@@ -31,8 +31,6 @@ func (handler *APIHandler) handleAdminBooks(w http.ResponseWriter, request *http
 			handler.handleImportExcel(w, request)
 		case path == "/api/admin/books/retry-covers":
 			handler.handleRetryExternalCovers(w, request)
-		case path == "/api/admin/books/import":
-			writeError(w, http.StatusNotImplemented, "Import noch nicht implementiert")
 		case path == "/api/books":
 			handler.BearbeiteBuchErstellen(w, request)
 		case strings.HasSuffix(path, "/refresh-cover"):

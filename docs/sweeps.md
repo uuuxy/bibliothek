@@ -63,8 +63,9 @@ Frage des Sweeps: **Funktionieren unsere Tests tatsächlich?** Vier Achsen, Meth
    `TEST_DATABASE_URL` führt **2052 Tests, 0 rot, 3 Skips** aus — alle drei legitim
    (2× CI-Guard, 1× Littera-Echtdaten). Playwright: 145 Tests in 79 Dateien, kein
    only/skip/fixme. Vitest-include deckt alle 52 Unit-Dateien. Go: keine Build-Tags,
-   kein `t.Skip` außerhalb der PG-/Littera-Gates. Einzige Ausnahme: 4 Benchmark-Dateien
-   laufen nirgends (kein `-bench`-Aufruf in Hook/CI) — kompiliert, nie gemessen; C-Posten.
+   kein `t.Skip` außerhalb der PG-/Littera-Gates. Einzige Ausnahme waren 4 Benchmark-
+   Bestände ohne jeden `-bench`-Aufruf in Hook/CI — kompiliert, nie gemessen; mit dem
+   v1.8.1-Aufräumen gelöscht (Tote-Türen-Regelfall: zurückbauen statt begründen).
 2. **Rot-Beweis** — kann die Ratsche noch rot werden? Je Ratsche ein eingeschleuster
    Verstoß (Probe-Datei bzw. Temp-Edit, danach revertiert — nie per `git checkout` auf
    alte Stände): 8 Frontend-Hygiene-Ratschen (Farben, Felder, Suchfelder, Icons, Reiter,

@@ -54,8 +54,8 @@ für Bibliothekspersonal gibt es das [Benutzerhandbuch](docs/HANDBUCH.md).
 | Betrieb | Docker Compose hinter Caddy |
 | Lizenz | [EUPL-1.2](LICENSE) |
 
-Umfang, gemessen am 01.09.2026: rund 52.000 Zeilen Go im Produktivcode, dazu 53.500
-Zeilen in 374 Testdateien; etwa 35.000 Zeilen Svelte/JavaScript und 79 e2e-Dateien.
+Umfang, gemessen am 01.09.2026: rund 52.000 Zeilen Go im Produktivcode, dazu 53.300
+Zeilen in 371 Testdateien; etwa 35.000 Zeilen Svelte/JavaScript und 79 e2e-Dateien.
 
 Diese Zahlen altern. Die vorige Fassung stand auf dem Stand vom Juli und lag bei den
 Testzeilen um 47 % daneben — deshalb steht hier das Messdatum und darunter der Befehl,

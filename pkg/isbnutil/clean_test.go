@@ -37,9 +37,3 @@ func TestCleanISBN_OhneTrennerKeineKopie(t *testing.T) {
 		t.Fatalf("CleanISBN(%q) = %q", in, got)
 	}
 }
-
-func BenchmarkCleanISBN(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		_ = CleanISBN("978-3-16-148410-0")
-	}
-}

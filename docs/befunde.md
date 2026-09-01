@@ -83,8 +83,8 @@ sind jetzt gemessen, nicht nur behauptet).
   ausschließt und kein Listen-Konsument es liest (Profil nutzt es); die
   Geräte-Torso-Reste (`ActionEvent.GeraetID` nie gesetzt, Geräte-Aktionen
   broadcasten gar nicht, Kiosk-Pfad liefert Null-Zeitstempel) warten auf den
-  Geräte-Ausbau; der 501-Zweig `/api/admin/books/import` zeigt neben dem
-  funktionierenden Import ins Leere.
+  Geräte-Ausbau. (Der 501-Zweig `/api/admin/books/import` ist am 01.09. mit dem
+  v1.8.1-Aufräumen gelöscht — er zeigte neben dem funktionierenden Import ins Leere.)
 - Reiterleisten: drei Höhen (30/32/34 px) in den handgebauten Bestands-Leisten —
   vereinheitlichen beim nächsten fachlichen Anfassen (der Umbruch ist seit
   `c35840d4` gelöst, Typografie-Fahrplan Schritt 6 damit halb offen).

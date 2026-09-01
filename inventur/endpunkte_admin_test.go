@@ -35,10 +35,13 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 		setupMock      func()
 	}{
 		{
-			name:           "POST /api/admin/books/import - Not Implemented",
+			// Der 501-Zweig zu diesem Pfad ist am 01.09.2026 zurückgebaut (C-Posten,
+			// keine Aufrufer in Frontend oder Go): Der funktionierende Import ist
+			// /api/books/import; dieser Pfad fällt jetzt ehrlich in den 404-Default.
+			name:           "POST /api/admin/books/import - zurückgebaut, 404",
 			method:         http.MethodPost,
 			path:           "/api/admin/books/import",
-			expectedStatus: http.StatusNotImplemented,
+			expectedStatus: http.StatusNotFound,
 		},
 		{
 			name:           "GET invalid path - Not Found",
