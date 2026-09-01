@@ -50,11 +50,15 @@ schrieb den alten Magie-Text statt `bestellstatus`).
 
 ## Offen — Entscheidung nötig (Peter)
 
-Leer (Stand 01.09.). Die drei Posten vom 31.08. sind nach Peters Freigabe alle
-umgesetzt: `sonar.projectVersion` (Scan-Skript), die Tresen-Auskunft
-(zweckgebundener Leseweg in `audit_log.details`, eigenes Recht `audit_details`)
-und das PII-Antwort-Gate (`api/pii_antwort_gate_pg_test.go` — die Stufen der
-GET-Routen sind jetzt gemessen, nicht nur behauptet).
+| Fund | Worum es geht |
+| ---- | ------------- |
+| Tote Vorlage `BESTELLUNG_EINGETROFFEN` (Sweep 01.09., F1) | Seed + Editor führen eine „Dein vorgemerktes Buch ist abholbereit!"-Vorlage, aber KEIN Go-Code liest sie — der Abholbereit-Zustand (Vormerkung) verschickt nichts, die 3-Tage-Frist läuft unbenachrichtigt ab. Der Editor zeigt sie seit 01.09. als „Ohne Wirkung", das Platzhalter-Gate führt sie als begründete Ausnahme. Entscheidung: Benachrichtigung BAUEN (an wen? Schüler haben keine Mail — Eltern-Mail bräuchte vorher VVT-Ergänzung, Klassenleitung wäre der SchDSV-konforme Weg) oder Vorlage AUSTRAGEN. |
+
+Die drei Posten vom 31.08. sind nach Peters Freigabe alle umgesetzt:
+`sonar.projectVersion` (Scan-Skript), die Tresen-Auskunft (zweckgebundener
+Leseweg in `audit_log.details`, eigenes Recht `audit_details`) und das
+PII-Antwort-Gate (`api/pii_antwort_gate_pg_test.go` — die Stufen der GET-Routen
+sind jetzt gemessen, nicht nur behauptet).
 
 ## Beobachten (nichts zu tun)
 
@@ -66,6 +70,15 @@ GET-Routen sind jetzt gemessen, nicht nur behauptet).
 
 ## Kategorie C — bewusst nicht ohne Anlass
 
+- Aus dem Nie-verdrahtet-Sweep (01.09., Agenten-Durchgang, je geprüft und bewusst
+  geparkt): `inventur_sessions.gestartet_von` wird geschrieben und 4× gescannt,
+  aber nie angezeigt (die Inventur-UI könnte den Starter nennen — Produktfrage);
+  `abgaenger_jahr` steht in der Aktiv-Listen-Antwort, obwohl die Liste Abgänger
+  ausschließt und kein Listen-Konsument es liest (Profil nutzt es); die
+  Geräte-Torso-Reste (`ActionEvent.GeraetID` nie gesetzt, Geräte-Aktionen
+  broadcasten gar nicht, Kiosk-Pfad liefert Null-Zeitstempel) warten auf den
+  Geräte-Ausbau; der 501-Zweig `/api/admin/books/import` zeigt neben dem
+  funktionierenden Import ins Leere.
 - Reiterleisten: drei Höhen (30/32/34 px) in den handgebauten Bestands-Leisten —
   vereinheitlichen beim nächsten fachlichen Anfassen (der Umbruch ist seit
   `c35840d4` gelöst, Typografie-Fahrplan Schritt 6 damit halb offen).
