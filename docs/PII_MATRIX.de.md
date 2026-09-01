@@ -9,8 +9,12 @@ Recht wird gegen die Registrierung geprüft. **Die Stufe der GET-Routen ist seit
 jede GET-Route über den echten Router mit genau dem Recht ihrer Zeile auf und prüft
 die Antwort (inkl. entpackter PDF-Ströme) gegen Kanarienwerte je Stufe — nichts
 oberhalb der dokumentierten Stufe darf erscheinen, Schlüsselrouten tragen
-Positiv-Kontrollen gegen leere Antworten. Für Nicht-GET-Routen (Schreibpfade)
-bleibt die Stufe Handarbeit: Wer eine Zeile anlegt, hat den Handler gelesen.
+Positiv-Kontrollen gegen leere Antworten. Auch die LESENDEN POST-Routen sind
+seit dem 01.09.2026 gemessen (`TestPIIAntwortenHaltenIhreStufe_LesendePosts`):
+der Theken-Scan (`POST /api/action` samt Batch) und die LUSD-Vorschau
+(`POST /api/lusd/preview`) laufen durch denselben Apparat. Für die übrigen
+Nicht-GET-Routen (Schreibpfade) bleibt die Stufe Handarbeit: Wer eine Zeile
+anlegt, hat den Handler gelesen.
 Stand: 01.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen).

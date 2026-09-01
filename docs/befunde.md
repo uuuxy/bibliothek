@@ -37,9 +37,13 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
-| Fund | Einordnung |
-| ---- | ---------- |
-| PII-Antwort-Gate deckt nur GET | B/Prüfvorrat (01.09., steht auch im Gate-Kopf): Lesende POST-Antworten — vor allem `POST /api/action` (Theken-DTO, Stufe 1) und `POST /api/lusd/preview` (Stufe 2) — bleiben Handarbeit. Erweiterung um nebenwirkungsarme POSTs wäre der nächste Schritt derselben Methode. |
+Leer (Stand 01.09. abends): Die drei Posten vom 01.09. sind abgearbeitet —
+Eigen-Lock-Harnesse auf `internal/pgtest` (6caa3d4b), Barcode-Snapshot beim
+Titel-Löschen an beiden Türen samt Paar-Gates (9889c30c), PII-Antwort-Gate um
+die lesenden POSTs erweitert (`TestPIIAntwortenHaltenIhreStufe_LesendePosts`).
+Der erste Lauf des POST-Gates fand direkt einen A-Fund: `POST /api/action/batch`
+wies durch `Validate.Struct` auf einem Slice JEDEN Offline-Sync als 400 ab —
+sofort gefixt, Rot am Live-Pfad gesehen.
 
 Davor: Leer seit 01.09. früh (Abgänger-in-Aktivliste behoben, Gate
 `aktivliste-ohne-abgaenger.spec.js`). Die Abarbeitung vom 31.08.2026 (7 Posten,

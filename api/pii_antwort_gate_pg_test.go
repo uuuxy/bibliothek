@@ -24,13 +24,22 @@ package api
 //
 // Vollständigkeit ist erzwungen: Jede GET-Zeile der Matrix braucht einen Aufruf
 // ODER einen begründeten Ausschluss — eine neue GET-Route ohne Einordnung wird
-// rot. Nicht-GET-Routen bleiben außerhalb (Aufrufe mit Seiteneffekten gehören
-// nicht in ein Lese-Gate); ihre Stufen sichert weiterhin die Handarbeit der
+// rot.
+//
+// Seit dem 01.09.2026 (Register-Posten „PII-Antwort-Gate deckt nur GET") misst
+// das Gate zusätzlich die LESENDEN POST-Routen — die, deren Antwort Schülerdaten
+// trägt, obwohl der Aufruf nebenwirkungsarm ist: der Theken-Scan (POST
+// /api/action, Stufe 1) samt Batch-Form und die LUSD-Vorschau (POST
+// /api/lusd/preview, Stufe 2 — apply=false schreibt nichts). Sie laufen durch
+// denselben Apparat (Kanarienwelt, genau EIN Recht, echter Router samt CSRF).
+// Die übrigen Nicht-GET-Zeilen bleiben außerhalb: Das sind Schreibpfade, deren
+// Aufruf die Welt verändert — ihre Stufen sichert weiterhin die Handarbeit der
 // Matrix plus die bestehenden Gates.
 
 import (
 	"context"
 	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -505,6 +514,152 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 			}
 		} else if rec.Code >= 400 {
 			t.Errorf("%s: Status %d — der Aufruf erreicht die Route nicht (Tippfehler im Verzeichnis, fehlendes Recht oder kaputter Seed); Antwort-Anfang: %.200s", route, rec.Code, text)
+		}
+	}
+}
+
+// ── Lesende POST-Routen ──────────────────────────────────────────────────────
+
+// piiPostFall ist EIN nebenwirkungsarmer POST-Aufruf einer Matrix-Zeile. Positiv
+// wie bei den GETs: Werte, die in der Antwort STEHEN MÜSSEN — mindestens ein
+// Fall je Route trägt welche, sonst prüfte das Gate leere Antworten.
+type piiPostFall struct {
+	Name    string
+	Anfrage func(t *testing.T) *http.Request
+	Positiv []string
+}
+
+// mitCSRF rüstet den Double-Submit nach, den der echte Router auf mutierenden
+// Methoden verlangt — Cookie und Header mit demselben Wert.
+func mitCSRF(req *http.Request) *http.Request {
+	req.AddCookie(&http.Cookie{Name: "csrf_token", Value: "pii-gate-csrf"})
+	req.Header.Set("X-CSRF-Token", "pii-gate-csrf")
+	return req
+}
+
+func jsonPost(url, body string) *http.Request {
+	req := httptest.NewRequest(http.MethodPost, url, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	return mitCSRF(req)
+}
+
+// bauePIIPostAufrufe: Schlüssel ist die Route EXAKT wie in der Matrix. Nur
+// nebenwirkungsarme, lesende Aufrufe — die Begründung je Route steht am Fall.
+func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
+	lusdVorschau := func(t *testing.T) *http.Request {
+		t.Helper()
+		// Klassenwechsel des Kanari-Schülers (05A → 06A), Zuordnung über
+		// Name+Geburtsdatum — die Vorschau (apply=false) schreibt nichts.
+		xlsx := baueXlsx(t, map[string][][]any{
+			"Klassenliste": {
+				{"Klassenliste — Schuljahr 2026/27"},
+				{"Nachname", "Vorname", "Klasse", "Geburtsdatum"},
+				{"Vogelbeere", "Pruefkanari", "06A", time.Date(2013, 7, 19, 0, 0, 0, 0, time.UTC)},
+			},
+		})
+		var body strings.Builder
+		mw := multipart.NewWriter(&body)
+		teil, err := mw.CreateFormFile("csvFile", "lusd_export.xlsx")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := teil.Write(xlsx); err != nil {
+			t.Fatal(err)
+		}
+		if err := mw.Close(); err != nil {
+			t.Fatal(err)
+		}
+		req := httptest.NewRequest(http.MethodPost, "/api/lusd/preview", strings.NewReader(body.String()))
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		return mitCSRF(req)
+	}
+
+	return map[string][]piiPostFall{
+		// Theken-Scan: liest den Schüler zum Ausweis-Barcode, bucht nichts.
+		// Der gesperrte Kanari-Schüler ist der Kernfall: Sein Sperrgrund-Freitext
+		// (Stufe 2) darf mit perform_actions ALLEIN nirgends in der Antwort stehen.
+		"POST /api/action": {
+			{Name: "Scan freier Schüler", Anfrage: func(t *testing.T) *http.Request {
+				return jsonPost("/api/action", `{"query":"SBK-KANARI-2"}`)
+			}, Positiv: []string{"Zugvogel"}},
+			{Name: "Scan gesperrter Schüler", Anfrage: func(t *testing.T) *http.Request {
+				return jsonPost("/api/action", `{"query":"SBK-KANARI-1"}`)
+			}, Positiv: []string{"Pruefkanari"}},
+		},
+		"POST /api/action/batch": {
+			{Name: "Batch-Scan", Anfrage: func(t *testing.T) *http.Request {
+				return jsonPost("/api/action/batch", `[{"query":"SBK-KANARI-2"}]`)
+			}, Positiv: []string{"Zugvogel"}},
+		},
+		"POST /api/lusd/preview": {
+			{Name: "Vorschau Klassenwechsel", Anfrage: lusdVorschau, Positiv: []string{"Pruefkanari"}},
+		},
+	}
+}
+
+// TestPIIAntwortenHaltenIhreStufe_LesendePosts ist derselbe Apparat wie das
+// GET-Gate für die nebenwirkungsarmen POST-Routen (Begründung im Dateikopf).
+func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
+	pool := pgTestPool(t)
+	t.Setenv("RATE_LIMIT", "100000")
+
+	if err := (&db.Database{Pool: pool}).InitPermissions(context.Background()); err != nil {
+		t.Fatalf("InitPermissions: %v", err)
+	}
+	authenticator, err := auth.NewAuthenticator(
+		"pii-antwort-gate-testgeheimnis-mind-32-bytes!", pool, time.Hour)
+	if err != nil {
+		t.Fatalf("Authenticator: %v", err)
+	}
+	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
+	router := srv.Routes()
+
+	welt := baueKanarienWelt(t, pool, authenticator)
+	aufrufe := bauePIIPostAufrufe(welt)
+	matrix := leseMatrix(t)
+
+	routen := make([]string, 0, len(aufrufe))
+	for route := range aufrufe {
+		routen = append(routen, route)
+	}
+	sort.Strings(routen)
+
+	for _, route := range routen {
+		zeile, ok := matrix[route]
+		if !ok {
+			t.Errorf("POST-Verzeichnis führt %q, die Matrix kennt diese Zeile nicht (mehr) — Eintrag entfernen oder Pfad korrigieren.", route)
+			continue
+		}
+		stufe := int(zeile.Stufe[0] - '0')
+		permission, mitSitzung := rechtFuerZeile(zeile.Recht)
+		setzeGenauEinRecht(t, pool, permission)
+
+		for _, fall := range aufrufe[route] {
+			req := fall.Anfrage(t)
+			if mitSitzung {
+				req.AddCookie(&http.Cookie{Name: "session_token", Value: welt.sessionToken})
+			}
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			text := antwortText(t, rec)
+
+			for _, kanarie := range verboteneKanarien(stufe) {
+				if strings.Contains(text, kanarie) {
+					t.Errorf("%s [%s] (Stufe %d, Recht %s): Antwort enthält %q — Daten OBERHALB der dokumentierten Stufe.\n"+
+						"→ Entweder blendet der Handler zu wenig aus, oder die Matrix-Stufe ist falsch. Status %d.",
+						route, fall.Name, stufe, zeile.Recht, kanarie, rec.Code)
+				}
+			}
+			for _, kanarie := range fall.Positiv {
+				if !strings.Contains(text, kanarie) {
+					t.Errorf("%s [%s]: Positiv-Kontrolle %q fehlt (Status %d) — der Aufruf erreicht die Route nicht (mehr); sonst misst das Gate hier nichts.\nAntwort-Anfang: %.200s",
+						route, fall.Name, kanarie, rec.Code, text)
+				}
+			}
+			if rec.Code >= 400 {
+				t.Errorf("%s [%s]: Status %d — der Aufruf läuft ins Leere (CSRF, Recht oder Body kaputt); Antwort-Anfang: %.200s",
+					route, fall.Name, rec.Code, text)
+			}
 		}
 	}
 }
