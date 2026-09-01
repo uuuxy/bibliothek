@@ -99,6 +99,22 @@ describe('wendeVorlageAn', () => {
 		expect(idStore.back.elements.some((e) => e.id === 'back-panel')).toBe(true);
 	});
 
+	it('übernimmt ein bereits hochgeladenes Schullogo in die Vorlage (leer heißt „noch keins", nicht „entfernen")', () => {
+		const logo = idStore.front.elements.find((e) => e.type === 'logo');
+		if (logo) logo.content = 'data:image/png;base64,ECHTES-SCHULLOGO';
+
+		expect(wendeVorlageAn('schwarz-gruen')).toBe(true);
+
+		expect(idStore.front.elements.find((e) => e.type === 'logo')?.content).toBe(
+			'data:image/png;base64,ECHTES-SCHULLOGO'
+		);
+	});
+
+	it('lässt das Logofeld leer, wenn vorher keines hochgeladen war', () => {
+		expect(wendeVorlageAn('reis-welle')).toBe(true);
+		expect(idStore.front.elements.find((e) => e.type === 'logo')?.content).toBe('');
+	});
+
 	it('lässt den Store bei unbekannter Kennung unangetastet', () => {
 		const vorher = JSON.stringify(idStore.front.elements.map((e) => e.id));
 		expect(wendeVorlageAn('gibt-es-nicht')).toBe(false);

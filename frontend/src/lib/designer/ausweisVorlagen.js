@@ -299,6 +299,15 @@ export function vorlage(kennung) {
 export function wendeVorlageAn(kennung) {
 	const v = vorlage(kennung);
 	if (!v) return false;
+	// Ein bereits hochgeladenes Schullogo überlebt den Vorlagenwechsel: Das leere
+	// Logofeld der Vorlage bedeutet „noch kein Logo", nicht „Logo entfernen" — sonst
+	// müsste die Schule ihre Logodatei nach jedem Vorlagenklick erneut hochladen.
+	// (Raster-Fund 01.09.2026, Frage 8 Lebenszyklus: Was überlebt den Ersetzen-Pfad?)
+	const bisherigesLogo = idStore.front.elements.find((e) => e.type === 'logo' && e.content);
+	if (bisherigesLogo) {
+		const logoNeu = v.front.elements.find((e) => e.type === 'logo');
+		if (logoNeu) logoNeu.content = bisherigesLogo.content;
+	}
 	idStore.front.elements = v.front.elements;
 	idStore.front.theme = v.front.theme;
 	idStore.back.elements = v.back.elements;
