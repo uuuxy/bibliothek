@@ -20,7 +20,6 @@ import (
 type berichtOrder struct {
 	ID              string
 	LieferantName   string
-	LieferantEmail  string
 	Kundennummer    string
 	Bestelldatum    time.Time
 	Gesamtbetrag    float64
@@ -70,7 +69,7 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool) string 
 // liefert zusätzlich einen Index ID→Position für das Nachladen der Positionen.
 func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Time, lieferantID string) ([]berichtOrder, map[string]int, error) {
 	orderQuery := `
-		SELECT id, lieferant_name, lieferant_email, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare
+		SELECT id, lieferant_name, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare
 		FROM bestellungen_verlauf
 		WHERE bestelldatum >= $1 AND bestelldatum < $2`
 	args := []any{von, bisExklusiv}
@@ -90,7 +89,7 @@ func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Tim
 	orderIndex := map[string]int{}
 	for orderRows.Next() {
 		var o berichtOrder
-		if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
+		if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.Kundennummer,
 			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare); err != nil {
 			return nil, nil, err
 		}
