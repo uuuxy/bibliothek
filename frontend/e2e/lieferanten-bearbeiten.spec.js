@@ -42,7 +42,7 @@ test('Lieferanten lassen sich bearbeiten, auch bei langem Namen', async ({ page 
 		const box = /** @type {HTMLElement} */ (tabelle.parentElement);
 		const zelle = /** @type {HTMLElement} */ (box.parentElement);
 		const knopf = [...document.querySelectorAll('button')].find(
-			(b) => b.textContent?.trim() === 'Bearbeiten'
+			(b) => b.textContent?.trim() === 'Bearbeiten' || b.getAttribute('aria-label')?.includes('bearbeiten')
 		);
 		return {
 			knopfRechts: knopf ? Math.round(knopf.getBoundingClientRect().right) : null,
@@ -67,7 +67,7 @@ test('Lieferanten lassen sich bearbeiten, auch bei langem Namen', async ({ page 
 	await page
 		.getByRole('row')
 		.filter({ hasText: LANGER_NAME })
-		.getByRole('button', { name: 'Bearbeiten' })
+		.getByRole('button', { name: `Lieferant ${LANGER_NAME} bearbeiten` })
 		.click();
 
 	// Im Bearbeitungsmodus wird der Name zum Eingabefeld — die Zeile trägt den Text dann
