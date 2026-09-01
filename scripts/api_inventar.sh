@@ -1,7 +1,7 @@
 #!/bin/sh
 # Erzeugt docs/api_inventar.md: alle registrierten Go-Routen,
 # alle /api/-Aufrufer im Frontend und den Abgleich in beide Richtungen
-# (tote Handler / Geister-Aufrufe). Radar-Referenz aus dem Master-Fahrplan.
+# (tote Handler / Geister-Aufrufe).
 #
 # Aufruf: ./scripts/api_inventar.sh   (vom Repo-Root)
 set -eu

@@ -48,7 +48,6 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [invarianten.md](invarianten.md) | Invarianten-Katalog: was immer gelten muss und auf welcher Ebene es durchgesetzt ist |
 | [befunde.md](befunde.md) | Befund-Register: was aufgefallen ist, was davon erledigt wurde |
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
-| [master_fahrplan.md](master_fahrplan.md) | Status-Dokument: erledigt / offen / Parkdeck |
 | [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
 | `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 168 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 | [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md) | Datenschutz-Arbeitsliste gegen den hessischen Rahmen (SchDSV, HBDI-Muster, HKM-LMF): Code-Punkte, Schul-/DSB-Punkte, bewusste Nicht-Befunde |

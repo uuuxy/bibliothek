@@ -144,9 +144,15 @@ Exemplar findet seinen Titel. Der Lauf gegen die echten Dateien hängt an
 ### Spalten-Zuordnung für den vollständigen Import — alle geklärt
 
 Diese Liste hieß bis zum 23.08.2026 „Noch offen", obwohl darunter ausschließlich
-Erledigtes steht. Offen ist am Littera-Import nur noch EINES, und es steht nicht hier,
-sondern im [Fahrplan](master_fahrplan.md): ein **frisches Backup aus dem laufenden
-Littera**. Die vorliegende Datei ist ein Stand von 2010.
+Erledigtes steht. Offen ist am Littera-Import nur noch EINES: ein **frisches Backup
+aus dem laufenden Littera** (Dienstprogramme → Datensicherung, ~100 MB+) — für Leser,
+Ausweisnummern und laufende Ausleihen; der MAB-Export (`katalogisat.xml`, Juni 2026,
+13.708 Titel) deckt nur den Katalog. Die vorliegende `littera_sav.mdb` ist ein Stand
+von **2010** — belegt an Leser 37 (letzte Bewegung 11.11.2010 in der Datei gegen
+letzte Ausleihe 17.06.2026 im laufenden LITTERA 5.4) und an einem Buch von 2022 mit
+Exemplar-Nr. 105785, während die Datei bei 61.520 endet. Der Export muss
+`FremdLeserNummer` und `FremdBarcode` enthalten — dort liegen die Nummern der
+Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
 
 * **Autoren — erledigt.** `Titel.Verfasserangabe` ist nur bei 2.519 von 10.732 Titeln
   brauchbar gefüllt (23 %). Die gepflegte Quelle sind `Personen` + `Personen_Zuordnung`,

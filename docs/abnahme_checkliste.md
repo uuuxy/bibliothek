@@ -178,6 +178,6 @@ Bibliothek ihn ohne Suchen findet, und nach der Freischaltung nur das Portal sic
 
 ## Nach der Abnahme
 
-- [ ] Ergebnis (bestanden / Auffälligkeiten) im [master_fahrplan.md](master_fahrplan.md) eintragen.
+- [ ] Ergebnis (bestanden / Auffälligkeiten) im Befund-Register ([befunde.md](befunde.md)) vermerken.
 - [ ] Bei Parser-Auffälligkeiten mit der echten LUSD-Datei: die Datei (anonymisiert!)
   als Testfixture sichern, damit die automatischen Tests das echte Format abdecken.

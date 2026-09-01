@@ -112,11 +112,33 @@ sind jetzt gemessen, nicht nur behauptet).
 
 ## Außerhalb dieses Registers (Betrieb, liegt bei Peter)
 
-Die gewichtigen offenen Posten sind keine Code-Befunde und leben in den
-Betriebs-Dokumenten bzw. der Selbstprüfung: **S3-Auslagerung der Backups** ·
-**frisches Littera-Backup** (littera_sav.mdb ist ein 2010er-Stand) ·
-**`SELBSTANMELDUNG_DOMAIN`** auf dem Schulserver setzen · Betriebsbereitschafts-Tab
-des Schulservers durchsehen · Datenwert Schulname/„Neuer Text" auf Live korrigieren.
+Seit dem 01.09.2026 ist dieser Abschnitt die EINE Liste der offenen Betriebs-Punkte —
+der frühere `master_fahrplan.md` ist aufgelöst (seine Code-Punkte waren erledigt, der
+Rest stand doppelt; Littera-Details jetzt in
+[littera_schema_befund.md](littera_schema_befund.md), Historie in `git log`):
+
+- **Frisches Littera-Backup** — littera_sav.mdb ist ein 2010er-Stand; Anforderungen
+  (FremdLeserNummer/FremdBarcode) in [littera_schema_befund.md](littera_schema_befund.md).
+- **Drei Sekretariats-Abnahmen** à ~10 Minuten (LUSD-Import, Versetzung ⏰ vor dem
+  Schuljahreswechsel, Klassensatz-Erledigen) — Ablauf in
+  [abnahme_checkliste.md](abnahme_checkliste.md).
+- **Zielumgebung** (die Seite System → Betriebsbereitschaft zeigt den Ist-Zustand):
+  Prod-Secrets mit `ENFORCE_PROD_SECRETS=true` (ohne `BACKUP_ENCRYPTION_KEY` läuft
+  KEIN Backup) · Schul-IMAP/SMTP-Zugangsdaten · **`SELBSTANMELDUNG_DOMAIN`** setzen ·
+  einmalige manuelle Restore-Probe am echten Ziel ([DEPLOYMENT.md](DEPLOYMENT.md) §6) ·
+  `SENTRY_DSN` leer lassen (A6 in
+  [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md)) ·
+  **S3-Auslagerung der Backups**.
+- **GitHub**: PR-Pflicht abschaffen (Solo-Entscheidung 30.07.), „Block force pushes"
+  und „Restrict deletions" anlassen.
+- Datenwert Schulname/„Neuer Text" auf Live korrigieren.
+
+**Parkdeck** (bewusste Nicht-Entscheidungen, nur mit Anlass wieder anfassen):
+Integer-Cent-Refactor (float64/NUMERIC) · Bundle-Splitting (720-kB-Chunk) ·
+TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-API ·
+`cmd/migrate` (MySQL) löschen — hat keine Datenquelle mehr, aber seine PG-Tests
+sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
+(`/api/v1`) und Mandantenfähigkeit (RLS).
 
 Postgres 18 ist KOMPLETT durch (Repo 31.08., Prod laut Peter längst umgezogen).
 Merkposten für lokale PG-Testläufe: `pg_dump` 18.6 liegt in
