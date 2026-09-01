@@ -2,6 +2,7 @@
 	import { apiClient } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
+	import MailVorlagenPlatzhalter from './MailVorlagenPlatzhalter.svelte';
 	import { CircleCheck } from '@lucide/svelte';
 
 	/** @type {any[]} */
@@ -79,9 +80,10 @@
 	<!-- Header: flach, durch feine Linie statt Kachel abgesetzt -->
 	<div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-6">
 		<div>
-			<h3 class="text-xl font-bold text-slate-900">E-Mail Vorlagen</h3>
+			<h3 class="text-xl font-bold text-slate-900">Brief- & Mail-Vorlagen</h3>
 			<p class="text-sm text-slate-600 mt-1">
-				Passen Sie die Texte für Mahnungen und Bestellbenachrichtigungen an.
+				Texte für den gedruckten Eltern-Mahnbrief und die Bestellmail an den Händler. Welche
+				Platzhalter gelten, hängt von der Vorlage ab — siehe Hinweis unter dem Text.
 			</p>
 		</div>
 
@@ -161,26 +163,7 @@
 						></textarea>
 					</div>
 
-					<!-- Platzhalter Info: flacher Akzent statt Kachel -->
-					<div class="border-l-2 border-blue-300 pl-4 py-1">
-						<h4 class="text-sm font-bold text-slate-700 mb-1">Erlaubte Platzhalter</h4>
-						<p class="text-xs text-slate-500 leading-relaxed">
-							Diese Variablen können im Text verwendet werden und werden automatisch ersetzt:
-							<br />
-							<code class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded mr-1 inline-block mt-1"
-								>{'{' + '{.Vorname}' + '}'}</code
-							>
-							<code class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded mr-1 inline-block mt-1"
-								>{'{' + '{.Nachname}' + '}'}</code
-							>
-							<code class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded mr-1 inline-block mt-1"
-								>{'{' + '{.BuchListe}' + '}'}</code
-							>
-							<code class="px-1.5 py-0.5 bg-slate-100 text-slate-700 rounded mr-1 inline-block mt-1"
-								>{'{' + '{.Frist}' + '}'}</code
-							>
-						</p>
-					</div>
+					<MailVorlagenPlatzhalter typ={selectedTemplate.typ} />
 
 					<div class="flex justify-end pt-2">
 						<Button size="lg" onclick={saveTemplate} disabled={isSaving} class="px-6">
