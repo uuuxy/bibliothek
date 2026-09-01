@@ -27,9 +27,9 @@ func TestGenerateDamagePDFHandler_Success(t *testing.T) {
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Mock fetchDamageCaseInfo query
-	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "titel", "barcode_id"}).
-		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Das Buch", "B-123")
-	mock.ExpectQuery("SELECT sf.beschreibung, sf.betrag, sf.erstellt_am, s.vorname, s.nachname, s.klasse, t.titel, e.barcode_id").
+	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "strasse", "hausnummer", "plz", "ort", "titel", "barcode_id"}).
+		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Musterweg", "3", "61169", "Musterstadt", "Das Buch", "B-123")
+	mock.ExpectQuery("SELECT sf.beschreibung, sf.betrag, sf.erstellt_am, s.vorname, s.nachname, s.klasse, COALESCE").
 		WithArgs(caseID).
 		WillReturnRows(rows)
 
@@ -160,8 +160,8 @@ func TestGenerateDamagePDFHandler_WriterError(t *testing.T) {
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Mock fetchDamageCaseInfo query
-	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "titel", "barcode_id"}).
-		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Das Buch", "B-123")
+	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "strasse", "hausnummer", "plz", "ort", "titel", "barcode_id"}).
+		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Musterweg", "3", "61169", "Musterstadt", "Das Buch", "B-123")
 	mock.ExpectQuery("SELECT sf.beschreibung").
 		WithArgs(caseID).
 		WillReturnRows(rows)
@@ -206,8 +206,8 @@ func TestGenerateDamagePDFHandler_UpdateError(t *testing.T) {
 	caseID := "123e4567-e89b-12d3-a456-426614174000"
 
 	// Mock fetchDamageCaseInfo query
-	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "titel", "barcode_id"}).
-		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Das Buch", "B-123")
+	rows := pgxmock.NewRows([]string{"beschreibung", "betrag", "erstellt_am", "vorname", "nachname", "klasse", "strasse", "hausnummer", "plz", "ort", "titel", "barcode_id"}).
+		AddRow("Wasserschaden", 12.50, time.Now(), "Max", "Muster", "7a", "Musterweg", "3", "61169", "Musterstadt", "Das Buch", "B-123")
 	mock.ExpectQuery("SELECT sf.beschreibung").
 		WithArgs(caseID).
 		WillReturnRows(rows)
