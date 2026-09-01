@@ -69,7 +69,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/abgaenger/pdf` | view_graduates | 2 | Kontoauszug-PDF je Abgänger |
 | `POST /api/abgaenger/mail` | create_orders | 2 | versendet Konto-PDFs an Klassenleitungen; Antwort nur Zähler |
 | `POST /api/damage/report` | edit_students | 0 | Antwort nur schadens_id |
-| `GET /api/schadensfaelle/{id}/pdf` | view_students | 3 | Elternbrief: Name, Betrag, Schaden |
+| `GET /api/schadensfaelle/{id}/pdf` | view_students | 3 | Elternbrief (Fensterkuvert): Name, Anschrift, Betrag, Schaden (Anschrift seit 01.09.2026 verdrahtet — vorher Unterstrich-Zeilen) |
 | `GET /api/schueler/{id}/schadensfaelle` | view_students | 2 | Gebührenliste zur Schüler-ID |
 | `POST /api/schadensfaelle/{id}/bezahlt` | edit_students | 0 | nur Status |
 | `POST /api/schadensfaelle/{id}/storno` | edit_students | 0 | nur Status |

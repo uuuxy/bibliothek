@@ -71,12 +71,17 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 	var betrag float64
 	var erstelltAm time.Time
 	var sVorname, sNachname, sKlasse string
+	var sStrasse, sHausnummer, sPLZ, sOrt string
 	var tTitel, eBarcode string
 
+	// COALESCE auf den Adressspalten: nullbar in der DB, nicht-nullbar in Go
+	// (NULL-Scan-Bugklasse). Anschrift fürs Fensterkuvert, siehe SchadensfallInfo.
 	query := `
 		SELECT
 			sf.beschreibung, sf.betrag, sf.erstellt_am,
 			s.vorname, s.nachname, s.klasse,
+			COALESCE(s.strasse, ''), COALESCE(s.hausnummer, ''),
+			COALESCE(s.plz, ''), COALESCE(s.ort, ''),
 			t.titel, e.barcode_id
 		FROM schadensfaelle sf
 		JOIN schueler s ON sf.schueler_id = s.id
@@ -88,6 +93,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 	err := s.DB.Pool.QueryRow(ctx, query, id).Scan(
 		&beschreibung, &betrag, &erstelltAm,
 		&sVorname, &sNachname, &sKlasse,
+		&sStrasse, &sHausnummer, &sPLZ, &sOrt,
 		&tTitel, &eBarcode,
 	)
 	if err != nil {
@@ -101,6 +107,10 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		SchuelerVorname:  sVorname,
 		SchuelerNachname: sNachname,
 		SchuelerKlasse:   sKlasse,
+		Strasse:          sStrasse,
+		Hausnummer:       sHausnummer,
+		PLZ:              sPLZ,
+		Ort:              sOrt,
 		BuchTitel:        tTitel,
 		ExemplarBarcode:  eBarcode,
 	}, nil

@@ -226,11 +226,14 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/klassen-mapping":                  {URL: "/api/klassen-mapping"},
 		"GET /api/abgaenger":                        {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
 		"GET /api/abgaenger/pdf":                    {URL: "/api/abgaenger/pdf"},
-		"GET /api/schadensfaelle/{id}/pdf":          {URL: "/api/schadensfaelle/" + w.schadensfallID + "/pdf", Positiv: []string{"Vogelbeere"}},
-		"GET /api/schueler/{id}/schadensfaelle":     {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
-		"GET /api/mahnwesen":                        {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
-		"GET /api/mahnwesen/ueberfaellig_jahrgang":  {URL: "/api/mahnwesen/ueberfaellig_jahrgang"},
-		"GET /api/mahnwesen/pdf":                    {URL: "/api/mahnwesen/pdf"},
+		// Auch der dritte Fensterkuvert-Brief trägt seit dem 01.09.2026 die Anschrift
+		// (vorher Unterstrich-Zeilen) — Kanariweg als Positiv-Kontrolle wie bei den
+		// Geschwistern overdue-pdf und print/rechnung.
+		"GET /api/schadensfaelle/{id}/pdf":         {URL: "/api/schadensfaelle/" + w.schadensfallID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/schueler/{id}/schadensfaelle":    {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
+		"GET /api/mahnwesen":                       {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
+		"GET /api/mahnwesen/ueberfaellig_jahrgang": {URL: "/api/mahnwesen/ueberfaellig_jahrgang"},
+		"GET /api/mahnwesen/pdf":                   {URL: "/api/mahnwesen/pdf"},
 
 		// routes_books.go
 		"GET /api/buecher/titel/{id}/exemplare":      {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},

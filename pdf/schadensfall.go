@@ -3,6 +3,7 @@ package pdf
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
@@ -18,8 +19,16 @@ type SchadensfallInfo struct {
 	SchuelerVorname  string
 	SchuelerNachname string
 	SchuelerKlasse   string
-	BuchTitel        string
-	ExemplarBarcode  string
+	// Anschrift für das DIN-Fensterkuvert (VVT-Zweck „gedruckte Rechnung /
+	// Elternbrief"). Bis zum 01.09.2026 druckte der Brief stattdessen zwei
+	// Unterstrich-Zeilen — das Fenster blieb leer, obwohl die Daten in der
+	// Schülerdatei stehen (gleiche Bauform wie Mahnbrief und Rechnung).
+	Strasse         string
+	Hausnummer      string
+	PLZ             string
+	Ort             string
+	BuchTitel       string
+	ExemplarBarcode string
 }
 
 // GenerateSchadensfallPDF generates a formal PDF notification letter ("Elternbrief")
@@ -71,12 +80,20 @@ func addSchadensfallAddress(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(str
 	pdf.SetX(20)
 	pdf.SetFont("Arial", "", 11)
 	pdf.Cell(0, 6, tr(fmt.Sprintf("%s %s", data.SchuelerVorname, data.SchuelerNachname)))
+	// Anschrift statt der früheren Unterstrich-Zeilen; fehlt sie, steht das
+	// ausdrücklich im Fenster (Regel wie Mahnbrief/Rechnung: leere Zeilen sähen
+	// aus wie ein Druckfehler, so geht der Brief sichtbar über die Klassenleitung).
+	zeile2 := strings.TrimSpace(data.Strasse + " " + data.Hausnummer)
+	zeile3 := strings.TrimSpace(data.PLZ + " " + data.Ort)
+	if zeile2 == "" && zeile3 == "" {
+		zeile2 = "(keine Adresse hinterlegt)"
+	}
 	pdf.Ln(5)
 	pdf.SetX(20)
-	pdf.Cell(0, 6, tr("_________________________"))
+	pdf.Cell(0, 6, tr(zeile2))
 	pdf.Ln(5)
 	pdf.SetX(20)
-	pdf.Cell(0, 6, tr("_________________________"))
+	pdf.Cell(0, 6, tr(zeile3))
 	pdf.Ln(30)
 }
 
