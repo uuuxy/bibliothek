@@ -28,10 +28,9 @@ type OverdueBook struct {
 
 // OverdueStudent groups overdue books for a specific student.
 type OverdueStudent struct {
-	ID          string
-	Vorname     string
-	Nachname    string
-	ElternEmail string
+	ID       string
+	Vorname  string
+	Nachname string
 	// Anschrift für das Fensterkuvert (DIN 5008). Zweck laut VVT/SECURITY.md
 	// ausdrücklich „gedruckter Elternbrief bei Mahnung" — bis zum 01.09.2026
 	// stand hier trotzdem hartkodiert „Adresse unbekannt": Das Layout war für
