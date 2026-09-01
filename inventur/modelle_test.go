@@ -45,22 +45,7 @@ func TestBook_JSONMarshaling(t *testing.T) {
 	assert.Equal(t, originalBook, unmarshaledBook, "Unmarshaled Book should match the original")
 }
 
-func TestClassBookAssignment_JSONMarshaling(t *testing.T) {
-	originalAssignment := ClassBookAssignment{
-		ClassName: "Class 5A",
-		BookID:    "book-123",
-		Title:     "Test Book Title",
-		Subject:   "Math",
-		Track:     "A",
-		CoverURL:  "https://example.com/cover.jpg",
-	}
-
-	jsonData, err := json.Marshal(originalAssignment)
-	require.NoError(t, err, "Should marshal ClassBookAssignment to JSON without error")
-
-	var unmarshaledAssignment ClassBookAssignment
-	err = json.Unmarshal(jsonData, &unmarshaledAssignment)
-	require.NoError(t, err, "Should unmarshal JSON to ClassBookAssignment without error")
-
-	assert.Equal(t, originalAssignment, unmarshaledAssignment, "Unmarshaled ClassBookAssignment should match the original")
-}
+// ClassBookAssignment ist entfernt (Sweep 01.09.2026): Das Struct hatte keinen
+// einzigen produktiven Verwender — die Klassen-Buchlisten laufen über ClassBook/
+// ClassGroup (class_books_handler.go). Sein Round-Trip-Test hier hielt es nur
+// künstlich am Leben.

@@ -28,16 +28,6 @@ type Book struct {
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften" db:"erweiterte_eigenschaften"`
 }
 
-// ClassBookAssignment represents a book assigned to a class.
-type ClassBookAssignment struct {
-	ClassName string `json:"className" db:"class_name"`
-	BookID    string `json:"bookId" db:"book_id"`
-	Title     string `json:"title" db:"title"`
-	Subject   string `json:"subject" db:"subject"`
-	Track     string `json:"track" db:"track"`
-	CoverURL  string `json:"coverUrl" db:"cover_url"`
-}
-
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
 type BuchEingabe struct {
 	ISBN         string `json:"isbn"`
