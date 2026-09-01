@@ -175,10 +175,21 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetXY(20, 100)
 
+	// {{.Frist}} ist die ÄLTESTE Rückgabefrist der gemahnten Bücher. Bis zum
+	// 01.09.2026 stand hier time.Now(): „Ursprüngliche Frist: <Druckdatum>" —
+	// direkt über einer Tabelle mit „34 Tage überfällig". Bei mehreren Büchern
+	// ist die früheste Frist die ehrliche eine Zahl; je Buch steht die eigene
+	// Überfälligkeit ohnehin in der Tabelle.
+	aeltesteFrist := time.Now()
+	for _, b := range student.Books {
+		if b.Frist.Before(aeltesteFrist) {
+			aeltesteFrist = b.Frist
+		}
+	}
 	replacer := strings.NewReplacer(
 		"{{.Vorname}}", student.Vorname,
 		"{{.Nachname}}", student.Nachname,
-		"{{.Frist}}", time.Now().Format(dateFormatDE),
+		"{{.Frist}}", aeltesteFrist.Format(dateFormatDE),
 	)
 
 	parsedBetreff := replacer.Replace(betreff)

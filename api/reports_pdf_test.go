@@ -59,6 +59,38 @@ func TestElternMahnbriefDrucktAnschriftInsFensterfeld(t *testing.T) {
 	}
 }
 
+// {{.Frist}} muss die ÄLTESTE Rückgabefrist der gemahnten Bücher tragen — nicht das
+// Druckdatum. Bis zum 01.09.2026 stand dort time.Now(): Der Seed-Text „Ursprüngliche
+// Frist: {{.Frist}}" nannte den Tag des Ausdrucks, direkt über einer Tabelle mit
+// „34 Tage überfällig" — der Brief widersprach sich selbst, Eltern konnten die
+// Angabe nicht prüfen.
+func TestElternMahnbriefFristIstDieAeltesteRueckgabefrist(t *testing.T) {
+	student := testOverdueStudent()
+	aeltere := time.Now().AddDate(0, 0, -40)
+	student.Books = append(student.Books, OverdueBook{
+		Titel: "Zweitband", BarcodeID: "BC-2",
+		AusgeliehenAm: time.Now().AddDate(0, -3, 0),
+		Frist:         aeltere,
+		DaysOverdue:   40,
+	})
+
+	doc := gofpdf.New("P", "mm", "A4", "")
+	tr := doc.UnicodeTranslatorFromDescriptor("")
+	zeichneElternMahnbrief(doc, tr, student, "Mahnung", "Frist war {{.Frist}} Ende\n{{.BuchListe}}", "Testschule")
+	var buf bytes.Buffer
+	if err := doc.Output(&buf); err != nil {
+		t.Fatalf("PDF erzeugen: %v", err)
+	}
+	text := pdfText(t, buf.Bytes())
+
+	if soll := "Frist war " + aeltere.Format(dateFormatDE) + " Ende"; !strings.Contains(text, soll) {
+		t.Errorf("Brief nennt nicht die älteste Rückgabefrist: %q fehlt", soll)
+	}
+	if falsch := "Frist war " + time.Now().Format(dateFormatDE); strings.Contains(text, falsch) {
+		t.Errorf("Brief füllt {{.Frist}} mit dem Druckdatum (%q) — genau der alte Fehler", falsch)
+	}
+}
+
 func TestElternMahnbriefOhneAnschriftSagtEsAusdruecklich(t *testing.T) {
 	text := renderElternMahnbrief(t, testOverdueStudent())
 	// Ohne Klammern gesucht: Im PDF-Inhaltsstrom stehen Klammern escaped
