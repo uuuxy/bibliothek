@@ -26,19 +26,28 @@ import (
 func TestUpdateSettings_SitzungsfristenSendenSSESignal(t *testing.T) {
 	broker := sse.NewBroker()
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	go broker.Start(ctx)
 
 	stream := httptest.NewServer(broker.Handler())
-	defer stream.Close()
 	resp, err := http.Get(stream.URL)
 	if err != nil {
+		cancel()
+		stream.Close()
 		t.Fatalf("SSE-Strom nicht erreichbar: %v", err)
 	}
+	// Abbau in DIESER Reihenfolge — und in einem Cleanup statt in defers: Ein
+	// `defer stream.Close()` lief vor `cancel()` und vor dem Schließen des Client-Bodys.
+	// httptest.Server.Close wartet aber auf alle aktiven Verbindungen, und der
+	// Strom-Handler (sse.streamEvents) beendet sich erst, wenn der Client geht
+	// (r.Context) oder der Broker herunterfährt (clientChan). Beides stand noch aus —
+	// der Test hing bis zum 10-Minuten-Timeout des Pakets und riss den Pre-Push mit.
 	t.Cleanup(func() {
 		if cerr := resp.Body.Close(); cerr != nil {
 			t.Logf("SSE-Strom schließen: %v", cerr)
 		}
+		cancel()
+		stream.CloseClientConnections()
+		stream.Close()
 	})
 
 	ereignisse := make(chan string, 8)
