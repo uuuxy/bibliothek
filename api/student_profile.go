@@ -22,19 +22,6 @@ func resolveFotoURL(ctx context.Context, studentRepo repository.StudentRepositor
 	return ""
 }
 
-// bestimmeSchuelerStatus leitet den Anzeigestatus (aktiv/gesperrt/abgaenger) ab;
-// Abgänger hat Vorrang vor Gesperrt.
-func bestimmeSchuelerStatus(student *repository.Student) string {
-	statusStr := "aktiv"
-	if student.IstGesperrt {
-		statusStr = "gesperrt"
-	}
-	if student.IstAbgaenger {
-		statusStr = "abgaenger"
-	}
-	return statusStr
-}
-
 // StudentProfileResponse returns master data (with photo_url) and currently borrowed books.
 type StudentProfileResponse struct {
 	ID            string `json:"id"`
@@ -52,7 +39,6 @@ type StudentProfileResponse struct {
 	FotoURL           string                    `json:"foto_url"`
 	Geburtsdatum      *string                   `json:"geburtsdatum,omitempty"`
 	LusdID            *string                   `json:"lusd_id,omitempty"`
-	Status            string                    `json:"status,omitempty"`
 	HasOpenDamages    bool                      `json:"has_open_damages"`
 	IsManuallyBlocked bool                      `json:"is_manually_blocked"`
 	BlockReason       *string                   `json:"block_reason"`
@@ -109,8 +95,6 @@ func (s *Server) GetStudentProfileHandler(
 			borrowedBooks = []repository.BorrowedBook{}
 		}
 
-		statusStr := bestimmeSchuelerStatus(student)
-
 		// 3.5 Check for open damages
 		hasOpenDamages, err := studentRepo.HasOpenDamages(ctx, student.ID)
 		if err != nil {
@@ -130,7 +114,6 @@ func (s *Server) GetStudentProfileHandler(
 			FotoURL:           fotoURL,
 			Geburtsdatum:      student.Geburtsdatum,
 			LusdID:            student.LusdID,
-			Status:            statusStr,
 			HasOpenDamages:    hasOpenDamages,
 			IsManuallyBlocked: student.IsManuallyBlocked,
 			BlockReason:       student.BlockReason,
