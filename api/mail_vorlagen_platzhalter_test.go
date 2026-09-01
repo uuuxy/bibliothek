@@ -38,12 +38,11 @@ var rendererQuellen = map[string]string{
 }
 
 // ohneRenderer: Seed-Typen, die BEWUSST keinen Renderer haben — mit Begründung.
-// Ein Eintrag hier ist ein geparkter Befund, kein Normalzustand.
-var ohneRenderer = map[string]string{
-	"BESTELLUNG_EINGETROFFEN": "Befund F1 (Register 01.09.2026): kein Go-Code liest diesen Typ — " +
-		"die Abholbereit-Benachrichtigung wurde nie gebaut (Schüler haben keine Mail; an wen sie " +
-		"ginge, ist Betreiber-Entscheidung). Der Editor zeigt die Vorlage als 'Ohne Wirkung' an.",
-}
+// Ein Eintrag hier ist ein geparkter Befund, kein Normalzustand. Der bisher
+// einzige Fall (BESTELLUNG_EINGETROFFEN) ist mit Migration 092 ausgetragen:
+// Die Abholbereit-Benachrichtigung ist der Abholfach-Hinweis am Theken-Terminal
+// (OmniboxService), keine Mail — Betreiber-Entscheidung 01.09.2026.
+var ohneRenderer = map[string]string{}
 
 // sammlePlatzhalter zieht alle {{.X}}-Vorkommen aus einem Text als Menge.
 func sammlePlatzhalter(text string) map[string]bool {
@@ -120,7 +119,7 @@ func leseSeedVorlagen(t *testing.T) map[string]map[string]bool {
 		}
 		out[typ] = sammlePlatzhalter(seed[m[0]:blockEnde])
 	}
-	if len(out) < 3 {
+	if len(out) < 2 {
 		t.Fatalf("nur %d Seed-Vorlagen erkannt — Parser prüfen", len(out))
 	}
 	return out

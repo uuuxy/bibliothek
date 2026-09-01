@@ -50,9 +50,12 @@ schrieb den alten Magie-Text statt `bestellstatus`).
 
 ## Offen — Entscheidung nötig (Peter)
 
-| Fund | Worum es geht |
-| ---- | ------------- |
-| Tote Vorlage `BESTELLUNG_EINGETROFFEN` (Sweep 01.09., F1) | Seed + Editor führen eine „Dein vorgemerktes Buch ist abholbereit!"-Vorlage, aber KEIN Go-Code liest sie — der Abholbereit-Zustand (Vormerkung) verschickt nichts, die 3-Tage-Frist läuft unbenachrichtigt ab. Der Editor zeigt sie seit 01.09. als „Ohne Wirkung", das Platzhalter-Gate führt sie als begründete Ausnahme. Entscheidung: Benachrichtigung BAUEN (an wen? Schüler haben keine Mail — Eltern-Mail bräuchte vorher VVT-Ergänzung, Klassenleitung wäre der SchDSV-konforme Weg) oder Vorlage AUSTRAGEN. |
+Leer (Stand 01.09. abends). Die tote Vorlage `BESTELLUNG_EINGETROFFEN` ist
+ENTSCHIEDEN (Peter, 01.09.): keine Mail — Klassenleitungen wären überlastet,
+Eltern-Mail wäre der dünnste §-15-SchDSV-Fall, und Schüler merken ohnehin an
+der Theke vor. Stattdessen zeigt das Terminal beim Ausweis-Scan durch die
+Mitarbeiterin den **Abholfach-Hinweis** (OmniboxService, PG-Test rot gesehen);
+die Vorlage ist mit Migration 092 ausgetragen.
 
 Die drei Posten vom 31.08. sind nach Peters Freigabe alle umgesetzt:
 `sonar.projectVersion` (Scan-Skript), die Tresen-Auskunft (zweckgebundener

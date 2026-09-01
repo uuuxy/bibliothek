@@ -292,10 +292,13 @@ CREATE TRIGGER trg_mail_vorlagen_updated_at
 BEFORE UPDATE ON mail_vorlagen
 FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
--- Seed der Mail-Vorlagen (Spiegel von migrations/023_seed_mail_vorlagen.sql).
+-- Seed der Mail-Vorlagen (Spiegel von migrations/023_seed_mail_vorlagen.sql,
+-- MINUS der mit Migration 092 ausgetragenen toten Vorlage BESTELLUNG_EINGETROFFEN
+-- — sie hatte nie einen Renderer; die Abholbereit-Benachrichtigung ist der
+-- Abholfach-Hinweis am Theken-Terminal, nicht eine Mail).
 -- WICHTIG: 023 ist oben als bereits angewendet markiert und läuft auf frischen
 -- Datenbanken daher NIE — ohne diesen Seed bliebe mail_vorlagen leer und der
--- Eltern-Mahnungs-/Abholbereit-Versand hätte keine Vorlage.
+-- Eltern-Mahnbrief/Händler-Versand hätte keine Vorlage.
 INSERT INTO mail_vorlagen (typ, betreff, text_body)
 VALUES
 (
@@ -312,20 +315,6 @@ Ursprüngliche Frist: {{.Frist}}
 
 Vielen Dank für Ihre Mithilfe!
 Ihre Schulbibliothek'
-),
-(
-    'BESTELLUNG_EINGETROFFEN',
-    'Dein vorgemerktes Buch ist abholbereit!',
-    'Hallo {{.Vorname}} {{.Nachname}},
-
-dein vorgemerktes Buch ist in der Schulbibliothek für dich eingetroffen:
-
-{{.BuchListe}}
-
-Bitte hole das Buch bis zum {{.Frist}} ab, da es ansonsten an den nächsten Schüler auf der Warteliste weitergegeben wird.
-
-Viele Grüße,
-Deine Schulbibliothek'
 ),
 (
     'BESTELLUNG_HAENDLER',
@@ -1025,7 +1014,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('088_klassensatz_erledigt_notiz.sql'),
 ('089_klassensatz_erledigt_am.sql'),
 ('090_ziel_jahrgang_notnull_constraint_name.sql'),
-('091_audit_logs_schueler_schluessel.sql')
+('091_audit_logs_schueler_schluessel.sql'),
+('092_tote_vorlage_bestellung_eingetroffen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

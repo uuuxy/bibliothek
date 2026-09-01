@@ -1,0 +1,16 @@
+-- =============================================================================
+-- Migration 092: Tote Mail-Vorlage BESTELLUNG_EINGETROFFEN austragen
+-- =============================================================================
+-- Betreiber-Entscheidung 01.09.2026 (Befund-Register, Sweep „Nie verdrahtet",
+-- Fund F1): Die Vorlage „Dein vorgemerktes Buch ist abholbereit!" wurde mit
+-- Migration 023 geseedet, aber KEIN Codepfad hat sie je gelesen — es gibt keinen
+-- Mailweg zum Schüler (keine Schüler-Mail-Spalte), und einer wird bewusst nicht
+-- gebaut: Die Benachrichtigung läuft stattdessen über den Abholfach-Hinweis am
+-- Theken-Terminal (Ausweis-Scan durch die Mitarbeiterin, OmniboxService).
+-- Solange die Zeile existierte, ließ sie sich im Vorlagen-Editor bearbeiten und
+-- speichern („Erfolgreich gespeichert") — ohne jede Wirkung.
+--
+-- Das Platzhalter-Paritäts-Gate (api/mail_vorlagen_platzhalter_test.go) verlangt
+-- seither für jeden Seed-Typ einen Renderer; die Ausnahme für diesen Typ ist mit
+-- dieser Migration ausgetragen.
+DELETE FROM mail_vorlagen WHERE typ = 'BESTELLUNG_EINGETROFFEN';

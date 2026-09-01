@@ -30,11 +30,6 @@
 				'{{.AnzahlExemplare}}',
 				'{{.BestaetigungsLink}}'
 			]
-		},
-		BESTELLUNG_EINGETROFFEN: {
-			verwendung:
-				'Wird derzeit von KEINEM Versand verwendet — Änderungen hier haben keine Wirkung (Befund-Register 01.09.2026, Entscheidung offen).',
-			platzhalter: []
 		}
 	};
 	const info = $derived(vorlagenInfo[typ] ?? null);
