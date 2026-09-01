@@ -19,3 +19,6 @@
 ## 2024-08-13 - [WCAG compliance for custom button role elements]
 **Learning:** When using `role="button"` for custom interactive elements, we must handle both Enter and Space keys for full keyboard accessibility, ensuring `preventDefault` is called for Space to avoid unintended scrolling.
 **Action:** Always implement `onkeydown` correctly catching both 'Enter' and ' ' and calling preventDefault for interactive elements functioning as buttons.
+## 2026-08-25 - Added ARIA labels to table row actions
+**Learning:** Action buttons in data tables (like Bearbeiten, Löschen) often lack context for screen readers when they only contain generic text. Users relying on screen readers hear 'Bearbeiten' multiple times without knowing which item it refers to.
+**Action:** Always ensure that row-specific action buttons have a clear `aria-label` that includes the item's name or identifier (e.g. `aria-label="Lieferant {s.name} bearbeiten"`).
