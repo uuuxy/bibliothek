@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"testing"
+
+	"bibliothek/internal/pgtest"
 )
 
 // „Titel löschen" gegen ein echtes Postgres — an der Regel, die der Betreiber am
@@ -16,7 +18,7 @@ import (
 // Ein spurlos verschwundenes Buch ist ein verlorenes Buch: Wer es zurückbringt, findet
 // beim Scannen nichts mehr vor, und ohne Protokollzeile weiss niemand mehr, wer es hatte.
 func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
-	pool := ladeSchemaPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	repo := NewBookRepository(pool)
 
@@ -29,12 +31,54 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 		return id
 	}
 
-	titelID := eins("Titel", `INSERT INTO buecher_titel (titel) VALUES ('Der Zauberberg') RETURNING id`)
-	imRegal := eins("Exemplar im Regal",
+	// pgtest teilt das Schema mit allen Tests des Binaries — die eigenen Zeilen werden
+	// deshalb abgeräumt. Die IDs stehen VOR dem Cleanup, damit die Closure sie sieht;
+	// die Guards greifen, wenn ein früher t.Fatal einen Teil nie angelegt hat.
+	// Reihenfolge wegen ON DELETE RESTRICT (ausleihen/schadensfaelle → exemplare):
+	// erst die abhängigen Zeilen, dann der Titel (Exemplare kaskadieren), dann der
+	// Schüler; die Protokollzeilen aus DeleteBooks zuletzt scoped über datensatz_id.
+	// Im Erfolgsfall hat DeleteBooks das meiste schon entfernt — die DELETEs treffen
+	// dann 0 Zeilen, und genau das ist in Ordnung.
+	var titelID, imRegal, verliehen, schuelerID string
+	t.Cleanup(func() {
+		ctx := context.Background()
+		exemplare := []string{}
+		for _, id := range []string{imRegal, verliehen} {
+			if id != "" {
+				exemplare = append(exemplare, id)
+			}
+		}
+		if len(exemplare) > 0 {
+			for _, tabelle := range []string{"schadensfaelle", "ausleihen"} {
+				if _, err := pool.Exec(ctx,
+					`DELETE FROM `+tabelle+` WHERE exemplar_id = ANY($1)`, exemplare); err != nil {
+					t.Errorf("Aufräumen %s: %v", tabelle, err)
+				}
+			}
+			if _, err := pool.Exec(ctx,
+				`DELETE FROM audit_log WHERE tabelle = 'ausleihen' AND datensatz_id = ANY($1)`,
+				exemplare); err != nil {
+				t.Errorf("Aufräumen audit_log: %v", err)
+			}
+		}
+		if titelID != "" {
+			if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE id = $1`, titelID); err != nil {
+				t.Errorf("Aufräumen Titel: %v", err)
+			}
+		}
+		if schuelerID != "" {
+			if _, err := pool.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, schuelerID); err != nil {
+				t.Errorf("Aufräumen Schüler: %v", err)
+			}
+		}
+	})
+
+	titelID = eins("Titel", `INSERT INTO buecher_titel (titel) VALUES ('Der Zauberberg') RETURNING id`)
+	imRegal = eins("Exemplar im Regal",
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'ZB-REGAL') RETURNING id`, titelID)
-	verliehen := eins("Exemplar verliehen",
+	verliehen = eins("Exemplar verliehen",
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'ZB-DRAUSSEN') RETURNING id`, titelID)
-	schuelerID := eins("Schüler", `
+	schuelerID = eins("Schüler", `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('ZB-S1', 'Hans', 'Castorp', '9a', 2030) RETURNING id`)
 

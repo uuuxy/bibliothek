@@ -1,13 +1,12 @@
 package auth
 
 import (
+	"bibliothek/internal/pgtest"
 	"bibliothek/repository"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -24,77 +23,21 @@ import (
 // darüber, was der Handler daraus macht — genau diese Lücke hat uns hier schon einmal
 // eine Runde gekostet (Ghost-Block, Runde 8).
 
-const testDBEnvVar = "TEST_DATABASE_URL"
-
-// testDBLockKey serialisiert die Test-DB-Nutzung über die Paketgrenzen hinweg —
-// derselbe Schlüssel wie in db/, repository/ und api/. `go test ./...` startet die
-// Paket-Binaries PARALLEL, und die anderen drei machen DROP SCHEMA public CASCADE.
-// Ohne diesen Lock zieht eines davon mitten im Lauf hier die Tabellen weg; der Test
-// fällt dann scheinbar zufällig um. Genau so ist es beim ersten Suitenlauf passiert:
-// einzeln grün, in der Suite rot.
-const testDBLockKey int64 = 0x42DB0001
-
+// Seit 01.09.2026 über internal/pgtest statt eines eigenen Harness: Der frühere
+// Aufbau hier hielt den Advisory-Lock 0x42DB0001 SELBST und machte je Test einen
+// eigenen DROP SCHEMA. Sobald ein zweiter Test im selben Binary den Lock über
+// pgtest genommen hätte — der ihn bewusst bis Prozessende hält —, hätte dieser
+// Harness für immer auf sein eigenes Binary gewartet; genau dieser Selbst-Deadlock
+// hat am 01.09. über order_search die ganze Suite in 10-Minuten-Timeouts gezogen
+// (de42b820). pgtest spielt schema.sql als die EINE Quelle ein — die Lektion vom
+// 30.08. (abgeschriebene benutzer-DDL ohne Migration 086 = eine Woche CI-Münzwurf,
+// b8daed0a) bleibt damit gewahrt. Das Schema wird je Binary EINMAL gebaut und mit
+// allen Tests geteilt: Jeder Test räumt sein Konto über raeumeKontoAb selbst ab
+// und prüft nur an seiner eigenen E-Mail-Adresse.
 func pgPoolFuerSelbstanmeldung(t *testing.T) *pgxpool.Pool {
 	t.Helper()
-	dsn := os.Getenv(testDBEnvVar)
-	if dsn == "" {
-		t.Skipf("%s nicht gesetzt — DB-Integrationstest übersprungen", testDBEnvVar)
-	}
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
-	pool, err := pgxpool.New(ctx, dsn)
-	if err != nil {
-		t.Fatalf("Pool: %v", err)
-	}
-	t.Cleanup(pool.Close)
-
-	// Über eine eigene, bis zum Testende offene Verbindung — der Lock hängt an der
-	// Sitzung, nicht am Pool.
-	lockConn, err := pool.Acquire(ctx)
-	if err != nil {
-		t.Fatalf("Lock-Verbindung: %v", err)
-	}
-	if _, err := lockConn.Exec(ctx, "SELECT pg_advisory_lock($1)", testDBLockKey); err != nil {
-		t.Fatalf("Test-DB-Lock: %v", err)
-	}
-	t.Cleanup(func() {
-		// Der Lock hängt an der Sitzung und fällt beim Release ohnehin weg — das
-		// ausdrückliche Entsperren ist nur höflich. Fehler hier sollen den Testlauf nicht
-		// umwerfen, aber auch nicht verschwinden.
-		if _, err := lockConn.Exec(context.Background(),
-			"SELECT pg_advisory_unlock($1)", testDBLockKey); err != nil {
-			t.Logf("Test-DB-Lock freigeben: %v", err)
-		}
-		lockConn.Release()
-	})
-
-	var name string
-	if err := pool.QueryRow(ctx, `SELECT current_database()`).Scan(&name); err != nil {
-		t.Fatalf("Datenbanknamen lesen: %v", err)
-	}
-	if !strings.Contains(strings.ToLower(name), "test") {
-		t.Fatalf("Sicherheitsabbruch: Datenbank %q enthält nicht \"test\"", name)
-	}
-
-	// Frisches Schema aus schema.sql — der EINEN Quelle, wie in db/, repository/ und api/.
-	//
-	// Bis zum 30.08.2026 legte dieser Harness `benutzer` mit einer abgeschriebenen
-	// Minimal-DDL an (CREATE TABLE IF NOT EXISTS). Lief auth als erstes Paket auf der
-	// leeren CI-Datenbank, fehlte die Spalte zugang_beantragt_am aus Migration 086: Die
-	// Zugangsanfrage scheiterte mit 42703, der Handler antwortete 401, der Test war rot.
-	// Lief vorher ein Paket, das schema.sql eingespielt hatte, blieb die vollständige
-	// Tabelle stehen — und der Test grün. Eine Woche Münzwurf in der CI (29./30.08.),
-	// benannt erst durch die Logzeile aus b8daed0a. Eine zweite Wahrheitsquelle für eine
-	// Tabelle driftet mit der nächsten Migration wieder; deshalb hier keine mehr.
-	if _, err := pool.Exec(ctx, `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`); err != nil {
-		t.Fatalf("Schema leeren: %v", err)
-	}
-	schema, err := os.ReadFile(filepath.Join("..", "schema.sql"))
-	if err != nil {
-		t.Fatalf("schema.sql lesen: %v", err)
-	}
-	if _, err := pool.Exec(ctx, string(schema)); err != nil {
-		t.Fatalf("schema.sql einspielen: %v", err)
-	}
 
 	// role_permissions steht NICHT in schema.sql — die Tabelle legt db.InitPermissions
 	// beim Serverstart an. Ohne sie scheitert der Login nach der Freischaltung am Laden
@@ -116,6 +59,25 @@ func pgPoolFuerSelbstanmeldung(t *testing.T) *pgxpool.Pool {
 		t.Fatalf("Rechte seeden: %v", err)
 	}
 	return pool
+}
+
+// raeumeKontoAb entfernt am Testende das Konto zu dieser Adresse samt seiner
+// Audit-Zeilen — pgtest teilt das Schema mit allen Tests des Binaries. Erst die
+// Audit-Zeilen: audit_logs.admin_id steht auf ON DELETE SET NULL, ein nacktes
+// DELETE auf benutzer ließe sie also verwaist zurück.
+func raeumeKontoAb(t *testing.T, pool *pgxpool.Pool, email string) {
+	t.Helper()
+	t.Cleanup(func() {
+		ctx := context.Background()
+		if _, err := pool.Exec(ctx, `
+			DELETE FROM audit_logs
+			WHERE admin_id IN (SELECT id FROM benutzer WHERE LOWER(email) = $1)`, email); err != nil {
+			t.Errorf("Aufräumen audit_logs: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE LOWER(email) = $1`, email); err != nil {
+			t.Errorf("Aufräumen benutzer: %v", err)
+		}
+	})
 }
 
 // anmelden schickt eine echte Login-Anfrage durch den Handler.
@@ -159,6 +121,7 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
 	const email = "erika.musterfrau@selbsttest.invalid"
+	raeumeKontoAb(t, pool, email)
 
 	// 1. Erster Anmeldeversuch: Es gibt noch kein Konto.
 	code, meldung := anmelden(t, pool, email)
@@ -258,6 +221,7 @@ func TestSelbstanmeldung_FremdeDomainLegtNichtsAn(t *testing.T) {
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
 	const fremd = "wer.auch.immer@ganz-andere-domain.invalid"
+	raeumeKontoAb(t, pool, fremd)
 
 	code, _ := anmelden(t, pool, fremd)
 	if code != http.StatusUnauthorized {
@@ -284,6 +248,7 @@ func TestSelbstanmeldung_AbgeschaltetLegtNichtsAn(t *testing.T) {
 	pool := pgPoolFuerSelbstanmeldung(t)
 	ctx := context.Background()
 	const email = "niemand@selbsttest.invalid"
+	raeumeKontoAb(t, pool, email)
 
 	if code, _ := anmelden(t, pool, email); code != http.StatusUnauthorized {
 		t.Errorf("abgeschaltet: Status %d, erwartet 401", code)

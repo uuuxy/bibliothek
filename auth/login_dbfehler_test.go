@@ -69,6 +69,7 @@ func TestSelbstanmeldung_BestehendesKontoWirdKeineAnfrage(t *testing.T) {
 	ctx := t.Context()
 
 	const mail = "bestandskonto@test.invalid"
+	raeumeKontoAb(t, pool, mail)
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
 		VALUES ('Bestands', 'Konto', $1, 'kollegium', true)`, mail); err != nil {

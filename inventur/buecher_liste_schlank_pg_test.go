@@ -2,68 +2,21 @@ package inventur
 
 import (
 	"context"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"bibliothek/internal/pgtest"
 )
 
-// testDBLockKey ist DER paket-übergreifende Advisory-Lock, mit dem sich db/, repository/
-// und api/ die eine geteilte Test-DB teilen (`go test ./...` startet ihre Binaries
-// parallel). Ohne ihn kollidiert das DROP SCHEMA hier mit den anderen Paketen — der Wert
-// muss identisch zu ihrem sein.
-const testDBLockKey int64 = 0x42DB0001
-
-// ladeSchemaPool baut auf TEST_DATABASE_URL eine frische Schema-Instanz auf und liefert
-// den Pool. Sicherheitsbremse: nur auf einer DB, deren Name "test" enthält (wie in den
-// db-/repository-PG-Tests), weil hier DROP SCHEMA läuft. Serialisiert über den geteilten
-// Advisory-Lock, damit es die parallel laufenden Pakete nicht unter den Füßen wegzieht.
-func ladeSchemaPool(t *testing.T) *pgxpool.Pool {
-	t.Helper()
-	dsn := os.Getenv("TEST_DATABASE_URL")
-	if dsn == "" {
-		t.Skip("TEST_DATABASE_URL nicht gesetzt — DB-Integrationstest übersprungen")
-	}
-	ctx := context.Background()
-
-	// Dedizierte Sperr-Verbindung, gehalten bis Testende (Close gibt den Lock frei).
-	lockConn, err := pgx.Connect(ctx, dsn)
-	if err != nil {
-		t.Fatalf("Sperr-Verbindung: %v", err)
-	}
-	if _, err := lockConn.Exec(ctx, "SELECT pg_advisory_lock($1)", testDBLockKey); err != nil {
-		t.Fatalf("Advisory-Lock: %v", err)
-	}
-	t.Cleanup(func() { _ = lockConn.Close(context.Background()) }) //nolint:errcheck // Cleanup: Close-Fehler irrelevant
-
-	pool, err := pgxpool.New(ctx, dsn)
-	if err != nil {
-		t.Fatalf("Pool: %v", err)
-	}
-	t.Cleanup(pool.Close)
-
-	var name string
-	if err := pool.QueryRow(ctx, `SELECT current_database()`).Scan(&name); err != nil {
-		t.Fatalf("DB-Name: %v", err)
-	}
-	if !strings.Contains(strings.ToLower(name), "test") {
-		t.Fatalf("Sicherheitsabbruch: Datenbank %q enthält nicht \"test\"", name)
-	}
-	if _, err := pool.Exec(ctx, `DROP SCHEMA public CASCADE; CREATE SCHEMA public;`); err != nil {
-		t.Fatalf("Schema zurücksetzen: %v", err)
-	}
-	sql, err := os.ReadFile(filepath.Join("..", "schema.sql"))
-	if err != nil {
-		t.Fatalf("schema.sql lesen: %v", err)
-	}
-	if _, err := pool.Exec(ctx, string(sql)); err != nil {
-		t.Fatalf("schema.sql laden: %v", err)
-	}
-	return pool
-}
+// Seit 01.09.2026 über internal/pgtest statt eines eigenen Harness: Der frühere
+// ladeSchemaPool hielt den Advisory-Lock 0x42DB0001 SELBST (eigene Verbindung,
+// eigener Schema-Reset je Test). Sobald ein zweiter Test im selben Binary den Lock
+// über pgtest genommen hätte — der ihn bewusst bis Prozessende hält —, hätte dieser
+// Test für immer auf sein eigenes Binary gewartet; genau dieser Selbst-Deadlock hat
+// am 01.09. über order_search die ganze Suite in 10-Minuten-Timeouts gezogen
+// (de42b820). Der eigene DROP SCHEMA mitten im Binary hätte zudem jedem
+// nachfolgenden Test die Tabellen weggezogen. pgtest teilt das Schema mit allen
+// Tests des Binaries — deshalb räumt jeder Test seine Zeilen selbst ab und prüft
+// nur ID-gescoped.
 
 // TestListBooksSchlank_KeineSchwerenFelder belegt die Payload-Verschlankung von
 // GET /api/books (Listen-Limits-Sweep 20.08.2026): Die Katalogliste liefert die zwei
@@ -71,7 +24,7 @@ func ladeSchemaPool(t *testing.T) *pgxpool.Pool {
 // Listenansicht und ihre clientseitige Suche brauchen sie nicht. Der Einzel-Read
 // (ListBooksByIDs, für Detail/Bearbeiten) liefert sie weiterhin vollständig.
 func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
-	pool := ladeSchemaPool(t)
+	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	repo := NewBookRepository(pool)
 
@@ -84,6 +37,13 @@ func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
 		RETURNING id`, grosseBeschreibung).Scan(&id); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
+	// Exemplar hängt per ON DELETE CASCADE am Titel — eine Zeile räumt beides ab.
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(),
+			`DELETE FROM buecher_titel WHERE id = $1`, id); err != nil {
+			t.Errorf("Aufräumen: %v", err)
+		}
+	})
 	if _, err := pool.Exec(ctx,
 		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'SCHLANK-1')`, id); err != nil {
 		t.Fatalf("Exemplar: %v", err)

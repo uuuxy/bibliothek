@@ -39,7 +39,6 @@ Zwei Regeln dazu:
 
 | Fund | Einordnung |
 | ---- | ---------- |
-| Zwei Harnesse, ein Lock-Schlüssel: `inventur/buecher_liste_schlank_pg_test.go` und `auth/selbstanmeldung_pg_test.go` halten den Advisory-Lock 0x42DB0001 SELBST statt über `internal/pgtest` | B (01.09.): Heute ungefährlich (kein pgtest im selben Binary) — aber der ERSTE pgtest-Test in einem dieser Pakete erzeugt denselben Selbst-Deadlock, der am 01.09. die ganze Suite in 10-Minuten-Timeouts gezogen hat (order_search in internal/service, behoben: pgtest hält den Lock bis Prozessende, der Eigen-Lock desselben Binaries wartet dann für immer). Fix: beide auf `pgtest.Pool` umstellen; dabei prüfen, welche Daten die Tests aus ihrem eigenen Schema-Reset ableiten. |
 | `DeleteTitle` löscht Exemplare ohne Barcode-Snapshot | B (01.09.): Die Tresen-Auskunft findet gelöschte Exemplare über `details->>'barcode_id'` der Lösch-Snapshots — die schreiben nur `DeleteCopy` und das Verlust-Löschen. Wer einen ganzen TITEL löscht, hinterlässt für dessen Exemplare keinen Barcode-Snapshot; solche Barcodes bleiben in der Auskunft unauffindbar. Fix: `DeleteTitle` schreibt je gelöschtem Exemplar denselben Snapshot wie die Geschwister-Pfade. |
 | PII-Antwort-Gate deckt nur GET | B/Prüfvorrat (01.09., steht auch im Gate-Kopf): Lesende POST-Antworten — vor allem `POST /api/action` (Theken-DTO, Stufe 1) und `POST /api/lusd/preview` (Stufe 2) — bleiben Handarbeit. Erweiterung um nebenwirkungsarme POSTs wäre der nächste Schritt derselben Methode. |
 
