@@ -242,8 +242,16 @@ func (s *Server) ActionBatchHandler(omniboxSvc service.OmniboxService) http.Hand
 			return
 		}
 
+		// Nur dekodieren, NICHT Struct-validieren: ActionBatchRequest ist ein SLICE,
+		// und go-playground/validator kann nur Structs — Validate.Struct darauf machte
+		// bis zum 01.09.2026 JEDEN wohlgeformten Batch-Body zum 400 („validator: …").
+		// Das Frontend schickt ein nacktes Array (offlineSync.svelte.js); der
+		// Offline-Sync der Theke scheiterte damit still bei jedem Anlauf. Die
+		// Pflichtfeld-Prüfung sitzt je Eintrag in processSingleBatchItem (leerer
+		// Query → Fehler-Item statt Stapel-Abbruch).
 		var batchReq ActionBatchRequest
-		if !DecodeAndValidate(w, r, &batchReq) {
+		if err := json.NewDecoder(r.Body).Decode(&batchReq); err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 
