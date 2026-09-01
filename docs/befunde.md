@@ -49,7 +49,6 @@ Magie-Text statt `bestellstatus`).
 | Fund | Worum es geht |
 | ---- | ------------- |
 | Audit-`details` sind über die Anwendung nicht lesbar (bewusste Stufe-0-Minimierung) | Für den einen Fall „Buch liegt auf dem Tresen, Barcode unbekannt: war er mal vergeben?" fehlt ein Weg. Vorschlag: zweckgebundener Endpunkt mit eigener PII-Einstufung und eigenem Recht — Betreiber-Entscheidung, keine Fehlerbehebung. |
-| `sonar.projectVersion` nicht gesetzt | New-Code-Periode `PREVIOUS_VERSION` heißt derzeit „seit dem letzten Scan"; mit `git describe --tags` hieße sie „seit dem letzten Release". Ändert die Gate-Semantik des lokalen SonarQube — kleine Änderung an `sonar_scan.sh`, aber Semantik-Entscheidung. |
 | PII-Matrix ist eine Zusage, die nur ein Dokument behauptet | Das PII-Gate prüft Route/Recht/Zeilen-Existenz, nicht den Antwortinhalt. Ein Gate, das Antwortfelder gegen die Matrix hält, wäre der nächste methodische Schritt — eigener Anlauf. |
 
 ## Beobachten (nichts zu tun)

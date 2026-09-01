@@ -79,9 +79,27 @@ echo "[2/3] Erzeuge Frontend-Coverage (vitest)."
 
 # Schritt 3: Analyse. sonar-project.properties liefert projectKey, Ausschluesse und die
 # Pfade zu beiden Coverage-Berichten — deshalb stehen hier nur Host und Quellen.
-echo "[3/3] Fuehre Analyse aus (${HOST_URL})..."
+#
+# sonar.projectVersion (Betreiber-Entscheidung 01.09.2026, Befund-Register): Die
+# New-Code-Periode des Servers steht auf PREVIOUS_VERSION — "neu" ist alles seit der
+# letzten VERSIONSAENDERUNG. Ohne gesetzte Version war jede Analyse "not provided",
+# die Basislinie rueckte also mit jedem Scan mit: Wer zweimal hintereinander scannte,
+# hatte beim zweiten Mal fast keinen "neuen" Code mehr, und das Quality Gate urteilte
+# ueber ein zufaelliges Fenster. Mit dem juengsten Release-Tag als Version heisst
+# "neu" jetzt: seit dem letzten Release — dem Rhythmus des Projekts (v-Tag = Release).
+# Die Basislinie springt nur noch, wenn ein neues v-Tag gesetzt wird.
+#
+# Kein stiller Fallback bei fehlendem Tag — gleiche Begruendung wie oben beim
+# fehlenden sonar-scanner: Ein Scan mit falscher Gate-Semantik sieht gesund aus.
+if ! PROJEKT_VERSION="$(git describe --tags --abbrev=0 2>/dev/null)"; then
+	echo "Kein Release-Tag gefunden (git describe --tags) — ohne Version urteilt das" >&2
+	echo "Quality Gate ueber 'seit dem letzten Scan' statt 'seit dem letzten Release'." >&2
+	exit 1
+fi
+echo "[3/3] Fuehre Analyse aus (${HOST_URL}, New-Code-Basis: ${PROJEKT_VERSION})..."
 SONAR_TOKEN="$SONAR_TOKEN" sonar-scanner \
 	-Dsonar.sources=. \
+	-Dsonar.projectVersion="$PROJEKT_VERSION" \
 	-Dsonar.host.url="$HOST_URL"
 
 echo "Fertig. Ergebnis: ${HOST_URL}/dashboard?id=bibliothek"
