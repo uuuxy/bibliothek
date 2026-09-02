@@ -159,7 +159,7 @@
 {#snippet nachlaufend()}
 	{#if isSearching}
 		<div
-			class="shrink-0 w-4 h-4 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin"
+			class="shrink-0 w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin"
 			aria-hidden="true"
 		></div>
 	{/if}

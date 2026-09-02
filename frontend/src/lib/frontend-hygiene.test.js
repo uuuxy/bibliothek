@@ -56,7 +56,6 @@ const ZEICHNUNGEN = [
 // Wer eine Datei bereinigt, nimmt sie hier heraus. Der Test meldet beides:
 // neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 const EMOJI_BESTAND = [
-	'src/lib/OpacSearch.svelte',
 	'src/lib/StatsDashboard.svelte',
 	'src/lib/StudentPrintReceipt.svelte',
 	'src/lib/UserManagement.svelte',

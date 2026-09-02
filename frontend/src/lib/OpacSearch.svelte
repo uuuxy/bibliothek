@@ -1,5 +1,5 @@
 <script>
-	import { BookOpen, Search } from '@lucide/svelte';
+	import { BookOpen, Search, ShieldCheck } from '@lucide/svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
@@ -40,24 +40,25 @@
 	}
 </script>
 
-<div class="min-h-screen bg-slate-50 flex flex-col relative overflow-x-hidden">
+<div class="min-h-screen bg-surface flex flex-col relative overflow-x-hidden">
 	<LogoRelief />
 
 	<!-- Header -->
 	<header
-		class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs relative z-10"
+		class="bg-surface-container-lowest border-b border-outline-variant px-6 py-4 flex items-center justify-between relative z-10"
 	>
 		<div class="flex items-center gap-3">
 			<BookOpen class="h-5 w-5" aria-hidden="true" />
 			<div>
-				<h1 class="text-lg font-bold text-slate-800 leading-tight">Schulbibliothek</h1>
-				<p class="text-xs text-slate-400">Öffentlicher Medienkatalog</p>
+				<h1 class="text-lg font-semibold text-on-surface leading-tight">Schulbibliothek</h1>
+				<p class="text-xs text-on-surface-variant">Öffentlicher Medienkatalog</p>
 			</div>
 		</div>
 		<div
-			class="text-xs text-emerald-600 font-semibold flex items-center gap-1.5 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100"
+			class="text-xs text-on-surface-variant font-medium flex items-center gap-1.5 bg-surface-container-high px-3 py-1.5 rounded-full"
 		>
-			🛡️ DSGVO-konform · Keine Ausleihdaten sichtbar
+			<ShieldCheck class="h-3.5 w-3.5" aria-hidden="true" />
+			DSGVO-konform · Keine Ausleihdaten sichtbar
 		</div>
 	</header>
 
@@ -81,7 +82,7 @@
 	<!-- Results / empty states -->
 	<div class="flex-1 w-full max-w-4xl mx-auto px-6 pb-10 relative z-10">
 		{#if results.length > 0}
-			<p class="text-xs text-slate-400 font-medium mb-4">{results.length} Treffer</p>
+			<p class="text-xs text-on-surface-variant font-medium mb-4">{results.length} Treffer</p>
 			<!-- Dieselbe Kachel wie im internen Katalog (02.09.2026): das Cover IST die Kachel,
 			     2:3 wie ein Buch, keine Karte, kein Rahmen. Vorher lag das Hochformat-Cover in
 			     einer festen Querformat-Fläche und wurde oben und unten abgeschnitten. -->
@@ -152,7 +153,7 @@
 {#snippet nachlaufend()}
 	{#if loading}
 		<div
-			class="shrink-0 w-4 h-4 border-2 border-blue-500/40 border-t-blue-500 rounded-full animate-spin"
+			class="shrink-0 w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin"
 			aria-hidden="true"
 		></div>
 	{/if}
