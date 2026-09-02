@@ -28,10 +28,7 @@ Beide Seiten haben keinen Menüpunkt. Die fertigen Adressen stehen unter
 
 ## Ausleihe (Theke)
 
-Der Startbildschirm nach der Anmeldung. Solange keine Akte offen ist, stehen unter dem
-Feld vier Zahlen zum Tag (überfällig, im Abholfach, Klassensätze wartend, Anliegen
-offen) — nur Zahlen, keine Namen, denn der Bildschirm ist am Tresen einsehbar; der
-Klick führt ins Mahnwesen bzw. in die Bestellungen. **Ein Feld für alles:**
+Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 
 1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status, entliehene
    Bücher, Gebühren, Vormerkungen.

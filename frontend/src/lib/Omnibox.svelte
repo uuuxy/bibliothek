@@ -10,7 +10,7 @@
 	import OmniboxBlockAlert from './components/OmniboxBlockAlert.svelte';
 	import OmniboxChecklistDialog from './components/OmniboxChecklistDialog.svelte';
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
-	import ThekenUebersicht from './components/ThekenUebersicht.svelte';
+	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
 	import { abonniere } from './liveEvents.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
@@ -157,7 +157,7 @@
 	{#if !omniboxStore.isActive}
 		<!-- Nur im Ruhezustand: Sobald ein Konto geladen ist, füllt der Inhalt die Fläche,
 		     und ein Wasserzeichen dahinter wäre Unruhe statt Dekoration. -->
-		<ThekenUebersicht />
+		<LogoRelief />
 	{/if}
 
 	<!-- relative z-10: Das Relief ist absolut positioniert und läge sonst optisch ÜBER
