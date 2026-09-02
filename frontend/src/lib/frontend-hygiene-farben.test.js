@@ -23,7 +23,7 @@ const PALETTE =
 //
 // Sie ist ein Bestand, KEINE Erlaubnis: Neues gehört auf bg-surface,
 // text-on-surface-variant, border-outline-variant.
-const PALETTE_BESTAND = 2201;
+const PALETTE_BESTAND = 2170;
 
 // Warum das nicht in einem Durchgang umgeschrieben wird (gemessen am 09.08.2026, damit
 // es niemand ein zweites Mal untersuchen muss):

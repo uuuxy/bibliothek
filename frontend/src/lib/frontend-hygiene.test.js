@@ -40,8 +40,6 @@ const PIXELGROESSE = /text-\[[0-9.]+(px|rem|em|pt)\]/;
 // eine Miniatur davon — die Schrift gehört dort zum Bild, nicht zur Bedienoberfläche,
 // und muss mit ihm skalieren. Eine Rolle aus der Skala wäre hier schlicht zu groß.
 const ZEICHNUNGEN = [
-	'src/inventur/lib/components/KlassenBuchKachelStartseite.svelte', // dito, in der Kachel
-	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte', // dito
 	'src/lib/WebcamCapture.svelte', // Aufnahme-Overlay über dem Kamerabild
 	'src/lib/components/labels/LabelPreview.svelte', // 42,3-mm-Etikett in Originalgröße
 	'src/lib/designer/CanvasElement.svelte', // Ausweiskarte in mm auf dem Reißbrett

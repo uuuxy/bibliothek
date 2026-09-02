@@ -117,7 +117,10 @@
 		     ausserhalb des Bildes. Die Pfeile dazu standen auf opacity:0 und erschienen
 		     erst bei :hover — am Tablet am Pult nie. M3 kennt zwar ein Carousel, meint
 		     damit aber das STOEBERN in Bildmaterial, nicht das Pruefen eines Bestands. -->
-		<div id={rasterID} class="grid grid-cols-[repeat(auto-fill,minmax(9rem,1fr))] gap-5 pt-1 pb-6">
+		<div
+			id={rasterID}
+			class="grid grid-cols-[repeat(auto-fill,minmax(11rem,1fr))] gap-x-3 gap-y-4 pt-1 pb-6"
+		>
 			{#each sortedBooks as book (book.id)}
 				<KlassenBuchKachel {book} {onEdit} bearbeitbar={darfPflegen} />
 			{/each}
