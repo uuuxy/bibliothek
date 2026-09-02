@@ -83,8 +83,15 @@ allem, was der Export sonst hergibt, dieselbe Person sind
 
 | Einstufung | Bedingung | Vorschau |
 |---|---|---|
-| **sicher** | Schuleintritt + Geburtsdatum, oder Schuleintritt + Name | vorangekreuzt |
+| **sicher** | Schuleintritt + Name, oder Schuleintritt + Geburtsdatum + Vorname | vorangekreuzt |
 | **vermutlich** | Geburtsdatum + ein weiteres Signal; oder Name + Klasse/Anschrift bei abweichendem Datum (Datumskorrektur) | angeboten, nicht angekreuzt |
+
+Zwei Schutzregeln (Rasterdurchgang 02.09.2026): Ein **abweichender Vorname bei gleichem
+Geburtsdatum** ist ein Gegen-Signal — so sehen Zwillinge aus — und macht ein Paar nie
+„sicher" (Grund nennt „Vorname abweichend (Zwilling?)"). Bei **Gleichstand** zweier
+Kandidaten mit exakt gleich starken Signalen wird kein Paar gebildet, statt zu raten;
+das Kind bleibt Abgänger + Neuzugang, und der Admin führt bei Bedarf über die Akte
+zusammen (§5).
 
 Der **Admin** (Recht `import_students`) kreuzt an. Bestätigt heißt: derselbe Datensatz
 bekommt den neuen Namen bzw. das korrigierte Geburtsdatum und behält UUID, Ausweis-Barcode,

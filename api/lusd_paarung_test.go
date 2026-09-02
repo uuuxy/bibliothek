@@ -177,3 +177,57 @@ func TestLusdHeader_SchuleintrittAlias(t *testing.T) {
 		t.Errorf("Schuleintritt nicht geparst: %v", row.EintrittAm)
 	}
 }
+
+// Zwillinge: gleiches Geburtsdatum, gleicher Schuleintritt, gleicher Nachname — nur
+// der Vorname unterscheidet sie. Ein abweichender Vorname bei gleichem Geburtsdatum ist
+// ein Gegen-Signal: höchstens „vermutlich", nie vorangekreuzt (Rasterdurchgang 02.09.).
+func TestBewertePaar_ZwillingNieSicher(t *testing.T) {
+	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
+	anna := bestandsZeile("anna", "Anna", "Müller", "05F1", geb, eintritt)
+	lena := parsedStudentRow{Vorname: "Lena", Nachname: "Müller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}
+	k, ok := bewertePaar(0, lena, &anna)
+	if !ok {
+		t.Fatal("Zwilling darf als vermutliches Paar angeboten werden")
+	}
+	if k.sicher {
+		t.Fatalf("Zwilling darf nie sicher sein: %+v", k)
+	}
+	if !strings.Contains(k.grund, "Vorname abweichend") {
+		t.Errorf("Grund muss das Gegen-Signal nennen: %q", k.grund)
+	}
+	// Vorname-Tippfehler ohne Präfix-Beziehung ebenso: nur vermutlich.
+	aiman := bestandsZeile("s", "Ayman", "Sharaf", "05F1", geb, eintritt)
+	k, _ = bewertePaar(0, parsedStudentRow{Vorname: "Aiman", Nachname: "Sharaf", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt}, &aiman)
+	if k.sicher {
+		t.Errorf("abweichender Vorname bei gleichem Datum: nicht sicher, bekam %+v", k)
+	}
+}
+
+// Gleichstand: Zwei Bestandsschüler tragen für dieselbe Zeile exakt gleich starke
+// Signale. Dann wird nicht gewürfelt, sondern kein Paar gebildet — der Admin führt
+// von Hand zusammen. Das Ergebnis darf nicht von der Reihenfolge des Bestands abhängen.
+func TestWaehlePaare_GleichstandKeinPaarUndReihenfolgeEgal(t *testing.T) {
+	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
+	anna := bestandsZeile("anna", "Anna", "Müller", "05F1", geb, eintritt)
+	lena := bestandsZeile("lena", "Lena", "Müller", "05F1", geb, eintritt)
+	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{
+		{LineNum: 2, Vorname: "Mia", Nachname: "Müller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt},
+	}}
+	idx := lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{}}
+	for _, reihenfolge := range [][]lusdBestandsSchueler{{anna, lena}, {lena, anna}} {
+		z := lusdZuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{reihenfolge[0].ID, reihenfolge[1].ID}}
+		if p := findeUmbenennungen(datei, reihenfolge, idx, z); len(p) != 0 {
+			t.Errorf("Gleichstand darf kein Paar ergeben, Reihenfolge %s/%s: %+v", reihenfolge[0].ID, reihenfolge[1].ID, p)
+		}
+	}
+	// Bricht ein Signal den Gleichstand (Vorname passt zu einem), wird genau der
+	// gewählt — unabhängig von der Reihenfolge.
+	datei.Zeilen[0].Vorname = "Lena-Marie"
+	for _, reihenfolge := range [][]lusdBestandsSchueler{{anna, lena}, {lena, anna}} {
+		z := lusdZuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{reihenfolge[0].ID, reihenfolge[1].ID}}
+		p := findeUmbenennungen(datei, reihenfolge, idx, z)
+		if len(p) != 1 || p[0].SchuelerID != "lena" {
+			t.Errorf("Reihenfolge %s/%s: erwartet genau Lena, bekam %+v", reihenfolge[0].ID, reihenfolge[1].ID, p)
+		}
+	}
+}

@@ -29,7 +29,9 @@ import (
 //   - Geburtsdatum, Name (Vor- oder Nachname), Klasse (gleich oder Nachbarjahrgang),
 //     Anschrift (Straße + PLZ).
 //
-// „sicher" (vorangekreuzt): Eintritt + Geburtsdatum, oder Eintritt + Name.
+// „sicher" (vorangekreuzt): Eintritt + Name, oder Eintritt + Geburtsdatum + Vorname.
+// Ein abweichender Vorname bei gleichem Geburtsdatum ist ein Gegen-Signal (Zwillinge!):
+// dann höchstens „vermutlich". Bei Gleichstand zweier Kandidaten wird kein Paar gebildet.
 // „vermutlich" (angeboten, nicht angekreuzt): Geburtsdatum + ein weiteres Signal, oder
 // Name + Klasse/Anschrift bei abweichendem Geburtsdatum (Datumskorrektur).
 // Jeder Abgänger und jede Zeile stehen in höchstens einem Paar; bei Konkurrenz gewinnt
@@ -93,6 +95,7 @@ func findeUmbenennungen(datei lusdDatei, bestand []lusdBestandsSchueler, idx lus
 			seite = append(seite, s)
 		}
 	}
+	sort.Slice(seite, func(a, b int) bool { return seite[a].ID < seite[b].ID })
 
 	var kandidaten []paarKandidat
 	for _, i := range z.neuZeilen {
@@ -131,21 +134,35 @@ func bewertePaar(i int, rec parsedStudentRow, s *lusdBestandsSchueler) (paarKand
 	add(adresse, "gleiche Anschrift")
 
 	k := paarKandidat{zeile: i, s: s, signale: len(gruende)}
+	// Gegen-Signal: gleiches Geburtsdatum, aber ein Vorname, der weder gleich noch
+	// Anfang des anderen ist — so sehen Zwillinge aus (und ein Vorname-Tippfehler).
+	// Ein solches Paar wird angeboten, aber nie vorangekreuzt.
+	zwilling := geb && !vorname && normName(rec.Vorname) != "" && normName(s.Vorname) != ""
 	switch {
-	case eintritt && (geb || name):
+	case eintritt && (name || (geb && vorname)):
 		k.sicher = true
-	case geb && (nachname || vorname || klasse || adresse):
+	case geb && (nachname || vorname || klasse || adresse || eintritt):
 	case name && (klasse || adresse):
 		gruende = append(gruende, "Geburtsdatum abweichend (Korrektur?)")
 	default:
 		return paarKandidat{}, false
+	}
+	if zwilling {
+		gruende = append(gruende, "Vorname abweichend (Zwilling?)")
 	}
 	k.grund = strings.Join(gruende, ", ")
 	return k, true
 }
 
 // waehlePaare löst Konkurrenz auf: stärkstes Paar zuerst, jeder Abgänger und jede
-// Zeile nur einmal. Die Reihenfolge ist deterministisch (Signale, Sicherheit, Zeile).
+// Zeile nur einmal. Die Reihenfolge ist deterministisch (Sicherheit, Signale, Zeile,
+// Schüler-ID) — sie darf nicht von der Map-Reihenfolge des Bestands abhängen, sonst
+// fiele ein Paar mal auf den einen, mal auf den anderen Zwilling.
+//
+// Gleichstand: Stehen für eine Zeile zwei noch freie Bestandsschüler mit exakt gleich
+// starken Signalen (oder ein Bestandsschüler für zwei gleich starke Zeilen), wird nicht
+// gewürfelt, sondern kein Paar gebildet — das Kind bleibt Abgänger + Neuzugang, und der
+// Admin führt bei Bedarf über die Akte zusammen.
 func waehlePaare(datei lusdDatei, kandidaten []paarKandidat) []UmbenennungDiff {
 	sort.SliceStable(kandidaten, func(a, b int) bool {
 		ka, kb := kandidaten[a], kandidaten[b]
@@ -155,12 +172,19 @@ func waehlePaare(datei lusdDatei, kandidaten []paarKandidat) []UmbenennungDiff {
 		if ka.signale != kb.signale {
 			return ka.signale > kb.signale
 		}
-		return ka.zeile < kb.zeile
+		if ka.zeile != kb.zeile {
+			return ka.zeile < kb.zeile
+		}
+		return ka.s.ID < kb.s.ID
 	})
 	zeileBelegt, schuelerBelegt := map[int]bool{}, map[string]bool{}
 	var paare []UmbenennungDiff
-	for _, k := range kandidaten {
+	for i, k := range kandidaten {
 		if zeileBelegt[k.zeile] || schuelerBelegt[k.s.ID] {
+			continue
+		}
+		if hatGleichstand(kandidaten[i+1:], k, zeileBelegt, schuelerBelegt) {
+			zeileBelegt[k.zeile], schuelerBelegt[k.s.ID] = true, true
 			continue
 		}
 		zeileBelegt[k.zeile], schuelerBelegt[k.s.ID] = true, true
@@ -176,6 +200,22 @@ func waehlePaare(datei lusdDatei, kandidaten []paarKandidat) []UmbenennungDiff {
 	}
 	sort.Slice(paare, func(a, b int) bool { return paare[a].Zeile < paare[b].Zeile })
 	return paare
+}
+
+// hatGleichstand: gibt es unter den schwächeren oder gleich starken Kandidaten einen
+// noch freien mit derselben Zeile ODER demselben Schüler und exakt gleicher Stärke?
+func hatGleichstand(rest []paarKandidat, k paarKandidat, zeileBelegt map[int]bool, schuelerBelegt map[string]bool) bool {
+	for _, o := range rest {
+		if o.sicher != k.sicher || o.signale != k.signale {
+			return false // sortiert: ab hier nur noch schwächere
+		}
+		selbeZeile := o.zeile == k.zeile && o.s.ID != k.s.ID && !schuelerBelegt[o.s.ID]
+		selberSchueler := o.s.ID == k.s.ID && o.zeile != k.zeile && !zeileBelegt[o.zeile]
+		if selbeZeile || selberSchueler {
+			return true
+		}
+	}
+	return false
 }
 
 // uebernimmUmbenennungen wendet die Wahl des Admins auf Zuordnung und Vorschau an.
