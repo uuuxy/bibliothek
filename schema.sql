@@ -1031,7 +1031,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('091_audit_logs_schueler_schluessel.sql'),
 ('092_tote_vorlage_bestellung_eingetroffen.sql'),
 ('093_lernmittel_feld.sql'),
-('094_schueler_umbenennung_karenz.sql')
+('094_schueler_umbenennung_karenz.sql'),
+('095_abgaenger_sperre_ein_praefix.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
