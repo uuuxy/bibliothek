@@ -149,3 +149,60 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 		t.Errorf("erwartet genau den gesperrten Abgänger: %+v", treffer)
 	}
 }
+
+// Gate über ALLE Tabellen, die an einem Schüler hängen (dieselbe Liste wie
+// dsgvo_paar_vollstaendigkeit_test.go): Der erste Test säte nur die Ausleihe (FK RESTRICT
+// — ein ausgelassener Schritt bräche laut). Vormerkungen und Foto hängen per CASCADE:
+// Fällt ihr UPDATE weg, löscht der DELETE der Quelle sie STILL mit. Deshalb hier jede
+// Tabelle befüllt und nach dem Zusammenführen gezählt (Rasterdurchgang 02.09.2026).
+func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Tabelle", klasse: "07A", barcode: "ZF-T1", geb: datum(2012, 7, 7)})
+	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Tabelle", klasse: "07A", barcode: "ZF-T2", geb: datum(2012, 7, 7)})
+
+	seedOffeneAusleihe(t, pool, quelle, "ZFT")
+	seedOffenerSchaden(t, pool, quelle, "ZFT")
+	titelID := titelMitMeldebestand(t, pool, "Vormerktitel-ZFT", 1)
+	exec := func(sql string, args ...any) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, sql, args...); err != nil {
+			t.Fatalf("%s: %v", sql[:40], err)
+		}
+	}
+	exec(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, quelle)
+	exec(`INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, '\x00'::bytea)`, quelle)
+	exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
+		VALUES ('ausleihen', 'CREATE', gen_random_uuid(), 'USER', jsonb_build_object('schueler_id', $1::text))`, quelle)
+	exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
+		VALUES ('schueler', 'UPDATE', $1::uuid, 'USER', '{"feld":"klasse"}'::jsonb)`, quelle)
+	exec(`INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text))`, quelle)
+
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+		t.Fatalf("Zusammenführen: %v", err)
+	}
+
+	zaehlungen := []struct {
+		was, sql string
+	}{
+		{"ausleihen", `SELECT count(*) FROM ausleihen WHERE schueler_id = $1`},
+		{"schadensfaelle", `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1`},
+		{"vormerkungen", `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`},
+		{"schueler_fotos", `SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`},
+		{"audit_log Lesehistorie", `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`},
+		{"audit_log Datensatz-Historie", `SELECT count(*) FROM audit_log WHERE tabelle = 'schueler' AND aktion = 'UPDATE' AND datensatz_id = $1::uuid`},
+		{"audit_logs", `SELECT count(*) FROM audit_logs WHERE aktion = 'LUSD_ID_NACHGETRAGEN' AND details->>'schueler_id' = $1`},
+	}
+	for _, z := range zaehlungen {
+		if n := zfZaehle(t, pool, z.sql, ziel); n != 1 {
+			t.Errorf("%s: erwartet 1 Zeile am Ziel, gefunden %d", z.was, n)
+		}
+	}
+	// Nichts hängt mehr an der Quelle — weder als FK noch als Protokollschlüssel.
+	for _, z := range zaehlungen {
+		if n := zfZaehle(t, pool, z.sql, quelle); n != 0 {
+			t.Errorf("%s: Quelle hat noch %d Zeile(n)", z.was, n)
+		}
+	}
+}
