@@ -51,6 +51,7 @@ func TestPromoteStudents_DryRunRollsBackAndSkipsGuardAndAudit(t *testing.T) {
 	// Audit-Insert, kein Commit — sonst wäre die „Vorschau" keine.
 	mock.ExpectBegin()
 	mock.ExpectQuery(`WITH parsed AS`).
+		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit), seit 02.09.2026
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(120, 25))
 	// Seit F3 wandert die Klassenlehrer-Zuordnung mit — auch die Vorschau
 	// rechnet sie durch (und rollt sie zurück).
@@ -98,6 +99,7 @@ func TestPromoteStudents_CommitPathWritesAuditLog(t *testing.T) {
 	mock.ExpectQuery(`SELECT COUNT\(\*\) FROM audit_logs`).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectQuery(`WITH parsed AS`).
+		WithArgs(pgxmock.AnyArg()). // Zone für abgaenger_jahr (schulzeit), seit 02.09.2026
 		WillReturnRows(pgxmock.NewRows([]string{"versetzt", "abgaenger"}).AddRow(300, 42))
 	mock.ExpectQuery(`FROM klassen_lehrer_mapping`).
 		WillReturnRows(pgxmock.NewRows([]string{"klasse", "neue_klasse", "abschluss"}))
