@@ -206,3 +206,73 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 		}
 	}
 }
+
+// Rückweg (Rasterfrage 10): Ein falsch bestätigtes Paar muss sich wieder trennen lassen.
+// Der Eintrag in audit_log (tabelle='schueler', datensatz_id=Ziel, in der Transaktion)
+// trägt die Stammdaten der Quelle, den Stand des Ziels davor und die Kennungen der
+// gewanderten Zeilen — dieser Test geht den Rückweg am ERGEBNIS: Quelle aus dem Eintrag
+// neu anlegen, Ausleihe zurückschlüsseln, Ziel auf den alten Stand setzen.
+func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Rueckweg", klasse: "07A", barcode: "ZF-R1", geb: datum(2012, 8, 8), abgaenger: true})
+	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Falsch", nachname: "Rueckweg", klasse: "08B", barcode: "ZF-R2", geb: datum(2012, 8, 8)})
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET lusd_bestaetigt_am = NOW(), strasse = 'Irrweg', plz = '61381', ort = 'Friedrichsdorf' WHERE id = $1`, quelle); err != nil {
+		t.Fatal(err)
+	}
+	seedOffeneAusleihe(t, pool, quelle, "ZFR")
+
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, repository.ZusammenfuehrenAuftrag{ZielID: ziel, QuelleID: quelle, AbgaengerJahr: calculateAbgaengerJahr}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Der Eintrag: in der Transaktion, am Ziel, mit allem, was der Rückweg braucht.
+	var details map[string]any
+	if err := pool.QueryRow(ctx, `SELECT details FROM audit_log WHERE tabelle = 'schueler' AND aktion = 'ZUSAMMENGEFUEHRT' AND datensatz_id = $1::uuid`, ziel).Scan(&details); err != nil {
+		t.Fatalf("Rückweg-Eintrag fehlt: %v", err)
+	}
+	teil := func(k string) map[string]any {
+		t.Helper()
+		m, ok := details[k].(map[string]any)
+		if !ok {
+			t.Fatalf("Eintrag ohne %q: %+v", k, details)
+		}
+		return m
+	}
+	q, vorher, gewandert := teil("quelle"), teil("ziel_vorher"), teil("gewandert")
+	ausleihen, ok := gewandert["ausleihen"].([]any)
+	if !ok {
+		t.Fatalf("gewandert.ausleihen fehlt: %+v", gewandert)
+	}
+	if q["id"] != quelle || q["barcode_id"] != "ZF-R2" || q["vorname"] != "Falsch" || q["strasse"] != "Irrweg" || q["geburtsdatum"] != "2012-08-08" {
+		t.Errorf("Quelle unvollständig im Eintrag: %+v", q)
+	}
+	if vorher["vorname"] != "Alt" || vorher["ist_abgaenger"] != true || vorher["block_reason"] == nil {
+		t.Errorf("Ziel-Stand davor unvollständig: %+v", vorher)
+	}
+	if len(ausleihen) != 1 {
+		t.Fatalf("gewanderte Ausleihe fehlt: %+v", gewandert)
+	}
+
+	// Der Rückweg von Hand, allein aus dem Eintrag — erst das Ziel zurück (sonst
+	// kollidiert Name + Geburtsdatum am Unique-Index), dann die Quelle neu, dann die Zeilen.
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET vorname = $2, nachname = $3, klasse = $4, ist_abgaenger = true, ist_gesperrt = true, block_reason = $5 WHERE id = $1`,
+		ziel, vorher["vorname"], vorher["nachname"], vorher["klasse"], vorher["block_reason"]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO schueler (id, barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr, strasse, plz, ort)
+		VALUES ($1, $2, $3, $4, $5, $6::date, 2031, $7, $8, $9)`,
+		q["id"], q["barcode_id"], q["vorname"], q["nachname"], q["klasse"], q["geburtsdatum"], q["strasse"], q["plz"], q["ort"]); err != nil {
+		t.Fatalf("Quelle aus dem Eintrag neu anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET schueler_id = $1 WHERE id = $2::uuid`, quelle, ausleihen[0]); err != nil {
+		t.Fatal(err)
+	}
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL`, quelle); n != 1 {
+		t.Errorf("Ausleihe nach dem Rückweg nicht bei der Quelle (n=%d)", n)
+	}
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler WHERE id = $1 AND vorname = 'Alt' AND ist_abgaenger`, ziel); n != 1 {
+		t.Error("Ziel nicht auf den alten Stand zurück")
+	}
+}

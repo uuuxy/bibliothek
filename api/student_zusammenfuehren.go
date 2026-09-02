@@ -39,8 +39,12 @@ func (s *Server) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 			return apierrors.BadRequest("quelle_id ist keine gültige Kennung", nil)
 		}
 
+		var bearbeiterID string
+		if claims, ok := auth.GetClaims(r.Context()); ok {
+			bearbeiterID = claims.UserID
+		}
 		erg, err := repository.ZusammenfuehrenSchueler(r.Context(), s.DB.Pool, repository.ZusammenfuehrenAuftrag{
-			ZielID: zielID, QuelleID: rumpf.QuelleID, AbgaengerJahr: calculateAbgaengerJahr,
+			ZielID: zielID, QuelleID: rumpf.QuelleID, AbgaengerJahr: calculateAbgaengerJahr, BearbeiterID: bearbeiterID,
 		})
 		switch {
 		case errors.Is(err, repository.ErrZusammenfuehrenGleich):
@@ -53,9 +57,10 @@ func (s *Server) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 			return apierrors.Internal("Zusammenführen fehlgeschlagen", err)
 		}
 
-		// Rechenschaft: welcher Datensatz in welchem aufging, samt Barcodes — der
-		// aufgelöste existiert danach nirgends mehr. Schlüssel `schueler_id` für den
-		// verbliebenen (Vokabular der Auskunft/Tilgung), `aufgeloest_id` für den anderen.
+		// Admin-Protokoll (audit_logs): welcher Datensatz in welchem aufging, samt Barcodes.
+		// Der RÜCKWEG (Stammdaten der Quelle, gewanderte Zeilen) steht in audit_log am
+		// Ziel, geschrieben in der Transaktion (repository.schreibeRueckwegEintrag).
+		// Schlüssel `schueler_id` für den verbliebenen (Vokabular der Auskunft/Tilgung).
 		if claims, ok := auth.GetClaims(r.Context()); ok {
 			if err := auditRepo.LogAdminAktion(r.Context(), claims.UserID, "SCHUELER_ZUSAMMENGEFUEHRT", getIP(r), map[string]any{
 				"schueler_id":        erg.ZielID,

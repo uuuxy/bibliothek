@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -44,6 +45,8 @@ var (
 type ZusammenfuehrenAuftrag struct {
 	ZielID, QuelleID string
 	AbgaengerJahr    func(klasse string) int
+	// BearbeiterID: wer zusammenführt — steht am Rückweg-Eintrag (audit_log); leer = SYSTEM.
+	BearbeiterID string
 }
 
 // ZusammenfuehrenErgebnis ist das, was die Oberfläche nach dem Zusammenführen zeigt:
@@ -70,6 +73,10 @@ type zusammenfuehrenZeile struct {
 	strasse, hausnummer, plz, ort, elternEmail, lusdID *string
 	bestaetigtAm                                       *time.Time
 	anonymisiert                                       bool
+	gesperrt, manuellGesperrt, abgaenger               bool
+	sperrgrund                                         *string
+	abgaengerSeit                                      *time.Time
+	abgaengerJahr                                      int
 }
 
 func ladeZusammenfuehrenZeile(ctx context.Context, tx pgx.Tx, id string) (*zusammenfuehrenZeile, error) {
@@ -77,11 +84,14 @@ func ladeZusammenfuehrenZeile(ctx context.Context, tx pgx.Tx, id string) (*zusam
 	err := tx.QueryRow(ctx, `
 		SELECT id, barcode_id, vorname, nachname, klasse, geburtsdatum, schul_eintritt_am,
 		       strasse, hausnummer, plz, ort, eltern_email, lusd_id, lusd_bestaetigt_am,
-		       anonymized_at IS NOT NULL
+		       anonymized_at IS NOT NULL,
+		       ist_gesperrt, COALESCE(is_manually_blocked, false), ist_abgaenger, block_reason,
+		       abgaenger_seit, abgaenger_jahr
 		FROM schueler WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`, id).Scan(
 		&z.id, &z.barcode, &z.vorname, &z.nachname, &z.klasse, &z.geburtsdatum, &z.eintritt,
 		&z.strasse, &z.hausnummer, &z.plz, &z.ort, &z.elternEmail, &z.lusdID, &z.bestaetigtAm,
-		&z.anonymisiert)
+		&z.anonymisiert, &z.gesperrt, &z.manuellGesperrt, &z.abgaenger, &z.sperrgrund,
+		&z.abgaengerSeit, &z.abgaengerJahr)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrZusammenfuehrenNichtGefunden
 	}
@@ -152,7 +162,11 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 	ziel, quelle := zeilen[a.ZielID], zeilen[a.QuelleID]
 
 	erg := &ZusammenfuehrenErgebnis{ZielID: ziel.id, BarcodeID: ziel.barcode, QuelleBarcode: quelle.barcode}
-	if err := verschiebeVorgaenge(ctx, tx, ziel.id, quelle.id, erg); err != nil {
+	gewandert, err := verschiebeVorgaenge(ctx, tx, ziel.id, quelle.id, erg)
+	if err != nil {
+		return nil, err
+	}
+	if err := schreibeRueckwegEintrag(ctx, tx, a.BearbeiterID, ziel, quelle, gewandert); err != nil {
 		return nil, err
 	}
 	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, quelle.id)
@@ -174,43 +188,137 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 	return erg, nil
 }
 
+// gewanderteVorgaenge sind die Zeilen, die beim Zusammenführen den Schüler gewechselt
+// haben — der Rückweg-Eintrag hält sie fest, damit sich ein falsches Paar von Hand
+// wieder trennen lässt.
+type gewanderteVorgaenge struct {
+	Ausleihen, Schadensfaelle, Vormerkungen, VormerkungenDoppelt []string
+	Foto                                                         bool
+}
+
 // verschiebeVorgaenge hängt alles, was an der Quelle hängt, an das Ziel: Vorgänge (FK),
 // das Foto (nur wenn das Ziel keines hat) und die Protokollspuren, über die die
 // Art.-15-Auskunft und die DSGVO-Tilgung den Schüler finden (details->>'schueler_id',
 // datensatz_id) — dieselben Schlüssel wie in SpurTilgungen. Eine Vormerkung, die das
 // Ziel auf denselben Titel schon hat, fällt weg (UNIQUE titel_id, schueler_id).
-func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, erg *ZusammenfuehrenErgebnis) error {
-	doppelt, err := tx.Exec(ctx, `DELETE FROM vormerkungen q WHERE q.schueler_id = $2
-		AND EXISTS (SELECT 1 FROM vormerkungen z WHERE z.schueler_id = $1 AND z.titel_id = q.titel_id)`, ziel, quelle)
+func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, erg *ZusammenfuehrenErgebnis) (*gewanderteVorgaenge, error) {
+	g := &gewanderteVorgaenge{}
+	var err error
+	if g.VormerkungenDoppelt, err = idsAus(ctx, tx, `DELETE FROM vormerkungen q WHERE q.schueler_id = $2
+		AND EXISTS (SELECT 1 FROM vormerkungen z WHERE z.schueler_id = $1 AND z.titel_id = q.titel_id)
+		RETURNING q.id`, ziel, quelle); err != nil {
+		return nil, fmt.Errorf("doppelte vormerkungen: %w", err)
+	}
+	erg.DoppelteVormerkungen = int64(len(g.VormerkungenDoppelt))
+	if g.Ausleihen, err = idsAus(ctx, tx, `UPDATE ausleihen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+		return nil, fmt.Errorf("ausleihen verschieben: %w", err)
+	}
+	if g.Schadensfaelle, err = idsAus(ctx, tx, `UPDATE schadensfaelle SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+		return nil, fmt.Errorf("schadensfälle verschieben: %w", err)
+	}
+	if g.Vormerkungen, err = idsAus(ctx, tx, `UPDATE vormerkungen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+		return nil, fmt.Errorf("vormerkungen verschieben: %w", err)
+	}
+	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
+	fotos, err := idsAus(ctx, tx, `UPDATE schueler_fotos SET schueler_id = $1 WHERE schueler_id = $2
+		AND NOT EXISTS (SELECT 1 FROM schueler_fotos WHERE schueler_id = $1) RETURNING schueler_id`, ziel, quelle)
 	if err != nil {
-		return fmt.Errorf("doppelte vormerkungen: %w", err)
+		return nil, fmt.Errorf("foto verschieben: %w", err)
 	}
-	erg.DoppelteVormerkungen = doppelt.RowsAffected()
-	schritte := []struct {
-		sql   string
-		zaehl *int64
-	}{
-		{`UPDATE ausleihen SET schueler_id = $1 WHERE schueler_id = $2`, &erg.Ausleihen},
-		{`UPDATE schadensfaelle SET schueler_id = $1 WHERE schueler_id = $2`, &erg.Schaeden},
-		{`UPDATE vormerkungen SET schueler_id = $1 WHERE schueler_id = $2`, &erg.Vormerkungen},
-		{`UPDATE schueler_fotos SET schueler_id = $1 WHERE schueler_id = $2
-			AND NOT EXISTS (SELECT 1 FROM schueler_fotos WHERE schueler_id = $1)`, nil},
-		{`UPDATE audit_log SET details = jsonb_set(details, '{schueler_id}', to_jsonb($1::text))
-			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $2`, nil},
-		{`UPDATE audit_log SET datensatz_id = $1::uuid WHERE tabelle = 'schueler' AND datensatz_id = $2::uuid`, nil},
-		{`UPDATE audit_logs SET details = jsonb_set(details, '{schueler_id}', to_jsonb($1::text))
-			WHERE details->>'schueler_id' = $2`, nil},
+	g.Foto = len(fotos) == 1
+	for _, sql := range []string{
+		`UPDATE audit_log SET details = jsonb_set(details, '{schueler_id}', to_jsonb($1::text))
+			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $2`,
+		`UPDATE audit_log SET datensatz_id = $1::uuid WHERE tabelle = 'schueler' AND datensatz_id = $2::uuid`,
+		`UPDATE audit_logs SET details = jsonb_set(details, '{schueler_id}', to_jsonb($1::text))
+			WHERE details->>'schueler_id' = $2`,
+	} {
+		if _, err := tx.Exec(ctx, sql, ziel, quelle); err != nil {
+			return nil, fmt.Errorf("protokollspuren umschlüsseln: %w", err)
+		}
 	}
-	for _, s := range schritte {
-		tag, err := tx.Exec(ctx, s.sql, ziel, quelle)
-		if err != nil {
-			return fmt.Errorf("vorgänge verschieben: %w", err)
+	return g, nil
+}
+
+// idsAus führt ein Statement mit RETURNING aus und sammelt die Kennungen.
+func idsAus(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, error) {
+	rows, err := tx.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
 		}
-		if s.zaehl != nil {
-			*s.zaehl = tag.RowsAffected()
-		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// schreibeRueckwegEintrag hält in audit_log (tabelle='schueler', datensatz_id=Ziel)
+// fest, was das Zusammenführen unumkehrbar macht: die vollständigen Stammdaten der
+// Quelle, den Stand des Ziels davor und die Kennungen aller gewanderten Zeilen. Ohne
+// diesen Eintrag wäre ein falsch bestätigtes Paar nicht mehr zu trennen (Raster-
+// frage 10, Rückweg). Der Eintrag entsteht in derselben Transaktion — kein Fenster,
+// in dem die Quelle weg ist und die Spur fehlt. Lebenszyklus: Wird das Ziel später
+// anonymisiert, ersetzt SpurTilgungen dieses Objekt als Ganzes — die Klardaten der
+// Quelle leben nicht länger als die des Ziels.
+func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, bearbeiterID string, ziel, quelle *zusammenfuehrenZeile, g *gewanderteVorgaenge) error {
+	details, err := json.Marshal(map[string]any{
+		"action":             "zusammenfuehren",
+		"aufgeloest_id":      quelle.id,
+		"aufgeloest_barcode": quelle.barcode,
+		"quelle":             stammdatenSnapshot(quelle),
+		"ziel_vorher":        stammdatenSnapshot(ziel),
+		"gewandert": map[string]any{
+			"ausleihen": g.Ausleihen, "schadensfaelle": g.Schadensfaelle,
+			"vormerkungen": g.Vormerkungen, "vormerkungen_doppelt_geloescht": g.VormerkungenDoppelt,
+			"foto": g.Foto,
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("rückweg-eintrag: %w", err)
+	}
+	var bearbeiter *string
+	akteur := "SYSTEM"
+	if bearbeiterID != "" {
+		bearbeiter, akteur = &bearbeiterID, "USER"
+	}
+	tag, err := tx.Exec(ctx, `INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur, details)
+		VALUES ('schueler', 'ZUSAMMENGEFUEHRT', $1::uuid, $2, $3, $4::jsonb)`, ziel.id, bearbeiter, akteur, string(details))
+	if err != nil {
+		return fmt.Errorf("rückweg-eintrag schreiben: %w", err)
+	}
+	if tag.RowsAffected() != 1 {
+		return errors.New("rückweg-eintrag nicht geschrieben")
 	}
 	return nil
+}
+
+func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
+	datum := func(t *time.Time) any {
+		if t == nil {
+			return nil
+		}
+		return t.Format("2006-01-02")
+	}
+	zeit := func(t *time.Time) any {
+		if t == nil {
+			return nil
+		}
+		return t.Format(time.RFC3339)
+	}
+	return map[string]any{
+		"id": z.id, "barcode_id": z.barcode, "vorname": z.vorname, "nachname": z.nachname, "klasse": z.klasse,
+		"geburtsdatum": datum(z.geburtsdatum), "schul_eintritt_am": datum(z.eintritt),
+		"strasse": z.strasse, "hausnummer": z.hausnummer, "plz": z.plz, "ort": z.ort, "eltern_email": z.elternEmail,
+		"lusd_id": z.lusdID, "lusd_bestaetigt_am": zeit(z.bestaetigtAm),
+		"ist_gesperrt": z.gesperrt, "is_manually_blocked": z.manuellGesperrt, "block_reason": z.sperrgrund,
+		"ist_abgaenger": z.abgaenger, "abgaenger_seit": zeit(z.abgaengerSeit), "abgaenger_jahr": z.abgaengerJahr,
+	}
 }
 
 // schreibeZusammengefuehrtesZiel setzt die Stammdaten des führenden Datensatzes (f) auf

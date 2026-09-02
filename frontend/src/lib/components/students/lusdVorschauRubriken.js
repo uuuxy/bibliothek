@@ -79,7 +79,9 @@ export function rubriken(r) {
 		{
 			key: 'graduates',
 			label: 'Abgänger',
-			hint: abgaengerHinweis(r.karenz_tage ?? 0),
+			// Rückfall 90, nicht 0: So rechnet der Server ohne Einstellung
+			// (StandardAbgaengerKarenzTage). Eine 0 hier versprach „sofort anonymisiert“ — und log.
+			hint: abgaengerHinweis(r.karenz_tage ?? 90),
 			items: r.graduates || [],
 			valueClass: 'text-rose-600'
 		},
