@@ -301,3 +301,28 @@ func TestZusammenfuehren_ManuelleSperreDerQuelleBleibt(t *testing.T) {
 		t.Errorf("manuelle Sperre der Quelle verloren: gesperrt=%v manuell=%v grund=%q", gesperrt, manuell, grund)
 	}
 }
+
+// Führend ist der Datensatz, den die LUSD zuletzt bestätigt hat — aber ein AKTIVER
+// Datensatz schlägt einen Abgänger, auch wenn er nie bestätigt wurde: Das Kind kam nach
+// der Umbenennung an die Theke, wurde von Hand neu angelegt (Handanlage, aktuelle Klasse),
+// und der Admin behält den alten Datensatz wegen des Ausweises. Bis 02.09.2026 gewannen
+// dann Name und Klasse des ABGÄNGERS — und der nächste Namensmodus-Import spaltete das
+// Kind erneut (Rasterdurchgang, Frage 8).
+func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Alt", nachname: "Fuehrend", klasse: "07A", barcode: "ZF-F1", geb: datum(2012, 10, 10), abgaenger: true})
+	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Neu", nachname: "Fuehrend-Neu", klasse: "08A", barcode: "ZF-F2", geb: datum(2012, 10, 10)})
+	// Die Handanlage wurde nie von der LUSD bestätigt.
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET lusd_bestaetigt_am = NULL WHERE id = $1`, quelle); err != nil {
+		t.Fatal(err)
+	}
+	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if erg.Nachname != "Fuehrend-Neu" || !klassenGleich(erg.Klasse, "08A") {
+		t.Errorf("aktive Handanlage muss die Stammdaten stellen, nicht der Abgänger: %+v", erg)
+	}
+}

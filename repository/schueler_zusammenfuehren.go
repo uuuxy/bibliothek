@@ -26,7 +26,8 @@ import (
 //     wandern zum Ziel, danach wird die Zeile endgültig gelöscht (kein Papierkorb — eine
 //     wiederherstellbare Hülle wäre die dritte Wahrheit über dieselbe Person).
 //   - LUSD bleibt führend: Die Stammdaten kommen von dem Datensatz, den ein LUSD-Export
-//     zuletzt bestätigt hat (lusd_bestaetigt_am); leere Felder füllt der andere auf.
+//     zuletzt bestätigt hat (lusd_bestaetigt_am); ein aktiver Datensatz schlägt dabei
+//     einen Abgänger (fuehrend); leere Felder füllt der andere auf.
 //   - Das Ziel ist danach aktiv (kein Abgänger). Eine automatische Abgänger-Sperre fällt,
 //     sofern keine Vorgänge offen sind; eine manuelle Sperre bleibt.
 
@@ -104,10 +105,19 @@ func ladeZusammenfuehrenZeile(ctx context.Context, tx pgx.Tx, id string) (*zusam
 	return z, nil
 }
 
-// fuehrend sagt, wessen Stammdaten gelten: die zuletzt von der LUSD bestätigten. Ohne
-// Bestätigung auf beiden Seiten oder bei Gleichstand bleibt das Ziel führend — es ist
-// der Datensatz, den der Admin bewusst behalten will.
+// fuehrend sagt, wessen Stammdaten gelten. Erst der Status: Ein AKTIVER Datensatz
+// schlägt einen Abgänger — der Abgänger ist per Definition der Stand, den die LUSD
+// nicht mehr kennt (typisch: Kind umbenannt, an der Theke von Hand neu angelegt, alter
+// Datensatz wegen des Ausweises behalten). Sind beide aktiv oder beide Abgänger, gilt
+// die jüngere LUSD-Bestätigung; ohne Bestätigung oder bei Gleichstand bleibt das Ziel
+// führend — es ist der Datensatz, den der Admin bewusst behalten will.
 func fuehrend(ziel, quelle *zusammenfuehrenZeile) (*zusammenfuehrenZeile, *zusammenfuehrenZeile) {
+	if ziel.abgaenger != quelle.abgaenger {
+		if quelle.abgaenger {
+			return ziel, quelle
+		}
+		return quelle, ziel
+	}
 	if quelle.bestaetigtAm != nil && (ziel.bestaetigtAm == nil || quelle.bestaetigtAm.After(*ziel.bestaetigtAm)) {
 		return quelle, ziel
 	}

@@ -139,12 +139,22 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
   Titel fallen weg), Foto (wenn das Ziel keines hat) und Protokollspuren wandern; danach
   wird die Zeile endgültig gelöscht — kein Papierkorb.
 - **LUSD führend:** Stammdaten kommen vom Datensatz mit dem jüngeren `lusd_bestaetigt_am`;
-  leere Felder füllt der andere.
+  ein **aktiver** Datensatz schlägt dabei einen Abgänger (der Abgänger ist der Stand, den
+  die LUSD nicht mehr kennt — etwa wenn das umbenannte Kind von Hand neu angelegt wurde
+  und der alte Datensatz wegen des Ausweises bleibt); leere Felder füllt der andere.
 - Das Ziel ist danach aktiv; eine automatische Abgänger-Sperre fällt, sofern nichts offen
-  ist (sonst „Sperre wegen offener Vorgänge"); eine manuelle Sperre bleibt.
+  ist (sonst „Sperre wegen offener Vorgänge"). Eine **manuelle Sperre bleibt — auf beiden
+  Seiten:** War die Quelle manuell gesperrt (Ausweis gestohlen, Hausverbot), trägt das
+  Ziel danach diese Sperre mit ihrem Grund.
 - Die Kandidatensuche im Dialog sieht **auch Abgänger und Gesperrte** — die Aktivliste der
   Schülerdatei blendet sie aus. Anonymisierte lassen sich nicht zusammenführen.
-- Audit: `SCHUELER_ZUSAMMENGEFUEHRT` mit beiden Barcodes und den Zählern.
+- **Rückweg:** In derselben Transaktion entsteht in `audit_log` (Tabelle `schueler`,
+  Aktion `ZUSAMMENGEFUEHRT`, am Ziel) ein Eintrag mit den vollständigen Stammdaten der
+  Quelle, dem Stand des Ziels davor und den Kennungen jeder gewanderten Zeile. Ein falsch
+  bestätigtes Paar lässt sich daraus von Hand wieder trennen (Quelle neu anlegen, Zeilen
+  zurückschlüsseln — `TestZusammenfuehren_RueckwegAusDemProtokoll` geht den Weg). Wird
+  das Ziel später anonymisiert, ersetzt die Tilgung diesen Eintrag als Ganzes.
+- Admin-Protokoll: `SCHUELER_ZUSAMMENGEFUEHRT` in `audit_logs` mit beiden Barcodes und den Zählern.
 
 ## 6. Der Ablauf beim Schuljahreswechsel
 
