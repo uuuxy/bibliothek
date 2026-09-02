@@ -335,16 +335,16 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID strin
 			abgaenger_jahr = $14,
 			ist_abgaenger = false, abgaenger_seit = NULL,
 			ist_gesperrt = CASE
-				WHEN block_reason LIKE 'Automatisierte Abgänger-Sperre%'
+				WHEN `+SQLAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
 				THEN false ELSE ist_gesperrt END,
 			block_reason = CASE
-				WHEN block_reason LIKE 'Automatisierte Abgänger-Sperre%'
+				WHEN `+SQLAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
 				THEN NULL
-				WHEN block_reason LIKE 'Automatisierte Abgänger-Sperre%' THEN 'Sperre wegen offener Vorgänge'
+				WHEN `+SQLAbgaengerSperreAutomatisch+` THEN 'Sperre wegen offener Vorgänge'
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $1`,

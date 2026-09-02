@@ -154,7 +154,7 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 //  1. Anonymisierter Abgänger (Vorname 'Abgänger', Nachname 'Anonymisiert-…'): immer
 //     entsperren und Grund räumen — er hatte per Definition keine offenen Vorgänge, sonst
 //     wäre er gesperrt statt anonymisiert worden.
-//  2. Nur gesperrter Abgänger (block_reason beginnt mit 'Automatisierte Abgänger-Sperre'):
+//  2. Nur gesperrter Abgänger (block_reason beginnt mit repository.AbgaengerSperrPraefix):
 //     dynamisch prüfen, ob NOCH offene Ausleihen oder unbezahlte Schäden bestehen. Sind
 //     alle Vorgänge beglichen → entsperren und Grund räumen. Bestehen noch Vorgänge →
 //     gesperrt lassen, aber den irreführenden „Abgänger"-Grund in einen sachlichen
@@ -201,7 +201,7 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 			abgaenger_seit = NULL,
 			ist_gesperrt = CASE
 				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN false
-				WHEN block_reason LIKE 'Automatisierte Abgänger-Sperre%'
+				WHEN `+repository.SQLAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $9 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $9 AND ist_bezahlt = false)
 				THEN false
@@ -210,11 +210,11 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 			-- verlangt einen Grund NUR solange ist_gesperrt = true.
 			block_reason = CASE
 				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN NULL
-				WHEN block_reason LIKE 'Automatisierte Abgänger-Sperre%'
+				WHEN `+repository.SQLAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $9 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $9 AND ist_bezahlt = false)
 				THEN NULL
-				WHEN block_reason LIKE 'Automatisierte Abgänger-Sperre%'
+				WHEN `+repository.SQLAbgaengerSperreAutomatisch+`
 				THEN 'Sperre wegen offener Vorgänge'
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
@@ -336,8 +336,8 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string, karenzT
 // Die beiden automatischen Sperrgründe teilen das Präfix, an dem der Rückkehrer-Pfad
 // (aktualisiereBestandsschuelerBatch) und das Zusammenführen die Automatik erkennen.
 const (
-	abgaengerSperrgrundOffen  = "Automatisierte Abgänger-Sperre (offene Vorgänge)"
-	abgaengerSperrgrundKarenz = "Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"
+	abgaengerSperrgrundOffen  = repository.AbgaengerSperrgrundOffen
+	abgaengerSperrgrundKarenz = repository.AbgaengerSperrgrundKarenz
 )
 
 // sperreAbgaenger markiert einen Abgänger mit offenen Vorgängen (nicht zurückgegebene

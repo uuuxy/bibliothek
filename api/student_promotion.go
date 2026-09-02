@@ -11,6 +11,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -60,7 +61,7 @@ type promoteStudentsRequest struct {
 //     schreiben.
 //   - lpad erhält führende Nullen ('05a' → '06a'), ohne beim Stellenwechsel zu
 //     kürzen ('09' → '10', greatest() verhindert lpad-Truncation).
-const promoteStudentsQuery = `
+var promoteStudentsQuery = `
 	WITH parsed AS (
 		SELECT id,
 			   klasse,
@@ -92,8 +93,11 @@ const promoteStudentsQuery = `
 			-- Abgänger werden gesperrt → chk_schueler_block_reason verlangt einen Grund.
 			-- Ein vorhandener (z. B. manueller) Grund bleibt erhalten.
 			block_reason = CASE WHEN c.is_graduating
-			                    THEN COALESCE(NULLIF(s.block_reason, ''), 'Automatische Abgänger-Sperre (Schuljahreswechsel)')
+			                    THEN COALESCE(NULLIF(s.block_reason, ''), '` + repository.AbgaengerSperrgrundSchuljahreswechsel + `')
 			                    ELSE s.block_reason END,
+			-- Karenz-Uhr (Migration 094): beim ERSTEN Abgang gestempelt, wie im LUSD-Pfad
+			-- (sperreAbgaenger) — Import, Job und Wächter rechnen die Anonymisierung daran.
+			abgaenger_seit = CASE WHEN c.is_graduating THEN COALESCE(s.abgaenger_seit, NOW()) ELSE s.abgaenger_seit END,
 			abgaenger_jahr = CASE
 				WHEN c.is_graduating THEN EXTRACT(YEAR FROM CURRENT_DATE)
 				ELSE s.abgaenger_jahr
