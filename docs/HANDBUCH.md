@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-08-30. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-02. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produktrundgang als
 Video (8 min) zeigt jeden Bereich in Aktion.
@@ -28,7 +28,10 @@ Beide Seiten haben keinen Menüpunkt. Die fertigen Adressen stehen unter
 
 ## Ausleihe (Theke)
 
-Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
+Der Startbildschirm nach der Anmeldung. Solange keine Akte offen ist, stehen unter dem
+Feld vier Zahlen zum Tag (überfällig, im Abholfach, Klassensätze wartend, Anliegen
+offen) — nur Zahlen, keine Namen, denn der Bildschirm ist am Tresen einsehbar; der
+Klick führt ins Mahnwesen bzw. in die Bestellungen. **Ein Feld für alles:**
 
 1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status, entliehene
    Bücher, Gebühren, Vormerkungen.
@@ -60,8 +63,11 @@ beides einstellbar (*Datenschutz & Sitzung*).
 
 ## Medienkatalog
 
-- **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse; Kartenansicht mit Cover.
-  Reiter *Jahrgänge*: Lernmittel je Stufe und Schulzweig mit Stückzahlen.
+- **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur; darunter Filter
+  (Fach, Jahrgang, Zweig, Medienart, Bestand: nur verfügbare / ohne Exemplare) und
+  Sortierung, Trefferzahl, Umschalter *Karten* (Cover) / *Liste* (dichte Tabelle mit
+  Signatur und Bestand). Reiter *Jahrgänge*: Lernmittel je Stufe und Schulzweig mit
+  Stückzahlen.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
   (Warteliste mit Schüler-Suche), Historie.
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
