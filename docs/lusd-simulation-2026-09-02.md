@@ -22,6 +22,13 @@ Ansprechpartner, also mehrere Zeilen je Schüler):
 - Klasse kommt aus `Klassen_Klassenbezeichnung`, in der festen Schreibweise (05F1).
 - Gefixt: `Schueler_Postleitzahl` hatte keinen Alias, die PLZ fiel still weg (fdfd09d8).
 - Offen: `Ansprechpartner_Alle_Email` wird nicht gelesen (siehe Empfehlung unten).
+- **Adressen (Nachprüfung):** SPH-PaedNet enthält **keine** Schüleradresse, nur die
+  Adresse der Ansprechpartner (`Ansprechpartner_Alle_Straße/Wohnort`) — die wird bewusst
+  nicht übernommen (letzte Zeile wäre sonst z. B. die Großeltern-Adresse). All_Inklusiv
+  enthält `Schueler_Straße` (mit Hausnummer im selben Feld, „Musterstr. 9"),
+  `Schueler_Postleitzahl`, `Schueler_Ort`: frischer Import → 31/31 Straße, 31/31 PLZ
+  (fünfstellig), 31/31 Ort in der Datenbank. Hausnummer bleibt leer, der Mahnbrief druckt
+  `Straße + " " + Hausnummer` getrimmt, also korrekt „Musterstr. 9".
 
 Import SPH (126): 126 neu, alle mit Geburtsdatum und Barcode. Danach Vorschau
 All_Inklusiv: 30 neu, 1 zusammengeführt, 125 Abgänger → Massenabgang-Bremse greift.
