@@ -82,54 +82,52 @@
 	<div class="flex-1 w-full max-w-4xl mx-auto px-6 pb-10 relative z-10">
 		{#if results.length > 0}
 			<p class="text-xs text-slate-400 font-medium mb-4">{results.length} Treffer</p>
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+			<!-- Dieselbe Kachel wie im internen Katalog (02.09.2026): das Cover IST die Kachel,
+			     2:3 wie ein Buch, keine Karte, kein Rahmen. Vorher lag das Hochformat-Cover in
+			     einer festen Querformat-Fläche und wurde oben und unten abgeschnitten. -->
+			<div class="grid grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-x-3 gap-y-4">
 				{#each results as book (book.id)}
-					<div
-						class="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col"
-					>
-						<!-- Cover area -->
+					<div class="flex flex-col gap-3 p-3">
 						<div
-							class="h-52 bg-linear-to-br from-slate-100 to-slate-200 flex items-center justify-center relative overflow-hidden"
+							class="relative aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low"
 						>
 							{#if coverSrc(book.cover_url, book.isbn)}
 								<img
 									src={coverSrc(book.cover_url, book.isbn)}
-									alt="Buchcover"
+									alt={`Cover von ${book.titel}`}
+									loading="lazy"
 									class="h-full w-full object-cover"
 								/>
 							{:else}
-								<span class="text-5xl font-extrabold text-slate-400 select-none">
-									{book.titel.charAt(0).toUpperCase()}
-								</span>
+								<div class="flex h-full w-full items-center justify-center">
+									<span class="text-5xl font-extrabold text-on-surface-variant/50 select-none">
+										{book.titel.charAt(0).toUpperCase()}
+									</span>
+								</div>
 							{/if}
-							<!-- Availability badge overlay -->
 							<div class="absolute top-2 right-2">
 								{#if book.verfuegbar > 0}
-									<span
-										class="px-2 py-1 rounded-lg bg-emerald-500 text-white text-xs font-bold shadow-sm"
-									>
+									<span class="px-2 py-1 rounded-lg bg-emerald-500 text-white text-xs font-bold">
 										✓ Verfügbar
 									</span>
 								{:else}
-									<span
-										class="px-2 py-1 rounded-lg bg-rose-600 text-white text-xs font-bold shadow-sm"
-									>
+									<span class="px-2 py-1 rounded-lg bg-error text-on-error text-xs font-bold">
 										Ausgeliehen
 									</span>
 								{/if}
 							</div>
 						</div>
-						<!-- Metadata -->
-						<div class="p-4 flex-1 flex flex-col">
-							<h3 class="font-bold text-slate-800 leading-snug mb-1 line-clamp-2">{book.titel}</h3>
+						<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
+							<h3
+								class="line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-on-surface"
+								title={book.titel}
+							>
+								{book.titel}
+							</h3>
 							{#if book.autor}
-								<p class="text-xs text-slate-500 mb-2">{book.autor}</p>
+								<p class="line-clamp-1">{book.autor}</p>
 							{/if}
-							<div class="mt-auto flex items-center justify-between pt-2">
-								<span class="text-xs text-slate-400"
-									>{book.verfuegbar} / {book.gesamt} verfügbar</span
-								>
-							</div>
+							<p>{book.verfuegbar} / {book.gesamt} verfügbar</p>
 						</div>
 					</div>
 				{/each}
