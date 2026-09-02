@@ -18,9 +18,18 @@ const (
 	// StandardAnonymisierungSoftDeleteTage sind die Tage nach dem Soft-Delete
 	// (Papierkorb), nach denen ein Schüler-Datensatz anonymisiert wird.
 	StandardAnonymisierungSoftDeleteTage = 180
-	// StandardAnonymisierungAbgaengerTage sind die Tage nach der letzten Änderung, nach
-	// denen ein als Abgänger markierter Schüler anonymisiert wird.
-	StandardAnonymisierungAbgaengerTage = 360
+	// StandardAbgaengerKarenzTage ist die Vorgabe der Karenzzeit nach dem Abgang: So
+	// lange bleibt ein Abgänger ohne offene Vorgänge nur gesperrt, bevor der nächtliche
+	// Job ihn anonymisiert. Bis zum 02.09.2026 anonymisierte der LUSD-Import sofort — und
+	// nahm damit jede Reparatur einer falschen Zuordnung (Namensänderung ohne Schüler-ID
+	// = Abgänger + Neuanlage) mit. 90 Tage decken das erste Quartal nach dem Schuljahres-
+	// wechsel, in dem solche Fälle an der Theke auffallen. Der Wert ist einstellbar
+	// (AbgaengerKarenzSchluessel); 0 heißt „sofort" wie früher. Die endgültige Löschung
+	// (AbgaengerStichjahr, 30. Januar) bleibt davon unberührt und deckelt die Frist.
+	StandardAbgaengerKarenzTage = 90
+	// AbgaengerKarenzSchluessel ist die Zeile in system_einstellungen, aus der Import,
+	// Job und Wächter die Karenz lesen — EIN Schlüssel für drei Leser.
+	AbgaengerKarenzSchluessel = "abgaenger_karenz_tage"
 
 	// StandardAuditAufbewahrungMonate ist die Vorgabe-Aufbewahrung der beiden
 	// Protokolltabellen.

@@ -315,7 +315,7 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := sperreAbgaenger(ctx, tx, sid); err != nil {
+	if err := sperreAbgaenger(ctx, tx, sid, abgaengerSperrgrundOffen); err != nil {
 		t.Fatalf("sperreAbgaenger: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {

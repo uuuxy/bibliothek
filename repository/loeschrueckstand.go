@@ -13,6 +13,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -54,16 +55,17 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	lernmittelTage := TageOderStandard(einst.LesehistorieLernmittelTage, StandardLesehistorieLernmittelTage)
 	anliegenTage := TageOderStandard(einst.AnliegenTage, StandardAnliegenTage)
 	auditMonate := AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
+	karenzTage := AbgaengerKarenzTageOderStandard(einst)
 
 	stand := []LoeschRueckstand{}
 	fehler := func(e error) ([]LoeschRueckstand, error) { return nil, e }
 
-	// 1. Schüler-Anonymisierung (180 Tage nach Soft-Delete / 360 Tage Abgänger).
-	n, err := r.zaehle(ctx, "schueler", "", PredikatAnonymisierung(KulanzWaechter))
+	// 1. Schüler-Anonymisierung (180 Tage nach Soft-Delete / Karenzzeit nach Abgang).
+	n, err := r.zaehle(ctx, "schueler", "", PredikatAnonymisierung(karenzTage, KulanzWaechter))
 	if err != nil {
 		return fehler(err)
 	}
-	stand = append(stand, LoeschRueckstand{Routine: "Schüler-Anonymisierung", Frist: "180 Tage (gelöscht) / 360 Tage (Abgänger)", Zeilen: n})
+	stand = append(stand, LoeschRueckstand{Routine: "Schüler-Anonymisierung", Frist: fmt.Sprintf("180 Tage (gelöscht) / %d Tage Karenz (Abgänger)", karenzTage), Zeilen: n})
 
 	// 2. Abgänger endgültig löschen. Die Kulanz steckt in AbgaengerStichjahr (30 Tage
 	//    nach Jahreswechsel) — ein zusätzlicher Tag wäre hier ohne Bedeutung.

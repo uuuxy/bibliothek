@@ -20,6 +20,12 @@ func TestAuditLogSchreibtueren_NurBekannteDateien(t *testing.T) {
 		"repository/audit_users.go":       "SpurTilgungen (DSGVO: Purge + LUSD-Anonymisierung + Cron)",
 		"jobs/cron_dsgvo_lesehistorie.go": "tilgeAusleihProtokoll (Lesehistorie-Frist)",
 		"jobs/cron_audit_retention.go":    "Aufbewahrung 24 Monate",
+		// Zusammenführen zweier Schülerdatensätze (02.09.2026): Die Protokollspuren der
+		// aufgelösten Quelle (details->>'schueler_id', datensatz_id) werden auf das Ziel
+		// UMGESCHLÜSSELT, nicht gelöscht oder geändert — sonst verlöre die Art.-15-Auskunft
+		// die Lesehistorie, und die DSGVO-Tilgung fände sie nicht mehr (dieselben Schlüssel
+		// wie SpurTilgungen). Aussage und Zeitstempel der Einträge bleiben.
+		"repository/schueler_zusammenfuehren.go": "verschiebeVorgaenge (Umschlüsselung beim Zusammenführen)",
 	}
 	muster := regexp.MustCompile(`(?i)\b(UPDATE|DELETE\s+FROM)\s+audit_logs?\b`)
 	var verstoesse []string

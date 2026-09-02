@@ -9,7 +9,7 @@ import { hatRecht } from './menu.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, endgueltigLoeschen: boolean, auskunft: boolean, foto: boolean }}
+ * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, endgueltigLoeschen: boolean, auskunft: boolean, foto: boolean, zusammenfuehren: boolean }}
  */
 export function schuelerRechte(user) {
 	return {
@@ -27,6 +27,9 @@ export function schuelerRechte(user) {
 		// GET /api/schueler/{id}/dsgvo-auskunft
 		auskunft: hatRecht(user, 'manage_students_admin'),
 		// POST /api/schueler/{id}/photo
-		foto: hatRecht(user, 'upload_photos')
+		foto: hatRecht(user, 'upload_photos'),
+		// POST /api/schueler/{id}/zusammenfuehren — zwei Datensätze, ein Mensch (Umbenennung
+		// ohne Schüler-ID, Dublette). Unumkehrbar, deshalb dasselbe Recht wie das Purge.
+		zusammenfuehren: hatRecht(user, 'manage_students_admin')
 	};
 }

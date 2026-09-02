@@ -225,16 +225,19 @@ type piiAufruf struct {
 func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 	return map[string]piiAufruf{
 		// routes_students.go
-		"GET /api/schueler":                         {URL: "/api/schueler", Positiv: []string{"Vogelbeere"}},
-		"GET /api/schueler/{id}":                    {URL: "/api/schueler/" + w.schuelerID, Positiv: []string{"Kanariweg", "kanari-eltern@example.org"}},
-		"GET /api/schueler/{id}/dsgvo-auskunft":     {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft", Positiv: []string{"Kanariweg"}},
-		"GET /api/schueler/{id}/dsgvo-auskunft/pdf": {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft/pdf"},
-		"GET /api/schueler/deleted":                 {URL: "/api/schueler/deleted"},
-		"GET /api/schueler/{barcode_id}/photo":      {URL: "/api/schueler/SBK-KANARI-1/photo"},
-		"GET /api/klassen":                          {URL: "/api/klassen"},
-		"GET /api/klassen-mapping":                  {URL: "/api/klassen-mapping"},
-		"GET /api/abgaenger":                        {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
-		"GET /api/abgaenger/pdf":                    {URL: "/api/abgaenger/pdf"},
+		"GET /api/schueler":                     {URL: "/api/schueler", Positiv: []string{"Vogelbeere"}},
+		"GET /api/schueler/{id}":                {URL: "/api/schueler/" + w.schuelerID, Positiv: []string{"Kanariweg", "kanari-eltern@example.org"}},
+		"GET /api/schueler/{id}/dsgvo-auskunft": {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft", Positiv: []string{"Kanariweg"}},
+		// Kandidatensuche fürs Zusammenführen: sucht über ALLE Schüler außer {id} selbst —
+		// der Abgänger Zugvogel (SBK-KANARI-2) muss erscheinen, Adresse/Grund (Stufe 3/2-Freitext) nicht.
+		"GET /api/schueler/{id}/zusammenfuehren-kandidaten": {URL: "/api/schueler/" + w.schuelerID + "/zusammenfuehren-kandidaten?q=Vogelbeere", Positiv: []string{"Zugvogel"}},
+		"GET /api/schueler/{id}/dsgvo-auskunft/pdf":         {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft/pdf"},
+		"GET /api/schueler/deleted":                         {URL: "/api/schueler/deleted"},
+		"GET /api/schueler/{barcode_id}/photo":              {URL: "/api/schueler/SBK-KANARI-1/photo"},
+		"GET /api/klassen":                                  {URL: "/api/klassen"},
+		"GET /api/klassen-mapping":                          {URL: "/api/klassen-mapping"},
+		"GET /api/abgaenger":                                {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
+		"GET /api/abgaenger/pdf":                            {URL: "/api/abgaenger/pdf"},
 		// Auch der dritte Fensterkuvert-Brief trägt seit dem 01.09.2026 die Anschrift
 		// (vorher Unterstrich-Zeilen) — Kanariweg als Positiv-Kontrolle wie bei den
 		// Geschwistern overdue-pdf und print/rechnung.

@@ -48,7 +48,7 @@ const BESTAND = {
 	'src/lib/components/layout/Sidebar.svelte': 206,
 	'src/lib/components/mahnwesen/MahnwesenTable.svelte': 242,
 	'src/lib/components/stats/StatsTrendChart.svelte': 243,
-	'src/lib/components/students/LusdImportView.svelte': 394,
+	'src/lib/components/students/LusdImportView.svelte': 311,
 	'src/lib/components/students/PromoteStudentsView.svelte': 212,
 	'src/lib/components/ui/Select.svelte': 207
 };

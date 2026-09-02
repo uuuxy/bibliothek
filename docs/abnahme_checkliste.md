@@ -19,9 +19,10 @@
 
 ## 1. LUSD-Import (Schuljahreswechsel-Datenabgleich)
 
-**Vorbereitung:** Klassenliste als **CSV oder XLSX** bereitlegen (Pflichtspalten:
-Vorname, Nachname, Klasse). Der Export der Schule ist eine LANIS-Klassenliste und
-enthält **weder Schüler-ID noch Geburtsdatum** — das ist bekannt und vorgesehen.
+**Vorbereitung:** Individuellen Bericht der LUSD als **XLSX** (oder CSV) bereitlegen —
+Pflichtspalten Vorname, Nachname, Klasse; **Geburtsdatum** und **Schuleintritt**
+(`Schueler_Eintritt_AktuelleSchule`) mit exportieren (Spaltenliste: [LUSD.md](LUSD.md) §1).
+Eine Schüler-ID enthält kein LUSD-Bericht — das ist bekannt und vorgesehen.
 
 **Zuordnungsstufe zuerst lesen.** Der Import erkennt aus der Datei selbst, worüber er
 zuordnen kann, und sagt es im Banner über der Vorschau:
@@ -37,13 +38,18 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
 1. [ ] Datei auswählen → **„Vorschau laden"**. Es wird noch nichts geändert.
 2. [ ] **Banner lesen:** Welche Zuordnungsstufe gilt? Bei „nur Name" ist mit
        Mehrdeutigkeiten zu rechnen — das ist kein Fehler, sondern die Schutzmaßnahme.
-3. [ ] Vorschau prüfen. Angezeigt werden bis zu **sieben** Gruppen — die letzten vier
-       sind die, bei denen das System bewusst NICHTS tut:
+3. [ ] Vorschau prüfen. Zuoberst **„Vermutlich dieselbe Person"** (nur wenn es Paare gibt):
+       ein Abgänger und ein Neuzugang, die nach Geburtsdatum, Schuleintritt, Klasse oder
+       Anschrift zusammengehören. „sicher" ist vorangekreuzt, „vermutlich" nicht — jedes
+       Paar lesen und entscheiden; angekreuzt behält der Schüler seinen Datensatz.
+       Darunter bis zu **sieben** Gruppen — die letzten vier sind die, bei denen das
+       System bewusst NICHTS tut:
    - **Neue Schüler** → Stichprobe: echte Neuzugänge?
    - **Klassenwechsel** → Stichprobe: stimmen alte und neue Klasse?
    - **Zusammengeführt** (Bestandsschüler, den der Export eindeutig trifft) → bekommt
      fehlende LUSD-ID bzw. fehlendes Geburtsdatum nachgetragen, **kein** Duplikat
-   - **Abgänger** → Stichprobe: sind die wirklich weg?
+   - **Abgänger** → Stichprobe: sind die wirklich weg? (Ohne offene Vorgänge bleiben sie
+     für die Karenzzeit gesperrt erhalten, Vorgabe 90 Tage — erst danach anonymisiert.)
    - **Rückkehrer** → früherer Abgänger steht wieder in der Datei; prüfen, ob das
      dieselbe Person ist
    - **Mehrdeutig** → Name kommt mehrfach vor; bleibt unverändert
@@ -53,6 +59,13 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
 5. [ ] Gegenprobe: 2–3 Schüler aus jeder Gruppe in der Schülerverwaltung suchen und prüfen.
 6. [ ] Bei „Mehrdeutig" oder „Nicht abgleichbar": stichprobenartig einen Fall im Profil
        nachpflegen und den Import wiederholen — die Gruppe muss kleiner werden.
+7. [ ] **Umbenennungs-Probe:** In einer Testdatei einen bestehenden Schüler umbenennen
+       (gleiches Geburtsdatum, gleicher Schuleintritt). Vorschau muss ihn unter „Vermutlich
+       dieselbe Person" als *sicher* zeigen; nach dem Import derselbe Datensatz (Barcode
+       unverändert) mit neuem Namen, keine zweite Zeile.
+8. [ ] **Zusammenführen-Probe:** Zwei Datensätze derselben Testperson anlegen, in der Akte
+       *Stammdaten & Adresse → „Doppelter Datensatz?"* zusammenführen. Danach: ein Datensatz,
+       Ausleihen beider daran, der andere weg (Audit-Eintrag `SCHUELER_ZUSAMMENGEFUEHRT`).
 
 **Eingebaute Bremsen:**
 - Falsche Datei (fehlende Pflichtspalten, Binärmüll) → verständliche deutsche Fehlermeldung, kein Import.

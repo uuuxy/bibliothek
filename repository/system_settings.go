@@ -66,6 +66,9 @@ type SystemEinstellungen struct {
 	AuditAufbewahrungMonate    *int `json:"audit_aufbewahrung_monate"`
 	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten"`
 	SperreMinuten              *int `json:"sperre_minuten"`
+	// AbgaengerKarenzTage: Tage nach dem Abgang, die ein Abgänger ohne offene Vorgänge
+	// nur gesperrt bleibt, bevor er anonymisiert wird. 0 = sofort. Migration 094.
+	AbgaengerKarenzTage *int `json:"abgaenger_karenz_tage"`
 }
 
 // StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.

@@ -60,12 +60,10 @@
 		st.fetchProfile(student?.id);
 	}
 
-	// Vom Bediener gesetztes Ablaufjahr. null = Vorschlag des Servers gilt.
-	//
-	// Bewusst NICHT gespeichert: Die Abweichung betrifft genau diesen einen Ausdruck
-	// (Wiederholer, Zweigwechsler, Ersatzausweis). Würde sie am Schüler hängen, müsste
-	// sie beim nächsten Schuljahreswechsel wieder aufgeräumt werden — und niemand wüsste
-	// mehr, warum sie dort steht. Beim Wechsel des Schülers fällt sie deshalb zurück.
+	// Vom Bediener gesetztes Ablaufjahr. null = Vorschlag des Servers gilt. Bewusst NICHT
+	// gespeichert: Die Abweichung betrifft genau diesen einen Ausdruck (Wiederholer,
+	// Zweigwechsler, Ersatzausweis); am Schüler müsste sie beim nächsten Schuljahreswechsel
+	// wieder aufgeräumt werden. Beim Wechsel des Schülers fällt sie deshalb zurück.
 	let gueltigBisOverride = $state(/** @type {number|null} */ (null));
 	let zuletztGezeigteId = $state(/** @type {string|null} */ (null));
 	$effect(() => {
@@ -191,7 +189,9 @@
 						<StudentProfileStammdaten
 							profile={st.profile}
 							darfBearbeiten={rechte.bearbeiten}
+							darfZusammenfuehren={rechte.zusammenfuehren}
 							onEdit={() => (st.showEditModal = true)}
+							onMerged={(id) => st.fetchProfile(id)}
 						/>
 
 						<!-- Gefahrenzone: ausschließlich am unteren Ende des Stammdaten-Reiters -->

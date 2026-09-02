@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"bibliothek/pkg/closeutil"
 	"bibliothek/repository"
@@ -25,6 +26,9 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z l
 			continue
 		}
 		if id, ok := z.zielID[i]; ok {
+			if z.geburtsdatumSetzen[i] {
+				rec.geburtsdatumUebernehmen = true
+			}
 			batchRecords = append(batchRecords, rec)
 			batchIDs = append(batchIDs, id)
 			continue
@@ -125,12 +129,12 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 	_, err := tx.Exec(ctx, `
 		INSERT INTO schueler
 			(barcode_id, vorname, nachname, klasse, abgaenger_jahr, lusd_id, geburtsdatum,
-			 strasse, hausnummer, plz, ort, eltern_email, lusd_bestaetigt_am)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())`,
+			 strasse, hausnummer, plz, ort, eltern_email, lusd_bestaetigt_am, schul_eintritt_am)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), $13)`,
 		generateImportBarcode(barcodeCounter), rec.Vorname, rec.Nachname, rec.Klasse, year,
 		nullableString(rec.LusdID), rec.GebDatum,
 		nullableString(rec.Strasse), nullableString(rec.Hausnummer), nullableString(rec.PLZ),
-		nullableString(rec.Ort), nullableString(rec.ElternEmail))
+		nullableString(rec.Ort), nullableString(rec.ElternEmail), rec.EintrittAm)
 	return err
 }
 
@@ -159,13 +163,25 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 // Eine Sperre aus ANDEREM Grund (manuell / nicht die Abgänger-Automatik) bleibt unangetastet.
 // Die CASE-Ausdrücke lesen die ALTEN Zeilenwerte (Postgres wertet SET-RHS vor der Zuweisung
 // aus), daher greifen die Namens-/Grund-Checks noch auf den Zustand VOR dem Namens-Update.
+//
+// Geburtsdatum und Schuleintritt: Der Schuleintritt kommt bei jedem Lauf mit (LUSD ist
+// führend, leer lässt stehen). Das Geburtsdatum schreibt der Batch NUR für bestätigte
+// Umbenennungs-Paare ($11 sonst NULL) — im Namensmodus ist es der Schlüssel selbst und
+// ohnehin gleich; im ID-Modus könnte eine LUSD-Korrektur am partiellen Unique-Index
+// unique_schueler_name_gebdatum kollidieren und den ganzen Lauf abreißen.
 func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records []parsedStudentRow, ids []string) error {
 	batch := &pgx.Batch{}
 	for i, rec := range records {
+		var gebFuerPaar *time.Time
+		if rec.geburtsdatumUebernehmen {
+			gebFuerPaar = rec.GebDatum
+		}
 		batch.Queue(`
 		UPDATE schueler SET
 			vorname      = COALESCE(NULLIF($1, ''), vorname),
 			nachname     = COALESCE(NULLIF($2, ''), nachname),
+			schul_eintritt_am = COALESCE($10::date, schul_eintritt_am),
+			geburtsdatum = COALESCE($11::date, geburtsdatum),
 			-- Wie die sieben Felder ringsum: ein LEERER Exportwert darf den Bestand nicht
 			-- loeschen. klasse stand hier als EINZIGES ungeschuetzt da (seit 4219a2e, nie
 			-- bewusst entschieden). Dieselbe Bugklasse hat 96c2f8c im Buch-Importer bereits
@@ -182,6 +198,7 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 			-- Im Export wiedergefunden: das Gedächtnis für den Namensmodus (Migration 084).
 			lusd_bestaetigt_am = NOW(),
 			ist_abgaenger = false,
+			abgaenger_seit = NULL,
 			ist_gesperrt = CASE
 				WHEN vorname = 'Abgänger' AND nachname LIKE 'Anonymisiert-%' THEN false
 				WHEN block_reason LIKE 'Automatisierte Abgänger-Sperre%'
@@ -203,7 +220,8 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 			aktualisiert_am = NOW()
 		WHERE id = $9`,
 			rec.Vorname, rec.Nachname, rec.Klasse,
-			rec.Strasse, rec.Hausnummer, rec.PLZ, rec.Ort, rec.ElternEmail, ids[i])
+			rec.Strasse, rec.Hausnummer, rec.PLZ, rec.Ort, rec.ElternEmail, ids[i],
+			rec.EintrittAm, gebFuerPaar)
 	}
 
 	// Die Verbindung bleibt bis zum Close() vom Batch belegt. Erst danach darf der
@@ -230,9 +248,13 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 
 // behandleAbgaenger verarbeitet Schüler, die nicht mehr im Export stehen.
 // Mit offenen Ausleihen bleiben Name UND Kontaktdaten erhalten (fürs Mahnwesen und
-// die Schadens-Rechnung noch nötig). Ohne offene Ausleihen wird DSGVO-konform
-// anonymisiert — dabei werden Adresse und Eltern-E-Mail gelöscht.
-func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string) error {
+// die Schadens-Rechnung noch nötig). Ohne offene Vorgänge entscheidet die Karenzzeit
+// (karenzTage, Einstellung abgaenger_karenz_tage): > 0 heißt nur sperren — der
+// nächtliche Job anonymisiert nach Ablauf (PredikatAnonymisierung, Uhr abgaenger_seit);
+// 0 heißt sofort anonymisieren, wie bis zum 02.09.2026. Die Karenz ist der Raum, in
+// dem eine falsche Zuordnung (Umbenennung ohne Schüler-ID) noch repariert werden kann —
+// per Vorschau-Paarung beim nächsten Lauf oder von Hand (Zusammenführen).
+func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string, karenzTage int) error {
 	if len(gradIDs) == 0 {
 		return nil
 	}
@@ -291,13 +313,17 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string) error {
 	}
 
 	for _, sID := range gradIDs {
-		pending := pendingCounts[sID]
-		offeneSchaeden := offeneSchaedenCounts[sID]
-		if pending > 0 || offeneSchaeden > 0 {
-			if err := sperreAbgaenger(ctx, tx, sID); err != nil {
+		offen := pendingCounts[sID] > 0 || offeneSchaedenCounts[sID] > 0
+		switch {
+		case offen:
+			if err := sperreAbgaenger(ctx, tx, sID, abgaengerSperrgrundOffen); err != nil {
 				return err
 			}
-		} else {
+		case karenzTage > 0:
+			if err := sperreAbgaenger(ctx, tx, sID, abgaengerSperrgrundKarenz); err != nil {
+				return err
+			}
+		default:
 			if err := anonymisiereAbgaenger(ctx, tx, sID); err != nil {
 				return err
 			}
@@ -307,6 +333,13 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string) error {
 	return nil
 }
 
+// Die beiden automatischen Sperrgründe teilen das Präfix, an dem der Rückkehrer-Pfad
+// (aktualisiereBestandsschuelerBatch) und das Zusammenführen die Automatik erkennen.
+const (
+	abgaengerSperrgrundOffen  = "Automatisierte Abgänger-Sperre (offene Vorgänge)"
+	abgaengerSperrgrundKarenz = "Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"
+)
+
 // sperreAbgaenger markiert einen Abgänger mit offenen Vorgängen (nicht zurückgegebene
 // Bücher ODER unbezahlte Schäden) als gesperrt, lässt Name und Kontaktdaten aber
 // unangetastet (Mahnung/Rechnung laufen noch).
@@ -315,16 +348,21 @@ func behandleAbgaenger(ctx context.Context, tx pgx.Tx, gradIDs []string) error {
 // es auf dem Default vom Anlegen (Jahr+5, in der Zukunft), und der DSGVO-Cronjob
 // (RunGDPRDeleteAbgaenger, Filter abgaenger_jahr < cutoffYear) hätte den Abgänger nach
 // der Buchrückgabe NIE erfasst — die PII wäre für immer geblieben.
-func sperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) error {
+//
+// abgaenger_seit wird beim ERSTEN Abgang gestempelt und danach nicht mehr verschoben
+// (COALESCE) — die Karenz-Uhr läuft ab dem Tag, an dem der Schüler aus dem Export fiel,
+// nicht ab dem letzten Lauf, der ihn erneut nicht fand.
+func sperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID, grund string) error {
 	// block_reason MUSS gesetzt sein (chk_schueler_block_reason). Ein bereits vorhandener
 	// (z. B. manueller) Grund bleibt erhalten — sonst greift der Abgänger-Standardgrund,
 	// damit das Personal im Profil sofort sieht, WARUM gesperrt wurde.
 	_, err := tx.Exec(ctx,
 		`UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
-		        block_reason = COALESCE(NULLIF(block_reason, ''), 'Automatisierte Abgänger-Sperre (offene Vorgänge)'),
+		        block_reason = COALESCE(NULLIF(block_reason, ''), $2),
+		        abgaenger_seit = COALESCE(abgaenger_seit, NOW()),
 		        abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
 		 WHERE id = $1`,
-		schuelerID)
+		schuelerID, grund)
 	return err
 }
 
@@ -361,6 +399,7 @@ func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) er
 			strasse = NULL, hausnummer = NULL, plz = NULL, ort = NULL, eltern_email = NULL,
 			geburtsdatum = NULL, lusd_id = NULL,
 			barcode_id = 'ANON-' || id::text, anonymized_at = NOW(),
+			abgaenger_seit = COALESCE(abgaenger_seit, NOW()),
 			ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Abgänger anonymisiert',
 			abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
 		WHERE id = $2`,

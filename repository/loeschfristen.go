@@ -31,14 +31,18 @@ import (
 
 // PredikatAnonymisierung liefert die Bedingung von RunGDPRAnonymizeOldData.
 // Ein Schüler mit offener Ausleihe oder unbezahltem Schaden bleibt stehen — dort ist
-// der Zweck der Speicherung noch nicht erreicht. Die beiden Fristen sind Konstanten und
-// werden hier gebunden; von außen kommt nur die Kulanz.
-func PredikatAnonymisierung(kulanz int) Loeschbedingung {
-	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, StandardAnonymisierungAbgaengerTage, kulanz}, Where: `anonymized_at IS NULL
+// der Zweck der Speicherung noch nicht erreicht. Die Soft-Delete-Frist ist eine
+// Konstante; die Abgänger-Frist ist die einstellbare Karenzzeit (abgaengerKarenzTage,
+// Migration 094), gerechnet ab abgaenger_seit — dem Zeitpunkt, zu dem ein Import den
+// Schüler zum Abgänger machte. aktualisiert_am ist nur noch der Rückfall für Altzeilen
+// ohne diesen Stempel; bis zum 02.09.2026 war es die einzige Uhr, und jede Änderung
+// am Datensatz stellte sie neu.
+func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, abgaengerKarenzTage, kulanz}, Where: `anonymized_at IS NULL
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
 		      OR
-		      (ist_abgaenger = true AND aktualisiert_am < NOW() - make_interval(days => $2::int + $3::int))
+		      (ist_abgaenger = true AND COALESCE(abgaenger_seit, aktualisiert_am) < NOW() - make_interval(days => $2::int + $3::int))
 		  )
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`}

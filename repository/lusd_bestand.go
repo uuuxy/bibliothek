@@ -44,10 +44,19 @@ func LusdNamensSchluessel(vorname, nachname string) string {
 // sie sieht. LusdID ist "" ohne ECHTE Kennung (NULL oder Littera-Marke), Schluessel der
 // Name+Geburtsdatum-Schlüssel ("" ohne Datum), Namensschluessel der Nur-Name-Schlüssel,
 // LusdBestaetigt spiegelt lusd_bestaetigt_am IS NOT NULL (Migration 084).
+//
+// Geburtsdatum, EintrittAm, Strasse und PLZ trägt die Zeile seit dem 02.09.2026 roh mit:
+// Die Umbenennungs-Paarung (api/lusd_paarung.go) vergleicht damit einen Abgänger mit
+// einem vermeintlichen Neuzugang — gleiches Geburtsdatum, gleicher Schuleintritt, gleiche
+// Anschrift sind die Signale, die eine Namensänderung überstehen. Anonymisiert sagt, ob
+// die Zeile bereits ihre Personendaten verloren hat; sie taugt dann für keine Paarung.
 type LusdBestandsSchueler struct {
 	ID, Klasse, Vorname, Nachname        string
 	LusdID, Schluessel, Namensschluessel string
+	Strasse, PLZ                         string
+	Geburtsdatum, EintrittAm             *time.Time
 	IstAbgaenger, LusdBestaetigt         bool
+	Anonymisiert                         bool
 }
 
 // LadeLusdBestand liest ALLE nicht soft-gelöschten Schüler — aktive UND Abgänger. Beide
@@ -57,7 +66,8 @@ type LusdBestandsSchueler struct {
 func LadeLusdBestand(ctx context.Context, tx pgx.Tx) ([]LusdBestandsSchueler, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger,
-		       lusd_bestaetigt_am IS NOT NULL
+		       lusd_bestaetigt_am IS NOT NULL, schul_eintritt_am,
+		       COALESCE(strasse, ''), COALESCE(plz, ''), anonymized_at IS NOT NULL
 		FROM schueler WHERE deleted_at IS NULL`)
 	if err != nil {
 		return nil, err
@@ -68,14 +78,14 @@ func LadeLusdBestand(ctx context.Context, tx pgx.Tx) ([]LusdBestandsSchueler, er
 	for rows.Next() {
 		var s LusdBestandsSchueler
 		var lusdID *string
-		var geb *time.Time
-		if err := rows.Scan(&s.ID, &s.Klasse, &s.Vorname, &s.Nachname, &lusdID, &geb, &s.IstAbgaenger, &s.LusdBestaetigt); err != nil {
+		if err := rows.Scan(&s.ID, &s.Klasse, &s.Vorname, &s.Nachname, &lusdID, &s.Geburtsdatum, &s.IstAbgaenger,
+			&s.LusdBestaetigt, &s.EintrittAm, &s.Strasse, &s.PLZ, &s.Anonymisiert); err != nil {
 			return nil, err
 		}
 		if HatEchteLusdID(lusdID) {
 			s.LusdID = *lusdID
 		}
-		s.Schluessel = LusdSchluessel(s.Vorname, s.Nachname, geb)
+		s.Schluessel = LusdSchluessel(s.Vorname, s.Nachname, s.Geburtsdatum)
 		s.Namensschluessel = LusdNamensSchluessel(s.Vorname, s.Nachname)
 		bestand = append(bestand, s)
 	}

@@ -1,5 +1,11 @@
 # LUSD-Import: Simulation Schuljahreswechsel (02.09.2026)
 
+> Messprotokoll. Das Konzept, die Spaltenliste für das Sekretariat, die Umbenennungs-Paarung,
+> die Karenzzeit und das Zusammenführen stehen in [LUSD.md](LUSD.md) — dort weiterlesen,
+> wer den Import bedienen oder verstehen will. Die Befunde aus §„Befunde und Empfehlungen"
+> sind am 02.09.2026 umgesetzt (Paarung, Karenz, Zusammenführen, Schuleintritt als zweiter
+> Schlüssel); offen bleibt allein der Wunsch nach einer Schüler-ID im Bericht.
+
 Prüfung des LUSD-Imports mit echten Demo-Exporten der Schule und einem synthetischen
 Bestand in Schulgröße, auf dem lokalen Stack (Container 8084, Datenbank vorher geleert).
 Alle Zahlen stammen aus Abfragen gegen die Datenbank nach jedem Schritt, Namen wurden

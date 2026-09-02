@@ -41,6 +41,9 @@ var lusdFieldAliases = map[string][]string{
 	lusdColPLZ:          {"plz", "postleitzahl", "schueler_plz", "schueler_postleitzahl", "anschrift_plz", "slr_plz"},
 	lusdColOrt:          {"ort", "wohnort", "schueler_ort", "anschrift_ort", "slr_ort"},
 	lusdColElternEmail:  {"eltern_email", "email", "ansprechpartner_email", "erziehungsberechtigte_email", "erziehungsberechtigter_email", "slr_email"},
+	// Schuleintritt (02.09.2026): So heißt die Spalte im Individuellen Bericht der LUSD
+	// („All_Inklusiv"-Demo-Export geprüft); die kurzen Formen für handgebaute Listen.
+	lusdColEintritt: {"eintritt", "eintrittsdatum", "schueler_eintritt_aktuelleschule", "eintritt_aktuelleschule", "schueler_eintritt", "slr_eintritt", "aufnahmedatum"},
 }
 
 // lusdPflichtspalten müssen in jedem Export stehen. Den ZUORDNUNGSSCHLÜSSEL bestimmt
@@ -48,8 +51,8 @@ var lusdFieldAliases = map[string][]string{
 // Name — der LANIS-Klassenlisten-Export der Schule hat genau diese drei Spalten.
 var lusdPflichtspalten = []string{lusdColVorname, lusdColNachname, lusdColKlasse}
 
-// lusdOptionaleSpalten sind die Adress-/Kontaktspalten (dürfen fehlen).
-var lusdOptionaleSpalten = []string{lusdColStrasse, lusdColHausnummer, lusdColPLZ, lusdColOrt, lusdColElternEmail}
+// lusdOptionaleSpalten sind die Adress-/Kontaktspalten und der Schuleintritt (dürfen fehlen).
+var lusdOptionaleSpalten = []string{lusdColStrasse, lusdColHausnummer, lusdColPLZ, lusdColOrt, lusdColElternEmail, lusdColEintritt}
 
 // lusdHeaderLookup mappt jede normalisierte Alias-Schreibweise auf ihr logisches Feld.
 var lusdHeaderLookup = buildLusdHeaderLookup()

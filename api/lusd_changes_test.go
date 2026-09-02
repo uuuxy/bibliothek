@@ -30,13 +30,22 @@ func TestGenerateImportBarcode_UniqueWithinImport(t *testing.T) {
 }
 
 func lusdStudentRows(n int) *pgxmock.Rows {
-	rows := pgxmock.NewRows([]string{"id", "klasse", "vorname", "nachname", "lusd_id", "geburtsdatum", "ist_abgaenger", "bestaetigt"})
+	rows := pgxmock.NewRows([]string{"id", "klasse", "vorname", "nachname", "lusd_id", "geburtsdatum", "ist_abgaenger", "bestaetigt",
+		"schul_eintritt_am", "strasse", "plz", "anonymisiert"})
 	for i := 0; i < n; i++ {
 		id := string(rune('a' + i))
 		lusdID := "L-" + id // Pointer: die Spalte wird als *string gescannt (nullable)
-		rows.AddRow("uuid-"+id, "7A", "Vor"+id, "Nach"+id, &lusdID, (*time.Time)(nil), false, true)
+		rows.AddRow("uuid-"+id, "7A", "Vor"+id, "Nach"+id, &lusdID, (*time.Time)(nil), false, true,
+			(*time.Time)(nil), "", "", false)
 	}
 	return rows
+}
+
+// erwarteEinstellungen: Der Lauf liest die Karenzzeit VOR der Transaktion (leere
+// Tabelle = Vorgabe); ohne diese Erwartung sähe der Mock eine fremde Abfrage.
+func erwarteEinstellungen(mock pgxmock.PgxPoolIface) {
+	mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 }
 
 func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
@@ -48,6 +57,7 @@ func TestComputeLusdChanges_MassGraduationBlockedBeforeAnyWrite(t *testing.T) {
 	s := &Server{DB: &db.Database{Pool: mock}}
 
 	// 10 aktive Schüler in der DB, CSV enthält nur 2 davon → 8 Abgänger (80%).
+	erwarteEinstellungen(mock)
 	mock.ExpectBegin()
 	// apply=true: der Import-Advisory-Lock wird ZUERST genommen (serialisiert Parallel-Läufe).
 	mock.ExpectExec(`pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("SELECT", 1))
@@ -83,6 +93,7 @@ func TestComputeLusdChanges_PreviewNeverWrites(t *testing.T) {
 	defer mock.Close()
 	s := &Server{DB: &db.Database{Pool: mock}}
 
+	erwarteEinstellungen(mock)
 	mock.ExpectBegin()
 	mock.ExpectQuery(`SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger`).
 		WillReturnRows(lusdStudentRows(10))

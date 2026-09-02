@@ -1,19 +1,27 @@
 <!-- @component LusdImportView — Preview-to-Commit Flow für den LUSD-Schuljahreswechsel-Import.
      Go-Handler sind zustandslos (keine Preview-Session), daher wird dieselbe Datei bei
-     „Import finalisieren“ erneut an /api/lusd/import gesendet.
+     „Import finalisieren“ erneut an /api/lusd/import gesendet — samt der bestätigten
+     Umbenennungs-Paare (LusdUmbenennungen).
 
      Drei Zuordnungsstufen, die Datei entscheidet (Backend: api/lusd_parser.go):
      LUSD-ID → Name + Geburtsdatum → nur Name. Der Export der Schule hat keine Schüler-ID;
-     die Vorschau sagt, welche Stufe gilt, und was unangetastet bleibt. -->
+     die Vorschau sagt, welche Stufe gilt, und was unangetastet bleibt. Texte und Rubriken
+     stehen in lusdVorschauRubriken.js. -->
 <script>
 	import { AlertTriangle, ChevronRight, CircleCheck } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import { SvelteSet } from 'svelte/reactivity';
 	import Button from '../ui/Button.svelte';
+	import LusdUmbenennungen from './LusdUmbenennungen.svelte';
+	import {
+		modusInfo,
+		rubriken,
+		umbenennungenFormwert,
+		vorausgewaehlteZeilen
+	} from './lusdVorschauRubriken.js';
 
-	/** @typedef {{ id: string, vorname: string, nachname: string, alte_klasse?: string, neue_klasse?: string }} StudentDiff */
-	/** @typedef {{ schueler_id: string, lusd_id: string, vorname: string, nachname: string, geburtsdatum: string, alte_klasse?: string, neue_klasse?: string }} AdoptionDiff */
-	/** @typedef {{ modus: 'lusd_id' | 'name_geburtsdatum' | 'name', new_students: StudentDiff[], class_changes: StudentDiff[], adoptions: AdoptionDiff[], rueckkehrer: StudentDiff[], graduates: StudentDiff[], nicht_im_export: StudentDiff[], nicht_abgleichbar: StudentDiff[], mehrdeutig: StudentDiff[], total_csv_records: number, active_db_students: number, skipped_no_id: number, dubletten_in_datei: number }} LusdPreviewResult */
+	/** @typedef {import('./lusdVorschauRubriken.js').LusdPreviewResult} LusdPreviewResult */
 
 	/** @type {{ onImported?: (result: LusdPreviewResult) => void }} */
 	let { onImported = () => {} } = $props();
@@ -25,89 +33,13 @@
 	let previewResult = $state(/** @type {LusdPreviewResult | null} */ (null));
 	let importResult = $state(/** @type {LusdPreviewResult | null} */ (null));
 	let errorMessage = $state(/** @type {string | null} */ (null));
+	/** Vom Admin bestätigte Umbenennungs-Paare (Zeilennummern der Datei); wird in
+	 *  place geändert — SvelteSet ist selbst reaktiv, ein $state-Umschlag wäre doppelt. */
+	const gewaehltePaare = new SvelteSet();
 
 	const activeResult = $derived(stage === 'done' ? importResult : previewResult);
-
-	/** Text und Ton je Zuordnungsstufe — die unsicherste Stufe wird als Warnung gezeigt. */
-	const modusInfo = $derived.by(() => {
-		switch (activeResult?.modus) {
-			case 'name_geburtsdatum':
-				return {
-					warn: false,
-					text: 'Zuordnung über Name + Geburtsdatum (die Datei enthält keine Schüler-ID).'
-				};
-			case 'name':
-				return {
-					warn: true,
-					text: 'Zuordnung nur über Vor- und Nachname — die Datei enthält weder Schüler-ID noch Geburtsdatum. Namensgleiche Schüler werden nicht zugeordnet, sondern unten als „mehrdeutig“ gemeldet. Sicherer: das Geburtsdatum mit exportieren.'
-				};
-			default:
-				return { warn: false, text: 'Zuordnung über die LUSD-ID.' };
-		}
-	});
-
-	const summaryRows = $derived(
-		activeResult
-			? [
-					{
-						key: 'new',
-						label: 'Neue Schüler',
-						hint: 'Werden neu angelegt',
-						items: activeResult.new_students || [],
-						valueClass: 'text-emerald-600'
-					},
-					{
-						key: 'adoptions',
-						label: 'Zusammengeführt',
-						hint: 'Bestehende Schüler, die der Export eindeutig trifft: ohne LUSD-ID (Handanlage/Littera) bekommen sie die ID, ohne Geburtsdatum das Datum aus dem Export nachgetragen — kein Duplikat',
-						items: (activeResult.adoptions || []).map((a) => ({ ...a, id: a.schueler_id })),
-						valueClass: 'text-primary'
-					},
-					{
-						key: 'changes',
-						label: 'Klassenwechsel',
-						hint: 'Bestehende Schüler mit geänderter Klasse',
-						items: activeResult.class_changes || [],
-						valueClass: 'text-blue-600'
-					},
-					{
-						key: 'returners',
-						label: 'Rückkehrer',
-						hint: 'Abgänger, die wieder im Export stehen — werden reaktiviert',
-						items: activeResult.rueckkehrer || [],
-						valueClass: 'text-primary'
-					},
-					{
-						key: 'graduates',
-						label: 'Abgänger',
-						hint: 'Fehlen in der Datei — werden als Abgänger markiert',
-						items: activeResult.graduates || [],
-						valueClass: 'text-rose-600'
-					},
-					{
-						key: 'notInExport',
-						label: 'Nicht im Export',
-						hint: 'Standen noch nie in einem LUSD-Export (Handanlagen, Gastschüler) — bleiben unverändert',
-						items: activeResult.nicht_im_export || [],
-						valueClass: 'text-on-surface-variant'
-					},
-					{
-						key: 'unmatchable',
-						label: 'Nicht abgleichbar',
-						hint: 'Ohne Geburtsdatum im Bestand und nicht eindeutig über den Namen zuzuordnen — bleiben unverändert; Geburtsdatum im Profil nachtragen',
-						items: activeResult.nicht_abgleichbar || [],
-						valueClass: 'text-on-surface-variant'
-					},
-					{
-						key: 'ambiguous',
-						label: 'Mehrdeutig',
-						hint: 'Gleicher Name mehrfach (in der Datei oder im Bestand) — wird nicht angefasst, bitte von Hand klären',
-						items: activeResult.mehrdeutig || [],
-						valueClass: 'text-error'
-					}
-				]
-			: []
-	);
+	const info = $derived(modusInfo(activeResult?.modus));
+	const summaryRows = $derived(activeResult ? rubriken(activeResult) : []);
 
 	// Bezugsgröße ist der aktive DB-Bestand (kommt vom Server), NICHT die
 	// CSV-Zeilenzahl — sonst rutscht ein Teilexport unter die Schwelle.
@@ -135,6 +67,7 @@
 		importResult = null;
 		errorMessage = null;
 		needsGraduateConfirm = false;
+		gewaehltePaare.clear();
 		stage = 'upload';
 	}
 
@@ -143,6 +76,8 @@
 		const formData = new FormData();
 		formData.append('csvFile', /** @type {File} */ (selectedFile));
 		if (confirmGraduates) formData.append('confirm_graduates', 'true');
+		const wahl = umbenennungenFormwert(previewResult?.umbenennungen ?? [], gewaehltePaare);
+		if (wahl) formData.append('umbenennungen', wahl);
 
 		const res = await apiFetch(url, { method: 'POST', body: formData });
 		if (!res.ok) {
@@ -160,10 +95,12 @@
 		errorMessage = null;
 		try {
 			previewResult = await submitLusdFile('/api/lusd/preview');
+			gewaehltePaare.clear();
+			for (const z of vorausgewaehlteZeilen(previewResult?.umbenennungen ?? []))
+				gewaehltePaare.add(z);
 			stage = 'preview';
 		} catch (err) {
-			// Nur das Inline-Banner unten — kein zusätzlicher Toast mit identischem Text
-			// (das wirkte wie zwei getrennte Fehler).
+			// Nur das Inline-Banner unten — kein zusätzlicher Toast mit identischem Text.
 			errorMessage = /** @type {any} */ (err).message || String(err);
 		} finally {
 			previewLoading = false;
@@ -181,14 +118,9 @@
 			toastStore.addToast('LUSD-Import erfolgreich übernommen.', 'success');
 			onImported(/** @type {LusdPreviewResult} */ (importResult));
 		} catch (err) {
-			if (/** @type {any} */ (err).status === 409) {
-				// Serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten
-				needsGraduateConfirm = true;
-				errorMessage = /** @type {any} */ (err).message;
-			} else {
-				// Nur das Inline-Banner — kein doppelter Toast mit gleichem Text.
-				errorMessage = /** @type {any} */ (err).message || String(err);
-			}
+			// 409 = serverseitige Massenabgang-Bremse: bewusste zweite Bestätigung anbieten.
+			needsGraduateConfirm = /** @type {any} */ (err).status === 409;
+			errorMessage = /** @type {any} */ (err).message || String(err);
 		} finally {
 			importLoading = false;
 		}
@@ -229,16 +161,32 @@
 	</details>
 {/snippet}
 
-{#snippet modusBanner()}
+{#snippet ergebnis(abgeschlossen)}
 	{#if activeResult}
 		<p
-			class="text-xs font-semibold rounded-xl p-3 {modusInfo.warn
+			class="text-xs font-semibold rounded-xl p-3 {info.warn
 				? 'bg-error-container text-on-error-container'
 				: 'text-on-surface-variant'}"
 		>
-			{modusInfo.text}
+			{info.text}
 		</p>
+		<div class="divide-y divide-slate-100">
+			<LusdUmbenennungen
+				paare={activeResult.umbenennungen ?? []}
+				gewaehlt={gewaehltePaare}
+				{abgeschlossen}
+			/>
+			{#each summaryRows as section (section.key)}
+				{@render diffSection(section)}
+			{/each}
+		</div>
 	{/if}
+{/snippet}
+
+{#snippet spinner(text)}
+	<span class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
+	></span>
+	{text}
 {/snippet}
 
 <div class="w-full max-w-2xl space-y-8">
@@ -267,18 +215,8 @@
 				>Import abgeschlossen — der Bestand ist aktuell.</span
 			>
 		</div>
-		{@render modusBanner()}
-		<div class="divide-y divide-slate-100">
-			{#each summaryRows as section (section.key)}
-				{@render diffSection(section)}
-			{/each}
-		</div>
-		<button
-			onclick={resetFlow}
-			class="px-5 py-2.5 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer"
-		>
-			Weitere Datei importieren
-		</button>
+		{@render ergebnis(true)}
+		<Button onclick={resetFlow}>Weitere Datei importieren</Button>
 	{:else}
 		<label
 			class="border-2 border-dashed border-slate-200 hover:border-blue-500/70 hover:bg-slate-50/40 transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer text-center select-none"
@@ -304,8 +242,8 @@
 					<p class="text-label-small text-slate-400 font-medium">
 						CSV (Komma/Semikolon) oder .xlsx · Pflichtspalten: <code>vorname, nachname, klasse</code
 						>
-						· Zuordnung über <code>lusd_id</code>, sonst <code>geburtsdatum</code> (empfohlen), sonst
-						nur der Name
+						· Zuordnung über <code>lusd_id</code>, sonst <code>geburtsdatum</code> (empfohlen),
+						sonst nur der Name · <code>eintritt</code> (Schuleintritt) hilft bei Umbenennungen
 					</p>
 				</div>
 			{/if}
@@ -314,20 +252,13 @@
 		{#if stage === 'upload'}
 			<div class="flex justify-end">
 				<Button onclick={runPreview} disabled={!selectedFile || previewLoading}>
-					{#if previewLoading}
-						<span
-							class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
-						></span> Vorschau wird geladen…
-					{:else}
-						Vorschau laden
-					{/if}
+					{#if previewLoading}{@render spinner('Vorschau wird geladen…')}{:else}Vorschau laden{/if}
 				</Button>
 			</div>
 		{/if}
 
 		{#if stage === 'preview' && previewResult}
 			<div class="space-y-4">
-				{@render modusBanner()}
 				<p class="text-xs text-slate-500">
 					{previewResult.total_csv_records} Datensätze in der Datei · {previewResult.active_db_students}
 					aktive Schüler im Bestand
@@ -354,11 +285,7 @@
 					</div>
 				{/if}
 
-				<div class="divide-y divide-slate-100">
-					{#each summaryRows as section (section.key)}
-						{@render diffSection(section)}
-					{/each}
-				</div>
+				{@render ergebnis(false)}
 
 				<div class="flex justify-end gap-3 pt-2">
 					<Button variant="secondary" onclick={resetFlow}>Andere Datei wählen</Button>
@@ -368,23 +295,13 @@
 							onclick={() => finalizeImport(true)}
 							disabled={importLoading}
 						>
-							{#if importLoading}
-								<span
-									class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
-								></span> Import wird übernommen…
-							{:else}
-								Massenabgang bestätigen &amp; endgültig importieren
-							{/if}
+							{#if importLoading}{@render spinner('Import wird übernommen…')}{:else}Massenabgang
+								bestätigen &amp; endgültig importieren{/if}
 						</Button>
 					{:else}
 						<Button onclick={() => finalizeImport(false)} disabled={importLoading}>
-							{#if importLoading}
-								<span
-									class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
-								></span> Import wird übernommen…
-							{:else}
-								Import finalisieren
-							{/if}
+							{#if importLoading}{@render spinner('Import wird übernommen…')}{:else}Import
+								finalisieren{/if}
 						</Button>
 					{/if}
 				</div>

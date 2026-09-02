@@ -4,11 +4,13 @@ import (
 	"bibliothek/auth"
 	"bibliothek/repository"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -54,10 +56,16 @@ type LusdPreviewResult struct {
 	NichtImExport    []StudentDiff  `json:"nicht_im_export"`   // Namensmodus: nie bestätigte Handanlagen — bleiben unverändert
 	NichtAbgleichbar []StudentDiff  `json:"nicht_abgleichbar"` // Namensmodus: ohne Geburtsdatum — bleiben unverändert
 	Mehrdeutig       []StudentDiff  `json:"mehrdeutig"`        // gleicher Schlüssel mehrfach — wird nicht angefasst
-	TotalCsvRecords  int            `json:"total_csv_records"`
-	ActiveDbStudents int            `json:"active_db_students"`
-	SkippedNoID      int            `json:"skipped_no_id"`      // ID-Modus: CSV-Zeilen ohne LUSD-ID — werden nie importiert
-	DublettenInDatei int            `json:"dubletten_in_datei"` // Zeilen mit demselben Schlüssel, letzte gewann
+	// Umbenennungen: Abgänger + Neuzugang, die nach Geburtsdatum/Schuleintritt/Klasse/
+	// Anschrift dieselbe Person sind (lusd_paarung.go). Der Admin bestätigt je Paar.
+	Umbenennungen []UmbenennungDiff `json:"umbenennungen"`
+	// KarenzTage: so lange bleiben Abgänger ohne offene Vorgänge nur gesperrt, bevor
+	// sie anonymisiert werden (Einstellung abgaenger_karenz_tage; 0 = sofort).
+	KarenzTage       int `json:"karenz_tage"`
+	TotalCsvRecords  int `json:"total_csv_records"`
+	ActiveDbStudents int `json:"active_db_students"`
+	SkippedNoID      int `json:"skipped_no_id"`      // ID-Modus: CSV-Zeilen ohne LUSD-ID — werden nie importiert
+	DublettenInDatei int `json:"dubletten_in_datei"` // Zeilen mit demselben Schlüssel, letzte gewann
 }
 
 // lusdImportLockKey serialisiert gleichzeitige LUSD-Importe (Advisory-Lock). Eigener
@@ -82,8 +90,25 @@ type errMassGraduation struct {
 
 func (e *errMassGraduation) Error() string {
 	return fmt.Sprintf(
-		"%d von %d aktiven Schülern würden als Abgänger anonymisiert (Schwelle: %d%%). Datei prüfen — falls der Massenabgang beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.",
+		"%d von %d aktiven Schülern würden zu Abgängern (Schwelle: %d%%). Datei prüfen — falls der Massenabgang beabsichtigt ist (Schuljahreswechsel), Import mit Bestätigung wiederholen.",
 		e.Graduates, e.Active, massGraduationThresholdPct)
+}
+
+// lusdLauf sind die Vorgaben eines Laufs: Vorschau oder Anwenden, ob der Massenabgang
+// bestätigt wurde, und welche Umbenennungs-Paare der Admin gewählt hat.
+type lusdLauf struct {
+	apply, allowMassGraduation bool
+	umbenennungen              []umbenennungWahl
+}
+
+// abgaengerKarenzTage liest die Karenzzeit aus den Einstellungen; ohne lesbare
+// Einstellungen gilt die Vorgabe — derselbe Rückfall wie im nächtlichen Job.
+func (s *Server) abgaengerKarenzTage(ctx context.Context) int {
+	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil {
+		return repository.StandardAbgaengerKarenzTage
+	}
+	return repository.AbgaengerKarenzTageOderStandard(einst)
 }
 
 // readLusdUpload liest die hochgeladene CSV und parst sie mit dem getesteten
@@ -112,9 +137,15 @@ func generateImportBarcode(counter int) string {
 	return fmt.Sprintf("S-%06d%04d", time.Now().Unix()%1000000, counter)
 }
 
-// computeLusd vergleicht die Datei mit dem Bestand in einer Transaktion und liefert
-// entweder die Vorschau oder wendet die Änderungen an.
-func (s *Server) computeLusd(ctx context.Context, datei lusdDatei, apply bool, allowMassGraduation bool) (*LusdPreviewResult, error) {
+// computeLusdLauf vergleicht die Datei mit dem Bestand in einer Transaktion und liefert
+// entweder die Vorschau oder wendet die Änderungen an — samt der Umbenennungs-Wahl des
+// Admins. (Die Kurzform ohne Wahl, computeLusd, lebt nur noch als Testhelfer.)
+func (s *Server) computeLusdLauf(ctx context.Context, datei lusdDatei, lauf lusdLauf) (*LusdPreviewResult, error) {
+	apply := lauf.apply
+	// Die Karenzzeit vor der Transaktion lesen: eine Einstellung, keine Bestandsdaten —
+	// sie gehört nicht in den Snapshot des Laufs, und die Mocks der Bremsen-Tests sehen
+	// so eine feste Reihenfolge (Einstellungen → Begin → Lock → Bestand).
+	karenzTage := s.abgaengerKarenzTage(ctx)
 	// Alles in einer TX für Atomarität. Bei Panic/frühem Return wird zurückgerollt.
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
@@ -150,23 +181,33 @@ func (s *Server) computeLusd(ctx context.Context, datei lusdDatei, apply bool, a
 		NichtImExport:    []StudentDiff{},
 		NichtAbgleichbar: []StudentDiff{},
 		Mehrdeutig:       []StudentDiff{},
+		Umbenennungen:    []UmbenennungDiff{},
 		TotalCsvRecords:  len(datei.Zeilen),
 		ActiveDbStudents: len(idx.aktiv),
 		DublettenInDatei: datei.DublettenInDatei,
+		KarenzTage:       karenzTage,
 	}
 
 	// Erster Durchlauf: nur klassifizieren — der Schwellen-Check muss VOR dem
 	// ersten destruktiven Statement entscheiden.
 	zuordnung := klassifiziereLusd(datei, idx, res)
 	res.Adoptions = append(res.Adoptions, zuordnung.adoptionen...)
+	// Umbenennungen aus Abgängern und Neuzugängen paaren; beim Anwenden die Wahl des
+	// Admins einarbeiten (bestätigte Paare verlassen beide Listen).
+	res.Umbenennungen = append(res.Umbenennungen, findeUmbenennungen(datei, bestand, idx, zuordnung)...)
+	if apply {
+		if err := uebernimmUmbenennungen(datei, lauf.umbenennungen, res.Umbenennungen, &zuordnung, res); err != nil {
+			return nil, err
+		}
+	}
 
 	if !apply {
 		return res, nil
 	}
 
-	// Serverseitige Massenabgang-Bremse: Die Abgänger-Behandlung anonymisiert
-	// Namen IRREVERSIBEL. Die Schwelle wird hier durchgesetzt, wo die Destruktion passiert.
-	if !allowMassGraduation &&
+	// Serverseitige Massenabgang-Bremse: Die Abgänger-Behandlung sperrt bzw. (Karenz 0)
+	// anonymisiert IRREVERSIBEL. Die Schwelle wird hier durchgesetzt, wo es passiert.
+	if !lauf.allowMassGraduation &&
 		res.ActiveDbStudents >= minStudentsForThreshold &&
 		len(res.Graduates)*100 >= res.ActiveDbStudents*massGraduationThresholdPct {
 		return nil, &errMassGraduation{Graduates: len(res.Graduates), Active: res.ActiveDbStudents}
@@ -181,7 +222,7 @@ func (s *Server) computeLusd(ctx context.Context, datei lusdDatei, apply bool, a
 	if err := wendeLusdAenderungenAn(ctx, tx, datei, zuordnung); err != nil {
 		return nil, err
 	}
-	if err := behandleAbgaenger(ctx, tx, zuordnung.abgaengerIDs); err != nil {
+	if err := behandleAbgaenger(ctx, tx, zuordnung.abgaengerIDs, res.KarenzTage); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -204,18 +245,29 @@ func (s *Server) lusdUploadHandler(apply bool) http.HandlerFunc {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
-		allowMass := apply && r.FormValue("confirm_graduates") == "true"
-		res, err := s.computeLusd(r.Context(), datei, apply, allowMass)
+		lauf := lusdLauf{apply: apply, allowMassGraduation: apply && r.FormValue("confirm_graduates") == "true"}
+		if apply {
+			if lauf.umbenennungen, err = leseUmbenennungsWahl(r.FormValue("umbenennungen")); err != nil {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+				return
+			}
+		}
+		res, err := s.computeLusdLauf(r.Context(), datei, lauf)
 		if err == nil && apply {
 			// Der einzige Pfad, der Schülernamen irreversibel anonymisiert, hinterließ bis
 			// 22.08.2026 keinen Audit-Eintrag — weder Akteur noch Zahlen (Prüfung 22.08., B).
 			// Zähler und Modus, keine Namen (Rechenschaft ohne neue PII).
-			s.protokolliereLusdImport(r, res, allowMass)
+			s.protokolliereLusdImport(r, res, lauf.allowMassGraduation)
 		}
 		if err != nil {
 			var massErr *errMassGraduation
+			var wahlErr *errUmbenennungUngueltig
 			if errors.As(err, &massErr) {
 				apierrors.SendHTTPError(w, http.StatusConflict, err)
+				return
+			}
+			if errors.As(err, &wahlErr) {
+				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -223,6 +275,19 @@ func (s *Server) lusdUploadHandler(apply bool) http.HandlerFunc {
 		}
 		RespondJSON(w, http.StatusOK, res)
 	}
+}
+
+// leseUmbenennungsWahl liest das Formularfeld `umbenennungen` (JSON-Liste aus Zeile +
+// schueler_id). Leer heißt: keine Paare bestätigt — dann läuft es wie bisher.
+func leseUmbenennungsWahl(roh string) ([]umbenennungWahl, error) {
+	if strings.TrimSpace(roh) == "" {
+		return nil, nil
+	}
+	var wahl []umbenennungWahl
+	if err := json.Unmarshal([]byte(roh), &wahl); err != nil {
+		return nil, fmt.Errorf("Umbenennungs-Auswahl unlesbar: %w", err) //nolint:staticcheck // ST1005: nutzer-sichtbarer Text
+	}
+	return wahl, nil
 }
 
 // PostLusdPreviewHandler parst die CSV und liefert die Vorschau der Änderungen.
@@ -233,6 +298,16 @@ func (s *Server) PostLusdPreviewHandler() http.HandlerFunc { return s.lusdUpload
 // confirm_graduates=true (HTTP 409 sonst) — zweite, bewusste Bestätigung.
 func (s *Server) PostLusdImportHandler() http.HandlerFunc { return s.lusdUploadHandler(true) }
 
+func zaehleBestaetigte(paare []UmbenennungDiff) int {
+	n := 0
+	for _, p := range paare {
+		if p.Bestaetigt {
+			n++
+		}
+	}
+	return n
+}
+
 // protokolliereLusdImport schreibt den Apply-Lauf ins Admin-Audit: Modus, Zähler je
 // Kategorie und ob der Massenabgang bestätigt wurde. Ohne Namen.
 func (s *Server) protokolliereLusdImport(r *http.Request, res *LusdPreviewResult, massenabgangBestaetigt bool) {
@@ -241,17 +316,19 @@ func (s *Server) protokolliereLusdImport(r *http.Request, res *LusdPreviewResult
 		return
 	}
 	details := map[string]any{
-		"modus":                   res.Modus,
-		"zeilen":                  res.TotalCsvRecords,
-		"neu":                     len(res.NewStudents),
-		"klassenwechsel":          len(res.ClassChanges),
-		"adoptionen":              len(res.Adoptions),
-		"rueckkehrer":             len(res.Rueckkehrer),
-		"abgaenger":               len(res.Graduates),
-		"nicht_im_export":         len(res.NichtImExport),
-		"nicht_abgleichbar":       len(res.NichtAbgleichbar),
-		"mehrdeutig":              len(res.Mehrdeutig),
-		"massenabgang_bestaetigt": massenabgangBestaetigt,
+		"modus":                    res.Modus,
+		"zeilen":                   res.TotalCsvRecords,
+		"neu":                      len(res.NewStudents),
+		"klassenwechsel":           len(res.ClassChanges),
+		"adoptionen":               len(res.Adoptions),
+		"rueckkehrer":              len(res.Rueckkehrer),
+		"abgaenger":                len(res.Graduates),
+		"nicht_im_export":          len(res.NichtImExport),
+		"nicht_abgleichbar":        len(res.NichtAbgleichbar),
+		"mehrdeutig":               len(res.Mehrdeutig),
+		"umbenennungen_bestaetigt": zaehleBestaetigte(res.Umbenennungen),
+		"karenz_tage":              res.KarenzTage,
+		"massenabgang_bestaetigt":  massenabgangBestaetigt,
 	}
 	if err := repository.NewAuditRepository(s.DB.Pool).
 		LogAdminAktion(r.Context(), claims.UserID, "LUSD_IMPORT", getIP(r), details); err != nil {

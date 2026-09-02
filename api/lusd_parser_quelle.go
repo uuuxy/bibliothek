@@ -94,7 +94,7 @@ func leseCsvZeilen(content []byte) ([]tabellenZeile, error) {
 // die Spalten in anderer Reihenfolge tragen: Ihre Zellen werden über die Kopfzeile auf
 // das Spaltenbild des ersten Blatts umsortiert, damit der Index-Zugriff des Parsers
 // stimmt. Rohwerte (RawCellValue): Datumszellen kommen als Excel-Serienzahl und werden
-// in parseLUSDGebDatum zurückgerechnet.
+// in parseLUSDDatum zurückgerechnet.
 func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
 	f, err := excelize.OpenReader(bytes.NewReader(content))
 	if err != nil {

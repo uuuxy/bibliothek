@@ -52,11 +52,13 @@ func (s *Scheduler) RunGDPRAnonymizeLoans() {
 	}
 }
 
-// ── GDPR: Anonymisierung alter Datensätze (180 Tage nach Soft-Delete / 360 Tage Abgänger) ──
+// ── GDPR: Anonymisierung alter Datensätze (180 Tage nach Soft-Delete / Karenzzeit nach Abgang) ──
 
 // RunGDPRAnonymizeOldData anonymisiert Schüler, die entweder:
-// - seit mehr als 180 Tagen weichgelöscht sind (deleted_at < NOW - 180 Tage)
-// - seit mehr als 360 Tagen als Abgänger markiert sind (aktualisiert_am < NOW - 360 Tage UND ist_abgaenger = true)
+//   - seit mehr als 180 Tagen weichgelöscht sind (deleted_at < NOW - 180 Tage)
+//   - länger als die Karenzzeit (Einstellung abgaenger_karenz_tage, Vorgabe 90) Abgänger
+//     sind (abgaenger_seit, Migration 094) und keine offenen Vorgänge mehr haben.
+//
 // Es werden Vorname, Nachname und Klasse geleert oder gehasht und anonymized_at gesetzt.
 func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
@@ -73,7 +75,12 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	// verlangt bei gesperrten Schülern einen nicht-leeren Grund, und ein alter Freitext-
 	// Grund könnte selbst personenbezogen sein. Deckt dieselben identifizierenden Felder ab
 	// wie anonymisiereAbgaenger (LUSD-Pfad).
-	bedingung := repository.PredikatAnonymisierung(repository.KulanzJob)
+	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	if err != nil {
+		log.Printf("Scheduler GDPR Anonymize: Einstellungen nicht lesbar, Vorgabe-Karenz gilt: %v", err)
+	}
+	karenzTage := repository.AbgaengerKarenzTageOderStandard(einst)
+	bedingung := repository.PredikatAnonymisierung(karenzTage, repository.KulanzJob)
 	query := `
 		UPDATE schueler
 		SET vorname = left(md5(random()::text), 8),
@@ -125,9 +132,10 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	if count > 0 {
 		log.Printf("Scheduler GDPR Anonymize: successfully anonymized %d old student records.", count)
 		if err := s.auditRepo.LogSystemAktion(ctx, "schueler", "ANONYMIZE",
-			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > 360T)",
+			"DSGVO Anonymisierung alter Datensätze (Soft-Delete > 180T oder Abgänger > Karenzzeit)",
 			map[string]any{
 				"betroffene_schueler": count,
+				"karenz_tage":         karenzTage,
 				"ausgefuehrt_am":      time.Now().UTC().Format(time.RFC3339),
 			},
 		); err != nil {

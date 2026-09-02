@@ -46,6 +46,7 @@ func datenschutzStandards(s *SystemEinstellungen) {
 	s.AuditAufbewahrungMonate = zeiger(StandardAuditAufbewahrungMonate)
 	s.ThekeLeerenMinuten = zeiger(StandardThekeLeerenMinuten)
 	s.SperreMinuten = zeiger(StandardSperreMinuten)
+	s.AbgaengerKarenzTage = zeiger(StandardAbgaengerKarenzTage)
 }
 
 // setzeIntZeiger übernimmt einen DB-Wert in ein Zeigerfeld; unlesbare Werte lassen die
@@ -79,6 +80,8 @@ func anwendenDatenschutzEinstellung(s *SystemEinstellungen, key string, val *str
 		setzeIntZeiger(val, &s.ThekeLeerenMinuten)
 	case "sperre_minuten":
 		setzeIntZeiger(val, &s.SperreMinuten)
+	case AbgaengerKarenzSchluessel:
+		setzeIntZeiger(val, &s.AbgaengerKarenzTage)
 	default:
 		return false
 	}
@@ -91,4 +94,14 @@ func TageOderStandard(v *int, standard int) int {
 		return standard
 	}
 	return *v
+}
+
+// AbgaengerKarenzTageOderStandard liefert die Karenzzeit vor der Anonymisierung —
+// aus den Einstellungen oder als Vorgabe, wenn sie nicht lesbar sind (nil-sicher, damit
+// Import, Job und Wächter denselben Rückfall haben).
+func AbgaengerKarenzTageOderStandard(einst *SystemEinstellungen) int {
+	if einst == nil {
+		return StandardAbgaengerKarenzTage
+	}
+	return TageOderStandard(einst.AbgaengerKarenzTage, StandardAbgaengerKarenzTage)
 }

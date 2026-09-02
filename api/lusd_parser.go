@@ -21,7 +21,13 @@ type parsedStudentRow struct {
 	PLZ         string
 	Ort         string
 	ElternEmail string
-	LineNum     int
+	// EintrittAm ist der Schuleintritt laut Bericht (Schueler_Eintritt_AktuelleSchule) —
+	// der zweite Schlüssel der Umbenennungs-Paarung (lusd_paarung.go); nil ohne Spalte.
+	EintrittAm *time.Time
+	LineNum    int
+	// geburtsdatumUebernehmen: nur für bestätigte Umbenennungs-Paare — der Bestands-Batch
+	// schreibt dann das Geburtsdatum des Exports (Datumskorrektur der LUSD).
+	geburtsdatumUebernehmen bool
 }
 
 // schluessel ist der Name+Geburtsdatum-Schlüssel der Zeile ("" ohne Datum).
@@ -59,6 +65,9 @@ const (
 	lusdColPLZ         = "plz"
 	lusdColOrt         = "ort"
 	lusdColElternEmail = "eltern_email"
+	// lusdColEintritt: Eintritt an der aktuellen Schule. Optional; ohne die Spalte bleibt
+	// die Umbenennungs-Paarung auf Geburtsdatum, Klasse, Name und Anschrift angewiesen.
+	lusdColEintritt = "eintritt"
 )
 
 // lusdModus sagt, worüber der Import die Schüler zuordnet — die Datei entscheidet.
@@ -113,10 +122,11 @@ func spaltenWert(row []string, headerMap map[string]int, col string) string {
 
 var excelSerienzahl = regexp.MustCompile(`^\d{4,6}(\.\d+)?$`)
 
-// parseLUSDGebDatum liest das Geburtsdatum. Excel liefert Datumszellen als Serienzahl
-// (Tage seit 1899-12-30), CSV als Text in mehreren Schreibweisen.
-func parseLUSDGebDatum(row []string, headerMap map[string]int) *time.Time {
-	raw := spaltenWert(row, headerMap, lusdColGeburtsdatum)
+// parseLUSDDatum liest eine Datumsspalte (Geburtsdatum, Schuleintritt). Excel liefert
+// Datumszellen als Serienzahl (Tage seit 1899-12-30), CSV als Text in mehreren
+// Schreibweisen. nil, wenn die Spalte fehlt oder der Wert unlesbar ist.
+func parseLUSDDatum(row []string, headerMap map[string]int, col string) *time.Time {
+	raw := spaltenWert(row, headerMap, col)
 	if raw == "" {
 		return nil
 	}
@@ -154,7 +164,8 @@ func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedSt
 		Vorname:     vorname,
 		Nachname:    nachname,
 		Klasse:      klasse,
-		GebDatum:    parseLUSDGebDatum(row, headerMap),
+		GebDatum:    parseLUSDDatum(row, headerMap, lusdColGeburtsdatum),
+		EintrittAm:  parseLUSDDatum(row, headerMap, lusdColEintritt),
 		Strasse:     spaltenWert(row, headerMap, lusdColStrasse),
 		Hausnummer:  spaltenWert(row, headerMap, lusdColHausnummer),
 		PLZ:         spaltenWert(row, headerMap, lusdColPLZ),

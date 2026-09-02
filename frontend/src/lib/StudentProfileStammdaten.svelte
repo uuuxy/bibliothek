@@ -1,7 +1,23 @@
 <script>
-	let { profile, darfBearbeiten = false, onEdit } = $props();
+	/**
+	 * @type {{
+	 *   profile: any,
+	 *   darfBearbeiten?: boolean,
+	 *   darfZusammenfuehren?: boolean,
+	 *   onEdit: () => void,
+	 *   onMerged?: (zielId: string) => void
+	 * }}
+	 */
+	let {
+		profile,
+		darfBearbeiten = false,
+		darfZusammenfuehren = false,
+		onEdit,
+		onMerged = () => {}
+	} = $props();
 
 	import Button from './components/ui/Button.svelte';
+	import SchuelerZusammenfuehren from './components/students/SchuelerZusammenfuehren.svelte';
 	import { Folder, SquarePen } from '@lucide/svelte';
 
 	function formatDate(dateString) {
@@ -71,4 +87,10 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Zusammenführen: Admin-Recht, unumkehrbar — deshalb hier unten bei den Stammdaten,
+	     nicht zwischen den Dokument-Knöpfen. Dialog und Suche bringt der Abschnitt mit. -->
+	{#if darfZusammenfuehren}
+		<SchuelerZusammenfuehren {profile} {onMerged} />
+	{/if}
 </div>

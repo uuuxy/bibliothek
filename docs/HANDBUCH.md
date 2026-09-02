@@ -103,6 +103,12 @@ im Bestellwesen (→ *Klassensatz-Reservierungen*). (§4)
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Abgänger / Archiv** und **Papierkorb**; endgültiges Löschen/Anonymisieren nur mit
   Namensbestätigung (DSGVO-Kette, §8).
+- **Doppelter Datensatz?** (Admin, unten im Reiter *Stammdaten & Adresse*): Steht dieselbe
+  Person zweimal in der Kartei — typisch nach einer Namensänderung in der LUSD, die der
+  Export ohne Schüler-ID nicht wiedererkannt hat —, beide Datensätze zusammenführen. Es
+  bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat; Ausleihen, Gebühren und
+  Historie des anderen wandern hinüber. Die Suche im Dialog findet auch Abgänger und
+  Gesperrte. ([LUSD.md](LUSD.md) §5)
 
 ## Mahnwesen
 
@@ -115,8 +121,10 @@ Lehrkraft geht, steht unter *Einstellungen → Mahnwesen-Routing*. (§3)
 ## Abgänger
 
 Zeigt nur Abgänger, die **noch Bücher haben**. Kontoauszüge drucken oder an die
-Klassenleitungen mailen. Wer alles zurückgegeben hat, verschwindet aus der Liste und wird
-nach der Karenzzeit automatisch gelöscht. (§8)
+Klassenleitungen mailen. Wer alles zurückgegeben hat, verschwindet aus der Liste, bleibt
+für die **Karenzzeit** (Vorgabe 90 Tage, *Einstellungen → Datenschutz & Sitzung*) als
+gesperrter Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu reparieren — und wird
+danach automatisch anonymisiert. (§8, [LUSD.md](LUSD.md) §4)
 
 ## Bestellwesen
 
@@ -171,12 +179,12 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 | Mahnwesen-Routing | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge) |
 | Bestellwesen | Bedarfswarnung, Bedarfsschwelle, Preise erfassen |
 | Lieferanten | Händler, Kundennummern, genau ein Hauptlieferant |
-| Datenschutz & Sitzung | Löschfristen, Theke leeren, Sperrbildschirm |
+| Datenschutz & Sitzung | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm |
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger |
 | Mail | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler) |
 | LMF-Aktionen | alle Lernmittel einer Klasse auf ein neues Datum verlängern |
 | Datenverwaltung | Katalog-Import (Littera), Bestands-Import (Kombi-CSV), Cover-Synchronisation, Katalog-Export, Offline-Sicherungen einspielen |
-| Schuljahreswechsel | LUSD-Abgleich, Versetzung mit Vorschau |
+| Schuljahreswechsel | LUSD-Abgleich (mit Vorschlägen für umbenannte Schüler), Versetzung mit Vorschau — Anleitung: [LUSD.md](LUSD.md) |
 | Betriebsbereitschaft | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15) |
 
 ## Mein Portal (Kollegium)

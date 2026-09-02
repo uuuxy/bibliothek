@@ -13,6 +13,12 @@ type lusdZuordnung struct {
 	ueberspringen map[int]bool   // Zeilenindex → nicht anfassen (ohne ID, mehrdeutig)
 	adoptionen    []AdoptionDiff // ID-Modus: LUSD-ID anheften; Name+Geb-Modus: Geburtsdatum nachtragen
 	abgaengerIDs  []string
+	// neuZeilen sind die Zeilenindizes, die als Neuzugang enden würden — die eine Seite der
+	// Umbenennungs-Paarung (lusd_paarung.go). geburtsdatumSetzen markiert bestätigte
+	// Paare: Nur dort schreibt der Bestands-Batch das Geburtsdatum aus dem Export (eine
+	// Datumskorrektur der LUSD), sonst bliebe der Schlüssel beim nächsten Lauf falsch.
+	neuZeilen          []int
+	geburtsdatumSetzen map[int]bool
 	// datumNachgetragen: Bestandsschüler ohne Geburtsdatum, die im Name+Geb-Modus über
 	// den Namen zugeordnet wurden — sie gehören nicht mehr in „nicht abgleichbar".
 	datumNachgetragen map[string]bool
@@ -47,7 +53,7 @@ func diffBestand(s *lusdBestandsSchueler, id string) StudentDiff {
 // klassifiziereLusd ordnet die CSV-Zeilen (rein klassifizierend, ohne Schreibzugriff)
 // ein und füllt Vorschau und Zuordnung in einem Durchgang.
 func klassifiziereLusd(datei lusdDatei, idx lusdIndex, res *LusdPreviewResult) lusdZuordnung {
-	z := lusdZuordnung{zielID: map[int]string{}, ueberspringen: map[int]bool{}, datumNachgetragen: map[string]bool{}}
+	z := lusdZuordnung{zielID: map[int]string{}, ueberspringen: map[int]bool{}, datumNachgetragen: map[string]bool{}, geburtsdatumSetzen: map[int]bool{}}
 	gesehen := map[string]bool{}
 	namenInDatei := zaehleNamenInDatei(datei)
 	for i, rec := range datei.Zeilen {
@@ -119,6 +125,7 @@ func klassifiziereZeileID(i int, rec parsedStudentRow, idx lusdIndex, res *LusdP
 		return
 	}
 	res.NewStudents = append(res.NewStudents, diffZeile(rec.LusdID, rec, "", rec.Klasse))
+	z.neuZeilen = append(z.neuZeilen, i)
 }
 
 // klassifiziereZeileName: Schlüssel Name+Geburtsdatum oder nur Name (key kommt vom
@@ -189,6 +196,7 @@ func klassifiziereZeileName(i int, rec parsedStudentRow, modus lusdModus, idx lu
 		}
 	}
 	res.NewStudents = append(res.NewStudents, diffZeile(zeilenID, rec, "", rec.Klasse))
+	z.neuZeilen = append(z.neuZeilen, i)
 }
 
 // sammleAbgaenger: Wer aktiv ist und nicht im Export steht, geht ab — im ID-Modus jeder

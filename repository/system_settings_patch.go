@@ -53,6 +53,7 @@ type EinstellungenPatch struct {
 	AuditAufbewahrungMonate    *int `json:"audit_aufbewahrung_monate,omitempty"`
 	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten,omitempty"`
 	SperreMinuten              *int `json:"sperre_minuten,omitempty"`
+	AbgaengerKarenzTage        *int `json:"abgaenger_karenz_tage,omitempty"`
 }
 
 // paarSammler sammelt die Upsert-Paare eines Patches. Jede Hinzufügung geht durch
@@ -144,6 +145,8 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.zahl(AuditAufbewahrungSchluessel, p.AuditAufbewahrungMonate, MindestAuditAufbewahrungMonate, StandardAuditAufbewahrungMonate)
 	s.zahl("theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 0)
 	s.zahl("sperre_minuten", p.SperreMinuten, 0, 0)
+	// 0 = sofort anonymisieren (Verhalten bis 02.09.2026), also ein echter Wert.
+	s.zahl(AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, 0)
 
 	return s.paare
 }

@@ -169,23 +169,62 @@ func TestLusdImport_MehrereAbgaengerGleichzeitig(t *testing.T) {
 		t.Fatalf("Abgängerlauf scheiterte: %v", err)
 	}
 
-	// „sauber" darf anonymisiert werden, die beiden anderen NICHT — sie tragen offene
-	// Vorgaenge, und dafuer braucht die Schule Name und Anschrift.
-	for name, sollAnonym := range map[string]bool{"sauber": true, "ausleihe": false, "schaden": false} {
-		var vorname string
-		var gesperrt bool
+	// Seit dem 02.09.2026 gilt die Karenzzeit (Vorgabe 90 Tage): Auch „sauber" wird NICHT
+	// sofort anonymisiert, sondern nur gesperrt — mit dem Karenz-Grund und gestempeltem
+	// abgaenger_seit, damit der nächtliche Job die Frist rechnen kann. Die beiden anderen
+	// tragen offene Vorgaenge und den Grund dafür; anonymisiert wird keiner.
+	sollGrund := map[string]string{
+		"sauber":   abgaengerSperrgrundKarenz,
+		"ausleihe": abgaengerSperrgrundOffen,
+		"schaden":  abgaengerSperrgrundOffen,
+	}
+	for name, grund := range sollGrund {
+		var vorname, blockReason string
+		var gesperrt, seitGesetzt bool
 		if err := pool.QueryRow(ctx,
-			`SELECT vorname, ist_gesperrt FROM schueler WHERE id = $1`, ids[name],
-		).Scan(&vorname, &gesperrt); err != nil {
+			`SELECT vorname, ist_gesperrt, COALESCE(block_reason, ''), abgaenger_seit IS NOT NULL FROM schueler WHERE id = $1`, ids[name],
+		).Scan(&vorname, &gesperrt, &blockReason, &seitGesetzt); err != nil {
 			t.Fatalf("%s nach dem Lauf lesen: %v", name, err)
 		}
-		istAnonym := vorname == "Abgänger"
-		if istAnonym != sollAnonym {
-			t.Errorf("%s: anonymisiert=%v, erwartet %v (vorname=%q) — die Zuordnung der offenen Vorgaenge stimmt nicht",
-				name, istAnonym, sollAnonym, vorname)
+		if vorname == "Abgänger" {
+			t.Errorf("%s: wurde anonymisiert — in der Karenzzeit darf das nicht passieren", name)
 		}
-		if !gesperrt {
-			t.Errorf("%s: jeder Abgänger muss gesperrt sein, war es aber nicht", name)
+		if !gesperrt || blockReason != grund {
+			t.Errorf("%s: gesperrt=%v grund=%q, erwartet gesperrt mit %q", name, gesperrt, blockReason, grund)
+		}
+		if !seitGesetzt {
+			t.Errorf("%s: abgaenger_seit fehlt — ohne Stempel läuft keine Karenz-Uhr", name)
+		}
+	}
+
+	// Karenz 0 = das alte Verhalten: sofort anonymisieren, wer nichts mehr schuldet.
+	if _, err := pool.Exec(ctx, `INSERT INTO system_einstellungen (schluessel, wert) VALUES ('abgaenger_karenz_tage', '0')
+		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`); err != nil {
+		t.Fatalf("Karenz 0 setzen: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM system_einstellungen WHERE schluessel = 'abgaenger_karenz_tage'`); err != nil {
+			t.Logf("Karenz-Einstellung aufräumen: %v", err)
+		}
+	})
+	// Rückkehr + erneuter Abgang derselben drei — ein zweiter Export ohne sie.
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = false, ist_gesperrt = false, block_reason = NULL, abgaenger_seit = NULL WHERE id = ANY($1)`,
+		[]string{ids["sauber"], ids["ausleihe"], ids["schaden"]}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.computeLusdChanges(ctx, []parsedStudentRow{
+		{LusdID: "L-BLEIBT", Vorname: "Ida", Nachname: "Immernoch", Klasse: "8a", LineNum: 1},
+	}, true, true); err != nil {
+		t.Fatalf("zweiter Abgängerlauf scheiterte: %v", err)
+	}
+	for name, sollAnonym := range map[string]bool{"sauber": true, "ausleihe": false, "schaden": false} {
+		var vorname string
+		if err := pool.QueryRow(ctx, `SELECT vorname FROM schueler WHERE id = $1`, ids[name]).Scan(&vorname); err != nil {
+			t.Fatal(err)
+		}
+		if (vorname == "Abgänger") != sollAnonym {
+			t.Errorf("Karenz 0: %s anonymisiert=%v, erwartet %v — die Zuordnung der offenen Vorgaenge stimmt nicht",
+				name, vorname == "Abgänger", sollAnonym)
 		}
 	}
 }

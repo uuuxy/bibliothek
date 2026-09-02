@@ -57,6 +57,8 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `DELETE /api/schueler/{id}` | delete_students | 0 | nur Erfolgsmeldung |
 | `GET /api/schueler/{id}/dsgvo-auskunft` | manage_students_admin | 3 | Vollauskunft (Zweck: DSGVO Art. 15) |
 | `GET /api/schueler/{id}/dsgvo-auskunft/pdf` | manage_students_admin | 3 | dieselbe Vollauskunft als PDF |
+| `POST /api/schueler/{id}/zusammenfuehren` | manage_students_admin | 1 | verbliebener Datensatz: Name, Klasse, Barcode + Zähler der gewanderten Vorgänge (Zusammenführen zweier Datensätze, seit 02.09.2026) |
+| `GET /api/schueler/{id}/zusammenfuehren-kandidaten` | manage_students_admin | 2 | Kandidatensuche über ALLE nicht gelöschten Schüler (auch Abgänger/Gesperrte): Name, Klasse, Barcode, Geburtsdatum, Sperr-/Abgängerflag, offene Bücher |
 | `GET /api/schueler/deleted` | delete_students | 2 | Papierkorb: Name, Klasse, deleted_at |
 | `POST /api/schueler/{id}/restore` | delete_students | 0 | nur Statusmeldung |
 | `DELETE /api/schueler/deleted/{id}` | manage_students_admin | 0 | nur Statusmeldung |

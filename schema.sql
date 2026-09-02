@@ -164,6 +164,13 @@ CREATE TABLE schueler (
     lusd_id VARCHAR(64),                              -- Integrated LUSD ID (Eindeutigkeit: partieller Index uniq_schueler_lusd_id_active, nur aktive Zeilen)
     lusd_bestaetigt_am TIMESTAMP WITH TIME ZONE,      -- zuletzt in einem LUSD-Export wiedergefunden/angelegt; NULL = nie (Handanlage/Littera). Migration 084, Namensmodus-Abgänger hängen daran
     ist_abgaenger BOOLEAN NOT NULL DEFAULT false,     -- Integrated ist_abgaenger
+    -- Zweiter Zuordnungsschlüssel des LUSD-Imports (Migration 094): Eintritt an der
+    -- aktuellen Schule laut LUSD-Bericht. Übersteht Namensänderung und Datumskorrektur;
+    -- NULL, solange der Bericht die Spalte nicht liefert.
+    schul_eintritt_am DATE,
+    -- Zeitpunkt des Abgangs durch einen LUSD-Import — die Uhr der Karenzzeit vor der
+    -- Anonymisierung (Einstellung abgaenger_karenz_tage). NULL bei Aktiven und Rückkehrern.
+    abgaenger_seit TIMESTAMP WITH TIME ZONE,
     strasse VARCHAR(255),
     hausnummer VARCHAR(50),
     plz VARCHAR(20),
@@ -1023,7 +1030,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('090_ziel_jahrgang_notnull_constraint_name.sql'),
 ('091_audit_logs_schueler_schluessel.sql'),
 ('092_tote_vorlage_bestellung_eingetroffen.sql'),
-('093_lernmittel_feld.sql')
+('093_lernmittel_feld.sql'),
+('094_schueler_umbenennung_karenz.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

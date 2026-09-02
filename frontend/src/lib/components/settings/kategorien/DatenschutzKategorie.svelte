@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * @component DatenschutzKategorie
-	 * Vier Löschfristen und zwei Sitzungsfristen (docs/datenschutz_offene_punkte.md
+	 * Fünf Löschfristen und zwei Sitzungsfristen (docs/datenschutz_offene_punkte.md
 	 * A1/A4).
 	 *
 	 * Zwei Lesehistorie-Fristen, weil es zwei Verarbeitungstätigkeiten sind:
@@ -34,6 +34,7 @@
 	let auditMonate = $state(start.audit_aufbewahrung_monate ?? 24);
 	let thekeLeeren = $state(start.theke_leeren_minuten ?? 5);
 	let sperre = $state(start.sperre_minuten ?? 15);
+	let abgaengerKarenz = $state(start.abgaenger_karenz_tage ?? 90);
 
 	const speichern = () =>
 		speichereKategorie({
@@ -71,7 +72,14 @@
 					wert: thekeLeeren,
 					min: 0
 				},
-				{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: sperre, min: 0 }
+				{ schluessel: 'sperre_minuten', label: 'Sperrbildschirm nach', wert: sperre, min: 0 },
+				{
+					// 0 = sofort anonymisieren (Verhalten bis 02.09.2026): ein echter Wert.
+					schluessel: 'abgaenger_karenz_tage',
+					label: 'Abgänger-Karenzzeit',
+					wert: abgaengerKarenz,
+					min: 0
+				}
 			],
 			onSaved
 		});
@@ -96,7 +104,14 @@
 			Sitzung: Minuten ohne Bedienung, bis die Theke den geladenen Schüler fallen lässt bzw. der
 			Sperrbildschirm kommt. Entsperrt wird mit dem eigenen Passwort.
 		</p>
-		<p>Eine getippte 0 schaltet die jeweilige Frist ab.</p>
+		<p>
+			Abgänger-Karenzzeit: Tage nach dem Abgang (LUSD-Import), die ein Abgänger ohne offene Vorgänge
+			nur gesperrt bleibt, bevor er anonymisiert wird. In dieser Zeit lässt sich eine falsche
+			Zuordnung noch reparieren — etwa ein umbenannter Schüler, den der Export ohne Schüler-ID nicht
+			wiedererkannt hat (Zusammenführen in der Schülerakte). Die endgültige Löschung am 30. Januar
+			des Folgejahres bleibt davon unberührt.
+		</p>
+		<p>Eine getippte 0 schaltet die jeweilige Frist ab bzw. anonymisiert sofort.</p>
 	{/snippet}
 
 	<div class="grid grid-cols-2 gap-x-8 gap-y-6 md:grid-cols-4">
@@ -147,6 +162,14 @@
 			min={0}
 			max={1440}
 			hint="Vorgabe 15."
+		/>
+		<Feld
+			type="number"
+			bind:value={abgaengerKarenz}
+			label="Abgänger-Karenzzeit (Tage)"
+			min={0}
+			max={365}
+			hint="Vorgabe 90. 0 = sofort anonymisieren."
 		/>
 	</div>
 </KategorieRahmen>
