@@ -387,7 +387,9 @@ func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) er
 	// könnte solchen enthalten. chk_schueler_block_reason verlangt zudem einen Grund.
 	// geburtsdatum und lusd_id gehören mit geleert: beide sind direkt identifizierend
 	// (Geburtsdatum reidentifiziert zusammen mit Restdaten, lusd_id ist die staatliche
-	// Schüler-ID). Damit ist dieser Pfad deckungsgleich mit RunGDPRAnonymizeOldData.
+	// Schüler-ID); schul_eintritt_am (Migration 094) ebenso — zusammen mit abgaenger_jahr
+	// ein Kohorten-Quasi-Identifikator. Damit ist dieser Pfad deckungsgleich mit
+	// RunGDPRAnonymizeOldData (Sentinel-Gate: cron_dsgvo_anonymize_pg_test.go).
 	// anonymized_at + anonymer Barcode wie im Cron-Pfad (RunGDPRAnonymizeOldData): Der
 	// Marker ist das Kriterium der nächtlichen Selbstheilung und der Papierkorb-Sperre;
 	// ohne ihn sah die Tilgung der Neben-Tabellen diesen Schüler nie, und der Purge am
@@ -397,7 +399,7 @@ func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) er
 		UPDATE schueler SET
 			vorname = 'Abgänger', nachname = $1, klasse = 'ABG',
 			strasse = NULL, hausnummer = NULL, plz = NULL, ort = NULL, eltern_email = NULL,
-			geburtsdatum = NULL, lusd_id = NULL,
+			geburtsdatum = NULL, schul_eintritt_am = NULL, lusd_id = NULL,
 			barcode_id = 'ANON-' || id::text, anonymized_at = NOW(),
 			abgaenger_seit = COALESCE(abgaenger_seit, NOW()),
 			ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Abgänger anonymisiert',

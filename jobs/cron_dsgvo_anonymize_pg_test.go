@@ -54,10 +54,10 @@ func TestGDPRAnonymizeOldData_LeertAllePII(t *testing.T) {
 		INSERT INTO schueler
 		    (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr, lusd_id,
 		     strasse, hausnummer, plz, ort, eltern_email,
-		     ist_gesperrt, block_reason, deleted_at)
+		     ist_gesperrt, block_reason, deleted_at, schul_eintritt_am)
 		VALUES ($1, $2, $3, '7b', '2011-05-05', 2030, $4,
 		        $5, '12a', '61250', $6, $7,
-		        true, $8, now() - interval '200 days')
+		        true, $8, now() - interval '200 days', '2022-08-29')
 		RETURNING id`,
 		barc, vn, nn, lusd, strdat, ortdat, email, reason).Scan(&id); err != nil {
 		t.Fatalf("Schüler anlegen: %v", err)
@@ -96,6 +96,16 @@ func TestGDPRAnonymizeOldData_LeertAllePII(t *testing.T) {
 	// Auch das Geburtsdatum darf nicht mehr dastehen (direkt identifizierend).
 	if strings.Contains(zeile, "2011-05-05") {
 		t.Errorf("Geburtsdatum überlebt die Anonymisierung: %s", zeile)
+	}
+	// DATE-Spalten fallen aus dem String-Sentinel heraus — deshalb je Spalte prüfen:
+	// Der Schuleintritt (Migration 094) ist mit abgaenger_jahr ein Kohorten-Quasi-
+	// Identifikator und muss die Anonymisierung ebenfalls nicht überleben (02.09.2026).
+	var eintrittWeg bool
+	if err := pool.QueryRow(ctx, `SELECT schul_eintritt_am IS NULL FROM schueler WHERE id = $1`, id).Scan(&eintrittWeg); err != nil {
+		t.Fatal(err)
+	}
+	if !eintrittWeg {
+		t.Error("schul_eintritt_am überlebt die Anonymisierung")
 	}
 }
 

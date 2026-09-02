@@ -88,6 +88,7 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 		    klasse = '',
 		    barcode_id = 'ANON-' || id::text,
 		    geburtsdatum = NULL,
+		    schul_eintritt_am = NULL,
 		    lusd_id = NULL,
 		    strasse = NULL,
 		    hausnummer = NULL,
