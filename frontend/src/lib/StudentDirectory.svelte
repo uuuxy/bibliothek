@@ -24,8 +24,7 @@
 
 	let activeTab = $state('active');
 
-	/** @type {any} */
-	let activeStudent = $state(null);
+	let activeStudent = $state(/** @type {any} */ (null));
 
 	/** @type {any[]} */
 	let readerGroups = $state.raw([]);
@@ -117,6 +116,7 @@
 			<StudentProfile
 				student={activeStudent}
 				defaultTab={profilReiter}
+				onMerged={(id) => (activeStudent = { id })}
 				onDeselect={() => {
 					activeStudent = null;
 					suche.lade();

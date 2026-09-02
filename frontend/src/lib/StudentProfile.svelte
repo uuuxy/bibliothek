@@ -23,6 +23,7 @@
 	 * @property {any} student - The selected student object
 	 * @property {() => void} onDeselect - Callback when profile is closed
 	 * @property {(barcode: string) => void} [onReturnClick] - Callback for returning a book
+	 * @property {(zielId: string) => void} [onMerged] - Nach dem Zusammenführen: der Aufrufer hängt seinen aktiven Schüler auf das Ziel um
 	 * @property {import('svelte').Snippet} [leftActions] - Optional slot for left card actions
 	 * @property {import('svelte').Snippet} [rightTop] - Optional slot for right content top
 	 * @property {'ausleihen'|'stammdaten'} [defaultTab] - Reiter, der beim Öffnen oben liegt
@@ -33,6 +34,7 @@
 		student,
 		onDeselect,
 		onReturnClick = undefined,
+		onMerged = undefined,
 		leftActions,
 		rightTop,
 		defaultTab = 'ausleihen'
@@ -56,9 +58,7 @@
 		st.fetchProfile(student.id);
 	});
 
-	export function reloadProfile() {
-		st.fetchProfile(student?.id);
-	}
+	export const reloadProfile = () => st.fetchProfile(st.profile?.id ?? student?.id);
 
 	// Vom Bediener gesetztes Ablaufjahr. null = Vorschlag des Servers gilt. Bewusst NICHT
 	// gespeichert: Die Abweichung betrifft genau diesen einen Ausdruck (Wiederholer,
@@ -191,7 +191,7 @@
 							darfBearbeiten={rechte.bearbeiten}
 							darfZusammenfuehren={rechte.zusammenfuehren}
 							onEdit={() => (st.showEditModal = true)}
-							onMerged={(id) => st.fetchProfile(id)}
+							onMerged={(id) => (st.fetchProfile(id), onMerged?.(id))}
 						/>
 
 						<!-- Gefahrenzone: ausschließlich am unteren Ende des Stammdaten-Reiters -->
@@ -206,7 +206,7 @@
 		<StudentEditSheet
 			student={st.profile}
 			onClose={() => (st.showEditModal = false)}
-			onSave={() => st.handleSaveEdit(student?.id)}
+			onSave={() => st.handleSaveEdit(st.profile.id)}
 		/>
 	{/if}
 {/if}
@@ -214,7 +214,7 @@
 {#if st.showWebcam}
 	<WebcamCapture
 		studentId={st.profile.id}
-		onCapture={() => st.handlePhotoCaptured(student?.id)}
+		onCapture={() => st.handlePhotoCaptured(st.profile.id)}
 		onClose={() => (st.showWebcam = false)}
 	/>
 {/if}
@@ -241,7 +241,7 @@
 		book={st.damageBook}
 		isSubmitting={st.isSubmittingDamage}
 		onCancel={() => (st.showDamageModal = false)}
-		onSubmit={(r, a) => st.submitDamageReport(student?.id, r, a)}
+		onSubmit={(r, a) => st.submitDamageReport(st.profile.id, r, a)}
 	/>
 {/if}
 

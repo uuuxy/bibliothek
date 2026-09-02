@@ -99,6 +99,8 @@
 					Export ohne Schüler-ID nicht wiedererkannt hat. Der bleibende Datensatz behält Kennung und
 					Ausweis-Barcode; Ausleihen, Gebühren, Vormerkungen und Foto des anderen wandern hinüber.
 					Stammdaten kommen von dem Datensatz, den die LUSD zuletzt bestätigt hat.
+					<strong class="font-bold">Der andere Datensatz wird endgültig gelöscht</strong> — das lässt
+					sich nicht rückgängig machen; Stammdaten und gewanderte Vorgänge stehen danach nur noch im Protokoll.
 				</p>
 
 				<ZusammenfuehrenKandidat kandidat={profile} etikett="Dieser Datensatz" />
