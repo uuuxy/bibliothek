@@ -4,54 +4,39 @@
      Konzept in docs/LUSD.md §5. -->
 <script>
 	import { Merge, X, AlertCircle } from '@lucide/svelte';
-	import { apiClient, apiFetch, extractApiError } from '../../apiFetch.js';
+	import { apiClient, extractApiError } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import ZusammenfuehrenKandidat from './ZusammenfuehrenKandidat.svelte';
+	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
 
 	/** @type {{ open: boolean, profile: any, onMerged: (zielId: string) => void }} */
 	let { open = $bindable(false), profile, onMerged } = $props();
 
-	let suche = $state('');
-	/** @type {any[]} */
-	let treffer = $state([]);
 	/** @type {any | null} */
 	let anderer = $state(null);
 	/** @type {'dieser' | 'anderer'} */
 	let bleibt = $state('dieser');
 	let laeuft = $state(false);
 	let fehler = $state('');
-	/** @type {ReturnType<typeof setTimeout> | undefined} */
-	let timer;
+	// Entprellung, Antwort-Reihenfolge und Fehlerzustand der Suche: zusammenfuehrenSuche.svelte.js.
+	const s = erzeugeKandidatenSuche(() => profile.id);
 
 	// Der Dialog bleibt gemountet; ohne Reset blitzte beim nächsten Öffnen der vorige
-	// Kandidat auf — für einen anderen Schüler.
+	// Kandidat auf — für einen anderen Schüler. Zurückgesetzt wird beim ÖFFNEN wie beim
+	// SCHLIESSEN (Aufräumfunktion): Nur der Schließ-Reset ließ Timer und laufende Antwort
+	// leben, und die schrieb nach dem Reset noch in die Liste.
 	$effect(() => {
-		if (!open) {
-			suche = '';
-			treffer = [];
-			anderer = null;
-			bleibt = 'dieser';
-			fehler = '';
-		}
+		if (open) leeren();
+		return leeren;
 	});
 
-	async function suchen() {
-		const q = suche.trim();
-		if (q.length < 2) {
-			treffer = [];
-			return;
-		}
-		const res = await apiFetch(
-			`/api/schueler/${profile.id}/zusammenfuehren-kandidaten?q=${encodeURIComponent(q)}`
-		);
-		treffer = res.ok ? await res.json() : [];
-	}
-
-	function tippen() {
-		clearTimeout(timer);
-		timer = setTimeout(suchen, 250);
+	function leeren() {
+		s.zuruecksetzen();
+		anderer = null;
+		bleibt = 'dieser';
+		fehler = '';
 	}
 
 	async function bestaetigen() {
@@ -120,16 +105,18 @@
 
 				<div class="space-y-2">
 					<Suchfeld
-						bind:wert={suche}
+						bind:wert={s.suche}
 						platzhalter="Anderen Datensatz suchen (Name, Klasse, Barcode) …"
 						etikett="Anderen Datensatz suchen"
-						oninput={tippen}
+						oninput={s.tippen}
 					/>
-					{#if treffer.length > 0 && !anderer}
+					{#if s.fehler}
+						<p class="text-xs font-bold text-error">{s.fehler}</p>
+					{:else if s.treffer.length > 0 && !anderer}
 						<ul
 							class="max-h-56 overflow-y-auto divide-y divide-outline-variant/40 rounded-xl border border-outline-variant"
 						>
-							{#each treffer as k (k.id)}
+							{#each s.treffer as k (k.id)}
 								<li>
 									<button
 										type="button"
@@ -141,7 +128,7 @@
 								</li>
 							{/each}
 						</ul>
-					{:else if suche.trim().length >= 2 && !anderer}
+					{:else if s.suche.trim().length >= 2 && !anderer}
 						<p class="text-xs text-on-surface-variant">Kein anderer Datensatz gefunden.</p>
 					{/if}
 				</div>
