@@ -122,6 +122,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Subject:                 strings.TrimSpace(eingabe.Fach),
 		GradeLevel:              eingabe.KlassenStufe,
 		Track:                   strings.TrimSpace(eingabe.Schulzweig),
+		IstLernmittel:           eingabe.IstLernmittel,
 		Stock:                   bestandOderNull(eingabe.Bestand),
 		LastCounted:             eingabe.ZaehlDatum,
 		Medientyp:               strings.TrimSpace(eingabe.Medientyp),

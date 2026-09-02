@@ -11,7 +11,7 @@
 	 *     author: string,
 	 *     subject: string,
 	 *     gradeLevel: number,
-	 *     track: string,
+	 *     istLernmittel: boolean,
 	 *     stock: number,
 	 *     verfuegbar: number,
 	 *     gesamt: number,
@@ -149,14 +149,14 @@
 	</td>
 
 	<td class="px-6 py-3">
-		{#if book.track}
+		{#if book.istLernmittel}
 			<span
 				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-50 text-cyan-700 border border-cyan-100"
 			>
-				{book.track}
+				Lernmittel
 			</span>
 		{:else}
-			<span class="text-slate-400 text-sm">-</span>
+			<span class="text-slate-400 text-sm">Bibliothek</span>
 		{/if}
 	</td>
 

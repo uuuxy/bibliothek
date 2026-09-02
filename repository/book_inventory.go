@@ -220,13 +220,26 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 		return 0, err
 	}
 
+	// Lernmittel, Fach und Jahrgang (Migration 093): Der Import liest sie aus Litteras
+	// Signatur „LMF Bio 7", den Schlagwörtern und der Zielgruppe (pkg/lmf). Beim
+	// Insert werden sie gesetzt; Jahrgang ohne Angabe fällt auf die Spaltenvorgabe 5–10.
 	const qInsert = `
-		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur, aktualisiert_am)
-		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''), CURRENT_TIMESTAMP)
+		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, signatur,
+		                           ist_lernmittel, subject, grade_level, jahrgang_von, jahrgang_bis, aktualisiert_am)
+		VALUES ($1, $2, NULLIF($3, ''), $4, NULLIF($5, 0), NULLIF($6, ''),
+		        $7, NULLIF($8, ''), NULLIF($9, 0)::smallint, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10),
+		        CURRENT_TIMESTAMP)
 	`
 	// autor/verlag/erscheinungsjahr sind wie signatur/isbn per COALESCE geschützt:
 	// eine Quelle ohne diese Angabe (z. B. MAB-Exporte ohne Autor-Feld) darf einen
 	// bereits bekannten, besseren Wert nicht stillschweigend leeren.
+	//
+	// ist_lernmittel wird per OR nur GESETZT, nie gelöscht: Ein Buch, das jemand in der
+	// Maske als Lernmittel markiert hat, verliert das nicht durch einen Export, der es
+	// nicht kennt. Fach und Klassenstufe füllen nur Leerstellen. Die Jahrgangsspanne
+	// dagegen folgt der Quelle, sobald sie eine nennt — sie hat eine Spaltenvorgabe
+	// (5–10), an der sich „ungepflegt" nicht von „gepflegt" unterscheiden lässt, und
+	// Litteras Signatur ist für den Altbestand die gepflegte Quelle.
 	const qUpdate = `
 		UPDATE buecher_titel SET
 			titel = $2,
@@ -235,9 +248,28 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 			erscheinungsjahr = COALESCE(NULLIF($5, 0), erscheinungsjahr),
 			signatur = COALESCE(NULLIF($6, ''), signatur),
 			isbn = COALESCE(isbn, NULLIF($7, '')),
+			ist_lernmittel = ist_lernmittel OR $8,
+			subject = COALESCE(subject, NULLIF($9, '')),
+			grade_level = COALESCE(NULLIF(grade_level, 0), NULLIF($10, 0)::smallint),
+			jahrgang_von = CASE WHEN $11 > 0 THEN $11 ELSE jahrgang_von END,
+			jahrgang_bis = CASE WHEN $12 > 0 THEN $12 ELSE jahrgang_bis END,
 			aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`
+
+	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer VOR dem
+	// SendBatch in derselben Transaktion registrieren (danach ist die Verbindung bis
+	// br.Close() belegt) und jede Zeile auf die kanonische Schreibweise ziehen.
+	faecher := make([]string, 0, len(titles))
+	for _, t := range titles {
+		if t.Fach != "" {
+			faecher = append(faecher, t.Fach)
+		}
+	}
+	kanonisch, err := StelleFaecherSicher(ctx, tx, faecher)
+	if err != nil {
+		return 0, err
+	}
 
 	// 2. In-Batch-Dedup (letzter Datensatz gewinnt): verhindert, dass derselbe
 	//    Titel bzw. dieselbe ISBN innerhalb einer Datei doppelt geschrieben wird.
@@ -251,6 +283,7 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	batch := &pgx.Batch{}
 	queued := 0
 	for _, t := range titles {
+		t.Fach = kanonisch[t.Fach]
 		if queueTitelUpsert(batch, t, c, qInsert, qUpdate) {
 			queued++
 		}
@@ -338,10 +371,18 @@ func queueTitelUpsert(batch *pgx.Batch, t BookTitle, c *titelUpsertContext, qIns
 		c.seenISBN[t.ISBN] = true
 	}
 
+	// Klassenstufe (eine Zahl) nur, wenn die Quelle genau EINEN Jahrgang nennt;
+	// „12–13" bleibt Spanne und lässt die Stufe offen.
+	stufe := 0
+	if t.JahrgangVon > 0 && t.JahrgangVon == t.JahrgangBis {
+		stufe = t.JahrgangVon
+	}
 	if bekannt {
-		batch.Queue(qUpdate, id, t.Titel, t.Autor, t.Verlag, t.Erscheinungsjahr, t.Signatur, t.ISBN)
+		batch.Queue(qUpdate, id, t.Titel, t.Autor, t.Verlag, t.Erscheinungsjahr, t.Signatur, t.ISBN,
+			t.IstLernmittel, t.Fach, stufe, t.JahrgangVon, t.JahrgangBis)
 	} else {
-		batch.Queue(qInsert, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur)
+		batch.Queue(qInsert, t.Titel, t.Autor, t.ISBN, t.Verlag, t.Erscheinungsjahr, t.Signatur,
+			t.IstLernmittel, t.Fach, stufe, t.JahrgangVon, t.JahrgangBis)
 	}
 	return true
 }

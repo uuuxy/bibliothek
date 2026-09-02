@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"bibliothek/db"
-	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -23,16 +22,16 @@ func (s *defaultLoanService) zaehleAktiveSchuelerAusleihen(ctx context.Context, 
 		return 0, err
 	}
 	var count int
-	// LMF-Titel zählen nicht ins Limit (zentrale, schreibvarianten-robuste Erkennung).
-	query := fmt.Sprintf(`
+	// Lernmittel zählen nicht ins Limit (buecher_titel.ist_lernmittel, Migration 093).
+	const query = `
 		SELECT COUNT(*)
 		FROM ausleihen a
 		JOIN buecher_exemplare be ON a.exemplar_id = be.id
 		JOIN buecher_titel bt ON be.titel_id = bt.id
 		WHERE a.schueler_id = $1
 		  AND a.rueckgabe_am IS NULL
-		  AND NOT (%s)
-	`, lmf.SQLBedingung("bt.titel", "bt.signatur"))
+		  AND NOT bt.ist_lernmittel
+	`
 	err := tx.QueryRow(ctx, query, chkCtx.borrowerID).Scan(&count)
 	return count, err
 }
@@ -62,8 +61,7 @@ func (s *defaultLoanService) pruefeSchuelerAusleihlimit(ctx context.Context, chk
 	if err != nil {
 		return err
 	}
-	isLMF := lmf.IstSchulbuch(copy.Titel, copy.Signatur)
-	if !isLMF && activeLoansCount >= settings.MaxAusleihenSchueler && !isReturningThis {
+	if !copy.IstLernmittel && activeLoansCount >= settings.MaxAusleihenSchueler && !isReturningThis {
 		return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell: %d)", ErrBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
 	}
 	return nil

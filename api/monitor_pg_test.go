@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/lmf"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -235,9 +236,9 @@ func seedMonitorTitel(t *testing.T, pool *pgxpool.Pool, titel, signatur string, 
 	}
 	var id string
 	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO buecher_titel (titel, signatur, cover_url, erstellt_am)
-		VALUES ($1, $2, $3, NOW() - make_interval(days => $4))
-		RETURNING id`, titel, signatur, cover, alterTage).Scan(&id); err != nil {
+		INSERT INTO buecher_titel (titel, signatur, cover_url, erstellt_am, ist_lernmittel)
+		VALUES ($1, $2, $3, NOW() - make_interval(days => $4), $5)
+		RETURNING id`, titel, signatur, cover, alterTage, lmf.HatKennung(signatur)).Scan(&id); err != nil {
 		t.Fatalf("Titel %q anlegen: %v", titel, err)
 	}
 	return id

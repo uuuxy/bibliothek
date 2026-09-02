@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bibliothek/pkg/lmf"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -68,12 +67,10 @@ func TestReorderFilterDefaultIstLMF(t *testing.T) {
 	faelle := []struct {
 		name, query, wantFragment string
 	}{
-		// Das erwartete Fragment wird ABGELEITET, nicht abgeschrieben: Eine abgeschriebene
-		// Kopie ist eine zweite Wahrheitsquelle und macht jede Änderung an pkg/lmf zu
-		// einem roten Test ohne fachlichen Grund (31.08.2026: btrim kam dazu).
-		{"ohne Parameter", "", "AND " + lmf.SQLBedingung("t.titel", "t.signatur")},
-		{"type=lmf", "?type=lmf", "AND " + lmf.SQLBedingung("t.titel", "t.signatur")},
-		{"type=freihand", "?type=freihand", "AND NOT (" + lmf.SQLBedingung("t.titel", "t.signatur") + ")"},
+		// Seit Migration 093 ist das Prädikat die Spalte buecher_titel.ist_lernmittel.
+		{"ohne Parameter", "", "AND t.ist_lernmittel"},
+		{"type=lmf", "?type=lmf", "AND t.ist_lernmittel"},
+		{"type=freihand", "?type=freihand", "AND NOT t.ist_lernmittel"},
 		{"type=alle", "?type=alle", ""},
 		{"unbekannter Wert", "?type=kaputt", ""},
 	}

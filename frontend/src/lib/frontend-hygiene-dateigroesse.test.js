@@ -29,7 +29,7 @@ const BESTAND = {
 	'src/inventur/routes/admin/+page.svelte': 211,
 	'src/lib/BestellBestaetigung.svelte': 254,
 	'src/lib/BestellWorkspace.svelte': 293,
-	'src/lib/BorrowedBooksList.svelte': 291,
+	'src/lib/BorrowedBooksList.svelte': 287,
 	'src/lib/Omnibox.svelte': 283,
 	'src/lib/Router.svelte': 248,
 	'src/lib/StatsDashboard.svelte': 391,

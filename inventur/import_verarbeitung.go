@@ -4,35 +4,11 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"bibliothek/pkg/lmf"
 )
 
 var gradeFromTitlePattern = regexp.MustCompile(`(?i)(?:^|[^0-9])(1[0-3]|[1-9])(?:[^0-9]|$)`)
-
-type subjectRule struct {
-	keyword string
-	subject string
-}
-
-var defaultSubjectRules = []subjectRule{
-	{keyword: "deutsch", subject: "Deutsch"},
-	{keyword: "englisch", subject: "Englisch"},
-	{keyword: "mathe", subject: "Mathematik"},
-	{keyword: "mathematik", subject: "Mathematik"},
-	{keyword: "physik", subject: "Physik"},
-	{keyword: "chemie", subject: "Chemie"},
-	{keyword: "biologie", subject: "Biologie"},
-	{keyword: "geschichte", subject: "Geschichte"},
-	{keyword: "geographie", subject: "Geographie"},
-	{keyword: "politik", subject: "Politik"},
-	{keyword: "informatik", subject: "Informatik"},
-	{keyword: "kunst", subject: "Kunst"},
-	{keyword: "musik", subject: "Musik"},
-	{keyword: "religion", subject: "Religion"},
-	{keyword: "latein", subject: "Latein"},
-	{keyword: "französisch", subject: "Französisch"},
-	{keyword: "franzoesisch", subject: "Französisch"},
-	{keyword: "natur und technik", subject: "Naturwissenschaften"},
-}
 
 func inferGradeLevelFromTitle(title string) int {
 	match := gradeFromTitlePattern.FindStringSubmatch(title)
@@ -46,16 +22,10 @@ func inferGradeLevelFromTitle(title string) int {
 	return grade
 }
 
+// inferSubjectFromTitle rät das Fach aus dem Titel — über dieselbe Liste wie der
+// ISBN-Lookup (pkg/lmf), damit beide Wege dasselbe Fach registrieren.
 func inferSubjectFromTitle(title string) string {
-	lower := strings.ToLower(strings.TrimSpace(title))
-
-	for _, rule := range defaultSubjectRules {
-		if strings.Contains(lower, rule.keyword) {
-			return rule.subject
-		}
-	}
-
-	return ""
+	return lmf.FachAusText(strings.TrimSpace(title))
 }
 
 func mapHeaderToField(header string) string {

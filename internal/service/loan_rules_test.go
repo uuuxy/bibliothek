@@ -60,7 +60,7 @@ func TestParseGrade(t *testing.T) {
 // Rückgabefristen und damit falsches Mahnwesen. ---
 
 func TestCalculateDueDate_RegularBook(t *testing.T) {
-	got := calculateDueDate("Der Hobbit", "", "Buch", "07-31", 21, 7, 0)
+	got := calculateDueDate(false, "Buch", "07-31", 21, 7, 0)
 	want := time.Now().AddDate(0, 0, 21)
 	if !sameDay(got, want) {
 		t.Errorf("reguläres Buch: got %v, want Tag %v", got, want)
@@ -69,7 +69,7 @@ func TestCalculateDueDate_RegularBook(t *testing.T) {
 
 func TestCalculateDueDate_Media(t *testing.T) {
 	for _, mt := range []string{"CD", "DVD", "Audio-CD", "dvd"} {
-		got := calculateDueDate("Irgendwas", "", mt, "07-31", 21, 7, 0)
+		got := calculateDueDate(false, mt, "07-31", 21, 7, 0)
 		want := time.Now().AddDate(0, 0, 7)
 		if !sameDay(got, want) {
 			t.Errorf("Medium %q: got %v, want Tag %v", mt, got, want)
@@ -78,8 +78,8 @@ func TestCalculateDueDate_Media(t *testing.T) {
 }
 
 func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
-	for _, titel := range []string{"LMF-Mathe 9", "lmf-deutsch 5"} {
-		got := calculateDueDate(titel, "", "Buch", "07-31", 21, 7, 0)
+	for _, titel := range []string{"Mathe 9", "Deutsch 5"} {
+		got := calculateDueDate(true, "Buch", "07-31", 21, 7, 0)
 
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("LMF %q: Stichtag soll 31.07 sein, got %02d-%02d", titel, got.Month(), got.Day())
@@ -109,18 +109,18 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 }
 
 // Der Regelfall bei manueller Neuanlage über die Admin-Oberfläche: Der Titel bleibt
-// Klartext ("Mathematik Neue Wege 9"), das LMF-Kennzeichen steht NUR in der Signatur
-// (Auto-Vorschlag "LMF <Kürzel>"). Vor der Signatur-Prüfung landete so ein Buch auf der
-// 21-Tage-Regelfrist statt auf der Schuljahresfrist.
+// Seit Migration 093 entscheidet allein das Feld — Titel und Signatur dürfen beliebig
+// heißen. Das war der Fehler von 2026: ein Klartext-Titel mit „LMF" nur in der Signatur
+// bekam die 21-Tage-Frist.
 func TestCalculateDueDate_LMF_NurInSignatur(t *testing.T) {
-	got := calculateDueDate("Mathematik Neue Wege 9", "LMF Ma", "Buch", "07-31", 21, 7, 0)
+	got := calculateDueDate(true, "Buch", "07-31", 21, 7, 0)
 	if got.Month() != time.July || got.Day() != 31 {
 		t.Errorf("LMF nur in Signatur: Stichtag soll 31.07 sein, got %02d-%02d", got.Month(), got.Day())
 	}
 }
 
 func TestCalculateDueDate_LMF_CustomStichtag(t *testing.T) {
-	got := calculateDueDate("LMF-Bio 7", "", "Buch", "06-15", 21, 7, 0)
+	got := calculateDueDate(true, "Buch", "06-15", 21, 7, 0)
 	if got.Month() != time.June || got.Day() != 15 {
 		t.Errorf("benutzerdefinierter Stichtag 06-15: got %02d-%02d", got.Month(), got.Day())
 	}
@@ -128,7 +128,7 @@ func TestCalculateDueDate_LMF_CustomStichtag(t *testing.T) {
 
 func TestCalculateDueDate_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 	for _, bad := range []string{"99-99", "kaputt", "13-40", ""} {
-		got := calculateDueDate("LMF-Chemie 8", "", "Buch", bad, 21, 7, 0)
+		got := calculateDueDate(true, "Buch", bad, 21, 7, 0)
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("ungültiger Stichtag %q soll auf 31.07 zurückfallen, got %02d-%02d", bad, got.Month(), got.Day())
 		}
@@ -136,8 +136,8 @@ func TestCalculateDueDate_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 }
 
 func TestCalculateDueDate_LMF_AdditionalYears(t *testing.T) {
-	base := calculateDueDate("LMF-Mathe 9", "", "Buch", "07-31", 21, 7, 0)
-	plus2 := calculateDueDate("LMF-Mathe 9", "", "Buch", "07-31", 21, 7, 2)
+	base := calculateDueDate(true, "Buch", "07-31", 21, 7, 0)
+	plus2 := calculateDueDate(true, "Buch", "07-31", 21, 7, 2)
 
 	if plus2.Year() != base.Year()+2 {
 		t.Errorf("additionalYears=2 soll Stichtagsjahr um 2 erhöhen: base %d, got %d", base.Year(), plus2.Year())
@@ -268,7 +268,7 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 		WillReturnRows(rows)
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
-	copy := &repository.BookCopy{Titel: "LMF-Mathe 9", Medientyp: "Buch"}
+	copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9a")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)

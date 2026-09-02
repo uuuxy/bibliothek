@@ -47,7 +47,7 @@ func TestAutomatischeKategorisierung(t *testing.T) {
 			name:       "Math book, class 7",
 			titel:      "Mathematik für Gymnasien",
 			untertitel: "Klasse 7",
-			wantFach:   "Mathe",
+			wantFach:   "Mathematik",
 			wantStufe:  "7",
 		},
 		{
@@ -96,7 +96,7 @@ func TestAutomatischeKategorisierung(t *testing.T) {
 			name:       "Math alias algebra",
 			titel:      "Algebra und mehr",
 			untertitel: "Level 9",
-			wantFach:   "Mathe",
+			wantFach:   "Mathematik",
 			wantStufe:  "9",
 		},
 		{

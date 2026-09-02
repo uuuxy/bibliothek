@@ -58,7 +58,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		t.Fatalf("Freihand-Titel: %v", err)
 	}
 	// Lernmittel-Kennung in der SIGNATUR (so schreibt die Admin-UI), nicht im Titel.
-	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7') RETURNING id`).Scan(&lmfTitel); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`).Scan(&lmfTitel); err != nil {
 		t.Fatalf("LMF-Titel: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO geraete (modellname, barcode_id) VALUES ('Laptop', 'G-HIST') RETURNING id`).Scan(&geraetID); err != nil {

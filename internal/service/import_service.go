@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/pkg/isbnutil"
+	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 
 	"golang.org/x/net/html/charset"
@@ -93,6 +94,11 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 // litteraFelder bündelt die aus einem Katalogisat extrahierten MAB-Rohfelder.
 type litteraFelder struct {
 	autor, titel, ort, verlag, isbn, jahrStr, signatur, standort string
+	// zielgruppe (MAB 070b: „Sekundarstufe 1", „Lehrer") und schlagwoerter (MAB 710:
+	// „Physik", „Schulbuch", …) — bis zum 02.09.2026 vom Import weggeworfen, obwohl
+	// zwei Drittel der Titel Schlagwörter tragen und sie das Fach nennen.
+	zielgruppe    string
+	schlagwoerter []string
 }
 
 // parseKatalogisat extrahiert die relevanten MAB-Felder eines Datensatzes.
@@ -122,6 +128,10 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 			if feld.Reihung == "1" {
 				f.signatur = val
 			}
+		case "710":
+			f.schlagwoerter = append(f.schlagwoerter, val)
+		case "070b":
+			f.zielgruppe = val
 		}
 	}
 	return f
@@ -134,15 +144,11 @@ func bookTitleAusFelder(f litteraFelder) (repository.BookTitle, bool) {
 		return repository.BookTitle{}, false // Ein Titel ist zwingend erforderlich
 	}
 
-	// Lernmittelfreiheit: Kennung aus Signatur ("LMF Bio 7") oder Standort-Feld 108a
-	// ("LMF", "LMF/Bibliothek") → reine Fach-Signatur behalten und den Titel per
-	// Projekt-Konvention "LMF-" flaggen.
-	titel := f.titel
-	signatur := f.signatur
-	if hatLMFKennung(signatur) || hatLMFKennung(f.standort) {
-		signatur = entferneLMFToken(signatur)
-		titel = flaggeAlsSchulbuch(titel)
-	}
+	// Lernmittelfreiheit: Litteras Kennung steht in der Signatur („LMF Bio 7") oder im
+	// Standortfeld 108a („LMF", „LMF/Bibliothek"). Daraus wird das Feld (Migration
+	// 093); Titel und Signatur bleiben, wie Littera sie liefert.
+	lernmittel := lmf.HatKennung(f.signatur) || hatLMFKennung(f.standort)
+	fach, von, bis := kategorisiere(f, lernmittel)
 
 	erscheinungsjahr := 0
 	if len(f.jahrStr) >= 4 {
@@ -161,11 +167,37 @@ func bookTitleAusFelder(f litteraFelder) (repository.BookTitle, bool) {
 	}
 
 	return repository.BookTitle{
-		Titel:            titel,
+		Titel:            f.titel,
 		Autor:            f.autor,
 		ISBN:             f.isbn,
 		Verlag:           verlag,
 		Erscheinungsjahr: erscheinungsjahr,
-		Signatur:         signatur,
+		Signatur:         f.signatur,
+		IstLernmittel:    lernmittel,
+		Fach:             fach,
+		JahrgangVon:      von,
+		JahrgangBis:      bis,
 	}, true
+}
+
+// kategorisiere leitet Fach und Jahrgangsspanne ab — in der Reihenfolge der
+// Verlässlichkeit: (1) die Lernmittelsignatur „LMF Bio 7", von Hand vergeben und
+// eindeutig; (2) Litteras Schlagwörter, wenn sie genau ein Fach nennen; (3) nur bei
+// Lernmitteln der Titeltext („Biologie heute 7") — bei Romanen und Sachbüchern
+// wäre das Raten; (4) die Zielgruppe für die Spanne, wo die Signatur keine nennt.
+// 0 bzw. "" heißt „unbekannt" und lässt im Bestand alles, wie es ist.
+func kategorisiere(f litteraFelder, lernmittel bool) (fach string, von, bis int) {
+	if z, ok := lmf.Zerlege(f.signatur); ok {
+		fach, von, bis = z.Fach, z.JahrgangVon, z.JahrgangBis
+	}
+	if fach == "" {
+		fach = lmf.FachAusSchlagworten(f.schlagwoerter)
+	}
+	if fach == "" && lernmittel {
+		fach = lmf.FachAusText(f.titel)
+	}
+	if von == 0 {
+		von, bis = lmf.JahrgangAusZielgruppe(f.zielgruppe)
+	}
+	return fach, von, bis
 }

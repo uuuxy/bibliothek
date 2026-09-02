@@ -28,11 +28,10 @@ func buchMitTitel(titel string) *repository.BookCopy {
 	return &repository.BookCopy{Titel: titel, Medientyp: "Buch", IstAusleihbar: true}
 }
 
-// buchMitSignatur bildet den Regelfall der manuellen Neuanlage über die
-// Admin-Oberfläche ab: Der Titel bleibt Klartext, das LMF-Kennzeichen steht nur in
-// der Signatur (Auto-Vorschlag "LMF <Kürzel>").
-func buchMitSignatur(titel, signatur string) *repository.BookCopy {
-	return &repository.BookCopy{Titel: titel, Signatur: signatur, Medientyp: "Buch", IstAusleihbar: true}
+// lernmittel bildet ein Schulbuch ab: Seit Migration 093 zählt allein das Feld,
+// Titel und Signatur sind freier Text.
+func lernmittel(titel string) *repository.BookCopy {
+	return &repository.BookCopy{Titel: titel, IstLernmittel: true, Medientyp: "Buch", IstAusleihbar: true}
 }
 
 // --- Ausleihlimit (max_ausleihen_schueler) ---
@@ -68,7 +67,7 @@ func TestPruefeAusleihlimit_LMFBuchIstAusgenommen(t *testing.T) {
 	defer mock.Close()
 	expectSettings(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("LMF-Mathematik 7"), 10, false)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), lernmittel("Mathematik 7"), 10, false)
 
 	if err != nil {
 		t.Errorf("LMF-Buch soll trotz überschrittenem Limit durchgehen, bekam: %v", err)
@@ -85,7 +84,7 @@ func TestPruefeAusleihlimit_LMFNurInSignaturIstAusgenommen(t *testing.T) {
 	expectSettings(mock, "5")
 
 	err := svc.pruefeSchuelerAusleihlimit(
-		context.Background(), schuelerCtx("s1"), buchMitSignatur("Mathematik Neue Wege 9", "LMF Ma"), 10, false,
+		context.Background(), schuelerCtx("s1"), lernmittel("Mathematik Neue Wege 9"), 10, false,
 	)
 
 	if err != nil {

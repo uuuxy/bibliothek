@@ -135,9 +135,6 @@
 							class="px-2.5 py-0.5 bg-surface-container-high text-surface-variant text-xs font-black rounded-lg"
 						>
 							Kl. {book.gradeLevel}
-							{#if book.track}
-								({book.track})
-							{/if}
 						</span>
 					{/if}
 				</div>

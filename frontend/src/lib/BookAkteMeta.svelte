@@ -50,7 +50,7 @@
 				: book.gradeLevel
 					? `Jahrgang ${book.gradeLevel}`
 					: '',
-			book.track,
+			book.istLernmittel ? 'Lernmittel' : '',
 			book.medientyp && book.medientyp !== 'Buch' ? book.medientyp : ''
 		]
 			.filter(Boolean)

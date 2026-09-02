@@ -20,9 +20,9 @@ type BorrowedBook struct {
 	// Cover-Proxy) — und das ist bei importierten Beständen der Normalfall.
 	ISBN     string `json:"isbn,omitempty"`
 	CoverURL string `json:"cover_url,omitempty"`
-	// Signatur wird gebraucht, um LMF-Titel zu erkennen (lmf.IstSchulbuch prüft
-	// Titel UND Signatur — die manuelle Neuanlage trägt das Kennzeichen oft nur hier).
-	Signatur       string    `json:"signatur,omitempty"`
+	// IstLernmittel steuert die Marke „Lernmittel" an der Ausleihzeile — aus der
+	// Spalte (Migration 093), nicht mehr aus einem LMF-Präfix in Titel oder Signatur.
+	IstLernmittel  bool      `json:"ist_lernmittel"`
 	AusgeliehenAm  time.Time `json:"ausgeliehen_am"`
 	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
 }

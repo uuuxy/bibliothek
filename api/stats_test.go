@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bibliothek/pkg/lmf"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,10 +15,10 @@ func TestResolveBestandsFilter(t *testing.T) {
 	cases := []struct {
 		in, wantFragment, wantName string
 	}{
-		// Abgeleitet statt abgeschrieben (31.08.2026) — eine Kopie des Prädikats wäre
-		// eine zweite Wahrheitsquelle neben pkg/lmf.
-		{"lmf", "AND " + lmf.SQLBedingung("t.titel", "t.signatur"), "lmf"},
-		{"freihand", "AND NOT (" + lmf.SQLBedingung("t.titel", "t.signatur") + ")", "freihand"},
+		// Seit Migration 093 ist das Prädikat die Spalte selbst — kein abgeleitetes
+		// Textmuster mehr, das Go und SQL getrennt formulieren könnten.
+		{"lmf", "AND t.ist_lernmittel", "lmf"},
+		{"freihand", "AND NOT t.ist_lernmittel", "freihand"},
 		{"", "", "alle"},
 		{"kaputt", "", "alle"}, // unbekannte Werte fallen sicher auf Gesamtbestand zurück
 	}
@@ -42,13 +41,13 @@ func TestGetStatistics_TypeFilterReachesAllQueries(t *testing.T) {
 	defer mock.Close()
 	server := &Server{DB: &db.Database{Pool: mock}}
 
-	mock.ExpectQuery(`COUNT\(a\.id\) AS count[\s\S]*~ '\^lmf\[ -\]'`).
+	mock.ExpectQuery(`COUNT\(a\.id\) AS count[\s\S]*AND t\.ist_lernmittel`).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "cover_url", "subject", "signatur", "erscheinungsjahr", "count"}).
 			AddRow("t1", "LMF-Mathe 7", "Verlag", "", "Mathematik", "Ma 7", 2023, 42))
-	mock.ExpectQuery(`MAX\(a\.ausgeliehen_am\) AS last_loan[\s\S]*~ '\^lmf\[ -\]'`).
+	mock.ExpectQuery(`MAX\(a\.ausgeliehen_am\) AS last_loan[\s\S]*AND t\.ist_lernmittel`).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "subject", "signatur", "erscheinungsjahr", "last_loan"}).
 			AddRow("sw1", "LMF-Physik 9", "", "978-1", "Physik", "Ph 9", 2019, nil))
-	mock.ExpectQuery(`aktive_ausleihen AS \([\s\S]*wiederbeschaffung[\s\S]*~ '\^lmf\[ -\]'`).
+	mock.ExpectQuery(`aktive_ausleihen AS \([\s\S]*wiederbeschaffung[\s\S]*AND t\.ist_lernmittel`).
 		WillReturnRows(pgxmock.NewRows([]string{"gesamt", "aktiv", "verliehen", "verlorene", "wiederbeschaffung", "verlust_quote", "zirkulationsquote"}).
 			AddRow(200, 190, 57, 4, 129.90, 2.0, 30.0))
 

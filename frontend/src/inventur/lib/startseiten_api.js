@@ -79,7 +79,7 @@ export function buecherSuchen(buecherArray, searchQuery) {
 			if (b.isbn && b.isbn.toLowerCase().includes(term)) return true;
 			if (b.author && b.author.toLowerCase().includes(term)) return true;
 			if (b.subject && b.subject.toLowerCase().includes(term)) return true;
-			if (b.track && b.track.toLowerCase().includes(term)) return true;
+			if (b.istLernmittel && 'lernmittel'.includes(term)) return true;
 			// Die Signatur ist die Regaladresse (Handbuch) — bis zum 02.09.2026 fand die
 			// Suche sie nicht, obwohl der Payload sie längst trug.
 			if (b.signatur && b.signatur.toLowerCase().includes(term)) return true;

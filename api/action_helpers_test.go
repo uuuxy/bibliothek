@@ -148,10 +148,10 @@ func TestHandleBookReturn(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock GetCopyByBarcode
-	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, coalesce\\(e\\.barcode_id, ''\\), coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, coalesce\\(e\\.ist_ausleihbar, false\\), coalesce\\(e\\.ist_ausgesondert, false\\), e\\.erstellt_am, e\\.aktualisiert_am, coalesce\\(t\\.titel, ''\\), coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), coalesce\\(t\\.medientyp, ''\\), coalesce\\(t\\.signatur, ''\\), coalesce\\(t\\.ziel_jahrgang, 0\\), coalesce\\(t\\.erweiterte_eigenschaften, '\\{\\}'::jsonb\\) FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
+	mock.ExpectQuery("SELECT e\\.id, e\\.titel_id, coalesce\\(e\\.barcode_id, ''\\), coalesce\\(e\\.zustand_notiz, ''\\), e\\.erworben_am, coalesce\\(e\\.ist_ausleihbar, false\\), coalesce\\(e\\.ist_ausgesondert, false\\), e\\.erstellt_am, e\\.aktualisiert_am, coalesce\\(t\\.titel, ''\\), coalesce\\(t\\.autor, ''\\), coalesce\\(t\\.verlag, ''\\), coalesce\\(t\\.isbn, ''\\), coalesce\\(t\\.cover_url, ''\\), coalesce\\(t\\.medientyp, ''\\), coalesce\\(t\\.signatur, ''\\), coalesce\\(t\\.ziel_jahrgang, 0\\), t\\.ist_lernmittel, coalesce\\(t\\.erweiterte_eigenschaften, '\\{\\}'::jsonb\\) FROM buecher_exemplare e JOIN buecher_titel t ON e\\.titel_id = t\\.id WHERE e\\.barcode_id = \\$1 LIMIT 1").
 		WithArgs(barcode).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "signatur", "ziel_jahrgang", "erweiterte_eigenschaften"}).
-			AddRow(copyID, "titel-1", barcode, "", time.Now(), true, false, time.Now(), time.Now(), "Testbuch", "", "", "", "", "", "", 0, map[string]any{}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "barcode_id", "zustand_notiz", "erworben_am", "ist_ausleihbar", "ist_ausgesondert", "erstellt_am", "aktualisiert_am", "titel", "autor", "verlag", "isbn", "cover_url", "medientyp", "signatur", "ziel_jahrgang", "ist_lernmittel", "erweiterte_eigenschaften"}).
+			AddRow(copyID, "titel-1", barcode, "", time.Now(), true, false, time.Now(), time.Now(), "Testbuch", "", "", "", "", "", "", 0, false, map[string]any{}))
 
 	// Mock Tx
 	mock.ExpectBeginTx(pgx.TxOptions{IsoLevel: pgx.ReadCommitted, AccessMode: pgx.ReadWrite})

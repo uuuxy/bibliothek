@@ -195,7 +195,7 @@
 					<th class="px-6 py-4">Titel</th>
 					<th class="px-6 py-4">Fach</th>
 					<th class="px-6 py-4">Klasse</th>
-					<th class="px-6 py-4">Zweig</th>
+					<th class="px-6 py-4">Art</th>
 					<th class="px-6 py-4">Standort</th>
 					<th class="px-6 py-4 text-right">Zuletzt geprüft</th>
 					<th class="px-6 py-4 text-right">Bestand</th>

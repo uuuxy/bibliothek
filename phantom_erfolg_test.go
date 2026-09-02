@@ -92,7 +92,7 @@ var phantomBestand = map[string]int{
 	"inventur/db_books_delete_spur.go:protokolliereGeloeschteExemplare":         1,
 	"inventur/db_books_delete_spur.go:protokolliereOffeneAusleihen":             1,
 	"inventur/db_books_update.go:syncBookStock":                                 3,
-	"inventur/systematik_sicherung.go:registriereFach":                          2,
+	"repository/systematik_sicherung.go:registriereFach":                        2,
 	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                                1,
 	"jobs/restore_probe.go:fuehreRestoreProbeAus":                               3,
 	"jobs/restore_probe.go:speichereRestoreProbe":                               1,

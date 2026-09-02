@@ -19,13 +19,12 @@ import (
 	"fmt"
 
 	"bibliothek/db"
-	"bibliothek/pkg/lmf"
 )
 
 // OeffentlichSichtbar liefert das SQL-Prädikat, unter dem ein Titel (Tabelle
 // buecher_titel unter dem Alias titelAlias) auf einer Seite ohne Anmeldung erscheinen darf:
 //
-//  1. kein Lernmittel — Titel ODER Signatur tragen das LMF-Kennzeichen (pkg/lmf).
+//  1. kein Lernmittel (buecher_titel.ist_lernmittel, Migration 093).
 //     Schulbücher werden klassensatzweise zugeteilt, niemand recherchiert freiwillig nach
 //     dem Biologiebuch der 8. Klasse; im Katalog stehend würden sie die Treffer der
 //     eigentlichen Freihand-Bibliothek zuschütten, auf dem Monitor jede Folie gewinnen.
@@ -35,7 +34,7 @@ import (
 //
 // Der Alias ist entwickler-definiert (nie nutzergesteuert), die Einbettung daher sicher.
 func OeffentlichSichtbar(titelAlias string) string {
-	return "(NOT " + lmf.SQLBedingung(titelAlias+".titel", titelAlias+".signatur") + `
+	return "(NOT " + titelAlias + `.ist_lernmittel
 		AND EXISTS (
 			SELECT 1 FROM buecher_exemplare oe
 			WHERE oe.titel_id = ` + titelAlias + `.id

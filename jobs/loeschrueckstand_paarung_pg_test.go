@@ -163,7 +163,7 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 
 	schuelerID := eins("Probeschüler", `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`)
 	freihand := eins("Freihand-Titel", `INSERT INTO buecher_titel (titel, signatur) VALUES ('Der Roman', 'Ro Mus') RETURNING id`)
-	lmf := eins("LMF-Titel", `INSERT INTO buecher_titel (titel, signatur) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7') RETURNING id`)
+	lmf := eins("LMF-Titel", `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`)
 
 	// 3./4. Lesehistorie, beide Klassen — je die Ausleihe UND die Protokollzeile, die
 	//       dieselbe Zuordnung trägt.

@@ -102,6 +102,15 @@ type BookTitle struct {
 	Signatur string `json:"signatur,omitempty"`
 	// ZielJahrgang definiert, bis zu welcher Klasse ein Exemplar dieses Titels bei Schülern bleibt (Default 0 = 1 Jahr).
 	ZielJahrgang int `json:"ziel_jahrgang"`
+	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —
+	// Frist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.
+	IstLernmittel bool `json:"ist_lernmittel"`
+	// Fach, JahrgangVon, JahrgangBis kommen NUR aus dem Katalogisat-Import (Zerlegung
+	// der Littera-Signatur „LMF Bio 7", Schlagwörter, Zielgruppe) und gehen nur in den
+	// Upsert; kein Leser füllt sie. 0 bzw. "" heißt „unbekannt, Bestand nicht anfassen".
+	Fach        string `json:"-"`
+	JahrgangVon int    `json:"-"`
+	JahrgangBis int    `json:"-"`
 	// Beschreibung enthält eine Inhaltsangabe oder Notizen zum Buch.
 	Beschreibung string `json:"beschreibung,omitempty"`
 	// CoverURL verweist auf das Bild des Buchumschlags.
@@ -156,6 +165,9 @@ type BookCopy struct {
 	Signatur string `json:"signatur,omitempty"`
 	// ZielJahrgang definiert die Zielklasse für die Fristberechnung.
 	ZielJahrgang int `json:"ziel_jahrgang"`
+	// IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,
+	// Migration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.
+	IstLernmittel bool `json:"ist_lernmittel"`
 	// ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
 }

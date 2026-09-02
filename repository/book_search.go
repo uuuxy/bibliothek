@@ -12,7 +12,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 	query := `
 		SELECT 
 			e.id, e.titel_id, coalesce(e.barcode_id, ''), coalesce(e.zustand_notiz, ''), e.erworben_am, coalesce(e.ist_ausleihbar, false), coalesce(e.ist_ausgesondert, false), e.erstellt_am, e.aktualisiert_am,
-			coalesce(t.titel, ''), coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), coalesce(t.medientyp, ''), coalesce(t.signatur, ''), coalesce(t.ziel_jahrgang, 0), coalesce(t.erweiterte_eigenschaften, '{}'::jsonb)
+			coalesce(t.titel, ''), coalesce(t.autor, ''), coalesce(t.verlag, ''), coalesce(t.isbn, ''), coalesce(t.cover_url, ''), coalesce(t.medientyp, ''), coalesce(t.signatur, ''), coalesce(t.ziel_jahrgang, 0), t.ist_lernmittel, coalesce(t.erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE e.barcode_id = $1
@@ -32,7 +32,7 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
 	query := `
 		SELECT 
-			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
+			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), ist_lernmittel, erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
 		FROM buecher_titel
 		WHERE 
 			search_vector @@ plainto_tsquery('german', $1::text) 
@@ -83,7 +83,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 			SELECT suchnorm(t) AS norm, lower(t) AS roh FROM unnest($1::text[]) AS t
 		)
 		SELECT
-			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb),
+			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(ziel_jahrgang, 0), ist_lernmittel, erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb),
 			count(*) OVER () AS gesamt
 		FROM buecher_titel b
 		WHERE (

@@ -63,6 +63,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Subject:                 eingabe.Fach,
 		GradeLevel:              eingabe.KlassenStufe,
 		Track:                   eingabe.Schulzweig,
+		IstLernmittel:           eingabe.IstLernmittel,
 		LastCounted:             eingabe.ZaehlDatum,
 		Medientyp:               eingabe.Medientyp,
 		JahrgangVon:             eingabe.JahrgangVon,

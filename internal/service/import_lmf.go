@@ -3,16 +3,17 @@ package service
 import (
 	"regexp"
 	"strings"
+
+	"bibliothek/pkg/lmf"
 )
 
 // Littera kennzeichnet Lernmittelfreiheits-Bestand (Schulbücher) uneinheitlich:
 // mal als Signatur-Präfix ("LMF Bio 7"), mal im Standort-Feld MAB 108a ("LMF",
 // "LMF/Bibliothek"), in CSV-Exporten als Token in der Kategorie-Spalte
-// ("Buch LMF Ma 6/Gri"). Diese Helfer erkennen das Token, entfernen es aus der
-// Signatur (auf dem Rücken-Etikett steht die reine Fach-Signatur) und flaggen
-// den Titel per Projekt-Konvention mit dem Präfix "LMF-" — daran erkennen
-// Leihfristen (loan_rules), Statistik (stats.go) und die Massenverlängerung
-// (ausleihe.go) den Schulbuch-Bestand.
+// ("Buch LMF Ma 6/Gri"). Diese Helfer erkennen das Token — daraus wird seit
+// Migration 093 das Feld buecher_titel.ist_lernmittel. Bis dahin verschob der Import
+// das Wort in den Titel ("LMF-…"), weil nur der Titel gelesen wurde; das ist vorbei,
+// Titel und Signatur bleiben, wie Littera sie liefert.
 
 // lmfTokenRegex trifft "LMF" nur als eigenständiges Token an Wortgrenzen,
 // damit Wörter wie "Filmfest" oder Signaturen wie "Elmf" nie anschlagen.
@@ -33,16 +34,13 @@ func entferneLMFToken(wert string) string {
 	return strings.Join(strings.Fields(bereinigt), " ")
 }
 
-// flaggeAlsSchulbuch stellt dem Titel das Projekt-Präfix "LMF-" voran.
-// Bereits geflaggte Titel ("LMF-…" oder "LMF …") werden nicht doppelt markiert,
-// sondern auf die Bindestrich-Schreibweise vereinheitlicht.
-func flaggeAlsSchulbuch(titel string) string {
-	lower := strings.ToLower(titel)
-	if strings.HasPrefix(lower, "lmf-") {
-		return titel
+// zerlegeLMFTeil liest Fach und Jahrgang ab dem LMF-Token eines Feldwerts:
+// "Buch LMF Ma 6/Gri" → Mathematik, 6. Ohne Token ok=false.
+func zerlegeLMFTeil(wert string) (lmf.Zerlegung, bool) {
+	loc := lmfTokenRegex.FindStringIndex(wert)
+	if loc == nil {
+		return lmf.Zerlegung{}, false
 	}
-	if strings.HasPrefix(lower, "lmf ") {
-		return "LMF-" + strings.TrimSpace(titel[4:])
-	}
-	return "LMF-" + titel
+	teil := strings.TrimLeft(wert[loc[0]:], " /")
+	return lmf.Zerlege(teil)
 }

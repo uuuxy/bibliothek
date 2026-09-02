@@ -362,6 +362,10 @@ CREATE TABLE buecher_titel (
         ON UPDATE CASCADE ON DELETE RESTRICT,
     grade_level SMALLINT,                             -- Integrated from books table
     track VARCHAR(100),                               -- Integrated from books table
+    -- Migration 093: Lernmittel (Schulbuch der Lernmittelfreiheit) ist ein Feld, kein
+    -- Textpräfix „LMF" in Titel oder Signatur mehr. Frist, Ausleihlimit, öffentlicher
+    -- Katalog, Löschfrist, Bestellbedarf und Massenverlängerung lesen diese Spalte.
+    ist_lernmittel BOOLEAN NOT NULL DEFAULT false,
     last_counted DATE,                                -- Integrated from books table
     sort_order SERIAL,                                -- Integrated from books table
     medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
@@ -400,6 +404,9 @@ CREATE INDEX idx_buecher_signatur_lower_trgm ON buecher_titel USING gin (lower(s
 CREATE INDEX idx_buecher_titel_signatur ON buecher_titel (btrim(signatur))
     WHERE COALESCE(btrim(signatur), '') <> '';
 CREATE INDEX idx_buecher_isbn_normalisiert ON buecher_titel (replace(isbn, '-', ''));
+-- Migration 093: Teilindex auf die Minderheit der Lernmittel (Massenverlängerung,
+-- Bestellbedarf, Statistik fragen genau nach ihnen).
+CREATE INDEX idx_titel_lernmittel ON buecher_titel (ist_lernmittel) WHERE ist_lernmittel;
 
 CREATE TRIGGER trg_buecher_titel_aktualisiert_am
 BEFORE UPDATE ON buecher_titel
@@ -1015,7 +1022,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('089_klassensatz_erledigt_am.sql'),
 ('090_ziel_jahrgang_notnull_constraint_name.sql'),
 ('091_audit_logs_schueler_schluessel.sql'),
-('092_tote_vorlage_bestellung_eingetroffen.sql')
+('092_tote_vorlage_bestellung_eingetroffen.sql'),
+('093_lernmittel_feld.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

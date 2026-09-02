@@ -46,14 +46,15 @@ test('OPAC: öffentliche Suche ohne Login zeigt Verfügbarkeit, leakt keine Pers
 test('OPAC: LMF-Schulbücher bleiben aus dem öffentlichen Katalog heraus', async ({ page }) => {
 	const s = uniqueSuffix();
 
-	// Beide Schreibweisen, die pkg/lmf kennt — ein manuell angelegtes "LMF - Deutsch"
-	// mit Leerzeichen fiel früher schon einmal durch die Erkennung.
+	// Lernmittel ist seit Migration 093 ein Feld — der Titeltext ist beliebig. Die
+	// alten „LMF"-Schreibweisen bleiben als Titel stehen, damit der Test weiter
+	// dokumentiert, was 2026 zweimal durch die Text-Erkennung fiel.
 	seedSQL(`
         WITH t AS (
-            INSERT INTO buecher_titel (titel, autor)
-            VALUES ('LMF-Biologie ${s}', 'Schulbuchverlag'),
-                   ('LMF - Deutsch ${s}', 'Schulbuchverlag'),
-                   ('Freihand Roman ${s}', 'Romanautor')
+            INSERT INTO buecher_titel (titel, autor, ist_lernmittel)
+            VALUES ('LMF-Biologie ${s}', 'Schulbuchverlag', true),
+                   ('LMF - Deutsch ${s}', 'Schulbuchverlag', true),
+                   ('Freihand Roman ${s}', 'Romanautor', false)
             RETURNING id, titel
         )
         INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)

@@ -32,8 +32,8 @@ test.describe('Lehrerportal: Lernmittel', () => {
 
 			WITH t AS (
 				-- kein subject: die Spalte trägt eine FK auf systematik_kategorien (Migration 078)
-				INSERT INTO buecher_titel (isbn, titel, autor, jahrgang_von, jahrgang_bis, track)
-				VALUES ('978lm${s}', '${TITEL}', 'Portal Autor', 7, 7, 'Gymnasium')
+				INSERT INTO buecher_titel (isbn, titel, autor, jahrgang_von, jahrgang_bis, ist_lernmittel)
+				VALUES ('978lm${s}', '${TITEL}', 'Portal Autor', 7, 7, true)
 				RETURNING id
 			), e AS (
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)

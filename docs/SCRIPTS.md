@@ -2,6 +2,24 @@
 
 ---
 
+## 0. Reihenfolge beim Umstieg: Littera, dann LUSD — und nie umgekehrt
+
+Die Importe hängen aneinander; die Reihenfolge steht sonst nur im Code (02.09.2026):
+
+1. **Littera-Bestand** (Katalogisat, Abschnitt 1a, oder Access-Altbestand, Abschnitt 1) —
+   Titel und Exemplare mit Barcodes.
+2. **Littera-Personen und -Ausleihen im selben Lauf** (`-personen -ausleihen`, Abschnitt 1).
+   Die Ausleihen finden ihre Entleiher nur über eine Zuordnung im Speicher des laufenden
+   Prozesses; ein späterer Ausleihlauf meldet alle als „ohne Entleiher".
+3. **LUSD-Import** (All_Inklusiv-Bericht, der einzige Export mit Schüleradresse). Er erkennt
+   Littera-Schüler an Name + Geburtsdatum und übernimmt sie samt Klasse und Anschrift, statt
+   sie doppelt anzulegen. Der Littera-Personenlauf kann das NICHT: nach einem LUSD-Import
+   legt er jeden Schüler ein zweites Mal an — seine Wiederholungssperre zählt nur
+   Littera-Zeilen.
+
+Das Geburtsdatum ist die Brücke: Fehlt es im Littera-Backup, legt die LUSD den Schüler
+doppelt an. Vor dem Lauf am frischen Backup prüfen.
+
 ## 1. LITTERA-Altbestand (`cmd/littera-altbestand`)
 
 Überträgt den Littera-Altbestand nach PostgreSQL. Quelle sind `mdb-export`-CSVs, nicht
@@ -104,8 +122,18 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
   keine zweite Importlogik, die eigene Fehler machen könnte.
 - **Keine Dubletten bei Re-Imports:** Titel werden über ISBN oder Titel gegen den Bestand
   gematcht. Der Lauf ist damit wiederholbar.
-- Signaturen landen in `buecher_titel.signatur` (der echten Spalte), LMF-Bestand wird über
-  das Präfix `LMF-` geflaggt.
+- Signaturen landen in `buecher_titel.signatur` (der echten Spalte) — **unverändert, wie
+  Littera sie liefert** („LMF Bio 7"). Bis Migration 093 (02.09.2026) schnitt der Import „LMF"
+  aus der Signatur und stellte es dem Titel voran („LMF-Biologie heute 7"); das ist vorbei.
+- **Lernmittel ist ein Feld** (`ist_lernmittel`): gesetzt, wenn die Signatur oder das
+  Standortfeld MAB 108a die LMF-Kennung trägt. Der Import setzt es nur, löscht es nie.
+- **Fach und Jahrgang** kommen aus der Lernmittelsignatur („LMF Bio 7" → Biologie, 7;
+  `pkg/lmf.Zerlege`), sonst aus Litteras Schlagwörtern (MAB 710, nur wenn sie genau ein
+  Fach nennen) und der Zielgruppe (MAB 070b: Sek I → 5–10, Sek II → 11–13). Fach und
+  Klassenstufe füllen nur Leerstellen, die Jahrgangsspanne folgt der Quelle.
+- **Re-Import als Reparatur:** Ein Bestand, der vor Migration 093 importiert wurde, bekommt
+  durch einen erneuten Lauf derselben Datei Fach und Jahrgang nachgetragen — die Migration
+  hat Titel und Lernmittel-Feld bereits bereinigt, die Titel matchen also.
 - Zeitlimit 10 Minuten: ~15.000 Titel brauchen gegen eine entfernte Datenbank Minuten,
   nicht Sekunden.
 - **Rückgabewerte:** 0 erfolgreich · 1 abgebrochen (fehlende Datei, DB nicht erreichbar,

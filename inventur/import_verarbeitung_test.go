@@ -60,7 +60,7 @@ func TestInferSubjectFromTitle(t *testing.T) {
 		{"Umlaut handling", "Französisch 1", "Französisch"},
 		{"Alternative spelling", "Franzoesisch 2", "Französisch"},
 		{"Multiple words keyword", "Natur und Technik 5", "Naturwissenschaften"},
-		{"No match", "Sport und Spiel", ""},
+		{"No match", "Roman und Erzählung", ""},
 		{"Multiple matches (returns first rule matched)", "Deutsch und Englisch", "Deutsch"}, // Deutsch is before Englisch in rules
 		{"Empty string", "", ""},
 	}

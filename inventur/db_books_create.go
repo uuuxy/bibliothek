@@ -18,8 +18,8 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	}
 
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur)
-		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''), $18)
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -63,6 +63,7 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		book.Erscheinungsjahr,
 		book.Beschreibung,
 		book.Signatur,
+		book.IstLernmittel,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
@@ -98,6 +99,7 @@ type bookBatchData struct {
 	erscheinungsjahre       []int
 	beschreibungen          []string
 	signaturen              []string
+	lernmittel              []bool
 	erweiterteEigenschaften [][]byte
 }
 
@@ -120,6 +122,7 @@ func prepareUpsertBatchData(books []Book) bookBatchData {
 		erscheinungsjahre:       make([]int, len(books)),
 		beschreibungen:          make([]string, len(books)),
 		signaturen:              make([]string, len(books)),
+		lernmittel:              make([]bool, len(books)),
 		erweiterteEigenschaften: make([][]byte, len(books)),
 	}
 
@@ -145,6 +148,7 @@ func prepareUpsertBatchData(books []Book) bookBatchData {
 		data.erscheinungsjahre[i] = b.Erscheinungsjahr
 		data.beschreibungen[i] = b.Beschreibung
 		data.signaturen[i] = b.Signatur
+		data.lernmittel[i] = b.IstLernmittel
 
 		props := b.ErweiterteEigenschaften
 		if props == nil {
@@ -160,11 +164,13 @@ func prepareUpsertBatchData(books []Book) bookBatchData {
 func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSchreiber, data bookBatchData) (int64, error) {
 	// signatur: NULLIF beim Insert + COALESCE beim Konflikt — Import-Läufe
 	// dürfen eine physisch verklebte Signatur nie mit Leerwerten überschreiben.
+	// ist_lernmittel wird per OR nur gesetzt, nie gelöscht: Eine Excel-Liste ohne
+	// diese Spalte darf ein markiertes Schulbuch nicht zum Bibliotheksbuch machen.
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), t.grade_level, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, '')
-		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::text[], $9::text[], $10::int[], $11::int[], $12::text[], $13::text[], $14::int[], $15::text[], $16::jsonb[], $17::text[])
-		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel)
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), t.grade_level, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, ''), t.ist_lernmittel
+		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::text[], $9::text[], $10::int[], $11::int[], $12::text[], $13::text[], $14::int[], $15::text[], $16::jsonb[], $17::text[], $18::boolean[])
+		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -181,7 +187,8 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSch
 			erscheinungsjahr = EXCLUDED.erscheinungsjahr,
 			beschreibung = EXCLUDED.beschreibung,
 			erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften,
-			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur)
+			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
+			ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel
 	`
 
 	cmdTag, err := q.Exec(
@@ -204,6 +211,7 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSch
 		data.beschreibungen,
 		data.erweiterteEigenschaften,
 		data.signaturen,
+		data.lernmittel,
 	)
 	if err != nil {
 		return 0, fmt.Errorf("bücher konnten nicht im batch importiert werden: %w", err)
@@ -281,8 +289,8 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	}
 
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur)
-		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''))
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, $11, $12, $13, $14, $15, $16, NULLIF($17, ''), $18)
 		ON CONFLICT (isbn) DO UPDATE SET
 			titel = EXCLUDED.titel,
 			autor = EXCLUDED.autor,
@@ -299,7 +307,8 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 			erscheinungsjahr = EXCLUDED.erscheinungsjahr,
 			beschreibung = EXCLUDED.beschreibung,
 			erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften,
-			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur)
+			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
+			ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -341,6 +350,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		book.Beschreibung,
 		properties,
 		book.Signatur,
+		book.IstLernmittel,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)

@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/lmf"
 	"regexp"
 	"strconv"
 	"strings"
@@ -57,18 +58,6 @@ var (
 	klassenZahlRegex = regexp.MustCompile(`\b([5-9]|1[0-3])\b`)
 )
 
-// kategorisierungFachZuweisungen ordnet Suchbegriffe den Fächern zu.
-var kategorisierungFachZuweisungen = map[string]string{
-	"mathematik": "Mathe", "algebra": "Mathe", "geometrie": "Mathe", "mathe": "Mathe",
-	"english": "Englisch", "englisch": "Englisch", "grammar": "Englisch",
-	"französisch": langFrench, "franzosisch": langFrench, "français": langFrench, "francais": langFrench, "fremdsprache": langFrench,
-	"deutsch": "Deutsch", "grammatik": "Deutsch", "literatur": "Deutsch",
-	"geschichte": "Geschichte", "histor": "Geschichte", "europa": "Geschichte",
-	"biologie": "Biologie", "chemie": "Chemie", "physik": "Physik",
-	"geographie": "Geographie", "erdkunde": "Geographie", "politik": "Politik",
-	"informatik": "Informatik", "musik": "Musik", "arbeitslehre": "Arbeitslehre",
-}
-
 var zielgruppenAlterRegex = regexp.MustCompile(`\d{1,2}`)
 
 // leiteBibKategorieAb übersetzt die DNB-Genre-Begriffe (MARC 655, z. B.
@@ -105,17 +94,14 @@ func leiteBibKategorieAb(genres []string, zielgruppe string) string {
 // automatischeKategorisierung liest Titel und Untertitel eines Buches und
 // versucht mit Regex-Wörterbüchern ein passendes Fach und die Klassenstufe
 // zu extrahieren. Dies beschleunigt das Anlegen von Schulbüchern ungemein.
+//
+// Das Fach kommt aus der einen Stichwortliste in pkg/lmf — bis zum 02.09.2026 hatte
+// dieser Pfad eine eigene Map („Mathe"), der Excel-Import eine zweite („Mathematik"),
+// und die Systematik führte beide Fächer nebeneinander.
 func automatischeKategorisierung(titel, untertitel string) (fach, klassenStufe string) {
 	text := strings.ToLower(strings.TrimSpace(titel + " " + untertitel))
-	fach = ""
+	fach = lmf.FachAusText(text)
 	klassenStufe = ""
-
-	for schluessel, wert := range kategorisierungFachZuweisungen {
-		if strings.Contains(text, schluessel) {
-			fach = wert
-			break
-		}
-	}
 
 	if match := stufenRegex.FindStringSubmatch(text); len(match) == 3 {
 		klassenStufe = match[2]

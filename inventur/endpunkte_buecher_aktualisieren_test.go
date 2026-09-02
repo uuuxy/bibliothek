@@ -187,7 +187,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		// Kein einziger syncBookStock-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
 		erwarteFachBekannt(mock, "Mathe")
 		mock.ExpectBegin()
-		beliebig := make([]any, 18)
+		beliebig := make([]any, 19)
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}

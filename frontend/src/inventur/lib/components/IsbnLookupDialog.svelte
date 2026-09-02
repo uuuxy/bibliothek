@@ -52,7 +52,7 @@
 
 	$effect(() => {
 		if (!data) return;
-		subject = data.subject ?? 'Mathe';
+		subject = data.subject ?? 'Mathematik';
 		grade = data.grade ?? '7';
 		stock = '';
 		const fallback = fallbackCover(data.isbn);

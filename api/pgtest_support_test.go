@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/pkg/lmf"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -50,27 +51,29 @@ func resetBestandsdaten(t *testing.T, pool *pgxpool.Pool) {
 	}
 }
 
-// titelMitMeldebestand legt einen Titel mit gegebenem Meldebestand an.
+// titelMitMeldebestand legt einen Titel mit gegebenem Meldebestand an. Ein Titel mit
+// Litteras LMF-Kennung („LMF-Mathe 7") wird als Lernmittel angelegt — so, wie es
+// Migration 093 mit dem Altbestand tat; die Tests dieses Pakets sprechen seit 2026 in
+// dieser Konvention, und sie bleibt hier lesbar.
 func titelMitMeldebestand(t *testing.T, pool *pgxpool.Pool, titel string, meldebestand int) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO buecher_titel (titel, meldebestand) VALUES ($1, $2) RETURNING id`,
-		titel, meldebestand).Scan(&id); err != nil {
+		`INSERT INTO buecher_titel (titel, meldebestand, ist_lernmittel) VALUES ($1, $2, $3) RETURNING id`,
+		titel, meldebestand, lmf.HatKennung(titel)).Scan(&id); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
 	return id
 }
 
-// titelMitSignatur legt einen Titel mit expliziter Signatur an — für Fälle, in denen
-// das LMF-Kennzeichen (anders als bei titelMitMeldebestand) nicht im Titel steht,
-// sondern nur in der Signatur.
+// titelMitSignatur legt einen Titel mit expliziter Signatur an; Lernmittel, wenn Titel
+// oder Signatur die LMF-Kennung tragen (siehe titelMitMeldebestand).
 func titelMitSignatur(t *testing.T, pool *pgxpool.Pool, titel, signatur string, meldebestand int) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO buecher_titel (titel, signatur, meldebestand) VALUES ($1, $2, $3) RETURNING id`,
-		titel, signatur, meldebestand).Scan(&id); err != nil {
+		`INSERT INTO buecher_titel (titel, signatur, meldebestand, ist_lernmittel) VALUES ($1, $2, $3, $4) RETURNING id`,
+		titel, signatur, meldebestand, lmf.HatKennung(titel) || lmf.HatKennung(signatur)).Scan(&id); err != nil {
 		t.Fatalf("Titel mit Signatur anlegen: %v", err)
 	}
 	return id

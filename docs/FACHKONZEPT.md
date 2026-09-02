@@ -392,8 +392,9 @@ Für Schülerinnen, Schüler, Eltern und Kollegium: Suche nach Titel, Autor oder
 „N von M verfügbar". Gezählt werden nur ausleihbare, nicht ausgesonderte Exemplare ohne offene
 Ausleihe. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarkeitsregel der
 öffentlichen Seiten** (`repository.OeffentlichSichtbar`, seit 30.08.2026 für Katalog und Monitor
-dieselbe): kein Lernmittel (LMF-Kennzeichen in Titel oder Signatur, `pkg/lmf`) und mindestens ein
-Exemplar im Haus (nicht ausgesondert, nicht nur bestellt). Maximal 50 Treffer.
+dieselbe): kein Lernmittel (`buecher_titel.ist_lernmittel`, seit Migration 093 ein Feld statt
+eines „LMF"-Präfixes in Titel oder Signatur) und mindestens ein Exemplar im Haus (nicht
+ausgesondert, nicht nur bestellt). Maximal 50 Treffer.
 Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Das Kollegiums-Portal benutzt für
 seine Suche denselben Endpunkt (§12, Rolle Kollegium).
 

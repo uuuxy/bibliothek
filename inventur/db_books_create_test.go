@@ -33,7 +33,7 @@ func TestCreateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	insertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\)\) RETURNING id`
+	insertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18\) RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -47,7 +47,7 @@ func TestCreateBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -80,7 +80,7 @@ func TestCreateBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
@@ -102,7 +102,7 @@ func TestCreateBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -139,7 +139,7 @@ func TestUpsertBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	upsertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\)\) ON CONFLICT \(isbn\) DO UPDATE SET titel = EXCLUDED.titel, autor = EXCLUDED.autor, cover_url = EXCLUDED.cover_url, subject = EXCLUDED.subject, grade_level = EXCLUDED.grade_level, track = EXCLUDED.track, last_counted = EXCLUDED.last_counted, medientyp = EXCLUDED.medientyp, jahrgang_von = EXCLUDED.jahrgang_von, jahrgang_bis = EXCLUDED.jahrgang_bis, untertitel = EXCLUDED.untertitel, verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, beschreibung = EXCLUDED.beschreibung, erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften, signatur = COALESCE\(NULLIF\(EXCLUDED.signatur, ''\), buecher_titel.signatur\) RETURNING id`
+	upsertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, \$11, \$12, \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18\) ON CONFLICT \(isbn\) DO UPDATE SET titel = EXCLUDED.titel, autor = EXCLUDED.autor, cover_url = EXCLUDED.cover_url, subject = EXCLUDED.subject, grade_level = EXCLUDED.grade_level, track = EXCLUDED.track, last_counted = EXCLUDED.last_counted, medientyp = EXCLUDED.medientyp, jahrgang_von = EXCLUDED.jahrgang_von, jahrgang_bis = EXCLUDED.jahrgang_bis, untertitel = EXCLUDED.untertitel, verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, beschreibung = EXCLUDED.beschreibung, erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften, signatur = COALESCE\(NULLIF\(EXCLUDED.signatur, ''\), buecher_titel.signatur\), ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -153,7 +153,7 @@ func TestUpsertBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -184,7 +184,7 @@ func TestUpsertBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
@@ -219,7 +219,7 @@ func TestUpsertBooksBatch(t *testing.T) {
 		},
 	}
 
-	batchQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur\) SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF\(t.subject, ''\), t.grade_level, t.track, NULLIF\(t.last_counted_text, ''\)::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF\(t.signatur, ''\) FROM UNNEST\(\$1::text\[\], \$2::text\[\], \$3::text\[\], \$4::text\[\], \$5::text\[\], \$6::smallint\[\], \$7::text\[\], \$8::text\[\], \$9::text\[\], \$10::int\[\], \$11::int\[\], \$12::text\[\], \$13::text\[\], \$14::int\[\], \$15::text\[\], \$16::jsonb\[\], \$17::text\[\]\) AS t\(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur\) ON CONFLICT \(isbn\) DO UPDATE SET titel = EXCLUDED.titel, autor = EXCLUDED.autor, cover_url = EXCLUDED.cover_url, subject = EXCLUDED.subject, grade_level = EXCLUDED.grade_level, track = EXCLUDED.track, last_counted = EXCLUDED.last_counted, medientyp = EXCLUDED.medientyp, jahrgang_von = EXCLUDED.jahrgang_von, jahrgang_bis = EXCLUDED.jahrgang_bis, untertitel = EXCLUDED.untertitel, verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, beschreibung = EXCLUDED.beschreibung, erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften, signatur = COALESCE\(NULLIF\(EXCLUDED.signatur, ''\), buecher_titel.signatur\)`
+	batchQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel\) SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF\(t.subject, ''\), t.grade_level, t.track, NULLIF\(t.last_counted_text, ''\)::date, t.medientyp, t.jahrgang_von, t.jahrgang_bis, t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF\(t.signatur, ''\), t.ist_lernmittel FROM UNNEST\(\$1::text\[\], \$2::text\[\], \$3::text\[\], \$4::text\[\], \$5::text\[\], \$6::smallint\[\], \$7::text\[\], \$8::text\[\], \$9::text\[\], \$10::int\[\], \$11::int\[\], \$12::text\[\], \$13::text\[\], \$14::int\[\], \$15::text\[\], \$16::jsonb\[\], \$17::text\[\], \$18::boolean\[\]\) AS t\(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel\) ON CONFLICT \(isbn\) DO UPDATE SET titel = EXCLUDED.titel, autor = EXCLUDED.autor, cover_url = EXCLUDED.cover_url, subject = EXCLUDED.subject, grade_level = EXCLUDED.grade_level, track = EXCLUDED.track, last_counted = EXCLUDED.last_counted, medientyp = EXCLUDED.medientyp, jahrgang_von = EXCLUDED.jahrgang_von, jahrgang_bis = EXCLUDED.jahrgang_bis, untertitel = EXCLUDED.untertitel, verlag = EXCLUDED.verlag, erscheinungsjahr = EXCLUDED.erscheinungsjahr, beschreibung = EXCLUDED.beschreibung, erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften, signatur = COALESCE\(NULLIF\(EXCLUDED.signatur, ''\), buecher_titel.signatur\), ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -253,6 +253,7 @@ func TestUpsertBooksBatch(t *testing.T) {
 				[]string{books[0].Beschreibung},
 				[][]byte{jsonProps},
 				[]string{books[0].Signatur},
+				[]bool{books[0].IstLernmittel},
 			).
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
@@ -316,6 +317,7 @@ func TestUpsertBooksBatch(t *testing.T) {
 				[]string{books[0].Beschreibung},
 				[][]byte{jsonProps},
 				[]string{books[0].Signatur},
+				[]bool{books[0].IstLernmittel},
 			).
 			WillReturnError(fmt.Errorf("db batch failed"))
 		mock.ExpectRollback()

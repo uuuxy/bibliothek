@@ -31,7 +31,7 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			coalesce(t.autor, ''), 
 			coalesce(t.isbn, ''),
 			coalesce(t.cover_url, ''),
-			coalesce(t.signatur, ''),
+			t.ist_lernmittel,
 			a.ausgeliehen_am,
 			a.rueckgabe_frist
 		FROM ausleihen a
@@ -57,7 +57,7 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			&b.Autor,
 			&b.ISBN,
 			&b.CoverURL,
-			&b.Signatur,
+			&b.IstLernmittel,
 			&b.AusgeliehenAm,
 			&b.RueckgabeFrist,
 		); err != nil {

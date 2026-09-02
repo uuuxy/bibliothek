@@ -40,15 +40,9 @@
 
 	let lastAutoSignatur = '';
 
-	// Computed states for the template
-	let isLmfTrack = $derived(
-		['Gymnasium', 'Realschule', 'Hauptschule', 'Förderstufe', 'Oberstufe'].includes(formular.track)
-	);
-	let isBibTrack = $derived(formular.track === 'Bibliothek');
-
 	// Belletristik-Vorschlag: erste 3 Buchstaben des Autor-Nachnamens
 	// ("Rowling, J.K." → "Row", "Joanne K. Rowling" → "Row") — die klassische
-	// Freihand-Systematik. Greift nur, wenn kein Schulbuch-Track gewählt ist.
+	// Freihand-Systematik. Greift nur, wenn kein Fach gewählt ist.
 	const autorKuerzel = $derived.by(() => {
 		const autor = (formular.author ?? '').trim();
 		if (!autor) return '';
@@ -57,8 +51,12 @@
 		return k ? k.charAt(0).toUpperCase() + k.slice(1).toLowerCase() : '';
 	});
 
-	/** Neuanlage ohne Signatur → Speichern gesperrt (Material-Error-State am Feld). */
-	const signaturFehlt = $derived(!formular.id && !(formular.signatur ?? '').trim());
+	/** Neuanlage eines Bibliotheksbuchs ohne Signatur → Speichern gesperrt (Material-
+	 *  Error-State am Feld). Lernmittel tragen kein Rückenetikett (Migration 093), für
+	 *  sie ist die Signatur frei. */
+	const signaturFehlt = $derived(
+		!formular.id && !formular.istLernmittel && !(formular.signatur ?? '').trim()
+	);
 
 	$effect(() => {
 		if (!formular.erweiterteEigenschaften) {
@@ -73,18 +71,15 @@
 
 		// Auto-Signatur-Vorschlag (bestehendes Guard-Muster: überschreibt nie
 		// eine manuelle Eingabe, nur den eigenen letzten Vorschlag).
-		// Ziel ist seit Migration 038 die ECHTE Spalte formular.signatur.
+		// Ziel ist seit Migration 038 die ECHTE Spalte formular.signatur. Nur für
+		// Bibliotheksbücher — das Etikett eines Lernmittels gibt es nicht, und „LMF"
+		// steht seit Migration 093 im Feld, nicht mehr im Text.
 		let autoSig = '';
-		if (formular.subject && (isLmfTrack || isBibTrack)) {
+		if (formular.istLernmittel) {
+			autoSig = '';
+		} else if (formular.subject) {
 			const sys = systematikListe.find((s) => s.bezeichnung === formular.subject);
-			const kuerzel = sys ? sys.kuerzel : '';
-			autoSig = isLmfTrack
-				? kuerzel
-					? `LMF ${kuerzel}`
-					: 'LMF'
-				: kuerzel
-					? `BIB ${kuerzel}`
-					: 'BIB';
+			autoSig = sys?.kuerzel ? `BIB ${sys.kuerzel}` : 'BIB';
 		} else if (!formular.id && autorKuerzel) {
 			autoSig = autorKuerzel; // Belletristik/Freihand-Neuzugang
 		}

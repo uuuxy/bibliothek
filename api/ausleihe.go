@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"bibliothek/internal/service"
-	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -293,7 +292,7 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			  -- Über den Normal-Schlüssel (Migration 079/087): „5a" aus einem Formular und
 			  -- „05A" als registrierte Anzeigeform meinen dieselbe Klasse.
 			  AND klassen_normkey(s.klasse) = klassen_normkey($2)
-			  AND ` + lmf.SQLBedingung("t.titel", "t.signatur") + `
+			  AND t.ist_lernmittel
 		`
 		tag, err := tx.Exec(ctx, q, newDate, req.Klasse)
 		if err != nil {

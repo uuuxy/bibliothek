@@ -4,6 +4,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/inventur"
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 	"context"
 	"fmt"
@@ -22,6 +23,11 @@ type importNewTitle struct {
 	Jahr      int
 	Kategorie string
 	Signatur  string
+	// Lernmittel-Feld und seine Ableitungen (Migration 093), siehe titelZeilenFelder.
+	IstLernmittel bool
+	Fach          string
+	JahrgangVon   int
+	JahrgangBis   int
 }
 
 type importCopyData struct {
@@ -47,24 +53,38 @@ func bereinigeImportTitel(s string) string {
 	return strings.TrimSpace(strings.Trim(strings.TrimSpace(s), `"`))
 }
 
-// titelZeilenFelder liefert die normalisierten Titel-Felder einer Zeile: Titel
-// (bereinigt, ggf. LMF-geflaggt), Signatur und Kategorie (jeweils ohne LMF-Token).
-// BEIDE Import-Pässe (Titel sammeln, Exemplare sammeln) müssen diese Funktion
-// verwenden, sonst verfehlt das Titel-Matching die gerade angelegten Titel.
-func titelZeilenFelder(row []string, headerMap map[string]int) (titel, signatur, kategorie string) {
-	titel = bereinigeImportTitel(spaltenWert(row, headerMap, "titel"))
-	signatur = spaltenWert(row, headerMap, "signatur")
-	kategorie = spaltenWert(row, headerMap, "kategorie")
+// zeilenFelder sind die normalisierten Titel-Felder einer Import-Zeile.
+type zeilenFelder struct {
+	titel, signatur, kategorie string
+	// lernmittel: LMF-Token in Kategorie („Buch LMF Ma 6/Gri") oder Signatur („LMF Bio
+	// 7"). Titel und Signatur bleiben unverändert (Migration 093); nur aus der Kategorie
+	// wird das Token entfernt, weil sie als Fach-Rückfall in subject landet.
+	lernmittel bool
+	// fach/jahrgang aus dem LMF-Teil („LMF Ma 6" → Mathematik, 6), sonst leer/0.
+	fach     string
+	von, bis int
+}
 
-	// Lernmittelfreiheit: LMF-Token in Kategorie ("Buch LMF Ma 6/Gri") oder
-	// Signatur ("LMF Bio 7") → Token entfernen und den Titel per
-	// Projekt-Konvention "LMF-" flaggen (identisch zum XML-Pfad).
-	if hatLMFKennung(kategorie) || hatLMFKennung(signatur) {
-		kategorie = entferneLMFToken(kategorie)
-		signatur = entferneLMFToken(signatur)
-		titel = flaggeAlsSchulbuch(titel)
+// titelZeilenFelder liefert die normalisierten Titel-Felder einer Zeile. BEIDE
+// Import-Pässe (Titel sammeln, Exemplare sammeln) müssen diese Funktion verwenden,
+// sonst verfehlt das Titel-Matching die gerade angelegten Titel.
+func titelZeilenFelder(row []string, headerMap map[string]int) zeilenFelder {
+	z := zeilenFelder{
+		titel:     bereinigeImportTitel(spaltenWert(row, headerMap, "titel")),
+		signatur:  spaltenWert(row, headerMap, "signatur"),
+		kategorie: spaltenWert(row, headerMap, "kategorie"),
 	}
-	return titel, signatur, kategorie
+	if !hatLMFKennung(z.kategorie) && !hatLMFKennung(z.signatur) {
+		return z
+	}
+	z.lernmittel = true
+	teil, ok := lmf.Zerlege(z.signatur)
+	if !ok {
+		teil, _ = zerlegeLMFTeil(z.kategorie)
+	}
+	z.fach, z.von, z.bis = teil.Fach, teil.JahrgangVon, teil.JahrgangBis
+	z.kategorie = entferneLMFToken(z.kategorie)
+	return z
 }
 
 // ladeVorhandeneTitel lädt die bestehenden Titel für schnelles ISBN-/Titel-Matching.
@@ -149,22 +169,22 @@ func matchTitelID(isbn, titel string, isbnToID, titelToID map[string]string) str
 // ist) den Cache-Key und den anzulegenden Titel. ok=false bedeutet: Zeile überspringen
 // (leer oder bereits über ISBN/Titel gematcht).
 func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, titelToID map[string]string) (cacheKey string, t *importNewTitle, ok bool) {
-	titel, signatur, kategorie := titelZeilenFelder(row, headerMap)
+	z := titelZeilenFelder(row, headerMap)
 	barcode := spaltenWert(row, headerMap, "barcode")
-	if titel == "" || barcode == "" {
+	if z.titel == "" || barcode == "" {
 		return "", nil, false
 	}
 
 	isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 
-	if matchTitelID(isbn, titel, isbnToID, titelToID) != "" {
+	if matchTitelID(isbn, z.titel, isbnToID, titelToID) != "" {
 		return "", nil, false // schon vorhanden
 	}
 
 	// Needs new title
 	cacheKey = isbn
 	if cacheKey == "" {
-		cacheKey = repository.NormalisiereTitelKey(titel)
+		cacheKey = repository.NormalisiereTitelKey(z.titel)
 	}
 
 	var jahr int
@@ -172,14 +192,26 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, tite
 		jahr = j
 	}
 	return cacheKey, &importNewTitle{
-		Titel:     titel,
-		Autor:     spaltenWert(row, headerMap, "autor"),
-		Verlag:    spaltenWert(row, headerMap, "verlag"),
-		ISBN:      isbn,
-		Jahr:      jahr,
-		Kategorie: kategorie,
-		Signatur:  signatur,
+		Titel:         z.titel,
+		Autor:         spaltenWert(row, headerMap, "autor"),
+		Verlag:        spaltenWert(row, headerMap, "verlag"),
+		ISBN:          isbn,
+		Jahr:          jahr,
+		Kategorie:     z.kategorie,
+		Signatur:      z.signatur,
+		IstLernmittel: z.lernmittel,
+		Fach:          z.fach,
+		JahrgangVon:   z.von,
+		JahrgangBis:   z.bis,
 	}, true
+}
+
+// fachDerZeile: das aus der Lernmittelsignatur gelesene Fach, sonst die Kategorie.
+func fachDerZeile(t *importNewTitle) string {
+	if t.Fach != "" {
+		return t.Fach
+	}
+	return t.Kategorie
 }
 
 // fuegeNeueTitelEin legt die neuen Titel per Batch an und ergänzt die
@@ -192,24 +224,33 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer VOR dem
 	// SendBatch in derselben Transaktion registrieren (danach ist die Verbindung bis
 	// br.Close() belegt) und jede Zeile auf die kanonische Schreibweise ziehen.
-	kategorien := make([]string, 0, len(newTitlesOrder))
+	// Fach: aus der Lernmittelsignatur („LMF Ma 6" → Mathematik), sonst die
+	// Kategorie-Spalte wie bisher.
+	faecher := make([]string, 0, len(newTitlesOrder))
 	for _, key := range newTitlesOrder {
-		kategorien = append(kategorien, newTitlesMap[key].Kategorie)
+		faecher = append(faecher, fachDerZeile(newTitlesMap[key]))
 	}
-	kanonisch, err := inventur.StelleFaecherSicher(ctx, tx, kategorien)
+	kanonisch, err := inventur.StelleFaecherSicher(ctx, tx, faecher)
 	if err != nil {
 		return 0, err
 	}
 
 	batch := &pgx.Batch{}
 	qInsertTitel := `
-		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject, signatur)
-		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), NULLIF($6, ''), NULLIF($7, ''))
+		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject, signatur,
+		                           ist_lernmittel, grade_level, jahrgang_von, jahrgang_bis)
+		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), NULLIF($6, ''), NULLIF($7, ''),
+		        $8, NULLIF($9, 0)::smallint, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10))
 		RETURNING id
 	`
 	for _, key := range newTitlesOrder {
 		t := newTitlesMap[key]
-		batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, kanonisch[t.Kategorie], t.Signatur)
+		stufe := 0
+		if t.JahrgangVon > 0 && t.JahrgangVon == t.JahrgangBis {
+			stufe = t.JahrgangVon
+		}
+		batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, kanonisch[fachDerZeile(t)], t.Signatur,
+			t.IstLernmittel, stufe, t.JahrgangVon, t.JahrgangBis)
 	}
 
 	br := tx.SendBatch(ctx, batch)
@@ -241,7 +282,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelT
 	for i, row := range rows[1:] {
 		// Identische Titel-Normalisierung wie Pass 1, sonst verfehlt das
 		// Titel-Matching die gerade angelegten Titel.
-		titel, _, _ := titelZeilenFelder(row, headerMap)
+		titel := titelZeilenFelder(row, headerMap).titel
 
 		// 1. String-Bereinigung & 2. Datentyp-Sicherheit
 		barcodeRaw := ""
@@ -296,13 +337,13 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, isbnToID, 
 
 	updates := make(map[string]string)
 	for _, row := range rows[1:] {
-		titel, signatur, _ := titelZeilenFelder(row, headerMap)
-		if titel == "" || signatur == "" {
+		z := titelZeilenFelder(row, headerMap)
+		if z.titel == "" || z.signatur == "" {
 			continue
 		}
 		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
-		if id := matchTitelID(isbn, titel, isbnToID, titelToID); id != "" {
-			updates[id] = signatur
+		if id := matchTitelID(isbn, z.titel, isbnToID, titelToID); id != "" {
+			updates[id] = z.signatur
 		}
 	}
 	return updates
@@ -310,7 +351,9 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, isbnToID, 
 
 // schreibeSignaturUpdates setzt die gesammelten Signaturen per Batch. Nur
 // nicht-leere Werte sind im Map enthalten — die Konvention „das Rücken-Etikett
-// gewinnt, leer überschreibt nie" bleibt damit gewahrt.
+// gewinnt, leer überschreibt nie" bleibt damit gewahrt. Trägt die Signatur Litteras
+// LMF-Kennung, wird der Bestandstitel zugleich als Lernmittel markiert (nur gesetzt,
+// nie gelöscht — Migration 093).
 func schreibeSignaturUpdates(ctx context.Context, tx pgx.Tx, updates map[string]string) error {
 	if len(updates) == 0 {
 		return nil
@@ -319,8 +362,8 @@ func schreibeSignaturUpdates(ctx context.Context, tx pgx.Tx, updates map[string]
 	batch := &pgx.Batch{}
 	for id, signatur := range updates {
 		batch.Queue(
-			"UPDATE buecher_titel SET signatur = $2, aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $1",
-			id, signatur,
+			"UPDATE buecher_titel SET signatur = $2, ist_lernmittel = ist_lernmittel OR $3, aktualisiert_am = CURRENT_TIMESTAMP WHERE id = $1",
+			id, signatur, lmf.HatKennung(signatur),
 		)
 	}
 	br := tx.SendBatch(ctx, batch)

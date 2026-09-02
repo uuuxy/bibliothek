@@ -20,12 +20,14 @@
 
 	let wirdGescannt = $state(false);
 
-	// Neuanlage ohne Signatur ist gesperrt — die Signatur muss aufs
-	// Rücken-Etikett. Die DNB liefert höchstens einen Kategorie-Vorschlag
-	// (Kinder-/Jugendbuch → "BIB …"), die Entscheidung bleibt beim Menschen.
-	// Altbestand (formular.id) bleibt speicherbar, damit leere
-	// Littera-Importe pflegbar sind.
-	const speichernGesperrt = $derived(!formular.id && !(formular.signatur ?? '').trim());
+	// Neuanlage eines Bibliotheksbuchs ohne Signatur ist gesperrt — die Signatur
+	// muss aufs Rücken-Etikett. Lernmittel tragen keins (Migration 093). Die DNB
+	// liefert höchstens einen Kategorie-Vorschlag (Kinder-/Jugendbuch → "BIB …"),
+	// die Entscheidung bleibt beim Menschen. Altbestand (formular.id) bleibt
+	// speicherbar, damit leere Littera-Importe pflegbar sind.
+	const speichernGesperrt = $derived(
+		!formular.id && !formular.istLernmittel && !(formular.signatur ?? '').trim()
+	);
 
 	/** @param {string} code */
 	async function handleScan(code) {

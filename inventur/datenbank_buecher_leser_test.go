@@ -24,11 +24,11 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
 			WithArgs("Math", &grade5, "algebra", 50000).
 			WillReturnRows(pgxmock.NewRows([]string{
-				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track",
+				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
 				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
 			}).AddRow(
-				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A",
+				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
 				2, 3, &lastCounted, 1, "Buch", 5, 6,
 				"", "", 2020, "", map[string]any{},
 			))
@@ -147,11 +147,11 @@ func TestBookRepository_ListBooksByIDs(t *testing.T) {
 		mock.ExpectQuery(`SELECT.+FROM buecher_titel bt LEFT JOIN buecher_exemplare e.+`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{
-				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track",
+				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
 				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
 			}).AddRow(
-				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A",
+				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
 				2, 3, &lastCounted, 1, "Buch", 5, 6,
 				"", "", 2020, "desc", map[string]any{},
 			))

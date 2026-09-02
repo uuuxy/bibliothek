@@ -232,6 +232,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				0,                   // erscheinungsjahr
 				"",                  // beschreibung
 				"",                  // signatur
+				false,               // ist_lernmittel
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("11111111-1111-1111-1111-111111111111"))
 		mock.ExpectCommit()

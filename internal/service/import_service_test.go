@@ -5,6 +5,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"bibliothek/pkg/lmf"
 )
 
 // Falsche XML-Dateien (z. B. der Schlagwort-Export systematik+.xml mit
@@ -54,22 +56,26 @@ func TestBereinigeImportTitel(t *testing.T) {
 func TestTitelZeilenFelder_LMFAusKategorieUndSignatur(t *testing.T) {
 	headerMap := map[string]int{"titel": 0, "kategorie": 1, "signatur": 2}
 
-	// LMF-Token in der Kategorie (Bestands-CSV-Fall)
-	titel, signatur, kategorie := titelZeilenFelder([]string{"Deutschbuch 9", "Buch LMF Ma 6", "De 9"}, headerMap)
-	if titel != "LMF-Deutschbuch 9" || kategorie != "Buch Ma 6" || signatur != "De 9" {
-		t.Errorf("Kategorie-LMF: titel=%q kategorie=%q signatur=%q", titel, kategorie, signatur)
+	// LMF-Token in der Kategorie (Bestands-CSV-Fall): Titel und Signatur bleiben, wie
+	// sie sind (Migration 093); aus dem LMF-Teil kommen Fach und Jahrgang.
+	z := titelZeilenFelder([]string{"Deutschbuch 9", "Buch LMF Ma 6", "De 9"}, headerMap)
+	if z.titel != "Deutschbuch 9" || z.kategorie != "Buch Ma 6" || z.signatur != "De 9" || !z.lernmittel {
+		t.Errorf("Kategorie-LMF: %+v", z)
+	}
+	if z.fach != lmf.FachMathematik || z.von != 6 || z.bis != 6 {
+		t.Errorf("Kategorie-LMF: Fach/Jahrgang aus LMF Ma 6 erwartet, war %+v", z)
 	}
 
 	// LMF-Präfix in der Signatur (Littera-Konvention wie im XML-Feld 700)
-	titel, signatur, _ = titelZeilenFelder([]string{"Biologie heute 7", "Buch", "LMF Bio 7"}, headerMap)
-	if titel != "LMF-Biologie heute 7" || signatur != "Bio 7" {
-		t.Errorf("Signatur-LMF: titel=%q signatur=%q", titel, signatur)
+	z = titelZeilenFelder([]string{"Biologie heute 7", "Buch", "LMF Bio 7"}, headerMap)
+	if z.titel != "Biologie heute 7" || z.signatur != "LMF Bio 7" || !z.lernmittel || z.fach != lmf.FachBiologie || z.von != 7 {
+		t.Errorf("Signatur-LMF: %+v", z)
 	}
 
 	// Ohne LMF bleibt alles unangetastet
-	titel, signatur, _ = titelZeilenFelder([]string{"Harry Potter", "Roman", "JF"}, headerMap)
-	if titel != "Harry Potter" || signatur != "JF" {
-		t.Errorf("ohne LMF: titel=%q signatur=%q", titel, signatur)
+	z = titelZeilenFelder([]string{"Harry Potter", "Roman", "JF"}, headerMap)
+	if z.titel != "Harry Potter" || z.signatur != "JF" || z.lernmittel || z.fach != "" {
+		t.Errorf("ohne LMF: %+v", z)
 	}
 }
 

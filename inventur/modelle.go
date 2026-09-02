@@ -8,11 +8,15 @@ type Book struct {
 	Author string `json:"author" db:"author"`
 	// Signatur steht physisch auf dem Buchrücken-Etikett (Littera-Systematik,
 	// z. B. "Bio 5" oder "Row") — Importe dürfen befüllte Werte NIE leeren.
-	Signatur                string         `json:"signatur" db:"signatur"`
-	CoverURL                string         `json:"coverUrl" db:"cover_url"`
-	Subject                 string         `json:"subject" db:"subject"`
-	GradeLevel              int16          `json:"gradeLevel" db:"grade_level"`
-	Track                   string         `json:"track" db:"track"`
+	Signatur   string `json:"signatur" db:"signatur"`
+	CoverURL   string `json:"coverUrl" db:"cover_url"`
+	Subject    string `json:"subject" db:"subject"`
+	GradeLevel int16  `json:"gradeLevel" db:"grade_level"`
+	Track      string `json:"track" db:"track"`
+	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Vorher stand das
+	// im Text („LMF" vor Titel oder Signatur); heute schaltet die Maske es, Importe
+	// lesen es aus Litteras Kennung.
+	IstLernmittel           bool           `json:"istLernmittel" db:"ist_lernmittel"`
 	Stock                   int            `json:"stock" db:"stock"`
 	Verfuegbar              int            `json:"verfuegbar"`
 	Gesamt                  int            `json:"gesamt"`
@@ -30,10 +34,11 @@ type Book struct {
 
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
 type BuchEingabe struct {
-	ISBN         string `json:"isbn"`
-	Fach         string `json:"subject"`
-	KlassenStufe int16  `json:"gradeLevel"`
-	Schulzweig   string `json:"track"`
+	ISBN          string `json:"isbn"`
+	Fach          string `json:"subject"`
+	KlassenStufe  int16  `json:"gradeLevel"`
+	Schulzweig    string `json:"track"`
+	IstLernmittel bool   `json:"istLernmittel"`
 	// Zeiger, nicht int: "nicht mitgeschickt" muss sich von "null" unterscheiden lassen.
 	// Beim Aktualisieren gleicht syncBookStock die physischen Exemplare an diese Zahl an
 	// — eine fehlende 0 sonderte bis zum 23.08.2026 den GESAMTEN Bestand aus, im

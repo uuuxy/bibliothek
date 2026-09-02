@@ -24,7 +24,6 @@ package repository
 import (
 	"time"
 
-	"bibliothek/pkg/lmf"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -94,10 +93,10 @@ func istLernmittelExemplar(spalte string) string {
 	return `EXISTS (
 		SELECT 1 FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE e.id = ` + spalte + ` AND ` + lmf.SQLBedingung("t.titel", "t.signatur") + `)`
+		WHERE e.id = ` + spalte + ` AND t.ist_lernmittel)`
 }
 
-// klasse wählt die Frist-Klasse: true = nur Lernmittel (LMF-Titel), false = alles andere
+// klasse wählt die Frist-Klasse: true = nur Lernmittel, false = alles andere
 // (Freihand, Medien und Geräte — Geräte haben kein Exemplar und fallen damit automatisch
 // in die kurze Frist).
 func klasse(spalte string, lernmittel bool) string {

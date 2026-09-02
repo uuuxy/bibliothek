@@ -81,13 +81,13 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", pgxmock.AnyArg(), "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
 					}).AddRow(
-						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", int16(5), "G", int64(5), int64(10), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, "", map[string]any{},
+						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", int16(5), "G", false, int64(5), int64(10), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, "", map[string]any{},
 					))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","gradeLevel":5,"track":"G","stock":10,"verfuegbar":5,"gesamt":10,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"untertitel":"Sub","verlag":"Ver","erscheinungsjahr":2020,"beschreibung":"","erweiterteEigenschaften":{}}]}`,
+			expectedBody:   `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","gradeLevel":5,"track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"untertitel":"Sub","verlag":"Ver","erscheinungsjahr":2020,"beschreibung":"","erweiterteEigenschaften":{}}]}`,
 		},
 		{
 			name: "Success - synonym translation",
@@ -96,7 +96,7 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", pgxmock.AnyArg(), "politik", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -128,7 +128,7 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", &grade, "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
 					}))
 			},
 			expectedStatus: http.StatusOK,
