@@ -38,7 +38,7 @@ var lusdFieldAliases = map[string][]string{
 	lusdColGeburtsdatum: {"geburtsdatum", "schueler_geburtsdatum", "slr_geburtsdatum"},
 	lusdColStrasse:      {"strasse", "schueler_strasse", "anschrift_strasse", "slr_strasse"},
 	lusdColHausnummer:   {"hausnummer", "schueler_hausnummer", "anschrift_hausnummer", "slr_hausnummer"},
-	lusdColPLZ:          {"plz", "postleitzahl", "schueler_plz", "anschrift_plz", "slr_plz"},
+	lusdColPLZ:          {"plz", "postleitzahl", "schueler_plz", "schueler_postleitzahl", "anschrift_plz", "slr_plz"},
 	lusdColOrt:          {"ort", "wohnort", "schueler_ort", "anschrift_ort", "slr_ort"},
 	lusdColElternEmail:  {"eltern_email", "email", "ansprechpartner_email", "erziehungsberechtigte_email", "erziehungsberechtigter_email", "slr_email"},
 }

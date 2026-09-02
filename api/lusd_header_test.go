@@ -91,3 +91,25 @@ func TestLusdHeaderMap_KuerzelExportStyleDerSchule(t *testing.T) {
 		t.Error("kein Geburtsdatum in dieser Datei — der Import muss in den Nur-Name-Modus")
 	}
 }
+
+// Der echte LUSD-Bericht „All_Inklusiv" (02.09.2026, Demo-Export der Schule) schreibt die
+// Postleitzahl als „Schueler_Postleitzahl" — weder „PLZ" noch „Schueler_PLZ". Ohne den Alias
+// kam jeder Schüler aus diesem Bericht ohne Postleitzahl an, still.
+func TestLusdHeaderMap_AllInklusivBericht(t *testing.T) {
+	headers := []string{
+		"Schueler_Schluessel", "Schueler_Nachname", "Schueler_Vorname", "Schueler_Geburtsdatum",
+		"Klassen_Klassenbezeichnung", "Schueler_Straße", "Schueler_Postleitzahl", "Schueler_Ort",
+	}
+	m, err := lusdHeaderMap(headers)
+	if err != nil {
+		t.Fatalf("Header-Map: %v", err)
+	}
+	for _, col := range []string{lusdColNachname, lusdColVorname, lusdColGeburtsdatum, lusdColKlasse, lusdColStrasse, lusdColPLZ, lusdColOrt} {
+		if _, ok := m[col]; !ok {
+			t.Errorf("Spalte %q nicht zugeordnet", col)
+		}
+	}
+	if _, ok := m[lusdColID]; ok {
+		t.Errorf("Schueler_Schluessel (Name,Vorname,Datum) darf NICHT als LUSD-ID gelten")
+	}
+}
