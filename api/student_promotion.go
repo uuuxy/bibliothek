@@ -11,6 +11,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -99,7 +100,7 @@ var promoteStudentsQuery = `
 			-- (sperreAbgaenger) — Import, Job und Wächter rechnen die Anonymisierung daran.
 			abgaenger_seit = CASE WHEN c.is_graduating THEN COALESCE(s.abgaenger_seit, NOW()) ELSE s.abgaenger_seit END,
 			abgaenger_jahr = CASE
-				WHEN c.is_graduating THEN EXTRACT(YEAR FROM CURRENT_DATE)
+				WHEN c.is_graduating THEN EXTRACT(YEAR FROM NOW() AT TIME ZONE $1)
 				ELSE s.abgaenger_jahr
 			END,
 			aktualisiert_am = CURRENT_TIMESTAMP
@@ -179,7 +180,7 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 		}
 	}
 
-	if err := tx.QueryRow(ctx, promoteStudentsQuery).Scan(&resp.PromotedCount, &resp.ArchivedCount); err != nil {
+	if err := tx.QueryRow(ctx, promoteStudentsQuery, schulzeit.Zone().String()).Scan(&resp.PromotedCount, &resp.ArchivedCount); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return resp, false
 	}

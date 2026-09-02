@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -349,6 +350,10 @@ const (
 // (RunGDPRDeleteAbgaenger, Filter abgaenger_jahr < cutoffYear) hätte den Abgänger nach
 // der Buchrückgabe NIE erfasst — die PII wäre für immer geblieben.
 //
+// abgaenger_jahr rechnet in der Schulzeitzone (pkg/schulzeit), nicht in der Sitzungszone
+// der DB (UTC): Ein Import am 1. Januar zwischen 0 und 1 Uhr setzte sonst das Vorjahr,
+// und der Purge am 30. Januar löschte ein Jahr zu früh (Rasterdurchgang 02.09.2026).
+//
 // abgaenger_seit wird beim ERSTEN Abgang gestempelt und danach nicht mehr verschoben
 // (COALESCE) — die Karenz-Uhr läuft ab dem Tag, an dem der Schüler aus dem Export fiel,
 // nicht ab dem letzten Lauf, der ihn erneut nicht fand.
@@ -360,9 +365,9 @@ func sperreAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID, grund string) e
 		`UPDATE schueler SET ist_abgaenger = true, ist_gesperrt = true,
 		        block_reason = COALESCE(NULLIF(block_reason, ''), $2),
 		        abgaenger_seit = COALESCE(abgaenger_seit, NOW()),
-		        abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
+		        abgaenger_jahr = EXTRACT(YEAR FROM NOW() AT TIME ZONE $3)::int, aktualisiert_am = NOW()
 		 WHERE id = $1`,
-		schuelerID, grund)
+		schuelerID, grund, schulzeit.Zone().String())
 	return err
 }
 
@@ -403,9 +408,9 @@ func anonymisiereAbgaenger(ctx context.Context, tx pgx.Tx, schuelerID string) er
 			barcode_id = 'ANON-' || id::text, anonymized_at = NOW(),
 			abgaenger_seit = COALESCE(abgaenger_seit, NOW()),
 			ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Abgänger anonymisiert',
-			abgaenger_jahr = EXTRACT(YEAR FROM NOW())::int, aktualisiert_am = NOW()
+			abgaenger_jahr = EXTRACT(YEAR FROM NOW() AT TIME ZONE $3)::int, aktualisiert_am = NOW()
 		WHERE id = $2`,
-		anonymisiertName, schuelerID); err != nil {
+		anonymisiertName, schuelerID, schulzeit.Zone().String()); err != nil {
 		return err
 	}
 	// Spuren in den Neben-Tabellen in derselben Transaktion — nicht erst in der Nacht.
