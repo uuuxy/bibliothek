@@ -327,7 +327,6 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/books":                {URL: "/api/books"},
 		"GET /api/books/{id}":           {URL: "/api/books/" + w.titelID},
 		"GET /api/class-books":          {URL: "/api/class-books"},
-		"GET /api/portal/lernmittel":    {URL: "/api/portal/lernmittel"},
 		"GET /api/portal/klassensaetze": {URL: "/api/portal/klassensaetze"},
 		"GET /api/admin/":               {URL: "/api/admin/"},
 	}

@@ -1,38 +1,26 @@
 <!--
-	+page.svelte (Startseite)
+	+page.svelte (Medienkatalog → Suche & Filter)
 
-	Orchestriert die Gast-Ansicht der Inventur-App:
-	Login, Navigation, Filterung und Anzeige der Bücher/Klassen.
-	Die eigentliche Logik und UI-Blöcke sind in Unterkomponenten ausgelagert.
+	Suchfeld und Cover-Raster der Buch-Suche. Der Reiter „Jahrgänge" (Gruppierung nach der
+	gepflegten Jahrgangsspanne) ist am 02.09.2026 weg: 13.055 von 13.060 Titeln trugen den
+	unangetasteten Import-Default 5–10 und lagen in EINER Gruppe „Ohne genaue Zuordnung" —
+	der Reiter hätte erst nach dem Nachpflegen von 13.000 Titeln etwas gezeigt. Welche
+	Klasse welche Bücher hat, steht unter Bibliothek → Klassensätze.
 -->
 <script>
-	import { fade } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import { appState } from '$lib/store.svelte.js';
 	import BuchRasterStartseite from '$lib/components/BuchRasterStartseite.svelte';
-	import KlassenUebersichtStartseite from '$lib/components/KlassenUebersichtStartseite.svelte';
 	import StartseitenFilter from '$lib/components/StartseitenFilter.svelte';
 	import Button from '../../lib/components/ui/Button.svelte';
 	import { hatRecht } from '../../lib/menu.js';
 	import { authStore } from '../../lib/stores/authStore.svelte.js';
-	import {
-		buecherLaden,
-		buecherSuchen,
-		buecherNachKlassenGruppieren,
-		klassenFiltern,
-		zweigOptionenAus,
-		jahrgangOptionenAus,
-		bestandsFarbe
-	} from '$lib/startseiten_api.js';
+	import { buecherLaden, buecherSuchen } from '$lib/startseiten_api.js';
 
-	// --- Zustandsvariablen ---
-	let viewMode = $state('suche');
 	let searchQuery = $state('');
-	let selectedZweig = $state('');
-	let selectedJahrgang = $state('');
 	let selectedBook = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
-	// Der Stift auf der Karte gehört nur denen, die bearbeiten dürfen. Vorher sah ihn
-	// jeder — und ohne Recht tat er dasselbe wie der Klick auf die Karte.
+	// Der Stift auf der Kachel gehört nur denen, die bearbeiten dürfen. Vorher sah ihn
+	// jeder — und ohne Recht tat er dasselbe wie der Klick auf die Kachel.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	/** Navigate to the full-page book detail view */
@@ -47,16 +35,7 @@
 
 	/** @type {any[]} */
 	let books = $state.raw([]);
-	// --- Abgeleitete Werte ---
-	// „Jahrgänge" gruppiert aus der Jahrgangsspanne der Bücher (Begründung in
-	// startseiten_api.js). Die ECHTEN Klassensätze aus /api/class-books standen hier
-	// bis zum 08.08.2026 als dritter Reiter daneben — dieselbe Liste wie unter
-	// Verwaltung → Schulklassen. Aufgelöst.
-	let classes = $derived(buecherNachKlassenGruppieren(books));
-
 	let filteredBooks = $derived(buecherSuchen(books, searchQuery));
-
-	let filteredClasses = $derived(klassenFiltern(classes, selectedZweig, selectedJahrgang));
 
 	let displayLimit = $state(50);
 	let paginatedBooks = $derived(filteredBooks.slice(0, displayLimit));
@@ -67,7 +46,6 @@
 		displayLimit = 50;
 	});
 
-	// --- Initialisierung ---
 	onMount(() => {
 		ladeDaten();
 	});
@@ -95,61 +73,28 @@
 </script>
 
 <div class="w-full text-slate-800 font-sans">
-	<div class="w-full transition-all duration-300">
-		<StartseitenFilter
-			bind:viewMode
-			bind:searchQuery
-			bind:selectedZweig
-			bind:selectedJahrgang
-			zweigOptionen={zweigOptionenAus(books)}
-			jahrgangOptionen={jahrgangOptionenAus(classes)}
-		/>
+	<StartseitenFilter bind:searchQuery />
 
-		<main class="relative">
-			{#if viewMode === 'suche'}
-				<div
-					in:fade={{ duration: 300, delay: 150 }}
-					out:fade={{ duration: 150 }}
-					role="tabpanel"
-					id="content-suche"
-					aria-labelledby="tab-suche"
-				>
-					<BuchRasterStartseite
-						filteredBooks={paginatedBooks}
-						onBookClick={(book) => navigateToDetail(book)}
-						onEditClick={darfBearbeiten
-							? (book) => {
-									// Die Titel-Verwaltung öffnet die Akte, sobald sie geladen hat
-									// (admin/+page: appState.bookToEdit) — unabhängig davon, ob sie in
-									// dieser Sitzung schon einmal offen war.
-									appState.bookToEdit = book;
-									appState.requestAdminView = true;
-								}
-							: undefined}
-					/>
-					{#if displayLimit < filteredBooks.length}
-						<div class="mt-8 flex justify-center">
-							<Button variant="secondary" onclick={() => (displayLimit += 50)} class="px-6">
-								Mehr laden ({filteredBooks.length - displayLimit} weitere)
-							</Button>
-						</div>
-					{/if}
-				</div>
-			{:else}
-				<div
-					in:fade={{ duration: 300, delay: 150 }}
-					out:fade={{ duration: 150 }}
-					role="tabpanel"
-					id="content-jahrgaenge"
-					aria-labelledby="tab-jahrgaenge"
-				>
-					<KlassenUebersichtStartseite
-						{filteredClasses}
-						getStockColor={bestandsFarbe}
-						onBookClick={(book) => navigateToDetail(book)}
-					/>
-				</div>
-			{/if}
-		</main>
-	</div>
+	<main class="relative">
+		<BuchRasterStartseite
+			filteredBooks={paginatedBooks}
+			onBookClick={(book) => navigateToDetail(book)}
+			onEditClick={darfBearbeiten
+				? (book) => {
+						// Die Titel-Verwaltung öffnet die Akte, sobald sie geladen hat
+						// (admin/+page: appState.bookToEdit) — unabhängig davon, ob sie in
+						// dieser Sitzung schon einmal offen war.
+						appState.bookToEdit = book;
+						appState.requestAdminView = true;
+					}
+				: undefined}
+		/>
+		{#if displayLimit < filteredBooks.length}
+			<div class="mt-8 flex justify-center">
+				<Button variant="secondary" onclick={() => (displayLimit += 50)} class="px-6">
+					Mehr laden ({filteredBooks.length - displayLimit} weitere)
+				</Button>
+			</div>
+		{/if}
+	</main>
 </div>

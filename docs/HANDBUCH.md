@@ -61,7 +61,7 @@ beides einstellbar (*Datenschutz & Sitzung*).
 ## Medienkatalog
 
 - **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur; Kartenansicht mit
-  Cover und Signatur. Reiter *Jahrgänge*: Lernmittel je Stufe und Schulzweig mit Stückzahlen.
+  Cover und Signatur.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
   (Warteliste mit Schüler-Suche), Historie.
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
@@ -183,7 +183,7 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Verfügbarkeit
 und Warteschlange; Klassensatz reservieren mit Klasse, Anzahl, Datum) · **Klassensätze** der
-eigenen Klassen · **Bestand nach Jahrgang** · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
+eigenen Klassen · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
 nicht" an die Bibliothek). (§12, Rolle Kollegium)
 
 ---

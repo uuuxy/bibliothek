@@ -86,7 +86,6 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	// Medienkatalog im Menü öffnen. Beide Antworten enthalten ausschließlich
 	// Buch- und Zähldaten, keine Ausleih- oder Personendaten (dieselben Handler
 	// wie /api/books und /api/class-books, nur eine andere Tür).
-	handler.mux.Handle("GET /api/portal/lernmittel", config.RequireAuthenticated(http.HandlerFunc(handler.BearbeiteBuecherListe)))
 	handler.mux.Handle("GET /api/portal/klassensaetze", config.RequireAuthenticated(http.HandlerFunc(handler.handleClassBooks)))
 
 	// Schreibend: RBAC-Permission edit_books (injiziert aus api/router.go)

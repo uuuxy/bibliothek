@@ -19,14 +19,15 @@ const KLASSE_B = '09Z2';
 test('Klassensätze stehen an genau EINEM Ort', async ({ page }) => {
 	await uiLogin(page);
 
-	// --- Medienkatalog: der Klassen-Reiter ist weg, die anderen beiden sind da ---
+	// --- Medienkatalog: kein Klassen-Reiter; die Buch-Suche ist da (seit 02.09.2026 ohne Reiter,
+	// das Suchfeld ist die Gegenprobe) ---
 	// Die Gegenprobe ist der Punkt: Ohne sie wäre der Test auch dann grün, wenn die
 	// Seite überhaupt nicht mehr lüde.
 	await page.goto('/medienkatalog');
-	const reiter = page.getByRole('tab');
-	await expect(reiter.filter({ hasText: 'Buch-Suche' })).toBeVisible();
-	await expect(reiter.filter({ hasText: 'Jahrgänge' })).toBeVisible();
-	await expect(reiter.filter({ hasText: /Klassensätze|Schulklassen/ })).toHaveCount(0);
+	await expect(page.locator('#katalog-suchfeld')).toBeVisible();
+	await expect(
+		page.getByRole('tab').filter({ hasText: /Klassensätze|Schulklassen|Jahrgänge/ })
+	).toHaveCount(0);
 
 	// --- Zwei Klassensätze anlegen, damit „filtern" überhaupt etwas bedeutet ---
 	const buecher = await (await page.request.get('/api/books')).json();

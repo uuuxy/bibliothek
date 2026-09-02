@@ -101,7 +101,6 @@
 - `GET /api/mail-templates`
 - `GET /api/monitor/slides`
 - `GET /api/portal/klassensaetze`
-- `GET /api/portal/lernmittel`
 - `GET /api/print/etikett/{id}`
 - `GET /api/print/kontoauszug/{schueler_id}`
 - `GET /api/print/mahnung/klasse/{klasse}`

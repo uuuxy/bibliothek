@@ -42,7 +42,7 @@ export function coverSrc(coverUrl, isbn) {
  * dann Google Books, dann OpenLibrary. Die Aufrufer probieren sie per onerror durch.
  *
  * Auch das war „die Entscheidung, die an vier Stellen einzeln getroffen wurde" —
- * BuchKarte, KlassenBuchKachel, KlassenBuchKachelStartseite und IsbnLookupDialog
+ * BuchKarte, KlassenBuchKachel und IsbnLookupDialog
  * bauten dieselbe Liste je selbst, und alle vier setzten die fremden Adressen DIREKT
  * ins src. Damit meldete sich der Browser jedes Nutzers bei Google und OpenLibrary und
  * gab dabei preis, welche ISBNs die Schule gerade ansieht. Jede Adresse läuft jetzt

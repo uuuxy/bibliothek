@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Lehrerportal → Reiter „Lernmittel" (Betreiber-Entscheidung 24.08.2026): Das
-// Kollegium sieht Bestand und Mengen je Jahrgang sowie die Klassensatz-Zuordnung —
+// Kollegium sieht die Klassensatz-Zuordnung (der Jahrgangs-Reiter ist seit 02.09.2026 weg) —
 // hinter der Anmeldung, über die Portal-Türen /api/portal/* (Anmeldung genügt,
 // KEIN view_books: die Rolle hat das Recht nicht, sonst käme sie nie an die Daten).
 //
@@ -55,9 +55,7 @@ test.describe('Lehrerportal: Lernmittel', () => {
 		`);
 	});
 
-	test('Lehrkraft sieht Klassensatz-Zuordnung und Bestand je Jahrgang mit Mengen', async ({
-		page
-	}) => {
+	test('Lehrkraft sieht die Klassensatz-Zuordnung, nur lesend', async ({ page }) => {
 		await uiLogin(page, LEHRER_EMAIL);
 		await page.getByTitle('Mein Portal').click();
 		// Seit 25.08.2026 zwei Reiter statt eines gestapelten Lernmittel-Reiters.
@@ -72,23 +70,10 @@ test.describe('Lehrerportal: Lernmittel', () => {
 		await expect(kachel).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Bearbeiten' })).toHaveCount(0);
 		await expect(page.locator('[role="button"]').filter({ has: kachel })).toHaveCount(0);
-
-		// Bestand nach Jahrgang: die Spanne 7–7 wird zur Gruppe „Klasse 7 Gymnasium".
-		await page.getByRole('tab', { name: 'Bestand nach Jahrgang' }).click();
-		const gruppe = page.getByRole('button', { name: /Klasse 7 Gymnasium/ });
-		await expect(gruppe).toBeVisible();
-		await gruppe.click();
-		const jahrgangsKachel = page.locator('h3').filter({ hasText: TITEL });
-		await expect(jahrgangsKachel).toBeVisible();
-
-		// Die Mengenangabe der Kachel — nicht nur „irgendwo steht 3/3".
-		await expect(
-			page.locator('div').filter({ has: jahrgangsKachel }).getByText('3/3 Stück').first()
-		).toBeVisible();
 	});
 
 	test('ohne Anmeldung bleiben die Portal-Türen zu', async ({ request }) => {
-		for (const pfad of ['/api/portal/lernmittel', '/api/portal/klassensaetze']) {
+		for (const pfad of ['/api/portal/klassensaetze']) {
 			const res = await request.get(pfad);
 			expect(res.status(), pfad).toBe(401);
 		}

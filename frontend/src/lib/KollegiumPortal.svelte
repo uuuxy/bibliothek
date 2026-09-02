@@ -101,13 +101,13 @@
 	<Reiter
 		etikett="Portal-Bereiche"
 		reiter={[
-			// Vier gleichrangige Aufgaben (25.08.2026, Peters Ansage): „Lernmittel" stapelte
+			// Drei gleichrangige Aufgaben (25.08.2026, Peters Ansage; „Bestand nach Jahrgang" am
+			// 02.09.2026 gestrichen — Import-Default 5–10 machte die Gruppierung leer): „Lernmittel" stapelte
 			// vorher zwei Listen mit eigenen Überschriften übereinander; und „Bücher &
 			// Klassensätze" hieß fast so wie der Abschnitt „Klassensätze" darin — dreimal
 			// dasselbe Wort für Suchen, Ansehen und den Menüpunkt.
 			{ id: 'buecher', label: 'Suchen & Reservieren' },
 			{ id: 'klassensaetze', label: 'Klassensätze' },
-			{ id: 'jahrgang', label: 'Bestand nach Jahrgang' },
 			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: offeneAnliegen }
 		]}
 		aktiv={reiter}
@@ -146,8 +146,8 @@
 		{:else if searchQuery.trim().length === 0}
 			<PortalUeberblick reservierungen={listen.eigene} />
 		{/if}
-	{:else if reiter === 'klassensaetze' || reiter === 'jahrgang'}
-		<PortalLernmittel bereich={reiter} />
+	{:else if reiter === 'klassensaetze'}
+		<PortalLernmittel />
 	{:else}
 		<AnliegenWidget anliegen={eigeneAnliegen} onaktualisiert={ladeAnliegen} />
 	{/if}
