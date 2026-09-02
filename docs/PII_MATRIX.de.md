@@ -15,7 +15,7 @@ der Theken-Scan (`POST /api/action` samt Batch) und die LUSD-Vorschau
 (`POST /api/lusd/preview`) laufen durch denselben Apparat. Für die übrigen
 Nicht-GET-Routen (Schreibpfade) bleibt die Stufe Handarbeit: Wer eine Zeile
 anlegt, hat den Handler gelesen.
-Stand: 01.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 02.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen).
 

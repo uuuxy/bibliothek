@@ -45,7 +45,11 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 	// Beide Schreibweisen, die im Projekt vorkommen: 2026-08-23 und 23.08.2026.
 	datumMuster := regexp.MustCompile(`(\d{4})-(\d{2})-(\d{2})|(\d{2})\.(\d{2})\.(\d{4})`)
 
-	const kopfZeilen = 12
+	// 24 statt 12 (02.09.2026): PII_MATRIX.de.md trägt ihren Stand in Zeile 18 — das
+	// Gate sah ihn nicht und blieb grün, während die Matrix Routen „seit 02.09." unter
+	// einem Stand vom 01.09. führte (lügende Ratsche). Die Abschnitts-Stände in
+	// befunde.md/invarianten.md liegen weit außerhalb dieses Fensters.
+	const kopfZeilen = 24
 
 	dateien, err := filepath.Glob("*.md")
 	if err != nil {
