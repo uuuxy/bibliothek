@@ -63,11 +63,8 @@ beides einstellbar (*Datenschutz & Sitzung*).
 
 ## Medienkatalog
 
-- **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur; darunter Filter
-  (Fach, Jahrgang, Zweig, Medienart, Bestand: nur verfügbare / ohne Exemplare) und
-  Sortierung, Trefferzahl, Umschalter *Karten* (Cover) / *Liste* (dichte Tabelle mit
-  Signatur und Bestand). Reiter *Jahrgänge*: Lernmittel je Stufe und Schulzweig mit
-  Stückzahlen.
+- **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur; Kartenansicht mit
+  Cover und Signatur. Reiter *Jahrgänge*: Lernmittel je Stufe und Schulzweig mit Stückzahlen.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
   (Warteliste mit Schüler-Suche), Historie.
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
