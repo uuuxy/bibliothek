@@ -330,14 +330,14 @@
 				     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
 				{@render kpi(
 					'Zirkulationsquote',
-					`${stats.zirkulationsquote ?? 0}%`,
+					`${num(stats.zirkulationsquote ?? 0)}\u00a0%`,
 					'verliehen ÷ aktiver Bestand',
 					'text-slate-900'
 				)}
 				{@render kpi(
 					'Verluste & Schäden',
 					num(stats.loss_stats.verlorene_exemplare),
-					`${stats.loss_stats.verlust_quote}% Quote · ${euro(stats.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
+					`${num(stats.loss_stats.verlust_quote ?? 0)}\u00a0% Quote · ${euro(stats.wiederbeschaffungswert_defekt)} Wiederbeschaffungswert`,
 					verlusteFarbe,
 					verlusteStatus
 				)}

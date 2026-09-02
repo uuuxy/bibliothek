@@ -2,7 +2,23 @@
 	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
+	import StatusChip from './components/ui/StatusChip.svelte';
+	import { formatZeitpunkt } from './utils/format.js';
 	import { RefreshCw, ScrollText } from '@lucide/svelte';
+
+	// Aktionen lesbar und mit BEDEUTUNG in der Farbe: Vorher stand jede Aktion in
+	// derselben roten Pille — CHECKOUT wie DELETE — und Rot heißt überall sonst
+	// „Fehler". Rot bleibt dem Unumkehrbaren (Löschung, Stornierung); der Rest ist
+	// neutral. Unbekannte Aktionen zeigen ihren Rohwert, die Rohform steht immer im Tooltip.
+	/** @type {Record<string, { text: string, ton: 'neutral'|'erfolg'|'warten'|'fehler' }>} */
+	const AKTIONEN = {
+		CHECKOUT: { text: 'Ausleihe', ton: 'neutral' },
+		RETURN: { text: 'Rückgabe', ton: 'neutral' },
+		UPDATE: { text: 'Änderung', ton: 'neutral' },
+		ZAHLUNG: { text: 'Zahlung', ton: 'erfolg' },
+		DELETE: { text: 'Löschung', ton: 'fehler' },
+		STORNIERUNG: { text: 'Stornierung', ton: 'fehler' }
+	};
 
 	// State Runes
 	/** @type {any[]} */
@@ -89,14 +105,14 @@
 						{#each logs as log, _i (_i)}
 							<tr class="hover:bg-slate-50/50 transition-colors">
 								<td class="p-4.5 text-sm text-slate-500">
-									{new Date(log.timestamp).toLocaleString('de-DE')}
+									{formatZeitpunkt(log.timestamp)}
 								</td>
 								<td class="p-4.5">
-									<span
-										class="inline-flex px-2 py-0.5 rounded-md text-xs font-bold bg-rose-50 border border-rose-100 text-rose-600"
-									>
-										{log.aktion}
-									</span>
+									<StatusChip
+										ton={AKTIONEN[log.aktion]?.ton ?? 'neutral'}
+										text={AKTIONEN[log.aktion]?.text ?? log.aktion}
+										tip={log.aktion}
+									/>
 								</td>
 								<td class="p-4.5 text-sm text-emerald-600">
 									{log.tabelle}
@@ -112,10 +128,12 @@
 										<span class="font-medium text-slate-500 italic">System</span>
 										<span class="block text-sm text-slate-400">automatischer Vorgang</span>
 									{:else}
-										<span class="font-medium text-slate-700"
+										<span class="font-medium text-slate-700" title={log.bearbeiter_id}
 											>{log.bearbeiter_vorname} {log.bearbeiter_nachname}</span
 										>
-										<span class="block text-sm font-mono text-slate-400">{log.bearbeiter_id}</span>
+										<!-- Die Bearbeiter-UUID ist in fast jeder Zeile dieselbe und verdoppelte die
+										     Zeilenhöhe; sie bleibt als Tooltip erreichbar. -->
+										<span class="sr-only">{log.bearbeiter_id}</span>
 									{/if}
 								</td>
 							</tr>

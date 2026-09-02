@@ -106,7 +106,7 @@
 			{/if}
 
 			{#if inventoryState.offeneSessions.length > 0}
-				<div class="w-full max-w-lg mx-auto text-left space-y-2 pt-4">
+				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
 					<h4 class="text-sm font-semibold text-slate-500">Laufende Inventuren</h4>
 					{#each inventoryState.offeneSessions as session (session.session_id)}
 						<div
@@ -144,11 +144,11 @@
 			     zweiten Arbeitsplatz, der mit der Liste ins Regal geht, sah ihn nie. Die Daten
 			     liegen dauerhaft auf dem Server; hier ist der Weg zurück zu ihnen. -->
 			{#if inventoryState.abgeschlosseneInventuren.length > 0}
-				<div class="w-full max-w-lg mx-auto text-left space-y-2 pt-4">
+				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
 					<h4 class="text-sm font-semibold text-slate-500">Frühere Inventuren</h4>
 					{#each inventoryState.abgeschlosseneInventuren as inventur (inventur.session_id)}
 						<div
-							class="flex items-center justify-between gap-3 p-3 bg-white border border-slate-200 rounded-xl"
+							class="flex items-center justify-between gap-3 px-3 py-2.5 border-b border-slate-200"
 						>
 							<div class="min-w-0">
 								<div class="font-semibold text-slate-800 truncate">{inventur.label}</div>

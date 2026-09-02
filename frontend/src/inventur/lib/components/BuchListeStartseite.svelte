@@ -27,16 +27,17 @@
 </script>
 
 <div class="overflow-x-auto">
-	<table class="w-full text-left text-sm">
+	<!-- table-fixed: Spalten springen sonst mit dem Inhalt (leere Signatur-Spalte → alles rutscht). -->
+	<table class="w-full table-fixed text-left text-sm">
 		<thead class="border-b border-outline-variant text-xs font-medium text-on-surface-variant">
 			<tr>
 				<th class="w-12 py-2 pr-2"><span class="sr-only">Cover</span></th>
 				<th class="py-2 pr-3">Titel</th>
-				<th class="py-2 pr-3">Fach</th>
-				<th class="py-2 pr-3">Klasse</th>
-				<th class="py-2 pr-3">Zweig</th>
-				<th class="py-2 pr-3">Signatur</th>
-				<th class="py-2 text-right">Verfügbar</th>
+				<th class="w-36 py-2 pr-3">Fach</th>
+				<th class="w-20 py-2 pr-3">Klasse</th>
+				<th class="w-32 py-2 pr-3">Zweig</th>
+				<th class="w-40 py-2 pr-3">Signatur</th>
+				<th class="w-36 py-2 text-right">Verfügbar</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -64,7 +65,7 @@
 							/>
 						{/if}
 					</td>
-					<td class="max-w-xs py-1.5 pr-3">
+					<td class="py-1.5 pr-3">
 						<div class="truncate font-medium text-on-surface" title={book.title}>{book.title}</div>
 						{#if book.author}
 							<div class="truncate text-sm text-on-surface-variant">{book.author}</div>

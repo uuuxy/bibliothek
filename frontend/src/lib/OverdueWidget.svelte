@@ -60,7 +60,7 @@
 				>{summary.total_overdue}</span
 			>
 			{#if quote !== null && hatMahnungen}
-				<span class="text-xs text-slate-400">≈ {quote}% der laufenden Ausleihen</span>
+				<span class="text-xs text-slate-400">≈ {quote} % der laufenden Ausleihen</span>
 			{/if}
 		</div>
 
