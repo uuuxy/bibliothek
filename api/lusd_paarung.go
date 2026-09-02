@@ -35,7 +35,8 @@ import (
 // „vermutlich" (angeboten, nicht angekreuzt): Geburtsdatum + ein weiteres Signal, oder
 // Name + Klasse/Anschrift bei abweichendem Geburtsdatum (Datumskorrektur).
 // Jeder Abgänger und jede Zeile stehen in höchstens einem Paar; bei Konkurrenz gewinnt
-// das stärkere. Im Nur-Name-Modus gibt es keine Paare — ohne Datum trägt kein Signal.
+// das stärkere. Paare gibt es nur im Modus Name + Geburtsdatum: Im Nur-Name-Modus trägt
+// ohne Datum kein Signal, im ID-Modus löst die LUSD-ID jede Umbenennung selbst.
 
 // UmbenennungDiff ist ein vorgeschlagenes Paar in der Vorschau. Zeile ist die Zeilen-
 // nummer der Datei (stabil über Vorschau und Import), SchuelerID der Bestandsdatensatz.
@@ -76,22 +77,32 @@ type paarKandidat struct {
 // findeUmbenennungen bildet die Paare. Kandidaten auf der Bestandsseite sind die
 // Abgänger dieses Laufs (aktive, die im Export fehlen) und die noch nicht anonymisierten
 // Abgänger früherer Läufe; auf der Dateiseite die Zeilen, die neu angelegt würden.
+//
+// Nur in den Namensmodi: Im ID-Modus trägt jede Zeile die LUSD-ID, eine Umbenennung
+// findet der Schlüssel selbst — ein Paar hätte dort die alte lusd_id behalten und wäre
+// beim nächsten Lauf erneut als Abgänger + Neuzugang erschienen (Rasterdurchgang 02.09.).
+// Ausgeschlossen sind außerdem Bestandsschüler, die dieser Lauf schon per Schlüssel
+// zuordnet (Rückkehrer in z.zielID): Sonst zeigten zwei Zeilen auf dieselbe ID.
 func findeUmbenennungen(datei lusdDatei, bestand []lusdBestandsSchueler, idx lusdIndex, z lusdZuordnung) []UmbenennungDiff {
-	if datei.Modus == lusdModusNurName || len(z.neuZeilen) == 0 {
+	if datei.Modus != lusdModusName || len(z.neuZeilen) == 0 {
 		return nil
 	}
 	nachID := make(map[string]*lusdBestandsSchueler, len(bestand))
 	for i := range bestand {
 		nachID[bestand[i].ID] = &bestand[i]
 	}
+	schonZugeordnet := make(map[string]bool, len(z.zielID))
+	for _, id := range z.zielID {
+		schonZugeordnet[id] = true
+	}
 	var seite []*lusdBestandsSchueler
 	for _, id := range z.abgaengerIDs {
-		if s := nachID[id]; s != nil {
+		if s := nachID[id]; s != nil && !schonZugeordnet[id] {
 			seite = append(seite, s)
 		}
 	}
 	for _, s := range idx.abgaenger {
-		if s != nil && !s.Anonymisiert {
+		if s != nil && !s.Anonymisiert && !schonZugeordnet[s.ID] {
 			seite = append(seite, s)
 		}
 	}

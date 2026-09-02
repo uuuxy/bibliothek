@@ -98,7 +98,8 @@ bekommt den neuen Namen bzw. das korrigierte Geburtsdatum und behält UUID, Ausw
 Ausleihen und Historie. Nicht bestätigt: Abgänger + Neuanlage wie bisher. Jeder Abgänger und
 jede Zeile stehen in höchstens einem Paar; bei Konkurrenz gewinnt das stärkere. Auch
 Abgänger **früherer** Läufe sind Kandidaten, solange sie nicht anonymisiert sind — dafür
-gibt es die Karenzzeit (§4). Im Nur-Name-Modus gibt es keine Paare.
+gibt es die Karenzzeit (§4). Paare gibt es nur im Modus Name + Geburtsdatum: Im Nur-Name-Modus
+trägt ohne Datum kein Signal, im ID-Modus löst die LUSD-ID jede Umbenennung selbst.
 
 Der Server nimmt nur Paare an, die diese Vorschau selbst vorgeschlagen hat; eine fremde
 Kombination wird mit 400 abgewiesen, nicht geraten.

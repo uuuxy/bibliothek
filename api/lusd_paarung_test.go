@@ -153,10 +153,13 @@ func TestUebernimmUmbenennungen(t *testing.T) {
 		t.Error("Paar muss als bestätigt markiert sein")
 	}
 
-	// Fremde Kombination → Fehler, nichts geraten.
-	err := uebernimmUmbenennungen(datei, []umbenennungWahl{{Zeile: 2, SchuelerID: "weg"}}, paare, &z, res)
-	if _, ok := err.(*errUmbenennungUngueltig); !ok {
-		t.Errorf("erwartet errUmbenennungUngueltig, bekam %v", err)
+	// Fremde Kombination → Fehler, nichts geraten: unbekannte Zeile UND bekannte Zeile
+	// mit fremder ID (die zweite Form fasste der Test bis 02.09.2026 nicht).
+	for _, w := range []umbenennungWahl{{Zeile: 2, SchuelerID: "weg"}, {Zeile: 3, SchuelerID: "weg"}} {
+		err := uebernimmUmbenennungen(datei, []umbenennungWahl{w}, paare, &z, res)
+		if _, ok := err.(*errUmbenennungUngueltig); !ok {
+			t.Errorf("Wahl %+v: erwartet errUmbenennungUngueltig, bekam %v", w, err)
+		}
 	}
 }
 
@@ -229,5 +232,38 @@ func TestWaehlePaare_GleichstandKeinPaarUndReihenfolgeEgal(t *testing.T) {
 		if len(p) != 1 || p[0].SchuelerID != "lena" {
 			t.Errorf("Reihenfolge %s/%s: erwartet genau Lena, bekam %+v", reihenfolge[0].ID, reihenfolge[1].ID, p)
 		}
+	}
+}
+
+// Paare nur im Modus Name + Geburtsdatum: Im ID-Modus löst die LUSD-ID die Umbenennung
+// selbst; ein Paar hätte dort die alte lusd_id behalten und wäre beim nächsten Lauf
+// erneut Abgänger + Neuzugang gewesen (Rasterdurchgang 02.09.2026).
+func TestFindeUmbenennungen_NurImNamensmodus(t *testing.T) {
+	geb, eintritt := tag(2013, 5, 4), tag(2024, 8, 19)
+	bestand := []lusdBestandsSchueler{bestandsZeile("alt", "Anna", "Müller", "05F1", geb, eintritt)}
+	datei := lusdDatei{Modus: lusdModusID, Zeilen: []parsedStudentRow{
+		{LineNum: 2, LusdID: "L-NEU", Vorname: "Anna", Nachname: "Mueller", Klasse: "06F1", GebDatum: geb, EintrittAm: eintritt},
+	}}
+	z := lusdZuordnung{neuZeilen: []int{0}, abgaengerIDs: []string{"alt"}}
+	if p := findeUmbenennungen(datei, bestand, lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{}}, z); len(p) != 0 {
+		t.Errorf("ID-Modus darf keine Paare bilden: %+v", p)
+	}
+}
+
+// Ein früherer Abgänger, den dieser Lauf schon per Schlüssel als Rückkehrer zuordnet,
+// ist kein Paar-Kandidat mehr — sonst zeigten zwei Zeilen auf dieselbe ID und der
+// Batch schriebe beide (letzter gewinnt).
+func TestFindeUmbenennungen_RueckkehrerIstKeinKandidat(t *testing.T) {
+	geb := tag(2013, 5, 4)
+	alt := bestandsZeile("alt", "Anna", "Müller", "05F1", geb, nil)
+	alt.IstAbgaenger = true
+	idx := lusdIndex{abgaenger: map[string]*lusdBestandsSchueler{"k1": &alt}}
+	datei := lusdDatei{Modus: lusdModusName, Zeilen: []parsedStudentRow{
+		{LineNum: 2, Vorname: "Anna", Nachname: "Müller", Klasse: "06F1", GebDatum: geb},       // Rückkehrer per Schlüssel
+		{LineNum: 3, Vorname: "Anna", Nachname: "Müller-Klein", Klasse: "06F1", GebDatum: geb}, // sähe wie ein Paar aus
+	}}
+	z := lusdZuordnung{neuZeilen: []int{1}, zielID: map[int]string{0: "alt"}}
+	if p := findeUmbenennungen(datei, nil, idx, z); len(p) != 0 {
+		t.Errorf("schon zugeordneter Rückkehrer darf kein Paar-Kandidat sein: %+v", p)
 	}
 }
