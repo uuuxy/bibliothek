@@ -145,8 +145,11 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.zahl(AuditAufbewahrungSchluessel, p.AuditAufbewahrungMonate, MindestAuditAufbewahrungMonate, StandardAuditAufbewahrungMonate)
 	s.zahl("theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 0)
 	s.zahl("sperre_minuten", p.SperreMinuten, 0, 0)
-	// 0 = sofort anonymisieren (Verhalten bis 02.09.2026), also ein echter Wert.
-	s.zahl(AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, 0)
+	// 0 = sofort anonymisieren (Verhalten bis 02.09.2026), also ein echter Wert. Ein
+	// NEGATIVER Wert darf aber nicht zur 0 werden: Für die Nachbarschlüssel heißt 0
+	// „aus" (Daten bleiben), hier heißt 0 „nächste Nacht alle Abgänger anonymisieren" —
+	// der destruktivste Wert des Schalters. Ersatz ist deshalb die Vorgabe.
+	s.zahl(AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, StandardAbgaengerKarenzTage)
 
 	return s.paare
 }

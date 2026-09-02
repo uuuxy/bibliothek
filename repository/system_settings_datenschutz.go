@@ -65,6 +65,22 @@ func setzeIntZeiger(val *string, ziel **int) {
 	*ziel = zeiger(v)
 }
 
+// setzeIntZeigerMitErsatz: wie setzeIntZeiger, aber ein negativer Wert wird zum Ersatz
+// statt zur 0 — für Schlüssel, bei denen 0 der schärfste Wert ist.
+func setzeIntZeigerMitErsatz(val *string, ziel **int, ersatz int) {
+	if val == nil || *val == "" {
+		return
+	}
+	v, err := strconv.Atoi(*val)
+	if err != nil {
+		return
+	}
+	if v < 0 {
+		v = ersatz
+	}
+	*ziel = zeiger(v)
+}
+
 // anwendenDatenschutzEinstellung meldet true, wenn der Schlüssel hierher gehört.
 func anwendenDatenschutzEinstellung(s *SystemEinstellungen, key string, val *string) bool {
 	switch key {
@@ -81,7 +97,8 @@ func anwendenDatenschutzEinstellung(s *SystemEinstellungen, key string, val *str
 	case "sperre_minuten":
 		setzeIntZeiger(val, &s.SperreMinuten)
 	case AbgaengerKarenzSchluessel:
-		setzeIntZeiger(val, &s.AbgaengerKarenzTage)
+		// Negativ/unlesbar → Vorgabe, nie 0 (0 = sofort anonymisieren, s. Patch).
+		setzeIntZeigerMitErsatz(val, &s.AbgaengerKarenzTage, StandardAbgaengerKarenzTage)
 	default:
 		return false
 	}

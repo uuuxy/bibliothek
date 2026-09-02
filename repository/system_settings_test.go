@@ -142,3 +142,26 @@ func TestSaveSettings_LeererPatchSchreibtNichts(t *testing.T) {
 		t.Fatalf("es hätte gar keine Abfrage geben dürfen: %v", err)
 	}
 }
+
+// Karenz negativ: Für die Nachbarschlüssel ist 0 „aus" (Daten bleiben), für die
+// Abgänger-Karenz ist 0 „sofort anonymisieren" — der destruktivste Wert. Ein Tippfehler
+// „-90" darf deshalb weder beim Speichern noch beim Lesen zur 0 werden, sondern zur
+// Vorgabe (Rasterdurchgang 02.09.2026).
+func TestAbgaengerKarenz_NegativWirdVorgabeNichtNull(t *testing.T) {
+	var s paarSammler
+	s.zahl(AbgaengerKarenzSchluessel, ptr(-5), 0, StandardAbgaengerKarenzTage)
+	if len(s.paare) != 1 || s.paare[0][1] != "90" {
+		t.Errorf("Patch -5 muss als Vorgabe 90 gespeichert werden, bekam %v", s.paare)
+	}
+	einst := &SystemEinstellungen{}
+	wert := "-5"
+	anwendenDatenschutzEinstellung(einst, AbgaengerKarenzSchluessel, &wert)
+	if einst.AbgaengerKarenzTage == nil || *einst.AbgaengerKarenzTage != StandardAbgaengerKarenzTage {
+		t.Errorf("DB-Wert -5 muss als Vorgabe gelesen werden, bekam %v", einst.AbgaengerKarenzTage)
+	}
+	null := "0"
+	anwendenDatenschutzEinstellung(einst, AbgaengerKarenzSchluessel, &null)
+	if einst.AbgaengerKarenzTage == nil || *einst.AbgaengerKarenzTage != 0 {
+		t.Error("0 bleibt 0 (sofort) — nur negativ wird ersetzt")
+	}
+}
