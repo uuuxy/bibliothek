@@ -146,7 +146,10 @@
 	</div>
 
 	<div class="w-40 shrink-0 sm:w-48">
-		<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low">
+		<!-- Der Schatten hebt das Cover als Gegenstand von der weißen Fläche ab — wie auf der
+		     Play-Store-Detailseite (Peter, 02.09.2026). Nur hier am großen Einzel-Cover; die
+		     Kacheln im Raster bleiben flach, zwölf Schatten nebeneinander wären Rauschen. -->
+		<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low shadow-2xl">
 			{#if coverSrc && !coverFailed}
 				<img
 					src={coverSrc}
