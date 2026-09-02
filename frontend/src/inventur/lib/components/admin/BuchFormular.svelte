@@ -6,9 +6,17 @@
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
-	import { BookOpen, Printer, X } from '@lucide/svelte';
+	import { BookOpen, Printer, Trash2, X } from '@lucide/svelte';
 
-	let { formular = $bindable(), onClose, onSave, onCoverUpload, onAssignClass } = $props();
+	/** onDelete kommt nur mit dem Recht delete_books (admin/+page) — ohne Recht gibt es den Knopf nicht. */
+	let {
+		formular = $bindable(),
+		onClose,
+		onSave,
+		onCoverUpload,
+		onAssignClass,
+		onDelete = undefined
+	} = $props();
 
 	let wirdGescannt = $state(false);
 
@@ -69,19 +77,39 @@
 		</button>
 	</div>
 
-	<!-- Form Content -->
-	<div class="p-6 space-y-8 flex-1">
-		<BuchCoverUpload bind:formular {onCoverUpload} />
-		<BuchEingabefelder bind:formular bind:wirdGescannt />
-		{#if formular.id}
-			<BuchExemplareListe bind:formular />
-		{/if}
+	<!-- Zwei Spalten wie eine Play-Store-Detailseite (Peter, 02.09.2026): Felder links,
+	     Cover rechts und beim Scrollen stehend. Vorher saß das Cover klein oben in der
+	     Mitte und jedes Feld lief über die volle Breite — zwei Meter Formular. -->
+	<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_14rem] lg:gap-10">
+		<div class="space-y-8">
+			<BuchEingabefelder bind:formular bind:wirdGescannt />
+			{#if formular.id}
+				<BuchExemplareListe bind:formular />
+			{/if}
+		</div>
+		<aside class="mt-8 lg:mt-0 lg:sticky lg:top-24 lg:self-start">
+			<BuchCoverUpload bind:formular {onCoverUpload} />
+		</aside>
 	</div>
 
 	<!-- Drawer Footer -->
 	<div
 		class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0 rounded-b-2xl"
 	>
+		{#if formular.id && onDelete}
+			<!-- Löschen gehörte bisher nur der Mehrfachauswahl in der Titel-Liste; wer schon in
+			     der Maske steht, musste zurück. Der Server verweigert bei verliehenen Exemplaren. -->
+			<Button
+				variant="ghost"
+				size="lg"
+				onclick={onDelete}
+				class="text-error"
+				title="Diesen Titel mit allen Exemplaren löschen"
+			>
+				<Trash2 class="w-4 h-4" aria-hidden="true" />
+				Titel löschen
+			</Button>
+		{/if}
 		{#if formular.id}
 			<Button
 				variant="secondary"
@@ -98,10 +126,10 @@
 				size="lg"
 				onclick={onAssignClass}
 				class="mr-auto px-5"
-				title="Dieses Buch einer Schulklasse zuweisen"
+				title="Diesen Titel dem Klassensatz einer Schulklasse hinzufügen"
 			>
 				<BookOpen class="w-4 h-4" aria-hidden="true" />
-				Klasse zuweisen
+				Zum Klassensatz hinzufügen
 			</Button>
 		{/if}
 

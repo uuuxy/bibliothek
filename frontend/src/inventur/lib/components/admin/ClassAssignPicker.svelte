@@ -80,9 +80,9 @@
 		class="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-5"
 		role="dialog"
 		aria-modal="true"
-		aria-label="Klasse zuweisen"
+		aria-label="Zum Klassensatz hinzufügen"
 	>
-		<h3 class="text-lg font-bold text-slate-900">Klasse zuweisen</h3>
+		<h3 class="text-lg font-bold text-slate-900">Zum Klassensatz hinzufügen</h3>
 		<p class="text-sm text-slate-500">
 			{bookIds.length}
 			{bookIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.

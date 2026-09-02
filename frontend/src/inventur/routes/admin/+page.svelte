@@ -1,7 +1,6 @@
 <!--
   admin/+page.svelte
-  Hauptseite für den Administratorenbereich der Inventur-App.
-  Liest und schreibt Bücherdaten mithilfe der API und steuert Unterkomponenten.
+  Hauptseite des Administratorenbereichs: liest/schreibt Bücherdaten über die API, steuert Unterkomponenten.
 -->
 <script>
 	import { onMount } from 'svelte';
@@ -180,6 +179,7 @@
 			onSave={() => buchAktionen.saveChanges()}
 			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.handleCoverUpload(ereignis)}
 			onAssignClass={() => (klassenZuweisenIds = formular.id ? [formular.id] : [])}
+			onDelete={buchAktionen?.darfLoeschen() ? () => buchAktionen.titelLoeschen() : undefined}
 		/>
 	{:else}
 		<BookTable

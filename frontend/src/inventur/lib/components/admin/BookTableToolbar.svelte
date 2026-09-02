@@ -42,7 +42,7 @@
 				class="border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100/60"
 			>
 				<BookOpen class="w-4 h-4" aria-hidden="true" />
-				Klasse zuweisen ({selectedCount})
+				Zum Klassensatz hinzufügen ({selectedCount})
 			</Button>
 			<Button variant="danger" onclick={onDelete}>
 				<Trash2 class="w-4 h-4" aria-hidden="true" />

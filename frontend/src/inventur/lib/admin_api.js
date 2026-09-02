@@ -117,3 +117,20 @@ export async function exportiereCSV() {
 	window.URL.revokeObjectURL(url);
 	a.remove();
 }
+
+/**
+ * Löscht EINEN Titel samt Exemplaren über DELETE /api/buecher/titel/{id} — der Endpunkt
+ * verweigert (400) mit Klartext, solange Exemplare verliehen sind. Nicht der Sammel-
+ * Endpunkt DELETE /api/books der Mehrfachauswahl: Der kennt die Ausleih-Sperre nicht.
+ * @param {string} id
+ */
+export async function loescheTitel(id) {
+	const res = await apiFetch(`/api/buecher/titel/${encodeURIComponent(id)}`, {
+		method: 'DELETE',
+		credentials: 'include'
+	});
+	if (!res.ok) {
+		const json = await res.json().catch(() => ({}));
+		throw new Error(json.error || 'Titel konnte nicht gelöscht werden.');
+	}
+}

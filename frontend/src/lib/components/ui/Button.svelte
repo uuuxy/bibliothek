@@ -69,10 +69,12 @@
 	// blieb ein getönter Button stumm weiß. Gemessen an sechs Stellen (Medienkatalog-Toolbar,
 	// Klassenkarte, Stammdaten, Buch-Akte, Offline-Banner, Mahnwesen), alle unbemerkt.
 	//
+	// Seit 02.09.2026 auch die M3-Rollen (text-error, bg-primary …): Sonst blieb `text-error` am
+	// Ghost-Knopf stumm, weil `text-slate-700` der Variante im Stylesheet dahinter steht.
 	// Nur Basisfarben werden ersetzt; Zustandsvarianten (hover:, disabled:, focus-within:)
 	// bleiben stehen, und Größenangaben (text-label-small, text-sm) gelten nicht als Farbe.
 	const FARBE =
-		/^(bg|border|ring|text)-(slate|gray|zinc|blue|indigo|emerald|green|amber|orange|rose|red|white|black|transparent)/;
+		/^(bg|border|ring|text)-(slate|gray|zinc|blue|indigo|emerald|green|amber|orange|rose|red|white|black|transparent|primary|secondary|tertiary|error|surface|outline|on-)/;
 	const familie = (/** @type {string} */ c) => c.split('-')[0];
 
 	const variantClasses = $derived.by(() => {

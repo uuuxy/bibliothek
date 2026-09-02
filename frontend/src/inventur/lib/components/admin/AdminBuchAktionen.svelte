@@ -1,8 +1,29 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { appState, showToast } from '$lib/store.svelte.js';
+	import { loescheTitel } from '../../admin_api.js';
+	import { hatRecht } from '../../../../lib/menu.js';
+	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 
 	let { books = $bindable(), isEditMode = $bindable(), formular = $bindable() } = $props();
+
+	export function darfLoeschen() {
+		return hatRecht(authStore.currentUser, 'delete_books');
+	}
+
+	/** Löschen aus der Maske: ein Titel, Rückfrage, der Server verweigert bei Ausleihen. */
+	export async function titelLoeschen() {
+		if (!formular.id) return;
+		if (!confirm(`„${formular.title}“ mit allen Exemplaren wirklich löschen?`)) return;
+		try {
+			await loescheTitel(formular.id);
+			books = books.filter((/** @type {any} */ b) => b.id !== formular.id);
+			isEditMode = false;
+			showToast('Titel gelöscht.', 'success');
+		} catch (fehler) {
+			showToast(fehler instanceof Error ? fehler.message : String(fehler), 'error');
+		}
+	}
 
 	export async function saveChanges() {
 		if (!formular.title || !formular.isbn) {

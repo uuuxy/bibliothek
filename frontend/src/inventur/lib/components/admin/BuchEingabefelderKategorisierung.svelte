@@ -46,7 +46,7 @@
 <div class="grid grid-cols-2 gap-4">
 	<Feld
 		id="buch-jahrgang-von"
-		label="Verwendbar von Klasse"
+		label="Geeignet für Jahrgang von"
 		type="number"
 		min="1"
 		max="13"
@@ -55,7 +55,7 @@
 	/>
 	<Feld
 		id="buch-jahrgang-bis"
-		label="bis Klasse"
+		label="bis Jahrgang"
 		type="number"
 		min="1"
 		max="13"

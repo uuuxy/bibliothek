@@ -10,7 +10,10 @@
 </script>
 
 <div class="flex flex-col items-center">
-	<div class="w-32 h-44 bg-slate-100 rounded-lg shadow-md overflow-hidden mb-4 relative group">
+	<!-- Füllt die rechte Spalte der Maske (02.09.2026); vorher 128×176 px oben in der Mitte. -->
+	<div
+		class="group relative mb-4 aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low"
+	>
 		{#if formular.coverUrl}
 			<img
 				src={formular.coverUrl}
