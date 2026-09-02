@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -144,5 +145,21 @@ func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 	rec := dsgvoRequest(t, mock)
 	if rec.Code != http.StatusOK {
 		t.Errorf("Audit-Fehler darf die Auskunft nicht blockieren: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+// Die Speicherdauer-Angabe nennt die EINGESTELLTE Karenzzeit, keine feste Zahl
+// (Rasterdurchgang 02.09.2026: „Altfälle nach 360 Tagen" stand noch im Text, der Job
+// rechnete längst mit abgaenger_karenz_tage).
+func TestDsgvoVerarbeitungsangaben_KarenzAusEinstellung(t *testing.T) {
+	va := dsgvoVerarbeitungsangaben(90, 730, 5)
+	if !strings.Contains(va.Speicherdauer, "Karenzzeit von 5 Tagen") {
+		t.Errorf("Speicherdauer nennt die Karenz nicht: %q", va.Speicherdauer)
+	}
+	if strings.Contains(va.Speicherdauer, "360") {
+		t.Errorf("Speicherdauer trägt noch die alte feste Frist: %q", va.Speicherdauer)
+	}
+	if va := dsgvoVerarbeitungsangaben(90, 730, 0); !strings.Contains(va.Speicherdauer, "sofort nach dem Abgang") {
+		t.Errorf("Karenz 0 muss sofort heißen: %q", va.Speicherdauer)
 	}
 }

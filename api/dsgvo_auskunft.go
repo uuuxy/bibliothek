@@ -154,7 +154,15 @@ type DsgvoAuskunftResponse struct {
 // Sitzung"). Bis 22.08.2026 stand hier pauschal lit. e ohne Fristen, während SECURITY.md,
 // VVT- und Art.-13-Entwurf längst zwei Tätigkeiten mit zwei Grundlagen und 90/730 Tagen
 // beschrieben — eine Betroffenenauskunft mit falscher Pflichtangabe (Prüfung 22.08., B).
-func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage int) DsgvoVerarbeitungsangaben {
+// dsgvoVerarbeitungsangaben baut die Pflichtangaben aus den EINGESTELLTEN Fristen — die
+// Karenzzeit vor der Anonymisierung (abgaenger_karenz_tage) ebenso wie die Lesehistorie.
+// Bis 02.09.2026 stand hier ein festes „Altfälle nach 360 Tagen", während der Job längst
+// mit der Karenz rechnete: eine Pflichtangabe an die betroffene Person, die nicht stimmte.
+func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage int) DsgvoVerarbeitungsangaben {
+	karenz := "sofort nach dem Abgang"
+	if karenzTage > 0 {
+		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem Abgang", karenzTage)
+	}
 	frist := func(tage int) string {
 		if tage <= 0 {
 			return "bis zur Löschung des Schülerdatensatzes (Befristung in dieser Installation abgeschaltet)"
@@ -171,21 +179,22 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage int) DsgvoVerarb
 			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO / § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
-			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz: nach dem Abgang (ab 30. Januar des Folgejahres) gelöscht, sofern keine offene Ausleihe und kein unbezahlter Schadensfall; Altfälle nach 360 Tagen, Papierkorb nach 180 Tagen anonymisiert. Protokolle 24 Monate. Verschlüsselte Backups 14 Tage.",
+			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz: nach dem Abgang (ab 30. Januar des Folgejahres) gelöscht, sofern keine offene Ausleihe und kein unbezahlter Schadensfall; Abgänger ohne offene Vorgänge " + karenz + " anonymisiert, Papierkorb nach 180 Tagen. Protokolle 24 Monate. Verschlüsselte Backups 14 Tage.",
 		Herkunft:          "Stammdaten aus der Landesschülerdatenbank LUSD (Export/Import) bzw. manuelle Erfassung durch das Bibliotheksteam",
 		Betroffenenrechte: "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)",
 	}
 }
 
-// dsgvoLesehistorieFristen liest die Befristung aus den Einstellungen; bei Fehlern gelten
-// die Vorgaben (so arbeitet auch der Job).
-func (s *Server) dsgvoLesehistorieFristen(ctx context.Context) (int, int) {
+// dsgvoFristen liest Lesehistorie-Befristung und Abgänger-Karenz aus den Einstellungen;
+// bei Fehlern gelten die Vorgaben (so arbeiten auch die Jobs).
+func (s *Server) dsgvoFristen(ctx context.Context) (int, int, int) {
 	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 	if err != nil || einst == nil {
-		return repository.StandardLesehistorieTage, repository.StandardLesehistorieLernmittelTage
+		return repository.StandardLesehistorieTage, repository.StandardLesehistorieLernmittelTage, repository.StandardAbgaengerKarenzTage
 	}
 	return repository.TageOderStandard(einst.LesehistorieTage, repository.StandardLesehistorieTage),
-		repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage)
+		repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage),
+		repository.AbgaengerKarenzTageOderStandard(einst)
 }
 
 func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {
@@ -399,7 +408,7 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Verwaltungsprotokolle", err)
 	}
-	verarbeitung := dsgvoVerarbeitungsangaben(s.dsgvoLesehistorieFristen(ctx))
+	verarbeitung := dsgvoVerarbeitungsangaben(s.dsgvoFristen(ctx))
 
 	return &dsgvoDaten{
 		verarbeitung:   verarbeitung,
