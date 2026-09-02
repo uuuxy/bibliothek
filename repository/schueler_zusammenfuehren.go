@@ -62,8 +62,8 @@ type ZusammenfuehrenErgebnis struct {
 	Ausleihen     int64  `json:"ausleihen"`
 	Schaeden      int64  `json:"schaeden"`
 	Vormerkungen  int64  `json:"vormerkungen"`
-	// DoppelteVormerkungen: Vormerkungen der Quelle auf Titel, die das Ziel schon
-	// vorgemerkt hatte — sie fallen weg (UNIQUE titel_id, schueler_id).
+	// DoppelteVormerkungen: Titel, die beide vorgemerkt hatten — die weniger
+	// fortgeschrittene Vormerkung fällt weg (UNIQUE titel_id, schueler_id).
 	DoppelteVormerkungen int64 `json:"doppelte_vormerkungen"`
 }
 
@@ -209,14 +209,26 @@ type gewanderteVorgaenge struct {
 // verschiebeVorgaenge hängt alles, was an der Quelle hängt, an das Ziel: Vorgänge (FK),
 // das Foto (nur wenn das Ziel keines hat) und die Protokollspuren, über die die
 // Art.-15-Auskunft und die DSGVO-Tilgung den Schüler finden (details->>'schueler_id',
-// datensatz_id) — dieselben Schlüssel wie in SpurTilgungen. Eine Vormerkung, die das
-// Ziel auf denselben Titel schon hat, fällt weg (UNIQUE titel_id, schueler_id).
+// datensatz_id) — dieselben Schlüssel wie in SpurTilgungen. Von zwei Vormerkungen auf
+// denselben Titel bleibt die fortgeschrittenere (UNIQUE titel_id, schueler_id).
 func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, erg *ZusammenfuehrenErgebnis) (*gewanderteVorgaenge, error) {
 	g := &gewanderteVorgaenge{}
 	var err error
-	if g.VormerkungenDoppelt, err = idsAus(ctx, tx, `DELETE FROM vormerkungen q WHERE q.schueler_id = $2
-		AND EXISTS (SELECT 1 FROM vormerkungen z WHERE z.schueler_id = $1 AND z.titel_id = q.titel_id)
-		RETURNING q.id`, ziel, quelle); err != nil {
+	// Dublette auf denselben Titel: Es bleibt die weiter fortgeschrittene Vormerkung
+	// (abholbereit vor wartend), bei Gleichstand die ältere, dann die des Ziels — egal,
+	// auf welcher Seite sie steht. Sonst verlöre das Kind den bereitgestellten Platz.
+	if g.VormerkungenDoppelt, err = idsAus(ctx, tx, `
+		WITH paar AS (
+			SELECT v.id, v.schueler_id, v.titel_id, v.erstellt_am,
+			       CASE WHEN v.status = 'abholbereit' THEN 2 ELSE 1 END AS rang
+			FROM vormerkungen v WHERE v.schueler_id IN ($1, $2)
+		)
+		DELETE FROM vormerkungen d USING paar v, paar w
+		WHERE d.id = v.id AND v.titel_id = w.titel_id AND v.schueler_id <> w.schueler_id
+		  AND (v.rang < w.rang
+		       OR (v.rang = w.rang AND v.erstellt_am > w.erstellt_am)
+		       OR (v.rang = w.rang AND v.erstellt_am = w.erstellt_am AND v.schueler_id = $2))
+		RETURNING d.id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("doppelte vormerkungen: %w", err)
 	}
 	erg.DoppelteVormerkungen = int64(len(g.VormerkungenDoppelt))

@@ -326,3 +326,40 @@ func TestZusammenfuehren_AktiveHandanlageSchlaegtAbgaenger(t *testing.T) {
 		t.Errorf("aktive Handanlage muss die Stammdaten stellen, nicht der Abgänger: %+v", erg)
 	}
 }
+
+// Vormerkungs-Dublette: Beide haben denselben Titel vorgemerkt, die Quelle ist schon
+// „abholbereit" (Exemplar liegt bereit), das Ziel noch „wartend". Bis 02.09.2026 fiel
+// die Vormerkung der QUELLE — das Kind verlor den bereitgestellten Platz, das Exemplar
+// stand frei, niemand wurde bedient. Es bleibt die weiter fortgeschrittene Vormerkung,
+// egal auf welcher Seite sie steht (Rasterdurchgang, Frage 5/8).
+func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Vormerk", klasse: "07A", barcode: "ZF-V1", geb: datum(2012, 11, 11)})
+	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Vormerk", klasse: "07A", barcode: "ZF-V2", geb: datum(2012, 11, 11)})
+	titelID := titelMitMeldebestand(t, pool, "Vormerktitel-ZFV", 1)
+	exID := exemplar(t, pool, titelID, "EX-ZFV", true, "")
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status) VALUES ($1, $2, 'wartend')`, titelID, ziel); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status, bereitgestellt_exemplar_id, bereitgestellt_bis)
+		VALUES ($1, $2, 'abholbereit', $3, CURRENT_TIMESTAMP + INTERVAL '2 days')`, titelID, quelle, exID); err != nil {
+		t.Fatal(err)
+	}
+	erg, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var status string
+	var exemplarID *string
+	if err := pool.QueryRow(ctx, `SELECT status, bereitgestellt_exemplar_id::text FROM vormerkungen WHERE schueler_id = $1 AND titel_id = $2`, ziel, titelID).Scan(&status, &exemplarID); err != nil {
+		t.Fatal(err)
+	}
+	if status != "abholbereit" || exemplarID == nil || *exemplarID != exID {
+		t.Errorf("die abholbereite Vormerkung muss überleben: status=%q exemplar=%v (Ergebnis %+v)", status, exemplarID, erg)
+	}
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM vormerkungen WHERE titel_id = $1`, titelID); n != 1 {
+		t.Errorf("genau eine Vormerkung je Titel erwartet, gefunden %d", n)
+	}
+}
