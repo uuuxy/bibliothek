@@ -334,13 +334,18 @@ var spurTilgungen = []SpurTilgung{
 			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = ANY($1::text[])`,
 	},
 	{
-		// Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN). Nur der PII-Schlüssel fällt;
+		// Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN) und die Ausweis-Barcodes
+		// (SCHUELER_ZUSAMMENGEFUEHRT, Tresen-Auskunft): Nur die PII-Schlüssel fallen;
 		// Aktion, Zeit und schueler_id (nach Anonymisierung ein Pseudonym) bleiben für
-		// die Rechenschaftspflicht erhalten.
-		Beschreibung: "audit_logs (LUSD-ID)",
+		// die Rechenschaftspflicht erhalten. Der Barcode gehört dazu, weil die anonyme
+		// Hülle einen ANON-Barcode bekommt, damit die physische Karte nicht mehr aufgeht —
+		// im Verwaltungsprotokoll stand die alte Nummer sonst bis zu 24 Monate neben der
+		// UUID (Rasterdurchgang 02.09.2026).
+		Beschreibung: "audit_logs (LUSD-ID, Barcodes)",
 		sql: `UPDATE audit_logs
-			SET details = details - 'lusd_id'
-			WHERE details ? 'lusd_id' AND details->>'schueler_id' = ANY($1::text[])`,
+			SET details = details - 'lusd_id' - 'barcode' - 'aufgeloest_barcode'
+			WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode')
+			  AND details->>'schueler_id' = ANY($1::text[])`,
 	},
 	{
 		// Vormerkungen: die Freitext-Notiz kann personenbezogen sein, und die Vormerkung

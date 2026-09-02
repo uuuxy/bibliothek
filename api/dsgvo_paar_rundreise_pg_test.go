@@ -87,9 +87,12 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		case "audit_logs":
 			// Verwaltungsprotokolle, wie sie student_update.go (LUSD_ID_NACHGETRAGEN)
 			// und student_deleted.go (RESTORE/PURGE) schreiben.
+			// … und das Zusammenführen (student_zusammenfuehren.go) legt beide Ausweis-
+			// Barcodes ab — der Kanarienwert hier ist der Barcode der Rundreise.
 			_, err = pool.Exec(ctx, `INSERT INTO audit_logs (aktion, details)
-				VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', $2::text))`,
-				sid, lusd)
+				VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', $2::text)),
+				       ('SCHUELER_ZUSAMMENGEFUEHRT', jsonb_build_object('schueler_id', $1::text, 'barcode', $3::text, 'aufgeloest_barcode', 'RUNDREISE-QUELLE'))`,
+				sid, lusd, barcode)
 		default:
 			t.Fatalf("keine Rundreise-Vorbereitung für Quelle %s — Test mit der Liste nachziehen", q.Tabelle)
 		}
@@ -172,7 +175,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		"vormerkungen":    `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`,
 		"ausleihen":       `SELECT count(*) FROM ausleihen WHERE schueler_id = $1`,
 		"audit_log (LH)":  `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`,
-		"audit_logs (Vw)": `SELECT count(*) FROM audit_logs WHERE details ? 'lusd_id' AND details->>'schueler_id' = $1`,
+		"audit_logs (Vw)": `SELECT count(*) FROM audit_logs WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode') AND details->>'schueler_id' = $1`,
 	} {
 		var n int
 		if err := pool.QueryRow(ctx, zaehler, sid).Scan(&n); err != nil {
