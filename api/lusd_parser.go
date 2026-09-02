@@ -148,6 +148,24 @@ func parseLUSDDatum(row []string, headerMap map[string]int, col string) *time.Ti
 	return nil
 }
 
+// plausiblerEintritt verwirft Platzhalter- und Unsinnsdaten im Schuleintritt: vor 1990,
+// in der Zukunft oder nicht nach dem Geburtsdatum. Ein Platzhalter wie 01.01.1900 in
+// jeder Zeile machte sonst jeden Namensvetter zum „sicheren" Paar (Rasterdurchgang
+// 02.09.2026, Sonde des Prüfers) — und bestätigt überschriebe der Batch das Geburtsdatum.
+func plausiblerEintritt(eintritt, geburtsdatum *time.Time) *time.Time {
+	if eintritt == nil {
+		return nil
+	}
+	heute := time.Now().UTC()
+	if eintritt.Year() < 1990 || eintritt.After(heute) {
+		return nil
+	}
+	if geburtsdatum != nil && !eintritt.After(*geburtsdatum) {
+		return nil
+	}
+	return eintritt
+}
+
 // parseLUSDRow parst eine Datenzeile und validiert die Pflichtfelder. Alle Spalten
 // laufen über spaltenWert, weil ID- und Geburtsdatum-Spalte fehlen dürfen.
 func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedStudentRow, error) {
@@ -159,13 +177,14 @@ func parseLUSDRow(row []string, headerMap map[string]int, lineNum int) (parsedSt
 		return parsedStudentRow{}, fmt.Errorf("zeile %d enthält ein leeres Pflichtfeld (Vorname/Nachname/Klasse)", lineNum)
 	}
 
+	geb := parseLUSDDatum(row, headerMap, lusdColGeburtsdatum)
 	return parsedStudentRow{
 		LusdID:      spaltenWert(row, headerMap, lusdColID),
 		Vorname:     vorname,
 		Nachname:    nachname,
 		Klasse:      klasse,
-		GebDatum:    parseLUSDDatum(row, headerMap, lusdColGeburtsdatum),
-		EintrittAm:  parseLUSDDatum(row, headerMap, lusdColEintritt),
+		GebDatum:    geb,
+		EintrittAm:  plausiblerEintritt(parseLUSDDatum(row, headerMap, lusdColEintritt), geb),
 		Strasse:     spaltenWert(row, headerMap, lusdColStrasse),
 		Hausnummer:  spaltenWert(row, headerMap, lusdColHausnummer),
 		PLZ:         spaltenWert(row, headerMap, lusdColPLZ),
