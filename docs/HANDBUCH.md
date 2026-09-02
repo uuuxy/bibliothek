@@ -122,9 +122,11 @@ Lehrkraft geht, steht unter *Einstellungen → Mahnwesen-Routing*. (§3)
 
 Zeigt nur Abgänger, die **noch Bücher haben**. Kontoauszüge drucken oder an die
 Klassenleitungen mailen. Wer alles zurückgegeben hat, verschwindet aus der Liste, bleibt
-für die **Karenzzeit** (Vorgabe 90 Tage, *Einstellungen → Datenschutz & Sitzung*) als
-gesperrter Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu reparieren — und wird
-danach automatisch anonymisiert. (§8, [LUSD.md](LUSD.md) §4)
+bis zum Ende der **Karenzzeit** (Vorgabe 90 Tage **ab dem Abgang**, nicht ab der Rückgabe;
+*Einstellungen → Datenschutz & Sitzung*) als gesperrter Datensatz erhalten — Zeit, eine
+falsche Zuordnung noch zu reparieren — und wird danach automatisch anonymisiert. Wer erst
+nach Ablauf der Karenz zurückgibt, wird in der folgenden Nacht anonymisiert.
+(§8, [LUSD.md](LUSD.md) §4)
 
 ## Bestellwesen
 

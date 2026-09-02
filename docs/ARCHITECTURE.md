@@ -209,7 +209,7 @@ if err := rows.Err(); err != nil {
 | Job | Zeitplan | Funktion |
 |---|---|---|
 | GDPR Anonymisierung | Startup + täglich | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen; `RunGDPRAnonymizeOldData` tilgt fällige Schüler-PII inkl. Audit-Spuren |
-| GDPR Abgänger-Löschung | Startup + täglich | `RunGDPRDeleteAbgaenger` — Hard-Delete nach Karenzzeit |
+| GDPR Abgänger-Löschung | Startup + täglich | `RunGDPRDeleteAbgaenger` — Hard-Delete am Stichtag 30. Januar (Karenzzeit = Anonymisierungsfrist, s. `RunGDPRAnonymizeOldData`) |
 | DB-Backup | täglich 02:30 | `pg_dump` → gzip → AES-256-GCM (scrypt-Schlüssel, `internal/backupkrypto`) |
 | Restore-Probe | **wöchentlich So 03:30** (`30 3 * * 0`) | `RunRestoreProbe` — jüngstes Backup in eine Wegwerf-DB einspielen, Ergebnis als Befund der Betriebsbereitschaft (`jobs/restore_probe.go`) |
 | Audit-Aufbewahrung | täglich 03:00 | Löscht Audit-Einträge jenseits der Frist (Vorgabe 24 Monate) |

@@ -43,7 +43,18 @@ Datei (`git log -p docs/befunde.md`), nicht hier.
 
 ## Offen — Entscheidung nötig (Peter)
 
-Leer (Stand 01.09.2026 abends).
+Aus dem Rasterdurchgang 02.09.2026 über den LUSD-Umbenennungs-Commit (0aa07f57; sechs
+Prüfer, 4 A- und ~20 B-Funde, alle Code-Funde am selben Tag abgearbeitet — Commits
+c4f74099…). Übrig sind Produktfragen:
+
+| Fund | Warum eine Entscheidung |
+| ---- | ----------------------- |
+| **Barcode der Quelle wird recycelt.** Nach dem Zusammenführen ist der Barcode der gelöschten Quelle frei; `GetNextSequence` rechnet MAX+1 (Purge erlaubt das seit Migration 049 bewusst). Wurde für die Quelle ein Ausweis gedruckt, scannt die alte Karte künftig ein fremdes Kind. | Memory „Nummern nie recyceln" gilt bisher nur für Exemplare. Optionen: MAX auch über `audit_logs.details->>'aufgeloest_barcode'` rechnen, oder Schüler-Barcodes auf eine Sequenz wie `barcode_seq` umstellen. |
+| **Foto beim Zusammenführen: das Ziel gewinnt immer**, auch wenn die Quelle das LUSD-frische ist (`schueler_fotos` 1:1, Quell-Foto stirbt im CASCADE). | Regel „LUSD führend" gilt heute nur für Stammdaten. Vorschlag: Foto vom führenden Datensatz bzw. jüngeres `aktualisiert_am`. |
+| **Karenz läuft ab dem Abgang, nicht ab der Rückgabe.** `abgaenger_seit` stempelt beim Abgang, auch mit offenen Büchern; wer erst nach 200 Tagen zurückgibt, wird in der folgenden Nacht anonymisiert — das Reparaturfenster fehlt dieser Gruppe. HANDBUCH sagt es seit 02.09. so. | Alternative: Uhr bei Rückgabe des letzten Vorgangs neu starten (Produktfrage, dann PG-Test dieser Konstellation). |
+| **Handanlagen sind keine Paar-Kandidaten.** Nie bestätigte Bestandsschüler landen in „nicht im Export"; „Anna Müller" (Handanlage) ↔ Export „Anna Mueller" ergibt Neuanlage + „nicht im Export", kein Paar. Rückweg: Zusammenführen über die Akte. | Paarung auf `NichtImExport`-Zeilen ausdehnen (`WarAbgaenger=false`)? Ändert die Semantik von „nicht im Export". |
+| **Abgänger in der Karenz tauchen in keiner Liste auf** (Aktivliste blendet Abgänger aus, Abgänger-Reiter zeigt nur die mit offenen Büchern). Erreichbar per Ausweis-Scan und Kandidatensuche. | Filter „in Karenz" im Abgänger-Reiter — kleiner Nachtrag. |
+| `resolveZeitraumFilter` (Statistik) rechnet das Schuljahr aus `CURRENT_DATE` in der Sitzungszone (UTC) — am 1. August/1. Januar zwischen 00 und 01 Uhr Berliner Zeit einen Tag daneben. Lesepfad, keine Datenwirkung. | Nur mit Anlass; die Schreibpfade (`abgaenger_jahr`) sind seit 02.09. auf die Schulzeitzone gezogen. |
 
 ## Beobachten (nichts zu tun)
 

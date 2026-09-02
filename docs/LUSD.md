@@ -163,8 +163,8 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
 1. Sekretariat: Bericht mit den Spalten aus §1 exportieren (Geburtsdatum und Schuleintritt!).
 2. Admin: *Einstellungen → Schuljahreswechsel* → Datei → **Vorschau laden**.
 3. Banner lesen (Stufe), dann die Rubriken: **Vermutlich dieselbe Person** zuerst — Paare
-   prüfen und ankreuzen; dann Neue, Klassenwechsel, Rückkehrer, Abgänger, Nicht im Export,
-   Nicht abgleichbar, Mehrdeutig.
+   prüfen und ankreuzen; dann Neue, Zusammengeführt (Geburtsdatum/ID nachgetragen),
+   Klassenwechsel, Rückkehrer, Abgänger, Nicht im Export, Nicht abgleichbar, Mehrdeutig.
 4. **Import finalisieren.** Bei mehr als 30 % Abgängern verlangt der Server die zweite
    Bestätigung (Massenabgang) — beim echten Schuljahreswechsel normal.
 5. Gegenprobe: je Rubrik zwei, drei Schüler in der Schülerdatei aufrufen.
