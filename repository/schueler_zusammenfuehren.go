@@ -179,7 +179,7 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 
 	f, o := fuehrend(ziel, quelle)
 	erg.Vorname, erg.Nachname, erg.Klasse = f.vorname, f.nachname, f.klasse
-	if err := schreibeZusammengefuehrtesZiel(ctx, tx, ziel.id, f, o, a.AbgaengerJahr(f.klasse)); err != nil {
+	if err := schreibeZusammengefuehrtesZiel(ctx, tx, ziel.id, f, o, a.AbgaengerJahr(f.klasse), quelle); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -325,7 +325,11 @@ func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
 // das Ziel, füllt Lücken aus dem anderen (o) und macht das Ziel wieder aktiv. Die CASE-
 // Ausdrücke für die Sperre lesen die ALTEN Werte (Postgres wertet die rechte Seite vor
 // der Zuweisung aus) — dieselbe Bauart wie der Rückkehrer-Pfad in api/lusd_apply.go.
-func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID string, f, o *zusammenfuehrenZeile, abgaengerJahr int) error {
+//
+// Eine MANUELLE Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
+// nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel
+// nicht selbst schon manuell gesperrt ist (dann bleibt dessen Grund).
+func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID string, f, o *zusammenfuehrenZeile, abgaengerJahr int, quelle *zusammenfuehrenZeile) error {
 	tag, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = $2, nachname = $3, klasse = $4,
@@ -334,12 +338,16 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID strin
 			lusd_id = $12, lusd_bestaetigt_am = $13,
 			abgaenger_jahr = $14,
 			ist_abgaenger = false, abgaenger_seit = NULL,
+			is_manually_blocked = COALESCE(is_manually_blocked, false) OR $15,
 			ist_gesperrt = CASE
+				WHEN $15 THEN true
 				WHEN `+SQLAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
 				THEN false ELSE ist_gesperrt END,
 			block_reason = CASE
+				WHEN $15 AND NOT COALESCE(is_manually_blocked, false) THEN $16
+				WHEN $15 THEN block_reason
 				WHEN `+SQLAbgaengerSperreAutomatisch+`
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
@@ -352,7 +360,8 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID strin
 		ersteZeit(f.geburtsdatum, o.geburtsdatum), ersteZeit(f.eintritt, o.eintritt),
 		erster(f.strasse, o.strasse), erster(f.hausnummer, o.hausnummer), erster(f.plz, o.plz),
 		erster(f.ort, o.ort), erster(f.elternEmail, o.elternEmail),
-		erster(f.lusdID, o.lusdID), ersteZeit(f.bestaetigtAm, o.bestaetigtAm), abgaengerJahr)
+		erster(f.lusdID, o.lusdID), ersteZeit(f.bestaetigtAm, o.bestaetigtAm), abgaengerJahr,
+		quelle.manuellGesperrt, quelle.sperrgrund)
 	if err != nil {
 		return fmt.Errorf("ziel schreiben: %w", err)
 	}

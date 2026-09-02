@@ -276,3 +276,28 @@ func TestZusammenfuehren_RueckwegAusDemProtokoll(t *testing.T) {
 		t.Error("Ziel nicht auf den alten Stand zurück")
 	}
 }
+
+// Eine manuelle Sperre der QUELLE (Ausweis verloren, Hausverbot …) darf beim Zusammen-
+// führen nicht still verschwinden — sie gehört zur Person, nicht zum Datensatz
+// (Rasterdurchgang 02.09.2026). Das Ziel trägt sie danach mit demselben Grund.
+func TestZusammenfuehren_ManuelleSperreDerQuelleBleibt(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Sperre", klasse: "07A", barcode: "ZF-M1", geb: datum(2012, 9, 9)})
+	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Sperre", klasse: "07A", barcode: "ZF-M2", geb: datum(2012, 9, 9)})
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = true, is_manually_blocked = true, block_reason = 'Manuell: Ausweis als gestohlen gemeldet' WHERE id = $1`, quelle); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+		t.Fatal(err)
+	}
+	var gesperrt, manuell bool
+	var grund string
+	if err := pool.QueryRow(ctx, `SELECT ist_gesperrt, COALESCE(is_manually_blocked, false), COALESCE(block_reason, '') FROM schueler WHERE id = $1`, ziel).Scan(&gesperrt, &manuell, &grund); err != nil {
+		t.Fatal(err)
+	}
+	if !gesperrt || !manuell || grund != "Manuell: Ausweis als gestohlen gemeldet" {
+		t.Errorf("manuelle Sperre der Quelle verloren: gesperrt=%v manuell=%v grund=%q", gesperrt, manuell, grund)
+	}
+}
