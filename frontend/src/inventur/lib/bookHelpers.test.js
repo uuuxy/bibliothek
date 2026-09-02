@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
 	getSubjectColor,
-	getStockDotColor,
 	getSubjectGradient,
 	getSpineGradient,
 	formatDate
@@ -25,22 +24,6 @@ describe('bookHelpers', () => {
 		it('returns default color for empty or undefined subject', () => {
 			expect(getSubjectColor('')).toBe('bg-slate-50 border border-slate-200 text-slate-600');
 			expect(getSubjectColor(undefined)).toBe('bg-slate-50 border border-slate-200 text-slate-600');
-		});
-	});
-
-	describe('getStockDotColor', () => {
-		it('returns red for 0 items available', () => {
-			expect(getStockDotColor(0)).toBe('bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.4)]');
-		});
-
-		it('returns amber for 1-4 items available', () => {
-			expect(getStockDotColor(1)).toBe('bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]');
-			expect(getStockDotColor(4)).toBe('bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]');
-		});
-
-		it('returns emerald for 5+ items available', () => {
-			expect(getStockDotColor(5)).toBe('bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]');
-			expect(getStockDotColor(10)).toBe('bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]');
 		});
 	});
 

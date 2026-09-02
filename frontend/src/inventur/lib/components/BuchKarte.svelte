@@ -1,9 +1,23 @@
+<!-- @component BuchKarte — eine Kachel des Medienkatalogs, gebaut wie Google Play Books
+     (02.09.2026, mit Peter entschieden): Das COVER ist die Kachel, der Text steht darunter
+     auf der Fläche. Kein Kartenrahmen, kein Schatten, kein Trennstrich, kein Kasten um
+     das Prüfdatum — beim Zeigen nur die M3-Zustandsschicht (m3-state) als weiche
+     Tonfläche um Bild und Text.
+
+     Fünf Informationen, in dieser Reihenfolge, und keine weiteren: Titel, ISBN mit
+     Kopieren (die Nummer liest man gegen das Buch in der Hand ab), Signatur (die
+     Regaladresse), Bestand als Satz statt Ampelpunkt, Prüfdatum nur wenn es eines gibt.
+     Fach-, Klassen- und Zweig-Chips sind bewusst weg: Das Suchfeld findet sie, der
+     Reiter „Jahrgänge" gruppiert danach. Der Autor interessiert im Schulkatalog nicht.
+
+     Vorher (bis 02.09.2026): weiße Karte mit Rahmen UND Schatten, sechs
+     Informationsschichten, Stift in einem weißen Kästchen auf dem Cover, Ampelpunkt
+     mit Leuchtschein — die Buchakte in klein, 455 px hoch, vier je Reihe. -->
 <script>
-	import { getSubjectColor } from '../bookHelpers.js';
 	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
 	import BuchKarteCover from './BuchKarteCover.svelte';
-	import BuchKarteFuss from './BuchKarteFuss.svelte';
-	import { Copy, SquarePen } from '@lucide/svelte';
+	import { formatDatum } from '../../../lib/utils/format.js';
+	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -13,13 +27,10 @@
 	 *     title: string,
 	 *     author: string,
 	 *     subject: string,
-	 *     gradeLevel: number,
-	 *     track: string,
-	 *     stock: number,
-	 *     verfuegbar: number,
-	 *     gesamt: number,
+	 *     verfuegbar?: number,
+	 *     gesamt?: number,
 	 *     coverUrl: string,
-	 *     lastCounted: string,
+	 *     lastCounted?: string,
 	 *     signatur?: string,
 	 *     medientyp?: string
 	 *   },
@@ -36,12 +47,23 @@
 	let coverFailed = $state(false);
 	let copied = $state(false);
 
-	/**
-	 * @param {string} isbn
-	 */
-	function copyIsbn(isbn) {
-		if (!isbn) return;
-		navigator.clipboard.writeText(isbn);
+	const nummerArt = $derived(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN');
+
+	/** Bestand als Satz: „27 von 28 verfügbar", „Keine Exemplare" bei einem Titel ohne
+	 *  Exemplare — der frühere rote Punkt sah für beides gleich aus. Bewusst OHNE Rot bei
+	 *  0: Im Schuljahr ist fast jedes Lernmittel komplett verliehen; ein Katalog, der
+	 *  überall rot ist, sagt nichts mehr. */
+	const bestand = $derived(
+		book.gesamt ? `${book.verfuegbar ?? 0} von ${book.gesamt} verfügbar` : 'Keine Exemplare'
+	);
+
+	const geprueft = $derived(book.lastCounted ? formatDatum(book.lastCounted) : '');
+
+	/** @param {Event} e */
+	function copyIsbn(e) {
+		e.stopPropagation();
+		if (!book.isbn) return;
+		navigator.clipboard.writeText(book.isbn);
 		copied = true;
 		setTimeout(() => (copied = false), 2000);
 	}
@@ -54,35 +76,27 @@
 		}
 	}
 
-	/**
-	 * @param {Event} event
-	 */
+	/** @param {Event} event */
 	function onCoverLoad(event) {
 		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) {
-			onCoverError();
-		}
+		if (image.naturalWidth < 10 || image.naturalHeight < 10) onCoverError();
 	}
 
+	// Lokale Liste statt Lesen des eigenen $state im selben Effekt: Der Effekt hinge sonst
+	// von coverCandidates ab, das er gerade schreibt — Endlosschleife, Svelte bricht mit
+	// effect_update_depth_exceeded ab und die ganze Seite reagiert nicht mehr (E2E 02.09.).
 	$effect(() => {
-		const candidates = [];
-		candidates.push(...coverKandidaten(book?.coverUrl, book?.isbn));
-		coverCandidates = candidates;
+		const kandidaten = coverKandidaten(book?.coverUrl, book?.isbn);
+		coverCandidates = kandidaten;
 		currentCandidateIndex = 0;
-		coverFailed = candidates.length === 0;
+		coverFailed = kandidaten.length === 0;
 	});
 </script>
 
-<!-- role="button" + tabindex + Tastaturweg: Die ganze Karte ist anklickbar, war aber
-     ausschliesslich mit der Maus erreichbar. Die Pruefung auf currentTarget haelt die
-     inneren Schaltflaechen (Quick-Edit) heraus — deren Enter darf nicht zusaetzlich die
-     Karte oeffnen. -->
-<!-- <div> statt <article>: Ein <article> ist nicht-interaktiv und darf laut ARIA keine
-     Button-Rolle tragen — der Svelte-Compiler weist das zu Recht ab. Zwischen "korrekte
-     Dokumentgliederung" und "mit der Tastatur bedienbar" ist Letzteres wichtiger; die
-     Karte IST eine Schaltflaeche, kein eigenstaendiger Artikel. -->
+<!-- role="button" + tabindex: Die ganze Kachel öffnet die Buchakte, auch per Tastatur.
+     Die Prüfung auf currentTarget hält die inneren Knöpfe (Kopieren, Stift) heraus. -->
 <div
-	class="bg-white rounded-xl border border-slate-200 flex flex-col h-full group overflow-hidden hover:border-blue-300 hover:shadow-md transition-all duration-300 shadow-sm cursor-pointer relative"
+	class="m3-state group flex h-full cursor-pointer flex-col gap-3 rounded-2xl p-3"
 	role="button"
 	tabindex="0"
 	{onclick}
@@ -94,129 +108,70 @@
 		}
 	}}
 >
-	<!-- Quick-Edit Stift-Icon.
-	     Stand bis zum 10.08.2026 auf `opacity-0 group-hover:opacity-100` und war damit aus
-	     drei unabhängigen Gründen unerreichbar: Auf einem Tablet gibt es kein :hover, ein
-	     Fingertipp löst stattdessen den Klick der Karte aus; per Tastatur bekam der Knopf
-	     zwar den Fokus, blieb dabei aber unsichtbar (WCAG 2.4.7); und Material 3 versteckt
-	     Aktionen nicht hinter dem Zeiger. Gefunden hat es der Rundgang
-	     (e2e/rundgang-alle-routen.spec.js) — 50 Fundstellen auf einer Seite, dieselbe
-	     Bauart wie die Karussell-Pfeile zwei Commits zuvor.
-	     Die Zurückhaltung trägt jetzt die Farbe, nicht die Sichtbarkeit: ruhiges Grau im
-	     Ruhezustand, Blau beim Zeigen. -->
-	{#if onEditClick}
-		<button
-			class="absolute top-2 right-2 z-10 p-2 rounded-lg bg-white/80 backdrop-blur-sm border border-slate-200 text-slate-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200 shadow-sm cursor-pointer"
-			onclick={(e) => {
-				e.stopPropagation();
-				onEditClick();
-			}}
-			title="Schnell bearbeiten"
-			aria-label="Buch schnell bearbeiten"
-		>
-			<!-- p-2 + 16 px Symbol = 32×32 Trefferfläche. Vorher p-1.5 + 14 px = 28×28 und damit
-			     unter der Mindestgröße — fiel nicht auf, solange das Gate den öffentlichen OPAC
-			     statt des internen Katalogs vermaß (Pfadkollision /katalog). -->
-			<SquarePen class="w-4 h-4" aria-hidden="true" />
-		</button>
-	{/if}
-	{#if coverSrc && !coverFailed}
-		<div
-			class="w-full h-56 rounded-t-2xl overflow-hidden bg-slate-50 flex items-center justify-center border-b border-slate-100 relative"
-		>
+	<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low">
+		{#if coverSrc && !coverFailed}
 			<img
 				src={coverSrc}
 				alt={`Cover von ${book.title}`}
 				loading="lazy"
-				class="object-contain h-full w-full p-3 transition-all duration-500 group-hover:scale-105"
+				class="h-full w-full object-cover"
 				onerror={onCoverError}
 				onload={onCoverLoad}
 			/>
-		</div>
-	{:else}
-		<BuchKarteCover
-			subject={book.subject}
+		{:else}
+			<BuchKarteCover subject={book.subject} title={book.title} />
+		{/if}
+	</div>
+
+	<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
+		<h2
+			class="line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-on-surface"
 			title={book.title}
-			author={book.author}
-			medientyp={book.medientyp}
-			isbn={book.isbn}
-		/>
-	{/if}
+		>
+			{book.title}
+		</h2>
 
-	<div class="grow p-5 pt-4 flex flex-col justify-between">
-		<div>
-			<h2
-				class="text-base font-bold text-slate-900 leading-snug mb-1 line-clamp-2"
-				title={book.title}
-			>
-				{book.title}
-			</h2>
-			<!-- Die ISBN ist keine Fußnote, sondern eine Nummer, die man ABLIEST: gegen das
-			     Buch in der Hand, gegen das Lieferantenformular, gegen die Bestellliste.
-			     Sie stand auf text-label-small (11 px) und damit auf derselben Stufe wie
-			     die Fach-Abzeichen und „Zuletzt geprüft" — also so klein wie das
-			     Unwichtigste auf der Karte.
-			     text-sm + font-mono ist keine neue Erfindung: Genau so zeigt
-			     BookAkteMeta.svelte dieselbe ISBN einen Klick tiefer, und genau so trägt
-			     die Profilkarte den Schüler-Barcode. Feste Zeichenbreite trennt die 13
-			     Ziffern, ohne dass man mitzählen muss. Die Farbe bleibt: slate-400 ist seit
-			     dem WCAG-Durchgang #5a5f66 und damit klar über der AA-Grenze. -->
-			<button
-				class="text-sm font-mono text-slate-400 mb-4 tracking-wide group/isbn flex items-center gap-2 text-left transition-colors hover:text-blue-600 cursor-pointer"
-				onclick={(e) => {
-					e.stopPropagation();
-					copyIsbn(book.isbn);
-				}}
-				title={(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN') + ' kopieren'}
-				aria-label={(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN') +
-					' kopieren'}
-			>
-				<span
-					>{book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN'}: {book.isbn ||
-						'-'}</span
-				>
-				{#if book.isbn}
-					{#if copied}
-						<!-- Bleibt eine Stufe unter der Nummer: Die Rückmeldung soll bestätigen,
-						     nicht mit dem konkurrieren, was man gerade abliest. -->
-						<span class="text-blue-600 text-xs font-sans font-bold">Kopiert!</span>
-					{:else}
-						<Copy
-							class="w-3.5 h-3.5 text-slate-300 opacity-0 group-hover/isbn:opacity-100 transition-opacity"
-							aria-hidden="true"
-						/>
-					{/if}
-				{/if}
-			</button>
+		<button
+			class="flex cursor-pointer items-center gap-1.5 text-left font-mono transition-colors hover:text-primary"
+			onclick={copyIsbn}
+			title="{nummerArt} kopieren"
+			aria-label="{nummerArt} kopieren"
+		>
+			<span class="truncate" title={book.isbn}>{nummerArt}: {book.isbn || '–'}</span>
+			{#if copied}
+				<span class="font-sans text-xs font-medium text-primary">Kopiert!</span>
+			{:else if book.isbn}
+				<Copy class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+			{/if}
+		</button>
 
-			<div class="flex flex-wrap gap-1.5 mb-4">
-				{#if book.subject}
-					<span
-						class="{getSubjectColor(
-							book.subject
-						)} text-label-small font-bold px-2 py-0.5 rounded-md"
-					>
-						{book.subject}
-					</span>
-				{/if}
-				<!-- Klasse 0 = nicht zugeordnet: kein Badge statt einer sinnlosen „Klasse 0". -->
-				{#if book.gradeLevel}
-					<span
-						class="bg-slate-50 border border-slate-200 text-slate-600 text-label-small font-bold px-2 py-0.5 rounded-md"
-					>
-						Klasse {book.gradeLevel}
-					</span>
-				{/if}
-				{#if book.track}
-					<span
-						class="bg-cyan-50 border border-cyan-200 text-cyan-700 text-label-small font-bold px-2 py-0.5 rounded-md"
-					>
-						{book.track}
-					</span>
-				{/if}
+		{#if book.signatur}
+			<div class="flex items-center gap-1.5">
+				<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+				<span class="truncate font-mono">{book.signatur}</span>
 			</div>
+		{/if}
+
+		<div class="flex items-center justify-between gap-2">
+			<span>{bestand}</span>
+			{#if onEditClick}
+				<!-- 32×32 Trefferfläche, ruhig grau; sitzt im Text statt auf dem Cover. -->
+				<button
+					class="m3-state -my-1 flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full"
+					onclick={(e) => {
+						e.stopPropagation();
+						onEditClick();
+					}}
+					title="Schnell bearbeiten"
+					aria-label="Buch schnell bearbeiten"
+				>
+					<SquarePen class="h-4 w-4" aria-hidden="true" />
+				</button>
+			{/if}
 		</div>
 
-		<BuchKarteFuss {book} />
+		{#if geprueft}
+			<span>Geprüft {geprueft}</span>
+		{/if}
 	</div>
 </div>

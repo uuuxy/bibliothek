@@ -31,16 +31,6 @@ export function getSubjectColor(subject) {
 }
 
 /**
- * @param {number} verfuegbar
- * @returns {string}
- */
-export function getStockDotColor(verfuegbar) {
-	if (verfuegbar === 0) return 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.4)]';
-	if (verfuegbar < 5) return 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]';
-	return 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]';
-}
-
-/**
  * @param {string | null | undefined} subject
  * @returns {string}
  */
