@@ -36,11 +36,13 @@ func expectStammdaten(mock pgxmock.PgxPoolIface) {
 			"abgaenger_jahr", "ist_gesperrt", "ist_abgaenger", "lusd_id",
 			"strasse", "hausnummer", "plz", "ort", "eltern_email",
 			"is_manually_blocked", "block_reason", "erstellt_am", "aktualisiert_am", "deleted_at",
+			"schul_eintritt_am", "abgaenger_seit", "lusd_bestaetigt_am", "anonymized_at",
 		}).AddRow(
 			dsgvoTestID, "S-0042", "Max", "Muster", "07B", &geb,
 			2029, false, false, (*string)(nil),
 			"Reisstraße", "1", "61169", "Friedberg", "eltern@example.org",
 			false, (*string)(nil), now, now, (*time.Time)(nil),
+			(*string)(nil), (*time.Time)(nil), &now, (*time.Time)(nil),
 		))
 }
 

@@ -18,6 +18,8 @@ import (
 // DsgvoStammdaten umfasst sämtliche im Schülerdatensatz gespeicherten
 // Stammdaten — bewusst inklusive Soft-Delete-Zeitpunkt und Sperrgrund,
 // denn die Auskunft nach Art. 15 DSGVO deckt alles ab, was gespeichert ist.
+// „Sämtliche" ist seit 02.09.2026 gemessen: TestDsgvoAuskunft_KenntJedeSchuelerSpalte
+// hält jede Spalte von schueler gegen dsgvoStammdatenSQL.
 type DsgvoStammdaten struct {
 	ID                string     `json:"id"`
 	BarcodeID         string     `json:"barcode_id"`
@@ -39,7 +41,31 @@ type DsgvoStammdaten struct {
 	ErstelltAm        time.Time  `json:"erfasst_am"`
 	AktualisiertAm    time.Time  `json:"zuletzt_aktualisiert_am"`
 	GeloeschtAm       *time.Time `json:"geloescht_am"`
+	// Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten
+	// unvollständig; Gate: TestDsgvoAuskunft_KenntJedeSchuelerSpalte).
+	SchulEintrittAm  *string    `json:"schul_eintritt_am"`
+	AbgaengerSeit    *time.Time `json:"abgaenger_seit"`
+	LusdBestaetigtAm *time.Time `json:"lusd_bestaetigt_am"`
+	AnonymisiertAm   *time.Time `json:"anonymisiert_am"`
 }
+
+// dsgvoStammdatenSQL ist die eine Spaltenliste der Auskunft. Sie steht außerhalb der
+// Funktion, damit das Spalten-Gate sie gegen information_schema.columns halten kann.
+//
+// Adress-/Kontaktfelder sind in der DB nullbar (VARCHAR ohne NOT NULL), werden aber
+// in nicht-nullbare Go-strings gescannt. Ohne COALESCE scheitert Scan(NULL → *string)
+// mit 500 — das traf jeden Schüler ohne erfasste Adresse (nicht nur Demo-Daten).
+const dsgvoStammdatenSQL = `
+		SELECT id, barcode_id, vorname, nachname, klasse, geburtsdatum::text,
+		       abgaenger_jahr, ist_gesperrt, ist_abgaenger, lusd_id,
+		       COALESCE(strasse, '') AS strasse, COALESCE(hausnummer, '') AS hausnummer,
+		       COALESCE(plz, '') AS plz, COALESCE(ort, '') AS ort,
+		       COALESCE(eltern_email, '') AS eltern_email,
+		       is_manually_blocked, block_reason,
+		       erstellt_am, aktualisiert_am, deleted_at,
+		       schul_eintritt_am::text, abgaenger_seit, lusd_bestaetigt_am, anonymized_at
+		FROM schueler
+		WHERE id = $1`
 
 // DsgvoFoto beschreibt das (verschlüsselt gespeicherte) Ausweisfoto.
 type DsgvoFoto struct {
@@ -163,26 +189,14 @@ func (s *Server) dsgvoLesehistorieFristen(ctx context.Context) (int, int) {
 }
 
 func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {
-	// Adress-/Kontaktfelder sind in der DB nullbar (VARCHAR ohne NOT NULL), werden aber
-	// in nicht-nullbare Go-strings gescannt. Ohne COALESCE scheitert Scan(NULL → *string)
-	// mit 500 — das traf jeden Schüler ohne erfasste Adresse (nicht nur Demo-Daten).
-	const q = `
-		SELECT id, barcode_id, vorname, nachname, klasse, geburtsdatum::text,
-		       abgaenger_jahr, ist_gesperrt, ist_abgaenger, lusd_id,
-		       COALESCE(strasse, '') AS strasse, COALESCE(hausnummer, '') AS hausnummer,
-		       COALESCE(plz, '') AS plz, COALESCE(ort, '') AS ort,
-		       COALESCE(eltern_email, '') AS eltern_email,
-		       is_manually_blocked, block_reason,
-		       erstellt_am, aktualisiert_am, deleted_at
-		FROM schueler
-		WHERE id = $1`
 	var st DsgvoStammdaten
-	err := s.DB.Pool.QueryRow(ctx, q, id).Scan(
+	err := s.DB.Pool.QueryRow(ctx, dsgvoStammdatenSQL, id).Scan(
 		&st.ID, &st.BarcodeID, &st.Vorname, &st.Nachname, &st.Klasse, &st.Geburtsdatum,
 		&st.AbgaengerJahr, &st.IstGesperrt, &st.IstAbgaenger, &st.LusdID,
 		&st.Strasse, &st.Hausnummer, &st.Plz, &st.Ort, &st.ElternEmail,
 		&st.IsManuallyBlocked, &st.BlockReason,
 		&st.ErstelltAm, &st.AktualisiertAm, &st.GeloeschtAm,
+		&st.SchulEintrittAm, &st.AbgaengerSeit, &st.LusdBestaetigtAm, &st.AnonymisiertAm,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil

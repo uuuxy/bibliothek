@@ -126,8 +126,12 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoS
 	dsgvoZeile(p, tr, "Nachname", st.Nachname)
 	dsgvoZeile(p, tr, "Klasse", st.Klasse)
 	dsgvoZeile(p, tr, "Geburtsdatum", dsgvoStrPtr(st.Geburtsdatum))
+	dsgvoZeile(p, tr, "Schuleintritt", dsgvoStrPtr(st.SchulEintrittAm))
 	dsgvoZeile(p, tr, "Abgangsjahr", fmt.Sprint(st.AbgaengerJahr))
+	dsgvoZeile(p, tr, "Abgänger seit", dsgvoZeitPtr(st.AbgaengerSeit))
 	dsgvoZeile(p, tr, "LUSD-ID", dsgvoStrPtr(st.LusdID))
+	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitPtr(st.LusdBestaetigtAm))
+	dsgvoZeile(p, tr, "Anonymisiert am", dsgvoZeitPtr(st.AnonymisiertAm))
 	dsgvoZeile(p, tr, "Straße/Nr.", strings.TrimSpace(st.Strasse+" "+st.Hausnummer))
 	dsgvoZeile(p, tr, "PLZ/Ort", strings.TrimSpace(st.Plz+" "+st.Ort))
 	dsgvoZeile(p, tr, "Eltern-E-Mail", st.ElternEmail)
@@ -311,6 +315,14 @@ func dsgvoLeerWert(s string) string {
 		return "—"
 	}
 	return s
+}
+
+// dsgvoZeitPtr: Zeitpunkt oder Strich — wie dsgvoStrPtr für Texte.
+func dsgvoZeitPtr(t *time.Time) string {
+	if t == nil {
+		return "—"
+	}
+	return t.Format(dsgvoZeitFormat)
 }
 
 func dsgvoJaNein(b bool) string {
