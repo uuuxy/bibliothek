@@ -6,11 +6,10 @@
 	import BookVormerkungenTab from './BookVormerkungenTab.svelte';
 	import BookAkteMeta from './BookAkteMeta.svelte';
 	import { useBookAkte } from './useBookAkte.svelte.js';
-	import Button from './components/ui/Button.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { hatRecht } from './menu.js';
-	import { ChevronLeft, Frown, SquarePen, Trash2 } from '@lucide/svelte';
+	import { ChevronLeft, Frown } from '@lucide/svelte';
 
 	/** @type {{ bookId: string | null, onBack: () => void }} */
 	let { bookId, onBack } = $props();
@@ -20,6 +19,10 @@
 	// Enges Theken-Recht (db/seed.go): Ohne manage_vormerkungen antwortet die API
 	// mit 403 — dann den Reiter gar nicht erst anbieten statt leer scheitern lassen.
 	const darfVormerken = $derived(hatRecht(authStore.currentUser, 'manage_vormerkungen'));
+	// Die Aktionen der Akte hängen am Recht — vorher sah jeder „Titel bearbeiten" und
+	// „Gesamten Titel löschen", auch wer beides nicht durfte (Knopf → 403).
+	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
+	const darfLoeschen = $derived(hatRecht(authStore.currentUser, 'delete_books'));
 	const tabs = $derived([
 		['ausleiher', `Ausleiher (${akte.borrowers.length})`],
 		['exemplare', `Exemplare (${akte.exemplare.length})`],
@@ -46,23 +49,6 @@
 			<span class="text-slate-400">/</span>
 			<span class="text-slate-500 text-sm truncate max-w-xs">{akte.book?.title ?? 'Lade...'}</span>
 		</div>
-		{#if !akte.isLoading && akte.book}
-			<div class="flex items-center gap-2">
-				<Button
-					variant="secondary"
-					size="sm"
-					onclick={akte.editTitle}
-					class="border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700"
-				>
-					<SquarePen class="w-3.5 h-3.5" aria-hidden="true" />
-					Titel bearbeiten
-				</Button>
-				<Button variant="danger" size="sm" onclick={() => akte.deleteTitle(showToast, onBack)}>
-					<Trash2 class="w-3.5 h-3.5" aria-hidden="true" />
-					Gesamten Titel löschen
-				</Button>
-			</div>
-		{/if}
 	</div>
 
 	{#if akte.isLoading}
@@ -80,6 +66,8 @@
 			coverFailed={akte.coverFailed}
 			onCoverError={akte.onCoverError}
 			onCoverLoad={akte.onCoverLoad}
+			onEdit={darfBearbeiten ? akte.editTitle : undefined}
+			onDelete={darfLoeschen ? () => akte.deleteTitle(showToast, onBack) : undefined}
 		/>
 
 		<!-- Tabs -->

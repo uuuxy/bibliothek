@@ -1,6 +1,15 @@
+<!-- @component BookAkteMeta — der Kopf der Buchakte wie eine Play-Store-Detailseite
+     (mit Peter am 02.09.2026 entschieden): Titel groß links, darunter in ruhigem Grau die
+     Einordnung (Fach · Jahrgang · Zweig · Medienart), dann ISBN, Signatur und Standort als
+     Textzeilen, eine Zahlenreihe (verfügbar, Ausleiher, Exemplare) und die Aktionen als
+     Knopfreihe. Das Cover steht rechts mit Luft.
+
+     Vorher: Cover links als farbiger Block, daneben sieben bunte Chips mit Rahmen, vier
+     getönte Zahlenkästen in vier Farben, Titel erst darunter. -->
 <script>
-	import { BookOpen } from '@lucide/svelte';
-	import { getSubjectGradient } from '../inventur/lib/bookHelpers.js';
+	import { Copy, MapPin, SquarePen, Trash2 } from '@lucide/svelte';
+	import Button from './components/ui/Button.svelte';
+	import BuchKarteCover from '../inventur/lib/components/BuchKarteCover.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -11,117 +20,144 @@
 	 * @property {boolean} coverFailed
 	 * @property {(e: Event) => void} onCoverError
 	 * @property {(e: Event) => void} onCoverLoad
+	 * @property {(() => void) | undefined} [onEdit] nur mit edit_books
+	 * @property {(() => void) | undefined} [onDelete] nur mit delete_books
 	 */
 
 	/** @type {Props} */
-	let { book, borrowers, exemplare, coverSrc, coverFailed, onCoverError, onCoverLoad } = $props();
+	let {
+		book,
+		borrowers,
+		exemplare,
+		coverSrc,
+		coverFailed,
+		onCoverError,
+		onCoverLoad,
+		onEdit = undefined,
+		onDelete = undefined
+	} = $props();
+
+	let copied = $state(false);
+
+	/** Einordnung in einer Zeile, wie „Sept. 2026 · Buch 3 · Verlag" im Play Store. */
+	const einordnung = $derived(
+		[
+			book.subject,
+			book.jahrgangVon && book.jahrgangBis
+				? book.jahrgangVon === book.jahrgangBis
+					? `Jahrgang ${book.jahrgangVon}`
+					: `Jahrgang ${book.jahrgangVon}–${book.jahrgangBis}`
+				: book.gradeLevel
+					? `Jahrgang ${book.gradeLevel}`
+					: '',
+			book.track,
+			book.medientyp && book.medientyp !== 'Buch' ? book.medientyp : ''
+		]
+			.filter(Boolean)
+			.join(' · ')
+	);
+
+	const nummerArt = $derived(book.medientyp === 'CD' || book.medientyp === 'DVD' ? 'EAN' : 'ISBN');
+	const signatur = $derived(book.signatur || book.erweiterte_eigenschaften?.signatur || '');
+	const standort = $derived(book.erweiterte_eigenschaften?.standort || '');
+
+	function kopieren() {
+		if (!book.isbn) return;
+		navigator.clipboard.writeText(book.isbn);
+		copied = true;
+		setTimeout(() => (copied = false), 2000);
+	}
 </script>
 
-<div class="overflow-hidden rounded-2xl">
-	<div class="flex flex-col sm:flex-row gap-0">
-		<!-- Cover / Spine -->
-		<div
-			class="w-full sm:w-48 shrink-0 bg-linear-to-br {getSubjectGradient(
-				book.subject
-			)} flex items-center justify-center min-h-56 relative"
-		>
+<div class="flex flex-col-reverse gap-8 sm:flex-row sm:items-start">
+	<div class="min-w-0 flex-1">
+		<h1 class="text-3xl leading-tight font-semibold wrap-break-word text-on-surface">
+			{book.title}
+		</h1>
+		{#if book.untertitel}
+			<p class="mt-1 text-lg text-on-surface-variant">{book.untertitel}</p>
+		{/if}
+		{#if einordnung}
+			<p class="mt-2 text-sm text-on-surface-variant">{einordnung}</p>
+		{/if}
+
+		<div class="mt-4 flex flex-col gap-1 text-sm text-on-surface-variant">
+			<button
+				class="flex w-fit cursor-pointer items-center gap-1.5 font-mono transition-colors hover:text-primary"
+				onclick={kopieren}
+				title="{nummerArt} kopieren"
+				aria-label="{nummerArt} kopieren"
+			>
+				<span>{nummerArt}: {book.isbn || '–'}</span>
+				{#if copied}
+					<span class="font-sans text-xs font-medium text-primary">Kopiert!</span>
+				{:else if book.isbn}
+					<Copy class="h-3.5 w-3.5" aria-hidden="true" />
+				{/if}
+			</button>
+			{#if signatur}
+				<span class="flex items-center gap-1.5">
+					<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+					<span class="font-mono">{signatur}</span>
+					{#if standort}<span>· {standort}</span>{/if}
+				</span>
+			{:else if standort}
+				<span class="flex items-center gap-1.5">
+					<MapPin class="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+					<span>{standort}</span>
+				</span>
+			{/if}
+		</div>
+
+		<!-- Zahlenreihe wie „E-Book | 544 Seiten": Wert oben, Bedeutung darunter, Trennlinien. -->
+		<dl class="mt-6 flex divide-x divide-outline-variant">
+			<div class="pr-6">
+				<dd class="text-lg font-semibold tabular-nums text-on-surface">
+					{book.verfuegbar ?? 0} von {book.gesamt ?? 0}
+				</dd>
+				<dt class="text-xs text-on-surface-variant">verfügbar</dt>
+			</div>
+			<div class="px-6">
+				<dd class="text-lg font-semibold tabular-nums text-on-surface">{borrowers.length}</dd>
+				<dt class="text-xs text-on-surface-variant">Ausleiher</dt>
+			</div>
+			<div class="pl-6">
+				<dd class="text-lg font-semibold tabular-nums text-on-surface">{exemplare.length}</dd>
+				<dt class="text-xs text-on-surface-variant">Exemplare</dt>
+			</div>
+		</dl>
+
+		{#if onEdit || onDelete}
+			<div class="mt-6 flex flex-wrap items-center gap-3">
+				{#if onEdit}
+					<Button onclick={onEdit}>
+						<SquarePen class="h-4 w-4" aria-hidden="true" />
+						Titel bearbeiten
+					</Button>
+				{/if}
+				{#if onDelete}
+					<Button variant="ghost" onclick={onDelete} class="text-error">
+						<Trash2 class="h-4 w-4" aria-hidden="true" />
+						Titel löschen
+					</Button>
+				{/if}
+			</div>
+		{/if}
+	</div>
+
+	<div class="w-40 shrink-0 sm:w-48">
+		<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low">
 			{#if coverSrc && !coverFailed}
 				<img
 					src={coverSrc}
 					alt={`Cover ${book.title}`}
-					class="h-full w-full object-cover absolute inset-0"
+					class="h-full w-full object-cover"
 					onerror={onCoverError}
 					onload={onCoverLoad}
 				/>
 			{:else}
-				<div class="text-center p-6 z-10">
-					<p class="text-xs font-extrabold text-white/60 mb-2">
-						{book.subject}
-					</p>
-					<p class="text-sm font-bold text-white leading-snug line-clamp-4">{book.title}</p>
-				</div>
+				<BuchKarteCover subject={book.subject} title={book.title} />
 			{/if}
-		</div>
-
-		<!-- Meta -->
-		<div class="flex-1 p-6 sm:p-8 flex flex-col justify-between gap-4">
-			<div>
-				<div class="flex flex-wrap gap-2 mb-3">
-					<span
-						class="text-label-small font-bold px-2 py-0.5 rounded-md bg-blue-50 border border-blue-200 text-blue-700"
-						>{book.subject}</span
-					>
-					<span
-						class="text-label-small font-bold px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600"
-						>Klasse {book.gradeLevel}</span
-					>
-					{#if book.jahrgangVon && book.jahrgangBis}
-						<span
-							class="text-label-small font-bold px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200 text-slate-600"
-							>Verwendbar: Kl. {book.jahrgangVon} - {book.jahrgangBis}</span
-						>
-					{/if}
-					{#if book.track}
-						<span
-							class="text-label-small font-bold px-2 py-0.5 rounded-md bg-cyan-50 border border-cyan-200 text-cyan-700"
-							>{book.track}</span
-						>
-					{/if}
-					{#if book.medientyp && book.medientyp !== 'Buch'}
-						<span
-							class="text-label-small font-bold px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-700"
-							>{book.medientyp}</span
-						>
-					{/if}
-					{#if book.signatur || book.erweiterte_eigenschaften?.signatur}
-						<span
-							class="text-label-small font-bold px-2 py-0.5 rounded-md bg-purple-50 border border-purple-200 text-purple-700"
-							><BookOpen class="h-5 w-5" aria-hidden="true" />
-							{book.signatur || book.erweiterte_eigenschaften?.signatur}</span
-						>
-					{/if}
-					{#if book.erweiterte_eigenschaften?.standort}
-						<span
-							class="text-label-small font-bold px-2 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700"
-							>📍 {book.erweiterte_eigenschaften.standort}</span
-						>
-					{/if}
-				</div>
-				<h1 class="text-2xl font-extrabold text-slate-900 leading-tight mb-1">{book.title}</h1>
-				<p class="text-sm text-slate-500 font-medium">{book.author || 'Unbekannter Autor'}</p>
-			</div>
-
-			<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-				<!-- Stock -->
-				<div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
-					<p class="text-label-small font-bold text-slate-400 mb-1">Verfügbar</p>
-					<p
-						class="text-2xl font-extrabold {book.verfuegbar === 0
-							? 'text-rose-600'
-							: book.verfuegbar < 5
-								? 'text-amber-600'
-								: 'text-emerald-600'}"
-					>
-						{book.verfuegbar}
-						<span class="text-sm font-medium text-slate-400">/ {book.gesamt}</span>
-					</p>
-				</div>
-				<!-- Ausleiher -->
-				<div class="bg-indigo-50 rounded-xl p-3 border border-indigo-100">
-					<p class="text-label-small font-bold text-indigo-400 mb-1">Ausleiher</p>
-					<p class="text-2xl font-extrabold text-indigo-700">{borrowers.length}</p>
-				</div>
-				<!-- Exemplare -->
-				<div class="bg-emerald-50 rounded-xl p-3 border border-emerald-100">
-					<p class="text-label-small font-bold text-emerald-400 mb-1">Exemplare</p>
-					<p class="text-2xl font-extrabold text-emerald-700">{exemplare.length}</p>
-				</div>
-				<!-- ISBN -->
-				<div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
-					<p class="text-label-small font-bold text-slate-400 mb-1">ISBN / EAN</p>
-					<p class="text-sm font-mono font-semibold text-slate-700 break-all">{book.isbn || '–'}</p>
-				</div>
-			</div>
 		</div>
 	</div>
 </div>
