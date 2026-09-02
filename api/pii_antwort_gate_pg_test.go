@@ -228,9 +228,11 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/schueler":                     {URL: "/api/schueler", Positiv: []string{"Vogelbeere"}},
 		"GET /api/schueler/{id}":                {URL: "/api/schueler/" + w.schuelerID, Positiv: []string{"Kanariweg", "kanari-eltern@example.org"}},
 		"GET /api/schueler/{id}/dsgvo-auskunft": {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft", Positiv: []string{"Kanariweg"}},
-		// Kandidatensuche fürs Zusammenführen: sucht über ALLE Schüler außer {id} selbst —
-		// der Abgänger Zugvogel (SBK-KANARI-2) muss erscheinen, Adresse/Grund (Stufe 3/2-Freitext) nicht.
-		"GET /api/schueler/{id}/zusammenfuehren-kandidaten": {URL: "/api/schueler/" + w.schuelerID + "/zusammenfuehren-kandidaten?q=Vogelbeere", Positiv: []string{"Zugvogel"}},
+		// Kandidatensuche fürs Zusammenführen: sucht über ALLE Schüler außer {id} selbst.
+		// Aufruf vom Abgänger Zugvogel aus, damit der Kanarienvogel mit Adresse/Grund/
+		// Geburtsdatum (Pruefkanari) im Treffer liegt — von seiner eigenen Akte aus wäre er
+		// ausgeschlossen, und Stufe 2/3 könnte nie rot werden (Rasterdurchgang 02.09.2026).
+		"GET /api/schueler/{id}/zusammenfuehren-kandidaten": {URL: "/api/schueler/" + w.abgaengerID + "/zusammenfuehren-kandidaten?q=Vogelbeere", Positiv: []string{"Pruefkanari"}},
 		"GET /api/schueler/{id}/dsgvo-auskunft/pdf":         {URL: "/api/schueler/" + w.schuelerID + "/dsgvo-auskunft/pdf"},
 		"GET /api/schueler/deleted":                         {URL: "/api/schueler/deleted"},
 		"GET /api/schueler/{barcode_id}/photo":              {URL: "/api/schueler/SBK-KANARI-1/photo"},
