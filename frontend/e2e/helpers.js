@@ -157,8 +157,10 @@ export function seedBestellbedarf(anzahl = 8) {
 		VALUES ('bestellbedarf_warnung_aktiv', 'true')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = 'true';
 
-		INSERT INTO buecher_titel (titel, autor, meldebestand)
-		SELECT 'LMF-${marke} ' || g, 'E2E', 30 FROM generate_series(1, ${anzahl}) g;
+		-- Lernmittel ist seit Migration 093 die SPALTE ist_lernmittel, nicht mehr das
+		-- Titelpräfix — ohne sie zählt der Bedarf nicht (CI rot am 02.09.2026).
+		INSERT INTO buecher_titel (titel, autor, meldebestand, ist_lernmittel)
+		SELECT 'LMF-${marke} ' || g, 'E2E', 30, true FROM generate_series(1, ${anzahl}) g;
 	`);
 
 	return () => {

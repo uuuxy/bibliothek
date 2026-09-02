@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedBestellbedarf } from './helpers.js';
 
 // Gate gegen unlesbaren Text (WCAG 2.1 AA).
 //
@@ -21,6 +21,20 @@ import { uiLogin } from './helpers.js';
 // Wert — er würde entweder Fehlalarm schlagen oder echte Fälle verstecken. Die Zahl der
 // übersprungenen Knoten steht in der Ausgabe, damit die Lücke sichtbar bleibt.
 const SEITEN = ['Mahnwesen', 'Medienkatalog', 'Schülerdatei', 'Bestellungen', 'Signaturen'];
+
+// Der Test bringt seinen Bestellbedarf selbst mit (wie bestellung-erreichbar.spec.js):
+// Die Liveness-Schwelle unten (> 300 Textknoten) hing sonst an Daten, die ANDERE Tests
+// liegen ließen — seit Lernmittel eine Spalte ist (Migration 093), war die Bestellungen-
+// Seite in der CI leer und die Zählung stand bei 298 (02.09.2026).
+/** @type {(() => void) | undefined} */
+let aufraeumen;
+test.beforeEach(() => {
+	aufraeumen = seedBestellbedarf();
+});
+test.afterEach(() => {
+	aufraeumen?.();
+	aufraeumen = undefined;
+});
 
 /**
  * Wartet, bis die nachgeladenen Listen im Baum STEHEN — zwei gleiche Messungen der

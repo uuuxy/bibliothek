@@ -3,8 +3,8 @@ import { uiLogin, seedSQL, querySQL, uniqueSuffix, einstellungsKategorie } from 
 
 // LMF-Massenverlängerung (Einstellungen → LMF-Aktionen, bis 24.08.2026 eigener
 // Menüpunkt /lmf-aktionen): kritisches Massen-Update — verlängert alle offenen
-// LMF-Ausleihen einer Klasse auf ein fixes Datum. Der Handler matcht per
-// Projekt-Konvention über das Titel-Präfix "LMF-" (mit Bindestrich!).
+// LMF-Ausleihen einer Klasse auf ein fixes Datum. Der Handler matcht seit Migration 093
+// über die Spalte ist_lernmittel — das Titelpräfix "LMF-" allein zählt nicht mehr.
 test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausleihen', async ({
 	page
 }) => {
@@ -13,8 +13,8 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
 
 	seedSQL(`
         WITH bt AS (
-            INSERT INTO buecher_titel (isbn, titel, autor)
-            VALUES ('978x${s}', 'LMF-Extend Testbuch ${s}', 'Autor')
+            INSERT INTO buecher_titel (isbn, titel, autor, ist_lernmittel)
+            VALUES ('978x${s}', 'LMF-Extend Testbuch ${s}', 'Autor', true)
             RETURNING id
         ),
         st AS (
