@@ -4,7 +4,15 @@ import {
 	klassenFiltern,
 	zweigOptionenAus,
 	jahrgangOptionenAus,
-	STANDARD_GRUPPE
+	STANDARD_GRUPPE,
+	buecherSuchen,
+	buecherFiltern,
+	buecherSortieren,
+	fachOptionenAus,
+	medientypOptionenAus,
+	leererFilter,
+	SORTIERUNGEN,
+	BESTAND_FILTER
 } from './startseiten_api.js';
 
 // Der Reiter „Jahrgänge" liest seit dem 24.08.2026 die JAHRGANGSSPANNE
@@ -84,5 +92,121 @@ describe('Filter-Optionen aus den Daten', () => {
 			buch({ jahrgangVon: 5, jahrgangBis: 10 }) // Standard — zählt nicht
 		]);
 		expect(jahrgangOptionenAus(gruppen).map((o) => o.value)).toEqual(['', '5', '6']);
+	});
+});
+
+// Filter, Sortierung und Signatur-Suche der Buch-Suche (02.09.2026): Der Reiter hieß
+// „Suche & Filter", hatte aber keinen Filter; die Signatur (Regaladresse) fand die
+// Suche nicht, obwohl der Payload sie trug; Titel ohne Exemplare waren von komplett
+// verliehenen nicht zu unterscheiden.
+const bestand = [
+	buch({
+		title: 'Faust',
+		author: 'Goethe',
+		subject: 'Deutsch',
+		signatur: 'Deu Goe',
+		verfuegbar: 2,
+		gesamt: 3,
+		jahrgangVon: 9,
+		jahrgangBis: 10,
+		track: 'Gymnasium'
+	}),
+	buch({
+		title: 'Analysis',
+		subject: 'Mathematik',
+		signatur: 'Mat Ana',
+		verfuegbar: 0,
+		gesamt: 5,
+		gradeLevel: 11
+	}),
+	buch({ title: 'Ohne Bestand', subject: 'Deutsch', signatur: '', verfuegbar: 0, gesamt: 0 }),
+	buch({ title: 'Hörbuch', subject: 'Englisch', medientyp: 'CD', verfuegbar: 1, gesamt: 1 })
+];
+
+describe('buecherSuchen: Signatur', () => {
+	it('findet ein Buch über seine Signatur (Regaladresse)', () => {
+		expect(buecherSuchen(bestand, 'goe').map((b) => b.title)).toEqual(['Faust']);
+	});
+});
+
+describe('buecherFiltern', () => {
+	it('ohne Filter bleibt alles', () => {
+		expect(buecherFiltern(bestand, leererFilter())).toHaveLength(4);
+	});
+
+	it('Fach, Zweig und Medienart filtern exakt; ohne Angabe ist ein Medium ein Buch', () => {
+		expect(buecherFiltern(bestand, { ...leererFilter(), fach: 'Deutsch' })).toHaveLength(2);
+		expect(buecherFiltern(bestand, { ...leererFilter(), zweig: 'Gymnasium' })).toHaveLength(1);
+		expect(buecherFiltern(bestand, { ...leererFilter(), medientyp: 'Buch' })).toHaveLength(3);
+		expect(buecherFiltern(bestand, { ...leererFilter(), medientyp: 'CD' })).toHaveLength(1);
+	});
+
+	it('Jahrgang trifft gradeLevel ODER die Spanne — dieselbe Regel wie die Suche', () => {
+		expect(
+			buecherFiltern(bestand, { ...leererFilter(), jahrgang: '10' }).map((b) => b.title)
+		).toEqual(['Faust']);
+		expect(
+			buecherFiltern(bestand, { ...leererFilter(), jahrgang: '11' }).map((b) => b.title)
+		).toEqual(['Analysis']);
+	});
+
+	it('Bestand: „nur verfügbare" und „ohne Exemplare" sind verschiedene Mengen', () => {
+		expect(
+			buecherFiltern(bestand, { ...leererFilter(), bestand: 'verfuegbar' }).map((b) => b.title)
+		).toEqual(['Faust', 'Hörbuch']);
+		expect(
+			buecherFiltern(bestand, { ...leererFilter(), bestand: 'ohne' }).map((b) => b.title)
+		).toEqual(['Ohne Bestand']);
+	});
+});
+
+describe('buecherSortieren', () => {
+	it('ohne Wahl bleibt die gepflegte Reihenfolge — dieselbe Liste, nicht umsortiert', () => {
+		expect(buecherSortieren(bestand, '')).toBe(bestand);
+	});
+
+	it('sortiert nach Titel, Fach, Signatur (Leere ans Ende) und Verfügbarkeit', () => {
+		expect(buecherSortieren(bestand, 'titel').map((b) => b.title)).toEqual([
+			'Analysis',
+			'Faust',
+			'Hörbuch',
+			'Ohne Bestand'
+		]);
+		expect(buecherSortieren(bestand, 'fach').map((b) => b.title)).toEqual([
+			'Faust',
+			'Ohne Bestand',
+			'Hörbuch',
+			'Analysis'
+		]);
+		expect(buecherSortieren(bestand, 'signatur').map((b) => b.title)).toEqual([
+			'Faust',
+			'Analysis',
+			'Hörbuch',
+			'Ohne Bestand'
+		]);
+		expect(buecherSortieren(bestand, 'verfuegbar')[0].title).toBe('Faust');
+		// Die Vorlage bleibt unangetastet.
+		expect(bestand[0].title).toBe('Faust');
+	});
+
+	it('jede angebotene Sortierung und jeder Bestandsfilter existiert wirklich', () => {
+		for (const s of SORTIERUNGEN)
+			expect(Array.isArray(buecherSortieren(bestand, s.value))).toBe(true);
+		for (const f of BESTAND_FILTER)
+			expect(Array.isArray(buecherFiltern(bestand, { ...leererFilter(), bestand: f.value }))).toBe(
+				true
+			);
+	});
+});
+
+describe('Optionslisten der Buch-Suche', () => {
+	it('entstehen aus den Daten, alphabetisch, mit „Alle" voran', () => {
+		expect(fachOptionenAus(bestand).map((o) => o.label)).toEqual([
+			'Alle Fächer',
+			'Deutsch',
+			'Englisch',
+			'Mathematik'
+		]);
+		expect(medientypOptionenAus(bestand).map((o) => o.value)).toEqual(['', 'Buch', 'CD']);
 	});
 });

@@ -1,8 +1,9 @@
 <script>
-	import { getSubjectColor, getStockDotColor, formatDate } from '../bookHelpers.js';
+	import { getSubjectColor } from '../bookHelpers.js';
 	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
 	import BuchKarteCover from './BuchKarteCover.svelte';
-	import { Clock, Copy, SquarePen } from '@lucide/svelte';
+	import BuchKarteFuss from './BuchKarteFuss.svelte';
+	import { Copy, SquarePen } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -19,6 +20,7 @@
 	 *     gesamt: number,
 	 *     coverUrl: string,
 	 *     lastCounted: string,
+	 *     signatur?: string,
 	 *     medientyp?: string
 	 *   },
 	 *   onclick?: (event: Event) => void,
@@ -215,26 +217,6 @@
 			</div>
 		</div>
 
-		<div class="space-y-4">
-			<div
-				class="inline-flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100 text-label-small text-slate-500 font-medium"
-			>
-				<Clock class="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
-				<span>
-					Zuletzt geprüft: {formatDate(book.lastCounted) || 'Unbekannt'}
-				</span>
-			</div>
-
-			<div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-				<span class="text-xs font-semibold text-slate-400">Verfügbar</span>
-				<div class="flex items-center gap-2">
-					<span class="w-2 h-2 rounded-full {getStockDotColor(book.verfuegbar || 0)}"></span>
-					<span class="text-lg font-extrabold text-slate-800">{book.verfuegbar || 0}</span>
-					{#if book.gesamt !== undefined}
-						<span class="text-xs text-slate-500 font-medium">/ {book.gesamt}</span>
-					{/if}
-				</div>
-			</div>
-		</div>
+		<BuchKarteFuss {book} />
 	</div>
 </div>

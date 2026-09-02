@@ -43,6 +43,20 @@ const suchSynonyme = new Map([
 ]);
 
 /**
+ * Trifft ein Buch den Jahrgang? Entweder über gradeLevel oder über die gepflegte
+ * Spanne von–bis. Eine Regel für Suche UND Filter — zwei Definitionen wären nur
+ * zufällig einig.
+ * @param {any} b
+ * @param {number} jahrgang
+ */
+export function trifftJahrgang(b, jahrgang) {
+	if (b.gradeLevel && Number(b.gradeLevel) === jahrgang) return true;
+	return (
+		!!b.jahrgangVon && !!b.jahrgangBis && jahrgang >= b.jahrgangVon && jahrgang <= b.jahrgangBis
+	);
+}
+
+/**
  * Die Buch-Suche der Startseite: jeder Begriff muss mindestens ein Feld treffen;
  * Zahlen zählen als Jahrgang (trifft gradeLevel ODER die Spanne von–bis), Füllwörter
  * wie „Klasse"/„Jg." fallen dann weg.
@@ -66,15 +80,11 @@ export function buecherSuchen(buecherArray, searchQuery) {
 			if (b.author && b.author.toLowerCase().includes(term)) return true;
 			if (b.subject && b.subject.toLowerCase().includes(term)) return true;
 			if (b.track && b.track.toLowerCase().includes(term)) return true;
-			if (b.gradeLevel && b.gradeLevel.toString() === term) return true;
+			// Die Signatur ist die Regaladresse (Handbuch) — bis zum 02.09.2026 fand die
+			// Suche sie nicht, obwohl der Payload sie längst trug.
+			if (b.signatur && b.signatur.toLowerCase().includes(term)) return true;
 			const num = parseInt(term, 10);
-			return (
-				!isNaN(num) &&
-				!!b.jahrgangVon &&
-				!!b.jahrgangBis &&
-				num >= b.jahrgangVon &&
-				num <= b.jahrgangBis
-			);
+			return !isNaN(num) && trifftJahrgang(b, num);
 		})
 	);
 }
@@ -177,4 +187,96 @@ export function bestandsFarbe(bestand) {
 	if (bestand === 0) return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]';
 	if (bestand < 5) return 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]';
 	return 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]';
+}
+
+// ---------------------------------------------------------------------------
+// Filter, Sortierung und Optionslisten der Buch-Suche (seit 02.09.2026).
+//
+// Der Reiter hieß „Suche & Filter", hatte in der Buch-Suche aber keinen Filter —
+// Zweig und Jahrgang gab es nur im Reiter „Jahrgänge". Alle Bücher liegen ohnehin
+// clientseitig vor, die Optionslisten entstehen aus den Daten (wie zweigOptionenAus).
+// ---------------------------------------------------------------------------
+
+/** Ohne Wahl bleibt die gepflegte Reihenfolge (sortOrder aus der Titel-Verwaltung). */
+export const SORTIERUNGEN = [
+	{ value: '', label: 'Gepflegte Reihenfolge' },
+	{ value: 'titel', label: 'Titel A–Z' },
+	{ value: 'fach', label: 'Fach' },
+	{ value: 'signatur', label: 'Signatur' },
+	{ value: 'verfuegbar', label: 'Verfügbarkeit' }
+];
+
+export const BESTAND_FILTER = [
+	{ value: '', label: 'Alle Titel' },
+	{ value: 'verfuegbar', label: 'Nur verfügbare' },
+	{ value: 'ohne', label: 'Ohne Exemplare' }
+];
+
+/** @returns {{fach: string, jahrgang: string, zweig: string, medientyp: string, bestand: string}} */
+export function leererFilter() {
+	return { fach: '', jahrgang: '', zweig: '', medientyp: '', bestand: '' };
+}
+
+/** @param {any[]} buecherArray */
+export function fachOptionenAus(buecherArray) {
+	const faecher = [...new Set(buecherArray.map((b) => b.subject).filter(Boolean))].sort((a, b) =>
+		a.localeCompare(b, 'de')
+	);
+	return [{ value: '', label: 'Alle Fächer' }, ...faecher.map((f) => ({ value: f, label: f }))];
+}
+
+/** Ohne Angabe ist ein Medium ein Buch — so liest es auch die Karte (CD/DVD → EAN). */
+const medientypVon = (/** @type {any} */ b) => b.medientyp || 'Buch';
+
+/** @param {any[]} buecherArray */
+export function medientypOptionenAus(buecherArray) {
+	const typen = [...new Set(buecherArray.map(medientypVon))].sort((a, b) =>
+		a.localeCompare(b, 'de')
+	);
+	return [{ value: '', label: 'Alle Medien' }, ...typen.map((t) => ({ value: t, label: t }))];
+}
+
+/**
+ * @param {any[]} buecherArray
+ * @param {ReturnType<typeof leererFilter>} f
+ */
+export function buecherFiltern(buecherArray, f) {
+	const jahrgang = f.jahrgang ? Number(f.jahrgang) : 0;
+	return buecherArray.filter(
+		(b) =>
+			(!f.fach || b.subject === f.fach) &&
+			(!f.zweig || b.track === f.zweig) &&
+			(!f.medientyp || medientypVon(b) === f.medientyp) &&
+			(!jahrgang || trifftJahrgang(b, jahrgang)) &&
+			(f.bestand !== 'verfuegbar' || (b.verfuegbar ?? 0) > 0) &&
+			(f.bestand !== 'ohne' || !(b.gesamt ?? 0))
+	);
+}
+
+/** Leere Werte sortieren ans Ende, nicht an den Anfang. */
+const vergleicheText = (/** @type {string} */ a, /** @type {string} */ b) => {
+	if (!a && !b) return 0;
+	if (!a) return 1;
+	if (!b) return -1;
+	return a.localeCompare(b, 'de');
+};
+
+/**
+ * Liefert eine NEUE Liste; die gepflegte Reihenfolge ('') bleibt unangetastet.
+ * @param {any[]} buecherArray
+ * @param {string} sortierung
+ */
+export function buecherSortieren(buecherArray, sortierung) {
+	if (!sortierung) return buecherArray;
+	const nachTitel = (/** @type {any} */ a, /** @type {any} */ b) =>
+		vergleicheText(a.title || '', b.title || '');
+	/** @type {Record<string, (a: any, b: any) => number>} */
+	const regeln = {
+		titel: nachTitel,
+		fach: (a, b) => vergleicheText(a.subject || '', b.subject || '') || nachTitel(a, b),
+		signatur: (a, b) => vergleicheText(a.signatur || '', b.signatur || '') || nachTitel(a, b),
+		verfuegbar: (a, b) => (b.verfuegbar ?? 0) - (a.verfuegbar ?? 0) || nachTitel(a, b)
+	};
+	const regel = regeln[sortierung];
+	return regel ? buecherArray.slice().sort(regel) : buecherArray;
 }

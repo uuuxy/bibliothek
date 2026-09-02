@@ -10,12 +10,21 @@
 	import { onMount } from 'svelte';
 	import { appState } from '$lib/store.svelte.js';
 	import BuchRasterStartseite from '$lib/components/BuchRasterStartseite.svelte';
+	import BuchListeStartseite from '$lib/components/BuchListeStartseite.svelte';
+	import KatalogFilterleiste from '$lib/components/KatalogFilterleiste.svelte';
 	import KlassenUebersichtStartseite from '$lib/components/KlassenUebersichtStartseite.svelte';
 	import StartseitenFilter from '$lib/components/StartseitenFilter.svelte';
 	import Button from '../../lib/components/ui/Button.svelte';
+	import { hatRecht } from '../../lib/menu.js';
+	import { authStore } from '../../lib/stores/authStore.svelte.js';
 	import {
 		buecherLaden,
 		buecherSuchen,
+		buecherFiltern,
+		buecherSortieren,
+		leererFilter,
+		fachOptionenAus,
+		medientypOptionenAus,
 		buecherNachKlassenGruppieren,
 		klassenFiltern,
 		zweigOptionenAus,
@@ -29,6 +38,14 @@
 	let selectedZweig = $state('');
 	let selectedJahrgang = $state('');
 	let selectedBook = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
+	// Filter, Sortierung und Ansicht der Buch-Suche (KatalogFilterleiste).
+	const suchFilter = $state(leererFilter());
+	let sortierung = $state('');
+	let ansicht = $state(/** @type {'karten'|'liste'} */ ('karten'));
+
+	// Der Stift auf der Karte gehört nur denen, die bearbeiten dürfen. Vorher sah ihn
+	// jeder — und ohne Recht tat er dasselbe wie der Klick auf die Karte.
+	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 
 	/** Navigate to the full-page book detail view */
 	/** @param {any} book */
@@ -49,7 +66,9 @@
 	// Verwaltung → Schulklassen. Aufgelöst.
 	let classes = $derived(buecherNachKlassenGruppieren(books));
 
-	let filteredBooks = $derived(buecherSuchen(books, searchQuery));
+	let filteredBooks = $derived(
+		buecherSortieren(buecherFiltern(buecherSuchen(books, searchQuery), suchFilter), sortierung)
+	);
 
 	let filteredClasses = $derived(klassenFiltern(classes, selectedZweig, selectedJahrgang));
 
@@ -108,19 +127,39 @@
 					role="tabpanel"
 					id="content-suche"
 					aria-labelledby="tab-suche"
+					class="space-y-4"
 				>
-					<BuchRasterStartseite
-						filteredBooks={paginatedBooks}
-						onBookClick={(book) => navigateToDetail(book)}
-						onEditClick={(book) => {
-							if (appState.adminAuthenticated) {
-								appState.bookToEdit = book;
-								appState.requestAdminView = true;
-							} else {
-								navigateToDetail(book);
-							}
-						}}
+					<KatalogFilterleiste
+						filter={suchFilter}
+						bind:sortierung
+						bind:ansicht
+						fachOptionen={fachOptionenAus(books)}
+						jahrgangOptionen={jahrgangOptionenAus(classes)}
+						zweigOptionen={zweigOptionenAus(books)}
+						medientypOptionen={medientypOptionenAus(books)}
+						treffer={filteredBooks.length}
+						gesamt={books.length}
 					/>
+					{#if ansicht === 'liste'}
+						<BuchListeStartseite
+							filteredBooks={paginatedBooks}
+							onBookClick={(book) => navigateToDetail(book)}
+						/>
+					{:else}
+						<BuchRasterStartseite
+							filteredBooks={paginatedBooks}
+							onBookClick={(book) => navigateToDetail(book)}
+							onEditClick={darfBearbeiten
+								? (book) => {
+										// Die Titel-Verwaltung öffnet die Akte, sobald sie geladen hat
+										// (admin/+page: appState.bookToEdit) — unabhängig davon, ob sie in
+										// dieser Sitzung schon einmal offen war.
+										appState.bookToEdit = book;
+										appState.requestAdminView = true;
+									}
+								: undefined}
+						/>
+					{/if}
 					{#if displayLimit < filteredBooks.length}
 						<div class="mt-8 flex justify-center">
 							<Button variant="secondary" onclick={() => (displayLimit += 50)} class="px-6">
