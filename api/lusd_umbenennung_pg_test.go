@@ -90,13 +90,25 @@ func TestUmbenennung_BestaetigtBehaeltDatensatz(t *testing.T) {
 	}
 	var nachname, klasse, barcode string
 	var abg bool
-	var bestaetigt *time.Time
-	if err := pool.QueryRow(ctx, `SELECT nachname, klasse, barcode_id, ist_abgaenger, lusd_bestaetigt_am FROM schueler WHERE id=$1`, annaID).
-		Scan(&nachname, &klasse, &barcode, &abg, &bestaetigt); err != nil {
+	var bestaetigt, eintrittDB *time.Time
+	if err := pool.QueryRow(ctx, `SELECT nachname, klasse, barcode_id, ist_abgaenger, lusd_bestaetigt_am, schul_eintritt_am FROM schueler WHERE id=$1`, annaID).
+		Scan(&nachname, &klasse, &barcode, &abg, &bestaetigt, &eintrittDB); err != nil {
 		t.Fatal(err)
 	}
 	if nachname != "Mueller-Schmidt" || !klassenGleich(klasse, "06F1") || barcode != "UMB-1" || abg || bestaetigt == nil || time.Since(*bestaetigt) > time.Minute {
 		t.Errorf("Anna: nachname=%q klasse=%q barcode=%q abg=%v bestaetigt=%v", nachname, klasse, barcode, abg, bestaetigt)
+	}
+	// Der Import SCHREIBT den Schuleintritt (Bestand + Neuanlage) — kein Test sah das
+	// bisher, alle säten die Spalte per SQL (Rasterdurchgang 02.09.2026, Rot-Proben P16).
+	if eintrittDB == nil || eintrittDB.Format("2006-01-02") != eintritt.Format("2006-01-02") {
+		t.Errorf("Bestandsschüler: schul_eintritt_am aus dem Export nicht geschrieben: %v", eintrittDB)
+	}
+	var neuEintritt *time.Time
+	if err := pool.QueryRow(ctx, `SELECT schul_eintritt_am FROM schueler WHERE nachname = 'KindA'`).Scan(&neuEintritt); err != nil {
+		t.Fatal(err)
+	}
+	if neuEintritt != nil {
+		t.Errorf("Neuanlage ohne Eintritt im Export darf keinen tragen: %v", neuEintritt)
 	}
 	if n := zaehle(t, pool, "id = $1 AND EXISTS (SELECT 1 FROM ausleihen a WHERE a.schueler_id = schueler.id AND a.rueckgabe_am IS NULL)", annaID); n != 1 {
 		t.Error("die offene Ausleihe hängt nicht mehr an Anna")
