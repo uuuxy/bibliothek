@@ -22,9 +22,14 @@
 	});
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
+	// Sichtbar nur, wenn der Server die Suche auch beantwortet: GET /api/search verlangt
+	// perform_actions (Theken-Erkennung, api/routes_misc.go). Eine Rolle mit Katalog- oder
+	// Schülerrecht, aber ohne Theken-Recht, sähe sonst eine Leiste, die bei jedem Zeichen
+	// „Suche nicht möglich" meldet (Paar, das nur in der Werksvorgabe zufällig einig ist).
 	const sichtbar = $derived(
 		uiStore.activeTab !== 'kiosk' &&
 			uiStore.activeTab !== 'kollegium_portal' &&
+			hatRecht(authStore.currentUser, 'perform_actions') &&
 			(hatRecht(authStore.currentUser, 'view_books') ||
 				hatRecht(authStore.currentUser, 'view_students'))
 	);

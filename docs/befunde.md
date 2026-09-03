@@ -56,6 +56,19 @@ Peter überlegt beide (03.09.).
    anonymisiert — das Reparaturfenster fehlt dieser Gruppe. Alternative: Uhr bei Rückgabe des
    letzten Vorgangs neu starten (dann PG-Test dieser Konstellation).
 
+3. **`GET /api/search` hängt an `perform_actions`, drei Aufrufer liegen außerhalb der Theke.**
+   Die Etiketten-Titelsuche im Druck-Center (Menüpunkt: `view_students`), die Schülersuche im
+   Vormerkungs-Reiter der Buchakte (`view_books`) und die globale Suchleiste rufen dieselbe
+   Route wie die Theken-Omnibox. In der Werksvorgabe fällt das nicht auf, weil jede Rolle mit
+   `view_books`/`view_students` auch `perform_actions` trägt — entzieht ein Admin einer Rolle
+   das Theken-Recht, meldet die Suche auf diesen Seiten nur noch „Suche nicht möglich" (laut,
+   daher B). Die Suchleiste blendet sich seit 03.09. abends ohne `perform_actions` aus; die
+   beiden anderen Felder nicht. Optionen: (a) Oder-Rechte-Middleware (`perform_actions` ODER
+   `view_books` ODER `view_students`) — dann sähe eine Rolle mit bloßem Katalogrecht die
+   Kiosk-Sicht auf Schüler (Name, Klasse, Ausweis; PII-Matrix Stufe 1), das ist eine
+   Datenschutz-Entscheidung; (b) beide Felder wie die Suchleiste an `perform_actions` koppeln;
+   (c) so lassen und in der Rechte-Oberfläche beim Theken-Recht darauf hinweisen.
+
 ## Beobachten (nichts zu tun)
 
 | Fund | Warum nur beobachten |
