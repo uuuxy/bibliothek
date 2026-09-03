@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-02. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-03. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produktrundgang als
 Video (8 min) zeigt jeden Bereich in Aktion.
