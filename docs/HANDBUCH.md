@@ -113,7 +113,7 @@ im Bestellwesen (→ *Klassensatz-Reservierungen*). (§4)
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Abgänger / Archiv** und **Papierkorb**; endgültiges Löschen/Anonymisieren nur mit
   Namensbestätigung (DSGVO-Kette, §8).
-- **Doppelter Datensatz?** (Admin, unten im Reiter *Stammdaten & Adresse*): Steht dieselbe
+- **Doppelter Datensatz?** (Recht „Schüler zusammenführen", ab Werk nur Admin; unten im Reiter *Stammdaten & Adresse*): Steht dieselbe
   Person zweimal in der Kartei — typisch nach einer Namensänderung in der LUSD, die der
   Export ohne Schüler-ID nicht wiedererkannt hat —, beide Datensätze zusammenführen. Es
   bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat; Ausleihen, Gebühren und

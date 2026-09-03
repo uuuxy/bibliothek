@@ -29,7 +29,8 @@ export function schuelerRechte(user) {
 		// POST /api/schueler/{id}/photo
 		foto: hatRecht(user, 'upload_photos'),
 		// POST /api/schueler/{id}/zusammenfuehren — zwei Datensätze, ein Mensch (Umbenennung
-		// ohne Schüler-ID, Dublette). Unumkehrbar, deshalb dasselbe Recht wie das Purge.
-		zusammenfuehren: hatRecht(user, 'manage_students_admin')
+		// ohne Schüler-ID, Dublette). Unumkehrbar; seit 03.09.2026 ein eigenes Recht, das der
+		// Admin einzeln delegieren kann (vorher an manage_students_admin gebunden).
+		zusammenfuehren: hatRecht(user, 'merge_students')
 	};
 }

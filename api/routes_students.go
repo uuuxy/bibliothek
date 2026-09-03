@@ -32,8 +32,8 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 
 	// Zusammenführen zweier Datensätze (Umbenennung ohne Schüler-ID, Dublette aus
 	// Handanlage + Import): Admin-Recht wie Purge — unumkehrbar, Identitätseingriff.
-	mux.Handle("POST /api/schueler/{id}/zusammenfuehren", s.RequirePermission("manage_students_admin")(s.ZusammenfuehrenSchuelerHandler(auditRepo)))
-	mux.Handle("GET /api/schueler/{id}/zusammenfuehren-kandidaten", s.RequirePermission("manage_students_admin")(s.ZusammenfuehrenKandidatenHandler()))
+	mux.Handle("POST /api/schueler/{id}/zusammenfuehren", s.RequirePermission("merge_students")(s.ZusammenfuehrenSchuelerHandler(auditRepo)))
+	mux.Handle("GET /api/schueler/{id}/zusammenfuehren-kandidaten", s.RequirePermission("merge_students")(s.ZusammenfuehrenKandidatenHandler()))
 
 	// Papierkorb
 	mux.Handle("GET /api/schueler/deleted", s.RequirePermission("delete_students")(s.GetDeletedStudentsHandler()))

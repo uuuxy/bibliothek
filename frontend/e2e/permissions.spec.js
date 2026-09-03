@@ -41,6 +41,14 @@ test('Mitarbeiter: Admin-Endpoints (manage_settings/manage_students_admin) liefe
 	expect(auskunft.status(), 'DSGVO-Auskunft für Mitarbeiter').toBe(403);
 	expect(await auskunft.text()).not.toContain(`Rbac-${suffix}`);
 
+	// Zusammenführen ist seit 03.09.2026 ein eigenes Recht (merge_students) — ab Werk nur Admin;
+	// die Kandidatensuche liefert Namen über ALLE Schüler und muss darum hart zu sein.
+	const kandidaten = await page.request.get(
+		`/api/schueler/${studentId}/zusammenfuehren-kandidaten?q=Rbac`
+	);
+	expect(kandidaten.status(), 'Zusammenführen-Kandidaten für Mitarbeiter').toBe(403);
+	expect(await kandidaten.text()).not.toContain(`Rbac-${suffix}`);
+
 	// Backup-Status verlangt manage_settings — Mitarbeiter haben es ab Werk nicht
 	const backup = await page.request.get('/api/admin/system/backup-status');
 	expect(backup.status(), 'Backup-Status für Mitarbeiter').toBe(403);

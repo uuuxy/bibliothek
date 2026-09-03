@@ -61,3 +61,42 @@ func TestRechteVererbung_ManageUsersSplit(t *testing.T) {
 		t.Error("Vererbung darf eine bewusst gesetzte Zeile nicht überschreiben")
 	}
 }
+
+// TestRechteVererbung_MergeStudents: Zusammenführen war bis zum 03.09.2026 Teil von
+// manage_students_admin. Eine Anlage, die dieses Sonderrecht ans Sekretariat delegiert
+// hatte, behält den Knopf nach dem Update — merge_students erbt den alten Wert je Rolle.
+func TestRechteVererbung_MergeStudents(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	d := &Database{Pool: pool}
+	if err := d.InitPermissions(ctx); err != nil {
+		t.Fatalf("InitPermissions: %v", err)
+	}
+	allowed := func(role, perm string) bool {
+		var v bool
+		if err := pool.QueryRow(ctx,
+			`SELECT allowed FROM role_permissions WHERE role = $1 AND permission = $2`, role, perm).Scan(&v); err != nil {
+			t.Fatalf("%s/%s fehlt: %v", role, perm, err)
+		}
+		return v
+	}
+	if !allowed("ADMIN", "merge_students") || allowed("MITARBEITER", "merge_students") || allowed("HELFER", "merge_students") {
+		t.Fatal("frische Anlage: merge_students ab Werk nur für ADMIN")
+	}
+	// Anlage vor der Herauslösung: Sonderrecht delegiert, die neue Zeile gibt es noch nicht.
+	if _, err := pool.Exec(ctx, `UPDATE role_permissions SET allowed = true WHERE role = 'MITARBEITER' AND permission = 'manage_students_admin'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `DELETE FROM role_permissions WHERE permission = 'merge_students'`); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.InitPermissions(ctx); err != nil {
+		t.Fatalf("InitPermissions (Update): %v", err)
+	}
+	if !allowed("MITARBEITER", "merge_students") {
+		t.Error("MITARBEITER hatte manage_students_admin und verliert nach dem Update still das Zusammenführen")
+	}
+	if !allowed("ADMIN", "merge_students") || allowed("HELFER", "merge_students") {
+		t.Error("Vererbung: ADMIN behält, HELFER bekommt nichts")
+	}
+}

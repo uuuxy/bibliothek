@@ -1,6 +1,6 @@
 <!-- @component SchuelerZusammenfuehren — der Abschnitt „Doppelter Datensatz?" am Ende des
      Reiters „Stammdaten & Adresse", über der Gefahrenzone: sichtbar nur mit dem Recht
-     manage_students_admin (schuelerRechte.zusammenfuehren). Trägt den Dialog gleich mit,
+     merge_students (schuelerRechte.zusammenfuehren; eigenes Recht seit 03.09.2026). Trägt den Dialog gleich mit,
      damit StudentProfile.svelte (an der 200-Zeilen-Ratsche) nichts davon halten muss. -->
 <script>
 	import { Merge } from '@lucide/svelte';

@@ -144,6 +144,11 @@ export const permissionsMetadata = [
 				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Kindes; außerdem das sofortige endgültige Löschen aus dem Papierkorb per API — die Oberfläche hat dafür keinen Knopf, der nächtliche Löschjob räumt nach Frist'
 			},
 			{
+				key: 'merge_students',
+				label: 'Schüler zusammenführen',
+				desc: 'Zwei Datensätze derselben Person zu einem vereinen („Doppelter Datensatz?" in der Schülerakte, Reiter Stammdaten & Adresse) — unumkehrbar: Ausleihen, Gebühren und Historie wandern, der zweite Datensatz wird endgültig gelöscht. Ohne das Recht ist der Knopf unsichtbar'
+			},
+			{
 				key: 'manage_users',
 				label: 'Benutzer & Rechte verwalten',
 				desc: 'Benutzerkonten anlegen und ändern, Rechte je Rolle festlegen, Admin-Audit-Log einsehen — öffnet den Menüpunkt „Berechtigungen"'

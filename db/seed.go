@@ -122,6 +122,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "manage_users", true},
 	{"ADMIN", "manage_settings", true},
 	{"ADMIN", "manage_students_admin", true},
+	{"ADMIN", "merge_students", true},
 
 	// Mitarbeiter defaults
 	{"MITARBEITER", "perform_actions", true},
@@ -147,6 +148,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"MITARBEITER", "manage_users", false},
 	{"MITARBEITER", "manage_settings", false},
 	{"MITARBEITER", "manage_students_admin", false},
+	{"MITARBEITER", "merge_students", false},
 
 	// Kollegium defaults — Portal-Rolle: eine Lehrkraft meldet sich an, um im
 	// Kollegiums-Portal einen Klassensatz zu reservieren. Mehr ist der Zweck nicht.
@@ -179,6 +181,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"KOLLEGIUM", "manage_users", false},
 	{"KOLLEGIUM", "manage_settings", false},
 	{"KOLLEGIUM", "manage_students_admin", false},
+	{"KOLLEGIUM", "merge_students", false},
 
 	// Helfer defaults — Kiosk-Rolle: darf NUR am Terminal ausleihen/zurücknehmen
 	// (perform_actions: /api/action, /scan, /search, /events). Bewusst KEIN
@@ -218,6 +221,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"HELFER", "manage_users", false},
 	{"HELFER", "manage_settings", false},
 	{"HELFER", "manage_students_admin", false},
+	{"HELFER", "merge_students", false},
 }
 
 // RechteOptional nennt die Rolle/Recht-Paare, deren Live-WERT eine bewusste
@@ -233,6 +237,9 @@ var RechteOptional = map[string]bool{
 	// Stünden sie nicht hier, wäre jede Delegation eine Dauerwarnung.
 	"MITARBEITER/manage_settings":       true,
 	"MITARBEITER/manage_students_admin": true,
+	// Zusammenführen (03.09.2026 aus manage_students_admin herausgelöst) ist ebenso
+	// eine Delegation ans Sekretariat.
+	"MITARBEITER/merge_students": true,
 }
 
 // vererbeAufgeteilteRechteSQL: Bis zum 24.08.2026 war manage_users das EINE Recht für
@@ -251,10 +258,25 @@ const vererbeAufgeteilteRechteSQL = `
 	ON CONFLICT (role, permission) DO NOTHING
 `
 
+// vererbeZusammenfuehrenSQL: Bis zum 03.09.2026 hing das Zusammenführen zweier
+// Schülerdatensätze an manage_students_admin. Seit es ein eigenes Recht ist (Peter:
+// „ein weiteres Rollenrecht"), erbt jede Rolle ihren bisherigen Wert — sonst verlöre
+// eine Anlage, die das Sonderrecht ans Sekretariat delegiert hat, den Knopf still.
+const vererbeZusammenfuehrenSQL = `
+	INSERT INTO role_permissions (role, permission, allowed)
+	SELECT rp.role, 'merge_students', rp.allowed
+	FROM role_permissions rp
+	WHERE rp.permission = 'manage_students_admin'
+	ON CONFLICT (role, permission) DO NOTHING
+`
+
 // seedRolePermissions schreibt die Rechte-Vorgabe in die Datenbank (nur fehlende Zeilen).
 func (db *Database) seedRolePermissions(ctx context.Context) error {
 	if _, err := db.Pool.Exec(ctx, vererbeAufgeteilteRechteSQL); err != nil {
 		return fmt.Errorf("vererbung manage_users → manage_settings/manage_students_admin: %w", err)
+	}
+	if _, err := db.Pool.Exec(ctx, vererbeZusammenfuehrenSQL); err != nil {
+		return fmt.Errorf("vererbung manage_students_admin → merge_students: %w", err)
 	}
 	for _, d := range RechteVorgabe {
 		_, err := db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
