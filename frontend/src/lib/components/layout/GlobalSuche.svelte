@@ -14,7 +14,12 @@
 	import { erzeugeGlobalSuche } from '../../stores/globalSuche.svelte.js';
 	import { springeZuBuch, springeZuSchueler } from '../../stores/springen.js';
 
-	const s = erzeugeGlobalSuche({ zuBuch: springeZuBuch, zuSchueler: springeZuSchueler });
+	const s = erzeugeGlobalSuche({
+		zuBuch: springeZuBuch,
+		zuSchueler: springeZuSchueler,
+		darfSchueler: () => hatRecht(authStore.currentUser, 'view_students'),
+		darfBuecher: () => hatRecht(authStore.currentUser, 'view_books')
+	});
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
 	const sichtbar = $derived(

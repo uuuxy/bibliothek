@@ -75,3 +75,37 @@ describe('globale Suche', () => {
 		expect(s.fehler).toContain('nicht möglich');
 	});
 });
+
+// Rechte-Kante: Was die Leiste anbietet, muss der Klick auch öffnen dürfen. Der Router
+// stellt einen gesperrten Bildschirm still auf den ersten erlaubten zurück — ein
+// Schüler-Treffer für den Helfer (view_books ohne view_students) wäre eine tote Tür.
+describe('globale Suche — Rechte', () => {
+	it('zeigt dem Helfer keine Schüler und springt bei Ausweis-Scan nicht', async () => {
+		const zuSchueler = vi.fn();
+		const s = erzeugeGlobalSuche({
+			zuBuch: vi.fn(),
+			zuSchueler,
+			darfSchueler: () => false,
+			holen: () =>
+				antwort({ students: [{ id: 's1' }], books: [], treffer: { typ: 'schueler', id: 's1' } })
+		});
+		s.suche = 'S-1';
+		await s.bestaetigen();
+		expect(zuSchueler).not.toHaveBeenCalled();
+		expect(s.schueler).toHaveLength(0);
+		expect(s.offen).toBe(false);
+		expect(s.fehler).toMatch(/freigegeben/);
+	});
+	it('lässt dem Helfer die Bücher und springt bei genau einem Titel', async () => {
+		const zuBuch = vi.fn();
+		const s = erzeugeGlobalSuche({
+			zuBuch,
+			zuSchueler: vi.fn(),
+			darfSchueler: () => false,
+			holen: () => antwort({ students: [{ id: 's1' }], books: [{ id: 'b1' }] })
+		});
+		s.suche = 'Meier';
+		await s.bestaetigen();
+		expect(zuBuch).toHaveBeenCalledWith('b1');
+	});
+});
