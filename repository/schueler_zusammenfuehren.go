@@ -204,6 +204,9 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 type gewanderteVorgaenge struct {
 	Ausleihen, Schadensfaelle, Vormerkungen, VormerkungenDoppelt []string
 	Foto                                                         bool
+	// ZielFotoGewichen: das Ziel hatte ein älteres Foto, das dem jüngeren der Quelle
+	// gewichen ist — der Rückweg weiß dann, dass ein Foto verloren ist.
+	ZielFotoGewichen bool
 }
 
 // verschiebeVorgaenge hängt alles, was an der Quelle hängt, an das Ziel: Vorgänge (FK),
@@ -245,10 +248,12 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
 	// das JÜNGERE Foto gewinnt, egal auf welcher Seite (Peter, 03.09.2026). Hat das Ziel
 	// ein älteres, weicht es; der Rückweg-Eintrag hält fest, ob das Quell-Foto gewandert ist.
-	if _, err := tx.Exec(ctx, `DELETE FROM schueler_fotos z WHERE z.schueler_id = $1
-		AND EXISTS (SELECT 1 FROM schueler_fotos q WHERE q.schueler_id = $2 AND q.aktualisiert_am > z.aktualisiert_am)`, ziel, quelle); err != nil {
+	gewichen, err := tx.Exec(ctx, `DELETE FROM schueler_fotos z WHERE z.schueler_id = $1
+		AND EXISTS (SELECT 1 FROM schueler_fotos q WHERE q.schueler_id = $2 AND q.aktualisiert_am > z.aktualisiert_am)`, ziel, quelle)
+	if err != nil {
 		return nil, fmt.Errorf("älteres foto weichen lassen: %w", err)
 	}
+	g.ZielFotoGewichen = gewichen.RowsAffected() == 1
 	fotos, err := idsAus(ctx, tx, `UPDATE schueler_fotos SET schueler_id = $1 WHERE schueler_id = $2
 		AND NOT EXISTS (SELECT 1 FROM schueler_fotos WHERE schueler_id = $1) RETURNING schueler_id`, ziel, quelle)
 	if err != nil {
@@ -305,7 +310,7 @@ func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, bearbeiterID string
 		"gewandert": map[string]any{
 			"ausleihen": g.Ausleihen, "schadensfaelle": g.Schadensfaelle,
 			"vormerkungen": g.Vormerkungen, "vormerkungen_doppelt_geloescht": g.VormerkungenDoppelt,
-			"foto": g.Foto,
+			"foto": g.Foto, "ziel_foto_gewichen": g.ZielFotoGewichen,
 		},
 	})
 	if err != nil {
