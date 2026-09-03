@@ -191,7 +191,7 @@ func FachAusText(text string) string {
 // nicht enthalten: „Deutsch für Ausländer" ist kein Deutschunterricht, „Englische
 // Literatur" kein Englischbuch.
 var schlagwortFach = map[string]string{
-	"mathematik": FachMathematik, "deutsch": FachDeutsch, "deutschunterricht": FachDeutsch,
+	"mathematik": FachMathematik, "mathe": FachMathematik, "deutsch": FachDeutsch, "deutschunterricht": FachDeutsch,
 	"englisch": FachEnglisch, "englischunterricht": FachEnglisch,
 	"französisch": FachFranzoesisch, "französischunterricht": FachFranzoesisch,
 	"latein": FachLatein, "lateinunterricht": FachLatein, "spanisch": FachSpanisch,
@@ -206,6 +206,35 @@ var schlagwortFach = map[string]string{
 	"religion": FachReligion, "religionsunterricht": FachReligion,
 	"ethik": FachEthik, "philosophie": FachPhilosophie, "sport": FachSport,
 	"arbeitslehre": FachArbeitslehre, "darstellendes spiel": FachDarstSpiel,
+}
+
+// FachExakt liefert das kanonische Fach, wenn der Text als GANZES ein Fach benennt
+// („Mathe", „Deutsch", „Politik und Wirtschaft") — sonst "". Für Spalten, die ein Fach
+// tragen SOLLEN, aber nicht müssen: Litteras Kategorie-Spalte enthielt in der aus dem
+// PDF gewonnenen Bestands-CSV Standorttexte wie „Buch Pg/Kaf 078829 1. Aufl.", und der
+// Import machte daraus 1.677 „Fächer" (Test-Server, 19.08.2026). Enthalten-Suche
+// (FachAusText) wäre hier falsch: „Buch Che 11/Che 175" ist kein Chemiebuch-Beleg.
+func FachExakt(text string) string {
+	t := strings.ToLower(strings.TrimSpace(text))
+	if t == "" {
+		return ""
+	}
+	if f, ok := schlagwortFach[t]; ok {
+		return f
+	}
+	for _, f := range alleFaecher {
+		if strings.ToLower(f) == t {
+			return f
+		}
+	}
+	return ""
+}
+
+var alleFaecher = []string{
+	FachMathematik, FachDeutsch, FachEnglisch, FachFranzoesisch, FachLatein, FachSpanisch,
+	FachGeschichte, FachPoWi, FachErdkunde, FachBiologie, FachChemie, FachPhysik, FachMusik,
+	FachKunst, FachReligion, FachEthik, FachPhilosophie, FachInformatik, FachSport,
+	FachArbeitslehre, FachDarstSpiel, FachNaWi,
 }
 
 // FachAusSchlagworten liefert das Fach, wenn die Schlagwörter GENAU EIN Fach nennen.

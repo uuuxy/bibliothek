@@ -178,3 +178,18 @@ func TestJahrgangAusZielgruppe(t *testing.T) {
 		}
 	}
 }
+
+func TestFachExakt(t *testing.T) {
+	faelle := map[string]string{
+		"Mathe": FachMathematik, "mathematik": FachMathematik, "Deutsch": FachDeutsch,
+		"Politik und Wirtschaft": FachPoWi, "Geographie": FachErdkunde, " Chemie ": FachChemie,
+		// Litteras Kategorie-Spalte aus der PDF-CSV: Standorttexte, keine Fächer.
+		"Buch Pg/Kaf 078829": "", "Buch Che 11/Che 175 Exemplare": "", "Buch Deu 6/Cha 126 Exemplare 1. Auflage": "",
+		"10 R / Ausgabe 2010": "", "": "",
+	}
+	for text, want := range faelle {
+		if got := FachExakt(text); got != want {
+			t.Errorf("FachExakt(%q) = %q, want %q", text, got, want)
+		}
+	}
+}

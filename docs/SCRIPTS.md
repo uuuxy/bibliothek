@@ -101,7 +101,7 @@ um, macht die Karten aber wertlos.
 **Rückgabewerte:** 0 vollständig · 1 abgebrochen · 2 unvollständig (Details im Protokoll).
 
 > Das frühere `cmd/littera_migration` ist entfallen. Es fragte `SELECT TitelID, Titel,
-> Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL` ab — von diesen Spalten existiert in
+Autor, ISBN, Verlag, Jahr, Signatur FROM TITEL` ab — von diesen Spalten existiert in
 > einer echten Littera-Datei einzig `ISBN`. Es ist nie gegen echte Daten gelaufen.
 
 ### 1a. Katalogisat aus dem MAB2-Export (`cmd/littera-import`)
@@ -180,14 +180,14 @@ Ableitung (`internal/backupkrypto`, scrypt + AES-256-GCM). Hier stand bis zum 06
 eine gemeinsame Zeile für alle — sie beschrieb den automatischen Weg und ließ die
 Shell-Wege sicherer aussehen, als sie waren.
 
-| | Automatisch (`jobs/backup.go`) | Manuell (`scripts/backup.sh`) | Vor jedem Deploy (`./update.sh`) |
-|---|---|---|---|
-| Auslöser | Täglich 02:30 via `jobs/cron.go` | `./scripts/backup.sh` | Schritt 1 von `./update.sh` |
-| Pipeline | `pg_dump → gzip → AES-GCM` | `pg_dump → gzip → AES-GCM` (in EINER Pipe) | `pg_dump → gzip`, AES-GCM in Schritt 5 |
-| Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`) | **ja** (seit 23.08.2026) | **ja, nach gesundem Deploy** (seit 23.08.2026) |
-| Dateirechte | 0600 | 0600 (seit 06.08.2026) | 0600 (seit 06.08.2026) |
-| Rotation | letzte 14 | 7 Tage (`.enc`) / 2 Tage (Klartext) | 30 Tage (`.enc`) / 2 Tage (Klartext) |
-| Dateiname | `backup_<Zeitstempel>.sql.gz.enc` | `bibliothek_backup_<Datum>.sql.gz.enc` | `backup_<Zeitstempel>.sql.gz.enc` |
+|               | Automatisch (`jobs/backup.go`)    | Manuell (`scripts/backup.sh`)              | Vor jedem Deploy (`./update.sh`)               |
+| ------------- | --------------------------------- | ------------------------------------------ | ---------------------------------------------- |
+| Auslöser      | Täglich 02:30 via `jobs/cron.go`  | `./scripts/backup.sh`                      | Schritt 1 von `./update.sh`                    |
+| Pipeline      | `pg_dump → gzip → AES-GCM`        | `pg_dump → gzip → AES-GCM` (in EINER Pipe) | `pg_dump → gzip`, AES-GCM in Schritt 5         |
+| Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`)  | **ja** (seit 23.08.2026)                   | **ja, nach gesundem Deploy** (seit 23.08.2026) |
+| Dateirechte   | 0600                              | 0600 (seit 06.08.2026)                     | 0600 (seit 06.08.2026)                         |
+| Rotation      | letzte 14                         | 7 Tage (`.enc`) / 2 Tage (Klartext)        | 30 Tage (`.enc`) / 2 Tage (Klartext)           |
+| Dateiname     | `backup_<Zeitstempel>.sql.gz.enc` | `bibliothek_backup_<Datum>.sql.gz.enc`     | `backup_<Zeitstempel>.sql.gz.enc`              |
 
 **Warum `update.sh` erst in Schritt 5 verschlüsselt.** Seine Vorab-Sicherung ist der
 Rückweg für genau das Zeitfenster, in dem der neue Container nicht hochkommt — und in dem
@@ -279,16 +279,21 @@ go run cmd/stresstest/main.go -port 8084
 ## 6. Paket-Utilities (`pkg/`)
 
 ### `pkg/csvutil`
+
 CSV-Formel-Injection-Schutz (OWASP CWE-1236):
+
 ```go
 import "bibliothek/pkg/csvutil"
 
 safeRow := csvutil.SanitizeRow([]string{titel, autor, ...})
 ```
+
 Setzt Apostroph-Präfix bei Zellen die mit `= + - @ \t \r \n` beginnen.
 
 ### `pkg/imageutil`
+
 Decompression-Bomb-Guard:
+
 ```go
 import "bibliothek/pkg/imageutil"
 
@@ -296,6 +301,7 @@ if err := imageutil.GuardImageDimensions(r.Body, 50_000_000); err != nil {
     // Bild zu groß oder ungültig
 }
 ```
+
 Liest nur den Bild-Header (`image.DecodeConfig`) — ohne volle RAM-Allokation. Limit: 50 Megapixel.
 
 ---
@@ -308,24 +314,24 @@ ausführliche Kommentar steht jeweils im Dateikopf.
 
 ### Qualitäts-Gates (lokal, es gibt dafür keinen CI-Job)
 
-| Skript | Zweck |
-|---|---|
-| `api_inventar.sh` | Erzeugt `docs/api_inventar.md`: alle registrierten Go-Routen, alle `/api/`-Aufrufer im Frontend und den Abgleich in beide Richtungen (tote Handler / Geister-Aufrufe). |
-| `deadcode_gate.sh` | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen; nur von Tests erreichter Code zählt mit, begründete Ausnahmen stehen in `deadcode_baseline.txt`. Tote **Interface**-Methoden sieht das Werkzeug nicht — dafür läuft `tote_tueren_test.go` in jedem `go test`. |
-| `sonar_scan.sh` | SonarQube-Analyse **inklusive beider** Coverage-Berichte (Go + Frontend-lcov; seit 23.08.2026 erzeugt Schritt 2 `npm run test:coverage` und bricht bei roten Frontend-Tests ab). Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund 13 Punkte zu niedrig. |
-| `install-hooks.sh` | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`. |
-| `backup_krypto.sh` | Kein eigenständiges Skript, sondern der gemeinsame Verschlüsselungs-Helfer von `backup.sh` und `update.sh` (`source`). Prüft, ob verschlüsselt werden kann, reicht Daten durch `cmd/encrypt-backup` im Backend-Container und beweist am fertigen `.enc` den Rückweg über `restore-backup`, **bevor** ein Klartext-Dump gelöscht wird. |
-| `../security-scan.sh` | Sammel-Scan im **Repo-Root**: `gosec` (SAST), `trivy fs` (Abhängigkeiten/Konfiguration), OWASP-ZAP-API-Scan gegen `/swagger/doc.json`. Der ZAP-Teil braucht einen laufenden Server, Docker und `ADMIN_TOKEN` — er ist kein stiller Durchläufer, sondern eine bewusste Sitzung. |
+| Skript                | Zweck                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `api_inventar.sh`     | Erzeugt `docs/api_inventar.md`: alle registrierten Go-Routen, alle `/api/`-Aufrufer im Frontend und den Abgleich in beide Richtungen (tote Handler / Geister-Aufrufe).                                                                                                                                                                                                                                                                                                         |
+| `deadcode_gate.sh`    | Gate gegen unerreichbaren Go-Code (`x/tools/cmd/deadcode`), Erreichbarkeit ab allen `main`-Paketen; nur von Tests erreichter Code zählt mit, begründete Ausnahmen stehen in `deadcode_baseline.txt`. Tote **Interface**-Methoden sieht das Werkzeug nicht — dafür läuft `tote_tueren_test.go` in jedem `go test`.                                                                                                                                                              |
+| `sonar_scan.sh`       | SonarQube-Analyse **inklusive beider** Coverage-Berichte (Go + Frontend-lcov; seit 23.08.2026 erzeugt Schritt 2 `npm run test:coverage` und bricht bei roten Frontend-Tests ab). Ein bloßer `sonar-scanner`-Aufruf lädt keine Coverage hoch — fehlende Coverage zählt dort als 0 %. Braucht `SONAR_TOKEN` in der Umgebung (nie als `-Dsonar.token=`, das stünde in `ps`). **Vorher `TEST_DATABASE_URL` setzen** — siehe unten, sonst misst der Lauf rund 13 Punkte zu niedrig. |
+| `install-hooks.sh`    | Installiert `scripts/git-hooks/` (pre-commit, pre-push) in `.git/hooks`.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `backup_krypto.sh`    | Kein eigenständiges Skript, sondern der gemeinsame Verschlüsselungs-Helfer von `backup.sh` und `update.sh` (`source`). Prüft, ob verschlüsselt werden kann, reicht Daten durch `cmd/encrypt-backup` im Backend-Container und beweist am fertigen `.enc` den Rückweg über `restore-backup`, **bevor** ein Klartext-Dump gelöscht wird.                                                                                                                                          |
+| `../security-scan.sh` | Sammel-Scan im **Repo-Root**: `gosec` (SAST), `trivy fs` (Abhängigkeiten/Konfiguration), OWASP-ZAP-API-Scan gegen `/swagger/doc.json`. Der ZAP-Teil braucht einen laufenden Server, Docker und `ADMIN_TOKEN` — er ist kein stiller Durchläufer, sondern eine bewusste Sitzung.                                                                                                                                                                                                 |
 
 #### Warum die Coverage niedriger aussieht, als sie ist
 
 Gemessen am 06.08.2026, dreimal dieselbe Codebasis:
 
-| Lauf | Gesamtabdeckung |
-|---|---|
-| `go test ./...` ohne Datenbank | **32,5 %** |
-| … mit `TEST_DATABASE_URL` | **45,2 %** |
-| … und ohne die Fremddatei aus `node_modules` | **45,9 %** |
+| Lauf                                         | Gesamtabdeckung |
+| -------------------------------------------- | --------------- |
+| `go test ./...` ohne Datenbank               | **32,5 %**      |
+| … mit `TEST_DATABASE_URL`                    | **45,2 %**      |
+| … und ohne die Fremddatei aus `node_modules` | **45,9 %**      |
 
 Zwei Messfehler, kein Codefehler:
 
@@ -343,6 +349,7 @@ deshalb **neuen** Code gegen 80 % — die richtige Frage ist nicht „wie hoch i
 sondern „ist das, was ich gerade geändert habe, abgesichert".
 
 Echte Zahlen erzeugen:
+
 ```bash
 docker run -d --name biblio-test-pg -e POSTGRES_PASSWORD=test \
   -e POSTGRES_DB=bibliothek_test -p 55432:5432 postgres:18-alpine
@@ -350,21 +357,23 @@ export TEST_DATABASE_URL="postgres://postgres:test@localhost:55432/bibliothek_te
 SONAR_TOKEN=sqp_… ./scripts/sonar_scan.sh
 docker rm -f biblio-test-pg
 ```
+
 Der DB-Name **muss** „test" enthalten (Sicherheits-Notbremse in `pgtest_support_test.go`
 vor dem `DROP SCHEMA`).
 
 ### Datenbank-Helfer
 
-| Skript | Zweck | Vorsicht |
-|---|---|---|
-| `seed_demo.sql` | Realistischer Demo-Datensatz für Pilot und Schulung. | Nur auf Test-/Demo-Datenbanken. |
-| `seed_loadtest.sql` | Datenbestand für den k6-Lasttest. | Nur auf Wegwerf-Datenbanken. |
-| `tabula_rasa.sql` | Bereinigt die Datenbank für den Echtbetrieb (Bewegungsdaten raus). | **Löscht Daten.** Vorher Backup. |
-| `repair_titel_dubletten.sql` | Räumt Titel-Dubletten aus dem Import auf. | Vorher Backup, Ergebnis prüfen. |
-| `repair_titel_ortssuffix.sql` | Entfernt Ortssuffixe aus Titelfeldern (Import-Artefakt). | Vorher Backup. |
-| `repair_altbestand_etiketten.sql` | Einmalige Prod-Reparatur (16.08.2026): setzt `etikett_gedruckt` für importierten Altbestand, der physisch längst beklebt ist. Ohne sie zählte das Druck-Center-Badge den ganzen Altbestand als „Etikett offen“. | **Ändert Daten.** Vorher Backup; nur für Bestände, die aus Littera kamen und bereits Etiketten tragen. |
-| `signatur_report.sql` | Report zur Signatur-Harmonisierung nach Littera-Import (Migration 038). | Nur lesend. |
-| `e2e_altlasten.sql` | Entfernt den Bestands-Bodensatz der E2E-Suite (Titel mit Präfix `E2E `, deren Exemplare und Ausleihen). | **Löscht Daten.** Vorher Backup; Probelauf mit `ROLLBACK` statt `COMMIT` möglich. |
+| Skript                            | Zweck                                                                                                                                                                                                                                                                                                                                         | Vorsicht                                                                                                                              |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `seed_demo.sql`                   | Realistischer Demo-Datensatz für Pilot und Schulung.                                                                                                                                                                                                                                                                                          | Nur auf Test-/Demo-Datenbanken.                                                                                                       |
+| `seed_loadtest.sql`               | Datenbestand für den k6-Lasttest.                                                                                                                                                                                                                                                                                                             | Nur auf Wegwerf-Datenbanken.                                                                                                          |
+| `tabula_rasa.sql`                 | Bereinigt die Datenbank für den Echtbetrieb (Bewegungsdaten raus).                                                                                                                                                                                                                                                                            | **Löscht Daten.** Vorher Backup.                                                                                                      |
+| `repair_titel_dubletten.sql`      | Räumt Titel-Dubletten aus dem Import auf.                                                                                                                                                                                                                                                                                                     | Vorher Backup, Ergebnis prüfen.                                                                                                       |
+| `repair_titel_ortssuffix.sql`     | Entfernt Ortssuffixe aus Titelfeldern (Import-Artefakt).                                                                                                                                                                                                                                                                                      | Vorher Backup.                                                                                                                        |
+| `repair_fach_kategorie.sql`       | Einmalige Reparatur (03.09.2026) für Bestände aus dem CSV-/Excel-Import vor diesem Datum: Litteras Kategorie-Spalte („Buch Pg/Kaf 078829 1. Aufl.“) war ungeprüft als Fach übernommen worden — 1.677 Schein-Fächer in der Systematik. Behält nur kanonische Fächer, zieht Schreibvarianten („Mathe“) zusammen, löscht verwaiste Nicht-Fächer. | **Ändert Daten.** Endet mit ROLLBACK — erst Ausgaben lesen, dann COMMIT einkommentieren. Löscht auch handgepflegte Fächer ohne Titel. |
+| `repair_altbestand_etiketten.sql` | Einmalige Prod-Reparatur (16.08.2026): setzt `etikett_gedruckt` für importierten Altbestand, der physisch längst beklebt ist. Ohne sie zählte das Druck-Center-Badge den ganzen Altbestand als „Etikett offen“.                                                                                                                               | **Ändert Daten.** Vorher Backup; nur für Bestände, die aus Littera kamen und bereits Etiketten tragen.                                |
+| `signatur_report.sql`             | Report zur Signatur-Harmonisierung nach Littera-Import (Migration 038).                                                                                                                                                                                                                                                                       | Nur lesend.                                                                                                                           |
+| `e2e_altlasten.sql`               | Entfernt den Bestands-Bodensatz der E2E-Suite (Titel mit Präfix `E2E `, deren Exemplare und Ausleihen).                                                                                                                                                                                                                                       | **Löscht Daten.** Vorher Backup; Probelauf mit `ROLLBACK` statt `COMMIT` möglich.                                                     |
 
 **Warum der Bestand von Hand aufgeräumt wird, Lieferanten aber automatisch:** Der globale
 Teardown der E2E-Suite (`frontend/e2e/global-teardown.js`) räumt nach jedem Lauf
@@ -382,9 +391,9 @@ Fremdschlüssel stehen auf `SET NULL`.
 
 ### Einmal-Werkzeuge (`//go:build ignore`, per `go run` gestartet)
 
-| Skript | Zweck |
-|---|---|
-| `import_isbns.go` | Nachträglicher ISBN-Import in bestehende Titel. |
+| Skript             | Zweck                                                                      |
+| ------------------ | -------------------------------------------------------------------------- |
+| `import_isbns.go`  | Nachträglicher ISBN-Import in bestehende Titel.                            |
 | `monitor_stats.sh` | Protokolliert Systemkennzahlen über ~6 Stunden (Begleitung von Lasttests). |
 
 > `scripts/migrate_photos.go` stand hier bis zum 11.08.2026. Es war ein Doppel von
@@ -422,4 +431,3 @@ Das Skript **ändert nichts**. Exit-Code 0 = sauber, 1 = kritischer Befund.
 Bei einem Treffer auf `APP_ENCRYPTION_KEY` den Schlüssel **nicht einfach ersetzen** —
 Schülerfotos und das SMTP-Passwort wären verloren. Der Weg mit Umschlüsselung steht in
 [SECURITY.md](SECURITY.md#app_encryption_key-wechseln).
-

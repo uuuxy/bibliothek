@@ -206,12 +206,17 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, tite
 	}, true
 }
 
-// fachDerZeile: das aus der Lernmittelsignatur gelesene Fach, sonst die Kategorie.
+// fachDerZeile: das aus der Lernmittelsignatur gelesene Fach, sonst die Kategorie —
+// aber nur, wenn die als Ganzes ein Fach benennt. Bis 03.09.2026 landete die Spalte
+// ungeprüft in subject; die aus dem Littera-PDF gewonnene Bestands-CSV trägt dort
+// Standorttexte („Buch Pg/Kaf 078829 1. Aufl."), und jeder davon wurde ein eigenes
+// „Fach" in der Systematik (1.677 Zeilen auf dem Test-Server, scripts/
+// repair_fach_kategorie.sql räumt sie ab).
 func fachDerZeile(t *importNewTitle) string {
 	if t.Fach != "" {
 		return t.Fach
 	}
-	return t.Kategorie
+	return lmf.FachExakt(t.Kategorie)
 }
 
 // fuegeNeueTitelEin legt die neuen Titel per Batch an und ergänzt die

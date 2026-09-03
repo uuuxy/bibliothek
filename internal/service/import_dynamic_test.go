@@ -284,3 +284,24 @@ func TestSammleSignaturUpdatesDynamic(t *testing.T) {
 		t.Errorf("updates[id2] = %v, want Sig2", updates["id2"])
 	}
 }
+
+// Die Kategorie-Spalte wird nur dann zum Fach, wenn sie ein Fach IST. Die aus dem
+// Littera-PDF gewonnene Bestands-CSV trug dort Standorttexte („Buch Pg/Kaf 078829");
+// der Rückfall machte daraus 1.677 „Fächer" samt Systematik-Zeilen (Test-Server,
+// 19.08.2026) — im Portal-Reiter Schulbücher stand je Titel eine eigene Fach-Kachel.
+func TestFachDerZeile_KategorieNurWennFach(t *testing.T) {
+	faelle := []struct{ fach, kategorie, want string }{
+		{"Mathematik", "Buch Ma 6/Gri", "Mathematik"}, // Lernmittelsignatur schlägt Kategorie
+		{"", "Mathe", "Mathematik"},                   // Kategorie ist ein Fach → kanonisch
+		{"", "Deutsch", "Deutsch"},
+		{"", "Buch Pg/Kaf 078829", ""},                      // Standorttext ist kein Fach
+		{"", "Buch Deu 6/Cha 126 Exemplare 1. Auflage", ""}, // auch mit Fachkürzel darin nicht
+		{"", "", ""},
+	}
+	for _, f := range faelle {
+		got := fachDerZeile(&importNewTitle{Fach: f.fach, Kategorie: f.kategorie})
+		if got != f.want {
+			t.Errorf("fachDerZeile(Fach=%q, Kategorie=%q) = %q, want %q", f.fach, f.kategorie, got, f.want)
+		}
+	}
+}
