@@ -1,62 +1,56 @@
 <script>
 	/**
 	 * @component PortalSchulbuecher
-	 * Schulbücher je Fach für die Fachsprecher (Peter, 03.09.2026): „Wie viele Mathebücher
-	 * haben wir?" Nach Material 3 gebaut (Peters Vorgabe am Abend: „es soll Google
-	 * entsprechen"): eine Zeile FILTER-CHIPS für die Fächer — M3 kennt genau dafür den
-	 * Filter-Chip, nicht die Kachel —, darunter EIN Satz mit der Antwort und eine dichte
-	 * M3-Liste wie in Google Drive (Cover, Titel, Zahlen). Die frühere Kachelwand zeigte auf
-	 * dem Test-Server 200 „Fächer", weil Standorttexte als Fach importiert waren
-	 * (scripts/repair_fach_kategorie.sql). Grundlage ist allein der Lernmittel-Schalter;
-	 * Daten über die Portal-Tür /api/portal/lernmittel (Anmeldung genügt, kein view_books).
+	 * Schulbücher für die Fachsprecher (Peter, 03.09.2026 abends, nach zwei verworfenen
+	 * Fassungen — Kachelwand, dann Chip-Leiste): „Die wollen nur den Bestand wissen, vom
+	 * Fach und von jedem Buch." Also EINE Tabelle: eine Zeile je Fach mit den Zahlen, Klick
+	 * klappt die Bücher des Fachs auf (Jahrgang, Bestand). Oben nur ein Jahrgang-Filter und
+	 * „Als Excel". Schulzweig gibt es nicht als Filter — Littera hat ihn nie erfasst (153 von
+	 * 13.060 Titeln). Grundlage ist allein der Lernmittel-Schalter; Daten über die Portal-Tür
+	 * /api/portal/lernmittel (Anmeldung genügt, kein view_books).
 	 */
 	import { onMount } from 'svelte';
-	import { Check } from '@lucide/svelte';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { ChevronRight } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
-	import Feld from '../ui/Feld.svelte';
-	import SchulbuchZeile from './SchulbuchZeile.svelte';
+	import Select from '../ui/Select.svelte';
 
 	/** @type {{ fach: string, titel: number, gesamt: number, verliehen: number, verfuegbar: number }[]} */
 	let faecher = $state.raw([]);
 	/** @type {any[]} */
 	let titel = $state.raw([]);
-	/** null = alle Fächer; '' = „ohne Fach". @type {string|null} */
-	let gewaehlt = $state(null);
-	let filter = $state('');
+	/** 0 = alle Jahrgänge */
+	let jahrgang = $state(0);
+	/** aufgeklappte Fächer ('' = ohne Fach) */
+	const offen = new SvelteSet();
 	let laedt = $state(true);
 	let fehler = $state('');
 
+	const JAHRGAENGE = [
+		{ value: 0, label: 'Alle Jahrgänge' },
+		...[5, 6, 7, 8, 9, 10, 11, 12, 13].map((j) => ({ value: j, label: `Jahrgang ${j}` }))
+	];
 	const fachName = (/** @type {string} */ f) => f || 'Ohne Fach';
 	const summe = (/** @type {'titel'|'gesamt'|'verliehen'} */ k) =>
 		faecher.reduce((n, f) => n + f[k], 0);
 	const exportUrl = $derived(
-		gewaehlt === null
-			? '/api/portal/lernmittel/export'
-			: `/api/portal/lernmittel/export?fach=${encodeURIComponent(gewaehlt)}`
+		`/api/portal/lernmittel/export${jahrgang ? `?jahrgang=${jahrgang}` : ''}`
 	);
-	const sichtbar = $derived.by(() => {
-		const q = filter.trim().toLowerCase();
-		if (!q) return titel;
-		return titel.filter((b) =>
-			[b.title, b.autor, b.isbn].some((w) => (w ?? '').toLowerCase().includes(q))
-		);
-	});
-	const antwort = $derived.by(() => {
-		if (gewaehlt === null)
-			return `Alle Fächer · ${summe('titel')} Titel · ${summe('gesamt')} Exemplare · ${summe('verliehen')} verliehen`;
-		const f = faecher.find((x) => x.fach === gewaehlt);
-		return f
-			? `${fachName(f.fach)} · ${f.titel} Titel · ${f.gesamt} Exemplare · ${f.verliehen} verliehen`
-			: fachName(gewaehlt);
-	});
+	// Jahrgang „5–10" ist die Spalten-Vorgabe (= unbekannt) und wird nicht gezeigt.
+	const jahrgangText = (/** @type {any} */ b) =>
+		!b.jahrgangVon || (b.jahrgangVon === 5 && b.jahrgangBis === 10)
+			? ''
+			: b.jahrgangVon === b.jahrgangBis
+				? String(b.jahrgangVon)
+				: `${b.jahrgangVon}–${b.jahrgangBis}`;
 
-	/** @param {string|null} fach */
-	async function lade(fach) {
+	async function lade() {
 		laedt = true;
 		fehler = '';
 		try {
-			const q = fach === null ? '' : `?fach=${encodeURIComponent(fach)}`;
-			const res = await apiFetch(`/api/portal/lernmittel${q}`);
+			const res = await apiFetch(
+				`/api/portal/lernmittel${jahrgang ? `?jahrgang=${jahrgang}` : ''}`
+			);
 			if (!res.ok) {
 				fehler = 'Schulbücher konnten nicht geladen werden.';
 				return;
@@ -71,63 +65,35 @@
 		}
 	}
 
-	onMount(() => lade(null));
+	onMount(lade);
 
-	/** @param {string|null} fach */
-	function waehle(fach) {
-		gewaehlt = fach;
-		lade(fach);
+	/** @param {string} fach */
+	function klappe(fach) {
+		if (!offen.delete(fach)) offen.add(fach);
 	}
 
-	// M3-Filter-Chip: 32 px, Ecken 8 px, Rahmen im Ruhezustand; gewählt als getönte
-	// secondary-container-Fläche mit Häkchen und ohne Rahmen.
-	const chip = (/** @type {boolean} */ aktiv) =>
-		'inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-label-large font-medium transition-colors cursor-pointer ' +
-		(aktiv
-			? 'bg-secondary-container text-on-secondary-container'
-			: 'border border-outline-variant text-on-surface hover:bg-surface-container');
+	const zahl = 'w-24 px-3 py-2.5 text-right text-sm tabular-nums';
 </script>
 
 <div class="flex flex-col gap-4 pt-2">
 	{#if fehler}
 		<p class="text-sm font-bold text-error">{fehler}</p>
-	{:else if !laedt && faecher.length === 0}
+	{:else if !laedt && faecher.length === 0 && !jahrgang}
 		<p class="py-4 text-sm text-on-surface-variant">
 			Noch keine Schulbücher markiert — der Lernmittel-Schalter am Titel entscheidet.
 		</p>
 	{:else}
-		<div class="flex flex-wrap gap-2" role="group" aria-label="Fach wählen">
-			<button
-				type="button"
-				aria-pressed={gewaehlt === null}
-				onclick={() => waehle(null)}
-				class={chip(gewaehlt === null)}
-			>
-				{#if gewaehlt === null}<Check size={18} aria-hidden="true" />{/if}
-				Alle <span class="text-on-surface-variant">{summe('gesamt')}</span>
-			</button>
-			{#each faecher as f (f.fach)}
-				<button
-					type="button"
-					aria-pressed={gewaehlt === f.fach}
-					onclick={() => waehle(f.fach)}
-					class={chip(gewaehlt === f.fach)}
-				>
-					{#if gewaehlt === f.fach}<Check size={18} aria-hidden="true" />{/if}
-					{fachName(f.fach)} <span class="text-on-surface-variant">{f.gesamt}</span>
-				</button>
-			{/each}
-		</div>
-
 		<div class="flex flex-wrap items-center justify-between gap-3">
-			<p class="text-body-large text-on-surface" data-testid="schulbuecher-antwort">{antwort}</p>
+			<p class="text-body-large text-on-surface" data-testid="schulbuecher-antwort">
+				{summe('titel')} Titel · {summe('gesamt')} Exemplare · {summe('verliehen')} verliehen
+			</p>
 			<div class="flex items-center gap-3">
-				<Feld
-					type="search"
-					bind:value={filter}
-					placeholder="Titel, Autor oder ISBN"
-					feld="w-64"
-					aria-label="Liste filtern"
+				<Select
+					bind:value={jahrgang}
+					options={JAHRGAENGE}
+					class="w-48"
+					aria-label="Jahrgang"
+					onchange={lade}
 				/>
 				<a
 					href={exportUrl}
@@ -138,16 +104,62 @@
 			</div>
 		</div>
 
+		<table class="w-full border-collapse text-left" data-testid="schulbuecher-tabelle">
+			<thead>
+				<tr class="border-b border-outline-variant text-sm font-semibold text-on-surface-variant">
+					<th class="px-3 py-2">Fach</th>
+					<th class="{zahl} font-semibold">Titel</th>
+					<th class="{zahl} font-semibold">Exemplare</th>
+					<th class="{zahl} font-semibold">Verliehen</th>
+				</tr>
+			</thead>
+			<tbody class="divide-y divide-outline-variant/40">
+				{#each faecher as f (f.fach)}
+					{@const auf = offen.has(f.fach)}
+					<tr class="hover:bg-surface-container-low">
+						<td class="p-0">
+							<button
+								type="button"
+								aria-expanded={auf}
+								onclick={() => klappe(f.fach)}
+								class="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-on-surface"
+							>
+								<ChevronRight
+									size={18}
+									class="shrink-0 transition-transform {auf ? 'rotate-90' : ''}"
+									aria-hidden="true"
+								/>
+								{fachName(f.fach)}
+							</button>
+						</td>
+						<td class="{zahl} font-medium">{f.titel}</td>
+						<td class="{zahl} font-medium">{f.gesamt}</td>
+						<td class={zahl}>{f.verliehen || '–'}</td>
+					</tr>
+					{#if auf}
+						{#each titel.filter((b) => (b.subject ?? '') === f.fach) as b (b.id)}
+							<tr class="bg-surface-container-lowest" data-testid="schulbuch">
+								<td class="py-2 pr-3 pl-11 text-sm text-on-surface">
+									<h3 class="text-sm font-normal">{b.title}</h3>
+									{#if b.autor || jahrgangText(b)}
+										<span class="text-sm text-on-surface-variant">
+											{[jahrgangText(b) && `Jahrgang ${jahrgangText(b)}`, b.autor]
+												.filter(Boolean)
+												.join(' · ')}
+										</span>
+									{/if}
+								</td>
+								<td class={zahl}></td>
+								<td class={zahl}>{b.gesamt}</td>
+								<td class={zahl}>{b.verliehen || '–'}</td>
+							</tr>
+						{/each}
+					{/if}
+				{/each}
+			</tbody>
+		</table>
 		{#if laedt}
 			<p class="text-sm text-on-surface-variant">Lädt …</p>
-		{:else if sichtbar.length === 0}
-			<p class="text-sm text-on-surface-variant">Keine Titel.</p>
-		{:else}
-			<ul class="border-t border-outline-variant/40 pb-6" data-testid="schulbuecher-titel">
-				{#each sichtbar as book (book.id)}
-					<SchulbuchZeile {book} mitFach={gewaehlt === null} />
-				{/each}
-			</ul>
 		{/if}
 	{/if}
 </div>

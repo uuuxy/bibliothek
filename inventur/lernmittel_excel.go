@@ -19,7 +19,7 @@ func SchulbuecherAlsExcel(titel []LernmittelTitel, coverBasis string) (*excelize
 	if err := f.SetSheetName("Sheet1", blatt); err != nil {
 		return nil, err
 	}
-	kopf := []any{"Fach", "Titel", "Autor", "ISBN", "Gesamt", "Verliehen", "Verfügbar", "Cover"}
+	kopf := []any{"Fach", "Titel", "Autor", "ISBN", "Jahrgang", "Gesamt", "Verliehen", "Verfügbar", "Cover"}
 	if err := f.SetSheetRow(blatt, "A1", &kopf); err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func SchulbuecherAlsExcel(titel []LernmittelTitel, coverBasis string) (*excelize
 	if err != nil {
 		return nil, err
 	}
-	if err := f.SetCellStyle(blatt, "A1", "H1", fett); err != nil {
+	if err := f.SetCellStyle(blatt, "A1", "I1", fett); err != nil {
 		return nil, err
 	}
 	for i, t := range titel {
@@ -36,12 +36,12 @@ func SchulbuecherAlsExcel(titel []LernmittelTitel, coverBasis string) (*excelize
 			fach = "ohne Fach"
 		}
 		zeile := []any{csvutil.SanitizeCell(fach), csvutil.SanitizeCell(t.Title), csvutil.SanitizeCell(t.Autor),
-			csvutil.SanitizeCell(t.ISBN), t.Gesamt, t.Verliehen, t.Verfuegbar, coverLink(coverBasis, t)}
+			csvutil.SanitizeCell(t.ISBN), jahrgangText(t), t.Gesamt, t.Verliehen, t.Verfuegbar, coverLink(coverBasis, t)}
 		if err := f.SetSheetRow(blatt, fmt.Sprintf("A%d", i+2), &zeile); err != nil {
 			return nil, err
 		}
 	}
-	for spalte, breite := range map[string]float64{"A": 16, "B": 48, "C": 24, "D": 16, "H": 40} {
+	for spalte, breite := range map[string]float64{"A": 16, "B": 48, "C": 24, "D": 16, "I": 40} {
 		if err := f.SetColWidth(blatt, spalte, spalte, breite); err != nil {
 			return nil, err
 		}
@@ -88,4 +88,15 @@ func dateinamenTeil(s string) string {
 		}
 	}
 	return strings.Trim(b.String(), "-")
+}
+
+// jahrgangText: „7", „12–13"; die Spalten-Vorgabe 5–10 (= unbekannt) und 0 bleiben leer.
+func jahrgangText(t LernmittelTitel) string {
+	if t.JahrgangVon == 0 || (t.JahrgangVon == 5 && t.JahrgangBis == 10) {
+		return ""
+	}
+	if t.JahrgangVon == t.JahrgangBis {
+		return fmt.Sprint(t.JahrgangVon)
+	}
+	return fmt.Sprintf("%d–%d", t.JahrgangVon, t.JahrgangBis)
 }

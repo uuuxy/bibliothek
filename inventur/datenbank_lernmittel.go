@@ -33,7 +33,15 @@ type LernmittelTitel struct {
 	Gesamt     int    `json:"gesamt"`
 	Verliehen  int    `json:"verliehen"`
 	Verfuegbar int    `json:"verfuegbar"`
+	// Jahrgang aus Signatur/Import (Migration 093); 5–10 ist die Spalten-Vorgabe und
+	// damit von „unbekannt" nicht zu unterscheiden — die Oberfläche zeigt sie nicht.
+	JahrgangVon int `json:"jahrgangVon"`
+	JahrgangBis int `json:"jahrgangBis"`
 }
+
+// lernmittelJahrgang: $J = 0 heißt „alle", sonst nur Titel, deren Spanne den Jahrgang
+// einschließt (ein Atlas 5–10 zählt bei Jahrgang 7 mit).
+const lernmittelJahrgang = ` AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))`
 
 const lernmittelZaehlung = `
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
@@ -46,17 +54,17 @@ const lernmittelJoins = `
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 	WHERE b.ist_lernmittel`
 
-// GetLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Kachel
-// (Fach ""), am Ende sortiert.
-func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context) ([]FachBestand, error) {
+// GetLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
+// (Fach ""), am Ende sortiert. jahrgang 0 = alle.
+func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, jahrgang int) ([]FachBestand, error) {
 	rows, err := repo.db.Query(ctx, `
 		SELECT fach, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
 		FROM (
-			SELECT COALESCE(b.subject, '') AS fach, b.id,`+lernmittelZaehlung+lernmittelJoins+`
+			SELECT COALESCE(b.subject, '') AS fach, b.id,`+lernmittelZaehlung+lernmittelJoins+lernmittelJahrgang+`
 			GROUP BY b.subject, b.id
 		) t
 		GROUP BY fach
-		ORDER BY (fach = ''), fach`)
+		ORDER BY (fach = ''), fach`, jahrgang)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel je fach: %w", err)
 	}
@@ -73,14 +81,14 @@ func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context) ([]FachBes
 }
 
 // GetLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
-// alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert (Export).
-func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool) ([]LernmittelTitel, error) {
+// alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert. jahrgang 0 = alle.
+func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, jahrgang int) ([]LernmittelTitel, error) {
 	rows, err := repo.db.Query(ctx, `
 		SELECT b.id, b.titel, COALESCE(b.autor, ''), COALESCE(b.subject, ''), COALESCE(b.cover_url, ''),
-		       COALESCE(b.isbn, ''),`+lernmittelZaehlung+lernmittelJoins+`
-		  AND ($1 OR COALESCE(b.subject, '') = $2)
-		GROUP BY b.id, b.titel, b.autor, b.subject, b.cover_url, b.isbn
-		ORDER BY (COALESCE(b.subject, '') = ''), b.subject, b.titel`, alleFaecher, fach)
+		       COALESCE(b.isbn, ''), b.jahrgang_von, b.jahrgang_bis,`+lernmittelZaehlung+lernmittelJoins+lernmittelJahrgang+`
+		  AND ($2 OR COALESCE(b.subject, '') = $3)
+		GROUP BY b.id, b.titel, b.autor, b.subject, b.cover_url, b.isbn, b.jahrgang_von, b.jahrgang_bis
+		ORDER BY (COALESCE(b.subject, '') = ''), b.subject, b.jahrgang_von, b.titel`, jahrgang, alleFaecher, fach)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel eines fachs: %w", err)
 	}
@@ -88,7 +96,7 @@ func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string,
 	out := []LernmittelTitel{}
 	for rows.Next() {
 		var t LernmittelTitel
-		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.Gesamt, &t.Verliehen, &t.Verfuegbar); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Gesamt, &t.Verliehen, &t.Verfuegbar); err != nil {
 			return nil, err
 		}
 		out = append(out, t)

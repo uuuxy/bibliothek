@@ -48,17 +48,17 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		await page.getByTitle('Mein Portal').click();
 		await page.getByRole('tab', { name: 'Schulbücher' }).click();
 
-		// Der Filter-Chip des Fachs: 4 Exemplare (der Freihand-Titel zählt nicht).
-		const chip = page.getByRole('button', { name: new RegExp(`^${FACH}\\s+4$`) });
-		await expect(chip).toBeVisible();
-		await chip.click();
-		await expect(page.getByTestId('schulbuecher-antwort')).toContainText(
-			`${FACH} · 1 Titel · 4 Exemplare`
-		);
+		// Die Fach-Zeile: 1 Titel, 4 Exemplare (der Freihand-Titel zählt nicht).
+		const zeile = page.getByTestId('schulbuecher-tabelle').locator('tr', { hasText: FACH }).first();
+		await expect(zeile).toBeVisible();
+		await expect(zeile.locator('td').nth(1)).toHaveText('1');
+		await expect(zeile.locator('td').nth(2)).toHaveText('4');
 
-		const titel = page.getByTestId('schulbuecher-titel').locator('h3').filter({ hasText: TITEL });
-		await expect(titel).toBeVisible();
-		await expect(page.getByTestId('schulbuecher-titel').locator('h3')).toHaveCount(1);
+		// Aufklappen zeigt genau das eine Buch des Fachs.
+		await zeile.getByRole('button', { name: FACH }).click();
+		const buecher = page.getByTestId('schulbuch');
+		await expect(buecher).toHaveCount(1);
+		await expect(buecher.locator('h3')).toHaveText(TITEL);
 
 		// Export: dieselbe Sitzung, Excel-Datei mit dem Titel drin (XLSX ist ein Zip —
 		// der Inhalt liegt in xl/sharedStrings.xml; hier genügt Typ, Größe und Dateiname).

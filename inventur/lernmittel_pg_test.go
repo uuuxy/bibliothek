@@ -42,7 +42,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	}
 	repo := NewBookRepository(pool)
 
-	faecher, err := repo.GetLernmittelFaecher(ctx)
+	faecher, err := repo.GetLernmittelFaecher(ctx, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Errorf("ohne Fach: %+v", faecher[1])
 	}
 
-	titel, err := repo.GetLernmittelTitel(ctx, "Mathematik", false)
+	titel, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if len(titel) != 2 || titel[0].Title != "Mathe 7" || titel[0].Gesamt != 2 || titel[0].Verliehen != 1 || titel[0].Verfuegbar != 1 {
 		t.Errorf("Titel eines Fachs: %+v", titel)
 	}
-	alle, err := repo.GetLernmittelTitel(ctx, "", true)
+	alle, err := repo.GetLernmittelTitel(ctx, "", true, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +74,38 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Errorf("Export-Liste: erwartet 3 Lernmittel, ohne Fach zuletzt: %+v", alle)
 	}
 
-	// Excel: eine Zeile je Titel, Kopf + Zahlen lesbar, Formel-Schutz greift.
+	// Jahrgang-Filter (03.09.2026): Mathe 8 nur Jahrgang 8, die anderen tragen die
+	// Vorgabe 5–10 und zählen bei jedem Jahrgang darin mit; Jahrgang 12 trifft nichts.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 8, jahrgang_bis = 8 WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+	jg7, err := repo.GetLernmittelTitel(ctx, "", true, 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jg7) != 2 || jg7[0].Title != "Mathe 7" || jg7[1].Title != "Lesebuch" {
+		t.Errorf("Jahrgang 7: erwartet Mathe 7 + Lesebuch, bekam %+v", jg7)
+	}
+	f12, err := repo.GetLernmittelFaecher(ctx, 12)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(f12) != 0 {
+		t.Errorf("Jahrgang 12: erwartet keine Fächer, bekam %+v", f12)
+	}
+	jg8, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, 8)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(jg8) != 2 || jg8[0].JahrgangVon != 5 || jg8[1].JahrgangVon != 8 {
+		t.Errorf("Jahrgang 8 in Mathematik: erwartet Mathe 7 (5–10) und Mathe 8 (8), bekam %+v", jg8)
+	}
+
+	// Excel: eine Zeile je Titel, Kopf + Zahlen lesbar, Formel-Schutz greift — frisch
+	// gelesen, damit der Jahrgang 8 von oben in der Spalte steht.
+	if alle, err = repo.GetLernmittelTitel(ctx, "", true, 0); err != nil {
+		t.Fatal(err)
+	}
 	alle[0].Title = "=1+1"
 	f, err := SchulbuecherAlsExcel(alle, "https://schule.test")
 	if err != nil {
@@ -92,7 +123,8 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(rows) != 4 || rows[0][1] != "Titel" || rows[1][0] != "Mathematik" || rows[1][4] != "2" || rows[3][0] != "ohne Fach" {
+	// Spalten: Fach, Titel, Autor, ISBN, Jahrgang, Gesamt, … — Jahrgang 5–10 (Vorgabe) bleibt leer, 8 steht drin.
+	if len(rows) != 4 || rows[0][1] != "Titel" || rows[1][0] != "Mathematik" || rows[1][4] != "" || rows[2][4] != "8" || rows[1][5] != "2" || rows[3][0] != "ohne Fach" {
 		t.Errorf("Excel-Inhalt: %v", rows)
 	}
 	if rows[1][1] == "=1+1" {

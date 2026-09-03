@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -17,7 +18,8 @@ import (
 // 03.09.2026 abends: Liste statt Kachelwand), mit ?fach= die des Fachs ("" = ohne Fach).
 func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	faecher, err := handler.repo.GetLernmittelFaecher(ctx)
+	jahrgang := lernmittelJahrgangParam(r)
+	faecher, err := handler.repo.GetLernmittelFaecher(ctx, jahrgang)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Fächer: %v", err)
 		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
@@ -28,7 +30,7 @@ func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http
 	if gewaehlt {
 		fachName = strings.TrimSpace(fach[0])
 	}
-	titel, err := handler.repo.GetLernmittelTitel(ctx, fachName, !gewaehlt)
+	titel, err := handler.repo.GetLernmittelTitel(ctx, fachName, !gewaehlt, jahrgang)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Titel: %v", err)
 		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
@@ -45,7 +47,7 @@ func (handler *APIHandler) handlePortalLernmittelExport(w http.ResponseWriter, r
 	if gewaehlt {
 		fachName = strings.TrimSpace(fach[0])
 	}
-	titel, err := handler.repo.GetLernmittelTitel(r.Context(), fachName, !gewaehlt)
+	titel, err := handler.repo.GetLernmittelTitel(r.Context(), fachName, !gewaehlt, lernmittelJahrgangParam(r))
 	if err != nil {
 		log.Printf("Portal Lernmittel-Export: %v", err)
 		writeError(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
@@ -71,4 +73,13 @@ func (handler *APIHandler) handlePortalLernmittelExport(w http.ResponseWriter, r
 	if err := datei.Write(w); err != nil {
 		log.Printf("Portal Lernmittel-Export: schreiben: %v", err)
 	}
+}
+
+// lernmittelJahrgangParam liest ?jahrgang= (5–13); alles andere heißt „alle" (0).
+func lernmittelJahrgangParam(r *http.Request) int {
+	j, err := strconv.Atoi(r.URL.Query().Get("jahrgang"))
+	if err != nil || j < 5 || j > 13 {
+		return 0
+	}
+	return j
 }
