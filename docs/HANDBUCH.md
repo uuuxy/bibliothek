@@ -26,6 +26,16 @@ Beide Seiten haben keinen Menüpunkt. Die fertigen Adressen stehen unter
 
 ---
 
+## Überall suchen (seit 03.09.2026)
+
+Oben auf jeder Verwaltungsseite steht **eine** Suchleiste. Sie versteht alles, was die Theke
+versteht — Buch-Barcode, Littera-Etikett, Schülerausweis, ISBN, Name, Klasse, Titel — und
+**springt nur hin:** ein Buch-Barcode oder eine ISBN öffnet die Buchakte, ein Ausweis die
+Schülerakte, ein Name zeigt eine Trefferliste. Gebucht wird nirgends außer an der Theke;
+dort und im Portal gibt es diese Leiste deshalb nicht. Ein Scanner funktioniert direkt
+hinein (Enter entscheidet), die Taste **/** setzt den Fokus, **Esc** leert das Feld. Die
+Filterfelder in den Listen bleiben Filter: Sie sieben nur, was schon auf dem Bildschirm ist.
+
 ## Ausleihe (Theke)
 
 Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**

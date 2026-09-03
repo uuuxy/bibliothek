@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"bibliothek/apierrors"
+	"bibliothek/internal/service"
 	"bibliothek/repository"
 )
 
@@ -17,6 +18,9 @@ type UnifiedSearchResult struct {
 	Books         []repository.BookTitle `json:"books"`
 	StudentsTotal int                    `json:"students_total"`
 	BooksTotal    int                    `json:"books_total"`
+	// Treffer: exakte Auflösung eines Scans (Exemplar-Barcode, Littera-EAN, Ausweis) —
+	// die globale Suchleiste springt damit direkt zur Akte (03.09.2026). nil = kein Scan.
+	Treffer *service.ScanTreffer `json:"treffer,omitempty"`
 }
 
 // SearchHandler provides a unified fuzzy search for students and books without requiring prefixes.
@@ -45,6 +49,11 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
+		treffer, err := service.ErkenneScan(ctx, bookRepo, studentRepo, query)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
 
 		if books == nil {
 			books = []repository.BookTitle{}
@@ -59,6 +68,7 @@ func (s *Server) SearchHandler(studentRepo repository.StudentRepository, bookRep
 			Books:         books,
 			StudentsTotal: studentsTotal,
 			BooksTotal:    booksTotal,
+			Treffer:       treffer,
 		}
 
 		RespondJSON(w, http.StatusOK, result)

@@ -20,7 +20,10 @@ import { uiLogin, gehZu } from './helpers.js';
 const PILLEN = [
 	{ name: 'Kiosk (Omnibox)', pfad: '/kiosk', id: 'omnibox-input' },
 	{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' },
-	{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld' }
+	{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld' },
+	// Die globale Suchleiste der Verwaltung (03.09.2026) — auf jeder Verwaltungsseite,
+	// gemessen in der Schülerdatei.
+	{ name: 'Verwaltung (global)', pfad: '/schuelerdatei', id: 'global-suchfeld' }
 ];
 
 /**

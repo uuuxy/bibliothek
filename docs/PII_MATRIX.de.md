@@ -140,7 +140,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/public/bestellung/{token}/bestaetigen` | Token | 0 | nur Status |
 | `POST /api/action` | perform_actions | 1 | SchuelerKiosk-DTO; seit 01.09.2026 beim Schüler-Scan zusätzlich der Abholfach-Hinweis (Titel + Abholfrist der abholbereiten Vormerkungen — Leseinteresse-zu-Name wie die Warteliste, Stufe 1); Sperrgrund-Freitext nur mit view_students (ohneSperrgrund). BEWUSST ohne Objektbindung: active_student_id/active_teacher_id sind frei wählbar — das IST die Theke (jedes Buch auf jeden Ausweis buchen); nachvollziehbar über StaffID, override_block zusätzlich edit_students-gated (IDOR-Sweep 19.08.2026, kein Fund) |
 | `POST /api/action/batch` | perform_actions | 1 | wie /api/action, je Batch-Item |
-| `GET /api/search` | perform_actions | 1 | Students als SchuelerKiosk-DTO |
+| `GET /api/search` | perform_actions | 1 | Students als SchuelerKiosk-DTO; seit 03.09.2026 zusätzlich `treffer` (exakte Scan-Auflösung: Typ, ID, Titel-ID, Barcode — keine weiteren Felder) |
 | `GET /api/inventur/sessions` | inventory_scan | 0 | Session-Zähler |
 | `POST /api/inventur/start` | manage_inventory | 0 | Session-Metadaten |
 | `POST /api/inventur/scan` | inventory_scan | 0 | Exemplar-/Titelstatus ohne Ausleiher |

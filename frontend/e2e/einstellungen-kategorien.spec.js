@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+
+// Die globale Suchleiste (03.09.2026) steht auf jeder Verwaltungsseite und ist IMMER ein
+// sichtbares Eingabefeld — sie gehört nicht zur Kategorie und darf weder das Warten auf
+// die Kategoriefelder beenden noch in der Reihenmessung stehen.
+const FELDER = 'input:visible:not(#global-suchfeld)';
 import {
 	uiLogin,
 	seedSQL,
@@ -171,7 +176,7 @@ test('Kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', async ({ pa
 
 	for (const kategorie of MIT_MEHREREN_FELDERN) {
 		await einstellungsKategorie(page, kategorie).click();
-		await page.locator('input:visible').first().waitFor();
+		await page.locator(FELDER).first().waitFor();
 		await pruefeFeldreihen(page, `Einstellungen → ${kategorie}`);
 	}
 });
@@ -185,6 +190,6 @@ test('Portal: kein Eingabefeld hängt eine Zeile tiefer als seine Nachbarn', asy
 	await uiLogin(page);
 	await gehZu(page, '/kollegium-portal');
 	await page.getByRole('tab', { name: /Meine Anliegen/ }).click();
-	await page.locator('input:visible').first().waitFor();
+	await page.locator(FELDER).first().waitFor();
 	await pruefeFeldreihen(page, 'Portal → Meine Anliegen');
 });

@@ -61,6 +61,12 @@ const AUSNAHMEN = [
 			'Medienkatalog-Suchpille: dieselbe Bauart wie die Omnibox — der Container ist h-12 und ' +
 			'trägt Rahmen, Fläche und Fokus, das Feld selbst h-full und nichts. Fiel bis zur ' +
 			'Auflösung der /katalog-Pfadkollision nie auf, weil dieser Test den öffentlichen OPAC maß.'
+	},
+	{
+		kennung: 'global-suchfeld',
+		grund:
+			'Globale Suchleiste der Verwaltung (03.09.2026): dieselbe 48-px-Suchpille (components/ui/' +
+			'Suchpille.svelte) auf jeder Verwaltungsseite — gemessen von suchpille-einheitlich.spec.js.'
 	}
 ];
 
