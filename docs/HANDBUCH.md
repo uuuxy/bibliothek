@@ -209,9 +209,11 @@ und Warteschlange; Klassensatz reservieren mit Klasse, Anzahl, Datum) · **Klass
 eigenen Klassen · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: aufgebaut wie die
 Klassensätze, nur nach Fach statt Klasse. Oben Suche (Titel, ISBN, Autor, Fach) und die
 Filter Jahrgang und Schulzweig; darunter je Fach eine Zeile mit Exemplaren, Titeln und
-Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. „Als Excel" sitzt an
-jedem Fach und exportiert genau dieses Fach mit der aktuellen Filterung (Fach, Titel,
-Autor, ISBN, Jahrgang, Schulzweig, Zahlen, Cover-Link). Gezählt wird nur, was den
+Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. „Als PDF" sitzt an
+jedem Fach und druckt genau dieses Fach mit der aktuellen Filterung: eine Zeile je Buch
+mit Coverbild, Titel, Autor, ISBN, Jahrgang, Schulzweig und den Zahlen. Im Kopf steht,
+welcher Ausschnitt es ist — ein gefilterter Ausdruck ist sonst nicht von der vollen Liste
+zu unterscheiden. Gezählt wird nur, was den
 Lernmittel-Schalter trägt. Den **Schulzweig** pflegt die Bibliothek am Buch: In der
 Buchmaske erscheint das Feld, sobald „Lernmittel" eingeschaltet ist; leer heißt „gilt für
 alle Zweige". Littera hat den Zweig nie mitgeliefert, der Altbestand ist also zunächst

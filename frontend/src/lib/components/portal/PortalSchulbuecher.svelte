@@ -64,8 +64,8 @@
 			)
 		).toString()
 	);
-	const summe = (/** @type {'titel'|'gesamt'|'verliehen'} */ k) =>
-		faecher.reduce((n, f) => n + f[k], 0);
+	// Der Export ist ein PDF mit Coverbildern (Peter, 03.09.2026: „es rechnet niemand,
+	// also können wir Excel löschen") und trägt dieselbe Filterung wie die Ansicht.
 	/** @param {string} fach */
 	const exportUrl = (fach) =>
 		`/api/portal/lernmittel/export?fach=${encodeURIComponent(fach)}${parameter ? `&${parameter}` : ''}`;
@@ -131,9 +131,6 @@
 			class="w-48"
 			aria-label="Nach Schulzweig filtern"
 		/>
-		<p class="ml-auto text-sm text-on-surface-variant" data-testid="schulbuecher-antwort">
-			{summe('titel')} Titel · {summe('gesamt')} Exemplare · {summe('verliehen')} verliehen
-		</p>
 	</div>
 
 	{#if fehler}

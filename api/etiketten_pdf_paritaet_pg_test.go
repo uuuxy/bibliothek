@@ -1,97 +1,20 @@
 package api
 
 import (
-	"bytes"
-	"compress/zlib"
 	"context"
-	"io"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
-	"sort"
 	"strings"
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/internal/pdftest"
 )
 
-// tjText findet die gezeichneten Textstücke im Inhaltsstrom: `(Ansch.J. 2016 · LMF-Deutsch 5)Tj`.
-//
-// `\s*` vor dem Tj, weil nicht jeder Erzeuger gleich schreibt: gofpdf setzt `)Tj`, maroto
-// (Kontoauszug der Abgänger) `) Tj`. Ohne diese drei Zeichen fand der Leser in einem
-// maroto-PDF NICHTS und meldete eine leere Seite — der Test hätte daraus geschlossen, auf
-// dem Blatt stehe nichts, statt zu merken, dass er nur nicht hinsehen kann.
-var tjText = regexp.MustCompile(`\(((?:\\.|[^()\\])*)\)\s*Tj`)
-
-// pdfTexte liest heraus, was auf einem erzeugten PDF wirklich GEDRUCKT wird.
-//
-// Der Umweg über das fertige PDF ist Absicht. Beide bisherigen Etiketten-Bugs waren an
-// den Zwischenschichten grün: Das Feld stand im Struct, die Abfrage lieferte es — nur
-// gezeichnet wurde es nicht bzw. kam auf dem zweiten Weg nie im Struct an. Erst der
-// Inhaltsstrom beantwortet die Frage, die die Bibliothek stellt: Was klebt am Buch?
-//
-// gofpdf komprimiert die Ströme meistens (FlateDecode); im Rohbyte-PDF steht der Text
-// dann nicht. Nach dem Inflaten liegt er als `(…)Tj` vor. Sonderzeichen bleiben in der
-// Kodierung des Erzeugers (Windows-1252) — für den Vergleich zweier Bögen und die Suche
-// nach ASCII-Signaturen ist das gleichgültig, beide Seiten werden gleich behandelt.
-//
-// „Meistens" ist der Grund für den Rückfall auf die Rohbytes: Der Kontoauszug der
-// Abgänger kommt UNKOMPRIMIERT aus dem Generator. Ohne diesen Zweig war der Leser für ihn
-// blind und brach mit „kein lesbarer Inhaltsstrom" ab — was nach kaputtem PDF aussieht,
-// aber nur hiess, dass der Leser eine Bauform nicht kannte.
+// pdfTexte delegiert an internal/pdftest — der Leser lag bis zum 03.09.2026 hier und
+// wird seither auch vom Schulbuch-Export (Paket inventur) gebraucht.
 func pdfTexte(t *testing.T, roh []byte) []string {
-	t.Helper()
-
-	var inhalt bytes.Buffer
-	rest := roh
-	for {
-		i := bytes.Index(rest, []byte("stream"))
-		if i < 0 {
-			break
-		}
-		body := bytes.TrimLeft(rest[i+len("stream"):], "\r\n")
-		j := bytes.Index(body, []byte("endstream"))
-		if j < 0 {
-			break
-		}
-		// Nicht jeder Strom ist ein komprimierter Inhaltsstrom (Schriften, Bilder) — was
-		// zlib nicht öffnet, wird übersprungen. Was es öffnet, muss aber vollständig
-		// lesbar sein, sonst prüfte der Test nur den Teil, den er zufällig entpacken konnte.
-		zr, err := zlib.NewReader(bytes.NewReader(body[:j]))
-		if err == nil {
-			entpackt, leseErr := io.ReadAll(zr)
-			if leseErr != nil {
-				t.Fatalf("Inhaltsstrom nicht vollständig lesbar: %v", leseErr)
-			}
-			inhalt.Write(entpackt)
-			if closeErr := zr.Close(); closeErr != nil {
-				t.Fatalf("Inhaltsstrom nicht sauber abgeschlossen: %v", closeErr)
-			}
-		} else {
-			// Unkomprimiert (oder Schrift/Bild): roh mitnehmen. Der Tj-Ausdruck unten
-			// entscheidet, ob etwas Gedrucktes darin steht — Binärmüll trifft er nicht.
-			inhalt.Write(body[:j])
-		}
-		// Hinter das "endstream", nicht davor. Mit rest = body[j:] fand der nächste
-		// Durchlauf das "stream" IN "endstream" wieder, las ab dort Unsinn, den zlib
-		// verwarf — und übersprang dabei den echten nächsten Strom. Gelesen wurde damit
-		// immer nur die ERSTE Seite: Ein Bogen mit einem Etikett und ein Bogen mit
-		// hundert sahen für diesen Test gleich aus.
-		rest = body[j+len("endstream"):]
-	}
-	if inhalt.Len() == 0 {
-		t.Fatalf("kein lesbarer Inhaltsstrom im PDF (%d Bytes) — Textextraktion kaputt, "+
-			"der Test würde ab hier alles durchwinken", len(roh))
-	}
-
-	var texte []string
-	for _, treffer := range tjText.FindAllSubmatch(inhalt.Bytes(), -1) {
-		if s := strings.TrimSpace(string(treffer[1])); s != "" {
-			texte = append(texte, s)
-		}
-	}
-	sort.Strings(texte)
-	return texte
+	return pdftest.Texte(t, roh)
 }
 
 // Beide Druckwege müssen denselben Aufkleber erzeugen.

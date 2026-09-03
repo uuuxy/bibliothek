@@ -1,13 +1,12 @@
 package inventur
 
 import (
-	"bytes"
 	"context"
+	"strings"
 	"testing"
 
+	"bibliothek/internal/pdftest"
 	"bibliothek/internal/pgtest"
-
-	"github.com/xuri/excelize/v2"
 )
 
 // Schulbücher je Fach (Lehrerportal, 03.09.2026) am echten Postgres: Nur Lernmittel
@@ -140,33 +139,61 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Excel: eine Zeile je Titel, Kopf + Zahlen lesbar, Formel-Schutz greift — frisch
-	// gelesen, damit der Jahrgang 8 von oben in der Spalte steht.
+	// PDF-Export (03.09.2026, löst den Excel-Export ab): geprüft wird am fertigen
+	// Dokument — Signatur, Abschluss und die GEDRUCKTEN Textstücke. Ein Export, dessen
+	// Zahlen im Struct stimmen, aber nicht aufs Blatt kommen, wäre sonst grün.
+	// Jahrgang und Schulzweig sind eigene Spalten (Peters Vorgabe: „diese Infos + das
+	// Bild"). Beide bekommen hier einen Wert, den nichts anderes auf dem Blatt trägt —
+	// sonst wäre eine leer gezeichnete Spalte vom richtigen Blatt nicht zu unterscheiden.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 13, jahrgang_bis = 13, track = 'Gymnasium', last_counted = DATE '2026-04-17' WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
 	if alle, err = repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{}); err != nil {
 		t.Fatal(err)
 	}
-	alle[0].Title = "=1+1"
-	f, err := SchulbuecherAlsExcel(alle, "https://schule.test")
+	doc, err := SchulbuecherAlsPDF(alle, "", "Jahrgang 7")
 	if err != nil {
 		t.Fatal(err)
 	}
-	var buf bytes.Buffer
-	if err := f.Write(&buf); err != nil {
-		t.Fatal(err)
+	pdftest.IstPDF(t, doc, "Schulbuch-Export")
+	gedruckt := strings.Join(pdftest.Texte(t, doc), "\n")
+	for _, muss := range []string{"Schulbücher", "Mathe 7", "Mathe 8", "Lesebuch", "Jahrgang 7", "ohne Fach", "13", "Gymnasium", "Gezählt", "17.04.2026"} {
+		if !strings.Contains(gedruckt, muss) {
+			t.Errorf("Schulbuch-PDF druckt %q nicht. Gedruckt: %s", muss, gedruckt)
+		}
 	}
-	gelesen, err := excelize.OpenReader(&buf)
+	// Der Filterhinweis im Kopf ist kein Schmuck: Ohne ihn sähe ein gefilterter Auszug
+	// wie der volle Bestand aus, und niemand erkennt ihn als Auszug.
+	if !strings.Contains(gedruckt, "3 Titel") {
+		t.Errorf("Schulbuch-PDF nennt die Titelzahl im Kopf nicht. Gedruckt: %s", gedruckt)
+	}
+
+	// Die Zählspalte erscheint nur, wenn in der Auswahl überhaupt gezählt wurde: Das
+	// Lesebuch allein trägt kein Datum, also fehlt die Spalte samt Überschrift.
+	nurOhneFach, err := repo.GetLernmittelTitel(ctx, "", false, LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	rows, err := gelesen.GetRows("Schulbücher")
+	docOhne, err := SchulbuecherAlsPDF(nurOhneFach, "ohne Fach", "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Spalten: Fach, Titel, Autor, ISBN, Jahrgang, Gesamt, … — Jahrgang 5–10 (Vorgabe) bleibt leer, 8 steht drin.
-	if len(rows) != 4 || rows[0][1] != "Titel" || rows[1][0] != "Mathematik" || rows[1][4] != "" || rows[2][4] != "8" || rows[1][6] != "2" || rows[3][0] != "ohne Fach" {
-		t.Errorf("Excel-Inhalt: %v", rows)
+	if g := strings.Join(pdftest.Texte(t, docOhne), "\n"); strings.Contains(g, "Gezählt") {
+		t.Errorf("ungezählte Auswahl zeigt trotzdem die Zählspalte. Gedruckt: %s", g)
 	}
-	if rows[1][1] == "=1+1" {
-		t.Error("Formel-Injection: Titel darf nicht als Formel in der Zelle stehen")
+
+	// Ein einzelnes Fach trägt seinen Namen in der Überschrift und nur seine Titel.
+	nurMathe, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err = SchulbuecherAlsPDF(nurMathe, "Mathematik", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pdftest.IstPDF(t, doc, "Schulbuch-Export Mathematik")
+	gedruckt = strings.Join(pdftest.Texte(t, doc), "\n")
+	if !strings.Contains(gedruckt, "Mathematik") || strings.Contains(gedruckt, "Lesebuch") {
+		t.Errorf("Fach-Export zeigt das falsche Fach. Gedruckt: %s", gedruckt)
 	}
 }

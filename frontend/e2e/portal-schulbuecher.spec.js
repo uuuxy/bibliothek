@@ -69,18 +69,20 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 
 		// Der eigene Titel dagegen bleibt — und nur er.
 		await suche.fill(TITEL);
-		await expect(page.getByTestId('schulbuecher-antwort')).toContainText('1 Titel · 4 Exemplare');
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toContainText('1 Titel');
 		await suche.fill('');
 		await expect(page.getByRole('button', { name: new RegExp(`${FACH}`) })).toBeVisible();
 
-		// Export: dieselbe Sitzung, Excel-Datei mit dem Titel drin (XLSX ist ein Zip —
-		// der Inhalt liegt in xl/sharedStrings.xml; hier genügt Typ, Größe und Dateiname).
+		// Export: dieselbe Sitzung, PDF mit dem Fach im Dateinamen. Was auf dem Blatt steht,
+		// prüft der PG-Test am Inhaltsstrom; hier zählt, dass die Tür ein PDF liefert.
 		const res = await page.request.get(
 			`/api/portal/lernmittel/export?fach=${encodeURIComponent(FACH)}`
 		);
 		expect(res.status()).toBe(200);
-		expect(res.headers()['content-type']).toContain('spreadsheetml');
+		expect(res.headers()['content-type']).toContain('application/pdf');
 		expect(res.headers()['content-disposition']).toContain('schulbuecher_e2e-fach');
-		expect((await res.body()).length).toBeGreaterThan(2000);
+		const körper = await res.body();
+		expect(körper.length).toBeGreaterThan(1000);
+		expect(körper.subarray(0, 5).toString()).toBe('%PDF-');
 	});
 });

@@ -40,6 +40,11 @@ type LernmittelTitel struct {
 	// Schulzweig (buecher_titel.track): am Schulbuch gepflegt, seit 03.09.2026 wieder in
 	// der Maske. Leer heißt „gilt für alle Zweige", nicht „unbekannt".
 	Track string `json:"track"`
+	// Gezaehlt ist das Datum der letzten Zählung (buecher_titel.last_counted) als
+	// „TT.MM.JJJJ"; leer heißt „noch nie gezählt". Peter, 03.09.2026: Eine Bestandszahl
+	// ohne Datum sagt nicht, wie alt sie ist — im Ausdruck steht sie sonst so da, als
+	// wäre sie von heute.
+	Gezaehlt string `json:"gezaehlt"`
 }
 
 // LernmittelFilter sind die drei Einschränkungen des Portal-Reiters. Nullwerte heißen
@@ -104,9 +109,10 @@ func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, f Lernmitt
 func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
 	rows, err := repo.db.Query(ctx, `
 		SELECT b.id, b.titel, COALESCE(b.autor, ''), COALESCE(b.subject, ''), COALESCE(b.cover_url, ''),
-		       COALESCE(b.isbn, ''), b.jahrgang_von, b.jahrgang_bis, COALESCE(b.track, ''),`+lernmittelZaehlung+lernmittelJoins+lernmittelFilterSQL+`
+		       COALESCE(b.isbn, ''), b.jahrgang_von, b.jahrgang_bis, COALESCE(b.track, ''),
+		       COALESCE(TO_CHAR(b.last_counted, 'DD.MM.YYYY'), ''),`+lernmittelZaehlung+lernmittelJoins+lernmittelFilterSQL+`
 		  AND ($4 OR COALESCE(b.subject, '') = $5)
-		GROUP BY b.id, b.titel, b.autor, b.subject, b.cover_url, b.isbn, b.jahrgang_von, b.jahrgang_bis, b.track
+		GROUP BY b.id, b.titel, b.autor, b.subject, b.cover_url, b.isbn, b.jahrgang_von, b.jahrgang_bis, b.track, b.last_counted
 		ORDER BY (COALESCE(b.subject, '') = ''), b.subject, b.jahrgang_von, b.titel`,
 		f.Jahrgang, f.Zweig, f.Suche, alleFaecher, fach)
 	if err != nil {
@@ -116,7 +122,7 @@ func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string,
 	out := []LernmittelTitel{}
 	for rows.Next() {
 		var t LernmittelTitel
-		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Track, &t.Gesamt, &t.Verliehen, &t.Verfuegbar); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Track, &t.Gezaehlt, &t.Gesamt, &t.Verliehen, &t.Verfuegbar); err != nil {
 			return nil, err
 		}
 		out = append(out, t)
