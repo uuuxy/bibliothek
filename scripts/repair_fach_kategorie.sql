@@ -23,8 +23,25 @@
 --      hängt UND sie kein kanonisches Fach sind. Handgepflegte Fächer ohne Titel sind
 --      davon ebenfalls betroffen — vorher die Liste prüfen (Ausgabe „wird gelöscht").
 --
--- Ablauf: erst mit ROLLBACK am Ende laufen lassen und die Ausgaben lesen, dann COMMIT.
+-- ABLAUF — zwei Aufrufe, die Datei bleibt unverändert:
+--
+--   1. Vorschau (ändert NICHTS, endet mit ROLLBACK):
+--        docker exec -i bibliothek-db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB -v ON_ERROR_STOP=1' \
+--          < scripts/repair_fach_kategorie.sql
+--
+--   2. Ausführen (endet mit COMMIT) — dieselbe Zeile plus -v ausfuehren=ja:
+--        docker exec -i bibliothek-db sh -c 'psql -U $POSTGRES_USER -d $POSTGRES_DB -v ON_ERROR_STOP=1 -v ausfuehren=ja' \
+--          < scripts/repair_fach_kategorie.sql
+--
+-- Die letzte Zeile der Ausgabe sagt, was passiert ist: „ROLLBACK" = Vorschau,
+-- „COMMIT" = geschrieben. Bis zum 03.09.2026 stand hier stattdessen die Bitte, ROLLBACK
+-- von Hand gegen COMMIT zu tauschen — der Lauf sah dann aus wie ein Erfolg, änderte aber
+-- nichts, und die Oberfläche zeigte danach unverändert die alten Daten.
+--
 -- VORHER ein Backup ziehen: pg_dump -U postgres -d bibliothek | gzip > backup.sql.gz
+-- (Ein solches Backup lässt sich NICHT einfach über die laufende Datenbank zurückspielen:
+-- pg_dump ohne --clean legt keine Tabellen neu an, und jedes COPY bricht am
+-- Primärschlüssel ab. Zum echten Zurücksetzen die Datenbank erst leeren.)
 
 BEGIN;
 
@@ -151,6 +168,9 @@ SELECT 'Fächer danach' AS was, string_agg(subject || ' ' || n, ', ' ORDER BY n 
 UNION ALL
 SELECT 'Systematik-Zeilen danach', count(*)::text FROM systematik_kategorien;
 
--- Erst lesen, dann entscheiden:
+-- Ohne -v ausfuehren=ja bleibt es bei der Vorschau.
+\if :{?ausfuehren}
+COMMIT;
+\else
 ROLLBACK;
--- COMMIT;
+\endif
