@@ -207,7 +207,7 @@ type gewanderteVorgaenge struct {
 }
 
 // verschiebeVorgaenge hängt alles, was an der Quelle hängt, an das Ziel: Vorgänge (FK),
-// das Foto (nur wenn das Ziel keines hat) und die Protokollspuren, über die die
+// das Foto (das jüngere von beiden) und die Protokollspuren, über die die
 // Art.-15-Auskunft und die DSGVO-Tilgung den Schüler finden (details->>'schueler_id',
 // datensatz_id) — dieselben Schlüssel wie in SpurTilgungen. Von zwei Vormerkungen auf
 // denselben Titel bleibt die fortgeschrittenere (UNIQUE titel_id, schueler_id).
@@ -242,6 +242,13 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("vormerkungen verschieben: %w", err)
 	}
 	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
+	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
+	// das JÜNGERE Foto gewinnt, egal auf welcher Seite (Peter, 03.09.2026). Hat das Ziel
+	// ein älteres, weicht es; der Rückweg-Eintrag hält fest, ob das Quell-Foto gewandert ist.
+	if _, err := tx.Exec(ctx, `DELETE FROM schueler_fotos z WHERE z.schueler_id = $1
+		AND EXISTS (SELECT 1 FROM schueler_fotos q WHERE q.schueler_id = $2 AND q.aktualisiert_am > z.aktualisiert_am)`, ziel, quelle); err != nil {
+		return nil, fmt.Errorf("älteres foto weichen lassen: %w", err)
+	}
 	fotos, err := idsAus(ctx, tx, `UPDATE schueler_fotos SET schueler_id = $1 WHERE schueler_id = $2
 		AND NOT EXISTS (SELECT 1 FROM schueler_fotos WHERE schueler_id = $1) RETURNING schueler_id`, ziel, quelle)
 	if err != nil {

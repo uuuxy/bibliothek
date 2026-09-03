@@ -363,3 +363,33 @@ func TestZusammenfuehren_FortgeschritteneVormerkungBleibt(t *testing.T) {
 		t.Errorf("genau eine Vormerkung je Titel erwartet, gefunden %d", n)
 	}
 }
+
+// Foto: kommt nie aus der LUSD — das JÜNGERE gewinnt, egal auf welcher Seite. Bis
+// 03.09.2026 blieb immer das Foto des Ziels, das jüngere der Quelle starb im CASCADE.
+func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Foto", klasse: "07A", barcode: "ZF-P1", geb: datum(2012, 12, 12)})
+	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Foto", klasse: "07A", barcode: "ZF-P2", geb: datum(2012, 12, 12)})
+	for _, f := range []struct {
+		id, bytes, alter string
+	}{{ziel, `\x01`, "2 years"}, {quelle, `\x02`, "1 day"}} {
+		if _, err := pool.Exec(ctx, `INSERT INTO schueler_fotos (schueler_id, foto_encrypted, aktualisiert_am) VALUES ($1, $2::bytea, NOW() - $3::interval)`, f.id, f.bytes, f.alter); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+		t.Fatal(err)
+	}
+	var foto []byte
+	if err := pool.QueryRow(ctx, `SELECT foto_encrypted FROM schueler_fotos WHERE schueler_id = $1`, ziel).Scan(&foto); err != nil {
+		t.Fatal(err)
+	}
+	if len(foto) != 1 || foto[0] != 0x02 {
+		t.Errorf("das jüngere Foto der Quelle muss am Ziel hängen, gefunden %x", foto)
+	}
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler_fotos`); n != 1 {
+		t.Errorf("genau ein Foto erwartet, gefunden %d", n)
+	}
+}
