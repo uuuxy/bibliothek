@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/coverdatei"
 	"bytes"
 	"image"
 	"image/color"
@@ -17,7 +18,7 @@ import (
 func mahnPDFTestUmgebung(t *testing.T) {
 	t.Helper()
 	t.Chdir(t.TempDir())
-	if err := os.Mkdir(uploadsVerzeichnis, 0o750); err != nil {
+	if err := os.Mkdir(coverdatei.Wurzel, 0o750); err != nil {
 		t.Fatalf("setup: uploads-Verzeichnis: %v", err)
 	}
 }
@@ -36,10 +37,10 @@ func schreibeCoverDatei(t *testing.T, name string) string {
 	if err != nil {
 		t.Fatalf("setup: webp encode: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(uploadsVerzeichnis, name), daten, 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(coverdatei.Wurzel, name), daten, 0o600); err != nil {
 		t.Fatalf("setup: cover schreiben: %v", err)
 	}
-	return "/" + uploadsVerzeichnis + "/" + name
+	return "/" + coverdatei.Wurzel + "/" + name
 }
 
 // mahnKlassenMit baut eine minimale Mahnwesen-Struktur mit einem überfälligen Medium.
@@ -97,12 +98,12 @@ func TestGenerateMahnPDF_WebPCoverBrichtDasDokumentNicht(t *testing.T) {
 // Egal was im uploads-Ordner liegt, die Mahnliste muss ausgeliefert werden.
 func TestGenerateMahnPDF_DefektesCoverKostetNurDasBild(t *testing.T) {
 	mahnPDFTestUmgebung(t)
-	kaputt := filepath.Join(uploadsVerzeichnis, "cover_kaputt.webp")
+	kaputt := filepath.Join(coverdatei.Wurzel, "cover_kaputt.webp")
 	if err := os.WriteFile(kaputt, []byte("das ist kein bild"), 0o600); err != nil {
 		t.Fatalf("setup: %v", err)
 	}
 
-	pdfBytes, err := generateMahnPDF(mahnKlassenMit("/" + uploadsVerzeichnis + "/cover_kaputt.webp"))
+	pdfBytes, err := generateMahnPDF(mahnKlassenMit("/" + coverdatei.Wurzel + "/cover_kaputt.webp"))
 	if err != nil {
 		t.Fatalf("defektes Cover ließ die PDF-Erzeugung scheitern: %v", err)
 	}
@@ -154,7 +155,7 @@ func TestCoverDateiPfad(t *testing.T) {
 		coverURL string
 		wantPfad string
 	}{
-		{"vorhandenes Cover", vorhanden, filepath.Join(uploadsVerzeichnis, "cover_ok.webp")},
+		{"vorhandenes Cover", vorhanden, filepath.Join(coverdatei.Wurzel, "cover_ok.webp")},
 		{"leere URL", "", ""},
 		{"externe URL", "https://example.invalid/cover.jpg", ""},
 		{"anderes Verzeichnis", "/etc/passwd", ""},
@@ -165,8 +166,8 @@ func TestCoverDateiPfad(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			if got := coverDateiPfad(f.coverURL); got != f.wantPfad {
-				t.Errorf("coverDateiPfad(%q) = %q, erwartet %q", f.coverURL, got, f.wantPfad)
+			if got := coverdatei.Pfad(f.coverURL); got != f.wantPfad {
+				t.Errorf("coverdatei.Pfad(%q) = %q, erwartet %q", f.coverURL, got, f.wantPfad)
 			}
 		})
 	}

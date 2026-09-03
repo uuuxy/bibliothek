@@ -11,6 +11,16 @@ internal/pgtest/pgtest.go: unreachable func: baueTestDB
 internal/pgtest/pgtest.go: unreachable func: pruefeTestDatenbank
 internal/pgtest/pgtest.go: unreachable func: schemaPfad
 
+# Testinfrastruktur per Paket-Design: der Leser für gedruckte PDF-Textstücke
+# (vorher Helfer in api/etiketten_pdf_paritaet_pg_test.go, seit 03.09.2026 auch vom
+# Schulbuch-Export gebraucht). Wird ausschließlich von *_test.go importiert.
+internal/pdftest/pdftest.go: unreachable func: IstPDF
+internal/pdftest/pdftest.go: unreachable func: Texte
+internal/pdftest/pdftest.go: unreachable func: nachUTF8
+internal/pdftest/pdftest.go: unreachable func: Inhalt
+internal/pdftest/pdftest.go: unreachable func: lies
+internal/pdftest/pdftest.go: unreachable func: texteAus
+
 # Testinfrastruktur per Paket-Design: eigener SMTP-Server für Tests, weil die
 # lokale .env auf den echten Schulserver zeigt (siehe Paketkommentar).
 internal/smtptest/server.go: unreachable func: Starte

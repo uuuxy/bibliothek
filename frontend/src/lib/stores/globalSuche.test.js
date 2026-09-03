@@ -109,3 +109,31 @@ describe('globale Suche — Rechte', () => {
 		expect(zuBuch).toHaveBeenCalledWith('b1');
 	});
 });
+
+// Rasterdurchgang 03.09.2026, Frage 6 (Zeit): Der „zu kurz"-Zweig von tippen() leerte die
+// Listen, verwarf aber laufende Antworten nicht. Wer „Meier" tippt und sofort auf „M"
+// zurücklöscht, bekam die Treffer zu „Meier" in die eben geleerte Liste zurück — und die
+// Liste klappte wieder auf, zu einer Eingabe, die nicht mehr im Feld steht.
+describe('globale Suche — späte Antwort nach dem Leeren', () => {
+	it('füllt die Liste nicht mehr, wenn das Feld inzwischen zu kurz ist', async () => {
+		/** @type {(v: any) => void} */
+		let antworte = () => {};
+		const s = erzeugeGlobalSuche({
+			zuBuch: vi.fn(),
+			zuSchueler: vi.fn(),
+			holen: () => new Promise((r) => (antworte = r))
+		});
+		s.suche = 'Meier';
+		const unterwegs = s.bestaetigen();
+		s.suche = 'M';
+		s.tippen();
+		antworte({
+			ok: true,
+			json: () => Promise.resolve({ students: [{ id: 'a' }, { id: 'b' }], books: [] })
+		});
+		await unterwegs;
+		expect(s.schueler).toHaveLength(0);
+		expect(s.offen).toBe(false);
+		expect(s.fehler).toBe('');
+	});
+});

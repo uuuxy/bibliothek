@@ -1,9 +1,8 @@
 package api
 
 import (
+	"bibliothek/internal/pdftest"
 	"bytes"
-	"compress/zlib"
-	"io"
 	"strings"
 	"testing"
 )
@@ -15,33 +14,17 @@ import (
 // einmal ein Weg vorbeigelaufen, der nur drei von sechs Feldern mitgeschickt hat.
 // Dieselbe Technik wie in etiketten_pdf_paritaet_pg_test.go.
 
-// pdfText packt die FlateDecode-Ströme eines PDFs aus und liefert ihren Inhalt.
+// pdfText liefert den lesbaren Inhalt eines PDFs: die entpackten Inhaltsströme plus die
+// Rohbytes (kleine Ströme lässt gofpdf offen).
+//
+// Die eigene Fassung ist am 03.09.2026 entfallen. Sie trug zwei Fallen, die
+// internal/pdftest längst kennt: Der Lesekopf sprang mit `rest = nach[j:]` VOR das
+// „endstream" zurück, fand dort das „stream" darin wieder und übersprang ab dem zweiten
+// Strom jeden echten — gelesen wurde nur die erste Seite. Und ohne die Windows-1252-
+// Wandlung konnte keine Erwartung mit Umlaut je zutreffen.
 func pdfText(t *testing.T, roh []byte) string {
 	t.Helper()
-	var text strings.Builder
-	text.Write(roh) // unkomprimierte Anteile (kleine Ströme lässt gofpdf offen)
-
-	rest := roh
-	for {
-		i := bytes.Index(rest, []byte("stream"))
-		if i < 0 {
-			break
-		}
-		nach := rest[i+len("stream"):]
-		nach = bytes.TrimLeft(nach, "\r\n")
-		j := bytes.Index(nach, []byte("endstream"))
-		if j < 0 {
-			break
-		}
-		if zr, err := zlib.NewReader(bytes.NewReader(nach[:j])); err == nil {
-			if entpackt, err := io.ReadAll(zr); err == nil {
-				text.Write(entpackt)
-			}
-			zr.Close() //nolint:errcheck // Lesende zlib-Ströme im Test
-		}
-		rest = nach[j:]
-	}
-	return text.String()
+	return string(roh) + "\n" + strings.Join(pdftest.Texte(t, roh), "\n")
 }
 
 func erzeugeBogen(t *testing.T, format string, start int, etiketten []SchuelerEtikett) string {

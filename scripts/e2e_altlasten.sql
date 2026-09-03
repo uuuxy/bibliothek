@@ -52,4 +52,20 @@ DELETE FROM ausleihen a
 -- Klassensatz-Reservierungen, class_books und inventur_erfassungen.
 DELETE FROM buecher_titel WHERE titel LIKE 'E2E %';
 
+-- Ohne -v ausfuehren=ja bleibt es bei der Vorschau; die letzte Ausgabezeile sagt, was
+-- passiert ist. Bis zum 03.09.2026 stand hier ein unbedingtes COMMIT und in SCRIPTS.md
+-- die Empfehlung, es für den Probelauf von Hand gegen ROLLBACK zu tauschen — genau die
+-- Handarbeit, die an repair_fach_kategorie.sql einen ganzen Abend gekostet hat: Der Lauf
+-- druckt seine Zahlen, meldet keinen Fehler und ändert trotzdem nichts (oder alles).
+\if :{?ausfuehren}
+SELECT :'ausfuehren' = 'ja' AS schreiben \gset
+\else
+SELECT false AS schreiben \gset
+\endif
+
+\if :schreiben
 COMMIT;
+\else
+\echo '>>> VORSCHAU — nichts gelöscht. Zum Ausführen: -v ausfuehren=ja'
+ROLLBACK;
+\endif

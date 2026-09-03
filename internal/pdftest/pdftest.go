@@ -50,6 +50,13 @@ var tjText = regexp.MustCompile(`\(((?:\\.|[^()\\])*)\)\s*Tj`)
 // aber nur hiess, dass der Leser eine Bauform nicht kannte.
 func Texte(t *testing.T, roh []byte) []string {
 	t.Helper()
+	_, texte := lies(t, roh)
+	return texte
+}
+
+// lies entpackt alle Inhaltsströme des Dokuments und liefert sie roh und als Textstücke.
+func lies(t *testing.T, roh []byte) ([]byte, []string) {
+	t.Helper()
 
 	var inhalt bytes.Buffer
 	rest := roh
@@ -93,8 +100,20 @@ func Texte(t *testing.T, roh []byte) []string {
 			"der Test würde ab hier alles durchwinken", len(roh))
 	}
 
+	return inhalt.Bytes(), texteAus(inhalt.Bytes())
+}
+
+// Inhalt liefert den entpackten Inhaltsstrom roh — für Prüfungen, die nicht am Text
+// hängen, etwa an der Position eingebetteter Bilder.
+func Inhalt(t *testing.T, roh []byte) []byte {
+	t.Helper()
+	strom, _ := lies(t, roh)
+	return strom
+}
+
+func texteAus(inhalt []byte) []string {
 	var texte []string
-	for _, treffer := range tjText.FindAllSubmatch(inhalt.Bytes(), -1) {
+	for _, treffer := range tjText.FindAllSubmatch(inhalt, -1) {
 		if s := strings.TrimSpace(nachUTF8(treffer[1])); s != "" {
 			texte = append(texte, s)
 		}

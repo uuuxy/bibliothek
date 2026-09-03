@@ -28,7 +28,9 @@ Beide Seiten haben keinen Menüpunkt. Die fertigen Adressen stehen unter
 
 ## Überall suchen (seit 03.09.2026)
 
-Oben auf jeder Verwaltungsseite steht **eine** Suchleiste. Sie versteht alles, was die Theke
+Oben auf jeder Verwaltungsseite steht **eine** Suchleiste (nur für Konten mit dem
+Theken-Recht; sie bietet außerdem nur an, was das eigene Konto auch öffnen darf — wer den
+Medienkatalog sehen darf, aber nicht die Schülerdatei, findet dort keine Ausweise). Sie versteht alles, was die Theke
 versteht — Buch-Barcode, Littera-Etikett, Schülerausweis, ISBN, Name, Klasse, Titel — und
 **springt nur hin:** ein Buch-Barcode oder eine ISBN öffnet die Buchakte, ein Ausweis die
 Schülerakte, ein Name zeigt eine Trefferliste. Gebucht wird nirgends außer an der Theke;
@@ -211,13 +213,17 @@ Klassensätze, nur nach Fach statt Klasse. Oben Suche (Titel, ISBN, Autor, Fach)
 Filter Jahrgang und Schulzweig; darunter je Fach eine Zeile mit Exemplaren, Titeln und
 Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. „Als PDF" sitzt an
 jedem Fach und druckt genau dieses Fach mit der aktuellen Filterung: eine Zeile je Buch
-mit Coverbild, Titel, Autor, ISBN, Jahrgang, Schulzweig und den Zahlen. Im Kopf steht,
+mit Coverbild, Titel, Autor, ISBN, Jahrgang, Schulzweig, Zähldatum und den Zahlen. Die
+Spalte **Gezählt** erscheint nur, wenn in der Auswahl überhaupt schon gezählt wurde. Im Kopf steht,
 welcher Ausschnitt es ist — ein gefilterter Ausdruck ist sonst nicht von der vollen Liste
 zu unterscheiden. Gezählt wird nur, was den
 Lernmittel-Schalter trägt. Den **Schulzweig** pflegt die Bibliothek am Buch: In der
 Buchmaske erscheint das Feld, sobald „Lernmittel" eingeschaltet ist; leer heißt „gilt für
-alle Zweige". Littera hat den Zweig nie mitgeliefert, der Altbestand ist also zunächst
-ohne. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
+alle Zweige" — solche Bücher erscheinen deshalb unter **jedem** Zweig-Filter, und die
+Auswahl „Ohne Schulzweig" zeigt umgekehrt nur sie. Littera hat den Zweig nie mitgeliefert,
+der Altbestand ist also zunächst ohne. Ein Buch, dessen Coverbild von außerhalb kommt
+(Deutsche Nationalbibliothek, Google Books), erscheint im PDF ohne Bild: gedruckt wird nur,
+was auf dem Server liegt. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
 stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`) · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
 nicht" an die Bibliothek). (§12, Rolle Kollegium)
 

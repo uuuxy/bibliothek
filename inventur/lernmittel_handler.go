@@ -103,8 +103,10 @@ func filterKlartext(f LernmittelFilter) string {
 func lernmittelFilterParam(r *http.Request) LernmittelFilter {
 	q := r.URL.Query()
 	f := LernmittelFilter{Zweig: strings.TrimSpace(q.Get("zweig")), Suche: strings.TrimSpace(q.Get("q"))}
-	if len(f.Suche) > 100 {
-		f.Suche = f.Suche[:100]
+	// Nach ZEICHEN kappen, nicht nach Bytes: Ein Schnitt mitten in einem Mehrbyte-Zeichen
+	// schickt ungültiges UTF-8 an Postgres, und aus einer Suche würde ein 500er.
+	if r := []rune(f.Suche); len(r) > 100 {
+		f.Suche = string(r[:100])
 	}
 	if j, err := strconv.Atoi(q.Get("jahrgang")); err == nil && j >= 5 && j <= 13 {
 		f.Jahrgang = j

@@ -62,3 +62,36 @@ func TestParseBestand(t *testing.T) {
 		})
 	}
 }
+
+// Die Fach-Spalte des Excel-Imports ist Freitext, buecher_titel.subject aber ein
+// Fremdschlüssel auf die Systematik: Jede eigenständige Zeichenkette wird dort eine
+// eigene Kategorie und steht danach in der Fach-Auswahl der Buchmaske und als Fach im
+// Portal-Reiter Schulbücher. Bis zum 03.09.2026 ging der Wert ungeprüft durch, und ein
+// leeres Feld wurde zum wörtlichen Fach „Unbekannt" — dieselbe Form, die der
+// CSV-Bestandsimport an diesem Tag verloren hat (fachDerZeile, Commit 21b8e172), nur
+// durch die zweite Tür. Ein Lauf hätte gereicht, um scripts/repair_fach_kategorie.sql
+// wieder aufzuheben.
+func TestVerarbeiteImportZeile_FachNurWennFach(t *testing.T) {
+	faelle := []struct{ spalte, want string }{
+		{"Mathematik", "Mathematik"},
+		{"Mathe", "Mathematik"},  // bekannte Schreibvariante wird kanonisch
+		{"biologie", "Biologie"}, // Kleinschreibung ebenso
+		{"Buch Pg/Kaf 078829", ""},
+		{"Regal 3 links", ""},
+		{"Unbekannt", ""},
+		{"", ""},
+	}
+	for _, f := range faelle {
+		cfg := ImportConfig{
+			Row:    []string{"9783161484100", "Ein Titel", "Ein Autor", f.spalte},
+			ColIdx: map[string]int{"isbn": 0, "titel": 1, "autor": 2, "fach": 3},
+		}
+		buch, err := verarbeiteImportZeile(cfg)
+		if err != nil || buch == nil {
+			t.Fatalf("Spalte %q: %v", f.spalte, err)
+		}
+		if buch.Subject != f.want {
+			t.Errorf("Fach-Spalte %q → Subject %q, erwartet %q", f.spalte, buch.Subject, f.want)
+		}
+	}
+}

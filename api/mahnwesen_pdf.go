@@ -3,91 +3,45 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
 	"bibliothek/apierrors"
-	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/coverdatei"
 	"bibliothek/pkg/httpresp"
-	"bibliothek/pkg/imageutil"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
 )
 
-// uploadsVerzeichnis ist die Wurzel aller lokal gespeicherten Bilder, relativ zum
-// Arbeitsverzeichnis des Servers.
-const uploadsVerzeichnis = "uploads"
-
-// coverDateiPfad löst die CoverURL eines Mediums in einen lesbaren lokalen Dateipfad auf.
-// Rückgabe "" bedeutet: kein verwendbares Cover — der Aufrufer zeichnet dann nur den Rahmen.
-//
-// Der Clean-und-Prefix-Test ist kein Selbstzweck: ohne ihn würde eine CoverURL wie
-// "/uploads/../../etc/passwd" aus dem Upload-Verzeichnis ausbrechen und beliebige Dateien
-// in ein PDF einbetten lassen.
-func coverDateiPfad(coverURL string) string {
-	if !strings.HasPrefix(coverURL, "/uploads/") {
-		return ""
-	}
-	pfad := filepath.Clean(strings.TrimPrefix(coverURL, "/"))
-	if pfad != uploadsVerzeichnis && !strings.HasPrefix(pfad, uploadsVerzeichnis+string(filepath.Separator)) {
-		return ""
-	}
-	info, err := os.Stat(pfad)
-	if err != nil || info.IsDir() {
-		return ""
-	}
-	return pfad
-}
-
 // bindeCoverEin bettet das Coverbild eines Mediums an der angegebenen Position ein.
 //
-// Der Umweg über ConvertToJPEG ist notwendig, weil gofpdf den Bildtyp an der Dateiendung
-// erkennt und nur JPG/PNG/GIF beherrscht — unsere Cover liegen aber als WebP auf der Platte.
-// Ein direkt übergebener .webp-Pfad setzte den internen Fehlerzustand des Fpdf-Objekts, und
+// Der Umweg über JPEG ist notwendig, weil gofpdf den Bildtyp an der Dateiendung erkennt
+// und nur JPG/PNG/GIF beherrscht — unsere Cover liegen aber als WebP auf der Platte. Ein
+// direkt übergebener .webp-Pfad setzte den internen Fehlerzustand des Fpdf-Objekts, und
 // der ist KLEBRIG: er wird bei jedem weiteren Aufruf durchgereicht und schlägt am Ende in
-// pdf.Output() durch. Ein einziges WebP-Cover ließ damit die komplette Mahnliste mit HTTP 500
-// scheitern, nicht etwa nur die eine Zeile.
+// pdf.Output() durch. Ein einziges WebP-Cover ließ damit die komplette Mahnliste mit
+// HTTP 500 scheitern, nicht etwa nur die eine Zeile.
 //
-// Genau deshalb werden hier auch alle Fehler geschluckt: Ein unlesbares, defektes oder
-// überdimensioniertes Cover darf das Dokument nie als Ganzes kosten. Es fehlt dann still —
-// die Rahmenzelle zeichnet der Aufrufer ohnehin immer.
+// Pfadprüfung und Wandlung liegen seit dem 03.09.2026 in pkg/coverdatei: Der
+// Schulbuch-Export braucht denselben Weg, und die Prüfung gegen
+// "/uploads/../../etc/passwd" darf es nicht zweimal geben. Beim Rasterdurchgang desselben
+// Tages fiel auf, dass die Auslagerung diese Fassung zunächst stehen ließ.
+//
+// Alle Fehler bleiben still: Ein unlesbares, defektes oder überdimensioniertes Cover darf
+// das Dokument nie als Ganzes kosten. Es fehlt dann — die Rahmenzelle zeichnet der
+// Aufrufer ohnehin immer.
 func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float64) {
-	pfad := coverDateiPfad(coverURL)
+	opt := gofpdf.ImageOptions{ImageType: "JPG"}
+	pfad := coverdatei.Pfad(coverURL)
 	if pfad == "" {
 		return
 	}
-	opt := gofpdf.ImageOptions{ImageType: "JPG"}
-	// gofpdf hält registrierte Bilder unter ihrem Namen vor. Mehrfach überfällige Exemplare
-	// desselben Titels lesen und dekodieren ihr Cover so nur einmal.
+	// gofpdf hält registrierte Bilder unter ihrem Namen vor. Mehrfach überfällige
+	// Exemplare desselben Titels lesen und dekodieren ihr Cover so nur einmal.
 	if pdf.GetImageInfo(pfad) == nil {
-		dirRoot, err := os.OpenRoot(uploadsVerzeichnis)
-		if err != nil {
-			return
-		}
-		defer closeutil.LogClose(dirRoot, "mahnwesen_pdf dirRoot")
-
-		relPfad, err := filepath.Rel(uploadsVerzeichnis, pfad)
-		if err != nil {
-			return
-		}
-
-		f, err := dirRoot.Open(relPfad)
-		if err != nil {
-			return
-		}
-		defer closeutil.LogClose(f, "mahnwesen_pdf cover image")
-
-		roh, err := io.ReadAll(f)
-		if err != nil {
-			return
-		}
-		jpg, err := imageutil.ConvertToJPEG(roh, imageutil.DefaultJPEGQuality)
-		if err != nil {
+		jpg, _, ok := coverdatei.AlsJPEG(coverURL)
+		if !ok {
 			return
 		}
 		pdf.RegisterImageOptionsReader(pfad, opt, bytes.NewReader(jpg))
@@ -155,7 +109,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch repository.U
 
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetTextColor(120, 120, 120)
-	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am %s", time.Now().Format(dateFormatDE))))
+	pdf.Cell(0, 5, tr(fmt.Sprintf("Erstellt am %s", schulzeit.Jetzt().Format(dateFormatDE))))
 	pdf.SetTextColor(0, 0, 0)
 	pdf.Ln(10)
 
@@ -282,7 +236,7 @@ func (s *Server) GetMahnwesenPDFHandler(mahnRepo *repository.MahnwesenRepository
 
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition,
-			fmt.Sprintf("attachment; filename=mahnliste_%s.pdf", time.Now().Format(dateFormatISO)))
+			fmt.Sprintf("attachment; filename=mahnliste_%s.pdf", schulzeit.Jetzt().Format(dateFormatISO)))
 		httpresp.Write(w, pdfBytes)
 	}
 }

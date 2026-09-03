@@ -31,10 +31,23 @@ RESTART IDENTITY CASCADE;
 -- Optional: Falls LUSD-Import-Zwischentabellen existieren, könnten diese hier
 -- ebenfalls geleert werden (z.B. 'lusd_schueler_raw'). Aktuell geschieht das im RAM.
 
-COMMIT;
-
--- Ausgabe zur Bestätigung
+-- Die Bestätigung MISST, statt zu behaupten: Sie läuft noch in der Transaktion und zählt
+-- nach. Bis zum 03.09.2026 stand sie hinter dem COMMIT und außerhalb jeder Transaktion —
+-- bricht eine der TRUNCATE-Anweisungen ab, meldet psql für das COMMIT ein ROLLBACK, und
+-- der Satz „Tabula Rasa erfolgreich" wurde trotzdem gedruckt. Ein Erfolgssatz, der nichts
+-- misst, ist schlimmer als keiner.
 DO $$
+DECLARE
+    rest_buecher  bigint;
+    rest_schueler bigint;
 BEGIN
-    RAISE NOTICE 'Tabula Rasa erfolgreich: Alle Bewegungsdaten wurden gelöscht. Admin-Accounts sind erhalten geblieben.';
+    SELECT count(*) INTO rest_buecher FROM buecher_titel;
+    SELECT count(*) INTO rest_schueler FROM schueler;
+    IF rest_buecher > 0 OR rest_schueler > 0 THEN
+        RAISE EXCEPTION 'Tabula Rasa unvollständig: noch % Titel und % Schüler vorhanden — nichts wird geschrieben.',
+            rest_buecher, rest_schueler;
+    END IF;
+    RAISE NOTICE 'Tabula Rasa: Bewegungsdaten geleert, Admin-Accounts erhalten. COMMIT folgt.';
 END $$;
+
+COMMIT;

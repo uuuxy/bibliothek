@@ -17,11 +17,14 @@
 --      Fach gezogen wird.
 --   1b. Schulbücher (ist_lernmittel) bekommen Fach und Jahrgang aus Signatur bzw.
 --      Standorttext („Deu 12", „Buch Bio 7/Nat 106 …") — dieselben Kürzel wie pkg/lmf.
---   2. Alles andere am Titel wird zu NULL („ohne Fach"). Der Text geht nicht verloren, er
---      steht weiterhin in der Systematik-Zeile, bis Schritt 3 sie löscht.
---   3. Systematik-Zeilen werden nur gelöscht, wenn nach Schritt 2 KEIN Titel mehr daran
---      hängt UND sie kein kanonisches Fach sind. Handgepflegte Fächer ohne Titel sind
---      davon ebenfalls betroffen — vorher die Liste prüfen (Ausgabe „wird gelöscht").
+--   2. Alles andere am Titel wird zu NULL („ohne Fach"). ACHTUNG: Der Standorttext ist
+--      danach WEG — Schritt 3 löscht die Systematik-Zeile elf Zeilen später in derselben
+--      Transaktion, und die Zuordnung Titel↔Text steht nirgends sonst (kein Trigger, kein
+--      audit_log-Eintrag). Der einzige Rückweg ist das Backup.
+--   3. Systematik-Zeilen werden gelöscht, wenn nach Schritt 2 kein Titel mehr daran hängt
+--      und sie kein kanonisches Fach sind. Weil Schritt 2b JEDES nicht-kanonische Fach vom
+--      Titel löst, trifft das auch handgepflegte Fächer MIT Büchern — die Liste „wird
+--      gelöscht" führt deshalb die Titelzahl mit. Vorher lesen.
 --
 -- ABLAUF — zwei Aufrufe, die Datei bleibt unverändert:
 --
@@ -56,16 +59,14 @@ CREATE TEMP TABLE variante (alt, neu) ON COMMIT DROP AS VALUES
     ('mathe', 'Mathematik'), ('geographie', 'Erdkunde'), ('geografie', 'Erdkunde'),
     ('politik', 'Politik und Wirtschaft'), ('sozialkunde', 'Politik und Wirtschaft');
 
--- Vorschau: was passiert.
+-- Vorschau: was passiert. Die Verlustzahl steht bewusst NICHT hier, sondern nach Schritt
+-- 1b — an dieser Stelle wäre sie zu hoch, weil die Rettung aus Signatur/Standorttext noch
+-- nicht gelaufen ist und der Ausführende an genau dieser Zahl entscheidet.
 SELECT 'Titel mit Fach gesamt' AS was, count(*) FROM buecher_titel WHERE subject IS NOT NULL AND subject <> ''
 UNION ALL
 SELECT 'davon bleibt (kanonisch)', count(*) FROM buecher_titel WHERE subject IN (SELECT bezeichnung FROM kanon)
 UNION ALL
-SELECT 'davon wird umbenannt (Variante)', count(*) FROM buecher_titel WHERE lower(subject) IN (SELECT alt FROM variante)
-UNION ALL
-SELECT 'davon wird "ohne Fach"', count(*) FROM buecher_titel
- WHERE subject IS NOT NULL AND subject <> ''
-   AND subject NOT IN (SELECT bezeichnung FROM kanon) AND lower(subject) NOT IN (SELECT alt FROM variante);
+SELECT 'davon wird umbenannt (Variante)', count(*) FROM buecher_titel WHERE lower(subject) IN (SELECT alt FROM variante);
 
 -- Schritt 1: kanonische Zeilen sicherstellen (Kürzel wie repository.registriereFach: ohne Leerzeichen).
 INSERT INTO systematik_kategorien (kuerzel, bezeichnung)
@@ -145,6 +146,20 @@ UPDATE buecher_titel t
   FROM variante v
  WHERE lower(t.subject) = v.alt;
 
+-- Ehrliche Verlustzahl: NACH der Rettung und der Varianten-Umbenennung.
+SELECT 'wird jetzt noch "ohne Fach"' AS was, count(*) FROM buecher_titel
+ WHERE subject IS NOT NULL AND subject <> '' AND subject NOT IN (SELECT bezeichnung FROM kanon);
+
+-- Offene Inventuren, die auf ein gleich gelöschtes Fach zeigen: Sie zählten danach null
+-- Exemplare, und jeder Scan liefe auf „außer Scope". Migration 078 und PatchSystematik
+-- ziehen scope_subject bei Umbenennungen mit; dieses Skript kann es nicht, weil das Fach
+-- ersatzlos verschwindet — also wird es genannt, damit niemand blind weiterzählt.
+SELECT 'ACHTUNG offene Inventur auf gelöschtem Fach' AS was, s.id, s.scope_subject
+  FROM inventur_sessions s
+ WHERE s.abgeschlossen_am IS NULL
+   AND s.scope_subject IS NOT NULL
+   AND s.scope_subject NOT IN (SELECT bezeichnung FROM kanon);
+
 -- Schritt 2b: alles andere wird „ohne Fach".
 UPDATE buecher_titel
    SET subject = NULL, aktualisiert_am = CURRENT_TIMESTAMP
@@ -152,7 +167,8 @@ UPDATE buecher_titel
    AND subject NOT IN (SELECT bezeichnung FROM kanon);
 
 -- Schritt 3: verwaiste Nicht-Fächer aus der Systematik — vorher zeigen, dann löschen.
-SELECT 'wird gelöscht' AS was, s.bezeichnung
+SELECT 'wird gelöscht' AS was, s.bezeichnung,
+       (SELECT count(*) FROM buecher_titel t WHERE t.subject = s.bezeichnung) AS titel_vorher
   FROM systematik_kategorien s
  WHERE s.bezeichnung NOT IN (SELECT bezeichnung FROM kanon)
    AND NOT EXISTS (SELECT 1 FROM buecher_titel t WHERE t.subject = s.bezeichnung)
@@ -168,9 +184,19 @@ SELECT 'Fächer danach' AS was, string_agg(subject || ' ' || n, ', ' ORDER BY n 
 UNION ALL
 SELECT 'Systematik-Zeilen danach', count(*)::text FROM systematik_kategorien;
 
--- Ohne -v ausfuehren=ja bleibt es bei der Vorschau.
+-- Ohne -v ausfuehren=ja bleibt es bei der Vorschau. Geprüft wird der WERT, nicht nur ob
+-- die Variable gesetzt ist — sonst schriebe auch `-v ausfuehren=nein`, und der Schalter
+-- hielte weniger, als der Kopf verspricht. psql kann Zeichenketten nicht selbst
+-- vergleichen; der Vergleich läuft deshalb über die Datenbank in eine \gset-Variable.
 \if :{?ausfuehren}
+SELECT :'ausfuehren' = 'ja' AS schreiben \gset
+\else
+SELECT false AS schreiben \gset
+\endif
+
+\if :schreiben
 COMMIT;
 \else
+\echo '>>> VORSCHAU — nichts geschrieben. Zum Ausführen: -v ausfuehren=ja'
 ROLLBACK;
 \endif

@@ -104,12 +104,15 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET track = 'Gymnasium' WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
 		t.Fatal(err)
 	}
+	// „Gymnasium" muss Mathe 8 UND die Bücher ohne Zweigangabe liefern: leer heißt laut
+	// Buchmaske „gilt für alle Zweige", und der ganze Littera-Altbestand ist so. Ein
+	// Filter, der nur die ausdrücklich zugeordneten zeigt, versteckt fast alles.
 	gym, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Zweig: "Gymnasium"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(gym) != 1 || gym[0].Title != "Mathe 8" || gym[0].Track != "Gymnasium" {
-		t.Errorf("Zweig Gymnasium: erwartet nur Mathe 8, bekam %+v", gym)
+	if len(gym) != 3 {
+		t.Errorf("Zweig Gymnasium: erwartet Mathe 8 plus die zweiglosen Titel, bekam %+v", gym)
 	}
 	ohne, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Zweig: ZweigOhne})
 	if err != nil {

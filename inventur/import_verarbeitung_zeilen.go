@@ -5,6 +5,8 @@ import (
 	"math"
 	"strconv"
 	"strings"
+
+	"bibliothek/pkg/lmf"
 )
 
 // ImportConfig bündelt die Parameter für die Verarbeitung einer Importzeile.
@@ -34,10 +36,16 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 
 	title := getCol("titel")
 	author := getCol("autor")
-	subject := getCol("fach")
-	if subject == "" {
-		subject = "Unbekannt"
-	}
+	// Die Fach-Spalte ist Freitext, buecher_titel.subject aber ein Fremdschlüssel auf die
+	// Systematik (Migration 078): Was hier durchgeht, wird eine Kategorie und steht danach
+	// in der Fach-Auswahl der Maske und als Fach im Portal. Deshalb dieselbe Prüfung wie
+	// im CSV-Bestandsimport seit dem 03.09.2026 (fachDerZeile): nur ein echter Fachname
+	// oder eine bekannte Schreibvariante, sonst leer.
+	//
+	// Der frühere Rückfall auf das wörtliche Fach „Unbekannt" ist damit entfallen — er
+	// legte eine Systematik-Kategorie dieses Namens an, die kein Fach ist. Leer heißt
+	// überall sonst „ohne Fach", und genau das ist hier gemeint.
+	subject := lmf.FachExakt(getCol("fach"))
 
 	book := Book{
 		ISBN:        isbn,

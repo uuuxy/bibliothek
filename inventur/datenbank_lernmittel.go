@@ -61,9 +61,17 @@ const ZweigOhne = "-"
 
 // lernmittelFilterSQL: $1 Jahrgang (0 = alle; ein Atlas 5–10 zählt bei Jahrgang 7 mit),
 // $2 Zweig, $3 Suchtext über Titel, ISBN, Autor und Fach.
+//
+// Zum Zweig: Ein leerer track heißt „gilt für ALLE Zweige" — so sagt es die Buchmaske
+// („leer heißt gilt für alle"), und so ist der Altbestand: Littera hat den Zweig nie
+// geliefert, 470 von 578 Schulbüchern tragen keinen. Ein Filter auf „Gymnasium", der
+// nur `track = 'Gymnasium'` prüft, versteckte deshalb fünf Sechstel des Bestands vor dem
+// Fachsprecher (Befund 03.09.2026). Gesucht wird darum „dieser Zweig ODER für alle";
+// ZweigOhne ist die Gegenrichtung — nur die ohne Angabe.
 const lernmittelFilterSQL = `
 	AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))
-	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '') OR b.track = $2)
+	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '')
+	     OR ($2 <> '` + ZweigOhne + `' AND (COALESCE(b.track, '') = '' OR b.track = $2)))
 	AND ($3 = '' OR b.titel ILIKE '%' || $3 || '%' OR COALESCE(b.isbn, '') ILIKE '%' || $3 || '%'
 	     OR COALESCE(b.autor, '') ILIKE '%' || $3 || '%' OR COALESCE(b.subject, '') ILIKE '%' || $3 || '%')`
 

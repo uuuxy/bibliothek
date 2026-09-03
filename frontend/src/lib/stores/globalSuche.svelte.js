@@ -79,8 +79,13 @@ export function erzeugeGlobalSuche({
 		clearTimeout(timer);
 		const q = suche.trim();
 		if (q.length < 2) {
+			// lauf hochzählen wie in leeren(): Sonst füllt die Antwort zu „Meier", die noch
+			// unterwegs ist, die eben geleerte Liste wieder und klappt sie auf — Treffer zu
+			// einer Eingabe, die nicht mehr im Feld steht (Rasterdurchgang 03.09.2026).
+			lauf++;
 			schueler = [];
 			buecher = [];
+			fehler = '';
 			offen = false;
 			return;
 		}

@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/csv"
 	"fmt"
-	"time"
 
 	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -117,7 +117,7 @@ func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, weg eti
 
 	// Date (Right-aligned)
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, schule.OrtDatum(time.Now().Format("02.01.2006")), "", 0, "R", false, 0, "")
+	p.CellFormat(0, 6, schule.OrtDatum(schulzeit.Jetzt().Format("02.01.2006")), "", 0, "R", false, 0, "")
 	p.Ln(10)
 
 	// Recipient Block

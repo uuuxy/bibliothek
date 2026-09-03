@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
@@ -63,7 +64,7 @@ func (s *Server) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition, `attachment; filename="DSGVO-Auskunft.pdf"`)
 		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
-		http.ServeContent(w, r, "DSGVO-Auskunft.pdf", time.Now(), bytes.NewReader(pdfBytes))
+		http.ServeContent(w, r, "DSGVO-Auskunft.pdf", schulzeit.Jetzt(), bytes.NewReader(pdfBytes))
 		return nil
 	})
 }
@@ -110,7 +111,7 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, st
 	p.SetTextColor(90, 90, 90)
 	p.Cell(0, 6, tr(fmt.Sprintf("Betroffene Person: %s %s (Klasse %s)", st.Vorname, st.Nachname, st.Klasse)))
 	p.Ln(5)
-	p.Cell(0, 6, tr("Erstellt am: "+time.Now().Format(dsgvoZeitFormat)))
+	p.Cell(0, 6, tr("Erstellt am: "+schulzeit.Jetzt().Format(dsgvoZeitFormat)))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(9)
 	p.SetFont("Arial", "", 9)

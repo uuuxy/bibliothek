@@ -3,6 +3,7 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 	"bytes"
 	"context"
@@ -171,18 +172,18 @@ func zeichneElternMahnbrief(pdf *gofpdf.Fpdf, tr func(string) string, student *O
 	// --- Date ---
 	pdf.SetFont("Arial", "", 11)
 	pdf.SetXY(150, 85)
-	pdf.Cell(40, 5, "Datum: "+time.Now().Format(dateFormatDE))
+	pdf.Cell(40, 5, "Datum: "+schulzeit.Jetzt().Format(dateFormatDE))
 
 	// --- Subject ---
 	pdf.SetFont("Arial", "B", 12)
 	pdf.SetXY(20, 100)
 
 	// {{.Frist}} ist die ÄLTESTE Rückgabefrist der gemahnten Bücher. Bis zum
-	// 01.09.2026 stand hier time.Now(): „Ursprüngliche Frist: <Druckdatum>" —
+	// 01.09.2026 stand hier schulzeit.Jetzt(): „Ursprüngliche Frist: <Druckdatum>" —
 	// direkt über einer Tabelle mit „34 Tage überfällig". Bei mehreren Büchern
 	// ist die früheste Frist die ehrliche eine Zahl; je Buch steht die eigene
 	// Überfälligkeit ohnehin in der Tabelle.
-	aeltesteFrist := time.Now()
+	aeltesteFrist := schulzeit.Jetzt()
 	for _, b := range student.Books {
 		if b.Frist.Before(aeltesteFrist) {
 			aeltesteFrist = b.Frist
@@ -305,7 +306,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 			zeichneElternMahnbrief(doc, tr, student, betreff, textBody, absender)
 		}
 
-		filename := fmt.Sprintf("mahnlauf_%s.pdf", time.Now().Format(dateFormatISO))
+		filename := fmt.Sprintf("mahnlauf_%s.pdf", schulzeit.Jetzt().Format(dateFormatISO))
 		w.Header().Set(headerContentType, contentTypePDF)
 		w.Header().Set(headerContentDisposition, fmt.Sprintf("attachment; filename=\"%s\"", filename))
 

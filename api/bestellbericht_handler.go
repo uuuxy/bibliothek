@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
@@ -489,7 +490,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 	p.Ln(12)
 
 	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(time.Now().Format(dateFormatDE))), "", 1, "R", false, 0, "")
+	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE))), "", 1, "R", false, 0, "")
 	p.Ln(6)
 
 	// Berichtstitel

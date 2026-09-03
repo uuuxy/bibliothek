@@ -43,7 +43,7 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		`);
 	});
 
-	test('Fach-Karte zählt nur Lernmittel; Suche, Filter und Excel-Export folgen', async ({
+	test('Fach-Karte zählt nur Lernmittel; Suche, Jahrgang, Schulzweig und PDF-Export folgen', async ({
 		page
 	}) => {
 		await uiLogin(page, LEHRER_EMAIL);
@@ -72,6 +72,32 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toContainText('1 Titel');
 		await suche.fill('');
 		await expect(page.getByRole('button', { name: new RegExp(`${FACH}`) })).toBeVisible();
+
+		// Jahrgang-Filter über den Draht: Der Seed-Titel trägt die Spalten-Vorgabe 5–10, ist
+		// also unter Jahrgang 7 dabei und unter Jahrgang 12 nicht. Bis zum 03.09.2026 abends
+		// prüfte diese Spec nur die Suche — der Filter-Zweig des Handlers war an keiner
+		// Stelle über den Draht belegt (Rasterdurchgang, Frage 7).
+		const jahrgang = page.getByLabel('Nach Jahrgang filtern');
+		await jahrgang.click();
+		await page.getByRole('option', { name: 'Jahrgang 7' }).click();
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toBeVisible();
+		await jahrgang.click();
+		await page.getByRole('option', { name: 'Jahrgang 12' }).click();
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toHaveCount(0);
+		await jahrgang.click();
+		await page.getByRole('option', { name: 'Alle Jahrgänge' }).click();
+
+		// Schulzweig: Der Seed-Titel trägt keinen Zweig — „leer heißt gilt für alle", er muss
+		// also auch unter Gymnasium erscheinen und unter „Ohne Schulzweig" ebenfalls.
+		const zweig = page.getByLabel('Nach Schulzweig filtern');
+		await zweig.click();
+		await page.getByRole('option', { name: 'Gymnasium' }).click();
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toBeVisible();
+		await zweig.click();
+		await page.getByRole('option', { name: 'Ohne Schulzweig' }).click();
+		await expect(page.getByRole('button', { name: new RegExp(FACH) })).toBeVisible();
+		await zweig.click();
+		await page.getByRole('option', { name: 'Alle Schulzweige' }).click();
 
 		// Export: dieselbe Sitzung, PDF mit dem Fach im Dateinamen. Was auf dem Blatt steht,
 		// prüft der PG-Test am Inhaltsstrom; hier zählt, dass die Tür ein PDF liefert.

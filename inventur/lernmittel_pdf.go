@@ -3,10 +3,11 @@ package inventur
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"strings"
-	"time"
 
 	"bibliothek/pkg/coverdatei"
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -31,8 +32,12 @@ const (
 	spZahl     = 8.0
 	nutzBreite = 178.0
 	randLinks  = 16.0
-	zeilenH    = 17.0
-	coverH     = 15.0
+	// randUnten ist die Schwelle, ab der eine weitere Zeile nicht mehr aufs Blatt passt
+	// (A4-Höhe 297 minus 16 mm Fußsteg). Der Umbruch wird VOR dem Cover selbst geprüft,
+	// siehe zeichneSchulbuchZeile.
+	randUnten = 281.0
+	zeilenH   = 17.0
+	coverH    = 15.0
 	// coverBrt ist nur die ANGENOMMENE Breite fürs Zentrieren (Cover sind 2:3); die
 	// echte Breite bestimmt gofpdf beim Skalieren über die Höhe.
 	coverBrt = 10.0
@@ -61,6 +66,7 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 		}
 	}
 	breiteTitel := titelBreite(mitGezaehlt)
+	fehlendeCover := 0
 
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(randLinks, 16, randLinks)
@@ -79,7 +85,7 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 		pdf.Ln(7)
 		pdf.SetFont("Arial", "", 9)
 		pdf.SetTextColor(120, 120, 120)
-		hinweis := fmt.Sprintf("%d Titel · Stand %s", len(titel), time.Now().Format("02.01.2006"))
+		hinweis := fmt.Sprintf("%d Titel · Stand %s", len(titel), schulzeit.Jetzt().Format("02.01.2006"))
 		if zusatz != "" {
 			hinweis = zusatz + " · " + hinweis
 		}
@@ -97,9 +103,21 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 	for _, t := range titel {
 		if fachName == "" && t.Subject != letztesFach {
 			letztesFach = t.Subject
+			// Der Trenner selbst darf nicht als letzte Zeile eines Blattes stehen: eine
+			// Fach-Überschrift ohne ein einziges Buch darunter ist keine Auskunft.
+			if pdf.GetY()+7+zeilenH > randUnten {
+				pdf.AddPage()
+			}
 			zeichneFachTrenner(pdf, tr, fachAnzeige(t.Subject))
 		}
-		zeichneSchulbuchZeile(pdf, tr, t, breiteTitel, mitGezaehlt)
+		zeichneSchulbuchZeile(pdf, tr, t, breiteTitel, mitGezaehlt, &fehlendeCover)
+	}
+	// Ein einzelnes unlesbares Cover darf die Liste nie kosten und bleibt deshalb still.
+	// Der TOTALAUSFALL aber — falsch gemountetes uploads/, falsches Arbeitsverzeichnis —
+	// sähe genauso aus: ein PDF ohne ein einziges Bild, ohne Hinweis, ohne Log. Eine Zeile
+	// macht den Unterschied auffindbar.
+	if fehlendeCover > 0 {
+		log.Printf("Schulbuch-PDF: %d von %d Covern nicht lesbar", fehlendeCover, len(titel))
 	}
 	if len(titel) == 0 {
 		pdf.SetFont("Arial", "I", 10)
@@ -141,9 +159,17 @@ func zeichneFachTrenner(pdf *gofpdf.Fpdf, tr func(string) string, fach string) {
 
 // zeichneSchulbuchZeile rendert eine Zeile samt Cover. Fehlt das Bild, bleibt die
 // Rahmenzelle leer — die Zeile darf deshalb nicht ausfallen.
-func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breiteTitel float64, mitGezaehlt bool) {
+func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breiteTitel float64, mitGezaehlt bool, fehlend *int) {
+	// Den Seitenumbruch selbst auslösen, BEVOR das Cover gezeichnet wird. gofpdf prüft
+	// ihn erst in der ersten CellFormat; das Bild geht aber mit fester Position an die
+	// aktuelle Seite und wäre dann schon unten im Fußsteg gelandet, während die Zeile
+	// dazu auf der nächsten Seite steht (nachgestellt: ab Zeile 14 auf jeder Seite ein
+	// herrenloses Cover und darüber eine Zeile mit leerem Bildkästchen).
+	if pdf.GetY()+zeilenH > randUnten {
+		pdf.AddPage()
+	}
 	oben := pdf.GetY()
-	bindeCoverEin(pdf, t.CoverURL, randLinks+(spCover-coverBrt)/2, oben+(zeilenH-coverH)/2)
+	bindeCoverEin(pdf, t.CoverURL, randLinks+(spCover-coverBrt)/2, oben+(zeilenH-coverH)/2, fehlend)
 
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetXY(randLinks, oben)
@@ -166,15 +192,19 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 // einziges WebP den Fehlerzustand des PDF-Objekts setzte und den Lauf mit 500 beendete).
 // gofpdf hält registrierte Bilder unter ihrem Namen vor — derselbe Titel in zwei Fächern
 // wird nur einmal dekodiert.
-func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y float64) {
+func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y float64, fehlend *int) {
 	opt := gofpdf.ImageOptions{ImageType: "JPG"}
 	pfad := coverdatei.Pfad(coverURL)
 	if pfad == "" {
+		if coverURL != "" {
+			*fehlend++
+		}
 		return
 	}
 	if pdf.GetImageInfo(pfad) == nil {
 		jpg, _, ok := coverdatei.AlsJPEG(coverURL)
 		if !ok {
+			*fehlend++
 			return
 		}
 		pdf.RegisterImageOptionsReader(pfad, opt, bytes.NewReader(jpg))

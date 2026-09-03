@@ -11,11 +11,11 @@
 	 * eine Chip-Leiste — beide zeigten dem Fachsprecher immer die ganze Schule.
 	 *
 	 * Gefiltert wird SERVERSEITIG (Jahrgang, Schulzweig, Suchtext): Sonst zeigten die
-	 * Zahlen am Fach und die Excel-Datei etwas anderes als die Liste darunter.
+	 * Zahlen am Fach und die PDF-Datei etwas anderes als die Liste darunter.
 	 * Grundlage ist allein der Lernmittel-Schalter; Daten über die Portal-Tür
 	 * /api/portal/lernmittel (Anmeldung genügt, kein view_books).
 	 */
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from '../../apiFetch.js';
 	import Feld from '../ui/Feld.svelte';
@@ -35,6 +35,12 @@
 	let fehler = $state('');
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
+	// Vier Türen rufen lade(): der Aufbau, das entprellte Tippen und die beiden Auswahlfelder
+	// (die sofort feuern). Ohne Lauf-Nummer gewinnt die zuletzt eintreffende Antwort, nicht
+	// die neueste Anfrage — die Filterzeile sagte dann „Jahrgang 6", die Liste zeigte
+	// Jahrgang 5, und der PDF-Knopf trüge schon den neuen Filter. Dieselbe Sicherung wie in
+	// stores/globalSuche.svelte.js und stores/omnibox.svelte.js.
+	let lauf = 0;
 
 	const JAHRGAENGE = [
 		{ value: 0, label: 'Alle Jahrgänge' },
@@ -71,25 +77,31 @@
 		`/api/portal/lernmittel/export?fach=${encodeURIComponent(fach)}${parameter ? `&${parameter}` : ''}`;
 
 	async function lade() {
+		const seq = ++lauf;
 		laedt = true;
 		fehler = '';
 		try {
 			const res = await apiFetch(`/api/portal/lernmittel${parameter ? `?${parameter}` : ''}`);
+			if (seq !== lauf) return;
 			if (!res.ok) {
 				fehler = 'Schulbücher konnten nicht geladen werden.';
 				return;
 			}
 			const data = await res.json();
+			if (seq !== lauf) return;
 			faecher = data.faecher ?? [];
 			titel = data.titel ?? [];
 		} catch {
-			fehler = 'Schulbücher konnten nicht geladen werden.';
+			if (seq === lauf) fehler = 'Schulbücher konnten nicht geladen werden.';
 		} finally {
-			laedt = false;
+			// Auch „Lädt …" gehört dem neuesten Lauf: Ein überholter Lauf darf die Anzeige
+			// nicht auf „fertig" stellen, während der aktuelle noch unterwegs ist.
+			if (seq === lauf) laedt = false;
 		}
 	}
 
 	onMount(lade);
+	onDestroy(() => clearTimeout(timer));
 
 	// Tippen entprellt, Auswahl sofort — wie in den übrigen Listen des Hauses.
 	function tippen() {

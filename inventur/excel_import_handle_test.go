@@ -115,9 +115,10 @@ func TestHandleImportExcel(t *testing.T) {
 			metadaten: offlineMetadatenClient(),
 		}
 
-		// Der Import registriert das Default-Fach "Unbekannt" (auf dem Pool) vor dem
-		// Batch-Upsert; der Batch selbst (Upsert + Exemplare) läuft atomar in einer Tx.
-		erwarteFachBekannt(mock, "Unbekannt")
+		// Kein Fach-Nachschlag: Die Testdatei hat keine Fach-Spalte, und seit dem
+		// 03.09.2026 wird daraus ein LEERES Fach statt des wörtlichen Fachs „Unbekannt"
+		// (das eine Systematik-Kategorie dieses Namens anlegte). StelleFaecherSicher
+		// überspringt leere Eingaben. Der Batch (Upsert + Exemplare) läuft atomar in einer Tx.
 		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("INSERT", 1))
 		mock.ExpectExec("CREATE SEQUENCE").WillReturnResult(pgxmock.NewResult("CREATE", 0))
@@ -161,12 +162,17 @@ func TestHandleImportExcel(t *testing.T) {
 			metadaten: offlineMetadatenClient(),
 		}
 
-		erwarteFachBekannt(mock, "Unbekannt")
 		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
 		mock.ExpectRollback()
-		// Fallback: der Einzel-Upsert scheitert schon beim Fach-Nachschlag (vor der Tx).
-		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
+		// Fallback je Zeile: UpsertBook macht KEINEN Fach-Nachschlag mehr (das Fach ist seit
+		// dem 03.09.2026 leer statt „Unbekannt") und öffnet direkt seine eigene Transaktion.
+		// Bis dahin stand hier eine ExpectQuery mit 18 Platzhaltern, die in Wahrheit den
+		// EINSTELLIGEN Fach-Nachschlag bediente — die Erwartung beschrieb also etwas
+		// anderes, als sie traf.
+		mock.ExpectBegin()
+		mock.ExpectQuery(".*").WillReturnError(assert.AnError)
+		mock.ExpectRollback()
 
 		handler.handleImportExcel(w, req)
 
@@ -203,17 +209,14 @@ func TestHandleImportExcel(t *testing.T) {
 			metadaten: offlineMetadatenClient(),
 		}
 
-		erwarteFachBekannt(mock, "Unbekannt")
 		mock.ExpectBegin()
 		mock.ExpectExec(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
 		mock.ExpectRollback()
-		// Fallback Einzel-Upsert je Zeile (Fach-Nachschlag auf dem Pool, dann Tx): erste
+		// Fallback Einzel-Upsert je Zeile (ohne Fach-Nachschlag, das Fach ist leer): erste
 		// Zeile scheitert im Upsert (Begin→Rollback), zweite gelingt (Begin→…→Commit).
-		erwarteFachBekannt(mock, "Unbekannt")
 		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(assert.AnError)
 		mock.ExpectRollback()
-		erwarteFachBekannt(mock, "Unbekannt")
 		mock.ExpectBegin()
 		mock.ExpectQuery(".*").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("test-id"))
 		mock.ExpectExec("CREATE SEQUENCE").WillReturnResult(pgxmock.NewResult("CREATE", 0))
