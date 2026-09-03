@@ -8,6 +8,7 @@
 	import PortalTrefferkarte from './components/portal/PortalTrefferkarte.svelte';
 	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
 	import PortalLernmittel from './components/portal/PortalLernmittel.svelte';
+	import PortalSchulbuecher from './components/portal/PortalSchulbuecher.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 	import {
 		erzeugeKlassensatzReservierung,
@@ -108,6 +109,8 @@
 			// dasselbe Wort für Suchen, Ansehen und den Menüpunkt.
 			{ id: 'buecher', label: 'Suchen & Reservieren' },
 			{ id: 'klassensaetze', label: 'Klassensätze' },
+			// Schulbücher je Fach für die Fachsprecher (Peter, 03.09.2026).
+			{ id: 'schulbuecher', label: 'Schulbücher' },
 			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: offeneAnliegen }
 		]}
 		aktiv={reiter}
@@ -148,6 +151,8 @@
 		{/if}
 	{:else if reiter === 'klassensaetze'}
 		<PortalLernmittel />
+	{:else if reiter === 'schulbuecher'}
+		<PortalSchulbuecher />
 	{:else}
 		<AnliegenWidget anliegen={eigeneAnliegen} onaktualisiert={ladeAnliegen} />
 	{/if}

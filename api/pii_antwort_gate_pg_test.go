@@ -328,12 +328,14 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /health":           {URL: "/health"},
 
 		// inventur/api_routen.go
-		"GET /uploads/":                 {URL: "/uploads/"},
-		"GET /api/books":                {URL: "/api/books"},
-		"GET /api/books/{id}":           {URL: "/api/books/" + w.titelID},
-		"GET /api/class-books":          {URL: "/api/class-books"},
-		"GET /api/portal/klassensaetze": {URL: "/api/portal/klassensaetze"},
-		"GET /api/admin/":               {URL: "/api/admin/"},
+		"GET /uploads/":                     {URL: "/uploads/"},
+		"GET /api/books":                    {URL: "/api/books"},
+		"GET /api/books/{id}":               {URL: "/api/books/" + w.titelID},
+		"GET /api/class-books":              {URL: "/api/class-books"},
+		"GET /api/portal/klassensaetze":     {URL: "/api/portal/klassensaetze"},
+		"GET /api/portal/lernmittel":        {URL: "/api/portal/lernmittel?fach="},
+		"GET /api/portal/lernmittel/export": {URL: "/api/portal/lernmittel/export"},
+		"GET /api/admin/":                   {URL: "/api/admin/"},
 	}
 }
 

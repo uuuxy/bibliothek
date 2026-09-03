@@ -196,7 +196,10 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Verfügbarkeit
 und Warteschlange; Klassensatz reservieren mit Klasse, Anzahl, Datum) · **Klassensätze** der
-eigenen Klassen · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
+eigenen Klassen · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: eine Kachel je Fach
+mit Exemplaren gesamt, Titeln und Verliehenen; Klick zeigt die Titel des Fachs als
+Cover-Kacheln; „Als Excel" lädt Titel, ISBN, Zahlen und Cover-Link — gezählt wird nur, was
+den Lernmittel-Schalter trägt) · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
 nicht" an die Bibliothek). (§12, Rolle Kollegium)
 
 ---

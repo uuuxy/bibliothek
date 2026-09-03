@@ -87,6 +87,10 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	// Buch- und Zähldaten, keine Ausleih- oder Personendaten (dieselben Handler
 	// wie /api/books und /api/class-books, nur eine andere Tür).
 	handler.mux.Handle("GET /api/portal/klassensaetze", config.RequireAuthenticated(http.HandlerFunc(handler.handleClassBooks)))
+	// Schulbücher je Fach für die Fachsprecher (03.09.2026): Zahlen, Titel, Excel-Export —
+	// nur Lernmittel (ist_lernmittel), nur Buch- und Zähldaten.
+	handler.mux.Handle("GET /api/portal/lernmittel", config.RequireAuthenticated(http.HandlerFunc(handler.handlePortalLernmittel)))
+	handler.mux.Handle("GET /api/portal/lernmittel/export", config.RequireAuthenticated(http.HandlerFunc(handler.handlePortalLernmittelExport)))
 
 	// Schreibend: RBAC-Permission edit_books (injiziert aus api/router.go)
 	adminH := config.RequireEditBooks(http.HandlerFunc(handler.handleAdminBooks))

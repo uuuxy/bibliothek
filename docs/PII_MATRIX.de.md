@@ -15,7 +15,7 @@ der Theken-Scan (`POST /api/action` samt Batch) und die LUSD-Vorschau
 (`POST /api/lusd/preview`) laufen durch denselben Apparat. Für die übrigen
 Nicht-GET-Routen (Schreibpfade) bleibt die Stufe Handarbeit: Wer eine Zeile
 anlegt, hat den Handler gelesen.
-Stand: 02.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 03.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen).
 
@@ -255,6 +255,8 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/class-books` | inventur:view_books | 0 | Klassen-Buchlisten (Klassenname als Etikett) |
 | `GET /api/lookup/` | inventur:view_books | 0 | externe ISBN-Metadaten |
 | `GET /api/portal/klassensaetze` | Sitzung | 0 | Klassen-Buchlisten fürs Lehrerportal (Klassenname als Etikett, keine Schüler) |
+| `GET /api/portal/lernmittel` | Sitzung | 0 | Schulbücher je Fach fürs Lehrerportal (seit 03.09.2026): Fach-Zahlen und Titel, keine Ausleih- oder Personendaten |
+| `GET /api/portal/lernmittel/export` | Sitzung | 0 | Dieselben Daten als Excel-Datei (Titel, ISBN, Zahlen, Cover-Link) |
 | `GET /api/admin/` | inventur:edit_books | 0 | Export/Cover/Listen ohne Ausleiher |
 | `POST /api/admin/` | inventur:edit_books | 0 | Buch-/Listen-Anlage |
 | `PUT /api/admin/` | inventur:edit_books | 0 | Buch-/Listen-Update |

@@ -87,7 +87,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [sweeps.md](sweeps.md) | Die Prüfachsen: Bugklassen, ihre Detektoren und Ratschen — neben Daniels Raster die Bestands-Achse |
 | [befunde.md](befunde.md) | Befund-Register: was aufgefallen ist, was davon erledigt wurde |
 | [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
-| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 188 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
+| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 190 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 
 > Eine Änderungshistorie gibt es bewusst nicht als Datei — `git log` ist ausführlicher und
 > kann nicht veralten.
