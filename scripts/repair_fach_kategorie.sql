@@ -15,6 +15,8 @@
 --   1. Fach am Titel bleibt nur, wenn es ein kanonisches Fach ist (Liste unten) oder eine
 --      bekannte Schreibvariante („Mathe", „Geographie", „Politik"), die auf das kanonische
 --      Fach gezogen wird.
+--   1b. Schulbücher (ist_lernmittel) bekommen Fach und Jahrgang aus Signatur bzw.
+--      Standorttext („Deu 12", „Buch Bio 7/Nat 106 …") — dieselben Kürzel wie pkg/lmf.
 --   2. Alles andere am Titel wird zu NULL („ohne Fach"). Der Text geht nicht verloren, er
 --      steht weiterhin in der Systematik-Zeile, bis Schritt 3 sie löscht.
 --   3. Systematik-Zeilen werden nur gelöscht, wenn nach Schritt 2 KEIN Titel mehr daran
@@ -52,6 +54,71 @@ SELECT 'davon wird "ohne Fach"', count(*) FROM buecher_titel
 INSERT INTO systematik_kategorien (kuerzel, bezeichnung)
 SELECT replace(bezeichnung, ' ', ''), bezeichnung FROM kanon
 ON CONFLICT (lower(bezeichnung)) DO NOTHING;
+
+-- Schritt 1b: Schulbücher bekommen Fach und Jahrgang aus dem, was Littera hinterließ.
+-- Die Signatur („Deu 12", „Ges7", „Re1213", „Bio 7/Nat 106") und der Standorttext
+-- („Buch Bio 7/Nat 106 Exemplare …") tragen beides; die Kürzel sind dieselben wie in
+-- pkg/lmf (fachKuerzel). Nur Lernmittel, nur wo das Fach noch kein kanonisches ist bzw.
+-- der Jahrgang noch auf der Vorgabe 5–10 steht.
+CREATE TEMP TABLE kuerzel (k, fach) ON COMMIT DROP AS VALUES
+    ('ma','Mathematik'), ('m','Mathematik'), ('deu','Deutsch'), ('d','Deutsch'),
+    ('eng','Englisch'), ('e','Englisch'), ('fra','Französisch'), ('f','Französisch'),
+    ('lat','Latein'), ('l','Latein'), ('spa','Spanisch'), ('ges','Geschichte'), ('g','Geschichte'),
+    ('powi','Politik und Wirtschaft'), ('powie','Politik und Wirtschaft'),
+    ('erd','Erdkunde'), ('erdat','Erdkunde'), ('ek','Erdkunde'), ('bio','Biologie'),
+    ('che','Chemie'), ('ch','Chemie'), ('phy','Physik'), ('ph','Physik'), ('mus','Musik'),
+    ('ku','Kunst'), ('kun','Kunst'), ('rel','Religion'), ('re','Religion'), ('eth','Ethik'),
+    ('phil','Philosophie'), ('inf','Informatik'), ('info','Informatik'),
+    ('spo','Sport'), ('sposi','Sport'), ('sposii','Sport'), ('arb','Arbeitslehre'),
+    ('dsp','Darstellendes Spiel'), ('nawi','Naturwissenschaften');
+
+CREATE TEMP TABLE ableitung ON COMMIT DROP AS
+WITH quelle AS (
+    SELECT id, subject, jahrgang_von, jahrgang_bis,
+           regexp_replace(
+               COALESCE(NULLIF(btrim(signatur), ''), regexp_replace(subject, '^Buch ', '')),
+               '^LMF[ -]*', '', 'i') AS s
+      FROM buecher_titel
+     WHERE ist_lernmittel
+), zerlegt AS (
+    SELECT id, subject, jahrgang_von, jahrgang_bis,
+           lower(substring(s from '^([A-Za-zÄÖÜäöüß]+)')) AS kz,
+           -- Ziffern direkt hinter dem Kürzel, vor dem „/": „7", „12", „1213" (12–13)
+           substring(regexp_replace(s, '^[A-Za-zÄÖÜäöüß]+ ?', '') from '^([0-9]{1,4})') AS ziffern
+      FROM quelle
+)
+SELECT z.id, z.subject AS alt, k.fach,
+       CASE WHEN length(ziffern) = 4 THEN left(ziffern, 2)::int
+            WHEN ziffern IS NOT NULL THEN ziffern::int END AS von,
+       CASE WHEN length(ziffern) = 4 THEN right(ziffern, 2)::int
+            WHEN ziffern IS NOT NULL THEN ziffern::int END AS bis,
+       z.jahrgang_von AS alt_von, z.jahrgang_bis AS alt_bis
+  FROM zerlegt z
+  LEFT JOIN kuerzel k ON k.k = z.kz;
+
+SELECT 'Schulbücher gesamt' AS was, count(*)::text FROM buecher_titel WHERE ist_lernmittel
+UNION ALL
+SELECT 'davon Fach aus Signatur/Standort ableitbar', count(*)::text FROM ableitung WHERE fach IS NOT NULL
+UNION ALL
+SELECT 'davon Jahrgang ableitbar (5–13)', count(*)::text FROM ableitung WHERE von BETWEEN 5 AND 13 AND bis BETWEEN 5 AND 13
+UNION ALL
+SELECT 'Fach-Verteilung danach', string_agg(fach || ' ' || n, ', ' ORDER BY n DESC)
+  FROM (SELECT fach, count(*) n FROM ableitung WHERE fach IS NOT NULL GROUP BY fach) x;
+
+UPDATE buecher_titel t
+   SET subject = (SELECT s.bezeichnung FROM systematik_kategorien s WHERE lower(s.bezeichnung) = lower(a.fach)),
+       aktualisiert_am = CURRENT_TIMESTAMP
+  FROM ableitung a
+ WHERE t.id = a.id AND a.fach IS NOT NULL
+   AND (t.subject IS NULL OR t.subject NOT IN (SELECT bezeichnung FROM kanon));
+
+UPDATE buecher_titel t
+   SET jahrgang_von = a.von, jahrgang_bis = a.bis,
+       grade_level = CASE WHEN a.von = a.bis THEN a.von ELSE grade_level END,
+       aktualisiert_am = CURRENT_TIMESTAMP
+  FROM ableitung a
+ WHERE t.id = a.id AND a.von BETWEEN 5 AND 13 AND a.bis BETWEEN 5 AND 13 AND a.von <= a.bis
+   AND (t.jahrgang_von, t.jahrgang_bis) IN ((5, 10), (0, 0));
 
 -- Schritt 2a: Varianten auf das kanonische Fach ziehen.
 UPDATE buecher_titel t
