@@ -4,6 +4,7 @@ package api
 // Inventory scanning and Fehlbestand (missing copies) live in inventory.go.
 
 import (
+	"bibliothek/pkg/schulzeit"
 	"context"
 	"fmt"
 	"log"
@@ -138,21 +139,30 @@ func (s *Server) queryBestandKennzahlen(ctx context.Context, typeFilter string) 
 
 // resolveZeitraumFilter mappt den ?zeitraum=-Parameter auf ein serverkontrolliertes
 // SQL-Fragment für das Renner-Ranking (Werte sind nie nutzergesteuertes SQL).
+//
+// Das Schuljahr wird in Go in der Schulzeitzone bestimmt (schulzeit), nicht per
+// CURRENT_DATE in der Sitzungszone der DB (UTC): am 1. August bzw. 1. Januar zwischen
+// 0 und 1 Uhr Berliner Zeit lag der Stichtag sonst ein Jahr daneben (Rasterdurchgang
+// 02.09.2026). Das Datum wird als ISO-Literal eingesetzt — kein Nutzerwert.
 func resolveZeitraumFilter(zeitraum string) string {
 	switch zeitraum {
 	case "schuljahr":
-		// Current school year starts August 1st.
-		return `AND a.ausgeliehen_am >= (
-			CASE WHEN EXTRACT(MONTH FROM CURRENT_DATE) >= 8
-				THEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 8, 1)
-				ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int - 1, 8, 1)
-			END
-		)`
+		return "AND a.ausgeliehen_am >= '" + schuljahresBeginn(schulzeit.Jetzt()).Format("2006-01-02") + "'::date"
 	case "monat":
 		return "AND a.ausgeliehen_am >= CURRENT_DATE - INTERVAL '30 days'"
 	default:
 		return ""
 	}
+}
+
+// schuljahresBeginn: der 1. August des laufenden Schuljahres zu t (Juli gehört noch
+// zum vorigen Schuljahr).
+func schuljahresBeginn(t time.Time) time.Time {
+	jahr := t.Year()
+	if t.Month() < time.August {
+		jahr--
+	}
+	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, t.Location())
 }
 
 // queryPopularTitles liefert die meistausgeliehenen Titel (best-effort: bei einem
