@@ -1,7 +1,7 @@
 // stores/labels.svelte.js
 // Status- und Logikverwaltung für den Etikettendruck (Svelte 5 Runes)
 
-import { apiFetch, apiClient } from '../apiFetch.js';
+import { apiFetch } from '../apiFetch.js';
 import { felderProBogen } from '../etikettformate.js';
 import { printQueue, clearPrintQueue } from './printQueue.svelte.js';
 import { toastStore } from './toastStore.svelte.js';
@@ -136,12 +136,12 @@ export function createLabelStore() {
 		isSearching = true;
 		searchTimeout = setTimeout(async () => {
 			try {
-				const res = await apiClient.post('/api/action', { query: searchVal.trim() });
+				// Titelsuche über die SUCH-Tür, nie über POST /api/action: Dort löst ein
+				// gescannter B-Barcode ohne aktiven Schüler eine Rückgabe aus (Inventur 03.09.2026).
+				const res = await apiFetch(`/api/search?q=${encodeURIComponent(searchVal.trim())}`);
 				if (res.ok) {
 					const body = await res.json();
-					if (body.type === 'search_results') {
-						searchResults = body.search_results || [];
-					}
+					searchResults = body.books || [];
 				}
 			} catch (err) {
 				console.error('Fehler bei Buchtitelsuche:', err);

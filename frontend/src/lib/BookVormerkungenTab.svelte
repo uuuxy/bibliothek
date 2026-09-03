@@ -37,10 +37,15 @@
 		}
 		isSearching = true;
 		try {
-			const res = await apiClient.post('/api/action', { query: searchVal });
+			// Schülersuche über die SUCH-Tür, nie über POST /api/action (Buchungs-Tür der Theke).
+			const res = await apiFetch(`/api/search?q=${encodeURIComponent(searchVal.trim())}`);
 			if (res.ok) {
 				const data = await res.json();
-				searchResults = data.search_results?.filter((r) => r.type === 'student') || [];
+				searchResults = (data.students || []).map((s) => ({
+					id: s.id,
+					title: `${s.vorname} ${s.nachname}`,
+					subtitle: `${s.klasse} · ${s.barcode_id}`
+				}));
 			} else {
 				searchResults = [];
 			}
