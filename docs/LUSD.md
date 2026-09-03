@@ -137,8 +137,8 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
 - Das **Ziel bleibt** (UUID, Ausweis-Barcode). Faustregel: Es bleibt der Datensatz, dessen
   Ausweis das Kind in der Hand hat.
 - Die **Quelle geht auf**: Ausleihen, Gebühren, Vormerkungen (haben beide denselben Titel
-  vorgemerkt, bleibt die weiter fortgeschrittene — abholbereit vor wartend), Foto (wenn
-  das Ziel keines hat) und Protokollspuren wandern; danach
+  vorgemerkt, bleibt die weiter fortgeschrittene — abholbereit vor wartend), Foto (das
+  jüngere von beiden — es kommt nie aus der LUSD) und Protokollspuren wandern; danach
   wird die Zeile endgültig gelöscht — kein Papierkorb.
 - **LUSD führend:** Stammdaten kommen vom Datensatz mit dem jüngeren `lusd_bestaetigt_am`;
   ein **aktiver** Datensatz schlägt dabei einen Abgänger (der Abgänger ist der Stand, den

@@ -107,8 +107,11 @@ im Bestellwesen (→ *Klassensatz-Reservierungen*). (§4)
   Person zweimal in der Kartei — typisch nach einer Namensänderung in der LUSD, die der
   Export ohne Schüler-ID nicht wiedererkannt hat —, beide Datensätze zusammenführen. Es
   bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat; Ausleihen, Gebühren und
-  Historie des anderen wandern hinüber. Die Suche im Dialog findet auch Abgänger und
-  Gesperrte. ([LUSD.md](LUSD.md) §5)
+  Historie des anderen wandern hinüber, vom Foto bleibt das jüngere. Die Suche im Dialog
+  findet auch Abgänger und Gesperrte. **Wurde für den aufgelösten Datensatz schon ein
+  Ausweis gedruckt, diese zweite Karte einziehen und vernichten:** Ihre Nummer ist danach
+  frei und kann beim nächsten neu angelegten Schüler wieder vergeben werden.
+  ([LUSD.md](LUSD.md) §5)
 
 ## Mahnwesen
 

@@ -43,18 +43,18 @@ Datei (`git log -p docs/befunde.md`), nicht hier.
 
 ## Offen — Entscheidung nötig (Peter)
 
-Aus dem Rasterdurchgang 02.09.2026 über den LUSD-Umbenennungs-Commit (0aa07f57; sechs
-Prüfer, 4 A- und ~20 B-Funde, alle Code-Funde am selben Tag abgearbeitet — Commits
-c4f74099…). Übrig sind Produktfragen:
+Rest aus dem Rasterdurchgang 02.09.2026 (LUSD-Umbenennung, 0aa07f57). Reihenfolge = Abarbeitung;
+Peter überlegt beide (03.09.).
 
-| Fund | Warum eine Entscheidung |
-| ---- | ----------------------- |
-| **Barcode der Quelle wird recycelt.** Nach dem Zusammenführen ist der Barcode der gelöschten Quelle frei; `GetNextSequence` rechnet MAX+1 (Purge erlaubt das seit Migration 049 bewusst). Wurde für die Quelle ein Ausweis gedruckt, scannt die alte Karte künftig ein fremdes Kind. | Memory „Nummern nie recyceln" gilt bisher nur für Exemplare. Optionen: MAX auch über `audit_logs.details->>'aufgeloest_barcode'` rechnen, oder Schüler-Barcodes auf eine Sequenz wie `barcode_seq` umstellen. |
-| **Foto beim Zusammenführen: das Ziel gewinnt immer**, auch wenn die Quelle das LUSD-frische ist (`schueler_fotos` 1:1, Quell-Foto stirbt im CASCADE). | Regel „LUSD führend" gilt heute nur für Stammdaten. Vorschlag: Foto vom führenden Datensatz bzw. jüngeres `aktualisiert_am`. |
-| **Karenz läuft ab dem Abgang, nicht ab der Rückgabe.** `abgaenger_seit` stempelt beim Abgang, auch mit offenen Büchern; wer erst nach 200 Tagen zurückgibt, wird in der folgenden Nacht anonymisiert — das Reparaturfenster fehlt dieser Gruppe. HANDBUCH sagt es seit 02.09. so. | Alternative: Uhr bei Rückgabe des letzten Vorgangs neu starten (Produktfrage, dann PG-Test dieser Konstellation). |
-| **Handanlagen sind keine Paar-Kandidaten.** Nie bestätigte Bestandsschüler landen in „nicht im Export"; „Anna Müller" (Handanlage) ↔ Export „Anna Mueller" ergibt Neuanlage + „nicht im Export", kein Paar. Rückweg: Zusammenführen über die Akte. | Paarung auf `NichtImExport`-Zeilen ausdehnen (`WarAbgaenger=false`)? Ändert die Semantik von „nicht im Export". |
-| **Abgänger in der Karenz tauchen in keiner Liste auf** (Aktivliste blendet Abgänger aus, Abgänger-Reiter zeigt nur die mit offenen Büchern). Erreichbar per Ausweis-Scan und Kandidatensuche. | Filter „in Karenz" im Abgänger-Reiter — kleiner Nachtrag. |
-| `resolveZeitraumFilter` (Statistik) rechnet das Schuljahr aus `CURRENT_DATE` in der Sitzungszone (UTC) — am 1. August/1. Januar zwischen 00 und 01 Uhr Berliner Zeit einen Tag daneben. Lesepfad, keine Datenwirkung. | Nur mit Anlass; die Schreibpfade (`abgaenger_jahr`) sind seit 02.09. auf die Schulzeitzone gezogen. |
+1. **Handanlagen als Paar-Kandidaten.** Ein von Hand angelegter, nie LUSD-bestätigter Schüler,
+   den die LUSD anders schreibt („Anna Müller" ↔ „Anna Mueller"), wird nicht als Paar
+   vorgeschlagen, sondern Neuanlage + „nicht im Export". Rückweg heute: Zusammenführen über
+   die Akte. Bauen hieße: `NichtImExport`-Zeilen als Kandidaten (`WarAbgaenger=false`) — und
+   die Rubrik „nicht im Export" bedeutet dann etwas anderes.
+2. **Karenz ab Rückgabe statt ab Abgang.** `abgaenger_seit` stempelt beim Abgang, auch mit
+   offenen Büchern; wer erst nach Ablauf der Karenz zurückgibt, wird in der Folgenacht
+   anonymisiert — das Reparaturfenster fehlt dieser Gruppe. Alternative: Uhr bei Rückgabe des
+   letzten Vorgangs neu starten (dann PG-Test dieser Konstellation).
 
 ## Beobachten (nichts zu tun)
 
@@ -63,6 +63,8 @@ c4f74099…). Übrig sind Produktfragen:
 | `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`) | Kein Fix verfügbar (`Fixed in: N/A`), transitiv, **kein** Aufrufer im eigenen Code (`govulncheck`, zuletzt 31.08. bestätigt). Dependabot meldet sich, falls sich das ändert. |
 | Designer-Restlücke: Browser-Schließen binnen 800 ms verliert die letzte Auto-Save-Änderung | `onDestroy` schickt seit `37abcbe0` sofort; `sendBeacon` bewusst nicht gebaut (Randlage). |
 | 082-Dedupe der Vormerkungen verlor den neueren `abholbereit`-Eintrag | Auf Prod gelaufen, nicht rückholbar; nur relevant, falls je eine weitere **gewachsene** DB migriert wird. |
+| Barcode des beim Zusammenführen aufgelösten Datensatzes wird wieder vergeben (MAX+1) | Betriebsregel statt Bau (Peter, 03.09.): zweite Karte einziehen — steht im HANDBUCH. Der Ausweis des Kindes selbst ändert sich nie. |
+| Abgänger in der Karenz stehen in keiner Liste (Aktivliste blendet Abgänger aus, Abgänger-Reiter nur mit offenen Büchern) | Peter, 03.09.: nicht schlimm — sie gehen ab und haben nichts offen. Erreichbar per Ausweis-Scan und Kandidatensuche. |
 
 ## Kategorie C — bewusst nicht ohne Anlass
 
