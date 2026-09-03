@@ -48,10 +48,13 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		await page.getByTitle('Mein Portal').click();
 		await page.getByRole('tab', { name: 'Schulbücher' }).click();
 
-		// Die Kachel des Fachs: 4 Exemplare (der Freihand-Titel zählt nicht), 1 Titel.
-		const kachel = page.getByRole('button', { name: new RegExp(`${FACH}\\s+4\\s+1 Titel`) });
-		await expect(kachel).toBeVisible();
-		await kachel.click();
+		// Der Filter-Chip des Fachs: 4 Exemplare (der Freihand-Titel zählt nicht).
+		const chip = page.getByRole('button', { name: new RegExp(`^${FACH}\\s+4$`) });
+		await expect(chip).toBeVisible();
+		await chip.click();
+		await expect(page.getByTestId('schulbuecher-antwort')).toContainText(
+			`${FACH} · 1 Titel · 4 Exemplare`
+		);
 
 		const titel = page.getByTestId('schulbuecher-titel').locator('h3').filter({ hasText: TITEL });
 		await expect(titel).toBeVisible();

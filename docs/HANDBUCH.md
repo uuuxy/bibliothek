@@ -206,10 +206,12 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Verfügbarkeit
 und Warteschlange; Klassensatz reservieren mit Klasse, Anzahl, Datum) · **Klassensätze** der
-eigenen Klassen · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: eine Kachel je Fach
-mit Exemplaren gesamt, Titeln und Verliehenen; Klick zeigt die Titel des Fachs als
-Cover-Kacheln; „Als Excel" lädt Titel, ISBN, Zahlen und Cover-Link — gezählt wird nur, was
-den Lernmittel-Schalter trägt) · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
+eigenen Klassen · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: ein Filter-Chip je Fach
+mit Exemplarzahl, darunter in einem Satz die Antwort „Mathematik · 22 Titel · 513 Exemplare ·
+3 verliehen" und die Titel als Liste mit Cover, Autor und ISBN; ein Feld filtert die Liste,
+„Als Excel" lädt Titel, ISBN, Zahlen und Cover-Link — gezählt wird nur, was den
+Lernmittel-Schalter trägt. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
+stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`) · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
 nicht" an die Bibliothek). (§12, Rolle Kollegium)
 
 ---

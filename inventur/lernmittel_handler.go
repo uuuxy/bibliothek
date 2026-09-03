@@ -13,7 +13,8 @@ import (
 // Zähldaten, keine Ausleih- oder Personendaten.
 
 // handlePortalLernmittel bedient GET /api/portal/lernmittel[?fach=…]: immer die
-// Fach-Kacheln, mit ?fach= zusätzlich die Titel dieses Fachs ("" = ohne Fach).
+// Fach-Zahlen und die Titel — ohne ?fach alle Schulbücher (Reiter-Startansicht seit
+// 03.09.2026 abends: Liste statt Kachelwand), mit ?fach= die des Fachs ("" = ohne Fach).
 func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	faecher, err := handler.repo.GetLernmittelFaecher(ctx)
@@ -22,17 +23,18 @@ func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http
 		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
 		return
 	}
-	antwort := map[string]any{"faecher": faecher}
-	if fach, gewaehlt := r.URL.Query()["fach"]; gewaehlt {
-		titel, err := handler.repo.GetLernmittelTitel(ctx, strings.TrimSpace(fach[0]), false)
-		if err != nil {
-			log.Printf("Portal Lernmittel: Titel: %v", err)
-			writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
-			return
-		}
-		antwort["titel"] = titel
+	fach, gewaehlt := r.URL.Query()["fach"]
+	fachName := ""
+	if gewaehlt {
+		fachName = strings.TrimSpace(fach[0])
 	}
-	writeJSON(w, http.StatusOK, antwort)
+	titel, err := handler.repo.GetLernmittelTitel(ctx, fachName, !gewaehlt)
+	if err != nil {
+		log.Printf("Portal Lernmittel: Titel: %v", err)
+		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"faecher": faecher, "titel": titel})
 }
 
 // handlePortalLernmittelExport bedient GET /api/portal/lernmittel/export[?fach=…] und
