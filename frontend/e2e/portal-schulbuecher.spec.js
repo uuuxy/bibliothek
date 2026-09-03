@@ -43,22 +43,35 @@ test.describe('Lehrerportal: Schulbücher je Fach', () => {
 		`);
 	});
 
-	test('Fach-Kachel zählt nur Lernmittel, Titel und Excel-Export folgen', async ({ page }) => {
+	test('Fach-Karte zählt nur Lernmittel; Suche, Filter und Excel-Export folgen', async ({
+		page
+	}) => {
 		await uiLogin(page, LEHRER_EMAIL);
 		await page.getByTitle('Mein Portal').click();
 		await page.getByRole('tab', { name: 'Schulbücher' }).click();
 
-		// Die Fach-Zeile: 1 Titel, 4 Exemplare (der Freihand-Titel zählt nicht).
-		const zeile = page.getByTestId('schulbuecher-tabelle').locator('tr', { hasText: FACH }).first();
-		await expect(zeile).toBeVisible();
-		await expect(zeile.locator('td').nth(1)).toHaveText('1');
-		await expect(zeile.locator('td').nth(2)).toHaveText('4');
+		// Die Fach-Karte: 4 Exemplare, 1 Titel (der Freihand-Titel zählt nicht).
+		const karte = page.getByRole('button', { name: new RegExp(`${FACH}`) });
+		await expect(karte).toContainText('4 Exemplare');
+		await expect(karte).toContainText('1 Titel');
 
-		// Aufklappen zeigt genau das eine Buch des Fachs.
-		await zeile.getByRole('button', { name: FACH }).click();
-		const buecher = page.getByTestId('schulbuch');
-		await expect(buecher).toHaveCount(1);
-		await expect(buecher.locator('h3')).toHaveText(TITEL);
+		// Aufklappen zeigt genau das eine Buch des Fachs als Kachel.
+		await karte.click();
+		const raster = page.getByTestId('schulbuecher-raster');
+		await expect(raster.locator('h3')).toHaveCount(1);
+		await expect(raster.locator('h3')).toHaveText(TITEL);
+
+		// Suche wirkt serverseitig und auf die Zahlen am Fach: ein Wort, das nur der
+		// Freihand-Titel trägt, lässt KEINE Karte übrig (er ist kein Lernmittel).
+		const suche = page.getByLabel('Schulbücher durchsuchen');
+		await suche.fill(`Freihand ${s}`);
+		await expect(page.getByText('Keine Schulbücher passen zu dieser Auswahl.')).toBeVisible();
+
+		// Der eigene Titel dagegen bleibt — und nur er.
+		await suche.fill(TITEL);
+		await expect(page.getByTestId('schulbuecher-antwort')).toContainText('1 Titel · 4 Exemplare');
+		await suche.fill('');
+		await expect(page.getByRole('button', { name: new RegExp(`${FACH}`) })).toBeVisible();
 
 		// Export: dieselbe Sitzung, Excel-Datei mit dem Titel drin (XLSX ist ein Zip —
 		// der Inhalt liegt in xl/sharedStrings.xml; hier genügt Typ, Größe und Dateiname).

@@ -37,11 +37,30 @@ type LernmittelTitel struct {
 	// damit von „unbekannt" nicht zu unterscheiden — die Oberfläche zeigt sie nicht.
 	JahrgangVon int `json:"jahrgangVon"`
 	JahrgangBis int `json:"jahrgangBis"`
+	// Schulzweig (buecher_titel.track): am Schulbuch gepflegt, seit 03.09.2026 wieder in
+	// der Maske. Leer heißt „gilt für alle Zweige", nicht „unbekannt".
+	Track string `json:"track"`
 }
 
-// lernmittelJahrgang: $J = 0 heißt „alle", sonst nur Titel, deren Spanne den Jahrgang
-// einschließt (ein Atlas 5–10 zählt bei Jahrgang 7 mit).
-const lernmittelJahrgang = ` AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))`
+// LernmittelFilter sind die drei Einschränkungen des Portal-Reiters. Nullwerte heißen
+// „alles": Jahrgang 0, Zweig "" (ZweigOhne = nur Bücher ohne Zweig), Suche "".
+type LernmittelFilter struct {
+	Jahrgang int
+	Zweig    string
+	Suche    string
+}
+
+// ZweigOhne ist der Filterwert für „kein Schulzweig gesetzt" — ein Zeichen, das als
+// Zweigname nicht vorkommt, damit es keinen echten Wert verdeckt.
+const ZweigOhne = "-"
+
+// lernmittelFilterSQL: $1 Jahrgang (0 = alle; ein Atlas 5–10 zählt bei Jahrgang 7 mit),
+// $2 Zweig, $3 Suchtext über Titel, ISBN, Autor und Fach.
+const lernmittelFilterSQL = `
+	AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))
+	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '') OR b.track = $2)
+	AND ($3 = '' OR b.titel ILIKE '%' || $3 || '%' OR COALESCE(b.isbn, '') ILIKE '%' || $3 || '%'
+	     OR COALESCE(b.autor, '') ILIKE '%' || $3 || '%' OR COALESCE(b.subject, '') ILIKE '%' || $3 || '%')`
 
 const lernmittelZaehlung = `
 	COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
@@ -55,16 +74,16 @@ const lernmittelJoins = `
 	WHERE b.ist_lernmittel`
 
 // GetLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
-// (Fach ""), am Ende sortiert. jahrgang 0 = alle.
-func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, jahrgang int) ([]FachBestand, error) {
+// (Fach ""), am Ende sortiert.
+func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, f LernmittelFilter) ([]FachBestand, error) {
 	rows, err := repo.db.Query(ctx, `
 		SELECT fach, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
 		FROM (
-			SELECT COALESCE(b.subject, '') AS fach, b.id,`+lernmittelZaehlung+lernmittelJoins+lernmittelJahrgang+`
+			SELECT COALESCE(b.subject, '') AS fach, b.id,`+lernmittelZaehlung+lernmittelJoins+lernmittelFilterSQL+`
 			GROUP BY b.subject, b.id
 		) t
 		GROUP BY fach
-		ORDER BY (fach = ''), fach`, jahrgang)
+		ORDER BY (fach = ''), fach`, f.Jahrgang, f.Zweig, f.Suche)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel je fach: %w", err)
 	}
@@ -81,14 +100,15 @@ func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, jahrgang i
 }
 
 // GetLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
-// alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert. jahrgang 0 = alle.
-func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, jahrgang int) ([]LernmittelTitel, error) {
+// alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert.
+func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
 	rows, err := repo.db.Query(ctx, `
 		SELECT b.id, b.titel, COALESCE(b.autor, ''), COALESCE(b.subject, ''), COALESCE(b.cover_url, ''),
-		       COALESCE(b.isbn, ''), b.jahrgang_von, b.jahrgang_bis,`+lernmittelZaehlung+lernmittelJoins+lernmittelJahrgang+`
-		  AND ($2 OR COALESCE(b.subject, '') = $3)
-		GROUP BY b.id, b.titel, b.autor, b.subject, b.cover_url, b.isbn, b.jahrgang_von, b.jahrgang_bis
-		ORDER BY (COALESCE(b.subject, '') = ''), b.subject, b.jahrgang_von, b.titel`, jahrgang, alleFaecher, fach)
+		       COALESCE(b.isbn, ''), b.jahrgang_von, b.jahrgang_bis, COALESCE(b.track, ''),`+lernmittelZaehlung+lernmittelJoins+lernmittelFilterSQL+`
+		  AND ($4 OR COALESCE(b.subject, '') = $5)
+		GROUP BY b.id, b.titel, b.autor, b.subject, b.cover_url, b.isbn, b.jahrgang_von, b.jahrgang_bis, b.track
+		ORDER BY (COALESCE(b.subject, '') = ''), b.subject, b.jahrgang_von, b.titel`,
+		f.Jahrgang, f.Zweig, f.Suche, alleFaecher, fach)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel eines fachs: %w", err)
 	}
@@ -96,7 +116,7 @@ func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string,
 	out := []LernmittelTitel{}
 	for rows.Next() {
 		var t LernmittelTitel
-		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Gesamt, &t.Verliehen, &t.Verfuegbar); err != nil {
+		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Track, &t.Gesamt, &t.Verliehen, &t.Verfuegbar); err != nil {
 			return nil, err
 		}
 		out = append(out, t)

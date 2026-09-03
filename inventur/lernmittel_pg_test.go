@@ -42,7 +42,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	}
 	repo := NewBookRepository(pool)
 
-	faecher, err := repo.GetLernmittelFaecher(ctx, 0)
+	faecher, err := repo.GetLernmittelFaecher(ctx, LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Errorf("ohne Fach: %+v", faecher[1])
 	}
 
-	titel, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, 0)
+	titel, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if len(titel) != 2 || titel[0].Title != "Mathe 7" || titel[0].Gesamt != 2 || titel[0].Verliehen != 1 || titel[0].Verfuegbar != 1 {
 		t.Errorf("Titel eines Fachs: %+v", titel)
 	}
-	alle, err := repo.GetLernmittelTitel(ctx, "", true, 0)
+	alle, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,21 +79,21 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 8, jahrgang_bis = 8 WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
 		t.Fatal(err)
 	}
-	jg7, err := repo.GetLernmittelTitel(ctx, "", true, 7)
+	jg7, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Jahrgang: 7})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(jg7) != 2 || jg7[0].Title != "Mathe 7" || jg7[1].Title != "Lesebuch" {
 		t.Errorf("Jahrgang 7: erwartet Mathe 7 + Lesebuch, bekam %+v", jg7)
 	}
-	f12, err := repo.GetLernmittelFaecher(ctx, 12)
+	f12, err := repo.GetLernmittelFaecher(ctx, LernmittelFilter{Jahrgang: 12})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(f12) != 0 {
 		t.Errorf("Jahrgang 12: erwartet keine Fächer, bekam %+v", f12)
 	}
-	jg8, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, 8)
+	jg8, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, LernmittelFilter{Jahrgang: 8})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,9 +101,48 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Errorf("Jahrgang 8 in Mathematik: erwartet Mathe 7 (5–10) und Mathe 8 (8), bekam %+v", jg8)
 	}
 
+	// Schulzweig-Filter (03.09.2026): Mathe 8 auf Gymnasium; "-" trifft die ohne Zweig.
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET track = 'Gymnasium' WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+	gym, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Zweig: "Gymnasium"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gym) != 1 || gym[0].Title != "Mathe 8" || gym[0].Track != "Gymnasium" {
+		t.Errorf("Zweig Gymnasium: erwartet nur Mathe 8, bekam %+v", gym)
+	}
+	ohne, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Zweig: ZweigOhne})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ohne) != 2 {
+		t.Errorf("Zweig ohne Angabe: erwartet 2 Titel, bekam %+v", ohne)
+	}
+
+	// Suche greift über Titel, ISBN, Autor UND Fach — „Mathematik" findet beide
+	// Mathe-Bücher über das Fach, obwohl keines das Wort im Titel trägt.
+	treffer, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Suche: "Mathematik"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(treffer) != 2 {
+		t.Errorf("Suche Mathematik: erwartet 2 Titel über das Fach, bekam %+v", treffer)
+	}
+	fSuche, err := repo.GetLernmittelFaecher(ctx, LernmittelFilter{Suche: "Lesebuch"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fSuche) != 1 || fSuche[0].Fach != "" || fSuche[0].Titel != 1 {
+		t.Errorf("Suche wirkt auch auf die Fach-Zahlen: %+v", fSuche)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET track = NULL WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {
+		t.Fatal(err)
+	}
+
 	// Excel: eine Zeile je Titel, Kopf + Zahlen lesbar, Formel-Schutz greift — frisch
 	// gelesen, damit der Jahrgang 8 von oben in der Spalte steht.
-	if alle, err = repo.GetLernmittelTitel(ctx, "", true, 0); err != nil {
+	if alle, err = repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{}); err != nil {
 		t.Fatal(err)
 	}
 	alle[0].Title = "=1+1"
@@ -124,7 +163,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Spalten: Fach, Titel, Autor, ISBN, Jahrgang, Gesamt, … — Jahrgang 5–10 (Vorgabe) bleibt leer, 8 steht drin.
-	if len(rows) != 4 || rows[0][1] != "Titel" || rows[1][0] != "Mathematik" || rows[1][4] != "" || rows[2][4] != "8" || rows[1][5] != "2" || rows[3][0] != "ohne Fach" {
+	if len(rows) != 4 || rows[0][1] != "Titel" || rows[1][0] != "Mathematik" || rows[1][4] != "" || rows[2][4] != "8" || rows[1][6] != "2" || rows[3][0] != "ohne Fach" {
 		t.Errorf("Excel-Inhalt: %v", rows)
 	}
 	if rows[1][1] == "=1+1" {

@@ -21,6 +21,17 @@
 		}))
 	]);
 	const klassen = klassenStufen.map((/** @type {number} */ k) => ({ value: k, label: String(k) }));
+	// Schulzweig: am 02.09.2026 mit Migration 093 aus der Maske genommen, am 03.09.2026 für
+	// SCHULBÜCHER zurückgeholt — der Portal-Reiter filtert danach, und niemand konnte den
+	// Zweig pflegen. Für Bibliotheksbücher bleibt er draußen: Dort war er nie eine Aussage
+	// über das Buch, sondern eine Restspur der alten „LMF/Bibliothek"-Unterscheidung.
+	const ZWEIGE = [
+		{ value: '', label: 'Alle Zweige' },
+		...['Gymnasium', 'Realschule', 'Hauptschule', 'Förderstufe', 'Oberstufe'].map((z) => ({
+			value: z,
+			label: z
+		}))
+	];
 </script>
 
 <div
@@ -56,6 +67,18 @@
 		<Select id="buch-klasse" bind:value={formular.gradeLevel} options={klassen} />
 	</div>
 </div>
+
+{#if formular.istLernmittel}
+	<div>
+		<label for="buch-schulzweig" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
+			>Schulzweig</label
+		>
+		<Select id="buch-schulzweig" bind:value={formular.track} options={ZWEIGE} />
+		<p class="mt-1 text-xs text-on-surface-variant">
+			Nur setzen, wenn das Buch wirklich einem Zweig gehört — leer heißt „gilt für alle".
+		</p>
+	</div>
+{/if}
 
 <div class="grid grid-cols-2 gap-4">
 	<Feld

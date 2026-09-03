@@ -206,11 +206,16 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Verfügbarkeit
 und Warteschlange; Klassensatz reservieren mit Klasse, Anzahl, Datum) · **Klassensätze** der
-eigenen Klassen · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: eine Tabelle mit einer Zeile
-je Fach — Titel, Exemplare, verliehen —, Klick klappt die Bücher des Fachs mit Jahrgang und
-Bestand auf; oben ein Jahrgang-Filter und „Als Excel" (Fach, Titel, Autor, ISBN, Jahrgang,
-Zahlen, Cover-Link) — gezählt wird nur, was den Lernmittel-Schalter trägt. Einen
-Schulzweig-Filter gibt es nicht: Littera hat den Zweig nie erfasst. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
+eigenen Klassen · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: aufgebaut wie die
+Klassensätze, nur nach Fach statt Klasse. Oben Suche (Titel, ISBN, Autor, Fach) und die
+Filter Jahrgang und Schulzweig; darunter je Fach eine Zeile mit Exemplaren, Titeln und
+Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. „Als Excel" sitzt an
+jedem Fach und exportiert genau dieses Fach mit der aktuellen Filterung (Fach, Titel,
+Autor, ISBN, Jahrgang, Schulzweig, Zahlen, Cover-Link). Gezählt wird nur, was den
+Lernmittel-Schalter trägt. Den **Schulzweig** pflegt die Bibliothek am Buch: In der
+Buchmaske erscheint das Feld, sobald „Lernmittel" eingeschaltet ist; leer heißt „gilt für
+alle Zweige". Littera hat den Zweig nie mitgeliefert, der Altbestand ist also zunächst
+ohne. Tauchen dort Standorttexte wie „Buch Deu 6/Cha 126" als Fach auf,
 stammt der Bestand aus einem Import vor dem 03.09.2026: `scripts/repair_fach_kategorie.sql`) · **Meine Anliegen** (Buchwunsch oder „Etwas stimmt
 nicht" an die Bibliothek). (§12, Rolle Kollegium)
 

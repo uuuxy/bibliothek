@@ -18,8 +18,8 @@ import (
 // 03.09.2026 abends: Liste statt Kachelwand), mit ?fach= die des Fachs ("" = ohne Fach).
 func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	jahrgang := lernmittelJahrgangParam(r)
-	faecher, err := handler.repo.GetLernmittelFaecher(ctx, jahrgang)
+	filter := lernmittelFilterParam(r)
+	faecher, err := handler.repo.GetLernmittelFaecher(ctx, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Fächer: %v", err)
 		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
@@ -30,7 +30,7 @@ func (handler *APIHandler) handlePortalLernmittel(w http.ResponseWriter, r *http
 	if gewaehlt {
 		fachName = strings.TrimSpace(fach[0])
 	}
-	titel, err := handler.repo.GetLernmittelTitel(ctx, fachName, !gewaehlt, jahrgang)
+	titel, err := handler.repo.GetLernmittelTitel(ctx, fachName, !gewaehlt, filter)
 	if err != nil {
 		log.Printf("Portal Lernmittel: Titel: %v", err)
 		writeError(w, http.StatusInternalServerError, "schulbücher konnten nicht geladen werden")
@@ -47,7 +47,7 @@ func (handler *APIHandler) handlePortalLernmittelExport(w http.ResponseWriter, r
 	if gewaehlt {
 		fachName = strings.TrimSpace(fach[0])
 	}
-	titel, err := handler.repo.GetLernmittelTitel(r.Context(), fachName, !gewaehlt, lernmittelJahrgangParam(r))
+	titel, err := handler.repo.GetLernmittelTitel(r.Context(), fachName, !gewaehlt, lernmittelFilterParam(r))
 	if err != nil {
 		log.Printf("Portal Lernmittel-Export: %v", err)
 		writeError(w, http.StatusInternalServerError, "export konnte nicht erstellt werden")
@@ -75,11 +75,16 @@ func (handler *APIHandler) handlePortalLernmittelExport(w http.ResponseWriter, r
 	}
 }
 
-// lernmittelJahrgangParam liest ?jahrgang= (5–13); alles andere heißt „alle" (0).
-func lernmittelJahrgangParam(r *http.Request) int {
-	j, err := strconv.Atoi(r.URL.Query().Get("jahrgang"))
-	if err != nil || j < 5 || j > 13 {
-		return 0
+// lernmittelFilterParam liest ?jahrgang= (5–13), ?zweig= und ?q=; alles andere heißt
+// „alle". Der Suchtext wird gekappt: Er geht als ILIKE-Muster in die Abfrage.
+func lernmittelFilterParam(r *http.Request) LernmittelFilter {
+	q := r.URL.Query()
+	f := LernmittelFilter{Zweig: strings.TrimSpace(q.Get("zweig")), Suche: strings.TrimSpace(q.Get("q"))}
+	if len(f.Suche) > 100 {
+		f.Suche = f.Suche[:100]
 	}
-	return j
+	if j, err := strconv.Atoi(q.Get("jahrgang")); err == nil && j >= 5 && j <= 13 {
+		f.Jahrgang = j
+	}
+	return f
 }

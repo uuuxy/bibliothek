@@ -10,6 +10,7 @@
 	import StrichcodeScanner from '$lib/components/StrichcodeScanner.svelte';
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
 	import ClassAssignPicker from '$lib/components/admin/ClassAssignPicker.svelte';
+	import { leeresBuchFormular } from '$lib/components/admin/buch_form_optionen.js';
 	import {
 		holeBuecherListe,
 		holeBuchDetail,
@@ -27,19 +28,7 @@
 	/** @type {string[]|null} Bücher-IDs, die gerade einer Klasse zugewiesen werden (Picker offen). */
 	let klassenZuweisenIds = $state(null);
 
-	let formular = $state({
-		id: null,
-		isbn: '',
-		title: '',
-		author: '',
-		subject: '',
-		gradeLevel: 5,
-		istLernmittel: false,
-		stock: 0,
-		coverUrl: '',
-		lastCounted: '',
-		medientyp: 'Buch'
-	});
+	let formular = $state(leeresBuchFormular());
 
 	/** @type {any} */
 	let suchVerzoegerung = null;
@@ -83,19 +72,7 @@
 	}
 
 	function neuesBuchErstellen() {
-		formular = {
-			id: null,
-			isbn: '',
-			title: '',
-			author: '',
-			subject: '',
-			gradeLevel: 5,
-			istLernmittel: false,
-			stock: 0,
-			coverUrl: '',
-			lastCounted: '',
-			medientyp: 'Buch'
-		};
+		formular = leeresBuchFormular();
 		istBearbeitenModus = true;
 	}
 

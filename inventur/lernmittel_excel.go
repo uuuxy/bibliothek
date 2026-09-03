@@ -19,7 +19,7 @@ func SchulbuecherAlsExcel(titel []LernmittelTitel, coverBasis string) (*excelize
 	if err := f.SetSheetName("Sheet1", blatt); err != nil {
 		return nil, err
 	}
-	kopf := []any{"Fach", "Titel", "Autor", "ISBN", "Jahrgang", "Gesamt", "Verliehen", "Verfügbar", "Cover"}
+	kopf := []any{"Fach", "Titel", "Autor", "ISBN", "Jahrgang", "Schulzweig", "Gesamt", "Verliehen", "Verfügbar", "Cover"}
 	if err := f.SetSheetRow(blatt, "A1", &kopf); err != nil {
 		return nil, err
 	}
@@ -27,7 +27,7 @@ func SchulbuecherAlsExcel(titel []LernmittelTitel, coverBasis string) (*excelize
 	if err != nil {
 		return nil, err
 	}
-	if err := f.SetCellStyle(blatt, "A1", "I1", fett); err != nil {
+	if err := f.SetCellStyle(blatt, "A1", "J1", fett); err != nil {
 		return nil, err
 	}
 	for i, t := range titel {
@@ -36,12 +36,13 @@ func SchulbuecherAlsExcel(titel []LernmittelTitel, coverBasis string) (*excelize
 			fach = "ohne Fach"
 		}
 		zeile := []any{csvutil.SanitizeCell(fach), csvutil.SanitizeCell(t.Title), csvutil.SanitizeCell(t.Autor),
-			csvutil.SanitizeCell(t.ISBN), jahrgangText(t), t.Gesamt, t.Verliehen, t.Verfuegbar, coverLink(coverBasis, t)}
+			csvutil.SanitizeCell(t.ISBN), jahrgangText(t), csvutil.SanitizeCell(t.Track),
+			t.Gesamt, t.Verliehen, t.Verfuegbar, coverLink(coverBasis, t)}
 		if err := f.SetSheetRow(blatt, fmt.Sprintf("A%d", i+2), &zeile); err != nil {
 			return nil, err
 		}
 	}
-	for spalte, breite := range map[string]float64{"A": 16, "B": 48, "C": 24, "D": 16, "I": 40} {
+	for spalte, breite := range map[string]float64{"A": 16, "B": 48, "C": 24, "D": 16, "F": 14, "J": 40} {
 		if err := f.SetColWidth(blatt, spalte, spalte, breite); err != nil {
 			return nil, err
 		}

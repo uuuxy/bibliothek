@@ -1,56 +1,80 @@
 <script>
 	/**
 	 * @component PortalSchulbuecher
-	 * Schulbücher für die Fachsprecher (Peter, 03.09.2026 abends, nach zwei verworfenen
-	 * Fassungen — Kachelwand, dann Chip-Leiste): „Die wollen nur den Bestand wissen, vom
-	 * Fach und von jedem Buch." Also EINE Tabelle: eine Zeile je Fach mit den Zahlen, Klick
-	 * klappt die Bücher des Fachs auf (Jahrgang, Bestand). Oben nur ein Jahrgang-Filter und
-	 * „Als Excel". Schulzweig gibt es nicht als Filter — Littera hat ihn nie erfasst (153 von
-	 * 13.060 Titeln). Grundlage ist allein der Lernmittel-Schalter; Daten über die Portal-Tür
+	 * Schulbücher für die Fachsprecher (Peter, 03.09.2026): „Englisch möchte nur die
+	 * Englisch-Bücher … im Grunde ähnlich wie bei Klassensätzen. Wir brauchen alle
+	 * Fachbereiche, eine Suchfunktion und Filterfunktionen."
+	 *
+	 * Also dieselbe Bauform wie unter Bibliothek → Klassensätze: oben Suche und Filter,
+	 * darunter eine aufklappbare Karte je Fach mit den Cover-Kacheln (FachKarte). Zwei
+	 * verworfene Fassungen desselben Tages stehen im git log: eine Kachelwand je Fach und
+	 * eine Chip-Leiste — beide zeigten dem Fachsprecher immer die ganze Schule.
+	 *
+	 * Gefiltert wird SERVERSEITIG (Jahrgang, Schulzweig, Suchtext): Sonst zeigten die
+	 * Zahlen am Fach und die Excel-Datei etwas anderes als die Liste darunter.
+	 * Grundlage ist allein der Lernmittel-Schalter; Daten über die Portal-Tür
 	 * /api/portal/lernmittel (Anmeldung genügt, kein view_books).
 	 */
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { ChevronRight } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
+	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
+	import FachKarte from './FachKarte.svelte';
 
 	/** @type {{ fach: string, titel: number, gesamt: number, verliehen: number, verfuegbar: number }[]} */
 	let faecher = $state.raw([]);
 	/** @type {any[]} */
 	let titel = $state.raw([]);
-	/** 0 = alle Jahrgänge */
+	let suche = $state('');
 	let jahrgang = $state(0);
+	let zweig = $state('');
 	/** aufgeklappte Fächer ('' = ohne Fach) */
 	const offen = new SvelteSet();
 	let laedt = $state(true);
 	let fehler = $state('');
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let timer;
 
 	const JAHRGAENGE = [
 		{ value: 0, label: 'Alle Jahrgänge' },
 		...[5, 6, 7, 8, 9, 10, 11, 12, 13].map((j) => ({ value: j, label: `Jahrgang ${j}` }))
 	];
-	const fachName = (/** @type {string} */ f) => f || 'Ohne Fach';
+	// „-" ist der Filterwert für „kein Zweig gesetzt" (inventur.ZweigOhne) — die meisten
+	// Altbestände tragen keinen, weil Littera den Zweig nie erfasst hat.
+	const ZWEIGE = [
+		{ value: '', label: 'Alle Schulzweige' },
+		...['Gymnasium', 'Realschule', 'Hauptschule', 'Förderstufe', 'Oberstufe'].map((z) => ({
+			value: z,
+			label: z
+		})),
+		{ value: '-', label: 'Ohne Schulzweig' }
+	];
+
+	const parameter = $derived(
+		new URLSearchParams(
+			/** @type {Record<string,string>} */ (
+				Object.fromEntries(
+					[
+						['q', suche.trim()],
+						['jahrgang', jahrgang ? String(jahrgang) : ''],
+						['zweig', zweig]
+					].filter(([, v]) => v)
+				)
+			)
+		).toString()
+	);
 	const summe = (/** @type {'titel'|'gesamt'|'verliehen'} */ k) =>
 		faecher.reduce((n, f) => n + f[k], 0);
-	const exportUrl = $derived(
-		`/api/portal/lernmittel/export${jahrgang ? `?jahrgang=${jahrgang}` : ''}`
-	);
-	// Jahrgang „5–10" ist die Spalten-Vorgabe (= unbekannt) und wird nicht gezeigt.
-	const jahrgangText = (/** @type {any} */ b) =>
-		!b.jahrgangVon || (b.jahrgangVon === 5 && b.jahrgangBis === 10)
-			? ''
-			: b.jahrgangVon === b.jahrgangBis
-				? String(b.jahrgangVon)
-				: `${b.jahrgangVon}–${b.jahrgangBis}`;
+	/** @param {string} fach */
+	const exportUrl = (fach) =>
+		`/api/portal/lernmittel/export?fach=${encodeURIComponent(fach)}${parameter ? `&${parameter}` : ''}`;
 
 	async function lade() {
 		laedt = true;
 		fehler = '';
 		try {
-			const res = await apiFetch(
-				`/api/portal/lernmittel${jahrgang ? `?jahrgang=${jahrgang}` : ''}`
-			);
+			const res = await apiFetch(`/api/portal/lernmittel${parameter ? `?${parameter}` : ''}`);
 			if (!res.ok) {
 				fehler = 'Schulbücher konnten nicht geladen werden.';
 				return;
@@ -67,99 +91,72 @@
 
 	onMount(lade);
 
+	// Tippen entprellt, Auswahl sofort — wie in den übrigen Listen des Hauses.
+	function tippen() {
+		clearTimeout(timer);
+		timer = setTimeout(lade, 250);
+	}
+
 	/** @param {string} fach */
 	function klappe(fach) {
 		if (!offen.delete(fach)) offen.add(fach);
 	}
 
-	const zahl = 'w-24 px-3 py-2.5 text-right text-sm tabular-nums';
+	/** @param {string} fach */
+	const buecherDesFachs = (fach) => titel.filter((b) => (b.subject ?? '') === fach);
 </script>
 
 <div class="flex flex-col gap-4 pt-2">
+	<div class="flex flex-wrap items-center gap-3">
+		<Feld
+			id="schulbuecher-suche"
+			type="search"
+			bind:value={suche}
+			oninput={tippen}
+			placeholder="Titel, ISBN, Autor oder Fach"
+			aria-label="Schulbücher durchsuchen"
+			feld="w-full sm:w-72"
+		/>
+		<Select
+			bind:value={jahrgang}
+			options={JAHRGAENGE}
+			onchange={lade}
+			class="w-44"
+			aria-label="Nach Jahrgang filtern"
+		/>
+		<Select
+			bind:value={zweig}
+			options={ZWEIGE}
+			onchange={lade}
+			class="w-48"
+			aria-label="Nach Schulzweig filtern"
+		/>
+		<p class="ml-auto text-sm text-on-surface-variant" data-testid="schulbuecher-antwort">
+			{summe('titel')} Titel · {summe('gesamt')} Exemplare · {summe('verliehen')} verliehen
+		</p>
+	</div>
+
 	{#if fehler}
 		<p class="text-sm font-bold text-error">{fehler}</p>
-	{:else if !laedt && faecher.length === 0 && !jahrgang}
+	{:else if laedt && faecher.length === 0}
+		<p class="py-4 text-sm text-on-surface-variant">Lädt …</p>
+	{:else if faecher.length === 0}
 		<p class="py-4 text-sm text-on-surface-variant">
-			Noch keine Schulbücher markiert — der Lernmittel-Schalter am Titel entscheidet.
+			{suche.trim() || jahrgang || zweig
+				? 'Keine Schulbücher passen zu dieser Auswahl.'
+				: 'Noch keine Schulbücher markiert — der Lernmittel-Schalter am Titel entscheidet.'}
 		</p>
 	{:else}
-		<div class="flex flex-wrap items-center justify-between gap-3">
-			<p class="text-body-large text-on-surface" data-testid="schulbuecher-antwort">
-				{summe('titel')} Titel · {summe('gesamt')} Exemplare · {summe('verliehen')} verliehen
-			</p>
-			<div class="flex items-center gap-3">
-				<Select
-					bind:value={jahrgang}
-					options={JAHRGAENGE}
-					class="w-48"
-					aria-label="Jahrgang"
-					onchange={lade}
+		<div data-testid="schulbuecher-faecher">
+			{#each faecher as f (f.fach)}
+				<FachKarte
+					fach={f}
+					buecher={buecherDesFachs(f.fach)}
+					offen={offen.has(f.fach)}
+					exportUrl={exportUrl(f.fach)}
+					onToggle={() => klappe(f.fach)}
 				/>
-				<a
-					href={exportUrl}
-					download
-					class="inline-flex h-9 shrink-0 items-center rounded-full bg-secondary-container px-4 text-label-large font-semibold text-on-secondary-container hover:bg-secondary-container/80"
-					>Als Excel</a
-				>
-			</div>
+			{/each}
 		</div>
-
-		<table class="w-full border-collapse text-left" data-testid="schulbuecher-tabelle">
-			<thead>
-				<tr class="border-b border-outline-variant text-sm font-semibold text-on-surface-variant">
-					<th class="px-3 py-2">Fach</th>
-					<th class="{zahl} font-semibold">Titel</th>
-					<th class="{zahl} font-semibold">Exemplare</th>
-					<th class="{zahl} font-semibold">Verliehen</th>
-				</tr>
-			</thead>
-			<tbody class="divide-y divide-outline-variant/40">
-				{#each faecher as f (f.fach)}
-					{@const auf = offen.has(f.fach)}
-					<tr class="hover:bg-surface-container-low">
-						<td class="p-0">
-							<button
-								type="button"
-								aria-expanded={auf}
-								onclick={() => klappe(f.fach)}
-								class="flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left text-sm font-medium text-on-surface"
-							>
-								<ChevronRight
-									size={18}
-									class="shrink-0 transition-transform {auf ? 'rotate-90' : ''}"
-									aria-hidden="true"
-								/>
-								{fachName(f.fach)}
-							</button>
-						</td>
-						<td class="{zahl} font-medium">{f.titel}</td>
-						<td class="{zahl} font-medium">{f.gesamt}</td>
-						<td class={zahl}>{f.verliehen || '–'}</td>
-					</tr>
-					{#if auf}
-						{#each titel.filter((b) => (b.subject ?? '') === f.fach) as b (b.id)}
-							<tr class="bg-surface-container-lowest" data-testid="schulbuch">
-								<td class="py-2 pr-3 pl-11 text-sm text-on-surface">
-									<h3 class="text-sm font-normal">{b.title}</h3>
-									{#if b.autor || jahrgangText(b)}
-										<span class="text-sm text-on-surface-variant">
-											{[jahrgangText(b) && `Jahrgang ${jahrgangText(b)}`, b.autor]
-												.filter(Boolean)
-												.join(' · ')}
-										</span>
-									{/if}
-								</td>
-								<td class={zahl}></td>
-								<td class={zahl}>{b.gesamt}</td>
-								<td class={zahl}>{b.verliehen || '–'}</td>
-							</tr>
-						{/each}
-					{/if}
-				{/each}
-			</tbody>
-		</table>
-		{#if laedt}
-			<p class="text-sm text-on-surface-variant">Lädt …</p>
-		{/if}
 	{/if}
 </div>
