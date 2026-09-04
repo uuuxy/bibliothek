@@ -64,7 +64,7 @@ func mahnKlassenMit(coverURL string) []repository.MahnwesenKlasse {
 	}}
 }
 
-// TestGenerateMahnPDF_WebPCoverBrichtDasDokumentNicht ist der Regressionstest zum Bug:
+// TestGenerateMahnPDF_WebPCoverBrichtDasDokumentNicht ist der Regressionstest zum Fehler:
 // gofpdf erkennt den Bildtyp an der Dateiendung und kann kein WebP. Der dabei gesetzte
 // Fehlerzustand ist klebrig und schlug in pdf.Output() durch — ein einziges WebP-Cover
 // ließ die komplette Mahnliste mit HTTP 500 scheitern.
