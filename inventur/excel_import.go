@@ -159,7 +159,9 @@ func (handler *APIHandler) processImportRows(ctx context.Context, dataRows [][]s
 					firstError = err
 				}
 				errMutex.Unlock()
-			} else if book != nil {
+				return
+			}
+			if book != nil {
 				booksMutex.Lock()
 				booksToUpsert = append(booksToUpsert, *book)
 				booksMutex.Unlock()
