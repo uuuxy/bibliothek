@@ -13,16 +13,17 @@ import (
 
 func TestSchluesselAus(t *testing.T) {
 	faelle := map[string]struct {
-		wert     string
-		laenge   int
-		fehler   bool
-		begruend string
+		wert       string
+		laenge     int
+		fehler     bool
+		begruend   string
+		wantErrMsg string
 	}{
-		"32 Zeichen Klartext": {"12345678901234567890123456789012", 32, false, ""},
-		"64 Zeichen Hex":      {"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", 32, false, ""},
-		"leer":                {"", 0, true, "leerer Schlüssel muss abgelehnt werden"},
-		"zu kurz":             {"kurz", 0, true, "zu kurzer Schlüssel muss abgelehnt werden"},
-		"64 Zeichen kein Hex": {"zzzz2233445566778899aabbccddeeff00112233445566778899aabbccddeeff", 0, true, "ungültiges Hex muss abgelehnt werden"},
+		"32 Zeichen Klartext": {"12345678901234567890123456789012", 32, false, "", ""},
+		"64 Zeichen Hex":      {"00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff", 32, false, "", ""},
+		"leer":                {"", 0, true, "leerer Schlüssel muss abgelehnt werden", "schlüssel ist leer"},
+		"zu kurz":             {"kurz", 0, true, "zu kurzer Schlüssel muss abgelehnt werden", "schlüssel muss genau 32 Zeichen (oder 64 Hex-Zeichen) lang sein"},
+		"64 Zeichen kein Hex": {"zzzz2233445566778899aabbccddeeff00112233445566778899aabbccddeeff", 0, true, "ungültiges Hex muss abgelehnt werden", "ungültiges Hex-Format"},
 	}
 
 	for name, f := range faelle {
@@ -31,6 +32,11 @@ func TestSchluesselAus(t *testing.T) {
 			if f.fehler {
 				if err == nil {
 					t.Fatalf("%s", f.begruend)
+				}
+				if f.wantErrMsg != "" {
+					if err.Error() == "" || !bytes.Contains([]byte(err.Error()), []byte(f.wantErrMsg)) {
+						t.Errorf("SchluesselAus() error = %v, wantErrMsg %v", err, f.wantErrMsg)
+					}
 				}
 				return
 			}
