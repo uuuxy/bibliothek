@@ -70,13 +70,13 @@ func advisoryLockKey(tableName, colName string) int64 {
 //     Barcode als String. Damit gilt 'B-99999' > 'B-100000' (die '9' schlägt die '1').
 //     Ab dem Übergang auf sechsstellige Nummern lieferte die Query dauerhaft 'B-99999'
 //     als Maximum; das System versuchte endlos, erneut 'B-100000' anzulegen, und lief
-//     jedes Mal in den UNIQUE-Constraint. Fix: Das Zahlensuffix NACH dem Präfix wird
+//     jedes Mal in den UNIQUE-Constraint. Lösung: Das Zahlensuffix NACH dem Präfix wird
 //     numerisch verglichen (Cast auf bigint), nicht lexikografisch.
 //
 //  2. Race-Condition: "Höchsten Wert lesen und in Go +1 rechnen" ist ohne Sperre nicht
 //     atomar — zwei gleichzeitige Anlagen lesen denselben Maximalwert und erzeugen
 //     denselben nächsten Barcode; einer läuft in eine Constraint-Verletzung (harter
-//     500er). Fix: pg_advisory_xact_lock serialisiert die Vergabe pro Sequenz. Der Lock
+//     500er). Lösung: pg_advisory_xact_lock serialisiert die Vergabe pro Sequenz. Der Lock
 //     wird in der Transaktion des Aufrufers gehalten, bis dieser den zugehörigen INSERT
 //     committet — der zweite Aufrufer blockiert so lange und liest danach den bereits
 //     erhöhten Maximalwert. Läuft die Funktion (Preview-Endpunkt) ohne umschließende
