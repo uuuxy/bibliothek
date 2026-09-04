@@ -176,7 +176,12 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 	if err != nil {
 		return nil, err
 	}
-	if err := schreibeRueckwegEintrag(ctx, tx, a.BearbeiterID, ziel, quelle, gewandert); err != nil {
+	if err := schreibeRueckwegEintrag(ctx, tx, RueckwegEintragParams{
+		BearbeiterID: a.BearbeiterID,
+		Ziel:         ziel,
+		Quelle:       quelle,
+		Gewandert:    gewandert,
+	}); err != nil {
 		return nil, err
 	}
 	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, quelle.id)
@@ -300,17 +305,24 @@ func idsAus(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, 
 // in dem die Quelle weg ist und die Spur fehlt. Lebenszyklus: Wird das Ziel später
 // anonymisiert, ersetzt SpurTilgungen dieses Objekt als Ganzes — die Klardaten der
 // Quelle leben nicht länger als die des Ziels.
-func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, bearbeiterID string, ziel, quelle *zusammenfuehrenZeile, g *gewanderteVorgaenge) error {
+type RueckwegEintragParams struct {
+	BearbeiterID string
+	Ziel         *zusammenfuehrenZeile
+	Quelle       *zusammenfuehrenZeile
+	Gewandert    *gewanderteVorgaenge
+}
+
+func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p RueckwegEintragParams) error {
 	details, err := json.Marshal(map[string]any{
 		"action":             "zusammenfuehren",
-		"aufgeloest_id":      quelle.id,
-		"aufgeloest_barcode": quelle.barcode,
-		"quelle":             stammdatenSnapshot(quelle),
-		"ziel_vorher":        stammdatenSnapshot(ziel),
+		"aufgeloest_id":      p.Quelle.id,
+		"aufgeloest_barcode": p.Quelle.barcode,
+		"quelle":             stammdatenSnapshot(p.Quelle),
+		"ziel_vorher":        stammdatenSnapshot(p.Ziel),
 		"gewandert": map[string]any{
-			"ausleihen": g.Ausleihen, "schadensfaelle": g.Schadensfaelle,
-			"vormerkungen": g.Vormerkungen, "vormerkungen_doppelt_geloescht": g.VormerkungenDoppelt,
-			"foto": g.Foto, "ziel_foto_gewichen": g.ZielFotoGewichen,
+			"ausleihen": p.Gewandert.Ausleihen, "schadensfaelle": p.Gewandert.Schadensfaelle,
+			"vormerkungen": p.Gewandert.Vormerkungen, "vormerkungen_doppelt_geloescht": p.Gewandert.VormerkungenDoppelt,
+			"foto": p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
 		},
 	})
 	if err != nil {
@@ -318,11 +330,11 @@ func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, bearbeiterID string
 	}
 	var bearbeiter *string
 	akteur := "SYSTEM"
-	if bearbeiterID != "" {
-		bearbeiter, akteur = &bearbeiterID, "USER"
+	if p.BearbeiterID != "" {
+		bearbeiter, akteur = &p.BearbeiterID, "USER"
 	}
 	tag, err := tx.Exec(ctx, `INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur, details)
-		VALUES ('schueler', 'ZUSAMMENGEFUEHRT', $1::uuid, $2, $3, $4::jsonb)`, ziel.id, bearbeiter, akteur, string(details))
+		VALUES ('schueler', 'ZUSAMMENGEFUEHRT', $1::uuid, $2, $3, $4::jsonb)`, p.Ziel.id, bearbeiter, akteur, string(details))
 	if err != nil {
 		return fmt.Errorf("rückweg-eintrag schreiben: %w", err)
 	}
