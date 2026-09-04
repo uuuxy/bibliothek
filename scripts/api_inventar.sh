@@ -18,7 +18,7 @@ grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" \
 # 2. Frontend-Aufrufe (Literale und Template-Strings)
 #
 # Zwei Ausschlüsse, beide aus falschen Alarmen am 06.08.2026 entstanden — der Abschnitt
-# "Geister-Aufrufe" meldete zwei Bugs, die keine waren:
+# "Geister-Aufrufe" meldete zwei Treffer, die keine waren:
 #
 #   --exclude=*.test.js/*.spec.js : `/api/test` stammte aus apiFetch.test.js, also aus
 #       einem erfundenen Pfad in einem Unit-Test. Testdateien rufen keine echten Routen.
