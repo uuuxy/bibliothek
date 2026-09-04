@@ -111,7 +111,7 @@
 </script>
 
 <div class="space-y-10">
-	<div class="flex flex-wrap justify-between items-center gap-4 px-2">
+	<div class="flex flex-col gap-3 px-2">
 		<KlassenSuchfeld
 			bind:klasseSearchQuery
 			bind:isKlasseDropdownOpen
@@ -120,10 +120,10 @@
 				klasseSearchQuery = klasse;
 				isKlasseDropdownOpen = false;
 			}}
-			class="w-full sm:w-64"
+			class="w-full"
 		/>
 
-		<div class="flex gap-4 items-center">
+		<div class="flex flex-wrap gap-4 items-center">
 			<Select
 				bind:value={filterBranch}
 				options={ZWEIGE}

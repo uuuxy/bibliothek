@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 // Die globale Suchleiste (03.09.2026) steht auf jeder Verwaltungsseite und ist IMMER ein
 // sichtbares Eingabefeld — sie gehört nicht zur Kategorie und darf weder das Warten auf
 // die Kategoriefelder beenden noch in der Reihenmessung stehen.
-const FELDER = 'input:visible:not(#global-suchfeld)';
+const FELDER = 'input:visible';
 import {
 	uiLogin,
 	seedSQL,

@@ -14,7 +14,6 @@
 	import Login from './lib/components/auth/Login.svelte';
 	import Sperrbildschirm from './lib/components/auth/Sperrbildschirm.svelte';
 	import Sidebar from './lib/components/layout/Sidebar.svelte';
-	import GlobalSuche from './lib/components/layout/GlobalSuche.svelte';
 	import BackupAlert from './lib/components/system/BackupAlert.svelte';
 	import Router from './lib/Router.svelte';
 	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
@@ -149,7 +148,6 @@
 					{#if hatRecht(authStore.currentUser, 'manage_settings')}
 						<BackupAlert />
 					{/if}
-					<GlobalSuche />
 					<Router />
 				</div>
 			</div>

@@ -125,7 +125,7 @@ test('Klassensatz-Warteschlange: Chip vor dem Klick, Vordermann nach dem Absende
 	await page.getByTitle('Mein Portal').click();
 
 	await page
-		.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' })
+		.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' })
 		.fill(`E2E KSQ Buch ${s}`);
 
 	// Der Chip steht am Treffer, BEVOR irgendetwas angeklickt wird.

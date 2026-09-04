@@ -62,12 +62,14 @@ const AUSNAHMEN = [
 			'trägt Rahmen, Fläche und Fokus, das Feld selbst h-full und nichts. Fiel bis zur ' +
 			'Auflösung der /katalog-Pfadkollision nie auf, weil dieser Test den öffentlichen OPAC maß.'
 	},
-	{
-		kennung: 'global-suchfeld',
-		grund:
-			'Globale Suchleiste der Verwaltung (03.09.2026): dieselbe 48-px-Suchpille (components/ui/' +
-			'Suchpille.svelte) auf jeder Verwaltungsseite — gemessen von suchpille-einheitlich.spec.js.'
-	}
+	// Die eine Suche einer Verwaltungsseite ist seit dem 04.09.2026 dieselbe 48-px-Pille
+	// wie in Katalog, Portal und Theke — sie IST das Werkzeug der Seite, kein Bedienelement
+	// in einer Leiste. Filter und Knöpfe stehen darunter und bleiben auf 36 px.
+	{ kennung: 'schuelerdatei-suchfeld', grund: 'Suchpille der Schülerdatei' },
+	{ kennung: 'mahnwesen-suchfeld', grund: 'Suchpille des Mahnwesens' },
+	{ kennung: 'klassensaetze-suchfeld', grund: 'Suchpille der Klassensätze' },
+	{ kennung: 'etiketten-suchfeld', grund: 'Suchpille des Etiketten-Nachdrucks im Druck-Center' },
+	{ kennung: 'bestellbedarf-suchfeld', grund: 'Suchpille des Bestellbedarfs' }
 ];
 
 /**
@@ -170,7 +172,11 @@ test('Feld und Button stehen in derselben Werkzeugleiste auf einer Linie', async
 	await uiLogin(page);
 	await page.goto('/mahnwesen');
 
-	const feld = page.getByPlaceholder('Schüler oder Klasse suchen …');
+	// Gemessen wird das AUSWAHLFELD der Werkzeugleiste, nicht die Suche: Seit dem
+	// 04.09.2026 ist die Suche jeder Verwaltungsseite die 48-px-Pille und steht über der
+	// Leiste, nicht darin (Peter: „eine Leiste … es soll gleich aussehen"). Was in der
+	// Leiste steht — Auswahlfelder und Knöpfe —, teilt weiterhin die 36-px-Grundlinie.
+	const auswahl = page.getByLabel('Nach Klasse filtern');
 	// Gemessen wird „Daten neu laden" und NICHT „Alle anmahnen": Letzterer steht in
 	// MahnwesenAktionen hinter {#if countAlle > 0} und erscheint nur, wenn gerade
 	// überfällige Ausleihen in der Datenbank stehen. Diese Zeile lag zuvor auf
@@ -180,12 +186,19 @@ test('Feld und Button stehen in derselben Werkzeugleiste auf einer Linie', async
 	// Testdateien abhängig, ohne es zu sagen. „Daten neu laden" steht unbedingt in
 	// derselben Leiste; für eine Höhenmessung ist der Knopf ohnehin austauschbar.
 	const button = page.getByRole('button', { name: 'Daten neu laden' }).first();
-	await feld.waitFor();
+	await auswahl.waitFor();
 	await button.waitFor();
 
-	const feldBox = await feld.boundingBox();
+	const auswahlBox = await auswahl.boundingBox();
 	const buttonBox = await button.boundingBox();
 
-	expect(Math.round(feldBox.height)).toBe(CONTROL_HOEHE);
+	expect(Math.round(auswahlBox.height)).toBe(CONTROL_HOEHE);
 	expect(Math.round(buttonBox.height)).toBe(CONTROL_HOEHE);
+
+	// Und die Suche darüber ist die Pille — nicht dieselbe Höhe, und das ist Absicht.
+	// Gemessen wird die HÜLLE: Die id sitzt am Eingabefeld, das die Pille mit h-full
+	// ausfüllt und deshalb um die beiden Rahmenlinien kleiner misst (46 statt 48).
+	const pille = page.locator('#mahnwesen-suchfeld').locator('xpath=..');
+	await pille.waitFor();
+	expect(Math.round((await pille.boundingBox()).height)).toBe(48);
 });

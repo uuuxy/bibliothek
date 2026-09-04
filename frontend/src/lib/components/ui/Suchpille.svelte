@@ -34,10 +34,21 @@
 	 *   disabled?: boolean,
 	 *   element?: HTMLInputElement,
 	 *   oninput?: (e: Event) => void,
+	 *   onfocus?: (e: FocusEvent) => void,
+	 *   onblur?: (e: FocusEvent) => void,
 	 *   nachlaufend?: import('svelte').Snippet
 	 * }}
 	 * element: bind:this-Ersatz für Aufrufer, die den Fokus selbst setzen (Inventur-Scan
 	 * nach jedem Treffer). disabled: während ein Scan verarbeitet wird.
+	 *
+	 * WO SIE HINGEHÖRT (Peter, 04.09.2026: „eine Leiste! aber nicht 2 … es soll gleich
+	 * aussehen"): Jede Seite hat GENAU EINE Suche, und die ist diese Pille — über die volle
+	 * Breite, ganz oben im Inhalt. Filter, Auswahlfelder und Knöpfe stehen in einer eigenen
+	 * Zeile DARUNTER und bleiben auf der 36-px-Grundlinie (ui/Suchfeld.svelte); nebeneinander
+	 * säße die Pille 12 px höher als alles daneben. Der Gegenstand ist der der Seite: Der
+	 * Katalog sucht Bücher, die Inventur scannt, das Mahnwesen sucht Schüler. Bis zum
+	 * 04.09.2026 stand darüber zusätzlich eine globale Leiste — zwei Suchzeilen je Seite,
+	 * und die größte davon konnte am wenigsten.
 	 */
 	let {
 		id,
@@ -48,6 +59,8 @@
 		disabled = false,
 		element = $bindable(),
 		oninput,
+		onfocus,
+		onblur,
 		nachlaufend
 	} = $props();
 
@@ -79,10 +92,16 @@
 	     halten ein Textfeld in einem Dialog sonst für ein Anmeldeformular und füllen es
 	     ungefragt aus. `autocomplete="off"` allein reicht ihnen nicht. Sie standen bisher
 	     nur an EINEM Feld (der Suche im Klassensatz-Dialog); hier gelten sie für alle. -->
+	<!-- type="search" statt "text" (04.09.2026): Erst damit meldet sich die Pille dem
+	     Screenreader und den Tests als Suchfeld (role=searchbox) — dieselbe Rolle, die das
+	     kleine Suchfeld-Bauteil längst trägt. Aufgefallen beim Umbau der Verwaltungsseiten
+	     auf die Pille: Drei e2e-Tests suchten eine `searchbox` und fanden nichts mehr.
+	     Chromes eigenes Löschkreuz wird unten weggeblendet, sonst stünde neben dem
+	     nachlaufenden Symbol ein zweites. -->
 	<input
 		{id}
 		name={id}
-		type="text"
+		type="search"
 		autocomplete="off"
 		spellcheck="false"
 		data-lpignore="true"
@@ -91,9 +110,11 @@
 		bind:value={wert}
 		{disabled}
 		{oninput}
+		{onfocus}
+		{onblur}
 		aria-label={etikett}
 		placeholder={platzhalter}
-		class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base"
+		class="h-full flex-1 min-w-0 bg-transparent border-none outline-none focus:ring-0 px-3 text-slate-900 placeholder:text-slate-500 text-base [&::-webkit-search-cancel-button]:appearance-none"
 	/>
 	{#if nachlaufend}
 		{@render nachlaufend()}

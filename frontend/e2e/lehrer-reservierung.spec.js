@@ -38,7 +38,7 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 	// Seite AUSMACHT: ihr Suchfeld — ueber den zugaenglichen Namen, nicht ueber den
 	// Platzhaltertext. Genau der hat sich am 10.08.2026 geaendert, als alle Suchfelder auf
 	// ein gemeinsames Bauteil kamen.
-	const suchfeld = page.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' });
+	const suchfeld = page.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' });
 	await expect(suchfeld).toBeVisible();
 
 	// Buch suchen (debounced Suchfeld)

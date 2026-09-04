@@ -32,7 +32,7 @@ function suchtreffer(verfuegbar = 12, gesamt = 30) {
 /** Sucht wie das Portal: debounced, deshalb über findBy* abwarten. */
 async function sucheUndOeffneFormular(screen) {
 	await fireEvent.input(
-		screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
 		{
 			target: { value: 'Seydlitz' }
 		}
@@ -85,7 +85,7 @@ describe('KollegiumPortal', () => {
 		const screen = render(KollegiumPortal, { user: { klasse: '' } });
 
 		await fireEvent.input(
-			screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
 			{
 				target: { value: 'Seydlitz' }
 			}
@@ -106,7 +106,7 @@ describe('KollegiumPortal', () => {
 
 		const screen = render(KollegiumPortal, { user: { klasse: '' } });
 		await fireEvent.input(
-			screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+			screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
 			{
 				target: { value: 'Seydlitz' }
 			}
@@ -165,7 +165,7 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	const screen = render(KollegiumPortal, { user: { klasse: '' } });
 
 	await fireEvent.input(
-		screen.getByRole('textbox', { name: 'Bücher für einen Klassensatz suchen' }),
+		screen.getByRole('searchbox', { name: 'Bücher für einen Klassensatz suchen' }),
 		{ target: { value: 'Seydlitz' } }
 	);
 

@@ -1,6 +1,6 @@
 <script>
 	import { CircleCheck, Plus, Printer } from '@lucide/svelte';
-	import Suchfeld from '../ui/Suchfeld.svelte';
+	import Suchpille from '../ui/Suchpille.svelte';
 	import CoverPeek from '../ui/CoverPeek.svelte';
 
 	let { recommendations, onAddToCart } = $props();
@@ -105,12 +105,11 @@
 		</div>
 
 		{#if recommendations.length}
-			<!-- Schnellfilter -->
-			<Suchfeld
+			<Suchpille
+				id="bestellbedarf-suchfeld"
 				bind:wert={filter}
 				platzhalter="In {recommendations.length} Titeln filtern …"
 				etikett="Bestellvorschläge filtern"
-				klasse="mt-4"
 			/>
 		{/if}
 	</header>

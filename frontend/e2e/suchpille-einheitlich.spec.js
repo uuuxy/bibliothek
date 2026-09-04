@@ -21,9 +21,12 @@ const PILLEN = [
 	{ name: 'Kiosk (Omnibox)', pfad: '/kiosk', id: 'omnibox-input' },
 	{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' },
 	{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld' },
-	// Die globale Suchleiste der Verwaltung (03.09.2026) — auf jeder Verwaltungsseite,
-	// gemessen in der Schülerdatei.
-	{ name: 'Verwaltung (global)', pfad: '/schuelerdatei', id: 'global-suchfeld' }
+	// Eine Suche je Verwaltungsseite, überall dieselbe Pille (Peter, 04.09.2026: „eine
+	// Leiste … es soll gleich aussehen"). Vorher trugen diese Seiten das 36-px-Suchfeld
+	// im Werkzeugbalken, weil darüber noch die globale Suchleiste stand.
+	{ name: 'Schülerdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld' },
+	{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld' },
+	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld' }
 ];
 
 /**

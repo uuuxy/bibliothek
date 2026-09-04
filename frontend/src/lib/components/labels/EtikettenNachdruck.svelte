@@ -16,7 +16,7 @@
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import { Printer, Eraser } from '@lucide/svelte';
-	import Suchfeld from '../ui/Suchfeld.svelte';
+	import Suchpille from '../ui/Suchpille.svelte';
 	import Feld from '../ui/Feld.svelte';
 
 	/** @type {{ onUebergeben?: () => void }} */
@@ -220,46 +220,46 @@
 </script>
 
 <div class="w-full space-y-6 no-print animate-fade-in">
-	<div class="flex flex-wrap items-center gap-4 border-b border-slate-200 pb-5">
-		<Suchfeld
+	<div class="flex flex-col gap-3 border-b border-slate-200 pb-5">
+		<Suchpille
+			id="etiketten-suchfeld"
 			bind:wert={suche}
 			oninput={sucheAngestossen}
 			platzhalter="Titel oder Barcode eingeben …"
 			etikett="Exemplare filtern"
-			klasse="flex-1 min-w-64 max-w-md"
 		/>
 
-		<!-- Was die Liste zeigt. Vorgabe bleibt „Offen" — die Ansicht heisst „Fehlende
-		     Etiketten" und soll ohne Zutun genau das zeigen. Die beiden anderen Stufen sind
-		     Werkzeug für den Notfall, nicht für den Alltag. -->
-		<div class="flex rounded-lg border border-slate-200 bg-white p-0.5 text-sm font-semibold">
-			{#each [['offen', 'Offen'], ['erledigt', 'Erledigt'], ['alle', 'Alle']] as [wert, text] (wert)}
-				<button
-					type="button"
-					onclick={() => {
-						status = /** @type {'offen'|'erledigt'|'alle'} */ (wert);
-						gewaehlt = [];
-						laden();
-					}}
-					class="cursor-pointer rounded-md px-3 py-1.5 transition-colors {status === wert
-						? 'bg-slate-800 text-white'
-						: 'text-slate-600 hover:bg-slate-100'}"
-				>
-					{text}
-				</button>
-			{/each}
-		</div>
+		<div class="flex flex-wrap items-center gap-4">
+			<!-- Vorgabe „Offen": Die Ansicht heisst „Fehlende Etiketten" und soll ohne Zutun
+			     genau das zeigen; die anderen Stufen sind Notfall-Werkzeug. -->
+			<div class="flex rounded-lg border border-slate-200 bg-white p-0.5 text-sm font-semibold">
+				{#each [['offen', 'Offen'], ['erledigt', 'Erledigt'], ['alle', 'Alle']] as [wert, text] (wert)}
+					<button
+						type="button"
+						onclick={() => {
+							status = /** @type {'offen'|'erledigt'|'alle'} */ (wert);
+							gewaehlt = [];
+							laden();
+						}}
+						class="cursor-pointer rounded-md px-3 py-1.5 transition-colors {status === wert
+							? 'bg-slate-800 text-white'
+							: 'text-slate-600 hover:bg-slate-100'}"
+					>
+						{text}
+					</button>
+				{/each}
+			</div>
 
-		<Button size="lg" onclick={uebergeben} disabled={gewaehltOffen.length === 0} class="px-5">
-			<Printer class="h-4 w-4" aria-hidden="true" />
-			{gewaehltOffen.length === 0
-				? 'Nichts ausgewählt'
-				: `${gewaehltOffen.length} an den Druck übergeben`}
-		</Button>
+			<Button size="lg" onclick={uebergeben} disabled={gewaehltOffen.length === 0} class="px-5">
+				<Printer class="h-4 w-4" aria-hidden="true" />
+				{gewaehltOffen.length === 0
+					? 'Nichts ausgewählt'
+					: `${gewaehltOffen.length} an den Druck übergeben`}
+			</Button>
+		</div>
 	</div>
 
-	<!-- Notfallwege. Bewusst zurückhaltend und nur sichtbar, wenn etwas ausgewählt ist:
-	     Der tägliche Weg ist der Druck darüber. -->
+	<!-- Notfallwege: nur sichtbar bei Auswahl — der tägliche Weg ist der Druck darüber. -->
 	{#if gewaehltOffen.length > 0 || gewaehltErledigt.length > 0}
 		<div
 			class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3"

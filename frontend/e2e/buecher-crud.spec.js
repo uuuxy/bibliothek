@@ -43,7 +43,9 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
 		// Ueber den zugaenglichen Namen, nicht ueber den Platzhalter: Der Text im Feld ist
 		// Beschriftung und darf sich aendern (am 10.08.2026 tat er das, als alle Suchfelder
 		// auf ein Bauteil kamen). Der aria-label sagt, WAS das Feld ist.
-		const suche = page.getByRole('textbox', { name: 'Suchen nach Titel, Fach, Klasse oder Autor' });
+		const suche = page.getByRole('searchbox', {
+			name: 'Suchen nach Titel, Fach, Klasse oder Autor'
+		});
 		await expect(suche).toBeVisible({ timeout: 15000 });
 		await suche.fill(titel);
 		await expect(page.getByText(titel).first()).toBeVisible();

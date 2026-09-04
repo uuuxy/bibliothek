@@ -5,13 +5,14 @@
      150-ms-Verzug beim Verlassen ist Absicht: Ohne ihn schließt die Liste, bevor
      der Klick auf einen Eintrag ankommt.
 
-     Stand in der Werkzeugleiste der Schulklassen-Seite, seit der Klassen-Reiter im
-     Medienkatalog aufgelöst wurde. Das Feld selbst ist seit dem 25.08.2026 das
-     Suchfeld-Bauteil (36 px, Werkzeugleiste); der Pfeil sitzt als nachlaufendes
-     Symbol darin und die Vorschlagsliste hängt an der Hülle. -->
+     Es ist die EINE Suche der Klassensatz-Seite und trägt deshalb seit dem 04.09.2026
+     die 48-px-Suchpille — dieselbe Gestalt wie Medienkatalog, Portal und Theke (Peter:
+     „eine Leiste … es soll gleich aussehen"). Bis dahin war es das 36-px-Suchfeld im
+     Werkzeugbalken, weil darüber noch die globale Suchleiste stand. Der Pfeil sitzt als
+     nachlaufendes Symbol darin, die Vorschlagsliste hängt an der Hülle. -->
 <script>
 	import { ChevronDown } from '@lucide/svelte';
-	import Suchfeld from '../../../lib/components/ui/Suchfeld.svelte';
+	import Suchpille from '../../../lib/components/ui/Suchpille.svelte';
 	/**
 	 * @type {{
 	 *   klasseSearchQuery: string,
@@ -32,7 +33,8 @@
 
 <div class={className}>
 	<div class="relative w-full">
-		<Suchfeld
+		<Suchpille
+			id="klassensaetze-suchfeld"
 			bind:wert={klasseSearchQuery}
 			etikett="Klasse suchen"
 			platzhalter="Klasse suchen (z.B. 5f1) …"
@@ -47,7 +49,7 @@
 					aria-hidden="true"
 				/>
 			{/snippet}
-		</Suchfeld>
+		</Suchpille>
 		{#if isKlasseDropdownOpen && filteredKlassenList.length > 0}
 			<ul
 				class="absolute z-10 w-full mt-1.5 bg-surface-container rounded-sm shadow-xl max-h-60 overflow-y-auto py-1"
