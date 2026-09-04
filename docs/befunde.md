@@ -41,14 +41,7 @@ Zwei Regeln dazu:
 Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
 nicht hier.
 
-- **`ui/Segmente.svelte` ist gebaut, aber nirgends eingesetzt** (04.09.2026). Der
-  Segmented Button nach M3 liegt fertig samt Begründung im Kopf der Datei; der
-  handgebaute Umschalter „Offen | Erledigt | Alle", den er ersetzen soll, steht
-  unverändert in `components/labels/EtikettenNachdruck.svelte` (38 px statt 40, Ecken
-  12 px statt voll gerundet, gewähltes Segment auf `inverse-surface` statt
-  `secondary-container`). Genau die Lage aus dem Sweep „Nie verdrahtet" vom 01.09.:
-  ein Bauteil, das aussieht, als sei die Arbeit erledigt. Entweder verdrahten oder die
-  Datei wieder löschen — halb ist der schlechteste der drei Zustände.
+_Zurzeit leer._
 
 ## Offen — Entscheidung nötig (Peter)
 
@@ -123,6 +116,10 @@ eigenmächtig entschieden.
   über ALLE Seiten — und genau solche werden hier nicht nebenbei getroffen (siehe
   „Seitengerüst: drei Zuständigkeiten"). Anlass wäre ein Rundgang über das Gerüst
   selbst, nicht eine einzelne Seite.
+- Drei handgebaute Pillen-Gruppen in `StatsDashboard.svelte` (`pills`-Snippet: Bestand,
+  Zeitraum, Renner/Ladenhüter) tun dasselbe wie `ui/Segmente.svelte`, seit dieses am
+  04.09.2026 im Druck-Center verdrahtet wurde. Kein Schaden — nur zwei Fassungen
+  desselben Bauteils; tauschen beim nächsten fachlichen Anfassen der Statistik.
 - Reiterleisten: drei Höhen (30/32/34 px) in den handgebauten Bestands-Leisten —
   vereinheitlichen beim nächsten fachlichen Anfassen (der Umbruch ist seit
   `c35840d4` gelöst).
@@ -178,4 +175,4 @@ TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-AP
 sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
 (`/api/v1`) und Mandantenfähigkeit (RLS).
 
-Stand: 2026-09-01
+Stand: 2026-09-04
