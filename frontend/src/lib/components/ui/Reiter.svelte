@@ -18,6 +18,21 @@
 	 * 04.09.2026 waren es zwei Fassungen, und im Druck-Center stand links „999+" neben
 	 * rechts „30674" — dieselbe Zahl, zwei Aussagen.
 	 *
+	 * Zwei M3-Masse, die hier am 04.09.2026 nachgezogen wurden, beide im Browser
+	 * gemessen und nicht aus dem Klassennamen gelesen:
+	 *
+	 *   Label-Gewicht: M3 gibt dem Reiter `title-small`, dessen Gewicht ist
+	 *   `weight-medium` = 500. Die Klasse `font-medium` zeigt in diesem Haus aber auf
+	 *   400 — theme-mass.css biegt die Skala um (medium→400, semibold/bold→500). Wer
+	 *   hier 500 will, schreibt `font-semibold`. Gemessen rendete diese Komponente
+	 *   400, die noch handgebaute Leiste im Katalog 500: Das gemeinsame Bauteil war
+	 *   leichter als die Kopien, die es ersetzen soll.
+	 *
+	 *   Indikator: primary-navigation-tab hat 3 px und `shape (3px 3px 0 0)`,
+	 *   secondary-navigation-tab 2 px ohne shape. Vorher trugen beide Ränge 2 px,
+	 *   und der primäre war voll gerundet — eine Form, die die Spezifikation für
+	 *   keinen von beiden kennt.
+	 *
 	 * Zwei Ränge, wie M3 sie kennt: `primaer` (Bereiche einer Seite, Indikator in
 	 * Primärfarbe) und `sekundaer` (Unteransichten DESSELBEN Inhalts, unter einer
 	 * Primärleiste). Bis 24.08.2026 trug der Medienkatalog zwei Leisten im selben
@@ -53,7 +68,7 @@
 			aria-selected={gewaehlt}
 			aria-controls={r.steuert}
 			onclick={() => onwahl(r.id)}
-			class="relative shrink-0 cursor-pointer text-sm font-medium whitespace-nowrap transition-colors {sekundaer
+			class="relative shrink-0 cursor-pointer text-sm font-semibold whitespace-nowrap transition-colors {sekundaer
 				? 'pb-2.5'
 				: 'pb-3'} {gewaehlt
 				? sekundaer
@@ -66,7 +81,10 @@
 				<Zaehlerpille anzahl={r.anzahl} klasse="ml-2" />
 			{/if}
 			{#if gewaehlt}
-				<span class="absolute inset-x-0 bottom-0 h-0.5 bg-primary {sekundaer ? '' : 'rounded-full'}"
+				<span
+					class="absolute inset-x-0 bottom-0 bg-primary {sekundaer
+						? 'h-0.5'
+						: 'h-0.75 rounded-t-[3px]'}"
 				></span>
 			{/if}
 		</button>
