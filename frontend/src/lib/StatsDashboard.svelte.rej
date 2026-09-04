@@ -1,0 +1,11 @@
+--- StatsDashboard.svelte
++++ StatsDashboard.svelte
+@@ -126,7 +126,7 @@
+				aria-pressed={current === it.value}
+				class="px-3.5 py-1 text-sm font-bold rounded-full cursor-pointer transition-all whitespace-nowrap {current ===
+				it.value
+-					? 'bg-white text-slate-900 shadow-xs'
++					? 'bg-white text-slate-900 shadow-xs'
+					: 'text-slate-500 hover:text-slate-800'}">{it.label}</button
+			>
+		{/each}

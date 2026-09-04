@@ -1,0 +1,6 @@
+🧹 Refactor LUSD klassifizierung parameters to a struct
+
+🎯 **What:** Introduced a lusdKlassifizierer struct to encapsulate classification context. Also fixed a frontend UI issue by removing an invalid Material 3 CSS class from StatsDashboard.svelte.
+💡 **Why:** Reduces parameter count and improves readability for klassifiziereZeileID, klassifiziereZeileName, and sammleAbgaenger.
+✅ **Verification:** Verified changes visually, ran full test suite with go test ./..., and ran frontend tests.
+✨ **Result:** Cleaner, more maintainable code and resolved CI test failures.

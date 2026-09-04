@@ -126,7 +126,7 @@
 				aria-pressed={current === it.value}
 				class="px-3.5 py-1 text-sm font-bold rounded-full cursor-pointer transition-all whitespace-nowrap {current ===
 				it.value
-					? 'bg-white text-slate-900 shadow-xs'
+					? 'bg-white text-slate-900'
 					: 'text-slate-500 hover:text-slate-800'}">{it.label}</button
 			>
 		{/each}
@@ -215,7 +215,7 @@
 								<img
 									src={coverSrc(book.cover_url, book.isbn)}
 									alt=""
-									class="w-8 aspect-3/4 object-cover rounded shadow-xs border border-slate-100 shrink-0"
+									class="w-8 aspect-3/4 object-cover rounded border border-slate-100 shrink-0"
 								/>
 							{:else}
 								<div
