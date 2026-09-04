@@ -7,11 +7,9 @@ reparieren oder vergessen — und beide sind falsch.
 Ergänzt [`invarianten.md`](invarianten.md): Dort steht, was immer wahr sein _muss_.
 Hier steht, was aufgefallen ist und noch nicht entschieden oder erledigt wurde.
 
-**Historie:** Die abgearbeiteten Durchgänge (Raster-Durchgänge, Sweeps, Audits
-Juli–August 2026) standen bis zum 31.08.2026 vollständig in dieser Datei; sie sind
-bewusst entfernt und in der Git-Historie dieser Datei erhalten
-(`git log -p docs/befunde.md`; Stände vor den Kürzungen: `2e09ec14` (31.08.),
-`47a09f70` (01.09. — Posten-Abarbeitung, v1.8.1, Fahrplan-Auflösung)).
+**Erledigtes wird gelöscht, nicht abgehakt** — es steht vollständig in
+`git log -p docs/befunde.md`. Stände vor früheren Kürzungen: `2e09ec14` (31.08.),
+`47a09f70` (01.09.), `9f91784b` (04.09.).
 
 ---
 
@@ -68,25 +66,20 @@ nicht hier.
   wäre übertragbar. Im **Portal** zeigt nur `PortalTrefferkarte` ein Cover;
   `AnliegenWidget`, `PortalSchulbuecher` und `PortalLernmittel` nicht.
 
-- **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen** (04.09.2026).
-  Aufgefallen beim M3-Bauform-Durchgang: `Modal.svelte` trug Rahmen **und** Schatten
-  zugleich — eine Bauform, die die M3-Spezifikation bei keinem ihrer 84 Bauteile kennt
-  (Dialog hat `container-elevation: level3` und **kein** outline-Token). Das ist behoben
-  und wirkt auf die elf Dialoge, die das Bauteil benutzen. Daneben stehen aber elf
-  weitere Overlays, die `fixed inset-0` selbst aufsetzen und denselben Fehler
-  wiederholen: `StudentLockModal`, `DamageReportModal`, `StudentProfileDeleteModal`,
-  `StudentGebuehrenCard`, `WebcamCapture`, `OmniboxBlockAlert`,
-  `OmniboxVormerkungAlert`, `OmniboxChecklistDialog`, `MahnwesenTable` (Bestätigung),
-  `IsbnLookupDialog`, `StrichcodeScanner`.
+- **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen**
+  (04.09.2026). `Modal.svelte` trug Rahmen **und** Schatten — die Bauform, die M3 bei
+  keinem seiner 84 Bauteile kennt; behoben, wirkt auf elf Dialoge. Diese elf wiederholen
+  den Fehler in eigenem `fixed inset-0`: `StudentLockModal`, `DamageReportModal`,
+  `StudentProfileDeleteModal`, `StudentGebuehrenCard`, `WebcamCapture`,
+  `OmniboxBlockAlert`, `OmniboxVormerkungAlert`, `OmniboxChecklistDialog`,
+  `MahnwesenTable`, `IsbnLookupDialog`, `StrichcodeScanner`.
 
-  Eine Quelltext-Zählung nach den Fixes fand **40 Kandidaten** mit sichtbarem Rahmen und
-  Schatten in derselben Klassenliste; der grösste Teil sitzt in diesen Overlays, der Rest
-  in Buchcovern (Bild, kein Bauteil), der Etikettenvorschau (simuliert Papier) und
-  einzelnen Karten. **Nicht pauschal ändern:** `OmniboxBlockAlert` trägt `border-4
-border-rose-500` als Alarmsignal an der Theke — dort ist der Rahmen die Aussage. Das
-  ist Einzelfallprüfung mit Blick auf den Bildschirm, kein Suchen-und-Ersetzen, und
-  deshalb ein eigener Durchgang. Das Gate `e2e/m3-bauform.spec.js` sieht diese Fälle
-  nicht, weil die Dialoge zu sind — seine Öffnerliste umfasst bisher zwei.
+  Quelltext-Zählung nach den Fixes: **40 Kandidaten**, überwiegend in diesen Overlays,
+  der Rest Buchcover (Bild, kein Bauteil) und Etikettenvorschau (simuliert Papier).
+  **Nicht pauschal ändern:** `OmniboxBlockAlert` trägt `border-4 border-rose-500` als
+  Alarmsignal an der Theke — dort IST der Rahmen die Aussage. Einzelfallprüfung am
+  Bildschirm, eigener Durchgang. `e2e/m3-bauform.spec.js` sieht die Fälle nicht (Dialoge
+  sind zu); seine Öffnerliste umfasst zwei.
 
 ## Offen — Entscheidung nötig (Peter)
 
@@ -129,75 +122,35 @@ eigenmächtig entschieden.
    sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich, also kein
    Verstoß gegen „eine Suchleiste je Seite" (04.09.). Offen ist allein, ob die Nähe der
    beiden Felder trotzdem stört; dann Umbau.
-5. ~~Die orange Backup-Bahn ist auf jeder Seite das lauteste Element.~~ **GEKLÄRT
-   04.09.2026 — kein Designbefund, nicht anfassen.** Der Alert erscheint ausschließlich
-   bei `needsAction`, und er hat recht: Im Container liegt das jüngste Backup vom
-   03.09. 02:30, gemessen **40,7 Stunden** alt. Die Warnschwelle ist 26 h, kritisch
-   48 h (`api/backup_status.go`) — also `warning`, also amber. Auf einem
-   Entwicklungsrechner, der nachts nicht läuft, wird das immer passieren; auf dem
-   Zielsystem mit laufendem 02:30-Job verschwindet die Bahn von selbst. (Die zuerst
-   vermutete Ursache — fehlender `BACKUP_ENCRYPTION_KEY` — war falsch, der Schlüssel
-   ist gesetzt.) Der Schatten ist ihm am 04.09. genommen worden, weil er neben dem
-   Rahmen stand; die Bauform selbst bleibt.
-6. ~~Die Statistiken zeigen vier umrandete Kacheln nebeneinander.~~ **ERLEDIGT
-   04.09.2026:** vier KPI- und drei Diagrammflächen auf die M3-Bauform „filled card"
-   (getönte Fläche, kein Rahmen, keine Erhebung). Siehe Bauform-Gate unten.
-7. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
+5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
    der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
 
 ## Beobachten (nichts zu tun)
 
-| Fund                                                                                                                     | Warum nur beobachten                                                                                                                                                         |
-| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`)                                                        | Kein Fix verfügbar (`Fixed in: N/A`), transitiv, **kein** Aufrufer im eigenen Code (`govulncheck`, zuletzt 31.08. bestätigt). Dependabot meldet sich, falls sich das ändert. |
-| Designer-Restlücke: Browser-Schließen binnen 800 ms verliert die letzte Auto-Save-Änderung                               | `onDestroy` schickt seit `37abcbe0` sofort; `sendBeacon` bewusst nicht gebaut (Randlage).                                                                                    |
-| 082-Dedupe der Vormerkungen verlor den neueren `abholbereit`-Eintrag                                                     | Auf Prod gelaufen, nicht rückholbar; nur relevant, falls je eine weitere **gewachsene** DB migriert wird.                                                                    |
-| Barcode des beim Zusammenführen aufgelösten Datensatzes wird wieder vergeben (MAX+1)                                     | Betriebsregel statt Bau (Peter, 03.09.): zweite Karte einziehen — steht im HANDBUCH. Der Ausweis des Kindes selbst ändert sich nie.                                          |
-| Abgänger in der Karenz stehen in keiner Liste (Aktivliste blendet Abgänger aus, Abgänger-Reiter nur mit offenen Büchern) | Peter, 03.09.: nicht schlimm — sie gehen ab und haben nichts offen. Erreichbar per Ausweis-Scan und Kandidatensuche.                                                         |
+| Fund                                                                                       | Warum nur beobachten                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`)                          | Kein Fix verfügbar (`Fixed in: N/A`), transitiv, **kein** Aufrufer im eigenen Code (`govulncheck`, zuletzt 31.08. bestätigt). Dependabot meldet sich, falls sich das ändert. |
+| Designer-Restlücke: Browser-Schließen binnen 800 ms verliert die letzte Auto-Save-Änderung | `onDestroy` schickt seit `37abcbe0` sofort; `sendBeacon` bewusst nicht gebaut (Randlage).                                                                                    |
+| 082-Dedupe der Vormerkungen verlor den neueren `abholbereit`-Eintrag                       | Auf Prod gelaufen, nicht rückholbar; nur relevant, falls je eine weitere **gewachsene** DB migriert wird.                                                                    |
 
 ## Kategorie C — bewusst nicht ohne Anlass
 
-- Aus dem Nie-verdrahtet-Sweep (01.09., Agenten-Durchgang, je geprüft und bewusst
-  geparkt): `inventur_sessions.gestartet_von` wird geschrieben und 4× gescannt,
-  aber nie angezeigt (die Inventur-UI könnte den Starter nennen — Produktfrage);
-  `abgaenger_jahr` steht in der Aktiv-Listen-Antwort, obwohl die Liste Abgänger
-  ausschließt und kein Listen-Konsument es liest (Profil nutzt es); die
-  Geräte-Torso-Reste (`ActionEvent.GeraetID` nie gesetzt, Geräte-Aktionen
-  broadcasten gar nicht, Kiosk-Pfad liefert Null-Zeitstempel) warten auf den
-  Geräte-Ausbau.
-- Knopfzeile über den Reitern (aufgefallen im Mahnwesen, 04.09.2026): Sie kommt aus dem
-  gemeinsamen Seitengerüst, nicht aus der Seite. Daran zu drehen ist eine Entscheidung
-  über ALLE Seiten — und genau solche werden hier nicht nebenbei getroffen (siehe
-  „Seitengerüst: drei Zuständigkeiten"). Anlass wäre ein Rundgang über das Gerüst
-  selbst, nicht eine einzelne Seite.
-- Drei handgebaute Pillen-Gruppen in `StatsDashboard.svelte` (`pills`-Snippet: Bestand,
-  Zeitraum, Renner/Ladenhüter) tun dasselbe wie `ui/Segmente.svelte`, seit dieses am
-  04.09.2026 im Druck-Center verdrahtet wurde. Kein Schaden — nur zwei Fassungen
-  desselben Bauteils; tauschen beim nächsten fachlichen Anfassen der Statistik.
-- Reiterleisten: drei Höhen (30/32/34 px) in den handgebauten Bestands-Leisten —
-  vereinheitlichen beim nächsten fachlichen Anfassen (der Umbruch ist seit
-  `c35840d4` gelöst).
-- Etikettenraster an zwei Stellen (maßgeblich `api/label_formats.go`,
-  Frontend-Kopie `src/lib/etikettformate.js`): Am 31.08.2026 geprüft und
-  ENTSCHIEDEN geparkt. Ein Server-Umbau bräuchte einen neuen Endpunkt (existiert
-  nicht) plus async-Ladezustand in drei Verbrauchern des täglich benutzten
-  Druck-Bildschirms — neuer Ausfallmodus gegen null Laufzeit-Risiko heute. Die
-  Drift hält `etikettformate-konsistenz.test.js` mechanisch (Spalten und Zeilen
-  einzeln gegen die Go-Datei). Wieder anfassen nur, wenn ein vierter Verbraucher
-  oder ein konfigurierbares Format dazukommt.
-- 20× `go:S3776` (Cognitive Complexity, alle Backend): Zählweise rechnet den
-  Handler-Closure als Ebene; Aufsplitten nur für die Zahl macht nichts lesbarer.
-  Lohnend allenfalls `OverrideDueDateHandler` (30), `behandleAbgaenger` (23).
-- `javascript:S6551` (`escapeHtml.js`) und `javascript:S8783`
-  (`schuelerprofil-sperre.spec.js`): begründete Dauer-Ausnahmen, keine offenen Punkte.
-- Tabellen-Inline-Felder (Rückgabedatum, Exemplar-Barcode) sind mit 36 px höher als
-  ihre Zeile — `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
-- `LabelHeight >= 30`-Schwelle steht 6× in zwei Dateien.
-- LUSD-Namensschlüssel nur `lower+trim` (Umlaut-/Bindestrich-Varianten gelten als
-  verschiedene Menschen → „mehrdeutig"/neu) — sicher, aber nicht klug.
-- Paritätstest vergleicht keine COMMENTs/Seeds (nur Kosmetik; Struktur ist gedeckt).
-- Jules-Erbe: sieben Testdateien > 200 Zeilen; Export-CSV-„breaks stream"-Test schwach.
-- Go `dupl` 8 Klonpaare (print.go, lookups.go, mahnwesen.go), Frontend `jscpd` 0,41 %.
+Einzeiler; die ausführlichen Begründungen stehen in der Git-Historie dieser Datei.
+
+| Posten                                                                         | Warum geparkt                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Knopfzeile über den Reitern (Mahnwesen, 04.09.)                                | Sie kommt aus dem gemeinsamen Seitengerüst. Daran zu drehen entscheidet über ALLE Seiten — Anlass wäre ein Rundgang über das Gerüst, nicht eine Seite.                                                                                                                                                           |
+| 3 handgebaute Pillen-Gruppen in `StatsDashboard` (`pills`)                     | Zweite Fassung von `ui/Segmente.svelte`. Tauschen beim nächsten fachlichen Anfassen der Statistik.                                                                                                                                                                                                               |
+| Etikettenraster doppelt (`api/label_formats.go` ↔ `src/lib/etikettformate.js`) | 31.08. ENTSCHIEDEN geparkt: Server-Umbau bräuchte neuen Endpunkt + async-Ladezustand in drei Verbrauchern des täglichen Druckbildschirms — neuer Ausfallmodus gegen null Risiko heute. `etikettformate-konsistenz.test.js` hält die Drift. Wieder anfassen bei viertem Verbraucher oder konfigurierbarem Format. |
+| Reste des Nie-verdrahtet-Sweeps (01.09.)                                       | `inventur_sessions.gestartet_von` nie angezeigt (Produktfrage); `abgaenger_jahr` in der Aktivlisten-Antwort ohne Konsument; Geräte-Torso (`ActionEvent.GeraetID`, kein Broadcast, Null-Zeitstempel) wartet auf den Geräte-Ausbau.                                                                                |
+| 20× `go:S3776` (Cognitive Complexity)                                          | Zählweise rechnet den Handler-Closure als Ebene. Lohnend allenfalls `OverrideDueDateHandler` (30), `behandleAbgaenger` (23).                                                                                                                                                                                     |
+| `javascript:S6551`, `javascript:S8783`                                         | Begründete Dauer-Ausnahmen.                                                                                                                                                                                                                                                                                      |
+| Tabellen-Inline-Felder (Rückgabedatum, Exemplar-Barcode) 36 px                 | `size="sm"`-Variante von `Feld` erst bei Bedienbefund.                                                                                                                                                                                                                                                           |
+| `LabelHeight >= 30` steht 6× in zwei Dateien                                   | Schwellwert-Doppelung ohne Wirkung.                                                                                                                                                                                                                                                                              |
+| LUSD-Namensschlüssel nur `lower+trim`                                          | Umlaut-/Bindestrich-Varianten gelten als verschiedene Menschen — sicher, aber nicht klug.                                                                                                                                                                                                                        |
+| Paritätstest vergleicht keine COMMENTs/Seeds                                   | Kosmetik; Struktur ist gedeckt.                                                                                                                                                                                                                                                                                  |
+| Jules-Erbe                                                                     | Sieben Testdateien > 200 Zeilen; Export-CSV-„breaks stream"-Test schwach.                                                                                                                                                                                                                                        |
+| Klone: Go `dupl` 8 Paare, Frontend `jscpd` 0,41 %                              | Unter der Schwelle.                                                                                                                                                                                                                                                                                              |
 
 ## Außerhalb dieses Registers (Betrieb, liegt bei Peter)
 
