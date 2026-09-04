@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -150,15 +151,23 @@ func (b *updateBuilder) addInt(spalte string, wert *int) {
 // build hängt die gesammelten SET-Zuweisungen (nummeriert ab $1) und die
 // WHERE-Bedingung an prefix an und liefert Query samt Argumentliste.
 func (b *updateBuilder) build(prefix, idValue string) (string, []interface{}) {
-	query := prefix
+	var sb strings.Builder
+	sb.Grow(len(prefix) + len(b.sets)*20 + 20)
+	sb.WriteString(prefix)
+
 	args := make([]interface{}, 0, len(b.args)+1)
 	for i, spalte := range b.sets {
-		query += fmt.Sprintf(", %s = $%d", spalte, i+1)
+		sb.WriteString(", ")
+		sb.WriteString(spalte)
+		sb.WriteString(" = $")
+		sb.WriteString(strconv.Itoa(i + 1))
 		args = append(args, b.args[i])
 	}
-	query += fmt.Sprintf(" WHERE id = $%d", len(b.sets)+1)
+	sb.WriteString(" WHERE id = $")
+	sb.WriteString(strconv.Itoa(len(b.sets) + 1))
+
 	args = append(args, idValue)
-	return query, args
+	return sb.String(), args
 }
 
 // parseGeburtsdatum parst ein optionales ISO-Datum. Leerstring ergibt (nil, nil)
