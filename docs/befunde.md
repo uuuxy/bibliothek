@@ -39,32 +39,42 @@ Zwei Regeln dazu:
 Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
 nicht hier.
 
-- **Buchcover: Geschwister-Asymmetrie im Bestellwesen, und fünf Größen ohne Bauteil**
-  (04.09.2026, Peter). Im **Bestellbedarf** steht statt des Covers ein Platzhalter-Symbol;
-  das Bild erscheint nur im Hover-Overlay (`CoverPeek`). Vier Geschwister derselben Seite
-  zeigen es dagegen längst in der Zeile: `OrderSearch`, `OrderCart`, `WareneingangTable`,
-  `BestellDetailPositionen`.
+- **Buchcover: nicht die Anzeige ist das Problem, sondern der Bestand** (04.09.2026,
+  Peter fragte nach Covern im Bestellbedarf). Erst die Zahl, dann alles andere:
+  **von 1119 Titeln haben 24 ein Cover — 2,1 %** (lokale Entwicklungs-DB gemessen).
 
-  Material 3 ist hier eindeutig: Die Listen-Tokens definieren
-  `list-item-leading-image-width/height: 56px` samt `-shape`; ein Muster „Bild nur bei
-  Hover" kennt die Spezifikation nicht. Dazu kommt die hier schon zweimal getroffene
-  Falle: **Am Tablet gibt es kein Hover** — dort sieht man aktuell überhaupt kein Cover
-  (vgl. Blätterpfeile auf `opacity:0` im Rundgang-Gate).
+  Damit ist `CoverPeek` (Cover nur auf Anforderung) nicht nachlässig, sondern belegt
+  richtig: Sein Kopfkommentar nennt „53 px je Zeile (71 % der Zeilenhöhe), einen
+  Proxy-Request je Titel, war aber fast immer leer" — das trifft zu. Ein Cover in der
+  Zeile zeigte bei 98 % der Zeilen einen Platzhalter. Auch das Tablet-Argument zieht
+  nicht: CoverPeek ist ausdrücklich touch- und tastaturfähig gebaut („kein reines
+  CSS-`:hover`"), nicht hover-only.
 
-  **Die Daten fliessen bereits:** `api/reorders.go` liefert `cover_url` UND `isbn`, mit
-  ISBN-Fallback direkt im SQL (Zeile 96). Für den Bestellbedarf ist es also reine
-  Frontend-Arbeit.
+  **Der echte Befund liegt im Cover-Sync** (`internal/service/cover_service.go`, Cron
+  alle 6 h):
 
-  **Vorher aber das Bauteil:** Es gibt fünf verschiedene Cover-Breiten im Haus (`w-7`,
-  `w-8`, `w-10`, `w-12`, `w-16`) und keinen gemeinsamen Ort — jede Stelle baut ihr eigenes
-  `<img>`. Eine sechste Kopie wiederholt das Suchfeld-Drama (zehn Fassungen, sieben Maße).
-  Erst `ui/BuchCover.svelte`, dann verdrahten.
+  |           | Anzahl  | Status    | Wirkung                                                                                                                                                                        |
+  | --------- | ------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+  | ohne ISBN | **913** | `PENDING` | Der Query verlangt `isbn <> ''` → werden **nie** angefasst. `PENDING` heißt „noch nie versucht" und bleibt es für immer — ein Status, der Wartendes verspricht, das nie kommt. |
+  | mit ISBN  | 194     | `FAILED`  | Der Query holt `PENDING` **und** `FAILED` → alle 6 h erneut gegen DNB/Google/OpenLibrary, **ohne Backoff und ohne Aufgabe-Zähler**. 776 Anfragen/Tag ohne Ertrag.              |
+  | mit ISBN  | 12      | `PENDING` | kommen beim nächsten Lauf dran                                                                                                                                                 |
 
-  Die beiden anderen Wünsche kosten mehr: **Klassensatz-Reservierungen** — `reservation.go`
-  liefert weder `cover_url` noch `isbn`, das Backend muss mit. **Wünsche & Meldungen** —
-  `anliegen.go` hat `isbn`, aber kein `cover_url`; der ISBN-Fallback aus `reorders.go`
-  wäre übertragbar. Im **Portal** zeigt nur `PortalTrefferkarte` ein Cover;
-  `AnliegenWidget`, `PortalSchulbuecher` und `PortalLernmittel` nicht.
+  Zu prüfen wäre, ob die 194 `FAILED` auf dem Zielsystem auch scheitern — lokal kann es
+  am fehlenden Netz des Containers liegen, dann wäre die Zahl nicht übertragbar. Die 913
+  ohne ISBN sind dagegen strukturell und gelten überall.
+
+  **Reihenfolge daher: erst die Daten, dann die Anzeige.** Cover in die Zeile zu bauen,
+  solange 82 % der Titel keine ISBN haben, poliert ein leeres Regal. Wenn die Abdeckung
+  steht, ist die Anzeige richtig — M3 sieht sie ausdrücklich vor
+  (`list-item-leading-image` 56 px, `leading-space` 16 px), und dann lohnt auch das
+  gemeinsame Bauteil: Es gibt fünf Cover-Breiten im Haus (`w-7`/`w-8`/`w-10`/`w-12`/`w-16`)
+  und die Fallback-Kette aus `coverKandidaten` steht in **vier** Dateien kopiert. Das muss
+  eine Komponente werden, kein Snippet — sie braucht State pro Instanz (Kandidaten-Index,
+  `naturalWidth`-Prüfung gegen das 1×1-GIF des Proxys).
+
+  Offen bleibt unabhängig davon Peters Wunsch für **Klassensatz-Reservierungen**
+  (`reservation.go` liefert weder `cover_url` noch `isbn`) und **Wünsche & Meldungen**
+  (`anliegen.go` hat `isbn`, kein `cover_url`).
 
 - **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen**
   (04.09.2026). `Modal.svelte` trug Rahmen **und** Schatten — die Bauform, die M3 bei
