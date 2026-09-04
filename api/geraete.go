@@ -43,16 +43,23 @@ func (s *Server) ListGeraeteHandler(repo repository.GeraeteRepository) http.Hand
 		// bleibt Aufrufern ohne view_students verborgen — verliehen ja/nein
 		// sieht man weiterhin (ausgeliehen_an wird zu "", nicht nil).
 		if !s.BesitztRecht(r, "view_students") {
-			leer := ""
-			for i := range geraete {
-				if geraete[i].AusgeliehenAn != nil {
-					geraete[i].AusgeliehenAn = &leer
-				}
-			}
+			maskiereAusleiher(geraete)
 		}
 		RespondJSON(w, http.StatusOK, map[string]any{"data": geraete})
 		return nil
 	})
+}
+
+// maskiereAusleiher ersetzt Ausleiher-Namen durch leere Strings, um den
+// Datenschutz (fehlendes view_students-Recht) zu wahren, während der
+// Ausleihstatus (verliehen ja/nein) erhalten bleibt.
+func maskiereAusleiher(geraete []repository.GeraetMitStatus) {
+	leer := ""
+	for i := range geraete {
+		if geraete[i].AusgeliehenAn != nil {
+			geraete[i].AusgeliehenAn = &leer
+		}
+	}
 }
 
 // CreateGeraetHandler legt ein Gerät an. POST /api/geraete
