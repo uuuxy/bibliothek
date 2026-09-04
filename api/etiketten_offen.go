@@ -31,6 +31,25 @@ const etikettenOffenLimit = 300
 // Fundstellen — Liste, Zähler und die pg-Tests — lesen unverändert diesen Namen.
 const etikettenOffenBedingung = repository.EtikettOffenBedingung
 
+// etikettenStatusBedingung uebersetzt den status-Parameter in sein SQL-Praedikat.
+//
+// Vorgabe bleibt "offen": Die Liste heisst „Fehlende Etiketten" und soll ohne Zutun
+// genau das zeigen. Die anderen Stufen sind Werkzeug, nicht Alltag.
+//
+// Liste UND Zaehler lesen es hier. Sonst nennt die Fusszeile der Liste ("300 von 30.674")
+// irgendwann eine Zahl aus einer anderen Menge als die Zeilen darueber — dieselbe Drift,
+// gegen die etikettenOffenBedingung eine Zeile hoeher anschreibt.
+func etikettenStatusBedingung(status string) string {
+	switch status {
+	case "erledigt":
+		return `e.etikett_gedruckt = true AND e.ist_ausgesondert = false`
+	case "alle":
+		return `e.ist_ausgesondert = false`
+	default:
+		return etikettenOffenBedingung
+	}
+}
+
 // ExemplarOhneEtikett ist eine Zeile der Nachdruck-Liste. Die Feldnamen barcode_id/titel/
 // autor sind KEIN Zufall: In genau dieser Form nimmt der Etikettendruck seine Aufträge
 // entgegen (printQueue → labels.svelte.js), die Liste kann also direkt übergeben werden.
@@ -72,17 +91,7 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		suche := strings.TrimSpace(r.URL.Query().Get("q"))
 
-		// Vorgabe bleibt "offen": Die Liste heisst „Fehlende Etiketten" und soll ohne
-		// Zutun genau das zeigen. Die anderen Stufen sind Werkzeug, nicht Alltag.
-		var statusBedingung string
-		switch r.URL.Query().Get("status") {
-		case "erledigt":
-			statusBedingung = `e.etikett_gedruckt = true AND e.ist_ausgesondert = false`
-		case "alle":
-			statusBedingung = `e.ist_ausgesondert = false`
-		default:
-			statusBedingung = etikettenOffenBedingung
-		}
+		statusBedingung := etikettenStatusBedingung(r.URL.Query().Get("status"))
 
 		rows, err := s.DB.Pool.Query(r.Context(), `
 			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY-MM-DD'),
@@ -124,9 +133,18 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 // Für eine Zahl 300 Zeilen zu übertragen wäre Verschwendung — und ab dem Limit wäre die
 // Zahl schlicht falsch (die Liste ist gedeckelt, der Bestand nicht).
 //
+// Seit dem 04.09.2026 versteht sie dieselben Filter wie die Liste (status, q). Der Grund
+// steht in der Fusszeile der Liste: Die zeigt hoechstens 300 Zeilen, sagte aber nicht, wie
+// viele es insgesamt sind — am Reiter stand "30674", darunter lagen 300, und nichts
+// verband die beiden Zahlen. Ohne die Filter haette die Fusszeile in "Erledigt" und
+// "Alle" eine Zahl aus der falschen Menge genannt.
+//
 // @Summary      Anzahl der Exemplare ohne gedrucktes Etikett
 // @Tags         books
 // @Produce      json
+// @Param        q       query   string  false  "Filter über Titel oder Barcode"
+// @Param        status  query   string  false  "offen (Vorgabe) | erledigt | alle"
+// @Param        bis     query   string  false  "Stichtag JJJJ-MM-TT (nur mit status=offen sinnvoll)"
 // @Success      200  {object}  map[string]int
 // @Router       /exemplare/etiketten-offen/anzahl [get]
 func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
@@ -144,11 +162,16 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 			bis = geparst
 		}
 
+		// Derselbe JOIN wie in der Liste. Er ist verlustfrei: titel_id ist NOT NULL.
 		var anzahl int
 		err := s.DB.Pool.QueryRow(r.Context(), `
-			SELECT count(*) FROM buecher_exemplare e
-			WHERE `+etikettenOffenBedingung+` AND ($1::date IS NULL OR e.erworben_am <= $1)`,
-			bis,
+			SELECT count(*)
+			FROM buecher_exemplare e
+			JOIN buecher_titel t ON t.id = e.titel_id
+			WHERE `+etikettenStatusBedingung(r.URL.Query().Get("status"))+`
+			  AND ($1::date IS NULL OR e.erworben_am <= $1)
+			  AND ($2 = '' OR t.titel ILIKE '%' || $2 || '%' OR e.barcode_id ILIKE '%' || $2 || '%')`,
+			bis, strings.TrimSpace(r.URL.Query().Get("q")),
 		).Scan(&anzahl)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Zählen der offenen Etiketten", err)

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/db"
 	"bibliothek/internal/service"
@@ -215,4 +216,86 @@ func postJSON(t *testing.T, handler http.HandlerFunc, pfad string, body map[stri
 		t.Fatalf("POST %s: Antwort unlesbar: %v", pfad, err)
 	}
 	return antwort
+}
+
+// Der Zähler muss dieselben Filter verstehen wie die Liste.
+//
+// Anlass (04.09.2026): Die Liste ist bei 300 Zeilen gedeckelt, sagte das aber nicht — am
+// Reiter stand "30674", darunter lagen 300 Zeilen, und nichts verband die beiden Zahlen.
+// Seitdem nennt die Fusszeile beide ("300 von 30.674"), und dafuer muss der Zaehler
+// dieselbe Menge zaehlen, die die Liste zeigt. Verstuende er status/q nicht, stuende unter
+// einer gefilterten Liste die Zahl des ungefilterten Bestands — eine Angabe, die
+// schlimmer ist als gar keine, weil sie glaubwuerdig aussieht.
+func TestEtikettenkette_ZaehlerFolgtDenFilternDerListe(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	ctx := context.Background()
+
+	// Drei offene und zwei erledigte Exemplare unter einer eigenen Marke, dazu ein
+	// Fremdkoerper ohne die Marke: Ohne den waere ein Zaehler, der `q` schlicht ignoriert,
+	// zufaellig richtig.
+	if _, err := pool.Exec(ctx, `
+		WITH t AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('ZAEHLERMARKE Titel', 'A') RETURNING id
+		), f AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('Anderer Titel', 'B') RETURNING id
+		), a AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+			SELECT t.id, 'ZM-OFFEN-' || g, false, CURRENT_DATE FROM t, generate_series(1, 3) AS g
+		), b AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+			SELECT t.id, 'ZM-FERTIG-' || g, true, CURRENT_DATE FROM t, generate_series(1, 2) AS g
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT f.id, 'ZM-FREMD-1', false, CURRENT_DATE FROM f
+	`); err != nil {
+		t.Fatalf("Seed: %v", err)
+	}
+
+	faelle := []struct {
+		name    string
+		query   string
+		erwarte int
+	}{
+		{"offen mit Marke", "?q=ZAEHLERMARKE", 3},
+		{"erledigt mit Marke", "?q=ZAEHLERMARKE&status=erledigt", 2},
+		{"alle mit Marke", "?q=ZAEHLERMARKE&status=alle", 5},
+		{"offen ueber Barcode", "?q=ZM-FREMD", 1},
+	}
+
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			var liste []ExemplarOhneEtikett
+			jsonHolen(t, srv.EtikettenOffenHandler(), "/api/exemplare/etiketten-offen"+f.query, &liste)
+
+			var zaehler struct {
+				Anzahl int `json:"anzahl"`
+			}
+			jsonHolen(t, srv.EtikettenOffenAnzahlHandler(),
+				"/api/exemplare/etiketten-offen/anzahl"+f.query, &zaehler)
+
+			if len(liste) != f.erwarte {
+				t.Errorf("Liste hat %d Zeilen, erwartet %d", len(liste), f.erwarte)
+			}
+			if zaehler.Anzahl != f.erwarte {
+				t.Errorf("Zaehler nennt %d, erwartet %d — die Fusszeile der Liste zeigte damit "+
+					"eine Zahl aus einer anderen Menge als die Zeilen darueber", zaehler.Anzahl, f.erwarte)
+			}
+		})
+	}
+
+	// Der Stichtag bleibt, was er war: die Zahl fuer das Altbestand-Aufraeumen, also
+	// ausschliesslich OFFENE Etiketten. Ein `bis`, das ploetzlich auch Erledigte zaehlte,
+	// wuerde im Dialog eine zu grosse Zahl versprechen.
+	var mitStichtag struct {
+		Anzahl int `json:"anzahl"`
+	}
+	jsonHolen(t, srv.EtikettenOffenAnzahlHandler(),
+		"/api/exemplare/etiketten-offen/anzahl?bis="+time.Now().Format(dateFormatISO), &mitStichtag)
+	if mitStichtag.Anzahl != 4 {
+		t.Errorf("Stichtag-Zaehler nennt %d, erwartet 4 (drei markierte + ein fremdes offenes)",
+			mitStichtag.Anzahl)
+	}
 }
