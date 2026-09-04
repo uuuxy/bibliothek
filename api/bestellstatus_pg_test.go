@@ -60,7 +60,11 @@ func TestBestellstatusSpalteStattNotizMagie(t *testing.T) {
 		t.Fatalf("Exemplar-ID: %v", err)
 	}
 	auditRepo := repository.NewAuditRepository(pool)
-	if _, err := service.BulkReceiveOrder(ctx, pool, auditRepo, []string{exemplarID}, "00000000-0000-0000-0000-000000000001", ""); err != nil {
+	if _, err := service.BulkReceiveOrder(ctx, pool, auditRepo, service.BulkReceiveParams{
+		ExemplarIDs: []string{exemplarID},
+		AdminID:     "00000000-0000-0000-0000-000000000001",
+		IPAddr:      "",
+	}); err != nil {
 		t.Fatalf("Wareneingang: %v", err)
 	}
 	if n := opacGesamt(t, pool, "F1-Magietext-Titel"); n != 2 {

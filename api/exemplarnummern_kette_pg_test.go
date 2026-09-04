@@ -143,7 +143,11 @@ func TestExemplarnummern_VonDerBestellungBisZumScan(t *testing.T) {
 	}
 
 	// 5. Wareneingang: dieselben Exemplare werden ausleihbar, die Nummer bleibt.
-	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), ids, "", "127.0.0.1"); err != nil {
+	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), service.BulkReceiveParams{
+		ExemplarIDs: ids,
+		AdminID:     "",
+		IPAddr:      "127.0.0.1",
+	}); err != nil {
 		t.Fatalf("Wareneingang: %v", err)
 	}
 
