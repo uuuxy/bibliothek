@@ -77,7 +77,11 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 			return
 		}
 
-		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, req.BarcodeID, "", "dieser Barcode wird bereits verwendet")
+		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
+			BarcodeID:   req.BarcodeID,
+			ExcludeID:   "",
+			KonfliktMsg: "dieser Barcode wird bereits verwendet",
+		})
 		if !ok {
 			return
 		}
@@ -163,7 +167,11 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 			return
 		}
 
-		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, req.BarcodeID, id, "dieser Barcode wird bereits von einem anderen Benutzer verwendet")
+		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
+			BarcodeID:   req.BarcodeID,
+			ExcludeID:   id,
+			KonfliktMsg: "dieser Barcode wird bereits von einem anderen Benutzer verwendet",
+		})
 		if !ok {
 			return
 		}
