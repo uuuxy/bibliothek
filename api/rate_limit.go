@@ -32,6 +32,17 @@ func newIPRateLimiter(limit int) *ipRateLimiter {
 	}
 }
 
+func (l *ipRateLimiter) cleanupStaleVisitors(now time.Time) {
+	if len(l.visitors) <= 5000 {
+		return
+	}
+	for k, vis := range l.visitors {
+		if now.Sub(vis.lastRefill) > 5*time.Minute {
+			delete(l.visitors, k)
+		}
+	}
+}
+
 // allow checks if the IP is allowed to perform a request under token bucket rules.
 func (l *ipRateLimiter) allow(ip string) bool {
 	l.mu.Lock()
@@ -47,13 +58,7 @@ func (l *ipRateLimiter) allow(ip string) bool {
 		l.visitors[ip] = v
 
 		// Clean up stale visitor entries to prevent memory leaks
-		if len(l.visitors) > 5000 {
-			for k, vis := range l.visitors {
-				if now.Sub(vis.lastRefill) > 5*time.Minute {
-					delete(l.visitors, k)
-				}
-			}
-		}
+		l.cleanupStaleVisitors(now)
 
 		v.tokens -= 1.0
 		return true
