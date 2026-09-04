@@ -2,6 +2,7 @@
 	import { CircleCheck, Plus, Printer } from '@lucide/svelte';
 	import Suchpille from '../ui/Suchpille.svelte';
 	import CoverPeek from '../ui/CoverPeek.svelte';
+	import BuchCover from '../ui/BuchCover.svelte';
 
 	let { recommendations, onAddToCart } = $props();
 
@@ -160,13 +161,12 @@
 				<div
 					class="group flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 hover:bg-slate-50 hover:border-slate-200 transition-colors"
 				>
-					<!-- Kein dauerhaftes Cover, sondern eines auf Abruf. Das feste Feld kostete 53 px
-					     je Zeile (71 % der Zeilenhöhe) und einen Proxy-Request je Titel, war für
-					     Lehrmittel aber fast immer leer. Der Abruf kostet 20 px in der Breite, nichts
-					     in der Höhe und null Requests, solange niemand hinsieht — deckt aber den Fall
-					     ab, für den das Bild wirklich gebraucht wird: die richtige Auflage erkennen,
-					     wenn die ISBN allein nicht reicht. -->
-					<CoverPeek isbn={r.isbn || ''} coverUrl={r.cover_url || ''} titel={r.titel} />
+					<!-- Cover IN der Zeile, zugleich Auslöser der Großansicht (so sieht CoverPeek es
+					     über `children` vor). Frühere Gegengründe gemessen widerlegt: `loading="lazy"`
+					     erspart die 247 Requests, 5.724 von 8.706 Titeln ohne Exemplar haben ein Cover. -->
+					<CoverPeek isbn={r.isbn || ''} coverUrl={r.cover_url || ''} titel={r.titel}>
+						<BuchCover coverUrl={r.cover_url || ''} isbn={r.isbn || ''} titel={r.titel} />
+					</CoverPeek>
 
 					<div class="min-w-0 flex-1">
 						<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">{r.titel}</h4>
