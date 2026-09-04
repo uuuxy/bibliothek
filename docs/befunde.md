@@ -34,6 +34,30 @@ Zwei Regeln dazu:
 
 ---
 
+## Reihenfolge — womit weitermachen (04.09.2026, abends)
+
+Diese Liste ordnet nur, sie beschreibt nichts doppelt; die Sache selbst steht jeweils
+unten. Was oben steht, blockiert oder verfällt; was unten steht, wartet ohne Schaden.
+
+1. **Getrennte Arbeitsverzeichnisse für die parallelen Sitzungen** (Betrieb, unten).
+   Zuerst, weil es sonst weiter Läufe entwertet — heute je einen E2E-Lauf und einen Commit.
+2. **Release ziehen.** Seit `v1.9.5` liegen 39 Commits auf `main`, darunter drei Features
+   (Portal-Schulbuch-PDF, eine Suchleiste je Seite, Cover im Bestellbedarf). Ein Tag kostet
+   nichts und macht die Zwischenstände unterscheidbar; danach ist der Deploy Peters Entscheidung.
+3. **Peters fünf Entscheidungen** (Abschnitt „Entscheidung nötig"). Punkt 2 (Karenz ab Rückgabe)
+   ist der einzige mit Verfallsdatum: Er betrifft Schüler, die nach dem Abgang zurückgeben.
+4. **Cover-Rest im Backend** (`reservation.go`, `anliegen.go`) — die zwei Bildschirme, denen
+   die gestern gebaute Anzeige mangels Feld noch nicht möglich ist.
+5. **Die elf Overlays auf `Modal.svelte`** — ein Durchgang am Bildschirm, Einzelfall für
+   Einzelfall, nicht als Suchen-und-Ersetzen.
+6. **`monitorTakt.test.js` entwackeln** und **das M3-Gate um Datenlagen erweitern** — beides
+   klein, beides an einem Nachmittag zu machen.
+7. **16 Cover-Stellen** und Kategorie C: nur beim nächsten fachlichen Anfassen.
+
+Nicht auf dieser Liste, weil sie bei Peter liegt: der Abschnitt „Außerhalb dieses Registers".
+
+---
+
 ## Offen — abarbeitbar
 
 Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
@@ -58,6 +82,18 @@ nicht hier.
     an ein Buch. Vorbild: DNB-Signaturvorschlag (22a10b1). Der Sync selbst ist in Ordnung
     (Drossel 500 ms, `NOT_FOUND` wird nicht wiederholt) — die Kritik vom 04.09. war falsch.
 
+- **Das M3-Gate sieht nur, was die Testdaten hergeben** (04.09.2026, B). `e2e/m3-bauform.spec.js`
+  läuft alle Routen aus `Router.svelte` ab und misst, was GERENDERT ist. Die Coverkachel im
+  Statistik-Dashboard trug Rahmen und Schatten zugleich — das Gate lief zwanzigmal darüber und
+  sah sie nie, weil die Liste „Top-Bücher" im e2e-Bestand keine Zeile mit Cover hat. Gefunden hat
+  sie ein fremder Agent beim Lesen des Quelltexts (Jules-PR #568, übernommen als cc953622).
+  Das ist die dritte Ausprägung derselben Blindheit — nach den geschlossenen Dialogen und der
+  zustandsabhängigen `BestelllinkHinweis`-Meldung, beide im Kopf der Spec-Datei beschrieben.
+  Anfassen: die Öffnerliste um Datenlagen erweitern (Seed mit Cover) oder die Regel zusätzlich
+  am Quelltext prüfen — eine Klassenlisten-Ratsche findet Rahmen+Schatten ohne Browser, kann
+  aber die drei gemessenen Fallen (Deckkraft 0, `ring-*`, Hover-Erhebung) nicht unterscheiden.
+  Beides zusammen, nicht eines statt des anderen.
+
 - **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen**
   (04.09.2026). `Modal.svelte` trug Rahmen **und** Schatten — die Bauform, die M3 bei
   keinem seiner 84 Bauteile kennt; behoben, wirkt auf elf Dialoge. Diese elf wiederholen
@@ -66,7 +102,8 @@ nicht hier.
   `OmniboxBlockAlert`, `OmniboxVormerkungAlert`, `OmniboxChecklistDialog`,
   `MahnwesenTable`, `IsbnLookupDialog`, `StrichcodeScanner`.
 
-  Quelltext-Zählung nach den Fixes: **40 Kandidaten**, überwiegend in diesen Overlays,
+  Quelltext-Zählung nach den Fixes: **39 Kandidaten** (die 40. war die Coverkachel im
+  Statistik-Dashboard, gefallen am 04.09. mit cc953622), überwiegend in diesen Overlays,
   der Rest Buchcover (Bild, kein Bauteil) und Etikettenvorschau (simuliert Papier).
   **Nicht pauschal ändern:** `OmniboxBlockAlert` trägt `border-4 border-rose-500` als
   Alarmsignal an der Theke — dort IST der Rahmen die Aussage. Einzelfallprüfung am
@@ -151,7 +188,7 @@ Einzeiler; die ausführlichen Begründungen stehen in der Git-Historie dieser Da
 | `LabelHeight >= 30` steht 6× in zwei Dateien                                   | Schwellwert-Doppelung ohne Wirkung.                                                                                                                                                                                                                                                                              |
 | LUSD-Namensschlüssel nur `lower+trim`                                          | Umlaut-/Bindestrich-Varianten gelten als verschiedene Menschen — sicher, aber nicht klug.                                                                                                                                                                                                                        |
 | Paritätstest vergleicht keine COMMENTs/Seeds                                   | Kosmetik; Struktur ist gedeckt.                                                                                                                                                                                                                                                                                  |
-| Jules-Erbe                                                                     | Sieben Testdateien > 200 Zeilen; Export-CSV-„breaks stream"-Test schwach.                                                                                                                                                                                                                                        |
+| Jules-Erbe                                                                     | Acht Testdateien > 200 Zeilen (neu: `inventur/lernmittel_pdf_test.go`, 257); Export-CSV-„breaks stream"-Test schwach.                                                                                                                                                                                                                                        |
 | Klone: Go `dupl` 8 Paare, Frontend `jscpd` 0,41 %                              | Unter der Schwelle.                                                                                                                                                                                                                                                                                              |
 
 ## Außerhalb dieses Registers (Betrieb, liegt bei Peter)
@@ -184,4 +221,4 @@ TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-AP
 sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
 (`/api/v1`) und Mandantenfähigkeit (RLS).
 
-Stand: 2026-09-04
+Stand: 2026-09-04 (abends)
