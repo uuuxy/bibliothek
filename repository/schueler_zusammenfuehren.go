@@ -189,7 +189,7 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 
 	f, o := fuehrend(ziel, quelle)
 	erg.Vorname, erg.Nachname, erg.Klasse = f.vorname, f.nachname, f.klasse
-	if err := schreibeZusammengefuehrtesZiel(ctx, tx, SchreibeZusammengefuehrtesZielParams{
+	if err := schreibeZusammengefuehrtesZiel(ctx, tx, schreibeZusammengefuehrtesZielParams{
 		ZielID:        ziel.id,
 		F:             f,
 		O:             o,
@@ -361,7 +361,7 @@ func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
 	}
 }
 
-type SchreibeZusammengefuehrtesZielParams struct {
+type schreibeZusammengefuehrtesZielParams struct {
 	ZielID        string
 	F             *zusammenfuehrenZeile
 	O             *zusammenfuehrenZeile
@@ -377,7 +377,7 @@ type SchreibeZusammengefuehrtesZielParams struct {
 // Eine MANUELLE Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
 // nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel
 // nicht selbst schon manuell gesperrt ist (dann bleibt dessen Grund).
-func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p SchreibeZusammengefuehrtesZielParams) error {
+func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p schreibeZusammengefuehrtesZielParams) error {
 	tag, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = $2, nachname = $3, klasse = $4,
