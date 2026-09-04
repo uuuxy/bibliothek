@@ -13,6 +13,7 @@
 	import BestellHistorie from './components/bestellungen/BestellHistorie.svelte';
 	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import BestelllinkHinweis from './components/bestellungen/BestelllinkHinweis.svelte';
+	import Reiter from './components/ui/Reiter.svelte';
 	import KlassensatzReservierungen from './components/bestellungen/KlassensatzReservierungen.svelte';
 	import AnliegenListe from './components/bestellungen/AnliegenListe.svelte';
 
@@ -145,39 +146,36 @@
 	     keine Aktionen aus und springen nicht zu anderen Zielen. Das Nachdrucken liegt im
 	     Druck-Center und traegt sein Badge dort (Sidebar.svelte).
 
-	     role=tablist/tab und aria-selected: Vorher waren das nackte <button>, ein
-	     Screenreader hoerte fuenf zusammenhanglose Knoepfe statt einer Reitergruppe. -->
-	<div
-		role="tablist"
-		aria-label="Bereiche des Bestellwesens"
-		class="flex items-end gap-6 border-b border-slate-200 shrink-0 overflow-x-auto"
-	>
-		{#snippet tab(id, label, anzahl = 0)}
-			<button
-				role="tab"
-				aria-selected={activeTab === id}
-				onclick={() => (activeTab = id)}
-				class="flex shrink-0 items-center gap-2 pb-3 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors cursor-pointer {activeTab ===
-				id
-					? 'border-blue-600 text-blue-700'
-					: 'border-transparent text-slate-500 hover:text-slate-800'}"
-			>
-				{label}
-				{#if anzahl > 0}
-					<span
-						class="min-w-5 h-5 flex items-center justify-center rounded-full bg-error text-on-error text-label-small font-bold px-1 tabular-nums"
-						aria-label="{anzahl} offen">{anzahl > 999 ? '999+' : anzahl}</span
-					>
-				{/if}
-			</button>
-		{/snippet}
-		{@render tab('bestellungen', 'Bestellungen')}
-		{@render tab('wareneingang', 'Wareneingang', zulaufExemplare)}
-		{@render tab('historie', 'Bestellhistorie')}
-		{@render tab('berichte', 'Berichte')}
-		{@render tab('klassensaetze', 'Klassensatz-Reservierungen', uiStore.pendingReservierungen)}
-		{@render tab('anliegen', 'Wünsche & Meldungen')}
-	</div>
+	     Seit 04.09.2026 aus ui/Reiter.svelte statt von Hand — der letzte der vier
+	     Bestandsfaelle aus der Reiter-Hygiene, „bei ihrem naechsten fachlichen Anfassen
+	     nachgezogen". Anlass war die Hoehe: Im Browser gemessen waren diese sechs Reiter
+	     34 px hoch, alle uebrigen 32. Die zwei Pixel kamen vom `border-b-2`, das den
+	     Indikator IM TEXTFLUSS zeichnete und die Hoehe damit vergroesserte; das Bauteil
+	     legt ihn absolut darueber. 34 px liegt auf keiner Stufe der M3-Dichteskala
+	     (Reiter: 48 / 44 / 40 / 36 / 32 / 28) — es war schlicht ein Rechenfehler der
+	     Bauform, kein gewaehltes Mass.
+
+	     Der Zaehler faellt damit ebenfalls an seinen Platz: Hier stand eine zweite,
+	     handgebaute Fassung der Zaehlerpille — dieselbe Doppelung, die am 04.09. im
+	     Druck-Center „999+" neben „30674" stellte. -->
+	<Reiter
+		etikett="Bereiche des Bestellwesens"
+		aktiv={activeTab}
+		onwahl={(id) => (activeTab = id)}
+		klasse="shrink-0"
+		reiter={[
+			{ id: 'bestellungen', label: 'Bestellungen' },
+			{ id: 'wareneingang', label: 'Wareneingang', anzahl: zulaufExemplare },
+			{ id: 'historie', label: 'Bestellhistorie' },
+			{ id: 'berichte', label: 'Berichte' },
+			{
+				id: 'klassensaetze',
+				label: 'Klassensatz-Reservierungen',
+				anzahl: uiStore.pendingReservierungen
+			},
+			{ id: 'anliegen', label: 'Wünsche & Meldungen' }
+		]}
+	/>
 
 	{#if activeTab === 'bestellungen'}
 		{#key 'bestellungen'}
