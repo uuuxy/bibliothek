@@ -3,6 +3,7 @@
 	import Suchpille from '../ui/Suchpille.svelte';
 	import CoverPeek from '../ui/CoverPeek.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
+	import Button from '../ui/Button.svelte';
 
 	let { recommendations, onAddToCart } = $props();
 
@@ -210,12 +211,11 @@
 			{/each}
 
 			{#if gefiltert.length > maxVisible}
-				<button
-					onclick={() => (maxVisible += 60)}
-					class="w-full py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
-				>
+				<!-- Hausbauteil statt rohem <button> mit text-xs (12 px kennt M3 fuer keinen Knopf).
+				     typo-rollen sah ihn nie: erscheint erst ab 61 Titeln, auf dem Zielsystem (247) immer. -->
+				<Button variant="ghost" class="w-full" onclick={() => (maxVisible += 60)}>
 					Weitere {gefiltert.length - maxVisible} anzeigen
-				</button>
+				</Button>
 			{/if}
 		</div>
 	{/if}
