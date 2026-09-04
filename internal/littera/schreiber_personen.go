@@ -328,7 +328,7 @@ func (p *personenlauf) mailadresse(l Leser) string {
 }
 
 func (p *personenlauf) kuerze(l Leser, feld, wert string, max int) string {
-	return uebernahme.Kuerze(p.s.prot, l.ID, l.Lesernummer, feld, wert, max)
+	return uebernahme.Kuerze(p.s.prot, uebernahme.FeldKontext{QuellID: l.ID, Kennung: l.Lesernummer, Feld: feld, Wert: wert, Max: max})
 }
 
 // lowerTrim bringt eine Adresse auf die Form, in der benutzer.email verglichen wird.

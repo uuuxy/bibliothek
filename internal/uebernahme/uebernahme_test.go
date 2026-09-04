@@ -11,7 +11,7 @@ func TestKuerzeZaehltZeichen(t *testing.T) {
 	p := testProtokoll(t)
 
 	lang := strings.Repeat("ä", 300)
-	got := Kuerze(p, "1", "", "titel", lang, MaxFreitext)
+	got := Kuerze(p, FeldKontext{QuellID: "1", Kennung: "", Feld: "titel", Wert: lang, Max: MaxFreitext})
 
 	if r := []rune(got); len(r) != MaxFreitext {
 		t.Fatalf("%d Zeichen erwartet, geliefert: %d", MaxFreitext, len(r))
@@ -28,7 +28,7 @@ func TestKuerzeLaesstPassendeWerteUnberuehrt(t *testing.T) {
 	p := testProtokoll(t)
 
 	grenzwert := strings.Repeat("ö", MaxFreitext)
-	if got := Kuerze(p, "1", "", "titel", grenzwert, MaxFreitext); got != grenzwert {
+	if got := Kuerze(p, FeldKontext{QuellID: "1", Kennung: "", Feld: "titel", Wert: grenzwert, Max: MaxFreitext}); got != grenzwert {
 		t.Error("ein Wert exakt auf Spaltenbreite darf nicht angetastet werden")
 	}
 	if p.Warnungen() != 0 {
@@ -40,7 +40,7 @@ func TestKuerzeKurzerString(t *testing.T) {
 	p := testProtokoll(t)
 
 	kurz := "Hallo"
-	if got := Kuerze(p, "1", "", "titel", kurz, MaxFreitext); got != kurz {
+	if got := Kuerze(p, FeldKontext{QuellID: "1", Kennung: "", Feld: "titel", Wert: kurz, Max: MaxFreitext}); got != kurz {
 		t.Error("ein kurzer Wert darf nicht angetastet werden")
 	}
 	if p.Warnungen() != 0 {

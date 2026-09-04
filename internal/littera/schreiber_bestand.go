@@ -307,10 +307,10 @@ type titelfelder struct {
 
 func (l *bestandslauf) felder(t Titel) titelfelder {
 	k := func(feld, wert string, max int) string {
-		return uebernahme.Kuerze(l.s.prot, t.ID, t.ISBN, feld, wert, max)
+		return uebernahme.Kuerze(l.s.prot, uebernahme.FeldKontext{QuellID: t.ID, Kennung: t.ISBN, Feld: feld, Wert: wert, Max: max})
 	}
 	kn := func(feld, wert string, max int) *string {
-		return uebernahme.KuerzeNullbar(l.s.prot, t.ID, t.ISBN, feld, wert, max)
+		return uebernahme.KuerzeNullbar(l.s.prot, uebernahme.FeldKontext{QuellID: t.ID, Kennung: t.ISBN, Feld: feld, Wert: wert, Max: max})
 	}
 
 	f := titelfelder{

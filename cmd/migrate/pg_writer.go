@@ -255,14 +255,14 @@ type titelFelder struct {
 func kuerzeFelder(el *uebernahme.Protokoll, m mysqlMedium) titelFelder {
 	id, isbn := quellID(m), isbnRoh(m)
 	f := titelFelder{
-		Titel:      uebernahme.Kuerze(el, id, isbn, "titel", m.Titel, maxTitelSpalte),
-		Untertitel: uebernahme.KuerzeNullbar(el, id, isbn, "untertitel", m.Untertitel.String, maxTitelSpalte),
-		Autor:      uebernahme.KuerzeNullbar(el, id, isbn, "autor", m.Autor.String, maxTitelSpalte),
-		Verlag:     uebernahme.KuerzeNullbar(el, id, isbn, "verlag", m.Verlag.String, maxTitelSpalte),
+		Titel:      uebernahme.Kuerze(el, uebernahme.FeldKontext{QuellID: id, Kennung: isbn, Feld: "titel", Wert: m.Titel, Max: maxTitelSpalte}),
+		Untertitel: uebernahme.KuerzeNullbar(el, uebernahme.FeldKontext{QuellID: id, Kennung: isbn, Feld: "untertitel", Wert: m.Untertitel.String, Max: maxTitelSpalte}),
+		Autor:      uebernahme.KuerzeNullbar(el, uebernahme.FeldKontext{QuellID: id, Kennung: isbn, Feld: "autor", Wert: m.Autor.String, Max: maxTitelSpalte}),
+		Verlag:     uebernahme.KuerzeNullbar(el, uebernahme.FeldKontext{QuellID: id, Kennung: isbn, Feld: "verlag", Wert: m.Verlag.String, Max: maxTitelSpalte}),
 		Medientyp:  "Buch",
 	}
 	if m.Medientyp.Valid && m.Medientyp.String != "" {
-		f.Medientyp = uebernahme.Kuerze(el, id, isbn, "medientyp", m.Medientyp.String, maxMedientypSpalte)
+		f.Medientyp = uebernahme.Kuerze(el, uebernahme.FeldKontext{QuellID: id, Kennung: isbn, Feld: "medientyp", Wert: m.Medientyp.String, Max: maxMedientypSpalte})
 	}
 	return f
 }
