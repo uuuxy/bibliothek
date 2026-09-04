@@ -6,6 +6,7 @@ import (
 	"bibliothek/db"
 	"errors"
 
+	"context"
 	"log"
 	"net/http"
 	"time"
@@ -49,16 +50,9 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
 	// eine Verlängerung ausgehebelt werden. Lehrer-/Handapparat-Ausleihen (kein
 	// schueler_id → LEFT JOIN liefert NULL) sind nicht betroffen.
-	var gesperrt bool
-	var blockReason string
-	if errChk := s.DB.Pool.QueryRow(ctx, `
-			SELECT COALESCE(s.ist_gesperrt, false) OR COALESCE(s.is_manually_blocked, false),
-			       COALESCE(s.block_reason, '')
-			FROM ausleihen a
-			LEFT JOIN schueler s ON s.id = a.schueler_id
-			WHERE a.id = $1 AND a.rueckgabe_am IS NULL
-		`, ausleiheID).Scan(&gesperrt, &blockReason); errChk != nil {
-		if errChk == pgx.ErrNoRows {
+	gesperrt, blockReason, errChk := s.checkAusleiheGesperrt(ctx, ausleiheID)
+	if errChk != nil {
+		if errors.Is(errChk, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 			return
 		}
@@ -174,13 +168,8 @@ func (s *Server) OverrideDueDateHandler(auditRepo repository.AuditRepository) ht
 		// verbieten. Ein VORGEZOGENES Datum (Rückruf) bleibt auch bei Sperre erlaubt:
 		// Es hebt die Sanktion nicht auf, im Gegenteil.
 		if newDate.After(time.Now()) {
-			var gesperrt bool
-			if errChk := s.DB.Pool.QueryRow(ctx, `
-				SELECT COALESCE(s.ist_gesperrt, false) OR COALESCE(s.is_manually_blocked, false)
-				FROM ausleihen a
-				LEFT JOIN schueler s ON s.id = a.schueler_id
-				WHERE a.id = $1 AND a.rueckgabe_am IS NULL
-			`, ausleiheID).Scan(&gesperrt); errChk != nil {
+			gesperrt, _, errChk := s.checkAusleiheGesperrt(ctx, ausleiheID)
+			if errChk != nil {
 				if errors.Is(errChk, pgx.ErrNoRows) {
 					apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
 					return
@@ -312,4 +301,18 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			"updated_count": tag.RowsAffected(),
 		})
 	}
+}
+
+// checkAusleiheGesperrt prüft, ob die angegebene Ausleihe an einen gesperrten Schüler vergeben ist.
+func (s *Server) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (bool, string, error) {
+	var gesperrt bool
+	var blockReason string
+	err := s.DB.Pool.QueryRow(ctx, `
+		SELECT COALESCE(s.ist_gesperrt, false) OR COALESCE(s.is_manually_blocked, false),
+		       COALESCE(s.block_reason, '')
+		FROM ausleihen a
+		LEFT JOIN schueler s ON s.id = a.schueler_id
+		WHERE a.id = $1 AND a.rueckgabe_am IS NULL
+	`, ausleiheID).Scan(&gesperrt, &blockReason)
+	return gesperrt, blockReason, err
 }
