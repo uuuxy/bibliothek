@@ -13,6 +13,16 @@ const (
 	MaxBarcode   = 100 // barcode_id
 )
 
+// Kuerzung enthält die Parameter für die Kuerze-Funktionen.
+type Kuerzung struct {
+	Protokoll *Protokoll
+	QuellID   string
+	Kennung   string
+	Feld      string
+	Wert      string
+	Max       int
+}
+
 // Kuerze bringt ein Freitextfeld auf die Spaltenbreite und meldet jede Kürzung.
 //
 // Gekürzt statt abgelehnt, im selben Geist wie die ISBN-Behandlung: der Datensatz kommt
@@ -22,24 +32,24 @@ const (
 //
 // Gekürzt wird auf max ZEICHEN, nicht auf max Bytes: Postgres zählt bei VARCHAR Zeichen,
 // und ein byteweiser Schnitt zerlegte deutsche Umlaute in ungültiges UTF-8.
-func Kuerze(p *Protokoll, quellID, kennung, feld, wert string, max int) string {
-	r := []rune(wert)
-	if len(r) <= max {
-		return wert
+func Kuerze(k Kuerzung) string {
+	r := []rune(k.Wert)
+	if len(r) <= k.Max {
+		return k.Wert
 	}
-	p.Warnung(quellID, kennung, fmt.Sprintf(
+	k.Protokoll.Warnung(k.QuellID, k.Kennung, fmt.Sprintf(
 		"%s war %d Zeichen lang (Spaltenbreite %d) und wurde gekürzt; Original: %q",
-		feld, len(r), max, wert))
-	return string(r[:max])
+		k.Feld, len(r), k.Max, k.Wert))
+	return string(r[:k.Max])
 }
 
 // KuerzeNullbar arbeitet wie Kuerze, liefert aber nil statt einer leeren Zeichenkette —
 // die Form, die pgx für eine nullbare Spalte braucht.
-func KuerzeNullbar(p *Protokoll, quellID, kennung, feld, wert string, max int) *string {
-	if wert == "" {
+func KuerzeNullbar(k Kuerzung) *string {
+	if k.Wert == "" {
 		return nil
 	}
-	gekuerzt := Kuerze(p, quellID, kennung, feld, wert, max)
+	gekuerzt := Kuerze(k)
 	return &gekuerzt
 }
 
