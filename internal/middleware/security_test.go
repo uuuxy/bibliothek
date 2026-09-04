@@ -63,3 +63,51 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		t.Errorf("Expected response body %q, got %q", "OK", body)
 	}
 }
+
+func TestSecurityHeadersMiddleware_ErrorPath(t *testing.T) {
+	// Create a mock next handler that sets an error status
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	})
+
+	// Wrap the next handler with the middleware being tested
+	middleware := SecurityHeadersMiddleware(nextHandler)
+
+	// Create a mock request and response recorder
+	req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", nil)
+	rr := httptest.NewRecorder()
+
+	// Execute the middleware
+	middleware.ServeHTTP(rr, req)
+
+	// Define expected headers and their expected values
+	expectedHeaders := map[string]string{
+		"X-Content-Type-Options":    "nosniff",
+		"X-Frame-Options":           "DENY",
+		"X-XSS-Protection":          "1; mode=block",
+		"Content-Security-Policy":   "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; frame-ancestors 'none'; form-action 'self'; base-uri 'self'; object-src 'none';",
+		"Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+		"Referrer-Policy":           "strict-origin-when-cross-origin",
+		"Permissions-Policy":        "geolocation=(), microphone=(), camera=(self)",
+	}
+
+	// Verify that each expected header is present and has the correct value even on error
+	for header, expectedValue := range expectedHeaders {
+		t.Run(header, func(t *testing.T) {
+			actualValue := rr.Header().Get(header)
+			if actualValue == "" {
+				t.Errorf("Expected header %s to be set on error, but it was missing", header)
+			} else if actualValue != expectedValue {
+				t.Errorf("Expected header %s to have value %q on error, but got %q", header, expectedValue, actualValue)
+			}
+		})
+	}
+
+	// Verify that the next handler was executed correctly (status code should be 500)
+	if status := rr.Code; status != http.StatusInternalServerError {
+		t.Errorf("Expected HTTP status %v, got %v", http.StatusInternalServerError, status)
+	}
+	if body := rr.Body.String(); body != "Internal Server Error\n" {
+		t.Errorf("Expected response body %q, got %q", "Internal Server Error\n", body)
+	}
+}
