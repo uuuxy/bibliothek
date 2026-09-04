@@ -6,7 +6,7 @@
 	import SignaturRegal from './components/signaturen/SignaturRegal.svelte';
 	import SystematikVerwaltung from './components/signaturen/SystematikVerwaltung.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
-	import Feld from './components/ui/Feld.svelte';
+	import Suchpille from './components/ui/Suchpille.svelte';
 
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	let laedt = $state(true);
@@ -43,10 +43,17 @@
 	     M3 ein „supporting pane". Getrennt wird durch eine Haarlinie, senkrecht sobald
 	     Platz ist, sonst waagerecht. Ein Rahmen mit Radius wuerde daraus zwei schwebende
 	     Objekte machen; es ist aber EIN Arbeitsbereich mit zwei Haelften. -->
+	<!-- Die Suche steht über BEIDEN Hälften, nicht in der linken Spalte: Sie ist die eine
+	     Suche der Seite und hat damit dieselbe Breite und Kante wie überall sonst. -->
+	<Suchpille
+		id="signaturen-suchfeld"
+		bind:wert={suche}
+		etikett="Signatur suchen"
+		platzhalter="Signatur suchen, z. B. BIB …"
+	/>
+
 	<div class="grid divide-y divide-slate-200 lg:grid-cols-[20rem_1fr] lg:divide-x lg:divide-y-0">
 		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">
-			<Feld id="sig-suche" label="Signatur suchen" bind:value={suche} placeholder="z. B. BIB" />
-
 			{#if laedt}
 				<p class="text-sm text-slate-500">Wird geladen …</p>
 			{:else if signaturen.length === 0}

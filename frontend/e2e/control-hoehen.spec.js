@@ -71,7 +71,9 @@ const AUSNAHMEN = [
 	{ kennung: 'etiketten-suchfeld', grund: 'Suchpille des Etiketten-Nachdrucks im Druck-Center' },
 	{ kennung: 'bestellbedarf-suchfeld', grund: 'Suchpille des Bestellbedarfs' },
 	{ kennung: 'titelverwaltung-suchfeld', grund: 'Suchpille der Titel-Verwaltung im Medienkatalog' },
-	{ kennung: 'benutzer-suchfeld', grund: 'Suchpille der Benutzerverwaltung' }
+	{ kennung: 'benutzer-suchfeld', grund: 'Suchpille der Benutzerverwaltung' },
+	{ kennung: 'signaturen-suchfeld', grund: 'Suchpille der Signaturen-Ansicht' },
+	{ kennung: 'abgaenger-suchfeld', grund: 'Suchpille der Abgänger-Ansicht' }
 ];
 
 /**

@@ -27,7 +27,9 @@ const PILLEN = [
 	{ name: 'Schülerdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld' },
 	{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld' },
 	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld' },
-	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld' }
+	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld' },
+	{ name: 'Signaturen', pfad: '/signaturen', id: 'signaturen-suchfeld' },
+	{ name: 'Abgänger', pfad: '/abgaenger', id: 'abgaenger-suchfeld' }
 ];
 
 /**

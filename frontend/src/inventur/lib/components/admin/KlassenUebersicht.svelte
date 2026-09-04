@@ -111,7 +111,7 @@
 </script>
 
 <div class="space-y-10">
-	<div class="flex flex-col gap-3 px-2">
+	<div class="flex flex-col gap-3">
 		<KlassenSuchfeld
 			bind:klasseSearchQuery
 			bind:isKlasseDropdownOpen

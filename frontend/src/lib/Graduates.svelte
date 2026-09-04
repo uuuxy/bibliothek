@@ -22,6 +22,9 @@
 
 	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Ausdruck.
 	let selectedKlasse = $state('');
+	// Suche über Name und Klasse (04.09.2026) — greift zusammen mit dem Klassenfilter und
+	// gilt genauso für den Ausdruck: Was auf dem Bildschirm steht, steht auf dem Papier.
+	let suche = $state('');
 	let classes = $derived(
 		[...new Set(graduates.map((/** @type {any} */ s) => s.klasse))].sort((a, b) =>
 			String(a).localeCompare(String(b), 'de', { numeric: true })
@@ -32,6 +35,15 @@
 			? graduates.filter((/** @type {any} */ s) => s.klasse === selectedKlasse)
 			: graduates
 		)
+			.filter((/** @type {any} */ s) => {
+				const q = suche.trim().toLowerCase();
+				if (!q) return true;
+				return [s.vorname, s.nachname, s.klasse, s.barcode_id].some((/** @type {any} */ w) =>
+					String(w ?? '')
+						.toLowerCase()
+						.includes(q)
+				);
+			})
 			.slice()
 			// Dringlichkeit zuerst: überfällige oben, dann nach Anzahl offener Bücher, dann Klasse/Name.
 			.sort(
@@ -133,6 +145,7 @@
 
 <PageShell>
 	<AbgaengerKopfzeile
+		bind:suche
 		bind:klasse={selectedKlasse}
 		klassen={classes}
 		gesamt={graduates.length}
