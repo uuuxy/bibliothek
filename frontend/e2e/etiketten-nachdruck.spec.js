@@ -243,14 +243,17 @@ test('Altbestand aufräumen vermerkt nur Exemplare bis zum Stichtag', async ({ p
 	await page.getByTitle('Druck-Center').click();
 	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 
-	await page.getByRole('group').filter({ hasText: 'Altbestand aufräumen' }).click();
+	// Seit dem 04.09.2026 ein Dialog statt eines <details> am Fuß der Liste: Die Aktion ist
+	// unumkehrbar und stand ausgerechnet hinter 300 Zeilen Scrollen.
+	await page.getByRole('button', { name: 'Altbestand aufräumen' }).click();
 	// Stichtag: gestern — trifft das alte Exemplar, nicht das heutige.
 	const gestern = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-	await page.locator('#stichtag').fill(gestern);
-	await page.locator('#stichtag').dispatchEvent('change');
+	await page.locator('#altbestand-stichtag').fill(gestern);
+	await page.locator('#altbestand-stichtag').dispatchEvent('change');
 
 	// Die Zahl steht VOR der Bestätigung — die Aktion ist nicht umkehrbar.
-	const knopf = page.getByRole('button', { name: /Exemplare als erledigt vermerken/ });
+	await expect(page.getByText(/Exemplare.*als erledigt vermerkt/)).toBeVisible();
+	const knopf = page.getByRole('button', { name: 'Als erledigt vermerken', exact: true });
 	await expect(knopf).toBeEnabled();
 	await knopf.click();
 
@@ -312,4 +315,73 @@ test('Etiketten von Hand vermerken und wieder öffnen', async ({ page }) => {
 	await zeile2.getByRole('checkbox').check();
 	await page.getByRole('button', { name: /wieder als offen vermerken/ }).click();
 	await expect.poll(flag, { timeout: 5000, message: 'Zurücksetzen muss ankommen' }).toBe('f');
+});
+
+// Die Liste ist serverseitig bei 300 Zeilen gedeckelt (etikettenOffenLimit). Bis zum
+// 04.09.2026 sagte das niemand: Am Reiter stand „30674", darunter lagen 300 Zeilen, und
+// nichts verband die beiden Zahlen — der Betreiber sah ein Prozent seines Bestands und
+// hielt es fuer alles.
+//
+// Der Vorrat wird hier selbst gesaet statt auf die Datenlage der Test-DB zu bauen: Ein
+// Gate, das an fremden Zeilen haengt, ist beim naechsten Aufraeumen still gruen.
+test('Ist die Liste gedeckelt, sagt sie es — mit beiden Zahlen', async ({ page }) => {
+	const s = uniqueSuffix();
+	const marke = `E2E-KAPP-${s}`;
+
+	// 305 Exemplare: mehr als die 300, die der Endpunkt hoechstens liefert.
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel, autor) VALUES ('E2E-Kapp-Titel ${s}', 'Viele') RETURNING id
+		)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT t.id, '${marke}-' || g, false, CURRENT_DATE FROM t, generate_series(1, 305) AS g;
+	`);
+
+	await uiLogin(page);
+	await page.getByTitle('Druck-Center').click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
+	await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(marke);
+
+	// BEWEIS: Beide Zahlen stehen da — und zwar UEBER der Liste. Unter 300 Zeilen liest
+	// die Ansage niemand; im ersten Anlauf stand sie am Fuss und war im Screenshot nicht
+	// zu sehen.
+	const ansage = page.getByText(/300 von 305/);
+	await expect(ansage).toBeVisible();
+	const yAnsage = (await ansage.boundingBox())?.y ?? 0;
+	const yTabelle = (await page.locator('table').boundingBox())?.y ?? 0;
+	expect(yAnsage, 'die Ansage steht ueber der Tabelle').toBeLessThan(yTabelle);
+
+	await expect(page.locator('tbody tr')).toHaveCount(300);
+});
+
+// In der Stufe „Erledigt" hing der gefuellte Knopf an `gewaehltOffen` — und davon gibt es
+// dort keine. Gemessen am 04.09.2026 mit 300 angehakten Zeilen stand der auffaelligste
+// Knopf der Seite auf „Nichts ausgewaehlt", waehrend der einzige wirksame Weg als
+// Nebenknopf in einem Kasten weiter unten lag.
+test('Der gefüllte Knopf trägt in jeder Stufe eine Aktion, die dort möglich ist', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	const titel = `E2E-Stufe ${s}`;
+	seedSQL(`
+		WITH t AS (INSERT INTO buecher_titel (titel, autor) VALUES ('${titel}', 'Stufe') RETURNING id)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
+		SELECT id, 'E2E-STUF-${s}', true, CURRENT_DATE FROM t;
+	`);
+
+	await uiLogin(page);
+	await page.getByTitle('Druck-Center').click();
+	await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
+	await page.getByRole('button', { name: 'Erledigt', exact: true }).click();
+	await page.getByRole('searchbox', { name: 'Exemplare filtern' }).fill(`E2E-STUF-${s}`);
+
+	const zeile = page.locator('tr', { hasText: titel });
+	await zeile.first().waitFor();
+	await zeile.getByRole('checkbox').check();
+
+	// BEWEIS: Der gefuellte Knopf (der erste in der Aktionszeile) ist bedienbar und trägt
+	// den Weg zurueck — nicht „Nichts ausgewaehlt".
+	const haupt = page.getByRole('button', { name: /1 wieder als offen vermerken/ });
+	await expect(haupt).toBeEnabled();
+	await expect(page.getByRole('button', { name: /Nichts ausgewählt/ })).toHaveCount(0);
 });

@@ -43,7 +43,7 @@ const BESTAND = {
 	'src/lib/components/admin/DataManagement.svelte': 276,
 	'src/lib/components/bestellungen/OrderRecommendations.svelte': 222,
 	'src/lib/components/bestellungen/OrderSearch.svelte': 287,
-	'src/lib/components/labels/EtikettenNachdruck.svelte': 412,
+	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
 	'src/lib/components/mahnwesen/MahnwesenTable.svelte': 242,
 	'src/lib/components/stats/StatsTrendChart.svelte': 243,
 	'src/lib/components/students/LusdImportView.svelte': 311,
