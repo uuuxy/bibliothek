@@ -41,6 +41,33 @@ Zwei Regeln dazu:
 Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
 nicht hier.
 
+- **Buchcover: Geschwister-Asymmetrie im Bestellwesen, und fünf Größen ohne Bauteil**
+  (04.09.2026, Peter). Im **Bestellbedarf** steht statt des Covers ein Platzhalter-Symbol;
+  das Bild erscheint nur im Hover-Overlay (`CoverPeek`). Vier Geschwister derselben Seite
+  zeigen es dagegen längst in der Zeile: `OrderSearch`, `OrderCart`, `WareneingangTable`,
+  `BestellDetailPositionen`.
+
+  Material 3 ist hier eindeutig: Die Listen-Tokens definieren
+  `list-item-leading-image-width/height: 56px` samt `-shape`; ein Muster „Bild nur bei
+  Hover" kennt die Spezifikation nicht. Dazu kommt die hier schon zweimal getroffene
+  Falle: **Am Tablet gibt es kein Hover** — dort sieht man aktuell überhaupt kein Cover
+  (vgl. Blätterpfeile auf `opacity:0` im Rundgang-Gate).
+
+  **Die Daten fliessen bereits:** `api/reorders.go` liefert `cover_url` UND `isbn`, mit
+  ISBN-Fallback direkt im SQL (Zeile 96). Für den Bestellbedarf ist es also reine
+  Frontend-Arbeit.
+
+  **Vorher aber das Bauteil:** Es gibt fünf verschiedene Cover-Breiten im Haus (`w-7`,
+  `w-8`, `w-10`, `w-12`, `w-16`) und keinen gemeinsamen Ort — jede Stelle baut ihr eigenes
+  `<img>`. Eine sechste Kopie wiederholt das Suchfeld-Drama (zehn Fassungen, sieben Maße).
+  Erst `ui/BuchCover.svelte`, dann verdrahten.
+
+  Die beiden anderen Wünsche kosten mehr: **Klassensatz-Reservierungen** — `reservation.go`
+  liefert weder `cover_url` noch `isbn`, das Backend muss mit. **Wünsche & Meldungen** —
+  `anliegen.go` hat `isbn`, aber kein `cover_url`; der ISBN-Fallback aus `reorders.go`
+  wäre übertragbar. Im **Portal** zeigt nur `PortalTrefferkarte` ein Cover;
+  `AnliegenWidget`, `PortalSchulbuecher` und `PortalLernmittel` nicht.
+
 - **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen** (04.09.2026).
   Aufgefallen beim M3-Bauform-Durchgang: `Modal.svelte` trug Rahmen **und** Schatten
   zugleich — eine Bauform, die die M3-Spezifikation bei keinem ihrer 84 Bauteile kennt
@@ -56,7 +83,7 @@ nicht hier.
   Schatten in derselben Klassenliste; der grösste Teil sitzt in diesen Overlays, der Rest
   in Buchcovern (Bild, kein Bauteil), der Etikettenvorschau (simuliert Papier) und
   einzelnen Karten. **Nicht pauschal ändern:** `OmniboxBlockAlert` trägt `border-4
-  border-rose-500` als Alarmsignal an der Theke — dort ist der Rahmen die Aussage. Das
+border-rose-500` als Alarmsignal an der Theke — dort ist der Rahmen die Aussage. Das
   ist Einzelfallprüfung mit Blick auf den Bildschirm, kein Suchen-und-Ersetzen, und
   deshalb ein eigener Durchgang. Das Gate `e2e/m3-bauform.spec.js` sieht diese Fälle
   nicht, weil die Dialoge zu sind — seine Öffnerliste umfasst bisher zwei.
@@ -120,13 +147,13 @@ eigenmächtig entschieden.
 
 ## Beobachten (nichts zu tun)
 
-| Fund | Warum nur beobachten |
-| ---- | -------------------- |
-| `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`) | Kein Fix verfügbar (`Fixed in: N/A`), transitiv, **kein** Aufrufer im eigenen Code (`govulncheck`, zuletzt 31.08. bestätigt). Dependabot meldet sich, falls sich das ändert. |
-| Designer-Restlücke: Browser-Schließen binnen 800 ms verliert die letzte Auto-Save-Änderung | `onDestroy` schickt seit `37abcbe0` sofort; `sendBeacon` bewusst nicht gebaut (Randlage). |
-| 082-Dedupe der Vormerkungen verlor den neueren `abholbereit`-Eintrag | Auf Prod gelaufen, nicht rückholbar; nur relevant, falls je eine weitere **gewachsene** DB migriert wird. |
-| Barcode des beim Zusammenführen aufgelösten Datensatzes wird wieder vergeben (MAX+1) | Betriebsregel statt Bau (Peter, 03.09.): zweite Karte einziehen — steht im HANDBUCH. Der Ausweis des Kindes selbst ändert sich nie. |
-| Abgänger in der Karenz stehen in keiner Liste (Aktivliste blendet Abgänger aus, Abgänger-Reiter nur mit offenen Büchern) | Peter, 03.09.: nicht schlimm — sie gehen ab und haben nichts offen. Erreichbar per Ausweis-Scan und Kandidatensuche. |
+| Fund                                                                                                                     | Warum nur beobachten                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`)                                                        | Kein Fix verfügbar (`Fixed in: N/A`), transitiv, **kein** Aufrufer im eigenen Code (`govulncheck`, zuletzt 31.08. bestätigt). Dependabot meldet sich, falls sich das ändert. |
+| Designer-Restlücke: Browser-Schließen binnen 800 ms verliert die letzte Auto-Save-Änderung                               | `onDestroy` schickt seit `37abcbe0` sofort; `sendBeacon` bewusst nicht gebaut (Randlage).                                                                                    |
+| 082-Dedupe der Vormerkungen verlor den neueren `abholbereit`-Eintrag                                                     | Auf Prod gelaufen, nicht rückholbar; nur relevant, falls je eine weitere **gewachsene** DB migriert wird.                                                                    |
+| Barcode des beim Zusammenführen aufgelösten Datensatzes wird wieder vergeben (MAX+1)                                     | Betriebsregel statt Bau (Peter, 03.09.): zweite Karte einziehen — steht im HANDBUCH. Der Ausweis des Kindes selbst ändert sich nie.                                          |
+| Abgänger in der Karenz stehen in keiner Liste (Aktivliste blendet Abgänger aus, Abgänger-Reiter nur mit offenen Büchern) | Peter, 03.09.: nicht schlimm — sie gehen ab und haben nichts offen. Erreichbar per Ausweis-Scan und Kandidatensuche.                                                         |
 
 ## Kategorie C — bewusst nicht ohne Anlass
 
