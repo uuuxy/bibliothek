@@ -3,9 +3,31 @@ package crypto
 import (
 	"bytes"
 	"encoding/hex"
+	"os"
 	"strings"
 	"testing"
 )
+
+func TestGetMasterKeyUnset(t *testing.T) {
+	// The existing TestGetMasterKey checks the empty string case via t.Setenv(SchluesselVariable, "").
+	// This test explicitly unsets the environment variable to ensure os.Getenv handles it correctly.
+	oldVal, wasSet := os.LookupEnv(SchluesselVariable)
+	os.Unsetenv(SchluesselVariable)
+	t.Cleanup(func() {
+		if wasSet {
+			os.Setenv(SchluesselVariable, oldVal)
+		} else {
+			os.Unsetenv(SchluesselVariable)
+		}
+	})
+
+	_, err := GetMasterKey()
+	if err == nil {
+		t.Error("GetMasterKey() expected error when env var is unset")
+	} else if !strings.Contains(err.Error(), "ist nicht gesetzt") {
+		t.Errorf("GetMasterKey() error = %v, want error containing 'ist nicht gesetzt'", err)
+	}
+}
 
 func TestGetMasterKey(t *testing.T) {
 	tests := []struct {
