@@ -32,6 +32,11 @@ const MESSE_TYPO = () => {
 		if (!text) continue;
 		const el = knoten.parentElement;
 		if (!el || el.closest('svg, script, style')) continue;
+		// Die Ausweis-Vorschau im Designer ist die maßstäbliche ZEICHNUNG einer Plastikkarte
+		// (85,6 × 54 mm), skaliert aufs Bildschirmformat — kein Bedienelement. Ihre 5 bis
+		// 10 px sind das, was später auf der Karte steht; sie zu vergrößern hieße, den Druck
+		// zu verfälschen. Dieselbe Ausnahme wie der Cover-Platzhalter der Theke.
+		if (el.closest('[data-ausweis-vorschau]')) continue;
 		const rect = el.getBoundingClientRect();
 		if (rect.width === 0 || rect.height === 0) continue;
 		const stil = getComputedStyle(el);
@@ -108,32 +113,55 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 }) => {
 	await uiLogin(page);
 
+	// Geprüft wird JEDE Verwaltungsseite, nicht eine Auswahl. Bis zum 04.09.2026 standen
+	// hier sechs Ansichten — der Standard-Reiter des Druck-Centers war nicht dabei, und
+	// genau dort trugen drei Schritt-Überschriften 14 px (Peter: „die Schrift bei den
+	// Überschriften ist wieder mega klein"). Eine Ratsche, die eine Liste von Bildschirmen
+	// abgeht, wächst nicht mit der Anwendung; sie muss den Bestand abgehen.
 	/** @type {{ name: string, oeffne: () => Promise<void> }[]} */
 	const ansichten = [
-		{ name: 'Schülerdatei', oeffne: () => page.getByTitle('Schülerdatei').click() },
-		{ name: 'Mahnwesen', oeffne: () => page.getByTitle('Mahnwesen').click() },
+		{ name: 'Medienkatalog', oeffne: () => page.goto('/medienkatalog') },
 		{
 			name: 'Medienkatalog › Titel-Verwaltung',
 			oeffne: async () => {
-				await page.getByTitle('Medienkatalog').click();
+				await page.goto('/medienkatalog');
 				await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
 			}
 		},
-		{
-			name: 'Bestellungen › Bestellhistorie',
-			oeffne: async () => {
-				await page.getByTitle('Bestellungen').click();
-				await page.getByRole('tab', { name: /Bestellhistorie/ }).click();
-			}
-		},
+		{ name: 'Signaturen', oeffne: () => page.goto('/signaturen') },
+		{ name: 'Druck-Center', oeffne: () => page.goto('/druck-center') },
 		{
 			name: 'Druck-Center › Fehlende Etiketten',
 			oeffne: async () => {
-				await page.getByTitle('Druck-Center').click();
+				await page.goto('/druck-center');
 				await page.getByRole('tab', { name: /Fehlende Etiketten/ }).click();
 			}
 		},
-		{ name: 'System-Logs', oeffne: () => page.goto('/system-logs') }
+		{
+			name: 'Druck-Center › Schülerausweise',
+			oeffne: async () => {
+				await page.goto('/druck-center');
+				await page.getByRole('tab', { name: /Schülerausweise/ }).click();
+			}
+		},
+		{ name: 'Klassensätze', oeffne: () => page.goto('/schulklassen') },
+		{ name: 'Schülerdatei', oeffne: () => page.goto('/schuelerdatei') },
+		{ name: 'Mahnwesen', oeffne: () => page.goto('/mahnwesen') },
+		{ name: 'Abgänger', oeffne: () => page.goto('/abgaenger') },
+		{ name: 'Bestellungen', oeffne: () => page.goto('/bestellungen') },
+		{
+			name: 'Bestellungen › Bestellhistorie',
+			oeffne: async () => {
+				await page.goto('/bestellungen');
+				await page.getByRole('tab', { name: /Bestellhistorie/ }).click();
+			}
+		},
+		{ name: 'Inventur', oeffne: () => page.goto('/inventur') },
+		{ name: 'Statistiken', oeffne: () => page.goto('/statistiken') },
+		{ name: 'System-Logs', oeffne: () => page.goto('/system-logs') },
+		{ name: 'Benutzer & Rechte', oeffne: () => page.goto('/berechtigungen') },
+		{ name: 'Einstellungen', oeffne: () => page.goto('/einstellungen') },
+		{ name: 'Mein Portal', oeffne: () => page.goto('/kollegium-portal') }
 	];
 
 	const alle = [];

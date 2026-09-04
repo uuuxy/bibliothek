@@ -16,7 +16,7 @@
 	import UserManagementDeleteModal from './UserManagementDeleteModal.svelte';
 	import { apiFetch, extractApiError } from './apiFetch.js';
 	import Button from './components/ui/Button.svelte';
-	import Suchfeld from './components/ui/Suchfeld.svelte';
+	import Suchpille from './components/ui/Suchpille.svelte';
 
 	/** @type {any[]} */
 	let users = $state.raw([]);
@@ -194,7 +194,6 @@
 	onMount(fetchUsers);
 </script>
 
-<!-- Error Banner -->
 {#if error && !showUserModal && !showDeleteConfirm}
 	<div
 		class="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium animate-slide-up flex items-center justify-between"
@@ -206,7 +205,6 @@
 	</div>
 {/if}
 
-<!-- Success Toast -->
 {#if successMessage}
 	<div
 		class="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold shadow-lg animate-slide-up flex items-center gap-2"
@@ -219,14 +217,16 @@
 <UserManagementZugangsanfragen {users} />
 
 <!-- Toolbar -->
-<div class="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-	<Suchfeld
+<div class="mb-4 flex flex-col gap-3">
+	<Suchpille
+		id="benutzer-suchfeld"
 		bind:wert={userSearchQuery}
 		platzhalter="Name oder E-Mail eingeben …"
 		etikett="Benutzer suchen"
-		klasse="w-full sm:max-w-xs"
 	/>
-	<Button onclick={openNewUserModal} class="w-full sm:w-auto">➕ Benutzer anlegen</Button>
+	<div class="flex">
+		<Button onclick={openNewUserModal} class="w-full sm:w-auto">➕ Benutzer anlegen</Button>
+	</div>
 </div>
 
 <!-- User Table -->

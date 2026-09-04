@@ -46,7 +46,7 @@
 <div class="border-outline-variant flex flex-wrap items-center justify-between gap-3 border-b pb-4">
 	<div class="flex flex-wrap items-center gap-3">
 		<div
-			class="border-outline-variant bg-surface-container flex shrink-0 rounded-xl border p-0.5 text-xs"
+			class="border-outline-variant bg-surface-container flex shrink-0 rounded-xl border p-0.5 text-sm"
 		>
 			{#each MODI as modus (modus.value)}
 				<button

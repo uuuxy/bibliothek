@@ -26,7 +26,8 @@ const PILLEN = [
 	// im Werkzeugbalken, weil darüber noch die globale Suchleiste stand.
 	{ name: 'Schülerdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld' },
 	{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld' },
-	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld' }
+	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld' },
+	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld' }
 ];
 
 /**

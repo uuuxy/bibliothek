@@ -36,7 +36,7 @@
 	>
 		<TriangleAlert class="h-6 w-6 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
 		<div>
-			<h3 class="text-sm font-bold text-amber-900">Achtung: Schließzeit / Ferien aktiv!</h3>
+			<h3 class="text-base font-bold text-amber-900">Achtung: Schließzeit / Ferien aktiv!</h3>
 			<p class="text-xs text-amber-800 mt-1">
 				Das Mahnwesen ist aktuell pausiert. Grund: <strong
 					>{mahnwesenStore.ferienBezeichnung}</strong

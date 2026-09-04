@@ -166,8 +166,12 @@
 			100}); transform-origin: center; transition: transform 0.05s ease-out;"
 		class="shrink-0"
 	>
+		<!-- data-ausweis-vorschau: Ab hier ist alles die maßstäbliche Zeichnung der
+		     Plastikkarte, kein Bedienelement — das Typografie-Gate misst darin nicht
+		     (e2e/typo-rollen.spec.js). Die Schriftgrößen hier sind die des DRUCKS. -->
 		<div
 			bind:this={cardEl}
+			data-ausweis-vorschau
 			class="card-container shadow-2xl relative border border-slate-200 rounded-lg overflow-visible select-none"
 			style="width: 85.6mm; height: 53.98mm; background: white;"
 		>
@@ -187,7 +191,7 @@
 	</div>
 
 	<span
-		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-slate-400 font-medium pointer-events-none"
+		class="absolute bottom-4 left-1/2 -translate-x-1/2 text-sm text-slate-400 font-medium pointer-events-none"
 	>
 		{side === 'front' ? 'Vorderseite' : 'Rückseite'} · Drag &amp; Drop zum Verschieben · Ecken zum Skalieren
 	</span>

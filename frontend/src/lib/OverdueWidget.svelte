@@ -54,7 +54,7 @@
 	     Layout: vertikal gestapelt, weil das Widget in der schmalen 1/3-Spalte der
 	     Bento-Reihe sitzt — nebeneinander bräche es dort um. -->
 	<div class="h-full flex flex-col">
-		<h3 class="text-xs font-medium text-slate-500">Überfällige Ausleihen</h3>
+		<h3 class="text-base font-medium text-slate-500">Überfällige Ausleihen</h3>
 		<div class="flex items-baseline gap-2 mt-2">
 			<span class="text-4xl font-light text-slate-900 tabular-nums leading-none"
 				>{summary.total_overdue}</span
@@ -66,9 +66,8 @@
 
 		{#if hatMahnungen}
 			<div class="flex items-baseline justify-between gap-2 mt-5 mb-2.5">
-				<h4 class="text-label-small font-medium text-slate-400">Verteilung nach Dauer</h4>
-				<span class="text-label-small text-slate-400 shrink-0"
-					>längste: {summary.max_tage_overdue} Tage</span
+				<h4 class="text-xs font-medium text-slate-400">Verteilung nach Dauer</h4>
+				<span class="shrink-0 text-xs text-slate-400">längste: {summary.max_tage_overdue} Tage</span
 				>
 			</div>
 			<!-- 2 Spalten fix (nicht viewport-abhängig): die Card ist immer schmal. -->
@@ -100,7 +99,7 @@
 		<button
 			type="button"
 			onclick={() => (uiStore.activeTab = 'mahnwesen')}
-			class="mt-auto pt-3 border-t border-slate-100 inline-flex items-center justify-between gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+			class="mt-auto pt-3 border-t border-slate-100 inline-flex items-center justify-between gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
 			aria-label="Zum Mahnwesen — überfällige Ausleihen bearbeiten"
 		>
 			Im Mahnwesen bearbeiten

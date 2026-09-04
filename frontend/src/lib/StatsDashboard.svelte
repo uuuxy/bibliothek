@@ -124,7 +124,7 @@
 				type="button"
 				onclick={() => select(it.value)}
 				aria-pressed={current === it.value}
-				class="px-3.5 py-1 text-xs font-bold rounded-full cursor-pointer transition-all whitespace-nowrap {current ===
+				class="px-3.5 py-1 text-sm font-bold rounded-full cursor-pointer transition-all whitespace-nowrap {current ===
 				it.value
 					? 'bg-white text-slate-900 shadow-xs'
 					: 'text-slate-500 hover:text-slate-800'}">{it.label}</button
@@ -138,20 +138,20 @@
 	<div
 		class="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 flex flex-col justify-between gap-3 text-left"
 	>
-		<span class="text-xs font-medium text-slate-500">{label}</span>
+		<span class="text-sm font-medium text-slate-500">{label}</span>
 		<span
 			class="text-4xl font-light tracking-tight tabular-nums leading-none flex items-center gap-2 {valueClass}"
 		>
 			{#if status === 'warn'}{@render warnIcon('w-6 h-6 shrink-0')}{/if}
 			<span class="truncate">{value}</span>
 		</span>
-		<span class="text-xs text-slate-400 leading-snug">{hint}</span>
+		<span class="text-sm text-slate-400 leading-snug">{hint}</span>
 	</div>
 {/snippet}
 
 <!-- Kopfzeile jeder großen Card: Label links, optionale Aktionen rechts. -->
 {#snippet cardTitel(label)}
-	<h3 class="text-xs font-medium text-slate-500">{label}</h3>
+	<h3 class="text-base font-medium text-slate-500">{label}</h3>
 {/snippet}
 
 {#snippet drillDownButton()}
@@ -160,7 +160,7 @@
 		size="sm"
 		type="button"
 		onclick={() => openDetail(analyse)}
-		class="shrink-0 gap-1 border-blue-100 bg-blue-50 text-label-small text-blue-600 hover:bg-blue-100"
+		class="shrink-0 gap-1 border-blue-100 bg-blue-50 text-sm text-blue-600 hover:bg-blue-100"
 		aria-label="{aktiveAnalyse.detailLabel} — Detailansicht öffnen"
 	>
 		Alle anzeigen
@@ -180,7 +180,7 @@
 
 {#snippet spaltenKopf(spalten)}
 	<thead class="sticky top-0 z-10 bg-white">
-		<tr class="text-label-small font-medium text-slate-400">
+		<tr class="text-xs font-medium text-slate-500">
 			{#each spalten as s (s.label)}
 				<th class="py-2 px-4 font-bold {s.right ? 'text-right' : 'text-left'}">{s.label}</th>
 			{/each}
@@ -295,11 +295,11 @@
 		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
 		<div class="shrink-0 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
 			<div class="flex items-center gap-2">
-				<span class="text-xs font-medium text-slate-500">Bestand</span>
+				<span class="text-sm font-medium text-slate-500">Bestand</span>
 				{@render pills(BESTAND_TYPES, selectedType, (v) => (selectedType = v), 'Bestand filtern')}
 			</div>
 			<div class="flex items-center gap-2">
-				<span class="text-xs font-medium text-slate-500">Zeitraum</span>
+				<span class="text-sm font-medium text-slate-500">Zeitraum</span>
 				{@render pills(
 					TIMEFRAMES,
 					selectedTimeframe,

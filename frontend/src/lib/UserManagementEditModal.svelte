@@ -37,7 +37,7 @@
 
 <Modal {open} {onclose} size="md">
 	{#snippet header()}
-		<h3 class="font-bold text-slate-800 text-sm">
+		<h3 class="font-bold text-slate-800 text-base">
 			{isEditingUser ? 'Benutzer bearbeiten' : 'Neuen Benutzer anlegen'}
 		</h3>
 	{/snippet}

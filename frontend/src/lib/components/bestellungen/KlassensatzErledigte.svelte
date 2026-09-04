@@ -21,7 +21,7 @@
 
 {#if juengste.length > 0}
 	<div>
-		<h3 class="text-sm font-semibold text-on-surface">Zuletzt bereitgestellt</h3>
+		<h3 class="text-base font-semibold text-on-surface">Zuletzt bereitgestellt</h3>
 		<ul class="divide-y divide-outline-variant">
 			{#each juengste as r (r.id)}
 				<li class="flex items-start justify-between gap-4 py-2 text-sm">

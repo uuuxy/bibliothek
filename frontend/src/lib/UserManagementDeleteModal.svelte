@@ -34,7 +34,7 @@
 			<AlertTriangle class="h-4 w-4" aria-hidden="true" />
 		</div>
 		<div class="text-center space-y-1.5">
-			<h3 class="font-bold text-slate-800 text-sm">Benutzer unwiderruflich löschen?</h3>
+			<h3 class="font-bold text-slate-800 text-base">Benutzer unwiderruflich löschen?</h3>
 			<p class="text-xs text-slate-500 leading-relaxed font-medium">
 				Sind Sie sicher, dass Sie den Benutzer <strong
 					>{userToDelete?.vorname} {userToDelete?.nachname}</strong

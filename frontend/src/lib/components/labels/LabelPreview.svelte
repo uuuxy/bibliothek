@@ -26,14 +26,14 @@
 	{#if !labelStore.selectedTitle && (printQueue.copies?.length ?? 0) === 0}
 		<div class="grow flex flex-col items-center justify-center text-slate-400 py-12">
 			<span>Kein Buch ausgewählt</span>
-			<span class="text-label-small mt-1 text-slate-500"
+			<span class="mt-1 text-xs text-slate-500"
 				>Suche einen Titel links, um die Live-Vorschau zu aktivieren.</span
 			>
 		</div>
 	{:else if labelStore.finalLabels.length === 0}
 		<div class="grow flex flex-col items-center justify-center text-slate-400 py-12">
 			<span>Keine Etiketten gewählt</span>
-			<span class="text-label-small mt-1 text-slate-500"
+			<span class="mt-1 text-xs text-slate-500"
 				>Wähle mindestens ein Exemplar oder erhöhe die Menge.</span
 			>
 		</div>

@@ -106,7 +106,7 @@
 </script>
 
 <div class="w-full space-y-5 no-print text-slate-800 animate-fade-in font-sans">
-	<div class="flex items-center justify-end gap-3 text-xs font-semibold min-h-4">
+	<div class="flex items-center justify-end gap-3 text-sm font-semibold min-h-4">
 		{#if ablage.zustand === 'saving'}
 			<span class="text-slate-400">Speichert…</span>
 		{:else if ablage.zustand === 'saved'}

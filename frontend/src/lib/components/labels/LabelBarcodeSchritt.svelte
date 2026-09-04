@@ -11,7 +11,7 @@
 
 {#if labelStore.selectedTitle}
 	<div class="py-5 space-y-4 border-b border-slate-200">
-		<h3 class="text-sm font-semibold text-slate-500">2. Barcodes generieren</h3>
+		<h3 class="text-base font-semibold text-slate-500">2. Barcodes generieren</h3>
 
 		<!-- Selection mode -->
 		<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40 text-xs">
@@ -80,7 +80,7 @@
 	<!-- Platzhalter, damit die Schrittfolge nicht von 1 auf 3 springt (wirkt sonst
 	     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
 	<div class="py-5 space-y-2 border-b border-slate-200 opacity-60">
-		<h3 class="text-sm font-semibold text-slate-400">2. Barcodes generieren</h3>
+		<h3 class="text-base font-semibold text-slate-400">2. Barcodes generieren</h3>
 		<p class="text-xs text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
 	</div>
 {/if}

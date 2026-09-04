@@ -151,7 +151,7 @@
 			<!-- Ausdrücklich als Muster benannt: Hier stand früher ein echter Schüler aus
 			     der gewählten Klasse, und man konnte meinen, dieser Bildschirm drucke ihn.
 			     Gedruckt wird in der Schülerdatei. -->
-			<span class="text-xs text-slate-500 font-medium ml-auto">
+			<span class="text-sm text-slate-500 font-medium ml-auto">
 				Musterkarte: {previewStudent.vorname}
 				{previewStudent.nachname}
 			</span>
@@ -160,7 +160,7 @@
 </div>
 
 {#snippet toggleGroup(options, active, onChange)}
-	<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40 text-xs shrink-0">
+	<div class="flex bg-slate-100 p-0.5 rounded-xl border border-slate-200/40 text-sm shrink-0">
 		{#each options as opt, _i (_i)}
 			<button
 				onclick={() => onChange(opt.value)}

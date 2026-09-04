@@ -69,7 +69,7 @@
 									: 'hover:bg-slate-50 text-slate-700'}"
 							>
 								<span class="font-mono text-sm truncate">{sig.signatur}</span>
-								<span class="text-xs text-slate-500 shrink-0">{sig.exemplare}</span>
+								<span class="text-sm text-slate-500 shrink-0">{sig.exemplare}</span>
 							</button>
 						</li>
 					{/each}

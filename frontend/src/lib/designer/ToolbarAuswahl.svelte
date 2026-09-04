@@ -35,12 +35,12 @@
 	<div class="space-y-1">
 		<!-- text-on-surface-variant statt des slate-500 der Nachbarzellen: Die Farb-Ratsche
 	     lässt keine NEUEN Paletten-Fundstellen zu; Neues gehört auf die M3-Rollen. -->
-		<span class="text-xs font-medium text-on-surface-variant">Design-Vorlage</span>
+		<span class="text-sm font-medium text-on-surface-variant">Design-Vorlage</span>
 		<VorlagenGalerie {onVorlage} />
 	</div>
 
 	<div class="space-y-1">
-		<span class="text-xs font-medium text-slate-500">Barcode-Typ</span>
+		<span class="text-sm font-medium text-slate-500">Barcode-Typ</span>
 		<Select
 			value={barcodeType}
 			options={BARCODE_TYPEN}
@@ -50,7 +50,7 @@
 	</div>
 
 	<div class="space-y-1">
-		<span class="text-xs font-medium text-slate-500">Karten-Hintergrund</span>
+		<span class="text-sm font-medium text-slate-500">Karten-Hintergrund</span>
 		<Select
 			value={currentTheme}
 			options={themes.map((/** @type {any} */ t) => ({ value: t.value, label: t.name }))}
@@ -60,7 +60,7 @@
 	</div>
 
 	<div class="space-y-1">
-		<span class="text-xs font-medium text-slate-500">Zoom</span>
+		<span class="text-sm font-medium text-slate-500">Zoom</span>
 		<div class="flex items-center gap-2">
 			<input
 				type="range"
@@ -71,7 +71,7 @@
 				oninput={(e) => onZoom(parseInt(/** @type {HTMLInputElement} */ (e.currentTarget).value))}
 				class="accent-blue-600 h-1 bg-slate-200 rounded-lg cursor-pointer flex-1"
 			/>
-			<span class="text-xs font-bold text-blue-600 w-10 text-right">{zoom}%</span>
+			<span class="text-sm font-bold text-blue-600 w-10 text-right">{zoom}%</span>
 		</div>
 	</div>
 </div>

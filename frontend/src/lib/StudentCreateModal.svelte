@@ -85,7 +85,7 @@
 
 <Modal {open} onclose={handleClose} size="md">
 	{#snippet header()}
-		<h3 class="text-sm font-bold text-slate-800">Neuen Schüler anlegen</h3>
+		<h3 class="text-base font-bold text-slate-800">Neuen Schüler anlegen</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
 		{#if duplicateConflict}

@@ -14,7 +14,7 @@
 			<div class="flex items-start gap-2.5">
 				<Printer class="h-4 w-4" aria-hidden="true" />
 				<div>
-					<h3 class="text-xs font-medium text-blue-800">Aktiver Druckauftrag</h3>
+					<h3 class="text-base font-medium text-blue-800">Aktiver Druckauftrag</h3>
 					<p class="text-xs text-blue-700 font-medium leading-relaxed mt-1">
 						Es werden {printQueue.copies?.length ?? 0} Etiketten aus der freigegebenen Lieferung geladen.
 					</p>
@@ -30,7 +30,7 @@
 	{:else}
 		<!-- Step 1: Selection -->
 		<div class="py-5 space-y-4 border-b border-slate-200">
-			<h3 class="text-sm font-semibold text-slate-500">1. Titel / Klassensatz wählen</h3>
+			<h3 class="text-base font-semibold text-slate-500">1. Titel / Klassensatz wählen</h3>
 
 			<!-- Tab selector for search vs class set -->
 			<div class="space-y-3">

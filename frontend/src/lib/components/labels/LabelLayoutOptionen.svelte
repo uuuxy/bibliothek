@@ -14,7 +14,7 @@
 </script>
 
 <div class="py-5 space-y-4 border-b border-slate-200">
-	<h3 class="text-sm font-semibold text-slate-500">3. Layout-Optionen</h3>
+	<h3 class="text-base font-semibold text-slate-500">3. Layout-Optionen</h3>
 
 	<div class="space-y-3.5">
 		<div class="space-y-1.5">

@@ -1,7 +1,7 @@
 <script>
 	import { appState } from '$lib/store.svelte.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
-	import Suchfeld from '../../../../lib/components/ui/Suchfeld.svelte';
+	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import { BookOpen, Plus, RefreshCw, Settings, Trash2 } from '@lucide/svelte';
 
 	/**
@@ -19,22 +19,18 @@
 		$props();
 </script>
 
-<div
-	class="px-4 py-4 md:px-6 border-b border-slate-100 flex flex-col md:flex-row items-stretch md:items-center justify-between bg-white gap-4"
->
-	<div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
-		<h2 class="text-lg font-bold text-slate-900 shrink-0">
-			Bücher ({booksLength})
-		</h2>
-		<Suchfeld
-			bind:wert={appState.searchQuery}
-			platzhalter="Titel, Autor oder ISBN eingeben …"
-			etikett="Bücher durchsuchen"
-			klasse="w-full sm:max-w-md"
-		/>
-	</div>
+<div class="flex flex-col gap-4 border-b border-slate-100 bg-white px-4 py-4 md:px-6">
+	<Suchpille
+		id="titelverwaltung-suchfeld"
+		bind:wert={appState.searchQuery}
+		platzhalter="Titel, Autor oder ISBN eingeben …"
+		etikett="Bücher durchsuchen"
+	/>
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
+		<h2 class="mr-auto shrink-0 text-lg font-bold text-slate-900">
+			Bücher ({booksLength})
+		</h2>
 		{#if selectedCount > 0}
 			<Button
 				variant="secondary"

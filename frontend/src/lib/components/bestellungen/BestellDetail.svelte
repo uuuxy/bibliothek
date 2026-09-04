@@ -118,7 +118,7 @@
 		{/if}
 
 		<section>
-			<h3 class="mb-2 text-sm font-bold text-slate-700">Bestellte Titel</h3>
+			<h3 class="mb-2 text-base font-bold text-slate-700">Bestellte Titel</h3>
 			<BestellDetailPositionen
 				positionen={bestellung.positionen}
 				{euro}
@@ -128,7 +128,7 @@
 		</section>
 
 		<section>
-			<h3 class="mb-2 text-sm font-bold text-slate-700">
+			<h3 class="mb-2 text-base font-bold text-slate-700">
 				Exemplare aus dieser Bestellung
 				{#if bestellung.exemplare.length > 0}
 					<span class="font-normal text-slate-400">({bestellung.exemplare.length})</span>

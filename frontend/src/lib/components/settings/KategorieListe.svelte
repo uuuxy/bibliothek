@@ -35,7 +35,7 @@
 			<k.icon size={20} strokeWidth={gewaehlt ? 2.25 : 2} class="shrink-0" />
 			<span class="flex min-w-0 flex-col">
 				<span class="truncate text-sm font-medium">{k.titel}</span>
-				<span class="truncate text-xs {gewaehlt ? 'opacity-80' : 'text-on-surface-variant'}"
+				<span class="truncate text-sm {gewaehlt ? 'opacity-80' : 'text-on-surface-variant'}"
 					>{k.kurz}</span
 				>
 			</span>

@@ -109,7 +109,7 @@
 		class="w-full max-w-lg p-6 rounded-3xl bg-zinc-900 border border-zinc-800 shadow-2xl flex flex-col space-y-4"
 	>
 		<div class="flex items-center justify-between border-b border-zinc-800 pb-3">
-			<h3 class="text-sm font-bold text-zinc-100 tracking-wide">📸 HQ Schülerfoto aufnehmen</h3>
+			<h3 class="text-base font-bold text-zinc-100 tracking-wide">📸 HQ Schülerfoto aufnehmen</h3>
 			<button
 				onclick={onClose}
 				class="text-xs font-bold text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"

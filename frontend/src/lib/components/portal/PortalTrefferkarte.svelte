@@ -53,7 +53,7 @@
 		</div>
 
 		<div class="min-w-0 flex-1">
-			<h3 class="truncate text-sm leading-tight font-medium text-on-surface">
+			<h3 class="truncate text-base leading-tight font-medium text-on-surface">
 				{book.titel ?? book.title ?? 'Unbekannter Titel'}
 			</h3>
 			<p class="mt-0.5 text-xs text-on-surface-variant">{book.autor ?? book.author ?? ''}</p>

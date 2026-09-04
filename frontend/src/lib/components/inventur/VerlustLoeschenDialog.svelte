@@ -15,7 +15,7 @@
 
 <Modal {open} onclose={onClose} size="sm">
 	{#snippet header()}
-		<h3 class="text-sm font-bold text-slate-800">Endgültig löschen?</h3>
+		<h3 class="text-base font-bold text-slate-800">Endgültig löschen?</h3>
 	{/snippet}
 	<div class="p-6 space-y-4">
 		<p class="text-sm text-slate-600">

@@ -66,7 +66,7 @@
 		</div>
 	{:else}
 		<div class="flex items-center justify-between">
-			<h3 class="text-xs font-medium text-slate-600">{el.id}</h3>
+			<h3 class="text-base font-medium text-slate-600">{el.id}</h3>
 			{#if !['header', 'address', 'logo', 'photo', 'name', 'validity', 'barcode'].includes(el.id)}
 				<button
 					onclick={handleDelete}

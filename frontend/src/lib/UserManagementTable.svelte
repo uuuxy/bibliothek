@@ -28,7 +28,7 @@
 		<div class="overflow-x-auto">
 			<table class="w-full text-left border-collapse">
 				<thead>
-					<tr class="bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-400">
+					<tr class="border-b border-slate-100 bg-slate-50 text-sm font-medium text-slate-500">
 						<th class="p-4">Name</th>
 						<th class="p-4">E-Mail</th>
 						<th class="p-4">Barcode</th>
@@ -52,15 +52,15 @@
 								><span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span
 								></td
 							>
-							<td class="p-4 text-slate-500 text-xs">{user.email}</td>
+							<td class="p-4 text-sm text-slate-500">{user.email}</td>
 							<td class="p-4">
 								{#if user.barcode_id}
 									<span
-										class="text-xs bg-slate-50 border border-slate-200/60 text-slate-600 py-0.5 px-2 rounded-md"
+										class="rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-sm text-slate-600"
 										>{user.barcode_id}</span
 									>
 								{:else}
-									<span class="text-xs text-slate-400 italic">Keine</span>
+									<span class="text-sm text-slate-400 italic">Keine</span>
 								{/if}
 							</td>
 							<td class="p-4">
@@ -72,7 +72,7 @@
 							</td>
 							<td class="p-4">
 								{#if user.aktiv}
-									<span class="inline-flex items-center gap-1.5 text-xs text-emerald-600">
+									<span class="inline-flex items-center gap-1.5 text-sm text-emerald-600">
 										<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktiv
 									</span>
 								{:else if user.zugang_beantragt_am}
@@ -84,7 +84,7 @@
 										<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Zugang beantragt
 									</span>
 								{:else}
-									<span class="inline-flex items-center gap-1.5 text-xs text-slate-400">
+									<span class="inline-flex items-center gap-1.5 text-sm text-slate-400">
 										<span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Inaktiv
 									</span>
 								{/if}
