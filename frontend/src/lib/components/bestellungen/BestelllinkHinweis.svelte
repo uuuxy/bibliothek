@@ -43,10 +43,13 @@
 	}
 </script>
 
+<!-- Kein Schatten neben dem Rahmen: dieselbe Bauform wie BackupAlert, dieselbe
+     Begruendung (Gate: e2e/m3-bauform.spec.js). Der 3-px-Streifen traegt die
+     Aussage, er bleibt. -->
 {#if sichtbar}
 	<div
 		role="alert"
-		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-amber-500 bg-white py-3 pr-4 pl-3.5 shadow-xs"
+		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-amber-500 bg-white py-3 pr-4 pl-3.5"
 	>
 		<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-amber-600" aria-hidden="true" />
 		<div class="min-w-0 flex-1">
@@ -74,7 +77,7 @@
 	     eine über diese Ansicht. Sie sagt, was sie nicht weiß, statt Ruhe vorzutäuschen. -->
 	<div
 		role="status"
-		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-slate-400 bg-white py-3 pr-4 pl-3.5 shadow-xs"
+		class="no-print flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] border-l-slate-400 bg-white py-3 pr-4 pl-3.5"
 	>
 		<AlertTriangle class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" aria-hidden="true" />
 		<div class="min-w-0 flex-1">

@@ -44,7 +44,7 @@
 {#if backupStatus.needsAction && !weggeklickt}
 	<div
 		role="alert"
-		class="no-print mb-5 flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] bg-white py-3 pr-4 pl-3.5 shadow-xs
+		class="no-print mb-5 flex items-start gap-3 rounded-md border border-slate-200 border-l-[3px] bg-white py-3 pr-4 pl-3.5
 			{critical ? 'border-l-rose-600' : 'border-l-amber-500'}"
 	>
 		<AlertTriangle

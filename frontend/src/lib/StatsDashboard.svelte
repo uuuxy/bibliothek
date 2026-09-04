@@ -133,10 +133,10 @@
 	</div>
 {/snippet}
 
-<!-- KPI-Kachel: Zahl groß und dünn, Label winzig und fett (Material-3-Typografie). -->
+<!-- KPI-Kachel: Zahl groß und dünn, Label fett (M3-Typografie); Fläche = „filled card" (Gate: e2e/m3-bauform.spec.js). -->
 {#snippet kpi(label, value, hint, valueClass, status = /** @type {'warn' | null} */ (null))}
 	<div
-		class="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 flex flex-col justify-between gap-3 text-left"
+		class="bg-surface-container-highest rounded-xl p-5 flex flex-col justify-between gap-3 text-left"
 	>
 		<span class="text-sm font-medium text-slate-500">{label}</span>
 		<span
@@ -346,24 +346,18 @@
 			<!-- 2) Asymmetrische Reihe: Chart (2 Spalten) + Mahnungs-Widget (1 Spalte).
 			     Beide Cards teilen sich exakt dieselbe feste Höhe → die Reihe kippt nie. -->
 			<div class="shrink-0 grid grid-cols-1 lg:grid-cols-3 gap-4">
-				<div
-					class="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 h-72 flex flex-col"
-				>
+				<div class="lg:col-span-2 bg-surface-container-highest rounded-xl p-5 h-72 flex flex-col">
 					<StatsTrendChart data={stats.monats_trend ?? []} />
 				</div>
 				<!-- Überfälligkeit NEUTRAL (kein Rot-Alarm): Analyse-Kontext, kein Einsatzleitstand. -->
-				<div
-					class="bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 h-72 flex flex-col"
-				>
+				<div class="bg-surface-container-highest rounded-xl p-5 h-72 flex flex-col">
 					<OverdueWidget aktuellVerliehen={stats.zirkulation?.aktuell_verliehen ?? 0} />
 				</div>
 			</div>
 
 			<!-- 3) Bestands-Analysen: EINE Card, Segmented Control schaltet Renner ↔ Ladenhüter.
 			     flex-1: füllt die Resthöhe bis zum Viewport-Rand aus. -->
-			<div
-				class="flex-1 min-h-0 bg-white rounded-xl border border-slate-200/80 shadow-sm p-5 flex flex-col"
-			>
+			<div class="flex-1 min-h-0 bg-surface-container-highest rounded-xl p-5 flex flex-col">
 				<div class="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
 					{@render cardTitel('Bestands-Analysen')}
 					<div class="flex items-center gap-2">

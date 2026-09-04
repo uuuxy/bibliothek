@@ -24,7 +24,12 @@
 		Keine Systembenutzer gefunden.
 	</div>
 {:else}
-	<div class="border border-slate-100 bg-white rounded-xl overflow-hidden shadow-xs">
+	<!-- Rahmen JA, Schatten NEIN: `data-table` ist eines der sechs M3-Bauteile mit
+	     `outline-width: 1px` und hat KEIN container-elevation-Token (material-web
+	     v0.192). Hier standen beide zusammen — die Bauform, die in der Spezifikation
+	     nicht vorkommt. Beim Dialog weicht umgekehrt der Rahmen: Welcher der beiden
+	     Teile geht, entscheidet die Bauteilrolle, nicht der Geschmack. -->
+	<div class="border border-slate-100 bg-white rounded-xl overflow-hidden">
 		<div class="overflow-x-auto">
 			<table class="w-full text-left border-collapse">
 				<thead>

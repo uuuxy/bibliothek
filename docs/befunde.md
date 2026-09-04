@@ -41,7 +41,25 @@ Zwei Regeln dazu:
 Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
 nicht hier.
 
-_Zurzeit leer._
+- **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen** (04.09.2026).
+  Aufgefallen beim M3-Bauform-Durchgang: `Modal.svelte` trug Rahmen **und** Schatten
+  zugleich — eine Bauform, die die M3-Spezifikation bei keinem ihrer 84 Bauteile kennt
+  (Dialog hat `container-elevation: level3` und **kein** outline-Token). Das ist behoben
+  und wirkt auf die elf Dialoge, die das Bauteil benutzen. Daneben stehen aber elf
+  weitere Overlays, die `fixed inset-0` selbst aufsetzen und denselben Fehler
+  wiederholen: `StudentLockModal`, `DamageReportModal`, `StudentProfileDeleteModal`,
+  `StudentGebuehrenCard`, `WebcamCapture`, `OmniboxBlockAlert`,
+  `OmniboxVormerkungAlert`, `OmniboxChecklistDialog`, `MahnwesenTable` (Bestätigung),
+  `IsbnLookupDialog`, `StrichcodeScanner`.
+
+  Eine Quelltext-Zählung nach den Fixes fand **40 Kandidaten** mit sichtbarem Rahmen und
+  Schatten in derselben Klassenliste; der grösste Teil sitzt in diesen Overlays, der Rest
+  in Buchcovern (Bild, kein Bauteil), der Etikettenvorschau (simuliert Papier) und
+  einzelnen Karten. **Nicht pauschal ändern:** `OmniboxBlockAlert` trägt `border-4
+  border-rose-500` als Alarmsignal an der Theke — dort ist der Rahmen die Aussage. Das
+  ist Einzelfallprüfung mit Blick auf den Bildschirm, kein Suchen-und-Ersetzen, und
+  deshalb ein eigener Durchgang. Das Gate `e2e/m3-bauform.spec.js` sieht diese Fälle
+  nicht, weil die Dialoge zu sind — seine Öffnerliste umfasst bisher zwei.
 
 ## Offen — Entscheidung nötig (Peter)
 
@@ -84,12 +102,21 @@ eigenmächtig entschieden.
    sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich, also kein
    Verstoß gegen „eine Suchleiste je Seite" (04.09.). Offen ist allein, ob die Nähe der
    beiden Felder trotzdem stört; dann Umbau.
-5. **Die orange Backup-Bahn ist auf jeder Seite das lauteste Element.** Sie liegt im
-   gemeinsamen Seitengerüst und schreit damit überall gleich laut — auch dort, wo
-   gerade etwas anderes wichtig ist.
-6. **Die Statistiken zeigen vier umrandete Kacheln nebeneinander.** Das steht gegen die
-   Hausregel „flach, edge-to-edge, keine Floating Cards".
-7. **Die Klassennamen in den Klassensätzen sind sehr groß.**
+5. ~~Die orange Backup-Bahn ist auf jeder Seite das lauteste Element.~~ **GEKLÄRT
+   04.09.2026 — kein Designbefund, nicht anfassen.** Der Alert erscheint ausschließlich
+   bei `needsAction`, und er hat recht: Im Container liegt das jüngste Backup vom
+   03.09. 02:30, gemessen **40,7 Stunden** alt. Die Warnschwelle ist 26 h, kritisch
+   48 h (`api/backup_status.go`) — also `warning`, also amber. Auf einem
+   Entwicklungsrechner, der nachts nicht läuft, wird das immer passieren; auf dem
+   Zielsystem mit laufendem 02:30-Job verschwindet die Bahn von selbst. (Die zuerst
+   vermutete Ursache — fehlender `BACKUP_ENCRYPTION_KEY` — war falsch, der Schlüssel
+   ist gesetzt.) Der Schatten ist ihm am 04.09. genommen worden, weil er neben dem
+   Rahmen stand; die Bauform selbst bleibt.
+6. ~~Die Statistiken zeigen vier umrandete Kacheln nebeneinander.~~ **ERLEDIGT
+   04.09.2026:** vier KPI- und drei Diagrammflächen auf die M3-Bauform „filled card"
+   (getönte Fläche, kein Rahmen, keine Erhebung). Siehe Bauform-Gate unten.
+7. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
+   der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
 
 ## Beobachten (nichts zu tun)
 

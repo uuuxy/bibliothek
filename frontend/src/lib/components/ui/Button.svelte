@@ -13,12 +13,30 @@
 	// wie Material 3 es vorsieht. Vorher legte jede Variante ihren eigenen
 	// Hover-Farbwechsel fest; das musste sechsmal gepflegt werden und passte bei
 	// getönten Flächen (danger, success) ohnehin nie ganz.
+	// KEIN Schatten, in keiner Variante — nachgezaehlt in der M3-Token-Spezifikation
+	// (material-web v0.192, "Design system display name: Google Material 3"):
+	//
+	//   filled-button    container-elevation level0   (= 0dp)   kein Rahmen
+	//   outlined-button  KEIN elevation-Token         outline-width 1px
+	//   text-button      KEIN elevation-Token         kein Rahmen
+	//   elevated-button  container-elevation level1   kein Rahmen
+	//
+	// Genau EINE der vier Bauformen ist erhoben — und das ist die, die dafuer eine
+	// eigene Variante hat und KEINEN Rahmen traegt. Ueber alle 84 Bauteile der
+	// Spezifikation gilt das ausnahmslos: 6 tragen einen Rahmen, 36 eine Erhebung
+	// ueber level0, die Schnittmenge ist LEER. Rahmen und Erhebung sind in M3 zwei
+	// Wege, eine Flaeche abzugrenzen — nie eine Summe.
+	//
+	// Hier standen sie als Summe: `baseClasses` gibt jeder Variante einen `border`,
+	// fuenf setzten zusaetzlich `shadow-sm`. Im Browser gemessen (15 Routen,
+	// Ruhezustand) waren das 224 sichtbare Vorkommen — jeder Knopf der Anwendung
+	// ausser `ghost`.
 	const variants = {
-		primary: 'bg-blue-600 text-white border-transparent shadow-sm',
-		secondary: 'bg-white border-slate-200 text-slate-700 shadow-sm',
-		danger: 'bg-rose-50 border-rose-200 text-rose-700 shadow-sm',
-		'danger-solid': 'bg-rose-600 text-white border-transparent shadow-sm',
-		success: 'bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm',
+		primary: 'bg-blue-600 text-white border-transparent',
+		secondary: 'bg-white border-slate-200 text-slate-700',
+		danger: 'bg-rose-50 border-rose-200 text-rose-700',
+		'danger-solid': 'bg-rose-600 text-white border-transparent',
+		success: 'bg-emerald-50 border-emerald-200 text-emerald-700',
 		ghost: 'bg-transparent border-transparent text-slate-700'
 	};
 

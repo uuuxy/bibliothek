@@ -8,10 +8,29 @@
 // Zeilenhöhe + Padding + Rahmen, und sie steckt oft in einer Variablen oder in einem
 // Ausdruck (class={inputClass}). Statisch war die Inventur nachweislich falsch —
 // gemessen wird deshalb offsetHeight an der laufenden Anwendung.
+//
+// ── Warum 36 und nicht 40 (Material-3-Dichte) ─────────────────────────────────
+// Die M3-Token-Spezifikation gibt dem Knopf 40 px und dem Textfeld 56 px. Das ist
+// aber der Wert bei DICHTE 0, und Dichte ist in M3 eine eigene Achse neben Farbe
+// und Typografie: „The density value accepts integers from 0 to -5 … Each whole
+// number step down (-1, -2, etc.) reduces the affected sizes by 4px"
+// (Angular Material, guides/theming.md — Googles eigene M3-Umsetzung).
+//
+// 36 px ist damit keine Abweichung, sondern Dichte -1. Diese Anwendung ist ein
+// Verwaltungswerkzeug mit Listen über zehntausende Zeilen; Dichte 0 würde jede
+// Werkzeugleiste um 4 px und jedes Textfeld um 20 px aufblasen und damit Zeilen
+// pro Bildschirm kosten. Die Entscheidung am 04.09.2026: kompakt bleiben, aber
+// AUF der Skala — nicht daneben.
+//
+// Wer diesen Wert ändert, ändert die Hausdichte. Erlaubt sind nur Stufen der
+// Skala (Knopf 40/36/32/28/24/20), nicht Zwischenwerte. Am 04.09.2026 gemessen
+// standen sechs Reiter auf 34 px — auf keiner Stufe, verursacht von einem
+// `border-b-2` im Textfluss. Genau solche krummen Werte sind der Fehler, nicht
+// die Kompaktheit.
 import { test, expect } from '@playwright/test';
 import { uiLogin, gehZu, einstellungsKategorie } from './helpers.js';
 
-const CONTROL_HOEHE = 36; // identisch zu Button size="md" (h-9)
+const CONTROL_HOEHE = 36; // Button size="md" (h-9) = M3-Dichte -1
 
 const SCREENS = [
 	['Einstellungen', '/einstellungen'],

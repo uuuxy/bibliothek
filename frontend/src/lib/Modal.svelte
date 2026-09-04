@@ -57,8 +57,14 @@
 			if (e.target === e.currentTarget) onclose?.();
 		}}
 	>
+		<!-- Kein Rahmen. M3 gibt dem Dialog `container-elevation: level3` (= 6dp) und
+		     definiert fuer ihn WEDER outline-width NOCH outline-color (material-web
+		     v0.192). Die Erhebung IST hier die Abgrenzung; ein zusaetzlicher Rahmen
+		     ist die Bauform, die in der Spezifikation bei keinem der 84 Bauteile
+		     vorkommt. Der Schatten bleibt — er ist der richtige Teil des Paares.
+		     Wirkt auf die 11 Dialoge, die dieses Bauteil benutzen. -->
 		<div
-			class="bg-white border border-slate-200 w-full {sizeClass} rounded-3xl shadow-2xl overflow-hidden animate-scale-up"
+			class="bg-white w-full {sizeClass} rounded-3xl shadow-2xl overflow-hidden animate-scale-up"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
