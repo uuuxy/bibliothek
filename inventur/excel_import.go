@@ -216,19 +216,7 @@ func (handler *APIHandler) persistImportedBooks(ctx context.Context, booksToUpse
 
 	count, err := handler.repo.UpsertBooksBatch(ctx, booksToUpsert)
 	if err != nil {
-		// Fallback: Einzelne Inserts, wenn der Batch-Insert fehlgeschlägt (z.B. wegen Constraint-Fehlern bei einem Buch)
-		for _, book := range booksToUpsert {
-			_, singleErr := handler.repo.UpsertBook(ctx, book)
-			if singleErr != nil {
-				failed++
-				if firstError == nil {
-					firstError = singleErr
-				}
-			} else {
-				imported++
-			}
-		}
-		return imported, failed, firstError
+		return handler.persistBooksFallback(ctx, booksToUpsert, failed, firstError)
 	}
 
 	// #nosec G115 - count is bounded by maxImportRows (5000)
@@ -237,6 +225,22 @@ func (handler *APIHandler) persistImportedBooks(ctx context.Context, booksToUpse
 		// Falls count 0 ist wegen z.B. nur Updates in manchen DB Versionen
 		// #nosec G115 - len is bounded by maxImportRows (5000)
 		imported = int32(len(booksToUpsert))
+	}
+	return imported, failed, firstError
+}
+
+// persistBooksFallback führt einzelne Inserts als Fallback aus, wenn der Batch-Insert fehlschlägt.
+func (handler *APIHandler) persistBooksFallback(ctx context.Context, books []Book, failed int32, firstError error) (imported, outFailed int32, outErr error) {
+	for _, book := range books {
+		_, singleErr := handler.repo.UpsertBook(ctx, book)
+		if singleErr != nil {
+			failed++
+			if firstError == nil {
+				firstError = singleErr
+			}
+		} else {
+			imported++
+		}
 	}
 	return imported, failed, firstError
 }
