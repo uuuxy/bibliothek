@@ -6,6 +6,7 @@
 	import BackupStatusBadge from '../system/BackupStatusBadge.svelte';
 	import { ChevronsLeft, ChevronDown } from '@lucide/svelte';
 	import NavIcon from './NavIcon.svelte';
+	import Zaehlerpille from '../ui/Zaehlerpille.svelte';
 	import SidebarFooter from './SidebarFooter.svelte';
 	import logoUrl from '../../../assets/logo.png';
 
@@ -37,14 +38,6 @@
 		if (id === 'druck-center') return uiStore.offeneEtiketten;
 		return 0;
 	}
-
-	/**
-	 * M3 kappt die Zahl im Badge bei drei Zeichen und schreibt darueber „999+". Der Grund
-	 * ist nicht der Platz, sondern die Aussage: Ob 30.674 oder 12.000 Etiketten offen sind,
-	 * aendert keine Entscheidung — „mehr als du heute schaffst" ist die ganze Information.
-	 * @param {number} n
-	 */
-	const badgeText = (n) => (n > 999 ? '999+' : String(n));
 </script>
 
 <!-- Ein Navigationsziel. Als Snippet, weil es vorher ZWEIMAL im Markup stand — einmal
@@ -75,12 +68,7 @@
 		<NavIcon name={item.icon} />
 		{#if !zu}
 			<span class="animate-fade-in flex-1 text-left">{item.label}</span>
-			{#if wartendeArbeit(item.id) > 0}
-				<span
-					class="bg-error text-on-error text-label-small ml-auto flex h-5 min-w-5 items-center justify-center rounded-full px-1 font-bold"
-					aria-label="{wartendeArbeit(item.id)} offen">{badgeText(wartendeArbeit(item.id))}</span
-				>
-			{/if}
+			<Zaehlerpille anzahl={wartendeArbeit(item.id)} klasse="ml-auto" />
 			<!-- Eingeklappt bleibt nur der Punkt: M3 nennt das „small badge" — er sagt „hier
 			     liegt etwas", ohne dass eine Zahl in eine 40-px-Pille gequetscht wird. -->
 		{:else if wartendeArbeit(item.id) > 0}

@@ -13,7 +13,10 @@
 	 * ungleichgewichtige gehören in eine Liste (siehe KategorieListe der Einstellungen,
 	 * wo sechs Reiter mit einem überfüllten „Allgemein" genau daran scheiterten).
 	 *
-	 * `anzahl` ist der Zähler am Reiter — er sagt VOR dem Klick, ob dort etwas wartet.
+	 * `anzahl` ist der Zähler am Reiter — er sagt VOR dem Klick, ob dort etwas wartet. Er
+	 * wird von ui/Zaehlerpille gezeichnet, derselben Pille wie in der Seitenleiste: Bis zum
+	 * 04.09.2026 waren es zwei Fassungen, und im Druck-Center stand links „999+" neben
+	 * rechts „30674" — dieselbe Zahl, zwei Aussagen.
 	 *
 	 * Zwei Ränge, wie M3 sie kennt: `primaer` (Bereiche einer Seite, Indikator in
 	 * Primärfarbe) und `sekundaer` (Unteransichten DESSELBEN Inhalts, unter einer
@@ -29,6 +32,8 @@
 	 * @prop {'primaer'|'sekundaer'} [variante]
 	 * @prop {string} [klasse] - zusätzliche Klassen der Leiste (z. B. justify-center).
 	 */
+	import Zaehlerpille from './Zaehlerpille.svelte';
+
 	/** @type {{ reiter: { id: string, label: string, anzahl?: number, steuert?: string }[], aktiv: string, onwahl: (id: string) => void, etikett: string, variante?: 'primaer'|'sekundaer', klasse?: string }} */
 	let { reiter, aktiv, onwahl, etikett, variante = 'primaer', klasse = '' } = $props();
 	const sekundaer = $derived(variante === 'sekundaer');
@@ -58,13 +63,7 @@
 		>
 			{r.label}
 			{#if r.anzahl}
-				<span
-					class="ml-2 inline-flex min-w-5 justify-center rounded-full px-1.5 text-label-small {gewaehlt
-						? 'bg-primary text-on-primary'
-						: 'bg-surface-container-high text-on-surface-variant'}"
-				>
-					{r.anzahl}
-				</span>
+				<Zaehlerpille anzahl={r.anzahl} klasse="ml-2" />
 			{/if}
 			{#if gewaehlt}
 				<span class="absolute inset-x-0 bottom-0 h-0.5 bg-primary {sekundaer ? '' : 'rounded-full'}"
