@@ -78,7 +78,13 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 			groupsMap[groupKey] = group
 		}
 
-		addExemplarToGroup(group, titelID, titel, isbn, coverURL, exemplarID)
+		addExemplarToGroup(group, AddExemplarParams{
+			TitelID:    titelID,
+			Titel:      titel,
+			ISBN:       isbn,
+			CoverURL:   coverURL,
+			ExemplarID: exemplarID,
+		})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -110,23 +116,32 @@ func resolveSupplierName(zustandNotiz string) string {
 	}
 }
 
+// AddExemplarParams holds the parameters for adding an exemplar to a group.
+type AddExemplarParams struct {
+	TitelID    string
+	Titel      string
+	ISBN       string
+	CoverURL   string
+	ExemplarID string
+}
+
 // addExemplarToGroup ordnet ein Exemplar dem passenden GroupedItem (nach Titel) zu oder
 // legt einen neuen Item-Eintrag in der Gruppe an.
-func addExemplarToGroup(group *ShipmentGroup, titelID, titel, isbn, coverURL, exemplarID string) {
+func addExemplarToGroup(group *ShipmentGroup, params AddExemplarParams) {
 	for _, item := range group.Items {
-		if item.Titel == titel {
+		if item.Titel == params.Titel {
 			item.Menge++
-			item.ExemplarIDs = append(item.ExemplarIDs, exemplarID)
+			item.ExemplarIDs = append(item.ExemplarIDs, params.ExemplarID)
 			return
 		}
 	}
 	group.Items = append(group.Items, &GroupedItem{
-		TitelID:     titelID,
-		Titel:       titel,
-		ISBN:        isbn,
-		CoverURL:    coverURL,
+		TitelID:     params.TitelID,
+		Titel:       params.Titel,
+		ISBN:        params.ISBN,
+		CoverURL:    params.CoverURL,
 		Menge:       1,
-		ExemplarIDs: []string{exemplarID},
+		ExemplarIDs: []string{params.ExemplarID},
 	})
 }
 
