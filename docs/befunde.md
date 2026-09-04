@@ -39,42 +39,51 @@ Zwei Regeln dazu:
 Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
 nicht hier.
 
-- **Buchcover: nicht die Anzeige ist das Problem, sondern der Bestand** (04.09.2026,
-  Peter fragte nach Covern im Bestellbedarf). Erst die Zahl, dann alles andere:
-  **von 1119 Titeln haben 24 ein Cover — 2,1 %** (lokale Entwicklungs-DB gemessen).
+- **Buchcover im Bestellbedarf: Anzeige nachziehen, Datenlage trägt sie** (04.09.2026,
+  Peter). Im Bestellbedarf steht statt des Covers ein Platzhalter; das Bild erscheint nur
+  über `CoverPeek` auf Anforderung. Vier Geschwister derselben Seite zeigen es längst in
+  der Zeile: `OrderSearch`, `OrderCart`, `WareneingangTable`, `BestellDetailPositionen`.
 
-  Damit ist `CoverPeek` (Cover nur auf Anforderung) nicht nachlässig, sondern belegt
-  richtig: Sein Kopfkommentar nennt „53 px je Zeile (71 % der Zeilenhöhe), einen
-  Proxy-Request je Titel, war aber fast immer leer" — das trifft zu. Ein Cover in der
-  Zeile zeigte bei 98 % der Zeilen einen Platzhalter. Auch das Tablet-Argument zieht
-  nicht: CoverPeek ist ausdrücklich touch- und tastaturfähig gebaut („kein reines
-  CSS-`:hover`"), nicht hover-only.
+  **Auf dem Zielsystem gemessen** (13.060 Titel), nachdem eine erste Messung auf der
+  lokalen Seed-DB mit 2,1 % zu einer falschen Empfehlung geführt hatte:
 
-  **Der echte Befund liegt im Cover-Sync** (`internal/service/cover_service.go`, Cron
-  alle 6 h):
+  | Bestand         | `FOUND` | `PENDING` (ohne ISBN) | `NOT_FOUND` | `FAILED` | Cover-Quote |
+  | --------------- | ------- | --------------------- | ----------- | -------- | ----------- |
+  | Schülerbücherei | 7192    | 2787                  | 1820        | 683      | **57,6 %**  |
+  | Lernmittel      | 300     | 213                   | 53          | 12       | **51,9 %**  |
 
-  |           | Anzahl  | Status    | Wirkung                                                                                                                                                                        |
-  | --------- | ------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-  | ohne ISBN | **913** | `PENDING` | Der Query verlangt `isbn <> ''` → werden **nie** angefasst. `PENDING` heißt „noch nie versucht" und bleibt es für immer — ein Status, der Wartendes verspricht, das nie kommt. |
-  | mit ISBN  | 194     | `FAILED`  | Der Query holt `PENDING` **und** `FAILED` → alle 6 h erneut gegen DNB/Google/OpenLibrary, **ohne Backoff und ohne Aufgabe-Zähler**. 776 Anfragen/Tag ohne Ertrag.              |
-  | mit ISBN  | 12      | `PENDING` | kommen beim nächsten Lauf dran                                                                                                                                                 |
+  Über die Hälfte der Titel hat ein Cover — die Anzeige in der Zeile lohnt sich also.
+  `PENDING` ist **exakt** die Menge ohne ISBN (3000 Titel): Der Sync-Query verlangt
+  `isbn <> ''`, sie werden nie versucht. Ursache laut Peter: rund zehn Jahre alte
+  Littera-Daten ohne ISBN; die aktuellen Titel kamen als Klassensätze aus einem anderen
+  Programm.
 
-  Zu prüfen wäre, ob die 194 `FAILED` auf dem Zielsystem auch scheitern — lokal kann es
-  am fehlenden Netz des Containers liegen, dann wäre die Zahl nicht übertragbar. Die 913
-  ohne ISBN sind dagegen strukturell und gelten überall.
+  **Der Sync selbst ist in Ordnung** und war zwischenzeitlich zu Unrecht als
+  „Endlosschleife ohne Backoff" kritisiert: 8 Worker mit globaler Drossel von 500 ms je
+  Titel, `NOT_FOUND` wird **nicht** wiederholt (nur `FAILED` = Abruffehler, und das ist
+  richtig), dazu Überlappungsschutz und Panik-Netz.
 
-  **Reihenfolge daher: erst die Daten, dann die Anzeige.** Cover in die Zeile zu bauen,
-  solange 82 % der Titel keine ISBN haben, poliert ein leeres Regal. Wenn die Abdeckung
-  steht, ist die Anzeige richtig — M3 sieht sie ausdrücklich vor
-  (`list-item-leading-image` 56 px, `leading-space` 16 px), und dann lohnt auch das
-  gemeinsame Bauteil: Es gibt fünf Cover-Breiten im Haus (`w-7`/`w-8`/`w-10`/`w-12`/`w-16`)
-  und die Fallback-Kette aus `coverKandidaten` steht in **vier** Dateien kopiert. Das muss
-  eine Komponente werden, kein Snippet — sie braucht State pro Instanz (Kandidaten-Index,
-  `naturalWidth`-Prüfung gegen das 1×1-GIF des Proxys).
+  **Vor dem Bauen zu klären** (Abfrage steht in der Sitzung vom 04.09.): Wie hoch ist die
+  Cover-Quote SPEZIFISCH bei den Titeln des Bestellbedarfs? Die Liste zeigt Titel mit
+  niedrigem Bestand — auf dem Zielsystem „179 von 247 ohne ein einziges Exemplar" —, und
+  das könnten überproportional die ISBN-losen Altdaten sein. Ist die Quote dort niedrig,
+  bleibt `CoverPeek` richtig; ist sie wie im Gesamtbestand, gehört das Cover in die Zeile.
 
-  Offen bleibt unabhängig davon Peters Wunsch für **Klassensatz-Reservierungen**
-  (`reservation.go` liefert weder `cover_url` noch `isbn`) und **Wünsche & Meldungen**
-  (`anliegen.go` hat `isbn`, kein `cover_url`).
+  **Wenn gebaut wird, dann als Bauteil:** Fünf Cover-Breiten im Haus
+  (`w-7`/`w-8`/`w-10`/`w-12`/`w-16`), und die Fallback-Kette aus `coverKandidaten` steht in
+  **vier** Dateien kopiert. Muss eine Komponente werden, kein Snippet — sie braucht State
+  pro Instanz (Kandidaten-Index, `naturalWidth`-Prüfung gegen das 1×1-GIF des Proxys).
+  M3-Mass: `list-item-leading-image` 56 px, `leading-space` 16 px.
+
+  Für Titel ohne ISBN gibt es `inventur.SucheTextDNB` (Freitext, heute von
+  `order_service.go` genutzt) und „Cover ändern" von Hand in der Buchakte. **Nicht
+  automatisch verdrahten:** Freitext auf „Mathematik" liefert hunderte Treffer; den ersten
+  zu nehmen hängt ein falsches Cover an ein Buch, und das ist schlimmer als keines. Beim
+  DNB-Signaturvorschlag wurde deshalb Vorschlag-plus-Bestätigung gebaut (22a10b1).
+
+  Offen bleibt Peters Wunsch für **Klassensatz-Reservierungen** (`reservation.go` liefert
+  weder `cover_url` noch `isbn`) und **Wünsche & Meldungen** (`anliegen.go` hat `isbn`,
+  kein `cover_url`).
 
 - **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen**
   (04.09.2026). `Modal.svelte` trug Rahmen **und** Schatten — die Bauform, die M3 bei
