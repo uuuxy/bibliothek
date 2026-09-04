@@ -142,9 +142,20 @@ func applyEinstellung(settings *SystemEinstellungen, key, value string) {
 	}
 }
 
+// DueDateOptions fasst die Parameter für die Fristenberechnung zusammen,
+// um die Anzahl der Funktionsargumente übersichtlich zu halten.
+type DueDateOptions struct {
+	IstLernmittel   bool
+	Medientyp       string
+	LmfStichtag     string
+	FristBuchTage   int
+	FristMedienTage int
+	AdditionalYears int
+}
+
 // calculateDueDate berechnet das Rückgabedatum auf Basis von Lernmittel-Kennzeichen,
 // Medientyp und den definierten Standardfristen.
-func calculateDueDate(istLernmittel bool, medientyp, lmfStichtag string, fristBuchTage, fristMedienTage, additionalYears int) time.Time {
+func calculateDueDate(opts DueDateOptions) time.Time {
 	// In Schul-Zeitzone rechnen, damit sowohl der Jahreswechsel-Stichtag (August)
 	// als auch das "Ende des Tages" (23:59:59) deterministisch sind — unabhängig
 	// von der Server-Zeitzone. now.Location() ist dadurch schoolLocation().
@@ -154,7 +165,7 @@ func calculateDueDate(istLernmittel bool, medientyp, lmfStichtag string, fristBu
 	// Schulbücher (buecher_titel.ist_lernmittel) werden für das gesamte Schuljahr
 	// ausgeliehen. Sie müssen spätestens am definierten Stichtag (standardmäßig 31. Juli)
 	// zurückgegeben werden.
-	if istLernmittel {
+	if opts.IstLernmittel {
 		year := now.Year()
 		// Wenn wir uns bereits im oder nach dem August befinden (neues Schuljahr),
 		// liegt der Stichtag im nächsten Kalenderjahr.
@@ -163,13 +174,13 @@ func calculateDueDate(istLernmittel bool, medientyp, lmfStichtag string, fristBu
 		}
 
 		// Mehrjährige Ausleihen
-		year += additionalYears
+		year += opts.AdditionalYears
 
 		month := time.July
 		day := 31
 
 		// Stichtag aus den Einstellungen parsen (Format: MM-DD, z.B. "07-31")
-		parts := strings.SplitN(lmfStichtag, "-", 2)
+		parts := strings.SplitN(opts.LmfStichtag, "-", 2)
 		if len(parts) == 2 {
 			m, err1 := strconv.Atoi(parts[0])
 			d, err2 := strconv.Atoi(parts[1])
@@ -185,14 +196,14 @@ func calculateDueDate(istLernmittel bool, medientyp, lmfStichtag string, fristBu
 	// 2. Fall: Audiovisuelle/Digitale Medien
 	// Medien wie CDs, DVDs oder Audio-Dateien haben aufgrund der höheren Nachfrage
 	// eine verkürzte Ausleihfrist (fristMedienTage).
-	lower := strings.ToLower(medientyp)
+	lower := strings.ToLower(opts.Medientyp)
 	if strings.Contains(lower, "cd") || strings.Contains(lower, "dvd") || strings.Contains(lower, "audio") {
-		return TagesEndeInSchulzeitzone(now.AddDate(0, 0, fristMedienTage))
+		return TagesEndeInSchulzeitzone(now.AddDate(0, 0, opts.FristMedienTage))
 	}
 
 	// 3. Fall: Reguläre Bücher
 	// Standardleihfrist für normale Buchbestände (fristBuchTage).
-	return TagesEndeInSchulzeitzone(now.AddDate(0, 0, fristBuchTage))
+	return TagesEndeInSchulzeitzone(now.AddDate(0, 0, opts.FristBuchTage))
 }
 
 // parseGrade extrahiert den Jahrgang aus dem Klassen-String.
@@ -233,7 +244,14 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 
 	if err != nil {
 		// Bei einem Datenbankfehler greifen wir auf feste Notfall-Standardwerte zurück
-		return calculateDueDate(copy.IstLernmittel, copy.Medientyp, "07-31", 21, 7, additionalYears), nil
+		return calculateDueDate(DueDateOptions{
+			IstLernmittel:   copy.IstLernmittel,
+			Medientyp:       copy.Medientyp,
+			LmfStichtag:     "07-31",
+			FristBuchTage:   21,
+			FristMedienTage: 7,
+			AdditionalYears: additionalYears,
+		}), nil
 	}
 
 	// Leseclub-Regel: Falls die Ferien-Leseclub-Aktion aktiv ist und ein Zieldatum konfiguriert wurde,
@@ -247,5 +265,12 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 	}
 
 	// Reguläre Fristenberechnung
-	return calculateDueDate(copy.IstLernmittel, copy.Medientyp, settings.LmfStichtag, settings.FristBuchTage, settings.FristMedienTage, additionalYears), nil
+	return calculateDueDate(DueDateOptions{
+		IstLernmittel:   copy.IstLernmittel,
+		Medientyp:       copy.Medientyp,
+		LmfStichtag:     settings.LmfStichtag,
+		FristBuchTage:   settings.FristBuchTage,
+		FristMedienTage: settings.FristMedienTage,
+		AdditionalYears: additionalYears,
+	}), nil
 }
