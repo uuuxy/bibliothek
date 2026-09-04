@@ -203,3 +203,24 @@ func testSucheISBNNotFound(t *testing.T) {
 		t.Errorf("Expected not found error, got: %v", err)
 	}
 }
+
+func TestNeuerMetadatenClient(t *testing.T) {
+	client := NeuerMetadatenClient()
+	if client == nil {
+		t.Fatal("Erwartete einen initialisierten MetadatenClient, aber bekam nil")
+	}
+	if client.httpClient == nil {
+		t.Fatal("Erwartete einen initialisierten httpClient im MetadatenClient, aber bekam nil")
+	}
+}
+
+func TestSetzeHTTPClientFuerTest(t *testing.T) {
+	client := NeuerMetadatenClient()
+	customHTTPClient := &http.Client{}
+
+	client.SetzeHTTPClientFuerTest(customHTTPClient)
+
+	if client.httpClient != customHTTPClient {
+		t.Errorf("Erwartete, dass der httpClient ueberschrieben wurde")
+	}
+}
