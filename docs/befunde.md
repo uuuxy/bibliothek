@@ -38,10 +38,23 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
-Leer (Stand 01.09.2026 abends). Abgearbeitetes steht in der Git-Historie dieser
-Datei (`git log -p docs/befunde.md`), nicht hier.
+Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
+nicht hier.
+
+- **`ui/Segmente.svelte` ist gebaut, aber nirgends eingesetzt** (04.09.2026). Der
+  Segmented Button nach M3 liegt fertig samt Begründung im Kopf der Datei; der
+  handgebaute Umschalter „Offen | Erledigt | Alle", den er ersetzen soll, steht
+  unverändert in `components/labels/EtikettenNachdruck.svelte` (38 px statt 40, Ecken
+  12 px statt voll gerundet, gewähltes Segment auf `inverse-surface` statt
+  `secondary-container`). Genau die Lage aus dem Sweep „Nie verdrahtet" vom 01.09.:
+  ein Bauteil, das aussieht, als sei die Arbeit erledigt. Entweder verdrahten oder die
+  Datei wieder löschen — halb ist der schlechteste der drei Zustände.
 
 ## Offen — Entscheidung nötig (Peter)
+
+Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
+kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht (04.09.2026:
+drei vorgelegte Geschmacksfragen waren so schon verloren und mussten neu erzählt werden).
 
 Rest aus dem Rasterdurchgang 02.09.2026 (LUSD-Umbenennung, 0aa07f57). Reihenfolge = Abarbeitung;
 Peter überlegt beide (03.09.).
@@ -69,6 +82,22 @@ Peter überlegt beide (03.09.).
    Datenschutz-Entscheidung; (b) beide Felder wie die Suchleiste an `perform_actions` koppeln;
    (c) so lassen und in der Rechte-Oberfläche beim Theken-Recht darauf hinweisen.
 
+Aus dem Design-Rundgang 04.09.2026 (Peter vorgelegt, Antwort steht aus). Alles
+Geschmacksfragen — nichts davon kann jemandem schaden, deshalb wird nichts davon
+eigenmächtig entschieden.
+
+4. **Zweites Feld neben der Suchpille im Bestellwesen.** Im Warenkorb steht neben der
+   Suchpille ein zweites Feld „Titel suchen & hinzufügen". Es sucht NICHT die Liste,
+   sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich, also kein
+   Verstoß gegen „eine Suchleiste je Seite" (04.09.). Offen ist allein, ob die Nähe der
+   beiden Felder trotzdem stört; dann Umbau.
+5. **Die orange Backup-Bahn ist auf jeder Seite das lauteste Element.** Sie liegt im
+   gemeinsamen Seitengerüst und schreit damit überall gleich laut — auch dort, wo
+   gerade etwas anderes wichtig ist.
+6. **Die Statistiken zeigen vier umrandete Kacheln nebeneinander.** Das steht gegen die
+   Hausregel „flach, edge-to-edge, keine Floating Cards".
+7. **Die Klassennamen in den Klassensätzen sind sehr groß.**
+
 ## Beobachten (nichts zu tun)
 
 | Fund | Warum nur beobachten |
@@ -89,6 +118,11 @@ Peter überlegt beide (03.09.).
   Geräte-Torso-Reste (`ActionEvent.GeraetID` nie gesetzt, Geräte-Aktionen
   broadcasten gar nicht, Kiosk-Pfad liefert Null-Zeitstempel) warten auf den
   Geräte-Ausbau.
+- Knopfzeile über den Reitern (aufgefallen im Mahnwesen, 04.09.2026): Sie kommt aus dem
+  gemeinsamen Seitengerüst, nicht aus der Seite. Daran zu drehen ist eine Entscheidung
+  über ALLE Seiten — und genau solche werden hier nicht nebenbei getroffen (siehe
+  „Seitengerüst: drei Zuständigkeiten"). Anlass wäre ein Rundgang über das Gerüst
+  selbst, nicht eine einzelne Seite.
 - Reiterleisten: drei Höhen (30/32/34 px) in den handgebauten Bestands-Leisten —
   vereinheitlichen beim nächsten fachlichen Anfassen (der Umbruch ist seit
   `c35840d4` gelöst).
