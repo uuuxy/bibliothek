@@ -189,7 +189,13 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 
 	f, o := fuehrend(ziel, quelle)
 	erg.Vorname, erg.Nachname, erg.Klasse = f.vorname, f.nachname, f.klasse
-	if err := schreibeZusammengefuehrtesZiel(ctx, tx, ziel.id, f, o, a.AbgaengerJahr(f.klasse), quelle); err != nil {
+	if err := schreibeZusammengefuehrtesZiel(ctx, tx, SchreibeZusammengefuehrtesZielParams{
+		ZielID:        ziel.id,
+		F:             f,
+		O:             o,
+		AbgaengerJahr: a.AbgaengerJahr(f.klasse),
+		Quelle:        quelle,
+	}); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -355,6 +361,14 @@ func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
 	}
 }
 
+type SchreibeZusammengefuehrtesZielParams struct {
+	ZielID        string
+	F             *zusammenfuehrenZeile
+	O             *zusammenfuehrenZeile
+	AbgaengerJahr int
+	Quelle        *zusammenfuehrenZeile
+}
+
 // schreibeZusammengefuehrtesZiel setzt die Stammdaten des führenden Datensatzes (f) auf
 // das Ziel, füllt Lücken aus dem anderen (o) und macht das Ziel wieder aktiv. Die CASE-
 // Ausdrücke für die Sperre lesen die ALTEN Werte (Postgres wertet die rechte Seite vor
@@ -363,7 +377,7 @@ func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
 // Eine MANUELLE Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
 // nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel
 // nicht selbst schon manuell gesperrt ist (dann bleibt dessen Grund).
-func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID string, f, o *zusammenfuehrenZeile, abgaengerJahr int, quelle *zusammenfuehrenZeile) error {
+func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p SchreibeZusammengefuehrtesZielParams) error {
 	tag, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = $2, nachname = $3, klasse = $4,
@@ -390,12 +404,12 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID strin
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $1`,
-		zielID, f.vorname, f.nachname, f.klasse,
-		ersteZeit(f.geburtsdatum, o.geburtsdatum), ersteZeit(f.eintritt, o.eintritt),
-		erster(f.strasse, o.strasse), erster(f.hausnummer, o.hausnummer), erster(f.plz, o.plz),
-		erster(f.ort, o.ort), erster(f.elternEmail, o.elternEmail),
-		erster(f.lusdID, o.lusdID), ersteZeit(f.bestaetigtAm, o.bestaetigtAm), abgaengerJahr,
-		quelle.manuellGesperrt, quelle.sperrgrund)
+		p.ZielID, p.F.vorname, p.F.nachname, p.F.klasse,
+		ersteZeit(p.F.geburtsdatum, p.O.geburtsdatum), ersteZeit(p.F.eintritt, p.O.eintritt),
+		erster(p.F.strasse, p.O.strasse), erster(p.F.hausnummer, p.O.hausnummer), erster(p.F.plz, p.O.plz),
+		erster(p.F.ort, p.O.ort), erster(p.F.elternEmail, p.O.elternEmail),
+		erster(p.F.lusdID, p.O.lusdID), ersteZeit(p.F.bestaetigtAm, p.O.bestaetigtAm), p.AbgaengerJahr,
+		p.Quelle.manuellGesperrt, p.Quelle.sperrgrund)
 	if err != nil {
 		return fmt.Errorf("ziel schreiben: %w", err)
 	}
