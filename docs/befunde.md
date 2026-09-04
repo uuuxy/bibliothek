@@ -39,51 +39,24 @@ Zwei Regeln dazu:
 Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
 nicht hier.
 
-- **Buchcover im Bestellbedarf: Anzeige nachziehen, Datenlage trägt sie** (04.09.2026,
-  Peter). Im Bestellbedarf steht statt des Covers ein Platzhalter; das Bild erscheint nur
-  über `CoverPeek` auf Anforderung. Vier Geschwister derselben Seite zeigen es längst in
-  der Zeile: `OrderSearch`, `OrderCart`, `WareneingangTable`, `BestellDetailPositionen`.
+- **Buchcover: Rest nach dem Bestellbedarf** (04.09.2026). Der Bestellbedarf zeigt seit
+  9cf11044 das Cover in der Zeile (`ui/BuchCover.svelte`, lazy, `naturalWidth`-Prüfung,
+  Initiale als Platzhalter; CoverPeek bleibt die Großansicht). Auf dem Zielsystem tragen
+  5.724 von 8.706 Titeln ohne Exemplar ein Cover — die Anzeige lohnt. Offen:
 
-  **Auf dem Zielsystem gemessen** (13.060 Titel), nachdem eine erste Messung auf der
-  lokalen Seed-DB mit 2,1 % zu einer falschen Empfehlung geführt hatte:
-
-  | Bestand         | `FOUND` | `PENDING` (ohne ISBN) | `NOT_FOUND` | `FAILED` | Cover-Quote |
-  | --------------- | ------- | --------------------- | ----------- | -------- | ----------- |
-  | Schülerbücherei | 7192    | 2787                  | 1820        | 683      | **57,6 %**  |
-  | Lernmittel      | 300     | 213                   | 53          | 12       | **51,9 %**  |
-
-  Über die Hälfte der Titel hat ein Cover — die Anzeige in der Zeile lohnt sich also.
-  `PENDING` ist **exakt** die Menge ohne ISBN (3000 Titel): Der Sync-Query verlangt
-  `isbn <> ''`, sie werden nie versucht. Ursache laut Peter: rund zehn Jahre alte
-  Littera-Daten ohne ISBN; die aktuellen Titel kamen als Klassensätze aus einem anderen
-  Programm.
-
-  **Der Sync selbst ist in Ordnung** und war zwischenzeitlich zu Unrecht als
-  „Endlosschleife ohne Backoff" kritisiert: 8 Worker mit globaler Drossel von 500 ms je
-  Titel, `NOT_FOUND` wird **nicht** wiederholt (nur `FAILED` = Abruffehler, und das ist
-  richtig), dazu Überlappungsschutz und Panik-Netz.
-
-  **Vor dem Bauen zu klären** (Abfrage steht in der Sitzung vom 04.09.): Wie hoch ist die
-  Cover-Quote SPEZIFISCH bei den Titeln des Bestellbedarfs? Die Liste zeigt Titel mit
-  niedrigem Bestand — auf dem Zielsystem „179 von 247 ohne ein einziges Exemplar" —, und
-  das könnten überproportional die ISBN-losen Altdaten sein. Ist die Quote dort niedrig,
-  bleibt `CoverPeek` richtig; ist sie wie im Gesamtbestand, gehört das Cover in die Zeile.
-
-  **Wenn gebaut wird, dann als Bauteil:** Fünf Cover-Breiten im Haus
-  (`w-7`/`w-8`/`w-10`/`w-12`/`w-16`), und die Fallback-Kette aus `coverKandidaten` steht in
-  **vier** Dateien kopiert. Muss eine Komponente werden, kein Snippet — sie braucht State
-  pro Instanz (Kandidaten-Index, `naturalWidth`-Prüfung gegen das 1×1-GIF des Proxys).
-  M3-Mass: `list-item-leading-image` 56 px, `leading-space` 16 px.
-
-  Für Titel ohne ISBN gibt es `inventur.SucheTextDNB` (Freitext, heute von
-  `order_service.go` genutzt) und „Cover ändern" von Hand in der Buchakte. **Nicht
-  automatisch verdrahten:** Freitext auf „Mathematik" liefert hunderte Treffer; den ersten
-  zu nehmen hängt ein falsches Cover an ein Buch, und das ist schlimmer als keines. Beim
-  DNB-Signaturvorschlag wurde deshalb Vorschlag-plus-Bestätigung gebaut (22a10b1).
-
-  Offen bleibt Peters Wunsch für **Klassensatz-Reservierungen** (`reservation.go` liefert
-  weder `cover_url` noch `isbn`) und **Wünsche & Meldungen** (`anliegen.go` hat `isbn`,
-  kein `cover_url`).
+  - **16 Bestandsstellen** bauen ihr Cover noch selbst (Liste in
+    `frontend-hygiene-cover.test.js`, eingefroren). Umstellen beim nächsten fachlichen
+    Anfassen — nicht in einem Rutsch, das sind täglich benutzte Bildschirme.
+  - **Klassensatz-Reservierungen**: `reservation.go` liefert weder `cover_url` noch `isbn`.
+    Backend muss mit. **Wünsche & Meldungen**: `anliegen.go` hat `isbn`, kein
+    `cover_url` — der ISBN-Fallback aus `reorders.go` (Zeile 96) wäre übertragbar.
+    **Portal**: `AnliegenWidget`, `PortalSchulbuecher`, `PortalLernmittel` ohne Cover.
+  - **3.000 Titel ohne ISBN** (`PENDING`, werden vom Sync nie versucht): Datenfrage, keine
+    Reparatur — zehn Jahre alte Littera-Daten. `inventur.SucheTextDNB` existiert
+    (Freitext), aber **nur mit Bestätigung durch einen Menschen** verdrahten: Freitext auf
+    „Mathematik" liefert hunderte Treffer, den ersten zu nehmen hängt ein falsches Cover
+    an ein Buch. Vorbild: DNB-Signaturvorschlag (22a10b1). Der Sync selbst ist in Ordnung
+    (Drossel 500 ms, `NOT_FOUND` wird nicht wiederholt) — die Kritik vom 04.09. war falsch.
 
 - **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen**
   (04.09.2026). `Modal.svelte` trug Rahmen **und** Schatten — die Bauform, die M3 bei
