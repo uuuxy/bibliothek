@@ -42,12 +42,15 @@ func (s *Server) ListGeraeteHandler(repo repository.GeraeteRepository) http.Hand
 		// da?"). Der NAME des Ausleihers ist aber eine Personenangabe und
 		// bleibt Aufrufern ohne view_students verborgen — verliehen ja/nein
 		// sieht man weiterhin (ausgeliehen_an wird zu "", nicht nil).
-		if !s.BesitztRecht(r, "view_students") {
-			leer := ""
-			for i := range geraete {
-				if geraete[i].AusgeliehenAn != nil {
-					geraete[i].AusgeliehenAn = &leer
-				}
+		if s.BesitztRecht(r, "view_students") {
+			RespondJSON(w, http.StatusOK, map[string]any{"data": geraete})
+			return nil
+		}
+
+		leer := ""
+		for i := range geraete {
+			if geraete[i].AusgeliehenAn != nil {
+				geraete[i].AusgeliehenAn = &leer
 			}
 		}
 		RespondJSON(w, http.StatusOK, map[string]any{"data": geraete})
