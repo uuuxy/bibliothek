@@ -117,6 +117,16 @@ eigenmächtig entschieden.
 5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
    der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
 
+- **`monitorTakt.test.js` ist flaky** (04.09.2026, B). Im vollen Vitest-Lauf einmal rot
+  („startet die Seite um drei Uhr nachts neu"), danach dreimal in Folge 369/369 grün;
+  allein immer grün. Der Test setzt `vi.useFakeTimers()` und `vi.setSystemTime()` — die
+  Klasse „Globalzustand + Testreihenfolge" aus `sweeps.md`: irgendein Nachbar lässt
+  Timer oder Systemzeit stehen, oder der Neustart-Timer feuert je nach Ausführungsdauer.
+  Zusätzlich ist er umgebungsempfindlich: Vitest vom Repo-Root statt aus `frontend/`
+  gestartet, fallen 12 von 13 Fällen (relative Pfade). Nicht meine Änderung
+  (df19b5af, 30.08.). Anfassen: Timer in `afterEach` restaurieren und die
+  Neustart-Erwartung gegen die FAKE-Uhr statt die Wanduhr messen.
+
 ## Beobachten (nichts zu tun)
 
 | Fund                                                                                       | Warum nur beobachten                                                                                                                                                         |
