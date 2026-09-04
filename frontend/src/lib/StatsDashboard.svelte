@@ -215,7 +215,7 @@
 								<img
 									src={coverSrc(book.cover_url, book.isbn)}
 									alt=""
-									class="w-8 aspect-3/4 object-cover rounded shadow-xs border border-slate-100 shrink-0"
+									class="w-8 aspect-3/4 object-cover rounded border border-slate-100 shrink-0"
 								/>
 							{:else}
 								<div
