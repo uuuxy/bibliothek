@@ -86,8 +86,11 @@
 		{/if}
 	</div>
 	<div class="flex flex-col gap-0.5 text-sm">
+		<!-- text-base ausdrücklich am Titel: Er ERBTE die 14 px vom Container darüber, und
+		     eine geerbte Größe sieht kein Grep — nur die Messung im Browser (04.09.2026,
+		     in der CI rot geworden, weil dort eine Klasse aufgeklappt war). -->
 		<h3
-			class="line-clamp-2 leading-snug font-semibold wrap-break-word text-on-surface"
+			class="line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-on-surface"
 			title={book.title}
 		>
 			{book.title}

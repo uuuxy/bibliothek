@@ -145,6 +145,20 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 			}
 		},
 		{ name: 'Klassensätze', oeffne: () => page.goto('/schulklassen') },
+		{
+			// Aufgeklappt, sonst sind die Buch-Kacheln gar nicht im Baum. Genau daran ist der
+			// Detektor am 04.09.2026 vorbeigelaufen: Lokal war keine Klasse offen, in der CI
+			// hatte ein früherer Test eine geöffnet — die Abdeckung hing an der Reihenfolge
+			// der Testdateien statt an diesem Test.
+			name: 'Klassensätze › Klasse aufgeklappt',
+			oeffne: async () => {
+				await page.goto('/schulklassen');
+				const knopf = page.locator('.class-group button[aria-expanded]').first();
+				await knopf.waitFor();
+				if ((await knopf.getAttribute('aria-expanded')) !== 'true') await knopf.click();
+				await page.locator('[id^="klassensatz-"] h3').first().waitFor();
+			}
+		},
 		{ name: 'Schülerdatei', oeffne: () => page.goto('/schuelerdatei') },
 		{ name: 'Mahnwesen', oeffne: () => page.goto('/mahnwesen') },
 		{ name: 'Abgänger', oeffne: () => page.goto('/abgaenger') },

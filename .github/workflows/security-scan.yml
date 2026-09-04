@@ -113,7 +113,26 @@ jobs:
       - name: Run npm audit
         # --audit-level=high: fail on HIGH and CRITICAL vulnerabilities only
         # moderate/low are reported but do not block CI in a school context
-        run: npm audit --audit-level=high --omit=dev
+        #
+        # Ein AUSFALL der Registry ist kein Befund (04.09.2026): Der Lauf zu d12171ca meldete
+        # erst „found 0 vulnerabilities" und brach dann mit `{ error: 'Service Unavailable' }`
+        # ab — npms Audit-Endpunkt war kurz weg. Ein Gate, das bei einem fremden Ausfall rot
+        # wird, erzieht zum Wegsehen (siehe „Deploy-Alarm schreit immer"). Deshalb: dreimal
+        # versuchen, und nur ein ECHTER Befund ist rot. Bleibt der Endpunkt unerreichbar,
+        # endet der Schritt gelb mit einer Warnung im Protokoll statt rot.
+        run: |
+          set -uo pipefail
+          for versuch in 1 2 3; do
+            ausgabe=$(npm audit --audit-level=high --omit=dev 2>&1) && { echo "$ausgabe"; exit 0; }
+            echo "$ausgabe"
+            if ! grep -qiE "audit endpoint returned an error|Service Unavailable|ENOTFOUND|ETIMEDOUT|ECONNRESET" <<<"$ausgabe"; then
+              echo "::error::npm audit meldet eine Schwachstelle (HIGH oder CRITICAL)."
+              exit 1
+            fi
+            echo "Versuch $versuch: Audit-Endpunkt nicht erreichbar, neuer Versuch in 20 s …"
+            sleep 20
+          done
+          echo "::warning::npm audit konnte den Endpunkt dreimal nicht erreichen — kein Befund, nur kein Ergebnis."
 
   # ── Docker image scan (Trivy) ─────────────────────────────────────────────
   docker-scan:
