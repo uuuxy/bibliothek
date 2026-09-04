@@ -83,11 +83,11 @@ type stresstestRunner struct {
 	token       string
 	numRequests int
 
-	wg         sync.WaitGroup
-	startMu    sync.Mutex
-	startCond  *sync.Cond
-	readyCount int
-	start      bool
+	wg        sync.WaitGroup
+	startMu   sync.Mutex
+	startCond *sync.Cond
+	readyWg   sync.WaitGroup
+	start     bool
 
 	resultsMu    sync.Mutex
 	statusCounts map[int]int
@@ -102,6 +102,7 @@ func newStresstestRunner(baseURL, token string, jsonData []byte, numRequests int
 		statusCounts: make(map[int]int),
 	}
 	r.startCond = sync.NewCond(&r.startMu)
+	r.readyWg.Add(numRequests)
 	return r
 }
 
@@ -132,11 +133,9 @@ func (r *stresstestRunner) baueRequest() (*http.Request, error) {
 
 // wartAufStart meldet den Worker als bereit und blockiert, bis das Startsignal kommt.
 func (r *stresstestRunner) wartAufStart() {
+	r.readyWg.Done()
+
 	r.startMu.Lock()
-	r.readyCount++
-	if r.readyCount == r.numRequests {
-		r.startCond.Broadcast() // Wake up everyone if this is the last one
-	}
 	for !r.start {
 		r.startCond.Wait()
 	}
@@ -203,13 +202,9 @@ func (r *stresstestRunner) starteAlle() {
 
 // gibStartsignal wartet, bis alle Worker bereitstehen, und weckt sie gleichzeitig.
 func (r *stresstestRunner) gibStartsignal() {
-	// Give goroutines a moment to spin up and wait on condition
-	time.Sleep(100 * time.Millisecond)
+	r.readyWg.Wait()
 
 	r.startMu.Lock()
-	if r.readyCount < r.numRequests {
-		r.startCond.Wait()
-	}
 	r.start = true
 	r.startCond.Broadcast()
 	r.startMu.Unlock()
