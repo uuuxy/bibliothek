@@ -54,7 +54,14 @@ func TestBerichtErzeugtGueltigesPDFInBeidenBetriebsarten(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			daten, err := generateBestellBerichtPDF(berichtTestdaten(), schule, "Testbericht", von, bis, f.jahresansicht, f.mitPreisen)
+			opts := bestellBerichtOpts{
+				Titel:         "Testbericht",
+				Von:           von,
+				Bis:           bis,
+				Jahresansicht: f.jahresansicht,
+				MitPreisen:    f.mitPreisen,
+			}
+			daten, err := generateBestellBerichtPDF(berichtTestdaten(), schule, opts)
 			if err != nil {
 				t.Fatalf("PDF-Erzeugung fehlgeschlagen: %v", err)
 			}
@@ -75,7 +82,14 @@ func TestBerichtOhneBestellungen(t *testing.T) {
 	bis := time.Date(2026, 1, 31, 0, 0, 0, 0, time.UTC)
 
 	for _, mitPreisen := range []bool{true, false} {
-		daten, err := generateBestellBerichtPDF(nil, pdf.SchuleInfo{Name: "Testbibliothek"}, "Leer", von, bis, true, mitPreisen)
+		opts := bestellBerichtOpts{
+			Titel:         "Leer",
+			Von:           von,
+			Bis:           bis,
+			Jahresansicht: true,
+			MitPreisen:    mitPreisen,
+		}
+		daten, err := generateBestellBerichtPDF(nil, pdf.SchuleInfo{Name: "Testbibliothek"}, opts)
 		if err != nil {
 			t.Fatalf("mitPreisen=%v: %v", mitPreisen, err)
 		}

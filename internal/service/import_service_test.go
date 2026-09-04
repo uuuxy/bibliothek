@@ -90,15 +90,18 @@ func TestSammleSignaturUpdates(t *testing.T) {
 		{"Unbekanntes Buch", "Xy 1", "1002"}, // nicht im Bestand → kein Update
 		{"Faust", "", "1003"},                // leer → darf "De GOE" nicht verdrängen
 	}
-	titelToID := map[string]string{"Faust": "id-faust"}
+	lookup := titelLookup{
+		isbnToID:  map[string]string{},
+		titelToID: map[string]string{"Faust": "id-faust"},
+	}
 
-	updates := sammleSignaturUpdates(rows, headerMap, map[string]string{}, titelToID)
+	updates := sammleSignaturUpdates(rows, headerMap, lookup)
 	if len(updates) != 1 || updates["id-faust"] != "De GOE" {
 		t.Errorf("updates = %v, want {id-faust: De GOE}", updates)
 	}
 
 	// Ohne Signatur-Spalte: gar keine Updates (nil)
-	if u := sammleSignaturUpdates(rows, map[string]int{"titel": 0}, map[string]string{}, titelToID); u != nil {
+	if u := sammleSignaturUpdates(rows, map[string]int{"titel": 0}, lookup); u != nil {
 		t.Errorf("ohne Signatur-Spalte: updates = %v, want nil", u)
 	}
 }

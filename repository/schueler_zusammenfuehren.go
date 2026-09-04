@@ -176,7 +176,12 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 	if err != nil {
 		return nil, err
 	}
-	if err := schreibeRueckwegEintrag(ctx, tx, a.BearbeiterID, ziel, quelle, gewandert); err != nil {
+	if err := schreibeRueckwegEintrag(ctx, tx, rueckwegEintragParams{
+		BearbeiterID: a.BearbeiterID,
+		Ziel:         ziel,
+		Quelle:       quelle,
+		Gewandert:    gewandert,
+	}); err != nil {
 		return nil, err
 	}
 	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, quelle.id)
@@ -189,7 +194,13 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 
 	f, o := fuehrend(ziel, quelle)
 	erg.Vorname, erg.Nachname, erg.Klasse = f.vorname, f.nachname, f.klasse
-	if err := schreibeZusammengefuehrtesZiel(ctx, tx, ziel.id, f, o, a.AbgaengerJahr(f.klasse), quelle); err != nil {
+	if err := schreibeZusammengefuehrtesZiel(ctx, tx, schreibeZusammengefuehrtesZielParams{
+		ZielID:        ziel.id,
+		F:             f,
+		O:             o,
+		AbgaengerJahr: a.AbgaengerJahr(f.klasse),
+		Quelle:        quelle,
+	}); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -292,6 +303,15 @@ func idsAus(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, 
 	return ids, rows.Err()
 }
 
+// rueckwegEintragParams bündelt die Angaben des Rückweg-Eintrags. Ziel und Quelle sind
+// typgleich — als Positionsargumente wären sie stumm vertauschbar.
+type rueckwegEintragParams struct {
+	BearbeiterID string
+	Ziel         *zusammenfuehrenZeile
+	Quelle       *zusammenfuehrenZeile
+	Gewandert    *gewanderteVorgaenge
+}
+
 // schreibeRueckwegEintrag hält in audit_log (tabelle='schueler', datensatz_id=Ziel)
 // fest, was das Zusammenführen unumkehrbar macht: die vollständigen Stammdaten der
 // Quelle, den Stand des Ziels davor und die Kennungen aller gewanderten Zeilen. Ohne
@@ -300,17 +320,17 @@ func idsAus(ctx context.Context, tx pgx.Tx, sql string, args ...any) ([]string, 
 // in dem die Quelle weg ist und die Spur fehlt. Lebenszyklus: Wird das Ziel später
 // anonymisiert, ersetzt SpurTilgungen dieses Objekt als Ganzes — die Klardaten der
 // Quelle leben nicht länger als die des Ziels.
-func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, bearbeiterID string, ziel, quelle *zusammenfuehrenZeile, g *gewanderteVorgaenge) error {
+func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p rueckwegEintragParams) error {
 	details, err := json.Marshal(map[string]any{
 		"action":             "zusammenfuehren",
-		"aufgeloest_id":      quelle.id,
-		"aufgeloest_barcode": quelle.barcode,
-		"quelle":             stammdatenSnapshot(quelle),
-		"ziel_vorher":        stammdatenSnapshot(ziel),
+		"aufgeloest_id":      p.Quelle.id,
+		"aufgeloest_barcode": p.Quelle.barcode,
+		"quelle":             stammdatenSnapshot(p.Quelle),
+		"ziel_vorher":        stammdatenSnapshot(p.Ziel),
 		"gewandert": map[string]any{
-			"ausleihen": g.Ausleihen, "schadensfaelle": g.Schadensfaelle,
-			"vormerkungen": g.Vormerkungen, "vormerkungen_doppelt_geloescht": g.VormerkungenDoppelt,
-			"foto": g.Foto, "ziel_foto_gewichen": g.ZielFotoGewichen,
+			"ausleihen": p.Gewandert.Ausleihen, "schadensfaelle": p.Gewandert.Schadensfaelle,
+			"vormerkungen": p.Gewandert.Vormerkungen, "vormerkungen_doppelt_geloescht": p.Gewandert.VormerkungenDoppelt,
+			"foto": p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
 		},
 	})
 	if err != nil {
@@ -318,11 +338,11 @@ func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, bearbeiterID string
 	}
 	var bearbeiter *string
 	akteur := "SYSTEM"
-	if bearbeiterID != "" {
-		bearbeiter, akteur = &bearbeiterID, "USER"
+	if p.BearbeiterID != "" {
+		bearbeiter, akteur = &p.BearbeiterID, "USER"
 	}
 	tag, err := tx.Exec(ctx, `INSERT INTO audit_log (tabelle, aktion, datensatz_id, bearbeiter_id, akteur, details)
-		VALUES ('schueler', 'ZUSAMMENGEFUEHRT', $1::uuid, $2, $3, $4::jsonb)`, ziel.id, bearbeiter, akteur, string(details))
+		VALUES ('schueler', 'ZUSAMMENGEFUEHRT', $1::uuid, $2, $3, $4::jsonb)`, p.Ziel.id, bearbeiter, akteur, string(details))
 	if err != nil {
 		return fmt.Errorf("rückweg-eintrag schreiben: %w", err)
 	}
@@ -355,6 +375,14 @@ func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
 	}
 }
 
+type schreibeZusammengefuehrtesZielParams struct {
+	ZielID        string
+	F             *zusammenfuehrenZeile
+	O             *zusammenfuehrenZeile
+	AbgaengerJahr int
+	Quelle        *zusammenfuehrenZeile
+}
+
 // schreibeZusammengefuehrtesZiel setzt die Stammdaten des führenden Datensatzes (f) auf
 // das Ziel, füllt Lücken aus dem anderen (o) und macht das Ziel wieder aktiv. Die CASE-
 // Ausdrücke für die Sperre lesen die ALTEN Werte (Postgres wertet die rechte Seite vor
@@ -363,7 +391,7 @@ func stammdatenSnapshot(z *zusammenfuehrenZeile) map[string]any {
 // Eine MANUELLE Sperre der Quelle (Ausweis gestohlen, Hausverbot …) gehört zur Person,
 // nicht zum Datensatz: Sie geht auf das Ziel über — mit ihrem Grund, sofern das Ziel
 // nicht selbst schon manuell gesperrt ist (dann bleibt dessen Grund).
-func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID string, f, o *zusammenfuehrenZeile, abgaengerJahr int, quelle *zusammenfuehrenZeile) error {
+func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p schreibeZusammengefuehrtesZielParams) error {
 	tag, err := tx.Exec(ctx, `
 		UPDATE schueler SET
 			vorname = $2, nachname = $3, klasse = $4,
@@ -390,12 +418,12 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, zielID strin
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $1`,
-		zielID, f.vorname, f.nachname, f.klasse,
-		ersteZeit(f.geburtsdatum, o.geburtsdatum), ersteZeit(f.eintritt, o.eintritt),
-		erster(f.strasse, o.strasse), erster(f.hausnummer, o.hausnummer), erster(f.plz, o.plz),
-		erster(f.ort, o.ort), erster(f.elternEmail, o.elternEmail),
-		erster(f.lusdID, o.lusdID), ersteZeit(f.bestaetigtAm, o.bestaetigtAm), abgaengerJahr,
-		quelle.manuellGesperrt, quelle.sperrgrund)
+		p.ZielID, p.F.vorname, p.F.nachname, p.F.klasse,
+		ersteZeit(p.F.geburtsdatum, p.O.geburtsdatum), ersteZeit(p.F.eintritt, p.O.eintritt),
+		erster(p.F.strasse, p.O.strasse), erster(p.F.hausnummer, p.O.hausnummer), erster(p.F.plz, p.O.plz),
+		erster(p.F.ort, p.O.ort), erster(p.F.elternEmail, p.O.elternEmail),
+		erster(p.F.lusdID, p.O.lusdID), ersteZeit(p.F.bestaetigtAm, p.O.bestaetigtAm), p.AbgaengerJahr,
+		p.Quelle.manuellGesperrt, p.Quelle.sperrgrund)
 	if err != nil {
 		return fmt.Errorf("ziel schreiben: %w", err)
 	}

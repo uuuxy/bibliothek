@@ -15,13 +15,13 @@ func TestKuerzeNullbar(t *testing.T) {
 	defer p.Schliessen()
 
 	t.Run("leer ergibt nil", func(t *testing.T) {
-		if got := KuerzeNullbar(p, "1", "kennung", "feld", "", 5); got != nil {
+		if got := KuerzeNullbar(Kuerzung{Protokoll: p, QuellID: "1", Kennung: "kennung", Feld: "feld", Wert: "", Max: 5}); got != nil {
 			t.Errorf("KuerzeNullbar() erwartet nil, bekam %v", *got)
 		}
 	})
 
 	t.Run("nicht leer", func(t *testing.T) {
-		got := KuerzeNullbar(p, "1", "kennung", "feld", "abcde", 3)
+		got := KuerzeNullbar(Kuerzung{Protokoll: p, QuellID: "1", Kennung: "kennung", Feld: "feld", Wert: "abcde", Max: 3})
 		if got == nil {
 			t.Fatal("KuerzeNullbar() erwartet nicht nil")
 		}

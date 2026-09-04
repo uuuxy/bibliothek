@@ -51,21 +51,28 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo r
 	return true
 }
 
+// BarcodePruefOptionen bündelt die Parameter für die Prüfung der Barcode-Eindeutigkeit.
+type BarcodePruefOptionen struct {
+	BarcodeID   string
+	ExcludeID   string
+	KonfliktMsg string
+}
+
 // pruefeBarcodeEindeutig liefert den optionalen Barcode-Pointer und validiert dessen
 // Eindeutigkeit. Ist kein Barcode gesetzt, wird (nil, true) geliefert. Bei Konflikt
 // oder DB-Fehler wird die HTTP-Antwort direkt geschrieben (ok=false).
-func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, barcodeID, excludeID, konfliktMsg string) (barcode *string, ok bool) {
-	if barcodeID == "" {
+func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, opt BarcodePruefOptionen) (barcode *string, ok bool) {
+	if opt.BarcodeID == "" {
 		return nil, true
 	}
-	exists, err := userRepo.CheckBarcodeExists(ctx, barcodeID, excludeID)
+	exists, err := userRepo.CheckBarcodeExists(ctx, opt.BarcodeID, opt.ExcludeID)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return nil, false
 	}
 	if exists {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(konfliktMsg))
+		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New(opt.KonfliktMsg))
 		return nil, false
 	}
-	return &barcodeID, true
+	return &opt.BarcodeID, true
 }

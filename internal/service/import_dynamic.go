@@ -37,6 +37,11 @@ type importCopyData struct {
 	ZustandNotiz  string
 }
 
+type titelLookup struct {
+	isbnToID  map[string]string
+	titelToID map[string]string
+}
+
 // spaltenWert liest den getrimmten Wert der über headerMap zugeordneten Spalte.
 func spaltenWert(row []string, headerMap map[string]int, key string) string {
 	if idx, ok := headerMap[key]; ok && idx < len(row) {
@@ -90,38 +95,40 @@ func titelZeilenFelder(row []string, headerMap map[string]int) zeilenFelder {
 // ladeVorhandeneTitel lädt die bestehenden Titel für schnelles ISBN-/Titel-Matching.
 // Die Titel-Map ist über repository.NormalisiereTitelKey geschlüsselt — identisch
 // zum XML-Pfad, damit Anführungszeichen-Varianten desselben Titels matchen.
-func ladeVorhandeneTitel(ctx context.Context, tx pgx.Tx) (map[string]string, map[string]string, error) {
+func ladeVorhandeneTitel(ctx context.Context, tx pgx.Tx) (titelLookup, error) {
 	dbRows, err := tx.Query(ctx, "SELECT id, coalesce(isbn, ''), titel FROM buecher_titel")
 	if err != nil {
-		return nil, nil, err
+		return titelLookup{}, err
 	}
-	isbnToID := make(map[string]string)
-	titelToID := make(map[string]string)
+	lookup := titelLookup{
+		isbnToID:  make(map[string]string),
+		titelToID: make(map[string]string),
+	}
 	for dbRows.Next() {
 		var id, isbn, titel string
 		if err := dbRows.Scan(&id, &isbn, &titel); err == nil {
 			if isbn != "" {
-				isbnToID[isbn] = id
+				lookup.isbnToID[isbn] = id
 			}
-			titelToID[repository.NormalisiereTitelKey(titel)] = id
+			lookup.titelToID[repository.NormalisiereTitelKey(titel)] = id
 		}
 	}
 	if err := dbRows.Err(); err != nil {
 		dbRows.Close()
-		return nil, nil, err
+		return titelLookup{}, err
 	}
 	dbRows.Close()
-	return isbnToID, titelToID, nil
+	return lookup, nil
 }
 
 // sammleNeueTitel identifiziert (erster Pass) die Titel, die neu angelegt werden
 // müssen, weil sie sich weder über ISBN noch über den Titel matchen lassen.
-func sammleNeueTitel(rows [][]string, headerMap map[string]int, isbnToID, titelToID map[string]string) (map[string]*importNewTitle, []string) {
+func sammleNeueTitel(rows [][]string, headerMap map[string]int, lookup titelLookup) (map[string]*importNewTitle, []string) {
 	newTitlesMap := make(map[string]*importNewTitle) // key: isbn or titel
 	var newTitlesOrder []string
 
 	for _, row := range rows[1:] {
-		cacheKey, t, ok := baueNeuTitelAusZeile(row, headerMap, isbnToID, titelToID)
+		cacheKey, t, ok := baueNeuTitelAusZeile(row, headerMap, lookup)
 		if !ok {
 			continue
 		}
@@ -158,17 +165,17 @@ func cleanISBN(val string) string {
 	return string(b)
 }
 
-func matchTitelID(isbn, titel string, isbnToID, titelToID map[string]string) string {
-	if isbn != "" && isbnToID[isbn] != "" {
-		return isbnToID[isbn]
+func matchTitelID(isbn, titel string, lookup titelLookup) string {
+	if isbn != "" && lookup.isbnToID[isbn] != "" {
+		return lookup.isbnToID[isbn]
 	}
-	return titelToID[repository.NormalisiereTitelKey(titel)]
+	return lookup.titelToID[repository.NormalisiereTitelKey(titel)]
 }
 
 // baueNeuTitelAusZeile prüft eine Zeile und liefert (falls es ein noch unbekannter Titel
 // ist) den Cache-Key und den anzulegenden Titel. ok=false bedeutet: Zeile überspringen
 // (leer oder bereits über ISBN/Titel gematcht).
-func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, titelToID map[string]string) (cacheKey string, t *importNewTitle, ok bool) {
+func baueNeuTitelAusZeile(row []string, headerMap map[string]int, lookup titelLookup) (cacheKey string, t *importNewTitle, ok bool) {
 	z := titelZeilenFelder(row, headerMap)
 	barcode := spaltenWert(row, headerMap, "barcode")
 	if z.titel == "" || barcode == "" {
@@ -177,7 +184,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, isbnToID, tite
 
 	isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
 
-	if matchTitelID(isbn, z.titel, isbnToID, titelToID) != "" {
+	if matchTitelID(isbn, z.titel, lookup) != "" {
 		return "", nil, false // schon vorhanden
 	}
 
@@ -221,7 +228,7 @@ func fachDerZeile(t *importNewTitle) string {
 
 // fuegeNeueTitelEin legt die neuen Titel per Batch an und ergänzt die
 // ID-Maps um die neu vergebenen Titel-IDs.
-func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, isbnToID, titelToID map[string]string) (int, error) {
+func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*importNewTitle, newTitlesOrder []string, lookup titelLookup) (int, error) {
 	if len(newTitlesOrder) == 0 {
 		return 0, nil
 	}
@@ -268,9 +275,9 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 		}
 		t := newTitlesMap[key]
 		if t.ISBN != "" {
-			isbnToID[t.ISBN] = insertedID
+			lookup.isbnToID[t.ISBN] = insertedID
 		}
-		titelToID[repository.NormalisiereTitelKey(t.Titel)] = insertedID
+		lookup.titelToID[repository.NormalisiereTitelKey(t.Titel)] = insertedID
 		newTitlesCount++
 	}
 	if err := br.Close(); err != nil {
@@ -281,7 +288,7 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 
 // sammleExemplare sammelt (zweiter Pass) alle einzufügenden Exemplare, jetzt mit
 // den vollständigen Titel-IDs aus Pass 1.
-func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelToID map[string]string) []importCopyData {
+func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLookup) []importCopyData {
 	var copiesToInsert []importCopyData
 
 	for i, row := range rows[1:] {
@@ -308,7 +315,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelT
 		}
 
 		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
-		titelID := matchTitelID(isbn, titel, isbnToID, titelToID)
+		titelID := matchTitelID(isbn, titel, lookup)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
 		// "verliehen" sperrt das Exemplar für neue Ausleihen, der Rohwert
@@ -335,7 +342,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, isbnToID, titelT
 // sammleSignaturUpdates sammelt je Titel-ID die Signatur aus der Datei (letzte
 // nicht-leere gewinnt). Damit bekommen auch BESTEHENDE Titel ihre Signatur —
 // der Insert-Pfad deckt nur neue Titel ab.
-func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, isbnToID, titelToID map[string]string) map[string]string {
+func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, lookup titelLookup) map[string]string {
 	if _, ok := headerMap["signatur"]; !ok {
 		return nil
 	}
@@ -347,7 +354,7 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, isbnToID, 
 			continue
 		}
 		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
-		if id := matchTitelID(isbn, z.titel, isbnToID, titelToID); id != "" {
+		if id := matchTitelID(isbn, z.titel, lookup); id != "" {
 			updates[id] = z.signatur
 		}
 	}
@@ -439,23 +446,23 @@ func (s *ImportService) ImportDynamic(ctx context.Context, rows [][]string, head
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	isbnToID, titelToID, err := ladeVorhandeneTitel(ctx, tx)
+	lookup, err := ladeVorhandeneTitel(ctx, tx)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, isbnToID, titelToID)
+	newTitlesMap, newTitlesOrder := sammleNeueTitel(rows, headerMap, lookup)
 
-	newTitlesCount, err := fuegeNeueTitelEin(ctx, tx, newTitlesMap, newTitlesOrder, isbnToID, titelToID)
+	newTitlesCount, err := fuegeNeueTitelEin(ctx, tx, newTitlesMap, newTitlesOrder, lookup)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	if err := schreibeSignaturUpdates(ctx, tx, sammleSignaturUpdates(rows, headerMap, isbnToID, titelToID)); err != nil {
+	if err := schreibeSignaturUpdates(ctx, tx, sammleSignaturUpdates(rows, headerMap, lookup)); err != nil {
 		return 0, 0, err
 	}
 
-	copiesToInsert := sammleExemplare(rows, headerMap, isbnToID, titelToID)
+	copiesToInsert := sammleExemplare(rows, headerMap, lookup)
 
 	importedCopiesCount, err := fuegeExemplareEin(ctx, tx, copiesToInsert)
 	if err != nil {

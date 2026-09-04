@@ -79,7 +79,11 @@ func wareneingang(t *testing.T, pool *pgxpool.Pool) []service.ReceivedItem {
 	if len(ids) == 0 {
 		t.Fatal("nichts einzubuchen — der Testaufbau hat keine Exemplare erzeugt")
 	}
-	items, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), ids, "", "127.0.0.1")
+	items, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), service.BulkReceiveParams{
+		ExemplarIDs: ids,
+		AdminID:     "",
+		IPAddr:      "127.0.0.1",
+	})
 	if err != nil {
 		t.Fatalf("Wareneingang: %v", err)
 	}

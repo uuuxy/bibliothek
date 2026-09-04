@@ -14,6 +14,11 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
+// coverBox bündelt die Abmessungen und Position für das Einbetten eines Covers.
+type coverBox struct {
+	x, y, breite, hoehe float64
+}
+
 // bindeCoverEin bettet das Coverbild eines Mediums an der angegebenen Position ein.
 //
 // Der Umweg über JPEG ist notwendig, weil gofpdf den Bildtyp an der Dateiendung erkennt
@@ -31,7 +36,7 @@ import (
 // Alle Fehler bleiben still: Ein unlesbares, defektes oder überdimensioniertes Cover darf
 // das Dokument nie als Ganzes kosten. Es fehlt dann — die Rahmenzelle zeichnet der
 // Aufrufer ohnehin immer.
-func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float64) {
+func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, box coverBox) {
 	opt := gofpdf.ImageOptions{ImageType: "JPG"}
 	pfad := coverdatei.Pfad(coverURL)
 	if pfad == "" {
@@ -46,7 +51,7 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float6
 		}
 		pdf.RegisterImageOptionsReader(pfad, opt, bytes.NewReader(jpg))
 	}
-	pdf.ImageOptions(pfad, x, y, breite, hoehe, false, opt, 0, "")
+	pdf.ImageOptions(pfad, box.x, box.y, box.breite, box.hoehe, false, opt, 0, "")
 }
 
 // zeichneMahnMedienZeile rendert eine Tabellenzeile für ein überfälliges Medium
@@ -54,7 +59,7 @@ func bindeCoverEin(pdf *gofpdf.Fpdf, coverURL string, x, y, breite, hoehe float6
 func zeichneMahnMedienZeile(pdf *gofpdf.Fpdf, tr func(string) string, med repository.UeberfaelligesMedium, rowHeight float64) {
 	startY := pdf.GetY()
 
-	bindeCoverEin(pdf, med.CoverURL, 18, startY+0.5, 7, rowHeight-1)
+	bindeCoverEin(pdf, med.CoverURL, coverBox{x: 18, y: startY + 0.5, breite: 7, hoehe: rowHeight - 1})
 
 	// Cover cell border (always draw border)
 	pdf.SetXY(18, startY)

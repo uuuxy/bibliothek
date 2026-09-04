@@ -297,8 +297,15 @@ type ReceivedItem struct {
 	EtikettGedruckt bool   `json:"etikett_gedruckt"`
 }
 
+// BulkReceiveParams encapsulates the parameters needed to bulk receive orders.
+type BulkReceiveParams struct {
+	ExemplarIDs []string
+	AdminID     string
+	IPAddr      string
+}
+
 // BulkReceiveOrder marks all pre-allocated items as received.
-func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, exemplarIDs []string, adminID, ipAddr string) ([]ReceivedItem, error) {
+func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repository.AuditRepository, params BulkReceiveParams) ([]ReceivedItem, error) {
 	query := `
 		UPDATE buecher_exemplare e
 		SET ist_ausleihbar = true, zustand_notiz = '', bestellstatus = NULL
@@ -309,7 +316,7 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 		RETURNING e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, e.etikett_gedruckt
 	`
 
-	rows, err := pool.Query(ctx, query, exemplarIDs)
+	rows, err := pool.Query(ctx, query, params.ExemplarIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -331,7 +338,7 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 		return nil, errors.New("keine zu aktualisierenden Exemplare gefunden (bereits freigegeben?)")
 	}
 
-	logAuditErr("wareneingang-bulk", auditRepo.LogAdminAktion(ctx, adminID, "BULK_RECEIVE_ITEMS", ipAddr, map[string]any{
+	logAuditErr("wareneingang-bulk", auditRepo.LogAdminAktion(ctx, params.AdminID, "BULK_RECEIVE_ITEMS", params.IPAddr, map[string]any{
 		"received_count": len(items),
 		"message":        "Wareneingang gebucht (Massen-Freigabe)",
 	}))

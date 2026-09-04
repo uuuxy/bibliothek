@@ -50,34 +50,46 @@ func diffBestand(s *lusdBestandsSchueler, id string) StudentDiff {
 	return StudentDiff{ID: id, Vorname: s.Vorname, Nachname: s.Nachname, AlteKlasse: s.Klasse}
 }
 
+type klassifizierungsLauf struct {
+	idx     lusdIndex
+	res     *LusdPreviewResult
+	z       *lusdZuordnung
+	gesehen map[string]bool
+}
+
 // klassifiziereLusd ordnet die CSV-Zeilen (rein klassifizierend, ohne Schreibzugriff)
 // ein und füllt Vorschau und Zuordnung in einem Durchgang.
 func klassifiziereLusd(datei lusdDatei, idx lusdIndex, res *LusdPreviewResult) lusdZuordnung {
 	z := lusdZuordnung{zielID: map[int]string{}, ueberspringen: map[int]bool{}, datumNachgetragen: map[string]bool{}, geburtsdatumSetzen: map[int]bool{}}
-	gesehen := map[string]bool{}
+	lauf := klassifizierungsLauf{
+		idx:     idx,
+		res:     res,
+		z:       &z,
+		gesehen: map[string]bool{},
+	}
 	namenInDatei := zaehleNamenInDatei(datei)
 	for i, rec := range datei.Zeilen {
 		switch datei.Modus {
 		case lusdModusID:
-			klassifiziereZeileID(i, rec, idx, res, &z, gesehen)
+			lauf.klassifiziereZeileID(i, rec)
 		case lusdModusName:
-			klassifiziereZeileName(i, rec, datei.Modus, idx, res, &z, gesehen)
+			lauf.klassifiziereZeileName(i, rec, datei.Modus)
 		default:
 			// Nur-Name: Derselbe Name zweimal in der Datei sind zwei Menschen, die sich
 			// nicht auseinanderhalten lassen — beide melden, keinen anfassen.
 			if namenInDatei[rec.namensschluessel()] > 1 {
-				res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(fmt.Sprintf("zeile-%d", rec.LineNum), rec, "", rec.Klasse))
-				z.ueberspringen[i] = true
+				lauf.res.Mehrdeutig = append(lauf.res.Mehrdeutig, diffZeile(fmt.Sprintf("zeile-%d", rec.LineNum), rec, "", rec.Klasse))
+				lauf.z.ueberspringen[i] = true
 				// Der Name STEHT im Export — ein bestätigter Bestandsschüler dieses Namens
 				// ist also nicht „nicht im Export". Ohne diese Zeile machte sammleAbgaenger
 				// ihn zum Abgänger und Apply anonymisierte ihn (Prüfung 22.08.2026, A1).
-				gesehen[rec.namensschluessel()] = true
+				lauf.gesehen[rec.namensschluessel()] = true
 				continue
 			}
-			klassifiziereZeileName(i, rec, datei.Modus, idx, res, &z, gesehen)
+			lauf.klassifiziereZeileName(i, rec, datei.Modus)
 		}
 	}
-	sammleAbgaenger(datei.Modus, idx, gesehen, res, &z)
+	lauf.sammleAbgaenger(datei.Modus)
 	return z
 }
 
@@ -96,36 +108,36 @@ func zaehleNamenInDatei(datei lusdDatei) map[string]int {
 // klassifiziereZeileID: Schlüssel LUSD-ID. Reihenfolge: aktiver Bestand → Rückkehrer
 // (Abgänger mit dieser ID) → Adoption (ID-loser Schüler gleichen Namens+Geburtsdatums)
 // → Neuzugang.
-func klassifiziereZeileID(i int, rec parsedStudentRow, idx lusdIndex, res *LusdPreviewResult, z *lusdZuordnung, gesehen map[string]bool) {
+func (l *klassifizierungsLauf) klassifiziereZeileID(i int, rec parsedStudentRow) {
 	if rec.LusdID == "" {
-		res.SkippedNoID++ // ohne LUSD-ID gibt es keinen stabilen Schlüssel — sichtbar zählen
-		z.ueberspringen[i] = true
+		l.res.SkippedNoID++ // ohne LUSD-ID gibt es keinen stabilen Schlüssel — sichtbar zählen
+		l.z.ueberspringen[i] = true
 		return
 	}
-	gesehen[rec.LusdID] = true
-	if s := idx.aktiv[rec.LusdID]; s != nil {
-		z.zielID[i] = s.ID
+	l.gesehen[rec.LusdID] = true
+	if s := l.idx.aktiv[rec.LusdID]; s != nil {
+		l.z.zielID[i] = s.ID
 		if !klassenGleich(s.Klasse, rec.Klasse) {
-			res.ClassChanges = append(res.ClassChanges, diffZeile(rec.LusdID, rec, s.Klasse, rec.Klasse))
+			l.res.ClassChanges = append(l.res.ClassChanges, diffZeile(rec.LusdID, rec, s.Klasse, rec.Klasse))
 		}
 		return
 	}
-	if s := idx.abgaenger[rec.LusdID]; s != nil {
-		z.zielID[i] = s.ID
-		res.Rueckkehrer = append(res.Rueckkehrer, diffZeile(rec.LusdID, rec, s.Klasse, rec.Klasse))
+	if s := l.idx.abgaenger[rec.LusdID]; s != nil {
+		l.z.zielID[i] = s.ID
+		l.res.Rueckkehrer = append(l.res.Rueckkehrer, diffZeile(rec.LusdID, rec, s.Klasse, rec.Klasse))
 		return
 	}
 	key := rec.schluessel()
-	if w := idx.waisen[key]; key != "" && w != nil {
-		z.adoptionen = append(z.adoptionen, AdoptionDiff{
+	if w := l.idx.waisen[key]; key != "" && w != nil {
+		l.z.adoptionen = append(l.z.adoptionen, AdoptionDiff{
 			SchuelerID: w.ID, LusdID: rec.LusdID, Vorname: rec.Vorname, Nachname: rec.Nachname,
 			Geburtsdatum: rec.GebDatum.Format("2006-01-02"), AlteKlasse: w.Klasse, NeueKlasse: rec.Klasse,
 		})
-		delete(idx.waisen, key) // konsumiert — zwei CSV-Zeilen beanspruchen nie denselben Waisen
+		delete(l.idx.waisen, key) // konsumiert — zwei CSV-Zeilen beanspruchen nie denselben Waisen
 		return
 	}
-	res.NewStudents = append(res.NewStudents, diffZeile(rec.LusdID, rec, "", rec.Klasse))
-	z.neuZeilen = append(z.neuZeilen, i)
+	l.res.NewStudents = append(l.res.NewStudents, diffZeile(rec.LusdID, rec, "", rec.Klasse))
+	l.z.neuZeilen = append(l.z.neuZeilen, i)
 }
 
 // klassifiziereZeileName: Schlüssel Name+Geburtsdatum oder nur Name (key kommt vom
@@ -137,7 +149,7 @@ func klassifiziereZeileID(i int, rec parsedStudentRow, idx lusdIndex, res *LusdP
 // Rückkehrer — ebenso gut ein neuer Fünftklässler, der sonst auf dem Datensatz (Sperre,
 // Schulden, Lesehistorie) des Abgegangenen landete (Prüfung 22.08.2026, A2). Er wird als
 // mehrdeutig gemeldet und nicht angefasst; das Sekretariat entscheidet von Hand.
-func klassifiziereZeileName(i int, rec parsedStudentRow, modus lusdModus, idx lusdIndex, res *LusdPreviewResult, z *lusdZuordnung, gesehen map[string]bool) {
+func (l *klassifizierungsLauf) klassifiziereZeileName(i int, rec parsedStudentRow, modus lusdModus) {
 	// Schlüssel AUS dem Modus ableiten (rec.schluesselFuer), nicht vom Aufrufer entgegennehmen:
 	// Die Gegenseite (bestandsSchluessel in lusd_bestand.go) tut dasselbe. Kämen beide aus
 	// verschiedenen Händen, könnte ein Aufrufer den Namensschlüssel gegen den Name+Datum-Index
@@ -146,31 +158,31 @@ func klassifiziereZeileName(i int, rec parsedStudentRow, modus lusdModus, idx lu
 	nurName := modus == lusdModusNurName
 	key := rec.schluesselFuer(modus)
 	zeilenID := fmt.Sprintf("zeile-%d", rec.LineNum)
-	if s, ok := idx.aktiv[key]; ok {
+	if s, ok := l.idx.aktiv[key]; ok {
 		if s == nil {
-			res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
-			z.ueberspringen[i] = true
+			l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
+			l.z.ueberspringen[i] = true
 			return
 		}
-		gesehen[key] = true
-		z.zielID[i] = s.ID
+		l.gesehen[key] = true
+		l.z.zielID[i] = s.ID
 		if !klassenGleich(s.Klasse, rec.Klasse) {
-			res.ClassChanges = append(res.ClassChanges, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
+			l.res.ClassChanges = append(l.res.ClassChanges, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
 		}
 		return
 	}
-	if s, ok := idx.abgaenger[key]; ok {
+	if s, ok := l.idx.abgaenger[key]; ok {
 		if s == nil || nurName {
 			alteKlasse := ""
 			if s != nil {
 				alteKlasse = s.Klasse
 			}
-			res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(zeilenID, rec, alteKlasse, rec.Klasse))
-			z.ueberspringen[i] = true
+			l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(zeilenID, rec, alteKlasse, rec.Klasse))
+			l.z.ueberspringen[i] = true
 			return
 		}
-		z.zielID[i] = s.ID
-		res.Rueckkehrer = append(res.Rueckkehrer, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
+		l.z.zielID[i] = s.ID
+		l.res.Rueckkehrer = append(l.res.Rueckkehrer, diffZeile(s.ID, rec, s.Klasse, rec.Klasse))
 		return
 	}
 	// Rückfallstufe (nur Name+Geb-Modus): Bestandsschüler OHNE Geburtsdatum über den
@@ -179,53 +191,53 @@ func klassifiziereZeileName(i int, rec parsedStudentRow, modus lusdModus, idx lu
 	// Liste, später Export mit Datum) jeder Bestandsschüler als „neu" dupliziert.
 	if !nurName && rec.GebDatum != nil {
 		nameKey := rec.namensschluessel()
-		if w, ok := idx.ohneDatumNachName[nameKey]; ok {
+		if w, ok := l.idx.ohneDatumNachName[nameKey]; ok {
 			if w == nil {
-				res.Mehrdeutig = append(res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
-				z.ueberspringen[i] = true
+				l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffZeile(zeilenID, rec, "", rec.Klasse))
+				l.z.ueberspringen[i] = true
 				return
 			}
-			z.zielID[i] = w.ID
-			z.datumNachgetragen[w.ID] = true
-			z.adoptionen = append(z.adoptionen, AdoptionDiff{
+			l.z.zielID[i] = w.ID
+			l.z.datumNachgetragen[w.ID] = true
+			l.z.adoptionen = append(l.z.adoptionen, AdoptionDiff{
 				SchuelerID: w.ID, Vorname: rec.Vorname, Nachname: rec.Nachname,
 				Geburtsdatum: rec.GebDatum.Format("2006-01-02"), AlteKlasse: w.Klasse, NeueKlasse: rec.Klasse,
 			})
-			delete(idx.ohneDatumNachName, nameKey) // konsumiert — zwei Zeilen beanspruchen nie denselben
+			delete(l.idx.ohneDatumNachName, nameKey) // konsumiert — zwei Zeilen beanspruchen nie denselben
 			return
 		}
 	}
-	res.NewStudents = append(res.NewStudents, diffZeile(zeilenID, rec, "", rec.Klasse))
-	z.neuZeilen = append(z.neuZeilen, i)
+	l.res.NewStudents = append(l.res.NewStudents, diffZeile(zeilenID, rec, "", rec.Klasse))
+	l.z.neuZeilen = append(l.z.neuZeilen, i)
 }
 
 // sammleAbgaenger: Wer aktiv ist und nicht im Export steht, geht ab — im ID-Modus jeder
 // mit echter LUSD-ID, in den Namensmodi nur, wer schon einmal von einem Export BESTÄTIGT
 // wurde (lusd_bestaetigt_am). Nie bestätigte Handanlagen bleiben stehen und werden als
 // „nicht im Export" gemeldet; Schüler ohne Geburtsdatum sind nicht abgleichbar.
-func sammleAbgaenger(modus lusdModus, idx lusdIndex, gesehen map[string]bool, res *LusdPreviewResult, z *lusdZuordnung) {
-	for key, s := range idx.aktiv {
-		if s == nil || gesehen[key] {
+func (l *klassifizierungsLauf) sammleAbgaenger(modus lusdModus) {
+	for key, s := range l.idx.aktiv {
+		if s == nil || l.gesehen[key] {
 			continue
 		}
 		if modus != lusdModusID && !s.LusdBestaetigt {
-			res.NichtImExport = append(res.NichtImExport, diffBestand(s, s.ID))
+			l.res.NichtImExport = append(l.res.NichtImExport, diffBestand(s, s.ID))
 			continue
 		}
 		listenID := key // ID-Modus: die LUSD-ID
 		if modus != lusdModusID {
 			listenID = s.ID
 		}
-		res.Graduates = append(res.Graduates, diffBestand(s, listenID))
-		z.abgaengerIDs = append(z.abgaengerIDs, s.ID)
+		l.res.Graduates = append(l.res.Graduates, diffBestand(s, listenID))
+		l.z.abgaengerIDs = append(l.z.abgaengerIDs, s.ID)
 	}
-	for i := range idx.ohneSchluessel {
-		if z.datumNachgetragen[idx.ohneSchluessel[i].ID] {
+	for i := range l.idx.ohneSchluessel {
+		if l.z.datumNachgetragen[l.idx.ohneSchluessel[i].ID] {
 			continue // über den Namen zugeordnet, Datum wird nachgetragen
 		}
-		res.NichtAbgleichbar = append(res.NichtAbgleichbar, diffBestand(&idx.ohneSchluessel[i], idx.ohneSchluessel[i].ID))
+		l.res.NichtAbgleichbar = append(l.res.NichtAbgleichbar, diffBestand(&l.idx.ohneSchluessel[i], l.idx.ohneSchluessel[i].ID))
 	}
-	for i := range idx.mehrdeutigAktiv {
-		res.Mehrdeutig = append(res.Mehrdeutig, diffBestand(&idx.mehrdeutigAktiv[i], idx.mehrdeutigAktiv[i].ID))
+	for i := range l.idx.mehrdeutigAktiv {
+		l.res.Mehrdeutig = append(l.res.Mehrdeutig, diffBestand(&l.idx.mehrdeutigAktiv[i], l.idx.mehrdeutigAktiv[i].ID))
 	}
 }

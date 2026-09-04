@@ -182,7 +182,14 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 			Ort:     settings.SchuleOrt,
 		}
 
-		pdfBytes, err := generateBestellBerichtPDF(orders, schule, berichtTitel, von, bis, jahresansicht, settings.PreiseErfassen)
+		opts := bestellBerichtOpts{
+			Titel:         berichtTitel,
+			Von:           von,
+			Bis:           bis,
+			Jahresansicht: jahresansicht,
+			MitPreisen:    settings.PreiseErfassen,
+		}
+		pdfBytes, err := generateBestellBerichtPDF(orders, schule, opts)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -466,13 +473,21 @@ func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []bericht
 	zeichneGesamtsumme(p, tr, r)
 }
 
+type bestellBerichtOpts struct {
+	Titel         string
+	Von           time.Time
+	Bis           time.Time
+	Jahresansicht bool
+	MitPreisen    bool
+}
+
 // generateBestellBerichtPDF baut den Bericht.
 //
 // mitPreisen entscheidet, ob er ein Geld- oder ein Mengenbericht ist. Das ist keine
 // Formatierungsfrage: Ohne gepflegte Preise summierte der Bericht durchweg Nullen und sah
 // dabei aus wie ein Ausgabennachweis. Ein Nachweis, der Null behauptet, ist schlimmer als
 // keiner — er wird geglaubt.
-func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, titel string, von, bis time.Time, jahresansicht, mitPreisen bool) ([]byte, error) {
+func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, opts bestellBerichtOpts) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
@@ -495,11 +510,11 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 
 	// Berichtstitel
 	p.SetFont("Arial", "B", 14)
-	p.Cell(0, 10, tr(titel))
+	p.Cell(0, 10, tr(opts.Titel))
 	p.Ln(7)
 	p.SetFont("Arial", "", 10)
 	p.SetTextColor(80, 80, 80)
-	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", von.Format(dateFormatDE), bis.Format(dateFormatDE))))
+	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s", opts.Von.Format(dateFormatDE), opts.Bis.Format(dateFormatDE))))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(12)
 
@@ -513,7 +528,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 
 	p.SetFillColor(240, 245, 255)
 	p.SetFont("Arial", "B", 9)
-	if mitPreisen {
+	if opts.MitPreisen {
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Bestellungen: %d", len(orders))), "1", 0, "C", true, 0, "")
 		p.CellFormat(60, 10, tr(fmt.Sprintf("Exemplare: %d", gesamtExemplare)), "1", 0, "C", true, 0, "")
 		p.CellFormat(50, 10, tr("Gesamtbetrag: "+euroStr(gesamtBetrag)), "1", 1, "C", true, 0, "")
@@ -525,16 +540,16 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, tit
 	p.Ln(10)
 
 	// Jahresübersicht-Tabellen
-	if jahresansicht {
-		zeichneMonatsuebersicht(p, tr, orders, gesamtExemplare, gesamtBetrag, mitPreisen)
-		zeichneLieferantenuebersicht(p, tr, orders, mitPreisen)
+	if opts.Jahresansicht {
+		zeichneMonatsuebersicht(p, tr, orders, gesamtExemplare, gesamtBetrag, opts.MitPreisen)
+		zeichneLieferantenuebersicht(p, tr, orders, opts.MitPreisen)
 	}
 
 	// Detailliste
 	zeichneDetailliste(p, tr, orders, berichtRahmen{
-		Von: von, Bis: bis,
+		Von: opts.Von, Bis: opts.Bis,
 		GesamtBetrag: gesamtBetrag, GesamtExemplare: gesamtExemplare,
-		MitPreisen: mitPreisen,
+		MitPreisen: opts.MitPreisen,
 	})
 
 	var buf bytes.Buffer
