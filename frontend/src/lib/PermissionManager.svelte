@@ -154,6 +154,14 @@
 
 	{#if activeSubTab === 'permissions'}
 		<div id="panel-permissions" role="tabpanel" aria-labelledby="tab-permissions">
+			<!-- Der Satz zur Tragweite stand bis zum 04.09.2026 in Berechtigungen.svelte ueber
+			     der ganzen Seite und damit auch ueber der Suchpille des Benutzer-Reiters. Er
+			     gilt aber fuer DIESE Tabelle: Sie steuert Menue und API, und die Drift-Warnung
+			     der Betriebsbereitschaft zeigt genau hierher. -->
+			<p class="mb-6 max-w-2xl text-sm text-on-surface-variant">
+				Rollen-Rechte. Was hier steht, steuert Menü und API — Abweichungen von der Code-Vorgabe
+				meldet die Betriebsbereitschaft.
+			</p>
 			{#if loadingPermissions}
 				<div class="p-12 text-center text-slate-400 font-medium animate-pulse">
 					Lade Rechtekonfiguration...
@@ -171,6 +179,11 @@
 	{/if}
 
 	{#if activeSubTab === 'users'}
-		<div id="panel-users" role="tabpanel" aria-labelledby="tab-users"><UserManagement /></div>
+		<!-- `flex flex-col`: Ohne das kollabiert der `mt-4` der Suchzeile in UserManagement
+		     mit dem Aussenabstand dieser Tafel (space-y-6), und die Pille sass 16 px zu hoch
+		     — 57 px statt 73. In einem Flex-Container kollabieren Raender nicht. -->
+		<div id="panel-users" role="tabpanel" aria-labelledby="tab-users" class="flex flex-col">
+			<UserManagement />
+		</div>
 	{/if}
 </div>

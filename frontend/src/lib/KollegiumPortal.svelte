@@ -118,14 +118,18 @@
 	/>
 
 	{#if reiter === 'buecher'}
-		<Suchpille
-			id="portal-suchfeld"
-			bind:wert={searchQuery}
-			platzhalter="Titel, Autor oder ISBN eingeben …"
-			etikett="Bücher für einen Klassensatz suchen"
-			autofokus
-			{nachlaufend}
-		/>
+		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Huelle) + 16 px. Er fehlte
+		     hier, die Pille begann bei 57 px statt bei 73. -->
+		<div class="mt-4">
+			<Suchpille
+				id="portal-suchfeld"
+				bind:wert={searchQuery}
+				platzhalter="Titel, Autor oder ISBN eingeben …"
+				etikett="Bücher für einen Klassensatz suchen"
+				autofokus
+				{nachlaufend}
+			/>
+		</div>
 
 		{#if searchResults.length > 0}
 			<div class="space-y-4">

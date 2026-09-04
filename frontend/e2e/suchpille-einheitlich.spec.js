@@ -285,3 +285,148 @@ for (const { name, pfad, id, anmelden } of MIT_FOKUS) {
 		expect(wo.wert).toContain('9783');
 	});
 }
+
+/**
+ * Die Seiten, auf denen die Startlinie gilt: eine Verwaltungsseite mit einer Suchpille.
+ *
+ * Kiosk und OPAC stehen bewusst NICHT hier. Der Kiosk ist ein Ruhebildschirm ohne
+ * Seitenleiste (nur Scanfeld und Wasserzeichen, Peters Ansage vom 02.09.2026), der OPAC
+ * eine oeffentliche Seite mit eigenem Kopf. Beide messen ihr AUSSEHEN oben mit — nur ihre
+ * Position ist eine andere Frage.
+ *
+ * `reiter` sagt, ob ueber der Suche ein Reiterband steht. Das ist die EINZIGE Sache, die
+ * dort stehen darf.
+ */
+const STARTLINIE = [
+	{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld', reiter: true },
+	{ name: 'Schülerdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld', reiter: true },
+	{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld', reiter: true },
+	{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld', reiter: true },
+	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld', reiter: true },
+	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld', reiter: false },
+	{ name: 'Signaturen', pfad: '/signaturen', id: 'signaturen-suchfeld', reiter: false },
+	{ name: 'Abgänger', pfad: '/abgaenger', id: 'abgaenger-suchfeld', reiter: false }
+];
+
+/**
+ * Misst, wo die Pille beginnt und was ueber ihr steht.
+ *
+ * Bezugspunkt ist die Oberkante des inneren `<main>` — der Arbeitsflaeche, in die der
+ * Router die Seite stellt. Die aeussere Polsterung sitzt davor in App.svelte und ist fuer
+ * alle Seiten dieselbe; sie darf die Messung nicht mitbewegen.
+ *
+ * „Darueber" heisst: sichtbar, kein Vorfahre der Pille (eine Huelle zaehlt nicht) und mit
+ * der Unterkante ueber der Pillen-Oberkante. Von geschachtelten Treffern zaehlt nur der
+ * aeusserste — sonst meldete eine Knopfzeile sich als sechs Funde.
+ */
+const STARTLINIE_MESSEN = (/** @type {string} */ id) => {
+	const feld = document.getElementById(id);
+	if (!feld) return null;
+	const pille = feld.parentElement;
+	const flaeche = feld.closest('main');
+	if (!pille || !flaeche) return null;
+	const p = pille.getBoundingClientRect();
+	const f = flaeche.getBoundingClientRect();
+	/** @type {{el: Element, wie: string}[]} */
+	const drueber = [];
+	for (const el of flaeche.querySelectorAll('*')) {
+		if (el.contains(pille)) continue;
+		const r = el.getBoundingClientRect();
+		if (r.width === 0 || r.height === 0) continue;
+		if (r.bottom > p.top + 1) continue;
+		if (drueber.some((d) => d.el.contains(el))) continue;
+		drueber.push({
+			el,
+			wie:
+				`${el.getAttribute('role') || el.tagName.toLowerCase()} ` +
+				`(${Math.round(r.height)} px, „${(el.textContent || '').trim().slice(0, 40)}")`
+		});
+	}
+	return {
+		start: Math.round(p.top - f.top),
+		drueber: drueber.map((d) => d.wie),
+		rollen: drueber.map((d) => d.el.getAttribute('role') || d.el.tagName.toLowerCase())
+	};
+};
+
+test('Die Suchpille beginnt auf jeder Seite an derselben Startlinie', async ({ page }) => {
+	// Peter am 04.09.2026 an zwei Bildschirmfotos: „hier ist die Suchleiste immer an
+	// anderen Positionen … ich empfinde es an dieser Stelle als Stilbruch."
+	//
+	// Er hatte recht, und das Gate darueber konnte es nicht sehen: Es misst Hoehe, Radius,
+	// Flaeche, Rahmen, Schrift und Farbe — also wie die Pille AUSSIEHT, nicht wo sie
+	// STEHT. Das Mahnwesen fuellte als einzige von sechzehn Routen den `aktionen`-Slot von
+	// PageShell; seine Knopfzeile stand ueber den Reitern und schob die Pille 84 px nach
+	// unten. Signaturen und Benutzer & Rechte trugen je einen Erklaersatz darueber.
+	//
+	// Die Hausordnung, die hier zugesichert wird (und die Material 3 so vorgibt — die
+	// Suchleiste ist „a persistent and prominent search field at the top of the screen"
+	// und nimmt den Platz der App-Leiste ein, Reiter sitzen „at the top of the content
+	// pane under an app bar"): Ueber der Suche steht ein Reiterband oder nichts. Keine
+	// Knopfzeile, kein Erklaersatz, keine Werkzeugleiste.
+	//
+	// Warum kein fester Pixelwert zugesichert wird: Gefragt ist Gleichheit, nicht eine
+	// Zahl. Ein Wert aus dem Test heraus waere beim naechsten Schriftwechsel falsch, ohne
+	// dass irgendetwas kaputt waere.
+	await uiLogin(page);
+
+	/** @type {{name: string, reiter: boolean, werte: any}[]} */
+	const gemessen = [];
+	for (const { name, pfad, id, reiter } of STARTLINIE) {
+		await gehZu(page, pfad);
+		await page.locator(`#${id}`).waitFor();
+		// Reiterzahlen und Listen laden nach und aendern die Hoehe des Bandes nicht,
+		// aber Ladeplatzhalter darueber koennten es. Auf Ruhe warten.
+		let vorher = null;
+		let werte = null;
+		for (let i = 0; i < 20; i++) {
+			werte = await page.evaluate(STARTLINIE_MESSEN, id);
+			if (vorher && JSON.stringify(vorher) === JSON.stringify(werte)) break;
+			vorher = werte;
+			await page.waitForTimeout(100);
+		}
+		expect(werte, `${name}: Pille nicht messbar`).not.toBeNull();
+		gemessen.push({ name, reiter, werte });
+	}
+
+	// Gegenprobe gegen den stillen Nulllauf.
+	expect(
+		gemessen,
+		'Nicht jede Seite wurde gemessen — die Schleife lief teilweise leer'
+	).toHaveLength(STARTLINIE.length);
+
+	// 1. Ueber der Pille steht ein Reiterband oder nichts.
+	for (const s of gemessen) {
+		expect(
+			s.werte.rollen,
+			`Über der Suchpille von „${s.name}" steht etwas, das dort nicht hingehört:\n` +
+				s.werte.drueber.map((/** @type {string} */ d) => `  • ${d}`).join('\n') +
+				`\nErlaubt ist dort ${s.reiter ? 'genau ein Reiterband' : 'nichts'}. ` +
+				`Knopfzeilen und Erklärsätze stehen UNTER der Pille ` +
+				`(Vorbild: StudentDirectoryToolbar, MahnwesenSuchleiste, SignaturenView).`
+		).toEqual(s.reiter ? ['tablist'] : []);
+	}
+
+	// 2. Seiten mit Reiterband beginnen alle an derselben Linie, Seiten ohne bei null.
+	const mitReiter = gemessen.filter((s) => s.reiter);
+	const ohneReiter = gemessen.filter((s) => !s.reiter);
+	expect(mitReiter.length, 'Keine Seite mit Reiterband gemessen').toBeGreaterThan(1);
+	expect(ohneReiter.length, 'Keine Seite ohne Reiterband gemessen').toBeGreaterThan(1);
+
+	for (const s of ohneReiter) {
+		expect(
+			s.werte.start,
+			`„${s.name}" hat kein Reiterband — die Pille muss dann das erste Element sein.`
+		).toBe(0);
+	}
+
+	const linie = mitReiter[0];
+	for (const s of mitReiter.slice(1)) {
+		expect(
+			s.werte.start,
+			`„${s.name}" beginnt bei ${s.werte.start} px, „${linie.name}" bei ${linie.werte.start} px. ` +
+				`Beide tragen ein Reiterband — der Abstand Reiter→Pille ist im Haus derselbe ` +
+				`(gap-6 der Hülle + mt-4 der Suchzeile).`
+		).toBe(linie.werte.start);
+	}
+});

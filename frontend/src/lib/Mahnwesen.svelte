@@ -2,7 +2,6 @@
 	import { mahnwesenStore } from './stores/mahnwesen.svelte.js';
 	import { offlineSync } from './stores/offlineSync.svelte.js';
 	import MahnwesenFilters from './components/mahnwesen/MahnwesenFilters.svelte';
-	import MahnwesenAktionen from './components/mahnwesen/MahnwesenAktionen.svelte';
 	import MahnwesenTable from './components/mahnwesen/MahnwesenTable.svelte';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
@@ -12,6 +11,11 @@
 	// die hinterlegten Klassenleitungen. Der Dialog steht jetzt als Tuersteher davor —
 	// und auf OBERSTER Ebene, nicht in der Aktionszeile: Ein Overlay hat in einem
 	// Flex-Container mit print:hidden nichts verloren.
+	//
+	// Die Knopfzeile selbst sass bis zum 04.09.2026 im `aktionen`-Slot von PageShell und
+	// damit UEBER den Reitern — als einzige Seite von sechzehn, mit der Folge, dass die
+	// Suchpille hier 84 px tiefer begann als ueberall sonst. Sie steht jetzt unter der
+	// Pille, siehe MahnwesenSuchleiste. Den Slot gibt es seitdem nicht mehr.
 	let mahnlaufOffen = $state(false);
 
 	$effect(() => {
@@ -69,16 +73,12 @@
 			</div>
 		</div>
 	{:else}
-		<PageShell aktionen={aktionsleiste}>
-			<MahnwesenFilters />
+		<PageShell>
+			<MahnwesenFilters onMahnlauf={() => (mahnlaufOffen = true)} />
 			<MahnwesenTable />
 		</PageShell>
 	{/if}
 </div>
-
-{#snippet aktionsleiste()}
-	<MahnwesenAktionen onMahnlauf={() => (mahnlaufOffen = true)} />
-{/snippet}
 
 <KlassenVersandDialog
 	open={mahnlaufOffen}

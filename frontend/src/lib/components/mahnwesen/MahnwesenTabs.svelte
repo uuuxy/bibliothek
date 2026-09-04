@@ -44,5 +44,5 @@
 	reiter={register}
 	aktiv={mahnwesenStore.activeFilter}
 	onwahl={(id) => (mahnwesenStore.activeFilter = id)}
-	klasse="mt-6 print:hidden"
+	klasse="print:hidden"
 />

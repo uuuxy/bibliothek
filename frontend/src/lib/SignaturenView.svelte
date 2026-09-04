@@ -34,23 +34,28 @@
 </script>
 
 <PageShell>
-	<p class="text-sm text-slate-500">
-		Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“
-		meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin.
-	</p>
-
 	<!-- Zwei Bereiche, keine zwei Kaesten: links die Liste, rechts das Regal dazu — in
 	     M3 ein „supporting pane". Getrennt wird durch eine Haarlinie, senkrecht sobald
 	     Platz ist, sonst waagerecht. Ein Rahmen mit Radius wuerde daraus zwei schwebende
 	     Objekte machen; es ist aber EIN Arbeitsbereich mit zwei Haelften. -->
 	<!-- Die Suche steht über BEIDEN Hälften, nicht in der linken Spalte: Sie ist die eine
 	     Suche der Seite und hat damit dieselbe Breite und Kante wie überall sonst. -->
-	<Suchpille
-		id="signaturen-suchfeld"
-		bind:wert={suche}
-		etikett="Signatur suchen"
-		platzhalter="Signatur suchen, z. B. BIB …"
-	/>
+	<!-- Der Erklaersatz steht UNTER dem Feld, nicht darueber: Er erklaert, wie diese Suche
+	     liest — in M3 die Rolle des „supporting text". Bis zum 04.09.2026 stand er darueber
+	     und schob als einziges Element im Haus die Pille aus der Startlinie (Peter: „die
+	     Suchleiste ist immer an anderen Positionen"). -->
+	<div class="flex flex-col gap-2">
+		<Suchpille
+			id="signaturen-suchfeld"
+			bind:wert={suche}
+			etikett="Signatur suchen"
+			platzhalter="Signatur suchen, z. B. BIB …"
+		/>
+		<p class="text-sm text-slate-500">
+			Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“
+			meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin.
+		</p>
+	</div>
 
 	<div class="grid divide-y divide-slate-200 lg:grid-cols-[20rem_1fr] lg:divide-x lg:divide-y-0">
 		<section class="space-y-3 pb-6 lg:pr-6 lg:pb-0">

@@ -1,8 +1,13 @@
 <!--
   @component MahnwesenAktionen
-  Die rechte Aktionsleiste des Mahnwesens. Herausgeloest aus MahnwesenFilters, damit sie
-  in den `aktionen`-Slot von PageShell passt — dort steht sie neben dem Seitentitel, so
-  wie sie es vorher in der handgebauten Kopfzeile tat.
+  Die Knopfzeile des Mahnwesens. Sie steht in der Werkzeugzeile UNTER der Suchpille
+  (MahnwesenSuchleiste), rechts neben dem Klassenfilter — so wie „Neuer Schueler" in
+  StudentDirectoryToolbar.
+
+  Bis zum 04.09.2026 stand sie GANZ OBEN im `aktionen`-Slot von PageShell, weil sie dort
+  einmal neben dem Seitentitel gestanden hatte. Den Seitentitel hat 68c4810 am 08.08.2026
+  abgeschafft, die Knopfzeile blieb — als einzige von sechzehn Routen — allein oben stehen
+  und schob die Suchpille um 84 px nach unten. Den Slot gibt es seitdem nicht mehr.
 
   Bei einer Auswahl uebernimmt sie den Auswahl-Modus (wie Gmail/Drive): Nur noch die auf
   die Markierung bezogenen Aktionen sind sichtbar.

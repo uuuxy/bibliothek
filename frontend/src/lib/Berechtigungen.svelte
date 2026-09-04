@@ -3,16 +3,13 @@
 	import PermissionManager from './PermissionManager.svelte';
 </script>
 
-<PageShell>
-	<!-- KEINE Ueberschrift (a3e4184): die Seitenleiste sagt, wo man ist. Der Satz
-	     erklaert stattdessen die Tragweite — die Tabelle hier steuert Menue UND API,
-	     und die Drift-Warnung der Betriebsbereitschaft zeigt genau hierher. -->
-	<p class="max-w-2xl text-sm text-on-surface-variant">
-		Konten und Rollen-Rechte. Was hier steht, steuert Menü und API — Abweichungen von der
-		Code-Vorgabe meldet die Betriebsbereitschaft.
-	</p>
+<!-- KEINE Ueberschrift (a3e4184): die Seitenleiste sagt, wo man ist.
 
-	<div class="mt-6">
-		<PermissionManager />
-	</div>
+     Der Erklaersatz zur Tragweite stand bis zum 04.09.2026 HIER, ueber allem — und damit
+     ueber der Suchpille des Benutzer-Reiters, die dadurch als einzige im Haus nicht an der
+     Startlinie begann. Er stimmte an dieser Stelle ohnehin nur halb: „steuert Menue und
+     API" gilt fuer die Rechte-Tabelle, nicht fuer die Benutzerliste. Er steht jetzt in
+     ihrem eigenen Reiter, siehe PermissionManager. -->
+<PageShell>
+	<PermissionManager />
 </PageShell>

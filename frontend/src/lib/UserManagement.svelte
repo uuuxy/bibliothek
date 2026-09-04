@@ -216,8 +216,8 @@
 
 <UserManagementZugangsanfragen {users} />
 
-<!-- Toolbar -->
-<div class="mb-4 flex flex-col gap-3">
+<!-- `mt-4`: Abstand Reiterband→Pille ist im Haus 24 px + 16 px; er fehlte hier. -->
+<div class="mt-4 mb-4 flex flex-col gap-3">
 	<Suchpille
 		id="benutzer-suchfeld"
 		bind:wert={userSearchQuery}
