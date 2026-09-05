@@ -44,6 +44,15 @@ Anfassen.
   plus Sweeps-Achse über 247 geänderte Dateien; vier Funde, alle im selben Durchgang
   behoben und rot bewiesen — hier bleibt nur, was offen ist:
 
+  Nachgetragen am selben Abend (Peters Frage „die Schemata hast du laufen lassen,
+  richtig?"): Der Durchgang vom 04.09. lief um 22:17, **acht Code-Commits kamen danach**
+  und waren nie gerastert — darunter die beiden Refactorings 1359408b (Parameterlisten →
+  Strukturen) und d267e708 (doppelte Abfrage zusammengelegt). Beide jetzt geprüft: Die
+  zusammengelegte Sperr-Abfrage und die drei herausgezogenen Helfer sind
+  verhaltensgleich (`persistBooksFallback` startet mit `imported = 0`, und das war es
+  vorher auch); kein Literal der zehn neuen Parameter-Strukturen lässt ein Feld offen.
+  Die Bugklasse hat jetzt eine Ratsche (`parameter_strukturen_test.go`, sweeps.md).
+
   - **Beobachtung, kein Fund (C):** Der Wächter „Ehemalige mit offene Vorgängen"
     (`ZaehleEhemaligeMitOffenenVorgaengen`) verlangt `abgaenger_seit IS NOT NULL`, das
     Löschprädikat rechnet mit `COALESCE(abgaenger_seit, aktualisiert_am)`. Zwei
