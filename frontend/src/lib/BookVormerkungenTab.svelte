@@ -92,7 +92,7 @@
 			{#if !rechte.einsehen}
 				<!-- Sichtbar statt still: Ein fehlendes Suchfeld sähe wie ein Fehler aus. -->
 				<p class="text-sm text-slate-500">
-					Die Schülersuche braucht das Recht „Schülerdatei einsehen“ (view_students).
+					Die Schülersuche braucht das Recht „Schülerdatei anzeigen“ (view_students).
 				</p>
 			{:else}
 				<!-- Flex statt Raster: Die Suche trägt neben sich einen Knopf, die Notiz nicht. -->
