@@ -9,7 +9,7 @@ Hier steht, was aufgefallen ist und noch nicht entschieden oder erledigt wurde.
 
 **Erledigtes wird gelöscht, nicht abgehakt** — es steht vollständig in
 `git log -p docs/befunde.md`. Stände vor früheren Kürzungen: `2e09ec14` (31.08.),
-`47a09f70` (01.09.), `9f91784b` (04.09.), `e2bd4b72` (05.09.).
+`47a09f70` (01.09.), `9f91784b` (04.09.), `e2bd4b72` (05.09.), `36c7bdce` (05.09. abends: Abgänger + LMF-Plan gebaut).
 
 ---
 
@@ -32,8 +32,8 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** erst die Rückkehr zur ursprünglichen Bedeutung von „Abgänger" (Entscheidung 2),
-dann der Wächter für Dauer-Abgänger, dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
+**Reihenfolge:** erst die zwei offenen Entscheidungen (Dauer-Abgänger-Wächter, Klassensatz-Ableitung),
+dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
 
 ---
 
@@ -105,59 +105,7 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    von selbst). Was zu tun ist, entscheidet ein Mensch; der Wächter hält nur fest, DASS es
    zu tun ist. Kosten: eine Zählung im Wächter, ein Test, eine Zeile im Handbuch.
 
-2. **„Abgänger" = Abschlussklassen, die zum Schuljahresende gehen — GEBAUT 05.09.2026.**
-   Historie (Bedeutungswechsel 25.06./16.07., Zwei-Block-Vorschlag verworfen) steht in der
-   Git-Historie dieser Datei und in [FACHKONZEPT.md](FACHKONZEPT.md) §8.x. Umgesetzt: eine
-   Regel `repository.AbschlussklasseSQL` für Versetzung, Klassenleitungs-Zuordnung und
-   Abgängerliste (Paar-Gate); Liste, Druck und Versand mit Saison 01.05.–31.07.
-   (`api/abgaenger_fenster.go`, `Server.Uhr` für Tests); `GET /api/abgaenger` antwortet
-   `{fenster, abgaenger}`; Schülerdatei-Reiter heißt „Ehemalige / Archiv" und hat eine EIGENE Liste
-   (`GET /api/schueler?status=ehemalige`) — er hatte bis dahin die Abgängerliste eingebettet,
-   was erst der E2E-Test am frischen Stack zeigte; Handbuch und Fachkonzept zurückgeschrieben. Beifund des Paar-Gates: Klasse ohne Zweigbuchstaben
-   („12") machte das Prädikat NULL, die Versetzung hätte NULL in `ist_abgaenger NOT NULL`
-   geschrieben — COALESCE. E2E außerhalb der Saison: Hinweis-Zweig läuft, Klick- und
-   Versand-Specs überspringen sichtbar; beide Zustände deterministisch in
-   `api/graduates_pg_test.go` und `AbgaengerTabelle.test.js`.
-
-3. **LMF-Plan: Rückgabe- und Ausgabetermine je Klasse statt Excel** (05.09.2026, Peters
-   Vorschlag, zwei Listen der Schule gesehen). **KOMPLETT GEBAUT 05.09.2026** (Migration 096,
-   `api/lmf_termine.go`, Seite _LMF-Plan_, Portal-Reiter, PDF, E2E; Frist-Kopplung
-   `api/lmf_termine_frist.go` + `resolveCheckoutDueDate`, Rückweg zum Stichtag nur für
-   Fristen auf dem Termin-Tag). Beifund: `repository.KlassenSchluessel` (Go) kennt die
-   führende Null nicht, `klassen_normkey` (SQL) schon — für Klassenvergleiche gegen die
-   Akte immer die SQL-Normalform nehmen. Die Schule führt eine Tabelle Wochentag,
-   Datum, Stunde, Klasse(n), Besonderheiten: vor den Sommerferien „Bücherrückgabe" für alle
-   Klassen, Abschlussklassen zuerst; wer keine Abschlussklasse ist, bekommt am selben Termin
-   die neuen Bücher; nach den Ferien „Bücherausgabe" für die neu gebildeten Klassen (5er,
-   7er „neu") plus „Nachzügler"; dazwischen Zeilen „Bücher setzen" ohne Klasse; Zeilen mit
-   zwei Klassen („6F1/6F2") und freien Vermerken. Klassenzahl schwankt je Jahr. Der Plan
-   geht als PDF per Mail ans Kollegium.
-   **Vorschlag:** Tabelle `lmf_termine` (Datum, Stunde, Art Rückgabe/Ausgabe, 0..n Klassen
-   aus dem Vokabular, freier Text), eine Seite unter Lernmittel, PDF in der heutigen Form,
-   Vorbelegung aus `klassen` (Abschlussklassen zuerst, je eine Stunde, dann von Hand
-   schieben). Zweiter, getrennt zu entscheidender Schritt: Der Termin einer Klasse wird die
-   Rückgabefrist ihrer LMF-Bücher — heute gilt für alle der globale Stichtag `lmf_stichtag`.
-   **Verteilung über das Kollegiums-Portal** (Peter, 05.09.): Der Plan wird heute per Mail
-   ans Kollegium geschickt, Korrekturen als Folge-Mail („alle anderen Termine bleiben
-   gleich"). Im Portal ist er immer aktuell: ein Reiter mit der ganzen Tabelle, für alle gleich,
-   in der Reihenfolge des PDFs. KEINE Personalisierung nach Klassenleitung (Peter: auch
-   Fachlehrer gehen mit ihren Klassen zum Büchertausch, und `klassen_lehrer_mapping` ist
-   nicht für jede Klasse gefüllt); das Portal liest
-   die Tabelle live, kein gespeichertes PDF (Peters Bedingung: „muss sich selbst
-   aktualisieren"). Versand: PDF zum Herunterladen reicht (Peter); die App kennt nicht das
-   ganze Kollegium, nur Klassenleitungen (`klassen_lehrer_mapping`) und Portal-Nutzer
-   (`benutzer`, Rolle kollegium). Falls die Schule eine Verteiler-Adresse hat, reicht EINE
-   Einstellung dafür — keine Adress-Sammlung in der App.
-   **Entschieden (Peter, 05.09.):** (a) Der Rückgabe-Termin einer Klasse IST die
-   Rückgabefrist ihrer LMF-Bücher („das wäre doch logisch"). Regel: nur Zeilen der Art
-   Rückgabe setzen die Frist; Ausgabe-Zeilen nicht; Klasse ohne Termin → globaler Stichtag
-   `lmf_stichtag` wie bisher; danach greift das Mahnwesen wie bei jeder Frist. (b) Die
-   Abschlussklassen erscheinen unabhängig vom Plan als Abgänger (Entscheidung 2 bleibt);
-   der Plan bestimmt nur, WANN ihre Bücher fällig sind. (c) Neuer Plan startet leer — eine
-   Vorbelegung würde mit Platzhalter-Daten sofort Fristen setzen; stattdessen zeigt die
-   Seite, welche Klassen noch keinen Termin haben.
-
-4. **Klassensätze automatisch ableiten statt von Hand pflegen** (05.09.2026, Peters Idee:
+2. **Klassensätze automatisch ableiten statt von Hand pflegen** (05.09.2026, Peters Idee:
    „ganz verwegene Idee … die manuelle Option kann weiterhin vorhanden sein"). Heute ist
    `class_books` (Klasse → Titel; Seite _Klassensätze_, Portal-Reiter _Klassensätze der
    eigenen Klassen_) reine Handpflege. Das Programm kennt die Antwort aber schon aus zwei
