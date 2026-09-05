@@ -169,9 +169,14 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    (a) als Vorschlagsliste mit Schwelle (z. B. ≥ 2/3 der Klasse), die der Nutzer per Klick
    übernimmt; Handpflege bleibt; ein Merkmal `quelle` (hand/ausleihe) an `class_books`,
    damit Übernommenes beim nächsten Lauf aktualisiert, Handgepflegtes nie überschrieben
-   wird. Offen (Peter): (i) Wirklichkeit (a) oder Plan (b) oder beides? (ii) Übernehmen
-   per Klick oder still nachführen? (iii) Was ist ein „Satz" — auch 12 Lektüren an eine
-   halbe Klasse?
+   wird. **Peter, 05.09. abends:** „Über die LUSD wissen wir genau, in welcher Klasse jeder
+   Schüler ist — die Liste kann sich selbstständig aktualisieren." Und: **Die Liste auf dem
+   Hetzner-Server ist die aktuelle, das haben die Klassen tatsächlich — NICHT löschen.**
+   Folgerung: Ableitung (a) aus den Ausleihen, LIVE gerechnet und nicht gespeichert (nichts
+   kann gelöscht oder überschrieben werden); die Handliste `class_books` bleibt unangetastet
+   und wird daneben gezeigt; abgeleitete Einträge tragen ein Abzeichen „aus Ausleihen".
+   Schwelle vorgeschlagen: mehr als die Hälfte der aktiven Schüler der Klasse hält ein
+   Exemplar, mindestens 5. Offen: nur die Schwelle und das Go.
 
 ## Beobachten (nichts zu tun)
 
