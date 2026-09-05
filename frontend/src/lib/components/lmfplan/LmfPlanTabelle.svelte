@@ -1,14 +1,12 @@
 <!-- @component LmfPlanTabelle — der Plan in der Form, die das Kollegium kennt: je Art
      ein Block (Bücherrückgabe, Bücherausgabe), darin Wochentag, Datum, Stunde, Klassen,
-     Besonderheiten. Verwaltungsseite und Portal-Reiter zeigen DIESELBE Tabelle; nur die
-     Verwaltung bekommt die Aktionsspalte. -->
+     Besonderheiten. Lesend — der Portal-Reiter und jede Stelle, die den fertigen Plan
+     zeigt. Bearbeitet wird er im Planer (LmfPlanReihenfolge). -->
 <script>
-	import { Pencil, Trash2 } from '@lucide/svelte';
-	import Button from '../ui/Button.svelte';
 	import { ARTEN, artLabel, datumKurz, stundeText, wochentag } from '../../lmfplanDienst.js';
 
-	/** @type {{ termine: import('../../lmfplanDienst.js').LmfTermin[], bearbeitbar?: boolean, onBearbeiten?: (t: any) => void, onLoeschen?: (t: any) => void }} */
-	let { termine, bearbeitbar = false, onBearbeiten = () => {}, onLoeschen = () => {} } = $props();
+	/** @type {{ termine: import('../../lmfplanDienst.js').LmfTermin[] }} */
+	let { termine } = $props();
 
 	const bloecke = $derived(
 		ARTEN.map((a) => ({
@@ -31,7 +29,6 @@
 						<th class="py-2 px-4">Stunde</th>
 						<th class="py-2 px-4">Klassen</th>
 						<th class="py-2 px-4">Besonderheiten</th>
-						{#if bearbeitbar}<th class="py-2 px-4 text-right">Aktionen</th>{/if}
 					</tr>
 				</thead>
 				<tbody class="divide-y divide-outline-variant">
@@ -42,28 +39,6 @@
 							<td class="py-2 px-4 text-on-surface-variant">{stundeText(t.stunde)}</td>
 							<td class="py-2 px-4 font-medium text-on-surface">{t.klassen.join(' / ')}</td>
 							<td class="py-2 px-4 text-on-surface-variant">{t.vermerk}</td>
-							{#if bearbeitbar}
-								<td class="py-1 px-4 text-right whitespace-nowrap">
-									<Button
-										variant="ghost"
-										size="sm"
-										onclick={() => onBearbeiten(t)}
-										title="Termin bearbeiten"
-									>
-										<Pencil class="h-4 w-4" aria-hidden="true" />
-										Bearbeiten
-									</Button>
-									<Button
-										variant="ghost"
-										size="sm"
-										onclick={() => onLoeschen(t)}
-										title="Termin löschen"
-									>
-										<Trash2 class="h-4 w-4" aria-hidden="true" />
-										Löschen
-									</Button>
-								</td>
-							{/if}
 						</tr>
 					{/each}
 				</tbody>

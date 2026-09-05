@@ -118,3 +118,42 @@ func ohne(a, b []string) []string {
 	}
 	return rest
 }
+
+// koppleLmfPlanFristen gleicht die Fristen nach dem Speichern oder Verwerfen eines
+// ganzen Plans ab (Migration 097): alt = Zeilen vorher, neu = Zeilen nachher (nil beim
+// Verwerfen). Nur Rückgabe-Pläne setzen Fristen. Zuerst kehren Klassen, die im neuen
+// Plan gar nicht mehr stehen, zum Stichtag zurück — genau die Fristen, die auf ihrem
+// alten Termin-Tag lagen —, dann bekommt jede Klasse des neuen Plans ihren Termin
+// (auch bei bloßer Verschiebung: dieselbe Regel wie beim Einzel-Termin vorher).
+func (s *Server) koppleLmfPlanFristen(ctx context.Context, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
+	if art != repository.LmfTerminRueckgabe {
+		return 0, nil
+	}
+	var neueKlassen []string
+	for _, z := range neu {
+		neueKlassen = append(neueKlassen, z.Klassen...)
+	}
+	var gesamt int64
+	for _, z := range alt {
+		verlierer := ohne(z.Klassen, neueKlassen)
+		if len(verlierer) == 0 {
+			continue
+		}
+		n, err := s.koppleLmfFristen(ctx, &repository.LmfTermin{Art: art, Datum: z.Datum, Klassen: verlierer}, nil)
+		if err != nil {
+			return gesamt, err
+		}
+		gesamt += n
+	}
+	for _, z := range neu {
+		if len(z.Klassen) == 0 {
+			continue
+		}
+		n, err := s.koppleLmfFristen(ctx, nil, &repository.LmfTermin{Art: art, Datum: z.Datum, Klassen: z.Klassen})
+		if err != nil {
+			return gesamt, err
+		}
+		gesamt += n
+	}
+	return gesamt, nil
+}

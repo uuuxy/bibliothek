@@ -6,16 +6,13 @@
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `DELETE /api/lmf-termine/{id}`
 - `GET /api/dinge/{id}`
-- `GET /api/lmf-termine/pdf`
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
 - `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/defekt`
 - `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/public/bestellung/{token}/bestaetigen`
-- `PUT /api/lmf-termine/{id}`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -44,7 +41,7 @@
 - `DELETE /api/buecher/titel/{id}`
 - `DELETE /api/klassen-mapping/{klasse}`
 - `DELETE /api/lieferanten/{id}`
-- `DELETE /api/lmf-termine/{id}`
+- `DELETE /api/lmf-plan/{art}`
 - `DELETE /api/schueler/deleted/{id}`
 - `DELETE /api/schueler/{id}`
 - `DELETE /api/systematics/{id}`
@@ -99,6 +96,7 @@
 - `GET /api/klassen`
 - `GET /api/klassen-mapping`
 - `GET /api/lieferanten`
+- `GET /api/lmf-plan/{art}`
 - `GET /api/lmf-termine`
 - `GET /api/lmf-termine/pdf`
 - `GET /api/lookup/`
@@ -184,7 +182,6 @@
 - `POST /api/inventur/start`
 - `POST /api/klassen-mapping`
 - `POST /api/lieferanten`
-- `POST /api/lmf-termine`
 - `POST /api/lusd/import`
 - `POST /api/lusd/preview`
 - `POST /api/mahnwesen/senden`
@@ -219,7 +216,7 @@
 - `PUT /api/einstellungen`
 - `PUT /api/geraete/{id}`
 - `PUT /api/lieferanten/{id}`
-- `PUT /api/lmf-termine/{id}`
+- `PUT /api/lmf-plan/{art}`
 - `PUT /api/mail-templates/{id}`
 - `PUT /api/reservierungen/klassensatz/{id}/erledigen`
 - `PUT /api/systematics/{id}`

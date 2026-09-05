@@ -1,10 +1,10 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/svelte';
+import { describe, it, expect } from 'vitest';
+import { render } from '@testing-library/svelte';
 import LmfPlanTabelle from './LmfPlanTabelle.svelte';
 
 // Die Tabelle ist die Form, die das Kollegium aus der Excel-Liste kennt: je Art ein
-// Block, darin Wochentag, Datum, Stunde, Klassen, Besonderheiten. Verwaltung und Portal
-// zeigen DIESELBE Komponente — nur die Verwaltung bekommt die Aktionen.
+// Block, darin Wochentag, Datum, Stunde, Klassen, Besonderheiten. Lesend — bearbeitet
+// wird im Planer (LmfPlanReihenfolge), seit 05.09.2026 abends.
 /** @type {import('../../lmfplanDienst.js').LmfTermin[]} */
 const termine = [
 	{ id: 'a', datum: '2027-06-28', stunde: 3, art: 'rueckgabe', klassen: ['09H1'], vermerk: '' },
@@ -35,21 +35,6 @@ describe('LmfPlanTabelle', () => {
 	it('lesend: keine Aktionsspalte', () => {
 		const { queryByRole } = render(LmfPlanTabelle, { termine });
 		expect(queryByRole('button', { name: /Bearbeiten/ })).toBeNull();
-	});
-
-	it('bearbeitbar: Bearbeiten und Löschen rufen mit der Zeile zurück', async () => {
-		const onBearbeiten = vi.fn();
-		const onLoeschen = vi.fn();
-		const { getAllByRole } = render(LmfPlanTabelle, {
-			termine,
-			bearbeitbar: true,
-			onBearbeiten,
-			onLoeschen
-		});
-		await fireEvent.click(getAllByRole('button', { name: /Bearbeiten/ })[1]);
-		expect(onBearbeiten).toHaveBeenCalledWith(termine[1]);
-		await fireEvent.click(getAllByRole('button', { name: /Löschen/ })[2]);
-		expect(onLoeschen).toHaveBeenCalledWith(termine[2]);
 	});
 
 	it('lässt einen leeren Block weg', () => {

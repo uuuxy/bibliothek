@@ -59,31 +59,48 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 ### 2.3. LMF-Plan: Rückgabe- und Ausgabetermine je Klasse (seit 05.09.2026)
 
 Die Schule führte den Plan als Excel-Tabelle (Wochentag, Datum, Stunde, Klasse(n),
-Besonderheiten) und mailte ihn dem Kollegium; Korrekturen kamen als Folge-Mail. Jetzt:
-Tabellen `lmf_termine` (Datum, Stunde 1–12, Art `rueckgabe`/`ausgabe`, Vermerk) und
-`lmf_termin_klassen` (0..n Klassen aus dem Vokabular, Migration 096; „Bücher setzen" ist ein
-Termin ohne Klasse mit Vermerk, „6F1/6F2" einer mit zwei). Pflege unter _LMF-Plan_
-(`edit_books`; `POST/PUT/DELETE /api/lmf-termine`), Lesen mit Sitzung (`GET /api/lmf-termine`,
-`/pdf`) — das Kollegium sieht denselben Plan im Portal-Reiter _LMF-Plan_, für alle gleich,
-keine Personalisierung nach Klassenleitung (auch Fachlehrer gehen mit ihren Klassen zum
-Büchertausch; `klassen_lehrer_mapping` ist nicht für jede Klasse gefüllt). Gelistet wird ab
-dem 1. August des laufenden Schuljahres (`?alle=1` hebt die Grenze auf); die Antwort nennt
-die Klassen mit Schülern ohne Rückgabe-Termin (`ohne_rueckgabe_termin`) — ein neuer Plan
-startet leer, weil eine Vorbelegung mit Platzhalter-Daten sofort Fristen setzen würde. Das
-PDF (`pdf.GenerateLmfPlan`) hat die Form der bisherigen Liste, getrennt nach Rückgabe und
-Ausgabe. Tests: `repository/lmf_termine_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
+Besonderheiten) und mailte ihn dem Kollegium; Korrekturen kamen als Folge-Mail. Der echte
+Plan 2026 zeigte die Form (Peter, 05.09. abends): Abschlussklassen zuerst, dann JEDER
+Schultag Stunde 1–6, eine Klasse je Stunde, die Reihenfolge läuft über die Tage weiter;
+manche teilen sich eine Stunde („10R1/10R2"), am Ende Zeilen ohne Klasse („Nachzügler",
+„Aufräumen"); zwei Datumsfehler von Hand. **Der Plan ist deshalb eine REIHENFOLGE, die
+der Server auf Schultage × Stunden gießt** — nicht eine Liste einzeln angelegter Zeilen
+(so gebaut in 1890a4df, am selben Abend ersetzt).
+
+Modell (Migration 096 + 097): `lmf_plaene` je Art und Schuljahr mit dem Rahmen (erster
+Tag, Startstunde, Stunden je Tag), `lmf_termine` als Zeilen mit `plan_id`, `position`
+und den GERECHNETEN Feldern Datum/Stunde (Portal, PDF und Frist-Kopplung lesen sie wie
+zuvor), `lmf_termin_klassen` (0..n Klassen aus dem Vokabular; „Bücher setzen" = Zeile
+ohne Klasse mit Vermerk), `lmf_plan_ausgelassen` (Klassen, die der Plan bewusst auslässt —
+die Oberstufe organisiert sich an dieser Schule selbst; sie gelten nicht als „ohne
+Termin", der nächste Plan übernimmt die Auslassung). Die Verteilung rechnet
+`pkg/lmfplan.Verteile` (Mo–Fr, `ferien_schliesszeiten` ausgespart, Startstunde nur am
+ersten Tag) — die EINE Stelle; die Vorschau im Planer ist derselbe Aufruf mit
+`"vorschau": true`, kein JavaScript-Zwilling.
+
+Routen (`api/lmf_plan.go`, alle `edit_books`): `GET /api/lmf-plan/{art}` liefert den
+neuesten Plan der Art, ob er vorbei ist, und dann den **Vorschlag** für den nächsten —
+die Reihenfolge des Vorjahres plus neue Klassen (Klassennamen bleiben Jahr für Jahr gleich,
+die Versetzung verschiebt Schüler, nicht Namen), ohne Vorjahr die Regel
+`KlassenMitSchuelern` (Abschluss zuerst via `AbschlussklasseSQL`, Jahrgang absteigend,
+Jahrgang ≥ 11 oder ohne Ziffer = Oberstufe → ausgelassen). `PUT` rechnet und speichert
+(gleiches Schuljahr = ersetzen, anderes = neuer Plan), `DELETE` verwirft den neuesten.
+Lesen für Portal und PDF unverändert: `GET /api/lmf-termine[/pdf]` mit Sitzung. Einzel-
+Termin-Routen gibt es nicht mehr — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
+Seite: Reiter _LMF-Plan_ auf _Schuljahreswechsel_ (`Schuljahr.svelte`, Menü Verwaltung;
+dort auch Abgänger und LUSD/Versetzung — Einmal-im-Jahr-Aufgaben statt dreier
+Menüpunkte). Tests: `pkg/lmfplan/layout_test.go`, `repository/lmf_termine_pg_test.go`,
+`api/lmf_termine_frist_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
 
 **Kopplung an die Fristen** (`api/lmf_termine_frist.go`, Peter 05.09.2026: „das wäre doch
 logisch"): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen
 liest `resolveCheckoutDueDate` den nächsten Rückgabe-Termin der Klasse ab heute (vor dem
-Stichtag; mehrjährige Ausleihen bleiben beim Stichtag). Ändert sich der Plan, folgt der
-Bestand: `SetzeLernmittelFristFuerKlassen` schreibt offene Lernmittel-Ausleihen der Klassen
-um — dieselbe Regel wie die Massenverlängerung (aktive, nicht gesperrte Schüler, Mahnstufe
-zurück), zusätzlich nur Fristen im Schuljahr des Termins. Rückweg: Verliert eine Klasse den
-Termin (aus der Zeile genommen, Art auf Ausgabe, Zeile gelöscht), kehren genau die Fristen,
-die auf dem Termin-Tag lagen, zum Stichtag zurück; von Hand gesetzte bleiben. POST/PUT/DELETE
-melden `fristen_angepasst`. Tests: `api/lmf_termine_frist_pg_test.go` (fünf Fälle über die
-Handler), `TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin`, `TestRueckgabeTerminFuerKlasse`.
+Stichtag; mehrjährige Ausleihen bleiben beim Stichtag). Beim Speichern eines Plans folgt
+der Bestand (`koppleLmfPlanFristen`): Klassen, die aus dem Plan fallen, kehren zum Stichtag
+zurück — genau die Fristen, die auf ihrem alten Termin-Tag lagen —, jede Klasse des neuen
+Plans bekommt ihren Termin (`SetzeLernmittelFristFuerKlassen`: aktive, nicht gesperrte
+Schüler, nur Lernmittel, nur Fristen im Schuljahr des Termins, Mahnstufe zurück).
+Ausgabe-Pläne setzen keine Frist. PUT/DELETE melden `fristen_angepasst`.
 
 ## 3. Mahnwesen
 
@@ -516,7 +533,7 @@ die Kategorie _LMF-Aktionen_ um.
 | 9   | **Mail**                    | SMTP-Postausgang mit Verbindungstest, Test-Mail; **Mail-Vorlagen** `MAHNUNG_ELTERN` (gedruckter Elternbrief: `{{.Vorname}} {{.Nachname}} {{.BuchListe}} {{.Frist}}`) und `BESTELLUNG_HAENDLER` (Bestellmail: `{{.Datum}} {{.Kundennummer}} {{.AnzahlTitel}} {{.AnzahlExemplare}} {{.BestaetigungsLink}}`) — Platzhalter je Typ, Gate `api/mail_vorlagen_platzhalter_test.go` (Migrationen 023, 052; die tote Vorlage `BESTELLUNG_EINGETROFFEN` ist mit 092 ausgetragen, Abholbereit läuft über den Abholfach-Hinweis am Terminal). Die SMTP-Daten aus der `.env` werden nur beim ersten Start übernommen; danach gilt die Datenbank | `manage_settings`                           |
 | 10  | **LMF-Aktionen**            | Massenverlängerung: alle offenen Lernmittel-Ausleihen **einer Klasse** auf ein neues Rückgabedatum (`POST /api/ausleihen/global-extend-lmf`), mit Rückfrage vor dem Ausführen                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `edit_books`                                |
 | 11  | **Datenverwaltung**         | Katalog-Import (Littera, CSV/XLSX), Finaler Bestands-Import (Kombi-CSV), Cover-Synchronisation für fehlende Cover, Daten exportieren (Katalog als CSV), **Offline-Sicherungen einspielen** (siehe §18.4)                                                                                                                                                                                                                                                                                                                                                                                                                            | `manage_inventory` / `edit_books`           |
-| 12  | **Schuljahreswechsel**      | LUSD-Abgleich (§8) und Versetzung: Klassen um einen Jahrgang hochsetzen, Abschlussklassen als Abgänger markieren, Klassenlehrer-Zuordnung mit versetzen; Vorschau per Dry-Run (identisches SQL, Transaktion wird zurückgerollt), Läufe sind per Advisory-Lock serialisiert                                                                                                                                                                                                                                                                                                                                                          | `import_students` / `manage_students_admin` |
+| 12  | ~~Schuljahreswechsel~~      | seit 05.09.2026 keine Kategorie mehr: LUSD-Abgleich (§8) und Versetzung sind der Reiter _LUSD & Versetzung_ der Seite _Schuljahreswechsel_ (Verwaltung), neben LMF-Plan (§2.3) und Abgängern                                                                                                                                                                                                                                                                                                                                                                                                                                        | `import_students` / `manage_students_admin` |
 | 13  | **Betriebsbereitschaft**    | Selbstprüfung (§15)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `manage_settings`                           |
 
 **Ferien-Leseclub (Kategorie 2):** Ist er aktiv und ein Zieldatum gesetzt, bekommen alle

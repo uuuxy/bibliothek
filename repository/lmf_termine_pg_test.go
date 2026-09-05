@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -10,94 +11,77 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// Der LMF-Plan am echten Postgres: Klassen laufen durch das Vokabular (Trigger),
-// die Liste sortiert nach Zeitpunkt, „alle" hebt die Schuljahresgrenze auf, und der
-// Hinweis „ohne Rückgabe-Termin" kennt Schreibvarianten.
-func TestLmfTermine_SpeichernListenLoeschen(t *testing.T) {
+// Der LMF-Plan am echten Postgres (Migration 097): Ein Plan wird als Reihenfolge
+// gespeichert, seine Zeilen tragen die gerechneten Plätze; Klassen laufen durch das
+// Vokabular (Trigger); die Liste sortiert nach Zeitpunkt, „alle" hebt die Schuljahres-
+// grenze auf; der Hinweis „ohne Rückgabe-Termin" kennt Schreibvarianten und mahnt
+// ausgelassene Klassen nicht an; ein zweites Speichern im selben Schuljahr ersetzt, in
+// einem anderen legt es einen neuen Plan an; der neueste gewinnt.
+func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	repo := NewLmfTerminRepository(pool)
 	t.Cleanup(func() {
-		if _, err := pool.Exec(ctx, `DELETE FROM lmf_termine WHERE vermerk LIKE 'PGTEST%'`); err != nil {
-			t.Logf("Aufräumen: %v", err)
-		}
+		raeumeLmfPlaene(t, pool)
 		if _, err := pool.Exec(ctx, `DELETE FROM schueler WHERE nachname = 'Lmfplantest'`); err != nil {
 			t.Logf("Aufräumen: %v", err)
 		}
 	})
-
-	// Zwei Termine, bewusst in falscher Reihenfolge und mit Schreibvariante der Klasse.
-	spaet, err := repo.SaveLmfTermin(ctx, LmfTermin{Datum: "2027-07-01", Stunde: 5, Art: LmfTerminRueckgabe,
-		Klassen: []string{"10r1", " 10R3 ", "10r1"}, Vermerk: "PGTEST spät"})
-	if err != nil {
-		t.Fatalf("Termin anlegen: %v", err)
-	}
-	if len(spaet.Klassen) != 2 {
-		t.Errorf("Klassen dedupliziert und kanonisiert erwartet, war %v", spaet.Klassen)
-	}
-	frueh, err := repo.SaveLmfTermin(ctx, LmfTermin{Datum: "2027-06-28", Stunde: 3, Art: LmfTerminRueckgabe,
-		Klassen: []string{"9H1"}, Vermerk: "PGTEST früh"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := repo.SaveLmfTermin(ctx, LmfTermin{Datum: "2027-06-28", Stunde: 5, Art: LmfTerminRueckgabe,
-		Vermerk: "PGTEST Bücher setzen"}); err != nil {
-		t.Fatalf("Termin ohne Klasse: %v", err)
+	if _, err := repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe); !errors.Is(err, pgx.ErrNoRows) {
+		t.Fatalf("ohne Plan erwartet ErrNoRows, war %v", err)
 	}
 
-	ab := time.Date(2026, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
+	// Donnerstag 11.06.2026 ab 3. Stunde, 6 je Tag — wie der echte Plan der Schule.
+	// Schreibvarianten und eine Dublette in einer Zeile; eine Zeile ohne Klasse.
+	st := speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-11", 3, 6,
+		[]LmfPlanZeile{
+			{Klassen: []string{"9h1"}}, {Klassen: []string{"9H2"}, Vermerk: "bis 11. eingesammelt"},
+			{Klassen: []string{"10r1", " 10R2 ", "10r1"}}, {Klassen: []string{"10R3"}},
+			{Klassen: []string{"8H1"}}, {Vermerk: "Bücher setzen"},
+		}, []string{"q1", "12T1"})
+	if len(st.Zeilen) != 6 {
+		t.Fatalf("%d Zeilen gespeichert", len(st.Zeilen))
+	}
+	if z := st.Zeilen[2]; len(z.Klassen) != 2 || z.Datum != "2026-06-11" || z.Stunde != 5 {
+		t.Errorf("Zeile 3: Klassen dedupliziert/kanonisiert und Platz Do 5. Std. erwartet, war %+v", z)
+	}
+	if z := st.Zeilen[4]; z.Datum != "2026-06-12" || z.Stunde != 1 {
+		t.Errorf("Zeile 5 muss am Freitag in der 1. Stunde liegen, war %+v", z)
+	}
+	if len(st.Ausgelassen) != 2 {
+		t.Errorf("Auslassungen: %v", st.Ausgelassen)
+	}
+
+	// Liste ab Schuljahresbeginn: alle sechs, sortiert nach Platz; das Vokabular hat
+	// die Schreibweise vereinheitlicht („9h1" → registrierte Form).
+	ab := time.Date(2025, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
 	liste, err := repo.ListLmfTermine(ctx, ab)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var eigene []LmfTermin
-	for _, e := range liste {
-		if len(e.Vermerk) >= 6 && e.Vermerk[:6] == "PGTEST" {
-			eigene = append(eigene, e)
-		}
+	if len(liste) != 6 || liste[0].Stunde != 3 || liste[5].Vermerk != "Bücher setzen" || len(liste[5].Klassen) != 0 {
+		t.Fatalf("Liste: %+v", liste)
 	}
-	if len(eigene) != 3 || eigene[0].ID != frueh.ID || eigene[2].ID != spaet.ID {
-		t.Fatalf("Reihenfolge nach Datum/Stunde erwartet (früh, setzen, spät), war %+v", eigene)
+	if klassenNorm(liste[0].Klassen[0]) != "9h1" {
+		t.Errorf("Klasse der ersten Zeile: %v", liste[0].Klassen)
 	}
-	if len(eigene[1].Klassen) != 0 {
-		t.Errorf("Bücher-setzen-Zeile hat keine Klasse, war %v", eigene[1].Klassen)
-	}
-
-	// Umschreiben ersetzt die Klassen vollständig.
-	spaet.Klassen = []string{"10R2"}
-	spaet.Stunde = 6
-	if spaet, err = repo.SaveLmfTermin(ctx, spaet); err != nil {
-		t.Fatal(err)
-	}
-	gelesen, err := repo.GetLmfTermin(ctx, spaet.ID)
-	if err != nil || len(gelesen.Klassen) != 1 || gelesen.Stunde != 6 {
-		t.Errorf("Umschreiben: %+v (%v)", gelesen, err)
-	}
-
-	// Schuljahresgrenze: ab August 2027 ist nichts davon mehr zu sehen, „alle" zeigt es.
-	spaeter, err := repo.ListLmfTermine(ctx, time.Date(2027, time.August, 1, 0, 0, 0, 0, schulzeit.Zone()))
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, e := range spaeter {
-		if e.ID == frueh.ID {
-			t.Error("ein Termin des alten Schuljahres steht noch in der Liste des neuen")
-		}
+	spaeter, err := repo.ListLmfTermine(ctx, time.Date(2026, time.August, 1, 0, 0, 0, 0, schulzeit.Zone()))
+	if err != nil || len(spaeter) != 0 {
+		t.Errorf("ab August 2026 darf nichts mehr zu sehen sein: %d (%v)", len(spaeter), err)
 	}
 	alle, err := repo.ListLmfTermine(ctx, time.Time{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(alle) < 3 {
-		t.Errorf("alle muss die Schuljahresgrenze aufheben, waren %d", len(alle))
+	if err != nil || len(alle) != 6 {
+		t.Errorf("alle hebt die Grenze auf: %d (%v)", len(alle), err)
 	}
 
-	// Hinweis: Klasse mit Schülern, aber ohne Rückgabe-Termin — Schreibvariante zählt als
-	// dieselbe Klasse. 9H1 hat einen (in eigener Schreibweise geseedet), 8G1 nicht.
+	// Hinweis „ohne Rückgabe-Termin": 9H1 hat einen (andere Schreibweise), 8G1 nicht,
+	// Q1 ist ausgelassen und wird nicht angemahnt, 12T1 ebenso.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES
-		('LMFP-1', 'Neun', 'Lmfplantest', '9h1', 2027),
-		('LMFP-2', 'Acht', 'Lmfplantest', '8G1', 2028)`); err != nil {
+		('LMFP-1', 'Neun', 'Lmfplantest', '09H1', 2027),
+		('LMFP-2', 'Acht', 'Lmfplantest', '8G1', 2028),
+		('LMFP-3', 'Zwoelf', 'Lmfplantest', '12T1', 2028),
+		('LMFP-4', 'Elf', 'Lmfplantest', '11G1', 2028)`); err != nil {
 		t.Fatal(err)
 	}
 	ohne, err := repo.KlassenOhneRueckgabeTermin(ctx, ab)
@@ -108,24 +92,80 @@ func TestLmfTermine_SpeichernListenLoeschen(t *testing.T) {
 	for _, k := range ohne {
 		hat[klassenNorm(k)] = true
 	}
-	if !hat["8g1"] || hat["9h1"] {
-		t.Errorf("ohne Rückgabe-Termin: %v — erwartet 8G1 drin, 9H1 draußen", ohne)
+	if !hat["8g1"] || !hat["11g1"] || hat["9h1"] || hat["12t1"] {
+		t.Errorf("ohne Rückgabe-Termin: %v — erwartet 8G1 und 11G1 drin, 9H1 und 12T1 (ausgelassen) draußen", ohne)
 	}
 
-	// Löschen räumt die Klassen mit (CASCADE) und meldet, ob es etwas gab.
-	weg, err := repo.DeleteLmfTermin(ctx, spaet.ID)
-	if err != nil || !weg {
-		t.Fatalf("Löschen: weg=%v err=%v", weg, err)
-	}
-	if _, err := repo.GetLmfTermin(ctx, spaet.ID); err != pgx.ErrNoRows {
-		t.Errorf("gelöschter Termin noch lesbar: %v", err)
-	}
-	weg, err = repo.DeleteLmfTermin(ctx, spaet.ID)
+	// Vorschlags-Reihenfolge: Abschlussklasse zuerst, dann Jahrgang absteigend; ab 11 Oberstufe.
+	reihe, err := repo.KlassenMitSchuelern(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if weg {
-		t.Error("zweites Löschen meldet Erfolg")
+	if len(reihe) != 4 || klassenNorm(reihe[0].Name) != "9h1" || !reihe[0].Abschluss ||
+		klassenNorm(reihe[1].Name) != "12t1" || !reihe[1].Oberstufe ||
+		klassenNorm(reihe[2].Name) != "11g1" || !reihe[2].Oberstufe ||
+		klassenNorm(reihe[3].Name) != "8g1" || reihe[3].Oberstufe {
+		t.Errorf("Reihenfolge: %+v", reihe)
+	}
+
+	// Zweites Speichern im selben Schuljahr ERSETZT (eine Zeile weniger, andere Startstunde).
+	st2 := speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-15", 1, 6,
+		[]LmfPlanZeile{{Klassen: []string{"9H1"}}}, nil)
+	if st2.Plan.ID != st.Plan.ID {
+		t.Errorf("gleiches Schuljahr muss denselben Plan umschreiben: %s ≠ %s", st2.Plan.ID, st.Plan.ID)
+	}
+	neuester, err := repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe)
+	if err != nil || len(neuester.Zeilen) != 1 || neuester.Plan.Startstunde != 1 || len(neuester.Ausgelassen) != 0 {
+		t.Errorf("umgeschriebener Plan: %+v (%v)", neuester, err)
+	}
+	// Anderes Schuljahr legt einen NEUEN Plan an; der neueste gewinnt.
+	st3 := speicherePlan(t, repo, LmfTerminRueckgabe, "2027-06-14", 1, 6,
+		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}}, nil)
+	if st3.Plan.ID == st.Plan.ID {
+		t.Error("neues Schuljahr muss einen neuen Plan anlegen")
+	}
+	if neuester, err = repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe); err != nil || neuester.Plan.ID != st3.Plan.ID {
+		t.Errorf("neuester Plan: %+v (%v)", neuester.Plan, err)
+	}
+	var anzahl int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM lmf_plaene WHERE art = 'rueckgabe'`).Scan(&anzahl); err != nil || anzahl != 2 {
+		t.Errorf("zwei Rückgabe-Pläne erwartet, %d (%v)", anzahl, err)
+	}
+
+	// Löschen räumt Zeilen und Klassen mit (CASCADE) und meldet, ob es etwas gab.
+	weg, err := repo.DeleteLmfPlan(ctx, st3.Plan.ID)
+	if err != nil || !weg {
+		t.Fatalf("Löschen: weg=%v err=%v", weg, err)
+	}
+	if weg, err = repo.DeleteLmfPlan(ctx, st3.Plan.ID); err != nil || weg {
+		t.Errorf("zweites Löschen: weg=%v err=%v", weg, err)
+	}
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM lmf_termine WHERE plan_id = $1`, st3.Plan.ID).Scan(&anzahl); err != nil || anzahl != 0 {
+		t.Errorf("Zeilen des gelöschten Plans: %d (%v)", anzahl, err)
+	}
+}
+
+// Ferien und Schließzeiten, die den Zeitraum berühren.
+func TestLmfPlan_FreieTage(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	repo := NewLmfTerminRepository(pool)
+	if _, err := pool.Exec(ctx, `INSERT INTO ferien_schliesszeiten (bezeichnung, start_datum, end_datum) VALUES
+		('PGTEST Pfingsten', '2026-05-26', '2026-05-29'), ('PGTEST Sommer', '2026-06-29', '2026-08-07')`); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM ferien_schliesszeiten WHERE bezeichnung LIKE 'PGTEST%'`); err != nil {
+			t.Logf("Aufräumen: %v", err)
+		}
+	})
+	von := time.Date(2026, time.June, 11, 0, 0, 0, 0, schulzeit.Zone())
+	frei, err := repo.FreieTage(ctx, von, von.AddDate(0, 1, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(frei) != 1 || frei[0].Von.Format("2006-01-02") != "2026-06-29" {
+		t.Errorf("nur die Sommerferien berühren Juni/Juli: %+v", frei)
 	}
 }
 

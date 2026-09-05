@@ -249,6 +249,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/klassen":                                  {URL: "/api/klassen"},
 		"GET /api/lmf-termine":                              {URL: "/api/lmf-termine"},
 		"GET /api/lmf-termine/pdf":                          {URL: "/api/lmf-termine/pdf"},
+		"GET /api/lmf-plan/{art}":                           {URL: "/api/lmf-plan/rueckgabe"},
 		"GET /api/klassen-mapping":                          {URL: "/api/klassen-mapping"},
 		"GET /api/abgaenger":                                {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
 		"GET /api/abgaenger/pdf":                            {URL: "/api/abgaenger/pdf"},

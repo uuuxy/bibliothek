@@ -12,17 +12,24 @@ import (
 	"bibliothek/db"
 	"bibliothek/internal/service"
 	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
 )
 
-// Die Kopplung Plan → Frist am echten Postgres, über die Handler (Register, Entscheidung 3a):
-// Ein Rückgabe-Termin setzt die Frist der offenen Schulbücher seiner Klassen; eine
-// Änderung zieht nach; Klassen, die den Termin verlieren, kehren zum Stichtag zurück.
-// Nicht angefasst: Nicht-Lernmittel, gesperrte Schüler, mehrjährige Ausleihen, andere Klassen.
-func TestLmfTermin_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
+// Die Kopplung Plan → Frist am echten Postgres, über den Plan-Handler (Register,
+// Entscheidung 3a; seit Migration 097 als Reihenfolge): Ein Rückgabe-Plan setzt die
+// Frist der offenen Schulbücher seiner Klassen; ein Umschreiben zieht nach; Klassen, die
+// aus dem Plan fallen, kehren zum Stichtag zurück; Verwerfen ebenso. Nicht angefasst:
+// Nicht-Lernmittel, gesperrte Schüler, mehrjährige Ausleihen, andere Klassen, Ausgabe-Pläne.
+func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
+			t.Logf("Aufräumen: %v", err)
+		}
+	})
 
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
@@ -53,17 +60,29 @@ func TestLmfTermin_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 		}
 	}
 
-	// 1. Anlegen: Rückgabe 28.06.2027 für 9H1.
-	rec := lmfTerminAufruf(t, srv, http.MethodPost, "", `{"datum":"2027-06-28","stunde":3,"art":"rueckgabe","klassen":["9H1"],"vermerk":""}`)
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("anlegen: %d %s", rec.Code, rec.Body.String())
+	// 0. Vorschau schreibt nichts: Plätze kommen, Fristen bleiben.
+	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"erster_tag":"2027-06-28","startstunde":3,"stunden_je_tag":6,"vorschau":true,"zeilen":[{"klassen":["9H1"]}]}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"vorschau":true`) {
+		t.Fatalf("Vorschau: %d %s", rec.Code, rec.Body.String())
 	}
-	var antwort LmfTerminAntwort
+	erwarte("Annas Schulbuch nach der Vorschau", annaLmf, stichtag)
+
+	// 1. Speichern: Montag 28.06.2027 ab 3. Stunde, 9H1 zuerst.
+	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"erster_tag":"2027-06-28","startstunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]},{"vermerk":"Bücher setzen"}]}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("speichern: %d %s", rec.Code, rec.Body.String())
+	}
+	var antwort LmfPlanSpeicherAntwort
 	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
 		t.Fatal(err)
 	}
 	if antwort.FristenAngepasst != 1 {
 		t.Errorf("genau Annas Schulbuch folgt dem Termin, gemeldet: %d", antwort.FristenAngepasst)
+	}
+	if len(antwort.Zeilen) != 2 || antwort.Zeilen[0].Datum != "2027-06-28" || antwort.Zeilen[0].Stunde != 3 {
+		t.Errorf("Zeilen der Antwort: %+v", antwort.Zeilen)
 	}
 	erwarte("Annas Schulbuch", annaLmf, tag("2027-06-28"))
 	erwarte("Annas Roman (kein Lernmittel)", annaRoman, tag("2026-10-01"))
@@ -71,79 +90,161 @@ func TestLmfTermin_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	erwarte("Bens Schulbuch (gesperrt)", benLmf, stichtag)
 	erwarte("Emils Schulbuch (8G1)", emilLmf, stichtag)
 
-	// 2. Datum ändern: die Frist zieht nach.
-	rec = lmfTerminAufruf(t, srv, http.MethodPut, antwort.ID, `{"datum":"2027-06-30","stunde":3,"art":"rueckgabe","klassen":["9H1"],"vermerk":""}`)
+	// 2. Umschreiben mit späterem ersten Tag: die Frist zieht nach.
+	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"erster_tag":"2027-06-30","startstunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("ändern: %d %s", rec.Code, rec.Body.String())
+		t.Fatalf("umschreiben: %d %s", rec.Code, rec.Body.String())
 	}
 	erwarte("Annas Schulbuch nach Verschiebung", annaLmf, tag("2027-06-30"))
 
-	// 3. Klasse tauschen: 9H1 verliert den Termin (zurück zum Stichtag), 8G1 bekommt ihn.
-	rec = lmfTerminAufruf(t, srv, http.MethodPut, antwort.ID, `{"datum":"2027-06-30","stunde":3,"art":"rueckgabe","klassen":["8G1"],"vermerk":""}`)
+	// 3. Klasse tauschen: 9H1 fällt aus dem Plan (zurück zum Stichtag), 8G1 kommt hinein
+	//    — 8G1 in Zeile 7 liegt am Donnerstag 01.07. (6 Stunden je Tag).
+	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"erster_tag":"2027-06-30","startstunde":1,"stunden_je_tag":6,"zeilen":[`+
+			`{"vermerk":"1"},{"vermerk":"2"},{"vermerk":"3"},{"vermerk":"4"},{"vermerk":"5"},{"vermerk":"6"},{"klassen":["8G1"]}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Klasse tauschen: %d %s", rec.Code, rec.Body.String())
 	}
 	erwarte("Annas Schulbuch ohne Termin", annaLmf, stichtag)
-	erwarte("Emils Schulbuch mit Termin", emilLmf, tag("2027-06-30"))
+	erwarte("Emils Schulbuch mit Termin", emilLmf, tag("2027-07-01"))
 
-	// 4. Art auf Ausgabe: Ausgabe-Zeilen setzen keine Frist — 8G1 fällt zurück.
-	rec = lmfTerminAufruf(t, srv, http.MethodPut, antwort.ID, `{"datum":"2027-08-10","stunde":2,"art":"ausgabe","klassen":["8G1"],"vermerk":"neu"}`)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("Art wechseln: %d %s", rec.Code, rec.Body.String())
+	// 4. Ein Ausgabe-Plan setzt keine Frist — auch nicht für 8G1.
+	rec = lmfPlanAufruf(t, srv, http.MethodPut, "ausgabe",
+		`{"erster_tag":"2027-08-10","startstunde":2,"stunden_je_tag":6,"zeilen":[{"klassen":["8G1"],"vermerk":"neu"}]}`)
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"fristen_angepasst":0`) {
+		t.Fatalf("Ausgabe-Plan: %d %s", rec.Code, rec.Body.String())
 	}
-	erwarte("Emils Schulbuch nach Wechsel auf Ausgabe", emilLmf, stichtag)
+	erwarte("Emils Schulbuch nach dem Ausgabe-Plan", emilLmf, tag("2027-07-01"))
 
-	// 5. Löschen eines Rückgabe-Termins: Rückweg, aber nur für Fristen, die auf ihm lagen.
-	rec = lmfTerminAufruf(t, srv, http.MethodPost, "", `{"datum":"2027-06-28","stunde":1,"art":"rueckgabe","klassen":["9H1"],"vermerk":""}`)
-	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil || rec.Code != http.StatusCreated {
-		t.Fatalf("zweiter Termin: %d %s (%v)", rec.Code, rec.Body.String(), err)
-	}
-	erwarte("Annas Schulbuch am zweiten Termin", annaLmf, tag("2027-06-28"))
-	// Von Hand gesetzte Frist bleibt beim Löschen stehen (liegt nicht auf dem Termin-Tag).
-	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_frist = $1 WHERE id = $2`, tag("2027-05-15"), annaLmf); err != nil {
+	// 5. Verwerfen: Rückweg, aber nur für Fristen, die auf dem Termin lagen.
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_frist = $1 WHERE id = $2`, tag("2027-05-15"), emilLmf); err != nil {
 		t.Fatal(err)
 	}
-	rec = lmfTerminAufruf(t, srv, http.MethodDelete, antwort.ID, "")
+	rec = lmfPlanAufruf(t, srv, http.MethodDelete, "rueckgabe", "")
 	if rec.Code != http.StatusOK {
-		t.Fatalf("löschen: %d %s", rec.Code, rec.Body.String())
+		t.Fatalf("verwerfen: %d %s", rec.Code, rec.Body.String())
 	}
-	erwarte("Annas von Hand gesetzte Frist überlebt das Löschen", annaLmf, tag("2027-05-15"))
+	erwarte("Emils von Hand gesetzte Frist überlebt das Verwerfen", emilLmf, tag("2027-05-15"))
+	if rec = lmfPlanAufruf(t, srv, http.MethodDelete, "rueckgabe", ""); rec.Code != http.StatusNotFound {
+		t.Errorf("zweites Verwerfen: %d", rec.Code)
+	}
 
-	// Gegenprobe des Rückwegs: Frist auf dem Termin-Tag → Stichtag.
-	rec = lmfTerminAufruf(t, srv, http.MethodPost, "", `{"datum":"2027-06-28","stunde":1,"art":"rueckgabe","klassen":["9H1"],"vermerk":""}`)
-	if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
-		t.Fatal(err)
+	// Gegenprobe des Rückwegs: Frist auf dem Termin-Tag → Stichtag, und die Antwort zählt sie.
+	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("dritter Plan: %d %s", rec.Code, rec.Body.String())
 	}
-	erwarte("Annas Schulbuch am dritten Termin", annaLmf, tag("2027-06-28"))
-	if rec = lmfTerminAufruf(t, srv, http.MethodDelete, antwort.ID, ""); rec.Code != http.StatusOK {
-		t.Fatalf("löschen: %d %s", rec.Code, rec.Body.String())
+	erwarte("Annas Schulbuch am dritten Plan", annaLmf, tag("2027-06-28"))
+	if rec = lmfPlanAufruf(t, srv, http.MethodDelete, "rueckgabe", ""); rec.Code != http.StatusOK {
+		t.Fatalf("verwerfen: %d %s", rec.Code, rec.Body.String())
 	}
-	erwarte("Annas Schulbuch nach dem Löschen", annaLmf, stichtag)
+	erwarte("Annas Schulbuch nach dem Verwerfen", annaLmf, stichtag)
 	if !strings.Contains(rec.Body.String(), `"fristen_angepasst":1`) {
-		t.Errorf("Löschantwort nennt die zurückgesetzten Fristen nicht: %s", rec.Body.String())
+		t.Errorf("Verwerfen nennt die zurückgesetzten Fristen nicht: %s", rec.Body.String())
+	}
+
+	// 6. Fachliche Ablehnung: Zeile ohne Klasse und Vermerk, falsche Art, Startstunde > Stunden je Tag.
+	for _, fall := range []struct{ art, body string }{
+		{"rueckgabe", `{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":[],"vermerk":""}]}`},
+		{"egal", `{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[]}`},
+		{"rueckgabe", `{"erster_tag":"2027-06-28","startstunde":7,"stunden_je_tag":6,"zeilen":[]}`},
+	} {
+		if rec = lmfPlanAufruf(t, srv, http.MethodPut, fall.art, fall.body); rec.Code != http.StatusBadRequest {
+			t.Errorf("%s %s: %d, erwartet 400", fall.art, fall.body, rec.Code)
+		}
 	}
 }
 
-// lmfTerminAufruf ruft die Plan-Handler wie der Router: POST ohne id, PUT/DELETE mit {id}.
-func lmfTerminAufruf(t *testing.T, srv *Server, methode, id, body string) *httptest.ResponseRecorder {
+// Der Vorschlag für einen neuen Plan: ohne Vorjahr aus der Regel (Abschluss zuerst,
+// Oberstufe ausgelassen); mit vorbeigegangenem Vorjahr dessen Reihenfolge plus neue Klassen.
+func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
+			t.Logf("Aufräumen: %v", err)
+		}
+	})
+	seedSchueler(t, pool, "V-1", "A", "8G1")
+	seedSchueler(t, pool, "V-2", "B", "9H1")
+	seedSchueler(t, pool, "V-3", "C", "Q1")
+	seedSchueler(t, pool, "V-4", "D", "12T1")
+
+	lies := func() LmfPlanStandAntwort {
+		t.Helper()
+		rec := lmfPlanAufruf(t, srv, http.MethodGet, "rueckgabe", "")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("lesen: %d %s", rec.Code, rec.Body.String())
+		}
+		var a LmfPlanStandAntwort
+		if err := json.Unmarshal(rec.Body.Bytes(), &a); err != nil {
+			t.Fatal(err)
+		}
+		return a
+	}
+	a := lies()
+	if a.Plan != nil || a.Vorschlag == nil || a.Vorschlag.Quelle != "regel" {
+		t.Fatalf("ohne Plan: %+v", a)
+	}
+	// Das Vokabular zeigt Klassen in seiner Anzeigeform (Migration 087: „09H1").
+	if klassenFolge(a.Vorschlag.Zeilen) != "09H1,08G1" {
+		t.Errorf("Regel-Reihenfolge (Abschluss zuerst): %+v", a.Vorschlag.Zeilen)
+	}
+	if strings.Join(a.Vorschlag.Ausgelassen, ",") != "Q1,12T1" {
+		t.Errorf("Oberstufe ausgelassen (Jahrgang absteigend, ohne Ziffer zuerst): %v", a.Vorschlag.Ausgelassen)
+	}
+
+	// Ein Plan in der Vergangenheit (2020): vorbei → Vorschlag aus dem Vorjahr, in dessen
+	// Reihenfolge (8G1 vor 9H1), ergänzt um die neue Klasse 7R1 am Ende.
+	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"erster_tag":"2020-06-15","startstunde":1,"stunden_je_tag":6,"ausgelassen":["Q1","12T1"],"zeilen":[{"klassen":["8G1"]},{"klassen":["9H1"],"vermerk":"bis 11. eingesammelt"}]}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Vorjahresplan: %d %s", rec.Code, rec.Body.String())
+	}
+	seedSchueler(t, pool, "V-5", "E", "7R1")
+	a = lies()
+	if a.Plan == nil || !a.Vorbei || a.Vorschlag == nil || a.Vorschlag.Quelle != "vorjahr" {
+		t.Fatalf("mit vergangenem Plan: plan=%v vorbei=%v vorschlag=%+v", a.Plan != nil, a.Vorbei, a.Vorschlag)
+	}
+	z := a.Vorschlag.Zeilen
+	if klassenFolge(z) != "08G1,09H1,07R1" || z[1].Vermerk != "bis 11. eingesammelt" {
+		t.Errorf("Vorjahres-Reihenfolge plus neue Klasse: %+v", z)
+	}
+	if strings.Join(a.Vorschlag.Ausgelassen, ",") != "12T1,Q1" {
+		t.Errorf("Auslassungen übernommen (aus dem Plan, nach Normschlüssel): %v", a.Vorschlag.Ausgelassen)
+	}
+	if len(a.Klassen) != 5 {
+		t.Errorf("Klassen des Vokabulars: %v", a.Klassen)
+	}
+}
+
+// klassenFolge nennt die erste Klasse jeder Zeile, kommagetrennt.
+func klassenFolge(zeilen []repository.LmfPlanZeile) string {
+	var teile []string
+	for _, z := range zeilen {
+		teile = append(teile, strings.Join(z.Klassen, "/"))
+	}
+	return strings.Join(teile, ",")
+}
+
+// lmfPlanAufruf ruft die Plan-Handler wie der Router: {art} im Pfad.
+func lmfPlanAufruf(t *testing.T, srv *Server, methode, art, body string) *httptest.ResponseRecorder {
 	t.Helper()
-	pfad := "/api/lmf-termine"
-	if id != "" {
-		pfad += "/" + id
-	}
-	req := httptest.NewRequest(methode, pfad, strings.NewReader(body))
+	req := httptest.NewRequest(methode, "/api/lmf-plan/"+art, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
-	if id != "" {
-		req.SetPathValue("id", id)
-	}
+	req.SetPathValue("art", art)
 	rec := httptest.NewRecorder()
 	switch methode {
-	case http.MethodPost:
-		srv.CreateLmfTerminHandler()(rec, req)
+	case http.MethodGet:
+		srv.GetLmfPlanHandler()(rec, req)
 	case http.MethodPut:
-		srv.UpdateLmfTerminHandler()(rec, req)
+		srv.PutLmfPlanHandler()(rec, req)
 	default:
-		srv.DeleteLmfTerminHandler()(rec, req)
+		srv.DeleteLmfPlanHandler()(rec, req)
 	}
 	return rec
 }

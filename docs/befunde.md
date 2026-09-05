@@ -94,63 +94,7 @@ suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanl
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
 kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-- **LMF-Plan: Tagesplaner statt Termin-Dialog** (Peter 05.09.2026, nach dem ersten Blick auf
-  die gebaute Seite: „so ganz zufrieden bin ich nicht"). Drei Befunde am Bau von 1890a4df:
-
-  1. **Das Anlegen ist zu klein und zu kleinteilig.** Ein Modal je Zeile; wer sechs Klassen
-     ankreuzt, bekommt EINE Zeile mit sechs Klassen in EINER Stunde — gemeint ist aber: sechs
-     Klassen nacheinander, Stunde 1 bis 6. Peters echter Plan 2026 (Excel „lmf termine 26",
-     05.09. abends) zeigt die Form: Rückgabe Do 11.06. ab 3. Std. 9H1, 9H2, 10R1/10R2, 10R3
-     (Abschlussklassen zuerst), dann JEDER Schultag Stunde 1–6, eine Klasse je Stunde, die
-     Reihenfolge läuft über die Tage weiter (8H, 9R, 8R, 7R, 7H, 6F paarweise, 5F, 10G, 9G,
-     8G, 7G, 6G …); Ausgabe Mo 10.08. ab 2. Std. „7G1 neu" … „5F4 neu", zuletzt „Nachzügler",
-     „Aufräumen" ohne Klasse. Zwei Tippfehler im Excel (Freitag 17.06., Montag 19.06.) —
-     Wochentag und Datum von Hand sind fehleranfällig. Recherche (Gymnasium Wentorf,
-     Hebbelschule Kiel, Kaiserin-Friedrich Bad Homburg, Realschule Waibstadt): überall dasselbe
-     Muster, je Klasse „weniger als eine Unterrichtsstunde", die Lehrkraft der Stunde bringt
-     die Klasse. **Der Plan ist eine REIHENFOLGE von Klassen, die auf Schultage × Stunden
-     gegossen wird** — keine Liste einzeln angelegter Zeilen.
-     **Vorschlag:** Die Seite wird ein Planer mit drei Schritten. (a) Rahmen: Art, erster Tag,
-     Startstunde am ersten Tag, Stunden je Tag (Vorgabe 6); Schultage rechnet das System
-     selbst (Mo–Fr, `ferien_schliesszeiten` ausgespart). (b) Reihenfolge: eine Liste der
-     Klassen, per Ziehen sortierbar; Vorbelegung = **Plan des Vorjahres** (liegt in
-     `lmf_termine`, Klassennamen bleiben Jahr für Jahr gleich, weil die Versetzung Schüler
-     verschiebt, nicht Namen), sonst Abschlussklassen zuerst, dann Jahrgang absteigend; nicht
-     im Vokabular stehende Klassen („7G1 neu" vor dem LUSD-Import) frei eintippbar. Die
-     Liste hat zwei Teile, „Im Plan" und „Nicht im Plan": **Die Oberstufe braucht den Ablauf
-     an dieser Schule nicht, sie organisiert Rückgabe und Ausgabe selbst** (Peter 05.09.
-     abends) — E/Q/12/13 stehen beim ersten Plan unten, das Vorjahr merkt es sich, und
-     „Noch ohne Rückgabe-Termin" mahnt sie nicht an; ihre Lernmittel behalten den Stichtag.
-     Für eine andere Schule ist die Oberstufe damit optional, nicht ausgeschlossen.
-     (c) Das System verteilt die Reihenfolge auf Tage und Stunden; die Tabelle zeigt das
-     Ergebnis und ist DORT editierbar: „mit voriger Zeile zusammenlegen" (10R1/10R2 teilen sich
-     die Stunde), Leerzeile einfügen (Bücher setzen, Nachzügler, Aufräumen — mit Vermerk),
-     Besonderheit je Zeile, Zeile entfernen; jede Änderung fließt nach. Kein Modal. Portal-
-     Reiter und PDF bleiben, wie sie sind. Schema: `lmf_termine` trägt das Modell schon
-     (mehrere Klassen je Termin, Termin ohne Klasse); neu nur die Reihenfolge als Attribut
-     (`position`) und ggf. `stunde_bis` für Doppelstunden — im echten Plan kommen keine vor,
-     also erst bei Bedarf.
-  2. **Stundenraster ist Schulsache.** Heute CHECK 1–12 in der Tabelle und `STUNDEN` 1–12 im
-     Frontend. Der echte Plan nutzt Stunde 1–6; das ist die Planer-Vorgabe „Stunden je Tag",
-     am Plan änderbar, keine eigene Systemeinstellung. Uhrzeiten zeigt der Plan nicht — das
-     Excel hatte keine, das Kollegium kennt sein Raster.
-  3. **Klassen-Schema ist hart verdrahtet** — vier Stellen lesen Jahrgang und Zweig aus dem
-     Namen mit Regeln DIESER Schule: `repository.AbschlussklasseSQL` (H ab 9, R ab 10, sonst
-     13), `calculateAbgaengerJahr` (student_create.go), `internal/ausweis/gueltigkeit.go`
-     (E/Q-Oberstufe, Gymnasialzweig bis 10), `pkg/lmf.JahrgangAusZielgruppe`. Eine andere
-     Schule (Q1 statt 12, „12T1", nur „7a") hätte keine Tür, das einzugeben. Vorschlag:
-     Einstellungs-Block „Klassen-Schema" unter Schule — Tabelle Zweig-Buchstabe → Bezeichnung →
-     letzter Jahrgang (H 9/10, R 10, G 13, F = Förderstufe, T = Oberstufe) plus Aliase ohne
-     Ziffer (E→11, Q1/Q2→12, Q3/Q4→13); Vorgabe = heutige Regel, die vier Stellen lesen die
-     Einstellung. Der Tagesplaner braucht daraus nur die Reihenfolge (Abschluss zuerst).
-     **Reihenfolge-Frage:** jetzt (Bibliosys hat eine Schule) oder erst mit der zweiten?
-  4. **Menüplatz.** Zweimal im Jahr gebraucht, steht aber dauerhaft unter Bibliothek. NICHT in
-     die Einstellungen: dort steht Konfiguration (manage_settings), der Plan ist ein Arbeits-
-     dokument mit Fristfolge und PDF (edit_books). Vorschlag: eine Seite „Schuljahreswechsel"
-     unter Verwaltung mit den Einmal-im-Jahr-Aufgaben als Reiter — LMF-Plan, Abgänger,
-     Versetzung (heute in SystemSettings) — statt dreier Menüpunkte. Alternative: Menüpunkt nur
-     in der Saison zeigen (Mai–September) — verworfen, weil „wo ist es hin?" schlimmer ist als
-     ein Punkt zu viel.
+_Zurzeit keine._
 
 ## Beobachten (nichts zu tun)
 

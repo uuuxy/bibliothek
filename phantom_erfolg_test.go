@@ -98,9 +98,9 @@ var phantomBestand = map[string]int{
 	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                        1,
 	"jobs/restore_probe.go:fuehreRestoreProbeAus":                       3,
 	"jobs/restore_probe.go:speichereRestoreProbe":                       1,
-	// Ersetzt die Klassen eines Termins vollständig: DELETE + INSERT. Null gelöschte
-	// Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
-	"repository/lmf_termine.go:SaveLmfTermin":                 1,
+	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null
+	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
+	"repository/lmf_plan.go:SaveLmfPlan":                      2,
 	"repository/audit.go:LogAdminAktion":                      1,
 	"repository/audit.go:insertAuditLog":                      1,
 	"repository/audit_books.go:DeleteTitle":                   3,

@@ -110,30 +110,50 @@ _Bücher verwalten_ sind nur die handgepflegten Titel vorgewählt, ein abgeleite
 per Haken übernehmen. Gibt die Klasse die Bücher zurück, verschwindet das Abzeichen wieder.
 Das Kollegium sieht dieselben Einträge in _Mein Portal → Klassensätze_.
 
-## LMF-Plan
+## Schuljahreswechsel
 
-Rückgabe- und Ausgabetermine je Klasse — die frühere Excel-Liste der Schule, jetzt im
-System (seit 05.09.2026). Vor den Sommerferien _Bücherrückgabe_ für alle Klassen,
-Abschlussklassen zuerst (wer keine Abschlussklasse ist, bekommt am selben Termin die
-neuen Bücher); nach den Ferien _Bücherausgabe_ für die neu gebildeten Klassen und
-Nachzügler; dazwischen Zeilen wie „Bücher setzen" ohne Klasse, nur mit Vermerk.
-_Termin hinzufügen_: Datum, Stunde, Art, eine oder mehrere Klassen (auch „6F1/6F2" in
-einer Stunde), Besonderheiten. Ein neuer Plan startet leer; die Seite nennt, welche
-Klassen noch keinen Rückgabe-Termin haben. Gezeigt wird das laufende Schuljahr (ab
+Die Aufgaben, die ein- bis zweimal im Jahr anfallen, an einem Ort (Menü _Verwaltung →
+Schuljahreswechsel_, seit 05.09.2026 abends; vorher drei Menüpunkte): drei Reiter, jeder
+nur für die, die das Recht der Aufgabe haben.
 
-1. August), _Ältere anzeigen_ holt den Rest. _Als PDF_ liefert die gewohnte Liste
-   (Wochentag, Datum, Stunde, Klassen, Besonderheiten), getrennt nach Rückgabe und Ausgabe.
-   Das Kollegium sieht denselben Plan in _Mein Portal → LMF-Plan_, für alle gleich und
-   immer auf dem aktuellen Stand — eine Korrektur-Mail entfällt.
+### LMF-Plan
 
-**Der Rückgabe-Termin einer Klasse ist die Frist ihrer Schulbücher.** Wird ein
-Rückgabe-Termin eingetragen oder verschoben, folgen die offenen Schulbuch-Ausleihen der
-Klasse (die Meldung nennt die Zahl); neue Ausleihen bekommen ihn gleich. Verliert eine
-Klasse ihren Termin, gehen die Fristen an den allgemeinen Stichtag zurück (_Einstellungen
-→ Ausleihe_, Vorgabe 31.07.). Nicht angefasst: gesperrte Schüler, mehrjährige Ausleihen,
-von Hand gesetzte Fristen und Ausgabe-Zeilen. (§2.3)
+Rückgabe- und Ausgabetermine je Klasse — die frühere Excel-Liste der Schule. **Der Plan
+ist eine Reihenfolge von Klassen, die das Programm auf Schultage und Stunden verteilt:**
+Abschlussklassen zuerst, dann jeder Schultag Stunde 1 bis 6, eine Klasse je Stunde, die
+Reihenfolge läuft über die Tage weiter; Wochenenden und die hinterlegten Ferien fallen aus.
+Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 
----
+- Oben _Bücherrückgabe_ / _Bücherausgabe_ umschalten; je Art gibt es einen Plan pro
+  Schuljahr. Rechts _Als PDF_, _Plan verwerfen_, _Plan speichern_.
+- **Rahmen**: erster Tag, Beginn am ersten Tag (der Donnerstag im Juni begann in der 3. Stunde), Stunden je Tag (Vorgabe 6).
+- **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Zeilen ziehen oder mit den
+  Pfeilen schieben; _zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"),
+  _trennen_ macht daraus wieder zwei; _davor einfügen_ setzt eine Zeile ohne Klasse
+  („Bücher setzen", „Nachzügler", „Aufräumen" — sie braucht einen Vermerk); das × am
+  Klassen-Chip nimmt eine Klasse aus dem Plan. Wochentag, Datum und Stunde rechnet der
+  Server bei jeder Änderung neu (Vorschau), gespeichert wird erst mit _Plan speichern_.
+- **Nicht im Plan**: alle Klassen ohne Zeile. Ein Klick holt eine ans Ende, _Weitere
+  Klasse_ nimmt Namen auf, die es noch nicht gibt („07G1" vor dem August-Import). Was
+  hier bleibt, gilt als bewusst ausgelassen — die Oberstufe organisiert Rückgabe und
+  Ausgabe an dieser Schule selbst.
+- **Vorjahr als Vorlage**: Ist der letzte Plan vorbei, beginnt der nächste mit dessen
+  Reihenfolge und Auslassungen; neue Klassen hängen hinten an. Ganz ohne Vorjahr gilt die
+  Regel: Abschlussklassen zuerst, dann Jahrgang absteigend, Oberstufe unten.
+
+Das Kollegium sieht den gespeicherten Plan in _Mein Portal → LMF-Plan_, für alle gleich
+und immer auf dem aktuellen Stand; _Als PDF_ liefert die gewohnte Liste (Wochentag, Datum,
+Stunde, Klassen, Besonderheiten), getrennt nach Rückgabe und Ausgabe.
+
+**Der Rückgabe-Termin einer Klasse ist die Frist ihrer Schulbücher.** Beim Speichern
+folgen die offenen Schulbuch-Ausleihen der Klassen (die Meldung nennt die Zahl); neue
+Ausleihen bekommen ihn gleich. Fällt eine Klasse aus dem Plan oder wird er verworfen, gehen
+die Fristen an den allgemeinen Stichtag zurück (_Einstellungen → Ausleihe_, Vorgabe
+31.07.). Nicht angefasst: gesperrte Schüler, mehrjährige Ausleihen, von Hand gesetzte
+Fristen und Ausgabe-Pläne. (§2.3)
+
+Die Reiter _Abgänger_ (→ Abschnitt Abgänger) und _LUSD & Versetzung_ (→ [LUSD.md](LUSD.md))
+stehen daneben.
 
 ## Schülerdatei
 
@@ -144,7 +164,7 @@ von Hand gesetzte Fristen und Ausgabe-Zeilen. (§2.3)
   Grund. (§14)
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
 - **Neuer Schüler** per Formular; klassenweise besser über den LUSD-Import
-  (_Einstellungen → Schuljahreswechsel_).
+  (_Schuljahreswechsel → LUSD & Versetzung_).
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**; endgültiges
   Löschen/Anonymisieren nur mit Namensbestätigung (DSGVO-Kette, §8).
@@ -249,7 +269,6 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 | Mail                    | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler)                                                |
 | LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                  |
 | Datenverwaltung         | Katalog-Import (Littera), Bestands-Import (Kombi-CSV), Cover-Synchronisation, Katalog-Export, Offline-Sicherungen einspielen |
-| Schuljahreswechsel      | LUSD-Abgleich (mit Vorschlägen für umbenannte Schüler), Versetzung mit Vorschau — Anleitung: [LUSD.md](LUSD.md)              |
 | Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                    |
 
 ## Mein Portal (Kollegium)

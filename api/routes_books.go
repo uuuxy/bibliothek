@@ -57,9 +57,12 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Klassennamen). Schreiben: edit_books wie die übrige Lernmittel-Pflege.
 	mux.Handle("GET /api/lmf-termine", s.RequireAuthenticated()(s.GetLmfTermineHandler()))
 	mux.Handle("GET /api/lmf-termine/pdf", s.RequireAuthenticated()(s.GetLmfPlanPDFHandler()))
-	mux.Handle("POST /api/lmf-termine", s.RequirePermission("edit_books")(s.CreateLmfTerminHandler()))
-	mux.Handle("PUT /api/lmf-termine/{id}", s.RequirePermission("edit_books")(s.UpdateLmfTerminHandler()))
-	mux.Handle("DELETE /api/lmf-termine/{id}", s.RequirePermission("edit_books")(s.DeleteLmfTerminHandler()))
+	// Geschrieben wird der Plan als REIHENFOLGE (Migration 097, lmf_plan.go): ein Aufruf
+	// je Art, Vorschau über denselben Aufruf. Einzel-Termin-Routen gibt es seit dem
+	// 05.09.2026 abends nicht mehr — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
+	mux.Handle("GET /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.GetLmfPlanHandler()))
+	mux.Handle("PUT /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.PutLmfPlanHandler()))
+	mux.Handle("DELETE /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.DeleteLmfPlanHandler()))
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.OverrideDueDateHandler(auditRepo)))
 
 	// Live ISBN Lookup

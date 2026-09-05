@@ -816,6 +816,39 @@ CREATE TABLE lmf_termin_klassen (
 
 CREATE INDEX idx_lmf_termin_klassen_klasse ON lmf_termin_klassen (klasse);
 
+-- Table: lmf_plaene / lmf_plan_ausgelassen (Migration 097): Der Plan ist eine
+-- REIHENFOLGE, die auf Schultage × Stunden gegossen wird. Der Rahmen (erster Tag,
+-- Startstunde, Stunden je Tag) steht je Art und Schuljahr hier; die Zeilen in
+-- lmf_termine tragen plan_id und position, Datum und Stunde rechnet der Server.
+-- Ausgelassene Klassen (die Oberstufe organisiert sich selbst) werden nicht angemahnt.
+CREATE TABLE lmf_plaene (
+    id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    art              TEXT NOT NULL CONSTRAINT chk_lmf_plaene_art CHECK (art IN ('rueckgabe', 'ausgabe')),
+    schuljahr_beginn DATE NOT NULL,
+    erster_tag       DATE NOT NULL,
+    startstunde      SMALLINT NOT NULL DEFAULT 1 CONSTRAINT chk_lmf_plaene_startstunde CHECK (startstunde BETWEEN 1 AND 12),
+    stunden_je_tag   SMALLINT NOT NULL DEFAULT 6 CONSTRAINT chk_lmf_plaene_stunden CHECK (stunden_je_tag BETWEEN 1 AND 12),
+    erstellt_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktualisiert_am  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uniq_lmf_plaene_art_schuljahr UNIQUE (art, schuljahr_beginn)
+);
+
+CREATE TRIGGER trg_lmf_plaene_aktualisiert_am
+BEFORE UPDATE ON lmf_plaene
+FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+
+ALTER TABLE lmf_termine
+    ADD COLUMN plan_id  UUID REFERENCES lmf_plaene(id) ON DELETE CASCADE,
+    ADD COLUMN position INTEGER;
+
+CREATE INDEX idx_lmf_termine_plan ON lmf_termine (plan_id, position);
+
+CREATE TABLE lmf_plan_ausgelassen (
+    plan_id UUID NOT NULL REFERENCES lmf_plaene(id) ON DELETE CASCADE,
+    klasse  VARCHAR(50) NOT NULL,
+    PRIMARY KEY (plan_id, klasse)
+);
+
 -- -------------------------------------------------------------
 -- Klassen-Vokabular (Migration 079): EINE klassen-Tabelle, an der schueler,
 -- klassen_lehrer_mapping, class_books und klassensatz_reservierungen per FK hängen.
@@ -903,6 +936,10 @@ CREATE TRIGGER trg_lmf_termin_klassen_vokabular
 BEFORE INSERT OR UPDATE OF klasse ON lmf_termin_klassen
 FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
 
+CREATE TRIGGER trg_lmf_plan_ausgelassen_vokabular
+BEFORE INSERT OR UPDATE OF klasse ON lmf_plan_ausgelassen
+FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
+
 -- Anzeigeform (Migration 087): Jahrgang zweistellig, Rest groß — „09G4", „10G1".
 -- Nur für klassenartige Namen; 'lehrer', 'ABG', Kursnamen bleiben.
 CREATE FUNCTION klassen_anzeigeform(text) RETURNS text
@@ -949,6 +986,11 @@ ALTER TABLE klassensatz_reservierungen
 
 ALTER TABLE lmf_termin_klassen
     ADD CONSTRAINT fk_lmf_termin_klassen_vokabular
+    FOREIGN KEY (klasse) REFERENCES klassen (name)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+ALTER TABLE lmf_plan_ausgelassen
+    ADD CONSTRAINT fk_lmf_plan_ausgelassen_vokabular
     FOREIGN KEY (klasse) REFERENCES klassen (name)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
@@ -1068,7 +1110,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('093_lernmittel_feld.sql'),
 ('094_schueler_umbenennung_karenz.sql'),
 ('095_abgaenger_sperre_ein_praefix.sql'),
-('096_lmf_termine.sql')
+('096_lmf_termine.sql'),
+('097_lmf_plaene.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

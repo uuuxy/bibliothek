@@ -1,35 +1,42 @@
+<!-- @component LmfPlan — der Planer: Der Plan ist eine REIHENFOLGE von Klassen, die der
+     Server auf Schultage × Stunden gießt (Peter, 05.09.2026, am echten Plan der Schule:
+     Abschlussklassen zuerst, dann jeder Schultag Stunde 1–6, die Reihenfolge läuft über
+     die Tage weiter). Oben der Rahmen, darunter die Reihenfolge als die bekannte Tabelle
+     mit Vorschau der Plätze, unten „Nicht im Plan". Ein neuer Plan beginnt mit der
+     Reihenfolge des Vorjahres. Gespeichert wird ausdrücklich — Rückgabe-Termine setzen
+     Fristen. Sitzt als Reiter auf der Seite „Schuljahreswechsel". -->
 <script>
-	import { onMount } from 'svelte';
-	import { CalendarDays, Plus, Printer } from '@lucide/svelte';
-	import PageShell from './components/layout/PageShell.svelte';
+	import { onMount, untrack } from 'svelte';
+	import { Printer, Trash2 } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
-	import LmfPlanTabelle from './components/lmfplan/LmfPlanTabelle.svelte';
-	import LmfTerminDialog from './components/lmfplan/LmfTerminDialog.svelte';
+	import Segmente from './components/ui/Segmente.svelte';
+	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
+	import LmfPlanReihenfolge from './components/lmfplan/LmfPlanReihenfolge.svelte';
+	import LmfPlanVorrat from './components/lmfplan/LmfPlanVorrat.svelte';
 	import { showToast } from '../inventur/lib/store.svelte.js';
-	import { apiFetch } from './apiFetch.js';
 	import * as dienst from './lmfplanDienst.js';
 
-	// Der LMF-Plan der Bibliothek (Register, Entscheidung 3, 05.09.2026): Rückgabe- und
-	// Ausgabetermine je Klasse, gepflegt statt in Excel. Neuer Plan startet leer; die
-	// Seite nennt, welche Klassen noch keinen Rückgabe-Termin haben.
-	/** @type {any[]} */
-	let termine = $state([]);
-	/** @type {string[]} */
-	let ohneTermin = $state([]);
-	/** @type {string[]} */
-	let klassen = $state([]);
-	let alle = $state(false);
+	let art = $state('rueckgabe');
+	/** @type {import('./lmfplanDienst.js').PlanStand | null} */
+	let stand = $state(null);
+	/** @type {import('./lmfplanDienst.js').PlanEntwurf} */
+	let entwurf = $state({
+		erster_tag: '',
+		startstunde: 1,
+		stunden_je_tag: 6,
+		zeilen: [],
+		ausgelassen: []
+	});
+	/** @type {{ datum: string, stunde: number }[]} */
+	let plaetze = $state([]);
 	let laedt = $state(true);
-	let dialogOffen = $state(false);
-	/** @type {any} */
-	let bearbeitet = $state(null);
+	let speichert = $state(false);
 
 	async function lade() {
 		laedt = true;
 		try {
-			const plan = await dienst.ladePlan(alle);
-			termine = plan.termine;
-			ohneTermin = plan.ohne_rueckgabe_termin;
+			stand = await dienst.ladeStand(art);
+			entwurf = dienst.entwurfAus(stand);
 		} catch (e) {
 			showToast(`${e}`, 'error');
 		} finally {
@@ -37,111 +44,137 @@
 		}
 	}
 
-	async function ladeKlassen() {
+	// Vorschau: der Server rechnet die Plätze, sobald Rahmen oder Reihenfolge sich ändern
+	// (entprellt). Liest den Entwurf, schreibt NUR plaetze — kein Effekt auf eigenen State.
+	$effect(() => {
+		const schnappschuss = JSON.stringify({
+			erster_tag: entwurf.erster_tag,
+			startstunde: entwurf.startstunde,
+			stunden_je_tag: entwurf.stunden_je_tag,
+			n: entwurf.zeilen.length
+		});
+		const aktuelleArt = art;
+		const timer = setTimeout(
+			async () => {
+				try {
+					const z = await dienst.rechneVorschau(
+						aktuelleArt,
+						untrack(() => JSON.parse(JSON.stringify(entwurf)))
+					);
+					plaetze = z.map((p) => ({ datum: p.datum, stunde: p.stunde }));
+				} catch (e) {
+					showToast(`${e}`, 'error');
+				}
+			},
+			schnappschuss ? 250 : 0
+		);
+		return () => clearTimeout(timer);
+	});
+
+	/** @param {string} k */
+	function klasseRaus(k) {
+		if (!entwurf.ausgelassen.some((x) => dienst.normKey(x) === dienst.normKey(k)))
+			entwurf.ausgelassen = [...entwurf.ausgelassen, k].sort((a, b) =>
+				a.localeCompare(b, 'de', { numeric: true })
+			);
+	}
+
+	/** @param {string} k */
+	function klasseHinein(k) {
+		entwurf.ausgelassen = entwurf.ausgelassen.filter(
+			(x) => dienst.normKey(x) !== dienst.normKey(k)
+		);
+		if (!entwurf.zeilen.some((z) => z.klassen.some((x) => dienst.normKey(x) === dienst.normKey(k))))
+			entwurf.zeilen = [...entwurf.zeilen, { klassen: [k], vermerk: '' }];
+	}
+
+	const gueltig = $derived(
+		Boolean(entwurf.erster_tag) &&
+			entwurf.zeilen.every((z) => z.klassen.length > 0 || z.vermerk.trim() !== '')
+	);
+
+	async function speichern() {
+		speichert = true;
 		try {
-			const res = await apiFetch('/api/klassen');
-			if (res.ok) klassen = (await res.json()) || [];
-		} catch {
-			klassen = [];
+			const erg = await dienst.speicherePlan(art, entwurf);
+			showToast(erg.meldung, erg.ok ? 'success' : 'error');
+			if (erg.ok) await lade();
+		} finally {
+			speichert = false;
 		}
 	}
 
-	/** @param {any} t */
-	function oeffne(t) {
-		bearbeitet = t;
-		dialogOffen = true;
-	}
-
-	/** @param {any} t */
-	async function speichere(t) {
-		const erg = await dienst.speichereTermin(t);
-		showToast(erg.meldung, erg.ok ? 'success' : 'error');
-		if (erg.ok) {
-			dialogOffen = false;
-			await lade();
-		}
-	}
-
-	/** @param {any} t */
-	async function loesche(t) {
-		if (!confirm(`Termin am ${dienst.datumKurz(t.datum)}, ${dienst.stundeText(t.stunde)} löschen?`))
-			return;
-		const erg = await dienst.loescheTermin(t.id);
+	async function verwerfen() {
+		if (!stand?.plan) return;
+		if (!confirm(`Plan vom ${dienst.datumKurz(stand.plan.erster_tag)} verwerfen?`)) return;
+		const erg = await dienst.verwerfePlan(art);
 		showToast(erg.meldung, erg.ok ? 'success' : 'error');
 		if (erg.ok) await lade();
 	}
 
 	async function pdf() {
 		try {
-			await dienst.ladePdf(alle);
+			await dienst.ladePdf();
 		} catch (e) {
 			showToast(`${e}`, 'error');
 		}
 	}
 
-	onMount(() => {
-		lade();
-		ladeKlassen();
-	});
+	onMount(lade);
 </script>
 
-<PageShell>
-	<div
-		class="flex flex-wrap items-center justify-between gap-3 border-b border-outline-variant pb-4"
-	>
-		<p class="text-sm text-on-surface-variant max-w-2xl">
-			Rückgabe- und Ausgabetermine je Klasse. Das Kollegium sieht denselben Plan in seinem Portal;
-			der Rückgabe-Termin einer Klasse ist die Frist ihrer Schulbücher.
-		</p>
-		<div class="flex items-center gap-2 shrink-0">
-			<Button variant="secondary" onclick={() => ((alle = !alle), lade())}>
-				{alle ? 'Nur laufendes Schuljahr' : 'Ältere anzeigen'}
-			</Button>
-			<Button variant="secondary" onclick={pdf} disabled={termine.length === 0}>
-				<Printer class="h-4 w-4" aria-hidden="true" />
-				Als PDF
-			</Button>
-			<Button onclick={() => oeffne(null)}>
-				<Plus class="h-4 w-4" aria-hidden="true" />
-				Termin hinzufügen
-			</Button>
-		</div>
+<div class="flex flex-wrap items-center justify-between gap-3">
+	<Segmente
+		etikett="Art des Plans"
+		optionen={dienst.ARTEN.map((a) => ({ wert: a.wert, text: a.label }))}
+		wert={art}
+		onwahl={(/** @type {string} */ w) => {
+			art = w;
+			lade();
+		}}
+	/>
+	<div class="flex items-center gap-2">
+		<Button variant="secondary" onclick={pdf}>
+			<Printer class="h-4 w-4" aria-hidden="true" />
+			Als PDF
+		</Button>
+		<Button variant="secondary" onclick={verwerfen} disabled={!stand?.plan || stand.vorbei}>
+			<Trash2 class="h-4 w-4" aria-hidden="true" />
+			Plan verwerfen
+		</Button>
+		<Button onclick={speichern} disabled={!gueltig || speichert}>Plan speichern</Button>
 	</div>
+</div>
 
-	{#if !alle && ohneTermin.length > 0}
-		<p class="mt-3 text-sm text-on-surface-variant" data-testid="lmf-ohne-termin">
-			<span class="font-medium text-on-surface">Noch ohne Rückgabe-Termin:</span>
-			{ohneTermin.join(', ')}
-		</p>
-	{/if}
+{#if laedt}
+	<div class="flex items-center justify-center py-12">
+		<div
+			class="h-8 w-8 animate-spin rounded-full border-2 border-surface-container-high border-t-primary"
+		></div>
+	</div>
+{:else}
+	<p class="mt-3 text-sm text-on-surface-variant" data-testid="lmf-plan-hinweis">
+		{#if stand?.plan && !stand.vorbei}
+			Plan vom {dienst.datumKurz(stand.plan.erster_tag)} — Änderungen gelten nach „Plan speichern".
+		{:else if stand?.plan && stand.vorbei}
+			Der Plan vom {dienst.datumKurz(stand.plan.erster_tag)} ist vorbei. Dieser Entwurf übernimmt seine
+			Reihenfolge — ersten Tag wählen, prüfen, speichern.
+		{:else}
+			Noch kein Plan. Die Reihenfolge folgt der Regel: Abschlussklassen zuerst, dann Jahrgang
+			absteigend; die Oberstufe steht unter „Nicht im Plan".
+		{/if}
+		{#if art === 'rueckgabe'}
+			Der Rückgabe-Termin einer Klasse wird die Frist ihrer Schulbücher.
+		{/if}
+	</p>
 
-	{#if laedt}
-		<div class="py-12 flex justify-center items-center">
-			<div
-				class="w-8 h-8 border-2 border-t-primary border-surface-container-high rounded-full animate-spin"
-			></div>
-		</div>
-	{:else if termine.length === 0}
-		<div class="py-12 text-center space-y-3 animate-fade-in">
-			<div
-				class="w-16 h-16 rounded-full bg-surface-container-low border border-outline-variant flex items-center justify-center text-on-surface-variant mx-auto"
-			>
-				<CalendarDays class="h-8 w-8" aria-hidden="true" />
-			</div>
-			<h3 class="font-bold text-on-surface">Noch kein Termin eingetragen</h3>
-			<p class="text-xs text-on-surface-variant max-w-sm mx-auto">
-				Mit „Termin hinzufügen" beginnt der Plan — Klasse für Klasse, Abschlussklassen zuerst.
-			</p>
-		</div>
-	{:else}
-		<LmfPlanTabelle {termine} bearbeitbar onBearbeiten={oeffne} onLoeschen={loesche} />
-	{/if}
-</PageShell>
-
-<LmfTerminDialog
-	open={dialogOffen}
-	termin={bearbeitet}
-	{klassen}
-	onclose={() => (dialogOffen = false)}
-	onspeichern={speichere}
-/>
+	<div class="mt-4 space-y-6">
+		<LmfPlanRahmen
+			bind:ersterTag={entwurf.erster_tag}
+			bind:startstunde={entwurf.startstunde}
+			bind:stundenJeTag={entwurf.stunden_je_tag}
+		/>
+		<LmfPlanReihenfolge bind:zeilen={entwurf.zeilen} {plaetze} onklasseraus={klasseRaus} />
+		<LmfPlanVorrat klassen={entwurf.ausgelassen} onhinein={klasseHinein} />
+	</div>
+{/if}

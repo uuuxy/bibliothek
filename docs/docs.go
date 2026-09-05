@@ -1520,6 +1520,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/lmf-plan/{art}": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Plan (Reihenfolge) lesen",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LmfPlanStandAntwort"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Plan (Reihenfolge) speichern oder als Vorschau rechnen",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LmfPlanSpeicherAntwort"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Plan (Reihenfolge) verwerfen",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/lmf-termine": {
             "get": {
                 "description": "Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle), plus Klassen ohne Rückgabe-Termin.",
@@ -1538,26 +1598,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lernmittel"
-                ],
-                "summary": "LMF-Termin anlegen",
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "$ref": "#/definitions/api.LmfTerminAntwort"
-                        }
-                    }
-                }
             }
         },
         "/lmf-termine/pdf": {
@@ -1570,49 +1610,6 @@ const docTemplate = `{
                 ],
                 "summary": "LMF-Plan als PDF",
                 "responses": {}
-            }
-        },
-        "/lmf-termine/{id}": {
-            "put": {
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lernmittel"
-                ],
-                "summary": "LMF-Termin ändern",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/api.LmfTerminAntwort"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "lernmittel"
-                ],
-                "summary": "LMF-Termin löschen",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "integer",
-                                "format": "int64"
-                            }
-                        }
-                    }
-                }
             }
         },
         "/schueler": {
@@ -2862,33 +2859,94 @@ const docTemplate = `{
                 }
             }
         },
-        "api.LmfTerminAntwort": {
+        "api.LmfPlanSpeicherAntwort": {
             "type": "object",
             "properties": {
-                "art": {
-                    "type": "string"
-                },
-                "datum": {
-                    "description": "YYYY-MM-DD",
-                    "type": "string"
-                },
-                "fristen_angepasst": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "klassen": {
+                "ausgelassen": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "stunde": {
+                "fristen_angepasst": {
                     "type": "integer"
                 },
-                "vermerk": {
+                "plan": {
+                    "$ref": "#/definitions/repository.LmfPlan"
+                },
+                "vorschau": {
+                    "type": "boolean"
+                },
+                "zeilen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                    }
+                }
+            }
+        },
+        "api.LmfPlanStandAntwort": {
+            "type": "object",
+            "properties": {
+                "ausgelassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "klassen": {
+                    "description": "Klassen: alle Klassen des Vokabulars, für die Auswahl im Planer.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "plan": {
+                    "description": "Plan ist der neueste Plan der Art; nil, wenn es noch keinen gibt.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.LmfPlan"
+                        }
+                    ]
+                },
+                "vorbei": {
+                    "description": "Vorbei: der letzte Termin des Plans liegt hinter heute — der Planer bietet dann\nden nächsten Plan an, mit derselben Reihenfolge als Vorschlag.",
+                    "type": "boolean"
+                },
+                "vorschlag": {
+                    "description": "Vorschlag ist gesetzt, wenn es keinen laufenden Plan gibt (kein Plan oder vorbei).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.LmfPlanVorschlag"
+                        }
+                    ]
+                },
+                "zeilen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                    }
+                }
+            }
+        },
+        "api.LmfPlanVorschlag": {
+            "type": "object",
+            "properties": {
+                "ausgelassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "quelle": {
+                    "description": "Quelle: \"vorjahr\" (der letzte Plan der Art) oder \"regel\" (Abschluss zuerst).",
                     "type": "string"
+                },
+                "zeilen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfPlanZeile"
+                    }
                 }
             }
         },
@@ -3339,6 +3397,54 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.LmfPlan": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "erster_tag": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "schuljahr_beginn": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "startstunde": {
+                    "type": "integer"
+                },
+                "stunden_je_tag": {
+                    "type": "integer"
+                }
+            }
+        },
+        "repository.LmfPlanZeile": {
+            "type": "object",
+            "properties": {
+                "datum": {
+                    "type": "string"
+                },
+                "klassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "stunde": {
+                    "type": "integer"
+                },
+                "vermerk": {
                     "type": "string"
                 }
             }
