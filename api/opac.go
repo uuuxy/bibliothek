@@ -74,11 +74,15 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		var searchConditions = []string{repository.OeffentlichSichtbar("bt")}
 
 		if q != "" {
-			args = append(args, q)
+			// $1 roh für die Volltextsuche, $2 mit maskierten LIKE-Jokern: Der Endpunkt ist
+			// öffentlich, und ein nacktes "%" oder "_" in $1 machte aus dem Teilstring-
+			// Vergleich einen Treffer auf den ganzen Bestand — LIMIT 50 hinter einem GROUP
+			// BY über alle Titel, Exemplare und Ausleihen, 50-mal pro Sekunde und Adresse.
+			args = append(args, q, maskiereLikeJoker(q))
 			searchConditions = append(searchConditions, `(bt.search_vector @@ plainto_tsquery('german', $1)
-			   OR bt.titel ILIKE '%' || $1 || '%'
-			   OR bt.autor ILIKE '%' || $1 || '%'
-			   OR bt.isbn ILIKE '%' || $1 || '%')`)
+			   OR bt.titel ILIKE '%' || $2 || '%'
+			   OR bt.autor ILIKE '%' || $2 || '%'
+			   OR bt.isbn ILIKE '%' || $2 || '%')`)
 		}
 
 		whereClause := ""
@@ -108,4 +112,11 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 
 		RespondJSON(w, http.StatusOK, result)
 	}
+}
+
+// maskiereLikeJoker macht aus einer Nutzereingabe einen wörtlichen LIKE-Teilstring:
+// Backslash, Prozent und Unterstrich verlieren ihre Sonderbedeutung (Postgres-Vorgabe
+// ESCAPE '\\'). Dieselbe Schreibweise wie in repository/student_queries.go.
+func maskiereLikeJoker(s string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }

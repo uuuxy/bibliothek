@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-05 (Karenz-Uhr läuft ab dem letzten abgeschlossenen Vorgang).
+> Zuletzt aktualisiert: 2026-09-05 abends (Sicherheits-Audit: Client-IP ein Hop, Cover-Proxy
+> an den Katalog gebunden, Secret-Guard als Vorgabe scharf, Login-Rumpfgrenze, OPAC-Joker).
+> Davor 2026-09-05 (Karenz-Uhr läuft ab dem letzten abgeschlossenen Vorgang).
 > Davor 2026-09-02 (PII-Stufen gemessen: GET + lesende POSTs), 2026-08-24 (Löschbarkeit einzelner Felder), 2026-08-06
 > (Audit-Nachlese: Cover-Proxy, SMTP-STARTTLS,
 > Lesefristen, Panic-Log, Secret-Guard-Klarstellung)
@@ -38,6 +40,31 @@ Credential-Stuffing über diesen Weg.
   Seitenaufruf lädt dutzende Bilder gleichzeitig, und SSE ist eine Dauerverbindung. Die
   Ausnahme gilt der **Auslieferung**; der teure Zweig des Cover-Proxys (fremder Download)
   hat eine eigene Bremse, siehe „Cover-Proxy" weiter unten.
+- **Anmelde-Rumpf begrenzt** (seit 05.09.2026, `loginRumpfMaxBytes` = 16 KB): `/login` ist der
+  eine unangemeldete Endpunkt, der JSON liest, und die serverweite 100-MB-Grenze gilt den
+  Importen. `json.Decoder` puffert einen Zeichenkettenwert vollständig — fünfzig parallele
+  100-MB-Rümpfe wären fünf Gigabyte Speicher ohne ein gültiges Passwort.
+
+### Welche IP zählt — genau ein Proxy-Hop (`pkg/clientip`, seit 05.09.2026)
+
+Alle IP-gebundenen Schutzmechanismen (beide Login-Limiter, der globale Rate-Limiter, die
+Cover-Bremse, das Audit-Log) fragen `clientip.FromRequest`. Die Regel: `X-Forwarded-For`
+wird nur geglaubt, wenn die Verbindung von einem Netz aus `TRUSTED_PROXIES` kommt, und
+dann zählt der **rechteste** Eintrag — der, den Caddy selbst angehängt hat.
+
+Bis zum 05.09.2026 lief der Resolver **rekursiv**: Er übersprang jeden Eintrag, der in
+einem vertrauten Netz lag. Der Compose-Default vertraut allen RFC-1918-Netzen (das
+Docker-Subnetz ist je Host anders), und die Schul-Clients liegen selbst in 192.168.x/10.x.
+Gemessen: Client 192.168.1.50 und Client 192.168.1.77 wurden beide zu Caddys Adresse
+172.18.0.5 — die ganze Schule war für den volumetrischen Login-Limiter **ein** Client
+(50 Fehlversuche in 15 Minuten von irgendwem sperrten die Anmeldung für alle), das
+50-req/s-Budget galt für das Gebäude, und das Audit-Log notierte den Proxy. Reicht ein
+Proxy den eingehenden Header durch, kehrte sich das um: `X-Forwarded-For: 8.8.8.8` vom
+Client kam als Client-IP durch, die Limiter waren frei wählbar. Beides ist mit „ein Hop,
+rechtester Eintrag" weg; eine Proxy-**Kette** löst der Resolver bewusst nicht mehr bis zum
+Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch). Gates:
+`TestResolver_LanClientHinterProxy`, `TestResolver_DurchgereichterHeaderIstNichtWaehlbar`
+(beide mit dem alten Code rot gesehen).
 
 ---
 
@@ -219,6 +246,23 @@ dutzende Bilder gleichzeitig lädt. Jetzt gilt:
 | Bildgröße             | 50 MP (`GuardImageDimensions`, nur Header)    | Decompression-Bomb: 30000×30000 px ≈ 3,6 GB im Speicher, wenige hundert KB auf der Leitung |
 | Downloads/IP          | 30/s — **nur der Cache-Fehltreffer**          | Verstärkung: eine Anfrage von außen = eine ausgehende Anfrage von uns                      |
 
+**Gebunden an den Katalog (seit 05.09.2026, `api/cover_quelle_bindung.go`).** Cache-Schlüssel
+(`isbn`) und Inhalt (`url`) waren bis dahin zwei unabhängige Angaben: Wer zuerst kam,
+bestimmte dauerhaft, welches Bild unter dieser ISBN lag — ohne Anmeldung. Am Handler
+nachgestellt: ein Aufruf mit der ISBN eines Schulbuchs und der Adresse eines beliebigen
+Google-Books-Covers, danach lieferte der Cache dem Flur-Monitor byte-identisch das fremde
+Bild. Und jeder ISBN-artige Schlüssel legte eine neue Datei an (sechs Schlüssel, sechs
+Dateien, keine Räumung) — ein Plattenfüller auf dem Host der Datenbank, mit 30 Downloads
+pro Sekunde und Adresse. Jetzt lädt der Server nur Adressen, die er für diese ISBN
+**selbst kennt** (gespeicherte `cover_url` eines Titels mit dieser ISBN) oder **selbst
+herleiten** könnte (die zwei Kandidaten-Muster aus `coverSrc.js`, ohne Anmeldung nur für
+Katalog-ISBNs; angemeldet auch für die ISBN-Suche beim Anlegen). Dateiname ist ISBN plus
+Hash der geprüften Adresse — zwei Adressen teilen sich nie eine Datei. Alte
+`<isbn>.webp`-Dateien im Cache werden nicht mehr gelesen; sie sind tot, nicht gefährlich.
+Gates: `api/cover_quelle_bindung_test.go` (Handler mit gestubbtem Download; der Aufbau
+zeigte mit dem alten Code das Vergiften und die sechs Dateien) und
+`TestCoverKandidaten_MusterGleichWieImFrontend` (Server- und Frontend-Muster identisch).
+
 Ausgelieferte Cache-Treffer bleiben ungebremst; sie sind ein Datei-Read. Wichtig zum
 Verständnis der Allowlist: `covers.openlibrary.org` steht darauf und wird von
 Freiwilligen befüllt — die Allowlist begrenzt das **Ziel**, nicht den **Inhalt**. Ein
@@ -274,28 +318,30 @@ auf der Leitung, aber keines für den Speicher.
 
 Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
 
-### Lösung (`main.go/loadConfig`)
+### Lösung (`main.go/loadConfig` + `api.ErzwingeProdGeheimnisse`)
 
-Der Server **verweigert den Start**, wenn der Schalter `ENFORCE_PROD_SECRETS=true` gesetzt ist und bekannte Default-Secrets erkannt werden:
+Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
+(`api.IstBekanntesDefaultGeheimnis`) aktiv ist — und zwar **als Vorgabe** (seit 05.09.2026):
 
-```go
-enforceProdSecrets := strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true"
-if enforceProdSecrets {
-    knownDefaultSecrets := map[string]bool{
-        "super-secret-default-key-at-least-32-bytes": true,
-        "super-secure-aes-key-32-chars-ok":           true,
-        "supergeheim_lokal":                          true,
-    }
-    // … log.Fatalf bei Treffer
-}
-```
+| Umgebung                          | `ENFORCE_PROD_SECRETS` | Verhalten                                   |
+| --------------------------------- | ---------------------- | ------------------------------------------- |
+| `production` / leer / sonstiges   | nicht gesetzt          | **verweigert** bei Beispielwert             |
+| `production`                      | `true`                 | verweigert                                  |
+| `production`                      | `false` (ausdrücklich) | startet, warnt im Log; Selbstprüfung gelb   |
+| `local` / `development` / `test`  | nicht gesetzt          | startet — dort sind die Beispielwerte richtig |
+| irgendeine                        | unlesbar (`ja`, `0`)   | verweigert — unsicher muss man hinschreiben  |
 
-**Bewusst per Schalter einschaltbar (entkoppelt von `APP_ENV`):**
+Bis zum 05.09.2026 galt `== "true"`: aus, solange niemand den Schalter setzte. Eine
+vergessene Zeile in der `.env` genügte, damit der Schulserver mit dem JWT-Schlüssel aus dem
+Repository lief — Admin-Sitzungen fälschbar, nichts rot. Dieselbe Regel liest die
+Selbstprüfung (`betriebsbereitschaft.go`), damit Seite und Server nicht verschieden
+entscheiden. Gates: `api/prod_geheimnisse_test.go`,
+`TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT` (mit dem alten Code rot).
 
-- Test-/Pilotphase: `ENFORCE_PROD_SECRETS=false` (Standard) → Stack startet auch mit Defaults.
-- Echter Prod-Deploy: `ENFORCE_PROD_SECRETS=true` → harte Start-Verweigerung bei Default-Secrets.
-
-Die Entkopplung von `APP_ENV` ist Absicht: `APP_ENV=local` würde sonst gleichzeitig das Cookie-`Secure`-Flag deaktivieren und Swagger öffentlich freischalten. So bleibt `APP_ENV=production` (sichere Cookies, kein Swagger), während die Secret-Härtung separat geschaltet wird.
+Die Entkopplung von `APP_ENV` bleibt für den Ausnahmefall: `APP_ENV=local` würde zugleich
+das Cookie-`Secure`-Flag deaktivieren und Swagger öffentlich freischalten. Wer auf einem
+production-Server ohne eigene Geheimnisse testen will, schreibt `ENFORCE_PROD_SECRETS=false`
+— sichtbar, und `scripts/pruefe_secrets.sh` meldet es als kritisch.
 
 ### Mindestanforderungen
 
@@ -310,13 +356,13 @@ Das stimmt nur für zwei davon. Tatsächlich:
 | -------------------- | ------------------------------------------------------------------------------------------------- |
 | `POSTGRES_PASSWORD`  | `${…:?}` — Stack startet ohne sie **nicht**                                                       |
 | `IMAP_HOST`          | `${…:?}` — Stack startet ohne sie **nicht**                                                       |
-| `JWT_SECRET`         | `${…:-super-secret-default-key-at-least-32-bytes}` — fällt auf den **committeten Default** zurück |
-| `APP_ENCRYPTION_KEY` | `${…:-super-secure-aes-key-32-chars-ok}` — fällt auf den **committeten Default** zurück           |
+| `JWT_SECRET`         | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo)      |
+| `APP_ENCRYPTION_KEY` | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo)      |
 
-Für die beiden letzten ist der Code-Guard (`ENFORCE_PROD_SECRETS=true`) die **einzige**
-Absicherung, und er ist standardmäßig **aus**. Ein Prod-Deploy ohne gesetzte `.env`-Werte
-läuft also mit im Repo nachlesbaren Schlüsseln — Admin-JWTs sind damit fälschbar und
-Schülerfotos entschlüsselbar.
+Bis zum 05.09.2026 fielen die beiden letzten auf committete Defaults zurück, und der
+Code-Guard war standardmäßig aus: Ein Prod-Deploy ohne gesetzte `.env`-Werte lief mit im
+Repo nachlesbaren Schlüsseln. Jetzt greifen beide Schranken — Compose verlangt die Werte,
+der Server lehnt die bekannten ab.
 
 > **Warum die Defaults trotzdem bleiben:** Ein `${JWT_SECRET:?}` würde einen bereits
 > laufenden Stack beim nächsten `./update.sh` nicht mehr starten. Schlimmer wäre der
