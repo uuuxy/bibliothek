@@ -63,6 +63,24 @@ describe('LmfPlanReihenfolge', () => {
 		expect(klassenJeZeile(container)).toEqual(['10R1']);
 	});
 
+	it('legt eine Zeile fest — vorbelegt mit ihrem Vorschau-Platz — und löst sie wieder', async () => {
+		// Die Klasse mit dem Ausflug (Peter, 05.09.2026): „festlegen" macht aus den
+		// gerechneten Spalten Eingabefelder, und zwar mit dem Platz, den die Zeile gerade
+		// hat — sonst spränge sie beim Klick irgendwohin. „lösen" gibt sie dem Fluss zurück.
+		const { container, getByLabelText, queryByLabelText } = zeige(start.map((z) => ({ ...z })));
+		await fireEvent.click(getByLabelText('Zeile 2 festlegen'));
+		const datum = /** @type {HTMLInputElement} */ (getByLabelText('Fester Tag Zeile 2'));
+		expect(datum.value).toBe('2027-06-28');
+		expect(container.querySelectorAll('tbody tr')[1].textContent).toContain('4. Std.');
+		expect(getByLabelText('Zeile 2 lösen')).toBeTruthy();
+		// Die anderen Zeilen bleiben gerechnet.
+		expect(queryByLabelText('Fester Tag Zeile 1')).toBeNull();
+
+		await fireEvent.click(getByLabelText('Zeile 2 lösen'));
+		expect(queryByLabelText('Fester Tag Zeile 2')).toBeNull();
+		expect(getByLabelText('Zeile 2 festlegen')).toBeTruthy();
+	});
+
 	it('entfernt die Zeile, wenn ihre letzte Klasse geht und kein Vermerk bleibt', async () => {
 		const { container, getByTitle } = zeige([{ klassen: ['10R1'], vermerk: '' }]);
 		await fireEvent.click(getByTitle('10R1 aus dem Plan nehmen'));

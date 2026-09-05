@@ -28,13 +28,26 @@ type LmfPlan struct {
 	ErsterTag       string `json:"erster_tag"`       // YYYY-MM-DD
 	Startstunde     int    `json:"startstunde"`
 	StundenJeTag    int    `json:"stunden_je_tag"`
+	// FreieTage: Tage, die dieser Plan überspringt (Migration 099) — bewegliche
+	// Ferientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche
+	// Feiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).
+	FreieTage []LmfFreierTag `json:"freie_tage"`
+}
+
+// LmfFreierTag ist ein freier Tag des Plans mit Grund.
+type LmfFreierTag struct {
+	Datum string `json:"datum"` // YYYY-MM-DD
+	Grund string `json:"grund"`
 }
 
 // LmfPlanZeile ist eine Zeile der Reihenfolge — mit den vom Server gerechneten Plätzen.
+// Fest: Datum und Stunde sind vorgegeben, nicht gerechnet (die Klasse mit dem Ausflug,
+// Migration 099); die übrigen Zeilen fließen um diesen Platz herum.
 type LmfPlanZeile struct {
 	Position int      `json:"position"`
 	Datum    string   `json:"datum"`
 	Stunde   int      `json:"stunde"`
+	Fest     bool     `json:"fest"`
 	Klassen  []string `json:"klassen"`
 	Vermerk  string   `json:"vermerk"`
 }
@@ -63,13 +76,35 @@ func (r *LmfTerminRepository) NeuesterLmfPlan(ctx context.Context, art string) (
 	if st.Zeilen, err = r.lmfPlanZeilen(ctx, st.Plan.ID); err != nil {
 		return st, err
 	}
+	if st.Plan.FreieTage, err = r.lmfPlanFreieTage(ctx, st.Plan.ID); err != nil {
+		return st, err
+	}
 	st.Ausgelassen, err = r.lmfPlanAusgelassen(ctx, st.Plan.ID)
 	return st, err
 }
 
+func (r *LmfTerminRepository) lmfPlanFreieTage(ctx context.Context, planID string) ([]LmfFreierTag, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT to_char(datum, 'YYYY-MM-DD'), grund FROM lmf_plan_freie_tage
+		WHERE plan_id = $1 ORDER BY datum`, planID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	tage := []LmfFreierTag{}
+	for rows.Next() {
+		var t LmfFreierTag
+		if err := rows.Scan(&t.Datum, &t.Grund); err != nil {
+			return nil, err
+		}
+		tage = append(tage, t)
+	}
+	return tage, rows.Err()
+}
+
 func (r *LmfTerminRepository) lmfPlanZeilen(ctx context.Context, planID string) ([]LmfPlanZeile, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT t.position, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.vermerk,
+		SELECT t.position, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.fest, t.vermerk,
 		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse))
 		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
 		FROM lmf_termine t WHERE t.plan_id = $1
@@ -81,7 +116,7 @@ func (r *LmfTerminRepository) lmfPlanZeilen(ctx context.Context, planID string) 
 	zeilen := []LmfPlanZeile{}
 	for rows.Next() {
 		var z LmfPlanZeile
-		if err := rows.Scan(&z.Position, &z.Datum, &z.Stunde, &z.Vermerk, &z.Klassen); err != nil {
+		if err := rows.Scan(&z.Position, &z.Datum, &z.Stunde, &z.Fest, &z.Vermerk, &z.Klassen); err != nil {
 			return nil, err
 		}
 		zeilen = append(zeilen, z)
@@ -109,9 +144,9 @@ func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID str
 }
 
 // SaveLmfPlan legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt
-// ihn um — Rahmen, Zeilen (vollständig ersetzt, mit Platz und Position) und ausgelassene
-// Klassen in einer Transaktion. Klassennamen laufen durch das Vokabular; die Antwort
-// trägt die kanonisierten Namen.
+// ihn um — Rahmen (mit freien Tagen), Zeilen (vollständig ersetzt, mit Platz, Position
+// und fest-Marke) und ausgelassene Klassen in einer Transaktion. Klassennamen laufen
+// durch das Vokabular; die Antwort trägt die kanonisierten Namen.
 func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zeilen []LmfPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LmfPlanStand, error) {
 	ersterTag, err := time.ParseInLocation("2006-01-02", plan.ErsterTag, schulzeit.Zone())
 	if err != nil {
@@ -145,13 +180,27 @@ func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zei
 	if _, err := tx.Exec(ctx, `DELETE FROM lmf_plan_ausgelassen WHERE plan_id = $1`, st.Plan.ID); err != nil {
 		return st, err
 	}
+	if _, err := tx.Exec(ctx, `DELETE FROM lmf_plan_freie_tage WHERE plan_id = $1`, st.Plan.ID); err != nil {
+		return st, err
+	}
+	st.Plan.FreieTage = []LmfFreierTag{}
+	for _, f := range plan.FreieTage {
+		var t LmfFreierTag
+		if err := tx.QueryRow(ctx, `
+			INSERT INTO lmf_plan_freie_tage (plan_id, datum, grund) VALUES ($1, $2::date, $3)
+			ON CONFLICT (plan_id, datum) DO UPDATE SET grund = EXCLUDED.grund
+			RETURNING to_char(datum, 'YYYY-MM-DD'), grund`, st.Plan.ID, f.Datum, f.Grund).Scan(&t.Datum, &t.Grund); err != nil {
+			return st, err
+		}
+		st.Plan.FreieTage = append(st.Plan.FreieTage, t)
+	}
 	st.Zeilen = make([]LmfPlanZeile, 0, len(zeilen))
 	for i, z := range zeilen {
 		var id string
 		if err := tx.QueryRow(ctx, `
-			INSERT INTO lmf_termine (plan_id, position, datum, stunde, art, vermerk)
-			VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-			st.Plan.ID, i+1, plaetze[i].Datum, plaetze[i].Stunde, plan.Art, z.Vermerk).Scan(&id); err != nil {
+			INSERT INTO lmf_termine (plan_id, position, datum, stunde, fest, art, vermerk)
+			VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+			st.Plan.ID, i+1, plaetze[i].Datum, plaetze[i].Stunde, z.Fest, plan.Art, z.Vermerk).Scan(&id); err != nil {
 			return st, err
 		}
 		kanonisch, err := schreibeKlassen(ctx, tx, `INSERT INTO lmf_termin_klassen (termin_id, klasse) VALUES ($1, $2)
@@ -160,7 +209,7 @@ func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zei
 			return st, err
 		}
 		st.Zeilen = append(st.Zeilen, LmfPlanZeile{Position: i + 1, Datum: plaetze[i].Datum.Format("2006-01-02"),
-			Stunde: plaetze[i].Stunde, Klassen: kanonisch, Vermerk: z.Vermerk})
+			Stunde: plaetze[i].Stunde, Fest: z.Fest, Klassen: kanonisch, Vermerk: z.Vermerk})
 	}
 	if st.Ausgelassen, err = schreibeKlassen(ctx, tx, `INSERT INTO lmf_plan_ausgelassen (plan_id, klasse) VALUES ($1, $2)
 		ON CONFLICT DO NOTHING RETURNING klasse`, st.Plan.ID, ausgelassen); err != nil {
@@ -200,10 +249,12 @@ func (r *LmfTerminRepository) DeleteLmfPlan(ctx context.Context, id string) (boo
 }
 
 // FreieTage liefert Ferien und Schließzeiten, die den Zeitraum berühren — der Plan
-// überspringt sie (pkg/lmfplan.Schultage).
+// überspringt sie (pkg/lmfplan.Schultage), mit Bezeichnung als Grund. Die Tabelle hat
+// bis heute (05.09.2026) keinen Schreiber in der Oberfläche; die freien Tage des Plans
+// selbst (lmf_plan_freie_tage) sind der Weg, den die Bibliothek tatsächlich hat.
 func (r *LmfTerminRepository) FreieTage(ctx context.Context, von, bis time.Time) ([]lmfplan.Zeitraum, error) {
 	rows, err := r.db.Query(ctx, `
-		SELECT start_datum, end_datum FROM ferien_schliesszeiten
+		SELECT start_datum, end_datum, bezeichnung FROM ferien_schliesszeiten
 		WHERE end_datum >= $1::date AND start_datum <= $2::date`, von, bis)
 	if err != nil {
 		return nil, err
@@ -212,7 +263,7 @@ func (r *LmfTerminRepository) FreieTage(ctx context.Context, von, bis time.Time)
 	frei := []lmfplan.Zeitraum{}
 	for rows.Next() {
 		var z lmfplan.Zeitraum
-		if err := rows.Scan(&z.Von, &z.Bis); err != nil {
+		if err := rows.Scan(&z.Von, &z.Bis, &z.Name); err != nil {
 			return nil, err
 		}
 		frei = append(frei, z)

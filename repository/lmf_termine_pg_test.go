@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
@@ -164,8 +165,8 @@ func TestLmfPlan_FreieTage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(frei) != 1 || frei[0].Von.Format("2006-01-02") != "2026-06-29" {
-		t.Errorf("nur die Sommerferien berühren Juni/Juli: %+v", frei)
+	if len(frei) != 1 || frei[0].Von.Format("2006-01-02") != "2026-06-29" || frei[0].Name != "PGTEST Sommer" {
+		t.Errorf("nur die Sommerferien berühren Juni/Juli, mit Bezeichnung als Grund: %+v", frei)
 	}
 }
 
@@ -186,4 +187,59 @@ func klassenNorm(k string) string {
 		b = b[1:]
 	}
 	return string(b)
+}
+
+// Fester Platz und freie Tage (Migration 099) überleben den Weg durch die Datenbank:
+// Die Zeile mit dem Ausflug kommt mit fest = true und ihrem Platz zurück, die freien
+// Tage hängen am Plan — und ein zweites Speichern ersetzt beides vollständig.
+func TestLmfPlan_FesterPlatzUndFreieTage(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	repo := NewLmfTerminRepository(pool)
+	t.Cleanup(func() { raeumeLmfPlaene(t, pool) })
+
+	tag := func(s string) time.Time {
+		d, err := time.ParseInLocation("2006-01-02", s, schulzeit.Zone())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return d
+	}
+	plan := LmfPlan{Art: LmfTerminAusgabe, ErsterTag: "2026-08-24", Startstunde: 1, StundenJeTag: 6,
+		FreieTage: []LmfFreierTag{{Datum: "2026-08-25", Grund: "Pädagogischer Tag"}}}
+	zeilen := []LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"7G1"}, Fest: true, Vermerk: "Ausflug"}}
+	fest := []*lmfplan.Platz{nil, {Datum: tag("2026-08-28"), Stunde: 4}}
+	frei := []lmfplan.Zeitraum{{Von: tag("2026-08-25"), Bis: tag("2026-08-25"), Name: "Pädagogischer Tag"}}
+	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag("2026-08-24"), Startstunde: 1, StundenJeTag: 6}, fest, lmfplan.Schultage(frei))
+	if _, err := repo.SaveLmfPlan(ctx, plan, zeilen, plaetze, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	st, err := repo.NeuesterLmfPlan(ctx, LmfTerminAusgabe)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(st.Plan.FreieTage) != 1 || st.Plan.FreieTage[0] != (LmfFreierTag{Datum: "2026-08-25", Grund: "Pädagogischer Tag"}) {
+		t.Errorf("freie Tage: %+v", st.Plan.FreieTage)
+	}
+	if len(st.Zeilen) != 2 || st.Zeilen[0].Fest || !st.Zeilen[1].Fest {
+		t.Fatalf("fest-Marken: %+v", st.Zeilen)
+	}
+	if st.Zeilen[1].Datum != "2026-08-28" || st.Zeilen[1].Stunde != 4 {
+		t.Errorf("fester Platz: %s/%d", st.Zeilen[1].Datum, st.Zeilen[1].Stunde)
+	}
+
+	// Zweites Speichern ohne freie Tage und ohne festen Platz: beides weg.
+	plan.FreieTage = nil
+	zeilen[1].Fest = false
+	plaetze = lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag("2026-08-24"), Startstunde: 1, StundenJeTag: 6}, make([]*lmfplan.Platz, 2), lmfplan.Schultage(nil))
+	if _, err := repo.SaveLmfPlan(ctx, plan, zeilen, plaetze, nil); err != nil {
+		t.Fatal(err)
+	}
+	if st, err = repo.NeuesterLmfPlan(ctx, LmfTerminAusgabe); err != nil {
+		t.Fatal(err)
+	}
+	if len(st.Plan.FreieTage) != 0 || st.Zeilen[1].Fest || st.Zeilen[1].Datum != "2026-08-24" {
+		t.Errorf("nach dem zweiten Speichern: freie Tage %+v, Zeile 2 %+v", st.Plan.FreieTage, st.Zeilen[1])
+	}
 }

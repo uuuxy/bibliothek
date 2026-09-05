@@ -851,6 +851,20 @@ CREATE TABLE lmf_plan_ausgelassen (
     PRIMARY KEY (plan_id, klasse)
 );
 
+-- Migration 099: feste Plätze und freie Tage. fest = Datum und Stunde der Zeile sind
+-- vorgegeben (die Klasse mit dem Ausflug), nicht gerechnet; die übrigen Zeilen fließen
+-- um den Platz herum. lmf_plan_freie_tage: Tage, die dieser Plan überspringt
+-- (Brückentag, pädagogischer Tag) — gesetzliche Feiertage kennt der Server selbst.
+ALTER TABLE lmf_termine
+    ADD COLUMN fest BOOLEAN NOT NULL DEFAULT false;
+
+CREATE TABLE lmf_plan_freie_tage (
+    plan_id UUID NOT NULL REFERENCES lmf_plaene(id) ON DELETE CASCADE,
+    datum   DATE NOT NULL,
+    grund   TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (plan_id, datum)
+);
+
 -- -------------------------------------------------------------
 -- Klassen-Vokabular (Migration 079): EINE klassen-Tabelle, an der schueler,
 -- klassen_lehrer_mapping, class_books und klassensatz_reservierungen per FK hängen.
@@ -1114,7 +1128,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('095_abgaenger_sperre_ein_praefix.sql'),
 ('096_lmf_termine.sql'),
 ('097_lmf_plaene.sql'),
-('098_lmf_termine_gehoeren_zum_plan.sql')
+('098_lmf_termine_gehoeren_zum_plan.sql'),
+('099_lmf_plan_feste_plaetze_und_freie_tage.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

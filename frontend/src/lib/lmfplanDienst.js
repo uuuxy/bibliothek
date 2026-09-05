@@ -8,10 +8,15 @@
 import { apiFetch } from './apiFetch.js';
 
 /** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string }} LmfTermin */
-/** @typedef {{ klassen: string[], vermerk: string }} PlanZeile */
-/** @typedef {{ erster_tag: string, startstunde: number, stunden_je_tag: number, zeilen: PlanZeile[], ausgelassen: string[] }} PlanEntwurf */
-/** @typedef {{ position: number, datum: string, stunde: number, klassen: string[], vermerk: string }} PlanPlatz */
-/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, stunden_je_tag: number } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[] }, klassen: string[] }} PlanStand */
+/** Fest: Datum und Stunde von Hand (die Klasse mit dem Ausflug) — null, wenn die Zeile fließt. */
+/** @typedef {{ datum: string, stunde: number }} FesterPlatz */
+/** @typedef {{ klassen: string[], vermerk: string, fest?: FesterPlatz | null }} PlanZeile */
+/** @typedef {{ datum: string, grund: string }} FreierTag */
+/** @typedef {{ erster_tag: string, startstunde: number, stunden_je_tag: number, freie_tage: FreierTag[], zeilen: PlanZeile[], ausgelassen: string[] }} PlanEntwurf */
+/** @typedef {{ position: number, datum: string, stunde: number, fest: boolean, klassen: string[], vermerk: string }} PlanPlatz */
+/** Ein Werktag im Plan-Zeitraum, an dem der Plan nicht läuft — mit Grund. */
+/** @typedef {{ datum: string, grund: string }} Ausfall */
+/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, stunden_je_tag: number, freie_tage: FreierTag[] } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[] }, klassen: string[] }} PlanStand */
 
 export const ARTEN = /** @type {const} */ ([
 	{ wert: 'rueckgabe', label: 'Bücherrückgabe' },
@@ -73,12 +78,18 @@ export async function ladeStand(art) {
 
 /** Baut den bearbeitbaren Entwurf aus dem Serverstand: ein laufender Plan wird
  *  bearbeitet, sonst beginnt der nächste mit dem Vorschlag (Vorjahr oder Regel). Alles
- *  aus dem Vokabular, was in keiner Zeile steht, liegt unter „Nicht im Plan".
+ *  aus dem Vokabular, was in keiner Zeile steht, liegt unter „Nicht im Plan". Feste
+ *  Plätze und freie Tage gehören zum laufenden Plan — der Vorschlag fürs nächste Jahr
+ *  bringt sie nicht mit (der Ausflug war dieses Jahr).
  *  @param {PlanStand} stand @returns {PlanEntwurf} */
 export function entwurfAus(stand) {
 	const laufend = stand.plan && !stand.vorbei;
 	const quelle = laufend ? stand : (stand.vorschlag ?? { zeilen: [], ausgelassen: [] });
-	const zeilen = quelle.zeilen.map((z) => ({ klassen: [...z.klassen], vermerk: z.vermerk ?? '' }));
+	const zeilen = quelle.zeilen.map((z) => ({
+		klassen: [...z.klassen],
+		vermerk: z.vermerk ?? '',
+		fest: laufend && 'fest' in z && z.fest ? { datum: z.datum, stunde: z.stunde } : null
+	}));
 	const drin = new Set(zeilen.flatMap((z) => z.klassen.map(normKey)));
 	const ausgelassen = [...quelle.ausgelassen];
 	for (const k of ausgelassen) drin.add(normKey(k));
@@ -92,6 +103,7 @@ export function entwurfAus(stand) {
 		erster_tag: laufend && stand.plan ? stand.plan.erster_tag : '',
 		startstunde: laufend && stand.plan ? stand.plan.startstunde : 1,
 		stunden_je_tag: laufend && stand.plan ? stand.plan.stunden_je_tag : 6,
+		freie_tage: laufend && stand.plan ? [...(stand.plan.freie_tage ?? [])] : [],
 		zeilen,
 		ausgelassen: ausgelassen.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
 	};
@@ -118,13 +130,38 @@ async function sende(art, entwurf, vorschau) {
 	return { res, json };
 }
 
-/** Rechnet die Plätze, ohne zu speichern. Leer, wenn der Rahmen noch unvollständig ist.
- *  @param {string} art @param {PlanEntwurf} entwurf @returns {Promise<PlanPlatz[]>} */
+/** Rechnet die Plätze und die Ausfälle (Feiertage, freie Tage) ohne zu speichern. Leer,
+ *  wenn der Rahmen noch unvollständig ist.
+ *  @param {string} art @param {PlanEntwurf} entwurf
+ *  @returns {Promise<{ plaetze: PlanPlatz[], ausfaelle: Ausfall[] }>} */
 export async function rechneVorschau(art, entwurf) {
-	if (!entwurf.erster_tag) return [];
+	if (!entwurf.erster_tag) return { plaetze: [], ausfaelle: [] };
 	const { res, json } = await sende(art, entwurf, true);
 	if (!res.ok) throw new Error(json.error ?? json.message ?? 'Vorschau fehlgeschlagen');
-	return json.zeilen ?? [];
+	return { plaetze: json.zeilen ?? [], ausfaelle: json.ausfaelle ?? [] };
+}
+
+/** Alles am Entwurf, wovon die Plätze abhängen — als EIN Text, den die Vorschau
+ *  beobachtet: Rahmen, freie Tage, Anzahl der Zeilen und je Zeile der feste Platz.
+ *  Klassen und Vermerke stehen nicht drin: Sie ändern keinen Platz. Ein fester Platz
+ *  dagegen verschiebt die Zeilen um ihn herum, und sein Wechsel von Zeile zu Zeile
+ *  (Umsortieren) ebenfalls.
+ *  @param {PlanEntwurf} e */
+export function vorschauSchluessel(e) {
+	return [
+		e.erster_tag,
+		e.startstunde,
+		e.stunden_je_tag,
+		e.freie_tage.map((t) => t.datum).join(','),
+		e.zeilen.map((z) => (z.fest ? `${z.fest.datum}/${z.fest.stunde}` : '-')).join('|')
+	].join(';');
+}
+
+/** Die Plätze der Zeilen dürfen erst gespeichert werden, wenn jeder feste Platz ein
+ *  Datum hat — ein fester Termin ohne Tag ist kein „fließt eben".
+ *  @param {PlanZeile[]} zeilen */
+export function festePlaetzeVollstaendig(zeilen) {
+	return zeilen.every((z) => !z.fest || (Boolean(z.fest.datum) && z.fest.stunde >= 1));
 }
 
 /** Speichert den Plan. Gibt die Server-Meldung zurück — nur der Server kennt den Grund

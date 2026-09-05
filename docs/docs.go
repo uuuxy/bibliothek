@@ -2859,9 +2859,26 @@ const docTemplate = `{
                 }
             }
         },
+        "api.LmfPlanAusfall": {
+            "type": "object",
+            "properties": {
+                "datum": {
+                    "type": "string"
+                },
+                "grund": {
+                    "type": "string"
+                }
+            }
+        },
         "api.LmfPlanSpeicherAntwort": {
             "type": "object",
             "properties": {
+                "ausfaelle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.LmfPlanAusfall"
+                    }
+                },
                 "ausgelassen": {
                     "type": "array",
                     "items": {
@@ -3401,6 +3418,18 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.LmfFreierTag": {
+            "type": "object",
+            "properties": {
+                "datum": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "grund": {
+                    "type": "string"
+                }
+            }
+        },
         "repository.LmfPlan": {
             "type": "object",
             "properties": {
@@ -3410,6 +3439,13 @@ const docTemplate = `{
                 "erster_tag": {
                     "description": "YYYY-MM-DD",
                     "type": "string"
+                },
+                "freie_tage": {
+                    "description": "FreieTage: Tage, die dieser Plan überspringt (Migration 099) — bewegliche\nFerientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche\nFeiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfFreierTag"
+                    }
                 },
                 "id": {
                     "type": "string"
@@ -3431,6 +3467,9 @@ const docTemplate = `{
             "properties": {
                 "datum": {
                     "type": "string"
+                },
+                "fest": {
+                    "type": "boolean"
                 },
                 "klassen": {
                     "type": "array",

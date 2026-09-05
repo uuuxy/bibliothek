@@ -2,14 +2,17 @@
      Server auf Schultage × Stunden gießt (Peter, 05.09.2026, am echten Plan der Schule:
      Abschlussklassen zuerst, dann jeder Schultag Stunde 1–6, die Reihenfolge läuft über
      die Tage weiter). Oben der Rahmen, darunter die Reihenfolge als die bekannte Tabelle
-     mit Vorschau der Plätze, unten „Nicht im Plan". Ein neuer Plan beginnt mit der
-     Reihenfolge des Vorjahres. Gespeichert wird ausdrücklich — Rückgabe-Termine setzen
-     Fristen. Sitzt als Reiter auf der Seite „Schuljahreswechsel". -->
+     mit Vorschau der Plätze, unten „Nicht im Plan". Feiertage rechnet der Server, freie
+     Tage der Schule stehen am Plan, und eine Zeile kann ihren Platz fest bekommen (die
+     Klasse mit dem Ausflug). Ein neuer Plan beginnt mit der Reihenfolge des Vorjahres. Gespeichert wird ausdrücklich — Rückgabe-Termine setzen
+     Fristen. Menüpunkt System → „Schuljahreswechsel" (Peter, 05.09.2026 abends). -->
 <script>
 	import { onMount, untrack } from 'svelte';
+	import PageShell from './components/layout/PageShell.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
 	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
+	import LmfPlanFreieTage from './components/lmfplan/LmfPlanFreieTage.svelte';
 	import LmfPlanReihenfolge from './components/lmfplan/LmfPlanReihenfolge.svelte';
 	import LmfPlanVorrat from './components/lmfplan/LmfPlanVorrat.svelte';
 	import { showToast } from '../inventur/lib/store.svelte.js';
@@ -23,11 +26,14 @@
 		erster_tag: '',
 		startstunde: 1,
 		stunden_je_tag: 6,
+		freie_tage: [],
 		zeilen: [],
 		ausgelassen: []
 	});
 	/** @type {{ datum: string, stunde: number }[]} */
 	let plaetze = $state([]);
+	/** @type {import('./lmfplanDienst.js').Ausfall[]} */
+	let ausfaelle = $state([]);
 	let laedt = $state(true);
 	let speichert = $state(false);
 	// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan: Sonst stünde nach
@@ -54,10 +60,11 @@
 	// Vorschau: der Server rechnet die Plätze, sobald Rahmen oder Reihenfolge sich ändern
 	// (entprellt). Liest den Entwurf, schreibt NUR plaetze — kein Effekt auf eigenen State.
 	//
-	// Verfolgt werden Rahmen und ANZAHL der Zeilen, nicht ihr Inhalt: Der Platz einer Zeile
-	// hängt allein an ihrer Position; Umsortieren ändert die Plätze also nicht, ein
-	// Vermerk erst recht nicht. Zusammenlegen, Trennen, Einfügen und Entfernen ändern die
-	// Anzahl und lösen neu aus.
+	// Verfolgt wird der Vorschau-Schlüssel (lmfplanDienst.vorschauSchluessel): Rahmen,
+	// freie Tage, Anzahl der Zeilen und die festen Plätze je Zeile — nicht Klassen und
+	// Vermerke, die ändern keinen Platz. Ein fester Platz dagegen verschiebt die Zeilen um
+	// ihn herum, und wandert er beim Umsortieren in eine andere Zeile, gehört die
+	// Verteilung neu gerechnet.
 	//
 	// `laufNr` ist die Sequenznummer wie im orderStore: Zwei schnelle Änderungen schicken
 	// zwei Anfragen, und ohne Nummer könnte die ältere Antwort die jüngere überholen — die
@@ -65,9 +72,7 @@
 	// (Rasterfrage 6, Frontend-Lesart).
 	let laufNr = 0;
 	$effect(() => {
-		void entwurf.erster_tag;
-		void entwurf.startstunde;
-		void entwurf.stunden_je_tag;
+		void dienst.vorschauSchluessel(entwurf);
 		void entwurf.zeilen.length;
 		const aktuelleArt = art;
 		const timer = setTimeout(async () => {
@@ -78,7 +83,8 @@
 					untrack(() => JSON.parse(JSON.stringify(entwurf)))
 				);
 				if (meine !== laufNr) return; // eine jüngere Anfrage ist schon unterwegs oder da
-				plaetze = z.map((p) => ({ datum: p.datum, stunde: p.stunde }));
+				plaetze = z.plaetze.map((p) => ({ datum: p.datum, stunde: p.stunde }));
+				ausfaelle = z.ausfaelle;
 			} catch (e) {
 				if (meine === laufNr) showToast(`${e}`, 'error');
 			}
@@ -105,7 +111,8 @@
 
 	const gueltig = $derived(
 		Boolean(entwurf.erster_tag) &&
-			entwurf.zeilen.every((z) => z.klassen.length > 0 || z.vermerk.trim() !== '')
+			entwurf.zeilen.every((z) => z.klassen.length > 0 || z.vermerk.trim() !== '') &&
+			dienst.festePlaetzeVollstaendig(entwurf.zeilen)
 	);
 
 	async function speichern() {
@@ -142,42 +149,45 @@
 	});
 </script>
 
-<LmfPlanKopf
-	{art}
-	{stand}
-	{laedt}
-	{ladeFehler}
-	{gueltig}
-	{speichert}
-	onart={(w) => {
-		art = w;
-		lade();
-	}}
-	onpdf={pdf}
-	onverwerfen={verwerfen}
-	onspeichern={speichern}
-/>
-
-{#if laedt}
-	<div class="flex items-center justify-center py-12">
-		<div
-			class="h-8 w-8 animate-spin rounded-full border-2 border-surface-container-high border-t-primary"
-		></div>
-	</div>
-{:else if ladeFehler}
-	<LadeFehler
-		onerneut={lade}
-		titel="Plan nicht geladen"
-		text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
+<PageShell>
+	<LmfPlanKopf
+		{art}
+		{stand}
+		{laedt}
+		{ladeFehler}
+		{gueltig}
+		{speichert}
+		onart={(w) => {
+			art = w;
+			lade();
+		}}
+		onpdf={pdf}
+		onverwerfen={verwerfen}
+		onspeichern={speichern}
 	/>
-{:else}
-	<div class="mt-4 space-y-6">
-		<LmfPlanRahmen
-			bind:ersterTag={entwurf.erster_tag}
-			bind:startstunde={entwurf.startstunde}
-			bind:stundenJeTag={entwurf.stunden_je_tag}
+
+	{#if laedt}
+		<div class="flex items-center justify-center py-12">
+			<div
+				class="h-8 w-8 animate-spin rounded-full border-2 border-surface-container-high border-t-primary"
+			></div>
+		</div>
+	{:else if ladeFehler}
+		<LadeFehler
+			onerneut={lade}
+			titel="Plan nicht geladen"
+			text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
 		/>
-		<LmfPlanReihenfolge bind:zeilen={entwurf.zeilen} {plaetze} onklasseraus={klasseRaus} />
-		<LmfPlanVorrat klassen={entwurf.ausgelassen} onhinein={klasseHinein} />
-	</div>
-{/if}
+	{:else}
+		<div class="mt-4 space-y-6">
+			<LmfPlanRahmen
+				bind:ersterTag={entwurf.erster_tag}
+				bind:startstunde={entwurf.startstunde}
+				bind:stundenJeTag={entwurf.stunden_je_tag}
+			/>
+			<LmfPlanFreieTage bind:tage={entwurf.freie_tage} {ausfaelle} />
+			<LmfPlanReihenfolge bind:zeilen={entwurf.zeilen} {plaetze} onklasseraus={klasseRaus} />
+			<LmfPlanVorrat klassen={entwurf.ausgelassen} onhinein={klasseHinein} />
+		</div>
+	{/if}
+</PageShell>

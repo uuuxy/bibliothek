@@ -53,8 +53,8 @@ func speicherePlan(t *testing.T, repo *LmfTerminRepository, art, ersterTag strin
 	if err != nil {
 		t.Fatal(err)
 	}
-	plaetze := lmfplan.Verteile(lmfplan.Rahmen{ErsterTag: tag, Startstunde: startstunde, StundenJeTag: stundenJeTag},
-		len(zeilen), lmfplan.Schultage(nil))
+	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag, Startstunde: startstunde, StundenJeTag: stundenJeTag},
+		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
 	st, err := repo.SaveLmfPlan(context.Background(),
 		LmfPlan{Art: art, ErsterTag: ersterTag, Startstunde: startstunde, StundenJeTag: stundenJeTag},
 		zeilen, plaetze, ausgelassen)

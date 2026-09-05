@@ -44,8 +44,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	seedSQL(`DELETE FROM lmf_plaene WHERE art = 'ausgabe';`);
 
 	await uiLogin(page);
-	await gehZu(page, '/schuljahr/lmf-plan');
-	await expect(page.getByRole('tab', { name: 'LMF-Plan', selected: true })).toBeVisible();
+	await gehZu(page, '/schuljahr');
 	await page.getByRole('button', { name: 'Bücherausgabe' }).click();
 	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
 
@@ -147,6 +146,66 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 		expect(verboten.status(), 'Kollegium schreibt den Plan').toBe(403);
 	} finally {
 		await lehrerKontext.close();
+		seedSQL(`DELETE FROM lmf_plaene WHERE art = 'ausgabe';`);
+	}
+});
+
+// Feiertage und Ausflüge (Peter, 05.09.2026 abends): Ein freier Tag des Plans verschiebt
+// den Beginn, der Hinweis nennt ihn mit Grund; eine Zeile mit festem Platz behält Datum
+// und Stunde über das Speichern hinweg — im API-Stand als fest markiert, nach dem
+// Neuladen wieder als Eingabefeld. Auch hier die AUSGABE, sie setzt keine Fristen.
+test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Speichern', async ({
+	page
+}) => {
+	const s = uniqueSuffix();
+	const klasse = `07H${s.slice(-2)}`.toUpperCase();
+	seedSQL(`DELETE FROM lmf_plaene WHERE art = 'ausgabe';`);
+
+	await uiLogin(page);
+	await gehZu(page, '/schuljahr');
+	await page.getByRole('button', { name: 'Bücherausgabe' }).click();
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
+	await page.getByLabel('Weitere Klasse').fill(klasse);
+	await page.getByRole('button', { name: 'In den Plan' }).click();
+
+	const tabelle = page.getByTestId('lmf-reihenfolge');
+	const erste = tabelle.getByRole('row').nth(1);
+	await page.getByLabel('Erster Tag').fill('2027-08-09'); // Montag
+	await expect(erste).toContainText('09.08.27');
+
+	// Der erste Tag wird freigehalten: Der Plan beginnt am Dienstag, der Grund steht da.
+	await page.getByLabel('Freier Tag').fill('2027-08-09');
+	await page.getByLabel('Grund', { exact: true }).fill('Pädagogischer Tag');
+	await page.getByRole('button', { name: 'Tag freihalten' }).click();
+	await expect(erste).toContainText('Dienstag');
+	await expect(erste).toContainText('10.08.27');
+	await expect(page.getByTestId('lmf-ausfaelle')).toContainText('Pädagogischer Tag');
+
+	// Unsere Klasse hat am Freitag 20.08. ihren Termin — fest, egal wo sie in der
+	// Reihenfolge steht.
+	const zeile = tabelle.getByRole('row').filter({ hasText: klasse });
+	const nummer = Number(await zeile.getByRole('cell').first().innerText());
+	await zeile.getByLabel(`Zeile ${nummer} festlegen`).click();
+	await zeile.getByLabel(`Fester Tag Zeile ${nummer}`).fill('2027-08-20');
+	await expect(zeile).toContainText('Freitag');
+
+	await page.getByRole('button', { name: 'Plan speichern' }).click();
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Plan vom 09.08.27');
+	try {
+		const stand = await (await page.request.get('/api/lmf-plan/ausgabe')).json();
+		const gespeichert = stand.zeilen.find((/** @type {any} */ z) => z.klassen.includes(klasse));
+		expect(gespeichert?.fest, 'fest-Marke im gespeicherten Plan').toBe(true);
+		expect(gespeichert?.datum).toBe('2027-08-20');
+		expect(stand.plan.freie_tage).toEqual([{ datum: '2027-08-09', grund: 'Pädagogischer Tag' }]);
+
+		// Nach dem Neuladen ist der feste Platz wieder ein Eingabefeld mit seinem Datum.
+		await page.reload();
+		await page.getByRole('button', { name: 'Bücherausgabe' }).click();
+		await expect(
+			tabelle.getByRole('row').filter({ hasText: klasse }).getByLabel(`Fester Tag Zeile ${nummer}`)
+		).toHaveValue('2027-08-20');
+		await expect(page.getByTestId('lmf-freie-tage')).toContainText('09.08.27 Pädagogischer Tag');
+	} finally {
 		seedSQL(`DELETE FROM lmf_plaene WHERE art = 'ausgabe';`);
 	}
 });

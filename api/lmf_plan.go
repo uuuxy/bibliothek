@@ -3,8 +3,10 @@ package api
 // lmf_plan.go — der LMF-Plan als Reihenfolge (Peter, 05.09.2026 abends, nach dem
 // echten Plan der Schule): Rahmen (erster Tag, Startstunde, Stunden je Tag) plus eine
 // Reihenfolge von Zeilen (Klassen, Vermerk); Datum und Stunde jeder Zeile rechnet der
-// Server (pkg/lmfplan) über die Schultage — Wochenende und Ferien fallen aus. Die
-// Vorschau im Planer ist DERSELBE Aufruf mit "vorschau": true, damit es keinen
+// Server (pkg/lmfplan) über die Schultage — Wochenende, gesetzliche Feiertage (Hessen),
+// Ferien und die freien Tage des Plans fallen aus; eine Zeile kann ihren Platz fest
+// vorgeben (die Klasse mit dem Ausflug, Migration 099), die anderen fließen um sie
+// herum. Die Vorschau im Planer ist DERSELBE Aufruf mit "vorschau": true, damit es keinen
 // JavaScript-Zwilling der Verteilung gibt. Ein Plan je Art und Schuljahr; GET liefert
 // den neuesten der Art und, wenn er vorbei ist, dieselbe Reihenfolge als Vorschlag für
 // den nächsten (Klassennamen bleiben Jahr für Jahr gleich — die Versetzung verschiebt
@@ -153,61 +155,108 @@ type lmfPlanRequest struct {
 	ErsterTag    string `json:"erster_tag"`
 	Startstunde  int    `json:"startstunde"`
 	StundenJeTag int    `json:"stunden_je_tag"`
-	Zeilen       []struct {
+	// FreieTage: Tage, die der Plan überspringt (Brückentag, pädagogischer Tag).
+	FreieTage []struct {
+		Datum string `json:"datum"`
+		Grund string `json:"grund"`
+	} `json:"freie_tage"`
+	Zeilen []struct {
 		Klassen []string `json:"klassen"`
 		Vermerk string   `json:"vermerk"`
+		// Fest: Datum und Stunde dieser Zeile von Hand — null, wenn sie fließt.
+		Fest *struct {
+			Datum  string `json:"datum"`
+			Stunde int    `json:"stunde"`
+		} `json:"fest"`
 	} `json:"zeilen"`
 	Ausgelassen []string `json:"ausgelassen"`
 	// Vorschau: nur rechnen, nichts schreiben — die Verteilung für den Planer.
 	Vorschau bool `json:"vorschau"`
 }
 
-// LmfPlanSpeicherAntwort ist die Antwort von PUT: der Stand und die Zahl der Ausleihen, deren
-// Frist dem Plan gefolgt ist (0 bei Vorschau und bei Ausgabe-Plänen).
+// LmfPlanAusfall ist ein Werktag im Plan-Zeitraum, an dem der Plan nicht läuft — mit
+// Grund, damit der Planer den fehlenden Donnerstag erklärt.
+type LmfPlanAusfall struct {
+	Datum string `json:"datum"`
+	Grund string `json:"grund"`
+}
+
+// LmfPlanSpeicherAntwort ist die Antwort von PUT: der Stand, die Ausfälle im Plan-
+// Zeitraum und die Zahl der Ausleihen, deren Frist dem Plan gefolgt ist (0 bei
+// Vorschau und bei Ausgabe-Plänen).
 type LmfPlanSpeicherAntwort struct {
 	repository.LmfPlanStand
-	Vorschau         bool  `json:"vorschau"`
-	FristenAngepasst int64 `json:"fristen_angepasst"`
+	Vorschau         bool             `json:"vorschau"`
+	Ausfaelle        []LmfPlanAusfall `json:"ausfaelle"`
+	FristenAngepasst int64            `json:"fristen_angepasst"`
 }
 
 const lmfPlanMaxZeilen = 400
 
-// pruefeLmfPlan validiert fachlich und liefert Rahmen und Zeilen.
-func pruefeLmfPlan(art string, req lmfPlanRequest) (repository.LmfPlan, []repository.LmfPlanZeile, []string, error) {
-	plan := repository.LmfPlan{Art: art, ErsterTag: strings.TrimSpace(req.ErsterTag),
-		Startstunde: req.Startstunde, StundenJeTag: req.StundenJeTag}
-	if _, err := time.Parse("2006-01-02", plan.ErsterTag); err != nil {
-		return plan, nil, nil, errors.New("erster_tag muss als JJJJ-MM-TT angegeben sein")
+// lmfPlanEntwurf ist das geprüfte Ergebnis einer Anfrage: Rahmen, Zeilen, je Zeile der
+// feste Platz (nil = fließt) und die ausgelassenen Klassen.
+type lmfPlanEntwurf struct {
+	Plan        repository.LmfPlan
+	Zeilen      []repository.LmfPlanZeile
+	Fest        []*lmfplan.Platz
+	Ausgelassen []string
+}
+
+// pruefeLmfPlan validiert fachlich und liefert den Entwurf.
+func pruefeLmfPlan(art string, req lmfPlanRequest) (lmfPlanEntwurf, error) {
+	e := lmfPlanEntwurf{Plan: repository.LmfPlan{Art: art, ErsterTag: strings.TrimSpace(req.ErsterTag),
+		Startstunde: req.Startstunde, StundenJeTag: req.StundenJeTag, FreieTage: []repository.LmfFreierTag{}}}
+	if _, err := time.Parse("2006-01-02", e.Plan.ErsterTag); err != nil {
+		return e, errors.New("erster_tag muss als JJJJ-MM-TT angegeben sein")
 	}
-	if plan.StundenJeTag < 1 || plan.StundenJeTag > 12 {
-		return plan, nil, nil, errors.New("stunden_je_tag muss zwischen 1 und 12 liegen")
+	if e.Plan.StundenJeTag < 1 || e.Plan.StundenJeTag > 12 {
+		return e, errors.New("stunden_je_tag muss zwischen 1 und 12 liegen")
 	}
-	if plan.Startstunde < 1 || plan.Startstunde > plan.StundenJeTag {
-		return plan, nil, nil, errors.New("startstunde muss zwischen 1 und stunden_je_tag liegen")
+	if e.Plan.Startstunde < 1 || e.Plan.Startstunde > e.Plan.StundenJeTag {
+		return e, errors.New("startstunde muss zwischen 1 und stunden_je_tag liegen")
 	}
-	if len(req.Zeilen) > lmfPlanMaxZeilen {
-		return plan, nil, nil, errors.New("zu viele Zeilen")
+	if len(req.Zeilen) > lmfPlanMaxZeilen || len(req.FreieTage) > lmfPlanMaxZeilen {
+		return e, errors.New("zu viele Zeilen")
 	}
-	zeilen := make([]repository.LmfPlanZeile, 0, len(req.Zeilen))
+	for i, f := range req.FreieTage {
+		datum := strings.TrimSpace(f.Datum)
+		if _, err := time.Parse("2006-01-02", datum); err != nil {
+			return e, fmt.Errorf("freier Tag %d: Datum muss als JJJJ-MM-TT angegeben sein", i+1)
+		}
+		e.Plan.FreieTage = append(e.Plan.FreieTage, repository.LmfFreierTag{Datum: datum, Grund: strings.TrimSpace(f.Grund)})
+	}
+	e.Zeilen = make([]repository.LmfPlanZeile, 0, len(req.Zeilen))
+	e.Fest = make([]*lmfplan.Platz, 0, len(req.Zeilen))
 	for i, z := range req.Zeilen {
-		zeile := repository.LmfPlanZeile{Vermerk: strings.TrimSpace(z.Vermerk)}
+		zeile := repository.LmfPlanZeile{Vermerk: strings.TrimSpace(z.Vermerk), Fest: z.Fest != nil}
 		for _, k := range z.Klassen {
 			if k = strings.TrimSpace(k); k != "" {
 				zeile.Klassen = append(zeile.Klassen, k)
 			}
 		}
 		if len(zeile.Klassen) == 0 && zeile.Vermerk == "" {
-			return plan, nil, nil, fmt.Errorf("zeile %d hat weder Klasse noch Vermerk", i+1)
+			return e, fmt.Errorf("zeile %d hat weder Klasse noch Vermerk", i+1)
 		}
-		zeilen = append(zeilen, zeile)
+		var fest *lmfplan.Platz
+		if z.Fest != nil {
+			tag, err := planTag(strings.TrimSpace(z.Fest.Datum))
+			if err != nil {
+				return e, fmt.Errorf("zeile %d: fester Termin braucht ein Datum (JJJJ-MM-TT)", i+1)
+			}
+			if z.Fest.Stunde < 1 || z.Fest.Stunde > 12 {
+				return e, fmt.Errorf("zeile %d: feste Stunde muss zwischen 1 und 12 liegen", i+1)
+			}
+			fest = &lmfplan.Platz{Datum: tag, Stunde: z.Fest.Stunde}
+		}
+		e.Zeilen = append(e.Zeilen, zeile)
+		e.Fest = append(e.Fest, fest)
 	}
-	var ausgelassen []string
 	for _, k := range req.Ausgelassen {
 		if k = strings.TrimSpace(k); k != "" {
-			ausgelassen = append(ausgelassen, k)
+			e.Ausgelassen = append(e.Ausgelassen, k)
 		}
 	}
-	return plan, zeilen, ausgelassen, nil
+	return e, nil
 }
 
 // PutLmfPlanHandler rechnet die Verteilung und speichert den Plan (oder zeigt sie nur).
@@ -227,32 +276,32 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 		if !DecodeAndValidate(w, r, &req) {
 			return nil
 		}
-		plan, zeilen, ausgelassen, err := pruefeLmfPlan(art, req)
+		e, err := pruefeLmfPlan(art, req)
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), err)
 		}
 		repo := repository.NewLmfTerminRepository(s.DB.Pool)
-		plaetze, err := s.verteileLmfPlan(r.Context(), repo, plan, len(zeilen))
+		plaetze, ausfaelle, err := s.verteileLmfPlan(r.Context(), repo, e)
 		if err != nil {
 			return apierrors.Internal("Verteilung rechnen", err)
 		}
 		if req.Vorschau {
-			for i := range zeilen {
-				zeilen[i].Position = i + 1
-				zeilen[i].Datum = plaetze[i].Datum.Format("2006-01-02")
-				zeilen[i].Stunde = plaetze[i].Stunde
+			for i := range e.Zeilen {
+				e.Zeilen[i].Position = i + 1
+				e.Zeilen[i].Datum = plaetze[i].Datum.Format("2006-01-02")
+				e.Zeilen[i].Stunde = plaetze[i].Stunde
 			}
-			RespondJSON(w, http.StatusOK, LmfPlanSpeicherAntwort{Vorschau: true,
-				LmfPlanStand: repository.LmfPlanStand{Plan: plan, Zeilen: zeilen, Ausgelassen: ausgelassen}})
+			RespondJSON(w, http.StatusOK, LmfPlanSpeicherAntwort{Vorschau: true, Ausfaelle: ausfaelle,
+				LmfPlanStand: repository.LmfPlanStand{Plan: e.Plan, Zeilen: e.Zeilen, Ausgelassen: e.Ausgelassen}})
 			return nil
 		}
 		// Den alten Stand DIESES Schuljahres lesen: Klassen, die ihren Termin verlieren,
 		// kehren zum Stichtag zurück (lmf_termine_frist.go).
-		alt, err := s.lmfPlanZeilenVorher(r.Context(), repo, art, plan.ErsterTag)
+		alt, err := s.lmfPlanZeilenVorher(r.Context(), repo, art, e.Plan.ErsterTag)
 		if err != nil {
 			return apierrors.Internal("alten Plan lesen", err)
 		}
-		stand, err := repo.SaveLmfPlan(r.Context(), plan, zeilen, plaetze, ausgelassen)
+		stand, err := repo.SaveLmfPlan(r.Context(), e.Plan, e.Zeilen, plaetze, e.Ausgelassen)
 		if err != nil {
 			return apierrors.Internal("LMF-Plan speichern", err)
 		}
@@ -260,24 +309,48 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Fristen koppeln", err)
 		}
-		RespondJSON(w, http.StatusOK, LmfPlanSpeicherAntwort{LmfPlanStand: stand, FristenAngepasst: angepasst})
+		RespondJSON(w, http.StatusOK, LmfPlanSpeicherAntwort{LmfPlanStand: stand, Ausfaelle: ausfaelle, FristenAngepasst: angepasst})
 		return nil
 	})
 }
 
-// verteileLmfPlan rechnet die Plätze über die Schultage; Ferien aus der Datenbank.
-func (s *Server) verteileLmfPlan(ctx context.Context, repo *repository.LmfTerminRepository, plan repository.LmfPlan, n int) ([]lmfplan.Platz, error) {
-	ersterTag, err := planTag(plan.ErsterTag)
+// verteileLmfPlan rechnet die Plätze über die Schultage — Ferien aus der Datenbank,
+// freie Tage des Plans, gesetzliche Feiertage aus pkg/lmfplan — und nennt die
+// Ausfälle vom ersten Tag bis zum letzten Platz.
+func (s *Server) verteileLmfPlan(ctx context.Context, repo *repository.LmfTerminRepository, e lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanAusfall, error) {
+	ersterTag, err := planTag(e.Plan.ErsterTag)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// Großzügiges Fenster: 400 Zeilen bei einer Stunde je Tag sind 80 Schulwochen.
 	frei, err := repo.FreieTage(ctx, ersterTag, ersterTag.AddDate(2, 0, 0))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	r := lmfplan.Rahmen{ErsterTag: ersterTag, Startstunde: plan.Startstunde, StundenJeTag: plan.StundenJeTag}
-	return lmfplan.Verteile(r, n, lmfplan.Schultage(frei)), nil
+	for _, f := range e.Plan.FreieTage {
+		tag, err := planTag(f.Datum)
+		if err != nil {
+			return nil, nil, err
+		}
+		grund := f.Grund
+		if grund == "" {
+			grund = "freier Tag"
+		}
+		frei = append(frei, lmfplan.Zeitraum{Von: tag, Bis: tag, Name: grund})
+	}
+	r := lmfplan.Rahmen{ErsterTag: ersterTag, Startstunde: e.Plan.Startstunde, StundenJeTag: e.Plan.StundenJeTag}
+	plaetze := lmfplan.VerteileMit(r, e.Fest, lmfplan.Schultage(frei))
+	letzter := ersterTag
+	for _, p := range plaetze {
+		if p.Datum.After(letzter) {
+			letzter = p.Datum
+		}
+	}
+	ausfaelle := []LmfPlanAusfall{}
+	for _, a := range lmfplan.Ausfaelle(ersterTag, letzter, frei) {
+		ausfaelle = append(ausfaelle, LmfPlanAusfall{Datum: a.Datum.Format("2006-01-02"), Grund: a.Grund})
+	}
+	return plaetze, ausfaelle, nil
 }
 
 // lmfPlanZeilenVorher liest die Zeilen des Plans, den das Speichern gleich ersetzt —

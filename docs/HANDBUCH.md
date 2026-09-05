@@ -110,13 +110,12 @@ _Bücher verwalten_ sind nur die handgepflegten Titel vorgewählt, ein abgeleite
 per Haken übernehmen. Gibt die Klasse die Bücher zurück, verschwindet das Abzeichen wieder.
 Das Kollegium sieht dieselben Einträge in _Mein Portal → Klassensätze_.
 
-## Schuljahreswechsel
+## Schuljahreswechsel (LMF-Plan)
 
-Die Aufgaben, die ein- bis zweimal im Jahr anfallen, an einem Ort (Menü _Verwaltung →
-Schuljahreswechsel_, seit 05.09.2026 abends; vorher drei Menüpunkte): drei Reiter, jeder
-nur für die, die das Recht der Aufgabe haben.
-
-### LMF-Plan
+Menü _System → Schuljahreswechsel_ (seit 05.09.2026; der Plan wird ein- bis zweimal im
+Jahr gebraucht und steht deshalb nicht dauerhaft im Bibliotheks-Menü). Abgänger bleiben
+unter _Verwaltung_, der LUSD-Abgleich mit Versetzung unter _Einstellungen →
+Schuljahreswechsel_.
 
 Rückgabe- und Ausgabetermine je Klasse — die frühere Excel-Liste der Schule. **Der Plan
 ist eine Reihenfolge von Klassen, die das Programm auf Schultage und Stunden verteilt:**
@@ -127,6 +126,16 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 - Oben _Bücherrückgabe_ / _Bücherausgabe_ umschalten; je Art gibt es einen Plan pro
   Schuljahr. Rechts _Als PDF_, _Plan verwerfen_, _Plan speichern_.
 - **Rahmen**: erster Tag, Beginn am ersten Tag (der Donnerstag im Juni begann in der 3. Stunde), Stunden je Tag (Vorgabe 6).
+- **Freie Tage**: Wochenenden und die gesetzlichen Feiertage Hessens (Fronleichnam!)
+  überspringt der Plan von selbst; bewegliche Ferientage, pädagogische Tage und
+  Brückentage trägt man hier mit Datum und Grund ein. Darunter steht _Übersprungen: …_
+  mit jedem Werktag im Plan-Zeitraum, der ausfällt, und seinem Grund — so ist ein
+  fehlender Donnerstag in der Tabelle erklärt.
+- **Fester Platz** (Stecknadel in der Zeile): Die Klasse mit dem Ausflug bekommt Datum
+  und Stunde von Hand — vorbelegt mit ihrem bisherigen Platz —, die übrigen Zeilen
+  fließen um sie herum und lassen die belegte Stunde aus. _Lösen_ gibt die Zeile dem
+  Fluss zurück. Feste Plätze gelten für diesen Plan; der Vorschlag fürs nächste Jahr
+  bringt sie nicht mit.
 - **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Zeilen ziehen oder mit den
   Pfeilen schieben; _zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"),
   _trennen_ macht daraus wieder zwei; _davor einfügen_ setzt eine Zeile ohne Klasse
@@ -152,9 +161,6 @@ die Fristen an den allgemeinen Stichtag zurück (_Einstellungen → Ausleihe_, V
 31.07.). Nicht angefasst: gesperrte Schüler, mehrjährige Ausleihen, von Hand gesetzte
 Fristen und Ausgabe-Pläne. (§2.3)
 
-Die Reiter _Abgänger_ (→ Abschnitt Abgänger) und _LUSD & Versetzung_ (→ [LUSD.md](LUSD.md))
-stehen daneben.
-
 ## Schülerdatei
 
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
@@ -164,7 +170,7 @@ stehen daneben.
   Grund. (§14)
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
 - **Neuer Schüler** per Formular; klassenweise besser über den LUSD-Import
-  (_Schuljahreswechsel → LUSD & Versetzung_).
+  (_Einstellungen → Schuljahreswechsel_).
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**; endgültiges
   Löschen/Anonymisieren nur mit Namensbestätigung (DSGVO-Kette, §8).
