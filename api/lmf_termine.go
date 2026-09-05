@@ -69,6 +69,13 @@ func (s *Server) GetLmfTermineHandler() http.HandlerFunc {
 	})
 }
 
+// LmfTerminAntwort ist die Antwort von POST/PUT: die gespeicherte Zeile und die Zahl der
+// Ausleihen, deren Frist dem Plan gefolgt ist (lmf_termine_frist.go).
+type LmfTerminAntwort struct {
+	repository.LmfTermin
+	FristenAngepasst int64 `json:"fristen_angepasst"`
+}
+
 // lmfTerminRequest ist der Körper von POST und PUT.
 type lmfTerminRequest struct {
 	Datum   string   `json:"datum"`
@@ -109,7 +116,7 @@ func pruefeLmfTermin(req lmfTerminRequest) (repository.LmfTermin, error) {
 // @Tags         lernmittel
 // @Accept       json
 // @Produce      json
-// @Success      201  {object}  repository.LmfTermin
+// @Success      201  {object}  LmfTerminAntwort
 // @Router       /lmf-termine [post]
 func (s *Server) CreateLmfTerminHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -122,7 +129,7 @@ func (s *Server) CreateLmfTerminHandler() http.HandlerFunc {
 // @Tags         lernmittel
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  repository.LmfTermin
+// @Success      200  {object}  LmfTerminAntwort
 // @Router       /lmf-termine/{id} [put]
 func (s *Server) UpdateLmfTerminHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -142,10 +149,12 @@ func (s *Server) speichereLmfTermin(w http.ResponseWriter, r *http.Request, id s
 	}
 	t.ID = id
 	repo := repository.NewLmfTerminRepository(s.DB.Pool)
+	var alt *repository.LmfTermin
 	if id != "" {
 		// Den alten Stand lesen, bevor er überschrieben wird: 404 statt eines stillen
-		// Nichts, und (Frist-Kopplung) die Klassen, die den Termin gleich verlieren.
-		if _, err := repo.GetLmfTermin(r.Context(), id); err != nil {
+		// Nichts, und für die Frist-Kopplung die Klassen, die den Termin gleich verlieren.
+		vorher, err := repo.GetLmfTermin(r.Context(), id)
+		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("termin nicht gefunden"))
 			} else {
@@ -153,6 +162,7 @@ func (s *Server) speichereLmfTermin(w http.ResponseWriter, r *http.Request, id s
 			}
 			return
 		}
+		alt = &vorher
 	}
 	gespeichert, err := repo.SaveLmfTermin(r.Context(), t)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -163,31 +173,47 @@ func (s *Server) speichereLmfTermin(w http.ResponseWriter, r *http.Request, id s
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
+	angepasst, err := s.koppleLmfFristen(r.Context(), alt, &gespeichert)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return
+	}
 	status := http.StatusOK
 	if id == "" {
 		status = http.StatusCreated
 	}
-	RespondJSON(w, status, gespeichert)
+	RespondJSON(w, status, LmfTerminAntwort{LmfTermin: gespeichert, FristenAngepasst: angepasst})
 }
 
-// DeleteLmfTerminHandler entfernt einen Termin.
+// DeleteLmfTerminHandler entfernt einen Termin; die Fristen seiner Klassen gehen an den
+// Stichtag zurück (nur die, die auf dem Termin lagen).
 // @Summary      LMF-Termin löschen
 // @Tags         lernmittel
-// @Success      204
+// @Produce      json
+// @Success      200  {object}  map[string]int64
 // @Router       /lmf-termine/{id} [delete]
 func (s *Server) DeleteLmfTerminHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		repo := repository.NewLmfTerminRepository(s.DB.Pool)
-		weg, err := repo.DeleteLmfTermin(r.Context(), r.PathValue("id"))
+		alt, err := repo.GetLmfTermin(r.Context(), r.PathValue("id"))
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("termin nicht gefunden"))
+			return
+		}
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		if !weg {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("termin nicht gefunden"))
+		if _, err := repo.DeleteLmfTermin(r.Context(), alt.ID); err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
+		angepasst, err := s.koppleLmfFristen(r.Context(), &alt, nil)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		RespondJSON(w, http.StatusOK, map[string]int64{"fristen_angepasst": angepasst})
 	}
 }
 

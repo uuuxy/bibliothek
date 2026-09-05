@@ -266,6 +266,9 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(rows)
+	// Kein Klassen-Termin im LMF-Plan → der Stichtag bleibt.
+	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"min"}).AddRow((*time.Time)(nil)))
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
 	copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
@@ -275,6 +278,46 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 	}
 	if got.Month() != time.July || got.Day() != 31 {
 		t.Errorf("LMF soll Stichtag (31.07) folgen, nicht Leseclub: got %v", got)
+	}
+}
+
+// LMF-Plan (Register, Entscheidung 3a): Nennt der Plan für die Klasse einen Rückgabe-
+// Termin, ist der die Frist — vor dem Stichtag. Eine mehrjährige Ausleihe folgt ihm nicht.
+func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
+	svc, mock := newServiceWithMock(t)
+	defer mock.Close()
+
+	termin := time.Date(2027, time.June, 28, 0, 0, 0, 0, time.UTC)
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
+	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"min"}).AddRow(&termin))
+
+	copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9H1")
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if got.Year() != 2027 || got.Month() != time.June || got.Day() != 28 || got.Hour() != 23 {
+		t.Errorf("Frist soll das Tagesende des Klassen-Termins sein: got %v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("unerfüllte Erwartungen: %v", err)
+	}
+
+	// Mehrjährig (Ziel-Jahrgang über dem aktuellen): kein Lookup, Stichtag im Zieljahr.
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
+	mehrjahr := &repository.BookCopy{Titel: "Atlas", IstLernmittel: true, Medientyp: "Buch", ZielJahrgang: 10}
+	got, err = svc.resolveCheckoutDueDate(context.Background(), mehrjahr, "9H1")
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if got.Month() != time.July || got.Day() != 31 {
+		t.Errorf("mehrjährig soll beim Stichtag bleiben: got %v", got)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("mehrjährig: unerwarteter Lookup? %v", err)
 	}
 }
 

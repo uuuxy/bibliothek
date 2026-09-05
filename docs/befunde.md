@@ -120,9 +120,12 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    `api/graduates_pg_test.go` und `AbgaengerTabelle.test.js`.
 
 3. **LMF-Plan: Rückgabe- und Ausgabetermine je Klasse statt Excel** (05.09.2026, Peters
-   Vorschlag, zwei Listen der Schule gesehen). **GEBAUT 05.09.2026** (Migration 096,
-   `api/lmf_termine.go`, Seite _LMF-Plan_, Portal-Reiter, PDF, E2E) — offen daraus nur
-   noch (a), die Frist-Kopplung, als eigener Commit. Die Schule führt eine Tabelle Wochentag,
+   Vorschlag, zwei Listen der Schule gesehen). **KOMPLETT GEBAUT 05.09.2026** (Migration 096,
+   `api/lmf_termine.go`, Seite _LMF-Plan_, Portal-Reiter, PDF, E2E; Frist-Kopplung
+   `api/lmf_termine_frist.go` + `resolveCheckoutDueDate`, Rückweg zum Stichtag nur für
+   Fristen auf dem Termin-Tag). Beifund: `repository.KlassenSchluessel` (Go) kennt die
+   führende Null nicht, `klassen_normkey` (SQL) schon — für Klassenvergleiche gegen die
+   Akte immer die SQL-Normalform nehmen. Die Schule führt eine Tabelle Wochentag,
    Datum, Stunde, Klasse(n), Besonderheiten: vor den Sommerferien „Bücherrückgabe" für alle
    Klassen, Abschlussklassen zuerst; wer keine Abschlussklasse ist, bekommt am selben Termin
    die neuen Bücher; nach den Ferien „Bücherausgabe" für die neu gebildeten Klassen (5er,

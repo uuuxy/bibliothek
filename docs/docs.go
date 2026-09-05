@@ -1554,7 +1554,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/repository.LmfTermin"
+                            "$ref": "#/definitions/api.LmfTerminAntwort"
                         }
                     }
                 }
@@ -1588,19 +1588,29 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/repository.LmfTermin"
+                            "$ref": "#/definitions/api.LmfTerminAntwort"
                         }
                     }
                 }
             },
             "delete": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "lernmittel"
                 ],
                 "summary": "LMF-Termin löschen",
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer",
+                                "format": "int64"
+                            }
+                        }
                     }
                 }
             }
@@ -2849,6 +2859,36 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/repository.LmfTermin"
                     }
+                }
+            }
+        },
+        "api.LmfTerminAntwort": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "datum": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "fristen_angepasst": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "klassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stunde": {
+                    "type": "integer"
+                },
+                "vermerk": {
+                    "type": "string"
                 }
             }
         },

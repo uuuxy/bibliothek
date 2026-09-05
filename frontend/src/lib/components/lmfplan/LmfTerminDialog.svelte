@@ -83,6 +83,13 @@
 			onwahl={(/** @type {string} */ w) => (art = w)}
 		/>
 
+		{#if art === 'rueckgabe'}
+			<p class="text-xs text-on-surface-variant">
+				Der Rückgabe-Termin wird die Frist der Schulbücher dieser Klassen — auch für Bücher, die
+				schon draußen sind.
+			</p>
+		{/if}
+
 		<div class="grid grid-cols-2 gap-4">
 			<Feld id="lmf-termin-datum" label="Datum" type="date" bind:value={datum} />
 			<div>

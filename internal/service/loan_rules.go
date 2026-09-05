@@ -254,6 +254,18 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 		}), nil
 	}
 
+	// LMF-Plan (Register, Entscheidung 3a): Nennt der Plan für die Klasse einen
+	// Rückgabe-Termin, ist der die Frist ihrer Schulbücher — vor dem globalen Stichtag.
+	// Nur für die einjährige Ausleihe; eine mehrjährige rechnet weiter über den Stichtag.
+	// Ein Fehler beim Nachschlagen blockiert die Ausleihe nicht: dann gilt der Stichtag.
+	if copy.IstLernmittel && additionalYears == 0 && borrowerKlasse != "" {
+		heute := time.Now().In(schoolLocation())
+		if termin, ok, err := repository.NewLmfTerminRepository(s.pool).
+			RueckgabeTerminFuerKlasse(ctx, borrowerKlasse, heute); err == nil && ok {
+			return TagesEndeInSchulzeitzone(termin), nil
+		}
+	}
+
 	// Leseclub-Regel: Falls die Ferien-Leseclub-Aktion aktiv ist und ein Zieldatum konfiguriert wurde,
 	// erhalten alle regulären Buchbestände (ausgenommen Lernmittel) dieses Zieldatum als Frist.
 	if !copy.IstLernmittel && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {

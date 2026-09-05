@@ -202,3 +202,67 @@ func (r *LmfTerminRepository) KlassenOhneRueckgabeTermin(ctx context.Context, ab
 	}
 	return klassen, rows.Err()
 }
+
+// RueckgabeTerminFuerKlasse liefert den nächsten Rückgabe-Termin der Klasse ab dem
+// Datum (einschließlich) — die Frist ihrer Lernmittel (Register, Entscheidung 3a:
+// „das wäre doch logisch"). ok = false, wenn der Plan für die Klasse nichts nennt;
+// dann gilt der globale Stichtag. Verglichen wird über den Normschlüssel.
+func (r *LmfTerminRepository) RueckgabeTerminFuerKlasse(ctx context.Context, klasse string, ab time.Time) (time.Time, bool, error) {
+	var datum *time.Time
+	err := r.db.QueryRow(ctx, `
+		SELECT min(t.datum)
+		FROM lmf_termine t
+		JOIN lmf_termin_klassen k ON k.termin_id = t.id
+		WHERE t.art = 'rueckgabe' AND t.datum >= $1::date
+		  AND klassen_normkey(k.klasse) = klassen_normkey($2)`, ab, klasse).Scan(&datum)
+	if err != nil || datum == nil {
+		return time.Time{}, false, err
+	}
+	d := *datum
+	return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, schulzeit.Zone()), true, nil
+}
+
+// SetzeLernmittelFristFuerKlassen schreibt die Frist offener Lernmittel-Ausleihen der
+// genannten Klassen um — dieselbe Regel wie die Massenverlängerung (api/ausleihe.go):
+// nur aktive, nicht gesperrte Schüler, nur Lernmittel, Mahnstufe zurück, wenn die neue
+// Frist in der Zukunft liegt. Zusätzlich: nur Fristen im Schuljahr [von, bis) — eine
+// mehrjährige Ausleihe (Frist im übernächsten Sommer) folgt dem Plan nicht. Ist
+// nurWennFristAm gesetzt, werden nur Ausleihen angefasst, deren Frist genau an diesem
+// Tag liegt (Rückweg: ein gelöschter Termin gibt die Frist an den Stichtag zurück, ohne
+// Fristen zu berühren, die jemand von Hand gesetzt hat).
+func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassen(ctx context.Context, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
+	if len(klassen) == 0 {
+		return 0, nil
+	}
+	var nurTag *time.Time
+	if nurWennFristAm != nil {
+		t := nurWennFristAm.In(schulzeit.Zone())
+		tag := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, schulzeit.Zone())
+		nurTag = &tag
+	}
+	tag, err := r.db.Exec(ctx, `
+		UPDATE ausleihen a
+		SET rueckgabe_frist = $1,
+		    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,
+		    letztes_mahndatum = CASE WHEN $1 > CURRENT_TIMESTAMP THEN NULL ELSE a.letztes_mahndatum END
+		FROM schueler s, buecher_exemplare e, buecher_titel t
+		WHERE a.schueler_id = s.id
+		  AND a.exemplar_id = e.id
+		  AND e.titel_id = t.id
+		  AND a.rueckgabe_am IS NULL
+		  AND s.deleted_at IS NULL
+		  AND s.ist_gesperrt = false
+		  AND COALESCE(s.is_manually_blocked, false) = false
+		  -- EINE Normalform für beide Seiten (klassen_normkey, Migration 079): „09H1" in der
+		  -- Akte und „9h1" aus dem Plan sind dieselbe Klasse. KlassenSchluessel (Go) kennt
+		  -- die führende Null nicht — deshalb hier nicht.
+		  AND klassen_normkey(s.klasse) IN (SELECT klassen_normkey(x) FROM unnest($2::text[]) AS x)
+		  AND t.ist_lernmittel
+		  AND a.rueckgabe_frist >= $3 AND a.rueckgabe_frist < $4
+		  AND ($5::date IS NULL OR (a.rueckgabe_frist AT TIME ZONE $6)::date = $5::date)`,
+		frist, klassen, von, bis, nurTag, schulzeit.Zone().String())
+	if err != nil {
+		return 0, err
+	}
+	return tag.RowsAffected(), nil
+}

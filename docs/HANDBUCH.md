@@ -115,7 +115,14 @@ Klassen noch keinen Rückgabe-Termin haben. Gezeigt wird das laufende Schuljahr 
 1. August), _Ältere anzeigen_ holt den Rest. _Als PDF_ liefert die gewohnte Liste
 (Wochentag, Datum, Stunde, Klassen, Besonderheiten), getrennt nach Rückgabe und Ausgabe.
 Das Kollegium sieht denselben Plan in _Mein Portal → LMF-Plan_, für alle gleich und
-immer auf dem aktuellen Stand — eine Korrektur-Mail entfällt. (§2.3)
+immer auf dem aktuellen Stand — eine Korrektur-Mail entfällt.
+
+**Der Rückgabe-Termin einer Klasse ist die Frist ihrer Schulbücher.** Wird ein
+Rückgabe-Termin eingetragen oder verschoben, folgen die offenen Schulbuch-Ausleihen der
+Klasse (die Meldung nennt die Zahl); neue Ausleihen bekommen ihn gleich. Verliert eine
+Klasse ihren Termin, gehen die Fristen an den allgemeinen Stichtag zurück (_Einstellungen
+→ Ausleihe_, Vorgabe 31.07.). Nicht angefasst: gesperrte Schüler, mehrjährige Ausleihen,
+von Hand gesetzte Fristen und Ausgabe-Zeilen. (§2.3)
 
 ---
 

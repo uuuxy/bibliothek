@@ -42,7 +42,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 ### 2.1. Fristenberechnung
 
-- **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres.
+- **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres (`lmf_stichtag`) — **es sei denn, der LMF-Plan (§2.3) nennt für die Klasse einen Rückgabe-Termin: dann ist der die Frist** (`RueckgabeTerminFuerKlasse`, nur einjährige Ausleihe; seit 05.09.2026).
 - **Freihand-Bestand (Sonderbestände):** CDs, DVDs, Hörbücher etc. haben eine rollierende Frist (z. B. +14 oder +28 Tage ab Ausleihe), keine starre Jahresfrist.
 - **Ferien-Logik:** Fällt das berechnete Rückgabedatum in die Schulferien, wird die Frist automatisch bis zum ersten Schultag nach den Ferien verlängert.
 - **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr — `AddDate(1, 0, 0)`, also ein **Kalenderjahr**, nicht 365 Tage (im Schaltjahr sind es 366). Wie jede andere Frist läuft sie durch `tagesEndeInSchulzeitzone`; eine zweite, rohe Berechnung gibt es bewusst nicht.
@@ -72,6 +72,18 @@ die Klassen mit Schülern ohne Rückgabe-Termin (`ohne_rueckgabe_termin`) — ei
 startet leer, weil eine Vorbelegung mit Platzhalter-Daten sofort Fristen setzen würde. Das
 PDF (`pdf.GenerateLmfPlan`) hat die Form der bisherigen Liste, getrennt nach Rückgabe und
 Ausgabe. Tests: `repository/lmf_termine_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
+
+**Kopplung an die Fristen** (`api/lmf_termine_frist.go`, Peter 05.09.2026: „das wäre doch
+logisch"): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen
+liest `resolveCheckoutDueDate` den nächsten Rückgabe-Termin der Klasse ab heute (vor dem
+Stichtag; mehrjährige Ausleihen bleiben beim Stichtag). Ändert sich der Plan, folgt der
+Bestand: `SetzeLernmittelFristFuerKlassen` schreibt offene Lernmittel-Ausleihen der Klassen
+um — dieselbe Regel wie die Massenverlängerung (aktive, nicht gesperrte Schüler, Mahnstufe
+zurück), zusätzlich nur Fristen im Schuljahr des Termins. Rückweg: Verliert eine Klasse den
+Termin (aus der Zeile genommen, Art auf Ausgabe, Zeile gelöscht), kehren genau die Fristen,
+die auf dem Termin-Tag lagen, zum Stichtag zurück; von Hand gesetzte bleiben. POST/PUT/DELETE
+melden `fristen_angepasst`. Tests: `api/lmf_termine_frist_pg_test.go` (fünf Fälle über die
+Handler), `TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin`, `TestRueckgabeTerminFuerKlasse`.
 
 ## 3. Mahnwesen
 

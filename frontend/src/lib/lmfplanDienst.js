@@ -75,17 +75,32 @@ export async function speichereTermin(termin) {
 		})
 	});
 	const json = await res.json().catch(() => ({}));
-	return res.ok
-		? { ok: true, termin: json, meldung: 'Termin gespeichert.' }
-		: { ok: false, meldung: json.error ?? json.message ?? 'Speichern fehlgeschlagen.' };
+	if (!res.ok)
+		return { ok: false, meldung: json.error ?? json.message ?? 'Speichern fehlgeschlagen.' };
+	// Der Server sagt, wie viele offene Schulbuch-Ausleihen dem Termin gefolgt sind —
+	// nur er weiß es, und der Nutzer soll sehen, dass die Kopplung wirkt.
+	const n = Number(json.fristen_angepasst ?? 0);
+	return {
+		ok: true,
+		termin: json,
+		meldung:
+			n > 0 ? `Termin gespeichert · Frist von ${n} Ausleihen angepasst.` : 'Termin gespeichert.'
+	};
 }
 
 /** @param {string} id @returns {Promise<{ ok: boolean, meldung: string }>} */
 export async function loescheTermin(id) {
 	const res = await apiFetch(`/api/lmf-termine/${id}`, { method: 'DELETE' });
-	if (res.ok) return { ok: true, meldung: 'Termin gelöscht.' };
 	const json = await res.json().catch(() => ({}));
-	return { ok: false, meldung: json.error ?? 'Löschen fehlgeschlagen.' };
+	if (!res.ok) return { ok: false, meldung: json.error ?? 'Löschen fehlgeschlagen.' };
+	const n = Number(json.fristen_angepasst ?? 0);
+	return {
+		ok: true,
+		meldung:
+			n > 0
+				? `Termin gelöscht · Frist von ${n} Ausleihen auf den Stichtag zurückgesetzt.`
+				: 'Termin gelöscht.'
+	};
 }
 
 /** Lädt den Plan als PDF herunter — dieselbe Auswahl wie die Liste.
