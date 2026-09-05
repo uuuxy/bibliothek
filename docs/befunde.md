@@ -9,7 +9,7 @@ Hier steht, was aufgefallen ist und noch nicht entschieden oder erledigt wurde.
 
 **Erledigtes wird gelöscht, nicht abgehakt** — es steht vollständig in
 `git log -p docs/befunde.md`. Stände vor früheren Kürzungen: `2e09ec14` (31.08.),
-`47a09f70` (01.09.), `9f91784b` (04.09.).
+`47a09f70` (01.09.), `9f91784b` (04.09.), `e2bd4b72` (05.09.).
 
 ---
 
@@ -32,165 +32,90 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
----
-
-## Reihenfolge — womit weitermachen (05.09.2026)
-
-Diese Liste ordnet nur, sie beschreibt nichts doppelt; die Sache selbst steht jeweils
-unten. Was oben steht, blockiert oder verfällt; was unten steht, wartet ohne Schaden.
-
-1. **Peters fünf Entscheidungen** (Abschnitt „Entscheidung nötig"). Punkt 2 (Karenz ab
-   Rückgabe) ist der einzige mit Verfallsdatum: Er betrifft Schüler, die nach dem Abgang
-   zurückgeben.
-2. **Cover in den Arbeitslisten** — steht jetzt als Frage 6 bei dir, nicht als Bauauftrag:
-   Das Backend-Feld fehlt gar nicht, die Zeile hat nur schon ein führendes Element.
-3. **Die elf Overlays auf `Modal.svelte`** — ein Durchgang am Bildschirm, Einzelfall für
-   Einzelfall, nicht als Suchen-und-Ersetzen. Die Ratsche unten nennt die Dateien.
-4. **16 Cover-Stellen** und Kategorie C: nur beim nächsten fachlichen Anfassen.
-
-Erledigt am 05.09.: Release `v1.9.6` gezogen (39 Commits seit v1.9.5), der Jules-Stapel
-aus 32 PRs abgearbeitet (19 übernommen), `monitorTakt.test.js` entwackelt und die
-Bauform-Ratsche gebaut.
-
-**Getrennte Arbeitsverzeichnisse** für parallele Sitzungen bleiben offen, sind aber gerade
-gegenstandslos: Am 05.09. läuft nur eine Sitzung auf dem Verzeichnis. Sobald wieder zwei
-gleichzeitig arbeiten, ist es der erste Handgriff — zwei Sitzungen auf einem Arbeitsbaum
-haben am 04.09. einen E2E-Lauf entwertet und einen Commit blockiert.
-
-Nicht auf dieser Liste, weil sie bei Peter liegt: der Abschnitt „Außerhalb dieses Registers".
+**Reihenfolge:** erst Peters Entscheidungen (Punkt 2 dort ist der einzige mit
+Verfallsdatum), dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten
+fachlichen Anfassen.
 
 ---
 
 ## Offen — abarbeitbar
 
-Abgearbeitetes steht in der Git-Historie dieser Datei (`git log -p docs/befunde.md`),
-nicht hier.
+- **Elf Overlays bauen ihr Dialog-Markup selbst statt `ui/Modal.svelte`** (05.09.2026, C).
+  Das Verhalten ist zusammengeführt (`use:escapeSchliesst`, geratscht in
+  `escapeSchliesst.test.js` — dort steht die Dateiliste), die Bauform ist es (Rahmen ab,
+  Erhebung bleibt). Offen ist allein das Markup: ein Durchgang am Bildschirm, Einzelfall
+  für Einzelfall, kein Suchen-und-Ersetzen. Ausnahme bleibt: `OmniboxBlockAlert` und
+  `OmniboxVormerkungAlert` behalten `border-4 border-rose-500` — der Rahmen ist dort das
+  Signal, das einen Schüler an der Ausleihe stoppt, kein Dekor. Sie stehen benannt in
+  `frontend-hygiene-bauform.test.js`.
 
-- **Buchcover: Rest nach dem Bestellbedarf** (04.09.2026). Der Bestellbedarf zeigt seit
-  9cf11044 das Cover in der Zeile (`ui/BuchCover.svelte`, lazy, `naturalWidth`-Prüfung,
-  Initiale als Platzhalter; CoverPeek bleibt die Großansicht). Auf dem Zielsystem tragen
-  5.724 von 8.706 Titeln ohne Exemplar ein Cover — die Anzeige lohnt. Offen:
+- **Buchcover: Rest nach dem Bestellbedarf** (04.09.2026). Der Bestellbedarf zeigt das
+  Cover in der Zeile (`ui/BuchCover.svelte`); auf dem Zielsystem tragen 5.724 von 8.706
+  Titeln ohne Exemplar ein Cover — die Anzeige lohnt. Offen:
 
   - **16 Bestandsstellen** bauen ihr Cover noch selbst (Liste in
     `frontend-hygiene-cover.test.js`, eingefroren). Umstellen beim nächsten fachlichen
     Anfassen — nicht in einem Rutsch, das sind täglich benutzte Bildschirme.
-  - **Die beiden Arbeitslisten hängen NICHT am Backend** (korrigiert 05.09.2026, die
-    Notiz vom 04.09. war falsch): `GetKlassensatzReservierungen` selektiert
-    `coalesce(t.cover_url,'')` und der Handler reicht die Struktur unverändert
-    durch — das Feld ist seit Langem da und wird im Frontend nur nicht gelesen.
-    Fehlend ist dort allein `isbn` (die Ausweichquelle) und bei `anliegen.go`
-    `cover_url` (ISBN hat es). Beides ist ein Zweizeiler — gebaut wird es aber
-    erst mit der Entscheidung unten, sonst entsteht ein Feld ohne Verbraucher.
-    **Portal**: `AnliegenWidget`, `PortalSchulbuecher`, `PortalLernmittel` ohne Cover.
+  - **Zwei Backend-Felder für die Arbeitslisten** warten auf Entscheidung 6 unten:
+    `GetKlassensatzReservierungen` liefert `cover_url`, aber kein `isbn` (Ausweichquelle);
+    `anliegen.go` liefert ISBN, aber kein `cover_url`. Je ein Zweizeiler — ohne
+    Verbraucher aber nicht bauen.
+  - **Portal** ohne Cover: `AnliegenWidget`, `PortalSchulbuecher`, `PortalLernmittel`.
   - **3.000 Titel ohne ISBN** (`PENDING`, werden vom Sync nie versucht): Datenfrage, keine
-    Reparatur — zehn Jahre alte Littera-Daten. `inventur.SucheTextDNB` existiert
-    (Freitext), aber **nur mit Bestätigung durch einen Menschen** verdrahten: Freitext auf
-    „Mathematik" liefert hunderte Treffer, den ersten zu nehmen hängt ein falsches Cover
-    an ein Buch. Vorbild: DNB-Signaturvorschlag (22a10b1). Der Sync selbst ist in Ordnung
-    (Drossel 500 ms, `NOT_FOUND` wird nicht wiederholt) — die Kritik vom 04.09. war falsch.
-
-- **Zwei Alarm-Overlays behalten Rahmen UND Schatten — bewusst** (05.09.2026, C). Von den
-  elf selbstgebauten Overlays haben neun am 05.09. ihren Rahmen abgegeben und behalten die
-  Erhebung: In M3 entscheidet die Rolle, welcher der beiden Teile weicht, und ein Dialog ist
-  eine erhobene Fläche (level3, kein outline-Token) — dieselbe Antwort, die `Modal.svelte`
-  am 04.09. bekommen hat. Alle neun liegen auf einem Abdunkler, keiner verliert seine Kante.
-
-  `OmniboxBlockAlert` und `OmniboxVormerkungAlert` bleiben, wie sie sind: `border-4
-  border-rose-500` ist dort kein Dekor, sondern das Signal, das einen Schüler an der Ausleihe
-  stoppt. Ein Alarm wird nicht leiser gemacht, um eine Gestaltungsregel zu erfüllen. Sie
-  stehen als benannte Ausnahme in `frontend-hygiene-bauform.test.js` (Bestand jetzt 25 statt
-  34; der Rest sind Cover-Bilder, die Etikettenvorschau und Flächen, die kein Dialog sind).
-
-  Offen bleibt, dass diese Dialoge ihr MARKUP weiterhin selbst bauen, statt `ui/Modal.svelte`
-  zu benutzen. Das VERHALTEN ist seit 05.09. zusammengeführt: `use:escapeSchliesst` liegt in
-  `components/ui/`, wird von Modal und von fünfzehn Overlays benutzt und ist über
-  `escapeSchliesst.test.js` geratscht — wer ein neues Overlay ohne Tastaturweg baut, wird rot.
+    Reparatur — zehn Jahre alte Littera-Daten. `inventur.SucheTextDNB` (Freitext) **nur mit
+    Bestätigung durch einen Menschen** verdrahten: Freitext auf „Mathematik" liefert
+    hunderte Treffer, den ersten zu nehmen hängt ein falsches Cover an ein Buch. Vorbild:
+    DNB-Signaturvorschlag (22a10b1).
 
 ## Offen — Entscheidung nötig (Peter)
 
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
-kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht (04.09.2026:
-drei vorgelegte Geschmacksfragen waren so schon verloren und mussten neu erzählt werden).
+kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-Rest aus dem Rasterdurchgang 02.09.2026 (LUSD-Umbenennung, 0aa07f57). Reihenfolge = Abarbeitung;
-Peter überlegt beide (03.09.).
+Rest aus dem Rasterdurchgang 02.09.2026 (LUSD-Umbenennung, 0aa07f57):
 
 1. **Handanlagen als Paar-Kandidaten.** Ein von Hand angelegter, nie LUSD-bestätigter Schüler,
    den die LUSD anders schreibt („Anna Müller" ↔ „Anna Mueller"), wird nicht als Paar
    vorgeschlagen, sondern Neuanlage + „nicht im Export". Rückweg heute: Zusammenführen über
    die Akte. Bauen hieße: `NichtImExport`-Zeilen als Kandidaten (`WarAbgaenger=false`) — und
    die Rubrik „nicht im Export" bedeutet dann etwas anderes.
-   **Empfehlung (05.09.): nicht bauen — messen.** Bei der Abnahme „LUSD-Import" die Vorschau
-   auf echten Daten laufen lassen und jedes Paar „neu" + „nicht im Export" ansehen: WARUM
-   matcht es nicht — zweiter Vorname, Umlaut, Bindestrich, Tippfehler? Der Schlüssel ist heute
-   `lower + trim` (`repository.LusdNamensSchluessel`, EINE Stelle); die billigste Regel, die den
-   echten Grund trifft, kommt dorthin. Kandidaten aus „nicht im Export" hätten die
-   Paarungs-Signale (Eintritt, Anschrift) meist gar nicht: schwache Vorschläge, und eine
-   Rubrik, die zweierlei bedeutet.
 2. **Karenz ab Rückgabe statt ab Abgang.** `abgaenger_seit` stempelt beim Abgang, auch mit
    offenen Büchern; wer erst nach Ablauf der Karenz zurückgibt, wird in der Folgenacht
    anonymisiert — das Reparaturfenster fehlt dieser Gruppe. Alternative: Uhr bei Rückgabe des
    letzten Vorgangs neu starten (dann PG-Test dieser Konstellation).
-   **Empfehlung (05.09.): ja — der einzige Punkt mit Schaden im Stillen** (unumkehrbar,
-   nächtlich, ohne Zeugen). Und nicht als Schreiben auf `abgaenger_seit` bei der Rückgabe,
-   sondern im Prädikat: `PredikatAnonymisierung` ist die EINE Quelle für Job und Wächter;
-   dort zusätzlich „keine Rückgabe innerhalb der Karenz" (`NOT EXISTS … rueckgabe_am >
-   NOW() - karenz`). Die Karenz läuft dann ab dem letzten abgeschlossenen Vorgang; ein
-   Schreibweg an der Rückgabe wäre eine zweite Tür zum selben Zustand. PG-Test: Abgang vor
-   100 Tagen, Rückgabe gestern → bleibt; Rückgabe vor 91 Tagen → fällt. Etwa eine Stunde.
-
-3. **`GET /api/search` hängt an `perform_actions`, drei Aufrufer liegen außerhalb der Theke.**
-   Die Etiketten-Titelsuche im Druck-Center (Menüpunkt: `view_students`), die Schülersuche im
-   Vormerkungs-Reiter der Buchakte (`view_books`) und die globale Suchleiste rufen dieselbe
-   Route wie die Theken-Omnibox. In der Werksvorgabe fällt das nicht auf, weil jede Rolle mit
+3. **`GET /api/search` hängt an `perform_actions`, zwei Aufrufer liegen außerhalb der Theke.**
+   Die Etiketten-Titelsuche im Druck-Center (Menüpunkt: `view_students`) und die Schülersuche
+   im Vormerkungs-Reiter der Buchakte (`view_books`) rufen dieselbe Route wie die
+   Theken-Omnibox. In der Werksvorgabe fällt das nicht auf, weil jede Rolle mit
    `view_books`/`view_students` auch `perform_actions` trägt — entzieht ein Admin einer Rolle
    das Theken-Recht, meldet die Suche auf diesen Seiten nur noch „Suche nicht möglich" (laut,
-   daher B). Die Suchleiste blendet sich seit 03.09. abends ohne `perform_actions` aus; die
-   beiden anderen Felder nicht. Optionen: (a) Oder-Rechte-Middleware (`perform_actions` ODER
-   `view_books` ODER `view_students`) — dann sähe eine Rolle mit bloßem Katalogrecht die
-   Kiosk-Sicht auf Schüler (Name, Klasse, Ausweis; PII-Matrix Stufe 1), das ist eine
-   Datenschutz-Entscheidung; (b) beide Felder wie die Suchleiste an `perform_actions` koppeln;
-   (c) so lassen und in der Rechte-Oberfläche beim Theken-Recht darauf hinweisen.
-   **Empfehlung (05.09.): keine der drei — „Recht folgt der Handlung".** (1) Die
-   Etiketten-Titelsuche bekommt eine eigene Titel-Route unter `view_books`
-   (`SearchTitlesFuzzy` existiert; der OPAC taugt dafür nicht, er blendet Lernmittel aus —
-   genau die Etiketten, die gedruckt werden). (2) `/api/search` nimmt `perform_actions` ODER
-   `manage_vormerkungen`, und der Vormerkungs-Reiter zeigt sein Suchfeld nur mit
-   `manage_vormerkungen`: Wer Vormerkungen anlegen darf, darf Schüler finden — das Recht
-   deckt die Personendaten bereits. Dann gibt kein Recht mehr her, als seine Handlung
-   braucht, und die Datenschutz-Frage stellt sich nicht. Zwei bis drei Stunden.
+   daher B). Optionen: (a) Oder-Rechte-Middleware (`perform_actions` ODER `view_books` ODER
+   `view_students`) — dann sähe eine Rolle mit bloßem Katalogrecht die Kiosk-Sicht auf
+   Schüler (Name, Klasse, Ausweis; PII-Matrix Stufe 1), das ist eine
+   Datenschutz-Entscheidung; (b) beide Felder an `perform_actions` koppeln und ohne das
+   Recht ausblenden; (c) so lassen und in der Rechte-Oberfläche beim Theken-Recht darauf
+   hinweisen.
 
-Aus dem Design-Rundgang 04.09.2026 (Peter vorgelegt, Antwort steht aus). Alles
-Geschmacksfragen — nichts davon kann jemandem schaden, deshalb wird nichts davon
-eigenmächtig entschieden.
+Geschmacksfragen aus dem Design-Rundgang 04.09.2026 — nichts davon kann jemandem schaden,
+deshalb wird nichts davon eigenmächtig entschieden:
 
 4. **Zweites Feld neben der Suchpille im Bestellwesen.** Im Warenkorb steht neben der
-   Suchpille ein zweites Feld „Titel suchen & hinzufügen". Es sucht NICHT die Liste,
-   sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich, also kein
-   Verstoß gegen „eine Suchleiste je Seite" (04.09.). Offen ist allein, ob die Nähe der
+   Suchpille ein zweites Feld „Titel suchen & hinzufügen" (`OrderSearch.svelte`). Es sucht
+   NICHT die Liste, sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich,
+   also kein Verstoß gegen „eine Suchleiste je Seite". Offen ist allein, ob die Nähe der
    beiden Felder trotzdem stört; dann Umbau.
-   **Empfehlung (05.09.): so lassen.** Erst ändern, wenn jemand beim Arbeiten danebengreift —
-   dann ist es gemessen, nicht geraten.
-5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Gemessen am 05.09., im
-   Quelltext: `KlassenKarte.svelte` führt den Klassennamen ZWEIMAL — `text-2xl font-bold`
-   (24 px, headline-small) unter Bibliothek → Klassensätze und `text-base font-medium`
-   (16 px) im Kollegiums-Portal (`kompakt`), dazu zwei verschiedene Zähler-Chips. Die Karte
-   ist laut eigenem Kommentar ein ausklappbares LISTENELEMENT; dessen Headline ist in M3
-   body-large, 16 px. Der Eindruck „sehr groß" ist die 24-px-Fassung.
-   **Empfehlung: die kompakte Fassung für beide Orte** — eine Gestalt, und die Zwillinge sind
-   weg. Eine halbe Stunde, sichtbar, deshalb deine Entscheidung.
-
+5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
+   der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
 6. **Cover in den beiden Arbeitslisten — wohin?** (05.09.2026) Klassensatz-Reservierungen und
    Wünsche & Meldungen laufen beide über `ArbeitsZeile.svelte`, die M3-„list item"-Zeile mit
-   FÜHRENDEM ELEMENT: links ein 48-px-Kreis mit der Klasse. Das war deine Entscheidung vom
-   26.08. mit einer Begründung, die weiter gilt — „welche Klasse will welches Buch" ist die
-   Frage, mit der die Bibliothek diese Listen überfliegt. Ein Cover davorzusetzen hieße zwei
-   führende Elemente in einer Zeile, und M3 kennt genau eins. Möglichkeiten: (a) so lassen —
-   in einer Arbeitsliste ist das Buchbild Zierde, der Titel steht ja da; (b) Cover STATT
-   Klassenkreis, Klasse wandert in den Nebentext (dann ist die Liste nach Büchern zu
-   überfliegen, nicht nach Klassen); (c) Cover klein hinter dem Titel als Anreißer. Meine
-   Empfehlung ist (a): Diese Listen werden abgearbeitet, nicht gestöbert. Bis das entschieden
-   ist, bleiben die zwei fehlenden Backend-Felder ungebaut.
+   FÜHRENDEM ELEMENT: links ein 48-px-Kreis mit der Klasse (Entscheidung vom 26.08.: „welche
+   Klasse will welches Buch" ist die Frage, mit der die Bibliothek diese Listen überfliegt).
+   Ein Cover davorzusetzen hieße zwei führende Elemente in einer Zeile, und M3 kennt genau
+   eins. Möglichkeiten: (a) so lassen — in einer Arbeitsliste ist das Buchbild Zierde, der
+   Titel steht ja da; (b) Cover STATT Klassenkreis, Klasse wandert in den Nebentext (dann ist
+   die Liste nach Büchern zu überfliegen, nicht nach Klassen); (c) Cover klein hinter dem
+   Titel als Anreißer. Empfehlung: (a) — diese Listen werden abgearbeitet, nicht gestöbert.
+   Bis zur Entscheidung bleiben die zwei Backend-Felder oben ungebaut.
 
 ## Beobachten (nichts zu tun)
 
@@ -216,15 +141,13 @@ Einzeiler; die ausführlichen Begründungen stehen in der Git-Historie dieser Da
 | `LabelHeight >= 30` steht 6× in zwei Dateien                                   | Schwellwert-Doppelung ohne Wirkung.                                                                                                                                                                                                                                                                              |
 | LUSD-Namensschlüssel nur `lower+trim`                                          | Umlaut-/Bindestrich-Varianten gelten als verschiedene Menschen — sicher, aber nicht klug.                                                                                                                                                                                                                        |
 | Paritätstest vergleicht keine COMMENTs/Seeds                                   | Kosmetik; Struktur ist gedeckt.                                                                                                                                                                                                                                                                                  |
-| Jules-Erbe                                                                     | Acht Testdateien > 200 Zeilen (neu: `inventur/lernmittel_pdf_test.go`, 257); Export-CSV-„breaks stream"-Test schwach.                                                                                                                                                                                                                                        |
+| Jules-Erbe                                                                     | Go-Testdateien > 200 Zeilen aus Jules-PRs; Export-CSV-„breaks stream"-Test schwach.                                                                                                                                                                                                                              |
 | Klone: Go `dupl` 8 Paare, Frontend `jscpd` 0,41 %                              | Unter der Schwelle.                                                                                                                                                                                                                                                                                              |
 
 ## Außerhalb dieses Registers (Betrieb, liegt bei Peter)
 
-Seit dem 01.09.2026 ist dieser Abschnitt die EINE Liste der offenen Betriebs-Punkte —
-der frühere `master_fahrplan.md` ist aufgelöst (seine Code-Punkte waren erledigt, der
-Rest stand doppelt; Littera-Details jetzt in
-[littera_schema_befund.md](littera_schema_befund.md), Historie in `git log`):
+Die EINE Liste der offenen Betriebs-Punkte. Littera-Details in
+[littera_schema_befund.md](littera_schema_befund.md).
 
 - **Frisches Littera-Backup** — littera_sav.mdb ist ein 2010er-Stand; Anforderungen
   (FremdLeserNummer/FremdBarcode) in [littera_schema_befund.md](littera_schema_befund.md).
@@ -238,20 +161,10 @@ Rest stand doppelt; Littera-Details jetzt in
   `SENTRY_DSN` leer lassen (A6 in
   [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md)) ·
   **S3-Auslagerung der Backups**.
-- **GitHub**: PR-Pflicht abschaffen (Solo-Entscheidung 30.07.), „Block force pushes"
-  und „Restrict deletions" anlassen.
+- **GitHub**: PR-Pflicht abschaffen (Solo-Entscheidung 30.07.; das Ruleset `main` trägt am
+  05.09. noch die `pull_request`-Regel), „Block force pushes" und „Restrict deletions"
+  anlassen.
 - Datenwert Schulname/„Neuer Text" auf Live korrigieren.
-
-**Empfohlene Reihenfolge (05.09.2026):** (0) System → Betriebsbereitschaft auf dem
-Schulserver LESEN — zwei Minuten, und was dort rot ist, schlägt alles auf dieser Liste;
-insbesondere: läuft ein Backup? (1) Frisches Littera-Backup anfordern — die einzige Pflicht,
-die nur mit fremder Hilfe geht, mit Wartezeit, und sie wird ZWEIMAL gebraucht: jetzt zum
-Erproben der Übernahme, am Umstellungstag noch einmal frisch. (2) Restore-Probe am Ziel —
-ein Backup, das nie zurückgespielt wurde, ist eine Hoffnung. (3) S3-Auslagerung. (4) `v1.9.6`
-auf den Test-Server — der Abstand zwischen Image und laufendem Stand wächst mit jedem Release,
-Migrationen lieber einzeln erleben als später im Bündel. (5) Abnahmen terminieren; die
-LUSD-Abnahme NACH Entscheidung 2 und MIT der Messung aus Entscheidung 1. (6) Handgriffe, wenn
-man ohnehin dran ist: `SELBSTANMELDUNG_DOMAIN`, PR-Pflicht abschaffen, Schulname korrigieren.
 
 **Parkdeck** (bewusste Nicht-Entscheidungen, nur mit Anlass wieder anfassen):
 Integer-Cent-Refactor (float64/NUMERIC) · Bundle-Splitting (720-kB-Chunk) ·
