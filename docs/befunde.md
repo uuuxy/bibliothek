@@ -39,6 +39,19 @@ Anfassen.
 
 ## Offen — abarbeitbar
 
+- **Rasterdurchgang 05.09.2026 abends über die Änderungen vom 04./05.09.** (Peter: „lass
+  alle Schemata nochmal über die heutigen und gestrigen Änderungen laufen"). Elf Fragen
+  plus Sweeps-Achse über 247 geänderte Dateien; vier Funde, alle im selben Durchgang
+  behoben und rot bewiesen — hier bleibt nur, was offen ist:
+
+  - **Beobachtung, kein Fund (C):** Der Wächter „Ehemalige mit offene Vorgängen"
+    (`ZaehleEhemaligeMitOffenenVorgaengen`) verlangt `abgaenger_seit IS NOT NULL`, das
+    Löschprädikat rechnet mit `COALESCE(abgaenger_seit, aktualisiert_am)`. Zwei
+    Formulierungen derselben Frage „wie lange ist der weg?" — heute ohne Wirkung, weil
+    Migration 094 die Spalte nachgetragen hat und alle drei Schreiber (LUSD, Versetzung,
+    Zusammenführen) sie stempeln; nachgezählt am Code. Beim nächsten Anfassen des
+    Wächters angleichen.
+
 - **Zwei Definitionen von „derselbe Mensch"** (05.09.2026, B). Der Unique-Index
   `unique_schueler_name_gebdatum` vergleicht Vor- und Nachname roh (case-sensitiv, keine
   Normalform); der LUSD-Schlüssel rechnet seit 3848c9f6 in der Normalform `suchnorm`. Folge:
