@@ -116,8 +116,10 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    **Zu bauen:** Abgänger sind die Abschlussklassen des laufenden Schuljahrs. Die Regel hat
    die Versetzung schon (`api/student_promotion.go`: 9+h, 10+r, 13), angewandt auf die
    AKTUELLE Klasse über Jahrgang und Zweig, nie über Klassennamen als Text. Ansicht und
-   Laufzettel filtern darauf; Ausleihe unverändert; sichtbar ab dem ersten Schultag ohne
-   Einstellung. Wer laut LUSD schon weg ist und noch Bücher hat, steht in der Mahnliste —
+   Laufzettel filtern darauf; Ausleihe unverändert. **Sichtbar ab dem 1. Mai** bis zur
+   Versetzung (Peter, 05.09.: „vielleicht wäre der Mai gut"); fester Wert, keine
+   Einstellung. Vorher zeigt die Ansicht den Hinweis „Abschlussklassen erscheinen hier ab
+   Mai", damit die Tür nicht tot wirkt. Wer laut LUSD schon weg ist und noch Bücher hat, steht in der Mahnliste —
    kein eigener Block. Paar-Gate: Versetzungs-Vorschau und Abgänger-Liste liefern dieselbe
    Menge. Danach Handbuch und Fachkonzept zurückschreiben. Die Frist-Frage löst sich über 3.
 
