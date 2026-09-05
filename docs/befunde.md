@@ -94,7 +94,45 @@ suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanl
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
 kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-_Zurzeit keine._
+- **LMF-Plan: Tagesplaner statt Termin-Dialog** (Peter 05.09.2026, nach dem ersten Blick auf
+  die gebaute Seite: „so ganz zufrieden bin ich nicht"). Drei Befunde am Bau von 1890a4df:
+
+  1. **Das Anlegen ist zu klein und zu kleinteilig.** Ein Modal je Zeile; wer sechs Klassen
+     ankreuzt, bekommt EINE Zeile mit sechs Klassen in EINER Stunde — gemeint ist aber fast
+     immer: sechs Klassen nacheinander, Stunde 1 bis 6. Manche Klassen teilen sich eine Stunde
+     („6F1/6F2"), manche brauchen zwei. Recherche (Gymnasium Wentorf, Hebbelschule Kiel,
+     Kaiserin-Friedrich Bad Homburg, Realschule Waibstadt): überall dasselbe Muster — ein
+     Jahrgang je Tag, Abschlussklassen zuerst, je Klasse „weniger als eine Unterrichtsstunde",
+     die Lehrkraft der jeweiligen Stunde bringt die Klasse. Der Plan IST ein Raster
+     Tage × Stunden, keine Liste von Zeilen.
+     **Vorschlag:** Die Seite wird im Bearbeitungsmodus ein Tagesplaner — links die Klassen als
+     Chips (Abschlussklassen zuerst, dann Jahrgang absteigend; schon geplante grau mit Datum),
+     rechts der gewählte Tag als Spalte Stunde 1..N. Klick auf einen Chip legt die Klasse in die
+     nächste freie Stunde; sechs Klicks = Stunde 1–6. Ziehen verschiebt; zwei Chips in einer
+     Zelle = geteilte Stunde; ein Chip kann auf zwei Stunden gezogen werden (Doppelstunde).
+     Zelle ohne Klasse = „Bücher setzen"/Pause mit Vermerk. Kein Modal mehr. Tabelle, Portal und
+     PDF bleiben, wie sie sind. Schema: `lmf_termine` bekommt `stunde_bis` (Doppelstunde);
+     sonst trägt das Modell das schon (mehrere Klassen je Termin, Termin ohne Klasse).
+  2. **Stundenraster ist Schulsache.** Heute CHECK 1–12 in der Tabelle und `STUNDEN` 1–12 im
+     Frontend. Vorschlag: Einstellung „Stunden pro Tag" unter Schule (Vorgabe 10), Uhrzeiten je
+     Stunde optional — die bisherige Excel-Liste hatte keine, die Kollegen kennen ihr Raster.
+  3. **Klassen-Schema ist hart verdrahtet** — vier Stellen lesen Jahrgang und Zweig aus dem
+     Namen mit Regeln DIESER Schule: `repository.AbschlussklasseSQL` (H ab 9, R ab 10, sonst
+     13), `calculateAbgaengerJahr` (student_create.go), `internal/ausweis/gueltigkeit.go`
+     (E/Q-Oberstufe, Gymnasialzweig bis 10), `pkg/lmf.JahrgangAusZielgruppe`. Eine andere
+     Schule (Q1 statt 12, „12T1", nur „7a") hätte keine Tür, das einzugeben. Vorschlag:
+     Einstellungs-Block „Klassen-Schema" unter Schule — Tabelle Zweig-Buchstabe → Bezeichnung →
+     letzter Jahrgang (H 9/10, R 10, G 13, F = Förderstufe, T = Oberstufe) plus Aliase ohne
+     Ziffer (E→11, Q1/Q2→12, Q3/Q4→13); Vorgabe = heutige Regel, die vier Stellen lesen die
+     Einstellung. Der Tagesplaner braucht daraus nur die Reihenfolge (Abschluss zuerst).
+     **Reihenfolge-Frage:** jetzt (Bibliosys hat eine Schule) oder erst mit der zweiten?
+  4. **Menüplatz.** Zweimal im Jahr gebraucht, steht aber dauerhaft unter Bibliothek. NICHT in
+     die Einstellungen: dort steht Konfiguration (manage_settings), der Plan ist ein Arbeits-
+     dokument mit Fristfolge und PDF (edit_books). Vorschlag: eine Seite „Schuljahreswechsel"
+     unter Verwaltung mit den Einmal-im-Jahr-Aufgaben als Reiter — LMF-Plan, Abgänger,
+     Versetzung (heute in SystemSettings) — statt dreier Menüpunkte. Alternative: Menüpunkt nur
+     in der Saison zeigen (Mai–September) — verworfen, weil „wo ist es hin?" schlimmer ist als
+     ein Punkt zu viel.
 
 ## Beobachten (nichts zu tun)
 
