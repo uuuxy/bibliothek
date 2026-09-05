@@ -157,6 +157,59 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	}
 }
 
+// Steht eine Klasse ZWEIMAL im Plan (im echten Plan der Schule steht 9H1 am ersten Tag
+// und noch einmal als Nachzügler), müssen beide Wege dieselbe Frist nennen: Der
+// Ausleihdienst nimmt den nächsten Termin der Klasse (RueckgabeTerminFuerKlasse = MIN),
+// der Plan-Abgleich muss dieselbe Zeile treffen. Bis 05.09.2026 gewann beim Speichern
+// die LETZTE Zeile — das schon draußen liegende Buch bekam den späteren Termin, das am
+// selben Tag ausgeliehene den früheren. Zwei Regeln für dieselbe Frage.
+func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM lmf_plaene`); err != nil {
+			t.Logf("Aufräumen: %v", err)
+		}
+	})
+	tag := func(d string) time.Time {
+		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
+		if err != nil {
+			t.Fatalf("Testdatum %q: %v", d, err)
+		}
+		return service.TagesEndeInSchulzeitzone(x)
+	}
+	anna := seedSchueler(t, pool, "Z-1", "Anna", "9H1")
+	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Zwei", tag("2027-07-31"))
+
+	// Zeile 1 (Mo 28.06., 1. Std.) und Zeile 7 (Di 29.06., 1. Std.) nennen dieselbe Klasse.
+	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
+		`{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[`+
+			`{"klassen":["9H1"]},{"vermerk":"2"},{"vermerk":"3"},{"vermerk":"4"},{"vermerk":"5"},{"vermerk":"6"},`+
+			`{"klassen":["9H1"],"vermerk":"Nachzügler"}]}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("speichern: %d %s", rec.Code, rec.Body.String())
+	}
+
+	// Was der Ausleihdienst beim nächsten Schulbuch sagen würde …
+	repo := repository.NewLmfTerminRepository(pool)
+	beimAusleihen, ok, err := repo.RueckgabeTerminFuerKlasse(ctx, "9H1", tag("2027-06-01"))
+	if err != nil || !ok {
+		t.Fatalf("Termin für 9H1: ok=%v err=%v", ok, err)
+	}
+	// … muss dasselbe sein wie das, was am schon ausgeliehenen Buch steht.
+	ist := fristVon(t, pool, annaLmf)
+	soll := service.TagesEndeInSchulzeitzone(beimAusleihen)
+	if !ist.Equal(soll) {
+		t.Errorf("Frist des offenen Buchs %v, der Ausleihdienst nennt %v — zwei Regeln für dieselbe Klasse",
+			ist.In(schulzeit.Zone()), soll.In(schulzeit.Zone()))
+	}
+	if !ist.Equal(tag("2027-06-28")) {
+		t.Errorf("erwartet der frühere Termin 28.06.2027, war %v", ist.In(schulzeit.Zone()))
+	}
+}
+
 // Der Vorschlag für einen neuen Plan: ohne Vorjahr aus der Regel (Abschluss zuerst,
 // Oberstufe ausgelassen); mit vorbeigegangenem Vorjahr dessen Reihenfolge plus neue Klassen.
 func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {

@@ -15,6 +15,7 @@ package api
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -121,21 +122,28 @@ func ohne(a, b []string) []string {
 
 // koppleLmfPlanFristen gleicht die Fristen nach dem Speichern oder Verwerfen eines
 // ganzen Plans ab (Migration 097): alt = Zeilen vorher, neu = Zeilen nachher (nil beim
-// Verwerfen). Nur Rückgabe-Pläne setzen Fristen. Zuerst kehren Klassen, die im neuen
-// Plan gar nicht mehr stehen, zum Stichtag zurück — genau die Fristen, die auf ihrem
-// alten Termin-Tag lagen —, dann bekommt jede Klasse des neuen Plans ihren Termin
-// (auch bei bloßer Verschiebung: dieselbe Regel wie beim Einzel-Termin vorher).
+// Verwerfen). Nur Rückgabe-Pläne setzen Fristen.
+//
+// Maßgeblich ist der FRÜHESTE Termin einer Klasse, nicht ihre letzte Zeile. Eine Klasse
+// darf mehrfach im Plan stehen — im Plan der Schule steht 9H1 am ersten Tag und noch
+// einmal als Nachzügler —, und der Ausleihdienst nimmt beim Ausleihen den nächsten
+// Termin ab heute (RueckgabeTerminFuerKlasse, MIN). Bis 05.09.2026 abends lief hier eine
+// Schleife über die Zeilen, deren letzte gewann: Dasselbe Schulbuch hatte je nach Weg
+// eine andere Frist — schon draußen den späteren Termin, am selben Tag ausgeliehen den
+// früheren. Zwei Regeln für dieselbe Frage; Gate:
+// TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt.
+//
+// Zuerst kehren Klassen, die im neuen Plan gar nicht mehr stehen, zum Stichtag zurück —
+// genau die Fristen, die auf ihrem alten Termin-Tag lagen —, dann bekommt jede Klasse
+// des neuen Plans ihren frühesten Termin.
 func (s *Server) koppleLmfPlanFristen(ctx context.Context, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
 	if art != repository.LmfTerminRueckgabe {
 		return 0, nil
 	}
-	var neueKlassen []string
-	for _, z := range neu {
-		neueKlassen = append(neueKlassen, z.Klassen...)
-	}
+	termine := fruehesteTermineJeKlasse(neu)
 	var gesamt int64
 	for _, z := range alt {
-		verlierer := ohne(z.Klassen, neueKlassen)
+		verlierer := ohneTermin(z.Klassen, termine)
 		if len(verlierer) == 0 {
 			continue
 		}
@@ -145,15 +153,58 @@ func (s *Server) koppleLmfPlanFristen(ctx context.Context, art string, alt, neu 
 		}
 		gesamt += n
 	}
-	for _, z := range neu {
-		if len(z.Klassen) == 0 {
-			continue
-		}
-		n, err := s.koppleLmfFristen(ctx, nil, &repository.LmfTermin{Art: art, Datum: z.Datum, Klassen: z.Klassen})
+	for _, datum := range sortierteSchluessel(termine) {
+		n, err := s.koppleLmfFristen(ctx, nil, &repository.LmfTermin{Art: art, Datum: datum, Klassen: termine[datum]})
 		if err != nil {
 			return gesamt, err
 		}
 		gesamt += n
 	}
 	return gesamt, nil
+}
+
+// fruehesteTermineJeKlasse gruppiert die Klassen des Plans nach ihrem FRÜHESTEN Datum:
+// Ergebnis ist Datum → Klassen. Verglichen wird über KlassenSchluessel; beide Seiten
+// kommen kanonisiert aus dem Vokabular (der Trigger schreibt die registrierte
+// Schreibweise), Schreibvarianten können hier also nicht ankommen.
+func fruehesteTermineJeKlasse(zeilen []repository.LmfPlanZeile) map[string][]string {
+	frueheste := map[string]string{} // Klassenschlüssel → Datum
+	namen := map[string]string{}     // Klassenschlüssel → Schreibweise
+	for _, z := range zeilen {
+		for _, k := range z.Klassen {
+			schluessel := repository.KlassenSchluessel(k)
+			if bisher, da := frueheste[schluessel]; !da || z.Datum < bisher {
+				frueheste[schluessel] = z.Datum
+			}
+			namen[schluessel] = k
+		}
+	}
+	nachDatum := map[string][]string{}
+	for schluessel, datum := range frueheste {
+		nachDatum[datum] = append(nachDatum[datum], namen[schluessel])
+	}
+	for datum := range nachDatum {
+		sort.Strings(nachDatum[datum])
+	}
+	return nachDatum
+}
+
+// ohneTermin liefert die Klassen aus a, die im neuen Plan keinen Termin mehr haben.
+func ohneTermin(a []string, termine map[string][]string) []string {
+	var drin []string
+	for _, klassen := range termine {
+		drin = append(drin, klassen...)
+	}
+	return ohne(a, drin)
+}
+
+// sortierteSchluessel macht die Reihenfolge der Datums-Gruppen deterministisch — die
+// Zahl der angefassten Ausleihen soll nicht von der Map-Reihenfolge abhängen.
+func sortierteSchluessel(m map[string][]string) []string {
+	schluessel := make([]string, 0, len(m))
+	for k := range m {
+		schluessel = append(schluessel, k)
+	}
+	sort.Strings(schluessel)
+	return schluessel
 }
