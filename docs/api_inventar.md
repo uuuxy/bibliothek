@@ -73,6 +73,7 @@
 - `GET /api/bestellungen/zulauf`
 - `GET /api/books`
 - `GET /api/books/{id}`
+- `GET /api/buecher/titel/suche`
 - `GET /api/buecher/titel/{id}/ausleiher`
 - `GET /api/buecher/titel/{id}/etiketten`
 - `GET /api/buecher/titel/{id}/exemplare`

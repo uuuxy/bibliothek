@@ -1,6 +1,9 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { authStore } from './stores/authStore.svelte.js';
+	import { schuelerRechte } from './schuelerRechte.js';
+	import { sucheSchuelerFuerVormerkung } from './vormerkungSchuelersuche.js';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import { Clock, Trash2 } from '@lucide/svelte';
@@ -13,6 +16,9 @@
 	let searchResults = $state.raw(/** @type {any[]} */ ([]));
 	let isSearching = $state(false);
 	let notiz = $state('');
+	// Die Schülersuche läuft über die Schülerdatei (GET /api/schueler?q=), also gilt deren
+	// Recht — dasselbe, das der Server an der Route verlangt (schuelerRechte.js).
+	const rechte = $derived(schuelerRechte(authStore.currentUser));
 
 	async function deleteVormerkung(id) {
 		if (!confirm('Vormerkung wirklich löschen?')) return;
@@ -37,18 +43,7 @@
 		}
 		isSearching = true;
 		try {
-			// Schülersuche über die SUCH-Tür, nie über POST /api/action (Buchungs-Tür der Theke).
-			const res = await apiFetch(`/api/search?q=${encodeURIComponent(searchVal.trim())}`);
-			if (res.ok) {
-				const data = await res.json();
-				searchResults = (data.students || []).map((s) => ({
-					id: s.id,
-					title: `${s.vorname} ${s.nachname}`,
-					subtitle: `${s.klasse} · ${s.barcode_id}`
-				}));
-			} else {
-				searchResults = [];
-			}
+			searchResults = await sucheSchuelerFuerVormerkung(searchVal);
 		} catch {
 			searchResults = [];
 		} finally {
@@ -94,54 +89,60 @@
 
 	{#if isAdding}
 		<div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 animate-fade-in">
-			<!-- Flex statt Raster: Die Suche trägt neben sich einen Knopf, die Notiz nicht —
-			     im Raster säßen beide Felder auf verschiedenen Zeilen. -->
-			<div class="flex flex-col sm:flex-row items-end gap-4">
-				<div class="flex flex-1 w-full items-end gap-2">
+			{#if !rechte.einsehen}
+				<!-- Sichtbar statt still: Ein fehlendes Suchfeld sähe wie ein Fehler aus. -->
+				<p class="text-sm text-slate-500">
+					Die Schülersuche braucht das Recht „Schülerdatei einsehen“ (view_students).
+				</p>
+			{:else}
+				<!-- Flex statt Raster: Die Suche trägt neben sich einen Knopf, die Notiz nicht. -->
+				<div class="flex flex-col sm:flex-row items-end gap-4">
+					<div class="flex flex-1 w-full items-end gap-2">
+						<Feld
+							id="student-search-input"
+							label="Schüler suchen (Name oder Barcode)"
+							bind:value={searchVal}
+							onkeydown={(e) => e.key === 'Enter' && searchStudent()}
+							placeholder="z.B. Max Mustermann"
+							class="flex-1"
+						/>
+						<Button variant="secondary" onclick={searchStudent} disabled={isSearching}>
+							{isSearching ? '...' : 'Suchen'}
+						</Button>
+					</div>
 					<Feld
-						id="student-search-input"
-						label="Schüler suchen (Name oder Barcode)"
-						bind:value={searchVal}
-						onkeydown={(e) => e.key === 'Enter' && searchStudent()}
-						placeholder="z.B. Max Mustermann"
-						class="flex-1"
+						id="notiz-input"
+						label="Interne Notiz (optional)"
+						bind:value={notiz}
+						placeholder="z.B. Braucht es dringend für Referat"
+						class="flex-1 w-full"
 					/>
-					<Button variant="secondary" onclick={searchStudent} disabled={isSearching}>
-						{isSearching ? '...' : 'Suchen'}
-					</Button>
 				</div>
-				<Feld
-					id="notiz-input"
-					label="Interne Notiz (optional)"
-					bind:value={notiz}
-					placeholder="z.B. Braucht es dringend für Referat"
-					class="flex-1 w-full"
-				/>
-			</div>
 
-			{#if searchResults.length > 0}
-				<div class="mt-4 border border-slate-200 rounded-xl overflow-hidden bg-white">
-					{#each searchResults as r, _i (_i)}
-						<div
-							class="flex items-center justify-between p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
-						>
-							<div>
-								<p class="font-semibold text-slate-800 text-sm">{r.title}</p>
-								<p class="text-xs text-slate-500">{r.subtitle}</p>
-							</div>
-							<Button
-								variant="secondary"
-								size="sm"
-								onclick={() => addVormerkung(r.id)}
-								class="border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100"
+				{#if searchResults.length > 0}
+					<div class="mt-4 border border-slate-200 rounded-xl overflow-hidden bg-white">
+						{#each searchResults as r, _i (_i)}
+							<div
+								class="flex items-center justify-between p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
 							>
-								Auswählen
-							</Button>
-						</div>
-					{/each}
-				</div>
-			{:else if searchVal && !isSearching && searchResults.length === 0}
-				<p class="text-sm text-slate-500 mt-2">Keine Schüler gefunden.</p>
+								<div>
+									<p class="font-semibold text-slate-800 text-sm">{r.title}</p>
+									<p class="text-xs text-slate-500">{r.subtitle}</p>
+								</div>
+								<Button
+									variant="secondary"
+									size="sm"
+									onclick={() => addVormerkung(r.id)}
+									class="border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100"
+								>
+									Auswählen
+								</Button>
+							</div>
+						{/each}
+					</div>
+				{:else if searchVal && !isSearching && searchResults.length === 0}
+					<p class="text-sm text-slate-500 mt-2">Keine Schüler gefunden.</p>
+				{/if}
 			{/if}
 		</div>
 	{/if}

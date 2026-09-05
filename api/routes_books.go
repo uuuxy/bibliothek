@@ -13,6 +13,10 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("PUT /api/buecher/titel/{id}/signatur", s.RequirePermission("create_orders")(s.UpdateTitelSignaturHandler()))
 
 	// Exemplare (Copies)
+	// Titel-Tür für Bildschirme außerhalb der Theke (Etiketten-Titelsuche im Druck-Center):
+	// dieselbe Suche wie GET /api/search, aber nur Titel und hinter view_books statt
+	// perform_actions (05.09.2026, Befund-Register Entscheidung 3).
+	mux.Handle("GET /api/buecher/titel/suche", s.RequirePermission("view_books")(s.TitelSucheHandler(bookRepo)))
 	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
 	// Ausleiher und Historie hinter view_students, nicht view_books: Beide
 	// verknüpfen Schülernamen mit Titeln (die Historie über Jahre) — dieselbe

@@ -251,6 +251,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 
 		// routes_books.go
 		"GET /api/buecher/titel/{id}/exemplare":      {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
+		"GET /api/buecher/titel/suche":               {URL: "/api/buecher/titel/suche?q=Antwortgate", Positiv: []string{"Antwortgate Testband"}},
 		"GET /api/buecher/titel/{id}/ausleiher":      {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
 		"GET /api/buecher/titel/{id}/historie":       {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
 		"GET /api/buecher/titel/{id}/etiketten":      {URL: "/api/buecher/titel/" + w.titelID + "/etiketten"},

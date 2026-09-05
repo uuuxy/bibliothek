@@ -136,9 +136,14 @@ export function createLabelStore() {
 		isSearching = true;
 		searchTimeout = setTimeout(async () => {
 			try {
-				// Titelsuche über die SUCH-Tür, nie über POST /api/action: Dort löst ein
-				// gescannter B-Barcode ohne aktiven Schüler eine Rückgabe aus (Inventur 03.09.2026).
-				const res = await apiFetch(`/api/search?q=${encodeURIComponent(searchVal.trim())}`);
+				// Titel-Tür (view_books) — nie POST /api/action (dort löst ein gescannter
+				// B-Barcode ohne aktiven Schüler eine Rückgabe aus, Inventur 03.09.2026) und seit
+				// 05.09.2026 auch nicht mehr die Theken-Suche /api/search: Die lieferte
+				// Schüler-Kiosk-Daten mit, die dieser Bildschirm nie zeigt, und hing am
+				// Theken-Recht perform_actions, das ein Druckbildschirm nicht braucht.
+				const res = await apiFetch(
+					`/api/buecher/titel/suche?q=${encodeURIComponent(searchVal.trim())}`
+				);
 				if (res.ok) {
 					const body = await res.json();
 					searchResults = body.books || [];
