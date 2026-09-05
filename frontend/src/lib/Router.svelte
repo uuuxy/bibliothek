@@ -3,7 +3,6 @@
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import { erlaubteTabs, tabIstGesperrt } from './menu.js';
-	import { schuljahrReiterAusPfad } from './schuljahrRoute.js';
 	import { escapeGehoertJemandAnderem } from './escapeRegel.js';
 
 	import Berechtigungen from './Berechtigungen.svelte';
@@ -22,7 +21,8 @@
 	import SystemSettings from './SystemSettings.svelte';
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
-	import Schuljahr from './Schuljahr.svelte';
+	import Graduates from './Graduates.svelte';
+	import LmfPlan from './LmfPlan.svelte';
 	import RouteFallback from './components/layout/RouteFallback.svelte';
 
 	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
@@ -44,6 +44,7 @@
 		orders: '/bestellungen',
 		media_catalog: '/medienkatalog',
 		signaturen: '/signaturen',
+		graduates: '/abgaenger',
 		schuljahr: '/schuljahr',
 		stats: '/statistiken',
 		mahnwesen: '/mahnwesen',
@@ -61,10 +62,9 @@
 	 * @param {string} path
 	 */
 	function applyPathToState(path) {
-		const schuljahrReiter = schuljahrReiterAusPfad(path);
-		if (schuljahrReiter) {
+		if (path === '/lmf-plan') {
+			// Alte Adresse (Menüpunkt am 05.09.2026): jetzt System → Schuljahreswechsel.
 			uiStore.activeTab = 'schuljahr';
-			uiStore.schuljahrReiter = schuljahrReiter;
 			return;
 		}
 		if (path === '/lmf-aktionen') {
@@ -96,9 +96,6 @@
 		}
 		if (uiStore.activeTab === 'stats_detail') {
 			return `/statistiken/${uiStore.statsDetailKind}`;
-		}
-		if (uiStore.activeTab === 'schuljahr') {
-			return `/schuljahr/${uiStore.schuljahrReiter}`;
 		}
 		return tabToPath[uiStore.activeTab];
 	}
@@ -205,8 +202,10 @@
 		<div class="w-full animate-fade-in"><StudentDirectory /></div>
 	{:else if uiStore.activeTab === 'schulklassen'}
 		<div class="w-full animate-fade-in"><Schulklassen /></div>
+	{:else if uiStore.activeTab === 'graduates'}
+		<div class="w-full animate-fade-in"><Graduates /></div>
 	{:else if uiStore.activeTab === 'schuljahr'}
-		<div class="w-full animate-fade-in"><Schuljahr /></div>
+		<div class="w-full animate-fade-in"><LmfPlan /></div>
 	{:else if uiStore.activeTab === 'mahnwesen'}
 		<div class="w-full animate-fade-in"><Mahnwesen /></div>
 	{:else if uiStore.activeTab === 'kollegium_portal'}

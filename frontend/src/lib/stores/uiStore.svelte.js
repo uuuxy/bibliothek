@@ -53,12 +53,6 @@ class UIStore {
 	 * Etiketten-Startposition stehen davor, nicht dahinter).
 	 */
 	requestedKlassenDruck = $state(/** @type {string | null} */ (null));
-	/**
-	 * Der offene Reiter der Seite „Schuljahreswechsel" (lmf-plan | abgaenger | versetzung).
-	 * Im Store, weil der Router ihn aus der URL setzt (/schuljahr/abgaenger, und die alten
-	 * Adressen /abgaenger und /lmf-plan) und für die Adresszeile zurückliest.
-	 */
-	schuljahrReiter = $state(/** @type {string} */ ('lmf-plan'));
 
 	async fetchPendingReservierungen() {
 		try {

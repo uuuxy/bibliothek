@@ -29,7 +29,7 @@ const PILLEN = [
 	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld' },
 	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld' },
 	{ name: 'Signaturen', pfad: '/signaturen', id: 'signaturen-suchfeld' },
-	{ name: 'Abgänger', pfad: '/schuljahr/abgaenger', id: 'abgaenger-suchfeld' }
+	{ name: 'Abgänger', pfad: '/abgaenger', id: 'abgaenger-suchfeld' }
 ];
 
 /**
@@ -305,7 +305,7 @@ const STARTLINIE = [
 	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld', reiter: true },
 	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld', reiter: false },
 	{ name: 'Signaturen', pfad: '/signaturen', id: 'signaturen-suchfeld', reiter: false },
-	{ name: 'Abgänger', pfad: '/schuljahr/abgaenger', id: 'abgaenger-suchfeld', reiter: true }
+	{ name: 'Abgänger', pfad: '/abgaenger', id: 'abgaenger-suchfeld', reiter: false }
 ];
 
 /**

@@ -44,7 +44,7 @@ test('Abgänger: Abschlussklasse mit offenem Buch — Saison entscheidet über L
 
 	await uiLogin(page);
 	const antwort = await (await page.request.get('/api/abgaenger')).json();
-	await page.goto('/schuljahr/abgaenger');
+	await page.goto('/abgaenger');
 
 	if (!antwort.fenster.offen) {
 		// Außerhalb der Saison: Hinweis statt Liste — und der 9H1-Schüler mit Buch fehlt.

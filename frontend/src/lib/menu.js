@@ -163,17 +163,7 @@ export const menuGroups = [
 				icon: 'bell',
 				permission: 'view_students'
 			},
-			{
-				// Schuljahreswechsel (05.09.2026): LMF-Plan, Abgänger und LUSD/Versetzung als
-				// Reiter einer Seite — Aufgaben, die ein- bis zweimal im Jahr anfallen, statt
-				// dreier Menüpunkte (Peter: der LMF-Plan „lenkt nur ab"). Sammelpunkt wie die
-				// Einstellungen: sichtbar, sobald EINE der Türen dahinter offen ist; welche
-				// Reiter man sieht, entscheidet Schuljahr.svelte mit hatRecht je Route.
-				id: 'schuljahr',
-				label: 'Schuljahreswechsel',
-				icon: 'academic-cap',
-				permissions: ['edit_books', 'view_graduates', 'import_students', 'manage_students_admin']
-			},
+			{ id: 'graduates', label: 'Abgänger', icon: 'academic-cap', permission: 'view_graduates' },
 			{ id: 'orders', label: 'Bestellungen', icon: 'shopping-bag', permission: 'view_orders' },
 			{ id: 'inventory', label: 'Inventur', icon: 'clipboard', permission: 'inventory_scan' }
 		]
@@ -183,6 +173,19 @@ export const menuGroups = [
 		items: [
 			{ id: 'stats', label: 'Statistiken', icon: 'chart-bar', permission: 'view_stats' },
 			{ id: 'system-logs', label: 'System-Logs', icon: 'shield', permission: 'audit_logs' },
+			{
+				// „Schuljahreswechsel" = der LMF-Plan (Peter, 05.09.2026 abends): Rückgabe- und
+				// Ausgabetermine je Klasse, ein- bis zweimal im Jahr gebraucht — deshalb unter
+				// System und nicht dauerhaft im Bibliotheks-Menü („lenkt nur ab"). Am selben
+				// Abend stand er kurz als Sammelseite unter Verwaltung, mit Abgängern und
+				// LUSD/Versetzung als Reitern; Peter: Abgänger bleibt unter Verwaltung, der
+				// LUSD-Import in den Einstellungen, der Plan hierher. edit_books wie die übrige
+				// Lernmittel-Pflege; das Kollegium liest den Plan im Portal.
+				id: 'schuljahr',
+				label: 'Schuljahreswechsel',
+				icon: 'calendar',
+				permission: 'edit_books'
+			},
 			// „LMF-Aktionen" stand hier bis zum 24.08.2026 als eigener Punkt (zuvor in
 			// „Verwaltung"). Auf Peters Ansage in die Einstellungen gewandert — die
 			// Massenverlaengerung wird "fast nie" gebraucht, weil der LUSD-Import
@@ -205,7 +208,8 @@ export const menuGroups = [
 			{
 				// Ein Sammelpunkt: Die Kategorien dahinter hängen an verschiedenen Rechten
 				// (kategorien.js) — Schule/Fristen/Mail an manage_settings, LMF-Aktionen an
-				// edit_books, Datenverwaltung an manage_inventory. Bis 24.08.2026 abends öffnete nur
+				// edit_books, Datenverwaltung an manage_inventory, Schuljahreswechsel (LUSD,
+				// Versetzung) an import_students/manage_students_admin. Bis 24.08.2026 abends öffnete nur
 				// manage_settings die Tür: Ein Mitarbeiter hatte ab Werk import_students und
 				// manage_inventory, kam aber nie an LUSD-Import oder Littera-Import heran —
 				// Rechte ohne Tür. Die Liste hier MUSS die Rechte aus kategorien.js spiegeln
@@ -217,6 +221,8 @@ export const menuGroups = [
 					'manage_settings',
 					'edit_books',
 					'manage_inventory',
+					'import_students',
+					'manage_students_admin',
 					// Lieferanten-Kategorie (25.08.2026) — Schreiben verlangt create_orders.
 					'create_orders'
 				]

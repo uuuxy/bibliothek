@@ -161,7 +161,7 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 		},
 		{ name: 'Schülerdatei', oeffne: () => page.goto('/schuelerdatei') },
 		{ name: 'Mahnwesen', oeffne: () => page.goto('/mahnwesen') },
-		{ name: 'Abgänger', oeffne: () => page.goto('/schuljahr/abgaenger') },
+		{ name: 'Abgänger', oeffne: () => page.goto('/abgaenger') },
 		{ name: 'Bestellungen', oeffne: () => page.goto('/bestellungen') },
 		{
 			name: 'Bestellungen › Bestellhistorie',

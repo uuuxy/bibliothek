@@ -95,29 +95,32 @@ describe('Menü-Sichtbarkeit', () => {
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_users'] }), rolle).toBe(false);
 			expect(canSeeItem(settings, { rolle, permissions: ['view_students'] }), rolle).toBe(false);
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_settings'] }), rolle).toBe(true);
+			expect(canSeeItem(settings, { rolle, permissions: ['import_students'] }), rolle).toBe(true);
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_inventory'] }), rolle).toBe(true);
 		}
 		expect(canSeeItem(settings, admin)).toBe(true);
 	});
 
-	it('öffnet den Schuljahreswechsel mit jedem Recht eines seiner Reiter', () => {
-		// LUSD-Abgleich und Versetzung wohnen seit 05.09.2026 nicht mehr in den
-		// Einstellungen, sondern als Reiter der Seite „Schuljahreswechsel" neben LMF-Plan
-		// und Abgängern. Wer nur import_students hat, muss die Seite trotzdem sehen —
-		// sonst gäbe es wieder ein Recht ohne Tür.
+	it('hängt Abgänger unter Verwaltung an view_graduates und den Schuljahreswechsel unter System an edit_books', () => {
+		// Peter, 05.09.2026 abends: Unter Verwaltung steht nur „Abgänger"; der LMF-Plan
+		// heißt im System-Menü „Schuljahreswechsel"; der LUSD-Import bleibt eine
+		// Einstellungs-Kategorie. Eine Sammelseite mit drei Reitern unter Verwaltung gab es
+		// für einen Abend — sie hat nicht getragen.
+		const gruppe = (/** @type {string} */ id) =>
+			menuGroups.find((g) => g.items.some((i) => i.id === id))?.name;
+		expect(gruppe('graduates')).toBe('Verwaltung');
+		expect(gruppe('schuljahr')).toBe('System');
+		const abgaenger = allePunkte.find((i) => i.id === 'graduates');
 		const schuljahr = allePunkte.find((i) => i.id === 'schuljahr');
-		if (!schuljahr) throw new Error('Menüpunkt schuljahr fehlt — Test läuft ins Leere');
-		for (const recht of [
-			'edit_books',
-			'view_graduates',
-			'import_students',
-			'manage_students_admin'
-		]) {
-			expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: [recht] }), recht).toBe(
-				true
-			);
-		}
-		expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: ['view_students'] })).toBe(
+		if (!abgaenger || !schuljahr) throw new Error('Menüpunkt fehlt — Test läuft ins Leere');
+		expect(canSeeItem(abgaenger, { rolle: 'mitarbeiter', permissions: ['view_graduates'] })).toBe(
+			true
+		);
+		expect(canSeeItem(abgaenger, { rolle: 'mitarbeiter', permissions: ['edit_books'] })).toBe(
+			false
+		);
+		expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: ['edit_books'] })).toBe(true);
+		expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: ['view_graduates'] })).toBe(
 			false
 		);
 		expect(

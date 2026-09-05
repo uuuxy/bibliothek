@@ -66,7 +66,7 @@ test('Lehrer: /abgaenger direkt aufgerufen leakt keine Schülerdaten', async ({ 
 	expect(api.status(), 'Abgänger-API für Lehrer').toBe(403);
 
 	// Direkter URL-Aufruf: kein Crash, keine Datenzeilen
-	await page.goto('/schuljahr/abgaenger');
+	await page.goto('/abgaenger');
 	await expect(page.locator('table')).toHaveCount(0);
 	await expect(page.getByText('Barcode-ID')).toHaveCount(0);
 
