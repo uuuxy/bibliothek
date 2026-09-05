@@ -5,6 +5,7 @@
 	import ManualInput from '$lib/components/scanner/ManualInput.svelte';
 	import FileUploader from '$lib/components/scanner/FileUploader.svelte';
 	import Button from '../../../lib/components/ui/Button.svelte';
+	import { escapeSchliesst } from '../../../lib/components/ui/escapeSchliesst.js';
 
 	let {
 		subject = 'Mathematik',
@@ -123,7 +124,10 @@
 	}
 </script>
 
-<div class="relative w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl text-slate-800">
+<div
+	class="relative w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl text-slate-800"
+	use:escapeSchliesst={manualScannerClose}
+>
 	<div class="mb-4 flex items-start justify-between gap-3">
 		<div>
 			<h3 class="text-lg font-bold text-slate-900">ISBN-Scanner</h3>

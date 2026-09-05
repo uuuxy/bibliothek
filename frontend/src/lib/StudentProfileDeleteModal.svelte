@@ -3,6 +3,7 @@
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
+	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 
 	let { open = false, profile, onclose, onsuccess } = $props();
 
@@ -60,7 +61,10 @@
 		role="dialog"
 		aria-modal="true"
 	>
-		<div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-slate-800 text-left">
+		<div
+			class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-slate-800 text-left"
+			use:escapeSchliesst={handleClose}
+		>
 			<h3 class="text-lg font-bold text-rose-600 flex items-center gap-2">
 				<TriangleAlert class="h-6 w-6 text-rose-600" aria-hidden="true" />
 				<span>Schüler löschen</span>

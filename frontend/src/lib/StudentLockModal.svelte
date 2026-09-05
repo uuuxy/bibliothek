@@ -2,6 +2,7 @@
 	import { apiClient } from './apiFetch.js';
 	import { Unlock, Lock, X, AlertCircle } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 
 	/** @type {{ open: boolean, profile: any, onsuccess: (updatedProfile: any) => void }} */
 	let { open = $bindable(false), profile, onsuccess } = $props();
@@ -61,6 +62,7 @@
 	>
 		<div
 			class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all"
+			use:escapeSchliesst={() => (open = false)}
 		>
 			<div
 				class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"

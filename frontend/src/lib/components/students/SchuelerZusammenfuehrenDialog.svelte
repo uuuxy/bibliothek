@@ -10,6 +10,7 @@
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import ZusammenfuehrenKandidat from './ZusammenfuehrenKandidat.svelte';
 	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
+	import { escapeSchliesst } from '../ui/escapeSchliesst.js';
 
 	/** @type {{ open: boolean, profile: any, onMerged: (zielId: string) => void }} */
 	let { open = $bindable(false), profile, onMerged } = $props();
@@ -76,7 +77,10 @@
 		aria-modal="true"
 		aria-labelledby="zf-titel"
 	>
-		<div class="bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden">
+		<div
+			class="bg-surface rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden"
+			use:escapeSchliesst={() => (open = false)}
+		>
 			<div class="px-6 py-5 border-b border-outline-variant flex items-center justify-between">
 				<h3 id="zf-titel" class="text-lg font-bold text-on-surface flex items-center gap-2">
 					<Merge class="w-5 h-5 text-primary" aria-hidden="true" />

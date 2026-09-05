@@ -24,7 +24,7 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 const BESTAND = {
 	'src/inventur/lib/components/admin/BookTable.svelte': 241,
 	'src/inventur/lib/components/admin/BookTableZeile.svelte': 203,
-	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 221,
+	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 214,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 215,
 	'src/lib/BestellBestaetigung.svelte': 254,
 	'src/lib/BestellWorkspace.svelte': 291,
@@ -44,7 +44,6 @@ const BESTAND = {
 	'src/lib/components/bestellungen/OrderRecommendations.svelte': 222,
 	'src/lib/components/bestellungen/OrderSearch.svelte': 287,
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
-	'src/lib/components/mahnwesen/MahnwesenTable.svelte': 240,
 	'src/lib/components/stats/StatsTrendChart.svelte': 243,
 	'src/lib/components/students/LusdImportView.svelte': 311,
 	'src/lib/components/students/PromoteStudentsView.svelte': 212,

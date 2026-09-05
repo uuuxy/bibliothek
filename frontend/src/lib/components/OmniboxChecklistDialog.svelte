@@ -2,6 +2,7 @@
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import Button from './ui/Button.svelte';
 	import { ClipboardCheck } from '@lucide/svelte';
+	import { escapeSchliesst } from './ui/escapeSchliesst.js';
 
 	/**
 	 * Zubehör-Checkliste beim Geräte-Scan: Der Server unterbricht mit
@@ -33,7 +34,10 @@
 	<div
 		class="fixed inset-0 bg-black/40 backdrop-blur-sm z-100 flex items-center justify-center p-4"
 	>
-		<div class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+		<div
+			class="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl"
+			use:escapeSchliesst={() => (omniboxStore.checklistAnfrage = null)}
+		>
 			<div class="flex items-center gap-3 mb-2">
 				<ClipboardCheck class="h-8 w-8 text-primary" aria-hidden="true" />
 				<h2 class="text-xl font-bold text-on-surface">Zubehör prüfen</h2>

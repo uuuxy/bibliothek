@@ -2,6 +2,7 @@
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import { apiClient } from '../apiFetch.js';
 	import Button from './ui/Button.svelte';
+	import { escapeSchliesst } from './ui/escapeSchliesst.js';
 
 	/** @type {{ onReload: () => void }} */
 	let { onReload } = $props();
@@ -13,6 +14,7 @@
 	>
 		<div
 			class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-rose-500"
+			use:escapeSchliesst={() => (omniboxStore.blockAlert = null)}
 		>
 			<div class="text-6xl mb-4">⛔️</div>
 			<h2 class="text-2xl font-extrabold text-rose-700 mb-2">Ausleihe blockiert</h2>

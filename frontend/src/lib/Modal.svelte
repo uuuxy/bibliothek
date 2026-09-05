@@ -1,4 +1,5 @@
 <script>
+	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 	/**
 	 * Modal — generic overlay container that accepts snippet render-props.
 	 *
@@ -32,19 +33,6 @@
 	);
 </script>
 
-<!-- Escape schliesst den Dialog. Am Fenster und nicht am Element darunter, weil das
-     tabindex="-1" traegt: Es ist nicht per Tastatur fokussierbar, ein onkeydown dort
-     feuerte also nur, solange der Fokus zufaellig darin liegt. Bis hierher gab es gar
-     keinen Escape-Weg — nur den Klick auf den Hintergrund, und der ist mit der Tastatur
-     nicht erreichbar.
-     `open` wird im Handler geprueft, nicht per {#if} darum herum: <svelte:window> muss
-     auf der obersten Ebene der Komponente stehen. -->
-<svelte:window
-	onkeydown={(e) => {
-		if (open && e.key === 'Escape') onclose?.();
-	}}
-/>
-
 {#if open}
 	<!-- Die Dialog-Semantik sitzt am Fenster darunter, nicht am Hintergrund: Der
 	     Hintergrund ist Dekoration (role="presentation"), das weisse Feld IST der Dialog.
@@ -68,6 +56,7 @@
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
+			use:escapeSchliesst={onclose}
 		>
 			{#if header}
 				<div class="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">

@@ -1,6 +1,7 @@
 <script>
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import Button from './ui/Button.svelte';
+	import { escapeSchliesst } from './ui/escapeSchliesst.js';
 </script>
 
 {#if omniboxStore.vormerkungAlert}
@@ -9,6 +10,7 @@
 	>
 		<div
 			class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-rose-500"
+			use:escapeSchliesst={() => (omniboxStore.vormerkungAlert = null)}
 		>
 			<div class="text-6xl mb-4">🚨</div>
 			<h2 class="text-2xl font-extrabold text-rose-700 mb-2">Achtung! Vorgemerkt!</h2>

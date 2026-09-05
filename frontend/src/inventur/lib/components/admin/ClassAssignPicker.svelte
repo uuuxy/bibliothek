@@ -7,6 +7,7 @@
 	import { onMount } from 'svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
+	import { escapeSchliesst } from '../../../../lib/components/ui/escapeSchliesst.js';
 
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();
@@ -57,13 +58,6 @@
 	}
 </script>
 
-<!-- Escape schliesst; vorher fuehrte nur der Klick auf den Hintergrund heraus. -->
-<svelte:window
-	onkeydown={(e) => {
-		if (e.key === 'Escape') onClose();
-	}}
-/>
-
 <div
 	class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
 	role="presentation"
@@ -78,6 +72,7 @@
 >
 	<div
 		class="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-5"
+		use:escapeSchliesst={onClose}
 		role="dialog"
 		aria-modal="true"
 		aria-label="Zum Klassensatz hinzufügen"

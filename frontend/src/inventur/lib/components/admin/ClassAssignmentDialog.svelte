@@ -6,6 +6,7 @@
 	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
 	import ClassAssignmentSummary from './ClassAssignmentSummary.svelte';
 	import { TriangleAlert, X } from '@lucide/svelte';
+	import { escapeSchliesst } from '../../../../lib/components/ui/escapeSchliesst.js';
 
 	/**
 	 * @type {{
@@ -139,15 +140,6 @@
 	}
 </script>
 
-<!-- Escape schliesst den Dialog; vorher gab es dafuer keinen Weg ausser dem Klick auf den
-     Hintergrund, den man mit der Tastatur nicht erreicht. `isOpen` wird im Handler
-     geprueft, weil <svelte:window> auf der obersten Ebene stehen muss. -->
-<svelte:window
-	onkeydown={(e) => {
-		if (isOpen && e.key === 'Escape') onClose();
-	}}
-/>
-
 {#if isOpen}
 	<!-- role="presentation": Der Hintergrund ist Dekoration. Das Schliessen per Klick
 	     darauf ist eine Maus-Bequemlichkeit, der Dialog selbst traegt die Semantik. -->
@@ -160,6 +152,7 @@
 	>
 		<div
 			class="bg-white rounded-none sm:rounded-3xl shadow-2xl w-full lg:w-300 max-w-[100vw] lg:max-w-[90vw] h-dvh sm:h-[90vh] lg:h-212.5 max-h-dvh lg:max-h-[95vh] p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
+			use:escapeSchliesst={onClose}
 		>
 			<!-- Left Content Area -->
 			<div class="grow flex flex-col gap-4 sm:gap-6 relative z-10 w-full overflow-hidden">

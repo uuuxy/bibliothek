@@ -1,6 +1,7 @@
 <script>
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
+	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 	let { book, onCancel, onSubmit, isSubmitting } = $props();
 
 	let damageReason = $state('Verloren');
@@ -14,7 +15,10 @@
 {#if book}
 	<div class="fixed inset-0 z-60 flex items-center justify-center p-4">
 		<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none"></div>
-		<div class="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full relative z-10 animate-fade-in">
+		<div
+			class="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full relative z-10 animate-fade-in"
+			use:escapeSchliesst={onCancel}
+		>
 			<h3 class="text-xl font-bold text-slate-800 mb-2">Verlust/Schaden melden</h3>
 			<p class="text-sm text-slate-500 mb-4">
 				Für <strong>{book.titel}</strong> ({book.barcode_id}). Die Ausleihe wird beendet und eine

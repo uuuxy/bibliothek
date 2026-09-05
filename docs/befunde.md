@@ -101,10 +101,10 @@ nicht hier.
   stehen als benannte Ausnahme in `frontend-hygiene-bauform.test.js` (Bestand jetzt 25 statt
   34; der Rest sind Cover-Bilder, die Etikettenvorschau und Flächen, die kein Dialog sind).
 
-  Offen bleibt allein, dass diese neun ihren Dialograhmen weiterhin SELBST bauen, statt
-  `ui/Modal.svelte` zu benutzen — das ist die eigentliche Doppelung, aber ein anderer
-  Durchgang: Modal bringt Fokusfalle, Escape und Scroll-Sperre mit, das ist Verhalten, nicht
-  Gestalt, und will je Dialog geprüft werden.
+  Offen bleibt, dass diese Dialoge ihr MARKUP weiterhin selbst bauen, statt `ui/Modal.svelte`
+  zu benutzen. Das VERHALTEN ist seit 05.09. zusammengeführt: `use:escapeSchliesst` liegt in
+  `components/ui/`, wird von Modal und von fünfzehn Overlays benutzt und ist über
+  `escapeSchliesst.test.js` geratscht — wer ein neues Overlay ohne Tastaturweg baut, wird rot.
 
 ## Offen — Entscheidung nötig (Peter)
 
