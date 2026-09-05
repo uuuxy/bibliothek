@@ -104,8 +104,14 @@ deshalb wird nichts davon eigenmächtig entschieden:
    NICHT die Liste, sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich,
    also kein Verstoß gegen „eine Suchleiste je Seite". Offen ist allein, ob die Nähe der
    beiden Felder trotzdem stört; dann Umbau.
-5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
-   der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
+5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Gemessen am Quelltext
+   (05.09.2026): `KlassenKarte.svelte` setzt den Namen in der weiten Fassung auf
+   `text-2xl font-bold text-slate-800`, also 24 px fett — die kompakte Fassung derselben
+   Karte nimmt `text-base font-medium text-on-surface` (16 px). M3 gäbe einer Listenzeile
+   title-medium (16 px); 24 px ist headline-small. Zweiter Punkt derselben Zeile: die weite
+   Fassung greift auf `slate`-Farben statt auf die Token. Entscheidung: auf 16 px
+   zurücknehmen (dann sind beide Fassungen bis auf die Dichte gleich) oder als bewusste
+   Kachel-Überschrift so lassen.
 6. **Cover in den beiden Arbeitslisten — wohin?** (05.09.2026) Klassensatz-Reservierungen und
    Wünsche & Meldungen laufen beide über `ArbeitsZeile.svelte`, die M3-„list item"-Zeile mit
    FÜHRENDEM ELEMENT: links ein 48-px-Kreis mit der Klasse (Entscheidung vom 26.08.: „welche
