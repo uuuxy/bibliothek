@@ -115,7 +115,7 @@ Das Kollegium sieht dieselben Einträge in _Mein Portal → Klassensätze_.
 Menü _System → Schuljahreswechsel_ (seit 05.09.2026; der Plan wird ein- bis zweimal im
 Jahr gebraucht und steht deshalb nicht dauerhaft im Bibliotheks-Menü). Abgänger bleiben
 unter _Verwaltung_, der LUSD-Abgleich mit Versetzung unter _Einstellungen →
-Schuljahreswechsel_.
+LUSD & Versetzung_.
 
 Rückgabe- und Ausgabetermine je Klasse — die frühere Excel-Liste der Schule. **Der Plan
 ist eine Reihenfolge von Klassen, die das Programm auf Schultage und Stunden verteilt:**
@@ -172,7 +172,7 @@ Fristen und Ausgabe-Pläne. (§2.3)
   Grund. (§14)
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
 - **Neuer Schüler** per Formular; klassenweise besser über den LUSD-Import
-  (_Einstellungen → Schuljahreswechsel_).
+  (_Einstellungen → LUSD & Versetzung_).
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**; endgültiges
   Löschen/Anonymisieren nur mit Namensbestätigung (DSGVO-Kette, §8).

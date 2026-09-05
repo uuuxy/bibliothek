@@ -4,9 +4,9 @@ import { uiLogin, uniqueSuffix, einstellungsKategorie } from './helpers.js';
 test('LUSD-Import: Preview und Ausführung', async ({ page }) => {
 	await uiLogin(page);
 
-	// 1. Navigation zu Einstellungen -> Schuljahreswechsel
+	// 1. Navigation zu Einstellungen -> LUSD & Versetzung
 	await page.goto('/einstellungen');
-	await einstellungsKategorie(page, 'Schuljahreswechsel').click();
+	await einstellungsKategorie(page, 'LUSD & Versetzung').click();
 
 	// 2. CSV generieren (1 neuer Schüler)
 	const s = uniqueSuffix();
@@ -69,7 +69,7 @@ test('LUSD-Import: Schrottdateien werden sauber abgewiesen', async ({ page }) =>
 	await uiLogin(page);
 
 	await page.goto('/einstellungen');
-	await einstellungsKategorie(page, 'Schuljahreswechsel').click();
+	await einstellungsKategorie(page, 'LUSD & Versetzung').click();
 
 	const uploadAndPreview = async (name, buffer) => {
 		// Direkt aufs versteckte File-Input — Label-Texte ändern sich nach dem
@@ -108,7 +108,7 @@ test('LUSD-Import: LANIS-Klassenliste ohne ID und Geburtsdatum (Nur-Name-Stufe)'
 }) => {
 	await uiLogin(page);
 	await page.goto('/einstellungen');
-	await einstellungsKategorie(page, 'Schuljahreswechsel').click();
+	await einstellungsKategorie(page, 'LUSD & Versetzung').click();
 
 	const s = uniqueSuffix();
 	const csvContent = `\uFEFFNachname;Vorname;Klasse;BKU;Spanisch\nLanis_${s};Neu_${s};05G1;x;\n`;

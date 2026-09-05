@@ -7,14 +7,14 @@
 	// Zwei Werkzeuge, zwei Rechte — jedes folgt seiner Route:
 	//   LUSD-Abgleich  POST /api/lusd/preview|import  → import_students
 	//   Versetzung     POST /api/students/promote     → manage_students_admin
-	// Wer nur eines davon hat, sieht nur dieses; die Kategorie „Schuljahreswechsel"
+	// Wer nur eines davon hat, sieht nur dieses; die Kategorie „LUSD & Versetzung"
 	// selbst öffnet sich mit einem der Rechte (kategorien.js).
 	const darfLusd = $derived(hatRecht(authStore.currentUser, 'import_students'));
 	const darfVersetzen = $derived(hatRecht(authStore.currentUser, 'manage_students_admin'));
 </script>
 
 {#if darfLusd || darfVersetzen}
-	<!-- Inhalt der Einstellungs-Kategorie „Schuljahreswechsel"; Titel und Beitext kommen
+	<!-- Inhalt der Einstellungs-Kategorie „LUSD & Versetzung"; Titel und Beitext kommen
 	     vom KategorieRahmen. -->
 	<div class="space-y-10">
 		{#if darfLusd}

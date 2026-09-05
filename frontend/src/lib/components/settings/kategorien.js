@@ -104,9 +104,11 @@ export const KATEGORIEN = [
 		// Einstellungen — aber nicht in der Datenverwaltung zwischen Littera-Import und
 		// Cover-Abgleich vergraben, wo es bis dahin stand. Am 05.09.2026 abends war die
 		// Kategorie kurz als Reiter einer Sammelseite unter Verwaltung; Peter: „der LUSD-
-		// Import gehört unter Einstellungen, da war er ja auch vorher".
+		// Import gehört unter Einstellungen, da war er ja auch vorher". Hieß bis 06.09.
+		// „Schuljahreswechsel" — derselbe Name wie der LMF-Plan im System-Menü (Peter:
+		// „dringend umbenennen"). Die id bleibt, die Route /einstellungen kennt sie.
 		id: 'schuljahr',
-		titel: 'Schuljahreswechsel',
+		titel: 'LUSD & Versetzung',
 		kurz: 'LUSD-Abgleich, Versetzung',
 		icon: GraduationCap,
 		// LUSD → import_students, Versetzung → manage_students_admin; eines genügt.

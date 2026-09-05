@@ -178,7 +178,7 @@
 						</KategorieRahmen>
 					{:else if aktiv === 'schuljahr' && sichtbar.has('schuljahr')}
 						<KategorieRahmen
-							titel="Schuljahreswechsel"
+							titel="LUSD & Versetzung"
 							kurz="LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres."
 						>
 							<SchuljahreswechselBereich />

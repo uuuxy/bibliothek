@@ -16,9 +16,9 @@ test('Schuljahreswechsel: Dry-Run und Ausführung', async ({ page }) => {
 	// 2. Login
 	await uiLogin(page);
 
-	// 3. Navigation zu Einstellungen -> Schuljahreswechsel
+	// 3. Navigation zu Einstellungen -> LUSD & Versetzung
 	await page.goto('/einstellungen');
-	await einstellungsKategorie(page, 'Schuljahreswechsel').click();
+	await einstellungsKategorie(page, 'LUSD & Versetzung').click();
 
 	// 4. Vorschau berechnen
 	await page.getByRole('button', { name: 'Vorschau berechnen' }).click();

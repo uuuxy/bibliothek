@@ -208,7 +208,7 @@ export const menuGroups = [
 			{
 				// Ein Sammelpunkt: Die Kategorien dahinter hängen an verschiedenen Rechten
 				// (kategorien.js) — Schule/Fristen/Mail an manage_settings, LMF-Aktionen an
-				// edit_books, Datenverwaltung an manage_inventory, Schuljahreswechsel (LUSD,
+				// edit_books, Datenverwaltung an manage_inventory, LUSD & Versetzung (LUSD,
 				// Versetzung) an import_students/manage_students_admin. Bis 24.08.2026 abends öffnete nur
 				// manage_settings die Tür: Ein Mitarbeiter hatte ab Werk import_students und
 				// manage_inventory, kam aber nie an LUSD-Import oder Littera-Import heran —
