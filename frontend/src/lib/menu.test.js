@@ -95,9 +95,34 @@ describe('Menü-Sichtbarkeit', () => {
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_users'] }), rolle).toBe(false);
 			expect(canSeeItem(settings, { rolle, permissions: ['view_students'] }), rolle).toBe(false);
 			expect(canSeeItem(settings, { rolle, permissions: ['manage_settings'] }), rolle).toBe(true);
-			expect(canSeeItem(settings, { rolle, permissions: ['import_students'] }), rolle).toBe(true);
+			expect(canSeeItem(settings, { rolle, permissions: ['manage_inventory'] }), rolle).toBe(true);
 		}
 		expect(canSeeItem(settings, admin)).toBe(true);
+	});
+
+	it('öffnet den Schuljahreswechsel mit jedem Recht eines seiner Reiter', () => {
+		// LUSD-Abgleich und Versetzung wohnen seit 05.09.2026 nicht mehr in den
+		// Einstellungen, sondern als Reiter der Seite „Schuljahreswechsel" neben LMF-Plan
+		// und Abgängern. Wer nur import_students hat, muss die Seite trotzdem sehen —
+		// sonst gäbe es wieder ein Recht ohne Tür.
+		const schuljahr = allePunkte.find((i) => i.id === 'schuljahr');
+		if (!schuljahr) throw new Error('Menüpunkt schuljahr fehlt — Test läuft ins Leere');
+		for (const recht of [
+			'edit_books',
+			'view_graduates',
+			'import_students',
+			'manage_students_admin'
+		]) {
+			expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: [recht] }), recht).toBe(
+				true
+			);
+		}
+		expect(canSeeItem(schuljahr, { rolle: 'mitarbeiter', permissions: ['view_students'] })).toBe(
+			false
+		);
+		expect(
+			canSeeItem(schuljahr, { rolle: 'kollegium', permissions: ['create_reservations'] })
+		).toBe(false);
 	});
 
 	it('nennt am Menüpunkt „Einstellungen" genau die Rechte der Kategorien', () => {

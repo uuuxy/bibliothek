@@ -17,7 +17,6 @@ import {
 	Clock,
 	Database,
 	Globe,
-	GraduationCap,
 	Mail,
 	Route,
 	School,
@@ -99,17 +98,10 @@ export const KATEGORIEN = [
 		// Littera-/Bestandsimport, Cover-Abgleich → manage_inventory; Export → edit_books.
 		rechte: ['manage_inventory', 'edit_books']
 	},
-	{
-		// Eigene Kategorie (Peters Entscheidung 24.08.2026): gehört ins System-Menü unter
-		// Einstellungen — aber nicht in der Datenverwaltung zwischen Littera-Import und
-		// Cover-Abgleich vergraben, wo es bis heute stand.
-		id: 'schuljahr',
-		titel: 'Schuljahreswechsel',
-		kurz: 'LUSD-Abgleich, Versetzung',
-		icon: GraduationCap,
-		// LUSD → import_students, Versetzung → manage_students_admin; eines genügt.
-		rechte: ['import_students', 'manage_students_admin']
-	},
+	// „Schuljahreswechsel" (LUSD-Abgleich, Versetzung) stand vom 24.08. bis 05.09.2026
+	// hier. Jetzt ist es eine eigene Seite unter Verwaltung (Schuljahr.svelte) mit
+	// LMF-Plan und Abgängern als Nachbar-Reitern: Läufe und Arbeitsdokumente, keine
+	// Konfiguration.
 	{
 		id: 'betrieb',
 		titel: 'Betriebsbereitschaft',

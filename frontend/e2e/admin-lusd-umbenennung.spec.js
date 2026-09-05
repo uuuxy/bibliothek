@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, uniqueSuffix, einstellungsKategorie, seedSQL, querySQL } from './helpers.js';
+import { uiLogin, uniqueSuffix, seedSQL, querySQL, gehZu } from './helpers.js';
 
 // Umbenennung ohne Schüler-ID, am echten Stack: Ein bestätigter Bestandsschüler kommt im
 // Export unter neuem Nachnamen (gleiches Geburtsdatum, gleicher Schuleintritt). Die
@@ -21,8 +21,7 @@ test('LUSD-Import: umbenannter Schüler wird als Paar erkannt und behält seinen
 	`);
 
 	await uiLogin(page);
-	await page.goto('/einstellungen');
-	await einstellungsKategorie(page, 'Schuljahreswechsel').click();
+	await gehZu(page, '/schuljahr/versetzung');
 
 	const csv =
 		'Schueler_Vorname;Schueler_Nachname;Klassen_Klassenbezeichnung;Schueler_Geburtsdatum;Schueler_Eintritt_AktuelleSchule\n' +

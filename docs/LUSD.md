@@ -168,7 +168,7 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
 ## 6. Der Ablauf beim Schuljahreswechsel
 
 1. Sekretariat: Bericht mit den Spalten aus §1 exportieren (Geburtsdatum und Schuleintritt!).
-2. Admin: _Einstellungen → Schuljahreswechsel_ → Datei → **Vorschau laden**.
+2. Admin: _Verwaltung → Schuljahreswechsel → LUSD & Versetzung_ → Datei → **Vorschau laden**.
 3. Banner lesen (Stufe), dann die Rubriken: **Vermutlich dieselbe Person** zuerst — Paare
    prüfen und ankreuzen; dann Neue, Zusammengeführt (Geburtsdatum/ID nachgetragen),
    Klassenwechsel, Rückkehrer, Abgänger, Nicht im Export, Nicht abgleichbar, Mehrdeutig.

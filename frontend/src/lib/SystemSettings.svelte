@@ -26,7 +26,6 @@
 	import { ArrowLeft } from '@lucide/svelte';
 	import LadeFehler from './components/settings/LadeFehler.svelte';
 	import DataManagement from './components/admin/DataManagement.svelte';
-	import SchuljahreswechselBereich from './components/admin/SchuljahreswechselBereich.svelte';
 	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
 	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
 	import KategorieListe from './components/settings/KategorieListe.svelte';
@@ -175,13 +174,6 @@
 							kurz="Importe und Exporte des Bestands, Offline-Sicherungen einspielen."
 						>
 							<DataManagement />
-						</KategorieRahmen>
-					{:else if aktiv === 'schuljahr' && sichtbar.has('schuljahr')}
-						<KategorieRahmen
-							titel="Schuljahreswechsel"
-							kurz="LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres."
-						>
-							<SchuljahreswechselBereich />
 						</KategorieRahmen>
 					{:else if aktiv === 'betrieb'}
 						<KategorieRahmen

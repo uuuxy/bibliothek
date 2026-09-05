@@ -43,7 +43,7 @@ test('Abgänger: Klassenauswahl und Override landen im Versand-Request', async (
 		});
 	});
 
-	await page.goto('/abgaenger');
+	await page.goto('/schuljahr/abgaenger');
 	await page.getByRole('button', { name: /An Klassenleitungen mailen/ }).click();
 
 	const dialog = page.getByRole('dialog');
@@ -91,7 +91,7 @@ test('Abgänger: hinterlegte Klassenleitung erscheint im Dialog', async ({ page 
 		lehrer_email: 'pflasch@philipp-reis-schule.de'
 	});
 
-	await page.goto('/abgaenger');
+	await page.goto('/schuljahr/abgaenger');
 	await page.getByRole('button', { name: /An Klassenleitungen mailen/ }).click();
 
 	const dialog = page.getByRole('dialog');

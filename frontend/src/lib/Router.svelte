@@ -3,6 +3,8 @@
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import { erlaubteTabs, tabIstGesperrt } from './menu.js';
+	import { schuljahrReiterAusPfad } from './schuljahrRoute.js';
+	import { escapeGehoertJemandAnderem } from './escapeRegel.js';
 
 	import Berechtigungen from './Berechtigungen.svelte';
 	import Omnibox from './Omnibox.svelte';
@@ -20,8 +22,7 @@
 	import SystemSettings from './SystemSettings.svelte';
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
-	import Graduates from './Graduates.svelte';
-	import LmfPlan from './LmfPlan.svelte';
+	import Schuljahr from './Schuljahr.svelte';
 	import RouteFallback from './components/layout/RouteFallback.svelte';
 
 	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
@@ -40,11 +41,10 @@
 		inventory: '/inventur',
 		students_dir: '/schuelerdatei',
 		schulklassen: '/schulklassen',
-		lmf_plan: '/lmf-plan',
 		orders: '/bestellungen',
 		media_catalog: '/medienkatalog',
 		signaturen: '/signaturen',
-		graduates: '/abgaenger',
+		schuljahr: '/schuljahr',
 		stats: '/statistiken',
 		mahnwesen: '/mahnwesen',
 		kollegium_portal: '/kollegium-portal',
@@ -61,6 +61,12 @@
 	 * @param {string} path
 	 */
 	function applyPathToState(path) {
+		const schuljahrReiter = schuljahrReiterAusPfad(path);
+		if (schuljahrReiter) {
+			uiStore.activeTab = 'schuljahr';
+			uiStore.schuljahrReiter = schuljahrReiter;
+			return;
+		}
 		if (path === '/lmf-aktionen') {
 			// Alte Adresse (Menüpunkt bis 24.08.2026): jetzt Einstellungs-Kategorie.
 			uiStore.activeTab = 'settings';
@@ -90,6 +96,9 @@
 		}
 		if (uiStore.activeTab === 'stats_detail') {
 			return `/statistiken/${uiStore.statsDetailKind}`;
+		}
+		if (uiStore.activeTab === 'schuljahr') {
+			return `/schuljahr/${uiStore.schuljahrReiter}`;
 		}
 		return tabToPath[uiStore.activeTab];
 	}
@@ -144,28 +153,7 @@
 		}
 	});
 
-	// Escape bringt von überall zurück an die Theke — aber nur, wenn die Taste nicht
-	// schon jemandem gehört.
-	//
-	// Vorher galt sie bedingungslos, und das machte ausgerechnet die Berichte unbenutzbar:
-	// Die Ansicht besteht aus Monats-, Jahres- und Datumsfeldern, und Escape ist dort die
-	// normale Art, ein aufgeklapptes Auswahlfenster wieder zuzumachen. Der Tastendruck kam
-	// beim Fenster an, blubberte weiter — und statt des Auswahlfensters schloss sich die
-	// ganze Ansicht. Für den Benutzer sprang das Programm grundlos in die Ausleihe.
-	//
-	// Zwei Ausnahmen, beide am Ereignis selbst ablesbar und damit auch für Bauteile
-	// gültig, die es noch gar nicht gibt:
-	/** @param {KeyboardEvent} e */
-	function escapeGehoertJemandAnderem(e) {
-		// 1. Jemand hat die Taste bereits verarbeitet (Dialog, Menü, Overlay).
-		if (e.defaultPrevented) return true;
-		// 2. Der Fokus steht in einem Eingabefeld. Dort heisst Escape "Auswahl schließen"
-		//    oder "Eingabe verwerfen" — nie "Ansicht verlassen".
-		const ziel = /** @type {HTMLElement | null} */ (e.target);
-		if (!ziel) return false;
-		return ziel.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(ziel.tagName);
-	}
-
+	// Escape-Regel: escapeRegel.js (Theke, außer die Taste gehört schon jemandem).
 	$effect(() => {
 		/** @param {KeyboardEvent} e */
 		function handleGlobalKeyDown(e) {
@@ -215,12 +203,10 @@
 		<div class="w-full animate-fade-in"><UnifiedInventory /></div>
 	{:else if uiStore.activeTab === 'students_dir'}
 		<div class="w-full animate-fade-in"><StudentDirectory /></div>
-	{:else if uiStore.activeTab === 'graduates'}
-		<div class="w-full animate-fade-in"><Graduates /></div>
 	{:else if uiStore.activeTab === 'schulklassen'}
 		<div class="w-full animate-fade-in"><Schulklassen /></div>
-	{:else if uiStore.activeTab === 'lmf_plan'}
-		<div class="w-full animate-fade-in"><LmfPlan /></div>
+	{:else if uiStore.activeTab === 'schuljahr'}
+		<div class="w-full animate-fade-in"><Schuljahr /></div>
 	{:else if uiStore.activeTab === 'mahnwesen'}
 		<div class="w-full animate-fade-in"><Mahnwesen /></div>
 	{:else if uiStore.activeTab === 'kollegium_portal'}
