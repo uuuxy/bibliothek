@@ -161,7 +161,7 @@ type DsgvoAuskunftResponse struct {
 func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage int) DsgvoVerarbeitungsangaben {
 	karenz := "sofort nach dem Abgang"
 	if karenzTage > 0 {
-		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem Abgang", karenzTage)
+		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem Abgang, frühestens aber %d Tage nach der letzten Rückgabe oder Schadensregulierung", karenzTage, karenzTage)
 	}
 	frist := func(tage int) string {
 		if tage <= 0 {

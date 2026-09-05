@@ -6,23 +6,24 @@ im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produkt
 Video (8 min) zeigt jeden Bereich in Aktion.
 
 **Zwei Grundsätze, die überall gelten:**
+
 - Es gibt **keine Passwörter** zu verwalten. Angemeldet wird mit dem Schul-Postfach
   (E-Mail + Mail-Passwort). Wer kein Konto hat, kann sich damit selbst anmelden und wird von
   der Bibliothek freigeschaltet (→ Benutzer & Rechte).
-- **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur *Mein Portal*, Helfer nur die
+- **Jede Rolle sieht nur ihren Teil.** Lehrkräfte sehen nur _Mein Portal_, Helfer nur die
   Theke ohne Schülerakten, Mitarbeitende den Tresenbetrieb, Admins alles.
 
 ---
 
 ## Öffentliche Seiten — ohne Anmeldung
 
-| Adresse | Für wen | Zeigt |
-|---|---|---|
-| `https://<schule>/katalog` | Schüler, Eltern, Kollegium — vom Handy, aus dem Klassenraum | Suche nach Titel, Autor, ISBN; Cover; „N von M verfügbar". Keine Ausleihdaten, keine Namen. |
-| `https://<schule>/monitor` | der Bildschirm vor der Bibliothek | Endlos-Slideshow: Buch des Monats (die meisten Schüler-Leser in 30 Tagen), Neu eingetroffen, Beliebt diese Woche (7 Tage). Gezählt werden Leser, nicht Exemplare — Klassensätze an Lehrkräfte zählen nicht. Keine Schulbücher (Lernmittel), nur Titel mit einem Exemplar im Haus — dieselbe Regel wie im Katalog. Buch des Monats und Neu eingetroffen nur mit Cover. Aktualisiert sich alle 5 Minuten von selbst; ist der Server beim Einschalten noch nicht da, versucht die Seite es alle 30 s erneut. Folien ohne Inhalt (Ferien) werden übersprungen. Um 03:00 Uhr lädt sich die Seite selbst neu und holt so neue Versionen — der Bildschirm braucht keine Tastatur. |
+| Adresse                    | Für wen                                                     | Zeigt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| -------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `https://<schule>/katalog` | Schüler, Eltern, Kollegium — vom Handy, aus dem Klassenraum | Suche nach Titel, Autor, ISBN; Cover; „N von M verfügbar". Keine Ausleihdaten, keine Namen.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `https://<schule>/monitor` | der Bildschirm vor der Bibliothek                           | Endlos-Slideshow: Buch des Monats (die meisten Schüler-Leser in 30 Tagen), Neu eingetroffen, Beliebt diese Woche (7 Tage). Gezählt werden Leser, nicht Exemplare — Klassensätze an Lehrkräfte zählen nicht. Keine Schulbücher (Lernmittel), nur Titel mit einem Exemplar im Haus — dieselbe Regel wie im Katalog. Buch des Monats und Neu eingetroffen nur mit Cover. Aktualisiert sich alle 5 Minuten von selbst; ist der Server beim Einschalten noch nicht da, versucht die Seite es alle 30 s erneut. Folien ohne Inhalt (Ferien) werden übersprungen. Um 03:00 Uhr lädt sich die Seite selbst neu und holt so neue Versionen — der Bildschirm braucht keine Tastatur. |
 
 Beide Seiten haben keinen Menüpunkt. Die fertigen Adressen stehen unter
-*Einstellungen → Erreichbarkeit & Alarme* zum Kopieren. (§16)
+_Einstellungen → Erreichbarkeit & Alarme_ zum Kopieren. (§16)
 
 ---
 
@@ -55,6 +56,7 @@ Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 die Forderung landet in der Akte, der Elternbrief kommt als PDF).
 
 **Die Theke warnt von selbst:**
+
 - Kommt ein **vorgemerktes** Buch zurück, erscheint ein roter Hinweis: nicht ins Regal, die
   nächste Leserin wartet. (§4)
 - Ein **gesperrter** Ausweis wird angehalten — mit dem hinterlegten Grund. Ausleihen ist nur
@@ -66,7 +68,7 @@ Zubehör-Checkliste beim Scan (§5) · Kamera als Ersatz für den Handscanner (K
 Feld) · Passbild per Webcam · Ausweis drucken, Kontoauszug, DSGVO-Auskunft als PDF (§18).
 
 Nach 5 Minuten ohne Eingabe schließt sich die Akte, nach 15 Minuten der Sperrbildschirm —
-beides einstellbar (*Datenschutz & Sitzung*).
+beides einstellbar (_Datenschutz & Sitzung_).
 
 ---
 
@@ -83,7 +85,7 @@ beides einstellbar (*Datenschutz & Sitzung*).
 
 ## Signaturen
 
-Sachgruppen (Kürzel + Bezeichnung, z. B. *Jug* – Jugendliteratur) pflegen und Regale per
+Sachgruppen (Kürzel + Bezeichnung, z. B. _Jug_ – Jugendliteratur) pflegen und Regale per
 Präfixsuche durchsehen („Jug" findet „Jug Her", „Jug Pre" …). (§13)
 
 ## Druck-Center
@@ -96,26 +98,26 @@ Rückseite) · **Klassenweise drucken** (Ausweise für eine ganze Klasse). Der D
 
 ## Klassensätze
 
-Welche Klasse hat welche Lektüre? Klasse suchen, *Klasse hinzufügen* öffnet den Dialog:
+Welche Klasse hat welche Lektüre? Klasse suchen, _Klasse hinzufügen_ öffnet den Dialog:
 Bücher auswählen, Zielklasse eintragen, speichern. Reservierungen aus dem Kollegium stehen
-im Bestellwesen (→ *Klassensatz-Reservierungen*). (§4)
+im Bestellwesen (→ _Klassensatz-Reservierungen_). (§4)
 
 ---
 
 ## Schülerdatei
 
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
-- **Akte**: *Ausleihen & Historie* und *Stammdaten & Adresse*. Dokumente: Ausweis drucken,
+- **Akte**: _Ausleihen & Historie_ und _Stammdaten & Adresse_. Dokumente: Ausweis drucken,
   Kontoauszug, Ersatzforderung (nur bei offenem Schaden), DSGVO-Auskunft.
-- **Gebühren & Schäden**: offen / bezahlt; *Bezahlt* bucht aus, *Stornieren* verlangt einen
+- **Gebühren & Schäden**: offen / bezahlt; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. (§14)
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
 - **Neuer Schüler** per Formular; klassenweise besser über den LUSD-Import
-  (*Einstellungen → Schuljahreswechsel*).
+  (_Einstellungen → Schuljahreswechsel_).
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Abgänger / Archiv** und **Papierkorb**; endgültiges Löschen/Anonymisieren nur mit
   Namensbestätigung (DSGVO-Kette, §8).
-- **Doppelter Datensatz?** (Recht „Schüler zusammenführen", ab Werk nur Admin; unten im Reiter *Stammdaten & Adresse*): Steht dieselbe
+- **Doppelter Datensatz?** (Recht „Schüler zusammenführen", ab Werk nur Admin; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
   Person zweimal in der Kartei — typisch nach einer Namensänderung in der LUSD, die der
   Export ohne Schüler-ID nicht wiedererkannt hat —, beide Datensätze zusammenführen. Es
   bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat; Ausleihen, Gebühren und
@@ -131,16 +133,17 @@ Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse
 Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die Klassenleitungen
 (Klassen wählen, Empfänger prüfen, dann senden). Die Mahnstufe steigt beim **Druck** des
 Mahnbriefs, nicht beim Mailversand. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
-Lehrkraft geht, steht unter *Einstellungen → Mahnwesen-Routing*. (§3)
+Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. (§3)
 
 ## Abgänger
 
 Zeigt nur Abgänger, die **noch Bücher haben**. Kontoauszüge drucken oder an die
 Klassenleitungen mailen. Wer alles zurückgegeben hat, verschwindet aus der Liste, bleibt
-bis zum Ende der **Karenzzeit** (Vorgabe 90 Tage **ab dem Abgang**, nicht ab der Rückgabe;
-*Einstellungen → Datenschutz & Sitzung*) als gesperrter Datensatz erhalten — Zeit, eine
-falsche Zuordnung noch zu reparieren — und wird danach automatisch anonymisiert. Wer erst
-nach Ablauf der Karenz zurückgibt, wird in der folgenden Nacht anonymisiert.
+bis zum Ende der **Karenzzeit** (Vorgabe 90 Tage; _Einstellungen → Datenschutz &
+Sitzung_) als gesperrter Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu
+reparieren — und wird danach automatisch anonymisiert. Die Karenz läuft ab dem **späteren**
+Zeitpunkt: dem Abgang oder der letzten Rückgabe beziehungsweise Schadensregulierung. Wer
+erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz.
 (§8, [LUSD.md](LUSD.md) §4)
 
 ## Bestellwesen
@@ -149,14 +152,14 @@ Sechs Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automa
 den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus) ·
 **Wareneingang** (Positionen einbuchen → Etiketten) · **Bestellhistorie** (Detail, Status,
 Händlerbestätigung) · **Berichte** (Monat/Jahr/Lieferant als PDF) · **Klassensatz-
-Reservierungen** (Warteschlange aus dem Kollegium; *Abschließen* schickt die Bereit-Mail) ·
-**Wünsche & Meldungen** (Anliegen aus dem Portal, *Erledigen* mit Notiz an die Lehrkraft).
+Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·
+**Wünsche & Meldungen** (Anliegen aus dem Portal, _Erledigen_ mit Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
 
 ## Inventur
 
-*Neue Bestandsprüfung starten* → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
-scannen; Fortschrittsbalken. **Achtung:** *Inventur abschließen* bucht alles Ungescannte im
+_Neue Bestandsprüfung starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
+scannen; Fortschrittsbalken. **Achtung:** _Inventur abschließen_ bucht alles Ungescannte im
 Umfang als Verlust — vorher den Fehlbestandsbericht prüfen; dort lassen sich Funde wieder
 zurückholen. Laufende Inventuren können fortgesetzt oder verworfen werden. (§6)
 
@@ -171,7 +174,7 @@ Ausleihen, nicht Personen. (§11)
 
 ## System-Logs
 
-*Allgemeines Logbuch* (jede Buchung) und *Admin-Audit-Log* (wer hat wann was geändert).
+_Allgemeines Logbuch_ (jede Buchung) und _Admin-Audit-Log_ (wer hat wann was geändert).
 Aufbewahrung 24 Monate, einstellbar. Dritter Reiter **Tresen-Auskunft** (eigenes Recht
 `audit_details`, ab Werk nur Admin): Ein Buch liegt auf dem Tresen, sein Exemplar ist
 längst gelöscht — die Barcode-Suche zeigt, was das Protokoll dazu noch weiß (Titel,
@@ -188,21 +191,21 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 13 Kategorien, jede einzeln speicherbar (§17):
 
-| Kategorie | Wofür |
-|---|---|
-| Schule | Name, Anschrift, Eigentumsvermerk auf Etiketten |
-| Ausleihe & Fristen | Tage je Buch/Medium, Limit je Schüler, LMF-Stichtag, Ferien-Leseclub (festes Rückgabedatum über die Ferien) |
-| Mahnwesen | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen |
-| Mahnwesen-Routing | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge) |
-| Bestellwesen | Bedarfswarnung, Bedarfsschwelle, Preise erfassen |
-| Lieferanten | Händler, Kundennummern, genau ein Hauptlieferant |
-| Datenschutz & Sitzung | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm |
-| Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger |
-| Mail | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler) |
-| LMF-Aktionen | alle Lernmittel einer Klasse auf ein neues Datum verlängern |
-| Datenverwaltung | Katalog-Import (Littera), Bestands-Import (Kombi-CSV), Cover-Synchronisation, Katalog-Export, Offline-Sicherungen einspielen |
-| Schuljahreswechsel | LUSD-Abgleich (mit Vorschlägen für umbenannte Schüler), Versetzung mit Vorschau — Anleitung: [LUSD.md](LUSD.md) |
-| Betriebsbereitschaft | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15) |
+| Kategorie               | Wofür                                                                                                                        |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Schule                  | Name, Anschrift, Eigentumsvermerk auf Etiketten                                                                              |
+| Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, LMF-Stichtag, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                  |
+| Mahnwesen               | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen                                                |
+| Mahnwesen-Routing       | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                   |
+| Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                             |
+| Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                             |
+| Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                             |
+| Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                         |
+| Mail                    | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler)                                                |
+| LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                  |
+| Datenverwaltung         | Katalog-Import (Littera), Bestands-Import (Kombi-CSV), Cover-Synchronisation, Katalog-Export, Offline-Sicherungen einspielen |
+| Schuljahreswechsel      | LUSD-Abgleich (mit Vorschlägen für umbenannte Schüler), Versetzung mit Vorschau — Anleitung: [LUSD.md](LUSD.md)              |
+| Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                    |
 
 ## Mein Portal (Kollegium)
 
@@ -231,10 +234,10 @@ nicht" an die Bibliothek). (§12, Rolle Kollegium)
 
 ## Wenn etwas nicht geht
 
-- **Bestellung geht ohne Link raus / Katalog-Adresse fehlt** → *Erreichbarkeit & Alarme*:
+- **Bestellung geht ohne Link raus / Katalog-Adresse fehlt** → _Erreichbarkeit & Alarme_:
   öffentliche Adresse eintragen.
-- **Mahnliste kommt bei niemandem an** → *Mahnwesen-Routing*: Klasse hat keine Lehrkraft.
-- **Rote Meldung „Kein Backup"** → *Betriebsbereitschaft* öffnen; dort steht je Punkt, was
+- **Mahnliste kommt bei niemandem an** → _Mahnwesen-Routing_: Klasse hat keine Lehrkraft.
+- **Rote Meldung „Kein Backup"** → _Betriebsbereitschaft_ öffnen; dort steht je Punkt, was
   fehlt und wie es zu beheben ist.
 - **Scanner tippt ins Leere** → einmal ins Scanfeld klicken; die Theke holt den Fokus nach
   jedem Scan selbst zurück.

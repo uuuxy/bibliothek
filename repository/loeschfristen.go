@@ -33,16 +33,32 @@ import (
 // Ein Schüler mit offener Ausleihe oder unbezahltem Schaden bleibt stehen — dort ist
 // der Zweck der Speicherung noch nicht erreicht. Die Soft-Delete-Frist ist eine
 // Konstante; die Abgänger-Frist ist die einstellbare Karenzzeit (abgaengerKarenzTage,
-// Migration 094), gerechnet ab abgaenger_seit — dem Zeitpunkt, zu dem ein Import den
-// Schüler zum Abgänger machte. aktualisiert_am ist nur noch der Rückfall für Altzeilen
-// ohne diesen Stempel; bis zum 02.09.2026 war es die einzige Uhr, und jede Änderung
-// am Datensatz stellte sie neu.
+// Migration 094).
+//
+// Die Uhr der Karenz ist der SPÄTESTE von drei Zeitpunkten: der Abgang (abgaenger_seit;
+// aktualisiert_am nur als Rückfall für Altzeilen ohne Stempel), die letzte Rückgabe
+// einer Ausleihe und der letzte Abschluss eines Schadensfalls (Bezahlung oder Storno —
+// beides setzt ist_bezahlt, repository/audit_system.go). Bis 05.09.2026 zählte nur der
+// Abgang. Weil offene Vorgänge die Zeile schützen, kippte der Schutz damit genau mit der
+// Rückgabe: Wer am Tag 10 zurückgab, hatte 80 Tage Reparaturfenster; wer am Tag 120
+// zurückgab, wurde in der Folgenacht anonymisiert. Die Karenz ist für die Korrektur an
+// der Theke da, und die Rückgabe IST der Thekenkontakt. Der Deckel bleibt:
+// PredikatAbgaengerLoeschung rechnet über das Stichjahr und kennt diese Uhr nicht.
+//
+// Der Soft-Delete-Zweig behält seine eigene Uhr (deleted_at): Eine Löschung von Hand ist
+// eine Entscheidung, keine Zuordnung, die sich noch als falsch herausstellen könnte.
+// GREATEST übergeht NULL — ein Schüler ohne je einen Vorgang rechnet allein ab dem Abgang.
 func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, abgaengerKarenzTage, kulanz}, Where: `anonymized_at IS NULL
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
 		      OR
-		      (ist_abgaenger = true AND COALESCE(abgaenger_seit, aktualisiert_am) < NOW() - make_interval(days => $2::int + $3::int))
+		      (ist_abgaenger = true AND GREATEST(
+		          COALESCE(abgaenger_seit, aktualisiert_am),
+		          (SELECT max(a.rueckgabe_am) FROM ausleihen a WHERE a.schueler_id = schueler.id),
+		          (SELECT max(GREATEST(sf.aktualisiert_am, sf.storniert_am)) FROM schadensfaelle sf
+		            WHERE sf.schueler_id = schueler.id AND sf.ist_bezahlt)
+		      ) < NOW() - make_interval(days => $2::int + $3::int))
 		  )
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`}

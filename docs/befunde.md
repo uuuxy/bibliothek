@@ -32,8 +32,7 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** erst Peters Entscheidungen (Punkt 2 dort ist der einzige mit
-Verfallsdatum), dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten
+**Reihenfolge:** erst die Entscheidungen bei Peter, dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten
 fachlichen Anfassen.
 
 ---
@@ -56,7 +55,7 @@ fachlichen Anfassen.
   - **16 Bestandsstellen** bauen ihr Cover noch selbst (Liste in
     `frontend-hygiene-cover.test.js`, eingefroren). Umstellen beim nächsten fachlichen
     Anfassen — nicht in einem Rutsch, das sind täglich benutzte Bildschirme.
-  - **Zwei Backend-Felder für die Arbeitslisten** warten auf Entscheidung 6 unten:
+  - **Zwei Backend-Felder für die Arbeitslisten** warten auf die Entscheidung „Cover in den beiden Arbeitslisten" unten:
     `GetKlassensatzReservierungen` liefert `cover_url`, aber kein `isbn` (Ausweichquelle);
     `anliegen.go` liefert ISBN, aber kein `cover_url`. Je ein Zweizeiler — ohne
     Verbraucher aber nicht bauen.
@@ -86,15 +85,7 @@ vom 05.09.2026 stehen jeweils dabei — am Code belegt, nicht geschätzt:
    Schlüssel schon heute als MEHRDEUTIG markiert und dann niemanden anfasst — ein zu weiter
    Schlüssel fällt auf das heutige Verhalten zurück, nie in eine falsche Zuordnung. Erledigt
    damit auch den Kategorie-C-Posten „LUSD-Namensschlüssel nur lower+trim".
-2. **Karenz ab Rückgabe statt ab Abgang.** `abgaenger_seit` stempelt beim Abgang, auch mit
-   offenen Büchern. `PredikatAnonymisierung` schließt Schüler mit offener Ausleihe zwar aus —
-   genau deshalb kippt der Schutz aber mit der Rückgabe: Wer am Tag 10 zurückgibt, hat 80
-   Tage Reparaturfenster; wer am Tag 120 zurückgibt, wird in der Folgenacht anonymisiert.
-   Die Karenz ist für die Korrektur an der Theke da, und die Rückgabe IST der Thekenkontakt.
-   **Empfehlung: Uhr = GREATEST(abgaenger_seit, letzte Rückgabe)** im selben Prädikat, mit
-   PG-Test dieser Konstellation. Der Deckel bleibt: Die endgültige Löschung rechnet über das
-   Stichjahr (30. Januar) und ist davon unberührt.
-3. **`GET /api/search` hängt an `perform_actions`, zwei Aufrufer liegen außerhalb der Theke.**
+2. **`GET /api/search` hängt an `perform_actions`, zwei Aufrufer liegen außerhalb der Theke.**
    Die Etiketten-Titelsuche im Druck-Center (`labels.svelte.js`) und die Schülersuche im
    Vormerkungs-Reiter der Buchakte (`BookVormerkungenTab.svelte`) rufen die Theken-Route.
    Entzieht ein Admin einer Rolle das Theken-Recht, melden beide Felder nur noch „Suche nicht
@@ -111,13 +102,13 @@ vom 05.09.2026 stehen jeweils dabei — am Code belegt, nicht geschätzt:
 
 Geschmacksfragen aus dem Design-Rundgang 04.09.2026 — nichts davon kann jemandem schaden:
 
-4. **Zweites Feld neben der Suchpille im Bestellwesen.** Im Warenkorb steht neben der
+3. **Zweites Feld neben der Suchpille im Bestellwesen.** Im Warenkorb steht neben der
    Suchpille ein zweites Feld „Titel suchen & hinzufügen" (`OrderSearch.svelte`). Es sucht
    NICHT die Liste, sondern legt in den Warenkorb.
    **Empfehlung: so lassen.** Das Feld trägt eine Beschriftung darüber, steht in einer
    Formulargruppe neben dem Lieferantenfeld und ist auf `ui/Feld` gebaut — es liest sich als
    Formular, nicht als zweite Suchpille.
-5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Gemessen am Quelltext
+4. **Die Klassennamen in den Klassensätzen sind sehr groß.** Gemessen am Quelltext
    (05.09.2026): `KlassenKarte.svelte` setzt den Namen in der weiten Fassung auf
    `text-2xl font-bold text-slate-800` (24 px fett), die kompakte Fassung derselben Karte auf
    `text-base font-medium text-on-surface` (16 px).
@@ -126,7 +117,7 @@ Geschmacksfragen aus dem Design-Rundgang 04.09.2026 — nichts davon kann jemand
    Listenzeile hat in M3 16 px — die kompakte Fassung hält sich schon daran. Dichte gehört
    ins Padding, nicht in die Schriftgröße; die weite Fassung greift außerdem an den Token
    vorbei auf `slate`.
-6. **Cover in den beiden Arbeitslisten — wohin?** Klassensatz-Reservierungen und Wünsche &
+5. **Cover in den beiden Arbeitslisten — wohin?** Klassensatz-Reservierungen und Wünsche &
    Meldungen laufen über `ArbeitsZeile.svelte`, die M3-Listenzeile mit FÜHRENDEM ELEMENT:
    links der 48-px-Kreis mit der Klasse (Entscheidung vom 26.08.). Ein Cover davor hieße zwei
    führende Elemente, und M3 kennt genau eins.

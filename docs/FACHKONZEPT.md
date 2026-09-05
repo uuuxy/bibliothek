@@ -195,7 +195,7 @@ Die Software verwaltet Bedarfe und Lieferungen:
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
 
 - Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" (`ist_abgaenger = true`).
-- **Karenzzeit (seit 02.09.2026):** Ein Abgänger ohne offene Vorgänge wird beim Import **nicht mehr sofort anonymisiert**, sondern nur gesperrt (Grund „Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"); der nächtliche Job anonymisiert nach der Karenzzeit aus *Einstellungen → Datenschutz & Sitzung* (`abgaenger_karenz_tage`, Vorgabe 90, 0 = sofort wie früher). Uhr ist `schueler.abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, geräumt bei Rückkehr); Import, Job und Selbstprüfung teilen Schlüssel und Prädikat (`repository.PredikatAnonymisierung`). Die Karenz ist der Raum, in dem eine falsche Zuordnung ohne Schüler-ID noch repariert werden kann; sie ersetzt die frühere feste Frist von 360 Tagen (kürzer, nicht länger). Die endgültige Löschung am 30. Januar des Folgejahres bleibt unberührt.
+- **Karenzzeit (seit 02.09.2026):** Ein Abgänger ohne offene Vorgänge wird beim Import **nicht mehr sofort anonymisiert**, sondern nur gesperrt (Grund „Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"); der nächtliche Job anonymisiert nach der Karenzzeit aus _Einstellungen → Datenschutz & Sitzung_ (`abgaenger_karenz_tage`, Vorgabe 90, 0 = sofort wie früher). Uhr ist der späteste von drei Zeitpunkten: `schueler.abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, geräumt bei Rückkehr), die letzte Rückgabe einer Ausleihe und der letzte Abschluss eines Schadensfalls (seit 05.09.2026 — vorher zählte nur der Abgang, und der Schutz kippte mit der Rückgabe, weil offene Vorgänge die Zeile bis dahin gehalten hatten); Import, Job und Selbstprüfung teilen Schlüssel und Prädikat (`repository.PredikatAnonymisierung`). Die Karenz ist der Raum, in dem eine falsche Zuordnung ohne Schüler-ID noch repariert werden kann; sie ersetzt die frühere feste Frist von 360 Tagen (kürzer, nicht länger). Die endgültige Löschung am 30. Januar des Folgejahres bleibt unberührt.
 - Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Foto), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Admin-Audit-Log und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
 - **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund: "Automatisierte Abgänger-Sperre (offene Vorgänge)"). Falls die offenen Vorgänge geklärt werden und der Abgänger im Folgejahr in der LUSD wieder als aktiver Schüler auftaucht, hebt das System die Sperre automatisch wieder auf.
 - **Papierkorb:** Manuelles Löschen von Schülern durch den Admin verschiebt diese in einen Papierkorb (Soft-Delete). Ausleihhistorie und Name bleiben vorerst für einen etwaigen Restore erhalten. Erst der `Purge`-Prozess löscht sie endgültig und anonymisiert historische Ausleihen (`schueler_id = NULL`).
@@ -386,7 +386,7 @@ Drei Adressen sind bewusst **vor** dem Login-Zweig eingehängt (`App.svelte`): S
 dass jemand angemeldet ist, und sie liefern ausschließlich Titeldaten — nie Ausleiher, nie
 Namen, nie Klassen (Nachweis: `docs/PII_MATRIX.de.md`, Zeilen zu `/api/opac/*`,
 `/api/monitor/slides`, `/api/bestellung/*`). Keine der drei Seiten hat einen Menüpunkt; ihre
-Adressen stehen seit 30.08.2026 unter *Einstellungen → Erreichbarkeit & Alarme* zum Kopieren.
+Adressen stehen seit 30.08.2026 unter _Einstellungen → Erreichbarkeit & Alarme_ zum Kopieren.
 
 ### 16.1 Katalog (OPAC) — `/katalog`
 
@@ -410,11 +410,11 @@ Seiten (§16.1) zulässt — **kein Lernmittel, mindestens ein Exemplar im Haus*
 30.08.2026 fehlte diese Regel auf dem Monitor: Auf einem Bestand, der zum größten Teil aus
 Schulbüchern besteht, wäre das Mathebuch der 7 „Buch des Monats" gewesen.
 
-| Folie | Regel |
-|---|---|
-| **Buch des Monats** | der Titel **mit Cover**, den in den letzten **30 Tagen** die meisten Schülerinnen und Schüler geliehen haben; gibt es keinen, der zuletzt angelegte Titel mit Cover |
-| **Neu eingetroffen** | die zehn zuletzt angelegten Titel mit Cover |
-| **Beliebt diese Woche** | die fünf Titel mit den meisten Leserinnen und Lesern der letzten **7 Tage** — auch ohne Cover (Platzhalter-Kachel) |
+| Folie                   | Regel                                                                                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Buch des Monats**     | der Titel **mit Cover**, den in den letzten **30 Tagen** die meisten Schülerinnen und Schüler geliehen haben; gibt es keinen, der zuletzt angelegte Titel mit Cover |
+| **Neu eingetroffen**    | die zehn zuletzt angelegten Titel mit Cover                                                                                                                         |
+| **Beliebt diese Woche** | die fünf Titel mit den meisten Leserinnen und Lesern der letzten **7 Tage** — auch ohne Cover (Platzhalter-Kachel)                                                  |
 
 Gezählt werden **Leser, nicht Exemplare**: Schüler-Ausleihen, je Schüler einmal. Lehrer-Ausleihen
 zählen nicht — ein Klassensatz an eine Lehrkraft sind 30 Ausleihzeilen und null freiwillige Leser;
@@ -451,26 +451,26 @@ Etiketten und bestätigt; der Token steht im Pfad und wird deshalb nie protokoll
 
 ## 17. Einstellungen — die 13 Kategorien
 
-Erreichbar unter *System → Einstellungen* (`/einstellungen`, `components/settings/kategorien.js`).
+Erreichbar unter _System → Einstellungen_ (`/einstellungen`, `components/settings/kategorien.js`).
 Jede Kategorie wird **einzeln** gespeichert (PATCH nur der Felder dieser Kategorie; ein nicht
 gesendetes Feld bleibt unangetastet — Prinzip „nil = unverändert"). `/lmf-aktionen` leitet auf
-die Kategorie *LMF-Aktionen* um.
+die Kategorie _LMF-Aktionen_ um.
 
-| # | Kategorie | Inhalt | Recht |
-|---|---|---|---|
-| 1 | **Schule** | Name, Anschrift, Eigentumsvermerk für Etiketten | `manage_settings` |
-| 2 | **Ausleihe & Fristen** | Tage je Buch / je Medium, Ausleihlimit je Schüler, LMF-Stichtag (`MM-TT`, Vorgabe 07-31), Ferien-Leseclub | `manage_settings` |
-| 3 | **Mahnwesen** | automatische Ausleihsperre: ab wie vielen überfälligen Medien und nach wie vielen Toleranztagen (`max_overdue_items`, `max_overdue_days`) | `manage_settings` |
-| 4 | **Mahnwesen-Routing** | Klasse → E-Mail der Klassenleitung (`klassen_lehrer_mapping`); Empfänger für Sammel-Mahnlauf und Abgänger-Kontoauszüge; wird beim Schuljahreswechsel mit versetzt | `manage_settings` |
-| 5 | **Bestellwesen** | Bedarfswarnung an/aus, Bedarfsschwelle (Titel mit weniger nicht ausgesonderten Exemplaren gelten als Bedarf), Preise erfassen | `manage_settings` |
-| 6 | **Lieferanten** | Händler mit E-Mail und Kundennummer; genau **einer** ist Hauptlieferant (Migration 066) und wird im Bestellformular vorausgewählt | `create_orders` |
-| 7 | **Datenschutz & Sitzung** | Löschfristen (Lesehistorie 90 Tage, Lernmittel-Historie 730 Tage, Anliegen 365 Tage, Audit 24 Monate), Theke leeren nach *n* Minuten (Vorgabe 5), Sperrbildschirm nach *n* Minuten (Vorgabe 15) | `manage_settings` |
-| 8 | **Erreichbarkeit & Alarme** | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog- und Monitor-Adresse; leer = keine Links), Alarm-Empfänger (leer = alle aktiven Admins) | `manage_settings` |
-| 9 | **Mail** | SMTP-Postausgang mit Verbindungstest, Test-Mail; **Mail-Vorlagen** `MAHNUNG_ELTERN` (gedruckter Elternbrief: `{{.Vorname}} {{.Nachname}} {{.BuchListe}} {{.Frist}}`) und `BESTELLUNG_HAENDLER` (Bestellmail: `{{.Datum}} {{.Kundennummer}} {{.AnzahlTitel}} {{.AnzahlExemplare}} {{.BestaetigungsLink}}`) — Platzhalter je Typ, Gate `api/mail_vorlagen_platzhalter_test.go` (Migrationen 023, 052; die tote Vorlage `BESTELLUNG_EINGETROFFEN` ist mit 092 ausgetragen, Abholbereit läuft über den Abholfach-Hinweis am Terminal). Die SMTP-Daten aus der `.env` werden nur beim ersten Start übernommen; danach gilt die Datenbank | `manage_settings` |
-| 10 | **LMF-Aktionen** | Massenverlängerung: alle offenen Lernmittel-Ausleihen **einer Klasse** auf ein neues Rückgabedatum (`POST /api/ausleihen/global-extend-lmf`), mit Rückfrage vor dem Ausführen | `edit_books` |
-| 11 | **Datenverwaltung** | Katalog-Import (Littera, CSV/XLSX), Finaler Bestands-Import (Kombi-CSV), Cover-Synchronisation für fehlende Cover, Daten exportieren (Katalog als CSV), **Offline-Sicherungen einspielen** (siehe §18.4) | `manage_inventory` / `edit_books` |
-| 12 | **Schuljahreswechsel** | LUSD-Abgleich (§8) und Versetzung: Klassen um einen Jahrgang hochsetzen, Abschlussklassen als Abgänger markieren, Klassenlehrer-Zuordnung mit versetzen; Vorschau per Dry-Run (identisches SQL, Transaktion wird zurückgerollt), Läufe sind per Advisory-Lock serialisiert | `import_students` / `manage_students_admin` |
-| 13 | **Betriebsbereitschaft** | Selbstprüfung (§15) | `manage_settings` |
+| #   | Kategorie                   | Inhalt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Recht                                       |
+| --- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| 1   | **Schule**                  | Name, Anschrift, Eigentumsvermerk für Etiketten                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `manage_settings`                           |
+| 2   | **Ausleihe & Fristen**      | Tage je Buch / je Medium, Ausleihlimit je Schüler, LMF-Stichtag (`MM-TT`, Vorgabe 07-31), Ferien-Leseclub                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `manage_settings`                           |
+| 3   | **Mahnwesen**               | automatische Ausleihsperre: ab wie vielen überfälligen Medien und nach wie vielen Toleranztagen (`max_overdue_items`, `max_overdue_days`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | `manage_settings`                           |
+| 4   | **Mahnwesen-Routing**       | Klasse → E-Mail der Klassenleitung (`klassen_lehrer_mapping`); Empfänger für Sammel-Mahnlauf und Abgänger-Kontoauszüge; wird beim Schuljahreswechsel mit versetzt                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `manage_settings`                           |
+| 5   | **Bestellwesen**            | Bedarfswarnung an/aus, Bedarfsschwelle (Titel mit weniger nicht ausgesonderten Exemplaren gelten als Bedarf), Preise erfassen                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `manage_settings`                           |
+| 6   | **Lieferanten**             | Händler mit E-Mail und Kundennummer; genau **einer** ist Hauptlieferant (Migration 066) und wird im Bestellformular vorausgewählt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `create_orders`                             |
+| 7   | **Datenschutz & Sitzung**   | Löschfristen (Lesehistorie 90 Tage, Lernmittel-Historie 730 Tage, Anliegen 365 Tage, Audit 24 Monate), Theke leeren nach _n_ Minuten (Vorgabe 5), Sperrbildschirm nach _n_ Minuten (Vorgabe 15)                                                                                                                                                                                                                                                                                                                                                                                                                                     | `manage_settings`                           |
+| 8   | **Erreichbarkeit & Alarme** | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog- und Monitor-Adresse; leer = keine Links), Alarm-Empfänger (leer = alle aktiven Admins)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | `manage_settings`                           |
+| 9   | **Mail**                    | SMTP-Postausgang mit Verbindungstest, Test-Mail; **Mail-Vorlagen** `MAHNUNG_ELTERN` (gedruckter Elternbrief: `{{.Vorname}} {{.Nachname}} {{.BuchListe}} {{.Frist}}`) und `BESTELLUNG_HAENDLER` (Bestellmail: `{{.Datum}} {{.Kundennummer}} {{.AnzahlTitel}} {{.AnzahlExemplare}} {{.BestaetigungsLink}}`) — Platzhalter je Typ, Gate `api/mail_vorlagen_platzhalter_test.go` (Migrationen 023, 052; die tote Vorlage `BESTELLUNG_EINGETROFFEN` ist mit 092 ausgetragen, Abholbereit läuft über den Abholfach-Hinweis am Terminal). Die SMTP-Daten aus der `.env` werden nur beim ersten Start übernommen; danach gilt die Datenbank | `manage_settings`                           |
+| 10  | **LMF-Aktionen**            | Massenverlängerung: alle offenen Lernmittel-Ausleihen **einer Klasse** auf ein neues Rückgabedatum (`POST /api/ausleihen/global-extend-lmf`), mit Rückfrage vor dem Ausführen                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `edit_books`                                |
+| 11  | **Datenverwaltung**         | Katalog-Import (Littera, CSV/XLSX), Finaler Bestands-Import (Kombi-CSV), Cover-Synchronisation für fehlende Cover, Daten exportieren (Katalog als CSV), **Offline-Sicherungen einspielen** (siehe §18.4)                                                                                                                                                                                                                                                                                                                                                                                                                            | `manage_inventory` / `edit_books`           |
+| 12  | **Schuljahreswechsel**      | LUSD-Abgleich (§8) und Versetzung: Klassen um einen Jahrgang hochsetzen, Abschlussklassen als Abgänger markieren, Klassenlehrer-Zuordnung mit versetzen; Vorschau per Dry-Run (identisches SQL, Transaktion wird zurückgerollt), Läufe sind per Advisory-Lock serialisiert                                                                                                                                                                                                                                                                                                                                                          | `import_students` / `manage_students_admin` |
+| 13  | **Betriebsbereitschaft**    | Selbstprüfung (§15)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | `manage_settings`                           |
 
 **Ferien-Leseclub (Kategorie 2):** Ist er aktiv und ein Zieldatum gesetzt, bekommen alle
 Ausleihen bis dahin dieses feste Rückgabedatum (`FerienLeseclubZieldatum`, `loan_rules.go`)
@@ -481,31 +481,36 @@ statt der rollierenden Frist — der Schalter für „Bücher über die Sommerfe
 ## 18. Theke: Ergänzungen zur Omnibox (§1)
 
 ### 18.1 Kamera als Barcode-Scanner
+
 Der Handscanner ist der Normalfall. Zusätzlich kann die Kamera des Geräts scannen
 (`CameraScanner.svelte`, Bibliothek `html5-qrcode`, wird erst beim Einschalten geladen) —
 gedacht für Laptops oder Tablets ohne Scanner. Ein-/Ausschalter neben dem Omnibox-Feld.
 
 ### 18.2 Passbild per Webcam
+
 In der Theke lässt sich ein Passbild aufnehmen (`WebcamCapture.svelte`,
 `POST /api/schueler/{id}/photo`). Das Bild wird **verschlüsselt** gespeichert
 (`schueler_fotos.foto_encrypted`, AES) und nur angemeldeten Benutzern ausgeliefert.
 
 ### 18.3 Theke leeren und Sperrbildschirm
+
 Nach `theke_leeren_minuten` ohne Eingabe (Vorgabe 5) schließt sich die offene Schülerakte,
 nach `sperre_minuten` (Vorgabe 15) erscheint der Sperrbildschirm — die Anwendung ist dann nicht
 mehr im DOM; entsperrt wird mit dem Passwort, nicht mit Maus oder Tastatur. Beides ist
 Datenschutz an einem Tresen, an dem Schüler mitlesen können (Kategorie 7).
 
 ### 18.4 Offline-Warteschlange
+
 Fällt das Netz aus, sammelt die Theke Scans in einer lokalen IndexedDB-Warteschlange
 (`offlineQueue.js`, Store `offline_actions`) und spielt sie ein, sobald der Server wieder
 erreichbar ist (`offlineSync`). Ein Offline-Hinweis zeigt den Zustand. Bleibt ein Arbeitsplatz
-dauerhaft offline, lässt sich seine Warteschlange als Datei sichern und unter *Datenverwaltung →
-Offline-Sicherungen einspielen* nachbuchen.
+dauerhaft offline, lässt sich seine Warteschlange als Datei sichern und unter _Datenverwaltung →
+Offline-Sicherungen einspielen_ nachbuchen.
 
 ### 18.5 Selbstanmeldung fürs Kollegium
+
 Wer sich mit einem Postfach der Schuldomäne (`SELBSTANMELDUNG_DOMAIN`) anmeldet und noch kein
 Konto hat, bekommt einen **inaktiven** Eintrag; anmelden kann er sich damit nicht. Die
-Anfrage erscheint unter *Benutzer & Rechte → Zugangsanfragen* und wird dort freigeschaltet
+Anfrage erscheint unter _Benutzer & Rechte → Zugangsanfragen_ und wird dort freigeschaltet
 (`auth/selbstanmeldung.go`). Ohne diesen Weg müssten ~160 Lehrkräfte vorab von Hand angelegt
 werden — was niemand tut.
