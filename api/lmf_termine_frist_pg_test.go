@@ -157,8 +157,8 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	}
 }
 
-// Steht eine Klasse ZWEIMAL im Plan (im echten Plan der Schule steht 9H1 am ersten Tag
-// und noch einmal als Nachzügler), müssen beide Wege dieselbe Frist nennen: Der
+// Steht eine Klasse ZWEIMAL im Plan — möglich, wenn für eine Klasse ein Termin nach-
+// geschoben wird —, müssen beide Wege dieselbe Frist nennen: Der
 // Ausleihdienst nimmt den nächsten Termin der Klasse (RueckgabeTerminFuerKlasse = MIN),
 // der Plan-Abgleich muss dieselbe Zeile treffen. Bis 05.09.2026 gewann beim Speichern
 // die LETZTE Zeile — das schon draußen liegende Buch bekam den späteren Termin, das am
@@ -187,7 +187,7 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
 		`{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[`+
 			`{"klassen":["9H1"]},{"vermerk":"2"},{"vermerk":"3"},{"vermerk":"4"},{"vermerk":"5"},{"vermerk":"6"},`+
-			`{"klassen":["9H1"],"vermerk":"Nachzügler"}]}`)
+			`{"klassen":["9H1"],"vermerk":"zweiter Termin"}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("speichern: %d %s", rec.Code, rec.Body.String())
 	}

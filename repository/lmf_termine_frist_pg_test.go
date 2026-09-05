@@ -26,7 +26,7 @@ func TestRueckgabeTerminFuerKlasse(t *testing.T) {
 	// 9H1 am 28.06. (Zeile 1) und noch einmal am 05.07. (Zeile 6, hinter dem Wochenende).
 	speicherePlan(t, repo, LmfTerminRueckgabe, "2027-06-28", 1, 1,
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
-			{Klassen: []string{"10R2"}}, {Klassen: []string{"10R3"}}, {Klassen: []string{"9H1"}, Vermerk: "Nachzügler"}}, nil)
+			{Klassen: []string{"10R2"}}, {Klassen: []string{"10R3"}}, {Klassen: []string{"9H1"}, Vermerk: "zweiter Termin"}}, nil)
 	speicherePlan(t, repo, LmfTerminAusgabe, "2027-08-10", 2, 6,
 		[]LmfPlanZeile{{Klassen: []string{"7G1"}, Vermerk: "neu"}}, nil)
 	heute := time.Date(2026, time.September, 5, 12, 0, 0, 0, schulzeit.Zone())

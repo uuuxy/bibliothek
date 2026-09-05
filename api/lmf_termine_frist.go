@@ -124,10 +124,13 @@ func ohne(a, b []string) []string {
 // ganzen Plans ab (Migration 097): alt = Zeilen vorher, neu = Zeilen nachher (nil beim
 // Verwerfen). Nur Rückgabe-Pläne setzen Fristen.
 //
-// Maßgeblich ist der FRÜHESTE Termin einer Klasse, nicht ihre letzte Zeile. Eine Klasse
-// darf mehrfach im Plan stehen — im Plan der Schule steht 9H1 am ersten Tag und noch
-// einmal als Nachzügler —, und der Ausleihdienst nimmt beim Ausleihen den nächsten
-// Termin ab heute (RueckgabeTerminFuerKlasse, MIN). Bis 05.09.2026 abends lief hier eine
+// Maßgeblich ist der FRÜHESTE Termin einer Klasse, nicht ihre letzte Zeile. Nichts
+// hindert einen Plan daran, eine Klasse zweimal zu nennen — ein nachgeschobener Termin
+// für eine Klasse, die beim ersten Mal nicht vollständig war —, und der Ausleihdienst
+// nimmt beim Ausleihen den nächsten Termin ab heute (RueckgabeTerminFuerKlasse, MIN).
+// (Im Plan der Schule vom Juni 2026 steht jede Klasse genau einmal; „Nachzügler" und
+// „Aufräumen" sind dort Zeilen OHNE Klasse. Der Fall ist also möglich, nicht üblich.)
+// Bis 05.09.2026 abends lief hier eine
 // Schleife über die Zeilen, deren letzte gewann: Dasselbe Schulbuch hatte je nach Weg
 // eine andere Frist — schon draußen den späteren Termin, am selben Tag ausgeliehen den
 // früheren. Zwei Regeln für dieselbe Frage; Gate:
