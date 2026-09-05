@@ -39,6 +39,19 @@ Anfassen.
 
 ## Offen — abarbeitbar
 
+- **Zwei selbstgebaute Menüs auf `ui/Menue.svelte` umstellen (B).** Seit 06.09.2026 gibt es
+  das eine M3-Menü (Überlaufmenü des LMF-Planers: surface-container, 4-px-Ecken,
+  48-px-Einträge, Tastaturbedienung, Escape über `escapeSchliesst`). `MahnwesenDruckMenue`
+  und der Ausweis-Split-Button in `StudentProfileActions` sind ältere Eigenbauten in
+  Paletten-Farben ohne Pfeiltasten. Umstellen, wenn eine der Stellen ohnehin angefasst
+  wird; das Mahnwesen-Menü trägt ein Auswahlfeld im Menü und braucht dafür einen Slot.
+- **Trennlinien in Tabellen (C, Design-Frage).** M3 Lists: „Limit dividers to
+  uncontained or complex lists, only when a stronger visual separation is necessary."
+  Der LMF-Planer kommt seit 06.09.2026 ohne Zeilen-Trennlinie aus (48-px-Zeilen,
+  Hover-Fläche); 44 andere Dateien tragen `divide-y`, meist `divide-slate-100`. Ob die
+  ganze Anwendung nachzieht, ist eine Gestaltungsentscheidung mit sichtbaren Folgen —
+  nicht nebenbei, sondern als eigener Durchgang mit Messung im Browser.
+
 - **Rasterdurchgang 05.09.2026 abends über die Änderungen vom 04./05.09.** (Peter: „lass
   alle Schemata nochmal über die heutigen und gestrigen Änderungen laufen"). Elf Fragen
   plus Sweeps-Achse über 247 geänderte Dateien; vier Funde, alle im selben Durchgang
@@ -122,13 +135,13 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
 
 ## Beobachten (nichts zu tun)
 
-| Fund                                                                                       | Warum nur beobachten                                                                                                                                                         |
-| ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`)                          | Kein Fix verfügbar (`Fixed in: N/A`), transitiv, **kein** Aufrufer im eigenen Code (`govulncheck`, zuletzt 31.08. bestätigt). Dependabot meldet sich, falls sich das ändert. |
-| Designer-Restlücke: Browser-Schließen binnen 800 ms verliert die letzte Auto-Save-Änderung | `onDestroy` schickt seit `37abcbe0` sofort; `sendBeacon` bewusst nicht gebaut (Randlage).                                                                                    |
-| 082-Dedupe der Vormerkungen verlor den neueren `abholbereit`-Eintrag                       | Auf Prod gelaufen, nicht rückholbar; nur relevant, falls je eine weitere **gewachsene** DB migriert wird.                                                                    |
-| Rate-Limiter-Maps (`api/rate_limit.go`, `middleware_ratelimit.go`) räumen erst ab 5.000 Einträgen und dann nur Stale > 5 min; jeder neue Eintrag iteriert die ganze Map | Sicherheits-Audit 05.09.: Nur mit vielen frischen Adressen (IPv6-Rotation) ein CPU-Thema; hinter Caddy trifft es die Schule nicht von innen. Ohne Anlass nicht anfassen. |
-| ZAP-Scan 05.09. (localhost:8084, unangemeldet, 17 GET-Endpunkte): `style-src 'unsafe-inline'`, `csrf_token` ohne HttpOnly, „Suspicious Comments" | Alle drei sind dokumentierte Entscheidungen (SECURITY.md: CSP-Begründung; Double-Submit-Cookie muss JS-lesbar sein; der Kommentar ist `//scanapp.org` aus der QR-Bibliothek). HSTS/Cache-Meldungen betrafen `content-autofill.googleapis.com` (Chrome), nicht die Anwendung. |
+| Fund                                                                                                                                                                    | Warum nur beobachten                                                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `golang.org/x/crypto/openpgp` gilt als unwartbar (`GO-2026-5932`)                                                                                                       | Kein Fix verfügbar (`Fixed in: N/A`), transitiv, **kein** Aufrufer im eigenen Code (`govulncheck`, zuletzt 31.08. bestätigt). Dependabot meldet sich, falls sich das ändert.                                                                                                 |
+| Designer-Restlücke: Browser-Schließen binnen 800 ms verliert die letzte Auto-Save-Änderung                                                                              | `onDestroy` schickt seit `37abcbe0` sofort; `sendBeacon` bewusst nicht gebaut (Randlage).                                                                                                                                                                                    |
+| 082-Dedupe der Vormerkungen verlor den neueren `abholbereit`-Eintrag                                                                                                    | Auf Prod gelaufen, nicht rückholbar; nur relevant, falls je eine weitere **gewachsene** DB migriert wird.                                                                                                                                                                    |
+| Rate-Limiter-Maps (`api/rate_limit.go`, `middleware_ratelimit.go`) räumen erst ab 5.000 Einträgen und dann nur Stale > 5 min; jeder neue Eintrag iteriert die ganze Map | Sicherheits-Audit 05.09.: Nur mit vielen frischen Adressen (IPv6-Rotation) ein CPU-Thema; hinter Caddy trifft es die Schule nicht von innen. Ohne Anlass nicht anfassen.                                                                                                     |
+| ZAP-Scan 05.09. (localhost:8084, unangemeldet, 17 GET-Endpunkte): `style-src 'unsafe-inline'`, `csrf_token` ohne HttpOnly, „Suspicious Comments"                        | Alle drei sind dokumentierte Entscheidungen (SECURITY.md: CSP-Begründung; Double-Submit-Cookie muss JS-lesbar sein; der Kommentar ist `//scanapp.org` aus der QR-Bibliothek). HSTS/Cache-Meldungen betrafen `content-autofill.googleapis.com` (Chrome), nicht die Anwendung. |
 
 ## Kategorie C — bewusst nicht ohne Anlass
 

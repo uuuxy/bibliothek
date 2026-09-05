@@ -1,10 +1,10 @@
-<!-- @component LmfPlanFreieTage — die Tage, an denen der Plan nicht läuft. Wochenenden
-     und die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Server von
-     selbst; hier trägt die Bibliothek ein, was nur die Schule weiß: bewegliche
-     Ferientage, pädagogische Tage, den Brückentag. Darunter steht, was der Server im
-     Plan-Zeitraum tatsächlich übersprungen hat, mit Grund — damit ein fehlender
-     Donnerstag in der Tabelle erklärt ist (Peter, 05.09.2026: „manchmal gibt es ja auch
-     noch gesetzliche Feiertage"). -->
+<!-- @component LmfPlanFreieTage — die freien Tage des Plans: Datum und Grund für das,
+     was nur die Schule weiß (Brückentag, pädagogischer Tag); darunter als Input-Chips
+     (M3: das Entfernen-Symbol „is required and must be used to remove the chip") und
+     die Zeile „Übersprungen", die jeden ausgefallenen Werktag des Plan-Zeitraums mit
+     Grund nennt — Feiertage eingeschlossen, damit ein fehlender Donnerstag in der
+     Tabelle erklärt ist (Peter, 05.09.2026). Ohne eigene Überschrift: Der Abschnitt
+     „Zeitraum" (LmfPlanRahmen) trägt sie, das Raster ist dasselbe. -->
 <script>
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -32,52 +32,42 @@
 	}
 </script>
 
-<section aria-labelledby="lmf-freie-tage-titel" class="space-y-3">
-	<h2 id="lmf-freie-tage-titel" class="text-title-medium font-medium text-on-surface">
-		Freie Tage
-		<span class="text-sm font-normal text-on-surface-variant">
-			— Wochenenden und gesetzliche Feiertage überspringt der Plan von selbst; hier stehen
-			bewegliche Ferientage, pädagogische Tage, Brückentage.
-		</span>
-	</h2>
-	{#if tage.length > 0}
-		<div class="flex flex-wrap gap-2" data-testid="lmf-freie-tage">
-			{#each tage as t (t.datum)}
-				<LmfKlasseChip
-					name={text(t)}
-					onentfernen={() => (tage = tage.filter((x) => x.datum !== t.datum))}
-				/>
-			{/each}
-		</div>
-	{/if}
-	<div class="flex max-w-2xl flex-wrap items-end gap-2">
-		<Feld
-			id="lmf-freier-tag-datum"
-			label="Freier Tag"
-			type="date"
-			bind:value={datum}
-			class="w-44"
-		/>
-		<Feld
-			id="lmf-freier-tag-grund"
-			label="Grund"
-			bind:value={grund}
-			placeholder="z. B. Pädagogischer Tag"
-			class="flex-1"
-			onkeydown={(/** @type {KeyboardEvent} */ e) => {
-				if (e.key === 'Enter') {
-					e.preventDefault();
-					hinzufuegen();
-				}
-			}}
-		/>
-		<Button variant="secondary" onclick={hinzufuegen} disabled={!datum}>Tag freihalten</Button>
+<div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
+	<Feld id="lmf-freier-tag-datum" label="Freier Tag" type="date" bind:value={datum} />
+	<Feld
+		id="lmf-freier-tag-grund"
+		label="Grund"
+		bind:value={grund}
+		placeholder="z. B. Pädagogischer Tag"
+		onkeydown={(/** @type {KeyboardEvent} */ e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				hinzufuegen();
+			}
+		}}
+	/>
+	<!-- Der Knopf steht in der Feldzeile des Subgrids, nicht in der Beschriftungszeile. -->
+	<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+		<span aria-hidden="true"></span>
+		<Button variant="secondary" onclick={hinzufuegen} disabled={!datum} class="justify-self-start">
+			Tag freihalten
+		</Button>
 	</div>
-	{#if ausfaelle.length > 0}
-		<p class="text-sm text-on-surface-variant" data-testid="lmf-ausfaelle">
-			Übersprungen:
-			{#each ausfaelle as a, i (a.datum)}{i > 0 ? ' · ' : ''}{wochentag(a.datum)}
-				{datumKurz(a.datum)} ({a.grund}){/each}
-		</p>
-	{/if}
-</section>
+</div>
+{#if tage.length > 0}
+	<div class="mt-4 flex flex-wrap gap-2" data-testid="lmf-freie-tage">
+		{#each tage as t (t.datum)}
+			<LmfKlasseChip
+				name={text(t)}
+				onentfernen={() => (tage = tage.filter((x) => x.datum !== t.datum))}
+			/>
+		{/each}
+	</div>
+{/if}
+{#if ausfaelle.length > 0}
+	<p class="mt-4 text-sm text-on-surface-variant" data-testid="lmf-ausfaelle">
+		Übersprungen:
+		{#each ausfaelle as a, i (a.datum)}{i > 0 ? ' · ' : ''}{wochentag(a.datum)}
+			{datumKurz(a.datum)} ({a.grund}){/each}
+	</p>
+{/if}

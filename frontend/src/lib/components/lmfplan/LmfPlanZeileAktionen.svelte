@@ -1,15 +1,20 @@
-<!-- @component LmfPlanZeileAktionen — die Knöpfe einer Zeile im Planer: hoch, runter,
-     zusammenlegen oder trennen, davor einfügen, festlegen oder lösen, entfernen. Nur
-     Knöpfe und ihre Namen; was sie tun, steht in LmfPlanReihenfolge. -->
+<!-- @component LmfPlanZeileAktionen — die Aktionen einer Zeile im Planer. Sichtbar
+     bleibt, was jede Zeile ständig braucht: hoch und runter (M3: Icon-Buttons „to
+     display actions in a compact layout"). Alles andere — zusammenlegen oder trennen,
+     davor einfügen, festlegen oder lösen, Klasse herausnehmen, entfernen — liegt im
+     Überlaufmenü (M3 Menus: „Use menus in situations that need extra actions, like:
+     Overflow menus"). Bis 06.09.2026 standen hier sechs Icon-Buttons je Zeile, rund
+     dreihundert auf der Seite. -->
 <script>
-	import { ArrowDown, ArrowUp, Merge, Pin, PinOff, Plus, Split, Trash2 } from '@lucide/svelte';
+	import { ArrowDown, ArrowUp, Merge, Pin, PinOff, Plus, Split, Trash2, X } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import Menue from '../ui/Menue.svelte';
 
-	/** @type {{ nummer: number, anzahl: number, mehrere: boolean, fest: boolean, onhoch: () => void, onrunter: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onentfernen: () => void }} */
+	/** @type {{ nummer: number, anzahl: number, klassen: number, fest: boolean, onhoch: () => void, onrunter: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
 	let {
 		nummer,
 		anzahl,
-		mehrere,
+		klassen,
 		fest,
 		onhoch,
 		onrunter,
@@ -17,8 +22,35 @@
 		ontrennen,
 		oneinfuegen,
 		onfest,
+		onklasseraus,
 		onentfernen
 	} = $props();
+
+	const eintraege = $derived([
+		klassen > 1
+			? { id: 'trennen', text: 'In einzelne Stunden trennen', icon: Split }
+			: {
+					id: 'zusammen',
+					text: 'Mit der Zeile davor zusammenlegen',
+					icon: Merge,
+					disabled: nummer === 1
+				},
+		{ id: 'einfuegen', text: 'Zeile davor einfügen', icon: Plus },
+		fest
+			? { id: 'fest', text: 'Festen Platz lösen', icon: PinOff }
+			: { id: 'fest', text: 'Datum und Stunde festlegen', icon: Pin },
+		...(klassen === 1 ? [{ id: 'klasseraus', text: 'Klasse aus dem Plan nehmen', icon: X }] : []),
+		{ id: 'entfernen', text: 'Zeile entfernen', icon: Trash2, trennerDavor: true }
+	]);
+
+	const aktionen = {
+		trennen: () => ontrennen(),
+		zusammen: () => onzusammen(),
+		einfuegen: () => oneinfuegen(),
+		fest: () => onfest(),
+		klasseraus: () => onklasseraus(),
+		entfernen: () => onentfernen()
+	};
 </script>
 
 <Button
@@ -41,64 +73,8 @@
 >
 	<ArrowDown class="h-4 w-4" aria-hidden="true" />
 </Button>
-{#if mehrere}
-	<Button
-		variant="ghost"
-		size="sm"
-		onclick={ontrennen}
-		title="In einzelne Stunden trennen"
-		aria-label="Zeile {nummer} trennen"
-	>
-		<Split class="h-4 w-4" aria-hidden="true" />
-	</Button>
-{:else}
-	<Button
-		variant="ghost"
-		size="sm"
-		onclick={onzusammen}
-		disabled={nummer === 1}
-		title="Mit der Zeile davor in eine Stunde legen"
-		aria-label="Zeile {nummer} mit voriger zusammenlegen"
-	>
-		<Merge class="h-4 w-4" aria-hidden="true" />
-	</Button>
-{/if}
-<Button
-	variant="ghost"
-	size="sm"
-	onclick={oneinfuegen}
-	title="Zeile ohne Klasse davor einfügen"
-	aria-label="Vor Zeile {nummer} einfügen"
->
-	<Plus class="h-4 w-4" aria-hidden="true" />
-</Button>
-{#if fest}
-	<Button
-		variant="ghost"
-		size="sm"
-		onclick={onfest}
-		title="Festen Platz lösen — die Zeile fließt wieder mit"
-		aria-label="Zeile {nummer} lösen"
-	>
-		<PinOff class="h-4 w-4" aria-hidden="true" />
-	</Button>
-{:else}
-	<Button
-		variant="ghost"
-		size="sm"
-		onclick={onfest}
-		title="Datum und Stunde festlegen (Ausflug, Projekttag)"
-		aria-label="Zeile {nummer} festlegen"
-	>
-		<Pin class="h-4 w-4" aria-hidden="true" />
-	</Button>
-{/if}
-<Button
-	variant="ghost"
-	size="sm"
-	onclick={onentfernen}
-	title="Zeile aus dem Plan nehmen"
-	aria-label="Zeile {nummer} entfernen"
->
-	<Trash2 class="h-4 w-4" aria-hidden="true" />
-</Button>
+<Menue
+	etikett="Aktionen Zeile {nummer}"
+	{eintraege}
+	onwahl={(id) => aktionen[/** @type {keyof typeof aktionen} */ (id)]?.()}
+/>

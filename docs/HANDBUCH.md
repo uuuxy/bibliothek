@@ -125,24 +125,26 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 
 - Oben _Bücherrückgabe_ / _Bücherausgabe_ umschalten; je Art gibt es einen Plan pro
   Schuljahr. Rechts _Als PDF_, _Plan verwerfen_, _Plan speichern_.
-- **Rahmen**: erster Tag, Beginn am ersten Tag (der Donnerstag im Juni begann in der 3. Stunde), Stunden je Tag (Vorgabe 6).
-- **Freie Tage**: Wochenenden und die gesetzlichen Feiertage Hessens (Fronleichnam!)
-  überspringt der Plan von selbst; bewegliche Ferientage, pädagogische Tage und
-  Brückentage trägt man hier mit Datum und Grund ein. Darunter steht _Übersprungen: …_
-  mit jedem Werktag im Plan-Zeitraum, der ausfällt, und seinem Grund — so ist ein
-  fehlender Donnerstag in der Tabelle erklärt.
-- **Fester Platz** (Stecknadel in der Zeile): Die Klasse mit dem Ausflug bekommt Datum
-  und Stunde von Hand — vorbelegt mit ihrem bisherigen Platz —, die übrigen Zeilen
-  fließen um sie herum und lassen die belegte Stunde aus. _Lösen_ gibt die Zeile dem
-  Fluss zurück. Feste Plätze gelten für diesen Plan; der Vorschlag fürs nächste Jahr
-  bringt sie nicht mit.
+- **Zeitraum**: erster Tag, Beginn am ersten Tag (der Donnerstag im Juni begann in der 3. Stunde), Stunden je Tag (Vorgabe 6). Darunter die **freien Tage**: Wochenenden und
+  die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Plan von selbst;
+  bewegliche Ferientage, pädagogische Tage und Brückentage trägt man mit Datum und Grund
+  ein (_Tag freihalten_). Die Zeile _Übersprungen: …_ nennt jeden Werktag im
+  Plan-Zeitraum, der ausfällt, mit Grund — so ist ein fehlender Donnerstag in der
+  Tabelle erklärt.
 - **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Zeilen ziehen oder mit den
-  Pfeilen schieben; _zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"),
-  _trennen_ macht daraus wieder zwei; _davor einfügen_ setzt eine Zeile ohne Klasse
-  („Bücher setzen", „Nachzügler", „Aufräumen" — sie braucht einen Vermerk); das × am
-  Klassen-Chip nimmt eine Klasse aus dem Plan. Wochentag, Datum und Stunde rechnet der
-  Server bei jeder Änderung neu (Vorschau), gespeichert wird erst mit _Plan speichern_.
-- **Nicht im Plan**: alle Klassen ohne Zeile. Ein Klick holt eine ans Ende, _Weitere
+  Pfeilen schieben; alles Weitere steht im Menü ⋮ der Zeile: _Mit der Zeile davor
+  zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"; die Klassen stehen dann
+  als Chips mit ×), _In einzelne Stunden trennen_ macht daraus wieder zwei, _Zeile davor
+  einfügen_ setzt eine Zeile ohne Klasse („Bücher setzen", „Nachzügler", „Aufräumen" — sie
+  braucht einen Vermerk), _Klasse aus dem Plan nehmen_, _Zeile entfernen_. Wochentag,
+  Datum und Stunde rechnet der Server bei jeder Änderung neu (Vorschau), gespeichert wird
+  erst mit _Plan speichern_.
+- **Fester Platz** (im Menü ⋮: _Datum und Stunde festlegen_): Die Klasse mit dem
+  Ausflug bekommt Datum und Stunde von Hand — vorbelegt mit ihrem bisherigen Platz —, die
+  übrigen Zeilen fließen um sie herum und lassen die belegte Stunde aus. _Festen Platz
+  lösen_ gibt die Zeile dem Fluss zurück. Feste Plätze gelten für diesen Plan; der
+  Vorschlag fürs nächste Jahr bringt sie nicht mit.
+- **Nicht im Plan**: alle Klassen ohne Zeile. _07G1 einplanen_ holt eine ans Ende, _Weitere
   Klasse_ nimmt Namen auf, die es noch nicht gibt („07G1" vor dem August-Import). Was
   hier bleibt, gilt als bewusst ausgelassen — die Oberstufe organisiert Rückgabe und
   Ausgabe an dieser Schule selbst.

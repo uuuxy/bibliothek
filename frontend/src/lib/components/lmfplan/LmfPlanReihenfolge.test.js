@@ -16,14 +16,25 @@ const PLAETZE = [
 
 /** @param {any} zeilen */
 function zeige(zeilen, onklasseraus = vi.fn()) {
-	return render(LmfPlanReihenfolge, { zeilen, plaetze: PLAETZE, onklasseraus });
+	return render(LmfPlanReihenfolge, { zeilen, plaetze: PLAETZE, bereit: true, onklasseraus });
 }
 
-/** Die Klassen je Zeile, wie die Tabelle sie zeigt. */
+/** Die Klassen je Zeile, wie die Tabelle sie zeigt: eine Klasse als Text, mehrere als
+ *  Chips (M3: kein Chip allein) — hier beides als „10R1/10R2" gelesen. */
 function klassenJeZeile(container) {
 	return [...container.querySelectorAll('tbody tr')].map((tr) =>
-		[...tr.querySelectorAll('td:nth-child(5) span')].map((s) => s.textContent.trim()).join('/')
+		(tr.querySelector('td:nth-child(5)')?.textContent ?? '')
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean)
+			.join('/')
 	);
+}
+
+/** Öffnet das Überlaufmenü einer Zeile und wählt den Eintrag. */
+async function menue(getByLabelText, getByRole, nummer, eintrag) {
+	await fireEvent.click(getByLabelText(`Aktionen Zeile ${nummer}`));
+	await fireEvent.click(getByRole('menuitem', { name: eintrag }));
 }
 
 describe('LmfPlanReihenfolge', () => {
@@ -34,15 +45,15 @@ describe('LmfPlanReihenfolge', () => {
 	];
 
 	it('legt zwei Klassen in eine Stunde zusammen — und trennt sie wieder', async () => {
-		const { container, getByLabelText } = zeige(start.map((z) => ({ ...z })));
-		await fireEvent.click(getByLabelText('Zeile 2 mit voriger zusammenlegen'));
+		const { container, getByLabelText, getByRole } = zeige(start.map((z) => ({ ...z })));
+		await menue(getByLabelText, getByRole, 2, 'Mit der Zeile davor zusammenlegen');
 		expect(klassenJeZeile(container)).toEqual(['10R1/10R2', '10R3']);
 		// Die zusammengelegte Zeile steht in der Stunde der ersten, 10R3 rückt eine hoch.
 		const zeilen = container.querySelectorAll('tbody tr');
 		expect(zeilen[0].textContent).toContain('3. Std.');
 		expect(zeilen[1].textContent).toContain('4. Std.');
 
-		await fireEvent.click(getByLabelText('Zeile 1 trennen'));
+		await menue(getByLabelText, getByRole, 1, 'In einzelne Stunden trennen');
 		expect(klassenJeZeile(container)).toEqual(['10R1', '10R2', '10R3']);
 	});
 
@@ -67,23 +78,42 @@ describe('LmfPlanReihenfolge', () => {
 		// Die Klasse mit dem Ausflug (Peter, 05.09.2026): „festlegen" macht aus den
 		// gerechneten Spalten Eingabefelder, und zwar mit dem Platz, den die Zeile gerade
 		// hat — sonst spränge sie beim Klick irgendwohin. „lösen" gibt sie dem Fluss zurück.
-		const { container, getByLabelText, queryByLabelText } = zeige(start.map((z) => ({ ...z })));
-		await fireEvent.click(getByLabelText('Zeile 2 festlegen'));
+		const { container, getByLabelText, getByRole, queryByLabelText } = zeige(
+			start.map((z) => ({ ...z }))
+		);
+		await menue(getByLabelText, getByRole, 2, 'Datum und Stunde festlegen');
 		const datum = /** @type {HTMLInputElement} */ (getByLabelText('Fester Tag Zeile 2'));
 		expect(datum.value).toBe('2027-06-28');
 		expect(container.querySelectorAll('tbody tr')[1].textContent).toContain('4. Std.');
-		expect(getByLabelText('Zeile 2 lösen')).toBeTruthy();
 		// Die anderen Zeilen bleiben gerechnet.
 		expect(queryByLabelText('Fester Tag Zeile 1')).toBeNull();
 
-		await fireEvent.click(getByLabelText('Zeile 2 lösen'));
+		await menue(getByLabelText, getByRole, 2, 'Festen Platz lösen');
 		expect(queryByLabelText('Fester Tag Zeile 2')).toBeNull();
-		expect(getByLabelText('Zeile 2 festlegen')).toBeTruthy();
 	});
 
 	it('entfernt die Zeile, wenn ihre letzte Klasse geht und kein Vermerk bleibt', async () => {
-		const { container, getByTitle } = zeige([{ klassen: ['10R1'], vermerk: '' }]);
-		await fireEvent.click(getByTitle('10R1 aus dem Plan nehmen'));
+		// Eine einzelne Klasse ist Text, kein Chip — herausgenommen wird sie über das Menü.
+		const zurueck = vi.fn();
+		const { container, getByLabelText, getByRole } = zeige(
+			[{ klassen: ['10R1'], vermerk: '' }],
+			zurueck
+		);
+		expect(container.querySelector('td:nth-child(5) button')).toBeNull();
+		await menue(getByLabelText, getByRole, 1, 'Klasse aus dem Plan nehmen');
+		expect(zurueck).toHaveBeenCalledWith('10R1');
 		expect(container.querySelectorAll('tbody tr')).toHaveLength(0);
+	});
+
+	it('nennt ohne ersten Tag, was fehlt — und lässt die gerechneten Spalten leer', () => {
+		const { getByTestId, container } = render(LmfPlanReihenfolge, {
+			zeilen: [{ klassen: ['10R1'], vermerk: '' }],
+			plaetze: [],
+			bereit: false,
+			onklasseraus: vi.fn()
+		});
+		expect(getByTestId('lmf-reihenfolge-hinweis').textContent).toContain('Ersten Tag wählen');
+		const zellen = [...container.querySelectorAll('tbody tr td')].slice(1, 4);
+		expect(zellen.map((td) => td.textContent?.trim())).toEqual(['', '', '']);
 	});
 });

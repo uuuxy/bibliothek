@@ -1,7 +1,10 @@
-<!-- @component LmfKlasseChip — eine Klasse im Planer als Material-3-Chip: Radius 8 px,
-     Höhe 32 px (Input-Chip), getönte Fläche. Mit `onentfernen` trägt er das × des
-     Input-Chips (Klasse aus der Zeile nehmen), mit `onklick` ist er ein Assist-Chip
-     (Klasse aus „Nicht im Plan" in den Plan holen). -->
+<!-- @component LmfKlasseChip — ein Chip im Planer nach Material 3: Radius 8 px,
+     Höhe 32 px, im Set (M3: „Don't display a single chip by itself. Chips should
+     appear in a set"). Mit `onentfernen` ist er ein Input-Chip mit dem Pflicht-× zum
+     Entfernen (Klasse aus einer geteilten Stunde, freier Tag); mit `onklick` ein
+     Assist-Chip, und der beginnt nach M3 mit einem Verb („Write assist chips like
+     buttons: start with a verb") — „12T3 einplanen". Eine EINZELNE Klasse in einer
+     Zeile ist deshalb kein Chip, sondern Text (LmfPlanZeile). -->
 <script>
 	import { Plus, X } from '@lucide/svelte';
 
@@ -14,23 +17,25 @@
 		type="button"
 		onclick={onklick}
 		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
-		title="{name} in den Plan"
+		title="{name} einplanen"
 	>
 		<Plus class="h-4 w-4" aria-hidden="true" />
-		{name}
+		{name} einplanen
 	</button>
 {:else}
 	<span
 		class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container pl-3 text-sm font-medium text-on-secondary-container {onentfernen
-			? 'pr-1'
+			? 'pr-0'
 			: 'pr-3'}"
 	>
 		{name}
 		{#if onentfernen}
+			<!-- 32 × 32 px: die ganze Chip-Höhe als Zielfläche (Gate icon-trefferflaechen,
+			     M3 Icon-Button „extra small"); vorher 24 px und damit zu klein. -->
 			<button
 				type="button"
 				onclick={onentfernen}
-				class="flex h-6 w-6 cursor-pointer items-center justify-center rounded-full hover:bg-on-secondary-container/10"
+				class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full hover:bg-on-secondary-container/10"
 				title="{name} aus dem Plan nehmen"
 				aria-label="{name} aus dem Plan nehmen"
 			>

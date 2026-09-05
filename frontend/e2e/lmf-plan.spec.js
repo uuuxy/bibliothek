@@ -16,6 +16,18 @@ const LEHRER_EMAIL = 'e2e-lehrer-lmfplan@test.local';
 const ERSTER_TAG = new Date(2027, 7, 9); // Montag 09.08.2027
 const STUNDEN_JE_TAG = 6;
 
+/**
+ * Wählt eine Aktion aus dem Überlaufmenü einer Zeile des Planers.
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} zeile
+ * @param {number} nummer
+ * @param {string} eintrag
+ */
+async function zeilenAktion(page, zeile, nummer, eintrag) {
+	await zeile.getByRole('button', { name: `Aktionen Zeile ${nummer}` }).click();
+	await page.getByRole('menuitem', { name: eintrag }).click();
+}
+
 /** Der Platz, den der Server der Zeile mit dieser Nummer geben muss (Mo–Fr, 6 je Tag). */
 function erwarteterPlatz(/** @type {number} */ nummer) {
 	const schultag = Math.floor((nummer - 1) / STUNDEN_JE_TAG);
@@ -76,8 +88,18 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(zeile).toContainText(soll.stunde);
 	await zeile.getByLabel(`Besonderheiten Zeile ${nummer}`).fill(vermerk);
 
-	// Eine Zeile ohne Klasse davor: die Klasse rückt eine Stunde weiter.
-	await zeile.getByLabel(`Vor Zeile ${nummer} einfügen`).click();
+	// Escape im Überlaufmenü schließt NUR das Menü — bis 06.09.2026 sprang derselbe
+	// Tastendruck zusätzlich an die Theke (Router hört vor dem Overlay auf window).
+	await zeile.getByRole('button', { name: `Aktionen Zeile ${nummer}` }).click();
+	await expect(page.getByRole('menu')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('menu')).toHaveCount(0);
+	await expect(page).toHaveURL(/\/schuljahr$/);
+
+	// Eine Zeile ohne Klasse davor: die Klasse rückt eine Stunde weiter. Die Aktion liegt
+	// im Überlaufmenü der Zeile (M3: Overflow für Aktionen, die nicht ständig sichtbar sein
+	// müssen).
+	await zeilenAktion(page, zeile, nummer, 'Zeile davor einfügen');
 	let verschoben = tabelle.getByRole('row').filter({ hasText: klasse });
 	soll = erwarteterPlatz(nummer + 1);
 	await expect(verschoben).toContainText(soll.datum);
@@ -85,11 +107,12 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 
 	// Erst die Klassenzeile mit der Leerzeile darüber zusammenlegen — sie bekommt deren
 	// Stunde zurück und trägt beide Vermerke.
-	await tabelle
-		.getByRole('row')
-		.filter({ hasText: klasse })
-		.getByLabel(`Zeile ${nummer + 1} mit voriger zusammenlegen`)
-		.click();
+	await zeilenAktion(
+		page,
+		tabelle.getByRole('row').filter({ hasText: klasse }),
+		nummer + 1,
+		'Mit der Zeile davor zusammenlegen'
+	);
 	verschoben = tabelle.getByRole('row').filter({ hasText: klasse });
 	soll = erwarteterPlatz(nummer);
 	await expect(verschoben).toContainText(soll.stunde);
@@ -99,7 +122,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	// Und dann mit der Klassenzeile darüber: ZWEI Klassen in EINER Stunde — so stehen
 	// „10R1/10R2" und „6F1/6F2" im Plan der Schule (Peter, 05.09.: „das muss alles super
 	// flexibel ablaufen und planbar sein").
-	await verschoben.getByLabel(`Zeile ${nummer} mit voriger zusammenlegen`).click();
+	await zeilenAktion(page, verschoben, nummer, 'Mit der Zeile davor zusammenlegen');
 	const geteilt = tabelle.getByRole('row').filter({ hasText: klasse });
 	soll = erwarteterPlatz(nummer - 1);
 	await expect(geteilt).toContainText(soll.stunde);
@@ -185,7 +208,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	// Reihenfolge steht.
 	const zeile = tabelle.getByRole('row').filter({ hasText: klasse });
 	const nummer = Number(await zeile.getByRole('cell').first().innerText());
-	await zeile.getByLabel(`Zeile ${nummer} festlegen`).click();
+	await zeilenAktion(page, zeile, nummer, 'Datum und Stunde festlegen');
 	await zeile.getByLabel(`Fester Tag Zeile ${nummer}`).fill('2027-08-20');
 	await expect(zeile).toContainText('Freitag');
 

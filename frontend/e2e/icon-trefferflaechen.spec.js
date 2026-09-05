@@ -31,6 +31,7 @@ const SCREENS = [
 	['Druck-Center', '/druck-center'],
 	['Inventur', '/inventur'],
 	['Abgänger', '/abgaenger'],
+	['Schuljahreswechsel', '/schuljahr'],
 	['Klassensätze', '/schulklassen'],
 	['Mein Portal', '/kollegium-portal'],
 	['Einstellungen', '/einstellungen']

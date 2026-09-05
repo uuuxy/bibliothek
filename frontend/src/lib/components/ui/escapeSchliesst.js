@@ -2,6 +2,21 @@
 const stapel = [];
 
 /**
+ * Ist gerade ein Overlay offen, dem Escape gehört? Der Router fragt das, BEVOR er
+ * Escape als „zurück an die Theke" deutet (escapeRegel.js).
+ *
+ * Anlass (06.09.2026, am Überlaufmenü des LMF-Planers gesehen): Der Router hört auf
+ * window und ist als Erster eingehängt; ein Dialog hängt seinen Escape-Lauscher später
+ * ein und kommt deshalb ZWEITER dran. Sein preventDefault erreicht den Router nicht mehr.
+ * Steht der Fokus nicht in einem Eingabefeld (Menüeintrag, Knopf), sprang das Programm
+ * mit demselben Tastendruck an die Theke UND schloss den Dialog — seit dem 05.09. für
+ * jedes Overlay mit dieser Aktion, auch Modal.svelte.
+ */
+export function escapeIstBelegt() {
+	return stapel.length > 0;
+}
+
+/**
  * `use:escapeSchliesst={schliessen}` — Escape schließt diesen Dialog.
  *
  * Anlass (05.09.2026): KEINES der elf selbstgebauten Overlays reagierte auf Escape,
@@ -33,6 +48,7 @@ export function escapeSchliesst(node, schliessen) {
 	function beiTaste(e) {
 		if (e.key !== 'Escape') return;
 		if (stapel[stapel.length - 1] !== eintrag) return;
+		e.preventDefault();
 		e.stopPropagation();
 		eintrag.ruf?.();
 	}

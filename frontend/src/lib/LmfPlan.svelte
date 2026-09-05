@@ -12,7 +12,6 @@
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
 	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
-	import LmfPlanFreieTage from './components/lmfplan/LmfPlanFreieTage.svelte';
 	import LmfPlanReihenfolge from './components/lmfplan/LmfPlanReihenfolge.svelte';
 	import LmfPlanVorrat from './components/lmfplan/LmfPlanVorrat.svelte';
 	import { showToast } from '../inventur/lib/store.svelte.js';
@@ -106,7 +105,7 @@
 			(x) => dienst.normKey(x) !== dienst.normKey(k)
 		);
 		if (!entwurf.zeilen.some((z) => z.klassen.some((x) => dienst.normKey(x) === dienst.normKey(k))))
-			entwurf.zeilen = [...entwurf.zeilen, { klassen: [k], vermerk: '' }];
+			entwurf.zeilen = [...entwurf.zeilen, { klassen: [k], vermerk: '', fest: null }];
 	}
 
 	const gueltig = $derived(
@@ -179,14 +178,21 @@
 			text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
 		/>
 	{:else}
-		<div class="mt-4 space-y-6">
+		<!-- Drei Abschnitte gleicher Bauart (Titel, ein Satz, Inhalt) mit 32 px Abstand. -->
+		<div class="mt-6 space-y-8">
 			<LmfPlanRahmen
 				bind:ersterTag={entwurf.erster_tag}
 				bind:startstunde={entwurf.startstunde}
 				bind:stundenJeTag={entwurf.stunden_je_tag}
+				bind:tage={entwurf.freie_tage}
+				{ausfaelle}
 			/>
-			<LmfPlanFreieTage bind:tage={entwurf.freie_tage} {ausfaelle} />
-			<LmfPlanReihenfolge bind:zeilen={entwurf.zeilen} {plaetze} onklasseraus={klasseRaus} />
+			<LmfPlanReihenfolge
+				bind:zeilen={entwurf.zeilen}
+				{plaetze}
+				bereit={Boolean(entwurf.erster_tag)}
+				onklasseraus={klasseRaus}
+			/>
 			<LmfPlanVorrat klassen={entwurf.ausgelassen} onhinein={klasseHinein} />
 		</div>
 	{/if}

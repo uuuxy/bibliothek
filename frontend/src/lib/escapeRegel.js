@@ -1,3 +1,5 @@
+import { escapeIstBelegt } from './components/ui/escapeSchliesst.js';
+
 /**
  * Escape bringt von überall zurück an die Theke — aber nur, wenn die Taste nicht
  * schon jemandem gehört.
@@ -17,6 +19,11 @@
 export function escapeGehoertJemandAnderem(e) {
 	// 1. Jemand hat die Taste bereits verarbeitet (Dialog, Menü, Overlay).
 	if (e.defaultPrevented) return true;
+	// 1b. Ein Overlay ist offen, das Escape schließt (escapeSchliesst). Sein Lauscher
+	//     kommt NACH dem Router dran — das Ereignis kann es also noch nicht verraten,
+	//     der Stapel schon. Ohne diese Frage sprang der Bildschirm zur Theke und der
+	//     Dialog ging zu, mit einem Tastendruck (06.09.2026).
+	if (escapeIstBelegt()) return true;
 	// 2. Der Fokus steht in einem Eingabefeld. Dort heisst Escape "Auswahl schließen"
 	//    oder "Eingabe verwerfen" — nie "Ansicht verlassen".
 	const ziel = /** @type {HTMLElement | null} */ (e.target);

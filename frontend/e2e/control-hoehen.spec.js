@@ -39,6 +39,7 @@ const SCREENS = [
 	['Klassensätze', '/schulklassen'],
 	['Bestellungen', '/bestellungen'],
 	['Katalog', '/medienkatalog'],
+	['Schuljahreswechsel', '/schuljahr'],
 	['Abgänger', '/abgaenger'],
 	['Statistiken', '/statistiken'],
 	['Mahnwesen', '/mahnwesen'],
