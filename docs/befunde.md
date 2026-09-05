@@ -136,8 +136,10 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    Rückgabefrist ihrer LMF-Bücher — heute gilt für alle der globale Stichtag `lmf_stichtag`.
    **Verteilung über das Kollegiums-Portal** (Peter, 05.09.): Der Plan wird heute per Mail
    ans Kollegium geschickt, Korrekturen als Folge-Mail („alle anderen Termine bleiben
-   gleich"). Im Portal ist er immer aktuell: eigener Reiter oder Block im Überblick, die
-   eigene Klasse (über `klassen_lehrer_mapping` und die Login-Adresse) obenan; das Portal liest
+   gleich"). Im Portal ist er immer aktuell: ein Reiter mit der ganzen Tabelle, für alle gleich,
+   in der Reihenfolge des PDFs. KEINE Personalisierung nach Klassenleitung (Peter: auch
+   Fachlehrer gehen mit ihren Klassen zum Büchertausch, und `klassen_lehrer_mapping` ist
+   nicht für jede Klasse gefüllt); das Portal liest
    die Tabelle live, kein gespeichertes PDF (Peters Bedingung: „muss sich selbst
    aktualisieren"). Versand: PDF zum Herunterladen reicht (Peter); die App kennt nicht das
    ganze Kollegium, nur Klassenleitungen (`klassen_lehrer_mapping`) und Portal-Nutzer
