@@ -137,6 +137,10 @@ Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. (§3)
 
 ## Abgänger
 
+Abgänger wird ein Schüler am Schuljahreswechsel: durch die Versetzung (Abschlussklassen
+9H, 10R und 13) oder den LUSD-Import (wer im neuen Export fehlt). Während des
+Abschlussjahres steht er hier noch nicht — nur „Abgang <Jahr>" in seiner Akte.
+
 Zeigt nur Abgänger, die **noch Bücher haben**. Kontoauszüge drucken oder an die
 Klassenleitungen mailen. Wer alles zurückgegeben hat, verschwindet aus der Liste, bleibt
 bis zum Ende der **Karenzzeit** (Vorgabe 90 Tage; _Einstellungen → Datenschutz &

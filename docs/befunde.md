@@ -32,7 +32,8 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** erst Peters Entscheidung zum Wächter für Dauer-Abgänger, dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
+**Reihenfolge:** erst Peters zwei Entscheidungen (Wächter für Dauer-Abgänger,
+Abschlussklassen-Liste), dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
 
 ---
 
@@ -48,6 +49,15 @@ Zwei Regeln dazu:
 suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanlage einer
   Schreibvariante an der Datenbank abgewiesen, und die Maske muss das erklären — deshalb
   eine Produktfrage, kein Reflex.
+
+- **Drei Definitionen für das Ende eines Bildungsgangs** (05.09.2026, B).
+  `internal/ausweis/gueltigkeit.go` (H 9, Mittelstufe 10, Oberstufe 13, kennt E/Q),
+  `calculateAbgaengerJahr` in `api/student_create.go` (h 9; Stufe ≥ 11 → 13; alles andere
+  10 — auch G) und die Versetzung in `api/student_promotion.go` (10+h, 11+r, ≥ 14). Folge:
+  Ein 10G steht in der Akte mit „Abgang <dieses Jahr>", die Versetzung setzt ihn nach 11G.
+  Kein stiller Schaden — der Wert ist Anzeige und editierbar, die Löschung rechnet mit dem
+  tatsächlichen Abgangsjahr —, aber drei Wahrheiten für eine Frage. Beim Bau der
+  Abschlussklassen-Liste (Entscheidung 2): eine Definition, drei Verbraucher.
 
 - **Elf Overlays bauen ihr Dialog-Markup selbst statt `ui/Modal.svelte`** (05.09.2026, C).
   Das Verhalten ist zusammengeführt (`use:escapeSchliesst`, geratscht in
@@ -92,6 +102,23 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    (Verlust buchen und Rechnung stellen oder stornieren; danach greifen Karenz und Löschung
    von selbst). Was zu tun ist, entscheidet ein Mensch; der Wächter hält nur fest, DASS es
    zu tun ist. Kosten: eine Zählung im Wächter, ein Test, eine Zeile im Handbuch.
+
+2. **Abschlussklassen vor dem Sommer: keine Arbeitsliste** (05.09.2026, Peters Frage).
+   Abgänger wird ein Schüler erst am Schuljahreswechsel — durch die Versetzung
+   (Abschlussklassen 9H, 10R, 13; Regel in `promoteStudentsQuery`) oder den LUSD-Import
+   (fehlt im neuen Export). `GET /api/abgaenger` zeigt nur so markierte Schüler mit offenen
+   Büchern. Während des Abschlussjahres kennt das System sie nur als „Abgang <Jahr>" in
+   der Akte (`calculateAbgaengerJahr`, grob und editierbar). Der Moment, in dem die
+   Bibliothek die Bücher der 9H/10R/13 einsammeln kann, ist aber Mai/Juni, solange die
+   Schüler im Haus sind. Dafür gibt es nichts: Die Mahnliste zeigt nur Überfälliges, die
+   Versetzungs-Vorschau nur Zahlen.
+   **Empfehlung:** In der Abgänger-Ansicht ein zweiter Abschnitt „Abschlussklassen
+   <Schuljahr>" — die Schüler, die die Versetzung als Abgänger markieren WÜRDE (dieselbe
+   Regel als geteilter SQL-Ausdruck, keine zweite Definition), mit offenen Büchern,
+   Kontoauszug und Klassenleitungs-Mail wie bei Abgängern; ganzjährig sichtbar, Zähler im
+   Reiter. Kosten: ein Ausdruck aus `promoteStudentsQuery` herausgelöst, eine Abfrage, ein
+   Abschnitt in `Graduates.svelte`, ein Paar-Gate (Versetzungs-Vorschau und Liste liefern
+   dieselbe Menge). Löst nebenbei den B-Posten „drei Definitionen" unten mit auf.
 
 ## Beobachten (nichts zu tun)
 
