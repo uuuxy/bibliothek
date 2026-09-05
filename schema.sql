@@ -837,9 +837,11 @@ CREATE TRIGGER trg_lmf_plaene_aktualisiert_am
 BEFORE UPDATE ON lmf_plaene
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
+-- NOT NULL seit Migration 098: Eine Zeile ohne Plan wäre eine Waise — sichtbar in Portal
+-- und PDF, fristsetzend, aber vom Planer weder zeigbar noch löschbar.
 ALTER TABLE lmf_termine
-    ADD COLUMN plan_id  UUID REFERENCES lmf_plaene(id) ON DELETE CASCADE,
-    ADD COLUMN position INTEGER;
+    ADD COLUMN plan_id  UUID NOT NULL REFERENCES lmf_plaene(id) ON DELETE CASCADE,
+    ADD COLUMN position INTEGER NOT NULL;
 
 CREATE INDEX idx_lmf_termine_plan ON lmf_termine (plan_id, position);
 
@@ -1111,7 +1113,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('094_schueler_umbenennung_karenz.sql'),
 ('095_abgaenger_sperre_ein_praefix.sql'),
 ('096_lmf_termine.sql'),
-('097_lmf_plaene.sql')
+('097_lmf_plaene.sql'),
+('098_lmf_termine_gehoeren_zum_plan.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

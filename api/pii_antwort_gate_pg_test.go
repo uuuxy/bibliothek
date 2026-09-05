@@ -129,9 +129,14 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 
 	// Ein LMF-Termin, damit GET /api/lmf-termine/pdf etwas zu rendern hat (leer = 404).
 	// Stufe 0: Datum, Stunde, Art, Vermerk — bewusst kanarienfrei.
-	if _, err := pool.Exec(ctx, `INSERT INTO lmf_termine (datum, stunde, art, vermerk)
-		VALUES (CURRENT_DATE + 30, 3, 'rueckgabe', 'Gate-Termin')`); err != nil {
-		t.Fatalf("LMF-Termin anlegen: %v", err)
+	var planID string
+	if err := pool.QueryRow(ctx, `INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag)
+	     VALUES ('rueckgabe', DATE '2098-08-01', DATE '2099-06-28', 1, 6) RETURNING id`).Scan(&planID); err != nil {
+		t.Fatalf("Gate-Plan: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO lmf_termine (plan_id, position, datum, stunde, art, vermerk)
+	     VALUES ($1, 1, DATE '2099-06-28', 3, 'rueckgabe', 'Gate-Termin')`, planID); err != nil {
+		t.Fatalf("Gate-Termin: %v", err)
 	}
 
 	// Titel + Exemplar. Titeldaten sind Stufe 0 und absichtlich kanarienfrei.
@@ -197,7 +202,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	t.Cleanup(func() {
 		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
 		aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
-		aufraeumen(t, pool, `DELETE FROM lmf_termine WHERE vermerk = 'Gate-Termin'`)
+		aufraeumen(t, pool, `DELETE FROM lmf_plaene WHERE erster_tag = DATE '2099-06-28'`)
 		aufraeumen(t, pool, `DELETE FROM vormerkungen WHERE titel_id = $1`, w.titelID)
 		aufraeumen(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
 		aufraeumen(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
