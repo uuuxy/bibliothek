@@ -1,6 +1,6 @@
 # Datenschutzhinweis Schulbibliothek / Lernmittel — Entwurf (Art. 13 DSGVO)
 
-**Status:** Entwurf aus dem Projekt (22.08.2026) für die Schule. Zwei Fassungen, weil zwei
+**Status:** Entwurf aus dem Projekt (22.08.2026) für die Schule. **Nachtrag 05.09.2026:** Absatz „Wie lange" an die Karenz ab dem letzten Vorgang angepasst — zum Gegenlesen durch die Schule. Zwei Fassungen, weil zwei
 Rechtsgrundlagen: **A** gehört in die Information bei der Schulaufnahme (§ 5 Abs. 2 SchDSV),
 **B** wird bei der Anmeldung zur Schülerbücherei ausgegeben (HBDI-Muster) — mit
 Einwilligungsfeld. Eckige Klammern füllt die Schule. Fachlich prüft der schulische
@@ -43,10 +43,7 @@ Server der Schule verarbeitet und nicht in Länder außerhalb der EU übermittel
 
 **Wie lange wir Daten speichern.** Ein Ausleihvorgang bleibt Ihrem Kind **zwei Jahre nach
 der Rückgabe** zugeordnet (Nachweis für die Lernmittel-Bestandskartei und etwaige
-Schadensfälle), danach wird die Zuordnung automatisch entfernt. Verlässt Ihr Kind die
-Schule, wird der Datensatz nach Ablauf des Schuljahres gelöscht, sobald keine Bücher mehr
-offen sind und keine Forderung besteht; spätestens nach einem Jahr werden die Daten
-anonymisiert. Protokolle werden nach 24 Monaten gelöscht.
+Schadensfälle), danach wird die Zuordnung automatisch entfernt. Verlässt Ihr Kind die Schule, werden die persönlichen Daten 90 Tage nach dem letzten Vorgang (Abgang, letzte Rückgabe oder Begleichung einer Forderung) anonymisiert und der Datensatz nach Ablauf des Schuljahres endgültig gelöscht. Solange Bücher offen sind oder eine Forderung besteht, bleiben Name und Anschrift für Erinnerung und Abrechnung erhalten. Protokolle werden nach 24 Monaten gelöscht.
 
 **Ihre Rechte.** Sie haben das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16),
 Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Widerspruch (Art. 21

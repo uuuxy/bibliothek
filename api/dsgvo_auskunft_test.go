@@ -159,7 +159,7 @@ func TestDsgvoVerarbeitungsangaben_KarenzAusEinstellung(t *testing.T) {
 	if strings.Contains(va.Speicherdauer, "360") {
 		t.Errorf("Speicherdauer trägt noch die alte feste Frist: %q", va.Speicherdauer)
 	}
-	if va := dsgvoVerarbeitungsangaben(90, 730, 0); !strings.Contains(va.Speicherdauer, "sofort nach dem Abgang") {
+	if va := dsgvoVerarbeitungsangaben(90, 730, 0); !strings.Contains(va.Speicherdauer, "sofort nach dem letzten Vorgang") {
 		t.Errorf("Karenz 0 muss sofort heißen: %q", va.Speicherdauer)
 	}
 }

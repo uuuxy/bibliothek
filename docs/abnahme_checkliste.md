@@ -1,6 +1,6 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
-> Stand: 2026-08-23. Für die Abnahme mit dem Sekretariat.
+> Stand: 2026-09-05. Für die Abnahme mit dem Sekretariat.
 > Alle vier Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
@@ -27,11 +27,11 @@ Eine Schüler-ID enthält kein LUSD-Bericht — das ist bekannt und vorgesehen.
 **Zuordnungsstufe zuerst lesen.** Der Import erkennt aus der Datei selbst, worüber er
 zuordnen kann, und sagt es im Banner über der Vorschau:
 
-| Stufe | Wann | Was das bedeutet |
-|---|---|---|
-| LUSD-ID | Datei hat eine Schüler-ID | sicherste Zuordnung |
-| Name + Geburtsdatum | keine ID, aber ein Datum | sicher genug |
-| **nur Name** | weder ID noch Datum | Namensgleiche werden **nicht** zugeordnet, sondern als „mehrdeutig" gemeldet — Banner erscheint als Warnung |
+| Stufe               | Wann                      | Was das bedeutet                                                                                            |
+| ------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| LUSD-ID             | Datei hat eine Schüler-ID | sicherste Zuordnung                                                                                         |
+| Name + Geburtsdatum | keine ID, aber ein Datum  | sicher genug                                                                                                |
+| **nur Name**        | weder ID noch Datum       | Namensgleiche werden **nicht** zugeordnet, sondern als „mehrdeutig" gemeldet — Banner erscheint als Warnung |
 
 **Ablauf** (System → Einstellungen → Schuljahreswechsel):
 
@@ -49,7 +49,7 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
    - **Zusammengeführt** (Bestandsschüler, den der Export eindeutig trifft) → bekommt
      fehlende LUSD-ID bzw. fehlendes Geburtsdatum nachgetragen, **kein** Duplikat
    - **Abgänger** → Stichprobe: sind die wirklich weg? (Ohne offene Vorgänge bleiben sie
-     für die Karenzzeit gesperrt erhalten, Vorgabe 90 Tage — erst danach anonymisiert.)
+     für die Karenzzeit gesperrt erhalten, Vorgabe 90 Tage ab dem letzten Vorgang — erst danach anonymisiert und erst danach endgültig gelöscht.)
    - **Rückkehrer** → früherer Abgänger steht wieder in der Datei; prüfen, ob das
      dieselbe Person ist
    - **Mehrdeutig** → Name kommt mehrfach vor; bleibt unverändert
@@ -61,13 +61,14 @@ zuordnen kann, und sagt es im Banner über der Vorschau:
        nachpflegen und den Import wiederholen — die Gruppe muss kleiner werden.
 7. [ ] **Umbenennungs-Probe:** In einer Testdatei einen bestehenden Schüler umbenennen
        (gleiches Geburtsdatum, gleicher Schuleintritt). Vorschau muss ihn unter „Vermutlich
-       dieselbe Person" als *sicher* zeigen; nach dem Import derselbe Datensatz (Barcode
+       dieselbe Person" als _sicher_ zeigen; nach dem Import derselbe Datensatz (Barcode
        unverändert) mit neuem Namen, keine zweite Zeile.
 8. [ ] **Zusammenführen-Probe:** Zwei Datensätze derselben Testperson anlegen, in der Akte
-       *Stammdaten & Adresse → „Doppelter Datensatz?"* zusammenführen. Danach: ein Datensatz,
+       _Stammdaten & Adresse → „Doppelter Datensatz?"_ zusammenführen. Danach: ein Datensatz,
        Ausleihen beider daran, der andere weg (Audit-Eintrag `SCHUELER_ZUSAMMENGEFUEHRT`).
 
 **Eingebaute Bremsen:**
+
 - Falsche Datei (fehlende Pflichtspalten, Binärmüll) → verständliche deutsche Fehlermeldung, kein Import.
 - Mehr als 30 % der aktiven Schüler würden zu Abgängern → Warnung; der Import verlangt dann
   die zusätzliche rote Bestätigung **„Massenabgang bestätigen & endgültig importieren"**.
@@ -85,9 +86,9 @@ oder nur die Versetzung nutzen, wenn kein frischer LUSD-Export vorliegt.
 **Ablauf** (System → Einstellungen → Schuljahreswechsel):
 
 1. [ ] **„Vorschau berechnen"** — der Server rechnet die komplette Versetzung durch und
-   verwirft sie wieder (echter Dry-Run). Es wird nichts geändert.
+       verwirft sie wieder (echter Dry-Run). Es wird nichts geändert.
 2. [ ] Vorschau prüfen: Anzahl versetzte Schüler plausibel? Werden Klassen korrekt
-   hochgezählt (z. B. `05a` → `06a`)? Höchste Jahrgangsstufe → Abgänger?
+       hochgezählt (z. B. `05a` → `06a`)? Höchste Jahrgangsstufe → Abgänger?
 3. [ ] Ausführen (rote Bestätigungsstufe) → Erfolgsmeldung.
 4. [ ] Gegenprobe: je einen Schüler aus niedrigster und höchster Stufe prüfen.
 
@@ -138,12 +139,12 @@ Betreiber — die Software kann es nicht wissen und rät deshalb bewusst nicht.
 **Ablauf** (Druck-Center → **Fehlende Etiketten** → Abschnitt „Altbestand aufräumen" aufklappen):
 
 1. [ ] Stichtag eintragen. Die Zahl der betroffenen Exemplare erscheint sofort — es wird
-   noch **nichts** geändert.
+       noch **nichts** geändert.
 2. [ ] Zahl prüfen: Liegt sie in der Größenordnung des Altbestands? Ist sie **auffällig
-   nah an der Gesamtzahl der Exemplare**, ist der Stichtag zu spät gewählt.
-3. [ ] Bestätigen → Meldung „*n* Exemplare als erledigt vermerkt".
+       nah an der Gesamtzahl der Exemplare**, ist der Stichtag zu spät gewählt.
+3. [ ] Bestätigen → Meldung „_n_ Exemplare als erledigt vermerkt".
 4. [ ] Gegenprobe: Die Nachdruck-Liste enthält jetzt **nur noch** Exemplare aus jüngeren
-   Lieferungen. Stichprobe: Ein Buch aus der letzten Lieferung muss noch dastehen.
+       Lieferungen. Stichprobe: Ein Buch aus der letzten Lieferung muss noch dastehen.
 
 **Die eine echte Gefahr:** Ein **zu später** Stichtag (z. B. heute). Dann verschwindet die
 frische Lieferung, die noch gar kein Etikett hat, still aus der Liste — und niemand
@@ -152,6 +153,7 @@ Stichtag **früher** setzen: Zu wenig aufgeräumt ist folgenlos (die Zeilen blei
 und lassen sich jederzeit erneut aufräumen), zu viel aufgeräumt ist es nicht.
 
 **Eingebaute Bremsen:**
+
 - Vorschau-Zahl und Aktion nutzen dieselbe Bedingung — die genannte Zahl ist die, die
   wirklich zuschlägt.
 - Ausgesonderte Exemplare bleiben unberührt.
@@ -193,4 +195,4 @@ Bibliothek ihn ohne Suchen findet, und nach der Freischaltung nur das Portal sic
 
 - [ ] Ergebnis (bestanden / Auffälligkeiten) im Befund-Register ([befunde.md](befunde.md)) vermerken.
 - [ ] Bei Parser-Auffälligkeiten mit der echten LUSD-Datei: die Datei (anonymisiert!)
-  als Testfixture sichern, damit die automatischen Tests das echte Format abdecken.
+      als Testfixture sichern, damit die automatischen Tests das echte Format abdecken.

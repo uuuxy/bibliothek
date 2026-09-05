@@ -25,7 +25,8 @@ const (
 	// = Abgänger + Neuanlage) mit. 90 Tage decken das erste Quartal nach dem Schuljahres-
 	// wechsel, in dem solche Fälle an der Theke auffallen. Der Wert ist einstellbar
 	// (AbgaengerKarenzSchluessel); 0 heißt „sofort" wie früher. Die endgültige Löschung
-	// (AbgaengerStichjahr, 30. Januar) bleibt davon unberührt und deckelt die Frist.
+	// (AbgaengerStichjahr, 30. Januar) trifft seit 05.09.2026 nur anonymisierte Zeilen —
+	// sie wartet die Karenz ab, statt sie abzuschneiden (PredikatAbgaengerLoeschung).
 	StandardAbgaengerKarenzTage = 90
 	// AbgaengerKarenzSchluessel ist die Zeile in system_einstellungen, aus der Import,
 	// Job und Wächter die Karenz lesen — EIN Schlüssel für drei Leser.

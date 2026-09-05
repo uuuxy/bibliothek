@@ -39,17 +39,7 @@ func NewScheduler(db db.PgxPoolIface, auditRepo repository.AuditRepository) *Sch
 // Start registriert alle Cronjobs für DSGVO, Backup und Vorhaltefristen.
 func (s *Scheduler) Start() {
 	// Tägliche DSGVO-Anonymisierung und Abgänger-Löschung um Mitternacht
-	if _, err := s.cron.AddFunc("0 0 * * *", func() {
-		s.RunGDPRAnonymizeLoans()
-		s.RunGDPRDeleteAbgaenger()
-		s.RunGDPRAnonymizeOldData()
-		// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene
-		// Ausleihen nach Frist vom Schüler. Fristen stehen in den Einstellungen.
-		s.RunLesehistorieBefristung()
-		// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen
-		// aus dem Kollegiums-Portal tragen Freitext, Klasse und den Namen der Lehrkraft.
-		s.RunAnliegenBefristung()
-	}); err != nil {
+	if _, err := s.cron.AddFunc("0 0 * * *", s.RunNaechtlicheDSGVO); err != nil {
 		log.Printf("Scheduler: Failed to register GDPR jobs: %v", err)
 		return
 	}
@@ -165,4 +155,23 @@ func (s *Scheduler) RunVormerkungVerfall() {
 	if verfallen > 0 {
 		log.Printf("Scheduler Vormerkung-Verfall: %d abgelaufene Abhol-Reservierung(en) verfallen, %d Exemplar(e) an den nächsten Wartenden zugeteilt.", verfallen, neuBereit)
 	}
+}
+
+// RunNaechtlicheDSGVO ist die nächtliche Folge der DSGVO-Routinen — als Methode, damit ein
+// Test dieselbe Folge in derselben Reihenfolge fahren kann wie der Cron.
+func (s *Scheduler) RunNaechtlicheDSGVO() {
+	s.RunGDPRAnonymizeLoans()
+	// Erst anonymisieren, dann löschen: Die Löschung trifft nur anonymisierte Zeilen
+	// (repository.PredikatAbgaengerLoeschung). In dieser Reihenfolge fallen beide in
+	// dieselbe Nacht, und der Wächter der Betriebsbereitschaft sieht nie eine
+	// anonymisierte Hülle einen Tag lang als Rückstand. Bis 05.09.2026 lief die Löschung
+	// zuerst — und schnitt die Karenz am Stichtag ab.
+	s.RunGDPRAnonymizeOldData()
+	s.RunGDPRDeleteAbgaenger()
+	// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene
+	// Ausleihen nach Frist vom Schüler. Fristen stehen in den Einstellungen.
+	s.RunLesehistorieBefristung()
+	// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen
+	// aus dem Kollegiums-Portal tragen Freitext, Klasse und den Namen der Lehrkraft.
+	s.RunAnliegenBefristung()
 }

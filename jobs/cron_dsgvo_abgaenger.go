@@ -13,7 +13,7 @@ import (
 // Schülerdaten unwiederbringlich entfernt. Steht deshalb für sich und nicht zwischen
 // den beiden Anonymisierungsläufen, die nur Felder überschreiben.
 
-// ── GDPR: Abgänger-Löschung (30 Tage nach Schuljahresende) ──────────────────
+// ── GDPR: Abgänger-Löschung (ab 30. Januar des Folgejahres, nur anonymisierte Zeilen) ──
 
 // RunGDPRDeleteAbgaenger führt eine DSGVO-konforme harte Löschung ehemaliger Schüler durch
 // (ist_abgaenger = true), die:
@@ -21,7 +21,9 @@ import (
 //   - keine unzurückgegebenen Bücher haben, UND
 //   - keine unbezahlten Schadensgebühren haben, UND
 //   - mindestens 30 Tage seit Beginn des aktuellen Kalenderjahres vergangen sind
-//     (Näherungswert für "30 Tage nach Schuljahresende").
+//     (Näherungswert für „30 Tage nach Schuljahresende"); gelöscht wird nur, was die Karenz
+//     durchlaufen hat, also schon anonymisiert ist — die Löschung läuft deshalb im Cron NACH
+//     der Anonymisierung (RunNaechtlicheDSGVO, 05.09.2026).
 //
 // Jede Löschung wird einzeln im audit_log protokolliert (Akteur: SYSTEM).
 func (s *Scheduler) RunGDPRDeleteAbgaenger() {

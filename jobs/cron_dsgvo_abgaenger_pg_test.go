@@ -50,11 +50,14 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 		t.Fatalf("Exemplar: %v", err)
 	}
 
-	// Fälliger Abgänger: ist_abgaenger, altes Abgangsjahr, NICHT im Papierkorb.
+	// Fälliger Abgänger: ist_abgaenger, altes Abgangsjahr, NICHT im Papierkorb — und schon
+	// anonymisiert: Seit 05.09.2026 löscht der Job nur, was die Karenz durchlaufen hat
+	// (cron_dsgvo_loeschung_karenz_pg_test.go). Hier geht es um die Mechanik der harten
+	// Löschung selbst (Ausleihhistorie anonymisiert, Zeile weg), nicht um die Fälligkeit.
 	var sid string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger)
-		VALUES ('DEL-S-1', 'Alt', 'Abgang', 'ABG', 2020, true) RETURNING id`).Scan(&sid); err != nil {
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, anonymized_at)
+		VALUES ('DEL-S-1', 'Alt', 'Abgang', 'ABG', 2020, true, NOW() - interval '1 day') RETURNING id`).Scan(&sid); err != nil {
 		t.Fatalf("Schüler: %v", err)
 	}
 

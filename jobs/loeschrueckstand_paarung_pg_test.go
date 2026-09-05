@@ -153,12 +153,13 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
 		VALUES ('S-PAPIERKORB', 'Paula', 'Papierkorb', '9c', 2030, NOW() - interval '200 days')`)
 
-	// 2. Abgänger endgültig löschen: Abgangsjahr vor dem Stichjahr. aktualisiert_am
-	//    bleibt frisch, damit ihn NUR die Löschung betrifft und nicht auch die
-	//    Anonymisierung — der Test soll je Routine eine Aussage machen.
+	// 2. Abgänger endgültig löschen: Abgangsjahr vor dem Stichjahr UND schon anonymisiert
+	//    (seit 05.09.2026 löscht der Job nur, was die Karenz durchlaufen hat). Damit
+	//    betrifft ihn NUR die Löschung und nicht auch die Anonymisierung — der Test soll
+	//    je Routine eine Aussage machen.
 	must("Abgänger", `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, ist_abgaenger, abgaenger_jahr, aktualisiert_am)
-		VALUES ('S-ABGANG', 'Aaron', 'Abgang', '10b', true, $1, NOW())`,
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, ist_abgaenger, abgaenger_jahr, aktualisiert_am, anonymized_at)
+		VALUES ('S-ABGANG', 'Aaron', 'Abgang', '10b', true, $1, NOW(), NOW() - interval '1 day')`,
 		repository.AbgaengerStichjahr(time.Now())-1)
 
 	schuelerID := eins("Probeschüler", `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`)

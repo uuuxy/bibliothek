@@ -159,9 +159,9 @@ type DsgvoAuskunftResponse struct {
 // Bis 02.09.2026 stand hier ein festes „Altfälle nach 360 Tagen", während der Job längst
 // mit der Karenz rechnete: eine Pflichtangabe an die betroffene Person, die nicht stimmte.
 func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage int) DsgvoVerarbeitungsangaben {
-	karenz := "sofort nach dem Abgang"
+	karenz := "sofort nach dem letzten Vorgang"
 	if karenzTage > 0 {
-		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem Abgang, frühestens aber %d Tage nach der letzten Rückgabe oder Schadensregulierung", karenzTage, karenzTage)
+		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem letzten Vorgang (Abgang, letzte Rückgabe oder Schadensregulierung)", karenzTage)
 	}
 	frist := func(tage int) string {
 		if tage <= 0 {
@@ -179,7 +179,7 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage int)
 			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO / § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
-			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz: nach dem Abgang (ab 30. Januar des Folgejahres) gelöscht, sofern keine offene Ausleihe und kein unbezahlter Schadensfall; Abgänger ohne offene Vorgänge " + karenz + " anonymisiert, Papierkorb nach 180 Tagen. Protokolle 24 Monate. Verschlüsselte Backups 14 Tage.",
+			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle 24 Monate. Verschlüsselte Backups 14 Tage.",
 		Herkunft:          "Stammdaten aus der Landesschülerdatenbank LUSD (Export/Import) bzw. manuelle Erfassung durch das Bibliotheksteam",
 		Betroffenenrechte: "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)",
 	}

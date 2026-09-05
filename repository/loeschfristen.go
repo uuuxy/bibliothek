@@ -42,8 +42,9 @@ import (
 // Abgang. Weil offene Vorgänge die Zeile schützen, kippte der Schutz damit genau mit der
 // Rückgabe: Wer am Tag 10 zurückgab, hatte 80 Tage Reparaturfenster; wer am Tag 120
 // zurückgab, wurde in der Folgenacht anonymisiert. Die Karenz ist für die Korrektur an
-// der Theke da, und die Rückgabe IST der Thekenkontakt. Der Deckel bleibt:
-// PredikatAbgaengerLoeschung rechnet über das Stichjahr und kennt diese Uhr nicht.
+// der Theke da, und die Rückgabe IST der Thekenkontakt. Die endgültige Löschung
+// (PredikatAbgaengerLoeschung) trifft seit 05.09.2026 nur anonymisierte Zeilen — sie
+// wartet die Karenz also ab, statt sie abzuschneiden.
 //
 // Der Soft-Delete-Zweig behält seine eigene Uhr (deleted_at): Eine Löschung von Hand ist
 // eine Entscheidung, keine Zuordnung, die sich noch als falsch herausstellen könnte.
@@ -69,9 +70,18 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 // PredikatAbgaengerLoeschung liefert die WHERE-Bedingung, mit der
 // RunGDPRDeleteAbgaenger die endgültig löschbaren Abgänger auswählt. Die Frist steckt
 // hier nicht in einem Intervall, sondern im Stichjahr — siehe AbgaengerStichjahr.
+//
+// Gelöscht wird nur, was schon anonymisiert ist (anonymized_at). Bis 05.09.2026 löschte
+// der Job ab dem 30. Januar jeden Abgänger ohne offene Vorgänge in der nächsten Nacht —
+// und lief im Cron VOR der Anonymisierung. Die Karenz (PredikatAnonymisierung, ab dem
+// letzten Vorgang) galt damit nur bis zum Stichtag: Wer im November zurückgab, hatte
+// 77 statt 90 Tage Reparaturfenster, wer nach dem Stichtag zurückgab, keines. Mit dieser
+// einen Bedingung gilt die EINE Einstellung abgaenger_karenz_tage für beides; 0 heißt
+// weiter „sofort", weil dann schon der Import anonymisiert (anonymisiereAbgaenger).
 func PredikatAbgaengerLoeschung(jetzt time.Time) Loeschbedingung {
 	return Loeschbedingung{Args: []any{AbgaengerStichjahr(jetzt)}, Where: `ist_abgaenger = true
 		  AND deleted_at IS NULL
+		  AND anonymized_at IS NOT NULL
 		  AND abgaenger_jahr < $1
 		  AND NOT EXISTS (
 		      SELECT 1 FROM ausleihen

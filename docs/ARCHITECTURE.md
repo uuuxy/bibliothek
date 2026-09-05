@@ -1,6 +1,6 @@
 # Systemarchitektur & technische Konzepte
 
-> Zuletzt aktualisiert: 2026-08-11
+> Zuletzt aktualisiert: 2026-09-05
 
 ---
 
@@ -57,11 +57,11 @@ HTTP Request
 Die Altbestandsübernahme läuft nicht über diese Schichten, sondern als eigenes Kommando
 gegen dieselbe Datenbank. Sie hat deshalb einen eigenen kleinen Unterbau:
 
-| Paket | Aufgabe |
-|---|---|
-| `internal/littera` | Liest den Littera-Export (`mdb-export`-CSVs), bildet ihn auf die Begriffe dieser Anwendung ab und schreibt ihn — Bestand, Personen, Ausleihen |
-| `internal/uebernahme` | Das Gemeinsame jeder Übernahme: Savepoint je Datensatz, Einordnung von Postgres-Fehlern nach SQLSTATE, ISBN-Prüfung, Spaltenbreiten, Protokoll mit getrennten Zählern für Abwertung und Ausfall |
-| `cmd/littera-altbestand` | Das Kommando davor (siehe [SCRIPTS.md](SCRIPTS.md)) |
+| Paket                    | Aufgabe                                                                                                                                                                                         |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `internal/littera`       | Liest den Littera-Export (`mdb-export`-CSVs), bildet ihn auf die Begriffe dieser Anwendung ab und schreibt ihn — Bestand, Personen, Ausleihen                                                   |
+| `internal/uebernahme`    | Das Gemeinsame jeder Übernahme: Savepoint je Datensatz, Einordnung von Postgres-Fehlern nach SQLSTATE, ISBN-Prüfung, Spaltenbreiten, Protokoll mit getrennten Zählern für Abwertung und Ausfall |
+| `cmd/littera-altbestand` | Das Kommando davor (siehe [SCRIPTS.md](SCRIPTS.md))                                                                                                                                             |
 
 Warum das ein eigenes Paket ist und nicht in `cmd/` liegt: Die Härtung entstand in
 `cmd/migrate` und wurde dort gegen echtes PostgreSQL erarbeitet. Eine zweite Kopie für
@@ -75,16 +75,17 @@ fehlende Savepoint war jahrelang unbemerkt und kostete im Fehlerfall ganze Batch
 Bis zu 8 Kiosk-Stationen arbeiten zeitgleich. Das System verhindert Race Conditions, Doppel-Scans und Inkonsistenzen durch drei Schichten:
 
 ### 1. Transaktions-Isolation & Row-Level-Locking
+
 - **READ COMMITTED** (PostgreSQL-Standard): hoher Durchsatz bei parallelen Zugriffen
 - **`SELECT … FOR UPDATE`** — welche Zeile gesperrt wird, hängt vom Pfad ab, und das ist keine Formsache (nachgezählt 11.08.2026, es sind genau fünf Stellen):
 
-  | Pfad | gesperrte Zeile | Fundstelle |
-  |---|---|---|
-  | Scan eines Exemplars | die **aktive Ausleihe** (`ausleihen`) | `GetActiveLoanByCopyIDTx` |
-  | Ausleihe an einen Schüler | die **Schüler**-Zeile | `loan_checkout.go` |
-  | Rückgabe mit Vormerkung | die **Vormerkung** (`FOR UPDATE OF v SKIP LOCKED`) | `loan_return.go` |
-  | Geräte-Ausleihe | die aktive Geräte-Ausleihe | `device_service.go` |
-  | Schaden erfassen | die **Exemplar**-Zeile (`buecher_exemplare`) | `damage.go` |
+  | Pfad                      | gesperrte Zeile                                    | Fundstelle                |
+  | ------------------------- | -------------------------------------------------- | ------------------------- |
+  | Scan eines Exemplars      | die **aktive Ausleihe** (`ausleihen`)              | `GetActiveLoanByCopyIDTx` |
+  | Ausleihe an einen Schüler | die **Schüler**-Zeile                              | `loan_checkout.go`        |
+  | Rückgabe mit Vormerkung   | die **Vormerkung** (`FOR UPDATE OF v SKIP LOCKED`) | `loan_return.go`          |
+  | Geräte-Ausleihe           | die aktive Geräte-Ausleihe                         | `device_service.go`       |
+  | Schaden erfassen          | die **Exemplar**-Zeile (`buecher_exemplare`)       | `damage.go`               |
 
   Hier stand bis zum 11.08.2026, der Scan sperre `buecher_exemplare`. Das tut nur der
   Schadens-Pfad. Der Unterschied ist wichtig: Scannen **zwei verschiedene** Stationen
@@ -93,6 +94,7 @@ Bis zu 8 Kiosk-Stationen arbeiten zeitgleich. Das System verhindert Race Conditi
   Hosenträger, sondern an dieser Stelle der einzige Schutz.
 
 ### 2. Datenintegrität durch Unique-Partial-Index
+
 ```sql
 -- migrations/033_unique_active_loan.sql — verhindert zwei aktive Ausleihen
 -- auf demselben Exemplar bzw. Gerät. Beide Indizes liegen auf DERSELBEN
@@ -106,10 +108,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_geraet
     ON ausleihen (geraet_id)
     WHERE rueckgabe_am IS NULL AND geraet_id IS NOT NULL;
 ```
+
 - Schützt auch gegen TOCTOU-Race bei Idempotenz-Keys (atomare DB-Ebene, nicht nur Applikationsebene)
 - Unique-Verletzung wird zu HTTP 409 Conflict gemappt (`mapLoanCreateErr`)
 
 ### 3. Echtzeit-Synchronisation (SSE Broker)
+
 Nach jedem DB-Commit sendet der Server über Server-Sent Events (SSE) ein Update an alle verbundenen Clients. Alle Kiosk-PCs sehen denselben Zustand in Echtzeit.
 
 ```mermaid
@@ -131,6 +135,7 @@ graph TD
 ## 🔄 Idempotenz-Keys
 
 Jeder Scan-Request trägt einen `item.id`-basierten Idempotenz-Key:
+
 - Doppelter Key → gespeicherte Antwort wird zurückgegeben (kein zweiter DB-Write)
 - 5xx-Fehler werden nicht gecacht (Retry möglich)
 - TTL-Cleanup läuft **stündlich** (`17 * * * *`); die **24 h** sind die Aufbewahrung, nicht der Takt. Hier stand bis zum 11.08.2026 „täglich (24h-Cron)" — die beiden Zahlen waren verwechselt
@@ -141,12 +146,15 @@ Jeder Scan-Request trägt einen `item.id`-basierten Idempotenz-Key:
 ## 🗄️ Datenbankdesign
 
 ### Katalog vs. Bestand (strikte Trennung)
+
 - **`buecher_titel`** — Metadaten (ISBN, Titel, Autor, Verlag, Ziel-Jahrgang, LMF-Flag)
 - **`buecher_exemplare`** — physische Instanzen (Barcode, Zustand, `ist_ausleihbar`)
 - **`ausleihen`** — aktive und historische Ausleihen (verknüpft mit Exemplar + Schüler)
 
 ### JSONB-Erweiterbarkeit
+
 Haupttabellen haben `erweiterte_eigenschaften JSONB DEFAULT '{}'` für ad-hoc-Attribute (Regalposition, Signatur, externe IDs) ohne Schema-Migration:
+
 - `buecher_titel.erweiterte_eigenschaften`
 - `buecher_exemplare.erweiterte_eigenschaften`
 - `audit_logs.details`
@@ -154,6 +162,7 @@ Haupttabellen haben `erweiterte_eigenschaften JSONB DEFAULT '{}'` für ad-hoc-At
 GIN-Indizes können bei Bedarf auf diese Spalten gelegt werden.
 
 ### Enum-Casing
+
 `benutzer_rolle` ist ein PostgreSQL-ENUM mit lowercase-Werten: `admin`, `kollegium`,
 `mitarbeiter`, `helfer` (`schema.sql`). SQL-Vergleiche müssen `LOWER(rolle::text)`
 verwenden (kein `= 'KOLLEGIUM'`).
@@ -164,6 +173,7 @@ Wort war doppelt belegt und bezeichnet seither nur noch den **Entleihertyp**
 deshalb weiterhin Treffer, die richtig sind.
 
 ### Migrations-Hygiene
+
 - Migrationen sind nummeriert (`NNN_beschreibung.sql`) und werden via `schema_migrations`-Tabelle dedupliziert
 - Die Seed-Liste in `schema.sql` muss exakt mit den Dateien in `migrations/` übereinstimmen (kein Phantom-Eintrag, kein fehlender Eintrag)
 - Doppelte Zahlenpräfixe (003, 008, 021, 022) sortieren deterministisch und haben keine Reihenfolge-Abhängigkeit — Style-Smell, aber funktional korrekt
@@ -174,6 +184,7 @@ deshalb weiterhin Treffer, die richtig sind.
 ## 🏗️ Repository-Schicht — Fehlerbehandlung
 
 Alle `rows.Next()`-Schleifen enden mit einer `rows.Err()`-Prüfung:
+
 ```go
 for rows.Next() {
     // scan …
@@ -182,6 +193,7 @@ if err := rows.Err(); err != nil {
     return nil, fmt.Errorf("…: %w", err)
 }
 ```
+
 **Warum kritisch:** Ohne `rows.Err()` würde ein Verbindungsabbruch mitten in der Iteration als Erfolg behandelt — die zurückgegebene Liste wäre still unvollständig. In `audit_books.go` hätte dies dazu führen können, dass ein Titel trotz aktiver Ausleihen als "ausleihbar" behandelt wird.
 
 ---
@@ -206,32 +218,33 @@ if err := rows.Err(); err != nil {
 
 ## ⚙️ Background Jobs
 
-| Job | Zeitplan | Funktion |
-|---|---|---|
-| GDPR Anonymisierung | Startup + täglich | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen; `RunGDPRAnonymizeOldData` tilgt fällige Schüler-PII inkl. Audit-Spuren |
-| GDPR Abgänger-Löschung | Startup + täglich | `RunGDPRDeleteAbgaenger` — Hard-Delete am Stichtag 30. Januar (Karenzzeit = Anonymisierungsfrist, s. `RunGDPRAnonymizeOldData`) |
-| DB-Backup | täglich 02:30 | `pg_dump` → gzip → AES-256-GCM (scrypt-Schlüssel, `internal/backupkrypto`) |
-| Restore-Probe | **wöchentlich So 03:30** (`30 3 * * 0`) | `RunRestoreProbe` — jüngstes Backup in eine Wegwerf-DB einspielen, Ergebnis als Befund der Betriebsbereitschaft (`jobs/restore_probe.go`) |
-| Audit-Aufbewahrung | täglich 03:00 | Löscht Audit-Einträge jenseits der Frist (Vorgabe 24 Monate) |
-| Idempotenz-TTL | **stündlich** (`17 * * * *`) | Bereinigt Idempotenz-Keys älter als 24 h |
-| Vormerkung-Verfall | **stündlich** (`23 * * * *`) | Räumt abgelaufene „abholbereit"-Reservierungen ab |
-| Cover-Sync | on-demand + **alle 6 Stunden** (`0 */6 * * *`) | Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry |
+| Job                    | Zeitplan                                       | Funktion                                                                                                                                                                                                                    |
+| ---------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GDPR Anonymisierung    | Startup + täglich                              | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen; `RunGDPRAnonymizeOldData` tilgt fällige Schüler-PII inkl. Audit-Spuren                                                                                      |
+| GDPR Abgänger-Löschung | Startup + täglich                              | `RunGDPRDeleteAbgaenger` — Hard-Delete ab dem 30. Januar des Folgejahres, nur anonymisierte Zeilen; läuft in `RunNaechtlicheDSGVO` NACH der Anonymisierung, damit die Karenz (s. `RunGDPRAnonymizeOldData`) für beides gilt |
+| DB-Backup              | täglich 02:30                                  | `pg_dump` → gzip → AES-256-GCM (scrypt-Schlüssel, `internal/backupkrypto`)                                                                                                                                                  |
+| Restore-Probe          | **wöchentlich So 03:30** (`30 3 * * 0`)        | `RunRestoreProbe` — jüngstes Backup in eine Wegwerf-DB einspielen, Ergebnis als Befund der Betriebsbereitschaft (`jobs/restore_probe.go`)                                                                                   |
+| Audit-Aufbewahrung     | täglich 03:00                                  | Löscht Audit-Einträge jenseits der Frist (Vorgabe 24 Monate)                                                                                                                                                                |
+| Idempotenz-TTL         | **stündlich** (`17 * * * *`)                   | Bereinigt Idempotenz-Keys älter als 24 h                                                                                                                                                                                    |
+| Vormerkung-Verfall     | **stündlich** (`23 * * * *`)                   | Räumt abgelaufene „abholbereit"-Reservierungen ab                                                                                                                                                                           |
+| Cover-Sync             | on-demand + **alle 6 Stunden** (`0 */6 * * *`) | Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry                                                                                                                                                                            |
 
 ---
 
 ## 🔌 Externe Abhängigkeiten
 
-| Paket | Zweck |
-|---|---|
-| `jackc/pgx/v5` | PostgreSQL-Treiber (Connection Pool, typsichere Queries) |
-| `golang-jwt/jwt` | JWT-Signierung und -Verifikation (HMAC-only) |
-| `chai2010/webp` | WebP-Dekodierung für Cover-Bilder (CGO) |
-| `go-playground/validator/v10` | Struct-Validierung aller API-Payloads |
-| `getsentry/sentry-go` | Error Tracking (optional via `SENTRY_DSN`) |
-| `jung-kurt/gofpdf` | PDF-Generierung (Mahnwesen, Abgänger, Schäden) |
-| `emersion/go-imap` | IMAP für E-Mail-Eingang |
+| Paket                         | Zweck                                                    |
+| ----------------------------- | -------------------------------------------------------- |
+| `jackc/pgx/v5`                | PostgreSQL-Treiber (Connection Pool, typsichere Queries) |
+| `golang-jwt/jwt`              | JWT-Signierung und -Verifikation (HMAC-only)             |
+| `chai2010/webp`               | WebP-Dekodierung für Cover-Bilder (CGO)                  |
+| `go-playground/validator/v10` | Struct-Validierung aller API-Payloads                    |
+| `getsentry/sentry-go`         | Error Tracking (optional via `SENTRY_DSN`)               |
+| `jung-kurt/gofpdf`            | PDF-Generierung (Mahnwesen, Abgänger, Schäden)           |
+| `emersion/go-imap`            | IMAP für E-Mail-Eingang                                  |
 
 ### Build-Tags
+
 - keine. Der frühere `//go:build odbc` für `cmd/littera_migration` ist mit dem Werkzeug entfallen; der Littera-Altbestand kommt jetzt über `mdb-export`-CSVs (`cmd/littera-altbestand`) und braucht kein `unixODBC`.
 
 ---
@@ -239,6 +252,7 @@ if err := rows.Err(); err != nil {
 ## 🎨 Frontend-Architektur (Svelte 5 Runes)
 
 ### Designsystem: Flat & Edge-to-Edge
+
 - Kein Karten-/Kachel-Anti-Pattern auf Layout-Ebene
 - Trennung durch `border-b border-gray-200` statt Box-Shadow
 - Container: `max-w-5xl` bis `max-w-6xl`, `w-full`
@@ -247,16 +261,19 @@ if err := rows.Err(); err != nil {
 - **Bewahrt** als Karten: Modals, Toasts, Dropdowns, Cover-Galerie-Kacheln
 
 ### Komponenten-Regeln
+
 - ≤ 200 Zeilen pro `.svelte`-Datei
 - Logik-freie Teilkomponenten mit `{#snippet}` / `{@render}` für DRY
 - Daten-Arrays in `.js`-Metadatendateien auslagern (z. B. `permissionMetadata.js`)
 
 ### State Management
+
 - Svelte 5 Runes (`$state`, `$derived`, `$props`, `$bindable`) — lokal, kein globaler Store
 - SSE-Reconnect mit Guards (`isLoggedIn`, Timeout)
 - Offline-Queue: Items nur bei 2xx/permanentem 4xx entfernt; bei 5xx/Netzwerkfehler erhalten
 
 ### RBAC im Frontend
+
 - Menü-Items werden client-seitig per Permission-Map geblendet
 - **Die Autorität ist ausschließlich das Backend**: jede Datenabfrage ist permission-gated (`RequirePermission`)
 - Erzwungene View ohne Berechtigung → 403, kein Datenleck

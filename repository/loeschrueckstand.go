@@ -73,7 +73,7 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	if err != nil {
 		return fehler(err)
 	}
-	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "30 Tage nach Schuljahresende", Zeilen: n})
+	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "nach der Karenz (anonymisiert), ab 30. Januar des Folgejahres", Zeilen: n})
 
 	// 3./4. Lesehistorie, beide Klassen — Ausleihe UND Protokolleintrag. Die
 	//       Protokollzeile trägt dieselbe Zuordnung; wer nur die Ausleihe zählt, sieht
