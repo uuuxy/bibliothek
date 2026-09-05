@@ -34,6 +34,12 @@ describe('MonitorTakt', () => {
 
 	beforeEach(() => {
 		vi.useFakeTimers();
+		// Feste Uhr für JEDEN Fall. Ohne sie erbt der Neustart-Wecker (setTimeout auf die
+		// nächste volle NEUSTART_STUNDE) die Wanduhr der Maschine — der Test hinge davon ab,
+		// wann am Tag er läuft, und zwischen 2 und 3 Uhr nachts feuerte er in fremde Fälle
+		// hinein. 10:00 liegt 17 Stunden vor dem nächsten Neustart, weiter als jeder Fall
+		// hier die Uhr vorstellt.
+		vi.setSystemTime(new Date(2026, 8, 1, 10, 0, 0));
 	});
 	afterEach(() => {
 		takt?.stop();
@@ -186,13 +192,19 @@ describe('MonitorTakt', () => {
 			expect(msBisNeustart(new Date(2026, 8, 1, 3, 0, 0))).toBe(24 * stunde);
 		});
 
+		// Kurz VOR drei stellen, nicht siebzehn Stunden davor: Die Uhr ist zwar gestellt,
+		// die Takte laufen beim Vorstellen aber wirklich — 17 Stunden sind 4 080 Folien-,
+		// 24 480 Cover- und 204 Nachlade-Durchläufe, jeder mit einem await. Im vollen
+		// Vitest-Lauf riss das den Fall gelegentlich in die 5-Sekunden-Grenze (04.09.2026:
+		// einmal rot, dreimal grün, allein immer grün). Dass die Rechnung auch über große
+		// Abstände stimmt, prüft der Fall darüber an msBisNeustart() direkt — ohne Takte.
 		it('startet die Seite um drei Uhr nachts neu — und nicht vorher', async () => {
-			vi.setSystemTime(new Date(2026, 8, 1, 10, 0, 0));
+			vi.setSystemTime(new Date(2026, 8, 1, 2, 59, 0));
 			const neustart = vi.fn();
 			takt = new MonitorTakt(vi.fn().mockResolvedValue(stand('A')), { neustart });
 			await takt.start();
 
-			await vi.advanceTimersByTimeAsync(17 * 60 * 60 * 1000 - 1000);
+			await vi.advanceTimersByTimeAsync(60 * 1000 - 1000);
 			expect(neustart).not.toHaveBeenCalled();
 			await vi.advanceTimersByTimeAsync(1000);
 			expect(neustart).toHaveBeenCalledTimes(1);
