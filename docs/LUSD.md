@@ -1,6 +1,6 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
-Stand: 2026-09-02. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
+Stand: 2026-09-05. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
 Zuordnung repariert. Der Code steht in `api/lusd_*.go` und
 `repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
@@ -11,13 +11,13 @@ Schulgröße (1.890 Schüler, drei Schuljahre) stehen in
 
 **Für wen welcher Abschnitt:**
 
-| Ich bin … | Lies |
-|---|---|
-| Sekretariat / Schulleitung — „Was muss ich exportieren?" | §1 |
-| Admin, der den Import fährt | §2, §3, §5, §6 |
-| Bibliothek — „Ein Kind steht mit altem Ausweis an der Theke" | §5 |
-| Datenschutz — „Was wird gespeichert, wann gelöscht?" | §4, §7 |
-| Entwicklung — „Wo steht was im Code?" | §8 |
+| Ich bin …                                                    | Lies           |
+| ------------------------------------------------------------ | -------------- |
+| Sekretariat / Schulleitung — „Was muss ich exportieren?"     | §1             |
+| Admin, der den Import fährt                                  | §2, §3, §5, §6 |
+| Bibliothek — „Ein Kind steht mit altem Ausweis an der Theke" | §5             |
+| Datenschutz — „Was wird gespeichert, wann gelöscht?"         | §4, §7         |
+| Entwicklung — „Wo steht was im Code?"                        | §8             |
 
 ---
 
@@ -32,13 +32,13 @@ verschlüsselte Littera-Export (`Littera_Export.txt`) ist für dieses System unb
 **Eine Schüler-ID enthält kein LUSD-Bericht** (offizielle Feldliste des HMKB, geprüft
 26.08.2026; „Schueler_Schluessel" ist nur `Nachname,Vorname,Geburtsdatum`).
 
-| Spalte im Bericht | Pflicht | Wofür |
-|---|---|---|
-| `Schueler_Vorname`, `Schueler_Nachname` | ja | Name |
-| `Klassen_Klassenbezeichnung` | ja | Klasse (feste Schreibweise „05F1") |
-| `Schueler_Geburtsdatum` | **dringend** | der Zuordnungsschlüssel — ohne Datum nur Stufe „nur Name" |
-| `Schueler_Eintritt_AktuelleSchule` | empfohlen | **zweiter Schlüssel** gegen Namensänderungen (§3) |
-| `Schueler_Straße`, `Schueler_Postleitzahl`, `Schueler_Ort` | optional | Anschrift für Mahnbrief und Ersatzforderung |
+| Spalte im Bericht                                          | Pflicht      | Wofür                                                     |
+| ---------------------------------------------------------- | ------------ | --------------------------------------------------------- |
+| `Schueler_Vorname`, `Schueler_Nachname`                    | ja           | Name                                                      |
+| `Klassen_Klassenbezeichnung`                               | ja           | Klasse (feste Schreibweise „05F1")                        |
+| `Schueler_Geburtsdatum`                                    | **dringend** | der Zuordnungsschlüssel — ohne Datum nur Stufe „nur Name" |
+| `Schueler_Eintritt_AktuelleSchule`                         | empfohlen    | **zweiter Schlüssel** gegen Namensänderungen (§3)         |
+| `Schueler_Straße`, `Schueler_Postleitzahl`, `Schueler_Ort` | optional     | Anschrift für Mahnbrief und Ersatzforderung               |
 
 Nicht gelesen (bewusst): `Ansprechpartner_Alle_*` — mehrere Kontakte je Schüler, Adresse
 und Mail der Eltern wären ein Ratespiel („letzte Zeile gewinnt" = Großeltern). Eltern-Mail
@@ -52,11 +52,18 @@ eine Tabelle gelesen; Kopfzeilen in drei Stilen (`Vorname`, `Schueler_Vorname`,
 
 Die Datei entscheidet, die Vorschau nennt die Stufe im Banner:
 
-| Stufe | Wann | Sicherheit |
-|---|---|---|
-| **LUSD-ID** | Datei hat eine ID-Spalte mit Werten | sicher — kommt in der Praxis nicht vor |
-| **Name + Geburtsdatum** | keine ID, Datum vorhanden | der Regelfall; Datum muss in jeder Zeile stehen |
-| **nur Name** | weder ID noch Datum (LANIS-Klassenliste) | Notweg; Namensgleiche werden nie zugeordnet, nur gemeldet |
+| Stufe                   | Wann                                     | Sicherheit                                                |
+| ----------------------- | ---------------------------------------- | --------------------------------------------------------- |
+| **LUSD-ID**             | Datei hat eine ID-Spalte mit Werten      | sicher — kommt in der Praxis nicht vor                    |
+| **Name + Geburtsdatum** | keine ID, Datum vorhanden                | der Regelfall; Datum muss in jeder Zeile stehen           |
+| **nur Name**            | weder ID noch Datum (LANIS-Klassenliste) | Notweg; Namensgleiche werden nie zugeordnet, nur gemeldet |
+
+Der Namensschlüssel beider Namensstufen ist die Normalform `suchnorm` (Migration 054;
+Go-Zwilling `repository.Suchnorm`, Parität geratscht): Müller ≡ Mueller ≡ MÜLLER,
+Öztürk ≡ Oeztuerk. Bis 05.09.2026 war er nur lower+trim, und eine Handanlage „Anna Müller"
+wurde vom Export „Anna Mueller" nie gefunden (Neuanlage + „nicht im Export"). Fallen zwei
+Bestandsschüler erst in der Normalform zusammen (Bauer/Baur), meldet die Vorschau sie als
+mehrdeutig und fasst sie nicht an — weder Zuordnung noch Abgang.
 
 Gedächtnis `lusd_bestaetigt_am`: Jeder Import stempelt jede Zeile, die er im Export
 wiedergefunden oder angelegt hat. **Abgänger** ist, wer bestätigt war und jetzt fehlt.
@@ -81,9 +88,9 @@ allem, was der Export sonst hergibt, dieselbe Person sind
 2. Geburtsdatum, Name (Vor- oder Nachname, normiert: Umlaut, Bindestrich, zweiter Vorname),
    Klasse (gleich oder Nachbarjahrgang: „05F1" ↔ „06F1"), Anschrift (Straße + PLZ).
 
-| Einstufung | Bedingung | Vorschau |
-|---|---|---|
-| **sicher** | Schuleintritt + Name, oder Schuleintritt + Geburtsdatum + Vorname | vorangekreuzt |
+| Einstufung     | Bedingung                                                                                                 | Vorschau                    |
+| -------------- | --------------------------------------------------------------------------------------------------------- | --------------------------- |
+| **sicher**     | Schuleintritt + Name, oder Schuleintritt + Geburtsdatum + Vorname                                         | vorangekreuzt               |
 | **vermutlich** | Geburtsdatum + ein weiteres Signal; oder Name + Klasse/Anschrift bei abweichendem Datum (Datumskorrektur) | angeboten, nicht angekreuzt |
 
 Zwei Schutzregeln (Rasterdurchgang 02.09.2026): Ein **abweichender Vorname bei gleichem
@@ -108,13 +115,13 @@ Kombination wird mit 400 abgewiesen, nicht geraten.
 
 Wer bestätigt war und im Export fehlt, wird Abgänger. Seit dem 02.09.2026:
 
-| Zustand | Was passiert |
-|---|---|
+| Zustand                                  | Was passiert                                                                                                      |
+| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | offene Ausleihe oder unbezahlter Schaden | gesperrt, Name und Anschrift bleiben (Mahnung/Rechnung), Grund „Automatisierte Abgänger-Sperre (offene Vorgänge)" |
-| nichts offen, Karenz > 0 | **nur gesperrt**, Grund „… (Karenzzeit vor Anonymisierung)"; der nächtliche Job anonymisiert nach Ablauf |
-| nichts offen, Karenz = 0 | sofort anonymisiert (Verhalten bis 02.09.2026) |
+| nichts offen, Karenz > 0                 | **nur gesperrt**, Grund „… (Karenzzeit vor Anonymisierung)"; der nächtliche Job anonymisiert nach Ablauf          |
+| nichts offen, Karenz = 0                 | sofort anonymisiert (Verhalten bis 02.09.2026)                                                                    |
 
-Die **Karenzzeit** steht in *Einstellungen → Datenschutz & Sitzung → Abgänger-Karenzzeit*
+Die **Karenzzeit** steht in _Einstellungen → Datenschutz & Sitzung → Abgänger-Karenzzeit_
 (Vorgabe **90 Tage**, Schlüssel `abgaenger_karenz_tage`). Ihre Uhr ist
 `schueler.abgaenger_seit` (Migration 094): gesetzt beim ersten Abgang, nicht verschoben
 bei weiteren Läufen, geräumt bei Rückkehr. Import, nächtlicher Job
@@ -161,7 +168,7 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
 ## 6. Der Ablauf beim Schuljahreswechsel
 
 1. Sekretariat: Bericht mit den Spalten aus §1 exportieren (Geburtsdatum und Schuleintritt!).
-2. Admin: *Einstellungen → Schuljahreswechsel* → Datei → **Vorschau laden**.
+2. Admin: _Einstellungen → Schuljahreswechsel_ → Datei → **Vorschau laden**.
 3. Banner lesen (Stufe), dann die Rubriken: **Vermutlich dieselbe Person** zuerst — Paare
    prüfen und ankreuzen; dann Neue, Zusammengeführt (Geburtsdatum/ID nachgetragen),
    Klassenwechsel, Rückkehrer, Abgänger, Nicht im Export, Nicht abgleichbar, Mehrdeutig.
@@ -182,19 +189,19 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.
 
 ## 8. Für die Entwicklung: wo steht was
 
-| Frage | Datei |
-|---|---|
-| Kopfzeilen, Aliase, Pflichtspalten | `api/lusd_header.go` |
-| Parsen, Modus-Erkennung, Dubletten in der Datei | `api/lusd_parser.go`, `api/lusd_parser_quelle.go` |
-| Bestandsindex je Modus | `api/lusd_bestand.go`, `repository/lusd_bestand.go` |
-| Klassifizierung (neu / Wechsel / Rückkehrer / Abgänger / mehrdeutig) | `api/lusd_klassifizierung.go` |
-| Umbenennungs-Paare | `api/lusd_paarung.go` |
-| Anwenden: Batch, Neuanlage, Abgänger, Karenz | `api/lusd_apply.go` |
-| Lauf, Bremse, Wahl des Admins, Audit | `api/lusd.go` |
-| Zusammenführen | `repository/schueler_zusammenfuehren.go`, `api/student_zusammenfuehren.go` |
-| Karenz-Prädikat, Job, Wächter | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go` |
-| Oberfläche | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
-| Tests, die den Jahreszyklus spielen | `api/lusd_namensmodus_pg_test.go`, `api/lusd_umbenennung_pg_test.go`, `api/student_zusammenfuehren_pg_test.go`, `api/lusd_paarung_test.go` |
+| Frage                                                                | Datei                                                                                                                                                  |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Kopfzeilen, Aliase, Pflichtspalten                                   | `api/lusd_header.go`                                                                                                                                   |
+| Parsen, Modus-Erkennung, Dubletten in der Datei                      | `api/lusd_parser.go`, `api/lusd_parser_quelle.go`                                                                                                      |
+| Bestandsindex je Modus                                               | `api/lusd_bestand.go`, `repository/lusd_bestand.go`                                                                                                    |
+| Klassifizierung (neu / Wechsel / Rückkehrer / Abgänger / mehrdeutig) | `api/lusd_klassifizierung.go`                                                                                                                          |
+| Umbenennungs-Paare                                                   | `api/lusd_paarung.go`                                                                                                                                  |
+| Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `api/lusd_apply.go`                                                                                                                                    |
+| Lauf, Bremse, Wahl des Admins, Audit                                 | `api/lusd.go`                                                                                                                                          |
+| Zusammenführen                                                       | `repository/schueler_zusammenfuehren.go`, `api/student_zusammenfuehren.go`                                                                             |
+| Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`                                                                  |
+| Oberfläche                                                           | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
+| Tests, die den Jahreszyklus spielen                                  | `api/lusd_namensmodus_pg_test.go`, `api/lusd_umbenennung_pg_test.go`, `api/student_zusammenfuehren_pg_test.go`, `api/lusd_paarung_test.go`             |
 
 Grenzen, die bleiben: Ohne Schüler-ID sind zwei Zeilen mit gleichem Namen **und** gleichem
 Geburtsdatum in einer Datei eine Person (zusammengelegt, nicht „mehrdeutig"). Eine

@@ -23,21 +23,34 @@ func HatEchteLusdID(lusdID *string) bool {
 }
 
 // LusdSchluessel normalisiert Vorname, Nachname und Geburtsdatum zu einem
-// vergleichbaren Schlüssel (kleingeschrieben, Datum als YYYY-MM-DD). Leerer String,
-// wenn kein Geburtsdatum vorliegt — ohne Datum ist kein sicherer Abgleich möglich.
+// vergleichbaren Schlüssel (Namen in der Normalform suchnorm, Datum als YYYY-MM-DD).
+// Leerer String, wenn kein Geburtsdatum vorliegt — ohne Datum ist kein sicherer
+// Abgleich möglich.
 func LusdSchluessel(vorname, nachname string, geb *time.Time) string {
 	if geb == nil {
 		return ""
 	}
-	return strings.ToLower(strings.TrimSpace(vorname)) + "\x1f" +
-		strings.ToLower(strings.TrimSpace(nachname)) + "\x1f" +
-		geb.Format("2006-01-02")
+	return namensteilNorm(vorname) + "\x1f" + namensteilNorm(nachname) + "\x1f" + geb.Format("2006-01-02")
 }
 
-// LusdNamensSchluessel ist der Nur-Name-Schlüssel (Vorname + Nachname, kleingeschrieben,
-// getrimmt) — die letzte Stufe, wenn der Export weder ID noch Geburtsdatum trägt.
+// LusdNamensSchluessel ist der Nur-Name-Schlüssel (Vorname + Nachname in der Normalform
+// suchnorm) — die letzte Stufe, wenn der Export weder ID noch Geburtsdatum trägt.
 func LusdNamensSchluessel(vorname, nachname string) string {
-	return strings.ToLower(strings.TrimSpace(vorname)) + "\x1f" + strings.ToLower(strings.TrimSpace(nachname))
+	return namensteilNorm(vorname) + "\x1f" + namensteilNorm(nachname)
+}
+
+// namensteilNorm ist die EINE Regel hinter beiden Schlüsseln: Ränder und Mehrfach-
+// Leerzeichen weg, dann die Normalform suchnorm (Migration 054, Go-Zwilling Suchnorm).
+// Bis 05.09.2026 stand hier nur lower+trim — „Anna Müller" von Hand angelegt wurde vom
+// Export „Anna Mueller" nie gefunden: Neuanlage plus „nicht im Export" statt Zuordnung.
+// Gefahrlos ist die weitere Regel, weil der Import einen doppelt belegten Schlüssel als
+// mehrdeutig markiert und dann niemanden anfasst (api/lusd_bestand.go, trageEin): Ein
+// Schlüssel, der zwei Menschen zusammenwirft, fällt auf das alte Verhalten zurück, nie
+// in eine falsche Zuordnung. Bindestriche bleiben bewusst stehen — „Anna-Lena" und
+// „Anna" sind verschiedene Vornamen; die Umbenennungs-Paarung (api/lusd_paarung.go)
+// hat dafür ihre eigene, weitere Regel mit menschlicher Bestätigung.
+func namensteilNorm(s string) string {
+	return Suchnorm(strings.Join(strings.Fields(s), " "))
 }
 
 // LusdBestandsSchueler ist eine nicht gelöschte schueler-Zeile, so wie der LUSD-Import
