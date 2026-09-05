@@ -102,6 +102,21 @@ Welche Klasse hat welche Lektüre? Klasse suchen, _Klasse hinzufügen_ öffnet d
 Bücher auswählen, Zielklasse eintragen, speichern. Reservierungen aus dem Kollegium stehen
 im Bestellwesen (→ _Klassensatz-Reservierungen_). (§4)
 
+## LMF-Plan
+
+Rückgabe- und Ausgabetermine je Klasse — die frühere Excel-Liste der Schule, jetzt im
+System (seit 05.09.2026). Vor den Sommerferien _Bücherrückgabe_ für alle Klassen,
+Abschlussklassen zuerst (wer keine Abschlussklasse ist, bekommt am selben Termin die
+neuen Bücher); nach den Ferien _Bücherausgabe_ für die neu gebildeten Klassen und
+Nachzügler; dazwischen Zeilen wie „Bücher setzen" ohne Klasse, nur mit Vermerk.
+_Termin hinzufügen_: Datum, Stunde, Art, eine oder mehrere Klassen (auch „6F1/6F2" in
+einer Stunde), Besonderheiten. Ein neuer Plan startet leer; die Seite nennt, welche
+Klassen noch keinen Rückgabe-Termin haben. Gezeigt wird das laufende Schuljahr (ab
+1. August), _Ältere anzeigen_ holt den Rest. _Als PDF_ liefert die gewohnte Liste
+(Wochentag, Datum, Stunde, Klassen, Besonderheiten), getrennt nach Rückgabe und Ausgabe.
+Das Kollegium sieht denselben Plan in _Mein Portal → LMF-Plan_, für alle gleich und
+immer auf dem aktuellen Stand — eine Korrektur-Mail entfällt. (§2.3)
+
 ---
 
 ## Schülerdatei
@@ -222,7 +237,8 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Verfügbarkeit
 und Warteschlange; Klassensatz reservieren mit Klasse, Anzahl, Datum) · **Klassensätze** der
-eigenen Klassen · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: aufgebaut wie die
+eigenen Klassen · **LMF-Plan** (seit 05.09.2026: Rückgabe- und Ausgabetermine je Klasse,
+für alle gleich, als PDF; → _LMF-Plan_) · **Schulbücher** (seit 03.09.2026, für die Fachsprecher: aufgebaut wie die
 Klassensätze, nur nach Fach statt Klasse. Oben Suche (Titel, ISBN, Autor, Fach) und die
 Filter Jahrgang und Schulzweig; darunter je Fach eine Zeile mit Exemplaren, Titeln und
 Verliehenen, die sich zu den Cover-Kacheln der Bücher aufklappt. „Als PDF" sitzt an

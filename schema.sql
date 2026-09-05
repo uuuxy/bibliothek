@@ -789,6 +789,33 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_ksr_idempotenz
     ON klassensatz_reservierungen (idempotenz_schluessel)
     WHERE idempotenz_schluessel IS NOT NULL;
 
+-- Table: lmf_termine / lmf_termin_klassen (LMF-Plan: Rückgabe- und Ausgabetermine je
+-- Klasse, Migration 096 — ersetzt die Excel-Tabelle der Schule; der Rückgabe-Termin
+-- einer Klasse ist die Frist ihrer Lernmittel)
+CREATE TABLE lmf_termine (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    datum           DATE NOT NULL,
+    stunde          SMALLINT NOT NULL CONSTRAINT chk_lmf_termine_stunde CHECK (stunde BETWEEN 1 AND 12),
+    art             TEXT NOT NULL CONSTRAINT chk_lmf_termine_art CHECK (art IN ('rueckgabe', 'ausgabe')),
+    vermerk         TEXT NOT NULL DEFAULT '',
+    erstellt_am     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER trg_lmf_termine_aktualisiert_am
+BEFORE UPDATE ON lmf_termine
+FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+
+CREATE INDEX idx_lmf_termine_datum ON lmf_termine (datum, stunde);
+
+CREATE TABLE lmf_termin_klassen (
+    termin_id UUID NOT NULL REFERENCES lmf_termine(id) ON DELETE CASCADE,
+    klasse    VARCHAR(50) NOT NULL,
+    PRIMARY KEY (termin_id, klasse)
+);
+
+CREATE INDEX idx_lmf_termin_klassen_klasse ON lmf_termin_klassen (klasse);
+
 -- -------------------------------------------------------------
 -- Klassen-Vokabular (Migration 079): EINE klassen-Tabelle, an der schueler,
 -- klassen_lehrer_mapping, class_books und klassensatz_reservierungen per FK hängen.
@@ -872,6 +899,9 @@ FOR EACH ROW EXECUTE FUNCTION class_name_kanonisieren();
 CREATE TRIGGER trg_ksr_klasse_vokabular
 BEFORE INSERT OR UPDATE OF klasse ON klassensatz_reservierungen
 FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
+CREATE TRIGGER trg_lmf_termin_klassen_vokabular
+BEFORE INSERT OR UPDATE OF klasse ON lmf_termin_klassen
+FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
 
 -- Anzeigeform (Migration 087): Jahrgang zweistellig, Rest groß — „09G4", „10G1".
 -- Nur für klassenartige Namen; 'lehrer', 'ABG', Kursnamen bleiben.
@@ -914,6 +944,11 @@ ALTER TABLE class_books
 
 ALTER TABLE klassensatz_reservierungen
     ADD CONSTRAINT fk_ksr_klasse_vokabular
+    FOREIGN KEY (klasse) REFERENCES klassen (name)
+    ON UPDATE CASCADE ON DELETE RESTRICT;
+
+ALTER TABLE lmf_termin_klassen
+    ADD CONSTRAINT fk_lmf_termin_klassen_vokabular
     FOREIGN KEY (klasse) REFERENCES klassen (name)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
@@ -1032,7 +1067,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('092_tote_vorlage_bestellung_eingetroffen.sql'),
 ('093_lernmittel_feld.sql'),
 ('094_schueler_umbenennung_karenz.sql'),
-('095_abgaenger_sperre_ein_praefix.sql')
+('095_abgaenger_sperre_ein_praefix.sql'),
+('096_lmf_termine.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

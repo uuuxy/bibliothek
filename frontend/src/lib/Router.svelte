@@ -21,6 +21,7 @@
 	import DruckCenter from './DruckCenter.svelte';
 	import SystemLogs from './SystemLogs.svelte';
 	import Graduates from './Graduates.svelte';
+	import LmfPlan from './LmfPlan.svelte';
 	import RouteFallback from './components/layout/RouteFallback.svelte';
 
 	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
@@ -39,6 +40,7 @@
 		inventory: '/inventur',
 		students_dir: '/schuelerdatei',
 		schulklassen: '/schulklassen',
+		lmf_plan: '/lmf-plan',
 		orders: '/bestellungen',
 		media_catalog: '/medienkatalog',
 		signaturen: '/signaturen',
@@ -188,12 +190,8 @@
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
 			<Omnibox onSelectBook={handleSelectBook} />
 		</div>
-		<!-- Der Zweig activeTab === 'books' ist entfallen: Ihn hat nie jemand gesetzt (kein
-     tabToPath-Eintrag, kein Menüpunkt, keine Zuweisung im Code). Er war seit Langem
-     unerreichbar und hielt BookDetails samt uiStore.selectedBook künstlich am Leben —
-     die Buchansicht läuft über 'book_detail' und appState.activeBookId.
-     Der Routing-Test prüft nur die Gegenrichtung (jedes Ziel wird gerendert), deshalb
-     fiel es dort nicht auf. Audit-Befund vom 01.08.2026. -->
+		<!-- Der Zweig 'books' ist entfallen (nie gesetzt, unerreichbar; Audit 01.08.2026) —
+		     die Buchansicht läuft über 'book_detail' und appState.activeBookId. -->
 	{:else if uiStore.activeTab === 'orders'}
 		<div class="w-full animate-fade-in"><BestellWorkspace /></div>
 	{:else if uiStore.activeTab === 'stats'}
@@ -216,13 +214,13 @@
 	{:else if uiStore.activeTab === 'inventory'}
 		<div class="w-full animate-fade-in"><UnifiedInventory /></div>
 	{:else if uiStore.activeTab === 'students_dir'}
-		<div class="w-full animate-fade-in">
-			<StudentDirectory />
-		</div>
+		<div class="w-full animate-fade-in"><StudentDirectory /></div>
 	{:else if uiStore.activeTab === 'graduates'}
 		<div class="w-full animate-fade-in"><Graduates /></div>
 	{:else if uiStore.activeTab === 'schulklassen'}
 		<div class="w-full animate-fade-in"><Schulklassen /></div>
+	{:else if uiStore.activeTab === 'lmf_plan'}
+		<div class="w-full animate-fade-in"><LmfPlan /></div>
 	{:else if uiStore.activeTab === 'mahnwesen'}
 		<div class="w-full animate-fade-in"><Mahnwesen /></div>
 	{:else if uiStore.activeTab === 'kollegium_portal'}

@@ -1,18 +1,21 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-09-03. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-09-05. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
+- `DELETE /api/lmf-termine/{id}`
 - `GET /api/dinge/{id}`
+- `GET /api/lmf-termine/pdf`
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
 - `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/defekt`
 - `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/public/bestellung/{token}/bestaetigen`
+- `PUT /api/lmf-termine/{id}`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -22,7 +25,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (190)
+## Alle registrierten Routen (196)
 
 - `/`
 - `/api/admin`
@@ -41,6 +44,7 @@
 - `DELETE /api/buecher/titel/{id}`
 - `DELETE /api/klassen-mapping/{klasse}`
 - `DELETE /api/lieferanten/{id}`
+- `DELETE /api/lmf-termine/{id}`
 - `DELETE /api/schueler/deleted/{id}`
 - `DELETE /api/schueler/{id}`
 - `DELETE /api/systematics/{id}`
@@ -95,6 +99,8 @@
 - `GET /api/klassen`
 - `GET /api/klassen-mapping`
 - `GET /api/lieferanten`
+- `GET /api/lmf-termine`
+- `GET /api/lmf-termine/pdf`
 - `GET /api/lookup/`
 - `GET /api/mahnwesen`
 - `GET /api/mahnwesen/pdf`
@@ -178,6 +184,7 @@
 - `POST /api/inventur/start`
 - `POST /api/klassen-mapping`
 - `POST /api/lieferanten`
+- `POST /api/lmf-termine`
 - `POST /api/lusd/import`
 - `POST /api/lusd/preview`
 - `POST /api/mahnwesen/senden`
@@ -212,6 +219,7 @@
 - `PUT /api/einstellungen`
 - `PUT /api/geraete/{id}`
 - `PUT /api/lieferanten/{id}`
+- `PUT /api/lmf-termine/{id}`
 - `PUT /api/mail-templates/{id}`
 - `PUT /api/reservierungen/klassensatz/{id}/erledigen`
 - `PUT /api/systematics/{id}`

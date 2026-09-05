@@ -127,6 +127,13 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		t.Fatalf("Abgänger anlegen: %v", err)
 	}
 
+	// Ein LMF-Termin, damit GET /api/lmf-termine/pdf etwas zu rendern hat (leer = 404).
+	// Stufe 0: Datum, Stunde, Art, Vermerk — bewusst kanarienfrei.
+	if _, err := pool.Exec(ctx, `INSERT INTO lmf_termine (datum, stunde, art, vermerk)
+		VALUES (CURRENT_DATE + 30, 3, 'rueckgabe', 'Gate-Termin')`); err != nil {
+		t.Fatalf("LMF-Termin anlegen: %v", err)
+	}
+
 	// Titel + Exemplar. Titeldaten sind Stufe 0 und absichtlich kanarienfrei.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp, signatur)
@@ -190,6 +197,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	t.Cleanup(func() {
 		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)
 		aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, w.exemplarID)
+		aufraeumen(t, pool, `DELETE FROM lmf_termine WHERE vermerk = 'Gate-Termin'`)
 		aufraeumen(t, pool, `DELETE FROM vormerkungen WHERE titel_id = $1`, w.titelID)
 		aufraeumen(t, pool, `DELETE FROM schadensfaelle WHERE id = $1`, w.schadensfallID)
 		aufraeumen(t, pool, `DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`, w.titelID)
@@ -239,6 +247,8 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/schueler/deleted":                         {URL: "/api/schueler/deleted"},
 		"GET /api/schueler/{barcode_id}/photo":              {URL: "/api/schueler/SBK-KANARI-1/photo"},
 		"GET /api/klassen":                                  {URL: "/api/klassen"},
+		"GET /api/lmf-termine":                              {URL: "/api/lmf-termine"},
+		"GET /api/lmf-termine/pdf":                          {URL: "/api/lmf-termine/pdf"},
 		"GET /api/klassen-mapping":                          {URL: "/api/klassen-mapping"},
 		"GET /api/abgaenger":                                {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
 		"GET /api/abgaenger/pdf":                            {URL: "/api/abgaenger/pdf"},

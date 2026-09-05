@@ -9,6 +9,7 @@
 	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
 	import PortalLernmittel from './components/portal/PortalLernmittel.svelte';
 	import PortalSchulbuecher from './components/portal/PortalSchulbuecher.svelte';
+	import PortalLmfPlan from './components/portal/PortalLmfPlan.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 	import {
 		erzeugeKlassensatzReservierung,
@@ -111,6 +112,8 @@
 			{ id: 'klassensaetze', label: 'Klassensätze' },
 			// Schulbücher je Fach für die Fachsprecher (Peter, 03.09.2026).
 			{ id: 'schulbuecher', label: 'Schulbücher' },
+			// LMF-Plan für alle gleich statt Excel per Mail (Peter, 05.09.2026).
+			{ id: 'lmfplan', label: 'LMF-Plan' },
 			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: offeneAnliegen }
 		]}
 		aktiv={reiter}
@@ -157,6 +160,8 @@
 		<PortalLernmittel />
 	{:else if reiter === 'schulbuecher'}
 		<PortalSchulbuecher />
+	{:else if reiter === 'lmfplan'}
+		<PortalLmfPlan />
 	{:else}
 		<AnliegenWidget anliegen={eigeneAnliegen} onaktualisiert={ladeAnliegen} />
 	{/if}

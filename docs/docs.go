@@ -1520,6 +1520,91 @@ const docTemplate = `{
                 }
             }
         },
+        "/lmf-termine": {
+            "get": {
+                "description": "Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle), plus Klassen ohne Rückgabe-Termin.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Plan",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LmfPlanAntwort"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Termin anlegen",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/repository.LmfTermin"
+                        }
+                    }
+                }
+            }
+        },
+        "/lmf-termine/pdf": {
+            "get": {
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Plan als PDF",
+                "responses": {}
+            }
+        },
+        "/lmf-termine/{id}": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Termin ändern",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repository.LmfTermin"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Termin löschen",
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
         "/schueler": {
             "get": {
                 "description": "Retrieves students, optionally filtered by a specific school class or a search term, along with loan counts.",
@@ -2745,6 +2830,28 @@ const docTemplate = `{
                 }
             }
         },
+        "api.LmfPlanAntwort": {
+            "type": "object",
+            "properties": {
+                "ab": {
+                    "description": "Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.",
+                    "type": "string"
+                },
+                "ohne_rueckgabe_termin": {
+                    "description": "OhneRueckgabeTermin nennt Klassen mit Schülern, die ab dem Datum keinen\nRückgabe-Termin haben — der Plan startet leer, die Seite zeigt, wer fehlt.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "termine": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.LmfTermin"
+                    }
+                }
+            }
+        },
         "api.PermissionSetting": {
             "type": "object",
             "properties": {
@@ -3192,6 +3299,33 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.LmfTermin": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "datum": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "klassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stunde": {
+                    "type": "integer"
+                },
+                "vermerk": {
                     "type": "string"
                 }
             }

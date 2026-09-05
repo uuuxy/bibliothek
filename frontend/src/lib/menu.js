@@ -143,7 +143,11 @@ export const menuGroups = [
 				label: 'Klassensätze',
 				icon: 'identification',
 				permission: 'view_books'
-			}
+			},
+			// LMF-Plan (05.09.2026): Rückgabe-/Ausgabetermine je Klasse, gepflegt von der
+			// Bibliothek (edit_books wie die übrige Lernmittel-Pflege). Das Kollegium liest
+			// ihn im Portal — deshalb hier nicht view_books, sonst stünde er zweimal.
+			{ id: 'lmf_plan', label: 'LMF-Plan', icon: 'calendar', permission: 'edit_books' }
 		]
 	},
 	{

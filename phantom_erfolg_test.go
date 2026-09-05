@@ -98,14 +98,17 @@ var phantomBestand = map[string]int{
 	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                        1,
 	"jobs/restore_probe.go:fuehreRestoreProbeAus":                       3,
 	"jobs/restore_probe.go:speichereRestoreProbe":                       1,
-	"repository/audit.go:LogAdminAktion":                                1,
-	"repository/audit.go:insertAuditLog":                                1,
-	"repository/audit_books.go:DeleteTitle":                             3,
-	"repository/audit_system.go:BezahltGebuehr":                         1,
-	"repository/audit_system.go:StornierungGebuehr":                     1,
-	"repository/audit_users.go:TilgeSchuelerSpuren":                     1,
-	"repository/audit_users.go:entferneSchuelerPIIUndLoesche":           2,
-	"repository/barcode_vergabe.go:hebeSequenzUeberBestand":             1,
+	// Ersetzt die Klassen eines Termins vollständig: DELETE + INSERT. Null gelöschte
+	// Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
+	"repository/lmf_termine.go:SaveLmfTermin":                 1,
+	"repository/audit.go:LogAdminAktion":                      1,
+	"repository/audit.go:insertAuditLog":                      1,
+	"repository/audit_books.go:DeleteTitle":                   3,
+	"repository/audit_system.go:BezahltGebuehr":               1,
+	"repository/audit_system.go:StornierungGebuehr":           1,
+	"repository/audit_users.go:TilgeSchuelerSpuren":           1,
+	"repository/audit_users.go:entferneSchuelerPIIUndLoesche": 2,
+	"repository/barcode_vergabe.go:hebeSequenzUeberBestand":   1,
 	// Umschlüsselung der Protokollspuren beim Zusammenführen (02.09.2026): audit_log/
 	// audit_logs dürfen 0 Zeilen zur Quelle haben — 0 ist kein Phantom, das Ergebnis
 	// (jede Tabelle wandert) misst TestZusammenfuehren_JedeTabelleWandert am Postgres.

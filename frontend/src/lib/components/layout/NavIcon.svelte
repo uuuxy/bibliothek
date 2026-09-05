@@ -15,6 +15,7 @@
 	import {
 		ScanBarcode,
 		Bell,
+		CalendarDays,
 		Library,
 		BookOpen,
 		Printer,
@@ -45,6 +46,7 @@
 		users: Users,
 		identification: IdCard,
 		'academic-cap': GraduationCap,
+		calendar: CalendarDays,
 		'shopping-bag': ShoppingBag,
 		clipboard: ClipboardCheck,
 		clock: Clock,

@@ -56,6 +56,23 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 ---
 
+### 2.3. LMF-Plan: Rückgabe- und Ausgabetermine je Klasse (seit 05.09.2026)
+
+Die Schule führte den Plan als Excel-Tabelle (Wochentag, Datum, Stunde, Klasse(n),
+Besonderheiten) und mailte ihn dem Kollegium; Korrekturen kamen als Folge-Mail. Jetzt:
+Tabellen `lmf_termine` (Datum, Stunde 1–12, Art `rueckgabe`/`ausgabe`, Vermerk) und
+`lmf_termin_klassen` (0..n Klassen aus dem Vokabular, Migration 096; „Bücher setzen" ist ein
+Termin ohne Klasse mit Vermerk, „6F1/6F2" einer mit zwei). Pflege unter _LMF-Plan_
+(`edit_books`; `POST/PUT/DELETE /api/lmf-termine`), Lesen mit Sitzung (`GET /api/lmf-termine`,
+`/pdf`) — das Kollegium sieht denselben Plan im Portal-Reiter _LMF-Plan_, für alle gleich,
+keine Personalisierung nach Klassenleitung (auch Fachlehrer gehen mit ihren Klassen zum
+Büchertausch; `klassen_lehrer_mapping` ist nicht für jede Klasse gefüllt). Gelistet wird ab
+dem 1. August des laufenden Schuljahres (`?alle=1` hebt die Grenze auf); die Antwort nennt
+die Klassen mit Schülern ohne Rückgabe-Termin (`ohne_rueckgabe_termin`) — ein neuer Plan
+startet leer, weil eine Vorbelegung mit Platzhalter-Daten sofort Fristen setzen würde. Das
+PDF (`pdf.GenerateLmfPlan`) hat die Form der bisherigen Liste, getrennt nach Rückgabe und
+Ausgabe. Tests: `repository/lmf_termine_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
+
 ## 3. Mahnwesen
 
 Das Mahnsystem durchläuft einen 3-stufigen, rechtlich bindenden Eskalationsprozess.
@@ -300,7 +317,7 @@ Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_s
 
 1. **Admin (`admin`):** Uneingeschränkter Zugriff auf alle Systembereiche, Einstellungen, Audits und Datenschutz-Routinen.
 2. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Schülerverwaltung, darf aber keine Systemeinstellungen ändern.
-3. **Kollegium (`kollegium`):** Zugang zum Kollegiums-Portal mit vier Reitern (Stand 03.09.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher), _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`) und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Die Suche läuft über den öffentlichen OPAC, Reservierung und Anliegen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
+3. **Kollegium (`kollegium`):** Zugang zum Kollegiums-Portal mit fünf Reitern (Stand 05.09.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3), _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`) und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Die Suche läuft über den öffentlichen OPAC, Reservierung und Anliegen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
 
    **„Mein Portal“ hängt seit 26.08.2026 am Recht `create_reservations`, nicht an der Rolle** (Entscheidung Peter): Eine Lehrkraft, die in Bibliothek oder LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, sieht das Portal ebenfalls und reserviert dort für die eigene Klasse. Vorher stand der Menüpunkt auf `roles: ['kollegium']`, während der Server sie mit demselben Recht längst hineinließ — zwei Wahrheitsquellen, die nur zufällig einig waren.
 

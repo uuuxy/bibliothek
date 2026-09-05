@@ -51,6 +51,15 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	settingsRepo := repository.NewSystemSettingsRepository(s.DB.Pool)
 	mux.Handle("POST /api/ausleihen/{ausleihe_id}/verlaengern", s.RequirePermission("edit_books")(s.ExtendLoanHandler(settingsRepo)))
 	mux.Handle("POST /api/ausleihen/global-extend-lmf", s.RequirePermission("edit_books")(s.GlobalExtendLMFHandler()))
+
+	// ── LMF-PLAN (Rückgabe-/Ausgabetermine je Klasse, Migration 096) ──
+	// Lesen: jede Sitzung (das Kollegium liest den Plan im Portal; Stufe 0 — Daten und
+	// Klassennamen). Schreiben: edit_books wie die übrige Lernmittel-Pflege.
+	mux.Handle("GET /api/lmf-termine", s.RequireAuthenticated()(s.GetLmfTermineHandler()))
+	mux.Handle("GET /api/lmf-termine/pdf", s.RequireAuthenticated()(s.GetLmfPlanPDFHandler()))
+	mux.Handle("POST /api/lmf-termine", s.RequirePermission("edit_books")(s.CreateLmfTerminHandler()))
+	mux.Handle("PUT /api/lmf-termine/{id}", s.RequirePermission("edit_books")(s.UpdateLmfTerminHandler()))
+	mux.Handle("DELETE /api/lmf-termine/{id}", s.RequirePermission("edit_books")(s.DeleteLmfTerminHandler()))
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.OverrideDueDateHandler(auditRepo)))
 
 	// Live ISBN Lookup
