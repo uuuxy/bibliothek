@@ -32,8 +32,8 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** erst Peters zwei Entscheidungen (Wächter für Dauer-Abgänger,
-Abschlussklassen-Liste), dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
+**Reihenfolge:** erst die Rückkehr zur ursprünglichen Bedeutung von „Abgänger" (Entscheidung 2),
+dann der Wächter für Dauer-Abgänger, dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
 
 ---
 
@@ -103,22 +103,28 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    von selbst). Was zu tun ist, entscheidet ein Mensch; der Wächter hält nur fest, DASS es
    zu tun ist. Kosten: eine Zählung im Wächter, ein Test, eine Zeile im Handbuch.
 
-2. **Abschlussklassen vor dem Sommer: keine Arbeitsliste** (05.09.2026, Peters Frage).
-   Abgänger wird ein Schüler erst am Schuljahreswechsel — durch die Versetzung
-   (Abschlussklassen 9H, 10R, 13; Regel in `promoteStudentsQuery`) oder den LUSD-Import
-   (fehlt im neuen Export). `GET /api/abgaenger` zeigt nur so markierte Schüler mit offenen
-   Büchern. Während des Abschlussjahres kennt das System sie nur als „Abgang <Jahr>" in
-   der Akte (`calculateAbgaengerJahr`, grob und editierbar). Der Moment, in dem die
-   Bibliothek die Bücher der 9H/10R/13 einsammeln kann, ist aber Mai/Juni, solange die
-   Schüler im Haus sind. Dafür gibt es nichts: Die Mahnliste zeigt nur Überfälliges, die
-   Versetzungs-Vorschau nur Zahlen.
-   **Empfehlung:** In der Abgänger-Ansicht ein zweiter Abschnitt „Abschlussklassen
-   <Schuljahr>" — die Schüler, die die Versetzung als Abgänger markieren WÜRDE (dieselbe
-   Regel als geteilter SQL-Ausdruck, keine zweite Definition), mit offenen Büchern,
-   Kontoauszug und Klassenleitungs-Mail wie bei Abgängern; ganzjährig sichtbar, Zähler im
-   Reiter. Kosten: ein Ausdruck aus `promoteStudentsQuery` herausgelöst, eine Abfrage, ein
-   Abschnitt in `Graduates.svelte`, ein Paar-Gate (Versetzungs-Vorschau und Liste liefern
-   dieselbe Menge). Löst nebenbei den B-Posten „drei Definitionen" unten mit auf.
+2. **„Abgänger" meint seit dem 25.06.2026 etwas anderes als am Anfang** (05.09.2026, am
+   Code belegt, Peters Einwand). Ursprünglich (Initial-Commit 29.05., Ansicht
+   „Abgänger-Entlastung"): die Abschlussklassen 9H/10R/13 mit offenen Büchern — noch an der
+   Schule, weiter ausleihend, die Liste zum Einsammeln VOR der Entlassung (`WHERE s.klasse
+IN ('9h','10r','13') AND a.rueckgabe_am IS NULL`). Am 25.06. (15beae53, als Nebensatz
+   in einem Briefkopf-Commit) und am 16.07. (37d6542c, Laufzettel) wurde der Filter auf
+   `ist_abgaenger = true` umgestellt — „fehlt im LUSD-Export, ist weg". Der Anlass war ein
+   echter Fehler (hartkodierte Klassennamen fanden „09H1" nicht), die Heilung aber ein
+   Bedeutungswechsel, den niemand benannt hat. Seitdem beschreiben Handbuch, Fachkonzept,
+   Versetzung, Karenz und die Handbuch-Ergänzung vom 05.09. die zweite Bedeutung. Beide
+   sind nötig: die erste zum Einsammeln, die zweite für Sperre, Mahnung nach dem Abgang
+   und Löschung.
+   **Empfehlung:** Die Ansicht bekommt ihre ursprüngliche Bedeutung zurück und behält die
+   zweite als eigenen Block. Oben „Abschlussjahrgang <Schuljahr>": die Regel der Versetzung
+   auf die AKTUELLE Klasse angewandt (numerischer Jahrgang plus Zweig, kein hartkodierter
+   Text — das war der Fehler von damals) ODER Akte mit Abgang = dieses Schuljahr; offene
+   Bücher; Ausleihe unverändert; ab September sichtbar. Darunter „Abgegangen"
+   (`ist_abgaenger`, offene Bücher, Mahnung an Eltern). Kontoauszug, Laufzettel und
+   Klassenleitungs-Mail für beide Blöcke. Paar-Gate: Versetzungs-Vorschau und oberer Block
+   liefern dieselbe Menge. Danach Handbuch und Fachkonzept zurückschreiben. Dazu gehört die
+   Frage nach einer Frist-Deckelung am letzten Schultag (Einstellung, ein Datum pro Jahr)
+   und nach einer Tür „Abgang melden" für Wegzüge, weil die LUSD nur einmal im Jahr kommt.
 
 ## Beobachten (nichts zu tun)
 
