@@ -34,25 +34,28 @@ Zwei Regeln dazu:
 
 ---
 
-## Reihenfolge — womit weitermachen (04.09.2026, abends)
+## Reihenfolge — womit weitermachen (05.09.2026)
 
 Diese Liste ordnet nur, sie beschreibt nichts doppelt; die Sache selbst steht jeweils
 unten. Was oben steht, blockiert oder verfällt; was unten steht, wartet ohne Schaden.
 
-1. **Getrennte Arbeitsverzeichnisse für die parallelen Sitzungen** (Betrieb, unten).
-   Zuerst, weil es sonst weiter Läufe entwertet — heute je einen E2E-Lauf und einen Commit.
-2. **Release ziehen.** Seit `v1.9.5` liegen 39 Commits auf `main`, darunter drei Features
-   (Portal-Schulbuch-PDF, eine Suchleiste je Seite, Cover im Bestellbedarf). Ein Tag kostet
-   nichts und macht die Zwischenstände unterscheidbar; danach ist der Deploy Peters Entscheidung.
-3. **Peters fünf Entscheidungen** (Abschnitt „Entscheidung nötig"). Punkt 2 (Karenz ab Rückgabe)
-   ist der einzige mit Verfallsdatum: Er betrifft Schüler, die nach dem Abgang zurückgeben.
-4. **Cover-Rest im Backend** (`reservation.go`, `anliegen.go`) — die zwei Bildschirme, denen
-   die gestern gebaute Anzeige mangels Feld noch nicht möglich ist.
-5. **Die elf Overlays auf `Modal.svelte`** — ein Durchgang am Bildschirm, Einzelfall für
-   Einzelfall, nicht als Suchen-und-Ersetzen.
-6. **`monitorTakt.test.js` entwackeln** und **das M3-Gate um Datenlagen erweitern** — beides
-   klein, beides an einem Nachmittag zu machen.
-7. **16 Cover-Stellen** und Kategorie C: nur beim nächsten fachlichen Anfassen.
+1. **Peters fünf Entscheidungen** (Abschnitt „Entscheidung nötig"). Punkt 2 (Karenz ab
+   Rückgabe) ist der einzige mit Verfallsdatum: Er betrifft Schüler, die nach dem Abgang
+   zurückgeben.
+2. **Cover-Rest im Backend** (`reservation.go`, `anliegen.go`) — die zwei Bildschirme, denen
+   die Anzeige mangels Feld noch nicht möglich ist.
+3. **Die elf Overlays auf `Modal.svelte`** — ein Durchgang am Bildschirm, Einzelfall für
+   Einzelfall, nicht als Suchen-und-Ersetzen. Die Ratsche unten nennt die Dateien.
+4. **16 Cover-Stellen** und Kategorie C: nur beim nächsten fachlichen Anfassen.
+
+Erledigt am 05.09.: Release `v1.9.6` gezogen (39 Commits seit v1.9.5), der Jules-Stapel
+aus 32 PRs abgearbeitet (19 übernommen), `monitorTakt.test.js` entwackelt und die
+Bauform-Ratsche gebaut.
+
+**Getrennte Arbeitsverzeichnisse** für parallele Sitzungen bleiben offen, sind aber gerade
+gegenstandslos: Am 05.09. läuft nur eine Sitzung auf dem Verzeichnis. Sobald wieder zwei
+gleichzeitig arbeiten, ist es der erste Handgriff — zwei Sitzungen auf einem Arbeitsbaum
+haben am 04.09. einen E2E-Lauf entwertet und einen Commit blockiert.
 
 Nicht auf dieser Liste, weil sie bei Peter liegt: der Abschnitt „Außerhalb dieses Registers".
 
@@ -82,18 +85,6 @@ nicht hier.
     an ein Buch. Vorbild: DNB-Signaturvorschlag (22a10b1). Der Sync selbst ist in Ordnung
     (Drossel 500 ms, `NOT_FOUND` wird nicht wiederholt) — die Kritik vom 04.09. war falsch.
 
-- **Das M3-Gate sieht nur, was die Testdaten hergeben** (04.09.2026, B). `e2e/m3-bauform.spec.js`
-  läuft alle Routen aus `Router.svelte` ab und misst, was GERENDERT ist. Die Coverkachel im
-  Statistik-Dashboard trug Rahmen und Schatten zugleich — das Gate lief zwanzigmal darüber und
-  sah sie nie, weil die Liste „Top-Bücher" im e2e-Bestand keine Zeile mit Cover hat. Gefunden hat
-  sie ein fremder Agent beim Lesen des Quelltexts (Jules-PR #568, übernommen als cc953622).
-  Das ist die dritte Ausprägung derselben Blindheit — nach den geschlossenen Dialogen und der
-  zustandsabhängigen `BestelllinkHinweis`-Meldung, beide im Kopf der Spec-Datei beschrieben.
-  Anfassen: die Öffnerliste um Datenlagen erweitern (Seed mit Cover) oder die Regel zusätzlich
-  am Quelltext prüfen — eine Klassenlisten-Ratsche findet Rahmen+Schatten ohne Browser, kann
-  aber die drei gemessenen Fallen (Deckkraft 0, `ring-*`, Hover-Erhebung) nicht unterscheiden.
-  Beides zusammen, nicht eines statt des anderen.
-
 - **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen**
   (04.09.2026). `Modal.svelte` trug Rahmen **und** Schatten — die Bauform, die M3 bei
   keinem seiner 84 Bauteile kennt; behoben, wirkt auf elf Dialoge. Diese elf wiederholen
@@ -109,6 +100,13 @@ nicht hier.
   Alarmsignal an der Theke — dort IST der Rahmen die Aussage. Einzelfallprüfung am
   Bildschirm, eigener Durchgang. `e2e/m3-bauform.spec.js` sieht die Fälle nicht (Dialoge
   sind zu); seine Öffnerliste umfasst zwei.
+
+  Seit 05.09. zählt sie `frontend-hygiene-bauform.test.js` am Quelltext mit — **34 Dateien
+  eingefroren**, wer eine abräumt, trägt sie dort aus. Diese Ratsche ist die Antwort auf den
+  Gate-Fund vom 04.09. (das e2e-Gate sah die Coverkachel im Statistik-Dashboard nie, weil
+  „Top-Bücher" im Testbestand kein Cover hat): Das Gate misst im Browser, was nur dort zu
+  entscheiden ist (Deckkraft 0, `ring-*`, Hover-Erhebung), die Ratsche liest auch, was gerade
+  keine Daten hat. Beide Maschen, nicht eine statt der anderen.
 
 ## Offen — Entscheidung nötig (Peter)
 
@@ -153,16 +151,6 @@ eigenmächtig entschieden.
    beiden Felder trotzdem stört; dann Umbau.
 5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
    der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
-
-- **`monitorTakt.test.js` ist flaky** (04.09.2026, B). Im vollen Vitest-Lauf einmal rot
-  („startet die Seite um drei Uhr nachts neu"), danach dreimal in Folge 369/369 grün;
-  allein immer grün. Der Test setzt `vi.useFakeTimers()` und `vi.setSystemTime()` — die
-  Klasse „Globalzustand + Testreihenfolge" aus `sweeps.md`: irgendein Nachbar lässt
-  Timer oder Systemzeit stehen, oder der Neustart-Timer feuert je nach Ausführungsdauer.
-  Zusätzlich ist er umgebungsempfindlich: Vitest vom Repo-Root statt aus `frontend/`
-  gestartet, fallen 12 von 13 Fällen (relative Pfade). Nicht meine Änderung
-  (df19b5af, 30.08.). Anfassen: Timer in `afterEach` restaurieren und die
-  Neustart-Erwartung gegen die FAKE-Uhr statt die Wanduhr messen.
 
 ## Beobachten (nichts zu tun)
 
@@ -221,4 +209,4 @@ TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-AP
 sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
 (`/api/v1`) und Mandantenfähigkeit (RLS).
 
-Stand: 2026-09-04 (abends)
+Stand: 2026-09-05
