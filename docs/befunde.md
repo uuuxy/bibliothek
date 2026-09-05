@@ -72,56 +72,68 @@ fachlichen Anfassen.
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
 kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-Rest aus dem Rasterdurchgang 02.09.2026 (LUSD-Umbenennung, 0aa07f57):
+Rest aus dem Rasterdurchgang 02.09.2026 (LUSD-Umbenennung, 0aa07f57). Die Empfehlungen
+vom 05.09.2026 stehen jeweils dabei — am Code belegt, nicht geschätzt:
 
 1. **Handanlagen als Paar-Kandidaten.** Ein von Hand angelegter, nie LUSD-bestätigter Schüler,
    den die LUSD anders schreibt („Anna Müller" ↔ „Anna Mueller"), wird nicht als Paar
    vorgeschlagen, sondern Neuanlage + „nicht im Export". Rückweg heute: Zusammenführen über
-   die Akte. Bauen hieße: `NichtImExport`-Zeilen als Kandidaten (`WarAbgaenger=false`) — und
-   die Rubrik „nicht im Export" bedeutet dann etwas anderes.
+   die Akte.
+   **Empfehlung: keine Kandidatenliste, sondern den Namensschlüssel normalisieren.**
+   `LusdNamensSchluessel` ist nur `lower+trim`; Umlaute falten, Bindestrich und Leerzeichen
+   gleichsetzen. Das greift eine Stufe früher: Die Dublette entsteht gar nicht, und „nicht im
+   Export" behält seine Bedeutung. Sicher ist es, weil der Index einen doppelt belegten
+   Schlüssel schon heute als MEHRDEUTIG markiert und dann niemanden anfasst — ein zu weiter
+   Schlüssel fällt auf das heutige Verhalten zurück, nie in eine falsche Zuordnung. Erledigt
+   damit auch den Kategorie-C-Posten „LUSD-Namensschlüssel nur lower+trim".
 2. **Karenz ab Rückgabe statt ab Abgang.** `abgaenger_seit` stempelt beim Abgang, auch mit
-   offenen Büchern; wer erst nach Ablauf der Karenz zurückgibt, wird in der Folgenacht
-   anonymisiert — das Reparaturfenster fehlt dieser Gruppe. Alternative: Uhr bei Rückgabe des
-   letzten Vorgangs neu starten (dann PG-Test dieser Konstellation).
+   offenen Büchern. `PredikatAnonymisierung` schließt Schüler mit offener Ausleihe zwar aus —
+   genau deshalb kippt der Schutz aber mit der Rückgabe: Wer am Tag 10 zurückgibt, hat 80
+   Tage Reparaturfenster; wer am Tag 120 zurückgibt, wird in der Folgenacht anonymisiert.
+   Die Karenz ist für die Korrektur an der Theke da, und die Rückgabe IST der Thekenkontakt.
+   **Empfehlung: Uhr = GREATEST(abgaenger_seit, letzte Rückgabe)** im selben Prädikat, mit
+   PG-Test dieser Konstellation. Der Deckel bleibt: Die endgültige Löschung rechnet über das
+   Stichjahr (30. Januar) und ist davon unberührt.
 3. **`GET /api/search` hängt an `perform_actions`, zwei Aufrufer liegen außerhalb der Theke.**
-   Die Etiketten-Titelsuche im Druck-Center (Menüpunkt: `view_students`) und die Schülersuche
-   im Vormerkungs-Reiter der Buchakte (`view_books`) rufen dieselbe Route wie die
-   Theken-Omnibox. In der Werksvorgabe fällt das nicht auf, weil jede Rolle mit
-   `view_books`/`view_students` auch `perform_actions` trägt — entzieht ein Admin einer Rolle
-   das Theken-Recht, meldet die Suche auf diesen Seiten nur noch „Suche nicht möglich" (laut,
-   daher B). Optionen: (a) Oder-Rechte-Middleware (`perform_actions` ODER `view_books` ODER
-   `view_students`) — dann sähe eine Rolle mit bloßem Katalogrecht die Kiosk-Sicht auf
-   Schüler (Name, Klasse, Ausweis; PII-Matrix Stufe 1), das ist eine
-   Datenschutz-Entscheidung; (b) beide Felder an `perform_actions` koppeln und ohne das
-   Recht ausblenden; (c) so lassen und in der Rechte-Oberfläche beim Theken-Recht darauf
-   hinweisen.
+   Die Etiketten-Titelsuche im Druck-Center (`labels.svelte.js`) und die Schülersuche im
+   Vormerkungs-Reiter der Buchakte (`BookVormerkungenTab.svelte`) rufen die Theken-Route.
+   Entzieht ein Admin einer Rolle das Theken-Recht, melden beide Felder nur noch „Suche nicht
+   möglich" (laut, daher B).
+   **Empfehlung: keine Rechte-Option — beide Aufrufer benutzen die falsche Route.** Der eine
+   liest aus der Antwort nur `books`, der andere nur `students`; jeder wirft die andere Hälfte
+   samt Kiosk-Personendaten weg. Die passenden Routen gibt es schon, mit `q`-Parameter und
+   dem ehrlichen Recht: `GET /api/books?q=` hinter `view_books` für die Titelsuche,
+   `GET /api/schueler?q=` hinter `view_students` für die Schülersuche. Die Theken-Route bleibt
+   unangetastet, nichts wird geweitet, und der Etikettenbildschirm bekommt keine Schülernamen
+   mehr, die er nie zeigt. Kosten: nur Frontend plus Feldabbildung (die Titel-Strukturen der
+   beiden Routen sind verschieden). Folge: Der Vormerkungs-Reiter braucht für die Schülersuche
+   dann `view_students` und blendet das Feld ohne das Recht aus, wie die Suchpille es tut.
 
-Geschmacksfragen aus dem Design-Rundgang 04.09.2026 — nichts davon kann jemandem schaden,
-deshalb wird nichts davon eigenmächtig entschieden:
+Geschmacksfragen aus dem Design-Rundgang 04.09.2026 — nichts davon kann jemandem schaden:
 
 4. **Zweites Feld neben der Suchpille im Bestellwesen.** Im Warenkorb steht neben der
    Suchpille ein zweites Feld „Titel suchen & hinzufügen" (`OrderSearch.svelte`). Es sucht
-   NICHT die Liste, sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich,
-   also kein Verstoß gegen „eine Suchleiste je Seite". Offen ist allein, ob die Nähe der
-   beiden Felder trotzdem stört; dann Umbau.
+   NICHT die Liste, sondern legt in den Warenkorb.
+   **Empfehlung: so lassen.** Das Feld trägt eine Beschriftung darüber, steht in einer
+   Formulargruppe neben dem Lieferantenfeld und ist auf `ui/Feld` gebaut — es liest sich als
+   Formular, nicht als zweite Suchpille.
 5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Gemessen am Quelltext
    (05.09.2026): `KlassenKarte.svelte` setzt den Namen in der weiten Fassung auf
-   `text-2xl font-bold text-slate-800`, also 24 px fett — die kompakte Fassung derselben
-   Karte nimmt `text-base font-medium text-on-surface` (16 px). M3 gäbe einer Listenzeile
-   title-medium (16 px); 24 px ist headline-small. Zweiter Punkt derselben Zeile: die weite
-   Fassung greift auf `slate`-Farben statt auf die Token. Entscheidung: auf 16 px
-   zurücknehmen (dann sind beide Fassungen bis auf die Dichte gleich) oder als bewusste
-   Kachel-Überschrift so lassen.
-6. **Cover in den beiden Arbeitslisten — wohin?** (05.09.2026) Klassensatz-Reservierungen und
-   Wünsche & Meldungen laufen beide über `ArbeitsZeile.svelte`, die M3-„list item"-Zeile mit
-   FÜHRENDEM ELEMENT: links ein 48-px-Kreis mit der Klasse (Entscheidung vom 26.08.: „welche
-   Klasse will welches Buch" ist die Frage, mit der die Bibliothek diese Listen überfliegt).
-   Ein Cover davorzusetzen hieße zwei führende Elemente in einer Zeile, und M3 kennt genau
-   eins. Möglichkeiten: (a) so lassen — in einer Arbeitsliste ist das Buchbild Zierde, der
-   Titel steht ja da; (b) Cover STATT Klassenkreis, Klasse wandert in den Nebentext (dann ist
-   die Liste nach Büchern zu überfliegen, nicht nach Klassen); (c) Cover klein hinter dem
-   Titel als Anreißer. Empfehlung: (a) — diese Listen werden abgearbeitet, nicht gestöbert.
-   Bis zur Entscheidung bleiben die zwei Backend-Felder oben ungebaut.
+   `text-2xl font-bold text-slate-800` (24 px fett), die kompakte Fassung derselben Karte auf
+   `text-base font-medium text-on-surface` (16 px).
+   **Empfehlung: auf 16 px und auf die Token.** Keine Geschmacksfrage: Der Kommentar der
+   Komponente nennt ihre M3-Rolle selbst („ausklappbares Listenelement"), und eine
+   Listenzeile hat in M3 16 px — die kompakte Fassung hält sich schon daran. Dichte gehört
+   ins Padding, nicht in die Schriftgröße; die weite Fassung greift außerdem an den Token
+   vorbei auf `slate`.
+6. **Cover in den beiden Arbeitslisten — wohin?** Klassensatz-Reservierungen und Wünsche &
+   Meldungen laufen über `ArbeitsZeile.svelte`, die M3-Listenzeile mit FÜHRENDEM ELEMENT:
+   links der 48-px-Kreis mit der Klasse (Entscheidung vom 26.08.). Ein Cover davor hieße zwei
+   führende Elemente, und M3 kennt genau eins.
+   **Empfehlung: so lassen.** Das führende Element ist der Schlüssel, nach dem man die Liste
+   überfliegt — einen Klassensatz zieht man für eine Klasse, also bleibt die Klasse. Damit
+   bleiben auch die zwei Backend-Felder oben ungebaut, was für ein Feld ohne Verbraucher
+   richtig ist.
 
 ## Beobachten (nichts zu tun)
 
