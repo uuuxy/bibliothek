@@ -46,6 +46,10 @@ const coverDownloadsProSekunde = 30
 // coverDownloadLimiter bremst die Fehltreffer pro Client-IP.
 var coverDownloadLimiter = newIPRateLimiter(coverDownloadsProSekunde)
 
+// coverCacheVerzeichnis ist eine Variable, damit Tests den Cache in ein Wegwerf-
+// Verzeichnis legen können, ohne das Arbeitsverzeichnis zu wechseln.
+var coverCacheVerzeichnis = "uploads/covers"
+
 // istCoverCacheSchluessel prüft den vom Aufrufer gewählten Cache-Namen, bevor daraus
 // ein Dateiname wird.
 //
@@ -230,7 +234,7 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dir := "uploads/covers"
+	dir := coverCacheVerzeichnis
 	if err := os.MkdirAll(dir, 0750); err != nil {
 		serveCoverFallback(w)
 		return
@@ -250,7 +254,9 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileName := isbn + ".webp"
+	// ISBN + Hash der geprüften Adresse: Zwei Adressen teilen sich nie eine Datei, der
+	// Erstaufrufer bestimmt nicht mehr, was andere unter dieser ISBN sehen.
+	fileName := coverDateiname(isbn, sichereURL)
 
 	// Serve cached version if it exists
 	if _, err := root.Stat(fileName); err == nil {
@@ -263,6 +269,14 @@ func (s *Server) serveCoverImage(w http.ResponseWriter, r *http.Request) {
 	// 429, weil am anderen Ende ein <img> hängt: Ein Fehlercode erzeugt dort nur einen
 	// roten Konsoleneintrag, das Bild fehlt so oder so. Der nächste Aufruf holt es nach.
 	if !coverDownloadLimiter.allow(getIP(r)) {
+		serveCoverFallback(w)
+		return
+	}
+
+	// Nur Adressen, die der Server für diese ISBN selbst kennt oder herleiten kann
+	// (cover_quelle_bindung.go) — sonst wäre der Endpunkt ein offener Proxy für alle
+	// Bilder der erlaubten Hosts und der Cache ein Plattenfüller.
+	if !s.coverQuelleErlaubt(r, isbn, sichereURL) {
 		serveCoverFallback(w)
 		return
 	}

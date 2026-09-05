@@ -48,6 +48,11 @@ export function coverSrc(coverUrl, isbn) {
  * gab dabei preis, welche ISBNs die Schule gerade ansieht. Jede Adresse läuft jetzt
  * über coverSrc und damit über den eigenen Proxy.
  *
+ * Die beiden Adress-Muster kennt auch der Server (api/cover_quelle_bindung.go,
+ * coverKandidatenFuerISBN): Der Proxy lädt seit dem 05.09.2026 nur Adressen, die er für
+ * die ISBN selbst herleiten kann — ein abweichendes Muster hier bliebe still leer.
+ * Gate: TestCoverKandidaten_MusterGleichWieImFrontend liest diese Datei.
+ *
  * @param {string} [coverUrl] Gespeichertes Cover (lokal oder extern)
  * @param {string} [isbn]
  * @returns {string[]} Nicht-leere Bildquellen, gleiche Herkunft (Server oder Proxy)
