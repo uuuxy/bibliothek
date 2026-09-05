@@ -134,8 +134,13 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    Vorbelegung aus `klassen` (Abschlussklassen zuerst, je eine Stunde, dann von Hand
    schieben). Zweiter, getrennt zu entscheidender Schritt: Der Termin einer Klasse wird die
    Rückgabefrist ihrer LMF-Bücher — heute gilt für alle der globale Stichtag `lmf_stichtag`.
-   Offene Fragen an Peter: (a) Termin = Frist der Klasse? (b) Versand ans Kollegium aus der
-   App oder nur PDF? (c) Vorbelegung aus der Klassenliste erwünscht oder leer starten?
+   **Verteilung über das Kollegiums-Portal** (Peter, 05.09.): Der Plan wird heute per Mail
+   ans Kollegium geschickt, Korrekturen als Folge-Mail („alle anderen Termine bleiben
+   gleich"). Im Portal ist er immer aktuell: eigener Reiter oder Block im Überblick, die
+   eigene Klasse (über `klassen_lehrer_mapping` und die Login-Adresse) obenan; eine Mail
+   bleibt als Anstoß („Plan steht bereit", Link ins Portal, PDF angehängt), Änderungen
+   brauchen keine zweite. Offene Fragen an Peter: (a) Termin = Frist der Klasse?
+   (c) Vorbelegung aus der Klassenliste erwünscht oder leer starten?
 
 ## Beobachten (nichts zu tun)
 
