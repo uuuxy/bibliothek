@@ -424,7 +424,7 @@ DATABASE_URL="postgres://…/bibliothek_test" go run ./cmd/seed
 Liest eine `.env` und meldet die Fehlkonfigurationen, die **still** bleiben: bekannte
 Default-Secrets aus dem Repository, fehlender `BACKUP_ENCRYPTION_KEY` (der nächtliche Job
 überspringt sich dann kommentarlos), `IMAP_HOST=mock` (akzeptiert jedes Passwort),
-ungesetztes `ENFORCE_PROD_SECRETS` oder `COOKIE_SECURE`.
+ausdrückliches `ENFORCE_PROD_SECRETS=false` oder ungesetztes `COOKIE_SECURE`.
 
 Das Skript **ändert nichts**. Exit-Code 0 = sauber, 1 = kritischer Befund.
 

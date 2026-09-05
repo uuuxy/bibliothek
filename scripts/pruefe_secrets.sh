@@ -5,8 +5,8 @@
 #
 # Warum es das gibt: Alle drei Fälle unten laufen still. Ein Default-Secret meldet
 # niemand, ein fehlender Backup-Schlüssel lässt den nächtlichen Job sich selbst
-# überspringen, und ein ungesetztes ENFORCE_PROD_SECRETS heißt bloß, dass der Server
-# startet. Man merkt es erst, wenn jemand ein Backup braucht oder ein fremdes JWT
+# überspringen, und ein ausdrückliches ENFORCE_PROD_SECRETS=false heißt bloß, dass der
+# Server startet. Man merkt es erst, wenn jemand ein Backup braucht oder ein fremdes JWT
 # vorlegt.
 #
 # Das Skript ÄNDERT NICHTS. Es liest, meldet und liefert einen Exit-Code.
@@ -132,8 +132,16 @@ pruefe_schalter() {
 	fi
 }
 
-pruefe_schalter ENFORCE_PROD_SECRETS true \
-	"Ohne diesen Schalter startet der Server auch mit den Default-Secrets, statt den Start zu verweigern."
+# Seit 05.09.2026 ist die Verweigerung bekannter Beispiel-Secrets die Vorgabe des Servers
+# (api.ErzwingeProdGeheimnisse): nicht gesetzt oder true ist gut, nur ein ausdrückliches
+# false schaltet sie ab — und das gehört gemeldet, nicht übersehen.
+enforce="$(lies ENFORCE_PROD_SECRETS | tr '[:upper:]' '[:lower:]')"
+if [ "$enforce" = "false" ]; then
+	kritisch "ENFORCE_PROD_SECRETS=false" \
+		"Der Server startet damit auch mit den Beispiel-Secrets aus dem Repository. Zeile entfernen, sobald eigene Werte gesetzt sind."
+else
+	gut "ENFORCE_PROD_SECRETS ${enforce:-nicht gesetzt} (Vorgabe: scharf)"
+fi
 pruefe_schalter COOKIE_SECURE true \
 	"Hinter Caddy-HTTPS gehört das Sitzungscookie auf Secure."
 

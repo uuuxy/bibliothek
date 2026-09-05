@@ -78,46 +78,50 @@ services:
       # Login-Brute-Force, Audit-Logs). Default = private Docker-Netze, damit die
       # von Caddy angehängte X-Forwarded-For-Client-IP ausgewertet wird.
       #
-      # Der Default ist bewusst weit, und er bleibt es: Das echte Subnetz von
-      # caddy_global_net vergibt der Docker-Daemon des JEWEILIGEN Hosts. Auf dem
-      # Entwicklungsrechner ist es 172.19.0.0/16 (geprüft), auf dem Schulserver kann
-      # es ein anderes sein. Ein hier fest eingetragener Wert, der dort nicht passt,
-      # fällt nicht als Fehler auf — er lässt still jede Client-IP auf die Proxy-
-      # Adresse zusammenfallen, und damit werden Rate-Limiting und Audit-Log
-      # wertlos, ohne dass irgendwo etwas rot wird.
+      # Der Default ist bewusst weit: Das echte Subnetz von caddy_global_net vergibt
+      # der Docker-Daemon des JEWEILIGEN Hosts (Entwicklungsrechner 172.19.0.0/16,
+      # Schulserver möglicherweise anders). Ein zu enger Wert fällt nicht als Fehler
+      # auf — er lässt still jede Client-IP auf die Proxy-Adresse zusammenfallen.
       #
-      # Enger fassen lohnt sich trotzdem. Auf dem Zielhost ermitteln mit:
+      # Seit dem 05.09.2026 darf der Default so weit sein: pkg/clientip vertraut genau
+      # EINEM Hop und nimmt den rechtesten X-Forwarded-For-Eintrag, den Caddy angehängt
+      # hat. Vorher übersprang es rekursiv jeden Eintrag aus diesen Netzen — und weil die
+      # Schul-Clients selbst in 192.168.x/10.x liegen, wurden sie als „Proxy" übersprungen:
+      # Die ganze Schule zählte als EIN Client (Login-Sperre für alle nach 50 Fehlversuchen).
+      # Die Liste sagt nur noch, WER den Header setzen darf, nicht, wer Client ist.
+      #
+      # Enger fassen geht weiterhin; auf dem Zielhost ermitteln mit:
       #   docker network inspect caddy_global_net \
       #     --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'
-      # und das Ergebnis in der .env als TRUSTED_PROXIES eintragen.
       #
-      # Bis dahin trägt die Absicherung das Port-Binding: Das Backend lauscht nur auf
-      # 127.0.0.1 (siehe oben), erreichbar ist es also ausschließlich über Caddy im
-      # Docker-Netz. Ein gefälschter X-Forwarded-For von außen kommt gar nicht erst an.
+      # Das Backend lauscht nur auf 127.0.0.1 (siehe oben), erreichbar ist es also
+      # ausschließlich über Caddy im Docker-Netz. Ein gefälschter X-Forwarded-For von
+      # außen kommt gar nicht erst an.
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
       # ── Sicherheit / Secrets ────────────────────────────────────────────────
-      # Test-/Pilotphase (Standard): Der Stack startet auch mit den Default-Secrets.
-      #
-      # VOR DEM ECHTEN PROD-DEPLOY in der .env setzen und damit die harte
-      # Absicherung scharf schalten:
-      #   ENFORCE_PROD_SECRETS=true
-      #   JWT_SECRET=<zufällig, >=32 Zeichen>
-      #   APP_ENCRYPTION_KEY=<exakt 32 Byte>
+      # JWT_SECRET und APP_ENCRYPTION_KEY haben KEINEN Default mehr (05.09.2026). Bis
+      # dahin standen hier zwei Werte, die öffentlich im Repository nachzulesen waren,
+      # und ENFORCE_PROD_SECRETS musste ausdrücklich auf true gesetzt werden, damit der
+      # Server sie ablehnt. Eine vergessene .env-Zeile reichte, um den Schulserver mit
+      # fälschbaren Admin-Sitzungen zu betreiben — ohne dass irgendetwas rot wurde.
+      # Jetzt startet der Stack ohne die beiden Werte gar nicht, und die Verweigerung
+      # bekannter Beispielwerte ist im Server die Vorgabe (api.ErzwingeProdGeheimnisse);
+      # nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet sie für eine Testphase ab.
+      #   JWT_SECRET=<zufällig, >=32 Zeichen>        z. B. openssl rand -base64 48
+      #   APP_ENCRYPTION_KEY=<exakt 32 Byte>         z. B. openssl rand -hex 16
       #   POSTGRES_PASSWORD=<eigenes Passwort>
       #   COOKIE_SECURE=true   # hinter Caddy-HTTPS
-      # Mit ENFORCE_PROD_SECRETS=true verweigert der Server den Start, falls noch
-      # ein bekannter Default-Wert für JWT_SECRET/APP_ENCRYPTION_KEY aktiv ist.
       - APP_ENV=${APP_ENV:-production}
-      - ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-false}
+      - ENFORCE_PROD_SECRETS=${ENFORCE_PROD_SECRETS:-}
       - DATABASE_URL=postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD muss gesetzt sein (siehe .env)}@postgres-db:5432/${POSTGRES_DB:-bibliothek}?sslmode=disable
-      - JWT_SECRET=${JWT_SECRET:-super-secret-default-key-at-least-32-bytes}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET muss gesetzt sein (>=32 Zeichen, zufaellig - siehe .env.example)}
       # Vorgabe true, nicht false: Dieser Stack läuft hinter Caddy (caddy_global_net,
       # Backend nur auf 127.0.0.1) — also über HTTPS. Ein Default von false setzte die
       # Variable auf den unsicheren Wert und hebelte damit die sichere Vorgabe in
       # ermittleCookieSecure() aus, die nur bei NICHT gesetzter Variable greift.
       # Nur überschreiben, wenn die Anwendung ausschließlich über HTTP im LAN läuft.
       - COOKIE_SECURE=${COOKIE_SECURE:-true}
-      - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:-super-secure-aes-key-32-chars-ok}
+      - APP_ENCRYPTION_KEY=${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY muss gesetzt sein (exakt 32 Byte - siehe .env.example)}
       # KEIN Default: "mock" ließ AuthenticateIMAP jedes Passwort für jede in
       # benutzer vorhandene E-Mail durchwinken (auth/imap.go). Als Compose-Default
       # stand damit in diesem Prod-Stack die Anmeldung faktisch offen, sofern

@@ -178,9 +178,9 @@ Details: [ARCHITECTURE.md](ARCHITECTURE.md)
 - SMTP: STARTTLS erzwungen, mit Zertifikatsprüfung
 - CSV-Formel-Injection-Schutz (OWASP CWE-1236)
 - Decompression-Bomb-Guard bei Bild-Uploads
-- Produktions-Secret-Guard: **muss scharf geschaltet werden** — mit `ENFORCE_PROD_SECRETS=true`
-  verweigert der Server den Start bei bekannten Default-Secrets. Der Standard ist `false`
-  (Testphase), damit der Stack ohne Konfiguration hochkommt; vor dem echten Prod-Deploy
-  gehört der Schalter gesetzt ([DEPLOYMENT.md](DEPLOYMENT.md#22-secret-guard-per-schalter-einschaltbar))
+- Produktions-Secret-Guard: **von selbst scharf** (seit 05.09.2026) — außerhalb von
+  `APP_ENV=local/development/test` verweigert der Server den Start bei bekannten
+  Default-Secrets; nur ein ausdrückliches `ENFORCE_PROD_SECRETS=false` schaltet das für
+  eine Testphase ab ([DEPLOYMENT.md](DEPLOYMENT.md#22-secret-guard-vorgabe-scharf))
 
 Details: [SECURITY.md](SECURITY.md)

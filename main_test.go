@@ -142,3 +142,44 @@ func TestLoadConfig_FehlenderIMAPHostVerweigertStart(t *testing.T) {
 		unsetenv("IMAP_HOST")
 	})
 }
+
+// Seit dem 05.09.2026 ist die Verweigerung bekannter Beispiel-Geheimnisse die VORGABE
+// außerhalb von local/development/test. Vorher musste ENFORCE_PROD_SECRETS=true gesetzt
+// werden — mit dem alten Code startet dieser Aufbau durch (rot gesehen).
+func TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT(t *testing.T) {
+	testFatal(t, "TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT", func() {
+		setupSuccessEnv()
+		unsetenv("ENFORCE_PROD_SECRETS")
+		setenv("APP_ENV", "production")
+		setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+	})
+}
+
+// Die Spielwiese bleibt bequem: lokal ohne Schalter startet der Server mit den
+// Beispielwerten aus docker-compose.local.yml.
+func TestLoadConfig_LokalOhneSchalterStartetMitBeispielJWT(t *testing.T) {
+	originalEnv := os.Environ()
+	defer restoreEnv(originalEnv)
+
+	setupSuccessEnv()
+	unsetenv("ENFORCE_PROD_SECRETS")
+	setenv("APP_ENV", "local")
+	setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+	if _, jwt, _, _ := loadConfig(); jwt != "super-secret-default-key-at-least-32-bytes" {
+		t.Fatalf("loadConfig hat den lokalen Beispielwert nicht durchgelassen: %q", jwt)
+	}
+}
+
+// Ausdrückliches false bleibt der Weg für eine Testphase auf einem production-Server.
+func TestLoadConfig_AusdrücklichFalseLaesstBeispielJWTDurch(t *testing.T) {
+	originalEnv := os.Environ()
+	defer restoreEnv(originalEnv)
+
+	setupSuccessEnv()
+	setenv("APP_ENV", "production")
+	setenv("ENFORCE_PROD_SECRETS", "false")
+	setenv("JWT_SECRET", "super-secret-default-key-at-least-32-bytes")
+	if _, jwt, _, _ := loadConfig(); jwt == "" {
+		t.Fatal("loadConfig ist ausgestiegen, obwohl ENFORCE_PROD_SECRETS=false gesetzt ist")
+	}
+}

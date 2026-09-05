@@ -25,14 +25,14 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `JWT_SECRET`                                                               | HMAC-Signatur-Schlüssel                                                                                                                                                                                                                      | Pflicht, ≥ 32 Zeichen                                                                                                                                                                                                                      |
 | `APP_ENCRYPTION_KEY`                                                       | AES-256-Schlüssel für Schülerfotos **und** das gespeicherte SMTP-Passwort                                                                                                                                                                    | Pflicht, genau 32 Bytes (oder 64 Hex-Zeichen). **Der einzige gültige Name** — `ENCRYPTION_KEY` wurde bis zum 06.08.2026 vorrangig gelesen und umging dabei jede Startprüfung; der Server bricht jetzt ab, wenn er abweichend gesetzt ist   |
 | `APP_ENV`                                                                  | Umgebung (`production` / `local`) — steuert Cookie-Secure & Swagger                                                                                                                                                                          | Standard: `production`                                                                                                                                                                                                                     |
-| `ENFORCE_PROD_SECRETS`                                                     | Harte Start-Verweigerung bei Default-Secrets                                                                                                                                                                                                 | Standard: `false` (Testphase)                                                                                                                                                                                                              |
+| `ENFORCE_PROD_SECRETS`                                                     | Harte Start-Verweigerung bei Default-Secrets                                                                                                                                                                                                 | **Vorgabe scharf** außerhalb von `local/development/test` (seit 05.09.2026); nur ausdrückliches `false` schaltet ab                                                                                                                       |
 | `COOKIE_SECURE`                                                            | `true` hinter TLS-Proxy (Caddy)                                                                                                                                                                                                              | Standard: **`true`**, außerhalb von `APP_ENV=local/development/test`. Nicht gesetzt → `true` mit Warnung im Log; unlesbarer Wert → harter Abbruch (`ermittleCookieSecure`). `docker-compose.yml` setzt zusätzlich `${COOKIE_SECURE:-true}` |
 | `PORT`                                                                     | HTTP-Port des Backends                                                                                                                                                                                                                       | Pflicht                                                                                                                                                                                                                                    |
 | `IMAP_HOST`                                                                | IMAP-Server der Schule — die Anmeldung prüft Zugangsdaten dagegen                                                                                                                                                                            | **Pflicht.** Ohne diese Variable bricht der Start ab (`FATAL: IMAP_HOST ist nicht gesetzt`); lokal `IMAP_HOST=mock` zusammen mit `APP_ENV=local`                                                                                           |
 | `IMAP_PORT`                                                                | IMAP-Port                                                                                                                                                                                                                                    | Standard: 993                                                                                                                                                                                                                              |
 | `SELBSTANMELDUNG_DOMAIN`                                                   | Maildomain, deren Postfächer sich selbst anmelden dürfen (z. B. `philipp-reis-schule.de`). Eine Lehrkraft ohne Konto bekommt beim ersten Login einen **inaktiven** Eintrag (Rolle Kollegium) und wird unter Benutzer & Rechte freigeschaltet | **Empfohlen** — leer = aus, dann muss jedes Kollegiums-Konto von Hand angelegt werden; die Selbstprüfung meldet den Zustand als Warnung                                                                                                    |
 | `ALLOWED_ORIGIN`                                                           | Erlaubte Herkunft für CORS (die Frontend-Adresse der Schule)                                                                                                                                                                                 | Empfohlen in Produktion                                                                                                                                                                                                                    |
-| `TRUSTED_PROXIES`                                                          | CIDRs/IPs, deren `X-Forwarded-For` geglaubt wird (Rate-Limit, Login-Brute-Force, Audit-Log)                                                                                                                                                  | Ohne sie gilt **nur Loopback** als vertrauenswürdig — hinter Caddy auf einem anderen Host also nötig                                                                                                                                       |
+| `TRUSTED_PROXIES`                                                          | CIDRs/IPs, deren `X-Forwarded-For` geglaubt wird (Rate-Limit, Login-Brute-Force, Audit-Log). Genau **ein** Hop: Client = rechtester Eintrag, den Caddy angehängt hat                                                                        | Ohne sie gilt **nur Loopback** als vertrauenswürdig — hinter Caddy auf einem anderen Host also nötig                                                                                                                                       |
 | `BACKUP_DIR`                                                               | Zielverzeichnis der automatischen Backups                                                                                                                                                                                                    | Standard siehe [resilience_and_recovery.md](resilience_and_recovery.md)                                                                                                                                                                    |
 | `BACKUP_ENCRYPTION_KEY`                                                    | AES-256-Schlüssel der Backups                                                                                                                                                                                                                | **Ohne ihn läuft kein Backup** — der Job überspringt sich mit einer Logzeile; sichtbar wird das im Admin-Dashboard über `/api/admin/system/backup-status`                                                                                  |
 | `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_BUCKET`, `S3_USE_SSL` | Optionaler Offsite-Upload der verschlüsselten Backups (`jobs/backup.go`)                                                                                                                                                                     | Nur gemeinsam sinnvoll; fehlt eine, unterbleibt der Upload                                                                                                                                                                                 |
@@ -119,7 +119,7 @@ Den Rest von Hand ergänzen — das sind Einstellungen, keine Geheimnisse:
 ```bash
 # /opt/bibliothek/.env
 APP_ENV=production
-ENFORCE_PROD_SECRETS=true   # erst beim echten Prod-Deploy scharf schalten
+# ENFORCE_PROD_SECRETS ist seit 05.09.2026 von selbst scharf — nichts zu setzen
 COOKIE_SECURE=true
 SMTP_HOST=smtp.example.com
 SMTP_USER=user@example.com
@@ -146,18 +146,24 @@ Kontrolle, bevor der Stack startet:
 grep -c '^JWT_SECRET=' .env          # genau 1
 ```
 
-### 2.2 Secret Guard (per Schalter einschaltbar)
+### 2.2 Secret Guard (Vorgabe scharf)
 
-Die harte Start-Verweigerung ist von `APP_ENV` **entkoppelt** und wird über den dedizierten Schalter `ENFORCE_PROD_SECRETS` gesteuert:
+Der Server verweigert den Start mit bekannten Beispiel-Geheimnissen für `JWT_SECRET` oder
+`APP_ENCRYPTION_KEY` **von selbst**, sobald `APP_ENV` nicht `local`/`development`/`test`
+ist (Regel: `api.ErzwingeProdGeheimnisse`, seit 05.09.2026). `docker-compose.yml`
+verlangt die beiden Werte zusätzlich per `${VAR:?}` — ohne sie startet der Stack nicht.
 
-| Phase              | `ENFORCE_PROD_SECRETS` | Verhalten                                                                                                        |
-| ------------------ | ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Test-/Pilotbetrieb | `false` (Standard)     | Stack startet auch mit Default-Secrets — bequemes Testen                                                         |
-| Echter Prod-Deploy | `true`                 | Server **verweigert den Start**, wenn ein bekannter Default für `JWT_SECRET` oder `APP_ENCRYPTION_KEY` aktiv ist |
+| Phase              | `ENFORCE_PROD_SECRETS`   | Verhalten                                                                                                        |
+| ------------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Echter Betrieb     | nicht gesetzt (Standard) | Server **verweigert den Start**, wenn ein bekannter Default für `JWT_SECRET` oder `APP_ENCRYPTION_KEY` aktiv ist |
+| Testphase, bewusst | `false` (ausdrücklich)   | Stack startet auch mit Beispielwerten; Log warnt, Selbstprüfung gelb, `pruefe_secrets.sh` rot                    |
 
-> **Warum entkoppelt von `APP_ENV`?** `APP_ENV=local` würde gleichzeitig das Cookie-`Secure`-Flag deaktivieren und die Swagger-Docs öffentlich freischalten — auf einem über das Internet erreichbaren Test-Server unerwünscht. Mit `ENFORCE_PROD_SECRETS` bleibt `APP_ENV=production` (sichere Cookies, kein Swagger), während die Secret-Härtung unabhängig davon ein-/ausgeschaltet wird.
+> Bis zum 05.09.2026 war es umgekehrt (`false` als Standard, `true` musste gesetzt
+> werden). Eine vergessene Zeile reichte, um den Schulserver mit dem JWT-Schlüssel aus dem
+> Repository zu betreiben. `APP_ENV` bleibt entkoppelt: `local` würde zugleich das
+> Cookie-`Secure`-Flag deaktivieren und Swagger freischalten.
 
-Fehlermeldung bei `ENFORCE_PROD_SECRETS=true` + Default-Secret:
+Fehlermeldung bei Default-Secret:
 
 ```
 FATAL: JWT_SECRET nutzt einen bekannten Default-Wert. Setze ein eigenes, geheimes
@@ -169,7 +175,7 @@ JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Test
 Default-Secrets, fehlender Backup-Schlüssel, `IMAP_HOST=mock`, offene Produktionsschalter.
 Exit-Code 1 bei kritischem Befund, damit es sich in ein Deploy-Skript hängen lässt.
 
-**Checkliste vor dem ersten echten Prod-Deploy:** `ENFORCE_PROD_SECRETS=true` setzen und dazu echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS).
+**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`.
 
 > **`APP_ENCRYPTION_KEY` auf einem System mit Bestand ändern?** Nicht einfach
 > überschreiben — Schülerfotos und das gespeicherte SMTP-Passwort sind damit
@@ -187,7 +193,7 @@ cd /pfad/zur/bibliothek
 docker compose --env-file .env up -d --build
 ```
 
-`docker-compose.yml` liefert für alle Secrets bequeme Defaults (`${VAR:-…}`), damit der Stack in der Testphase ohne weitere Konfiguration startet. Die Produktions-Absicherung übernimmt der Code-Guard (`ENFORCE_PROD_SECRETS=true`), nicht die Compose-Datei.
+`docker-compose.yml` verlangt `POSTGRES_PASSWORD`, `IMAP_HOST`, `JWT_SECRET` und `APP_ENCRYPTION_KEY` per `${VAR:?}` — ohne sie bricht `docker compose up` mit der jeweiligen Meldung ab. Für alles Weitere liefert die Datei Defaults. Wer nach dem Pull vom 05.09.2026 diese Meldung sieht, ergänzt die `.env` (`openssl rand -base64 48` für den JWT-Schlüssel, `openssl rand -hex 16` für den 32-Byte-AES-Schlüssel); ein **bestehendes** System behält seinen `APP_ENCRYPTION_KEY` unbedingt — siehe Warnung oben.
 
 ### 2.4 Deployment-Skript
 

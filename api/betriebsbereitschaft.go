@@ -512,17 +512,17 @@ func pruefeGeheimnisse(l Lage, echt bool) Befund {
 		b.Befund = "Eigene Geheimnisse gesetzt, die harte Absicherung ist scharf."
 	case !defaultsAktiv:
 		b.Stufe = StufeWarnung
-		b.Befund = "Eigene Geheimnisse gesetzt, ENFORCE_PROD_SECRETS steht aber auf false."
+		b.Befund = "Eigene Geheimnisse gesetzt, ENFORCE_PROD_SECRETS steht aber ausdrücklich auf false."
 		b.Folge = "Der Server würde auch mit einem Beispiel-Geheimnis starten — " +
 			"ein versehentliches Zurückfallen fiele nicht auf."
-		b.Abhilfe = "ENFORCE_PROD_SECRETS=true setzen."
+		b.Abhilfe = "Die Zeile ENFORCE_PROD_SECRETS=false aus der .env entfernen (Vorgabe ist scharf)."
 	case echt:
 		b.Stufe = StufeKritisch
 		b.Befund = "Es laufen mitgelieferte Beispiel-Geheimnisse."
 		b.Folge = "JWT_SECRET und APP_ENCRYPTION_KEY stehen öffentlich im Repository. " +
 			"Wer sie kennt, kann Sitzungen fälschen und verschlüsselte Ablagen lesen."
-		b.Abhilfe = "Eigene Werte setzen (JWT_SECRET ≥32 Zeichen, APP_ENCRYPTION_KEY genau 32 Byte), " +
-			"danach ENFORCE_PROD_SECRETS=true."
+		b.Abhilfe = "Eigene Werte setzen (JWT_SECRET ≥32 Zeichen, APP_ENCRYPTION_KEY genau 32 Byte) " +
+			"und die Zeile ENFORCE_PROD_SECRETS=false entfernen."
 	default:
 		b.Stufe = StufeOK
 		b.Befund = befundNichtImEchtbetrieb("Beispiel-Geheimnisse", l.AppEnv)
