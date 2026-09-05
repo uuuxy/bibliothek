@@ -102,6 +102,14 @@ Welche Klasse hat welche Lektüre? Klasse suchen, _Klasse hinzufügen_ öffnet d
 Bücher auswählen, Zielklasse eintragen, speichern. Reservierungen aus dem Kollegium stehen
 im Bestellwesen (→ _Klassensatz-Reservierungen_). (§4)
 
+Seit 05.09.2026 ergänzt sich die Liste von selbst: Hat mehr als die Hälfte einer Klasse
+(mindestens fünf Kinder) denselben Titel ausgeliehen, erscheint er bei der Klasse mit dem
+Abzeichen _aus Ausleihen · n Leser_ — Schulbuch wie Lektüre, live aus den Ausleihen
+gerechnet, nirgends gespeichert. Die von Hand gepflegte Liste bleibt unverändert; beim
+_Bücher verwalten_ sind nur die handgepflegten Titel vorgewählt, ein abgeleiteter lässt sich
+per Haken übernehmen. Gibt die Klasse die Bücher zurück, verschwindet das Abzeichen wieder.
+Das Kollegium sieht dieselben Einträge in _Mein Portal → Klassensätze_.
+
 ## LMF-Plan
 
 Rückgabe- und Ausgabetermine je Klasse — die frühere Excel-Liste der Schule, jetzt im
@@ -112,10 +120,11 @@ Nachzügler; dazwischen Zeilen wie „Bücher setzen" ohne Klasse, nur mit Verme
 _Termin hinzufügen_: Datum, Stunde, Art, eine oder mehrere Klassen (auch „6F1/6F2" in
 einer Stunde), Besonderheiten. Ein neuer Plan startet leer; die Seite nennt, welche
 Klassen noch keinen Rückgabe-Termin haben. Gezeigt wird das laufende Schuljahr (ab
+
 1. August), _Ältere anzeigen_ holt den Rest. _Als PDF_ liefert die gewohnte Liste
-(Wochentag, Datum, Stunde, Klassen, Besonderheiten), getrennt nach Rückgabe und Ausgabe.
-Das Kollegium sieht denselben Plan in _Mein Portal → LMF-Plan_, für alle gleich und
-immer auf dem aktuellen Stand — eine Korrektur-Mail entfällt.
+   (Wochentag, Datum, Stunde, Klassen, Besonderheiten), getrennt nach Rückgabe und Ausgabe.
+   Das Kollegium sieht denselben Plan in _Mein Portal → LMF-Plan_, für alle gleich und
+   immer auf dem aktuellen Stand — eine Korrektur-Mail entfällt.
 
 **Der Rückgabe-Termin einer Klasse ist die Frist ihrer Schulbücher.** Wird ein
 Rückgabe-Termin eingetragen oder verschoben, folgen die offenen Schulbuch-Ausleihen der
@@ -159,8 +168,7 @@ Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. (§3)
 
 ## Abgänger
 
-Abgänger sind die Abschlussklassen des laufenden Schuljahres — 9H (und das freiwillige
-10. Hauptschuljahr), 10R und 13 —, also die Kinder, die zum Schuljahresende gehen. Sie
+Abgänger sind die Abschlussklassen des laufenden Schuljahres — 9H (und das freiwillige 10. Hauptschuljahr), 10R und 13 —, also die Kinder, die zum Schuljahresende gehen. Sie
 sind noch an der Schule und leihen bis zuletzt aus. Die Regel ist dieselbe wie bei der
 Versetzung; eingestellt wird nichts, die Klasse weiß es.
 

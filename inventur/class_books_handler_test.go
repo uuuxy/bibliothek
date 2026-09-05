@@ -30,15 +30,15 @@ func TestHandleClassBooks(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("").
+					WithArgs("", KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "quelle", "leser",
 					}).AddRow(
-						"5A", "b1", "Book 1", "Math", "G", "url", "123", 5, 10,
+						"5A", "b1", "Book 1", "Math", "G", "url", "123", 5, 10, "hand", 0,
 					))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","verfuegbar":5,"gesamt":10}]}]}`,
+			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","verfuegbar":5,"gesamt":10,"quelle":"hand","leser":0}]}]}`,
 		},
 		{
 			name:   "Success - Empty results fallback",
@@ -46,9 +46,9 @@ func TestHandleClassBooks(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("").
+					WithArgs("", KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "quelle", "leser",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -60,9 +60,9 @@ func TestHandleClassBooks(t *testing.T) {
 			sort:   "desc",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("F").
+					WithArgs("F", KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt",
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "quelle", "leser",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -74,7 +74,7 @@ func TestHandleClassBooks(t *testing.T) {
 			sort:   "",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT.*").
-					WithArgs("").
+					WithArgs("", KlassensatzMindestLeser).
 					WillReturnError(errors.New("db error"))
 			},
 			expectedStatus: http.StatusInternalServerError,

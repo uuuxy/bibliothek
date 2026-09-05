@@ -31,22 +31,62 @@ func insertClassBookBindings(ctx context.Context, tx pgx.Tx, newClassNames, book
 	return nil
 }
 
-// GetClassGroups liefert die Klassensätze nach Klasse gruppiert. branch filtert auf den
-// Bildungsgang, sortOrder bestimmt die Reihenfolge der Klassen.
+// KlassensatzMindestLeser ist die Mindestzahl: Ab so vielen Kindern derselben Klasse mit demselben Titel — und
+// mehr als der Hälfte der Klasse — gilt ein Titel als Klassensatz „aus Ausleihen". Die
+// Hälfte allein reichte nicht: In einer Restklasse mit vier Kindern wären zwei Leser schon
+// ein Satz.
+const KlassensatzMindestLeser = 5
+
+// GetClassGroups liefert je Klasse ihre Klassensatz-Titel aus ZWEI Quellen (Peter,
+// 05.09.2026: „über die LUSD wissen wir genau, in welcher Klasse jeder Schüler ist — die
+// Liste kann sich selbstständig aktualisieren"): der von Hand gepflegten Zuordnung
+// (class_books, Quelle „hand" — bleibt unangetastet, nichts wird geschrieben oder
+// gelöscht) und den laufenden Ausleihen (Quelle „ausleihe", live gerechnet, nie
+// gespeichert): Halten mehr als die Hälfte der aktiven Kinder einer Klasse, mindestens
+// KlassensatzMindestLeser, denselben Titel, ist das ihr Klassensatz — Schulbuch oder
+// Lektüre. Ein Titel, der schon von Hand zugeordnet ist, erscheint nur einmal (hand).
+// Beide Quellen laufen durch dieselbe Sortierung; branch filtert auf den Bildungsgang,
+// sortOrder bestimmt die Reihenfolge der Klassen.
 func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, sortOrder string) ([]ClassGroup, error) {
 	query := `
+		WITH klassen_groesse AS (
+			SELECT klassen_normkey(klasse) AS k, min(klasse) AS klasse, count(*) AS n
+			FROM schueler
+			WHERE deleted_at IS NULL AND ist_abgaenger = false AND klasse ~ '^\d'
+			GROUP BY klassen_normkey(klasse)
+		),
+		leser AS (
+			SELECT klassen_normkey(s.klasse) AS k, e.titel_id, count(DISTINCT s.id) AS leser
+			FROM ausleihen a
+			JOIN schueler s ON s.id = a.schueler_id AND s.deleted_at IS NULL AND s.ist_abgaenger = false
+			JOIN buecher_exemplare e ON e.id = a.exemplar_id
+			WHERE a.rueckgabe_am IS NULL
+			GROUP BY klassen_normkey(s.klasse), e.titel_id
+		),
+		zuordnung AS (
+			SELECT class_name, book_id, 'hand'::text AS quelle, 0::bigint AS leser FROM class_books
+			UNION ALL
+			SELECT COALESCE((SELECT min(h.class_name) FROM class_books h WHERE klassen_normkey(h.class_name) = l.k), g.klasse),
+			       l.titel_id, 'ausleihe', l.leser
+			FROM leser l
+			JOIN klassen_groesse g ON g.k = l.k
+			WHERE l.leser * 2 > g.n AND l.leser >= $2
+			  AND NOT EXISTS (SELECT 1 FROM class_books h
+			                  WHERE klassen_normkey(h.class_name) = l.k AND h.book_id = l.titel_id)
+		)
 		SELECT 
 			cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject, 
 			COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url, 
 			COALESCE(b.isbn, '') AS isbn,
 			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
-			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt
-		FROM class_books cb
+			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
+			cb.quelle, cb.leser
+		FROM zuordnung cb
 		JOIN buecher_titel b ON cb.book_id = b.id
 		LEFT JOIN buecher_exemplare e ON e.titel_id = b.id
 		LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 		WHERE ($1 = '' OR cb.class_name ILIKE '%' || $1 || '%')
-		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn
+		GROUP BY cb.class_name, b.id, b.titel, b.subject, b.track, b.cover_url, b.isbn, cb.quelle, cb.leser
 		ORDER BY `
 
 	if branch == "" {
@@ -70,7 +110,7 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 		query += gradeCast + ` ASC, cb.class_name ASC, b.titel ASC`
 	}
 
-	rows, err := repo.db.Query(ctx, query, branch)
+	rows, err := repo.db.Query(ctx, query, branch, KlassensatzMindestLeser)
 	if err != nil {
 		return nil, fmt.Errorf("klassen-bücher konnten nicht geladen werden: %w", err)
 	}
@@ -82,7 +122,7 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 	for rows.Next() {
 		var className string
 		var book ClassBook
-		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt)
+		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.Quelle, &book.Leser)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
 		}

@@ -1,7 +1,6 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
-
 	import ClassAssignmentSelector from './ClassAssignmentSelector.svelte';
 	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
 	import ClassAssignmentSummary from './ClassAssignmentSummary.svelte';
@@ -39,7 +38,10 @@
 	onMount(async () => {
 		if (initialGroup) {
 			selectedClasses = [initialGroup.className];
-			selectedBookIds = new Set(initialGroup.books.map((/** @type {any} */ b) => b.id));
+			// Nur Handgepflegtes vorgewählt; „aus Ausleihen" steht zur Übernahme per Haken bereit.
+			selectedBookIds = new Set(
+				initialGroup.books.flatMap((b) => (b.quelle === 'ausleihe' ? [] : [b.id]))
+			);
 		}
 
 		try {
@@ -57,11 +59,10 @@
 		books.filter((/** @type {any} */ b) => selectedBookIds.has(b.id))
 	);
 
-	// Der Speicherpfad ERSETZT: UpdateClassBooks loescht die Zuweisungen ALLER Zielklassen
-	// und schreibt danach die Auswahl hinein (inventur/datenbank_klassen.go). Mehrere
-	// Klassen gleichzeitig zu bearbeiten ist also seit jeher moeglich — nur sagte nichts,
-	// dass die zusaetzlich gewaehlte Klasse dabei ihren bisherigen Satz verliert. Wer zu
-	// 05F1 noch 06A2 dazunimmt, loescht deren neun Buecher, ohne es zu sehen.
+	// Der Speicherpfad ERSETZT: UpdateClassBooks loescht die Zuweisungen ALLER Zielklassen und
+	// schreibt danach die Auswahl hinein (inventur/datenbank_klassen.go). Mehrere Klassen auf
+	// einmal gingen schon immer — nur sagte nichts, dass die zusaetzlich gewaehlte Klasse ihren
+	// Satz verliert: Wer zu 05F1 noch 06A2 dazunimmt, loescht deren neun Buecher, ohne es zu sehen.
 	const ueberschriebeneKlassen = $derived(
 		selectedClasses
 			.filter((/** @type {string} */ name) => name !== initialGroup?.className)
@@ -71,9 +72,8 @@
 			.filter((/** @type {any} */ g) => g && g.books?.length > 0)
 	);
 
-	// Aufzaehlung im Skript statt im Markup: Die Variante mit {#each} brauchte fuer das
-	// Komma und das „und" Mustaches mit reinen Zeichenketten — ESLint lehnt die zu Recht
-	// ab (svelte/no-useless-mustaches), und lesbar war sie auch nicht.
+	// Aufzaehlung im Skript statt im Markup: {#each} braeuchte fuer Komma und „und" Mustaches mit
+	// reinen Zeichenketten — ESLint lehnt die zu Recht ab (svelte/no-useless-mustaches).
 	const ueberschriebenText = $derived.by(() => {
 		const teile = ueberschriebeneKlassen.map(
 			(/** @type {any} */ g) =>

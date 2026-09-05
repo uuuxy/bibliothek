@@ -32,8 +32,8 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** erst die Klassensatz-Ableitung (freigegeben 05.09.), dann die Overlays auf
-`Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
+**Reihenfolge:** die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen
+Anfassen.
 
 ---
 
@@ -94,26 +94,7 @@ suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanl
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
 kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-1. **Klassensätze automatisch ableiten statt von Hand pflegen** (05.09.2026, Peters Idee:
-   „ganz verwegene Idee … die manuelle Option kann weiterhin vorhanden sein"). Heute ist
-   `class_books` (Klasse → Titel; Seite _Klassensätze_, Portal-Reiter _Klassensätze der
-   eigenen Klassen_) reine Handpflege. Das Programm kennt die Antwort aber schon aus zwei
-   Quellen: (a) den **laufenden Ausleihen** — wenn 25 von 28 Kindern der 7G1 denselben
-   Titel haben, ist das ihr Klassensatz, egal ob Schulbuch oder Lektüre; (b) den
-   **Lernmittel-Feldern** (Migration 093: `ist_lernmittel`, Fach, Jahrgang, Zweig) — alle
-   Lernmittel mit Jahrgang 7 und Zweig G gehören jeder 7G. (a) ist die Wirklichkeit und
-   deckt Lektüren; (b) ist der Plan und funktioniert schon vor der Ausgabe. **Vorschlag:**
-   (a) als Vorschlagsliste mit Schwelle (z. B. ≥ 2/3 der Klasse), die der Nutzer per Klick
-   übernimmt; Handpflege bleibt; ein Merkmal `quelle` (hand/ausleihe) an `class_books`,
-   damit Übernommenes beim nächsten Lauf aktualisiert, Handgepflegtes nie überschrieben
-   wird. **Peter, 05.09. abends:** „Über die LUSD wissen wir genau, in welcher Klasse jeder
-   Schüler ist — die Liste kann sich selbstständig aktualisieren." Und: **Die Liste auf dem
-   Hetzner-Server ist die aktuelle, das haben die Klassen tatsächlich — NICHT löschen.**
-   Folgerung: Ableitung (a) aus den Ausleihen, LIVE gerechnet und nicht gespeichert (nichts
-   kann gelöscht oder überschrieben werden); die Handliste `class_books` bleibt unangetastet
-   und wird daneben gezeigt; abgeleitete Einträge tragen ein Abzeichen „aus Ausleihen".
-   Schwelle vorgeschlagen: mehr als die Hälfte der aktiven Schüler der Klasse hält ein
-   Exemplar, mindestens 5. Offen: nur die Schwelle und das Go.
+_Zurzeit keine._
 
 ## Beobachten (nichts zu tun)
 

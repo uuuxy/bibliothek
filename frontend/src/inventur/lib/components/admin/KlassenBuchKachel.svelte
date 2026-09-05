@@ -19,7 +19,9 @@
 	 *     subject: string,
 	 *     coverUrl: string,
 	 *     verfuegbar?: number,
-	 *     gesamt?: number
+	 *     gesamt?: number,
+	 *     quelle?: string,
+	 *     leser?: number
 	 *   },
 	 *   onEdit?: (book: any) => void,
 	 *   bearbeitbar?: boolean
@@ -97,6 +99,13 @@
 		</h3>
 		{#if bestand}
 			<span class="text-on-surface-variant">{bestand}</span>
+		{/if}
+		{#if book.quelle === 'ausleihe'}
+			<!-- Live aus den Ausleihen abgeleitet, nicht gespeichert (05.09.2026): mehr als die
+			     Hälfte der Klasse hat den Titel. Die Handliste bleibt unangetastet. -->
+			<span class="text-xs text-on-surface-variant" data-testid="klassensatz-aus-ausleihen">
+				aus Ausleihen · {book.leser} Leser
+			</span>
 		{/if}
 	</div>
 {/snippet}
