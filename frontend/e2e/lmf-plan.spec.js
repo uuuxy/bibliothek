@@ -57,6 +57,16 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(zeile).toBeVisible();
 	const nummer = Number(await zeile.getByRole('cell').first().innerText());
 	expect(nummer).toBeGreaterThan(0);
+	// Die Klasse, die gleich dieselbe Stunde teilt: der Nachbar darüber.
+	const vorherige = (
+		await tabelle
+			.getByRole('row')
+			.nth(nummer - 1)
+			.getByRole('cell')
+			.nth(4)
+			.innerText()
+	).trim();
+	expect(vorherige, 'Nachbarklasse für die geteilte Stunde').not.toBe('');
 
 	// Ersten Tag setzen: Die Vorschau vom Server gibt der Zeile den Platz, der ihrer
 	// Nummer entspricht — Wochenende übersprungen, 6 Stunden je Tag.
@@ -69,10 +79,33 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 
 	// Eine Zeile ohne Klasse davor: die Klasse rückt eine Stunde weiter.
 	await zeile.getByLabel(`Vor Zeile ${nummer} einfügen`).click();
-	const verschoben = tabelle.getByRole('row').filter({ hasText: klasse });
+	let verschoben = tabelle.getByRole('row').filter({ hasText: klasse });
 	soll = erwarteterPlatz(nummer + 1);
 	await expect(verschoben).toContainText(soll.datum);
 	await expect(verschoben).toContainText(soll.stunde);
+
+	// Erst die Klassenzeile mit der Leerzeile darüber zusammenlegen — sie bekommt deren
+	// Stunde zurück und trägt beide Vermerke.
+	await tabelle
+		.getByRole('row')
+		.filter({ hasText: klasse })
+		.getByLabel(`Zeile ${nummer + 1} mit voriger zusammenlegen`)
+		.click();
+	verschoben = tabelle.getByRole('row').filter({ hasText: klasse });
+	soll = erwarteterPlatz(nummer);
+	await expect(verschoben).toContainText(soll.stunde);
+	// Der Vermerk steht in einem Eingabefeld (kein Text) — geprüft wird er im Portal,
+	// wo er nach dem Speichern als Text in der Zeile steht.
+
+	// Und dann mit der Klassenzeile darüber: ZWEI Klassen in EINER Stunde — so stehen
+	// „10R1/10R2" und „6F1/6F2" im Plan der Schule (Peter, 05.09.: „das muss alles super
+	// flexibel ablaufen und planbar sein").
+	await verschoben.getByLabel(`Zeile ${nummer} mit voriger zusammenlegen`).click();
+	const geteilt = tabelle.getByRole('row').filter({ hasText: klasse });
+	soll = erwarteterPlatz(nummer - 1);
+	await expect(geteilt).toContainText(soll.stunde);
+	await expect(geteilt).toContainText(vorherige);
+	await expect(geteilt).toContainText(klasse);
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
 	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Plan vom 09.08.27');
@@ -88,8 +121,11 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 		const portalZeile = portal.getByRole('row').filter({ hasText: vermerk });
 		await expect(portalZeile).toBeVisible();
 		await expect(portalZeile).toContainText(soll.wochentag);
+		await expect(portalZeile).toContainText(soll.stunde);
+		// Beide Klassen der geteilten Stunde stehen in EINER Zeile (Reihenfolge macht der
+		// Server über den Normschlüssel, deshalb einzeln geprüft).
+		await expect(portalZeile).toContainText(vorherige);
 		await expect(portalZeile).toContainText(klasse);
-		await expect(portal).toContainText('Bücher setzen');
 		// Lesend: keine Planer-Aktionen im Portal.
 		await expect(lehrer.getByRole('button', { name: /Plan speichern/ })).toHaveCount(0);
 
