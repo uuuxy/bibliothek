@@ -98,24 +98,37 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
   die gebaute Seite: „so ganz zufrieden bin ich nicht"). Drei Befunde am Bau von 1890a4df:
 
   1. **Das Anlegen ist zu klein und zu kleinteilig.** Ein Modal je Zeile; wer sechs Klassen
-     ankreuzt, bekommt EINE Zeile mit sechs Klassen in EINER Stunde — gemeint ist aber fast
-     immer: sechs Klassen nacheinander, Stunde 1 bis 6. Manche Klassen teilen sich eine Stunde
-     („6F1/6F2"), manche brauchen zwei. Recherche (Gymnasium Wentorf, Hebbelschule Kiel,
-     Kaiserin-Friedrich Bad Homburg, Realschule Waibstadt): überall dasselbe Muster — ein
-     Jahrgang je Tag, Abschlussklassen zuerst, je Klasse „weniger als eine Unterrichtsstunde",
-     die Lehrkraft der jeweiligen Stunde bringt die Klasse. Der Plan IST ein Raster
-     Tage × Stunden, keine Liste von Zeilen.
-     **Vorschlag:** Die Seite wird im Bearbeitungsmodus ein Tagesplaner — links die Klassen als
-     Chips (Abschlussklassen zuerst, dann Jahrgang absteigend; schon geplante grau mit Datum),
-     rechts der gewählte Tag als Spalte Stunde 1..N. Klick auf einen Chip legt die Klasse in die
-     nächste freie Stunde; sechs Klicks = Stunde 1–6. Ziehen verschiebt; zwei Chips in einer
-     Zelle = geteilte Stunde; ein Chip kann auf zwei Stunden gezogen werden (Doppelstunde).
-     Zelle ohne Klasse = „Bücher setzen"/Pause mit Vermerk. Kein Modal mehr. Tabelle, Portal und
-     PDF bleiben, wie sie sind. Schema: `lmf_termine` bekommt `stunde_bis` (Doppelstunde);
-     sonst trägt das Modell das schon (mehrere Klassen je Termin, Termin ohne Klasse).
+     ankreuzt, bekommt EINE Zeile mit sechs Klassen in EINER Stunde — gemeint ist aber: sechs
+     Klassen nacheinander, Stunde 1 bis 6. Peters echter Plan 2026 (Excel „lmf termine 26",
+     05.09. abends) zeigt die Form: Rückgabe Do 11.06. ab 3. Std. 9H1, 9H2, 10R1/10R2, 10R3
+     (Abschlussklassen zuerst), dann JEDER Schultag Stunde 1–6, eine Klasse je Stunde, die
+     Reihenfolge läuft über die Tage weiter (8H, 9R, 8R, 7R, 7H, 6F paarweise, 5F, 10G, 9G,
+     8G, 7G, 6G …); Ausgabe Mo 10.08. ab 2. Std. „7G1 neu" … „5F4 neu", zuletzt „Nachzügler",
+     „Aufräumen" ohne Klasse. Zwei Tippfehler im Excel (Freitag 17.06., Montag 19.06.) —
+     Wochentag und Datum von Hand sind fehleranfällig. Recherche (Gymnasium Wentorf,
+     Hebbelschule Kiel, Kaiserin-Friedrich Bad Homburg, Realschule Waibstadt): überall dasselbe
+     Muster, je Klasse „weniger als eine Unterrichtsstunde", die Lehrkraft der Stunde bringt
+     die Klasse. **Der Plan ist eine REIHENFOLGE von Klassen, die auf Schultage × Stunden
+     gegossen wird** — keine Liste einzeln angelegter Zeilen.
+     **Vorschlag:** Die Seite wird ein Planer mit drei Schritten. (a) Rahmen: Art, erster Tag,
+     Startstunde am ersten Tag, Stunden je Tag (Vorgabe 6); Schultage rechnet das System
+     selbst (Mo–Fr, `ferien_schliesszeiten` ausgespart). (b) Reihenfolge: eine Liste der
+     Klassen, per Ziehen sortierbar; Vorbelegung = **Plan des Vorjahres** (liegt in
+     `lmf_termine`, Klassennamen bleiben Jahr für Jahr gleich, weil die Versetzung Schüler
+     verschiebt, nicht Namen), sonst Abschlussklassen zuerst, dann Jahrgang absteigend; nicht
+     im Vokabular stehende Klassen („7G1 neu" vor dem LUSD-Import) frei eintippbar.
+     (c) Das System verteilt die Reihenfolge auf Tage und Stunden; die Tabelle zeigt das
+     Ergebnis und ist DORT editierbar: „mit voriger Zeile zusammenlegen" (10R1/10R2 teilen sich
+     die Stunde), Leerzeile einfügen (Bücher setzen, Nachzügler, Aufräumen — mit Vermerk),
+     Besonderheit je Zeile, Zeile entfernen; jede Änderung fließt nach. Kein Modal. Portal-
+     Reiter und PDF bleiben, wie sie sind. Schema: `lmf_termine` trägt das Modell schon
+     (mehrere Klassen je Termin, Termin ohne Klasse); neu nur die Reihenfolge als Attribut
+     (`position`) und ggf. `stunde_bis` für Doppelstunden — im echten Plan kommen keine vor,
+     also erst bei Bedarf.
   2. **Stundenraster ist Schulsache.** Heute CHECK 1–12 in der Tabelle und `STUNDEN` 1–12 im
-     Frontend. Vorschlag: Einstellung „Stunden pro Tag" unter Schule (Vorgabe 10), Uhrzeiten je
-     Stunde optional — die bisherige Excel-Liste hatte keine, die Kollegen kennen ihr Raster.
+     Frontend. Der echte Plan nutzt Stunde 1–6; das ist die Planer-Vorgabe „Stunden je Tag",
+     am Plan änderbar, keine eigene Systemeinstellung. Uhrzeiten zeigt der Plan nicht — das
+     Excel hatte keine, das Kollegium kennt sein Raster.
   3. **Klassen-Schema ist hart verdrahtet** — vier Stellen lesen Jahrgang und Zweig aus dem
      Namen mit Regeln DIESER Schule: `repository.AbschlussklasseSQL` (H ab 9, R ab 10, sonst
      13), `calculateAbgaengerJahr` (student_create.go), `internal/ausweis/gueltigkeit.go`
