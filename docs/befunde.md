@@ -120,10 +120,24 @@ Peter überlegt beide (03.09.).
    vorgeschlagen, sondern Neuanlage + „nicht im Export". Rückweg heute: Zusammenführen über
    die Akte. Bauen hieße: `NichtImExport`-Zeilen als Kandidaten (`WarAbgaenger=false`) — und
    die Rubrik „nicht im Export" bedeutet dann etwas anderes.
+   **Empfehlung (05.09.): nicht bauen — messen.** Bei der Abnahme „LUSD-Import" die Vorschau
+   auf echten Daten laufen lassen und jedes Paar „neu" + „nicht im Export" ansehen: WARUM
+   matcht es nicht — zweiter Vorname, Umlaut, Bindestrich, Tippfehler? Der Schlüssel ist heute
+   `lower + trim` (`repository.LusdNamensSchluessel`, EINE Stelle); die billigste Regel, die den
+   echten Grund trifft, kommt dorthin. Kandidaten aus „nicht im Export" hätten die
+   Paarungs-Signale (Eintritt, Anschrift) meist gar nicht: schwache Vorschläge, und eine
+   Rubrik, die zweierlei bedeutet.
 2. **Karenz ab Rückgabe statt ab Abgang.** `abgaenger_seit` stempelt beim Abgang, auch mit
    offenen Büchern; wer erst nach Ablauf der Karenz zurückgibt, wird in der Folgenacht
    anonymisiert — das Reparaturfenster fehlt dieser Gruppe. Alternative: Uhr bei Rückgabe des
    letzten Vorgangs neu starten (dann PG-Test dieser Konstellation).
+   **Empfehlung (05.09.): ja — der einzige Punkt mit Schaden im Stillen** (unumkehrbar,
+   nächtlich, ohne Zeugen). Und nicht als Schreiben auf `abgaenger_seit` bei der Rückgabe,
+   sondern im Prädikat: `PredikatAnonymisierung` ist die EINE Quelle für Job und Wächter;
+   dort zusätzlich „keine Rückgabe innerhalb der Karenz" (`NOT EXISTS … rueckgabe_am >
+   NOW() - karenz`). Die Karenz läuft dann ab dem letzten abgeschlossenen Vorgang; ein
+   Schreibweg an der Rückgabe wäre eine zweite Tür zum selben Zustand. PG-Test: Abgang vor
+   100 Tagen, Rückgabe gestern → bleibt; Rückgabe vor 91 Tagen → fällt. Etwa eine Stunde.
 
 3. **`GET /api/search` hängt an `perform_actions`, drei Aufrufer liegen außerhalb der Theke.**
    Die Etiketten-Titelsuche im Druck-Center (Menüpunkt: `view_students`), die Schülersuche im
@@ -137,6 +151,14 @@ Peter überlegt beide (03.09.).
    Kiosk-Sicht auf Schüler (Name, Klasse, Ausweis; PII-Matrix Stufe 1), das ist eine
    Datenschutz-Entscheidung; (b) beide Felder wie die Suchleiste an `perform_actions` koppeln;
    (c) so lassen und in der Rechte-Oberfläche beim Theken-Recht darauf hinweisen.
+   **Empfehlung (05.09.): keine der drei — „Recht folgt der Handlung".** (1) Die
+   Etiketten-Titelsuche bekommt eine eigene Titel-Route unter `view_books`
+   (`SearchTitlesFuzzy` existiert; der OPAC taugt dafür nicht, er blendet Lernmittel aus —
+   genau die Etiketten, die gedruckt werden). (2) `/api/search` nimmt `perform_actions` ODER
+   `manage_vormerkungen`, und der Vormerkungs-Reiter zeigt sein Suchfeld nur mit
+   `manage_vormerkungen`: Wer Vormerkungen anlegen darf, darf Schüler finden — das Recht
+   deckt die Personendaten bereits. Dann gibt kein Recht mehr her, als seine Handlung
+   braucht, und die Datenschutz-Frage stellt sich nicht. Zwei bis drei Stunden.
 
 Aus dem Design-Rundgang 04.09.2026 (Peter vorgelegt, Antwort steht aus). Alles
 Geschmacksfragen — nichts davon kann jemandem schaden, deshalb wird nichts davon
@@ -147,8 +169,16 @@ eigenmächtig entschieden.
    sondern legt in den Warenkorb — ein Formularfeld in einem eigenen Bereich, also kein
    Verstoß gegen „eine Suchleiste je Seite" (04.09.). Offen ist allein, ob die Nähe der
    beiden Felder trotzdem stört; dann Umbau.
-5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
-   der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
+   **Empfehlung (05.09.): so lassen.** Erst ändern, wenn jemand beim Arbeiten danebengreift —
+   dann ist es gemessen, nicht geraten.
+5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Gemessen am 05.09., im
+   Quelltext: `KlassenKarte.svelte` führt den Klassennamen ZWEIMAL — `text-2xl font-bold`
+   (24 px, headline-small) unter Bibliothek → Klassensätze und `text-base font-medium`
+   (16 px) im Kollegiums-Portal (`kompakt`), dazu zwei verschiedene Zähler-Chips. Die Karte
+   ist laut eigenem Kommentar ein ausklappbares LISTENELEMENT; dessen Headline ist in M3
+   body-large, 16 px. Der Eindruck „sehr groß" ist die 24-px-Fassung.
+   **Empfehlung: die kompakte Fassung für beide Orte** — eine Gestalt, und die Zwillinge sind
+   weg. Eine halbe Stunde, sichtbar, deshalb deine Entscheidung.
 
 6. **Cover in den beiden Arbeitslisten — wohin?** (05.09.2026) Klassensatz-Reservierungen und
    Wünsche & Meldungen laufen beide über `ArbeitsZeile.svelte`, die M3-„list item"-Zeile mit
@@ -211,6 +241,17 @@ Rest stand doppelt; Littera-Details jetzt in
 - **GitHub**: PR-Pflicht abschaffen (Solo-Entscheidung 30.07.), „Block force pushes"
   und „Restrict deletions" anlassen.
 - Datenwert Schulname/„Neuer Text" auf Live korrigieren.
+
+**Empfohlene Reihenfolge (05.09.2026):** (0) System → Betriebsbereitschaft auf dem
+Schulserver LESEN — zwei Minuten, und was dort rot ist, schlägt alles auf dieser Liste;
+insbesondere: läuft ein Backup? (1) Frisches Littera-Backup anfordern — die einzige Pflicht,
+die nur mit fremder Hilfe geht, mit Wartezeit, und sie wird ZWEIMAL gebraucht: jetzt zum
+Erproben der Übernahme, am Umstellungstag noch einmal frisch. (2) Restore-Probe am Ziel —
+ein Backup, das nie zurückgespielt wurde, ist eine Hoffnung. (3) S3-Auslagerung. (4) `v1.9.6`
+auf den Test-Server — der Abstand zwischen Image und laufendem Stand wächst mit jedem Release,
+Migrationen lieber einzeln erleben als später im Bündel. (5) Abnahmen terminieren; die
+LUSD-Abnahme NACH Entscheidung 2 und MIT der Messung aus Entscheidung 1. (6) Handgriffe, wenn
+man ohnehin dran ist: `SELBSTANMELDUNG_DOMAIN`, PR-Pflicht abschaffen, Schulname korrigieren.
 
 **Parkdeck** (bewusste Nicht-Entscheidungen, nur mit Anlass wieder anfassen):
 Integer-Cent-Refactor (float64/NUMERIC) · Bundle-Splitting (720-kB-Chunk) ·
