@@ -311,3 +311,25 @@ export async function pruefeFeldreihen(page, kontext) {
 		}
 	}
 }
+
+/**
+ * Öffnet das Profil eines Schülers über die Schülerdatei und wechselt auf den Reiter
+ * „Ausleihen & Historie".
+ *
+ * Bis 06.09.2026 nahmen drei Specs die Abgänger-Liste als Abkürzung ins Profil (Schüler
+ * mit ist_abgaenger = true geseedet, dann „Profil von …" geklickt). Seit dem 05.09. zeigt
+ * die Abgänger-Seite Abschlussklassen nur in der Saison (Mai–Juli) und Ehemalige gar
+ * nicht mehr — die drei Specs standen ab August dauerhaft rot in der CI. Die
+ * Schülerdatei ist der Weg, der das ganze Jahr gilt.
+ * @param {import('@playwright/test').Page} page
+ * @param {string} vorname eindeutiger Vorname des geseedeten Schülers
+ */
+export async function oeffneSchuelerProfil(page, vorname) {
+	const { expect } = await import('@playwright/test');
+	await gehZu(page, '/schuelerdatei');
+	await page.getByRole('searchbox', { name: 'Schüler suchen' }).fill(vorname);
+	await page.getByRole('button', { name: new RegExp(`Profil von ${vorname} `) }).click();
+	const reiter = page.getByRole('button', { name: /Ausleihen & Historie/ });
+	await expect(reiter).toBeVisible();
+	await reiter.click();
+}

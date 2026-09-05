@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, seedCoverDatei, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, seedCoverDatei, uniqueSuffix, oeffneSchuelerProfil } from './helpers.js';
 
 // Die Großansicht eines Covers zeigte "Kein Coverbild hinterlegt", obwohl das
 // Miniaturbild derselben Zeile das Cover anzeigte.
@@ -31,9 +31,8 @@ test('Cover-Großansicht zeigt ein lokal abgelegtes Cover', async ({ page }) => 
 			SELECT id, 'E2E-COV-B-${s}' FROM t RETURNING id
 		),
 		sch AS (
-			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger)
-			VALUES ('E2E-COV-S-${s}', 'Cover${s}', 'Testschueler', '10c',
-			        EXTRACT(YEAR FROM CURRENT_DATE)::int, true)
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+			VALUES ('E2E-COV-S-${s}', 'Cover${s}', 'Testschueler', '10c', EXTRACT(YEAR FROM CURRENT_DATE)::int + 1)
 			RETURNING id
 		)
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
@@ -42,10 +41,9 @@ test('Cover-Großansicht zeigt ein lokal abgelegtes Cover', async ({ page }) => 
 
 	await uiLogin(page);
 
-	// Über die Abgänger-Ansicht ins Profil — dieser Weg öffnet direkt den Reiter
-	// "Ausleihen & Historie", in dem die Ausleihliste mit den Covern steht.
-	await page.getByTitle('Abgänger').click();
-	await page.getByRole('button', { name: new RegExp(`Profil von Cover${s} Testschueler`) }).click();
+	// Ins Profil und auf den Reiter „Ausleihen & Historie", in dem die Ausleihliste mit
+	// den Covern steht.
+	await oeffneSchuelerProfil(page, `Cover${s}`);
 	await expect(page.getByText(titel).first()).toBeVisible();
 
 	// Das Miniaturbild IST der Auslöser der Großansicht.

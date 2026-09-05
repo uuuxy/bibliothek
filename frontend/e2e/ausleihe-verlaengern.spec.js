@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, oeffneSchuelerProfil } from './helpers.js';
 
 // „Was macht die Uhr da? Da passiert nichts." — aus dem Betrieb gemeldet. Die
 // Verlängerung funktionierte, aber ihre einzige Wirkung war eine still geänderte Zahl
@@ -10,8 +10,8 @@ test('Einzel-Verlängerung: verschiebt die Frist und meldet es zurück', async (
 	seedSQL(`
 		WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('E2E-Verl-Titel ${s}') RETURNING id),
 		ex AS (INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'E2E-VERL-B-${s}' FROM t RETURNING id),
-		sch AS (INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger)
-			VALUES ('E2E-VERL-S-${s}', 'Verl${s}', 'Testschueler', '10a', EXTRACT(YEAR FROM CURRENT_DATE)::int, true) RETURNING id)
+		sch AS (INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+			VALUES ('E2E-VERL-S-${s}', 'Verl${s}', 'Testschueler', '10a', EXTRACT(YEAR FROM CURRENT_DATE)::int + 1) RETURNING id)
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
 		SELECT ex.id, sch.id, CURRENT_DATE - 5 FROM ex, sch;
 	`);
@@ -26,9 +26,7 @@ test('Einzel-Verlängerung: verschiebt die Frist und meldet es zurück', async (
 		if (r.url().includes('verlaengern')) antworten.push(`${r.status()} ${r.url()}`);
 	});
 
-	await page.getByTitle('Abgänger').click();
-	await page.getByRole('button', { name: new RegExp(`Profil von Verl${s} Testschueler`) }).click();
-	await expect(page.getByText('Ausleihen & Historie')).toBeVisible();
+	await oeffneSchuelerProfil(page, `Verl${s}`);
 
 	const zelle = page.locator('td', { hasText: /^\s*\d{1,2}\.\d{1,2}\.\d{4}/ }).first();
 	const vorher = (await zelle.innerText()).trim();
@@ -59,16 +57,14 @@ test('Verlängerung einer lange überfälligen Ausleihe endet in der Zukunft', a
 	seedSQL(`
 		WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('E2E-Spaet-Titel ${s}') RETURNING id),
 		ex AS (INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'E2E-SPAET-B-${s}' FROM t RETURNING id),
-		sch AS (INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger)
-			VALUES ('E2E-SPAET-S-${s}', 'Spaet${s}', 'Testschueler', '10a', EXTRACT(YEAR FROM CURRENT_DATE)::int, true) RETURNING id)
+		sch AS (INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+			VALUES ('E2E-SPAET-S-${s}', 'Spaet${s}', 'Testschueler', '10a', EXTRACT(YEAR FROM CURRENT_DATE)::int + 1) RETURNING id)
 		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, mahnstufe)
 		SELECT ex.id, sch.id, CURRENT_DATE - 60, 2 FROM ex, sch;
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Abgänger').click();
-	await page.getByRole('button', { name: new RegExp(`Profil von Spaet${s} Testschueler`) }).click();
-	await expect(page.getByText('Ausleihen & Historie')).toBeVisible();
+	await oeffneSchuelerProfil(page, `Spaet${s}`);
 
 	await page.getByRole('button', { name: 'Ausleihe verlängern' }).first().click();
 	await expect(page.getByText(/Verlängert bis \d{1,2}\.\d{1,2}\.\d{4}/)).toBeVisible();
