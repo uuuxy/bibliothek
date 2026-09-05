@@ -89,9 +89,7 @@
 		role="dialog"
 		aria-modal="true"
 	>
-		<div
-			class="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800"
-		>
+		<div class="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl text-slate-800">
 			<h3 class="text-lg font-bold text-slate-900">ISBN bestätigt</h3>
 			<div class="mt-4 grid gap-4 sm:grid-cols-[120px,1fr]">
 				<div

@@ -60,9 +60,7 @@
 		role="dialog"
 		aria-modal="true"
 	>
-		<div
-			class="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-2xl text-slate-800 text-left"
-		>
+		<div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-slate-800 text-left">
 			<h3 class="text-lg font-bold text-rose-600 flex items-center gap-2">
 				<TriangleAlert class="h-6 w-6 text-rose-600" aria-hidden="true" />
 				<span>Schüler löschen</span>

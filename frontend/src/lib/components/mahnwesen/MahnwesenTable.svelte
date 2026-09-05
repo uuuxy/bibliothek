@@ -179,9 +179,7 @@
 			onclick={mahnwesenStore.closeModal}
 			aria-hidden="true"
 		></div>
-		<div
-			class="relative bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-md p-6 space-y-5"
-		>
+		<div class="relative bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 space-y-5">
 			<div class="flex items-center justify-between">
 				<h2 class="text-base font-bold text-slate-800">Mahnliste per E-Mail senden</h2>
 				<button

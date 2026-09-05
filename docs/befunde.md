@@ -89,28 +89,22 @@ nicht hier.
     an ein Buch. Vorbild: DNB-Signaturvorschlag (22a10b1). Der Sync selbst ist in Ordnung
     (Drossel 500 ms, `NOT_FOUND` wird nicht wiederholt) — die Kritik vom 04.09. war falsch.
 
-- **Elf Overlays bauen ihren Dialog selbst, statt `Modal.svelte` zu benutzen**
-  (04.09.2026). `Modal.svelte` trug Rahmen **und** Schatten — die Bauform, die M3 bei
-  keinem seiner 84 Bauteile kennt; behoben, wirkt auf elf Dialoge. Diese elf wiederholen
-  den Fehler in eigenem `fixed inset-0`: `StudentLockModal`, `DamageReportModal`,
-  `StudentProfileDeleteModal`, `StudentGebuehrenCard`, `WebcamCapture`,
-  `OmniboxBlockAlert`, `OmniboxVormerkungAlert`, `OmniboxChecklistDialog`,
-  `MahnwesenTable`, `IsbnLookupDialog`, `StrichcodeScanner`.
+- **Zwei Alarm-Overlays behalten Rahmen UND Schatten — bewusst** (05.09.2026, C). Von den
+  elf selbstgebauten Overlays haben neun am 05.09. ihren Rahmen abgegeben und behalten die
+  Erhebung: In M3 entscheidet die Rolle, welcher der beiden Teile weicht, und ein Dialog ist
+  eine erhobene Fläche (level3, kein outline-Token) — dieselbe Antwort, die `Modal.svelte`
+  am 04.09. bekommen hat. Alle neun liegen auf einem Abdunkler, keiner verliert seine Kante.
 
-  Quelltext-Zählung nach den Fixes: **39 Kandidaten** (die 40. war die Coverkachel im
-  Statistik-Dashboard, gefallen am 04.09. mit cc953622), überwiegend in diesen Overlays,
-  der Rest Buchcover (Bild, kein Bauteil) und Etikettenvorschau (simuliert Papier).
-  **Nicht pauschal ändern:** `OmniboxBlockAlert` trägt `border-4 border-rose-500` als
-  Alarmsignal an der Theke — dort IST der Rahmen die Aussage. Einzelfallprüfung am
-  Bildschirm, eigener Durchgang. `e2e/m3-bauform.spec.js` sieht die Fälle nicht (Dialoge
-  sind zu); seine Öffnerliste umfasst zwei.
+  `OmniboxBlockAlert` und `OmniboxVormerkungAlert` bleiben, wie sie sind: `border-4
+  border-rose-500` ist dort kein Dekor, sondern das Signal, das einen Schüler an der Ausleihe
+  stoppt. Ein Alarm wird nicht leiser gemacht, um eine Gestaltungsregel zu erfüllen. Sie
+  stehen als benannte Ausnahme in `frontend-hygiene-bauform.test.js` (Bestand jetzt 25 statt
+  34; der Rest sind Cover-Bilder, die Etikettenvorschau und Flächen, die kein Dialog sind).
 
-  Seit 05.09. zählt sie `frontend-hygiene-bauform.test.js` am Quelltext mit — **34 Dateien
-  eingefroren**, wer eine abräumt, trägt sie dort aus. Diese Ratsche ist die Antwort auf den
-  Gate-Fund vom 04.09. (das e2e-Gate sah die Coverkachel im Statistik-Dashboard nie, weil
-  „Top-Bücher" im Testbestand kein Cover hat): Das Gate misst im Browser, was nur dort zu
-  entscheiden ist (Deckkraft 0, `ring-*`, Hover-Erhebung), die Ratsche liest auch, was gerade
-  keine Daten hat. Beide Maschen, nicht eine statt der anderen.
+  Offen bleibt allein, dass diese neun ihren Dialograhmen weiterhin SELBST bauen, statt
+  `ui/Modal.svelte` zu benutzen — das ist die eigentliche Doppelung, aber ein anderer
+  Durchgang: Modal bringt Fokusfalle, Escape und Scroll-Sperre mit, das ist Verhalten, nicht
+  Gestalt, und will je Dialog geprüft werden.
 
 ## Offen — Entscheidung nötig (Peter)
 

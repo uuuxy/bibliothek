@@ -30,12 +30,15 @@ import { srcRoot, sammleQuelldateien, relPfad, vergleicheMitBestand } from './hy
 const RAHMEN = /(^|[\s'"`{(])border(-[trblxy])?(-[1-8])?(?=[\s'"`});]|$)/;
 const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 
-// Eingefroren am 05.09.2026. Die Liste wird NICHT in einem Rutsch abgeräumt: Elf der
-// Einträge sind selbstgebaute Overlays, die auf `ui/Modal.svelte` gehören (eigener
-// Durchgang, siehe docs/befunde.md), und mindestens drei sind bewusst so:
+// Eingefroren am 05.09.2026, am selben Tag um neun Einträge gekürzt: Die neun
+// selbstgebauten Dialoge haben ihren Rahmen abgegeben und behalten die Erhebung — die
+// Rolle entscheidet, welcher der beiden Teile weicht, und ein Dialog ist in M3 eine
+// erhobene Fläche (level3, kein outline-Token). Was bleibt, ist bewusst so:
 //
 //   * `OmniboxBlockAlert`/`OmniboxVormerkungAlert` tragen `border-4 border-rose-500`
-//     als Alarmsignal an der Theke — dort IST der Rahmen die Aussage.
+//     als Alarmsignal an der Theke — dort IST der Rahmen die Aussage. Sie behalten
+//     BEIDES: Ein Alarm, der einen Schüler an der Ausleihe stoppt, wird nicht leiser
+//     gemacht, um eine Gestaltungsregel zu erfüllen. Bewusste Ausnahme, keine Schuld.
 //   * `LabelPreview` bildet Papier nach; der Rahmen ist die Etikettenkante.
 //   * Die Cover-Bilder (`BookTableZeile`, `BorrowedBooksList`, `OrderSearch`,
 //     `WareneingangTable`, `CoverPeek`) sind Bilder, keine M3-Bauteile.
@@ -44,8 +47,6 @@ const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 // Verstoß gebaut — die Regel ist nicht ausgelegt, sondern in Googles Token-Spezifikation
 // nachgezählt.
 const BESTAND = [
-	'src/inventur/lib/components/IsbnLookupDialog.svelte',
-	'src/inventur/lib/components/StrichcodeScanner.svelte',
 	'src/inventur/lib/components/admin/BookTableZeile.svelte',
 	'src/inventur/lib/components/admin/ClassAssignmentBookGrid.svelte',
 	'src/inventur/lib/components/admin/ClassAssignmentSelector.svelte',
@@ -53,27 +54,20 @@ const BESTAND = [
 	'src/lib/BookVormerkungenTab.svelte',
 	'src/lib/BorrowedBooksList.svelte',
 	'src/lib/CameraScanner.svelte',
-	'src/lib/DamageReportModal.svelte',
 	'src/lib/LitteraImportWidget.svelte',
 	'src/lib/OmniboxTeacherCard.svelte',
 	'src/lib/PermissionManager.svelte',
-	'src/lib/StudentGebuehrenCard.svelte',
-	'src/lib/StudentLockModal.svelte',
 	'src/lib/StudentProfileActions.svelte',
-	'src/lib/StudentProfileDeleteModal.svelte',
 	'src/lib/UserManagement.svelte',
-	'src/lib/WebcamCapture.svelte',
 	'src/lib/components/BookExemplarCard.svelte',
 	'src/lib/components/OfflineIndicator.svelte',
 	'src/lib/components/OmniboxBlockAlert.svelte',
-	'src/lib/components/OmniboxChecklistDialog.svelte',
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/auth/Login.svelte',
 	'src/lib/components/bestellungen/BestellHistorieTabelle.svelte',
 	'src/lib/components/bestellungen/OrderSearch.svelte',
 	'src/lib/components/bestellungen/WareneingangTable.svelte',
 	'src/lib/components/labels/LabelPreview.svelte',
-	'src/lib/components/mahnwesen/MahnwesenTable.svelte',
 	'src/lib/components/students/AuswahlAktionsleiste.svelte',
 	'src/lib/components/ui/CoverPeek.svelte',
 	'src/lib/designer/CanvasArea.svelte',

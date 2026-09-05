@@ -60,7 +60,7 @@
 		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
 	>
 		<div
-			class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all border border-slate-100"
+			class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all"
 		>
 			<div
 				class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
