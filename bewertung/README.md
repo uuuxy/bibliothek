@@ -7,13 +7,14 @@ Diese Mappe enthält eine unabhängige, **nur lesende** Prüfung der Datenbankst
 > Die Berichte darin sind **unverändert** — sie sind ein Prüfprotokoll, kein Aufgabenzettel,
 > und werden nicht nachträglich umgeschrieben. Was seither passiert ist, steht hier:
 >
-> | Befund | Erledigt durch | Am Code geprüft am 23.08.2026 |
-> |---|---|---|
-> | **F1** — Notizfeld steuert das Bestellwesen | Migration 071 gibt dem Zustand eine eigene Spalte `bestellstatus` | ✅ 084 zitiert die Lehre ausdrücklich |
-> | **F2** — jeder Programmteil sieht den ganzen Schülerdatensatz | [`docs/PII_MATRIX.de.md`](../docs/PII_MATRIX.de.md) stuft jede Route ein, mit Gate | ✅ |
-> | **F3** — Verbindungen nur als übereinstimmender Text | Migration 078 (Fach) und 079 (Klassen-Vokabular) machen echte Fremdschlüssel daraus | ✅ vier Tabellen verweisen auf `klassen` |
-> | **F4** — Lehrkraft wird als Schüler gespeichert | `pruefeKlassenname` sperrt „lehrer" an beiden Türen (Anlegen und Ändern) | ✅ `api/student_klasse_regel.go:18` |
-> | **F5–F8** | im Zuge desselben Durchgangs | ✅ F8: partieller Unique-Index, Migration 048 |
+> | Befund                                                        | Erledigt durch                                                                                                                                                                                                                      | Am Code geprüft am 23.08.2026                 |
+> | ------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+> | **F1** — Notizfeld steuert das Bestellwesen                   | Migration 071 gibt dem Zustand eine eigene Spalte `bestellstatus`                                                                                                                                                                   | ✅ 084 zitiert die Lehre ausdrücklich         |
+> | **F2** — jeder Programmteil sieht den ganzen Schülerdatensatz | [`docs/PII_MATRIX.de.md`](../docs/PII_MATRIX.de.md) stuft jede Route ein, mit Gate                                                                                                                                                  | ✅                                            |
+> | **F3** — Verbindungen nur als übereinstimmender Text          | Migration 078 (Fach) und 079 (Klassen-Vokabular) machen echte Fremdschlüssel daraus                                                                                                                                                 | ✅ vier Tabellen verweisen auf `klassen`      |
+> | **F4** — Lehrkraft wird als Schüler gespeichert               | `pruefeKlassenname` sperrt „lehrer" an beiden Türen (Anlegen und Ändern)                                                                                                                                                            | ✅ `api/student_klasse_regel.go:18`           |
+> | **F5–F8**                                                     | im Zuge desselben Durchgangs                                                                                                                                                                                                        | ✅ F8: partieller Unique-Index, Migration 048 |
+> | **Kiosk-Suche** (eigener Befund)                              | Antwort auf das Kiosk-DTO reduziert (`api/schueler_kiosk.go`, 18.08.); seit 05.09.2026 rufen nur noch Theken-Felder die Route — die zwei Felder außerhalb (Druck-Center, Vormerkungen) haben eigene Türen mit dem Recht ihrer Daten | ✅ f4a200e2                                   |
 >
 > Die Sätze „drei Befunde gehören vor den Echtbetrieb behoben" und „F3 spätestens vor den
 > ersten Schuljahreswechsel" weiter unten waren richtig und sind eingelöst. Sie stehen
@@ -22,13 +23,13 @@ Diese Mappe enthält eine unabhängige, **nur lesende** Prüfung der Datenbankst
 
 ## Inhalt
 
-| Datei | Was drin ist |
-|---|---|
-| [**datenbank-pruefbericht.md**](datenbank-pruefbericht.md) | Der Hauptbericht. Öffnet direkt hier auf GitHub, mit Diagrammen. **Hier anfangen.** |
-| [datenbank-pruefbericht.html](datenbank-pruefbericht.html) | Dieselbe Fassung als gestaltete Seite — herunterladen und im Browser öffnen. |
-| [sicherheitsbefund-kiosk-suche.md](sicherheitsbefund-kiosk-suche.md) | Eigener Sicherheitsbefund: Die Kiosk-Suche gibt vollständige Schülerdaten an die Helfer-Rolle heraus (Hoch). |
-| [sicherheitsbefund-vormerkungen.md](sicherheitsbefund-vormerkungen.md) | Eigener Sicherheitsbefund: Die Vormerkungsliste gibt Schülernamen an die Helfer-Rolle heraus (Mittel–Hoch). |
-| [bibliothek-erd.svg](bibliothek-erd.svg) | Das vollständige Datenbank-Diagramm (breit — im Browser öffnen). |
+| Datei                                                                  | Was drin ist                                                                                                 |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| [**datenbank-pruefbericht.md**](datenbank-pruefbericht.md)             | Der Hauptbericht. Öffnet direkt hier auf GitHub, mit Diagrammen. **Hier anfangen.**                          |
+| [datenbank-pruefbericht.html](datenbank-pruefbericht.html)             | Dieselbe Fassung als gestaltete Seite — herunterladen und im Browser öffnen.                                 |
+| [sicherheitsbefund-kiosk-suche.md](sicherheitsbefund-kiosk-suche.md)   | Eigener Sicherheitsbefund: Die Kiosk-Suche gibt vollständige Schülerdaten an die Helfer-Rolle heraus (Hoch). |
+| [sicherheitsbefund-vormerkungen.md](sicherheitsbefund-vormerkungen.md) | Eigener Sicherheitsbefund: Die Vormerkungsliste gibt Schülernamen an die Helfer-Rolle heraus (Mittel–Hoch).  |
+| [bibliothek-erd.svg](bibliothek-erd.svg)                               | Das vollständige Datenbank-Diagramm (breit — im Browser öffnen).                                             |
 
 ## Kurzfassung in drei Sätzen
 
