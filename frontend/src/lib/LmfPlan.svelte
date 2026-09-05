@@ -7,9 +7,8 @@
      Fristen. Sitzt als Reiter auf der Seite „Schuljahreswechsel". -->
 <script>
 	import { onMount, untrack } from 'svelte';
-	import { Printer, Trash2 } from '@lucide/svelte';
-	import Button from './components/ui/Button.svelte';
-	import Segmente from './components/ui/Segmente.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
+	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
 	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
 	import LmfPlanReihenfolge from './components/lmfplan/LmfPlanReihenfolge.svelte';
 	import LmfPlanVorrat from './components/lmfplan/LmfPlanVorrat.svelte';
@@ -31,13 +30,21 @@
 	let plaetze = $state([]);
 	let laedt = $state(true);
 	let speichert = $state(false);
+	// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan: Sonst stünde nach
+	// einem Netzfehler „Noch kein Plan" da, der Planer böte die Regel-Reihenfolge an —
+	// und ein Klick auf „Plan speichern" ersetzte den echten Plan des Schuljahres durch
+	// diesen Entwurf und stellte die Fristen der Klassen auf den Stichtag zurück.
+	// Dieselbe Klasse wie an den Einstellungen am 31.08.2026 (ui/LadeFehler.svelte).
+	let ladeFehler = $state(false);
 
 	async function lade() {
 		laedt = true;
 		try {
 			stand = await dienst.ladeStand(art);
 			entwurf = dienst.entwurfAus(stand);
+			ladeFehler = false;
 		} catch (e) {
+			ladeFehler = true;
 			showToast(`${e}`, 'error');
 		} finally {
 			laedt = false;
@@ -46,28 +53,36 @@
 
 	// Vorschau: der Server rechnet die Plätze, sobald Rahmen oder Reihenfolge sich ändern
 	// (entprellt). Liest den Entwurf, schreibt NUR plaetze — kein Effekt auf eigenen State.
+	//
+	// Verfolgt werden Rahmen und ANZAHL der Zeilen, nicht ihr Inhalt: Der Platz einer Zeile
+	// hängt allein an ihrer Position; Umsortieren ändert die Plätze also nicht, ein
+	// Vermerk erst recht nicht. Zusammenlegen, Trennen, Einfügen und Entfernen ändern die
+	// Anzahl und lösen neu aus.
+	//
+	// `laufNr` ist die Sequenznummer wie im orderStore: Zwei schnelle Änderungen schicken
+	// zwei Anfragen, und ohne Nummer könnte die ältere Antwort die jüngere überholen — die
+	// Tabelle stünde dann mit den Daten eines Entwurfs da, den es nicht mehr gibt
+	// (Rasterfrage 6, Frontend-Lesart).
+	let laufNr = 0;
 	$effect(() => {
-		const schnappschuss = JSON.stringify({
-			erster_tag: entwurf.erster_tag,
-			startstunde: entwurf.startstunde,
-			stunden_je_tag: entwurf.stunden_je_tag,
-			n: entwurf.zeilen.length
-		});
+		void entwurf.erster_tag;
+		void entwurf.startstunde;
+		void entwurf.stunden_je_tag;
+		void entwurf.zeilen.length;
 		const aktuelleArt = art;
-		const timer = setTimeout(
-			async () => {
-				try {
-					const z = await dienst.rechneVorschau(
-						aktuelleArt,
-						untrack(() => JSON.parse(JSON.stringify(entwurf)))
-					);
-					plaetze = z.map((p) => ({ datum: p.datum, stunde: p.stunde }));
-				} catch (e) {
-					showToast(`${e}`, 'error');
-				}
-			},
-			schnappschuss ? 250 : 0
-		);
+		const timer = setTimeout(async () => {
+			const meine = ++laufNr;
+			try {
+				const z = await dienst.rechneVorschau(
+					aktuelleArt,
+					untrack(() => JSON.parse(JSON.stringify(entwurf)))
+				);
+				if (meine !== laufNr) return; // eine jüngere Anfrage ist schon unterwegs oder da
+				plaetze = z.map((p) => ({ datum: p.datum, stunde: p.stunde }));
+			} catch (e) {
+				if (meine === laufNr) showToast(`${e}`, 'error');
+			}
+		}, 250);
 		return () => clearTimeout(timer);
 	});
 
@@ -120,31 +135,28 @@
 		}
 	}
 
-	onMount(lade);
+	// Nicht `onMount(lade)`: Eine async-Funktion gibt eine Zusage zurück, und Svelte
+	// nimmt den Rückgabewert von onMount als Aufräum-Funktion.
+	onMount(() => {
+		lade();
+	});
 </script>
 
-<div class="flex flex-wrap items-center justify-between gap-3">
-	<Segmente
-		etikett="Art des Plans"
-		optionen={dienst.ARTEN.map((a) => ({ wert: a.wert, text: a.label }))}
-		wert={art}
-		onwahl={(/** @type {string} */ w) => {
-			art = w;
-			lade();
-		}}
-	/>
-	<div class="flex items-center gap-2">
-		<Button variant="secondary" onclick={pdf}>
-			<Printer class="h-4 w-4" aria-hidden="true" />
-			Als PDF
-		</Button>
-		<Button variant="secondary" onclick={verwerfen} disabled={!stand?.plan || stand.vorbei}>
-			<Trash2 class="h-4 w-4" aria-hidden="true" />
-			Plan verwerfen
-		</Button>
-		<Button onclick={speichern} disabled={!gueltig || speichert}>Plan speichern</Button>
-	</div>
-</div>
+<LmfPlanKopf
+	{art}
+	{stand}
+	{laedt}
+	{ladeFehler}
+	{gueltig}
+	{speichert}
+	onart={(w) => {
+		art = w;
+		lade();
+	}}
+	onpdf={pdf}
+	onverwerfen={verwerfen}
+	onspeichern={speichern}
+/>
 
 {#if laedt}
 	<div class="flex items-center justify-center py-12">
@@ -152,22 +164,13 @@
 			class="h-8 w-8 animate-spin rounded-full border-2 border-surface-container-high border-t-primary"
 		></div>
 	</div>
+{:else if ladeFehler}
+	<LadeFehler
+		onerneut={lade}
+		titel="Plan nicht geladen"
+		text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
+	/>
 {:else}
-	<p class="mt-3 text-sm text-on-surface-variant" data-testid="lmf-plan-hinweis">
-		{#if stand?.plan && !stand.vorbei}
-			Plan vom {dienst.datumKurz(stand.plan.erster_tag)} — Änderungen gelten nach „Plan speichern".
-		{:else if stand?.plan && stand.vorbei}
-			Der Plan vom {dienst.datumKurz(stand.plan.erster_tag)} ist vorbei. Dieser Entwurf übernimmt seine
-			Reihenfolge — ersten Tag wählen, prüfen, speichern.
-		{:else}
-			Noch kein Plan. Die Reihenfolge folgt der Regel: Abschlussklassen zuerst, dann Jahrgang
-			absteigend; die Oberstufe steht unter „Nicht im Plan".
-		{/if}
-		{#if art === 'rueckgabe'}
-			Der Rückgabe-Termin einer Klasse wird die Frist ihrer Schulbücher.
-		{/if}
-	</p>
-
 	<div class="mt-4 space-y-6">
 		<LmfPlanRahmen
 			bind:ersterTag={entwurf.erster_tag}

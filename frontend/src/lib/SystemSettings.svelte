@@ -24,7 +24,7 @@
 	import { apiGet } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
-	import LadeFehler from './components/settings/LadeFehler.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import DataManagement from './components/admin/DataManagement.svelte';
 	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
 	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
