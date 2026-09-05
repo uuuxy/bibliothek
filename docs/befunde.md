@@ -144,8 +144,15 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    aktualisieren"). Versand: PDF zum Herunterladen reicht (Peter); die App kennt nicht das
    ganze Kollegium, nur Klassenleitungen (`klassen_lehrer_mapping`) und Portal-Nutzer
    (`benutzer`, Rolle kollegium). Falls die Schule eine Verteiler-Adresse hat, reicht EINE
-   Einstellung dafür — keine Adress-Sammlung in der App. Offene Fragen an Peter: (a) Termin =
-   Frist der Klasse? (c) Vorbelegung aus der Klassenliste erwünscht oder leer starten?
+   Einstellung dafür — keine Adress-Sammlung in der App.
+   **Entschieden (Peter, 05.09.):** (a) Der Rückgabe-Termin einer Klasse IST die
+   Rückgabefrist ihrer LMF-Bücher („das wäre doch logisch"). Regel: nur Zeilen der Art
+   Rückgabe setzen die Frist; Ausgabe-Zeilen nicht; Klasse ohne Termin → globaler Stichtag
+   `lmf_stichtag` wie bisher; danach greift das Mahnwesen wie bei jeder Frist. (b) Die
+   Abschlussklassen erscheinen unabhängig vom Plan als Abgänger (Entscheidung 2 bleibt);
+   der Plan bestimmt nur, WANN ihre Bücher fällig sind. (c) Neuer Plan startet leer — eine
+   Vorbelegung würde mit Platzhalter-Daten sofort Fristen setzen; stattdessen zeigt die
+   Seite, welche Klassen noch keinen Termin haben.
 
 ## Beobachten (nichts zu tun)
 
