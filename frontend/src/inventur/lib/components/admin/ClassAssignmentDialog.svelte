@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { vorauswahlAusGruppe } from './klassensatzVorauswahl.js';
 	import { onMount } from 'svelte';
 	import ClassAssignmentSelector from './ClassAssignmentSelector.svelte';
 	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
@@ -38,10 +39,8 @@
 	onMount(async () => {
 		if (initialGroup) {
 			selectedClasses = [initialGroup.className];
-			// Nur Handgepflegtes vorgewählt; „aus Ausleihen" steht zur Übernahme per Haken bereit.
-			selectedBookIds = new Set(
-				initialGroup.books.flatMap((b) => (b.quelle === 'ausleihe' ? [] : [b.id]))
-			);
+			// Nur Handgepflegtes vorgewählt (Regel samt Begründung: klassensatzVorauswahl.js).
+			selectedBookIds = vorauswahlAusGruppe(initialGroup);
 		}
 
 		try {
