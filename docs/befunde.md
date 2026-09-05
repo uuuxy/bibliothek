@@ -42,8 +42,8 @@ unten. Was oben steht, blockiert oder verfällt; was unten steht, wartet ohne Sc
 1. **Peters fünf Entscheidungen** (Abschnitt „Entscheidung nötig"). Punkt 2 (Karenz ab
    Rückgabe) ist der einzige mit Verfallsdatum: Er betrifft Schüler, die nach dem Abgang
    zurückgeben.
-2. **Cover-Rest im Backend** (`reservation.go`, `anliegen.go`) — die zwei Bildschirme, denen
-   die Anzeige mangels Feld noch nicht möglich ist.
+2. **Cover in den Arbeitslisten** — steht jetzt als Frage 6 bei dir, nicht als Bauauftrag:
+   Das Backend-Feld fehlt gar nicht, die Zeile hat nur schon ein führendes Element.
 3. **Die elf Overlays auf `Modal.svelte`** — ein Durchgang am Bildschirm, Einzelfall für
    Einzelfall, nicht als Suchen-und-Ersetzen. Die Ratsche unten nennt die Dateien.
 4. **16 Cover-Stellen** und Kategorie C: nur beim nächsten fachlichen Anfassen.
@@ -74,9 +74,13 @@ nicht hier.
   - **16 Bestandsstellen** bauen ihr Cover noch selbst (Liste in
     `frontend-hygiene-cover.test.js`, eingefroren). Umstellen beim nächsten fachlichen
     Anfassen — nicht in einem Rutsch, das sind täglich benutzte Bildschirme.
-  - **Klassensatz-Reservierungen**: `reservation.go` liefert weder `cover_url` noch `isbn`.
-    Backend muss mit. **Wünsche & Meldungen**: `anliegen.go` hat `isbn`, kein
-    `cover_url` — der ISBN-Fallback aus `reorders.go` (Zeile 96) wäre übertragbar.
+  - **Die beiden Arbeitslisten hängen NICHT am Backend** (korrigiert 05.09.2026, die
+    Notiz vom 04.09. war falsch): `GetKlassensatzReservierungen` selektiert
+    `coalesce(t.cover_url,'')` und der Handler reicht die Struktur unverändert
+    durch — das Feld ist seit Langem da und wird im Frontend nur nicht gelesen.
+    Fehlend ist dort allein `isbn` (die Ausweichquelle) und bei `anliegen.go`
+    `cover_url` (ISBN hat es). Beides ist ein Zweizeiler — gebaut wird es aber
+    erst mit der Entscheidung unten, sonst entsteht ein Feld ohne Verbraucher.
     **Portal**: `AnliegenWidget`, `PortalSchulbuecher`, `PortalLernmittel` ohne Cover.
   - **3.000 Titel ohne ISBN** (`PENDING`, werden vom Sync nie versucht): Datenfrage, keine
     Reparatur — zehn Jahre alte Littera-Daten. `inventur.SucheTextDNB` existiert
@@ -151,6 +155,18 @@ eigenmächtig entschieden.
    beiden Felder trotzdem stört; dann Umbau.
 5. **Die Klassennamen in den Klassensätzen sind sehr groß.** Noch **nicht gemessen** —
    der Punkt steht bisher nur als Eindruck hier, ohne Zahl aus dem Browser.
+
+6. **Cover in den beiden Arbeitslisten — wohin?** (05.09.2026) Klassensatz-Reservierungen und
+   Wünsche & Meldungen laufen beide über `ArbeitsZeile.svelte`, die M3-„list item"-Zeile mit
+   FÜHRENDEM ELEMENT: links ein 48-px-Kreis mit der Klasse. Das war deine Entscheidung vom
+   26.08. mit einer Begründung, die weiter gilt — „welche Klasse will welches Buch" ist die
+   Frage, mit der die Bibliothek diese Listen überfliegt. Ein Cover davorzusetzen hieße zwei
+   führende Elemente in einer Zeile, und M3 kennt genau eins. Möglichkeiten: (a) so lassen —
+   in einer Arbeitsliste ist das Buchbild Zierde, der Titel steht ja da; (b) Cover STATT
+   Klassenkreis, Klasse wandert in den Nebentext (dann ist die Liste nach Büchern zu
+   überfliegen, nicht nach Klassen); (c) Cover klein hinter dem Titel als Anreißer. Meine
+   Empfehlung ist (a): Diese Listen werden abgearbeitet, nicht gestöbert. Bis das entschieden
+   ist, bleiben die zwei fehlenden Backend-Felder ungebaut.
 
 ## Beobachten (nichts zu tun)
 
