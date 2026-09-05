@@ -32,8 +32,8 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** erst die Entscheidungen bei Peter, dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten
-fachlichen Anfassen.
+**Reihenfolge:** die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen
+Anfassen.
 
 ---
 
@@ -55,10 +55,11 @@ fachlichen Anfassen.
   - **16 Bestandsstellen** bauen ihr Cover noch selbst (Liste in
     `frontend-hygiene-cover.test.js`, eingefroren). Umstellen beim nächsten fachlichen
     Anfassen — nicht in einem Rutsch, das sind täglich benutzte Bildschirme.
-  - **Zwei Backend-Felder für die Arbeitslisten** warten auf die Entscheidung „Cover in den beiden Arbeitslisten" unten:
-    `GetKlassensatzReservierungen` liefert `cover_url`, aber kein `isbn` (Ausweichquelle);
-    `anliegen.go` liefert ISBN, aber kein `cover_url`. Je ein Zweizeiler — ohne
-    Verbraucher aber nicht bauen.
+  - **Arbeitslisten bleiben ohne Cover** (entschieden 05.09.2026): Das führende Element der
+    `ArbeitsZeile` ist der Klassenkreis, nach dem Klassensatz-Reservierungen und Wünsche &
+    Meldungen überflogen werden — M3 kennt genau eines. Die zwei fehlenden Backend-Felder
+    (`isbn` in `GetKlassensatzReservierungen`, `cover_url` in `anliegen.go`) werden deshalb
+    nicht gebaut.
   - **Portal** ohne Cover: `AnliegenWidget`, `PortalSchulbuecher`, `PortalLernmittel`.
   - **3.000 Titel ohne ISBN** (`PENDING`, werden vom Sync nie versucht): Datenfrage, keine
     Reparatur — zehn Jahre alte Littera-Daten. `inventur.SucheTextDNB` (Freitext) **nur mit
@@ -71,60 +72,8 @@ fachlichen Anfassen.
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
 kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-Rest aus dem Rasterdurchgang 02.09.2026 (LUSD-Umbenennung, 0aa07f57). Die Empfehlungen
-vom 05.09.2026 stehen jeweils dabei — am Code belegt, nicht geschätzt:
-
-1. **Handanlagen als Paar-Kandidaten.** Ein von Hand angelegter, nie LUSD-bestätigter Schüler,
-   den die LUSD anders schreibt („Anna Müller" ↔ „Anna Mueller"), wird nicht als Paar
-   vorgeschlagen, sondern Neuanlage + „nicht im Export". Rückweg heute: Zusammenführen über
-   die Akte.
-   **Empfehlung: keine Kandidatenliste, sondern den Namensschlüssel normalisieren.**
-   `LusdNamensSchluessel` ist nur `lower+trim`; Umlaute falten, Bindestrich und Leerzeichen
-   gleichsetzen. Das greift eine Stufe früher: Die Dublette entsteht gar nicht, und „nicht im
-   Export" behält seine Bedeutung. Sicher ist es, weil der Index einen doppelt belegten
-   Schlüssel schon heute als MEHRDEUTIG markiert und dann niemanden anfasst — ein zu weiter
-   Schlüssel fällt auf das heutige Verhalten zurück, nie in eine falsche Zuordnung. Erledigt
-   damit auch den Kategorie-C-Posten „LUSD-Namensschlüssel nur lower+trim".
-2. **`GET /api/search` hängt an `perform_actions`, zwei Aufrufer liegen außerhalb der Theke.**
-   Die Etiketten-Titelsuche im Druck-Center (`labels.svelte.js`) und die Schülersuche im
-   Vormerkungs-Reiter der Buchakte (`BookVormerkungenTab.svelte`) rufen die Theken-Route.
-   Entzieht ein Admin einer Rolle das Theken-Recht, melden beide Felder nur noch „Suche nicht
-   möglich" (laut, daher B).
-   **Empfehlung: keine Rechte-Option — beide Aufrufer benutzen die falsche Route.** Der eine
-   liest aus der Antwort nur `books`, der andere nur `students`; jeder wirft die andere Hälfte
-   samt Kiosk-Personendaten weg. Die passenden Routen gibt es schon, mit `q`-Parameter und
-   dem ehrlichen Recht: `GET /api/books?q=` hinter `view_books` für die Titelsuche,
-   `GET /api/schueler?q=` hinter `view_students` für die Schülersuche. Die Theken-Route bleibt
-   unangetastet, nichts wird geweitet, und der Etikettenbildschirm bekommt keine Schülernamen
-   mehr, die er nie zeigt. Kosten: nur Frontend plus Feldabbildung (die Titel-Strukturen der
-   beiden Routen sind verschieden). Folge: Der Vormerkungs-Reiter braucht für die Schülersuche
-   dann `view_students` und blendet das Feld ohne das Recht aus, wie die Suchpille es tut.
-
-Geschmacksfragen aus dem Design-Rundgang 04.09.2026 — nichts davon kann jemandem schaden:
-
-3. **Zweites Feld neben der Suchpille im Bestellwesen.** Im Warenkorb steht neben der
-   Suchpille ein zweites Feld „Titel suchen & hinzufügen" (`OrderSearch.svelte`). Es sucht
-   NICHT die Liste, sondern legt in den Warenkorb.
-   **Empfehlung: so lassen.** Das Feld trägt eine Beschriftung darüber, steht in einer
-   Formulargruppe neben dem Lieferantenfeld und ist auf `ui/Feld` gebaut — es liest sich als
-   Formular, nicht als zweite Suchpille.
-4. **Die Klassennamen in den Klassensätzen sind sehr groß.** Gemessen am Quelltext
-   (05.09.2026): `KlassenKarte.svelte` setzt den Namen in der weiten Fassung auf
-   `text-2xl font-bold text-slate-800` (24 px fett), die kompakte Fassung derselben Karte auf
-   `text-base font-medium text-on-surface` (16 px).
-   **Empfehlung: auf 16 px und auf die Token.** Keine Geschmacksfrage: Der Kommentar der
-   Komponente nennt ihre M3-Rolle selbst („ausklappbares Listenelement"), und eine
-   Listenzeile hat in M3 16 px — die kompakte Fassung hält sich schon daran. Dichte gehört
-   ins Padding, nicht in die Schriftgröße; die weite Fassung greift außerdem an den Token
-   vorbei auf `slate`.
-5. **Cover in den beiden Arbeitslisten — wohin?** Klassensatz-Reservierungen und Wünsche &
-   Meldungen laufen über `ArbeitsZeile.svelte`, die M3-Listenzeile mit FÜHRENDEM ELEMENT:
-   links der 48-px-Kreis mit der Klasse (Entscheidung vom 26.08.). Ein Cover davor hieße zwei
-   führende Elemente, und M3 kennt genau eins.
-   **Empfehlung: so lassen.** Das führende Element ist der Schlüssel, nach dem man die Liste
-   überfliegt — einen Klassensatz zieht man für eine Klasse, also bleibt die Klasse. Damit
-   bleiben auch die zwei Backend-Felder oben ungebaut, was für ein Feld ohne Verbraucher
-   richtig ist.
+Zurzeit nichts offen (05.09.2026: sechs Fragen beantwortet, vier davon gebaut, zwei mit „so
+lassen" entschieden — Historie in `git log -p docs/befunde.md`).
 
 ## Beobachten (nichts zu tun)
 
@@ -138,20 +87,20 @@ Geschmacksfragen aus dem Design-Rundgang 04.09.2026 — nichts davon kann jemand
 
 Einzeiler; die ausführlichen Begründungen stehen in der Git-Historie dieser Datei.
 
-| Posten                                                                         | Warum geparkt                                                                                                                                                                                                                                                                                                    |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Knopfzeile über den Reitern (Mahnwesen, 04.09.)                                | Sie kommt aus dem gemeinsamen Seitengerüst. Daran zu drehen entscheidet über ALLE Seiten — Anlass wäre ein Rundgang über das Gerüst, nicht eine Seite.                                                                                                                                                           |
-| 3 handgebaute Pillen-Gruppen in `StatsDashboard` (`pills`)                     | Zweite Fassung von `ui/Segmente.svelte`. Tauschen beim nächsten fachlichen Anfassen der Statistik.                                                                                                                                                                                                               |
-| Etikettenraster doppelt (`api/label_formats.go` ↔ `src/lib/etikettformate.js`) | 31.08. ENTSCHIEDEN geparkt: Server-Umbau bräuchte neuen Endpunkt + async-Ladezustand in drei Verbrauchern des täglichen Druckbildschirms — neuer Ausfallmodus gegen null Risiko heute. `etikettformate-konsistenz.test.js` hält die Drift. Wieder anfassen bei viertem Verbraucher oder konfigurierbarem Format. |
-| Reste des Nie-verdrahtet-Sweeps (01.09.)                                       | `inventur_sessions.gestartet_von` nie angezeigt (Produktfrage); `abgaenger_jahr` in der Aktivlisten-Antwort ohne Konsument; Geräte-Torso (`ActionEvent.GeraetID`, kein Broadcast, Null-Zeitstempel) wartet auf den Geräte-Ausbau.                                                                                |
-| 20× `go:S3776` (Cognitive Complexity)                                          | Zählweise rechnet den Handler-Closure als Ebene. Lohnend allenfalls `OverrideDueDateHandler` (30), `behandleAbgaenger` (23).                                                                                                                                                                                     |
-| `javascript:S6551`, `javascript:S8783`                                         | Begründete Dauer-Ausnahmen.                                                                                                                                                                                                                                                                                      |
-| Tabellen-Inline-Felder (Rückgabedatum, Exemplar-Barcode) 36 px                 | `size="sm"`-Variante von `Feld` erst bei Bedienbefund.                                                                                                                                                                                                                                                           |
-| `LabelHeight >= 30` steht 6× in zwei Dateien                                   | Schwellwert-Doppelung ohne Wirkung.                                                                                                                                                                                                                                                                              |
-| LUSD-Namensschlüssel nur `lower+trim`                                          | Umlaut-/Bindestrich-Varianten gelten als verschiedene Menschen — sicher, aber nicht klug.                                                                                                                                                                                                                        |
-| Paritätstest vergleicht keine COMMENTs/Seeds                                   | Kosmetik; Struktur ist gedeckt.                                                                                                                                                                                                                                                                                  |
-| Jules-Erbe                                                                     | Go-Testdateien > 200 Zeilen aus Jules-PRs; Export-CSV-„breaks stream"-Test schwach.                                                                                                                                                                                                                              |
-| Klone: Go `dupl` 8 Paare, Frontend `jscpd` 0,41 %                              | Unter der Schwelle.                                                                                                                                                                                                                                                                                              |
+| Posten                                                                                                                                                                                                             | Warum geparkt                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Knopfzeile über den Reitern (Mahnwesen, 04.09.)                                                                                                                                                                    | Sie kommt aus dem gemeinsamen Seitengerüst. Daran zu drehen entscheidet über ALLE Seiten — Anlass wäre ein Rundgang über das Gerüst, nicht eine Seite.                                                                                                                                                           |
+| 3 handgebaute Pillen-Gruppen in `StatsDashboard` (`pills`)                                                                                                                                                         | Zweite Fassung von `ui/Segmente.svelte`. Tauschen beim nächsten fachlichen Anfassen der Statistik.                                                                                                                                                                                                               |
+| Etikettenraster doppelt (`api/label_formats.go` ↔ `src/lib/etikettformate.js`)                                                                                                                                     | 31.08. ENTSCHIEDEN geparkt: Server-Umbau bräuchte neuen Endpunkt + async-Ladezustand in drei Verbrauchern des täglichen Druckbildschirms — neuer Ausfallmodus gegen null Risiko heute. `etikettformate-konsistenz.test.js` hält die Drift. Wieder anfassen bei viertem Verbraucher oder konfigurierbarem Format. |
+| Reste des Nie-verdrahtet-Sweeps (01.09.)                                                                                                                                                                           | `inventur_sessions.gestartet_von` nie angezeigt (Produktfrage); `abgaenger_jahr` in der Aktivlisten-Antwort ohne Konsument; Geräte-Torso (`ActionEvent.GeraetID`, kein Broadcast, Null-Zeitstempel) wartet auf den Geräte-Ausbau.                                                                                |
+| 20× `go:S3776` (Cognitive Complexity)                                                                                                                                                                              | Zählweise rechnet den Handler-Closure als Ebene. Lohnend allenfalls `OverrideDueDateHandler` (30), `behandleAbgaenger` (23).                                                                                                                                                                                     |
+| `javascript:S6551`, `javascript:S8783`                                                                                                                                                                             | Begründete Dauer-Ausnahmen.                                                                                                                                                                                                                                                                                      |
+| Tabellen-Inline-Felder (Rückgabedatum, Exemplar-Barcode) 36 px                                                                                                                                                     | `size="sm"`-Variante von `Feld` erst bei Bedienbefund.                                                                                                                                                                                                                                                           |
+| `LabelHeight >= 30` steht 6× in zwei Dateien                                                                                                                                                                       | Schwellwert-Doppelung ohne Wirkung.                                                                                                                                                                                                                                                                              |
+| Zwei Go-Normalformen für Namen: `repository.Suchnorm` (Zwilling von SQL `suchnorm`, LUSD-Schlüssel) und `normName` in `api/lusd_paarung.go` (eigene Umlaut-Tabelle, zusätzlich ohne Bindestrich/Leerzeichen/Punkt) | Die Paarung ist ein Vorschlag mit menschlicher Bestätigung, Unschärfe dort harmlos. Beim nächsten Anfassen der Paarung: `normName` auf `Suchnorm` aufsetzen und nur die Zeichen-Tilgung behalten.                                                                                                                |
+| Paritätstest vergleicht keine COMMENTs/Seeds                                                                                                                                                                       | Kosmetik; Struktur ist gedeckt.                                                                                                                                                                                                                                                                                  |
+| Jules-Erbe                                                                                                                                                                                                         | Go-Testdateien > 200 Zeilen aus Jules-PRs; Export-CSV-„breaks stream"-Test schwach.                                                                                                                                                                                                                              |
+| Klone: Go `dupl` 8 Paare, Frontend `jscpd` 0,41 %                                                                                                                                                                  | Unter der Schwelle.                                                                                                                                                                                                                                                                                              |
 
 ## Außerhalb dieses Registers (Betrieb, liegt bei Peter)
 
