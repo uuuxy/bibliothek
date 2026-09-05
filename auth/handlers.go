@@ -121,11 +121,21 @@ type LoginResponse struct {
 // (so bis 22.08.2026: 10 s gegen 15 s). Gate: TestLoginHandlerFrist_LaesstIMAPLuft.
 const loginHandlerFrist = imapFrist + 10*time.Second
 
+// loginRumpfMaxBytes begrenzt den Anmelde-Rumpf (E-Mail + Passwort als JSON).
+const loginRumpfMaxBytes = 16 << 10
+
 // LoginHandler returns an http.HandlerFunc that performs secure authentication.
 // Anmeldung ausschliesslich per E-Mail/Passwort gegen den Schul-Mailserver (IMAP).
 func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		clientIP := realIP(r)
+
+		// Eigene Rumpfgrenze VOR dem Decodieren: Der Endpunkt ist der eine ohne Anmeldung,
+		// der JSON liest, und die serverweite Grenze (100 MB, für die Importe) ist hier
+		// keine — json.Decoder puffert einen 100-MB-String vollständig, fünfzig parallele
+		// Aufrufe wären fünf Gigabyte Speicher ohne ein einziges gültiges Passwort.
+		// E-Mail und Passwort passen in ein paar hundert Byte.
+		r.Body = http.MaxBytesReader(w, r.Body, loginRumpfMaxBytes)
 
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {

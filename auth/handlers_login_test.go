@@ -271,3 +271,29 @@ func TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 		t.Fatalf("nach Server-Rückkehr: erwartet 200, bekam %d — die Ausfall-Versuche haben den Nutzer gesperrt: %s", rec.Code, rec.Body.String())
 	}
 }
+
+// Der Anmelde-Rumpf ist begrenzt (loginRumpfMaxBytes): Ohne eigene Grenze galt hier die
+// serverweite 100-MB-Grenze der Importe, und ein Unangemeldeter konnte je Aufruf einen
+// 100-MB-String in den Decoder schieben. Mit dem alten Code liefert dieser Test 401
+// (der Rumpf wird gelesen und als falsches Passwort behandelt) statt 400.
+func TestLoginHandler_UebergrosserRumpfWirdAbgewiesen(t *testing.T) {
+	aktiviereMockIMAP(t)
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer mock.Close()
+	a, err := NewAuthenticator("a-very-long-secret-key-of-at-least-32-bytes", mock, time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	body := `{"email":"x@example.test","password":"` + strings.Repeat("a", loginRumpfMaxBytes) + `"}`
+	rec := doLogin(t, a, mock, body)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("Status = %d; want 400 — der Rumpf darf nicht bis zur Anmeldung kommen", rec.Code)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("es darf kein Datenbankzugriff stattfinden: %v", err)
+	}
+}
