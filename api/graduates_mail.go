@@ -55,6 +55,13 @@ func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 			return
 		}
 
+		// Dieselbe Saison wie Liste und Druck: Außerhalb gäbe es nichts zu versenden —
+		// und ein Lauf im Oktober schickte den Klassenleitungen die laufende Ausleihe.
+		if fenster := abgaengerFensterFuer(s.jetzt()); !fenster.Offen {
+			apierrors.SendHTTPError(w, http.StatusConflict, abgaengerAusserhalbDerSaison(fenster))
+			return
+		}
+
 		// Dieselbe Abfrage, die auch der Druck benutzt (leerer Filter = alle Klassen).
 		// Papier und Mail zeigen damit garantiert denselben Stand.
 		eintraege, err := s.queryAbgaengerKontoauszug(ctx, "")

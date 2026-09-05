@@ -54,7 +54,11 @@ type promoteStudentsRequest struct {
 }
 
 // promoteStudentsQuery zählt Klassenbezeichnungen um eine Stufe hoch und markiert
-// Abschlussklassen als Abgänger.
+// Abschlussklassen als Abgänger. WER Abschlussklasse ist, sagt allein
+// repository.AbschlussklasseSQL — dieselbe Regel, nach der die Abgängerliste
+// (api/graduates.go) diese Klassen von Mai bis Juli zum Einsammeln zeigt. Bis zum
+// 05.09.2026 stand die Regel hier zweimal als eigener CASE-Block und in der Liste gar
+// nicht (dort galt ist_abgaenger — ein anderer Begriff unter demselben Namen).
 //
 // Wichtige Invarianten:
 //   - klasse ist NOT NULL (schema.sql) — Abgänger bekommen 'ABG', exakt wie der
@@ -68,7 +72,8 @@ var promoteStudentsQuery = `
 			   klasse,
 			   substring(klasse from '^\d+') AS old_digits,
 			   (substring(klasse from '^\d+')::int + 1) AS new_grade,
-			   substring(klasse from '^\d+(.*)$') AS new_suffix
+			   substring(klasse from '^\d+(.*)$') AS new_suffix,
+			   ` + repository.AbschlussklasseSQL("klasse") + ` AS is_graduating
 		FROM schueler
 		WHERE ist_abgaenger = false
 		  AND deleted_at IS NULL
@@ -77,12 +82,7 @@ var promoteStudentsQuery = `
 	calculated AS (
 		SELECT id,
 			   (lpad(new_grade::text, greatest(length(old_digits), length(new_grade::text)), '0') || new_suffix) AS new_klasse,
-			   CASE
-				 WHEN new_grade = 10 AND new_suffix ILIKE '%h%' THEN true
-				 WHEN new_grade = 11 AND new_suffix ILIKE '%r%' THEN true
-				 WHEN new_grade >= 14 THEN true
-				 ELSE false
-			   END AS is_graduating
+			   is_graduating
 		FROM parsed
 	),
 	updated AS (
@@ -116,7 +116,7 @@ var promoteStudentsQuery = `
 
 // PromoteStudentsHandler führt den automatischen Schuljahreswechsel durch.
 // @Summary      Automatische Versetzung (Schuljahreswechsel)
-// @Description  Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H, 10R, 13) automatisch als Abgänger. Erfordert { "confirm": true } im Body; { "dry_run": true } liefert eine exakte Vorschau ohne Änderungen.
+// @Description  Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { "confirm": true } im Body; { "dry_run": true } liefert eine exakte Vorschau ohne Änderungen.
 // @Tags         schueler
 // @Accept       json
 // @Produce      json
@@ -218,12 +218,7 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *Promot
 		       lpad((substring(klasse from '^\d+')::int + 1)::text,
 		            greatest(length(substring(klasse from '^\d+')), length((substring(klasse from '^\d+')::int + 1)::text)), '0')
 		         || substring(klasse from '^\d+(.*)$') AS neue_klasse,
-		       CASE
-		         WHEN (substring(klasse from '^\d+')::int + 1) = 10 AND substring(klasse from '^\d+(.*)$') ILIKE '%h%' THEN true
-		         WHEN (substring(klasse from '^\d+')::int + 1) = 11 AND substring(klasse from '^\d+(.*)$') ILIKE '%r%' THEN true
-		         WHEN (substring(klasse from '^\d+')::int + 1) >= 14 THEN true
-		         ELSE false
-		       END AS abschluss
+		       `+repository.AbschlussklasseSQL("klasse")+` AS abschluss
 		FROM klassen_lehrer_mapping
 		WHERE klasse ~ '^\d+'
 		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)

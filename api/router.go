@@ -48,6 +48,10 @@ type Server struct {
 	Auth         *auth.Authenticator
 	Broker       *sse.Broker
 	CookieSecure bool
+	// Uhr liefert „jetzt" aus Sicht der Schule; nil = pkg/schulzeit. Nur Tests setzen
+	// sie — für das, was am Kalender hängt (Saison der Abgängerliste): Sonst bewiese
+	// derselbe Test im Oktober das Gegenteil von dem im Juni.
+	Uhr func() time.Time
 }
 
 // NewServer constructs and returns a new Server instance.

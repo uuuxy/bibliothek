@@ -6,10 +6,31 @@
 // wird der Payload, den das Frontend schicken WÜRDE; die Serverseite deckt
 // api/graduates_mail_test.go ab.
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, csrfToken } from './helpers.js';
+import { uiLogin, apiPost, csrfToken, seedSQL, uniqueSuffix } from './helpers.js';
+
+/** Ein Schüler einer Abschlussklasse mit offenem Buch — damit der Dialog überhaupt eine
+ *  Klasse anzubieten hat, unabhängig vom Seed. Zeilen gibt es nur in der Saison
+ *  (01.05.–31.07.); außerhalb wird übersprungen, sichtbar im Bericht.
+ *  @param {import('@playwright/test').Page} page
+ *  @returns {Promise<any[]>} die Abgängerliste */
+async function abgaengerBereitstellen(page) {
+	const s = uniqueSuffix();
+	seedSQL(`
+		WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('E2E-Versand-Titel ${s}') RETURNING id),
+		ex AS (INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'E2E-VER-B-${s}' FROM t RETURNING id),
+		sch AS (INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		        VALUES ('E2E-VER-S-${s}', 'Versand${s}', 'Testschueler', '10R1', 2030) RETURNING id)
+		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+		SELECT ex.id, sch.id, CURRENT_DATE - 5 FROM ex, sch;
+	`);
+	const { fenster, abgaenger } = await (await page.request.get('/api/abgaenger')).json();
+	test.skip(!fenster.offen, `Abgängerliste außerhalb der Saison (${fenster.von}–${fenster.bis})`);
+	return abgaenger;
+}
 
 test('Abgänger: Klassenauswahl und Override landen im Versand-Request', async ({ page }) => {
 	await uiLogin(page);
+	await abgaengerBereitstellen(page);
 
 	/** @type {any} */
 	let gesendeterBody = null;
@@ -61,7 +82,7 @@ test('Abgänger: hinterlegte Klassenleitung erscheint im Dialog', async ({ page 
 
 	// Erst die Klassen der Abgänger holen, dann für die erste eine Adresse hinterlegen —
 	// bewusst in ABWEICHENDER Schreibweise, denn genau daran scheiterte es.
-	const abgaenger = await (await page.request.get('/api/abgaenger')).json();
+	const abgaenger = await abgaengerBereitstellen(page);
 	const klasse = abgaenger[0]?.klasse;
 	expect(klasse, 'Testdaten ohne Abgänger').toBeTruthy();
 

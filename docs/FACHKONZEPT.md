@@ -194,7 +194,7 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
 
-- Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" (`ist_abgaenger = true`).
+- Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" im Sinne des Imports (`ist_abgaenger = true`): Er ist **weg**. Die Abgänger-Ansicht (§8.x) meint etwas anderes — die Abschlussklassen, die noch da sind; in der Schülerdatei heißt der Reiter der Weggegangenen deshalb „Ehemalige / Archiv".
 - **Karenzzeit (seit 02.09.2026):** Ein Abgänger ohne offene Vorgänge wird beim Import **nicht mehr sofort anonymisiert**, sondern nur gesperrt (Grund „Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"); der nächtliche Job anonymisiert nach der Karenzzeit aus _Einstellungen → Datenschutz & Sitzung_ (`abgaenger_karenz_tage`, Vorgabe 90, 0 = sofort wie früher). Uhr ist der späteste von drei Zeitpunkten: `schueler.abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, geräumt bei Rückkehr), die letzte Rückgabe einer Ausleihe und der letzte Abschluss eines Schadensfalls (seit 05.09.2026 — vorher zählte nur der Abgang, und der Schutz kippte mit der Rückgabe, weil offene Vorgänge die Zeile bis dahin gehalten hatten); Import, Job und Selbstprüfung teilen Schlüssel und Prädikat (`repository.PredikatAnonymisierung`). Die Karenz ist der Raum, in dem eine falsche Zuordnung ohne Schüler-ID noch repariert werden kann; sie ersetzt die frühere feste Frist von 360 Tagen (kürzer, nicht länger). Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft seit 05.09.2026 nur anonymisierte Datensätze — sie wartet die Karenz ab, statt sie abzuschneiden; im Cron läuft die Anonymisierung deshalb vor der Löschung (`RunNaechtlicheDSGVO`).
 - Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Foto), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Admin-Audit-Log und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
 - **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund: "Automatisierte Abgänger-Sperre (offene Vorgänge)"). Falls die offenen Vorgänge geklärt werden und der Abgänger im Folgejahr in der LUSD wieder als aktiver Schüler auftaucht, hebt das System die Sperre automatisch wieder auf.
@@ -203,14 +203,28 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 ---
 
-### 8.x Abgänger-Kontoauszug (Ergänzung 30.08.2026)
+### 8.x Abgänger-Ansicht und Kontoauszug (Ergänzung 30.08.2026; Bedeutung zurückgestellt 05.09.2026)
 
-Die Abgänger-Ansicht (`/abgaenger`) zeigt **nur** Abgänger mit noch offenen Ausleihen — wer nichts
-mehr schuldet, verschwindet aus der Liste. Je Klasse lässt sich ein **Kontoauszug** drucken
-(PDF aller offenen Medien je Schüler, `queryAbgaengerKontoauszug`) oder per Mail an die
+Die Abgänger-Ansicht (`/abgaenger`) zeigt die **Abschlussklassen mit noch offenen Ausleihen**:
+H-Zweig ab Jahrgang 9 (9H, auch das freiwillige 10H), R-Zweig ab 10, sonst ab 13 —
+`repository.AbschlussklasseSQL`, dieselbe Regel, mit der die Versetzung Abgänger markiert und
+ihre Klassenleitungs-Zuordnung entfernt (Paar-Gate `TestAbgaengerliste_UndVersetzungSehenDieselbeMenge`,
+Regel-Tabelle `TestAbschlussklasseSQL_Regel`). Sie sind noch an der Schule (`ist_abgaenger = false`)
+und leihen weiter aus. Sichtbar ist die Liste in der **Saison 01.05.–31.07.** (fester Wert,
+`api/abgaenger_fenster.go`; `Server.Uhr` nur für Tests): außerhalb antwortet `GET /api/abgaenger`
+mit `fenster.offen = false` und leerer Liste, der Druck mit `404`, der Versand mit `409`. Je Klasse
+lässt sich ein **Kontoauszug** drucken (`queryAbgaengerKontoauszug`) oder per Mail an die
 Klassenleitung schicken (`POST /api/abgaenger/mail`); die Empfängeradresse kommt aus dem
-Mahnwesen-Routing (Klasse → Lehrkraft, §17.4). Klassen ohne Zuordnung werden im Versand-Dialog
-als „keine E-Mail" markiert, statt still übersprungen zu werden.
+Mahnwesen-Routing (§17.4), Klassen ohne Zuordnung werden im Versand-Dialog als „keine E-Mail"
+markiert, statt still übersprungen zu werden.
+
+Historie: Vom 25.06. bis 05.09.2026 filterte die Ansicht `ist_abgaenger = true` (weg laut LUSD) —
+ein Bedeutungswechsel, der als Fix eines echten Fehlers (hartkodierte Klassennamen) durchging
+(Register, Entscheidung 2). Wer weg ist und noch Bücher hat, steht im Mahnwesen
+(`QueryUeberfaelligeNachJahrgang` schließt `ist_abgaenger` ein) und in der Schülerdatei unter
+„Ehemalige / Archiv" (`GET /api/schueler?status=ehemalige`, `ListEhemaligeWithStats` — dieselbe
+Liste und Serversuche wie „Aktive Schüler" mit umgekehrtem Vorzeichen; bis 05.09.2026 bettete
+der Reiter die Abgängerliste ein).
 
 ## 9. Druck-Center und Ausweise
 

@@ -5,7 +5,13 @@
  *  Entscheidung, was davon als Toast erscheint, bleibt in der Komponente. */
 import { apiFetch } from './apiFetch.js';
 
-/** @returns {Promise<any[]>} */
+/** Lädt die Abgängerliste samt Saisonfenster.
+ *
+ *  Die Antwort trägt das Fenster mit, weil eine leere Liste zwei Gründe haben kann: alle
+ *  entlastet — oder außerhalb der Saison (Mai bis Juli), in der die Abschlussklassen
+ *  überhaupt gezeigt werden. Das entscheidet der Server; die Oberfläche rechnet es nicht
+ *  nach, sonst gäbe es zwei Kalender.
+ *  @returns {Promise<{ fenster: { offen: boolean, von: string, bis: string }, abgaenger: any[] }>} */
 export async function ladeAbgaenger() {
 	const res = await apiFetch('/api/abgaenger');
 	if (!res.ok) throw new Error('Fehler beim Laden');

@@ -17,33 +17,19 @@ const docTemplate = `{
     "paths": {
         "/abgaenger": {
             "get": {
-                "description": "Retrieves former/graduating students who still have unreturned books, optionally including loan details.",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Abschlussklassen (9H/10H, 10R, 13) mit noch offenen Büchern, in der Saison vom 01.05. bis 31.07.; außerhalb leer mit offen=false.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "admin"
                 ],
-                "summary": "Get list of graduating students",
-                "parameters": [
-                    {
-                        "type": "boolean",
-                        "description": "True to include loan detail structures",
-                        "name": "details",
-                        "in": "query"
-                    }
-                ],
+                "summary": "Abgängerliste",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/api.GraduateDetail"
-                            }
+                            "$ref": "#/definitions/api.AbgaengerAntwort"
                         }
                     },
                     "500": {
@@ -60,7 +46,7 @@ const docTemplate = `{
         },
         "/abgaenger/pdf": {
             "get": {
-                "description": "Generates a printable PDF for former/graduating students with their unreturned books.",
+                "description": "Generates a printable PDF for graduating students with their unreturned books (season 01.05.–31.07.).",
                 "produces": [
                     "application/pdf"
                 ],
@@ -1105,6 +1091,26 @@ const docTemplate = `{
                     "books"
                 ],
                 "summary": "Anzahl der Exemplare ohne gedrucktes Etikett",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter über Titel oder Barcode",
+                        "name": "q",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "offen (Vorgabe) | erledigt | alle",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Stichtag JJJJ-MM-TT (nur mit status=offen sinnvoll)",
+                        "name": "bis",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -1539,6 +1545,12 @@ const docTemplate = `{
                         "description": "Search term (name or barcode); searches server-side over all students",
                         "name": "q",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Leer = aktive Schüler; 'ehemalige' = wer die Schule verlassen hat (ist_abgaenger)",
+                        "name": "status",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1897,7 +1909,7 @@ const docTemplate = `{
         },
         "/students/promote": {
             "post": {
-                "description": "Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H, 10R, 13) automatisch als Abgänger. Erfordert { \"confirm\": true } im Body; { \"dry_run\": true } liefert eine exakte Vorschau ohne Änderungen.",
+                "description": "Erhöht die Klassenstufe aller aktiven Schüler um 1. Markiert Abschlussklassen (9H/10H, 10R, 13 — repository.AbschlussklasseSQL) automatisch als Abgänger. Erfordert { \"confirm\": true } im Body; { \"dry_run\": true } liefert eine exakte Vorschau ohne Änderungen.",
                 "consumes": [
                     "application/json"
                 ],
@@ -2130,6 +2142,71 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "api.AbgaengerAntwort": {
+            "type": "object",
+            "properties": {
+                "abgaenger": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.AbgaengerZeile"
+                    }
+                },
+                "fenster": {
+                    "$ref": "#/definitions/api.AbgaengerFenster"
+                }
+            }
+        },
+        "api.AbgaengerFenster": {
+            "type": "object",
+            "properties": {
+                "bis": {
+                    "description": "„31.07.\"",
+                    "type": "string"
+                },
+                "offen": {
+                    "type": "boolean"
+                },
+                "von": {
+                    "description": "„01.05.\"",
+                    "type": "string"
+                }
+            }
+        },
+        "api.AbgaengerZeile": {
+            "type": "object",
+            "properties": {
+                "abgaenger_jahr": {
+                    "type": "integer"
+                },
+                "barcode_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "ist_gesperrt": {
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "lehrer_email": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "offene_buecher": {
+                    "type": "integer"
+                },
+                "ueberfaellig": {
+                    "type": "integer"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
         "api.AbgeschlosseneInventurDTO": {
             "type": "object",
             "properties": {
@@ -2179,26 +2256,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "timestamp": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.AusleiheDetail": {
-            "type": "object",
-            "properties": {
-                "autor": {
-                    "type": "string"
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "cover_url": {
-                    "type": "string"
-                },
-                "frist": {
-                    "type": "string"
-                },
-                "titel": {
                     "type": "string"
                 }
             }
@@ -2332,6 +2389,12 @@ const docTemplate = `{
                 "verarbeitungsangaben": {
                     "$ref": "#/definitions/api.DsgvoVerarbeitungsangaben"
                 },
+                "verwaltungsprotokolle": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DsgvoVerwaltungsEintrag"
+                    }
+                },
                 "vormerkungen": {
                     "type": "array",
                     "items": {
@@ -2406,6 +2469,12 @@ const docTemplate = `{
                 "abgaenger_jahr": {
                     "type": "integer"
                 },
+                "abgaenger_seit": {
+                    "type": "string"
+                },
+                "anonymisiert_am": {
+                    "type": "string"
+                },
                 "barcode_id": {
                     "type": "string"
                 },
@@ -2436,6 +2505,9 @@ const docTemplate = `{
                 "klasse": {
                     "type": "string"
                 },
+                "lusd_bestaetigt_am": {
+                    "type": "string"
+                },
                 "lusd_id": {
                     "type": "string"
                 },
@@ -2449,6 +2521,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "plz": {
+                    "type": "string"
+                },
+                "schul_eintritt_am": {
+                    "description": "Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten\nunvollständig; Gate: TestDsgvoAuskunft_KenntJedeSchuelerSpalte).",
                     "type": "string"
                 },
                 "sperrgrund": {
@@ -2491,6 +2567,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api.DsgvoVerwaltungsEintrag": {
+            "type": "object",
+            "properties": {
+                "aktion": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "object"
+                },
+                "zeitpunkt": {
+                    "type": "string"
+                }
+            }
+        },
         "api.DsgvoVormerkung": {
             "type": "object",
             "properties": {
@@ -2525,38 +2615,6 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "titel": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.GraduateDetail": {
-            "type": "object",
-            "properties": {
-                "abgaenger_jahr": {
-                    "type": "integer"
-                },
-                "ausleihen": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api.AusleiheDetail"
-                    }
-                },
-                "barcode_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ist_gesperrt": {
-                    "type": "boolean"
-                },
-                "klasse": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "vorname": {
                     "type": "string"
                 }
             }
@@ -2850,9 +2908,6 @@ const docTemplate = `{
                 "plz": {
                     "type": "string"
                 },
-                "status": {
-                    "type": "string"
-                },
                 "strasse": {
                     "type": "string"
                 },
@@ -2966,6 +3021,10 @@ const docTemplate = `{
                 },
                 "vorname": {
                     "type": "string"
+                },
+                "zugang_beantragt_am": {
+                    "description": "ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);\nnull = keiner. Die Oberfläche unterscheidet daran „wartet\" von „deaktiviert\".",
+                    "type": "string"
                 }
             }
         },
@@ -3016,11 +3075,11 @@ const docTemplate = `{
                     "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
                     "type": "string"
                 },
-                "rueckgabe_frist": {
-                    "type": "string"
+                "ist_lernmittel": {
+                    "description": "IstLernmittel steuert die Marke „Lernmittel\" an der Ausleihzeile — aus der\nSpalte (Migration 093), nicht mehr aus einem LMF-Präfix in Titel oder Signatur.",
+                    "type": "boolean"
                 },
-                "signatur": {
-                    "description": "Signatur wird gebraucht, um LMF-Titel zu erkennen (lmf.IstSchulbuch prüft\nTitel UND Signatur — die manuelle Neuanlage trägt das Kennzeichen oft nur hier).",
+                "rueckgabe_frist": {
                     "type": "string"
                 },
                 "titel": {
@@ -3031,8 +3090,17 @@ const docTemplate = `{
         "repository.EinstellungenPatch": {
             "type": "object",
             "properties": {
+                "abgaenger_karenz_tage": {
+                    "type": "integer"
+                },
                 "alarm_empfaenger": {
                     "type": "string"
+                },
+                "anliegen_tage": {
+                    "type": "integer"
+                },
+                "audit_aufbewahrung_monate": {
+                    "type": "integer"
                 },
                 "bestellbedarf_schwelle": {
                     "type": "integer"
@@ -3150,6 +3218,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_manually_blocked": {
+                    "type": "boolean"
+                },
                 "ist_gesperrt": {
                     "type": "boolean"
                 },
@@ -3170,9 +3241,19 @@ const docTemplate = `{
         "repository.SystemEinstellungen": {
             "type": "object",
             "properties": {
+                "abgaenger_karenz_tage": {
+                    "description": "AbgaengerKarenzTage: Tage nach dem Abgang, die ein Abgänger ohne offene Vorgänge\nnur gesperrt bleibt, bevor er anonymisiert wird. 0 = sofort. Migration 094.",
+                    "type": "integer"
+                },
                 "alarm_empfaenger": {
                     "description": "AlarmEmpfaenger: kommaseparierte Adressen fuer die Kritisch-Alarme der\nSelbstpruefung. Leer = alle aktiven Admin-Konten (sicherer Rueckfall — ein\nAlarm, der niemanden erreicht, ist keiner). Betreiber-Wunsch 17.08.2026.",
                     "type": "string"
+                },
+                "anliegen_tage": {
+                    "type": "integer"
+                },
+                "audit_aufbewahrung_monate": {
+                    "type": "integer"
                 },
                 "bestellbedarf_schwelle": {
                     "type": "integer"

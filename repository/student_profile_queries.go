@@ -102,15 +102,33 @@ const ListStudentsWithStatsLimit = 500
 // alphabetisch dahinter lag, war über die Suche nicht erreichbar, und zwar abhängig vom
 // Klassennamen, also für den Benutzer ohne erkennbares Muster.
 func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, klasse, suche, false)
+}
+
+// ListEhemaligeWithStats liefert die Schüler, die die Schule verlassen haben
+// (ist_abgaenger = true, nicht gelöscht) — der Reiter „Ehemalige / Archiv" der
+// Schülerdatei. Bis zum 05.09.2026 bettete der Reiter die Abgängerliste ein; seit die
+// wieder die Abschlussklassen meint (noch an der Schule), brauchen die Weggegangenen
+// eine eigene Liste. Jüngster Abgang zuerst, dann Name.
+func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, "", suche, true)
+}
+
+func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klasse, suche string, ehemalige bool) ([]StudentListStat, error) {
 	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
 	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
 	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
 	// Postgres lehnt sonst überzählige Bind-Parameter ab.
-	// Abgänger haben ihren eigenen Reiter samt Endpunkt (/api/abgaenger) — in
-	// „Aktive Schüler" gehören sie nicht (Fund 31.08.2026: sie standen als
-	// „Gesperrt" ohne erkennbaren Grund zwischen den Aktiven; nach einem
-	// Schuljahreswechsel wäre das ein ganzer Jahrgang Karteileichen).
-	bedingungen := []string{"s.deleted_at IS NULL", "COALESCE(s.ist_abgaenger, false) = false"}
+	// Weggegangene (ist_abgaenger) gehören nicht in „Aktive Schüler" (Fund 31.08.2026:
+	// sie standen als „Gesperrt" ohne erkennbaren Grund zwischen den Aktiven; nach
+	// einem Schuljahreswechsel wäre das ein ganzer Jahrgang Karteileichen) — sie haben
+	// den Reiter „Ehemalige / Archiv", der über dieselbe Abfrage mit umgekehrtem
+	// Vorzeichen läuft.
+	statusBedingung := "COALESCE(s.ist_abgaenger, false) = false"
+	if ehemalige {
+		statusBedingung = "s.ist_abgaenger = true"
+	}
+	bedingungen := []string{"s.deleted_at IS NULL", statusBedingung}
 	args := []any{}
 	praefix := ""
 	limit := ""
@@ -132,8 +150,12 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 		bedingungen = append(bedingungen, fmt.Sprintf("s.klasse = $%d", len(args)))
 	}
 
-	// Bei einer Suche zuerst die besten Treffer, sonst die gewohnte Kartei-Reihenfolge.
+	// Bei einer Suche zuerst die besten Treffer, sonst die gewohnte Kartei-Reihenfolge —
+	// bei den Ehemaligen der jüngste Abgang zuerst (die Klasse ist dort nur noch „ABG").
 	sortierung := "s.klasse, s.nachname, s.vorname"
+	if ehemalige {
+		sortierung = "s.abgaenger_jahr DESC, s.nachname, s.vorname"
+	}
 	if praefix != "" {
 		sortierung = SchuelerSuchRang + ", s.nachname ASC, s.vorname ASC"
 	}

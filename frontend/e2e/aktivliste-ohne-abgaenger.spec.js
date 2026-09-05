@@ -7,7 +7,7 @@ import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
 // wechsel wären das ~100 Karteileichen zwischen den Aktiven (später sogar mit
 // anonymisiertem Namen). Der Reiter heißt AKTIVE Schüler; Abgänger haben ihren
 // eigenen Reiter samt eigenem Endpunkt (/api/abgaenger).
-test('Aktive Schüler zeigt keine Abgänger — die stehen im Archiv-Reiter', async ({ page }) => {
+test('Aktive Schüler zeigt keine Ehemaligen — die stehen im Archiv-Reiter', async ({ page }) => {
 	await uiLogin(page);
 	const suffix = uniqueSuffix();
 
@@ -43,7 +43,9 @@ test('Aktive Schüler zeigt keine Abgänger — die stehen im Archiv-Reiter', as
 	await expect(page.getByText('Keine Schüler im Verzeichnis gefunden.')).toBeVisible();
 	await expect(page.locator('tr').filter({ hasText: `Weggegangen-${suffix}` })).toHaveCount(0);
 
-	// Gegenprobe, damit der Filter nicht zu viel löscht: Im Abgänger-Reiter steht er.
-	await page.getByRole('tab', { name: /Abgänger/ }).click();
+	// Gegenprobe, damit der Filter nicht zu viel löscht: Im Reiter der Ehemaligen steht er —
+	// über dieselbe Serversuche, denn auch dort können mehr als 500 Zeilen liegen.
+	await page.getByRole('tab', { name: /Ehemalige/ }).click();
+	await page.getByLabel('Ehemalige suchen').fill(`Weggegangen-${suffix}`);
 	await expect(page.getByText(`Weggegangen-${suffix}`).first()).toBeVisible();
 });

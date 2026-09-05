@@ -92,17 +92,18 @@ func globalExtend(t *testing.T, srv *Server, klasse, datum string) *httptest.Res
 // TestLaufzettel_NurAbgaengerMitBuechern sichert Audit-Bug #2 ab: Der Laufzettel-Massendruck
 // darf NUR Abgänger mit noch offenen Büchern enthalten. Vorher (LEFT JOIN) erschien jeder
 // Abgänger — 150 Abgänger, davon 140 ohne Buch, ergaben 140 leere Laufzettel.
+// Abgänger heißt hier seit dem 05.09.2026 wieder: Abschlussklasse, noch an der Schule.
 func TestLaufzettel_NurAbgaengerMitBuechern(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// Abgänger MIT offenem Buch.
-	mitBuch := seedAbgaengerRet(t, pool, "AB-1", "Anna", "10a")
+	// Abschlussklasse MIT offenem Buch.
+	mitBuch := seedSchueler(t, pool, "AB-1", "Anna", "10R1")
 	seedAusleihe(t, pool, mitBuch, "Physikbuch 10", time.Now().AddDate(0, 0, -3))
-	// Abgänger OHNE Buch — darf keinen (leeren) Laufzettel bekommen.
-	seedAbgaenger(t, pool, "AB-2", "Bodo", "10a", true)
-	// Nicht-Abgänger mit Buch — darf nicht auftauchen.
+	// Abschlussklasse OHNE Buch — darf keinen (leeren) Laufzettel bekommen.
+	seedSchueler(t, pool, "AB-2", "Bodo", "10R1")
+	// Kein Abschlussjahrgang, mit Buch — darf nicht auftauchen.
 	kein := seedSchueler(t, pool, "AB-3", "Cleo", "8a")
 	seedAusleihe(t, pool, kein, "Chemiebuch 8", time.Now().AddDate(0, 0, -3))
 

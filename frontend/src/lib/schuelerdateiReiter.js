@@ -8,7 +8,9 @@
 export function schuelerdateiReiter(rechte) {
 	const liste = [
 		{ id: 'active', label: 'Aktive Schüler' },
-		{ id: 'graduates', label: 'Abgänger / Archiv' }
+		// „Ehemalige", nicht „Abgänger": Abgänger sind die Abschlussklassen, die noch da sind
+		// (eigene Ansicht /abgaenger); hier stehen die, die laut LUSD schon weg sind.
+		{ id: 'graduates', label: 'Ehemalige / Archiv' }
 	];
 	if (rechte.loeschen) liste.push({ id: 'deleted', label: 'Papierkorb' });
 	return liste;

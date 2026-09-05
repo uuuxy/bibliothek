@@ -4,7 +4,7 @@
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import StudentProfile from './StudentProfile.svelte';
 	import StudentCreateModal from './StudentCreateModal.svelte';
-	import Graduates from './Graduates.svelte';
+	import EhemaligeListe from './components/students/EhemaligeListe.svelte';
 	import ActiveStudentList from './components/students/ActiveStudentList.svelte';
 	import DeletedStudentList from './components/students/DeletedStudentList.svelte';
 	import StudentDirectoryToolbar from './components/students/StudentDirectoryToolbar.svelte';
@@ -54,6 +54,12 @@
 	const ohneDatum = $derived(
 		markierte.filter((/** @type {any} */ s) => s.ausweis_gueltig_bis == null).length
 	);
+
+	/** Selbst gesucht und angeklickt = Datenpflege-Absicht: Profil öffnet Stammdaten. @param {any} s */
+	function oeffneStammdaten(s) {
+		profilReiter = 'stammdaten';
+		activeStudent = s;
+	}
 
 	/** @param {string} id */
 	function toggle(id) {
@@ -163,18 +169,12 @@
 							{auswahl}
 							onToggle={toggle}
 							onToggleAlle={toggleAlle}
-							onSelectStudent={(s) => {
-								// Selbst gesucht und angeklickt = Datenpflege-Absicht.
-								profilReiter = 'stammdaten';
-								activeStudent = s;
-							}}
+							onSelectStudent={oeffneStammdaten}
 						/>
 					</div>
 				</div>
 			{:else if activeTab === 'graduates'}
-				<div class="w-full animate-fade-in">
-					<Graduates />
-				</div>
+				<EhemaligeListe onSelect={oeffneStammdaten} />
 			{:else if activeTab === 'deleted'}
 				<div class="w-full animate-fade-in space-y-6">
 					<DeletedStudentList

@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -16,7 +15,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Die Abgänger-Kette: markiert → Liste → Kontoauszug per Mail → Rückgabe → Löschung.
+// Die Abgänger-Kette: Abschlussklasse → Liste → Kontoauszug per Mail → Rückgabe → laut
+// LUSD weg → Löschung.
 //
 // Am Ende dieser Kette steht der einzige unumkehrbare Schritt des Systems: Der Datensatz
 // wird endgültig entfernt. Was davor schiefgeht, merkt niemand mehr — der Schüler ist weg,
@@ -39,35 +39,25 @@ import (
 //     entfernen. Ginge die Zeile mit, verlöre die Bibliothek rückwirkend ihre Ausleihzahlen
 //     — und keine Statistik würde es melden, die Summe wäre einfach kleiner.
 
-// abgaengerMitBuch legt einen Abgänger mit genau einem offenen Buch an.
+// abgaengerMitBuch legt einen Schüler einer Abschlussklasse mit genau einem offenen Buch
+// an — noch an der Schule (ist_abgaenger = false), so wie die Liste ihn im Juni sieht.
 func abgaengerMitBuch(t *testing.T, pool *pgxpool.Pool, barcode, vorname, klasse, titel string) (schuelerID, ausleiheID string) {
 	t.Helper()
-	schuelerID = seedAbgaengerRet(t, pool, barcode, vorname, klasse)
+	schuelerID = seedSchueler(t, pool, barcode, vorname, klasse)
 	ausleiheID = seedAusleihe(t, pool, schuelerID, titel, time.Now().AddDate(0, 0, -3))
 	return schuelerID, ausleiheID
 }
 
 // abgaengerListe ruft GET /api/abgaenger — die Ansicht, aus der heraus versendet wird.
-func abgaengerListe(t *testing.T, srv *Server) []map[string]any {
+func abgaengerListe(t *testing.T, srv *Server) []AbgaengerZeile {
 	t.Helper()
-	rec := httptest.NewRecorder()
-	srv.GetGraduatesHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/abgaenger", nil))
-	if rec.Code != http.StatusOK {
-		t.Fatalf("Abgängerliste: Status %d — %s", rec.Code, rec.Body.String())
-	}
-	var liste []map[string]any
-	if err := json.Unmarshal(rec.Body.Bytes(), &liste); err != nil {
-		t.Fatalf("Abgängerliste unlesbar: %v", err)
-	}
-	return liste
+	return abgaengerAntwort(t, srv).Abgaenger
 }
 
-func namenAus(liste []map[string]any) map[string]bool {
+func namenAus(liste []AbgaengerZeile) map[string]bool {
 	namen := map[string]bool{}
 	for _, e := range liste {
-		if v, ok := e["vorname"].(string); ok {
-			namen[v] = true
-		}
+		namen[e.Vorname] = true
 	}
 	return namen
 }
@@ -91,15 +81,16 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	ctx := context.Background()
 
 	sitzungen := mailAbfangen(t)
-	srv := &Server{DB: &db.Database{Pool: pool}}
+	srv := &Server{DB: &db.Database{Pool: pool}, Uhr: saisonUhr}
 
-	// Zwei Abgänger derselben Klasse und einer aus einer anderen — plus die Schreibweise,
-	// an der sich schon zweimal etwas aufgehängt hat: Schülerdaten "9H", Mapping "9h ".
+	// Zwei Abgänger derselben Abschlussklasse und einer aus einer anderen — plus die
+	// Schreibweise, an der sich schon zweimal etwas aufgehängt hat: Schülerdaten "9H",
+	// Mapping "9h ".
 	anna, annaAusleihe := abgaengerMitBuch(t, pool, "S-ABG-1", "Anna", "9H", "Annas Buch")
 	ben, benAusleihe := abgaengerMitBuch(t, pool, "S-ABG-2", "Ben", "9H", "Bens Buch")
-	abgaengerMitBuch(t, pool, "S-ABG-3", "Cem", "10a", "Cems Buch")
+	abgaengerMitBuch(t, pool, "S-ABG-3", "Cem", "10R1", "Cems Buch")
 	klassenleitung(t, pool, "9h ", "leitung9h@schule.invalid")
-	klassenleitung(t, pool, "10a", "leitung10a@schule.invalid")
+	klassenleitung(t, pool, "10R1", "leitung10r1@schule.invalid")
 
 	// 1. Beide Ansichten müssen dieselben Personen kennen.
 	liste := abgaengerListe(t, srv)
@@ -114,8 +105,8 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	// Die Liste muss die Klassenleitung schon VOR dem Versand nennen, sonst kann niemand
 	// sehen, dass eine Klasse gleich stillschweigend übersprungen wird.
 	for _, e := range liste {
-		if e["vorname"] == "Anna" && e["lehrer_email"] != "leitung9h@schule.invalid" {
-			t.Errorf("Klassenleitung der 9H fehlt in der Liste: %v (Schreibweise 9H/9h?)", e["lehrer_email"])
+		if e.Vorname == "Anna" && e.LehrerEmail != "leitung9h@schule.invalid" {
+			t.Errorf("Klassenleitung der 9H fehlt in der Liste: %v (Schreibweise 9H/9h?)", e.LehrerEmail)
 		}
 	}
 
@@ -130,7 +121,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Versand: Status %d — %s", rec.Code, rec.Body.String())
 	}
-	// Beide Zahlen: Ohne skipped_count bestünde der Test auch, wenn zusätzlich an die 10a
+	// Beide Zahlen: Ohne skipped_count bestünde der Test auch, wenn zusätzlich an die 10R1
 	// ginge — die zweite Mail scheiterte am Testserver und zählte still als übersprungen.
 	if antwort := rec.Body.String(); !strings.Contains(antwort, `"sent_count":1`) ||
 		!strings.Contains(antwort, `"skipped_count":0`) {
@@ -142,7 +133,7 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 	if !strings.Contains(nachricht, "leitung9h@schule.invalid") {
 		t.Errorf("Mail ging nicht an die Klassenleitung der 9H:\n%s", kopf(nachricht))
 	}
-	if strings.Contains(nachricht, "leitung10a@schule.invalid") {
+	if strings.Contains(nachricht, "leitung10r1@schule.invalid") {
 		t.Error("die Mail nennt die Klassenleitung einer nicht gewählten Klasse")
 	}
 
@@ -164,7 +155,13 @@ func TestAbgaengerkette_VomLaufzettelBisZurGeloeschtenAkte(t *testing.T) {
 		t.Error("Ben ist mit Annas Rückgabe aus der Ansicht gefallen")
 	}
 
-	// 5. Der unumkehrbare Schritt — und was er stehen lassen MUSS.
+	// 5. Der unumkehrbare Schritt — und was er stehen lassen MUSS. Vorher geht die Kohorte
+	// von der Schule: Der LUSD-Import findet Anna und Ben im Herbst nicht mehr und lässt sie
+	// so zurück (Flag + ABG). Erst DANN ist die Löschung überhaupt Thema.
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_abgaenger = true, klasse = 'ABG', abgaenger_seit = now()
+		WHERE id = ANY($1)`, []string{anna, ben}); err != nil {
+		t.Fatalf("Abgang laut LUSD: %v", err)
+	}
 	auditRepo := repository.NewAuditRepository(pool)
 	if err := auditRepo.PurgeAbgaenger(ctx, anna, ""); err != nil {
 		t.Fatalf("Purge nach Rückgabe: %v", err)

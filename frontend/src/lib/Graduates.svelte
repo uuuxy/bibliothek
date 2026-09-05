@@ -19,6 +19,9 @@
 	/** @type {any[]} */
 	let graduates = $state([]);
 	let loading = $state(true);
+	// Saisonfenster vom Server: Von Mai bis Juli zeigt die Liste die Abschlussklassen;
+	// außerhalb ist sie leer, und die Tabelle erklärt warum, statt „alle entlastet" zu melden.
+	let fenster = $state({ offen: true, von: '', bis: '' });
 
 	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Ausdruck.
 	let selectedKlasse = $state('');
@@ -113,7 +116,9 @@
 	// Fetch graduates list from backend api
 	async function fetchGraduates() {
 		try {
-			graduates = await dienst.ladeAbgaenger();
+			const antwort = await dienst.ladeAbgaenger();
+			graduates = antwort.abgaenger;
+			fenster = antwort.fenster;
 		} catch (err) {
 			console.error('Graduates error:', err);
 		} finally {
@@ -167,6 +172,7 @@
 			<AbgaengerTabelle
 				zeilen={filteredGraduates}
 				leer={graduates.length === 0}
+				{fenster}
 				onProfil={openProfile}
 			/>
 		</div>

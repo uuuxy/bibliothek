@@ -1,7 +1,13 @@
 package api
 
-// graduates.go — Handler for listing graduating students with unreturned books.
-// Used by the administration view to generate Laufzettel PDFs for outgoing classes.
+// graduates.go — die Abgängerliste: Abschlussklassen mit offenen Büchern, noch an der
+// Schule, sichtbar in der Saison (Mai bis Juli). Daraus entstehen die Kontoauszüge zum
+// Einsammeln vor der Entlassung (Druck hier, Versand in graduates_mail.go).
+//
+// „Abgänger" heißt hier, was die Schule damit meint: die Kinder, die zum Schuljahresende
+// gehen. Wer laut LUSD schon WEG ist (ist_abgaenger = true, Klasse ABG), steht nicht hier,
+// sondern im Mahnwesen — zwei Bedeutungen, die vom 25.06. bis 05.09.2026 denselben Namen
+// trugen (Register, Entscheidung 2).
 
 import (
 	"bytes"
@@ -12,34 +18,41 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/repository"
 )
 
-// AusleiheDetail holds book-loan info for one physical copy.
-type AusleiheDetail struct {
-	Titel     string `json:"titel"`
-	Autor     string `json:"autor"`
-	CoverURL  string `json:"cover_url"`
-	BarcodeID string `json:"barcode_id"`
-	Frist     string `json:"frist"`
+// abgaengerBedingung ist die EINE Definition, wer in der Abgängerliste steht: nicht
+// gelöscht, noch an der Schule und in einer Abschlussklasse nach der Regel der Versetzung.
+// Liste, Kontoauszug-Druck und Versand lesen alle dieses Prädikat.
+var abgaengerBedingung = "s.deleted_at IS NULL AND s.ist_abgaenger = false AND " +
+	repository.AbschlussklasseSQL("s.klasse")
+
+// AbgaengerZeile ist eine Zeile der Liste: ein Schüler mit der Zahl seiner offenen und
+// davon überfälligen Bücher — das ist die handlungsrelevante Information (was muss noch
+// zurück?), nicht die Ausweisnummer.
+type AbgaengerZeile struct {
+	ID            string `json:"id"`
+	BarcodeID     string `json:"barcode_id"`
+	Vorname       string `json:"vorname"`
+	Nachname      string `json:"nachname"`
+	Klasse        string `json:"klasse"`
+	AbgaengerJahr int    `json:"abgaenger_jahr"`
+	IstGesperrt   bool   `json:"ist_gesperrt"`
+	OffeneBuecher int    `json:"offene_buecher"`
+	Ueberfaellig  int    `json:"ueberfaellig"`
+	LehrerEmail   string `json:"lehrer_email"`
 }
 
-// GraduateDetail extends the basic graduate record with all open loans.
-type GraduateDetail struct {
-	ID            string           `json:"id"`
-	BarcodeID     string           `json:"barcode_id"`
-	Vorname       string           `json:"vorname"`
-	Nachname      string           `json:"nachname"`
-	Klasse        string           `json:"klasse"`
-	AbgaengerJahr int              `json:"abgaenger_jahr"`
-	IstGesperrt   bool             `json:"ist_gesperrt"`
-	Ausleihen     []AusleiheDetail `json:"ausleihen"`
+// AbgaengerAntwort ist die Antwort von GET /api/abgaenger: das Saisonfenster und die
+// Zeilen. Außerhalb der Saison ist die Liste leer, ohne dass die Abfrage läuft — die
+// Oberfläche zeigt dann den Hinweis mit den Daten statt „alle entlastet".
+type AbgaengerAntwort struct {
+	Fenster   AbgaengerFenster `json:"fenster"`
+	Abgaenger []AbgaengerZeile `json:"abgaenger"`
 }
 
-// queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen — inkl. der
-// Anzahl offener und davon überfälliger Bücher. Genau diese Zahl ist in der Abgänger-
-// Ansicht die handlungsrelevante Information (was muss noch zurück?), nicht die Ausweis-
-// nummer. COUNT + GROUP BY ersetzt das frühere DISTINCT (eine Zeile je Schüler bleibt).
-func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
+// queryGraduatesBasic liefert eine Zeile je Abgänger mit offenen Ausleihen.
+func (s *Server) queryGraduatesBasic(ctx context.Context) ([]AbgaengerZeile, error) {
 	query := `
 		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
 		       COUNT(a.id)                                        AS offene_buecher,
@@ -52,8 +65,7 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 		-- (getrimmt, Kleinschreibung) — „5a", „5A" und „5a " sind dieselbe Klasse, und
 		-- ein unsichtbares Leerzeichen darf keinen stillen Nullversand auslösen.
 		LEFT JOIN klassen_lehrer_mapping m ON lower(btrim(m.klasse)) = lower(btrim(s.klasse))
-		WHERE s.deleted_at IS NULL
-		  AND s.ist_abgaenger = true
+		WHERE ` + abgaengerBedingung + `
 		  AND a.rueckgabe_am IS NULL
 		GROUP BY s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt, m.lehrer_email
 		ORDER BY s.klasse, s.nachname
@@ -64,136 +76,41 @@ func (s *Server) queryGraduatesBasic(ctx context.Context) ([]any, error) {
 	}
 	defer rows.Close()
 
-	students := []any{}
+	zeilen := []AbgaengerZeile{}
 	for rows.Next() {
-		var id, barcode, vorname, nachname, klasse, lehrerEmail string
-		var abgaengerJahr int
-		var gesperrt bool
-		var offeneBuecher, ueberfaellig int
-		if err := rows.Scan(&id, &barcode, &vorname, &nachname, &klasse, &abgaengerJahr, &gesperrt,
-			&offeneBuecher, &ueberfaellig, &lehrerEmail); err != nil {
+		var z AbgaengerZeile
+		if err := rows.Scan(&z.ID, &z.BarcodeID, &z.Vorname, &z.Nachname, &z.Klasse, &z.AbgaengerJahr,
+			&z.IstGesperrt, &z.OffeneBuecher, &z.Ueberfaellig, &z.LehrerEmail); err != nil {
 			return nil, err
 		}
-		students = append(students, map[string]any{
-			"id":             id,
-			"barcode_id":     barcode,
-			"vorname":        vorname,
-			"nachname":       nachname,
-			"klasse":         klasse,
-			"abgaenger_jahr": abgaengerJahr,
-			"ist_gesperrt":   gesperrt,
-			"offene_buecher": offeneBuecher,
-			"ueberfaellig":   ueberfaellig,
-			"lehrer_email":   lehrerEmail,
-		})
+		zeilen = append(zeilen, z)
 	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return students, nil
+	return zeilen, rows.Err()
 }
 
-// queryGraduatesDetail liefert die Abgänger mit ihren offenen Ausleihen, gruppiert je
-// Schüler in stabiler Reihenfolge (Klasse, Nachname, Titel) — für den Laufzettel-View.
-func (s *Server) queryGraduatesDetail(ctx context.Context) ([]*GraduateDetail, error) {
-	detailQuery := `
-		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
-		       t.titel,
-		       coalesce(t.autor, '') AS autor,
-		       coalesce(t.cover_url, '') AS cover_url,
-		       e.barcode_id AS ex_barcode,
-		       coalesce(to_char(a.rueckgabe_frist, 'DD.MM.YYYY'), '') AS frist
-		FROM schueler s
-		JOIN ausleihen a ON s.id = a.schueler_id
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE s.deleted_at IS NULL
-		  AND s.ist_abgaenger = true
-		  AND a.rueckgabe_am IS NULL
-		ORDER BY s.klasse, s.nachname, t.titel
-	`
-	rows, err := s.DB.Pool.Query(ctx, detailQuery)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	studMap := map[string]*GraduateDetail{}
-	studOrder := make([]string, 0)
-	for rows.Next() {
-		var id, barcode, vorname, nachname, klasse string
-		var abgaengerJahr int
-		var gesperrt bool
-		var titel, autor, coverURL, exBarcode, frist string
-		if err := rows.Scan(&id, &barcode, &vorname, &nachname, &klasse,
-			&abgaengerJahr, &gesperrt, &titel, &autor, &coverURL, &exBarcode, &frist); err != nil {
-			return nil, err
-		}
-		if _, ok := studMap[id]; !ok {
-			studMap[id] = &GraduateDetail{
-				ID:            id,
-				BarcodeID:     barcode,
-				Vorname:       vorname,
-				Nachname:      nachname,
-				Klasse:        klasse,
-				AbgaengerJahr: abgaengerJahr,
-				IstGesperrt:   gesperrt,
-				Ausleihen:     []AusleiheDetail{},
-			}
-			studOrder = append(studOrder, id)
-		}
-		studMap[id].Ausleihen = append(studMap[id].Ausleihen, AusleiheDetail{
-			Titel:     titel,
-			Autor:     autor,
-			CoverURL:  coverURL,
-			BarcodeID: exBarcode,
-			Frist:     frist,
-		})
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-
-	result := make([]*GraduateDetail, 0, len(studOrder))
-	for _, id := range studOrder {
-		result = append(result, studMap[id])
-	}
-	return result, nil
-}
-
-// GetGraduatesHandler lists graduating students with unreturned books.
-// Pass ?details=true to include per-student loan details (for Laufzettel PDF).
-// @Summary      Get list of graduating students
-// @Description  Retrieves former/graduating students who still have unreturned books, optionally including loan details.
+// GetGraduatesHandler liefert die Abgängerliste samt Saisonfenster.
+// @Summary      Abgängerliste
+// @Description  Abschlussklassen (9H/10H, 10R, 13) mit noch offenen Büchern, in der Saison vom 01.05. bis 31.07.; außerhalb leer mit offen=false.
 // @Tags         admin
-// @Accept       json
 // @Produce      json
-// @Param        details  query     bool  false  "True to include loan detail structures"
-// @Success      200      {array}   GraduateDetail
-// @Failure      500      {object}  map[string]string
+// @Success      200  {object}  AbgaengerAntwort
+// @Failure      500  {object}  map[string]string
 // @Router       /abgaenger [get]
 func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		if r.URL.Query().Get("details") != "true" {
-			// Basic list: one row per student
-			students, err := s.queryGraduatesBasic(ctx)
+		antwort := AbgaengerAntwort{
+			Fenster:   abgaengerFensterFuer(s.jetzt()),
+			Abgaenger: []AbgaengerZeile{},
+		}
+		if antwort.Fenster.Offen {
+			zeilen, err := s.queryGraduatesBasic(r.Context())
 			if err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
-			RespondJSON(w, http.StatusOK, students)
-			return
+			antwort.Abgaenger = zeilen
 		}
-
-		// Detail mode: one row per loan, assembled into per-student objects
-		result, err := s.queryGraduatesDetail(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		RespondJSON(w, http.StatusOK, result)
+		RespondJSON(w, http.StatusOK, antwort)
 	}
 }
 
@@ -204,9 +121,8 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 // auf ausleihen (früher LEFT JOIN) — sonst kamen beim Massendruck von 150 Abgängern 140
 // komplett leere Seiten aus dem Drucker.
 //
-// Filter ist ist_abgaenger — dieselbe Definition wie die übrige Abgänger-Ansicht. Ein
-// leerer klasse-Filter ("") liefert alle Abgänger; sonst nur die genannte Klasse (für den
-// klassenweisen Druck via /api/abgaenger/pdf?klasse=…).
+// Ein leerer klasse-Filter ("") liefert alle Abgänger; sonst nur die genannte Klasse (für
+// den klassenweisen Druck via /api/abgaenger/pdf?klasse=…).
 func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) ([]pdf.KontoauszugEintrag, error) {
 	detailQuery := `
 		SELECT s.id, s.vorname, s.nachname, s.klasse,
@@ -218,7 +134,7 @@ func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) (
 		JOIN ausleihen a ON s.id = a.schueler_id AND a.rueckgabe_am IS NULL
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = true
+		WHERE ` + abgaengerBedingung + `
 		  AND ($1 = '' OR s.klasse = $1)
 		ORDER BY s.klasse, s.nachname, t.titel
 	`
@@ -268,13 +184,20 @@ func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) (
 // je Schüler, mit Freigabezeile). Hieß früher „Laufzettel" — der Name hing dem
 // Dokument noch an, obwohl längst der Kontoauszug erzeugt wird.
 // @Summary      Get Kontoauszug PDF
-// @Description  Generates a printable PDF for former/graduating students with their unreturned books.
+// @Description  Generates a printable PDF for graduating students with their unreturned books (season 01.05.–31.07.).
 // @Tags         admin
 // @Produce      application/pdf
 // @Router       /abgaenger/pdf [get]
 func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		// Außerhalb der Saison gibt es keinen Ausdruck — dieselbe Regel wie die Liste,
+		// sonst druckte ein direkter Aufruf im Oktober, was der Bildschirm nicht zeigt.
+		if fenster := abgaengerFensterFuer(s.jetzt()); !fenster.Offen {
+			apierrors.SendHTTPError(w, http.StatusNotFound, abgaengerAusserhalbDerSaison(fenster))
+			return
+		}
 
 		// Optionaler Klassenfilter: /api/abgaenger/pdf?klasse=10a druckt nur diese Klasse.
 		klasse := r.URL.Query().Get("klasse")

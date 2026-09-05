@@ -115,14 +115,14 @@ im Bestellwesen (→ _Klassensatz-Reservierungen_). (§4)
 - **Neuer Schüler** per Formular; klassenweise besser über den LUSD-Import
   (_Einstellungen → Schuljahreswechsel_).
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
-- Reiter **Abgänger / Archiv** und **Papierkorb**; endgültiges Löschen/Anonymisieren nur mit
-  Namensbestätigung (DSGVO-Kette, §8).
+- Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**; endgültiges
+  Löschen/Anonymisieren nur mit Namensbestätigung (DSGVO-Kette, §8).
 - **Doppelter Datensatz?** (Recht „Schüler zusammenführen", ab Werk nur Admin; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
   Person zweimal in der Kartei — typisch nach einer Namensänderung in der LUSD, die der
   Export ohne Schüler-ID nicht wiedererkannt hat —, beide Datensätze zusammenführen. Es
   bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat; Ausleihen, Gebühren und
   Historie des anderen wandern hinüber, vom Foto bleibt das jüngere. Die Suche im Dialog
-  findet auch Abgänger und Gesperrte. **Wurde für den aufgelösten Datensatz schon ein
+  findet auch Ehemalige und Gesperrte. **Wurde für den aufgelösten Datensatz schon ein
   Ausweis gedruckt, diese zweite Karte einziehen und vernichten:** Ihre Nummer ist danach
   frei und kann beim nächsten neu angelegten Schüler wieder vergeben werden.
   ([LUSD.md](LUSD.md) §5)
@@ -137,15 +137,22 @@ Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. (§3)
 
 ## Abgänger
 
-Abgänger wird ein Schüler am Schuljahreswechsel: durch die Versetzung (Abschlussklassen
-9H, 10R und 13) oder den LUSD-Import (wer im neuen Export fehlt). Während des
-Abschlussjahres steht er hier noch nicht — nur „Abgang <Jahr>" in seiner Akte.
+Abgänger sind die Abschlussklassen des laufenden Schuljahres — 9H (und das freiwillige
+10. Hauptschuljahr), 10R und 13 —, also die Kinder, die zum Schuljahresende gehen. Sie
+sind noch an der Schule und leihen bis zuletzt aus. Die Regel ist dieselbe wie bei der
+Versetzung; eingestellt wird nichts, die Klasse weiß es.
 
-Zeigt nur Abgänger, die **noch Bücher haben**. Kontoauszüge drucken oder an die
-Klassenleitungen mailen. Wer alles zurückgegeben hat, verschwindet aus der Liste, bleibt
-bis zum Ende der **Karenzzeit** (Vorgabe 90 Tage; _Einstellungen → Datenschutz &
-Sitzung_) als gesperrter Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu
-reparieren — und wird danach automatisch anonymisiert. Die Karenz läuft ab dem **späteren**
+Die Liste zeigt **vom 1. Mai bis 31. Juli** die Abgänger, die **noch Bücher haben** — zum
+Einsammeln vor der Entlassung. Kontoauszüge drucken oder an die Klassenleitungen mailen;
+wer alles zurückgegeben hat, verschwindet. Außerhalb dieser Zeit steht hier nur der
+Hinweis mit den Daten.
+
+Wer die Schule dann **verlassen** hat (Versetzung: Abschlussklasse; LUSD-Import: fehlt im
+neuen Export), steht nicht mehr hier, sondern in der Schülerdatei unter _Ehemalige /
+Archiv_ — mit offenen Büchern zusätzlich im Mahnwesen. Er bleibt bis zum Ende der
+**Karenzzeit** (Vorgabe 90 Tage; _Einstellungen → Datenschutz & Sitzung_) als gesperrter
+Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu reparieren — und wird danach
+automatisch anonymisiert. Die Karenz läuft ab dem **späteren**
 Zeitpunkt: dem Abgang oder der letzten Rückgabe beziehungsweise Schadensregulierung. Wer
 erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur Datensätze, die die Karenz durchlaufen haben, also schon anonymisiert sind (§8).
 (§8, [LUSD.md](LUSD.md) §4)

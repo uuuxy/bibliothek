@@ -95,6 +95,9 @@ type StudentRepository interface {
 	// und/oder Suchbegriff eingegrenzt. Die Suche läuft über dieselben SQL-Bausteine
 	// wie SearchStudentsFuzzy und kennt keine 500er-Grenze.
 	ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error)
+	// ListEhemaligeWithStats liefert die Weggegangenen (ist_abgaenger = true) für den
+	// Reiter „Ehemalige / Archiv" — dieselben Zeilen und dieselbe Suche wie die Aktiven.
+	ListEhemaligeWithStats(ctx context.Context, suche string) ([]StudentListStat, error)
 }
 
 // pgStudentRepository implementiert das StudentRepository für PostgreSQL.

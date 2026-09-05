@@ -1,13 +1,29 @@
-<!-- @component AbgaengerTabelle — die Liste der Abgänger mit offenen Posten,
-     einschließlich des leeren Falls („alle entlastet"). Beides gehört zusammen:
-     Es ist derselbe Bildschirmbereich in zwei Zuständen. -->
+<!-- @component AbgaengerTabelle — die Liste der Abgänger mit offenen Posten in drei
+     Zuständen desselben Bildschirmbereichs: außerhalb der Saison (Hinweis mit den Daten),
+     in der Saison ohne Posten („alle entlastet"), in der Saison mit Zeilen (Tabelle).
+     Welcher Zustand gilt, sagt der Server über `fenster` — die Oberfläche rechnet
+     keinen eigenen Kalender. -->
 <script>
-	import { Check } from '@lucide/svelte';
-	/** @type {{ zeilen: any[], leer: boolean, onProfil: (student: any) => void }} */
-	let { zeilen, leer, onProfil } = $props();
+	import { CalendarClock, Check } from '@lucide/svelte';
+	/** @type {{ zeilen: any[], leer: boolean, fenster: { offen: boolean, von: string, bis: string }, onProfil: (student: any) => void }} */
+	let { zeilen, leer, fenster, onProfil } = $props();
 </script>
 
-{#if leer}
+{#if !fenster.offen}
+	<div class="py-12 text-center space-y-3 animate-fade-in">
+		<div
+			class="w-16 h-16 rounded-full bg-surface-container-low border border-outline-variant flex items-center justify-center text-on-surface-variant mx-auto"
+		>
+			<CalendarClock class="h-8 w-8" aria-hidden="true" />
+		</div>
+		<h3 class="font-bold text-on-surface">Abschlussklassen erscheinen hier ab Mai</h3>
+		<p class="text-xs text-on-surface-variant max-w-sm mx-auto">
+			Vom {fenster.von} bis {fenster.bis} zeigt diese Liste die Abschlussklassen (9H, 10R, 13) mit noch
+			offenen Büchern — zum Einsammeln vor der Entlassung. Wer die Schule schon verlassen hat und noch
+			Bücher schuldet, steht im Mahnwesen.
+		</p>
+	</div>
+{:else if leer}
 	<div class="py-12 text-center space-y-3 animate-fade-in">
 		<div
 			class="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mx-auto"
@@ -16,7 +32,7 @@
 		</div>
 		<h3 class="font-bold text-slate-800">Alle Abgänger entlastet!</h3>
 		<p class="text-xs text-slate-500 max-w-xs mx-auto">
-			Kein Abgänger hat mehr offene Lehrmittel oder unbezahlte Schadensfälle.
+			Kein Schüler der Abschlussklassen hat noch offene Lehrmittel.
 		</p>
 	</div>
 {:else}

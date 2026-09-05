@@ -50,14 +50,16 @@ suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanl
   Schreibvariante an der Datenbank abgewiesen, und die Maske muss das erklären — deshalb
   eine Produktfrage, kein Reflex.
 
-- **Drei Definitionen für das Ende eines Bildungsgangs** (05.09.2026, B).
-  `internal/ausweis/gueltigkeit.go` (H 9, Mittelstufe 10, Oberstufe 13, kennt E/Q),
-  `calculateAbgaengerJahr` in `api/student_create.go` (h 9; Stufe ≥ 11 → 13; alles andere
-  10 — auch G) und die Versetzung in `api/student_promotion.go` (10+h, 11+r, ≥ 14). Folge:
-  Ein 10G steht in der Akte mit „Abgang <dieses Jahr>", die Versetzung setzt ihn nach 11G.
-  Kein stiller Schaden — der Wert ist Anzeige und editierbar, die Löschung rechnet mit dem
-  tatsächlichen Abgangsjahr —, aber drei Wahrheiten für eine Frage. Beim Bau der
-  Abschlussklassen-Liste (Entscheidung 2): eine Definition, drei Verbraucher.
+- **Dritte Definition für das Ende eines Bildungsgangs** (05.09.2026, B; seit dem Bau der
+  Abgängerliste am selben Tag nur noch EINE Restdefinition). Versetzung, Klassenleitungs-
+  Zuordnung und Abgängerliste lesen jetzt `repository.AbschlussklasseSQL` (H ab 9, R ab 10,
+  sonst ab 13; Regel-Tabelle `TestAbschlussklasseSQL_Regel`, Paar-Gate
+  `TestAbgaengerliste_UndVersetzungSehenDieselbeMenge`). Übrig: `calculateAbgaengerJahr` in
+  `api/student_create.go` (h → 9, ≥ 11 → 13, sonst 10 — auch G) rechnet das Anzeigejahr
+  „Abgang <Jahr>" der Akte; ein 10G steht dort mit dem falschen Jahr. Anzeige, editierbar,
+  kein Filter — Zwilling in Go bewusst nicht gebaut (Vollprobe fehlte). Beim nächsten
+  Anfassen der Akte: Jahr aus der SQL-Regel rechnen lassen (eine Abfrage) statt in Go.
+  `internal/ausweis/gueltigkeit.go` bleibt eigene Sache (Ausweis-Gültigkeit ≠ Abgang).
 
 - **Elf Overlays bauen ihr Dialog-Markup selbst statt `ui/Modal.svelte`** (05.09.2026, C).
   Das Verhalten ist zusammengeführt (`use:escapeSchliesst`, geratscht in
@@ -103,25 +105,19 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    von selbst). Was zu tun ist, entscheidet ein Mensch; der Wächter hält nur fest, DASS es
    zu tun ist. Kosten: eine Zählung im Wächter, ein Test, eine Zeile im Handbuch.
 
-2. **„Abgänger" = wer die Schule zum Schuljahresende verlässt — eine Bedeutung, keine zwei
-   Blöcke** (05.09.2026, Peter). Am Code belegt: Der Initial-Commit (29.05., Ansicht
-   „Abgänger-Entlastung") filterte die Abschlussklassen 9H/10R/13 mit offenen Büchern — noch
-   an der Schule, weiter ausleihend, Liste zum Einsammeln vor der Entlassung. 15beae53
-   (25.06., Nebensatz in einem Briefkopf-Commit) und 37d6542c (16.07., Laufzettel) stellten
-   auf `ist_abgaenger = true` („fehlt im LUSD-Export") um; Anlass war ein echter Fehler
-   (hartkodierte Klassennamen fanden „09H1" nicht), Wirkung ein Bedeutungswechsel, den
-   Handbuch, Fachkonzept und Karenz-Arbeit seitdem als Wahrheit beschreiben. Mein erster
-   Vorschlag (zwei Blöcke, Sekretariatseintrag, Tür „Abgang melden") war zu kompliziert —
-   von Peter verworfen.
-   **Zu bauen:** Abgänger sind die Abschlussklassen des laufenden Schuljahrs. Die Regel hat
-   die Versetzung schon (`api/student_promotion.go`: 9+h, 10+r, 13), angewandt auf die
-   AKTUELLE Klasse über Jahrgang und Zweig, nie über Klassennamen als Text. Ansicht und
-   Laufzettel filtern darauf; Ausleihe unverändert. **Sichtbar ab dem 1. Mai** bis zur
-   Versetzung (Peter, 05.09.: „vielleicht wäre der Mai gut"); fester Wert, keine
-   Einstellung. Vorher zeigt die Ansicht den Hinweis „Abschlussklassen erscheinen hier ab
-   Mai", damit die Tür nicht tot wirkt. Wer laut LUSD schon weg ist und noch Bücher hat, steht in der Mahnliste —
-   kein eigener Block. Paar-Gate: Versetzungs-Vorschau und Abgänger-Liste liefern dieselbe
-   Menge. Danach Handbuch und Fachkonzept zurückschreiben. Die Frist-Frage löst sich über 3.
+2. **„Abgänger" = Abschlussklassen, die zum Schuljahresende gehen — GEBAUT 05.09.2026.**
+   Historie (Bedeutungswechsel 25.06./16.07., Zwei-Block-Vorschlag verworfen) steht in der
+   Git-Historie dieser Datei und in [FACHKONZEPT.md](FACHKONZEPT.md) §8.x. Umgesetzt: eine
+   Regel `repository.AbschlussklasseSQL` für Versetzung, Klassenleitungs-Zuordnung und
+   Abgängerliste (Paar-Gate); Liste, Druck und Versand mit Saison 01.05.–31.07.
+   (`api/abgaenger_fenster.go`, `Server.Uhr` für Tests); `GET /api/abgaenger` antwortet
+   `{fenster, abgaenger}`; Schülerdatei-Reiter heißt „Ehemalige / Archiv" und hat eine EIGENE Liste
+   (`GET /api/schueler?status=ehemalige`) — er hatte bis dahin die Abgängerliste eingebettet,
+   was erst der E2E-Test am frischen Stack zeigte; Handbuch und Fachkonzept zurückgeschrieben. Beifund des Paar-Gates: Klasse ohne Zweigbuchstaben
+   („12") machte das Prädikat NULL, die Versetzung hätte NULL in `ist_abgaenger NOT NULL`
+   geschrieben — COALESCE. E2E außerhalb der Saison: Hinweis-Zweig läuft, Klick- und
+   Versand-Specs überspringen sichtbar; beide Zustände deterministisch in
+   `api/graduates_pg_test.go` und `AbgaengerTabelle.test.js`.
 
 3. **LMF-Plan: Rückgabe- und Ausgabetermine je Klasse statt Excel** (05.09.2026, Peters
    Vorschlag, zwei Listen der Schule gesehen). Die Schule führt eine Tabelle Wochentag,
@@ -155,6 +151,22 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    der Plan bestimmt nur, WANN ihre Bücher fällig sind. (c) Neuer Plan startet leer — eine
    Vorbelegung würde mit Platzhalter-Daten sofort Fristen setzen; stattdessen zeigt die
    Seite, welche Klassen noch keinen Termin haben.
+
+4. **Klassensätze automatisch ableiten statt von Hand pflegen** (05.09.2026, Peters Idee:
+   „ganz verwegene Idee … die manuelle Option kann weiterhin vorhanden sein"). Heute ist
+   `class_books` (Klasse → Titel; Seite _Klassensätze_, Portal-Reiter _Klassensätze der
+   eigenen Klassen_) reine Handpflege. Das Programm kennt die Antwort aber schon aus zwei
+   Quellen: (a) den **laufenden Ausleihen** — wenn 25 von 28 Kindern der 7G1 denselben
+   Titel haben, ist das ihr Klassensatz, egal ob Schulbuch oder Lektüre; (b) den
+   **Lernmittel-Feldern** (Migration 093: `ist_lernmittel`, Fach, Jahrgang, Zweig) — alle
+   Lernmittel mit Jahrgang 7 und Zweig G gehören jeder 7G. (a) ist die Wirklichkeit und
+   deckt Lektüren; (b) ist der Plan und funktioniert schon vor der Ausgabe. **Vorschlag:**
+   (a) als Vorschlagsliste mit Schwelle (z. B. ≥ 2/3 der Klasse), die der Nutzer per Klick
+   übernimmt; Handpflege bleibt; ein Merkmal `quelle` (hand/ausleihe) an `class_books`,
+   damit Übernommenes beim nächsten Lauf aktualisiert, Handgepflegtes nie überschrieben
+   wird. Offen (Peter): (i) Wirklichkeit (a) oder Plan (b) oder beides? (ii) Übernehmen
+   per Klick oder still nachführen? (iii) Was ist ein „Satz" — auch 12 Lektüren an eine
+   halbe Klasse?
 
 ## Beobachten (nichts zu tun)
 

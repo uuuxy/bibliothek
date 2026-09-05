@@ -116,11 +116,13 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		RETURNING id`).Scan(&w.schuelerID); err != nil {
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
-	// Abgänger mit offener Ausleihe — sonst bleibt die Abgängerliste leer und
-	// ihre Stufe-2-Zeile wäre trivial grün.
+	// Schüler einer Abschlussklasse mit offener Ausleihe — sonst bleibt die Abgängerliste
+	// (Abschlussklassen, noch an der Schule; seit 05.09.2026 wieder in dieser Bedeutung)
+	// leer und ihre Stufe-2-Zeile wäre trivial grün. Der Router läuft dafür mit der Uhr
+	// in der Saison (Mai–Juli), siehe unten.
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger)
-		VALUES ('SBK-KANARI-2', 'Zugvogel', 'Vogelbeere', '05A', 2026, true)
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		VALUES ('SBK-KANARI-2', 'Zugvogel', 'Vogelbeere', '09H1', 2026)
 		RETURNING id`).Scan(&w.abgaengerID); err != nil {
 		t.Fatalf("Abgänger anlegen: %v", err)
 	}
@@ -437,6 +439,9 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 		t.Fatalf("Authenticator: %v", err)
 	}
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
+	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
+	// das Gate misste dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
+	srv.Uhr = saisonUhr
 	router := srv.Routes()
 
 	welt := baueKanarienWelt(t, pool, authenticator)
@@ -619,6 +624,9 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 		t.Fatalf("Authenticator: %v", err)
 	}
 	srv := NewServer(&db.Database{Pool: pool}, authenticator, sse.NewBroker(), false)
+	// Die Abgängerliste hat eine Saison (Mai–Juli); außerhalb wäre ihre Zeile leer und
+	// das Gate misste dort nichts. Deshalb mit gestellter Uhr, nicht mit dem Kalender.
+	srv.Uhr = saisonUhr
 	router := srv.Routes()
 
 	welt := baueKanarienWelt(t, pool, authenticator)

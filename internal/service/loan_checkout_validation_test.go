@@ -41,6 +41,9 @@ func (m *mockStudentRepo) EtikettenZeilen(ctx context.Context, ids []string) ([]
 func (m *mockStudentRepo) ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]repository.StudentListStat, error) {
 	return nil, nil
 }
+func (m *mockStudentRepo) ListEhemaligeWithStats(ctx context.Context, suche string) ([]repository.StudentListStat, error) {
+	return nil, nil
+}
 
 type mockAuditRepo struct {
 	adminAktionCalls int
