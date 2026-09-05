@@ -116,7 +116,12 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
      Klassen, per Ziehen sortierbar; Vorbelegung = **Plan des Vorjahres** (liegt in
      `lmf_termine`, Klassennamen bleiben Jahr für Jahr gleich, weil die Versetzung Schüler
      verschiebt, nicht Namen), sonst Abschlussklassen zuerst, dann Jahrgang absteigend; nicht
-     im Vokabular stehende Klassen („7G1 neu" vor dem LUSD-Import) frei eintippbar.
+     im Vokabular stehende Klassen („7G1 neu" vor dem LUSD-Import) frei eintippbar. Die
+     Liste hat zwei Teile, „Im Plan" und „Nicht im Plan": **Die Oberstufe braucht den Ablauf
+     an dieser Schule nicht, sie organisiert Rückgabe und Ausgabe selbst** (Peter 05.09.
+     abends) — E/Q/12/13 stehen beim ersten Plan unten, das Vorjahr merkt es sich, und
+     „Noch ohne Rückgabe-Termin" mahnt sie nicht an; ihre Lernmittel behalten den Stichtag.
+     Für eine andere Schule ist die Oberstufe damit optional, nicht ausgeschlossen.
      (c) Das System verteilt die Reihenfolge auf Tage und Stunden; die Tabelle zeigt das
      Ergebnis und ist DORT editierbar: „mit voriger Zeile zusammenlegen" (10R1/10R2 teilen sich
      die Stunde), Leerzeile einfügen (Bücher setzen, Nachzügler, Aufräumen — mit Vermerk),
