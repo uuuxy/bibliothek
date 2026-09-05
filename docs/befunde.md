@@ -32,8 +32,8 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen
-Anfassen.
+**Reihenfolge:** erst Peters Entscheidung zur endgültigen Löschung (Verfallsdatum 30. Januar),
+dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
 
 ---
 
@@ -83,8 +83,27 @@ suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanl
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
 kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-Zurzeit nichts offen (05.09.2026: sechs Fragen beantwortet, vier davon gebaut, zwei mit „so
-lassen" entschieden — Historie in `git log -p docs/befunde.md`).
+1. **Endgültige Löschung kennt die Karenz nicht** (05.09.2026, Peters Frage nach der
+   Inventur). `RunGDPRDeleteAbgaenger` löscht ab dem 30. Januar des Folgejahres jeden
+   Abgänger ohne offene Vorgänge in der nächsten Nacht — und läuft im Cron VOR der
+   Anonymisierung. Die Karenz (seit 3c81c260 ab dem letzten Vorgang) gilt nur für die
+   Anonymisierung; der Löschjob schneidet sie ab: Wer im November zurückgibt, hat bis zum 30. Januar 77 statt 90 Tage, wer im Januar zurückgibt 16, wer danach zurückgibt 0. Der
+   Abgang im Juli ohne offene Bücher ist nicht betroffen (Karenz läuft im Oktober ab,
+   Löschung im Januar).
+   **Empfehlung: kein zweiter Regler, sondern eine Regel — endgültig gelöscht wird nur, was
+   die Karenz durchlaufen hat, also schon anonymisiert ist** (`anonymized_at IS NOT NULL` im
+   Löschprädikat). Die vorhandene Einstellung „Abgänger-Karenzzeit" steuert damit beides,
+   0 heißt weiter „sofort". Folge: Späte Rückgeber bekommen die volle Karenz und werden in
+   der Nacht nach der Anonymisierung gelöscht; offene Bücher schützen wie bisher. Kosten:
+   ein Prädikat, ein PG-Test (Rückgabe nach dem Stichjahr: nicht gelöscht, nach der Karenz
+   anonymisiert, dann gelöscht — rot am alten Stand), die bestehenden Tests der
+   Sofort-Löschung, der Wächter-Text „30 Tage nach Schuljahresende", der Hilfetext.
+   Nach außen: Der Art.-13-Hinweis sagt „spätestens nach einem Jahr anonymisiert" — mit
+   Karenz nach dem letzten Vorgang kann ein Buch, das elf Monate draußen war, das Jahr
+   überschreiten. Ehrlicher Wortlaut: „spätestens 90 Tage nach der letzten Rückgabe". Das
+   ist ein Text an Eltern, deshalb Peters Entscheidung. Alternative mit gleicher Wirkung:
+   dieselbe Uhr (GREATEST) zusätzlich ins Löschprädikat — zwei Stellen für eine Regel.
+   Verfallsdatum: 30. Januar 2027, ab dann trifft es die ersten späten Rückgeber.
 
 ## Beobachten (nichts zu tun)
 
