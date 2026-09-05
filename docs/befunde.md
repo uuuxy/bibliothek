@@ -103,28 +103,39 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
    von selbst). Was zu tun ist, entscheidet ein Mensch; der Wächter hält nur fest, DASS es
    zu tun ist. Kosten: eine Zählung im Wächter, ein Test, eine Zeile im Handbuch.
 
-2. **„Abgänger" meint seit dem 25.06.2026 etwas anderes als am Anfang** (05.09.2026, am
-   Code belegt, Peters Einwand). Ursprünglich (Initial-Commit 29.05., Ansicht
-   „Abgänger-Entlastung"): die Abschlussklassen 9H/10R/13 mit offenen Büchern — noch an der
-   Schule, weiter ausleihend, die Liste zum Einsammeln VOR der Entlassung (`WHERE s.klasse
-IN ('9h','10r','13') AND a.rueckgabe_am IS NULL`). Am 25.06. (15beae53, als Nebensatz
-   in einem Briefkopf-Commit) und am 16.07. (37d6542c, Laufzettel) wurde der Filter auf
-   `ist_abgaenger = true` umgestellt — „fehlt im LUSD-Export, ist weg". Der Anlass war ein
-   echter Fehler (hartkodierte Klassennamen fanden „09H1" nicht), die Heilung aber ein
-   Bedeutungswechsel, den niemand benannt hat. Seitdem beschreiben Handbuch, Fachkonzept,
-   Versetzung, Karenz und die Handbuch-Ergänzung vom 05.09. die zweite Bedeutung. Beide
-   sind nötig: die erste zum Einsammeln, die zweite für Sperre, Mahnung nach dem Abgang
-   und Löschung.
-   **Empfehlung:** Die Ansicht bekommt ihre ursprüngliche Bedeutung zurück und behält die
-   zweite als eigenen Block. Oben „Abschlussjahrgang <Schuljahr>": die Regel der Versetzung
-   auf die AKTUELLE Klasse angewandt (numerischer Jahrgang plus Zweig, kein hartkodierter
-   Text — das war der Fehler von damals) ODER Akte mit Abgang = dieses Schuljahr; offene
-   Bücher; Ausleihe unverändert; ab September sichtbar. Darunter „Abgegangen"
-   (`ist_abgaenger`, offene Bücher, Mahnung an Eltern). Kontoauszug, Laufzettel und
-   Klassenleitungs-Mail für beide Blöcke. Paar-Gate: Versetzungs-Vorschau und oberer Block
-   liefern dieselbe Menge. Danach Handbuch und Fachkonzept zurückschreiben. Dazu gehört die
-   Frage nach einer Frist-Deckelung am letzten Schultag (Einstellung, ein Datum pro Jahr)
-   und nach einer Tür „Abgang melden" für Wegzüge, weil die LUSD nur einmal im Jahr kommt.
+2. **„Abgänger" = wer die Schule zum Schuljahresende verlässt — eine Bedeutung, keine zwei
+   Blöcke** (05.09.2026, Peter). Am Code belegt: Der Initial-Commit (29.05., Ansicht
+   „Abgänger-Entlastung") filterte die Abschlussklassen 9H/10R/13 mit offenen Büchern — noch
+   an der Schule, weiter ausleihend, Liste zum Einsammeln vor der Entlassung. 15beae53
+   (25.06., Nebensatz in einem Briefkopf-Commit) und 37d6542c (16.07., Laufzettel) stellten
+   auf `ist_abgaenger = true` („fehlt im LUSD-Export") um; Anlass war ein echter Fehler
+   (hartkodierte Klassennamen fanden „09H1" nicht), Wirkung ein Bedeutungswechsel, den
+   Handbuch, Fachkonzept und Karenz-Arbeit seitdem als Wahrheit beschreiben. Mein erster
+   Vorschlag (zwei Blöcke, Sekretariatseintrag, Tür „Abgang melden") war zu kompliziert —
+   von Peter verworfen.
+   **Zu bauen:** Abgänger sind die Abschlussklassen des laufenden Schuljahrs. Die Regel hat
+   die Versetzung schon (`api/student_promotion.go`: 9+h, 10+r, 13), angewandt auf die
+   AKTUELLE Klasse über Jahrgang und Zweig, nie über Klassennamen als Text. Ansicht und
+   Laufzettel filtern darauf; Ausleihe unverändert; sichtbar ab dem ersten Schultag ohne
+   Einstellung. Wer laut LUSD schon weg ist und noch Bücher hat, steht in der Mahnliste —
+   kein eigener Block. Paar-Gate: Versetzungs-Vorschau und Abgänger-Liste liefern dieselbe
+   Menge. Danach Handbuch und Fachkonzept zurückschreiben. Die Frist-Frage löst sich über 3.
+
+3. **LMF-Plan: Rückgabe- und Ausgabetermine je Klasse statt Excel** (05.09.2026, Peters
+   Vorschlag, zwei Listen der Schule gesehen). Die Schule führt eine Tabelle Wochentag,
+   Datum, Stunde, Klasse(n), Besonderheiten: vor den Sommerferien „Bücherrückgabe" für alle
+   Klassen, Abschlussklassen zuerst; wer keine Abschlussklasse ist, bekommt am selben Termin
+   die neuen Bücher; nach den Ferien „Bücherausgabe" für die neu gebildeten Klassen (5er,
+   7er „neu") plus „Nachzügler"; dazwischen Zeilen „Bücher setzen" ohne Klasse; Zeilen mit
+   zwei Klassen („6F1/6F2") und freien Vermerken. Klassenzahl schwankt je Jahr. Der Plan
+   geht als PDF per Mail ans Kollegium.
+   **Vorschlag:** Tabelle `lmf_termine` (Datum, Stunde, Art Rückgabe/Ausgabe, 0..n Klassen
+   aus dem Vokabular, freier Text), eine Seite unter Lernmittel, PDF in der heutigen Form,
+   Vorbelegung aus `klassen` (Abschlussklassen zuerst, je eine Stunde, dann von Hand
+   schieben). Zweiter, getrennt zu entscheidender Schritt: Der Termin einer Klasse wird die
+   Rückgabefrist ihrer LMF-Bücher — heute gilt für alle der globale Stichtag `lmf_stichtag`.
+   Offene Fragen an Peter: (a) Termin = Frist der Klasse? (b) Versand ans Kollegium aus der
+   App oder nur PDF? (c) Vorbelegung aus der Klassenliste erwünscht oder leer starten?
 
 ## Beobachten (nichts zu tun)
 
