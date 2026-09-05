@@ -14,13 +14,17 @@
 	 *   darfPflegen?: boolean,
 	 *   onToggle: () => void,
 	 *   onEdit?: () => void,
-	 *   onDelete?: () => void,
-	 *   kompakt?: boolean
+	 *   onDelete?: () => void
 	 * }}
-	 * kompakt: Listenzeile statt Seitenüberschrift — dieselbe Stufe wie der Nachbar-Reiter
-	 * „Bestand nach Jahrgang" im Kollegiums-Portal (KlassenUebersichtStartseite, 25.08.2026).
 	 * Ohne darfPflegen (Kollegiums-Portal) braucht es keine Aktionen — die Karte ist dann
 	 * dieselbe Ansicht wie unter Bibliothek → Klassensätze, nur lesend.
+	 *
+	 * EINE Fassung seit 05.09.2026: Bis dahin trug die Karte unter Bibliothek → Klassensätze
+	 * den Klassennamen als Seitenüberschrift (24 px fett, slate) und nur das Portal die
+	 * Listenzeile (`kompakt`, 25.08.2026). Die Karte ist in beiden Fällen dasselbe
+	 * ausklappbare Listenelement (siehe Kommentar am Markup), und eine Listenzeile hat in M3
+	 * 16 px — die 24 px stammten aus dem ersten Feature-Commit, nicht aus einer Entscheidung.
+	 * Dichte gehört ins Padding, nicht in die Schriftgröße; die Farben in die Rollen.
 	 */
 	let {
 		group,
@@ -28,21 +32,13 @@
 		darfPflegen = false,
 		onToggle,
 		onEdit = undefined,
-		onDelete = undefined,
-		kompakt = false
+		onDelete = undefined
 	} = $props();
-	const zeilenTitel = $derived(
-		kompakt
-			? 'truncate text-base font-medium text-on-surface'
-			: 'truncate font-sans text-2xl font-bold text-slate-800'
-	);
+	const zeilenTitel = 'truncate text-base font-medium text-on-surface';
 	// Feste Mindestbreite + Tabellenziffern: Bei „28 Bücher" war der Chip breiter als bei
 	// „5 Bücher", und der Klassenname rutschte je Zeile nach rechts (Peter, 26.08.2026).
-	const zaehlerChip = $derived(
-		kompakt
-			? 'bg-secondary-container text-on-secondary-container inline-flex min-w-[6.5rem] shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums'
-			: 'inline-flex min-w-[7rem] shrink-0 justify-center rounded-lg border border-blue-100 bg-blue-50 px-3 py-1 text-sm font-semibold tabular-nums text-blue-600'
-	);
+	const zaehlerChip =
+		'bg-secondary-container text-on-secondary-container inline-flex min-w-[6.5rem] shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums';
 
 	let sortedBooks = $derived([...group.books].sort(sortBooksBySubjectAndTitle));
 	const rasterID = $derived(`klassensatz-${group.className.replace(/\s+/g, '-')}`);

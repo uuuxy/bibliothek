@@ -54,7 +54,6 @@
 				{#each klassensaetze as gruppe (gruppe.className)}
 					<KlassenKarte
 						group={gruppe}
-						kompakt
 						offen={offeneKlasse === gruppe.className}
 						onToggle={() =>
 							(offeneKlasse = offeneKlasse === gruppe.className ? null : gruppe.className)}
