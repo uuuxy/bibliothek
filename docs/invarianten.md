@@ -197,7 +197,7 @@ löst nichts mehr aus (`api/reorders.go`).
 > Rolle auf `create_reservations` zurückgenommen; das ist aber eine **Vorgabe**, keine
 > Invariante: Die Zeile darüber gilt, ein Administrator darf mehr erteilen. Siehe
 > [FACHKONZEPT §12](FACHKONZEPT.md).
-> | Login-Rate-Limit je echter Client-IP (nicht Proxy) | 🟢/🟡 `pkg/clientip` + `TRUSTED_PROXIES` | `middleware_ratelimit.go` |
+> | Login-Rate-Limit je echter Client-IP (nicht Proxy) | 🟢 `pkg/clientip` (ein Hop, rechtester Eintrag) + `TRUSTED_PROXIES`; Gate `TestResolver_LanClientHinterProxy` | `middleware_ratelimit.go` |
 
 ---
 

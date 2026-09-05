@@ -3,11 +3,25 @@
 //
 // The rule: X-Forwarded-For and X-Real-IP are only believed when the request
 // actually arrived from a configured trusted proxy. For requests that reach the
-// backend directly, these headers are attacker-controlled and are ignored. When
-// walking X-Forwarded-For we start at the right (the hop closest to us) and
-// return the first address that is not itself a trusted proxy — that is the real
-// client as our proxy saw it, and it cannot be spoofed by prepending fake
-// left-hand entries.
+// backend directly, these headers are attacker-controlled and are ignored.
+//
+// Exactly ONE proxy hop is trusted. The client is the RIGHTMOST X-Forwarded-For
+// entry — the one our proxy appended itself. Until 05.09.2026 the resolver walked
+// further left and skipped every entry that lay inside a trusted network. That is the
+// textbook "recursive" mode, and it breaks the moment clients and proxies share an
+// address space: the Compose default trusts all RFC-1918 networks because the Docker
+// subnet differs per host, and the school's own clients live in 192.168.x/10.x. The
+// resolver skipped them as "proxies" and fell back to Caddy's container address — every
+// device in the school became ONE client for the login limiter (50 failures / 15 min
+// for the whole building) and the 50-req/s bucket, and the audit log recorded the
+// proxy. With a proxy that passes the incoming header through, the same walk let a
+// client choose its own IP by prepending one. Gates: TestResolver_LanClientHinterProxy
+// and TestResolver_DurchgereichterHeaderIstNichtWaehlbar.
+//
+// Chained proxies (edge proxy in front of Caddy) are therefore NOT resolved to the
+// original client — this deployment has one proxy, and the second hop would need a
+// separate, explicit hop count rather than a network match that doubles as a client
+// filter.
 package clientip
 
 import (
@@ -59,27 +73,30 @@ func (rs *Resolver) FromRequest(r *http.Request) string {
 		// Direct connection from a non-proxy: forwarding headers are untrusted.
 		return peer
 	}
-	// The immediate peer is a trusted proxy. Walk X-Forwarded-For from the
-	// right (closest hop) to the left (original client) and return the first
-	// entry that is not itself a trusted proxy.
-	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-		parts := strings.Split(xff, ",")
-		for i := len(parts) - 1; i >= 0; i-- {
-			ip := strings.TrimSpace(parts[i])
-			if ip == "" {
-				continue
-			}
-			if !rs.isTrusted(ip) {
-				return ip
-			}
-		}
+	// The immediate peer is a trusted proxy. It appended the address it saw as the
+	// RIGHTMOST X-Forwarded-For entry; that is the client. Everything left of it was
+	// sent BY the client and is never consulted (see package comment).
+	if ip := rechtesterEintrag(r.Header.Get("X-Forwarded-For")); ip != "" {
+		return ip
 	}
-	// No untrusted X-Forwarded-For entry: fall back to the single-valued
-	// X-Real-IP set by the immediate proxy, otherwise the peer itself.
+	// No X-Forwarded-For: fall back to the single-valued X-Real-IP set by the
+	// immediate proxy, otherwise the peer itself.
 	if xri := strings.TrimSpace(r.Header.Get("X-Real-IP")); xri != "" {
 		return xri
 	}
 	return peer
+}
+
+// rechtesterEintrag liefert den letzten nicht-leeren Eintrag einer kommaseparierten
+// Liste — "" wenn es keinen gibt.
+func rechtesterEintrag(xff string) string {
+	parts := strings.Split(xff, ",")
+	for i := len(parts) - 1; i >= 0; i-- {
+		if ip := strings.TrimSpace(parts[i]); ip != "" {
+			return ip
+		}
+	}
+	return ""
 }
 
 // isTrusted reports whether ipStr is a configured trusted proxy address.
