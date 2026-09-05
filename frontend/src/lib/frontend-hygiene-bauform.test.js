@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { srcRoot, sammleQuelldateien, relPfad, vergleicheMitBestand } from './hygiene-quellen.js';
+import {
+	srcRoot,
+	sammleQuelldateien,
+	relPfad,
+	vergleicheMitBestand,
+	ohneKommentare
+} from './hygiene-quellen.js';
 
 // Material 3 kennt keine Fläche, die Rahmen UND Erhebung zugleich trägt: 6 seiner 84
 // Bauteile haben einen Rahmen, 36 eine Erhebung, die Schnittmenge ist leer. Die Regel
@@ -78,7 +84,7 @@ const BESTAND = [
 function klassenlisten(quelle) {
 	// OHNE KOMMENTARE. Ein Detektor, der die Begründung für die Sache hält, meldet ewig
 	// „alles gut" (Bugklasse „Lügende Ratsche", docs/sweeps.md).
-	const code = quelle.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+	const code = ohneKommentare(quelle);
 	return [...code.matchAll(/\bclass=("([^"]*)"|'([^']*)'|\{([^}]*)\})/g)].map(
 		(m) => m[2] ?? m[3] ?? m[4] ?? ''
 	);

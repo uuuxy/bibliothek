@@ -42,3 +42,27 @@ export function vergleicheMitBestand(betroffen, bestand) {
 		inzwischenSauber: bestand.filter((f) => !betroffen.includes(f))
 	};
 }
+
+/**
+ * Quelltext ohne Kommentare — HTML-Kommentare, Blockkommentare, Zeilenkommentare.
+ *
+ * Ein Detektor, der die Begründung für die Sache hält, meldet ewig „alles gut"
+ * (Bugklasse „Lügende Ratsche", docs/sweeps.md). Bis 06.09.2026 stand dieselbe
+ * Ersetzung in zwei Tests je einmal; CodeQL (Alerts #27, #28: „Incomplete
+ * multi-character sanitization") wies darauf hin, dass EIN Durchlauf nicht reicht —
+ * `<!-- <!-- -->` lässt nach der ersten Runde wieder einen Kommentar stehen. Deshalb
+ * wird ersetzt, bis sich nichts mehr ändert.
+ * @param {string} quelle
+ * @returns {string}
+ */
+export function ohneKommentare(quelle) {
+	let code = quelle;
+	for (;;) {
+		const vorher = code;
+		code = code
+			.replace(/<!--[\s\S]*?-->/g, '')
+			.replace(/\/\*[\s\S]*?\*\//g, '')
+			.replace(/^\s*\/\/.*$/gm, '');
+		if (code === vorher) return code;
+	}
+}

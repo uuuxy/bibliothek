@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { srcRoot, sammleQuelldateien, relPfad, vergleicheMitBestand } from './hygiene-quellen.js';
+import {
+	srcRoot,
+	sammleQuelldateien,
+	relPfad,
+	vergleicheMitBestand,
+	ohneKommentare
+} from './hygiene-quellen.js';
 
 // Buchcover kommen aus components/ui/BuchCover.svelte — dieselbe Invariante wie bei
 // Suchfeldern, Reitern und Symbolen.
@@ -82,10 +88,7 @@ describe('Cover-Hygiene', () => {
 		// obwohl `loading="lazy"` aus dem <img> entfernt war — der String stand weiterhin
 		// im Kopfkommentar, der ihn erklärt. Ein Detektor, der die Begründung für die Sache
 		// hält, meldet ewig „alles gut" (Bugklasse „Lügende Ratsche", docs/sweeps.md).
-		const code = datei
-			.replace(/<!--[\s\S]*?-->/g, '')
-			.replace(/\/\*[\s\S]*?\*\//g, '')
-			.replace(/^\s*\/\/.*$/gm, '');
+		const code = ohneKommentare(datei);
 
 		// loading="lazy" ist der Grund, warum das Cover überhaupt in die Zeile zurückdarf:
 		// Der Bestellbedarf hat auf dem Zielsystem 247 Zeilen, ohne lazy wären das 247
