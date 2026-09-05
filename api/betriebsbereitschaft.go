@@ -139,6 +139,13 @@ type Lage struct {
 	// bevor; ein stiller Fehlschlag wäre erst aufgefallen, wenn jemand fragt, warum
 	// Daten von vor zwei Jahren noch da sind.
 	LoeschRueckstand []repository.LoeschRueckstand
+
+	// Ehemalige mit offenen Vorgängen seit mehr als einem Jahr (Register 05.09.2026,
+	// Entscheidung 1): Ein offenes Buch oder eine unbezahlte Forderung schützt den
+	// Datensatz vor Anonymisierung und Löschung — richtig, solange jemand mahnt oder
+	// abrechnet. Schließt niemand den Vorgang, bleibt Name und Anschrift auf Dauer, und
+	// keine Routine meldet es. nil: nicht erhoben.
+	EhemaligeMitOffenenVorgaengen *int
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -188,8 +195,40 @@ func Pruefe(l Lage) []Befund {
 		pruefeBackupAlter(l, echt),
 		pruefeRestoreProbe(l, echt),
 		pruefeDsgvoRoutinen(l),
+		pruefeEhemaligeOffen(l),
 	}
 	return befunde
+}
+
+// ehemaligeOffenSeitTagen ist die Schwelle des Wächters: ein Jahr. Kürzer meldete er
+// jede Herbst-Mahnung, länger ließe die Akte Jahre stehen.
+const ehemaligeOffenSeitTagen = 365
+
+// pruefeEhemaligeOffen: Bleibt jemand, der die Schule verlassen hat, mit Name und
+// Anschrift stehen, weil ein Vorgang nie geschlossen wurde? Kein Automatismus — was zu
+// tun ist (Verlust buchen, Forderung stellen oder stornieren), entscheidet ein Mensch;
+// der Wächter hält nur fest, DASS es zu tun ist. Danach greifen Karenz und Löschung von
+// selbst.
+func pruefeEhemaligeOffen(l Lage) Befund {
+	b := Befund{Bereich: "Ehemalige mit offenen Vorgängen"}
+	if l.EhemaligeMitOffenenVorgaengen == nil {
+		b.Stufe = StufeWarnung
+		b.Befund = "Nicht erhoben — die Zählung der Ehemaligen mit offenen Vorgängen ist fehlgeschlagen."
+		b.Folge = "Unklar, ob Datensätze Weggegangener über die Löschfrist hinaus stehen bleiben."
+		b.Abhilfe = "Datenbankverbindung prüfen; die Zählung läuft bei jedem Aufruf dieser Seite."
+		return b
+	}
+	n := *l.EhemaligeMitOffenenVorgaengen
+	if n > 0 {
+		b.Stufe = StufeWarnung
+		b.Befund = fmt.Sprintf("%d Ehemalige haben seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung.", n)
+		b.Folge = "Solange der Vorgang offen ist, bleiben Name und Anschrift gespeichert — Karenz, Anonymisierung und Löschung greifen nicht (Art. 5 (1) e DSGVO)."
+		b.Abhilfe = "Schülerdatei → Ehemalige / Archiv → Akte öffnen: das Buch als Verlust melden (schließt die Ausleihe, die Forderung entsteht), dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
+		return b
+	}
+	b.Stufe = StufeOK
+	b.Befund = "Kein Ehemaliger mit einem seit über einem Jahr offenen Vorgang."
+	return b
 }
 
 // pruefeDsgvoRoutinen: Tun die nächtlichen Löschroutinen, was sie sollen? Das Kriterium

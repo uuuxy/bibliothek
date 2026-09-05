@@ -32,8 +32,8 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** erst die zwei offenen Entscheidungen (Dauer-Abgänger-Wächter, Klassensatz-Ableitung),
-dann die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
+**Reihenfolge:** erst die Klassensatz-Ableitung (freigegeben 05.09.), dann die Overlays auf
+`Modal.svelte`, alles Weitere beim nächsten fachlichen Anfassen.
 
 ---
 
@@ -94,18 +94,7 @@ suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanl
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
 kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht.
 
-1. **Abgänger mit nie geschlossenem Vorgang bleiben unbegrenzt** (05.09.2026). Ein offenes
-   Buch oder ein unbezahlter Schadensfall schützt vor Anonymisierung und Löschung — richtig,
-   solange die Bibliothek mahnt oder abrechnet. Schließt niemand den Vorgang (Buch kommt nie
-   zurück und wird nie als Verlust gebucht), bleibt der Datensatz mit Namen und Anschrift auf
-   Dauer, und keine Routine und kein Wächter meldet das.
-   **Empfehlung: kein Automatismus, sondern ein Befund in der Betriebsbereitschaft** —
-   „n Abgänger mit offenen Vorgängen seit mehr als 365 Tagen" als Warnung mit Abhilfe
-   (Verlust buchen und Rechnung stellen oder stornieren; danach greifen Karenz und Löschung
-   von selbst). Was zu tun ist, entscheidet ein Mensch; der Wächter hält nur fest, DASS es
-   zu tun ist. Kosten: eine Zählung im Wächter, ein Test, eine Zeile im Handbuch.
-
-2. **Klassensätze automatisch ableiten statt von Hand pflegen** (05.09.2026, Peters Idee:
+1. **Klassensätze automatisch ableiten statt von Hand pflegen** (05.09.2026, Peters Idee:
    „ganz verwegene Idee … die manuelle Option kann weiterhin vorhanden sein"). Heute ist
    `class_books` (Klasse → Titel; Seite _Klassensätze_, Portal-Reiter _Klassensätze der
    eigenen Klassen_) reine Handpflege. Das Programm kennt die Antwort aber schon aus zwei

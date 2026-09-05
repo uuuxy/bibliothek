@@ -156,3 +156,22 @@ func (r *BetriebszustandRepository) LadeEinstellungswert(ctx context.Context, sc
 		`SELECT wert FROM system_einstellungen WHERE schluessel = $1`, schluessel).Scan(&wert)
 	return wert, err
 }
+
+// ZaehleEhemaligeMitOffenenVorgaengen zählt Weggegangene (ist_abgaenger, nicht
+// gelöscht), die seit mehr als `tage` Tagen weg sind und noch einen offenen Vorgang
+// haben — ein nie zurückgegebenes Buch oder eine unbezahlte Forderung. Genau diese
+// Vorgänge schützen den Datensatz vor Anonymisierung und Löschung (Retention-Blockade);
+// schließt sie niemand, bleibt der Name mit Anschrift auf Dauer stehen, und keine
+// Routine meldet es (Register 05.09.2026, Entscheidung 1: Befund statt Automatismus).
+func (r *BetriebszustandRepository) ZaehleEhemaligeMitOffenenVorgaengen(ctx context.Context, tage int) (int, error) {
+	var n int
+	err := r.pool.QueryRow(ctx, `
+		SELECT count(*)
+		FROM schueler s
+		WHERE s.ist_abgaenger = true AND s.deleted_at IS NULL
+		  AND s.abgaenger_seit IS NOT NULL
+		  AND s.abgaenger_seit < now() - make_interval(days => $1)
+		  AND (EXISTS (SELECT 1 FROM ausleihen a WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL)
+		    OR EXISTS (SELECT 1 FROM schadensfaelle d WHERE d.schueler_id = s.id AND d.ist_bezahlt = false))`, tage).Scan(&n)
+	return n, err
+}

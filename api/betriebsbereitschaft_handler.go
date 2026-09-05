@@ -84,6 +84,10 @@ func (s *Server) sammleLage(
 	if rueckstand, err := zustandRepo.ZaehleLoeschRueckstand(ctx); err == nil {
 		lage.LoeschRueckstand = rueckstand
 	}
+	// Ehemalige mit offenen Vorgängen: bei Fehler nil → „nicht erhoben" statt „alles gut".
+	if n, err := zustandRepo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, ehemaligeOffenSeitTagen); err == nil {
+		lage.EhemaligeMitOffenenVorgaengen = &n
+	}
 	if mail, err := mailRepo.GetConfig(ctx); err == nil && mail != nil {
 		lage.SmtpHost = strings.TrimSpace(mail.SMTPHost)
 	}

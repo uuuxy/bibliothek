@@ -174,7 +174,11 @@ neuen Export), steht nicht mehr hier, sondern in der Schülerdatei unter _Ehemal
 Archiv_ — mit offenen Büchern zusätzlich im Mahnwesen. Er bleibt bis zum Ende der
 **Karenzzeit** (Vorgabe 90 Tage; _Einstellungen → Datenschutz & Sitzung_) als gesperrter
 Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu reparieren — und wird danach
-automatisch anonymisiert. Die Karenz läuft ab dem **späteren**
+automatisch anonymisiert. Bleibt ein Buch oder eine Forderung dauerhaft offen, meldet
+_System → Betriebsbereitschaft_ nach einem Jahr „Ehemalige mit offenen Vorgängen": In der
+Akte das Buch als Verlust melden, dann die Forderung bezahlt oder storniert buchen — danach
+löscht das System von selbst. Der Buch-Barcode wird dabei nicht neu vergeben, die
+Ausweisnummer des Kindes nach der Löschung schon. Die Karenz läuft ab dem **späteren**
 Zeitpunkt: dem Abgang oder der letzten Rückgabe beziehungsweise Schadensregulierung. Wer
 erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur Datensätze, die die Karenz durchlaufen haben, also schon anonymisiert sind (§8).
 (§8, [LUSD.md](LUSD.md) §4)

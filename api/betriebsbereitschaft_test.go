@@ -55,8 +55,13 @@ func lageEingerichtet() Lage {
 		},
 		// DSGVO-Löschroutinen: alle erhoben, nichts überfällig, keine Frist auf 0.
 		LoeschRueckstand: rueckstandSauber(),
+		// Ehemalige mit offenen Vorgängen: erhoben, keiner.
+		EhemaligeMitOffenenVorgaengen: zahl(0),
 	}
 }
+
+// zahl liefert einen Zeiger auf n — für die „erhoben"-Felder der Lage.
+func zahl(n int) *int { return &n }
 
 // rechteWieVorgabe baut die Live-Rechte deckungsgleich zur Code-Vorgabe — der
 // Ausgangspunkt „keine Drift". Jeder Rechte-Testfall verstellt davon ausgehend
@@ -119,6 +124,20 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Auslagerung der Backups",
 			stufe:    StufeKritisch,
 			enthaelt: "S3_BUCKET",
+		},
+		{
+			name:     "Ehemalige mit offenem Vorgang seit über einem Jahr",
+			aendere:  func(l *Lage) { l.EhemaligeMitOffenenVorgaengen = zahl(3) },
+			bereich:  "Ehemalige mit offenen Vorgängen",
+			stufe:    StufeWarnung,
+			enthaelt: "Verlust",
+		},
+		{
+			name:     "Ehemalige nicht erhoben",
+			aendere:  func(l *Lage) { l.EhemaligeMitOffenenVorgaengen = nil },
+			bereich:  "Ehemalige mit offenen Vorgängen",
+			stufe:    StufeWarnung,
+			enthaelt: "Nicht erhoben",
 		},
 		{
 			name:     "Beispiel-Geheimnis im Echtbetrieb",

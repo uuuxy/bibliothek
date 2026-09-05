@@ -388,7 +388,7 @@ nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Contai
 und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
 raus, nur ohne den Link, um dessentwillen es sie gibt).
 
-**Geprüft werden neun Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
+**Geprüft werden vierzehn Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
 (IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten, Admin-Konten
 (wer hat Vollzugriff und erhält die Kritisch-Alarme — der Alarm-Mail-Vorfall vom
 16.08.2026 zeigte vier aktive Admins, drei davon dem Betreiber unbekannt; Konten-Anlage
@@ -398,7 +398,11 @@ bestehende Zeilen nie an, eine geänderte Vorgabe erreicht Alt-Anlagen sonst nie
 Abweichung ist bewusst nur eine Warnung, denn sie kann eine Admin-Entscheidung sein)
 und die Klassen-Zuordnung (seit 18.08.2026, Befund F3: Klassennamen verbinden Schüler,
 Klassenlehrer-Zuordnung und Bücherlisten nur als übereinstimmender Text — die Prüfung
-benennt Klassen ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten ohne Klasse).
+benennt Klassen ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten ohne Klasse); sowie **Ehemalige mit offenen Vorgängen** (seit 05.09.2026, Register Entscheidung 1:
+Weggegangene, die seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung
+haben — der Vorgang schützt sie vor Anonymisierung und Löschung, also bleiben Name und
+Anschrift sonst auf Dauer; Warnung mit Abhilfe „Verlust melden, Forderung bezahlen oder
+stornieren", kein Automatismus; `ZaehleEhemaligeMitOffenenVorgaengen`).
 
 Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
 **Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet
