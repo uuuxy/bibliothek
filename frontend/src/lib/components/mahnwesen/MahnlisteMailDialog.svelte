@@ -68,6 +68,7 @@
 				<Button
 					onclick={mahnwesenStore.sendMahnliste}
 					disabled={mahnwesenStore.modalSending || mahnwesenStore.modalMsg?.type === 'success'}
+					title={mahnwesenStore.modalSending ? 'Wird gesendet …' : mahnwesenStore.modalMsg?.type === 'success' ? 'Bereits gesendet' : ''}
 				>
 					{#if mahnwesenStore.modalSending}
 						<div

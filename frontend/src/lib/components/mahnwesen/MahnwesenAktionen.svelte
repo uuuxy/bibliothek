@@ -46,7 +46,11 @@
 	<span class="text-sm font-semibold text-slate-700"
 		>{mahnwesenStore.selectedIds.size} ausgewählt</span
 	>
-	<Button onclick={mahnwesenStore.printSelectedMahnungen} disabled={mahnwesenStore.pdfLoading}>
+	<Button
+		onclick={mahnwesenStore.printSelectedMahnungen}
+		disabled={mahnwesenStore.pdfLoading}
+		title={mahnwesenStore.pdfLoading ? 'PDF wird erzeugt …' : ''}
+	>
 		{#if mahnwesenStore.pdfLoading}
 			<div
 				class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"

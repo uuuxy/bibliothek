@@ -63,6 +63,7 @@
 		<Button
 			onclick={mahnwesenStore.downloadElternPDF}
 			disabled={mahnwesenStore.elternPdfLoading}
+			title={mahnwesenStore.elternPdfLoading ? 'PDF wird erzeugt …' : ''}
 			class="rounded-r-none"
 		>
 			{#if mahnwesenStore.elternPdfLoading}
@@ -113,6 +114,7 @@
 					mahnwesenStore.downloadElternPDF();
 				}}
 				disabled={mahnwesenStore.elternPdfLoading}
+				title={mahnwesenStore.elternPdfLoading ? 'PDF wird erzeugt …' : ''}
 				class={eintragKlasse}
 			>
 				{@render symbol(BRIEF)}
@@ -138,6 +140,13 @@
 							offen = false;
 						}}
 						disabled={mahnwesenStore.klassePdfLoading || !mahnwesenStore.selectedKlasse}
+						title={
+							!mahnwesenStore.selectedKlasse
+								? 'Bitte zuerst eine Klasse auswählen'
+								: mahnwesenStore.klassePdfLoading
+									? 'PDF wird erzeugt …'
+									: ''
+						}
 						class="shrink-0 disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
 					>
 						PDF
@@ -154,6 +163,7 @@
 					mahnwesenStore.downloadPDF();
 				}}
 				disabled={mahnwesenStore.pdfLoading}
+				title={mahnwesenStore.pdfLoading ? 'PDF wird erzeugt …' : ''}
 				class={eintragKlasse}
 			>
 				{@render symbol(HERUNTERLADEN)}
