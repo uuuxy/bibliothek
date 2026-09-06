@@ -48,9 +48,12 @@ export function vergleicheMitBestand(betroffen, bestand) {
  *
  * Ein Detektor, der die Begründung für die Sache hält, meldet ewig „alles gut"
  * (Bugklasse „Lügende Ratsche", docs/sweeps.md). Bis 06.09.2026 stand dieselbe
- * Regex-Ersetzung in zwei Tests je einmal; CodeQL (#27, #28) wies darauf hin, dass
- * EIN `replace`-Durchlauf nicht reicht: `<!-- <!-- -->` lässt danach wieder einen
- * Kommentar stehen. Eine Schleife bis zum Fixpunkt half nicht (#29) — CodeQL bewertet
+ * Regex-Ersetzung in zwei Tests je einmal; CodeQL (#27, #28) meldete, dass EIN
+ * `replace`-Durchlauf im Allgemeinen nicht reicht. (Das Beispiel `<!-- <!-- -->`, das
+ * hier bis zum 06.09.2026 als Begründung stand, belegt es NICHT: non-greedy frisst die
+ * ganze Zeichenkette. Nachgemessen im Rasterdurchgang desselben Tages — eine Begründung,
+ * die man nicht nachrechnet, ist selbst eine lügende Ratsche.) Eine Schleife bis zum
+ * Fixpunkt half auch nicht (#29) — CodeQL bewertet
  * jeden `replace`-Aufruf für sich und sieht die Schleife nicht. Deshalb kein `replace`
  * mehr: Ein Scanner läuft einmal von vorn nach hinten und ÜBERSPRINGT jeden Kommentar
  * vom Anfang bis zum ersten Ende. Was übersprungen ist, kann keinen neuen Anfang bilden.

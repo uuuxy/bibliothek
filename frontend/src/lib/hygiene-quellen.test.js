@@ -6,12 +6,13 @@ import { describe, expect, it } from 'vitest';
 import { ohneKommentare } from './hygiene-quellen.js';
 
 describe('ohneKommentare', () => {
-	it('lässt aus verschachtelten Anfängen keinen neuen Kommentar entstehen (CodeQL #29)', () => {
-		expect(ohneKommentare('<!-- <!-- -->')).toBe('');
-		expect(ohneKommentare('/* /* */')).toBe('');
-		expect(ohneKommentare('a<!-- <!-- -->b')).toBe('ab');
-	});
-
+	// Rasterdurchgang 06.09.2026 (Frage 7), am Rückbau GEMESSEN: Diese drei Zeilen sind
+	// KEIN Beleg für den Scanner. Die verworfene Regex-Fassung
+	// (`/<!--[\s\S]*?-->/g` und Geschwister) besteht sie ebenfalls — non-greedy frisst bei
+	// `<!-- <!-- -->` die ganze Zeichenkette, es bleibt kein Kommentar stehen. Rot wird
+	// die Regex-Fassung an den beiden Tests darunter (Leerraum vor `//` bleibt erhalten;
+	// ein Zeilenkommentar frisst keinen Blockanfang der nächsten Zeile) — DIE halten den
+	// Scanner fest. Der Fall hier bleibt als Beschreibung stehen, nicht als Beweis.
 	it('entfernt HTML-, Block- und ganze Zeilenkommentare, auch über Zeilen hinweg', () => {
 		const quelle = ['<!-- x\n y -->keep1', '/* a\n b */keep2', '  // nur Kommentar', 'keep3'].join(
 			'\n'

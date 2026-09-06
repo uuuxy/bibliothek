@@ -40,6 +40,14 @@ var parameterStrukturen = map[string]string{
 	"klassifizierungsLauf":                 "fehlendes Feld = LUSD-Klassifizierung ohne Ergebnis- oder Gesehen-Liste",
 	"bestellBerichtOpts":                   "fehlendes Feld = Bericht über den falschen Zeitraum oder ohne Preise",
 	"coverBox":                             "fehlendes Maß = Cover an Position 0 oder mit Größe 0",
+	// Nachgetragen im Rasterdurchgang 06.09.2026 (Frage 7): Alle drei entstanden am
+	// 05./06.09. — „exemplarZurGruppe" sogar in einem Commit, dessen Botschaft genau
+	// diese Bugklasse nennt („fünf benachbarte string-Parameter, der Vertauscher war
+	// stumm"). Die Liste ist die Aussage, nicht der Zufall: Wer die Struktur einführt,
+	// trägt sie ein, sonst ist die Ratsche für sie blind.
+	"exemplarZurGruppe": "fehlendes Feld = Zulaufzeile ohne Exemplar-ID oder ohne Cover",
+	"Rahmen":            "fehlendes Feld = Plan ohne Startstunde oder mit 0 Stunden je Tag, also ohne Plätze",
+	"Ende":              "fehlendes Feld = Rückgabe-Plan ohne Anker oder mit 0 Stunden je Tag, also still leer",
 }
 
 func TestParameterStrukturen_JedesLiteralSetztJedesFeld(t *testing.T) {
