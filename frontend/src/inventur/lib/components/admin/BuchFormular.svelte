@@ -19,6 +19,8 @@
 	} = $props();
 
 	let wirdGescannt = $state(false);
+	/** ISBN-Abfrage gescheitert — „nichts gefunden" und „Dienst weg" sehen sonst gleich aus. */
+	let lookupFehler = $state(false);
 
 	// Neuanlage eines Bibliotheksbuchs ohne Signatur ist gesperrt — die Signatur
 	// muss aufs Rücken-Etikett. Lernmittel tragen keins (Migration 093). Die DNB
@@ -32,6 +34,7 @@
 	/** @param {string} code */
 	async function handleScan(code) {
 		formular.isbn = code;
+		lookupFehler = false;
 		if (!formular.title) {
 			try {
 				const res = await apiFetch(`/api/lookup/${code}`);
@@ -51,8 +54,15 @@
 					if (data.bibKategorie && !(formular.signatur ?? '').trim()) {
 						formular.signatur = `BIB ${data.bibKategorie}`;
 					}
+				} else {
+					// Sweep „verschluckte Fehlantwort" (06.09.2026): Vorher blieb das Formular
+					// nach dem Scan einfach leer — nicht zu unterscheiden von „zu dieser ISBN
+					// ist nichts bekannt". Die Bibliothekarin tippt dann alles ab, obwohl der
+					// Dienst nur kurz weg war.
+					lookupFehler = true;
 				}
 			} catch (e) {
+				lookupFehler = true;
 				console.error('Lookup failed', e);
 			}
 		}
@@ -84,6 +94,13 @@
 	     Mitte und jedes Feld lief über die volle Breite — zwei Meter Formular. -->
 	<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_14rem] lg:gap-10">
 		<div class="space-y-8">
+			{#if lookupFehler}
+				<p class="mb-3 text-sm font-semibold text-error" role="alert">
+					Die ISBN-Abfrage ist fehlgeschlagen — die Felder bleiben leer. Das heißt NICHT, dass zu
+					dieser ISBN nichts bekannt ist.
+				</p>
+			{/if}
+
 			<BuchEingabefelder bind:formular bind:wirdGescannt />
 			{#if formular.id}
 				<BuchExemplareListe bind:formular />

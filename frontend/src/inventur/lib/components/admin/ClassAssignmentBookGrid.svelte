@@ -1,7 +1,10 @@
 <script>
 	import { Book, Check } from '@lucide/svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
-	let { books = [], selectedBookIds = $bindable(new Set()) } = $props();
+	// buecherFehler: Der Abruf der Bücher ist gescheitert (Sweep „verschluckte
+	// Fehlantwort", 06.09.2026). Ein leeres Gitter sähe sonst aus wie „kein Buch im
+	// Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
+	let { books = [], buecherFehler = false, selectedBookIds = $bindable(new Set()) } = $props();
 
 	let searchQuery = $state('');
 
@@ -58,6 +61,13 @@
 		autofokus
 		{nachlaufend}
 	/>
+
+	{#if buecherFehler}
+		<p class="mt-2 px-1 text-sm font-semibold text-error" role="alert">
+			Die Bücherliste konnte nicht geladen werden — hier steht deshalb nichts. Das heißt NICHT, dass
+			keine Bücher im Bestand sind.
+		</p>
+	{/if}
 
 	{#if filteredBooks.length > ANZEIGE_GRENZE}
 		<p class="mt-2 px-1 text-xs text-slate-500">

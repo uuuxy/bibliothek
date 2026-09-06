@@ -10,6 +10,8 @@
 	/** @type {any} */
 	let summary = $state(null);
 	let loading = $state(true);
+	/** Abruf gescheitert — eine leere Kachel sähe aus wie „nichts überfällig". */
+	let fehler = $state(false);
 
 	const hatMahnungen = $derived((summary?.total_overdue ?? 0) > 0);
 
@@ -28,8 +30,17 @@
 	async function fetchSummary() {
 		try {
 			const res = await apiFetch('/api/dashboard/summary');
-			if (res.ok) summary = await res.json();
+			if (res.ok) {
+				summary = await res.json();
+				fehler = false;
+			} else {
+				// Sweep „verschluckte Fehlantwort" (06.09.2026): Ohne summary rendert unten
+				// GAR NICHTS — eine leere Kachel in der Bento-Reihe, die wie „nichts
+				// überfällig" aussieht. Eine Zahl, die fehlt, muss sich als fehlend zeigen.
+				fehler = true;
+			}
 		} catch (err) {
+			fehler = true;
 			console.error(err);
 		} finally {
 			loading = false;
@@ -47,6 +58,10 @@
 			class="w-6 h-6 border-2 border-t-slate-400 border-slate-200 rounded-full animate-spin"
 		></div>
 	</div>
+{:else if fehler}
+	<p class="py-8 text-center text-sm font-semibold text-error" role="alert">
+		Überfällige Ausleihen konnten nicht geladen werden.
+	</p>
 {:else if summary}
 	<!-- NEUTRAL (kein Rot-Alarm): Überfälligkeit als reine Statistik. Zahl + Quote in Slate,
 	     Verteilung in Grau (nur „>60 Tage" ein dezenter Amber-Akzent). Die operative

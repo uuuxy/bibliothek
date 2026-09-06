@@ -42,6 +42,8 @@
 
 	let searchQuery = $state('');
 	let searchResults = $state.raw(/** @type {any[]} */ ([]));
+	/** Der letzte Suchlauf ist gescheitert — dann steht hier kein Ergebnis, sondern nichts. */
+	let suchfehler = $state(false);
 	let isSearching = $state(false);
 
 	let searchTimeout = /** @type {any} */ (null);
@@ -79,13 +81,20 @@
 				//
 				// Der OPAC passt auch fachlich: ausdrücklich nur Titel, Autor und Verfügbarkeit,
 				// keine Ausleih- oder Personendaten — genau das, was eine Lehrkraft sehen darf.
+				suchfehler = false;
 				const res = await apiFetch(`/api/public/opac/suche?q=${encodeURIComponent(q)}`);
 				if (res.ok) {
 					const data = await res.json();
 					searchResults = Array.isArray(data) ? data : (data.books ?? []);
+				} else {
+					// Sonst stünden die Treffer des vorigen Suchtextes unter der neuen
+					// Eingabe (Sweep „verschluckte Fehlantwort", 06.09.2026).
+					searchResults = [];
+					suchfehler = true;
 				}
 			} catch {
-				/* ignore */
+				searchResults = [];
+				suchfehler = true;
 			} finally {
 				isSearching = false;
 			}
@@ -133,6 +142,13 @@
 				{nachlaufend}
 			/>
 		</div>
+
+		{#if suchfehler}
+			<p class="text-sm font-semibold text-error" role="alert">
+				Die Suche ist fehlgeschlagen. Bitte erneut versuchen — es werden keine Treffer angezeigt,
+				damit hier nichts Falsches steht.
+			</p>
+		{/if}
 
 		{#if searchResults.length > 0}
 			<div class="space-y-4">

@@ -66,9 +66,9 @@
 				notiz = '';
 				// Reload list
 				const listRes = await apiFetch(`/api/vormerkungen?titel_id=${book.id}`);
-				if (listRes.ok) {
-					vormerkungen = await listRes.json();
-				}
+				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
+				if (listRes.ok) vormerkungen = await listRes.json();
+				else showToast('Vormerkung angelegt — die Liste konnte nicht neu geladen werden.', 'error');
 			} else {
 				const err = await res.json().catch(() => ({}));
 				showToast(err.error || 'Fehler beim Hinzufügen', 'error');

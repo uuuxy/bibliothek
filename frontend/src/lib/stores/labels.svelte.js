@@ -147,8 +147,15 @@ export function createLabelStore() {
 				if (res.ok) {
 					const body = await res.json();
 					searchResults = body.books || [];
+				} else {
+					// Sweep „verschluckte Fehlantwort" (06.09.2026): Vorher blieben die
+					// Treffer des VORIGEN Suchtextes stehen — man klickt auf eine Zeile,
+					// die zu einer anderen Eingabe gehört, und druckt deren Etikett.
+					searchResults = [];
+					toastStore.addToast('Titelsuche fehlgeschlagen — bitte erneut versuchen.', 'error');
 				}
 			} catch (err) {
+				searchResults = [];
 				console.error('Fehler bei Buchtitelsuche:', err);
 			} finally {
 				isSearching = false;

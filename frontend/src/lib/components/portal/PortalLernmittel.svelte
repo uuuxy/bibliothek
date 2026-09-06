@@ -20,13 +20,18 @@
 	/** Immer nur eine Klasse offen — wie unter Bibliothek → Klassensätze. @type {string|null} */
 	let offeneKlasse = $state(null);
 	let laedt = $state(true);
+	let ladefehler = $state(false);
 
 	onMount(async () => {
 		try {
 			const k = await apiFetch('/api/portal/klassensaetze');
 			if (k.ok) klassensaetze = (await k.json()).data ?? [];
+			else ladefehler = true;
 		} catch {
-			/* Die leeren Zustände unten sagen, dass nichts da ist. */
+			// Sweep „verschluckte Fehlantwort" (06.09.2026): Der leere Zustand unten sagte
+			// „Noch keine Klassensätze zugeordnet" — auch dann, wenn der Abruf gescheitert
+			// war. Das ist keine fehlende Meldung, sondern eine falsche Auskunft.
+			ladefehler = true;
 		} finally {
 			laedt = false;
 		}
@@ -43,7 +48,12 @@
 	<!-- Ein Reiter = eine Liste. Der Reiter ist die Überschrift; Beitexte standen hier bis
 	     25.08.2026 als dritte Ebene unter Reiter und Abschnitt. -->
 	<div class="pt-2">
-		{#if klassensaetze.length === 0}
+		{#if ladefehler}
+			<p class="py-4 text-sm font-semibold text-error" role="alert">
+				Die Klassensätze konnten nicht geladen werden. Bitte die Seite neu laden — das hier bedeutet
+				NICHT, dass keine zugeordnet sind.
+			</p>
+		{:else if klassensaetze.length === 0}
 			<p class="py-4 text-sm text-on-surface-variant">Noch keine Klassensätze zugeordnet.</p>
 		{:else}
 			<!-- Dieselbe Karte wie unter Bibliothek → Klassensätze, nur lesend (Peter,

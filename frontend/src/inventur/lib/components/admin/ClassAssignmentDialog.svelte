@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { vorauswahlAusGruppe } from './klassensatzVorauswahl.js';
+	import { erzeugeBuecherListe } from './klassensatzBuecher.svelte.js';
 	import { onMount } from 'svelte';
 	import ClassAssignmentSelector from './ClassAssignmentSelector.svelte';
 	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
@@ -27,7 +28,7 @@
 
 	let selectedClasses = $state(/** @type {string[]} */ ([]));
 	let selectedBookIds = $state(/** @type {Set<number>} */ (new Set()));
-	let books = $state(/** @type {any[]} */ ([]));
+	const buecher = erzeugeBuecherListe();
 	let isSaving = $state(false);
 
 	$effect(() => {
@@ -43,19 +44,11 @@
 			selectedBookIds = vorauswahlAusGruppe(initialGroup);
 		}
 
-		try {
-			const res = await apiFetch('/api/books');
-			if (res.ok) {
-				const json = await res.json();
-				if (json.data) books = json.data;
-			}
-		} catch (e) {
-			console.error('Fehler beim Laden der Bücher:', e);
-		}
+		await buecher.laden();
 	});
 
 	const selectedBooksList = $derived(
-		books.filter((/** @type {any} */ b) => selectedBookIds.has(b.id))
+		buecher.liste.filter((/** @type {any} */ b) => selectedBookIds.has(b.id))
 	);
 
 	// Der Speicherpfad ERSETZT: UpdateClassBooks loescht die Zuweisungen ALLER Zielklassen und
@@ -180,7 +173,11 @@
 						</div>
 					{/if}
 
-					<ClassAssignmentBookGrid {books} bind:selectedBookIds />
+					<ClassAssignmentBookGrid
+						books={buecher.liste}
+						buecherFehler={buecher.fehler}
+						bind:selectedBookIds
+					/>
 				</div>
 			</div>
 
