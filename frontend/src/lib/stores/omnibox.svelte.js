@@ -126,6 +126,13 @@ export function createOmniboxStore() {
 	// gestarteten darf die Trefferliste schreiben.
 	let suchLauf = 0;
 
+	/** Trefferliste und Dropdown leeren — eine Liste darf ihren Suchtext nie überleben. */
+	function verwirfTreffer() {
+		unifiedSearchResults = { students: [], books: [], studentsTotal: 0, booksTotal: 0 };
+		isDropdownOpen = false;
+		selectedDropdownIndex = -1;
+	}
+
 	function handleInput() {
 		clearTimeout(debounceTimer);
 		if (!queryVal.trim()) {
@@ -148,20 +155,32 @@ export function createOmniboxStore() {
 			try {
 				const res = await apiFetch(`/api/search?q=${encodeURIComponent(queryVal.trim())}`);
 				if (seq !== suchLauf) return;
-				if (res.ok) {
-					const results = await res.json();
-					unifiedSearchResults = {
-						students: results.students || [],
-						books: results.books || [],
-						studentsTotal: results.students_total ?? (results.students || []).length,
-						booksTotal: results.books_total ?? (results.books || []).length
-					};
-					isDropdownOpen =
-						unifiedSearchResults.students.length > 0 || unifiedSearchResults.books.length > 0;
-					selectedDropdownIndex = -1;
+				if (!res.ok) {
+					// Dieselbe Gefahr wie oben, nur über den anderen Ausgang (Sweep
+					// „verschluckte Fehlantwort", 06.09.2026): Bis hierher blieb bei einem
+					// Fehlschlag die Liste des VORIGEN Suchtextes stehen — samt offenem
+					// Dropdown. „Müller" getippt, Treffer da; „Schmidt" getippt, Abruf
+					// scheitert (500, oder 429 vom Rate-Limiter) — und der nächste Klick
+					// oder Enter buchte auf Müller, während im Feld Schmidt stand.
+					verwirfTreffer();
+					showToast('Suche fehlgeschlagen — bitte erneut versuchen.', 'error');
+					return;
 				}
+				const results = await res.json();
+				unifiedSearchResults = {
+					students: results.students || [],
+					books: results.books || [],
+					studentsTotal: results.students_total ?? (results.students || []).length,
+					booksTotal: results.books_total ?? (results.books || []).length
+				};
+				isDropdownOpen =
+					unifiedSearchResults.students.length > 0 || unifiedSearchResults.books.length > 0;
+				selectedDropdownIndex = -1;
 			} catch (err) {
 				if (seq !== suchLauf) return;
+				// Netzfehler: ebenfalls verwerfen, aber ohne Toast — im WLAN-Loch käme
+				// bei jedem Tastendruck einer, und das Offline-Overlay sagt es bereits.
+				verwirfTreffer();
 				console.error('Suche fehlgeschlagen:', err);
 			}
 		}, 300);

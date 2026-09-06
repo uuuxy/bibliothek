@@ -80,4 +80,48 @@ describe('Omnibox-Suchlauf', () => {
 		expect(store.unifiedSearchResults.students).toHaveLength(0);
 		expect(store.isDropdownOpen).toBe(false);
 	});
+
+	// Die zweite Tür zu derselben Gefahr (Sweep „verschluckte Fehlantwort", 06.09.2026):
+	// Nicht die verspätete Antwort, sondern die AUSBLEIBENDE. Bis dahin stand bei einem
+	// Fehlschlag die Trefferliste des vorigen Suchtextes weiter im offenen Dropdown —
+	// und selectDropdownItem bucht ohne Rückfrage auf den ersten Treffer.
+	it('verwirft die Treffer, wenn die Suche fehlschlägt', async () => {
+		const store = createOmniboxStore();
+		vi.mocked(apiFetch).mockImplementation(async () => treffer('Müller'));
+		store.queryVal = 'Mül';
+		store.handleInput();
+		await vi.advanceTimersByTimeAsync(300);
+		expect(store.isDropdownOpen).toBe(true);
+
+		vi.mocked(apiFetch).mockImplementation(
+			async () => /** @type {any} */ ({ ok: false, status: 500, json: async () => ({}) })
+		);
+		store.queryVal = 'Schmidt';
+		store.handleInput();
+		await vi.advanceTimersByTimeAsync(300);
+
+		expect(
+			store.unifiedSearchResults.students,
+			'Müller steht noch unter dem Suchtext Schmidt'
+		).toEqual([]);
+		expect(store.isDropdownOpen, 'das Dropdown blieb mit fremden Treffern offen').toBe(false);
+	});
+
+	it('verwirft die Treffer auch bei einem Netzfehler', async () => {
+		const store = createOmniboxStore();
+		vi.mocked(apiFetch).mockImplementation(async () => treffer('Müller'));
+		store.queryVal = 'Mül';
+		store.handleInput();
+		await vi.advanceTimersByTimeAsync(300);
+
+		vi.mocked(apiFetch).mockImplementation(async () => {
+			throw new Error('offline');
+		});
+		store.queryVal = 'Schmidt';
+		store.handleInput();
+		await vi.advanceTimersByTimeAsync(300);
+
+		expect(store.unifiedSearchResults.students).toEqual([]);
+		expect(store.isDropdownOpen).toBe(false);
+	});
 });
