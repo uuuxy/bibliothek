@@ -75,9 +75,18 @@ func (s *Scheduler) RunGDPRAnonymizeOldData() {
 	// verlangt bei gesperrten Schülern einen nicht-leeren Grund, und ein alter Freitext-
 	// Grund könnte selbst personenbezogen sein. Deckt dieselben identifizierenden Felder ab
 	// wie anonymisiereAbgaenger (LUSD-Pfad).
+	// Bei unlesbaren Einstellungen wird NICHT anonymisiert (Rasterdurchgang 06.09.2026).
+	// Die Vorgabe-Karenz von 90 Tagen ist hier kein sicherer Rückfall, sondern der
+	// gefährlichste Wert: Eine KLEINERE Karenz wählt MEHR Zeilen. Hat die Schule 365 Tage
+	// eingestellt, hätte ein einziger Lesefehler die Abgänger zwischen Tag 91 und 365
+	// anonymisiert — Name, Adresse, Geburtsdatum, LUSD-ID, Eltern-Mail, Foto, und der
+	// Löschjob räumt die Hülle in derselben Nacht. Die drei Geschwister
+	// (Audit-Aufbewahrung, Lesehistorie, Anliegen) steigen an dieser Stelle seit jeher aus;
+	// ausgerechnet der destruktivste Lauf tat es nicht.
 	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
 	if err != nil {
-		log.Printf("Scheduler GDPR Anonymize: Einstellungen nicht lesbar, Vorgabe-Karenz gilt: %v", err)
+		log.Printf("Scheduler GDPR Anonymize: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		return
 	}
 	karenzTage := repository.AbgaengerKarenzTageOderStandard(einst)
 	bedingung := repository.PredikatAnonymisierung(karenzTage, repository.KulanzJob)
