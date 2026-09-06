@@ -106,6 +106,26 @@
 </script>
 
 <div class="w-full space-y-5 no-print text-slate-800 animate-fade-in font-sans">
+	{#if ablage.ladefehler}
+		<!-- Die Leinwand zeigt hier NICHT den zentralen Stand, sondern Vorgabewerte. Bis
+		     zum Sweep am 06.09.2026 stand das nirgends — und die Auto-Speicherung schob
+		     diese Vorgabewerte 800 ms später an alle Arbeitsplätze. Jetzt ist sie aus,
+		     und der Bildschirm sagt beides. -->
+		<div
+			class="rounded-xl border border-error bg-error-container px-4 py-3 text-sm text-on-error-container"
+			role="alert"
+		>
+			<p class="font-semibold">{ablage.ladefehler}</p>
+			<button
+				type="button"
+				onclick={() => ablage.laden()}
+				class="mt-1 font-semibold underline underline-offset-2 cursor-pointer"
+			>
+				Erneut laden
+			</button>
+		</div>
+	{/if}
+
 	<div class="flex items-center justify-end gap-3 text-sm font-semibold min-h-4">
 		{#if ablage.zustand === 'saving'}
 			<span class="text-slate-400">Speichert…</span>

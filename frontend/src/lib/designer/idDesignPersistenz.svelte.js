@@ -15,13 +15,27 @@ import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
  * Lebenszyklus, der ihn wieder abräumt.
  */
 
-/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
+/** @returns {{ readonly zustand: 'idle'|'saving'|'saved'|'error', readonly geladen: boolean, readonly ladefehler: string, laden: () => Promise<void>, speichern: (body: string) => Promise<void>, beginneSpeichern: () => void, zuruecksetzen: () => Promise<boolean>, vorlageAnwenden: (kennung: string) => Promise<boolean> }} */
 export function erzeugeDesignAblage() {
 	/** @type {'idle'|'saving'|'saved'|'error'} */
 	let zustand = $state('idle');
 	// Erst nach dem initialen Laden auto-speichern, sonst überschrieben die
 	// Store-Vorgabewerte den geladenen Stand.
+	//
+	// Genau das geschah bis zum Sweep am 06.09.2026 bei einem FEHLGESCHLAGENEN Laden:
+	// `geladen` wurde im finally gesetzt, egal wie der Abruf ausging. Die Leinwand zeigte
+	// dann die Vorgabewerte, der Auto-Save-Effekt war scharf — und die anschließende
+	// Heilung der Schulstammdaten fasst den Store an. Das allein genügte: 800 ms später
+	// ging ein PUT mit dem VORGABE-Design an den Server und ersetzte das Design der
+	// Schule auf ALLEN Arbeitsplätzen. Ohne einen Klick, nur weil jemand den Bildschirm
+	// öffnete, während der GET scheiterte.
+	//
+	// Deshalb: `geladen` nur bei einer echten Antwort. Ein leeres {} beim Erststart ist
+	// eine (200er) Antwort und darf weiterhin auto-speichern.
 	let geladen = $state(false);
+	// Nicht leer = die Leinwand zeigt NICHT den zentralen Stand. Der Bildschirm sagt es,
+	// statt still mit Vorgabewerten weiterzuarbeiten.
+	let ladefehler = $state('');
 
 	// /api/einstellungen verlangt manage_settings — wer den Ausweis-Designer nur zum Drucken
 	// öffnet (view_students reicht dafür), bekäme sonst ein sichtbares Berechtigungs-Toast
@@ -51,19 +65,31 @@ export function erzeugeDesignAblage() {
 		get geladen() {
 			return geladen;
 		},
+		get ladefehler() {
+			return ladefehler;
+		},
 
 		/** Lädt das zentral gespeicherte Design. Leeres {} (Erststart) → Vorgabewerte. */
 		async laden() {
 			try {
 				const res = await apiFetch('/api/ausweis-layout');
-				if (res.ok) applyDesign(await res.json());
-			} catch (e) {
-				console.error('Ausweis-Design konnte nicht geladen werden:', e);
-			} finally {
+				if (!res.ok) {
+					ladefehler = `Das gespeicherte Ausweis-Design konnte nicht geladen werden (Fehler ${res.status}). Es wird nichts gespeichert, solange das so ist.`;
+					return;
+				}
+				applyDesign(await res.json());
+				ladefehler = '';
 				geladen = true;
+			} catch (e) {
+				ladefehler =
+					'Das gespeicherte Ausweis-Design konnte nicht geladen werden (Netzwerkfehler). Es wird nichts gespeichert, solange das so ist.';
+				console.error('Ausweis-Design konnte nicht geladen werden:', e);
+				return;
 			}
 			// NACH applyDesign(): Sonst überschreibt das geladene Design (auch eines, das
-			// den Platzhalter noch trägt) die geheilten Werte sofort wieder.
+			// den Platzhalter noch trägt) die geheilten Werte sofort wieder. Und nur nach
+			// einem GELUNGENEN Laden: Die Heilung fasst den Store an, und auf einer
+			// Leinwand voller Vorgabewerte wäre das der erste Schritt zum Überschreiben.
 			await heileSchulstammdaten();
 		},
 
