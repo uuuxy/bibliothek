@@ -253,11 +253,49 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await expect(page.getByTestId('lmf-ausfaelle')).toContainText('Pädagogischer Tag');
 
 	// Unsere Klasse hat am Freitag 20.08. ihren Termin — fest, egal wo sie in der
-	// Reihenfolge steht.
+	// Reihenfolge steht. Der Weg ist die Zelle selbst (Peter, 06.09.2026: „einfach
+	// anklicken um es zu ändern … statt immer über die 3 Punkte rechts"): Klick auf das
+	// Datum legt die Zeile fest, vorbelegt mit ihrem Platz, der Fokus liegt im Datumsfeld.
+	// Das Zeilenmenü kennt den Weg weiterhin (LmfPlanReihenfolge.test.js).
 	const zeile = tabelle.getByRole('row').filter({ hasText: klasse });
 	const nummer = Number(await zeile.getByRole('cell').first().innerText());
-	await zeilenAktion(page, zeile, nummer, 'Datum und Stunde festlegen');
-	await zeile.getByLabel(`Fester Tag Zeile ${nummer}`).fill('2027-08-20');
+	const vorher = await zeile.getByRole('cell').nth(2).innerText();
+	await zeile.getByRole('button', { name: new RegExp(`^Datum Zeile ${nummer}:`) }).click();
+	const festerTag = zeile.getByLabel(`Fester Tag Zeile ${nummer}`);
+	await expect(festerTag).toBeFocused();
+	expect(
+		new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }).format(
+			new Date(`${await festerTag.inputValue()}T12:00:00`)
+		),
+		'vorbelegt mit dem Platz der Zeile'
+	).toBe(vorher.trim());
+	await festerTag.fill('2027-08-20');
+	await expect(zeile).toContainText('Freitag');
+	// Die Zeile darunter fließt weiter: Sie bekommt den Platz, den die feste Zeile hatte.
+	const naechste = tabelle.getByRole('row').nth(nummer + 1);
+	await expect(naechste).toContainText(vorher.trim());
+
+	// Klick auf die Klasse tauscht sie gegen eine aus „Noch nicht im Plan" — die Auswahl
+	// öffnet sich sofort, die alte Klasse liegt danach im Vorrat, die Zeile behält den Platz.
+	await page.getByRole('button', { name: /Klassen bleiben draußen/ }).click();
+	const andere = (
+		await page.getByTestId('lmf-vorrat-draussen').getByRole('button').first().innerText()
+	)
+		.replace(/\s*einplanen.*$/, '')
+		.trim();
+	await page.getByRole('button', { name: /Klassen bleiben draußen/ }).click();
+	await zeile.getByTitle(`${klasse} gegen eine andere Klasse tauschen`).click();
+	const auswahl = zeile.getByRole('combobox', { name: `Klasse Zeile ${nummer} tauschen` });
+	await expect(auswahl).toHaveAttribute('aria-expanded', 'true');
+	await page.getByRole('option', { name: andere, exact: true }).click();
+	const getauscht = tabelle.getByRole('row').nth(nummer);
+	await expect(getauscht).toContainText(andere);
+	await expect(getauscht).toContainText('Freitag');
+	await expect(page.getByRole('button', { name: `${klasse} einplanen` })).toBeVisible();
+	// Und zurück, damit der Rest des Tests unsere Klasse wiederfindet — im Vorrat trägt
+	// sie den Zusatz „ohne Schüler", deshalb kein exakter Name.
+	await getauscht.getByTitle(`${andere} gegen eine andere Klasse tauschen`).click();
+	await page.getByRole('option', { name: `${klasse} · ohne Schüler` }).click();
 	await expect(zeile).toContainText('Freitag');
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();

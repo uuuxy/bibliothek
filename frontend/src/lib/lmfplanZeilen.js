@@ -123,3 +123,14 @@ export function festWechseln(zeilen, i, platz) {
 		return { ...z, fest: { datum: platz?.datum ?? '', stunde: platz?.stunde ?? 1 } };
 	});
 }
+
+/** Klasse `alt` in Zeile i gegen `neu` tauschen — die Zelle überschreiben wie im Excel
+ *  (06.09.2026). Steht `neu` schon in der Zeile oder `alt` nicht, bleibt alles.
+ *  @param {PlanZeile[]} zeilen @param {number} i @param {string} alt @param {string} neu */
+export function klasseTauschen(zeilen, i, alt, neu) {
+	const z = zeilen[i];
+	if (!z || !z.klassen.includes(alt) || z.klassen.includes(neu)) return zeilen;
+	return zeilen.map((x, n) =>
+		n === i ? { ...x, klassen: x.klassen.map((k) => (k === alt ? neu : k)) } : x
+	);
+}

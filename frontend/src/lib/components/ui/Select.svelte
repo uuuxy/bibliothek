@@ -64,7 +64,7 @@
 		if (ausloeser) box = berechneBox(ausloeser, options.length);
 	}
 
-	function oeffnen() {
+	export function oeffnen() {
 		if (disabled) return;
 		messen();
 		offen = true;

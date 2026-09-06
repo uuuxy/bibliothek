@@ -193,6 +193,7 @@
 				{markiert}
 				onklasseraus={(k) => (entwurf = dienst.klasseRaus(entwurf, k))}
 				onhinein={klasseHinein}
+				ontausch={(i, alt, neu) => (entwurf = dienst.klasseTauschen(entwurf, i, alt, neu))}
 			/>
 		</div>
 	{/if}

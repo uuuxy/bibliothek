@@ -6,7 +6,7 @@
  *  zurück — auch die Vorschau rechnet der Server, damit es keinen JavaScript-Zwilling
  *  der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
 import { apiFetch } from './apiFetch.js';
-import { einordnen } from './lmfplanZeilen.js';
+import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js';
 
 /** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string }} LmfTermin */
 /** Fest: Datum und Stunde von Hand (die Klasse mit dem Ausflug) — null, wenn die Zeile fließt. */
@@ -342,4 +342,17 @@ export function klasseRaus(e, k) {
 		...e,
 		ausgelassen: [...e.ausgelassen, k].sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
 	};
+}
+
+/** Tauscht in Zeile i die Klasse `alt` gegen `neu` aus „Nicht im Plan" — ein Klick auf
+ *  die Klasse in der Tabelle (06.09.2026, Peter: „einfach anklicken um es zu ändern").
+ *  `neu` verlässt die Auslassungen, `alt` kommt dorthin; die Zeile behält Platz und Vermerk.
+ *  @param {PlanEntwurf} e @param {number} i @param {string} alt @param {string} neu
+ *  @returns {PlanEntwurf} */
+export function klasseTauschen(e, i, alt, neu) {
+	if (normKey(alt) === normKey(neu)) return e;
+	const zeilen = tauscheInZeile(e.zeilen, i, alt, neu);
+	if (zeilen === e.zeilen) return e;
+	const ausgelassen = e.ausgelassen.filter((x) => normKey(x) !== normKey(neu));
+	return klasseRaus({ ...e, zeilen, ausgelassen }, alt);
 }

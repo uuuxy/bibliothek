@@ -7,7 +7,9 @@
      Klasse in einer Zeile ist deshalb kein Chip, sondern Text (LmfPlanZeile). `hinweis`
      hängt eine leise Einordnung an („ohne Schüler"), ohne einen zweiten Chip zu bauen.
      Mit `ziehbar` lässt sich der Assist-Chip in die Tabelle ziehen (Drop auf eine
-     Zeile = davor einplanen); der Name reist im dataTransfer als `text/lmf-klasse`. -->
+     Zeile = davor einplanen); der Name reist im dataTransfer als `text/lmf-klasse`.
+     Mit `onentfernen` UND `onklick` ist der Name des Input-Chips selbst ein Knopf: Klick
+     tauscht die Klasse (LmfPlanKlassenZelle, 06.09.2026), das × nimmt sie heraus. -->
 <script>
 	import { Plus, X } from '@lucide/svelte';
 
@@ -28,7 +30,7 @@
 	}
 </script>
 
-{#if onklick}
+{#if onklick && !onentfernen}
 	<button
 		type="button"
 		onclick={onklick}
@@ -44,12 +46,24 @@
 	</button>
 {:else}
 	<span
-		class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container pl-3 text-sm font-medium text-on-secondary-container {onentfernen
-			? 'pr-0'
-			: 'pr-3'}"
+		class="inline-flex h-8 items-center gap-1 rounded-md bg-secondary-container text-sm font-medium text-on-secondary-container {onklick
+			? 'pl-0'
+			: 'pl-3'} {onentfernen ? 'pr-0' : 'pr-3'}"
 	>
-		{name}
-		{#if hinweis}<span class="font-normal opacity-80">· {hinweis}</span>{/if}
+		{#if onklick}
+			<button
+				type="button"
+				onclick={onklick}
+				class="flex h-8 cursor-pointer items-center gap-1 rounded-l-md pl-3 pr-1 hover:bg-on-secondary-container/10"
+				title="{name} gegen eine andere Klasse tauschen"
+			>
+				{name}
+				{#if hinweis}<span class="font-normal opacity-80">· {hinweis}</span>{/if}
+			</button>
+		{:else}
+			{name}
+			{#if hinweis}<span class="font-normal opacity-80">· {hinweis}</span>{/if}
+		{/if}
 		{#if onentfernen}
 			<!-- 32 × 32 px: die ganze Chip-Höhe als Zielfläche (Gate icon-trefferflaechen,
 			     M3 Icon-Button „extra small"); vorher 24 px und damit zu klein. -->

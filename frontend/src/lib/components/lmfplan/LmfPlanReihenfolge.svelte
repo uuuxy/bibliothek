@@ -4,7 +4,9 @@
      Pfeilen schieben, zwei Zeilen zu einer Stunde zusammenlegen („10R1/10R2"), eine
      Zeile ohne Klasse davor einfügen („Bücher setzen"), festlegen, Klasse aus dem Plan
      nehmen. Die Umformungen rechnet lmfplanZeilen.js, die Zeile selbst ist
-     LmfPlanZeile, ihre Aktionen LmfPlanZeileAktionen.
+     LmfPlanZeile, ihre Aktionen LmfPlanZeileAktionen. Seit dem 06.09.2026 sind die
+     Zellen selbst der kurze Weg: Klick auf Wochentag, Datum oder Stunde legt die Zeile
+     fest, Klick auf die Klasse tauscht sie gegen eine aus „Noch nicht im Plan".
 
      Über der Tabelle liegt seit dem 06.09.2026 LmfPlanVorrat („Noch nicht im Plan"):
      Ein Klick plant die Klasse an ihren Platz (Nachbar-Regel), ein Chip lässt sich auf
@@ -18,7 +20,7 @@
 	import LmfPlanZeile from './LmfPlanZeile.svelte';
 	import * as op from '../../lmfplanZeilen.js';
 
-	/** @type {{ zeilen: import('../../lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, bereit: boolean, ausgelassen: string[], draussen: (klasse: string) => boolean, markiert: { index: number } | null, onklasseraus: (klasse: string) => void, onhinein: (klasse: string, vor?: number) => void }} */
+	/** @type {{ zeilen: import('../../lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, bereit: boolean, ausgelassen: string[], draussen: (klasse: string) => boolean, markiert: { index: number } | null, onklasseraus: (klasse: string) => void, onhinein: (klasse: string, vor?: number) => void, ontausch: (i: number, alt: string, neu: string) => void }} */
 	let {
 		zeilen = $bindable(),
 		plaetze,
@@ -28,7 +30,8 @@
 		draussen,
 		markiert,
 		onklasseraus,
-		onhinein
+		onhinein,
+		ontausch
 	} = $props();
 
 	/** @type {number | null} */
@@ -127,6 +130,7 @@
 						anzahl={zeilen.length}
 						platz={plaetze[i]}
 						{marker}
+						vorrat={ausgelassen}
 						gezogen={gezogen === i}
 						ziel={ziel === i}
 						markiert={leuchtet === i}
@@ -134,6 +138,7 @@
 						onziehueber={() => (ziel = i)}
 						onablegen={(e) => ablegen(e, i)}
 						onklasseraus={(k) => klasseRaus(i, k)}
+						ontausch={(alt, neu) => ontausch(i, alt, neu)}
 						onhoch={() => (zeilen = op.verschiebe(zeilen, i, i - 1))}
 						onrunter={() => (zeilen = op.verschiebe(zeilen, i, i + 1))}
 						onanfang={() => (zeilen = op.verschiebe(zeilen, i, 0))}

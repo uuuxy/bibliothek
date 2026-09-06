@@ -3,6 +3,7 @@ import {
 	einordnen,
 	nachbarZeile,
 	klassenTeile,
+	klasseTauschen,
 	verschiebe,
 	zusammenlegen
 } from './lmfplanZeilen.js';
@@ -90,5 +91,40 @@ describe('lmfplanDienst.bewusstDraussen', () => {
 		);
 		expect(neu('13T1')).toBe(true);
 		expect(neu('05F1')).toBe(false);
+	});
+});
+
+describe('lmfplanZeilen.klasseTauschen', () => {
+	// Klick auf die Klasse in der Tabelle (06.09.2026): die Zelle überschreiben, Platz
+	// und Vermerk bleiben — auch in einer geteilten Stunde nur die eine Klasse.
+	const plan = [
+		{ klassen: ['10R1', '10R2'], vermerk: 'zusammen', fest: { datum: '2027-06-28', stunde: 3 } },
+		z('09H1')
+	];
+
+	it('ersetzt genau die eine Klasse und lässt den Rest der Zeile', () => {
+		const neu = klasseTauschen(plan, 0, '10R2', '10R4');
+		expect(neu[0]).toEqual({ ...plan[0], klassen: ['10R1', '10R4'] });
+		expect(neu[1]).toBe(plan[1]);
+		expect(plan[0].klassen).toEqual(['10R1', '10R2']);
+	});
+
+	it('tut nichts, wenn die alte fehlt oder die neue schon in der Zeile steht', () => {
+		expect(klasseTauschen(plan, 0, '09H1', '10R4')).toBe(plan);
+		expect(klasseTauschen(plan, 0, '10R1', '10R2')).toBe(plan);
+		expect(klasseTauschen(plan, 5, '10R1', '10R4')).toBe(plan);
+	});
+});
+
+describe('lmfplanDienst.klasseTauschen', () => {
+	it('nimmt die neue Klasse aus dem Vorrat und legt die alte dorthin', async () => {
+		const { klasseTauschen: tausche, leererEntwurf } = await import('./lmfplanDienst.js');
+		const e = { ...leererEntwurf(), zeilen: [z('10R1'), z('09H1')], ausgelassen: ['10R4', '12T1'] };
+		const neu = tausche(e, 0, '10R1', '10R4');
+		expect(neu.zeilen.map((x) => x.klassen)).toEqual([['10R4'], ['09H1']]);
+		expect(neu.ausgelassen).toEqual(['10R1', '12T1']);
+		// Gleiche Klasse oder eine, die nicht in der Zeile steht: unverändert.
+		expect(tausche(e, 0, '10R1', '10r1')).toBe(e);
+		expect(tausche(e, 1, '10R1', '10R4')).toBe(e);
 	});
 });
