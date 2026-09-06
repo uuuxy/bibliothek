@@ -22,8 +22,13 @@ export function useStudentProfile() {
 	let rechnungPdfLoading = $state(false);
 	let kontoauszugPdfLoading = $state(false);
 
+	// Sequenznummer wie im orderStore: Zwei Akten kurz hintereinander geöffnet, und die
+	// langsamere Antwort gewinnt. `laufNr` verwirft, was überholt wurde.
+	let laufNr = 0;
+
 	async function fetchProfile(studentId) {
 		if (!studentId) return;
+		const meine = ++laufNr;
 		loading = true;
 		try {
 			const [resProfile, resVormerkungen, resGebuehren] = await Promise.all([
@@ -31,15 +36,40 @@ export function useStudentProfile() {
 				apiFetch(`/api/vormerkungen?schueler_id=${studentId}`),
 				apiFetch(`/api/schueler/${studentId}/schadensfaelle`)
 			]);
-			if (resProfile.ok) profile = await resProfile.json();
-			if (resVormerkungen.ok) vormerkungen = await resVormerkungen.json();
+			if (meine !== laufNr) return; // eine jüngere Akte ist schon unterwegs oder da
+			// Jede der drei Antworten wird ZUGEWIESEN, auch wenn sie scheitert. Bis zum
+			// Rasterdurchgang am 06.09.2026 stand hier dreimal `if (ok)` ohne `else`: Fiel
+			// genau eine Anfrage aus (500, oder 429 vom Rate-Limiter — es sind drei
+			// parallele Anfragen je Akte), behielt dieser Teil die Werte des VORHER
+			// geöffneten Schülers, während Kopf und Ausleihen schon zum neuen gehörten.
+			// Bei den Gebühren ist das nicht nur Anzeige: Die Karte schreibt auf die
+			// Fall-ID der ZEILE („Zahlung verbucht", „Storno") — ein Klick hätte die
+			// Zahlung einem fremden Schadensfall gutgeschrieben.
+			profile = resProfile.ok ? await resProfile.json() : null;
+			vormerkungen = resVormerkungen.ok ? await resVormerkungen.json() : [];
 			// 403 (z. B. Kiosk-Rolle ohne view_students) heisst schlicht: keine Liste zeigen.
-			if (resGebuehren.ok) gebuehren = (await resGebuehren.json()).data || [];
+			gebuehren = resGebuehren.ok ? (await resGebuehren.json()).data || [] : [];
 		} catch (err) {
+			if (meine !== laufNr) return;
 			console.error('Fehler beim Laden des Schüler-Profils:', err);
+			profile = null;
+			vormerkungen = [];
+			gebuehren = [];
 		} finally {
-			loading = false;
+			if (meine === laufNr) loading = false;
 		}
+	}
+
+	// Alles, was über einem Schüler offen stehen kann, beim Wechsel schließen. Eine Liste
+	// statt fünf Zuweisungen im Aufrufer: Wer ein sechstes Blatt baut, trägt es hier ein.
+	function schliesseAlleBlaetter() {
+		showEditModal = false;
+		showDamageModal = false;
+		showLockModal = false;
+		showDeleteConfirm = false;
+		showWebcam = false;
+		damageBook = null;
+		globalErrorToast = null;
 	}
 
 	function handleDeleteSuccess(onDeselect) {
@@ -235,6 +265,7 @@ export function useStudentProfile() {
 			return kontoauszugPdfLoading;
 		},
 		fetchProfile,
+		schliesseAlleBlaetter,
 		handleDeleteSuccess,
 		handleSaveEdit,
 		handlePhotoCaptured,

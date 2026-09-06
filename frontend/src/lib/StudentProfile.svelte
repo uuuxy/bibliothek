@@ -55,6 +55,12 @@
 	$effect(() => {
 		if (!student?.id) return;
 		st.activeTab = defaultTab;
+		// Und alles, was über einem Schüler offen stehen kann, geht mit ihm zu
+		// (Rasterdurchgang 06.09.2026): Bis dahin überlebte das Bearbeiten-Blatt den
+		// Wechsel — wer bei Schüler A die Adresse tippte, ohne zu speichern, und dann
+		// B's Ausweis scannte, sah dasselbe Formular mit B's Daten, A's Eingabe war
+		// wortlos weg, und „Speichern" ging als PATCH auf B.
+		st.schliesseAlleBlaetter();
 		st.fetchProfile(student.id);
 	});
 
