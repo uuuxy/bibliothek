@@ -72,18 +72,8 @@ func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Con
 	if err != nil {
 		return 0, 0, err
 	}
-	type freigabe struct{ exemplarID, titelID *string }
-	var freigaben []freigabe
-	for rows.Next() {
-		var f freigabe
-		if err := rows.Scan(&f.exemplarID, &f.titelID); err != nil {
-			rows.Close()
-			return 0, 0, err
-		}
-		freigaben = append(freigaben, f)
-	}
-	rows.Close()
-	if err := rows.Err(); err != nil {
+	freigaben, err := sammleFreigaben(rows)
+	if err != nil {
 		return 0, 0, err
 	}
 
@@ -92,28 +82,14 @@ func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Con
 		if f.exemplarID == nil || f.titelID == nil {
 			continue
 		}
-		// Nächsten Wartenden nur dann bedienen, wenn das Exemplar wirklich noch frei ist.
-		tag, err := tx.Exec(ctx, `
-			UPDATE vormerkungen
-			SET status = 'abholbereit', bereitgestellt_exemplar_id = $1,
-			    bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days'
-			WHERE id = (
-				SELECT v.id FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
-				WHERE v.titel_id = $2 AND v.status = 'wartend'
-				  AND s.deleted_at IS NULL AND s.ist_gesperrt = false
-				  AND COALESCE(s.is_manually_blocked, false) = false
-				ORDER BY v.erstellt_am ASC LIMIT 1
-				FOR UPDATE SKIP LOCKED
-			)
-			AND EXISTS (
-				SELECT 1 FROM buecher_exemplare e
-				WHERE e.id = $1 AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
-				  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $1 AND a.rueckgabe_am IS NULL)
-			)`, *f.exemplarID, *f.titelID)
+		// Nächsten Wartenden nur dann bedienen, wenn das Exemplar wirklich noch frei
+		// ist — dieselbe Bewegung wie beim endgültigen Löschen eines Schülers
+		// (vormerkung_nachruecken.go).
+		bedient, err := bedieneNaechstenWartenden(ctx, tx, *f.exemplarID, *f.titelID)
 		if err != nil {
 			return 0, 0, err
 		}
-		if tag.RowsAffected() > 0 {
+		if bedient {
 			neuBereit++
 		}
 	}

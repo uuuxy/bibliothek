@@ -185,8 +185,9 @@ func blockiereBeiOffenenVorgaengen(ctx context.Context, tx pgx.Tx, studentID str
 // entferneSchuelerPIIUndLoesche ist die gemeinsame DSGVO-Löschung für PurgeStudent
 // (manueller Papierkorb) und PurgeAbgaenger (Cronjob): Ausleihhistorie anonymisieren
 // (schueler_id = NULL — beide Entleiher NULL ist laut check_loan_borrower erlaubt),
-// bezahlte Schadensfälle löschen, Schüler-Audit-Details anonymisieren, Datensatz
-// entfernen (FK-CASCADE räumt Fotos + Vormerkungen), Löschung ohne PII protokollieren.
+// bezahlte Schadensfälle löschen, Schüler-Audit-Details anonymisieren (dabei fallen
+// auch die Vormerkungen, siehe TilgeSchuelerSpuren), Datensatz entfernen (der
+// FK-CASCADE räumt dann nur noch das Foto), Löschung ohne PII protokollieren.
 func (r *pgAuditRepository) entferneSchuelerPIIUndLoesche(ctx context.Context, tx pgx.Tx, studentID, bearbeiterID, kontextText string) error {
 	if _, err := tx.Exec(ctx, `UPDATE ausleihen SET schueler_id = NULL WHERE schueler_id = $1`, studentID); err != nil {
 		return fmt.Errorf("anonymizing loans: %w", err)
@@ -274,9 +275,12 @@ func (r *pgAuditRepository) PurgeAbgaenger(ctx context.Context, studentID string
 	return tx.Commit(ctx)
 }
 
-// SpurenExecutor ist der kleinste gemeinsame Nenner von pgx.Tx und dem Pool.
+// SpurenExecutor ist der kleinste gemeinsame Nenner von pgx.Tx und dem Pool. Query
+// steht mit drin, seit eine Tilgung nicht mehr nur schreibt, sondern das Ergebnis ihres
+// eigenen DELETE braucht (Vormerkungen, siehe vormerkung_nachruecken.go).
 type SpurenExecutor interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
 // SpurTilgung ist EINE Anweisung der Spuren-Tilgung, parametrisiert über eine
@@ -293,11 +297,18 @@ type SpurTilgung struct {
 	Beschreibung string
 	sql          string // $1 = Schüler-IDs als text[]; $2 = Grund (nur brauchtGrund)
 	brauchtGrund bool
+	// schritt steht STATT sql, wenn eine Tilgung mehr ist als eine Anweisung — sie
+	// bleibt trotzdem ein Eintrag DIESER Liste, damit Purge, LUSD-Abgang und Cron
+	// weiterhin dasselbe tun.
+	schritt func(ctx context.Context, ex SpurenExecutor, schuelerIDs []string) (int64, error)
 }
 
 // Exec führt die Anweisung für die gegebene Schüler-Menge aus und meldet die Zahl
 // der betroffenen Zeilen.
 func (st SpurTilgung) Exec(ctx context.Context, ex SpurenExecutor, schuelerIDs []string, grund string) (int64, error) {
+	if st.schritt != nil {
+		return st.schritt(ctx, ex, schuelerIDs)
+	}
 	args := []any{schuelerIDs}
 	if st.brauchtGrund {
 		args = append(args, grund)
@@ -350,10 +361,14 @@ var spurTilgungen = []SpurTilgung{
 	{
 		// Vormerkungen: die Freitext-Notiz kann personenbezogen sein, und die Vormerkung
 		// eines gelöschten/anonymisierten Schülers ist funktionslos. Beim Purge räumt sie
-		// auch der FK-CASCADE — hier stehen sie trotzdem, damit der Cron-Pfad (Schüler
+		// auch der FK-CASCADE — hier steht sie trotzdem, damit der Cron-Pfad (Schüler
 		// lebt als anonymisierte Hülle weiter) dieselbe Liste fahren kann.
-		Beschreibung: "vormerkungen",
-		sql:          `DELETE FROM vormerkungen WHERE schueler_id = ANY($1::uuid[])`,
+		//
+		// Kein reines DELETE: Lag für das Kind schon ein Exemplar abholbereit, muss es
+		// an den nächsten Wartenden gehen — sonst bleibt das Buch auf dem Abholregal
+		// liegen und die Schlange rückt nie nach (06.09.2026).
+		Beschreibung: "vormerkungen (gelöscht, Warteschlange nachgerückt)",
+		schritt:      loescheVormerkungenUndRuecktNach,
 	},
 }
 
