@@ -147,7 +147,16 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   Fristen der Klassen, und jede weitere Speicherung gilt sofort (die Korrektur-Mail von
   früher). Einen zweiten Entwurf neben dem veröffentlichten Plan gibt es nicht — der Plan
   des nächsten Schuljahres ist ein neuer Plan und beginnt wieder als Entwurf.
-- **Zeitraum**: erster Tag, Beginn am ersten Tag (der Donnerstag im Juni begann in der 3. Stunde), Stunden je Tag (Vorgabe 6). Darunter die **freien Tage**: Wochenenden und
+- **Zeitraum** (seit 06.09.2026 je Art verschieden): Der **Büchertausch endet am
+  Donnerstag vor den Sommerferien in der 4. Stunde** — _Letzter Tag_ und _Ende am letzten
+  Tag_ sind aus der Ferientabelle Hessen (KMK-Beschluss, bis 2030 hinterlegt) vorbelegt,
+  die Reihenfolge läuft rückwärts davor, und der Satz darunter nennt Ferien und den
+  gerechneten Beginn („Der Plan beginnt Donnerstag, 11.06.26 in der 3. Stunde"). Kommen
+  Klassen dazu, beginnt der Plan früher; das Ende bleibt. Die **Bücherausgabe beginnt** —
+  _Erster Tag_ (vorbelegt: erster Schultag nach den Ferien), _Beginn am ersten Tag_
+  (vorbelegt 2. Stunde, wie im Plan 2026: Montag 10.08., 2. Stunde). Dazu
+  _Stunden je Tag_ (Vorgabe 6). Fehlt ein Jahr in der Ferientabelle, sagt der Satz das,
+  und der Tag wird von Hand eingetragen. Darunter die **freien Tage**: Wochenenden und
   die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Plan von selbst;
   bewegliche Ferientage, pädagogische Tage und Brückentage trägt man mit Datum und Grund
   ein (_Tag freihalten_). Die Zeile _Übersprungen: …_ nennt jeden Werktag im

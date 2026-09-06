@@ -25,9 +25,16 @@ type LmfPlan struct {
 	ID              string `json:"id"`
 	Art             string `json:"art"`
 	SchuljahrBeginn string `json:"schuljahr_beginn"` // YYYY-MM-DD
-	ErsterTag       string `json:"erster_tag"`       // YYYY-MM-DD
-	Startstunde     int    `json:"startstunde"`
-	StundenJeTag    int    `json:"stunden_je_tag"`
+	// ErsterTag/Startstunde: der Beginn. Beim Rückgabe-Plan GERECHNET aus dem Ende
+	// (Migration 101), beim Ausgabe-Plan die Vorgabe des Planers.
+	ErsterTag    string `json:"erster_tag"` // YYYY-MM-DD
+	Startstunde  int    `json:"startstunde"`
+	StundenJeTag int    `json:"stunden_je_tag"`
+	// LetzterTag/LetzteStunde: der Anker des Rückgabe-Plans — Donnerstag vor den
+	// Sommerferien, 4. Stunde (Peter, 06.09.2026); die Reihenfolge fließt rückwärts
+	// davor. Beim Ausgabe-Plan leer ("" / 0): sein Anker ist der Beginn.
+	LetzterTag   string `json:"letzter_tag"` // YYYY-MM-DD oder ""
+	LetzteStunde int    `json:"letzte_stunde"`
 	// VeroeffentlichtAm: nil = Entwurf (Migration 100) — nur im Planer sichtbar, keine
 	// Fristen. Gesetzt (RFC 3339) = gilt für Portal, PDF und Frist-Kopplung.
 	VeroeffentlichtAm *string `json:"veroeffentlicht_am"`
@@ -65,13 +72,16 @@ type LmfPlanStand struct {
 // lmfPlanSpalten ist die eine Spaltenliste des Rahmens — für Lesen, Speichern und
 // Veröffentlichen dieselbe, damit kein Weg ein Feld vergisst (scanLmfPlan liest sie).
 const lmfPlanSpalten = `id, art, to_char(schuljahr_beginn, 'YYYY-MM-DD'), to_char(erster_tag, 'YYYY-MM-DD'),
-		       startstunde, stunden_je_tag, veroeffentlicht_am`
+		       startstunde, stunden_je_tag, veroeffentlicht_am,
+		       COALESCE(to_char(letzter_tag, 'YYYY-MM-DD'), ''), COALESCE(letzte_stunde, 0)`
 
 // scanLmfPlan liest lmfPlanSpalten in den Rahmen; der Stempel kommt als RFC 3339 in der
-// Schulzeitzone, weil die Oberfläche ihn nur anzeigt.
+// Schulzeitzone, weil die Oberfläche ihn nur anzeigt. Das Ende ist beim Ausgabe-Plan
+// NULL — COALESCE, nicht Zeigertyp (NULL-Scan-Bugklasse).
 func scanLmfPlan(row pgx.Row, p *LmfPlan) error {
 	var veroeffentlicht *time.Time
-	if err := row.Scan(&p.ID, &p.Art, &p.SchuljahrBeginn, &p.ErsterTag, &p.Startstunde, &p.StundenJeTag, &veroeffentlicht); err != nil {
+	if err := row.Scan(&p.ID, &p.Art, &p.SchuljahrBeginn, &p.ErsterTag, &p.Startstunde, &p.StundenJeTag, &veroeffentlicht,
+		&p.LetzterTag, &p.LetzteStunde); err != nil {
 		return err
 	}
 	p.VeroeffentlichtAm = nil
@@ -189,14 +199,17 @@ func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zei
 
 	sjb := SchuljahrBeginn(ersterTag)
 	var st LmfPlanStand
+	// Das Ende (Anker des Rückgabe-Plans) als NULL, wenn leer — der Check der Tabelle
+	// verlangt es beim Rückgabe-Plan und verbietet es beim Ausgabe-Plan.
 	if err := scanLmfPlan(tx.QueryRow(ctx, `
-		INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag, letzter_tag, letzte_stunde)
+		VALUES ($1, $2, $3, $4, $5, NULLIF($6, '')::date, NULLIF($7, 0))
 		ON CONFLICT (art, schuljahr_beginn) DO UPDATE
 		  SET erster_tag = EXCLUDED.erster_tag, startstunde = EXCLUDED.startstunde,
-		      stunden_je_tag = EXCLUDED.stunden_je_tag
+		      stunden_je_tag = EXCLUDED.stunden_je_tag,
+		      letzter_tag = EXCLUDED.letzter_tag, letzte_stunde = EXCLUDED.letzte_stunde
 		RETURNING `+lmfPlanSpalten,
-		plan.Art, sjb, ersterTag, plan.Startstunde, plan.StundenJeTag), &st.Plan); err != nil {
+		plan.Art, sjb, ersterTag, plan.Startstunde, plan.StundenJeTag, plan.LetzterTag, plan.LetzteStunde), &st.Plan); err != nil {
 		return st, err
 	}
 	// Zeilen vollständig ersetzen: Der Plan IST die Reihenfolge, Einzel-IDs gibt es nicht.

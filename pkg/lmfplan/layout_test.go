@@ -111,3 +111,65 @@ func TestVerteileMit_FesterPlatzWirdAusgelassen(t *testing.T) {
 		}
 	}
 }
+
+// Peters echter Plan 2026 vom Ende her (06.09.2026: „es endet immer am gleichen Tag —
+// Donnerstags vor den Ferien zur vierten Stunde"): 56 Zeilen, Ende Do 25.06. 4. Stunde,
+// Do 18.06. frei (im Excel steht dort keine Klasse) → Beginn Do 11.06. 3. Stunde, genau
+// wie im Excel. Ohne den freien Tag rückt der Beginn auf Fr 12.06. 3. Stunde — der
+// Anfang wandert, das Ende bleibt.
+func TestVerteileRueckwaerts_EchterPlan2026(t *testing.T) {
+	e := Ende{LetzterTag: tag("2026-06-25"), LetzteStunde: 4, StundenJeTag: 6}
+	frei := []Zeitraum{{Von: tag("2026-06-18"), Bis: tag("2026-06-18"), Name: "frei"}}
+	p := VerteileRueckwaerts(e, make([]*Platz, 56), Schultage(frei))
+	if len(p) != 56 || !p[55].Datum.Equal(tag("2026-06-25")) || p[55].Stunde != 4 {
+		t.Fatalf("letzte Zeile %s/%d", p[55].Datum.Format("2006-01-02"), p[55].Stunde)
+	}
+	if !p[0].Datum.Equal(tag("2026-06-11")) || p[0].Stunde != 3 {
+		t.Errorf("erste Zeile %s/%d, erwartet Do 11.06. 3. Std.", p[0].Datum.Format("2006-01-02"), p[0].Stunde)
+	}
+	if !p[4].Datum.Equal(tag("2026-06-12")) || p[4].Stunde != 1 || !p[52].Datum.Equal(tag("2026-06-25")) || p[52].Stunde != 1 {
+		t.Errorf("Zeile 5 %s/%d, Zeile 53 %s/%d", p[4].Datum.Format("2006-01-02"), p[4].Stunde, p[52].Datum.Format("2006-01-02"), p[52].Stunde)
+	}
+	for i := range p {
+		if d := p[i].Datum; d.Equal(tag("2026-06-18")) || d.Weekday() == time.Saturday || d.Weekday() == time.Sunday {
+			t.Errorf("Zeile %d liegt auf %s", i+1, d.Format("2006-01-02 Mon"))
+		}
+	}
+	b, ok := Beginn(p)
+	if !ok || !b.Datum.Equal(tag("2026-06-11")) || b.Stunde != 3 {
+		t.Errorf("Beginn %+v", b)
+	}
+	ohne := VerteileRueckwaerts(e, make([]*Platz, 56), Schultage(nil))
+	if !ohne[0].Datum.Equal(tag("2026-06-12")) || ohne[0].Stunde != 3 {
+		t.Errorf("ohne freien Tag: Beginn %s/%d, erwartet Fr 12.06. 3. Std.", ohne[0].Datum.Format("2006-01-02"), ohne[0].Stunde)
+	}
+}
+
+// Rückwärts mit festem Platz, letztem Tag am Wochenende und letzter Stunde hinter dem
+// Tagesende: Samstag → Freitag davor; Stunde 9 bei 6 → 6. Die feste Zeile 2 (Fr 2. Std.)
+// wird vom Fluss ausgelassen: Zeile 3 rutscht von der belegten 2. auf die 1. Stunde,
+// Zeile 1 auf den Donnerstag, 6. Stunde.
+func TestVerteileRueckwaerts_FestUndRaender(t *testing.T) {
+	e := Ende{LetzterTag: tag("2026-06-13"), LetzteStunde: 9, StundenJeTag: 6} // Samstag
+	fest := []*Platz{nil, {Datum: tag("2026-06-12"), Stunde: 2}, nil, nil, nil, nil, nil}
+	p := VerteileRueckwaerts(e, fest, Schultage(nil))
+	erwartet := []Platz{
+		{tag("2026-06-11"), 6}, // Zeile 1: Donnerstag, letzte Stunde
+		{tag("2026-06-12"), 2}, // Zeile 2: fest
+		{tag("2026-06-12"), 1}, // Zeile 3: die 2. ist belegt
+		{tag("2026-06-12"), 3}, {tag("2026-06-12"), 4}, {tag("2026-06-12"), 5},
+		{tag("2026-06-12"), 6}, // Zeile 7: der Anker, auf das Tagesende gezogen
+	}
+	for i := range erwartet {
+		if !p[i].Datum.Equal(erwartet[i].Datum) || p[i].Stunde != erwartet[i].Stunde {
+			t.Errorf("Zeile %d: %s/%d, erwartet %s/%d", i+1, p[i].Datum.Format("2006-01-02"), p[i].Stunde,
+				erwartet[i].Datum.Format("2006-01-02"), erwartet[i].Stunde)
+		}
+	}
+	if got := VerteileRueckwaerts(e, nil, Schultage(nil)); len(got) != 0 {
+		t.Errorf("ohne Zeilen keine Plätze, waren %d", len(got))
+	}
+	if _, ok := Beginn(nil); ok {
+		t.Error("Beginn ohne Plätze")
+	}
+}

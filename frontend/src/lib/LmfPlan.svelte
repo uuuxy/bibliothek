@@ -23,6 +23,9 @@
 	let plaetze = $state([]);
 	/** @type {import('./lmfplanDienst.js').Ausfall[]} */
 	let ausfaelle = $state([]);
+	/** Der gerechnete Beginn des Büchertauschs (der Plan hängt am Ende) — vom Server.
+	 *  @type {{ datum: string, stunde: number } | null} */
+	let beginn = $state(null);
 	let laedt = $state(true);
 	let speichert = $state(false);
 	// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan (ui/LadeFehler.svelte):
@@ -62,6 +65,7 @@
 				if (meine !== laufNr) return; // eine jüngere Anfrage ist schon unterwegs oder da
 				plaetze = z.plaetze.map((p) => ({ datum: p.datum, stunde: p.stunde }));
 				ausfaelle = z.ausfaelle;
+				beginn = z.beginn;
 			} catch (e) {
 				if (meine === laufNr) showToast(`${e}`, 'error');
 			}
@@ -89,7 +93,7 @@
 	}
 
 	const gueltig = $derived(
-		Boolean(entwurf.erster_tag) &&
+		dienst.ankerGesetzt(art, entwurf) &&
 			entwurf.zeilen.every((z) => z.klassen.length > 0 || z.vermerk.trim() !== '') &&
 			dienst.festePlaetzeVollstaendig(entwurf.zeilen)
 	);
@@ -133,14 +137,8 @@
 		if (erg.ok) await lade();
 	}
 
-	async function pdf() {
-		// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
-		try {
-			await dienst.ladePdf(false, true);
-		} catch (e) {
-			showToast(`${e}`, 'error');
-		}
-	}
+	// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
+	const pdf = () => dienst.ladePdf(false, true).catch((e) => showToast(`${e}`, 'error'));
 
 	// Nicht `onMount(lade)`: Svelte nähme die zurückgegebene Zusage als Aufräum-Funktion.
 	onMount(() => {
@@ -181,17 +179,17 @@
 	{:else}
 		<div class="mt-6 space-y-8">
 			<LmfPlanRahmen
-				bind:ersterTag={entwurf.erster_tag}
-				bind:startstunde={entwurf.startstunde}
-				bind:stundenJeTag={entwurf.stunden_je_tag}
-				bind:tage={entwurf.freie_tage}
+				{art}
+				bind:entwurf
 				{ausfaelle}
+				{beginn}
+				sommerferien={stand?.sommerferien ?? null}
 			/>
 			<LmfPlanReihenfolge
 				bind:zeilen={entwurf.zeilen}
 				{plaetze}
 				{marker}
-				bereit={Boolean(entwurf.erster_tag)}
+				bereit={dienst.ankerGesetzt(art, entwurf)}
 				onklasseraus={klasseRaus}
 			/>
 			<LmfPlanVorrat klassen={entwurf.ausgelassen} {marker} onhinein={klasseHinein} />

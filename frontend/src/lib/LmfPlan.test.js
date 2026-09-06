@@ -24,7 +24,17 @@ const STAND = {
 	vorschlag: { quelle: 'regel', zeilen: [{ klassen: ['09H1'], vermerk: '' }], ausgelassen: [] },
 	klassen: ['09H1'],
 	nur_rueckgabe: ['09H1'],
-	eingangsjahrgaenge: [5, 7]
+	eingangsjahrgaenge: [5, 7],
+	sommerferien: { jahr: 2027, von: '2027-06-28', bis: '2027-08-06', bekannt: true }
+};
+// Der Rahmen, mit dem ein neuer Büchertausch beginnt (Migration 101): Donnerstag vor den
+// Sommerferien, 4. Stunde — vom Server aus der Ferientabelle.
+const RAHMEN = {
+	erster_tag: '',
+	startstunde: 1,
+	letzter_tag: '2027-06-24',
+	letzte_stunde: 4,
+	stunden_je_tag: 6
 };
 
 // Ein gespeicherter Plan ohne Stempel ist ein Entwurf (Migration 100): „Veröffentlichen"
@@ -34,6 +44,8 @@ const PLAN = {
 	art: 'rueckgabe',
 	erster_tag: '2027-06-28',
 	startstunde: 1,
+	letzter_tag: '2027-06-28',
+	letzte_stunde: 1,
 	stunden_je_tag: 6,
 	freie_tage: [],
 	veroeffentlicht_am: null
@@ -108,5 +120,76 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		);
 		// Ohne Schüler in 09H1 (klassen leer): die Zeile sagt es.
 		expect(screen.getByText('ohne Schüler')).toBeTruthy();
+	});
+});
+
+// Der Anker des Büchertauschs (Peter, 06.09.2026: „es endet immer am gleichen Tag —
+// Donnerstags vor den Ferien zur vierten Stunde"): Ein neuer Plan kommt mit dem
+// vorbelegten letzten Tag aus der Ferientabelle, die Vorschau schickt ihn als
+// letzter_tag, und der Satz unter dem Rahmen nennt Ferien und gerechneten Beginn. Fehlt
+// das Jahr in der Tabelle, sagt der Satz das und das Feld bleibt leer.
+describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
+	beforeEach(() => vi.mocked(apiFetch).mockReset());
+
+	/** @param {any} stand @returns {any[]} die Körper der Vorschau-Aufrufe */
+	function antworte(stand) {
+		/** @type {any[]} */
+		const gesendet = [];
+		vi.mocked(apiFetch).mockImplementation(async (url, init) => {
+			if (init?.method === 'PUT') {
+				gesendet.push(JSON.parse(String(init.body)));
+				return new Response(
+					JSON.stringify({
+						plan: { erster_tag: '2027-06-24', startstunde: 4 },
+						zeilen: [{ datum: '2027-06-24', stunde: 4 }],
+						ausfaelle: []
+					}),
+					{ status: 200 }
+				);
+			}
+			return new Response(JSON.stringify(stand), { status: 200 });
+		});
+		return gesendet;
+	}
+
+	it('belegt den letzten Tag vor, schickt ihn als letzter_tag und nennt den Beginn', async () => {
+		const gesendet = antworte({ ...STAND, vorschlag: { ...STAND.vorschlag, rahmen: RAHMEN } });
+		render(LmfPlan);
+		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
+		expect(feld.value).toBe('2027-06-24');
+		expect(screen.getByText('Ende am letzten Tag')).toBeTruthy();
+		expect(screen.queryByLabelText('Erster Tag')).toBeNull();
+		const hinweis = await screen.findByTestId('lmf-zeitraum-hinweis');
+		expect(hinweis.textContent).toContain('Sommerferien 2027: 28.06.27 bis 06.08.27');
+		await vi.waitFor(() => expect(gesendet.length).toBeGreaterThan(0));
+		expect(gesendet[0].letzter_tag).toBe('2027-06-24');
+		expect(gesendet[0].letzte_stunde).toBe(4);
+		expect(gesendet[0].vorschau).toBe(true);
+		await vi.waitFor(() =>
+			expect(screen.getByTestId('lmf-zeitraum-hinweis').textContent).toContain(
+				'Der Plan beginnt Donnerstag, 24.06.27 in der 4. Stunde'
+			)
+		);
+	});
+
+	it('nennt das fehlende Ferienjahr und lässt den Tag leer (Gegenprobe)', async () => {
+		const gesendet = antworte({
+			...STAND,
+			sommerferien: { jahr: 2031, von: '', bis: '', bekannt: false },
+			vorschlag: { ...STAND.vorschlag, rahmen: { ...RAHMEN, letzter_tag: '' } }
+		});
+		render(LmfPlan);
+		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
+		expect(feld.value).toBe('');
+		expect(screen.getByTestId('lmf-zeitraum-hinweis').textContent).toContain(
+			'Sommerferien 2031 sind im Programm noch nicht hinterlegt'
+		);
+		// Ohne Anker keine Vorschau und kein Speichern.
+		await new Promise((r) => setTimeout(r, 400));
+		expect(gesendet).toHaveLength(0);
+		expect(
+			/** @type {HTMLButtonElement} */ (screen.getByRole('button', { name: 'Plan speichern' }))
+				.disabled
+		).toBe(true);
 	});
 });

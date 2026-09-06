@@ -13,13 +13,19 @@ import { apiFetch } from './apiFetch.js';
 /** @typedef {{ datum: string, stunde: number }} FesterPlatz */
 /** @typedef {{ klassen: string[], vermerk: string, fest?: FesterPlatz | null }} PlanZeile */
 /** @typedef {{ datum: string, grund: string }} FreierTag */
-/** @typedef {{ erster_tag: string, startstunde: number, stunden_je_tag: number, freie_tage: FreierTag[], zeilen: PlanZeile[], ausgelassen: string[] }} PlanEntwurf */
+/** Der Rahmen hängt an der Art (Migration 101): der Büchertausch ENDET (letzter_tag,
+ *  letzte_stunde — Donnerstag vor den Sommerferien, 4. Stunde), die Bücherausgabe BEGINNT
+ *  (erster_tag, startstunde). Der Entwurf trägt beide Paare; gesendet wird, was die Art
+ *  braucht, der Server verwirft den Rest.
+ *  @typedef {{ erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], zeilen: PlanZeile[], ausgelassen: string[] }} PlanEntwurf */
+/** @typedef {{ erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number }} RahmenVorgabe */
+/** @typedef {{ jahr: number, von: string, bis: string, bekannt: boolean }} Sommerferien */
 /** @typedef {{ position: number, datum: string, stunde: number, fest: boolean, klassen: string[], vermerk: string }} PlanPlatz */
 /** Ein Werktag im Plan-Zeitraum, an dem der Plan nicht läuft — mit Grund. */
 /** @typedef {{ datum: string, grund: string }} Ausfall */
 /** veroeffentlicht_am: null = Entwurf (nur im Planer), sonst der Stempel (Migration 100). klassen = Klassen mit
  *  Schülern; nur_rueckgabe = Klassen, die vor den Ferien nur abgeben; eingangsjahrgaenge aus der Einstellung. */
-/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[] }, klassen: string[], nur_rueckgabe?: string[], eingangsjahrgaenge?: number[] }} PlanStand */
+/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], nur_rueckgabe?: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
 
 /** Die zwei Pläne — mit den Worten, die sagen, was passiert (Peter, 06.09.2026: „Rückgabe"
  *  und „Ausgabe" allein waren unklar, das sind zwei verschiedene Dinge zu verschiedenen
@@ -105,6 +111,8 @@ export function leererEntwurf() {
 	return {
 		erster_tag: '',
 		startstunde: 1,
+		letzter_tag: '',
+		letzte_stunde: 4,
 		stunden_je_tag: 6,
 		freie_tage: [],
 		zeilen: [],
@@ -113,7 +121,8 @@ export function leererEntwurf() {
 }
 
 /** Baut den bearbeitbaren Entwurf aus dem Serverstand: ein laufender Plan wird
- *  bearbeitet, sonst beginnt der nächste mit dem Vorschlag (Vorjahr oder Regel). Alles
+ *  bearbeitet, sonst beginnt der nächste mit dem Vorschlag (Vorjahr oder Regel) und dem
+ *  Rahmen aus den Sommerferien (Donnerstag davor, 4. Stunde; erster Schultag danach). Alles
  *  aus dem Vokabular, was in keiner Zeile steht, liegt unter „Nicht im Plan". Feste
  *  Plätze und freie Tage gehören zum laufenden Plan — der Vorschlag fürs nächste Jahr
  *  bringt sie nicht mit (der Ausflug war dieses Jahr).
@@ -135,10 +144,13 @@ export function entwurfAus(stand) {
 			drin.add(normKey(k));
 		}
 	}
+	const rahmen = laufend && stand.plan ? stand.plan : (stand.vorschlag?.rahmen ?? leererEntwurf());
 	return {
-		erster_tag: laufend && stand.plan ? stand.plan.erster_tag : '',
-		startstunde: laufend && stand.plan ? stand.plan.startstunde : 1,
-		stunden_je_tag: laufend && stand.plan ? stand.plan.stunden_je_tag : 6,
+		erster_tag: rahmen.erster_tag,
+		startstunde: rahmen.startstunde,
+		letzter_tag: rahmen.letzter_tag,
+		letzte_stunde: rahmen.letzte_stunde,
+		stunden_je_tag: rahmen.stunden_je_tag,
 		freie_tage: laufend && stand.plan ? [...(stand.plan.freie_tage ?? [])] : [],
 		zeilen,
 		ausgelassen: ausgelassen.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
@@ -182,15 +194,26 @@ async function sende(art, entwurf, vorschau) {
 	return { res, json };
 }
 
-/** Rechnet die Plätze und die Ausfälle (Feiertage, freie Tage) ohne zu speichern. Leer,
- *  wenn der Rahmen noch unvollständig ist.
+/** Hat der Entwurf den Anker seiner Art — das Ende beim Büchertausch, den Beginn bei
+ *  der Bücherausgabe? Erst dann gibt es Plätze zu rechnen und etwas zu speichern.
+ *  @param {string} art @param {PlanEntwurf} e */
+export function ankerGesetzt(art, e) {
+	return Boolean(art === 'rueckgabe' ? e.letzter_tag : e.erster_tag);
+}
+
+/** Rechnet die Plätze und die Ausfälle (Feiertage, freie Tage) ohne zu speichern, dazu
+ *  den gerechneten Beginn (beim Büchertausch: wo der Plan anfängt). Leer, wenn der
+ *  Anker noch fehlt.
  *  @param {string} art @param {PlanEntwurf} entwurf
- *  @returns {Promise<{ plaetze: PlanPlatz[], ausfaelle: Ausfall[] }>} */
+ *  @returns {Promise<{ plaetze: PlanPlatz[], ausfaelle: Ausfall[], beginn: { datum: string, stunde: number } | null }>} */
 export async function rechneVorschau(art, entwurf) {
-	if (!entwurf.erster_tag) return { plaetze: [], ausfaelle: [] };
+	if (!ankerGesetzt(art, entwurf)) return { plaetze: [], ausfaelle: [], beginn: null };
 	const { res, json } = await sende(art, entwurf, true);
 	if (!res.ok) throw new Error(json.error ?? json.message ?? 'Vorschau fehlgeschlagen');
-	return { plaetze: json.zeilen ?? [], ausfaelle: json.ausfaelle ?? [] };
+	const beginn = json.plan?.erster_tag
+		? { datum: json.plan.erster_tag, stunde: json.plan.startstunde }
+		: null;
+	return { plaetze: json.zeilen ?? [], ausfaelle: json.ausfaelle ?? [], beginn };
 }
 
 /** Alles am Entwurf, wovon die Plätze abhängen — als EIN Text, den die Vorschau
@@ -203,6 +226,8 @@ export function vorschauSchluessel(e) {
 	return [
 		e.erster_tag,
 		e.startstunde,
+		e.letzter_tag,
+		e.letzte_stunde,
 		e.stunden_je_tag,
 		e.freie_tage.map((t) => t.datum).join(','),
 		e.zeilen.map((z) => (z.fest ? `${z.fest.datum}/${z.fest.stunde}` : '-')).join('|')

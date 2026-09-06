@@ -62,9 +62,16 @@ func speicherePlan(t *testing.T, repo *LmfTerminRepository, art, ersterTag strin
 	}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag, Startstunde: startstunde, StundenJeTag: stundenJeTag},
 		make([]*lmfplan.Platz, len(zeilen)), lmfplan.Schultage(nil))
-	st, err := repo.SaveLmfPlan(context.Background(),
-		LmfPlan{Art: art, ErsterTag: ersterTag, Startstunde: startstunde, StundenJeTag: stundenJeTag},
-		zeilen, plaetze, ausgelassen)
+	plan := LmfPlan{Art: art, ErsterTag: ersterTag, Startstunde: startstunde, StundenJeTag: stundenJeTag}
+	// Der Rückgabe-Plan trägt sein Ende (Migration 101): hier der Platz der letzten Zeile
+	// — vom Ende her gerechnet ergäbe das dieselben Plätze.
+	if art == LmfTerminRueckgabe {
+		plan.LetzterTag, plan.LetzteStunde = ersterTag, startstunde
+		if n := len(plaetze); n > 0 {
+			plan.LetzterTag, plan.LetzteStunde = plaetze[n-1].Datum.Format("2006-01-02"), plaetze[n-1].Stunde
+		}
+	}
+	st, err := repo.SaveLmfPlan(context.Background(), plan, zeilen, plaetze, ausgelassen)
 	if err != nil {
 		t.Fatalf("Plan %s ab %s speichern: %v", art, ersterTag, err)
 	}

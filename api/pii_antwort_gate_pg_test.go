@@ -130,8 +130,8 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	// Ein LMF-Termin, damit GET /api/lmf-termine/pdf etwas zu rendern hat (leer = 404).
 	// Stufe 0: Datum, Stunde, Art, Vermerk — bewusst kanarienfrei.
 	var planID string
-	if err := pool.QueryRow(ctx, `INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag, veroeffentlicht_am)
-	     VALUES ('rueckgabe', DATE '2098-08-01', DATE '2099-06-28', 1, 6, CURRENT_TIMESTAMP) RETURNING id`).Scan(&planID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag, veroeffentlicht_am, letzter_tag, letzte_stunde)
+	     VALUES ('rueckgabe', DATE '2098-08-01', DATE '2099-06-28', 1, 6, CURRENT_TIMESTAMP, DATE '2099-06-28', 3) RETURNING id`).Scan(&planID); err != nil {
 		t.Fatalf("Gate-Plan: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `INSERT INTO lmf_termine (plan_id, position, datum, stunde, art, vermerk)

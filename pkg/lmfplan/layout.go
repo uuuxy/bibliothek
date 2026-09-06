@@ -56,20 +56,9 @@ type Ausfall struct {
 // Platz darf auf einem Tag liegen, der sonst kein Schultag wäre: Wer ihn setzt, weiß es.
 // Ohne feste Plätze: make([]*Platz, n).
 func VerteileMit(r Rahmen, fest []*Platz, istSchultag func(time.Time) bool) []Platz {
-	n := len(fest)
-	plaetze := make([]Platz, n)
-	if n == 0 || r.StundenJeTag < 1 {
+	plaetze, belegt := festePlaetze(fest)
+	if len(fest) == 0 || r.StundenJeTag < 1 {
 		return plaetze[:0]
-	}
-	// Schlüssel als Text, nicht als time.Time: Zwei Zeitpunkte desselben Kalendertags
-	// aus verschiedenen Zonen wären als Map-Schlüssel verschieden.
-	schluessel := func(p Platz) string { return fmt.Sprintf("%s/%d", p.Datum.Format("2006-01-02"), p.Stunde) }
-	belegt := map[string]bool{}
-	for i, f := range fest {
-		if f != nil {
-			plaetze[i] = Platz{Datum: kalendertag(f.Datum), Stunde: f.Stunde}
-			belegt[schluessel(plaetze[i])] = true
-		}
 	}
 	tag := naechsterSchultag(kalendertag(r.ErsterTag), istSchultag)
 	stunde := r.Startstunde
@@ -100,6 +89,87 @@ func VerteileMit(r Rahmen, fest []*Platz, istSchultag func(time.Time) bool) []Pl
 		weiter()
 	}
 	return plaetze
+}
+
+// Ende ist der Anker des Büchertauschs vor den Sommerferien (Peter, 06.09.2026: „es
+// endet immer am gleichen Tag — Donnerstags vor den Ferien zur vierten Stunde"): die
+// LETZTE Zeile bekommt diesen Platz, die übrigen fließen rückwärts davor. Kommen Zeilen
+// dazu, rückt der Beginn nach vorn, das Ende bleibt.
+type Ende struct {
+	LetzterTag   time.Time
+	LetzteStunde int
+	StundenJeTag int
+}
+
+// VerteileRueckwaerts ist VerteileMit vom Ende her: die letzte Zeile auf den letzten
+// Platz, jede davor eine Stunde früher, vor der ersten Stunde des Tages der vorige
+// Schultag ab seiner letzten Stunde. Feste Plätze gelten wie beim Vorwärtsfluss. Ist
+// der letzte Tag kein Schultag, endet der Plan am Schultag davor; eine letzte Stunde
+// hinter dem Tagesende wird auf das Tagesende gezogen.
+func VerteileRueckwaerts(e Ende, fest []*Platz, istSchultag func(time.Time) bool) []Platz {
+	plaetze, belegt := festePlaetze(fest)
+	if len(fest) == 0 || e.StundenJeTag < 1 {
+		return plaetze[:0]
+	}
+	tag := vorigerSchultag(kalendertag(e.LetzterTag), istSchultag)
+	stunde := e.LetzteStunde
+	if stunde > e.StundenJeTag {
+		stunde = e.StundenJeTag
+	}
+	if stunde < 1 {
+		stunde = 1
+	}
+	zurueck := func() {
+		stunde--
+		if stunde < 1 {
+			tag = vorigerSchultag(tag.AddDate(0, 0, -1), istSchultag)
+			stunde = e.StundenJeTag
+		}
+	}
+	for i := len(fest) - 1; i >= 0; i-- {
+		if fest[i] != nil {
+			continue
+		}
+		for belegt[schluessel(Platz{Datum: tag, Stunde: stunde})] {
+			zurueck()
+		}
+		plaetze[i] = Platz{Datum: tag, Stunde: stunde}
+		zurueck()
+	}
+	return plaetze
+}
+
+// Beginn nennt den frühesten Platz — Datum und Stunde, an denen ein rückwärts
+// gerechneter Plan beginnt. ok=false ohne Plätze.
+func Beginn(plaetze []Platz) (Platz, bool) {
+	if len(plaetze) == 0 {
+		return Platz{}, false
+	}
+	erster := plaetze[0]
+	for _, p := range plaetze[1:] {
+		if p.Datum.Before(erster.Datum) || (p.Datum.Equal(erster.Datum) && p.Stunde < erster.Stunde) {
+			erster = p
+		}
+	}
+	return erster, true
+}
+
+// schluessel ist der Map-Schlüssel eines Platzes — als Text, nicht als time.Time: Zwei
+// Zeitpunkte desselben Kalendertags aus verschiedenen Zonen wären als Schlüssel verschieden.
+func schluessel(p Platz) string { return fmt.Sprintf("%s/%d", p.Datum.Format("2006-01-02"), p.Stunde) }
+
+// festePlaetze legt die Ergebnisliste an, trägt die festen Plätze ein und merkt sie als
+// belegt — der gemeinsame Anfang von Vorwärts- und Rückwärtsfluss.
+func festePlaetze(fest []*Platz) ([]Platz, map[string]bool) {
+	plaetze := make([]Platz, len(fest))
+	belegt := map[string]bool{}
+	for i, f := range fest {
+		if f != nil {
+			plaetze[i] = Platz{Datum: kalendertag(f.Datum), Stunde: f.Stunde}
+			belegt[schluessel(plaetze[i])] = true
+		}
+	}
+	return plaetze, belegt
 }
 
 // kalender kennt die Gründe, aus denen ein Tag kein Schultag ist. Feiertage werden je
@@ -166,11 +236,20 @@ func Ausfaelle(von, bis time.Time, frei []Zeitraum) []Ausfall {
 // Nach einem Jahr ohne Schultag gibt es keinen — dann bleibt es beim Kalender, statt
 // endlos zu laufen (ein Ferien-Eintrag „bis 9999" ist ein Datenfehler, kein Endlos-Plan).
 func naechsterSchultag(t time.Time, istSchultag func(time.Time) bool) time.Time {
+	return schultagAb(t, 1, istSchultag)
+}
+
+// vorigerSchultag liefert t selbst, wenn es ein Schultag ist, sonst den davor.
+func vorigerSchultag(t time.Time, istSchultag func(time.Time) bool) time.Time {
+	return schultagAb(t, -1, istSchultag)
+}
+
+func schultagAb(t time.Time, schritt int, istSchultag func(time.Time) bool) time.Time {
 	for i := 0; i < 366; i++ {
 		if istSchultag(t) {
 			return t
 		}
-		t = t.AddDate(0, 0, 1)
+		t = t.AddDate(0, 0, schritt)
 	}
 	return t
 }

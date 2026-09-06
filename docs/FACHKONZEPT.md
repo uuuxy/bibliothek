@@ -85,15 +85,21 @@ manche teilen sich eine Stunde („10R1/10R2"), am Ende Zeilen ohne Klasse („N
 der Server auf Schultage × Stunden gießt** — nicht eine Liste einzeln angelegter Zeilen
 (so gebaut in 1890a4df, am selben Abend ersetzt).
 
-Modell (Migration 096 + 097): `lmf_plaene` je Art und Schuljahr mit dem Rahmen (erster
-Tag, Startstunde, Stunden je Tag), `lmf_termine` als Zeilen mit `plan_id`, `position`
+Modell (Migration 096 + 097 + 101): `lmf_plaene` je Art und Schuljahr mit dem Rahmen —
+beim Büchertausch das ENDE (`letzter_tag`, `letzte_stunde`: Donnerstag vor den
+Sommerferien, 4. Stunde; Peter 06.09.2026: „es endet immer am gleichen Tag"), die
+Reihenfolge fließt rückwärts davor und `erster_tag`/`startstunde` sind gerechnet; bei
+der Bücherausgabe der Beginn (`erster_tag`, `startstunde`) — plus Stunden je Tag;
+die Vorbelegung kommt aus der Ferientabelle Hessen (`pkg/lmfplan/ferien.go`, KMK bis
+2030, Horizont-Test als Erinnerung), `lmf_termine` als Zeilen mit `plan_id`, `position`
 und den GERECHNETEN Feldern Datum/Stunde (Portal, PDF und Frist-Kopplung lesen sie wie
 zuvor), `lmf_termin_klassen` (0..n Klassen aus dem Vokabular; „Bücher setzen" = Zeile
 ohne Klasse mit Vermerk), `lmf_plan_ausgelassen` (Klassen, die der Plan bewusst auslässt —
 die Oberstufe organisiert sich an dieser Schule selbst; sie gelten nicht als „ohne
 Termin", der nächste Plan übernimmt die Auslassung). Die Verteilung rechnet
-`pkg/lmfplan.Verteile` (Mo–Fr, `ferien_schliesszeiten` ausgespart, Startstunde nur am
-ersten Tag) — die EINE Stelle; die Vorschau im Planer ist derselbe Aufruf mit
+`pkg/lmfplan.VerteileMit` bzw. `VerteileRueckwaerts` (Mo–Fr, Feiertage Hessen,
+`ferien_schliesszeiten` und freie Tage des Plans ausgespart, feste Plätze umflossen) —
+die EINE Stelle; die Vorschau im Planer ist derselbe Aufruf mit
 `"vorschau": true`, kein JavaScript-Zwilling.
 
 Routen (`api/lmf_plan.go`, alle `edit_books`): `GET /api/lmf-plan/{art}` liefert den

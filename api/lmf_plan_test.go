@@ -10,7 +10,7 @@ import (
 // sondern ein Fehler, den der Planer sehen muss.
 func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
 	var req lmfPlanRequest
-	req.ErsterTag, req.Startstunde, req.StundenJeTag = "2026-06-11", 3, 6
+	req.LetzterTag, req.LetzteStunde, req.StundenJeTag = "2026-06-25", 4, 6
 	req.FreieTage = append(req.FreieTage, struct {
 		Datum string `json:"datum"`
 		Grund string `json:"grund"`
@@ -64,5 +64,38 @@ func TestPruefeLmfPlan_FestUndFreieTage(t *testing.T) {
 	req.FreieTage[0].Datum = "Freitag"
 	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "freier Tag 1") {
 		t.Errorf("freier Tag ohne Datum: %v", err)
+	}
+}
+
+// Der Anker hängt an der Art (Migration 101): Der Rückgabe-Plan braucht das Ende und
+// verwirft einen mitgeschickten Beginn (der Server rechnet ihn); der Ausgabe-Plan
+// braucht den Beginn und lässt das Ende leer. Ohne Zeilen steht beim Rückgabe-Plan das
+// Ende auch als Beginn — ein Plan ohne Tag gäbe ein leeres Schuljahr.
+func TestPruefeLmfPlan_AnkerJeArt(t *testing.T) {
+	var req lmfPlanRequest
+	req.ErsterTag, req.Startstunde, req.StundenJeTag = "2026-06-11", 3, 6
+	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzter_tag") {
+		t.Errorf("Rückgabe ohne Ende: %v", err)
+	}
+	req.LetzterTag, req.LetzteStunde = " 2026-06-25 ", 4
+	e, err := pruefeLmfPlan("rueckgabe", req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if e.Plan.LetzterTag != "2026-06-25" || e.Plan.LetzteStunde != 4 || e.Plan.ErsterTag != "2026-06-25" || e.Plan.Startstunde != 4 {
+		t.Errorf("Rückgabe-Anker: %+v", e.Plan)
+	}
+	req.LetzteStunde = 7
+	if _, err := pruefeLmfPlan("rueckgabe", req); err == nil || !strings.Contains(err.Error(), "letzte_stunde") {
+		t.Errorf("letzte Stunde hinter dem Tagesende: %v", err)
+	}
+	req.LetzteStunde = 4
+	if e, err = pruefeLmfPlan("ausgabe", req); err != nil || e.Plan.LetzterTag != "" || e.Plan.LetzteStunde != 0 ||
+		e.Plan.ErsterTag != "2026-06-11" || e.Plan.Startstunde != 3 {
+		t.Errorf("Ausgabe-Anker: %+v (%v)", e.Plan, err)
+	}
+	req.ErsterTag = ""
+	if _, err := pruefeLmfPlan("ausgabe", req); err == nil || !strings.Contains(err.Error(), "erster_tag") {
+		t.Errorf("Ausgabe ohne Beginn: %v", err)
 	}
 }

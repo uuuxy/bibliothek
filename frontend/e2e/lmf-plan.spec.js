@@ -13,7 +13,8 @@ import { uiLogin, csrfToken, seedBenutzer, seedSQL, uniqueSuffix, gehZu } from '
 // dieser Suite rechnen mit dem Stichtag. Die Frist-Kopplung misst
 // api/lmf_termine_frist_pg_test.go am Postgres.
 const LEHRER_EMAIL = 'e2e-lehrer-lmfplan@test.local';
-const ERSTER_TAG = new Date(2027, 7, 9); // Montag 09.08.2027
+const ERSTER_TAG = new Date(2027, 7, 9); // Montag 09.08.2027 — erster Schultag nach den Ferien
+const STARTSTUNDE = 2; // Vorgabe des Planers (Peters Plan 2026: Mo 10.08., 2. Std.)
 const STUNDEN_JE_TAG = 6;
 
 /**
@@ -28,9 +29,11 @@ async function zeilenAktion(page, zeile, nummer, eintrag) {
 	await page.getByRole('menuitem', { name: eintrag }).click();
 }
 
-/** Der Platz, den der Server der Zeile mit dieser Nummer geben muss (Mo–Fr, 6 je Tag). */
+/** Der Platz, den der Server der Zeile mit dieser Nummer geben muss (Mo–Fr, 6 je Tag,
+ *  am ersten Tag ab der Startstunde). */
 function erwarteterPlatz(/** @type {number} */ nummer) {
-	const schultag = Math.floor((nummer - 1) / STUNDEN_JE_TAG);
+	const platz = nummer - 1 + (STARTSTUNDE - 1);
+	const schultag = Math.floor(platz / STUNDEN_JE_TAG);
 	const datum = new Date(ERSTER_TAG);
 	datum.setDate(datum.getDate() + schultag + 2 * Math.floor(schultag / 5));
 	return {
@@ -40,7 +43,7 @@ function erwarteterPlatz(/** @type {number} */ nummer) {
 			month: '2-digit',
 			year: '2-digit'
 		}).format(datum),
-		stunde: `${((nummer - 1) % STUNDEN_JE_TAG) + 1}. Std.`
+		stunde: `${(platz % STUNDEN_JE_TAG) + 1}. Std.`
 	};
 }
 
@@ -79,9 +82,12 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	).trim();
 	expect(vorherige, 'Nachbarklasse für die geteilte Stunde').not.toBe('');
 
-	// Ersten Tag setzen: Die Vorschau vom Server gibt der Zeile den Platz, der ihrer
-	// Nummer entspricht — Wochenende übersprungen, 6 Stunden je Tag.
+	// Ersten Tag setzen (vorbelegt ist der erste Schultag nach den nächsten Ferien, hier
+	// fest 2027, damit die Rechnung steht): Die Vorschau vom Server gibt der Zeile den
+	// Platz, der ihrer Nummer entspricht — Wochenende übersprungen, 6 Stunden je Tag,
+	// am ersten Tag ab der 2. Stunde (Vorgabe).
 	await page.getByLabel('Erster Tag').fill('2027-08-09');
+	await expect(page.getByLabel('Beginn am ersten Tag')).toContainText('2. Stunde');
 	let soll = erwarteterPlatz(nummer);
 	await expect(zeile).toContainText(soll.wochentag);
 	await expect(zeile).toContainText(soll.datum);
@@ -259,4 +265,47 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	} finally {
 		seedSQL(`DELETE FROM lmf_plaene WHERE art = 'ausgabe';`);
 	}
+});
+
+// Der Büchertausch vor den Sommerferien hängt am ENDE (Peter, 06.09.2026: „es endet immer
+// am gleichen Tag — Donnerstags vor den Ferien zur vierten Stunde"): Der Planer belegt
+// den letzten Tag aus der Ferientabelle Hessen vor (ein Donnerstag), die letzte Zeile
+// liegt in der 4. Stunde dieses Tages, und der Satz unter dem Rahmen nennt den
+// gerechneten Beginn. Nur Vorschau, nichts wird gespeichert — ein Rückgabe-Plan über die
+// Seed-Klassen würde nach dem Veröffentlichen Fristen setzen. Läuft die Ferientabelle
+// aus (nach 2030), wird dieser Test rot — so wie TestSommerferienHessen_Horizont im Go.
+test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stunde', async ({
+	page
+}) => {
+	seedSQL(`DELETE FROM lmf_plaene WHERE art = 'rueckgabe';`);
+	await uiLogin(page);
+	await gehZu(page, '/schuljahr');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
+
+	const letzterTag = page.getByLabel('Letzter Tag');
+	const wert = await letzterTag.inputValue();
+	expect(wert, 'letzter Tag vorbelegt').toMatch(/^\d{4}-\d{2}-\d{2}$/);
+	expect(new Date(`${wert}T12:00:00`).getDay(), 'ein Donnerstag').toBe(4);
+	await expect(page.getByLabel('Ende am letzten Tag')).toContainText('4. Stunde');
+	await expect(page.getByLabel('Erster Tag')).toHaveCount(0);
+	await expect(page.getByTestId('lmf-zeitraum-hinweis')).toContainText('Sommerferien');
+
+	// Die letzte Zeile der Reihenfolge liegt auf dem Anker, die Vorschau nennt den Beginn.
+	const zeilen = page.getByTestId('lmf-reihenfolge').getByRole('row');
+	const letzte = zeilen.last();
+	await expect(letzte).toContainText('4. Std.');
+	await expect(letzte).toContainText(
+		new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }).format(
+			new Date(`${wert}T12:00:00`)
+		)
+	);
+	await expect(page.getByTestId('lmf-zeitraum-hinweis')).toContainText('Der Plan beginnt');
+
+	// Eine Zeile mehr: das Ende bleibt, der Beginn rückt nach vorn.
+	const beginnVorher = await page.getByTestId('lmf-zeitraum-hinweis').innerText();
+	const erste = zeilen.nth(1);
+	await erste.getByRole('button', { name: 'Aktionen Zeile 1' }).click();
+	await page.getByRole('menuitem', { name: 'Zeile davor einfügen' }).click();
+	await expect(zeilen.last()).toContainText('4. Std.');
+	await expect(page.getByTestId('lmf-zeitraum-hinweis')).not.toHaveText(beginnVorher);
 });

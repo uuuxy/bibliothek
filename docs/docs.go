@@ -2863,6 +2863,13 @@ const docTemplate = `{
                     "description": "Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.",
                     "type": "string"
                 },
+                "eingangsjahrgaenge": {
+                    "description": "Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher\nbekommen — für den erklärenden Satz über der Tabelle.",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "ohne_rueckgabe_termin": {
                     "description": "OhneRueckgabeTermin nennt Klassen mit Schülern, die ab dem Datum keinen\nRückgabe-Termin haben — der Plan startet leer, die Seite zeigt, wer fehlt.",
                     "type": "array",
@@ -2885,6 +2892,45 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "grund": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.LmfPlanRahmenVorgabe": {
+            "type": "object",
+            "properties": {
+                "erster_tag": {
+                    "type": "string"
+                },
+                "letzte_stunde": {
+                    "type": "integer"
+                },
+                "letzter_tag": {
+                    "type": "string"
+                },
+                "startstunde": {
+                    "type": "integer"
+                },
+                "stunden_je_tag": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api.LmfPlanSommerferien": {
+            "type": "object",
+            "properties": {
+                "bekannt": {
+                    "description": "Bekannt: false, wenn das Jahr nicht in pkg/lmfplan hinterlegt ist — der Planer\nnennt dann das Jahr und bittet um den letzten bzw. ersten Tag von Hand.",
+                    "type": "boolean"
+                },
+                "bis": {
+                    "type": "string"
+                },
+                "jahr": {
+                    "type": "integer"
+                },
+                "von": {
+                    "description": "YYYY-MM-DD, leer wenn nicht bekannt",
                     "type": "string"
                 }
             }
@@ -2959,6 +3005,14 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "sommerferien": {
+                    "description": "Sommerferien: die Ferien Hessen, an denen sich der Plan ausrichtet — der Planer\nzeigt sie neben dem Rahmen, oder den Hinweis, dass das Jahr nicht hinterlegt ist.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.LmfPlanSommerferien"
+                        }
+                    ]
+                },
                 "vorbei": {
                     "description": "Vorbei: der letzte Termin des Plans liegt hinter heute — der Planer bietet dann\nden nächsten Plan an, mit derselben Reihenfolge als Vorschlag.",
                     "type": "boolean"
@@ -2991,6 +3045,14 @@ const docTemplate = `{
                 "quelle": {
                     "description": "Quelle: \"vorjahr\" (der letzte Plan der Art) oder \"regel\" (Abschluss zuerst).",
                     "type": "string"
+                },
+                "rahmen": {
+                    "description": "Rahmen: womit der neue Plan beginnt — aus den Sommerferien (lmf_plan_vorgabe.go).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.LmfPlanRahmenVorgabe"
+                        }
+                    ]
                 },
                 "zeilen": {
                     "type": "array",
@@ -3473,7 +3535,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "erster_tag": {
-                    "description": "YYYY-MM-DD",
+                    "description": "ErsterTag/Startstunde: der Beginn. Beim Rückgabe-Plan GERECHNET aus dem Ende\n(Migration 101), beim Ausgabe-Plan die Vorgabe des Planers.",
                     "type": "string"
                 },
                 "freie_tage": {
@@ -3484,6 +3546,13 @@ const docTemplate = `{
                     }
                 },
                 "id": {
+                    "type": "string"
+                },
+                "letzte_stunde": {
+                    "type": "integer"
+                },
+                "letzter_tag": {
+                    "description": "LetzterTag/LetzteStunde: der Anker des Rückgabe-Plans — Donnerstag vor den\nSommerferien, 4. Stunde (Peter, 06.09.2026); die Reihenfolge fließt rückwärts\ndavor. Beim Ausgabe-Plan leer (\"\" / 0): sein Anker ist der Beginn.",
                     "type": "string"
                 },
                 "schuljahr_beginn": {

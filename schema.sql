@@ -834,11 +834,19 @@ CREATE TABLE lmf_plaene (
     -- sichtbar, keine Fristen); gesetzt = veröffentlicht, gilt für Portal, PDF des
     -- Kollegiums und die Frist-Kopplung.
     veroeffentlicht_am TIMESTAMP WITH TIME ZONE,
-    CONSTRAINT uniq_lmf_plaene_art_schuljahr UNIQUE (art, schuljahr_beginn)
+    -- Migration 101: Anker des Rückgabe-Plans am ENDE (Donnerstag vor den Sommerferien,
+    -- 4. Stunde); erster_tag/startstunde sind dann gerechnet. Beim Ausgabe-Plan NULL.
+    letzter_tag      DATE,
+    letzte_stunde    SMALLINT CONSTRAINT chk_lmf_plaene_letzte_stunde CHECK (letzte_stunde BETWEEN 1 AND 12),
+    CONSTRAINT uniq_lmf_plaene_art_schuljahr UNIQUE (art, schuljahr_beginn),
+    CONSTRAINT chk_lmf_plaene_anker
+        CHECK ((art = 'rueckgabe') = (letzter_tag IS NOT NULL AND letzte_stunde IS NOT NULL))
 );
 
 COMMENT ON COLUMN lmf_plaene.veroeffentlicht_am IS
     'NULL = Entwurf (nur im Planer sichtbar, keine Fristen); gesetzt = gilt für Portal, PDF und Frist-Kopplung.';
+COMMENT ON COLUMN lmf_plaene.letzter_tag IS
+    'Anker des Rückgabe-Plans: letzter Tag (Donnerstag vor den Sommerferien); erster_tag ist dann gerechnet. NULL beim Ausgabe-Plan.';
 
 CREATE TRIGGER trg_lmf_plaene_aktualisiert_am
 BEFORE UPDATE ON lmf_plaene
@@ -1137,7 +1145,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('097_lmf_plaene.sql'),
 ('098_lmf_termine_gehoeren_zum_plan.sql'),
 ('099_lmf_plan_feste_plaetze_und_freie_tage.sql'),
-('100_lmf_plan_veroeffentlichung.sql')
+('100_lmf_plan_veroeffentlichung.sql'),
+('101_lmf_plan_ende_als_anker.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

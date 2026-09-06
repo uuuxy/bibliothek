@@ -62,16 +62,17 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 
 	// 0. Vorschau schreibt nichts: Plätze kommen, Fristen bleiben.
 	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"erster_tag":"2027-06-28","startstunde":3,"stunden_je_tag":6,"vorschau":true,"zeilen":[{"klassen":["9H1"]}]}`)
+		`{"letzter_tag":"2027-06-28","letzte_stunde":3,"stunden_je_tag":6,"vorschau":true,"zeilen":[{"klassen":["9H1"]}]}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"vorschau":true`) {
 		t.Fatalf("Vorschau: %d %s", rec.Code, rec.Body.String())
 	}
 	erwarte("Annas Schulbuch nach der Vorschau", annaLmf, stichtag)
 
-	// 1. Speichern: Montag 28.06.2027 ab 3. Stunde, 9H1 zuerst. Das ist ein ENTWURF
+	// 1. Speichern: Ende Montag 28.06.2027 4. Stunde (Migration 101: der Rückgabe-Plan
+	//    fließt vom Ende her), zwei Zeilen → 9H1 in der 3. Stunde. Das ist ein ENTWURF
 	//    (Migration 100): Plätze kommen, Fristen bleiben — bis zum Veröffentlichen.
 	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"erster_tag":"2027-06-28","startstunde":3,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]},{"vermerk":"Bücher setzen"}]}`)
+		`{"letzter_tag":"2027-06-28","letzte_stunde":4,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]},{"vermerk":"Bücher setzen"}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("speichern: %d %s", rec.Code, rec.Body.String())
 	}
@@ -84,6 +85,10 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	}
 	if len(antwort.Zeilen) != 2 || antwort.Zeilen[0].Datum != "2027-06-28" || antwort.Zeilen[0].Stunde != 3 {
 		t.Errorf("Zeilen der Antwort: %+v", antwort.Zeilen)
+	}
+	// Der Beginn ist gerechnet und steht am Plan — mit dem Ende, das die Anfrage gab.
+	if antwort.Plan.ErsterTag != "2027-06-28" || antwort.Plan.Startstunde != 3 || antwort.Plan.LetzterTag != "2027-06-28" || antwort.Plan.LetzteStunde != 4 {
+		t.Errorf("Rahmen der Antwort: %+v", antwort.Plan)
 	}
 	erwarte("Annas Schulbuch im Entwurf", annaLmf, stichtag)
 	rec = lmfPlanAufruf(t, srv, http.MethodPost, "rueckgabe", "")
@@ -106,19 +111,19 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	erwarte("Bens Schulbuch (gesperrt)", benLmf, stichtag)
 	erwarte("Emils Schulbuch (8G1)", emilLmf, stichtag)
 
-	// 2. Umschreiben mit späterem ersten Tag: der Plan ist veröffentlicht, die Korrektur
+	// 2. Umschreiben mit späterem Ende: der Plan ist veröffentlicht, die Korrektur
 	//    gilt sofort — die Frist zieht nach.
 	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"erster_tag":"2027-06-30","startstunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`)
+		`{"letzter_tag":"2027-06-30","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`)
 	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"veroeffentlicht_am":"`) {
 		t.Fatalf("umschreiben (bleibt veröffentlicht): %d %s", rec.Code, rec.Body.String())
 	}
 	erwarte("Annas Schulbuch nach Verschiebung", annaLmf, tag("2027-06-30"))
 
 	// 3. Klasse tauschen: 9H1 fällt aus dem Plan (zurück zum Stichtag), 8G1 kommt hinein
-	//    — 8G1 in Zeile 7 liegt am Donnerstag 01.07. (6 Stunden je Tag).
+	//    — 8G1 in Zeile 7 ist die letzte und liegt auf dem Ende, Donnerstag 01.07. 1. Std.
 	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"erster_tag":"2027-06-30","startstunde":1,"stunden_je_tag":6,"zeilen":[`+
+		`{"letzter_tag":"2027-07-01","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[`+
 			`{"vermerk":"1"},{"vermerk":"2"},{"vermerk":"3"},{"vermerk":"4"},{"vermerk":"5"},{"vermerk":"6"},{"klassen":["8G1"]}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Klasse tauschen: %d %s", rec.Code, rec.Body.String())
@@ -152,7 +157,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 
 	// Gegenprobe des Rückwegs: Frist auf dem Termin-Tag → Stichtag, und die Antwort zählt sie.
 	rec = lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`)
+		`{"letzter_tag":"2027-06-28","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":["9H1"]}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("dritter Plan: %d %s", rec.Code, rec.Body.String())
 	}
@@ -168,11 +173,14 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 		t.Errorf("Verwerfen nennt die zurückgesetzten Fristen nicht: %s", rec.Body.String())
 	}
 
-	// 6. Fachliche Ablehnung: Zeile ohne Klasse und Vermerk, falsche Art, Startstunde > Stunden je Tag.
+	// 6. Fachliche Ablehnung: Zeile ohne Klasse und Vermerk, falsche Art, letzte Stunde >
+	//    Stunden je Tag, Rückgabe-Plan in der alten Form (nur Beginn) und Ausgabe-Plan ohne Beginn.
 	for _, fall := range []struct{ art, body string }{
-		{"rueckgabe", `{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":[],"vermerk":""}]}`},
-		{"egal", `{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[]}`},
-		{"rueckgabe", `{"erster_tag":"2027-06-28","startstunde":7,"stunden_je_tag":6,"zeilen":[]}`},
+		{"rueckgabe", `{"letzter_tag":"2027-06-28","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[{"klassen":[],"vermerk":""}]}`},
+		{"egal", `{"letzter_tag":"2027-06-28","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[]}`},
+		{"rueckgabe", `{"letzter_tag":"2027-06-28","letzte_stunde":7,"stunden_je_tag":6,"zeilen":[]}`},
+		{"rueckgabe", `{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[]}`},
+		{"ausgabe", `{"letzter_tag":"2027-08-10","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[]}`},
 	} {
 		if rec = lmfPlanAufruf(t, srv, http.MethodPut, fall.art, fall.body); rec.Code != http.StatusBadRequest {
 			t.Errorf("%s %s: %d, erwartet 400", fall.art, fall.body, rec.Code)
@@ -206,9 +214,9 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 	anna := seedSchueler(t, pool, "Z-1", "Anna", "9H1")
 	annaLmf := seedAusleihe(t, pool, anna, "LMF Mathe 9 Zwei", tag("2027-07-31"))
 
-	// Zeile 1 (Mo 28.06., 1. Std.) und Zeile 7 (Di 29.06., 1. Std.) nennen dieselbe Klasse.
+	// Zeile 1 (Mo 28.06., 1. Std.) und Zeile 7 (Di 29.06., 1. Std. — das Ende) nennen dieselbe Klasse.
 	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"erster_tag":"2027-06-28","startstunde":1,"stunden_je_tag":6,"zeilen":[`+
+		`{"letzter_tag":"2027-06-29","letzte_stunde":1,"stunden_je_tag":6,"zeilen":[`+
 			`{"klassen":["9H1"]},{"vermerk":"2"},{"vermerk":"3"},{"vermerk":"4"},{"vermerk":"5"},{"vermerk":"6"},`+
 			`{"klassen":["9H1"],"vermerk":"zweiter Termin"}]}`)
 	if rec.Code != http.StatusOK {
@@ -253,6 +261,8 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	seedSchueler(t, pool, "V-3", "C", "Q1")
 	seedSchueler(t, pool, "V-4", "D", "12T1")
 
+	// Die Uhr steht auf dem 06.09.2026: Die nächsten Sommerferien sind 2027 (28.06.–06.08.).
+	srv.Uhr = func() time.Time { return time.Date(2026, 9, 6, 10, 0, 0, 0, schulzeit.Zone()) }
 	lies := func() LmfPlanStandAntwort {
 		t.Helper()
 		rec := lmfPlanAufruf(t, srv, http.MethodGet, "rueckgabe", "")
@@ -269,6 +279,13 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if a.Plan != nil || a.Vorschlag == nil || a.Vorschlag.Quelle != "regel" {
 		t.Fatalf("ohne Plan: %+v", a)
 	}
+	// Der Rahmen-Vorschlag (Peter, 06.09.2026): Donnerstag vor den Sommerferien 2027, 4. Stunde.
+	if r := a.Vorschlag.Rahmen; r.LetzterTag != "2027-06-24" || r.LetzteStunde != 4 || r.StundenJeTag != 6 || r.ErsterTag != "" {
+		t.Errorf("Rahmen-Vorgabe Rückgabe: %+v", r)
+	}
+	if f := a.Sommerferien; f.Jahr != 2027 || !f.Bekannt || f.Von != "2027-06-28" || f.Bis != "2027-08-06" {
+		t.Errorf("Sommerferien: %+v", f)
+	}
 	// Das Vokabular zeigt Klassen in seiner Anzeigeform (Migration 087: „09H1").
 	if klassenFolge(a.Vorschlag.Zeilen) != "09H1,08G1" {
 		t.Errorf("Regel-Reihenfolge (Abschluss zuerst): %+v", a.Vorschlag.Zeilen)
@@ -280,7 +297,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	// Ein Plan in der Vergangenheit (2020): vorbei → Vorschlag aus dem Vorjahr, in dessen
 	// Reihenfolge (8G1 vor 9H1), ergänzt um die neue Klasse 7R1 am Ende.
 	rec := lmfPlanAufruf(t, srv, http.MethodPut, "rueckgabe",
-		`{"erster_tag":"2020-06-15","startstunde":1,"stunden_je_tag":6,"ausgelassen":["Q1","12T1"],"zeilen":[{"klassen":["8G1"]},{"klassen":["9H1"],"vermerk":"bis 11. eingesammelt"}]}`)
+		`{"letzter_tag":"2020-06-15","letzte_stunde":2,"stunden_je_tag":6,"ausgelassen":["Q1","12T1"],"zeilen":[{"klassen":["8G1"]},{"klassen":["9H1"],"vermerk":"bis 11. eingesammelt"}]}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Vorjahresplan: %d %s", rec.Code, rec.Body.String())
 	}
@@ -322,6 +339,18 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	}
 	if ausgabe.Vorschlag == nil || klassenFolge(ausgabe.Vorschlag.Zeilen) != "07R1,05F2" {
 		t.Errorf("Ausgabe-Vorschlag (nur Eingangsjahrgänge, Jahrgang absteigend): %+v", ausgabe.Vorschlag)
+	}
+	// Der Ausgabe-Plan beginnt am ersten Schultag nach den Ferien 2027 (Montag 09.08.) in
+	// der 2. Stunde — wie Peters Plan 2026 (Mo 10.08., 2. Std.).
+	if ausgabe.Vorschlag != nil {
+		if r := ausgabe.Vorschlag.Rahmen; r.ErsterTag != "2027-08-09" || r.Startstunde != 2 || r.LetzterTag != "" {
+			t.Errorf("Rahmen-Vorgabe Ausgabe: %+v", r)
+		}
+	}
+	// Jenseits der Tabelle: das Jahr kommt, die Tage nicht — der Planer bittet um den Termin.
+	srv.Uhr = func() time.Time { return time.Date(2031, 3, 1, 10, 0, 0, 0, schulzeit.Zone()) }
+	if a = lies(); a.Sommerferien.Bekannt || a.Sommerferien.Jahr != 2031 || a.Vorschlag == nil || a.Vorschlag.Rahmen.LetzterTag != "" || a.Vorschlag.Rahmen.LetzteStunde != 4 {
+		t.Errorf("ohne hinterlegte Ferien: %+v / %+v", a.Sommerferien, a.Vorschlag)
 	}
 	// Reihenfolge wie KlassenMitSchuelern: Abschluss zuerst, dann Jahrgang absteigend (ohne Ziffer = 99).
 	if ausgabe.Vorschlag != nil && strings.Join(ausgabe.Vorschlag.Ausgelassen, ",") != "09H1,Q1,12T1,08G1,06F1" {
