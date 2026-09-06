@@ -208,6 +208,24 @@ löst nichts mehr aus (`api/reorders.go`).
 | Seed-Liste == alle `migrations/*.sql` | 🟢 CI-Drift-Guard (Test schlägt bei Abweichung fehl) | `db/migrations_drift_test.go` |
 | Jede Migration atomar (eigene TX)     | 🟢 Runner                                            | `db/migrations.go:146`        |
 
+## 11. LMF-Plan (`lmf_plaene`, `lmf_termine`)
+
+Der Plan ist eine REIHENFOLGE, die der Server auf Schultage × Stunden gießt (Migration
+097); Datum und Stunde der Zeilen sind gerechnet, nie getippt. Seit Migration 101 hängt
+der Rahmen an der Art: Der Büchertausch vor den Sommerferien ENDET (Donnerstag vor den
+Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
+
+| Invariante                                                                                                                                   | Durchsetzung                                                                                        | Fundstelle                                                               |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Ein Plan je Art und Schuljahr                                                                                                                | 🟢 UNIQUE                                                                                           | `uniq_lmf_plaene_art_schuljahr`                                          |
+| Anker folgt der Art: Rückgabe-Plan hat Ende (`letzter_tag`, `letzte_stunde`), Ausgabe-Plan nicht — `erster_tag` beim Rückgabe-Plan GERECHNET | 🟢 CHECK + Server (`pruefeLmfAnker`, `verteileLmfPlan`)                                             | `chk_lmf_plaene_anker`, `api/lmf_plan.go`                                |
+| Jede Zeile gehört zu einem Plan (Waisen setzten unsichtbar Fristen, 098)                                                                     | 🟢 NOT NULL + FK ON DELETE CASCADE                                                                  | `lmf_termine` (`plan_id`, `position`)                                    |
+| Datum/Stunde der Zeilen sind gerechnet — EINE Verteilung, Vorschau = derselbe Aufruf (`vorschau: true`), kein JavaScript-Zwilling            | 🟡 Bauart (`pkg/lmfplan.VerteileMit` / `VerteileRueckwaerts`) + PG-Test                             | `pkg/lmfplan/layout.go`, `api/lmf_termine_frist_pg_test.go`              |
+| Steht eine Klasse mehrfach im Plan, gilt der FRÜHESTE Termin — beim Ausleihen wie beim Massenabgleich                                        | 🟡 Code (`RueckgabeTerminFuerKlasse` MIN, `fruehesteTermineJeKlasse`) + PG-Test                     | `repository/lmf_termine.go`, `api/lmf_termine_frist_pg_test.go`          |
+| Ein Entwurf (`veroeffentlicht_am` NULL) setzt keine Fristen und ist für Portal und PDF unsichtbar                                            | 🟡 Code (Frist-Kopplung nur bei Stempel; Listen filtern `veroeffentlicht_am IS NOT NULL`) + PG-Test | `lmf_plaene` (`veroeffentlicht_am`), `api/lmf_plan_veroeffentlichung.go` |
+| Freie Tage und feste Plätze gelten je Plan; der Vorschlag fürs Folgejahr bringt sie nicht mit                                                | 🟡 Code (`entwurfAus`, `lmfPlanVorschlag`)                                                          | `lmf_plan_freie_tage`, `lmf_termine` (`fest`)                            |
+| Sommerferien-Tabelle (Hessen, KMK) reicht mindestens zwei Jahre voraus                                                                       | 🟡 Selbstprüfung „Ferientabelle" + Horizont-Test (rot ab Januar 2029)                               | `pkg/lmfplan/ferien.go`, `api/betriebsbereitschaft.go`                   |
+
 ---
 
 ## Lücken-Register (priorisiert)
