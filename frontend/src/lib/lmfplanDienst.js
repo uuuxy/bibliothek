@@ -342,6 +342,12 @@ export function klasseHinein(e, k, vor) {
  *  @param {PlanEntwurf} e @param {string} k @returns {PlanEntwurf} */
 export function klasseRaus(e, k) {
 	if (e.ausgelassen.some((x) => normKey(x) === normKey(k))) return e;
+	// Steht die Klasse noch in einer anderen Zeile, ist sie NICHT draußen: Sie stünde
+	// sonst gleichzeitig im Plan und unter „Noch nicht im Plan" und ginge beim Speichern
+	// in beide Listen (Rasterdurchgang 06.09.2026). Erreichbar seit dem Tausch per Klick:
+	// Eine Klasse darf mehrfach im Plan stehen (Nachzügler-Termin), und getauscht wird
+	// immer nur die eine Zeile.
+	if (e.zeilen.some((z) => z.klassen.some((x) => normKey(x) === normKey(k)))) return e;
 	return {
 		...e,
 		ausgelassen: [...e.ausgelassen, k].sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))

@@ -136,8 +136,14 @@ func (s *Server) ermittleUndCacheBerechtigung(ctx context.Context, rolle, permis
 
 // RequireAuthenticated verlangt nur eine gültige Sitzung, kein bestimmtes Recht.
 //
-// Für Endpunkte, die JEDER angemeldete Client öffnet, unabhängig von seiner Rolle — heute
-// genau einer: der SSE-Stream /events, den der authStore direkt nach dem Login aufbaut.
+// Für Endpunkte, die JEDER angemeldete Client öffnet, unabhängig von seiner Rolle. Heute
+// sind es vier (Stand 06.09.2026, im Rasterdurchgang nachgezählt — der Satz behauptete
+// vorher „genau einer", und ein Kommentar, der eine Schutzbehauptung aufstellt, muss
+// stimmen): der SSE-Stream /events, den der authStore direkt nach dem Login aufbaut,
+// GET /api/einstellungen/sitzung, und die zwei lesenden Wege zum LMF-Plan
+// (/api/lmf-termine und dessen PDF — veröffentlichter Plan, Klassennamen ohne
+// Schülerbezug, PII-Matrix Stufe 0). Der Stream war der erste Fall und bleibt die
+// Begründung:
 // Ihn an ein Fachrecht zu hängen war eine Zeitbombe: Wer das Recht nicht hat, bekommt
 // keine saubere Absage, sondern eine Reconnect-Schleife plus das Offline-Overlay aus
 // App.svelte, das nach 25 s ohne Herzschlag zuschlägt. Für die Helfer-Rolle war das schon

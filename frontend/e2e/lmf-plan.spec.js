@@ -407,7 +407,10 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	// wenn man in Zeile 60 arbeitet (06.09.2026; vorher zwei Bildschirmhöhen entfernt).
 	// Der Scroll-Container ist <main class="overflow-y-auto"> (App.svelte), nicht window;
 	// die Backup-Warnung steht DARÜBER, deshalb zählt der Abstand zur Oberkante von main.
-	const oben = await page.getByTestId('lmf-reihenfolge').evaluate((el) => {
+	// Gemessen wird auch, dass wirklich GESCROLLT wurde: Bei einer kurzen Tabelle bliebe
+	// „Plan speichern" auch ohne Haftung im Bild, und das Gate wäre grün ohne Messung
+	// (Rasterdurchgang 06.09.2026, Frage 7).
+	const { oben, gescrollt } = await page.getByTestId('lmf-reihenfolge').evaluate((el) => {
 		let p = el.parentElement;
 		while (
 			p &&
@@ -419,8 +422,9 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 			p = p.parentElement;
 		if (!p) throw new Error('kein Scroll-Container');
 		p.scrollTop = 600;
-		return p.getBoundingClientRect().top;
+		return { oben: p.getBoundingClientRect().top, gescrollt: p.scrollTop };
 	});
+	expect(gescrollt, 'der Bereich wurde wirklich gescrollt').toBeGreaterThan(400);
 	const speichern = page.getByRole('button', { name: 'Plan speichern' });
 	await expect(speichern).toBeInViewport();
 	const lage = await speichern.boundingBox();

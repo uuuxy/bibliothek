@@ -147,3 +147,24 @@ describe('lmfplanZeilen.festWechseln', () => {
 		expect(festWechseln(fest, 0, undefined)[0].fest).toBeNull();
 	});
 });
+
+describe('lmfplanDienst.klasseRaus', () => {
+	// Eine Klasse darf mehrfach im Plan stehen (nachgeschobener Termin). Wird sie in EINER
+	// Zeile getauscht, ist sie deshalb noch nicht draußen — sonst stünde sie gleichzeitig
+	// im Plan und unter „Noch nicht im Plan" (Rasterdurchgang 06.09.2026).
+	it('merkt die Klasse nur, wenn sie in keiner Zeile mehr steht', async () => {
+		const { klasseRaus, klasseTauschen, leererEntwurf } = await import('./lmfplanDienst.js');
+		const zweimal = {
+			...leererEntwurf(),
+			zeilen: [z('10R1'), z('09H1'), z('10R1')],
+			ausgelassen: ['10R4']
+		};
+		// Tausch in der ersten Zeile: 10R1 steht noch in Zeile 3, bleibt also im Plan.
+		const nachTausch = klasseTauschen(zweimal, 0, '10R1', '10R4');
+		expect(nachTausch.zeilen.map((x) => x.klassen)).toEqual([['10R4'], ['09H1'], ['10R1']]);
+		expect(nachTausch.ausgelassen).toEqual([]);
+		// Aus der letzten Zeile genommen, ist sie wirklich draußen.
+		const raus = klasseRaus({ ...leererEntwurf(), zeilen: [z('09H1')] }, '10R1');
+		expect(raus.ausgelassen).toEqual(['10R1']);
+	});
+});
