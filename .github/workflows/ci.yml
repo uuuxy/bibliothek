@@ -214,6 +214,18 @@ jobs:
         cd frontend
         npm run lint
 
+    # svelte-check lief bis zum 06.09.2026 NUR im pre-push-Hook — dieselbe Lücke, die
+    # ESLint bis zum 10.08. hatte, und dieselbe Begründung: Ein Hook greift nur bei dem,
+    # der ihn installiert hat. jsconfig.json setzt checkJs, 200 Dateien tragen JSDoc-Typen;
+    # ein Pull Request (Jules, Dependabot, ein zweiter Rechner) oder ein --no-verify-Push
+    # brachte einen Typfehler nach main, ohne dass etwas rot wurde. Gefunden im
+    # Rasterdurchgang am selben Tag — und am selben Abend hat der Hook prompt einen
+    # Typfehler in einem frischen Test gefangen, den die CI nicht gesehen hätte.
+    - name: Run svelte-check (Frontend-Typen)
+      run: |
+        cd frontend
+        npm run check
+
     - name: Run Vitest
       run: |
         cd frontend
