@@ -18,13 +18,32 @@ import (
 
 // queryRechnungItems lädt die offenen (unbezahlten) Schadensfälle eines Schülers als
 // Rechnungspositionen.
+//
+// LEFT JOIN, nicht INNER (Bestands-Durchgang 06.09.2026, Frage 3): `exemplar_id` und
+// `ausleihe_id` sind beide nullbar, `ausleihe_id` steht sogar auf ON DELETE SET NULL, und
+// `geraet_id` wartet als dritte Bezugsspalte in derselben Tabelle. Mit INNER JOINs fiele
+// eine Forderung ohne diese Bezüge lautlos aus dem Brief — und wären ALLE betroffen,
+// antwortete der Weg mit „keine offenen Schadensfälle", während die Akte offene Beträge
+// zeigt und der Schüler gesperrt bleibt. Heute ist der Fall nicht erreichbar (die drei
+// Löschpfade räumen die Forderungen VOR den Ausleihen), aber das ist eine Zusicherung,
+// die nur zufällig hält: Geld darf nicht davon abhängen, ob ein Buch noch existiert.
+//
+// Die Datenbank verlangt sogar GENAU EINES von beidem (CHECK check_damage_item:
+// exemplar_id XOR geraet_id) — der Geräteschaden ist im Schema also vorgesehen, ihm fehlt
+// nur der Schreiber. Deshalb steht das Gerät hier schon als Position: Modellname statt
+// Titel, Geräte-Barcode statt Exemplar-Barcode. Bleibt beides leer, trägt die Beschreibung
+// des Schadensfalls die Zeile; Ausleihdatum ersatzweise das Datum der Forderung.
 func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
 	query := `
-		SELECT t.titel, e.barcode_id, a.ausgeliehen_am, sf.betrag
+		SELECT COALESCE(t.titel, g.modellname, sf.beschreibung),
+		       COALESCE(e.barcode_id, g.barcode_id, ''),
+		       COALESCE(a.ausgeliehen_am, sf.erstellt_am),
+		       sf.betrag
 		FROM schadensfaelle sf
-		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
-		JOIN buecher_titel t ON e.titel_id = t.id
-		JOIN ausleihen a ON sf.ausleihe_id = a.id
+		LEFT JOIN buecher_exemplare e ON sf.exemplar_id = e.id
+		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN geraete g ON sf.geraet_id = g.id
+		LEFT JOIN ausleihen a ON sf.ausleihe_id = a.id
 		WHERE sf.schueler_id = $1 AND sf.ist_bezahlt = false
 	`
 	rows, err := dbPool.Query(ctx, query, schuelerID)
@@ -36,8 +55,10 @@ func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID 
 	var items []pdf.RechnungItem
 	for rows.Next() {
 		var item pdf.RechnungItem
+		// Kein `continue`: Eine Rechnung, der still eine Position fehlt, nennt einen zu
+		// kleinen Betrag — und niemand erfährt es. Lieber gar kein Brief als ein falscher.
 		if err := rows.Scan(&item.Titel, &item.Barcode, &item.Ausleihdatum, &item.Ersatzpreis); err != nil {
-			continue
+			return nil, err
 		}
 		items = append(items, item)
 	}

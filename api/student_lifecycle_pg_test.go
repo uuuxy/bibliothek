@@ -30,7 +30,7 @@ func TestRestoreStudent_HebtLoeschSperreAuf(t *testing.T) {
 	}
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	req := httptest.NewRequest(http.MethodPost, "/api/schueler/deleted/"+id+"/restore", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+id+"/restore", nil)
 	req.SetPathValue("id", id)
 	rec := httptest.NewRecorder()
 	srv.RestoreStudentHandler().ServeHTTP(rec, req)
@@ -223,7 +223,7 @@ func TestRestoreStudent_AnonymisierteZeileBleibtImPapierkorb(t *testing.T) {
 		t.Fatal(err)
 	}
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	req := httptest.NewRequest(http.MethodPost, "/api/schueler/deleted/"+id+"/restore", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/schueler/"+id+"/restore", nil)
 	req.SetPathValue("id", id)
 	rec := httptest.NewRecorder()
 	srv.RestoreStudentHandler().ServeHTTP(rec, req)
