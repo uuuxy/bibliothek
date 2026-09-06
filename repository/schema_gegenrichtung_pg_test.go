@@ -51,9 +51,12 @@ var fkAktionenBestand = []string{
 	"CASCADE  lmf_plan_freie_tage.plan_id -> lmf_plaene",
 	"CASCADE  lmf_termin_klassen.termin_id -> lmf_termine",
 	"CASCADE  lmf_termine.plan_id -> lmf_plaene",
+	// Befragt am 06.09.2026: Die Erfassungen fielen mit dem Exemplar und senkten damit
+	// rückwirkend das Ergebnis abgeschlossener Durchgänge — neben einem
+	// verloren_gemeldet, das feststand. Migration 103 friert die Zahl beim Abschluss ein.
+	"CASCADE  inventur_erfassungen.exemplar_id -> buecher_exemplare",
 	// Noch nicht befragt — beim nächsten Anfassen des jeweiligen Pfades.
 	"CASCADE  bestellungen_positionen.bestellung_id -> bestellungen_verlauf",
-	"CASCADE  inventur_erfassungen.exemplar_id -> buecher_exemplare",
 	"CASCADE  inventur_erfassungen.session_id -> inventur_sessions",
 	"CASCADE  inventur_verluste.session_id -> inventur_sessions",
 	"CASCADE  schueler_fotos.schueler_id -> schueler",
