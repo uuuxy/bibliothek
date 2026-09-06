@@ -44,25 +44,56 @@ export function vergleicheMitBestand(betroffen, bestand) {
 }
 
 /**
- * Quelltext ohne Kommentare — HTML-Kommentare, Blockkommentare, Zeilenkommentare.
+ * Quelltext ohne Kommentare — HTML-Kommentare, Blockkommentare, ganze Zeilenkommentare.
  *
  * Ein Detektor, der die Begründung für die Sache hält, meldet ewig „alles gut"
  * (Bugklasse „Lügende Ratsche", docs/sweeps.md). Bis 06.09.2026 stand dieselbe
- * Ersetzung in zwei Tests je einmal; CodeQL (Alerts #27, #28: „Incomplete
- * multi-character sanitization") wies darauf hin, dass EIN Durchlauf nicht reicht —
- * `<!-- <!-- -->` lässt nach der ersten Runde wieder einen Kommentar stehen. Deshalb
- * wird ersetzt, bis sich nichts mehr ändert.
+ * Regex-Ersetzung in zwei Tests je einmal; CodeQL (#27, #28) wies darauf hin, dass
+ * EIN `replace`-Durchlauf nicht reicht: `<!-- <!-- -->` lässt danach wieder einen
+ * Kommentar stehen. Eine Schleife bis zum Fixpunkt half nicht (#29) — CodeQL bewertet
+ * jeden `replace`-Aufruf für sich und sieht die Schleife nicht. Deshalb kein `replace`
+ * mehr: Ein Scanner läuft einmal von vorn nach hinten und ÜBERSPRINGT jeden Kommentar
+ * vom Anfang bis zum ersten Ende. Was übersprungen ist, kann keinen neuen Anfang bilden.
+ * Ein Kommentar ohne Ende bleibt stehen (wie bisher). Zeilenkommentare zählen nur, wenn
+ * vor dem `//` nichts als Leerraum steht — `https://…` in einer Code-Zeile bleibt.
  * @param {string} quelle
  * @returns {string}
  */
 export function ohneKommentare(quelle) {
-	let code = quelle;
-	for (;;) {
-		const vorher = code;
-		code = code
-			.replace(/<!--[\s\S]*?-->/g, '')
-			.replace(/\/\*[\s\S]*?\*\//g, '')
-			.replace(/^\s*\/\/.*$/gm, '');
-		if (code === vorher) return code;
+	let out = '';
+	let zeilenanfang = true;
+	let i = 0;
+	while (i < quelle.length) {
+		const sprung = kommentarEnde(quelle, i, zeilenanfang);
+		if (sprung > i) {
+			i = sprung;
+			zeilenanfang = false;
+			continue;
+		}
+		const z = quelle[i++];
+		out += z;
+		zeilenanfang = z === '\n' || (zeilenanfang && /\s/.test(z));
 	}
+	return out;
+}
+
+/**
+ * Index hinter dem Kommentar, der bei `i` beginnt — oder `i`, wenn dort keiner beginnt
+ * (oder er kein Ende hat).
+ * @param {string} q @param {number} i @param {boolean} zeilenanfang @returns {number}
+ */
+function kommentarEnde(q, i, zeilenanfang) {
+	if (q.startsWith('<!--', i)) {
+		const ende = q.indexOf('-->', i + 4);
+		return ende === -1 ? i : ende + 3;
+	}
+	if (q.startsWith('/*', i)) {
+		const ende = q.indexOf('*/', i + 2);
+		return ende === -1 ? i : ende + 2;
+	}
+	if (zeilenanfang && q.startsWith('//', i)) {
+		const ende = q.indexOf('\n', i);
+		return ende === -1 ? q.length : ende;
+	}
+	return i;
 }
