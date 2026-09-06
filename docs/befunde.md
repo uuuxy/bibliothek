@@ -74,6 +74,57 @@ Anfassen.
     Zusammenführen) sie stempeln; nachgezählt am Code. Beim nächsten Anfassen des
     Wächters angleichen.
 
+- **Rasterdurchgang 06.09.2026 über die Änderungen desselben Tages** (Peter: „lass bitte
+  die Schemata komplett über die heutigen Änderungen laufen"). Elf Fragen plus
+  Sweeps-Achse über 97 geänderte Dateien (+4525/−985), sechs Prüfer. Vierzehn Funde, alle
+  im selben Durchgang behoben und je am Rückbau rot gesehen (06116d38 bis 4ef052f1) —
+  darunter ein rotes `main` seit 14:40 (der Postgres-Test kannte die zwei Schlusszeilen
+  „Nachzügler"/„Aufräumen" nicht, und der Pre-Push-Hook lässt die `*_pg_test.go` aus).
+  Hier bleibt nur, was offen ist:
+
+  - **Kein Rückweg vom Veröffentlichen (B, Produktfrage).** Ein Klick auf
+    „Veröffentlichen" ist unumkehrbar; der einzige Weg zurück ist „Plan verwerfen", und
+    der löscht den ganzen Plan (Zeilen, freie Tage, feste Plätze, Auslassungen — CASCADE).
+    Eine von Hand gebaute Reihenfolge mit Brückentagen und Ausflugsterminen ist damit weg.
+    Ein „Zurückziehen" (Stempel löschen, Fristen an den Stichtag) wäre klein und am
+    Ergebnis prüfbar. Frage an Peter: Soll es das geben, oder ist „veröffentlicht ist
+    veröffentlicht" gewollt?
+  - **Speichern/Veröffentlichen/Verwerfen und die Frist-Kopplung sind zwei
+    Transaktionen (B).** Erst schreiben/löschen (committed), dann `koppleLmfPlanFristen`.
+    Bricht der zweite Schritt ab, ist der erste geschehen; die Antwort ist 500. Die
+    Oberfläche lädt seit `de899297` in diesem Fall neu und zeigt damit den echten Stand —
+    die halb umgeschriebenen Fristen bleiben aber. Ein zweiter Anlauf repariert sie nicht
+    vollständig, weil der „alte" Stand nach dem Commit nicht mehr lesbar ist. Sauber wäre
+    eine gemeinsame Transaktion um Plan-Schreibung und Kopplung.
+  - **Drei Tage im Jahr überschreibt „Plan speichern" den laufenden Plan (B).** Zwischen
+    dem Ende des Büchertauschs (Donnerstag) und dem Beginn der Sommerferien (Montag)
+    meldet `Naechste(heute, bevorstehend)` noch die Ferien DIESES Jahres. Der Planer hält
+    den Plan für „vorbei" und bietet den Vorschlag fürs nächste Jahr an, rechnet daraus
+    aber denselben `schuljahr_beginn` — der Upsert trifft den alten, weiterhin
+    veröffentlichten Plan. Gerechnet an der echten Ferientabelle (Fr 25.06. bis So
+    27.06.2027). Ab dem ersten Ferientag stimmt die Rechnung wieder.
+  - **`ohne_rueckgabe_termin` geht ans Kollegium, das es nie zeigt (C).**
+    `GET /api/lmf-termine` füllt das Feld für jeden Aufrufer; `PortalLmfPlan.svelte` liest
+    es nicht. Klassennamen, kein Schülerbezug — Über-Auslieferung ohne Schaden.
+  - **Portal-Menü und Portal-Route messen verschieden (C).** Das Menü „Mein Portal"
+    verlangt `create_reservations`, `GET /api/lmf-termine` und dessen PDF nur eine
+    Sitzung. Ein HELFER sieht den Menüpunkt nie, kann den veröffentlichten Plan aber
+    abrufen. Inhalt ist PII-Stufe 0 und so dokumentiert; die Asymmetrie ist bewusst.
+  - **Der Vermerk ist Freitext, die PII-Matrix nennt ihn „kein Schülerbezug" (C).** Tippt
+    die Bibliothek dort einen Schülernamen („Nachzügler: …"), steht er im Portal des
+    ganzen Kollegiums und im PDF. Kein Code-Fehler; gehört ins Handbuch.
+  - **Die Ferientabelle 2027–2030 ist eine ungeprüfte Abschrift (C).** Extern verifiziert
+    ist nur 2026 (gegen Peters Excel). Ein Zahlendreher in Tabelle UND Test fiele erst im
+    Juni des betroffenen Jahres auf. Beim nächsten KMK-Beschluss gegen die Quelle prüfen.
+  - **Vier Zusicherungen halten nur per Verabredung (C).** `lmf_termine.art ≡
+lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je_tag`
+    und `len(plaetze) == len(zeilen)` stehen in Go bzw. im Kommentar, nicht in der
+    Datenbank. Heute unerreichbar (ein Schreiber), am frischen Postgres nachgemessen.
+  - **Kleinkram (C):** `leererEntwurf()` startstunde 1 gegen Server-Vorgabe 2 (heute
+    verdeckt, weil der Vorschlag immer gewinnt); Vorschau-Antwort liefert `klassen: null`,
+    Speicher- und Leseantwort `[]`; `LmfPlan.test.js` wartet 400 ms gegen 250 ms
+    Entprellung; die drei Browser-Gates öffnen die neuen Planer-Dialoge nicht.
+
 - **Zwei Definitionen von „derselbe Mensch"** (05.09.2026, B). Der Unique-Index
   `unique_schueler_name_gebdatum` vergleicht Vor- und Nachname roh (case-sensitiv, keine
   Normalform); der LUSD-Schlüssel rechnet seit 3848c9f6 in der Normalform `suchnorm`. Folge:
