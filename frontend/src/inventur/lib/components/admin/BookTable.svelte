@@ -29,6 +29,17 @@
 
 	/** @type {string[]} */
 	let selectedIds = $state([]);
+
+	// Die Auswahl gilt nur für das, was gerade in der Liste steht (Rasterdurchgang
+	// 06.09.2026). Ohne diese Angleichung überlebte sie jeden Such- und Filterwechsel:
+	// „Alle auswählen" bei 312 Titeln, dann „Mathe" tippen — vier Zeilen sichtbar, keine
+	// angehakt, und die Werkzeugleiste sagte weiter „Löschen (312)". Der Bestätigungstext
+	// nannte dieselbe Zahl, gelöscht worden wären die 312 unsichtbaren Titel.
+	$effect(() => {
+		const sichtbar = new Set(books.map((b) => b.id));
+		const gefiltert = selectedIds.filter((id) => sichtbar.has(id));
+		if (gefiltert.length !== selectedIds.length) selectedIds = gefiltert;
+	});
 	/** @type {number|null} */
 	let draggedIndex = $state(null);
 	/** @type {number|null} */
@@ -47,7 +58,11 @@
 	}
 
 	function toggleSelectAll() {
-		if (selectedIds.length === books.length) {
+		// Längenvergleich reicht nicht: Vier alte IDs und vier Treffer sahen aus wie
+		// „alles ausgewählt", obwohl keine der sichtbaren Zeilen angehakt war. Seit der
+		// Angleichung oben stehen in selectedIds nur sichtbare IDs — der Vergleich stimmt
+		// damit wieder, und die Kopf-Checkbox sagt die Wahrheit.
+		if (books.length > 0 && selectedIds.length === books.length) {
 			selectedIds = [];
 			return;
 		}
