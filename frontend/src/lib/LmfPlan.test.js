@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { render, screen, fireEvent } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import LmfPlan from './LmfPlan.svelte';
 import { apiFetch } from './apiFetch.js';
 
@@ -130,6 +131,56 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 // vorbelegten letzten Tag aus der Ferientabelle, die Vorschau schickt ihn als
 // letzter_tag, und der Satz unter dem Rahmen nennt Ferien und gerechneten Beginn. Fehlt
 // das Jahr in der Tabelle, sagt der Satz das und das Feld bleibt leer.
+// Umschalten der Art: Der Ladepfad braucht dieselbe Sequenznummer wie die Vorschau
+// (Rasterdurchgang 06.09.2026, Frage 6). Ohne sie gewann die zuletzt eintreffende
+// Antwort — und das konnte die ÄLTERE sein: Der Kopf zeigte „Bücherausgabe", die Tabelle
+// die Büchertausch-Zeilen, und „Plan speichern" schrieb sie nach ausgabe.
+describe('LmfPlan: Art umschalten', () => {
+	beforeEach(() => vi.mocked(apiFetch).mockReset());
+
+	/** Antwortet je Art — die Rückgabe erst, wenn `loesen()` gerufen wird. */
+	function antworteVerzoegert() {
+		/** @type {() => void} */
+		let loesen = () => {};
+		const rueckgabeKam = new Promise((r) => (loesen = /** @type {any} */ (r)));
+		vi.mocked(apiFetch).mockImplementation(async (url, init) => {
+			if (init?.method === 'PUT')
+				return new Response(JSON.stringify({ zeilen: [], ausfaelle: [] }), { status: 200 });
+			if (String(url).endsWith('/rueckgabe')) {
+				await rueckgabeKam;
+				return new Response(
+					JSON.stringify({ ...STAND, plan: PLAN, zeilen: ZEILEN, vorschlag: undefined }),
+					{ status: 200 }
+				);
+			}
+			return new Response(JSON.stringify({ ...STAND, vorbei: false }), { status: 200 });
+		});
+		return () => loesen();
+	}
+
+	it('lässt die überholte Antwort nicht gewinnen', async () => {
+		const loesen = antworteVerzoegert();
+		render(LmfPlan);
+		// Der Büchertausch lädt noch: keine Aktionen, kein Stand.
+		expect(screen.queryByRole('button', { name: 'Plan speichern' })).toBeNull();
+		await fireEvent.click(
+			screen.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' })
+		);
+		expect(await screen.findByText(/noch nicht gespeichert/)).toBeTruthy();
+		// Jetzt trifft die alte Antwort ein — sie darf den Planer nicht mehr umschreiben.
+		// Ausgespült wird großzügig: Die Antwort läuft durch mehrere Mikrotasks (await im
+		// Mock, res.json(), der Effekt der Vorschau). Zu wenige Runden, und der Test sähe
+		// die späte Schreibung gar nicht — grün, ohne etwas zu belegen.
+		loesen();
+		for (let i = 0; i < 20; i++) {
+			await Promise.resolve();
+			await tick();
+		}
+		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain('noch nicht gespeichert');
+		expect(screen.queryByText(/Entwurf vom/)).toBeNull();
+	});
+});
+
 describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 	beforeEach(() => vi.mocked(apiFetch).mockReset());
 

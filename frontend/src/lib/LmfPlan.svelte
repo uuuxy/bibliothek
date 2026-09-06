@@ -39,17 +39,42 @@
 	// sonst ersetzte „Plan speichern" den echten Plan durch die Regel-Reihenfolge.
 	let ladeFehler = $state(false);
 
+	// `ladeNr` ist dieselbe Sequenznummer wie unten in der Vorschau (Rasterfrage 6) — der
+	// Ladepfad hatte sie bis zum Rasterdurchgang am 06.09.2026 NICHT, zwei Zeilen neben
+	// dem Kommentar, der sie erklärt. Beim Umschalten der Art laufen zwei GETs; kam die
+	// ältere Antwort zuletzt, stand am Ende die Art des einen Plans über den Zeilen des
+	// anderen — und „Plan speichern" schickte die Büchertausch-Reihenfolge an
+	// PUT /api/lmf-plan/ausgabe, wo sie den (weiter veröffentlichten!) Ausgabe-Plan
+	// überschrieb. Der Zustand heilte nicht von selbst: Die Vorschau rechnete die fremde
+	// Reihenfolge anstandslos durch, die Tabelle sah stimmig aus.
+	let ladeNr = 0;
 	async function lade() {
+		const meine = ++ladeNr;
+		const meineArt = art;
 		laedt = true;
+		// Alles, was am vorigen Plan hing, geht zurück auf Anfang. Sonst stünden die Plätze
+		// des anderen Plans in der Tabelle, bis die neue Vorschau kommt (250 ms + Rundlauf)
+		// — und ein Klick auf eine Datumszelle nähme genau diesen fremden Platz als festen
+		// Platz mit (LmfPlanPlatzZellen). `stand = null` sperrt zugleich die Kopf-Aktionen,
+		// die sonst auf dem alten Plan arbeiten.
+		stand = null;
+		entwurf = dienst.leererEntwurf();
+		plaetze = [];
+		ausfaelle = [];
+		beginn = null;
+		markiert = null;
 		try {
-			stand = await dienst.ladeStand(art);
-			entwurf = dienst.entwurfAus(stand);
+			const geladen = await dienst.ladeStand(meineArt);
+			if (meine !== ladeNr) return; // eine jüngere Anfrage ist unterwegs oder schon da
+			stand = geladen;
+			entwurf = dienst.entwurfAus(geladen);
 			ladeFehler = false;
 		} catch (e) {
+			if (meine !== ladeNr) return;
 			ladeFehler = true;
 			showToast(`${e}`, 'error');
 		} finally {
-			laedt = false;
+			if (meine === ladeNr) laedt = false;
 		}
 	}
 

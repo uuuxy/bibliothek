@@ -45,7 +45,11 @@
 			wert={art}
 			onwahl={onart}
 		/>
-		{#if !ladeFehler}
+		<!-- Während des Ladens KEINE Aktionen: Bis zum 06.09.2026 stand die Leiste schon,
+		     während der Stand des neuen Plans noch unterwegs war — „Plan verwerfen" schickte
+		     dann das DELETE an die neue Art, entschied seine Sperre aber am alten Plan und
+		     nannte im Bestätigungsdialog dessen Datum. -->
+		{#if !ladeFehler && !laedt}
 			<div class="flex items-center gap-2">
 				<Button variant="secondary" onclick={onpdf}>
 					<Printer class="h-4 w-4" aria-hidden="true" />
