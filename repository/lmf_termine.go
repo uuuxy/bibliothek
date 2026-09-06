@@ -74,7 +74,7 @@ func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time, 
 		JOIN lmf_plaene p ON p.id = t.plan_id
 		WHERE ($1::date IS NULL OR t.datum >= $1::date)
 		  AND ($2 OR p.veroeffentlicht_am IS NOT NULL)
-		ORDER BY t.datum, t.stunde, t.id`, nullbaresDatum(ab), f.MitEntwuerfen)
+		ORDER BY t.datum, t.stunde, t.position`, nullbaresDatum(ab), f.MitEntwuerfen)
 	if err != nil {
 		return nil, err
 	}

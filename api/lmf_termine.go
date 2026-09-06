@@ -114,8 +114,18 @@ func jahrgaengeText(eingang []int) string {
 }
 
 // lmfPlanAbschnitte gruppiert die Termine für das PDF: erst der Tausch vor den Ferien,
-// dann die Ausgabe danach, je Abschnitt in der Reihenfolge des Plans. „Nur Rückgabe"
-// steht, wo die Bibliothek es hingeschrieben hat: im Vermerk.
+// dann die Ausgabe danach, je Abschnitt NACH ZEITPUNKT — Datum, Stunde, und bei
+// Gleichstand die Position im Plan.
+//
+// Das ist bewusst NICHT die Reihenfolge der Zeilen im Planer (der Kommentar behauptete
+// das bis zum Rasterdurchgang am 06.09.2026): Ein fester Platz kann eine Zeile nach
+// hinten schieben, ohne ihre Nummer zu ändern — im Planer bleibt sie Zeile 2, im Portal
+// und im PDF steht sie dort, wo sie stattfindet. Das Kollegium liest einen Fahrplan, die
+// Bibliothek arbeitet eine Reihenfolge ab. Die Position als letztes Kriterium hält die
+// Ausgabe stabil; vorher entschied bei zwei gleichen Plätzen die Zeilen-UUID, und die ist
+// nach jedem Speichern neu.
+//
+// „Nur Rückgabe" steht, wo die Bibliothek es hingeschrieben hat: im Vermerk.
 func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.LmfPlanAbschnitt, error) {
 	abschnitte := []pdf.LmfPlanAbschnitt{
 		{Titel: strings.ToUpper(LmfArtTitel(repository.LmfTerminRueckgabe)), Untertitel: LmfArtErklaerung(repository.LmfTerminRueckgabe, eingang)},
