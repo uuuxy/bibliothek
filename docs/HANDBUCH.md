@@ -164,8 +164,8 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   KMK-Beschluss nachzutragen ist. Darunter die **freien Tage**: Wochenenden und
   die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Plan von selbst;
   bewegliche Ferientage, pädagogische Tage und Brückentage trägt man mit Datum und Grund
-  ein — Chip _Tag freihalten_ neben den freien Tagen, dann ein kleines Fenster mit
-  Datum und Grund. Die Zeile _Übersprungen: …_ nennt jeden Werktag im
+  ein — Chip _Tag freihalten_ in der Spalte _Freie Tage_ neben den drei Feldern, dann
+  ein kleines Fenster mit Datum und Grund. Die Zeile _Übersprungen: …_ nennt jeden Werktag im
   Plan-Zeitraum, der ausfällt, mit Grund — so ist ein fehlender Donnerstag in der
   Tabelle erklärt.
 - **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Zeilen ziehen oder mit den

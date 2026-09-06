@@ -34,6 +34,9 @@
 	}
 </script>
 
+<!-- EINE Zeile: fehlende Klassen, „Andere Klasse eintragen", „… bleiben draußen".
+     Vorher zwei Zeilen übereinander (06.09.2026, Peter: „verschenken wir im oberen
+     Bereich nicht viel Platz?"). -->
 <div class="mt-4 flex flex-wrap items-center gap-2" data-testid="lmf-vorrat">
 	{#if offene.length > 0}
 		<span class="text-sm text-on-surface-variant">Noch nicht im Plan:</span>
@@ -54,9 +57,7 @@
 			dialogOffen = true;
 		}}
 	/>
-</div>
-{#if bewusst.length > 0}
-	<div class="mt-3">
+	{#if bewusst.length > 0}
 		<button
 			type="button"
 			class="inline-flex h-9 cursor-pointer items-center gap-1 rounded-full px-3 text-sm font-medium text-on-surface-variant hover:bg-surface-container"
@@ -70,18 +71,18 @@
 			{/if}
 			{bewusst.length === 1 ? 'Eine Klasse bleibt' : `${bewusst.length} Klassen bleiben`} draußen
 		</button>
-		{#if zeigeBewusst}
-			<div class="mt-2 flex flex-wrap gap-2" data-testid="lmf-vorrat-draussen">
-				{#each bewusst as k (k)}
-					<LmfKlasseChip
-						name={k}
-						hinweis={marker.ohneSchueler(k) ? 'ohne Schüler' : ''}
-						ziehbar
-						onklick={() => onhinein(k)}
-					/>
-				{/each}
-			</div>
-		{/if}
+	{/if}
+</div>
+{#if bewusst.length > 0 && zeigeBewusst}
+	<div class="mt-2 flex flex-wrap gap-2" data-testid="lmf-vorrat-draussen">
+		{#each bewusst as k (k)}
+			<LmfKlasseChip
+				name={k}
+				hinweis={marker.ohneSchueler(k) ? 'ohne Schüler' : ''}
+				ziehbar
+				onklick={() => onhinein(k)}
+			/>
+		{/each}
 	</div>
 {/if}
 

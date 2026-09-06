@@ -6,8 +6,9 @@
      mit drei Spalten für eine Eingabe, die ein- bis zweimal im Jahr vorkommt. Darunter
      die Zeile „Übersprungen", die jeden ausgefallenen Werktag des Plan-Zeitraums mit
      Grund nennt — Feiertage eingeschlossen, damit ein fehlender Donnerstag in der
-     Tabelle erklärt ist (Peter, 05.09.2026). Ohne eigene Überschrift: Der Abschnitt
-     „Zeitraum" (LmfPlanRahmen) trägt sie. -->
+     Tabelle erklärt ist (Peter, 05.09.2026). Kein eigener Abschnitt: Das Bauteil ist
+     die vierte Spalte des Zeitraum-Rasters in LmfPlanRahmen (Subgrid-Zeilen wie
+     Feld.svelte), „Übersprungen" liegt darunter über die volle Breite. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
@@ -41,22 +42,26 @@
 	}
 </script>
 
-<div class="mt-4 flex flex-wrap items-center gap-2">
-	<span class="text-sm text-on-surface-variant">Freie Tage:</span>
-	{#if tage.length > 0}
-		<span class="contents" data-testid="lmf-freie-tage">
-			{#each tage as t (t.datum)}
-				<LmfKlasseChip
-					name={text(t)}
-					onentfernen={() => (tage = tage.filter((x) => x.datum !== t.datum))}
-				/>
-			{/each}
-		</span>
-	{/if}
-	<LmfKlasseChip name="Tag" verb="freihalten" onklick={oeffnen} />
+<!-- Die vierte Spalte des Zeitraum-Rasters: Beschriftung in der Beschriftungszeile,
+     Chips in der Feldzeile (Chip 32 px in der 36-px-Zeile mittig). -->
+<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+	<span class="text-sm font-medium text-on-surface-variant">Freie Tage</span>
+	<div class="flex min-h-9 flex-wrap items-center gap-2">
+		{#if tage.length > 0}
+			<span class="contents" data-testid="lmf-freie-tage">
+				{#each tage as t (t.datum)}
+					<LmfKlasseChip
+						name={text(t)}
+						onentfernen={() => (tage = tage.filter((x) => x.datum !== t.datum))}
+					/>
+				{/each}
+			</span>
+		{/if}
+		<LmfKlasseChip name="Tag" verb="freihalten" onklick={oeffnen} />
+	</div>
 </div>
 {#if ausfaelle.length > 0}
-	<p class="mt-4 text-sm text-on-surface-variant" data-testid="lmf-ausfaelle">
+	<p class="col-span-full text-sm text-on-surface-variant" data-testid="lmf-ausfaelle">
 		Übersprungen:
 		{#each ausfaelle as a, i (a.datum)}{i > 0 ? ' · ' : ''}{wochentag(a.datum)}
 			{datumKurz(a.datum)} ({a.grund}){/each}
