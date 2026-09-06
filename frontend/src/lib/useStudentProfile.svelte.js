@@ -62,6 +62,11 @@ export function useStudentProfile() {
 
 	// Alles, was über einem Schüler offen stehen kann, beim Wechsel schließen. Eine Liste
 	// statt fünf Zuweisungen im Aufrufer: Wer ein sechstes Blatt baut, trägt es hier ein.
+	//
+	// Bis zum Rasterdurchgang am 06.09.2026 setzte der Aufrufer beim Schülerwechsel nur
+	// den Reiter zurück: Das Bearbeiten-Blatt überlebte ihn. Wer bei Schüler A die Adresse
+	// tippte, ohne zu speichern, und dann B's Ausweis scannte, sah dasselbe Formular mit
+	// B's Daten, A's Eingabe war wortlos weg — und „Speichern" ging als PATCH auf B.
 	function schliesseAlleBlaetter() {
 		showEditModal = false;
 		showDamageModal = false;
