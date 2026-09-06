@@ -7,7 +7,11 @@
 
      Aufbau seit 06.09.2026 nach Arbeitsablauf, nicht nach Datenmodell (Peter: „es steht
      oben was und unten was"): Kopf haftet oben, freie Tage als Chips, fehlende Klassen
-     direkt über der Reihenfolge; einplanen setzt an den Platz (lmfplanZeilen.js). -->
+     direkt über der Reihenfolge; einplanen setzt an den Platz (lmfplanZeilen.js).
+
+     Hier steht nur noch der Bildschirm. Zustand und die Wege, die ihn bewegen (laden,
+     Vorschau, speichern, veröffentlichen, verwerfen), liegen seit dem Rasterdurchgang am
+     06.09.2026 in lmfplanPlaner.svelte.js. -->
 <script>
 	import { onMount, untrack } from 'svelte';
 	import PageShell from './components/layout/PageShell.svelte';
@@ -15,238 +19,92 @@
 	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
 	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
 	import LmfPlanReihenfolge from './components/lmfplan/LmfPlanReihenfolge.svelte';
-	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { erzeugePlaner } from './lmfplanPlaner.svelte.js';
 	import * as dienst from './lmfplanDienst.js';
 
-	let art = $state('rueckgabe');
-	/** @type {import('./lmfplanDienst.js').PlanStand | null} */
-	let stand = $state(null);
-	/** @type {import('./lmfplanDienst.js').PlanEntwurf} */
-	let entwurf = $state(dienst.leererEntwurf());
-	/** @type {{ datum: string, stunde: number }[]} */
-	let plaetze = $state([]);
-	/** @type {import('./lmfplanDienst.js').Ausfall[]} */
-	let ausfaelle = $state([]);
-	/** Der gerechnete Beginn des Büchertauschs (der Plan hängt am Ende) — vom Server.
-	 *  @type {{ datum: string, stunde: number } | null} */
-	let beginn = $state(null);
-	/** Die gerade eingeplante Zeile — die Tabelle scrollt hin und hebt sie kurz hervor.
-	 *  @type {{ index: number } | null} */
-	let markiert = $state(null);
-	let laedt = $state(true);
-	let speichert = $state(false);
-	// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan (ui/LadeFehler.svelte):
-	// sonst ersetzte „Plan speichern" den echten Plan durch die Regel-Reihenfolge.
-	let ladeFehler = $state(false);
+	const planer = erzeugePlaner();
+	const z = planer.zustand;
 
-	// `ladeNr` ist dieselbe Sequenznummer wie unten in der Vorschau (Rasterfrage 6) — der
-	// Ladepfad hatte sie bis zum Rasterdurchgang am 06.09.2026 NICHT, zwei Zeilen neben
-	// dem Kommentar, der sie erklärt. Beim Umschalten der Art laufen zwei GETs; kam die
-	// ältere Antwort zuletzt, stand am Ende die Art des einen Plans über den Zeilen des
-	// anderen — und „Plan speichern" schickte die Büchertausch-Reihenfolge an
-	// PUT /api/lmf-plan/ausgabe, wo sie den (weiter veröffentlichten!) Ausgabe-Plan
-	// überschrieb. Der Zustand heilte nicht von selbst: Die Vorschau rechnete die fremde
-	// Reihenfolge anstandslos durch, die Tabelle sah stimmig aus.
-	let ladeNr = 0;
-	async function lade() {
-		const meine = ++ladeNr;
-		const meineArt = art;
-		laedt = true;
-		// Alles, was am vorigen Plan hing, geht zurück auf Anfang. Sonst stünden die Plätze
-		// des anderen Plans in der Tabelle, bis die neue Vorschau kommt (250 ms + Rundlauf)
-		// — und ein Klick auf eine Datumszelle nähme genau diesen fremden Platz als festen
-		// Platz mit (LmfPlanPlatzZellen). `stand = null` sperrt zugleich die Kopf-Aktionen,
-		// die sonst auf dem alten Plan arbeiten.
-		stand = null;
-		entwurf = dienst.leererEntwurf();
-		plaetze = [];
-		ausfaelle = [];
-		beginn = null;
-		markiert = null;
-		try {
-			const geladen = await dienst.ladeStand(meineArt);
-			if (meine !== ladeNr) return; // eine jüngere Anfrage ist unterwegs oder schon da
-			stand = geladen;
-			entwurf = dienst.entwurfAus(geladen);
-			ladeFehler = false;
-		} catch (e) {
-			if (meine !== ladeNr) return;
-			ladeFehler = true;
-			showToast(`${e}`, 'error');
-		} finally {
-			if (meine === ladeNr) laedt = false;
-		}
-	}
-
-	// Vorschau: der Server rechnet die Plätze, sobald sich etwas ändert, wovon sie abhängen
-	// (dienst.vorschauSchluessel, entprellt). Liest den Entwurf, schreibt NUR plaetze —
-	// kein Effekt auf eigenen State. `laufNr` ist die Sequenznummer wie im orderStore:
-	// Ohne sie könnte eine ältere Antwort die jüngere überholen (Rasterfrage 6).
-	let laufNr = 0;
+	// Vorschau: der Server rechnet die Plätze, sobald sich etwas ändert, wovon sie
+	// abhängen (dienst.vorschauSchluessel, entprellt um 250 ms). Der Effekt liest den
+	// Entwurf und schreibt nichts von dem, was er liest — kein Effekt auf eigenen State.
 	$effect(() => {
-		void dienst.vorschauSchluessel(entwurf);
-		void entwurf.zeilen.length;
-		const aktuelleArt = art;
-		const timer = setTimeout(async () => {
-			const meine = ++laufNr;
-			try {
-				const z = await dienst.rechneVorschau(
-					aktuelleArt,
-					untrack(() => JSON.parse(JSON.stringify(entwurf)))
-				);
-				if (meine !== laufNr) return; // eine jüngere Anfrage ist schon unterwegs oder da
-				plaetze = z.plaetze.map((p) => ({ datum: p.datum, stunde: p.stunde }));
-				ausfaelle = z.ausfaelle;
-				beginn = z.beginn;
-			} catch (e) {
-				if (meine === laufNr) showToast(`${e}`, 'error');
-			}
-		}, 250);
+		void dienst.vorschauSchluessel(z.entwurf);
+		void z.entwurf.zeilen.length;
+		const art = z.art;
+		const timer = setTimeout(
+			() =>
+				planer.vorschau(
+					art,
+					untrack(() => JSON.parse(JSON.stringify(z.entwurf)))
+				),
+			250
+		);
 		return () => clearTimeout(timer);
 	});
 
-	const marker = $derived(dienst.klassenMarker(stand));
-	const draussen = $derived(dienst.bewusstDraussen(stand));
-
-	/** @param {string} k @param {number} [vor] */
-	function klasseHinein(k, vor) {
-		const erg = dienst.klasseHinein(entwurf, k, vor);
-		entwurf = erg.entwurf;
-		if (erg.index !== null) markiert = { index: erg.index };
-	}
-
+	const marker = $derived(dienst.klassenMarker(z.stand));
+	const draussen = $derived(dienst.bewusstDraussen(z.stand));
 	const gueltig = $derived(
-		dienst.ankerGesetzt(art, entwurf) &&
-			entwurf.zeilen.every((z) => z.klassen.length > 0 || z.vermerk.trim() !== '') &&
-			dienst.festePlaetzeVollstaendig(entwurf.zeilen)
+		dienst.ankerGesetzt(z.art, z.entwurf) &&
+			z.entwurf.zeilen.every((x) => x.klassen.length > 0 || x.vermerk.trim() !== '') &&
+			dienst.festePlaetzeVollstaendig(z.entwurf.zeilen)
 	);
 
-	// Die drei Schreibwege hatten bis zum Rasterdurchgang am 06.09.2026 kein `catch`
-	// (Frage 5): Der Dienst wirft bei Netzfehler und beim 10-Sekunden-Zeitlimit von
-	// apiFetch, und die Ablehnung landete in window.unhandledrejection — für den
-	// Bediener wurde der Knopf einfach wieder aktiv. KEIN Toast, keine Meldung, und ein
-	// clientseitig abgebrochenes PUT kann serverseitig trotzdem gelaufen sein. Der
-	// Ladepfad zwei Funktionen höher fängt seit jeher sauber ab.
-	/** @param {unknown} e @param {string} was */
-	function schreibfehler(e, was) {
-		showToast(`${was} fehlgeschlagen: ${e instanceof Error ? e.message : e}`, 'error');
-	}
-
-	async function speichern() {
-		speichert = true;
-		try {
-			const erg = await dienst.speicherePlan(art, entwurf);
-			showToast(erg.meldung, erg.ok ? 'success' : 'error');
-			if (erg.ok) await lade();
-		} catch (e) {
-			schreibfehler(e, 'Speichern');
-		} finally {
-			speichert = false;
-		}
-	}
-
-	// Veröffentlichen speichert den Entwurf zuerst — was die Schulleitung im PDF sah und
-	// was das Kollegium gleich sieht, soll derselbe Stand sein.
-	async function veroeffentlichen() {
-		const fristen = art === 'rueckgabe' ? ', und die Termine werden die Fristen der Klassen' : '';
-		if (!confirm(`Plan veröffentlichen? Das Kollegium sieht ihn dann im Portal${fristen}.`)) return;
-		speichert = true;
-		try {
-			const gespeichert = await dienst.speicherePlan(art, entwurf);
-			if (!gespeichert.ok) {
-				showToast(gespeichert.meldung, 'error');
-				return;
-			}
-			const erg = await dienst.veroeffentlichePlan(art);
-			showToast(erg.meldung, erg.ok ? 'success' : 'error');
-			// Auch nach einem Fehlschlag neu laden: Das Veröffentlichen stempelt zuerst und
-			// koppelt danach die Fristen (zwei Schritte, keine gemeinsame Transaktion).
-			// Bricht der zweite ab, IST der Plan veröffentlicht — der Planer darf dann nicht
-			// weiter einen Entwurf zeigen.
-			await lade();
-		} catch (e) {
-			schreibfehler(e, 'Veröffentlichen');
-			await lade();
-		} finally {
-			speichert = false;
-		}
-	}
-
-	async function verwerfen() {
-		if (!stand?.plan) return;
-		if (!confirm(`Plan vom ${dienst.datumKurz(stand.plan.erster_tag)} verwerfen?`)) return;
-		try {
-			const erg = await dienst.verwerfePlan(art);
-			showToast(erg.meldung, erg.ok ? 'success' : 'error');
-			// Wie beim Veröffentlichen: Gelöscht wird zuerst, die Fristen kehren danach
-			// zurück. Nach einem Fehlschlag ist der Plan womöglich weg — neu laden, sonst
-			// zeigt der Planer einen Plan, den es nicht mehr gibt.
-			await lade();
-		} catch (e) {
-			schreibfehler(e, 'Verwerfen');
-			await lade();
-		}
-	}
-
-	// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
-	const pdf = () => dienst.ladePdf(false, true).catch((e) => showToast(`${e}`, 'error'));
-
-	// Nicht `onMount(lade)`: Svelte nähme die zurückgegebene Zusage als Aufräum-Funktion.
+	// Nicht `onMount(planer.lade)`: Svelte nähme die zurückgegebene Zusage als
+	// Aufräum-Funktion.
 	onMount(() => {
-		lade();
+		planer.lade();
 	});
 </script>
 
 <PageShell>
 	<LmfPlanKopf
-		{art}
-		{stand}
-		{laedt}
-		{ladeFehler}
+		art={z.art}
+		stand={z.stand}
+		laedt={z.laedt}
+		ladeFehler={z.ladeFehler}
 		{gueltig}
-		{speichert}
-		onart={(w) => {
-			art = w;
-			lade();
-		}}
-		onpdf={pdf}
-		onverwerfen={verwerfen}
-		onspeichern={speichern}
-		onveroeffentlichen={veroeffentlichen}
+		speichert={z.speichert}
+		onart={planer.waehleArt}
+		onpdf={planer.pdf}
+		onverwerfen={planer.verwerfen}
+		onspeichern={planer.speichern}
+		onveroeffentlichen={planer.veroeffentlichen}
 	/>
 
-	{#if laedt}
+	{#if z.laedt}
 		<div class="flex items-center justify-center py-12">
 			<div
 				class="h-8 w-8 animate-spin rounded-full border-2 border-surface-container-high border-t-primary"
 			></div>
 		</div>
-	{:else if ladeFehler}
+	{:else if z.ladeFehler}
 		<LadeFehler
-			onerneut={lade}
+			onerneut={planer.lade}
 			titel="Plan nicht geladen"
 			text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
 		/>
 	{:else}
 		<div class="space-y-8">
 			<LmfPlanRahmen
-				{art}
-				bind:entwurf
-				{ausfaelle}
-				{beginn}
-				sommerferien={stand?.sommerferien ?? null}
+				art={z.art}
+				bind:entwurf={z.entwurf}
+				ausfaelle={z.ausfaelle}
+				beginn={z.beginn}
+				sommerferien={z.stand?.sommerferien ?? null}
 			/>
 			<LmfPlanReihenfolge
-				bind:zeilen={entwurf.zeilen}
-				{plaetze}
+				bind:zeilen={z.entwurf.zeilen}
+				plaetze={z.plaetze}
 				{marker}
-				bereit={dienst.ankerGesetzt(art, entwurf)}
-				ausgelassen={entwurf.ausgelassen}
+				bereit={dienst.ankerGesetzt(z.art, z.entwurf)}
+				ausgelassen={z.entwurf.ausgelassen}
 				{draussen}
-				{markiert}
-				onklasseraus={(k) => (entwurf = dienst.klasseRaus(entwurf, k))}
-				onhinein={klasseHinein}
-				ontausch={(i, alt, neu) => (entwurf = dienst.klasseTauschen(entwurf, i, alt, neu))}
+				markiert={z.markiert}
+				onklasseraus={(k) => (z.entwurf = dienst.klasseRaus(z.entwurf, k))}
+				onhinein={planer.klasseHinein}
+				ontausch={(i, alt, neu) => (z.entwurf = dienst.klasseTauschen(z.entwurf, i, alt, neu))}
 			/>
 		</div>
 	{/if}
