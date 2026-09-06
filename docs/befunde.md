@@ -148,6 +148,26 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     Früh-Rückkehr-Form (`if (res.ok) { …; return; }`) ist harmlos und mindestens ein Treffer
     ist genau die. Ein ehrlicher Detektor braucht den AST und jeden Treffer gelesen
     (`sweeps.md`, Regel 4). Eigener Sweep, eigene Sitzung.
+  - **`jsonOrEmpty` macht aus einem Fehlschlag eine leere Liste (B).**
+    `useBookAkte.loadAll` lädt vier Listen über `Promise.allSettled`; scheitert eine, zeigt
+    der Reiter „Ausleiher (0)" für einen Titel, der Ausleiher hat. Dieselbe Klasse wie der
+    Papierkorb-Fund (`14be1528`), nur milder — es braucht Fehlerzustände je Reiter, also
+    einen eigenen Commit.
+  - **Die Rechnung verlässt sich auf Spalten, die das Schema nicht garantiert (B).**
+    `queryRechnungItems` (api/print.go) verbindet `schadensfaelle` per INNER JOIN mit
+    Exemplar, Titel und Ausleihe. `exemplar_id` und `ausleihe_id` sind beide **nullbar**,
+    `ausleihe_id` sogar `ON DELETE SET NULL` — eine Forderung ohne diese Bezüge fiele
+    lautlos aus der Rechnung, und bei „alle betroffen" antwortet der Weg mit 404 „keine
+    offenen Schadensfälle", während die Akte offene Beträge zeigt und der Schüler gesperrt
+    bleibt. **Heute nicht erreichbar**, am Code nachgezählt: Die drei Löschpfade
+    (`inventur/db_books_delete.go`, `repository/audit_books.go`,
+    `repository/inventur_verlust_aktionen.go`) entfernen die Schadensfälle VOR den
+    Ausleihen, und `geraet_id` hat in `schadensfaelle` keinen Schreiber. Erreichbar wäre es
+    über `POST /api/buecher/exemplare/{id}/defekt` mit `schueler_id` ohne `loan_id` — die
+    Route hat kein Frontend, und `MarkCopyDefekt` behandelt den Fall ausdrücklich. Also
+    kein A-Fund, sondern eine Zusicherung, die nur zufällig hält: Wer Geräteschäden baut
+    (die Spalte steht schon da), macht Geld unsichtbar. LEFT JOIN + Ersatztexte beim
+    nächsten Anfassen.
   - **Irreführende URL in zwei Tests (C).** `api/student_lifecycle_pg_test.go` ruft den
     Restore-Handler direkt (`srv.RestoreStudentHandler().ServeHTTP`) und setzt die ID per
     `SetPathValue` — die Prüfung ist gültig, aber die URL im Request lautet
