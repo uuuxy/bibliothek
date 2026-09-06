@@ -13,8 +13,13 @@ Positiv-Kontrollen gegen leere Antworten. Auch die LESENDEN POST-Routen sind
 seit dem 01.09.2026 gemessen (`TestPIIAntwortenHaltenIhreStufe_LesendePosts`):
 der Theken-Scan (`POST /api/action` samt Batch) und die LUSD-Vorschau
 (`POST /api/lusd/preview`) laufen durch denselben Apparat. Für die übrigen
-Nicht-GET-Routen (Schreibpfade) bleibt die Stufe Handarbeit: Wer eine Zeile
-anlegt, hat den Handler gelesen.
+Nicht-GET-Routen (Schreibpfade) bleibt die STUFE Handarbeit: Wer eine Zeile
+anlegt, hat den Handler gelesen. Ihr RECHT dagegen ist seit dem 06.09.2026
+gemessen: `api/rechte_schreibwege_pg_test.go` fährt alle 87 Schreibrouten mit
+Fachrecht über den echten Router mit einer Rolle, die das Recht ihrer Zeile
+NICHT hat, und verlangt 403 mit der Begründung des Rechte-Wächters. Damit ist
+auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein Recht, das im
+Seed ohnehin jede Rolle hält.
 Stand: 06.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen).

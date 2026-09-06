@@ -32,9 +32,12 @@ package api
 // /api/action, Stufe 1) samt Batch-Form und die LUSD-Vorschau (POST
 // /api/lusd/preview, Stufe 2 — apply=false schreibt nichts). Sie laufen durch
 // denselben Apparat (Kanarienwelt, genau EIN Recht, echter Router samt CSRF).
-// Die übrigen Nicht-GET-Zeilen bleiben außerhalb: Das sind Schreibpfade, deren
-// Aufruf die Welt verändert — ihre Stufen sichert weiterhin die Handarbeit der
-// Matrix plus die bestehenden Gates.
+// Die übrigen Nicht-GET-Zeilen bleiben hier außerhalb: Das sind Schreibpfade, deren
+// Aufruf die Welt verändert — ihre STUFE sichert weiterhin die Handarbeit der
+// Matrix. Ihr RECHT misst seit dem 06.09.2026 rechte_schreibwege_pg_test.go: alle 87
+// Schreibrouten am echten Router, mit einer Rolle OHNE das geforderte Recht, Erwartung
+// 403 mit der Begründung des Rechte-Wächters. Diese Richtung ist ungefährlich — der
+// Request stirbt vor dem Handler, es wird nichts geschrieben oder verschickt.
 
 import (
 	"context"
