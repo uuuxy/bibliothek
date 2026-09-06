@@ -14,9 +14,18 @@ const PLAETZE = [
 	{ datum: '2027-06-28', stunde: 6 }
 ];
 
+// Ohne Markierungen: Diese Tests prüfen die Reihenfolge, nicht die Einordnung der Klassen.
+const KEIN_MARKER = { ohneSchueler: () => false, nurRueckgabe: () => false };
+
 /** @param {any} zeilen */
 function zeige(zeilen, onklasseraus = vi.fn()) {
-	return render(LmfPlanReihenfolge, { zeilen, plaetze: PLAETZE, bereit: true, onklasseraus });
+	return render(LmfPlanReihenfolge, {
+		zeilen,
+		plaetze: PLAETZE,
+		marker: KEIN_MARKER,
+		bereit: true,
+		onklasseraus
+	});
 }
 
 /** Die Klassen je Zeile, wie die Tabelle sie zeigt: eine Klasse als Text, mehrere als
@@ -109,6 +118,7 @@ describe('LmfPlanReihenfolge', () => {
 		const { getByTestId, container } = render(LmfPlanReihenfolge, {
 			zeilen: [{ klassen: ['10R1'], vermerk: '' }],
 			plaetze: [],
+			marker: KEIN_MARKER,
 			bereit: false,
 			onklasseraus: vi.fn()
 		});

@@ -7,7 +7,8 @@
  *  der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
 import { apiFetch } from './apiFetch.js';
 
-/** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string }} LmfTermin */
+/** nur_rueckgabe: alle Klassen der Zeile geben vor den Ferien nur ab (Abschlussklassen, neu gebildete Klassen). */
+/** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string, nur_rueckgabe?: boolean }} LmfTermin */
 /** Fest: Datum und Stunde von Hand (die Klasse mit dem Ausflug) — null, wenn die Zeile fließt. */
 /** @typedef {{ datum: string, stunde: number }} FesterPlatz */
 /** @typedef {{ klassen: string[], vermerk: string, fest?: FesterPlatz | null }} PlanZeile */
@@ -16,12 +17,34 @@ import { apiFetch } from './apiFetch.js';
 /** @typedef {{ position: number, datum: string, stunde: number, fest: boolean, klassen: string[], vermerk: string }} PlanPlatz */
 /** Ein Werktag im Plan-Zeitraum, an dem der Plan nicht läuft — mit Grund. */
 /** @typedef {{ datum: string, grund: string }} Ausfall */
-/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, stunden_je_tag: number, freie_tage: FreierTag[] } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[] }, klassen: string[] }} PlanStand */
+/** veroeffentlicht_am: null = Entwurf (nur im Planer), sonst der Stempel (Migration 100). klassen = Klassen mit
+ *  Schülern; nur_rueckgabe = Klassen, die vor den Ferien nur abgeben; eingangsjahrgaenge aus der Einstellung. */
+/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[] }, klassen: string[], nur_rueckgabe?: string[], eingangsjahrgaenge?: number[] }} PlanStand */
 
+/** Die zwei Pläne — mit den Worten, die sagen, was passiert (Peter, 06.09.2026: „Rückgabe"
+ *  und „Ausgabe" allein waren unklar, das sind zwei verschiedene Dinge zu verschiedenen
+ *  Zeiten). Dieselben Titel schreibt das PDF (api/lmf_termine.go, LmfArtTitel). */
 export const ARTEN = /** @type {const} */ ([
-	{ wert: 'rueckgabe', label: 'Bücherrückgabe' },
-	{ wert: 'ausgabe', label: 'Bücherausgabe' }
+	{ wert: 'rueckgabe', label: 'Büchertausch vor den Sommerferien' },
+	{ wert: 'ausgabe', label: 'Bücherausgabe nach den Sommerferien' }
 ]);
+
+/** „5 und 7", „5, 7 und 11".
+ *  @param {number[] | undefined} jahrgaenge */
+export function jahrgaengeText(jahrgaenge) {
+	const j = (jahrgaenge ?? []).map(String);
+	if (j.length <= 1) return j.join('');
+	return `${j.slice(0, -1).join(', ')} und ${j[j.length - 1]}`;
+}
+
+/** Der eine Satz, der erklärt, was in einem Plan geschieht — im Planer, im Portal und
+ *  (gleichlautend) im PDF.
+ *  @param {string} art @param {number[] | undefined} eingang */
+export function artErklaerung(art, eingang) {
+	if (art === 'ausgabe')
+		return `Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.`;
+	return 'Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. „Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.';
+}
 
 export const STUNDEN = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -58,10 +81,10 @@ export function artLabel(art) {
 	return ARTEN.find((a) => a.wert === art)?.label ?? art;
 }
 
-/** Lädt die Termine ab Schuljahresbeginn (alle = true: auch ältere) — die Tabelle des
- *  Portals und der PDF.
+/** Lädt die Termine veröffentlichter Pläne ab Schuljahresbeginn (alle = true: auch
+ *  ältere) — die Tabelle des Portals und der PDF.
  *  @param {boolean} [alle]
- *  @returns {Promise<{ ab: string, termine: LmfTermin[], ohne_rueckgabe_termin: string[] }>} */
+ *  @returns {Promise<{ ab: string, termine: LmfTermin[], ohne_rueckgabe_termin: string[], eingangsjahrgaenge?: number[] }>} */
 export async function ladePlan(alle = false) {
 	const res = await apiFetch(`/api/lmf-termine${alle ? '?alle=1' : ''}`);
 	if (!res.ok) throw new Error('LMF-Plan konnte nicht geladen werden');
@@ -74,6 +97,19 @@ export async function ladeStand(art) {
 	const res = await apiFetch(`/api/lmf-plan/${art}`);
 	if (!res.ok) throw new Error('LMF-Plan konnte nicht geladen werden');
 	return await res.json();
+}
+
+/** Der leere Entwurf — der Zustand des Planers vor dem ersten Laden.
+ *  @returns {PlanEntwurf} */
+export function leererEntwurf() {
+	return {
+		erster_tag: '',
+		startstunde: 1,
+		stunden_je_tag: 6,
+		freie_tage: [],
+		zeilen: [],
+		ausgelassen: []
+	};
 }
 
 /** Baut den bearbeitbaren Entwurf aus dem Serverstand: ein laufender Plan wird
@@ -106,6 +142,22 @@ export function entwurfAus(stand) {
 		freie_tage: laufend && stand.plan ? [...(stand.plan.freie_tage ?? [])] : [],
 		zeilen,
 		ausgelassen: ausgelassen.sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
+	};
+}
+
+/** Zwei Fragen an jede Klasse im Planer (Peter, 06.09.2026: Klassen wechseln mit dem
+ *  Schuljahr — mal 3, mal 4, mal 6 je Stufe und Zweig): Hat sie schon Schüler? Ein
+ *  „07G6" aus dem Vorjahr oder ein vor dem August-Import getipptes „07G1" hat keine —
+ *  es kommt mit dem LUSD-Import oder gehört aus dem Plan. Und gibt sie vor den Ferien
+ *  nur ab (Abschlussklasse, wird neu gebildet)? Beides beantwortet der Server, hier
+ *  wird nur nachgeschlagen — über den Normschlüssel.
+ *  @param {PlanStand | null} stand */
+export function klassenMarker(stand) {
+	const mitSchuelern = new Set((stand?.klassen ?? []).map(normKey));
+	const nurRueckgabe = new Set((stand?.nur_rueckgabe ?? []).map(normKey));
+	return {
+		/** @param {string} k */ ohneSchueler: (k) => !mitSchuelern.has(normKey(k)),
+		/** @param {string} k */ nurRueckgabe: (k) => nurRueckgabe.has(normKey(k))
 	};
 }
 
@@ -165,17 +217,34 @@ export function festePlaetzeVollstaendig(zeilen) {
 }
 
 /** Speichert den Plan. Gibt die Server-Meldung zurück — nur der Server kennt den Grund
- *  einer Ablehnung und die Zahl der Ausleihen, deren Frist dem Plan gefolgt ist.
+ *  einer Ablehnung und die Zahl der Ausleihen, deren Frist dem Plan gefolgt ist. Ein
+ *  unveröffentlichter Plan bleibt Entwurf (Migration 100); die Meldung sagt es.
  *  @param {string} art @param {PlanEntwurf} entwurf
  *  @returns {Promise<{ ok: boolean, meldung: string }>} */
 export async function speicherePlan(art, entwurf) {
 	const { res, json } = await sende(art, entwurf, false);
 	if (!res.ok)
 		return { ok: false, meldung: json.error ?? json.message ?? 'Speichern fehlgeschlagen.' };
+	if (!json.plan?.veroeffentlicht_am) return { ok: true, meldung: 'Entwurf gespeichert.' };
 	const n = Number(json.fristen_angepasst ?? 0);
 	return {
 		ok: true,
 		meldung: n > 0 ? `Plan gespeichert · Frist von ${n} Ausleihen angepasst.` : 'Plan gespeichert.'
+	};
+}
+
+/** Veröffentlicht den gespeicherten Plan der Art: ab jetzt sehen ihn Portal und PDF, und
+ *  bei einem Rückgabe-Plan folgen die Fristen der Klassen (die Meldung nennt die Zahl).
+ *  @param {string} art @returns {Promise<{ ok: boolean, meldung: string }>} */
+export async function veroeffentlichePlan(art) {
+	const res = await apiFetch(`/api/lmf-plan/${art}/veroeffentlichen`, { method: 'POST' });
+	const json = await res.json().catch(() => ({}));
+	if (!res.ok) return { ok: false, meldung: json.error ?? 'Veröffentlichen fehlgeschlagen.' };
+	const n = Number(json.fristen_angepasst ?? 0);
+	return {
+		ok: true,
+		meldung:
+			n > 0 ? `Plan veröffentlicht · Frist von ${n} Ausleihen angepasst.` : 'Plan veröffentlicht.'
 	};
 }
 
@@ -194,10 +263,13 @@ export async function verwerfePlan(art) {
 	};
 }
 
-/** Lädt das PDF und öffnet den Download — Verwaltung und Portal gleich.
- *  @param {boolean} [alle] */
-export async function ladePdf(alle = false) {
-	const res = await apiFetch(`/api/lmf-termine/pdf${alle ? '?alle=1' : ''}`);
+/** Lädt das PDF und öffnet den Download — Verwaltung und Portal gleich. entwurf = true
+ *  (nur der Planer, edit_books) nimmt den unveröffentlichten Entwurf mit: das PDF für
+ *  die Abnahme durch die Schulleitung.
+ *  @param {boolean} [alle] @param {boolean} [entwurf] */
+export async function ladePdf(alle = false, entwurf = false) {
+	const pfad = entwurf ? '/api/lmf-termine/entwurf/pdf' : '/api/lmf-termine/pdf';
+	const res = await apiFetch(`${pfad}${alle ? '?alle=1' : ''}`);
 	if (!res.ok) throw new Error('PDF konnte nicht erzeugt werden');
 	const blob = await res.blob();
 	const url = URL.createObjectURL(blob);

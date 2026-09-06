@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-05. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-06. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produktrundgang als
 Video (8 min) zeigt jeden Bereich in Aktion.
@@ -117,14 +117,36 @@ Jahr gebraucht und steht deshalb nicht dauerhaft im Bibliotheks-Menü). Abgänge
 unter _Verwaltung_, der LUSD-Abgleich mit Versetzung unter _Einstellungen →
 LUSD & Versetzung_.
 
-Rückgabe- und Ausgabetermine je Klasse — die frühere Excel-Liste der Schule. **Der Plan
-ist eine Reihenfolge von Klassen, die das Programm auf Schultage und Stunden verteilt:**
+Die frühere Excel-Liste der Schule als zwei Pläne (seit 06.09.2026 so benannt, weil
+„Rückgabe" und „Ausgabe" allein unklar waren — es sind zwei verschiedene Dinge zu
+verschiedenen Zeiten):
+
+- **Büchertausch vor den Sommerferien:** Alle Klassen geben die alten Schulbücher ab und
+  bekommen direkt die neuen. Abschlussklassen und Klassen, die zum neuen Schuljahr neu
+  gebildet werden (die 6er, die auf die Zweige H, R, G verteilt werden), geben **nur
+  zurück** — der Planer und der Plan markieren sie so.
+- **Bücherausgabe nach den Sommerferien:** Nur die neu gebildeten Klassen bekommen ihre
+  Bücher — die **Eingangsjahrgänge** (_Einstellungen → Ausleihe & Fristen_, Vorgabe
+  „5, 7"). Der Vorschlag für diesen Plan enthält nur sie; alle anderen Klassen liegen
+  unter _Nicht im Plan_.
+
+**Der Plan ist eine Reihenfolge von Klassen, die das Programm auf Schultage und Stunden verteilt:**
 Abschlussklassen zuerst, dann jeder Schultag Stunde 1 bis 6, eine Klasse je Stunde, die
 Reihenfolge läuft über die Tage weiter; Wochenenden und die hinterlegten Ferien fallen aus.
 Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 
-- Oben _Bücherrückgabe_ / _Bücherausgabe_ umschalten; je Art gibt es einen Plan pro
-  Schuljahr. Rechts _Als PDF_, _Plan verwerfen_, _Plan speichern_.
+- Oben _Büchertausch vor den Sommerferien_ / _Bücherausgabe nach den Sommerferien_
+  umschalten; je Art gibt es einen Plan pro Schuljahr. Rechts _Als PDF_, _Plan verwerfen_,
+  _Veröffentlichen_ (nur bei einem Entwurf), _Plan speichern_.
+- **Entwurf und Veröffentlichen** (seit 06.09.2026): _Plan speichern_ legt einen
+  **Entwurf** an — zentral gespeichert, auf jedem PC gleich, aber für das Kollegium
+  unsichtbar: nicht im Portal, nicht im PDF des Portals, und es werden keine Fristen
+  gesetzt. _Als PDF_ im Planer enthält den Entwurf — das ist das Blatt für die Abnahme
+  durch die Schulleitung. _Veröffentlichen_ speichert den aktuellen Stand und gibt ihn
+  frei; ab dann sieht das Kollegium den Plan, beim Büchertausch werden die Termine die
+  Fristen der Klassen, und jede weitere Speicherung gilt sofort (die Korrektur-Mail von
+  früher). Einen zweiten Entwurf neben dem veröffentlichten Plan gibt es nicht — der Plan
+  des nächsten Schuljahres ist ein neuer Plan und beginnt wieder als Entwurf.
 - **Zeitraum**: erster Tag, Beginn am ersten Tag (der Donnerstag im Juni begann in der 3. Stunde), Stunden je Tag (Vorgabe 6). Darunter die **freien Tage**: Wochenenden und
   die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Plan von selbst;
   bewegliche Ferientage, pädagogische Tage und Brückentage trägt man mit Datum und Grund
@@ -148,15 +170,23 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   Klasse_ nimmt Namen auf, die es noch nicht gibt („07G1" vor dem August-Import). Was
   hier bleibt, gilt als bewusst ausgelassen — die Oberstufe organisiert Rückgabe und
   Ausgabe an dieser Schule selbst.
+- **Klassen ohne Schüler** („ohne Schüler" an der Klasse, oben in der Reihenfolge
+  gezählt): eine Klasse aus dem Vorjahr, die es nicht mehr gibt, oder eine vor dem
+  LUSD-Import getippte. Klassen muss niemand anlegen oder löschen — ein Name im Plan
+  registriert sich selbst, und eine Klasse ohne aktive Schüler verschwindet von allein
+  aus jeder Liste. Nach dem LUSD-Import zeigt der Satz, was übrig blieb: raus damit,
+  oder es kommt noch. Neue Klassen mit Schülern erscheinen unter _Nicht im Plan_.
 - **Vorjahr als Vorlage**: Ist der letzte Plan vorbei, beginnt der nächste mit dessen
   Reihenfolge und Auslassungen; neue Klassen hängen hinten an. Ganz ohne Vorjahr gilt die
   Regel: Abschlussklassen zuerst, dann Jahrgang absteigend, Oberstufe unten.
 
-Das Kollegium sieht den gespeicherten Plan in _Mein Portal → LMF-Plan_, für alle gleich
-und immer auf dem aktuellen Stand; _Als PDF_ liefert die gewohnte Liste (Wochentag, Datum,
-Stunde, Klassen, Besonderheiten), getrennt nach Rückgabe und Ausgabe.
+Das Kollegium sieht den **veröffentlichten** Plan in _Mein Portal → LMF-Plan_, für alle
+gleich und immer auf dem aktuellen Stand; _Als PDF_ liefert die gewohnte Liste (Wochentag,
+Datum, Stunde, Klassen, Besonderheiten — „nur Rückgabe" steht dort vor dem Vermerk),
+getrennt nach Büchertausch und Bücherausgabe.
 
-**Der Rückgabe-Termin einer Klasse ist die Frist ihrer Schulbücher.** Beim Speichern
+**Der Termin einer Klasse beim Büchertausch ist die Frist ihrer Schulbücher.** Beim
+Veröffentlichen (und bei jeder Speicherung eines veröffentlichten Plans)
 folgen die offenen Schulbuch-Ausleihen der Klassen (die Meldung nennt die Zahl); neue
 Ausleihen bekommen ihn gleich. Fällt eine Klasse aus dem Plan oder wird er verworfen, gehen
 die Fristen an den allgemeinen Stichtag zurück (_Einstellungen → Ausleihe_, Vorgabe

@@ -11,11 +11,14 @@ type SystemEinstellungen struct {
 	FerienLeseclubAktiv     bool    `json:"ferien_leseclub_aktiv"`
 	FerienLeseclubZieldatum *string `json:"ferien_leseclub_zieldatum"` // ISO date string "YYYY-MM-DD" or null
 	LmfStichtag             string  `json:"lmf_stichtag"`              // "MM-DD" format, e.g. "07-31"
-	MaxAusleihenSchueler    int     `json:"max_ausleihen_schueler"`
-	FristBuchTage           int     `json:"frist_buch_tage"`
-	FristMedienTage         int     `json:"frist_medien_tage"`
-	MaxOverdueDays          int     `json:"max_overdue_days"`
-	MaxOverdueItems         int     `json:"max_overdue_items"`
+	// LmfEingangsjahrgaenge: die Jahrgänge, die nach den Sommerferien ihre Bücher
+	// bekommen, weil ihre Klassen neu gebildet werden („5, 7"; EingangsjahrgaengeAus).
+	LmfEingangsjahrgaenge string `json:"lmf_eingangsjahrgaenge"`
+	MaxAusleihenSchueler  int    `json:"max_ausleihen_schueler"`
+	FristBuchTage         int    `json:"frist_buch_tage"`
+	FristMedienTage       int    `json:"frist_medien_tage"`
+	MaxOverdueDays        int    `json:"max_overdue_days"`
+	MaxOverdueItems       int    `json:"max_overdue_items"`
 	// Bestellbedarf: ob überhaupt gewarnt wird und ab welcher Exemplarzahl ein
 	// (LMF-)Titel als Bestellbedarf gilt (gesamt < Schwelle). Löst den früheren
 	// pauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.
@@ -94,12 +97,13 @@ func NewSystemSettingsRepository(db db.PgxPoolIface) SystemSettingsRepository {
 // Wert nicht in der DB steht).
 func standardEinstellungen() *SystemEinstellungen {
 	s := &SystemEinstellungen{
-		LmfStichtag:          "07-31",
-		MaxAusleihenSchueler: 5,
-		FristBuchTage:        21,
-		FristMedienTage:      7,
-		MaxOverdueDays:       14,
-		MaxOverdueItems:      1,
+		LmfStichtag:           "07-31",
+		LmfEingangsjahrgaenge: LmfEingangsjahrgaengeVorgabe,
+		MaxAusleihenSchueler:  5,
+		FristBuchTage:         21,
+		FristMedienTage:       7,
+		MaxOverdueDays:        14,
+		MaxOverdueItems:       1,
 		// Warnung standardmäßig an; Schwelle 3 (statt des früheren Default 5) als
 		// ruhigerer Startwert — der Betreiber justiert sie in den Einstellungen.
 		BestellbedarfWarnungAktiv: true,
@@ -149,6 +153,8 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		}
 	case "lmf_stichtag":
 		setzeStringNichtLeer(val, &settings.LmfStichtag)
+	case "lmf_eingangsjahrgaenge":
+		setzeStringNichtLeer(val, &settings.LmfEingangsjahrgaenge)
 	case "max_ausleihen_schueler":
 		setzeIntEinstellung(val, &settings.MaxAusleihenSchueler)
 	case "frist_buch_tage":

@@ -22,13 +22,25 @@ const (
 )
 
 // LmfTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen.
+// NurRueckgabe (nur bei Rückgabe-Zeilen): Alle Klassen der Zeile geben nur ab und
+// bekommen vor den Ferien keine neuen Bücher — Abschlussklassen und Klassen, die zum
+// neuen Schuljahr neu gebildet werden (nurRueckgabeSQL, lmf_plan_veroeffentlichung.go).
 type LmfTermin struct {
-	ID      string   `json:"id"`
-	Datum   string   `json:"datum"` // YYYY-MM-DD
-	Stunde  int      `json:"stunde"`
-	Art     string   `json:"art"`
-	Klassen []string `json:"klassen"`
-	Vermerk string   `json:"vermerk"`
+	ID           string   `json:"id"`
+	Datum        string   `json:"datum"` // YYYY-MM-DD
+	Stunde       int      `json:"stunde"`
+	Art          string   `json:"art"`
+	Klassen      []string `json:"klassen"`
+	Vermerk      string   `json:"vermerk"`
+	NurRueckgabe bool     `json:"nur_rueckgabe"`
+}
+
+// LmfListenFilter steuert ListLmfTermine: MitEntwuerfen zeigt auch unveröffentlichte
+// Pläne (nur der Planer selbst, für das PDF an die Schulleitung); Eingangsjahrgaenge
+// bestimmen die Markierung „nur Rückgabe" (Einstellung lmf_eingangsjahrgaenge).
+type LmfListenFilter struct {
+	MitEntwuerfen      bool
+	Eingangsjahrgaenge []int
 }
 
 // SchuljahrBeginn liefert den 1. August des Schuljahres, in dem t liegt (Hessen:
@@ -52,17 +64,26 @@ func NewLmfTerminRepository(pool db.PgxPoolIface) *LmfTerminRepository {
 	return &LmfTerminRepository{db: pool}
 }
 
-// ListLmfTermine liefert die Termine ab einem Datum (einschließlich), nach Datum und
-// Stunde sortiert; ab = Nullzeit liefert alle. Die Klassen kommen sortiert mit, damit
-// „6F1/6F2" in Oberfläche und PDF gleich aussieht.
-func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time) ([]LmfTermin, error) {
+// ListLmfTermine liefert die Termine veröffentlichter Pläne ab einem Datum
+// (einschließlich), nach Datum und Stunde sortiert; ab = Nullzeit liefert alle. Die
+// Klassen kommen sortiert mit, damit „6F1/6F2" in Oberfläche und PDF gleich aussieht.
+// Entwürfe (Migration 100) sieht nur, wer MitEntwuerfen setzt.
+func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time, f LmfListenFilter) ([]LmfTermin, error) {
+	eingang := f.Eingangsjahrgaenge
+	if eingang == nil {
+		eingang = []int{}
+	}
 	rows, err := r.db.Query(ctx, `
 		SELECT t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
 		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse))
-		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
+		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}'),
+		       t.art = 'rueckgabe' AND COALESCE((SELECT bool_and(`+nurRueckgabeSQL("k.klasse", "$3")+`)
+		                                          FROM lmf_termin_klassen k WHERE k.termin_id = t.id), false)
 		FROM lmf_termine t
-		WHERE $1::date IS NULL OR t.datum >= $1::date
-		ORDER BY t.datum, t.stunde, t.id`, nullbaresDatum(ab))
+		JOIN lmf_plaene p ON p.id = t.plan_id
+		WHERE ($1::date IS NULL OR t.datum >= $1::date)
+		  AND ($2 OR p.veroeffentlicht_am IS NOT NULL)
+		ORDER BY t.datum, t.stunde, t.id`, nullbaresDatum(ab), f.MitEntwuerfen, eingang)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +92,7 @@ func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time) 
 	termine := []LmfTermin{}
 	for rows.Next() {
 		var t LmfTermin
-		if err := rows.Scan(&t.ID, &t.Datum, &t.Stunde, &t.Art, &t.Vermerk, &t.Klassen); err != nil {
+		if err := rows.Scan(&t.ID, &t.Datum, &t.Stunde, &t.Art, &t.Vermerk, &t.Klassen, &t.NurRueckgabe); err != nil {
 			return nil, err
 		}
 		termine = append(termine, t)
@@ -94,7 +115,8 @@ func nullbaresDatum(t time.Time) *time.Time {
 // Normschlüssel, damit „5f1" und „05F1" dieselbe Klasse sind. Nicht angemahnt werden
 // Klassen ohne führende Ziffer (Oberstufenkurse „Q1", Sonderwerte) und die, die ein
 // Rückgabe-Plan ab dem Datum ausdrücklich auslässt (lmf_plan_ausgelassen, Migration 097:
-// die Oberstufe organisiert sich selbst).
+// die Oberstufe organisiert sich selbst). Entwürfe zählen nicht (Migration 100): Ein
+// Termin, den das Kollegium nicht sieht, ist noch keiner.
 func (r *LmfTerminRepository) KlassenOhneRueckgabeTermin(ctx context.Context, ab time.Time) ([]string, error) {
 	rows, err := r.db.Query(ctx, `
 		SELECT s.klasse
@@ -103,12 +125,13 @@ func (r *LmfTerminRepository) KlassenOhneRueckgabeTermin(ctx context.Context, ab
 		  AND NOT EXISTS (
 		      SELECT 1 FROM lmf_termin_klassen k
 		      JOIN lmf_termine t ON t.id = k.termin_id
-		      WHERE t.art = 'rueckgabe' AND t.datum >= $1::date
+		      JOIN lmf_plaene p ON p.id = t.plan_id
+		      WHERE t.art = 'rueckgabe' AND t.datum >= $1::date AND p.veroeffentlicht_am IS NOT NULL
 		        AND klassen_normkey(k.klasse) = klassen_normkey(s.klasse))
 		  AND NOT EXISTS (
 		      SELECT 1 FROM lmf_plan_ausgelassen a
 		      JOIN lmf_plaene p ON p.id = a.plan_id
-		      WHERE p.art = 'rueckgabe' AND p.erster_tag >= $1::date
+		      WHERE p.art = 'rueckgabe' AND p.erster_tag >= $1::date AND p.veroeffentlicht_am IS NOT NULL
 		        AND klassen_normkey(a.klasse) = klassen_normkey(s.klasse))
 		GROUP BY s.klasse
 		ORDER BY substring(s.klasse from '^\d+')::int, s.klasse`, ab)
@@ -130,14 +153,17 @@ func (r *LmfTerminRepository) KlassenOhneRueckgabeTermin(ctx context.Context, ab
 // RueckgabeTerminFuerKlasse liefert den nächsten Rückgabe-Termin der Klasse ab dem
 // Datum (einschließlich) — die Frist ihrer Lernmittel (Register, Entscheidung 3a:
 // „das wäre doch logisch"). ok = false, wenn der Plan für die Klasse nichts nennt;
-// dann gilt der globale Stichtag. Verglichen wird über den Normschlüssel.
+// dann gilt der globale Stichtag. Verglichen wird über den Normschlüssel. Nur
+// veröffentlichte Pläne (Migration 100): Ein Entwurf setzt keine Frist — auch nicht
+// still beim Ausleihen, während die Schulleitung ihn noch prüft.
 func (r *LmfTerminRepository) RueckgabeTerminFuerKlasse(ctx context.Context, klasse string, ab time.Time) (time.Time, bool, error) {
 	var datum *time.Time
 	err := r.db.QueryRow(ctx, `
 		SELECT min(t.datum)
 		FROM lmf_termine t
 		JOIN lmf_termin_klassen k ON k.termin_id = t.id
-		WHERE t.art = 'rueckgabe' AND t.datum >= $1::date
+		JOIN lmf_plaene p ON p.id = t.plan_id
+		WHERE t.art = 'rueckgabe' AND t.datum >= $1::date AND p.veroeffentlicht_am IS NOT NULL
 		  AND klassen_normkey(k.klasse) = klassen_normkey($2)`, ab, klasse).Scan(&datum)
 	if err != nil || datum == nil {
 		return time.Time{}, false, err

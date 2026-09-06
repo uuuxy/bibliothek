@@ -21,15 +21,22 @@ func TestRueckgabeTerminFuerKlasse(t *testing.T) {
 	repo := NewLmfTerminRepository(pool)
 	t.Cleanup(func() { raeumeLmfPlaene(t, pool) })
 
-	speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-01", 1, 6,
-		[]LmfPlanZeile{{Klassen: []string{"9H1"}, Vermerk: "vergangen"}}, nil)
+	veroeffentliche(t, repo, speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-01", 1, 6,
+		[]LmfPlanZeile{{Klassen: []string{"9H1"}, Vermerk: "vergangen"}}, nil))
 	// 9H1 am 28.06. (Zeile 1) und noch einmal am 05.07. (Zeile 6, hinter dem Wochenende).
-	speicherePlan(t, repo, LmfTerminRueckgabe, "2027-06-28", 1, 1,
+	entwurf := speicherePlan(t, repo, LmfTerminRueckgabe, "2027-06-28", 1, 1,
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}, {Klassen: []string{"10R1"}},
 			{Klassen: []string{"10R2"}}, {Klassen: []string{"10R3"}}, {Klassen: []string{"9H1"}, Vermerk: "zweiter Termin"}}, nil)
-	speicherePlan(t, repo, LmfTerminAusgabe, "2027-08-10", 2, 6,
-		[]LmfPlanZeile{{Klassen: []string{"7G1"}, Vermerk: "neu"}}, nil)
+	veroeffentliche(t, repo, speicherePlan(t, repo, LmfTerminAusgabe, "2027-08-10", 2, 6,
+		[]LmfPlanZeile{{Klassen: []string{"7G1"}, Vermerk: "neu"}}, nil))
 	heute := time.Date(2026, time.September, 5, 12, 0, 0, 0, schulzeit.Zone())
+
+	// Solange der Plan 2027 Entwurf ist (Migration 100), kennt der Ausleihdienst nur den
+	// vergangenen Termin — also keinen: Ein Entwurf setzt still keine Frist.
+	if _, ok, err := repo.RueckgabeTerminFuerKlasse(ctx, "09h1", heute); ok || err != nil {
+		t.Errorf("ein Entwurf darf keine Frist liefern (ok=%v err=%v)", ok, err)
+	}
+	veroeffentliche(t, repo, entwurf)
 
 	termin, ok, err := repo.RueckgabeTerminFuerKlasse(ctx, "09h1", heute)
 	if err != nil || !ok {
@@ -60,6 +67,17 @@ func speicherePlan(t *testing.T, repo *LmfTerminRepository, art, ersterTag strin
 		zeilen, plaetze, ausgelassen)
 	if err != nil {
 		t.Fatalf("Plan %s ab %s speichern: %v", art, ersterTag, err)
+	}
+	return st
+}
+
+// veroeffentliche stempelt einen gespeicherten Plan (Migration 100) — wie POST
+// …/veroeffentlichen, ohne Frist-Kopplung (die liegt in api/).
+func veroeffentliche(t *testing.T, repo *LmfTerminRepository, st LmfPlanStand) LmfPlanStand {
+	t.Helper()
+	st, err := repo.VeroeffentlicheLmfPlan(context.Background(), st.Plan.ID, time.Now())
+	if err != nil {
+		t.Fatalf("Plan %s veröffentlichen: %v", st.Plan.ID, err)
 	}
 	return st
 }

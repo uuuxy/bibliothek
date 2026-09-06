@@ -12,7 +12,11 @@ package api
 // den nächsten (Klassennamen bleiben Jahr für Jahr gleich — die Versetzung verschiebt
 // Schüler, nicht Namen). Ohne Vorjahr kommt der Vorschlag aus der Regel: Abschluss-
 // klassen zuerst, dann Jahrgang absteigend; die Oberstufe steht unten („ausgelassen",
-// sie organisiert sich an dieser Schule selbst).
+// sie organisiert sich an dieser Schule selbst). Der Ausgabe-Plan nach den Ferien
+// schlägt nur die Eingangsjahrgänge vor (Peter, 06.09.2026: „nach den Sommerferien
+// bekommen nur die neuen 5er und 7er Klassen ihre Bücher"). Gespeichert wird ein
+// ENTWURF; erst das Veröffentlichen macht ihn sichtbar und fristsetzend
+// (lmf_plan_veroeffentlichung.go).
 
 import (
 	"context"
@@ -49,8 +53,14 @@ type LmfPlanStandAntwort struct {
 	Vorbei bool `json:"vorbei"`
 	// Vorschlag ist gesetzt, wenn es keinen laufenden Plan gibt (kein Plan oder vorbei).
 	Vorschlag *LmfPlanVorschlag `json:"vorschlag,omitempty"`
-	// Klassen: alle Klassen des Vokabulars, für die Auswahl im Planer.
+	// Klassen: die Klassen mit aktiven Schülern, für die Auswahl im Planer. Eine Klasse
+	// im Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.
 	Klassen []string `json:"klassen"`
+	// NurRueckgabe (nur beim Rückgabe-Plan): Klassen, die vor den Ferien nur abgeben —
+	// Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.
+	NurRueckgabe []string `json:"nur_rueckgabe"`
+	// Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).
+	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`
 }
 
 // lmfPlanArt liest {art} aus dem Pfad und prüft sie.
@@ -75,7 +85,11 @@ func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
 			return apierrors.BadRequest(err.Error(), err)
 		}
 		repo := repository.NewLmfTerminRepository(s.DB.Pool)
-		antwort := LmfPlanStandAntwort{Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}}
+		eingang, err := s.lmfEingangsjahrgaenge(r.Context())
+		if err != nil {
+			return apierrors.Internal("Einstellungen laden", err)
+		}
+		antwort := LmfPlanStandAntwort{Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}, Eingangsjahrgaenge: eingang}
 		stand, err := repo.NeuesterLmfPlan(r.Context(), art)
 		switch {
 		case errors.Is(err, pgx.ErrNoRows):
@@ -87,13 +101,21 @@ func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
 			antwort.Plan, antwort.Zeilen, antwort.Ausgelassen = &plan, stand.Zeilen, stand.Ausgelassen
 			antwort.Vorbei = lmfPlanVorbei(stand, s.jetzt())
 		}
-		if antwort.Plan == nil || antwort.Vorbei {
-			if antwort.Vorschlag, err = s.lmfPlanVorschlag(r.Context(), repo, antwort.Plan != nil, stand); err != nil {
-				return apierrors.Internal("Vorschlag bauen", err)
-			}
-		}
-		if antwort.Klassen, err = repository.NewStudentRepository(s.DB.Pool).GetDistinctClasses(r.Context()); err != nil {
+		// Klassen mit AKTIVEN Schülern (nicht GetDistinctClasses: das zählt Abgänger mit, und
+		// die Klasse eines Abgängers ohne aktive Schüler wäre im Planer fälschlich „mit Schülern").
+		klassen, err := repo.KlassenMitSchuelern(r.Context())
+		if err != nil {
 			return apierrors.Internal("Klassen laden", err)
+		}
+		antwort.Klassen = make([]string, 0, len(klassen))
+		for _, k := range klassen {
+			antwort.Klassen = append(antwort.Klassen, k.Name)
+		}
+		if antwort.Plan == nil || antwort.Vorbei {
+			antwort.Vorschlag = lmfPlanVorschlag(art, eingang, antwort.Plan != nil, stand, klassen)
+		}
+		if antwort.NurRueckgabe, err = s.lmfPlanNurRueckgabe(r.Context(), repo, art, antwort, eingang); err != nil {
+			return apierrors.Internal("Klassen einordnen", err)
 		}
 		RespondJSON(w, http.StatusOK, antwort)
 		return nil
@@ -115,13 +137,10 @@ func lmfPlanVorbei(st repository.LmfPlanStand, jetzt time.Time) bool {
 
 // lmfPlanVorschlag baut die Start-Reihenfolge: das Vorjahr, wenn es eines gibt, ergänzt
 // um Klassen, die inzwischen neu sind; sonst die Regel. Klassen ohne Schüler bleiben aus
-// dem Vorjahr erhalten (ein „7G6" kann wiederkommen) — der Planer entfernt sie mit
-// einem Klick.
-func (s *Server) lmfPlanVorschlag(ctx context.Context, repo *repository.LmfTerminRepository, vorjahr bool, st repository.LmfPlanStand) (*LmfPlanVorschlag, error) {
-	klassen, err := repo.KlassenMitSchuelern(ctx)
-	if err != nil {
-		return nil, err
-	}
+// dem Vorjahr erhalten (ein „7G6" kann wiederkommen) — der Planer markiert sie und
+// entfernt sie mit einem Klick. Beim Ausgabe-Plan kommen nur die Eingangsjahrgänge in
+// die Reihenfolge; alle anderen Klassen liegen unter „Nicht im Plan".
+func lmfPlanVorschlag(art string, eingang []int, vorjahr bool, st repository.LmfPlanStand, klassen []repository.KlasseImPlan) *LmfPlanVorschlag {
 	v := &LmfPlanVorschlag{Quelle: "regel", Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}}
 	bekannt := map[string]bool{}
 	if vorjahr {
@@ -141,13 +160,17 @@ func (s *Server) lmfPlanVorschlag(ctx context.Context, repo *repository.LmfTermi
 		if bekannt[repository.KlassenSchluessel(k.Name)] {
 			continue
 		}
-		if k.Oberstufe {
+		ausgelassen := k.Oberstufe
+		if art == repository.LmfTerminAusgabe {
+			ausgelassen = !enthaeltJahrgang(eingang, k.Jahrgang)
+		}
+		if ausgelassen {
 			v.Ausgelassen = append(v.Ausgelassen, k.Name)
 			continue
 		}
 		v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: []string{k.Name}})
 	}
-	return v, nil
+	return v
 }
 
 // lmfPlanRequest ist der Körper von PUT /api/lmf-plan/{art}.
@@ -181,9 +204,9 @@ type LmfPlanAusfall struct {
 	Grund string `json:"grund"`
 }
 
-// LmfPlanSpeicherAntwort ist die Antwort von PUT: der Stand, die Ausfälle im Plan-
-// Zeitraum und die Zahl der Ausleihen, deren Frist dem Plan gefolgt ist (0 bei
-// Vorschau und bei Ausgabe-Plänen).
+// LmfPlanSpeicherAntwort ist die Antwort von PUT und von POST …/veroeffentlichen: der
+// Stand, die Ausfälle im Plan-Zeitraum und die Zahl der Ausleihen, deren Frist dem Plan
+// gefolgt ist (0 bei Vorschau, bei Ausgabe-Plänen und bei einem Entwurf).
 type LmfPlanSpeicherAntwort struct {
 	repository.LmfPlanStand
 	Vorschau         bool             `json:"vorschau"`
@@ -305,9 +328,13 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("LMF-Plan speichern", err)
 		}
-		angepasst, err := s.koppleLmfPlanFristen(r.Context(), art, alt, stand.Zeilen)
-		if err != nil {
-			return apierrors.Internal("Fristen koppeln", err)
+		// Ein Entwurf setzt keine Fristen — das tut erst das Veröffentlichen. Ein schon
+		// veröffentlichter Plan bleibt es, und seine Korrektur gilt sofort.
+		var angepasst int64
+		if stand.Plan.VeroeffentlichtAm != nil {
+			if angepasst, err = s.koppleLmfPlanFristen(r.Context(), art, alt, stand.Zeilen); err != nil {
+				return apierrors.Internal("Fristen koppeln", err)
+			}
 		}
 		RespondJSON(w, http.StatusOK, LmfPlanSpeicherAntwort{LmfPlanStand: stand, Ausfaelle: ausfaelle, FristenAngepasst: angepasst})
 		return nil
@@ -354,7 +381,8 @@ func (s *Server) verteileLmfPlan(ctx context.Context, repo *repository.LmfTermin
 }
 
 // lmfPlanZeilenVorher liest die Zeilen des Plans, den das Speichern gleich ersetzt —
-// der Plan derselben Art im Schuljahr des ersten Tages. Leer, wenn es keinen gibt.
+// der Plan derselben Art im Schuljahr des ersten Tages. Leer, wenn es keinen gibt oder
+// er noch Entwurf ist (dann hat er keine Frist gesetzt, die zurückkehren müsste).
 func (s *Server) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTerminRepository, art, ersterTag string) ([]repository.LmfPlanZeile, error) {
 	st, err := repo.NeuesterLmfPlan(ctx, art)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -367,7 +395,7 @@ func (s *Server) lmfPlanZeilenVorher(ctx context.Context, repo *repository.LmfTe
 	if err != nil {
 		return nil, err
 	}
-	if st.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format("2006-01-02") {
+	if st.Plan.SchuljahrBeginn != repository.SchuljahrBeginn(tag).Format("2006-01-02") || st.Plan.VeroeffentlichtAm == nil {
 		// Anderes Schuljahr: das Speichern legt einen neuen Plan an, der alte bleibt.
 		return nil, nil
 	}
@@ -398,9 +426,12 @@ func (s *Server) DeleteLmfPlanHandler() http.HandlerFunc {
 		if _, err := repo.DeleteLmfPlan(r.Context(), st.Plan.ID); err != nil {
 			return apierrors.Internal("LMF-Plan löschen", err)
 		}
-		angepasst, err := s.koppleLmfPlanFristen(r.Context(), art, st.Zeilen, nil)
-		if err != nil {
-			return apierrors.Internal("Fristen koppeln", err)
+		// Nur ein veröffentlichter Plan hat Fristen gesetzt, die zurückkehren müssen.
+		var angepasst int64
+		if st.Plan.VeroeffentlichtAm != nil {
+			if angepasst, err = s.koppleLmfPlanFristen(r.Context(), art, st.Zeilen, nil); err != nil {
+				return apierrors.Internal("Fristen koppeln", err)
+			}
 		}
 		RespondJSON(w, http.StatusOK, map[string]int64{"fristen_angepasst": angepasst})
 		return nil

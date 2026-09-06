@@ -830,8 +830,15 @@ CREATE TABLE lmf_plaene (
     stunden_je_tag   SMALLINT NOT NULL DEFAULT 6 CONSTRAINT chk_lmf_plaene_stunden CHECK (stunden_je_tag BETWEEN 1 AND 12),
     erstellt_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Migration 100 (hinten, wie ADD COLUMN sie anhängt): NULL = Entwurf (nur im Planer
+    -- sichtbar, keine Fristen); gesetzt = veröffentlicht, gilt für Portal, PDF des
+    -- Kollegiums und die Frist-Kopplung.
+    veroeffentlicht_am TIMESTAMP WITH TIME ZONE,
     CONSTRAINT uniq_lmf_plaene_art_schuljahr UNIQUE (art, schuljahr_beginn)
 );
+
+COMMENT ON COLUMN lmf_plaene.veroeffentlicht_am IS
+    'NULL = Entwurf (nur im Planer sichtbar, keine Fristen); gesetzt = gilt für Portal, PDF und Frist-Kopplung.';
 
 CREATE TRIGGER trg_lmf_plaene_aktualisiert_am
 BEFORE UPDATE ON lmf_plaene
@@ -1129,7 +1136,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('096_lmf_termine.sql'),
 ('097_lmf_plaene.sql'),
 ('098_lmf_termine_gehoeren_zum_plan.sql'),
-('099_lmf_plan_feste_plaetze_und_freie_tage.sql')
+('099_lmf_plan_feste_plaetze_und_freie_tage.sql'),
+('100_lmf_plan_veroeffentlichung.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -1,12 +1,21 @@
 <!-- @component LmfPlanTabelle — der Plan in der Form, die das Kollegium kennt: je Art
-     ein Block (Bücherrückgabe, Bücherausgabe), darin Wochentag, Datum, Stunde, Klassen,
-     Besonderheiten. Lesend — der Portal-Reiter und jede Stelle, die den fertigen Plan
-     zeigt. Bearbeitet wird er im Planer (LmfPlanReihenfolge). -->
+     ein Block (Büchertausch vor den Sommerferien, Bücherausgabe nach den Sommerferien),
+     darunter der eine Satz, was dort geschieht, darin Wochentag, Datum, Stunde, Klassen,
+     Besonderheiten („nur Rückgabe" als Chip vor dem Vermerk). Lesend — der Portal-Reiter
+     und jede Stelle, die den fertigen Plan zeigt. Bearbeitet wird er im Planer. -->
 <script>
-	import { ARTEN, artLabel, datumKurz, stundeText, wochentag } from '../../lmfplanDienst.js';
+	import StatusChip from '../ui/StatusChip.svelte';
+	import {
+		ARTEN,
+		artErklaerung,
+		artLabel,
+		datumKurz,
+		stundeText,
+		wochentag
+	} from '../../lmfplanDienst.js';
 
-	/** @type {{ termine: import('../../lmfplanDienst.js').LmfTermin[] }} */
-	let { termine } = $props();
+	/** @type {{ termine: import('../../lmfplanDienst.js').LmfTermin[], eingangsjahrgaenge?: number[] }} */
+	let { termine, eingangsjahrgaenge = [] } = $props();
 
 	const bloecke = $derived(
 		ARTEN.map((a) => ({
@@ -19,7 +28,10 @@
 
 {#each bloecke as block (block.art)}
 	<section class="mt-6" aria-label={block.label}>
-		<h2 class="text-title-medium font-medium text-on-surface px-4 pb-2">{artLabel(block.art)}</h2>
+		<h2 class="text-title-medium font-medium text-on-surface px-4">{artLabel(block.art)}</h2>
+		<p class="px-4 pb-2 text-sm text-on-surface-variant max-w-3xl">
+			{artErklaerung(block.art, eingangsjahrgaenge)}
+		</p>
 		<div class="overflow-x-auto">
 			<table class="w-full text-left text-base border-collapse">
 				<thead>
@@ -38,7 +50,14 @@
 							<td class="py-2 px-4 text-on-surface tabular-nums">{datumKurz(t.datum)}</td>
 							<td class="py-2 px-4 text-on-surface-variant">{stundeText(t.stunde)}</td>
 							<td class="py-2 px-4 font-medium text-on-surface">{t.klassen.join(' / ')}</td>
-							<td class="py-2 px-4 text-on-surface-variant">{t.vermerk}</td>
+							<td class="py-2 px-4 text-on-surface-variant">
+								<span class="inline-flex items-center gap-2">
+									{#if t.nur_rueckgabe}
+										<StatusChip text="nur Rückgabe" />
+									{/if}
+									{t.vermerk}
+								</span>
+							</td>
 						</tr>
 					{/each}
 				</tbody>

@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-09-05. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-09-06. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -22,7 +22,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (196)
+## Alle registrierten Routen (198)
 
 - `/`
 - `/api/admin`
@@ -98,6 +98,7 @@
 - `GET /api/lieferanten`
 - `GET /api/lmf-plan/{art}`
 - `GET /api/lmf-termine`
+- `GET /api/lmf-termine/entwurf/pdf`
 - `GET /api/lmf-termine/pdf`
 - `GET /api/lookup/`
 - `GET /api/mahnwesen`
@@ -182,6 +183,7 @@
 - `POST /api/inventur/start`
 - `POST /api/klassen-mapping`
 - `POST /api/lieferanten`
+- `POST /api/lmf-plan/{art}/veroeffentlichen`
 - `POST /api/lusd/import`
 - `POST /api/lusd/preview`
 - `POST /api/mahnwesen/senden`

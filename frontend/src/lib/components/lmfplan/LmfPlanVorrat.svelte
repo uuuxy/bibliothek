@@ -10,8 +10,8 @@
 	import Feld from '../ui/Feld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
 
-	/** @type {{ klassen: string[], onhinein: (klasse: string) => void }} */
-	let { klassen, onhinein } = $props();
+	/** @type {{ klassen: string[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, onhinein: (klasse: string) => void }} */
+	let { klassen, marker, onhinein } = $props();
 
 	let neue = $state('');
 
@@ -36,7 +36,11 @@
 	{#if klassen.length > 0}
 		<div class="mt-4 flex flex-wrap gap-2" data-testid="lmf-vorrat">
 			{#each klassen as k (k)}
-				<LmfKlasseChip name={k} onklick={() => onhinein(k)} />
+				<LmfKlasseChip
+					name={k}
+					hinweis={marker.ohneSchueler(k) ? 'ohne Schüler' : ''}
+					onklick={() => onhinein(k)}
+				/>
 			{/each}
 		</div>
 	{/if}

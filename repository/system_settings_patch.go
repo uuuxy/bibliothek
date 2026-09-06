@@ -1,6 +1,9 @@
 package repository
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // EinstellungenPatch ist das, was ein Speichern-Klick schickt: NUR die Felder der
 // Kategorie, die gerade gespeichert wurde. Jedes Feld ist ein Zeiger, und nil heißt
@@ -23,6 +26,7 @@ type EinstellungenPatch struct {
 	FerienLeseclubAktiv     *bool   `json:"ferien_leseclub_aktiv,omitempty"`
 	FerienLeseclubZieldatum *string `json:"ferien_leseclub_zieldatum,omitempty"`
 	LmfStichtag             *string `json:"lmf_stichtag,omitempty"`
+	LmfEingangsjahrgaenge   *string `json:"lmf_eingangsjahrgaenge,omitempty"`
 	MaxAusleihenSchueler    *int    `json:"max_ausleihen_schueler,omitempty"`
 	FristBuchTage           *int    `json:"frist_buch_tage,omitempty"`
 	FristMedienTage         *int    `json:"frist_medien_tage,omitempty"`
@@ -114,6 +118,13 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 		s.paare = append(s.paare, [2]string{"lmf_stichtag", "07-31"})
 	} else {
 		s.text("lmf_stichtag", p.LmfStichtag)
+	}
+	// Leer heißt Vorgabe, nie „niemand": Ohne Eingangsjahrgänge hätte der Ausgabe-Plan
+	// keine Klasse und vor den Ferien gäbe niemand „nur zurück".
+	if p.LmfEingangsjahrgaenge != nil && strings.TrimSpace(*p.LmfEingangsjahrgaenge) == "" {
+		s.paare = append(s.paare, [2]string{"lmf_eingangsjahrgaenge", LmfEingangsjahrgaengeVorgabe})
+	} else {
+		s.text("lmf_eingangsjahrgaenge", p.LmfEingangsjahrgaenge)
 	}
 	s.zahl("max_ausleihen_schueler", p.MaxAusleihenSchueler, 1, 5)
 	s.zahl("frist_buch_tage", p.FristBuchTage, 1, 21)

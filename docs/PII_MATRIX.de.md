@@ -15,7 +15,7 @@ der Theken-Scan (`POST /api/action` samt Batch) und die LUSD-Vorschau
 (`POST /api/lusd/preview`) laufen durch denselben Apparat. Für die übrigen
 Nicht-GET-Routen (Schreibpfade) bleibt die Stufe Handarbeit: Wer eine Zeile
 anlegt, hat den Handler gelesen.
-Stand: 05.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 06.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen).
 
@@ -94,10 +94,12 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/buecher/titel/suche`                       | view_books          | 0     | Titelsuche (SearchTitlesFuzzy) für Bildschirme außerhalb der Theke; nur Titel — bis 05.09.2026 holte die Etiketten-Titelsuche über `/api/search` Schüler-Kiosk-Daten mit, die sie nie zeigte |
 | `GET /api/buecher/titel/{id}/exemplare`              | view_books          | 0     | Exemplare ohne Schüler-Join                                                                                                                                                                  |
 | `GET /api/lmf-termine`                               | Sitzung             | 0     | LMF-Plan: Datum, Stunde, Art, Klassennamen, Vermerk — kein Schülerbezug (Kollegium liest ihn im Portal)                                                                                      |
-| `GET /api/lmf-termine/pdf`                           | Sitzung             | 0     | derselbe Plan als PDF                                                                                                                                                                        |
+| `GET /api/lmf-termine/pdf`                           | Sitzung             | 0     | derselbe Plan als PDF (nur veröffentlichte Pläne, Migration 100)                                                                                                                             |
+| `GET /api/lmf-termine/entwurf/pdf`                   | edit_books          | 0     | derselbe Plan als PDF samt unveröffentlichtem Entwurf — zur Abnahme durch die Schulleitung (seit 06.09.2026)                                                                                 |
 | `GET /api/lmf-plan/{art}`                            | edit_books          | 0     | LMF-Plan als Reihenfolge (Migration 097): Rahmen, Zeilen mit Klassennamen, ausgelassene Klassen, Vorschlag aus Vorjahr/Regel, Klassenliste — kein Schülerbezug                               |
 | `PUT /api/lmf-plan/{art}`                            | edit_books          | 0     | rechnet die Verteilung (auch als Vorschau) und speichert; Antwort = der Stand plus Zähler angepasster Fristen                                                                                |
 | `DELETE /api/lmf-plan/{art}`                         | edit_books          | 0     | nur Zähler                                                                                                                                                                                   |
+| `POST /api/lmf-plan/{art}/veroeffentlichen`          | edit_books          | 0     | stempelt den Entwurf als veröffentlicht (Migration 100); Antwort = der Stand plus Zähler angepasster Fristen — kein Schülerbezug                                                             |
 | `GET /api/buecher/titel/{id}/ausleiher`              | view_students       | 1     | aktuelle Ausleiher: Name, Klasse, Fristen                                                                                                                                                    |
 | `GET /api/buecher/titel/{id}/historie`               | view_students       | 2     | Leser-Historie eines Titels                                                                                                                                                                  |
 | `GET /api/buecher/titel/{id}/etiketten`              | view_books          | 0     | Etiketten-PDF                                                                                                                                                                                |

@@ -28,6 +28,9 @@ type LmfPlan struct {
 	ErsterTag       string `json:"erster_tag"`       // YYYY-MM-DD
 	Startstunde     int    `json:"startstunde"`
 	StundenJeTag    int    `json:"stunden_je_tag"`
+	// VeroeffentlichtAm: nil = Entwurf (Migration 100) — nur im Planer sichtbar, keine
+	// Fristen. Gesetzt (RFC 3339) = gilt für Portal, PDF und Frist-Kopplung.
+	VeroeffentlichtAm *string `json:"veroeffentlicht_am"`
 	// FreieTage: Tage, die dieser Plan überspringt (Migration 099) — bewegliche
 	// Ferientage, pädagogische Tage, der Brückentag nach Fronleichnam. Gesetzliche
 	// Feiertage stehen hier nicht, die kennt der Server (pkg/lmfplan).
@@ -59,20 +62,44 @@ type LmfPlanStand struct {
 	Ausgelassen []string       `json:"ausgelassen"`
 }
 
+// lmfPlanSpalten ist die eine Spaltenliste des Rahmens — für Lesen, Speichern und
+// Veröffentlichen dieselbe, damit kein Weg ein Feld vergisst (scanLmfPlan liest sie).
+const lmfPlanSpalten = `id, art, to_char(schuljahr_beginn, 'YYYY-MM-DD'), to_char(erster_tag, 'YYYY-MM-DD'),
+		       startstunde, stunden_je_tag, veroeffentlicht_am`
+
+// scanLmfPlan liest lmfPlanSpalten in den Rahmen; der Stempel kommt als RFC 3339 in der
+// Schulzeitzone, weil die Oberfläche ihn nur anzeigt.
+func scanLmfPlan(row pgx.Row, p *LmfPlan) error {
+	var veroeffentlicht *time.Time
+	if err := row.Scan(&p.ID, &p.Art, &p.SchuljahrBeginn, &p.ErsterTag, &p.Startstunde, &p.StundenJeTag, &veroeffentlicht); err != nil {
+		return err
+	}
+	p.VeroeffentlichtAm = nil
+	if veroeffentlicht != nil {
+		s := veroeffentlicht.In(schulzeit.Zone()).Format(time.RFC3339)
+		p.VeroeffentlichtAm = &s
+	}
+	return nil
+}
+
 // NeuesterLmfPlan liefert den Plan der Art mit dem spätesten ersten Tag — der, an dem
-// gearbeitet wird oder der zuletzt galt. pgx.ErrNoRows, wenn es noch keinen gibt.
+// gearbeitet wird oder der zuletzt galt, Entwurf oder veröffentlicht. pgx.ErrNoRows,
+// wenn es noch keinen gibt.
 func (r *LmfTerminRepository) NeuesterLmfPlan(ctx context.Context, art string) (LmfPlanStand, error) {
 	var st LmfPlanStand
-	err := r.db.QueryRow(ctx, `
-		SELECT id, art, to_char(schuljahr_beginn, 'YYYY-MM-DD'), to_char(erster_tag, 'YYYY-MM-DD'),
-		       startstunde, stunden_je_tag
+	err := scanLmfPlan(r.db.QueryRow(ctx, `
+		SELECT `+lmfPlanSpalten+`
 		FROM lmf_plaene WHERE art = $1
-		ORDER BY erster_tag DESC LIMIT 1`, art).
-		Scan(&st.Plan.ID, &st.Plan.Art, &st.Plan.SchuljahrBeginn, &st.Plan.ErsterTag,
-			&st.Plan.Startstunde, &st.Plan.StundenJeTag)
+		ORDER BY erster_tag DESC LIMIT 1`, art), &st.Plan)
 	if err != nil {
 		return st, err
 	}
+	return r.ladeLmfPlanTeile(ctx, st)
+}
+
+// ladeLmfPlanTeile ergänzt einen gelesenen Rahmen um Zeilen, freie Tage und Auslassungen.
+func (r *LmfTerminRepository) ladeLmfPlanTeile(ctx context.Context, st LmfPlanStand) (LmfPlanStand, error) {
+	var err error
 	if st.Zeilen, err = r.lmfPlanZeilen(ctx, st.Plan.ID); err != nil {
 		return st, err
 	}
@@ -146,7 +173,9 @@ func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID str
 // SaveLmfPlan legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt
 // ihn um — Rahmen (mit freien Tagen), Zeilen (vollständig ersetzt, mit Platz, Position
 // und fest-Marke) und ausgelassene Klassen in einer Transaktion. Klassennamen laufen
-// durch das Vokabular; die Antwort trägt die kanonisierten Namen.
+// durch das Vokabular; die Antwort trägt die kanonisierten Namen. Der Veröffentlichungs-
+// Stempel bleibt, wie er ist: Ein neuer Plan ist Entwurf, ein veröffentlichter bleibt
+// veröffentlicht (Migration 100).
 func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zeilen []LmfPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LmfPlanStand, error) {
 	ersterTag, err := time.ParseInLocation("2006-01-02", plan.ErsterTag, schulzeit.Zone())
 	if err != nil {
@@ -160,17 +189,14 @@ func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zei
 
 	sjb := SchuljahrBeginn(ersterTag)
 	var st LmfPlanStand
-	if err := tx.QueryRow(ctx, `
+	if err := scanLmfPlan(tx.QueryRow(ctx, `
 		INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag)
 		VALUES ($1, $2, $3, $4, $5)
 		ON CONFLICT (art, schuljahr_beginn) DO UPDATE
 		  SET erster_tag = EXCLUDED.erster_tag, startstunde = EXCLUDED.startstunde,
 		      stunden_je_tag = EXCLUDED.stunden_je_tag
-		RETURNING id, art, to_char(schuljahr_beginn, 'YYYY-MM-DD'), to_char(erster_tag, 'YYYY-MM-DD'),
-		          startstunde, stunden_je_tag`,
-		plan.Art, sjb, ersterTag, plan.Startstunde, plan.StundenJeTag).
-		Scan(&st.Plan.ID, &st.Plan.Art, &st.Plan.SchuljahrBeginn, &st.Plan.ErsterTag,
-			&st.Plan.Startstunde, &st.Plan.StundenJeTag); err != nil {
+		RETURNING `+lmfPlanSpalten,
+		plan.Art, sjb, ersterTag, plan.Startstunde, plan.StundenJeTag), &st.Plan); err != nil {
 		return st, err
 	}
 	// Zeilen vollständig ersetzen: Der Plan IST die Reihenfolge, Einzel-IDs gibt es nicht.
@@ -271,11 +297,14 @@ func (r *LmfTerminRepository) FreieTage(ctx context.Context, von, bis time.Time)
 	return frei, rows.Err()
 }
 
-// KlasseImPlan ist eine Klasse für den Vorschlag der Reihenfolge.
+// KlasseImPlan ist eine Klasse für den Vorschlag der Reihenfolge. Jahrgang ist die
+// führende Zahl des Namens (99 ohne Ziffer) — der Ausgabe-Plan wählt danach die
+// Eingangsjahrgänge aus.
 type KlasseImPlan struct {
 	Name      string
 	Abschluss bool
 	Oberstufe bool
+	Jahrgang  int
 }
 
 // KlassenMitSchuelern nennt die Klassen aktiver Schüler in der Reihenfolge, in der die
@@ -299,11 +328,10 @@ func (r *LmfTerminRepository) KlassenMitSchuelern(ctx context.Context) ([]Klasse
 	klassen := []KlasseImPlan{}
 	for rows.Next() {
 		var k KlasseImPlan
-		var jahrgang int
-		if err := rows.Scan(&k.Name, &k.Abschluss, &jahrgang); err != nil {
+		if err := rows.Scan(&k.Name, &k.Abschluss, &k.Jahrgang); err != nil {
 			return nil, err
 		}
-		k.Oberstufe = jahrgang >= 11
+		k.Oberstufe = k.Jahrgang >= 11
 		klassen = append(klassen, k)
 	}
 	return klassen, rows.Err()

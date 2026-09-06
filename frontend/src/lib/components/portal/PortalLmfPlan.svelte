@@ -11,12 +11,16 @@
 
 	/** @type {any[]} */
 	let termine = $state([]);
+	/** @type {number[]} */
+	let eingangsjahrgaenge = $state([]);
 	let laedt = $state(true);
 	let fehler = $state('');
 
 	onMount(async () => {
 		try {
-			termine = (await dienst.ladePlan()).termine;
+			const plan = await dienst.ladePlan();
+			termine = plan.termine;
+			eingangsjahrgaenge = plan.eingangsjahrgaenge ?? [];
 		} catch (e) {
 			fehler = `${e}`;
 		} finally {
@@ -27,8 +31,9 @@
 
 <div class="flex flex-wrap items-center justify-between gap-3 pb-2">
 	<p class="text-sm text-on-surface-variant max-w-2xl">
-		Wann welche Klasse ihre Schulbücher zurückgibt oder neue bekommt — der Plan der Bibliothek,
-		immer auf dem aktuellen Stand.
+		Wann welche Klasse ihre Schulbücher tauscht oder bekommt: der Büchertausch vor den Sommerferien
+		und die Ausgabe an die neuen Klassen danach — der Plan der Bibliothek, immer auf dem aktuellen
+		Stand.
 	</p>
 	<Button variant="secondary" onclick={() => dienst.ladePdf()} disabled={termine.length === 0}>
 		<Printer class="h-4 w-4" aria-hidden="true" />
@@ -53,9 +58,9 @@
 		</div>
 		<h3 class="font-bold text-on-surface">Noch kein Plan für dieses Schuljahr</h3>
 		<p class="text-xs text-on-surface-variant max-w-sm mx-auto">
-			Sobald die Bibliothek die Termine einträgt, stehen sie hier.
+			Sobald die Bibliothek den Plan veröffentlicht, steht er hier.
 		</p>
 	</div>
 {:else}
-	<LmfPlanTabelle {termine} />
+	<LmfPlanTabelle {termine} {eingangsjahrgaenge} />
 {/if}

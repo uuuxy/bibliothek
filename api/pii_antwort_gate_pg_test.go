@@ -130,8 +130,8 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	// Ein LMF-Termin, damit GET /api/lmf-termine/pdf etwas zu rendern hat (leer = 404).
 	// Stufe 0: Datum, Stunde, Art, Vermerk — bewusst kanarienfrei.
 	var planID string
-	if err := pool.QueryRow(ctx, `INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag)
-	     VALUES ('rueckgabe', DATE '2098-08-01', DATE '2099-06-28', 1, 6) RETURNING id`).Scan(&planID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO lmf_plaene (art, schuljahr_beginn, erster_tag, startstunde, stunden_je_tag, veroeffentlicht_am)
+	     VALUES ('rueckgabe', DATE '2098-08-01', DATE '2099-06-28', 1, 6, CURRENT_TIMESTAMP) RETURNING id`).Scan(&planID); err != nil {
 		t.Fatalf("Gate-Plan: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `INSERT INTO lmf_termine (plan_id, position, datum, stunde, art, vermerk)
@@ -254,6 +254,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/klassen":                                  {URL: "/api/klassen"},
 		"GET /api/lmf-termine":                              {URL: "/api/lmf-termine"},
 		"GET /api/lmf-termine/pdf":                          {URL: "/api/lmf-termine/pdf"},
+		"GET /api/lmf-termine/entwurf/pdf":                  {URL: "/api/lmf-termine/entwurf/pdf"},
 		"GET /api/lmf-plan/{art}":                           {URL: "/api/lmf-plan/rueckgabe"},
 		"GET /api/klassen-mapping":                          {URL: "/api/klassen-mapping"},
 		"GET /api/abgaenger":                                {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},

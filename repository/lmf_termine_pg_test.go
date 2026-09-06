@@ -53,10 +53,27 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Errorf("Auslassungen: %v", st.Ausgelassen)
 	}
 
+	// Gespeichert ist ein ENTWURF (Migration 100): Die Liste des Kollegiums sieht nichts,
+	// der Planer mit MitEntwuerfen alles. Erst das Veröffentlichen öffnet die Liste.
+	ab := time.Date(2025, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
+	if st.Plan.VeroeffentlichtAm != nil {
+		t.Errorf("frisch gespeichert muss ein Entwurf sein, Stempel: %v", *st.Plan.VeroeffentlichtAm)
+	}
+	if entwurf, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{}); err != nil || len(entwurf) != 0 {
+		t.Errorf("Entwurf darf in der Liste nicht stehen: %d (%v)", len(entwurf), err)
+	}
+	if planer, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{MitEntwuerfen: true}); err != nil || len(planer) != 6 {
+		t.Errorf("der Planer sieht den Entwurf: %d (%v)", len(planer), err)
+	}
+	stempel := time.Date(2026, time.May, 20, 10, 0, 0, 0, schulzeit.Zone())
+	veroeffentlicht, err := repo.VeroeffentlicheLmfPlan(ctx, st.Plan.ID, stempel)
+	if err != nil || veroeffentlicht.Plan.VeroeffentlichtAm == nil || len(veroeffentlicht.Zeilen) != 6 {
+		t.Fatalf("veröffentlichen: %+v (%v)", veroeffentlicht.Plan, err)
+	}
+	st = veroeffentlicht
 	// Liste ab Schuljahresbeginn: alle sechs, sortiert nach Platz; das Vokabular hat
 	// die Schreibweise vereinheitlicht („9h1" → registrierte Form).
-	ab := time.Date(2025, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
-	liste, err := repo.ListLmfTermine(ctx, ab)
+	liste, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{Eingangsjahrgaenge: []int{5, 7}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,11 +83,18 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	if klassenNorm(liste[0].Klassen[0]) != "9h1" {
 		t.Errorf("Klasse der ersten Zeile: %v", liste[0].Klassen)
 	}
-	spaeter, err := repo.ListLmfTermine(ctx, time.Date(2026, time.August, 1, 0, 0, 0, 0, schulzeit.Zone()))
+	// „Nur Rückgabe": 9H1, 9H2, 10R1/10R2, 10R3 sind Abschlussklassen; 8H1 tauscht; die
+	// Zeile ohne Klasse ist keins von beidem.
+	for i, soll := range []bool{true, true, true, true, false, false} {
+		if liste[i].NurRueckgabe != soll {
+			t.Errorf("Zeile %d (%v): nur_rueckgabe=%v, erwartet %v", i+1, liste[i].Klassen, liste[i].NurRueckgabe, soll)
+		}
+	}
+	spaeter, err := repo.ListLmfTermine(ctx, time.Date(2026, time.August, 1, 0, 0, 0, 0, schulzeit.Zone()), LmfListenFilter{})
 	if err != nil || len(spaeter) != 0 {
 		t.Errorf("ab August 2026 darf nichts mehr zu sehen sein: %d (%v)", len(spaeter), err)
 	}
-	alle, err := repo.ListLmfTermine(ctx, time.Time{})
+	alle, err := repo.ListLmfTermine(ctx, time.Time{}, LmfListenFilter{})
 	if err != nil || len(alle) != 6 {
 		t.Errorf("alle hebt die Grenze auf: %d (%v)", len(alle), err)
 	}
@@ -109,11 +133,15 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Errorf("Reihenfolge: %+v", reihe)
 	}
 
-	// Zweites Speichern im selben Schuljahr ERSETZT (eine Zeile weniger, andere Startstunde).
+	// Zweites Speichern im selben Schuljahr ERSETZT (eine Zeile weniger, andere Startstunde)
+	// — und der Stempel bleibt: ein veröffentlichter Plan wird durch Umschreiben kein Entwurf.
 	st2 := speicherePlan(t, repo, LmfTerminRueckgabe, "2026-06-15", 1, 6,
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}}}, nil)
 	if st2.Plan.ID != st.Plan.ID {
 		t.Errorf("gleiches Schuljahr muss denselben Plan umschreiben: %s ≠ %s", st2.Plan.ID, st.Plan.ID)
+	}
+	if st2.Plan.VeroeffentlichtAm == nil {
+		t.Error("Umschreiben eines veröffentlichten Plans darf den Stempel nicht löschen")
 	}
 	neuester, err := repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe)
 	if err != nil || len(neuester.Zeilen) != 1 || neuester.Plan.Startstunde != 1 || len(neuester.Ausgelassen) != 0 {
@@ -124,6 +152,9 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		[]LmfPlanZeile{{Klassen: []string{"9H1"}}, {Klassen: []string{"9H2"}}}, nil)
 	if st3.Plan.ID == st.Plan.ID {
 		t.Error("neues Schuljahr muss einen neuen Plan anlegen")
+	}
+	if st3.Plan.VeroeffentlichtAm != nil {
+		t.Error("der Plan des neuen Schuljahres beginnt als Entwurf")
 	}
 	if neuester, err = repo.NeuesterLmfPlan(ctx, LmfTerminRueckgabe); err != nil || neuester.Plan.ID != st3.Plan.ID {
 		t.Errorf("neuester Plan: %+v (%v)", neuester.Plan, err)

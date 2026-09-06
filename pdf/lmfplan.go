@@ -25,8 +25,9 @@ type LmfPlanZeile struct {
 
 // LmfPlanAbschnitt ist „BÜCHERRÜCKGABE" oder „BÜCHERAUSGABE" mit seinen Zeilen.
 type LmfPlanAbschnitt struct {
-	Titel  string
-	Zeilen []LmfPlanZeile
+	Titel      string
+	Untertitel string // der eine Satz unter der Überschrift (was in diesem Abschnitt geschieht)
+	Zeilen     []LmfPlanZeile
 }
 
 var wochentage = [...]string{"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"}
@@ -58,6 +59,10 @@ func GenerateLmfPlan(abschnitte []LmfPlanAbschnitt, stand time.Time) ([]byte, er
 		}
 		p.Add(row.New(8).Add(col.New(12).Add(
 			text.New(a.Titel, props.Text{Size: 13, Style: fontstyle.Bold, Align: align.Center}))))
+		if a.Untertitel != "" {
+			p.Add(row.New(6).Add(col.New(12).Add(
+				text.New(a.Untertitel, props.Text{Size: 8, Style: fontstyle.Italic, Align: align.Center}))))
+		}
 		p.Add(row.New(6).Add(col.New(12).Add(
 			text.New("Sortiert nach Zeitpunkt/Termin", props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Center}))))
 		p.Add(row.New(6).Add(

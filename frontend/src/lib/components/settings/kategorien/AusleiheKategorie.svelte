@@ -26,6 +26,7 @@
 	let fristMedien = $state(start.frist_medien_tage ?? 7);
 	let maxAusleihen = $state(start.max_ausleihen_schueler ?? 5);
 	let lmfStichtag = $state(start.lmf_stichtag ?? '07-31');
+	let lmfEingang = $state(start.lmf_eingangsjahrgaenge ?? '5, 7');
 	let leseclubAktiv = $state(start.ferien_leseclub_aktiv ?? false);
 	let leseclubZieldatum = $state(start.ferien_leseclub_zieldatum ?? '');
 
@@ -33,6 +34,7 @@
 		speichereKategorie({
 			felder: {
 				lmf_stichtag: lmfStichtag,
+				lmf_eingangsjahrgaenge: lmfEingang,
 				ferien_leseclub_aktiv: leseclubAktiv,
 				ferien_leseclub_zieldatum: leseclubZieldatum
 			},
@@ -52,13 +54,19 @@
 
 <KategorieRahmen
 	titel="Ausleihe & Fristen"
-	kurz="Rückgabefristen, Ausleih-Obergrenze und der Stichtag der Lernmittelfreiheit."
+	kurz="Rückgabefristen, Ausleih-Obergrenze, Stichtag und Eingangsjahrgänge der Lernmittelfreiheit."
 	{speichern}
 >
 	{#snippet mehr()}
 		<p>
 			Bücher und Medien haben getrennte Fristen, weil eine DVD schneller zurückkommt als ein
 			Lesebuch. Lernmittel (LMF) laufen nicht auf Tage, sondern bis zum Stichtag am Schuljahresende.
+		</p>
+		<p>
+			Die Eingangsjahrgänge sind die Klassen, die zum neuen Schuljahr neu gebildet werden (an dieser
+			Schule die 5er und die 7er nach der Förderstufe). Sie bekommen ihre Schulbücher erst nach den
+			Sommerferien; der Jahrgang davor gibt beim Büchertausch nur zurück. Der LMF-Plan liest das
+			hier.
 		</p>
 		<p>
 			Der Ferien-Leseclub überschreibt beide Fristen: Solange er aktiv ist, bekommt JEDE neue
@@ -77,6 +85,14 @@
 			placeholder="07-31"
 			pattern={'\\d{2}-\\d{2}'}
 			maxlength={5}
+		/>
+		<Feld
+			bind:value={lmfEingang}
+			label="Eingangsjahrgänge"
+			type="text"
+			placeholder="5, 7"
+			hint="Jahrgänge, die nach den Ferien Bücher bekommen"
+			maxlength={20}
 		/>
 	</div>
 

@@ -4,12 +4,13 @@
      Entfernen (Klasse aus einer geteilten Stunde, freier Tag); mit `onklick` ein
      Assist-Chip, und der beginnt nach M3 mit einem Verb („Write assist chips like
      buttons: start with a verb") — „12T3 einplanen". Eine EINZELNE Klasse in einer
-     Zeile ist deshalb kein Chip, sondern Text (LmfPlanZeile). -->
+     Zeile ist deshalb kein Chip, sondern Text (LmfPlanZeile). `hinweis` hängt eine
+     leise Einordnung an („ohne Schüler"), ohne einen zweiten Chip zu bauen. -->
 <script>
 	import { Plus, X } from '@lucide/svelte';
 
-	/** @type {{ name: string, onentfernen?: () => void, onklick?: () => void }} */
-	let { name, onentfernen = undefined, onklick = undefined } = $props();
+	/** @type {{ name: string, hinweis?: string, onentfernen?: () => void, onklick?: () => void }} */
+	let { name, hinweis = '', onentfernen = undefined, onklick = undefined } = $props();
 </script>
 
 {#if onklick}
@@ -17,10 +18,11 @@
 		type="button"
 		onclick={onklick}
 		class="inline-flex h-8 cursor-pointer items-center gap-1 rounded-md border border-outline px-3 text-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
-		title="{name} einplanen"
+		title="{name} einplanen{hinweis ? ` (${hinweis})` : ''}"
 	>
 		<Plus class="h-4 w-4" aria-hidden="true" />
 		{name} einplanen
+		{#if hinweis}<span class="font-normal text-on-surface-variant">· {hinweis}</span>{/if}
 	</button>
 {:else}
 	<span
@@ -29,6 +31,7 @@
 			: 'pr-3'}"
 	>
 		{name}
+		{#if hinweis}<span class="font-normal opacity-80">· {hinweis}</span>{/if}
 		{#if onentfernen}
 			<!-- 32 × 32 px: die ganze Chip-Höhe als Zielfläche (Gate icon-trefferflaechen,
 			     M3 Icon-Button „extra small"); vorher 24 px und damit zu klein. -->

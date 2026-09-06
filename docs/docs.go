@@ -1580,6 +1580,25 @@ const docTemplate = `{
                 }
             }
         },
+        "/lmf-plan/{art}/veroeffentlichen": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "lernmittel"
+                ],
+                "summary": "LMF-Plan veröffentlichen",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.LmfPlanSpeicherAntwort"
+                        }
+                    }
+                }
+            }
+        },
         "/lmf-termine": {
             "get": {
                 "description": "Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle), plus Klassen ohne Rückgabe-Termin.",
@@ -2911,8 +2930,22 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "eingangsjahrgaenge": {
+                    "description": "Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
                 "klassen": {
-                    "description": "Klassen: alle Klassen des Vokabulars, für die Auswahl im Planer.",
+                    "description": "Klassen: die Klassen mit aktiven Schülern, für die Auswahl im Planer. Eine Klasse\nim Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nur_rueckgabe": {
+                    "description": "NurRueckgabe (nur beim Rückgabe-Plan): Klassen, die vor den Ferien nur abgeben —\nAbschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -3351,6 +3384,9 @@ const docTemplate = `{
                 "lesehistorie_tage": {
                     "type": "integer"
                 },
+                "lmf_eingangsjahrgaenge": {
+                    "type": "string"
+                },
                 "lmf_stichtag": {
                     "type": "string"
                 },
@@ -3459,6 +3495,10 @@ const docTemplate = `{
                 },
                 "stunden_je_tag": {
                     "type": "integer"
+                },
+                "veroeffentlicht_am": {
+                    "description": "VeroeffentlichtAm: nil = Entwurf (Migration 100) — nur im Planer sichtbar, keine\nFristen. Gesetzt (RFC 3339) = gilt für Portal, PDF und Frist-Kopplung.",
+                    "type": "string"
                 }
             }
         },
@@ -3506,6 +3546,9 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "nur_rueckgabe": {
+                    "type": "boolean"
                 },
                 "stunde": {
                     "type": "integer"
@@ -3604,6 +3647,10 @@ const docTemplate = `{
                 "lesehistorie_tage": {
                     "description": "Datenschutz (A1): Tage nach der Rückgabe, nach denen die Ausleihe vom Schüler getrennt\nwird (schueler_id = NULL) — getrennt für Schülerbücherei und Lernmittel. 0 = nie.\nSitzung (A4): Minuten Inaktivität bis Theke leeren bzw. Sperrbildschirm. 0 = aus.\nZeiger, Vorgaben und Begründung: system_settings_datenschutz.go.",
                     "type": "integer"
+                },
+                "lmf_eingangsjahrgaenge": {
+                    "description": "LmfEingangsjahrgaenge: die Jahrgänge, die nach den Sommerferien ihre Bücher\nbekommen, weil ihre Klassen neu gebildet werden („5, 7\"; EingangsjahrgaengeAus).",
+                    "type": "string"
                 },
                 "lmf_stichtag": {
                     "description": "\"MM-DD\" format, e.g. \"07-31\"",

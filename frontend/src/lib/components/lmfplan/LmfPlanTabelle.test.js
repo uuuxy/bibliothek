@@ -22,8 +22,8 @@ const termine = [
 describe('LmfPlanTabelle', () => {
 	it('gruppiert nach Art und zeigt Wochentag, Datum, Stunde, Klassen und Vermerk', () => {
 		const { getByRole, getAllByRole, getByText } = render(LmfPlanTabelle, { termine });
-		expect(getByRole('region', { name: 'Bücherrückgabe' })).toBeTruthy();
-		expect(getByRole('region', { name: 'Bücherausgabe' })).toBeTruthy();
+		expect(getByRole('region', { name: 'Büchertausch vor den Sommerferien' })).toBeTruthy();
+		expect(getByRole('region', { name: 'Bücherausgabe nach den Sommerferien' })).toBeTruthy();
 		expect(getAllByRole('table')).toHaveLength(2);
 		expect(getByText('Montag')).toBeTruthy(); // 28.06.2027
 		expect(getByText('28.06.27')).toBeTruthy();
@@ -41,7 +41,40 @@ describe('LmfPlanTabelle', () => {
 		const { queryByRole } = render(LmfPlanTabelle, {
 			termine: termine.filter((t) => t.art === 'ausgabe')
 		});
-		expect(queryByRole('region', { name: 'Bücherrückgabe' })).toBeNull();
-		expect(queryByRole('region', { name: 'Bücherausgabe' })).toBeTruthy();
+		expect(queryByRole('region', { name: 'Büchertausch vor den Sommerferien' })).toBeNull();
+		expect(queryByRole('region', { name: 'Bücherausgabe nach den Sommerferien' })).toBeTruthy();
+	});
+
+	// „Nur Rückgabe" kommt vom Server (Abschlussklasse, neu gebildete Klasse) und steht als
+	// Chip vor dem Vermerk; der Satz unter der Überschrift nennt die Eingangsjahrgänge.
+	it('markiert Zeilen, die nur zurückgeben, und erklärt die Blöcke', () => {
+		const { getByText, container } = render(LmfPlanTabelle, {
+			termine: [
+				{
+					id: 'a',
+					datum: '2027-06-28',
+					stunde: 1,
+					art: 'rueckgabe',
+					klassen: ['09H1'],
+					vermerk: '',
+					nur_rueckgabe: true
+				},
+				{
+					id: 'b',
+					datum: '2027-08-10',
+					stunde: 2,
+					art: 'ausgabe',
+					klassen: ['07G1'],
+					vermerk: 'neu',
+					nur_rueckgabe: false
+				}
+			],
+			eingangsjahrgaenge: [5, 7]
+		});
+		expect(getByText('nur Rückgabe')).toBeTruthy();
+		const zeilen = [...container.querySelectorAll('tbody tr')].map((tr) => tr.textContent ?? '');
+		expect(zeilen.find((z) => z.includes('09H1'))).toContain('nur Rückgabe');
+		expect(zeilen.find((z) => z.includes('07G1'))).not.toContain('nur Rückgabe');
+		expect(getByText(/Jahrgang 5 und 7/)).toBeTruthy();
 	});
 });

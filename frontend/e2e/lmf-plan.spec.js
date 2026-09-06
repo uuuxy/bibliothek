@@ -57,7 +57,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
-	await page.getByRole('button', { name: 'Bücherausgabe' }).click();
+	await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
 	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
 
 	// Die Klasse in den Plan holen — sie landet am Ende, hinter dem Regel-Vorschlag.
@@ -129,18 +129,46 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(geteilt).toContainText(vorherige);
 	await expect(geteilt).toContainText(klasse);
 
-	await page.getByRole('button', { name: 'Plan speichern' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Plan vom 09.08.27');
+	// Die getippte Klasse hat noch keine Schüler — der Planer sagt es (Peter, 06.09.2026:
+	// Klassen wechseln mit dem Schuljahr; was übrig bleibt, gehört raus oder kommt mit dem Import).
+	await expect(zeile.getByText('ohne Schüler')).toBeVisible();
+	await expect(page.getByTestId('lmf-ohne-schueler')).toContainText(klasse);
 
-	// Das Kollegium sieht denselben Plan im Portal — ohne edit_books, nur mit Sitzung.
+	await page.getByRole('button', { name: 'Plan speichern' }).click();
+	// Gespeichert ist ein ENTWURF (Migration 100): sichtbar nur hier, nicht im Portal.
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Entwurf vom 09.08.27');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('nicht im Portal');
+
+	// Das Kollegium sieht denselben Plan im Portal — ohne edit_books, nur mit Sitzung —
+	// aber erst nach dem Veröffentlichen.
 	const lehrerKontext = await browser.newContext();
 	const lehrer = await lehrerKontext.newPage();
 	try {
 		await uiLogin(lehrer, LEHRER_EMAIL);
 		await lehrer.getByTitle('Mein Portal').click();
 		await lehrer.getByRole('tab', { name: 'LMF-Plan' }).click();
-		const portal = lehrer.getByRole('region', { name: 'Bücherausgabe' });
+		const portal = lehrer.getByRole('region', { name: 'Bücherausgabe nach den Sommerferien' });
 		const portalZeile = portal.getByRole('row').filter({ hasText: vermerk });
+		await expect(lehrer.getByText('Noch kein Plan für dieses Schuljahr')).toBeVisible();
+		await expect(portalZeile).toHaveCount(0);
+		// Der Entwurf ist auch über die Leitung unsichtbar, nicht nur in der Oberfläche.
+		const entwurfListe = await lehrer.request.get('/api/lmf-termine');
+		expect(
+			(await entwurfListe.json()).termine.some((/** @type {any} */ t) => t.vermerk === vermerk),
+			'Entwurf steht in der Portal-Liste'
+		).toBe(false);
+		expect(
+			(await lehrer.request.get('/api/lmf-termine/entwurf/pdf')).status(),
+			'Kollegium lädt das Entwurfs-PDF'
+		).toBe(403);
+
+		page.once('dialog', (d) => d.accept());
+		await page.getByRole('button', { name: 'Veröffentlichen' }).click();
+		await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('veröffentlicht am');
+		await expect(page.getByRole('button', { name: 'Veröffentlichen' })).toHaveCount(0);
+
+		await lehrer.reload();
+		await lehrer.getByRole('tab', { name: 'LMF-Plan' }).click();
 		await expect(portalZeile).toBeVisible();
 		await expect(portalZeile).toContainText(soll.wochentag);
 		await expect(portalZeile).toContainText(soll.stunde);
@@ -186,7 +214,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
-	await page.getByRole('button', { name: 'Bücherausgabe' }).click();
+	await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
 	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
 	await page.getByLabel('Weitere Klasse').fill(klasse);
 	await page.getByRole('button', { name: 'In den Plan' }).click();
@@ -213,7 +241,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await expect(zeile).toContainText('Freitag');
 
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Plan vom 09.08.27');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Entwurf vom 09.08.27');
 	try {
 		const stand = await (await page.request.get('/api/lmf-plan/ausgabe')).json();
 		const gespeichert = stand.zeilen.find((/** @type {any} */ z) => z.klassen.includes(klasse));
@@ -223,7 +251,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 
 		// Nach dem Neuladen ist der feste Platz wieder ein Eingabefeld mit seinem Datum.
 		await page.reload();
-		await page.getByRole('button', { name: 'Bücherausgabe' }).click();
+		await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
 		await expect(
 			tabelle.getByRole('row').filter({ hasText: klasse }).getByLabel(`Fester Tag Zeile ${nummer}`)
 		).toHaveValue('2027-08-20');

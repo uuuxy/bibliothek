@@ -56,13 +56,19 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Lesen: jede Sitzung (das Kollegium liest den Plan im Portal; Stufe 0 — Daten und
 	// Klassennamen). Schreiben: edit_books wie die übrige Lernmittel-Pflege.
 	mux.Handle("GET /api/lmf-termine", s.RequireAuthenticated()(s.GetLmfTermineHandler()))
-	mux.Handle("GET /api/lmf-termine/pdf", s.RequireAuthenticated()(s.GetLmfPlanPDFHandler()))
+	mux.Handle("GET /api/lmf-termine/pdf", s.RequireAuthenticated()(s.GetLmfPlanPDFHandler(false)))
+	// Der Entwurf als PDF — zur Abnahme durch die Schulleitung, bevor er veröffentlicht
+	// ist (Migration 100). Nur der Planer; das Kollegium sieht Entwürfe nirgends.
+	mux.Handle("GET /api/lmf-termine/entwurf/pdf", s.RequirePermission("edit_books")(s.GetLmfPlanPDFHandler(true)))
 	// Geschrieben wird der Plan als REIHENFOLGE (Migration 097, lmf_plan.go): ein Aufruf
 	// je Art, Vorschau über denselben Aufruf. Einzel-Termin-Routen gibt es seit dem
 	// 05.09.2026 abends nicht mehr — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
 	mux.Handle("GET /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.GetLmfPlanHandler()))
 	mux.Handle("PUT /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.PutLmfPlanHandler()))
 	mux.Handle("DELETE /api/lmf-plan/{art}", s.RequirePermission("edit_books")(s.DeleteLmfPlanHandler()))
+	// Veröffentlichen: Speichern legt einen Entwurf an, erst dieser Aufruf macht ihn für
+	// Portal und PDF sichtbar und setzt bei einem Rückgabe-Plan die Fristen.
+	mux.Handle("POST /api/lmf-plan/{art}/veroeffentlichen", s.RequirePermission("edit_books")(s.PostLmfPlanVeroeffentlichenHandler()))
 	mux.Handle("PATCH /api/admin/ausleihen/{id}/faelligkeit", s.RequirePermission("edit_books")(s.OverrideDueDateHandler(auditRepo)))
 
 	// Live ISBN Lookup

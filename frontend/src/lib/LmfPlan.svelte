@@ -1,11 +1,8 @@
-<!-- @component LmfPlan — der Planer: Der Plan ist eine REIHENFOLGE von Klassen, die der
-     Server auf Schultage × Stunden gießt (Peter, 05.09.2026, am echten Plan der Schule:
-     Abschlussklassen zuerst, dann jeder Schultag Stunde 1–6, die Reihenfolge läuft über
-     die Tage weiter). Oben der Rahmen, darunter die Reihenfolge als die bekannte Tabelle
-     mit Vorschau der Plätze, unten „Nicht im Plan". Feiertage rechnet der Server, freie
-     Tage der Schule stehen am Plan, und eine Zeile kann ihren Platz fest bekommen (die
-     Klasse mit dem Ausflug). Ein neuer Plan beginnt mit der Reihenfolge des Vorjahres. Gespeichert wird ausdrücklich — Rückgabe-Termine setzen
-     Fristen. Menüpunkt System → „Schuljahreswechsel" (Peter, 05.09.2026 abends). -->
+<!-- @component LmfPlan — der Planer: eine REIHENFOLGE von Klassen, die der Server auf
+     Schultage × Stunden gießt (Peter, 05.09.2026): Rahmen, Reihenfolge mit Vorschau der
+     Plätze, „Nicht im Plan". Gespeichert wird ein ENTWURF (Migration 100), für Portal und
+     Kollegiums-PDF unsichtbar; erst „Veröffentlichen" macht ihn gültig und setzt beim
+     Büchertausch die Fristen (die Schulleitung nimmt ihn vorher ab). System → „Schuljahreswechsel". -->
 <script>
 	import { onMount, untrack } from 'svelte';
 	import PageShell from './components/layout/PageShell.svelte';
@@ -21,25 +18,15 @@
 	/** @type {import('./lmfplanDienst.js').PlanStand | null} */
 	let stand = $state(null);
 	/** @type {import('./lmfplanDienst.js').PlanEntwurf} */
-	let entwurf = $state({
-		erster_tag: '',
-		startstunde: 1,
-		stunden_je_tag: 6,
-		freie_tage: [],
-		zeilen: [],
-		ausgelassen: []
-	});
+	let entwurf = $state(dienst.leererEntwurf());
 	/** @type {{ datum: string, stunde: number }[]} */
 	let plaetze = $state([]);
 	/** @type {import('./lmfplanDienst.js').Ausfall[]} */
 	let ausfaelle = $state([]);
 	let laedt = $state(true);
 	let speichert = $state(false);
-	// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan: Sonst stünde nach
-	// einem Netzfehler „Noch kein Plan" da, der Planer böte die Regel-Reihenfolge an —
-	// und ein Klick auf „Plan speichern" ersetzte den echten Plan des Schuljahres durch
-	// diesen Entwurf und stellte die Fristen der Klassen auf den Stichtag zurück.
-	// Dieselbe Klasse wie an den Einstellungen am 31.08.2026 (ui/LadeFehler.svelte).
+	// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan (ui/LadeFehler.svelte):
+	// sonst ersetzte „Plan speichern" den echten Plan durch die Regel-Reihenfolge.
 	let ladeFehler = $state(false);
 
 	async function lade() {
@@ -56,19 +43,10 @@
 		}
 	}
 
-	// Vorschau: der Server rechnet die Plätze, sobald Rahmen oder Reihenfolge sich ändern
-	// (entprellt). Liest den Entwurf, schreibt NUR plaetze — kein Effekt auf eigenen State.
-	//
-	// Verfolgt wird der Vorschau-Schlüssel (lmfplanDienst.vorschauSchluessel): Rahmen,
-	// freie Tage, Anzahl der Zeilen und die festen Plätze je Zeile — nicht Klassen und
-	// Vermerke, die ändern keinen Platz. Ein fester Platz dagegen verschiebt die Zeilen um
-	// ihn herum, und wandert er beim Umsortieren in eine andere Zeile, gehört die
-	// Verteilung neu gerechnet.
-	//
-	// `laufNr` ist die Sequenznummer wie im orderStore: Zwei schnelle Änderungen schicken
-	// zwei Anfragen, und ohne Nummer könnte die ältere Antwort die jüngere überholen — die
-	// Tabelle stünde dann mit den Daten eines Entwurfs da, den es nicht mehr gibt
-	// (Rasterfrage 6, Frontend-Lesart).
+	// Vorschau: der Server rechnet die Plätze, sobald sich etwas ändert, wovon sie abhängen
+	// (dienst.vorschauSchluessel, entprellt). Liest den Entwurf, schreibt NUR plaetze —
+	// kein Effekt auf eigenen State. `laufNr` ist die Sequenznummer wie im orderStore:
+	// Ohne sie könnte eine ältere Antwort die jüngere überholen (Rasterfrage 6).
 	let laufNr = 0;
 	$effect(() => {
 		void dienst.vorschauSchluessel(entwurf);
@@ -90,6 +68,8 @@
 		}, 250);
 		return () => clearTimeout(timer);
 	});
+
+	const marker = $derived(dienst.klassenMarker(stand));
 
 	/** @param {string} k */
 	function klasseRaus(k) {
@@ -125,6 +105,26 @@
 		}
 	}
 
+	// Veröffentlichen speichert den Entwurf zuerst — was die Schulleitung im PDF sah und
+	// was das Kollegium gleich sieht, soll derselbe Stand sein.
+	async function veroeffentlichen() {
+		const fristen = art === 'rueckgabe' ? ', und die Termine werden die Fristen der Klassen' : '';
+		if (!confirm(`Plan veröffentlichen? Das Kollegium sieht ihn dann im Portal${fristen}.`)) return;
+		speichert = true;
+		try {
+			const gespeichert = await dienst.speicherePlan(art, entwurf);
+			if (!gespeichert.ok) {
+				showToast(gespeichert.meldung, 'error');
+				return;
+			}
+			const erg = await dienst.veroeffentlichePlan(art);
+			showToast(erg.meldung, erg.ok ? 'success' : 'error');
+			if (erg.ok) await lade();
+		} finally {
+			speichert = false;
+		}
+	}
+
 	async function verwerfen() {
 		if (!stand?.plan) return;
 		if (!confirm(`Plan vom ${dienst.datumKurz(stand.plan.erster_tag)} verwerfen?`)) return;
@@ -134,15 +134,15 @@
 	}
 
 	async function pdf() {
+		// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
 		try {
-			await dienst.ladePdf();
+			await dienst.ladePdf(false, true);
 		} catch (e) {
 			showToast(`${e}`, 'error');
 		}
 	}
 
-	// Nicht `onMount(lade)`: Eine async-Funktion gibt eine Zusage zurück, und Svelte
-	// nimmt den Rückgabewert von onMount als Aufräum-Funktion.
+	// Nicht `onMount(lade)`: Svelte nähme die zurückgegebene Zusage als Aufräum-Funktion.
 	onMount(() => {
 		lade();
 	});
@@ -163,6 +163,7 @@
 		onpdf={pdf}
 		onverwerfen={verwerfen}
 		onspeichern={speichern}
+		onveroeffentlichen={veroeffentlichen}
 	/>
 
 	{#if laedt}
@@ -178,7 +179,6 @@
 			text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
 		/>
 	{:else}
-		<!-- Drei Abschnitte gleicher Bauart (Titel, ein Satz, Inhalt) mit 32 px Abstand. -->
 		<div class="mt-6 space-y-8">
 			<LmfPlanRahmen
 				bind:ersterTag={entwurf.erster_tag}
@@ -190,10 +190,11 @@
 			<LmfPlanReihenfolge
 				bind:zeilen={entwurf.zeilen}
 				{plaetze}
+				{marker}
 				bereit={Boolean(entwurf.erster_tag)}
 				onklasseraus={klasseRaus}
 			/>
-			<LmfPlanVorrat klassen={entwurf.ausgelassen} onhinein={klasseHinein} />
+			<LmfPlanVorrat klassen={entwurf.ausgelassen} {marker} onhinein={klasseHinein} />
 		</div>
 	{/if}
 </PageShell>

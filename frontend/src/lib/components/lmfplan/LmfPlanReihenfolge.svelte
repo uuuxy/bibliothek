@@ -14,11 +14,17 @@
 	import Button from '../ui/Button.svelte';
 	import LmfPlanZeile from './LmfPlanZeile.svelte';
 
-	/** @type {{ zeilen: import('../../lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], bereit: boolean, onklasseraus: (klasse: string) => void }} */
-	let { zeilen = $bindable(), plaetze, bereit, onklasseraus } = $props();
+	/** @type {{ zeilen: import('../../lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, bereit: boolean, onklasseraus: (klasse: string) => void }} */
+	let { zeilen = $bindable(), plaetze, marker, bereit, onklasseraus } = $props();
 
 	/** @type {number | null} */
 	let gezogen = $state(null);
+
+	// Klassen im Plan ohne Schüler (Vorjahr, vor dem Import getippt) — der Satz oben
+	// zählt sie, damit man nach dem LUSD-Import sieht, was übrig geblieben ist.
+	const ohneSchueler = $derived(
+		[...new Set(zeilen.flatMap((z) => z.klassen))].filter((k) => marker.ohneSchueler(k))
+	);
 
 	/** @param {number} von @param {number} nach */
 	function verschiebe(von, nach) {
@@ -98,6 +104,13 @@
 		{:else}
 			Ersten Tag wählen — dann rechnet der Plan Wochentag, Datum und Stunde jeder Zeile.
 		{/if}
+		{#if ohneSchueler.length > 0}
+			<span data-testid="lmf-ohne-schueler">
+				{ohneSchueler.length === 1 ? 'Eine Klasse' : `${ohneSchueler.length} Klassen`} im Plan
+				{ohneSchueler.length === 1 ? 'hat' : 'haben'} noch keine Schüler ({ohneSchueler.join(', ')})
+				— sie kommen mit dem LUSD-Import oder gehören aus dem Plan.
+			</span>
+		{/if}
 	</p>
 	<div class="mt-4 overflow-x-auto">
 		<table class="w-full border-collapse text-left text-sm" data-testid="lmf-reihenfolge">
@@ -119,6 +132,7 @@
 						{i}
 						anzahl={zeilen.length}
 						platz={plaetze[i]}
+						{marker}
 						gezogen={gezogen === i}
 						onziehstart={() => (gezogen = i)}
 						onablegen={() => {
