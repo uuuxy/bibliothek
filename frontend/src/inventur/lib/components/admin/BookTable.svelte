@@ -1,4 +1,5 @@
 <script>
+	import { erzeugeAuswahl } from './bookTableAuswahl.svelte.js';
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import BookTableToolbar from '$lib/components/admin/BookTableToolbar.svelte';
 	import BookTableZeile from '$lib/components/admin/BookTableZeile.svelte';
@@ -27,19 +28,11 @@
 		onRetryCovers
 	} = $props();
 
-	/** @type {string[]} */
-	let selectedIds = $state([]);
+	// Auswahl für die Massenaktionen: bookTableAuswahl.svelte.js. Der Effekt hält sie auf
+	// dem, was in der Liste steht — sonst trifft „Löschen" nach dem Filtern Unsichtbares.
+	const auswahl = erzeugeAuswahl();
+	$effect(() => auswahl.angleichen(books));
 
-	// Die Auswahl gilt nur für das, was gerade in der Liste steht (Rasterdurchgang
-	// 06.09.2026). Ohne diese Angleichung überlebte sie jeden Such- und Filterwechsel:
-	// „Alle auswählen" bei 312 Titeln, dann „Mathe" tippen — vier Zeilen sichtbar, keine
-	// angehakt, und die Werkzeugleiste sagte weiter „Löschen (312)". Der Bestätigungstext
-	// nannte dieselbe Zahl, gelöscht worden wären die 312 unsichtbaren Titel.
-	$effect(() => {
-		const sichtbar = new Set(books.map((b) => b.id));
-		const gefiltert = selectedIds.filter((id) => sichtbar.has(id));
-		if (gefiltert.length !== selectedIds.length) selectedIds = gefiltert;
-	});
 	/** @type {number|null} */
 	let draggedIndex = $state(null);
 	/** @type {number|null} */
@@ -57,38 +50,15 @@
 		}
 	}
 
-	function toggleSelectAll() {
-		// Längenvergleich reicht nicht: Vier alte IDs und vier Treffer sahen aus wie
-		// „alles ausgewählt", obwohl keine der sichtbaren Zeilen angehakt war. Seit der
-		// Angleichung oben stehen in selectedIds nur sichtbare IDs — der Vergleich stimmt
-		// damit wieder, und die Kopf-Checkbox sagt die Wahrheit.
-		if (books.length > 0 && selectedIds.length === books.length) {
-			selectedIds = [];
-			return;
-		}
-		selectedIds = books.map((book) => book.id);
-	}
-
-	/**
-	 * @param {string} id
-	 */
-	function toggleSelect(id) {
-		if (selectedIds.includes(id)) {
-			selectedIds = selectedIds.filter((selectedId) => selectedId !== id);
-			return;
-		}
-		selectedIds = [...selectedIds, id];
-	}
-
 	function handleDelete() {
-		onDelete(selectedIds);
-		selectedIds = [];
+		onDelete(auswahl.ids);
+		auswahl.leeren();
 	}
 
 	function handleAssignClass() {
 		// Auswahl bleibt bestehen, bis der Dialog abgeschlossen/abgebrochen ist —
 		// der Picker hält die IDs bereits über seine Prop.
-		onAssignClass(selectedIds);
+		onAssignClass(auswahl.ids);
 	}
 
 	/**
@@ -183,7 +153,7 @@
 <div class="w-full">
 	<BookTableToolbar
 		booksLength={books.length}
-		selectedCount={selectedIds.length}
+		selectedCount={auswahl.anzahl}
 		onDelete={handleDelete}
 		onAssignClass={handleAssignClass}
 		{onScan}
@@ -202,8 +172,8 @@
 							type="checkbox"
 							aria-label="Alle Bücher auswählen"
 							class="rounded border-slate-200 bg-white text-blue-600 focus:ring-blue-500/20 cursor-pointer"
-							checked={books.length > 0 && selectedIds.length === books.length}
-							onclick={toggleSelectAll}
+							checked={auswahl.alleGewaehlt(books)}
+							onclick={() => auswahl.alleUmschalten(books)}
 						/>
 					</th>
 					<th class="px-6 py-4 w-20">Cover</th>
@@ -224,9 +194,9 @@
 						{book}
 						{index}
 						{dragOverIndex}
-						isSelected={selectedIds.includes(book.id)}
+						isSelected={auswahl.enthaelt(book.id)}
 						{onOpenDetail}
-						onToggleSelect={toggleSelect}
+						onToggleSelect={(id) => auswahl.umschalten(id)}
 						{onDragStart}
 						{onDragOver}
 						{onDragLeave}

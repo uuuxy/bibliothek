@@ -23,7 +23,10 @@ const buch = (/** @type {string} */ id, /** @type {string} */ titel) => ({
 function zeige(books, onDelete = vi.fn()) {
 	return render(BookTable, {
 		books,
-		onEdit: vi.fn(),
+		loading: false,
+		onOpenDetail: vi.fn(),
+		onCreateNew: vi.fn(),
+		onScan: vi.fn(),
 		onDelete,
 		onAssignClass: vi.fn(),
 		onRetryCovers: vi.fn()
