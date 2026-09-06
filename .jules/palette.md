@@ -19,3 +19,6 @@
 ## 2024-08-13 - [WCAG compliance for custom button role elements]
 **Learning:** When using `role="button"` for custom interactive elements, we must handle both Enter and Space keys for full keyboard accessibility, ensuring `preventDefault` is called for Space to avoid unintended scrolling.
 **Action:** Always implement `onkeydown` correctly catching both 'Enter' and ' ' and calling preventDefault for interactive elements functioning as buttons.
+## 2026-09-05 - ARIA Labels on Icon-only Buttons
+**Learning:** When using components like `<Trash2>` inside a `<button>` without visible text, the `title` attribute alone is insufficient for screen readers. An explicit `aria-label` must be provided on the button element itself.
+**Action:** Always ensure icon-only buttons include an `aria-label` attribute describing their function, regardless of whether a `title` attribute (for tooltips) is present.

@@ -186,6 +186,7 @@
 									onclick={() => deleteVormerkung(v.id)}
 									class="text-rose-600 hover:text-rose-700 font-semibold p-2 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
 									title="Vormerkung löschen"
+									aria-label="Vormerkung löschen"
 								>
 									<Trash2 class="w-4 h-4" aria-hidden="true" />
 								</button>
