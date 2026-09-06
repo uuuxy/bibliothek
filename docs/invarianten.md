@@ -257,10 +257,10 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.
 
-## Daniels Raster — die elf Fragen, und ihre Frontend-Lesart
+## Daniels Raster — die zwölf Fragen, und ihre Frontend-Lesart
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
-Speicher-Granularität) — nicht bei Kosmetik. Die Durchgänge samt Funden stehen in
+Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration. Die Durchgänge samt Funden stehen in
 [befunde.md](befunde.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
 [sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
 und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
@@ -276,6 +276,37 @@ und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 9. **Ausleitung** — wo verlässt eine Kopie die Anwendung (Datei, Mail, Export, Log, Fremdsystem)? Wer liest sie, wie lange lebt sie, ist sie verschlüsselt?
 10. **Rückweg** — ist der Weg zurück begehbar und am Ergebnis bewiesen, nicht am Vorgang?
 11. **Geteilter Zustand** — wer lädt ihn auf diesem Pfad, was gilt vor dem Laden und bei Fehlschlag, überlebt der Lader sein eigenes Ergebnis?
+12. **Gegenrichtung Schema** — was TUT die Datenbank, das im Code nirgends steht? Fremdschlüssel mit Löschwirkung (CASCADE/SET NULL), CHECK-Bedingungen, Trigger.
+
+### Zu Frage 12 (neu am 06.09.2026)
+
+Die ersten elf Fragen sehen vom Code aus auf die Daten. Frage 12 sieht zurück, und das
+ist keine Wortklauberei — zwei Funde desselben Abends kamen aus der DDL und wären beim
+Lesen des Go-Codes nie aufgefallen:
+
+- `CONSTRAINT check_damage_item` verlangt genau eines von `exemplar_id`/`geraet_id`. Der
+  Geräteschaden ist damit ausdrücklich vorgesehen; die Rechnung an die Eltern verband per
+  INNER JOIN und hätte ihn verloren (`ce875654`).
+- An `buecher_titel` hängen vier Kinder mit `ON DELETE CASCADE`. Drei davon erwähnte kein
+  Löschpfad — dahinter standen ein wartender Schüler und eine Lehrkraft mit einer
+  angemeldeten Klassensatz-Anforderung (`77bbf931`).
+
+Beides stand jahrelang lesbar in `schema.sql` und wurde nie gelesen, weil niemand die
+Frage gestellt hat. **Frage 1 („Konvention statt Regel") ist nicht dieselbe Frage:** Sie
+fragt, ob eine Zusicherung des Codes von der Datenbank gehalten wird. Frage 12 fragt
+umgekehrt nach dem, was die Datenbank ohnehin tut — und wovon der Code nichts weiß.
+
+Mechanischer Teil: `repository/schema_gegenrichtung_pg_test.go` friert die drei Inventare
+ein (31 Fremdschlüssel mit Löschwirkung, 32 CHECK-Bedingungen, 19 Trigger). Jede
+Schema-Änderung wird damit rot und verlangt die Antwort: **Wer behandelt die Folge?** Die
+schon befragten Einträge tragen ihre Antwort als Kommentar; der Rest ist Arbeitsliste.
+
+Bewusst NICHT eingefroren: die 96 nullbaren Spalten. Ihre Gefahr ist die Bugklasse
+„NULL-Scan", und die hat ihre eigene Antwort — echte Postgres-Tests je Lesepfad. Eine
+Liste von 96 Namen wäre der Dateibaum und würde nichts aussagen.
+
+Eine Frontend-Lesart hat Frage 12 nicht; das Gegenstück dort ist die Bugklasse „Nie
+verdrahtet" (`docs/sweeps.md`): Felder, die der Server liefert und die niemand liest.
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 
