@@ -57,6 +57,8 @@ func lageEingerichtet() Lage {
 		LoeschRueckstand: rueckstandSauber(),
 		// Ehemalige mit offenen Vorgängen: erhoben, keiner.
 		EhemaligeMitOffenenVorgaengen: zahl(0),
+		// Ferientabelle: reicht weit genug (testJetzt 2026 + 2 ≤ 2030).
+		FerientabelleBis: 2030,
 	}
 }
 
@@ -131,6 +133,14 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Ehemalige mit offenen Vorgängen",
 			stufe:    StufeWarnung,
 			enthaelt: "Verlust",
+		},
+		{
+			// 2026 + 2 > 2027: zwei Jahre vor dem Ende der Tabelle kommt die Warnung.
+			name:     "Ferientabelle läuft in unter zwei Jahren aus",
+			aendere:  func(l *Lage) { l.FerientabelleBis = 2027 },
+			bereich:  "Ferientabelle",
+			stufe:    StufeWarnung,
+			enthaelt: "kmk.org",
 		},
 		{
 			name:     "Ehemalige nicht erhoben",

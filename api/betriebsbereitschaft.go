@@ -121,6 +121,13 @@ type Lage struct {
 	LetztesBackup *time.Time
 	Jetzt         time.Time
 
+	// Ferientabelle (06.09.2026): Der LMF-Planer belegt den letzten Tag des
+	// Büchertauschs aus den Sommerferien Hessen vor (pkg/lmfplan/ferien.go, KMK-
+	// Beschluss in Sechsjahresblöcken). Läuft die Tabelle aus, steht der Planer ohne
+	// Vorgabe da — still. Das letzte hinterlegte Jahr, damit die Warnung hier steht,
+	// wo sie jemand liest, und nicht nur in einem roten Test.
+	FerientabelleBis int
+
 	// Restore-Probe (Schema-Erweiterung 21.08.2026): Ob das jüngste Backup
 	// WIEDERHERSTELLBAR ist, beweist wöchentlich jobs.RunRestoreProbe — ein Backup,
 	// das sich nicht einspielen lässt, ist exakt so viel wert wie keins. nil: noch
@@ -196,8 +203,32 @@ func Pruefe(l Lage) []Befund {
 		pruefeRestoreProbe(l, echt),
 		pruefeDsgvoRoutinen(l),
 		pruefeEhemaligeOffen(l),
+		pruefeFerientabelle(l),
 	}
 	return befunde
+}
+
+// ferientabelleVorlaufJahre: Wie viele Jahre vor dem Ende der Tabelle die Warnung
+// kommt. Zwei — die KMK beschließt den nächsten Block Jahre im Voraus, und der Plan
+// für den Sommer wird im Frühjahr gemacht.
+const ferientabelleVorlaufJahre = 2
+
+// pruefeFerientabelle: Reichen die hinterlegten Sommerferien noch weit genug?
+func pruefeFerientabelle(l Lage) Befund {
+	b := Befund{Bereich: "Ferientabelle"}
+	if l.Jetzt.Year()+ferientabelleVorlaufJahre > l.FerientabelleBis {
+		b.Stufe = StufeWarnung
+		b.Befund = fmt.Sprintf("Die Sommerferien Hessen sind im Programm nur bis %d hinterlegt.", l.FerientabelleBis)
+		b.Folge = fmt.Sprintf("Ab dem Schuljahr %d/%d belegt der LMF-Planer den letzten Tag des Büchertauschs "+
+			"und den ersten Tag der Bücherausgabe nicht mehr vor — die Termine müssen dann von Hand gesetzt werden.",
+			l.FerientabelleBis, (l.FerientabelleBis+1)%100)
+		b.Abhilfe = "Den nächsten Beschluss der Kultusministerkonferenz (kmk.org/service/ferienregelung) " +
+			"in pkg/lmfplan/ferien.go nachtragen — sechs Zeilen je Sechsjahresblock."
+		return b
+	}
+	b.Stufe = StufeOK
+	b.Befund = fmt.Sprintf("Sommerferien Hessen bis %d hinterlegt.", l.FerientabelleBis)
+	return b
 }
 
 // ehemaligeOffenSeitTagen ist die Schwelle des Wächters: ein Jahr. Kürzer meldete er

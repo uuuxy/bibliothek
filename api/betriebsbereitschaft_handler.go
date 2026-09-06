@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"bibliothek/jobs"
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 )
 
@@ -129,6 +130,7 @@ func (s *Server) sammleLage(
 	}
 	lage.LetztesBackup = newestBackupTime(backupDir)
 	lage.Jetzt = time.Now()
+	lage.FerientabelleBis = lmfplan.LetztesFerienjahr()
 
 	// Ergebnis der wöchentlichen Restore-Probe. Unlesbar oder nie gelaufen → nil,
 	// die Prüfung meldet dann „noch kein Probelauf" statt eines falschen Urteils.

@@ -8,9 +8,10 @@ import "time"
 // endet immer am gleichen Tag: Donnerstags vor den Ferien zur vierten Stunde." Die
 // Tabelle IST diese Automatik. Eine Schnittstelle, die ein Schulserver dafür abfragen
 // sollte, gibt es nicht; die KMK beschließt in Blöcken von sechs Jahren. Läuft die
-// Tabelle aus, sagt es der Planer (ok=false) und TestSommerferienHessen_Horizont
-// wird zwei Jahre vorher rot — das ist die Erinnerung, den nächsten Beschluss
-// nachzutragen. Fest auf Hessen wie die Feiertage (feiertage.go).
+// Tabelle aus, sagt es der Planer (ok=false); zwei Jahre vorher warnen die Selbstprüfung
+// unter System → Betriebsbereitschaft (Peter, 06.09.2026: „also bekommen wir eine
+// Warnung, die Termine nachzutragen?") und TestSommerferienHessen_Horizont — das ist
+// die Erinnerung, den nächsten Beschluss nachzutragen. Fest auf Hessen wie die Feiertage (feiertage.go).
 var sommerferienHessen = map[int]Zeitraum{
 	2025: ferien("2025-07-07", "2025-08-15"),
 	2026: ferien("2026-06-29", "2026-08-07"),
@@ -32,6 +33,16 @@ func ferien(von, bis string) Zeitraum {
 		panic("Ferientabelle: " + err.Error())
 	}
 	return Zeitraum{Von: v, Bis: b, Name: "Sommerferien"}
+}
+
+// LetztesFerienjahr ist das letzte Jahr, für das Sommerferien hinterlegt sind — die
+// Selbstprüfung (System → Betriebsbereitschaft) warnt zwei Jahre vor dem Ende.
+func LetztesFerienjahr() int {
+	letztes := 0
+	for jahr := range sommerferienHessen {
+		letztes = max(letztes, jahr)
+	}
+	return letztes
 }
 
 // SommerferienHessen nennt die Sommerferien eines Jahres (Kalendertage in UTC, Name
