@@ -70,21 +70,13 @@ func (t Ferientabelle) Mit(eintraege []SommerferienEintrag) Ferientabelle {
 	return Ferientabelle{jahre: jahre}
 }
 
-// LetztesJahr ist das letzte Jahr, für das Sommerferien bekannt sind — die
-// Selbstprüfung (System → Betriebsbereitschaft) warnt zwei Jahre vor dem Ende.
-func (t Ferientabelle) LetztesJahr() int {
-	letztes := 0
-	for jahr := range t.jahre {
-		letztes = max(letztes, jahr)
-	}
-	return letztes
-}
-
 // LueckenlosBis nennt das letzte Jahr, bis zu dem die Tabelle AB `ab` ohne Lücke reicht;
 // `ab-1`, wenn schon `ab` fehlt.
 //
-// Rasterdurchgang 06.09.2026 (Frage 3): Die Selbstprüfung fragte nach dem Maximum
-// (LetztesJahr), der Planer fragt nach GENAU EINEM Jahr (Sommerferien). Trägt die Schule
+// Rasterdurchgang 06.09.2026 (Frage 3): Die Selbstprüfung fragte nach dem MAXIMUM der
+// Tabelle, der Planer fragt nach GENAU EINEM Jahr (Sommerferien). Das Maximum
+// (`LetztesJahr`) ist mit diesem Durchgang ausgebaut — es beantwortete keine Frage, die
+// jemand wirklich stellt, und das deadcode-Gate hat es beim ersten Push gemeldet. Trägt die Schule
 // 2032 und 2033 ein und vergisst 2031, meldete die Selbstprüfung „bis 2033 hinterlegt",
 // während der Planer 2031 ohne Vorgabe dastand. Zwei Formulierungen derselben Frage
 // „reicht die Tabelle?" — diese hier ist die, die der Planer stellt.

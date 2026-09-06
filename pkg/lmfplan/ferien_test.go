@@ -96,7 +96,7 @@ func TestNaechsteSommerferien(t *testing.T) {
 // kmk.org/service/ferienregelung nachlesen, sommerferienHessen ergänzen, Zahlen oben
 // prüfen. Bewusst zeitabhängig — ein Wächter, der nie schlägt, wäre keiner.
 func TestSommerferienHessen_Horizont(t *testing.T) {
-	if letztes := Hessen().LetztesJahr(); time.Now().Year()+2 > letztes {
+	if letztes := Hessen().LueckenlosBis(2025); time.Now().Year()+2 > letztes {
 		t.Errorf("Sommerferien Hessen sind nur bis %d hinterlegt — KMK-Beschluss nachtragen (pkg/lmfplan/ferien.go)", letztes)
 	}
 }

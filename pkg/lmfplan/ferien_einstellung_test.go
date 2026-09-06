@@ -11,8 +11,8 @@ import (
 // Zahlendreher durch — der Planer hängt an diesen Tagen jede Frist auf.
 func TestFerientabelleAus(t *testing.T) {
 	tab := FerientabelleAus(`[{"jahr":2031,"von":"2031-07-07","bis":"2031-08-15"},{"jahr":2027,"von":"2027-07-05","bis":"2027-08-13"}]`)
-	if tab.LetztesJahr() != 2031 {
-		t.Errorf("letztes Jahr %d, erwartet 2031", tab.LetztesJahr())
+	if tab.LueckenlosBis(2025) != 2031 {
+		t.Errorf("lückenlos bis %d, erwartet 2031", tab.LueckenlosBis(2025))
 	}
 	z, ok := tab.Sommerferien(2031)
 	if !ok || z.Von.Format("2006-01-02") != "2031-07-07" {
@@ -37,7 +37,7 @@ func TestFerientabelleAus(t *testing.T) {
 	}
 	// Leer und unlesbar: die Programmtabelle.
 	for _, text := range []string{"", "   ", "kaputt", `[{"jahr":2031,"von":"x","bis":"y"}]`} {
-		if FerientabelleAus(text).LetztesJahr() != Hessen().LetztesJahr() {
+		if FerientabelleAus(text).LueckenlosBis(2025) != Hessen().LueckenlosBis(2025) {
 			t.Errorf("%q: nicht die Programmtabelle", text)
 		}
 	}
@@ -72,7 +72,7 @@ func TestNormalisiereSommerferien(t *testing.T) {
 
 func TestProgrammEintraege(t *testing.T) {
 	e := ProgrammEintraege()
-	if len(e) == 0 || e[0].Jahr != 2025 || e[len(e)-1].Jahr != Hessen().LetztesJahr() {
+	if len(e) == 0 || e[0].Jahr != 2025 || e[len(e)-1].Jahr != Hessen().LueckenlosBis(2025) {
 		t.Errorf("Programmeinträge: %+v", e)
 	}
 }
@@ -84,8 +84,8 @@ func TestFerientabelle_LueckeUndZahlendreher(t *testing.T) {
 	// 2032 und 2033 eingetragen, 2031 vergessen: ab 2031 reicht die Tabelle nicht.
 	mit := `[{"jahr":2032,"von":"2032-07-05","bis":"2032-08-14"},{"jahr":2033,"von":"2033-07-04","bis":"2033-08-13"}]`
 	tab := FerientabelleAus(mit)
-	if got := tab.LetztesJahr(); got != 2033 {
-		t.Errorf("Maximum: %d", got)
+	if got := tab.LueckenlosBis(2032); got != 2033 {
+		t.Errorf("lückenlos ab 2032: %d", got)
 	}
 	// Die Programmtabelle endet 2030 — lückenlos ab 2031 heißt also: gar nicht.
 	if got := tab.LueckenlosBis(2031); got != 2030 {
