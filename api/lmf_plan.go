@@ -344,7 +344,7 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 			return apierrors.BadRequest(err.Error(), err)
 		}
 		repo := repository.NewLmfTerminRepository(s.DB.Pool)
-		plaetze, ausfaelle, err := s.verteileLmfPlan(r.Context(), repo, &e)
+		plaetze, ausfaelle, err := s.verteileLmfPlan(&e)
 		if err != nil {
 			return apierrors.Internal("Verteilung rechnen", err)
 		}
@@ -381,11 +381,12 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 	})
 }
 
-// verteileLmfPlan rechnet die Plätze über die Schultage — Ferien aus der Datenbank,
-// freie Tage des Plans, gesetzliche Feiertage aus pkg/lmfplan — und nennt die
-// Ausfälle vom ersten Tag bis zum letzten Platz. Der Rückgabe-Plan fließt vom Ende her
+// verteileLmfPlan rechnet die Plätze über die Schultage — freie Tage des Plans und
+// gesetzliche Feiertage aus pkg/lmfplan (die Tabelle ferien_schliesszeiten ist seit
+// Migration 102 weg; sie hatte nie einen Schreiber) — und nennt die Ausfälle vom ersten
+// Tag bis zum letzten Platz. Der Rückgabe-Plan fließt vom Ende her
 // rückwärts; sein Beginn (e.Plan.ErsterTag/Startstunde) ist danach der früheste Platz.
-func (s *Server) verteileLmfPlan(ctx context.Context, repo *repository.LmfTerminRepository, e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanAusfall, error) {
+func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanAusfall, error) {
 	rueckwaerts := e.Plan.Art == repository.LmfTerminRueckgabe
 	ankerTag := e.Plan.ErsterTag
 	if rueckwaerts {
@@ -395,15 +396,7 @@ func (s *Server) verteileLmfPlan(ctx context.Context, repo *repository.LmfTermin
 	if err != nil {
 		return nil, nil, err
 	}
-	// Großzügiges Fenster: 400 Zeilen bei einer Stunde je Tag sind 80 Schulwochen.
-	von, bis := anker, anker.AddDate(2, 0, 0)
-	if rueckwaerts {
-		von, bis = anker.AddDate(-2, 0, 0), anker
-	}
-	frei, err := repo.FreieTage(ctx, von, bis)
-	if err != nil {
-		return nil, nil, err
-	}
+	frei := []lmfplan.Zeitraum{}
 	for _, f := range e.Plan.FreieTage {
 		tag, err := planTag(f.Datum)
 		if err != nil {

@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"strings"
 
 	"bibliothek/db"
 )
@@ -57,27 +56,6 @@ type MahnwesenRepository struct {
 // NewMahnwesenRepository erzeugt eine neue Instanz des MahnwesenRepositorys.
 func NewMahnwesenRepository(pool db.PgxPoolIface) *MahnwesenRepository {
 	return &MahnwesenRepository{db: pool}
-}
-
-// CheckFerienAktiv prüft, ob das heutige Datum in einen eingetragenen Ferien- oder Schließzeitraum fällt.
-// Ist dies der Fall, können automatische Mahnungen systemseitig pausiert werden.
-func (repo *MahnwesenRepository) CheckFerienAktiv(ctx context.Context) (bool, string, error) {
-	q := `
-		SELECT bezeichnung 
-		FROM ferien_schliesszeiten 
-		WHERE CURRENT_DATE >= start_datum AND CURRENT_DATE <= end_datum 
-		LIMIT 1
-	`
-	var bezeichnung string
-	err := repo.db.QueryRow(ctx, q).Scan(&bezeichnung)
-	if err != nil {
-		// pgx bzw. Standardfehler abfangen, wenn kein Zeitraum aktiv ist
-		if err.Error() == "no rows in result set" || strings.Contains(err.Error(), "no rows") {
-			return false, "", nil
-		}
-		return false, "", err
-	}
-	return true, bezeichnung, nil
 }
 
 // CountReturnsToday queries the database for loans successfully returned today.

@@ -74,20 +74,11 @@ func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) 
 	}
 }
 
-// bereiteKlassenMahnung prüft die Ferien-Pause, lädt die überfälligen Ausleihen der
-// Klasse, erzeugt das PDF und baut die versandfertige E-Mail. ok=false: die Fehlerantwort
-// (500 bzw. 403 während einer Ferien-/Schließzeit) wurde bereits geschrieben.
+// bereiteKlassenMahnung lädt die überfälligen Ausleihen der Klasse, erzeugt das PDF und
+// baut die versandfertige E-Mail. ok=false: die Fehlerantwort wurde bereits geschrieben.
+// (Die Ferien-/Schließzeit-Sperre von Migration 017 ist seit 102 ausgebaut — sie hatte
+// nie einen Schreiber und griff nie.)
 func bereiteKlassenMahnung(ctx context.Context, w http.ResponseWriter, mahnRepo *repository.MahnwesenRepository, req mahnwesenSendenRequest) (MailRequest, bool) {
-	isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
-	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return MailRequest{}, false
-	}
-	if isFerien {
-		apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
-		return MailRequest{}, false
-	}
-
 	klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, req.Klasse)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

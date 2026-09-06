@@ -36,36 +36,8 @@ func smtpKonfigAusUmgebung(t *testing.T) {
 	t.Cleanup(func() { smtpKonfigLader = alt })
 }
 
-// Während einer Ferien-/Schließzeit MUSS der Massenversand mit 403 abbrechen und
-// nichts senden — sonst gingen Mahnungen in den Ferien raus.
-func TestSendBulkOverdueHandler_FerienGesperrt(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatalf("pgxmock: %v", err)
-	}
-	defer mock.Close()
-
-	// CheckFerienAktiv findet einen aktiven Zeitraum → gesperrt.
-	mock.ExpectQuery("ferien_schliesszeiten").
-		WillReturnRows(pgxmock.NewRows([]string{"bezeichnung"}).AddRow("Sommerferien"))
-
-	server := &Server{DB: &db.Database{Pool: mock}}
-	mahnRepo := repository.NewMahnwesenRepository(mock)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/mail/send-bulk-overdue", nil)
-	rec := httptest.NewRecorder()
-	server.SendBulkOverdueHandler(mahnRepo)(rec, req)
-
-	if rec.Code != http.StatusForbidden {
-		t.Fatalf("erwartet 403 während Ferien, bekam %d: %s", rec.Code, rec.Body.String())
-	}
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Errorf("unerfüllte Mock-Erwartungen: %v", err)
-	}
-}
-
 // Ohne konfigurierten Mailserver (SMTP_HOST leer) → 503, kein Versand. Der Check
-// greift NACH der Ferien-Prüfung und VOR jeder Klassen-Query.
+// greift VOR jeder Klassen-Query — pgxmock erwartet keine einzige.
 func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
 	smtpKonfigAusUmgebung(t)
 	t.Setenv("SMTP_HOST", "")
@@ -75,10 +47,6 @@ func TestSendBulkOverdueHandler_SmtpFehlt(t *testing.T) {
 		t.Fatalf("pgxmock: %v", err)
 	}
 	defer mock.Close()
-
-	// Keine Ferien: leeres Ergebnis → CheckFerienAktiv liefert (false, "", nil).
-	mock.ExpectQuery("ferien_schliesszeiten").
-		WillReturnRows(pgxmock.NewRows([]string{"bezeichnung"}))
 
 	server := &Server{DB: &db.Database{Pool: mock}}
 	mahnRepo := repository.NewMahnwesenRepository(mock)

@@ -58,15 +58,6 @@ CREATE TABLE system_einstellungen (
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Table: ferien_schliesszeiten (Pausierung des Mahnwesens)
-CREATE TABLE ferien_schliesszeiten (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    bezeichnung VARCHAR(255) NOT NULL,
-    start_datum DATE NOT NULL,
-    end_datum DATE NOT NULL,
-    erstellt_am TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-);
-
 -- Seed default system settings
 INSERT INTO system_einstellungen (schluessel, wert) VALUES
     ('ferien_leseclub_aktiv', 'false'),
@@ -1146,7 +1137,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('098_lmf_termine_gehoeren_zum_plan.sql'),
 ('099_lmf_plan_feste_plaetze_und_freie_tage.sql'),
 ('100_lmf_plan_veroeffentlichung.sql'),
-('101_lmf_plan_ende_als_anker.sql')
+('101_lmf_plan_ende_als_anker.sql'),
+('102_ferien_schliesszeiten_ausgebaut.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

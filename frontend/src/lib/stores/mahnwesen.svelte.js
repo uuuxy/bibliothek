@@ -42,9 +42,6 @@ export function createMahnwesenStore() {
 	let loading = $state(true);
 	let error = $state(/** @type {string|null} */ (null));
 
-	// Ferien-Logik
-	let ferienAktiv = $state(false);
-	let ferienBezeichnung = $state('');
 	let heuteRetourniert = $state(0);
 
 	// Filter und Auswahl
@@ -120,8 +117,6 @@ export function createMahnwesenStore() {
 			if (!res.ok) throw new Error((await res.text()) || 'Fehler beim Laden');
 			const json = await res.json();
 			data = json;
-			ferienAktiv = json.ferien_aktiv || false;
-			ferienBezeichnung = json.ferien_bezeichnung || '';
 			heuteRetourniert = json.heute_retourniert || 0;
 			selectedIds.clear();
 		} catch (e) {
@@ -201,12 +196,6 @@ export function createMahnwesenStore() {
 		},
 		get totalOverdue() {
 			return totalOverdue;
-		},
-		get ferienAktiv() {
-			return ferienAktiv;
-		},
-		get ferienBezeichnung() {
-			return ferienBezeichnung;
 		},
 		get heuteRetourniert() {
 			return heuteRetourniert;

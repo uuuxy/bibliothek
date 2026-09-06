@@ -55,9 +55,8 @@ type bulkOverdueResponse struct {
 // Es wird NICHT an einzelne, i.d.R. minderjährige Schüler gemailt, sondern an die
 // Lehrkraft, die die Schüler informiert. Jede Lehrkraft erhält ausschließlich die
 // eigene Klassenliste — es gibt also keine klassenübergreifende Offenlegung von
-// Empfängern oder Mahn-Status (kein TO/CC über mehrere Betroffene). Während
-// Ferien-/Schließzeiten ist der Versand gesperrt, und der Massenversand wird
-// auditiert (Rechenschaftspflicht, Art. 5 (2) DSGVO).
+// Empfängern oder Mahn-Status (kein TO/CC über mehrere Betroffene). Der Massenversand
+// wird auditiert (Rechenschaftspflicht, Art. 5 (2) DSGVO).
 //
 // AUSNAHME override_email: Damit gehen die Listen ALLER gewählten Klassen an eine
 // einzige, von Hand eingetippte Adresse (Vertretungsfall, Sekretariat, Probelauf).
@@ -84,18 +83,9 @@ func (s *Server) SendBulkOverdueHandler(mahnRepo *repository.MahnwesenRepository
 			return
 		}
 
-		// 2. Ferien-/Schließzeit-Sperre — identisch zum Einzelversand.
-		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if isFerien {
-			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
-			return
-		}
-
-		// 3. Ohne konfigurierten Mailserver kein Massenversand.
+		// 2. Ohne konfigurierten Mailserver kein Massenversand.
+		//    (Die Ferien-/Schließzeit-Sperre stand hier bis Migration 102 — ohne
+		//    Schreiber der Tabelle griff sie nie.)
 		if !smtpKonfiguriert() {
 			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, fmt.Errorf("SMTP nicht konfiguriert – Massenversand nicht möglich"))
 			return

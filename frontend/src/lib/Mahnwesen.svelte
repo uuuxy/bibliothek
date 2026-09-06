@@ -34,22 +34,6 @@
 	</div>
 {/if}
 
-{#if mahnwesenStore.ferienAktiv}
-	<div
-		class="w-full mb-6 p-4 bg-amber-50 border-b border-amber-200 flex items-start gap-3 animate-fade-in"
-	>
-		<TriangleAlert class="h-6 w-6 text-amber-600 mt-0.5 shrink-0" aria-hidden="true" />
-		<div>
-			<h3 class="text-base font-bold text-amber-900">Achtung: Schließzeit / Ferien aktiv!</h3>
-			<p class="text-xs text-amber-800 mt-1">
-				Das Mahnwesen ist aktuell pausiert. Grund: <strong
-					>{mahnwesenStore.ferienBezeichnung}</strong
-				>. E-Mails und PDF-Exporte sind währenddessen serverseitig blockiert.
-			</p>
-		</div>
-	</div>
-{/if}
-
 <div class="w-full h-full flex flex-col">
 	{#if offlineSync.pendingCount > 0}
 		<div

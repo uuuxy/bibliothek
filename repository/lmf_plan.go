@@ -287,29 +287,6 @@ func (r *LmfTerminRepository) DeleteLmfPlan(ctx context.Context, id string) (boo
 	return tag.RowsAffected() > 0, nil
 }
 
-// FreieTage liefert Ferien und Schließzeiten, die den Zeitraum berühren — der Plan
-// überspringt sie (pkg/lmfplan.Schultage), mit Bezeichnung als Grund. Die Tabelle hat
-// bis heute (05.09.2026) keinen Schreiber in der Oberfläche; die freien Tage des Plans
-// selbst (lmf_plan_freie_tage) sind der Weg, den die Bibliothek tatsächlich hat.
-func (r *LmfTerminRepository) FreieTage(ctx context.Context, von, bis time.Time) ([]lmfplan.Zeitraum, error) {
-	rows, err := r.db.Query(ctx, `
-		SELECT start_datum, end_datum, bezeichnung FROM ferien_schliesszeiten
-		WHERE end_datum >= $1::date AND start_datum <= $2::date`, von, bis)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	frei := []lmfplan.Zeitraum{}
-	for rows.Next() {
-		var z lmfplan.Zeitraum
-		if err := rows.Scan(&z.Von, &z.Bis, &z.Name); err != nil {
-			return nil, err
-		}
-		frei = append(frei, z)
-	}
-	return frei, rows.Err()
-}
-
 // KlasseImPlan ist eine Klasse für den Vorschlag der Reihenfolge. Jahrgang ist die
 // führende Zahl des Namens (99 ohne Ziffer) — der Ausgabe-Plan wählt danach die
 // Eingangsjahrgänge aus.

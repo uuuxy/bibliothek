@@ -14,12 +14,6 @@ func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) h
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-
 		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -32,10 +26,8 @@ func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) h
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{
-			"klassen":            klassen,
-			"ferien_aktiv":       isFerien,
-			"ferien_bezeichnung": ferienName,
-			"heute_retourniert":  heuteRetourniert,
+			"klassen":           klassen,
+			"heute_retourniert": heuteRetourniert,
 		})
 	}
 }
@@ -45,12 +37,6 @@ func (s *Server) GetMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) h
 func (s *Server) GetMahnwesenJahrgangHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
 
 		klassen, err := mahnRepo.QueryUeberfaelligeNachJahrgang(ctx, "")
 		if err != nil {
@@ -64,10 +50,8 @@ func (s *Server) GetMahnwesenJahrgangHandler(mahnRepo *repository.MahnwesenRepos
 		}
 
 		RespondJSON(w, http.StatusOK, map[string]any{
-			"klassen":            klassen,
-			"ferien_aktiv":       isFerien,
-			"ferien_bezeichnung": ferienName,
-			"heute_retourniert":  heuteRetourniert,
+			"klassen":           klassen,
+			"heute_retourniert": heuteRetourniert,
 		})
 	}
 }

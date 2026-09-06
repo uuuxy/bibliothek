@@ -177,30 +177,6 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	}
 }
 
-// Ferien und Schließzeiten, die den Zeitraum berühren.
-func TestLmfPlan_FreieTage(t *testing.T) {
-	pool := pgTestPool(t)
-	ctx := context.Background()
-	repo := NewLmfTerminRepository(pool)
-	if _, err := pool.Exec(ctx, `INSERT INTO ferien_schliesszeiten (bezeichnung, start_datum, end_datum) VALUES
-		('PGTEST Pfingsten', '2026-05-26', '2026-05-29'), ('PGTEST Sommer', '2026-06-29', '2026-08-07')`); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if _, err := pool.Exec(ctx, `DELETE FROM ferien_schliesszeiten WHERE bezeichnung LIKE 'PGTEST%'`); err != nil {
-			t.Logf("Aufräumen: %v", err)
-		}
-	})
-	von := time.Date(2026, time.June, 11, 0, 0, 0, 0, schulzeit.Zone())
-	frei, err := repo.FreieTage(ctx, von, von.AddDate(0, 1, 0))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(frei) != 1 || frei[0].Von.Format("2006-01-02") != "2026-06-29" || frei[0].Name != "PGTEST Sommer" {
-		t.Errorf("nur die Sommerferien berühren Juni/Juli, mit Bezeichnung als Grund: %+v", frei)
-	}
-}
-
 // klassenNorm spiegelt klassen_normkey für den Vergleich im Test.
 func klassenNorm(k string) string {
 	var b []byte

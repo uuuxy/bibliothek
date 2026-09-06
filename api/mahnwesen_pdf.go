@@ -217,16 +217,6 @@ func (s *Server) GetMahnwesenPDFHandler(mahnRepo *repository.MahnwesenRepository
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		isFerien, ferienName, err := mahnRepo.CheckFerienAktiv(ctx)
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if isFerien {
-			apierrors.SendHTTPError(w, http.StatusForbidden, fmt.Errorf("mahnwesen ist derzeit pausiert (Ferien/Schließzeit: %s)", ferienName))
-			return
-		}
-
 		klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, "")
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
