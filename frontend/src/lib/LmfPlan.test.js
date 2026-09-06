@@ -234,9 +234,14 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		render(LmfPlan);
 		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
 		expect(feld.value).toBe('');
-		expect(screen.getByTestId('lmf-zeitraum-hinweis').textContent).toContain(
-			'Sommerferien 2031 sind im Programm noch nicht hinterlegt'
-		);
+		// Der Satz zeigt auf die EINSTELLUNG, nicht auf ein Programm-Update: Genau das hat
+		// Peter am 06.09.2026 an der Selbstprüfung beanstandet („eine Warnung, die nur ein
+		// Entwickler beheben kann, ist für den Betreiber keine Abhilfe"). Der Planer sagte
+		// bis zum Rasterdurchgang desselben Tages noch das Alte — und dieser Test hielt es
+		// fest.
+		const hinweis = screen.getByTestId('lmf-zeitraum-hinweis').textContent ?? '';
+		expect(hinweis).toContain('Sommerferien 2031 sind noch nicht hinterlegt');
+		expect(hinweis).toContain('Einstellungen → LUSD & Versetzung → Sommerferien');
 		// Ohne Anker keine Vorschau und kein Speichern.
 		await new Promise((r) => setTimeout(r, 400));
 		expect(gesendet).toHaveLength(0);

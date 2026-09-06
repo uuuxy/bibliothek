@@ -46,7 +46,11 @@
 	const ferienText = $derived.by(() => {
 		if (!sommerferien) return '';
 		if (!sommerferien.bekannt)
-			return `Die Sommerferien ${sommerferien.jahr} sind im Programm noch nicht hinterlegt — bitte den ${ende ? 'letzten' : 'ersten'} Tag von Hand eintragen.`;
+			// Zeigt auf die EINSTELLUNG, nicht auf ein Programm-Update (Peter, 06.09.2026:
+			// „das muss doch dann irgendwo eingestellt werden"). Die Selbstprüfung sagt
+			// seit 47c1d461 dasselbe; hier stand bis zum Rasterdurchgang noch die alte,
+			// für den Betreiber nutzlose Antwort.
+			return `Die Sommerferien ${sommerferien.jahr} sind noch nicht hinterlegt — unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, oder den ${ende ? 'letzten' : 'ersten'} Tag hier von Hand setzen.`;
 		return `Sommerferien ${sommerferien.jahr}: ${datumKurz(sommerferien.von)} bis ${datumKurz(sommerferien.bis)}.`;
 	});
 </script>

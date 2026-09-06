@@ -73,6 +73,17 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 			req.Sommerferien = &norm
 		}
 
+		// Dieselbe Regel wie bei den Sommerferien: geprüft und in Normalform, oder gar
+		// nicht gespeichert. Unlesbares wurde sonst gespeichert, angezeigt und beim Lesen
+		// still auf die Vorgabe zurückgeworfen (Rasterdurchgang 06.09.2026).
+		if req.LmfEingangsjahrgaenge != nil {
+			norm, err := repository.NormalisiereEingangsjahrgaenge(*req.LmfEingangsjahrgaenge)
+			if err != nil {
+				return apierrors.BadRequest(err.Error(), err)
+			}
+			req.LmfEingangsjahrgaenge = &norm
+		}
+
 		ctx := r.Context()
 
 		if err := settingsRepo.SaveSettings(ctx, &req); err != nil {

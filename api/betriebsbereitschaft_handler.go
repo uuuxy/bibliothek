@@ -13,10 +13,10 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"bibliothek/jobs"
 	"bibliothek/pkg/lmfplan"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -129,14 +129,18 @@ func (s *Server) sammleLage(
 		backupDir = "./backups" // identischer Default wie jobs/backup.go
 	}
 	lage.LetztesBackup = newestBackupTime(backupDir)
-	lage.Jetzt = time.Now()
+	// Schulzeitzone, nicht die Zone des Containers: Mit TZ=UTC wäre `Jetzt.Year()` in der
+	// Stunde nach Berliner Mitternacht des 1. Januar noch das alte Jahr.
+	lage.Jetzt = schulzeit.Jetzt()
 	// Programmtabelle plus die eingestellten Jahre (Einstellungen → LUSD & Versetzung);
 	// ein Lesefehler zählt wie „nichts eingestellt".
 	sommerferien, err := zustandRepo.LadeEinstellungswert(ctx, lmfplan.SommerferienSchluessel)
 	if err != nil {
 		sommerferien = ""
 	}
-	lage.FerientabelleBis = lmfplan.FerientabelleAus(sommerferien).LetztesJahr()
+	// Lückenlos AB dem laufenden Jahr — nicht das Maximum: Ein vergessenes Jahr mitten in
+	// der Liste lässt den Planer ohne Vorgabe stehen, und genau das soll die Prüfung sagen.
+	lage.FerientabelleBis = lmfplan.FerientabelleAus(sommerferien).LueckenlosBis(lage.Jetzt.Year())
 
 	// Ergebnis der wöchentlichen Restore-Probe. Unlesbar oder nie gelaufen → nil,
 	// die Prüfung meldet dann „noch kein Probelauf" statt eines falschen Urteils.

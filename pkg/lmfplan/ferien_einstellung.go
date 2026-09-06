@@ -54,6 +54,11 @@ func ParseSommerferien(text string) ([]SommerferienEintrag, error) {
 		if !ok {
 			return nil, fmt.Errorf("Sommerferien %d: Datum nicht lesbar (JJJJ-MM-TT)", e.Jahr)
 		}
+		// Ein Zahlendreher im Jahr (2131 statt 2031) kam sonst durch beide Türen und machte
+		// die Selbstprüfung hundert Jahre stumm (Rasterdurchgang 06.09.2026).
+		if e.Jahr < 2000 || e.Jahr > 2100 {
+			return nil, fmt.Errorf("Sommerferien %d: das Jahr liegt außerhalb von 2000 bis 2100 — Zahlendreher?", e.Jahr)
+		}
 		if z.Von.Year() != e.Jahr || z.Bis.Year() != e.Jahr {
 			return nil, fmt.Errorf("Sommerferien %d: Beginn und Ende müssen im Jahr %d liegen", e.Jahr, e.Jahr)
 		}

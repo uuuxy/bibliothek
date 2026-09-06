@@ -44,6 +44,38 @@ func EingangsjahrgaengeAus(einstellung string) []int {
 	return jahrgaenge
 }
 
+// NormalisiereEingangsjahrgaenge prüft die Eingabe und gibt sie in Normalform zurück
+// („5, 7"). Fehler statt stiller Vorgabe: Bis zum Rasterdurchgang am 06.09.2026 wurde
+// jeder Text gespeichert und angezeigt, aber beim Lesen still verworfen — „8/9" (mit
+// Schrägstrich, so wie Klassen geschrieben werden) hieß gespeichert „8/9" und gerechnet
+// „5, 7". Der Nachbar im selben Formular (lmf_stichtag) prüft seit jeher.
+func NormalisiereEingangsjahrgaenge(text string) (string, error) {
+	if strings.TrimSpace(text) == "" {
+		return "", nil // leer heißt Vorgabe — das entscheidet der Patch-Pfad
+	}
+	teile := strings.FieldsFunc(text, func(r rune) bool { return r == ',' || r == ';' || r == ' ' })
+	gesehen := map[int]bool{}
+	var jahrgaenge []int
+	for _, teil := range teile {
+		n, err := strconv.Atoi(strings.TrimPrefix(teil, "0"))
+		if err != nil || n < 1 || n > 13 {
+			//nolint:staticcheck // ST1005: nutzer-sichtbarer Text, erscheint als 400-Meldung im Formular
+			return "", fmt.Errorf("Eingangsjahrgänge: %q ist kein Jahrgang zwischen 1 und 13 — erwartet wird etwa „5, 7“", teil)
+		}
+		if gesehen[n] {
+			continue
+		}
+		gesehen[n] = true
+		jahrgaenge = append(jahrgaenge, n)
+	}
+	sort.Ints(jahrgaenge)
+	worte := make([]string, 0, len(jahrgaenge))
+	for _, j := range jahrgaenge {
+		worte = append(worte, strconv.Itoa(j))
+	}
+	return strings.Join(worte, ", "), nil
+}
+
 // nurRueckgabeSQL ist das Prädikat „diese Klasse gibt vor den Ferien nur ab": Abschluss-
 // klasse (AbschlussklasseSQL, die eine Regel) oder ihr nächster Jahrgang ist ein
 // Eingangsjahrgang (die Klasse wird neu gebildet). eingang ist der Platzhalter eines

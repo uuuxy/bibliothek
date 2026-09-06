@@ -80,6 +80,24 @@ func (t Ferientabelle) LetztesJahr() int {
 	return letztes
 }
 
+// LueckenlosBis nennt das letzte Jahr, bis zu dem die Tabelle AB `ab` ohne Lücke reicht;
+// `ab-1`, wenn schon `ab` fehlt.
+//
+// Rasterdurchgang 06.09.2026 (Frage 3): Die Selbstprüfung fragte nach dem Maximum
+// (LetztesJahr), der Planer fragt nach GENAU EINEM Jahr (Sommerferien). Trägt die Schule
+// 2032 und 2033 ein und vergisst 2031, meldete die Selbstprüfung „bis 2033 hinterlegt",
+// während der Planer 2031 ohne Vorgabe dastand. Zwei Formulierungen derselben Frage
+// „reicht die Tabelle?" — diese hier ist die, die der Planer stellt.
+func (t Ferientabelle) LueckenlosBis(ab int) int {
+	jahr := ab
+	for {
+		if _, ok := t.jahre[jahr]; !ok {
+			return jahr - 1
+		}
+		jahr++
+	}
+}
+
 // Sommerferien nennt die Sommerferien eines Jahres (Kalendertage in UTC, Name
 // „Sommerferien"); ok=false, wenn das Jahr nicht bekannt ist.
 func (t Ferientabelle) Sommerferien(jahr int) (Zeitraum, bool) {
