@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -357,5 +358,63 @@ func TestAbgaengerRetentionKette(t *testing.T) {
 	}
 	if exists {
 		t.Error("Abgänger nach Purge nicht gelöscht (PII bliebe für immer)")
+	}
+}
+
+// Die andere Hälfte des Papierkorb-Funds vom 06.09.2026: Die Oberfläche kann den
+// Wiederherstellen-Knopf nur dann an der richtigen Zeile weglassen, wenn die Liste
+// verrät, welche Zeile anonymisiert ist. Bis zu diesem Tag lieferte sie das Feld nicht
+// — der Knopf stand überall, und ein Klick lief in den 409 von
+// TestRestoreStudent_AnonymisierteZeileBleibtImPapierkorb (dort: die eine Hälfte).
+func TestGetDeletedStudents_NenntDieAnonymisiertenZeilen(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at, anonymized_at, ist_gesperrt, block_reason)
+		 VALUES ('P-FRISCH', 'Anna', 'Muster', '07H1', 2030, now(), NULL, true, 'Systematisch gelöscht'),
+		        ('P-ANON', 'a1b2', 'Anonym', '', 2030, now() - interval '200 days', now(), true, 'Anonymisiert (DSGVO)')`,
+	); err != nil {
+		t.Fatalf("Papierkorb-Zeilen anlegen: %v", err)
+	}
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	req := httptest.NewRequest(http.MethodGet, "/api/schueler/deleted", nil)
+	rec := httptest.NewRecorder()
+	srv.GetDeletedStudentsHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+	}
+
+	var zeilen []map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &zeilen); err != nil {
+		t.Fatalf("Antwort lesen: %v — %s", err, rec.Body.String())
+	}
+	gesehen := map[string]any{}
+	for _, z := range zeilen {
+		barcode, ok := z["barcode_id"].(string)
+		if !ok {
+			t.Fatalf("Zeile ohne barcode_id: %v", z)
+		}
+		if barcode == "P-FRISCH" || barcode == "P-ANON" {
+			wert, vorhanden := z["anonymized_at"]
+			if !vorhanden {
+				t.Fatalf("%s: das Feld anonymized_at fehlt in der Antwort — die Oberfläche kann "+
+					"die nicht wiederherstellbaren Zeilen dann nicht erkennen und bietet einen "+
+					"Knopf an, der nur mit 409 enden kann", barcode)
+			}
+			gesehen[barcode] = wert
+		}
+	}
+	if len(gesehen) != 2 {
+		t.Fatalf("erwartet beide Zeilen im Papierkorb, gesehen: %v", gesehen)
+	}
+	if gesehen["P-FRISCH"] != nil {
+		t.Errorf("frisch gelöschte Zeile: anonymized_at soll null sein, war %v", gesehen["P-FRISCH"])
+	}
+	if gesehen["P-ANON"] == nil {
+		t.Error("anonymisierte Zeile: anonymized_at ist null — dann sieht die Oberfläche sie als " +
+			"wiederherstellbar an")
 	}
 }

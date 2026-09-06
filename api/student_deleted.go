@@ -22,7 +22,8 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 		const papierkorbLimit = 1000
 		rows, err := s.DB.Pool.Query(ctx, `
 			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
-			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at
+			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at,
+			       anonymized_at
 			FROM schueler
 			WHERE deleted_at IS NOT NULL
 			ORDER BY deleted_at DESC
@@ -42,8 +43,14 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 			// timestamptz braucht time.Time — ein String-Scan brach hier
 			// die Iteration ab und machte den Papierkorb zum 500er.
 			var deletedAt time.Time
+			// anonymized_at reist MIT (Rasterdurchgang 06.09.2026): Nach der
+			// 180-Tage-Anonymisierung weist RestoreStudentHandler die Wiederherstellung
+			// mit 409 ab — die Zeile ist kein Schüler mehr, sondern ein Pseudonym. Ohne
+			// dieses Feld kann die Oberfläche das nicht wissen und bietet einen Knopf an,
+			// der nur scheitern kann. Nullbar, deshalb ein Zeiger (Bugklasse „NULL-Scan").
+			var anonymizedAt *time.Time
 
-			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &deletedAt); err != nil {
+			if err := rows.Scan(&id, &barcode, &vorname, &nachname, &kl, &abgaengerJahr, &gesperrt, &deletedAt, &anonymizedAt); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -56,6 +63,7 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 				"abgaenger_jahr": abgaengerJahr,
 				"ist_gesperrt":   gesperrt,
 				"deleted_at":     deletedAt,
+				"anonymized_at":  anonymizedAt,
 			})
 		}
 		if err := rows.Err(); err != nil {
