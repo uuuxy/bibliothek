@@ -2,30 +2,44 @@ import { describe, it, expect } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import LmfPlanFreieTage from './LmfPlanFreieTage.svelte';
 
-// Freie Tage des Plans (Brückentag, pädagogischer Tag) trägt die Bibliothek ein; was der
-// Server im Plan-Zeitraum übersprungen hat — Feiertage eingeschlossen —, steht mit
-// Grund darunter. Geprüft wird das Bauteil: eintragen, Dublette ersetzt, entfernen,
-// Ausfälle lesbar.
+// Freie Tage des Plans (Brückentag, pädagogischer Tag) trägt die Bibliothek ein — seit
+// dem 06.09.2026 über den Assist-Chip „Tag freihalten" und ein kleines Dialogfenster,
+// nicht über ein leeres Dauerformular; was der Server im Plan-Zeitraum übersprungen
+// hat — Feiertage eingeschlossen —, steht mit Grund darunter. Geprüft wird das Bauteil:
+// eintragen, Dublette ersetzt, entfernen, Ausfälle lesbar.
 describe('LmfPlanFreieTage', () => {
+	/** Chip → Dialog → Felder → „Freihalten". */
+	async function freihalten(r, datum, grund) {
+		await fireEvent.click(r.getByRole('button', { name: 'Tag freihalten' }));
+		await fireEvent.input(r.getByLabelText('Freier Tag'), { target: { value: datum } });
+		await fireEvent.input(r.getByLabelText('Grund'), { target: { value: grund } });
+		await fireEvent.click(r.getByRole('button', { name: 'Freihalten' }));
+	}
+
 	it('nimmt einen freien Tag auf, ersetzt ein Duplikat und entfernt ihn wieder', async () => {
-		const { getByLabelText, getByRole, getByTestId, queryByTestId } = render(LmfPlanFreieTage, {
-			tage: [],
-			ausfaelle: []
-		});
-		await fireEvent.input(getByLabelText('Freier Tag'), { target: { value: '2026-06-05' } });
-		await fireEvent.input(getByLabelText('Grund'), { target: { value: 'Brückentag' } });
-		await fireEvent.click(getByRole('button', { name: 'Tag freihalten' }));
-		expect(getByTestId('lmf-freie-tage').textContent).toContain('05.06.26 Brückentag');
+		const r = render(LmfPlanFreieTage, { tage: [], ausfaelle: [] });
+		// Ohne Eintrag kein Dialog — nur der Chip.
+		expect(r.queryByRole('dialog')).toBeNull();
+		await freihalten(r, '2026-06-05', 'Brückentag');
+		expect(r.getByTestId('lmf-freie-tage').textContent).toContain('05.06.26 Brückentag');
+		// Der Dialog ist nach dem Eintragen zu.
+		expect(r.queryByRole('dialog')).toBeNull();
 
 		// Derselbe Tag noch einmal, anderer Grund: eine Zeile, der neue Grund.
-		await fireEvent.input(getByLabelText('Freier Tag'), { target: { value: '2026-06-05' } });
-		await fireEvent.input(getByLabelText('Grund'), { target: { value: 'Studientag' } });
-		await fireEvent.click(getByRole('button', { name: 'Tag freihalten' }));
-		expect(getByTestId('lmf-freie-tage').querySelectorAll('span').length).toBe(1);
-		expect(getByTestId('lmf-freie-tage').textContent).toContain('Studientag');
+		await freihalten(r, '2026-06-05', 'Studientag');
+		expect(r.getByTestId('lmf-freie-tage').querySelectorAll('span').length).toBe(1);
+		expect(r.getByTestId('lmf-freie-tage').textContent).toContain('Studientag');
 
-		await fireEvent.click(getByLabelText('05.06.26 Studientag aus dem Plan nehmen'));
-		expect(queryByTestId('lmf-freie-tage')).toBeNull();
+		await fireEvent.click(r.getByLabelText('05.06.26 Studientag aus dem Plan nehmen'));
+		expect(r.queryByTestId('lmf-freie-tage')).toBeNull();
+	});
+
+	it('lässt sich ohne Datum nicht bestätigen', async () => {
+		const r = render(LmfPlanFreieTage, { tage: [], ausfaelle: [] });
+		await fireEvent.click(r.getByRole('button', { name: 'Tag freihalten' }));
+		expect(
+			/** @type {HTMLButtonElement} */ (r.getByRole('button', { name: 'Freihalten' })).disabled
+		).toBe(true);
 	});
 
 	it('nennt die übersprungenen Tage mit Wochentag und Grund', () => {

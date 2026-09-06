@@ -5,7 +5,7 @@ import { apiFetch } from './apiFetch.js';
 
 // Scheitert das Laden, darf der Planer NICHT erscheinen.
 //
-// Sonst stünde nach einem Netzfehler „Noch kein Plan" da, der Planer böte die
+// Sonst stünde nach einem Netzfehler „Vorschlag nach der Regel" da, der Planer böte die
 // Regel-Reihenfolge an — und ein Klick auf „Plan speichern" ersetzte den echten Plan des
 // Schuljahres durch diesen Entwurf und stellte die Fristen aller Klassen auf den
 // Stichtag zurück. Dieselbe Klasse wie an den Einstellungen am 31.08.2026; das Bauteil
@@ -62,7 +62,7 @@ describe('LmfPlan: gescheitertes Laden', () => {
 		);
 		render(LmfPlan);
 		expect(await screen.findByText('Plan nicht geladen')).toBeTruthy();
-		expect(screen.queryByText(/Noch kein Plan/)).toBeNull();
+		expect(screen.queryByText(/noch nicht gespeichert/)).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Plan speichern' })).toBeNull();
 		expect(screen.getByRole('button', { name: 'Erneut versuchen' })).toBeTruthy();
 	});
@@ -72,7 +72,9 @@ describe('LmfPlan: gescheitertes Laden', () => {
 			/** @type {any} */ ({ ok: true, json: async () => STAND })
 		);
 		render(LmfPlan);
-		expect(await screen.findByText(/Noch kein Plan/)).toBeTruthy();
+		expect(
+			await screen.findByText(/Vorschlag nach der Regel, noch nicht gespeichert/)
+		).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Plan speichern' })).toBeTruthy();
 		expect(screen.queryByText('Plan nicht geladen')).toBeNull();
 	});

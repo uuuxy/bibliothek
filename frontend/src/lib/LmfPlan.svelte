@@ -1,8 +1,13 @@
 <!-- @component LmfPlan — der Planer: eine REIHENFOLGE von Klassen, die der Server auf
      Schultage × Stunden gießt (Peter, 05.09.2026): Rahmen, Reihenfolge mit Vorschau der
-     Plätze, „Nicht im Plan". Gespeichert wird ein ENTWURF (Migration 100), für Portal und
-     Kollegiums-PDF unsichtbar; erst „Veröffentlichen" macht ihn gültig und setzt beim
-     Büchertausch die Fristen (die Schulleitung nimmt ihn vorher ab). System → „Schuljahreswechsel". -->
+     Plätze und, darüber, „Noch nicht im Plan". Gespeichert wird ein ENTWURF (Migration
+     100), für Portal und Kollegiums-PDF unsichtbar; erst „Veröffentlichen" macht ihn
+     gültig und setzt beim Büchertausch die Fristen (die Schulleitung nimmt ihn vorher
+     ab). System → „Schuljahreswechsel".
+
+     Aufbau seit 06.09.2026 nach Arbeitsablauf, nicht nach Datenmodell (Peter: „es steht
+     oben was und unten was"): Kopf haftet oben, freie Tage als Chips, fehlende Klassen
+     direkt über der Reihenfolge; einplanen setzt an den Platz (lmfplanZeilen.js). -->
 <script>
 	import { onMount, untrack } from 'svelte';
 	import PageShell from './components/layout/PageShell.svelte';
@@ -10,7 +15,6 @@
 	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
 	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
 	import LmfPlanReihenfolge from './components/lmfplan/LmfPlanReihenfolge.svelte';
-	import LmfPlanVorrat from './components/lmfplan/LmfPlanVorrat.svelte';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import * as dienst from './lmfplanDienst.js';
 
@@ -26,6 +30,9 @@
 	/** Der gerechnete Beginn des Büchertauschs (der Plan hängt am Ende) — vom Server.
 	 *  @type {{ datum: string, stunde: number } | null} */
 	let beginn = $state(null);
+	/** Die gerade eingeplante Zeile — die Tabelle scrollt hin und hebt sie kurz hervor.
+	 *  @type {{ index: number } | null} */
+	let markiert = $state(null);
 	let laedt = $state(true);
 	let speichert = $state(false);
 	// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan (ui/LadeFehler.svelte):
@@ -74,22 +81,13 @@
 	});
 
 	const marker = $derived(dienst.klassenMarker(stand));
+	const draussen = $derived(dienst.bewusstDraussen(stand));
 
-	/** @param {string} k */
-	function klasseRaus(k) {
-		if (!entwurf.ausgelassen.some((x) => dienst.normKey(x) === dienst.normKey(k)))
-			entwurf.ausgelassen = [...entwurf.ausgelassen, k].sort((a, b) =>
-				a.localeCompare(b, 'de', { numeric: true })
-			);
-	}
-
-	/** @param {string} k */
-	function klasseHinein(k) {
-		entwurf.ausgelassen = entwurf.ausgelassen.filter(
-			(x) => dienst.normKey(x) !== dienst.normKey(k)
-		);
-		if (!entwurf.zeilen.some((z) => z.klassen.some((x) => dienst.normKey(x) === dienst.normKey(k))))
-			entwurf.zeilen = [...entwurf.zeilen, { klassen: [k], vermerk: '', fest: null }];
+	/** @param {string} k @param {number} [vor] */
+	function klasseHinein(k, vor) {
+		const erg = dienst.klasseHinein(entwurf, k, vor);
+		entwurf = erg.entwurf;
+		if (erg.index !== null) markiert = { index: erg.index };
 	}
 
 	const gueltig = $derived(
@@ -177,7 +175,7 @@
 			text="Der gespeicherte Plan konnte nicht abgerufen werden. Der Planer bleibt geschlossen — sonst würde ein Klick auf „Plan speichern“ den echten Plan durch diesen Entwurf ersetzen und die Fristen der Klassen zurückstellen."
 		/>
 	{:else}
-		<div class="mt-6 space-y-8">
+		<div class="space-y-8">
 			<LmfPlanRahmen
 				{art}
 				bind:entwurf
@@ -190,9 +188,12 @@
 				{plaetze}
 				{marker}
 				bereit={dienst.ankerGesetzt(art, entwurf)}
-				onklasseraus={klasseRaus}
+				ausgelassen={entwurf.ausgelassen}
+				{draussen}
+				{markiert}
+				onklasseraus={(k) => (entwurf = dienst.klasseRaus(entwurf, k))}
+				onhinein={klasseHinein}
 			/>
-			<LmfPlanVorrat klassen={entwurf.ausgelassen} {marker} onhinein={klasseHinein} />
 		</div>
 	{/if}
 </PageShell>

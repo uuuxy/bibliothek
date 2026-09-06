@@ -3,22 +3,52 @@
      Besonderheiten), nur dass sie hier bearbeitet wird: Zeilen ziehen oder mit den
      Pfeilen schieben, zwei Zeilen zu einer Stunde zusammenlegen („10R1/10R2"), eine
      Zeile ohne Klasse davor einfügen („Bücher setzen"), festlegen, Klasse aus dem Plan
-     nehmen. Die Zeile selbst ist LmfPlanZeile, ihre Aktionen LmfPlanZeileAktionen.
+     nehmen. Die Umformungen rechnet lmfplanZeilen.js, die Zeile selbst ist
+     LmfPlanZeile, ihre Aktionen LmfPlanZeileAktionen.
 
-     Nach M3 Lists ohne Trennlinie je Zeile („Limit dividers to uncontained or complex
-     lists, only when a stronger visual separation is necessary"): Zeilenhöhe 48 px und
-     die Hover-Fläche trennen, die Linie steht nur unter dem Kopf. Wochentag, Datum und
-     Stunde kommen vom Server (Vorschau) — die zwei Spalten, die im Excel von Hand
-     falsch waren. -->
+     Über der Tabelle liegt seit dem 06.09.2026 LmfPlanVorrat („Noch nicht im Plan"):
+     Ein Klick plant die Klasse an ihren Platz (Nachbar-Regel), ein Chip lässt sich auf
+     eine Zeile ziehen und landet davor; die neue Zeile wird angescrollt und leuchtet
+     kurz. Nach M3 Lists ohne Trennlinie je Zeile („Limit dividers … only when a
+     stronger visual separation is necessary"): Zeilenhöhe 48 px und die Hover-Fläche
+     trennen, die Linie steht nur unter dem Kopf. -->
 <script>
 	import Button from '../ui/Button.svelte';
+	import LmfPlanVorrat from './LmfPlanVorrat.svelte';
 	import LmfPlanZeile from './LmfPlanZeile.svelte';
+	import * as op from '../../lmfplanZeilen.js';
 
-	/** @type {{ zeilen: import('../../lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, bereit: boolean, onklasseraus: (klasse: string) => void }} */
-	let { zeilen = $bindable(), plaetze, marker, bereit, onklasseraus } = $props();
+	/** @type {{ zeilen: import('../../lmfplanDienst.js').PlanZeile[], plaetze: { datum: string, stunde: number }[], marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, bereit: boolean, ausgelassen: string[], draussen: (klasse: string) => boolean, markiert: { index: number } | null, onklasseraus: (klasse: string) => void, onhinein: (klasse: string, vor?: number) => void }} */
+	let {
+		zeilen = $bindable(),
+		plaetze,
+		marker,
+		bereit,
+		ausgelassen,
+		draussen,
+		markiert,
+		onklasseraus,
+		onhinein
+	} = $props();
 
 	/** @type {number | null} */
 	let gezogen = $state(null);
+	/** @type {number | null} */
+	let ziel = $state(null);
+	/** @type {number | null} */
+	let leuchtet = $state(null);
+
+	// Eine gerade eingeplante Zeile: anscrollen und zwei Sekunden hervorheben. Liest nur
+	// die Prop, schreibt nur `leuchtet` — kein Effekt auf eigenen State.
+	$effect(() => {
+		if (!markiert) return;
+		leuchtet = markiert.index;
+		document
+			.getElementById(`lmf-zeile-${markiert.index}`)
+			?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+		const timer = setTimeout(() => (leuchtet = null), 2000);
+		return () => clearTimeout(timer);
+	});
 
 	// Klassen im Plan ohne Schüler (Vorjahr, vor dem Import getippt) — der Satz oben
 	// zählt sie, damit man nach dem LUSD-Import sieht, was übrig geblieben ist.
@@ -26,71 +56,27 @@
 		[...new Set(zeilen.flatMap((z) => z.klassen))].filter((k) => marker.ohneSchueler(k))
 	);
 
-	/** @param {number} von @param {number} nach */
-	function verschiebe(von, nach) {
-		if (von === nach || nach < 0 || nach >= zeilen.length) return;
-		const kopie = [...zeilen];
-		const [z] = kopie.splice(von, 1);
-		kopie.splice(nach, 0, z);
-		zeilen = kopie;
+	/** Ablegen auf Zeile i: eine gezogene Zeile wandert dorthin, ein gezogener Chip
+	 *  („Noch nicht im Plan") wird davor eingeplant.
+	 *  @param {DragEvent} e @param {number} i */
+	function ablegen(e, i) {
+		const klasse = e.dataTransfer?.getData('text/lmf-klasse');
+		if (gezogen !== null) zeilen = op.verschiebe(zeilen, gezogen, i);
+		else if (klasse) onhinein(klasse, i);
+		gezogen = null;
+		ziel = null;
 	}
 
-	/** Zeile i mit der davor zusammenlegen: beide Klassen in einer Stunde. */
-	function zusammenlegen(i) {
-		if (i === 0) return;
-		const oben = zeilen[i - 1];
-		const unten = zeilen[i];
-		const vermerk = [oben.vermerk, unten.vermerk].filter(Boolean).join(' · ');
-		zeilen = [
-			...zeilen.slice(0, i - 1),
-			{ klassen: [...oben.klassen, ...unten.klassen], vermerk, fest: oben.fest ?? null },
-			...zeilen.slice(i + 1)
-		];
-	}
-
-	/** Eine Zeile mit mehreren Klassen wieder in einzelne Stunden trennen. */
-	function trennen(i) {
-		const z = zeilen[i];
-		if (z.klassen.length < 2) return;
-		const einzeln = z.klassen.map((k, n) => ({
-			klassen: [k],
-			vermerk: n === 0 ? z.vermerk : '',
-			fest: n === 0 ? (z.fest ?? null) : null
-		}));
-		zeilen = [...zeilen.slice(0, i), ...einzeln, ...zeilen.slice(i + 1)];
-	}
-
-	function einfuegen(i) {
-		zeilen = [
-			...zeilen.slice(0, i),
-			{ klassen: [], vermerk: 'Bücher setzen', fest: null },
-			...zeilen.slice(i)
-		];
-	}
-
+	/** @param {number} i */
 	function entfernen(i) {
 		for (const k of zeilen[i].klassen) onklasseraus(k);
-		zeilen = zeilen.filter((_, n) => n !== i);
+		zeilen = op.entfernen(zeilen, i);
 	}
 
+	/** @param {number} i @param {string} k */
 	function klasseRaus(i, k) {
 		onklasseraus(k);
-		const rest = zeilen[i].klassen.filter((x) => x !== k);
-		if (rest.length === 0 && !zeilen[i].vermerk.trim()) {
-			zeilen = zeilen.filter((_, n) => n !== i);
-		} else {
-			zeilen = zeilen.map((z, n) => (n === i ? { ...z, klassen: rest } : z));
-		}
-	}
-
-	/** Festlegen: Die Zeile nimmt ihren Vorschau-Platz als Vorgabe mit, damit „festlegen"
-	 *  zunächst nichts verschiebt. Lösen: sie fließt wieder mit. */
-	function festWechseln(i) {
-		zeilen = zeilen.map((z, n) => {
-			if (n !== i) return z;
-			if (z.fest) return { ...z, fest: null };
-			return { ...z, fest: { datum: plaetze[i]?.datum ?? '', stunde: plaetze[i]?.stunde ?? 1 } };
-		});
+		zeilen = op.klasseRaus(zeilen, i, k);
 	}
 </script>
 
@@ -112,7 +98,8 @@
 			</span>
 		{/if}
 	</p>
-	<div class="mt-4 overflow-x-auto">
+	<LmfPlanVorrat klassen={ausgelassen} {draussen} {marker} onhinein={(k) => onhinein(k)} />
+	<div class="mt-4 overflow-x-auto" ondragleave={() => (ziel = null)} role="presentation">
 		<table class="w-full border-collapse text-left text-sm" data-testid="lmf-reihenfolge">
 			<thead>
 				<tr class="border-b border-outline-variant text-on-surface-variant">
@@ -134,18 +121,20 @@
 						platz={plaetze[i]}
 						{marker}
 						gezogen={gezogen === i}
+						ziel={ziel === i}
+						markiert={leuchtet === i}
 						onziehstart={() => (gezogen = i)}
-						onablegen={() => {
-							if (gezogen !== null) verschiebe(gezogen, i);
-							gezogen = null;
-						}}
+						onziehueber={() => (ziel = i)}
+						onablegen={(e) => ablegen(e, i)}
 						onklasseraus={(k) => klasseRaus(i, k)}
-						onhoch={() => verschiebe(i, i - 1)}
-						onrunter={() => verschiebe(i, i + 1)}
-						onzusammen={() => zusammenlegen(i)}
-						ontrennen={() => trennen(i)}
-						oneinfuegen={() => einfuegen(i)}
-						onfest={() => festWechseln(i)}
+						onhoch={() => (zeilen = op.verschiebe(zeilen, i, i - 1))}
+						onrunter={() => (zeilen = op.verschiebe(zeilen, i, i + 1))}
+						onanfang={() => (zeilen = op.verschiebe(zeilen, i, 0))}
+						onende={() => (zeilen = op.verschiebe(zeilen, i, zeilen.length - 1))}
+						onzusammen={() => (zeilen = op.zusammenlegen(zeilen, i))}
+						ontrennen={() => (zeilen = op.trennen(zeilen, i))}
+						oneinfuegen={() => (zeilen = op.einfuegen(zeilen, i))}
+						onfest={() => (zeilen = op.festWechseln(zeilen, i, plaetze[i]))}
 						onentfernen={() => entfernen(i)}
 					/>
 				{/each}
@@ -153,11 +142,15 @@
 		</table>
 		{#if zeilen.length === 0}
 			<p class="px-4 py-6 text-sm text-on-surface-variant">
-				Noch keine Zeile — Klassen aus „Nicht im Plan" holen.
+				Noch keine Zeile — eine Klasse aus „Noch nicht im Plan" einplanen.
 			</p>
 		{/if}
 		<div class="px-2 pt-2">
-			<Button variant="ghost" size="sm" onclick={() => einfuegen(zeilen.length)}>
+			<Button
+				variant="ghost"
+				size="sm"
+				onclick={() => (zeilen = op.einfuegen(zeilen, zeilen.length))}
+			>
 				Zeile ohne Klasse anhängen
 			</Button>
 		</div>

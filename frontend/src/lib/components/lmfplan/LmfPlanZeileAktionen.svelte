@@ -1,16 +1,29 @@
 <!-- @component LmfPlanZeileAktionen — die Aktionen einer Zeile im Planer. Sichtbar
      bleibt, was jede Zeile ständig braucht: hoch und runter (M3: Icon-Buttons „to
-     display actions in a compact layout"). Alles andere — zusammenlegen oder trennen,
-     davor einfügen, festlegen oder lösen, Klasse herausnehmen, entfernen — liegt im
-     Überlaufmenü (M3 Menus: „Use menus in situations that need extra actions, like:
-     Overflow menus"). Bis 06.09.2026 standen hier sechs Icon-Buttons je Zeile, rund
-     dreihundert auf der Seite. -->
+     display actions in a compact layout"). Alles andere — an den Anfang oder ans Ende
+     (die weiten Wege, wie im Zeilenmenü einer YouTube-Playlist), zusammenlegen oder
+     trennen, davor einfügen, festlegen oder lösen, Klasse herausnehmen, entfernen —
+     liegt im Überlaufmenü (M3 Menus: „Use menus in situations that need extra actions,
+     like: Overflow menus"). Bis 06.09.2026 standen hier sechs Icon-Buttons je Zeile,
+     rund dreihundert auf der Seite. -->
 <script>
-	import { ArrowDown, ArrowUp, Merge, Pin, PinOff, Plus, Split, Trash2, X } from '@lucide/svelte';
+	import {
+		ArrowDown,
+		ArrowDownToLine,
+		ArrowUp,
+		ArrowUpToLine,
+		Merge,
+		Pin,
+		PinOff,
+		Plus,
+		Split,
+		Trash2,
+		X
+	} from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import Menue from '../ui/Menue.svelte';
 
-	/** @type {{ nummer: number, anzahl: number, klassen: number, fest: boolean, onhoch: () => void, onrunter: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
+	/** @type {{ nummer: number, anzahl: number, klassen: number, fest: boolean, onhoch: () => void, onrunter: () => void, onanfang: () => void, onende: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
 	let {
 		nummer,
 		anzahl,
@@ -18,6 +31,8 @@
 		fest,
 		onhoch,
 		onrunter,
+		onanfang,
+		onende,
 		onzusammen,
 		ontrennen,
 		oneinfuegen,
@@ -27,13 +42,16 @@
 	} = $props();
 
 	const eintraege = $derived([
+		{ id: 'anfang', text: 'An den Anfang', icon: ArrowUpToLine, disabled: nummer === 1 },
+		{ id: 'ende', text: 'Ans Ende', icon: ArrowDownToLine, disabled: nummer === anzahl },
 		klassen > 1
-			? { id: 'trennen', text: 'In einzelne Stunden trennen', icon: Split }
+			? { id: 'trennen', text: 'In einzelne Stunden trennen', icon: Split, trennerDavor: true }
 			: {
 					id: 'zusammen',
 					text: 'Mit der Zeile davor zusammenlegen',
 					icon: Merge,
-					disabled: nummer === 1
+					disabled: nummer === 1,
+					trennerDavor: true
 				},
 		{ id: 'einfuegen', text: 'Zeile davor einfügen', icon: Plus },
 		fest
@@ -44,6 +62,8 @@
 	]);
 
 	const aktionen = {
+		anfang: () => onanfang(),
+		ende: () => onende(),
 		trennen: () => ontrennen(),
 		zusammen: () => onzusammen(),
 		einfuegen: () => oneinfuegen(),

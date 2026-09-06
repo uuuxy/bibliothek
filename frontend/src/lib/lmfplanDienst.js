@@ -6,6 +6,7 @@
  *  zurück — auch die Vorschau rechnet der Server, damit es keinen JavaScript-Zwilling
  *  der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
 import { apiFetch } from './apiFetch.js';
+import { einordnen } from './lmfplanZeilen.js';
 
 /** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string }} LmfTermin */
 /** Fest: Datum und Stunde von Hand (die Klasse mit dem Ausflug) — null, wenn die Zeile fließt. */
@@ -302,4 +303,41 @@ export async function ladePdf(alle = false, entwurf = false) {
 	a.click();
 	a.remove();
 	URL.revokeObjectURL(url);
+}
+
+/** Welche Klassen im Planer eingeklappt unter „bleiben draußen" stehen: die, die der
+ *  gespeicherte Plan (laufend) oder der Vorschlag (Vorjahr, Regel) bewusst auslässt —
+ *  die Oberstufe, beim Ausgabe-Plan alles außer den Eingangsjahrgängen. Was das
+ *  Vokabular darüber hinaus kennt, hat keine Regel und steht offen unter „Noch nicht
+ *  im Plan": die neue Klasse nach dem LUSD-Import (06.09.2026).
+ *  @param {PlanStand | null} stand @returns {(klasse: string) => boolean} */
+export function bewusstDraussen(stand) {
+	const laufend = stand?.plan && !stand.vorbei;
+	const liste = laufend ? (stand?.ausgelassen ?? []) : (stand?.vorschlag?.ausgelassen ?? []);
+	const menge = new Set(liste.map(normKey));
+	return (k) => menge.has(normKey(k));
+}
+
+/** Nimmt eine Klasse in den Entwurf: aus „Nicht im Plan" heraus und — wenn sie in
+ *  keiner Zeile steht — als eigene Zeile hinein, vor `vor` (Ziehen auf eine Zeile) oder
+ *  nach der Nachbar-Regel (lmfplanZeilen.einordnen). `index` ist die neue Zeile, oder
+ *  null, wenn die Klasse schon im Plan stand.
+ *  @param {PlanEntwurf} e @param {string} k @param {number} [vor]
+ *  @returns {{ entwurf: PlanEntwurf, index: number | null }} */
+export function klasseHinein(e, k, vor) {
+	const ausgelassen = e.ausgelassen.filter((x) => normKey(x) !== normKey(k));
+	if (e.zeilen.some((z) => z.klassen.some((x) => normKey(x) === normKey(k))))
+		return { entwurf: { ...e, ausgelassen }, index: null };
+	const { zeilen, index } = einordnen(e.zeilen, k, vor);
+	return { entwurf: { ...e, ausgelassen, zeilen }, index };
+}
+
+/** Merkt eine Klasse als ausgelassen (die Zeile nimmt LmfPlanReihenfolge selbst weg).
+ *  @param {PlanEntwurf} e @param {string} k @returns {PlanEntwurf} */
+export function klasseRaus(e, k) {
+	if (e.ausgelassen.some((x) => normKey(x) === normKey(k))) return e;
+	return {
+		...e,
+		ausgelassen: [...e.ausgelassen, k].sort((a, b) => a.localeCompare(b, 'de', { numeric: true }))
+	};
 }

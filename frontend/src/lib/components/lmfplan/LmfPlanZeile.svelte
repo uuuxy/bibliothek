@@ -8,7 +8,12 @@
      Ohne ersten Tag bleiben die gerechneten Spalten leer; der Abschnitt darüber sagt,
      was fehlt. Ein Status-Chip aus dem Marker (lmfplanDienst.klassenMarker): „ohne
      Schüler" an der Klasse. „Nur Rückgabe" ist seit 06.09.2026 Text im Vermerk (vom
-     Vorschlag vorbelegt, änderbar), kein Chip. -->
+     Vorschlag vorbelegt, änderbar), kein Chip.
+
+     Ziel und Marke: `ziel` zeichnet beim Ziehen die Einfügelinie über der Zeile (Apple
+     HIG: „display an insertion point … only when the destination can accept a dragged
+     item"); `markiert` hebt eine gerade eingeplante Zeile kurz hervor (M3: Auswahl =
+     secondary-container), damit man sieht, wohin die Nachbar-Regel sie gesetzt hat. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
@@ -17,19 +22,24 @@
 	import LmfPlanZeileAktionen from './LmfPlanZeileAktionen.svelte';
 	import { STUNDEN, datumKurz, stundeText, wochentag } from '../../lmfplanDienst.js';
 
-	/** @type {{ zeile: import('../../lmfplanDienst.js').PlanZeile, i: number, anzahl: number, platz: { datum: string, stunde: number } | undefined, gezogen: boolean, marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, onziehstart: () => void, onablegen: () => void, onklasseraus: (klasse: string) => void, onhoch: () => void, onrunter: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onentfernen: () => void }} */
+	/** @type {{ zeile: import('../../lmfplanDienst.js').PlanZeile, i: number, anzahl: number, platz: { datum: string, stunde: number } | undefined, gezogen: boolean, ziel: boolean, markiert: boolean, marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, onziehstart: () => void, onziehueber: () => void, onablegen: (e: DragEvent) => void, onklasseraus: (klasse: string) => void, onhoch: () => void, onrunter: () => void, onanfang: () => void, onende: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onentfernen: () => void }} */
 	let {
 		zeile = $bindable(),
 		i,
 		anzahl,
 		platz,
 		gezogen,
+		ziel,
+		markiert,
 		marker,
 		onziehstart,
+		onziehueber,
 		onablegen,
 		onklasseraus,
 		onhoch,
 		onrunter,
+		onanfang,
+		onende,
 		onzusammen,
 		ontrennen,
 		oneinfuegen,
@@ -39,14 +49,25 @@
 
 	const OHNE_SCHUELER_TIP =
 		'Noch kein Schüler in dieser Klasse — sie kommt mit dem LUSD-Import oder gehört aus dem Plan';
+
+	const flaeche = $derived(
+		markiert ? 'bg-secondary-container' : gezogen ? 'opacity-50' : 'hover:bg-surface-container-low'
+	);
 </script>
 
 <tr
+	id="lmf-zeile-{i}"
 	draggable="true"
 	ondragstart={onziehstart}
-	ondragover={(e) => e.preventDefault()}
-	ondrop={onablegen}
-	class="h-12 transition-colors hover:bg-surface-container-low {gezogen ? 'opacity-50' : ''}"
+	ondragover={(e) => {
+		e.preventDefault();
+		onziehueber();
+	}}
+	ondrop={(e) => {
+		e.preventDefault();
+		onablegen(e);
+	}}
+	class="h-12 transition-colors {flaeche} {ziel ? '[&>td]:border-t-2 [&>td]:border-primary' : ''}"
 >
 	<td class="px-2 py-1 text-right tabular-nums text-on-surface-variant">{i + 1}</td>
 	{#if zeile.fest}
@@ -98,15 +119,13 @@
 		{/if}
 	</td>
 	<td class="px-4 py-1">
-		<div class="flex items-center gap-2">
-			<Feld
-				id="lmf-zeile-vermerk-{i}"
-				aria-label="Besonderheiten Zeile {i + 1}"
-				bind:value={zeile.vermerk}
-				placeholder={zeile.klassen.length === 0 ? 'Pflicht ohne Klasse' : ''}
-				ungueltig={zeile.klassen.length === 0 && !zeile.vermerk.trim()}
-			/>
-		</div>
+		<Feld
+			id="lmf-zeile-vermerk-{i}"
+			aria-label="Besonderheiten Zeile {i + 1}"
+			bind:value={zeile.vermerk}
+			placeholder={zeile.klassen.length === 0 ? 'Pflicht ohne Klasse' : ''}
+			ungueltig={zeile.klassen.length === 0 && !zeile.vermerk.trim()}
+		/>
 	</td>
 	<td class="px-4 py-1 text-right whitespace-nowrap">
 		<LmfPlanZeileAktionen
@@ -116,6 +135,8 @@
 			fest={Boolean(zeile.fest)}
 			{onhoch}
 			{onrunter}
+			{onanfang}
+			{onende}
 			{onzusammen}
 			{ontrennen}
 			{oneinfuegen}

@@ -128,8 +128,8 @@ verschiedenen Zeiten):
   der Text gehört dann der Bibliothek und lässt sich ändern oder löschen.
 - **Bücherausgabe nach den Sommerferien:** Nur die neu gebildeten Klassen bekommen ihre
   Bücher — die **Eingangsjahrgänge** (_Einstellungen → Ausleihe & Fristen_, Vorgabe
-  „5, 7"). Der Vorschlag für diesen Plan enthält nur sie; alle anderen Klassen liegen
-  unter _Nicht im Plan_.
+  „5, 7"). Der Vorschlag für diesen Plan enthält nur sie; alle anderen Klassen bleiben
+  draußen.
 
 **Der Plan ist eine Reihenfolge von Klassen, die das Programm auf Schultage und Stunden verteilt:**
 Abschlussklassen zuerst, dann jeder Schultag Stunde 1 bis 6, eine Klasse je Stunde, die
@@ -138,7 +138,9 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 
 - Oben _Büchertausch vor den Sommerferien_ / _Bücherausgabe nach den Sommerferien_
   umschalten; je Art gibt es einen Plan pro Schuljahr. Rechts _Als PDF_, _Plan verwerfen_,
-  _Veröffentlichen_ (nur bei einem Entwurf), _Plan speichern_.
+  _Veröffentlichen_ (nur bei einem Entwurf), _Plan speichern_. Die Leiste bleibt beim
+  Scrollen oben stehen; der Satz darunter sagt, was man sieht („Vorschlag aus dem
+  Vorjahr, noch nicht gespeichert", „Entwurf vom …", „veröffentlicht am …").
 - **Entwurf und Veröffentlichen** (seit 06.09.2026): _Plan speichern_ legt einen
   **Entwurf** an — zentral gespeichert, auf jedem PC gleich, aber für das Kollegium
   unsichtbar: nicht im Portal, nicht im PDF des Portals, und es werden keine Fristen
@@ -162,11 +164,13 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   KMK-Beschluss nachzutragen ist. Darunter die **freien Tage**: Wochenenden und
   die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Plan von selbst;
   bewegliche Ferientage, pädagogische Tage und Brückentage trägt man mit Datum und Grund
-  ein (_Tag freihalten_). Die Zeile _Übersprungen: …_ nennt jeden Werktag im
+  ein — Chip _Tag freihalten_ neben den freien Tagen, dann ein kleines Fenster mit
+  Datum und Grund. Die Zeile _Übersprungen: …_ nennt jeden Werktag im
   Plan-Zeitraum, der ausfällt, mit Grund — so ist ein fehlender Donnerstag in der
   Tabelle erklärt.
 - **Reihenfolge**: die bekannte Tabelle, nur bearbeitbar. Zeilen ziehen oder mit den
-  Pfeilen schieben; alles Weitere steht im Menü ⋮ der Zeile: _Mit der Zeile davor
+  Pfeilen schieben; alles Weitere steht im Menü ⋮ der Zeile: _An den Anfang_ und _Ans
+  Ende_ (die weiten Wege mit einem Klick), _Mit der Zeile davor
   zusammenlegen_ legt zwei Klassen in eine Stunde („10R1/10R2"; die Klassen stehen dann
   als Chips mit ×), _In einzelne Stunden trennen_ macht daraus wieder zwei, _Zeile davor
   einfügen_ setzt eine Zeile ohne Klasse („Bücher setzen", „Nachzügler", „Aufräumen" — sie
@@ -178,16 +182,22 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   übrigen Zeilen fließen um sie herum und lassen die belegte Stunde aus. _Festen Platz
   lösen_ gibt die Zeile dem Fluss zurück. Feste Plätze gelten für diesen Plan; der
   Vorschlag fürs nächste Jahr bringt sie nicht mit.
-- **Nicht im Plan**: alle Klassen ohne Zeile. _07G1 einplanen_ holt eine ans Ende, _Weitere
-  Klasse_ nimmt Namen auf, die es noch nicht gibt („07G1" vor dem August-Import). Was
-  hier bleibt, gilt als bewusst ausgelassen — die Oberstufe organisiert Rückgabe und
-  Ausgabe an dieser Schule selbst.
+- **Noch nicht im Plan** (direkt über der Tabelle, seit 06.09.2026): die Klassen, die
+  keine Zeile haben und für die keine Regel gilt — die neue Klasse nach dem LUSD-Import.
+  _06F4 einplanen_ setzt sie **an ihren Platz**: hinter die letzte Klasse desselben
+  Jahrgangs und Zweigs (06F4 hinter 06F3), sonst hinter den Jahrgang, sonst ans Ende;
+  die Tabelle springt dorthin und hebt die Zeile kurz hervor. Wer sie woanders will,
+  zieht den Chip auf eine Zeile — die Klasse landet davor. _Andere Klasse eintragen_
+  öffnet ein kleines Fenster für einen Namen, den es noch nicht gibt („07G1" vor dem
+  August-Import). Was Regel oder gespeicherter Plan bewusst auslassen — die Oberstufe,
+  die Rückgabe und Ausgabe an dieser Schule selbst organisiert —, steht eingeklappt
+  hinter _11 Klassen bleiben draußen_ und lässt sich von dort genauso einplanen.
 - **Klassen ohne Schüler** („ohne Schüler" an der Klasse, oben in der Reihenfolge
   gezählt): eine Klasse aus dem Vorjahr, die es nicht mehr gibt, oder eine vor dem
   LUSD-Import getippte. Klassen muss niemand anlegen oder löschen — ein Name im Plan
   registriert sich selbst, und eine Klasse ohne aktive Schüler verschwindet von allein
   aus jeder Liste. Nach dem LUSD-Import zeigt der Satz, was übrig blieb: raus damit,
-  oder es kommt noch. Neue Klassen mit Schülern erscheinen unter _Nicht im Plan_.
+  oder es kommt noch. Neue Klassen mit Schülern erscheinen unter _Noch nicht im Plan_.
 - **Vorjahr als Vorlage**: Ist der letzte Plan vorbei, beginnt der nächste mit dessen
   Reihenfolge und Auslassungen; neue Klassen hängen hinten an. Ganz ohne Vorjahr gilt die
   Regel: Abschlussklassen zuerst, dann Jahrgang absteigend, Oberstufe unten.

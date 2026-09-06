@@ -61,17 +61,23 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
 	await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht gespeichert');
 
-	// Die Klasse in den Plan holen — sie landet am Ende, hinter dem Regel-Vorschlag.
-	await page.getByLabel('Weitere Klasse').fill(klasse);
+	// Die Klasse in den Plan holen — über das Dialogfenster „Andere Klasse eintragen"
+	// (seit 06.09.2026 kein Dauerformular mehr). Sie landet NICHT am Ende, sondern nach
+	// der Nachbar-Regel hinter der letzten Klasse ihres Jahrgangs und Zweigs (07G6 im
+	// Seed), mitten im Regel-Vorschlag.
+	await page.getByRole('button', { name: 'Andere Klasse eintragen' }).click();
+	await page.getByLabel('Klasse', { exact: true }).fill(klasse);
 	await page.getByRole('button', { name: 'In den Plan' }).click();
 	const tabelle = page.getByTestId('lmf-reihenfolge');
 	const zeile = tabelle.getByRole('row').filter({ hasText: klasse });
 	await expect(zeile).toBeVisible();
 	const nummer = Number(await zeile.getByRole('cell').first().innerText());
 	expect(nummer).toBeGreaterThan(0);
-	// Die Klasse, die gleich dieselbe Stunde teilt: der Nachbar darüber.
+	// Die Klasse, die gleich dieselbe Stunde teilt: der Nachbar darüber — derselbe
+	// Jahrgang (den Zweig belegt lmfplanZeilen.test.js; die e2e-Datenbank trägt
+	// Klassen anderer Läufe wie „07E29", und der Suffix hier kann Buchstaben enthalten).
 	const vorherige = (
 		await tabelle
 			.getByRole('row')
@@ -80,7 +86,11 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 			.nth(4)
 			.innerText()
 	).trim();
-	expect(vorherige, 'Nachbarklasse für die geteilte Stunde').not.toBe('');
+	expect(vorherige, 'Nachbarklasse nach der Nachbar-Regel').toMatch(/^07/);
+	expect(
+		Number(await tabelle.getByRole('row').last().getByRole('cell').first().innerText()),
+		'nicht die letzte Zeile'
+	).toBeGreaterThan(nummer);
 
 	// Ersten Tag setzen (vorbelegt ist der erste Schultag nach den nächsten Ferien, hier
 	// fest 2027, damit die Rechnung steht): Die Vorschau vom Server gibt der Zeile den
@@ -221,8 +231,9 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
 	await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
-	await page.getByLabel('Weitere Klasse').fill(klasse);
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht gespeichert');
+	await page.getByRole('button', { name: 'Andere Klasse eintragen' }).click();
+	await page.getByLabel('Klasse', { exact: true }).fill(klasse);
 	await page.getByRole('button', { name: 'In den Plan' }).click();
 
 	const tabelle = page.getByTestId('lmf-reihenfolge');
@@ -230,10 +241,13 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await page.getByLabel('Erster Tag').fill('2027-08-09'); // Montag
 	await expect(erste).toContainText('09.08.27');
 
-	// Der erste Tag wird freigehalten: Der Plan beginnt am Dienstag, der Grund steht da.
+	// Der erste Tag wird freigehalten — Chip „Tag freihalten", Dialogfenster, „Freihalten"
+	// (06.09.2026): Der Plan beginnt am Dienstag, der Grund steht da.
+	await page.getByRole('button', { name: 'Tag freihalten' }).click();
 	await page.getByLabel('Freier Tag').fill('2027-08-09');
 	await page.getByLabel('Grund', { exact: true }).fill('Pädagogischer Tag');
-	await page.getByRole('button', { name: 'Tag freihalten' }).click();
+	await page.getByRole('button', { name: 'Freihalten', exact: true }).click();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(erste).toContainText('Dienstag');
 	await expect(erste).toContainText('10.08.27');
 	await expect(page.getByTestId('lmf-ausfaelle')).toContainText('Pädagogischer Tag');
@@ -280,7 +294,7 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	seedSQL(`DELETE FROM lmf_plaene WHERE art = 'rueckgabe';`);
 	await uiLogin(page);
 	await gehZu(page, '/schuljahr');
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Noch kein Plan');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht gespeichert');
 
 	const letzterTag = page.getByLabel('Letzter Tag');
 	const wert = await letzterTag.inputValue();
@@ -308,4 +322,71 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 	await page.getByRole('menuitem', { name: 'Zeile davor einfügen' }).click();
 	await expect(zeilen.last()).toContainText('4. Std.');
 	await expect(page.getByTestId('lmf-zeitraum-hinweis')).not.toHaveText(beginnVorher);
+
+	// „Noch nicht im Plan" (06.09.2026): Die Oberstufe liegt eingeklappt hinter „bleiben
+	// draußen" — offen steht nichts, die Regel hat jede Klasse eingeordnet. Ausgeklappt
+	// plant ein Klick 12T1 ein; ohne Jahrgang 12 im Plan ans Ende. „An den Anfang" holt
+	// die Zeile mit einem Klick nach oben — vorher 60 Pfeilklicks.
+	await expect(page.getByText('Noch nicht im Plan:')).toHaveCount(0);
+	await page.getByRole('button', { name: /Klassen bleiben draußen/ }).click();
+	const draussen = page.getByTestId('lmf-vorrat-draussen').getByRole('button');
+	const namen = (await draussen.allInnerTexts()).map((t) =>
+		t.replace(/\s*einplanen.*$/, '').trim()
+	);
+	const klasseA = namen[0];
+	const klasseB = namen[namen.length - 1]; // der letzte Chip: der Tabelle am nächsten
+	await draussen.first().click();
+	const zeileA = zeilen.filter({ hasText: klasseA });
+	await expect(zeileA).toHaveCount(1);
+	await zeileA.getByRole('button', { name: /Aktionen Zeile/ }).click();
+	await page.getByRole('menuitem', { name: 'An den Anfang' }).click();
+	await expect(zeilen.nth(1)).toContainText(klasseA);
+	await expect(zeilen.nth(1).getByRole('cell').first()).toHaveText('1');
+
+	// Ein Chip auf eine Zeile ziehen setzt die Klasse DAVOR: auf Zeile 2 → Zeile 2.
+	// Von Hand mit der Maus, nicht locator.dragTo: hover() scrollt das Ziel erst in den
+	// Blick, und dann liegt unter der gedrückten Maus nicht mehr der Chip, sondern eine
+	// Zeile — der Drag startete auf Zeile 3 statt auf dem Chip (Wegwerf-Probe 06.09.2026).
+	// Deshalb der letzte Chip (der Tabelle am nächsten), einmal in die Mitte gescrollt,
+	// dann die Koordinaten beider nehmen und die Maus ohne weiteres Scrollen führen.
+	const chip = page.getByRole('button', { name: `${klasseB} einplanen` });
+	await chip.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+	const von = await chip.boundingBox();
+	const nach = await zeilen.nth(2).boundingBox();
+	if (!von || !nach) throw new Error('Chip oder Zielzeile ohne Geometrie');
+	const fenster = page.viewportSize();
+	expect(nach.y + nach.height, 'Zielzeile im Fenster').toBeLessThan(fenster?.height ?? 720);
+	await page.mouse.move(von.x + von.width / 2, von.y + von.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(von.x + von.width / 2 + 10, von.y + von.height / 2 + 10);
+	await page.mouse.move(nach.x + nach.width / 2, nach.y + nach.height / 2, { steps: 8 });
+	await page.mouse.move(nach.x + nach.width / 2, nach.y + nach.height / 2 + 1);
+	await page.mouse.up();
+	await expect(zeilen.nth(2)).toContainText(klasseB);
+	await expect(page.getByRole('button', { name: `${klasseB} einplanen` })).toHaveCount(0);
+
+	// Die Kopfleiste haftet beim Scrollen oben: „Plan speichern" bleibt im Fenster, auch
+	// wenn man in Zeile 60 arbeitet (06.09.2026; vorher zwei Bildschirmhöhen entfernt).
+	// Der Scroll-Container ist <main class="overflow-y-auto"> (App.svelte), nicht window;
+	// die Backup-Warnung steht DARÜBER, deshalb zählt der Abstand zur Oberkante von main.
+	const oben = await page.getByTestId('lmf-reihenfolge').evaluate((el) => {
+		let p = el.parentElement;
+		while (
+			p &&
+			!(
+				p.scrollHeight > p.clientHeight + 50 &&
+				['auto', 'scroll'].includes(getComputedStyle(p).overflowY)
+			)
+		)
+			p = p.parentElement;
+		if (!p) throw new Error('kein Scroll-Container');
+		p.scrollTop = 600;
+		return p.getBoundingClientRect().top;
+	});
+	const speichern = page.getByRole('button', { name: 'Plan speichern' });
+	await expect(speichern).toBeInViewport();
+	const lage = await speichern.boundingBox();
+	expect((lage?.y ?? 999) - oben, 'Leiste haftet an der Oberkante des Scrollbereichs').toBeLessThan(
+		100
+	);
 });
