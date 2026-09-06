@@ -103,7 +103,7 @@ func NewSystemSettingsRepository(db db.PgxPoolIface) SystemSettingsRepository {
 // Wert nicht in der DB steht).
 func standardEinstellungen() *SystemEinstellungen {
 	s := &SystemEinstellungen{
-		LmfStichtag:           "07-31",
+		LmfStichtag:           StandardLmfStichtag,
 		LmfEingangsjahrgaenge: LmfEingangsjahrgaengeVorgabe,
 		SommerferienProgramm:  lmfplan.ProgrammEintraege(),
 		MaxAusleihenSchueler:  5,

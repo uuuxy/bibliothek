@@ -84,7 +84,7 @@ func ladeSystemEinstellungen(ctx context.Context, pool db.PgxPoolIface) (*System
 		FristBuchTage:        21,
 		FristMedienTage:      7,
 		MaxAusleihenSchueler: 5,
-		LmfStichtag:          "07-31",
+		LmfStichtag:          repository.StandardLmfStichtag,
 		FerienLeseclubAktiv:  false,
 		MaxOverdueDays:       14,
 		MaxOverdueItems:      1,
@@ -166,31 +166,17 @@ func calculateDueDate(opts DueDateOptions) time.Time {
 	// ausgeliehen. Sie müssen spätestens am definierten Stichtag (standardmäßig 31. Juli)
 	// zurückgegeben werden.
 	if opts.IstLernmittel {
-		year := now.Year()
-		// Wenn wir uns bereits im oder nach dem August befinden (neues Schuljahr),
-		// liegt der Stichtag im nächsten Kalenderjahr.
-		if now.Month() >= time.August {
-			year++
-		}
-
-		// Mehrjährige Ausleihen
-		year += opts.AdditionalYears
-
-		month := time.July
-		day := 31
-
-		// Stichtag aus den Einstellungen parsen (Format: MM-DD, z.B. "07-31")
-		parts := strings.SplitN(opts.LmfStichtag, "-", 2)
-		if len(parts) == 2 {
-			m, err1 := strconv.Atoi(parts[0])
-			d, err2 := strconv.Atoi(parts[1])
-			if err1 == nil && err2 == nil && m >= 1 && m <= 12 && d >= 1 && d <= 31 {
-				month = time.Month(m)
-				day = d
-			}
-		}
-		// Rückgabezeitpunkt auf das Ende des Stichtags (23:59:59 Uhr) setzen.
-		return TagesEndeInSchulzeitzone(time.Date(year, month, day, 12, 0, 0, 0, now.Location()))
+		// Der nächste Stichtag ab heute — DIE Rechnung, die auch der Rückweg des
+		// LMF-Plans benutzt (repository.LmfStichtagAbTag). Bis zum 06.09.2026 stand sie
+		// hier ein zweites Mal und rechnete „ab August ins nächste Kalenderjahr"; das
+		// stimmt nur für einen Stichtag von Januar bis Juli. Ein Stichtag ab August
+		// ergab hier den Termin des FOLGENDEN Schuljahres — dreizehn Monate Frist —,
+		// während der Rückweg denselben Stichtag ein Jahr früher setzte.
+		stichtag := repository.LmfStichtagAbTag(now, opts.LmfStichtag)
+		// Mehrjährige Ausleihen (Zieljahrgang über der Klasse des Entleihers) laufen
+		// entsprechend viele Stichtage weiter.
+		stichtag = stichtag.AddDate(opts.AdditionalYears, 0, 0)
+		return TagesEndeInSchulzeitzone(stichtag)
 	}
 
 	// 2. Fall: Audiovisuelle/Digitale Medien
@@ -247,7 +233,7 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 		return calculateDueDate(DueDateOptions{
 			IstLernmittel:   copy.IstLernmittel,
 			Medientyp:       copy.Medientyp,
-			LmfStichtag:     "07-31",
+			LmfStichtag:     repository.StandardLmfStichtag,
 			FristBuchTage:   21,
 			FristMedienTage: 7,
 			AdditionalYears: additionalYears,

@@ -16,8 +16,6 @@ package api
 import (
 	"context"
 	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	"bibliothek/internal/service"
@@ -47,7 +45,10 @@ func (s *Server) koppleLmfFristen(ctx context.Context, alt, neu *repository.LmfT
 			if err != nil {
 				return gesamt, err
 			}
-			stichtag := stichtagImSchuljahr(altTag, einstellungen.LmfStichtag)
+			// Der Stichtag des Schuljahres, in dem der Termin lag — NICHT der nächste ab
+			// heute: Angefasst werden nur Fristen dieses Schuljahres (von/bis unten),
+			// und sie gehen dorthin zurück, wo sie ohne Plan gestanden hätten.
+			stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LmfStichtag)
 			von, bis := schuljahrGrenzen(altTag)
 			n, err := repo.SetzeLernmittelFristFuerKlassen(ctx, verlierer,
 				service.TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)
@@ -84,25 +85,6 @@ func planTag(datum string) (time.Time, error) {
 func schuljahrGrenzen(tag time.Time) (time.Time, time.Time) {
 	von := repository.SchuljahrBeginn(tag)
 	return von, von.AddDate(1, 0, 0)
-}
-
-// stichtagImSchuljahr legt den globalen Stichtag („MM-TT", Vorgabe 31.07.) in das
-// Schuljahr des Tages — dieselbe Rechnung wie die Fristberechnung beim Ausleihen.
-func stichtagImSchuljahr(tag time.Time, stichtag string) time.Time {
-	monat, tagImMonat := time.July, 31
-	if teile := strings.SplitN(stichtag, "-", 2); len(teile) == 2 {
-		m, err1 := strconv.Atoi(teile[0])
-		d, err2 := strconv.Atoi(teile[1])
-		if err1 == nil && err2 == nil && m >= 1 && m <= 12 && d >= 1 && d <= 31 {
-			monat, tagImMonat = time.Month(m), d
-		}
-	}
-	von := repository.SchuljahrBeginn(tag)
-	jahr := von.Year() + 1
-	if monat >= time.August {
-		jahr = von.Year()
-	}
-	return time.Date(jahr, monat, tagImMonat, 12, 0, 0, 0, schulzeit.Zone())
 }
 
 // ohne liefert die Einträge von a, die nicht in b stehen (Klassen über den Normschlüssel).

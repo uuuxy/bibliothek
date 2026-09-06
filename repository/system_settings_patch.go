@@ -120,7 +120,7 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.schalter("ferien_leseclub_aktiv", p.FerienLeseclubAktiv)
 	s.text("ferien_leseclub_zieldatum", p.FerienLeseclubZieldatum)
 	if p.LmfStichtag != nil && *p.LmfStichtag == "" {
-		s.paare = append(s.paare, [2]string{"lmf_stichtag", "07-31"})
+		s.paare = append(s.paare, [2]string{"lmf_stichtag", StandardLmfStichtag})
 	} else {
 		s.text("lmf_stichtag", p.LmfStichtag)
 	}
