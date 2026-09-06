@@ -286,9 +286,13 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if f := a.Sommerferien; f.Jahr != 2027 || !f.Bekannt || f.Von != "2027-06-28" || f.Bis != "2027-08-06" {
 		t.Errorf("Sommerferien: %+v", f)
 	}
-	// Das Vokabular zeigt Klassen in seiner Anzeigeform (Migration 087: „09H1").
-	if klassenFolge(a.Vorschlag.Zeilen) != "09H1,08G1" {
+	// Das Vokabular zeigt Klassen in seiner Anzeigeform (Migration 087: „09H1"). Am Ende
+	// stehen die zwei Zeilen ohne Klasse, mit denen Peters Excel endet (ab67484a).
+	if klassenFolge(a.Vorschlag.Zeilen) != "09H1,08G1,," {
 		t.Errorf("Regel-Reihenfolge (Abschluss zuerst): %+v", a.Vorschlag.Zeilen)
+	}
+	if s := schlusszeilen(a.Vorschlag.Zeilen); s != "Nachzügler|Aufräumen" {
+		t.Errorf("Regel-Vorschlag endet wie das Excel: %q", s)
 	}
 	if strings.Join(a.Vorschlag.Ausgelassen, ",") != "Q1,12T1" {
 		t.Errorf("Oberstufe ausgelassen (Jahrgang absteigend, ohne Ziffer zuerst): %v", a.Vorschlag.Ausgelassen)
@@ -344,8 +348,11 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &ausgabe); err != nil {
 		t.Fatal(err)
 	}
-	if ausgabe.Vorschlag == nil || klassenFolge(ausgabe.Vorschlag.Zeilen) != "07R1,05F2" {
+	if ausgabe.Vorschlag == nil || klassenFolge(ausgabe.Vorschlag.Zeilen) != "07R1,05F2,," {
 		t.Errorf("Ausgabe-Vorschlag (nur Eingangsjahrgänge, Jahrgang absteigend): %+v", ausgabe.Vorschlag)
+	}
+	if s := schlusszeilen(ausgabe.Vorschlag.Zeilen); s != "Nachzügler|Aufräumen" {
+		t.Errorf("Ausgabe-Vorschlag endet wie das Excel: %q", s)
 	}
 	// Der Ausgabe-Plan beginnt am ersten Schultag nach den Ferien 2027 (Montag 09.08.) in
 	// der 2. Stunde — wie Peters Plan 2026 (Mo 10.08., 2. Std.).
@@ -363,11 +370,25 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if ausgabe.Vorschlag != nil && strings.Join(ausgabe.Vorschlag.Ausgelassen, ",") != "09H1,Q1,12T1,08G1,06F1" {
 		t.Errorf("Ausgabe: alle anderen ausgelassen: %v", ausgabe.Vorschlag.Ausgelassen)
 	}
+	// Kein Vermerk „nur Rückgabe" — die Vorbelegung gehört zum Büchertausch, nicht zur
+	// Ausgabe. Geprüft wird der Vermerk der KLASSEN-Zeilen; die zwei Schlusszeilen ohne
+	// Klasse tragen ihren eigenen Text und stehen eine Zeile höher.
 	for _, zeile := range ausgabe.Vorschlag.Zeilen {
-		if zeile.Vermerk != "" {
+		if len(zeile.Klassen) > 0 && zeile.Vermerk != "" {
 			t.Errorf("Ausgabe-Plan kennt kein „nur Rückgabe“: %v %q", zeile.Klassen, zeile.Vermerk)
 		}
 	}
+}
+
+// schlusszeilen nennt die Vermerke der abschließenden Zeilen OHNE Klasse, mit | getrennt.
+func schlusszeilen(zeilen []repository.LmfPlanZeile) string {
+	var teile []string
+	for _, z := range zeilen {
+		if len(z.Klassen) == 0 {
+			teile = append(teile, z.Vermerk)
+		}
+	}
+	return strings.Join(teile, "|")
 }
 
 // klassenFolge nennt die erste Klasse jeder Zeile, kommagetrennt.
