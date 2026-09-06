@@ -14,6 +14,28 @@ echo "======================================================"
 echo "🛡️ PRE-PUSH HOOK: Starte Tests & Security-Scans..."
 echo "======================================================"
 
+# Die Datenbank der DB-Integrationstests: Steht der Entwicklungs-Stack, BENUTZEN wir ihn.
+#
+# Bis zum 06.09.2026 hat dieser Hook nur GEWARNT, dass die *_pg_test.go übersprungen
+# werden. Am selben Tag reichte das nicht: Eine Regeländerung (der Regel-Vorschlag des
+# LMF-Plans endet mit „Nachzügler"/„Aufräumen") zog den Mock-Test nach, den Postgres-Test
+# nicht — lokal grün, CI seit 14:40 rot, und der nächste Push hat das Rot geerbt. Die
+# Datenbank stand die ganze Zeit auf Port 5434 daneben.
+#
+# Gefunden wird sie über dieselbe Zeile, die die Warnung unten vorschlägt; scheitert das
+# (Stack aus, keine psql, Datenbank fehlt), bleibt es bei der Warnung. Der Hook zieht
+# NIE selbst ein Postgres hoch — das gehört nicht in einen Push.
+[ -d /opt/homebrew/opt/libpq/bin ] && export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+if [ -z "${TEST_DATABASE_URL:-}" ] && [ -f .env ]; then
+    PG_PASSWORT=$(grep '^POSTGRES_PASSWORD=' .env | cut -d= -f2-)
+    PG_KANDIDAT="postgres://postgres:${PG_PASSWORT}@127.0.0.1:5434/bibliothek_test?sslmode=disable"
+    if [ -n "$PG_PASSWORT" ] && command -v psql >/dev/null 2>&1 &&
+        PGCONNECT_TIMEOUT=3 psql "$PG_KANDIDAT" -c 'SELECT 1' >/dev/null 2>&1; then
+        export TEST_DATABASE_URL="$PG_KANDIDAT"
+        echo -e "${GREEN}  DB-Integrationstests laufen mit — Stack-Postgres auf 5434 gefunden.${NC}"
+    fi
+fi
+
 # 1. Go Tests
 echo "[1/6] Führe Go Tests aus..."
 if go test ./...; then
@@ -43,7 +65,7 @@ PG_DATEIEN=$(find . -name '*_pg_test.go' -not -path './node_modules/*' 2>/dev/nu
 if [ -z "${TEST_DATABASE_URL:-}" ] && [ "${PG_DATEIEN:-0}" -gt 0 ]; then
     echo -e "${YELLOW}⚠ ${PG_DATEIEN} Datei(en) mit DB-Integrationstests wurden NICHT ausgeführt — TEST_DATABASE_URL ist nicht gesetzt.${NC}"
     echo -e "${YELLOW}  Sie prüfen echtes SQL (Rechte-Seed, LUSD-Import, Backup-Restore). CI führt sie aus.${NC}"
-    echo -e "${YELLOW}  Lokal mitlaufen lassen — der Entwicklungs-Stack bringt Postgres schon mit.${NC}"
+    echo -e "${YELLOW}  Der Hook nimmt den Stack-Postgres von selbst, sobald er läuft und die Datenbank existiert.${NC}"
     # Einmalig, danach existiert die Datenbank. Bewusst OHNE spitze Klammern: Ein
     # Platzhalter in einer Copy-Paste-Zeile hat auf diesem Projekt schon einmal die
     # Produktion umgelegt. Das Passwort holt sich der Befehl selbst aus der .env.
