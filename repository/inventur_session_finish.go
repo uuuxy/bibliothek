@@ -167,9 +167,14 @@ func (r *InventoryRepository) FinishInventurSession(ctx context.Context, session
 		return 0, fmt.Errorf("verluste markieren fehlgeschlagen: %w", err)
 	}
 
+	// erfasst_gemeldet mit einfrieren (Migration 103): inventur_erfassungen fällt per
+	// ON DELETE CASCADE mit dem Exemplar. Live gezählt sank die Zahl eines längst
+	// abgeschlossenen Durchgangs, sobald später ein Buch aus dem Bestand fiel — neben
+	// einem verloren_gemeldet, das feststand. Was gezählt wurde, wurde gezählt.
 	if _, err := r.db.Exec(ctx, `
 		UPDATE inventur_sessions
-		SET abgeschlossen_am = now(), verloren_gemeldet = $2
+		SET abgeschlossen_am = now(), verloren_gemeldet = $2,
+		    erfasst_gemeldet = (SELECT count(*) FROM inventur_erfassungen WHERE session_id = $1)
 		WHERE id = $1 AND abgeschlossen_am IS NULL
 	`, sessionID, verloren); err != nil {
 		return 0, fmt.Errorf("session abschliessen fehlgeschlagen: %w", err)
@@ -239,7 +244,8 @@ var ErrInventurSessionNichtGefunden = errors.New("inventur-session nicht gefunde
 func (r *InventoryRepository) AbortInventurSession(ctx context.Context, sessionID string) error {
 	tag, err := r.db.Exec(ctx, `
 		UPDATE inventur_sessions
-		SET abgeschlossen_am = now(), verloren_gemeldet = 0
+		SET abgeschlossen_am = now(), verloren_gemeldet = 0,
+		    erfasst_gemeldet = (SELECT count(*) FROM inventur_erfassungen WHERE session_id = $1)
 		WHERE id = $1 AND abgeschlossen_am IS NULL
 	`, sessionID)
 	if err != nil {

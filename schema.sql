@@ -1138,7 +1138,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('099_lmf_plan_feste_plaetze_und_freie_tage.sql'),
 ('100_lmf_plan_veroeffentlichung.sql'),
 ('101_lmf_plan_ende_als_anker.sql'),
-('102_ferien_schliesszeiten_ausgebaut.sql')
+('102_ferien_schliesszeiten_ausgebaut.sql'),
+('103_inventur_erfasst_einfrieren.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -1227,6 +1228,10 @@ CREATE TABLE IF NOT EXISTS inventur_sessions (
     gestartet_am      TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
     abgeschlossen_am  TIMESTAMP WITH TIME ZONE,
     verloren_gemeldet INT,
+    -- Beim Abschluss festgeschrieben (Migration 103): inventur_erfassungen fällt per
+    -- ON DELETE CASCADE mit dem Exemplar, eine live gezählte Zahl senkte damit
+    -- rückwirkend das Ergebnis eines abgeschlossenen Durchgangs. NULL = noch offen.
+    erfasst_gemeldet  INT,
     CONSTRAINT chk_inv_session_scope
         CHECK (scope_type IN ('global', 'signature', 'filter')
                AND (scope_type <> 'signature' OR COALESCE(btrim(scope_signatur), '') <> '')

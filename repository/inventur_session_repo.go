@@ -167,7 +167,7 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 	rows, err := r.db.Query(ctx, `
 		WITH limited_sessions AS (
 			SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
-			       gestartet_von, gestartet_am, abgeschlossen_am
+			       gestartet_von, gestartet_am, abgeschlossen_am, erfasst_gemeldet
 			FROM inventur_sessions
 			WHERE abgeschlossen_am IS NOT NULL
 			ORDER BY abgeschlossen_am DESC
@@ -178,7 +178,10 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 		       COALESCE(e.count, 0),
 		       COALESCE(v.count, 0)
 		FROM limited_sessions s
-		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_erfassungen WHERE session_id = s.id) e ON true
+		-- COALESCE auf die eingefrorene Zahl (Migration 103): Nur eine OFFENE Session
+		-- zählt live; ein abgeschlossener Durchgang behält, was er gezählt hat.
+		LEFT JOIN LATERAL (SELECT COALESCE(s.erfasst_gemeldet,
+			(SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id)) as count) e ON true
 		LEFT JOIN LATERAL (SELECT count(*) as count FROM inventur_verluste WHERE session_id = s.id) v ON true
 		ORDER BY s.abgeschlossen_am DESC
 	`, limit)
@@ -210,7 +213,8 @@ func (r *InventoryRepository) ListOffeneInventurSessions(ctx context.Context) ([
 	rows, err := r.db.Query(ctx, `
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text,
-		       (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id)
+		       COALESCE(s.erfasst_gemeldet,
+		                (SELECT count(*) FROM inventur_erfassungen WHERE session_id = s.id))
 		FROM inventur_sessions s
 		WHERE s.abgeschlossen_am IS NULL
 		ORDER BY s.gestartet_am ASC
