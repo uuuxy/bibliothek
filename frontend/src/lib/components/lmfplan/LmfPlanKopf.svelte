@@ -10,7 +10,7 @@
 	import { Printer, Send, Trash2 } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import Segmente from '../ui/Segmente.svelte';
-	import { ARTEN, artErklaerung, datumKurz } from '../../lmfplanDienst.js';
+	import { ARTEN, datumKurz } from '../../lmfplanDienst.js';
 
 	/** @type {{ art: string, stand: any, laedt: boolean, ladeFehler: boolean, gueltig: boolean, speichert: boolean, onart: (a: string) => void, onpdf: () => void, onverwerfen: () => void, onspeichern: () => void, onveroeffentlichen: () => void }} */
 	let {
@@ -60,27 +60,19 @@
 </div>
 
 {#if !laedt && !ladeFehler}
+	<!-- EIN Satz Stand, keine Regelerklärung (Peter, 06.09.2026: „diese seltsamen
+	     Erklärungstexte müssen weg") — die Regeln stehen im Handbuch. -->
 	<p class="mt-3 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-plan-hinweis">
 		{#if veroeffentlicht}
 			Plan vom {datumKurz(stand.plan.erster_tag)}, veröffentlicht am {datumKurz(
 				stand.plan.veroeffentlicht_am.slice(0, 10)
-			)} — Änderungen gelten sofort nach „Plan speichern".
+			)}.
 		{:else if laufend}
-			Entwurf vom {datumKurz(stand.plan.erster_tag)} — nur hier sichtbar, nicht im Portal. „Als PDF" für
-			die Abnahme durch die Schulleitung, dann „Veröffentlichen".
+			Entwurf vom {datumKurz(stand.plan.erster_tag)}, noch nicht veröffentlicht.
 		{:else if stand?.plan && stand.vorbei}
-			Der Plan vom {datumKurz(stand.plan.erster_tag)} ist vorbei. Dieser Entwurf übernimmt seine Reihenfolge
-			— ersten Tag wählen, prüfen, speichern, veröffentlichen.
-		{:else if art === 'ausgabe'}
-			Noch kein Plan. Vorgeschlagen sind die Klassen der Eingangsjahrgänge, Jahrgang absteigend;
-			alle anderen stehen unter „Nicht im Plan".
+			Der Plan vom {datumKurz(stand.plan.erster_tag)} ist vorbei; dieser Entwurf übernimmt seine Reihenfolge.
 		{:else}
-			Noch kein Plan. Die Reihenfolge folgt der Regel: Abschlussklassen zuerst, dann Jahrgang
-			absteigend; die Oberstufe steht unter „Nicht im Plan".
-		{/if}
-		{artErklaerung(art, stand?.eingangsjahrgaenge)}
-		{#if art === 'rueckgabe'}
-			Mit dem Veröffentlichen wird der Termin einer Klasse die Frist ihrer Schulbücher.
+			Noch kein Plan.
 		{/if}
 	</p>
 {/if}

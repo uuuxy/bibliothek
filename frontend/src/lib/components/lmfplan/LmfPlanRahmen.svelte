@@ -56,13 +56,10 @@
 	<p class="mt-1 max-w-3xl text-sm text-on-surface-variant">
 		{#if ende}
 			Der Büchertausch endet am Donnerstag vor den Sommerferien in der 4. Stunde; die Reihenfolge
-			läuft rückwärts davor über die Schultage — kommen Klassen dazu, beginnt der Plan früher.
+			läuft rückwärts davor.
 		{:else}
-			Die Bücherausgabe beginnt am ersten Schultag nach den Sommerferien in der 2. Stunde und läuft
-			über die Schultage.
+			Die Bücherausgabe beginnt am ersten Schultag nach den Sommerferien in der 2. Stunde.
 		{/if}
-		Wochenenden und gesetzliche Feiertage überspringt er von selbst; bewegliche Ferientage, pädagogische
-		Tage und Brückentage der Schule trägst du als freie Tage ein.
 	</p>
 	<div class="mt-4 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
 		<Feld

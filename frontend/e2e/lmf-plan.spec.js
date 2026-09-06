@@ -143,7 +143,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await page.getByRole('button', { name: 'Plan speichern' }).click();
 	// Gespeichert ist ein ENTWURF (Migration 100): sichtbar nur hier, nicht im Portal.
 	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('Entwurf vom 09.08.27');
-	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('nicht im Portal');
+	await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('noch nicht veröffentlicht');
 
 	// Das Kollegium sieht denselben Plan im Portal — ohne edit_books, nur mit Sitzung —
 	// aber erst nach dem Veröffentlichen.

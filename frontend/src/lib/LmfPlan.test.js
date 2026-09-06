@@ -96,7 +96,9 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		render(LmfPlan);
 		expect(await screen.findByRole('button', { name: 'Veröffentlichen' })).toBeTruthy();
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain('Entwurf vom 28.06.27');
-		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain('nicht im Portal');
+		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain(
+			'noch nicht veröffentlicht'
+		);
 		// Die Markierungen aus dem Stand: 09H1 hat Schüler und gibt nur zurück.
 		expect(screen.getByText('nur Rückgabe')).toBeTruthy();
 		expect(screen.queryByText('ohne Schüler')).toBeNull();

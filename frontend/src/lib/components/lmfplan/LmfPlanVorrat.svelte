@@ -29,8 +29,7 @@
 		{#if klassen.length === 0}
 			Jede Klasse hat eine Zeile.
 		{:else}
-			{klassen.length} Klassen ohne Zeile — ein Klick plant eine Klasse am Ende ein. Was hier bleibt,
-			gilt als bewusst ausgelassen und wird nicht als „ohne Termin" gemeldet.
+			{klassen.length} Klassen ohne Zeile; was hier bleibt, gilt als bewusst ausgelassen.
 		{/if}
 	</p>
 	{#if klassen.length > 0}
