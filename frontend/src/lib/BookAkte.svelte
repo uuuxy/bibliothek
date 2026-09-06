@@ -23,10 +23,16 @@
 	// „Gesamten Titel löschen", auch wer beides nicht durfte (Knopf → 403).
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
 	const darfLoeschen = $derived(hatRecht(authStore.currentUser, 'delete_books'));
+	// Eine Zahl, die niemand kennt, ist ein Fragezeichen — kein „(0)". Der Abruf einer
+	// Liste kann scheitern (Sweep „verschluckte Fehlantwort", 06.09.2026), und „Ausleiher
+	// (0)" wäre dann eine Aussage über den Bestand, die niemand geprüft hat.
+	/** @param {string} name @param {any[]} liste */
+	const zaehler = (name, liste) =>
+		`${name} (${akte.fehlendeListen.includes(name) ? '?' : liste.length})`;
 	const tabs = $derived([
-		['ausleiher', `Ausleiher (${akte.borrowers.length})`],
-		['exemplare', `Exemplare (${akte.exemplare.length})`],
-		...(darfVormerken ? [['vormerkungen', `Vormerkungen (${akte.vormerkungen.length})`]] : []),
+		['ausleiher', zaehler('Ausleiher', akte.borrowers)],
+		['exemplare', zaehler('Exemplare', akte.exemplare)],
+		...(darfVormerken ? [['vormerkungen', zaehler('Vormerkungen', akte.vormerkungen)]] : []),
 		['historie', 'Historie']
 	]);
 
@@ -69,6 +75,13 @@
 			onEdit={darfBearbeiten ? akte.editTitle : undefined}
 			onDelete={darfLoeschen ? () => akte.deleteTitle(showToast, onBack) : undefined}
 		/>
+
+		{#if akte.fehlendeListen.length > 0}
+			<p class="text-sm font-semibold text-error" role="alert">
+				Nicht geladen: {akte.fehlendeListen.join(', ')}. Diese Reiter sind leer, weil der Abruf
+				gescheitert ist — nicht, weil nichts da wäre.
+			</p>
+		{/if}
 
 		<!-- Tabs -->
 		<div class="border-b border-slate-200">

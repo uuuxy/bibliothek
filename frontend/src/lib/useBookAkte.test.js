@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { srcRoot, ohneKommentare } from './hygiene-quellen.js';
 import { useBookAkte } from './useBookAkte.svelte.js';
 import { apiFetch } from './apiFetch.js';
 
@@ -79,5 +82,47 @@ describe('useBookAkte.loadAll', () => {
 
 		expect(akte.book?.id, 'die überholte Antwort von A hat B überschrieben').toBe('B');
 		expect(akte.exemplare).toEqual([{ id: 'e-B' }]);
+	});
+
+	// „(0)" ist eine Aussage über den Bestand. Scheitert der Abruf einer Liste, hat
+	// niemand diese Aussage geprüft — bis zum Sweep am 06.09.2026 machte die Akte sie
+	// trotzdem („Ausleiher (0)" für einen Titel, der Ausleiher hat).
+	it('nennt die Listen, die nicht geladen werden konnten', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			const u = String(url);
+			if (u.startsWith('/api/books/'))
+				return /** @type {any} */ (ok({ id: 'A', titel: 'Titel A' }));
+			if (u.includes('/ausleiher')) return /** @type {any} */ ({ ok: false, status: 500 });
+			if (u.includes('/historie')) return /** @type {any} */ ({ ok: false, status: 500 });
+			return /** @type {any} */ (ok([]));
+		});
+		const akte = useBookAkte();
+		await akte.loadAll('A');
+
+		expect(akte.fehlendeListen).toEqual(['Ausleiher', 'Historie']);
+		expect(akte.borrowers, 'die Anzeige braucht trotzdem ein Array').toEqual([]);
+	});
+
+	it('vergisst die Fehlliste beim nächsten Titel', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			const u = String(url);
+			if (u.includes('/ausleiher')) return /** @type {any} */ ({ ok: false, status: 500 });
+			if (u.startsWith('/api/books/')) return /** @type {any} */ (ok({ id: 'A' }));
+			return /** @type {any} */ (ok([]));
+		});
+		const akte = useBookAkte();
+		await akte.loadAll('A');
+		expect(akte.fehlendeListen).toEqual(['Ausleiher']);
+
+		vi.mocked(apiFetch).mockImplementation(antworten('B'));
+		await akte.loadAll('B');
+		expect(akte.fehlendeListen).toEqual([]);
+	});
+
+	// Die zweite Hälfte der Kette: Die Liste nützt nur, solange der Reiter sie fragt.
+	// Am Quelltext OHNE Kommentare — sonst genügte der erklärende Satz daneben.
+	it('der Reiter zeigt ein Fragezeichen statt einer ungeprüften Null', () => {
+		const quelle = ohneKommentare(readFileSync(join(srcRoot, 'lib', 'BookAkte.svelte'), 'utf8'));
+		expect(quelle).toMatch(/fehlendeListen\.includes\(name\)\s*\?\s*'\?'/);
 	});
 });

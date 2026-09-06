@@ -4,16 +4,21 @@ import { apiFetch } from './apiFetch.js';
 import { coverKandidaten } from './utils/coverSrc.js';
 
 /**
- * Liefert das geparste JSON eines erfüllten, erfolgreichen Promise.allSettled-Ergebnisses,
- * sonst ein leeres Array.
+ * Das geparste JSON eines erfüllten, erfolgreichen Ergebnisses — sonst `null`.
+ *
+ * Bewusst NICHT „sonst ein leeres Array" (Sweep „verschluckte Fehlantwort", 06.09.2026):
+ * Ein leeres Array ist eine Aussage über den Bestand, und der Reiter schrieb sie hin —
+ * „Ausleiher (0)" für einen Titel, der Ausleiher hat. `null` heißt „nicht geladen", und
+ * das ist etwas anderes als „keine da".
+ *
  * @param {PromiseSettledResult<any>} settled
- * @returns {Promise<any[]>}
+ * @returns {Promise<any[] | null>}
  */
-async function jsonOrEmpty(settled) {
+async function jsonOderNull(settled) {
 	if (settled.status === 'fulfilled' && settled.value.ok) {
 		return await settled.value.json();
 	}
-	return [];
+	return null;
 }
 
 export function useBookAkte() {
@@ -29,6 +34,9 @@ export function useBookAkte() {
 	let vormerkungen = $state([]);
 	let activeTab = $state('ausleiher');
 	let isLoading = $state(true);
+
+	/** Listen, deren Abruf gescheitert ist — ihre Zahl ist keine Zahl, sondern ein Fragezeichen. */
+	let fehlendeListen = $state(/** @type {string[]} */ ([]));
 
 	let coverCandidates = $state([]);
 	let currentCandidateIndex = $state(0);
@@ -68,6 +76,7 @@ export function useBookAkte() {
 		exemplare = [];
 		history = [];
 		vormerkungen = [];
+		fehlendeListen = [];
 
 		if (appState.selectedBook && appState.selectedBook.id === id) {
 			book = appState.selectedBook;
@@ -95,10 +104,21 @@ export function useBookAkte() {
 		]);
 		if (meine !== laufNr) return;
 
-		borrowers = await jsonOrEmpty(bRes);
-		exemplare = await jsonOrEmpty(eRes);
-		history = await jsonOrEmpty(hRes);
-		vormerkungen = await jsonOrEmpty(vRes);
+		/** @type {[string, PromiseSettledResult<any>, (w: any[]) => void][]} */
+		const listen = [
+			['Ausleiher', bRes, (w) => (borrowers = w)],
+			['Exemplare', eRes, (w) => (exemplare = w)],
+			['Historie', hRes, (w) => (history = w)],
+			['Vormerkungen', vRes, (w) => (vormerkungen = w)]
+		];
+		/** @type {string[]} */
+		const fehlend = [];
+		for (const [name, antwort, setze] of listen) {
+			const daten = await jsonOderNull(antwort);
+			setze(daten ?? []);
+			if (daten === null) fehlend.push(name);
+		}
+		fehlendeListen = fehlend;
 		isLoading = false;
 	}
 
@@ -158,6 +178,9 @@ export function useBookAkte() {
 		},
 		get borrowers() {
 			return borrowers;
+		},
+		get fehlendeListen() {
+			return fehlendeListen;
 		},
 		get exemplare() {
 			return exemplare;
