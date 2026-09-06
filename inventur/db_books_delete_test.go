@@ -64,6 +64,19 @@ func TestDeleteBooks(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
 				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
 
+		// Und die drei CASCADE-Kinder des Titels, die niemand nannte, bis Frage 12
+		// („Gegenrichtung Schema", 06.09.2026) die DDL gelesen hat: Vormerkungen,
+		// Klassensatz-Reservierungen, Klassensatz-Zuordnungen.
+		mock.ExpectQuery(`FROM vormerkungen v`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
+		mock.ExpectQuery(`FROM klassensatz_reservierungen r`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse", "status", "seit"}))
+		mock.ExpectQuery(`FROM class_books c`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
+
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\) AND cover_url LIKE '/uploads/%'`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover1.jpg"))
@@ -109,6 +122,19 @@ func TestDeleteBooks(t *testing.T) {
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
 				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
+
+		// Und die drei CASCADE-Kinder des Titels, die niemand nannte, bis Frage 12
+		// („Gegenrichtung Schema", 06.09.2026) die DDL gelesen hat: Vormerkungen,
+		// Klassensatz-Reservierungen, Klassensatz-Zuordnungen.
+		mock.ExpectQuery(`FROM vormerkungen v`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
+		mock.ExpectQuery(`FROM klassensatz_reservierungen r`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse", "status", "seit"}))
+		mock.ExpectQuery(`FROM class_books c`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
 
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
 			WithArgs(ids).

@@ -101,6 +101,23 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("ex-1", pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// Die drei CASCADE-Kinder des Titels (Frage 12 „Gegenrichtung Schema", 06.09.2026):
+	// Vormerkungen, Klassensatz-Reservierungen und Klassensatz-Zuordnungen fallen mit —
+	// die DDL sagte das längst, das Verfahren erwähnte es nicht. Hier eine wartende
+	// Vormerkung, damit auch die Protokollzeile erwartet wird.
+	mock.ExpectQuery("FROM vormerkungen v").
+		WithArgs([]string{titelID}).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}).
+			AddRow("vm-1", titelID, "Der Zauberberg", "Hans Castorp", "wartend", "2026-05-01T10:00:00+02", ptrString("s-1")))
+	mock.ExpectQuery("FROM klassensatz_reservierungen r").
+		WithArgs([]string{titelID}).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse", "status", "seit"}))
+	mock.ExpectQuery("FROM class_books c").
+		WithArgs([]string{titelID}).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
+	mock.ExpectExec("INSERT INTO audit_log").
+		WithArgs("vormerkungen", titelID, pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectExec("DELETE FROM schadensfaelle").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
 	mock.ExpectExec("DELETE FROM ausleihen").WithArgs(titelID).

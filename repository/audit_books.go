@@ -125,6 +125,17 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	if err = protokolliereOffeneForderungen(ctx, tx, titleID); err != nil {
 		return err
 	}
+	// Und wer auf den Titel wartet, fällt ebenfalls mit ihm — per ON DELETE CASCADE, den
+	// keine Zeile dieses Verfahrens erwähnte (Frage 12 „Gegenrichtung Schema",
+	// 06.09.2026). Dieselbe Regel wie in der Massenaktion der Bestandstabelle: EIN Ort
+	// (titel_loeschen_wartende.go), zwei Türen.
+	wartende, err := LeseWartendeBezuege(ctx, tx, []string{titleID})
+	if err != nil {
+		return err
+	}
+	if err = ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
+		return err
+	}
 	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden
 	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
 		return fmt.Errorf("failed to delete damage records for title: %w", err)

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"bibliothek/db"
+	"bibliothek/repository"
 )
 
 // DeleteBooks löscht Titel samt allem, was an ihnen hängt.
@@ -43,6 +44,14 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	// Unbezahlte Forderungen fallen mit dem Titel — auch sie brauchen eine Spur
 	// (db_books_delete_spur.go, Rasterdurchgang 06.09.2026).
 	offeneSchaeden, err := repo.leseOffeneSchaeden(ctx, ids)
+	if err != nil {
+		return err
+	}
+
+	// Vormerkungen, Klassensatz-Reservierungen und Klassensatz-Zuordnungen fallen per
+	// ON DELETE CASCADE mit dem Titel — die DDL sagt das, der Code sagte es nicht
+	// (Frage 12 „Gegenrichtung Schema", 06.09.2026). Vorher lesen, danach ist es weg.
+	wartende, err := repository.LeseWartendeBezuege(ctx, repo.db, ids)
 	if err != nil {
 		return err
 	}
@@ -87,6 +96,9 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 
 	// In derselben Transaktion: Entweder die Löschung UND ihre Spur, oder keins von beidem.
 	if err := protokolliereOffeneSchaeden(ctx, tx, offeneSchaeden); err != nil {
+		return err
+	}
+	if err := repository.ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
 		return err
 	}
 	if err := protokolliereOffeneAusleihen(ctx, tx, offene); err != nil {

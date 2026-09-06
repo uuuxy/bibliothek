@@ -119,6 +119,19 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
 				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
 
+		// Die drei CASCADE-Kinder des Titels, seit Frage 12 („Gegenrichtung Schema",
+		// 06.09.2026) im Protokoll: Vormerkungen, Klassensatz-Reservierungen,
+		// Klassensatz-Zuordnungen.
+		mock.ExpectQuery(`FROM vormerkungen v`).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
+		mock.ExpectQuery(`FROM klassensatz_reservierungen r`).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse", "status", "seit"}))
+		mock.ExpectQuery(`FROM class_books c`).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
+
 		mock.ExpectQuery("SELECT cover_url").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover.jpg"))

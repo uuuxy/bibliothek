@@ -98,6 +98,9 @@ var phantomBestand = map[string]int{
 	// ON CONFLICT auf 1 zu vergleichen — die Fehlerrückgabe deckt den Fall schon ab.
 	"inventur/db_books_delete_spur.go:protokolliereOffeneSchaeden":       1,
 	"repository/audit_books_forderung.go:protokolliereOffeneForderungen": 1,
+	// Dritte Zeile derselben Bauart (Frage 12 „Gegenrichtung Schema", 06.09.2026):
+	// ein INSERT ins Protokoll je Zeile, die der CASCADE gleich nimmt.
+	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
 	"inventur/db_books_update.go:syncBookStock":                          3,
 	"repository/systematik_sicherung.go:registriereFach":                 2,
 	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                         1,
