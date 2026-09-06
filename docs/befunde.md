@@ -125,6 +125,36 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     Speicher- und Leseantwort `[]`; `LmfPlan.test.js` wartet 400 ms gegen 250 ms
     Entprellung; die drei Browser-Gates öffnen die neuen Planer-Dialoge nicht.
 
+- **Bestands-Durchgang 06.09.2026 abends** (Peter: „löse alles professionell … belege und
+  überprüfe wirklich alles am Code"). Anlass ist eine Frage, die eine Antwort verdient hat:
+  Warum kommen jetzt MEHR Funde, wo die Ausbeute doch fallen sollte? Am Code nachgesehen:
+  Die elf Fragen laufen seit dem 22.08. über **Änderungen** — `docs/sweeps.md` sagt das im
+  eigenen Zweck-Absatz („Es sieht nicht, was schon da ist"). Über den ganzen Baum liefen sie
+  genau **einmal**, am 23.08., und damals mit zehn Fragen: Frage 11 (geteilter Zustand/Lader)
+  kam am 24.08. dazu — und lieferte heute den gefährlichsten Fund. Dazu kommt, dass ein
+  Durchgang über einen Diff die NACHBARSCHAFT nicht sieht: Der DSGVO-Fund entstand am 02.09.
+  in einem Commit über 55 Dateien, dessen Raster an dem Tag über das Thema der Änderung lief
+  (LUSD-Umbenennung), nicht über jede mitgeänderte Datei. Der Bestand ist also keine
+  ausgeschöpfte Fläche, sondern eine nie vollständig befragte.
+
+  Erledigt in diesem Durchgang (je ein Commit, je am Rückbau rot gesehen): die sieben Funde
+  des Nachmittags (`8c5b354f` bis `3abe0bd7`), die Ratsche über die Routen ohne Fachrecht
+  (`3e98f78b`), der Stichtags-Zwilling (`de4484a9`) und die Papierkorb-Tür (`14be1528`).
+
+  - **Sweep-Kandidat: verschlucktes `!ok` im Frontend (B).** Der Papierkorb-Fund war die
+    dritte Stelle in zwei Tagen, an der eine Antwort ohne `else` gelesen wird (vorher:
+    Schülerakte `529def4d`, Offline-Sync `c339f439`). Ein Grep findet 65 Stellen
+    `if (res.ok)`, davon rund 28 ohne benachbartes `else` — **Hypothese, kein Befund**: Die
+    Früh-Rückkehr-Form (`if (res.ok) { …; return; }`) ist harmlos und mindestens ein Treffer
+    ist genau die. Ein ehrlicher Detektor braucht den AST und jeden Treffer gelesen
+    (`sweeps.md`, Regel 4). Eigener Sweep, eigene Sitzung.
+  - **Irreführende URL in zwei Tests (C).** `api/student_lifecycle_pg_test.go` ruft den
+    Restore-Handler direkt (`srv.RestoreStudentHandler().ServeHTTP`) und setzt die ID per
+    `SetPathValue` — die Prüfung ist gültig, aber die URL im Request lautet
+    `/api/schueler/deleted/{id}/restore`, und diese Route gibt es nicht (registriert ist
+    `POST /api/schueler/{id}/restore`). Wer den Test liest, glaubt an eine zweite Tür. Beim
+    nächsten Anfassen der Datei richtigstellen.
+
 - **Zwei Definitionen von „derselbe Mensch"** (05.09.2026, B). Der Unique-Index
   `unique_schueler_name_gebdatum` vergleicht Vor- und Nachname roh (case-sensitiv, keine
   Normalform); der LUSD-Schlüssel rechnet seit 3848c9f6 in der Normalform `suchnorm`. Folge:
