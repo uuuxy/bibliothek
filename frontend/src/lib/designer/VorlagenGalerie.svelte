@@ -32,7 +32,13 @@
 		if (offen && wurzel && !wurzel.contains(/** @type {Node} */ (e.target))) offen = false;
 	}}
 	onkeydown={(e) => {
-		if (e.key === 'Escape') offen = false;
+		if (e.key !== 'Escape' || !offen) return;
+		offen = false;
+		// Als verarbeitet markieren: Sonst schließt derselbe Tastendruck zusätzlich die
+		// ganze Ansicht (globaler Escape-Kurzbefehl in Router.svelte) — die Galerie ging zu
+		// UND der Designer sprang an die Theke. Gefunden im Rasterdurchgang 06.09.2026;
+		// CoverPeek.svelte macht es seit jeher richtig, die Ratsche sah diese Form nicht.
+		e.preventDefault();
 	}}
 />
 
