@@ -58,7 +58,7 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 			}
 			if _, err := pool.Exec(ctx,
 				`DELETE FROM audit_log
-				 WHERE tabelle IN ('ausleihen', 'buecher_exemplare') AND datensatz_id = ANY($1)`,
+				 WHERE tabelle IN ('ausleihen', 'buecher_exemplare', 'schadensfaelle') AND datensatz_id = ANY($1)`,
 				exemplare); err != nil {
 				t.Errorf("Aufräumen audit_log: %v", err)
 			}
@@ -161,6 +161,27 @@ func TestDeleteBooks_LoeschtAuchVerlieheneUndHinterlaesstSpur(t *testing.T) {
 	// sieht das nicht, weil er dieselbe Frage stellt wie der Job.
 	if !strings.Contains(details, `"schueler_id"`) {
 		t.Errorf("Protokollzeile ohne schueler_id — die Befristung erreicht den Klarnamen nie: %s", details)
+	}
+
+	// 2b. Die Spur der offenen FORDERUNG (Rasterdurchgang 06.09.2026). Die Gebühr fällt
+	//     mit dem Titel — sie ist aber Geld, das ein Schüler der Schule schuldet, und sie
+	//     steuert sechs Entscheidungen (Kontoanzeige, Lösch-Sperre, Zusammenführen,
+	//     Abgänger-Wächter, LUSD-Anonymisierungsbremse, DSGVO-Löschprädikat). Ohne Spur
+	//     verschwindet die Forderung, ohne dass jemand sie später nachtragen könnte.
+	var schadenKontext, schadenDetails string
+	if err := pool.QueryRow(ctx, `
+		SELECT kontext, details::text FROM audit_log
+		WHERE tabelle = 'schadensfaelle' AND aktion = 'DELETE' AND datensatz_id = $1`,
+		imRegal).Scan(&schadenKontext, &schadenDetails); err != nil {
+		t.Fatalf("keine Protokollzeile für die unbezahlte Forderung: %v", err)
+	}
+	if !strings.Contains(schadenKontext, "Forderung") {
+		t.Errorf("Kontext sagt nicht, was los war: %q", schadenKontext)
+	}
+	for _, muss := range []string{"ZB-REGAL", "Hans Castorp", "3.00", "Fleck", `"schueler_id"`} {
+		if !strings.Contains(schadenDetails, muss) {
+			t.Errorf("Forderungs-Protokoll ohne %q — nicht nachtragbar: %s", muss, schadenDetails)
+		}
 	}
 
 	// 3. Kein Rauschen: Das Exemplar aus dem Regal war nicht verliehen und darf keine

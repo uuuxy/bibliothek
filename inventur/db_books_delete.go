@@ -40,6 +40,13 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return err
 	}
 
+	// Unbezahlte Forderungen fallen mit dem Titel — auch sie brauchen eine Spur
+	// (db_books_delete_spur.go, Rasterdurchgang 06.09.2026).
+	offeneSchaeden, err := repo.leseOffeneSchaeden(ctx, ids)
+	if err != nil {
+		return err
+	}
+
 	localCovers, err := repo.sammleLokaleCoverPfade(ctx, ids)
 	if err != nil {
 		return err
@@ -79,6 +86,9 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	}
 
 	// In derselben Transaktion: Entweder die Löschung UND ihre Spur, oder keins von beidem.
+	if err := protokolliereOffeneSchaeden(ctx, tx, offeneSchaeden); err != nil {
+		return err
+	}
 	if err := protokolliereOffeneAusleihen(ctx, tx, offene); err != nil {
 		return err
 	}

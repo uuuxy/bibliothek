@@ -90,6 +90,17 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 		WithArgs(titelID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id"}).
 			AddRow("ex-1", "B-00001"))
+	// Offene Forderungen VOR dem Löschen ins Protokoll (Rasterdurchgang 06.09.2026):
+	// Ein unbezahlter Schadensfall ist Geld, das ein Schüler schuldet, und er verschwand
+	// bis dahin mit dem Titel, ohne dass jemand ihn später nachtragen konnte.
+	mock.ExpectQuery("FROM schadensfaelle sf").
+		WithArgs(titelID).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "schuldner",
+			"schueler_id", "betrag", "beschreibung", "erstellt_am"}).
+			AddRow("sf-1", "ex-1", "B-00001", "Hans Castorp", ptrString("s-1"), "3.00", "Fleck", "2026-05-01"))
+	mock.ExpectExec("INSERT INTO audit_log").
+		WithArgs("ex-1", pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectExec("DELETE FROM schadensfaelle").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
 	mock.ExpectExec("DELETE FROM ausleihen").WithArgs(titelID).
@@ -152,3 +163,6 @@ func TestDeleteTitle_LeseFehlerBlocktLoeschung(t *testing.T) {
 		t.Errorf("offene/unerwartete Mock-Erwartungen: %v", err)
 	}
 }
+
+// ptrString: pgxmock reicht Zeiger unverändert durch; die Spalte schueler_id ist nullbar.
+func ptrString(s string) *string { return &s }

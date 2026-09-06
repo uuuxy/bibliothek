@@ -37,7 +37,9 @@ var (
 
 // DeleteTitle entfernt einen Buchtitel vollständig aus dem Katalog und erstellt einen revisionssicheren Audit-Eintrag.
 // Vor dem Löschen wird geprüft, ob noch Exemplare dieses Titels verliehen sind (was das Löschen blockiert).
-// Historische Ausleihen und abgeschlossene Schadensfälle werden bereinigt, um Fremdschlüssel-Fehler zu vermeiden.
+// Historische Ausleihen und ALLE Schadensfälle des Titels werden bereinigt, um
+// Fremdschlüssel-Fehler zu vermeiden — unbezahlte Forderungen stehen vorher im
+// Protokoll (protokolliereOffeneForderungen).
 func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bearbeiterID string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -112,6 +114,17 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("failed to read copy snapshots: %w", err)
 	}
 
+	// Unbezahlte Forderungen fallen mit dem Titel — vorher festhalten, WER wie viel wofür
+	// schuldete (Rasterdurchgang 06.09.2026, Frage 8). Ein unbezahlter Schadensfall ist
+	// Geld, das ein Schüler der Schule schuldet, und er steuert sechs Entscheidungen:
+	// Kontoanzeige, Lösch-Sperre, Zusammenführen, Abgänger-Wächter,
+	// LUSD-Anonymisierungsbremse und das DSGVO-Löschprädikat. Bis heute verschwand er mit
+	// dem Titel spurlos, und der Kommentar über dieser Funktion behauptete sogar, nur
+	// ABGESCHLOSSENE Fälle würden bereinigt. Für die offenen Ausleihen gibt es die Spur
+	// seit dem 23.08.2026 (inventur/db_books_delete_spur.go), fürs Geld nicht.
+	if err = protokolliereOffeneForderungen(ctx, tx, titleID); err != nil {
+		return err
+	}
 	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden
 	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
 		return fmt.Errorf("failed to delete damage records for title: %w", err)

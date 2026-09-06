@@ -183,3 +183,97 @@ func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, snaps []ex
 	}
 	return nil
 }
+
+// offenerSchaden ist eine UNBEZAHLTE Forderung, die eine Titel-Löschung mit abräumt.
+type offenerSchaden struct {
+	ID         string
+	ExemplarID string
+	Barcode    string
+	Titel      string
+	Schuldner  string
+	SchuelerID *string
+	Betrag     string
+	Grund      string
+	Seit       string
+}
+
+// leseOffeneSchaeden sammelt die unbezahlten, nicht stornierten Schadensfälle der zu
+// löschenden Titel — VOR der Löschung.
+//
+// Warum das eine eigene Spur braucht (Rasterdurchgang 06.09.2026): Beide Löschwege
+// räumen `schadensfaelle` ohne Rücksicht auf `ist_bezahlt` ab; der Funktionskommentar in
+// repository/audit_books.go behauptete sogar, nur ABGESCHLOSSENE Fälle würden bereinigt.
+// Ein unbezahlter Schadensfall ist aber Geld, das ein Schüler der Schule schuldet, und er
+// steuert sechs Entscheidungen — Kontoanzeige, Lösch-Sperre, Zusammenführen,
+// Abgänger-Wächter, LUSD-Anonymisierungsbremse und das DSGVO-Löschprädikat. Mit dem Titel
+// verschwand die Forderung samt allen sechs Wirkungen, und niemand konnte es später
+// sehen. Für die offenen AUSLEIHEN gibt es diese Spur seit dem 23.08.2026; fürs Geld
+// fehlte sie.
+func (repo *BookRepository) leseOffeneSchaeden(ctx context.Context, ids []string) ([]offenerSchaden, error) {
+	rows, err := repo.db.Query(ctx, `
+		SELECT sf.id, e.id, e.barcode_id, t.titel,
+		       coalesce(nullif(trim(coalesce(s.vorname,'') || ' ' || coalesce(s.nachname,'')), ''),
+		                nullif(trim(coalesce(b.vorname,'') || ' ' || coalesce(b.nachname,'')), ''),
+		                '(unbekannt)'),
+		       sf.schueler_id, to_char(sf.betrag, 'FM9999990.00'), sf.beschreibung,
+		       to_char(sf.erstellt_am, 'YYYY-MM-DD')
+		FROM schadensfaelle sf
+		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
+		JOIN buecher_titel t     ON e.titel_id = t.id
+		LEFT JOIN schueler s     ON sf.schueler_id = s.id
+		LEFT JOIN benutzer b     ON sf.benutzer_id = b.id
+		WHERE t.id = ANY($1::uuid[]) AND sf.ist_bezahlt = false AND sf.storniert_am IS NULL
+		ORDER BY e.barcode_id`, ids)
+	if err != nil {
+		return nil, fmt.Errorf("offene schadensfälle konnten nicht gelesen werden: %w", err)
+	}
+	defer rows.Close()
+	var alle []offenerSchaden
+	for rows.Next() {
+		var o offenerSchaden
+		if err := rows.Scan(&o.ID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Schuldner,
+			&o.SchuelerID, &o.Betrag, &o.Grund, &o.Seit); err != nil {
+			return nil, fmt.Errorf("offene schadensfälle konnten nicht gelesen werden: %w", err)
+		}
+		alle = append(alle, o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("offene schadensfälle konnten nicht gelesen werden: %w", err)
+	}
+	return alle, nil
+}
+
+// protokolliereOffeneSchaeden hält jede offene Forderung fest, bevor sie mit dem Titel
+// fällt: Wer schuldet wie viel, wofür, seit wann. Wie bei den offenen Ausleihen ist
+// `schueler_id` nicht nur Information, sondern der Schlüssel, an dem die
+// Lesehistorie-Befristung die Zeile findet.
+func protokolliereOffeneSchaeden(ctx context.Context, tx pgx.Tx, offene []offenerSchaden) error {
+	for _, o := range offene {
+		inhalt := map[string]any{
+			"schadensfall_id": o.ID,
+			"barcode_id":      o.Barcode,
+			"titel":           o.Titel,
+			"schuldner":       o.Schuldner,
+			"betrag":          o.Betrag,
+			"beschreibung":    o.Grund,
+			"erstellt_am":     o.Seit,
+			"action":          "titel_geloescht_mit_offener_forderung",
+		}
+		if o.SchuelerID != nil {
+			inhalt["schueler_id"] = *o.SchuelerID
+		}
+		details, err := json.Marshal(inhalt)
+		if err != nil {
+			return fmt.Errorf("protokoll der offenen forderung: %w", err)
+		}
+		if _, err := tx.Exec(ctx, `
+			INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, kontext, details)
+			VALUES ('schadensfaelle', 'DELETE', $1, 'SYSTEM', $2, $3::jsonb)`,
+			o.ExemplarID,
+			"Titel gelöscht, es stand noch eine unbezahlte Forderung offen",
+			string(details)); err != nil {
+			return fmt.Errorf("protokoll der offenen forderung: %w", err)
+		}
+	}
+	return nil
+}
