@@ -34,15 +34,50 @@ export function useBookAkte() {
 	let currentCandidateIndex = $state(0);
 	let coverFailed = $state(false);
 
+	// Sequenznummer wie in der Schülerakte (useStudentProfile) und im orderStore: Die
+	// Buch-Akte bleibt beim Wechsel MONTIERT — die Omnibox setzt nur appState.activeBookId,
+	// der Router hält `book_detail`. Zwei Titel kurz hintereinander geöffnet, und die
+	// langsamere Antwort gewinnt.
+	let laufNr = 0;
+
+	/**
+	 * Lädt Kopf und alle vier Listen eines Titels.
+	 *
+	 * Rasterdurchgang 06.09.2026 (Fragen 5 und 11), Zwilling des Akten-Fundes von heute
+	 * (529def4d): Bis hierher stand `if (res.ok) book = await res.json();` ohne `else`,
+	 * und nichts wurde beim Wechsel zurückgesetzt. Scheiterte genau diese eine Anfrage
+	 * (500, oder 429 vom Rate-Limiter — es sind fünf parallele Anfragen je Titel), blieb
+	 * der Kopf des VORHER geöffneten Titels stehen, während die Reiter darunter schon zum
+	 * neuen gehörten. Das ist hier nicht nur Anzeige:
+	 *
+	 *   - „Gesamten Titel löschen" schickt `book.id` — also den ALTEN Titel, samt allen
+	 *     Exemplaren, Ausleihen und offenen Forderungen. Die Rückfrage nannte dabei die
+	 *     Exemplarzahl des NEUEN („ALLE 12 zugehörigen Exemplare").
+	 *   - „Titel bearbeiten" öffnet den Editor auf dem alten Titel.
+	 *
+	 * @param {string} id
+	 */
 	async function loadAll(id) {
+		const meine = ++laufNr;
 		isLoading = true;
+		// Alles, was zum vorigen Titel gehört, geht mit ihm. Ein leerer Kopf ist die
+		// ehrliche Antwort auf „konnte nicht geladen werden" — der alte Kopf ist eine
+		// falsche.
+		book = null;
+		borrowers = [];
+		exemplare = [];
+		history = [];
+		vormerkungen = [];
+
 		if (appState.selectedBook && appState.selectedBook.id === id) {
 			book = appState.selectedBook;
 		} else {
 			try {
 				const res = await apiFetch(`/api/books/${id}`, { credentials: 'include' });
-				if (res.ok) book = await res.json();
+				if (meine !== laufNr) return; // ein jüngerer Titel ist schon unterwegs oder da
+				book = res.ok ? await res.json() : null;
 			} catch (err) {
+				if (meine !== laufNr) return;
 				console.error('Fehler beim Laden des Buches:', err);
 			}
 		}
@@ -58,6 +93,7 @@ export function useBookAkte() {
 			apiFetch(`/api/buecher/titel/${id}/historie`, { credentials: 'include' }),
 			apiFetch(`/api/vormerkungen?titel_id=${id}`, { credentials: 'include' })
 		]);
+		if (meine !== laufNr) return;
 
 		borrowers = await jsonOrEmpty(bRes);
 		exemplare = await jsonOrEmpty(eRes);
