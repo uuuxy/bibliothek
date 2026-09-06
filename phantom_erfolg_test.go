@@ -93,11 +93,16 @@ var phantomBestand = map[string]int{
 	"inventur/db_books_delete.go:DeleteBooks":                           2,
 	"inventur/db_books_delete_spur.go:protokolliereGeloeschteExemplare": 1,
 	"inventur/db_books_delete_spur.go:protokolliereOffeneAusleihen":     1,
-	"inventur/db_books_update.go:syncBookStock":                         3,
-	"repository/systematik_sicherung.go:registriereFach":                2,
-	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                        1,
-	"jobs/restore_probe.go:fuehreRestoreProbeAus":                       3,
-	"jobs/restore_probe.go:speichereRestoreProbe":                       1,
+	// Dieselbe Bauart wie die Zeile darüber (Rasterdurchgang 06.09.2026): ein INSERT ins
+	// Protokoll je gelesener Zeile. Ein CommandTag zu prüfen hieße, einen INSERT ohne
+	// ON CONFLICT auf 1 zu vergleichen — die Fehlerrückgabe deckt den Fall schon ab.
+	"inventur/db_books_delete_spur.go:protokolliereOffeneSchaeden":       1,
+	"repository/audit_books_forderung.go:protokolliereOffeneForderungen": 1,
+	"inventur/db_books_update.go:syncBookStock":                          3,
+	"repository/systematik_sicherung.go:registriereFach":                 2,
+	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                         1,
+	"jobs/restore_probe.go:fuehreRestoreProbeAus":                        3,
+	"jobs/restore_probe.go:speichereRestoreProbe":                        1,
 	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null
 	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
 	"repository/lmf_plan.go:SaveLmfPlan":                      3,

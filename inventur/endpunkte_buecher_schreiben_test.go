@@ -113,6 +113,12 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
 
+		// Offene Forderungen vor dem Löschen (Rasterdurchgang 06.09.2026); hier: keine.
+		mock.ExpectQuery(`FROM schadensfaelle sf`).
+			WithArgs(pgxmock.AnyArg()).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
+				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
+
 		mock.ExpectQuery("SELECT cover_url").
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover.jpg"))

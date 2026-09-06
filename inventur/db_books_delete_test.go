@@ -56,6 +56,14 @@ func TestDeleteBooks(t *testing.T) {
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
 
+		// Offene Forderungen werden VOR dem Löschen gelesen und protokolliert
+		// (Rasterdurchgang 06.09.2026): Ein unbezahlter Schadensfall ist Geld, das ein
+		// Schüler schuldet, und er verschwand bis dahin spurlos mit dem Titel.
+		mock.ExpectQuery(`FROM schadensfaelle sf`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
+				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
+
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\) AND cover_url LIKE '/uploads/%'`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover1.jpg"))
@@ -96,6 +104,11 @@ func TestDeleteBooks(t *testing.T) {
 		mock.ExpectQuery(`FROM ausleihen a`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
+
+		mock.ExpectQuery(`FROM schadensfaelle sf`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
+				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
 
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
 			WithArgs(ids).
