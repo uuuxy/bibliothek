@@ -119,18 +119,14 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 		// Die Antwort wird aus dem Payload gebaut: Die Reihenfolge in der Warteschlange
 		// hängt am Zeitstempel, und zwei Einträge derselben Millisekunde sind nicht
 		// geordnet. Ein Test, der die Reihenfolge rät, misst die falsche Zeile.
-		vi.mocked(apiClient.post).mockImplementation(
-			async (/** @type {any} */ _pfad, /** @type {any} */ payload) => ({
-				ok: true,
-				json: async () => ({
-					results: payload.map((/** @type {any} */ p, /** @type {number} */ i) =>
-						p.query === 'B-10243'
-							? { index: i, success: false, status: 404, error: 'Barcode nicht gefunden' }
-							: { index: i, success: true, status: 200 }
-					)
-				})
-			})
-		);
+		vi.mocked(apiClient.post).mockImplementation(async (_pfad, payload) => {
+			const results = /** @type {any[]} */ (payload).map((p, i) =>
+				p.query === 'B-10243'
+					? { index: i, success: false, status: 404, error: 'Barcode nicht gefunden' }
+					: { index: i, success: true, status: 200 }
+			);
+			return /** @type {any} */ ({ ok: true, json: async () => ({ results }) });
+		});
 
 		await offlineSync.startSync();
 
