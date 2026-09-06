@@ -86,7 +86,10 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 			.nth(4)
 			.innerText()
 	).trim();
-	expect(vorherige, 'Nachbarklasse nach der Nachbar-Regel').toMatch(/^07/);
+	// Jahrgang 7, egal in welcher Schreibweise: Die e2e-Datenbank sammelt Klassen aus
+	// früheren Läufen („07E29", „7e0f") und folgt nicht dem Seed-Vokabular. Ein Test, der
+	// auf „07" besteht, misst die Datenlage statt der Regel (06.09.2026 rot geworden).
+	expect(vorherige, 'Nachbarklasse nach der Nachbar-Regel (Jahrgang 7)').toMatch(/^0?7/i);
 	expect(
 		Number(await tabelle.getByRole('row').last().getByRole('cell').first().innerText()),
 		'nicht die letzte Zeile'
