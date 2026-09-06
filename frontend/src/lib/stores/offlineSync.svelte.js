@@ -1,6 +1,7 @@
 import { loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
 import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
+import { showToast } from '../../inventur/lib/store.svelte.js';
 
 // Baut das Batch-Payload; nur Checkouts mit Schüler-ID tragen active_student_id.
 function baueBatchPayload(batchItems) {
@@ -17,8 +18,16 @@ function baueBatchPayload(batchItems) {
 }
 
 // Bucht je Item aus, wenn der Server Erfolg oder einen permanenten 4xx-Fehler
-// (außer 429 Too Many Requests) meldet.
+// (außer 429 Too Many Requests) meldet. Gibt die ABGELEHNTEN Vorgänge zurück.
+//
+// Dass ein 4xx nicht ewig wiederholt wird, ist richtig — der Server hat fachlich
+// entschieden (Buch nicht gefunden, Schüler gesperrt, falscher Zustand). Falsch war bis
+// zum Rasterdurchgang am 06.09.2026, dass es niemand erfuhr: Der Eintrag verschwand aus
+// der Warteschlange, `pendingCount` ging auf 0, und der Erfolgston lief. Eine Klasse gibt
+// 18 Bücher offline zurück, vier werden abgelehnt, und niemand weiß es — die Ausleihen
+// bleiben offen und laufen ins Mahnwesen bis zur Rechnung an die Eltern.
 async function verarbeiteBatchErgebnisse(data, batchItems) {
+	const abgelehnt = [];
 	for (let i = 0; i < batchItems.length; i++) {
 		const item = batchItems[i];
 		const result = data.results?.find((r) => r.index === i);
@@ -30,9 +39,17 @@ async function verarbeiteBatchErgebnisse(data, batchItems) {
 			result.success ||
 			(result.status >= 400 && result.status < 500 && result.status !== 429)
 		) {
+			if (result && !result.success) {
+				abgelehnt.push({
+					barcode: item.barcode_id,
+					status: result.status,
+					meldung: result.error || result.message || ''
+				});
+			}
 			await dequeueOfflineAction(item.id);
 		}
 	}
+	return abgelehnt;
 }
 
 async function exportQueueAsJSON() {
@@ -47,6 +64,21 @@ async function exportQueueAsJSON() {
 	a.click();
 	a.remove();
 	URL.revokeObjectURL(url);
+}
+
+// Sagt dem Bediener, was der Server NICHT angenommen hat — mit Barcode, damit er es von
+// Hand klären kann. Das Muster steht im Haus schon fertig (useFehlbestand: „n gelöscht,
+// m übersprungen").
+function meldeAbgelehnte(abgelehnt) {
+	if (abgelehnt.length === 0) return;
+	const liste = abgelehnt.map((a) => a.barcode).join(', ');
+	const grund = abgelehnt[0].meldung ? ` (${abgelehnt[0].meldung})` : '';
+	showToast(
+		abgelehnt.length === 1
+			? `Offline-Scan „${liste}“ wurde nicht angenommen${grund} — bitte von Hand prüfen.`
+			: `${abgelehnt.length} Offline-Scans wurden nicht angenommen: ${liste} — bitte von Hand prüfen.`,
+		'error'
+	);
 }
 
 function createOfflineSyncStore() {
@@ -71,7 +103,8 @@ function createOfflineSyncStore() {
 			}
 
 			const data = await res.json();
-			await verarbeiteBatchErgebnisse(data, batchItems);
+			const abgelehnt = await verarbeiteBatchErgebnisse(data, batchItems);
+			meldeAbgelehnte(abgelehnt);
 			await updateCount();
 
 			// Network Jitter: 200-500 ms Pause vor dem nächsten Batch, damit mehrere

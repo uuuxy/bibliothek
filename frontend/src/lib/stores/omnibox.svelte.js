@@ -302,10 +302,18 @@ export function createOmniboxStore() {
 		}
 	}
 
-	// Speichert eine Scan-Aktion offline (nur Rückgaben „B-…"), sonst Netzwerkfehler-Toast.
+	// Speichert eine Scan-Aktion offline (nur Buchbarcodes „B-…"), sonst Netzwerkfehler-Toast.
+	//
+	// Ist ein Schüler geladen, war der Scan eine AUSLEIHE — bis zum Rasterdurchgang am
+	// 06.09.2026 wurde jeder Offline-Scan als „checkin" abgelegt, und der Server las das
+	// Schweigen als Rückgabe: Das Buch war schon draußen, die Rückgabe scheiterte, der
+	// Eintrag flog aus der Warteschlange. Das Kind hatte das Buch, das System sagte
+	// „verfügbar". (Der Payload-Bauer schickte `active_student_id` nur bei „checkout" —
+	// einem Typ, den niemand je einreihte; der Zweig war unerreichbar.)
 	async function speichereOfflineAktion(q, idempotencyKey) {
 		if (q.startsWith('B-')) {
-			await enqueueOfflineAction('checkin', q, activeStudent?.id ?? null, idempotencyKey);
+			const art = activeStudent?.id ? 'checkout' : 'checkin';
+			await enqueueOfflineAction(art, q, activeStudent?.id ?? null, idempotencyKey);
 			offlineSync.updateCount();
 			triggerScreenFlash('warning');
 			playSoundSuccess();
