@@ -90,6 +90,11 @@ func LmfArtTitel(art string) string {
 // LmfArtErklaerung ist der eine Satz unter der Überschrift, mit den Eingangsjahrgängen.
 func LmfArtErklaerung(art string, eingang []int) string {
 	if art == repository.LmfTerminAusgabe {
+		// Ohne bekannte Jahrgänge KEIN leeres Klammerpaar („(Jahrgang )"): Der Satz nennt
+		// dann nur die Regel. Beide Seiten müssen das gleich halten — TestLmfTexte prüft es.
+		if len(eingang) == 0 {
+			return "Nur die neu gebildeten Klassen bekommen ihre Schulbücher."
+		}
 		return "Nur die neu gebildeten Klassen (Jahrgang " + jahrgaengeText(eingang) + ") bekommen ihre Schulbücher."
 	}
 	return "Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. " +

@@ -48,7 +48,11 @@ export function jahrgaengeText(jahrgaenge) {
  *  @param {string} art @param {number[] | undefined} eingang */
 export function artErklaerung(art, eingang) {
 	if (art === 'ausgabe')
-		return `Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.`;
+		// Ohne bekannte Jahrgänge kein leeres Klammerpaar — dieselbe Regel wie in Go
+		// (api/lmf_termine.go, LmfArtErklaerung; Gate: TestLmfTexte…).
+		return (eingang ?? []).length === 0
+			? 'Nur die neu gebildeten Klassen bekommen ihre Schulbücher.'
+			: `Nur die neu gebildeten Klassen (Jahrgang ${jahrgaengeText(eingang)}) bekommen ihre Schulbücher.`;
 	return 'Alle Klassen geben die alten Schulbücher ab und bekommen direkt die neuen. „Nur Rückgabe“: Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.';
 }
 
