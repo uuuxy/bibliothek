@@ -45,9 +45,9 @@ describe('LmfPlanTabelle', () => {
 		expect(queryByRole('region', { name: 'Bücherausgabe nach den Sommerferien' })).toBeTruthy();
 	});
 
-	// „Nur Rückgabe" kommt vom Server (Abschlussklasse, neu gebildete Klasse) und steht als
-	// Chip vor dem Vermerk; der Satz unter der Überschrift nennt die Eingangsjahrgänge.
-	it('markiert Zeilen, die nur zurückgeben, und erklärt die Blöcke', () => {
+	// Der Vermerk steht so, wie die Bibliothek ihn geschrieben hat („nur Rückgabe" ist seit
+	// 06.09.2026 Text, kein Chip); der Satz unter der Überschrift nennt die Eingangsjahrgänge.
+	it('zeigt den Vermerk als Text und erklärt die Blöcke', () => {
 		const { getByText, container } = render(LmfPlanTabelle, {
 			termine: [
 				{
@@ -56,8 +56,7 @@ describe('LmfPlanTabelle', () => {
 					stunde: 1,
 					art: 'rueckgabe',
 					klassen: ['09H1'],
-					vermerk: '',
-					nur_rueckgabe: true
+					vermerk: 'nur Rückgabe'
 				},
 				{
 					id: 'b',
@@ -65,8 +64,7 @@ describe('LmfPlanTabelle', () => {
 					stunde: 2,
 					art: 'ausgabe',
 					klassen: ['07G1'],
-					vermerk: 'neu',
-					nur_rueckgabe: false
+					vermerk: 'neu'
 				}
 			],
 			eingangsjahrgaenge: [5, 7]

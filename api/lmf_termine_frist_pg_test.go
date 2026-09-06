@@ -307,7 +307,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 		t.Fatalf("mit vergangenem Plan: plan=%v vorbei=%v vorschlag=%+v", a.Plan != nil, a.Vorbei, a.Vorschlag)
 	}
 	z := a.Vorschlag.Zeilen
-	if klassenFolge(z) != "08G1,09H1,07R1" || z[1].Vermerk != "bis 11. eingesammelt" {
+	if klassenFolge(z) != "08G1,09H1,07R1" || z[1].Vermerk != "nur Rückgabe · bis 11. eingesammelt" {
 		t.Errorf("Vorjahres-Reihenfolge plus neue Klasse: %+v", z)
 	}
 	if strings.Join(a.Vorschlag.Ausgelassen, ",") != "12T1,Q1" {
@@ -316,19 +316,26 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if len(a.Klassen) != 5 {
 		t.Errorf("Klassen des Vokabulars: %v", a.Klassen)
 	}
-	// „Nur Rückgabe" vor den Ferien: 9H1 ist Abschlussklasse; 8G1 und 7R1 tauschen (Vorgabe
-	// der Eingangsjahrgänge 5 und 7: erst die 6er geben nur ab).
-	if strings.Join(a.NurRueckgabe, ",") != "09H1" || len(a.Eingangsjahrgaenge) != 2 || a.Eingangsjahrgaenge[0] != 5 || a.Eingangsjahrgaenge[1] != 7 {
-		t.Errorf("nur Rückgabe %v, Eingangsjahrgänge %v", a.NurRueckgabe, a.Eingangsjahrgaenge)
+	// „Nur Rückgabe" vor den Ferien steht als VORBELEGUNG im Vermerk (Peter, 06.09.2026):
+	// 9H1 ist Abschlussklasse und trägt es zusätzlich zum Vorjahres-Vermerk; 8G1 und 7R1
+	// tauschen (Vorgabe der Eingangsjahrgänge 5 und 7: erst die 6er geben nur ab).
+	if z[1].Vermerk != "nur Rückgabe · bis 11. eingesammelt" || z[0].Vermerk != "" || z[2].Vermerk != "" ||
+		len(a.Eingangsjahrgaenge) != 2 || a.Eingangsjahrgaenge[0] != 5 || a.Eingangsjahrgaenge[1] != 7 {
+		t.Errorf("Vermerke %q/%q/%q, Eingangsjahrgänge %v", z[0].Vermerk, z[1].Vermerk, z[2].Vermerk, a.Eingangsjahrgaenge)
 	}
 	seedSchueler(t, pool, "V-6", "F", "6F1")
 	seedSchueler(t, pool, "V-7", "G", "5F2")
-	if a = lies(); strings.Join(a.NurRueckgabe, ",") != "06F1,09H1" {
-		t.Errorf("die 6er werden neu gebildet und geben nur ab: %v", a.NurRueckgabe)
+	a = lies()
+	vermerke := map[string]string{}
+	for _, zeile := range a.Vorschlag.Zeilen {
+		vermerke[strings.Join(zeile.Klassen, "/")] = zeile.Vermerk
+	}
+	if vermerke["06F1"] != "nur Rückgabe" || vermerke["05F2"] != "" || vermerke["07R1"] != "" {
+		t.Errorf("die 6er werden neu gebildet und geben nur ab, die 5er nicht: %v", vermerke)
 	}
 
 	// Der Ausgabe-Plan nach den Ferien schlägt nur die Eingangsjahrgänge vor (5er, 7er);
-	// alle anderen Klassen liegen unter „Nicht im Plan", ohne Markierung „nur Rückgabe".
+	// alle anderen Klassen liegen unter „Nicht im Plan", ohne Vorbelegung „nur Rückgabe".
 	rec = lmfPlanAufruf(t, srv, http.MethodGet, "ausgabe", "")
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Ausgabe lesen: %d %s", rec.Code, rec.Body.String())
@@ -356,8 +363,10 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if ausgabe.Vorschlag != nil && strings.Join(ausgabe.Vorschlag.Ausgelassen, ",") != "09H1,Q1,12T1,08G1,06F1" {
 		t.Errorf("Ausgabe: alle anderen ausgelassen: %v", ausgabe.Vorschlag.Ausgelassen)
 	}
-	if len(ausgabe.NurRueckgabe) != 0 {
-		t.Errorf("Ausgabe-Plan kennt kein „nur Rückgabe“: %v", ausgabe.NurRueckgabe)
+	for _, zeile := range ausgabe.Vorschlag.Zeilen {
+		if zeile.Vermerk != "" {
+			t.Errorf("Ausgabe-Plan kennt kein „nur Rückgabe“: %v %q", zeile.Klassen, zeile.Vermerk)
+		}
 	}
 }
 

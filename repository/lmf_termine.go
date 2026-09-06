@@ -21,26 +21,23 @@ const (
 	LmfTerminAusgabe   = "ausgabe"
 )
 
-// LmfTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen.
-// NurRueckgabe (nur bei Rückgabe-Zeilen): Alle Klassen der Zeile geben nur ab und
-// bekommen vor den Ferien keine neuen Bücher — Abschlussklassen und Klassen, die zum
-// neuen Schuljahr neu gebildet werden (nurRueckgabeSQL, lmf_plan_veroeffentlichung.go).
+// LmfTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen. „Nur
+// Rückgabe" ist seit 06.09.2026 kein gerechnetes Feld mehr, sondern Text im Vermerk —
+// der Planer belegt ihn im Vorschlag vor, die Bibliothek darf ihn ändern (Peter: „fest
+// verankert … das ist nicht gut, es sollte im Feld sein").
 type LmfTermin struct {
-	ID           string   `json:"id"`
-	Datum        string   `json:"datum"` // YYYY-MM-DD
-	Stunde       int      `json:"stunde"`
-	Art          string   `json:"art"`
-	Klassen      []string `json:"klassen"`
-	Vermerk      string   `json:"vermerk"`
-	NurRueckgabe bool     `json:"nur_rueckgabe"`
+	ID      string   `json:"id"`
+	Datum   string   `json:"datum"` // YYYY-MM-DD
+	Stunde  int      `json:"stunde"`
+	Art     string   `json:"art"`
+	Klassen []string `json:"klassen"`
+	Vermerk string   `json:"vermerk"`
 }
 
 // LmfListenFilter steuert ListLmfTermine: MitEntwuerfen zeigt auch unveröffentlichte
-// Pläne (nur der Planer selbst, für das PDF an die Schulleitung); Eingangsjahrgaenge
-// bestimmen die Markierung „nur Rückgabe" (Einstellung lmf_eingangsjahrgaenge).
+// Pläne (nur der Planer selbst, für das PDF an die Schulleitung).
 type LmfListenFilter struct {
-	MitEntwuerfen      bool
-	Eingangsjahrgaenge []int
+	MitEntwuerfen bool
 }
 
 // SchuljahrBeginn liefert den 1. August des Schuljahres, in dem t liegt (Hessen:
@@ -69,21 +66,15 @@ func NewLmfTerminRepository(pool db.PgxPoolIface) *LmfTerminRepository {
 // Klassen kommen sortiert mit, damit „6F1/6F2" in Oberfläche und PDF gleich aussieht.
 // Entwürfe (Migration 100) sieht nur, wer MitEntwuerfen setzt.
 func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time, f LmfListenFilter) ([]LmfTermin, error) {
-	eingang := f.Eingangsjahrgaenge
-	if eingang == nil {
-		eingang = []int{}
-	}
 	rows, err := r.db.Query(ctx, `
 		SELECT t.id, to_char(t.datum, 'YYYY-MM-DD'), t.stunde, t.art, t.vermerk,
 		       COALESCE((SELECT array_agg(k.klasse ORDER BY klassen_normkey(k.klasse))
-		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}'),
-		       t.art = 'rueckgabe' AND COALESCE((SELECT bool_and(`+nurRueckgabeSQL("k.klasse", "$3")+`)
-		                                          FROM lmf_termin_klassen k WHERE k.termin_id = t.id), false)
+		                 FROM lmf_termin_klassen k WHERE k.termin_id = t.id), '{}')
 		FROM lmf_termine t
 		JOIN lmf_plaene p ON p.id = t.plan_id
 		WHERE ($1::date IS NULL OR t.datum >= $1::date)
 		  AND ($2 OR p.veroeffentlicht_am IS NOT NULL)
-		ORDER BY t.datum, t.stunde, t.id`, nullbaresDatum(ab), f.MitEntwuerfen, eingang)
+		ORDER BY t.datum, t.stunde, t.id`, nullbaresDatum(ab), f.MitEntwuerfen)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +83,7 @@ func (r *LmfTerminRepository) ListLmfTermine(ctx context.Context, ab time.Time, 
 	termine := []LmfTermin{}
 	for rows.Next() {
 		var t LmfTermin
-		if err := rows.Scan(&t.ID, &t.Datum, &t.Stunde, &t.Art, &t.Vermerk, &t.Klassen, &t.NurRueckgabe); err != nil {
+		if err := rows.Scan(&t.ID, &t.Datum, &t.Stunde, &t.Art, &t.Vermerk, &t.Klassen); err != nil {
 			return nil, err
 		}
 		termine = append(termine, t)

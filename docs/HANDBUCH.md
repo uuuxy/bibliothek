@@ -124,7 +124,8 @@ verschiedenen Zeiten):
 - **Büchertausch vor den Sommerferien:** Alle Klassen geben die alten Schulbücher ab und
   bekommen direkt die neuen. Abschlussklassen und Klassen, die zum neuen Schuljahr neu
   gebildet werden (die 6er, die auf die Zweige H, R, G verteilt werden), geben **nur
-  zurück** — der Planer und der Plan markieren sie so.
+  zurück** — der Vorschlag belegt bei ihnen die Besonderheiten mit „nur Rückgabe" vor;
+  der Text gehört dann der Bibliothek und lässt sich ändern oder löschen.
 - **Bücherausgabe nach den Sommerferien:** Nur die neu gebildeten Klassen bekommen ihre
   Bücher — die **Eingangsjahrgänge** (_Einstellungen → Ausleihe & Fristen_, Vorgabe
   „5, 7"). Der Vorschlag für diesen Plan enthält nur sie; alle anderen Klassen liegen
@@ -193,7 +194,7 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
 
 Das Kollegium sieht den **veröffentlichten** Plan in _Mein Portal → LMF-Plan_, für alle
 gleich und immer auf dem aktuellen Stand; _Als PDF_ liefert die gewohnte Liste (Wochentag,
-Datum, Stunde, Klassen, Besonderheiten — „nur Rückgabe" steht dort vor dem Vermerk),
+Datum, Stunde, Klassen, Besonderheiten — so, wie sie im Planer eingetragen sind),
 getrennt nach Büchertausch und Bücherausgabe.
 
 **Der Termin einer Klasse beim Büchertausch ist die Frist ihrer Schulbücher.** Beim

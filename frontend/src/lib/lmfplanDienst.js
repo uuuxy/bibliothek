@@ -7,8 +7,7 @@
  *  der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
 import { apiFetch } from './apiFetch.js';
 
-/** nur_rueckgabe: alle Klassen der Zeile geben vor den Ferien nur ab (Abschlussklassen, neu gebildete Klassen). */
-/** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string, nur_rueckgabe?: boolean }} LmfTermin */
+/** @typedef {{ id?: string, datum: string, stunde: number, art: 'rueckgabe' | 'ausgabe', klassen: string[], vermerk: string }} LmfTermin */
 /** Fest: Datum und Stunde von Hand (die Klasse mit dem Ausflug) — null, wenn die Zeile fließt. */
 /** @typedef {{ datum: string, stunde: number }} FesterPlatz */
 /** @typedef {{ klassen: string[], vermerk: string, fest?: FesterPlatz | null }} PlanZeile */
@@ -24,8 +23,8 @@ import { apiFetch } from './apiFetch.js';
 /** Ein Werktag im Plan-Zeitraum, an dem der Plan nicht läuft — mit Grund. */
 /** @typedef {{ datum: string, grund: string }} Ausfall */
 /** veroeffentlicht_am: null = Entwurf (nur im Planer), sonst der Stempel (Migration 100). klassen = Klassen mit
- *  Schülern; nur_rueckgabe = Klassen, die vor den Ferien nur abgeben; eingangsjahrgaenge aus der Einstellung. */
-/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], nur_rueckgabe?: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
+ *  Schülern; eingangsjahrgaenge aus der Einstellung. */
+/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
 
 /** Die zwei Pläne — mit den Worten, die sagen, was passiert (Peter, 06.09.2026: „Rückgabe"
  *  und „Ausgabe" allein waren unklar, das sind zwei verschiedene Dinge zu verschiedenen
@@ -157,19 +156,17 @@ export function entwurfAus(stand) {
 	};
 }
 
-/** Zwei Fragen an jede Klasse im Planer (Peter, 06.09.2026: Klassen wechseln mit dem
+/** Eine Frage an jede Klasse im Planer (Peter, 06.09.2026: Klassen wechseln mit dem
  *  Schuljahr — mal 3, mal 4, mal 6 je Stufe und Zweig): Hat sie schon Schüler? Ein
  *  „07G6" aus dem Vorjahr oder ein vor dem August-Import getipptes „07G1" hat keine —
- *  es kommt mit dem LUSD-Import oder gehört aus dem Plan. Und gibt sie vor den Ferien
- *  nur ab (Abschlussklasse, wird neu gebildet)? Beides beantwortet der Server, hier
- *  wird nur nachgeschlagen — über den Normschlüssel.
+ *  es kommt mit dem LUSD-Import oder gehört aus dem Plan. Der Server beantwortet sie,
+ *  hier wird nur nachgeschlagen — über den Normschlüssel. („Nur Rückgabe" ist kein
+ *  Marker mehr, sondern Text im Vermerk, den der Vorschlag vorbelegt.)
  *  @param {PlanStand | null} stand */
 export function klassenMarker(stand) {
 	const mitSchuelern = new Set((stand?.klassen ?? []).map(normKey));
-	const nurRueckgabe = new Set((stand?.nur_rueckgabe ?? []).map(normKey));
 	return {
-		/** @param {string} k */ ohneSchueler: (k) => !mitSchuelern.has(normKey(k)),
-		/** @param {string} k */ nurRueckgabe: (k) => nurRueckgabe.has(normKey(k))
+		/** @param {string} k */ ohneSchueler: (k) => !mitSchuelern.has(normKey(k))
 	};
 }
 

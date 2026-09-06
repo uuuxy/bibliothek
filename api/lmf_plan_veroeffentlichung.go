@@ -45,6 +45,7 @@ func enthaeltJahrgang(eingang []int, j int) bool {
 
 // lmfPlanNurRueckgabe nennt aus allen Klassen, die der Planer zeigt (Vokabular, Zeilen,
 // Vorschlag, Auslassungen), die, die vor den Ferien nur abgeben — leer beim Ausgabe-Plan.
+// Seit 06.09.2026 nur noch die Quelle der VORBELEGUNG des Vermerks (vermerkNurRueckgabe).
 func (s *Server) lmfPlanNurRueckgabe(ctx context.Context, repo *repository.LmfTerminRepository, art string, a LmfPlanStandAntwort, eingang []int) ([]string, error) {
 	if art != repository.LmfTerminRueckgabe {
 		return []string{}, nil

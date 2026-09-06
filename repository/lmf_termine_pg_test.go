@@ -73,7 +73,7 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	st = veroeffentlicht
 	// Liste ab Schuljahresbeginn: alle sechs, sortiert nach Platz; das Vokabular hat
 	// die Schreibweise vereinheitlicht („9h1" → registrierte Form).
-	liste, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{Eingangsjahrgaenge: []int{5, 7}})
+	liste, err := repo.ListLmfTermine(ctx, ab, LmfListenFilter{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,13 +82,6 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	}
 	if klassenNorm(liste[0].Klassen[0]) != "9h1" {
 		t.Errorf("Klasse der ersten Zeile: %v", liste[0].Klassen)
-	}
-	// „Nur Rückgabe": 9H1, 9H2, 10R1/10R2, 10R3 sind Abschlussklassen; 8H1 tauscht; die
-	// Zeile ohne Klasse ist keins von beidem.
-	for i, soll := range []bool{true, true, true, true, false, false} {
-		if liste[i].NurRueckgabe != soll {
-			t.Errorf("Zeile %d (%v): nur_rueckgabe=%v, erwartet %v", i+1, liste[i].Klassen, liste[i].NurRueckgabe, soll)
-		}
 	}
 	spaeter, err := repo.ListLmfTermine(ctx, time.Date(2026, time.August, 1, 0, 0, 0, 0, schulzeit.Zone()), LmfListenFilter{})
 	if err != nil || len(spaeter) != 0 {

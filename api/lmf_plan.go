@@ -62,9 +62,6 @@ type LmfPlanStandAntwort struct {
 	// Klassen: die Klassen mit aktiven Schülern, für die Auswahl im Planer. Eine Klasse
 	// im Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.
 	Klassen []string `json:"klassen"`
-	// NurRueckgabe (nur beim Rückgabe-Plan): Klassen, die vor den Ferien nur abgeben —
-	// Abschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.
-	NurRueckgabe []string `json:"nur_rueckgabe"`
 	// Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).
 	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`
 	// Sommerferien: die Ferien Hessen, an denen sich der Plan ausrichtet — der Planer
@@ -127,12 +124,53 @@ func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
 			antwort.Vorschlag = lmfPlanVorschlag(art, eingang, antwort.Plan != nil, stand, klassen)
 			antwort.Vorschlag.Rahmen = lmfPlanRahmenVorgabe(art, antwort.Sommerferien, ferien)
 		}
-		if antwort.NurRueckgabe, err = s.lmfPlanNurRueckgabe(r.Context(), repo, art, antwort, eingang); err != nil {
-			return apierrors.Internal("Klassen einordnen", err)
+		if antwort.Vorschlag != nil {
+			// „nur Rückgabe" als VORBELEGUNG des Vermerks, nicht als gerechnete Marke
+			// (Peter, 06.09.2026: „es sollte im Feld sein, dass man es ggf. verändern kann").
+			nurRueckgabe, err := s.lmfPlanNurRueckgabe(r.Context(), repo, art, antwort, eingang)
+			if err != nil {
+				return apierrors.Internal("Klassen einordnen", err)
+			}
+			vermerkNurRueckgabe(antwort.Vorschlag.Zeilen, nurRueckgabe)
 		}
 		RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})
+}
+
+// vermerkNurRueckgabeText ist der Text, den der Vorschlag Zeilen voranstellt, deren Klassen
+// vor den Ferien nur abgeben — Abschlussklassen und Klassen, die neu gebildet werden.
+const vermerkNurRueckgabeText = "nur Rückgabe"
+
+// vermerkNurRueckgabe belegt den Vermerk der Vorschlags-Zeilen vor, in denen ALLE Klassen
+// nur abgeben — außer der Vermerk (aus dem Vorjahr) sagt es schon. Danach gehört der
+// Text der Bibliothek: Sie kann ihn ändern oder löschen, nichts rechnet ihn nach.
+func vermerkNurRueckgabe(zeilen []repository.LmfPlanZeile, nurRueckgabe []string) {
+	ist := map[string]bool{}
+	for _, k := range nurRueckgabe {
+		ist[repository.KlassenSchluessel(k)] = true
+	}
+	for i := range zeilen {
+		z := &zeilen[i]
+		if len(z.Klassen) == 0 || strings.Contains(strings.ToLower(z.Vermerk), strings.ToLower(vermerkNurRueckgabeText)) {
+			continue
+		}
+		alle := true
+		for _, k := range z.Klassen {
+			if !ist[repository.KlassenSchluessel(k)] {
+				alle = false
+				break
+			}
+		}
+		if !alle {
+			continue
+		}
+		if z.Vermerk == "" {
+			z.Vermerk = vermerkNurRueckgabeText
+		} else {
+			z.Vermerk = vermerkNurRueckgabeText + " · " + z.Vermerk
+		}
+	}
 }
 
 // lmfPlanVorbei: Der letzte Platz des Plans (oder der erste Tag, wenn er leer ist) liegt

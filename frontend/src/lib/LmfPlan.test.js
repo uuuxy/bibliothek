@@ -23,7 +23,6 @@ const STAND = {
 	vorbei: false,
 	vorschlag: { quelle: 'regel', zeilen: [{ klassen: ['09H1'], vermerk: '' }], ausgelassen: [] },
 	klassen: ['09H1'],
-	nur_rueckgabe: ['09H1'],
 	eingangsjahrgaenge: [5, 7],
 	sommerferien: { jahr: 2027, von: '2027-06-28', bis: '2027-08-06', bekannt: true }
 };
@@ -99,8 +98,7 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 		expect(screen.getByTestId('lmf-plan-hinweis').textContent).toContain(
 			'noch nicht veröffentlicht'
 		);
-		// Die Markierungen aus dem Stand: 09H1 hat Schüler und gibt nur zurück.
-		expect(screen.getByText('nur Rückgabe')).toBeTruthy();
+		// Die Markierung aus dem Stand: 09H1 hat Schüler.
 		expect(screen.queryByText('ohne Schüler')).toBeNull();
 	});
 

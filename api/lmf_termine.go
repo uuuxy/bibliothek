@@ -60,7 +60,7 @@ func (s *Server) GetLmfTermineHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Einstellungen laden", err)
 		}
-		termine, err := repo.ListLmfTermine(r.Context(), ab, repository.LmfListenFilter{Eingangsjahrgaenge: eingang})
+		termine, err := repo.ListLmfTermine(r.Context(), ab, repository.LmfListenFilter{})
 		if err != nil {
 			return apierrors.Internal("LMF-Plan laden", err)
 		}
@@ -110,7 +110,7 @@ func jahrgaengeText(eingang []int) string {
 
 // lmfPlanAbschnitte gruppiert die Termine für das PDF: erst der Tausch vor den Ferien,
 // dann die Ausgabe danach, je Abschnitt in der Reihenfolge des Plans. „Nur Rückgabe"
-// steht als Besonderheit vor dem Vermerk.
+// steht, wo die Bibliothek es hingeschrieben hat: im Vermerk.
 func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.LmfPlanAbschnitt, error) {
 	abschnitte := []pdf.LmfPlanAbschnitt{
 		{Titel: strings.ToUpper(LmfArtTitel(repository.LmfTerminRueckgabe)), Untertitel: LmfArtErklaerung(repository.LmfTerminRueckgabe, eingang)},
@@ -121,11 +121,7 @@ func lmfPlanAbschnitte(termine []repository.LmfTermin, eingang []int) ([]pdf.Lmf
 		if err != nil {
 			return nil, err
 		}
-		vermerk := t.Vermerk
-		if t.NurRueckgabe {
-			vermerk = strings.TrimSuffix("nur Rückgabe · "+vermerk, " · ")
-		}
-		z := pdf.LmfPlanZeile{Datum: datum, Stunde: t.Stunde, Klassen: strings.Join(t.Klassen, "/"), Vermerk: vermerk}
+		z := pdf.LmfPlanZeile{Datum: datum, Stunde: t.Stunde, Klassen: strings.Join(t.Klassen, "/"), Vermerk: t.Vermerk}
 		if t.Art == repository.LmfTerminAusgabe {
 			abschnitte[1].Zeilen = append(abschnitte[1].Zeilen, z)
 		} else {
@@ -151,7 +147,7 @@ func (s *Server) GetLmfPlanPDFHandler(mitEntwuerfen bool) http.HandlerFunc {
 			return
 		}
 		termine, err := repo.ListLmfTermine(r.Context(), s.lmfPlanAb(r),
-			repository.LmfListenFilter{MitEntwuerfen: mitEntwuerfen, Eingangsjahrgaenge: eingang})
+			repository.LmfListenFilter{MitEntwuerfen: mitEntwuerfen})
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

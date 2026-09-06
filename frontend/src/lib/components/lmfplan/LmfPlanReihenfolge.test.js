@@ -15,7 +15,7 @@ const PLAETZE = [
 ];
 
 // Ohne Markierungen: Diese Tests prüfen die Reihenfolge, nicht die Einordnung der Klassen.
-const KEIN_MARKER = { ohneSchueler: () => false, nurRueckgabe: () => false };
+const KEIN_MARKER = { ohneSchueler: () => false };
 
 /** @param {any} zeilen */
 function zeige(zeilen, onklasseraus = vi.fn()) {

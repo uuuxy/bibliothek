@@ -6,8 +6,9 @@
      Klassen nach M3: EINE Klasse steht als Text — „Don't display a single chip by
      itself" —, ab zwei Klassen (geteilte Stunde) ein Input-Chip-Set mit × je Chip.
      Ohne ersten Tag bleiben die gerechneten Spalten leer; der Abschnitt darüber sagt,
-     was fehlt. Zwei Status-Chips aus dem Marker (lmfplanDienst.klassenMarker): „ohne
-     Schüler" an der Klasse, „nur Rückgabe" bei den Besonderheiten. -->
+     was fehlt. Ein Status-Chip aus dem Marker (lmfplanDienst.klassenMarker): „ohne
+     Schüler" an der Klasse. „Nur Rückgabe" ist seit 06.09.2026 Text im Vermerk (vom
+     Vorschlag vorbelegt, änderbar), kein Chip. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Select from '../ui/Select.svelte';
@@ -38,10 +39,6 @@
 
 	const OHNE_SCHUELER_TIP =
 		'Noch kein Schüler in dieser Klasse — sie kommt mit dem LUSD-Import oder gehört aus dem Plan';
-	// Wie der Server für Portal und PDF: alle Klassen der Zeile geben nur ab.
-	const nurRueckgabe = $derived(
-		zeile.klassen.length > 0 && zeile.klassen.every((k) => marker.nurRueckgabe(k))
-	);
 </script>
 
 <tr
@@ -102,12 +99,6 @@
 	</td>
 	<td class="px-4 py-1">
 		<div class="flex items-center gap-2">
-			{#if nurRueckgabe}
-				<StatusChip
-					text="nur Rückgabe"
-					tip="Abschlussklasse oder wird zum neuen Schuljahr neu gebildet: gibt ab, bekommt vor den Ferien keine neuen Bücher"
-				/>
-			{/if}
 			<Feld
 				id="lmf-zeile-vermerk-{i}"
 				aria-label="Besonderheiten Zeile {i + 1}"

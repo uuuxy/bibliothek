@@ -2990,13 +2990,6 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
-                "nur_rueckgabe": {
-                    "description": "NurRueckgabe (nur beim Rückgabe-Plan): Klassen, die vor den Ferien nur abgeben —\nAbschlussklassen und Klassen, die zum neuen Schuljahr neu gebildet werden.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "plan": {
                     "description": "Plan ist der neueste Plan der Art; nil, wenn es noch keinen gibt.",
                     "allOf": [
@@ -3615,9 +3608,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "nur_rueckgabe": {
-                    "type": "boolean"
                 },
                 "stunde": {
                     "type": "integer"

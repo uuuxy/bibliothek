@@ -31,7 +31,7 @@ const BESTAND = {
 	'src/lib/BorrowedBooksList.svelte': 287,
 	'src/lib/Omnibox.svelte': 283,
 	'src/lib/Router.svelte': 231,
-	'src/lib/StatsDashboard.svelte': 385,
+	'src/lib/StatsDashboard.svelte': 384,
 	'src/lib/StudentDirectory.svelte': 209,
 	'src/lib/StudentEditSheet.svelte': 207,
 	'src/lib/StudentProfile.svelte': 256,
