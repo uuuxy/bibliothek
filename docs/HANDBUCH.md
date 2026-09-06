@@ -204,7 +204,7 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   oder es kommt noch. Neue Klassen mit Schülern erscheinen unter _Noch nicht im Plan_.
 - **Vorjahr als Vorlage**: Ist der letzte Plan vorbei, beginnt der nächste mit dessen
   Reihenfolge und Auslassungen; neue Klassen hängen hinten an. Ganz ohne Vorjahr gilt die
-  Regel: Abschlussklassen zuerst, dann Jahrgang absteigend, Oberstufe unten.
+  Regel: Abschlussklassen zuerst, dann Jahrgang absteigend, Oberstufe unten, am Ende die Zeilen „Nachzügler" und „Aufräumen" wie im Plan der Schule.
 
 Das Kollegium sieht den **veröffentlichten** Plan in _Mein Portal → LMF-Plan_, für alle
 gleich und immer auf dem aktuellen Stand; _Als PDF_ liefert die gewohnte Liste (Wochentag,

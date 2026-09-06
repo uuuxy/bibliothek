@@ -229,6 +229,15 @@ func lmfPlanVorschlag(art string, eingang []int, vorjahr bool, st repository.Lmf
 		}
 		v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: []string{k.Name}})
 	}
+	if v.Quelle == "regel" {
+		// Die zwei Zeilen ohne Klasse, mit denen Peters Pläne enden (Excel „Bücherausgabe"
+		// und „Bücherrückgabe", 06.09.2026): wer nicht dran war, und dann das Aufräumen.
+		// Das Vorjahr bringt sie von selbst mit; die Regel setzt sie, damit der erste Plan
+		// aussieht wie der der Schule.
+		v.Zeilen = append(v.Zeilen,
+			repository.LmfPlanZeile{Klassen: []string{}, Vermerk: "Nachzügler"},
+			repository.LmfPlanZeile{Klassen: []string{}, Vermerk: "Aufräumen"})
+	}
 	return v
 }
 

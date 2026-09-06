@@ -128,3 +128,35 @@ func TestLmfPlanRegelLaesstAus(t *testing.T) {
 		}
 	}
 }
+
+// Der Regel-Vorschlag endet wie Peters Excel: nach den Klassen „Nachzügler" und
+// „Aufräumen" (Zeilen ohne Klasse); beim Ausgabe-Plan stehen davor nur die
+// Eingangsjahrgänge. Das Vorjahr bringt seine eigenen Zeilen mit — ohne Zusatz.
+func TestLmfPlanVorschlag_RegelEndetMitNachzueglerUndAufraeumen(t *testing.T) {
+	klassen := []repository.KlasseImPlan{
+		{Name: "10R1", Jahrgang: 10, Abschluss: true},
+		{Name: "07G1", Jahrgang: 7},
+		{Name: "05F1", Jahrgang: 5},
+		{Name: "12T1", Jahrgang: 12, Oberstufe: true},
+	}
+	v := lmfPlanVorschlag(repository.LmfTerminAusgabe, []int{5, 7}, false, repository.LmfPlanStand{}, klassen)
+	vermerke := make([]string, 0, len(v.Zeilen))
+	for _, z := range v.Zeilen {
+		if len(z.Klassen) > 0 {
+			vermerke = append(vermerke, z.Klassen[0])
+		} else {
+			vermerke = append(vermerke, z.Vermerk)
+		}
+	}
+	if got := strings.Join(vermerke, ","); got != "07G1,05F1,Nachzügler,Aufräumen" {
+		t.Errorf("Ausgabe-Vorschlag: %s", got)
+	}
+	if got := strings.Join(v.Ausgelassen, ","); got != "10R1,12T1" {
+		t.Errorf("Ausgabe ausgelassen: %s", got)
+	}
+	// Vorjahr: nur die eigenen Zeilen.
+	st := repository.LmfPlanStand{Zeilen: []repository.LmfPlanZeile{{Klassen: []string{"07G1"}}}}
+	if v := lmfPlanVorschlag(repository.LmfTerminAusgabe, []int{5, 7}, true, st, klassen); len(v.Zeilen) != 2 {
+		t.Errorf("Vorjahr-Vorschlag: %d Zeilen, erwartet 2 (07G1 + neue 05F1)", len(v.Zeilen))
+	}
+}
