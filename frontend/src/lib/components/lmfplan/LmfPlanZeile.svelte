@@ -79,6 +79,7 @@
 			{anzahl}
 			klassen={zeile.klassen.length}
 			fest={Boolean(zeile.fest)}
+			platzlos={!platz}
 			{onhoch}
 			{onrunter}
 			{onanfang}

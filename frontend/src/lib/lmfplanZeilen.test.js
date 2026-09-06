@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	einordnen,
 	nachbarZeile,
+	festWechseln,
 	klassenTeile,
 	klasseTauschen,
 	verschiebe,
@@ -126,5 +127,23 @@ describe('lmfplanDienst.klasseTauschen', () => {
 		// Gleiche Klasse oder eine, die nicht in der Zeile steht: unverändert.
 		expect(tausche(e, 0, '10R1', '10r1')).toBe(e);
 		expect(tausche(e, 1, '10R1', '10R4')).toBe(e);
+	});
+});
+
+describe('lmfplanZeilen.festWechseln', () => {
+	// „Fest ohne Datum" kannte nur das Frontend: Der Server nimmt zwei Zustände (fließt,
+	// oder fester Platz MIT Datum) und antwortet sonst 400. Das Fenster ohne Plätze ist
+	// echt — nach jedem Laden, bis die erste Vorschau da ist (Rasterdurchgang 06.09.2026).
+	const zeilen = [z('10R1'), z('09H1')];
+
+	it('legt ohne gerechneten Platz nichts fest', () => {
+		expect(festWechseln(zeilen, 0, undefined)).toBe(zeilen);
+		expect(festWechseln(zeilen, 0, { datum: '', stunde: 1 })).toBe(zeilen);
+	});
+
+	it('legt mit Platz fest und löst wieder — auch ohne Platz (Gegenprobe)', () => {
+		const fest = festWechseln(zeilen, 0, { datum: '2027-06-28', stunde: 3 });
+		expect(fest[0].fest).toEqual({ datum: '2027-06-28', stunde: 3 });
+		expect(festWechseln(fest, 0, undefined)[0].fest).toBeNull();
 	});
 });

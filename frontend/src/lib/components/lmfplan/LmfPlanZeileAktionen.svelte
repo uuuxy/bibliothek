@@ -23,12 +23,13 @@
 	import Button from '../ui/Button.svelte';
 	import Menue from '../ui/Menue.svelte';
 
-	/** @type {{ nummer: number, anzahl: number, klassen: number, fest: boolean, onhoch: () => void, onrunter: () => void, onanfang: () => void, onende: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
+	/** @type {{ nummer: number, anzahl: number, klassen: number, fest: boolean, platzlos?: boolean, onhoch: () => void, onrunter: () => void, onanfang: () => void, onende: () => void, onzusammen: () => void, ontrennen: () => void, oneinfuegen: () => void, onfest: () => void, onklasseraus: () => void, onentfernen: () => void }} */
 	let {
 		nummer,
 		anzahl,
 		klassen,
 		fest,
+		platzlos = false,
 		onhoch,
 		onrunter,
 		onanfang,
@@ -56,7 +57,9 @@
 		{ id: 'einfuegen', text: 'Zeile davor einfügen', icon: Plus },
 		fest
 			? { id: 'fest', text: 'Festen Platz lösen', icon: PinOff }
-			: { id: 'fest', text: 'Datum und Stunde festlegen', icon: Pin },
+			: // Ohne gerechneten Platz gäbe es nichts vorzubelegen, und der Server nähme die
+				// Zeile nicht an (400): Der Eintrag bleibt sichtbar, aber gesperrt.
+				{ id: 'fest', text: 'Datum und Stunde festlegen', icon: Pin, disabled: platzlos },
 		...(klassen === 1 ? [{ id: 'klasseraus', text: 'Klasse aus dem Plan nehmen', icon: X }] : []),
 		{ id: 'entfernen', text: 'Zeile entfernen', icon: Trash2, trennerDavor: true }
 	]);

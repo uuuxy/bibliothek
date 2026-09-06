@@ -121,12 +121,25 @@
 			dienst.festePlaetzeVollstaendig(entwurf.zeilen)
 	);
 
+	// Die drei Schreibwege hatten bis zum Rasterdurchgang am 06.09.2026 kein `catch`
+	// (Frage 5): Der Dienst wirft bei Netzfehler und beim 10-Sekunden-Zeitlimit von
+	// apiFetch, und die Ablehnung landete in window.unhandledrejection — für den
+	// Bediener wurde der Knopf einfach wieder aktiv. KEIN Toast, keine Meldung, und ein
+	// clientseitig abgebrochenes PUT kann serverseitig trotzdem gelaufen sein. Der
+	// Ladepfad zwei Funktionen höher fängt seit jeher sauber ab.
+	/** @param {unknown} e @param {string} was */
+	function schreibfehler(e, was) {
+		showToast(`${was} fehlgeschlagen: ${e instanceof Error ? e.message : e}`, 'error');
+	}
+
 	async function speichern() {
 		speichert = true;
 		try {
 			const erg = await dienst.speicherePlan(art, entwurf);
 			showToast(erg.meldung, erg.ok ? 'success' : 'error');
 			if (erg.ok) await lade();
+		} catch (e) {
+			schreibfehler(e, 'Speichern');
 		} finally {
 			speichert = false;
 		}
@@ -146,7 +159,14 @@
 			}
 			const erg = await dienst.veroeffentlichePlan(art);
 			showToast(erg.meldung, erg.ok ? 'success' : 'error');
-			if (erg.ok) await lade();
+			// Auch nach einem Fehlschlag neu laden: Das Veröffentlichen stempelt zuerst und
+			// koppelt danach die Fristen (zwei Schritte, keine gemeinsame Transaktion).
+			// Bricht der zweite ab, IST der Plan veröffentlicht — der Planer darf dann nicht
+			// weiter einen Entwurf zeigen.
+			await lade();
+		} catch (e) {
+			schreibfehler(e, 'Veröffentlichen');
+			await lade();
 		} finally {
 			speichert = false;
 		}
@@ -155,9 +175,17 @@
 	async function verwerfen() {
 		if (!stand?.plan) return;
 		if (!confirm(`Plan vom ${dienst.datumKurz(stand.plan.erster_tag)} verwerfen?`)) return;
-		const erg = await dienst.verwerfePlan(art);
-		showToast(erg.meldung, erg.ok ? 'success' : 'error');
-		if (erg.ok) await lade();
+		try {
+			const erg = await dienst.verwerfePlan(art);
+			showToast(erg.meldung, erg.ok ? 'success' : 'error');
+			// Wie beim Veröffentlichen: Gelöscht wird zuerst, die Fristen kehren danach
+			// zurück. Nach einem Fehlschlag ist der Plan womöglich weg — neu laden, sonst
+			// zeigt der Planer einen Plan, den es nicht mehr gibt.
+			await lade();
+		} catch (e) {
+			schreibfehler(e, 'Verwerfen');
+			await lade();
+		}
 	}
 
 	// Mit Entwurf: das PDF geht zur Abnahme an die Schulleitung.
