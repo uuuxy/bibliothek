@@ -44,7 +44,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 - **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres (`lmf_stichtag`) — **es sei denn, der LMF-Plan (§2.3) nennt für die Klasse einen Rückgabe-Termin: dann ist der die Frist** (`RueckgabeTerminFuerKlasse`, nur einjährige Ausleihe; seit 05.09.2026).
 - **Freihand-Bestand (Sonderbestände):** CDs, DVDs, Hörbücher etc. haben eine rollierende Frist (z. B. +14 oder +28 Tage ab Ausleihe), keine starre Jahresfrist.
-- **Ferien-Logik:** Fällt das berechnete Rückgabedatum in die Schulferien, wird die Frist automatisch bis zum ersten Schultag nach den Ferien verlängert.
+- **Ferien:** Eine automatische Verlängerung „bis zum ersten Schultag nach den Ferien" gibt es NICHT (stand bis 06.09.2026 fälschlich hier; `loan_rules.go` kennt keine Ferien). Das Werkzeug für „Bücher über die Sommerferien mitnehmen" ist der **Ferien-Leseclub** (Kategorie 2, §14): aktiv + Zieldatum → alle Ausleihen bekommen dieses feste Rückgabedatum. Die Tabelle `ferien_schliesszeiten` (Migration 017) betrifft nur das Mahnwesen (Banner + Sperre von Mail und PDF) und hat keinen Schreiber in der Oberfläche — siehe befunde.md.
 - **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr — `AddDate(1, 0, 0)`, also ein **Kalenderjahr**, nicht 365 Tage (im Schaltjahr sind es 366). Wie jede andere Frist läuft sie durch `tagesEndeInSchulzeitzone`; eine zweite, rohe Berechnung gibt es bewusst nicht.
 - **Verlängerungen:** Ausleihen können verlängert werden, es sei denn, der Schüler ist gesperrt oder hat das Ausleihlimit überschritten.
 
