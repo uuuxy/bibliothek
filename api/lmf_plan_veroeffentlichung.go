@@ -108,6 +108,7 @@ func (s *Server) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
 		if antwort.FristenAngepasst, err = s.koppleLmfPlanFristen(r.Context(), art, nil, antwort.Zeilen); err != nil {
 			return apierrors.Internal("Fristen koppeln", err)
 		}
+		s.auditiereLmfPlan(r, auditLmfPlanVeroeffentlicht, art, st.Plan.ID, antwort.FristenAngepasst)
 		RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})

@@ -442,6 +442,9 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 			if angepasst, err = s.koppleLmfPlanFristen(r.Context(), art, alt, stand.Zeilen); err != nil {
 				return apierrors.Internal("Fristen koppeln", err)
 			}
+			// Nur der veröffentlichte Plan greift in Fristen ein; ein Entwurf bleibt im Haus
+			// und braucht keine Spur.
+			s.auditiereLmfPlan(r, auditLmfPlanGespeichert, art, stand.Plan.ID, angepasst)
 		}
 		RespondJSON(w, http.StatusOK, LmfPlanSpeicherAntwort{LmfPlanStand: stand, Ausfaelle: ausfaelle, FristenAngepasst: angepasst})
 		return nil
@@ -556,6 +559,9 @@ func (s *Server) DeleteLmfPlanHandler() http.HandlerFunc {
 				return apierrors.Internal("Fristen koppeln", err)
 			}
 		}
+		// Auch das Verwerfen eines Entwurfs wird protokolliert: Es löscht einen Plan, den
+		// jemand gebaut hat, und die Antwort nennt nur eine Zahl.
+		s.auditiereLmfPlan(r, auditLmfPlanVerworfen, art, st.Plan.ID, angepasst)
 		RespondJSON(w, http.StatusOK, map[string]int64{"fristen_angepasst": angepasst})
 		return nil
 	})
