@@ -141,39 +141,23 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
   des Nachmittags (`8c5b354f` bis `3abe0bd7`), die Ratsche über die Routen ohne Fachrecht
   (`3e98f78b`), der Stichtags-Zwilling (`de4484a9`) und die Papierkorb-Tür (`14be1528`).
 
-  - **Sweep-Kandidat: verschlucktes `!ok` im Frontend (B).** Der Papierkorb-Fund war die
-    dritte Stelle in zwei Tagen, an der eine Antwort ohne `else` gelesen wird (vorher:
-    Schülerakte `529def4d`, Offline-Sync `c339f439`). Ein Grep findet 65 Stellen
-    `if (res.ok)`, davon rund 28 ohne benachbartes `else` — **Hypothese, kein Befund**: Die
-    Früh-Rückkehr-Form (`if (res.ok) { …; return; }`) ist harmlos und mindestens ein Treffer
-    ist genau die. Ein ehrlicher Detektor braucht den AST und jeden Treffer gelesen
-    (`sweeps.md`, Regel 4). Eigener Sweep, eigene Sitzung.
-  - **`jsonOrEmpty` macht aus einem Fehlschlag eine leere Liste (B).**
-    `useBookAkte.loadAll` lädt vier Listen über `Promise.allSettled`; scheitert eine, zeigt
-    der Reiter „Ausleiher (0)" für einen Titel, der Ausleiher hat. Dieselbe Klasse wie der
-    Papierkorb-Fund (`14be1528`), nur milder — es braucht Fehlerzustände je Reiter, also
-    einen eigenen Commit.
-  - **Die Rechnung verlässt sich auf Spalten, die das Schema nicht garantiert (B).**
-    `queryRechnungItems` (api/print.go) verbindet `schadensfaelle` per INNER JOIN mit
-    Exemplar, Titel und Ausleihe. `exemplar_id` und `ausleihe_id` sind beide **nullbar**,
-    `ausleihe_id` sogar `ON DELETE SET NULL` — eine Forderung ohne diese Bezüge fiele
-    lautlos aus der Rechnung, und bei „alle betroffen" antwortet der Weg mit 404 „keine
-    offenen Schadensfälle", während die Akte offene Beträge zeigt und der Schüler gesperrt
-    bleibt. **Heute nicht erreichbar**, am Code nachgezählt: Die drei Löschpfade
-    (`inventur/db_books_delete.go`, `repository/audit_books.go`,
-    `repository/inventur_verlust_aktionen.go`) entfernen die Schadensfälle VOR den
-    Ausleihen, und `geraet_id` hat in `schadensfaelle` keinen Schreiber. Erreichbar wäre es
-    über `POST /api/buecher/exemplare/{id}/defekt` mit `schueler_id` ohne `loan_id` — die
-    Route hat kein Frontend, und `MarkCopyDefekt` behandelt den Fall ausdrücklich. Also
-    kein A-Fund, sondern eine Zusicherung, die nur zufällig hält: Wer Geräteschäden baut
-    (die Spalte steht schon da), macht Geld unsichtbar. LEFT JOIN + Ersatztexte beim
-    nächsten Anfassen.
-  - **Irreführende URL in zwei Tests (C).** `api/student_lifecycle_pg_test.go` ruft den
-    Restore-Handler direkt (`srv.RestoreStudentHandler().ServeHTTP`) und setzt die ID per
-    `SetPathValue` — die Prüfung ist gültig, aber die URL im Request lautet
-    `/api/schueler/deleted/{id}/restore`, und diese Route gibt es nicht (registriert ist
-    `POST /api/schueler/{id}/restore`). Wer den Test liest, glaubt an eine zweite Tür. Beim
-    nächsten Anfassen der Datei richtigstellen.
+  - **Sweep „verschluckte Fehlantwort" — gelaufen und abgeschlossen** (`2d8e2d2d`). Aus dem
+    Kandidaten wurde ein Sweep mit AST-Detektor: 26 Fundstellen (der Grep hatte 65
+    vermutet), neun behoben, siebzehn mit Begründung eingefroren, Ratsche
+    `frontend/src/lib/fehlerausgang.test.js` in beide Richtungen rot gesehen. Zwei der
+    Funde waren Kategorie A und haben eigene Commits: die Theke zeigte unter dem neuen
+    Suchtext die Treffer des alten (`22173001`), und der Ausweis-Designer schrieb nach
+    einem fehlgeschlagenen Laden das Vorgabe-Design an alle Arbeitsplätze (`c2be1069`).
+    Die Reste der Klasse — Buch-Akte (`0a59a9e9`) und Rechnung (`ce875654`) — ebenfalls
+    erledigt.
+
+    **Ein Nachtrag, der zur Vorsicht mahnt:** Den Rechnungs-Posten hatte ich hier
+    ausdrücklich als „heute nicht erreichbar" abgelegt. Beim Bauen des Gates zeigte die
+    Datenbank etwas, das ich beim Lesen des Go-Codes nicht gesehen hatte —
+    `CONSTRAINT check_damage_item` verlangt GENAU EINES von `exemplar_id` und `geraet_id`.
+    Der Geräteschaden ist im Schema also vorgesehen, ihm fehlt nur der Schreiber, und die
+    INNER JOINs hätten ihn aus der Rechnung an die Eltern fallen lassen. Merksatz: Die
+    Reichweite einer Zusicherung steht im SCHEMA, nicht im Aufrufer.
 
 - **Zwei Definitionen von „derselbe Mensch"** (05.09.2026, B). Der Unique-Index
   `unique_schueler_name_gebdatum` vergleicht Vor- und Nachname roh (case-sensitiv, keine
