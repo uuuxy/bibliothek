@@ -3,6 +3,8 @@ package api
 import (
 	"strings"
 	"testing"
+
+	"bibliothek/repository"
 )
 
 // pruefeLmfPlan: fester Platz und freie Tage (Migration 099) werden geprüft, bevor
@@ -97,5 +99,32 @@ func TestPruefeLmfPlan_AnkerJeArt(t *testing.T) {
 	req.ErsterTag = ""
 	if _, err := pruefeLmfPlan("ausgabe", req); err == nil || !strings.Contains(err.Error(), "erster_tag") {
 		t.Errorf("Ausgabe ohne Beginn: %v", err)
+	}
+}
+
+// Die eine Regel, welche Klasse nicht in den Plan einer Art gehört — gelesen vom
+// Vorschlag UND von der Liste „bleiben draußen" des Planers (ausgelassen_regel).
+func TestLmfPlanRegelLaesstAus(t *testing.T) {
+	eingang := []int{5, 7}
+	f := func(name string, jg int, ober bool) repository.KlasseImPlan {
+		return repository.KlasseImPlan{Name: name, Jahrgang: jg, Oberstufe: ober}
+	}
+	faelle := []struct {
+		art  string
+		k    repository.KlasseImPlan
+		soll bool
+	}{
+		{repository.LmfTerminRueckgabe, f("05F1", 5, false), false},
+		{repository.LmfTerminRueckgabe, f("10R1", 10, false), false},
+		{repository.LmfTerminRueckgabe, f("12T1", 12, true), true},
+		{repository.LmfTerminAusgabe, f("05F1", 5, false), false},
+		{repository.LmfTerminAusgabe, f("07G1", 7, false), false},
+		{repository.LmfTerminAusgabe, f("06F1", 6, false), true},
+		{repository.LmfTerminAusgabe, f("12T1", 12, true), true},
+	}
+	for _, c := range faelle {
+		if ist := lmfPlanRegelLaesstAus(c.art, eingang, c.k); ist != c.soll {
+			t.Errorf("%s %s: ausgelassen=%v, erwartet %v", c.art, c.k.Name, ist, c.soll)
+		}
 	}
 }

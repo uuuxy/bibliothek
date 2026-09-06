@@ -65,3 +65,30 @@ describe('lmfplanZeilen.verschiebe', () => {
 		expect(verschiebe(plan, 1, 9)).toBe(plan);
 	});
 });
+
+// bewusstDraussen: Gespeicherte Auslassungen UND die Regel der Art klappen ein — auch bei
+// einem laufenden Plan, der die Klassen nie kannte (06.09.2026: ein Plan mit alten
+// Klassennamen bot sonst 60 Chips offen an). Was keine Regel hat, bleibt offen.
+describe('lmfplanDienst.bewusstDraussen', () => {
+	it('klappt gespeicherte Auslassungen und die Regel ein, lässt den Rest offen', async () => {
+		const { bewusstDraussen } = await import('./lmfplanDienst.js');
+		const laufend = bewusstDraussen(
+			/** @type {any} */ ({
+				plan: { id: 'p' },
+				vorbei: false,
+				ausgelassen: ['12T1'],
+				vorschlag: { ausgelassen: ['13T1'] },
+				ausgelassen_regel: ['06F1', 'ET1']
+			})
+		);
+		expect(laufend('12T1')).toBe(true); // gespeichert
+		expect(laufend('6f1')).toBe(true); // Regel, über den Normschlüssel
+		expect(laufend('13T1')).toBe(false); // Vorschlag zählt bei laufendem Plan nicht
+		expect(laufend('05F1')).toBe(false); // keine Regel: offen
+		const neu = bewusstDraussen(
+			/** @type {any} */ ({ plan: null, vorschlag: { ausgelassen: ['13T1'] } })
+		);
+		expect(neu('13T1')).toBe(true);
+		expect(neu('05F1')).toBe(false);
+	});
+});

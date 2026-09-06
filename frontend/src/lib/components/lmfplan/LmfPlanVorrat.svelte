@@ -4,10 +4,11 @@
      Klasse an ihren Platz — hinter die letzte Klasse desselben Jahrgangs und Zweigs
      (lmfplanZeilen.einordnen), nicht ans Ende; ziehen auf eine Zeile setzt sie davor.
      Zwei Gruppen: Offen sichtbar ist nur, was ohne Regel fehlt (die neue Klasse nach
-     dem LUSD-Import). Was die Regel oder der gespeicherte Plan bewusst auslässt (die
-     Oberstufe, die sich an dieser Schule selbst organisiert), steht eingeklappt hinter
-     „11 Klassen bleiben draußen" — sonst böte die Seite jedes Jahr elf Chips an, die
-     niemand will. „Andere Klasse eintragen" öffnet das kleine Dialogfenster für eine
+     dem LUSD-Import). Was die Regel der Art (Server: ausgelassen_regel) oder der
+     gespeicherte Plan bewusst auslässt (die Oberstufe, die sich an dieser Schule
+     selbst organisiert; bei der Ausgabe alles außer den Eingangsjahrgängen), steht
+     eingeklappt hinter „11 Klassen bleiben draußen" — sonst böte die Seite jedes Jahr
+     elf Chips an, die niemand will. „Andere Klasse eintragen" öffnet das kleine Dialogfenster für eine
      Klasse, die das Vokabular noch nicht kennt („07G1" vor dem August-Import). Was hier
      liegt, wird beim Speichern als ausgelassen gemerkt und gilt nicht als „ohne Termin". -->
 <script>

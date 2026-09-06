@@ -25,7 +25,7 @@ import { einordnen } from './lmfplanZeilen.js';
 /** @typedef {{ datum: string, grund: string }} Ausfall */
 /** veroeffentlicht_am: null = Entwurf (nur im Planer), sonst der Stempel (Migration 100). klassen = Klassen mit
  *  Schülern; eingangsjahrgaenge aus der Einstellung. */
-/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
+/** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], ausgelassen_regel?: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
 
 /** Die zwei Pläne — mit den Worten, die sagen, was passiert (Peter, 06.09.2026: „Rückgabe"
  *  und „Ausgabe" allein waren unklar, das sind zwei verschiedene Dinge zu verschiedenen
@@ -306,15 +306,17 @@ export async function ladePdf(alle = false, entwurf = false) {
 }
 
 /** Welche Klassen im Planer eingeklappt unter „bleiben draußen" stehen: die, die der
- *  gespeicherte Plan (laufend) oder der Vorschlag (Vorjahr, Regel) bewusst auslässt —
- *  die Oberstufe, beim Ausgabe-Plan alles außer den Eingangsjahrgängen. Was das
- *  Vokabular darüber hinaus kennt, hat keine Regel und steht offen unter „Noch nicht
- *  im Plan": die neue Klasse nach dem LUSD-Import (06.09.2026).
+ *  gespeicherte Plan (laufend) oder der Vorschlag (Vorjahr, Regel) bewusst auslässt,
+ *  UND die, die die Regel der Art auslässt (Server: ausgelassen_regel — die Oberstufe,
+ *  beim Ausgabe-Plan alles außer den Eingangsjahrgängen). Letzteres auch bei einem
+ *  laufenden Plan, der die Klassen nie kannte: Ein Plan mit alten Klassennamen bot
+ *  sonst 60 Chips offen an (06.09.2026). Was übrig bleibt, hat keine Regel und steht
+ *  offen unter „Noch nicht im Plan": die neue Klasse nach dem LUSD-Import.
  *  @param {PlanStand | null} stand @returns {(klasse: string) => boolean} */
 export function bewusstDraussen(stand) {
 	const laufend = stand?.plan && !stand.vorbei;
 	const liste = laufend ? (stand?.ausgelassen ?? []) : (stand?.vorschlag?.ausgelassen ?? []);
-	const menge = new Set(liste.map(normKey));
+	const menge = new Set([...liste, ...(stand?.ausgelassen_regel ?? [])].map(normKey));
 	return (k) => menge.has(normKey(k));
 }
 

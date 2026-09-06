@@ -62,6 +62,11 @@ type LmfPlanStandAntwort struct {
 	// Klassen: die Klassen mit aktiven Schülern, für die Auswahl im Planer. Eine Klasse
 	// im Plan, die hier fehlt, hat (noch) keine Schüler — der Planer markiert sie.
 	Klassen []string `json:"klassen"`
+	// AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt
+	// (Büchertausch: Oberstufe; Ausgabe: alles außer den Eingangsjahrgängen). Der Planer
+	// klappt sie unter „bleiben draußen" ein — auch bei einem laufenden Plan, der sie
+	// nie kannte (06.09.2026: ein Plan mit alten Klassennamen bot 60 Chips offen an).
+	AusgelassenRegel []string `json:"ausgelassen_regel"`
 	// Eingangsjahrgaenge: die Jahrgänge, die nach den Ferien Bücher bekommen (Einstellung).
 	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`
 	// Sommerferien: die Ferien Hessen, an denen sich der Plan ausrichtet — der Planer
@@ -117,8 +122,12 @@ func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
 			return apierrors.Internal("Klassen laden", err)
 		}
 		antwort.Klassen = make([]string, 0, len(klassen))
+		antwort.AusgelassenRegel = []string{}
 		for _, k := range klassen {
 			antwort.Klassen = append(antwort.Klassen, k.Name)
+			if lmfPlanRegelLaesstAus(art, eingang, k) {
+				antwort.AusgelassenRegel = append(antwort.AusgelassenRegel, k.Name)
+			}
 		}
 		laufend := antwort.Plan != nil && !antwort.Vorbei
 		var ferien lmfplan.Zeitraum
@@ -214,17 +223,25 @@ func lmfPlanVorschlag(art string, eingang []int, vorjahr bool, st repository.Lmf
 		if bekannt[repository.KlassenSchluessel(k.Name)] {
 			continue
 		}
-		ausgelassen := k.Oberstufe
-		if art == repository.LmfTerminAusgabe {
-			ausgelassen = !enthaeltJahrgang(eingang, k.Jahrgang)
-		}
-		if ausgelassen {
+		if lmfPlanRegelLaesstAus(art, eingang, k) {
 			v.Ausgelassen = append(v.Ausgelassen, k.Name)
 			continue
 		}
 		v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: []string{k.Name}})
 	}
 	return v
+}
+
+// lmfPlanRegelLaesstAus: die EINE Regel, welche Klasse nicht in den Plan einer Art
+// gehört — Büchertausch: die Oberstufe (organisiert sich selbst); Ausgabe nach den
+// Ferien: alles außer den Eingangsjahrgängen (Peter, 06.09.2026: „nach den Sommerferien
+// bekommen nur die neuen 5er und 7er Klassen ihre Bücher"). Vorschlag und die Liste
+// „bleiben draußen" des Planers lesen sie hier.
+func lmfPlanRegelLaesstAus(art string, eingang []int, k repository.KlasseImPlan) bool {
+	if art == repository.LmfTerminAusgabe {
+		return !enthaeltJahrgang(eingang, k.Jahrgang)
+	}
+	return k.Oberstufe
 }
 
 // lmfPlanRequest ist der Körper von PUT /api/lmf-plan/{art}.
