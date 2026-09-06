@@ -21,7 +21,10 @@ DELETE FROM buecher_exemplare WHERE barcode_id LIKE 'DEMO-B-%';
 DELETE FROM buecher_titel   WHERE titel LIKE 'DEMO-Titel %';
 DELETE FROM schueler        WHERE barcode_id LIKE 'DEMO-S-%';
 
--- 2) ~2000 Schüler, über realistische Klassen (5a–Q4) verteilt.
+-- 2) ~2000 Schüler, über die Klassen DIESER Schule verteilt (Peter, 06.09.2026: „es gibt
+--    kein 10a" — Anzeigeform des Vokabulars, Migration 087): Förderstufe 5F/6F und
+--    Gymnasialzweig 5G/6G, ab 7 die Zweige H (bis 9), R (bis 10) und G (bis 10), dann die
+--    Oberstufe als Tutorien ET/12T/13T — so, wie sie im LMF-Plan der Schule stehen.
 --    ~8 % Abgänger (NUR aus Abschlussklassen, s. u.), ~2 % gesperrt (mit Pflicht-Grund).
 INSERT INTO schueler (barcode_id, vorname, nachname, klasse, geburtsdatum,
                       abgaenger_jahr, ist_abgaenger, eltern_email, ist_gesperrt, block_reason, ort, plz)
@@ -50,17 +53,23 @@ FROM (
         p.vn[1 + ((i - 1) % array_length(p.vn, 1))] AS vorname,
         p.nn[1 + (((i - 1) / array_length(p.vn, 1)) % array_length(p.nn, 1))] AS nachname,
         p.kl[1 + (i % array_length(p.kl, 1))] AS klasse,
-        -- Abgänger NUR aus Abschlussklassen: Hauptschulabschluss (9…), Realschulabschluss
-        -- (10…), Abitur (Q4) — ein „abgehender Fünftklässler" wäre fachlich Unsinn. i % 7
-        -- (teilerfremd zu 30 = |Klassen|) streut die Abgänger gleichmäßig INNERHALB dieser
-        -- Klassen (~2/7 davon ≈ 8 % gesamt), statt ganze Jahrgänge komplett zu treffen.
-        (p.kl[1 + (i % array_length(p.kl, 1))] IN ('9a','9b','9c','9d','10a','10b','10c','10d','Q4')
+        -- Abgänger NUR aus Abschlussklassen (dieselbe Regel wie repository.AbschlussklasseSQL:
+        -- H ab 9, R ab 10, Jahrgang 13) — ein „abgehender Fünftklässler" wäre fachlich
+        -- Unsinn. i % 7 (teilerfremd zu 73 = |Klassen|) streut die Abgänger gleichmäßig
+        -- INNERHALB dieser Klassen, statt ganze Jahrgänge komplett zu treffen.
+        (p.kl[1 + (i % array_length(p.kl, 1))] IN ('09H1','09H2','10R1','10R2','10R3','13T1','13T2','13T3')
             AND i % 7 < 2) AS ist_abgaenger
     FROM generate_series(1, 2000) AS i
     CROSS JOIN (SELECT
     ARRAY['Lukas','Leon','Finn','Noah','Elias','Paul','Ben','Jonas','Luca','Felix','Maximilian','Jakob','David','Tim','Moritz','Julian','Niklas','Simon','Fabian','Tom','Emma','Mia','Hannah','Emilia','Sofia','Lina','Marie','Lena','Sophie','Charlotte','Clara','Johanna','Laura','Anna','Leonie','Amelie','Nele','Ida','Frieda','Greta','Yusuf','Ali','Mert','Emir','Can','Aylin','Elif','Zeynep','Mohammed','Duc'] AS vn,
     ARRAY['Müller','Schmidt','Schneider','Fischer','Weber','Meyer','Wagner','Becker','Schulz','Hoffmann','Koch','Bauer','Richter','Klein','Wolf','Schröder','Neumann','Schwarz','Zimmermann','Braun','Krüger','Hofmann','Hartmann','Lange','Schmitt','Werner','Krause','Meier','Lehmann','Schmitz','Yılmaz','Kaya','Demir','Çelik','Şahin','Yıldız','Nguyen','Popović','Novak','Kowalski','Weiß','Jung','Hahn','Vogel','Friedrich','Keller','Günther','Frank','Berger','Winkler'] AS nn,
-    ARRAY['5a','5b','5c','5d','6a','6b','6c','6d','7a','7b','7c','7d','8a','8b','8c','8d','9a','9b','9c','9d','10a','10b','10c','10d','E1','E2','Q1','Q2','Q3','Q4'] AS kl
+    ARRAY['05F1','05F2','05F3','05F4','05G1','05G2','05G3','05G4','05G5','05G6',
+          '06F1','06F2','06F3','06F4','06G1','06G2','06G3','06G4','06G5','06G6',
+          '07H1','07H2','07R1','07R2','07R3','07G1','07G2','07G3','07G4','07G5','07G6',
+          '08H1','08H2','08H3','08H4','08R1','08R2','08R3','08G1','08G2','08G3','08G4','08G5',
+          '09H1','09H2','09R1','09R2','09R3','09G1','09G2','09G3','09G4','09G5',
+          '10R1','10R2','10R3','10G1','10G2','10G3','10G4','10G5','10G6',
+          'ET1','ET2','ET3','12T1','12T2','12T3','12T4','12T5','13T1','13T2','13T3'] AS kl
     ) p
 ) s;
 
