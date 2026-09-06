@@ -159,9 +159,13 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   _Erster Tag_ (vorbelegt: erster Schultag nach den Ferien), _Beginn am ersten Tag_
   (vorbelegt 2. Stunde, wie im Plan 2026: Montag 10.08., 2. Stunde). Dazu
   _Stunden je Tag_ (Vorgabe 6). Fehlt ein Jahr in der Ferientabelle, sagt der Satz das,
-  und der Tag wird von Hand eingetragen. Zwei Jahre vor dem Ende der Tabelle warnt
-  _System → Betriebsbereitschaft_ („Ferientabelle") mit dem Hinweis, wo der nächste
-  KMK-Beschluss nachzutragen ist. Darunter die **freien Tage**: Wochenenden und
+  und der Tag wird von Hand eingetragen. **Die Sommerferien pflegt die Schule selbst**
+  (seit 06.09.2026): _Einstellungen → LUSD & Versetzung → Sommerferien_ zeigt die Jahre
+  des Programms und nimmt weitere auf (Beginn und Ende, Quelle
+  kmk.org/service/ferienregelung); ein eigener Eintrag für ein Programmjahr gilt vor dem
+  Programm. Zwei Jahre vor dem letzten bekannten Jahr warnt _System →
+  Betriebsbereitschaft_ („Ferientabelle") und zeigt auf diese Einstellung. Darunter die
+  **freien Tage**: Wochenenden und
   die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Plan von selbst;
   bewegliche Ferientage, pädagogische Tage und Brückentage trägt man mit Datum und Grund
   ein — Chip _Tag freihalten_ in der Spalte _Freie Tage_ neben den drei Feldern, dann

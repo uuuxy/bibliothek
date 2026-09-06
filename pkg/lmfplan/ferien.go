@@ -10,8 +10,11 @@ import "time"
 // sollte, gibt es nicht; die KMK beschließt in Blöcken von sechs Jahren. Läuft die
 // Tabelle aus, sagt es der Planer (ok=false); zwei Jahre vorher warnen die Selbstprüfung
 // unter System → Betriebsbereitschaft (Peter, 06.09.2026: „also bekommen wir eine
-// Warnung, die Termine nachzutragen?") und TestSommerferienHessen_Horizont — das ist
-// die Erinnerung, den nächsten Beschluss nachzutragen. Fest auf Hessen wie die Feiertage (feiertage.go).
+// Warnung, die Termine nachzutragen?") und TestSommerferienHessen_Horizont. Seit dem
+// 06.09.2026 abends trägt die Schule spätere Jahre SELBST ein (Einstellung
+// „sommerferien", ferien_einstellung.go) — diese Tabelle ist die Vorbelegung, der
+// Horizont-Test die Erinnerung, den nächsten Beschluss auch hier nachzutragen, damit
+// eine frische Installation ihn hat. Fest auf Hessen wie die Feiertage (feiertage.go).
 var sommerferienHessen = map[int]Zeitraum{
 	2025: ferien("2025-07-07", "2025-08-15"),
 	2026: ferien("2026-06-29", "2026-08-07"),
@@ -35,32 +38,64 @@ func ferien(von, bis string) Zeitraum {
 	return Zeitraum{Von: v, Bis: b, Name: "Sommerferien"}
 }
 
-// LetztesFerienjahr ist das letzte Jahr, für das Sommerferien hinterlegt sind — die
+// Ferientabelle sind die Sommerferien, an denen sich die Pläne ausrichten: die
+// Programmtabelle oben plus das, was die Schule selbst eingetragen hat (Einstellung
+// „sommerferien", ferien_einstellung.go). Ein eigener Eintrag gewinnt über die
+// Programmtabelle für dasselbe Jahr. Peter, 06.09.2026: „Es muss doch dann irgendwo
+// eingestellt werden" — eine Warnung, die nur ein Entwickler beheben kann, ist für
+// den Betreiber keine Abhilfe.
+type Ferientabelle struct {
+	jahre map[int]Zeitraum
+}
+
+// Hessen ist die Programmtabelle allein — der Rückfall, wenn nichts eingestellt ist.
+func Hessen() Ferientabelle {
+	return Ferientabelle{jahre: sommerferienHessen}
+}
+
+// Mit ergänzt die Tabelle um eigene Einträge (gleiches Jahr: der eigene gilt).
+func (t Ferientabelle) Mit(eintraege []SommerferienEintrag) Ferientabelle {
+	if len(eintraege) == 0 {
+		return t
+	}
+	jahre := make(map[int]Zeitraum, len(t.jahre)+len(eintraege))
+	for j, z := range t.jahre {
+		jahre[j] = z
+	}
+	for _, e := range eintraege {
+		if z, ok := e.zeitraum(); ok {
+			jahre[e.Jahr] = z
+		}
+	}
+	return Ferientabelle{jahre: jahre}
+}
+
+// LetztesJahr ist das letzte Jahr, für das Sommerferien bekannt sind — die
 // Selbstprüfung (System → Betriebsbereitschaft) warnt zwei Jahre vor dem Ende.
-func LetztesFerienjahr() int {
+func (t Ferientabelle) LetztesJahr() int {
 	letztes := 0
-	for jahr := range sommerferienHessen {
+	for jahr := range t.jahre {
 		letztes = max(letztes, jahr)
 	}
 	return letztes
 }
 
-// SommerferienHessen nennt die Sommerferien eines Jahres (Kalendertage in UTC, Name
-// „Sommerferien"); ok=false, wenn das Jahr nicht hinterlegt ist.
-func SommerferienHessen(jahr int) (Zeitraum, bool) {
-	z, ok := sommerferienHessen[jahr]
+// Sommerferien nennt die Sommerferien eines Jahres (Kalendertage in UTC, Name
+// „Sommerferien"); ok=false, wenn das Jahr nicht bekannt ist.
+func (t Ferientabelle) Sommerferien(jahr int) (Zeitraum, bool) {
+	z, ok := t.jahre[jahr]
 	return z, ok
 }
 
-// NaechsteSommerferien nennt die Sommerferien, an denen sich der nächste Plan
-// ausrichtet, gesehen von heute: bevorstehend=true die nächsten, die noch nicht
-// begonnen haben (vor ihnen liegt der Büchertausch); sonst die nächsten, die noch nicht
-// vorbei sind (nach ihnen liegt die Bücherausgabe). Das Jahr kommt immer zurück, auch
-// wenn es nicht hinterlegt ist (ok=false) — der Planer nennt es dann im Hinweis.
-func NaechsteSommerferien(heute time.Time, bevorstehend bool) (Zeitraum, int, bool) {
+// Naechste nennt die Sommerferien, an denen sich der nächste Plan ausrichtet, gesehen
+// von heute: bevorstehend=true die nächsten, die noch nicht begonnen haben (vor ihnen
+// liegt der Büchertausch); sonst die nächsten, die noch nicht vorbei sind (nach ihnen
+// liegt die Bücherausgabe). Das Jahr kommt immer zurück, auch wenn es nicht bekannt
+// ist (ok=false) — der Planer nennt es dann im Hinweis.
+func (t Ferientabelle) Naechste(heute time.Time, bevorstehend bool) (Zeitraum, int, bool) {
 	tag := kalendertag(heute)
 	jahr := tag.Year()
-	z, ok := SommerferienHessen(jahr)
+	z, ok := t.Sommerferien(jahr)
 	if !ok {
 		return Zeitraum{}, jahr, false
 	}
@@ -68,7 +103,7 @@ func NaechsteSommerferien(heute time.Time, bevorstehend bool) (Zeitraum, int, bo
 	if !vorbei {
 		return z, jahr, true
 	}
-	z, ok = SommerferienHessen(jahr + 1)
+	z, ok = t.Sommerferien(jahr + 1)
 	return z, jahr + 1, ok
 }
 

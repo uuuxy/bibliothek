@@ -3,6 +3,8 @@ package repository
 import (
 	"strconv"
 	"strings"
+
+	"bibliothek/pkg/lmfplan"
 )
 
 // EinstellungenPatch ist das, was ein Speichern-Klick schickt: NUR die Felder der
@@ -27,11 +29,14 @@ type EinstellungenPatch struct {
 	FerienLeseclubZieldatum *string `json:"ferien_leseclub_zieldatum,omitempty"`
 	LmfStichtag             *string `json:"lmf_stichtag,omitempty"`
 	LmfEingangsjahrgaenge   *string `json:"lmf_eingangsjahrgaenge,omitempty"`
-	MaxAusleihenSchueler    *int    `json:"max_ausleihen_schueler,omitempty"`
-	FristBuchTage           *int    `json:"frist_buch_tage,omitempty"`
-	FristMedienTage         *int    `json:"frist_medien_tage,omitempty"`
-	MaxOverdueDays          *int    `json:"max_overdue_days,omitempty"`
-	MaxOverdueItems         *int    `json:"max_overdue_items,omitempty"`
+	// Sommerferien: JSON-Liste eigener Jahre; der Handler bringt sie vor dem Speichern in
+	// Normalform (lmfplan.NormalisiereSommerferien) und lehnt Unlesbares mit 400 ab.
+	Sommerferien         *string `json:"sommerferien,omitempty"`
+	MaxAusleihenSchueler *int    `json:"max_ausleihen_schueler,omitempty"`
+	FristBuchTage        *int    `json:"frist_buch_tage,omitempty"`
+	FristMedienTage      *int    `json:"frist_medien_tage,omitempty"`
+	MaxOverdueDays       *int    `json:"max_overdue_days,omitempty"`
+	MaxOverdueItems      *int    `json:"max_overdue_items,omitempty"`
 
 	BestellbedarfWarnungAktiv *bool `json:"bestellbedarf_warnung_aktiv,omitempty"`
 	BestellbedarfSchwelle     *int  `json:"bestellbedarf_schwelle,omitempty"`
@@ -126,6 +131,7 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	} else {
 		s.text("lmf_eingangsjahrgaenge", p.LmfEingangsjahrgaenge)
 	}
+	s.text(lmfplan.SommerferienSchluessel, p.Sommerferien)
 	s.zahl("max_ausleihen_schueler", p.MaxAusleihenSchueler, 1, 5)
 	s.zahl("frist_buch_tage", p.FristBuchTage, 1, 21)
 	s.zahl("frist_medien_tage", p.FristMedienTage, 1, 7)

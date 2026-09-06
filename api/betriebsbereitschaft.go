@@ -123,9 +123,10 @@ type Lage struct {
 
 	// Ferientabelle (06.09.2026): Der LMF-Planer belegt den letzten Tag des
 	// Büchertauschs aus den Sommerferien Hessen vor (pkg/lmfplan/ferien.go, KMK-
-	// Beschluss in Sechsjahresblöcken). Läuft die Tabelle aus, steht der Planer ohne
-	// Vorgabe da — still. Das letzte hinterlegte Jahr, damit die Warnung hier steht,
-	// wo sie jemand liest, und nicht nur in einem roten Test.
+	// Beschluss in Sechsjahresblöcken, plus die Jahre aus der Einstellung
+	// „Sommerferien"). Läuft die Tabelle aus, steht der Planer ohne Vorgabe da — still.
+	// Das letzte bekannte Jahr, damit die Warnung hier steht, wo sie jemand liest, und
+	// die Abhilfe eine Einstellung ist, nicht ein Programm-Update.
 	FerientabelleBis int
 
 	// Restore-Probe (Schema-Erweiterung 21.08.2026): Ob das jüngste Backup
@@ -218,12 +219,12 @@ func pruefeFerientabelle(l Lage) Befund {
 	b := Befund{Bereich: "Ferientabelle"}
 	if l.Jetzt.Year()+ferientabelleVorlaufJahre > l.FerientabelleBis {
 		b.Stufe = StufeWarnung
-		b.Befund = fmt.Sprintf("Die Sommerferien Hessen sind im Programm nur bis %d hinterlegt.", l.FerientabelleBis)
+		b.Befund = fmt.Sprintf("Die Sommerferien Hessen sind nur bis %d hinterlegt.", l.FerientabelleBis)
 		b.Folge = fmt.Sprintf("Ab dem Schuljahr %d/%d belegt der LMF-Planer den letzten Tag des Büchertauschs "+
 			"und den ersten Tag der Bücherausgabe nicht mehr vor — die Termine müssen dann von Hand gesetzt werden.",
 			l.FerientabelleBis, (l.FerientabelleBis+1)%100)
 		b.Abhilfe = "Den nächsten Beschluss der Kultusministerkonferenz (kmk.org/service/ferienregelung) " +
-			"in pkg/lmfplan/ferien.go nachtragen — sechs Zeilen je Sechsjahresblock."
+			"unter Einstellungen → LUSD & Versetzung → Sommerferien eintragen, je Jahr Beginn und Ende."
 		return b
 	}
 	b.Stufe = StufeOK

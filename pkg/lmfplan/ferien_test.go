@@ -16,7 +16,7 @@ func TestSommerferienHessen_DonnerstagVor(t *testing.T) {
 		2029: {"2029-07-16", "2029-07-12"},
 		2030: {"2030-07-22", "2030-07-18"},
 	} {
-		z, ok := SommerferienHessen(jahr)
+		z, ok := Hessen().Sommerferien(jahr)
 		if !ok {
 			t.Fatalf("%d fehlt", jahr)
 		}
@@ -30,7 +30,7 @@ func TestSommerferienHessen_DonnerstagVor(t *testing.T) {
 			t.Errorf("%d: kein Donnerstag", jahr)
 		}
 	}
-	if _, ok := SommerferienHessen(1999); ok {
+	if _, ok := Hessen().Sommerferien(1999); ok {
 		t.Error("1999 darf nicht hinterlegt sein")
 	}
 	// Ein Donnerstag als Ferienbeginn: der Donnerstag DAVOR, nicht er selbst.
@@ -42,7 +42,7 @@ func TestSommerferienHessen_DonnerstagVor(t *testing.T) {
 // Ferienende Freitag 06.08.2027 → erster Schultag Montag 09.08.2027 (der Tag, den die
 // E2E-Probe des Planers seit dem 05.09.2026 von Hand tippte).
 func TestErsterSchultagNach(t *testing.T) {
-	z, _ := SommerferienHessen(2027)
+	z, _ := Hessen().Sommerferien(2027)
 	if e := ErsterSchultagNach(z); !e.Equal(tag("2027-08-09")) {
 		t.Errorf("erster Schultag nach den Ferien 2027: %s", e.Format("2006-01-02"))
 	}
@@ -80,7 +80,7 @@ func TestNaechsteSommerferien(t *testing.T) {
 			t.Fatal(err)
 		}
 		heute = heute.Add(23 * time.Hour) // spät am Abend in Berlin: der Kalendertag bleibt
-		z, jahr, ok := NaechsteSommerferien(heute, f.bevorstehend)
+		z, jahr, ok := Hessen().Naechste(heute, f.bevorstehend)
 		if jahr != f.jahr || ok != f.ok {
 			t.Errorf("heute %s bevorstehend=%v: Jahr %d ok=%v, erwartet %d/%v", f.heute, f.bevorstehend, jahr, ok, f.jahr, f.ok)
 		}
@@ -96,7 +96,7 @@ func TestNaechsteSommerferien(t *testing.T) {
 // kmk.org/service/ferienregelung nachlesen, sommerferienHessen ergänzen, Zahlen oben
 // prüfen. Bewusst zeitabhängig — ein Wächter, der nie schlägt, wäre keiner.
 func TestSommerferienHessen_Horizont(t *testing.T) {
-	if letztes := LetztesFerienjahr(); time.Now().Year()+2 > letztes {
+	if letztes := Hessen().LetztesJahr(); time.Now().Year()+2 > letztes {
 		t.Errorf("Sommerferien Hessen sind nur bis %d hinterlegt — KMK-Beschluss nachtragen (pkg/lmfplan/ferien.go)", letztes)
 	}
 }

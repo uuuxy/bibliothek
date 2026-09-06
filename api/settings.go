@@ -8,6 +8,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 )
 
@@ -61,6 +62,15 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 		if req.IstLeer() {
 			return apierrors.BadRequest("Es wurde keine einzige Einstellung mitgeschickt.",
 				errors.New("leerer Einstellungs-Patch"))
+		}
+		// Die Sommerferien tragen jede Frist des LMF-Plans: geprüft und in Normalform,
+		// oder gar nicht gespeichert (pkg/lmfplan/ferien_einstellung.go).
+		if req.Sommerferien != nil {
+			norm, err := lmfplan.NormalisiereSommerferien(*req.Sommerferien)
+			if err != nil {
+				return apierrors.BadRequest(err.Error(), err)
+			}
+			req.Sommerferien = &norm
 		}
 
 		ctx := r.Context()

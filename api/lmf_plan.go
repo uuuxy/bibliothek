@@ -91,10 +91,13 @@ func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
 			return apierrors.BadRequest(err.Error(), err)
 		}
 		repo := repository.NewLmfTerminRepository(s.DB.Pool)
-		eingang, err := s.lmfEingangsjahrgaenge(r.Context())
+		einstellungen, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(r.Context())
 		if err != nil {
 			return apierrors.Internal("Einstellungen laden", err)
 		}
+		eingang := repository.EingangsjahrgaengeAus(einstellungen.LmfEingangsjahrgaenge)
+		// Programmtabelle plus die Jahre, die die Schule selbst eingetragen hat.
+		ferientabelle := lmfplan.FerientabelleAus(einstellungen.Sommerferien)
 		antwort := LmfPlanStandAntwort{Zeilen: []repository.LmfPlanZeile{}, Ausgelassen: []string{}, Eingangsjahrgaenge: eingang}
 		stand, err := repo.NeuesterLmfPlan(r.Context(), art)
 		switch {
@@ -119,7 +122,7 @@ func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
 		}
 		laufend := antwort.Plan != nil && !antwort.Vorbei
 		var ferien lmfplan.Zeitraum
-		antwort.Sommerferien, ferien = lmfPlanSommerferien(art, antwort.Plan, laufend, s.jetzt())
+		antwort.Sommerferien, ferien = lmfPlanSommerferien(art, antwort.Plan, laufend, s.jetzt(), ferientabelle)
 		if !laufend {
 			antwort.Vorschlag = lmfPlanVorschlag(art, eingang, antwort.Plan != nil, stand, klassen)
 			antwort.Vorschlag.Rahmen = lmfPlanRahmenVorgabe(art, antwort.Sommerferien, ferien)

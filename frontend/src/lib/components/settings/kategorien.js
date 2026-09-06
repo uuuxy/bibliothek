@@ -109,10 +109,11 @@ export const KATEGORIEN = [
 		// „dringend umbenennen"). Die id bleibt, die Route /einstellungen kennt sie.
 		id: 'schuljahr',
 		titel: 'LUSD & Versetzung',
-		kurz: 'LUSD-Abgleich, Versetzung',
+		kurz: 'LUSD-Abgleich, Versetzung, Sommerferien',
 		icon: GraduationCap,
-		// LUSD → import_students, Versetzung → manage_students_admin; eines genügt.
-		rechte: ['import_students', 'manage_students_admin']
+		// LUSD → import_students, Versetzung → manage_students_admin, Sommerferien →
+		// manage_settings; eines genügt.
+		rechte: ['import_students', 'manage_students_admin', 'manage_settings']
 	},
 	{
 		id: 'betrieb',

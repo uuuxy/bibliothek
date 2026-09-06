@@ -28,8 +28,9 @@ type LmfPlanSommerferien struct {
 	Jahr int    `json:"jahr"`
 	Von  string `json:"von"` // YYYY-MM-DD, leer wenn nicht bekannt
 	Bis  string `json:"bis"`
-	// Bekannt: false, wenn das Jahr nicht in pkg/lmfplan hinterlegt ist — der Planer
-	// nennt dann das Jahr und bittet um den letzten bzw. ersten Tag von Hand.
+	// Bekannt: false, wenn das Jahr weder im Programm noch in der Einstellung
+	// „Sommerferien" steht — der Planer nennt dann das Jahr und bittet um den letzten
+	// bzw. ersten Tag von Hand.
 	Bekannt bool `json:"bekannt"`
 }
 
@@ -47,7 +48,7 @@ type LmfPlanRahmenVorgabe struct {
 // lmfPlanSommerferien nennt die Ferien zum Plan: Für einen laufenden Plan die, an denen
 // er hängt (Rückgabe: die nächsten nach seinem Ende; Ausgabe: die seines Schuljahres),
 // sonst die nächsten von heute aus — vor denen der Tausch, nach denen die Ausgabe liegt.
-func lmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jetzt time.Time) (LmfPlanSommerferien, lmfplan.Zeitraum) {
+func lmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jetzt time.Time, tab lmfplan.Ferientabelle) (LmfPlanSommerferien, lmfplan.Zeitraum) {
 	rueckgabe := art == repository.LmfTerminRueckgabe
 	var z lmfplan.Zeitraum
 	var jahr int
@@ -58,16 +59,16 @@ func lmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jet
 		if err != nil {
 			anker = jetzt
 		}
-		z, jahr, ok = lmfplan.NaechsteSommerferien(anker, true)
+		z, jahr, ok = tab.Naechste(anker, true)
 	case laufend:
 		beginn, err := planTag(plan.ErsterTag)
 		if err != nil {
 			beginn = jetzt
 		}
 		jahr = repository.SchuljahrBeginn(beginn).Year()
-		z, ok = lmfplan.SommerferienHessen(jahr)
+		z, ok = tab.Sommerferien(jahr)
 	default:
-		z, jahr, ok = lmfplan.NaechsteSommerferien(jetzt, rueckgabe)
+		z, jahr, ok = tab.Naechste(jetzt, rueckgabe)
 	}
 	f := LmfPlanSommerferien{Jahr: jahr, Bekannt: ok}
 	if ok {

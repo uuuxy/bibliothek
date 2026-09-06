@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bibliothek/db"
+	"bibliothek/pkg/lmfplan"
 	"context"
 	"strconv"
 )
@@ -14,11 +15,16 @@ type SystemEinstellungen struct {
 	// LmfEingangsjahrgaenge: die Jahrgänge, die nach den Sommerferien ihre Bücher
 	// bekommen, weil ihre Klassen neu gebildet werden („5, 7"; EingangsjahrgaengeAus).
 	LmfEingangsjahrgaenge string `json:"lmf_eingangsjahrgaenge"`
-	MaxAusleihenSchueler  int    `json:"max_ausleihen_schueler"`
-	FristBuchTage         int    `json:"frist_buch_tage"`
-	FristMedienTage       int    `json:"frist_medien_tage"`
-	MaxOverdueDays        int    `json:"max_overdue_days"`
-	MaxOverdueItems       int    `json:"max_overdue_items"`
+	// Sommerferien: eigene Jahre der Schule als JSON-Liste (pkg/lmfplan/ferien_einstellung.go),
+	// Verlängerung der Programmtabelle; leer = nur die Programmtabelle. SommerferienProgramm
+	// ist die Programmtabelle selbst (nur gelesen, damit die Oberfläche zeigt, was schon da ist).
+	Sommerferien         string                        `json:"sommerferien"`
+	SommerferienProgramm []lmfplan.SommerferienEintrag `json:"sommerferien_programm"`
+	MaxAusleihenSchueler int                           `json:"max_ausleihen_schueler"`
+	FristBuchTage        int                           `json:"frist_buch_tage"`
+	FristMedienTage      int                           `json:"frist_medien_tage"`
+	MaxOverdueDays       int                           `json:"max_overdue_days"`
+	MaxOverdueItems      int                           `json:"max_overdue_items"`
 	// Bestellbedarf: ob überhaupt gewarnt wird und ab welcher Exemplarzahl ein
 	// (LMF-)Titel als Bestellbedarf gilt (gesamt < Schwelle). Löst den früheren
 	// pauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.
@@ -99,6 +105,7 @@ func standardEinstellungen() *SystemEinstellungen {
 	s := &SystemEinstellungen{
 		LmfStichtag:           "07-31",
 		LmfEingangsjahrgaenge: LmfEingangsjahrgaengeVorgabe,
+		SommerferienProgramm:  lmfplan.ProgrammEintraege(),
 		MaxAusleihenSchueler:  5,
 		FristBuchTage:         21,
 		FristMedienTage:       7,
@@ -155,6 +162,8 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeStringNichtLeer(val, &settings.LmfStichtag)
 	case "lmf_eingangsjahrgaenge":
 		setzeStringNichtLeer(val, &settings.LmfEingangsjahrgaenge)
+	case lmfplan.SommerferienSchluessel:
+		setzeStringRoh(val, &settings.Sommerferien)
 	case "max_ausleihen_schueler":
 		setzeIntEinstellung(val, &settings.MaxAusleihenSchueler)
 	case "frist_buch_tage":

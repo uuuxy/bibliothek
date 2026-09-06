@@ -130,7 +130,13 @@ func (s *Server) sammleLage(
 	}
 	lage.LetztesBackup = newestBackupTime(backupDir)
 	lage.Jetzt = time.Now()
-	lage.FerientabelleBis = lmfplan.LetztesFerienjahr()
+	// Programmtabelle plus die eingestellten Jahre (Einstellungen → LUSD & Versetzung);
+	// ein Lesefehler zählt wie „nichts eingestellt".
+	sommerferien, err := zustandRepo.LadeEinstellungswert(ctx, lmfplan.SommerferienSchluessel)
+	if err != nil {
+		sommerferien = ""
+	}
+	lage.FerientabelleBis = lmfplan.FerientabelleAus(sommerferien).LetztesJahr()
 
 	// Ergebnis der wöchentlichen Restore-Probe. Unlesbar oder nie gelaufen → nil,
 	// die Prüfung meldet dann „noch kein Probelauf" statt eines falschen Urteils.

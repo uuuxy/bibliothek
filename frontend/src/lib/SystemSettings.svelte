@@ -181,7 +181,7 @@
 							titel="LUSD & Versetzung"
 							kurz="LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres."
 						>
-							<SchuljahreswechselBereich />
+							<SchuljahreswechselBereich {daten} onSaved={loadSettings} />
 						</KategorieRahmen>
 					{:else if aktiv === 'betrieb'}
 						<KategorieRahmen
