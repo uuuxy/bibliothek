@@ -150,6 +150,12 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   Fristen der Klassen, und jede weitere Speicherung gilt sofort (die Korrektur-Mail von
   früher). Einen zweiten Entwurf neben dem veröffentlichten Plan gibt es nicht — der Plan
   des nächsten Schuljahres ist ein neuer Plan und beginnt wieder als Entwurf.
+- **Das PDF ist immer EIN Blatt** (seit 06.09.2026). Ein voller Plan bricht nicht mehr auf
+  eine zweite Seite um: Bis rund vierzig Terminen sieht das Blatt aus wie das gewohnte
+  Excel; darüber rückt der Satz enger zusammen und stellt ab etwa sechzig Terminen
+  Rückgabe und Ausgabe nebeneinander in zwei Spalten (dort steht der Wochentag abgekürzt).
+  Reicht eine Spalte für einen Abschnitt nicht, geht er mit „(Fortsetzung)" und eigenem
+  Tabellenkopf daneben weiter. Es wird nie etwas weggelassen.
 - **Zeitraum** (seit 06.09.2026 je Art verschieden): Der **Büchertausch endet am
   Donnerstag vor den Sommerferien in der 4. Stunde** — _Letzter Tag_ und _Ende am letzten
   Tag_ sind aus der Ferientabelle Hessen (KMK-Beschluss, bis 2030 hinterlegt) vorbelegt,

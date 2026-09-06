@@ -16,6 +16,7 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/minio/minio-go/v7 v7.3.0
 	github.com/pashagolub/pgxmock/v4 v4.9.0
+	github.com/phpdave11/gofpdf v1.4.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/stretchr/testify v1.12.1
 	github.com/swaggo/http-swagger v1.3.4
@@ -60,7 +61,6 @@ require (
 	github.com/minio/md5-simd v1.1.2 // indirect
 	github.com/pdfcpu/pdfcpu v0.11.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
-	github.com/phpdave11/gofpdf v1.4.3 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/richardlehane/mscfb v1.0.7 // indirect
 	github.com/richardlehane/msoleps v1.0.6 // indirect

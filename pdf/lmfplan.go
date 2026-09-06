@@ -30,62 +30,49 @@ type LmfPlanAbschnitt struct {
 	Zeilen     []LmfPlanZeile
 }
 
+// lmfSortierhinweis steht über jeder Tabelle — die Zeilen stehen in der Reihenfolge, in
+// der die Termine stattfinden, nicht in der des Planers.
+const lmfSortierhinweis = "Sortiert nach Zeitpunkt/Termin"
+
 var wochentage = [...]string{"Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"}
 
 // Wochentag liefert den deutschen Namen — für PDF und Tests dieselbe Tabelle.
 func Wochentag(t time.Time) string { return wochentage[t.Weekday()] }
 
+// WochentagKurz ist die zweibuchstabige Abkürzung („Do."). Sie steht nur im zweispaltigen
+// Satz: dort ist für den ausgeschriebenen Tag kein Platz.
+func WochentagKurz(t time.Time) string {
+	name := Wochentag(t)
+	return string([]rune(name)[:2]) + "."
+}
+
 // GenerateLmfPlan baut den Plan in der Form der bisherigen Excel-Tabelle der Schule:
 // Kopf „LMF-PLAN", je Abschnitt eine Überschrift und die Tabelle, sortiert nach
 // Zeitpunkt. Ein Abschnitt ohne Zeilen wird ausgelassen.
+//
+// Das Ergebnis ist EIN Blatt — auch bei einem vollen Plan. Wie das erreicht wird (und
+// warum feste Zeilenhöhen es nicht konnten), steht in lmfplan_satz.go.
 func GenerateLmfPlan(abschnitte []LmfPlanAbschnitt, stand time.Time) ([]byte, error) {
+	satz := lmfSatzWaehlen(abschnitte)
+	breite := lmfGrid * satz.modus.spalten
 	cfg := config.NewBuilder().
 		WithPageSize("A4").
-		WithLeftMargin(20).
-		WithTopMargin(15).
-		WithRightMargin(20).
+		WithLeftMargin(satz.modus.rand).
+		WithRightMargin(satz.modus.rand).
+		WithTopMargin(lmfRandOben).
+		WithBottomMargin(lmfRandUnten).
+		WithMaxGridSize(breite).
 		Build()
 	m := maroto.New(cfg)
 	p := page.New()
 
-	p.Add(row.New(10).Add(col.New(12).Add(
-		text.New("LMF-PLAN", props.Text{Size: 11, Style: fontstyle.Bold, Align: align.Center}))))
-
-	klein := props.Text{Size: 9}
-	kopf := props.Text{Size: 9, Style: fontstyle.Bold}
-	for _, a := range abschnitte {
-		if len(a.Zeilen) == 0 {
-			continue
-		}
-		p.Add(row.New(8).Add(col.New(12).Add(
-			text.New(a.Titel, props.Text{Size: 13, Style: fontstyle.Bold, Align: align.Center}))))
-		if a.Untertitel != "" {
-			p.Add(row.New(6).Add(col.New(12).Add(
-				text.New(a.Untertitel, props.Text{Size: 8, Style: fontstyle.Italic, Align: align.Center}))))
-		}
-		p.Add(row.New(6).Add(col.New(12).Add(
-			text.New("Sortiert nach Zeitpunkt/Termin", props.Text{Size: 9, Style: fontstyle.Bold, Align: align.Center}))))
-		p.Add(row.New(6).Add(
-			col.New(2).Add(text.New("Wochentag", kopf)),
-			col.New(2).Add(text.New("Datum", kopf)),
-			col.New(1).Add(text.New("Stunde", kopf)),
-			col.New(3).Add(text.New("Klassen", kopf)),
-			col.New(4).Add(text.New("Besonderheiten", kopf)),
-		))
-		for _, z := range a.Zeilen {
-			p.Add(row.New(5).Add(
-				col.New(2).Add(text.New(Wochentag(z.Datum), klein)),
-				col.New(2).Add(text.New(z.Datum.Format(dateFormatDE), klein)),
-				col.New(1).Add(text.New(stundeText(z.Stunde), klein)),
-				col.New(3).Add(text.New(z.Klassen, props.Text{Size: 9, Style: fontstyle.Bold})),
-				col.New(4).Add(text.New(z.Vermerk, klein)),
-			))
-		}
-		p.Add(row.New(6).Add(col.New(12)))
+	p.Add(row.New(satz.masse.kopfHoehe()).Add(col.New(breite).Add(
+		text.New("LMF-PLAN", props.Text{Size: satz.masse.dok, Style: fontstyle.Bold, Align: align.Center}))))
+	for _, r := range satz.reihen() {
+		p.Add(r)
 	}
-
-	p.Add(row.New(6).Add(col.New(12).Add(
-		text.New("Stand: "+stand.Format(dateFormatDE), props.Text{Size: 8, Style: fontstyle.Italic, Align: align.Right}))))
+	p.Add(row.New(satz.masse.fussHoehe()).Add(col.New(breite).Add(
+		text.New("Stand: "+stand.Format(dateFormatDE), props.Text{Size: satz.masse.fuss, Style: fontstyle.Italic, Align: align.Right}))))
 
 	m.AddPages(p)
 	doc, err := m.Generate()
