@@ -84,32 +84,39 @@
 	<h2 id="lmf-reihenfolge-titel" class="text-title-medium font-medium text-on-surface">
 		Reihenfolge
 	</h2>
-	<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-reihenfolge-hinweis">
-		{#if bereit}
-			Zeilen ziehen oder mit den Pfeilen schieben; Wochentag, Datum und Stunde rechnet der Plan.
-		{:else}
-			Ersten Tag wählen — dann rechnet der Plan Wochentag, Datum und Stunde jeder Zeile.
-		{/if}
-		{#if ohneSchueler.length > 0}
-			<span data-testid="lmf-ohne-schueler">
-				{ohneSchueler.length === 1 ? 'Eine Klasse' : `${ohneSchueler.length} Klassen`} im Plan
-				{ohneSchueler.length === 1 ? 'hat' : 'haben'} noch keine Schüler ({ohneSchueler.join(', ')})
-				— sie kommen mit dem LUSD-Import oder gehören aus dem Plan.
-			</span>
-		{/if}
-	</p>
+	<!-- Kein Bedienungssatz mehr (06.09.2026, Peter: Erklärungstexte kosten Zeilen).
+	     Der Satz erscheint nur, wenn er etwas zu sagen hat: der fehlende erste Tag oder
+	     Klassen ohne Schüler. -->
+	{#if !bereit || ohneSchueler.length > 0}
+		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-reihenfolge-hinweis">
+			{#if !bereit}
+				Ersten Tag wählen — dann rechnet der Plan Wochentag, Datum und Stunde jeder Zeile.
+			{/if}
+			{#if ohneSchueler.length > 0}
+				<span data-testid="lmf-ohne-schueler">
+					{ohneSchueler.length === 1 ? 'Eine Klasse' : `${ohneSchueler.length} Klassen`} im Plan
+					{ohneSchueler.length === 1 ? 'hat' : 'haben'} noch keine Schüler ({ohneSchueler.join(
+						', '
+					)}) — sie kommen mit dem LUSD-Import oder gehören aus dem Plan.
+				</span>
+			{/if}
+		</p>
+	{/if}
 	<LmfPlanVorrat klassen={ausgelassen} {draussen} {marker} onhinein={(k) => onhinein(k)} />
 	<div class="mt-4 overflow-x-auto" ondragleave={() => (ziel = null)} role="presentation">
 		<table class="w-full border-collapse text-left text-sm" data-testid="lmf-reihenfolge">
 			<thead>
+				<!-- Spaltenbreiten (06.09.2026): Die gerechneten Spalten und die Aktionen sind so
+				     schmal wie ihr Inhalt, Klassen bekommen festen Platz für zwei Chips, und die
+				     Besonderheiten füllen den Rest — vorher lagen 300 px Leere rechts vom Feld. -->
 				<tr class="border-b border-outline-variant text-on-surface-variant">
 					<th class="w-10 px-2 py-2 text-right font-medium">#</th>
-					<th class="px-4 py-2 font-medium">Wochentag</th>
-					<th class="px-4 py-2 font-medium">Datum</th>
-					<th class="px-4 py-2 font-medium">Stunde</th>
-					<th class="px-4 py-2 font-medium">Klassen</th>
+					<th class="w-px px-4 py-2 font-medium whitespace-nowrap">Wochentag</th>
+					<th class="w-px px-4 py-2 font-medium whitespace-nowrap">Datum</th>
+					<th class="w-px px-4 py-2 font-medium whitespace-nowrap">Stunde</th>
+					<th class="w-48 px-4 py-2 font-medium">Klassen</th>
 					<th class="px-4 py-2 font-medium">Besonderheiten</th>
-					<th class="px-4 py-2 text-right font-medium">Aktionen</th>
+					<th class="w-px px-4 py-2 text-right font-medium whitespace-nowrap">Aktionen</th>
 				</tr>
 			</thead>
 			<tbody>

@@ -94,9 +94,15 @@
 			/>
 		</td>
 	{:else}
-		<td class="px-4 py-1 text-on-surface-variant">{platz ? wochentag(platz.datum) : ''}</td>
-		<td class="px-4 py-1 tabular-nums text-on-surface">{platz ? datumKurz(platz.datum) : ''}</td>
-		<td class="px-4 py-1 text-on-surface-variant">{platz ? stundeText(platz.stunde) : ''}</td>
+		<td class="px-4 py-1 whitespace-nowrap text-on-surface-variant"
+			>{platz ? wochentag(platz.datum) : ''}</td
+		>
+		<td class="px-4 py-1 tabular-nums whitespace-nowrap text-on-surface"
+			>{platz ? datumKurz(platz.datum) : ''}</td
+		>
+		<td class="px-4 py-1 whitespace-nowrap text-on-surface-variant"
+			>{platz ? stundeText(platz.stunde) : ''}</td
+		>
 	{/if}
 	<td class="px-4 py-1">
 		{#if zeile.klassen.length === 1}
@@ -125,6 +131,7 @@
 			bind:value={zeile.vermerk}
 			placeholder={zeile.klassen.length === 0 ? 'Pflicht ohne Klasse' : ''}
 			ungueltig={zeile.klassen.length === 0 && !zeile.vermerk.trim()}
+			feld="w-full"
 		/>
 	</td>
 	<td class="px-4 py-1 text-right whitespace-nowrap">
