@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
+
 	"bibliothek/internal/pgtest"
 	"bibliothek/pkg/lmf"
 
@@ -90,4 +92,22 @@ func exemplar(t *testing.T, pool *pgxpool.Pool, titelID, barcode string, ausleih
 		t.Fatalf("Exemplar %q anlegen: %v", barcode, err)
 	}
 	return id
+}
+
+// inTx führt f in einer eigenen Transaktion aus und committet — für Testschreiber, die
+// wie LogAusleihe seit dem 07.09.2026 eine Transaktion des Aufrufers verlangen.
+func inTx(t *testing.T, pool *pgxpool.Pool, f func(tx pgx.Tx) error) {
+	t.Helper()
+	ctx := context.Background()
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	if err := f(tx); err != nil {
+		_ = tx.Rollback(ctx) //nolint:errcheck
+		t.Fatalf("in Transaktion: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
 }

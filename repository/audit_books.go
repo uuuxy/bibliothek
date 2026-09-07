@@ -254,23 +254,18 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 }
 
 // LogAusleihe schreibt einen neuen Ausleiheintrag (CHECKOUT) in das Audit-Log.
-func (r *pgAuditRepository) LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
-	return r.logLoanEvent(ctx, "ausleihen", "CHECKOUT", exemplarID, schuelerID, benutzerID, bearbeiterID)
+func (r *pgAuditRepository) LogAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+	return r.logLoanEvent(ctx, tx, "ausleihen", "CHECKOUT", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
 // LogRueckgabe schreibt einen neuen Rückgabeeintrag (RETURN) in das Audit-Log.
-func (r *pgAuditRepository) LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
-	return r.logLoanEvent(ctx, "ausleihen", "RETURN", exemplarID, schuelerID, benutzerID, bearbeiterID)
+func (r *pgAuditRepository) LogRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+	return r.logLoanEvent(ctx, tx, "ausleihen", "RETURN", exemplarID, schuelerID, benutzerID, bearbeiterID)
 }
 
-// logLoanEvent ist die interne Hilfsfunktion zur Erstellung von Transaktionsprotokollen für Ausleihen und Rückgaben.
-func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, exemplarID, schuelerID, benutzerID, bearbeiterID string) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer db.SafeRollback(ctx, tx)
-
+// logLoanEvent schreibt den Ausleih-/Rückgabe-Eintrag in die ÜBERGEBENE Transaktion —
+// keine eigene: Eintrag und Buchung stehen oder fallen zusammen.
+func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tx pgx.Tx, tabelle, aktion, exemplarID, schuelerID, benutzerID, bearbeiterID string) error {
 	var bearbeiterPtr *string
 	if bearbeiterID != "" {
 		bearbeiterPtr = &bearbeiterID
@@ -287,13 +282,9 @@ func (r *pgAuditRepository) logLoanEvent(ctx context.Context, tabelle, aktion, e
 		details["benutzer_id"] = benutzerID
 	}
 
-	if err = r.insertAuditLog(ctx, tx, auditEntry{
+	return r.insertAuditLog(ctx, tx, auditEntry{
 		Tabelle: tabelle, Aktion: aktion, DatensatzID: exemplarID,
 		BearbeiterID: bearbeiterPtr, Akteur: "USER",
 		Details: details,
-	}); err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
+	})
 }

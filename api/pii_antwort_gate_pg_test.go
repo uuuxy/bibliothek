@@ -51,6 +51,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -197,10 +199,10 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 
 	// Audit-Spur über den ECHTEN Schreiber: /api/audit darf sie nicht ausbreiten,
 	// die Tresen-Auskunft muss sie (Stufe 2) zeigen.
-	if err := repository.NewAuditRepository(pool).
-		LogAusleihe(ctx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID); err != nil {
-		t.Fatalf("Audit-Spur schreiben: %v", err)
-	}
+	inTx(t, pool, func(tx pgx.Tx) error {
+		return repository.NewAuditRepository(pool).
+			LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.mitarbeiterID)
+	})
 
 	t.Cleanup(func() {
 		aufraeumen(t, pool, `DELETE FROM audit_logs WHERE aktion = 'TRESEN_AUSKUNFT' AND details->>'barcode' = $1`, w.buchBarcode)

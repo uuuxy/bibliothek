@@ -105,11 +105,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WithArgs(copy.TitelID, studentID).
 		WillReturnError(pgx.ErrNoRows)
 
-	// Mock Commit
-	mock.ExpectCommit()
-
-	// Audit Log (runs in its own transaction inside logLoanEvent)
-	mock.ExpectBegin()
+	// Audit-Zeile in DERSELBEN Transaktion, vor dem Commit (seit 07.09.2026).
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -181,10 +177,7 @@ func TestHandleBookReturn(t *testing.T) {
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
 
-	mock.ExpectCommit()
-
-	// Audit Log (runs in its own transaction inside logLoanEvent)
-	mock.ExpectBegin()
+	// Audit-Zeile in DERSELBEN Transaktion, vor dem Commit (seit 07.09.2026).
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))

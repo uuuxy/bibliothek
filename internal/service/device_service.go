@@ -196,15 +196,19 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 		return nil, err
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-
 	// Revisionssicheres Audit-Log schreiben.
 	if student != nil {
-		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, student.ID, "", staffID))
+		if err := s.auditRepo.LogAusleihe(ctx, tx, g.ID, student.ID, "", staffID); err != nil {
+			return nil, err
+		}
 	} else {
-		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, g.ID, "", teacher.ID, staffID))
+		if err := s.auditRepo.LogAusleihe(ctx, tx, g.ID, "", teacher.ID, staffID); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
 	}
 
 	resp.Type = "ausleihe"
@@ -262,15 +266,19 @@ func (s *defaultDeviceService) gibGeraetZurueck(ctx context.Context, tx pgx.Tx, 
 		return nil, err
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-
 	// Revisionssicheres Audit-Log für die Rückgabe schreiben.
 	if activeLoan.SchuelerID != nil {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, g.ID, *activeLoan.SchuelerID, "", staffID))
+		if err := s.auditRepo.LogRueckgabe(ctx, tx, g.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
+			return nil, err
+		}
 	} else if activeLoan.AusleiherBenutzerID != nil {
-		logAuditErr("rückgabe", s.auditRepo.LogRueckgabe(ctx, g.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
+		if err := s.auditRepo.LogRueckgabe(ctx, tx, g.ID, "", *activeLoan.AusleiherBenutzerID, staffID); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
 	}
 
 	resp.Type = "rueckgabe"

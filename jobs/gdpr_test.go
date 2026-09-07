@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/pashagolub/pgxmock/v4"
 )
 
@@ -54,11 +56,11 @@ func (m *MockAuditRepo) BezahltGebuehr(ctx context.Context, schadensfallID strin
 	return nil
 }
 
-func (m *MockAuditRepo) LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+func (m *MockAuditRepo) LogAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
 	return nil
 }
 
-func (m *MockAuditRepo) LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
+func (m *MockAuditRepo) LogRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error {
 	return nil
 }
 

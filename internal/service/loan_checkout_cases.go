@@ -162,16 +162,20 @@ func (s *defaultLoanService) handleNewLoan(
 		entferneErfuellteVormerkung(ctx, tx, copy, chkCtx.borrowerID, resp)
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-
 	if chkCtx.borrowerType == "student" {
-		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
+		if err := s.auditRepo.LogAusleihe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+			return nil, err
+		}
 		resp.Student = chkCtx.student
 	} else {
-		logAuditErr("ausleihe", s.auditRepo.LogAusleihe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
+		if err := s.auditRepo.LogAusleihe(ctx, tx, copy.ID, "", chkCtx.borrowerID, staffID); err != nil {
+			return nil, err
+		}
 		resp.Teacher = chkCtx.teacher
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
 	}
 
 	resp.Type = "ausleihe"
@@ -201,16 +205,20 @@ func (s *defaultLoanService) handleReturn(
 		return nil, err
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
-	}
-
 	if chkCtx.borrowerType == "student" {
-		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, chkCtx.borrowerID, "", staffID))
+		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+			return nil, err
+		}
 		resp.Student = chkCtx.student
 	} else {
-		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", chkCtx.borrowerID, staffID))
+		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, "", chkCtx.borrowerID, staffID); err != nil {
+			return nil, err
+		}
 		resp.Teacher = chkCtx.teacher
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
 	}
 
 	resp.Type = "rueckgabe"
@@ -263,14 +271,18 @@ func (s *defaultLoanService) handleForeignReturn(
 		return nil, err
 	}
 
-	if err := tx.Commit(ctx); err != nil {
-		return nil, err
+	if activeLoan.SchuelerID != nil {
+		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
+			return nil, err
+		}
+	} else if activeLoan.AusleiherBenutzerID != nil {
+		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID); err != nil {
+			return nil, err
+		}
 	}
 
-	if activeLoan.SchuelerID != nil {
-		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, *activeLoan.SchuelerID, "", staffID))
-	} else if activeLoan.AusleiherBenutzerID != nil {
-		logAuditErr(actionReturn, s.auditRepo.LogRueckgabe(ctx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID))
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
 	}
 
 	resp.Type = "rueckgabe"

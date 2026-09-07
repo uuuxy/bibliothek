@@ -50,10 +50,14 @@ type AuditRepository interface {
 	// BezahltGebuehr verbucht die Zahlung einer ausstehenden Gebühr und protokolliert den Vorgang.
 	BezahltGebuehr(ctx context.Context, schadensfallID string, bearbeiterID string) error
 
-	// LogAusleihe protokolliert die erfolgreiche Ausleihe eines Exemplars an einen Schüler oder Lehrer.
-	LogAusleihe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
-	// LogRueckgabe protokolliert die Rückgabe eines Exemplars inklusive des bearbeitenden Mitarbeiters.
-	LogRueckgabe(ctx context.Context, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
+	// LogAusleihe protokolliert die Ausleihe eines Exemplars an einen Schüler oder Lehrer —
+	// IN der Transaktion der Ausleihe, vor deren Commit. Bis zum 07.09.2026 lief der
+	// Eintrag nach dem Commit in eigener Transaktion; brach die Verbindung dazwischen ab,
+	// galt die Ausleihe ohne Revisionsspur, und nur eine Logzeile sagte es (Register B).
+	// Jetzt gilt: Kann die Spur nicht geschrieben werden, gibt es die Ausleihe nicht.
+	LogAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
+	// LogRueckgabe protokolliert die Rückgabe eines Exemplars, ebenfalls in der Transaktion der Rückgabe.
+	LogRueckgabe(ctx context.Context, tx pgx.Tx, exemplarID string, schuelerID string, benutzerID string, bearbeiterID string) error
 
 	// LogSystemAktion protokolliert systemgesteuerte Batch-Prozesse (z. B. automatische Sperrungen oder Bereinigungen).
 	LogSystemAktion(ctx context.Context, tabelle string, aktion string, kontext string, details map[string]any) error

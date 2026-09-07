@@ -183,3 +183,44 @@ func TestDeleteTitle_LeseFehlerBlocktLoeschung(t *testing.T) {
 
 // ptrString: pgxmock reicht Zeiger unverändert durch; die Spalte schueler_id ist nullbar.
 func ptrString(s string) *string { return &s }
+
+// LogAusleihe/LogRueckgabe schreiben in die ÜBERGEBENE Transaktion und eröffnen keine
+// eigene (Register B, 07.09.2026): pgxmock kennt nur das eine Begin des Aufrufers — ein
+// zweites Begin oder ein Commit im Repository wäre eine unerwartete Erwartung und macht
+// den Test rot. Am alten Stand (eigene Tx mit Commit) fiel er genau so.
+func TestLogAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	defer mock.Close()
+	repo := NewAuditRepository(mock)
+	ctx := context.Background()
+
+	mock.ExpectBegin()
+	tx, err := mock.Begin(ctx)
+	if err != nil {
+		t.Fatalf("Begin: %v", err)
+	}
+	mock.ExpectExec("INSERT INTO audit_log").
+		WithArgs("ausleihen", "CHECKOUT", "ex-1", pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	mock.ExpectExec("INSERT INTO audit_log").
+		WithArgs("ausleihen", "RETURN", "ex-1", pgxmock.AnyArg(), "USER", pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+
+	if err := repo.LogAusleihe(ctx, tx, "ex-1", "s-1", "", "b-1"); err != nil {
+		t.Fatalf("LogAusleihe: %v", err)
+	}
+	if err := repo.LogRueckgabe(ctx, tx, "ex-1", "s-1", "", "b-1"); err != nil {
+		t.Fatalf("LogRueckgabe: %v", err)
+	}
+	// Der Aufrufer committet — nicht das Repository.
+	mock.ExpectCommit()
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("Erwartungen: %v", err)
+	}
+}

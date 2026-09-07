@@ -17,6 +17,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -101,12 +103,12 @@ func TestTresenAuskunftFindetGeloeschtesExemplar(t *testing.T) {
 	w := baueTresenWelt(t, pool)
 
 	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.LogAusleihe(ctx, w.exemplarID, w.schuelerID, "", w.adminID); err != nil {
-		t.Fatalf("LogAusleihe: %v", err)
-	}
-	if err := auditRepo.LogRueckgabe(ctx, w.exemplarID, w.schuelerID, "", w.adminID); err != nil {
-		t.Fatalf("LogRueckgabe: %v", err)
-	}
+	inTx(t, pool, func(tx pgx.Tx) error {
+		if err := auditRepo.LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID); err != nil {
+			return err
+		}
+		return auditRepo.LogRueckgabe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
+	})
 
 	// Verlust buchen und über den echten Löschpfad endgültig entfernen — der
 	// schreibt den Barcode-Snapshot, an dem die Auskunft hängt.
@@ -167,9 +169,9 @@ func TestTresenAuskunftZeigtGetilgtenBezug(t *testing.T) {
 	w := baueTresenWelt(t, pool)
 
 	auditRepo := repository.NewAuditRepository(pool)
-	if err := auditRepo.LogAusleihe(ctx, w.exemplarID, w.schuelerID, "", w.adminID); err != nil {
-		t.Fatalf("LogAusleihe: %v", err)
-	}
+	inTx(t, pool, func(tx pgx.Tx) error {
+		return auditRepo.LogAusleihe(ctx, tx, w.exemplarID, w.schuelerID, "", w.adminID)
+	})
 	// Die echte Tilgung (dieselbe Liste wie Purge und Cron), nicht ein nachgebautes UPDATE.
 	if err := repository.TilgeSchuelerSpuren(ctx, pool, w.schuelerID, "Testtilgung"); err != nil {
 		t.Fatalf("TilgeSchuelerSpuren: %v", err)

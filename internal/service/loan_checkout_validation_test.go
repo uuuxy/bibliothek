@@ -5,6 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/jackc/pgx/v5"
+
 	"bibliothek/repository"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -61,8 +63,12 @@ func (m *mockAuditRepo) PurgeStudent(ctx context.Context, s, b string) error    
 func (m *mockAuditRepo) PurgeAbgaenger(ctx context.Context, s, b string) error        { return nil }
 func (m *mockAuditRepo) StornierungGebuehr(ctx context.Context, s, b, g string) error { return nil }
 func (m *mockAuditRepo) BezahltGebuehr(ctx context.Context, s, b string) error        { return nil }
-func (m *mockAuditRepo) LogAusleihe(ctx context.Context, e, s, bu, b string) error    { return nil }
-func (m *mockAuditRepo) LogRueckgabe(ctx context.Context, e, s, bu, b string) error   { return nil }
+func (m *mockAuditRepo) LogAusleihe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
+	return nil
+}
+func (m *mockAuditRepo) LogRueckgabe(ctx context.Context, tx pgx.Tx, e, s, bu, b string) error {
+	return nil
+}
 func (m *mockAuditRepo) LogSystemAktion(ctx context.Context, tabelle, aktion, kontext string, details map[string]any) error {
 	return nil
 }

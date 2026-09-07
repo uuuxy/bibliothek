@@ -56,9 +56,6 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 		WithArgs("titel1", "student1").
 		WillReturnRows(pgxmock.NewRows([]string{"bereitgestellt_exemplar_id"}).AddRow(nilStr))
 
-	mock.ExpectCommit()
-
-	mock.ExpectBegin()
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("ausleihen", "CHECKOUT", uuidCopy, ptr(staffID), "USER", nilStr, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -119,9 +116,6 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow("loan1", ptr(uuidCopy), nilStr, ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
 
-	mock.ExpectCommit()
-
-	mock.ExpectBegin()
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("ausleihen", "CHECKOUT", uuidCopy, ptr(staffID), "USER", nilStr, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -230,6 +224,10 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow("loan1", ptr(uuidCopy), nilStr, ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
 
+	// Die Audit-Zeile steht seit 07.09.2026 VOR dem Commit in derselben Transaktion.
+	mock.ExpectExec("INSERT INTO audit_log").
+		WithArgs("ausleihen", "CHECKOUT", uuidCopy, ptr(staffID), "USER", nilStr, pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit().WillReturnError(errors.New("commit failed"))
 
 	result, err := svc.handleNewLoan(context.Background(), tx, copy, chkCtx, staffID, resp)
