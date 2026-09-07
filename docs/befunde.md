@@ -38,6 +38,28 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
+- **LMF-Plan: ungespeicherter Entwurf geht bei Navigation ohne Rückfrage verloren (B,
+  07.09.2026, Persistenz-Audit).** Der Planer speichert nur auf „Plan speichern"
+  (`lib/lmfplanPlaner.svelte.js:154`); `hatUngespeichertes()` schützt nur vor stillem
+  Nachladen bei Fremdänderung, nicht vor dem Klick auf einen anderen Menüpunkt oder dem
+  Tab-Schließen. Kein `beforeunload`, kein Entwurfs-Autosave — der einzige `beforeunload`
+  im Frontend sitzt in `offlineSync.svelte.js`. Verlust ist Arbeitszeit (20 umgeordnete
+  Zeilen), kein Fachzustand; nichts wurde als gespeichert angezeigt. Zwei Wege:
+  Router-Wächter über `hatUngespeichertes()` + `beforeunload`, oder Entwurf serverseitig
+  (Multi-PC-Regel: geteilter Zustand nie im Browser). Zwilling: Ausweis-Designer speichert
+  entprellt nach 800 ms und in `onDestroy` — dort bleibt nur das Fenster < 1 s bei
+  Browser-Absturz.
+- **Audit-Zeile wird NACH dem Commit der Ausleihe in eigener Transaktion geschrieben (B,
+  07.09.2026, Persistenz-Audit).** `loan_checkout_cases.go:164-173`, `loan_return.go`,
+  `device_service.go`: `tx.Commit` vor `auditRepo.LogAusleihe`; `audit_books.go:267`
+  öffnet dafür `r.db.Begin`. Bricht die DB-Verbindung genau dazwischen ab, gilt die
+  Ausleihe und die Revisionsspur fehlt — nur eine Logzeile (`audit_log.go:9-13`) sagt es.
+  Bewusst so gebaut („darf eine committete Ausleihe nicht rückgängig machen"), aber die
+  Alternative — Audit-INSERT in derselben Tx, Ausleihe scheitert laut, wenn die Spur nicht
+  geschrieben werden kann — ist für ein Revisionsprotokoll die richtigere Regel. Gleiche
+  Form beim Idempotenz-Cache der Theken-Aktionen (`api/action.go:188`, nach dem Commit):
+  dort nur eine irritierende Meldung beim Offline-Replay, kein Datenverlust.
+
 - **Abgebrochener Browser-Request landet als HTTP 500 samt nutzlosem Stacktrace im Log (B,
   07.09.2026).** Wechselt der Browser die Seite, während `GET
 /api/exemplare/etiketten-offen/anzahl` noch läuft, meldet pgx `context canceled`;
