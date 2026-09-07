@@ -38,18 +38,24 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
-- **Listenimport und Kombi-CSV-Import setzen `etikett_gedruckt` verschieden (B, Zwillinge).**
-  Der Kombi-CSV-Import (`internal/service/import_dynamic.go`) markiert importierte
-  Exemplare seit 16.08.2026 als etikettiert — Altbestand trägt seine Littera-Etiketten,
-  sonst stand das Druck-Center dauerhaft auf 999+. Der Listenimport der Titel-Verwaltung
-  (`POST /api/books/import`, `inventur/excel_import.go` → `legeImportExemplareAn`) lässt
-  den Default `false` stehen: Seine Exemplare landen auf der Nachdruck-Liste. Ob das
-  richtig ist, hängt davon ab, wofür die Liste benutzt wird (Altbestand → `true` wie der
-  Zwilling; Neuzugang ohne Etikett → `false`). Dazu kommt: Die Route hat im Frontend
-  **keinen Aufrufer** — `importiereListe` in `admin_api.js` importiert niemand (grep über
-  `src` und `e2e`, 07.09.2026); der Weg existiert nur im Backend und in seinen Tests.
-  Aufgefallen beim Nummernkreis-Umbau (Migration 105); beides bewusst nicht mit
-  entschieden — beim Verdrahten oder Entfernen in einem Zug klären.
+- **Listenimport hat keine Oberfläche (B, nie verdrahtet).** `POST /api/books/import`
+  (`inventur/excel_import.go` → `legeImportExemplareAn`, Route im Pfad-Schalter
+  `endpunkte_admin.go:31`, nicht bei den `mux.Handle`-Zeilen) funktioniert und ist
+  getestet, aber `importiereListe` in `admin_api.js` ruft niemand — geprüft über `src`
+  und `e2e` am 07.09.2026. Entweder ein Knopf in der Titel-Verwaltung oder entfernen;
+  Peter am 07.09.: „nicht dass wir eine Funktion beschneiden", deshalb steht der Weg
+  vorerst.
+
+  **Die `etikett_gedruckt`-Frage daran ist ENTSCHIEDEN (07.09.2026) — es sind keine
+  Zwillinge.** Der Vergleich mit dem Kombi-CSV-Import war der falsche Rahmen, beide Werte
+  sind richtig: Die verdrahteten Wege (`/api/import/littera`,
+  `/api/admin/import-bestand`, beide über `ImportDynamic`) verlangen eine Spalte
+  `barcode`/`exemplarnummer` und ÜBERNEHMEN vorhandene Exemplare samt ihrer Nummern — die
+  tragen schon Littera-Etiketten, also `true`. Der Listenimport verlangt nur ISBN/Titel
+  und Stückzahl und ERZEUGT neue Exemplare mit frisch gezogenen Nummern
+  („Automatisch generiert (Sammelimport)") — für die gibt es noch kein Etikett, also
+  gehören sie auf die Nachdruck-Liste, `false`. Nichts anzugleichen.
+
 - **Trennlinien in Tabellen (C, Design-Frage).** M3 Lists: „Limit dividers to
   uncontained or complex lists, only when a stronger visual separation is necessary."
   Der LMF-Planer kommt seit 06.09.2026 ohne Zeilen-Trennlinie aus (48-px-Zeilen,
