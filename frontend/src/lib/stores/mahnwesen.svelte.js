@@ -37,7 +37,7 @@ function berechneMahnstufe(maxTage) {
 /**
  * Creates the central Mahnwesen store.
  */
-export function createMahnwesenStore() {
+function createMahnwesenStore() {
 	let data = $state(/** @type {{ klassen: any[] } | null} */ (null));
 	let loading = $state(true);
 	let error = $state(/** @type {string|null} */ (null));

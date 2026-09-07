@@ -32,7 +32,7 @@ import { heileAltBaender } from './idDesignAltbestand.js';
 /** Monotone counter for generating unique element IDs at runtime. */
 let _nextId = 100;
 /** @returns {string} */
-export function nextId() {
+function nextId() {
 	return `el-${++_nextId}`;
 }
 
@@ -173,7 +173,7 @@ export function defaultFrontElements() {
 }
 
 /** @returns {any[]} */
-export function defaultBackElements() {
+function defaultBackElements() {
 	return [
 		{
 			id: 'back-header',

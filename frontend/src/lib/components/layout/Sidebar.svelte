@@ -2,7 +2,6 @@
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { menuGroups, canSeeItem, hatRecht } from '../../menu.js';
-	import { sidebarExtensions } from '../../plugins.svelte.js';
 	import BackupStatusBadge from '../system/BackupStatusBadge.svelte';
 	import { ChevronsLeft, ChevronDown } from '@lucide/svelte';
 	import NavIcon from './NavIcon.svelte';
@@ -165,20 +164,6 @@
 						</div>
 					{/if}
 				{/each}
-
-				{#if sidebarExtensions.length > 0}
-					<div class="border-outline-variant/60 space-y-1 border-t pt-4">
-						{#if !zu}
-							<span class="text-on-surface-variant/70 mb-2 block px-3 text-xs font-medium"
-								>Erweiterungen</span
-							>
-						{/if}
-						{#each sidebarExtensions as ext, _i (_i)}
-							{@const Component = ext.component}
-							<Component {...ext.props} collapsed={zu} />
-						{/each}
-					</div>
-				{/if}
 			</nav>
 		</div>
 

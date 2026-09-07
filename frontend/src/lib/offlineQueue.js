@@ -69,24 +69,6 @@ export async function enqueueOfflineAction(
 }
 
 /**
- * Retrieves the oldest action from the queue.
- * @returns {Promise<any | null>}
- */
-export async function peekOfflineAction() {
-	try {
-		const db = await getDB();
-		const tx = db.transaction(STORE_NAME, 'readonly');
-		const store = tx.objectStore(STORE_NAME);
-		const index = store.index('timestamp');
-		const cursor = await index.openCursor();
-		return cursor ? cursor.value : null;
-	} catch (err) {
-		console.error('Failed to peek offline queue:', err);
-		return null;
-	}
-}
-
-/**
  * Deletes an action from the queue.
  * @param {string} id
  * @returns {Promise<void>}

@@ -49,7 +49,7 @@ const suchSynonyme = new Map([
  * @param {any} b
  * @param {number} jahrgang
  */
-export function trifftJahrgang(b, jahrgang) {
+function trifftJahrgang(b, jahrgang) {
 	if (b.gradeLevel && Number(b.gradeLevel) === jahrgang) return true;
 	return (
 		!!b.jahrgangVon && !!b.jahrgangBis && jahrgang >= b.jahrgangVon && jahrgang <= b.jahrgangBis

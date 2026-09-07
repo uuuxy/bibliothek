@@ -37,7 +37,7 @@ export const ARTEN = /** @type {const} */ ([
 
 /** „5 und 7", „5, 7 und 11".
  *  @param {number[] | undefined} jahrgaenge */
-export function jahrgaengeText(jahrgaenge) {
+function jahrgaengeText(jahrgaenge) {
 	const j = (jahrgaenge ?? []).map(String);
 	if (j.length <= 1) return j.join('');
 	return `${j.slice(0, -1).join(', ')} und ${j[j.length - 1]}`;
@@ -178,7 +178,7 @@ export function klassenMarker(stand) {
 /** Der Vergleichsschlüssel des Vokabulars (klassen_normkey): klein, ohne Leerzeichen,
  *  ohne führende Nullen — „05F1" und „5f1" sind dieselbe Klasse.
  *  @param {string} k */
-export function normKey(k) {
+function normKey(k) {
 	return k
 		.replace(/\s+/g, '')
 		.toLowerCase()

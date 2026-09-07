@@ -2,7 +2,6 @@
 	import { Camera, Lock, RotateCcw, X } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
 	import { ausleiheGesperrt } from './sperrStatus.js';
-	import { studentTabExtensions } from './plugins.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
@@ -176,19 +175,6 @@
 	</div>
 
 	<StudentKontoStatus {profile} {onLock} />
-
-	<!-- Plugin-Erweiterungen -->
-	{#if studentTabExtensions.length > 0}
-		<div class="w-full flex flex-col gap-3">
-			{#each studentTabExtensions as ext, _i (_i)}
-				{@const Component = ext.component}
-				<div class="w-full">
-					<span class="block text-xs font-medium text-slate-400 mb-2">{ext.name}</span>
-					<Component student={profile} {...ext.props} />
-				</div>
-			{/each}
-		</div>
-	{/if}
 
 	<!-- Linke Aktionen (z. B. "Sitzung beenden" im Kiosk). Ausweis-Druck & DSGVO-
 	     Auskunft leben bewusst rechts unter „Dokumente & Aktionen" — die Identitäts-

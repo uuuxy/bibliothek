@@ -35,7 +35,7 @@ async function vermerkeGedruckt(gedruckt) {
 	}
 }
 
-export function createLabelStore() {
+function createLabelStore() {
 	let searchVal = $state('');
 	let searchResults = $state.raw(/** @type {any[]} */ ([]));
 	let isSearching = $state(false);
