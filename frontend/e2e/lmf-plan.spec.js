@@ -435,3 +435,32 @@ test('LMF-Plan: Büchertausch endet am Donnerstag vor den Ferien in der 4. Stund
 		100
 	);
 });
+
+// Verlassen-Schutz (Register B, 07.09.2026): Bis dahin ging eine ungespeicherte
+// Änderung beim Klick auf einen anderen Menüpunkt wortlos verloren. Jetzt hält der
+// uiStore den Wechsel an, der Planer fragt — „Bleiben" lässt alles stehen, „Verwerfen
+// und weiter" führt den Wechsel aus. Gemessen an Adresse UND Feldinhalt.
+test('LMF-Plan: Menüwechsel mit ungespeicherter Änderung fragt nach', async ({ page }) => {
+	await uiLogin(page);
+	await gehZu(page, '/schuljahr');
+	await page.getByRole('button', { name: 'Bücherausgabe nach den Sommerferien' }).click();
+	const tabelle = page.getByTestId('lmf-reihenfolge');
+	await expect(tabelle.getByRole('row').nth(1)).toBeVisible();
+	const nummer = Number(
+		await tabelle.getByRole('row').nth(1).getByRole('cell').first().innerText()
+	);
+	const feld = tabelle.getByLabel(`Besonderheiten Zeile ${nummer}`);
+	await feld.fill('E2E ungespeichert');
+
+	await page.getByTitle('Ausleihe').click();
+	const dialog = page.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
+	await expect(dialog).toBeVisible();
+	await dialog.getByRole('button', { name: 'Bleiben' }).click();
+	await expect(dialog).toBeHidden();
+	await expect(page).toHaveURL(/\/schuljahr$/);
+	await expect(feld, 'die Eingabe steht noch').toHaveValue('E2E ungespeichert');
+
+	await page.getByTitle('Ausleihe').click();
+	await dialog.getByRole('button', { name: 'Verwerfen und weiter' }).click();
+	await expect(page).toHaveURL(/\/kiosk$/);
+});

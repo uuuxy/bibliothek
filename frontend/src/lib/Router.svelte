@@ -101,19 +101,12 @@
 	}
 
 	// ── Wer darf welchen Bildschirm? EINE Regel, nicht zwei ────────────────────
-	//
-	// Hier stand bis zum 08.08.2026 eine handgepflegte Liste für die Helfer-Rolle
-	// ('kiosk' und 'media_catalog'). Damit gab es ZWEI Definitionen davon, was eine
-	// Rolle erreichen darf — die Navigation entschied nach canSeeItem, der Router nach
-	// dieser Liste. Sie sind auseinandergelaufen: Als der Menüpunkt „Schulklassen" von
-	// manage_users auf view_books wechselte, erschien er dem Helfer im Menü und warf
-	// ihn beim Klick wortlos zurück an die Theke. Ein Menüpunkt, der nichts tut, ist
-	// schlimmer als keiner — er sieht aus wie ein Defekt der Seite dahinter.
-	//
-	// Jetzt fragt der Router dieselbe Funktion wie das Menü. Eine Rechteänderung wirkt
-	// damit an beiden Stellen gleichzeitig oder an keiner.
-	// erlaubteTabs/tabIstGesperrt liegen bei canSeeItem in menu.js — dort steht die Regel,
-	// wer was erreichen darf, und der Router liest sie nur ab.
+	// Bis zum 08.08.2026 stand hier eine handgepflegte Helfer-Liste ('kiosk',
+	// 'media_catalog') neben canSeeItem im Menü — zwei Definitionen, die auseinanderliefen:
+	// Als „Schulklassen" von manage_users auf view_books wechselte, sah der Helfer den
+	// Menüpunkt und wurde beim Klick wortlos an die Theke geworfen. Ein Menüpunkt, der
+	// nichts tut, sieht aus wie ein Defekt der Seite dahinter. Jetzt liest der Router
+	// dieselbe Regel (erlaubteTabs/tabIstGesperrt bei canSeeItem in menu.js) nur ab.
 
 	function handleSelectBook(book) {
 		// Ein in der Omnibox angeklicktes Buch soll die Detail-/Akte-Ansicht dieses Buchs
@@ -160,6 +153,10 @@
 		}
 		function handlePopState() {
 			applyPathToState(window.location.pathname);
+			// Verlassen-Schutz hat angehalten (uiStore): Adresszeile auf den offenen Tab zurück.
+			if (uiStore.blockierterWechsel !== null) {
+				window.history.pushState(null, '', currentTargetPath());
+			}
 		}
 		window.addEventListener('keydown', handleGlobalKeyDown);
 		window.addEventListener('popstate', handlePopState);

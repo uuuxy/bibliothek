@@ -21,8 +21,10 @@
 	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
 	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
 	import LmfPlanReihenfolge from './components/lmfplan/LmfPlanReihenfolge.svelte';
+	import LmfPlanUngespeichert from './components/lmfplan/LmfPlanUngespeichert.svelte';
 	import { erzeugePlaner } from './lmfplanPlaner.svelte.js';
 	import * as dienst from './lmfplanDienst.js';
+	import { uiStore } from './stores/uiStore.svelte.js';
 
 	const planer = erzeugePlaner();
 	const z = planer.zustand;
@@ -64,7 +66,31 @@
 		planer.lade();
 		return abonniere('lmf-plan', () => planer.fremdesSignal());
 	});
+
+	// Verlassen-Schutz (Register B, 07.09.2026): Bis dahin ging eine umgeordnete
+	// Reihenfolge beim Klick auf einen anderen Menüpunkt wortlos verloren. Zwei Türen,
+	// eine Wahrheit: Der Tab-Wechsel fragt den Wächter im uiStore, das Schließen des
+	// Fensters den Browser-Dialog — beide über hatUngespeichertes(), kein zweites Flag.
+	onMount(() => {
+		uiStore.verlassenSperre = () => planer.hatUngespeichertes();
+		/** @param {BeforeUnloadEvent} e */
+		const warnung = (e) => {
+			if (planer.hatUngespeichertes()) e.preventDefault();
+		};
+		window.addEventListener('beforeunload', warnung);
+		return () => {
+			uiStore.verlassenSperre = null;
+			uiStore.blockierterWechsel = null;
+			window.removeEventListener('beforeunload', warnung);
+		};
+	});
 </script>
+
+<LmfPlanUngespeichert
+	offen={uiStore.blockierterWechsel !== null}
+	onbleiben={() => uiStore.bleibe()}
+	onverwerfen={() => uiStore.erzwingeWechsel()}
+/>
 
 <PageShell>
 	<LmfPlanKopf

@@ -1,7 +1,42 @@
 import { apiFetch } from '../apiFetch.js';
 
 class UIStore {
-	activeTab = $state('kiosk');
+	#activeTab = $state('kiosk');
+	/**
+	 * Verlassen-Schutz (07.09.2026, Register B): Ein Bildschirm mit ungespeicherter Arbeit
+	 * (der LMF-Planer) trägt hier eine Funktion ein, die sagt, ob gerade etwas verloren
+	 * ginge. Der Setter von activeTab fragt sie — an EINER Stelle, statt an den ~40
+	 * Stellen, die den Tab setzen (Seitenleiste, Router, Deep-Links, Escape-Regel).
+	 * Blockiert der Wächter, bleibt das Ziel in blockierterWechsel stehen; der Bildschirm
+	 * zeigt seinen Dialog und ruft bleibe() oder erzwingeWechsel().
+	 * @type {(() => boolean) | null}
+	 */
+	verlassenSperre = null;
+	/** Ziel eines angehaltenen Wechsels; null = nichts offen. */
+	blockierterWechsel = $state(/** @type {string | null} */ (null));
+
+	get activeTab() {
+		return this.#activeTab;
+	}
+	/** @param {string} id */
+	set activeTab(id) {
+		if (id !== this.#activeTab && this.verlassenSperre?.()) {
+			this.blockierterWechsel = id;
+			return;
+		}
+		this.#activeTab = id;
+	}
+	/** Der Mensch hat sich fürs Bleiben entschieden: nichts passiert, der Dialog geht zu. */
+	bleibe() {
+		this.blockierterWechsel = null;
+	}
+	/** Der Mensch verwirft die Arbeit: der angehaltene Wechsel wird ausgeführt. */
+	erzwingeWechsel() {
+		const ziel = this.blockierterWechsel;
+		this.blockierterWechsel = null;
+		this.verlassenSperre = null;
+		if (ziel !== null) this.#activeTab = ziel;
+	}
 	selectedBook = $state(/** @type {any} */ (null));
 	isSidebarCollapsed = $state(false);
 	pendingReservierungen = $state(0);
