@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import {
 	srcRoot,
@@ -139,4 +139,92 @@ describe('Oberflächen-Hygiene', () => {
 			`Nie importierte Komponenten — bitte löschen. Toter Code kostet beim Suchen und\nverleitet dazu, die falsche Datei zu bearbeiten:\n  ${verwaist.join('\n  ')}`
 		).toEqual([]);
 	});
+
+	// Die blinde Hälfte des Tests darüber (gefunden am 07.09.2026): Er prüft nur
+	// `.svelte`-KOMPONENTEN. Eine exportierte Funktion in einem `.js`-Modul, die niemand
+	// importiert, fiel durch — so überlebte `importiereListe` in `admin_api.js` samt der
+	// Route `POST /api/books/import` dahinter unbemerkt als Weg ohne Oberfläche
+	// (Befund-Register). Backend-seitig gibt es dafür `deadcode`; im Frontend nichts.
+	//
+	// Der Bestand darunter ist eine ARBEITSLISTE, keine Erlaubnis: Neues fällt sofort
+	// auf, Bestehendes wird beim nächsten Anfassen der Datei geklärt — löschen, oder das
+	// `export` entfernen, wenn die Funktion nur im eigenen Modul gebraucht wird (das ist
+	// bei den Fabriken der Fall, die ihren Store gleich daneben erzeugen).
+	const NIE_IMPORTIERT = [
+		'src/inventur/lib/admin_api.js :: importiereListe',
+		'src/inventur/lib/startseiten_api.js :: trifftJahrgang',
+		'src/lib/audio.js :: getAudioCtx',
+		'src/lib/designer/idDesignerStore.svelte.js :: defaultBackElements',
+		'src/lib/designer/idDesignerStore.svelte.js :: nextId',
+		'src/lib/lmfplanDienst.js :: jahrgaengeText',
+		'src/lib/lmfplanDienst.js :: normKey',
+		'src/lib/offlineQueue.js :: peekOfflineAction',
+		'src/lib/plugins.svelte.js :: registerSidebarExtension',
+		'src/lib/plugins.svelte.js :: registerStudentTabExtension',
+		'src/lib/stores/labels.svelte.js :: createLabelStore',
+		'src/lib/stores/mahnwesen.svelte.js :: createMahnwesenStore'
+	];
+
+	it('exportiert keine Funktion, die kein anderes Modul importiert', () => {
+		const dateien = sammleQuelldateien(srcRoot);
+		const e2eDir = join(repoFrontend, 'e2e');
+		const suchraum = [...dateien, ...sammleQuelldateien(e2eDir)];
+		const inhalte = new Map(suchraum.map((f) => [f, readFileSync(f, 'utf8')]));
+
+		// Gesucht wird in ALLEN Dateien, Tests eingeschlossen — `sammleQuelldateien` lässt
+		// `.test.js` bewusst aus, deshalb kommen sie hier eigens dazu. Die strengere Regel
+		// („nur Quellmodule zählen als Leser") war der erste Versuch und ging daneben: Sie
+		// meldete die Testhelfer selbst — `hygiene-quellen.js`, `_zuruecksetzenFuerTests`
+		// in liveEvents — als verwaist, und die existieren genau für Tests. Ein Gate, das
+		// seine eigenen Werkzeuge anklagt, wird abgeschaltet statt befolgt.
+		const module = dateien.filter((f) => f.endsWith('.js'));
+		const testDateien = sammleTestdateien(srcRoot);
+		// DIESE Datei zählt nicht als Leser: Ihre Bestandsliste unten nennt jeden Namen,
+		// und der Test fände ihn dort wieder — jede eingetragene Ausfuhr sähe benutzt aus,
+		// die Ratsche meldete für immer „alles sauber". Genau die Bugklasse „lügende
+		// Ratsche" (docs/sweeps.md), hier beim Bau in die eigene Falle gelaufen und
+		// bemerkt, weil die erwarteten zwölf Funde plötzlich null waren.
+		const leser = [...inhalte, ...testDateien.map((f) => [f, readFileSync(f, 'utf8')])].filter(
+			([f]) => !f.endsWith('frontend-hygiene.test.js')
+		);
+
+		/** @type {string[]} */
+		const verwaist = [];
+		for (const datei of module) {
+			const quelle = /** @type {string} */ (inhalte.get(datei) ?? '');
+			for (const [, name] of quelle.matchAll(/^export (?:async )?function ([A-Za-z0-9_]+)/gm)) {
+				const wort = new RegExp(`\\b${name}\\b`);
+				const anderswo = leser.some(([f, inhalt]) => f !== datei && wort.test(inhalt));
+				if (!anderswo) verwaist.push(`${relPfad(datei)} :: ${name}`);
+			}
+		}
+		verwaist.sort();
+
+		const { neu, inzwischenSauber } = vergleicheMitBestand(verwaist, [...NIE_IMPORTIERT].sort());
+
+		expect(
+			neu,
+			`Exportiert, aber von keinem anderen Modul importiert. Entweder wird die Funktion\n` +
+				`gebraucht — dann fehlt der Aufrufer — oder sie ist tot:\n  ${neu.join('\n  ')}`
+		).toEqual([]);
+
+		expect(
+			inzwischenSauber,
+			`Diese Ausfuhren haben inzwischen einen Aufrufer (oder sind weg) — bitte aus\nNIE_IMPORTIERT entfernen:\n  ${inzwischenSauber.join('\n  ')}`
+		).toEqual([]);
+	});
 });
+
+/** Alle `.test.js` unter p — das Gegenstück zu sammleQuelldateien, das sie auslässt.
+ * @param {string} p @returns {string[]} */
+function sammleTestdateien(p) {
+	/** @type {string[]} */
+	const out = [];
+	for (const entry of readdirSync(p)) {
+		if (entry === 'node_modules') continue;
+		const full = join(p, entry);
+		if (statSync(full).isDirectory()) out.push(...sammleTestdateien(full));
+		else if (entry.endsWith('.test.js')) out.push(full);
+	}
+	return out;
+}
