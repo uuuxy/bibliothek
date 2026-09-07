@@ -38,39 +38,6 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
-- **LMF-Plan: ungespeicherter Entwurf geht bei Navigation ohne Rückfrage verloren (B,
-  07.09.2026, Persistenz-Audit).** Der Planer speichert nur auf „Plan speichern"
-  (`lib/lmfplanPlaner.svelte.js:154`); `hatUngespeichertes()` schützt nur vor stillem
-  Nachladen bei Fremdänderung, nicht vor dem Klick auf einen anderen Menüpunkt oder dem
-  Tab-Schließen. Kein `beforeunload`, kein Entwurfs-Autosave — der einzige `beforeunload`
-  im Frontend sitzt in `offlineSync.svelte.js`. Verlust ist Arbeitszeit (20 umgeordnete
-  Zeilen), kein Fachzustand; nichts wurde als gespeichert angezeigt. Zwei Wege:
-  Router-Wächter über `hatUngespeichertes()` + `beforeunload`, oder Entwurf serverseitig
-  (Multi-PC-Regel: geteilter Zustand nie im Browser). Zwilling: Ausweis-Designer speichert
-  entprellt nach 800 ms und in `onDestroy` — dort bleibt nur das Fenster < 1 s bei
-  Browser-Absturz.
-- **Audit-Zeile wird NACH dem Commit der Ausleihe in eigener Transaktion geschrieben (B,
-  07.09.2026, Persistenz-Audit).** `loan_checkout_cases.go:164-173`, `loan_return.go`,
-  `device_service.go`: `tx.Commit` vor `auditRepo.LogAusleihe`; `audit_books.go:267`
-  öffnet dafür `r.db.Begin`. Bricht die DB-Verbindung genau dazwischen ab, gilt die
-  Ausleihe und die Revisionsspur fehlt — nur eine Logzeile (`audit_log.go:9-13`) sagt es.
-  Bewusst so gebaut („darf eine committete Ausleihe nicht rückgängig machen"), aber die
-  Alternative — Audit-INSERT in derselben Tx, Ausleihe scheitert laut, wenn die Spur nicht
-  geschrieben werden kann — ist für ein Revisionsprotokoll die richtigere Regel. Gleiche
-  Form beim Idempotenz-Cache der Theken-Aktionen (`api/action.go:188`, nach dem Commit):
-  dort nur eine irritierende Meldung beim Offline-Replay, kein Datenverlust.
-
-- **Abgebrochener Browser-Request landet als HTTP 500 samt nutzlosem Stacktrace im Log (B,
-  07.09.2026).** Wechselt der Browser die Seite, während `GET
-/api/exemplare/etiketten-offen/anzahl` noch läuft, meldet pgx `context canceled`;
-  `apierrors` macht daraus einen 500, und `LoggingMiddleware` (`api/middleware.go:326`) hängt
-  `debug.Stack()` an — der zeigt aber den Stack der Middleware _nach_ `next.ServeHTTP`, nie die
-  Fehlerstelle: 40 Zeilen ohne Information. Gesehen im lokalen Backend-Log beim E2E-Lauf der
-  Datenverwaltung. Ein Client-Abbruch ist kein Serverfehler. Zwei Zeilen: `errors.Is(err,
-context.Canceled)` in `apierrors` ohne Alarm beantworten (499 „Client hat abgebrochen", kein
-  Log auf Fehlerstufe), und der Stacktrace in der Middleware entweder weg oder dorthin, wo der
-  Fehler entsteht (`PanicRecoveryMiddleware` hat ihn schon). Zu prüfen dabei: ob der 500 heute
-  auch als Sentry-Ereignis zählt (`sentryhttp` sitzt im selben Handler-Stack).
 - **Trennlinien in Tabellen (C, Design-Frage).** M3 Lists: „Limit dividers to
   uncontained or complex lists, only when a stronger visual separation is necessary."
   Der LMF-Planer kommt seit 06.09.2026 ohne Zeilen-Trennlinie aus (48-px-Zeilen,
@@ -163,28 +130,6 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     Der Geräteschaden ist im Schema also vorgesehen, ihm fehlt nur der Schreiber, und die
     INNER JOINs hätten ihn aus der Rechnung an die Eltern fallen lassen. Merksatz: Die
     Reichweite einer Zusicherung steht im SCHEMA, nicht im Aufrufer.
-
-- **Zwei Definitionen von „derselbe Mensch"** (05.09.2026, B). Der Unique-Index
-  `unique_schueler_name_gebdatum` vergleicht Vor- und Nachname roh (case-sensitiv, keine
-  Normalform); der LUSD-Schlüssel rechnet seit 3848c9f6 in der Normalform `suchnorm`. Folge:
-  Die Datenbank lässt „Anna Müller" und „Anna Mueller" mit gleichem Geburtsdatum als zwei
-  Zeilen zu (Handanlage), der Import sieht darin einen mehrdeutigen Schlüssel und fasst beide
-  nicht an. Kein stiller Schaden — die Mehrdeutig-Meldung fängt es —, aber der Index
-  verspricht weniger, als der Import annimmt. Option: Index auf `suchnorm(vorname),
-suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanlage einer
-  Schreibvariante an der Datenbank abgewiesen, und die Maske muss das erklären — deshalb
-  eine Produktfrage, kein Reflex.
-
-- **Dritte Definition für das Ende eines Bildungsgangs** (05.09.2026, B; seit dem Bau der
-  Abgängerliste am selben Tag nur noch EINE Restdefinition). Versetzung, Klassenleitungs-
-  Zuordnung und Abgängerliste lesen jetzt `repository.AbschlussklasseSQL` (H ab 9, R ab 10,
-  sonst ab 13; Regel-Tabelle `TestAbschlussklasseSQL_Regel`, Paar-Gate
-  `TestAbgaengerliste_UndVersetzungSehenDieselbeMenge`). Übrig: `calculateAbgaengerJahr` in
-  `api/student_create.go` (h → 9, ≥ 11 → 13, sonst 10 — auch G) rechnet das Anzeigejahr
-  „Abgang <Jahr>" der Akte; ein 10G steht dort mit dem falschen Jahr. Anzeige, editierbar,
-  kein Filter — Zwilling in Go bewusst nicht gebaut (Vollprobe fehlte). Beim nächsten
-  Anfassen der Akte: Jahr aus der SQL-Regel rechnen lassen (eine Abfrage) statt in Go.
-  `internal/ausweis/gueltigkeit.go` bleibt eigene Sache (Ausweis-Gültigkeit ≠ Abgang).
 
 - **Buchcover: Rest nach dem Bestellbedarf** (04.09.2026). Der Bestellbedarf zeigt das
   Cover in der Zeile (`ui/BuchCover.svelte`); auf dem Zielsystem tragen 5.724 von 8.706
