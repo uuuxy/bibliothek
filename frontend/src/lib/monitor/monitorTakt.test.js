@@ -70,18 +70,44 @@ describe('MonitorTakt', () => {
 		expect(lader).toHaveBeenCalledTimes(3);
 	});
 
-	it('lädt alle fünf Minuten nach und blendet den neuen Stand erst am Folienwechsel ein', async () => {
+	it('hält einen nachgeladenen Stand zurück, bis die Folie wechselt', async () => {
 		const lader = vi.fn().mockResolvedValueOnce(stand('A')).mockResolvedValue(stand('B'));
 		takt = new MonitorTakt(lader);
 		await takt.start();
 		expect(takt.slides?.buch_des_monats?.titel).toBe('A Monatsbuch');
 
-		await vi.advanceTimersByTimeAsync(NACHLADEN_MS);
+		// Ohne Uhr, weil es hier NICHT um den Takt geht, sondern um die Regel: Ein
+		// zweiter Stand darf nicht unter dem Betrachter ausgetauscht werden, während
+		// dieselbe Folie steht. Frühere Fassung stellte dafür die Uhr um NACHLADEN_MS
+		// vor und prüfte den Titel genau dort — nur fallen an dieser Stelle ZWEI Takte
+		// auf dieselbe Millisekunde (300 s sind ein Vielfaches von 15 s), und der Test
+		// hielt damit fest, welcher von beiden zuerst drankommt. Das ist keine
+		// Zusicherung, sondern eine Eigenschaft des Timer-Ablaufs: vitest 5 dreht die
+		// Reihenfolge um, und der Test wurde rot, ohne dass sich am Verhalten des
+		// Monitors etwas geändert hätte.
+		await takt.nachladen();
 		expect(lader).toHaveBeenCalledTimes(2);
-		// Der neue Stand liegt bereit, ist aber noch nicht zu sehen.
+		expect(takt.slides?.buch_des_monats?.titel, 'der neue Stand sprang ohne Folienwechsel um').toBe(
+			'A Monatsbuch'
+		);
+
+		takt.weiter();
+		expect(takt.slides?.buch_des_monats?.titel).toBe('B Monatsbuch');
+	});
+
+	it('lädt alle fünf Minuten nach, und der neue Stand ist eine Folie später zu sehen', async () => {
+		const lader = vi.fn().mockResolvedValueOnce(stand('A')).mockResolvedValue(stand('B'));
+		takt = new MonitorTakt(lader);
+		await takt.start();
+
+		// Kurz VOR dem Nachlade-Takt ist nichts nachgeholt — das prüft den Takt selbst,
+		// ohne auf der Millisekunde zu sitzen, auf der zwei Wecker zusammenfallen.
+		await vi.advanceTimersByTimeAsync(NACHLADEN_MS - FOLIE_MS);
+		expect(lader).toHaveBeenCalledTimes(1);
 		expect(takt.slides?.buch_des_monats?.titel).toBe('A Monatsbuch');
 
-		await vi.advanceTimersByTimeAsync(FOLIE_MS);
+		await vi.advanceTimersByTimeAsync(FOLIE_MS + FOLIE_MS);
+		expect(lader).toHaveBeenCalledTimes(2);
 		expect(takt.slides?.buch_des_monats?.titel).toBe('B Monatsbuch');
 	});
 
