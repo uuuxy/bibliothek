@@ -26,6 +26,20 @@ cd "$ROOT_DIR"
 COMPOSE="docker-compose.local.yml"
 URL="http://localhost:8084"
 
+# Läuft gerade eine E2E-Suite gegen diesen Stack, liegt ihr Merkzettel (global-setup.js).
+# Ein Neubau JETZT zieht ihr den Container unter den Füßen weg: Die Hälfte der Specs misst
+# den alten Stand, die andere den neuen, und der Teardown findet eine andere Anlage vor
+# als das Setup. Am 07.09.2026 dreimal gespürt — meist war es eine ZWEITE Sitzung
+# (Antigravity/Claude parallel), nicht die eigene. Lieber hart abbrechen als eine halbe
+# Stunde der falschen Spur folgen.
+MERKZETTEL="frontend/.e2e-hauptlieferant"
+if [ -f "$MERKZETTEL" ] && [ "${STACK_NEU_TROTZDEM:-}" != "1" ]; then
+	echo "✗ $MERKZETTEL liegt — es läuft eine E2E-Suite gegen diesen Stack (möglicherweise aus einer anderen Sitzung)." >&2
+	echo "  Neubau jetzt = fremder Lauf misst halb alten, halb neuen Stand. Warten, bis der Lauf durch ist." >&2
+	echo "  Ist sicher keiner mehr aktiv (ps aux | grep playwright), dann: rm $MERKZETTEL — oder STACK_NEU_TROTZDEM=1." >&2
+	exit 2
+fi
+
 echo "── 1/4  Frontend lokal bauen (liefert den Soll-Hash) ────────────────────────"
 (cd frontend && npm run build >/dev/null)
 SOLL=$(basename "$(ls -t frontend/dist/assets/index-*.js | head -1)")
