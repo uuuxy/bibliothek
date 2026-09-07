@@ -24,13 +24,14 @@ const demoBarcodePraefix = "DEMO-S-%"
 // stand mit 300 Demo-Exemplaren im Bestandsbericht und einer grünen Selbstprüfung da.
 const demoExemplarPraefix = "DEMO-B-%"
 
-// Kennungen der drei ERFUNDENEN Lieferanten, die db/seed.go bis zum 07.09.2026 beim
-// ersten Start anlegte (Migration 107 löscht das exakte Tripel). Adresse und Kundennummer
-// einzeln, nicht das Tripel: Ein umbenannter Eintrag mit der erfundenen Adresse schickt
-// Bestellungen genauso ins Leere wie das Original.
+// Kennungen der drei BEISPIEL-Lieferanten, die db/seed.go vom 30.05. bis zum 07.09.2026
+// beim ersten Start anlegte — gewollte Startdaten der ersten Bauwoche, damit das
+// Bestellwesen ohne Vorarbeit bedienbar war (Migration 107 löscht das exakte Tripel).
+// Adresse und Kundennummer einzeln, nicht das Tripel: Ein umbenannter Eintrag mit der
+// Beispiel-Adresse schickt Bestellungen genauso ins Leere wie das Original.
 var (
-	erfundeneLieferantenEmails = []string{"bestellung@klett.de", "service@cornelsen.de", "order@westermann.de"}
-	erfundeneKundennummern     = []string{"K-99281", "C-88123", "W-77441"}
+	beispielLieferantenEmails = []string{"bestellung@klett.de", "service@cornelsen.de", "order@westermann.de"}
+	beispielKundennummern     = []string{"K-99281", "C-88123", "W-77441"}
 )
 
 // BetriebszustandRepository beantwortet Fragen über den Zustand des Bestandes.
@@ -69,18 +70,18 @@ func (r *BetriebszustandRepository) ZaehleDemoExemplare(ctx context.Context) (in
 	return anzahl, err
 }
 
-// ErfundeneLieferanten nennt die Lieferanten, die noch eine Kennung des alten
-// Programmstart-Seeds tragen. Leer = keiner; ein Fehler heißt „nicht erhoben" — der
+// BeispielLieferanten nennt die Lieferanten, die noch eine Kennung der alten
+// Startdaten tragen. Leer = keiner; ein Fehler heißt „nicht erhoben" — der
 // Aufrufer unterscheidet das von der leeren Liste, damit ein Datenbankfehler nicht als
 // „alles gut" durchgeht.
-func (r *BetriebszustandRepository) ErfundeneLieferanten(ctx context.Context) ([]string, error) {
+func (r *BetriebszustandRepository) BeispielLieferanten(ctx context.Context) ([]string, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
 
 	rows, err := r.pool.Query(ctx,
 		`SELECT name FROM lieferanten
 		  WHERE lower(email) = ANY($1) OR kundennummer = ANY($2)
-		  ORDER BY name`, erfundeneLieferantenEmails, erfundeneKundennummern)
+		  ORDER BY name`, beispielLieferantenEmails, beispielKundennummern)
 	if err != nil {
 		return nil, err
 	}

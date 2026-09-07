@@ -92,10 +92,10 @@ type Lage struct {
 	DemoSchueler  int
 	DemoExemplare int
 
-	// Lieferanten mit einer Kennung des alten Programmstart-Seeds (db/seed.go bis
-	// 07.09.2026, Migration 107): erfundene Adresse oder erfundene Kundennummer. Eine
-	// Bestellung an so einen Eintrag geht wirklich raus — an niemanden. nil: nicht lesbar.
-	ErfundeneLieferanten []string
+	// Lieferanten mit einer Kennung der alten Startdaten (db/seed.go 30.05.–07.09.2026,
+	// Migration 107): Beispiel-Adresse oder Beispiel-Kundennummer. Eine Bestellung an so
+	// einen Eintrag geht wirklich raus — an niemanden. nil: nicht lesbar.
+	BeispielLieferanten []string
 
 	// Live-Rechte (role_permissions) als Rolle→Recht→erlaubt. nil heisst: nicht
 	// lesbar — bewusst unterschieden von der leeren Map, denn „leer" würde jede
@@ -203,7 +203,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeBestelllink(l),
 		pruefeMailversand(l),
 		pruefeDemodaten(l),
-		pruefeErfundeneLieferanten(l),
+		pruefeBeispielLieferanten(l),
 		pruefeRechteVorgabe(l),
 		pruefeAdminKonten(l),
 		pruefeKlassenDrift(l),
@@ -657,28 +657,30 @@ func pruefeDemodaten(l Lage) Befund {
 	return b
 }
 
-// pruefeErfundeneLieferanten: Bis zum 07.09.2026 legte der erste Programmstart drei
-// ausgedachte Geschäftspartner an. Wer einen davon im Bestellformular wählte, bekam eine
-// Historie mit „gesendet" — und keine Bücher. Kritisch, nicht Warnung: Der Schaden ist
-// still und trifft eine echte Bestellung.
-func pruefeErfundeneLieferanten(l Lage) Befund {
+// pruefeBeispielLieferanten: Vom 30.05. bis zum 07.09.2026 legte der erste Programmstart
+// drei Beispiel-Lieferanten an — damals gewollt, damit das Bestellwesen ohne Vorarbeit
+// bedienbar war. Das Problem war nie die Absicht, sondern der Ort: Startdaten im
+// Boot-Pfad sind auf einer echten Anlage von echten Händlern nicht zu unterscheiden. Wer
+// einen davon im Bestellformular wählte, bekam eine Historie mit „gesendet“ — und keine
+// Bücher. Kritisch, nicht Warnung: Der Schaden ist still und trifft eine echte Bestellung.
+func pruefeBeispielLieferanten(l Lage) Befund {
 	b := Befund{Bereich: "Lieferanten"}
 	switch {
-	case l.ErfundeneLieferanten == nil:
+	case l.BeispielLieferanten == nil:
 		b.Stufe = StufeWarnung
 		b.Befund = "Lieferantenliste nicht lesbar — nicht geprüft."
-		b.Folge = "Ob noch erfundene Lieferanten aus dem alten Programmstart im Bestand stehen, ist offen."
+		b.Folge = "Ob noch Beispiel-Lieferanten aus den alten Startdaten im Bestand stehen, ist offen."
 		b.Abhilfe = abhilfeDbNeuLaden
-	case len(l.ErfundeneLieferanten) > 0:
+	case len(l.BeispielLieferanten) > 0:
 		b.Stufe = StufeKritisch
-		b.Befund = "Erfundene Lieferanten aus dem alten Programmstart im Bestand: " +
-			strings.Join(l.ErfundeneLieferanten, ", ") + "."
-		b.Folge = "Eine Bestellung an diesen Eintrag geht wirklich an die ausgedachte Adresse, mit einer " +
+		b.Befund = "Beispiel-Lieferanten aus den alten Startdaten im Bestand: " +
+			strings.Join(l.BeispielLieferanten, ", ") + "."
+		b.Folge = "Eine Bestellung an diesen Eintrag geht wirklich an die Beispiel-Adresse, mit einer " +
 			"Kundennummer, die es nicht gibt. Die Historie meldet „gesendet“, die Bücher kommen nie."
 		b.Abhilfe = "Einstellungen → Lieferanten: Eintrag löschen oder mit den echten Daten des Händlers überschreiben."
 	default:
 		b.Stufe = StufeOK
-		b.Befund = "Keine erfundenen Lieferanten im Bestand."
+		b.Befund = "Keine Beispiel-Lieferanten im Bestand."
 	}
 	return b
 }

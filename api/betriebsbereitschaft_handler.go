@@ -102,8 +102,8 @@ func (s *Server) sammleLage(
 		lage.DemoExemplare = anzahl
 	}
 	// Bei einem Fehler bleibt die Liste nil — „nicht lesbar", nicht „keiner".
-	if namen, err := zustandRepo.ErfundeneLieferanten(ctx); err == nil {
-		lage.ErfundeneLieferanten = namen
+	if namen, err := zustandRepo.BeispielLieferanten(ctx); err == nil {
+		lage.BeispielLieferanten = namen
 	}
 
 	// Bei einem Fehler bleibt RechteLive nil — die Prüfung meldet dann „nicht

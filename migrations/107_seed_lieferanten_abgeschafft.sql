@@ -1,9 +1,11 @@
--- Migration 107: Die drei erfundenen Lieferanten des Programmstarts sind weg.
+-- Migration 107: Die drei Beispiel-Lieferanten des Programmstarts sind weg.
 --
--- db/seed.go legte bis zum 07.09.2026 bei leerer Tabelle drei Geschäftspartner an —
--- „Klett Verlag" bestellung@klett.de K-99281, „Cornelsen" service@cornelsen.de C-88123,
--- „Westermann" order@westermann.de W-77441. Alles ausgedacht: Adressen, Kundennummern.
--- Der Bestellweg (internal/service/order_service.go) schickt die Bestellmail wirklich an
+-- db/seed.go legte vom 30.05. bis zum 07.09.2026 bei leerer Tabelle drei Beispiel-
+-- Lieferanten an — „Klett Verlag" bestellung@klett.de K-99281, „Cornelsen"
+-- service@cornelsen.de C-88123, „Westermann" order@westermann.de W-77441. In der ersten
+-- Bauwoche gewollt: Startdaten, damit das Bestellwesen ohne Vorarbeit bedienbar war.
+-- Das Problem war nie die Absicht, sondern der Ort — Startdaten im Boot-Pfad sind auf
+-- einer echten Anlage von echten Händlern nicht zu unterscheiden. Der Bestellweg (internal/service/order_service.go) schickt die Bestellmail wirklich an
 -- diese Adresse, die Historie meldet „gesendet", und die Schule wartet auf Bücher, die nie
 -- kommen. Auf dem Test-Server standen die drei real in der Datenbank, eine Bestellung
 -- ging an einen davon. Auf jeder frischen Anlage wäre beim ersten Start dasselbe passiert.
@@ -17,8 +19,8 @@
 -- Eintrag bleiben als Beleg erhalten: bestellungen_verlauf trägt Name, Adresse und
 -- Kundennummer selbst, der Fremdschlüssel steht auf ON DELETE SET NULL (Migration 037).
 --
--- Reste — etwa ein umbenannter Eintrag mit der erfundenen Adresse — meldet ab jetzt die
--- Selbstprüfung als kritisch (repository/betriebszustand.go, ErfundeneLieferanten).
+-- Reste — etwa ein umbenannter Eintrag mit der Beispiel-Adresse — meldet ab jetzt die
+-- Selbstprüfung als kritisch (repository/betriebszustand.go, BeispielLieferanten).
 
 DELETE FROM lieferanten
  WHERE (name, email, kundennummer) IN (

@@ -8,10 +8,10 @@ import (
 	"bibliothek/repository"
 )
 
-// Migration 107 räumt die drei erfundenen Lieferanten des alten Programmstarts ab; die
+// Migration 107 räumt die drei Beispiel-Lieferanten der alten Startdaten ab; die
 // Selbstprüfung meldet Reste. Beides am echten Postgres: Ein Eintrag mit echten Daten
 // bleibt, die Bestellung an den gelöschten Eintrag bleibt als Beleg erhalten, und ein
-// umbenannter Rest mit der erfundenen Adresse wird gefunden.
+// umbenannter Rest mit der Beispiel-Adresse wird gefunden.
 func TestSeedLieferantenAbgeschafft107(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -76,24 +76,24 @@ func TestSeedLieferantenAbgeschafft107(t *testing.T) {
 
 	// Die Selbstprüfung: nach der Migration sauber …
 	repo := repository.NewBetriebszustandRepository(pool)
-	namen, err := repo.ErfundeneLieferanten(ctx)
+	namen, err := repo.BeispielLieferanten(ctx)
 	if err != nil {
-		t.Fatalf("ErfundeneLieferanten: %v", err)
+		t.Fatalf("BeispielLieferanten: %v", err)
 	}
 	if len(namen) != 0 {
-		t.Errorf("nach Migration noch erfunden: %v", namen)
+		t.Errorf("nach Migration noch Beispiel-Lieferanten: %v", namen)
 	}
 
-	// … und ein umbenannter Rest mit der erfundenen Adresse wird trotzdem gefunden — den
+	// … und ein umbenannter Rest mit der Beispiel-Adresse wird trotzdem gefunden — den
 	// lässt die Migration bewusst stehen (kein exaktes Tripel), die Prüfung nicht.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO lieferanten (name, email, kundennummer)
 		VALUES ('Unser Schulbuchhändler', 'Bestellung@Klett.de', 'K-1')`); err != nil {
 		t.Fatalf("Rest anlegen: %v", err)
 	}
-	namen, err = repo.ErfundeneLieferanten(ctx)
+	namen, err = repo.BeispielLieferanten(ctx)
 	if err != nil {
-		t.Fatalf("ErfundeneLieferanten (Rest): %v", err)
+		t.Fatalf("BeispielLieferanten (Rest): %v", err)
 	}
 	if len(namen) != 1 || namen[0] != "Unser Schulbuchhändler" {
 		t.Errorf("Rest nicht erkannt: %v", namen)

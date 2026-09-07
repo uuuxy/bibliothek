@@ -246,12 +246,14 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 	return nil
 }
 
-// Bis zum 07.09.2026 stand hier InitLieferanten: Bei leerer Tabelle legte der erste Start
-// drei ERFUNDENE Geschäftspartner an (Klett/Cornelsen/Westermann mit ausgedachten
-// Adressen und Kundennummern). Der Bestellweg schickte die Mail wirklich dorthin, die
-// Historie meldete „gesendet", und keine Prüfung kannte den Unterschied zu echten Daten.
-// Lieferanten pflegt man in den Einstellungen; Migration 107 räumt die drei Zeilen ab,
-// und die Selbstprüfung (api/betriebsbereitschaft.go) meldet Reste als kritisch.
+// Vom 30.05. bis zum 07.09.2026 stand hier InitLieferanten: Bei leerer Tabelle legte der
+// erste Start drei Beispiel-Lieferanten an (Klett/Cornelsen/Westermann mit Beispiel-
+// Adressen und -Kundennummern). Das war in der ersten Bauwoche gewollt — das Bestellwesen
+// sollte ohne Vorarbeit bedienbar sein. Das Problem war nie die Absicht, sondern der Ort:
+// Startdaten im Boot-Pfad sind auf einer echten Anlage von echten Händlern nicht zu
+// unterscheiden. Der Bestellweg schickte die Mail wirklich dorthin, die Historie meldete
+// „gesendet“. Lieferanten pflegt man in den Einstellungen; Migration 107 räumt die drei
+// Zeilen ab, und die Selbstprüfung (api/betriebsbereitschaft.go) meldet Reste als kritisch.
 //
 // Was der Boot heute anlegt, steht vollständig in der Selbstprüfung: Rechte-Vorgabe
 // (InitPermissions → Bereich „Rechte-Vorgabe"), erster Admin (InitAdmin → „Admin-Konten"),

@@ -39,9 +39,9 @@ func lageEingerichtet() Lage {
 		DemoSchueler:        0,
 		DemoExemplare:       0,
 		// Lieferanten: erhoben, keiner trägt eine Kennung des alten Seeds.
-		ErfundeneLieferanten: []string{},
-		RechteLive:           rechteWieVorgabe(),
-		AdminKonten:          []string{"Peter Flasch (pflasch@philipp-reis-schule.de)"},
+		BeispielLieferanten: []string{},
+		RechteLive:          rechteWieVorgabe(),
+		AdminKonten:         []string{"Peter Flasch (pflasch@philipp-reis-schule.de)"},
 		// Klassen-Drift (F3): erhoben und leer = alles verbunden.
 		KlassenOhneLehrkraft:  []string{},
 		VerwaisteZuordnungen:  []string{},
@@ -217,16 +217,16 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "300 Demo-Exemplare",
 		},
 		{
-			// Der alte Programmstart-Seed: Bestellung geht raus, Bücher kommen nie.
-			name:     "erfundener Lieferant im Bestand",
-			aendere:  func(l *Lage) { l.ErfundeneLieferanten = []string{"Klett Verlag"} },
+			// Die alten Startdaten: Bestellung geht raus, Bücher kommen nie.
+			name:     "Beispiel-Lieferant im Bestand",
+			aendere:  func(l *Lage) { l.BeispielLieferanten = []string{"Klett Verlag"} },
 			bereich:  "Lieferanten",
 			stufe:    StufeKritisch,
 			enthaelt: "Klett Verlag",
 		},
 		{
 			name:     "Lieferantenliste nicht lesbar",
-			aendere:  func(l *Lage) { l.ErfundeneLieferanten = nil },
+			aendere:  func(l *Lage) { l.BeispielLieferanten = nil },
 			bereich:  "Lieferanten",
 			stufe:    StufeWarnung,
 			enthaelt: "nicht geprüft",
