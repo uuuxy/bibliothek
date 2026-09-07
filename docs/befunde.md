@@ -82,13 +82,6 @@ Anfassen.
   „Nachzügler"/„Aufräumen" nicht, und der Pre-Push-Hook lässt die `*_pg_test.go` aus).
   Hier bleibt nur, was offen ist:
 
-  - **Kein Rückweg vom Veröffentlichen (B, Produktfrage).** Ein Klick auf
-    „Veröffentlichen" ist unumkehrbar; der einzige Weg zurück ist „Plan verwerfen", und
-    der löscht den ganzen Plan (Zeilen, freie Tage, feste Plätze, Auslassungen — CASCADE).
-    Eine von Hand gebaute Reihenfolge mit Brückentagen und Ausflugsterminen ist damit weg.
-    Ein „Zurückziehen" (Stempel löschen, Fristen an den Stichtag) wäre klein und am
-    Ergebnis prüfbar. Frage an Peter: Soll es das geben, oder ist „veröffentlicht ist
-    veröffentlicht" gewollt?
   - **Speichern/Veröffentlichen/Verwerfen und die Frist-Kopplung sind zwei
     Transaktionen (B).** Erst schreiben/löschen (committed), dann `koppleLmfPlanFristen`.
     Bricht der zweite Schritt ab, ist der erste geschehen; die Antwort ist 500. Die
