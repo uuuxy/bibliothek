@@ -47,12 +47,38 @@ jobs:
           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
             echo "::error::Commit $GITHUB_SHA liegt nicht auf main — Releases kommen nur von main."; exit 1
           fi
-          # Check-Runs des getaggten Commits: alles, was 'CI' heißt, muss success sein.
-          STATUS=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
-            --jq '[.check_runs[] | select(.name=="build-and-test" or .name=="docker-scan")] | if length==0 then "none" elif all(.conclusion=="success") then "success" else "other" end')
-          if [ "$STATUS" != "success" ]; then
-            echo "::error::CI für $GITHUB_SHA ist nicht grün (Status: $STATUS). Erst CI abwarten/grün machen, dann diesen Workflow erneut starten (Re-run)."; exit 1
+          # Check-Runs des getaggten Commits: JEDER Job aus ci.yml muss success sein.
+          #
+          # Bis zum 07.09.2026 stand hier `name=="build-and-test" or name=="docker-scan"`.
+          # Beides zusammen prüfte weniger, als es aussah:
+          #   * `docker-scan` gibt es nicht und gab es hier nie — der Name passte auf
+          #     keinen einzigen Check-Run. Ein Name, der ins Leere zeigt, verschwindet in
+          #     dieser jq-Zeile spurlos: `[…] | all(...)` ist für die leere Menge wahr.
+          #   * `e2e` fehlte. Am 06.09. war main vier Stunden lang rot, GENAU in diesem
+          #     Job — ein Tag hätte in dieser Zeit ein Release und ein Image erzeugt, und
+          #     das Gate hätte grün dazu genickt.
+          # Die Liste ist deshalb Pflicht statt Auswahl, und ein FEHLENDER Name ist ein
+          # Fehler, kein Freifahrtschein. Sie wird von docs/umgebung_paritaet_test.go
+          # gegen die Jobs in ci.yml gehalten — ein neuer CI-Job muss hier mitwachsen.
+          PFLICHT="actionlint build-and-test frontend-test e2e"
+          RUNS=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
+            --jq '.check_runs[] | "\(.name)\t\(.conclusion // "pending")"')
+          FEHLT=""; ROT=""
+          for job in $PFLICHT; do
+            ERGEBNIS=$(printf '%s\n' "$RUNS" | awk -F'\t' -v n="$job" '$1==n {print $2; exit}')
+            if [ -z "$ERGEBNIS" ]; then
+              FEHLT="$FEHLT $job"
+            elif [ "$ERGEBNIS" != "success" ]; then
+              ROT="$ROT $job=$ERGEBNIS"
+            fi
+          done
+          if [ -n "$FEHLT" ]; then
+            echo "::error::Für $GITHUB_SHA fehlen Prüfungen ganz:$FEHLT. Entweder läuft die CI noch, oder ein Job wurde umbenannt — dann diese Liste in release.yml nachziehen."; exit 1
           fi
+          if [ -n "$ROT" ]; then
+            echo "::error::CI für $GITHUB_SHA ist nicht grün:$ROT. Erst CI abwarten/grün machen, dann diesen Workflow erneut starten (Re-run)."; exit 1
+          fi
+          echo "Alle Pflicht-Prüfungen grün:$PFLICHT" 
 
       # --verify-tag: Kein Release zu einem Tag, der (noch) nicht auf dem Server liegt.
       # Existiert das Release schon (z. B. manueller Vorgriff), wird es NICHT überschrieben —

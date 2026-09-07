@@ -3,6 +3,7 @@ package docs
 import (
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 )
 
@@ -167,4 +168,74 @@ func TestNodeMajorUeberallGleich(t *testing.T) {
 			}
 		}
 	}
+}
+
+// Vierter Zwilling (07.09.2026): Die Jobs der CI und die Pflichtliste des
+// Release-Workflows sind dasselbe Versprechen an zwei Orten — „bevor ein Tag ein Release
+// und ein Image erzeugt, muss geprüft sein, was diese Anwendung prüft".
+//
+// Sie liefen auseinander, und zwar in beide Richtungen gleichzeitig: release.yml
+// verlangte `build-and-test` und `docker-scan`. Der erste Name stimmte, der zweite zeigte
+// ins Leere — einen Job dieses Namens gibt es in keinem Workflow dieses Repos. In der
+// alten jq-Zeile fiel das nicht auf: `[…] | all(.conclusion=="success")` ist für die
+// leere Menge WAHR. Zugleich fehlten `frontend-test` und vor allem `e2e`. Am 06.09.2026
+// war main vier Stunden rot, genau in e2e; ein Tag in diesem Fenster hätte ein Release
+// samt Image erzeugt, und das Gate hätte grün dazu genickt.
+//
+// Deshalb Gleichheit als MENGE, nicht Teilmenge: Ein neuer CI-Job, den release.yml nicht
+// kennt, ist genauso ein Loch wie ein Name in release.yml, den die CI nicht mehr baut.
+func TestReleaseGateVerlangtAlleCIJobs(t *testing.T) {
+	ausCI := jobNamen(t, "../.github/workflows/ci.yml")
+	if len(ausCI) == 0 {
+		t.Fatal("in ci.yml wurde kein einziger Job gefunden (Datei umformuliert?) — das Gate wäre abgeschaltet")
+	}
+
+	pflicht := leseEinePin(t, "../.github/workflows/release.yml", regexp.MustCompile(`(?m)^\s*PFLICHT="([^"]+)"`))
+	ausRelease := map[string]bool{}
+	for _, name := range strings.Fields(pflicht) {
+		ausRelease[name] = true
+	}
+
+	for name := range ausCI {
+		if !ausRelease[name] {
+			t.Errorf("CI-Job %q steht nicht in der Pflichtliste von release.yml — ein Tag würde "+
+				"ein Release erzeugen, ohne dass dieser Job grün sein muss.", name)
+		}
+	}
+	for name := range ausRelease {
+		if !ausCI[name] {
+			t.Errorf("release.yml verlangt %q, aber ci.yml baut keinen Job dieses Namens — der "+
+				"Name zeigt ins Leere und prüft nichts (genau der Fall 'docker-scan').", name)
+		}
+	}
+}
+
+// jobNamen liest die Job-Schlüssel eines Workflows: die Einrückungsebene unter `jobs:`.
+// Bewusst ohne YAML-Bibliothek — das Gate soll an der Datei hängen, wie sie dasteht, und
+// nicht an einer Abhängigkeit, die dieses Repo sonst nirgends braucht.
+func jobNamen(t *testing.T, pfad string) map[string]bool {
+	t.Helper()
+	inhalt, err := os.ReadFile(pfad)
+	if err != nil {
+		t.Fatalf("%s lesen: %v", pfad, err)
+	}
+	namen := map[string]bool{}
+	inJobs := false
+	for _, zeile := range strings.Split(string(inhalt), "\n") {
+		if strings.HasPrefix(zeile, "jobs:") {
+			inJobs = true
+			continue
+		}
+		if !inJobs {
+			continue
+		}
+		// Eine Zeile ohne Einrückung beendet den jobs-Block.
+		if zeile != "" && !strings.HasPrefix(zeile, " ") {
+			break
+		}
+		if treffer := regexp.MustCompile(`^  ([A-Za-z][A-Za-z0-9_-]*):\s*$`).FindStringSubmatch(zeile); treffer != nil {
+			namen[treffer[1]] = true
+		}
+	}
+	return namen
 }
