@@ -16,56 +16,70 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// calculateAbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers
-// anhand der Klassenbezeichnung (z. B. "5a", "9h", "10r", "11", "13").
+// abschlussJahrgang liest aus der Klassenbezeichnung den aktuellen Jahrgang und den
+// Jahrgang, mit dem der Bildungsgang endet. Es ist der Go-Zwilling von
+// repository.AbschlussklasseSQL — DIESELBE Regel (H ab 9, R ab 10, alles andere ab 13),
+// belegt durch das Paar-Gate abgaenger_jahr_paar_pg_test.go, das beide über den ganzen
+// Formenraum vergleicht (Zwilling mit Vollprobe, sweeps.md).
 //
-// Regeln:
-//   - Hauptschule (Suffix "h"): Abschluss nach Klasse 9
-//   - Oberstufe (Klassenstufe >= 11): Abschluss nach Klasse 13
-//   - Alle übrigen (Realschule "r", Gymnasium "g", unmarkiert): Abschluss nach Klasse 10
+// Bis zum 07.09.2026 rechnete diese Funktion „R, G und unmarkiert → 10“: Ein 10G stand in
+// der Akte mit dem Abgang des laufenden Jahres, obwohl der Gymnasialzweig an dieser Schule
+// in die Oberstufe weiterläuft (Register B, 05.09.2026). Die Oberstufe selbst heißt hier
+// ET/12T/13T: „E“ ohne Ziffer ist die Einführungsphase, Jahrgang 11.
 //
-// Das Schuljahr endet im Juli; ab August läuft das neue Schuljahr, daher wird
-// das Basisjahr um 1 erhöht, wenn wir uns ab August befinden.
-func calculateAbgaengerJahr(klasse string) int {
+// ok=false: keine lesbare Jahrgangszahl (ABG, Q4, leer) — der Aufrufer nimmt einen
+// Rückfallwert.
+func abschlussJahrgang(klasse string) (jahrgang, abschluss int, ok bool) {
 	klasse = strings.ToLower(strings.TrimSpace(klasse))
+	if strings.HasPrefix(klasse, "e") {
+		return 11, 13, true // Einführungsphase: ET, E1, E2 — Jahrgang 11
+	}
 
-	// Führende Ziffern extrahieren
 	gradeStr := ""
 	suffix := ""
 	for i, c := range klasse {
 		if c >= '0' && c <= '9' {
 			gradeStr += string(c)
 		} else {
-			suffix = klasse[i:]
+			suffix = strings.TrimSpace(klasse[i:])
 			break
 		}
 	}
-
 	grade, err := strconv.Atoi(gradeStr)
 	if err != nil || grade < 1 {
-		return time.Now().Year() + 5 // Fallback
+		return 0, 0, false
 	}
 
-	var maxGrade int
 	switch {
 	case strings.HasPrefix(suffix, "h"):
-		maxGrade = 9 // Hauptschule → endet mit Klasse 9h
-	case grade >= 11:
-		maxGrade = 13 // Oberstufe → endet mit Klasse 13
+		return grade, 9, true
+	case strings.HasPrefix(suffix, "r"):
+		return grade, 10, true
 	default:
-		maxGrade = 10 // Gymnasium / Realschule → endet mit Klasse 10
+		return grade, 13, true
 	}
+}
 
-	yearsLeft := maxGrade - grade
+// calculateAbgaengerJahr errechnet das voraussichtliche Abgangsjahr eines Schülers aus
+// der Klasse (abschlussJahrgang) und dem laufenden Schuljahr.
+//
+// Das Schuljahr endet im Juli; ab August läuft das neue Schuljahr, daher wird das
+// Basisjahr um 1 erhöht, wenn wir uns ab August befinden.
+func calculateAbgaengerJahr(klasse string) int {
+	return abgaengerJahrAm(klasse, time.Now())
+}
+
+func abgaengerJahrAm(klasse string, jetzt time.Time) int {
+	jahrgang, abschluss, ok := abschlussJahrgang(klasse)
+	if !ok {
+		return jetzt.Year() + 5 // Fallback
+	}
+	yearsLeft := abschluss - jahrgang
 	if yearsLeft < 0 {
 		yearsLeft = 0
 	}
-
-	// Basisjahr: Schuljahresende liegt im Juli.
-	// Ab August läuft das neue Schuljahr → aktueller Schüler schließt erst nächsten Sommer ab.
-	now := time.Now()
-	baseYear := now.Year()
-	if now.Month() >= time.August {
+	baseYear := jetzt.Year()
+	if jetzt.Month() >= time.August {
 		baseYear++
 	}
 	return baseYear + yearsLeft
