@@ -88,7 +88,12 @@ var fkAktionenBestand = []string{
 	// Befragt: Die Vormerkung fällt zurück auf „wartend", wenn ihr bereitgestelltes
 	// Exemplar verschwindet (repository/damage.go).
 	"SET NULL  vormerkungen.bereitgestellt_exemplar_id -> buecher_exemplare",
-	// Noch nicht befragt.
+	// Befragt am 07.09.2026: Die harmlose Hälfte — die Bestellung hält Name und E-Mail
+	// des Händlers als eigene Abschrift, die Historie überlebt das Löschen unbeschadet
+	// (bestellbestaetigung_handler.go COALESCEt ausdrücklich dagegen). Der LÖSCHWEG
+	// daneben war der Fund: Er nahm auch den Hauptlieferanten, an dem Bestellmail,
+	// Bestätigungs-Link und Etiketten-Verhalten hängen — ohne Rückfrage und ohne Meldung.
+	// Seit 07.09. weist der Handler das ab (api/supplier_handler.go).
 	"SET NULL  bestellungen_verlauf.lieferant_id -> lieferanten",
 	"SET NULL  buecher_exemplare.bestellung_id -> bestellungen_verlauf",
 	"SET NULL  lehrer_anliegen.titel_id -> buecher_titel",

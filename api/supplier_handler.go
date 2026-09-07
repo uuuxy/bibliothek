@@ -8,6 +8,8 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // SupplierResponse represents the supplier data sent to the client.
@@ -225,6 +227,40 @@ func (s *Server) DeleteSupplierHandler() http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+
+		// Den Hauptlieferanten nicht einfach wegnehmen.
+		//
+		// Gefunden am 07.09.2026 beim Befragen von `bestellungen_verlauf.lieferant_id ->
+		// lieferanten` (Frage 12): Der Fremdschlüssel selbst ist harmlos — die Bestellung
+		// hält Name und E-Mail als eigene Abschrift, SET NULL nimmt ihr nichts. Der
+		// LÖSCHWEG daneben war das Problem. „Löschen" in der Lieferantenverwaltung fragt
+		// nicht nach, und getroffen werden konnte auch der EINE Händler, an dem der ganze
+		// Bestellweg hängt: Bestellmail, Bestätigungs-Link (bestellbestaetigung_handler.go)
+		// und die Etiketten-Entscheidung „der Händler beklebt selbst" (pdf_service.go).
+		// Danach gab es keinen Hauptlieferanten mehr, und niemand erfuhr davon — die
+		// Oberfläche zeigte nur einen Händler weniger.
+		//
+		// Kein Sonderfall in der Oberfläche, sondern hier: Die Verwaltung ist nicht die
+		// einzige Tür, und ein Hinweis, den nur ein Formular kennt, ist keine Regel. Der
+		// Weg bleibt offen — erst einen anderen zum Hauptlieferanten machen (oder den
+		// Schalter abwählen), dann löschen.
+		var istHaupt bool
+		if err := s.DB.Pool.QueryRow(ctx,
+			"SELECT ist_hauptlieferant FROM lieferanten WHERE id = $1", id).Scan(&istHaupt); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
+				return
+			}
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if istHaupt {
+			//nolint:staticcheck // ST1005: ganze Sätze mit Satzzeichen — diese Meldung steht so vor der Bibliothekskraft.
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+				"Dieser Händler ist der Hauptlieferant — über ihn läuft die Bestellung. "+
+					"Erst einen anderen zum Hauptlieferanten machen oder den Schalter abwählen, dann löschen."))
+			return
+		}
 
 		tag, err := s.DB.Pool.Exec(ctx, "DELETE FROM lieferanten WHERE id = $1", id)
 		if err != nil {
