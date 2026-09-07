@@ -32,8 +32,7 @@ Zwei Regeln dazu:
    Test, der mit dem alten Code rot wird. Ohne diese Gegenprobe ist unklar, ob
    überhaupt etwas repariert wurde.
 
-**Reihenfolge:** die Overlays auf `Modal.svelte`, alles Weitere beim nächsten fachlichen
-Anfassen.
+**Reihenfolge:** alles Weitere beim nächsten fachlichen Anfassen.
 
 ---
 
@@ -171,15 +170,6 @@ suchnorm(nachname), geburtsdatum` umstellen (Migration). Dann würde die Handanl
   kein Filter — Zwilling in Go bewusst nicht gebaut (Vollprobe fehlte). Beim nächsten
   Anfassen der Akte: Jahr aus der SQL-Regel rechnen lassen (eine Abfrage) statt in Go.
   `internal/ausweis/gueltigkeit.go` bleibt eigene Sache (Ausweis-Gültigkeit ≠ Abgang).
-
-- **Elf Overlays bauen ihr Dialog-Markup selbst statt `ui/Modal.svelte`** (05.09.2026, C).
-  Das Verhalten ist zusammengeführt (`use:escapeSchliesst`, geratscht in
-  `escapeSchliesst.test.js` — dort steht die Dateiliste), die Bauform ist es (Rahmen ab,
-  Erhebung bleibt). Offen ist allein das Markup: ein Durchgang am Bildschirm, Einzelfall
-  für Einzelfall, kein Suchen-und-Ersetzen. Ausnahme bleibt: `OmniboxBlockAlert` und
-  `OmniboxVormerkungAlert` behalten `border-4 border-rose-500` — der Rahmen ist dort das
-  Signal, das einen Schüler an der Ausleihe stoppt, kein Dekor. Sie stehen benannt in
-  `frontend-hygiene-bauform.test.js`.
 
 - **Buchcover: Rest nach dem Bestellbedarf** (04.09.2026). Der Bestellbedarf zeigt das
   Cover in der Zeile (`ui/BuchCover.svelte`); auf dem Zielsystem tragen 5.724 von 8.706

@@ -4,7 +4,7 @@
 	import { Receipt, CheckCircle2, Ban } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
-	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
+	import Modal from './Modal.svelte';
 
 	/**
 	 * Gebühren/Schäden eines Schülers mit den beiden Erledigungs-Wegen:
@@ -121,13 +121,18 @@
 {/if}
 
 {#if stornoFall}
-	<div class="fixed inset-0 z-60 flex items-center justify-center p-4">
-		<div class="absolute inset-0 bg-black/40 backdrop-blur-sm pointer-events-none"></div>
-		<div
-			class="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full relative z-10 animate-fade-in"
-			use:escapeSchliesst={schliesseStornoModal}
-		>
-			<h3 class="text-xl font-bold text-on-surface mb-2">Gebühr wirklich stornieren?</h3>
+	<!-- Ebene „darueber": aus der Schülerakte heraus, die selbst ein Overlay ist. Seit
+	     07.09.2026 auf Modal.svelte (Register 05.09.). -->
+	<Modal
+		open={true}
+		onclose={schliesseStornoModal}
+		ebene="darueber"
+		beschriftetDurch="storno-titel"
+	>
+		<div class="p-6">
+			<h3 id="storno-titel" class="text-xl font-bold text-on-surface mb-2">
+				Gebühr wirklich stornieren?
+			</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
 				<strong>{euro(stornoFall.betrag)}</strong> für
 				<strong>{stornoFall.titel || stornoFall.beschreibung}</strong> werden erlassen. Der Vorgang wird
@@ -156,5 +161,5 @@
 				</Button>
 			</div>
 		</div>
-	</div>
+	</Modal>
 {/if}

@@ -7,7 +7,7 @@
 	import ClassAssignmentBookGrid from './ClassAssignmentBookGrid.svelte';
 	import ClassAssignmentSummary from './ClassAssignmentSummary.svelte';
 	import { TriangleAlert, X } from '@lucide/svelte';
-	import { escapeSchliesst } from '../../../../lib/components/ui/escapeSchliesst.js';
+	import Modal from '../../../../lib/Modal.svelte';
 
 	/**
 	 * @type {{
@@ -133,23 +133,20 @@
 </script>
 
 {#if isOpen}
-	<!-- role="presentation": Der Hintergrund ist Dekoration. Das Schliessen per Klick
-	     darauf ist eine Maus-Bequemlichkeit, der Dialog selbst traegt die Semantik. -->
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200"
-		role="presentation"
-		onclick={(e) => {
-			if (e.target === e.currentTarget) onClose();
-		}}
-	>
+	<!-- Seit 07.09.2026 auf Modal.svelte, Größe „voll" (M3 full-screen dialog): Hintergrund,
+	     Feld, Escape und Hintergrundklick stellt das Bauteil; die zweispaltige Arbeitsfläche
+	     samt eigenem Schließen-Knopf bleibt Inhalt. -->
+	<Modal open={true} onclose={() => onClose()} size="voll" beschriftetDurch="zuweisung-titel">
 		<div
-			class="bg-white rounded-none sm:rounded-3xl shadow-2xl w-full lg:w-300 max-w-[100vw] lg:max-w-[90vw] h-dvh sm:h-[90vh] lg:h-212.5 max-h-dvh lg:max-h-[95vh] p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden animate-in zoom-in-95 duration-200"
-			use:escapeSchliesst={onClose}
+			class="h-full p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8 relative overflow-hidden"
 		>
 			<!-- Left Content Area -->
 			<div class="grow flex flex-col gap-4 sm:gap-6 relative z-10 w-full overflow-hidden">
 				<div class="shrink-0">
-					<h2 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 leading-none">
+					<h2
+						id="zuweisung-titel"
+						class="text-2xl sm:text-3xl font-bold tracking-tight text-on-surface leading-none"
+					>
 						Klasse & Bücher zuweisen
 					</h2>
 					<p class="mt-1 sm:mt-2 text-slate-500 font-medium text-sm sm:text-lg">
@@ -206,5 +203,5 @@
 				<X class="w-4 h-4" aria-hidden="true" />
 			</button>
 		</div>
-	</div>
+	</Modal>
 {/if}

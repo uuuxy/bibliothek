@@ -147,6 +147,9 @@
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
 		>
+			<!-- Bewusst KEIN Modal.svelte (Overlay-Durchgang 07.09.2026): Das hier ist eine
+			     Kamera-Fläche wie StrichcodeScannerOverlay, kein Dialog — sie trägt weder Feld noch
+			     Überschrift, und Escape/Hintergrundklick gehören dem Scanner. -->
 			<StrichcodeScanner onClose={() => (wirdGescannt = false)} onCreated={nachScanAktion} />
 		</div>
 	{:else if istBearbeitenModus}
