@@ -41,7 +41,11 @@ export async function holeBuchDetail(id) {
 	return await res.json();
 }
 
-/** @param {File} datei */
+/**
+ * Listenimport: ISBN + Stückzahl → neue Titel samt Exemplaren (POST /api/books/import).
+ * @param {File} datei
+ * @returns {Promise<{ imported: number, failed: number, message: string }>}
+ */
 export async function importiereListe(datei) {
 	const formData = new FormData();
 	formData.append('file', datei);
@@ -55,7 +59,7 @@ export async function importiereListe(datei) {
 		const errJson = await res.json().catch(() => ({}));
 		throw new Error(errJson.error || errJson.message || 'Import fehlgeschlagen');
 	}
-	return true;
+	return await res.json();
 }
 
 /** @param {string[]} ids */

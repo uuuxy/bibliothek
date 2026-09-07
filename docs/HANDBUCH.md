@@ -342,20 +342,20 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 13 Kategorien, jede einzeln speicherbar (§17):
 
-| Kategorie               | Wofür                                                                                                                        |
-| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Schule                  | Name, Anschrift, Eigentumsvermerk auf Etiketten                                                                              |
-| Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, LMF-Stichtag, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                  |
-| Mahnwesen               | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen                                                |
-| Mahnwesen-Routing       | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                   |
-| Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                             |
-| Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                             |
-| Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                             |
-| Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                         |
-| Mail                    | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler)                                                |
-| LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                  |
-| Datenverwaltung         | Katalog-Import (Littera), Bestands-Import (Kombi-CSV), Cover-Synchronisation, Katalog-Export, Offline-Sicherungen einspielen |
-| Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                    |
+| Kategorie               | Wofür                                                                                                                                                                                                                                                                              |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schule                  | Name, Anschrift, Eigentumsvermerk auf Etiketten                                                                                                                                                                                                                                    |
+| Ausleihe & Fristen      | Tage je Buch/Medium, Limit je Schüler, LMF-Stichtag, Ferien-Leseclub (festes Rückgabedatum über die Ferien)                                                                                                                                                                        |
+| Mahnwesen               | automatische Sperre: ab wie vielen überfälligen Medien, nach wie vielen Tagen                                                                                                                                                                                                      |
+| Mahnwesen-Routing       | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                         |
+| Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                                                                                                                                                                                   |
+| Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                   |
+| Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                                                                                                                                                                                   |
+| Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                                                                                                                                                                               |
+| Mail                    | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler)                                                                                                                                                                                                      |
+| LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                                                                                                                                                                        |
+| Datenverwaltung         | Katalog-Import (Littera), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; der Knopf fehlte vom 21.06. bis 07.09.2026), Cover-Synchronisation, Katalog-Export, Offline-Sicherungen einspielen |
+| Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                                                                                                                                                                          |
 
 ## Mein Portal (Kollegium)
 

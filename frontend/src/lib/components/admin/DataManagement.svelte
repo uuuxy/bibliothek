@@ -1,24 +1,22 @@
 <!--
   @component DataManagement
-  Verwaltungszentrum für den Import und Export von Medien- und Katalogdaten.
-  Ermöglicht den Littera XML/CSV/XLSX-Import sowie den vollständigen CSV-Katalog-Export.
+  Verwaltungszentrum für den Import und Export von Medien- und Katalogdaten: Katalog-Import
+  (Littera), Bestands-Import (Kombi-CSV), Listenimport (ISBN + Stückzahl), Cover-Sync und
+  CSV-Export. Jeder Import ist ein eigenes Widget — seit dem 07.09.2026 auch der Bestand,
+  damit diese Datei unter der 200-Zeilen-Regel bleibt.
 -->
 <script lang="ts">
 	import LitteraImportWidget from '../../LitteraImportWidget.svelte';
+	import BestandImportWidget from './BestandImportWidget.svelte';
+	import ListenImportWidget from './ListenImportWidget.svelte';
+	import { apiFetch } from '../../apiFetch.js';
 	import { exportiereCSV } from '../../../inventur/lib/admin_api.js';
 	import OfflineSicherungenEinspielen from './OfflineSicherungenEinspielen.svelte';
-	import Button from '../ui/Button.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menu.js';
 
 	const darfImport = $derived(hatRecht(authStore.currentUser, 'manage_inventory'));
 	const darfExport = $derived(hatRecht(authStore.currentUser, 'edit_books'));
-
-	const csrfToken = () =>
-		document.cookie
-			.split('; ')
-			.find((row) => row.startsWith('csrf_token='))
-			?.split('=')[1] ?? '';
 
 	let isExporting = $state(false);
 	let exportError = $state<string | null>(null);
@@ -35,10 +33,6 @@
 		}
 	}
 
-	let files: FileList | null = $state(null);
-	let isImportingCsv = $state(false);
-	let importCsvResult: { type: 'success' | 'error'; message: string } | null = $state(null);
-
 	let isSyncingCovers = $state(false);
 	let syncCoversResult: { type: 'success' | 'error'; message: string } | null = $state(null);
 
@@ -46,12 +40,7 @@
 		isSyncingCovers = true;
 		syncCoversResult = null;
 		try {
-			const token = csrfToken();
-			const res = await fetch('/api/admin/sync-covers', {
-				method: 'POST',
-				credentials: 'include',
-				headers: token ? { 'X-CSRF-Token': decodeURIComponent(token) } : {}
-			});
+			const res = await apiFetch('/api/admin/sync-covers', { method: 'POST' });
 			const data = await res.json();
 			if (!res.ok) throw new Error(data.error || 'Fehler beim Starten des Cover-Syncs');
 			syncCoversResult = { type: 'success', message: data.message || 'Job gestartet.' };
@@ -62,41 +51,6 @@
 			};
 		} finally {
 			isSyncingCovers = false;
-		}
-	}
-
-	async function handleBestandUpload() {
-		if (!files || files.length === 0) return;
-		isImportingCsv = true;
-		importCsvResult = null;
-
-		const formData = new FormData();
-		formData.append('file', files[0]);
-
-		try {
-			// Using native fetch to preserve automatic multipart/form-data with boundaries
-			const token = csrfToken();
-			const res = await fetch('/api/admin/import-bestand', {
-				method: 'POST',
-				body: formData,
-				credentials: 'include',
-				headers: token ? { 'X-CSRF-Token': decodeURIComponent(token) } : {}
-			});
-			const data = await res.json();
-			if (!res.ok) throw new Error(data.error || 'Bestands-Import fehlgeschlagen');
-
-			importCsvResult = {
-				type: 'success',
-				message: `Kombi-Import erfolgreich! ${data.new_titles_count || 0} neue Titel und ${data.imported_copies_count || 0} Exemplare wurden verarbeitet.`
-			};
-			files = null;
-		} catch (err) {
-			importCsvResult = {
-				type: 'error',
-				message: (err instanceof Error && err.message) || 'Ein unerwarteter Fehler ist aufgetreten.'
-			};
-		} finally {
-			isImportingCsv = false;
 		}
 	}
 </script>
@@ -154,52 +108,8 @@
 	<div class="flex flex-col gap-8">
 		<LitteraImportWidget />
 
-		<div class="pt-6 border-t border-slate-100">
-			<h4 class="text-sm font-bold text-slate-900 mb-1">Finaler Bestands-Import (Kombi-CSV)</h4>
-			<p class="text-xs text-slate-500 mb-4">
-				Laden Sie die finale Semikolon-separierte CSV hoch (Spalten:
-				Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand).
-			</p>
-
-			<div class="flex items-center gap-4">
-				<label
-					class="relative {isImportingCsv ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}"
-				>
-					<input type="file" accept=".csv" bind:files disabled={isImportingCsv} class="sr-only" />
-					<div
-						class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition-colors border border-slate-200 inline-block"
-					>
-						{files && files.length > 0 ? files[0].name : 'CSV-Datei auswählen...'}
-					</div>
-				</label>
-
-				<Button
-					size="lg"
-					onclick={handleBestandUpload}
-					disabled={isImportingCsv || !files || files.length === 0}
-					class="px-6 bg-emerald-600 hover:bg-emerald-700"
-				>
-					{#if isImportingCsv}
-						<div
-							class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-						></div>
-						<span>Importiere Bestand...</span>
-					{:else}
-						<span>Import Starten</span>
-					{/if}
-				</Button>
-			</div>
-
-			{#if importCsvResult}
-				<div
-					class="mt-4 p-4 rounded-xl text-sm font-semibold {importCsvResult.type === 'error'
-						? 'bg-rose-50 text-rose-600 border border-rose-100'
-						: 'bg-emerald-50 text-emerald-700 border border-emerald-100'}"
-				>
-					{importCsvResult.message}
-				</div>
-			{/if}
-		</div>
+		<BestandImportWidget />
+		<ListenImportWidget />
 
 		<div class="pt-6 border-t border-slate-100">
 			<h4 class="text-sm font-bold text-slate-900 mb-1">Cover-Synchronisation</h4>

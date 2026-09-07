@@ -151,7 +151,6 @@ describe('Oberflächen-Hygiene', () => {
 	// `export` entfernen, wenn die Funktion nur im eigenen Modul gebraucht wird (das ist
 	// bei den Fabriken der Fall, die ihren Store gleich daneben erzeugen).
 	const NIE_IMPORTIERT = [
-		'src/inventur/lib/admin_api.js :: importiereListe',
 		'src/inventur/lib/startseiten_api.js :: trifftJahrgang',
 		'src/lib/audio.js :: getAudioCtx',
 		'src/lib/designer/idDesignerStore.svelte.js :: defaultBackElements',
