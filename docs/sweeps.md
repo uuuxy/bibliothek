@@ -62,6 +62,114 @@ der ganze Bestand, eine Ratsche.
 
 | **Regel-Zwilling Massenlauf ↔ Einzelfall** | Ein Massenabgleich formuliert dieselbe Auswahlregel anders als der Einzelpfad: Beim Ausleihen gilt der FRÜHESTE Rückgabe-Termin einer Klasse (`RueckgabeTerminFuerKlasse`, MIN), beim Speichern des Plans gewann die LETZTE Zeile — nennt ein Plan eine Klasse zweimal, bekam dasselbe Schulbuch je nach Weg eine andere Frist | `TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt` (Live-Pfad über die Handler, rot gesehen) | 05.09.2026: gefunden im Rasterdurchgang über den eigenen Code desselben Tages; Massenlauf rechnet jetzt je Klasse das Minimum. Prüfmuster für den Bestand: Wo eine Regel einmal „für einen" und einmal „für alle" geschrieben ist, dieselbe Eingabe durch beide schicken |
 
+## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
+
+Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das
+der Boot auf BEIDEN verglichenen Wegen anlegt (Migration 106); der Verwaisten-Test sah keine
+JS-Ausfuhren; die Farb-Ratsche fand ich selbst erst nach Suchen. Jede Ratsche hat eine
+Blindheit, die aus ihrer Mechanik folgt. Wer sie kennt, sucht beim nächsten Fund an der
+richtigen Stelle, statt zu fragen, warum „alles grün" war. Je Zeile ein Satz; die Mechanik
+steht im Kopfkommentar der Datei.
+
+**Backend (Go-Quelltext, laufen in `go test`, pre-push, CI)**
+
+| Ratsche                                       | Sieht nicht                                                                                                                                          |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tote_tueren_test.go`                         | Abgleich nur über den Namen: eine tote Interface-Methode, deren Name anderswo als Feld lebt, gilt als benutzt; eingebettete Interfaces gar nicht.    |
+| `fehler_kollaps_test.go`                      | Liest nur die if-Bedingung: ein Kollaps im Rumpf (Switch, Helfer, `sendError(err)`) oder eine Fehlervariable ohne `err`-Suffix.                      |
+| `phantom_erfolg_test.go`                      | Zählt verworfene CommandTags, nicht Korrektheit: `RowsAffected` gelesen und falsch ausgewertet ist grün; `logExec`-Wrapper existieren für sie nicht. |
+| `parameter_strukturen_test.go`                | Nur die 13 eingetragenen Typen; Nullwerte über Zwischenvariablen.                                                                                    |
+| `audit_schreibtueren_test.go`                 | Nur Literaltext: SQL aus `Sprintf`, Variablen oder generischen Repository-Helfern; Migrationen und JS sind ausgeklammert.                            |
+| `abgaenger_sperre_ratsche_test.go`            | Nur Backtick-Rohstrings; ein zweites UPDATE in derselben Tx zählt als Verstoß bzw. als erfüllt.                                                      |
+| `api/schichtung_test.go`                      | Datei-granular: eine Bestandsdatei darf beliebig SQL DAZUbekommen.                                                                                   |
+| `api/bestellstatus_ratsche_test.go`           | Vier feste Zeichenketten — jede Umformulierung (`ILIKE`, anderes Spacing, Muster in Variable).                                                       |
+| `api/privilegierte_felder_test.go`            | Rein namensbasiert (`override/force/bypass/…`): ein Feld `admin_modus` ist unsichtbar; ob das Recht im Code abgefragt wird, prüft sie nicht.         |
+| `api/routes_authz_coverage_test.go`           | Lexikalisch: dass ein Recht dransteht, nicht ob es das RICHTIGE ist oder zur Laufzeit greift; Routen außerhalb `mux.Handle*`.                        |
+| `api/rechte_paritaet_test.go`                 | Namen, nicht Zuordnung: ob `view_stats` an der richtigen Route hängt.                                                                                |
+| `api/lmf_plan_live_test.go`                   | Dass der SSE-Aufruf im Funktionskörper steht — nicht, ob er auf allen Zweigen erreicht wird.                                                         |
+| `pdf/zeitzone_test.go`                        | Nur Dateien mit PDF-Import: ein Datum, das ein anderes Paket berechnet und hineinreicht.                                                             |
+| `repository/aussonderung_paritaet_test.go`    | Exakte Schreibweise (`= FALSE`, Parameter `$3`); zwei getrennte UPDATEs in einer Tx.                                                                 |
+| `inventur/kein_ddl_im_schreibpfad_test.go`    | Textform: DDL aus zusammengesetzten Strings oder eingelesenen `.sql`-Dateien; `cmd/` ist bewusst blind.                                              |
+| `jobs/loeschpraedikat_ratsche_test.go`        | Nur ANWESENHEIT des Prädikat-Aufrufs in der Datei, nicht dass es im Statement landet; Löschjobs außerhalb `cron_*.go`.                               |
+| `api/dsgvo_paar_vollstaendigkeit_test.go`     | „Tabellenname kommt im SQL vor" — nicht welche Spalten, nicht ob die Liste vollständig ist (dafür die FK-Ratsche, die PG braucht).                   |
+| `api/einstellungen_*_paritaet_test.go`        | Nur die erwartete Aufrufform (`speichereKategorie({…})`, `case "…"`) in einer festen Dateiliste.                                                     |
+| `repository/system_settings_paritaet_test.go` | Dass sich IRGENDETWAS ändert — ein `case`, der ins falsche Feld schreibt, ist grün; kein DB-Kontakt.                                                 |
+| `api/student_update_paritaet_test.go`         | Eine Richtung (Feld → SET); eine Spalte ohne Feld sieht `inventur/schema_paritaet_test.go`.                                                          |
+| `api/pii_matrix_test.go`                      | Text gegen Text: die eingetragene PII-Stufe wird hier nicht gemessen; Nicht-GET-Routen bleiben Handarbeit.                                           |
+| `docs/swagger_drift_test.go`                  | Nur annotierte Routen (~49 von 190); nur Pfade, keine Parameter/Antworten.                                                                           |
+| `docs/stand_angaben_test.go`                  | Daten ohne Jahr; Dokumente ohne Kopfzeile; Stand-Datum jenseits Zeile 24.                                                                            |
+| `docs/umgebung_paritaet_test.go`              | Nur eingetragene Fundstellen: ein neues Compose/Workflow/Deploy-Skript mit eigenem Pin.                                                              |
+
+**Schema + DB (PG-Tests: CI immer; pre-push nur, wenn Stack-Postgres:5434 läuft — sonst STILL übersprungen)**
+
+| Ratsche                                                       | Sieht nicht                                                                                                                                      |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `db/migrations_schema_paritaet_pg_test.go`                    | Was in BEIDEN verglichenen Wegen fehlt (Laufzeit-DDL, Migration 104–106); RLS, Kommentare, Grants, Storage-Parameter.                            |
+| `db/migrations_drift_test.go`                                 | Nur Dateinamen gegen die Seed-Liste, nicht Inhalte.                                                                                              |
+| `repository/schema_gegenrichtung_pg_test.go`                  | Bewusst kein Urteil: ein CASCADE, der schon in der Liste steht und dessen Folge niemand behandelt, bleibt grün; 96 nullbare Spalten ausgenommen. |
+| `inventur/schema_paritaet_test.go`                            | Nur `UpdateBook`/`buecher_titel`; parst `schema.sql`, nicht die laufende DB.                                                                     |
+| `api/dsgvo_spalten_gate_pg_test.go`                           | Wort-Vorkommen ≠ Selektion (Spalte nur im WHERE zählt als abgedeckt); nur `schueler`.                                                            |
+| `api/dsgvo_paar_rundreise_pg_test.go`                         | Nur gesäte Kanarienwerte; Referenzen OHNE Fremdschlüssel (JSON-Details, Freitext).                                                               |
+| `jobs/dsgvo_spuren_paarung_pg_test.go`                        | Eine Spur, die BEIDE Pfade vergessen.                                                                                                            |
+| `api/etiketten_*_paritaet_pg_test.go`                         | Nur die aufgezählten Felder — ein neues Etikettenfeld muss von Hand hinein.                                                                      |
+| `api/rechte_schreibwege_pg_test.go`                           | Nur die negative Richtung (403 ohne Recht); nicht, ob es MIT Recht funktioniert; nicht die PII-Stufe.                                            |
+| `api/pii_antwort_gate_pg_test.go`                             | Nicht-GET-Routen; PII-Felder ohne Kanarienwert.                                                                                                  |
+| `db/pgtest_guard_test.go`, `jobs/restore_drill_guard_test.go` | Greifen nur bei `CI` gesetzt — lokal, wo PG-Tests am ehesten still ausfallen, sind sie blind.                                                    |
+
+**Frontend-Quelltext (vitest, pre-push, CI)**
+
+| Ratsche                                    | Sieht nicht                                                                                                                                              |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hygiene-quellen.js` (Sammler)             | Überspringt `.test.js` — deshalb liegen alle Bestandslisten dort; eine Liste in einer normalen `.js` wird dauerhaft unsichtbar.                          |
+| `frontend-hygiene.test.js` (Verwaiste)     | Namens-Vorkommen: ein Dateiname in Kommentar/Route/e2e-Spec zählt als Import; nur `export function`, keine `export const`-Pfeile, keine Default-Exports. |
+| `frontend-hygiene-farben.test.js`          | Reine Summe: 10 neue Verstöße sind grün, wenn 10 anderswo verschwinden; CSS-Dateien, Inline-`style`, berechnete Klassen.                                 |
+| `frontend-hygiene-icons.test.js`           | Datei-granular; SVG in CSS/`data:`-URIs/npm-Paketen.                                                                                                     |
+| `frontend-hygiene-felder.test.js`          | Nur literale `<input>`-Tags; gerenderte Höhe misst erst `control-hoehen.spec.js`.                                                                        |
+| `frontend-hygiene-suchfelder.test.js`      | Erkennung am Beschriftungstext („Such/Filter"): anderer Platzhalter rutscht durch.                                                                       |
+| `frontend-hygiene-reiter.test.js`          | Nur `role="tab"` im Markup.                                                                                                                              |
+| `frontend-hygiene-cover.test.js`           | Nur zwei Bezeichner (`coverKandidaten`, `coverSrc(`); eine vierte Kopie unter anderem Namen.                                                             |
+| `frontend-hygiene-bauform.test.js`         | Ob ein Schatten überhaupt malt, ob `ring-*` Fokus ist, ob die Erhebung nur im `:hover` gilt; Klassen aus Variablen/`clsx`.                               |
+| `frontend-hygiene-dateigroesse.test.js`    | Nur `.svelte`; Zeilen, nicht Komplexität — Auslagern in eine zweite 199-Zeilen-Datei ist grün.                                                           |
+| `frontend-hygiene-layout.test.js`          | Nur oberste Markup-Ebene der Router-Komponenten; Flächen aus Unterkomponenten.                                                                           |
+| `frontend-hygiene-rechte.test.js`          | Braucht Variablenname UND Rollen-Literal: `benutzer.typ === 'admin'` oder Vergleich gegen Konstante.                                                     |
+| `frontend-hygiene-action-endpunkt.test.js` | Nur Text: Pfad aus Variable/Konkatenation (dafür `e2e/suchfelder-eigene-tuer.spec.js` am Draht).                                                         |
+| `e2e-hygiene-waechter.test.js`             | Nur `isVisible()`-Formen: `count() > 0`, `isEnabled()`, `try/catch`, Helfer in `helpers.js`; ob das `.or(` zum selben Element gehört.                    |
+| `fehlerausgang.test.js`                    | Nur `if (res.ok) {…}` ohne Ausgang: `catch {}`, `if (!res.ok) return` mit falschem Zustand, `.then()`-Pfade.                                             |
+| `routing-consistency.test.js`              | Nur literal zugewiesene Tab-Werte.                                                                                                                       |
+| `vormerkung-status-konsistenz.test.js`     | Nur eine UI-Datei; String-Vorkommen ≠ Behandlung.                                                                                                        |
+| `feld-huellen.test.js`                     | Nur direkt benachbarte Tags: Kommentar oder `{#if}` dazwischen.                                                                                          |
+
+**Browser-Gates (Playwright — NUR in CI, nie in pre-push)**
+
+| Ratsche                                                                                                                        | Sieht nicht                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| alle (`typo-rollen`, `kontrast`, `m3-bauform`, `control-hoehen`, `icon-*`, `rundgang-alle-routen`, `suchpille-einheitlich`, …) | Nur den Zustand, der beim Messen hergestellt ist: geschlossene Dialoge, `{#if}`-Zweige, leere Listen, Datenlagen ohne Seed — der Coverkachel-Fall, den erst die Quelltext-Ratsche fand. Dazu: alle hängen am EINEN CI-Job `e2e`. |
+| `kontrast.spec.js`                                                                                                             | Text über Bildern, Verläufen, halbtransparenten Flächen (wird übersprungen, Zahl steht in der Ausgabe); nur 5 Seiten.                                                                                                            |
+| `navigation-m3.spec.js`                                                                                                        | Bewusst blind gegen Farbwechsel in `rollen.css` — nur der Verlust der Rollennutzung.                                                                                                                                             |
+| `menue-fuehrt-irgendwohin.spec.js`                                                                                             | Der Administrator ist kein Messpunkt; „landet irgendwo" ≠ zeigt das Richtige.                                                                                                                                                    |
+| `feld-roundtrip.spec.js`                                                                                                       | Nur sieben Pfade — ein achter migrierter Schreibpfad hat keinen Beweis.                                                                                                                                                          |
+| `scripts/druck-sektionen-gate.mjs`                                                                                             | Braucht frischen `vite build`; läuft in keinem vitest/playwright-Lauf mit; nur zwei Sektionen, nicht Etiketten/Berichte.                                                                                                         |
+
+**Prozess + CI**
+
+| Gate                              | Sieht nicht                                                                                                                                                                                     |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scripts/git-hooks/pre-push`      | Zieht nie selbst ein Postgres hoch: Stack aus ⇒ ALLE `*_pg_test.go` laufen nicht (Warnung mit Dateizahl, blockiert nicht). Keine Playwright-Specs, kein Druck-Gate. `--no-verify` umgeht alles. |
+| `scripts/deadcode_gate.sh`        | Tote Interface-Methoden (Methodentabelle gilt als erreichbar); was nur Tests am Leben halten.                                                                                                   |
+| CI-Skip-Bilanz (`build-and-test`) | Schreibt nur ins Log — ein neuer stiller Skip ohne Guard bleibt grün.                                                                                                                           |
+| `release.yml` Voraussetzungen     | Nur Check-Runs desselben Commits; ein CI-Job außerhalb der Pflichtliste (dafür `TestReleaseGateVerlangtAlleCIJobs`).                                                                            |
+| `security-scan.yml`               | gosec um 13 Regeln entschärft (G304/G401/G101/G204/…); CodeQL läuft über GitHubs Default-Setup — fällt das ab, merkt es dieser Workflow nicht.                                                  |
+
+**Läuft NIRGENDS automatisch (nur von Hand):** `scripts/pruefe_secrets.sh` (Default-Secrets,
+fehlender Backup-Schlüssel, `ENFORCE_PROD_SECRETS=false` — alle drei still),
+`scripts/sonar_scan.sh`, `security-scan.sh` (ZAP), `scripts/api_inventar.sh` (Generat
+veraltet still), `scripts/install-hooks.sh` (ohne ihn greift auf einem Arbeitsplatz gar
+kein Hook). **Nur in pre-push, nicht in CI:** `prettier --check`, `gofmt -l`,
+Trivy-Config-Scan des Dockerfiles.
+
+Regel 7 daraus: **Jede neue Ratsche trägt ihre Blindheit im Kopfkommentar und eine Zeile
+hier.** Ein Gate ohne benannte Blindheit wird beim nächsten Fund zur falschen Spur.
+
 ## Rot-Beweis-Battery — Testprüfung 01.09.2026
 
 Frage des Sweeps: **Funktionieren unsere Tests tatsächlich?** Vier Achsen, Methode je Achse:
