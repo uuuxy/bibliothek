@@ -139,6 +139,7 @@
 				size="lg"
 				onclick={() => orderStore.submitOrder()}
 				disabled={orderStore.submitting || !orderStore.selectedSupplier}
+				title={!orderStore.selectedSupplier ? 'Bitte zuerst einen Lieferanten wählen' : undefined}
 				class="w-full disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
 			>
 				{#if orderStore.submitting}
