@@ -1,6 +1,7 @@
 package apierrors
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -88,12 +89,36 @@ func Conflict(message string, err error) *APIError {
 // APIHandler is a signature for HTTP handlers that return an error.
 type APIHandler func(w http.ResponseWriter, r *http.Request) error
 
+// StatusClientClosedRequest (499, nginx-Konvention): Der Browser hat die Verbindung
+// aufgegeben, bevor die Antwort fertig war — Seitenwechsel, Tab zu, Timeout im Client.
+// Bis zum 07.09.2026 wurde daraus ein 500 samt Stacktrace im Log (Register B): pgx meldet
+// „context canceled“, der Sanitizer machte „Interner Serverfehler“ daraus, und der
+// Stacktrace der Middleware zeigte nie die Fehlerstelle. Ein Client-Abbruch ist kein
+// Serverfehler; er wird nicht auf Fehlerstufe geloggt und zählt in keinem Alarm.
+const StatusClientClosedRequest = 499
+
+// istClientAbbruch: Der Fehler stammt aus einem abgebrochenen Request-Kontext. errors.Is
+// reicht — pgx und net/http reichen context.Canceled gewrappt durch.
+func istClientAbbruch(err error) bool {
+	return err != nil && errors.Is(err, context.Canceled)
+}
+
+func writeClientAbbruch(w http.ResponseWriter) {
+	writeJSONError(w, StatusClientClosedRequest, "Anfrage vom Client abgebrochen")
+}
+
 // Wrap converts an APIHandler into a standard http.HandlerFunc.
 // If the handler returns an error, it is properly formatted and sent to the client.
 func Wrap(h APIHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := h(w, r)
 		if err != nil {
+			// Der Request-Kontext selbst ist die sicherste Quelle: Auch ein Fehler, der
+			// context.Canceled nicht wrappt, ist nach einem Abbruch kein Serverfehler.
+			if istClientAbbruch(err) || errors.Is(r.Context().Err(), context.Canceled) {
+				writeClientAbbruch(w)
+				return
+			}
 			var apiErr *APIError
 			if errors.As(err, &apiErr) {
 				if apiErr.StatusCode >= 500 {
@@ -112,6 +137,10 @@ func Wrap(h APIHandler) http.HandlerFunc {
 
 // SendHTTPError logs the detailed internal error to the server console and returns a sanitized JSON error to the client.
 func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
+	if istClientAbbruch(internalErr) {
+		writeClientAbbruch(w)
+		return
+	}
 	if internalErr != nil {
 		log.Printf("API Error [HTTP %d]: %v (path: %s)", status, internalErr, "unknown")
 	}

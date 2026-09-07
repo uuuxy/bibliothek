@@ -1,8 +1,10 @@
 package apierrors
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -97,5 +99,44 @@ func TestWrapAndSendHTTPError_SameShape(t *testing.T) {
 	// Der interne Fehler von Pfad A darf nie im Body erscheinen.
 	if strings.Contains(recA.Body.String(), "darf nicht sichtbar sein") {
 		t.Errorf("Wrap leakt internen Fehler: %q", recA.Body.String())
+	}
+}
+
+// Ein abgebrochener Browser-Request ist kein Serverfehler (Register B, 07.09.2026):
+// Seitenwechsel während GET /api/exemplare/etiketten-offen/anzahl → pgx „context
+// canceled“ → bis dahin 500 mit nutzlosem Stacktrace. Jetzt 499, egal ob der Fehler
+// context.Canceled wrappt (SendHTTPError) oder nur der Request-Kontext abgebrochen ist
+// (Wrap).
+func TestSendHTTPError_ClientAbbruchIstKein500(t *testing.T) {
+	rec := httptest.NewRecorder()
+	SendHTTPError(rec, http.StatusInternalServerError, fmt.Errorf("query: %w", context.Canceled))
+	if rec.Code != StatusClientClosedRequest {
+		t.Fatalf("Status = %d, want 499", rec.Code)
+	}
+	if msg := decodeErrorBody(t, rec.Body.String()); !strings.Contains(msg, "abgebrochen") {
+		t.Errorf("Meldung = %q, want Hinweis auf Abbruch", msg)
+	}
+}
+
+func TestWrap_AbgebrochenerKontextIstKein500(t *testing.T) {
+	ctx, abbrechen := context.WithCancel(context.Background())
+	abbrechen()
+	req := httptest.NewRequest(http.MethodGet, "/api/x", nil).WithContext(ctx)
+	rec := httptest.NewRecorder()
+	// Der Handler meldet einen Fehler, der context.Canceled NICHT wrappt — der Kontext
+	// allein muss reichen.
+	Wrap(func(http.ResponseWriter, *http.Request) error { return errors.New("scan: broken pipe") })(rec, req)
+	if rec.Code != StatusClientClosedRequest {
+		t.Fatalf("Status = %d, want 499", rec.Code)
+	}
+}
+
+// Gegenprobe: ein echter 500 bleibt ein 500.
+func TestWrap_EchterFehlerBleibt500(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/api/x", nil)
+	rec := httptest.NewRecorder()
+	Wrap(func(http.ResponseWriter, *http.Request) error { return errors.New("kaputt") })(rec, req)
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("Status = %d, want 500", rec.Code)
 	}
 }

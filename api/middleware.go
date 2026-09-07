@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"runtime/debug"
 	"strings"
 	"time"
 
@@ -323,8 +322,12 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(recorder, r)
 
+		// Bis zum 07.09.2026 hing hier debug.Stack() an — der Stack DIESER Middleware nach
+		// next.ServeHTTP, nie der der Fehlerstelle: 40 Zeilen ohne Information bei jedem
+		// 5xx. Den echten Stack eines Panics schreibt PanicRecoveryMiddleware; die Ursache
+		// eines 5xx steht in der Zeile, die apierrors beim Senden loggt.
 		if recorder.status >= 500 {
-			log.Printf("HTTP 500 ERROR on %s %s - STACKTRACE:\n%s", r.Method, maskiereToken(r.URL.Path), string(debug.Stack()))
+			log.Printf("HTTP %d on %s %s", recorder.status, r.Method, maskiereToken(r.URL.Path))
 		}
 	})
 }
