@@ -41,8 +41,7 @@ const ZEICHNUNGEN = [
 // „Komponente" zu ändern — eine eigene Entscheidung, kein Nachziehen.
 const SVG_BESTAND = [
 	'src/inventur/lib/components/admin/BuchCoverUpload.svelte',
-	'src/lib/components/admin/DataManagement.svelte',
-	'src/lib/components/mahnwesen/MahnwesenDruckMenue.svelte'
+	'src/lib/components/admin/DataManagement.svelte'
 ];
 
 describe('Symbol-Hygiene', () => {

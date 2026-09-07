@@ -1,9 +1,9 @@
 <script>
 	import Button from './components/ui/Button.svelte';
+	import Menue from './components/ui/Menue.svelte';
 	import AusweisGueltigkeit from './components/AusweisGueltigkeit.svelte';
 	import { apiFetch } from './apiFetch.js';
 	import { idStore } from './designer/idDesignerStore.svelte.js';
-	import { scale } from 'svelte/transition';
 	import {
 		Printer,
 		FileText,
@@ -44,45 +44,20 @@
 	// Toolbar mit einem Dauer-Umschalter zuzustellen.
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
 
-	/** @type {{ side: 'front'|'back'|'both', label: string, hint: string, icon: any }[]} */
-	const printOptions = [
-		{ side: 'both', label: 'Beides', hint: 'Vorder- & Rückseite', icon: Layers },
-		{ side: 'front', label: 'Nur Vorderseite', hint: 'Foto & Ausweisdaten', icon: IdCard },
-		{ side: 'back', label: 'Nur Rückseite', hint: 'Hinweise & Zusatzinfos', icon: FileText }
+	// Seit 07.09.2026 das eine Menü des Hauses (ui/Menue.svelte) mit dem Split-Button als
+	// Auslöser. Die Hinweiszeilen der Einträge („Foto & Ausweisdaten") sind weg: M3-Menüs
+	// tragen eine Zeile je Aktion, und die drei Beschriftungen erklären sich selbst.
+	/** @type {import('./components/ui/menueGeometrie.js').Eintrag[]} */
+	const seiten = [
+		{ id: 'both', text: 'Beides', icon: Layers },
+		{ id: 'front', text: 'Nur Vorderseite', icon: IdCard },
+		{ id: 'back', text: 'Nur Rückseite', icon: FileText }
 	];
 
-	let menuOpen = $state(false);
-	/** @type {HTMLElement | null} */
-	let menuAnchor = $state(null);
-
-	/** @param {'front'|'back'|'both'} side */
+	/** @param {string} side */
 	function doPrint(side) {
-		menuOpen = false;
-		onPrint(side);
+		onPrint(/** @type {'front'|'back'|'both'} */ (side));
 	}
-
-	// Menü schließt bei Klick außerhalb und mit Escape.
-	$effect(() => {
-		if (!menuOpen) return;
-		/** @param {PointerEvent} e */
-		const onDown = (e) => {
-			if (menuAnchor && !menuAnchor.contains(/** @type {Node} */ (e.target))) menuOpen = false;
-		};
-		/** @param {KeyboardEvent} e */
-		const onKey = (e) => {
-			if (e.key !== 'Escape') return;
-			menuOpen = false;
-			// Als verarbeitet melden, sonst schliesst derselbe Tastendruck zusätzlich das
-			// Schülerprofil (globaler Escape-Kurzbefehl in Router.svelte).
-			e.preventDefault();
-		};
-		document.addEventListener('pointerdown', onDown);
-		document.addEventListener('keydown', onKey);
-		return () => {
-			document.removeEventListener('pointerdown', onDown);
-			document.removeEventListener('keydown', onKey);
-		};
-	});
 
 	async function downloadDsgvoAuskunft() {
 		try {
@@ -127,53 +102,33 @@
 
 	<div class="flex flex-wrap gap-3 items-center">
 		<!-- Primäraktion: Ausweis drucken. Mit Rückseite → Split-Button mit Seitenwahl. -->
-		<div class="relative" bind:this={menuAnchor}>
+		<div class="relative">
 			{#if hasBack}
-				<div class="inline-flex rounded-md shadow-sm">
-					<Button type="button" onclick={() => doPrint('both')} class="rounded-r-none">
-						<IdCard class="w-4 h-4" />
-						Ausweis drucken
-					</Button>
-					<Button
-						type="button"
-						onclick={() => (menuOpen = !menuOpen)}
-						aria-haspopup="menu"
-						aria-expanded={menuOpen}
-						aria-label="Ausweisseiten wählen"
-						class="rounded-l-none border-l-white/25 px-2.5"
-					>
-						<ChevronDown class="w-4 h-4 transition-transform {menuOpen ? 'rotate-180' : ''}" />
-					</Button>
-				</div>
-
-				{#if menuOpen}
-					<div
-						role="menu"
-						tabindex="-1"
-						transition:scale={{ duration: 130, start: 0.95, opacity: 0 }}
-						class="absolute left-0 top-full mt-2 z-30 w-60 origin-top-left rounded-sm bg-surface-container shadow-xl p-1.5"
-					>
-						{#each printOptions as opt (opt.side)}
-							{@const Icon = opt.icon}
-							<button
+				<Menue
+					etikett="Ausweisseiten wählen"
+					eintraege={seiten}
+					onwahl={doPrint}
+					ausrichtung="links"
+				>
+					{#snippet ausloeser({ offen, umschalten })}
+						<div class="inline-flex rounded-md shadow-sm">
+							<Button type="button" onclick={() => doPrint('both')} class="rounded-r-none">
+								<IdCard class="w-4 h-4" />
+								Ausweis drucken
+							</Button>
+							<Button
 								type="button"
-								role="menuitem"
-								onclick={() => doPrint(opt.side)}
-								class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-slate-100 active:bg-slate-200/70 transition-colors cursor-pointer group"
+								onclick={umschalten}
+								aria-haspopup="menu"
+								aria-expanded={offen}
+								aria-label="Ausweisseiten wählen"
+								class="rounded-l-none border-l-white/25 px-2.5"
 							>
-								<span
-									class="flex items-center justify-center w-9 h-9 shrink-0 rounded-full bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition-colors"
-								>
-									<Icon class="w-4 h-4" />
-								</span>
-								<span class="flex flex-col leading-tight">
-									<span class="text-sm font-semibold text-slate-800">{opt.label}</span>
-									<span class="text-xs text-slate-400">{opt.hint}</span>
-								</span>
-							</button>
-						{/each}
-					</div>
-				{/if}
+								<ChevronDown class="w-4 h-4 transition-transform {offen ? 'rotate-180' : ''}" />
+							</Button>
+						</div>
+					{/snippet}
+				</Menue>
 			{:else}
 				<Button variant="primary" onclick={() => doPrint('both')}>
 					<IdCard class="w-4 h-4" />

@@ -17,24 +17,44 @@
 
      Tastatur: Pfeile wandern, Pos1/Ende springen, Enter und Leertaste wählen (der
      Eintrag ist ein <button>), Escape schließt und gibt den Fokus an den Knopf zurück
-     (escapeSchliesst — nur das oberste Overlay reagiert), Tab verlässt das Menü. -->
+     (escapeSchliesst — nur das oberste Overlay reagiert), Tab verlässt das Menü.
+
+     Seit 07.09.2026 tragen die beiden alten Menüs dieses Bauteil, und dafür kann es
+     zweierlei mehr: einen eigenen Auslöser (`ausloeser`-Snippet — der Split-Button
+     „Mahnbriefe ▾" bzw. „Ausweis drucken ▾"; der Chevron trägt aria-haspopup, dorthin
+     kehrt der Fokus zurück) und einen Kopf über den Einträgen (`kopf`-Snippet — das
+     Auswahlfeld „Ganze Klasse" im Mahnwesen). Mit Kopf steht die Höhe erst nach dem
+     Rendern fest, deshalb wird gemessen statt gerechnet (menueGeometrie.js), und Tab
+     wandert IN den Kopf statt das Menü zu schließen — geschlossen wird, wenn der Fokus
+     das Menü verlässt. Gruppen-Überschriften: `ueberschriftDavor` am Eintrag. -->
 <script>
 	import { tick } from 'svelte';
 	import { EllipsisVertical } from '@lucide/svelte';
 	import Button from './Button.svelte';
 	import { escapeSchliesst } from './escapeSchliesst.js';
+	import { berechneMenueBox } from './menueGeometrie.js';
 
-	/** @typedef {{ id: string, text: string, icon?: any, disabled?: boolean, trennerDavor?: boolean }} Eintrag */
-	/** @type {{ etikett: string, eintraege: Eintrag[], onwahl: (id: string) => void }} */
-	let { etikett, eintraege, onwahl } = $props();
+	/** @typedef {import('./menueGeometrie.js').Eintrag} Eintrag */
+	/** @type {{ etikett: string, eintraege: Eintrag[], onwahl: (id: string) => void,
+	 *   ausloeser?: import('svelte').Snippet<[{ offen: boolean, umschalten: () => void }]>,
+	 *   kopf?: import('svelte').Snippet, ausrichtung?: 'rechts' | 'links', breite?: number }} */
+	let {
+		etikett,
+		eintraege,
+		onwahl,
+		ausloeser,
+		kopf,
+		ausrichtung = 'rechts',
+		breite = 256
+	} = $props();
 
 	/** Breite in px — innerhalb der M3-Spanne 112–280 dp. */
-	const BREITE = 256;
-	const ZEILE = 48;
+	const BREITE = $derived(Math.max(112, Math.min(280, breite)));
 
 	let offen = $state(false);
 	let aktiv = $state(0);
-	let box = $state({ left: 0, top: 0 });
+	/** Lage erst nach dem Messen — bis dahin unsichtbar gerendert. @type {{ left: number, top: number } | null} */
+	let box = $state(null);
 	/** @type {HTMLDivElement | undefined} */
 	let anker = $state();
 	/** @type {HTMLDivElement | undefined} */
@@ -42,30 +62,33 @@
 
 	async function oeffnen() {
 		if (!anker) return;
-		const r = anker.getBoundingClientRect();
-		const trenner = eintraege.filter((e) => e.trennerDavor).length;
-		const hoehe = eintraege.length * ZEILE + 16 + trenner * 17;
-		// Rechtsbündig am Knopf, nach unten, wenn Platz ist — sonst nach oben (dieselbe
-		// Regel wie selectGeometrie.berechneBox).
-		const untenPlatz = window.innerHeight - r.bottom;
-		const nachOben = untenPlatz < hoehe && r.top > untenPlatz;
-		box = {
-			left: Math.max(8, Math.min(r.right - BREITE, window.innerWidth - BREITE - 8)),
-			top: nachOben ? Math.max(8, r.top - hoehe - 4) : r.bottom + 4
-		};
 		aktiv = Math.max(
 			0,
 			eintraege.findIndex((e) => !e.disabled)
 		);
+		box = null;
 		offen = true;
 		await tick();
+		// Gemessen, nicht gerechnet: Der Kopf hat keine feste Zeilenhöhe.
+		const hoehe = flaeche?.getBoundingClientRect().height ?? 0;
+		box = berechneMenueBox(anker.getBoundingClientRect(), hoehe, BREITE, ausrichtung, {
+			breite: window.innerWidth,
+			hoehe: window.innerHeight
+		});
 		fokussiere();
 	}
 
 	/** @param {boolean} [fokusZurueck] */
 	function schliessen(fokusZurueck = true) {
 		offen = false;
-		if (fokusZurueck) anker?.querySelector('button')?.focus();
+		if (fokusZurueck)
+			/** @type {HTMLElement | null} */ (anker?.querySelector('[aria-haspopup="menu"]'))?.focus();
+	}
+
+	/** Fokus verlässt das Menü (Tab aus dem letzten Element, Klick in ein fremdes Feld). @param {FocusEvent} e */
+	function fokusWeg(e) {
+		const ziel = /** @type {Node | null} */ (e.relatedTarget);
+		if (ziel && !flaeche?.contains(ziel) && !anker?.contains(ziel)) schliessen(false);
 	}
 
 	/** @param {Eintrag} e */
@@ -82,15 +105,16 @@
 
 	/** @param {KeyboardEvent} e */
 	function taste(e) {
+		// Nur die Einträge wandern mit den Pfeilen — im Kopf gehören die Tasten dem
+		// Auswahlfeld, das dort steht.
+		const ziel = /** @type {HTMLElement} */ (e.target);
+		if (ziel !== flaeche && !ziel.matches('[role="menuitem"]')) return;
 		const n = eintraege.length;
 		if (e.key === 'ArrowDown') aktiv = (aktiv + 1) % n;
 		else if (e.key === 'ArrowUp') aktiv = (aktiv - 1 + n) % n;
 		else if (e.key === 'Home') aktiv = 0;
 		else if (e.key === 'End') aktiv = n - 1;
-		else if (e.key === 'Tab') {
-			schliessen(false);
-			return;
-		} else return;
+		else return;
 		e.preventDefault();
 		fokussiere();
 	}
@@ -110,17 +134,21 @@
 </script>
 
 <div class="inline-block" bind:this={anker}>
-	<Button
-		variant="ghost"
-		size="sm"
-		aria-haspopup="menu"
-		aria-expanded={offen}
-		aria-label={etikett}
-		title={etikett}
-		onclick={() => (offen ? schliessen() : oeffnen())}
-	>
-		<EllipsisVertical class="h-4 w-4" aria-hidden="true" />
-	</Button>
+	{#if ausloeser}
+		{@render ausloeser({ offen, umschalten: () => (offen ? schliessen() : oeffnen()) })}
+	{:else}
+		<Button
+			variant="ghost"
+			size="sm"
+			aria-haspopup="menu"
+			aria-expanded={offen}
+			aria-label={etikett}
+			title={etikett}
+			onclick={() => (offen ? schliessen() : oeffnen())}
+		>
+			<EllipsisVertical class="h-4 w-4" aria-hidden="true" />
+		</Button>
+	{/if}
 </div>
 
 {#if offen}
@@ -131,12 +159,22 @@
 		tabindex="-1"
 		use:escapeSchliesst={() => schliessen()}
 		onkeydown={taste}
-		style="position:fixed; left:{box.left}px; top:{box.top}px; width:{BREITE}px; z-index:60;"
+		onfocusout={fokusWeg}
+		style="position:fixed; left:{box?.left ?? 0}px; top:{box?.top ??
+			0}px; width:{BREITE}px; z-index:60; visibility:{box ? 'visible' : 'hidden'};"
 		class="rounded-sm bg-surface-container py-2 shadow-xl"
 	>
+		{#if kopf}
+			<div class="px-3 pb-2">{@render kopf()}</div>
+		{/if}
 		{#each eintraege as e, i (e.id)}
 			{#if e.trennerDavor}
 				<div class="my-2 border-t border-outline-variant" role="separator"></div>
+			{/if}
+			{#if e.ueberschriftDavor}
+				<div class="px-3 pt-1 pb-1 text-label-small font-medium text-on-surface-variant">
+					{e.ueberschriftDavor}
+				</div>
 			{/if}
 			<button
 				type="button"
