@@ -38,6 +38,17 @@ Zwei Regeln dazu:
 
 ## Offen — abarbeitbar
 
+- **Abgebrochener Browser-Request landet als HTTP 500 samt nutzlosem Stacktrace im Log (B,
+  07.09.2026).** Wechselt der Browser die Seite, während `GET
+/api/exemplare/etiketten-offen/anzahl` noch läuft, meldet pgx `context canceled`;
+  `apierrors` macht daraus einen 500, und `LoggingMiddleware` (`api/middleware.go:326`) hängt
+  `debug.Stack()` an — der zeigt aber den Stack der Middleware _nach_ `next.ServeHTTP`, nie die
+  Fehlerstelle: 40 Zeilen ohne Information. Gesehen im lokalen Backend-Log beim E2E-Lauf der
+  Datenverwaltung. Ein Client-Abbruch ist kein Serverfehler. Zwei Zeilen: `errors.Is(err,
+context.Canceled)` in `apierrors` ohne Alarm beantworten (499 „Client hat abgebrochen", kein
+  Log auf Fehlerstufe), und der Stacktrace in der Middleware entweder weg oder dorthin, wo der
+  Fehler entsteht (`PanicRecoveryMiddleware` hat ihn schon). Zu prüfen dabei: ob der 500 heute
+  auch als Sentry-Ereignis zählt (`sentryhttp` sitzt im selben Handler-Stack).
 - **Trennlinien in Tabellen (C, Design-Frage).** M3 Lists: „Limit dividers to
   uncontained or complex lists, only when a stronger visual separation is necessary."
   Der LMF-Planer kommt seit 06.09.2026 ohne Zeilen-Trennlinie aus (48-px-Zeilen,
