@@ -1,8 +1,12 @@
+<!-- @component StudentLockModal — Ausleihe eines Schülers sperren oder freigeben.
+
+     Seit 07.09.2026 auf Modal.svelte (Register 05.09.); Kopfzeile und Schließen-Knopf
+     stellt das Bauteil. -->
 <script>
 	import { apiClient } from './apiFetch.js';
-	import { Unlock, Lock, X, AlertCircle } from '@lucide/svelte';
+	import { Unlock, Lock, AlertCircle } from '@lucide/svelte';
+	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
-	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 
 	/** @type {{ open: boolean, profile: any, onsuccess: (updatedProfile: any) => void }} */
 	let { open = $bindable(false), profile, onsuccess } = $props();
@@ -56,96 +60,80 @@
 	}
 </script>
 
-{#if open}
-	<div
-		class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in"
-	>
-		<div
-			class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all"
-			use:escapeSchliesst={() => (open = false)}
+<Modal {open} onclose={() => (open = false)} beschriftetDurch="sperre-titel">
+	{#snippet header()}
+		<h3
+			id="sperre-titel"
+			class="text-lg font-bold {profile?.is_manually_blocked
+				? 'text-emerald-700'
+				: 'text-error'} flex items-center gap-2"
 		>
+			{#if profile?.is_manually_blocked}
+				<Unlock class="w-5 h-5" aria-hidden="true" />
+				Sperre aufheben
+			{:else}
+				<Lock class="w-5 h-5" aria-hidden="true" />
+				Ausleihe sperren
+			{/if}
+		</h3>
+	{/snippet}
+
+	<div class="px-6 py-6 text-on-surface-variant space-y-4">
+		<p class="text-sm font-medium leading-relaxed">
+			{#if profile?.is_manually_blocked}
+				Möchten Sie die Ausleihe für <span class="font-bold text-on-surface"
+					>{profile.vorname} {profile.nachname}</span
+				> wirklich freigeben?
+			{:else}
+				Möchten Sie die Ausleihe für <span class="font-bold text-on-surface"
+					>{profile?.vorname} {profile?.nachname}</span
+				> wirklich sperren?
+			{/if}
+		</p>
+
+		{#if willLock}
+			<label class="block space-y-1.5">
+				<span class="text-xs font-bold text-on-surface"
+					>Grund der Sperre <span class="text-error">*</span></span
+				>
+				<textarea
+					bind:value={reason}
+					rows="2"
+					disabled={isSubmitting}
+					placeholder="z. B. wiederholt Bücher nicht zurückgegeben"
+					class="w-full px-3 py-2 text-sm border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-error/30 disabled:opacity-50"
+				></textarea>
+			</label>
+		{/if}
+
+		{#if errorMsg}
 			<div
-				class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50"
+				role="alert"
+				class="p-3 bg-error-container text-on-error-container rounded-xl flex gap-2 items-start"
 			>
-				<h3
-					class="text-lg font-bold {profile.is_manually_blocked
-						? 'text-emerald-700'
-						: 'text-rose-700'} flex items-center gap-2"
-				>
-					{#if profile.is_manually_blocked}
-						<Unlock class="w-5 h-5" />
-						Sperre aufheben
-					{:else}
-						<Lock class="w-5 h-5" />
-						Ausleihe sperren
-					{/if}
-				</h3>
-				<button
-					onclick={() => (open = false)}
-					disabled={isSubmitting}
-					class="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
-				>
-					<X class="w-5 h-5" />
-				</button>
+				<AlertCircle class="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+				<p class="text-xs font-bold leading-tight">{errorMsg}</p>
 			</div>
-
-			<div class="px-6 py-6 text-slate-600 space-y-4">
-				<p class="text-sm font-medium leading-relaxed">
-					{#if profile.is_manually_blocked}
-						Möchten Sie die Ausleihe für <span class="font-bold text-slate-900"
-							>{profile.vorname} {profile.nachname}</span
-						> wirklich freigeben?
-					{:else}
-						Möchten Sie die Ausleihe für <span class="font-bold text-slate-900"
-							>{profile.vorname} {profile.nachname}</span
-						> wirklich sperren?
-					{/if}
-				</p>
-
-				{#if willLock}
-					<label class="block space-y-1.5">
-						<span class="text-xs font-bold text-slate-700"
-							>Grund der Sperre <span class="text-rose-500">*</span></span
-						>
-						<textarea
-							bind:value={reason}
-							rows="2"
-							disabled={isSubmitting}
-							placeholder="z. B. wiederholt Bücher nicht zurückgegeben"
-							class="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-200 disabled:opacity-50 resize-none"
-						></textarea>
-					</label>
-				{/if}
-
-				{#if errorMsg}
-					<div
-						class="p-3 bg-rose-50 border border-rose-100 rounded-xl flex gap-2 items-start text-rose-700 animate-fade-in"
-					>
-						<AlertCircle class="w-4 h-4 mt-0.5 shrink-0" />
-						<p class="text-xs font-bold leading-tight">{errorMsg}</p>
-					</div>
-				{/if}
-			</div>
-
-			<div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-				<Button variant="secondary" onclick={() => (open = false)} disabled={isSubmitting}>
-					Abbrechen
-				</Button>
-				<Button
-					variant={profile.is_manually_blocked ? 'success' : 'danger-solid'}
-					onclick={handleConfirm}
-					disabled={isSubmitting}
-				>
-					{#if isSubmitting}
-						<div
-							class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-						></div>
-						Wird verarbeitet...
-					{:else}
-						Bestätigen
-					{/if}
-				</Button>
-			</div>
-		</div>
+		{/if}
 	</div>
-{/if}
+
+	<div class="px-6 py-4 border-t border-outline-variant flex justify-end gap-3">
+		<Button variant="secondary" onclick={() => (open = false)} disabled={isSubmitting}>
+			Abbrechen
+		</Button>
+		<Button
+			variant={profile?.is_manually_blocked ? 'success' : 'danger-solid'}
+			onclick={handleConfirm}
+			disabled={isSubmitting}
+		>
+			{#if isSubmitting}
+				<div
+					class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+				></div>
+				Wird verarbeitet...
+			{:else}
+				Bestätigen
+			{/if}
+		</Button>
+	</div>
+</Modal>

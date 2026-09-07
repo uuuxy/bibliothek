@@ -1,9 +1,11 @@
+<!-- @component StudentProfileDeleteModal — Schülerprofil löschen/archivieren, mit
+     Namens-Bestätigung. Seit 07.09.2026 auf Modal.svelte (Register 05.09.). -->
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
-	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 
 	let { open = false, profile, onclose, onsuccess } = $props();
 
@@ -56,22 +58,16 @@
 </script>
 
 {#if open && profile}
-	<div
-		class="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 backdrop-blur-xs p-4 animate-fade-in"
-		role="dialog"
-		aria-modal="true"
-	>
-		<div
-			class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl text-slate-800 text-left"
-			use:escapeSchliesst={handleClose}
-		>
-			<h3 class="text-lg font-bold text-rose-600 flex items-center gap-2">
-				<TriangleAlert class="h-6 w-6 text-rose-600" aria-hidden="true" />
+	<Modal open={true} onclose={handleClose} beschriftetDurch="loeschen-titel">
+		<div class="p-6 text-on-surface text-left">
+			<h3 id="loeschen-titel" class="text-lg font-bold text-error flex items-center gap-2">
+				<TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
 				<span>Schüler löschen</span>
 			</h3>
 			{#if profile.entliehene_buecher && profile.entliehene_buecher.length > 0}
 				<div
-					class="mt-4 p-4 bg-rose-50 border border-rose-100 rounded-2xl text-sm font-semibold text-rose-700"
+					role="alert"
+					class="mt-4 p-4 bg-error-container text-on-error-container rounded-2xl text-sm font-semibold"
 				>
 					Löschen nicht möglich: Schüler hat noch entliehene Bücher
 				</div>
@@ -79,7 +75,7 @@
 					<Button variant="secondary" onclick={handleClose}>Schließen</Button>
 				</div>
 			{:else}
-				<p class="mt-4 text-sm text-slate-600 leading-relaxed font-sans">
+				<p class="mt-4 text-sm text-on-surface-variant leading-relaxed font-sans">
 					Sind Sie sicher, dass Sie das Profil von <strong
 						>{profile.vorname} {profile.nachname}</strong
 					> löschen/archivieren möchten? Alle historischen Ausleihen werden anonymisiert. Dieser Vorgang
@@ -87,9 +83,9 @@
 				</p>
 
 				<div class="mt-5">
-					<label class="block text-xs font-bold text-slate-700 mb-1.5" for="confirm-name">
+					<label class="block text-xs font-bold text-on-surface mb-1.5" for="confirm-name">
 						Bitte tippen Sie den Namen zur Bestätigung ein: <span
-							class="font-mono text-rose-600 select-none bg-rose-50 px-1 py-0.5 rounded"
+							class="font-mono text-error select-none bg-error-container/40 px-1 py-0.5 rounded"
 							>{expectedConfirmText}</span
 						>
 					</label>
@@ -103,7 +99,8 @@
 
 				{#if deleteError}
 					<div
-						class="mt-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-semibold text-rose-600"
+						role="alert"
+						class="mt-4 p-3 bg-error-container text-on-error-container rounded-xl text-xs font-semibold"
 					>
 						{deleteError}
 					</div>
@@ -128,5 +125,5 @@
 				</div>
 			{/if}
 		</div>
-	</div>
+	</Modal>
 {/if}

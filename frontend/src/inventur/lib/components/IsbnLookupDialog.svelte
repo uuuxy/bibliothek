@@ -1,10 +1,13 @@
+<!-- @component IsbnLookupDialog — die per ISBN gefundenen Titeldaten bestätigen und mit
+     Fach, Klassenstufe und Bestand anlegen. Seit 07.09.2026 auf Modal.svelte (Register
+     05.09.). -->
 <script>
+	import Modal from '../../../lib/Modal.svelte';
 	import Button from '../../../lib/components/ui/Button.svelte';
 	import Select from '../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../lib/components/ui/Feld.svelte';
 	// Alias: coverSrc ist in dieser Komponente bereits der Name des Anzeige-Zustands.
 	import { coverSrc as proxyCover } from '../../../lib/utils/coverSrc.js';
-	import { escapeSchliesst } from '../../../lib/components/ui/escapeSchliesst.js';
 
 	const klassenstufen = [5, 6, 7, 8, 9, 10].map((g) => ({ value: g, label: String(g) }));
 	/**
@@ -85,19 +88,12 @@
 </script>
 
 {#if data}
-	<div
-		class="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 backdrop-blur-xs p-4"
-		role="dialog"
-		aria-modal="true"
-	>
-		<div
-			class="w-full max-w-xl rounded-3xl bg-white p-6 shadow-2xl text-slate-800"
-			use:escapeSchliesst={onCancel}
-		>
-			<h3 class="text-lg font-bold text-slate-900">ISBN bestätigt</h3>
+	<Modal open={true} onclose={onCancel} size="xl" beschriftetDurch="isbn-titel">
+		<div class="p-6 text-on-surface">
+			<h3 id="isbn-titel" class="text-lg font-bold text-on-surface">ISBN bestätigt</h3>
 			<div class="mt-4 grid gap-4 sm:grid-cols-[120px,1fr]">
 				<div
-					class="h-36 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 flex items-center justify-center relative"
+					class="h-36 overflow-hidden rounded-2xl border border-outline-variant bg-surface-container flex items-center justify-center relative"
 				>
 					{#if coverSrc}
 						<img
@@ -108,15 +104,17 @@
 							onload={onCoverLoad}
 						/>
 					{:else}
-						<div class="grid h-full place-items-center text-xs text-slate-500 font-semibold">
+						<div
+							class="grid h-full place-items-center text-xs text-on-surface-variant font-semibold"
+						>
 							Kein Cover
 						</div>
 					{/if}
 				</div>
 				<div>
-					<p class="font-bold text-slate-900">{data.title || 'Unbekannter Titel'}</p>
-					<p class="text-sm text-slate-500 mt-0.5">{data.author || 'Unbekannter Autor'}</p>
-					<p class="mt-2 text-xs text-slate-400">ISBN: {data.isbn}</p>
+					<p class="font-bold text-on-surface">{data.title || 'Unbekannter Titel'}</p>
+					<p class="text-sm text-on-surface-variant mt-0.5">{data.author || 'Unbekannter Autor'}</p>
+					<p class="mt-2 text-xs text-on-surface-variant">ISBN: {data.isbn}</p>
 				</div>
 			</div>
 
@@ -145,5 +143,5 @@
 				<Button size="lg" onclick={save} disabled={busy} class="px-5">Speichern</Button>
 			</div>
 		</div>
-	</div>
+	</Modal>
 {/if}
