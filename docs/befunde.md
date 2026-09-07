@@ -39,6 +39,18 @@ Anfassen.
 
 ## Offen — abarbeitbar
 
+- **Listenimport und Kombi-CSV-Import setzen `etikett_gedruckt` verschieden (B, Zwillinge).**
+  Der Kombi-CSV-Import (`internal/service/import_dynamic.go`) markiert importierte
+  Exemplare seit 16.08.2026 als etikettiert — Altbestand trägt seine Littera-Etiketten,
+  sonst stand das Druck-Center dauerhaft auf 999+. Der Listenimport der Titel-Verwaltung
+  (`POST /api/books/import`, `inventur/excel_import.go` → `legeImportExemplareAn`) lässt
+  den Default `false` stehen: Seine Exemplare landen auf der Nachdruck-Liste. Ob das
+  richtig ist, hängt davon ab, wofür die Liste benutzt wird (Altbestand → `true` wie der
+  Zwilling; Neuzugang ohne Etikett → `false`). Dazu kommt: Die Route hat im Frontend
+  **keinen Aufrufer** — `importiereListe` in `admin_api.js` importiert niemand (grep über
+  `src` und `e2e`, 07.09.2026); der Weg existiert nur im Backend und in seinen Tests.
+  Aufgefallen beim Nummernkreis-Umbau (Migration 105); beides bewusst nicht mit
+  entschieden — beim Verdrahten oder Entfernen in einem Zug klären.
 - **Zwei selbstgebaute Menüs auf `ui/Menue.svelte` umstellen (B).** Seit 06.09.2026 gibt es
   das eine M3-Menü (Überlaufmenü des LMF-Planers: surface-container, 4-px-Ecken,
   48-px-Einträge, Tastaturbedienung, Escape über `escapeSchliesst`). `MahnwesenDruckMenue`

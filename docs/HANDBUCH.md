@@ -80,7 +80,10 @@ beides einstellbar (_Datenschutz & Sitzung_).
   (Warteliste mit Schüler-Suche), Historie.
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
   Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen, Meldebestand,
-  Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). (§13)
+  Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben
+  korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
+  07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
+  Etiketten_. (§13)
 - **Geräte**: anlegen mit Modell, Seriennummer, Barcode `G-…` und Zubehör-Checkliste.
 
 ## Signaturen

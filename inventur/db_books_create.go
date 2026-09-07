@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/repository"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -265,19 +266,41 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 	return betroffen, nil
 }
 
-// legeImportExemplareAn erzeugt je Import-Zeile stück-viele Exemplare mit
-// SYS-Barcode (gleiche Mechanik wie syncBookStock, aber additiv je Zeile).
-// sys_barcode_seq wird NICHT hier angelegt — sie kommt aus Migration 104 (bis
-// 07.09.2026 stand hier ein CREATE SEQUENCE, das in der Transaktion sperrte).
-func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q dbSchreiber, isbns []string, stueck []int32) error {
-	_, err := q.Exec(ctx, `
+// legeImportExemplareAn erzeugt je Import-Zeile stück-viele Exemplare (gleiche Mechanik
+// wie syncBookStock, aber additiv je Zeile). Die Nummern kommen aus barcode_seq, der
+// einen Quelle aller Exemplarnummern (Migration 068) — bis zum 07.09.2026 aus einer
+// eigenen SYS-Sequenz, die 068 übersehen hatte (Migration 105).
+//
+// Gezogen wird die Summe aller Stückzahlen, zugeordnet über die Zeilennummer. Eine ISBN,
+// die keinen Titel findet, lässt ihre Nummern ungenutzt: Eine Lücke im Nummernkreis ist
+// harmlos, eine doppelt vergebene Nummer nicht (repository/barcode_vergabe.go).
+func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q repository.DBQueryer, isbns []string, stueck []int32) error {
+	gesamt := 0
+	for _, n := range stueck {
+		if n > 0 {
+			gesamt += int(n)
+		}
+	}
+	if gesamt == 0 {
+		return nil
+	}
+	barcodes, err := repository.ZieheFreieExemplarBarcodes(ctx, q, gesamt)
+	if err != nil {
+		return err
+	}
+	_, err = q.Exec(ctx, `
+		WITH ziel AS (
+			SELECT t.id AS titel_id, row_number() OVER () AS nr
+			FROM UNNEST($1::text[], $2::int[]) AS u(isbn, stueck)
+			JOIN buecher_titel t ON t.isbn = u.isbn
+			CROSS JOIN generate_series(1, u.stueck)
+			WHERE u.stueck > 0 AND u.isbn <> ''
+		)
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
-		SELECT t.id, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert (Sammelimport)'
-		FROM UNNEST($1::text[], $2::int[]) AS u(isbn, stueck)
-		JOIN buecher_titel t ON t.isbn = u.isbn
-		CROSS JOIN generate_series(1, u.stueck)
-		WHERE u.stueck > 0 AND u.isbn <> ''
-	`, isbns, stueck)
+		SELECT z.titel_id, c.code, true, 'Automatisch generiert (Sammelimport)'
+		FROM ziel z
+		JOIN UNNEST($3::text[]) WITH ORDINALITY AS c(code, nr) ON c.nr = z.nr
+	`, isbns, stueck, barcodes)
 	return err
 }
 

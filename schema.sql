@@ -1140,7 +1140,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('101_lmf_plan_ende_als_anker.sql'),
 ('102_ferien_schliesszeiten_ausgebaut.sql'),
 ('103_inventur_erfasst_einfrieren.sql'),
-('104_sys_barcode_seq_deklariert.sql')
+('104_sys_barcode_seq_deklariert.sql'),
+('105_sys_barcode_seq_abgeschafft.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -1190,23 +1191,13 @@ SELECT setval('barcode_seq', (
     WHERE barcode_id ~ '^B-[0-9]{1,15}$'
 ));
 
--- sys_barcode_seq ist der ZWEITE Nummernkreis: die Exemplare, die das System selbst
--- anlegt ("SYS-…") — Bestandskorrektur in der Buchmaske und Sammelimport. Getrennt von
--- barcode_seq gehalten, die Präfixe halten beide auseinander.
---
--- Bis zum 07.09.2026 stand sie NIRGENDS: Der Go-Code führte vor jedem Insert ein
--- `CREATE SEQUENCE IF NOT EXISTS` in der laufenden Transaktion aus. Solange die Sequenz
--- fehlt, sperrt dieses DDL bis zum Commit (gemessen: 3,06 s) — der Preis fällt beim
--- ERSTEN Buch mit Bestand einer frischen Installation an. Die Schema-Paritäts-Ratsche
--- konnte es nicht sehen: Was erst zur Laufzeit entsteht, fehlt in beiden verglichenen
--- Wegen. Migration 104, Gate: inventur/kein_ddl_im_schreibpfad_test.go.
-CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000;
-SELECT setval('sys_barcode_seq', GREATEST(
-    (SELECT last_value FROM sys_barcode_seq),
-    (SELECT COALESCE(MAX(CAST(SUBSTRING(barcode_id FROM '^SYS-([0-9]{1,15})$') AS BIGINT)), 100000)
-     FROM buecher_exemplare
-     WHERE barcode_id ~ '^SYS-[0-9]{1,15}$')
-));
+-- Es gibt KEINEN zweiten Nummernkreis. Bis zum 07.09.2026 prägten Bestandskorrektur
+-- (Buchmaske) und Excel-Sammelimport „SYS-…"-Nummern aus einer eigenen Sequenz, die
+-- nirgends deklariert war — der Go-Code legte sie per CREATE SEQUENCE in der laufenden
+-- Transaktion an (Migration 104 hat sie deklariert, 105 abgeschafft; beide Pfade ziehen
+-- seither aus barcode_seq). Vorhandene SYS-Exemplare behalten ihre Nummer — sie kann
+-- physisch am Buch kleben; die Exemplarkarte zeigt sie als Platzhalter („Barcode
+-- scannen"). Gate gegen DDL im Schreibpfad: inventur/kein_ddl_im_schreibpfad_test.go.
 
 CREATE TABLE IF NOT EXISTS idempotency_keys (
     idempotency_key UUID PRIMARY KEY,

@@ -128,6 +128,10 @@
 					/>
 				{/if}
 				<div class="flex items-center gap-2">
+					<!-- SYS-/AUTO- sind Platzhalter aus Altbestand: Seit Migration 105 (07.09.2026)
+					     entstehen keine neuen — Bestandskorrektur und Sammelimport vergeben B-Nummern
+					     aus barcode_seq wie jeder andere Weg. Die Erkennung bleibt für vorhandene
+					     Exemplare, deren Nummer physisch am Buch kleben kann. -->
 					<span
 						class="text-xs font-bold {ex.barcode_id.startsWith('AUTO-') ||
 						ex.barcode_id.startsWith('SYS-')

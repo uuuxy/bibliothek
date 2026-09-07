@@ -1,0 +1,24 @@
+-- Migration 105: Der zweite Nummernkreis „SYS-…" wird abgeschafft.
+--
+-- Migration 068 hat entschieden: barcode_seq ist die EINZIGE Quelle für Exemplarnummern
+-- — Bestellwesen, Handvergabe in der Exemplarkarte, Littera-Import. Zwei Wege hatte sie
+-- übersehen: die Bestandskorrektur in der Buchmaske („Aktueller Bestand: 3") und der
+-- Excel-Sammelimport. Beide prägten „SYS-100001"-Nummern aus einer eigenen Sequenz, die
+-- nirgends deklariert war (Migration 104 hat sie am 07.09.2026 erst sichtbar gemacht).
+--
+-- Seit heute ziehen beide Pfade aus barcode_seq (repository.ZieheFreieExemplarBarcodes,
+-- mit dem Bestandsabgleich aus 068, damit eine von Hand vorweggenommene Nummer nicht
+-- kollidiert). Was dadurch wegfällt: ein zweites Format an der Theke, eine Nummer, die
+-- die Omnibox nicht als Exemplar erkennt (nur „B-" hat dort einen Pfad), und ein
+-- Platzhalter, der auf der Nachdruck-Liste als „SYS-100045" auf ein Etikett gedruckt
+-- werden konnte.
+--
+-- Vorhandene SYS-Exemplare bleiben, wie sie sind: Ihre Nummer kann physisch am Buch
+-- kleben, und eine Nummer wird nie umgeschrieben oder recycelt (068). Die Exemplarkarte
+-- zeigt sie weiter als Platzhalter mit „Barcode scannen". Gezählt am 07.09.2026 auf der
+-- lokalen Prod-Kopie: null.
+--
+-- DROP IF EXISTS: Auf Anlagen, die 104 nie gesehen haben und auf denen nie ein Bestand
+-- korrigiert wurde, gibt es die Sequenz nicht. Wiederholbar.
+
+DROP SEQUENCE IF EXISTS sys_barcode_seq;

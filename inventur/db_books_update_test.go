@@ -127,8 +127,9 @@ func TestSyncBookStock(t *testing.T) {
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(2))
 
+		codes := erwarteBarcodeVergabe(mock, 3) // 5 - 2 = 3
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
-			WithArgs("book-123", 3). // 5 - 2 = 3
+			WithArgs("book-123", codes).
 			WillReturnResult(pgxmock.NewResult("INSERT", 3))
 
 		err := repo.syncBookStock(ctx, mock, "book-123", 5)

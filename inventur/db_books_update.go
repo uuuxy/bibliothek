@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/repository"
 	"context"
 	"fmt"
 
@@ -121,7 +122,10 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 }
 
 // syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
-func (repo *BookRepository) syncBookStock(ctx context.Context, q dbSchreiber, titelID string, expectedStock int) error {
+//
+// q ist repository.DBQueryer statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
+// Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides.
+func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQueryer, titelID string, expectedStock int) error {
 	var currentStock int
 	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare WHERE titel_id = $1 AND ist_ausgesondert = false`, titelID).Scan(&currentStock)
 	if err != nil {
@@ -131,14 +135,19 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q dbSchreiber, ti
 	if expectedStock > currentStock {
 		numToCreate := expectedStock - currentStock
 		if numToCreate > 0 {
-			// sys_barcode_seq stammt aus Migration 104. Bis zum 07.09.2026 legte diese
-			// Stelle sie selbst per DDL an — in der laufenden Transaktion, wo sie bis
-			// zum Commit sperrte, solange die Sequenz noch fehlte.
-			_, err := q.Exec(ctx, `
+			// Nummern aus barcode_seq — dieselbe Quelle wie Bestellwesen, Handvergabe und
+			// Littera-Import (Migration 068: „EINE Quelle für alle Wege"). Bis zum
+			// 07.09.2026 zog diese Stelle aus einer eigenen, nirgends deklarierten Sequenz
+			// und prägte „SYS-…" — ein zweiter Nummernkreis, den 068 übersehen hatte
+			// (Migration 105 räumt ihn ab).
+			barcodes, err := repository.ZieheFreieExemplarBarcodes(ctx, q, numToCreate)
+			if err != nil {
+				return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
+			}
+			_, err = q.Exec(ctx, `
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
-				SELECT $1, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert'
-				FROM generate_series(1, $2)
-			`, titelID, numToCreate)
+				SELECT $1, unnest($2::text[]), true, 'Automatisch generiert'
+			`, titelID, barcodes)
 			if err != nil {
 				return fmt.Errorf("fehler beim generieren von exemplaren im batch: %w", err)
 			}
