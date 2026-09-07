@@ -446,6 +446,7 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 			// und braucht keine Spur.
 			s.auditiereLmfPlan(r, auditLmfPlanGespeichert, art, stand.Plan.ID, angepasst)
 		}
+		s.meldeLmfPlanGeaendert()
 		RespondJSON(w, http.StatusOK, LmfPlanSpeicherAntwort{LmfPlanStand: stand, Ausfaelle: ausfaelle, FristenAngepasst: angepasst})
 		return nil
 	})
@@ -562,6 +563,7 @@ func (s *Server) DeleteLmfPlanHandler() http.HandlerFunc {
 		// Auch das Verwerfen eines Entwurfs wird protokolliert: Es löscht einen Plan, den
 		// jemand gebaut hat, und die Antwort nennt nur eine Zahl.
 		s.auditiereLmfPlan(r, auditLmfPlanVerworfen, art, st.Plan.ID, angepasst)
+		s.meldeLmfPlanGeaendert()
 		RespondJSON(w, http.StatusOK, map[string]int64{"fristen_angepasst": angepasst})
 		return nil
 	})

@@ -8,6 +8,7 @@
 	import Button from '../ui/Button.svelte';
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
 	import * as dienst from '../../lmfplanDienst.js';
+	import { abonniere } from '../../liveEvents.js';
 
 	/** @type {any[]} */
 	let termine = $state([]);
@@ -16,16 +17,27 @@
 	let laedt = $state(true);
 	let fehler = $state('');
 
-	onMount(async () => {
+	async function hole() {
 		try {
 			const plan = await dienst.ladePlan();
 			termine = plan.termine;
 			eingangsjahrgaenge = plan.eingangsjahrgaenge ?? [];
+			fehler = '';
 		} catch (e) {
 			fehler = `${e}`;
 		} finally {
 			laedt = false;
 		}
+	}
+
+	onMount(() => {
+		hole();
+		// „Immer auf dem aktuellen Stand" galt bisher nur im Moment des Öffnens: Im
+		// Lehrerzimmer läuft diese Seite nebenbei, und eine verschobene Stunde erschien
+		// erst nach F5. Nur abonnieren, nicht verbinden — die Leitung gehört der Sitzung
+		// (liveEvents.js). Das Signal trägt keine Daten; geholt wird über den eigenen
+		// Endpunkt, der nur veröffentlichte Pläne kennt.
+		return abonniere('lmf-plan', () => hole());
 	});
 </script>
 

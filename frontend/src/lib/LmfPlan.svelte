@@ -14,7 +14,9 @@
      06.09.2026 in lmfplanPlaner.svelte.js. -->
 <script>
 	import { onMount, untrack } from 'svelte';
+	import { abonniere } from './liveEvents.js';
 	import PageShell from './components/layout/PageShell.svelte';
+	import Button from './components/ui/Button.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import LmfPlanKopf from './components/lmfplan/LmfPlanKopf.svelte';
 	import LmfPlanRahmen from './components/lmfplan/LmfPlanRahmen.svelte';
@@ -52,9 +54,15 @@
 	);
 
 	// Nicht `onMount(planer.lade)`: Svelte nähme die zurückgegebene Zusage als
-	// Aufräum-Funktion.
+	// Aufräum-Funktion. Die Abmeldung des Abonnements IST die Aufräum-Funktion.
+	//
+	// Zwei Bibliothekskräfte bauen an derselben Reihenfolge — bisher erfuhr keine von
+	// der anderen, bis sie neu lud, und wer danach speicherte, überschrieb den fremden
+	// Stand. Nur abonnieren, nicht verbinden (liveEvents.js). Das Nachladen entscheidet
+	// `fremdesSignal`: still, solange hier nichts Ungespeichertes steht.
 	onMount(() => {
 		planer.lade();
+		return abonniere('lmf-plan', () => planer.fremdesSignal());
 	});
 </script>
 
@@ -72,6 +80,21 @@
 		onspeichern={planer.speichern}
 		onveroeffentlichen={planer.veroeffentlichen}
 	/>
+
+	{#if z.fremdeAenderung}
+		<!-- Kein Dialog und kein automatisches Nachladen: Hier steht ungespeicherte Arbeit,
+		     und beides nähme sie weg. Wer neu lädt, entscheidet selbst. -->
+		<div
+			class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-surface-container px-4 py-3"
+			role="status"
+		>
+			<p class="text-sm text-on-surface-variant">
+				Der Plan wurde an einem anderen Platz geändert. Hier stehen ungespeicherte Änderungen —
+				deshalb wurde nichts überschrieben.
+			</p>
+			<Button variant="secondary" onclick={planer.lade}>Neu laden und verwerfen</Button>
+		</div>
+	{/if}
 
 	{#if z.laedt}
 		<div class="flex items-center justify-center py-12">

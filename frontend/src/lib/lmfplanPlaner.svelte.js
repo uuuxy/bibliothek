@@ -38,7 +38,11 @@ export function erzeugePlaner() {
 		speichert: false,
 		// Gescheitertes Laden ist ein eigener Zustand, kein leerer Plan (ui/LadeFehler.svelte):
 		// sonst ersetzte „Plan speichern" den echten Plan durch die Regel-Reihenfolge.
-		ladeFehler: false
+		ladeFehler: false,
+		// An einem ANDEREN Platz wurde der Plan geändert, während hier ungespeicherte
+		// Arbeit steht. Dann wird NICHT nachgeladen (das würfe sie weg), sondern
+		// hingewiesen — siehe fremdesSignal().
+		fremdeAenderung: false
 	});
 
 	// `ladeNr` ist dieselbe Sequenznummer wie in der Vorschau (Rasterfrage 6) — der
@@ -49,10 +53,38 @@ export function erzeugePlaner() {
 	// überschrieb. Der Zustand heilte nicht: Die Vorschau rechnete die fremde Reihenfolge
 	// anstandslos durch, die Tabelle sah stimmig aus.
 	let ladeNr = 0;
+	/**
+	 * Steht hier Arbeit, die der Server nicht kennt? Verglichen wird der Entwurf gegen
+	 * den, der aus dem geladenen Stand entsteht — dieselbe Ableitung, die `lade()`
+	 * benutzt. Kein eigenes „schmutzig"-Flag an jeder Bearbeitung: Das wäre eine zweite
+	 * Wahrheit über denselben Sachverhalt, und jede vergessene Stelle liesse es lügen.
+	 */
+	function hatUngespeichertes() {
+		if (!zustand.stand) return false;
+		return JSON.stringify(zustand.entwurf) !== JSON.stringify(dienst.entwurfAus(zustand.stand));
+	}
+
+	/**
+	 * Der Plan wurde anderswo geändert (SSE, siehe api/lmf_plan_live.go).
+	 *
+	 * Stilles Nachladen ist hier NICHT immer richtig: `lade()` setzt den Entwurf auf den
+	 * Server-Stand zurück, und wer gerade eine Reihenfolge zusammengezogen hat, verlöre
+	 * sie ohne ein Wort. Deshalb nur nachladen, wenn nichts Ungespeichertes offen ist;
+	 * sonst stehen lassen und sagen, dass es einen neueren Stand gibt.
+	 */
+	function fremdesSignal() {
+		if (hatUngespeichertes()) {
+			zustand.fremdeAenderung = true;
+			return;
+		}
+		lade();
+	}
+
 	async function lade() {
 		const meine = ++ladeNr;
 		const meineArt = zustand.art;
 		zustand.laedt = true;
+		zustand.fremdeAenderung = false;
 		// Alles, was am vorigen Plan hing, geht zurück auf Anfang. Sonst stünden die Plätze
 		// des anderen Plans in der Tabelle, bis die neue Vorschau kommt (250 ms + Rundlauf)
 		// — und ein Klick auf eine Datumszelle nähme genau diesen fremden Platz als festen
@@ -182,6 +214,8 @@ export function erzeugePlaner() {
 	return {
 		zustand,
 		lade,
+		fremdesSignal,
+		hatUngespeichertes,
 		waehleArt,
 		vorschau,
 		klasseHinein,
