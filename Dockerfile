@@ -20,7 +20,7 @@ RUN npm run build
 # die verwundbaren Pakete ins Binary (GOTOOLCHAIN=local laedt nichts nach). Beim
 # naechsten Go-Bump go.mod UND diese Zeile ziehen — seit 31.08.2026 erzwingt
 # docs/umgebung_paritaet_test.go die Paarung (Dependabot hebt nur diese Zeile!).
-FROM golang:1.27.0-alpine AS backend-builder
+FROM golang:1.27.1-alpine AS backend-builder
 WORKDIR /app
 
 # Disable Go workspace mode to build using root go.mod directly
