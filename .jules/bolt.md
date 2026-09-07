@@ -39,3 +39,9 @@
 ## 2026-08-24 - Optimize queryBestandKennzahlen performance
 **Learning:** Found a suboptimal `LEFT JOIN` subquery in `queryBestandKennzahlen` (`api/stats.go`) that counted active loans. When the dataset scales, executing this nested loop left join directly inside the FROM clause leads to an inefficient query plan in PostgreSQL, resulting in high CPU usage and slow response times. Simply removing `DISTINCT` to attempt an optimization is extremely dangerous as it duplicates rows and breaks the aggregations entirely.
 **Action:** Extract the subquery into a Common Table Expression (CTE) `WITH aktive_ausleihen AS (SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL)`. This prevents the planner from executing a suboptimal nested loop left join and allows a highly efficient parallel hash join while safely preserving the logic.
+## 2025-02-28 - Avoid unconditional slice allocations in variadic appends
+**Learning:** In high-frequency functions like database scanners, using `append(ziele, zusatz...)` when `zusatz` is empty causes unnecessary allocation overhead or prevents compiler optimizations.
+**Action:** Always check `if len(zusatz) > 0` before appending variadic arguments to a base slice in hot paths.
+## 2025-02-28 - Avoid unconditional slice allocations in variadic appends
+**Learning:** In high-frequency functions like database scanners, using `append(ziele, zusatz...)` when `zusatz` is empty causes unnecessary allocation overhead or prevents compiler optimizations.
+**Action:** Always check `if len(zusatz) > 0` before appending variadic arguments to a base slice in hot paths.
