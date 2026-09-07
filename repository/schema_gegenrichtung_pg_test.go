@@ -55,8 +55,16 @@ var fkAktionenBestand = []string{
 	// rückwirkend das Ergebnis abgeschlossener Durchgänge — neben einem
 	// verloren_gemeldet, das feststand. Migration 103 friert die Zahl beim Abschluss ein.
 	"CASCADE  inventur_erfassungen.exemplar_id -> buecher_exemplare",
-	// Noch nicht befragt — beim nächsten Anfassen des jeweiligen Pfades.
+	// Befragt am 07.09.2026: Der Elternteil hat KEINEN Löschweg — kein DELETE auf
+	// bestellungen_verlauf im ganzen Go-Code, keine Route, kein Cron. Der CASCADE ruht.
+	// Wer je „Bestellung löschen" baut, muss wissen: Die Positionen gehen mit, die
+	// Exemplare verlieren nur ihren Verweis (SET NULL unten).
 	"CASCADE  bestellungen_positionen.bestellung_id -> bestellungen_verlauf",
+	// Befragt am 07.09.2026: Ebenfalls ohne Löschweg — die Anwendung löscht nie eine
+	// Inventur-Sitzung, auch keine Aufbewahrungsfrist tut es. Beide CASCADEs ruhen. Wer
+	// je „Durchgang löschen" baut, löscht damit die Erfassungen UND den Fehlbestand
+	// dieses Durchgangs — seit Migration 103 auch die eingefrorene Zahl. Das gehört dann
+	// gesagt, nicht nur getan.
 	"CASCADE  inventur_erfassungen.session_id -> inventur_sessions",
 	"CASCADE  inventur_verluste.session_id -> inventur_sessions",
 	// Befragt am 06.09.2026: Das Foto ist PII und MUSS mit dem Kind fallen; beim
@@ -95,7 +103,11 @@ var fkAktionenBestand = []string{
 	// Bestätigungs-Link und Etiketten-Verhalten hängen — ohne Rückfrage und ohne Meldung.
 	// Seit 07.09. weist der Handler das ab (api/supplier_handler.go).
 	"SET NULL  bestellungen_verlauf.lieferant_id -> lieferanten",
+	// Befragt am 07.09.2026: Elternteil ohne Löschweg (siehe CASCADE oben) — ruht.
 	"SET NULL  buecher_exemplare.bestellung_id -> bestellungen_verlauf",
+	// Befragt am 07.09.2026: Sauber. Der Lesepfad nimmt den Titel als *string (kein
+	// NULL-Scan), und das Anliegen hält den Titeltext als eigene Abschrift
+	// (titel_text) — der Wunsch bleibt lesbar, wenn der Titel fällt (anliegen_repo.go).
 	"SET NULL  lehrer_anliegen.titel_id -> buecher_titel",
 	// Befragt am 06.09.2026: Genau dieser SET NULL machte die Forderung in der Rechnung
 	// unsichtbar, solange dort INNER JOIN stand (ce875654).
