@@ -37,8 +37,11 @@ func lageEingerichtet() Lage {
 		OeffentlicheAdresse: "https://flasch3.herzog-dupont.de",
 		SmtpHost:            "srv1.philipp-reis-schule.de",
 		DemoSchueler:        0,
-		RechteLive:          rechteWieVorgabe(),
-		AdminKonten:         []string{"Peter Flasch (pflasch@philipp-reis-schule.de)"},
+		DemoExemplare:       0,
+		// Lieferanten: erhoben, keiner trägt eine Kennung des alten Seeds.
+		ErfundeneLieferanten: []string{},
+		RechteLive:           rechteWieVorgabe(),
+		AdminKonten:          []string{"Peter Flasch (pflasch@philipp-reis-schule.de)"},
 		// Klassen-Drift (F3): erhoben und leer = alles verbunden.
 		KlassenOhneLehrkraft:  []string{},
 		VerwaisteZuordnungen:  []string{},
@@ -204,6 +207,29 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Demo-Daten",
 			stufe:    StufeWarnung,
 			enthaelt: "2000",
+		},
+		{
+			// Halber Cleanup: Schüler weg, Exemplare noch da — bis 07.09.2026 grün.
+			name:     "Demo-Exemplare ohne Demo-Schüler",
+			aendere:  func(l *Lage) { l.DemoExemplare = 300 },
+			bereich:  "Demo-Daten",
+			stufe:    StufeWarnung,
+			enthaelt: "300 Demo-Exemplare",
+		},
+		{
+			// Der alte Programmstart-Seed: Bestellung geht raus, Bücher kommen nie.
+			name:     "erfundener Lieferant im Bestand",
+			aendere:  func(l *Lage) { l.ErfundeneLieferanten = []string{"Klett Verlag"} },
+			bereich:  "Lieferanten",
+			stufe:    StufeKritisch,
+			enthaelt: "Klett Verlag",
+		},
+		{
+			name:     "Lieferantenliste nicht lesbar",
+			aendere:  func(l *Lage) { l.ErfundeneLieferanten = nil },
+			bereich:  "Lieferanten",
+			stufe:    StufeWarnung,
+			enthaelt: "nicht geprüft",
 		},
 		{
 			// Die Kollegium-Wunde: Der Seed fasst bestehende Zeilen nie an — ein im

@@ -159,12 +159,6 @@ func setupDatabase(ctx context.Context, dsn string) *db.Database {
 		os.Exit(1)
 	}
 
-	slog.Info("Initializing suppliers...")
-	if err := database.InitLieferanten(ctx); err != nil {
-		slog.Error("Database supplier initialization failed", "error", err)
-		os.Exit(1)
-	}
-
 	slog.Info("Bootstrapping initial admin (if database is empty)...")
 	if err := database.InitAdmin(ctx); err != nil {
 		slog.Error("Admin bootstrapping failed", "error", err)

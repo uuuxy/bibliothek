@@ -14,11 +14,6 @@ const (
 		ON CONFLICT (role, permission) DO NOTHING
 	`
 
-	seedLieferantenSQL = `
-		INSERT INTO lieferanten (name, email, kundennummer)
-		VALUES ($1, $2, $3)
-	`
-
 	insertInitialAdminSQL = `
 		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
 		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
@@ -251,36 +246,17 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 	return nil
 }
 
-// InitLieferanten seeds the lieferanten table with default values when it is empty.
-// Die Tabelle selbst kommt aus schema.sql bzw. der Baseline — bis zum 07.09.2026 legte
-// diese Funktion sie per CREATE TABLE IF NOT EXISTS beim Start an (Migration 106).
-func (db *Database) InitLieferanten(ctx context.Context) error {
-	var count int
-	err := db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM lieferanten").Scan(&count)
-	if err != nil {
-		return fmt.Errorf("failed to query lieferanten count: %w", err)
-	}
-
-	if count == 0 {
-		defaults := []struct {
-			Name         string
-			Email        string
-			Kundennummer string
-		}{
-			{"Klett Verlag", "bestellung@klett.de", "K-99281"},
-			{"Cornelsen", "service@cornelsen.de", "C-88123"},
-			{"Westermann", "order@westermann.de", "W-77441"},
-		}
-
-		for _, d := range defaults {
-			_, err = db.Pool.Exec(ctx, seedLieferantenSQL, d.Name, d.Email, d.Kundennummer)
-			if err != nil {
-				return fmt.Errorf("failed to seed supplier default (%s): %w", d.Name, err)
-			}
-		}
-	}
-	return nil
-}
+// Bis zum 07.09.2026 stand hier InitLieferanten: Bei leerer Tabelle legte der erste Start
+// drei ERFUNDENE Geschäftspartner an (Klett/Cornelsen/Westermann mit ausgedachten
+// Adressen und Kundennummern). Der Bestellweg schickte die Mail wirklich dorthin, die
+// Historie meldete „gesendet", und keine Prüfung kannte den Unterschied zu echten Daten.
+// Lieferanten pflegt man in den Einstellungen; Migration 107 räumt die drei Zeilen ab,
+// und die Selbstprüfung (api/betriebsbereitschaft.go) meldet Reste als kritisch.
+//
+// Was der Boot heute anlegt, steht vollständig in der Selbstprüfung: Rechte-Vorgabe
+// (InitPermissions → Bereich „Rechte-Vorgabe"), erster Admin (InitAdmin → „Admin-Konten"),
+// SMTP-Übernahme (mail_settings → „Mailversand"). Demo-Daten kommen nur aus
+// scripts/seed_demo.sql, nie aus dem Programmstart.
 
 // InitAdmin checks if the users table is empty and bootstraps the first admin
 // using the INITIAL_ADMIN_EMAIL environment variable.

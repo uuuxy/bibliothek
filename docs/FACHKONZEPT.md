@@ -461,8 +461,12 @@ nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Contai
 und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
 raus, nur ohne den Link, um dessentwillen es sie gibt).
 
-**Geprüft werden vierzehn Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
-(IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten, Admin-Konten
+**Geprüft werden fünfzehn Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
+(IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten (Schüler UND
+Exemplare aus `seed_demo.sql`), Lieferanten (seit 07.09.2026, kritisch: Reste der drei
+erfundenen Geschäftspartner, die der Programmstart bis Migration 107 bei leerer Tabelle
+anlegte — eine Bestellung an so einen Eintrag ging wirklich an eine ausgedachte Adresse
+und meldete „gesendet"), Admin-Konten
 (wer hat Vollzugriff und erhält die Kritisch-Alarme — der Alarm-Mail-Vorfall vom
 16.08.2026 zeigte vier aktive Admins, drei davon dem Betreiber unbekannt; Konten-Anlage
 und -Änderung werden seither auditiert), Rechte-Vorgabe

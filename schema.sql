@@ -1155,7 +1155,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('103_inventur_erfasst_einfrieren.sql'),
 ('104_sys_barcode_seq_deklariert.sql'),
 ('105_sys_barcode_seq_abgeschafft.sql'),
-('106_boot_schema_in_migration.sql')
+('106_boot_schema_in_migration.sql'),
+('107_seed_lieferanten_abgeschafft.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

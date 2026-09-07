@@ -88,8 +88,14 @@ type Lage struct {
 	OeffentlicheAdresse string
 	SmtpHost            string
 
-	// Bestand
-	DemoSchueler int
+	// Bestand: was scripts/seed_demo.sql angelegt hat (Schüler DEMO-S-, Exemplare DEMO-B-).
+	DemoSchueler  int
+	DemoExemplare int
+
+	// Lieferanten mit einer Kennung des alten Programmstart-Seeds (db/seed.go bis
+	// 07.09.2026, Migration 107): erfundene Adresse oder erfundene Kundennummer. Eine
+	// Bestellung an so einen Eintrag geht wirklich raus — an niemanden. nil: nicht lesbar.
+	ErfundeneLieferanten []string
 
 	// Live-Rechte (role_permissions) als Rolle→Recht→erlaubt. nil heisst: nicht
 	// lesbar — bewusst unterschieden von der leeren Map, denn „leer" würde jede
@@ -197,6 +203,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeBestelllink(l),
 		pruefeMailversand(l),
 		pruefeDemodaten(l),
+		pruefeErfundeneLieferanten(l),
 		pruefeRechteVorgabe(l),
 		pruefeAdminKonten(l),
 		pruefeKlassenDrift(l),
@@ -636,16 +643,43 @@ func pruefeMailversand(l Lage) Befund {
 
 func pruefeDemodaten(l Lage) Befund {
 	b := Befund{Bereich: "Demo-Daten"}
-	if l.DemoSchueler == 0 {
+	if l.DemoSchueler == 0 && l.DemoExemplare == 0 {
 		b.Stufe = StufeOK
 		b.Befund = "Keine Demo-Datensätze im Bestand."
 		return b
 	}
 	b.Stufe = StufeWarnung
-	b.Befund = strconv.Itoa(l.DemoSchueler) + " Demo-Schüler im Bestand."
+	b.Befund = strconv.Itoa(l.DemoSchueler) + " Demo-Schüler und " +
+		strconv.Itoa(l.DemoExemplare) + " Demo-Exemplare im Bestand."
 	b.Folge = "Statistik, Mahnwesen und Bestellbedarf mischen echte Zahlen mit Fiktion. " +
 		"Demo-Eltern-Adressen enden auf example.invalid, ein Mahnlauf erreicht sie nie."
 	b.Abhilfe = "Vor dem Echtstart den DEMO-Block aus scripts/seed_demo.sql (Abschnitt 1) ausführen."
+	return b
+}
+
+// pruefeErfundeneLieferanten: Bis zum 07.09.2026 legte der erste Programmstart drei
+// ausgedachte Geschäftspartner an. Wer einen davon im Bestellformular wählte, bekam eine
+// Historie mit „gesendet" — und keine Bücher. Kritisch, nicht Warnung: Der Schaden ist
+// still und trifft eine echte Bestellung.
+func pruefeErfundeneLieferanten(l Lage) Befund {
+	b := Befund{Bereich: "Lieferanten"}
+	switch {
+	case l.ErfundeneLieferanten == nil:
+		b.Stufe = StufeWarnung
+		b.Befund = "Lieferantenliste nicht lesbar — nicht geprüft."
+		b.Folge = "Ob noch erfundene Lieferanten aus dem alten Programmstart im Bestand stehen, ist offen."
+		b.Abhilfe = abhilfeDbNeuLaden
+	case len(l.ErfundeneLieferanten) > 0:
+		b.Stufe = StufeKritisch
+		b.Befund = "Erfundene Lieferanten aus dem alten Programmstart im Bestand: " +
+			strings.Join(l.ErfundeneLieferanten, ", ") + "."
+		b.Folge = "Eine Bestellung an diesen Eintrag geht wirklich an die ausgedachte Adresse, mit einer " +
+			"Kundennummer, die es nicht gibt. Die Historie meldet „gesendet“, die Bücher kommen nie."
+		b.Abhilfe = "Einstellungen → Lieferanten: Eintrag löschen oder mit den echten Daten des Händlers überschreiben."
+	default:
+		b.Stufe = StufeOK
+		b.Befund = "Keine erfundenen Lieferanten im Bestand."
+	}
 	return b
 }
 

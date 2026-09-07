@@ -64,7 +64,6 @@ var phantomBestand = map[string]int{
 	"db/migrations.go:applyMigration":                         2,
 	"db/migrations.go:ensureBaselineSchema":                   1,
 	"db/migrations.go:ensureMigrationsTable":                  1,
-	"db/seed.go:InitLieferanten":                              1,
 	// 3 seit 03.09.2026: zweite Vererbung (manage_students_admin → merge_students), ebenfalls
 	// INSERT … ON CONFLICT DO NOTHING — 0 Zeilen beim zweiten Start sind der Normalfall.
 	"db/seed.go:seedRolePermissions":                           3,

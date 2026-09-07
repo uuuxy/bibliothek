@@ -98,6 +98,13 @@ func (s *Server) sammleLage(
 	if anzahl, err := zustandRepo.ZaehleDemoSchueler(ctx); err == nil {
 		lage.DemoSchueler = anzahl
 	}
+	if anzahl, err := zustandRepo.ZaehleDemoExemplare(ctx); err == nil {
+		lage.DemoExemplare = anzahl
+	}
+	// Bei einem Fehler bleibt die Liste nil — „nicht lesbar", nicht „keiner".
+	if namen, err := zustandRepo.ErfundeneLieferanten(ctx); err == nil {
+		lage.ErfundeneLieferanten = namen
+	}
 
 	// Bei einem Fehler bleibt RechteLive nil — die Prüfung meldet dann „nicht
 	// lesbar" statt fälschlich jede Vorgabe-Zeile als fehlend zu deklarieren.
