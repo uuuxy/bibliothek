@@ -54,8 +54,6 @@ func TestCreateBook(t *testing.T) {
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare WHERE titel_id = \$1 AND ist_ausgesondert = false`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
-		mock.ExpectExec(`CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`).
-			WillReturnResult(pgxmock.NewResult("CREATE", 0))
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
 			WithArgs("book-123", 10).
 			WillReturnResult(pgxmock.NewResult("INSERT", 10))
@@ -158,8 +156,6 @@ func TestUpsertBook(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
 		// Upsert calls legeImportExemplareAn
-		mock.ExpectExec(`CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`).
-			WillReturnResult(pgxmock.NewResult("CREATE", 0))
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
 			WithArgs([]string{book.ISBN}, []int32{int32(book.Stock)}).
 			WillReturnResult(pgxmock.NewResult("INSERT", 2))
@@ -258,8 +254,6 @@ func TestUpsertBooksBatch(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("INSERT", 1))
 
 		// Batch Upsert calls legeImportExemplareAn
-		mock.ExpectExec(`CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`).
-			WillReturnResult(pgxmock.NewResult("CREATE", 0))
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
 			WithArgs([]string{books[0].ISBN}, []int32{int32(books[0].Stock)}).
 			WillReturnResult(pgxmock.NewResult("INSERT", 2))

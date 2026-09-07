@@ -89,7 +89,7 @@ var phantomBestand = map[string]int{
 	"inventur/datenbank_klassen.go:NormalizeAllClasses":                 4,
 	"inventur/datenbank_klassen.go:UpdateClassBooks":                    2,
 	"inventur/datenbank_klassen.go:insertClassBookBindings":             1,
-	"inventur/db_books_create.go:legeImportExemplareAn":                 2,
+	"inventur/db_books_create.go:legeImportExemplareAn":                 1,
 	"inventur/db_books_delete.go:DeleteBooks":                           2,
 	"inventur/db_books_delete_spur.go:protokolliereGeloeschteExemplare": 1,
 	"inventur/db_books_delete_spur.go:protokolliereOffeneAusleihen":     1,
@@ -101,7 +101,7 @@ var phantomBestand = map[string]int{
 	// Dritte Zeile derselben Bauart (Frage 12 „Gegenrichtung Schema", 06.09.2026):
 	// ein INSERT ins Protokoll je Zeile, die der CASCADE gleich nimmt.
 	"repository/titel_loeschen_wartende.go:ProtokolliereWartendeBezuege": 1,
-	"inventur/db_books_update.go:syncBookStock":                          3,
+	"inventur/db_books_update.go:syncBookStock":                          2,
 	"repository/systematik_sicherung.go:registriereFach":                 2,
 	"jobs/cron_dsgvo.go:RunGDPRAnonymizeOldData":                         1,
 	"jobs/restore_probe.go:fuehreRestoreProbeAus":                        3,

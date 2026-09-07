@@ -127,9 +127,6 @@ func TestSyncBookStock(t *testing.T) {
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(2))
 
-		mock.ExpectExec(`CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`).
-			WillReturnResult(pgxmock.NewResult("CREATE", 0))
-
 		mock.ExpectExec(`INSERT INTO buecher_exemplare`).
 			WithArgs("book-123", 3). // 5 - 2 = 3
 			WillReturnResult(pgxmock.NewResult("INSERT", 3))

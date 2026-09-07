@@ -267,8 +267,9 @@ func (repo *BookRepository) UpsertBooksBatch(ctx context.Context, books []Book) 
 
 // legeImportExemplareAn erzeugt je Import-Zeile stück-viele Exemplare mit
 // SYS-Barcode (gleiche Mechanik wie syncBookStock, aber additiv je Zeile).
+// sys_barcode_seq wird NICHT hier angelegt — sie kommt aus Migration 104 (bis
+// 07.09.2026 stand hier ein CREATE SEQUENCE, das in der Transaktion sperrte).
 func (repo *BookRepository) legeImportExemplareAn(ctx context.Context, q dbSchreiber, isbns []string, stueck []int32) error {
-	_, _ = q.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`) //nolint:errcheck
 	_, err := q.Exec(ctx, `
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
 		SELECT t.id, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert (Sammelimport)'

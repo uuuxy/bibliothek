@@ -131,7 +131,9 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q dbSchreiber, ti
 	if expectedStock > currentStock {
 		numToCreate := expectedStock - currentStock
 		if numToCreate > 0 {
-			_, _ = q.Exec(ctx, `CREATE SEQUENCE IF NOT EXISTS sys_barcode_seq START 100000`) //nolint:errcheck
+			// sys_barcode_seq stammt aus Migration 104. Bis zum 07.09.2026 legte diese
+			// Stelle sie selbst per DDL an — in der laufenden Transaktion, wo sie bis
+			// zum Commit sperrte, solange die Sequenz noch fehlte.
 			_, err := q.Exec(ctx, `
 				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz)
 				SELECT $1, 'SYS-' || nextval('sys_barcode_seq')::text, true, 'Automatisch generiert'
