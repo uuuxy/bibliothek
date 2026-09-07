@@ -8,31 +8,10 @@ import (
 )
 
 const (
-	createPgTrgmExtensionSQL = "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-
-	createRolePermissionsTableSQL = `
-		CREATE TABLE IF NOT EXISTS role_permissions (
-			role VARCHAR(50) NOT NULL,
-			permission VARCHAR(100) NOT NULL,
-			allowed BOOLEAN NOT NULL DEFAULT false,
-			PRIMARY KEY (role, permission)
-		)
-	`
-
 	seedRolePermissionSQL = `
 		INSERT INTO role_permissions (role, permission, allowed)
 		VALUES ($1, $2, $3)
 		ON CONFLICT (role, permission) DO NOTHING
-	`
-
-	createLieferantenTableSQL = `
-		CREATE TABLE IF NOT EXISTS lieferanten (
-			id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-			name VARCHAR(255) NOT NULL,
-			email VARCHAR(255) NOT NULL,
-			kundennummer VARCHAR(100) NOT NULL,
-			erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-		)
 	`
 
 	seedLieferantenSQL = `
@@ -47,31 +26,16 @@ const (
 	`
 )
 
-// InitPermissions initializes the role_permissions schema, runs db migrations, and seeds defaults.
+// InitPermissions schreibt die Rechte-Vorgabe (nur fehlende Zeilen, siehe RechteVorgabe).
+//
+// Nur noch Daten: Bis zum 07.09.2026 führte diese Funktion bei jedem Start Schema-
+// Anweisungen aus — CREATE EXTENSION pg_trgm, fünf GIN-Indexe, CREATE TABLE
+// role_permissions und ein ALTER TABLE für eine ENUM-Altlast. role_permissions stand
+// dabei in keiner Migration und keiner Zeile von schema.sql; eine frische Anlage bekam
+// die Rechte-Tabelle allein dadurch, dass der Go-Prozess sie erzeugte. Das Schema kommt
+// jetzt aus Migration 106 bzw. schema.sql; das Gate inventur/kein_ddl_im_schreibpfad_test.go
+// hält DDL aus dem Boot heraus.
 func (db *Database) InitPermissions(ctx context.Context) error {
-	// 1. Enable pg_trgm extension
-	_, err := db.Pool.Exec(ctx, createPgTrgmExtensionSQL)
-	if err != nil {
-		return fmt.Errorf("failed to create pg_trgm extension: %w", err)
-	}
-
-	// 2. Create pg_trgm GIN indexes
-	if err := db.createTrgmIndexes(ctx); err != nil {
-		return err
-	}
-
-	// 3. Migrate role_permissions table role column to VARCHAR(50) if it's enum
-	if err := db.migrateRolePermissionsColumn(ctx); err != nil {
-		return err
-	}
-
-	// 4. Create role_permissions table
-	_, err = db.Pool.Exec(ctx, createRolePermissionsTableSQL)
-	if err != nil {
-		return fmt.Errorf("failed to create role_permissions table: %w", err)
-	}
-
-	// 5. Seed default role permissions with uppercase role names.
 	return db.seedRolePermissions(ctx)
 }
 
@@ -287,49 +251,12 @@ func (db *Database) seedRolePermissions(ctx context.Context) error {
 	return nil
 }
 
-// createTrgmIndexes legt die pg_trgm-GIN-Indizes für die Fuzzy-Suche an (idempotent).
-func (db *Database) createTrgmIndexes(ctx context.Context) error {
-	queries := []string{
-		"CREATE INDEX IF NOT EXISTS idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_buecher_isbn_trgm ON buecher_titel USING gin (isbn gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);",
-		"CREATE INDEX IF NOT EXISTS idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);",
-	}
-	for _, q := range queries {
-		if _, err := db.Pool.Exec(ctx, q); err != nil {
-			return fmt.Errorf("failed to create GIN index: %w", err)
-		}
-	}
-	return nil
-}
-
-// migrateRolePermissionsColumn hebt eine evtl. noch als ENUM angelegte role-Spalte auf
-// VARCHAR(50) an (idempotent, nur bei USER-DEFINED-Typ).
-func (db *Database) migrateRolePermissionsColumn(ctx context.Context) error {
-	var dataType string
-	err := db.Pool.QueryRow(ctx, `
-		SELECT data_type
-		FROM information_schema.columns
-		WHERE table_name = 'role_permissions' AND column_name = 'role'
-	`).Scan(&dataType)
-	if err == nil && dataType == "USER-DEFINED" {
-		if _, err := db.Pool.Exec(ctx, "ALTER TABLE role_permissions ALTER COLUMN role TYPE VARCHAR(50);"); err != nil {
-			return fmt.Errorf("failed to alter role_permissions.role column type: %w", err)
-		}
-	}
-	return nil
-}
-
-// InitLieferanten initializes the lieferanten table and seeds it with default values.
+// InitLieferanten seeds the lieferanten table with default values when it is empty.
+// Die Tabelle selbst kommt aus schema.sql bzw. der Baseline — bis zum 07.09.2026 legte
+// diese Funktion sie per CREATE TABLE IF NOT EXISTS beim Start an (Migration 106).
 func (db *Database) InitLieferanten(ctx context.Context) error {
-	_, err := db.Pool.Exec(ctx, createLieferantenTableSQL)
-	if err != nil {
-		return fmt.Errorf("failed to create lieferanten table: %w", err)
-	}
-
 	var count int
-	err = db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM lieferanten").Scan(&count)
+	err := db.Pool.QueryRow(ctx, "SELECT COUNT(*) FROM lieferanten").Scan(&count)
 	if err != nil {
 		return fmt.Errorf("failed to query lieferanten count: %w", err)
 	}

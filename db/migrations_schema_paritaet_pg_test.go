@@ -52,6 +52,19 @@ var paritaetsAspekte = []struct{ name, query string }{
 	{"Sequenz", `SELECT sequencename FROM pg_sequences WHERE schemaname = 'public'`},
 }
 
+// bootRolePermissionsSQL ist das SQL, mit dem db/seed.go role_permissions bis zum
+// 07.09.2026 bei jedem Start anlegte — wörtlich eingefroren, weil der gewachsene Weg
+// diese Tabelle historisch genau so bekam (vor Migration 055). Migration 106 legt sie
+// heute identisch an; weicht eine der beiden Fassungen ab, meldet es der Diff unten.
+const bootRolePermissionsSQL = `
+		CREATE TABLE IF NOT EXISTS role_permissions (
+			role VARCHAR(50) NOT NULL,
+			permission VARCHAR(100) NOT NULL,
+			allowed BOOLEAN NOT NULL DEFAULT false,
+			PRIMARY KEY (role, permission)
+		)
+	`
+
 func TestSchemaParitaet_GewachsenGleichFrisch(t *testing.T) {
 	dsn := os.Getenv(pgtest.EnvVar)
 	if dsn == "" {
@@ -71,12 +84,15 @@ func TestSchemaParitaet_GewachsenGleichFrisch(t *testing.T) {
 	// Gewachsener Pfad: eingefrorene Baseline, dann der ECHTE Runner über migrations/.
 	// (ensureBaselineSchema greift nicht: die Baseline bringt schema_migrations mit.)
 	//
-	// role_permissions kommt aus dem Go-Startup (db/seed.go), nicht aus einer Migration —
-	// auf einer gewachsenen Anlage existierte die Tabelle aus früheren Boots, BEVOR
-	// Migration 055 sie voraussetzte. Der Replay komprimiert die Zeit und muss diese
-	// Startup-Tabelle deshalb vor dem Migrationslauf anlegen (dasselbe SQL wie der Boot).
+	// role_permissions kam bis zum 07.09.2026 aus dem Go-Startup (db/seed.go), nicht aus
+	// einer Migration — auf einer gewachsenen Anlage existierte die Tabelle aus früheren
+	// Boots, BEVOR Migration 055 sie voraussetzte. Der Replay komprimiert die Zeit und
+	// muss diese Startup-Tabelle deshalb vor dem Migrationslauf anlegen. Seit Migration
+	// 106 steht sie im Schema und der Boot führt kein DDL mehr aus; das historische
+	// Boot-SQL ist dafür HIER eingefroren (bootRolePermissionsSQL) — 106 läuft nach 055
+	// und kann nicht rückwirkend vor sie treten.
 	fuehreDateiAus(t, ctx, gewachsen, "testdata/schema_baseline_e5740b95.sql")
-	if _, err := gewachsen.Exec(ctx, createRolePermissionsTableSQL); err != nil {
+	if _, err := gewachsen.Exec(ctx, bootRolePermissionsSQL); err != nil {
 		t.Fatalf("role_permissions (Startup-Tabelle) anlegen: %v", err)
 	}
 	booteAnwendung(t, ctx, gewachsen)

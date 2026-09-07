@@ -132,6 +132,19 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- Rechte eine Rolle hat, steht in role_permissions (GROSS-Vokabular; die Middleware
 -- verbindet beide per UPPER(), siehe api/permission_middleware.go).
 
+-- Table: role_permissions (Rechte je Rolle). Der Inhalt kommt aus dem Seed
+-- (db.RechteVorgabe, ON CONFLICT DO NOTHING) — nur die Struktur steht hier. Bis zum
+-- 07.09.2026 stand diese Tabelle in KEINER Zeile von schema.sql und keiner Migration:
+-- Der Go-Prozess legte sie beim ersten Start an, und die Schema-Paritäts-Ratsche konnte
+-- das nicht sehen, weil derselbe Boot auf beiden verglichenen Seiten läuft
+-- (Migration 106; Gate an der Quelle: inventur/kein_ddl_im_schreibpfad_test.go).
+CREATE TABLE role_permissions (
+    role VARCHAR(50) NOT NULL,
+    permission VARCHAR(100) NOT NULL,
+    allowed BOOLEAN NOT NULL DEFAULT false,
+    PRIMARY KEY (role, permission)
+);
+
 
 -- Table: schueler (Students borrowing books)
 -- DSGVO Art. 5 Abs. 1 lit. c – Zweckbindung & Datensparsamkeit:
@@ -1141,7 +1154,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('102_ferien_schliesszeiten_ausgebaut.sql'),
 ('103_inventur_erfasst_einfrieren.sql'),
 ('104_sys_barcode_seq_deklariert.sql'),
-('105_sys_barcode_seq_abgeschafft.sql')
+('105_sys_barcode_seq_abgeschafft.sql'),
+('106_boot_schema_in_migration.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

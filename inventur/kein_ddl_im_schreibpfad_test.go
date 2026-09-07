@@ -43,12 +43,19 @@ func TestKeinDDLImSchreibpfad(t *testing.T) {
 	// nirgends vorkommen: Der Fund war ein CREATE, die Klasse ist größer.
 	ddl := regexp.MustCompile(`(?i)\b(CREATE|ALTER|DROP)\s+(SEQUENCE|TABLE|INDEX|VIEW|TYPE|SCHEMA|FUNCTION|TRIGGER)\b`)
 
-	// Bewusst die fachlichen Schreibpfade, nicht das ganze Repo. Draußen bleiben:
-	//   - db/ — Migrations-Runner und Seed stellen das Schema HER, das ist ihre Aufgabe.
-	//     (Dass db/seed.go zwei Tabellen anlegt, statt sie zu migrieren, ist ein eigener
-	//     Posten — siehe „Seed erreicht bestehende DB nie"; hier nicht mit erschlagen.)
-	//   - cmd/ — Werkzeuge wie die Restore-Probe bauen absichtlich ganze Schemata.
-	wurzeln := []string{".", "../api", "../repository", "../jobs"}
+	// Die fachlichen Schreibpfade UND der Boot (db/). Draußen bleibt nur cmd/ — Werkzeuge
+	// wie die Restore-Probe bauen absichtlich ganze Schemata. db/ stand bis zum 07.09.2026
+	// mit der Begründung „stellt das Schema her" außen vor; genau dort lagen aber die
+	// nächsten Funde derselben Klasse: db/seed.go legte role_permissions, lieferanten,
+	// die pg_trgm-Extension und fünf GIN-Indexe beim Start an — role_permissions in
+	// KEINER Migration und keiner Zeile von schema.sql (Migration 106).
+	wurzeln := []string{".", "../api", "../repository", "../jobs", "../db"}
+
+	// Einzelne Dateien, die DDL ausführen DÜRFEN — mit dem Grund daneben, damit die
+	// Liste nicht zur Ratschen-Lockerung verkommt (jede Erweiterung braucht einen Satz).
+	ausnahmen := map[string]string{
+		"db/migrations.go": "der Runner selbst: schema_migrations ist die Tabelle, die es VOR jeder Migration geben muss",
+	}
 
 	var funde []string
 	for _, wurzel := range wurzeln {
@@ -62,6 +69,9 @@ func TestKeinDDLImSchreibpfad(t *testing.T) {
 				continue
 			}
 			pfad := filepath.Join(wurzel, name)
+			if _, erlaubt := ausnahmen[filepath.Join(filepath.Base(wurzel), name)]; erlaubt {
+				continue
+			}
 			inhalt, err := os.ReadFile(pfad) //nolint:gosec // feste Repo-Pfade
 			if err != nil {
 				t.Fatalf("%s: %v", pfad, err)
