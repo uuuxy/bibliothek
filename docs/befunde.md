@@ -50,12 +50,6 @@ Zwei Regeln dazu:
   `src` und `e2e`, 07.09.2026); der Weg existiert nur im Backend und in seinen Tests.
   Aufgefallen beim Nummernkreis-Umbau (Migration 105); beides bewusst nicht mit
   entschieden — beim Verdrahten oder Entfernen in einem Zug klären.
-- **Zwei selbstgebaute Menüs auf `ui/Menue.svelte` umstellen (B).** Seit 06.09.2026 gibt es
-  das eine M3-Menü (Überlaufmenü des LMF-Planers: surface-container, 4-px-Ecken,
-  48-px-Einträge, Tastaturbedienung, Escape über `escapeSchliesst`). `MahnwesenDruckMenue`
-  und der Ausweis-Split-Button in `StudentProfileActions` sind ältere Eigenbauten in
-  Paletten-Farben ohne Pfeiltasten. Umstellen, wenn eine der Stellen ohnehin angefasst
-  wird; das Mahnwesen-Menü trägt ein Auswahlfeld im Menü und braucht dafür einen Slot.
 - **Trennlinien in Tabellen (C, Design-Frage).** M3 Lists: „Limit dividers to
   uncontained or complex lists, only when a stronger visual separation is necessary."
   Der LMF-Planer kommt seit 06.09.2026 ohne Zeilen-Trennlinie aus (48-px-Zeilen,
