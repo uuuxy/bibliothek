@@ -5,9 +5,9 @@
 	// POST /api/admin/class-books/add (klassenname wird serverseitig normalisiert).
 	import { apiFetch, apiClient } from '../../../../lib/apiFetch.js';
 	import { onMount } from 'svelte';
+	import Modal from '../../../../lib/Modal.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
-	import { escapeSchliesst } from '../../../../lib/components/ui/escapeSchliesst.js';
 
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();
@@ -58,25 +58,10 @@
 	}
 </script>
 
-<div
-	class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-	role="presentation"
-	onclick={(e) => {
-		// Der Treffer-Vergleich ersetzt das stopPropagation, das vorher am Dialog hing.
-		// Dort machte es das Dialog-Element zu einem Klickziel und verlangte damit
-		// tabindex und einen Tastaturweg — fuer einen Handler, der nichts tut, ausser
-		// ein Ereignis aufzuhalten. Hier gefragt ist ohnehin nur: Wurde der Hintergrund
-		// selbst getroffen?
-		if (e.target === e.currentTarget) onClose();
-	}}
->
-	<div
-		class="bg-white rounded-3xl shadow-xl w-full max-w-md p-6 space-y-5"
-		use:escapeSchliesst={onClose}
-		role="dialog"
-		aria-modal="true"
-		aria-label="Zum Klassensatz hinzufügen"
-	>
+<!-- Seit 07.09.2026 auf Modal.svelte (Register 05.09.): Hintergrund, Feld und
+     Escape stellt das Bauteil; der Name des Dialogs kommt als `beschriftung`. -->
+<Modal open={true} onclose={onClose} beschriftung="Zum Klassensatz hinzufügen">
+	<div class="p-6 space-y-5">
 		<h3 class="text-lg font-bold text-slate-900">Zum Klassensatz hinzufügen</h3>
 		<p class="text-sm text-slate-500">
 			{bookIds.length}
@@ -108,4 +93,4 @@
 			</Button>
 		</div>
 	</div>
-</div>
+</Modal>

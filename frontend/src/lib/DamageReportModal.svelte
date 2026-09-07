@@ -1,7 +1,12 @@
+<!-- @component DamageReportModal — Verlust oder Schaden an einem entliehenen Buch melden.
+
+     Seit 07.09.2026 auf Modal.svelte (Register 05.09.: elf Overlays bauten ihr Markup
+     selbst). Ebene „darueber": Der Dialog öffnet aus der Schülerakte heraus, die selbst
+     ein Overlay ist — auf der Grundebene läge er unsichtbar dahinter. -->
 <script>
+	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
-	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 	let { book, onCancel, onSubmit, isSubmitting } = $props();
 
 	let damageReason = $state('Verloren');
@@ -13,14 +18,12 @@
 </script>
 
 {#if book}
-	<div class="fixed inset-0 z-60 flex items-center justify-center p-4">
-		<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm pointer-events-none"></div>
-		<div
-			class="bg-white rounded-3xl shadow-2xl p-6 max-w-md w-full relative z-10 animate-fade-in"
-			use:escapeSchliesst={onCancel}
-		>
-			<h3 class="text-xl font-bold text-slate-800 mb-2">Verlust/Schaden melden</h3>
-			<p class="text-sm text-slate-500 mb-4">
+	<Modal open={true} onclose={onCancel} ebene="darueber" beschriftetDurch="schaden-titel">
+		<div class="p-6">
+			<h3 id="schaden-titel" class="text-xl font-bold text-on-surface mb-2">
+				Verlust/Schaden melden
+			</h3>
+			<p class="text-sm text-on-surface-variant mb-4">
 				Für <strong>{book.titel}</strong> ({book.barcode_id}). Die Ausleihe wird beendet und eine
 				Ersatzforderung an die Eltern generiert.
 			</p>
@@ -52,5 +55,5 @@
 				</div>
 			</div>
 		</div>
-	</div>
+	</Modal>
 {/if}
