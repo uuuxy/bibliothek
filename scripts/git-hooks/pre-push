@@ -125,11 +125,46 @@ else
 fi
 
 # 5. Trivy (Container Security)
+#
+# Mit Zeitlimit, seit der Scan am 07.09.2026 einen Push 50 Minuten lang festhielt:
+# `trivy config` holt vor der Prüfung sein Regelbündel aus einer Registry, und dieser
+# Abruf hing ohne Ausgabe und ohne Abbruch. Die Prüfung SELBST braucht Sekunden — sie
+# lief anschliessend mit dem Cache in unter zehn durch.
+#
+# Deshalb zwei Stufen statt eines unbegrenzten Wartens: erst der normale Lauf mit
+# Zeitlimit, und wenn der nicht rechtzeitig fertig wird, derselbe Scan mit dem
+# vorhandenen Regel-Cache (--skip-check-update). Das Gate bleibt damit scharf; nur
+# seine Regeln sind dann evtl. einen Tag alt, und genau das sagt es auch.
+# `timeout` gibt es auf macOS nicht — deshalb von Hand: Hintergrundlauf, Wecker, kill.
+mit_zeitlimit() {
+    local sekunden="$1"; shift
+    "$@" & local pid=$!
+    local i=0
+    while [ "$i" -lt "$sekunden" ]; do
+        kill -0 "$pid" 2>/dev/null || { wait "$pid"; return $?; }
+        sleep 1; i=$((i + 1))
+    done
+    kill -9 "$pid" 2>/dev/null
+    wait "$pid" 2>/dev/null
+    return 124
+}
+
 echo "[5/6] Führe Trivy (Container) aus..."
 if command -v trivy &> /dev/null; then
     if [ -f "Dockerfile" ]; then
-        if trivy config Dockerfile; then
+        mit_zeitlimit 90 trivy config Dockerfile
+        TRIVY_STATUS=$?
+        if [ "$TRIVY_STATUS" = "124" ]; then
+            echo -e "${YELLOW}⚠ Trivy brauchte länger als 90 s (vermutlich der Abruf des Regelbündels).${NC}"
+            echo -e "${YELLOW}  Zweiter Versuch mit dem vorhandenen Regel-Cache — die Regeln sind dann evtl. nicht die neuesten.${NC}"
+            mit_zeitlimit 90 trivy config --skip-check-update Dockerfile
+            TRIVY_STATUS=$?
+        fi
+        if [ "$TRIVY_STATUS" = "0" ]; then
             echo -e "${GREEN}✓ Trivy Config Scan bestanden.${NC}"
+        elif [ "$TRIVY_STATUS" = "124" ]; then
+            echo -e "${RED}✗ Trivy antwortet auch mit Cache nicht. Push abgebrochen — der Scan hat NICHT stattgefunden.${NC}"
+            exit 1
         else
             echo -e "${RED}✗ Trivy Config Scan fehlgeschlagen! Dockerfile weist Fehler auf.${NC}"
             exit 1
