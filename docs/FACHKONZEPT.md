@@ -177,7 +177,37 @@ dahin beschrieb dieser Abschnitt ein Blockier-Modell, das nie gebaut war):
   „Deine Reservierungen“ im Portal meint seither wirklich die eigenen — die Warteschlange
   aller bleibt als Chip an den Suchtreffern sichtbar.
 
-### 4.3. Wünsche & Meldungen der Lehrkräfte
+### 4.3. Klassensatz-Übersicht: zwei Quellen, zwei Bedeutungen von „Klasse“
+
+Die Übersicht (`GetClassGroups`, `inventur/datenbank_klassen.go`) beantwortet die
+Alltagsfrage „welche Bücher hat diese Klasse?“ — gebraucht vor allem für Nachzügler, die
+mitten im Jahr dazukommen. Sie speist sich aus zwei Quellen, die verschieden altern:
+
+- **Handliste (`class_books`, Quelle `hand`)** hängt am **Klassennamen**. „Die 7R2 liest
+  Mathe 7“ gilt für jede künftige 7R2, deshalb lässt die Versetzung sie bewusst stehen
+  (`api/student_promotion.go`, Befund F3). Sie veraltet nicht von selbst und muss von Hand
+  gepflegt werden — dafür sieht sie auch Gruppen unter fünf Kindern.
+- **Aus Ausleihen (Quelle `ausleihe`)** hängt an den **Kindern**: bei jedem Aufruf neu
+  gerechnet über `klassen_normkey(schueler.klasse)`, nie gespeichert. Halten mehr als die
+  Hälfte der aktiven Kinder einer Klasse und mindestens `KlassensatzMindestLeser` (5)
+  denselben Titel, ist er ihr Klassensatz.
+
+Aus dem Unterschied folgt das Verhalten am Büchertausch (07.09.2026 aufgeschrieben, weil
+die Frage im Betrieb aufkam): Die 7R2 gibt im Juni ihre Bücher ab und bekommt die der 8,
+steht in der LUSD aber bis nach den Ferien weiter als 07R2. Die abgeleitete Liste zeigt die
+neuen Bücher deshalb sofort unter _07R2_ — was für den Nachzügler genau richtig ist, denn
+er bekommt dasselbe wie seine Klasse. Schiebt die LUSD (oder die Versetzung) die Kohorte
+auf 08R2, steht dieselbe Liste ohne Zutun unter _08R2_, und die nachrückende Klasse
+erscheint mit ihren eigenen Büchern unter _07R2_. **Die Ableitung wandert mit den Menschen,
+die Handliste bleibt am Namen** — im Fenster zwischen Tausch und Versetzung stehen beide
+untereinander. Belegt am echten Postgres:
+`inventur/klassensatz_ableitung_pg_test.go` (Schwelle, Normschlüssel, keine Dubletten).
+
+Ein Titel erscheint je Klasse **einmal**, unabhängig von der Zahl der Exemplare; die
+Leserzahl steht als Abzeichen an der Kachel. Ist ein Titel von Hand zugeordnet UND
+abgeleitet, gewinnt `hand`.
+
+### 4.4. Wünsche & Meldungen der Lehrkräfte
 
 Seit 18.08.2026 (Betreiber-Entscheidung: bewusst schlank, kein Ticketsystem):
 

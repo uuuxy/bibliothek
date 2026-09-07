@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-06. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-07. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produktrundgang als
 Video (8 min) zeigt jeden Bereich in Aktion.
@@ -109,6 +109,19 @@ gerechnet, nirgends gespeichert. Die von Hand gepflegte Liste bleibt unveränder
 _Bücher verwalten_ sind nur die handgepflegten Titel vorgewählt, ein abgeleiteter lässt sich
 per Haken übernehmen. Gibt die Klasse die Bücher zurück, verschwindet das Abzeichen wieder.
 Das Kollegium sieht dieselben Einträge in _Mein Portal → Klassensätze_.
+
+**Die Klasse kommt von den Kindern, nicht vom Namen** (07.09.2026 aufgeschrieben, weil die
+Frage beim Büchertausch aufkam): Die abgeleiteten Einträge fragen bei jedem Aufruf, welche
+Klasse in der Schülerliste steht und was deren Kinder gerade ausgeliehen haben. Beim
+Büchertausch im Juni hat die 7R2 also schon die Bücher der 8 — sie stehen bis zu den Ferien
+unter _07R2_, weil die LUSD die Kinder erst danach hochschiebt. Ist die Versetzung gelaufen,
+steht dieselbe Liste unter _08R2_, ohne dass jemand etwas umträgt; die nachrückende Klasse
+erscheint im selben Moment mit ihren eigenen Büchern unter _07R2_. Für den Nachzügler, der
+mitten im Jahr dazukommt, zeigt die Übersicht damit immer das, was seine Klasse tatsächlich
+hat. **Handgepflegte Einträge wandern nicht mit** — die hängen am Klassennamen („die 7R2
+liest Mathe 7" gilt für jede künftige 7R2) und bleiben stehen, bis jemand sie ändert. In den
+Wochen zwischen Tausch und Versetzung stehen deshalb beide untereinander: der alte
+Handeintrag und der neue mit dem Abzeichen _aus Ausleihen_.
 
 ## Schuljahreswechsel (LMF-Plan)
 
