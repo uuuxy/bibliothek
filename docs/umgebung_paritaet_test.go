@@ -118,6 +118,29 @@ func TestGoToolchainDockerfileFolgtGoMod(t *testing.T) {
 	// Die dritte Stelle ist bewusst KEIN Literal: die CI liest go.mod. Verschwindet
 	// diese Kopplung (jemand pinnt in ci.yml wieder eine Zahl), reißt das Gate.
 	leseEinePin(t, "../.github/workflows/ci.yml", regexp.MustCompile(`go-version-file:\s*'?(go\.mod)'?`))
+
+	// Dritter Ort, gefunden am 07.09.2026 beim Nachziehen von Dependabot-PR #589:
+	// go.work trägt dieselbe Zahl noch einmal, und er stand hier nicht. Beim letzten
+	// Sprung (b6f29aaa) wurde er von Hand mitgezogen; verlassen konnte man sich darauf
+	// nicht.
+	//
+	// Die beiden Richtungen sind NICHT gleich gefährlich, und nur eine braucht dieses
+	// Gate:
+	//   - go.work HINTER go.mod: Das fängt Go selbst ab, sofort und unübersehbar
+	//     („module . listed in go.work file requires go >= 1.27.1, but go.work lists go
+	//     1.27.0"). Es beendet jedes `go build` und `go test` — auch dieses hier, das
+	//     dann gar nicht erst läuft. Dafür braucht es keine Ratsche.
+	//   - go.work VOR go.mod: Das lässt Go stillschweigend zu. Gebaut und getestet wird
+	//     dann mit einer neueren Toolchain, als go.mod erklärt — genau der Zustand, den
+	//     dieses Gate für den Dockerfile schon einmal gefunden hat. Diese Richtung ist
+	//     der Grund für die Prüfung.
+	ausGoWork := leseEinePin(t, "../go.work", regexp.MustCompile(`(?m)^go (\d+\.\d+\.\d+)$`))
+	if ausGoWork != ausGoMod {
+		t.Errorf("go.work läuft auseinander: go.mod sagt %s, go.work %s — gebaut und "+
+			"getestet wird dann mit der Toolchain aus go.work, nicht mit der erklärten. "+
+			"Beide zusammen ziehen.",
+			ausGoMod, ausGoWork)
+	}
 }
 
 // Dritter Zwilling: Das ausgelieferte Bundle baut der Dockerfile-node-Builder — die CI
