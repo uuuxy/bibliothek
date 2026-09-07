@@ -11,6 +11,19 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
 	const s = uniqueSuffix();
 	const klasse = `1e${s.slice(-2)}`; // eigene Wegwerf-Klasse, kollidiert nicht mit echten Daten
 
+	// Erst den eigenen Zustand herstellen: Die Wegwerf-Klasse hat nur zwei freie Zeichen —
+	// hundert mögliche Namen —, und nichts räumte ihre Schüler je weg. Nach drei Läufen an
+	// einem Tag traf `1e16` auf die Altlast eines früheren Laufs: 2 alte + 2 neue
+	// Ausleihen, der Test erwartete 2 und bekam 4 (07.09.2026). Ausleihen zuerst, weil
+	// ausleihen.schueler_id ON DELETE RESTRICT trägt.
+	seedSQL(`
+        DELETE FROM ausleihen
+        WHERE schueler_id IN (SELECT id FROM schueler WHERE klassen_normkey(klasse) = klassen_normkey('${klasse}'));
+    `);
+	seedSQL(`
+        DELETE FROM schueler WHERE klassen_normkey(klasse) = klassen_normkey('${klasse}');
+    `);
+
 	seedSQL(`
         WITH bt AS (
             INSERT INTO buecher_titel (isbn, titel, autor, ist_lernmittel)
