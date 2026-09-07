@@ -96,13 +96,6 @@ Anfassen.
     die halb umgeschriebenen Fristen bleiben aber. Ein zweiter Anlauf repariert sie nicht
     vollständig, weil der „alte" Stand nach dem Commit nicht mehr lesbar ist. Sauber wäre
     eine gemeinsame Transaktion um Plan-Schreibung und Kopplung.
-  - **Drei Tage im Jahr überschreibt „Plan speichern" den laufenden Plan (B).** Zwischen
-    dem Ende des Büchertauschs (Donnerstag) und dem Beginn der Sommerferien (Montag)
-    meldet `Naechste(heute, bevorstehend)` noch die Ferien DIESES Jahres. Der Planer hält
-    den Plan für „vorbei" und bietet den Vorschlag fürs nächste Jahr an, rechnet daraus
-    aber denselben `schuljahr_beginn` — der Upsert trifft den alten, weiterhin
-    veröffentlichten Plan. Gerechnet an der echten Ferientabelle (Fr 25.06. bis So
-    27.06.2027). Ab dem ersten Ferientag stimmt die Rechnung wieder.
   - **`ohne_rueckgabe_termin` geht ans Kollegium, das es nie zeigt (C).**
     `GET /api/lmf-termine` füllt das Feld für jeden Aufrufer; `PortalLmfPlan.svelte` liest
     es nicht. Klassennamen, kein Schülerbezug — Über-Auslieferung ohne Schaden.

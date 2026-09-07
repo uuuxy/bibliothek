@@ -54,27 +54,52 @@ func lmfPlanSommerferien(art string, plan *repository.LmfPlan, laufend bool, jet
 	var jahr int
 	var ok bool
 	switch {
-	case laufend && rueckgabe:
-		anker, err := planTag(plan.LetzterTag)
-		if err != nil {
-			anker = jetzt
-		}
-		z, jahr, ok = tab.Naechste(anker, true)
 	case laufend:
-		beginn, err := planTag(plan.ErsterTag)
-		if err != nil {
-			beginn = jetzt
-		}
-		jahr = repository.SchuljahrBeginn(beginn).Year()
-		z, ok = tab.Sommerferien(jahr)
+		z, jahr, ok = lmfPlanEigeneFerien(rueckgabe, plan, jetzt, tab)
 	default:
 		z, jahr, ok = tab.Naechste(jetzt, rueckgabe)
+		// Ein Plan, der vorbei ist, dessen Ferien aber noch vor uns liegen: Zwischen dem
+		// Donnerstag, an dem der Büchertausch endet, und dem Montag, an dem die Ferien
+		// beginnen, nennt Naechste(heute) noch DIESELBEN Ferien wie der abgelaufene
+		// Plan. Der Vorschlag rechnete daraus denselben schuljahr_beginn — und „Plan
+		// speichern" traf über ON CONFLICT (art, schuljahr_beginn) den alten, weiterhin
+		// veröffentlichten Plan (Register 06.09.2026; an der echten Tabelle: Fr 25.06. bis
+		// So 27.06.2027). Der nächste Plan muss über die Ferien des vorigen hinaus.
+		// Nicht pauschal „Planjahr + 1": Liegt der vorige Plan Jahre zurück, ist
+		// Naechste(heute) schon weiter, und das gilt dann.
+		if plan != nil {
+			if _, planJahr, planOk := lmfPlanEigeneFerien(rueckgabe, plan, jetzt, tab); planOk && jahr <= planJahr {
+				jahr = planJahr + 1
+				z, ok = tab.Sommerferien(jahr)
+			}
+		}
 	}
 	f := LmfPlanSommerferien{Jahr: jahr, Bekannt: ok}
 	if ok {
 		f.Von, f.Bis = z.Von.Format("2006-01-02"), z.Bis.Format("2006-01-02")
 	}
 	return f, z
+}
+
+// lmfPlanEigeneFerien nennt die Ferien, an denen ein bestehender Plan hängt: Rückgabe
+// die nächsten nach seinem Ende (vor ihnen lag der Tausch), Ausgabe die seines
+// Schuljahres. Dieselbe Rechnung für den laufenden Plan und für die Frage, worüber ein
+// Nachfolger hinaus muss.
+func lmfPlanEigeneFerien(rueckgabe bool, plan *repository.LmfPlan, jetzt time.Time, tab lmfplan.Ferientabelle) (lmfplan.Zeitraum, int, bool) {
+	if rueckgabe {
+		anker, err := planTag(plan.LetzterTag)
+		if err != nil {
+			anker = jetzt
+		}
+		return tab.Naechste(anker, true)
+	}
+	beginn, err := planTag(plan.ErsterTag)
+	if err != nil {
+		beginn = jetzt
+	}
+	jahr := repository.SchuljahrBeginn(beginn).Year()
+	z, ok := tab.Sommerferien(jahr)
+	return z, jahr, ok
 }
 
 // lmfPlanRahmenVorgabe baut den Rahmen eines neuen Plans aus den Ferien.
