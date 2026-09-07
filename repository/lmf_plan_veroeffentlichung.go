@@ -111,11 +111,16 @@ func (r *LmfTerminRepository) KlassenNurRueckgabe(ctx context.Context, namen []s
 	return klassen, rows.Err()
 }
 
-// VeroeffentlicheLmfPlan stempelt den Plan; ein schon veröffentlichter behält seinen
+// VeroeffentlicheLmfPlanIn stempelt den Plan; ein schon veröffentlichter behält seinen
 // Stempel (idempotent). Liefert den vollständigen Stand wie NeuesterLmfPlan.
-func (r *LmfTerminRepository) VeroeffentlicheLmfPlan(ctx context.Context, id string, jetzt time.Time) (LmfPlanStand, error) {
+//
+// Arbeitet auf einem Executor des Aufrufers (Transaktion des
+// Handlers, im Test der Pool). Die Teile (Zeilen, freie Tage, Auslassungen) liest sie
+// weiter am Pool: Sie wurden in dieser Transaktion nicht geschrieben, es gibt nichts
+// zurückzulesen.
+func (r *LmfTerminRepository) VeroeffentlicheLmfPlanIn(ctx context.Context, ex DBQueryer, id string, jetzt time.Time) (LmfPlanStand, error) {
 	var st LmfPlanStand
-	err := scanLmfPlan(r.db.QueryRow(ctx, `
+	err := scanLmfPlan(ex.QueryRow(ctx, `
 		UPDATE lmf_plaene SET veroeffentlicht_am = COALESCE(veroeffentlicht_am, $2)
 		WHERE id = $1
 		RETURNING `+lmfPlanSpalten, id, jetzt), &st.Plan)

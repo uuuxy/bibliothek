@@ -66,7 +66,7 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Errorf("der Planer sieht den Entwurf: %d (%v)", len(planer), err)
 	}
 	stempel := time.Date(2026, time.May, 20, 10, 0, 0, 0, schulzeit.Zone())
-	veroeffentlicht, err := repo.VeroeffentlicheLmfPlan(ctx, st.Plan.ID, stempel)
+	veroeffentlicht, err := repo.VeroeffentlicheLmfPlanIn(ctx, repo.db, st.Plan.ID, stempel)
 	if err != nil || veroeffentlicht.Plan.VeroeffentlichtAm == nil || len(veroeffentlicht.Zeilen) != 6 {
 		t.Fatalf("veröffentlichen: %+v (%v)", veroeffentlicht.Plan, err)
 	}
@@ -158,11 +158,11 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	}
 
 	// Löschen räumt Zeilen und Klassen mit (CASCADE) und meldet, ob es etwas gab.
-	weg, err := repo.DeleteLmfPlan(ctx, st3.Plan.ID)
+	weg, err := repo.DeleteLmfPlanIn(ctx, repo.db, st3.Plan.ID)
 	if err != nil || !weg {
 		t.Fatalf("Löschen: weg=%v err=%v", weg, err)
 	}
-	if weg, err = repo.DeleteLmfPlan(ctx, st3.Plan.ID); err != nil || weg {
+	if weg, err = repo.DeleteLmfPlanIn(ctx, repo.db, st3.Plan.ID); err != nil || weg {
 		t.Errorf("zweites Löschen: weg=%v err=%v", weg, err)
 	}
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM lmf_termine WHERE plan_id = $1`, st3.Plan.ID).Scan(&anzahl); err != nil || anzahl != 0 {
@@ -211,7 +211,7 @@ func TestLmfPlan_FesterPlatzUndFreieTage(t *testing.T) {
 	fest := []*lmfplan.Platz{nil, {Datum: tag("2026-08-28"), Stunde: 4}}
 	frei := []lmfplan.Zeitraum{{Von: tag("2026-08-25"), Bis: tag("2026-08-25"), Name: "Pädagogischer Tag"}}
 	plaetze := lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag("2026-08-24"), Startstunde: 1, StundenJeTag: 6}, fest, lmfplan.Schultage(frei))
-	if _, err := repo.SaveLmfPlan(ctx, plan, zeilen, plaetze, nil); err != nil {
+	if _, err := speichereLmfPlanImTest(ctx, repo, plan, zeilen, plaetze, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -233,7 +233,7 @@ func TestLmfPlan_FesterPlatzUndFreieTage(t *testing.T) {
 	plan.FreieTage = nil
 	zeilen[1].Fest = false
 	plaetze = lmfplan.VerteileMit(lmfplan.Rahmen{ErsterTag: tag("2026-08-24"), Startstunde: 1, StundenJeTag: 6}, make([]*lmfplan.Platz, 2), lmfplan.Schultage(nil))
-	if _, err := repo.SaveLmfPlan(ctx, plan, zeilen, plaetze, nil); err != nil {
+	if _, err := speichereLmfPlanImTest(ctx, repo, plan, zeilen, plaetze, nil); err != nil {
 		t.Fatal(err)
 	}
 	if st, err = repo.NeuesterLmfPlan(ctx, LmfTerminAusgabe); err != nil {

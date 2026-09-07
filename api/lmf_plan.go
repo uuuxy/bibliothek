@@ -31,6 +31,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -431,7 +432,17 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("alten Plan lesen", err)
 		}
-		stand, err := repo.SaveLmfPlan(r.Context(), e.Plan, e.Zeilen, plaetze, e.Ausgelassen)
+		// Plan und Fristen in EINER Klammer (Register 06.09.2026): Bis hierher committete
+		// SaveLmfPlan selbst, und die Kopplung lief danach am Pool. Scheiterte sie —
+		// mitten in der Schleife über die Klassen —, war der Plan geschrieben und die
+		// Fristen zur Hälfte, und ein zweiter Anlauf konnte das nicht mehr heilen: Der
+		// „alte" Plan, aus dem die Verlierer-Klassen kämen, war schon überschrieben.
+		tx, err := s.DB.Pool.Begin(r.Context())
+		if err != nil {
+			return apierrors.Internal("Transaktion", err)
+		}
+		defer db.SafeRollback(r.Context(), tx)
+		stand, err := repo.SaveLmfPlanIn(r.Context(), tx, e.Plan, e.Zeilen, plaetze, e.Ausgelassen)
 		if err != nil {
 			return apierrors.Internal("LMF-Plan speichern", err)
 		}
@@ -439,11 +450,17 @@ func (s *Server) PutLmfPlanHandler() http.HandlerFunc {
 		// veröffentlichter Plan bleibt es, und seine Korrektur gilt sofort.
 		var angepasst int64
 		if stand.Plan.VeroeffentlichtAm != nil {
-			if angepasst, err = s.koppleLmfPlanFristen(r.Context(), art, alt, stand.Zeilen); err != nil {
+			if angepasst, err = s.koppleLmfPlanFristen(r.Context(), tx, art, alt, stand.Zeilen); err != nil {
 				return apierrors.Internal("Fristen koppeln", err)
 			}
-			// Nur der veröffentlichte Plan greift in Fristen ein; ein Entwurf bleibt im Haus
-			// und braucht keine Spur.
+		}
+		if err := tx.Commit(r.Context()); err != nil {
+			return apierrors.Internal("LMF-Plan speichern", err)
+		}
+		// Spur und Signal erst NACH dem Commit: Beides beschreibt einen Zustand, den es
+		// vorher noch nicht gab. Nur der veröffentlichte Plan greift in Fristen ein; ein
+		// Entwurf bleibt im Haus und braucht keine Spur.
+		if stand.Plan.VeroeffentlichtAm != nil {
 			s.auditiereLmfPlan(r, auditLmfPlanGespeichert, art, stand.Plan.ID, angepasst)
 		}
 		s.meldeLmfPlanGeaendert()
@@ -550,15 +567,24 @@ func (s *Server) DeleteLmfPlanHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("LMF-Plan laden", err)
 		}
-		if _, err := repo.DeleteLmfPlan(r.Context(), st.Plan.ID); err != nil {
+		// Löschen und Fristen-Rückkehr in EINER Klammer — siehe PutLmfPlanHandler.
+		tx, err := s.DB.Pool.Begin(r.Context())
+		if err != nil {
+			return apierrors.Internal("Transaktion", err)
+		}
+		defer db.SafeRollback(r.Context(), tx)
+		if _, err := repo.DeleteLmfPlanIn(r.Context(), tx, st.Plan.ID); err != nil {
 			return apierrors.Internal("LMF-Plan löschen", err)
 		}
 		// Nur ein veröffentlichter Plan hat Fristen gesetzt, die zurückkehren müssen.
 		var angepasst int64
 		if st.Plan.VeroeffentlichtAm != nil {
-			if angepasst, err = s.koppleLmfPlanFristen(r.Context(), art, st.Zeilen, nil); err != nil {
+			if angepasst, err = s.koppleLmfPlanFristen(r.Context(), tx, art, st.Zeilen, nil); err != nil {
 				return apierrors.Internal("Fristen koppeln", err)
 			}
+		}
+		if err := tx.Commit(r.Context()); err != nil {
+			return apierrors.Internal("LMF-Plan löschen", err)
 		}
 		// Auch das Verwerfen eines Entwurfs wird protokolliert: Es löscht einen Plan, den
 		// jemand gebaut hat, und die Antwort nennt nur eine Zahl.

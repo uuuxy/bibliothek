@@ -19,6 +19,7 @@ import (
 	"net/http"
 
 	"bibliothek/apierrors"
+	"bibliothek/db"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -102,11 +103,20 @@ func (s *Server) PostLmfPlanVeroeffentlichenHandler() http.HandlerFunc {
 			RespondJSON(w, http.StatusOK, antwort)
 			return nil
 		}
-		if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlan(r.Context(), st.Plan.ID, s.jetzt()); err != nil {
+		// Stempel und Fristen in EINER Klammer — siehe PutLmfPlanHandler.
+		tx, err := s.DB.Pool.Begin(r.Context())
+		if err != nil {
+			return apierrors.Internal("Transaktion", err)
+		}
+		defer db.SafeRollback(r.Context(), tx)
+		if antwort.LmfPlanStand, err = repo.VeroeffentlicheLmfPlanIn(r.Context(), tx, st.Plan.ID, s.jetzt()); err != nil {
 			return apierrors.Internal("LMF-Plan veröffentlichen", err)
 		}
-		if antwort.FristenAngepasst, err = s.koppleLmfPlanFristen(r.Context(), art, nil, antwort.Zeilen); err != nil {
+		if antwort.FristenAngepasst, err = s.koppleLmfPlanFristen(r.Context(), tx, art, nil, antwort.Zeilen); err != nil {
 			return apierrors.Internal("Fristen koppeln", err)
+		}
+		if err := tx.Commit(r.Context()); err != nil {
+			return apierrors.Internal("LMF-Plan veröffentlichen", err)
 		}
 		s.auditiereLmfPlan(r, auditLmfPlanVeroeffentlicht, art, st.Plan.ID, antwort.FristenAngepasst)
 		s.meldeLmfPlanGeaendert()

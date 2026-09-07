@@ -108,7 +108,9 @@ var phantomBestand = map[string]int{
 	"jobs/restore_probe.go:speichereRestoreProbe":                        1,
 	// Ersetzt Zeilen und Auslassungen eines Plans vollständig: DELETE + INSERT. Null
 	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
-	"repository/lmf_plan.go:SaveLmfPlan":                      3,
+	// Seit 07.09.2026 heißt der Rumpf SaveLmfPlanIn (Transaktion des Aufrufers);
+	// SaveLmfPlan ist nur noch die Hülle mit eigener kurzer Transaktion.
+	"repository/lmf_plan.go:SaveLmfPlanIn":                    3,
 	"repository/audit.go:LogAdminAktion":                      1,
 	"repository/audit.go:insertAuditLog":                      1,
 	"repository/audit_books.go:DeleteTitle":                   3,

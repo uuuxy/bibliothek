@@ -163,7 +163,7 @@ func (r *LmfTerminRepository) RueckgabeTerminFuerKlasse(ctx context.Context, kla
 	return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, schulzeit.Zone()), true, nil
 }
 
-// SetzeLernmittelFristFuerKlassen schreibt die Frist offener Lernmittel-Ausleihen der
+// SetzeLernmittelFristFuerKlassenIn schreibt die Frist offener Lernmittel-Ausleihen der
 // genannten Klassen um — dieselbe Regel wie die Massenverlängerung (api/ausleihe.go):
 // nur aktive, nicht gesperrte Schüler, nur Lernmittel, Mahnstufe zurück, wenn die neue
 // Frist in der Zukunft liegt. Zusätzlich: nur Fristen im Schuljahr [von, bis) — eine
@@ -171,7 +171,10 @@ func (r *LmfTerminRepository) RueckgabeTerminFuerKlasse(ctx context.Context, kla
 // nurWennFristAm gesetzt, werden nur Ausleihen angefasst, deren Frist genau an diesem
 // Tag liegt (Rückweg: ein gelöschter Termin gibt die Frist an den Stichtag zurück, ohne
 // Fristen zu berühren, die jemand von Hand gesetzt hat).
-func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassen(ctx context.Context, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
+//
+// Arbeitet auf einem Executor des Aufrufers — die Plan-Handler koppeln die Fristen in
+// DERSELBEN Transaktion wie den Plan.
+func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassenIn(ctx context.Context, ex DBQueryer, klassen []string, frist time.Time, von, bis time.Time, nurWennFristAm *time.Time) (int64, error) {
 	if len(klassen) == 0 {
 		return 0, nil
 	}
@@ -181,7 +184,7 @@ func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassen(ctx context.Contex
 		tag := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, schulzeit.Zone())
 		nurTag = &tag
 	}
-	tag, err := r.db.Exec(ctx, `
+	tag, err := ex.Exec(ctx, `
 		UPDATE ausleihen a
 		SET rueckgabe_frist = $1,
 		    mahnstufe = CASE WHEN $1 > CURRENT_TIMESTAMP THEN 0 ELSE a.mahnstufe END,

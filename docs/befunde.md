@@ -82,13 +82,6 @@ Anfassen.
   „Nachzügler"/„Aufräumen" nicht, und der Pre-Push-Hook lässt die `*_pg_test.go` aus).
   Hier bleibt nur, was offen ist:
 
-  - **Speichern/Veröffentlichen/Verwerfen und die Frist-Kopplung sind zwei
-    Transaktionen (B).** Erst schreiben/löschen (committed), dann `koppleLmfPlanFristen`.
-    Bricht der zweite Schritt ab, ist der erste geschehen; die Antwort ist 500. Die
-    Oberfläche lädt seit `de899297` in diesem Fall neu und zeigt damit den echten Stand —
-    die halb umgeschriebenen Fristen bleiben aber. Ein zweiter Anlauf repariert sie nicht
-    vollständig, weil der „alte" Stand nach dem Commit nicht mehr lesbar ist. Sauber wäre
-    eine gemeinsame Transaktion um Plan-Schreibung und Kopplung.
   - **`ohne_rueckgabe_termin` geht ans Kollegium, das es nie zeigt (C).**
     `GET /api/lmf-termine` füllt das Feld für jeden Aufrufer; `PortalLmfPlan.svelte` liest
     es nicht. Klassennamen, kein Schülerbezug — Über-Auslieferung ohne Schaden.

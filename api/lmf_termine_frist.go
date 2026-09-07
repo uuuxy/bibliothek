@@ -26,7 +26,7 @@ import (
 // koppleLmfFristen gleicht die Fristen nach einer Planänderung ab. alt = Stand vor der
 // Änderung (nil beim Anlegen), neu = Stand danach (nil beim Löschen). Liefert die Zahl
 // der umgeschriebenen Ausleihen.
-func (s *Server) koppleLmfFristen(ctx context.Context, alt, neu *repository.LmfTermin) (int64, error) {
+func (s *Server) koppleLmfFristen(ctx context.Context, ex repository.DBQueryer, alt, neu *repository.LmfTermin) (int64, error) {
 	repo := repository.NewLmfTerminRepository(s.DB.Pool)
 	var gesamt int64
 
@@ -50,7 +50,7 @@ func (s *Server) koppleLmfFristen(ctx context.Context, alt, neu *repository.LmfT
 			// und sie gehen dorthin zurück, wo sie ohne Plan gestanden hätten.
 			stichtag := repository.LmfStichtagImSchuljahr(altTag, einstellungen.LmfStichtag)
 			von, bis := schuljahrGrenzen(altTag)
-			n, err := repo.SetzeLernmittelFristFuerKlassen(ctx, verlierer,
+			n, err := repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, verlierer,
 				service.TagesEndeInSchulzeitzone(stichtag), von, bis, &altTag)
 			if err != nil {
 				return gesamt, err
@@ -66,7 +66,7 @@ func (s *Server) koppleLmfFristen(ctx context.Context, alt, neu *repository.LmfT
 			return gesamt, err
 		}
 		von, bis := schuljahrGrenzen(neuTag)
-		n, err := repo.SetzeLernmittelFristFuerKlassen(ctx, neu.Klassen,
+		n, err := repo.SetzeLernmittelFristFuerKlassenIn(ctx, ex, neu.Klassen,
 			service.TagesEndeInSchulzeitzone(neuTag), von, bis, nil)
 		if err != nil {
 			return gesamt, err
@@ -121,7 +121,7 @@ func ohne(a, b []string) []string {
 // Zuerst kehren Klassen, die im neuen Plan gar nicht mehr stehen, zum Stichtag zurück —
 // genau die Fristen, die auf ihrem alten Termin-Tag lagen —, dann bekommt jede Klasse
 // des neuen Plans ihren frühesten Termin.
-func (s *Server) koppleLmfPlanFristen(ctx context.Context, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
+func (s *Server) koppleLmfPlanFristen(ctx context.Context, ex repository.DBQueryer, art string, alt, neu []repository.LmfPlanZeile) (int64, error) {
 	if art != repository.LmfTerminRueckgabe {
 		return 0, nil
 	}
@@ -132,14 +132,14 @@ func (s *Server) koppleLmfPlanFristen(ctx context.Context, art string, alt, neu 
 		if len(verlierer) == 0 {
 			continue
 		}
-		n, err := s.koppleLmfFristen(ctx, &repository.LmfTermin{Art: art, Datum: z.Datum, Klassen: verlierer}, nil)
+		n, err := s.koppleLmfFristen(ctx, ex, &repository.LmfTermin{Art: art, Datum: z.Datum, Klassen: verlierer}, nil)
 		if err != nil {
 			return gesamt, err
 		}
 		gesamt += n
 	}
 	for _, datum := range sortierteSchluessel(termine) {
-		n, err := s.koppleLmfFristen(ctx, nil, &repository.LmfTermin{Art: art, Datum: datum, Klassen: termine[datum]})
+		n, err := s.koppleLmfFristen(ctx, ex, nil, &repository.LmfTermin{Art: art, Datum: datum, Klassen: termine[datum]})
 		if err != nil {
 			return gesamt, err
 		}

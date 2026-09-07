@@ -71,7 +71,7 @@ func speicherePlan(t *testing.T, repo *LmfTerminRepository, art, ersterTag strin
 			plan.LetzterTag, plan.LetzteStunde = plaetze[n-1].Datum.Format("2006-01-02"), plaetze[n-1].Stunde
 		}
 	}
-	st, err := repo.SaveLmfPlan(context.Background(), plan, zeilen, plaetze, ausgelassen)
+	st, err := speichereLmfPlanImTest(context.Background(), repo, plan, zeilen, plaetze, ausgelassen)
 	if err != nil {
 		t.Fatalf("Plan %s ab %s speichern: %v", art, ersterTag, err)
 	}
@@ -82,7 +82,7 @@ func speicherePlan(t *testing.T, repo *LmfTerminRepository, art, ersterTag strin
 // …/veroeffentlichen, ohne Frist-Kopplung (die liegt in api/).
 func veroeffentliche(t *testing.T, repo *LmfTerminRepository, st LmfPlanStand) LmfPlanStand {
 	t.Helper()
-	st, err := repo.VeroeffentlicheLmfPlan(context.Background(), st.Plan.ID, time.Now())
+	st, err := repo.VeroeffentlicheLmfPlanIn(context.Background(), repo.db, st.Plan.ID, time.Now())
 	if err != nil {
 		t.Fatalf("Plan %s veröffentlichen: %v", st.Plan.ID, err)
 	}

@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/db"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 
@@ -180,22 +179,25 @@ func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID str
 	return klassen, rows.Err()
 }
 
-// SaveLmfPlan legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt
+// SaveLmfPlanIn legt den Plan der Art für das Schuljahr des ersten Tages an oder schreibt
 // ihn um — Rahmen (mit freien Tagen), Zeilen (vollständig ersetzt, mit Platz, Position
 // und fest-Marke) und ausgelassene Klassen in einer Transaktion. Klassennamen laufen
 // durch das Vokabular; die Antwort trägt die kanonisierten Namen. Der Veröffentlichungs-
 // Stempel bleibt, wie er ist: Ein neuer Plan ist Entwurf, ein veröffentlichter bleibt
 // veröffentlicht (Migration 100).
-func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zeilen []LmfPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LmfPlanStand, error) {
+//
+// Geschrieben wird in eine Transaktion, die der AUFRUFER hält — damit
+// Plan und Frist-Kopplung in einer Klammer stehen (api/lmf_plan.go). Bis 07.09.2026
+// hieß das SaveLmfPlan und committete selbst, und die Kopplung lief danach am Pool:
+// Scheiterte sie, war der Plan geschrieben und die Fristen halb — ein Zustand, den ein
+// zweiter Anlauf nicht mehr reparieren konnte, weil der alte Plan nicht mehr lesbar war.
+// Eine Hülle mit eigener Transaktion gibt es bewusst nicht mehr: Sie rief niemand, und
+// eine Tür, durch die niemand geht, ist eine, die irgendwann jemand falsch benutzt.
+func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan LmfPlan, zeilen []LmfPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LmfPlanStand, error) {
 	ersterTag, err := time.ParseInLocation("2006-01-02", plan.ErsterTag, schulzeit.Zone())
 	if err != nil {
 		return LmfPlanStand{}, err
 	}
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return LmfPlanStand{}, err
-	}
-	defer db.SafeRollback(ctx, tx)
 
 	sjb := SchuljahrBeginn(ersterTag)
 	var st LmfPlanStand
@@ -254,7 +256,7 @@ func (r *LmfTerminRepository) SaveLmfPlan(ctx context.Context, plan LmfPlan, zei
 		ON CONFLICT DO NOTHING RETURNING klasse`, st.Plan.ID, ausgelassen); err != nil {
 		return st, err
 	}
-	return st, tx.Commit(ctx)
+	return st, nil
 }
 
 // schreibeKlassen fügt Klassen einer Elternzeile hinzu und liefert die vom Vokabular-
@@ -278,9 +280,10 @@ func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klass
 	return kanonisch, nil
 }
 
-// DeleteLmfPlan entfernt einen Plan samt Zeilen und Auslassungen (CASCADE).
-func (r *LmfTerminRepository) DeleteLmfPlan(ctx context.Context, id string) (bool, error) {
-	tag, err := r.db.Exec(ctx, `DELETE FROM lmf_plaene WHERE id = $1`, id)
+// DeleteLmfPlanIn entfernt einen Plan samt Zeilen und Auslassungen (CASCADE) — auf einem
+// Executor des Aufrufers (Transaktion des Handlers, im Test der Pool).
+func (r *LmfTerminRepository) DeleteLmfPlanIn(ctx context.Context, ex DBQueryer, id string) (bool, error) {
+	tag, err := ex.Exec(ctx, `DELETE FROM lmf_plaene WHERE id = $1`, id)
 	if err != nil {
 		return false, err
 	}
