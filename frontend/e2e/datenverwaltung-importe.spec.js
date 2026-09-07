@@ -1,5 +1,12 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix, einstellungsKategorie } from './helpers.js';
+import {
+	uiLogin,
+	seedSQL,
+	querySQL,
+	uniqueSuffix,
+	einstellungsKategorie,
+	csrfToken
+} from './helpers.js';
 
 // Die Datenverwaltung hat drei Importwege, die sich in EINER Frage unterscheiden: übernimmt
 // der Weg vorhandene Exemplare samt Nummer, oder erzeugt er neue? Der Listenimport (ISBN +
@@ -17,9 +24,63 @@ const pruef = (10 - ([...kern].reduce((a, d, i) => a + Number(d) * (i % 2 ? 3 : 
 const ISBN = kern + pruef;
 const KOMBI_BARCODE = `E2E-KOMBI-${s}`;
 
+// Zweite gültige ISBN für den Idempotenz-Fall (Kern um eins verschoben).
+const kern2 = String(Number(kern) + 1).padStart(12, '0');
+const pruef2 =
+	(10 - ([...kern2].reduce((a, d, i) => a + Number(d) * (i % 2 ? 3 : 1), 0) % 10)) % 10;
+const ISBN2 = kern2 + pruef2;
+
 test.afterAll(() => {
 	// buecher_exemplare hängt per ON DELETE CASCADE am Titel.
-	seedSQL(`DELETE FROM buecher_titel WHERE titel IN ('Listenimport ${s}', 'Kombiimport ${s}');`);
+	seedSQL(
+		`DELETE FROM buecher_titel WHERE titel IN ('Listenimport ${s}', 'Kombiimport ${s}', 'Doppelklick ${s}');`
+	);
+});
+
+// Der Listenimport ist additiv. Nach einer verlorenen Antwort (Timeout, Netz) drückt der
+// Mensch nochmal — und hätte bis zum 07.09.2026 den Bestand verdoppelt, ohne dass es
+// irgendwo stand. Mit demselben X-Idempotency-Key liefert der Server die Antwort des
+// ersten Laufs; gemessen am Draht und in der Datenbank, nicht am Knopf.
+test('Listenimport: derselbe Idempotenz-Schlüssel legt die Exemplare nicht ein zweites Mal an', async ({
+	page
+}) => {
+	await uiLogin(page);
+	const token = await csrfToken(page);
+	const schluessel = crypto.randomUUID();
+	const sende = () =>
+		page.request.post('/api/books/import', {
+			headers: { 'X-CSRF-Token': token, 'X-Idempotency-Key': schluessel },
+			multipart: {
+				file: {
+					name: 'doppelklick.csv',
+					mimeType: 'text/csv',
+					buffer: Buffer.from(`isbn,titel,autor,bestand\n${ISBN2},Doppelklick ${s},Autor,3\n`)
+				}
+			}
+		});
+
+	const erster = await sende();
+	expect(erster.status(), await erster.text()).toBe(200);
+	const zweiter = await sende();
+	expect(zweiter.status(), await zweiter.text()).toBe(200);
+	expect(await zweiter.json(), 'zweite Antwort ist die gespeicherte erste').toEqual(
+		await erster.json()
+	);
+
+	expect(
+		querySQL(
+			`SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
+			 WHERE t.titel = 'Doppelklick ${s}'`
+		),
+		'drei Exemplare, nicht sechs'
+	).toBe('3');
+
+	// Ein Schlüssel, der keine UUID ist, wird abgewiesen, bevor etwas passiert.
+	const kaputt = await page.request.post('/api/books/import', {
+		headers: { 'X-CSRF-Token': token, 'X-Idempotency-Key': 'nochmal' },
+		multipart: { file: { name: 'x.csv', mimeType: 'text/csv', buffer: Buffer.from('isbn\n') } }
+	});
+	expect(kaputt.status()).toBe(400);
 });
 
 test('Datenverwaltung: Listenimport erzeugt B-Nummern ohne Etikett, Bestands-Import übernimmt die Nummer mit Etikett', async ({

@@ -23,6 +23,10 @@ func TestRequestFrist(t *testing.T) {
 	}{
 		{"/api/import/littera", LangLaufendeFrist, "Katalogimport dauert Minuten"},
 		{"/api/admin/import-bestand", LangLaufendeFrist, "Bestandsimport dauert Minuten"},
+		// Bis 07.09.2026 stand der Listenimport unter der 15-s-Frist: Eine Liste mit 200
+		// unbekannten ISBNs braucht bei 10 parallelen Lookups eine Minute — der Server
+		// brach am Kontext ab, der Browser wartete noch vier weitere Minuten.
+		{"/api/books/import", LangLaufendeFrist, "Listenimport fragt je ISBN den Katalog"},
 		{"/api/admin/sync-covers", LangLaufendeFrist, "Cover-Abgleich laeuft ueber den ganzen Bestand"},
 		{"/api/lusd/import", LangLaufendeFrist, "LUSD-Import umfasst ganze Jahrgaenge"},
 		{"/api/lusd/preview", LangLaufendeFrist, "Vorschau liest dieselbe Datei"},

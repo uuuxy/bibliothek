@@ -22,16 +22,21 @@
 	let files: FileList | null = $state(null);
 	let laeuft = $state(false);
 	let ergebnis: { type: 'success' | 'error'; message: string } | null = $state(null);
+	// Ein Schlüssel je Dateiauswahl, nicht je Klick: Bleibt die Auswahl nach einem
+	// Netzfehler stehen, holt der nächste Klick das Ergebnis des ersten Laufs ab, statt
+	// die Exemplare ein zweites Mal anzulegen. Eine neue Auswahl ist ein neuer Lauf.
+	let schluessel = $state(crypto.randomUUID());
 
 	async function importieren() {
 		if (!files || files.length === 0) return;
 		laeuft = true;
 		ergebnis = null;
 		try {
-			const r = await importiereListe(files[0]);
+			const r = await importiereListe(files[0], schluessel);
 			const fehl = r.failed > 0 ? `, ${r.failed} fehlgeschlagen` : '';
 			ergebnis = { type: 'success', message: `${r.imported} Titel importiert${fehl}.` };
 			files = null;
+			schluessel = crypto.randomUUID();
 		} catch (err) {
 			ergebnis = {
 				type: 'error',
@@ -60,6 +65,7 @@
 					type="file"
 					accept=".csv,.xlsx"
 					bind:files
+					onchange={() => (schluessel = crypto.randomUUID())}
 					disabled={laeuft}
 					class="sr-only"
 					data-testid="listenimport-datei"

@@ -37,6 +37,7 @@ const LangLaufendeFrist = 5 * time.Minute
 var langLaufendePfade = []string{
 	"/api/import/",          // Littera-Katalogimport
 	"/api/admin/import-",    // Bestandsimport
+	"/api/books/import",     // Listenimport: je unbekannter ISBN ein Katalog-Lookup, 10 parallel
 	"/api/admin/sync-",      // Cover-Abgleich über den ganzen Bestand
 	"/api/lusd/",            // LUSD-Vorschau und -Import (ganze Jahrgänge)
 	"/api/admin/mahnungen/", // Sammeldruck über alle Klassen

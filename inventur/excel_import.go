@@ -246,31 +246,57 @@ func (handler *APIHandler) persistBooksFallback(ctx context.Context, books []Boo
 }
 
 func (handler *APIHandler) handleImportExcel(writer http.ResponseWriter, request *http.Request) {
+	schluessel, ok := importSchluessel(writer, request)
+	if !ok {
+		return
+	}
 	dataRows, colIdx, ok := handler.prepareImportRows(writer, request)
 	if !ok {
 		return
+	}
+	// Erst nach der Dateiprüfung reservieren: Ein Formfehler ist deterministisch und
+	// braucht kein Gedächtnis; ein reservierter Schlüssel dagegen sperrt den zweiten
+	// Aufruf, solange dieser läuft.
+	if schluessel != "" {
+		frisch, alt, err := handler.reserviereImportLauf(request.Context(), schluessel)
+		if err != nil {
+			writeError(writer, http.StatusInternalServerError, "import-schlüssel konnte nicht geprüft werden")
+			return
+		}
+		if !frisch {
+			writeJSON(writer, alt.Status, alt.Daten)
+			return
+		}
 	}
 
 	booksToUpsert, failed, firstError := handler.processImportRows(request.Context(), dataRows, colIdx)
 	imported, failed, firstError := handler.persistImportedBooks(request.Context(), booksToUpsert, failed, firstError)
 
+	status, antwort := importAntwort(imported, failed, firstError)
+	if schluessel != "" {
+		handler.schliesseImportLauf(request.Context(), schluessel, imported > 0, status, antwort)
+	}
+	writeJSON(writer, status, antwort)
+}
+
+// importAntwort formt das Ergebnis eines Laufs — EINE Stelle, weil dieselbe Antwort
+// beim Wiederholungsaufruf aus dem Idempotenz-Gedächtnis kommt.
+func importAntwort(imported, failed int32, firstError error) (int, map[string]any) {
 	if imported == 0 && failed > 0 {
 		msg := "keine bücher konnten importiert werden."
 		if firstError != nil {
 			msg += " fehler: " + firstError.Error()
 		}
-		writeError(writer, http.StatusBadRequest, msg)
-		return
+		return http.StatusBadRequest, map[string]any{"error": msg}
 	}
 
 	message := fmt.Sprintf("%d bücher importiert", imported)
 	if failed > 0 {
 		message += fmt.Sprintf(", %d fehlgeschlagen", failed)
 	}
-
-	writeJSON(writer, http.StatusOK, map[string]any{
+	return http.StatusOK, map[string]any{
 		"message":  message,
 		"imported": imported,
 		"failed":   failed,
-	})
+	}
 }

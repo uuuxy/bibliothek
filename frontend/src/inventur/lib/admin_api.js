@@ -43,16 +43,22 @@ export async function holeBuchDetail(id) {
 
 /**
  * Listenimport: ISBN + Stückzahl → neue Titel samt Exemplaren (POST /api/books/import).
+ *
+ * schluessel benennt den Lauf (UUID je Dateiauswahl): Der Import ist additiv, und nach
+ * einer verlorenen Antwort würde der zweite Klick den Bestand verdoppeln. Mit demselben
+ * Schlüssel liefert der Server das Ergebnis des ersten Laufs — oder 409, solange er noch
+ * läuft (inventur/import_idempotenz.go).
  * @param {File} datei
+ * @param {string} schluessel
  * @returns {Promise<{ imported: number, failed: number, message: string }>}
  */
-export async function importiereListe(datei) {
+export async function importiereListe(datei, schluessel) {
 	const formData = new FormData();
 	formData.append('file', datei);
 	const res = await apiFetch('/api/books/import', {
 		method: 'POST',
 		credentials: 'include',
-		headers: {},
+		headers: { 'X-Idempotency-Key': schluessel },
 		body: formData
 	});
 	if (!res.ok) {
