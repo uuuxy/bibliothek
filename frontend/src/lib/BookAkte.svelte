@@ -10,6 +10,7 @@
 	import { authStore } from './stores/authStore.svelte.js';
 	import { hatRecht } from './menu.js';
 	import { ChevronLeft, Frown } from '@lucide/svelte';
+	import { untrack } from 'svelte';
 
 	/** @type {{ bookId: string | null, onBack: () => void }} */
 	let { bookId, onBack } = $props();
@@ -36,8 +37,13 @@
 		['historie', 'Historie']
 	]);
 
+	// Der Effekt hängt an GENAU einer Sache: der Titel-ID. untrack sorgt dafür, dass
+	// nichts, was loadAll unterwegs liest (appState.selectedBook, sein eigener Zustand),
+	// je wieder zum Auslöser dieses Effekts wird — am 06.09.2026 tat es das, und die
+	// Akte lief in einer Endlosschleife, bis Svelte sie abbrach (siehe useBookAkte).
 	$effect(() => {
-		if (bookId) akte.loadAll(bookId);
+		const id = bookId;
+		if (id) untrack(() => akte.loadAll(id));
 	});
 </script>
 

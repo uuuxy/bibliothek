@@ -78,20 +78,28 @@ export function useBookAkte() {
 		vormerkungen = [];
 		fehlendeListen = [];
 
+		// Der Kopf läuft durch eine LOKALE Variable, nie durch `book` zurück: Dieser Lauf
+		// steht in einem $effect (BookAkte.svelte). Ein Effekt, der `book` schreibt und im
+		// selben Atemzug wieder liest, abonniert es — und löst sich beim nächsten Anlass
+		// mit seinem eigenen `book = null` endlos selbst aus, bis Svelte nach 1.000
+		// Umläufen abbricht (effect_update_depth_exceeded) und isLoading hängen bleibt.
+		/** @type {any} */
+		let kopf = null;
 		if (appState.selectedBook && appState.selectedBook.id === id) {
-			book = appState.selectedBook;
+			kopf = appState.selectedBook;
 		} else {
 			try {
 				const res = await apiFetch(`/api/books/${id}`, { credentials: 'include' });
 				if (meine !== laufNr) return; // ein jüngerer Titel ist schon unterwegs oder da
-				book = res.ok ? await res.json() : null;
+				kopf = res.ok ? await res.json() : null;
 			} catch (err) {
 				if (meine !== laufNr) return;
 				console.error('Fehler beim Laden des Buches:', err);
 			}
 		}
+		book = kopf;
 
-		const candidates = coverKandidaten(book?.coverUrl, book?.isbn);
+		const candidates = coverKandidaten(kopf?.coverUrl, kopf?.isbn);
 		coverCandidates = candidates;
 		currentCandidateIndex = 0;
 		coverFailed = candidates.length === 0;

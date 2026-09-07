@@ -57,7 +57,19 @@ if [ -z "${IST:-}" ]; then
 	exit 1
 fi
 
+# Verglichen wird der INHALT, nicht der Dateiname. Vite rechnet die CSS-Prüfsumme in den
+# Namen des JS-Bundles ein, und das CSS weicht lokal ab: Tailwind scannt hier Dateien,
+# die es im Image nicht gibt (unversionierte Skripte, .env). Am 06./07.09.2026 schlug der
+# Namensvergleich deshalb zweimal Alarm — bei byte-identischem JavaScript. Die
+# Container-Fassung ist dabei die kanonische (so baut auch CI); wer lokal gegen den
+# Container misst, misst den richtigen Stand.
 if [ "$IST" != "$SOLL" ]; then
+	IST_MD5=$(curl -sf "$URL/assets/$IST" | md5 -q 2>/dev/null || curl -sf "$URL/assets/$IST" | md5sum | cut -d' ' -f1)
+	SOLL_MD5=$(md5 -q "frontend/dist/assets/$SOLL" 2>/dev/null || md5sum "frontend/dist/assets/$SOLL" | cut -d' ' -f1)
+	if [ -n "$IST_MD5" ] && [ "$IST_MD5" = "$SOLL_MD5" ]; then
+		echo "✓ Container liefert $IST — byte-identisch mit dem lokalen $SOLL (nur der CSS-Anteil des Namens weicht ab)."
+		exit 0
+	fi
 	echo "✗ Der Container liefert ein ANDERES Bundle aus als der lokale Build." >&2
 	echo "    ausgeliefert: $IST" >&2
 	echo "    erwartet:     $SOLL" >&2
