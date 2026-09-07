@@ -216,7 +216,9 @@ CREATE INDEX idx_schueler_barcode_lower_trgm ON schueler USING gin (lower(barcod
 -- Als partieller Index greift die Eindeutigkeit nur bei nicht-leerem Geburtsdatum und
 -- nur unter aktiven Schülern (soft-gelöschte dürfen bei Wiederanmeldung neu entstehen,
 -- analog uniq_schueler_lusd_id_active). Siehe Migration 048.
-CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (vorname, nachname, geburtsdatum)
+-- In der Normalform suchnorm (Migration 108): „Anna Müller" und „Anna Mueller" mit gleichem
+-- Geburtsdatum sind EIN Mensch — dieselbe Regel wie der LUSD-Schlüssel (repository/lusd_bestand.go).
+CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (suchnorm(vorname), suchnorm(nachname), geburtsdatum)
     WHERE geburtsdatum IS NOT NULL AND deleted_at IS NULL AND lusd_id IS NULL;
 -- lusd_id ist nur unter AKTIVEN Schülern eindeutig; eine soft-gelöschte lusd_id
 -- darf bei Wiederanmeldung neu vergeben werden (siehe Migration 035).
@@ -1156,7 +1158,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('104_sys_barcode_seq_deklariert.sql'),
 ('105_sys_barcode_seq_abgeschafft.sql'),
 ('106_boot_schema_in_migration.sql'),
-('107_seed_lieferanten_abgeschafft.sql')
+('107_seed_lieferanten_abgeschafft.sql'),
+('108_namensindex_in_normalform.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

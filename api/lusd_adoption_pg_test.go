@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -106,21 +107,29 @@ func TestLusdAutoMatching_OhneGeburtsdatumKeineAdoption(t *testing.T) {
 	}
 }
 
-// Zwei ID-lose Schüler mit gleichem Name+Geburtsdatum (case-Varianten) sind
-// MEHRDEUTIG — dann NICHT adoptieren (lieber neu anlegen als falsch zusammenführen).
-func TestLusdAutoMatching_MehrdeutigKeineAdoption(t *testing.T) {
+// Zwei ID-lose Schüler mit gleichem Name+Geburtsdatum (Schreibvarianten) waren bis zum
+// 07.09.2026 MEHRDEUTIG — der Import adoptierte dann keinen. Seit Migration 108 kann
+// dieser Zustand gar nicht entstehen: Der Namensindex rechnet in derselben Normalform wie
+// der LUSD-Schlüssel, die zweite Schreibvariante wird an der Datenbank abgewiesen. Der
+// Test belegt das Verbot UND dass der eine verbliebene Schüler eindeutig adoptiert wird.
+// Die Mehrdeutig-Behandlung im Code bleibt als Sicherheitsnetz stehen.
+func TestLusdAutoMatching_SchreibvarianteKannNichtMehrdeutigWerden(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 	s := &Server{DB: &db.Database{Pool: pool}}
 
 	geb := time.Date(2012, 6, 6, 0, 0, 0, 0, time.UTC)
-	for i, vn := range []string{"anna", "Anna"} {
-		if _, err := pool.Exec(ctx, `
-			INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum, lusd_id)
-			VALUES ($1,'Zwilling','7c',$2,2030,$3,NULL)`, vn, "W-AMB-"+string(rune('a'+i)), geb); err != nil {
-			t.Fatalf("Waise %d anlegen: %v", i, err)
-		}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum, lusd_id)
+		VALUES ('anna','Zwilling','7c','W-AMB-a',2030,$1,NULL)`, geb); err != nil {
+		t.Fatalf("Waise anlegen: %v", err)
+	}
+	_, err := pool.Exec(ctx, `
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr, geburtsdatum, lusd_id)
+		VALUES ('Anna','Zwilling','7c','W-AMB-b',2030,$1,NULL)`, geb)
+	if err == nil || !strings.Contains(err.Error(), "unique_schueler_name_gebdatum") {
+		t.Fatalf("Schreibvariante desselben Menschen wurde angelegt — Migration 108 greift nicht: %v", err)
 	}
 
 	rec := parsedStudentRow{LusdID: "LUSD-AMB", Vorname: "Anna", Nachname: "Zwilling", Klasse: "8c", GebDatum: &geb}
@@ -128,10 +137,10 @@ func TestLusdAutoMatching_MehrdeutigKeineAdoption(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Vorschau: %v", err)
 	}
-	if len(prev.Adoptions) != 0 {
-		t.Errorf("mehrdeutiger Match darf nicht adoptiert werden, waren %d Adoptionen", len(prev.Adoptions))
+	if len(prev.Adoptions) != 1 {
+		t.Errorf("der eine verbliebene Schüler muss eindeutig adoptiert werden, waren %d Adoptionen", len(prev.Adoptions))
 	}
-	if len(prev.NewStudents) != 1 {
-		t.Errorf("erwartet 1 Neuzugang, waren %d", len(prev.NewStudents))
+	if len(prev.NewStudents) != 0 {
+		t.Errorf("erwartet 0 Neuzugänge, waren %d", len(prev.NewStudents))
 	}
 }

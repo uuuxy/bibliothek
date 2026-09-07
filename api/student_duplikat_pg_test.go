@@ -81,3 +81,41 @@ func createStudent(t *testing.T, srv *Server, jsonBody string) (int, string) {
 	srv.CreateStudentHandler().ServeHTTP(rec, req)
 	return rec.Code, rec.Body.String()
 }
+
+// Migration 108: „Derselbe Mensch" in EINER Definition — Handanlage, Index und
+// LUSD-Schlüssel rechnen in suchnorm. „Anna Mueller" nach „Anna Müller" mit gleichem
+// Geburtsdatum ist ein Duplikat (409 mit Hinweis auf die Schreibweise), am alten Stand
+// (lower() in der Prüfung, roher Index) eine zweite Zeile.
+func TestCreateStudent_SchreibvarianteIstDuplikat(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	if code, body := createStudent(t, srv, `{"vorname":"Anna","nachname":"Müller","klasse":"06G1","geburtsdatum":"2012-03-04"}`); code != http.StatusCreated {
+		t.Fatalf("erste Anna Müller: erwartet 201, war %d: %s", code, body)
+	}
+	for _, variante := range []string{`"anna","MÜLLER"`, `"Anna","Mueller"`, `"Ánna","Muller"`} {
+		teile := strings.SplitN(variante, ",", 2)
+		body := `{"vorname":` + teile[0] + `,"nachname":` + teile[1] + `,"klasse":"06G2","geburtsdatum":"2012-03-04"}`
+		code, resp := createStudent(t, srv, body)
+		if code != http.StatusConflict {
+			t.Fatalf("Schreibvariante %s: erwartet 409, war %d: %s", variante, code, resp)
+		}
+		if !strings.Contains(resp, "Schreibweise") {
+			t.Errorf("Meldung muss die Schreibweise nennen: %s", resp)
+		}
+	}
+	// Der Index selbst hält, auch wenn die Prüfung umgangen wird (zweiter Arbeitsplatz):
+	_, err := pool.Exec(t.Context(), `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr)
+		VALUES ('S-DUP-1', 'Anna', 'Mueller', '06G3', '2012-03-04', 2030)`)
+	if err == nil || !strings.Contains(err.Error(), "unique_schueler_name_gebdatum") {
+		t.Fatalf("Index lässt die Schreibvariante durch: %v", err)
+	}
+	var anzahl int
+	if err := pool.QueryRow(t.Context(), `SELECT count(*) FROM schueler WHERE suchnorm(nachname) = suchnorm('Müller')`).Scan(&anzahl); err != nil {
+		t.Fatal(err)
+	}
+	if anzahl != 1 {
+		t.Fatalf("%d Zeilen für denselben Menschen, want 1", anzahl)
+	}
+}

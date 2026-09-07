@@ -14,7 +14,13 @@ import (
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
+
+// meldungSchuelerDuplikat nennt die Regel, an der die Anlage scheitert — auch die
+// Schreibweise, denn genau die ist der Fall, den man vor sich hat, wenn man den Namen
+// in der Liste nicht findet.
+const meldungSchuelerDuplikat = "achtung: Ein Schüler mit diesem Namen (auch in anderer Schreibweise: Müller/Mueller, Groß/Klein) und Geburtsdatum existiert bereits im System"
 
 // abschlussJahrgang liest aus der Klassenbezeichnung den aktuellen Jahrgang und den
 // Jahrgang, mit dem der Bildungsgang endet. Es ist der Go-Zwilling von
@@ -175,7 +181,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		return "", "", false
 	}
 	if isDuplicate {
-		apierrors.SendHTTPError(w, http.StatusConflict, errors.New("achtung: Ein Schüler mit diesem Namen und Geburtsdatum existiert bereits im System"))
+		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
 		return "", "", false
 	}
 
@@ -193,6 +199,13 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		RETURNING id
 	`
 	if err := tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, req.Klasse, parsedGebdatum, abgaengerJahr).Scan(&studentID); err != nil {
+		// Der Index ist die letzte Instanz (zwei Arbeitsplätze gleichzeitig): seine
+		// Verletzung ist ein Bedienfall mit Erklärung, kein 500.
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "unique_schueler_name_gebdatum" {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+			return "", "", false
+		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}
@@ -230,9 +243,14 @@ func parseCreateGeburtsdatum(w http.ResponseWriter, raw *string) (*time.Time, bo
 // als Treffer. Vorher stülpte coalesce beiden Seiten '1900-01-01' über und machte damit
 // namensgleiche Schüler OHNE Geburtsdatum fälschlich zu Duplikaten (Zwillings-Blockade):
 // der zweite "Leon Müller" ohne Geburtsdatum konnte gar nicht angelegt werden.
+//
+// Seit Migration 108 vergleicht die Prüfung in der Normalform suchnorm — derselben, in
+// der der Unique-Index und der LUSD-Schlüssel rechnen: „Müller" und „Mueller" sind ein
+// Mensch. Vorher nur lower(): Die Schreibvariante rutschte an der Prüfung vorbei und
+// stand als zweite Zeile in der Datenbank.
 func pruefeSchuelerDuplikat(ctx context.Context, tx pgx.Tx, vorname, nachname string, gebdatum *time.Time) (bool, error) {
 	var isDuplicate bool
-	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE lower(vorname) = lower($1) AND lower(nachname) = lower($2) AND geburtsdatum = $3::DATE AND deleted_at IS NULL)`
+	q := `SELECT EXISTS(SELECT 1 FROM schueler WHERE suchnorm(vorname) = suchnorm($1) AND suchnorm(nachname) = suchnorm($2) AND geburtsdatum = $3::DATE AND deleted_at IS NULL)`
 	err := tx.QueryRow(ctx, q, vorname, nachname, gebdatum).Scan(&isDuplicate)
 	return isDuplicate, err
 }
