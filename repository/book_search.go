@@ -110,7 +110,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 			   )
 		  )
 		ORDER BY
-			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE tokens.norm || '%') DESC,
+			(SELECT count(*) FROM tokens WHERE starts_with(suchnorm(coalesce(b.titel, '')), tokens.norm)) DESC,
 			b.titel ASC
 		LIMIT $3
 	`
