@@ -39,14 +39,14 @@ type ActionResponse struct {
 	Type            string                 `json:"type"`                       // "student", "teacher", "ausleihe", "rueckgabe", "search_results", "info"
 	Message         string                 `json:"message,omitempty"`          // Informational message for the frontend
 	Student         *SchuelerKiosk         `json:"student,omitempty"`          // The active student, or original borrower (Theken-Sicht, siehe SchuelerKiosk)
-	Teacher         *repository.User       `json:"teacher,omitempty"`          // The active teacher borrower (Handapparat)
+	Teacher         *MitarbeiterKiosk      `json:"teacher,omitempty"`          // The active teacher borrower (Handapparat; Theken-Sicht, siehe MitarbeiterKiosk)
 	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable
 	Geraet          *repository.Geraet     `json:"geraet,omitempty"`           // Hardware details if applicable
 	DueDate         *time.Time             `json:"due_date,omitempty"`         // Return deadline for check-outs
 	LoanID          *string                `json:"loan_id,omitempty"`          // Loan UUID (for Undo support on returns)
 	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another student/teacher
 	Vorbesitzer     *SchuelerKiosk         `json:"vorbesitzer,omitempty"`      // Original student borrower if foreign return (Theken-Sicht)
-	VorbesitzerUser *repository.User       `json:"vorbesitzer_user,omitempty"` // Original teacher borrower if foreign return
+	VorbesitzerUser *MitarbeiterKiosk      `json:"vorbesitzer_user,omitempty"` // Original teacher borrower if foreign return (Theken-Sicht)
 	SearchResults   []repository.BookTitle `json:"search_results,omitempty"`   // Full-text search list
 	HasVormerkung   bool                   `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
 	VormerkungTitel string                 `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
