@@ -7,6 +7,7 @@
 <script>
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import Feld from '../ui/Feld.svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 </script>
 
 {#if labelStore.selectedTitle}
@@ -54,11 +55,7 @@
 							<label
 								class="flex items-center space-x-3 text-xs text-slate-700 cursor-pointer p-1.5 hover:bg-slate-50 rounded-lg"
 							>
-								<input
-									type="checkbox"
-									bind:checked={copy.checked}
-									class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white"
-								/>
+								<Kaestchen bind:checked={copy.checked} />
 								<span class="font-bold text-slate-800">{copy.barcode_id}</span>
 								<span class="text-label-small text-slate-500 font-sans"
 									>({copy.zustand_notiz || 'Neuwertig'})</span

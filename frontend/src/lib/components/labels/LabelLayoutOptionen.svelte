@@ -6,6 +6,7 @@
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { ETIKETT_FORMATE } from '../../etikettformate.js';
 	const BARCODE_AUSGABE = [
 		{ value: 'code39', label: 'Code39 (1D Standard)' },
@@ -53,13 +54,6 @@
 			/>
 		</div>
 
-		<label class="flex items-center space-x-3 text-xs text-slate-705 cursor-pointer select-none">
-			<input
-				type="checkbox"
-				bind:checked={labelStore.labelBorder}
-				class="accent-blue-600 w-4 h-4 rounded border-slate-200 bg-white"
-			/>
-			<span>Hilfsrahmen auf dem Etikett zeichnen</span>
-		</label>
+		<Kaestchen bind:checked={labelStore.labelBorder} label="Hilfsrahmen auf dem Etikett zeichnen" />
 	</div>
 </div>

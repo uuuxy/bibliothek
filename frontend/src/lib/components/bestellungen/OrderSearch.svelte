@@ -5,6 +5,7 @@
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 
@@ -269,14 +270,7 @@
 					feld="w-16 text-center font-bold"
 				/>
 			</div>
-			<label class="flex items-center gap-2 cursor-pointer select-none">
-				<input
-					type="checkbox"
-					bind:checked={stagedGenerateBarcodes}
-					class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-				/>
-				<span class="text-xs font-semibold text-slate-700">Barcodes generieren</span>
-			</label>
+			<Kaestchen bind:checked={stagedGenerateBarcodes} label="Barcodes generieren" />
 		</div>
 
 		<div class="flex items-center gap-2">

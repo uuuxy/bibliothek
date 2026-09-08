@@ -22,8 +22,8 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 // Bewusst NICHT: ein Limit für .js/.go. Die Regel in ARCHITECTURE.md gilt den
 // Svelte-Komponenten, und nur dafür steht hier ein Gate.
 const BESTAND = {
-	'src/inventur/lib/components/admin/BookTable.svelte': 226,
-	'src/inventur/lib/components/admin/BookTableZeile.svelte': 203,
+	'src/inventur/lib/components/admin/BookTable.svelte': 225,
+	'src/inventur/lib/components/admin/BookTableZeile.svelte': 202,
 	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 207,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 215,
 	'src/lib/BestellBestaetigung.svelte': 254,
@@ -37,9 +37,9 @@ const BESTAND = {
 	'src/lib/StudentProfile.svelte': 256,
 	'src/lib/UnifiedInventory.svelte': 325,
 	'src/lib/UserManagement.svelte': 257,
-	'src/lib/components/BookExemplarCard.svelte': 227,
+	'src/lib/components/BookExemplarCard.svelte': 224,
 	'src/lib/components/bestellungen/OrderRecommendations.svelte': 222,
-	'src/lib/components/bestellungen/OrderSearch.svelte': 287,
+	'src/lib/components/bestellungen/OrderSearch.svelte': 281,
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
 	'src/lib/components/stats/StatsTrendChart.svelte': 243,
 	'src/lib/components/students/LusdImportView.svelte': 311,

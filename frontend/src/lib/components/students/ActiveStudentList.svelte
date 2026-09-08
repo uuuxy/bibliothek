@@ -7,6 +7,7 @@
 -->
 <script>
 	import { BookOpen, ChevronRight } from '@lucide/svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
 
 	/**
@@ -94,13 +95,11 @@
 					<tr>
 						{#if auswaehlbar}
 							<th class="px-4 py-2 w-10">
-								<input
-									type="checkbox"
+								<Kaestchen
 									checked={alleGewaehlt}
 									indeterminate={teilweise}
 									onchange={onToggleAlle}
 									aria-label="Alle angezeigten Schüler für den Ausweisdruck markieren"
-									class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-blue-600"
 								/>
 							</th>
 						{/if}
@@ -132,12 +131,10 @@
 								     wuerde jedes Ankreuzen den Bildschirm wechseln — und die
 								     Markierung waere weg, bevor man die zweite setzen kann. -->
 								<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
-									<input
-										type="checkbox"
+									<Kaestchen
 										checked={auswahl.has(s.id)}
 										onchange={() => onToggle?.(s.id)}
 										aria-label="{s.vorname} {s.nachname} für den Ausweisdruck markieren"
-										class="h-4 w-4 cursor-pointer rounded border-slate-300 accent-blue-600"
 									/>
 								</td>
 							{/if}

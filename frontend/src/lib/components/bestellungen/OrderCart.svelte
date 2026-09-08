@@ -2,6 +2,7 @@
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { X } from '@lucide/svelte';
 </script>
@@ -125,16 +126,7 @@
 					<span class="text-xl font-bold text-slate-900 tabular-nums">{orderStore.totalQty}</span>
 				{/if}
 			</div>
-			<label
-				class="flex items-center gap-2 cursor-pointer bg-slate-50 px-3 py-2 border border-slate-200 rounded-xl select-none"
-			>
-				<input
-					type="checkbox"
-					bind:checked={orderStore.attachBarcodes}
-					class="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
-				/>
-				<span class="text-sm font-semibold text-slate-700">Barcodes mitschicken</span>
-			</label>
+			<Kaestchen bind:checked={orderStore.attachBarcodes} label="Barcodes mitschicken" />
 			<Button
 				size="lg"
 				onclick={() => orderStore.submitOrder()}

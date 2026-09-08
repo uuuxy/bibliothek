@@ -8,6 +8,7 @@
 	import Select from '../components/ui/Select.svelte';
 	import Feld from '../components/ui/Feld.svelte';
 	import ZahlenFeld from './ZahlenFeld.svelte';
+	import Kaestchen from '../components/ui/Kaestchen.svelte';
 
 	/**
 	 * @type {{
@@ -68,17 +69,11 @@
 		{/each}
 	</div>
 
-	<label class="flex items-center gap-2 cursor-pointer">
-		<input
-			type="checkbox"
-			checked={el.style.fontWeight === 'bold'}
-			onchange={(e) => {
-				el.style.fontWeight = /** @type {HTMLInputElement} */ (e.currentTarget).checked
-					? 'bold'
-					: 'normal';
-			}}
-			class="rounded border-slate-300 text-blue-600"
-		/>
-		<span class="text-xs text-slate-600 font-medium">Fett</span>
-	</label>
+	<Kaestchen
+		checked={el.style.fontWeight === 'bold'}
+		onchange={(e) => {
+			el.style.fontWeight = e.currentTarget.checked ? 'bold' : 'normal';
+		}}
+		label="Fett"
+	/>
 </div>

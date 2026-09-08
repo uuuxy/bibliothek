@@ -3,6 +3,7 @@
 	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
+	import Kaestchen from './ui/Kaestchen.svelte';
 	import { Pencil, Plus, Printer, Trash2 } from '@lucide/svelte';
 
 	/**
@@ -121,11 +122,7 @@
 		{:else}
 			<div class="flex items-center gap-3">
 				{#if darfBearbeiten}
-					<input
-						type="checkbox"
-						checked={selected}
-						class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer pointer-events-none"
-					/>
+					<Kaestchen checked={selected} class="pointer-events-none" aria-label="Ausgewählt" />
 				{/if}
 				<div class="flex items-center gap-2">
 					<span

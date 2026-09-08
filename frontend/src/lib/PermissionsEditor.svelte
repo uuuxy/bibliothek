@@ -1,4 +1,5 @@
 <script>
+	import Switch from './components/ui/Switch.svelte';
 	/**
 	 * @component PermissionsEditor
 	 * Reine Darstellung des Rechte-Editors (flach, edge-to-edge). Logik/State liegen
@@ -17,35 +18,27 @@
 	let { metadata, permissionsState, updatingKeys, onToggle, schreibgeschuetzt = false } = $props();
 </script>
 
-<!-- DRY: ein Toggle-Block für Mitarbeiter & Lehrer -->
+<!-- DRY: ein Toggle-Block für Mitarbeiter, Lehrer und Helfer.
+     Seit 08.09.2026 der M3-Schalter aus ui/ statt eines sr-only/peer-checked-Nachbaus
+     (40×24 px, ohne zugänglichen Namen). Das {#key} setzt den Schalter nach jedem
+     Speichern auf den Stand der Matrix zurück — schlägt der PUT fehl, bliebe der
+     Schalter sonst umgelegt, obwohl das Recht unverändert ist. -->
 {#snippet roleToggle(item, roleLabel, roleKey)}
 	{@const isUpdating = updatingKeys[`${roleKey}-${item.key}`]}
-	<div class="flex items-center gap-3">
-		<span class="text-xs font-bold text-slate-500 tracking-wider w-16 text-right">{roleLabel}</span>
-		<button
-			onclick={() => onToggle(roleKey, item.key, permissionsState[roleKey]?.[item.key] ?? false)}
-			disabled={isUpdating || schreibgeschuetzt}
-			class="relative inline-flex items-center cursor-pointer group focus:outline-none disabled:cursor-not-allowed"
-			aria-label="{roleLabel} Rechte umschalten"
-			title={schreibgeschuetzt ? 'Die Rechte-Matrix kann nur ein Administrator ändern' : undefined}
-		>
-			<input
-				type="checkbox"
-				checked={permissionsState[roleKey]?.[item.key] ?? false}
-				class="sr-only peer"
-				readonly
+	{@const wert = permissionsState[roleKey]?.[item.key] ?? false}
+	<div
+		class="flex items-center gap-3"
+		title={schreibgeschuetzt ? 'Die Rechte-Matrix kann nur ein Administrator ändern' : undefined}
+	>
+		<span class="text-xs font-bold text-slate-500 tracking-wider w-24 text-right">{roleLabel}</span>
+		{#key isUpdating}
+			<Switch
+				checked={wert}
+				disabled={isUpdating || schreibgeschuetzt}
+				label="{roleLabel} Rechte umschalten"
+				onchange={() => onToggle(roleKey, item.key, wert)}
 			/>
-			<div
-				class="w-10 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-slate-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 peer-focus:ring-2 peer-focus:ring-blue-500/20"
-			></div>
-			{#if isUpdating}
-				<div class="absolute inset-0 flex items-center justify-center bg-white/70 rounded-full">
-					<div
-						class="w-3.5 h-3.5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"
-					></div>
-				</div>
-			{/if}
-		</button>
+		{/key}
 	</div>
 {/snippet}
 
@@ -71,15 +64,10 @@
 						<div class="flex items-center gap-8 md:gap-12 shrink-0">
 							<!-- Admin (Read-only) -->
 							<div class="flex items-center gap-3">
-								<span class="text-xs font-bold text-slate-400 tracking-wider w-16 text-right"
+								<span class="text-xs font-bold text-slate-400 tracking-wider w-24 text-right"
 									>ADMIN</span
 								>
-								<label class="relative inline-flex items-center opacity-60 cursor-not-allowed">
-									<input type="checkbox" checked disabled class="sr-only peer" />
-									<div
-										class="w-10 h-6 bg-blue-100 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-									></div>
-								</label>
+								<Switch checked disabled label="Administrator hat immer alle Rechte" />
 							</div>
 
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}

@@ -4,6 +4,7 @@
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Radio from '../ui/Radio.svelte';
 	import { Printer } from '@lucide/svelte';
 
 	/** @type {{ suppliers?: { id: string, name: string }[] }} */
@@ -60,7 +61,7 @@
 						? 'border-blue-600 bg-blue-50/40'
 						: 'border-transparent hover:bg-slate-50/60'}"
 				>
-					<input type="radio" bind:group={typ} value={opt.value} class="mt-0.5 accent-blue-600" />
+					<Radio bind:group={typ} value={opt.value} />
 					<div>
 						<div class="font-bold text-sm text-slate-800">{opt.label}</div>
 						<div class="text-xs text-slate-500">{opt.desc}</div>

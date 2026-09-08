@@ -2,6 +2,7 @@
 	import { slide } from 'svelte/transition';
 	import Select from './ui/Select.svelte';
 	import Feld from './ui/Feld.svelte';
+	import Radio from './ui/Radio.svelte';
 
 	const KLASSEN = [
 		{ value: '', label: 'Alle Klassen' },
@@ -43,12 +44,7 @@
 						: 'border-slate-200 hover:bg-slate-50'}"
 				>
 					<div class="flex items-center h-5 mt-0.5">
-						<input
-							type="radio"
-							bind:group={state.scopeType}
-							value="global"
-							class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-600"
-						/>
+						<Radio bind:group={state.scopeType} value="global" />
 					</div>
 					<div class="flex-1">
 						<div class="font-bold text-slate-900">Komplette Bibliothek</div>
@@ -63,12 +59,7 @@
 						: 'border-slate-200 hover:bg-slate-50'}"
 				>
 					<div class="flex items-center h-5 mt-0.5">
-						<input
-							type="radio"
-							bind:group={state.scopeType}
-							value="signature"
-							class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-600"
-						/>
+						<Radio bind:group={state.scopeType} value="signature" />
 					</div>
 					<div class="flex-1">
 						<div class="font-bold text-slate-900">Nur bestimmte Signatur</div>
@@ -83,12 +74,7 @@
 						: 'border-slate-200 hover:bg-slate-50'}"
 				>
 					<div class="flex items-center h-5 mt-0.5">
-						<input
-							type="radio"
-							bind:group={state.scopeType}
-							value="filter"
-							class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-600"
-						/>
+						<Radio bind:group={state.scopeType} value="filter" />
 					</div>
 					<div class="flex-1">
 						<div class="font-bold text-slate-900">Nach Fach / Klasse</div>

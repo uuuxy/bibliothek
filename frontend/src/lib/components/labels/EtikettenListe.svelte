@@ -11,6 +11,7 @@
      (MahnwesenTable): „Schülerdatei, Abgänger, Medienkatalog und Inventur stehen alle
      edge-to-edge. Getrennt wird über die Kopfzeile, nicht über eine Umrandung." -->
 <script>
+	import Kaestchen from '../ui/Kaestchen.svelte';
 	/** @type {{
 	 *   zeilen: { barcode_id: string, titel: string, autor: string, erworben_am: string, etikett_gedruckt: boolean }[],
 	 *   gewaehlt: string[],
@@ -44,12 +45,10 @@
 				<th
 					class="sticky top-0 z-10 w-12 border-b border-outline-variant bg-surface px-3 py-3 text-left"
 				>
-					<input
-						type="checkbox"
+					<Kaestchen
 						aria-label="Alle auswählen"
 						checked={alleGewaehlt}
 						onchange={onalleUmschalten}
-						class="h-[18px] w-[18px] cursor-pointer accent-primary"
 					/>
 				</th>
 				{@render kopf('Titel', 'w-full text-left')}
@@ -69,12 +68,10 @@
 						: 'hover:bg-surface-container'}"
 				>
 					<td class="px-3 py-2.5">
-						<input
-							type="checkbox"
+						<Kaestchen
 							aria-label="{e.titel} ({e.barcode_id}) auswählen"
 							checked={markiert}
 							onchange={() => onumschalten(e.barcode_id)}
-							class="h-[18px] w-[18px] cursor-pointer accent-primary"
 						/>
 					</td>
 					<td class="max-w-0 px-3 py-2.5">

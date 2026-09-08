@@ -7,6 +7,7 @@
      den neuen Namen. „sicher" (Schuleintritt trifft) ist vorangekreuzt, „vermutlich" nicht. -->
 <script>
 	import { ArrowRight, CircleCheck, UserRoundPen } from '@lucide/svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	/**
@@ -67,9 +68,7 @@
 								{#if p.bestaetigt}<CircleCheck class="w-4 h-4" />{/if}
 							</span>
 						{:else}
-							<input
-								type="checkbox"
-								class="mt-0.5 h-4 w-4 accent-primary shrink-0"
+							<Kaestchen
 								checked={gewaehlt.has(p.zeile)}
 								onchange={() => umschalten(p.zeile)}
 								aria-label="Paar bestätigen: {p.alt_vorname} {p.alt_nachname} ist {p.neu_vorname} {p.neu_nachname}"

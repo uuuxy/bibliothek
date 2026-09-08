@@ -3,6 +3,7 @@
 	import { Mail } from '@lucide/svelte';
 	import Modal from '../../Modal.svelte';
 	import Button from './Button.svelte';
+	import Kaestchen from './Kaestchen.svelte';
 	import Feld from './Feld.svelte';
 
 	/**
@@ -124,12 +125,7 @@
 					<label
 						class="flex items-center gap-3 px-3 py-3 hover:bg-slate-50 cursor-pointer text-sm transition-colors"
 					>
-						<input
-							type="checkbox"
-							checked={ausgewaehlt.includes(k.klasse)}
-							onchange={() => toggle(k.klasse)}
-							class="w-4 h-4 shrink-0 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 cursor-pointer"
-						/>
+						<Kaestchen checked={ausgewaehlt.includes(k.klasse)} onchange={() => toggle(k.klasse)} />
 						<span class="w-16 shrink-0 font-semibold text-slate-800">{k.klasse}</span>
 						<span class="w-20 shrink-0 text-xs text-slate-500">{anzahlSchueler(k)} Schüler</span>
 

@@ -21,6 +21,7 @@
 <script>
 	import { Printer, X, PackageSearch, Trash2 } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 	import VerlustLoeschenDialog from './VerlustLoeschenDialog.svelte';
 
 	/**
@@ -163,9 +164,7 @@
 								{#if istGefunden}
 									<span class="text-sm font-medium text-emerald-700">Gefunden</span>
 								{:else if e.exemplar_id}
-									<input
-										type="checkbox"
-										class="h-4 w-4 cursor-pointer rounded border-slate-300 text-emerald-600 focus:ring-emerald-500/20"
+									<Kaestchen
 										checked={false}
 										disabled={gefundenLaeuft === e.exemplar_id}
 										onclick={() => gefunden(e.exemplar_id)}

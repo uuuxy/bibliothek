@@ -4,6 +4,7 @@
 	import BookTableToolbar from '$lib/components/admin/BookTableToolbar.svelte';
 	import BookTableZeile from '$lib/components/admin/BookTableZeile.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
 
 	/**
 	 * @type {{
@@ -168,10 +169,8 @@
 			>
 				<tr>
 					<th class="px-6 py-4 w-10">
-						<input
-							type="checkbox"
+						<Kaestchen
 							aria-label="Alle Bücher auswählen"
-							class="rounded border-slate-200 bg-white text-blue-600 focus:ring-blue-500/20 cursor-pointer"
 							checked={auswahl.alleGewaehlt(books)}
 							onclick={() => auswahl.alleUmschalten(books)}
 						/>

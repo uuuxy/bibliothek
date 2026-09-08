@@ -9,6 +9,8 @@
 	import { idStore, bringForward, sendBackward, removeElement } from './idDesignerStore.svelte.js';
 	import PropertiesText from './PropertiesText.svelte';
 	import ZahlenFeld from './ZahlenFeld.svelte';
+	import Kaestchen from '../components/ui/Kaestchen.svelte';
+	import Switch from '../components/ui/Switch.svelte';
 	import { MousePointer2, Trash2 } from '@lucide/svelte';
 
 	/** @type {{ selectedId: string|null, side: 'front'|'back' }} */
@@ -81,13 +83,10 @@
 
 		<!-- Visibility -->
 		<div class="flex items-center justify-between">
-			<span class="text-xs font-medium text-slate-500">Sichtbar</span>
-			<label class="relative inline-flex items-center cursor-pointer select-none">
-				<input type="checkbox" bind:checked={el.show} class="sr-only peer" />
-				<div
-					class="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"
-				></div>
-			</label>
+			<label for="designer-element-sichtbar" class="text-xs font-medium text-slate-500"
+				>Sichtbar</label
+			>
+			<Switch id="designer-element-sichtbar" bind:checked={el.show} />
 		</div>
 
 		<!-- Position & Size -->
@@ -186,14 +185,7 @@
 					onchange={handleImageUpload}
 					class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-md file:border-0 file:text-label-small file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer"
 				/>
-				<label class="flex items-center gap-2 cursor-pointer">
-					<input
-						type="checkbox"
-						bind:checked={el.proportional}
-						class="rounded border-slate-300 text-blue-600"
-					/>
-					<span class="text-xs text-slate-600 font-medium">Proportionale Skalierung</span>
-				</label>
+				<Kaestchen bind:checked={el.proportional} label="Proportionale Skalierung" />
 			</div>
 		{/if}
 	{/if}

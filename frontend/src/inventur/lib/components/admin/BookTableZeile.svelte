@@ -1,6 +1,7 @@
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
 	import { ChevronRight, Menu } from '@lucide/svelte';
+	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
 
 	/**
 	 * @type {{
@@ -97,10 +98,8 @@
 				class="w-4 h-4 text-slate-300 cursor-grab active:cursor-grabbing hover:text-slate-500"
 				aria-hidden="true"
 			/>
-			<input
-				type="checkbox"
+			<Kaestchen
 				aria-label="Buch auswählen"
-				class="rounded border-slate-200 bg-white text-blue-600 focus:ring-blue-500/20 cursor-pointer"
 				checked={isSelected}
 				onchange={() => onToggleSelect(book.id)}
 			/>

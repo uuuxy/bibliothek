@@ -3,6 +3,7 @@
 	import MahnlisteMailDialog from './MahnlisteMailDialog.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Mail } from '@lucide/svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function openProfile(schuelerId) {
@@ -57,9 +58,7 @@
 				<thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
 					<tr>
 						<th class="w-12 px-4 py-2 text-center">
-							<input
-								type="checkbox"
-								class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
+							<Kaestchen
 								checked={allSelected}
 								{indeterminate}
 								onclick={toggleAll}
@@ -82,9 +81,7 @@
 								: ''}"
 						>
 							<td class="w-12 px-4 py-2 text-center">
-								<input
-									type="checkbox"
-									class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/20 transition-all cursor-pointer"
+								<Kaestchen
 									checked={mahnwesenStore.selectedIds.has(schueler.schueler_id)}
 									onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
 									aria-label="{schueler.name} auswählen"

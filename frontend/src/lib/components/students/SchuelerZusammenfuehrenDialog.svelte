@@ -9,6 +9,7 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
+	import Radio from '../ui/Radio.svelte';
 	import ZusammenfuehrenKandidat from './ZusammenfuehrenKandidat.svelte';
 	import { erzeugeKandidatenSuche } from './zusammenfuehrenSuche.svelte.js';
 	import Modal from '../../Modal.svelte';
@@ -131,13 +132,7 @@
 				<legend class="text-xs font-bold text-on-surface">Welcher Datensatz bleibt?</legend>
 				{#each [{ wert: 'dieser', text: `${profile.vorname} ${profile.nachname} (${profile.barcode_id})` }, { wert: 'anderer', text: `${anderer.vorname} ${anderer.nachname} (${anderer.barcode_id})` }] as w (w.wert)}
 					<label class="flex items-center gap-2 text-sm cursor-pointer">
-						<input
-							type="radio"
-							name="bleibt"
-							value={w.wert}
-							bind:group={bleibt}
-							class="accent-primary"
-						/>
+						<Radio name="bleibt" value={w.wert} bind:group={bleibt} />
 						<span>{w.text}</span>
 					</label>
 				{/each}
