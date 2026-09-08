@@ -39,3 +39,6 @@
 ## 2026-08-24 - Optimize queryBestandKennzahlen performance
 **Learning:** Found a suboptimal `LEFT JOIN` subquery in `queryBestandKennzahlen` (`api/stats.go`) that counted active loans. When the dataset scales, executing this nested loop left join directly inside the FROM clause leads to an inefficient query plan in PostgreSQL, resulting in high CPU usage and slow response times. Simply removing `DISTINCT` to attempt an optimization is extremely dangerous as it duplicates rows and breaks the aggregations entirely.
 **Action:** Extract the subquery into a Common Table Expression (CTE) `WITH aktive_ausleihen AS (SELECT DISTINCT exemplar_id FROM ausleihen WHERE rueckgabe_am IS NULL)`. This prevents the planner from executing a suboptimal nested loop left join and allows a highly efficient parallel hash join while safely preserving the logic.
+## 2025-02-28 - No-op slice append in variadic arguments
+**Learning:** Found an instance where we tried to optimize `append(ziele, zusatz...)` by wrapping it in `if len(zusatz) > 0`. This is a micro-optimization with zero measurable impact because appending an empty slice in Go is a no-op that allocates nothing.
+**Action:** Do not use `len` guards before appending variadic slices. Trust the standard library's `append` implementation, which is highly optimized for this case.
