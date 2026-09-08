@@ -63,7 +63,6 @@ func (s *Server) sammleLage(
 		AppEncryptionKey:    os.Getenv("APP_ENCRYPTION_KEY"),
 		ImapHost:            os.Getenv("IMAP_HOST"),
 		SelbstanmeldeDomain: auth.SelbstanmeldeDomain(),
-		TestzugangEmail:     auth.TestzugangEmail(),
 	}
 
 	// Öffentliche Adresse und SMTP-Host kommen aus der DATENBANK, nicht aus der .env:

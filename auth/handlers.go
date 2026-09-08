@@ -163,7 +163,7 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		user, verifyErr := verifyCredentials(ctx, dbPool, req.Email, password)
+		user, verifyErr := verifyIMAPCredentials(ctx, dbPool, req.Email, password)
 		if verifyErr != nil {
 			// Mailserver-Ausfall ≠ falsches Passwort (Ausfallmatrix 20.08.2026): Vorher
 			// bekam der Nutzer bei Server-Down „invalid email or password" UND einen
@@ -202,15 +202,6 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		if !user.aktiv {
 			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("user account is deactivated"))
 			return
-		}
-
-		// Der Sonderweg hinterlässt eine Spur — im Protokoll und im Log. Wer über den
-		// Testzugang hereinkommt, arbeitet mit den Rechten eines echten Kontos; ohne
-		// diesen Eintrag wäre er von dessen Inhaber nicht zu unterscheiden. Ein
-		// Schreibfehler beim Protokoll darf die Anmeldung nicht kippen, aber er muss
-		// laut sein.
-		if user.ueberTestzugang {
-			protokolliereTestzugang(ctx, dbPool, user.id, clientIP)
 		}
 
 		role := Role(user.roleStr)
@@ -258,10 +249,6 @@ type loginUser struct {
 	vorname   string
 	nachname  string
 	aktiv     bool
-	// ueberTestzugang: Diese Anmeldung lief über den außerordentlichen Testzugang statt
-	// über den Mailserver. Nur für den Protokolleintrag — auf die Rechte hat es keinen
-	// Einfluss, die stehen wie bei jedem anderen am Konto.
-	ueberTestzugang bool
 	// neuAngelegt: Diese Zeile ist gerade erst durch die Selbstanmeldung entstanden
 	// (siehe selbstanmeldung.go) und ist zwangsläufig inaktiv. Nur für die Antwort an
 	// den Anmeldenden gedacht — er soll „Zugang beantragt" lesen statt „Konto
@@ -283,23 +270,14 @@ func validateLoginCredentials(w http.ResponseWriter, req LoginRequest) (password
 	return req.Password, true
 }
 
-// verifyCredentials prüft die Zugangsdaten und lädt bei Erfolg den lokal registrierten
-// Benutzer. Ein Fehler bedeutet: kein gültiger Login.
+// verifyIMAPCredentials prüft die Zugangsdaten per IMAP (Roundcube-SSO) und lädt bei
+// Erfolg den lokal registrierten Benutzer. Ein Fehler bedeutet: kein gültiger Login.
 // ErrMailserverNichtErreichbar wird UNVERÄNDERT durchgereicht, damit der Handler den
 // Transport-Ausfall vom falschen Passwort unterscheiden kann (503 statt 401+Sperre).
-//
-// Der Regelweg ist IMAP (Roundcube-SSO). Genau eine Ausnahme kann daneben stehen: der
-// außerordentliche Testzugang (auth/testzugang.go), der nur existiert, solange
-// TESTZUGANG_EMAIL und TESTZUGANG_PASSWORT gesetzt sind, und nur für diese eine Adresse
-// gilt. Er ersetzt ausschließlich den Mailserver-Schritt — alles danach (Konto muss
-// existieren, aktiv sein, Rolle, Rechte, Protokoll) läuft unverändert.
-func verifyCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, password string) (loginUser, error) {
-	ueberTestzugang := istTestzugang(email, password)
-	if !ueberTestzugang {
-		// ONLY perform IMAP verification (Roundcube SSO)
-		if imapErr := AuthenticateIMAP(ctx, email, password); imapErr != nil {
-			return loginUser{}, imapErr
-		}
+func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, password string) (loginUser, error) {
+	// ONLY perform IMAP verification (Roundcube SSO)
+	if imapErr := AuthenticateIMAP(ctx, email, password); imapErr != nil {
+		return loginUser{}, imapErr
 	}
 
 	// IMAP succeeded, check if the user is registered in our local DB
@@ -323,15 +301,6 @@ func verifyCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, passw
 		// entsteht hier eine INAKTIVE Zugangsanfrage — kein Zugang, nur ein Eintrag, den
 		// die Bibliothek freischalten kann. Ist sie nicht freigegeben, bleibt es beim
 		// bisherigen Verhalten (kein Login).
-		// Der Testzugang nimmt diesen Ausgang nie: Sein Konto legt der Serverstart an
-		// (db.SichereTestzugangKonto). Fehlt es trotzdem, ist das ein Fehler der
-		// Einrichtung und keine Einladung, über die Selbstanmeldung ein zweites Konto
-		// entstehen zu lassen — erst recht keines, das anschließend freigeschaltet wird.
-		if ueberTestzugang {
-			slog.Error("Testzugang: konfigurierte Adresse hat keinen Benutzereintrag",
-				"email", TestzugangEmail())
-			return loginUser{}, errSelbstanmeldungNichtErlaubt
-		}
 		neu, anlegeErr := legeZugangsanfrageAn(ctx, dbPool, email)
 		if anlegeErr != nil {
 			// „Nicht erlaubt" ist der Normalfall (Domain nicht freigegeben) und braucht
@@ -345,35 +314,7 @@ func verifyCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, passw
 		}
 		return neu, nil
 	}
-	u.ueberTestzugang = ueberTestzugang
 	return u, nil
-}
-
-// protokolliereTestzugang hält jede Anmeldung über den außerordentlichen Zugang in
-// audit_logs fest. Bewusst dieselbe Tabelle wie die kritischen Admin-Eingriffe: Die
-// Bibliothek soll in der Protokollansicht sehen, wann ein Externer im System war, ohne
-// dafür Server-Logs lesen zu müssen.
-func protokolliereTestzugang(ctx context.Context, dbPool db.PgxPoolIface, benutzerID, ip string) {
-	slog.Warn("Anmeldung über den außerordentlichen Testzugang",
-		"email", TestzugangEmail(), "benutzer_id", benutzerID, "ip", ip)
-	const q = `INSERT INTO audit_logs (admin_id, aktion, details, ip_adresse)
-	           VALUES ($1, $2, $3, $4)`
-	details := map[string]any{
-		"email":   TestzugangEmail(),
-		"hinweis": "Anmeldung ohne Mailserver über TESTZUGANG_EMAIL/TESTZUGANG_PASSWORT",
-	}
-	tag, err := dbPool.Exec(ctx, q, benutzerID, "testzugang_anmeldung", details, ip)
-	if err != nil {
-		slog.Error("Testzugang: Protokolleintrag konnte nicht geschrieben werden", "fehler", err)
-		return
-	}
-	// Ein INSERT ohne Fehler UND ohne geschriebene Zeile wäre der stille Ausgang: Die
-	// Anmeldung liefe durch, das Protokoll bliebe leer, und niemand käme darauf, dass die
-	// Spur fehlt. Genau die Klasse, die phantom_erfolg_test.go abklopft.
-	if tag.RowsAffected() != 1 {
-		slog.Error("Testzugang: Protokolleintrag schrieb keine Zeile",
-			"zeilen", tag.RowsAffected(), "benutzer_id", benutzerID)
-	}
 }
 
 // loadPermissionsForRole lädt die effektiven Rechte aus der konfigurierbaren

@@ -84,10 +84,6 @@ type Lage struct {
 	// angelegt werden (auth/selbstanmeldung.go).
 	SelbstanmeldeDomain string
 
-	// TestzugangEmail: TESTZUGANG_EMAIL — die eine Adresse, die sich ohne Mailserver
-	// anmelden darf (auth/testzugang.go). Leer heißt: es gibt diesen Weg nicht.
-	TestzugangEmail string
-
 	// Aus den Einstellungen (Datenbank, nicht .env — siehe api/mail_settings.go)
 	OeffentlicheAdresse string
 	SmtpHost            string
@@ -214,7 +210,6 @@ func Pruefe(l Lage) []Befund {
 		pruefeGeheimnisse(l, echt),
 		pruefeAnmeldung(l, echt),
 		pruefeSelbstanmeldung(l),
-		pruefeTestzugang(l, echt),
 		pruefeBestelllink(l),
 		pruefeMailversand(l),
 		pruefeDemodaten(l),
@@ -624,33 +619,6 @@ func pruefeSelbstanmeldung(l Lage) Befund {
 	}
 	b.Stufe = StufeOK
 	b.Befund = "Postfächer @" + l.SelbstanmeldeDomain + " melden sich selbst an; neue Konten warten inaktiv auf die Freischaltung."
-	return b
-}
-
-// pruefeTestzugang: Der außerordentliche Zugang ist kein Fehler — er wird absichtlich
-// eingerichtet, damit jemand ohne Schul-Mailkonto das System ansehen kann. Er ist aber
-// eine Tür neben dem Mailserver, und Türen dieser Art werden vergessen. Weil er allein
-// an zwei Umgebungsvariablen hängt, sieht man ihm in der Oberfläche sonst nirgends an,
-// dass es ihn gibt: Die Zeile hier ist die einzige Stelle, an der er sichtbar wird.
-//
-// Warnung statt kritisch: Ein Wächter, der bei einer bewussten Entscheidung dauerhaft
-// rot leuchtet, wird weggeklickt statt gelesen (siehe istEchterBetrieb).
-func pruefeTestzugang(l Lage, echt bool) Befund {
-	b := Befund{Bereich: "Außerordentlicher Testzugang"}
-	if l.TestzugangEmail == "" {
-		b.Stufe = StufeOK
-		b.Befund = "Kein außerordentlicher Zugang eingerichtet — angemeldet wird ausschließlich über den Mailserver."
-		return b
-	}
-	if !echt {
-		b.Stufe = StufeOK
-		b.Befund = befundNichtImEchtbetrieb("Testzugang für "+l.TestzugangEmail, l.AppEnv)
-		return b
-	}
-	b.Stufe = StufeWarnung
-	b.Befund = "TESTZUGANG_EMAIL ist gesetzt: " + l.TestzugangEmail + " meldet sich ohne Mailserver an."
-	b.Folge = "Wer dieses Passwort hat, arbeitet mit den Rechten des Kontos — bei Rolle admin also mit vollem Zugriff auf Schüler-, Ausleih- und Gebührendaten. Jede Anmeldung darüber steht im Protokoll (Aktion testzugang_anmeldung)."
-	b.Abhilfe = "Nach der Testphase TESTZUGANG_EMAIL und TESTZUGANG_PASSWORT aus der .env nehmen und neu starten; das Konto danach unter Benutzer & Rechte deaktivieren."
 	return b
 }
 

@@ -69,12 +69,6 @@ services:
       - IMAP_HOST=mock
       # E2E: e2e/selbstanmeldung.spec.js meldet ein @test.local-Postfach ohne Konto an.
       - SELBSTANMELDUNG_DOMAIN=test.local
-      # Ausserordentlicher Testzugang. Hier eigentlich ueberfluessig — dieser Stack laeuft
-      # mit IMAP_HOST=mock und laesst ohnehin jedes Passwort durch. Die Zeilen stehen
-      # trotzdem da, damit man die Einrichtung lokal ausprobieren kann, bevor man sie auf
-      # den Server schreibt: Ohne sie kaeme der Wert aus der .env nie im Container an.
-      - TESTZUGANG_EMAIL=${TESTZUGANG_EMAIL:-}
-      - TESTZUGANG_PASSWORT=${TESTZUGANG_PASSWORT:-}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}
       - SMTP_USER=${SMTP_USER}
