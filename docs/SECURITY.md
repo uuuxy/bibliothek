@@ -2,7 +2,12 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-05 abends (Sicherheits-Audit: Client-IP ein Hop, Cover-Proxy
+> Zuletzt aktualisiert: 2026-09-07 (Sicherheits-Audit über Auth/Authz, Injection, Dateien,
+> SSRF, Secrets, XSS, DoS: kein aus dem Netz ausnutzbarer Fund; drei Fixes — Secret-Guard
+> kennt die .env.example-Platzhalter, Theken-Antwort reduziert Lehrkräfte auf Identität
+> (MitarbeiterKiosk), XLSX-Entpackgrenze 256 MB für alle drei Importwege; Audit-Zeile der
+> Ausleihe steht seit demselben Tag IN der Transaktion).
+> Davor 2026-09-05 abends (Sicherheits-Audit: Client-IP ein Hop, Cover-Proxy
 > an den Katalog gebunden, Secret-Guard als Vorgabe scharf, Login-Rumpfgrenze, OPAC-Joker).
 > Davor 2026-09-05 (Karenz-Uhr läuft ab dem letzten abgeschlossenen Vorgang).
 > Davor 2026-09-02 (PII-Stufen gemessen: GET + lesende POSTs), 2026-08-24 (Löschbarkeit einzelner Felder), 2026-08-06
@@ -323,13 +328,13 @@ Wenn `JWT_SECRET` oder `APP_ENCRYPTION_KEY` die committeten Entwicklungs-Default
 Der Server **verweigert den Start**, wenn ein bekanntes Beispiel-Geheimnis
 (`api.IstBekanntesDefaultGeheimnis`) aktiv ist — und zwar **als Vorgabe** (seit 05.09.2026):
 
-| Umgebung                          | `ENFORCE_PROD_SECRETS` | Verhalten                                   |
-| --------------------------------- | ---------------------- | ------------------------------------------- |
-| `production` / leer / sonstiges   | nicht gesetzt          | **verweigert** bei Beispielwert             |
-| `production`                      | `true`                 | verweigert                                  |
-| `production`                      | `false` (ausdrücklich) | startet, warnt im Log; Selbstprüfung gelb   |
-| `local` / `development` / `test`  | nicht gesetzt          | startet — dort sind die Beispielwerte richtig |
-| irgendeine                        | unlesbar (`ja`, `0`)   | verweigert — unsicher muss man hinschreiben  |
+| Umgebung                         | `ENFORCE_PROD_SECRETS` | Verhalten                                     |
+| -------------------------------- | ---------------------- | --------------------------------------------- |
+| `production` / leer / sonstiges  | nicht gesetzt          | **verweigert** bei Beispielwert               |
+| `production`                     | `true`                 | verweigert                                    |
+| `production`                     | `false` (ausdrücklich) | startet, warnt im Log; Selbstprüfung gelb     |
+| `local` / `development` / `test` | nicht gesetzt          | startet — dort sind die Beispielwerte richtig |
+| irgendeine                       | unlesbar (`ja`, `0`)   | verweigert — unsicher muss man hinschreiben   |
 
 Bis zum 05.09.2026 galt `== "true"`: aus, solange niemand den Schalter setzte. Eine
 vergessene Zeile in der `.env` genügte, damit der Schulserver mit dem JWT-Schlüssel aus dem
@@ -352,12 +357,12 @@ production-Server ohne eigene Geheimnisse testen will, schreibt `ENFORCE_PROD_SE
 die Compose-Datei erzwinge per `${VAR:?Fehlermeldung}`, dass _alle_ Secrets gesetzt sind.
 Das stimmt nur für zwei davon. Tatsächlich:
 
-| Variable             | Compose-Verhalten                                                                                 |
-| -------------------- | ------------------------------------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD`  | `${…:?}` — Stack startet ohne sie **nicht**                                                       |
-| `IMAP_HOST`          | `${…:?}` — Stack startet ohne sie **nicht**                                                       |
-| `JWT_SECRET`         | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo)      |
-| `APP_ENCRYPTION_KEY` | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo)      |
+| Variable             | Compose-Verhalten                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`  | `${…:?}` — Stack startet ohne sie **nicht**                                               |
+| `IMAP_HOST`          | `${…:?}` — Stack startet ohne sie **nicht**                                               |
+| `JWT_SECRET`         | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo) |
+| `APP_ENCRYPTION_KEY` | `${…:?}` seit 05.09.2026 — Stack startet ohne sie **nicht** (vorher Default aus dem Repo) |
 
 Bis zum 05.09.2026 fielen die beiden letzten auf committete Defaults zurück, und der
 Code-Guard war standardmäßig aus: Ein Prod-Deploy ohne gesetzte `.env`-Werte lief mit im
@@ -689,4 +694,4 @@ diesen Schutz auf.
 ## 📋 Audit-Trail
 
 - Alle administrativen Aktionen und Buchbewegungen werden in `audit_logs` protokolliert (append-only als Konvention — kein UPDATE/DELETE außer der DSGVO-PII-Tilgung; kein DB-Trigger-Zwang, siehe Migration 083).
-- Auditierung erfolgt **nach** dem Transaktions-Commit (kein Rollback-Risiko).
+- Ausleihe und Rückgabe (Bücher wie Geräte) schreiben ihre Audit-Zeile seit dem 07.09.2026 **in derselben Transaktion**, vor dem Commit: Kann die Spur nicht geschrieben werden, gibt es die Buchung nicht (`repository.AuditRepository.LogAusleihe/LogRueckgabe` verlangen die Transaktion des Aufrufers). Bis dahin lief die Zeile nach dem Commit in eigener Transaktion — brach die Verbindung dazwischen ab, galt die Ausleihe ohne Revisionsspur. Admin-Aktionen (`LogAdminAktion`: Sperr-Override, Wareneingang-Sammelbuchung) stehen weiter neben dem Vorgang.
