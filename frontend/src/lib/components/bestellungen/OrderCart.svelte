@@ -1,5 +1,6 @@
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -134,9 +135,7 @@
 				class="w-full disabled:bg-slate-200 disabled:text-slate-400 disabled:opacity-100"
 			>
 				{#if orderStore.submitting}
-					<div
-						class="w-4 h-4 border-2 border-t-white border-white/20 rounded-full animate-spin"
-					></div>
+					<Ladekreis size="sm" farbe="aktuell" />
 					Wird gesendet …
 				{:else}
 					Bestellung auslösen · {orderStore.totalQty} Expl.

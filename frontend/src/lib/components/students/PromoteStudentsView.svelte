@@ -3,6 +3,7 @@
      → Ausführen-Knopf → rote Bestätigung. Kein window.confirm/Modal. -->
 <script>
 	import { AlertTriangle, CircleCheck } from '@lucide/svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
 
@@ -154,9 +155,7 @@
 		<div class="flex justify-end">
 			<Button onclick={runPreview} disabled={loading}>
 				{#if loading}
-					<span
-						class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
-					></span> Vorschau wird berechnet…
+					<Ladekreis size="sm" farbe="aktuell" /> Vorschau wird berechnet…
 				{:else}
 					Vorschau berechnen
 				{/if}
@@ -199,9 +198,7 @@
 				</Button>
 				<Button variant="danger-solid" onclick={executePromotion} disabled={loading}>
 					{#if loading}
-						<span
-							class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
-						></span> Wird ausgeführt…
+						<Ladekreis size="sm" farbe="aktuell" /> Wird ausgeführt…
 					{:else}
 						Ja, unwiderruflich ausführen
 					{/if}

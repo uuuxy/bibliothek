@@ -1,5 +1,6 @@
 <script>
 	import { AlertTriangle } from '@lucide/svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Switch from './components/ui/Switch.svelte';
@@ -78,9 +79,7 @@
 		<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
 			<Button variant="secondary" type="button" onclick={onclose}>Abbrechen</Button>
 			<Button type="submit" disabled={submittingUser}>
-				{#if submittingUser}<div
-						class="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"
-					></div>{/if}
+				{#if submittingUser}<Ladekreis size="sm" farbe="aktuell" />{/if}
 				Speichern
 			</Button>
 		</div>

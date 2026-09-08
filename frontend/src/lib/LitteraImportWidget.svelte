@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { apiFetch } from './apiFetch.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import Button from './components/ui/Button.svelte';
 
 	let files: FileList | null = $state(null);
@@ -85,9 +86,7 @@
 			class="px-6"
 		>
 			{#if isImporting}
-				<div
-					class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-				></div>
+				<Ladekreis size="sm" farbe="aktuell" />
 				<span>Importiere...</span>
 			{:else}
 				<span>Import Starten</span>

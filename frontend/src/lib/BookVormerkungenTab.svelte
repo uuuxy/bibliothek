@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte } from './schuelerRechte.js';
@@ -21,15 +22,14 @@
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
 
 	async function deleteVormerkung(id) {
-		if (!confirm('Vormerkung wirklich löschen?')) return;
+		if (!(await loeschenBestaetigen('Vormerkung löschen?'))) return;
 		try {
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
 			if (res.ok) {
 				vormerkungen = vormerkungen.filter((v) => v.id !== id);
 				showToast('Vormerkung gelöscht', 'success');
 			} else {
-				const err = await res.json().catch(() => ({}));
-				showToast(err.error || 'Fehler beim Löschen', 'error');
+				showToast((await res.json().catch(() => ({}))).error || 'Fehler beim Löschen', 'error');
 			}
 		} catch {
 			showToast('Netzwerkfehler', 'error');

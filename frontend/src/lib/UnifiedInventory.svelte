@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { slide } from 'svelte/transition';
 	import { useUnifiedInventory } from './useUnifiedInventory.svelte.js';
 	import InventoryStartModal from './components/InventoryStartModal.svelte';
@@ -215,9 +216,7 @@
 				>
 					{#snippet nachlaufend()}
 						{#if inventoryState.isScanning}
-							<div
-								class="h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600"
-							></div>
+							<Ladekreis size="md" />
 						{:else}
 							<ScanBarcode class="h-5 w-5 shrink-0 text-slate-500" aria-hidden="true" />
 						{/if}

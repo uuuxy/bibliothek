@@ -8,6 +8,7 @@
      einzige Verwaltungsseite mit einer langen Liste. -->
 <script>
 	import { Mail, Printer } from '@lucide/svelte';
+	import Ladekreis from './ui/Ladekreis.svelte';
 	import Button from './ui/Button.svelte';
 	import Select from './ui/Select.svelte';
 	import Suchpille from './ui/Suchpille.svelte';
@@ -73,9 +74,7 @@
 				class="no-print"
 			>
 				{#if druckLaeuft}
-					<div
-						class="w-3.5 h-3.5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"
-					></div>
+					<Ladekreis size="sm" />
 					Lade Daten…
 				{:else}
 					<Printer class="h-4 w-4" aria-hidden="true" />

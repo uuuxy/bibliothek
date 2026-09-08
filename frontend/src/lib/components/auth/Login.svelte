@@ -1,5 +1,6 @@
 <script>
 	import { authStore } from '../../stores/authStore.svelte.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import logoUrl from '../../../assets/logo.png';
@@ -41,9 +42,7 @@
 		</div>
 		<Button type="submit" size="lg" disabled={authStore.isLoggingIn} class="w-full">
 			{#if authStore.isLoggingIn}
-				<div
-					class="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin"
-				></div>
+				<Ladekreis size="sm" farbe="aktuell" />
 				Anmelden...
 			{:else}
 				Anmelden

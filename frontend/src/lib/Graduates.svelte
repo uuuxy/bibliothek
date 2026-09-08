@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
@@ -163,9 +164,7 @@
 
 	{#if loading}
 		<div class="py-12 flex justify-center items-center">
-			<div
-				class="w-8 h-8 border-2 border-t-blue-600 border-blue-100 rounded-full animate-spin"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else}
 		<div class="w-full">

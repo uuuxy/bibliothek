@@ -61,17 +61,17 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
 	const dateStr = futureDate.toISOString().split('T')[0];
 	await page.locator('input[type="date"]').fill(dateStr);
 
-	const dialogMessages = [];
-	page.on('dialog', async (dialog) => {
-		dialogMessages.push(dialog.message());
-		await dialog.accept();
-	});
-
 	await page.getByRole('button', { name: /verlängern/i }).click();
+	// Rückfrage und Erfolgsmeldung sind seit 08.09.2026 M3-Dialog und Toast, keine
+	// Browser-Dialoge mehr.
+	await page
+		.getByRole('dialog', { name: /Alle LMF-Ausleihen der Klasse/ })
+		.getByRole('button', { name: 'Verlängern' })
+		.click();
 
-	// Der Erfolgs-Alert nennt die Anzahl — "Erfolgreich" allein würde auch bei
+	// Die Erfolgsmeldung nennt die Anzahl — "Erfolgreich" allein würde auch bei
 	// 0 Treffern erscheinen und wäre als Assertion wertlos.
-	await expect.poll(() => dialogMessages.join(' ')).toContain('2 Ausleihen');
+	await expect(page.getByRole('status')).toContainText('2 Ausleihen');
 
 	// Harte DB-Verifikation: BEIDE Fristen stehen auf dem neuen Datum (23:59:59).
 	const fristen = querySQL(`

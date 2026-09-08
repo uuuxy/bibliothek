@@ -1,5 +1,6 @@
 <script>
 	import { showToast } from '../inventur/lib/store.svelte.js';
+	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { hatRecht } from './menu.js';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -26,8 +27,7 @@
 
 	/** @param {any} ex */
 	async function deleteCopy(ex) {
-		if (!confirm(`Möchtest du das Exemplar ${ex.barcode_id} wirklich unwiderruflich löschen?`))
-			return;
+		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
 		try {
 			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
 				method: 'DELETE',
@@ -44,21 +44,16 @@
 				showToast('Exemplar erfolgreich gelöscht', 'success');
 			} else {
 				const err = await res.json().catch(() => ({}));
-				alert(err.error || 'Fehler beim Löschen des Exemplars.');
+				showToast(err.error || 'Fehler beim Löschen des Exemplars.', 'error');
 			}
 		} catch {
-			alert('Netzwerkfehler beim Löschen.');
+			showToast('Netzwerkfehler beim Löschen.', 'error');
 		}
 	}
 
 	async function deleteSelectedCopies() {
 		if (selectedExemplare.size === 0) return;
-		if (
-			!confirm(
-				`Möchtest du die ${selectedExemplare.size} ausgewählten Exemplare unwiderruflich löschen?`
-			)
-		)
-			return;
+		if (!(await loeschenBestaetigen(`${selectedExemplare.size} Exemplare löschen?`))) return;
 
 		let successCount = 0;
 

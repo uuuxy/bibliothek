@@ -1,5 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import { bestaetigen } from './stores/bestaetigung.svelte.js';
+	import { toastStore } from './stores/toastStore.svelte.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
@@ -30,13 +32,16 @@
 
 	async function handleGlobalExtend() {
 		if (!klasse.trim() || !neuesDatum) {
-			alert('Bitte Klasse und neues Rückgabedatum eingeben.');
+			toastStore.addToast('Bitte Klasse und neues Rückgabedatum eingeben.', 'warning');
 			return;
 		}
 
-		const confirmed = confirm(
-			`ACHTUNG: Möchten Sie wirklich alle LMF-Ausleihen der Klasse ${klasse} auf den ${neuesDatum} verlängern?\nDies verändert möglicherweise hunderte Datensätze gleichzeitig!`
-		);
+		const confirmed = await bestaetigen({
+			titel: `Alle LMF-Ausleihen der Klasse ${klasse} verlängern?`,
+			text: `Neues Rückgabedatum ${neuesDatum}. Das verändert möglicherweise hunderte Datensätze gleichzeitig.`,
+			aktion: 'Verlängern',
+			gefaehrlich: true
+		});
 		if (!confirmed) return;
 
 		isExtending = true;
@@ -48,16 +53,16 @@
 
 			if (res.ok) {
 				const data = await res.json();
-				alert(`Erfolgreich: ${data.updated_count} Ausleihen wurden verlängert!`);
+				toastStore.addToast(`${data.updated_count} Ausleihen wurden verlängert.`, 'success');
 				klasse = '';
 				neuesDatum = '';
 			} else {
 				const errText = await res.text();
-				alert(`Fehler: ${errText}`);
+				toastStore.addToast(`Fehler: ${errText}`, 'error');
 			}
 		} catch (e) {
 			console.error(e);
-			alert('Netzwerkfehler beim Senden der Anfrage.');
+			toastStore.addToast('Netzwerkfehler beim Senden der Anfrage.', 'error');
 		} finally {
 			isExtending = false;
 		}

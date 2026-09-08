@@ -10,7 +10,10 @@
      Helfer ins 403, denen der Reiter vorher offenstand. -->
 <script>
 	import { BookOpen, Plus } from '@lucide/svelte';
+	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
+	import { showToast } from '$lib/store.svelte.js';
 	import { onMount } from 'svelte';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 	import { hatRecht } from '../../../../lib/menu.js';
@@ -92,20 +95,16 @@
 	 * @param {string} className
 	 */
 	async function deleteGroup(className) {
-		if (!confirm(`Klasse ${className} wirklich löschen?`)) return;
+		if (!(await loeschenBestaetigen(`Klasse ${className} löschen?`))) return;
 		try {
 			const res = await apiFetch(
 				`/api/admin/class-books?className=${encodeURIComponent(className)}`,
-				{
-					method: 'DELETE',
-					credentials: 'include',
-					headers: /** @type {HeadersInit} */ ({})
-				}
+				{ method: 'DELETE', credentials: 'include' }
 			);
 			if (!res.ok) throw new Error('Fehler beim Löschen');
 			loadGroups();
 		} catch (err) {
-			alert(/** @type {any} */ (err).message);
+			showToast(/** @type {any} */ (err).message, 'error');
 		}
 	}
 </script>
@@ -155,9 +154,7 @@
 	</div>
 
 	{#if loading}
-		<div class="flex justify-center py-12">
-			<div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-		</div>
+		<div class="flex justify-center py-12"><Ladekreis size="lg" /></div>
 	{:else if error}
 		<div class="text-red-650 border border-red-200 bg-red-50 text-center py-8 rounded-xl">
 			{error}

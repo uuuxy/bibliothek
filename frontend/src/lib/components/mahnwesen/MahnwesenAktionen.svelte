@@ -18,6 +18,7 @@
 -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import MahnwesenDruckMenue from './MahnwesenDruckMenue.svelte';
 	import { Mail, Printer, RefreshCw, X } from '@lucide/svelte';
@@ -48,9 +49,7 @@
 	>
 	<Button onclick={mahnwesenStore.printSelectedMahnungen} disabled={mahnwesenStore.pdfLoading}>
 		{#if mahnwesenStore.pdfLoading}
-			<div
-				class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"
-			></div>
+			<Ladekreis size="sm" farbe="aktuell" />
 		{:else}
 			<Printer class="h-4 w-4" aria-hidden="true" />
 		{/if}

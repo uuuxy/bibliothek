@@ -1,5 +1,6 @@
 <script>
 	import { Lock } from '@lucide/svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { idleLock } from '../../stores/idleLock.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -69,9 +70,7 @@
 		/>
 		<Button type="submit" size="lg" disabled={idleLock.entsperreLaeuft} class="w-full">
 			{#if idleLock.entsperreLaeuft}
-				<div
-					class="w-4 h-4 border-2 border-on-primary/40 border-t-on-primary rounded-full animate-spin"
-				></div>
+				<Ladekreis size="sm" farbe="aktuell" />
 				Prüfe…
 			{:else}
 				Entsperren

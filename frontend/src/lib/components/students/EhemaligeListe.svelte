@@ -5,6 +5,7 @@
      diese eigene Liste: dieselbe Serversuche wie „Aktive Schüler", mit status=ehemalige. -->
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Archive } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import Suchpille from '../ui/Suchpille.svelte';
@@ -65,9 +66,7 @@
 
 {#if laedt}
 	<div class="py-12 flex justify-center items-center">
-		<div
-			class="w-8 h-8 border-2 border-t-primary border-surface-container-high rounded-full animate-spin"
-		></div>
+		<Ladekreis size="lg" />
 	</div>
 {:else if zeilen.length === 0}
 	<div class="py-12 text-center space-y-3 animate-fade-in">

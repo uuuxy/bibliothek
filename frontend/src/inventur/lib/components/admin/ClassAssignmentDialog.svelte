@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { toastStore } from '../../../../lib/stores/toastStore.svelte.js';
 	import { vorauswahlAusGruppe } from './klassensatzVorauswahl.js';
 	import { erzeugeBuecherListe } from './klassensatzBuecher.svelte.js';
 	import { onMount } from 'svelte';
@@ -120,12 +121,11 @@
 				});
 				onClose();
 			} else {
-				console.error('Server-Fehler beim Speichern');
-				alert('Ein Fehler ist aufgetreten. Bitte erneut versuchen.');
+				toastStore.addToast('Ein Fehler ist aufgetreten. Bitte erneut versuchen.', 'error');
 			}
 		} catch (e) {
 			console.error('Netzwerkfehler', e);
-			alert('Fehler beim Speichern der Zuweisung.');
+			toastStore.addToast('Fehler beim Speichern der Zuweisung.', 'error');
 		} finally {
 			isSaving = false;
 		}

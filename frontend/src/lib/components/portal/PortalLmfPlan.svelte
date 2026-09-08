@@ -4,6 +4,7 @@
      Büchertausch, und nicht jede Klasse hat eine hinterlegte Adresse (Peter, 05.09.2026). -->
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { CalendarDays, Printer } from '@lucide/svelte';
 	import Button from '../ui/Button.svelte';
 	import LmfPlanTabelle from '../lmfplan/LmfPlanTabelle.svelte';
@@ -55,9 +56,7 @@
 
 {#if laedt}
 	<div class="py-12 flex justify-center items-center">
-		<div
-			class="w-8 h-8 border-2 border-t-primary border-surface-container-high rounded-full animate-spin"
-		></div>
+		<Ladekreis size="lg" />
 	</div>
 {:else if fehler}
 	<p class="py-8 text-center text-sm text-error">{fehler}</p>

@@ -11,6 +11,7 @@
 -->
 <script lang="ts">
 	import { importiereListe } from '../../../inventur/lib/admin_api.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
 	import { hatRecht } from '../../menu.js';
@@ -84,9 +85,7 @@
 				class="px-6"
 			>
 				{#if laeuft}
-					<div
-						class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-					></div>
+					<Ladekreis size="sm" farbe="aktuell" />
 					<span>Importiere Liste...</span>
 				{:else}
 					<span>Liste importieren</span>

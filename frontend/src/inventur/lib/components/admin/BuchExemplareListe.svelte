@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { showToast } from '$lib/store.svelte.js';
 	import { onMount } from 'svelte';
 	import { Trash2 } from '@lucide/svelte';
@@ -38,8 +39,7 @@
 
 	/** @param {any} ex */
 	async function deleteCopy(ex) {
-		if (!confirm(`Möchtest du das Exemplar ${ex.barcode_id} wirklich unwiderruflich löschen?`))
-			return;
+		if (!(await loeschenBestaetigen(`Exemplar ${ex.barcode_id} löschen?`))) return;
 		try {
 			const res = await apiFetch(`/api/buecher/exemplare/${ex.id}`, {
 				method: 'DELETE',

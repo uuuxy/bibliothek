@@ -22,6 +22,7 @@
 	 * eigener Menüpunkt, auf den die Drift-Warnung der Selbstprüfung zeigt.
 	 */
 	import { apiGet } from './apiFetch.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
@@ -113,9 +114,7 @@
 <PageShell>
 	{#if loading}
 		<div class="flex items-center justify-center py-20">
-			<div
-				class="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else if ladeFehler}
 		<LadeFehler onerneut={erneutLaden} />

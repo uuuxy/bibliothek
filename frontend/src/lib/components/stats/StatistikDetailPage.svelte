@@ -4,6 +4,7 @@
      Lädt die volle Liste selbst (limit=100); alle Filter laufen rein clientseitig. -->
 <script>
 	import { apiFetch } from '../../apiFetch.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
@@ -124,9 +125,7 @@
 
 	{#if loading}
 		<div class="py-20 flex justify-center">
-			<div
-				class="w-8 h-8 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else if gefiltert.length === 0}
 		<div class="py-20 text-center text-slate-400 text-sm">

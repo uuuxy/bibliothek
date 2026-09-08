@@ -181,8 +181,12 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 			'Kollegium lädt das Entwurfs-PDF'
 		).toBe(403);
 
-		page.once('dialog', (d) => d.accept());
 		await page.getByRole('button', { name: 'Veröffentlichen' }).click();
+		// Rückfrage als M3-Dialog (seit 08.09.2026 statt window.confirm).
+		await page
+			.getByRole('dialog', { name: 'Plan veröffentlichen?' })
+			.getByRole('button', { name: 'Veröffentlichen' })
+			.click();
 		await expect(page.getByTestId('lmf-plan-hinweis')).toContainText('veröffentlicht am');
 		await expect(page.getByRole('button', { name: 'Veröffentlichen' })).toHaveCount(0);
 

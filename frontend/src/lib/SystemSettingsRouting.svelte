@@ -1,5 +1,6 @@
 <script>
 	import { apiGet, apiPost, apiDelete } from './apiFetch.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Feld from './components/ui/Feld.svelte';
@@ -70,9 +71,7 @@
 
 	{#if mappingLoading}
 		<div class="py-8 flex justify-center">
-			<div
-				class="w-8 h-8 border-4 border-slate-400 border-t-transparent rounded-full animate-spin"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else if mappingRows.length === 0}
 		<p class="text-sm text-slate-500 py-4">Noch keine Mappings vorhanden.</p>

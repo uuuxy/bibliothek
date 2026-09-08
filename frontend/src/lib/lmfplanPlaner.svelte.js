@@ -12,6 +12,7 @@
 // einen Moment den Plan von vorhin (Rasterfrage 8, Ansichtswechsel).
 
 import { showToast } from '../inventur/lib/store.svelte.js';
+import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import * as dienst from './lmfplanDienst.js';
 
 /** @typedef {import('./lmfplanDienst.js').PlanStand} PlanStand */
@@ -169,7 +170,14 @@ export function erzeugePlaner() {
 	async function veroeffentlichen() {
 		const fristen =
 			zustand.art === 'rueckgabe' ? ', und die Termine werden die Fristen der Klassen' : '';
-		if (!confirm(`Plan veröffentlichen? Das Kollegium sieht ihn dann im Portal${fristen}.`)) return;
+		if (
+			!(await bestaetigen({
+				titel: 'Plan veröffentlichen?',
+				text: `Das Kollegium sieht ihn dann im Portal${fristen}.`,
+				aktion: 'Veröffentlichen'
+			}))
+		)
+			return;
 		zustand.speichert = true;
 		try {
 			const gespeichert = await dienst.speicherePlan(zustand.art, zustand.entwurf);
@@ -194,7 +202,14 @@ export function erzeugePlaner() {
 
 	async function verwerfen() {
 		if (!zustand.stand?.plan) return;
-		if (!confirm(`Plan vom ${dienst.datumKurz(zustand.stand.plan.erster_tag)} verwerfen?`)) return;
+		if (
+			!(await bestaetigen({
+				titel: `Plan vom ${dienst.datumKurz(zustand.stand.plan.erster_tag)} verwerfen?`,
+				aktion: 'Verwerfen',
+				gefaehrlich: true
+			}))
+		)
+			return;
 		try {
 			const erg = await dienst.verwerfePlan(zustand.art);
 			showToast(erg.meldung, erg.ok ? 'success' : 'error');

@@ -1,5 +1,6 @@
 <script>
 	import WebcamCapture from './WebcamCapture.svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import DamageReportModal from './DamageReportModal.svelte';
 	import StudentLockModal from './StudentLockModal.svelte';
 	import BorrowedBooksCard from './BorrowedBooksCard.svelte';
@@ -97,9 +98,7 @@
 
 {#if st.loading}
 	<div class="w-full py-12 flex justify-center items-center">
-		<div
-			class="w-8 h-8 border-4 border-slate-800 border-t-transparent rounded-full animate-spin"
-		></div>
+		<Ladekreis size="lg" />
 	</div>
 {:else if st.profile}
 	{#if st.globalErrorToast}

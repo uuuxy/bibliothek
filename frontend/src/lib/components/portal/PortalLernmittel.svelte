@@ -12,6 +12,7 @@
 	 * view_books — das Recht würde der Rolle den ganzen Medienkatalog öffnen).
 	 */
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import KlassenKarte from '../../../inventur/lib/components/admin/KlassenKarte.svelte';
 
@@ -40,9 +41,7 @@
 
 {#if laedt}
 	<div class="flex justify-center py-16">
-		<div
-			class="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"
-		></div>
+		<Ladekreis size="lg" />
 	</div>
 {:else}
 	<!-- Ein Reiter = eine Liste. Der Reiter ist die Überschrift; Beitexte standen hier bis

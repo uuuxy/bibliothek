@@ -1,5 +1,6 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import MahnlisteMailDialog from './MahnlisteMailDialog.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Mail } from '@lucide/svelte';
@@ -31,9 +32,7 @@
 
 {#if mahnwesenStore.loading}
 	<div class="flex justify-center py-20">
-		<div
-			class="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"
-		></div>
+		<Ladekreis size="lg" />
 	</div>
 {:else if mahnwesenStore.error}
 	<div

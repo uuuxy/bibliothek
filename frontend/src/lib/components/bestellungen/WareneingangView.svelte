@@ -1,5 +1,6 @@
 <script>
 	import { apiPost } from '../../apiFetch.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import WareneingangTable from './WareneingangTable.svelte';
 	import Button from '../ui/Button.svelte';
@@ -68,9 +69,7 @@
 				class="px-6"
 			>
 				{#if isSubmitting}
-					<div
-						class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-					></div>
+					<Ladekreis size="sm" farbe="aktuell" />
 				{/if}
 				Ausgewählte Positionen einbuchen
 			</Button>

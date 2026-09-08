@@ -1,5 +1,6 @@
 <script>
 	import OpacSearch from './lib/OpacSearch.svelte';
+	import Ladekreis from './lib/components/ui/Ladekreis.svelte';
 	import Monitor from './lib/Monitor.svelte';
 	import BestellBestaetigung from './lib/BestellBestaetigung.svelte';
 
@@ -18,6 +19,7 @@
 	import Router from './lib/Router.svelte';
 	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
 	import ToastContainer from './lib/ToastContainer.svelte';
+	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
 	import { initTooltips } from './lib/actions/tooltip.js';
 	import * as Sentry from '@sentry/svelte';
 
@@ -107,9 +109,7 @@
 			<div
 				class="fixed inset-0 bg-white/45 backdrop-blur-lg z-50 flex flex-col items-center justify-center space-y-4"
 			>
-				<div
-					class="w-12 h-12 border-4 border-t-slate-800 border-slate-200/50 rounded-full animate-spin"
-				></div>
+				<Ladekreis size="lg" />
 				<h2 class="text-lg font-bold text-slate-800 tracking-wide">VERBINDUNG VERLOREN</h2>
 				<p class="text-slate-500 text-xs font-medium">Reconnecting...</p>
 			</div>
@@ -118,9 +118,7 @@
 		{#if !authStore.sessionChecked}
 			<!-- Boot-Restore läuft — kurzer neutraler Zustand statt Login-Flackern -->
 			<div class="fixed inset-0 flex items-center justify-center">
-				<div
-					class="w-10 h-10 border-4 border-t-slate-800 border-slate-200/60 rounded-full animate-spin"
-				></div>
+				<Ladekreis size="lg" />
 			</div>
 		{:else if !authStore.isLoggedIn}
 			<Login />
@@ -155,6 +153,7 @@
 	{/if}
 	<OfflineIndicator />
 	<ToastContainer />
+	<BestaetigungsDialog />
 </main>
 
 <style>

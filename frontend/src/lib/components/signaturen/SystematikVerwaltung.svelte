@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	// apiPost/apiPut/apiDelete liefern die geparste Antwort und WERFEN im Fehlerfall —
 	// den Fehler-Toast haben sie dann schon gezeigt. Deshalb hier kein zweiter Toast im
 	// catch: Ein generisches "Fehler beim Speichern" verdeckte sonst die Servermeldung,
@@ -97,7 +98,11 @@
 
 	/** @param {any} eintrag */
 	async function loeschen(eintrag) {
-		if (!confirm(`Sachgruppe „${eintrag.kuerzel} – ${eintrag.bezeichnung}“ wirklich löschen?`))
+		if (
+			!(await loeschenBestaetigen(
+				`Sachgruppe „${eintrag.kuerzel} – ${eintrag.bezeichnung}“ löschen?`
+			))
+		)
 			return;
 		try {
 			await apiDelete(`/api/systematics/${eintrag.id}`);

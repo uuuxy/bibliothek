@@ -14,6 +14,7 @@
         beim Bestandsabgleich im Raum wäre das Feature sonst nicht erreichbar. -->
 <script>
 	import { coverSrc } from '../../utils/coverSrc.js';
+	import Ladekreis from './Ladekreis.svelte';
 	import { Image, Slash } from '@lucide/svelte';
 
 	/** children ist der Auslöser. Ohne Angabe erscheint das Bild-Symbol (Bestellliste,
@@ -138,9 +139,7 @@
 		{:else}
 			{#if status === 'laedt'}
 				<div class="absolute inset-0 flex items-center justify-center">
-					<div
-						class="w-5 h-5 border-2 border-slate-200 border-t-slate-400 rounded-full animate-spin"
-					></div>
+					<Ladekreis size="md" />
 				</div>
 			{/if}
 			<img

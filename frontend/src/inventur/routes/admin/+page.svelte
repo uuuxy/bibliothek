@@ -4,6 +4,7 @@
 -->
 <script>
 	import { onMount } from 'svelte';
+	import { bestaetigen, loeschenBestaetigen } from '../../../lib/stores/bestaetigung.svelte.js';
 	import { appState, showToast } from '$lib/store.svelte.js';
 	import BookTable from '$lib/components/admin/BookTable.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
@@ -106,12 +107,13 @@
 
 	/** @param {any} ids */
 	async function aktionBuecherLoeschen(ids) {
-		if (!ids.length || !confirm(`${ids.length} Bücher wirklich löschen?`)) return;
+		if (!ids.length) return;
+		if (!(await loeschenBestaetigen(`${ids.length} Bücher mit allen Exemplaren löschen?`))) return;
 		try {
 			await loescheBuecher(ids);
 			buecher = buecher.filter((b) => !ids.includes(b.id));
 		} catch (fehler) {
-			alert(/** @type {any} */ (fehler).message);
+			showToast(/** @type {any} */ (fehler).message, 'error');
 		}
 	}
 
@@ -119,21 +121,26 @@
 		try {
 			const externe = await holeExterneCover();
 			if (!externe.length) {
-				alert('Keine externen Cover mehr vorhanden.');
+				showToast('Keine externen Cover mehr vorhanden.', 'info');
 				return;
 			}
-			if (!confirm(`${externe.length} externe Cover jetzt erneut lokalisieren?`)) {
+			if (
+				!(await bestaetigen({
+					titel: `${externe.length} externe Cover erneut lokalisieren?`,
+					aktion: 'Lokalisieren'
+				}))
+			)
 				return;
-			}
 
 			const ids = externe.map((/** @type {any} */ b) => b.id);
 			const ergebnis = await retryExterneCover(ids);
 			await aktualisiereBuecher();
-			alert(
-				`Cover-Retry fertig. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`
+			showToast(
+				`Cover-Retry fertig. Aktualisiert: ${ergebnis.updated}, Übersprungen: ${ergebnis.skipped}, Fehler: ${ergebnis.failed}`,
+				'info'
 			);
 		} catch (fehler) {
-			alert(/** @type {any} */ (fehler).message);
+			showToast(/** @type {any} */ (fehler).message, 'error');
 		}
 	}
 

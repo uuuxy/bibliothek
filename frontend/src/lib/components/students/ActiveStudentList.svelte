@@ -7,6 +7,7 @@
 -->
 <script>
 	import { BookOpen, ChevronRight } from '@lucide/svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
 
@@ -78,10 +79,7 @@
 <div class="w-full">
 	{#if loading}
 		<div class="py-16 flex justify-center items-center">
-			<div
-				class="w-8 h-8 border-4 border-t-blue-600 border-slate-200 rounded-full animate-spin"
-				aria-hidden="true"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else if filteredStudents.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">

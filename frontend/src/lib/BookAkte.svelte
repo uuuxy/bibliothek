@@ -1,5 +1,6 @@
 <script>
 	import { showToast } from '../inventur/lib/store.svelte.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import BookBorrowersTab from './BookBorrowersTab.svelte';
 	import BookExemplareTab from './BookExemplareTab.svelte';
 	import BookHistoryTab from './BookHistoryTab.svelte';
@@ -65,9 +66,7 @@
 
 	{#if akte.isLoading}
 		<div class="flex justify-center items-center py-32">
-			<div
-				class="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else if akte.book}
 		<BookAkteMeta

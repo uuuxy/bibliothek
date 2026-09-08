@@ -1,5 +1,6 @@
 <script>
 	import Button from './components/ui/Button.svelte';
+	import { toastStore } from './stores/toastStore.svelte.js';
 	import Select from './components/ui/Select.svelte';
 	import BorrowersListe from './components/BorrowersListe.svelte';
 	import { baueAusleiherDruckHtml } from './utils/ausleiherDruck.js';
@@ -33,7 +34,7 @@
 	function printAusleiher() {
 		const printWindow = window.open('', '_blank', 'width=800,height=600');
 		if (!printWindow) {
-			alert('Bitte erlaube Popups, um die Liste zu drucken.');
+			toastStore.addToast('Bitte erlaube Popups, um die Liste zu drucken.', 'warning');
 			return;
 		}
 

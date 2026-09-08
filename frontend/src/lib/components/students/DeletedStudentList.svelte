@@ -11,6 +11,7 @@
 -->
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Trash2, Undo2, ShieldOff } from '@lucide/svelte';
 	import PapierkorbLoeschenDialog from './PapierkorbLoeschenDialog.svelte';
 	import { erzeugePapierkorb, istAnonymisiert } from './papierkorbListe.svelte.js';
@@ -51,10 +52,7 @@
 
 	{#if papierkorb.laedt}
 		<div class="py-16 flex justify-center items-center">
-			<div
-				class="w-8 h-8 border-4 border-t-rose-600 border-slate-200 rounded-full animate-spin"
-				aria-hidden="true"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else if papierkorb.ladefehler}
 		<!-- Ein gescheiterter Abruf ist KEIN leerer Papierkorb: „leer" wäre hier eine

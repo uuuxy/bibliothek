@@ -4,9 +4,17 @@
 	 *   variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'danger-solid' | 'ghost',
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   class?: string,
+	 *   element?: HTMLButtonElement,
 	 *   [key: string]: any
 	 * }} */
-	let { children, variant = 'primary', size = 'md', class: className = '', ...rest } = $props();
+	let {
+		children,
+		variant = 'primary',
+		size = 'md',
+		class: className = '',
+		element = $bindable(),
+		...rest
+	} = $props();
 
 	// Ohne hover:bg-*: Die Rückmeldung kommt jetzt aus dem State-Layer (.m3-state,
 	// siehe app.css) — eine Schicht in der Textfarbe über der UNVERÄNDERTEN Fläche,
@@ -110,6 +118,10 @@
 	});
 </script>
 
-<button class="{baseClasses} {sizes[size]} {variantClasses} {className}" {...rest}>
+<button
+	bind:this={element}
+	class="{baseClasses} {sizes[size]} {variantClasses} {className}"
+	{...rest}
+>
 	{@render children?.()}
 </button>

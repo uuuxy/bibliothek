@@ -1,4 +1,5 @@
 import { apiFetch } from '../apiFetch.js';
+import { bestaetigen } from '../stores/bestaetigung.svelte.js';
 import { applyDesign, resetDesign, wendeSchulstammdatenAn } from './idDesignerStore.svelte.js';
 import { AUSWEIS_VORLAGEN, wendeVorlageAn } from './ausweisVorlagen.js';
 
@@ -120,11 +121,14 @@ export function erzeugeDesignAblage() {
 		 *   Elementauswahl ab — die bisherigen IDs gibt es danach nicht mehr).
 		 */
 		async zuruecksetzen() {
-			const ok = window.confirm(
-				'Ausweis-Design auf die Standardwerte zurücksetzen?\n\n' +
+			const ok = await bestaetigen({
+				titel: 'Ausweis-Design auf die Standardwerte zurücksetzen?',
+				text:
 					'Alle eigenen Anpassungen an Vorder- und Rückseite gehen verloren — ' +
-					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.'
-			);
+					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.',
+				aktion: 'Zurücksetzen',
+				gefaehrlich: true
+			});
 			if (!ok) return false;
 			resetDesign();
 			// resetDesign() setzt den Kopf zurück auf PLATZHALTER_SCHULNAME. Ohne diesen
@@ -147,11 +151,14 @@ export function erzeugeDesignAblage() {
 		 */
 		async vorlageAnwenden(kennung) {
 			const name = AUSWEIS_VORLAGEN.find((v) => v.value === kennung)?.label ?? kennung;
-			const ok = window.confirm(
-				`Design-Vorlage „${name}" anwenden?\n\n` +
+			const ok = await bestaetigen({
+				titel: `Design-Vorlage „${name}" anwenden?`,
+				text:
 					'Vorder- und Rückseite werden ersetzt; eigene Anpassungen gehen verloren — ' +
-					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.'
-			);
+					'auch für die anderen Arbeitsplätze, da das Design zentral gespeichert wird.',
+				aktion: 'Anwenden',
+				gefaehrlich: true
+			});
 			if (!ok) return false;
 			if (!wendeVorlageAn(kennung)) return false;
 			await heileSchulstammdaten();

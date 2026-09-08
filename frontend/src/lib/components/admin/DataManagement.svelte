@@ -7,6 +7,7 @@
 -->
 <script lang="ts">
 	import LitteraImportWidget from '../../LitteraImportWidget.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import BestandImportWidget from './BestandImportWidget.svelte';
 	import ListenImportWidget from './ListenImportWidget.svelte';
 	import { apiFetch } from '../../apiFetch.js';
@@ -93,7 +94,7 @@
 		class="px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shadow-sm flex items-center gap-2"
 	>
 		{#if loading}
-			<div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+			<Ladekreis size="sm" farbe="aktuell" />
 			<span>Bitte warten...</span>
 		{:else}
 			<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

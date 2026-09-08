@@ -10,6 +10,7 @@
      und „24 von 30, Rest bei der 8a" ging nur mündlich im Flur. -->
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -162,8 +163,7 @@
 				disabled={completingId === r.id}
 			>
 				{#if completingId === r.id}
-					<span class="w-3 h-3 border-2 border-white/60 border-t-white rounded-full animate-spin"
-					></span>
+					<Ladekreis size="sm" farbe="aktuell" />
 				{:else}
 					Abschließen & Mail senden
 				{/if}

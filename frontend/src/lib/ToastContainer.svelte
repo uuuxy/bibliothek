@@ -22,6 +22,7 @@
 	{#each toastStore.toasts as toast (toast.id)}
 		{@const Symbol = symbole[toast.type] ?? Info}
 		<div
+			role="status"
 			class="pointer-events-auto flex items-start gap-2 px-4 py-3 rounded-sm text-sm max-w-sm w-full {flaechen[
 				toast.type
 			] ?? flaechen.info}"

@@ -1,5 +1,6 @@
 <script>
 	import { BookOpen, Search, ShieldCheck } from '@lucide/svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
@@ -152,9 +153,6 @@
 <!-- Der Ladepunkt sitzt IN der Pille — dieselbe Stelle wie im Kollegiums-Portal. -->
 {#snippet nachlaufend()}
 	{#if loading}
-		<div
-			class="shrink-0 w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin"
-			aria-hidden="true"
-		></div>
+		<Ladekreis size="sm" />
 	{/if}
 {/snippet}

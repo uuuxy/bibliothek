@@ -1,5 +1,6 @@
 <script>
 	import Suchfeld from '../ui/Suchfeld.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiPost, apiPut } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
@@ -203,18 +204,14 @@
 			<div
 				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
 			>
-				<div
-					class="w-4 h-4 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin shrink-0"
-				></div>
+				<Ladekreis size="sm" />
 				Suche läuft...
 			</div>
 		{:else if resolvingDnb}
 			<div
 				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
 			>
-				<div
-					class="w-4 h-4 border-2 border-t-blue-500 border-blue-500/20 rounded-full animate-spin shrink-0"
-				></div>
+				<Ladekreis size="sm" />
 				Titel wird im Katalog angelegt...
 			</div>
 		{/if}

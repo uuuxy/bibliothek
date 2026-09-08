@@ -4,6 +4,7 @@
      stellt das Bauteil. -->
 <script>
 	import { apiClient } from './apiFetch.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { Unlock, Lock, AlertCircle } from '@lucide/svelte';
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
@@ -127,9 +128,7 @@
 			disabled={isSubmitting}
 		>
 			{#if isSubmitting}
-				<div
-					class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-				></div>
+				<Ladekreis size="sm" farbe="aktuell" />
 				Wird verarbeitet...
 			{:else}
 				Bestätigen

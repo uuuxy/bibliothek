@@ -9,6 +9,7 @@
      stehen in lusdVorschauRubriken.js. -->
 <script>
 	import { AlertTriangle, ChevronRight, CircleCheck } from '@lucide/svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -184,8 +185,7 @@
 {/snippet}
 
 {#snippet spinner(text)}
-	<span class="w-3.5 h-3.5 border-2 border-white/60 border-t-white rounded-full animate-spin"
-	></span>
+	<Ladekreis size="sm" farbe="aktuell" />
 	{text}
 {/snippet}
 

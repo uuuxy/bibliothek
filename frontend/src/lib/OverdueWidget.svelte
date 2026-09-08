@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import { ChevronRight, CircleCheck } from '@lucide/svelte';
 
@@ -54,9 +55,7 @@
 
 {#if loading}
 	<div class="flex-1 flex justify-center items-center py-8">
-		<div
-			class="w-6 h-6 border-2 border-t-slate-400 border-slate-200 rounded-full animate-spin"
-		></div>
+		<Ladekreis size="md" />
 	</div>
 {:else if fehler}
 	<p class="py-8 text-center text-sm font-semibold text-error" role="alert">

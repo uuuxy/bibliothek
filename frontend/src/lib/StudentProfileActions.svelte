@@ -1,5 +1,7 @@
 <script>
 	import Button from './components/ui/Button.svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import { toastStore } from './stores/toastStore.svelte.js';
 	import Menue from './components/ui/Menue.svelte';
 	import AusweisGueltigkeit from './components/AusweisGueltigkeit.svelte';
 	import { apiFetch } from './apiFetch.js';
@@ -75,11 +77,11 @@
 			} else {
 				const text = await res.text();
 				console.error('Auskunft Error:', text);
-				alert('Fehler beim Herunterladen der Auskunft.');
+				toastStore.addToast('Fehler beim Herunterladen der Auskunft.', 'error');
 			}
 		} catch (e) {
 			console.error('Netzwerkfehler DSGVO Auskunft:', e);
-			alert('Netzwerkfehler');
+			toastStore.addToast('Netzwerkfehler beim Herunterladen der Auskunft.', 'error');
 		}
 	}
 </script>
@@ -95,9 +97,7 @@
 		Dokumente
 	</h4>
 	{#snippet spinner()}
-		<div
-			class="w-4 h-4 border-2 border-slate-400 border-t-slate-700 rounded-full animate-spin"
-		></div>
+		<Ladekreis size="sm" />
 	{/snippet}
 
 	<div class="flex flex-wrap gap-3 items-center">

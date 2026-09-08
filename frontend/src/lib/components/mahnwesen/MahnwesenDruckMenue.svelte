@@ -9,6 +9,7 @@
      Pfeiltasten und mit handgeschriebenen SVG-Pfaden (Register 06.09.). -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
 	import Menue from '../ui/Menue.svelte';
@@ -50,9 +51,7 @@
 				class="rounded-r-none"
 			>
 				{#if mahnwesenStore.elternPdfLoading}
-					<div
-						class="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin"
-					></div>
+					<Ladekreis size="sm" farbe="aktuell" />
 				{:else}
 					<FileText class="h-4 w-4" aria-hidden="true" />
 				{/if}

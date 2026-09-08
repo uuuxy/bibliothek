@@ -6,6 +6,7 @@
      1 auf 3 und sähe aus wie ein übersprungener Schritt. -->
 <script>
 	import { labelStore } from '../../stores/labels.svelte.js';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 </script>
@@ -39,9 +40,7 @@
 				>
 				{#if labelStore.loadingCopies}
 					<div class="flex items-center justify-center py-4">
-						<div
-							class="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"
-						></div>
+						<Ladekreis size="md" />
 					</div>
 				{:else if labelStore.existingCopies.length === 0}
 					<p class="text-xs text-slate-500">

@@ -1,4 +1,5 @@
 import { appState } from '../inventur/lib/store.svelte.js';
+import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 import { uiStore } from './stores/uiStore.svelte.js';
 import { apiFetch } from './apiFetch.js';
 import { coverKandidaten } from './utils/coverSrc.js';
@@ -132,11 +133,7 @@ export function useBookAkte() {
 
 	async function deleteTitle(showToast, onBack) {
 		if (!book) return;
-		if (
-			!confirm(
-				`Achtung: Dies löscht diesen Titel und ALLE ${exemplare.length} zugehörigen Exemplare unwiderruflich. Fortfahren?`
-			)
-		)
+		if (!(await loeschenBestaetigen(`Titel mit allen ${exemplare.length} Exemplaren löschen?`)))
 			return;
 		try {
 			const res = await apiFetch(`/api/buecher/titel/${book.id}`, {

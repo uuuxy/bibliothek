@@ -1,5 +1,6 @@
 <script>
 	import Feld from './components/ui/Feld.svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import Snackbar from './components/ui/Snackbar.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { useStudentEditForm } from './useStudentEditForm.svelte.js';
@@ -80,9 +81,7 @@
 		<div class="flex items-center gap-3 shrink-0">
 			<Button size="lg" onclick={save} disabled={saving} class="px-6">
 				{#if saving}
-					<div
-						class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
-					></div>
+					<Ladekreis size="sm" farbe="aktuell" />
 					Speichert…
 				{:else}
 					<Check class="w-4 h-4" aria-hidden="true" />

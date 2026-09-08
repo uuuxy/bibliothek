@@ -14,6 +14,7 @@
      06.09.2026 in lmfplanPlaner.svelte.js. -->
 <script>
 	import { onMount, untrack } from 'svelte';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { abonniere } from './liveEvents.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import Button from './components/ui/Button.svelte';
@@ -124,9 +125,7 @@
 
 	{#if z.laedt}
 		<div class="flex items-center justify-center py-12">
-			<div
-				class="h-8 w-8 animate-spin rounded-full border-2 border-surface-container-high border-t-primary"
-			></div>
+			<Ladekreis size="lg" />
 		</div>
 	{:else if z.ladeFehler}
 		<LadeFehler

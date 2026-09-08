@@ -1,5 +1,6 @@
 <script>
 	import Suchfeld from '../ui/Suchfeld.svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Printer } from '@lucide/svelte';
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
@@ -46,9 +47,7 @@
 					>
 						{#snippet nachlaufend()}
 							{#if labelStore.isSearching}
-								<div
-									class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-primary border-t-transparent"
-								></div>
+								<Ladekreis size="sm" />
 							{/if}
 						{/snippet}
 					</Suchfeld>

@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import { bestaetigen, loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { appState, showToast } from '$lib/store.svelte.js';
 	import { loescheTitel } from '../../admin_api.js';
 	import { hatRecht } from '../../../../lib/menu.js';
@@ -14,7 +15,7 @@
 	/** Löschen aus der Maske: ein Titel, Rückfrage, der Server verweigert bei Ausleihen. */
 	export async function titelLoeschen() {
 		if (!formular.id) return;
-		if (!confirm(`„${formular.title}“ mit allen Exemplaren wirklich löschen?`)) return;
+		if (!(await loeschenBestaetigen(`„${formular.title}“ mit allen Exemplaren löschen?`))) return;
 		try {
 			await loescheTitel(formular.id);
 			books = books.filter((/** @type {any} */ b) => b.id !== formular.id);
@@ -34,9 +35,12 @@
 		if (formular.id) {
 			const originalBook = books.find((/** @type {any} */ b) => b.id === formular.id);
 			if (originalBook && Number(formular.stock) < Number(originalBook.stock)) {
-				const proceed = confirm(
-					'Achtung: Du verringerst den Gesamtbestand manuell. Das System wird die entsprechende Anzahl an Exemplaren im Hintergrund als verloren markieren. Möchtest du fortfahren?'
-				);
+				const proceed = await bestaetigen({
+					titel: 'Gesamtbestand verringern?',
+					text: 'Die entsprechende Anzahl an Exemplaren wird im Hintergrund als verloren markiert.',
+					aktion: 'Verringern',
+					gefaehrlich: true
+				});
 				if (!proceed) return;
 			}
 		}

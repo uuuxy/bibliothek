@@ -1,5 +1,6 @@
 <script>
 	import { apiClient } from './apiFetch.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
 	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
 
@@ -167,9 +168,7 @@
 					class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-800 text-zinc-950 disabled:text-zinc-500 font-bold text-xs rounded-xl shadow-lg cursor-pointer transition-all flex items-center gap-1.5"
 				>
 					{#if isCapturing}
-						<span
-							class="w-3.5 h-3.5 border-2 border-t-zinc-950 border-zinc-950/20 rounded-full animate-spin"
-						></span>
+						<Ladekreis size="sm" farbe="aktuell" />
 						Speichert...
 					{:else}
 						📸 Foto aufnehmen

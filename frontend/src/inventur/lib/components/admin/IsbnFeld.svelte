@@ -5,6 +5,7 @@
 -->
 <script>
 	import { apiFetch } from '../../../../lib/apiFetch.js';
+	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import { showToast } from '$lib/store.svelte.js';
 	import { Camera, RefreshCw } from '@lucide/svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
@@ -88,9 +89,7 @@
 			aria-label="Daten aus dem Internet aktualisieren"
 		>
 			{#if isLookupActive}
-				<div
-					class="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-emerald-600"
-				></div>
+				<Ladekreis size="md" />
 			{:else}
 				<RefreshCw class="h-5 w-5" aria-hidden="true" />
 			{/if}

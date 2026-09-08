@@ -5,6 +5,7 @@
      Mail mit der optionalen Notiz. Älteste zuerst, wie die Klassensätze. -->
 <script>
 	import { onMount } from 'svelte';
+	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -142,8 +143,7 @@
 				disabled={completingId === a.id}
 			>
 				{#if completingId === a.id}
-					<span class="w-3 h-3 border-2 border-white/60 border-t-white rounded-full animate-spin"
-					></span>
+					<Ladekreis size="sm" farbe="aktuell" />
 				{:else}
 					Erledigt & Mail senden
 				{/if}

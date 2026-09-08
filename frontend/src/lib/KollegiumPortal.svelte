@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import SuchZustand from './components/ui/SuchZustand.svelte';
@@ -188,9 +189,6 @@
      lief also unter den Punkt. -->
 {#snippet nachlaufend()}
 	{#if isSearching}
-		<div
-			class="shrink-0 w-4 h-4 border-2 border-primary/40 border-t-primary rounded-full animate-spin"
-			aria-hidden="true"
-		></div>
+		<Ladekreis size="sm" />
 	{/if}
 {/snippet}

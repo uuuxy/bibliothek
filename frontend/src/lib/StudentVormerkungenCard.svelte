@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { Clock, Trash2 } from '@lucide/svelte';
 
@@ -7,7 +8,7 @@
 	let { vormerkungen = $bindable() } = $props();
 
 	async function deleteVormerkung(id) {
-		if (!confirm('Vormerkung wirklich löschen?')) return;
+		if (!(await loeschenBestaetigen('Vormerkung löschen?'))) return;
 		try {
 			const res = await apiFetch(`/api/vormerkungen/${id}`, { method: 'DELETE' });
 			if (res.ok) {
