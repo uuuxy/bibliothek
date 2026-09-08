@@ -1,5 +1,6 @@
 <script>
 	import Button from './components/ui/Button.svelte';
+	import Tabelle from './components/ui/Tabelle.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -31,18 +32,18 @@
 	     Teile geht, entscheidet die Bauteilrolle, nicht der Geschmack. -->
 	<div class="border border-slate-100 bg-white rounded-xl overflow-hidden">
 		<div class="overflow-x-auto">
-			<table class="w-full text-left border-collapse">
+			<Tabelle>
 				<thead>
-					<tr class="border-b border-slate-100 bg-slate-50 text-sm font-medium text-slate-500">
-						<th class="p-4">Name</th>
-						<th class="p-4">E-Mail</th>
-						<th class="p-4">Barcode</th>
-						<th class="p-4">Rolle</th>
-						<th class="p-4">Status</th>
-						<th class="p-4 text-right">Aktionen</th>
+					<tr>
+						<th>Name</th>
+						<th>E-Mail</th>
+						<th>Barcode</th>
+						<th>Rolle</th>
+						<th>Status</th>
+						<th class="text-right">Aktionen</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-slate-100 text-sm text-slate-600 font-medium">
+				<tbody class="font-medium">
 					{#each filteredUsers as user, _i (_i)}
 						{@const roleBadge =
 							user.rolle === 'admin'
@@ -52,13 +53,13 @@
 									: user.rolle === 'helfer'
 										? 'bg-purple-50 text-purple-700 border border-purple-100'
 										: 'bg-amber-50 text-amber-700 border border-amber-100'}
-						<tr class="hover:bg-slate-50/50 transition-colors">
-							<td class="p-4"
+						<tr>
+							<td
 								><span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span
 								></td
 							>
-							<td class="p-4 text-sm text-slate-500">{user.email}</td>
-							<td class="p-4">
+							<td>{user.email}</td>
+							<td>
 								{#if user.barcode_id}
 									<span
 										class="rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-sm text-slate-600"
@@ -68,14 +69,14 @@
 									<span class="text-sm text-slate-400 italic">Keine</span>
 								{/if}
 							</td>
-							<td class="p-4">
+							<td>
 								<span
 									class="inline-flex px-2 py-0.5 rounded-md font-bold text-xs uppercase tracking-wide {roleBadge}"
 								>
 									{user.rolle}
 								</span>
 							</td>
-							<td class="p-4">
+							<td>
 								{#if user.aktiv}
 									<span class="inline-flex items-center gap-1.5 text-sm text-emerald-600">
 										<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktiv
@@ -94,7 +95,7 @@
 									</span>
 								{/if}
 							</td>
-							<td class="p-4 text-right space-x-2 shrink-0">
+							<td class="text-right space-x-2 shrink-0">
 								<Button variant="secondary" size="sm" onclick={() => openEditUserModal(user)}>
 									Bearbeiten
 								</Button>
@@ -105,7 +106,7 @@
 						</tr>
 					{/each}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	</div>
 {/if}

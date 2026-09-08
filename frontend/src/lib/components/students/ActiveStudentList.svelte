@@ -7,6 +7,7 @@
 -->
 <script>
 	import { BookOpen, ChevronRight } from '@lucide/svelte';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
@@ -88,11 +89,11 @@
 		</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
-			<table class="w-full text-base text-slate-700">
-				<thead class="border-b border-slate-200 text-sm font-semibold text-slate-500 font-sans">
+			<Tabelle>
+				<thead class="font-semibold">
 					<tr>
 						{#if auswaehlbar}
-							<th class="px-4 py-2 w-10">
+							<th class="w-10">
 								<Kaestchen
 									checked={alleGewaehlt}
 									indeterminate={teilweise}
@@ -101,15 +102,15 @@
 								/>
 							</th>
 						{/if}
-						<th class="px-4 py-2 w-16">Foto</th>
-						<th class="px-4 py-2">Name</th>
-						<th class="px-4 py-2 w-24">Klasse</th>
-						<th class="px-4 py-2 w-44 text-right">Geliehene Bücher</th>
-						<th class="px-4 py-2 w-36 text-right">Status</th>
-						<th class="px-4 py-2 w-10"></th>
+						<th class="w-16">Foto</th>
+						<th>Name</th>
+						<th class="w-24">Klasse</th>
+						<th class="w-44 text-right">Geliehene Bücher</th>
+						<th class="w-36 text-right">Status</th>
+						<th class="w-10"></th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-slate-100">
+				<tbody>
 					{#each filteredStudents as s, _i (_i)}
 						<tr
 							onclick={() => onSelectStudent(s)}
@@ -122,13 +123,13 @@
 							tabindex="0"
 							role="button"
 							aria-label="Profil von {s.vorname} {s.nachname} (Klasse {s.klasse || 'N/A'}) anzeigen"
-							class="hover:bg-slate-50/50 cursor-pointer transition-colors group focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
+							class="cursor-pointer group focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
 						>
 							{#if auswaehlbar}
 								<!-- stopPropagation: Die gesamte Zeile oeffnet das Profil. Ohne das
 								     wuerde jedes Ankreuzen den Bildschirm wechseln — und die
 								     Markierung waere weg, bevor man die zweite setzen kann. -->
-								<td class="px-4 py-2" onclick={(e) => e.stopPropagation()}>
+								<td onclick={(e) => e.stopPropagation()}>
 									<Kaestchen
 										checked={auswahl.has(s.id)}
 										onchange={() => onToggle?.(s.id)}
@@ -136,20 +137,20 @@
 									/>
 								</td>
 							{/if}
-							<td class="px-4 py-2">
+							<td>
 								{@render avatar(s)}
 							</td>
-							<td class="px-4 py-2 font-semibold text-slate-800">
+							<td class="font-semibold">
 								{s.vorname}
 								{s.nachname}
 								<div class="text-sm font-mono text-slate-400 font-normal mt-0.5">
 									{s.barcode_id}
 								</div>
 							</td>
-							<td class="px-4 py-2 font-medium text-slate-600">
+							<td class="font-medium">
 								Kl. {s.klasse || 'N/A'}
 							</td>
-							<td class="px-4 py-2 text-right">
+							<td class="text-right">
 								<span
 									class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold {s.ausgeliehen_count >
 									0
@@ -159,10 +160,10 @@
 									{s.ausgeliehen_count || 0}
 								</span>
 							</td>
-							<td class="px-4 py-2 text-right">
+							<td class="text-right">
 								{@render statusBadge(s)}
 							</td>
-							<td class="px-4 py-2 text-right">
+							<td class="text-right">
 								<ChevronRight
 									class="w-4 h-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity ml-auto"
 									aria-hidden="true"
@@ -171,7 +172,7 @@
 						</tr>
 					{/each}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	{/if}
 </div>

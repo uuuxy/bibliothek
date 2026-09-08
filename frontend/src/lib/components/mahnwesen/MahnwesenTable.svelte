@@ -1,5 +1,6 @@
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import MahnlisteMailDialog from './MahnlisteMailDialog.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
@@ -53,10 +54,10 @@
 	     edge-to-edge. Getrennt wird über die Kopfzeile, nicht über eine Umrandung. -->
 	<div class="w-full pb-6">
 		<div class="overflow-x-auto w-full">
-			<table class="w-full text-left text-sm whitespace-nowrap">
-				<thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-medium">
+			<Tabelle class="whitespace-nowrap">
+				<thead class="font-medium">
 					<tr>
-						<th class="w-12 px-4 py-2 text-center">
+						<th class="w-12 text-center">
 							<Kaestchen
 								checked={allSelected}
 								{indeterminate}
@@ -64,29 +65,23 @@
 								aria-label="Alle überfälligen Schüler auswählen"
 							/>
 						</th>
-						<th class="px-4 py-2">Schüler/in</th>
-						<th class="px-4 py-2">Klasse</th>
-						<th class="px-4 py-2">Medien</th>
-						<th class="px-4 py-2">Status</th>
+						<th>Schüler/in</th>
+						<th>Klasse</th>
+						<th>Medien</th>
+						<th>Status</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-slate-100">
+				<tbody>
 					{#each mahnwesenStore.filteredSchueler as schueler, _i (_i)}
-						<tr
-							class="hover:bg-slate-50 transition-colors {mahnwesenStore.selectedIds.has(
-								schueler.schueler_id
-							)
-								? 'bg-blue-50/50'
-								: ''}"
-						>
-							<td class="w-12 px-4 py-2 text-center">
+						<tr aria-selected={mahnwesenStore.selectedIds.has(schueler.schueler_id)}>
+							<td class="w-12 text-center">
 								<Kaestchen
 									checked={mahnwesenStore.selectedIds.has(schueler.schueler_id)}
 									onclick={() => mahnwesenStore.toggleSelect(schueler.schueler_id)}
 									aria-label="{schueler.name} auswählen"
 								/>
 							</td>
-							<td class="px-4 py-2">
+							<td>
 								<div class="flex items-center gap-1.5">
 									<button
 										type="button"
@@ -108,12 +103,12 @@
 									{/if}
 								</div>
 							</td>
-							<td class="px-4 py-2">
+							<td>
 								<span class="text-sm text-slate-600">
 									{schueler.klasse}
 								</span>
 							</td>
-							<td class="px-4 py-2">
+							<td>
 								<!-- Text statt Cover-Stapel: Ab drei, vier überfälligen Büchern wurde die
 								     Reihe aus Miniaturen plus "+N"-Badge selbst zur Ratearbeit — welches
 								     Cover zu welchem Titel gehört, war ohnehin nicht zu erkennen. Wie bei
@@ -132,7 +127,7 @@
 							     und braucht keine Warnfarbe. Rot bekommt nur die Eskalation. Vorher trug
 							     jede Zeile Pille UND roten Text: bei 422 Zeilen eine Farbwand, in der die
 							     wirklich dringenden Fälle untergehen. -->
-							<td class="px-4 py-2">
+							<td>
 								<div class="flex flex-col items-start">
 									<span
 										class="text-sm font-medium {schueler.mahnstufe === 'Mahnung'
@@ -152,13 +147,13 @@
 					{/each}
 					{#if mahnwesenStore.filteredSchueler.length === 0}
 						<tr>
-							<td colspan="5" class="px-4 py-8 text-center text-slate-500">
+							<td colspan="5" class="text-center">
 								Keine Treffer für die aktuelle Auswahl (Tab, Klasse oder Suche).
 							</td>
 						</tr>
 					{/if}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	</div>
 {/if}

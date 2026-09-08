@@ -20,6 +20,7 @@
      er entsteht. -->
 <script>
 	import { Printer, X, PackageSearch, Trash2 } from '@lucide/svelte';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import VerlustLoeschenDialog from './VerlustLoeschenDialog.svelte';
@@ -131,23 +132,23 @@
 		</p>
 	{:else}
 		<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-			<table class="w-full border-collapse text-sm">
+			<Tabelle>
 				<thead>
-					<tr class="border-b border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-400">
-						<th class="px-3 py-2 text-left font-semibold">Signatur</th>
-						<th class="px-3 py-2 text-left font-semibold">Titel</th>
-						<th class="px-3 py-2 text-left font-semibold">Barcode</th>
+					<tr>
+						<th>Signatur</th>
+						<th>Titel</th>
+						<th>Barcode</th>
 						<!-- Zum Abhaken beim Regal-Absuchen: mit Tastatur/Maus am Bildschirm,
 						     oder auf dem Ausdruck mit dem Stift — beides bleibt möglich. -->
-						<th class="w-24 px-3 py-2 text-center font-semibold no-print">Gefunden</th>
+						<th class="w-24 text-center no-print">Gefunden</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-slate-100">
+				<tbody>
 					{#each eintraege as e (e.barcode_id)}
 						{@const istGefunden = Boolean(e.gefunden_am)}
 						<tr class={istGefunden ? 'bg-emerald-50/40' : ''}>
-							<td class="px-3 py-2 whitespace-nowrap text-slate-600">{e.signatur || '—'}</td>
-							<td class="max-w-0 px-3 py-2">
+							<td class="whitespace-nowrap">{e.signatur || '—'}</td>
+							<td class="max-w-0">
 								<span
 									class="block truncate font-semibold text-slate-800 {istGefunden
 										? 'line-through decoration-slate-300'
@@ -157,10 +158,8 @@
 									<span class="block truncate text-sm text-slate-400">{e.autor}</span>
 								{/if}
 							</td>
-							<td class="px-3 py-2 font-mono text-sm whitespace-nowrap text-slate-500"
-								>{e.barcode_id}</td
-							>
-							<td class="px-3 py-2 text-center no-print">
+							<td class="font-mono whitespace-nowrap">{e.barcode_id}</td>
+							<td class="text-center no-print">
 								{#if istGefunden}
 									<span class="text-sm font-medium text-emerald-700">Gefunden</span>
 								{:else if e.exemplar_id}
@@ -177,7 +176,7 @@
 						</tr>
 					{/each}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	{/if}
 </section>

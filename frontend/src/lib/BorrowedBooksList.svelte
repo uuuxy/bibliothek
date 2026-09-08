@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { AlertTriangle, CalendarPlus, Check, Loader2, Pencil, Undo2, X } from '@lucide/svelte';
@@ -82,9 +83,9 @@
 </script>
 
 <div class="max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-	<table class="w-full text-left border-collapse table-fixed">
+	<Tabelle class="table-fixed">
 		<thead>
-			<tr class="border-b border-slate-200 text-xs font-medium text-slate-600">
+			<tr>
 				<!-- table-fixed + PROZENT-Breiten (Summe 100%): Die Liste steht auch in schmalen
 				     Panels (Schülerprofil ~590px). Mit festen px-Breiten (w-32/w-48/w-28/w-40 =
 				     592px) blieb dort für die Titelspalte 0px übrig — der truncatete Titel
@@ -92,18 +93,16 @@
 				     Prozente skalieren mit jeder Containerbreite und können nie kollabieren. -->
 				<!-- truncate auch auf den Kopfzellen: bei table-fixed ragt zu langer Kopftext
 				     sonst in die Nachbarspalte hinein (überlappte „RÜCKGABEDATUM|STATUS"). -->
-				<th class="py-3 px-4 truncate {mode === 'loans' ? 'w-[30%]' : 'w-[60%]'}">Titel & Autor</th>
-				<th class="py-3 px-4 truncate {mode === 'loans' ? 'w-[14%]' : 'w-[22%]'}">Barcode</th>
+				<th class={mode === 'loans' ? 'w-[30%]' : 'w-[60%]'}>Titel & Autor</th>
+				<th class={mode === 'loans' ? 'w-[14%]' : 'w-[22%]'}>Barcode</th>
 				{#if mode === 'loans'}
-					<th class="py-3 px-4 truncate w-[20%]">Rückgabe</th>
-					<th class="py-3 px-4 truncate w-[19%]">Status</th>
+					<th class="truncate w-[20%]">Rückgabe</th>
+					<th class="truncate w-[19%]">Status</th>
 				{/if}
-				<th class="py-3 px-4 truncate text-right {mode === 'loans' ? 'w-[17%]' : 'w-[18%]'}"
-					>Aktion</th
-				>
+				<th class="text-right {mode === 'loans' ? 'w-[17%]' : 'w-[18%]'}">Aktion</th>
 			</tr>
 		</thead>
-		<tbody class="divide-y divide-slate-100">
+		<tbody>
 			{#each books as book (book.id || book.barcode_id || Math.random())}
 				<!-- Lernmittel kommt aus dem Feld (Migration 093) — nicht mehr aus einem
 				     „LMF"-Präfix in Titel oder Signatur, den drei Stellen verschieden lasen. -->
@@ -114,8 +113,8 @@
 				     der lokale Pfade ablehnt. Ergebnis: sichtbares Cover in der Zeile, "Kein
 				     Coverbild hinterlegt" in der Vergrößerung. -->
 				{@const miniatur = coverSrc(book.cover_url, book.isbn)}
-				<tr class="hover:bg-slate-50 transition-colors">
-					<td class="py-3 px-4">
+				<tr>
+					<td>
 						<div class="flex items-center space-x-3">
 							<!-- Das Miniaturbild ist der Auslöser für die Großansicht: 32×48 px reichen,
 							     um eine Zeile wiederzuerkennen, nicht um ein Cover zu prüfen. Ein
@@ -156,12 +155,9 @@
 						</div>
 					</td>
 					<!-- truncate: lange Barcodes brechen sonst um und überlappen die Nachbarspalte -->
-					<td
-						class="py-3 px-4 text-sm font-semibold text-slate-700 truncate"
-						title={book.barcode_id}>{book.barcode_id}</td
-					>
+					<td class="font-semibold truncate" title={book.barcode_id}>{book.barcode_id}</td>
 					{#if mode === 'loans'}
-						<td class="py-3 px-4 text-sm font-semibold text-slate-700 whitespace-nowrap">
+						<td class="font-semibold whitespace-nowrap">
 							{#if editingId === (book.ausleihe_id || book.id)}
 								<div class="flex items-center gap-1.5">
 									<Feld
@@ -216,7 +212,7 @@
 								</div>
 							{/if}
 						</td>
-						<td class="py-3 px-4 whitespace-nowrap">
+						<td class="whitespace-nowrap">
 							<!-- Farbe nur für die Ausnahme: „In Frist" ist der Normalfall einer
 							     laufenden Ausleihe und braucht kein grünes Abzeichen. Grün auf jeder
 							     Zeile heisst nur, dass Grün nichts mehr bedeutet. -->
@@ -233,7 +229,7 @@
 					     dort die Status-Spalte. Statt Platz zu erzwingen, trägt das Symbol jetzt
 					     die Bedeutung: Kalender-Plus statt Uhr (eine Uhr heisst „Zeit", nicht
 					     „Frist verlängern"). Die Rückmeldung nach dem Klick liefert der Toast. -->
-					<td class="py-3 px-4 text-right">
+					<td class="text-right">
 						<div class="flex items-center justify-end gap-1">
 							{#if mode === 'loans'}
 								<Button
@@ -283,5 +279,5 @@
 				</tr>
 			{/each}
 		</tbody>
-	</table>
+	</Tabelle>
 </div>

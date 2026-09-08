@@ -13,6 +13,7 @@
      der 200-Zeilen-Marke, die in diesem Projekt gilt. -->
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import { CheckCircle2, Clock, ChevronRight } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 
@@ -29,22 +30,21 @@
 </script>
 
 <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
-	<table class="w-full border-collapse text-sm">
+	<Tabelle>
 		<thead>
-			<tr class="border-b border-slate-200 bg-slate-50/60 text-xs font-semibold text-slate-400">
-				<th class="px-3 py-2 text-left font-semibold">Datum</th>
-				<th class="px-3 py-2 text-left font-semibold">Lieferant</th>
+			<tr>
+				<th>Datum</th>
+				<th>Lieferant</th>
 				<!-- Eigene Spalte, weil der Status vorher IN der Lieferantenzelle stand: Die
 			     trägt max-w-0 + truncate, und das Chip wurde auf wenige Pixel zerquetscht —
 			     die Angabe war da, aber nicht lesbar. -->
-				<th class="px-3 py-2 text-left font-semibold">Bestätigung</th>
-				<th class="px-3 py-2 text-right font-semibold">Exemplare</th>
-				{#if orderStore.preiseErfassen}<th class="px-3 py-2 text-right font-semibold">Betrag</th
-					>{/if}
-				<th class="w-8 px-3 py-2"><span class="sr-only">Bestellung öffnen</span></th>
+				<th>Bestätigung</th>
+				<th class="text-right">Exemplare</th>
+				{#if orderStore.preiseErfassen}<th class="text-right">Betrag</th>{/if}
+				<th class="w-8"><span class="sr-only">Bestellung öffnen</span></th>
 			</tr>
 		</thead>
-		<tbody class="divide-y divide-slate-100">
+		<tbody>
 			{#each bestellungen as b (b.id)}
 				<tr
 					role="button"
@@ -57,12 +57,12 @@
 							onOeffnen(b.id);
 						}
 					}}
-					class="cursor-pointer transition-colors hover:bg-slate-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+					class="cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
 				>
-					<td class="px-3 py-2 font-semibold whitespace-nowrap text-slate-800 tabular-nums">
+					<td class="font-semibold whitespace-nowrap tabular-nums">
 						{datum(b.bestelldatum)}
 					</td>
-					<td class="max-w-0 px-3 py-2">
+					<td class="max-w-0">
 						<span class="block truncate font-semibold text-slate-800">{b.lieferant_name}</span>
 						<span class="block truncate text-sm text-slate-400">
 							{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
@@ -70,7 +70,7 @@
 					</td>
 					<!-- Nur Lieferanten mit dem externen Schritt tragen hier etwas. Ein „—" in
 				     jeder anderen Zeile wäre Rauschen: Auffallen soll die Abweichung. -->
-					<td class="px-3 py-2 whitespace-nowrap">
+					<td class="whitespace-nowrap">
 						{#if b.mit_bestaetigung && b.bestaetigt_am}
 							<StatusChip
 								ton="erfolg"
@@ -90,22 +90,20 @@
 							/>
 						{/if}
 					</td>
-					<td class="px-3 py-2 text-right whitespace-nowrap text-slate-700 tabular-nums">
+					<td class="text-right whitespace-nowrap tabular-nums">
 						{b.anzahl_exemplare}
 					</td>
 					{#if orderStore.preiseErfassen}
-						<td
-							class="px-3 py-2 text-right font-bold whitespace-nowrap text-slate-900 tabular-nums"
-						>
+						<td class="text-right font-bold whitespace-nowrap tabular-nums">
 							{euro(b.gesamtbetrag)}
 						</td>
 					{/if}
 					<!-- Chevron nach rechts: Die Zeile führt weiter, sie klappt nicht mehr auf. -->
-					<td class="px-3 py-2 text-right">
+					<td class="text-right">
 						<ChevronRight class="inline-block h-4 w-4 text-slate-400" aria-hidden="true" />
 					</td>
 				</tr>
 			{/each}
 		</tbody>
-	</table>
+	</Tabelle>
 </div>

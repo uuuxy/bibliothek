@@ -1,5 +1,6 @@
 <script>
 	import { erzeugeAuswahl } from './bookTableAuswahl.svelte.js';
+	import Tabelle from '../../../../lib/components/ui/Tabelle.svelte';
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import BookTableToolbar from '$lib/components/admin/BookTableToolbar.svelte';
 	import BookTableZeile from '$lib/components/admin/BookTableZeile.svelte';
@@ -163,31 +164,29 @@
 	/>
 
 	<div class="overflow-x-auto">
-		<table class="w-full text-left text-base text-slate-700">
-			<thead
-				class="bg-slate-50 border-b border-slate-100 text-xs font-medium text-slate-500 font-sans"
-			>
+		<Tabelle>
+			<thead class="font-medium">
 				<tr>
-					<th class="px-6 py-4 w-10">
+					<th class="w-10">
 						<Kaestchen
 							aria-label="Alle Bücher auswählen"
 							checked={auswahl.alleGewaehlt(books)}
 							onclick={() => auswahl.alleUmschalten(books)}
 						/>
 					</th>
-					<th class="px-6 py-4 w-20">Cover</th>
-					<th class="px-6 py-4">Titel</th>
-					<th class="px-6 py-4">Fach</th>
-					<th class="px-6 py-4">Klasse</th>
-					<th class="px-6 py-4">Art</th>
-					<th class="px-6 py-4">Standort</th>
-					<th class="px-6 py-4 text-right">Zuletzt geprüft</th>
-					<th class="px-6 py-4 text-right">Bestand</th>
-					<th class="px-6 py-4 w-10"></th>
+					<th class="w-20">Cover</th>
+					<th>Titel</th>
+					<th>Fach</th>
+					<th>Klasse</th>
+					<th>Art</th>
+					<th>Standort</th>
+					<th class="text-right">Zuletzt geprüft</th>
+					<th class="text-right">Bestand</th>
+					<th class="w-10"></th>
 				</tr>
 			</thead>
 
-			<tbody class="divide-y divide-slate-100">
+			<tbody>
 				{#each books.slice(0, maxVisible) as book, index (book.id)}
 					<BookTableZeile
 						{book}
@@ -206,13 +205,11 @@
 
 				{#if books.length === 0 && !loading}
 					<tr>
-						<td colspan="10" class="px-6 py-12 text-center text-slate-400 font-medium">
-							Keine Bücher gefunden.
-						</td>
+						<td colspan="10" class="text-center">Keine Bücher gefunden.</td>
 					</tr>
 				{/if}
 			</tbody>
-		</table>
+		</Tabelle>
 
 		{#if books.length > maxVisible}
 			<div class="p-4 flex justify-center bg-slate-50 border-t border-slate-100">

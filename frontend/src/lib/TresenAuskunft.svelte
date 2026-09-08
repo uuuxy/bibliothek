@@ -6,6 +6,7 @@
 	// selbst (deshalb steht der Hinweis dazu sichtbar über dem Feld, nicht im
 	// Kleingedruckten). Recht: audit_details, ab Werk nur ADMIN.
 	import { apiFetch } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Button from './components/ui/Button.svelte';
 	import StatusChip from './components/ui/StatusChip.svelte';
@@ -109,39 +110,37 @@
 				</p>
 			{:else}
 				<div class="overflow-x-auto">
-					<table class="w-full border-collapse text-left">
+					<Tabelle>
 						<thead>
-							<tr
-								class="border-b border-outline-variant text-sm font-semibold text-on-surface-variant"
-							>
-								<th class="p-3">Zeitpunkt</th>
-								<th class="p-3">Vorgang</th>
-								<th class="p-3">Entleiher</th>
-								<th class="p-3">Klasse</th>
-								<th class="p-3">Bearbeiter</th>
+							<tr>
+								<th>Zeitpunkt</th>
+								<th>Vorgang</th>
+								<th>Entleiher</th>
+								<th>Klasse</th>
+								<th>Bearbeiter</th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-outline-variant text-sm text-on-surface">
+						<tbody>
 							{#each auskunft.ereignisse as e, i (i)}
 								<tr>
-									<td class="p-3 text-on-surface-variant">
+									<td>
 										{new Date(e.zeitpunkt).toLocaleString('de-DE')}
 									</td>
-									<td class="p-3 font-medium">{aktionsText[e.aktion] ?? e.aktion}</td>
+									<td class="font-medium">{aktionsText[e.aktion] ?? e.aktion}</td>
 									{#if e.personenbezug_getilgt}
 										<!-- Getilgt ≠ Datenfehler: Die leere Zelle bekommt eine Erklärung. -->
-										<td class="p-3 italic text-on-surface-variant" colspan="2">
+										<td class="italic" colspan="2">
 											Personenbezug getilgt (DSGVO-Frist oder Löschung)
 										</td>
 									{:else}
-										<td class="p-3 font-medium">{e.entleiher}</td>
-										<td class="p-3 text-on-surface-variant">{e.klasse}</td>
+										<td class="font-medium">{e.entleiher}</td>
+										<td>{e.klasse}</td>
 									{/if}
-									<td class="p-3 text-on-surface-variant">{e.bearbeiter || 'System'}</td>
+									<td>{e.bearbeiter || 'System'}</td>
 								</tr>
 							{/each}
 						</tbody>
-					</table>
+					</Tabelle>
 				</div>
 			{/if}
 		{/if}

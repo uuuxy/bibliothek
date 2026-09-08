@@ -12,6 +12,7 @@
 	 * Teil der Kategorie „LUSD & Versetzung" (SchuljahreswechselBereich).
 	 */
 	import { untrack } from 'svelte';
+	import Tabelle from '../../ui/Tabelle.svelte';
 	import { X } from '@lucide/svelte';
 	import Button from '../../ui/Button.svelte';
 	import Feld from '../../ui/Feld.svelte';
@@ -98,26 +99,24 @@
 		</p>
 	</div>
 
-	<table class="w-full max-w-2xl border-collapse text-left text-sm">
+	<Tabelle class="max-w-2xl">
 		<thead>
-			<tr class="border-b border-outline-variant text-on-surface-variant">
-				<th class="w-px px-3 py-2 font-medium">Jahr</th>
-				<th class="px-3 py-2 font-medium">Beginn</th>
-				<th class="px-3 py-2 font-medium">Ende</th>
-				<th class="px-3 py-2 font-medium">Quelle</th>
-				<th class="w-px px-3 py-2"><span class="sr-only">Entfernen</span></th>
+			<tr>
+				<th class="w-px">Jahr</th>
+				<th>Beginn</th>
+				<th>Ende</th>
+				<th>Quelle</th>
+				<th class="w-px"><span class="sr-only">Entfernen</span></th>
 			</tr>
 		</thead>
 		<tbody>
 			{#each zeilen as z (z.jahr)}
-				<tr class="h-12 hover:bg-surface-container-low">
-					<td class="px-3 py-1 font-medium tabular-nums text-on-surface">{z.jahr}</td>
-					<td class="px-3 py-1 tabular-nums">{kurz(z.von)}</td>
-					<td class="px-3 py-1 tabular-nums">{kurz(z.bis)}</td>
-					<td class="px-3 py-1 text-on-surface-variant"
-						>{z.eigen ? 'eigener Eintrag' : 'Programm'}</td
-					>
-					<td class="px-3 py-1 text-right">
+				<tr class="h-12">
+					<td class="font-medium tabular-nums">{z.jahr}</td>
+					<td class="tabular-nums">{kurz(z.von)}</td>
+					<td class="tabular-nums">{kurz(z.bis)}</td>
+					<td>{z.eigen ? 'eigener Eintrag' : 'Programm'}</td>
+					<td class="text-right">
 						{#if z.eigen}
 							<Button
 								variant="ghost"
@@ -133,7 +132,7 @@
 				</tr>
 			{/each}
 		</tbody>
-	</table>
+	</Tabelle>
 
 	<div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-3">
 		<Feld id="sommerferien-von" label="Beginn" type="date" bind:value={von} />

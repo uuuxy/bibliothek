@@ -6,6 +6,7 @@
 	// Der Token steht in der Adresse; einen Login gibt es hier nicht und soll es nicht
 	// geben, sonst müsste der Lieferant ein Geheimnis verwalten.
 	import { apiFetch } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Select from './components/ui/Select.svelte';
 	import { Check } from '@lucide/svelte';
@@ -155,25 +156,24 @@
 				     {#if}-Blöcken verschluckt der Formatierer die Leerzeichen, und im Browser
 				     stand „Naacher· Kundennummer". -->
 				<p class="mt-1 text-sm text-slate-500">{kopfzeile}</p>
-
-				<table class="mt-6 w-full text-left text-sm">
+				<Tabelle class="mt-6">
 					<thead>
-						<tr class="border-b border-slate-200 text-xs font-semibold text-slate-500">
-							<th class="py-2 pr-3">Titel</th>
-							{#if zeigeISBN}<th class="py-2 pr-3">ISBN</th>{/if}
-							<th class="py-2 text-right">Menge</th>
+						<tr>
+							<th>Titel</th>
+							{#if zeigeISBN}<th>ISBN</th>{/if}
+							<th class="text-right">Menge</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-100">
+					<tbody>
 						{#each bestellung.positionen as p (p.titel_name + p.isbn)}
 							<tr>
-								<td class="py-2 pr-3 font-medium text-slate-700">{p.titel_name}</td>
-								{#if zeigeISBN}<td class="py-2 pr-3 text-slate-500">{p.isbn}</td>{/if}
-								<td class="py-2 text-right text-slate-700">{p.menge}</td>
+								<td class="font-medium">{p.titel_name}</td>
+								{#if zeigeISBN}<td>{p.isbn}</td>{/if}
+								<td class="text-right">{p.menge}</td>
 							</tr>
 						{/each}
 					</tbody>
-				</table>
+				</Tabelle>
 			</div>
 
 			{#if bestellung.etiketten_vorhanden}

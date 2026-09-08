@@ -11,6 +11,7 @@
 -->
 <script>
 	import { onMount } from 'svelte';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Trash2, Undo2, ShieldOff } from '@lucide/svelte';
 	import PapierkorbLoeschenDialog from './PapierkorbLoeschenDialog.svelte';
@@ -74,29 +75,29 @@
 		</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
-			<table class="w-full text-base text-slate-700">
-				<thead class="border-b border-slate-200 text-sm font-semibold text-slate-500 font-sans">
+			<Tabelle>
+				<thead class="font-semibold">
 					<tr>
-						<th class="px-4 py-2">Name</th>
-						<th class="px-4 py-2 w-24">Klasse</th>
-						<th class="px-4 py-2 w-44">Gelöscht am</th>
-						<th class="px-4 py-2 w-44 text-right">Aktion</th>
+						<th>Name</th>
+						<th class="w-24">Klasse</th>
+						<th class="w-44">Gelöscht am</th>
+						<th class="w-44 text-right">Aktion</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-slate-100">
+				<tbody>
 					{#each papierkorb.liste as s, _i (_i)}
-						<tr class="hover:bg-slate-50/50 transition-colors">
-							<td class="px-4 py-2 font-semibold text-slate-800">
+						<tr>
+							<td class="font-semibold">
 								{s.vorname}
 								{s.nachname}
 								<div class="text-sm font-mono text-slate-400 font-normal mt-0.5">
 									{s.barcode_id}
 								</div>
 							</td>
-							<td class="px-4 py-2 font-medium text-slate-600">
+							<td class="font-medium">
 								Kl. {s.klasse || 'N/A'}
 							</td>
-							<td class="px-4 py-2 text-sm text-slate-500">
+							<td>
 								{new Date(s.deleted_at).toLocaleString('de-DE', {
 									day: '2-digit',
 									month: '2-digit',
@@ -105,7 +106,7 @@
 									minute: '2-digit'
 								})}
 							</td>
-							<td class="px-4 py-2 text-right">
+							<td class="text-right">
 								<div class="inline-flex items-center gap-2">
 									{#if istAnonymisiert(s)}
 										<!-- Kein Wiederherstellen-Knopf: Der Server antwortet hier mit 409,
@@ -143,7 +144,7 @@
 						</tr>
 					{/each}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	{/if}
 </div>

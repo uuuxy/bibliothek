@@ -1,5 +1,6 @@
 <script>
 	import Button from '../ui/Button.svelte';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
 
@@ -111,30 +112,30 @@
 			     daneben. Name/E-Mail werden gekürzt (Block in der Zelle — max-width auf <td>
 			     ignoriert das Auto-Layout), der volle Text steht im title. -->
 			<div class="overflow-x-auto">
-				<table class="w-full text-left border-collapse text-sm">
+				<Tabelle>
 					<thead>
-						<tr class="border-b border-slate-200 text-xs font-medium text-slate-500">
-							<th class="py-2.5 pr-4">Lieferant</th>
-							<th class="py-2.5 pr-4">Kontakt</th>
-							<th class="py-2.5 text-right">Aktionen</th>
+						<tr>
+							<th>Lieferant</th>
+							<th>Kontakt</th>
+							<th class="text-right">Aktionen</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-100">
+					<tbody>
 						{#each suppliers as s (s.id)}
 							{#if editingId === s.id}
-								<tr class="bg-blue-50/60 align-top">
-									<td class="py-2 pr-4 space-y-2">
+								<tr aria-selected="true" class="align-top">
+									<td class="space-y-2">
 										<Feld aria-label="Name" bind:value={editName} />
 										<Switch
 											bind:checked={editIstHaupt}
 											label="Hauptlieferant der Schule ({s.name})"
 										/>
 									</td>
-									<td class="py-2 pr-4 space-y-2">
+									<td class="space-y-2">
 										<Feld aria-label="E-Mail" type="email" bind:value={editEmail} />
 										<Feld aria-label="Kundennummer" bind:value={editCustNum} />
 									</td>
-									<td class="py-2 text-right whitespace-nowrap">
+									<td class="text-right whitespace-nowrap">
 										<button
 											onclick={saveEdit}
 											aria-label="Änderungen für Lieferant {s.name} speichern"
@@ -150,8 +151,8 @@
 									</td>
 								</tr>
 							{:else}
-								<tr class="hover:bg-slate-50/40">
-									<td class="py-3 pr-4">
+								<tr>
+									<td>
 										<span class="block max-w-52 truncate font-bold text-slate-800" title={s.name}
 											>{s.name}</span
 										>
@@ -167,13 +168,13 @@
 											<span class="block text-xs text-slate-400">nur Bestellmail</span>
 										{/if}
 									</td>
-									<td class="py-3 pr-4 text-slate-600">
+									<td>
 										<span class="block max-w-60 truncate" title={s.email}>{s.email}</span>
 										<span class="block text-xs text-slate-400 whitespace-nowrap"
 											>Kd.-Nr. {s.customerNumber || '–'}</span
 										>
 									</td>
-									<td class="py-3 text-right whitespace-nowrap">
+									<td class="text-right whitespace-nowrap">
 										<button
 											onclick={() => startEdit(s)}
 											aria-label="Lieferant {s.name} bearbeiten"
@@ -191,7 +192,7 @@
 							{/if}
 						{/each}
 					</tbody>
-				</table>
+				</Tabelle>
 			</div>
 		{/if}
 	</div>

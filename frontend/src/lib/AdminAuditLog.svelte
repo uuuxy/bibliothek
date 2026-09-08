@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
 	import { RefreshCw, ShieldCheck } from '@lucide/svelte';
@@ -64,36 +65,36 @@
 	{:else}
 		<div class="w-full">
 			<div class="overflow-x-auto">
-				<table class="w-full text-left border-collapse">
+				<Tabelle>
 					<thead>
-						<tr class="border-b border-slate-200 text-sm font-semibold text-slate-500">
-							<th class="p-4">Zeitstempel</th>
-							<th class="p-4">Aktion</th>
-							<th class="p-4">Admin</th>
-							<th class="p-4">IP-Adresse</th>
-							<th class="p-4">Details</th>
+						<tr>
+							<th>Zeitstempel</th>
+							<th>Aktion</th>
+							<th>Admin</th>
+							<th>IP-Adresse</th>
+							<th>Details</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-100 text-sm text-slate-600">
+					<tbody>
 						{#each logs as log, _i (_i)}
-							<tr class="hover:bg-slate-50/50 transition-colors">
-								<td class="p-4 whitespace-nowrap text-slate-500">
+							<tr>
+								<td class="whitespace-nowrap">
 									{new Date(log.zeitstempel).toLocaleString('de-DE')}
 								</td>
-								<td class="p-4">
+								<td>
 									<span
 										class="inline-flex px-2 py-1 rounded-md text-xs font-bold bg-amber-50 border border-amber-100 text-amber-700"
 									>
 										{log.aktion}
 									</span>
 								</td>
-								<td class="p-4 whitespace-nowrap font-medium text-slate-700">
+								<td class="whitespace-nowrap font-medium">
 									{log.admin_name}
 								</td>
-								<td class="p-4 whitespace-nowrap text-slate-500 font-mono text-sm">
+								<td class="whitespace-nowrap font-mono">
 									{log.ip_adresse || '-'}
 								</td>
-								<td class="p-4">
+								<td>
 									<pre
 										class="text-sm text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 whitespace-pre-wrap font-mono max-w-md overflow-x-auto">{JSON.stringify(
 											log.details,
@@ -104,7 +105,7 @@
 							</tr>
 						{/each}
 					</tbody>
-				</table>
+				</Tabelle>
 			</div>
 		</div>
 	{/if}

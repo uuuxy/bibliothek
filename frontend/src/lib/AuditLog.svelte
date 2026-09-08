@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
 	import StatusChip from './components/ui/StatusChip.svelte';
@@ -91,36 +92,36 @@
 	{:else}
 		<div class="w-full">
 			<div class="overflow-x-auto">
-				<table class="w-full text-left border-collapse">
+				<Tabelle>
 					<thead>
-						<tr class="border-b border-slate-200 text-sm font-semibold text-slate-500">
-							<th class="p-4.5">Zeitstempel</th>
-							<th class="p-4.5">Aktion</th>
-							<th class="p-4.5">Tabelle</th>
-							<th class="p-4.5">Datensatz-ID</th>
-							<th class="p-4.5">Bearbeiter (Operator)</th>
+						<tr>
+							<th>Zeitstempel</th>
+							<th>Aktion</th>
+							<th>Tabelle</th>
+							<th>Datensatz-ID</th>
+							<th>Bearbeiter (Operator)</th>
 						</tr>
 					</thead>
-					<tbody class="divide-y divide-slate-100 text-base text-slate-600">
+					<tbody>
 						{#each logs as log, _i (_i)}
-							<tr class="hover:bg-slate-50/50 transition-colors">
-								<td class="p-4.5 text-sm text-slate-500">
+							<tr>
+								<td>
 									{formatZeitpunkt(log.timestamp)}
 								</td>
-								<td class="p-4.5">
+								<td>
 									<StatusChip
 										ton={AKTIONEN[log.aktion]?.ton ?? 'neutral'}
 										text={AKTIONEN[log.aktion]?.text ?? log.aktion}
 										tip={log.aktion}
 									/>
 								</td>
-								<td class="p-4.5 text-sm text-emerald-600">
+								<td class="text-emerald-600">
 									{log.tabelle}
 								</td>
-								<td class="p-4.5 text-sm text-slate-400">
+								<td>
 									{log.datensatz_id}
 								</td>
-								<td class="p-4.5">
+								<td>
 									<!-- Systemgesteuerte Vorgänge haben keinen Bearbeiter. Sie als leere
 									     Zelle zu zeigen wäre von einem Datenfehler nicht zu unterscheiden;
 									     sie werden deshalb ausdrücklich als „System" benannt. -->
@@ -139,7 +140,7 @@
 							</tr>
 						{/each}
 					</tbody>
-				</table>
+				</Tabelle>
 			</div>
 		</div>
 	{/if}

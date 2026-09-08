@@ -1,5 +1,6 @@
 <script>
 	import { apiGet } from '../../apiFetch.js';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { appState } from '../../../inventur/lib/store.svelte.js';
 
@@ -77,31 +78,28 @@
 		{/if}
 
 		<div class="overflow-x-auto">
-			<table class="w-full text-sm">
+			<Tabelle>
 				<thead>
-					<tr class="text-left text-xs uppercase tracking-wide text-slate-500">
-						<th class="py-2 pr-3 font-medium">Signatur</th>
-						<th class="py-2 pr-3 font-medium">Titel</th>
-						<th class="py-2 pr-3 font-medium">Autor</th>
-						<th class="py-2 pr-3 font-medium text-right">Exemplare</th>
-						<th class="py-2 font-medium text-right">verliehen</th>
+					<tr>
+						<th>Signatur</th>
+						<th>Titel</th>
+						<th>Autor</th>
+						<th class="text-right">Exemplare</th>
+						<th class="text-right">verliehen</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each buecher as buch (buch.titel_id)}
-						<tr
-							class="border-t border-slate-100 hover:bg-slate-50 cursor-pointer"
-							onclick={() => oeffneBuch(buch.titel_id)}
-						>
-							<td class="py-2 pr-3 font-mono whitespace-nowrap text-slate-900">{buch.signatur}</td>
-							<td class="py-2 pr-3 text-slate-900">{buch.titel}</td>
-							<td class="py-2 pr-3 text-slate-600">{buch.autor || '—'}</td>
-							<td class="py-2 pr-3 text-right text-slate-700">{buch.exemplare}</td>
-							<td class="py-2 text-right text-slate-700">{buch.verliehen}</td>
+						<tr class="cursor-pointer" onclick={() => oeffneBuch(buch.titel_id)}>
+							<td class="font-mono whitespace-nowrap">{buch.signatur}</td>
+							<td>{buch.titel}</td>
+							<td>{buch.autor || '—'}</td>
+							<td class="text-right">{buch.exemplare}</td>
+							<td class="text-right">{buch.verliehen}</td>
 						</tr>
 					{/each}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	</div>
 {/if}

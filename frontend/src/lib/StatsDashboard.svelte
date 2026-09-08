@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import { coverSrc } from './utils/coverSrc.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
@@ -180,10 +181,10 @@
 {/snippet}
 
 {#snippet spaltenKopf(spalten)}
-	<thead class="sticky top-0 z-10 bg-white">
-		<tr class="text-xs font-medium text-slate-500">
+	<thead>
+		<tr>
 			{#each spalten as s (s.label)}
-				<th class="py-2 px-4 font-bold {s.right ? 'text-right' : 'text-left'}">{s.label}</th>
+				<th class={s.right ? 'text-right' : 'text-left'}>{s.label}</th>
 			{/each}
 		</tr>
 	</thead>
@@ -201,16 +202,16 @@
 {/snippet}
 
 {#snippet rennerTabelle()}
-	<table class="w-full border-collapse">
+	<Tabelle sticky>
 		{@render spaltenKopf([
 			{ label: 'Buchtitel' },
 			{ label: 'Autor' },
 			{ label: 'Ausleihen', right: true }
 		])}
-		<tbody class="divide-y divide-slate-100">
+		<tbody>
 			{#each topRenner as book (book.id)}
-				<tr class="hover:bg-slate-50 transition-colors">
-					<td class="py-2 px-4">
+				<tr>
+					<td>
 						<div class="flex items-center gap-3 min-w-0">
 							{#if coverSrc(book.cover_url, book.isbn)}
 								<img
@@ -230,42 +231,31 @@
 							>
 						</div>
 					</td>
-					<td class="py-2 px-4 text-sm text-slate-500 truncate max-w-48" title={book.autor}
-						>{book.autor}</td
-					>
-					<td class="py-2 px-4 text-sm font-semibold text-slate-900 tabular-nums text-right"
-						>{num(book.count)}×</td
-					>
+					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
+					<td class="font-semibold tabular-nums text-right">{num(book.count)}×</td>
 				</tr>
 			{/each}
 		</tbody>
-	</table>
+	</Tabelle>
 {/snippet}
 
 {#snippet ladenhueterTabelle()}
-	<table class="w-full border-collapse">
+	<Tabelle sticky>
 		{@render spaltenKopf([
 			{ label: 'Buchtitel' },
 			{ label: 'Autor' },
 			{ label: 'Zuletzt geliehen', right: true }
 		])}
-		<tbody class="divide-y divide-slate-100">
+		<tbody>
 			{#each topWarmers as book (book.id)}
-				<tr class="hover:bg-slate-50 transition-colors">
-					<td
-						class="py-3 px-4 text-sm font-semibold text-slate-800 truncate max-w-64"
-						title={book.titel}>{book.titel}</td
-					>
-					<td class="py-3 px-4 text-sm text-slate-500 truncate max-w-48" title={book.autor}
-						>{book.autor}</td
-					>
-					<td class="py-3 px-4 text-sm font-semibold text-amber-600 tabular-nums text-right"
-						>{book.letzte_aus}</td
-					>
+				<tr>
+					<td class="font-semibold truncate max-w-64" title={book.titel}>{book.titel}</td>
+					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
+					<td class="font-semibold text-amber-600 tabular-nums text-right">{book.letzte_aus}</td>
 				</tr>
 			{/each}
 		</tbody>
-	</table>
+	</Tabelle>
 {/snippet}
 
 <!-- Skeleton in der Geometrie des fertigen Layouts: beim Filterwechsel springt nichts. -->

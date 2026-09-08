@@ -5,6 +5,7 @@
      diese eigene Liste: dieselbe Serversuche wie „Aktive Schüler", mit status=ehemalige. -->
 <script>
 	import { onMount } from 'svelte';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Archive } from '@lucide/svelte';
 	import { apiFetch } from '../../apiFetch.js';
@@ -81,17 +82,17 @@
 	</div>
 {:else}
 	<div class="overflow-x-auto">
-		<table class="w-full text-left text-base border-collapse">
+		<Tabelle>
 			<thead>
-				<tr class="border-b border-outline-variant text-on-surface-variant text-sm">
-					<th class="py-2 px-4">Abgang</th>
-					<th class="py-2 px-4">Name</th>
-					<th class="py-2 px-4">Barcode</th>
-					<th class="py-2 px-4">Offene Bücher</th>
-					<th class="py-2 px-4">Sperr-Status</th>
+				<tr>
+					<th>Abgang</th>
+					<th>Name</th>
+					<th>Barcode</th>
+					<th>Offene Bücher</th>
+					<th>Sperr-Status</th>
 				</tr>
 			</thead>
-			<tbody class="divide-y divide-outline-variant">
+			<tbody>
 				{#each zeilen as s (s.id)}
 					<tr
 						onclick={() => onSelect(s)}
@@ -104,12 +105,12 @@
 						tabindex="0"
 						role="button"
 						aria-label="Profil von {s.vorname} {s.nachname} anzeigen"
-						class="hover:bg-surface-container-low cursor-pointer transition-colors animate-slide-up focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2"
+						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2"
 					>
-						<td class="py-2 px-4 text-on-surface-variant">{s.abgaenger_jahr || '–'}</td>
-						<td class="py-2 px-4 font-medium text-on-surface">{s.vorname} {s.nachname}</td>
-						<td class="py-2 px-4 text-on-surface-variant font-mono text-sm">{s.barcode_id}</td>
-						<td class="py-2 px-4 text-on-surface-variant">
+						<td>{s.abgaenger_jahr || '–'}</td>
+						<td class="font-medium">{s.vorname} {s.nachname}</td>
+						<td class="font-mono">{s.barcode_id}</td>
+						<td>
 							{#if s.ausgeliehen_count > 0}
 								{s.ausgeliehen_count}
 								{s.ausgeliehen_count === 1 ? 'Buch' : 'Bücher'}
@@ -120,7 +121,7 @@
 								<span class="text-on-surface-variant">–</span>
 							{/if}
 						</td>
-						<td class="py-2 px-4">
+						<td>
 							{#if s.ist_gesperrt}
 								<span class="text-sm font-medium text-error">Sperre aktiv</span>
 							{/if}
@@ -128,6 +129,6 @@
 					</tr>
 				{/each}
 			</tbody>
-		</table>
+		</Tabelle>
 	</div>
 {/if}

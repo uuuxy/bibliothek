@@ -5,6 +5,7 @@
      keinen eigenen Kalender. -->
 <script>
 	import { CalendarClock, Check } from '@lucide/svelte';
+	import Tabelle from './ui/Tabelle.svelte';
 	/** @type {{ zeilen: any[], leer: boolean, fenster: { offen: boolean, von: string, bis: string }, onProfil: (student: any) => void }} */
 	let { zeilen, leer, fenster, onProfil } = $props();
 </script>
@@ -37,16 +38,16 @@
 	</div>
 {:else}
 	<div class="overflow-x-auto">
-		<table class="w-full text-left text-base border-collapse">
+		<Tabelle>
 			<thead>
-				<tr class="border-b border-slate-100 text-slate-500 text-sm">
-					<th class="py-2 px-4">Klasse</th>
-					<th class="py-2 px-4">Name</th>
-					<th class="py-2 px-4">Offene Bücher</th>
-					<th class="py-2 px-4">Sperr-Status</th>
+				<tr>
+					<th>Klasse</th>
+					<th>Name</th>
+					<th>Offene Bücher</th>
+					<th>Sperr-Status</th>
 				</tr>
 			</thead>
-			<tbody class="divide-y divide-slate-50">
+			<tbody>
 				{#each zeilen as student (student.id)}
 					<tr
 						onclick={() => onProfil(student)}
@@ -59,13 +60,11 @@
 						tabindex="0"
 						role="button"
 						aria-label="Profil von {student.vorname} {student.nachname} (Klasse {student.klasse}) anzeigen"
-						class="hover:bg-slate-50/85 cursor-pointer transition-colors animate-slide-up focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
+						class="cursor-pointer animate-slide-up focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
 					>
-						<td class="py-2 px-4 text-slate-500">{student.klasse}</td>
-						<td class="py-2 px-4 font-medium text-slate-800"
-							>{student.vorname} {student.nachname}</td
-						>
-						<td class="py-2 px-4 text-slate-600">
+						<td>{student.klasse}</td>
+						<td class="font-medium">{student.vorname} {student.nachname}</td>
+						<td>
 							{student.offene_buecher}
 							{student.offene_buecher === 1 ? 'Buch' : 'Bücher'}
 							{#if student.ueberfaellig > 0}
@@ -74,7 +73,7 @@
 								</span>
 							{/if}
 						</td>
-						<td class="py-2 px-4">
+						<td>
 							{#if student.ist_gesperrt}
 								<span class="text-sm font-medium text-rose-600">Sperre aktiv</span>
 							{/if}
@@ -82,6 +81,6 @@
 					</tr>
 				{/each}
 			</tbody>
-		</table>
+		</Tabelle>
 	</div>
 {/if}

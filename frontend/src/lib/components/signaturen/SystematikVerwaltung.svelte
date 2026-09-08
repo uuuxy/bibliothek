@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import Tabelle from '../ui/Tabelle.svelte';
 	import { loeschenBestaetigen } from '../../stores/bestaetigung.svelte.js';
 	// apiPost/apiPut/apiDelete liefern die geparste Antwort und WERFEN im Fehlerfall —
 	// den Fehler-Toast haben sie dann schon gezeigt. Deshalb hier kein zweiter Toast im
@@ -156,32 +157,32 @@
 		</p>
 	{:else}
 		<div class="overflow-x-auto">
-			<table class="w-full text-sm">
+			<Tabelle>
 				<thead>
-					<tr class="text-left text-xs uppercase tracking-wide text-slate-500">
-						<th class="py-2 pr-3 font-medium">Kürzel</th>
-						<th class="py-2 pr-3 font-medium">Bezeichnung</th>
-						<th class="py-2 font-medium text-right">Aktion</th>
+					<tr>
+						<th>Kürzel</th>
+						<th>Bezeichnung</th>
+						<th class="text-right">Aktion</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each liste as eintrag (eintrag.id)}
-						<tr class="border-t border-slate-100">
+						<tr>
 							{#if bearbeiteId === eintrag.id}
-								<td class="py-2 pr-3">
+								<td>
 									<Feld bind:value={bearbeiteKuerzel} aria-label="Kürzel bearbeiten" feld="w-24" />
 								</td>
-								<td class="py-2 pr-3">
+								<td>
 									<Feld bind:value={bearbeiteBezeichnung} aria-label="Bezeichnung bearbeiten" />
 								</td>
-								<td class="py-2 text-right whitespace-nowrap">
+								<td class="text-right whitespace-nowrap">
 									<Button size="sm" onclick={speichereBearbeitung}>Sichern</Button>
 									<Button size="sm" variant="ghost" onclick={brichBearbeitenAb}>Abbrechen</Button>
 								</td>
 							{:else}
-								<td class="py-2 pr-3 font-mono text-slate-900">{eintrag.kuerzel}</td>
-								<td class="py-2 pr-3 text-slate-700">{eintrag.bezeichnung}</td>
-								<td class="py-2 text-right whitespace-nowrap">
+								<td class="font-mono">{eintrag.kuerzel}</td>
+								<td>{eintrag.bezeichnung}</td>
+								<td class="text-right whitespace-nowrap">
 									<Button size="sm" variant="secondary" onclick={() => starteBearbeiten(eintrag)}>
 										Ändern
 									</Button>
@@ -193,7 +194,7 @@
 						</tr>
 					{/each}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	{/if}
 </section>

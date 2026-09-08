@@ -12,6 +12,7 @@
      edge-to-edge. Getrennt wird über die Kopfzeile, nicht über eine Umrandung." -->
 <script>
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import Tabelle from '../ui/Tabelle.svelte';
 	/** @type {{
 	 *   zeilen: { barcode_id: string, titel: string, autor: string, erworben_am: string, etikett_gedruckt: boolean }[],
 	 *   gewaehlt: string[],
@@ -32,19 +33,15 @@
 <!-- border-separate statt collapse: Bei `collapse` gehören die Rahmen der Tabelle, nicht
      der Zelle — an einem klebenden Kopf verschwindet die Trennlinie dann beim Scrollen. -->
 <div class="w-full overflow-x-auto">
-	<table class="w-full border-separate border-spacing-0 text-sm">
+	<Tabelle sticky>
 		<thead>
 			<tr>
 				{#snippet kopf(/** @type {string} */ inhalt, /** @type {string} */ klasse)}
-					<th
-						class="sticky top-0 z-10 border-b border-outline-variant bg-surface px-3 py-3 text-xs font-medium text-on-surface-variant {klasse}"
-					>
+					<th class={klasse}>
 						{inhalt}
 					</th>
 				{/snippet}
-				<th
-					class="sticky top-0 z-10 w-12 border-b border-outline-variant bg-surface px-3 py-3 text-left"
-				>
+				<th class="w-12">
 					<Kaestchen
 						aria-label="Alle auswählen"
 						checked={alleGewaehlt}
@@ -62,19 +59,15 @@
 				<!-- Gewählt = secondary-container, wie überall in dieser Anwendung: Die Regel
 				     steht seit dem 04.08.2026 in styles/rollen.css. Vorher lag hier ein
 				     bg-blue-50/50, das mit keiner Rolle etwas zu tun hatte. -->
-				<tr
-					class="transition-colors {markiert
-						? 'bg-secondary-container'
-						: 'hover:bg-surface-container'}"
-				>
-					<td class="px-3 py-2.5">
+				<tr aria-selected={markiert}>
+					<td>
 						<Kaestchen
 							aria-label="{e.titel} ({e.barcode_id}) auswählen"
 							checked={markiert}
 							onchange={() => onumschalten(e.barcode_id)}
 						/>
 					</td>
-					<td class="max-w-0 px-3 py-2.5">
+					<td class="max-w-0">
 						<span class="block truncate font-medium text-on-surface">
 							{e.titel}
 							<!-- Nur in den gemischten Ansichten: In „Offen" wäre der Vermerk an
@@ -87,14 +80,14 @@
 							<span class="block truncate text-sm text-on-surface-variant">{e.autor}</span>
 						{/if}
 					</td>
-					<td class="px-3 py-2.5 font-mono text-sm whitespace-nowrap text-on-surface-variant">
+					<td class="font-mono whitespace-nowrap">
 						{e.barcode_id}
 					</td>
-					<td class="px-3 py-2.5 text-right whitespace-nowrap tabular-nums text-on-surface-variant">
+					<td class="text-right whitespace-nowrap tabular-nums">
 						{datum(e.erworben_am)}
 					</td>
 				</tr>
 			{/each}
 		</tbody>
-	</table>
+	</Tabelle>
 </div>

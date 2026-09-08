@@ -4,6 +4,7 @@
      Besonderheiten (Vermerk, wie die Bibliothek ihn geschrieben hat). Lesend — der Portal-Reiter
      und jede Stelle, die den fertigen Plan zeigt. Bearbeitet wird er im Planer. -->
 <script>
+	import Tabelle from '../ui/Tabelle.svelte';
 	import {
 		ARTEN,
 		artErklaerung,
@@ -32,30 +33,30 @@
 			{artErklaerung(block.art, eingangsjahrgaenge)}
 		</p>
 		<div class="overflow-x-auto">
-			<table class="w-full text-left text-base border-collapse">
+			<Tabelle>
 				<thead>
-					<tr class="border-b border-outline-variant text-on-surface-variant text-sm">
-						<th class="py-2 px-4">Wochentag</th>
-						<th class="py-2 px-4">Datum</th>
-						<th class="py-2 px-4">Stunde</th>
-						<th class="py-2 px-4">Klassen</th>
-						<th class="py-2 px-4">Besonderheiten</th>
+					<tr>
+						<th>Wochentag</th>
+						<th>Datum</th>
+						<th>Stunde</th>
+						<th>Klassen</th>
+						<th>Besonderheiten</th>
 					</tr>
 				</thead>
-				<tbody class="divide-y divide-outline-variant">
+				<tbody>
 					{#each block.zeilen as t (t.id)}
-						<tr class="hover:bg-surface-container-low transition-colors">
-							<td class="py-2 px-4 text-on-surface-variant">{wochentag(t.datum)}</td>
-							<td class="py-2 px-4 text-on-surface tabular-nums">{datumKurz(t.datum)}</td>
-							<td class="py-2 px-4 text-on-surface-variant">{stundeText(t.stunde)}</td>
-							<td class="py-2 px-4 font-medium text-on-surface">{t.klassen.join(' / ')}</td>
-							<td class="py-2 px-4 text-on-surface-variant">
+						<tr>
+							<td>{wochentag(t.datum)}</td>
+							<td class="tabular-nums">{datumKurz(t.datum)}</td>
+							<td>{stundeText(t.stunde)}</td>
+							<td class="font-medium">{t.klassen.join(' / ')}</td>
+							<td>
 								{t.vermerk}
 							</td>
 						</tr>
 					{/each}
 				</tbody>
-			</table>
+			</Tabelle>
 		</div>
 	</section>
 {/each}

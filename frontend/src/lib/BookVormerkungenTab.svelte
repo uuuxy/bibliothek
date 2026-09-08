@@ -1,5 +1,6 @@
 <script>
 	import { apiFetch, apiClient } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
@@ -155,46 +156,44 @@
 			<p class="font-medium text-sm">Keine ausstehenden Vormerkungen für diesen Titel.</p>
 		</div>
 	{:else}
-		<div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-			<table class="w-full text-left text-sm whitespace-nowrap">
-				<thead class="bg-slate-50 text-slate-500 text-xs font-medium">
+		<Tabelle class="whitespace-nowrap">
+			<thead>
+				<tr>
+					<th>Wartet seit</th>
+					<th>Schüler</th>
+					<th>Notiz</th>
+					<th class="text-right">Aktion</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each vormerkungen as v, _i (_i)}
 					<tr>
-						<th class="px-4 py-2">Wartet seit</th>
-						<th class="px-4 py-2">Schüler</th>
-						<th class="px-4 py-2">Notiz</th>
-						<th class="px-4 py-2 text-right">Aktion</th>
+						<td class="font-medium">
+							{new Date(v.erstellt_am).toLocaleDateString('de-DE', {
+								day: '2-digit',
+								month: '2-digit',
+								year: 'numeric'
+							})}
+						</td>
+						<td class="font-semibold text-blue-600">
+							{v.schueler_name || 'Unbekannt'}
+						</td>
+						<td>
+							{v.notiz || '—'}
+						</td>
+						<td class="text-right">
+							<button
+								onclick={() => deleteVormerkung(v.id)}
+								class="text-rose-600 hover:text-rose-700 font-semibold p-2 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+								title="Vormerkung löschen"
+								aria-label="Vormerkung löschen"
+							>
+								<Trash2 class="w-4 h-4" aria-hidden="true" />
+							</button>
+						</td>
 					</tr>
-				</thead>
-				<tbody class="divide-y divide-slate-100">
-					{#each vormerkungen as v, _i (_i)}
-						<tr class="hover:bg-slate-50/50 transition-colors">
-							<td class="px-4 py-2 font-medium text-slate-800">
-								{new Date(v.erstellt_am).toLocaleDateString('de-DE', {
-									day: '2-digit',
-									month: '2-digit',
-									year: 'numeric'
-								})}
-							</td>
-							<td class="px-4 py-2 font-semibold text-blue-600">
-								{v.schueler_name || 'Unbekannt'}
-							</td>
-							<td class="px-4 py-2 text-slate-500">
-								{v.notiz || '—'}
-							</td>
-							<td class="px-4 py-2 text-right">
-								<button
-									onclick={() => deleteVormerkung(v.id)}
-									class="text-rose-600 hover:text-rose-700 font-semibold p-2 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-									title="Vormerkung löschen"
-									aria-label="Vormerkung löschen"
-								>
-									<Trash2 class="w-4 h-4" aria-hidden="true" />
-								</button>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
+				{/each}
+			</tbody>
+		</Tabelle>
 	{/if}
 </div>

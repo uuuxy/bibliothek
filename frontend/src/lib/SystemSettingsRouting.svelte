@@ -1,5 +1,6 @@
 <script>
 	import { apiGet, apiPost, apiDelete } from './apiFetch.js';
+	import Tabelle from './components/ui/Tabelle.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
@@ -76,20 +77,20 @@
 	{:else if mappingRows.length === 0}
 		<p class="text-sm text-slate-500 py-4">Noch keine Mappings vorhanden.</p>
 	{:else}
-		<table class="w-full text-sm border-b border-slate-200">
+		<Tabelle>
 			<thead>
-				<tr class="border-b border-slate-200 text-xs font-medium text-slate-500">
-					<th class="text-left py-3">Klasse</th>
-					<th class="text-left py-3">Lehrer-E-Mail</th>
-					<th class="py-3 text-right">Aktion</th>
+				<tr>
+					<th>Klasse</th>
+					<th>Lehrer-E-Mail</th>
+					<th class="text-right">Aktion</th>
 				</tr>
 			</thead>
-			<tbody class="divide-y divide-slate-200">
+			<tbody>
 				{#each mappingRows as row, _i (_i)}
-					<tr class="hover:bg-slate-50/60 transition-colors">
-						<td class="py-3 font-semibold text-slate-800">{row.klasse}</td>
-						<td class="py-3 text-slate-600">{row.lehrer_email}</td>
-						<td class="py-3 text-right">
+					<tr>
+						<td class="font-semibold">{row.klasse}</td>
+						<td>{row.lehrer_email}</td>
+						<td class="text-right">
 							<button
 								onclick={() => deleteMapping(row.klasse)}
 								class="p-2 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
@@ -101,7 +102,7 @@
 					</tr>
 				{/each}
 			</tbody>
-		</table>
+		</Tabelle>
 	{/if}
 
 	<!-- Neuen Eintrag hinzufügen: flacher Eingabeblock ohne Box -->
