@@ -173,7 +173,17 @@ func IstBekanntesDefaultGeheimnis(wert string) bool {
 	switch wert {
 	case "super-secret-default-key-at-least-32-bytes", // Default aus docker-compose.yml (JWT)
 		"super-secure-aes-key-32-chars-ok", // Default aus docker-compose.yml (AES)
-		"supergeheim_lokal":
+		"supergeheim_lokal",
+		// Platzhalter aus .env.example (07.09.2026, Sicherheits-Audit): Wer die Datei
+		// nach .env kopiert und nur die per docker-compose `:?` erzwungenen Werte
+		// (POSTGRES_PASSWORD, IMAP_HOST) setzt, ließ diese beiden unverändert — und der
+		// Server startete mit APP_ENV=production trotz scharfem ENFORCE_PROD_SECRETS,
+		// weil der Wächter genau die im Repository lesbaren Beispielwerte nicht kannte.
+		// Beide erfüllen zugleich die Längenprüfung, fielen also durch jede andere
+		// Schranke. Die Selbstprüfung nutzt dieselbe Liste (betriebsbereitschaft_handler),
+		// meldete die Absicherung also fälschlich als „scharf".
+		"super-secret-key-that-is-at-least-32-bytes-long", // .env.example JWT_SECRET
+		"your-32-character-encryption-key":                // .env.example APP_ENCRYPTION_KEY
 		return true
 	}
 	return false
