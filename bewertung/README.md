@@ -29,7 +29,15 @@ Diese Mappe enthält eine unabhängige, **nur lesende** Prüfung der Datenbankst
 | [datenbank-pruefbericht.html](datenbank-pruefbericht.html)             | Dieselbe Fassung als gestaltete Seite — herunterladen und im Browser öffnen.                                 |
 | [sicherheitsbefund-kiosk-suche.md](sicherheitsbefund-kiosk-suche.md)   | Eigener Sicherheitsbefund: Die Kiosk-Suche gibt vollständige Schülerdaten an die Helfer-Rolle heraus (Hoch). |
 | [sicherheitsbefund-vormerkungen.md](sicherheitsbefund-vormerkungen.md) | Eigener Sicherheitsbefund: Die Vormerkungsliste gibt Schülernamen an die Helfer-Rolle heraus (Mittel–Hoch).  |
-| [bibliothek-erd.svg](bibliothek-erd.svg)                               | Das vollständige Datenbank-Diagramm (breit — im Browser öffnen).                                             |
+| [bibliothek-erd.svg](bibliothek-erd.svg)                               | Das Datenbank-Diagramm **zum Prüfstand 18.08.2026** — siehe Hinweis darunter.                                 |
+
+> **Das Diagramm ist ein Zeitdokument, kein aktueller Schemaplan.** Es zeigt den Stand vom
+> 18.08.2026; gemessen am 08.09.2026 fehlen ihm **7 der 32 Tabellen**: `klassen`,
+> `lehrer_anliegen` sowie die fünf Tabellen des LMF-Planers (`lmf_plaene`,
+> `lmf_plan_ausgelassen`, `lmf_plan_freie_tage`, `lmf_termine`, `lmf_termin_klassen`).
+> Besonders `klassen` ist der Punkt: Diese Tabelle entstand erst als **Antwort auf Befund
+> F3** (Migration 079) — das Diagramm zeigt also die Welt vor der Behebung des Befunds,
+> den es selbst aufgedeckt hat. Wer den heutigen Aufbau sehen will, liest `schema.sql`.
 
 ## Kurzfassung in drei Sätzen
 
