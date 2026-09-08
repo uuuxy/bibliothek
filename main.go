@@ -165,6 +165,14 @@ func setupDatabase(ctx context.Context, dsn string) *db.Database {
 		os.Exit(1)
 	}
 
+	// Konto für den außerordentlichen Testzugang, falls er konfiguriert ist. Ohne diesen
+	// Schritt bestünde der Zugang aus einem gültigen Passwort und einem 401 dahinter.
+	// Legt nur an, was fehlt — vorhandene Konten bleiben unverändert (siehe dort).
+	if err := database.SichereTestzugangKonto(ctx, auth.TestzugangEmail()); err != nil {
+		slog.Error("Testzugang-Konto konnte nicht sichergestellt werden", "error", err)
+		os.Exit(1)
+	}
+
 	// Muss vor dem ersten Versand laufen: Übernimmt die SMTP-Zugangsdaten aus der
 	// Umgebung in die Datenbank, solange dort die Schema-Vorgabe steht. Ab dann gilt
 	// die Konfiguration aus der Oberfläche — ohne diese Übernahme gingen die Mahnungen
@@ -284,6 +292,15 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	if err := auth.PruefeIMAPKonfiguration(); err != nil {
 		log.Fatalf("FATAL: %v", err)
 	}
+
+	// Der außerordentliche Testzugang (auth/testzugang.go) steht daneben: Er öffnet genau
+	// eine Adresse ohne Mailserver. Halb oder schwach konfiguriert lässt er den Server
+	// nicht starten — ein Sonderzugang, der nicht tut, was der Einrichtende glaubt, ist
+	// gefährlicher als keiner.
+	if err := auth.PruefeTestzugangKonfiguration(); err != nil {
+		log.Fatalf("FATAL: %v", err)
+	}
+	slog.Info(auth.TestzugangStatus())
 
 	// Ausdrücklich protokolliert, weil eine vergessene Einstellung sonst genauso aussieht
 	// wie eine funktionierende: Die Lehrkraft bekommt in beiden Fällen nur eine

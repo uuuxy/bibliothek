@@ -209,6 +209,17 @@ Die EINE Liste der offenen Betriebs-Punkte. Littera-Details in
   05.09. noch die `pull_request`-Regel), „Block force pushes" und „Restrict deletions"
   anlassen.
 - Datenwert Schulname/„Neuer Text" auf Live korrigieren.
+- **Vier Umgebungsvariablen, die Compose nicht durchreicht** (gemessen 08.09.2026 beim Bau
+  des Testzugangs): `ALLOWED_ORIGIN`, `RATE_LIMIT`, `SENTRY_DSN`, `IMAP_PORT` werden von
+  Go gelesen, stehen aber in keinem `environment:`-Block von `docker-compose.yml` — im
+  Container gilt also immer der eingebaute Vorgabewert, auch wenn die `.env` etwas anderes
+  sagt. Dieselbe Klasse wie der zweimal aufgetretene `BACKUP_ENCRYPTION_KEY`-Fall. Je
+  Variable zu klären, ob die Vorgabe gewollt ist; sonst durchreichen. Die übrigen neun
+  ungelisteten (`PATH`, `TEST_DATABASE_URL`, `PG_DSN`, `MYSQL_DSN`, `BE_CRASHER`,
+  `LITTERA_CSV_DIR`, `FOTOS_BEHALTEN`, `SMTP_ALLOW_INSECURE_TLS`, `SMTP_ALLOW_PLAINTEXT`)
+  gehören Werkzeugen außerhalb des Servers und sind richtig so. Ein allgemeines Gate
+  bräuchte diese Ausnahmeliste — bisher deckt `TestTestzugangUeberallDurchgereicht` nur
+  das eine Paar ab.
 
 **Parkdeck** (bewusste Nicht-Entscheidungen, nur mit Anlass wieder anfassen):
 Integer-Cent-Refactor (float64/NUMERIC) · Bundle-Splitting (720-kB-Chunk) ·
@@ -217,4 +228,4 @@ TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-AP
 sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
 (`/api/v1`) und Mandantenfähigkeit (RLS).
 
-Stand: 2026-09-05
+Stand: 2026-09-08

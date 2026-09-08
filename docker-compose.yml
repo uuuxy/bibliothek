@@ -132,6 +132,12 @@ services:
       # Leer = Selbstanmeldung aus. Muss hier stehen: Compose reicht ohne env_file
       # ausschliesslich die aufgefuehrten Variablen durch (siehe Backup-Block unten).
       - SELBSTANMELDUNG_DOMAIN=${SELBSTANMELDUNG_DOMAIN:-}
+      # Ausserordentlicher Testzugang (auth/testzugang.go). Leer = es gibt ihn nicht.
+      # Dieselbe Pflicht wie eine Zeile hoeher: Ohne diese beiden Eintraege staende der
+      # Wert zwar in der .env, kaeme aber nie im Container an — und der Zugang waere
+      # eine Einstellung, die nichts bewirkt.
+      - TESTZUGANG_EMAIL=${TESTZUGANG_EMAIL:-}
+      - TESTZUGANG_PASSWORT=${TESTZUGANG_PASSWORT:-}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL:-pflasch@philipp-reis-schule.de}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_PORT=${SMTP_PORT:-587}
