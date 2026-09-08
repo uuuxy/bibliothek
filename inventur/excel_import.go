@@ -1,6 +1,7 @@
 package inventur
 
 import (
+	"bibliothek/pkg/xlsxgrenze"
 	"context"
 	"encoding/csv"
 	"errors"
@@ -62,7 +63,7 @@ func parseCSVRows(file io.Reader) ([][]string, error) {
 
 // parseExcelRows liest die erste Tabelle einer Excel-Datei.
 func parseExcelRows(file io.Reader) ([][]string, error) {
-	f, err := excelize.OpenReader(file)
+	f, err := excelize.OpenReader(file, xlsxgrenze.Optionen())
 	if err != nil {
 		return nil, errors.New("ungültige excel-datei")
 	}

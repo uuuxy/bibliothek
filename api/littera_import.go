@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/xlsxgrenze"
 	"bytes"
 	"encoding/csv"
 	"errors"
@@ -64,7 +65,7 @@ func istLitteraXML(filename, contentStr string) bool {
 // leseTabellarischeDaten liest die Zeilen aus einer XLSX- oder CSV-Datei.
 func leseTabellarischeDaten(filename string, content []byte, contentStr string) (rows [][]string, isXLSX bool, err error) {
 	if strings.HasSuffix(strings.ToLower(filename), ".xlsx") {
-		f, err := excelize.OpenReader(bytes.NewReader(content))
+		f, err := excelize.OpenReader(bytes.NewReader(content), xlsxgrenze.Optionen())
 		if err != nil {
 			return nil, true, fmt.Errorf("failed to open excel file: %w", err)
 		}

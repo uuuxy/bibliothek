@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/xlsxgrenze"
 	"bytes"
 	"encoding/csv"
 	"fmt"
@@ -96,7 +97,7 @@ func leseCsvZeilen(content []byte) ([]tabellenZeile, error) {
 // stimmt. Rohwerte (RawCellValue): Datumszellen kommen als Excel-Serienzahl und werden
 // in parseLUSDDatum zurückgerechnet.
 func leseXlsxZeilen(content []byte) ([]tabellenZeile, error) {
-	f, err := excelize.OpenReader(bytes.NewReader(content))
+	f, err := excelize.OpenReader(bytes.NewReader(content), xlsxgrenze.Optionen())
 	if err != nil {
 		return nil, fmt.Errorf("Excel-Datei konnte nicht geöffnet werden: %w", err)
 	}
