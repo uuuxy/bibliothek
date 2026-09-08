@@ -3415,6 +3415,9 @@ const docTemplate = `{
                 "bestellbedarf_schwelle": {
                     "type": "integer"
                 },
+                "bestelllink_gueltigkeit_tage": {
+                    "type": "integer"
+                },
                 "bestellbedarf_warnung_aktiv": {
                     "type": "boolean"
                 },
@@ -3677,6 +3680,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "bestellbedarf_schwelle": {
+                    "type": "integer"
+                },
+                "bestelllink_gueltigkeit_tage": {
                     "type": "integer"
                 },
                 "bestellbedarf_warnung_aktiv": {

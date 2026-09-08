@@ -46,6 +46,8 @@ type OrderResult struct {
 	// Datenbank liegt nur sein Hash; wer ihn hier nicht mitnimmt, kann ihn nie wieder
 	// erfahren. Leer, wenn der Lieferant keinen Bestätigungsschritt hat.
 	BestaetigungsToken string
+	// LinkGueltigBis: Ablauf des Bestätigungs-Links (nil ohne Link) — für die Mail.
+	LinkGueltigBis *time.Time
 	// BereitsVorhanden: true, wenn derselbe Idempotenz-Schlüssel schon eine Bestellung
 	// erzeugt hat (Doppelklick). Der Handler überspringt dann den Mailversand — es gibt
 	// keine zweite Bestellung und keine zweite Lieferanten-Mail.
@@ -89,11 +91,14 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	// und bestätigt. Alle anderen bekämen eine Seite, auf der es nichts zu tun gibt —
 	// für sie bleibt es bei der reinen Bestellmail.
 	var token, tokenHash string
+	linkTage := TokenGueltigkeitTage
 	if supplier.IstHauptlieferant {
 		token, tokenHash, err = neuerBestaetigungsToken()
 		if err != nil {
 			return nil, fmt.Errorf("bestaetigungs-token: %w", err)
 		}
+		// Die Frist ist Einstellungssache („Bestellwesen"), nicht Konstante.
+		linkTage = bestellinkTageAus(repository.NewSystemSettingsRepository(s.db.Pool).GetSettings(ctx))
 	}
 
 	tx, err := s.db.Pool.Begin(ctx)
@@ -128,7 +133,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	// ist unbedenklich, weil keine der beiden Einfügungen die andere liest — die Barcodes
 	// sind oben in der Schleife bereits reserviert, und der Kopf zählt nur die dort
 	// errechneten Summen.
-	bestellungID, err := s.insertBestellverlauf(ctx, tx, req, supplier, gesamtbetrag, totalAllocated, tokenHash)
+	bestellungID, linkGueltigBis, err := s.insertBestellverlauf(ctx, tx, req, supplier, gesamtbetrag, totalAllocated, tokenHash, linkTage)
 	if errors.Is(err, ErrBestellungDuplikat) {
 		// Doppelklick: dieselbe Bestellung lief schon durch. Die Transaktion wird
 		// zurückgerollt (die hier reservierten Exemplare verschwinden wieder), und wir
@@ -164,6 +169,7 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		IstHauptlieferant:  supplier.IstHauptlieferant,
 		BestellungID:       bestellungID,
 		BestaetigungsToken: token,
+		LinkGueltigBis:     linkGueltigBis,
 	}, nil
 }
 
@@ -264,8 +270,9 @@ func (s *OrderService) verarbeiteBestellItem(ctx context.Context, tx pgx.Tx, ite
 // tokenHash ist leer, wenn dieser Lieferant keinen Bestätigungs-Link bekommt; NULLIF
 // macht daraus ein SQL-NULL, damit der Teil-Index (Migration 063) nicht zwei Bestellungen
 // ohne Link als Dublette ablehnt.
-func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, gesamtbetrag float64, totalAllocated int, tokenHash string) (string, error) {
+func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req SubmitOrderRequest, supplier *repository.Supplier, gesamtbetrag float64, totalAllocated int, tokenHash string, linkTage int) (string, *time.Time, error) {
 	var bestellungID string
+	var linkGueltigBis *time.Time
 	// ON CONFLICT (idempotenz_schluessel) DO NOTHING: Ein Doppelklick mit demselben
 	// Schlüssel läuft am partiellen Unique-Index auf, liefert keine Zeile — das signalisiert
 	// ProcessOrder als ErrBestellungDuplikat (keine zweite Bestellung, keine zweite Mail).
@@ -277,18 +284,18 @@ func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req 
 		        CASE WHEN $7 = '' THEN NULL ELSE now() + make_interval(days => $8) END,
 		        $9)
 		ON CONFLICT (idempotenz_schluessel) WHERE idempotenz_schluessel IS NOT NULL DO NOTHING
-		RETURNING id`,
+		RETURNING id, token_gueltig_bis`,
 		req.SupplierID, supplier.Name, supplier.Email, supplier.Kundennummer,
-		gesamtbetrag, totalAllocated, tokenHash, TokenGueltigkeitTage,
+		gesamtbetrag, totalAllocated, tokenHash, linkTage,
 		nullableString(req.IdempotencyKey),
-	).Scan(&bestellungID)
+	).Scan(&bestellungID, &linkGueltigBis)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return "", ErrBestellungDuplikat
+		return "", nil, ErrBestellungDuplikat
 	}
 	if err != nil {
-		return "", fmt.Errorf("bestellverlauf insert: %w", err)
+		return "", nil, fmt.Errorf("bestellverlauf insert: %w", err)
 	}
-	return bestellungID, nil
+	return bestellungID, linkGueltigBis, nil
 }
 
 // ErrBestellungDuplikat signalisiert, dass für diesen Idempotenz-Schlüssel bereits eine

@@ -100,7 +100,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		if settings.OeffentlicheAdresse != nil {
 			link = bestaetigungsLink(*settings.OeffentlicheAdresse, res.BestaetigungsToken)
 		}
-		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link)
+		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link, res.LinkGueltigBis)
 
 		if err := pdfSvc.DispatchOrderEmail(BestellMail{
 			Empfaenger:           res.SupplierEmail,

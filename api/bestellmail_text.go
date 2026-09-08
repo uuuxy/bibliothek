@@ -56,29 +56,45 @@ func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody str
 //
 // link ist der Bestätigungs-Link für Lieferanten, die selbst etikettieren; er ist leer,
 // wenn dieser Lieferant keinen bekommt oder keine öffentliche Adresse hinterlegt ist.
-func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string) (subject, body string) {
+// gueltigBis ist der Ablauf des Links (nil ohne Link). Als Datum in der Mail, nicht als
+// Tageszahl: „bis zum 29.09.2026" kann der Händler in den Kalender schreiben, „21 Tage"
+// muss er erst ausrechnen — und die Zahl ist seit 08.09.2026 eine Einstellung.
+func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string, gueltigBis *time.Time) (subject, body string) {
 	replacer := strings.NewReplacer(
 		"{{.Datum}}", time.Now().Format(dateFormatDE),
 		"{{.Kundennummer}}", kundennummer,
 		"{{.AnzahlTitel}}", strconv.Itoa(anzahlTitel),
 		"{{.AnzahlExemplare}}", strconv.Itoa(anzahlExemplare),
 		"{{.BestaetigungsLink}}", link,
+		"{{.LinkGueltigBis}}", linkFrist(gueltigBis),
 	)
-	return replacer.Replace(betreff), ergaenzeLinkAbsatz(replacer.Replace(textBody), textBody, link)
+	return replacer.Replace(betreff), ergaenzeLinkAbsatz(replacer.Replace(textBody), textBody, link, gueltigBis)
 }
 
 // linkAbsatz ist der Textblock, der den Link trägt, wenn die Vorlage ihn nicht selbst
 // platziert. Die Vorlage ist frei editierbar (Vorlagen-Editor) — ein Lieferant, der den
 // Link nicht bekommt, weil jemand den Platzhalter beim Umformulieren verloren hat, wäre
 // ein stiller Ausfall des ganzen Ablaufs.
-const linkAbsatz = "\n\nEtiketten wählen, drucken und Bestellung bestätigen:\n%s\n\nDer Link ist %d Tage gültig und gehört nur zu dieser Bestellung."
+const linkAbsatz = "\n\nEtiketten wählen, drucken und Bestellung bestätigen:\n%s\n\nDer Link ist bis zum %s gültig und gehört nur zu dieser Bestellung."
+
+// linkFrist formatiert den Ablauf für Mail und Platzhalter {{.LinkGueltigBis}}.
+func linkFrist(gueltigBis *time.Time) string {
+	if gueltigBis == nil {
+		return ""
+	}
+	return gueltigBis.Format(dateFormatDE)
+}
 
 // ergaenzeLinkAbsatz hängt den Link an, falls die Vorlage keinen Platzhalter dafür hat.
 // Geprüft wird die ROHE Vorlage, nicht der aufgelöste Text: Nach dem Ersetzen ist nicht
 // mehr zu sehen, ob der Platzhalter je da war.
-func ergaenzeLinkAbsatz(aufgeloest, rohesTemplate, link string) string {
+func ergaenzeLinkAbsatz(aufgeloest, rohesTemplate, link string, gueltigBis *time.Time) string {
 	if link == "" || strings.Contains(rohesTemplate, "{{.BestaetigungsLink}}") {
 		return aufgeloest
 	}
-	return aufgeloest + fmt.Sprintf(linkAbsatz, link, TokenGueltigkeitTage)
+	frist := linkFrist(gueltigBis)
+	if frist == "" {
+		frist = "Ablauf laut Bestellhistorie"
+	}
+	return aufgeloest + fmt.Sprintf(linkAbsatz, link, frist)
 }

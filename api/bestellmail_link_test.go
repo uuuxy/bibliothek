@@ -3,6 +3,7 @@ package api
 import (
 	"strings"
 	"testing"
+	"time"
 )
 
 // Erreicht der Bestätigungs-Link die Bestellmail?
@@ -22,7 +23,7 @@ const testLink = "https://bib.example.invalid/bestellung/TESTTOKEN"
 // Vorlage ohne Platzhalter — der Normalfall, denn die ausgelieferte Vorlage aus
 // Migration 052 kennt {{.BestaetigungsLink}} nicht. Der Link muss trotzdem mit.
 func TestBestellmail_LinkWirdAngehaengtWennVorlageIhnNichtKennt(t *testing.T) {
-	_, body := resolveBestellMail("Betreff", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.", "K-1", 2, 5, testLink)
+	_, body := resolveBestellMail("Betreff", "Sehr geehrte Damen und Herren,\n\nanbei die Bestellung.", "K-1", 2, 5, testLink, nil)
 
 	if !strings.Contains(body, testLink) {
 		t.Fatalf("Link fehlt in der Mail — der Lieferant bekäme nichts zum Anklicken.\nBody:\n%s", body)
@@ -39,7 +40,7 @@ func TestBestellmail_AusgelieferteVorlageBrauchtDenAnhaengePfad(t *testing.T) {
 	if strings.Contains(bestellMailFallbackBody, "{{.BestaetigungsLink}}") {
 		t.Skip("Vorlage trägt den Platzhalter jetzt selbst — Anhänge-Pfad nicht mehr nötig")
 	}
-	_, body := resolveBestellMail(bestellMailFallbackBetreff, bestellMailFallbackBody, "K-1", 2, 5, testLink)
+	_, body := resolveBestellMail(bestellMailFallbackBetreff, bestellMailFallbackBody, "K-1", 2, 5, testLink, nil)
 	if !strings.Contains(body, testLink) {
 		t.Fatal("die ausgelieferte Vorlage verschickt den Link nicht")
 	}
@@ -49,7 +50,7 @@ func TestBestellmail_AusgelieferteVorlageBrauchtDenAnhaengePfad(t *testing.T) {
 // zusätzlich unten angehängt werden.
 func TestBestellmail_PlatzhalterWirdErsetztUndNichtVerdoppelt(t *testing.T) {
 	vorlage := "Guten Tag,\n\nBestätigung hier: {{.BestaetigungsLink}}\n\nViele Grüße"
-	_, body := resolveBestellMail("Betreff", vorlage, "K-1", 2, 5, testLink)
+	_, body := resolveBestellMail("Betreff", vorlage, "K-1", 2, 5, testLink, nil)
 
 	if strings.Contains(body, "{{.BestaetigungsLink}}") {
 		t.Error("Platzhalter blieb unersetzt im Text stehen")
@@ -68,7 +69,7 @@ func TestBestellmail_OhneLinkBleibtDieMailSauber(t *testing.T) {
 	}
 	for name, vorlage := range faelle {
 		t.Run(name, func(t *testing.T) {
-			_, body := resolveBestellMail("Betreff", vorlage, "K-1", 2, 5, "")
+			_, body := resolveBestellMail("Betreff", vorlage, "K-1", 2, 5, "", nil)
 
 			if strings.Contains(body, "{{.BestaetigungsLink}}") {
 				t.Error("unaufgelöster Platzhalter in der Mail an den Lieferanten")
@@ -127,5 +128,19 @@ func TestBestaetigungsToken_EinmaligUndNurAlsHashGespeichert(t *testing.T) {
 	}
 	if hashBestaetigungsToken(tokenA) != hashA {
 		t.Error("hashBestaetigungsToken liefert für denselben Token einen anderen Wert — der Lookup fände die Bestellung nie")
+	}
+}
+
+// Die Frist steht als Datum in der Mail — sowohl im angehängten Absatz als auch über den
+// Platzhalter {{.LinkGueltigBis}} in einer eigenen Vorlage.
+func TestBestellmail_FristStehtAlsDatumInDerMail(t *testing.T) {
+	bis := time.Date(2026, 9, 29, 12, 0, 0, 0, time.UTC)
+	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.", "K-1", 2, 5, testLink, &bis)
+	if !strings.Contains(body, "bis zum 29.09.2026 gültig") {
+		t.Errorf("Ablaufdatum fehlt im angehängten Absatz:\n%s", body)
+	}
+	_, body = resolveBestellMail("Betreff", "Link: {{.BestaetigungsLink}} (gültig bis {{.LinkGueltigBis}})", "K-1", 2, 5, testLink, &bis)
+	if !strings.Contains(body, "(gültig bis 29.09.2026)") {
+		t.Errorf("Platzhalter {{.LinkGueltigBis}} nicht ersetzt:\n%s", body)
 	}
 }

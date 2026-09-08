@@ -23,6 +23,7 @@
 	let warnungAktiv = $state(start.bestellbedarf_warnung_aktiv ?? true);
 	let schwelle = $state(start.bestellbedarf_schwelle ?? 3);
 	let preiseErfassen = $state(start.preise_erfassen ?? true);
+	let linkTage = $state(start.bestelllink_gueltigkeit_tage ?? 21);
 
 	const speichern = () =>
 		speichereKategorie({
@@ -30,16 +31,24 @@
 				bestellbedarf_warnung_aktiv: warnungAktiv,
 				preise_erfassen: preiseErfassen
 			},
-			zahlen: warnungAktiv
-				? [
-						{
-							schluessel: 'bestellbedarf_schwelle',
-							label: 'Warnen unter x Exemplaren',
-							wert: schwelle,
-							min: 1
-						}
-					]
-				: [],
+			zahlen: [
+				...(warnungAktiv
+					? [
+							{
+								schluessel: 'bestellbedarf_schwelle',
+								label: 'Warnen unter x Exemplaren',
+								wert: schwelle,
+								min: 1
+							}
+						]
+					: []),
+				{
+					schluessel: 'bestelllink_gueltigkeit_tage',
+					label: 'Bestätigungs-Link gültig (Tage)',
+					wert: linkTage,
+					min: 1
+				}
+			],
 			onSaved
 		});
 </script>
@@ -92,6 +101,17 @@
 				>
 			</div>
 			<Switch bind:checked={preiseErfassen} label="Preise im Bestellwesen umschalten" />
+		</div>
+
+		<div class="border-t border-outline-variant pt-6">
+			<Feld
+				type="number"
+				min={1}
+				bind:value={linkTage}
+				label="Bestätigungs-Link gültig (Tage)"
+				hint="Solange kann der Händler über den Link aus der Bestellmail bestätigen und Etiketten drucken. Gilt für neu erzeugte Links; laufende behalten ihr Datum."
+				feld="w-32"
+			/>
 		</div>
 	</div>
 </KategorieRahmen>

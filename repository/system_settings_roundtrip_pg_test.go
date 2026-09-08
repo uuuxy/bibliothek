@@ -107,19 +107,20 @@ func TestSettingsRoundtrip_KategorieSpeichernLaesstDenRestInRuhe(t *testing.T) {
 	repo := NewSystemSettingsRepository(pool)
 
 	if err := repo.SaveSettings(ctx, &EinstellungenPatch{
-		FerienLeseclubAktiv:       ptr(true),
-		FerienLeseclubZieldatum:   ptr("2027-01-06"),
-		LmfStichtag:               ptr("08-15"),
-		MaxAusleihenSchueler:      ptr(9),
-		FristBuchTage:             ptr(28),
-		FristMedienTage:           ptr(10),
-		MaxOverdueDays:            ptr(20),
-		MaxOverdueItems:           ptr(3),
-		BestellbedarfWarnungAktiv: ptr(true),
-		BestellbedarfSchwelle:     ptr(7),
-		PreiseErfassen:            ptr(true),
-		SchuleName:                ptr("Philipp-Reis-Schule"),
-		SchuleOrt:                 ptr("Friedrichsdorf"),
+		FerienLeseclubAktiv:        ptr(true),
+		FerienLeseclubZieldatum:    ptr("2027-01-06"),
+		LmfStichtag:                ptr("08-15"),
+		MaxAusleihenSchueler:       ptr(9),
+		FristBuchTage:              ptr(28),
+		FristMedienTage:            ptr(10),
+		MaxOverdueDays:             ptr(20),
+		MaxOverdueItems:            ptr(3),
+		BestellbedarfWarnungAktiv:  ptr(true),
+		BestellbedarfSchwelle:      ptr(7),
+		BestelllinkGueltigkeitTage: ptr(45),
+		PreiseErfassen:             ptr(true),
+		SchuleName:                 ptr("Philipp-Reis-Schule"),
+		SchuleOrt:                  ptr("Friedrichsdorf"),
 	}); err != nil {
 		t.Fatalf("Ausgangsstand: %v", err)
 	}
@@ -154,6 +155,7 @@ func TestSettingsRoundtrip_KategorieSpeichernLaesstDenRestInRuhe(t *testing.T) {
 		{"max_overdue_days", nachher.MaxOverdueDays, 20},
 		{"max_overdue_items", nachher.MaxOverdueItems, 3},
 		{"bestellbedarf_schwelle", nachher.BestellbedarfSchwelle, 7},
+		{"bestelllink_gueltigkeit_tage", nachher.BestelllinkGueltigkeitTage, 45},
 	} {
 		if f.ist != f.soll {
 			t.Errorf("%s wurde von einer fremden Kategorie zurückgesetzt: %d statt %d", f.name, f.ist, f.soll)

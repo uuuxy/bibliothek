@@ -39,6 +39,7 @@ function ausgangsstand() {
 			('frist_medien_tage', '11'),
 			('max_ausleihen_schueler', '9'),
 			('bestellbedarf_schwelle', '7'),
+			('bestelllink_gueltigkeit_tage', '30'),
 			('ferien_leseclub_aktiv', 'true'),
 			('preise_erfassen', 'true'),
 			('lmf_stichtag', '08-15'),
@@ -56,6 +57,7 @@ test.afterEach(() => {
 			('frist_medien_tage', '7'),
 			('max_ausleihen_schueler', '5'),
 			('bestellbedarf_schwelle', '3'),
+			('bestelllink_gueltigkeit_tage', '21'),
 			('ferien_leseclub_aktiv', 'false'),
 			('preise_erfassen', 'true'),
 			('lmf_stichtag', '07-31'),
@@ -87,6 +89,7 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 			frist_medien_tage: wert('frist_medien_tage'),
 			max_ausleihen_schueler: wert('max_ausleihen_schueler'),
 			bestellbedarf_schwelle: wert('bestellbedarf_schwelle'),
+			bestelllink_gueltigkeit_tage: wert('bestelllink_gueltigkeit_tage'),
 			ferien_leseclub_aktiv: wert('ferien_leseclub_aktiv'),
 			preise_erfassen: wert('preise_erfassen'),
 			lmf_stichtag: wert('lmf_stichtag')
@@ -97,6 +100,7 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 		frist_medien_tage: '11',
 		max_ausleihen_schueler: '9',
 		bestellbedarf_schwelle: '7',
+		bestelllink_gueltigkeit_tage: '30',
 		ferien_leseclub_aktiv: 'true',
 		preise_erfassen: 'true',
 		lmf_stichtag: '08-15'

@@ -75,6 +75,9 @@ type BestellVerlaufResponse struct {
 	// LinkAktiv: Für diese Bestellung ist ein gültiger Bestätigungs-Link unterwegs. Der
 	// Link selbst kann hier nicht stehen — gespeichert ist nur sein Hash.
 	LinkAktiv bool `json:"link_aktiv"`
+	// LinkGueltigBis: Ablauf des aktuellen Links (nil ohne Link) — damit die Bibliothek
+	// sieht, bis wann der Händler noch bestätigen und Etiketten drucken kann.
+	LinkGueltigBis *time.Time `json:"link_gueltig_bis,omitempty"`
 }
 
 // bestellhistorieStandardLimit / -MaxLimit deckeln die Liste.
@@ -134,7 +137,8 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellV
 		       b.bestaetigungs_token_hash IS NOT NULL,
 		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
 		       (b.bestaetigungs_token_hash IS NOT NULL
-		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now()))
+		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now())),
+		       b.token_gueltig_bis
 		FROM bestellungen_verlauf b
 		ORDER BY b.bestelldatum DESC
 		LIMIT $1
@@ -151,7 +155,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellV
 		var o BestellVerlaufResponse
 		if err := rows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
 			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.MitBestaetigung,
-			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv); err != nil {
+			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv, &o.LinkGueltigBis); err != nil {
 			return nil, nil, err
 		}
 		o.Positionen = []BestellPositionResponse{}

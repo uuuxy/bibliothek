@@ -68,7 +68,7 @@ func (s *Server) NeuerBestaetigungsLinkHandler() http.HandlerFunc {
 			SET bestaetigungs_token_hash = $1, token_gueltig_bis = now() + make_interval(days => $2)
 			WHERE id = $3
 			RETURNING token_gueltig_bis
-		`, hash, TokenGueltigkeitTage, id).Scan(&gueltigBis)
+		`, hash, s.bestellinkGueltigkeitTage(ctx), id).Scan(&gueltigBis)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

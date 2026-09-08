@@ -31,11 +31,6 @@
 	// Liste hier: Zwei Listen über dieselben Etikettenbögen laufen auseinander, sobald
 	// eine Seite ein Format ergänzt.
 	let formatId = $state('');
-	$effect(() => {
-		if (!formatId && bestellung?.etiketten_format_vorgabe) {
-			formatId = bestellung.etiketten_format_vorgabe;
-		}
-	});
 
 	async function laden() {
 		try {
@@ -45,6 +40,7 @@
 				return;
 			}
 			bestellung = await res.json();
+			formatId ||= bestellung.etiketten_format_vorgabe ?? '';
 			zustand = 'bereit';
 		} catch {
 			zustand = 'ungueltig';
@@ -230,13 +226,17 @@
 					<h2 class="text-base font-bold text-emerald-700">Bestellung bestätigt</h2>
 					<p class="mt-1 text-sm text-slate-500">
 						Eingegangen am {datum(bestellung.bestaetigt_am)}. Die Schulbibliothek sieht die
-						Bestätigung in ihrer Bestellhistorie — Sie müssen nichts weiter tun.
+						Bestätigung in ihrer Bestellhistorie — Sie müssen nichts weiter tun.{bestellung.link_gueltig_bis
+							? ` Diese Seite und die Etiketten bleiben bis zum ${datum(bestellung.link_gueltig_bis)} erreichbar.`
+							: ''}
 					</p>
 				{:else}
 					<h2 class="text-base font-bold text-slate-800">Bestellung bestätigen</h2>
 					<p class="mt-1 text-sm text-slate-500">
 						Damit meldet sich die Bestellung in der Schulbibliothek als von Ihnen bestätigt. Das ist
-						einmal möglich.
+						einmal möglich.{bestellung.link_gueltig_bis
+							? ` Dieser Link gilt bis zum ${datum(bestellung.link_gueltig_bis)}; danach hilft die Schulbibliothek mit einem neuen.`
+							: ''}
 					</p>
 					{#if fehler}
 						<p class="mt-3 text-sm font-medium text-rose-600">{fehler}</p>

@@ -54,6 +54,8 @@ type OeffentlicheBestellung struct {
 	// BestaetigtAm ist NULL, solange niemand bestätigt hat — die Seite entscheidet daran,
 	// ob sie den Bestätigen-Knopf oder die Quittung zeigt.
 	BestaetigtAm *time.Time `json:"bestaetigt_am,omitempty"`
+	// LinkGueltigBis: bis wann diese Seite und ihre Etiketten erreichbar bleiben.
+	LinkGueltigBis *time.Time `json:"link_gueltig_bis,omitempty"`
 }
 
 // bestellungPerToken übersetzt den Token aus dem Link in eine Bestell-ID.
@@ -108,11 +110,12 @@ func (s *Server) ladeOeffentlicheBestellung(ctx context.Context, bestellungID st
 	var a OeffentlicheBestellung
 	err := s.DB.Pool.QueryRow(ctx, `
 		SELECT b.lieferant_name, b.kundennummer, b.bestelldatum, b.anzahl_exemplare, b.bestaetigt_am,
+		       b.token_gueltig_bis,
 		       EXISTS (SELECT 1 FROM bestellungen_positionen p
 		                WHERE p.bestellung_id = b.id AND p.mit_vorab_barcode)
 		FROM bestellungen_verlauf b WHERE b.id = $1
 	`, bestellungID).Scan(&a.LieferantName, &a.Kundennummer, &a.Bestelldatum, &a.AnzahlExemplare,
-		&a.BestaetigtAm, &a.EtikettenVorhanden)
+		&a.BestaetigtAm, &a.LinkGueltigBis, &a.EtikettenVorhanden)
 	if err != nil {
 		return nil, err
 	}

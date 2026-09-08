@@ -22,13 +22,14 @@
 		},
 		BESTELLUNG_HAENDLER: {
 			verwendung:
-				'Bestellmail an den Buchhändler. Fehlt {{.BestaetigungsLink}} im Text, hängt das System den Bestätigungs-Link automatisch als eigenen Absatz an.',
+				'Bestellmail an den Buchhändler. Fehlt {{.BestaetigungsLink}} im Text, hängt das System den Bestätigungs-Link automatisch als eigenen Absatz an. {{.LinkGueltigBis}} ist das Ablaufdatum des Links (Einstellung „Bestellwesen").',
 			platzhalter: [
 				'{{.Datum}}',
 				'{{.Kundennummer}}',
 				'{{.AnzahlTitel}}',
 				'{{.AnzahlExemplare}}',
-				'{{.BestaetigungsLink}}'
+				'{{.BestaetigungsLink}}',
+				'{{.LinkGueltigBis}}'
 			]
 		}
 	};

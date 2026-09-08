@@ -30,6 +30,10 @@ type SystemEinstellungen struct {
 	// pauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.
 	BestellbedarfWarnungAktiv bool `json:"bestellbedarf_warnung_aktiv"`
 	BestellbedarfSchwelle     int  `json:"bestellbedarf_schwelle"`
+	// BestelllinkGueltigkeitTage: Lebensdauer des Bestätigungs-Links in Tagen, den der
+	// Hauptlieferant mit der Bestellmail bekommt (Einstellung seit 08.09.2026; vorher
+	// fest 21). Gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.
+	BestelllinkGueltigkeitTage int `json:"bestelllink_gueltigkeit_tage"`
 	// PreiseErfassen entscheidet, ob das Bestellwesen mit Geld arbeitet.
 	//
 	// Aus heisst: kein Preisfeld im Warenkorb, keine Betragsspalten in der Historie, und
@@ -84,6 +88,12 @@ type SystemEinstellungen struct {
 // Die Vorgabe passt zum Betreiber dieses Systems; jede Schule kann sie überschreiben.
 const StandardEigentumsvermerk = "Eigentum des Landes Hessen"
 
+// BestelllinkGueltigkeitTageVorgabe ist, wie lange ein Bestätigungs-Link für den Lieferanten
+// lebt, wenn die Schule nichts anderes einstellt. Drei Wochen decken den üblichen Vorgang
+// (Bestellung, Etiketten drucken, bekleben, bestätigen); wer länger braucht, stellt es in
+// „Bestellwesen" um. Die Begründung der Frist steht in api/bestellbestaetigung_token.go.
+const BestelllinkGueltigkeitTageVorgabe = 21
+
 // SystemSettingsRepository defines operations for managing global system settings.
 type SystemSettingsRepository interface {
 	GetSettings(ctx context.Context) (*SystemEinstellungen, error)
@@ -113,8 +123,9 @@ func standardEinstellungen() *SystemEinstellungen {
 		MaxOverdueItems:       1,
 		// Warnung standardmäßig an; Schwelle 3 (statt des früheren Default 5) als
 		// ruhigerer Startwert — der Betreiber justiert sie in den Einstellungen.
-		BestellbedarfWarnungAktiv: true,
-		BestellbedarfSchwelle:     3,
+		BestellbedarfWarnungAktiv:  true,
+		BestellbedarfSchwelle:      3,
+		BestelllinkGueltigkeitTage: BestelllinkGueltigkeitTageVorgabe,
 		// An als Vorgabe: Das ist das bisherige Verhalten, und wer Preise fuehrt,
 		// soll sie nach einem Update nicht ploetzlich vermissen.
 		PreiseErfassen: true,
@@ -178,6 +189,8 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		settings.BestellbedarfWarnungAktiv = val != nil && *val == "true"
 	case "bestellbedarf_schwelle":
 		setzeIntEinstellung(val, &settings.BestellbedarfSchwelle)
+	case "bestelllink_gueltigkeit_tage":
+		setzeIntEinstellung(val, &settings.BestelllinkGueltigkeitTage)
 	case "preise_erfassen":
 		// Gegen "false" statt fuer "true": Die Vorgabe ist AN, ein fehlender oder
 		// unlesbarer Wert darf die Preise also nicht abschalten.

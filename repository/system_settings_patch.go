@@ -38,9 +38,10 @@ type EinstellungenPatch struct {
 	MaxOverdueDays       *int    `json:"max_overdue_days,omitempty"`
 	MaxOverdueItems      *int    `json:"max_overdue_items,omitempty"`
 
-	BestellbedarfWarnungAktiv *bool `json:"bestellbedarf_warnung_aktiv,omitempty"`
-	BestellbedarfSchwelle     *int  `json:"bestellbedarf_schwelle,omitempty"`
-	PreiseErfassen            *bool `json:"preise_erfassen,omitempty"`
+	BestellbedarfWarnungAktiv  *bool `json:"bestellbedarf_warnung_aktiv,omitempty"`
+	BestellbedarfSchwelle      *int  `json:"bestellbedarf_schwelle,omitempty"`
+	BestelllinkGueltigkeitTage *int  `json:"bestelllink_gueltigkeit_tage,omitempty"`
+	PreiseErfassen             *bool `json:"preise_erfassen,omitempty"`
 
 	// Schul-Identität. Bis zum 23.08.2026 hieß ein leeres Feld hier „nicht anfassen" —
 	// eine Notbremse gegen das Blanking oben, die aber zugleich das Löschen unmöglich
@@ -140,6 +141,7 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 
 	s.schalter("bestellbedarf_warnung_aktiv", p.BestellbedarfWarnungAktiv)
 	s.zahl("bestellbedarf_schwelle", p.BestellbedarfSchwelle, 1, 3)
+	s.zahl("bestelllink_gueltigkeit_tage", p.BestelllinkGueltigkeitTage, 1, BestelllinkGueltigkeitTageVorgabe)
 	s.schalter("preise_erfassen", p.PreiseErfassen)
 
 	s.text("schule_name", p.SchuleName)

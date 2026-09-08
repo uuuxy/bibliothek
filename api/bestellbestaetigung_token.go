@@ -1,12 +1,15 @@
 package api
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"strings"
 	"time"
+
+	"bibliothek/repository"
 )
 
 // TokenGueltigkeitTage begrenzt, wie lange ein Bestätigungs-Link lebt.
@@ -22,10 +25,27 @@ import (
 //
 // Läuft er doch einmal ab, ist das kein Verlust: Die Bestellhistorie erzeugt zu jeder
 // offenen Bestellung einen neuen Link ("Link erzeugen"), und der alte stirbt dabei.
-const TokenGueltigkeitTage = 21
+//
+// Seit 08.09.2026 ist das nur noch die VORGABE: Die Schule stellt die Frist unter
+// „Bestellwesen" ein (bestellinkGueltigkeitTage liest sie), weil Lieferanten
+// unterschiedlich lange brauchen. Die Konstante bleibt für Tests und als Rückfall.
+const TokenGueltigkeitTage = repository.BestelllinkGueltigkeitTageVorgabe
 
 // TokenGueltigkeit ist dieselbe Frist als Zeitspanne — für Tests und Anzeige.
 const TokenGueltigkeit = TokenGueltigkeitTage * 24 * time.Hour
+
+// bestellinkGueltigkeitTage liest die eingestellte Frist; unter 1 oder bei Lesefehler
+// gilt die Vorgabe — ein Link ohne Frist darf nicht entstehen.
+func (s *Server) bestellinkGueltigkeitTage(ctx context.Context) int {
+	return bestellinkTageAus(repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx))
+}
+
+func bestellinkTageAus(settings *repository.SystemEinstellungen, err error) int {
+	if err != nil || settings == nil || settings.BestelllinkGueltigkeitTage < 1 {
+		return TokenGueltigkeitTage
+	}
+	return settings.BestelllinkGueltigkeitTage
+}
 
 // tokenBytes: 32 Byte aus crypto/rand = 256 Bit Entropie. Der Link IST das Geheimnis,
 // deshalb muss er unerratbar sein — bei dieser Größe scheitert Raten an der Physik,
