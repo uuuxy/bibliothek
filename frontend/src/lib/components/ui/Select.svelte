@@ -176,8 +176,8 @@
 	aria-controls={offen && id ? `${id}-liste` : undefined}
 	onclick={() => (offen ? schliessen() : oeffnen())}
 	onkeydown={taste}
-	class="flex h-9 cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40
-		{offen ? 'border-primary ring-1 ring-primary' : 'border-outline-variant'} {className}"
+	class="flex h-9 cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40
+		{offen ? 'border-primary ring-1 ring-primary' : 'border-outline'} {className}"
 	{...rest}
 >
 	<!-- truncate statt hartem Abschneiden: Der native Select kappte mitten im

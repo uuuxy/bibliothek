@@ -60,7 +60,7 @@
 		{onblur}
 		aria-label={etikett}
 		placeholder={platzhalter}
-		class="h-9 w-full rounded-xl border border-outline-variant bg-surface-container-lowest pl-9 {nachlaufend
+		class="h-9 w-full rounded-xl border border-outline bg-surface-container-lowest pl-9 {nachlaufend
 			? 'pr-10'
 			: 'pr-3'} text-sm text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 	/>

@@ -24,9 +24,11 @@
 	 *     Select in derselben Zeile.
 	 *   - Schrift `text-sm` wie Select und Button size="md" — ein Feld neben einem
 	 *     Auswahlfeld darf nicht größer schreiben als dieses.
-	 *   - Rahmen `outline-variant`, Fläche `surface-container-lowest`, im Fokus
-	 *     `primary` mit 1-px-Ring: exakt das Rezept von Select.svelte, damit Feld und
-	 *     Auswahlfeld in einer Zeile als EIN Vokabular lesen.
+	 *   - Rahmen `outline` (die M3-Rolle des outlined text field im Ruhezustand), Fläche
+	 *     `surface-container-lowest`, im Fokus `primary` mit 1-px-Ring: exakt das Rezept
+	 *     von Select.svelte, damit Feld und Auswahlfeld in einer Zeile als EIN Vokabular
+	 *     lesen. Bis zum 09.09.2026 stand hier `outline-variant` — auf Weiß 1,6:1, und
+	 *     WCAG 1.4.11 verlangt 3:1 für den Rand eines Bedienelements; `outline` hat 4,6:1.
 	 *   - Outlined und nicht filled, weil die Arbeitsfläche weiß ist (f2320e1) — eine
 	 *     getönte Feldfläche wäre der einzige graue Block auf der Seite.
 	 *
@@ -100,7 +102,7 @@
 			'disabled:cursor-not-allowed disabled:opacity-40 read-only:text-on-surface-variant ' +
 			(ungueltig
 				? 'border-error focus:border-error focus:ring-error '
-				: 'border-outline-variant focus:border-primary focus:ring-primary ') +
+				: 'border-outline focus:border-primary focus:ring-primary ') +
 			(vorlaufend && !/\bpl-/.test(feld) ? 'pl-10 ' : '') +
 			(nachlaufend && !/\bpr-/.test(feld) ? 'pr-10 ' : '') +
 			feld
