@@ -152,7 +152,7 @@
 				     {#if}-Blöcken verschluckt der Formatierer die Leerzeichen, und im Browser
 				     stand „Naacher· Kundennummer". -->
 				<p class="mt-1 text-sm text-slate-500">{kopfzeile}</p>
-				<Tabelle class="mt-6">
+				<Tabelle beschriftung="Bestellte Titel" class="mt-6">
 					<thead>
 						<tr>
 							<th>Titel</th>

@@ -164,7 +164,7 @@
 	/>
 
 	<div class="overflow-x-auto">
-		<Tabelle>
+		<Tabelle beschriftung="Titel im Bestand">
 			<thead class="font-medium">
 				<tr>
 					<th class="w-10">

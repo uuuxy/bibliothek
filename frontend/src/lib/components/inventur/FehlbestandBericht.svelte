@@ -132,7 +132,7 @@
 		</p>
 	{:else}
 		<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-			<Tabelle>
+			<Tabelle beschriftung="Fehlbestand">
 				<thead>
 					<tr>
 						<th>Signatur</th>

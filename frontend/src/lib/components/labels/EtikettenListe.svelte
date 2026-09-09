@@ -33,7 +33,7 @@
 <!-- border-separate statt collapse: Bei `collapse` gehören die Rahmen der Tabelle, nicht
      der Zelle — an einem klebenden Kopf verschwindet die Trennlinie dann beim Scrollen. -->
 <div class="w-full overflow-x-auto">
-	<Tabelle sticky>
+	<Tabelle beschriftung="Exemplare ohne Etikett" sticky>
 		<thead>
 			<tr>
 				{#snippet kopf(/** @type {string} */ inhalt, /** @type {string} */ klasse)}

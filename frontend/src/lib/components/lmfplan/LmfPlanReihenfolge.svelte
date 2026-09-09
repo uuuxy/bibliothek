@@ -108,7 +108,7 @@
 	{/if}
 	<LmfPlanVorrat klassen={ausgelassen} {draussen} {marker} onhinein={(k) => onhinein(k)} />
 	<div class="mt-4 overflow-x-auto" ondragleave={() => (ziel = null)} role="presentation">
-		<Tabelle data-testid="lmf-reihenfolge">
+		<Tabelle beschriftung="Reihenfolge der Klassen" data-testid="lmf-reihenfolge">
 			<thead>
 				<!-- Spaltenbreiten (06.09.2026): Die gerechneten Spalten und die Aktionen sind so
 				     schmal wie ihr Inhalt, Klassen bekommen festen Platz für zwei Chips, und die

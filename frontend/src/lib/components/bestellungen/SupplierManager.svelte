@@ -112,7 +112,7 @@
 			     daneben. Name/E-Mail werden gekürzt (Block in der Zelle — max-width auf <td>
 			     ignoriert das Auto-Layout), der volle Text steht im title. -->
 			<div class="overflow-x-auto">
-				<Tabelle>
+				<Tabelle beschriftung="Lieferanten">
 					<thead>
 						<tr>
 							<th>Lieferant</th>

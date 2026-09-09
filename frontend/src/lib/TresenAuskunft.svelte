@@ -110,7 +110,7 @@
 				</p>
 			{:else}
 				<div class="overflow-x-auto">
-					<Tabelle>
+					<Tabelle beschriftung="Ausleihvorgänge zum Exemplar">
 						<thead>
 							<tr>
 								<th>Zeitpunkt</th>

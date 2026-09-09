@@ -89,7 +89,7 @@
 		</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
-			<Tabelle>
+			<Tabelle beschriftung="Schülerinnen und Schüler">
 				<thead class="font-semibold">
 					<tr>
 						{#if auswaehlbar}

@@ -156,7 +156,7 @@
 			<p class="font-medium text-sm">Keine ausstehenden Vormerkungen für diesen Titel.</p>
 		</div>
 	{:else}
-		<Tabelle class="whitespace-nowrap">
+		<Tabelle beschriftung="Vormerkungen" class="whitespace-nowrap">
 			<thead>
 				<tr>
 					<th>Wartet seit</th>

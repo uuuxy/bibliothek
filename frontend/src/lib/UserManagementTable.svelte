@@ -32,7 +32,7 @@
 	     Teile geht, entscheidet die Bauteilrolle, nicht der Geschmack. -->
 	<div class="border border-slate-100 bg-white rounded-xl overflow-hidden">
 		<div class="overflow-x-auto">
-			<Tabelle>
+			<Tabelle beschriftung="Benutzerkonten">
 				<thead>
 					<tr>
 						<th>Name</th>

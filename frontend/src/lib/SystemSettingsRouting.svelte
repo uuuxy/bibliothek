@@ -77,7 +77,7 @@
 	{:else if mappingRows.length === 0}
 		<p class="text-sm text-slate-500 py-4">Noch keine Mappings vorhanden.</p>
 	{:else}
-		<Tabelle>
+		<Tabelle beschriftung="Klassenleitungen und ihre E-Mail-Adressen">
 			<thead>
 				<tr>
 					<th>Klasse</th>

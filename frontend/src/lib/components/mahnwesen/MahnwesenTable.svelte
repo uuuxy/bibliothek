@@ -54,7 +54,7 @@
 	     edge-to-edge. Getrennt wird über die Kopfzeile, nicht über eine Umrandung. -->
 	<div class="w-full pb-6">
 		<div class="overflow-x-auto w-full">
-			<Tabelle class="whitespace-nowrap">
+			<Tabelle beschriftung="Überfällige Ausleihen nach Schüler" class="whitespace-nowrap">
 				<thead class="font-medium">
 					<tr>
 						<th class="w-12 text-center">

@@ -65,7 +65,7 @@
 	{:else}
 		<div class="w-full">
 			<div class="overflow-x-auto">
-				<Tabelle>
+				<Tabelle beschriftung="Admin-Audit-Log">
 					<thead>
 						<tr>
 							<th>Zeitstempel</th>

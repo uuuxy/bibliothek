@@ -75,7 +75,7 @@
 		</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
-			<Tabelle>
+			<Tabelle beschriftung="Papierkorb">
 				<thead class="font-semibold">
 					<tr>
 						<th>Name</th>

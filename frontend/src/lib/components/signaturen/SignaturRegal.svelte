@@ -78,7 +78,7 @@
 		{/if}
 
 		<div class="overflow-x-auto">
-			<Tabelle>
+			<Tabelle beschriftung="Signaturen im Regal">
 				<thead>
 					<tr>
 						<th>Signatur</th>

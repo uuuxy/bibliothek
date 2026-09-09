@@ -157,7 +157,7 @@
 		</p>
 	{:else}
 		<div class="overflow-x-auto">
-			<Tabelle>
+			<Tabelle beschriftung="Systematik">
 				<thead>
 					<tr>
 						<th>Kürzel</th>

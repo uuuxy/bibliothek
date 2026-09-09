@@ -30,7 +30,7 @@
 </script>
 
 <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-xs">
-	<Tabelle>
+	<Tabelle beschriftung="Bestellhistorie">
 		<thead>
 			<tr>
 				<th>Datum</th>

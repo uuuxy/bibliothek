@@ -38,7 +38,7 @@
 	</div>
 {:else}
 	<div class="overflow-x-auto">
-		<Tabelle>
+		<Tabelle beschriftung="Abgänger mit offenen Büchern">
 			<thead>
 				<tr>
 					<th>Klasse</th>

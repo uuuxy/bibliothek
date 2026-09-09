@@ -99,7 +99,7 @@
 		</p>
 	</div>
 
-	<Tabelle class="max-w-2xl">
+	<Tabelle beschriftung="Sommerferien je Jahr" class="max-w-2xl">
 		<thead>
 			<tr>
 				<th class="w-px">Jahr</th>

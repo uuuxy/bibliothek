@@ -202,7 +202,7 @@
 {/snippet}
 
 {#snippet rennerTabelle()}
-	<Tabelle sticky>
+	<Tabelle beschriftung="Renner: meistausgeliehene Titel" sticky>
 		{@render spaltenKopf([
 			{ label: 'Buchtitel' },
 			{ label: 'Autor' },
@@ -240,7 +240,7 @@
 {/snippet}
 
 {#snippet ladenhueterTabelle()}
-	<Tabelle sticky>
+	<Tabelle beschriftung="Ladenhüter: seit über zwei Jahren nicht ausgeliehen" sticky>
 		{@render spaltenKopf([
 			{ label: 'Buchtitel' },
 			{ label: 'Autor' },

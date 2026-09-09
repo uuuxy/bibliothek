@@ -33,7 +33,7 @@
 			{artErklaerung(block.art, eingangsjahrgaenge)}
 		</p>
 		<div class="overflow-x-auto">
-			<Tabelle>
+			<Tabelle beschriftung="Termine des Lernmittelplans">
 				<thead>
 					<tr>
 						<th>Wochentag</th>

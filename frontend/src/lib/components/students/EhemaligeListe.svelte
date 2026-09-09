@@ -82,7 +82,7 @@
 	</div>
 {:else}
 	<div class="overflow-x-auto">
-		<Tabelle>
+		<Tabelle beschriftung="Ehemalige">
 			<thead>
 				<tr>
 					<th>Abgang</th>

@@ -23,17 +23,45 @@
      Umbruch (whitespace-nowrap, truncate), Zahlen (tabular-nums, font-mono).
 
      `sticky` hält den Kopf beim Scrollen oben (Etikettenliste, Statistik).
-     Der Aufrufer schreibt <thead>/<tbody>/<tr>/<th>/<td> wie gehabt — nur ohne Optik. -->
+     Der Aufrufer schreibt <thead>/<tbody>/<tr>/<th>/<td> wie gehabt — nur ohne Optik.
+
+     Barrierefreiheit (09.09.2026, Gate e2e/barrierefreiheit-dialog.spec.js):
+       - `beschriftung` ist Pflicht (Ratsche frontend-hygiene-tabellen.test.js) und wird
+         als unsichtbare <caption> gesetzt — ein Screenreader nennt beim Betreten der
+         Tabelle, WAS hier steht; sehende Nutzer brauchen den Titel nicht, die Seite sagt es.
+       - Jede <th> bekommt ihren `scope` (col im Kopf, row im Rumpf) von der Aktion
+         unten, damit 147 Kopfzellen ihn nicht einzeln tragen müssen; ein selbst
+         gesetzter scope bleibt stehen. Ein MutationObserver hält das auch für Zeilen,
+         die später kommen. -->
 <script>
-	/** @type {{ sticky?: boolean, class?: string, children: import('svelte').Snippet, [rest: string]: any }} */
-	let { sticky = false, class: klasse = '', children, ...rest } = $props();
+	/** @type {{ beschriftung: string, sticky?: boolean, class?: string, children: import('svelte').Snippet, [rest: string]: any }} */
+	let { beschriftung, sticky = false, class: klasse = '', children, ...rest } = $props();
+
+	/**
+	 * scope="col" für Kopfzellen im <thead>, scope="row" für <th> im Rumpf.
+	 * @param {HTMLTableElement} tabelle
+	 */
+	function kopfzellenScope(tabelle) {
+		const setze = () => {
+			for (const th of tabelle.querySelectorAll('th')) {
+				if (!th.hasAttribute('scope'))
+					th.setAttribute('scope', th.closest('thead') ? 'col' : 'row');
+			}
+		};
+		setze();
+		const beobachter = new MutationObserver(setze);
+		beobachter.observe(tabelle, { childList: true, subtree: true });
+		return { destroy: () => beobachter.disconnect() };
+	}
 </script>
 
 <table
 	class="w-full border-collapse text-left text-sm text-on-surface {klasse}"
 	class:sticky
+	use:kopfzellenScope
 	{...rest}
 >
+	<caption class="sr-only">{beschriftung}</caption>
 	{@render children()}
 </table>
 

@@ -92,7 +92,7 @@
 						<div class="font-bold text-slate-800">{group.supplierName}</div>
 						<div class="text-xs font-semibold text-slate-500">Bestellt am {group.date}</div>
 					</div>
-					<Tabelle>
+					<Tabelle beschriftung="Bestellte Exemplare im Zulauf">
 						<tbody>
 							{#each group.items as item, _i (_i)}
 								{@const isSelected = item.exemplar_ids.every((/** @type {string} */ id) =>

@@ -92,7 +92,7 @@
 	{:else}
 		<div class="w-full">
 			<div class="overflow-x-auto">
-				<Tabelle>
+				<Tabelle beschriftung="Allgemeines Logbuch">
 					<thead>
 						<tr>
 							<th>Zeitstempel</th>

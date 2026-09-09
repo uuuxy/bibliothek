@@ -83,7 +83,7 @@
 </script>
 
 <div class="max-h-64 overflow-y-auto pr-2 custom-scrollbar">
-	<Tabelle class="table-fixed">
+	<Tabelle beschriftung="Ausgeliehene Bücher" class="table-fixed">
 		<thead>
 			<tr>
 				<!-- table-fixed + PROZENT-Breiten (Summe 100%): Die Liste steht auch in schmalen

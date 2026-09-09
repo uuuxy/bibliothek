@@ -53,4 +53,21 @@ describe('Tabellen kommen aus ui/', () => {
 		}
 		expect(treffer, 'Optik an Tabellenzellen — das Rezept steht in ui/Tabelle.svelte').toEqual([]);
 	});
+
+	// Barrierefreiheit (09.09.2026): Jede Tabelle sagt, was in ihr steht — als unsichtbare
+	// <caption>, die ui/Tabelle aus `beschriftung` setzt. Ohne sie hört ein Screenreader
+	// nur „Tabelle, 6 Spalten, 1482 Zeilen". Rot bewiesen gegen den Bestand (26 Tabellen).
+	it('gibt jeder <Tabelle> eine beschriftung', () => {
+		const treffer = [];
+		for (const datei of sammleQuelldateien(srcRoot)) {
+			if (!datei.endsWith('.svelte')) continue;
+			const rel = relPfad(datei);
+			if (rel === 'src/lib/components/ui/Tabelle.svelte') continue;
+			const quelle = ohneKommentare(readFileSync(datei, 'utf8'));
+			for (const m of quelle.matchAll(/<Tabelle\b([^>]*)>/g)) {
+				if (!/\bbeschriftung=/.test(m[1])) treffer.push(`${rel}: <Tabelle${m[1]}>`);
+			}
+		}
+		expect(treffer, '<Tabelle> ohne beschriftung — der Screenreader braucht den Titel').toEqual([]);
+	});
 });
