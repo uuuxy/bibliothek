@@ -128,11 +128,11 @@
 										aria-expanded={systemOpen}
 									>
 										<span
-											class="text-on-surface-variant/70 group-hover/sys:text-on-surface-variant animate-fade-in text-sm font-medium transition-colors"
+											class="text-on-surface-variant group-hover/sys:text-on-surface animate-fade-in text-sm font-medium transition-colors"
 											>{group.name}</span
 										>
 										<ChevronDown
-											class="text-on-surface-variant/70 group-hover/sys:text-on-surface-variant h-3.5 w-3.5 transition-transform duration-200 {systemOpen
+											class="text-on-surface-variant group-hover/sys:text-on-surface h-3.5 w-3.5 transition-transform duration-200 {systemOpen
 												? 'rotate-180'
 												: ''}"
 											aria-hidden="true"
@@ -151,7 +151,7 @@
 							{:else}
 								{#if !zu}
 									<span
-										class="text-on-surface-variant/70 animate-fade-in mb-2 block px-3 text-xs font-medium"
+										class="text-on-surface-variant animate-fade-in mb-2 block px-3 text-xs font-medium"
 										>{group.name}</span
 									>
 								{/if}

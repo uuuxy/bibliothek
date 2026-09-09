@@ -75,8 +75,10 @@
 {:else}
 	<!-- Platzhalter, damit die Schrittfolge nicht von 1 auf 3 springt (wirkt sonst
 	     wie ein übersprungener Schritt). Wird aktiv, sobald ein Titel gewählt ist. -->
-	<div class="py-5 space-y-2 border-b border-slate-200 opacity-60">
-		<h3 class="text-base font-semibold text-slate-400">2. Barcodes generieren</h3>
-		<p class="text-xs text-slate-400">Zuerst oben einen Titel oder Klassensatz wählen.</p>
+	<!-- Gedämpft über die Textfarbe, nicht über opacity: 60 % Deckung auf slate-400 ergab
+	     2,5:1 — der inaktive Schritt war für viele schlicht unlesbar (axe, 09.09.2026). -->
+	<div class="py-5 space-y-2 border-b border-slate-200">
+		<h3 class="text-base font-semibold text-on-surface-variant">2. Barcodes generieren</h3>
+		<p class="text-xs text-on-surface-variant">Zuerst oben einen Titel oder Klassensatz wählen.</p>
 	</div>
 {/if}

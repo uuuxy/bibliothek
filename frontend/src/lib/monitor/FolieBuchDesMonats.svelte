@@ -25,7 +25,7 @@
 		<div>
 			<h2 class="text-3xl font-extrabold leading-tight">{titel.titel}</h2>
 			{#if titel.autor}
-				<p class="text-slate-400 mt-2 text-lg">{titel.autor}</p>
+				<p class="text-slate-300 mt-2 text-lg">{titel.autor}</p>
 			{/if}
 		</div>
 	{:else}

@@ -29,7 +29,7 @@
 					<div class="flex-1 min-w-0">
 						<p class="font-bold truncate">{book.titel}</p>
 						{#if book.autor}
-							<p class="text-xs text-slate-400 truncate">{book.autor}</p>
+							<p class="text-xs text-slate-300 truncate">{book.autor}</p>
 						{/if}
 					</div>
 				</li>

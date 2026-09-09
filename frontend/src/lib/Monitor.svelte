@@ -56,7 +56,9 @@
 		class="bg-slate-800 px-6 py-3 flex items-center justify-between text-xs text-slate-300 font-semibold tracking-wide"
 	>
 		<span data-testid="monitor-folie">{FOLIEN[takt.folie]}</span>
-		<span class="text-slate-600">Schulbibliothek</span>
+		<!-- Keine eigene Farbe: `slate-400` ist im Theme ein M3-Neutralton für HELLE Flächen
+		     (2,05:1 auf dem dunklen Monitor, axe 09.09.2026); die Fußzeile schreibt slate-300. -->
+		<span>Schulbibliothek</span>
 	</div>
 
 	<!-- Fortschrittsbalken: läuft genau eine Folie lang, dieselbe Zahl wie der Takt -->

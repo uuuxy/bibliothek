@@ -43,7 +43,7 @@
 						<div class="text-center max-w-32">
 							<p class="text-sm font-bold leading-tight text-white truncate">{book.titel}</p>
 							{#if book.autor}
-								<p class="text-xs text-slate-400 truncate">{book.autor}</p>
+								<p class="text-xs text-slate-300 truncate">{book.autor}</p>
 							{/if}
 						</div>
 					{/if}
