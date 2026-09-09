@@ -47,6 +47,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | das System betreiben, deployen, sichern, wiederherstellen | [DEPLOYMENT.md](DEPLOYMENT.md), [resilience_and_recovery.md](resilience_and_recovery.md), [SCRIPTS.md](SCRIPTS.md) |
 | etwas abnehmen (LUSD, Versetzung, Klassensatz) | [abnahme_checkliste.md](abnahme_checkliste.md) |
 | Datenschutz beurteilen (welche Daten, welche Fristen, welche Rechte) | [SECURITY.md](SECURITY.md), [PII_MATRIX.de.md](PII_MATRIX.de.md), [datenschutz/](datenschutz/) |
+| Barrierefreiheit beurteilen (was gilt, was die Gates prüfen, was die Schule liefern muss) | [FACHKONZEPT.md §19](FACHKONZEPT.md), [HANDBUCH.md](HANDBUCH.md) „Bedienung ohne Maus", GitHub #600 |
 | am Code arbeiten | [ARCHITECTURE.md](ARCHITECTURE.md), [invarianten.md](invarianten.md), [api_inventar.md](api_inventar.md), [sweeps.md](sweeps.md) |
 
 ### Bedienen und fachlich verstehen

@@ -652,7 +652,9 @@ vor dem ersten Fix rot (17 von 19 bzw. 4 von 4 Tests).
 - **`e2e/barrierefreiheit-axe.spec.js`:** axe-core (WCAG A/AA) über Anmeldung, Katalog,
   Monitor und jede interne Hauptansicht; dazu `<html lang="de">`, genau EIN `<main>`, eine
   Überschrift je Seite, Skip-Link als erstes Fokusziel. Gescannt wird mit „Bewegung
-  reduzieren", weil axe mitten in einer Einblendung gemischte Farben liest.
+  reduzieren", weil axe mitten in einer Einblendung gemischte Farben liest; der Monitor
+  wird auf jeder Folie gescannt (Takt 15 s), weil jede Folie eigene Farben trägt — ein
+  einzelner Scan sah am 09.09.2026 lokal eine andere Folie als die CI.
 - **`e2e/barrierefreiheit-dialog.spec.js`:** ein Dialog nimmt den Fokus, hält ihn (Tab
   kreist) und gibt ihn dem Auslöser zurück; Tabellen tragen Beschriftung und `scope`;
   `prefers-reduced-motion` schaltet Animationen ab.

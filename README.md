@@ -37,6 +37,7 @@ konkreten Betrieb gebaut, und die Entscheidungen darin sind entsprechend konkret
   Reservierungen, Buchwünsche und Meldungen an die Bibliothek.
 - **Statistiken ohne Klarnamen** — Zirkulation, Wiederbeschaffungswert, Renner und Ladenhüter.
 - **Selbstprüfung der Betriebsbereitschaft** — was ist eingerichtet, aber nicht in Betrieb?
+- **Barrierefreiheit** — WCAG 2.1 AA als Browser-Gate (axe über alle Ansichten, Fokusfalle, Tabellen, Bewegung); Tastatur- und Screenreader-Bedienung im [Handbuch](docs/HANDBUCH.md), Umfang und Grenzen in [FACHKONZEPT.md §19](docs/FACHKONZEPT.md).
 
 Die fachliche Spezifikation steht vollständig in [docs/FACHKONZEPT.md](docs/FACHKONZEPT.md);
 für Bibliothekspersonal gibt es das [Benutzerhandbuch](docs/HANDBUCH.md).
