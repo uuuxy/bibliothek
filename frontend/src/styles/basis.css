@@ -26,3 +26,20 @@
 		height: 2.25rem; /* 36 px — dieselbe Control-Höhe wie Button size="md" (h-9) */
 	}
 }
+
+/* Bewegung reduzieren (WCAG 2.3.3, Gate e2e/barrierefreiheit-dialog.spec.js).
+   Wer im System „Bewegung reduzieren" wählt, bekommt keine Ein- und Ausblendungen —
+   107 Animationen an einer Stelle statt in jeder Komponente. 0s statt `none`: Der
+   Endzustand der Animation bleibt stehen (eine eingeblendete Seite ist sichtbar),
+   nur der Weg dorthin entfällt. Der Ladekreis dreht weiter: Er ist die Rückmeldung,
+   dass etwas läuft — ohne Bewegung sähe er aus wie eingefroren. */
+@media (prefers-reduced-motion: reduce) {
+	*:not(.animate-spin),
+	*:not(.animate-spin)::before,
+	*:not(.animate-spin)::after {
+		animation-duration: 0s !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0s !important;
+		scroll-behavior: auto !important;
+	}
+}
