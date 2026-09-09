@@ -19,6 +19,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 
 	"bibliothek/internal/backupkrypto"
+	"bibliothek/pkg/closeutil"
 )
 
 // escapePgPass escapes backslashes and colons as required by PostgreSQL .pgpass format.
@@ -296,23 +297,26 @@ func uploadBackupToS3(ctx context.Context, outFilename string, encrypted []byte)
 	log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
 }
 
-// rotateBackups löscht die ältesten Backup-Dateien, wenn es mehr als maxKeep gibt.
+// rotateBackups löscht die ältesten Sicherungen, wenn es mehr als maxKeep gibt. Die
+// Namen tragen den Zeitstempel, die Listenreihenfolge ist die zeitliche (backup_dateien.go).
+// Gelöscht wird über die Wurzel: ein Symlink verschwindet als Link, sein Ziel bleibt.
 func rotateBackups(dir string, maxKeep int) {
-	entries, err := filepath.Glob(filepath.Join(dir, "backup_*.sql.gz.enc"))
-	if err != nil || len(entries) <= maxKeep {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
 		return
 	}
-	// Dateien sind nach Zeitstempel benannt; lexikographische Sortierung = chronologische Sortierung
-	// Einträge aus Glob sind bereits alphabetisch sortiert
-	toDelete := entries[:len(entries)-maxKeep]
-	for _, f := range toDelete {
-		// #nosec G304 - f is derived from filepath.Glob
-		if err := os.Remove(f); err != nil {
+	defer closeutil.LogClose(root, "backup dir")
+	dateien, err := listeBackups(root)
+	if err != nil || len(dateien) <= maxKeep {
+		return
+	}
+	for _, d := range dateien[:len(dateien)-maxKeep] {
+		if err := root.Remove(d.Name); err != nil {
 			// #nosec G706
-			log.Printf("Backup rotation: failed to delete %s: %v", f, err)
+			log.Printf("Backup rotation: failed to delete %s: %v", d.Name, err)
 		} else {
 			// #nosec G706
-			log.Printf("Backup rotation: deleted old backup %s", f)
+			log.Printf("Backup rotation: deleted old backup %s", d.Name)
 		}
 	}
 }

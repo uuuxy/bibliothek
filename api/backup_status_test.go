@@ -128,3 +128,30 @@ func TestBackupStatus_Thresholds(t *testing.T) {
 		}
 	}
 }
+
+// newestBackupTime nimmt die jüngste Sicherung nach Änderungszeit — nicht die
+// lexikographisch letzte (die Liste ist nach Namen sortiert, die Zeit steht am Inode).
+func TestNewestBackupTime_NimmtDieJuengste(t *testing.T) {
+	dir := t.TempDir()
+	for name, alter := range map[string]time.Duration{
+		"backup_2026-09-01.sql.gz.enc": 5 * time.Hour,
+		"backup_2026-09-02.sql.gz.enc": 1 * time.Hour,
+		"notiz.txt":                    0,
+	} {
+		f := filepath.Join(dir, name)
+		if err := os.WriteFile(f, []byte("x"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		mtime := time.Now().Add(-alter)
+		if err := os.Chtimes(f, mtime, mtime); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got := newestBackupTime(dir)
+	if got == nil || time.Since(*got) > 90*time.Minute || time.Since(*got) < 30*time.Minute {
+		t.Errorf("jüngste Sicherung ist ~1 h alt, bekam %v", got)
+	}
+	if newestBackupTime(filepath.Join(dir, "nein")) != nil {
+		t.Errorf("fehlendes Verzeichnis = nil")
+	}
+}
