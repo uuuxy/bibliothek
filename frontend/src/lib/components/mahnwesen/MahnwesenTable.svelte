@@ -92,8 +92,12 @@
 										{schueler.name}
 									</button>
 									{#if !schueler.eltern_email}
-										<!-- Dezentes „keine Eltern-E-Mail"-Icon statt lautem Dauer-Label auf jeder Zeile. -->
+										<!-- Dezentes „keine Eltern-E-Mail"-Icon statt lautem Dauer-Label auf jeder Zeile.
+										     role="img": Auf einem nackten <span> ist aria-label verboten
+										     (aria-prohibited-attr, 174 Treffer am 09.09.2026) — als Bild mit
+										     Namen liest der Screenreader es vor, statt es zu ignorieren. -->
 										<span
+											role="img"
 											class="text-slate-400 shrink-0 flex items-center"
 											title="Keine Eltern-E-Mail hinterlegt"
 											aria-label="Keine Eltern-E-Mail hinterlegt"
