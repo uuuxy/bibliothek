@@ -2,18 +2,28 @@
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import Button from './ui/Button.svelte';
 	import { escapeSchliesst } from './ui/escapeSchliesst.js';
+	import { fokusFalle } from './ui/fokusFalle.js';
 </script>
 
 {#if omniboxStore.vormerkungAlert}
 	<div
 		class="fixed inset-0 bg-rose-900/80 backdrop-blur-sm z-100 flex items-center justify-center p-4"
 	>
+		<!-- alertdialog + Fokusfalle (09.09.2026): Der Alarm unterbricht die Theke — der
+		     Screenreader liest ihn sofort, Tab bleibt drin, Escape gibt den Fokus ans
+		     Scanfeld zurück. -->
 		<div
+			role="alertdialog"
+			aria-modal="true"
+			aria-labelledby="omnibox-vormerkung-titel"
 			class="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-rose-500"
+			use:fokusFalle
 			use:escapeSchliesst={() => (omniboxStore.vormerkungAlert = null)}
 		>
 			<div class="text-6xl mb-4">🚨</div>
-			<h2 class="text-2xl font-extrabold text-rose-700 mb-2">Achtung! Vorgemerkt!</h2>
+			<h2 id="omnibox-vormerkung-titel" class="text-2xl font-extrabold text-rose-700 mb-2">
+				Achtung! Vorgemerkt!
+			</h2>
 			<p class="text-slate-700 mb-2">Dieses Medium wurde reserviert.</p>
 			<p class="font-bold text-slate-900 mb-6">Achtung: Exemplar nicht ins Regal stellen!</p>
 			{#if omniboxStore.vormerkungAlert.titel}

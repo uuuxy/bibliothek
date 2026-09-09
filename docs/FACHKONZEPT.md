@@ -644,36 +644,73 @@ werden — was niemand tut.
 
 ## 19. Barrierefreiheit
 
-Die Anwendung ist für die Schule als öffentliche Stelle nach HessBGG/HVBIT (EU 2016/2102) an
-EN 301 549 / WCAG 2.1 AA gebunden — für Intranet-Anwendungen seit 09/2019, also heute.
-Seit dem 09.09.2026 (Paket 1, GitHub #595) sichern zwei Browser-Gates den Stand; sie liefen
-vor dem ersten Fix rot (17 von 19 bzw. 4 von 4 Tests).
+**Rechtsrahmen — was belegt ist und was nicht.** § 14 HessBGG verpflichtet die Träger
+öffentlicher Gewalt, Intranet- und Internetangebote sowie grafische Programmoberflächen so
+zu gestalten, dass Menschen mit Behinderung sie grundsätzlich uneingeschränkt nutzen können;
+die Hessische Verordnung über barrierefreie Informationstechnik (BITV HE 2019, 16.09.2019)
+setzt dafür in § 3 Abs. 1–4 die EN 301 549 (WCAG 2.1 AA) an und verlangt in § 4 eine
+Erklärung zur Barrierefreiheit; Durchsetzungs- und Überwachungsstelle ist die beim
+Regierungspräsidium Gießen angesiedelte Stelle des Sozialministeriums. **Nicht geprüft**
+(der Verordnungstext ist online nur hinter Login oder JavaScript erreichbar): ob Hessen die
+Ausnahme der EU-Richtlinie 2016/2102 (Art. 1 Abs. 5) für Schulen nutzt — sie nimmt Webangebote
+von Schulen aus, außer für wesentliche Online-Verwaltungsfunktionen — und wie eine interne
+Fachanwendung der Schulbibliothek dort eingeordnet wird. Diese Frage klärt die Schule mit der
+Durchsetzungsstelle (GitHub #600). Die Anwendung ist unabhängig davon auf WCAG 2.1 AA
+gebaut; „muss" ist damit eine Annahme zur sicheren Seite, keine festgestellte Pflicht.
 
-- **`e2e/barrierefreiheit-axe.spec.js`:** axe-core (WCAG A/AA) über Anmeldung, Katalog,
-  Monitor und jede interne Hauptansicht; dazu `<html lang="de">`, genau EIN `<main>`, eine
+**Was geprüft wird.** Zwei Browser-Gates, beide vor dem ersten Fix rot gesehen (17 von 19
+bzw. 4 von 4 Tests, 09.09.2026), seither grün:
+
+- **`e2e/barrierefreiheit-axe.spec.js`:** axe-core mit den Regeln WCAG 2.0/2.1 A und AA über
+  Anmeldung, Katalog, jede Monitor-Folie und alle 15 internen Hauptansichten — jeweils im
+  **Anfangszustand** der Ansicht; Reiter, Dialoge und Unteransichten (etwa die Reiter des
+  Bestellwesens) werden nicht mitgescannt. Dazu `<html lang="de">`, genau EIN `<main>`, eine
   Überschrift je Seite, Skip-Link als erstes Fokusziel. Gescannt wird mit „Bewegung
   reduzieren", weil axe mitten in einer Einblendung gemischte Farben liest; der Monitor
-  wird auf jeder Folie gescannt (Takt 15 s), weil jede Folie eigene Farben trägt — ein
-  einzelner Scan sah am 09.09.2026 lokal eine andere Folie als die CI.
-- **`e2e/barrierefreiheit-dialog.spec.js`:** ein Dialog nimmt den Fokus, hält ihn (Tab
-  kreist) und gibt ihn dem Auslöser zurück; Tabellen tragen Beschriftung und `scope`;
-  `prefers-reduced-motion` schaltet Animationen ab.
+  wird auf jeder Folie gescannt (Takt 15 s).
+- **`e2e/barrierefreiheit-dialog.spec.js`:** ein Dialog (Schüler anlegen) nimmt den Fokus,
+  hält ihn über 25 Tab und 5 Shift+Tab und gibt ihn bei Escape an den Auslöser zurück;
+  Tabellen auf drei Seiten tragen Beschriftung und `scope`; `prefers-reduced-motion`
+  setzt Animationen auf 0 s.
 
-Die Fixes sitzen in Bauteilen, nicht in Seiten: `ui/fokusFalle.js` (Modal, Sperrbildschirm),
-`ui/Tabelle.svelte` (`beschriftung` ist Pflicht — Ratsche `frontend-hygiene-tabellen`,
-`scope` setzt das Bauteil), `layout/SkipLink.svelte` und `layout/Hauptbereich.svelte`
-(das eine `<main>` mit unsichtbarer `h1` aus dem Menü — sichtbare Seitenköpfe bleiben
-abgeschafft, §Seitengerüst), `basis.css` (Bewegung reduzieren), Feld/Select/Suchfeld mit
-Rahmen `outline` (3:1 für Bedienelement-Ränder, WCAG 1.4.11), Toasts pausieren unter Maus
-und Fokus (2.2.1), Fehler-Toasts sind `role="alert"`, die Omnibox führt den Screenreader
-per `aria-activedescendant` durch die Trefferliste.
+Keine dieser Prüfungen ersetzt einen Durchgang mit einem Screenreader (NVDA, VoiceOver);
+der hat nicht stattgefunden.
 
-Zwei Regeln für neue Oberfläche: Ein interaktiver Container (Zeile, Kachel) enthält keine
-weiteren Bedienelemente — der **Name oder Titel** ist der Knopf, nie die ganze Zeile
-(nested-interactive). Und `slate-*` ist im Theme auf M3-Neutraltöne gelegt: `slate-400` ist
-ein Dunkelgrau für helle Flächen, auf dunklem Grund unlesbar.
+**Was gebaut ist (09.09.2026).** Die Fixes sitzen in Bauteilen, nicht in Seiten:
 
-**Außerhalb des Codes:** Erklärung zur Barrierefreiheit, Rückmeldeweg und Hinweis auf die
-Durchsetzungsstelle liefert die Schule (GitHub #600). Die PDFs (maroto/gofpdf) sind
-ungetaggt; ob ein HTML-Druckweg kommt oder eine begründete Ausnahme, ist eine offene
-Entscheidung (#594).
+- `ui/fokusFalle.js` in `Modal.svelte` (24 Verwender), im Sperrbildschirm und in den zwei
+  Theken-Alarmen (`OmniboxBlockAlert`, `OmniboxVormerkungAlert`, als `alertdialog`); die
+  Vorlagen-Galerie des Designers ist ein Popover ohne Falle.
+- `ui/Tabelle.svelte`: `beschriftung` ist Pflicht (Ratsche `frontend-hygiene-tabellen`, 26
+  Tabellen), `scope` setzt das Bauteil; die sr-only-Tabelle des Trend-Diagramms trägt eine
+  `caption`.
+- `layout/SkipLink.svelte`, `layout/Hauptbereich.svelte` (das eine `<main>` mit unsichtbarer
+  `h1` aus dem Menü — sichtbare Seitenköpfe bleiben abgeschafft), `basis.css` (Bewegung).
+- Rahmen von Feld, Select und Suchfeld in der M3-Rolle `outline` (#72777f auf Weiß 4,5:1)
+  statt `outline-variant` (#c2c7cf, 1,7:1; WCAG 1.4.11 verlangt 3:1). Sidebar-Gruppentitel
+  ohne 70 %-Deckung; Monitor-Folien und der inaktive Schritt im Druck-Center ohne die
+  Theme-Töne `slate-400/500`, die dort Dunkelgrau sind.
+- Toasts pausieren unter Maus und Fokus (2.2.1), Fehler-Toasts, Snackbar-Fehler und
+  Ladefehler sind `role="alert"`; die Omnibox führt per `aria-activedescendant` durch die
+  Trefferliste.
+- Zeile und Kachel sind keine Knöpfe mehr: In Schülerdatei und Signaturen-Regal öffnet der
+  **Name bzw. Titel** die Akte, im Medienkatalog der Titel (die Kachelfläche bleibt ein
+  Mausziel ohne Rolle).
+
+**Bekannte Lücken (offen, keine davon im Gate versteckt):**
+
+- `ui/Select`: Pfeiltasten markieren sichtbar, aber ohne `aria-activedescendant` folgt ein
+  Screenreader der Markierung nicht (Bestandsdatei über 200 Zeilen; Tastaturlogik vorher
+  auslagern — GitHub #593).
+- Der Ausweis-Designer (Zeichenfläche `designer/CanvasArea`) ist Maus- und Touch-Arbeit ohne
+  Tastaturweg.
+- Die PDFs (maroto/gofpdf) sind ungetaggt — HTML-Druckweg oder begründete Ausnahme, offen
+  (#594).
+- Nicht gescannte Zustände (Reiter, Dialoge, Unteransichten) können weitere Verstöße tragen;
+  gemessen sind sie nicht.
+- Erklärung zur Barrierefreiheit, Rückmeldeweg und Hinweis auf die Durchsetzungsstelle
+  liefert die Schule (#600).
+
+Regel für neue Oberfläche: Ein interaktiver Container (Zeile, Kachel) enthält keine weiteren
+Bedienelemente — der Name oder Titel ist der Knopf. Und `slate-*` ist im Theme auf
+M3-Neutraltöne gelegt; `slate-400` ist Dunkelgrau, auf dunklem Grund unlesbar.

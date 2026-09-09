@@ -27,8 +27,8 @@
 	 *   - Rahmen `outline` (die M3-Rolle des outlined text field im Ruhezustand), Fläche
 	 *     `surface-container-lowest`, im Fokus `primary` mit 1-px-Ring: exakt das Rezept
 	 *     von Select.svelte, damit Feld und Auswahlfeld in einer Zeile als EIN Vokabular
-	 *     lesen. Bis zum 09.09.2026 stand hier `outline-variant` — auf Weiß 1,6:1, und
-	 *     WCAG 1.4.11 verlangt 3:1 für den Rand eines Bedienelements; `outline` hat 4,6:1.
+	 *     lesen. Bis zum 09.09.2026 stand hier `outline-variant` — auf Weiß 1,7:1, und
+	 *     WCAG 1.4.11 verlangt 3:1 für den Rand eines Bedienelements; `outline` hat 4,5:1.
 	 *   - Outlined und nicht filled, weil die Arbeitsfläche weiß ist (f2320e1) — eine
 	 *     getönte Feldfläche wäre der einzige graue Block auf der Seite.
 	 *

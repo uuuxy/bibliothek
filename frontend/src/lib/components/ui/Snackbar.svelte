@@ -10,7 +10,9 @@
 </script>
 
 {#if snackbar}
+	<!-- Fehler unterbrechen den Screenreader (alert), Erfolg wartet (status). -->
 	<div
+		role={snackbar.type === 'error' ? 'alert' : 'status'}
 		class="fixed bottom-8 left-1/2 -translate-x-1/2 z-200
            flex items-center gap-3 px-5 py-3.5
            rounded-2xl shadow-2xl

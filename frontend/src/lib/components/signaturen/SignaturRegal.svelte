@@ -90,9 +90,19 @@
 				</thead>
 				<tbody>
 					{#each buecher as buch (buch.titel_id)}
-						<tr class="cursor-pointer" onclick={() => oeffneBuch(buch.titel_id)}>
+						<!-- Der TITEL öffnet die Akte, nicht die Zeile: Eine Zeile mit onclick ist nur
+						     mit der Maus erreichbar (Barrierefreiheit, 09.09.2026). -->
+						<tr>
 							<td class="font-mono whitespace-nowrap">{buch.signatur}</td>
-							<td>{buch.titel}</td>
+							<td>
+								<button
+									type="button"
+									onclick={() => oeffneBuch(buch.titel_id)}
+									class="cursor-pointer text-left hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-primary"
+								>
+									{buch.titel}
+								</button>
+							</td>
 							<td>{buch.autor || '—'}</td>
 							<td class="text-right">{buch.exemplare}</td>
 							<td class="text-right">{buch.verliehen}</td>

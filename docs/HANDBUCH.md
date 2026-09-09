@@ -385,14 +385,21 @@ nicht" an die Bibliothek). (§12, Rolle Kollegium)
 
 ## Bedienung ohne Maus
 
-Die Anwendung lässt sich vollständig mit der Tastatur bedienen: Das erste **Tab** auf jeder
-Seite landet auf „Zum Inhalt springen" (überspringt die Seitenleiste), **Tab** wandert durch
-Felder und Knöpfe, **Enter/Leertaste** löst aus, **Escape** schließt den obersten Dialog und
-gibt den Fokus an die Stelle zurück, von der er kam. In Listen öffnet der **Name** (Schüler)
-beziehungsweise der **Titel** (Buch) die Akte. Wer im Betriebssystem „Bewegung reduzieren"
-eingestellt hat, sieht keine Ein- und Ausblendungen. Meldungen am oberen Rand bleiben
-stehen, solange die Maus oder der Fokus darauf liegt. An der Theke hält das Scanfeld den
-Fokus — das ist gewollt, der Scanner tippt blind. (§19)
+Die Hauptbildschirme lassen sich mit der Tastatur bedienen — geprüft an den Stellen, die
+das Browser-Gate misst (§19): Das erste **Tab** auf jeder Seite landet auf „Zum Inhalt
+springen" (überspringt die Seitenleiste), **Tab** wandert durch Felder und Knöpfe,
+**Enter/Leertaste** löst aus, **Escape** schließt den obersten Dialog und gibt den Fokus an
+die Stelle zurück, von der er kam. In Listen öffnet der **Name** (Schüler) beziehungsweise
+der **Titel** (Buch, Signaturen-Regal) die Akte. Im LMF-Planer lassen sich Zeilen außer per
+Ziehen auch über ihr Zeilenmenü verschieben (nach oben, nach unten, an den Anfang, ans Ende).
+Wer im Betriebssystem „Bewegung reduzieren" eingestellt hat, sieht keine Ein- und
+Ausblendungen. Meldungen am oberen Rand bleiben stehen, solange die Maus oder der Fokus
+darauf liegt. An der Theke hält das Scanfeld den Fokus — das ist gewollt, der Scanner tippt
+blind.
+
+Was nicht ohne Maus geht: die Zeichenfläche des Ausweis-Designers. Und in Auswahlfeldern
+folgt ein Screenreader der Pfeiltasten-Markierung noch nicht (§19, Bekannte Lücken). Ein
+Durchgang mit einem Screenreader hat nicht stattgefunden.
 
 ## Wenn etwas nicht geht
 

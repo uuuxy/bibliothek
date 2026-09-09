@@ -23,7 +23,8 @@
 	} = $props();
 </script>
 
-<div class="flex flex-col items-center gap-4 py-20 text-center">
+<!-- role="alert": Ein Ladefehler soll vorgelesen werden, sobald er erscheint. -->
+<div role="alert" class="flex flex-col items-center gap-4 py-20 text-center">
 	<p class="text-base font-medium text-on-surface">{titel}</p>
 	<p class="max-w-md text-sm text-on-surface-variant">{text}</p>
 	<Button variant="primary" onclick={onerneut}>Erneut versuchen</Button>
