@@ -1,4 +1,5 @@
 <script>
+	import { fokusFalle } from '../ui/fokusFalle.js';
 	import { Lock } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { authStore } from '../../stores/authStore.svelte.js';
@@ -41,6 +42,7 @@
 	aria-modal="true"
 	aria-labelledby="sperre-titel"
 	data-testid="sperrbildschirm"
+	use:fokusFalle
 >
 	<form
 		onsubmit={entsperren}

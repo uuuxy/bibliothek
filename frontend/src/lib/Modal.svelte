@@ -1,5 +1,6 @@
 <script>
 	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
+	import { fokusFalle } from './components/ui/fokusFalle.js';
 	/**
 	 * Modal — generic overlay container that accepts snippet render-props.
 	 *
@@ -88,6 +89,7 @@
 			aria-labelledby={beschriftetDurch}
 			tabindex="-1"
 			use:escapeSchliesst={onclose}
+			use:fokusFalle
 		>
 			{#if header}
 				<div class="p-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
