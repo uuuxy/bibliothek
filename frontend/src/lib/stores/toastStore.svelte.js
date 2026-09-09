@@ -32,10 +32,35 @@ export const toastStore = new (class {
 	addToast(message, type = 'info', aktion = undefined) {
 		const id = this.#counter++;
 		this.toasts.push({ id, message, type, aktion });
+		this.#starte(id);
+	}
+
+	/** @param {number} id */
+	#starte(id) {
+		const toast = this.toasts.find((t) => t.id === id);
+		if (!toast) return;
 		this.#timers.set(
 			id,
-			setTimeout(() => this.removeToast(id), aktion ? 10000 : 5000)
+			setTimeout(() => this.removeToast(id), toast.aktion ? 10000 : 5000)
 		);
+	}
+
+	/**
+	 * Die Standzeit hält an, solange Maus oder Tastaturfokus auf dem Toast liegen
+	 * (WCAG 2.2.1: eine Zeitgrenze muss sich verlängern lassen). Wer noch liest oder
+	 * die Folgehandlung anpeilt, verliert die Meldung nicht unter der Hand.
+	 * @param {number} id
+	 */
+	pausieren(id) {
+		const timer = this.#timers.get(id);
+		if (timer === undefined) return;
+		clearTimeout(timer);
+		this.#timers.delete(id);
+	}
+
+	/** Nach dem Verlassen läuft die volle Standzeit noch einmal. @param {number} id */
+	fortsetzen(id) {
+		if (!this.#timers.has(id)) this.#starte(id);
 	}
 
 	/**

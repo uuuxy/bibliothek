@@ -21,8 +21,15 @@
 <div class="fixed top-6 right-6 z-9999 flex flex-col gap-2 pointer-events-none items-end">
 	{#each toastStore.toasts as toast (toast.id)}
 		{@const Symbol = symbole[toast.type] ?? Info}
+		<!-- Fehler sind alert (der Screenreader unterbricht), alles andere status (er
+		     wartet). Maus oder Fokus auf dem Toast halten die Standzeit an — siehe
+		     toastStore.pausieren. -->
 		<div
-			role="status"
+			role={toast.type === 'error' ? 'alert' : 'status'}
+			onmouseenter={() => toastStore.pausieren(toast.id)}
+			onmouseleave={() => toastStore.fortsetzen(toast.id)}
+			onfocusin={() => toastStore.pausieren(toast.id)}
+			onfocusout={() => toastStore.fortsetzen(toast.id)}
 			class="pointer-events-auto flex items-start gap-2 px-4 py-3 rounded-sm text-sm max-w-sm w-full {flaechen[
 				toast.type
 			] ?? flaechen.info}"
