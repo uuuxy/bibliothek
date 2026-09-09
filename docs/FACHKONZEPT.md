@@ -639,3 +639,39 @@ Konto hat, bekommt einen **inaktiven** Eintrag; anmelden kann er sich damit nich
 Anfrage erscheint unter _Benutzer & Rechte → Zugangsanfragen_ und wird dort freigeschaltet
 (`auth/selbstanmeldung.go`). Ohne diesen Weg müssten ~160 Lehrkräfte vorab von Hand angelegt
 werden — was niemand tut.
+
+---
+
+## 19. Barrierefreiheit
+
+Die Anwendung ist für die Schule als öffentliche Stelle nach HessBGG/HVBIT (EU 2016/2102) an
+EN 301 549 / WCAG 2.1 AA gebunden — für Intranet-Anwendungen seit 09/2019, also heute.
+Seit dem 09.09.2026 (Paket 1, GitHub #595) sichern zwei Browser-Gates den Stand; sie liefen
+vor dem ersten Fix rot (17 von 19 bzw. 4 von 4 Tests).
+
+- **`e2e/barrierefreiheit-axe.spec.js`:** axe-core (WCAG A/AA) über Anmeldung, Katalog,
+  Monitor und jede interne Hauptansicht; dazu `<html lang="de">`, genau EIN `<main>`, eine
+  Überschrift je Seite, Skip-Link als erstes Fokusziel. Gescannt wird mit „Bewegung
+  reduzieren", weil axe mitten in einer Einblendung gemischte Farben liest.
+- **`e2e/barrierefreiheit-dialog.spec.js`:** ein Dialog nimmt den Fokus, hält ihn (Tab
+  kreist) und gibt ihn dem Auslöser zurück; Tabellen tragen Beschriftung und `scope`;
+  `prefers-reduced-motion` schaltet Animationen ab.
+
+Die Fixes sitzen in Bauteilen, nicht in Seiten: `ui/fokusFalle.js` (Modal, Sperrbildschirm),
+`ui/Tabelle.svelte` (`beschriftung` ist Pflicht — Ratsche `frontend-hygiene-tabellen`,
+`scope` setzt das Bauteil), `layout/SkipLink.svelte` und `layout/Hauptbereich.svelte`
+(das eine `<main>` mit unsichtbarer `h1` aus dem Menü — sichtbare Seitenköpfe bleiben
+abgeschafft, §Seitengerüst), `basis.css` (Bewegung reduzieren), Feld/Select/Suchfeld mit
+Rahmen `outline` (3:1 für Bedienelement-Ränder, WCAG 1.4.11), Toasts pausieren unter Maus
+und Fokus (2.2.1), Fehler-Toasts sind `role="alert"`, die Omnibox führt den Screenreader
+per `aria-activedescendant` durch die Trefferliste.
+
+Zwei Regeln für neue Oberfläche: Ein interaktiver Container (Zeile, Kachel) enthält keine
+weiteren Bedienelemente — der **Name oder Titel** ist der Knopf, nie die ganze Zeile
+(nested-interactive). Und `slate-*` ist im Theme auf M3-Neutraltöne gelegt: `slate-400` ist
+ein Dunkelgrau für helle Flächen, auf dunklem Grund unlesbar.
+
+**Außerhalb des Codes:** Erklärung zur Barrierefreiheit, Rückmeldeweg und Hinweis auf die
+Durchsetzungsstelle liefert die Schule (GitHub #600). Die PDFs (maroto/gofpdf) sind
+ungetaggt; ob ein HTML-Druckweg kommt oder eine begründete Ausnahme, ist eine offene
+Entscheidung (#594).

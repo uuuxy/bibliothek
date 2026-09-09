@@ -383,6 +383,17 @@ nicht" an die Bibliothek). (§12, Rolle Kollegium)
 
 ---
 
+## Bedienung ohne Maus
+
+Die Anwendung lässt sich vollständig mit der Tastatur bedienen: Das erste **Tab** auf jeder
+Seite landet auf „Zum Inhalt springen" (überspringt die Seitenleiste), **Tab** wandert durch
+Felder und Knöpfe, **Enter/Leertaste** löst aus, **Escape** schließt den obersten Dialog und
+gibt den Fokus an die Stelle zurück, von der er kam. In Listen öffnet der **Name** (Schüler)
+beziehungsweise der **Titel** (Buch) die Akte. Wer im Betriebssystem „Bewegung reduzieren"
+eingestellt hat, sieht keine Ein- und Ausblendungen. Meldungen am oberen Rand bleiben
+stehen, solange die Maus oder der Fokus darauf liegt. An der Theke hält das Scanfeld den
+Fokus — das ist gewollt, der Scanner tippt blind. (§19)
+
 ## Wenn etwas nicht geht
 
 - **Bestellung geht ohne Link raus / Katalog-Adresse fehlt** → _Erreichbarkeit & Alarme_:
