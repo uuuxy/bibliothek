@@ -644,19 +644,7 @@ werden — was niemand tut.
 
 ## 19. Barrierefreiheit
 
-**Rechtsrahmen — was belegt ist und was nicht.** § 14 HessBGG verpflichtet die Träger
-öffentlicher Gewalt, Intranet- und Internetangebote sowie grafische Programmoberflächen so
-zu gestalten, dass Menschen mit Behinderung sie grundsätzlich uneingeschränkt nutzen können;
-die Hessische Verordnung über barrierefreie Informationstechnik (BITV HE 2019, 16.09.2019)
-setzt dafür in § 3 Abs. 1–4 die EN 301 549 (WCAG 2.1 AA) an und verlangt in § 4 eine
-Erklärung zur Barrierefreiheit; Durchsetzungs- und Überwachungsstelle ist die beim
-Regierungspräsidium Gießen angesiedelte Stelle des Sozialministeriums. **Nicht geprüft**
-(der Verordnungstext ist online nur hinter Login oder JavaScript erreichbar): ob Hessen die
-Ausnahme der EU-Richtlinie 2016/2102 (Art. 1 Abs. 5) für Schulen nutzt — sie nimmt Webangebote
-von Schulen aus, außer für wesentliche Online-Verwaltungsfunktionen — und wie eine interne
-Fachanwendung der Schulbibliothek dort eingeordnet wird. Diese Frage klärt die Schule mit der
-Durchsetzungsstelle (GitHub #600). Die Anwendung ist unabhängig davon auf WCAG 2.1 AA
-gebaut; „muss" ist damit eine Annahme zur sicheren Seite, keine festgestellte Pflicht.
+Die Anwendung ist auf WCAG 2.1 AA gebaut; geprüft wird das mit zwei Browser-Gates.
 
 **Was geprüft wird.** Zwei Browser-Gates, beide vor dem ersten Fix rot gesehen (17 von 19
 bzw. 4 von 4 Tests, 09.09.2026), seither grün:
@@ -708,8 +696,6 @@ der hat nicht stattgefunden.
   (#594).
 - Nicht gescannte Zustände (Reiter, Dialoge, Unteransichten) können weitere Verstöße tragen;
   gemessen sind sie nicht.
-- Erklärung zur Barrierefreiheit, Rückmeldeweg und Hinweis auf die Durchsetzungsstelle
-  liefert die Schule (#600).
 
 Regel für neue Oberfläche: Ein interaktiver Container (Zeile, Kachel) enthält keine weiteren
 Bedienelemente — der Name oder Titel ist der Knopf. Und `slate-*` ist im Theme auf

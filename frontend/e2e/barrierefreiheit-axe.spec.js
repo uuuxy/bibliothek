@@ -3,11 +3,9 @@
 // die axe nicht stellt: Sprache des Dokuments, EIN <main>, Überschrift je Seite,
 // Skip-Link als erstes Fokusziel.
 //
-// Anlass (Prüfung 08.09.2026): Die Anwendung gilt für die Schule als öffentliche Stelle
-// (HessBGG/HVBIT → EN 301 549 / WCAG 2.1 AA, für Intranet-Anwendungen seit 09/2019).
-// Der erste Lauf fand unter anderem `lang="en"`, zwei verschachtelte <main>, 592
-// nested-interactive-Knoten und 168 `span[aria-label]` — alles Dinge, die ein Mensch
-// beim Klicken nie bemerkt.
+// Anlass (Prüfung 08.09.2026): Maßstab ist WCAG 2.1 AA. Der erste Lauf fand unter
+// anderem `lang="en"`, zwei verschachtelte <main>, 592 nested-interactive-Knoten und
+// 168 `span[aria-label]` — alles Dinge, die ein Mensch beim Klicken nie bemerkt.
 //
 // Warum je Seite ein eigener Test: Ein roter Lauf soll die SEITE nennen, nicht nur
 // „irgendwo 37 Verstöße". Gemessen wird am laufenden Container (8084), wie alle
