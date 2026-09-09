@@ -17,6 +17,7 @@
 		"test:druck": "vite build && node scripts/druck-sektionen-gate.mjs"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.13.0",
 		"@playwright/test": "^1.62.1",
 		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@testing-library/svelte": "^5.4.2",
