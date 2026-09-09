@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -298,21 +299,50 @@ func uploadBackupToS3(ctx context.Context, outFilename string, encrypted []byte)
 
 // rotateBackups löscht die ältesten Backup-Dateien, wenn es mehr als maxKeep gibt.
 func rotateBackups(dir string, maxKeep int) {
-	entries, err := filepath.Glob(filepath.Join(dir, "backup_*.sql.gz.enc"))
-	if err != nil || len(entries) <= maxKeep {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
 		return
 	}
+	defer root.Close()
+
+	f, err := root.Open(".")
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	entries, err := f.ReadDir(-1)
+	if err != nil {
+		return
+	}
+
+	var names []string
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		name := e.Name()
+		if len(name) > 11 && name[:7] == "backup_" && name[len(name)-11:] == ".sql.gz.enc" {
+			names = append(names, name)
+		}
+	}
+
+	if len(names) <= maxKeep {
+		return
+	}
+
 	// Dateien sind nach Zeitstempel benannt; lexikographische Sortierung = chronologische Sortierung
-	// Einträge aus Glob sind bereits alphabetisch sortiert
-	toDelete := entries[:len(entries)-maxKeep]
-	for _, f := range toDelete {
-		// #nosec G304 - f is derived from filepath.Glob
-		if err := os.Remove(f); err != nil {
+	// Einträge aus (*os.File).ReadDir sind nicht garantiert sortiert, also explizit sortieren.
+	slices.Sort(names)
+
+	toDelete := names[:len(names)-maxKeep]
+	for _, name := range toDelete {
+		if err := root.Remove(name); err != nil {
 			// #nosec G706
-			log.Printf("Backup rotation: failed to delete %s: %v", f, err)
+			log.Printf("Backup rotation: failed to delete %s: %v", name, err)
 		} else {
 			// #nosec G706
-			log.Printf("Backup rotation: deleted old backup %s", f)
+			log.Printf("Backup rotation: deleted old backup %s", name)
 		}
 	}
 }

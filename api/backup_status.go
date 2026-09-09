@@ -9,7 +9,6 @@ package api
 import (
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"bibliothek/jobs"
@@ -35,18 +34,38 @@ type BackupStatusResponse struct {
 // wenn (noch) keine existiert. Ein fehlendes Verzeichnis ist kein Fehler,
 // sondern schlicht "kein Backup vorhanden".
 func newestBackupTime(dir string) *time.Time {
-	matches, err := filepath.Glob(filepath.Join(dir, "backup_*.sql.gz.enc"))
-	if err != nil || len(matches) == 0 {
+	root, err := os.OpenRoot(dir)
+	if err != nil {
 		return nil
 	}
+	defer root.Close()
+
+	// Use root.Open(".") to get the directory, then ReadDir
+	f, err := root.Open(".")
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+
+	entries, err := f.ReadDir(-1)
+	if err != nil {
+		return nil
+	}
+
 	var newest time.Time
-	for _, m := range matches {
-		info, statErr := os.Stat(m)
-		if statErr != nil {
+	for _, e := range entries {
+		if e.IsDir() {
 			continue
 		}
-		if info.ModTime().After(newest) {
-			newest = info.ModTime()
+		name := e.Name()
+		if len(name) > 11 && name[:7] == "backup_" && name[len(name)-11:] == ".sql.gz.enc" {
+			info, statErr := e.Info()
+			if statErr != nil {
+				continue
+			}
+			if info.ModTime().After(newest) {
+				newest = info.ModTime()
+			}
 		}
 	}
 	if newest.IsZero() {
