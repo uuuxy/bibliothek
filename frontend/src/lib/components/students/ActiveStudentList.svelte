@@ -112,24 +112,14 @@
 				</thead>
 				<tbody>
 					{#each filteredStudents as s, _i (_i)}
-						<tr
-							onclick={() => onSelectStudent(s)}
-							onkeydown={(e) => {
-								if (e.key === 'Enter' || e.key === ' ') {
-									e.preventDefault();
-									onSelectStudent(s);
-								}
-							}}
-							tabindex="0"
-							role="button"
-							aria-label="Profil von {s.vorname} {s.nachname} (Klasse {s.klasse || 'N/A'}) anzeigen"
-							class="cursor-pointer group focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:-outline-offset-2"
-						>
+						<!-- Die ZEILE ist kein Knopf mehr, der NAME ist es (wie im Mahnwesen). Eine Zeile
+						     mit role="button", in der ein Kästchen steckt, ist ein Bedienelement im
+						     Bedienelement — für Screenreader unlesbar, für axe 273 Verstöße
+						     (nested-interactive, 09.09.2026). Das Kästchen braucht damit auch kein
+						     stopPropagation mehr: Ankreuzen öffnet nichts. -->
+						<tr class="group">
 							{#if auswaehlbar}
-								<!-- stopPropagation: Die gesamte Zeile oeffnet das Profil. Ohne das
-								     wuerde jedes Ankreuzen den Bildschirm wechseln — und die
-								     Markierung waere weg, bevor man die zweite setzen kann. -->
-								<td onclick={(e) => e.stopPropagation()}>
+								<td>
 									<Kaestchen
 										checked={auswahl.has(s.id)}
 										onchange={() => onToggle?.(s.id)}
@@ -141,8 +131,16 @@
 								{@render avatar(s)}
 							</td>
 							<td class="font-semibold">
-								{s.vorname}
-								{s.nachname}
+								<button
+									type="button"
+									onclick={() => onSelectStudent(s)}
+									aria-label="Profil von {s.vorname} {s.nachname} (Klasse {s.klasse ||
+										'N/A'}) anzeigen"
+									class="text-left font-semibold text-on-surface hover:text-primary hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"
+								>
+									{s.vorname}
+									{s.nachname}
+								</button>
 								<div class="text-sm font-mono text-slate-400 font-normal mt-0.5">
 									{s.barcode_id}
 								</div>

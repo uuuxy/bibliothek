@@ -21,10 +21,18 @@ test('Cover: das Bild ist kein verstecktes Bedienelement, „Cover ändern" blei
 	await uiLogin(page);
 	await gehZu(page, '/medienkatalog');
 
-	// Derselbe Weg, den eine Bibliothekskraft nimmt: Stift auf der Buchkarte → Buchakte →
+	// Derselbe Weg, den eine Bibliothekskraft nimmt: Titel auf der Buchkarte → Buchakte →
 	// „Titel bearbeiten". Zwei Klicks, kein Abkürzen über den Store — sonst prüfte der
 	// Test einen Zustand, den man von Hand gar nicht erreicht.
-	await page.getByRole('button', { name: 'Buch schnell bearbeiten' }).first().click();
+	//
+	// Bis zum 09.09.2026 stand hier getByRole('button', { name: 'Buch schnell bearbeiten' })
+	// .first() — und traf NICHT den Stift, sondern die Kachel: Sie trug role="button", ihr
+	// berechneter Name enthielt den Stift-Text als Teil, und sie kam im DOM zuerst. Der
+	// Test öffnete die Akte also über die Fläche und hielt das für den Stift (der die
+	// Titel-Verwaltung öffnet, nicht die Akte). Seit die Kachel kein Knopf mehr ist
+	// (nested-interactive), ist der Titel der Knopf — und der Weg ist der, den der
+	// Kommentar oben schon immer meinte.
+	await page.getByRole('heading', { level: 2 }).first().getByRole('button').click();
 	await page.getByRole('button', { name: 'Titel bearbeiten' }).click();
 
 	const aendern = page.getByRole('button', { name: 'Cover ändern' });

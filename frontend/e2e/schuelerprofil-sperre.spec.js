@@ -22,7 +22,8 @@ async function ersterSchueler(page) {
 	await page.goto('/schuelerdatei');
 	const treffer = page.locator('tbody tr').first();
 	await treffer.waitFor();
-	await treffer.click();
+	// Seit 09.09.2026 öffnet der NAME das Profil, nicht die Zeile (nested-interactive).
+	await treffer.getByRole('button', { name: /^Profil von/ }).click();
 	await expect(page.getByText('Konto-Status')).toBeVisible();
 }
 

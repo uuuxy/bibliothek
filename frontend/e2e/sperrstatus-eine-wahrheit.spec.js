@@ -60,7 +60,8 @@ test('Sperrstatus: eine Wahrheit für Liste, Profil und Umschalter', async ({ pa
 	// 2) Profil des System-Gesperrten: Sperren+Entsperren (Handschloss) darf die
 	//    Anzeige NICHT auf „Aktiv" kippen — die Systemsperre besteht weiter.
 	//    Vorher log die erfundene Formel genau hier.
-	await zeile2.click();
+	// Seit 09.09.2026 öffnet der NAME das Profil, nicht die Zeile (nested-interactive).
+	await zeile2.getByRole('button', { name: /^Profil von/ }).click();
 	await expect(page.getByText('Konto-Status')).toBeVisible();
 	await expect(page.getByText('Gesperrt', { exact: true }).first()).toBeVisible();
 

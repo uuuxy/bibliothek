@@ -93,21 +93,19 @@
 	});
 </script>
 
-<!-- role="button" + tabindex: Die ganze Kachel öffnet die Buchakte, auch per Tastatur.
-     Die Prüfung auf currentTarget hält die inneren Knöpfe (Kopieren, Stift) heraus. -->
-<div
-	class="m3-state group flex h-full cursor-pointer flex-col gap-3 rounded-2xl p-3"
-	role="button"
-	tabindex="0"
-	{onclick}
-	onkeydown={(e) => {
-		if (e.target !== e.currentTarget) return;
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			onclick?.(e);
-		}
-	}}
->
+<!-- Die Kachel ist für Hilfstechnik KEIN Knopf mehr: Bis zum 09.09.2026 trug sie
+     role="button" — mit Kopieren-Knopf und Stift darin, Bedienelemente im Bedienelement
+     (nested-interactive, 50 Verstöße je Katalogseite). Jetzt ist der TITEL der Knopf
+     (echter <button> in der Überschrift, per Tastatur und Screenreader erreichbar). Der
+     Klick auf die ganze Fläche bleibt für Maus und Finger erhalten — als reiner
+     Maus-Komfort ohne Rolle, deshalb die beiden Ausnahmen darunter; die Tastatur hat
+     den Titel. Die inneren Knöpfe stoppen die Weitergabe wie zuvor. (Gemessen am
+     09.09.2026: Der Stift öffnet trotzdem die Akte, weil dieser Flächen-Handler als
+     direkter Listener vor Sveltes Delegation feuert — e2e/cover-aendern.spec.js
+     schreibt genau das fest, also bleibt es so.) -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<div class="m3-state group flex h-full cursor-pointer flex-col gap-3 rounded-2xl p-3" {onclick}>
 	<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low">
 		{#if coverSrc && !coverFailed}
 			<img
@@ -124,11 +122,16 @@
 	</div>
 
 	<div class="flex flex-col gap-1 text-sm text-on-surface-variant">
-		<h2
-			class="line-clamp-2 text-base leading-snug font-semibold wrap-break-word text-on-surface"
-			title={book.title}
-		>
-			{book.title}
+		<h2 class="text-base leading-snug font-semibold text-on-surface" title={book.title}>
+			<!-- Ohne eigenen Handler: Enter/Leertaste erzeugen ein click-Ereignis, das zur
+			     Fläche aufsteigt und dort die Akte öffnet — ein Handler hier navigierte doppelt.
+			     Der Knopf trägt die Semantik (Tastatur, Screenreader), die Fläche das Verhalten. -->
+			<button
+				type="button"
+				class="line-clamp-2 block w-full cursor-pointer text-left wrap-break-word hover:underline"
+			>
+				{book.title}
+			</button>
 		</h2>
 
 		<button

@@ -57,27 +57,15 @@
 	}
 </script>
 
-<!-- Auswahl per Tastatur, nicht nur per Maus. Die Pruefung auf currentTarget ist hier
-     wichtig: In der Karte liegt das Barcode-Eingabefeld, dessen Enter das Speichern
-     ausloest — ohne die Pruefung wuerde derselbe Tastendruck zusaetzlich die Auswahl
-     umschalten. -->
+<!-- Die Karte ist KEIN Knopf. Bis zum 09.09.2026 trug sie role="button" mit
+     aria-pressed — und darin lagen Barcode-Feld, Drucken-Link, Stift und Papierkorb:
+     Bedienelemente im Bedienelement (nested-interactive, 50 Verstöße im
+     Medienkatalog). Ausgewählt wird über das Kästchen, das ohnehin da war und bis
+     dahin nur Anzeige war (pointer-events-none). -->
 <div
-	class="bg-white rounded-xl border p-4 shadow-sm transition-colors cursor-pointer {selected
+	class="bg-white rounded-xl border p-4 shadow-sm transition-colors {selected
 		? 'border-blue-500 bg-blue-50/30 ring-1 ring-blue-500'
 		: 'border-slate-200 hover:border-slate-300'}"
-	role="button"
-	tabindex="0"
-	aria-pressed={selected}
-	onclick={() => {
-		if (darfBearbeiten) onToggleSelect();
-	}}
-	onkeydown={(e) => {
-		if (e.target !== e.currentTarget) return;
-		if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			if (darfBearbeiten) onToggleSelect();
-		}
-	}}
 >
 	<div class="flex items-start justify-between mb-3">
 		{#if editingBarcode}
@@ -122,7 +110,11 @@
 		{:else}
 			<div class="flex items-center gap-3">
 				{#if darfBearbeiten}
-					<Kaestchen checked={selected} class="pointer-events-none" aria-label="Ausgewählt" />
+					<Kaestchen
+						checked={selected}
+						onchange={onToggleSelect}
+						aria-label="Exemplar {ex.barcode_id} auswählen"
+					/>
 				{/if}
 				<div class="flex items-center gap-2">
 					<span
@@ -140,7 +132,6 @@
 								target="_blank"
 								title="Ersatz-Etikett drucken"
 								class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1"
-								onclick={(e) => e.stopPropagation()}
 							>
 								<Printer class="w-3.5 h-3.5" aria-hidden="true" />
 							</a>
@@ -148,8 +139,7 @@
 						{#if ex.barcode_id.startsWith('AUTO-') || ex.barcode_id.startsWith('SYS-')}
 							<button
 								class="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded shadow-sm transition-colors cursor-pointer flex items-center gap-1"
-								onclick={(e) => {
-									e.stopPropagation();
+								onclick={() => {
 									editingBarcode = true;
 									editBarcodeValue = ''; // Leer lassen für den Scanner
 									barcodeError = '';
@@ -163,8 +153,7 @@
 								title="Barcode zuweisen/ändern"
 								aria-label="Barcode zuweisen oder ändern"
 								class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1"
-								onclick={(e) => {
-									e.stopPropagation();
+								onclick={() => {
 									editingBarcode = true;
 									editBarcodeValue = ex.barcode_id;
 									barcodeError = '';
@@ -192,8 +181,7 @@
 					title="Status ändern"
 					aria-label="Status ändern"
 					class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-					onclick={(e) => {
-						e.stopPropagation();
+					onclick={() => {
 						editingStatus = true;
 					}}
 				>
@@ -203,8 +191,7 @@
 					title="Exemplar löschen"
 					aria-label="Exemplar löschen"
 					class="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-					onclick={(e) => {
-						e.stopPropagation();
+					onclick={() => {
 						onDelete();
 					}}
 				>

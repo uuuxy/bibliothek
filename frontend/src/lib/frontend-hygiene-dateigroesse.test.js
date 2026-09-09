@@ -37,7 +37,7 @@ const BESTAND = {
 	'src/lib/StudentProfile.svelte': 255,
 	'src/lib/UnifiedInventory.svelte': 324,
 	'src/lib/UserManagement.svelte': 257,
-	'src/lib/components/BookExemplarCard.svelte': 224,
+	'src/lib/components/BookExemplarCard.svelte': 211,
 	'src/lib/components/bestellungen/OrderRecommendations.svelte': 222,
 	'src/lib/components/bestellungen/OrderSearch.svelte': 278,
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
