@@ -41,7 +41,7 @@
 	<!-- Folie -->
 	<div class="flex-1 flex items-center justify-center px-8 py-16">
 		{#if !takt.slides}
-			<div class="text-slate-500 text-xl animate-pulse">Lade Daten …</div>
+			<div class="text-slate-300 text-xl animate-pulse">Lade Daten …</div>
 		{:else if takt.folie === 0}
 			<FolieBuchDesMonats titel={takt.slides.buch_des_monats} />
 		{:else if takt.folie === 1}

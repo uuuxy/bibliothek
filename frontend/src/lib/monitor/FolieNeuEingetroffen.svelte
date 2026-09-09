@@ -33,7 +33,7 @@
                               {i === coverIndex ? 'w-32 h-44' : 'w-20 h-28'}"
 						>
 							<span
-								class="{i === coverIndex ? 'text-2xl' : 'text-base'} text-slate-500 font-extrabold"
+								class="{i === coverIndex ? 'text-2xl' : 'text-base'} text-slate-300 font-extrabold"
 							>
 								{book.titel.charAt(0)}
 							</span>
@@ -51,6 +51,6 @@
 			{/each}
 		</div>
 	{:else}
-		<p class="text-slate-500">Keine neuen Medien</p>
+		<p class="text-slate-300">Keine neuen Medien</p>
 	{/if}
 </div>

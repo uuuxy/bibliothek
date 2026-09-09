@@ -22,8 +22,7 @@ import { uiLogin, gehZu } from './helpers.js';
 /** Öffentlich, ohne Anmeldung. */
 const OEFFENTLICH = [
 	['Anmeldung', '/'],
-	['Katalog', '/katalog'],
-	['Monitor', '/monitor']
+	['Katalog', '/katalog']
 ];
 
 /** Jede interne Hauptansicht (Router.svelte, tabToPath) — außer dem Kollegiums-Portal,
@@ -99,6 +98,34 @@ test.describe('axe: keine WCAG-A/AA-Verstöße', () => {
 			expect(await verstoesse(page), `${name} (${pfad})`).toEqual([]);
 		});
 	}
+	// Der Monitor wechselt alle 15 s die Folie — und jede Folie hat eigene Farben. Ein
+	// einzelner Scan sieht nur eine (lokal grün, CI rot am 09.09.2026: die Rangzahlen der
+	// Folie „Beliebt" mit 1,84:1). Gescannt wird deshalb jede Folie, die sich zeigt;
+	// Folien ohne Inhalt überspringt der Monitor selbst, dann endet der Wechsel früher.
+	test('öffentlich · Monitor, jede Folie', async ({ page }) => {
+		test.setTimeout(90_000); // zwei Folienwechsel à 15 s plus drei Scans
+		await page.goto('/monitor');
+		await zurRuhe(page);
+		const anzeige = page.getByTestId('monitor-folie');
+		const gesehen = new Set();
+		/** @type {string[]} */
+		const befunde = [];
+		for (let i = 0; i < 3; i++) {
+			const folie = (await anzeige.textContent())?.trim() ?? '';
+			if (!gesehen.has(folie)) {
+				gesehen.add(folie);
+				for (const v of await verstoesse(page)) befunde.push(`${folie}: ${v}`);
+			}
+			if (gesehen.size === 3) break;
+			try {
+				await expect(anzeige).not.toHaveText(folie, { timeout: 20_000 });
+			} catch {
+				break; // nur diese eine Folie hat Inhalt — mehr gibt es nicht zu scannen
+			}
+			await zurRuhe(page);
+		}
+		expect(befunde, `Monitor, Folien: ${[...gesehen].join(', ')}`).toEqual([]);
+	});
 	for (const [name, pfad] of INTERN) {
 		test(`intern · ${name}`, async ({ page }) => {
 			await uiLogin(page);

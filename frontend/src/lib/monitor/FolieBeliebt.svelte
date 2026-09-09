@@ -14,7 +14,7 @@
 		<ol class="w-full flex flex-col gap-3">
 			{#each titel as book, i (i)}
 				<li class="flex items-center gap-4 bg-slate-800/60 rounded-2xl p-3 shadow-md">
-					<span class="text-2xl font-black w-8 text-center text-slate-500">#{i + 1}</span>
+					<span class="text-2xl font-black w-8 text-center text-slate-300">#{i + 1}</span>
 					{#if coverSrc(book.cover_url, book.isbn)}
 						<img
 							src={coverSrc(book.cover_url, book.isbn)}
@@ -23,7 +23,7 @@
 						/>
 					{:else}
 						<div class="w-12 h-16 rounded-xl bg-slate-700 flex items-center justify-center">
-							<span class="text-lg font-extrabold text-slate-500">{book.titel.charAt(0)}</span>
+							<span class="text-lg font-extrabold text-slate-300">{book.titel.charAt(0)}</span>
 						</div>
 					{/if}
 					<div class="flex-1 min-w-0">
@@ -36,6 +36,6 @@
 			{/each}
 		</ol>
 	{:else}
-		<p class="text-slate-500">Keine Daten verfügbar</p>
+		<p class="text-slate-300">Keine Daten verfügbar</p>
 	{/if}
 </div>

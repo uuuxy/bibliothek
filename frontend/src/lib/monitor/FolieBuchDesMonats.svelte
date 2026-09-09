@@ -19,7 +19,7 @@
 			/>
 		{:else}
 			<div class="w-48 h-64 rounded-2xl bg-slate-700 flex items-center justify-center shadow-2xl">
-				<span class="text-6xl font-extrabold text-slate-500">{titel.titel.charAt(0)}</span>
+				<span class="text-6xl font-extrabold text-slate-300">{titel.titel.charAt(0)}</span>
 			</div>
 		{/if}
 		<div>
@@ -29,6 +29,6 @@
 			{/if}
 		</div>
 	{:else}
-		<p class="text-slate-500">Kein Buch verfügbar</p>
+		<p class="text-slate-300">Kein Buch verfügbar</p>
 	{/if}
 </div>
