@@ -10,7 +10,7 @@
 	});
 </script>
 
-<div class="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+<main class="min-h-screen flex items-center justify-center p-6 bg-slate-50">
 	<form
 		onsubmit={(e) => authStore.handleLogin(e, undefined)}
 		class="w-full max-w-md p-8 rounded-3xl bg-white border border-slate-100 shadow-xl flex flex-col items-center space-y-6 animate-fade-in no-print"
@@ -52,4 +52,4 @@
 			<p class="text-xs text-rose-500 font-semibold animate-slide-up">{authStore.loginError}</p>
 		{/if}
 	</form>
-</div>
+</main>

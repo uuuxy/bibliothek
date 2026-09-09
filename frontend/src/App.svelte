@@ -17,6 +17,8 @@
 	import Sidebar from './lib/components/layout/Sidebar.svelte';
 	import BackupAlert from './lib/components/system/BackupAlert.svelte';
 	import Router from './lib/Router.svelte';
+	import Hauptbereich from './lib/components/layout/Hauptbereich.svelte';
+	import SkipLink from './lib/components/layout/SkipLink.svelte';
 	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
 	import ToastContainer from './lib/ToastContainer.svelte';
 	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
@@ -92,8 +94,8 @@
 	});
 </script>
 
-<main
-	class="min-h-screen bg-surface text-on-surface font-sans selection:bg-slate-200 selection:text-slate-900"
+<div
+	class="app min-h-screen bg-surface text-on-surface font-sans selection:bg-slate-200 selection:text-slate-900"
 >
 	{#if _currentPath === '/katalog'}
 		<OpacSearch />
@@ -129,6 +131,7 @@
 			<Sperrbildschirm />
 		{:else}
 			<div class="h-screen flex w-full overflow-hidden">
+				<SkipLink />
 				<Sidebar />
 				<!-- Arbeitsflaeche WEISS, nicht getoent. Am 07.08. hatte ich sie auf `surface`
 				     gestellt, damit die weissen Karten sich abheben — und genau das war der
@@ -146,7 +149,7 @@
 					{#if hatRecht(authStore.currentUser, 'manage_settings')}
 						<BackupAlert />
 					{/if}
-					<Router />
+					<Hauptbereich><Router /></Hauptbereich>
 				</div>
 			</div>
 		{/if}
@@ -154,7 +157,7 @@
 	<OfflineIndicator />
 	<ToastContainer />
 	<BestaetigungsDialog />
-</main>
+</div>
 
 <style>
 	@keyframes fadeIn {
@@ -187,7 +190,7 @@
 			background: white !important;
 			color: black !important;
 		}
-		main {
+		.app {
 			background: white !important;
 		}
 		:global(.no-print) {

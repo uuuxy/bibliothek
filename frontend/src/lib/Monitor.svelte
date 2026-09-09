@@ -24,7 +24,7 @@
 	});
 </script>
 
-<div class="fixed inset-0 bg-slate-900 text-white flex flex-col overflow-hidden select-none">
+<main class="fixed inset-0 bg-slate-900 text-white flex flex-col overflow-hidden select-none">
 	<!-- Folienpunkte -->
 	<div class="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
 		{#each FOLIEN as name, i (name)}
@@ -67,7 +67,7 @@
 			<div class="h-full bg-slate-400 progress-bar" style:animation-duration="{FOLIE_MS}ms"></div>
 		</div>
 	{/key}
-</div>
+</main>
 
 <style>
 	@keyframes progress {

@@ -41,7 +41,7 @@
 	}
 </script>
 
-<div class="min-h-screen bg-surface flex flex-col relative overflow-x-hidden">
+<main class="min-h-screen bg-surface flex flex-col relative overflow-x-hidden">
 	<LogoRelief />
 
 	<!-- Header -->
@@ -148,7 +148,7 @@
 			/>
 		{/if}
 	</div>
-</div>
+</main>
 
 <!-- Der Ladepunkt sitzt IN der Pille — dieselbe Stelle wie im Kollegiums-Portal. -->
 {#snippet nachlaufend()}

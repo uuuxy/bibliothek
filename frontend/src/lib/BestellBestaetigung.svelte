@@ -125,7 +125,7 @@
 	}
 </script>
 
-<div class="min-h-screen bg-slate-50 px-4 py-10">
+<main class="min-h-screen bg-slate-50 px-4 py-10">
 	<div class="mx-auto max-w-2xl space-y-6">
 		{#if zustand === 'laedt'}
 			<p class="text-center text-slate-400">Bestellung wird geladen …</p>
@@ -251,4 +251,4 @@
 			</p>
 		{/if}
 	</div>
-</div>
+</main>

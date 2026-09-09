@@ -71,6 +71,10 @@ const BEFUNDE = () => {
 
 		const stil = getComputedStyle(el);
 		if (stil.visibility === 'hidden') continue; // ausdrücklich verborgen, kein Zwitter
+		// sr-only (Tailwind v4: clip-path inset(50%), 1×1 px): für Screenreader da, für das
+		// Auge nicht — der Skip-Link wird erst im Fokus sichtbar. Ob das klappt, misst
+		// barrierefreiheit-axe.spec.js (Gerüst); hier zählt er nicht als abgeschnitten.
+		if (stil.clipPath === 'inset(50%)') continue;
 
 		// 2. Belegt Platz, ist aber durchsichtig: das Hover-Muster. Auf einem Tablet gibt
 		//    es kein :hover — dort ist so ein Knopf dauerhaft unsichtbar und trotzdem da.

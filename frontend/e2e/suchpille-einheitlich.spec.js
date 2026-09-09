@@ -333,6 +333,9 @@ const STARTLINIE_MESSEN = (/** @type {string} */ id) => {
 		if (el.contains(pille)) continue;
 		const r = el.getBoundingClientRect();
 		if (r.width === 0 || r.height === 0) continue;
+		// sr-only (die unsichtbare Seitenüberschrift aus Hauptbereich.svelte; Tailwind v4:
+		// clip-path inset(50%), 1×1 px): nur für Screenreader — steht nicht „über" der Pille.
+		if (getComputedStyle(el).clipPath === 'inset(50%)') continue;
 		if (r.bottom > p.top + 1) continue;
 		if (drueber.some((d) => d.el.contains(el))) continue;
 		drueber.push({

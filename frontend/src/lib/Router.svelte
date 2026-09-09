@@ -167,7 +167,7 @@
 	});
 </script>
 
-<main class="flex-1 overflow-y-auto flex flex-col w-full">
+<div class="flex-1 overflow-y-auto flex flex-col w-full">
 	{#if uiStore.activeTab === 'kiosk'}
 		<div class="flex-1 flex flex-col w-full animate-fade-in">
 			<Omnibox onSelectBook={handleSelectBook} />
@@ -225,4 +225,4 @@
 		<!-- Unbekannter Tab: sichtbarer Fallback statt lautloser weißer Seite (+ Sentry). -->
 		<RouteFallback tab={uiStore.activeTab} />
 	{/if}
-</main>
+</div>

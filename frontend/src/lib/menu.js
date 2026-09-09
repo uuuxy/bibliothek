@@ -118,6 +118,18 @@ export function tabIstGesperrt(tab, erlaubt) {
 	return menuIDs.has(tab) && !erlaubt.has(tab);
 }
 
+/**
+ * Titel eines Bildschirms für die (unsichtbare) Seitenüberschrift im Router — aus dem
+ * Menü, damit es nicht zwei Listen von Bildschirmnamen gibt. Unteransichten, die kein
+ * Menüpunkt sind, stehen hier mit eigenem Namen.
+ * @param {string} tab
+ * @returns {string}
+ */
+export function tabTitel(tab) {
+	for (const g of menuGroups) for (const i of g.items) if (i.id === tab) return i.label;
+	return { book_detail: 'Buchakte', stats_detail: 'Statistik im Detail' }[tab] ?? 'Bibliothek';
+}
+
 export const menuGroups = [
 	{
 		name: 'Kiosk',

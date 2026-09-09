@@ -75,7 +75,7 @@
 <div class="w-full text-slate-800 font-sans">
 	<StartseitenFilter bind:searchQuery />
 
-	<main class="relative">
+	<div class="relative">
 		<BuchRasterStartseite
 			filteredBooks={paginatedBooks}
 			onBookClick={(book) => navigateToDetail(book)}
@@ -96,5 +96,5 @@
 				</Button>
 			</div>
 		{/if}
-	</main>
+	</div>
 </div>
