@@ -86,6 +86,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [invarianten.md](invarianten.md) | Invarianten-Katalog: was immer gelten muss und auf welcher Ebene es durchgesetzt ist |
 | [sweeps.md](sweeps.md) | Die Prüfachsen: Bugklassen, ihre Detektoren und Ratschen — neben Daniels Raster die Bestands-Achse |
 | [befunde.md](befunde.md) | Befund-Register: was aufgefallen ist, was davon erledigt wurde |
+| [schadensersatz_konzept.md](schadensersatz_konzept.md) | Landes- und Kreismittel: Schadensersatz nach Erlass (Teil A) und getrennte Töpfe in der Beschaffung (Teil B) — Konzept, nicht gebaut |
 | [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
 | `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 190 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 
