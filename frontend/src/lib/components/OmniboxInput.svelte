@@ -5,6 +5,7 @@
 	let {
 		queryVal = $bindable(),
 		isDropdownOpen,
+		selectedDropdownIndex = -1,
 		totalDropdownItems,
 		isActive,
 		showCamera,
@@ -31,6 +32,9 @@
 	aria-expanded={isDropdownOpen}
 	aria-autocomplete="list"
 	aria-controls="omnibox-dropdown"
+	aria-activedescendant={isDropdownOpen && selectedDropdownIndex >= 0
+		? `dropdown-item-${selectedDropdownIndex}`
+		: undefined}
 	bind:value={queryVal}
 	oninput={onInput}
 	use:keyboardNav={{

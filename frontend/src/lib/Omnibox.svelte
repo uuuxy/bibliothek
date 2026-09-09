@@ -65,8 +65,6 @@
 			}
 		});
 
-		// Offline / Online Erkennung is now handled globally in offlineSync.svelte.js
-
 		return abmelden;
 	});
 
@@ -181,6 +179,7 @@
 				<OmniboxInput
 					bind:queryVal={omniboxStore.queryVal}
 					isDropdownOpen={omniboxStore.isDropdownOpen}
+					selectedDropdownIndex={omniboxStore.selectedDropdownIndex}
 					totalDropdownItems={omniboxStore.totalDropdownItems}
 					isActive={omniboxStore.isActive}
 					showCamera={omniboxStore.showCamera}
