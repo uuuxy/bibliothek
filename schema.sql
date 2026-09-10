@@ -473,6 +473,32 @@ CREATE TRIGGER trg_buecher_exemplare_aktualisiert_am
 BEFORE UPDATE ON buecher_exemplare
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
+-- Migration 112: Eine abholbereite Vormerkung folgt ihrem Exemplar. Verschwindet es aus
+-- dem Umlauf (ausgesondert, nicht mehr ausleihbar, gelöscht), geht sie zurück auf
+-- „wartend" — über jede Tür, nicht nur über die, die daran denkt.
+CREATE OR REPLACE FUNCTION abholfach_folgt_dem_exemplar()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE vormerkungen
+       SET status = 'wartend', bereitgestellt_exemplar_id = NULL, bereitgestellt_bis = NULL
+     WHERE bereitgestellt_exemplar_id = OLD.id AND status = 'abholbereit';
+    IF TG_OP = 'DELETE' THEN
+        RETURN OLD;
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_exemplar_aus_dem_umlauf
+AFTER UPDATE OF ist_ausgesondert, ist_ausleihbar ON buecher_exemplare
+FOR EACH ROW
+WHEN ((NEW.ist_ausgesondert AND NOT OLD.ist_ausgesondert)
+      OR (OLD.ist_ausleihbar AND NOT NEW.ist_ausleihbar))
+EXECUTE FUNCTION abholfach_folgt_dem_exemplar();
+
+CREATE TRIGGER trg_exemplar_geloescht_abholfach
+BEFORE DELETE ON buecher_exemplare
+FOR EACH ROW EXECUTE FUNCTION abholfach_folgt_dem_exemplar();
+
 
 -- Table: class_books (LMF class to book catalog metadata association)
 CREATE TABLE class_books (
@@ -1255,7 +1281,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('108_namensindex_in_normalform.sql'),
 ('109_bestellung_mittel.sql'),
 ('110_schadensersatz_bescheide.sql'),
-('111_bestellstatus_nur_im_zulauf.sql')
+('111_bestellstatus_nur_im_zulauf.sql'),
+('112_abholfach_folgt_dem_exemplar.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

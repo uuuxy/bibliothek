@@ -181,6 +181,11 @@ var triggerBestand = []string{
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",
+	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
+	// ist genau der Zweck — vorher kannte sie nur ReportDamage, sechs andere Aussonder- und
+	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).
+	"trg_exemplar_aus_dem_umlauf @ buecher_exemplare",
+	"trg_exemplar_geloescht_abholfach @ buecher_exemplare",
 	"trg_klassen_aktualisiert_am @ klassen",
 	"trg_klassen_anzeigeform @ klassen",
 	"trg_klm_klasse_vokabular @ klassen_lehrer_mapping",

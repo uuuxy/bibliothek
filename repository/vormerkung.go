@@ -211,17 +211,36 @@ func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, sch
 // (sicherheitsbefund-vormerkungen, Weg 2) — fremde Vormerkungen auf Zuruf zu löschen
 // IST der Zweck dieses Rechts, kein Bypass. Die Datenminimierungs-Lücke war der
 // parameterlose List-Vollabzug, nicht das Löschen; siehe ErrVormerkungScopeFehlt.
+//
+// Lag für die Vormerkung schon ein Exemplar im Abholfach, rückt der Nächste in derselben
+// Transaktion nach (vormerkung_nachruecken.go) — sonst bliebe er für immer „wartend",
+// und das Exemplar gälte als frei (Bestands-Durchgang 10.09.2026; Verfall-Lauf und
+// DSGVO-Tilgung taten es längst, das manuelle Löschen nicht).
 func (r *pgVormerkungRepository) Delete(ctx context.Context, id string) error {
-	tag, err := r.db.Exec(ctx, `DELETE FROM vormerkungen WHERE id = $1`, id)
+	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	// 0 Zeilen = unbekannte ID: „gelöscht" wäre gelogen (Phantom-Erfolg-Sweep
-	// 31.08.2026; Fulfill 100 Zeilen weiter oben prüft längst).
-	if tag.RowsAffected() == 0 {
+	defer db.SafeRollback(ctx, tx)
+	var titelID string
+	var bereitgestellt *string
+	err = tx.QueryRow(ctx, `
+		DELETE FROM vormerkungen WHERE id = $1
+		RETURNING titel_id::text, CASE WHEN status = 'abholbereit' THEN bereitgestellt_exemplar_id::text END`,
+		id).Scan(&titelID, &bereitgestellt)
+	// Keine Zeile = unbekannte ID: „gelöscht" wäre gelogen (Phantom-Erfolg-Sweep 31.08.2026).
+	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrVormerkungNichtGefunden
 	}
-	return nil
+	if err != nil {
+		return err
+	}
+	if bereitgestellt != nil {
+		if _, err := bedieneNaechstenWartenden(ctx, tx, *bereitgestellt, titelID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
 }
 
 // ErrVormerkungNichtGefunden meldet eine unbekannte Vormerkungs-ID beim Löschen.
