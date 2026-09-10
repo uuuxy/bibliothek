@@ -36,6 +36,7 @@
 	import AusleiheKategorie from './components/settings/kategorien/AusleiheKategorie.svelte';
 	import MahnwesenKategorie from './components/settings/kategorien/MahnwesenKategorie.svelte';
 	import BestellwesenKategorie from './components/settings/kategorien/BestellwesenKategorie.svelte';
+	import SchadensersatzKategorie from './components/settings/kategorien/SchadensersatzKategorie.svelte';
 	import LieferantenKategorie from './components/settings/kategorien/LieferantenKategorie.svelte';
 	import DatenschutzKategorie from './components/settings/kategorien/DatenschutzKategorie.svelte';
 	import ErreichbarkeitKategorie from './components/settings/kategorien/ErreichbarkeitKategorie.svelte';
@@ -155,6 +156,8 @@
 						<BestellwesenKategorie {daten} onSaved={loadSettings} />
 					{:else if aktiv === 'lieferanten' && sichtbar.has('lieferanten')}
 						<LieferantenKategorie />
+					{:else if aktiv === 'schadensersatz' && sichtbar.has('schadensersatz')}
+						<SchadensersatzKategorie {daten} onSaved={loadSettings} />
 					{:else if aktiv === 'datenschutz'}
 						<DatenschutzKategorie {daten} onSaved={loadSettings} />
 					{:else if aktiv === 'erreichbarkeit'}

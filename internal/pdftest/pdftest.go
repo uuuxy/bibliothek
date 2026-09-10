@@ -54,11 +54,52 @@ func Texte(t *testing.T, roh []byte) []string {
 	return texte
 }
 
+// TexteJeSeite liefert die Textstücke GETRENNT nach Inhaltsstrom — bei gofpdf ist das
+// je Seite einer.
+//
+// Gebraucht für eine Fehlerklasse, die der zusammengefasste Text nicht sieht: einen
+// Seitenumbruch MITTEN in einem Block. Am 10.09.2026 riss der Bescheid seine
+// Tabellenkopfzeile auseinander, „Name des/der" stand unten auf Seite 1 und
+// „Schülers/Schülerin" oben auf Seite 2. Im Gesamttext war beides vorhanden, das Gate
+// blieb grün, und nur das Ansehen des Papiers zeigte es.
+func TexteJeSeite(t *testing.T, roh []byte) [][]string {
+	t.Helper()
+	stroeme := stroemeAus(t, roh)
+	seiten := make([][]string, 0, len(stroeme))
+	for _, strom := range stroeme {
+		texte := texteAus(strom)
+		// Ströme ohne Gedrucktes (Schriften, Bilder) sind keine Seiten.
+		if len(texte) > 0 {
+			seiten = append(seiten, texte)
+		}
+	}
+	if len(seiten) == 0 {
+		t.Fatalf("keine Seite mit Text im PDF (%d Bytes) — Textextraktion kaputt", len(roh))
+	}
+	return seiten
+}
+
 // lies entpackt alle Inhaltsströme des Dokuments und liefert sie roh und als Textstücke.
 func lies(t *testing.T, roh []byte) ([]byte, []string) {
 	t.Helper()
 
 	var inhalt bytes.Buffer
+	for _, strom := range stroemeAus(t, roh) {
+		inhalt.Write(strom)
+	}
+	if inhalt.Len() == 0 {
+		t.Fatalf("kein lesbarer Inhaltsstrom im PDF (%d Bytes) — Textextraktion kaputt, "+
+			"der Test würde ab hier alles durchwinken", len(roh))
+	}
+	return inhalt.Bytes(), texteAus(inhalt.Bytes())
+}
+
+// stroemeAus entpackt die Inhaltsströme einzeln. Die Kommentare zur Bauform stehen bei
+// den beiden Zweigen unten; sie sind der Grund, warum dieser Leser nicht drei Zeilen lang ist.
+func stroemeAus(t *testing.T, roh []byte) [][]byte {
+	t.Helper()
+
+	var stroeme [][]byte
 	rest := roh
 	for {
 		i := bytes.Index(rest, []byte("stream"))
@@ -79,14 +120,14 @@ func lies(t *testing.T, roh []byte) ([]byte, []string) {
 			if leseErr != nil {
 				t.Fatalf("Inhaltsstrom nicht vollständig lesbar: %v", leseErr)
 			}
-			inhalt.Write(entpackt)
+			stroeme = append(stroeme, entpackt)
 			if closeErr := zr.Close(); closeErr != nil {
 				t.Fatalf("Inhaltsstrom nicht sauber abgeschlossen: %v", closeErr)
 			}
 		} else {
 			// Unkomprimiert (oder Schrift/Bild): roh mitnehmen. Der Tj-Ausdruck unten
 			// entscheidet, ob etwas Gedrucktes darin steht — Binärmüll trifft er nicht.
-			inhalt.Write(body[:j])
+			stroeme = append(stroeme, body[:j])
 		}
 		// Hinter das "endstream", nicht davor. Mit rest = body[j:] fand der nächste
 		// Durchlauf das "stream" IN "endstream" wieder, las ab dort Unsinn, den zlib
@@ -95,12 +136,7 @@ func lies(t *testing.T, roh []byte) ([]byte, []string) {
 		// hundert sahen für diesen Test gleich aus.
 		rest = body[j+len("endstream"):]
 	}
-	if inhalt.Len() == 0 {
-		t.Fatalf("kein lesbarer Inhaltsstrom im PDF (%d Bytes) — Textextraktion kaputt, "+
-			"der Test würde ab hier alles durchwinken", len(roh))
-	}
-
-	return inhalt.Bytes(), texteAus(inhalt.Bytes())
+	return stroeme
 }
 
 // Inhalt liefert den entpackten Inhaltsstrom roh — für Prüfungen, die nicht am Text

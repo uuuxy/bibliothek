@@ -64,6 +64,18 @@ type EinstellungenPatch struct {
 	ThekeLeerenMinuten         *int `json:"theke_leeren_minuten,omitempty"`
 	SperreMinuten              *int `json:"sperre_minuten,omitempty"`
 	AbgaengerKarenzTage        *int `json:"abgaenger_karenz_tage,omitempty"`
+
+	// Kategorie „Schadensersatz" (Migration 110).
+	BescheidBereichNr         *string `json:"bescheid_bereich_nr,omitempty"`
+	BescheidSchulnummer       *string `json:"bescheid_schulnummer,omitempty"`
+	BescheidAufsicht          *string `json:"bescheid_aufsicht,omitempty"`
+	BescheidSchulleitung      *string `json:"bescheid_schulleitung,omitempty"`
+	BescheidGeschaeftszeichen *string `json:"bescheid_geschaeftszeichen,omitempty"`
+	BescheidBearbeiter        *string `json:"bescheid_bearbeiter,omitempty"`
+	BescheidDurchwahl         *string `json:"bescheid_durchwahl,omitempty"`
+	BescheidZahlstelle        *string `json:"bescheid_zahlstelle,omitempty"`
+	BescheidBankverbindung    *string `json:"bescheid_bankverbindung,omitempty"`
+	BescheidFristTage         *int    `json:"bescheid_frist_tage,omitempty"`
 }
 
 // paarSammler sammelt die Upsert-Paare eines Patches. Jede Hinzufügung geht durch
@@ -149,6 +161,19 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.text("schule_plz", p.SchulePLZ)
 	s.text("schule_ort", p.SchuleOrt)
 	s.text("etikett_eigentumsvermerk", p.EtikettEigentumsvermerk)
+
+	s.text("bescheid_bereich_nr", p.BescheidBereichNr)
+	s.text("bescheid_schulnummer", p.BescheidSchulnummer)
+	s.text("bescheid_aufsicht", p.BescheidAufsicht)
+	s.text("bescheid_schulleitung", p.BescheidSchulleitung)
+	s.text("bescheid_geschaeftszeichen", p.BescheidGeschaeftszeichen)
+	s.text("bescheid_bearbeiter", p.BescheidBearbeiter)
+	s.text("bescheid_durchwahl", p.BescheidDurchwahl)
+	s.text("bescheid_zahlstelle", p.BescheidZahlstelle)
+	s.text("bescheid_bankverbindung", p.BescheidBankverbindung)
+	// Untergrenze 1 Tag: Eine Frist von 0 Tagen wäre ein Bescheid, der am Tag des
+	// Drucks bereits abgelaufen ist.
+	s.zahl("bescheid_frist_tage", p.BescheidFristTage, 1, BescheidFristTageVorgabe)
 
 	s.text("oeffentliche_adresse", p.OeffentlicheAdresse)
 	s.text("alarm_empfaenger", p.AlarmEmpfaenger)

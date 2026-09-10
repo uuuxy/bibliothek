@@ -2606,6 +2606,12 @@ const docTemplate = `{
                         "$ref": "#/definitions/api.DsgvoAuditEintrag"
                     }
                 },
+                "schadensersatz_bescheide": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DsgvoBescheid"
+                    }
+                },
                 "schadensfaelle": {
                     "type": "array",
                     "items": {
@@ -2651,6 +2657,26 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "rueckgabe_frist": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.DsgvoBescheid": {
+            "type": "object",
+            "properties": {
+                "brief_datum": {
+                    "type": "string"
+                },
+                "frist_bis": {
+                    "type": "string"
+                },
+                "gesamtbetrag": {
+                    "type": "string"
+                },
+                "referenznummer": {
+                    "type": "string"
+                },
+                "status": {
                     "type": "string"
                 }
             }
@@ -3570,6 +3596,37 @@ const docTemplate = `{
                 "audit_aufbewahrung_monate": {
                     "type": "integer"
                 },
+                "bescheid_aufsicht": {
+                    "type": "string"
+                },
+                "bescheid_bankverbindung": {
+                    "type": "string"
+                },
+                "bescheid_bearbeiter": {
+                    "type": "string"
+                },
+                "bescheid_bereich_nr": {
+                    "description": "Kategorie „Schadensersatz\" (Migration 110).",
+                    "type": "string"
+                },
+                "bescheid_durchwahl": {
+                    "type": "string"
+                },
+                "bescheid_frist_tage": {
+                    "type": "integer"
+                },
+                "bescheid_geschaeftszeichen": {
+                    "type": "string"
+                },
+                "bescheid_schulleitung": {
+                    "type": "string"
+                },
+                "bescheid_schulnummer": {
+                    "type": "string"
+                },
+                "bescheid_zahlstelle": {
+                    "type": "string"
+                },
                 "bestellbedarf_schwelle": {
                     "type": "integer"
                 },
@@ -3840,6 +3897,37 @@ const docTemplate = `{
                 },
                 "audit_aufbewahrung_monate": {
                     "type": "integer"
+                },
+                "bescheid_aufsicht": {
+                    "type": "string"
+                },
+                "bescheid_bankverbindung": {
+                    "type": "string"
+                },
+                "bescheid_bearbeiter": {
+                    "type": "string"
+                },
+                "bescheid_bereich_nr": {
+                    "description": "Angaben für den Schadensersatz-Bescheid (Migration 110). Vorgaben, Prüfung der\nPflichtangaben und der Aufbau der Referenznummer stehen in\nsystem_settings_bescheid.go — dort ist auch begründet, warum das neun einzelne\nSchlüssel sind und kein Block.",
+                    "type": "string"
+                },
+                "bescheid_durchwahl": {
+                    "type": "string"
+                },
+                "bescheid_frist_tage": {
+                    "type": "integer"
+                },
+                "bescheid_geschaeftszeichen": {
+                    "type": "string"
+                },
+                "bescheid_schulleitung": {
+                    "type": "string"
+                },
+                "bescheid_schulnummer": {
+                    "type": "string"
+                },
+                "bescheid_zahlstelle": {
+                    "type": "string"
                 },
                 "bestellbedarf_schwelle": {
                     "type": "integer"

@@ -93,6 +93,15 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 				VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text, 'lusd_id', $2::text)),
 				       ('SCHUELER_ZUSAMMENGEFUEHRT', jsonb_build_object('schueler_id', $1::text, 'barcode', $3::text, 'aufgeloest_barcode', 'RUNDREISE-QUELLE'))`,
 				sid, lusd, barcode)
+		case "schadensersatz_bescheide":
+			// Ein Bescheid mit PII im Snapshot: Er BLEIBT nach dem Purge als Beleg (die
+			// Referenznummer ordnet Zahlungen zu), aber ohne Personenbezug.
+			_, err = pool.Exec(ctx, `
+				INSERT INTO schadensersatz_bescheide
+					(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis,
+					 gesamtbetrag, empfaenger_snapshot)
+				VALUES ($1, 'land', 2026, 1, '5830 2026 1234 0001', CURRENT_DATE + 28, 24.90,
+					jsonb_build_object('name', $2::text, 'strasse', 'Rundreiseweg'))`, sid, entl)
 		default:
 			t.Fatalf("keine Rundreise-Vorbereitung für Quelle %s — Test mit der Liste nachziehen", q.Tabelle)
 		}
@@ -138,6 +147,8 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 			leer = !lesehistorie
 		case "audit_logs":
 			leer = len(daten.verwaltung) == 0
+		case "schadensersatz_bescheide":
+			leer = len(daten.bescheide) == 0
 		default:
 			t.Fatalf("keine Auskunfts-Prüfung für Quelle %s — Test mit der Liste nachziehen", q.Tabelle)
 		}
@@ -176,6 +187,9 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		"ausleihen":       `SELECT count(*) FROM ausleihen WHERE schueler_id = $1`,
 		"audit_log (LH)":  `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`,
 		"audit_logs (Vw)": `SELECT count(*) FROM audit_logs WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode') AND details->>'schueler_id' = $1`,
+		// Der Bescheid bleibt als Beleg, aber ohne Person: schueler_id ist NULL
+		// (ON DELETE SET NULL) und der Snapshot geleert.
+		"schadensersatz_bescheide": `SELECT count(*) FROM schadensersatz_bescheide WHERE schueler_id = $1`,
 	} {
 		var n int
 		if err := pool.QueryRow(ctx, zaehler, sid).Scan(&n); err != nil {

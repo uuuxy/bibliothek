@@ -125,6 +125,17 @@ type DsgvoVerwaltungsEintrag struct {
 	Details   json.RawMessage `json:"details" swaggertype:"object"`
 }
 
+// DsgvoBescheid ist ein Schadensersatz-Bescheid, der an diese Person gerichtet war
+// (Migration 110). Die Positionen selbst stehen als Schadensfälle im Abschnitt darüber;
+// hier steht der BRIEF: Nummer, Datum, Frist, Summe, Zustand.
+type DsgvoBescheid struct {
+	Referenznummer string    `json:"referenznummer"`
+	BriefDatum     time.Time `json:"brief_datum"`
+	FristBis       time.Time `json:"frist_bis"`
+	Gesamtbetrag   string    `json:"gesamtbetrag"`
+	Status         string    `json:"status"`
+}
+
 // DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO: Zwecke
 // (lit. a), Empfänger (lit. c), Speicherdauer (lit. d), Herkunft (lit. g) und die
 // Betroffenenrechte samt Beschwerderecht (lit. e und f). Die Datenkategorien (lit. b)
@@ -159,6 +170,7 @@ type DsgvoAuskunftResponse struct {
 	Ausleihen            []DsgvoAusleihe           `json:"ausleihhistorie"`
 	Schadensfaelle       []DsgvoSchadensfall       `json:"schadensfaelle"`
 	Vormerkungen         []DsgvoVormerkung         `json:"vormerkungen"`
+	Bescheide            []DsgvoBescheid           `json:"schadensersatz_bescheide"`
 	AuditEintraege       []DsgvoAuditEintrag       `json:"protokolleintraege"`
 	Verwaltung           []DsgvoVerwaltungsEintrag `json:"verwaltungsprotokolle"`
 	Verarbeitungsangaben DsgvoVerarbeitungsangaben `json:"verarbeitungsangaben"`
@@ -332,6 +344,34 @@ func (s *Server) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]Dsgvo
 	return out, rows.Err()
 }
 
+// dsgvoQueryBescheide liest die Schadensersatz-Bescheide dieser Person.
+//
+// Nach der Anonymisierung findet diese Abfrage nichts mehr: schueler_id ist dann NULL
+// (ON DELETE SET NULL) und der Empfänger-Snapshot geleert — der Brief bleibt als Beleg
+// ohne Person bestehen, gehört aber zu niemandem mehr.
+func (s *Server) dsgvoQueryBescheide(ctx context.Context, id string) ([]DsgvoBescheid, error) {
+	const q = `
+		SELECT referenznummer, brief_datum, frist_bis, gesamtbetrag::text, status
+		FROM schadensersatz_bescheide
+		WHERE schueler_id = $1
+		ORDER BY brief_datum DESC`
+	rows, err := s.DB.Pool.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []DsgvoBescheid{}
+	for rows.Next() {
+		var b DsgvoBescheid
+		if err := rows.Scan(&b.Referenznummer, &b.BriefDatum, &b.FristBis, &b.Gesamtbetrag, &b.Status); err != nil {
+			return nil, err
+		}
+		out = append(out, b)
+	}
+	return out, rows.Err()
+}
+
 func (s *Server) dsgvoQueryAuditEintraege(ctx context.Context, id string) ([]DsgvoAuditEintrag, error) {
 	// Auch die Ausleih-Protokolle (CHECKOUT/RETURN) gehören zur Auskunft: Dort steht der
 	// Schüler in details.schueler_id, datensatz_id ist das Exemplar. Ohne diesen Zweig
@@ -392,6 +432,7 @@ type dsgvoDaten struct {
 	ausleihen      []DsgvoAusleihe
 	schaeden       []DsgvoSchadensfall
 	vormerkungen   []DsgvoVormerkung
+	bescheide      []DsgvoBescheid
 	auditEintraege []DsgvoAuditEintrag
 	verwaltung     []DsgvoVerwaltungsEintrag
 	verarbeitung   DsgvoVerarbeitungsangaben
@@ -424,6 +465,10 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Vormerkungen", err)
 	}
+	bescheide, err := s.dsgvoQueryBescheide(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Schadensersatz-Bescheide", err)
+	}
 	auditEintraege, err := s.dsgvoQueryAuditEintraege(ctx, id)
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Protokolleinträge", err)
@@ -441,6 +486,7 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 		ausleihen:      ausleihen,
 		schaeden:       schaeden,
 		vormerkungen:   vormerkungen,
+		bescheide:      bescheide,
 		auditEintraege: auditEintraege,
 		verwaltung:     verwaltung,
 	}, nil
@@ -502,6 +548,7 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 			Ausleihen:            daten.ausleihen,
 			Schadensfaelle:       daten.schaeden,
 			Vormerkungen:         daten.vormerkungen,
+			Bescheide:            daten.bescheide,
 			AuditEintraege:       daten.auditEintraege,
 			Verwaltung:           daten.verwaltung,
 			Verarbeitungsangaben: daten.verarbeitung,

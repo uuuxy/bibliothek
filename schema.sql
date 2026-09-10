@@ -579,6 +579,13 @@ CREATE TABLE schadensfaelle (
     
     beschreibung TEXT NOT NULL,
     betrag NUMERIC(10, 2) NOT NULL DEFAULT 0.00 CONSTRAINT check_positive_amount CHECK (betrag >= 0.00),
+    -- Fallgruppe des Bescheids (Migration 110): genau die zwei Kästchen des Formulars.
+    art TEXT NOT NULL DEFAULT 'beschaedigt'
+        CONSTRAINT chk_schaden_art CHECK (art IN ('nicht_zurueckgegeben', 'beschaedigt')),
+    -- Zu welchem Brief diese Forderung als Position gehört (Migration 110); NULL = noch
+    -- auf keinem Bescheid. Der Fremdschlüssel steht weiter unten, weil
+    -- schadensersatz_bescheide erst nach dieser Tabelle entsteht.
+    bescheid_id UUID,
     ist_bezahlt BOOLEAN NOT NULL DEFAULT false,
     elternbrief_generiert BOOLEAN NOT NULL DEFAULT false,
     elternbrief_generiert_am TIMESTAMP WITH TIME ZONE,
@@ -679,6 +686,73 @@ CREATE TABLE lieferanten (
 -- zur selben Bestellung, wer zuerst bestätigt, gewinnt — und bei der Vorauswahl entschiede
 -- die Sortierung, welcher im Formular steht. Der Teil-Index lässt nur eine Zeile mit true zu.
 CREATE UNIQUE INDEX idx_lieferanten_ein_hauptlieferant ON lieferanten (ist_hauptlieferant) WHERE ist_hauptlieferant;
+
+
+-- Table: schadensersatz_bescheide (One dunning notice = one letter, Migration 110)
+--
+-- Die Positionen des Briefs sind die Forderungen selbst (schadensfaelle.bescheid_id) —
+-- keine zweite Positionstabelle, damit Sperre, Löschblockade, Auskunft und
+-- Bezahlt/Storno unverändert an der Forderung hängen.
+CREATE TABLE schadensersatz_bescheide (
+    id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    -- SET NULL und nullbar, wie bei der Ausleihhistorie: Der Bescheid überlebt die
+    -- DSGVO-Löschung als Beleg OHNE PERSON — Referenznummer und Betrag bleiben, der
+    -- Klarname im Snapshot wird bei der Tilgung geleert. RESTRICT hätte die berechtigte
+    -- Löschung blockiert; die Sperre bei offenen Vorgängen liegt an der Forderung.
+    schueler_id         UUID REFERENCES schueler(id) ON DELETE SET NULL,
+    -- Dasselbe Vokabular wie bestellungen_verlauf.mittel (Migration 109).
+    mittel              TEXT NOT NULL
+        CONSTRAINT chk_bescheid_mittel CHECK (mittel IN ('land', 'schultraeger')),
+    kassenjahr          INTEGER NOT NULL,
+    laufende_nr         INTEGER NOT NULL
+        CONSTRAINT chk_bescheid_laufende_nr CHECK (laufende_nr >= 1),
+    referenznummer      TEXT NOT NULL UNIQUE,
+    brief_datum         DATE NOT NULL DEFAULT CURRENT_DATE,
+    frist_bis           DATE NOT NULL,
+    gesamtbetrag        NUMERIC(10,2) NOT NULL DEFAULT 0.00
+        CONSTRAINT chk_bescheid_betrag CHECK (gesamtbetrag >= 0.00),
+    -- Anrede, Name und Anschrift zum Briefdatum: Der Nachdruck ergibt dasselbe Blatt wie
+    -- das Original, auch nach einem Umzug.
+    empfaenger_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+    status              TEXT NOT NULL DEFAULT 'offen'
+        CONSTRAINT chk_bescheid_status CHECK (status IN ('offen', 'uebergeben', 'erledigt')),
+    uebergeben_am       TIMESTAMPTZ,
+    erledigt_am         TIMESTAMPTZ,
+    rueckgabe_nach_uebergabe BOOLEAN NOT NULL DEFAULT false,
+    erstellt_von        UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    erstellt_am         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    letzter_druck_am    TIMESTAMPTZ,
+    CONSTRAINT uniq_bescheid_nummer UNIQUE (mittel, kassenjahr, laufende_nr)
+);
+
+CREATE INDEX idx_bescheide_offen_frist
+    ON schadensersatz_bescheide (frist_bis)
+    WHERE status = 'offen';
+
+CREATE INDEX idx_bescheide_schueler
+    ON schadensersatz_bescheide (schueler_id, brief_datum DESC);
+
+ALTER TABLE schadensfaelle
+    ADD CONSTRAINT schadensfaelle_bescheid_id_fkey
+    FOREIGN KEY (bescheid_id) REFERENCES schadensersatz_bescheide(id) ON DELETE SET NULL;
+
+CREATE INDEX idx_schadensfaelle_bescheid
+    ON schadensfaelle (bescheid_id)
+    WHERE bescheid_id IS NOT NULL;
+
+-- Table: schadensersatz_nummern (the ONE reference-number generator, Migration 110)
+--
+-- Eine Zeile je Topf und Kassenjahr; gezogen wird mit UPDATE … RETURNING, das die Zeile
+-- für die Dauer der Transaktion sperrt. Kein MAX+1 über die Bescheide — zwei gleichzeitige
+-- Briefe bekämen dieselbe Nummer, und eine Nummer darf nie zweimal vergeben werden.
+CREATE TABLE schadensersatz_nummern (
+    mittel     TEXT NOT NULL
+        CONSTRAINT chk_nummern_mittel CHECK (mittel IN ('land', 'schultraeger')),
+    kassenjahr INTEGER NOT NULL,
+    letzte_nr  INTEGER NOT NULL DEFAULT 0
+        CONSTRAINT chk_nummern_letzte_nr CHECK (letzte_nr >= 0),
+    PRIMARY KEY (mittel, kassenjahr)
+);
 
 
 -- Table: bestellungen_verlauf (Order history — one record per submitted order)
@@ -1175,7 +1249,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('106_boot_schema_in_migration.sql'),
 ('107_seed_lieferanten_abgeschafft.sql'),
 ('108_namensindex_in_normalform.sql'),
-('109_bestellung_mittel.sql')
+('109_bestellung_mittel.sql'),
+('110_schadensersatz_bescheide.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

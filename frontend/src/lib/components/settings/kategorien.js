@@ -20,6 +20,7 @@ import {
 	GraduationCap,
 	Mail,
 	Route,
+	Receipt,
 	School,
 	ShieldCheck,
 	ShoppingCart,
@@ -63,6 +64,16 @@ export const KATEGORIEN = [
 		kurz: 'Händler, Kundennummern, Hauptlieferant',
 		icon: Truck,
 		rechte: ['create_orders']
+	},
+	{
+		// Angaben für den Schadensersatz-Bescheid (Migration 110). Kein eigenes Recht:
+		// Das sind Schulstammdaten wie Name und Anschrift (Kategorie „Schule"), also
+		// manage_settings. Wer einen Bescheid ERSTELLEN darf, ist eine andere Frage — die
+		// entscheidet die Route, nicht diese Kategorie.
+		id: 'schadensersatz',
+		titel: 'Schadensersatz',
+		kurz: 'Referenznummer, Frist, Zahlungsweg des Bescheids',
+		icon: Receipt
 	},
 	{
 		id: 'datenschutz',

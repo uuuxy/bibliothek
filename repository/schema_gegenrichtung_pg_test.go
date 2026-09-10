@@ -112,6 +112,27 @@ var fkAktionenBestand = []string{
 	// Befragt am 06.09.2026: Genau dieser SET NULL machte die Forderung in der Rechnung
 	// unsichtbar, solange dort INNER JOIN stand (ce875654).
 	"SET NULL  schadensfaelle.ausleihe_id -> ausleihen",
+	// Befragt am 10.09.2026 (Migration 110): Der Bescheid überlebt die DSGVO-Löschung des
+	// Schülers als Beleg ohne Person — Referenznummer und Betrag bleiben (Zahlungen werden
+	// über die Nummer zugeordnet), der Klarname im Snapshot wird von der Tilgung geleert
+	// (spurTilgungen, „schadensersatz_bescheide"). Die Liste der Bescheide in der
+	// Art.-15-Auskunft filtert auf schueler_id, findet die anonyme Hülle also nicht mehr.
+	// Ein RESTRICT hätte hier die berechtigte Löschung blockiert.
+	"SET NULL  schadensersatz_bescheide.schueler_id -> schueler",
+	// Befragt am 10.09.2026 (Migration 110): Wer den Bescheid erstellt hat, ist eine
+	// Angabe ÜBER den Vorgang, nicht der Vorgang selbst. Verlässt die Bearbeiterin die
+	// Schule und wird ihr Konto gelöscht, bleibt der Brief samt Referenznummer gültig —
+	// die Zuordnung der Zahlung hängt an der Nummer, nicht an der Person. Wer ihn
+	// erstellt hat, steht zusätzlich im Admin-Audit-Log, das die Löschung überlebt.
+	// Die Lesepfade nehmen die Spalte als *string (kein NULL-Scan).
+	"SET NULL  schadensersatz_bescheide.erstellt_von -> benutzer",
+	// Befragt am 10.09.2026 (Migration 110): Die Forderung überlebt ihren Brief. Im
+	// Betrieb wird kein Bescheid gelöscht — SET NULL ist die Zusicherung für den Fall,
+	// dass es doch einmal geschieht: Die Forderung trägt Sperre und Löschblockade, sie
+	// darf NICHT mit dem Brief verschwinden (CASCADE hätte genau das getan). Sie steht
+	// danach wieder als „auf keinem Bescheid" in der Liste und kann neu angeschrieben
+	// werden. Der Lesepfad nimmt bescheid_id als *string.
+	"SET NULL  schadensfaelle.bescheid_id -> schadensersatz_bescheide",
 }
 
 // Bedingungen, die die Datenbank durchsetzt. Der Code muss sie kennen — sonst schreibt
@@ -131,6 +152,15 @@ var checkBedingungenBestand = []string{
 	"chk_lmf_plaene_letzte_stunde", "chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
 	"chk_lmf_termine_art", "chk_lmf_termine_stunde", "chk_meldebestand_nonneg",
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
+	// Migration 110, befragt am 10.09.2026: Vokabular und Wertebereiche des Bescheids.
+	// chk_bescheid_mittel und chk_nummern_mittel sind dieselbe Menge wie MittelGueltig
+	// (repository/mittel.go); chk_schaden_art sind genau die zwei Kästchen des Formulars.
+	// chk_bescheid_laufende_nr >= 1 hält den Generator davon ab, eine 0 auszugeben — die
+	// Referenznummer „… 0000" gibt es nicht. Alle vier prüft der Code an der Tür (400),
+	// die Datenbank ist die zweite.
+	"chk_bescheid_betrag", "chk_bescheid_laufende_nr", "chk_bescheid_mittel",
+	"chk_bescheid_status", "chk_nummern_letzte_nr", "chk_nummern_mittel",
+	"chk_schaden_art",
 	"chk_verlauf_anzahl_nonneg", "chk_verlauf_gesamtbetrag_nonneg", "chk_vormerkung_status",
 	"mail_settings_config_single_row_chk",
 }

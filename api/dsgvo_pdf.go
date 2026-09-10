@@ -83,6 +83,7 @@ func generateDsgvoAuskunftPDF(daten *dsgvoDaten, schule pdf.SchuleInfo) ([]byte,
 	dsgvoAusleihAbschnitt(p, tr, daten.ausleihen)
 	dsgvoSchadensAbschnitt(p, tr, daten.schaeden)
 	dsgvoVormerkAbschnitt(p, tr, daten.vormerkungen)
+	dsgvoBescheidAbschnitt(p, tr, daten.bescheide)
 	dsgvoAuditAbschnitt(p, tr, daten.auditEintraege)
 	dsgvoVerwaltungAbschnitt(p, tr, daten.verwaltung)
 	dsgvoVerarbeitungAbschnitt(p, tr, daten.verarbeitung)
@@ -207,8 +208,25 @@ func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen 
 	}
 }
 
+// dsgvoBescheidAbschnitt nennt die Schadensersatz-Bescheide, die an diese Person
+// gerichtet waren (Migration 110). Die Positionen stehen als Schadensfälle in Abschnitt 4;
+// hier steht der Brief selbst — Nummer, Frist, Summe, Zustand.
+func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []DsgvoBescheid) {
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("6. Schadensersatz-Bescheide (%d)", len(bescheide)))
+	if len(bescheide) == 0 {
+		dsgvoLeer(p, tr)
+		return
+	}
+	for _, b := range bescheide {
+		dsgvoEintragTitel(p, tr, "Bescheid "+b.Referenznummer)
+		dsgvoEintragZeile(p, tr, fmt.Sprintf("vom %s · Frist: %s · Betrag: %s EUR · Status: %s",
+			b.BriefDatum.Format(dsgvoDatumFormat), b.FristBis.Format(dsgvoDatumFormat),
+			b.Gesamtbetrag, b.Status))
+	}
+}
+
 func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAuditEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("6. Protokolleinträge zu diesem Datensatz (%d)", len(audit)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Protokolleinträge zu diesem Datensatz (%d)", len(audit)))
 	if len(audit) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -228,7 +246,7 @@ func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAu
 // 31.08.2026 Teil der Auskunft; vorher war audit_logs die eine Quelle mit Schülerbezug,
 // die die Auskunft nicht las.
 func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []DsgvoVerwaltungsEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
 	if len(eintraege) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -241,7 +259,7 @@ func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege 
 }
 
 func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va DsgvoVerarbeitungsangaben) {
-	dsgvoAbschnitt(p, tr, "8. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
+	dsgvoAbschnitt(p, tr, "9. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
 	dsgvoAbsatz(p, tr, "Verarbeitungszwecke", strings.Join(va.Zwecke, "; "))
 	dsgvoAbsatz(p, tr, "Rechtsgrundlage", va.Rechtsgrundlage)
 	dsgvoAbsatz(p, tr, "Empfänger", va.Empfaenger)

@@ -8,12 +8,9 @@
 	 * @component Feld
 	 * DAS Eingabefeld der Anwendung — Material 3, Variante „outlined".
 	 *
-	 * Bis zum 25.08.2026 gab es drei Wörter für dieselbe Sache: `SettingField`
-	 * (Einstellungen, M3), `InputField` (ein Nutzer, Slate-Optik) und 81 handgebaute
-	 * `<input>` in 47 Dateien mit sieben Radien, vier Fokusfarben und drei Flächen —
-	 * kopiert und dann auseinandergelaufen, dieselbe Geschichte wie bei den zehn
-	 * Suchfeld-Kopien (Suchfeld.svelte). Buttons, Auswahlfelder und Suchfelder waren
-	 * längst normiert; die Textfelder trugen nur die 36-px-Höhe aus styles/basis.css.
+	 * Bis zum 25.08.2026 gab es drei Wörter für dieselbe Sache: `SettingField`, `InputField`
+	 * und 81 handgebaute `<input>` in 47 Dateien mit sieben Radien, vier Fokusfarben und
+	 * drei Flächen — dieselbe Geschichte wie bei den zehn Suchfeld-Kopien.
 	 *
 	 * Die Form ist entschieden, nicht gewählt:
 	 *   - Höhe 36 px wie jedes Bedienelement (basis.css, Gate e2e/control-hoehen.spec.js).
@@ -62,15 +59,19 @@
 	 * @prop {HTMLInputElement} [element] - bind:this-Ersatz (bindable).
 	 * @prop {Snippet} [vorlaufend] - Inhalt links IM Feld (Symbol, Präfix-Text wie „Gültig bis 31.07.").
 	 * @prop {Snippet} [nachlaufend] - Inhalt rechts IM Feld (Einheit „Stück", Knöpfe, Spinner).
+	 * @prop {boolean} [mehrzeilig=false] - Mehrzeiliges Textfeld (M3: text field, multiline).
+	 * @prop {number} [zeilen=3] - Sichtbare Zeilen im mehrzeiligen Feld.
 	 *
-	 * vor-/nachlaufend liegen als Überlagerung über dem Feld (wie in Suchfeld.svelte), das
-	 * Feld selbst bleibt das gerahmte 36-px-Element — so misst e2e/control-hoehen.spec.js
-	 * weiterhin das Feld und nicht eine Hülle. Das Feld bekommt dafür pl-10 bzw. pr-10;
-	 * wer breiteren Inhalt legt, gibt die Innenabstände selbst über `feld` mit
-	 * (z. B. feld="pl-36" für einen Präfix-Text) — dann setzt das Bauteil keine eigenen.
+	 * Mehrzeilig ist dieselbe Bauform, nur höher — ohne die 36-px-Höhe, die für eine Zeile
+	 * gilt. Ein zweites Bauteil dafür wäre der Anfang derselben Geschichte wie bei den 81
+	 * handgebauten Feldern; das Höhen-Gate misst input und select, textarea nicht.
+	 *
+	 * vor-/nachlaufend liegen als Überlagerung über dem Feld (wie in Suchfeld.svelte); das
+	 * Feld bleibt das gerahmte 36-px-Element und bekommt pl-10 bzw. pr-10. Wer breiteren
+	 * Inhalt legt, gibt die Innenabstände über `feld` mit (z. B. feld="pl-36").
 	 */
 
-	/** @type {{ value?: any, label?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
+	/** @type {{ value?: any, label?: string, vorlaufend?: import('svelte').Snippet, nachlaufend?: import('svelte').Snippet, type?: 'text'|'number'|'email'|'date'|'month'|'password'|'search'|'tel'|'url', hint?: string, ungueltig?: boolean, class?: string, feld?: string, element?: HTMLInputElement, id?: string, mehrzeilig?: boolean, zeilen?: number } & Omit<import('svelte/elements').HTMLInputAttributes, 'value'|'type'|'class'|'id'>} */
 	let {
 		value = $bindable(),
 		label = undefined,
@@ -83,6 +84,8 @@
 		id = undefined,
 		vorlaufend = undefined,
 		nachlaufend = undefined,
+		mehrzeilig = false,
+		zeilen = 3,
 		...rest
 	} = $props();
 
@@ -96,7 +99,8 @@
 		// Breite NUR setzen, wenn `feld` keine mitbringt: w-full und w-64 sind gleich
 		// spezifisch, dann entschiede die Stylesheet-Reihenfolge statt des Aufrufs
 		// (Tailwind-Kaskaden-Falle, am Ausweis-Feld gesehen: w-64 verlor gegen w-full).
-		(/\bw-/.test(feld) ? 'h-9 ' : 'h-9 w-full ') +
+		// Mehrzeilig wächst mit den Zeilen, die 36-px-Grundlinie gilt für eine Zeile.
+		(mehrzeilig ? 'w-full py-2 leading-relaxed ' : /\bw-/.test(feld) ? 'h-9 ' : 'h-9 w-full ') +
 			'rounded-xl border bg-surface-container-lowest px-3 text-sm text-on-surface ' +
 			'transition-colors placeholder:text-outline focus:outline-none focus:ring-1 ' +
 			'disabled:cursor-not-allowed disabled:opacity-40 read-only:text-on-surface-variant ' +
@@ -108,10 +112,26 @@
 			feld
 	);
 	const beschreibung = $derived(hint ? hinweisId : undefined);
+	// $derived, nicht const: `rest` ist reaktiv, eine Konstante fror den Anfangswert ein.
+	const restFuerTextarea = $derived(
+		/** @type {import('svelte/elements').HTMLTextareaAttributes} */ (/** @type {any} */ (rest))
+	);
 </script>
 
 {#snippet roh()}
-	{#if type === 'number'}
+	{#if mehrzeilig}
+		<!-- `restFuerTextarea` ist die Naht zwischen zwei Elementtypen: `rest` ist als
+		     HTMLInputAttributes typisiert (das Bauteil ist zuerst ein <input>). Die
+		     Attribute, die hier durchgereicht werden, gibt es an beiden Elementen. -->
+		<textarea
+			id={feldId}
+			rows={zeilen}
+			aria-describedby={beschreibung}
+			aria-invalid={ungueltig || undefined}
+			bind:value
+			class={inputClass}
+			{...restFuerTextarea}></textarea>
+	{:else if type === 'number'}
 		<input
 			bind:this={element}
 			id={feldId}

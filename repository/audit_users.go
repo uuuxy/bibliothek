@@ -323,6 +323,18 @@ func SpurTilgungen() []SpurTilgung { return spurTilgungen }
 
 var spurTilgungen = []SpurTilgung{
 	{
+		// Schadensersatz-Bescheid (Migration 110): Der Brief BLEIBT als Beleg — über seine
+		// Referenznummer werden Zahlungen zugeordnet, und Rechnungsunterlagen liegen
+		// Jahre. Was fällt, ist der Personenbezug: der Empfänger-Snapshot (Anrede, Name,
+		// Anschrift zum Briefdatum). Der Fremdschlüssel wird von ON DELETE SET NULL
+		// geleert, sobald der Schülerdatensatz verschwindet; diese Zeile räumt den
+		// Klartext, der sonst im JSONB stehen bliebe. Idempotent: leeres Objekt bleibt leer.
+		Beschreibung: "schadensersatz_bescheide (Empfänger-Snapshot)",
+		sql: `UPDATE schadensersatz_bescheide
+			SET empfaenger_snapshot = '{}'::jsonb
+			WHERE schueler_id = ANY($1::uuid[]) AND empfaenger_snapshot <> '{}'::jsonb`,
+	},
+	{
 		// Datensatz-Historie: DeleteStudent legt Vor-/Nachname, Klasse und Barcode in
 		// details ab; das ganze Objekt wird durch den Anonymisierungs-Marker ersetzt.
 		// Idempotent über den Marker.

@@ -82,6 +82,21 @@ type SystemEinstellungen struct {
 	// AbgaengerKarenzTage: Tage nach dem Abgang, die ein Abgänger ohne offene Vorgänge
 	// nur gesperrt bleibt, bevor er anonymisiert wird. 0 = sofort. Migration 094.
 	AbgaengerKarenzTage *int `json:"abgaenger_karenz_tage"`
+
+	// Angaben für den Schadensersatz-Bescheid (Migration 110). Vorgaben, Prüfung der
+	// Pflichtangaben und der Aufbau der Referenznummer stehen in
+	// system_settings_bescheid.go — dort ist auch begründet, warum das neun einzelne
+	// Schlüssel sind und kein Block.
+	BescheidBereichNr         string `json:"bescheid_bereich_nr"`
+	BescheidSchulnummer       string `json:"bescheid_schulnummer"`
+	BescheidAufsicht          string `json:"bescheid_aufsicht"`
+	BescheidSchulleitung      string `json:"bescheid_schulleitung"`
+	BescheidGeschaeftszeichen string `json:"bescheid_geschaeftszeichen"`
+	BescheidBearbeiter        string `json:"bescheid_bearbeiter"`
+	BescheidDurchwahl         string `json:"bescheid_durchwahl"`
+	BescheidZahlstelle        string `json:"bescheid_zahlstelle"`
+	BescheidBankverbindung    string `json:"bescheid_bankverbindung"`
+	BescheidFristTage         *int   `json:"bescheid_frist_tage"`
 }
 
 // StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.
@@ -205,6 +220,26 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeStringRoh(val, &settings.SchuleOrt)
 	case "etikett_eigentumsvermerk":
 		setzeStringRoh(val, &settings.EtikettEigentumsvermerk)
+	case "bescheid_bereich_nr":
+		setzeStringRoh(val, &settings.BescheidBereichNr)
+	case "bescheid_schulnummer":
+		setzeStringRoh(val, &settings.BescheidSchulnummer)
+	case "bescheid_aufsicht":
+		setzeStringRoh(val, &settings.BescheidAufsicht)
+	case "bescheid_schulleitung":
+		setzeStringRoh(val, &settings.BescheidSchulleitung)
+	case "bescheid_geschaeftszeichen":
+		setzeStringRoh(val, &settings.BescheidGeschaeftszeichen)
+	case "bescheid_bearbeiter":
+		setzeStringRoh(val, &settings.BescheidBearbeiter)
+	case "bescheid_durchwahl":
+		setzeStringRoh(val, &settings.BescheidDurchwahl)
+	case "bescheid_zahlstelle":
+		setzeStringRoh(val, &settings.BescheidZahlstelle)
+	case "bescheid_bankverbindung":
+		setzeStringRoh(val, &settings.BescheidBankverbindung)
+	case "bescheid_frist_tage":
+		setzeIntZeiger(val, &settings.BescheidFristTage)
 	case "alarm_empfaenger":
 		if val != nil {
 			v := *val
