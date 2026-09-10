@@ -125,7 +125,22 @@ type DsgvoVerwaltungsEintrag struct {
 	Details   json.RawMessage `json:"details" swaggertype:"object"`
 }
 
-// DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 lit. a–d, g DSGVO.
+// DsgvoVerarbeitungsangaben sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO: Zwecke
+// (lit. a), Empfänger (lit. c), Speicherdauer (lit. d), Herkunft (lit. g) und die
+// Betroffenenrechte samt Beschwerderecht (lit. e und f). Die Datenkategorien (lit. b)
+// stehen als die Daten selbst in der Auskunft.
+//
+// Die Rechtsgrundlage ist KEINE Angabe des Art. 15 — sie gehört zur Information bei der
+// Erhebung (Art. 13 Abs. 1 lit. c) und steht hier freiwillig mit, weil die Auskunft sonst
+// den Grund der Verarbeitung nicht nennt. Maßgeblich bleibt das Verzeichnis von
+// Verarbeitungstätigkeiten der Schule.
+//
+// Geprüft am 10.09.2026 gegen die Fundstellen: § 83 HSchG ist die Norm zur Erhebung und
+// Verarbeitung personenbezogener Daten durch Schulen, § 153 HSchG die Lernmittelfreiheit
+// (Schulbücher bleiben Eigentum des Landes und werden befristet überlassen). Bis dahin
+// klammerte dieser Text beide Paragrafen unter „(Lernmittelfreiheit)" und nannte die LUSD
+// „Landesschülerdatenbank" — zwei falsche Angaben in einem Dokument, das die betroffene
+// Person in die Hand bekommt. VVT-Entwurf und SECURITY.md waren die ganze Zeit richtig.
 type DsgvoVerarbeitungsangaben struct {
 	Zwecke            []string `json:"zwecke"`
 	Rechtsgrundlage   string   `json:"rechtsgrundlage"`
@@ -158,7 +173,14 @@ type DsgvoAuskunftResponse struct {
 // Karenzzeit vor der Anonymisierung (abgaenger_karenz_tage) ebenso wie die Lesehistorie.
 // Bis 02.09.2026 stand hier ein festes „Altfälle nach 360 Tagen", während der Job längst
 // mit der Karenz rechnete: eine Pflichtangabe an die betroffene Person, die nicht stimmte.
-func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage int) DsgvoVerarbeitungsangaben {
+//
+// DRITTER Fall derselben Klasse, gefunden am 10.09.2026: „Protokolle 24 Monate" stand
+// starr im Text, während die Aufbewahrung der beiden Protokolle seit dem 16.08.2026 eine
+// Einstellung ist (audit_aufbewahrung_monate, Untergrenze 6). Wer sie auf 6 stellte, gab
+// der betroffenen Person eine falsche Frist. Jetzt liest die Auskunft dieselbe Quelle wie
+// der Löschjob (jobs/cron_audit_retention.go) und der Rückstands-Wächter
+// (repository/loeschrueckstand.go): AufbewahrungMonateOderStandard.
+func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, auditMonate int) DsgvoVerarbeitungsangaben {
 	karenz := "sofort nach dem letzten Vorgang"
 	if karenzTage > 0 {
 		karenz = fmt.Sprintf("nach einer Karenzzeit von %d Tagen ab dem letzten Vorgang (Abgang, letzte Rückgabe oder Schadensregulierung)", karenzTage)
@@ -175,26 +197,28 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage int)
 			"Betrieb der Schülerbücherei (Ausleihe, Vormerkung, Rückgabeerinnerung)",
 			"Abwicklung von Schadens- und Verlustfällen",
 		},
-		Rechtsgrundlage: "Lernmittelausleihe: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 und § 153 HSchG (Lernmittelfreiheit) und SchDSV — öffentlich-rechtliches Nutzungsverhältnis. " +
-			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO / § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
+		Rechtsgrundlage: "Lernmittelausleihe: Art. 6 Abs. 1 lit. e DSGVO i. V. m. § 83 HSchG (Erhebung und Verarbeitung personenbezogener Daten durch Schulen) und § 153 HSchG (Lernmittelfreiheit) sowie SchDSV — öffentlich-rechtliches Nutzungsverhältnis. " +
+			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO, § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
-			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle 24 Monate. Verschlüsselte Backups 14 Tage.",
-		Herkunft:          "Stammdaten aus der Landesschülerdatenbank LUSD (Export/Import) bzw. manuelle Erfassung durch das Bibliotheksteam",
+			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", auditMonate) + " Monate. Verschlüsselte Backups 14 Tage.",
+		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule (Export/Import) bzw. manuelle Erfassung durch das Bibliotheksteam",
 		Betroffenenrechte: "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)",
 	}
 }
 
-// dsgvoFristen liest Lesehistorie-Befristung und Abgänger-Karenz aus den Einstellungen;
-// bei Fehlern gelten die Vorgaben (so arbeiten auch die Jobs).
-func (s *Server) dsgvoFristen(ctx context.Context) (int, int, int) {
+// dsgvoFristen liest Lesehistorie-Befristung, Abgänger-Karenz und Protokoll-Aufbewahrung
+// aus den Einstellungen; bei Fehlern gelten die Vorgaben (so arbeiten auch die Jobs).
+func (s *Server) dsgvoFristen(ctx context.Context) (int, int, int, int) {
 	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 	if err != nil || einst == nil {
-		return repository.StandardLesehistorieTage, repository.StandardLesehistorieLernmittelTage, repository.StandardAbgaengerKarenzTage
+		return repository.StandardLesehistorieTage, repository.StandardLesehistorieLernmittelTage,
+			repository.StandardAbgaengerKarenzTage, repository.StandardAuditAufbewahrungMonate
 	}
 	return repository.TageOderStandard(einst.LesehistorieTage, repository.StandardLesehistorieTage),
 		repository.TageOderStandard(einst.LesehistorieLernmittelTage, repository.StandardLesehistorieLernmittelTage),
-		repository.AbgaengerKarenzTageOderStandard(einst)
+		repository.AbgaengerKarenzTageOderStandard(einst),
+		repository.AufbewahrungMonateOderStandard(einst.AuditAufbewahrungMonate)
 }
 
 func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoStammdaten, error) {

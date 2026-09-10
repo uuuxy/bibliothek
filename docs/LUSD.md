@@ -23,7 +23,7 @@ Schulgröße (1.890 Schüler, drei Schuljahre) stehen in
 
 ## 1. Was die LUSD liefern muss
 
-Die LUSD (Landesschuldatenbank Hessen) ist das **führende System** für Schülerdaten
+Die LUSD (Lehrer- und Schülerdatenbank) ist das **führende System** für Schülerdaten
 (Entscheidung 02.09.2026): Was sie liefert, überschreibt den Bestand, leere Felder lassen
 den Bestand stehen. Handkorrekturen an Adressen überleben den nächsten Import nicht.
 

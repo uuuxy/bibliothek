@@ -70,7 +70,7 @@ können sie jederzeit mit Wirkung für die Zukunft widerrufen; dann wird der
 Bücherei-Zugang beendet und die Daten werden gelöscht bzw. anonymisiert. Die Ausleihe von
 Schulbüchern (Lernmittel, Teil A) ist davon nicht betroffen.
 [Alternative, falls die Schule die Bücherei als schulische Aufgabe führt: „Art. 6 Abs. 1
-Buchst. e DSGVO i. V. m. § 83 HSchG (Leseförderung). Dann entfällt das Einwilligungsfeld
+Buchst. e DSGVO i. V. m. § 83 HSchG als schulische Aufgabe der Leseförderung. Dann entfällt das Einwilligungsfeld
 und es gilt das Widerspruchsrecht nach Art. 21."]
 
 **Welche Daten.** Dieselben Stammdaten wie bei der Lernmittelausleihe (Name, Vorname,
