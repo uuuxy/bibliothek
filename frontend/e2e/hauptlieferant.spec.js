@@ -39,7 +39,7 @@ function flagInDB(name) {
 async function lieferantAnlegen(page, name, s, alsHaupt) {
 	await page.getByLabel('Name').fill(name);
 	await page.getByLabel('E-Mail').fill(`h${s}@example.invalid`);
-	await page.getByLabel('Kundennummer').fill(`K-${s}`);
+	await page.getByLabel('Kundennummer', { exact: true }).fill(`K-${s}`);
 	if (alsHaupt) {
 		// Ein Zustand, kein Auswahlpunkt: Die Oberfläche zeigt hier einen M3-Schalter
 		// (role="switch"), kein Häkchen.
