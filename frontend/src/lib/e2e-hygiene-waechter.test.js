@@ -102,3 +102,61 @@ describe('e2e-Wächter', () => {
 		).toEqual([]);
 	});
 });
+
+// Kalender-Gate (Bestands-Durchgang 10.09.2026): Ein `test.skip(bedingung, …)` mit einer
+// Bedingung, die erst zur LAUFZEIT feststeht (Datum, Datenlage, Serverantwort), macht einen
+// Test in manchen Wochen zu einem grünen Nichts. Die beiden Abgänger-Specs übersprangen sich
+// vom 01.08. bis 30.04. — der Job e2e blieb grün, das Release-Gate nickte, und ein Bruch im
+// Versand der Kontoauszüge wäre erst im Mai aufgefallen. Die Rot-Beweis-Battery vom 01.09.
+// hatte „kein skip" festgestellt; die beiden kamen vier Tage später dazu.
+//
+// Erlaubt ist so ein Skip nur mit Begründung UND einem Unit-Test, der dieselbe Wirkung das
+// ganze Jahr hält. Die Liste muss genau zum Bestand passen — ein erledigter Eintrag, der
+// stehen bleibt, ist ein Freifahrtschein für den nächsten.
+const KALENDER_SKIP = /\btest\.skip\(\s*[^'"`)\s]/;
+const KALENDER_AUSNAHMEN = [
+	{
+		datei: 'e2e/abgaenger-versand.spec.js',
+		abdeckung: 'src/lib/abgaengerDienst.test.js',
+		grund: 'Saisonfenster kommt aus der Serveruhr; die Nutzlast des Versands hält der Unit-Test.'
+	},
+	{
+		datei: 'e2e/schueler-profil-klick.spec.js',
+		abdeckung: 'src/lib/components/AbgaengerTabelle.test.js',
+		grund:
+			'Saisonfenster kommt aus der Serveruhr; alle vier Zustände der Tabelle hält der Unit-Test.'
+	}
+];
+
+describe('Kalender-Gate', () => {
+	it('erkennt Skips mit Laufzeitbedingung, nicht bedingungslose (Selbstprobe)', () => {
+		for (const zeile of [
+			'test.skip(!fenster.offen, `außerhalb der Saison`);',
+			'test.skip(heute.getMonth() < 4);',
+			'  test.skip( keineDaten, "leer");'
+		])
+			expect(KALENDER_SKIP.test(zeile), zeile).toBe(true);
+		for (const zeile of ["test.skip('wird ersetzt', async () => {});", 'test.skip();'])
+			expect(KALENDER_SKIP.test(zeile), zeile).toBe(false);
+	});
+
+	it('jeder Laufzeit-Skip ist begründet und hat eine ganzjährige Abdeckung', () => {
+		const treffer = specDateien()
+			.filter(({ inhalt }) =>
+				inhalt.split('\n').some((z) => !z.trim().startsWith('//') && KALENDER_SKIP.test(z))
+			)
+			.map(({ name }) => name)
+			.sort();
+		expect(treffer, 'Liste der Laufzeit-Skips passt nicht zum Bestand').toEqual(
+			KALENDER_AUSNAHMEN.map((a) => a.datei).sort()
+		);
+		for (const a of KALENDER_AUSNAHMEN) {
+			expect(
+				readdirSync(join(srcRoot, '..', ...a.abdeckung.split('/').slice(0, -1))).includes(
+					a.abdeckung.split('/').at(-1)
+				),
+				`${a.datei}: Abdeckung ${a.abdeckung} fehlt`
+			).toBe(true);
+		}
+	});
+});
