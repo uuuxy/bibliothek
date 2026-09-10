@@ -21,10 +21,22 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
 	import MahnwesenDruckMenue from './MahnwesenDruckMenue.svelte';
-	import { Mail, Printer, RefreshCw, X } from '@lucide/svelte';
+	import { FileText, Mail, Printer, RefreshCw, X } from '@lucide/svelte';
 
-	/** @type {{ onMahnlauf: () => void }} */
-	let { onMahnlauf } = $props();
+	/**
+	 * onBescheid bekommt die ID des einen markierten Schülers. Als Prop, weil den Dialog
+	 * Mahnwesen.svelte auf oberster Ebene rendert — ein Overlay hat in dieser Flex-Zeile
+	 * mit `print:hidden` nichts verloren (dieselbe Regel wie beim Mahnlauf-Dialog).
+	 * @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean }}
+	 */
+	let { onMahnlauf, onBescheid, darfBescheid } = $props();
+
+	// Der Bescheid ist ein Einzelfall, kein Massenlauf: Jeder Betrag ist eine
+	// Ermessensentscheidung, und jede Referenznummer wird unwiderruflich verbraucht.
+	// Deshalb erscheint der Knopf nur bei GENAU EINER Markierung.
+	const einzelnMarkiert = $derived(
+		mahnwesenStore.selectedIds.size === 1 ? [...mahnwesenStore.selectedIds][0] : ''
+	);
 
 	let countAlle = $derived(
 		mahnwesenStore.klassen.reduce(
@@ -55,6 +67,14 @@
 		{/if}
 		Mahnbriefe drucken
 	</Button>
+	{#if darfBescheid && einzelnMarkiert}
+		<!-- Getönt, nicht gefüllt: In diesem Bereich ist „Mahnbriefe drucken" die eine
+		     gefüllte Aktion (M3). -->
+		<Button variant="secondary" onclick={() => onBescheid(einzelnMarkiert)}>
+			<FileText class="h-4 w-4" aria-hidden="true" />
+			Schadensersatz-Bescheid
+		</Button>
+	{/if}
 {:else}
 	<div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
 		<button

@@ -3,6 +3,11 @@
 	import { offlineSync } from './stores/offlineSync.svelte.js';
 	import MahnwesenFilters from './components/mahnwesen/MahnwesenFilters.svelte';
 	import MahnwesenTable from './components/mahnwesen/MahnwesenTable.svelte';
+	import BescheideTabelle from './components/mahnwesen/BescheideTabelle.svelte';
+	import BescheidDialog from './components/mahnwesen/BescheidDialog.svelte';
+	import { bescheideStore } from './stores/bescheide.svelte.js';
+	import { authStore } from './stores/authStore.svelte.js';
+	import { hatRecht } from './menu.js';
 	import KlassenVersandDialog from './components/ui/KlassenVersandDialog.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import { Info, TriangleAlert } from '@lucide/svelte';
@@ -17,10 +22,23 @@
 	// Suchpille hier 84 px tiefer begann als ueberall sonst. Sie steht jetzt unter der
 	// Pille, siehe MahnwesenSuchleiste. Den Slot gibt es seitdem nicht mehr.
 	let mahnlaufOffen = $state(false);
+	// Der Bescheid-Dialog trägt die ID des einen markierten Schülers; leer = zu.
+	let bescheidFuer = $state('');
+	// Schreiben verlangt edit_students wie die Route (UI entscheidet nach Recht, nicht
+	// nach Rolle); LESEN darf jeder, der das Mahnwesen sieht.
+	const darfBescheid = $derived(hatRecht(authStore.currentUser, 'edit_students'));
 
 	$effect(() => {
 		if (offlineSync.pendingCount === 0) {
 			mahnwesenStore.fetchData();
+		}
+	});
+
+	// Die Zahl am Reiter „Bescheide" steht schon vor dem ersten Blick darauf — sonst
+	// zeigte er 0, solange niemand hineingesehen hat, und wäre damit eine Falschaussage.
+	$effect(() => {
+		if (!bescheideStore.geladen) {
+			bescheideStore.lade();
 		}
 	});
 </script>
@@ -58,11 +76,34 @@
 		</div>
 	{:else}
 		<PageShell>
-			<MahnwesenFilters onMahnlauf={() => (mahnlaufOffen = true)} />
-			<MahnwesenTable />
+			<MahnwesenFilters
+				onMahnlauf={() => (mahnlaufOffen = true)}
+				onBescheid={(id) => (bescheidFuer = id)}
+				{darfBescheid}
+			/>
+			{#if mahnwesenStore.activeFilter === 'Bescheide'}
+				<BescheideTabelle darfSchreiben={darfBescheid} />
+			{:else}
+				<MahnwesenTable />
+			{/if}
 		</PageShell>
 	{/if}
 </div>
+
+{#if bescheidFuer}
+	<!-- Auf oberster Ebene wie der Mahnlauf-Dialog: Ein Overlay gehört nicht in den
+	     Flex-Container mit print:hidden. {#key}: je Schüler ein frisches Formular. -->
+	{#key bescheidFuer}
+		<BescheidDialog
+			schuelerId={bescheidFuer}
+			onclose={() => (bescheidFuer = '')}
+			onErstellt={async () => {
+				await bescheideStore.lade();
+				await mahnwesenStore.fetchData();
+			}}
+		/>
+	{/key}
+{/if}
 
 <KlassenVersandDialog
 	open={mahnlaufOffen}

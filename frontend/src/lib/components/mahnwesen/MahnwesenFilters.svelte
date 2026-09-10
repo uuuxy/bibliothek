@@ -3,8 +3,8 @@
 	import MahnwesenTabs from './MahnwesenTabs.svelte';
 	import MahnwesenSuchleiste from './MahnwesenSuchleiste.svelte';
 
-	/** @type {{ onMahnlauf: () => void }} */
-	let { onMahnlauf } = $props();
+	/** @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean }} */
+	let { onMahnlauf, onBescheid, darfBescheid } = $props();
 </script>
 
 <!-- Register nach Dringlichkeit, darunter Suche, Filter und Knöpfe.
@@ -15,4 +15,4 @@
 {#if mahnwesenStore.data && !mahnwesenStore.loading}
 	<MahnwesenTabs />
 {/if}
-<MahnwesenSuchleiste {onMahnlauf} />
+<MahnwesenSuchleiste {onMahnlauf} {onBescheid} {darfBescheid} />

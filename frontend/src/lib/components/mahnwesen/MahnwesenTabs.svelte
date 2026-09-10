@@ -10,6 +10,7 @@
      schon mitbringt, samt Farben aus der M3-Skala statt slate/blue). -->
 <script>
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
+	import { bescheideStore } from '../../stores/bescheide.svelte.js';
 	import Reiter from '../ui/Reiter.svelte';
 
 	/** Höchste Überfälligkeit eines Schülers in Tagen. @param {any} s */
@@ -29,10 +30,15 @@
 	// „Akut fällig" = überfällig bis 14 Tage (inkl. der <24h-Fälle mit maxTage 0),
 	// passend zur Mahnstufe '1. Erinnerung'. So stimmt die Register-Zahl mit der Liste.
 	// `id` ist der Filterwert des Stores, damit Reiter und Liste dieselbe Sprache sprechen.
+	// Vierter Eintrag: die Schadensersatz-Bescheide. Die Zahl zählt NUR die abgelaufenen
+	// Fristen — die Arbeit, die wartet. Stünde dort die Gesamtzahl aller Briefe, wäre der
+	// Reiter dauerhaft zweistellig und niemand sähe mehr, wann etwas zu tun ist.
+	// Dieselbe Reihe nach Dringlichkeit: Alle → akut → eskaliert → Bescheid.
 	const register = $derived([
 		{ id: 'Alle', label: 'Alle', anzahl: zaehle(() => true) },
 		{ id: '1. Erinnerung', label: 'Akut fällig', anzahl: zaehle((s) => maxTage(s) <= 14) },
-		{ id: 'Mahnung', label: 'Eskaliert', anzahl: zaehle((s) => maxTage(s) > 14) }
+		{ id: 'Mahnung', label: 'Eskaliert', anzahl: zaehle((s) => maxTage(s) > 14) },
+		{ id: 'Bescheide', label: 'Bescheide', anzahl: bescheideStore.faellig }
 	]);
 	// Das Register „Kollegium" (klasse='lehrer') ist mit Migration 072 gefallen:
 	// Lehrkräfte sind Personal-Konten, ihre Handapparat-Ausleihen laufen bewusst

@@ -31,8 +31,8 @@
 	import Suchpille from '../ui/Suchpille.svelte';
 	import MahnwesenAktionen from './MahnwesenAktionen.svelte';
 
-	/** @type {{ onMahnlauf: () => void }} */
-	let { onMahnlauf } = $props();
+	/** @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean }} */
+	let { onMahnlauf, onBescheid, darfBescheid } = $props();
 </script>
 
 <div class="mt-4 flex flex-col gap-3 print:hidden">
@@ -57,7 +57,7 @@
 		/>
 
 		<div class="ml-auto flex flex-wrap items-center gap-2">
-			<MahnwesenAktionen {onMahnlauf} />
+			<MahnwesenAktionen {onMahnlauf} {onBescheid} {darfBescheid} />
 		</div>
 	</div>
 </div>

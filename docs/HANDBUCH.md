@@ -299,6 +299,16 @@ erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die
 
 ## Bestellwesen
 
+**Schadensersatz-Bescheid:** Im Mahnwesen einen (genau einen) Schüler markieren, dann
+_Schadensersatz-Bescheid_ in der Auswahlleiste. Der Dialog zeigt die offenen Forderungen
+mit einem Betragsvorschlag nach der Staffel der Schule samt Herleitung; Beträge sind
+änderbar, Positionen abwählbar. _Bescheid erstellen_ vergibt die Referenznummer (nie
+zweimal), setzt die Frist als Datum und öffnet den Brief. Die Briefe stehen im vierten
+Reiter **Bescheide**; die Zahl daran sind die abgelaufenen Fristen. Dort gibt es
+_Nachdruck_ (immer derselbe Brief, auch nach einem Umzug) und nach Fristablauf
+_Übergeben_. Die Angaben für den Brief stehen in den Einstellungen unter
+_Schadensersatz_; fehlen sie, sagt der Dialog welche. (§3)
+
 Sechs Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automatisch; Titel in
 den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
 Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücherei
