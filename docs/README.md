@@ -6,13 +6,13 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 ## Tech-Stack
 
-| Komponente | Technologie |
-|---|---|
-| Backend | Go 1.27.0 (go.mod = Dockerfile), `net/http`, `pgx/v5` |
-| Frontend | Svelte 5 (Runes), Tailwind CSS, Vite |
-| Datenbank | PostgreSQL 18 |
-| Echtzeit | Server-Sent Events (SSE) |
-| Deployment | Docker Compose, Caddy (Reverse Proxy) |
+| Komponente | Technologie                                           |
+| ---------- | ----------------------------------------------------- |
+| Backend    | Go 1.27.0 (go.mod = Dockerfile), `net/http`, `pgx/v5` |
+| Frontend   | Svelte 5 (Runes), Tailwind CSS, Vite                  |
+| Datenbank  | PostgreSQL 18                                         |
+| Echtzeit   | Server-Sent Events (SSE)                              |
+| Deployment | Docker Compose, Caddy (Reverse Proxy)                 |
 
 ---
 
@@ -31,7 +31,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 - **Rollenbasierte Zugriffskontrolle (RBAC):** Rollen für Admin, Kollegium (nur Klassensatz-Reservierung im eigenen Portal), Mitarbeiter (Tresen-Betrieb) und Helfer (Kiosk-Betrieb ohne Schülerrechte). Angemeldet wird gegen den Schul-Mailserver per IMAP — die Anwendung speichert kein Benutzerpasswort.
 - **Öffentliche Seiten:** Katalog `/katalog` (Suche mit Cover und Verfügbarkeit) und Bibliotheks-Monitor `/monitor` (Slideshow für den Flur) — beide ohne Anmeldung, beide ohne Personendaten ([FACHKONZEPT.md §16](FACHKONZEPT.md)).
 - **Kollegiums-Portal & Selbstanmeldung:** Lehrkräfte melden sich mit dem Schul-Postfach an, reservieren Klassensätze und geben Wünsche/Meldungen ab; die Bibliothek schaltet Zugangsanfragen frei.
-- **Selbstprüfung der Betriebsbereitschaft:** Eine Seite unter *System*, die eine einzige Frage beantwortet — was ist eingerichtet, aber nicht in Betrieb? Sie fängt die wiederkehrende Fehlerart ab, bei der eine fertige Funktion still nichts tut, weil eine Einstellung fehlt (Details: [FACHKONZEPT.md §15](FACHKONZEPT.md)).
+- **Selbstprüfung der Betriebsbereitschaft:** Eine Seite unter _System_, die eine einzige Frage beantwortet — was ist eingerichtet, aber nicht in Betrieb? Sie fängt die wiederkehrende Fehlerart ab, bei der eine fertige Funktion still nichts tut, weil eine Einstellung fehlt (Details: [FACHKONZEPT.md §15](FACHKONZEPT.md)).
 
 ---
 
@@ -39,57 +39,57 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 **Wo finde ich was?** — nach Frage, nicht nach Dateiname:
 
-| Ich will … | Dokument |
-|---|---|
-| das System bedienen (Theke, Schülerdatei, Mahnwesen, Einstellungen) | [HANDBUCH.md](HANDBUCH.md) |
-| den **LUSD-Import** verstehen oder fahren: Spalten für das Sekretariat, Umbenennung ohne Schüler-ID, Karenzzeit, Zusammenführen | [LUSD.md](LUSD.md) |
-| wissen, welche fachliche Regel gilt (Fristen, Vormerkung, DSGVO, Rollen) | [FACHKONZEPT.md](FACHKONZEPT.md) |
-| das System betreiben, deployen, sichern, wiederherstellen | [DEPLOYMENT.md](DEPLOYMENT.md), [resilience_and_recovery.md](resilience_and_recovery.md), [SCRIPTS.md](SCRIPTS.md) |
-| etwas abnehmen (LUSD, Versetzung, Klassensatz) | [abnahme_checkliste.md](abnahme_checkliste.md) |
-| Datenschutz beurteilen (welche Daten, welche Fristen, welche Rechte) | [SECURITY.md](SECURITY.md), [PII_MATRIX.de.md](PII_MATRIX.de.md), [datenschutz/](datenschutz/) |
-| Barrierefreiheit beurteilen (was die Gates prüfen, was offen ist) | [FACHKONZEPT.md §19](FACHKONZEPT.md), [HANDBUCH.md](HANDBUCH.md) „Bedienung ohne Maus" |
-| am Code arbeiten | [ARCHITECTURE.md](ARCHITECTURE.md), [invarianten.md](invarianten.md), [api_inventar.md](api_inventar.md), [sweeps.md](sweeps.md) |
+| Ich will …                                                                                                                      | Dokument                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| das System bedienen (Theke, Schülerdatei, Mahnwesen, Einstellungen)                                                             | [HANDBUCH.md](HANDBUCH.md)                                                                                                       |
+| den **LUSD-Import** verstehen oder fahren: Spalten für das Sekretariat, Umbenennung ohne Schüler-ID, Karenzzeit, Zusammenführen | [LUSD.md](LUSD.md)                                                                                                               |
+| wissen, welche fachliche Regel gilt (Fristen, Vormerkung, DSGVO, Rollen)                                                        | [FACHKONZEPT.md](FACHKONZEPT.md)                                                                                                 |
+| das System betreiben, deployen, sichern, wiederherstellen                                                                       | [DEPLOYMENT.md](DEPLOYMENT.md), [resilience_and_recovery.md](resilience_and_recovery.md), [SCRIPTS.md](SCRIPTS.md)               |
+| etwas abnehmen (LUSD, Versetzung, Klassensatz)                                                                                  | [abnahme_checkliste.md](abnahme_checkliste.md)                                                                                   |
+| Datenschutz beurteilen (welche Daten, welche Fristen, welche Rechte)                                                            | [SECURITY.md](SECURITY.md), [PII_MATRIX.de.md](PII_MATRIX.de.md), [datenschutz/](datenschutz/)                                   |
+| Barrierefreiheit beurteilen (was die Gates prüfen, was offen ist)                                                               | [FACHKONZEPT.md §19](FACHKONZEPT.md), [HANDBUCH.md](HANDBUCH.md) „Bedienung ohne Maus"                                           |
+| am Code arbeiten                                                                                                                | [ARCHITECTURE.md](ARCHITECTURE.md), [invarianten.md](invarianten.md), [api_inventar.md](api_inventar.md), [sweeps.md](sweeps.md) |
 
 ### Bedienen und fachlich verstehen
 
-| Dokument | Inhalt |
-|---|---|
-| [HANDBUCH.md](HANDBUCH.md) | Benutzerhandbuch — jeder Bereich aus Sicht der Bibliothek, mit den öffentlichen Seiten und den 13 Einstellungs-Kategorien |
-| [LUSD.md](LUSD.md) | **LUSD-Import ohne Schüler-ID:** was der Bericht enthalten muss, drei Zuordnungsstufen, Umbenennungs-Paarung, Karenzzeit vor der Anonymisierung, Zusammenführen von Hand, Ablauf zum Schuljahreswechsel, Code-Landkarte |
-| [lusd-simulation-2026-09-02.md](lusd-simulation-2026-09-02.md) | Messprotokoll: 1.890 Schüler, drei Schuljahre, 40 Prüfungen — die Zahlen hinter LUSD.md |
-| [FACHKONZEPT.md](FACHKONZEPT.md) | Vollständige fachliche Feature-Spezifikation (Ausleihregeln, Mahnwesen, Vormerkungen, DSGVO, RBAC, Katalog …) |
-| [abnahme_checkliste.md](abnahme_checkliste.md) | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz) |
+| Dokument                                                       | Inhalt                                                                                                                                                                                                                  |
+| -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [HANDBUCH.md](HANDBUCH.md)                                     | Benutzerhandbuch — jeder Bereich aus Sicht der Bibliothek, mit den öffentlichen Seiten und den 13 Einstellungs-Kategorien                                                                                               |
+| [LUSD.md](LUSD.md)                                             | **LUSD-Import ohne Schüler-ID:** was der Bericht enthalten muss, drei Zuordnungsstufen, Umbenennungs-Paarung, Karenzzeit vor der Anonymisierung, Zusammenführen von Hand, Ablauf zum Schuljahreswechsel, Code-Landkarte |
+| [lusd-simulation-2026-09-02.md](lusd-simulation-2026-09-02.md) | Messprotokoll: 1.890 Schüler, drei Schuljahre, 40 Prüfungen — die Zahlen hinter LUSD.md                                                                                                                                 |
+| [FACHKONZEPT.md](FACHKONZEPT.md)                               | Vollständige fachliche Feature-Spezifikation (Ausleihregeln, Mahnwesen, Vormerkungen, DSGVO, RBAC, Katalog …)                                                                                                           |
+| [abnahme_checkliste.md](abnahme_checkliste.md)                 | Durchlauf für die manuellen Abnahmen (LUSD, Versetzung, Klassensatz)                                                                                                                                                    |
 
 ### Betreiben
 
-| Dokument | Inhalt |
-|---|---|
-| [DEPLOYMENT.md](DEPLOYMENT.md) | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups |
+| Dokument                                                 | Inhalt                                                                                          |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [DEPLOYMENT.md](DEPLOYMENT.md)                           | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups                                      |
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
-| [SCRIPTS.md](SCRIPTS.md) | CLI-Werkzeuge: Littera-Altbestand, Foto-Migration, Backup, Deployment, Lasttest |
-| [littera_schema_befund.md](littera_schema_befund.md) | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen |
+| [SCRIPTS.md](SCRIPTS.md)                                 | CLI-Werkzeuge: Littera-Altbestand, Foto-Migration, Backup, Deployment, Lasttest                 |
+| [littera_schema_befund.md](littera_schema_befund.md)     | Littera-Altbestand: Schema, Barcodes, Schreibpfad — alle Zahlen gemessen                        |
 
 ### Datenschutz und Sicherheit
 
-| Dokument | Inhalt |
-|---|---|
-| [SECURITY.md](SECURITY.md) | Sicherheitskonzept, DSGVO, Schutzmaßnahmen, Löschroutinen |
-| [PII_MATRIX.de.md](PII_MATRIX.de.md) | Jede Route nach Schülerdaten eingestuft (Stufe 0–3) — vom Gate `api/pii_matrix_test.go` mit dem Code deckungsgleich gehalten |
-| [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md) | Datenschutz-Arbeitsliste gegen den hessischen Rahmen (SchDSV, HBDI-Muster, HKM-LMF): Code-Punkte, Schul-/DSB-Punkte, bewusste Nicht-Befunde |
-| [datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md) | Entwurf Verzeichnis von Verarbeitungstätigkeiten (HBDI-Muster) — zwei Tätigkeiten: Lernmittelausleihe, Schülerbücherei; TOM-Anhang aus SECURITY.md |
-| [datenschutz/datenschutzhinweis_art13.md](datenschutz/datenschutzhinweis_art13.md) | Entwurf Datenschutzhinweis nach Art. 13 DSGVO für Schüler/Eltern — zwei Fassungen (Lernmittel, Schülerbücherei) |
+| Dokument                                                                           | Inhalt                                                                                                                               |
+| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| [SECURITY.md](SECURITY.md)                                                         | Sicherheitskonzept, DSGVO, Schutzmaßnahmen, Löschroutinen                                                                            |
+| [PII_MATRIX.de.md](PII_MATRIX.de.md)                                               | Jede Route nach Schülerdaten eingestuft (Stufe 0–3) — vom Gate `api/pii_matrix_test.go` mit dem Code deckungsgleich gehalten         |
+| [datenschutz_offene_punkte.md](datenschutz_offene_punkte.md)                       | Datenschutz-Arbeitsliste: Code-Punkte, Schul-/DSB-Punkte, bewusste Nicht-Befunde                                                     |
+| [datenschutz/vvt_entwurf.md](datenschutz/vvt_entwurf.md)                           | Entwurf Verzeichnis von Verarbeitungstätigkeiten — zwei Tätigkeiten: Lernmittelausleihe, Schülerbücherei; TOM-Anhang aus SECURITY.md |
+| [datenschutz/datenschutzhinweis_art13.md](datenschutz/datenschutzhinweis_art13.md) | Entwurf Datenschutzhinweis nach Art. 13 DSGVO für Schüler/Eltern — zwei Fassungen (Lernmittel, Schülerbücherei)                      |
 
 ### Entwickeln und prüfen
 
-| Dokument | Inhalt |
-|---|---|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Schichtenarchitektur, Concurrency-Modell, Datenbankdesign, Frontend, Komponenten-Regeln |
-| [invarianten.md](invarianten.md) | Invarianten-Katalog: was immer gelten muss und auf welcher Ebene es durchgesetzt ist |
-| [sweeps.md](sweeps.md) | Die Prüfachsen: Bugklassen, ihre Detektoren und Ratschen — neben Daniels Raster die Bestands-Achse |
-| [befunde.md](befunde.md) | Befund-Register: was aufgefallen ist, was davon erledigt wurde |
-| [schadensersatz_konzept.md](schadensersatz_konzept.md) | Landes- und Kreismittel: Schadensersatz nach Erlass (Teil A) und getrennte Töpfe in der Beschaffung (Teil B) — Konzept, nicht gebaut |
-| [api_inventar.md](api_inventar.md) | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh` |
-| `docs.go` (Swagger) | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 190 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
+| Dokument                               | Inhalt                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [ARCHITECTURE.md](ARCHITECTURE.md)     | Schichtenarchitektur, Concurrency-Modell, Datenbankdesign, Frontend, Komponenten-Regeln                                                                                                                                                                                                                                                                                                                         |
+| [invarianten.md](invarianten.md)       | Invarianten-Katalog: was immer gelten muss und auf welcher Ebene es durchgesetzt ist                                                                                                                                                                                                                                                                                                                            |
+| [sweeps.md](sweeps.md)                 | Die Prüfachsen: Bugklassen, ihre Detektoren und Ratschen — neben Daniels Raster die Bestands-Achse                                                                                                                                                                                                                                                                                                              |
+| [befunde.md](befunde.md)               | Befund-Register: was aufgefallen ist, was davon erledigt wurde                                                                                                                                                                                                                                                                                                                                                  |
+| [mittel_konzept.md](mittel_konzept.md) | Landes- und Kreismittel: Schadensersatz-Bescheide (Teil A, Konzept) und getrennte Töpfe in der Beschaffung (Teil B, erster Schnitt gebaut 10.09.2026)                                                                                                                                                                                                                                                           |
+| [api_inventar.md](api_inventar.md)     | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh`                                                                                                                                                                                                                                                             |
+| `docs.go` (Swagger)                    | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 190 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 
 > Eine Änderungshistorie gibt es bewusst nicht als Datei — `git log` ist ausführlicher und
 > kann nicht veralten.
@@ -99,6 +99,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 ## Schnellstart (lokal)
 
 ### Voraussetzungen
+
 - Go 1.27.0 (wie go.mod/Dockerfile)
 - Node.js (npm)
 - PostgreSQL (lokal oder via Docker)
@@ -109,26 +110,31 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 > Backup-Proben-Tests scheitern dann scheinbar grundlos (so passiert am 31.08.2026).
 
 ### Mit Docker
+
 ```bash
 docker compose -f docker-compose.local.yml up -d
 ```
+
 Backend: `http://localhost:8084` · DB: `localhost:5434`
 
 ### Manuell
 
 **1. Umgebungsvariablen**
+
 ```bash
 cp .env.example .env
 # DATABASE_URL, JWT_SECRET (≥32 Zeichen), APP_ENCRYPTION_KEY (32 Bytes) anpassen
 ```
 
 **2. Backend starten**
+
 ```bash
 go run main.go
 # Führt Datenbank-Migrationen automatisch aus
 ```
 
 **3. Frontend starten**
+
 ```bash
 cd frontend
 npm ci                    # nicht `npm install` — der Lockfile ist verbindlich
