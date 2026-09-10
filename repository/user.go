@@ -105,14 +105,18 @@ func (r *postgresUserRepo) GetUsers(ctx context.Context) ([]User, error) {
 	return users, nil
 }
 
-// CheckEmailExists prüft das Vorhandensein einer E-Mail-Adresse im System.
+// CheckEmailExists prüft das Vorhandensein einer E-Mail-Adresse im System — in der
+// Normalform der Anmeldung (LOWER, auth/handlers.go). Bis zum 10.09.2026 exakt: Zwei
+// Konten, die sich nur in der Schreibweise unterschieden, gingen durch, und welches der
+// Login öffnet, entschied die Speicherreihenfolge (Bestands-Durchgang). Migration 113
+// hält dasselbe als Index in der Datenbank.
 func (r *postgresUserRepo) CheckEmailExists(ctx context.Context, email string, excludeID string) (bool, error) {
 	var exists bool
 	var err error
 	if excludeID == "" {
-		err = r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE email = $1)", email).Scan(&exists)
+		err = r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE LOWER(email) = LOWER($1))", email).Scan(&exists)
 	} else {
-		err = r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE email = $1 AND id != $2)", email, excludeID).Scan(&exists)
+		err = r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE LOWER(email) = LOWER($1) AND id != $2)", email, excludeID).Scan(&exists)
 	}
 	return exists, err
 }

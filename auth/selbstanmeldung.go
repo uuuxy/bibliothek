@@ -120,7 +120,7 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 	tag, err := dbPool.Exec(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, zugang_beantragt_am)
 		VALUES ($1, $2, LOWER($3), 'kollegium', false, CURRENT_TIMESTAMP)
-		ON CONFLICT (email) DO NOTHING
+		ON CONFLICT DO NOTHING
 	`, vorname, nachname, email)
 	if err != nil {
 		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht angelegt werden: %v", ErrAnmeldedienstGestoert, err)

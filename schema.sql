@@ -122,6 +122,9 @@ CREATE TABLE benutzer (
 
 CREATE INDEX idx_benutzer_barcode ON benutzer (barcode_id) WHERE barcode_id IS NOT NULL;
 
+-- Migration 113: eindeutig in der Normalform der Anmeldung (LOWER, auth/handlers.go).
+CREATE UNIQUE INDEX uniq_benutzer_email_lower ON benutzer (lower(email));
+
 CREATE TRIGGER trg_benutzer_aktualisiert_am
 BEFORE UPDATE ON benutzer
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
@@ -1282,7 +1285,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('109_bestellung_mittel.sql'),
 ('110_schadensersatz_bescheide.sql'),
 ('111_bestellstatus_nur_im_zulauf.sql'),
-('112_abholfach_folgt_dem_exemplar.sql')
+('112_abholfach_folgt_dem_exemplar.sql'),
+('113_benutzer_email_eindeutig_in_normalform.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
