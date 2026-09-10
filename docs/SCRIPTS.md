@@ -187,7 +187,8 @@ Shell-Wege sicherer aussehen, als sie waren.
 | Verschlüsselt | **ja** (`BACKUP_ENCRYPTION_KEY`)  | **ja** (seit 23.08.2026)                   | **ja, nach gesundem Deploy** (seit 23.08.2026) |
 | Dateirechte   | 0600                              | 0600 (seit 06.08.2026)                     | 0600 (seit 06.08.2026)                         |
 | Rotation      | letzte 14                         | 7 Tage (`.enc`) / 2 Tage (Klartext)        | 30 Tage (`.enc`) / 2 Tage (Klartext)           |
-| Dateiname     | `backup_<Zeitstempel>.sql.gz.enc` | `bibliothek_backup_<Datum>.sql.gz.enc`     | `backup_<Zeitstempel>.sql.gz.enc`              |
+| Dateiname     | `backup_<Zeitstempel>.sql.gz.enc` | `bibliothek_backup_<Datum>.sql.gz.enc`     | `vordeploy_<Zeitstempel>.sql.gz.enc`           |
+| Ablage        | Volume `bibliothek_backups` (`/app/backups` im Container) | `./backups` auf dem Host | `./backups` auf dem Host               |
 
 **Warum `update.sh` erst in Schritt 5 verschlüsselt.** Seine Vorab-Sicherung ist der
 Rückweg für genau das Zeitfenster, in dem der neue Container nicht hochkommt — und in dem

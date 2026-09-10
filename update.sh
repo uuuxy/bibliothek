@@ -79,7 +79,15 @@ else
 fi
 
 TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
-BACKUP_FILE="${BACKUP_DIR}/backup_${TIMESTAMP}.sql.gz"
+# Eigenes Präfix, seit 10.09.2026: Das nächtliche Backup heißt backup_<Zeit>.sql.gz.enc
+# (jobs/backup.go, im Volume des Containers). Unter demselben Muster lag hier in ./backups
+# die Vorab-Sicherung — die Restore-Anleitung wählte per `ls -t backups/backup_*` die
+# letzte DEPLOY-Sicherung statt des Nachtbackups, und alles seit dem letzten Deploy war nach
+# dem Restore still weg (Bestands-Durchgang, „Zwei Ablagen, ein Dateiname").
+BACKUP_FILE="${BACKUP_DIR}/vordeploy_${TIMESTAMP}.sql.gz"
+# Der Commit VOR dem Pull (Schritt 2) — der Rückweg der Rollback-Anleitung. Leer, solange
+# kein Pull gelaufen ist: dann ist der Code noch der alte.
+VORHER_COMMIT=""
 
 # ── Farben für Ausgabe ────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -107,21 +115,30 @@ print_rollback_instructions() {
     echo ""
     echo -e "${YELLOW}Schritte zum manuellen Rollback:${NC}"
     echo ""
-    echo -e "  ${BOLD}1. Container stoppen:${NC}"
-    echo "     docker compose down"
+    # Bis zum 10.09.2026 stand hier `git stash` (nach einem sauberen Pull wirkungslos —
+    # der neue Code blieb), der Dump lief ohne dropdb und ohne ON_ERROR_STOP in die schon
+    # migrierte Datenbank (Fehlerflut, psql endet trotzdem mit 0), und Schritt 4 baute
+    # wieder den neuen Code. Die Anleitung führte also weder zum alten Code noch zu den
+    # alten Daten (Bestands-Durchgang, Rasterfrage 10; Gate docs/rueckweg_anleitungen_test.go).
+    echo -e "  ${BOLD}1. Backend stoppen (die Datenbank läuft weiter):${NC}"
+    echo "     docker compose stop backend"
     echo ""
-    echo -e "  ${BOLD}2. Altes Image zurücksetzen (falls Git-Pull durchgeführt):${NC}"
-    echo "     git stash  # oder: git reset --hard HEAD@{1}"
+    echo -e "  ${BOLD}2. Code auf den Stand VOR diesem Update zurücksetzen:${NC}"
+    if [ -n "${VORHER_COMMIT}" ]; then
+        echo "     git reset --hard ${VORHER_COMMIT}"
+    else
+        echo "     # Kein git pull gelaufen — der Code ist noch der alte, nichts zu tun."
+    fi
     echo ""
-    echo -e "  ${BOLD}3. Backup einspielen:${NC}"
-    echo "     # DB-Container starten:"
-    echo "     docker compose up -d postgres-db"
-    echo "     # Warten bis DB bereit ist:"
-    echo "     docker compose exec postgres-db pg_isready -U ${DB_USER} -d ${DB_NAME}"
-    echo "     # Backup einspielen:"
-    echo "     gunzip -c \"${BACKUP_FILE}\" | docker exec -i ${DB_CONTAINER} psql -U ${DB_USER} -d ${DB_NAME}"
+    echo -e "  ${BOLD}3. Datenbank auf den Stand der Vorab-Sicherung zurücksetzen:${NC}"
+    echo "     # Die Migrationen des neuen Codes sind womöglich schon gelaufen — deshalb die"
+    echo "     # Datenbank NEU anlegen statt in die migrierte hineinzuspielen. ON_ERROR_STOP"
+    echo "     # bricht beim ersten Fehler ab, statt mit Exit 0 eine halbe Datenbank zu lassen."
+    echo "     docker exec ${DB_CONTAINER} dropdb -U ${DB_USER} --force --if-exists ${DB_NAME}"
+    echo "     docker exec ${DB_CONTAINER} createdb -U ${DB_USER} ${DB_NAME}"
+    echo "     gunzip -c \"${BACKUP_FILE}\" | docker exec -i ${DB_CONTAINER} psql -v ON_ERROR_STOP=1 -U ${DB_USER} -d ${DB_NAME}"
     echo ""
-    echo -e "  ${BOLD}4. App wieder starten:${NC}"
+    echo -e "  ${BOLD}4. Den ALTEN Code bauen und starten:${NC}"
     echo "     docker compose up -d --build"
     echo ""
     echo -e "  ${BOLD}5. Danach: die Vorab-Sicherung entsorgen${NC}"
@@ -204,7 +221,8 @@ log_step "Schritt 2: Code aktualisieren (git pull)"
 
 if [ -d "$(dirname "$0")/.git" ]; then
     cd "$(dirname "$0")"
-    log_info "Führe git pull aus..."
+    VORHER_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo '')"
+    log_info "Führe git pull aus... (Stand davor: ${VORHER_COMMIT})"
     if ! git pull; then
         log_error "git pull fehlgeschlagen!"
         print_rollback_instructions
@@ -375,8 +393,9 @@ log_step "Schritt 6: Alte Backups aufräumen (verschlüsselt: ${BACKUP_RETENTION
 
 # Zwei Fristen, zwei Muster. `backup_*.sql.gz` trifft NICHT die `.enc`-Dateien — deren
 # Name endet auf `.enc`, und `find -name` vergleicht den ganzen Namen.
-DELETED=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz.enc" -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
-DELETED_KLAR=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz" -mtime "+${KLARTEXT_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+# Beide Präfixe: vordeploy_ seit 10.09.2026, backup_ für die Vorab-Sicherungen davor.
+DELETED=$(find "${BACKUP_DIR}" \( -name "vordeploy_*.sql.gz.enc" -o -name "backup_*.sql.gz.enc" \) -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+DELETED_KLAR=$(find "${BACKUP_DIR}" \( -name "vordeploy_*.sql.gz" -o -name "backup_*.sql.gz" \) -mtime "+${KLARTEXT_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "${DELETED}" -gt 0 ] || [ "${DELETED_KLAR}" -gt 0 ]; then
     log_ok "${DELETED} verschlüsselte/s und ${DELETED_KLAR} unverschlüsselte/s Backup/s gelöscht."

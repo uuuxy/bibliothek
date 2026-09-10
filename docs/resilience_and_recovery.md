@@ -11,8 +11,15 @@ Der eingebaute Scheduler (`jobs.RunDatabaseBackup`) läuft täglich um **02:30 U
 **AES-256-GCM-verschlüsselte**, gzip-komprimierte `pg_dump`-Dateien:
 
 ```
-backups/backup_<ZEITSTEMPEL>.sql.gz.enc
+/app/backups/backup_<ZEITSTEMPEL>.sql.gz.enc
 ```
+
+Die Dateien liegen im **Docker-Volume `bibliothek_backups`** (`/app/backups` im Container),
+**nicht** in `./backups` auf dem Host. Dort liegen nur die Vorab-Sicherungen von
+`update.sh` (`vordeploy_<ZEITSTEMPEL>…`) und die Ad-hoc-Sicherungen von
+`scripts/backup.sh`. Bis zum 10.09.2026 hießen die Vorab-Sicherungen ebenfalls `backup_…`,
+und die Restore-Anleitung unten wählte per Host-Glob die letzte Deploy-Sicherung statt des
+Nachtbackups.
 
 - Schlüssel: `BACKUP_ENCRYPTION_KEY` (≥ 32 Zeichen). Ableitung via **scrypt**
   (N=2¹⁵, r=8, p=1) mit einem 16-Byte-Salt pro Datei — speicherhart, damit eine
@@ -55,7 +62,7 @@ Seit dem 06.08.2026 mit `pipefail`: Ohne ihn lieferte die Pipe den Status des le
 Glieds, und `gzip` gelingt auch dann, wenn `pg_dump` abgebrochen ist — das Skript meldete
 „Backup erfolgreich" und legte eine gzip-Datei mit einer Fehlermeldung darin ab.
 
-**`./update.sh`** — legt vor **jedem** Deploy `backups/backup_<ZEITSTEMPEL>.sql.gz` an und
+**`./update.sh`** — legt vor **jedem** Deploy `backups/vordeploy_<ZEITSTEMPEL>.sql.gz` an und
 nennt diese Datei in seiner Rollback-Anleitung. Diese eine Datei entsteht **bewusst im
 Klartext**: Sie ist der Rückweg für genau das Zeitfenster, in dem der neue Container nicht
 hochkommt — und in dem damit auch das Verschlüsselungswerkzeug nicht erreichbar wäre.
@@ -109,8 +116,13 @@ Alles in **derselben** Shell-Sitzung, damit `$KEY` und `$DUMP` erhalten bleiben.
 #    Außerhalb des Containers (Entwicklungsrechner mit Go) einmalig bauen:
 go build -o restore-backup ./cmd/restore-backup
 
-# 1. Backup auswählen — neuestes verschlüsseltes Backup
-ENC=$(ls -t backups/backup_*.sql.gz.enc | head -1)
+# 1. Backup auswählen — das neueste NÄCHTLICHE Backup. Es liegt im Volume des Containers
+#    (/app/backups), nicht in ./backups auf dem Host — also erst herauskopieren.
+#    (Nach einem fehlgeschlagenen Deploy ist stattdessen die Vorab-Sicherung gemeint:
+#     ENC=$(ls -t backups/vordeploy_*.sql.gz.enc | head -1) — und dann ab Schritt 2.)
+IM_CONTAINER=$(docker compose exec -T backend sh -c 'ls -t /app/backups/backup_*.sql.gz.enc | head -1')
+docker compose cp "backend:${IM_CONTAINER}" ./backups/
+ENC="backups/$(basename "$IM_CONTAINER")"
 echo "Verwende: $ENC"
 
 # 2. Schlüssel setzen (der ORIGINALE aus der Zeit des Backups)
@@ -146,7 +158,8 @@ psql -U postgres -d bibliothek -f "$DUMP"
 ### 2b. Backups aus den Shell-Wegen (Abschnitt 1b)
 
 **Der Regelfall — `.enc`:** identisch zu Abschnitt 2a, nur der Dateiname unterscheidet
-sich (`bibliothek_backup_<DATUM>.sql.gz.enc` bzw. `backup_<ZEITSTEMPEL>.sql.gz.enc`).
+sich (`bibliothek_backup_<DATUM>.sql.gz.enc` bzw. `vordeploy_<ZEITSTEMPEL>.sql.gz.enc`;
+Vorab-Sicherungen vor dem 10.09.2026 heißen noch `backup_<ZEITSTEMPEL>.sql.gz.enc`).
 
 **Der Klartext-Fall — `.sql.gz`:** Solche Dateien entstehen nur noch im Ausnahmefall
 (fehlgeschlagener Deploy, Verschlüsselung nicht möglich). Sie lassen sich weiterhin direkt
@@ -213,7 +226,10 @@ Ein Backup, das nie zurückgespielt wurde, ist kein verlässliches Backup.
 Diese manuelle Probe fasst die Produktivdatenbank **nicht** an:
 
 ```bash
-ENC=$(ls -t backups/backup_*.sql.gz.enc | head -1)
+# Das neueste NÄCHTLICHE Backup aus dem Volume holen (siehe 2a, Schritt 1):
+IM_CONTAINER=$(docker compose exec -T backend sh -c 'ls -t /app/backups/backup_*.sql.gz.enc | head -1')
+docker compose cp "backend:${IM_CONTAINER}" ./backups/
+ENC="backups/$(basename "$IM_CONTAINER")"
 read -rsp "BACKUP_ENCRYPTION_KEY: " KEY; echo
 
 createdb -U postgres bibliothek_restore_test
