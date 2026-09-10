@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-09-06. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-09-10. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -22,7 +22,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (198)
+## Alle registrierten Routen (206)
 
 - `/`
 - `/api/admin`
@@ -64,6 +64,8 @@
 - `GET /api/barcode`
 - `GET /api/barcode/next`
 - `GET /api/benutzer`
+- `GET /api/bescheide`
+- `GET /api/bescheide/{id}/pdf`
 - `GET /api/bestellhistorie`
 - `GET /api/bestellhistorie/bericht`
 - `GET /api/bestellhistorie/uebersicht`
@@ -127,6 +129,8 @@
 - `GET /api/schueler/deleted`
 - `GET /api/schueler/{barcode_id}/photo`
 - `GET /api/schueler/{id}`
+- `GET /api/schueler/{id}/bescheid-vorschlag`
+- `GET /api/schueler/{id}/bescheide`
 - `GET /api/schueler/{id}/dsgvo-auskunft`
 - `GET /api/schueler/{id}/dsgvo-auskunft/pdf`
 - `GET /api/schueler/{id}/schadensfaelle`
@@ -159,6 +163,7 @@
 - `POST /api/auth/logout`
 - `POST /api/auth/refresh`
 - `POST /api/benutzer`
+- `POST /api/bescheide/{id}/uebergeben`
 - `POST /api/bestellungen`
 - `POST /api/bestellungen/bulk-receive`
 - `POST /api/bestellungen/suche`
@@ -195,6 +200,7 @@
 - `POST /api/schadensfaelle/{id}/bezahlt`
 - `POST /api/schadensfaelle/{id}/storno`
 - `POST /api/schueler`
+- `POST /api/schueler/{id}/bescheide`
 - `POST /api/schueler/{id}/photo`
 - `POST /api/schueler/{id}/restore`
 - `POST /api/schueler/{id}/zusammenfuehren`
@@ -212,12 +218,6 @@
 - `PUT /api/bestellungen/{id}/bestaetigen`
 - `PUT /api/bestellungen/{id}/bestaetigungs-link`
 - `PUT /api/bestellungen/{id}/mittel`
-- `POST /api/bescheide/{id}/uebergeben`
-- `GET /api/bescheide`
-- `GET /api/bescheide/{id}/pdf`
-- `GET /api/schueler/{id}/bescheid-vorschlag`
-- `GET /api/schueler/{id}/bescheide`
-- `POST /api/schueler/{id}/bescheide`
 - `PUT /api/books/`
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`
