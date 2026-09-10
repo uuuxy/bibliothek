@@ -63,6 +63,28 @@ der ganze Bestand, eine Ratsche.
 | **Regel-Zwilling Massenlauf ↔ Einzelfall** | Ein Massenabgleich formuliert dieselbe Auswahlregel anders als der Einzelpfad: Beim Ausleihen gilt der FRÜHESTE Rückgabe-Termin einer Klasse (`RueckgabeTerminFuerKlasse`, MIN), beim Speichern des Plans gewann die LETZTE Zeile — nennt ein Plan eine Klasse zweimal, bekam dasselbe Schulbuch je nach Weg eine andere Frist | `TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt` (Live-Pfad über die Handler, rot gesehen) | 05.09.2026: gefunden im Rasterdurchgang über den eigenen Code desselben Tages; Massenlauf rechnet jetzt je Klasse das Minimum. Prüfmuster für den Bestand: Wo eine Regel einmal „für einen" und einmal „für alle" geschrieben ist, dieselbe Eingabe durch beide schicken |
 | **Barriere im Bauteil** | Ein Container ist Knopf und enthält Knöpfe (nested-interactive), ein Dialog hält den Fokus nicht, eine Tabelle hat keinen Namen, ein Text steht auf zu wenig Kontrast — für Maus und Auge unsichtbar, für Tastatur und Screenreader eine Wand | `e2e/barrierefreiheit-axe.spec.js` (axe WCAG A/AA über alle Routen + Gerüst), `e2e/barrierefreiheit-dialog.spec.js` (Fokusfalle, Tabellen, Bewegung), Ratsche `frontend-hygiene-tabellen` (`beschriftung` Pflicht) | 09.09.2026: beide Gates vor dem ersten Fix rot (17/19, 4/4), danach 23/23 grün; Fixes an der Quelle (fokusFalle, Tabelle, Hauptbereich, SkipLink, basis.css, Feld/Select-Rahmen). FACHKONZEPT §19 |
 
+### Bestands-Durchgang 10.09.2026 — neue Klassen
+
+Anlass: alle zwölf Fragen über JEDE Datei (neun Prüfer, je ein Bereich), dazu die „sieht
+nicht"-Spalte der Landkarte als Suchliste. 22 Funde in 20 Commits behoben, jeder mit am alten
+Code rot gesehenem Test; die Formen, die mehr als einmal vorkamen, sind hier eigene Klassen.
+Die offenen Funde stehen in `befunde.md`.
+
+| Bugklasse | Form | Gate | Stand |
+| --- | --- | --- | --- |
+| **Zustands-Ausgang ohne Räumer** | Eine Vorgangsspalte („NULL = kein Vorgang") wird von einem Pfad gesetzt und nur von EINEM Ausgang geräumt; jeder andere Ausgang lässt sie stehen, und alle Leser mit `IS NULL` zählen falsch | DB-Regel `chk_exemplar_bestellstatus_nur_im_zulauf` (Migration 111) + `api/bestellstatus_ausgang_pg_test.go` | 10.09.: `bestellstatus` — Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur räumten nicht (4f46dd52). Prüfmuster: je Vorgangsspalte alle Schreiber ihrer Nachbarflags aufzählen |
+| **Ausgang ohne Folgeschritt** | Ein Datensatz, der eine geteilte Ressource hält, verschwindet über mehrere Türen; den Folgeschritt (Nachrücken, Zurücksetzen) ruft nur ein Teil | Trigger `trg_exemplar_aus_dem_umlauf`/`…_geloescht_abholfach` (Migration 112) + `repository/vormerkung_abholfach_pg_test.go` | 10.09.: abholbereite Vormerkung — 1 von 7 Türen setzte zurück; manuelles Löschen rückte nicht nach (4156d0e8). Offen: Geisterbuch-Fall bei der Ausleihe (befunde.md) |
+| **Zustand ohne Eingang** | Ein Wert aus einer CHECK-Liste, den kein Produktivcode schreibt; Leser verzweigen darauf, der Zustand wird nie erreicht | — (Detektor-Idee: CHECK-Literale aus `pg_constraint` gegen Schreib-Literale im Go-SQL; blind für Parameter) | 10.09.: `schadensfaelle.art='nicht_zurueckgegeben'` nur per Backfill (d775f954), `schadensersatz_bescheide.status='erledigt'` — jetzt abgeleitet (232e8926) |
+| **Vorgang ohne Umzug / zweiter Löschweg** | Eine Frage-12-Antwort gilt für EINEN Löschweg des Elternteils; ein zweiter (Zusammenführen, Reparaturskript) lässt die Kante ungefragt | `TestZusammenfuehren_JedeTabelleWandert` läuft über `dsgvoSchuelerQuellen` statt über eine Abschrift | 10.09.: Bescheid blieb beim Zusammenführen personenlos (0a580fbd). Prüfmuster: je FK-Kante × je Löschweg |
+| **DEFAULT-Umgehung durch Nullwert** | Ein Go-Nullwert steht ausdrücklich in einer INSERT-Spalte mit DB-DEFAULT; der DEFAULT greift nie | `inventur/jahrgang_vorgabe_pg_test.go` (Minimal-Anlage → Spalte = Vorgabe) | 10.09.: `jahrgang_von/bis` 0–0 an drei Anlege-Stellen (29c1d702, Migration 114 repariert) |
+| **Maschine gegen Hand** | Ein Hintergrundjob wählt über eine Statusspalte, die die Hand-Pfade nicht pflegen, und überschreibt die Eingabe eines Menschen | `internal/service/cover_sync_auswahl_pg_test.go` + `inventur/cover_hand_gegen_maschine_pg_test.go` | 10.09.: Cover-Sync überschrieb Hand-Uploads (672e3bb3) |
+| **Normalform-Asymmetrie Prüfer ↔ Leser** | Die Eindeutigkeit vergleicht in einer anderen Normalform (exakt) als der Lookup, der die Identität auflöst (`LOWER … LIMIT 1`) | Unique-Index `uniq_benutzer_email_lower` (Migration 113) + `repository/user_email_pg_test.go` | 10.09.: `benutzer.email` (c1c7f685). Prüfmuster: jedes `LOWER(col) =`/`suchnorm(col) =` gegen den UNIQUE der Spalte |
+| **Zustand im Freitext** | Eine Zustandsentscheidung hängt am Präfix/Wortlaut eines überschreibbaren Textes | — (Grep auf `LIKE '…%'` über Freitext-Spalten, `includes(` auf Fehlertexten) | 10.09.: umbenannter Rückkehrer-Grund ohne Automatik-Präfix → Dauersperre (283b079b). Offen: Sperr-Dialog der Theke am Fehlertext (befunde.md) |
+| **Zwei Ablagen, ein Dateiname** | Zwei Erzeuger legen gleich benannte Artefakte an verschiedenen Orten ab; Leser und Anleitungen wählen nach Muster statt nach Herkunft | `docs/rueckweg_anleitungen_test.go` | 10.09.: Restore-Anleitung griff die Deploy- statt der Nachtsicherung; Rollback führte nicht zurück |
+| **Kalender-Gate** | Ein Test überspringt sich nach Datum oder Datenlage — außerhalb des Fensters grün, ohne etwas zu prüfen | Kalender-Gate in `e2e-hygiene-waechter.test.js` (Liste ≡ Bestand, je Eintrag ein ganzjähriger Unit-Test) | 10.09.: zwei Abgänger-Specs, neun Monate im Jahr übersprungen |
+| **Verrottete Ausnahme-Begründung** | Ein Eintrag im Bestand einer Ratsche begründet sich mit einer Tatsache („kein DB-Zugriff"), die der Code später widerlegt | — (Detektor-Idee: Aufrufgraph gegen die Begründung) | 10.09.: `fehler_kollaps_test.go` friert `claimsAusRequest`/`MeHandler`/`Refresh` mit „kein DB-Zugriff" ein — beide lesen die DB (befunde.md) |
+| **Frist am Tag des Ereignisses** | Eine Regel nimmt einen Termin als Frist für einen Vorgang, der am oder nach dem Termin eine andere Bedeutung hat | — (Matrix T−1/T/T+1 je Fristquelle; braucht injizierbare Uhr) | 10.09.: vergangenes Leseclub-Datum (5f09591c). Offen, Produktfrage: LMF-Frist am Rückgabetermin (befunde.md) |
+
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 
 Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das
@@ -77,7 +99,8 @@ steht im Kopfkommentar der Datei.
 | Ratsche                                       | Sieht nicht                                                                                                                                          |
 | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tote_tueren_test.go`                         | Abgleich nur über den Namen: eine tote Interface-Methode, deren Name anderswo als Feld lebt, gilt als benutzt; eingebettete Interfaces gar nicht.    |
-| `fehler_kollaps_test.go`                      | Liest nur die if-Bedingung: ein Kollaps im Rumpf (Switch, Helfer, `sendError(err)`) oder eine Fehlervariable ohne `err`-Suffix.                      |
+| `fehler_kollaps_test.go`                      | Liest nur die if-Bedingung: ein Kollaps im Rumpf (Switch, Helfer, `sendError(err)`) oder eine Fehlervariable ohne `err`-Suffix. Bis 10.09.2026 auch blind für `apierrors.NotFound/Unauthorized/Forbidden` (die Hausform hinter `Wrap`) — seitdem in der Antwortmenge. |
+| `docs/rueckweg_anleitungen_test.go`           | Nur Text: ob die gedruckten Befehle am Server laufen, beweist sie nicht (dafür die manuelle Restore-Probe 2e); nur `update.sh` und die Restore-Anleitung. |
 | `phantom_erfolg_test.go`                      | Zählt verworfene CommandTags, nicht Korrektheit: `RowsAffected` gelesen und falsch ausgewertet ist grün; `logExec`-Wrapper existieren für sie nicht. |
 | `parameter_strukturen_test.go`                | Nur die 13 eingetragenen Typen; Nullwerte über Zwischenvariablen.                                                                                    |
 | `audit_schreibtueren_test.go`                 | Nur Literaltext: SQL aus `Sprintf`, Variablen oder generischen Repository-Helfern; Migrationen und JS sind ausgeklammert.                            |
@@ -134,7 +157,7 @@ steht im Kopfkommentar der Datei.
 | `frontend-hygiene-layout.test.js`          | Nur oberste Markup-Ebene der Router-Komponenten; Flächen aus Unterkomponenten.                                                                           |
 | `frontend-hygiene-rechte.test.js`          | Braucht Variablenname UND Rollen-Literal: `benutzer.typ === 'admin'` oder Vergleich gegen Konstante.                                                     |
 | `frontend-hygiene-action-endpunkt.test.js` | Nur Text: Pfad aus Variable/Konkatenation (dafür `e2e/suchfelder-eigene-tuer.spec.js` am Draht).                                                         |
-| `e2e-hygiene-waechter.test.js`             | Nur `isVisible()`-Formen: `count() > 0`, `isEnabled()`, `try/catch`, Helfer in `helpers.js`; ob das `.or(` zum selben Element gehört.                    |
+| `e2e-hygiene-waechter.test.js`             | Nur `isVisible()`-Formen: `count() > 0`, `isEnabled()`, `try/catch`, Helfer in `helpers.js`; ob das `.or(` zum selben Element gehört. Kalender-Gate (10.09.2026): nur `test.skip(bedingung…)` — ein `return` am Testanfang oder eine Bedingung in einem Helfer sieht es nicht. |
 | `fehlerausgang.test.js`                    | Nur `if (res.ok) {…}` ohne Ausgang: `catch {}`, `if (!res.ok) return` mit falschem Zustand, `.then()`-Pfade.                                             |
 | `routing-consistency.test.js`              | Nur literal zugewiesene Tab-Werte.                                                                                                                       |
 | `vormerkung-status-konsistenz.test.js`     | Nur eine UI-Datei; String-Vorkommen ≠ Behandlung.                                                                                                        |
@@ -165,8 +188,10 @@ steht im Kopfkommentar der Datei.
 fehlender Backup-Schlüssel, `ENFORCE_PROD_SECRETS=false` — alle drei still),
 `scripts/sonar_scan.sh`, `security-scan.sh` (ZAP), `scripts/api_inventar.sh` (Generat
 veraltet still), `scripts/install-hooks.sh` (ohne ihn greift auf einem Arbeitsplatz gar
-kein Hook). **Nur in pre-push, nicht in CI:** `prettier --check`, `gofmt -l`,
-Trivy-Config-Scan des Dockerfiles.
+kein Hook). **Nur in den Hooks, nicht in CI:** `prettier --check` und `gofmt -l` (pre-commit —
+hier stand bis 10.09.2026 fälschlich „pre-push"), Trivy-Config-Scan des Dockerfiles (pre-push).
+**Nirgends automatisch:** `scripts/api_inventar.sh` — das Generat war am 10.09.2026 von Hand
+nachgetragen statt neu erzeugt (9056f2d0).
 
 Regel 7 daraus: **Jede neue Ratsche trägt ihre Blindheit im Kopfkommentar und eine Zeile
 hier.** Ein Gate ohne benannte Blindheit wird beim nächsten Fund zur falschen Spur.

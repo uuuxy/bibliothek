@@ -150,6 +150,71 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     hunderte Treffer, den ersten zu nehmen hängt ein falsches Cover an ein Buch. Vorbild:
     DNB-Signaturvorschlag (22a10b1).
 
+- **Bestands-Durchgang 10.09.2026** (Peter: „lass alle Schemata nochmal über alles laufen,
+  keine Ausnahmen"). Alle zwölf Fragen über jede Datei (neun Prüfer, je ein Bereich), die
+  „sieht nicht"-Spalte der Landkarte als Suchliste, dazu die volle Gate-Batterie (Go mit
+  Postgres 2341 grün, Vitest, svelte-check, Lint, deadcode, govulncheck, Trivy, Druck-Gate,
+  Playwright 183 grün). **22 Funde in 20 Commits behoben** (9056f2d0 … f67078f3), jeder
+  am alten Code rot gesehen; neue Klassen in `sweeps.md`. Hier nur, was offen ist:
+
+  - **Rest-A, bewusst nicht im Durchgang:** Geisterbuch-Fall bei der Ausleihe
+    (`entferneErfuellteVormerkung`) — das reservierte Exemplar geht ins Regal zurück,
+    statt den Nächsten zu bedienen; braucht einen Rot-Test über den Checkout.
+  - **Sicherheit/Anmeldung (B):** DB-Aussetzer im Token-Pfad ergibt 401 statt 5xx — alle
+    Arbeitsplätze melden sich ab, SECURITY.md verspricht 500; die Ausnahmen in
+    `fehler_kollaps_test.go` begründen sich mit „kein DB-Zugriff", `claimsAusRequest`/
+    `MeHandler`/`Refresh` lesen aber die DB (Klasse „verrottete Ausnahme-Begründung").
+    Selbstanmeldung, zweiter Versuch: englisches „user account is deactivated" statt
+    „Zugang beantragt". `MarkCopyDefekt` trägt ohne Schüler den klickenden BEARBEITER als
+    Verantwortlichen ein, zwei Leser nennen ihn „Schuldner"; `DeleteUser` prüft offene
+    Schäden nicht.
+  - **Bescheid (B):** Verleihjahr zählt Ausleihen und Kalenderjahre statt Schuljahre;
+    Kassenjahr = Jahr der Frist (Dezember-Brief zählt ins Folgejahr); Frist serverseitig
+    unbegrenzt (Vergangenheit = sofort übergabefähig); Nachdruck liest Bank/Aufsicht live
+    aus den Einstellungen; Rechnung und Elternbrief führen Bescheid-Positionen weiter mit
+    „bar in der Bibliothek" (zwei Zahlungswege für eine Forderung, Etappe 4); Einstieg nur
+    über überfällige Ausleihen — wer „nur" eine Forderung hat, bekommt keinen Bescheid;
+    `aussonderung_grund` bleibt BESCHAEDIGUNG auch bei Verlust; `tabula_rasa.sql` leert
+    `schadensersatz_nummern` nicht.
+  - **Bestand/Katalog (B):** Massenlöschen `DELETE /api/books` hängt an `edit_books`,
+    Einzellöschen an `delete_books`; Ausleiher-Reiter der Buchakte verschweigt
+    Lehrer-Ausleihen (INNER JOIN); ISBN-Eindeutigkeit nur je Schreibweise (mit/ohne
+    Bindestrich); `DeleteBooks` liest die Spuren vor der Transaktion; Titel-Etiketten
+    drucken ausgesonderte Exemplare mit; Jahrgangs-CHECK erst nach Messung der Prod-Daten.
+  - **Bestellwesen (B):** Wareneingang gruppiert nach Datum|Notiztext statt
+    `bestellung_id` (zwei Töpfe am selben Tag = eine Gruppe; ohne Vorab-Barcode
+    „Unbekannter Lieferant"; Datum ohne Schulzeitzone); Mail-Datum und Link-Frist in
+    Serverzeit; Idempotenz-Schlüssel überlebt eine Änderung des Warenkorbs.
+  - **Theke (B):** eigene Rückgabe in offener Sitzung scheitert an der Sperrprüfung;
+    verliehenes, als defekt gemeldetes Gerät nicht rückgebbar; Sperr-Dialog hängt am
+    Fehlertext (Schadens-Sperre ohne Übergehen-Dialog); Geräte-Ausleihe übernimmt
+    `active_teacher_id` ungeprüft; Offline-Warteschlange nur für `B-`-Barcodes; doppelte
+    Vormerkung 500 statt 409.
+  - **Schüler/Frontend (B):** Suchen in Schülerdatei und Ehemaligen mit `res.ok && …`
+    bzw. `res.ok ? … : []` — der Fehlerausgang-Scanner sieht beide Formen nicht
+    (Fundstellen auch AnliegenListe, KollegiumPortal, KlassensatzReservierungen,
+    GeraeteVerwaltung); Abgänger-Druck folgt der Suche nicht, obwohl zwei Kommentare es
+    zusichern; Mail-Knopf an Klassenleitungen ohne `hatRecht('create_orders')`; Theke hält
+    nach dem Zusammenführen die gelöschte Quell-ID; Bearbeiten-Formular schickt das alte
+    `abgaenger_jahr` mit (Klassenwechsel rechnet nie neu); Foto per Barcode ohne
+    `deleted_at`; Ausweis 12T gilt bis 12 statt 13; Purge-Fehler immer 409; DELETE im
+    Papierkorb setzt die 180-Tage-Uhr zurück; Wiederherstellen kollidiert seit Migration
+    108 am Namensindex mit 500.
+  - **LMF/Statistik (B):** Klasse zweimal im Plan — Ausleihe und Massenabgleich nennen
+    zwischen den Terminen verschiedene Fristen; Statistik ohne Sequenznummer und ohne
+    Fehlerzustand, Query-Fehler ergeben leere Listen ohne Logzeile.
+  - **Gates/Betrieb (B):** Gegenrichtungs-Ratsche blind für UNIQUE/Teilindizes und
+    RESTRICT-FKs, Schema-Parität vergleicht Funktionen nur am Namen; Release-Gate ignoriert
+    `security-scan.yml` (die Begründung „docker-scan gab es nie" stimmt nicht); zwölf
+    Ratschen ohne Landkarten-Zeile (Regel 7 hat keine Ratsche); `api/search_debug_test.go`
+    mit fester DSN auf die Entwicklungs-DB und Skip ohne Guard; kein Rückweg beim Wechsel
+    des `BACKUP_ENCRYPTION_KEY`; `migrate-fotos` (14-MB-Binary) im öffentlichen Repo
+    getrackt; Escape in einem offenen Select schließt den ganzen Dialog.
+  - **Kleinkram (C):** DEPLOYMENT §8 beschreibt das alte Release-Gate, §2.3 `base64`
+    gegen §2.1 `hex`; `resilience_and_recovery.md` nennt `bibliothek-db` als Dienst;
+    `scripts/backup.sh` exportiert die ganze `.env`; tote Compose-Variablen `DB_HOST`,
+    `SMTP_SENDER`; tote CSS-Klassen in `altlasten.css`; zwei Regexe für die LMF-Kennung.
+
 ## Offen — Entscheidung nötig (Peter)
 
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
@@ -158,6 +223,11 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
 | Fund                                                                                                                                                                                                                                                                                                                         | Frage                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Landesmittel/Kreismittel: Schadensersatz (Teil A) + Beschaffung (Teil B)** — Konzept in [mittel_konzept.md](mittel_konzept.md) (09.09.2026). Teil A (Bescheide) nicht gebaut; heute verlangen drei Briefe Barzahlung „in der Bibliothek", kennen weder Referenznummer noch den Topf; Betrag ist Freitext mit Vorgabe 15 €. | **E1** Nummern für die Referenznummer (Sekretariat) · **E2** aktuelles Musterschreiben anfordern (die vorliegenden Unterlagen sind von 2014 und nennen eine inzwischen aufgelöste Stelle) · **E3** Frist 28 Tage statt 6 Wochen · **E4** Feld „Listenpreis" am Titel für die Staffel ab dem 2. Verleihjahr · **E5** Zahlungsweg der Schülerbücherei mit dem Schulträger klären · **E6** nach Übergabe: Sperre bleibt, Löschblockade fällt? · **E7** kein E-Mail-/App-Versand · **E8** keine Eltern-Namen/zweite Anschrift · **Teil B Beschaffung — erster Schnitt GEBAUT 10.09.2026** (Migration 109: eine Bestellung = ein Topf, gemischter Warenkorb → zwei Bestellungen, Vermerk auf Anschreiben und Mail, zweite Kundennummer, Backfill, Lernmittel-Frage im Staging, Topf nachträglich korrigierbar; D1/D3/D5 von der EDV-Servicestelle für Schulbibliotheken beantwortet, siehe Konzept 7.4). **Offen, zweiter Schnitt:** Berichte (Monat/Jahr/Lieferantenabrechnung) in zwei Blöcken Land/Kreis + Topf-Filter in der Historie (Konzept 7.3, Schritt 4). |
+
+| **LMF-Frist am Rückgabetermin** (Bestands-Durchgang 10.09.2026). Wer am Termintag der Klasse neue Schulbücher bekommt, erhält den Termin selbst als Frist (heute 23:59, `RueckgabeTerminFuerKlasse` sucht `>= heute`); am Tag danach gilt der Stichtag 31.07. — in den Ferien. Nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt. `ziel_jahrgang` (mehrjährige Ausleihe) hat keinen Schreiber. | Welche Frist gilt für ein Lernmittel, das am oder nach dem Rückgabetermin der Klasse ausgegeben wird — der Stichtag des NÄCHSTEN Schuljahres, oder der Termin des nächsten Plans? |
+| **Karenz gegen Lesehistorie** (10.09.2026). Die Uhr vor der Anonymisierung rechnet ab der letzten Rückgabe — über `ausleihen.schueler_id`, die der Lesehistorie-Lauf nach `lesehistorie_tage` trennt. Ist die Karenz länger eingestellt als die Lesehistorie, wird früher anonymisiert als eingestellt. Mit den Vorgaben (90/90) ohne Wirkung. | Soll die Einstellung Karenz ≤ Lesehistorie erzwingen, oder soll die Uhr ihren Zeitpunkt selbst speichern (eigene Spalte)? |
+| **Topf auf Bestätigungsseite und großen Etiketten** (10.09.2026). Der Händler bekommt am selben Tag zwei gleich aussehende Links; auch für eine Schülerbücherei-Bestellung werden die großen Lernmittel-Etiketten mit „Eigentum des Landes" angeboten und angehängt. | Nennt die Bestätigungsseite den Topf? Große Etiketten nur bei `land`? |
+| **Security-Jobs im Release-Gate** (10.09.2026). Die Pflichtliste enthält keinen der vier Security-Jobs (govulncheck, gosec, npm audit, Trivy-Image); ein Tag auf einen Commit mit rotem Trivy erzeugt trotzdem Release und Image. | Gehören sie in die Pflichtliste, oder bleibt es bewusst so (dann begründet festhalten)? |
 
 ## Beobachten (nichts zu tun)
 
@@ -210,6 +280,13 @@ Die EINE Liste der offenen Betriebs-Punkte. Littera-Details in
   05.09. noch die `pull_request`-Regel), „Block force pushes" und „Restrict deletions"
   anlassen.
 - Datenwert Schulname/„Neuer Text" auf Live korrigieren.
+- **Vor dem nächsten Deploy (Migration 113):** auf dem Server prüfen, dass keine E-Mail in
+  zwei Schreibweisen existiert — sonst bricht die Migration mit Klartext ab:
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT lower(email), count(*) FROM benutzer GROUP BY 1 HAVING count(*) > 1;"`
+  (leere Ausgabe = gut).
+- **Restore-Probe 2e einmal mit dem neuen Weg** (`docs/resilience_and_recovery.md`): Die
+  alte Anleitung griff die Deploy- statt der Nachtsicherung (e490960e) — ob die neuen
+  Befehle am Server so laufen, ist nur am Text geprüft.
 - **Vier Umgebungsvariablen, die Compose nicht durchreicht** (gemessen 08.09.2026):
   `ALLOWED_ORIGIN`, `RATE_LIMIT`, `SENTRY_DSN`, `IMAP_PORT` werden von Go gelesen, stehen
   aber in keinem `environment:`-Block von `docker-compose.yml` — im Container gilt also
@@ -228,4 +305,4 @@ TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-AP
 sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
 (`/api/v1`) und Mandantenfähigkeit (RLS).
 
-Stand: 2026-09-08
+Stand: 2026-09-11
