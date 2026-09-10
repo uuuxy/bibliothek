@@ -253,12 +253,17 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 	}
 
 	// Leseclub-Regel: Falls die Ferien-Leseclub-Aktion aktiv ist und ein Zieldatum konfiguriert wurde,
-	// erhalten alle regulären Buchbestände (ausgenommen Lernmittel) dieses Zieldatum als Frist.
+	// erhalten alle regulären Buchbestände (ausgenommen Lernmittel) dieses Zieldatum als Frist —
+	// aber nur, solange es nicht vorbei ist. Bleibt der Schalter nach den Ferien an, wäre das
+	// vergangene Ferienende sonst die Frist jeder neuen Ausleihe: sofort überfällig, nach 14
+	// Tagen gesperrt (Bestands-Durchgang 10.09.2026). Dann gilt die reguläre Frist.
 	if !copy.IstLernmittel && settings.FerienLeseclubAktiv && settings.FerienLeseclubZieldatum != nil {
 		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
 		if parseErr == nil {
 			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schoolLocation())
-			return end, nil
+			if end.After(time.Now()) {
+				return end, nil
+			}
 		}
 	}
 

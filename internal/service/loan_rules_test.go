@@ -256,6 +256,30 @@ func TestResolveCheckoutDueDate_LeseclubOverride(t *testing.T) {
 	}
 }
 
+// Bestands-Durchgang 10.09.2026: Blieb der Leseclub nach den Ferien eingeschaltet, bekam
+// jede neue Ausleihe das VERGANGENE Ferienende als Frist — sofort überfällig, nach 14
+// Tagen gesperrt, und das Mahnwesen erfasste sie am selben Tag. Die Theke zeigt die Frist
+// beim Ausleihen nicht an; niemand hätte es bemerkt. Ein Zieldatum vor heute gilt nicht.
+func TestResolveCheckoutDueDate_LeseclubVergangenGiltNicht(t *testing.T) {
+	svc, mock := newServiceWithMock(t)
+	defer mock.Close()
+
+	rows := pgxmock.NewRows([]string{"schluessel", "wert"}).
+		AddRow("ferien_leseclub_aktiv", "true").
+		AddRow("ferien_leseclub_zieldatum", "2020-09-15")
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		WillReturnRows(rows)
+
+	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
+	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if !got.After(time.Now()) {
+		t.Errorf("vergangenes Leseclub-Zieldatum darf keine Frist sein: got %v", got)
+	}
+}
+
 func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 	svc, mock := newServiceWithMock(t)
 	defer mock.Close()
