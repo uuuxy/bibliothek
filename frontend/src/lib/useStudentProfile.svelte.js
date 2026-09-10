@@ -148,7 +148,7 @@ export function useStudentProfile() {
 		showDamageModal = true;
 	}
 
-	async function submitDamageReport(studentId, reason, amount) {
+	async function submitDamageReport(studentId, reason, amount, art) {
 		if (!damageBook) return;
 		isSubmittingDamage = true;
 		try {
@@ -159,6 +159,7 @@ export function useStudentProfile() {
 				// `exemplar_id`-Feld gibt es dort nicht (500: leere UUID).
 				copy_id: damageBook.id,
 				beschreibung: reason,
+				art,
 				betrag: amount
 			});
 			if (res.ok) {

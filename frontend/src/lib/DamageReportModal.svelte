@@ -7,13 +7,17 @@
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
+	import Radio from './components/ui/Radio.svelte';
 	let { book, onCancel, onSubmit, isSubmitting } = $props();
 
 	let damageReason = $state('Verloren');
 	let damageAmount = $state(15.0);
+	// Die Fallgruppe steht im Bescheid an die Eltern (welches Kästchen, ob Rückgabe
+	// verlangt wird) — deshalb eine Wahl, kein Rückschluss aus dem Freitext.
+	let art = $state('nicht_zurueckgegeben');
 
 	function handleSubmit() {
-		onSubmit(damageReason, damageAmount);
+		onSubmit(damageReason, damageAmount, art);
 	}
 </script>
 
@@ -29,6 +33,15 @@
 			</p>
 
 			<div class="space-y-4">
+				<fieldset class="space-y-2">
+					<legend class="text-sm font-semibold text-on-surface">Was ist passiert?</legend>
+					<Radio
+						bind:group={art}
+						value="nicht_zurueckgegeben"
+						label="Nicht zurückgegeben (verloren)"
+					/>
+					<Radio bind:group={art} value="beschaedigt" label="Beschädigt zurückgegeben" />
+				</fieldset>
 				<Feld
 					id="damage-reason"
 					label="Grund"

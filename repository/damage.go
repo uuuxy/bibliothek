@@ -10,10 +10,28 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// SchadensArt ist die Fallgruppe einer Forderung — genau die beiden Kästchen des
+// Bescheid-Formulars (chk_schaden_art, Migration 110): Sie entscheidet, welches Kästchen
+// der Brief ankreuzt und ob er die Rückgabe verlangt. Ein eigener Typ, damit sie in der
+// Parameterliste von ReportDamage nicht stumm mit der Beschreibung vertauscht wird.
+type SchadensArt string
+
+const (
+	// SchadensArtNichtZurueck heißt: verloren bzw. nicht ordnungsgemäß zurückgegeben.
+	SchadensArtNichtZurueck SchadensArt = "nicht_zurueckgegeben"
+	// SchadensArtBeschaedigt heißt: so stark beschädigt zurückgegeben, dass es unbrauchbar ist.
+	SchadensArtBeschaedigt SchadensArt = "beschaedigt"
+)
+
+// Gueltig sagt, ob a einer der beiden Werte ist.
+func (a SchadensArt) Gueltig() bool {
+	return a == SchadensArtNichtZurueck || a == SchadensArtBeschaedigt
+}
+
 // DamageRepository defines operations for managing book damages and related loan actions.
 type DamageRepository interface {
 	MarkCopyDefekt(ctx context.Context, copyID string, loanID, schuelerID *string, benutzerID string, betrag float64, beschreibung string) (string, error)
-	ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, betrag float64) (string, error)
+	ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, art SchadensArt, betrag float64) (string, error)
 	// ListSchadensfaelleVonSchueler liefert alle Schadensfälle eines Schülers,
 	// neueste zuerst — die Gebühren-Sektion der Schülerakte.
 	ListSchadensfaelleVonSchueler(ctx context.Context, schuelerID string) ([]Schadensfall, error)
@@ -162,7 +180,7 @@ func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, 
 var ErrExemplarNeuVerliehen = errors.New("Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden")
 
 // ReportDamage sets ist_ausgesondert = true, inserts a damage record, and ends the loan.
-func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, betrag float64) (string, error) {
+func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, art SchadensArt, betrag float64) (string, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return "", err
@@ -248,10 +266,10 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 
 	var schadensID string
 	err = tx.QueryRow(ctx, `
-		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, art)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
-	`, copyID, loanID, loanSchuelerID, beschreibung, betrag).Scan(&schadensID)
+	`, copyID, loanID, loanSchuelerID, beschreibung, betrag, string(art)).Scan(&schadensID)
 	if err != nil {
 		return "", err
 	}

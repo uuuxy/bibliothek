@@ -31,7 +31,7 @@ func TestReportDamage_ResetsAbholbereiteVormerkung(t *testing.T) {
 	}
 
 	repo := NewDamageRepository(pool)
-	if _, err := repo.ReportDamage(ctx, ex[0], loan, schueler, bearbeiter, "Wasserschaden", 10.0); err != nil {
+	if _, err := repo.ReportDamage(ctx, ex[0], loan, schueler, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 10.0); err != nil {
 		t.Fatalf("ReportDamage: %v", err)
 	}
 

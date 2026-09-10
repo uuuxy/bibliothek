@@ -74,17 +74,27 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 		}
 
 		var req struct {
-			LoanID       string  `json:"loan_id"`
-			SchuelerID   string  `json:"schueler_id"`
-			CopyID       string  `json:"copy_id"`
-			Beschreibung string  `json:"beschreibung"`
-			Betrag       float64 `json:"betrag"`
+			LoanID       string `json:"loan_id"`
+			SchuelerID   string `json:"schueler_id"`
+			CopyID       string `json:"copy_id"`
+			Beschreibung string `json:"beschreibung"`
+			// Art: Fallgruppe des Bescheids — Pflicht, ohne stillen Vorgabewert. Bis zum
+			// 10.09.2026 fehlte das Feld, jede Forderung bekam den DEFAULT 'beschaedigt',
+			// und der Bescheid nannte ein verlorenes Buch „beschädigt zurückgegeben".
+			Art    string  `json:"art"`
+			Betrag float64 `json:"betrag"`
 		}
 		if !DecodeAndValidate(w, r, &req) {
 			return nil
 		}
+		art := repository.SchadensArt(req.Art)
+		if !art.Gueltig() {
+			//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
+			return apierrors.BadRequest("Bitte angeben, ob das Buch nicht zurückgegeben oder beschädigt zurückgegeben wurde.",
+				errors.New("art fehlt oder ist ungültig"))
+		}
 
-		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, req.SchuelerID, claims.UserID, req.Beschreibung, req.Betrag)
+		schadensID, err := damageRepo.ReportDamage(r.Context(), req.CopyID, req.LoanID, req.SchuelerID, claims.UserID, req.Beschreibung, art, req.Betrag)
 		if err != nil {
 			// Zwischenzeitliche Neuausleihe ist ein Konflikt (409), kein Serverfehler:
 			// Der Nutzer muss den Vorgang neu laden, nicht der Server ist kaputt.

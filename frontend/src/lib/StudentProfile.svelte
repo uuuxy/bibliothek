@@ -240,7 +240,7 @@
 		book={st.damageBook}
 		isSubmitting={st.isSubmittingDamage}
 		onCancel={() => (st.showDamageModal = false)}
-		onSubmit={(r, a) => st.submitDamageReport(st.profile.id, r, a)}
+		onSubmit={(r, a, art) => st.submitDamageReport(st.profile.id, r, a, art)}
 	/>
 {/if}
 

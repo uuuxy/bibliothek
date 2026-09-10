@@ -30,7 +30,7 @@ func TestReportDamageRace(t *testing.T) {
 	seedAusleihe(t, pool, copyID, schuelerB, bearbeiter)
 
 	// Jetzt kommt der verspätete "Schaden melden"-Klick mit der ALTEN loanID.
-	_, err := repo.ReportDamage(ctx, copyID, alteLoan, schuelerA, bearbeiter, "Kaffeefleck", 5.0)
+	_, err := repo.ReportDamage(ctx, copyID, alteLoan, schuelerA, bearbeiter, "Kaffeefleck", SchadensArtBeschaedigt, 5.0)
 	if !errors.Is(err, ErrExemplarNeuVerliehen) {
 		t.Fatalf("erwartet ErrExemplarNeuVerliehen, war: %v", err)
 	}
@@ -63,7 +63,7 @@ func TestReportDamageNormalfall(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 
-	schadensID, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Riss im Einband", 3.0)
+	schadensID, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Riss im Einband", SchadensArtBeschaedigt, 3.0)
 	if err != nil {
 		t.Fatalf("regulärer Schaden abgelehnt: %v", err)
 	}
@@ -92,11 +92,11 @@ func TestReportDamageIdempotent(t *testing.T) {
 	bearbeiter := seedBearbeiter(t, pool)
 	loan := seedAusleihe(t, pool, copyID, schueler, bearbeiter)
 
-	id1, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", 7.5)
+	id1, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
 	if err != nil {
 		t.Fatalf("erster Report abgelehnt: %v", err)
 	}
-	id2, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", 7.5)
+	id2, err := repo.ReportDamage(ctx, copyID, loan, schueler, bearbeiter, "Wasserschaden", SchadensArtBeschaedigt, 7.5)
 	if err != nil {
 		t.Fatalf("zweiter Report (Doppelklick) abgelehnt: %v", err)
 	}
@@ -174,7 +174,7 @@ func TestReportDamageSchuldnerAusAusleihe(t *testing.T) {
 	loan := seedAusleihe(t, pool, copyID, echterSchuldner, bearbeiter)
 
 	// Der Client behauptet fälschlich, der FREMDE sei schuld.
-	schadensID, err := repo.ReportDamage(ctx, copyID, loan, fremder, bearbeiter, "Riss", 4.0)
+	schadensID, err := repo.ReportDamage(ctx, copyID, loan, fremder, bearbeiter, "Riss", SchadensArtBeschaedigt, 4.0)
 	if err != nil {
 		t.Fatalf("ReportDamage: %v", err)
 	}
