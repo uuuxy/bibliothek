@@ -5,9 +5,25 @@
 Beide Teile teilen EIN Vokabular für die Mittelherkunft: `land` (Lernmittelfreiheit) und
 `schultraeger` (Schülerbücherei) — `repository/mittel.go`, `bestellungen_verlauf.mittel`.
 
-**Status:** Teil A ist Entwurf, NICHT gebaut; er wartet auf die Entscheidungen in
-Abschnitt 6 (Register: `befunde.md` → „Offen — Entscheidung nötig"). Teil B ist seit dem
-10.09.2026 im ersten Schnitt gebaut (Abschnitt 7.3).
+**Status (10.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
+Datenmodell mit Nummernkreis, Staffel, Einstellungen, Erstellen aus dem Mahnwesen,
+Nachdruck, Übergabe. Offen bleiben aus Abschnitt 4.7 die Etappen 2 (Massen-Anbindung ans
+Mahnwesen, Rückgabe-Hook) und 4 (Altbriefe abräumen, Staffel-Vorschlag im Schaden-Dialog).
+Teil B ist ebenfalls im ersten Schnitt gebaut (Abschnitt 7.3).
+
+**Was der Einbau geworden ist (Absprache 10.09.2026, drei Entscheidungen):** Der Bescheid
+entsteht in der bestehenden Auswahlleiste des Mahnwesens und nur bei GENAU EINEM
+markierten Schüler — jeder Betrag ist Ermessen, jede Referenznummer unwiderruflich. Die
+Briefe leben im vierten Reiter derselben Reiterzeile (Alle → Akut fällig → Eskaliert →
+Bescheide), dessen Zahl nur die abgelaufenen Fristen nennt. Der Erstell-Schritt ist EIN
+Basis-Dialog ohne Schritte (Material 3: Vollbild ist die Form für Telefone, einen Stepper
+gibt es dort nicht) und zeigt genau das, was ein Mensch entscheidet: welche Bücher, welcher
+Betrag, mit der Herleitung daneben.
+
+**Zwei Fehler, die erst das ANSEHEN des fertigen PDFs zeigte** (die Gates waren grün):
+„Ayşe" wurde zu „Ay.e" (der Zeichensatz des PDFs kennt das ş nicht), und der Seitenumbruch
+riss die Tabellenkopfzeile entzwei. Beide Klassen haben jetzt ein Gate; für das zweite
+liest `internal/pdftest` die Seiten getrennt (`TexteJeSeite`).
 
 **Anlass:** Peter hat am 08./09.09.2026 vier Unterlagen der Schule vorgelegt — die
 Verfahrensbeschreibung für den Schadensersatz bei Lernmitteln (Stand 2014), die
@@ -221,7 +237,16 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 
 ### 4.7 Etappen
 
-1. Datenmodell + Nummernkreis + Landes-Bescheid aus der Schülerakte + Recht + Einstellungen.
+1. ~~Datenmodell + Nummernkreis + Landes-Bescheid + Einstellungen.~~ **GEBAUT 10.09.2026**
+   (Migration 110, `pkg/ersatzwert`, `api/bescheid_pdf.go`, `repository/bescheid.go`,
+   `api/bescheid_handler.go`, Kategorie „Schadensersatz", Reiter und Dialog im Mahnwesen).
+   Abweichungen vom Plan oben, jeweils mit Grund: Der Bescheid entsteht im **Mahnwesen**
+   statt in der Schülerakte (dort steht, wer überfällig ist); `schadensfaelle.art` hat
+   **zwei** Werte statt drei (genau die zwei Kästchen des Formulars — „Verlust" IST die
+   erste Gruppe); `schueler_id` ist **SET NULL** statt RESTRICT (der Brief überlebt die
+   DSGVO-Löschung als Beleg ohne Person, RESTRICT hätte die berechtigte Löschung
+   blockiert); das Recht ist `edit_students` statt eines neuen — ein eigenes Recht bliebe
+   ab Werk bei niemandem und wäre eine Tür, die keiner öffnen kann.
 2. Mahnwesen-Anbindung (Auswahl → Bescheide) + Bescheid-Liste + Übergabe + Rückgabe-Hook.
 3. Schulträger-Rechnung + Betriebsbereitschaft-Warnung.
 4. Altbriefe abräumen, Staffel-Vorschlag im Schaden-Dialog, Doku (FACHKONZEPT §3/§14,
