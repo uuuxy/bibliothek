@@ -48,7 +48,8 @@ func EingangsjahrgaengeAus(einstellung string) []int {
 // („5, 7"). Fehler statt stiller Vorgabe: Bis zum Rasterdurchgang am 06.09.2026 wurde
 // jeder Text gespeichert und angezeigt, aber beim Lesen still verworfen — „8/9" (mit
 // Schrägstrich, so wie Klassen geschrieben werden) hieß gespeichert „8/9" und gerechnet
-// „5, 7". Der Nachbar im selben Formular (lmf_stichtag) prüft seit jeher.
+// „5, 7". Hier stand bis zum 10.09.2026, der Nachbar lmf_stichtag
+// prüfe „seit jeher" — er tat es nicht; seitdem NormalisiereLmfStichtag.
 func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 	if strings.TrimSpace(text) == "" {
 		return "", nil // leer heißt Vorgabe — das entscheidet der Patch-Pfad
@@ -74,6 +75,29 @@ func NormalisiereEingangsjahrgaenge(text string) (string, error) {
 		worte = append(worte, strconv.Itoa(j))
 	}
 	return strings.Join(worte, ", "), nil
+}
+
+// tageImMonat eines Nicht-Schaltjahres: Ein Stichtag 29.02. gäbe es drei von vier Jahren nicht.
+var tageImMonat = [13]int{0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+
+// NormalisiereLmfStichtag prüft den Lernmittel-Stichtag: „MM-TT", ein echter Kalendertag.
+// Leer heißt Vorgabe (das entscheidet der Patch-Pfad). Bis zum 10.09.2026 prüfte der
+// Server ihn nicht: „30.06." wurde gespeichert und angezeigt, gerechnet wurde still mit
+// 07-31 (lmfStichtagMonatTag), „02-30" wurde zum 2. März (Bestands-Durchgang).
+func NormalisiereLmfStichtag(text string) (string, error) {
+	s := strings.TrimSpace(text)
+	if s == "" {
+		return "", nil
+	}
+	if len(s) == 5 && s[2] == '-' {
+		m, err1 := strconv.Atoi(s[:2])
+		d, err2 := strconv.Atoi(s[3:])
+		if err1 == nil && err2 == nil && m >= 1 && m <= 12 && d >= 1 && d <= tageImMonat[m] {
+			return s, nil
+		}
+	}
+	//nolint:staticcheck // ST1005: nutzer-sichtbarer Text, erscheint als 400-Meldung im Formular
+	return "", fmt.Errorf("Lernmittel-Stichtag: %q ist kein Kalendertag im Format MM-TT — erwartet wird etwa „07-31“ für den 31. Juli", text)
 }
 
 // nurRueckgabeSQL ist das Prädikat „diese Klasse gibt vor den Ferien nur ab": Abschluss-

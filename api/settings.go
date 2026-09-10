@@ -83,6 +83,15 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 			}
 			req.LmfEingangsjahrgaenge = &norm
 		}
+		// Der dritte Nachbar im selben Formular: Der Stichtag trägt jede Lernmittel-Frist.
+		// Bis zum 10.09.2026 ungeprüft gespeichert, beim Rechnen still auf 07-31 zurück.
+		if req.LmfStichtag != nil {
+			norm, err := repository.NormalisiereLmfStichtag(*req.LmfStichtag)
+			if err != nil {
+				return apierrors.BadRequest(err.Error(), err)
+			}
+			req.LmfStichtag = &norm
+		}
 
 		ctx := r.Context()
 
