@@ -1286,7 +1286,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('110_schadensersatz_bescheide.sql'),
 ('111_bestellstatus_nur_im_zulauf.sql'),
 ('112_abholfach_folgt_dem_exemplar.sql'),
-('113_benutzer_email_eindeutig_in_normalform.sql')
+('113_benutzer_email_eindeutig_in_normalform.sql'),
+('114_jahrgang_null_null_repariert.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
