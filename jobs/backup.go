@@ -307,7 +307,15 @@ func rotateBackups(dir string, maxKeep int) {
 	}
 	defer closeutil.LogClose(root, "backup dir")
 	dateien, err := listeBackups(root)
-	if err != nil || len(dateien) <= maxKeep {
+	if err != nil {
+		// Nicht still aufhören: Ohne Rotation wächst das Verzeichnis, bis die Platte voll
+		// ist — und das ist genau der Moment, in dem auch keine neue Sicherung mehr
+		// entsteht. Vorher schluckte diese Zeile den Fehler zusammen mit dem Normalfall
+		// „noch nicht genug Sicherungen".
+		log.Printf("Backup rotation: Verzeichnis %s nicht lesbar, es wird nichts rotiert: %v", dir, err)
+		return
+	}
+	if len(dateien) <= maxKeep {
 		return
 	}
 	for _, d := range dateien[:len(dateien)-maxKeep] {
