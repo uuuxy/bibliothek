@@ -33,4 +33,6 @@ func (s *Server) registerOrderRoutes(mux *http.ServeMux, orderSvc *OrderService,
 	mux.Handle("POST /api/bestellungen/bulk-receive", s.RequirePermission("create_orders")(s.BulkReceiveOrderHandler()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigen", s.RequirePermission("create_orders")(s.BestaetigenBestellungHandler()))
 	mux.Handle("PUT /api/bestellungen/{id}/bestaetigungs-link", s.RequirePermission("create_orders")(s.NeuerBestaetigungsLinkHandler()))
+	// Rückweg für den Topf (Migration 109): mit Pflicht-Grund, im Admin-Audit-Log.
+	mux.Handle("PUT /api/bestellungen/{id}/mittel", s.RequirePermission("create_orders")(s.UpdateBestellungMittelHandler()))
 }

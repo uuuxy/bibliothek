@@ -303,7 +303,8 @@ Sechs Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automa
 den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
 Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücherei
 (Schulträger)_ — je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt
-sich per Knopf in den anderen Abschnitt schieben) ·
+sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich der Topf einer
+Bestellung nachträglich mit Grund korrigieren) ·
 **Wareneingang** (Positionen einbuchen → Etiketten) · **Bestellhistorie** (Detail, Status,
 Händlerbestätigung) · **Berichte** (Monat/Jahr/Lieferant als PDF) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·

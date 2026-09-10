@@ -20,7 +20,10 @@
 	import BestellDetailExemplare from './BestellDetailExemplare.svelte';
 	import Button from '../ui/Button.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
+	import BestellMittelDialog from './BestellMittelDialog.svelte';
 	import { mittelLabel } from './mittel.js';
+	import { authStore } from '../../stores/authStore.svelte.js';
+	import { hatRecht } from '../../menu.js';
 	import { ArrowLeft } from '@lucide/svelte';
 
 	/** @type {{ bestellungId: string, onBack: () => void }} */
@@ -31,6 +34,10 @@
 	let laedt = $state(true);
 	/** @type {string} */
 	let fehler = $state('');
+	// Der Rückweg für den Topf: nur mit dem Recht, das auch bestellen darf (dieselbe Tür
+	// wie der Endpunkt — UI entscheidet nach Recht, nicht nach Rolle).
+	let mittelDialogOffen = $state(false);
+	const darfKorrigieren = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	async function laden() {
 		laedt = true;
@@ -102,6 +109,14 @@
 					     Zuordnung" ist eine Alt-Bestellung, deren Topf nicht eindeutig war —
 					     nie ein geratener. -->
 					<StatusChip ton="neutral" text={mittelLabel(bestellung.mittel)} />
+					{#if darfKorrigieren}
+						<button
+							onclick={() => (mittelDialogOffen = true)}
+							class="text-label-small font-medium text-primary hover:underline cursor-pointer"
+						>
+							Topf ändern
+						</button>
+					{/if}
 				</div>
 				<p class="mt-0.5 text-sm text-slate-500">
 					{langdatum(bestellung.bestelldatum)}
@@ -125,6 +140,14 @@
 		{#if bestellung.mit_bestaetigung}
 			<BestellStatusBlock b={bestellung} onAktualisieren={laden} />
 		{/if}
+
+		<BestellMittelDialog
+			open={mittelDialogOffen}
+			bestellungId={bestellung.id}
+			aktuell={bestellung.mittel ?? ''}
+			onclose={() => (mittelDialogOffen = false)}
+			onAktualisieren={laden}
+		/>
 
 		<section>
 			<h3 class="mb-2 text-base font-bold text-slate-700">Bestellte Titel</h3>

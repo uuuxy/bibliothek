@@ -211,6 +211,7 @@
 - `PUT /api/benutzer/{id}`
 - `PUT /api/bestellungen/{id}/bestaetigen`
 - `PUT /api/bestellungen/{id}/bestaetigungs-link`
+- `PUT /api/bestellungen/{id}/mittel`
 - `PUT /api/books/`
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`

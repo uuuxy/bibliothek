@@ -186,6 +186,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/bestellungen/bulk-receive`           | create_orders | 0     | Exemplar-Barcodes, Titel                  |
 | `PUT /api/bestellungen/{id}/bestaetigen`        | create_orders | 0     | Status, Etikettengröße                    |
 | `PUT /api/bestellungen/{id}/bestaetigungs-link` | create_orders | 0     | Link, Gültigkeit                          |
+| `PUT /api/bestellungen/{id}/mittel`             | create_orders | 0     | Topf (Land/Schulträger), Grund            |
 
 ## routes_system.go
 

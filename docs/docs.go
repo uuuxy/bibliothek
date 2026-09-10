@@ -409,6 +409,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/bestellungen/{id}/mittel": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Correct the funding pot of an existing order",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New pot and reason",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.MittelKorrekturRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/buecher/exemplare/verlust-endgueltig-loeschen": {
             "post": {
                 "responses": {}
@@ -3118,6 +3177,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/repository.LmfPlanZeile"
                     }
+                }
+            }
+        },
+        "api.MittelKorrekturRequest": {
+            "type": "object",
+            "properties": {
+                "grund": {
+                    "type": "string"
+                },
+                "mittel": {
+                    "type": "string"
                 }
             }
         },
