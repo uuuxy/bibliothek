@@ -42,6 +42,7 @@
 							bind:checked={gewaehlt[p.schadensfall_id]}
 							label=""
 							aria-label="{p.titel} in den Bescheid aufnehmen"
+							disabled={!p.ist_lernmittel}
 						/>
 					</div>
 					<div class="min-w-0 flex-1">
@@ -49,6 +50,11 @@
 						<div class="text-xs text-on-surface-variant">
 							{p.isbn || 'ohne ISBN'} · {p.herleitung}
 						</div>
+						{#if !p.ist_lernmittel}
+							<div class="text-xs text-on-surface-variant">
+								Buch der Schülerbücherei — gehört nicht auf den Bescheid des Landes.
+							</div>
+						{/if}
 					</div>
 					<div class="flex shrink-0 items-center gap-1.5">
 						<Feld

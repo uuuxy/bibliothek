@@ -150,7 +150,7 @@ func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) 
 	}
 	if zugeordnet != len(e.Positionen) {
 		return nil, fmt.Errorf("%d von %d Forderungen konnten nicht zugeordnet werden — "+
-			"gehören sie diesem Schüler, sind sie offen und noch auf keinem Bescheid?",
+			"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Lernmittel?",
 			len(e.Positionen)-zugeordnet, len(e.Positionen))
 	}
 	b.AnzahlPositionen = zugeordnet
@@ -182,7 +182,9 @@ func ziehLaufendeNummer(ctx context.Context, tx pgx.Tx, mittel string, kassenjah
 
 // ordnePositionenZu hängt die Forderungen an den Brief und setzt ihren Betrag auf den
 // festgesetzten Wert. Die WHERE-Bedingung ist die Prüfung: Sie lässt nur offene,
-// unzugeordnete Forderungen DIESES Schülers durch.
+// unzugeordnete Forderungen DIESES Schülers durch — und nur solche aus dem Topf des
+// Briefs: Lernmittel auf den Brief des Landes, alles andere nicht (ein Brief = ein Topf,
+// Konzept 4.6). Eine Forderung ohne Exemplar (Geräteschaden) gehört in keinen der beiden.
 func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e BescheidEingabe) (int, error) {
 	var zugeordnet int
 	for _, p := range e.Positionen {
@@ -193,8 +195,10 @@ func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e Besc
 			   AND schueler_id = $4
 			   AND bescheid_id IS NULL
 			   AND ist_bezahlt = false
-			   AND storniert_am IS NULL`,
-			bescheidID, p.Betrag, p.SchadensfallID, e.SchuelerID)
+			   AND storniert_am IS NULL
+			   AND EXISTS (SELECT 1 FROM buecher_exemplare ex JOIN buecher_titel t ON t.id = ex.titel_id
+			               WHERE ex.id = schadensfaelle.exemplar_id AND t.ist_lernmittel = ($5 = 'land'))`,
+			bescheidID, p.Betrag, p.SchadensfallID, e.SchuelerID, e.Mittel)
 		if err != nil {
 			return 0, fmt.Errorf("position %s zuordnen: %w", p.SchadensfallID, err)
 		}

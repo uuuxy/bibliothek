@@ -248,7 +248,14 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    blockiert); das Recht ist `edit_students` statt eines neuen — ein eigenes Recht bliebe
    ab Werk bei niemandem und wäre eine Tür, die keiner öffnen kann.
 2. Mahnwesen-Anbindung (Auswahl → Bescheide) + Bescheid-Liste + Übergabe + Rückgabe-Hook.
-3. Schulträger-Rechnung + Betriebsbereitschaft-Warnung.
+3. Schulträger-Rechnung + Betriebsbereitschaft-Warnung. **Bis dahin nimmt der Server nur
+   `mittel = land` an, und jede Position muss ein Lernmittel sein** (Bestands-Durchgang
+   10.09.2026: der Dialog schickte `schultraeger`, sobald kein Lernmittel gewählt war — die
+   Eltern bekamen für ein Bücherei-Buch den Landes-Wortlaut mit Landeskonto). Beim Bau
+   zwingend: Der Topf muss in die Referenznummer oder in ein eigenes Format — der Zähler
+   läuft je Topf, `referenznummer` ist aber global UNIQUE, und die heutige Nummer enthält
+   keinen Topf. Der erste Brief des zweiten Topfs kollidiert sonst mit dem ersten des
+   anderen (23505, Rollback, der Zähler bleibt stehen — der Topf wäre dauerhaft blockiert).
 4. Altbriefe abräumen, Staffel-Vorschlag im Schaden-Dialog, Doku (FACHKONZEPT §3/§14,
    HANDBUCH, PII-Matrix, invarianten §4, SECURITY/VVT: neuer Zweck „Bescheid").
 

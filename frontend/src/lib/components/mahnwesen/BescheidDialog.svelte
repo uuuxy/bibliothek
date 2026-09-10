@@ -49,7 +49,7 @@
 			vorschlag = daten;
 			frist = daten?.frist_bis ?? '';
 			for (const p of daten?.positionen ?? []) {
-				gewaehlt[p.schadensfall_id] = true;
+				gewaehlt[p.schadensfall_id] = !!p.ist_lernmittel;
 				betraege[p.schadensfall_id] = p.betrag;
 			}
 		} catch {
@@ -70,11 +70,10 @@
 			0
 		)
 	);
-	// Der Topf folgt den gewählten Positionen: Lernmittel gehören zum Land. Ein Brief
-	// trägt genau einen Topf, deshalb entscheidet die erste gewählte Position.
-	const mittel = $derived(
-		ausgewaehlt.some((/** @type {any} */ p) => p.ist_lernmittel) ? 'land' : 'schultraeger'
-	);
+	// Der Brief ist der des Landes (Wortlaut und Konto der Lernmittelfreiheit). Die Rechnung
+	// der Schülerbücherei ist noch nicht gebaut (Konzept 4.7, Etappe 3); ihre Forderungen
+	// stehen deshalb gesperrt in der Liste, und der Server weist alles andere ab.
+	const mittel = 'land';
 	const fehlt = $derived(vorschlag?.fehlende_angaben ?? []);
 	const bereit = $derived(ausgewaehlt.length > 0 && frist !== '' && fehlt.length === 0 && !sendet);
 

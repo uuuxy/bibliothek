@@ -189,6 +189,14 @@ func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 		if !repository.MittelGueltig(req.Mittel) {
 			return apierrors.BadRequest(ErrMittelUngueltig.Error(), ErrMittelUngueltig)
 		}
+		// Der Brief kennt nur einen Wortlaut und ein Konto: die des Landes. Die Rechnung
+		// der Schülerbücherei (Mittel des Schulträgers) ist Etappe 3 — bis dahin gäbe
+		// „schultraeger" einen Landes-Bescheid mit Landeskonto für ein Buch des Trägers.
+		if req.Mittel != repository.MittelLand {
+			//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
+			return apierrors.Conflict("Ein Bescheid entsteht nur für Lernmittel des Landes. Die Rechnung für Bücher der Schülerbücherei ist noch nicht gebaut.",
+				errors.New("bescheid nur für mittel=land"))
+		}
 		if len(req.Positionen) == 0 {
 			//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
 			return apierrors.BadRequest("Bitte mindestens eine Forderung auswählen.", errors.New("keine positionen"))

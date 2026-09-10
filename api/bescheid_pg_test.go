@@ -107,6 +107,53 @@ func bescheidRumpf(frist string, betraege map[string]float64) string {
 
 func in28Tagen() string { return time.Now().AddDate(0, 0, 28).Format("2006-01-02") }
 
+// bescheidLernmittel legt einen Lernmittel-Titel an — nur deren Forderungen gehören auf
+// einen Bescheid des Landes.
+func bescheidLernmittel(t *testing.T, pool *pgxpool.Pool, titel string) string {
+	t.Helper()
+	id := seedMonitorTitel(t, pool, titel, "Autor", true, 0)
+	if _, err := pool.Exec(context.Background(), `UPDATE buecher_titel SET ist_lernmittel = true WHERE id = $1`, id); err != nil {
+		t.Fatalf("Lernmittel setzen: %v", err)
+	}
+	return id
+}
+
+// Ein Bescheid trägt den Wortlaut der Lernmittelfreiheit („Eigentum des Landes …") und
+// die Bankverbindung des Landes. Der Topf „schultraeger" hat noch keinen eigenen Brief
+// (Konzept 4.7, Etappe 3) — bis dahin wies der Server ihn nicht ab, und der Dialog
+// schickte ihn, sobald keine gewählte Forderung ein Lernmittel war: Die Eltern bekamen
+// für ein Buch der Schülerbücherei einen Landes-Bescheid mit Landeskonto (Bestands-
+// Durchgang 10.09.2026). Ebenso wenig darf ein Nicht-Lernmittel auf einen Landes-
+// Bescheid. Beides wird abgewiesen, ohne eine Nummer zu verbrauchen.
+func TestBescheidErstellen_NurLernmittelAufDemLandesBescheid(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	bescheidReset(t, pool)
+	bescheidAngabenSetzen(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	sid := seedSchueler(t, pool, "S-BESCHEID-TOPF", "Topfkind", "08G2")
+	roman := seedMonitorTitel(t, pool, "Roman der Buecherei", "Autor", true, 0)
+	f := bescheidForderung(t, pool, sid, exemplar(t, pool, roman, "BESCH-TOPF-1", true, ""), "beschaedigt", "Roman beschädigt")
+
+	for _, mittel := range []string{"land", "schultraeger"} {
+		rumpf := fmt.Sprintf(`{"mittel":%q,"frist_bis":%q,"positionen":[{"schadensfall_id":%q,"betrag":12.00}]}`,
+			mittel, in28Tagen(), f)
+		rec := bescheidErstellenUeberHandler(t, srv, pool, sid, rumpf)
+		if rec.Code != http.StatusConflict {
+			t.Errorf("mittel=%s für ein Nicht-Lernmittel: Status %d, want 409: %s", mittel, rec.Code, rec.Body.String())
+		}
+	}
+	var briefe, nummern int
+	if err := pool.QueryRow(context.Background(), `SELECT (SELECT count(*) FROM schadensersatz_bescheide),
+		(SELECT count(*) FROM schadensersatz_nummern)`).Scan(&briefe, &nummern); err != nil {
+		t.Fatal(err)
+	}
+	if briefe != 0 || nummern != 0 {
+		t.Errorf("abgewiesen, aber %d Brief(e) und %d Nummernzeile(n) angelegt", briefe, nummern)
+	}
+}
+
 func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
@@ -116,7 +163,7 @@ func TestBescheidErstellen_SchreibtBriefUndOrdnetForderungenZu(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	sid := seedSchueler(t, pool, "S-BESCHEID-1", "Bescheidkind", "08G2")
-	titelID := seedMonitorTitel(t, pool, "Mathematik 7", "Autor", true, 0)
+	titelID := bescheidLernmittel(t, pool, "Mathematik 7")
 	ex1 := exemplar(t, pool, titelID, "BESCH-EX-1", true, "")
 	ex2 := exemplar(t, pool, titelID, "BESCH-EX-2", true, "")
 	f1 := bescheidForderung(t, pool, sid, ex1, "nicht_zurueckgegeben", "Mathematik 7 nicht zurück")
@@ -191,7 +238,7 @@ func TestBescheidErstellen_ForderungNurEinmal(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	sid := seedSchueler(t, pool, "S-BESCHEID-2", "Zweitkind", "08G2")
-	titelID := seedMonitorTitel(t, pool, "Deutsch 8", "Autor", true, 0)
+	titelID := bescheidLernmittel(t, pool, "Deutsch 8")
 	ex := exemplar(t, pool, titelID, "BESCH-EX-3", true, "")
 	f := bescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
 
@@ -233,7 +280,7 @@ func TestBescheidErstellen_OhneAngabenKeinBriefUndKeineNummer(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	sid := seedSchueler(t, pool, "S-BESCHEID-3", "Ohneangaben", "08G2")
-	titelID := seedMonitorTitel(t, pool, "Englisch 9", "Autor", true, 0)
+	titelID := bescheidLernmittel(t, pool, "Englisch 9")
 	ex := exemplar(t, pool, titelID, "BESCH-EX-4", true, "")
 	f := bescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 9 nicht zurück")
 
@@ -277,7 +324,7 @@ func TestBescheidNummernkreis_ParallelKeineDoppelte(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	const anzahl = 8
-	titelID := seedMonitorTitel(t, pool, "Parallelbuch", "Autor", true, 0)
+	titelID := bescheidLernmittel(t, pool, "Parallelbuch")
 	type auftrag struct{ sid, forderung string }
 	auftraege := make([]auftrag, 0, anzahl)
 	for i := 0; i < anzahl; i++ {
@@ -343,7 +390,7 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 	repo := repository.NewBescheidRepository(pool)
 
 	sid := seedSchueler(t, pool, "S-BESCHEID-4", "Fristkind", "08G2")
-	titelID := seedMonitorTitel(t, pool, "Physik 9", "Autor", true, 0)
+	titelID := bescheidLernmittel(t, pool, "Physik 9")
 	ex := exemplar(t, pool, titelID, "BESCH-EX-5", true, "")
 	f := bescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Physik 9 nicht zurück")
 
@@ -412,7 +459,7 @@ func TestBescheidNachdruck_BleibtDerselbeBrief(t *testing.T) {
 		`UPDATE schueler SET strasse = 'Altweg', hausnummer = '1', plz = '11111', ort = 'Altstadt' WHERE id = $1`, sid); err != nil {
 		t.Fatal(err)
 	}
-	titelID := seedMonitorTitel(t, pool, "Chemie 9", "Autor", true, 0)
+	titelID := bescheidLernmittel(t, pool, "Chemie 9")
 	ex := exemplar(t, pool, titelID, "BESCH-EX-6", true, "")
 	f := bescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Chemie 9 nicht zurück")
 
