@@ -57,7 +57,11 @@ func (repo *BookRepository) UpdateBookMetadata(ctx context.Context, id string, t
 		UPDATE buecher_titel
 		SET titel = COALESCE(NULLIF($1, ''), titel),
 		    autor = COALESCE(NULLIF($2, ''), autor),
-		    cover_url = COALESCE(NULLIF($3, ''), cover_url)
+		    cover_url = COALESCE(NULLIF($3, ''), cover_url),
+		    -- Wer ein Cover setzt (Hand-Upload, DNB-Übernahme), hat es gefunden. Ohne das
+		    -- blieb ein neuer Titel auf 'PENDING', und der Cover-Sync überschrieb das von
+		    -- Hand hochgeladene Cover beim nächsten Lauf (Bestands-Durchgang 10.09.2026).
+		    cover_status = CASE WHEN NULLIF($3, '') IS NOT NULL THEN 'FOUND' ELSE cover_status END
 		WHERE id = $4::uuid`
 
 	result, err := repo.db.Exec(ctx, query, title, author, coverURL, id)

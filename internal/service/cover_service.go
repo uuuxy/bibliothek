@@ -46,6 +46,24 @@ type missingCover struct {
 	ISBN string
 }
 
+// coverSyncAuswahl sind die Titel, die der Cover-Sync anfasst: noch nie versuchte
+// (PENDING), fehlgeschlagene (FAILED, erneuter Versuch) sowie Alt-Titel mit externer
+// Cover-URL (FOUND, aber nicht lokal) — diese werden auf ein lokales WebP migriert, damit
+// nichts mehr extern (mit Hotlink-/Bot-Risiko) lädt.
+//
+// Ein lokales Cover (/uploads/) fasst er NIE an, egal was cover_status sagt: Bis zum
+// 10.09.2026 blieb ein neuer Titel nach einem Hand-Upload auf 'PENDING', und der nächste
+// Lauf überschrieb das hochgeladene Cover mit dem Treffer der Katalogdienste
+// (Bestands-Durchgang, „Maschine gegen Hand").
+const coverSyncAuswahl = `
+		SELECT id, isbn FROM buecher_titel
+		WHERE isbn IS NOT NULL AND isbn != ''
+		  AND COALESCE(cover_url, '') NOT LIKE '/uploads/%'
+		  AND (
+		        cover_status IN ('PENDING', 'FAILED')
+		     OR COALESCE(cover_url, '') <> ''
+		      )`
+
 // SyncMissingCoversAsync lädt für alle Titel ohne lokales Cover die Cover parallel nach.
 // Es werden PENDING- (noch nie versucht) UND FAILED-Titel (erneuter Versuch) verarbeitet,
 // sodass transiente Fehler bei einem späteren Lauf automatisch nachgeholt werden.
@@ -67,14 +85,7 @@ func (s *CoverService) SyncMissingCoversAsync() {
 	// Verarbeitet: noch nie versuchte (PENDING), fehlgeschlagene (FAILED, erneuter Versuch)
 	// sowie Alt-Titel mit externer Cover-URL (FOUND, aber nicht lokal) — diese werden auf
 	// ein lokales WebP migriert, damit nichts mehr extern (mit Hotlink-/Bot-Risiko) lädt.
-	query := `
-		SELECT id, isbn FROM buecher_titel
-		WHERE isbn IS NOT NULL AND isbn != ''
-		  AND (
-		        cover_status IN ('PENDING', 'FAILED')
-		     OR (cover_url IS NOT NULL AND cover_url <> '' AND cover_url NOT LIKE '/uploads/%')
-		      )`
-	rows, err := s.db.Query(ctx, query)
+	rows, err := s.db.Query(ctx, coverSyncAuswahl)
 	if err != nil {
 		log.Printf("Cover Sync: Fehler beim Abrufen der fehlenden Cover: %v", err)
 		return
