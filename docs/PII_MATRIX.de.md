@@ -187,6 +187,12 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `PUT /api/bestellungen/{id}/bestaetigen`        | create_orders | 0     | Status, Etikettengröße                    |
 | `PUT /api/bestellungen/{id}/bestaetigungs-link` | create_orders | 0     | Link, Gültigkeit                          |
 | `PUT /api/bestellungen/{id}/mittel`             | create_orders | 0     | Topf (Land/Schulträger), Grund            |
+| `GET /api/schueler/{id}/bescheid-vorschlag`     | edit_students | 2     | Name, Klasse, offene Forderungen mit Titeln |
+| `GET /api/schueler/{id}/bescheide`              | view_students | 2     | Bescheide dieses Kindes (Nummer, Frist, Betrag) |
+| `POST /api/schueler/{id}/bescheide`             | edit_students | 3     | Schreibt Anrede, Name und Anschrift als Snapshot |
+| `GET /api/bescheide`                            | view_students | 2     | Arbeitsliste: Name, Klasse, Betrag, Frist |
+| `GET /api/bescheide/{id}/pdf`                   | view_students | 3     | Der Brief: Anschrift, Titel, Beträge      |
+| `POST /api/bescheide/{id}/uebergeben`           | edit_students | 0     | Status                                    |
 
 ## routes_system.go
 

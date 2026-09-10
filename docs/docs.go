@@ -390,6 +390,93 @@ const docTemplate = `{
                 }
             }
         },
+        "/bescheide": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "List compensation notices",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "offen = nur nicht übergebene",
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.Bescheid"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/bescheide/{id}/pdf": {
+            "get": {
+                "produces": [
+                    "application/pdf"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "Print (or reprint) a compensation notice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notice ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "file"
+                        }
+                    }
+                }
+            }
+        },
+        "/bescheide/{id}/uebergeben": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "Mark a notice as handed over after the deadline",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Notice ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
         "/bestellungen/konfiguration": {
             "get": {
                 "produces": [
@@ -1992,6 +2079,103 @@ const docTemplate = `{
                 }
             }
         },
+        "/schueler/{id}/bescheid-vorschlag": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "Proposal for a new compensation notice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.BescheidVorschlag"
+                        }
+                    }
+                }
+            }
+        },
+        "/schueler/{id}/bescheide": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "List a student's compensation notices",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.Bescheid"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "Create a compensation notice for a student",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Student ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pot, deadline and positions",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.BescheidErstellenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/repository.Bescheid"
+                        }
+                    }
+                }
+            }
+        },
         "/schueler/{id}/dsgvo-auskunft": {
             "get": {
                 "produces": [
@@ -2485,6 +2669,86 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.BescheidErstellenRequest": {
+            "type": "object",
+            "properties": {
+                "frist_bis": {
+                    "type": "string"
+                },
+                "mittel": {
+                    "type": "string"
+                },
+                "positionen": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "betrag": {
+                                "type": "number"
+                            },
+                            "schadensfall_id": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "api.BescheidVorschlag": {
+            "type": "object",
+            "properties": {
+                "fehlende_angaben": {
+                    "description": "FehlendeAngaben nennt die Einstellungen, ohne die kein Bescheid entstehen kann.\nDer Dialog zeigt sie, statt den Knopf stumm zu sperren.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "frist_bis": {
+                    "type": "string"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "positionen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.BescheidVorschlagPosition"
+                    }
+                },
+                "schueler_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.BescheidVorschlagPosition": {
+            "type": "object",
+            "properties": {
+                "art": {
+                    "type": "string"
+                },
+                "betrag": {
+                    "type": "number"
+                },
+                "herleitung": {
+                    "description": "Herleitung: „3. Verleihjahr → 60 % von 41,50 €\" bzw. der Hinweis, dass kein Preis\nhinterlegt ist.",
+                    "type": "string"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel entscheidet den Topf: Lernmittel gehen an das Land, alles andere an\nden Schulträger. Ein Brief trägt genau einen Topf.",
+                    "type": "boolean"
+                },
+                "schadensfall_id": {
+                    "type": "string"
+                },
+                "titel": {
                     "type": "string"
                 }
             }
@@ -3540,6 +3804,65 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "von": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.Bescheid": {
+            "type": "object",
+            "properties": {
+                "anzahl_positionen": {
+                    "description": "AnzahlPositionen: wie viele Forderungen auf dem Brief stehen.",
+                    "type": "integer"
+                },
+                "brief_datum": {
+                    "type": "string"
+                },
+                "frist_abgelaufen": {
+                    "description": "FristAbgelaufen: offen und die Frist ist vorbei — das ist die Arbeitsliste.",
+                    "type": "boolean"
+                },
+                "frist_bis": {
+                    "type": "string"
+                },
+                "gesamtbetrag": {
+                    "type": "number"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kassenjahr": {
+                    "type": "integer"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "laufende_nr": {
+                    "type": "integer"
+                },
+                "letzter_druck_am": {
+                    "type": "string"
+                },
+                "mittel": {
+                    "type": "string"
+                },
+                "referenznummer": {
+                    "type": "string"
+                },
+                "rueckgabe_nach_uebergabe": {
+                    "description": "RueckgabeNachUebergabe: Merker für „die Aufsicht ist zu informieren\".",
+                    "type": "boolean"
+                },
+                "schueler_id": {
+                    "type": "string"
+                },
+                "schueler_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "uebergeben_am": {
                     "type": "string"
                 }
             }

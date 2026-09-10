@@ -1,0 +1,453 @@
+package repository
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
+)
+
+// Der Schadensersatz-Bescheid: Nummer ziehen, Brief schreiben, Positionen zuordnen —
+// alles in EINER Transaktion (Migration 110).
+//
+// Die Reihenfolge ist der Schutz: Erst wird die laufende Nummer gezogen (UPDATE …
+// RETURNING sperrt die Zeile des Generators), dann der Bescheid geschrieben, dann die
+// Forderungen zugeordnet. Bricht irgendetwas ab, ist auch die Nummer nicht verbraucht.
+// Zwei gleichzeitige Briefe warten am Generator aufeinander, statt dieselbe Nummer zu
+// bekommen — eine doppelte Referenznummer macht eine Zahlung unzuordenbar.
+
+// BescheidPositionEingabe ist eine Forderung, die auf den Brief soll, mit dem Betrag,
+// den die Schule festgesetzt hat.
+type BescheidPositionEingabe struct {
+	SchadensfallID string
+	Betrag         float64
+}
+
+// BescheidEingabe ist alles, was der Aufrufer für einen neuen Bescheid mitbringt.
+type BescheidEingabe struct {
+	SchuelerID  string
+	Mittel      string
+	Kassenjahr  int
+	FristBis    time.Time
+	Positionen  []BescheidPositionEingabe
+	Snapshot    map[string]string
+	ErstelltVon string
+	// Referenznummer baut der Aufrufer aus der laufenden Nummer, die diese Schicht zieht
+	// (BescheidAngaben.Referenznummer) — das Format ist eine Sache der Einstellungen,
+	// nicht der Datenbank.
+	Referenznummer func(laufendeNr int) string
+}
+
+// Bescheid ist ein geschriebener Brief.
+type Bescheid struct {
+	ID             string     `json:"id"`
+	SchuelerID     *string    `json:"schueler_id,omitempty"`
+	SchuelerName   string     `json:"schueler_name,omitempty"`
+	Klasse         string     `json:"klasse,omitempty"`
+	Mittel         string     `json:"mittel"`
+	Referenznummer string     `json:"referenznummer"`
+	Kassenjahr     int        `json:"kassenjahr"`
+	LaufendeNr     int        `json:"laufende_nr"`
+	BriefDatum     time.Time  `json:"brief_datum"`
+	FristBis       time.Time  `json:"frist_bis"`
+	Gesamtbetrag   float64    `json:"gesamtbetrag"`
+	Status         string     `json:"status"`
+	UebergebenAm   *time.Time `json:"uebergeben_am,omitempty"`
+	LetzterDruckAm *time.Time `json:"letzter_druck_am,omitempty"`
+	// FristAbgelaufen: offen und die Frist ist vorbei — das ist die Arbeitsliste.
+	FristAbgelaufen bool `json:"frist_abgelaufen"`
+	// RueckgabeNachUebergabe: Merker für „die Aufsicht ist zu informieren".
+	RueckgabeNachUebergabe bool `json:"rueckgabe_nach_uebergabe"`
+	// AnzahlPositionen: wie viele Forderungen auf dem Brief stehen.
+	AnzahlPositionen int `json:"anzahl_positionen"`
+}
+
+// BescheidRepository sind die Datenbankzugriffe des Bescheids.
+type BescheidRepository interface {
+	Erstelle(ctx context.Context, e BescheidEingabe) (*Bescheid, error)
+	Liste(ctx context.Context, nurOffen bool) ([]Bescheid, error)
+	ZuSchueler(ctx context.Context, schuelerID string) ([]Bescheid, error)
+	Lies(ctx context.Context, id string) (*Bescheid, error)
+	Snapshot(ctx context.Context, id string) (map[string]string, error)
+	Positionen(ctx context.Context, id string) ([]BescheidBriefPosition, error)
+	DruckVermerken(ctx context.Context, id string) error
+	Uebergebe(ctx context.Context, id string) error
+	EmpfaengerFuerBescheid(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error)
+	OffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error)
+}
+
+// BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck.
+type BescheidBriefPosition struct {
+	Art          string  `json:"art"`
+	SchuelerName string  `json:"schueler_name"`
+	Titel        string  `json:"titel"`
+	ISBN         string  `json:"isbn"`
+	Betrag       float64 `json:"betrag"`
+}
+
+type pgBescheidRepository struct{ db db.PgxPoolIface }
+
+// NewBescheidRepository erstellt das Repository.
+func NewBescheidRepository(pool db.PgxPoolIface) BescheidRepository {
+	return &pgBescheidRepository{db: pool}
+}
+
+// Erstelle schreibt den Bescheid und ordnet ihm seine Positionen zu.
+//
+// Geprüft wird IN der Transaktion, dass jede Position dem Schüler gehört, offen ist und
+// noch auf keinem Bescheid steht — sonst stünde dieselbe Forderung auf zwei Briefen mit
+// zwei Nummern.
+func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) (*Bescheid, error) {
+	if len(e.Positionen) == 0 {
+		return nil, fmt.Errorf("ein Bescheid ohne Positionen ist kein Bescheid")
+	}
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	laufendeNr, err := ziehLaufendeNummer(ctx, tx, e.Mittel, e.Kassenjahr)
+	if err != nil {
+		return nil, err
+	}
+
+	snapshot, err := json.Marshal(e.Snapshot)
+	if err != nil {
+		return nil, fmt.Errorf("empfänger-snapshot: %w", err)
+	}
+
+	var summe float64
+	for _, p := range e.Positionen {
+		summe += p.Betrag
+	}
+
+	var b Bescheid
+	err = tx.QueryRow(ctx, `
+		INSERT INTO schadensersatz_bescheide
+			(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis,
+			 gesamtbetrag, empfaenger_snapshot, erstellt_von)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, NULLIF($9, '')::uuid)
+		RETURNING id, referenznummer, kassenjahr, laufende_nr, brief_datum, frist_bis,
+		          gesamtbetrag, status`,
+		e.SchuelerID, e.Mittel, e.Kassenjahr, laufendeNr, e.Referenznummer(laufendeNr),
+		e.FristBis, summe, string(snapshot), e.ErstelltVon,
+	).Scan(&b.ID, &b.Referenznummer, &b.Kassenjahr, &b.LaufendeNr, &b.BriefDatum,
+		&b.FristBis, &b.Gesamtbetrag, &b.Status)
+	if err != nil {
+		return nil, fmt.Errorf("bescheid schreiben: %w", err)
+	}
+	b.Mittel = e.Mittel
+	b.SchuelerID = &e.SchuelerID
+
+	zugeordnet, err := ordnePositionenZu(ctx, tx, b.ID, e)
+	if err != nil {
+		return nil, err
+	}
+	if zugeordnet != len(e.Positionen) {
+		return nil, fmt.Errorf("%d von %d Forderungen konnten nicht zugeordnet werden — "+
+			"gehören sie diesem Schüler, sind sie offen und noch auf keinem Bescheid?",
+			len(e.Positionen)-zugeordnet, len(e.Positionen))
+	}
+	b.AnzahlPositionen = zugeordnet
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+	return &b, nil
+}
+
+// ziehLaufendeNummer holt die nächste Nummer für Topf und Kassenjahr.
+//
+// Das INSERT … ON CONFLICT DO UPDATE ist beides in einem Schritt: die erste Nummer eines
+// Jahres anlegen und jede weitere hochzählen. Die Zeile bleibt bis zum Ende der
+// Transaktion gesperrt.
+func ziehLaufendeNummer(ctx context.Context, tx pgx.Tx, mittel string, kassenjahr int) (int, error) {
+	var nr int
+	err := tx.QueryRow(ctx, `
+		INSERT INTO schadensersatz_nummern (mittel, kassenjahr, letzte_nr)
+		VALUES ($1, $2, 1)
+		ON CONFLICT (mittel, kassenjahr)
+		DO UPDATE SET letzte_nr = schadensersatz_nummern.letzte_nr + 1
+		RETURNING letzte_nr`, mittel, kassenjahr).Scan(&nr)
+	if err != nil {
+		return 0, fmt.Errorf("laufende nummer ziehen: %w", err)
+	}
+	return nr, nil
+}
+
+// ordnePositionenZu hängt die Forderungen an den Brief und setzt ihren Betrag auf den
+// festgesetzten Wert. Die WHERE-Bedingung ist die Prüfung: Sie lässt nur offene,
+// unzugeordnete Forderungen DIESES Schülers durch.
+func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e BescheidEingabe) (int, error) {
+	var zugeordnet int
+	for _, p := range e.Positionen {
+		tag, err := tx.Exec(ctx, `
+			UPDATE schadensfaelle
+			   SET bescheid_id = $1, betrag = $2, aktualisiert_am = CURRENT_TIMESTAMP
+			 WHERE id = $3
+			   AND schueler_id = $4
+			   AND bescheid_id IS NULL
+			   AND ist_bezahlt = false
+			   AND storniert_am IS NULL`,
+			bescheidID, p.Betrag, p.SchadensfallID, e.SchuelerID)
+		if err != nil {
+			return 0, fmt.Errorf("position %s zuordnen: %w", p.SchadensfallID, err)
+		}
+		zugeordnet += int(tag.RowsAffected())
+	}
+	return zugeordnet, nil
+}
+
+// bescheidSpalten ist die gemeinsame Auswahl der Leser — EIN Ort, damit Liste, Akte und
+// Einzelabruf dieselben Felder in derselben Reihenfolge liefern.
+const bescheidSpalten = `
+	b.id, b.schueler_id, coalesce(s.vorname || ' ' || s.nachname, ''), coalesce(s.klasse, ''),
+	b.mittel, b.referenznummer, b.kassenjahr, b.laufende_nr, b.brief_datum, b.frist_bis,
+	b.gesamtbetrag, b.status, b.uebergeben_am, b.letzter_druck_am,
+	(b.status = 'offen' AND b.frist_bis < CURRENT_DATE),
+	b.rueckgabe_nach_uebergabe,
+	(SELECT count(*) FROM schadensfaelle f WHERE f.bescheid_id = b.id)::int`
+
+func scanBescheid(rows pgx.Rows) (Bescheid, error) {
+	var b Bescheid
+	err := rows.Scan(&b.ID, &b.SchuelerID, &b.SchuelerName, &b.Klasse, &b.Mittel,
+		&b.Referenznummer, &b.Kassenjahr, &b.LaufendeNr, &b.BriefDatum, &b.FristBis,
+		&b.Gesamtbetrag, &b.Status, &b.UebergebenAm, &b.LetzterDruckAm,
+		&b.FristAbgelaufen, &b.RueckgabeNachUebergabe, &b.AnzahlPositionen)
+	return b, err
+}
+
+// Liste liefert die Bescheide, die neuesten zuerst; nurOffen beschränkt auf die, die
+// noch nicht übergeben oder erledigt sind.
+func (r *pgBescheidRepository) Liste(ctx context.Context, nurOffen bool) ([]Bescheid, error) {
+	bedingung := ""
+	if nurOffen {
+		bedingung = "WHERE b.status = 'offen'"
+	}
+	// LIMIT, weil auch diese Liste über Jahre wächst (Register „Unbegrenzte
+	// Listen-Endpunkte"): die abgelaufenen Fristen stehen dank ORDER BY oben.
+	rows, err := r.db.Query(ctx, `
+		SELECT `+bescheidSpalten+`
+		FROM schadensersatz_bescheide b
+		LEFT JOIN schueler s ON s.id = b.schueler_id
+		`+bedingung+`
+		ORDER BY (b.status = 'offen' AND b.frist_bis < CURRENT_DATE) DESC, b.brief_datum DESC
+		LIMIT 500`)
+	if err != nil {
+		return nil, err
+	}
+	return sammleBescheide(rows)
+}
+
+// ZuSchueler liefert die Bescheide eines Schülers für die Akte.
+func (r *pgBescheidRepository) ZuSchueler(ctx context.Context, schuelerID string) ([]Bescheid, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT `+bescheidSpalten+`
+		FROM schadensersatz_bescheide b
+		LEFT JOIN schueler s ON s.id = b.schueler_id
+		WHERE b.schueler_id = $1
+		ORDER BY b.brief_datum DESC`, schuelerID)
+	if err != nil {
+		return nil, err
+	}
+	return sammleBescheide(rows)
+}
+
+func sammleBescheide(rows pgx.Rows) ([]Bescheid, error) {
+	defer rows.Close()
+	out := []Bescheid{}
+	for rows.Next() {
+		b, err := scanBescheid(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, b)
+	}
+	return out, rows.Err()
+}
+
+// Lies holt einen Bescheid; pgx.ErrNoRows, wenn es ihn nicht gibt.
+func (r *pgBescheidRepository) Lies(ctx context.Context, id string) (*Bescheid, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT `+bescheidSpalten+`
+		FROM schadensersatz_bescheide b
+		LEFT JOIN schueler s ON s.id = b.schueler_id
+		WHERE b.id = $1`, id)
+	if err != nil {
+		return nil, err
+	}
+	alle, err := sammleBescheide(rows)
+	if err != nil {
+		return nil, err
+	}
+	if len(alle) == 0 {
+		return nil, pgx.ErrNoRows
+	}
+	return &alle[0], nil
+}
+
+// Snapshot liest die Empfänger-Angaben zum Briefdatum — die Grundlage des Nachdrucks.
+// Nach der Anonymisierung ist er leer; der Nachdruck sagt dann, dass die Anschrift
+// getilgt ist, statt eine falsche zu drucken.
+func (r *pgBescheidRepository) Snapshot(ctx context.Context, id string) (map[string]string, error) {
+	var roh []byte
+	if err := r.db.QueryRow(ctx,
+		`SELECT empfaenger_snapshot FROM schadensersatz_bescheide WHERE id = $1`, id).Scan(&roh); err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	if err := json.Unmarshal(roh, &out); err != nil {
+		return nil, fmt.Errorf("empfänger-snapshot lesen: %w", err)
+	}
+	return out, nil
+}
+
+// Positionen liest die Zeilen des Briefs. Der Name kommt aus dem Titelsatz bzw. dem
+// Snapshot des Schülers — nicht aus dem lebenden Schülerdatensatz, damit der Nachdruck
+// dasselbe Blatt ergibt.
+func (r *pgBescheidRepository) Positionen(ctx context.Context, id string) ([]BescheidBriefPosition, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''), f.betrag
+		FROM schadensfaelle f
+		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
+		LEFT JOIN buecher_titel t ON t.id = e.titel_id
+		WHERE f.bescheid_id = $1
+		ORDER BY f.art, coalesce(t.titel, f.beschreibung)`, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []BescheidBriefPosition{}
+	for rows.Next() {
+		var p BescheidBriefPosition
+		if err := rows.Scan(&p.Art, &p.Titel, &p.ISBN, &p.Betrag); err != nil {
+			return nil, err
+		}
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+// DruckVermerken hält fest, wann der Brief zuletzt gedruckt wurde. Die Nummer und der
+// Betrag bleiben unberührt — ein Nachdruck ist derselbe Bescheid, kein neuer.
+//
+// Trifft das UPDATE keine Zeile, ist das ein Fehler und kein Erfolg: pgx.ErrNoRows. Der
+// Aufrufer schickt den Brief trotzdem (der Vermerk ist Buchführung, nicht der Zweck),
+// protokolliert es aber — ein stiller Erfolg auf einer ID, die es nicht gibt, wäre die
+// Bugklasse „Phantom-Erfolg".
+func (r *pgBescheidRepository) DruckVermerken(ctx context.Context, id string) error {
+	tag, err := r.db.Exec(ctx,
+		`UPDATE schadensersatz_bescheide SET letzter_druck_am = NOW() WHERE id = $1`, id)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return pgx.ErrNoRows
+	}
+	return nil
+}
+
+// Uebergebe setzt den Bescheid auf „übergeben" — nur aus dem Zustand „offen" und nur,
+// wenn die Frist vorbei ist. Die WHERE-Bedingung ist die Regel: Sie verhindert, dass ein
+// Brief vor Fristablauf weitergegeben wird, und dass eine zweite Übergabe den Zeitpunkt
+// überschreibt. pgx.ErrNoRows heißt: Der Zustand passt nicht.
+func (r *pgBescheidRepository) Uebergebe(ctx context.Context, id string) error {
+	var gesetzt string
+	err := r.db.QueryRow(ctx, `
+		UPDATE schadensersatz_bescheide
+		   SET status = 'uebergeben', uebergeben_am = NOW()
+		 WHERE id = $1 AND status = 'offen' AND frist_bis < CURRENT_DATE
+		RETURNING id`, id).Scan(&gesetzt)
+	return err
+}
+
+// ── Der Vorschlag für einen neuen Bescheid ───────────────────────────────────
+//
+// Die drei Lesepfade des Dialogs liegen HIER und nicht im Handler: Das Schichtungs-Gate
+// verlangt es, und die Regel dahinter ist die richtige — die Bedingung „offen, nicht
+// storniert, noch auf keinem Brief" steht damit an EINER Stelle, dieselbe, die beim
+// Erstellen zuordnet (ordnePositionenZu).
+
+// BescheidEmpfaengerDaten sind die Angaben, aus denen der Snapshot entsteht.
+type BescheidEmpfaengerDaten struct {
+	Vorname     string
+	Nachname    string
+	Klasse      string
+	Strasse     string
+	Hausnummer  string
+	PLZ         string
+	Ort         string
+	Volljaehrig bool
+}
+
+// OffeneForderung ist eine Forderung, die auf einen Brief könnte — mit den Größen, aus
+// denen der Betragsvorschlag entsteht.
+type OffeneForderung struct {
+	SchadensfallID string
+	Art            string
+	Titel          string
+	ISBN           string
+	Kaufpreis      float64
+	IstLernmittel  bool
+	// Ausleihen und JahreImBestand sind die beiden Größen für das Verleihjahr: die Zahl
+	// der Ausleihen dieses Exemplars und sein Alter im Bestand. Beide sind unvollständig
+	// (der Altbestand kam ohne Ausleihhistorie), deshalb rechnet ersatzwert.Verleihjahr
+	// mit dem Maximum.
+	Ausleihen      int
+	JahreImBestand int
+}
+
+// EmpfaengerFuerBescheid liest die Angaben des Schülers für Anrede und Anschriftfeld.
+//
+// Volljährig entscheidet über die Anrede: Bei minderjährigen Schülern geht der Brief an
+// die Erziehungsberechtigten. Ohne Geburtsdatum (Altdaten) gilt minderjährig — das ist
+// an einer Schule der Regelfall und der schonendere Fehler.
+func (r *pgBescheidRepository) EmpfaengerFuerBescheid(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error) {
+	var d BescheidEmpfaengerDaten
+	err := r.db.QueryRow(ctx, `
+		SELECT vorname, nachname, coalesce(klasse, ''), coalesce(strasse, ''),
+		       coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''),
+		       coalesce(geburtsdatum <= CURRENT_DATE - INTERVAL '18 years', false)
+		FROM schueler WHERE id = $1`, schuelerID).
+		Scan(&d.Vorname, &d.Nachname, &d.Klasse, &d.Strasse, &d.Hausnummer, &d.PLZ, &d.Ort, &d.Volljaehrig)
+	return d, err
+}
+
+// OffeneForderungen liest die Forderungen, die noch auf keinem Brief stehen.
+func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT f.id, f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''),
+		       coalesce(e.einkaufspreis, 0)::float8,
+		       coalesce(t.ist_lernmittel, false),
+		       (SELECT count(*) FROM ausleihen a WHERE a.exemplar_id = e.id)::int,
+		       coalesce(date_part('year', CURRENT_DATE) - date_part('year', e.erworben_am), 0)::int
+		FROM schadensfaelle f
+		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
+		LEFT JOIN buecher_titel t ON t.id = e.titel_id
+		WHERE f.schueler_id = $1
+		  AND f.bescheid_id IS NULL
+		  AND f.ist_bezahlt = false
+		  AND f.storniert_am IS NULL
+		ORDER BY f.art, coalesce(t.titel, f.beschreibung)`, schuelerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []OffeneForderung{}
+	for rows.Next() {
+		var f OffeneForderung
+		if err := rows.Scan(&f.SchadensfallID, &f.Art, &f.Titel, &f.ISBN, &f.Kaufpreis,
+			&f.IstLernmittel, &f.Ausleihen, &f.JahreImBestand); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}

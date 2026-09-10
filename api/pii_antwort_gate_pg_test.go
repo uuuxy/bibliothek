@@ -88,6 +88,7 @@ type kanarienWelt struct {
 	titelID, exemplarID         string
 	buchBarcode                 string
 	schadensfallID              string
+	bescheidID                  string
 }
 
 func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) kanarienWelt {
@@ -190,6 +191,23 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		t.Fatalf("Schadensfall anlegen: %v", err)
 	}
 
+	// Schadensersatz-Bescheid (Migration 110): Der Brief trägt Anrede, Name und
+	// Anschrift als Snapshot — er ist Stufe 3 wie die beiden anderen Fensterkuvert-Briefe.
+	// Die Positionen des Briefs sind Forderungen; hier genügt der Kopf mit Snapshot,
+	// weil das Gate die ANTWORT prüft und nicht den Erstellungsweg.
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schadensersatz_bescheide
+			(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis,
+			 gesamtbetrag, empfaenger_snapshot)
+		VALUES ($1, 'land', 2026, (random() * 900000)::int + 1000,
+			'5830 2026 1234 ' || ((random() * 900000)::int + 1000)::text, CURRENT_DATE + 28, 12.50,
+			jsonb_build_object('anrede', 'Sehr geehrte Erziehungsberechtigte,',
+				'name', 'Vogelbeere Kanari', 'strasse', 'Kanariweg 7',
+				'plz', '12345', 'ort', 'Kanaristadt'))
+		RETURNING id`, w.schuelerID).Scan(&w.bescheidID); err != nil {
+		t.Fatalf("Bescheid anlegen: %v", err)
+	}
+
 	// Vormerkung (Warteliste nennt Name + Klasse).
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`,
@@ -267,11 +285,21 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// Auch der dritte Fensterkuvert-Brief trägt seit dem 01.09.2026 die Anschrift
 		// (vorher Unterstrich-Zeilen) — Kanariweg als Positiv-Kontrolle wie bei den
 		// Geschwistern overdue-pdf und print/rechnung.
-		"GET /api/schadensfaelle/{id}/pdf":         {URL: "/api/schadensfaelle/" + w.schadensfallID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
-		"GET /api/schueler/{id}/schadensfaelle":    {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
-		"GET /api/mahnwesen":                       {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
-		"GET /api/mahnwesen/ueberfaellig_jahrgang": {URL: "/api/mahnwesen/ueberfaellig_jahrgang"},
-		"GET /api/mahnwesen/pdf":                   {URL: "/api/mahnwesen/pdf"},
+		"GET /api/schadensfaelle/{id}/pdf":      {URL: "/api/schadensfaelle/" + w.schadensfallID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/schueler/{id}/schadensfaelle": {URL: "/api/schueler/" + w.schuelerID + "/schadensfaelle", Positiv: []string{"Kanarischaden"}},
+		// Schadensersatz-Bescheide (Migration 110). Der Vorschlag und die Akten-Liste
+		// nennen das Kind, die Arbeitsliste ebenso; das PDF trägt zusätzlich die
+		// Anschrift — deshalb stehen dort dieselben Positiv-Kontrollen wie beim
+		// Schwester-Brief schadensfaelle/{id}/pdf. Ohne einen erstellten Bescheid im
+		// Wächter-Bestand liefern die drei Listen leer, und das ist hier richtig: Das
+		// Gate prüft, dass NICHTS Unerwartetes durchfällt, nicht dass etwas da ist.
+		"GET /api/schueler/{id}/bescheid-vorschlag": {URL: "/api/schueler/" + w.schuelerID + "/bescheid-vorschlag", Positiv: []string{"Vogelbeere"}},
+		"GET /api/schueler/{id}/bescheide":          {URL: "/api/schueler/" + w.schuelerID + "/bescheide"},
+		"GET /api/bescheide":                        {URL: "/api/bescheide"},
+		"GET /api/bescheide/{id}/pdf":               {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/mahnwesen":                        {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
+		"GET /api/mahnwesen/ueberfaellig_jahrgang":  {URL: "/api/mahnwesen/ueberfaellig_jahrgang"},
+		"GET /api/mahnwesen/pdf":                    {URL: "/api/mahnwesen/pdf"},
 
 		// routes_books.go
 		"GET /api/buecher/titel/{id}/exemplare":      {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},

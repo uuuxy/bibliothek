@@ -90,6 +90,21 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// Anlegen (edit_students) — Begründung im Kopf von damage_resolve.go.
 	auditRepoGebuehren := repository.NewAuditRepository(s.DB.Pool)
 	mux.Handle("GET /api/schueler/{id}/schadensfaelle", s.RequirePermission("view_students")(s.ListStudentSchadensfaelleHandler(damageRepo)))
+
+	// ── SCHADENSERSATZ-BESCHEIDE (Migration 110) ──
+	//
+	// Rechte wie an den übrigen Forderungs-Routen: LESEN mit view_students (die Akte
+	// zeigt die Briefe eines Schülers, die Arbeitsliste die offenen), SCHREIBEN mit
+	// edit_students — wer eine Forderung anlegen und stornieren darf, schreibt auch den
+	// Brief dazu. Ein eigenes Recht bliebe ab Werk bei niemandem und wäre eine Tür, die
+	// keiner öffnen kann; die Entscheidung steht als E-Frage im Konzept.
+	bescheidRepo := repository.NewBescheidRepository(s.DB.Pool)
+	mux.Handle("GET /api/schueler/{id}/bescheid-vorschlag", s.RequirePermission("edit_students")(s.BescheidVorschlagHandler(bescheidRepo)))
+	mux.Handle("GET /api/schueler/{id}/bescheide", s.RequirePermission("view_students")(s.BescheidSchuelerListeHandler(bescheidRepo)))
+	mux.Handle("POST /api/schueler/{id}/bescheide", s.RequirePermission("edit_students")(s.BescheidErstellenHandler(bescheidRepo, auditRepoGebuehren)))
+	mux.Handle("GET /api/bescheide", s.RequirePermission("view_students")(s.BescheidListeHandler(bescheidRepo)))
+	mux.Handle("GET /api/bescheide/{id}/pdf", s.RequirePermission("view_students")(s.BescheidPDFHandler(bescheidRepo)))
+	mux.Handle("POST /api/bescheide/{id}/uebergeben", s.RequirePermission("edit_students")(s.BescheidUebergebenHandler(bescheidRepo, auditRepoGebuehren)))
 	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.RequirePermission("edit_students")(s.BezahltGebuehrHandler(auditRepoGebuehren)))
 	mux.Handle("POST /api/schadensfaelle/{id}/storno", s.RequirePermission("edit_students")(s.StornoGebuehrHandler(auditRepoGebuehren)))
 

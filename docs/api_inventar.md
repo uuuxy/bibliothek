@@ -212,6 +212,12 @@
 - `PUT /api/bestellungen/{id}/bestaetigen`
 - `PUT /api/bestellungen/{id}/bestaetigungs-link`
 - `PUT /api/bestellungen/{id}/mittel`
+- `POST /api/bescheide/{id}/uebergeben`
+- `GET /api/bescheide`
+- `GET /api/bescheide/{id}/pdf`
+- `GET /api/schueler/{id}/bescheid-vorschlag`
+- `GET /api/schueler/{id}/bescheide`
+- `POST /api/schueler/{id}/bescheide`
 - `PUT /api/books/`
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`
