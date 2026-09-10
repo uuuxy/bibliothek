@@ -214,6 +214,7 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 // wieder trennen lässt.
 type gewanderteVorgaenge struct {
 	Ausleihen, Schadensfaelle, Vormerkungen, VormerkungenDoppelt []string
+	Bescheide                                                    []string
 	Foto                                                         bool
 	// ZielFotoGewichen: das Ziel hatte ein älteres Foto, das dem jüngeren der Quelle
 	// gewichen ist — der Rückweg weiß dann, dass ein Foto verloren ist.
@@ -254,6 +255,13 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	}
 	if g.Vormerkungen, err = idsAus(ctx, tx, `UPDATE vormerkungen SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("vormerkungen verschieben: %w", err)
+	}
+	// Der Bescheid hängt per SET NULL: Bliebe er stehen, machte der DELETE der Quelle ihn
+	// STILL personenlos — weg aus der Akte und der Auskunft des Ziels, und die Tilgung
+	// (sie sucht über schueler_id) fände Name und Anschrift im Snapshot nie mehr. Der
+	// Snapshot selbst bleibt, wie er ist: Er zeigt, an wen der Brief damals ging.
+	if g.Bescheide, err = idsAus(ctx, tx, `UPDATE schadensersatz_bescheide SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+		return nil, fmt.Errorf("bescheide verschieben: %w", err)
 	}
 	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
 	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
@@ -330,7 +338,8 @@ func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p rueckwegEintragPa
 		"gewandert": map[string]any{
 			"ausleihen": p.Gewandert.Ausleihen, "schadensfaelle": p.Gewandert.Schadensfaelle,
 			"vormerkungen": p.Gewandert.Vormerkungen, "vormerkungen_doppelt_geloescht": p.Gewandert.VormerkungenDoppelt,
-			"foto": p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
+			"bescheide": p.Gewandert.Bescheide,
+			"foto":      p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
 		},
 	})
 	if err != nil {

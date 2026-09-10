@@ -150,11 +150,18 @@ func TestZusammenfuehren_KandidatenSucheSiehtAbgaenger(t *testing.T) {
 	}
 }
 
-// Gate über ALLE Tabellen, die an einem Schüler hängen (dieselbe Liste wie
-// dsgvo_paar_vollstaendigkeit_test.go): Der erste Test säte nur die Ausleihe (FK RESTRICT
-// — ein ausgelassener Schritt bräche laut). Vormerkungen und Foto hängen per CASCADE:
-// Fällt ihr UPDATE weg, löscht der DELETE der Quelle sie STILL mit. Deshalb hier jede
-// Tabelle befüllt und nach dem Zusammenführen gezählt (Rasterdurchgang 02.09.2026).
+// Gate über ALLE Tabellen, die an einem Schüler hängen: Der erste Test säte nur die
+// Ausleihe (FK RESTRICT — ein ausgelassener Schritt bräche laut). Vormerkungen und Foto
+// hängen per CASCADE, der Bescheid per SET NULL: Fällt ihr UPDATE weg, nimmt der DELETE
+// der Quelle sie STILL mit bzw. lässt sie personenlos zurück (Rasterdurchgang 02.09.2026).
+//
+// Die Tabellen kommen aus dsgvoSchuelerQuellen, nicht aus einer Abschrift. Bis zum
+// 10.09.2026 stand hier eine eigene Liste, deren Kommentar „dieselbe Liste" behauptete —
+// sie blieb bei sieben Tabellen stehen, als Migration 110 die Bescheide in die echte
+// Liste brachte. Das Zusammenführen ließ den Bescheid der Quelle danach ohne Schüler
+// zurück: weg aus der Akte, weg aus der Art.-15-Auskunft, und die Tilgung (sie sucht
+// über schueler_id) hätte Name und Anschrift im Snapshot nie mehr gefunden. Eine neue
+// Quelle ohne Fall im switch macht diesen Test rot.
 func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
@@ -162,38 +169,58 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Tabelle", klasse: "07A", barcode: "ZF-T1", geb: datum(2012, 7, 7)})
 	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Tabelle", klasse: "07A", barcode: "ZF-T2", geb: datum(2012, 7, 7)})
 
-	seedOffeneAusleihe(t, pool, quelle, "ZFT")
-	seedOffenerSchaden(t, pool, quelle, "ZFT")
-	titelID := titelMitMeldebestand(t, pool, "Vormerktitel-ZFT", 1)
 	exec := func(sql string, args ...any) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, sql, args...); err != nil {
 			t.Fatalf("%s: %v", sql[:40], err)
 		}
 	}
-	exec(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, quelle)
-	exec(`INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, '\x00'::bytea)`, quelle)
-	exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
-		VALUES ('ausleihen', 'CREATE', gen_random_uuid(), 'USER', jsonb_build_object('schueler_id', $1::text))`, quelle)
-	exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
-		VALUES ('schueler', 'UPDATE', $1::uuid, 'USER', '{"feld":"klasse"}'::jsonb)`, quelle)
-	exec(`INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text))`, quelle)
+	type zaehlung struct{ was, sql string }
+	var zaehlungen []zaehlung
+	for _, q := range dsgvoSchuelerQuellen {
+		switch q.Tabelle {
+		case "schueler":
+			// Die Zeile selbst wandert nicht — sie geht im Ziel auf.
+		case "ausleihen":
+			seedOffeneAusleihe(t, pool, quelle, "ZFT")
+			zaehlungen = append(zaehlungen, zaehlung{"ausleihen", `SELECT count(*) FROM ausleihen WHERE schueler_id = $1`})
+		case "schadensfaelle":
+			seedOffenerSchaden(t, pool, quelle, "ZFT")
+			zaehlungen = append(zaehlungen, zaehlung{"schadensfaelle", `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1`})
+		case "vormerkungen":
+			titelID := titelMitMeldebestand(t, pool, "Vormerktitel-ZFT", 1)
+			exec(`INSERT INTO vormerkungen (titel_id, schueler_id) VALUES ($1, $2)`, titelID, quelle)
+			zaehlungen = append(zaehlungen, zaehlung{"vormerkungen", `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`})
+		case "schueler_fotos":
+			exec(`INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, '\x00'::bytea)`, quelle)
+			zaehlungen = append(zaehlungen, zaehlung{"schueler_fotos", `SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`})
+		case "schadensersatz_bescheide":
+			exec(`INSERT INTO schadensersatz_bescheide
+					(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis, gesamtbetrag, empfaenger_snapshot)
+				VALUES ($1, 'land', 2026, 1, '5830 2026 1234 0001', CURRENT_DATE + 28, 24.90,
+					jsonb_build_object('name', 'Quelle Tabelle'))`, quelle)
+			zaehlungen = append(zaehlungen, zaehlung{"schadensersatz_bescheide", `SELECT count(*) FROM schadensersatz_bescheide WHERE schueler_id = $1`})
+		case "audit_log":
+			exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
+				VALUES ('ausleihen', 'CREATE', gen_random_uuid(), 'USER', jsonb_build_object('schueler_id', $1::text))`, quelle)
+			exec(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details)
+				VALUES ('schueler', 'UPDATE', $1::uuid, 'USER', '{"feld":"klasse"}'::jsonb)`, quelle)
+			zaehlungen = append(zaehlungen,
+				zaehlung{"audit_log Lesehistorie", `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`},
+				zaehlung{"audit_log Datensatz-Historie", `SELECT count(*) FROM audit_log WHERE tabelle = 'schueler' AND aktion = 'UPDATE' AND datensatz_id = $1::uuid`})
+		case "audit_logs":
+			exec(`INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text))`, quelle)
+			zaehlungen = append(zaehlungen, zaehlung{"audit_logs", `SELECT count(*) FROM audit_logs WHERE aktion = 'LUSD_ID_NACHGETRAGEN' AND details->>'schueler_id' = $1`})
+		default:
+			t.Fatalf("dsgvoSchuelerQuellen kennt %s (%s), das Zusammenführen-Gate nicht — "+
+				"verschiebeVorgaenge und diesen Test nachziehen", q.Tabelle, q.Bezug)
+		}
+	}
 
 	if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
 		t.Fatalf("Zusammenführen: %v", err)
 	}
 
-	zaehlungen := []struct {
-		was, sql string
-	}{
-		{"ausleihen", `SELECT count(*) FROM ausleihen WHERE schueler_id = $1`},
-		{"schadensfaelle", `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1`},
-		{"vormerkungen", `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`},
-		{"schueler_fotos", `SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`},
-		{"audit_log Lesehistorie", `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`},
-		{"audit_log Datensatz-Historie", `SELECT count(*) FROM audit_log WHERE tabelle = 'schueler' AND aktion = 'UPDATE' AND datensatz_id = $1::uuid`},
-		{"audit_logs", `SELECT count(*) FROM audit_logs WHERE aktion = 'LUSD_ID_NACHGETRAGEN' AND details->>'schueler_id' = $1`},
-	}
 	for _, z := range zaehlungen {
 		if n := zfZaehle(t, pool, z.sql, ziel); n != 1 {
 			t.Errorf("%s: erwartet 1 Zeile am Ziel, gefunden %d", z.was, n)

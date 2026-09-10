@@ -118,6 +118,9 @@ var fkAktionenBestand = []string{
 	// (spurTilgungen, „schadensersatz_bescheide"). Die Liste der Bescheide in der
 	// Art.-15-Auskunft filtert auf schueler_id, findet die anonyme Hülle also nicht mehr.
 	// Ein RESTRICT hätte hier die berechtigte Löschung blockiert.
+	// Nachgetragen am 10.09.2026 (Bestands-Durchgang): Es gibt einen ZWEITEN Löschweg —
+	// das Zusammenführen löscht die Quelle. Dort ist SET NULL nicht gewollt, der Bescheid
+	// wandert vorher ans Ziel (verschiebeVorgaenge, Gate TestZusammenfuehren_JedeTabelleWandert).
 	"SET NULL  schadensersatz_bescheide.schueler_id -> schueler",
 	// Befragt am 10.09.2026 (Migration 110): Wer den Bescheid erstellt hat, ist eine
 	// Angabe ÜBER den Vorgang, nicht der Vorgang selbst. Verlässt die Bearbeiterin die
