@@ -153,7 +153,7 @@ describe('Kalender-Gate', () => {
 		for (const a of KALENDER_AUSNAHMEN) {
 			expect(
 				readdirSync(join(srcRoot, '..', ...a.abdeckung.split('/').slice(0, -1))).includes(
-					a.abdeckung.split('/').at(-1)
+					a.abdeckung.split('/').at(-1) ?? ''
 				),
 				`${a.datei}: Abdeckung ${a.abdeckung} fehlt`
 			).toBe(true);
