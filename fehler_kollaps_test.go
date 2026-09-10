@@ -48,7 +48,14 @@ var kollapsBestand = map[string]string{
 	// erreichbar ohne Treffer = 404 (Produktentscheidung; Sweep docs/sweeps.md).
 }
 
-var kollapsAntworten = map[string]bool{"StatusNotFound": true, "StatusUnauthorized": true, "StatusForbidden": true}
+// kollapsAntworten: die harmlosen Antworten als Status-Konstante UND als Helfer der
+// Hausform (apierrors.NotFound/Unauthorized/Forbidden hinter apierrors.Wrap). Bis zum
+// 10.09.2026 standen nur die Konstanten hier — die Ratsche war mit dem Umzug der Handler
+// auf Wrap für die häufigste Form blind geworden (Bestands-Durchgang, „Lügende Ratsche").
+var kollapsAntworten = map[string]bool{
+	"StatusNotFound": true, "StatusUnauthorized": true, "StatusForbidden": true,
+	"NotFound": true, "Unauthorized": true, "Forbidden": true,
+}
 
 func istFehlerName(name string) bool {
 	n := strings.ToLower(name)
@@ -201,13 +208,21 @@ func sauber2(w http.ResponseWriter) { _, err := f(); if err != nil { w.WriteHead
 func sauber3(w http.ResponseWriter) { _, err := f(); if err == ErrBookNotFound { w.WriteHeader(http.StatusNotFound) } }
 func sauber4(w http.ResponseWriter) { _, err := f(); if err != nil { if errors.Is(err, pgx.ErrNoRows) { w.WriteHeader(http.StatusNotFound); return }; w.WriteHeader(500) } }
 func kollaps2(w http.ResponseWriter) { _, err := f(); if err != nil { log.Print(err); w.WriteHeader(http.StatusNotFound) } }
+func kollaps3() error { _, err := f(); if err != nil { return apierrors.NotFound("x", err) }; return nil }
+func kollaps4() error { _, err := f(); if err != nil { return apierrors.Unauthorized("x", err) }; return nil }
+func sauber5() error { _, err := f(); if errors.Is(err, pgx.ErrNoRows) { return apierrors.NotFound("x", err) }; return nil }
 `
 	fset := token.NewFileSet()
 	datei, err := parser.ParseFile(fset, "probe.go", quelle, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	erwartet := map[string]bool{"kollaps": true, "kollaps2": true, "sauber": false, "sauber2": false, "sauber3": false, "sauber4": false}
+	// kollaps3/kollaps4/sauber5 (Bestands-Durchgang 10.09.2026): die Hausform der Handler
+	// hinter apierrors.Wrap. Der Detektor kannte nur http.StatusNotFound & Co. — 49 Handler
+	// laufen über Wrap, und ein neuer `return apierrors.NotFound("…", err)` im err-Zweig
+	// wäre grün geblieben.
+	erwartet := map[string]bool{"kollaps": true, "kollaps2": true, "kollaps3": true, "kollaps4": true,
+		"sauber": false, "sauber2": false, "sauber3": false, "sauber4": false, "sauber5": false}
 	for _, decl := range datei.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
 		if !ok {
