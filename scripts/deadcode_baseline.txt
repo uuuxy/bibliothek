@@ -20,6 +20,8 @@ internal/pdftest/pdftest.go: unreachable func: nachUTF8
 internal/pdftest/pdftest.go: unreachable func: Inhalt
 internal/pdftest/pdftest.go: unreachable func: lies
 internal/pdftest/pdftest.go: unreachable func: texteAus
+internal/pdftest/pdftest.go: unreachable func: TexteJeSeite
+internal/pdftest/pdftest.go: unreachable func: stroemeAus
 
 # Testinfrastruktur per Paket-Design: eigener SMTP-Server für Tests, weil die
 # lokale .env auf den echten Schulserver zeigt (siehe Paketkommentar).
