@@ -1,16 +1,21 @@
-<!-- @component AbgaengerTabelle — die Liste der Abgänger mit offenen Posten in drei
-     Zuständen desselben Bildschirmbereichs: außerhalb der Saison (Hinweis mit den Daten),
-     in der Saison ohne Posten („alle entlastet"), in der Saison mit Zeilen (Tabelle).
-     Welcher Zustand gilt, sagt der Server über `fenster` — die Oberfläche rechnet
-     keinen eigenen Kalender. -->
+<!-- @component AbgaengerTabelle — die Liste der Abgänger mit offenen Posten in vier
+     Zuständen desselben Bildschirmbereichs: Ladefehler, außerhalb der Saison (Hinweis mit
+     den Daten), in der Saison ohne Posten („alle entlastet"), in der Saison mit Zeilen
+     (Tabelle). Welcher Zustand gilt, sagt der Server über `fenster` — die Oberfläche
+     rechnet keinen eigenen Kalender. Der Ladefehler schlägt alle anderen: Eine leere
+     Liste nach gescheitertem Abruf ist nicht „alle entlastet" (Bestands-Durchgang
+     10.09.2026 — sonst entlässt die Bibliothek Schüler, ohne Bücher einzusammeln). -->
 <script>
 	import { CalendarClock, Check } from '@lucide/svelte';
 	import Tabelle from './ui/Tabelle.svelte';
-	/** @type {{ zeilen: any[], leer: boolean, fenster: { offen: boolean, von: string, bis: string }, onProfil: (student: any) => void }} */
-	let { zeilen, leer, fenster, onProfil } = $props();
+	import LadeFehler from './ui/LadeFehler.svelte';
+	/** @type {{ zeilen: any[], leer: boolean, fenster: { offen: boolean, von: string, bis: string }, ladefehler?: string | null, onErneut?: () => void, onProfil: (student: any) => void }} */
+	let { zeilen, leer, fenster, ladefehler = null, onErneut = () => {}, onProfil } = $props();
 </script>
 
-{#if !fenster.offen}
+{#if ladefehler}
+	<LadeFehler onerneut={onErneut} titel="Abgängerliste nicht geladen" text={ladefehler} />
+{:else if !fenster.offen}
 	<div class="py-12 text-center space-y-3 animate-fade-in">
 		<div
 			class="w-16 h-16 rounded-full bg-surface-container-low border border-outline-variant flex items-center justify-center text-on-surface-variant mx-auto"

@@ -23,6 +23,7 @@
 	// Saisonfenster vom Server: Von Mai bis Juli zeigt die Liste die Abschlussklassen;
 	// außerhalb ist sie leer, und die Tabelle erklärt warum, statt „alle entlastet" zu melden.
 	let fenster = $state({ offen: true, von: '', bis: '' });
+	let ladefehler = $state(/** @type {string | null} */ (null));
 
 	// Klassenfilter: leerer Wert = alle Klassen. Filtert die Liste UND den Ausdruck.
 	let selectedKlasse = $state('');
@@ -68,7 +69,7 @@
 		try {
 			await dienst.ladeKontoauszuege(selectedKlasse);
 		} catch (err) {
-			console.error('Kontoauszug load error:', err);
+			showToast(`Kontoauszüge konnten nicht erstellt werden: ${err}`, 'error');
 		} finally {
 			loadingKontoauszuege = false;
 		}
@@ -120,11 +121,17 @@
 			const antwort = await dienst.ladeAbgaenger();
 			graduates = antwort.abgaenger;
 			fenster = antwort.fenster;
+			ladefehler = null;
 		} catch (err) {
-			console.error('Graduates error:', err);
+			ladefehler = `Die Abgängerliste konnte nicht geladen werden (${err}). Ohne sie ist nicht zu sehen, wer noch Bücher hat.`;
 		} finally {
 			loading = false;
 		}
+	}
+
+	function erneutLaden() {
+		loading = true;
+		fetchGraduates();
 	}
 
 	onMount(() => {
@@ -169,6 +176,8 @@
 	{:else}
 		<div class="w-full">
 			<AbgaengerTabelle
+				{ladefehler}
+				onErneut={erneutLaden}
 				zeilen={filteredGraduates}
 				leer={graduates.length === 0}
 				{fenster}
