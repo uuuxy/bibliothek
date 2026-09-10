@@ -70,7 +70,6 @@ const BESTAND = [
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/auth/Login.svelte',
 	'src/lib/components/bestellungen/BestellHistorieTabelle.svelte',
-	'src/lib/components/bestellungen/OrderSearch.svelte',
 	'src/lib/components/bestellungen/WareneingangTable.svelte',
 	'src/lib/components/labels/LabelPreview.svelte',
 	'src/lib/components/students/AuswahlAktionsleiste.svelte',

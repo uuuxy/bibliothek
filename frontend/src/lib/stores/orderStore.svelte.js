@@ -5,9 +5,17 @@
 
 import { apiGet, apiPost, apiPut, apiDelete } from '../apiFetch.js';
 import { toastStore } from './toastStore.svelte.js';
+import {
+	MITTEL,
+	MITTEL_REIHENFOLGE,
+	anderesMittel,
+	mittelVorschlag
+} from '../components/bestellungen/mittel.js';
 
-/** @typedef {{ id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean }} Supplier */
-/** @typedef {{ id: string, titel: string, autor: string, isbn: string, verlag: string, cover_url: string, menge: number, preis: number, preis_vorschlag: number, generate_barcodes: boolean }} CartItem */
+/** @typedef {import('../components/bestellungen/mittel.js').Mittel} Mittel */
+/** @typedef {{ id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean, kundennummer_schultraeger?: string }} Supplier */
+/** @typedef {{ id: string, titel: string, autor: string, isbn: string, verlag: string, cover_url: string, menge: number, preis: number, preis_vorschlag: number, generate_barcodes: boolean, ist_lernmittel: boolean, mittel: Mittel }} CartItem */
+/** @typedef {{ mittel: Mittel, label: string, traeger: string, items: CartItem[], menge: number, summe: number }} Warenkorbgruppe */
 
 class OrderStore {
 	/** @type {Supplier[]} */
@@ -19,9 +27,36 @@ class OrderStore {
 	cart = $state([]);
 	total = $derived(this.cart.reduce((sum, i) => sum + i.menge * (Number(i.preis) || 0), 0));
 	totalQty = $derived(this.cart.reduce((sum, i) => sum + i.menge, 0));
+	/**
+	 * Der Warenkorb nach Topf: Lernmittelfreiheit (Land) und Schülerbücherei (Schulträger),
+	 * jede Gruppe mit eigener Summe. Eine Bestellung = ein Topf — beim Auslösen entsteht je
+	 * nicht-leerer Gruppe eine eigene Bestellung an denselben Händler (zwei Mails, zwei
+	 * Anschreiben), weil der Händler Nachlass und Rechnungsweg nach dem Topf richtet.
+	 * Leere Gruppen fehlen: Ein leerer Abschnitt „Schülerbücherei" unter jedem
+	 * Lernmittel-Warenkorb wäre Rauschen.
+	 * @type {Warenkorbgruppe[]}
+	 */
+	gruppen = $derived(
+		MITTEL_REIHENFOLGE.map((mittel) => {
+			const items = this.cart.filter((i) => i.mittel === mittel);
+			return {
+				mittel,
+				...MITTEL[mittel],
+				items,
+				menge: items.reduce((sum, i) => sum + i.menge, 0),
+				summe: items.reduce((sum, i) => sum + i.menge * (Number(i.preis) || 0), 0)
+			};
+		}).filter((g) => g.items.length > 0)
+	);
 	submitting = $state(false);
-	/** Idempotenz-Schlüssel des laufenden Absende-Vorgangs (Doppelklick-Schutz). */
-	pendingIdempotencyKey = /** @type {string | null} */ (null);
+	/**
+	 * Idempotenz-Schlüssel des laufenden Absende-Vorgangs (Doppelklick-Schutz) — EINER JE
+	 * TOPF: Ein gemischter Warenkorb schickt zwei Bestellungen, und ein wiederholter
+	 * Versuch nach einem Netzfehler darf die schon durchgelaufene nicht verdoppeln, die
+	 * gescheiterte aber nachholen.
+	 * @type {Partial<Record<Mittel, string>>}
+	 */
+	pendingIdempotencyKeys = {};
 	/** Globaler Schalter „Barcodes mitschicken" */
 	attachBarcodes = $state(true);
 	/**
@@ -195,15 +230,26 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [istHauptlieferant] */
-	async addSupplier(name, email, customerNumber, istHauptlieferant = false) {
+	/**
+	 * kundennummerSchultraeger: zweites Kundenkonto für Bestellungen der Schülerbücherei;
+	 * leer = dieselbe Nummer (Migration 109).
+	 * @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [istHauptlieferant] @param {string} [kundennummerSchultraeger]
+	 */
+	async addSupplier(
+		name,
+		email,
+		customerNumber,
+		istHauptlieferant = false,
+		kundennummerSchultraeger = ''
+	) {
 		if (!name || !email || !customerNumber) return;
 		try {
 			await apiPost('/api/lieferanten', {
 				name,
 				email,
 				customerNumber,
-				ist_hauptlieferant: istHauptlieferant
+				ist_hauptlieferant: istHauptlieferant,
+				kundennummer_schultraeger: kundennummerSchultraeger
 			});
 			await this.loadSuppliers();
 		} catch {
@@ -211,14 +257,22 @@ class OrderStore {
 		}
 	}
 
-	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [istHauptlieferant] */
-	async editSupplier(id, name, email, customerNumber, istHauptlieferant = false) {
+	/** @param {string} id @param {string} name @param {string} email @param {string} customerNumber @param {boolean} [istHauptlieferant] @param {string} [kundennummerSchultraeger] */
+	async editSupplier(
+		id,
+		name,
+		email,
+		customerNumber,
+		istHauptlieferant = false,
+		kundennummerSchultraeger = ''
+	) {
 		try {
 			await apiPut(`/api/lieferanten/${id}`, {
 				name,
 				email,
 				customerNumber,
-				ist_hauptlieferant: istHauptlieferant
+				ist_hauptlieferant: istHauptlieferant,
+				kundennummer_schultraeger: kundennummerSchultraeger
 			});
 			await this.loadSuppliers();
 			toastStore.addToast('Lieferant aktualisiert.', 'success');
@@ -296,6 +350,8 @@ class OrderStore {
 		const vorschlag = Number(book.preis_vorschlag) || 0;
 		const existing = this.cart.find((item) => item.id === key || (isbn && item.isbn === isbn));
 		if (existing) {
+			// Der Topf bleibt, wie er im Warenkorb steht — wer eine Position von Hand
+			// verschoben hat, verliert das nicht durch ein zweites „+".
 			existing.menge += menge;
 			if (withBarcodes) existing.generate_barcodes = true;
 			// Einen bereits erfassten Preis NICHT überschreiben: Wer ihn getippt hat, kennt
@@ -315,7 +371,11 @@ class OrderStore {
 				menge,
 				preis: vorschlag,
 				preis_vorschlag: vorschlag,
-				generate_barcodes: withBarcodes
+				generate_barcodes: withBarcodes,
+				// Der Titel schlägt den Topf vor (Lernmittel → Land); die Bestellung darf
+				// ihn überstimmen (verschiebe).
+				ist_lernmittel: Boolean(book.ist_lernmittel),
+				mittel: mittelVorschlag(book.ist_lernmittel)
 			});
 		}
 		this.resetSearch();
@@ -357,25 +417,58 @@ class OrderStore {
 		}
 	}
 
-	/** @param {number} idx */
-	removeFromCart(idx) {
-		this.cart.splice(idx, 1);
+	/** @param {CartItem} item */
+	removeFromCart(item) {
+		const idx = this.cart.indexOf(item);
+		if (idx >= 0) this.cart.splice(idx, 1);
 	}
 
+	/**
+	 * Schiebt eine Position in den anderen Topf — für falsch gekennzeichnete Titel. Der
+	 * Titel selbst bleibt unverändert; korrigiert wird nur diese Bestellung.
+	 * @param {CartItem} item
+	 */
+	verschiebe(item) {
+		item.mittel = anderesMittel(item.mittel);
+	}
+
+	/**
+	 * Löst je Topf EINE Bestellung aus — nacheinander, damit ein Fehler bei der zweiten
+	 * die erste nicht verschleiert: Was durch ist, verlässt den Warenkorb sofort; was
+	 * scheitert, bleibt liegen und lässt sich erneut auslösen (mit demselben Schlüssel).
+	 */
 	async submitOrder() {
 		const supplier = this.selectedSupplier;
 		if (!this.cart.length || !supplier) return;
 		if (this.submitting) return; // Doppelklick abfangen, bevor die Anfrage rausgeht
 		this.submitting = true;
-		// Idempotenz-Schlüssel pro Absende-Vorgang: Überholt ein Doppelklick den Guard
-		// (oder klemmt das Netz und der Client wiederholt), geht DERSELBE Schlüssel raus —
-		// der Server macht daraus ein No-op statt einer zweiten Bestellung + Mail.
-		if (!this.pendingIdempotencyKey) this.pendingIdempotencyKey = crypto.randomUUID();
+		try {
+			for (const gruppe of this.gruppen) {
+				await this.#bestelleGruppe(supplier.id, gruppe);
+			}
+			await this.loadIncomingShipments();
+			this.loadRecommendations();
+		} finally {
+			this.submitting = false;
+		}
+	}
+
+	/**
+	 * Eine Bestellung für einen Topf. Meldet true, wenn sie durch ist; bei einem Fehler
+	 * bleibt die Gruppe im Warenkorb (apiFetch zeigt den Fehler-Toast).
+	 * @param {string} supplierId @param {Warenkorbgruppe} gruppe
+	 */
+	async #bestelleGruppe(supplierId, gruppe) {
+		// Idempotenz-Schlüssel pro Absende-Vorgang UND Topf: Überholt ein Doppelklick den
+		// Guard (oder klemmt das Netz und der Client wiederholt), geht DERSELBE Schlüssel
+		// raus — der Server macht daraus ein No-op statt einer zweiten Bestellung + Mail.
+		const key = (this.pendingIdempotencyKeys[gruppe.mittel] ??= crypto.randomUUID());
 		try {
 			const data = await apiPost('/api/bestellungen', {
-				supplier_id: supplier.id,
-				idempotency_key: this.pendingIdempotencyKey,
-				items: this.cart.map((item) => ({
+				supplier_id: supplierId,
+				idempotency_key: key,
+				mittel: gruppe.mittel,
+				items: gruppe.items.map((item) => ({
 					titel_id: item.id,
 					menge: item.menge,
 					// Ohne Preiserfassung wird auch nichts erfasst. Sonst wanderte der
@@ -385,18 +478,18 @@ class OrderStore {
 					generate_barcodes: this.attachBarcodes ? item.generate_barcodes : false
 				}))
 			});
-			this.cart = [];
-			this.pendingIdempotencyKey = null; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
+			this.cart = this.cart.filter((i) => i.mittel !== gruppe.mittel);
+			delete this.pendingIdempotencyKeys[gruppe.mittel]; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
 			const toastType = data?.status === 'warning' ? 'error' : 'success';
 			const barcodeInfo =
 				data?.ordered_qty != null ? ` (${data.ordered_qty} Barcodes reserviert.)` : '';
-			toastStore.addToast((data?.message ?? 'Bestellung ausgelöst.') + barcodeInfo, toastType);
-			await this.loadIncomingShipments();
-			this.loadRecommendations();
+			toastStore.addToast(
+				`${gruppe.label}: ${data?.message ?? 'Bestellung ausgelöst.'}${barcodeInfo}`,
+				toastType
+			);
+			return true;
 		} catch {
-			/* apiFetch zeigt Fehler-Toast */
-		} finally {
-			this.submitting = false;
+			return false; /* apiFetch zeigt Fehler-Toast */
 		}
 	}
 }

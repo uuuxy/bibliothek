@@ -1,25 +1,16 @@
 <script>
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { apiPost, apiPut } from '../../apiFetch.js';
+	import { apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
-	import Button from '../ui/Button.svelte';
 	import Select from '../ui/Select.svelte';
-	import Kaestchen from '../ui/Kaestchen.svelte';
-	import Feld from '../ui/Feld.svelte';
+	import OrderStaging from './OrderStaging.svelte';
 	import { coverSrc } from '../../utils/coverSrc.js';
 
 	/** @type {any} */
 	let stagedBook = $state(null);
-	let stagedMenge = $state(1);
-	let stagedGenerateBarcodes = $state(true);
 	let resolvingDnb = $state(false);
-	// Vergleichswert, um beim Bestätigen zu erkennen, ob die Signatur tatsächlich
-	// bearbeitet wurde — unverändert übernommen wird nie ein zusätzlicher Request
-	// ausgelöst (weder für einen unangetasteten Vorschlag noch für eine bereits
-	// vorhandene Signatur).
-	let stagedSignaturBeiStart = $state('');
 
 	let localResults = $derived(orderStore.searchResults.filter((r) => r.source === 'local'));
 	let dnbResults = $derived(orderStore.searchResults.filter((r) => r.source === 'dnb'));
@@ -43,7 +34,10 @@
 						signatur: localBook.signatur ?? '',
 						// Der Preisvorschlag steht am DNB-Treffer, nicht am eben angelegten
 						// lokalen Titel — sonst ginge er beim Umweg über /aus-isbn verloren.
-						preis_vorschlag: book.preis_vorschlag
+						preis_vorschlag: book.preis_vorschlag,
+						// Ein eben angelegter Titel ist noch kein Lernmittel — das Staging-
+						// Fenster fragt nach (OrderStaging).
+						ist_lernmittel: Boolean(localBook.ist_lernmittel)
 					});
 				} else {
 					toastStore.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
@@ -61,29 +55,7 @@
 	/** @param {any} book */
 	function stageBook(book) {
 		stagedBook = book;
-		stagedMenge = 1;
-		stagedGenerateBarcodes = true;
-		stagedSignaturBeiStart = book.signatur ?? '';
 		orderStore.resetSearch();
-	}
-
-	async function confirmAddToCart() {
-		// Signatur nur speichern, wenn tatsächlich bearbeitet — ein unangetasteter
-		// Vorschlag steht bereits so in der DB (aus /aus-isbn), eine unangetastete
-		// vorhandene Signatur soll erst recht nicht neu geschrieben werden.
-		const neueSignatur = (stagedBook.signatur ?? '').trim();
-		if (neueSignatur !== stagedSignaturBeiStart) {
-			try {
-				await apiPut(`/api/buecher/titel/${stagedBook.id}/signatur`, { signatur: neueSignatur });
-			} catch {
-				toastStore.addToast(
-					'Signatur konnte nicht gespeichert werden — Titel wird trotzdem bestellt.',
-					'error'
-				);
-			}
-		}
-		orderStore.addToCart(stagedBook, stagedMenge, stagedGenerateBarcodes);
-		stagedBook = null;
 	}
 </script>
 
@@ -219,60 +191,9 @@
 </div>
 
 {#if stagedBook}
-	{@const stagedQuelle = coverSrc(stagedBook.cover_url, stagedBook.isbn)}
-	<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50/60 space-y-3.5 animate-fade-in">
-		<div class="flex items-center gap-3 min-w-0">
-			{#if stagedQuelle}
-				<img
-					src={stagedQuelle}
-					class="w-10 aspect-3/4 object-cover rounded shadow-sm border border-white shrink-0"
-					alt=""
-				/>
-			{:else}
-				<div
-					class="w-10 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase shrink-0"
-				>
-					{stagedBook.titel.charAt(0)}
-				</div>
-			{/if}
-			<div class="min-w-0">
-				<div class="font-bold text-slate-900 text-sm truncate">{stagedBook.titel}</div>
-				<div class="text-xs text-slate-500 truncate">{stagedBook.autor}</div>
-			</div>
-		</div>
-
-		<div class="space-y-1">
-			<label for="stagedSignaturInput" class="text-xs font-medium text-slate-500">
-				Signatur
-				{#if !stagedSignaturBeiStart}
-					<span class="text-amber-600 font-normal">(Vorschlag, bitte prüfen)</span>
-				{/if}
-			</label>
-			<Feld
-				id="stagedSignaturInput"
-				bind:value={stagedBook.signatur}
-				placeholder="z. B. BIB Jugendbuch"
-				feld="font-medium"
-			/>
-		</div>
-
-		<div class="flex items-center justify-between gap-3">
-			<div class="flex items-center gap-2">
-				<label for="stagedMengeInput" class="text-xs font-medium text-slate-500">Menge</label>
-				<Feld
-					id="stagedMengeInput"
-					type="number"
-					min="1"
-					bind:value={stagedMenge}
-					feld="w-16 text-center font-bold"
-				/>
-			</div>
-			<Kaestchen bind:checked={stagedGenerateBarcodes} label="Barcodes generieren" />
-		</div>
-
-		<div class="flex items-center gap-2">
-			<Button variant="ghost" onclick={() => (stagedBook = null)}>Abbrechen</Button>
-			<Button onclick={confirmAddToCart} class="flex-1">In den Warenkorb</Button>
-		</div>
-	</div>
+	<!-- {#key}: Ein neuer Treffer bekommt ein frisches Fenster mit frischen Feldern,
+	     statt die Eingaben des vorigen zu erben. -->
+	{#key stagedBook.id}
+		<OrderStaging book={stagedBook} onDone={() => (stagedBook = null)} />
+	{/key}
 {/if}

@@ -52,7 +52,16 @@ type OrderResult struct {
 	// erzeugt hat (Doppelklick). Der Handler überspringt dann den Mailversand — es gibt
 	// keine zweite Bestellung und keine zweite Lieferanten-Mail.
 	BereitsVorhanden bool
+	// Mittel: der Topf dieser Bestellung (repository.MittelLand / MittelSchultraeger).
+	// Steuert Vermerk in Anschreiben und Mail; CustomerNumber ist bereits die Nummer
+	// dieses Topfs (Supplier.KundennummerFuer).
+	Mittel string
 }
+
+// ErrMittelUngueltig meldet: Die Bestellung nennt keinen (gültigen) Topf. Kein Fallback
+// auf einen Standard — eine Bestellung, die still im falschen Topf landet, ist genau der
+// Fehler, den Migration 109 abschafft. Der Handler macht daraus 400.
+var ErrMittelUngueltig = errors.New("mittel muss 'land' (Lernmittelfreiheit) oder 'schultraeger' (Schülerbücherei) sein")
 
 type bestellungPosition struct {
 	titelID   string
@@ -78,6 +87,12 @@ type bestellItemResult struct {
 
 // ProcessOrder verarbeitet eine eingehende SubmitOrderRequest innerhalb einer Transaktion, generiert Barcodes und gibt das OrderResult zurück.
 func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest) (*OrderResult, error) {
+	// Der Topf ist Pflicht — VOR jedem Datenbankzugriff, damit keine Barcodes für eine
+	// Bestellung reserviert werden, die es nie geben wird.
+	if !repository.MittelGueltig(req.Mittel) {
+		return nil, ErrMittelUngueltig
+	}
+
 	// 1. Lieferantendetails abrufen
 	supplier, err := s.supplierRepo.GetSupplierByID(ctx, req.SupplierID)
 	if err != nil {
@@ -162,7 +177,8 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 	return &OrderResult{
 		SupplierName:       supplier.Name,
 		SupplierEmail:      supplier.Email,
-		CustomerNumber:     supplier.Kundennummer,
+		CustomerNumber:     supplier.KundennummerFuer(req.Mittel),
+		Mittel:             req.Mittel,
 		Labels:             labels,
 		SummaryItems:       orderSummaryItems,
 		TotalAllocated:     totalAllocated,
@@ -276,18 +292,23 @@ func (s *OrderService) insertBestellverlauf(ctx context.Context, tx pgx.Tx, req 
 	// ON CONFLICT (idempotenz_schluessel) DO NOTHING: Ein Doppelklick mit demselben
 	// Schlüssel läuft am partiellen Unique-Index auf, liefert keine Zeile — das signalisiert
 	// ProcessOrder als ErrBestellungDuplikat (keine zweite Bestellung, keine zweite Mail).
+	//
+	// Die Kundennummer ist die des TOPFS (Supplier.KundennummerFuer): Händler führen
+	// Lernmittel und Bibliothek oft als getrennte Kundenkonten. Auf der Bestellung steht
+	// deshalb die Nummer, unter der der Händler diesen Topf abrechnet — als Abschrift, wie
+	// Name und Adresse, damit der Beleg auch nach einer Änderung am Lieferanten stimmt.
 	err := tx.QueryRow(ctx, `
 		INSERT INTO bestellungen_verlauf
 			(lieferant_id, lieferant_name, lieferant_email, kundennummer, gesamtbetrag, anzahl_exemplare,
-			 bestaetigungs_token_hash, token_gueltig_bis, idempotenz_schluessel)
+			 bestaetigungs_token_hash, token_gueltig_bis, idempotenz_schluessel, mittel)
 		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''),
 		        CASE WHEN $7 = '' THEN NULL ELSE now() + make_interval(days => $8) END,
-		        $9)
+		        $9, $10)
 		ON CONFLICT (idempotenz_schluessel) WHERE idempotenz_schluessel IS NOT NULL DO NOTHING
 		RETURNING id, token_gueltig_bis`,
-		req.SupplierID, supplier.Name, supplier.Email, supplier.Kundennummer,
+		req.SupplierID, supplier.Name, supplier.Email, supplier.KundennummerFuer(req.Mittel),
 		gesamtbetrag, totalAllocated, tokenHash, linkTage,
-		nullableString(req.IdempotencyKey),
+		nullableString(req.IdempotencyKey), req.Mittel,
 	).Scan(&bestellungID, &linkGueltigBis)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return "", nil, ErrBestellungDuplikat

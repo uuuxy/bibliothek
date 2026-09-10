@@ -27,6 +27,21 @@ type Supplier struct {
 	// aber einzeln gesetzt werden — und „Bestelllink, aber nicht beklebt" hiess: Der
 	// Händler beklebt, die Bibliothek druckt trotzdem noch einmal. Siehe Migration 066.
 	IstHauptlieferant bool
+
+	// KundennummerSchultraeger: zweites Kundenkonto beim selben Händler für Bestellungen
+	// aus Mitteln des Schulträgers (Schülerbücherei). Leer = dieselbe Nummer wie
+	// Kundennummer. Siehe Migration 109 und KundennummerFuer.
+	KundennummerSchultraeger string
+}
+
+// KundennummerFuer liefert die Kundennummer, die auf einer Bestellung aus dem
+// genannten Topf steht: für den Schulträger die zweite Nummer, falls hinterlegt — sonst
+// (und für Landesmittel immer) die erste.
+func (s *Supplier) KundennummerFuer(mittel string) string {
+	if mittel == MittelSchultraeger && s.KundennummerSchultraeger != "" {
+		return s.KundennummerSchultraeger
+	}
+	return s.Kundennummer
 }
 
 // SupplierRepository definiert die Datenbank-Zugriffe für Lieferanten.
@@ -60,10 +75,10 @@ func (r *pgSupplierRepository) GetSupplierByID(ctx context.Context, id string) (
 	var s Supplier
 	s.ID = id
 	err := r.db.QueryRow(ctx, `
-		SELECT name, email, kundennummer, ist_hauptlieferant
+		SELECT name, email, kundennummer, ist_hauptlieferant, kundennummer_schultraeger
 		FROM lieferanten
 		WHERE id = $1
-	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer, &s.IstHauptlieferant)
+	`, id).Scan(&s.Name, &s.Email, &s.Kundennummer, &s.IstHauptlieferant, &s.KundennummerSchultraeger)
 	if err != nil {
 		return nil, err
 	}

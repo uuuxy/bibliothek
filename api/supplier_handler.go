@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
@@ -24,6 +25,10 @@ type SupplierResponse struct {
 	// repository.Supplier — an diesem einen Merkmal hängen Vorauswahl, Bestelllink und
 	// Nachdruck-Liste gemeinsam.
 	IstHauptlieferant bool `json:"ist_hauptlieferant"`
+
+	// KundennummerSchultraeger: zweites Kundenkonto für Bestellungen der Schülerbücherei
+	// (Mittel des Schulträgers). Leer = dieselbe Nummer (Migration 109).
+	KundennummerSchultraeger string `json:"kundennummer_schultraeger"`
 }
 
 // CreateSupplierRequest holds the payload for creating a new supplier.
@@ -35,6 +40,12 @@ type CreateSupplierRequest struct {
 	// IstHauptlieferant ist bewusst ein einfaches bool und kein *bool: Fehlt das Feld,
 	// gilt false — also ein Händler, der einfach nur die Bestellmail bekommt.
 	IstHauptlieferant bool `json:"ist_hauptlieferant"`
+
+	// KundennummerSchultraeger: optional; leer heißt „dieselbe Nummer wie customerNumber".
+	// Ein Feld, das der Aufrufer weglässt, wird beim Bearbeiten deshalb als leer gespeichert
+	// — das ist gewollt: Die Maske schickt immer den ganzen Datensatz (startEdit liest ihn
+	// aus der Zeile), ein stilles Blanking über eine andere Tür gibt es nicht.
+	KundennummerSchultraeger string `json:"kundennummer_schultraeger"`
 }
 
 // setzeHauptlieferant macht genau einen Lieferanten zum Hauptlieferanten und nimmt das
@@ -75,7 +86,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 		// Der Hauptlieferant zuerst: Das Bestellformular nimmt sonst den alphabetisch
 		// ersten, und die Vorauswahl bliebe wirkungslos.
 		rows, err := s.DB.Pool.Query(ctx, `
-			SELECT id, name, email, kundennummer, erstellt_am, ist_hauptlieferant
+			SELECT id, name, email, kundennummer, erstellt_am, ist_hauptlieferant, kundennummer_schultraeger
 			FROM lieferanten
 			ORDER BY ist_hauptlieferant DESC, name ASC
 		`)
@@ -88,7 +99,7 @@ func (s *Server) ListSuppliersHandler() http.HandlerFunc {
 		suppliers := []SupplierResponse{}
 		for rows.Next() {
 			var sup SupplierResponse
-			if err := rows.Scan(&sup.ID, &sup.Name, &sup.Email, &sup.CustomerNumber, &sup.ErstelltAm, &sup.IstHauptlieferant); err != nil {
+			if err := rows.Scan(&sup.ID, &sup.Name, &sup.Email, &sup.CustomerNumber, &sup.ErstelltAm, &sup.IstHauptlieferant, &sup.KundennummerSchultraeger); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
@@ -121,10 +132,10 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 		var newID string
 		var erstelltAm time.Time
 		err := s.DB.Pool.QueryRow(ctx, `
-			INSERT INTO lieferanten (name, email, kundennummer)
-			VALUES ($1, $2, $3)
+			INSERT INTO lieferanten (name, email, kundennummer, kundennummer_schultraeger)
+			VALUES ($1, $2, $3, $4)
 			RETURNING id, erstellt_am
-		`, req.Name, req.Email, req.CustomerNumber).Scan(&newID, &erstelltAm)
+		`, req.Name, req.Email, req.CustomerNumber, strings.TrimSpace(req.KundennummerSchultraeger)).Scan(&newID, &erstelltAm)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -142,12 +153,13 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 		}
 
 		RespondJSON(w, http.StatusCreated, SupplierResponse{
-			ID:                newID,
-			Name:              req.Name,
-			Email:             req.Email,
-			CustomerNumber:    req.CustomerNumber,
-			ErstelltAm:        erstelltAm,
-			IstHauptlieferant: req.IstHauptlieferant,
+			ID:                       newID,
+			Name:                     req.Name,
+			Email:                    req.Email,
+			CustomerNumber:           req.CustomerNumber,
+			ErstelltAm:               erstelltAm,
+			IstHauptlieferant:        req.IstHauptlieferant,
+			KundennummerSchultraeger: strings.TrimSpace(req.KundennummerSchultraeger),
 		})
 	}
 }
@@ -175,8 +187,8 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 	tag, err := s.DB.Pool.Exec(ctx,
-		`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3 WHERE id = $4`,
-		req.Name, req.Email, req.CustomerNumber, id,
+		`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3, kundennummer_schultraeger = $5 WHERE id = $4`,
+		req.Name, req.Email, req.CustomerNumber, id, strings.TrimSpace(req.KundennummerSchultraeger),
 	)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -208,11 +220,12 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 	}
 
 	RespondJSON(w, http.StatusOK, SupplierResponse{
-		ID:                id,
-		Name:              req.Name,
-		Email:             req.Email,
-		CustomerNumber:    req.CustomerNumber,
-		IstHauptlieferant: req.IstHauptlieferant,
+		ID:                       id,
+		Name:                     req.Name,
+		Email:                    req.Email,
+		CustomerNumber:           req.CustomerNumber,
+		IstHauptlieferant:        req.IstHauptlieferant,
+		KundennummerSchultraeger: strings.TrimSpace(req.KundennummerSchultraeger),
 	})
 }
 

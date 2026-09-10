@@ -52,6 +52,11 @@ type BestellungKopf struct {
 	// genau die Parallelwelt, die diese Seite gerade beseitigt hat.
 	EtikettenGroesse *string `json:"etiketten_groesse,omitempty"`
 	LinkAktiv        bool    `json:"link_aktiv"`
+
+	// Mittel: der Topf der Bestellung ('land' / 'schultraeger', Migration 109). Leer bei
+	// Alt-Bestellungen ohne eindeutige Zuordnung — die Oberfläche zeigt dann „ohne
+	// Zuordnung", nie einen geratenen Topf.
+	Mittel string `json:"mittel"`
 }
 
 // BestellPositionDetail ist eine bestellte Zeile samt Angaben aus dem Titelsatz.
@@ -139,12 +144,13 @@ func (r *pgBestelldetailRepository) ladeKopf(ctx context.Context, bestellungID s
 		       bestaetigungs_token_hash IS NOT NULL,
 		       bestaetigt_am, bestaetigt_durch, etiketten_groesse,
 		       (bestaetigungs_token_hash IS NOT NULL
-		        AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now()))
+		        AND (token_gueltig_bis IS NULL OR token_gueltig_bis > now())),
+		       coalesce(mittel, '')
 		FROM bestellungen_verlauf
 		WHERE id = $1
 	`, bestellungID).Scan(&k.ID, &k.LieferantName, &k.LieferantEmail, &k.Kundennummer,
 		&k.Bestelldatum, &k.Gesamtbetrag, &k.AnzahlExemplare, &k.MitBestaetigung,
-		&k.BestaetigtAm, &k.BestaetigtDurch, &k.EtikettenGroesse, &k.LinkAktiv)
+		&k.BestaetigtAm, &k.BestaetigtDurch, &k.EtikettenGroesse, &k.LinkAktiv, &k.Mittel)
 	if err != nil {
 		return nil, err
 	}

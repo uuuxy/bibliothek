@@ -50,6 +50,7 @@ func bestellungMitEtiketten(t *testing.T, srv *Server, pool *pgxpool.Pool, menge
 	titel := titelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: lieferant,
 		Items:      []OrderItemRequest{{TitelID: titel, Menge: menge, Preis: 10, GenerateBarcodes: true}},
 	})

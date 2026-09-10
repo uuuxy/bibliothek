@@ -854,6 +854,65 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/buecher/titel/{id}/lernmittel": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Update a title's Lernmittel flag",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Title ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Lernmittel yes/no",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.UpdateTitelLernmittelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/buecher/titel/{id}/signatur": {
             "put": {
                 "consumes": [
@@ -2920,7 +2979,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "bekannt": {
-                    "description": "Bekannt: false, wenn das Jahr nicht in pkg/lmfplan hinterlegt ist — der Planer\nnennt dann das Jahr und bittet um den letzten bzw. ersten Tag von Hand.",
+                    "description": "Bekannt: false, wenn das Jahr weder im Programm noch in der Einstellung\n„Sommerferien\" steht — der Planer nennt dann das Jahr und bittet um den letzten\nbzw. ersten Tag von Hand.",
                     "type": "boolean"
                 },
                 "bis": {
@@ -2971,6 +3030,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "ausgelassen": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "ausgelassen_regel": {
+                    "description": "AusgelassenRegel: die Klassen aus Klassen, die die Regel dieser Art auslässt\n(Büchertausch: Oberstufe; Ausgabe: alles außer den Eingangsjahrgängen). Der Planer\nklappt sie unter „bleiben draußen\" ein — auch bei einem laufenden Plan, der sie\nnie kannte (06.09.2026: ein Plan mit alten Klassennamen bot 60 Chips offen an).",
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -3262,6 +3328,14 @@ const docTemplate = `{
                 }
             }
         },
+        "api.UpdateTitelLernmittelRequest": {
+            "type": "object",
+            "properties": {
+                "ist_lernmittel": {
+                    "type": "boolean"
+                }
+            }
+        },
         "api.UpdateTitelSignaturRequest": {
             "type": "object",
             "properties": {
@@ -3360,6 +3434,20 @@ const docTemplate = `{
                 }
             }
         },
+        "lmfplan.SommerferienEintrag": {
+            "type": "object",
+            "properties": {
+                "bis": {
+                    "type": "string"
+                },
+                "jahr": {
+                    "type": "integer"
+                },
+                "von": {
+                    "type": "string"
+                }
+            }
+        },
         "repository.BorrowedBook": {
             "type": "object",
             "properties": {
@@ -3415,11 +3503,11 @@ const docTemplate = `{
                 "bestellbedarf_schwelle": {
                     "type": "integer"
                 },
-                "bestelllink_gueltigkeit_tage": {
-                    "type": "integer"
-                },
                 "bestellbedarf_warnung_aktiv": {
                     "type": "boolean"
+                },
+                "bestelllink_gueltigkeit_tage": {
+                    "type": "integer"
                 },
                 "etikett_eigentumsvermerk": {
                     "type": "string"
@@ -3474,6 +3562,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "schule_strasse": {
+                    "type": "string"
+                },
+                "sommerferien": {
+                    "description": "Sommerferien: JSON-Liste eigener Jahre; der Handler bringt sie vor dem Speichern in\nNormalform (lmfplan.NormalisiereSommerferien) und lehnt Unlesbares mit 400 ab.",
                     "type": "string"
                 },
                 "sperre_minuten": {
@@ -3682,12 +3774,13 @@ const docTemplate = `{
                 "bestellbedarf_schwelle": {
                     "type": "integer"
                 },
-                "bestelllink_gueltigkeit_tage": {
-                    "type": "integer"
-                },
                 "bestellbedarf_warnung_aktiv": {
                     "description": "Bestellbedarf: ob überhaupt gewarnt wird und ab welcher Exemplarzahl ein\n(LMF-)Titel als Bestellbedarf gilt (gesamt \u003c Schwelle). Löst den früheren\npauschalen Meldebestand-Default 5 ab, der fast jeden Titel fälschlich meldete.",
                     "type": "boolean"
+                },
+                "bestelllink_gueltigkeit_tage": {
+                    "description": "BestelllinkGueltigkeitTage: Lebensdauer des Bestätigungs-Links in Tagen, den der\nHauptlieferant mit der Bestellmail bekommt (Einstellung seit 08.09.2026; vorher\nfest 21). Gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.",
+                    "type": "integer"
                 },
                 "etikett_eigentumsvermerk": {
                     "description": "EtikettEigentumsvermerk steht als letzte Zeile auf jedem Buchetikett\n(\"Eigentum des Landes Hessen\"). Konfigurierbar und nicht fest verdrahtet, weil\nder Träger je nach Bundesland und Schulform ein anderer ist — und weil ein\nEigentumsvermerk, der nicht stimmt, schlechter ist als keiner.",
@@ -3750,6 +3843,16 @@ const docTemplate = `{
                 },
                 "schule_strasse": {
                     "type": "string"
+                },
+                "sommerferien": {
+                    "description": "Sommerferien: eigene Jahre der Schule als JSON-Liste (pkg/lmfplan/ferien_einstellung.go),\nVerlängerung der Programmtabelle; leer = nur die Programmtabelle. SommerferienProgramm\nist die Programmtabelle selbst (nur gelesen, damit die Oberfläche zeigt, was schon da ist).",
+                    "type": "string"
+                },
+                "sommerferien_programm": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/lmfplan.SommerferienEintrag"
+                    }
                 },
                 "sperre_minuten": {
                     "type": "integer"

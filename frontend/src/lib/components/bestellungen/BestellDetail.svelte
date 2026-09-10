@@ -19,6 +19,8 @@
 	import BestellDetailPositionen from './BestellDetailPositionen.svelte';
 	import BestellDetailExemplare from './BestellDetailExemplare.svelte';
 	import Button from '../ui/Button.svelte';
+	import StatusChip from '../ui/StatusChip.svelte';
+	import { mittelLabel } from './mittel.js';
 	import { ArrowLeft } from '@lucide/svelte';
 
 	/** @type {{ bestellungId: string, onBack: () => void }} */
@@ -93,7 +95,14 @@
 	{:else if bestellung}
 		<div class="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-4">
 			<div>
-				<h2 class="text-base font-bold text-slate-800">{bestellung.lieferant_name}</h2>
+				<div class="flex flex-wrap items-center gap-2">
+					<h2 class="text-base font-bold text-slate-800">{bestellung.lieferant_name}</h2>
+					<!-- Der Topf gehört zum Beleg wie die Kundennummer: Er steht auf dem
+					     Anschreiben, das der Händler bekommen hat (Migration 109). „ohne
+					     Zuordnung" ist eine Alt-Bestellung, deren Topf nicht eindeutig war —
+					     nie ein geratener. -->
+					<StatusChip ton="neutral" text={mittelLabel(bestellung.mittel)} />
+				</div>
 				<p class="mt-0.5 text-sm text-slate-500">
 					{langdatum(bestellung.bestelldatum)}
 					{#if bestellung.kundennummer}· Kd.-Nr. {bestellung.kundennummer}{/if}

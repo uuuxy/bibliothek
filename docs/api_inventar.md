@@ -214,6 +214,7 @@
 - `PUT /api/books/`
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`
+- `PUT /api/buecher/titel/{id}/lernmittel`
 - `PUT /api/buecher/titel/{id}/signatur`
 - `PUT /api/einstellungen`
 - `PUT /api/geraete/{id}`

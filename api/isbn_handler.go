@@ -34,9 +34,9 @@ func parseErscheinungsjahr(raw string) *int {
 func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLookupResponse, error) {
 	resp := ISBNLookupResponse{ISBN: isbn}
 	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,'')
+		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel
 		FROM buecher_titel WHERE replace(isbn, '-', '') = $1 LIMIT 1
-	`, isbn).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur)
+	`, isbn).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel)
 	if err == nil {
 		resp.Exists = true
 		return &resp, nil
@@ -89,9 +89,9 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 			    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
 			    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
 			    aktualisiert_am = CURRENT_TIMESTAMP
-		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,'')
+		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel
 	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, signatur, kanonisch[meta.Fach]).
-		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur)
+		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel)
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}
@@ -114,6 +114,12 @@ type ISBNLookupResponse struct {
 	// beiden Fällen im Bestellkorb vor dem Bestellen editierbar, siehe
 	// PUT /api/buecher/titel/{id}/signatur.
 	Signatur string `json:"signatur,omitempty"`
+	// IstLernmittel: bei exists=true das Kennzeichen des vorhandenen Titels, bei
+	// exists=false immer false — ein über die DNB neu angelegter Titel ist bis zur
+	// Rückfrage im Staging-Fenster kein Lernmittel (PUT /api/buecher/titel/{id}/lernmittel).
+	// Bis zum 10.09.2026 gab es diese Rückfrage nicht: Jedes neue Schulbuch entstand als
+	// Bücherei-Titel und blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
+	IstLernmittel bool `json:"ist_lernmittel"`
 }
 
 // ISBNZuTitelHandler handles POST /api/buecher/aus-isbn.

@@ -16,6 +16,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import { CheckCircle2, Clock, ChevronRight } from '@lucide/svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
+	import { mittelLabel } from './mittel.js';
 
 	/**
 	 * @type {{
@@ -38,6 +39,9 @@
 				<!-- Eigene Spalte, weil der Status vorher IN der Lieferantenzelle stand: Die
 			     trägt max-w-0 + truncate, und das Chip wurde auf wenige Pixel zerquetscht —
 			     die Angabe war da, aber nicht lesbar. -->
+				<!-- Der Topf (Migration 109): Land oder Schulträger. Eigene Spalte aus demselben
+			     Grund wie die Bestätigung — in der Lieferantenzelle würde das Chip zerquetscht. -->
+				<th>Mittel</th>
 				<th>Bestätigung</th>
 				<th class="text-right">Exemplare</th>
 				{#if orderStore.preiseErfassen}<th class="text-right">Betrag</th>{/if}
@@ -67,6 +71,13 @@
 						<span class="block truncate text-sm text-slate-400">
 							{b.kundennummer ? 'Kd.-Nr. ' + b.kundennummer : b.lieferant_email}
 						</span>
+					</td>
+					<td class="whitespace-nowrap">
+						{#if b.mittel}
+							<StatusChip ton="neutral" text={mittelLabel(b.mittel)} />
+						{:else}
+							<span class="text-sm text-on-surface-variant">ohne Zuordnung</span>
+						{/if}
 					</td>
 					<!-- Nur Lieferanten mit dem externen Schritt tragen hier etwas. Ein „—" in
 				     jeder anderen Zeile wäre Rauschen: Auffallen soll die Abweichung. -->

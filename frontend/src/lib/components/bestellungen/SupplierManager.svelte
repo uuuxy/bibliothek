@@ -3,49 +3,41 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Switch from '../ui/Switch.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import LieferantZeile from './LieferantZeile.svelte';
 
 	let { suppliers, onAddSupplier, onEditSupplier, onRemoveSupplier } = $props();
 
 	let newName = $state('');
 	let newEmail = $state('');
 	let newCustNum = $state('');
+	let newCustNumSchultraeger = $state('');
 	let newIstHaupt = $state(false);
 
 	/** @type {string|null} */
 	let editingId = $state(null);
-	let editName = $state('');
-	let editEmail = $state('');
-	let editCustNum = $state('');
-	let editIstHaupt = $state(false);
 
 	/** @param {SubmitEvent} e */
 	function handleSubmit(e) {
 		e.preventDefault();
-		onAddSupplier(newName, newEmail, newCustNum, newIstHaupt);
+		onAddSupplier(newName, newEmail, newCustNum, newIstHaupt, newCustNumSchultraeger);
 		newName = '';
 		newEmail = '';
 		newCustNum = '';
+		newCustNumSchultraeger = '';
 		newIstHaupt = false;
 	}
 
-	/** @param {{ id: string, name: string, email: string, customerNumber: string, ist_hauptlieferant?: boolean }} s */
-	function startEdit(s) {
-		editingId = s.id;
-		editName = s.name;
-		editEmail = s.email;
-		editCustNum = s.customerNumber;
-		// Ohne diese Zeile stünde beim Bearbeiten immer „aus" im Feld, und wer nur die
-		// E-Mail korrigiert, degradierte den Hauptlieferanten still zum normalen Händler.
-		editIstHaupt = s.ist_hauptlieferant ?? false;
-	}
-
-	function cancelEdit() {
-		editingId = null;
-	}
-
-	async function saveEdit() {
+	/** @param {{ name: string, email: string, customerNumber: string, istHauptlieferant: boolean, kundennummerSchultraeger: string }} w */
+	async function saveEdit(w) {
 		if (!editingId) return;
-		await onEditSupplier(editingId, editName, editEmail, editCustNum, editIstHaupt);
+		await onEditSupplier(
+			editingId,
+			w.name,
+			w.email,
+			w.customerNumber,
+			w.istHauptlieferant,
+			w.kundennummerSchultraeger
+		);
 		editingId = null;
 	}
 </script>
@@ -63,6 +55,14 @@
 			<Feld id="n" label="Name" bind:value={newName} required />
 			<Feld id="e" label="E-Mail" type="email" bind:value={newEmail} required />
 			<Feld id="c" label="Kundennummer" bind:value={newCustNum} required />
+			<!-- Händler führen Lernmittel und Bibliothek oft als getrennte Kundenkonten
+			     (anderer Nachlass, andere Rechnungsstelle). Bestellungen der Schülerbücherei
+			     tragen dann diese Nummer; leer heißt: dieselbe wie oben (Migration 109). -->
+			<Feld
+				id="cs"
+				label="Kundennummer Schülerbücherei (falls abweichend)"
+				bind:value={newCustNumSchultraeger}
+			/>
 			<!-- EIN Schalter statt drei. Vorher standen hier „beklebt die Bücher",
 			     „voreingestellt beim Bestellen" und „bekommt den Bestelllink" einzeln — drei
 			     Haken für eine einzige Tatsache aus dem Schulalltag, und eine Kombination davon
@@ -104,13 +104,6 @@
 		{#if !suppliers.length}
 			<div class="py-12 text-center text-slate-400 text-base">Keine Lieferanten angelegt.</div>
 		{:else}
-			<!-- Drei Spalten mit je zwei Zeilen (M3-Listenzeile: Headline + Supporting) statt
-			     fünf einzeiligen: Seit dem Umzug in die Einstellungen (25.08.2026) hat die Tabelle
-			     bei 1280 px nur 592 px — fünf Spalten brauchten gemessen 924. Zuerst klebte die
-			     Aktionsspalte und legte sich über „Rolle", dann half auch Kürzen nicht. Zwei
-			     Zeilen je Zelle passen ohne Scrollbalken und lesen sich wie die Kategorienliste
-			     daneben. Name/E-Mail werden gekürzt (Block in der Zelle — max-width auf <td>
-			     ignoriert das Auto-Layout), der volle Text steht im title. -->
 			<div class="overflow-x-auto">
 				<Tabelle beschriftung="Lieferanten">
 					<thead>
@@ -122,74 +115,18 @@
 					</thead>
 					<tbody>
 						{#each suppliers as s (s.id)}
-							{#if editingId === s.id}
-								<tr aria-selected="true" class="align-top">
-									<td class="space-y-2">
-										<Feld aria-label="Name" bind:value={editName} />
-										<Switch
-											bind:checked={editIstHaupt}
-											label="Hauptlieferant der Schule ({s.name})"
-										/>
-									</td>
-									<td class="space-y-2">
-										<Feld aria-label="E-Mail" type="email" bind:value={editEmail} />
-										<Feld aria-label="Kundennummer" bind:value={editCustNum} />
-									</td>
-									<td class="text-right whitespace-nowrap">
-										<button
-											onclick={saveEdit}
-											aria-label="Änderungen für Lieferant {s.name} speichern"
-											class="text-blue-600 hover:text-blue-800 font-bold cursor-pointer text-sm mr-3"
-											>Speichern</button
-										>
-										<button
-											onclick={cancelEdit}
-											aria-label="Änderungen für Lieferant {s.name} abbrechen"
-											class="text-slate-400 hover:text-slate-600 cursor-pointer text-sm"
-											>Abbrechen</button
-										>
-									</td>
-								</tr>
-							{:else}
-								<tr>
-									<td>
-										<span class="block max-w-52 truncate font-bold text-slate-800" title={s.name}
-											>{s.name}</span
-										>
-										<!-- Nur die Abweichung wird benannt: „Bestellmail" in jeder Zeile wäre
-										     Rauschen. Auffallen soll die eine Zeile, die anders ist. -->
-										{#if s.ist_hauptlieferant}
-											<span
-												class="block text-xs font-semibold text-slate-700"
-												data-tip="Vorausgewählt beim Bestellen, bekommt den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst"
-												>Hauptlieferant</span
-											>
-										{:else}
-											<span class="block text-xs text-slate-400">nur Bestellmail</span>
-										{/if}
-									</td>
-									<td>
-										<span class="block max-w-60 truncate" title={s.email}>{s.email}</span>
-										<span class="block text-xs text-slate-400 whitespace-nowrap"
-											>Kd.-Nr. {s.customerNumber || '–'}</span
-										>
-									</td>
-									<td class="text-right whitespace-nowrap">
-										<button
-											onclick={() => startEdit(s)}
-											aria-label="Lieferant {s.name} bearbeiten"
-											class="text-slate-500 hover:text-blue-600 cursor-pointer text-sm mr-3"
-											>Bearbeiten</button
-										>
-										<button
-											onclick={() => onRemoveSupplier(s.id)}
-											aria-label="Lieferant {s.name} löschen"
-											class="text-rose-600/80 hover:text-rose-700 cursor-pointer text-sm"
-											>Löschen</button
-										>
-									</td>
-								</tr>
-							{/if}
+							<!-- {#key}: Der Bearbeiten-Zustand beginnt mit den Werten der Zeile —
+							     nicht mit denen eines früheren Bearbeitens. -->
+							{#key editingId === s.id}
+								<LieferantZeile
+									{s}
+									bearbeiten={editingId === s.id}
+									onEdit={(z) => (editingId = z.id)}
+									onRemove={onRemoveSupplier}
+									onSave={saveEdit}
+									onCancel={() => (editingId = null)}
+								/>
+							{/key}
 						{/each}
 					</tbody>
 				</Tabelle>

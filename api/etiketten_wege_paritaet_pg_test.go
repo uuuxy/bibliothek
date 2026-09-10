@@ -37,6 +37,7 @@ func TestEtikettenDatenSindAufBeidenWegenGleich(t *testing.T) {
 	titel := titelMitMeldebestand(t, pool, "LMF-Paritaet", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: lieferant,
 		Items:      []OrderItemRequest{{TitelID: titel, Menge: 3, Preis: 10, GenerateBarcodes: true}},
 	})

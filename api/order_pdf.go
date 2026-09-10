@@ -78,9 +78,16 @@ const linkbogenSatz = "Bitte versehen Sie die gelieferten Exemplare vorab mit de
 // Eigene Funktion, damit der Satz mit dem "beigefügten Bogen" prüfbar ist, ohne ein
 // erzeugtes PDF wieder auseinanderzunehmen: Genau dieser Satz stand vorher bedingungslos
 // im Brief und verwies auf eine Anlage, die oft nicht existierte.
-func bestellAnschreibenText(weg etikettenWeg) string {
+//
+// texte trägt den Vermerk des Topfs (mittel_vermerk.go). Bis zum 10.09.2026 stand hier
+// für JEDE Bestellung „für unsere Schulbibliothek" — auch für Lernmittel-Klassensätze,
+// die das Land bezahlt. Die Rechnung geht in beiden Fällen an die Schule (Auskunft der
+// EDV-Servicestelle für Schulbibliotheken, 10.09.2026); der Vermerk soll darauf
+// wiederkehren, damit die Schule die Rechnungen den Töpfen zuordnen kann.
+func bestellAnschreibenText(weg etikettenWeg, texte mittelText) string {
 	text := "Sehr geehrte Damen und Herren,\n\n" +
-		"hiermit bestellen wir für unsere Schulbibliothek die nachfolgend aufgeführten Buchtitel zur Lieferung.\n"
+		"hiermit bestellen wir die nachfolgend aufgeführten Buchtitel zur Lieferung.\n" +
+		texte.Vermerk + "\n"
 	switch weg {
 	case bogenLiegtBei:
 		text += barcodebogenSatz
@@ -89,7 +96,7 @@ func bestellAnschreibenText(weg etikettenWeg) string {
 	case ohneEtiketten:
 		// Keine Klebeanweisung — es gibt nichts zu kleben.
 	}
-	return text + "Die Rechnung senden Sie bitte an die oben angegebene Anschrift.\n\n" +
+	return text + "Die Rechnung senden Sie bitte an die oben angegebene Anschrift und führen Sie darauf denselben Vermerk.\n\n" +
 		"Bestellte Titel:"
 }
 
@@ -99,7 +106,16 @@ func bestellAnschreibenText(weg etikettenWeg) string {
 // vorher immer drin, auch wenn der Bogen gar nicht mitgeschickt wurde. Der Lieferant bekam
 // damit eine Anweisung auf etwas, das der E-Mail nicht beilag: Er kann sie nur ignorieren
 // oder nachfragen, beides kostet die Lieferung Zeit.
-func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, weg etikettenWeg) ([]byte, error) {
+//
+// mittel ist der Topf (repository.MittelLand / MittelSchultraeger): Betreffzeile und
+// Vermerk des Briefs hängen daran. Ein unbekannter Topf ist ein Fehler, kein Brief ohne
+// Vermerk — belegt in order_pdf_mittel_test.go am Inhaltsstrom des fertigen PDFs.
+func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, weg etikettenWeg, mittel string) ([]byte, error) {
+	texte, err := mittelTexteFuer(mittel)
+	if err != nil {
+		return nil, err
+	}
+
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.AddPage()
 	p.SetMargins(20, 20, 20)
@@ -125,14 +141,14 @@ func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, weg eti
 	p.Cell(0, 4, tr("An den Buchlieferanten"))
 	p.Ln(20)
 
-	// Subject
+	// Subject — der Topf steht in der Betreffzeile, nicht erst im Fliesstext.
 	p.SetFont("Arial", "B", 12)
-	p.Cell(0, 8, tr("Buchbestellung für die Schulbibliothek"))
+	p.Cell(0, 8, tr(texte.Betreff))
 	p.Ln(10)
 
 	// Letter Body Text
 	p.SetFont("Arial", "", 10)
-	p.MultiCell(0, 5, tr(bestellAnschreibenText(weg)), "", "L", false)
+	p.MultiCell(0, 5, tr(bestellAnschreibenText(weg, texte)), "", "L", false)
 	p.Ln(6)
 
 	// Table headers

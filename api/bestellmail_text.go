@@ -37,9 +37,13 @@ func bestellVersandMeldung(lieferantName string, ohneLink bool) (status, meldung
 // bestellMailFallback* ist der Standardtext, falls die Vorlage BESTELLUNG_HAENDLER
 // fehlt oder ein Feld leer ist — so bleibt der Bestellversand immer versandfähig
 // (identisch zum früher hartkodierten Text in pdf_service.go).
+//
+// {{.Mittel}} ist der Topf (Lernmittelfreiheit / Schülerbücherei, Migration 109) — im
+// Betreff, damit er im Postfach des Händlers zwischen allen anderen Bestellungen
+// sichtbar ist, und im Text mit der Bitte, ihn auf die Rechnung zu übernehmen.
 const (
-	bestellMailFallbackBetreff = "Buchbestellung Schulbibliothek - {{.Datum}} (Kundennummer {{.Kundennummer}})"
-	bestellMailFallbackBody    = "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nBestellte Titel: {{.AnzahlTitel}}\nGesamtanzahl Exemplare: {{.AnzahlExemplare}}\n\nMit freundlichen Grüßen,\nSchulbibliothek"
+	bestellMailFallbackBetreff = "Buchbestellung {{.Mittel}} - {{.Datum}} (Kundennummer {{.Kundennummer}})"
+	bestellMailFallbackBody    = "Sehr geehrte Damen und Herren,\n\nanbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.\n\nDiese Bestellung: {{.Mittel}} — den Vermerk finden Sie auch im Anschreiben; bitte führen Sie ihn auf der Rechnung.\n\nBestellte Titel: {{.AnzahlTitel}}\nGesamtanzahl Exemplare: {{.AnzahlExemplare}}\n\nMit freundlichen Grüßen,\nSchulbibliothek"
 )
 
 // loadBestellTemplate lädt die Händler-Bestellvorlage aus der Datenbank; fehlt sie
@@ -59,7 +63,13 @@ func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody str
 // gueltigBis ist der Ablauf des Links (nil ohne Link). Als Datum in der Mail, nicht als
 // Tageszahl: „bis zum 29.09.2026" kann der Händler in den Kalender schreiben, „21 Tage"
 // muss er erst ausrechnen — und die Zahl ist seit 08.09.2026 eine Einstellung.
-func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string, gueltigBis *time.Time) (subject, body string) {
+//
+// mittel ist der Topf der Bestellung (repository.MittelLand / MittelSchultraeger). Er
+// füllt {{.Mittel}} — und fehlt der Platzhalter in der Vorlage, sorgt
+// ergaenzeMittelVermerk dafür, dass Betreff und Text ihn trotzdem tragen: Der Vermerk
+// ist Pflicht auf der Bestellung, eine umformulierte Vorlage darf ihn nicht verlieren.
+func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string, gueltigBis *time.Time, mittel string) (subject, body string) {
+	texte := mittelTexte[mittel]
 	replacer := strings.NewReplacer(
 		"{{.Datum}}", time.Now().Format(dateFormatDE),
 		"{{.Kundennummer}}", kundennummer,
@@ -67,8 +77,27 @@ func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anz
 		"{{.AnzahlExemplare}}", strconv.Itoa(anzahlExemplare),
 		"{{.BestaetigungsLink}}", link,
 		"{{.LinkGueltigBis}}", linkFrist(gueltigBis),
+		"{{.Mittel}}", texte.Kurz,
 	)
-	return replacer.Replace(betreff), ergaenzeLinkAbsatz(replacer.Replace(textBody), textBody, link, gueltigBis)
+	subject, body = ergaenzeMittelVermerk(replacer.Replace(betreff), replacer.Replace(textBody), betreff, textBody, texte)
+	return subject, ergaenzeLinkAbsatz(body, textBody, link, gueltigBis)
+}
+
+// ergaenzeMittelVermerk hängt den Topf an, wo die Vorlage {{.Mittel}} nicht selbst
+// platziert: an den Betreff als Zusatz, an den Text als eigenen Absatz. Geprüft wird die
+// ROHE Vorlage — dieselbe Technik wie ergaenzeLinkAbsatz. Ohne Topf (leere Texte, etwa
+// in einem Test ohne Mittel) bleibt alles unverändert.
+func ergaenzeMittelVermerk(subject, body, rohBetreff, rohText string, texte mittelText) (string, string) {
+	if texte.Kurz == "" {
+		return subject, body
+	}
+	if !strings.Contains(rohBetreff, "{{.Mittel}}") {
+		subject += " – " + texte.Kurz
+	}
+	if !strings.Contains(rohText, "{{.Mittel}}") {
+		body += "\n\n" + texte.Vermerk + " Bitte führen Sie diesen Vermerk auch auf der Rechnung."
+	}
+	return subject, body
 }
 
 // linkAbsatz ist der Textblock, der den Link trägt, wenn die Vorlage ihn nicht selbst

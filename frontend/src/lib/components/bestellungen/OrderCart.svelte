@@ -1,11 +1,21 @@
+<!-- @component Der Warenkorb — nach Topf gruppiert, ein Absenden-Knopf für alle.
+
+     Eine Bestellung = ein Topf (Migration 109): Lernmittel bezahlt das Land im Rahmen der
+     Lernmittelfreiheit, die Schülerbücherei der Schulträger. Der Händler gewährt darauf
+     verschiedene Nachlässe, und die Rechnungen gehen getrennte Wege — er kann eine
+     gemischte Bestellung weder richtig rabattieren noch richtig abrechnen. Deshalb zeigt
+     der Warenkorb seine Positionen in zwei Abschnitten mit eigener Summe, und
+     „Bestellung auslösen" erzeugt je Abschnitt eine Bestellung an denselben Händler. -->
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Button from '../ui/Button.svelte';
-	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
-	import { coverSrc } from '../../utils/coverSrc.js';
-	import { X } from '@lucide/svelte';
+	import OrderCartPosition from './OrderCartPosition.svelte';
+
+	/** @param {number} betrag */
+	const euro = (betrag) => betrag.toFixed(2).replace('.', ',') + ' €';
+	const anzahlBestellungen = $derived(orderStore.gruppen.length);
 </script>
 
 <div class="space-y-3">
@@ -28,89 +38,25 @@
 			Tippe links bei einem Titel auf <span class="font-bold text-slate-500">+</span> oder suche oben.
 		</div>
 	{:else}
-		<div class="space-y-2">
-			{#each orderStore.cart as item, idx (idx)}
-				{@const quelle = coverSrc(item.cover_url, item.isbn)}
-				<div class="rounded-xl border border-slate-200 bg-white p-3 space-y-2.5">
-					<div class="flex items-start gap-2.5">
-						{#if quelle}<img
-								src={quelle}
-								class="w-8 aspect-3/4 object-cover rounded-sm shrink-0 ring-1 ring-slate-200/70"
-								alt=""
-							/>{:else}<div
-								class="w-8 aspect-3/4 rounded-sm bg-slate-200 flex items-center justify-center font-bold text-xs uppercase shrink-0"
-							>
-								{item.titel.charAt(0)}
-							</div>{/if}
-						<div class="min-w-0 flex-1">
-							<h4 class="font-semibold text-slate-900 text-sm truncate leading-snug">
-								{item.titel}
-							</h4>
-							<p class="text-xs text-slate-400 truncate font-mono">{item.isbn || '—'}</p>
-							{#if item.generate_barcodes}
-								<div
-									class="text-label-small font-bold text-blue-600 mt-1 flex items-center gap-1 bg-blue-50 w-fit px-1.5 py-0.5 rounded-md"
-								>
-									🔖 {item.menge}
-									{item.menge === 1 ? 'Barcode' : 'Barcodes'}
-								</div>
-							{/if}
-						</div>
-						<button
-							onclick={() => orderStore.removeFromCart(idx)}
-							aria-label="Entfernen"
-							class="shrink-0 w-6 h-6 rounded-full text-slate-400 hover:text-rose-500 hover:bg-rose-50 flex items-center justify-center cursor-pointer transition-colors"
-						>
-							<X class="w-3.5 h-3.5" aria-hidden="true" />
-						</button>
-					</div>
-
-					<div class="flex items-center justify-between gap-2 pl-10">
-						<div
-							class="flex items-center border border-slate-200 bg-white rounded-xl overflow-hidden"
-						>
-							<button
-								aria-label="Menge verringern"
-								onclick={() => (item.menge = Math.max(1, item.menge - 1))}
-								class="px-2.5 py-1 hover:bg-slate-50 font-bold text-slate-500 cursor-pointer"
-								>−</button
-							><span class="px-2 font-bold text-slate-800 text-sm min-w-6 text-center tabular-nums"
-								>{item.menge}</span
-							><button
-								aria-label="Menge erhöhen"
-								onclick={() => (item.menge += 1)}
-								class="px-2.5 py-1 hover:bg-slate-50 font-bold text-slate-500 cursor-pointer"
-								>+</button
-							>
-						</div>
-						{#if orderStore.preiseErfassen}
-							<div class="flex items-center gap-1.5">
-								<!-- Der Vorschlag bleibt als solcher erkennbar, solange er unveraendert ist.
-							     Er ist der DNB-Ladenpreis bei Erscheinen — NICHT der Schulpreis, den die
-							     Schule tatsaechlich zahlt. Wer ihn ueberschreibt, verliert das Abzeichen
-							     und damit die Erinnerung daran, dass hier geraten wurde. -->
-								{#if item.preis_vorschlag > 0 && Number(item.preis) === item.preis_vorschlag}
-									<span
-										class="text-label-small font-bold uppercase text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded"
-										title="Ladenpreis aus dem DNB-Datensatz — bitte gegen den Schulpreis pruefen"
-									>
-										DNB
-									</span>
-								{/if}
-								<Feld
-									type="number"
-									step="0.01"
-									bind:value={item.preis}
-									aria-label="Preis"
-									feld="w-20 text-right font-semibold"
-								/>
-								<span class="text-sm font-semibold text-slate-400">€</span>
-							</div>
-						{/if}
-					</div>
+		{#each orderStore.gruppen as gruppe (gruppe.mittel)}
+			<!-- Abschnittskopf: der Topf und seine Summe. Bei nur EINEM Abschnitt steht er
+			     trotzdem da — er ist der Vermerk, den der Händler auf der Bestellung liest. -->
+			<section aria-label="Bestellung {gruppe.label}" class="space-y-2">
+				<div class="flex items-baseline justify-between gap-2 border-b border-outline-variant pb-1">
+					<h3 class="text-xs font-semibold text-on-surface">
+						{gruppe.label}
+						<span class="font-normal text-on-surface-variant">({gruppe.traeger})</span>
+					</h3>
+					<span class="text-xs text-on-surface-variant tabular-nums">
+						{gruppe.menge} Expl.{#if orderStore.preiseErfassen}
+							· {euro(gruppe.summe)}{/if}
+					</span>
 				</div>
-			{/each}
-		</div>
+				{#each gruppe.items as item (item.id)}
+					<OrderCartPosition {item} />
+				{/each}
+			</section>
+		{/each}
 
 		<!-- Footer: Summe + CTA -->
 		<div class="pt-3 mt-1 border-t border-slate-100 space-y-3">
@@ -119,8 +65,7 @@
 			<div class="flex items-center justify-between">
 				{#if orderStore.preiseErfassen}
 					<span class="text-sm font-semibold text-slate-500">Gesamt</span>
-					<span class="text-xl font-bold text-slate-900 tabular-nums"
-						>{orderStore.total.toFixed(2).replace('.', ',')} €</span
+					<span class="text-xl font-bold text-slate-900 tabular-nums">{euro(orderStore.total)}</span
 					>
 				{:else}
 					<span class="text-sm font-semibold text-slate-500">Exemplare</span>
@@ -137,10 +82,20 @@
 				{#if orderStore.submitting}
 					<Ladekreis size="sm" farbe="aktuell" />
 					Wird gesendet …
+				{:else if anzahlBestellungen > 1}
+					{anzahlBestellungen} Bestellungen auslösen · {orderStore.totalQty} Expl.
 				{:else}
 					Bestellung auslösen · {orderStore.totalQty} Expl.
 				{/if}
 			</Button>
+			{#if anzahlBestellungen > 1}
+				<!-- Kein Hinweis, der erschrickt, sondern die Ansage, was gleich passiert: Der
+				     Händler bekommt zwei Mails und stellt zwei Rechnungen — so will es die
+				     getrennte Finanzierung von Land und Schulträger. -->
+				<p class="text-label-small text-center text-on-surface-variant">
+					Lernmittel und Bücherei gehen als getrennte Bestellungen an denselben Händler.
+				</p>
+			{/if}
 			{#if !orderStore.selectedSupplier}
 				<p class="text-label-small text-center text-amber-600 font-medium">
 					Bitte zuerst einen Lieferanten wählen.

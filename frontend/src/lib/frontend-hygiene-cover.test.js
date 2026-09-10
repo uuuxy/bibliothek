@@ -35,7 +35,6 @@ const BESTAND = [
 	'src/lib/StatsDashboard.svelte',
 	'src/lib/StudentPrintReceipt.svelte',
 	'src/lib/components/bestellungen/BestellDetailPositionen.svelte',
-	'src/lib/components/bestellungen/OrderCart.svelte',
 	'src/lib/components/bestellungen/OrderSearch.svelte',
 	'src/lib/components/bestellungen/WareneingangTable.svelte',
 	'src/lib/components/portal/PortalTrefferkarte.svelte',

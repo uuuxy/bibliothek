@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"bibliothek/pdf"
+	"bibliothek/repository"
 )
 
 func TestPDFGeneration(t *testing.T) {
@@ -14,7 +15,7 @@ func TestPDFGeneration(t *testing.T) {
 		{Titel: "Test Buch 2", Autor: "Autor 2", ISBN: "789-012", Menge: 2},
 	}
 
-	summaryPDF, err := GenerateOrderSummaryPDF(items, pdf.SchuleInfo{Name: "Testbibliothek"}, bogenLiegtBei)
+	summaryPDF, err := GenerateOrderSummaryPDF(items, pdf.SchuleInfo{Name: "Testbibliothek"}, bogenLiegtBei, repository.MittelLand)
 	if err != nil {
 		t.Fatalf("Failed to generate summary PDF: %v", err)
 	}
@@ -79,12 +80,13 @@ func TestZweiteZeile(t *testing.T) {
 // Barcode-Aufklebern — auch dann, wenn der E-Mail gar keiner beilag. Der Lieferant kann
 // eine solche Anweisung nur ignorieren oder nachfragen; beides kostet die Lieferung Zeit.
 func TestBestellAnschreibenNenntBarcodebogenNurWennErBeiliegt(t *testing.T) {
-	mit := bestellAnschreibenText(bogenLiegtBei)
+	land := mittelTexte[repository.MittelLand]
+	mit := bestellAnschreibenText(bogenLiegtBei, land)
 	if !strings.Contains(mit, barcodebogenSatz) {
 		t.Error("Mit Bogen: Der Hinweis auf die Aufkleber fehlt im Anschreiben")
 	}
 
-	ohne := bestellAnschreibenText(ohneEtiketten)
+	ohne := bestellAnschreibenText(ohneEtiketten, land)
 	if strings.Contains(ohne, barcodebogenSatz) {
 		t.Error("Ohne Bogen: Das Anschreiben verweist auf eine Anlage, die nicht existiert")
 	}
@@ -93,7 +95,7 @@ func TestBestellAnschreibenNenntBarcodebogenNurWennErBeiliegt(t *testing.T) {
 	// dann den LINK nennen. Bliebe hier der Satz vom "beigefügten Bogen" stehen, suchte der
 	// Händler eine Anlage, die es nicht gibt — und der Link, der die Bestätigung trägt,
 	// bliebe ungeklickt.
-	ueberLink := bestellAnschreibenText(bogenHinterLink)
+	ueberLink := bestellAnschreibenText(bogenHinterLink, land)
 	if strings.Contains(ueberLink, barcodebogenSatz) {
 		t.Error("Bogen hinter dem Link: Das Anschreiben verweist trotzdem auf eine beigefügte Anlage")
 	}

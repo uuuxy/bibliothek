@@ -11,6 +11,9 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Bestellkorb-Korrektur der Signatur (create_orders, nicht edit_books — dieselbe
 	// Berechtigung wie das Anlegen des Titels über /aus-isbn, siehe api/isbn_handler.go).
 	mux.Handle("PUT /api/buecher/titel/{id}/signatur", s.RequirePermission("create_orders")(s.UpdateTitelSignaturHandler()))
+	// Dieselbe Tür für das Lernmittel-Kennzeichen eines eben angelegten DNB-Titels — es
+	// entscheidet über den Topf der Bestellung (Migration 109).
+	mux.Handle("PUT /api/buecher/titel/{id}/lernmittel", s.RequirePermission("create_orders")(s.UpdateTitelLernmittelHandler()))
 
 	// Exemplare (Copies)
 	// Titel-Tür für Bildschirme außerhalb der Theke (Etiketten-Titelsuche im Druck-Center):

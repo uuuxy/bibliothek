@@ -32,6 +32,11 @@ type SubmitOrderRequest struct {
 	// denselben Schlüssel; die zweite Anfrage wird zum No-op (keine zweite Bestellung,
 	// keine zweite Lieferanten-Mail). Optional — ohne Schlüssel läuft alles wie bisher.
 	IdempotencyKey string `json:"idempotency_key,omitempty"`
+	// Mittel: der Topf dieser Bestellung — 'land' (Lernmittelfreiheit) oder
+	// 'schultraeger' (Schülerbücherei), siehe repository.Mittel*. PFLICHT: Der Vermerk
+	// muss auf der Bestellung stehen, und ein Standardwert wäre eine stille Zuordnung
+	// zum falschen Topf. Ein gemischter Warenkorb schickt zwei Anfragen — eine je Topf.
+	Mittel string `json:"mittel"`
 }
 
 // SubmitOrderHandler processes a full cart order via the OrderService and dispatches PDFs via PDFService.
@@ -48,6 +53,10 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		}
 		if len(req.Items) == 0 {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("order cart cannot be empty"))
+			return
+		}
+		if !repository.MittelGueltig(req.Mittel) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, ErrMittelUngueltig)
 			return
 		}
 
@@ -100,7 +109,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 		if settings.OeffentlicheAdresse != nil {
 			link = bestaetigungsLink(*settings.OeffentlicheAdresse, res.BestaetigungsToken)
 		}
-		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link, res.LinkGueltigBis)
+		subject, body := resolveBestellMail(betreff, textBody, res.CustomerNumber, len(res.SummaryItems), len(res.Labels), link, res.LinkGueltigBis, res.Mittel)
 
 		if err := pdfSvc.DispatchOrderEmail(BestellMail{
 			Empfaenger:           res.SupplierEmail,
@@ -113,6 +122,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			MitBestaetigungsLink: link != "",
 			Schule:               schule,
 			Eigentumsvermerk:     settings.EtikettEigentumsvermerk,
+			Mittel:               res.Mittel,
 		}); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{
 				"status":      "warning",
@@ -136,7 +146,7 @@ func mapProcessOrderError(err error) int {
 	switch {
 	case err.Error() == "supplier not found":
 		return http.StatusNotFound
-	case strings.HasPrefix(err.Error(), "invalid quantity"):
+	case errors.Is(err, ErrMittelUngueltig), strings.HasPrefix(err.Error(), "invalid quantity"):
 		return http.StatusBadRequest
 	default:
 		return http.StatusInternalServerError

@@ -51,6 +51,9 @@ type BestellVerlaufResponse struct {
 	Gesamtbetrag    float64                   `json:"gesamtbetrag"`
 	AnzahlExemplare int                       `json:"anzahl_exemplare"`
 	Positionen      []BestellPositionResponse `json:"positionen"`
+	// Mittel: der Topf ('land' / 'schultraeger', Migration 109); leer = Alt-Bestellung
+	// ohne eindeutige Zuordnung.
+	Mittel string `json:"mittel"`
 
 	// MitBestaetigung: DIESE Bestellung ist mit einem Bestätigungs-Link rausgegangen —
 	// sie hat einen Token bekommen. Steuert, ob die Oberfläche den Bestätigen-Schritt
@@ -138,7 +141,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellV
 		       b.bestaetigt_am, b.etiketten_groesse, b.bestaetigt_durch,
 		       (b.bestaetigungs_token_hash IS NOT NULL
 		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now())),
-		       b.token_gueltig_bis
+		       b.token_gueltig_bis, coalesce(b.mittel, '')
 		FROM bestellungen_verlauf b
 		ORDER BY b.bestelldatum DESC
 		LIMIT $1
@@ -155,7 +158,7 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellV
 		var o BestellVerlaufResponse
 		if err := rows.Scan(&o.ID, &o.LieferantName, &o.LieferantEmail, &o.Kundennummer,
 			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.MitBestaetigung,
-			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv, &o.LinkGueltigBis); err != nil {
+			&o.BestaetigtAm, &o.EtikettenGroesse, &o.BestaetigtDurch, &o.LinkAktiv, &o.LinkGueltigBis, &o.Mittel); err != nil {
 			return nil, nil, err
 		}
 		o.Positionen = []BestellPositionResponse{}

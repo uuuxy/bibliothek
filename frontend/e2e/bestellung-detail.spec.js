@@ -40,6 +40,7 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 
 	const bestellRes = await apiPost(page, '/api/bestellungen', {
 		supplier_id: lieferantId,
+		mittel: 'land',
 		items: [{ titel_id: titel.id, menge: MENGE, preis: 12.5, generate_barcodes: true }]
 	});
 	expect(bestellRes.ok(), `Bestellung aufgeben: ${await bestellRes.text()}`).toBeTruthy();

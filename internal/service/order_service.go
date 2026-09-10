@@ -170,6 +170,11 @@ type OrderSearchItem struct {
 	// Schulpreis. Die Oberflaeche fuellt damit das Preisfeld vor, uebernimmt ihn aber
 	// nie ungefragt als erfasste Ausgabe.
 	PreisVorschlag float64 `json:"preis_vorschlag,omitempty"`
+	// IstLernmittel: nur bei source="local" aussagekräftig — der Vorschlag für den
+	// Topf der Bestellung (Lernmittel → Land, sonst Schulträger; Warenkorb, mittel.js).
+	// Ein DNB-Treffer ist noch kein Titel und trägt deshalb false; das Staging-Fenster
+	// fragt beim Anlegen nach.
+	IstLernmittel bool `json:"ist_lernmittel"`
 }
 
 // SearchOrders searches local DB and DNB for book orders.
@@ -186,7 +191,7 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 	var results []OrderSearchItem
 	localQuery := `
 		WITH matched_titels AS (
-			SELECT t.id, t.titel, t.autor, t.isbn, t.verlag, t.cover_url, t.signatur, t.search_vector
+			SELECT t.id, t.titel, t.autor, t.isbn, t.verlag, t.cover_url, t.signatur, t.ist_lernmittel, t.search_vector
 			FROM buecher_titel t
 			WHERE
 				t.search_vector @@ plainto_tsquery('german', $1)
@@ -199,7 +204,7 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 		)
 		SELECT mt.id, mt.titel, coalesce(mt.autor, ''), coalesce(mt.isbn, ''), coalesce(mt.verlag, ''),
 		       COALESCE(NULLIF(mt.cover_url, ''), CASE WHEN mt.isbn IS NOT NULL AND mt.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(mt.isbn, '-', '') ELSE '' END),
-		       coalesce(mt.signatur, ''),
+		       coalesce(mt.signatur, ''), mt.ist_lernmittel,
 		       COALESCE(e.current_stock, 0)
 		FROM matched_titels mt
 		LEFT JOIN LATERAL (
@@ -217,7 +222,7 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 	for rows.Next() {
 		var item OrderSearchItem
 		item.Source = "local"
-		if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.Signatur, &item.CurrentStock); errScan == nil {
+		if errScan := rows.Scan(&item.ID, &item.Titel, &item.Autor, &item.ISBN, &item.Verlag, &item.CoverURL, &item.Signatur, &item.IstLernmittel, &item.CurrentStock); errScan == nil {
 			results = append(results, item)
 		}
 	}

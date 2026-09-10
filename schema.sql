@@ -331,10 +331,12 @@ Ihre Schulbibliothek'
 ),
 (
     'BESTELLUNG_HAENDLER',
-    'Buchbestellung Schulbibliothek - {{.Datum}} (Kundennummer {{.Kundennummer}})',
+    'Buchbestellung {{.Mittel}} - {{.Datum}} (Kundennummer {{.Kundennummer}})',
     'Sehr geehrte Damen und Herren,
 
 anbei erhalten Sie unsere Buchbestellung vom {{.Datum}} (Kundennummer: {{.Kundennummer}}) sowie den zugehörigen Barcode-Bogen zur Vorab-Beklebung der Exemplare.
+
+Diese Bestellung: {{.Mittel}} — den Vermerk finden Sie auch im Anschreiben; bitte führen Sie ihn auf der Rechnung.
 
 Bestellte Titel: {{.AnzahlTitel}}
 Gesamtanzahl Exemplare: {{.AnzahlExemplare}}
@@ -665,7 +667,12 @@ CREATE TABLE lieferanten (
     -- den Bestelllink (Etikettengröße + Bestätigung) und beklebt die Bücher selbst —
     -- seine Exemplare stehen deshalb nicht auf der Nachdruck-Liste. Alle anderen Händler
     -- bekommen einfach nur die Bestellmail.
-    ist_hauptlieferant BOOLEAN NOT NULL DEFAULT false
+    ist_hauptlieferant BOOLEAN NOT NULL DEFAULT false,
+    -- Zweites Kundenkonto beim selben Händler für Bestellungen aus Mitteln des
+    -- Schulträgers (Schülerbücherei) — Händler führen Lernmittel und Bibliothek oft
+    -- getrennt (anderer Nachlass, andere Rechnungsstelle). Leer = dieselbe Nummer wie
+    -- kundennummer (Migration 109).
+    kundennummer_schultraeger VARCHAR(100) NOT NULL DEFAULT ''
 );
 
 -- Höchstens EINER. Zwei Hauptlieferanten wären ein stiller Fehler: Beide bekämen den Link
@@ -705,7 +712,15 @@ CREATE TABLE bestellungen_verlauf (
     bestaetigt_durch   TEXT
         CONSTRAINT bestellungen_verlauf_bestaetigt_durch_check
         CHECK (bestaetigt_durch IS NULL OR bestaetigt_durch IN ('lieferant', 'bibliothek')),
-    idempotenz_schluessel UUID                            -- Doppelklick-Schutz (Migration 077)
+    idempotenz_schluessel UUID,                           -- Doppelklick-Schutz (Migration 077)
+    -- Aus welchem Topf bestellt wurde (Migration 109): 'land' = Lernmittelfreiheit
+    -- (Eigentum des Landes), 'schultraeger' = Schülerbücherei (Mittel des Schulträgers).
+    -- Eine Bestellung = ein Topf; der Vermerk steht auf Anschreiben und Mail, weil der
+    -- Händler danach Nachlass und Rechnungsweg richtet. Pflicht für neue Bestellungen
+    -- (Go-Guard, 400 an der Tür); NULL nur bei Alt-Bestellungen ohne eindeutige Zuordnung.
+    mittel             TEXT
+        CONSTRAINT bestellungen_verlauf_mittel_check
+        CHECK (mittel IS NULL OR mittel IN ('land', 'schultraeger'))
 );
 
 -- Doppelklick-Schutz Bestellung: zweite Anfrage mit demselben Schlüssel läuft hier auf.
@@ -1159,7 +1174,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('105_sys_barcode_seq_abgeschafft.sql'),
 ('106_boot_schema_in_migration.sql'),
 ('107_seed_lieferanten_abgeschafft.sql'),
-('108_namensindex_in_normalform.sql')
+('108_namensindex_in_normalform.sql'),
+('109_bestellung_mittel.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

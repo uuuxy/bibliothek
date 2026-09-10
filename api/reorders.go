@@ -32,6 +32,10 @@ type ReorderTitle struct {
 	// Bei Lernmitteln ist ein Klassensatz das ganze Schuljahr verliehen — "0 verfügbar"
 	// bei 30 vorhandenen ist KEIN Bestellgrund, deshalb triggert gesamt < meldebestand.
 	GesamtBestand int `json:"gesamt_bestand"`
+	// IstLernmittel: Vorschlag für den Topf der Bestellung (Warenkorb, mittel.js).
+	// Mitgeliefert, obwohl die Vorgabe ?type=lmf ist — bei ?type=alle stünden sonst
+	// Bücherei-Titel ohne Kennzeichen im Warenkorb.
+	IstLernmittel bool `json:"ist_lernmittel"`
 }
 
 // GetReordersHandler liefert den Bestellbedarf.
@@ -95,7 +99,7 @@ func (s *Server) queryReorders(ctx context.Context, typeFilter string, schwelle 
 		       coalesce(t.signatur, ''), coalesce(t.erscheinungsjahr, 0),
 		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != ''
 		           THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
-		       t.meldebestand, v.verfuegbar, v.gesamt
+		       t.meldebestand, v.verfuegbar, v.gesamt, t.ist_lernmittel
 		FROM buecher_titel t
 		JOIN LATERAL (
 			SELECT
@@ -123,7 +127,7 @@ func (s *Server) queryReorders(ctx context.Context, typeFilter string, schwelle 
 		var t ReorderTitle
 		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.Verlag, &t.Signatur,
 			&t.Erscheinungsjahr, &t.CoverURL, &t.Meldebestand, &t.VerfuegbarBestand,
-			&t.GesamtBestand); err != nil {
+			&t.GesamtBestand, &t.IstLernmittel); err != nil {
 			return nil, err
 		}
 		results = append(results, t)

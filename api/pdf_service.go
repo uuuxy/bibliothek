@@ -48,6 +48,10 @@ type BestellMail struct {
 	// bestellbestaetigung_etiketten.go ausschließen will).
 	Eigentumsvermerk string
 	Schule           pdf.SchuleInfo
+	// Mittel: der Topf der Bestellung (repository.MittelLand / MittelSchultraeger) —
+	// bestimmt Betreff und Vermerk des Anschreibens. Pflicht: Ohne gültigen Topf gibt es
+	// kein Anschreiben und damit keine Mail (mittelTexteFuer).
+	Mittel string
 }
 
 // DispatchOrderEmail erzeugt die PDFs und verschickt die Bestellmail an den Lieferanten.
@@ -95,7 +99,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 		weg = bogenLiegtBei
 	}
 
-	summaryPDF, err := GenerateOrderSummaryPDF(m.Positionen, m.Schule, weg)
+	summaryPDF, err := GenerateOrderSummaryPDF(m.Positionen, m.Schule, weg, m.Mittel)
 	if err != nil {
 		return nil, err
 	}

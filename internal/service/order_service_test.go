@@ -32,8 +32,8 @@ func TestSearchOrders_ReturnsCombinedResults(t *testing.T) {
 	localQuery := `WITH matched_titels AS`
 	mock.ExpectQuery(localQuery).
 		WithArgs("TestBook").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "current_stock"}).
-			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "", "SIG-1", 3))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "ist_lernmittel", "current_stock"}).
+			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "", "SIG-1", false, 3))
 
 	mockTransport := &orderMockTransport{
 		roundTripFunc: func(req *http.Request) (*http.Response, error) {
@@ -118,8 +118,8 @@ func TestSearchOrders_LocalOnlyWhenDNBFails(t *testing.T) {
 	localQuery := `WITH matched_titels AS`
 	mock.ExpectQuery(localQuery).
 		WithArgs("TestBook").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "current_stock"}).
-			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "", "SIG-1", 3))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "titel", "autor", "isbn", "verlag", "cover_url", "signatur", "ist_lernmittel", "current_stock"}).
+			AddRow("id-1", "Lokales Buch", "Autor A", "9781234567890", "Verlag X", "", "SIG-1", false, 3))
 
 	mockTransport := &orderMockTransport{
 		roundTripFunc: func(req *http.Request) (*http.Response, error) {

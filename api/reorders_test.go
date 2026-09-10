@@ -15,7 +15,7 @@ import (
 // reorderSpalten spiegelt die Projektion aus queryReorders.
 func reorderSpalten() []string {
 	return []string{"id", "titel", "autor", "isbn", "verlag", "signatur",
-		"erscheinungsjahr", "cover_url", "meldebestand", "verfuegbar", "gesamt"}
+		"erscheinungsjahr", "cover_url", "meldebestand", "verfuegbar", "gesamt", "ist_lernmittel"}
 }
 
 func TestQueryReorders(t *testing.T) {
@@ -33,7 +33,7 @@ func TestQueryReorders(t *testing.T) {
 	mock.ExpectQuery("SELECT t.id, t.titel, coalesce").
 		WithArgs(5).
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()).
-			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3))
+			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3, true))
 
 	results, err := server.queryReorders(context.Background(), "", 5)
 	if err != nil {
@@ -53,6 +53,10 @@ func TestQueryReorders(t *testing.T) {
 	// Beide Bestandszahlen müssen ankommen — der Gesamtbestand ist die Nachbestell-Schwelle.
 	if got.GesamtBestand != 3 {
 		t.Errorf("GesamtBestand: erwartet 3, war %d", got.GesamtBestand)
+	}
+	// Das Lernmittel-Kennzeichen wird der Topf-Vorschlag im Warenkorb (Migration 109).
+	if !got.IstLernmittel {
+		t.Error("IstLernmittel: erwartet true — ohne das Kennzeichen landet der Titel im Bücherei-Topf")
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("offene Mock-Erwartungen: %v", err)

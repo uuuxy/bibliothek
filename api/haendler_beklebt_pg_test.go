@@ -82,6 +82,7 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	titelSelbst := titelMitMeldebestand(t, pool, "LMF-Selbst", 0)
 
 	if _, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: beklebtID,
 		Items:      []OrderItemRequest{{TitelID: titelBeklebt, Menge: 2, Preis: 10, GenerateBarcodes: true}},
 	}); err != nil {
@@ -89,6 +90,7 @@ func TestProcessOrder_HaendlerBeklebtSelbst(t *testing.T) {
 	}
 
 	if _, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: selbstID,
 		Items:      []OrderItemRequest{{TitelID: titelSelbst, Menge: 2, Preis: 10, GenerateBarcodes: true}},
 	}); err != nil {
@@ -135,6 +137,7 @@ func TestProcessOrder_LabelsTragenSignatur(t *testing.T) {
 	titel := titelMitSignatur(t, pool, "Deutschbuch 5", "LMF-Deutsch 5", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: lieferant,
 		Items:      []OrderItemRequest{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
 	})
@@ -164,6 +167,7 @@ func TestProcessOrder_BeklebenderHaendlerOhneBarcodebogen(t *testing.T) {
 	titel := titelMitMeldebestand(t, pool, "LMF-OhneBogen", 0)
 
 	if _, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: lieferant,
 		Items:      []OrderItemRequest{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: false}},
 	}); err != nil {

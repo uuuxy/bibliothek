@@ -119,7 +119,10 @@ var fkAktionenBestand = []string{
 // Datenbank ausdrücklich zulässt (check_damage_item war genau das).
 var checkBedingungenBestand = []string{
 	"audit_log_akteur_check", "bestellungen_verlauf_bestaetigt_durch_check",
-	"bestellungen_verlauf_etiketten_groesse_check", "check_damage_item",
+	"bestellungen_verlauf_etiketten_groesse_check",
+	// Befragt am 10.09.2026: dieselbe Menge wie repository.MittelGueltig — der Code prüft
+	// sie an der Tür (400), die Datenbank hält die zweite Tür (api/bestellung_mittel_pg_test.go).
+	"bestellungen_verlauf_mittel_check", "check_damage_item",
 	"check_damage_responsible", "check_loan_borrower", "check_loan_item",
 	"check_positive_amount", "check_return_date", "chk_anliegen_art",
 	"chk_aussonderung_grund", "chk_cover_status", "chk_einkaufspreis_nonneg",

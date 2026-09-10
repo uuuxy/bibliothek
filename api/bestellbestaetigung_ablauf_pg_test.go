@@ -34,6 +34,7 @@ func TestBestellablauf_LinkUndEtiketten(t *testing.T) {
 	ohneBarcode := titelMitMeldebestand(t, pool, "LMF-Ohne-Barcode", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: lieferant,
 		Items: []OrderItemRequest{
 			{TitelID: mitBarcode, Menge: 3, Preis: 10, GenerateBarcodes: true},
@@ -119,6 +120,7 @@ func TestBestellablauf_OhneBestaetigungKeinToken(t *testing.T) {
 	titel := titelMitMeldebestand(t, pool, "LMF-Normal", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
+		Mittel:     repository.MittelLand,
 		SupplierID: lieferant,
 		Items:      []OrderItemRequest{{TitelID: titel, Menge: 1, Preis: 10, GenerateBarcodes: true}},
 	})

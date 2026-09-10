@@ -23,10 +23,30 @@
 >
 	<SupplierManager
 		suppliers={orderStore.suppliers}
-		onAddSupplier={(name, email, customerNumber, istHauptlieferant) =>
-			orderStore.addSupplier(name, email, customerNumber, istHauptlieferant)}
-		onEditSupplier={(id, name, email, customerNumber, istHauptlieferant) =>
-			orderStore.editSupplier(id, name, email, customerNumber, istHauptlieferant)}
+		onAddSupplier={(name, email, customerNumber, istHauptlieferant, kundennummerSchultraeger) =>
+			orderStore.addSupplier(
+				name,
+				email,
+				customerNumber,
+				istHauptlieferant,
+				kundennummerSchultraeger
+			)}
+		onEditSupplier={(
+			id,
+			name,
+			email,
+			customerNumber,
+			istHauptlieferant,
+			kundennummerSchultraeger
+		) =>
+			orderStore.editSupplier(
+				id,
+				name,
+				email,
+				customerNumber,
+				istHauptlieferant,
+				kundennummerSchultraeger
+			)}
 		onRemoveSupplier={(id) => orderStore.removeSupplier(id)}
 	/>
 </KategorieRahmen>

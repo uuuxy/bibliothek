@@ -1,4 +1,4 @@
-# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026)
+# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 10.09.2026)
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
@@ -284,6 +284,18 @@ Kreismitteln (Schülerbücherei) beschafft wird.
 
 ### 7.3 Bauplan (kleiner als Teil A)
 
+**Stand 10.09.2026 — erster Schnitt gebaut:** Schritte 1, 2, 3 und 5 (Migration 109,
+Warenkorb in zwei Gruppen mit Verschieben, je Gruppe eine Bestellung, Vermerk auf
+Anschreiben und Mail, Lernmittel-Frage im Staging-Fenster, Topf-Chip in Historie und
+Detail). Offen als zweiter Schnitt: Schritt 4 (Berichte und Historie nach Topf getrennt).
+Schritt 6 ist nach den Antworten unten auf die zweite Kundennummer geschrumpft — eine
+eigene Rechnungsanschrift je Topf gibt es nicht, beide Rechnungen gehen an die Schule.
+Der Vermerk nennt den Schulträger nicht beim Namen (die Anwendung kennt ihn nicht, der
+Leitfaden verlangt nur die Unterscheidung). Gates: `api/bestellung_mittel_pg_test.go`,
+`api/bestellung_mittel_backfill_pg_test.go`, `api/order_pdf_mittel_test.go`,
+`api/bestellmail_mittel_test.go`, `api/titel_lernmittel_pg_test.go`,
+`frontend/src/lib/stores/orderStore.test.js`.
+
 1. **Datenmodell:** `bestellungen_verlauf.mittel TEXT CHECK (mittel IN ('land','schultraeger'))`,
    nullbar für Alt-Bestellungen; eine Backfill-Migration ordnet eindeutige Fälle zu (alle
    Positionen Lernmittel → `land`, keine → `schultraeger`), gemischte bleiben NULL und
@@ -323,10 +335,10 @@ Haken entsteht als Lernmittel (PG).
 
 ### 7.4 Entscheidungen (Teil B)
 
-| #      | Frage                                                                                                                                                                                                                | Empfehlung                                                                                                                                                     |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **D1** | Eine Bestellung = ein Topf; ein gemischter Warenkorb wird beim Auslösen in zwei Bestellungen geteilt (zwei Mails an denselben Händler).                                                                              | Ja — anders kann der Händler weder Nachlass noch Rechnung sauber trennen (9.4.3).                                                                              |
-| **D2** | Hat der Händler getrennte Kundenkonten für Lernmittel und Bibliothek? (Sekretariat fragen.)                                                                                                                          | Zweite Kundennummer je Lieferant, optional; leer = dieselbe.                                                                                                   |
-| **D3** | Rechnungsanschrift und Wortlaut je Topf: Land = an die Schule, Original geht ans Schulamt (10.3). Kreis = an die Schule oder direkt an den Kreis? (Fachbereich Schule und Betreuung fragen — dieselbe Frage wie E5.) | Bis zur Antwort steht auf der Kreis-Bestellung nur der Vermerk „Anschaffung für die Schülerbücherei (Schulträger Hochtaunuskreis)"; keine erfundene Anschrift. |
-| **D4** | Alt-Bestellungen rückwirkend zuordnen, wo es eindeutig ist; gemischte bleiben „ohne Zuordnung"?                                                                                                                      | Ja.                                                                                                                                                            |
-| **D5** | Besteht zwischen Hochtaunuskreis und Land eine 5 %-Vereinbarung (Leitfaden 13)? Dann muss das Verschieben einer Position in den anderen Topf auf dem Beleg vermerkt werden.                                          | Sekretariat/Schulamt fragen; das Verschieben gibt es ohnehin, der Vermerk kommt dazu, falls ja.                                                                |
+| #      | Frage                                                                                                                                                                                                                | Empfehlung                                                                                                                                                                                                                                               |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D1** | Eine Bestellung = ein Topf; ein gemischter Warenkorb wird beim Auslösen in zwei Bestellungen geteilt (zwei Mails an denselben Händler).                                                                              | **Bestätigt (EDV-Servicestelle für Schulbibliotheken, 10.09.2026):** „optimal" — über Littera wird ebenfalls getrennt bestellt; die Trennung trägt den getrennten Finanzen von Kreis und Land Rechnung. Gebaut.                                          |
+| **D2** | Hat der Händler getrennte Kundenkonten für Lernmittel und Bibliothek? (Sekretariat fragen.)                                                                                                                          | Gebaut als optionales Feld „Kundennummer Schülerbücherei" am Lieferanten (Migration 109); leer = dieselbe. Ob der Händler ein zweites Konto führt, trägt das Sekretariat ein, wenn es so ist.                                                            |
+| **D3** | Rechnungsanschrift und Wortlaut je Topf: Land = an die Schule, Original geht ans Schulamt (10.3). Kreis = an die Schule oder direkt an den Kreis? (Fachbereich Schule und Betreuung fragen — dieselbe Frage wie E5.) | **Beantwortet (10.09.2026):** Die Rechnung für Kreismittel geht direkt an die Schule. Beide Bestellungen tragen dieselbe Anschrift; der Unterschied ist allein der Vermerk (`api/mittel_vermerk.go`). Keine eigene Kreis-Anschrift in den Einstellungen. |
+| **D4** | Alt-Bestellungen rückwirkend zuordnen, wo es eindeutig ist; gemischte bleiben „ohne Zuordnung"?                                                                                                                      | Ja — Backfill in Migration 109, belegt in `api/bestellung_mittel_backfill_pg_test.go`.                                                                                                                                                                   |
+| **D5** | Besteht zwischen Hochtaunuskreis und Land eine 5 %-Vereinbarung (Leitfaden 13)? Dann muss das Verschieben einer Position in den anderen Topf auf dem Beleg vermerkt werden.                                          | **Beantwortet (10.09.2026):** Beim Staatlichen Schulamt für Hochtaunuskreis und Wetteraukreis gibt es keine 5 %-Regelung. Kein Vermerk gebaut; das Verschieben bleibt als Korrektur falsch gekennzeichneter Titel.                                       |

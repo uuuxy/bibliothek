@@ -210,6 +210,8 @@ describe('orderStore.submitOrder', () => {
 			'/api/bestellungen',
 			expect.objectContaining({
 				supplier_id: 's1',
+				// Ohne Lernmittel-Kennzeichen ist der Topf die Schülerbücherei.
+				mittel: 'schultraeger',
 				items: [{ titel_id: 't1', menge: 2, preis: 9.9, generate_barcodes: true }]
 			})
 		);
@@ -348,5 +350,118 @@ describe('orderStore.loadSuppliers — Standard-Lieferant', () => {
 		orderStore.selectedSupplierId = '';
 		await orderStore.loadSuppliers();
 		expect(orderStore.selectedSupplierId).toBe('s1');
+	});
+});
+
+// Eine Bestellung = ein Topf (Migration 109). Der Titel schlägt den Topf vor, die
+// Bestellung darf ihn überstimmen, und ein gemischter Warenkorb wird beim Auslösen zu
+// ZWEI Bestellungen an denselben Händler — der Händler richtet Nachlass und Rechnungsweg
+// nach dem Topf und kann eine gemischte Bestellung weder rabattieren noch abrechnen.
+describe('orderStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
+	beforeEach(() => {
+		resetStore();
+		vi.clearAllMocks();
+		orderStore.suppliers = [{ id: 's1', name: 'Naacher', email: 'x@y.z', customerNumber: 'K1' }];
+		orderStore.selectedSupplierId = 's1';
+	});
+
+	/** Alle Bestell-Payloads in Aufrufreihenfolge. */
+	function bestellPayloads() {
+		return apiPostMock.mock.calls
+			.filter((/** @type {any[]} */ args) => args[0] === '/api/bestellungen')
+			.map((/** @type {any[]} */ args) => args[1]);
+	}
+
+	it('schlägt den Topf aus dem Lernmittel-Kennzeichen vor', () => {
+		orderStore.addToCart({
+			id: 'lmf',
+			titel: 'Mathe 7',
+			autor: '',
+			isbn: '1',
+			ist_lernmittel: true
+		});
+		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+		expect(orderStore.cart.map((i) => i.mittel)).toEqual(['land', 'schultraeger']);
+		expect(orderStore.gruppen.map((g) => g.mittel)).toEqual(['land', 'schultraeger']);
+	});
+
+	it('zeigt nur nicht-leere Gruppen, Lernmittel zuerst', () => {
+		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+		expect(orderStore.gruppen).toHaveLength(1);
+		expect(orderStore.gruppen[0].mittel).toBe('schultraeger');
+		orderStore.addToCart(
+			{ id: 'lmf', titel: 'Mathe 7', autor: '', isbn: '1', ist_lernmittel: true },
+			30
+		);
+		expect(orderStore.gruppen.map((g) => [g.mittel, g.menge])).toEqual([
+			['land', 30],
+			['schultraeger', 1]
+		]);
+	});
+
+	it('verschiebt eine Position in den anderen Topf und behält das beim zweiten „+"', () => {
+		orderStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
+		orderStore.verschiebe(orderStore.cart[0]);
+		expect(orderStore.cart[0].mittel).toBe('land');
+		// Ein zweites „+" auf denselben Titel schiebt ihn NICHT zurück.
+		orderStore.addToCart({ id: 'bib', titel: 'Falsch gekennzeichnet', autor: '', isbn: '2' });
+		expect(orderStore.cart[0].mittel).toBe('land');
+		expect(orderStore.cart[0].menge).toBe(2);
+	});
+
+	it('löst für einen gemischten Warenkorb zwei Bestellungen mit eigenem Schlüssel aus', async () => {
+		bestellAntwort({ status: 'success', message: 'ok', ordered_qty: 1 });
+		orderStore.addToCart(
+			{ id: 'lmf', titel: 'Mathe 7', autor: '', isbn: '1', ist_lernmittel: true },
+			30
+		);
+		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' }, 2);
+
+		await orderStore.submitOrder();
+
+		const payloads = bestellPayloads();
+		expect(payloads.map((p) => p.mittel)).toEqual(['land', 'schultraeger']);
+		expect(payloads[0].items).toEqual([
+			{ titel_id: 'lmf', menge: 30, preis: 0, generate_barcodes: true }
+		]);
+		expect(payloads[1].items).toEqual([
+			{ titel_id: 'bib', menge: 2, preis: 0, generate_barcodes: true }
+		]);
+		expect(payloads[0].supplier_id).toBe('s1');
+		expect(payloads[1].supplier_id).toBe('s1');
+		// Zwei Bestellungen, zwei Idempotenz-Schlüssel — sonst hielte der Server die
+		// zweite für den Doppelklick der ersten.
+		expect(payloads[0].idempotency_key).not.toBe(payloads[1].idempotency_key);
+		expect(orderStore.cart).toEqual([]);
+	});
+
+	it('behält bei einem Fehler nur die gescheiterte Gruppe im Warenkorb', async () => {
+		apiPostMock.mockImplementation(async (/** @type {string} */ url, /** @type {any} */ body) => {
+			if (url !== '/api/bestellungen') return [];
+			if (body.mittel === 'schultraeger') throw new Error('boom');
+			return { status: 'success', message: 'ok' };
+		});
+		orderStore.addToCart({
+			id: 'lmf',
+			titel: 'Mathe 7',
+			autor: '',
+			isbn: '1',
+			ist_lernmittel: true
+		});
+		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+
+		await orderStore.submitOrder();
+
+		// Die Lernmittel-Bestellung ist durch und weg; die Bücherei-Position wartet.
+		expect(orderStore.cart.map((i) => i.id)).toEqual(['bib']);
+		expect(orderStore.submitting).toBe(false);
+		const ersterSchluessel = bestellPayloads()[1].idempotency_key;
+
+		// Der zweite Versuch schickt DENSELBEN Schlüssel für die gescheiterte Gruppe.
+		await orderStore.submitOrder();
+		const payloads = bestellPayloads();
+		expect(payloads).toHaveLength(3);
+		expect(payloads[2].mittel).toBe('schultraeger');
+		expect(payloads[2].idempotency_key).toBe(ersterSchluessel);
 	});
 });
