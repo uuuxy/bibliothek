@@ -40,6 +40,7 @@
 	use:keyboardNav={{
 		totalItems: totalDropdownItems,
 		isOpen: isDropdownOpen,
+		selectedIndex: selectedDropdownIndex,
 		onSelect: onSelect,
 		onIndexChange: onIndexChange,
 		onEscape: onEscape

@@ -2,18 +2,24 @@
  * @typedef {Object} KeyboardNavParams
  * @property {number} totalItems
  * @property {boolean} isOpen
+ * @property {number} [selectedIndex] Der markierte Index des Aufrufers (Store) — EINE Quelle.
  * @property {function(number): void} onSelect
  * @property {function(number): void} onIndexChange
  * @property {function(): void} onEscape
  */
 
 /**
+ * Der markierte Index gehört dem Aufrufer, nicht dieser Aktion. Bis zum 10.09.2026 führte
+ * sie einen eigenen und setzte ihn nur beim Schließen zurück: Kamen neue Treffer, stand der
+ * Store auf -1 (nichts markiert), die Aktion aber auf dem alten Index — Enter öffnete an der
+ * Theke einen Schüler, der nicht markiert war (Bestands-Durchgang).
+ *
  * @param {HTMLElement} node
  * @param {KeyboardNavParams} params
  */
 export function keyboardNav(node, params) {
 	let { totalItems, isOpen, onSelect, onIndexChange, onEscape } = params;
-	let selectedIndex = -1;
+	let selectedIndex = params.selectedIndex ?? -1;
 
 	/** @param {KeyboardEvent} e */
 	function handleKeydown(e) {
@@ -54,6 +60,7 @@ export function keyboardNav(node, params) {
 			onSelect = newParams.onSelect;
 			onIndexChange = newParams.onIndexChange;
 			onEscape = newParams.onEscape;
+			if (newParams.selectedIndex !== undefined) selectedIndex = newParams.selectedIndex;
 			// Reset index when closed
 			if (!isOpen) {
 				selectedIndex = -1;
