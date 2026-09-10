@@ -42,10 +42,32 @@ type CreateSupplierRequest struct {
 	IstHauptlieferant bool `json:"ist_hauptlieferant"`
 
 	// KundennummerSchultraeger: optional; leer heißt „dieselbe Nummer wie customerNumber".
-	// Ein Feld, das der Aufrufer weglässt, wird beim Bearbeiten deshalb als leer gespeichert
-	// — das ist gewollt: Die Maske schickt immer den ganzen Datensatz (startEdit liest ihn
-	// aus der Zeile), ein stilles Blanking über eine andere Tür gibt es nicht.
-	KundennummerSchultraeger string `json:"kundennummer_schultraeger"`
+	//
+	// Zeiger, weil das FEHLENDE Feld etwas anderes bedeutet als das LEERE (Bugklasse
+	// „Fehlendes Feld, zwei Bedeutungen"): nil = unverändert lassen, "" = ausdrücklich
+	// löschen. Ein plain string machte jede Anfrage ohne dieses Feld zum stillen Blanking
+	// — eine Kundennummer, die verschwindet, fällt erst auf, wenn der Händler die Rechnung
+	// auf das falsche Konto stellt. Beim Anlegen (POST) ist nil schlicht leer.
+	KundennummerSchultraeger *string `json:"kundennummer_schultraeger"`
+}
+
+// kundennummerSchultraeger liefert den getrimmten Wert für das Anlegen — dort ist ein
+// fehlendes Feld schlicht leer, es gibt noch keinen Stand, der erhalten bleiben könnte.
+func kundennummerSchultraeger(req CreateSupplierRequest) string {
+	if req.KundennummerSchultraeger == nil {
+		return ""
+	}
+	return strings.TrimSpace(*req.KundennummerSchultraeger)
+}
+
+// kundennummerSchultraegerOderNil liefert nil, wenn das Feld in der Anfrage fehlt — das
+// COALESCE im UPDATE lässt die hinterlegte Nummer dann unangetastet.
+func kundennummerSchultraegerOderNil(req CreateSupplierRequest) *string {
+	if req.KundennummerSchultraeger == nil {
+		return nil
+	}
+	getrimmt := strings.TrimSpace(*req.KundennummerSchultraeger)
+	return &getrimmt
 }
 
 // setzeHauptlieferant macht genau einen Lieferanten zum Hauptlieferanten und nimmt das
@@ -135,7 +157,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			INSERT INTO lieferanten (name, email, kundennummer, kundennummer_schultraeger)
 			VALUES ($1, $2, $3, $4)
 			RETURNING id, erstellt_am
-		`, req.Name, req.Email, req.CustomerNumber, strings.TrimSpace(req.KundennummerSchultraeger)).Scan(&newID, &erstelltAm)
+		`, req.Name, req.Email, req.CustomerNumber, kundennummerSchultraeger(req)).Scan(&newID, &erstelltAm)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -159,7 +181,7 @@ func (s *Server) CreateSupplierHandler() http.HandlerFunc {
 			CustomerNumber:           req.CustomerNumber,
 			ErstelltAm:               erstelltAm,
 			IstHauptlieferant:        req.IstHauptlieferant,
-			KundennummerSchultraeger: strings.TrimSpace(req.KundennummerSchultraeger),
+			KundennummerSchultraeger: kundennummerSchultraeger(req),
 		})
 	}
 }
@@ -186,16 +208,27 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	tag, err := s.DB.Pool.Exec(ctx,
-		`UPDATE lieferanten SET name = $1, email = $2, kundennummer = $3, kundennummer_schultraeger = $5 WHERE id = $4`,
-		req.Name, req.Email, req.CustomerNumber, id, strings.TrimSpace(req.KundennummerSchultraeger),
-	)
-	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+	// COALESCE mit einem Zeiger-Parameter: Fehlt das Feld in der Anfrage (nil → SQL NULL),
+	// bleibt die hinterlegte Nummer stehen; ein leerer String löscht sie ausdrücklich.
+	//
+	// RETURNING statt Exec + RowsAffected, damit die Antwort den GESPEICHERTEN Stand nennt
+	// und nicht die Eingabe zurückspiegelt — sonst meldete sie eine leere zweite
+	// Kundennummer, während in der Datenbank die alte steht.
+	var gespeicherteZweitnummer string
+	err := s.DB.Pool.QueryRow(ctx, `
+		UPDATE lieferanten
+		   SET name = $1, email = $2, kundennummer = $3,
+		       kundennummer_schultraeger = COALESCE($5, kundennummer_schultraeger)
+		 WHERE id = $4
+		RETURNING kundennummer_schultraeger`,
+		req.Name, req.Email, req.CustomerNumber, id, kundennummerSchultraegerOderNil(req),
+	).Scan(&gespeicherteZweitnummer)
+	if errors.Is(err, pgx.ErrNoRows) {
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
 		return
 	}
-	if tag.RowsAffected() == 0 {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("supplier not found"))
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -225,7 +258,7 @@ func (s *Server) handleUpdateSupplier(w http.ResponseWriter, r *http.Request) {
 		Email:                    req.Email,
 		CustomerNumber:           req.CustomerNumber,
 		IstHauptlieferant:        req.IstHauptlieferant,
-		KundennummerSchultraeger: strings.TrimSpace(req.KundennummerSchultraeger),
+		KundennummerSchultraeger: gespeicherteZweitnummer,
 	})
 }
 

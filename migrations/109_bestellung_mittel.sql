@@ -5,11 +5,10 @@
 -- Bestätigung — aber nicht, aus welchen Mitteln bestellt wurde. Das Anschreiben behauptete
 -- für JEDE Bestellung „für unsere Schulbibliothek", auch für einen Lernmittel-Klassensatz.
 -- Der Händler gewährt auf Lernmittel-Sammelbestellungen einen anderen Nachlass als auf
--- Bibliotheksbestände, und die Rechnungen gehen getrennte Wege (Land: nach Prüfung ans
--- Staatliche Schulamt; Schulträger: bleibt bei der Schule). Deshalb steht der Topf ab jetzt
--- auf der Bestellung selbst — eine Bestellung = ein Topf, ein gemischter Warenkorb wird
--- beim Auslösen in zwei Bestellungen geteilt (bestätigt von der EDV-Servicestelle für
--- Schulbibliotheken, 10.09.2026; docs/schadensersatz_konzept.md, Teil B).
+-- Bibliotheksbestände, und die Rechnungen der beiden Töpfe werden getrennt geführt.
+-- Deshalb steht der Topf ab jetzt auf der Bestellung selbst — eine Bestellung = ein Topf,
+-- ein gemischter Warenkorb wird beim Auslösen in zwei Bestellungen geteilt (bestätigt von
+-- der EDV-Servicestelle für Schulbibliotheken, 10.09.2026; docs/mittel_konzept.md, Teil B).
 --
 -- Vokabular: 'land' (Lernmittelfreiheit, Eigentum des Landes) und 'schultraeger'
 -- (Schülerbücherei, Mittel des Schulträgers). Neue Bestellungen MÜSSEN einen Topf tragen

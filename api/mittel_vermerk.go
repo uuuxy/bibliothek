@@ -8,20 +8,19 @@ import (
 
 // Der Vermerk, der auf jeder Bestellung steht: aus welchem Topf sie bezahlt wird.
 //
-// Der Leitfaden zur Lernmittelfreiheit verlangt, dass die Schule schon auf der BESTELLUNG
-// vermerkt, ob die Bücher im Rahmen der Lernmittelfreiheit beschafft werden oder für die
-// Schülerbücherei — der Händler richtet danach den Nachlass, und die Rechnung geht je
-// nach Topf einen anderen Weg (Land: nach Prüfung ans Staatliche Schulamt; Schulträger:
-// bleibt bei der Schule). Bis zum 10.09.2026 behauptete jedes Anschreiben „für unsere
-// Schulbibliothek", auch für Lernmittel-Klassensätze — der Vermerk stand also da, nur
-// falsch herum.
+// Die Schule vermerkt schon auf der BESTELLUNG, ob die Bücher Lernmittel sind oder für die
+// Schülerbücherei angeschafft werden: Der Händler richtet danach seinen Nachlass, und die
+// Rechnungen der beiden Töpfe werden getrennt geführt. Bis zum 10.09.2026 behauptete jedes
+// Anschreiben „für unsere Schulbibliothek", auch für Lernmittel-Klassensätze — der Vermerk
+// stand also da, nur falsch herum.
 //
 // EINE Quelle für Anschreiben (order_pdf.go) und Mail (bestellmail_text.go): Zwei
 // Formulierungen desselben Vermerks liefen früher oder später auseinander, und der
 // Händler hielte dann zwei Dokumente in der Hand, die sich widersprechen.
 //
-// Bewusst ohne Namen des Schulträgers: Die Anwendung kennt ihn nicht, und der Leitfaden
-// verlangt nur die Unterscheidung — nicht die Behörde.
+// Der Text nennt bewusst nur die Unterscheidung — keine Behörde, keinen Träger, keine
+// Eigentums- oder Rechtsangabe. Der Aufdruck auf den Büchern ist eine eigene Einstellung
+// (etikett_eigentumsvermerk) und gehört nicht in dieses Anschreiben.
 type mittelText struct {
 	// Kurz: das eine Wort für Betreffzeile und Platzhalter {{.Mittel}}.
 	Kurz string
@@ -36,12 +35,13 @@ var mittelTexte = map[string]mittelText{
 	repository.MittelLand: {
 		Kurz:    "Lernmittelfreiheit",
 		Betreff: "Bestellung im Rahmen der Lernmittelfreiheit",
-		Vermerk: "Die Bücher werden im Rahmen der Lernmittelfreiheit beschafft (Sammelbestellung, Eigentum des Landes Hessen).",
+		Vermerk: "Die Bücher werden im Rahmen der Lernmittelfreiheit beschafft — Sammelbestellung der Schule.",
 	},
 	repository.MittelSchultraeger: {
 		Kurz:    "Schülerbücherei",
 		Betreff: "Bestellung für die Schülerbücherei",
 		Vermerk: "Die Bücher sind eine Anschaffung für die Schülerbücherei aus Mitteln des Schulträgers — keine Beschaffung im Rahmen der Lernmittelfreiheit.",
+		// „Schultr" ist das Unterscheidungswort im PDF-Gate; es steht nur in diesem Vermerk.
 	},
 }
 

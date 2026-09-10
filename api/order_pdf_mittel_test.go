@@ -22,7 +22,7 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 	// gehalten, weil gofpdf lange Zeilen umbricht und ein ganzer Satz dann nicht mehr
 	// am Stück im Strom steht.
 	kennzeichen := map[string][]string{
-		repository.MittelLand:         {"Lernmittelfreiheit", "Eigentum des Landes"},
+		repository.MittelLand:         {"Lernmittelfreiheit", "Sammelbestellung"},
 		repository.MittelSchultraeger: {"lerb", "Schultr"},
 	}
 
@@ -42,8 +42,8 @@ func TestBestellanschreibenTraegtDenVermerkDesTopfsUndNieDenAnderen(t *testing.T
 			// vorher. Für den Schulträger-Brief heißt das: „Lernmittelfreiheit" darf nur
 			// in der Verneinung stehen; der Brief nennt es einmal („keine Beschaffung im
 			// Rahmen der Lernmittelfreiheit"), also prüfen wir das Eigentums-Wort.
-			if mittel == repository.MittelSchultraeger && strings.Contains(text, "Eigentum des Landes") {
-				t.Error("Schulträger-Anschreiben behauptet Eigentum des Landes")
+			if mittel == repository.MittelSchultraeger && strings.Contains(text, "Sammelbestellung") {
+				t.Error("Schulträger-Anschreiben nennt sich Sammelbestellung — das ist der Lernmittel-Vermerk")
 			}
 			if mittel == repository.MittelLand && strings.Contains(text, "Schultr") {
 				t.Error("Land-Anschreiben nennt den Schulträger")
