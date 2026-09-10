@@ -42,8 +42,9 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE e.ist_ausleihbar = false 
+		WHERE e.ist_ausleihbar = false
 		  AND e.bestellstatus IS NOT NULL
+		  AND e.ist_ausgesondert = false
 		ORDER BY e.erstellt_am DESC
 	`
 
@@ -335,6 +336,10 @@ func BulkReceiveOrder(ctx context.Context, pool db.PgxPoolIface, auditRepo repos
 		FROM buecher_titel t
 		WHERE e.titel_id = t.id
 		  AND e.ist_ausleihbar = false
+		  -- Nur echte Zulauf-Exemplare: Ein ausgesondertes (Händler liefert nicht) darf
+		  -- „alle einbuchen" nicht wiederbeleben und seine Notiz nicht verlieren.
+		  AND e.bestellstatus IS NOT NULL
+		  AND e.ist_ausgesondert = false
 		  AND e.id = ANY($1)
 		RETURNING e.barcode_id, t.titel, coalesce(t.autor, '') AS autor, e.etikett_gedruckt
 	`

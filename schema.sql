@@ -458,7 +458,11 @@ CREATE TABLE buecher_exemplare (
     -- nichts mehr (Befund F1, bewertung/datenbank-pruefbericht.md).
     bestellstatus TEXT DEFAULT NULL CONSTRAINT chk_exemplar_bestellstatus CHECK (bestellstatus IN ('bestellt', 'im_zulauf')),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
+    -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
+    CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
+        CHECK (bestellstatus IS NULL OR (ist_ausleihbar = false AND ist_ausgesondert = false))
 );
 CREATE INDEX idx_exemplare_bestellstatus ON buecher_exemplare (bestellstatus) WHERE bestellstatus IS NOT NULL;
 
@@ -1250,7 +1254,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('107_seed_lieferanten_abgeschafft.sql'),
 ('108_namensindex_in_normalform.sql'),
 ('109_bestellung_mittel.sql'),
-('110_schadensersatz_bescheide.sql')
+('110_schadensersatz_bescheide.sql'),
+('111_bestellstatus_nur_im_zulauf.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

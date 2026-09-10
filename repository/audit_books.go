@@ -233,7 +233,7 @@ func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearb
 	// setzen. Der Guard ist_ausgesondert = false macht den Doppelklick zum 404 statt zum
 	// zweiten „Erfolg" — und verhindert, dass ein Wiederholungsklick die Zustandsnotiz
 	// eines längst ausgebuchten Exemplars erneut überschreibt.
-	tag, err := tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT', zustand_notiz = 'Systematisch gelöscht' WHERE id = $1 AND ist_ausgesondert = false", copyID)
+	tag, err := tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT', zustand_notiz = 'Systematisch gelöscht', bestellstatus = NULL WHERE id = $1 AND ist_ausgesondert = false", copyID)
 	if err != nil {
 		return err
 	}

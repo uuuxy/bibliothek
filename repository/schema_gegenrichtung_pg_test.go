@@ -150,7 +150,12 @@ var checkBedingungenBestand = []string{
 	"check_damage_responsible", "check_loan_borrower", "check_loan_item",
 	"check_positive_amount", "check_return_date", "chk_anliegen_art",
 	"chk_aussonderung_grund", "chk_cover_status", "chk_einkaufspreis_nonneg",
-	"chk_exemplar_bestellstatus", "chk_grade_level_bereich", "chk_inv_session_scope",
+	"chk_exemplar_bestellstatus",
+	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
+	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
+	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
+	"chk_exemplar_bestellstatus_nur_im_zulauf",
+	"chk_grade_level_bereich", "chk_inv_session_scope",
 	"chk_ksr_anzahl_positiv", "chk_lmf_plaene_anker", "chk_lmf_plaene_art",
 	"chk_lmf_plaene_letzte_stunde", "chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
 	"chk_lmf_termine_art", "chk_lmf_termine_stunde", "chk_meldebestand_nonneg",

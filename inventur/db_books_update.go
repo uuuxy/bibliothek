@@ -165,7 +165,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQu
 		// Leser BEIDE Spalten prüft. Der erste, der nur ist_ausleihbar liest, verleiht es.
 		query := `
 			UPDATE buecher_exemplare
-			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR',
+			SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL,
 			    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert'
 			WHERE id IN (
 				SELECT e.id
@@ -186,7 +186,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQu
 			remainingToRetire := int64(numToRetire) - retired
 			fallbackQuery := `
 				UPDATE buecher_exemplare
-				SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR',
+				SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESTANDSKORREKTUR', bestellstatus = NULL,
 				    zustand_notiz = COALESCE(zustand_notiz || ' | ', '') || 'Automatisch ausgesondert (war ausgeliehen)'
 				WHERE id IN (
 					SELECT e.id

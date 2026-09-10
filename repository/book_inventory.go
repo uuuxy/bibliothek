@@ -79,7 +79,10 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 		        WHEN $2 THEN COALESCE(aussonderung_grund, 'VERLUST')
 		        ELSE NULL
 		    END,
-		    zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP
+		    zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP,
+		    -- Freigeben oder Aussondern ist ein Ausgang aus dem Zulauf wie der Wareneingang:
+		    -- bliebe bestellstatus stehen, zählten OPAC, Inventur und Katalog das Exemplar nie.
+		    bestellstatus = CASE WHEN $1 OR $2 THEN NULL ELSE bestellstatus END
 		WHERE id = $4
 		  AND NOT ($2::boolean AND EXISTS (
 		      SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $4 AND a.rueckgabe_am IS NULL))
@@ -102,7 +105,7 @@ func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) erro
 	query := `
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT',
-		    aktualisiert_am = CURRENT_TIMESTAMP
+		    aktualisiert_am = CURRENT_TIMESTAMP, bestellstatus = NULL
 		WHERE id = $1
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $1 AND a.rueckgabe_am IS NULL)
 	`
