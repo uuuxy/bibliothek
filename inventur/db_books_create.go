@@ -82,6 +82,40 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	return id, nil
 }
 
+// titelBeiKonflikt ist die Regel des Listenimports für eine ISBN, die schon im Katalog
+// steht — EINE Fassung für den Batch und den Einzel-Rückfall: Bestand gewinnt, der Import
+// füllt nur Lücken. Der Listenimport ist für Sammelkäufe und Spenden gedacht (weitere
+// Exemplare eines vorhandenen Titels); die Stammdaten hat dort ein Mensch gepflegt.
+//
+// Bis zum 10.09.2026 setzte die Klausel jede Spalte auf EXCLUDED.*: Eine Datei
+// `isbn;bestand` leerte Titel, Autor, Verlag und Beschreibung, setzte Jahr und Jahrgang auf
+// 0, den Medientyp auf „Buch" und warf ein von Hand hochgeladenes Cover weg — gemeldet
+// wurde „1 Titel importiert" (Bestands-Durchgang, Bugklasse Upsert-Blanking).
+//
+// Zwei bewusste Ausnahmen: signatur — ein GESETZTER Wert aus der Datei gewinnt (die
+// Signatur-Liste ist der Zweck mancher Importe), ein leerer überschreibt nie; und
+// ist_lernmittel — wird nur gesetzt, nie gelöscht. Bei den Eigenschaften werden beide
+// Seiten gemischt, bei gleichem Schlüssel gewinnt der Bestand.
+const titelBeiKonflikt = `ON CONFLICT (isbn) DO UPDATE SET
+			titel = COALESCE(NULLIF(buecher_titel.titel, ''), EXCLUDED.titel),
+			autor = COALESCE(NULLIF(buecher_titel.autor, ''), EXCLUDED.autor),
+			cover_url = COALESCE(NULLIF(buecher_titel.cover_url, ''), EXCLUDED.cover_url),
+			subject = COALESCE(buecher_titel.subject, EXCLUDED.subject),
+			grade_level = COALESCE(NULLIF(buecher_titel.grade_level, 0), EXCLUDED.grade_level),
+			track = COALESCE(NULLIF(buecher_titel.track, ''), EXCLUDED.track),
+			last_counted = COALESCE(buecher_titel.last_counted, EXCLUDED.last_counted),
+			medientyp = COALESCE(NULLIF(buecher_titel.medientyp, ''), EXCLUDED.medientyp),
+			jahrgang_von = COALESCE(NULLIF(buecher_titel.jahrgang_von, 0), EXCLUDED.jahrgang_von),
+			jahrgang_bis = COALESCE(NULLIF(buecher_titel.jahrgang_bis, 0), EXCLUDED.jahrgang_bis),
+			untertitel = COALESCE(NULLIF(buecher_titel.untertitel, ''), EXCLUDED.untertitel),
+			verlag = COALESCE(NULLIF(buecher_titel.verlag, ''), EXCLUDED.verlag),
+			erscheinungsjahr = COALESCE(NULLIF(buecher_titel.erscheinungsjahr, 0), EXCLUDED.erscheinungsjahr),
+			beschreibung = COALESCE(NULLIF(buecher_titel.beschreibung, ''), EXCLUDED.beschreibung),
+			erweiterte_eigenschaften = COALESCE(EXCLUDED.erweiterte_eigenschaften, '{}'::jsonb)
+				|| COALESCE(buecher_titel.erweiterte_eigenschaften, '{}'::jsonb),
+			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
+			ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel`
+
 type bookBatchData struct {
 	isbns                   []string
 	titles                  []string
@@ -172,24 +206,7 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSch
 		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), t.grade_level, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, COALESCE(NULLIF(t.jahrgang_von, 0), 5), COALESCE(NULLIF(t.jahrgang_bis, 0), 10), t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, ''), t.ist_lernmittel
 		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::text[], $9::text[], $10::int[], $11::int[], $12::text[], $13::text[], $14::int[], $15::text[], $16::jsonb[], $17::text[], $18::boolean[])
 		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel)
-		ON CONFLICT (isbn) DO UPDATE SET
-			titel = EXCLUDED.titel,
-			autor = EXCLUDED.autor,
-			cover_url = EXCLUDED.cover_url,
-			subject = EXCLUDED.subject,
-			grade_level = EXCLUDED.grade_level,
-			track = EXCLUDED.track,
-			last_counted = EXCLUDED.last_counted,
-			medientyp = EXCLUDED.medientyp,
-			jahrgang_von = EXCLUDED.jahrgang_von,
-			jahrgang_bis = EXCLUDED.jahrgang_bis,
-			untertitel = EXCLUDED.untertitel,
-			verlag = EXCLUDED.verlag,
-			erscheinungsjahr = EXCLUDED.erscheinungsjahr,
-			beschreibung = EXCLUDED.beschreibung,
-			erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften,
-			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
-			ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel
+		` + titelBeiKonflikt + `
 	`
 
 	cmdTag, err := q.Exec(
@@ -315,24 +332,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel)
 		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10), $12, $13, $14, $15, $16, NULLIF($17, ''), $18)
-		ON CONFLICT (isbn) DO UPDATE SET
-			titel = EXCLUDED.titel,
-			autor = EXCLUDED.autor,
-			cover_url = EXCLUDED.cover_url,
-			subject = EXCLUDED.subject,
-			grade_level = EXCLUDED.grade_level,
-			track = EXCLUDED.track,
-			last_counted = EXCLUDED.last_counted,
-			medientyp = EXCLUDED.medientyp,
-			jahrgang_von = EXCLUDED.jahrgang_von,
-			jahrgang_bis = EXCLUDED.jahrgang_bis,
-			untertitel = EXCLUDED.untertitel,
-			verlag = EXCLUDED.verlag,
-			erscheinungsjahr = EXCLUDED.erscheinungsjahr,
-			beschreibung = EXCLUDED.beschreibung,
-			erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften,
-			signatur = COALESCE(NULLIF(EXCLUDED.signatur, ''), buecher_titel.signatur),
-			ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel
+		` + titelBeiKonflikt + `
 		RETURNING id`
 
 	medientyp := book.Medientyp
