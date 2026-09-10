@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +16,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/repository"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -440,6 +442,60 @@ func TestBescheidUebergabe_ErstNachFristUndNurEinmal(t *testing.T) {
 	}
 	if status != "uebergeben" || uebergebenAm == nil {
 		t.Errorf("Status %q, uebergeben_am %v", status, uebergebenAm)
+	}
+}
+
+// Ein Bescheid, dessen Forderungen bezahlt oder storniert sind, ist erledigt (Konzept 4.3:
+// „abgeleitet"). Bis zum 10.09.2026 hatte der Zustand „erledigt" keinen Schreiber: Die
+// Familie zahlte fristgerecht, und nach 28 Tagen stand der Brief ganz oben als „Frist
+// abgelaufen", die Zahl am Reiter stieg, und die Übergabe an die Schulaufsicht ging mit
+// einem Klick durch — ein bezahlter Fall zur Vollstreckung (Bestands-Durchgang).
+func TestBescheid_BezahltIstErledigtUndNichtUebergebbar(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	bescheidReset(t, pool)
+	ctx := context.Background()
+	bescheidAngabenSetzen(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	repo := repository.NewBescheidRepository(pool)
+
+	sid := seedSchueler(t, pool, "S-BESCHEID-BEZ", "Zahlkind", "08G2")
+	titelID := bescheidLernmittel(t, pool, "Biologie 8")
+	f := bescheidForderung(t, pool, sid, exemplar(t, pool, titelID, "BESCH-BEZ-1", true, ""), "nicht_zurueckgegeben", "Biologie 8 nicht zurück")
+	rec := bescheidErstellenUeberHandler(t, srv, pool, sid, bescheidRumpf(in28Tagen(), map[string]float64{f: 18.00}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid: %d %s", rec.Code, rec.Body.String())
+	}
+	var b repository.Bescheid
+	if err := json.Unmarshal(rec.Body.Bytes(), &b); err != nil {
+		t.Fatal(err)
+	}
+	// Bezahlt über den echten Pfad, danach ist die Frist vorbei.
+	if err := repository.NewAuditRepository(pool).BezahltGebuehr(ctx, f, adminFuerAudit(t, pool)); err != nil {
+		t.Fatalf("Bezahlt: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE schadensersatz_bescheide SET frist_bis = CURRENT_DATE - 1 WHERE id = $1`, b.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	gelesen, err := repo.Lies(ctx, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gelesen.Status != "erledigt" || gelesen.FristAbgelaufen {
+		t.Errorf("bezahlter Bescheid: Status %q, frist_abgelaufen %v — want erledigt/false", gelesen.Status, gelesen.FristAbgelaufen)
+	}
+	if err := repo.Uebergebe(ctx, b.ID); !errors.Is(err, pgx.ErrNoRows) {
+		t.Errorf("Übergabe eines bezahlten Bescheids: err = %v, want pgx.ErrNoRows (409)", err)
+	}
+	offen, err := repo.Liste(ctx, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, o := range offen {
+		if o.ID == b.ID {
+			t.Errorf("bezahlter Bescheid steht in der Liste der offenen")
+		}
 	}
 }
 

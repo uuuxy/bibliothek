@@ -207,13 +207,27 @@ func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e Besc
 	return zugeordnet, nil
 }
 
+// bescheidHatOffenePosition: Steht auf dem Brief b noch eine unbezahlte Forderung?
+// Bezahlt UND Storno setzen ist_bezahlt (audit_system.go) — beide erledigen die Position.
+//
+// Daraus leitet sich „erledigt" ab (Konzept 4.3): Die Spalte status kennt den Wert, aber
+// kein Schreibpfad setzt ihn — Bezahlen und Storno laufen über die Forderung, nicht über
+// den Brief. Bis zum 10.09.2026 fehlte die Ableitung ganz: Ein bezahlter Bescheid galt
+// nach Fristablauf als überfällig und ließ sich an die Schulaufsicht übergeben.
+const bescheidHatOffenePosition = `EXISTS (SELECT 1 FROM schadensfaelle fo WHERE fo.bescheid_id = b.id AND fo.ist_bezahlt = false)`
+
+// bescheidFristAbgelaufen: offen, Frist vorbei, und es ist noch etwas zu zahlen.
+const bescheidFristAbgelaufen = `(b.status = 'offen' AND b.frist_bis < CURRENT_DATE AND ` + bescheidHatOffenePosition + `)`
+
 // bescheidSpalten ist die gemeinsame Auswahl der Leser — EIN Ort, damit Liste, Akte und
 // Einzelabruf dieselben Felder in derselben Reihenfolge liefern.
 const bescheidSpalten = `
 	b.id, b.schueler_id, coalesce(s.vorname || ' ' || s.nachname, ''), coalesce(s.klasse, ''),
 	b.mittel, b.referenznummer, b.kassenjahr, b.laufende_nr, b.brief_datum, b.frist_bis,
-	b.gesamtbetrag, b.status, b.uebergeben_am, b.letzter_druck_am,
-	(b.status = 'offen' AND b.frist_bis < CURRENT_DATE),
+	b.gesamtbetrag,
+	CASE WHEN b.status = 'offen' AND NOT ` + bescheidHatOffenePosition + ` THEN 'erledigt' ELSE b.status END,
+	b.uebergeben_am, b.letzter_druck_am,
+	` + bescheidFristAbgelaufen + `,
 	b.rueckgabe_nach_uebergabe,
 	(SELECT count(*) FROM schadensfaelle f WHERE f.bescheid_id = b.id)::int`
 
@@ -231,7 +245,7 @@ func scanBescheid(rows pgx.Rows) (Bescheid, error) {
 func (r *pgBescheidRepository) Liste(ctx context.Context, nurOffen bool) ([]Bescheid, error) {
 	bedingung := ""
 	if nurOffen {
-		bedingung = "WHERE b.status = 'offen'"
+		bedingung = "WHERE b.status = 'offen' AND " + bescheidHatOffenePosition
 	}
 	// LIMIT, weil auch diese Liste über Jahre wächst (Register „Unbegrenzte
 	// Listen-Endpunkte"): die abgelaufenen Fristen stehen dank ORDER BY oben.
@@ -240,7 +254,7 @@ func (r *pgBescheidRepository) Liste(ctx context.Context, nurOffen bool) ([]Besc
 		FROM schadensersatz_bescheide b
 		LEFT JOIN schueler s ON s.id = b.schueler_id
 		`+bedingung+`
-		ORDER BY (b.status = 'offen' AND b.frist_bis < CURRENT_DATE) DESC, b.brief_datum DESC
+		ORDER BY `+bescheidFristAbgelaufen+` DESC, b.brief_datum DESC
 		LIMIT 500`)
 	if err != nil {
 		return nil, err
@@ -360,14 +374,15 @@ func (r *pgBescheidRepository) DruckVermerken(ctx context.Context, id string) er
 // Uebergebe setzt den Bescheid auf „übergeben" — nur aus dem Zustand „offen" und nur,
 // wenn die Frist vorbei ist. Die WHERE-Bedingung ist die Regel: Sie verhindert, dass ein
 // Brief vor Fristablauf weitergegeben wird, und dass eine zweite Übergabe den Zeitpunkt
-// überschreibt. pgx.ErrNoRows heißt: Der Zustand passt nicht.
+// überschreibt — und nur, solange noch etwas zu zahlen ist: Ein bezahlter Fall geht
+// nicht zur Vollstreckung. pgx.ErrNoRows heißt: Der Zustand passt nicht.
 func (r *pgBescheidRepository) Uebergebe(ctx context.Context, id string) error {
 	var gesetzt string
 	err := r.db.QueryRow(ctx, `
-		UPDATE schadensersatz_bescheide
+		UPDATE schadensersatz_bescheide b
 		   SET status = 'uebergeben', uebergeben_am = NOW()
-		 WHERE id = $1 AND status = 'offen' AND frist_bis < CURRENT_DATE
-		RETURNING id`, id).Scan(&gesetzt)
+		 WHERE b.id = $1 AND `+bescheidFristAbgelaufen+`
+		RETURNING b.id`, id).Scan(&gesetzt)
 	return err
 }
 
