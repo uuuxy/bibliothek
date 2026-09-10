@@ -158,8 +158,12 @@ func legeNeuenSchuelerAn(ctx context.Context, tx pgx.Tx, rec parsedStudentRow, b
 //  2. Nur gesperrter Abgänger (block_reason beginnt mit repository.AbgaengerSperrPraefix):
 //     dynamisch prüfen, ob NOCH offene Ausleihen oder unbezahlte Schäden bestehen. Sind
 //     alle Vorgänge beglichen → entsperren und Grund räumen. Bestehen noch Vorgänge →
-//     gesperrt lassen, aber den irreführenden „Abgänger"-Grund in einen sachlichen
-//     „Sperre wegen offener Vorgänge" umbenennen (sonst „Permanent Ghost-Block").
+//     gesperrt lassen, aber den Grund auf repository.AbgaengerSperrgrundOffen setzen —
+//     sachlich („offene Vorgänge") UND mit dem Präfix der Automatik. Bis zum 10.09.2026
+//     stand hier „Sperre wegen offener Vorgänge" ohne Präfix: Kein späterer Weg erkannte
+//     die Sperre danach als automatisch, auch dieser nicht — nach der Rückgabe blieb der
+//     Schüler dauerhaft gesperrt (genau der „Permanent Ghost-Block", den das hier verhindern
+//     sollte; Bestands-Durchgang).
 //
 // Eine Sperre aus ANDEREM Grund (manuell / nicht die Abgänger-Automatik) bleibt unangetastet.
 // Die CASE-Ausdrücke lesen die ALTEN Zeilenwerte (Postgres wertet SET-RHS vor der Zuweisung
@@ -216,7 +220,7 @@ func aktualisiereBestandsschuelerBatch(ctx context.Context, tx pgx.Tx, records [
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $9 AND ist_bezahlt = false)
 				THEN NULL
 				WHEN `+repository.SQLAbgaengerSperreAutomatisch+`
-				THEN 'Sperre wegen offener Vorgänge'
+				THEN '`+repository.AbgaengerSperrgrundOffen+`'
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $9`,

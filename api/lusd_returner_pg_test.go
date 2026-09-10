@@ -104,8 +104,43 @@ func TestLusdImport_ReturningBlockedAbgaenger(t *testing.T) {
 		if abgaenger {
 			t.Error("ist_abgaenger muss dennoch zurückgesetzt sein (wieder aktiv)")
 		}
-		if reason == nil || *reason != "Sperre wegen offener Vorgänge" {
-			t.Errorf("irreführender Abgänger-Grund muss umbenannt werden, war %v", reason)
+		// Der Grund sagt jetzt „offene Vorgänge", trägt aber weiter das Präfix der
+		// Automatik — sonst erkennt kein späterer Weg die Sperre als automatisch wieder.
+		if reason == nil || *reason != "Automatisierte Abgänger-Sperre (offene Vorgänge)" {
+			t.Errorf("Grund muss „offene Vorgänge“ nennen UND das Automatik-Präfix tragen, war %v", reason)
+		}
+	})
+
+	// Bestands-Durchgang 10.09.2026 (Rasterfrage 10: der Rückweg am ERGEBNIS): Der
+	// umbenannte Grund hieß „Sperre wegen offener Vorgänge" — ohne das Präfix der
+	// Automatik. Nach der Rückgabe hob NICHTS die Sperre mehr auf; der nächste Import hielt
+	// sie für eine manuelle und ließ sie stehen. Ein aktiver Schüler blieb dauerhaft
+	// gesperrt, und die Oberfläche kann ist_gesperrt ohne manuelle Sperre nicht aufheben.
+	t.Run("Rückkehrer: nach der Rückgabe hebt der nächste Import die Sperre auf", func(t *testing.T) {
+		resetBestandsdaten(t, pool)
+		ctx := context.Background()
+		id := seedGesperrterAbgaenger(t, pool, "OLD-3", "L-DEBT3")
+		titelID := titelMitMeldebestand(t, pool, "Schuldbuch-3", 1)
+		exID := exemplar(t, pool, titelID, "EX-DEBT3", true, "")
+		if _, err := pool.Exec(ctx,
+			`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+			 VALUES ($1, $2, now() + interval '14 days')`, exID, id); err != nil {
+			t.Fatalf("offene Ausleihe anlegen: %v", err)
+		}
+		s := &Server{DB: &db.Database{Pool: pool}}
+		zeile := []parsedStudentRow{{LusdID: "L-DEBT3", Vorname: "Max", Nachname: "Muster", Klasse: "E1"}}
+		if _, err := s.computeLusdChanges(ctx, zeile, true, true); err != nil {
+			t.Fatalf("erster Import: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() WHERE schueler_id = $1`, id); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.computeLusdChanges(ctx, zeile, true, true); err != nil {
+			t.Fatalf("zweiter Import: %v", err)
+		}
+		gesperrt, _, reason, _ := leseSchuelerStatus(t, pool, id)
+		if gesperrt || reason != nil {
+			t.Errorf("nach der Rückgabe noch gesperrt (Grund %v) — die Sperre wird nie mehr aufgehoben", reason)
 		}
 	})
 }

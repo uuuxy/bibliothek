@@ -71,7 +71,7 @@ func TestZusammenfuehren_QuelleGehtImZielAuf(t *testing.T) {
 		t.Errorf("Stammdaten nicht von der LUSD-frischen Seite: vorname=%q klasse=%q strasse=%q", vorname, klasse, strasse)
 	}
 	// Kein Abgänger mehr; die Sperre bleibt wegen der offenen Ausleihe — mit sachlichem Grund.
-	if abg || seit || !gesperrt || grund != "Sperre wegen offener Vorgänge" {
+	if abg || seit || !gesperrt || grund != repository.AbgaengerSperrgrundOffen {
 		t.Errorf("Status falsch: abg=%v seit=%v gesperrt=%v grund=%q", abg, seit, gesperrt, grund)
 	}
 	if n := zfZaehle(t, pool, `SELECT count(*) FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL`, ziel); n != 1 {

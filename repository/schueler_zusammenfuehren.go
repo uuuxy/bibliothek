@@ -423,7 +423,8 @@ func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p schreibeZu
 				     AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = $1 AND rueckgabe_am IS NULL)
 				     AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)
 				THEN NULL
-				WHEN `+SQLAbgaengerSperreAutomatisch+` THEN 'Sperre wegen offener Vorgänge'
+				-- Mit Präfix: sonst erkennt kein späterer Weg die Sperre als automatisch wieder.
+				WHEN `+SQLAbgaengerSperreAutomatisch+` THEN '`+AbgaengerSperrgrundOffen+`'
 				ELSE block_reason END,
 			aktualisiert_am = NOW()
 		WHERE id = $1`,

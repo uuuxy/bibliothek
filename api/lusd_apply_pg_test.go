@@ -168,7 +168,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		if abgaenger {
 			t.Error("ist_abgaenger muss trotzdem zurückgesetzt sein (er ist wieder aktiv)")
 		}
-		if reason == nil || *reason != "Sperre wegen offener Vorgänge" {
+		if reason == nil || *reason != "Automatisierte Abgänger-Sperre (offene Vorgänge)" {
 			t.Errorf("irreführender Abgänger-Grund muss umbenannt werden, war %v", reason)
 		}
 	})
@@ -185,7 +185,7 @@ func TestAktualisiereBestandsschueler_Rueckkehrer(t *testing.T) {
 		if !gesperrt {
 			t.Error("mit unbezahltem Schaden muss die Sperre bestehen bleiben")
 		}
-		if reason == nil || *reason != "Sperre wegen offener Vorgänge" {
+		if reason == nil || *reason != "Automatisierte Abgänger-Sperre (offene Vorgänge)" {
 			t.Errorf("Grund muss umbenannt werden, war %v", reason)
 		}
 	})
