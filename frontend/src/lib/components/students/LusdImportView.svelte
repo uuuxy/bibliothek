@@ -54,11 +54,10 @@
 
 	function handleFileChange(/** @type {Event} */ e) {
 		const target = /** @type {HTMLInputElement} */ (e.target);
+		// Neue Datei = neuer Durchgang, auch für die Massenabgang-Bestätigung (10.09.2026).
 		if (target.files && target.files[0]) {
+			resetFlow();
 			selectedFile = target.files[0];
-			errorMessage = null;
-			previewResult = null;
-			stage = 'upload';
 		}
 	}
 
@@ -94,6 +93,7 @@
 		if (!selectedFile || previewLoading) return;
 		previewLoading = true;
 		errorMessage = null;
+		needsGraduateConfirm = false;
 		try {
 			previewResult = await submitLusdFile('/api/lusd/preview');
 			gewaehltePaare.clear();
