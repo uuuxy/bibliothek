@@ -112,8 +112,9 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 		return nil, fmt.Errorf("%w: dieses Buchexemplar ist nicht ausleihbar", ErrInvalidState)
 	}
 
-	// 1. Borrower-Validation (loan_checkout_validation.go)
-	chkCtx, err := s.resolveBorrowerAndDueTime(ctx, copy, activeStudentID, activeTeacherID, staffID, overrideBlock)
+	// 1. Ausleiher und Frist auflösen (loan_checkout_validation.go). Die Sperrprüfung folgt
+	// erst nach dem Lesen der Ausleihe — sie hängt davon ab, ob das Buch diesem Ausleiher gehört.
+	chkCtx, err := s.resolveBorrowerAndDueTime(ctx, copy, activeStudentID, activeTeacherID)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +137,17 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	}
 
 	isReturningThis := istEigeneRueckgabe(chkCtx, activeLoan)
+
+	// Sperrgründe — nur, wenn es keine eigene Rückgabe ist, wie beim Ausleihlimit. Bis
+	// 11.09.2026 liefen sie beim Auflösen des Ausleihers, bevor feststand, wem das Buch
+	// gehört: Ein wegen Überfälligkeit gesperrtes Kind wurde mit genau diesen Büchern
+	// abgewiesen. Die Ausleihe liegt hier unter FOR UPDATE; „eigene Rückgabe" kann sich bis
+	// zum Commit nicht mehr ändern, ein Wettlauf öffnet also keine Ausleihe an der Sperre vorbei.
+	if chkCtx.student != nil && !isReturningThis {
+		if err := s.pruefeSchuelerAusleihbar(ctx, chkCtx.student, chkCtx.borrowerID, staffID, overrideBlock); err != nil {
+			return nil, err
+		}
+	}
 
 	// 3. Ausleihlimit für Schüler prüfen
 	if err := s.pruefeSchuelerAusleihlimit(ctx, chkCtx, copy, activeLoansCount, isReturningThis); err != nil {

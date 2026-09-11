@@ -122,8 +122,10 @@ func (s *defaultLoanService) pruefeUeberfaellig(ctx context.Context, borrowerID,
 	return nil
 }
 
-// resolveStudentBorrower lädt und validiert den aktiven Schüler und bestimmt die Leihfrist.
-func (s *defaultLoanService) resolveStudentBorrower(ctx context.Context, copy *repository.BookCopy, studentID, staffID string, overrideBlock bool) (*checkoutContext, error) {
+// resolveStudentBorrower lädt den aktiven Schüler und bestimmt die Leihfrist. Die
+// Sperrgründe prüft HandleUnifiedCheckout erst, wenn feststeht, ob es eine eigene
+// Rückgabe ist (pruefeSchuelerAusleihbar).
+func (s *defaultLoanService) resolveStudentBorrower(ctx context.Context, copy *repository.BookCopy, studentID string) (*checkoutContext, error) {
 	result := &checkoutContext{borrowerType: "student", borrowerID: studentID}
 
 	sObj, err := s.studentRepo.GetByID(ctx, studentID)
@@ -132,10 +134,6 @@ func (s *defaultLoanService) resolveStudentBorrower(ctx context.Context, copy *r
 	}
 	if sObj == nil {
 		return nil, fmt.Errorf("%w: Aktives Schülerprofil nicht gefunden", ErrNotFound)
-	}
-
-	if err := s.pruefeSchuelerAusleihbar(ctx, sObj, studentID, staffID, overrideBlock); err != nil {
-		return nil, err
 	}
 
 	result.student = sObj
@@ -171,17 +169,16 @@ func (s *defaultLoanService) resolveTeacherBorrower(ctx context.Context, teacher
 	return result, nil
 }
 
-// resolveBorrowerAndDueTime validates the borrower (student or teacher) and determines the due date.
+// resolveBorrowerAndDueTime löst den Ausleiher (Schüler oder Lehrer) auf und bestimmt die
+// Frist. Keine Sperrprüfung — siehe resolveStudentBorrower.
 func (s *defaultLoanService) resolveBorrowerAndDueTime(
 	ctx context.Context,
 	copy *repository.BookCopy,
 	activeStudentID *string,
 	activeTeacherID *string,
-	staffID string,
-	overrideBlock bool,
 ) (*checkoutContext, error) {
 	if activeStudentID != nil && *activeStudentID != "" {
-		return s.resolveStudentBorrower(ctx, copy, *activeStudentID, staffID, overrideBlock)
+		return s.resolveStudentBorrower(ctx, copy, *activeStudentID)
 	}
 	if activeTeacherID != nil && *activeTeacherID != "" {
 		return s.resolveTeacherBorrower(ctx, *activeTeacherID)

@@ -41,24 +41,6 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email"}).
 			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", ""))
 
-	// 0. Auto-block: offene Schadensfälle prüfen (0 = keine offenen Schäden)
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle WHERE schueler_id = \\$1 AND ist_bezahlt = false").
-		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
-
-	// 1. Settings query for auto-block
-	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
-		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
-			AddRow("max_ausleihen_schueler", "5").
-			AddRow("standard_ausleihfrist_tage", "14").
-			AddRow("max_overdue_days", "14").
-			AddRow("max_overdue_items", "1"))
-
-	// Overdue check mock
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen WHERE schueler_id = \\$1 AND rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP - \\(INTERVAL '1 day' \\* \\$2\\) AND ist_handapparat = false AND geraet_id IS NULL").
-		WithArgs(studentID, 14).
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
-
 	// 2. querySettings inside resolveCheckoutDueDate
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
@@ -82,6 +64,21 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
 		WithArgs(copy.ID).
 		WillReturnRows(pgxmock.NewRows([]string{}))
+
+	// Sperrgründe erst jetzt — nach dem Lesen der Ausleihe, weil die eigene Rückgabe nie
+	// gesperrt ist (seit 11.09.2026): offene Schäden (0), Einstellungen, Überfällige (0).
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle WHERE schueler_id = \\$1 AND ist_bezahlt = false").
+		WithArgs(studentID).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
+			AddRow("max_ausleihen_schueler", "5").
+			AddRow("standard_ausleihfrist_tage", "14").
+			AddRow("max_overdue_days", "14").
+			AddRow("max_overdue_items", "1"))
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM ausleihen WHERE schueler_id = \\$1 AND rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP - \\(INTERVAL '1 day' \\* \\$2\\) AND ist_handapparat = false AND geraet_id IS NULL").
+		WithArgs(studentID, 14).
+		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 7. querySettings inside early limit check
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").

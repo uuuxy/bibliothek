@@ -182,8 +182,7 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     `bestellung_id` (zwei Töpfe am selben Tag = eine Gruppe; ohne Vorab-Barcode
     „Unbekannter Lieferant"; Datum ohne Schulzeitzone); Mail-Datum und Link-Frist in
     Serverzeit; Idempotenz-Schlüssel überlebt eine Änderung des Warenkorbs.
-  - **Theke (B):** eigene Rückgabe in offener Sitzung scheitert an der Sperrprüfung;
-    verliehenes, als defekt gemeldetes Gerät nicht rückgebbar; Sperr-Dialog hängt am
+  - **Theke (B):** verliehenes, als defekt gemeldetes Gerät nicht rückgebbar; Sperr-Dialog hängt am
     Fehlertext (Schadens-Sperre ohne Übergehen-Dialog); Geräte-Ausleihe übernimmt
     `active_teacher_id` ungeprüft; Offline-Warteschlange nur für `B-`-Barcodes; doppelte
     Vormerkung 500 statt 409.
