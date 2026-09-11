@@ -77,6 +77,13 @@ func (s *Server) sammleLage(
 		if settings.AlarmEmpfaenger != nil {
 			lage.AlarmEmpfaenger = strings.TrimSpace(*settings.AlarmEmpfaenger)
 		}
+		// Schadensersatz-Bescheid: dieselbe Prüfung, mit der das Erstellen abweist.
+		// FehlendeAngaben liefert nil, wenn nichts fehlt — in der Lage heißt nil aber
+		// „nicht erhoben", also wird daraus die leere Liste.
+		lage.BescheidFehlend = repository.BescheidAngabenAus(settings).FehlendeAngaben(repository.SchuleAngabenAus(settings))
+		if lage.BescheidFehlend == nil {
+			lage.BescheidFehlend = []string{}
+		}
 	}
 
 	// DSGVO-Löschroutinen: Zustand statt Log, und zwar für ALLE, nicht nur die

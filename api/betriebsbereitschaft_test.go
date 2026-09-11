@@ -63,6 +63,8 @@ func lageEingerichtet() Lage {
 		EhemaligeMitOffenenVorgaengen: zahl(0),
 		// Ferientabelle: reicht weit genug (testJetzt 2026 + 2 ≤ 2030).
 		FerientabelleBis: 2030,
+		// Schadensersatz-Bescheid: erhoben, keine Pflichtangabe fehlt.
+		BescheidFehlend: []string{},
 	}
 }
 
@@ -130,6 +132,20 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Auslagerung der Backups",
 			stufe:    StufeKritisch,
 			enthaelt: "S3_BUCKET",
+		},
+		{
+			name:     "Bescheid ohne Schulnummer",
+			aendere:  func(l *Lage) { l.BescheidFehlend = []string{"Schulnummer"} },
+			bereich:  "Schadensersatz-Bescheid",
+			stufe:    StufeWarnung,
+			enthaelt: "Schulnummer",
+		},
+		{
+			name:     "Bescheid-Angaben nicht erhoben",
+			aendere:  func(l *Lage) { l.BescheidFehlend = nil },
+			bereich:  "Schadensersatz-Bescheid",
+			stufe:    StufeWarnung,
+			enthaelt: "nicht erhoben",
 		},
 		{
 			name:     "Ehemalige mit offenem Vorgang seit über einem Jahr",

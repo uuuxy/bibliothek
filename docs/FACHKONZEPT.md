@@ -462,7 +462,7 @@ nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Contai
 und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
 raus, nur ohne den Link, um dessentwillen es sie gibt).
 
-**Geprüft werden fünfzehn Bereiche:** Auslagerung der Backups, Geheimnisse, Anmeldung
+**Geprüft werden siebzehn Bereiche**, darunter: Auslagerung der Backups, Geheimnisse, Anmeldung
 (IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten (Schüler UND
 Exemplare aus `seed_demo.sql`), Lieferanten (seit 07.09.2026, kritisch: Reste der drei
 Beispiel-Lieferanten, die der Programmstart vom 30.05. bis Migration 107 bei leerer Tabelle
@@ -481,7 +481,10 @@ benennt Klassen ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten ohne Kla
 Weggegangene, die seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung
 haben — der Vorgang schützt sie vor Anonymisierung und Löschung, also bleiben Name und
 Anschrift sonst auf Dauer; Warnung mit Abhilfe „Verlust melden, Forderung bezahlen oder
-stornieren", kein Automatismus; `ZaehleEhemaligeMitOffenenVorgaengen`).
+stornieren", kein Automatismus; `ZaehleEhemaligeMitOffenenVorgaengen`); und der **Schadensersatz-Bescheid**
+(seit 11.09.2026: welche Pflichtangaben fehlen — Nummer des Schulamtsbereichs, Schulnummer,
+Aufsichtsbehörde, Schulleitung, Anschrift der Schule; dieselbe Prüfung, mit der das Erstellen
+abweist; Warnung, weil ohne Bescheid-Bedarf nichts ausfällt).
 
 Jeder Befund trägt vier Angaben, weil drei nicht reichen: **Befund** („was ist"),
 **Folge** („warum das zählt") und **Abhilfe** („was zu tun ist") — ohne die letzte landet

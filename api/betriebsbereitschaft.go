@@ -160,6 +160,12 @@ type Lage struct {
 	// abrechnet. Schließt niemand den Vorgang, bleibt Name und Anschrift auf Dauer, und
 	// keine Routine meldet es. nil: nicht erhoben.
 	EhemaligeMitOffenenVorgaengen *int
+
+	// Schadensersatz-Bescheid (11.09.2026): die Pflichtangaben, die noch fehlen — aus
+	// derselben Funktion, mit der die Bescheid-Tür abweist (BescheidAngaben.FehlendeAngaben).
+	// Ohne diese Zeile fiel die Lücke erst auf, wenn ein Bescheid gebraucht wurde.
+	// nil: nicht erhoben; leere Liste: alles da.
+	BescheidFehlend []string
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -222,6 +228,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeDsgvoRoutinen(l),
 		pruefeEhemaligeOffen(l),
 		pruefeFerientabelle(l),
+		pruefeBescheidAngaben(l),
 	}
 	return befunde
 }
@@ -648,6 +655,31 @@ func pruefeMailversand(l Lage) Befund {
 	b.Befund = "Kein SMTP-Server in den Einstellungen."
 	b.Folge = "Mahnungen und Bestellmails können nicht zugestellt werden."
 	b.Abhilfe = "Einstellungen → Mail: Postausgang ausfüllen und mit dem Testversand prüfen."
+	return b
+}
+
+// pruefeBescheidAngaben: Kann das Sekretariat einen Schadensersatz-Bescheid erstellen?
+// Die Liste kommt aus BescheidAngaben.FehlendeAngaben — derselben Funktion, mit der das
+// Erstellen abweist. Warnung, nicht kritisch: Solange niemand einen Bescheid braucht,
+// fällt nichts aus; die Schule soll es vorher wissen, nicht erst am Tag des Falls.
+func pruefeBescheidAngaben(l Lage) Befund {
+	b := Befund{Bereich: "Schadensersatz-Bescheid"}
+	if l.BescheidFehlend == nil {
+		b.Stufe = StufeWarnung
+		b.Befund = "Die Pflichtangaben wurden nicht erhoben — die Einstellungen waren nicht lesbar."
+		b.Folge = "Unklar, ob sich ein Bescheid erstellen lässt."
+		b.Abhilfe = abhilfeDbNeuLaden
+		return b
+	}
+	if len(l.BescheidFehlend) > 0 {
+		b.Stufe = StufeWarnung
+		b.Befund = "Es fehlen: " + strings.Join(l.BescheidFehlend, ", ") + "."
+		b.Folge = "Ein Bescheid lässt sich erst erstellen, wenn diese Angaben stehen — das Erstellen weist bis dahin ab."
+		b.Abhilfe = "Einstellungen → Schadensersatz: die fehlenden Angaben eintragen; die Anschrift der Schule steht unter Einstellungen → Schule."
+		return b
+	}
+	b.Stufe = StufeOK
+	b.Befund = "Alle Pflichtangaben für den Bescheid stehen."
 	return b
 }
 
