@@ -162,14 +162,9 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     Exemplar, geht das bereitgelegte ins Regal zurück und nicht an den Nächsten auf der
     Warteliste. Es geht nichts verloren; der Nächste wird bei der nächsten Rückgabe
     bedient. Die strenge Reihenfolge der Warteliste ist im Betrieb nicht nötig.
-  - **Sicherheit/Anmeldung (B):** DB-Aussetzer im Token-Pfad ergibt 401 statt 5xx — alle
-    Arbeitsplätze melden sich ab, SECURITY.md verspricht 500; die Ausnahmen in
-    `fehler_kollaps_test.go` begründen sich mit „kein DB-Zugriff", `claimsAusRequest`/
-    `MeHandler`/`Refresh` lesen aber die DB (Klasse „verrottete Ausnahme-Begründung").
-    Selbstanmeldung, zweiter Versuch: englisches „user account is deactivated" statt
-    „Zugang beantragt". `MarkCopyDefekt` trägt ohne Schüler den klickenden BEARBEITER als
-    Verantwortlichen ein, zwei Leser nennen ihn „Schuldner"; `DeleteUser` prüft offene
-    Schäden nicht.
+  - **Schäden/Benutzer (B):** `MarkCopyDefekt` trägt ohne Schüler den klickenden
+    BEARBEITER als Verantwortlichen ein, zwei Leser nennen ihn „Schuldner"; `DeleteUser`
+    prüft offene Schäden nicht.
   - **Bescheid (B):** Verleihjahr zählt Ausleihen und Kalenderjahre statt Schuljahre;
     Kassenjahr = Jahr der Frist (Dezember-Brief zählt ins Folgejahr); Frist serverseitig
     unbegrenzt (Vergangenheit = sofort übergabefähig); Nachdruck liest Bank/Aufsicht live

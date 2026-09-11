@@ -134,9 +134,10 @@ func legeZugangsanfrageAn(ctx context.Context, dbPool db.PgxPoolIface, email str
 
 	var u loginUser
 	err = dbPool.QueryRow(ctx, `
-		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv
+		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv,
+		       zugang_beantragt_am IS NOT NULL
 		FROM benutzer WHERE LOWER(email) = LOWER($1) LIMIT 1
-	`, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv)
+	`, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.beantragt)
 	if err != nil {
 		return loginUser{}, fmt.Errorf("%w: zugangsanfrage konnte nicht gelesen werden: %v", ErrAnmeldedienstGestoert, err)
 	}

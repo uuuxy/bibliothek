@@ -58,7 +58,7 @@ func TestLoginHandler_UnknownUserReturns401(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("unbekannt@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
 
 	rec := doLogin(t, a, mock, `{"email":"unbekannt@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusUnauthorized {
@@ -75,8 +75,8 @@ func TestLoginHandler_DeactivatedUserReturns403(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("inaktiv@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
-			AddRow("u-1", "BC-TEST", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-1", "BC-TEST", "mitarbeiter", "Ex", "Kollege", false, "ex@example.org", false))
 
 	rec := doLogin(t, a, mock, `{"email":"inaktiv@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusForbidden {
@@ -90,8 +90,8 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("pflasch@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
-			AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true, "peter@example.org"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true, "peter@example.org", false))
 
 	rec := doLogin(t, a, mock, `{"email":"pflasch@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusOK {
@@ -143,7 +143,7 @@ func TestLoginHandler_BruteForceLimiterBlocksSixthAttempt(t *testing.T) {
 	for i := 1; i <= 5; i++ {
 		mock.ExpectQuery(benutzerSelect).
 			WithArgs(email).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}))
 		if rec := doLogin(t, a, mock, body); rec.Code != http.StatusUnauthorized {
 			t.Fatalf("Versuch %d: erwartet 401, bekam %d", i, rec.Code)
 		}
@@ -174,8 +174,8 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs("pflasch@schule.de").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
-			AddRow("u-admin", "BC-ECHT", "admin", "Peter", "Flasch", true, "peter@example.org"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-admin", "BC-ECHT", "admin", "Peter", "Flasch", true, "peter@example.org", false))
 
 	rec := doLogin(t, a, mock,
 		`{"email":"pflasch@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
@@ -263,8 +263,8 @@ func TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 	aktiviereMockIMAP(t)
 	mock.ExpectQuery(benutzerSelect).
 		WithArgs(email).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
-			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org", false))
 
 	rec := doLogin(t, a, mock, body)
 	if rec.Code != http.StatusOK {

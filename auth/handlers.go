@@ -189,18 +189,22 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		// Beides ist HTTP 403 und beides bedeutet „Zugangsdaten stimmen, Zugang trotzdem
 		// nicht" — die Unterscheidung ist für den Menschen davor. „Konto deaktiviert" ließe
 		// eine Lehrkraft, die sich gerade zum ersten Mal gemeldet hat, ratlos zurück und
-		// verleitet zum Wiederholen; sie soll wissen, dass sie nur warten muss.
+		// verleitet zum Wiederholen; sie soll wissen, dass sie nur warten muss. Das gilt
+		// für jeden Versuch, solange der Antrag offen ist — bis 11.09.2026 sah nur der
+		// erste „beantragt", jeder weitere „user account is deactivated".
 		//
 		// KEIN recordFailure hier: Das Passwort war richtig. Sonst sperrte sich jemand mit
 		// fünf Versuchen selbst aus, während seine Freischaltung noch aussteht.
-		if user.neuAngelegt {
+		if user.neuAngelegt || (!user.aktiv && user.beantragt) {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
 			apierrors.SendHTTPError(w, http.StatusForbidden,
 				errors.New("Zugang beantragt — die Bibliothek muss ihn noch freischalten"))
 			return
 		}
 		if !user.aktiv {
-			apierrors.SendHTTPError(w, http.StatusForbidden, errors.New("user account is deactivated"))
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
+			apierrors.SendHTTPError(w, http.StatusForbidden,
+				errors.New("Konto deaktiviert — bitte an die Bibliothek wenden"))
 			return
 		}
 
@@ -254,6 +258,10 @@ type loginUser struct {
 	// den Anmeldenden gedacht — er soll „Zugang beantragt" lesen statt „Konto
 	// deaktiviert" und nicht in Endlosschleife weiterprobieren.
 	neuAngelegt bool
+	// beantragt: zugang_beantragt_am ist gesetzt — die Selbstanmeldung wartet auf die
+	// Freischaltung. Die Freischaltung räumt die Spalte; ein danach deaktiviertes Konto
+	// ist kein Antrag mehr und bekommt „Konto deaktiviert".
+	beantragt bool
 }
 
 // validateLoginCredentials erzwingt das Vorhandensein von E-Mail und Passwort.
@@ -283,12 +291,13 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 	// IMAP succeeded, check if the user is registered in our local DB
 	var u loginUser
 	query := `
-		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv, email
+		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv, email,
+		       zugang_beantragt_am IS NOT NULL
 		FROM benutzer
 		WHERE LOWER(email) = LOWER($1)
 		LIMIT 1
 	`
-	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.email); err != nil {
+	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.email, &u.beantragt); err != nil {
 		// NUR „Zeile nicht vorhanden" ist der Selbstanmelde-Fall. Jeder andere Fehler
 		// (Verbindungsabriss, Pool erschöpft, ctx-Frist) ist ein Ausfall des
 		// Anmeldedienstes — bis zum 31.08.2026 lief er in den 401-Pfad und wurde als

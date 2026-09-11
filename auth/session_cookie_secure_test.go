@@ -58,8 +58,8 @@ func TestLoginCookieFolgtDerKonfiguration(t *testing.T) {
 			a, mock := newTestAuthenticator(t, 12*time.Hour)
 			mock.ExpectQuery(benutzerSelect).
 				WithArgs("pflasch@schule.de").
-				WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email"}).
-					AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true, "peter@example.org"))
+				WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
+					AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true, "peter@example.org", false))
 
 			req := httptest.NewRequest(http.MethodPost, "/login",
 				strings.NewReader(`{"email":"pflasch@schule.de","password":"egal"}`))

@@ -173,10 +173,12 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 		t.Errorf("%d Audit-Zeilen SELBSTANMELDUNG für das Konto, erwartet genau 1", auditZeilen)
 	}
 
-	// 3. Zweiter Versuch, immer noch nicht freigeschaltet: weiterhin kein Zugang, und
-	//    es entsteht KEIN zweiter Eintrag.
-	if code, _ := anmelden(t, pool, email); code != http.StatusForbidden {
-		t.Errorf("zweiter Versuch vor der Freischaltung: Status %d, erwartet 403", code)
+	// 3. Zweiter Versuch, immer noch nicht freigeschaltet: weiterhin kein Zugang, dieselbe
+	//    Meldung wie beim ersten Mal, und es entsteht KEIN zweiter Eintrag. Bis 11.09.2026
+	//    kam hier „user account is deactivated" — wer nachsah, ob die Freischaltung schon
+	//    da ist, las „deaktiviert" statt „beantragt".
+	if code, meldung := anmelden(t, pool, email); code != http.StatusForbidden || !strings.Contains(meldung, "beantragt") {
+		t.Errorf("zweiter Versuch vor der Freischaltung: Status %d (%q), erwartet 403 mit „beantragt“", code, meldung)
 	}
 	var anzahl int
 	if err := pool.QueryRow(ctx,
@@ -208,6 +210,18 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	}
 	if beantragt {
 		t.Error("nach der Freischaltung steht zugang_beantragt_am noch — ein späteres Deaktivieren sähe wieder wie ein Antrag aus")
+	}
+
+	// 5. Bewusst deaktivieren: Das ist kein Antrag mehr — die Meldung sagt „deaktiviert",
+	//    nicht „beantragt". Sonst wartete die Person auf eine Freischaltung, die nicht kommt.
+	if err := repository.NewUserRepository(pool).UpdateUser(ctx, repository.UpdateUserParams{
+		ID: id, Vorname: vorname, Nachname: nachname, Email: email, Rolle: rolle, Aktiv: false,
+	}); err != nil {
+		t.Fatalf("deaktivieren: %v", err)
+	}
+	if code, meldung := anmelden(t, pool, email); code != http.StatusForbidden ||
+		strings.Contains(meldung, "beantragt") || !strings.Contains(meldung, "deaktiviert") {
+		t.Errorf("bewusst deaktiviert: Status %d (%q), erwartet 403 mit „deaktiviert“", code, meldung)
 	}
 }
 
