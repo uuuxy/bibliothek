@@ -157,9 +157,11 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
   Playwright 183 grün). **22 Funde in 20 Commits behoben** (9056f2d0 … f67078f3), jeder
   am alten Code rot gesehen; neue Klassen in `sweeps.md`. Hier nur, was offen ist:
 
-  - **Rest-A, bewusst nicht im Durchgang:** Geisterbuch-Fall bei der Ausleihe
-    (`entferneErfuellteVormerkung`) — das reservierte Exemplar geht ins Regal zurück,
-    statt den Nächsten zu bedienen; braucht einen Rot-Test über den Checkout.
+  - **Entschieden, bleibt so (Peter, 11.09.2026):** Geisterbuch-Fall bei der Ausleihe
+    (`entferneErfuellteVormerkung`). Nimmt ein Kind statt des bereitgelegten ein anderes
+    Exemplar, geht das bereitgelegte ins Regal zurück und nicht an den Nächsten auf der
+    Warteliste. Es geht nichts verloren; der Nächste wird bei der nächsten Rückgabe
+    bedient. Die strenge Reihenfolge der Warteliste ist im Betrieb nicht nötig.
   - **Sicherheit/Anmeldung (B):** DB-Aussetzer im Token-Pfad ergibt 401 statt 5xx — alle
     Arbeitsplätze melden sich ab, SECURITY.md verspricht 500; die Ausnahmen in
     `fehler_kollaps_test.go` begründen sich mit „kein DB-Zugriff", `claimsAusRequest`/
