@@ -43,4 +43,29 @@ describe('keyboardNav', () => {
 		expect(onIndexChange).toHaveBeenLastCalledWith(0);
 		aktion.destroy?.();
 	});
+
+	// CI 11.09.2026: Jeder Pfeil plante einen Scroll-Timer, destroy räumte ihn nicht. Endete
+	// die Testdatei vor Ablauf der 10 ms, lief er ohne jsdom — „document is not defined",
+	// der ganze Lauf rot, obwohl alle Tests grün waren. Im Browser lief er nach dem Abbau
+	// ins Leere.
+	it('räumt den Scroll-Timer beim Abbau', () => {
+		vi.useFakeTimers();
+		try {
+			const node = document.createElement('input');
+			const aktion = keyboardNav(node, {
+				totalItems: 3,
+				isOpen: true,
+				selectedIndex: -1,
+				onSelect: () => {},
+				onIndexChange: () => {},
+				onEscape: () => {}
+			});
+			taste(node, 'ArrowDown');
+			taste(node, 'ArrowDown');
+			aktion.destroy?.();
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
 });

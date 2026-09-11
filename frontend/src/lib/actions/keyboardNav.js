@@ -43,8 +43,14 @@ export function keyboardNav(node, params) {
 		}
 	}
 
+	// Ein Timer, nicht einer je Pfeil: Der nächste Pfeil ersetzt den offenen, destroy räumt
+	// ihn. Vorher lief er nach dem Abbau weiter (tooltip.js räumt seinen schon so).
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let scrollTimer;
+
 	function scrollIntoView() {
-		setTimeout(() => {
+		clearTimeout(scrollTimer);
+		scrollTimer = setTimeout(() => {
 			const el = document.getElementById(`dropdown-item-${selectedIndex}`);
 			if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 		}, 10);
@@ -68,6 +74,7 @@ export function keyboardNav(node, params) {
 			}
 		},
 		destroy() {
+			clearTimeout(scrollTimer);
 			node.removeEventListener('keydown', handleKeydown);
 		}
 	};
