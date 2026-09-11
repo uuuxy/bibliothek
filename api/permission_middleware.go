@@ -63,6 +63,11 @@ func (s *Server) claimsAusRequest(r *http.Request) (*auth.Claims, int, error) {
 	// (aktiv / nicht gelöscht) direkt in der DB — siehe auth.Authenticator.VerifyToken.
 	// Deshalb ist hier keine zusätzliche Zombie-Session-Prüfung nötig.
 	claims, err := s.Auth.VerifyToken(cookie.Value)
+	if errors.Is(err, auth.ErrPruefungGestoert) {
+		// Datenbank-Aussetzer: abgelehnt, aber nicht als abgelaufene Sitzung. Eine 401
+		// meldet den Arbeitsplatz im Client ab (apiFetch → sitzungAbgelaufen).
+		return nil, http.StatusServiceUnavailable, err
+	}
 	if err != nil {
 		return nil, http.StatusUnauthorized, err
 	}

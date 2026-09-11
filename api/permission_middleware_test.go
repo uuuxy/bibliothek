@@ -290,10 +290,34 @@ func TestRequirePermission_BlacklistDBDownFailsClosed(t *testing.T) {
 	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "buch.ausleihen", req)
 
-	if rr.Code != http.StatusUnauthorized {
-		t.Errorf("fail-closed Blacklist erwartet 401, bekam %d", rr.Code)
+	// 503, nicht 401: Eine 401 meldet den Arbeitsplatz im Client ab (apiFetch →
+	// sitzungAbgelaufen). Ein Datenbank-Aussetzer ist keine abgelaufene Sitzung.
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Errorf("fail-closed Blacklist erwartet 503, bekam %d", rr.Code)
 	}
 	if reached {
 		t.Error("bei nicht verifizierbarem Token darf Handler nicht erreicht werden")
+	}
+}
+
+func TestRequirePermission_KontostatusDBDownIst503(t *testing.T) {
+	s, mock := setupRBAC(t)
+	defer mock.Close()
+
+	mock.ExpectQuery("revoked_tokens").
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
+	mock.ExpectQuery("SELECT aktiv, rolle FROM benutzer").
+		WithArgs(pgxmock.AnyArg()).
+		WillReturnError(errors.New("context deadline exceeded"))
+
+	req := reqWithToken(t, s, auth.RoleKollegium)
+	rr, reached := serve(s, "buch.ausleihen", req)
+
+	if rr.Code != http.StatusServiceUnavailable {
+		t.Errorf("Kontostatus nicht prüfbar: erwartet 503, bekam %d", rr.Code)
+	}
+	if reached {
+		t.Error("bei nicht prüfbarem Kontostatus darf der Handler nicht erreicht werden")
 	}
 }

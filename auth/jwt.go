@@ -110,7 +110,11 @@ func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (stri
 // VerifyToken parst und validiert den bereitgestellten JWT-String und gibt dessen Claims zurück.
 // Es prüft außerdem, ob das Token in der serverseitigen Blacklist widerrufen wurde.
 func (a *Authenticator) VerifyToken(tokenString string) (*Claims, error) {
-	if a.Blacklist.IsBlacklisted(tokenString) {
+	widerrufen, err := a.Blacklist.IsBlacklisted(tokenString)
+	if err != nil {
+		return nil, fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)
+	}
+	if widerrufen {
 		return nil, errors.New("token has been revoked (logged out)")
 	}
 
@@ -154,7 +158,8 @@ func (a *Authenticator) VerifyToken(tokenString string) (*Claims, error) {
 
 // ladeKontoStatus stellt sicher, dass das Konto zum Zeitpunkt des Requests noch existiert
 // und aktiv ist, und liefert dessen AKTUELLE Rolle zurück.
-// Fail-closed wie die Blacklist: bei DB-Fehler wird der Zugriff verweigert.
+// Fail-closed wie die Blacklist: bei DB-Fehler wird der Zugriff verweigert — gemeldet als
+// ErrPruefungGestoert (503), nicht als ungültige Sitzung (401).
 func (a *Authenticator) ladeKontoStatus(userID string) (Role, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
@@ -165,7 +170,7 @@ func (a *Authenticator) ladeKontoStatus(userID string) (Role, error) {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", errors.New("user account no longer exists")
 		}
-		return "", errors.New("account status could not be verified")
+		return "", fmt.Errorf("%w: kontostatus: %v", ErrPruefungGestoert, err)
 	}
 	if !aktiv {
 		return "", errors.New("user account is deactivated")

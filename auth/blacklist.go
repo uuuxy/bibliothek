@@ -66,23 +66,21 @@ func (b *TokenBlacklist) Add(token string, expiresAt time.Time) {
 	}
 }
 
-// IsBlacklisted checks if a token exists in the revoked_tokens table.
-func (b *TokenBlacklist) IsBlacklisted(token string) bool {
+// IsBlacklisted prüft, ob das Token in revoked_tokens steht. Ein Datenbankfehler kommt als
+// Fehler zurück und nicht als „widerrufen": Der Aufrufer lehnt die Anfrage in beiden Fällen
+// ab (fail-closed), antwortet aber verschieden — widerrufen = 401, nicht prüfbar = 503.
+func (b *TokenBlacklist) IsBlacklisted(token string) (bool, error) {
 	hash := hashToken(token)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
 	var exists bool
-	err := b.pool.QueryRow(ctx, `
+	if err := b.pool.QueryRow(ctx, `
 		SELECT EXISTS(SELECT 1 FROM revoked_tokens WHERE token_signature = $1)
-	`, hash).Scan(&exists)
-
-	if err != nil {
-		// Fail-closed: if the DB is down and we can't verify the token isn't revoked,
-		// deny access. This is the safer security posture for a school system.
-		return true
+	`, hash).Scan(&exists); err != nil {
+		return false, err
 	}
-	return exists
+	return exists, nil
 }
 
 // Stop cleanly stops the background cleanup routine.

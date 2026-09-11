@@ -39,10 +39,14 @@ var kollapsBestand = map[string]string{
 	// waren echte DB-Kollapse und sind behoben (MeHandler, Foto, zwei Druck-Handler,
 	// dazu GetBookByID und CreateKlassensatzReservierung). Die folgenden acht sind
 	// semantisch vertretbar — der Fehler IST dort die negative Antwort:
-	"api/csrf.go:CSRFMiddleware":                    "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
-	"api/permission_middleware.go:claimsAusRequest": "Token-Parsefehler = 401; kein DB-Zugriff",
-	"auth/handlers.go:MeHandler":                    "Cookie/Token-Parsefehler = 401 (zwei Stellen); der DB-Kollaps dahinter ist behoben",
-	"auth/handlers.go:RefreshTokenHandler":          "Token-Parsefehler = 401; kein DB-Zugriff",
+	"api/csrf.go:CSRFMiddleware": "Validierungsfehler des Double-Submit = 403; kein DB-Zugriff",
+	// Die drei Token-Stellen lesen über VerifyToken die DB (Sperrliste, Kontostatus). Bis
+	// 11.09.2026 stand hier „kein DB-Zugriff" — falsch seit Juni/August; ein DB-Ausfall
+	// wurde zur 401. Seitdem ordnet die Zeile davor ErrPruefungGestoert als 503 ein; die
+	// verbleibende 401 ist Parse-/Signatur-/Widerrufsfehler bzw. deaktiviertes Konto.
+	"api/permission_middleware.go:claimsAusRequest": "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
+	"auth/handlers.go:MeHandler":                    "Cookie fehlt/Token ungültig = 401 (zwei Stellen); DB-Ausfall als 503 eingeordnet",
+	"auth/handlers.go:RefreshTokenHandler":          "Token ungültig/widerrufen/Konto inaktiv = 401; DB-Ausfall vorher als 503 eingeordnet",
 	// Die drei externen Lookups (DNB, Google, OpenLibrary) sind seit dem 31.08.2026
 	// eingeordnet: Netzausfall = 502 (inventur.ErrKatalogdiensteNichtErreichbar),
 	// erreichbar ohne Treffer = 404 (Produktentscheidung; Sweep docs/sweeps.md).

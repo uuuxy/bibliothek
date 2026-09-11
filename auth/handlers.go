@@ -361,6 +361,12 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 		}
 
 		claims, err := authenticator.VerifyToken(cookie.Value)
+		if errors.Is(err, ErrPruefungGestoert) {
+			// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
+			// meldet der Client ab.
+			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, err)
+			return
+		}
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
 			return
@@ -429,6 +435,12 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 
 		// Verify the existing token is still valid and not revoked
 		claims, err := authenticator.VerifyToken(cookie.Value)
+		if errors.Is(err, ErrPruefungGestoert) {
+			// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
+			// meldet der Client ab.
+			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, err)
+			return
+		}
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
 			return
