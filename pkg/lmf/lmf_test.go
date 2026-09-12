@@ -13,7 +13,7 @@ func TestHatKennung(t *testing.T) {
 	}{
 		{"lmf-Deutsch 5", true},
 		{"LMF-Deutsch 5", true},
-		{"LMF - Deutsch 5", true}, // Leerzeichen um den Bindestrich (der gemeldete Bug von 2026)
+		{"LMF - Deutsch 5", true}, // Leerzeichen um den Bindestrich (der gemeldete Fehler von 2026)
 		{"LMF Deutsch 5", true},
 		{"  lmf-Mathe", true}, // führender Whitespace
 		{"LMF Bio 7 / Nat", true},
