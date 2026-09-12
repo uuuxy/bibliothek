@@ -14,8 +14,13 @@ import { findeVerschluckteFehlantworten } from './fehlerausgangScanner.js';
 //   - Der Ausweis-Designer schrieb nach einem fehlgeschlagenen Laden das VORGABE-Design
 //     an alle Arbeitsplätze — ohne Klick, nur durch Öffnen des Bildschirms (c2be1069).
 //
-// Die siebzehn Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
+// Die sechzehn Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
 // Ausnahmen, KEINE Erlaubnis: Neues gehört behandelt, nicht eingetragen.
+//
+// Ausgetragen am 12.09.2026: der Boot-Restore des authStore. Seine Begründung
+// („Login-Screen IST der richtige Rückfall") stimmte für den Netzwerkfehler, nicht mehr
+// für die Antwort 503 — die seit dem 11.09.2026 heißt „die Sitzung ließ sich nicht
+// prüfen", nicht „sie gilt nicht". Der Zweig behandelt sie jetzt.
 /** @type {Record<string, [number, string]>} */
 const BESTAND = {
 	// — Vorschlagslisten: Ohne sie tippt man den Wert von Hand, nichts geht verloren.
@@ -39,8 +44,6 @@ const BESTAND = {
 	// — Zähler an Menüpunkten: Eine Pille, die fehlt, hält niemanden auf.
 	'src/lib/stores/uiStore.svelte.js': [3, 'Zählerpillen (Reservierungen, Anliegen, Etiketten)'],
 
-	// — Bewusste Entscheidungen mit eigener Begründung im Code.
-	'src/lib/stores/authStore.svelte.js': [1, 'Boot-Restore: Login-Screen IST der richtige Rückfall'],
 	'src/lib/stores/backupStatus.svelte.js': [1, 'kein Abzeichen statt falscher Entwarnung'],
 	'src/lib/components/portal/klassensatzReservierung.svelte.js': [
 		1,

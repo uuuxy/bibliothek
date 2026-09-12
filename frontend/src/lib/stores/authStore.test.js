@@ -105,6 +105,51 @@ describe('authStore Session-Restore (Boot)', () => {
 		expect(authStore.sessionChecked).toBe(true);
 	});
 
+	// Raster-Durchgang 12.09.2026 über die Änderungen vom 11.09.: Seit 5cc80b89 antwortet
+	// der Server bei einem Datenbank-Aussetzer mit 503 statt 401 — damit ein kurzer
+	// Aussetzer nicht alle Arbeitsplätze abmeldet. Der Boot-Restore las aber nur `res.ok`:
+	// Wer währenddessen neu lud, landete trotz gültigem Cookie am Login.
+	it('hält die Sitzung, wenn der Boot-Restore in einen 503 läuft', async () => {
+		vi.useFakeTimers();
+		try {
+			const antworten = [
+				{ ok: false, status: 503 },
+				{ ok: false, status: 503 },
+				{
+					ok: true,
+					status: 200,
+					json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Peter' })
+				}
+			];
+			// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+			globalThis.fetch = vi.fn(async () => antworten.shift());
+
+			const lauf = authStore.restoreSession();
+			await vi.advanceTimersByTimeAsync(5000);
+			await lauf;
+
+			expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+			expect(authStore.isLoggedIn).toBe(true);
+			expect(authStore.sessionChecked).toBe(true);
+		} finally {
+			authStore.stopSessionRefresh();
+			vi.useRealTimers();
+		}
+	});
+
+	// Die Gegenprobe zum Warten: Ein 401 ist die reguläre Antwort für „kein Cookie". Würde
+	// er auch wiederholt, stünde jeder frische Browser sechs Sekunden vor dem Ladekreis.
+	it('wartet bei 401 nicht, sondern zeigt sofort den Login', async () => {
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({ ok: false, status: 401 }));
+
+		await authStore.restoreSession();
+
+		expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+		expect(authStore.isLoggedIn).toBe(false);
+		expect(authStore.sessionChecked).toBe(true);
+	});
+
 	it('handleLogout invalidiert die Session auch serverseitig', () => {
 		authStore.handleLogout();
 		expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/logout', { method: 'POST' });

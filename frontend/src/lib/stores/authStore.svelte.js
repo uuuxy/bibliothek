@@ -4,6 +4,12 @@ import { abonniere, trenne, verbinde } from '../liveEvents.js';
 import { thekeLeeren } from './thekeLeeren.js';
 import { toastStore } from './toastStore.svelte.js';
 
+// Boot-Restore gegen einen Datenbank-Aussetzer: dreimal fragen, 2 s auseinander. Die
+// Frist des Servers bei der Token-Prüfung ist 2 s (auth/jwt.go), ein kurzer Aussetzer ist
+// damit überbrückt; länger darf der Ladekreis vor dem Login nicht stehen.
+const RESTORE_VERSUCHE = 3;
+const RESTORE_WARTEZEIT_MS = 2000;
+
 class AuthStore {
 	isLoggedIn = $state(false);
 	currentUser = $state(/** @type {any} */ (null));
@@ -95,12 +101,27 @@ class AuthStore {
 	 * Boot-Restore: stellt eine bestehende Session aus dem HttpOnly-Cookie wieder her.
 	 * Ohne diesen Check zeigte jeder Reload den Login-Screen (F5 = UI-Logout),
 	 * obwohl die Session serverseitig noch 12h gültig war.
+	 *
+	 * Ein 5xx beantwortet die Frage „gilt diese Sitzung?" nicht — er sagt, dass der Server
+	 * sie gerade nicht prüfen kann. Seit dem 11.09.2026 antwortet er bei einem
+	 * Datenbank-Aussetzer mit 503 statt 401, damit ein Arbeitsplatz nicht abgemeldet wird
+	 * (auth/handlers.go). Hier hieß „nicht ok" trotzdem Login-Bildschirm: Wer während des
+	 * Aussetzers neu lud — F5, Kiosk-Neustart, Bildschirm morgens an — musste sich neu
+	 * anmelden, obwohl sein Cookie noch galt. Deshalb kurz warten und erneut fragen; der
+	 * Boot zeigt so lange den Ladekreis (App.svelte). Ein 401 wartet NICHT: Er ist die
+	 * reguläre Antwort für „kein Cookie", und jeder frische Browser käme sonst erst nach
+	 * Sekunden an den Login.
 	 */
 	async restoreSession() {
 		try {
-			const res = await fetch('/api/auth/me');
-			if (res.ok) {
-				this.#applyLogin(await res.json());
+			for (let versuch = 1; ; versuch++) {
+				const res = await fetch('/api/auth/me');
+				if (res.ok) {
+					this.#applyLogin(await res.json());
+					return;
+				}
+				if (res.status < 500 || versuch >= RESTORE_VERSUCHE) return;
+				await new Promise((fertig) => setTimeout(fertig, RESTORE_WARTEZEIT_MS));
 			}
 		} catch {
 			/* offline/Server weg → Login-Screen ist der richtige Fallback */
