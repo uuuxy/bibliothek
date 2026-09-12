@@ -190,11 +190,25 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
+		// LEFT JOIN auf BEIDE Ausleiher-Arten: Eine Ausleihe an eine Lehrkraft trägt keine
+		// schueler_id, und der frühere INNER JOIN auf schueler ließ sie damit verschwinden
+		// — der Reiter zeigte weniger Ausleiher, als der Titel hat, und wer das Exemplar
+		// suchte, suchte im Regal. Die Klasse 'Lehrer' ist dieselbe Auskunft, die die
+		// Titel-Historie seit dem 22.08.2026 gibt; der Klassenfilter des Reiters liest
+		// genau dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe ab —
+		// laufende trifft die Lesehistorie-Befristung zwar nicht, aber die Antwort soll
+		// auch dann keinen leeren Namen tragen.
 		query := `
-			SELECT s.vorname, s.nachname, s.klasse, s.barcode_id, e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
+			SELECT
+			  COALESCE(s.vorname, b.vorname, 'Anonym') AS vorname,
+			  COALESCE(s.nachname, b.nachname, '') AS nachname,
+			  CASE WHEN a.ausleiher_benutzer_id IS NOT NULL THEN 'Lehrer' ELSE COALESCE(s.klasse, '') END AS klasse,
+			  COALESCE(s.barcode_id, b.barcode_id, '') AS ausleiher_barcode,
+			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			JOIN schueler s ON a.schueler_id = s.id
+			LEFT JOIN schueler s ON a.schueler_id = s.id
+			LEFT JOIN benutzer b ON a.ausleiher_benutzer_id = b.id
 			WHERE e.titel_id = $1 AND a.rueckgabe_am IS NULL
 			ORDER BY a.rueckgabe_frist ASC
 		`
