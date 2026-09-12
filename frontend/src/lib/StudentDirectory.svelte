@@ -1,5 +1,4 @@
 <script>
-	import { apiFetch } from './apiFetch.js';
 	import { onMount } from 'svelte';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import StudentProfile from './StudentProfile.svelte';
@@ -13,6 +12,7 @@
 	import StudentBatchPrint from './components/students/StudentBatchPrint.svelte';
 	import { erzeugeAusweisdruck } from './components/students/ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './components/students/schuelerSuche.svelte.js';
+	import { erzeugeLesergruppen } from './components/students/lesergruppen.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Reiter from './components/ui/Reiter.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
@@ -26,8 +26,8 @@
 
 	let activeStudent = $state(/** @type {any} */ (null));
 
-	/** @type {any[]} */
-	let readerGroups = $state.raw([]);
+	// Vorschlagsliste des Anlegen-Dialogs (eigene Datei, Größen-Ratsche).
+	const gruppen = erzeugeLesergruppen();
 	let showCreateModal = $state(false);
 
 	// Markierte Schüler für den Ausweis-Stapeldruck. Set statt Array: Das Ankreuzen
@@ -80,24 +80,13 @@
 	// gespeicherten Design, die Wege dahinter sind grundverschieden (ausweisdruck.svelte.js).
 	const druck = erzeugeAusweisdruck();
 
-	async function loadClasses() {
-		try {
-			const res = await apiFetch('/api/readergroups');
-			if (res.ok) {
-				readerGroups = (await res.json()) || [];
-			}
-		} catch (err) {
-			console.error('Fehler beim Laden der Lesergruppen:', err);
-		}
-	}
-
 	function handleStudentCreated() {
 		showCreateModal = false;
 		suche.lade();
-		loadClasses(); // Klassenliste aktualisieren
+		gruppen.lade(); // Klassenliste aktualisieren
 	}
 
-	onMount(loadClasses);
+	onMount(gruppen.lade);
 
 	// Reiter nach Absicht (siehe StudentProfile): Wer hier selbst gesucht hat, will
 	// Stammdaten — Elternkontakt, Adressabgleich, Abgangsjahr. Wer aus Mahnwesen oder
@@ -166,6 +155,8 @@
 						<ActiveStudentList
 							filteredStudents={suche.students}
 							loading={suche.beschaeftigt}
+							ladefehler={suche.ladefehler}
+							onErneut={() => suche.lade()}
 							{auswahl}
 							onToggle={toggle}
 							onToggleAlle={toggleAlle}
@@ -181,7 +172,7 @@
 						darfEndgueltigLoeschen={rechte.endgueltigLoeschen}
 						onRestoreSuccess={() => {
 							suche.lade();
-							loadClasses();
+							gruppen.lade();
 						}}
 					/>
 				</div>
@@ -192,7 +183,7 @@
 
 <StudentCreateModal
 	open={showCreateModal}
-	{readerGroups}
+	readerGroups={gruppen.liste}
 	onclose={() => (showCreateModal = false)}
 	onsuccess={handleStudentCreated}
 />

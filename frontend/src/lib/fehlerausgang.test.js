@@ -30,7 +30,10 @@ const BESTAND = {
 	],
 	'src/inventur/lib/components/admin/ClassAssignPicker.svelte': [1, 'Klassennamen als Vorschlag'],
 	'src/lib/GlobalLMFExtendWidget.svelte': [1, 'Klassennamen als Vorschlag'],
-	'src/lib/StudentDirectory.svelte': [1, 'Lesergruppen als Filter-Vorschlag'],
+	'src/lib/components/students/lesergruppen.svelte.js': [
+		1,
+		'Lesergruppen als Vorschlag im Anlegen-Dialog (am 12.09.2026 aus StudentDirectory ausgelagert)'
+	],
 	'src/lib/components/students/KlassenDruckEinstieg.svelte': [
 		1,
 		'Klassenliste; der Weg über die Schülerdatei bleibt'

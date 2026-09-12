@@ -3,7 +3,12 @@ import { render, fireEvent } from '@testing-library/svelte';
 import EhemaligeListe from './EhemaligeListe.svelte';
 import { apiFetch } from '../../apiFetch.js';
 
-vi.mock('../../apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../apiFetch.js', () => ({
+	apiFetch: vi.fn(),
+	// Die echte Auspack-Logik steht in apiFetch.test.js; hier genügt die Form
+	// {"error": …}, die das Backend einheitlich liefert (apierrors.writeJSONError).
+	extractApiError: vi.fn(async (/** @type {any} */ res) => JSON.parse(await res.text()).error)
+}));
 
 // Der Reiter „Ehemalige / Archiv" muss die WEGGEGANGENEN laden (status=ehemalige) —
 // nicht die Abgängerliste, die er bis zum 05.09.2026 eingebettet hatte und die seitdem
@@ -63,5 +68,31 @@ describe('EhemaligeListe', () => {
 			const urls = vi.mocked(apiFetch).mock.calls.map((c) => c[0]);
 			expect(urls).toContain('/api/schueler?status=ehemalige&q=Wera');
 		});
+	});
+
+	// Ein gescheiterter Abruf ist KEINE Trefferliste. Bis zum 12.09.2026 schrieb `if
+	// (res.ok && nr === ladeNr)` die Liste nur im Erfolgsfall — scheiterte die Suche,
+	// blieben die Treffer der VORIGEN Suche stehen, unter dem neuen Suchtext. Genau die
+	// Form, mit der der Sweep „verschluckte Fehlantwort" angefangen hat (die Theke zeigte
+	// unter dem neuen Text die Schüler des alten); der Detektor sah sie nur nicht, weil
+	// die Bedingung ein zweites Glied trägt.
+	it('zeigt nach einem gescheiterten Suchlauf nicht die Treffer von vorher', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(antwort(ehemalige));
+		const { getByRole, findByRole, findByText } = render(EhemaligeListe, { onSelect: () => {} });
+		await findByRole('button', { name: /Wera Weggegangen/ });
+
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: false,
+				status: 500,
+				text: async () => JSON.stringify({ error: 'Datenbank nicht erreichbar' })
+			})
+		);
+		await fireEvent.input(getByRole('searchbox', { name: 'Ehemalige suchen' }), {
+			target: { value: 'Xaver' }
+		});
+
+		expect(await findByText('Datenbank nicht erreichbar')).toBeTruthy();
+		expect(document.body.textContent).not.toContain('Wera Weggegangen');
 	});
 });

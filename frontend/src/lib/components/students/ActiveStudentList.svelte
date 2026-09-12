@@ -6,7 +6,7 @@
   Sie zeigt ein Profilbild, den Namen, die Klasse, die Anzahl der ausgeliehenen Bücher und den Status an.
 -->
 <script>
-	import { BookOpen, ChevronRight } from '@lucide/svelte';
+	import { BookOpen, ChevronRight, ShieldOff } from '@lucide/svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -16,6 +16,9 @@
 	 * @typedef {Object} Props
 	 * @property {any[]} filteredStudents
 	 * @property {boolean} loading
+	 * @property {string} [ladefehler]  gescheiterter Abruf — dann steht hier kein leeres
+	 *   Verzeichnis, sondern der Grund (die Suche der Schülerdatei setzt ihn)
+	 * @property {() => void} [onErneut]
 	 * @property {(s: any) => void} onSelectStudent
 	 * @property {Set<string>} [auswahl]    markierte Schüler-IDs (Ausweis-Stapeldruck)
 	 * @property {(id: string) => void} [onToggle]
@@ -25,6 +28,8 @@
 	let {
 		filteredStudents = [],
 		loading = false,
+		ladefehler = '',
+		onErneut,
 		onSelectStudent = () => {},
 		auswahl = new Set(),
 		onToggle,
@@ -81,6 +86,21 @@
 	{#if loading}
 		<div class="py-16 flex justify-center items-center">
 			<Ladekreis size="lg" />
+		</div>
+	{:else if ladefehler}
+		<!-- Ein gescheiterter Abruf ist kein leeres Verzeichnis: „keine Schüler gefunden"
+		     wäre hier die Auskunft, mit der jemand einen Ausweis neu anlegt, den es gibt. -->
+		<div class="py-16 flex flex-col items-center justify-center gap-2 px-6 text-center">
+			<ShieldOff class="h-10 w-10 text-error" aria-hidden="true" />
+			<span class="text-sm font-semibold text-error">{ladefehler}</span>
+			{#if onErneut}
+				<button
+					onclick={onErneut}
+					class="text-sm font-semibold text-primary underline cursor-pointer"
+				>
+					Erneut versuchen
+				</button>
+			{/if}
 		</div>
 	{:else if filteredStudents.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
