@@ -74,6 +74,7 @@
 			// 'druck-center' ist der App-Route-Name (Router.svelte); 'labels' ist nur der
 			// INTERNE Unter-Tab in DruckCenter. Vorher stand hier 'labels' — den kennt der
 			// Router nicht, also rendert <main> nichts → weiße Seite beim Etikettendruck.
+			uiStore.requestedDruckCenterTab = 'labels';
 			uiStore.activeTab = 'druck-center';
 		}
 	});
