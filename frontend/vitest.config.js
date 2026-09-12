@@ -17,6 +17,8 @@ export default defineConfig({
 	test: {
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		environment: 'jsdom',
+		// Lücken von jsdom, einmal gestopft — siehe vitest.setup.js.
+		setupFiles: ['./vitest.setup.js'],
 		globals: true,
 		// Coverage als lcov für SonarQube. Ohne diesen Bericht zählt dort JEDE Frontend-Zeile
 		// als ungedeckt — SonarQube wertet fehlende Coverage als 0 %, nicht als „unbekannt“

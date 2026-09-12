@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
 import LmfPlanReihenfolge from './LmfPlanReihenfolge.svelte';
 
@@ -52,10 +52,6 @@ async function menue(getByLabelText, getByRole, nummer, eintrag) {
 }
 
 describe('LmfPlanReihenfolge', () => {
-	// jsdom kennt kein scrollIntoView; das Auswahlfeld hält den aktiven Eintrag damit sichtbar.
-	beforeAll(() => {
-		Element.prototype.scrollIntoView = vi.fn();
-	});
 	const start = [
 		{ klassen: ['10R1'], vermerk: '' },
 		{ klassen: ['10R2'], vermerk: '' },
