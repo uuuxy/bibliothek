@@ -211,6 +211,51 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     `scripts/backup.sh` exportiert die ganze `.env`; tote Compose-Variablen `DB_HOST`,
     `SMTP_SENDER`; tote CSS-Klassen in `altlasten.css`; zwei Regexe für die LMF-Kennung.
 
+- **Rasterdurchgang 12.09.2026 über die Änderungen vom 11.09.** (Peter: „wir haben die
+  ganzen Schemata komplett drüberlaufen lassen — überprüfe alles sorgfältig und fahre
+  gegebenenfalls fort"). Anlass ist dieselbe Lücke wie am 05.09.: Der Bestands-Durchgang
+  vom 10.09. endete bei `f67078f3`, danach kamen **sieben Commits** (`4fd4bc42` …
+  `214a5ecd`, sechs davon mit Code, 29 Dateien) — und die waren nie gerastert. Ein
+  Durchgang „über alles" altert ab dem nächsten Commit. Zwölf Fragen über die sechs
+  Code-Commits, dazu die Zwillingsfrage je Fix. Drei Funde, alle behoben und am alten Code
+  rot gesehen:
+
+  - **Fremdrückgabe an der Sperre (`395551f9`).** Der Fix vom 11.09. hängte die
+    Sperrprüfung an `!isReturningThis` — der dritte Fall fiel damit auf die falsche Seite.
+    Wer gesperrt oder am Ausleihlimit war, konnte das Buch eines Mitschülers nicht abgeben,
+    obwohl dabei für ihn keine Ausleihe entsteht; ohne offene Sitzung ging dieselbe
+    Rückgabe durch. Neue Klasse in `sweeps.md`. Der Umbau hätte fast die
+    Reservierungs-Schranke des Handapparats mitgenommen (zweiter Aufrufer derselben
+    Prüfung) — gehalten hat sie `TestHandleLehrerHandapparat_SchranktEin`.
+  - **Boot-Restore gegen den Datenbank-Aussetzer (`8750b897`).** Der Fix vom 11.09. gab dem
+    Aussetzer den eigenen Statuscode 503, damit kein Arbeitsplatz abgemeldet wird — gelernt
+    hatten ihn aber nur die Leser im laufenden Betrieb. Der Boot-Restore las weiter bloß
+    `res.ok`: Wer währenddessen neu lud, stand trotz gültigem Cookie am Login.
+    **Prüfmuster:** Wer einen Statuscode neu einführt, zählt seine Leser — jede Stelle, die
+    `res.ok` oder `status ===` auswertet, nicht nur die, die den Fehler gemeldet hat.
+  - **Zahl der geprüften Bereiche (`a17fc517`).** „Geprüft werden fünfzehn Bereiche" stand
+    im FACHKONZEPT, während `Pruefe` sechzehn lieferte; aufgefallen ist es nur, weil
+    `387a9949` den siebzehnten baute. Jetzt eine Ratsche, in drei Richtungen rot gesehen.
+
+  Offen aus demselben Durchgang:
+
+  - **Der 503 trägt den rohen Datenbank-Text nach draußen (C).** `SendHTTPError` schickt
+    bei allem außer 500 den Fehlertext an den Client und filtert nur, was
+    `istDatenbankFehler` erkennt — SQL-Wortlaute, Constraint-Namen. „connection reset by
+    peer" und „context deadline exceeded" sind keins davon; die Meldung lautet also
+    „sitzung konnte nicht geprüft werden …: sperrliste: connection reset by peer". Kein
+    Schema, keine Daten, aber Betriebsinnenleben in einer Meldung für das Personal.
+  - **Abmelden meldet Erfolg, auch wenn nichts widerrufen wurde (B).** `Blacklist.Add`
+    protokolliert einen Fehlschlag nur als Logzeile; der Handler löscht das Cookie und
+    antwortet `{"status":"ok"}`. Bei einem Datenbank-Aussetzer bleibt das Token bis zum
+    Ablauf gültig (12 h) — die Antwort kommt aus der Eingabe, nicht aus der Wirkung
+    (Frage 5). Gefunden in der Nachbarschaft des Token-Pfads, nicht neu vom 11.09.
+  - **Beobachtung, kein Fund (C):** Die Sperrprüfung liest seit dem 11.09. aus dem Pool,
+    während die Transaktion des Checkouts offen ist (drei Abfragen über eine zweite
+    Verbindung, `FOR UPDATE` gehalten). Bei `MaxConns = 50` und einer Handvoll
+    Arbeitsplätzen ohne Wirkung; die Form — Pool-Abfrage in offener Transaktion — ist die,
+    die bei kleinem Pool in den Stillstand läuft.
+
 ## Offen — Entscheidung nötig (Peter)
 
 Was einem Menschen zur Entscheidung vorgelegt wird, gehört HIER hin, bevor die Antwort
