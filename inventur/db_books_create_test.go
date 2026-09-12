@@ -138,7 +138,7 @@ func TestUpsertBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	upsertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, COALESCE\(NULLIF\(\$10, 0\), 5\), COALESCE\(NULLIF\(\$11, 0\), 10\), \$12, \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel RETURNING id`
+	upsertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, COALESCE\(NULLIF\(\$11, 0\), 5\), COALESCE\(NULLIF\(\$12, 0\), 10\), \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -152,7 +152,7 @@ func TestUpsertBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -182,7 +182,7 @@ func TestUpsertBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()

@@ -44,28 +44,8 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	defer db.SafeRollback(ctx, tx)
 
 	var id string
-	err = tx.QueryRow(
-		ctx,
-		query,
-		book.ISBN,
-		book.Title,
-		book.Author,
-		book.CoverURL,
-		kanonisch[book.Subject],
-		book.GradeLevel,
-		book.Track,
-		book.LastCounted,
-		medientyp,
-		properties,
-		book.JahrgangVon,
-		book.JahrgangBis,
-		book.Untertitel,
-		book.Verlag,
-		book.Erscheinungsjahr,
-		book.Beschreibung,
-		book.Signatur,
-		book.IstLernmittel,
-	).Scan(&id)
+	args := buildBookArgs(book, kanonisch[book.Subject], medientyp, properties, book.Signatur, book.IstLernmittel)
+	err = tx.QueryRow(ctx, query, args...).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
 	}
@@ -330,8 +310,8 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	}
 
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel)
-		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10), $12, $13, $14, $15, $16, NULLIF($17, ''), $18)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, COALESCE(NULLIF($11, 0), 5), COALESCE(NULLIF($12, 0), 10), $13, $14, $15, $16, NULLIF($17, ''), $18)
 		` + titelBeiKonflikt + `
 		RETURNING id`
 
@@ -354,28 +334,8 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 	defer db.SafeRollback(ctx, tx)
 
 	var id string
-	err = tx.QueryRow(
-		ctx,
-		query,
-		book.ISBN,
-		book.Title,
-		book.Author,
-		book.CoverURL,
-		kanonisch[book.Subject],
-		book.GradeLevel,
-		book.Track,
-		book.LastCounted,
-		medientyp,
-		book.JahrgangVon,
-		book.JahrgangBis,
-		book.Untertitel,
-		book.Verlag,
-		book.Erscheinungsjahr,
-		book.Beschreibung,
-		properties,
-		book.Signatur,
-		book.IstLernmittel,
-	).Scan(&id)
+	args := buildBookArgs(book, kanonisch[book.Subject], medientyp, properties, book.Signatur, book.IstLernmittel)
+	err = tx.QueryRow(ctx, query, args...).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
 	}
@@ -391,4 +351,29 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 		return "", fmt.Errorf("buch konnte nicht importiert werden: %w", err)
 	}
 	return id, nil
+}
+
+// buildBookArgs bündelt die Parameter, die für die Datenbank-Anweisungen zu buecher_titel
+// benötigt werden (Titel, Autor, etc.).
+func buildBookArgs(book Book, subject string, medientyp string, properties map[string]any, additionalArgs ...any) []any {
+	args := []any{
+		book.ISBN,
+		book.Title,
+		book.Author,
+		book.CoverURL,
+		subject,
+		book.GradeLevel,
+		book.Track,
+		book.LastCounted,
+		medientyp,
+		properties,
+		book.JahrgangVon,
+		book.JahrgangBis,
+		book.Untertitel,
+		book.Verlag,
+		book.Erscheinungsjahr,
+		book.Beschreibung,
+	}
+	args = append(args, additionalArgs...)
+	return args
 }
