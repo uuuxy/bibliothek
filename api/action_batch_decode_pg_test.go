@@ -80,7 +80,7 @@ func TestActionBatch_ArrayBodyWirdAngenommen(t *testing.T) {
 	}
 
 	// Leerer Query-Eintrag: kein 400 für den ganzen Stapel, sondern ein
-	// Fehler-Item — die Prüfung sitzt seit dem Fix ausschließlich je Eintrag.
+	// Fehler-Item — die Prüfung sitzt seit der Lösung ausschließlich je Eintrag.
 	req2 := httptest.NewRequest(http.MethodPost, "/api/action/batch",
 		strings.NewReader(`[{"query":""}]`))
 	req2.Header.Set("Content-Type", "application/json")
