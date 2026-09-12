@@ -34,8 +34,13 @@ func TestLogoutCookieFolgtDerKonfiguration(t *testing.T) {
 			t.Cleanup(a.Blacklist.Stop)
 			s := &Server{DB: &db.Database{Pool: mock}, Auth: a, CookieSecure: secure}
 
-			// Unbrauchbares Token: VerifyToken scheitert an der Signatur, noch bevor
-			// die Datenbank gefragt wird — der Handler loescht das Cookie trotzdem.
+			// Unbrauchbares Token: Die Sperrliste antwortet, VerifyToken scheitert
+			// danach an der Signatur — es gibt nichts zu widerrufen, der Handler
+			// loescht das Cookie und meldet 200. (Antwortet die Datenbank NICHT, ist
+			// die Abmeldung unvollstaendig: logout_widerruf_test.go.)
+			mock.ExpectQuery("revoked_tokens").
+				WithArgs(pgxmock.AnyArg()).
+				WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
 			req := httptest.NewRequest(http.MethodPost, "/api/logout", nil)
 			req.AddCookie(&http.Cookie{Name: "session_token", Value: "kein.gueltiges.token"})
 			rec := httptest.NewRecorder()
