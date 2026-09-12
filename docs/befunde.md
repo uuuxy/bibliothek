@@ -68,9 +68,17 @@ Zwei Regeln dazu:
   „Nachzügler"/„Aufräumen" nicht, und der Pre-Push-Hook lässt die `*_pg_test.go` aus).
   Hier bleibt nur, was offen ist:
 
-  - **`ohne_rueckgabe_termin` geht ans Kollegium, das es nie zeigt (C).**
-    `GET /api/lmf-termine` füllt das Feld für jeden Aufrufer; `PortalLmfPlan.svelte` liest
-    es nicht. Klassennamen, kein Schülerbezug — Über-Auslieferung ohne Schaden.
+  - **`ohne_rueckgabe_termin` geht ans Kollegium, das es nie zeigt (C, Entscheidung
+    nötig).** `GET /api/lmf-termine` füllt das Feld für jeden Aufrufer; `PortalLmfPlan.svelte`
+    liest es nicht. Klassennamen, kein Schülerbezug — Über-Auslieferung ohne Schaden.
+    Nachgesehen am 12.09.2026: Das Feld ist kein Versehen, sondern **Entscheidung 3c**
+    („leer starten, aber zeigen, wer noch fehlt") — nur sitzt es an der falschen Tür. Der
+    Portal-Aufruf ist der EINZIGE Leser von `GET /api/lmf-termine`, und der Planer, für
+    den der Hinweis gedacht war, lädt über `GET /api/lmf-plan/{art}`. Drei Wege, einer
+    davon ist zu wählen: (a) den Hinweis an die Planer-Tür umhängen und dort zeigen —
+    dann wird die Entscheidung endlich sichtbar; (b) ersatzlos streichen, weil der Planer
+    dieselbe Auskunft als „Nicht im Plan" schon hat (dann fällt auch
+    `KlassenOhneRueckgabeTermin` samt Test); (c) so lassen. Empfehlung: (a).
   - **Portal-Menü und Portal-Route messen verschieden (C).** Das Menü „Mein Portal"
     verlangt `create_reservations`, `GET /api/lmf-termine` und dessen PDF nur eine
     Sitzung. Ein HELFER sieht den Menüpunkt nie, kann den veröffentlichten Plan aber
@@ -85,10 +93,10 @@ Zwei Regeln dazu:
 lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je_tag`
     und `len(plaetze) == len(zeilen)` stehen in Go bzw. im Kommentar, nicht in der
     Datenbank. Heute unerreichbar (ein Schreiber), am frischen Postgres nachgemessen.
-  - **Kleinkram (C):** `leererEntwurf()` startstunde 1 gegen Server-Vorgabe 2 (heute
-    verdeckt, weil der Vorschlag immer gewinnt); Vorschau-Antwort liefert `klassen: null`,
-    Speicher- und Leseantwort `[]`; `LmfPlan.test.js` wartet 400 ms gegen 250 ms
-    Entprellung; die drei Browser-Gates öffnen die neuen Planer-Dialoge nicht.
+  - **Kleinkram (C):** Startstunde, Vorschau-Form und die Wartezeit der Entprellung sind
+    am 12.09.2026 erledigt (`a5d2a6f6`, `cc7bc392`, `c672183e`) — je mit einem Gate, das
+    die Zahl nicht wieder auseinanderlaufen lässt. Offen: die drei Browser-Gates öffnen
+    die neuen Planer-Dialoge nicht.
 
 - **Bestands-Durchgang 06.09.2026 abends** (Peter: „löse alles professionell … belege und
   überprüfe wirklich alles am Code"). Anlass ist eine Frage, die eine Antwort verdient hat:
