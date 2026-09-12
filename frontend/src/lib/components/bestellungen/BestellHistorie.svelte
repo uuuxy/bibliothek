@@ -3,8 +3,8 @@
 	import { apiGet } from '../../apiFetch.js';
 	import BestellDetail from './BestellDetail.svelte';
 	import BestellHistorieTabelle from './BestellHistorieTabelle.svelte';
-	import { orderStore } from '../../stores/orderStore.svelte.js';
-	import { Clock } from '@lucide/svelte';
+	import BestellHistorieKopf from './BestellHistorieKopf.svelte';
+	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 
 	/** @type {any[]} */
 	let bestellungen = $state([]);
@@ -12,13 +12,28 @@
 	/** @type {string|null} Bestellung, deren Detailansicht offen ist (null = Liste). */
 	let geoeffneteId = $state(null);
 
-	/** @type {{gesamt: number, gesamtbetrag: number, gesamt_exemplare: number, offene_bestaetigungen: number}} */
+	/** @type {{gesamt: number, gesamtbetrag: number, gesamt_exemplare: number, offene_bestaetigungen: number, nach_mittel: any[]}} */
 	let uebersicht = $state({
 		gesamt: 0,
 		gesamtbetrag: 0,
 		gesamt_exemplare: 0,
-		offene_bestaetigungen: 0
+		offene_bestaetigungen: 0,
+		nach_mittel: []
 	});
+
+	// Der Topf-Filter. Gefiltert wird SERVERSEITIG: Die Liste ist auf die neuesten 200
+	// Bestellungen gedeckelt, ein Filter im Browser zeigte also nur, was davon übrig
+	// bleibt. „ohne" sind die Alt-Bestellungen ohne eindeutige Zuordnung — genau sie
+	// sucht, wer den Topf im Detail nachträgt.
+	let mittel = $state('');
+	const mittelFilter = [
+		{ value: '', label: 'Alle Mittel' },
+		...MITTEL_REIHENFOLGE.map((m) => ({
+			value: m,
+			label: `${MITTEL[m].label} (${MITTEL[m].traeger})`
+		})),
+		{ value: 'ohne', label: 'ohne Zuordnung' }
+	];
 
 	async function ladeBestellungen() {
 		// Zwei Anfragen mit Absicht: Die Liste ist auf die neuesten Bestellungen gedeckelt
@@ -27,7 +42,7 @@
 		// gerechnet, stünde dort nach dem Deckeln eine zu kleine Zahl — die aussieht wie eine
 		// Gesamtsumme.
 		const [liste, summen] = await Promise.all([
-			apiGet('/api/bestellhistorie'),
+			apiGet('/api/bestellhistorie' + (mittel ? `?mittel=${mittel}` : '')),
 			apiGet('/api/bestellhistorie/uebersicht')
 		]);
 		bestellungen = liste || [];
@@ -42,7 +57,26 @@
 	// Serverseitig gezählt: Eine wartende Bestellung darf nicht deshalb unsichtbar bleiben,
 	// weil sie hinter dem Listen-Limit liegt.
 	let offeneBestaetigungen = $derived(uebersicht.offene_bestaetigungen);
-	let gekappt = $derived(uebersicht.gesamt > bestellungen.length);
+	// Gekappt heißt „die Liste zeigt nicht alles" — und das ist beim gefilterten Blick
+	// die Zahl DIESES Topfes, nicht die aller Bestellungen. Sonst stünde unter einer
+	// vollständigen Liste „Neueste 2 von 137".
+	let gesamtImBlick = $derived(
+		mittel === ''
+			? uebersicht.gesamt
+			: (uebersicht.nach_mittel?.find(
+					(/** @type {any} */ t) => t.mittel === (mittel === 'ohne' ? '' : mittel)
+				)?.gesamt ?? bestellungen.length)
+	);
+	let gekappt = $derived(gesamtImBlick > bestellungen.length);
+	// Die Aufteilung im Kopf: Was steckt in den Gesamtzahlen je Topf? Nur Zeilen mit
+	// Bestellungen — „Schülerbücherei: 0" sagt nichts, was die Zeile darüber nicht schon
+	// sagt.
+	let aufteilung = $derived(
+		(uebersicht.nach_mittel ?? []).filter((/** @type {any} */ t) => t.gesamt > 0)
+	);
+	/** @param {string} wert */
+	const topfLabel = (wert) =>
+		wert && wert in MITTEL ? `${MITTEL[/** @type {any} */ (wert)].label}` : 'ohne Zuordnung';
 
 	/** @param {number} n */
 	function euro(n) {
@@ -91,39 +125,18 @@
 	<BestellDetail bestellungId={geoeffneteId} onBack={zurueck} />
 {:else}
 	<div class="space-y-6">
-		<div class="flex items-center justify-between border-b border-slate-200 pb-4">
-			<div>
-				<h2 class="text-base font-bold text-slate-800">Bestellhistorie</h2>
-				<p class="text-sm text-slate-500 mt-0.5">
-					Alle aufgegebenen Bestellungen — automatisch erfasst beim Bestellen
-				</p>
-				<!-- Nur wenn wirklich etwas aussteht. „Alles bestätigt" jeden Tag zu lesen, wäre
-			     dieselbe Zeile ohne Nachricht — auffallen soll die Abweichung. Wer den Satz
-			     sieht, weiß ohne Scrollen, dass in der Statusspalte etwas auf ihn wartet. -->
-				{#if offeneBestaetigungen > 0}
-					<p class="mt-2 flex items-center gap-1.5 text-sm font-medium text-amber-700">
-						<Clock size={15} aria-hidden="true" />
-						{offeneBestaetigungen === 1
-							? '1 Bestellung wartet noch auf die Bestätigung des Händlers'
-							: `${offeneBestaetigungen} Bestellungen warten noch auf die Bestätigung des Händlers`}
-					</p>
-				{/if}
-			</div>
-			<!-- Ohne Preiserfassung ist "Gesamtausgaben 0,00 €" keine Auskunft, sondern eine
-		     falsche: Die Schule hat ausgegeben, nur steht es nirgends. Dann lieber die Zahl
-		     nennen, die stimmt. -->
-			{#if bestellungen.length > 0}
-				<div class="text-right">
-					{#if orderStore.preiseErfassen}
-						<div class="text-xs text-slate-400 font-semibold">Gesamtausgaben</div>
-						<div class="text-2xl font-black text-slate-800">{euro(gesamtsumme)}</div>
-					{:else}
-						<div class="text-xs text-slate-400 font-semibold">Bestellte Exemplare</div>
-						<div class="text-2xl font-black text-slate-800">{gesamtExemplare}</div>
-					{/if}
-				</div>
-			{/if}
-		</div>
+		<BestellHistorieKopf
+			{offeneBestaetigungen}
+			{gesamtsumme}
+			{gesamtExemplare}
+			{aufteilung}
+			{euro}
+			{topfLabel}
+			{mittelFilter}
+			zeigeKennzahlen={bestellungen.length > 0}
+			bind:mittel
+			onFilterWechsel={ladeBestellungen}
+		/>
 
 		{#if loading}
 			<div class="py-16 text-center text-slate-400 text-base animate-pulse">
@@ -131,8 +144,13 @@
 			</div>
 		{:else if bestellungen.length === 0}
 			<div class="py-16 text-center text-slate-400 text-base">
-				Noch keine Bestellungen aufgegeben.<br />
-				<span class="text-sm">Bestellungen werden hier automatisch gespeichert.</span>
+				{#if mittel}
+					Keine Bestellungen in diesem Topf.<br />
+					<span class="text-sm">Andere Mittelherkunft wählen, um alle zu sehen.</span>
+				{:else}
+					Noch keine Bestellungen aufgegeben.<br />
+					<span class="text-sm">Bestellungen werden hier automatisch gespeichert.</span>
+				{/if}
 			</div>
 		{:else}
 			<BestellHistorieTabelle {bestellungen} {euro} {datum} {kurzdatum} onOeffnen={oeffne} />
@@ -141,7 +159,7 @@
 		     ältere Bestellung, findet sie nicht und hält sie für gelöscht. -->
 			{#if gekappt}
 				<p class="text-center text-xs text-slate-400">
-					Neueste {bestellungen.length} von {uebersicht.gesamt} Bestellungen — ältere stehen im Bericht.
+					Neueste {bestellungen.length} von {gesamtImBlick} Bestellungen — ältere stehen im Bericht.
 				</p>
 			{/if}
 		{/if}

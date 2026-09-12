@@ -108,7 +108,16 @@ func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 			}
 		}
 
-		orders, orderIndex, err := s.ladeBestellhistorie(ctx, limit)
+		// Der Topf-Filter: Die Liste ist gedeckelt, gefiltert wird deshalb im SQL und
+		// nicht im Browser — sonst zeigte „Lernmittelfreiheit" nur, was von den neuesten
+		// 200 Bestellungen übrig bleibt.
+		mittel := r.URL.Query().Get("mittel")
+		if !mittelFilterGueltig(mittel) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, mittelFilterFehler(mittel))
+			return
+		}
+
+		orders, orderIndex, err := s.ladeBestellhistorie(ctx, limit, mittel)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -130,11 +139,12 @@ func (s *Server) GetBestellhistorieHandler() http.HandlerFunc {
 
 // ladeBestellhistorie lädt alle Bestellköpfe (neueste zuerst) und einen Index
 // Bestell-ID → Position im Slice für das spätere Zuordnen der Positionen.
-func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellVerlaufResponse, map[string]int, error) {
+func (s *Server) ladeBestellhistorie(ctx context.Context, limit int, mittel string) ([]BestellVerlaufResponse, map[string]int, error) {
 	// Kein JOIN auf lieferanten mehr nötig: Beide Bestätigungs-Angaben stehen an der
 	// Bestellung selbst. Das ist auch der Grund, warum eine Bestellung ihren gelöschten
 	// Lieferanten als vollständiger Beleg überlebt (lieferant_id ON DELETE SET NULL).
-	rows, err := s.DB.Pool.Query(ctx, `
+	args := []any{limit}
+	abfrage := `
 		SELECT b.id, b.lieferant_name, b.lieferant_email, b.kundennummer, b.bestelldatum,
 		       b.gesamtbetrag, b.anzahl_exemplare,
 		       b.bestaetigungs_token_hash IS NOT NULL,
@@ -143,9 +153,18 @@ func (s *Server) ladeBestellhistorie(ctx context.Context, limit int) ([]BestellV
 		        AND (b.token_gueltig_bis IS NULL OR b.token_gueltig_bis > now())),
 		       b.token_gueltig_bis, coalesce(b.mittel, '')
 		FROM bestellungen_verlauf b
+		WHERE true`
+	if bedingung, arg := mittelBedingung(mittel, "b.mittel", len(args)+1); bedingung != "" {
+		abfrage += bedingung
+		if arg != nil {
+			args = append(args, arg)
+		}
+	}
+	abfrage += `
 		ORDER BY b.bestelldatum DESC
-		LIMIT $1
-	`, limit)
+		LIMIT $1`
+
+	rows, err := s.DB.Pool.Query(ctx, abfrage, args...)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -70,7 +70,7 @@ func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel 
 	}
 	// Ist der Bericht auf einen Topf gefiltert, gehört das in die Überschrift: Ein Blatt
 	// ohne diesen Zusatz sieht aus wie der Gesamtbericht und wird auch so abgelegt.
-	if beschriftung := mittelBeschriftung(mittel); mittel != "" && beschriftung != "" {
+	if beschriftung := mittelBeschriftung(mittelDatenwert(mittel)); mittel != "" && beschriftung != "" {
 		titel += " — " + beschriftung
 	}
 	return titel
@@ -89,9 +89,11 @@ func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Tim
 		args = append(args, lieferantID)
 		orderQuery += fmt.Sprintf(" AND lieferant_id = $%d", len(args))
 	}
-	if mittel != "" {
-		args = append(args, mittel)
-		orderQuery += fmt.Sprintf(" AND mittel = $%d", len(args))
+	if bedingung, arg := mittelBedingung(mittel, "mittel", len(args)+1); bedingung != "" {
+		orderQuery += bedingung
+		if arg != nil {
+			args = append(args, arg)
+		}
 	}
 	orderQuery += " ORDER BY bestelldatum ASC"
 
@@ -179,10 +181,8 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		// stiller Gesamtbericht: Sonst prüfte das Sekretariat die Landes-Rechnung gegen
 		// eine Liste, in der auch die Schülerbücherei steht.
 		mittel := q.Get("mittel")
-		if mittel != "" && !repository.MittelGueltig(mittel) {
-			apierrors.SendHTTPError(w, http.StatusBadRequest,
-				fmt.Errorf("unbekannter Topf %q — erlaubt sind %q und %q",
-					mittel, repository.MittelLand, repository.MittelSchultraeger))
+		if !mittelFilterGueltig(mittel) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, mittelFilterFehler(mittel))
 			return
 		}
 		jahresansicht := q.Get("jahresansicht") == "true"
