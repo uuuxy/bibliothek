@@ -41,11 +41,6 @@ type RueckkehrBefund struct {
 	AufsichtInformieren []string
 }
 
-// Betroffen sagt, ob überhaupt etwas zu melden ist.
-func (b RueckkehrBefund) Betroffen() bool {
-	return b.StornierteForderungen > 0 || len(b.AufsichtInformieren) > 0
-}
-
 // VerbucheRueckkehr behandelt die offenen „nicht zurückgegeben"-Forderungen eines
 // Exemplars, das wieder aufgetaucht ist.
 //
