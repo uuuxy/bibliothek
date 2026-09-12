@@ -168,6 +168,11 @@ sind, warum das zählt und wie man sie los wird (`shred -u uploads/fotos/*.jpg`)
 FOTOS_BEHALTEN=1 docker compose exec backend ./migrate-fotos
 ```
 
+> **Im Image seit 12.09.2026.** Bis dahin nannte dieser Abschnitt den Aufruf, ohne dass
+> das Werkzeug je im Container lag (das Dockerfile baute es nicht, der Schulserver hat
+> kein Go) — dafür lag ein fertiges Binary im Repo. Dass jedes hier genannte Werkzeug
+> auch im Image liegt, hält jetzt ein Gate fest (`docs/werkzeuge_im_image_test.go`).
+
 > **Auf dem Schulserver prüfen:** Der Lauf von vor dem 23.08.2026 hat nichts gelöscht.
 > `docker compose exec backend ls -la uploads/fotos` sagt, ob dort noch Altbestand liegt.
 

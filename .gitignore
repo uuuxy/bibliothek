@@ -11,10 +11,21 @@ frontend/dist/
 frontend/dist-ssr/
 
 # Kompilierte Go-Binaries im Repo-Root (root-verankert, damit cmd/-Pakete unberührt bleiben)
+#
+# Die Liste folgt cmd/ — sie stand auf einem Stand, den es nicht mehr gibt
+# (`/migrate_photos`), und genau daneben lag am 12.09.2026 ein 14 MB großes
+# `migrate-fotos` im Repo (Register, Bestands-Durchgang 10.09.2026). Gebaut wird das
+# Werkzeug im Image (Dockerfile), nicht im Arbeitsverzeichnis.
 /bibliothek
+/encrypt-backup
+/littera-altbestand
+/littera-import
 /migrate
-/migrate_photos
+/migrate-fotos
 /restore-backup
+/rotate-encryption-key
+/seed
+/stresstest
 
 # User uploads & data
 uploads/

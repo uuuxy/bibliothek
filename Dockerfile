@@ -80,6 +80,16 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o restore-backup ./cmd/r
 # den Klartext offen ab (Befund A5); mit diesem Werkzeug im Container verschlüsseln sie
 # über dieselbe Ableitung wie der Job — ohne den Schlüssel je an den Host zu reichen.
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o encrypt-backup ./cmd/encrypt-backup
+# Einmal-Werkzeug der Foto-Migration (docs/SCRIPTS.md 2). Es gehört aus demselben Grund
+# ins Image wie die drei darüber: docs/SCRIPTS.md nennt seit jeher den Aufruf
+# `docker compose exec backend ./migrate-fotos` — im Image lag es aber nie, und der
+# Schulserver hat kein Go. Statt dessen lag ein 14-MB-Binary IM REPO, gebaut irgendwann
+# auf irgendeinem Rechner (Register, Bestands-Durchgang 10.09.2026).
+#
+# CGO_ENABLED=0 wie die drei darüber — nachgemessen: Das Werkzeug baut ohne cgo (es
+# zieht die WebP-Bibliothek nicht mit), und ein zweiter cgo-Durchlauf je Deploy wäre
+# der Preis für eine Abhängigkeit, die es nicht hat.
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o migrate-fotos ./cmd/migrate-fotos
 
 # ==============================================================================
 # Stage 3: Runner container
@@ -131,6 +141,9 @@ COPY --from=backend-builder /app/restore-backup .
 # Verschlüsselung für die Shell-Wege (docs/resilience_and_recovery.md 1b):
 #   … | docker exec -i bibliothek-backend ./encrypt-backup > <datei>.sql.gz.enc
 COPY --from=backend-builder /app/encrypt-backup .
+# Foto-Migration, einmalig beim Umstieg (docs/SCRIPTS.md 2):
+#   docker compose exec backend ./migrate-fotos
+COPY --from=backend-builder /app/migrate-fotos .
 
 # Copy built Svelte static files
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
