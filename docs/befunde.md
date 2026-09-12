@@ -165,13 +165,14 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
   - **Schäden/Benutzer (B):** `MarkCopyDefekt` trägt ohne Schüler den klickenden
     BEARBEITER als Verantwortlichen ein, zwei Leser nennen ihn „Schuldner"; `DeleteUser`
     prüft offene Schäden nicht.
-  - **Bescheid (B):** Verleihjahr zählt Ausleihen und Kalenderjahre statt Schuljahre;
-    Kassenjahr = Jahr der Frist (Dezember-Brief zählt ins Folgejahr); Frist serverseitig
+  - **Bescheid (B):** Kassenjahr = Jahr der Frist (Dezember-Brief zählt ins Folgejahr); Frist serverseitig
     unbegrenzt (Vergangenheit = sofort übergabefähig); Nachdruck liest Bank/Aufsicht live
     aus den Einstellungen; Rechnung und Elternbrief führen Bescheid-Positionen weiter mit
     „bar in der Bibliothek" (zwei Zahlungswege für eine Forderung, Etappe 4); Einstieg nur
     über überfällige Ausleihen — wer „nur" eine Forderung hat, bekommt keinen Bescheid;
-    `aussonderung_grund` bleibt BESCHAEDIGUNG auch bei Verlust; `tabula_rasa.sql` leert
+    `aussonderung_grund` bleibt BESCHAEDIGUNG auch bei Verlust (Nachtrag 12.09.2026: Damit
+    findet der Fehlbestandsbericht diese Exemplare nicht — sein „Buch doch gefunden" sucht
+    `VERLUST`. Solange die Rückkehr über die Theke läuft, fällt es nicht auf); `tabula_rasa.sql` leert
     `schadensersatz_nummern` nicht.
   - **Bestand/Katalog (B):** Massenlöschen `DELETE /api/books` hängt an `edit_books`,
     Einzellöschen an `delete_books`; Ausleiher-Reiter der Buchakte verschweigt
