@@ -65,6 +65,26 @@ const BESTAND = {
 	'src/lib/components/students/StudentBatchPrint.svelte': [
 		1,
 		'Ausweis-Design; Vorschau zeigt, was gedruckt wird'
+	],
+
+	// — Seit dem 12.09.2026 sieht der Detektor zwei weitere Formen (UND-Kette und
+	//   `? … : neutraler Wert`). Was er dabei fand, ist behoben; diese drei bleiben, weil
+	//   sie den Fehler BEHANDELN — sie sehen nur aus wie die Form.
+	'src/lib/Monitor.svelte': [
+		1,
+		'Flur-Monitor: null heißt „nichts Neues" — der Takt behält die Folien und versucht es wieder (monitorTakt.svelte.js)'
+	],
+	'src/lib/useBookAkte.svelte.js': [
+		1,
+		'leerer Kopf MIT Meldung: die Zeile darunter setzt `kopfFehler`, und die Akte zeigt „Titel nicht geladen" statt „Buch nicht gefunden" (12.09.2026)'
+	],
+	'src/lib/components/students/zusammenfuehrenSuche.svelte.js': [
+		1,
+		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus extractApiError'
+	],
+	'src/lib/useStudentProfile.svelte.js': [
+		4,
+		'bewusst zugewiesen (06.09.2026): Scheitert eine der vier Anfragen, dürfen NICHT die Werte des vorher geöffneten Schülers stehen bleiben — die Gebühren-Karte schreibt auf die Fall-ID der Zeile'
 	]
 };
 
@@ -95,6 +115,36 @@ describe('Sweep: verschluckte Fehlantworten', () => {
 				if (res.ok) { daten = await res.json(); } else { melde('fehlgeschlagen'); }
 			}`;
 		expect(findeVerschluckteFehlantworten('probe.js', mitElse)).toHaveLength(0);
+
+		// Seit dem 12.09.2026: die UND-Kette. Die Wettlauf-Form der Suchfelder
+		// (`if (res.ok && nr === ladeNr)`) rutschte vorher durch — und das ist die Stelle,
+		// an der der Sweep angefangen hat.
+		const undKette = `
+			async function f() {
+				const res = await fetch('/x');
+				if (res.ok && nr === ladeNr) { daten = await res.json(); }
+				weiter(daten);
+			}`;
+		expect(findeVerschluckteFehlantworten('probe.js', undKette)).toHaveLength(1);
+
+		// Und der Dreisatz mit neutralem Ersatzwert: Der Fehlerzweig existiert, setzt aber
+		// „nichts" — auf dem Bildschirm nicht von „nichts gefunden" zu unterscheiden.
+		const neutralerErsatz = `
+			async function f() {
+				const res = await fetch('/x');
+				liste = res.ok ? await res.json() : [];
+			}`;
+		expect(findeVerschluckteFehlantworten('probe.js', neutralerErsatz)).toHaveLength(1);
+
+		// Ein Ersatzwert, der etwas AUSSAGT, ist Fehlerbehandlung — kein Fund. Sonst
+		// stünde die halbe Anwendung im Bestand und die Ratsche wäre wertlos.
+		const sprechenderErsatz = `
+			async function f() {
+				const res = await fetch('/x');
+				melde(res.ok ? 'gespeichert' : 'fehlgeschlagen');
+				zustand = res.ok ? 'saved' : 'error';
+			}`;
+		expect(findeVerschluckteFehlantworten('probe.js', sprechenderErsatz)).toHaveLength(0);
 
 		const inSvelte = `<script>
 			async function f() {

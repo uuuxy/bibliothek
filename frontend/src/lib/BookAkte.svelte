@@ -8,6 +8,7 @@
 	import BookAkteMeta from './BookAkteMeta.svelte';
 	import { useBookAkte } from './useBookAkte.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { hatRecht } from './menu.js';
 	import { ChevronLeft, Frown } from '@lucide/svelte';
@@ -122,6 +123,14 @@
 				<BookVormerkungenTab bind:vormerkungen={akte.vormerkungen} book={akte.book} />
 			{/if}
 		</div>
+	{:else if akte.kopfFehler}
+		<!-- „Nicht gefunden" wäre hier eine Aussage über den Bestand. Der Abruf ist
+		     gescheitert — den Titel gibt es womöglich, es kam nur nichts an. -->
+		<LadeFehler
+			onerneut={() => bookId && akte.loadAll(bookId)}
+			titel="Titel nicht geladen"
+			text={akte.kopfFehler}
+		/>
 	{:else}
 		<div class="py-24 flex flex-col items-center text-slate-400 gap-3">
 			<Frown class="w-12 h-12" aria-hidden="true" />

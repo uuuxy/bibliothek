@@ -17,7 +17,13 @@ import { apiFetch } from './apiFetch.js';
 //   „Gesamten Titel löschen" schickt `book.id`. Stand dort noch der VORIGE Titel, fällt
 //   dieser — mit allen Exemplaren, Ausleihen und offenen Forderungen —, während die
 //   Rückfrage die Exemplarzahl des neuen nannte.
-vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('./apiFetch.js', () => ({
+	apiFetch: vi.fn(),
+	extractApiError: vi.fn(async (/** @type {any} */ res) => {
+		const text = await res.text();
+		return text ? JSON.parse(text).error : `Fehler ${res.status}`;
+	})
+}));
 vi.mock('../inventur/lib/store.svelte.js', () => ({
 	appState: { selectedBook: null, bookToEdit: null, requestAdminView: false, activeBookId: null },
 	showToast: vi.fn()
@@ -101,6 +107,37 @@ describe('useBookAkte.loadAll', () => {
 
 		expect(akte.fehlendeListen).toEqual(['Ausleiher', 'Historie']);
 		expect(akte.borrowers, 'die Anzeige braucht trotzdem ein Array').toEqual([]);
+	});
+
+	// „Buch nicht gefunden." ist ebenfalls eine Aussage über den Bestand, und die Akte traf
+	// sie bis zum 12.09.2026 auch dann, wenn der KOPF nicht geladen werden konnte
+	// (`kopf = res.ok ? await res.json() : null`, Register 10.09.2026). Der Unterschied
+	// zählt: Bei „nicht gefunden" legt die Bibliothek den Titel neu an.
+	it('unterscheidet einen nicht geladenen Kopf von einem Titel, den es nicht gibt', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) => {
+			const u = String(url);
+			if (u.startsWith('/api/books/'))
+				return /** @type {any} */ ({
+					ok: false,
+					status: 500,
+					text: async () => JSON.stringify({ error: 'Datenbank nicht erreichbar' })
+				});
+			return /** @type {any} */ (ok([]));
+		});
+		const akte = useBookAkte();
+		await akte.loadAll('A');
+		expect(akte.book).toBeNull();
+		expect(akte.kopfFehler).toBe('Datenbank nicht erreichbar');
+
+		// Der 404 dagegen IST die Auskunft „gibt es nicht" — dann bleibt es beim alten Bild.
+		vi.mocked(apiFetch).mockImplementation(async (/** @type {any} */ url) =>
+			String(url).startsWith('/api/books/')
+				? /** @type {any} */ ({ ok: false, status: 404, text: async () => '' })
+				: /** @type {any} */ (ok([]))
+		);
+		await akte.loadAll('B');
+		expect(akte.book).toBeNull();
+		expect(akte.kopfFehler).toBe('');
 	});
 
 	it('vergisst die Fehlliste beim nächsten Titel', async () => {
