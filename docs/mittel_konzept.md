@@ -1,14 +1,16 @@
-# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 10.09.2026)
+# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 12.09.2026)
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
 Beide Teile teilen EIN Vokabular für die Mittelherkunft: `land` (Lernmittelfreiheit) und
 `schultraeger` (Schülerbücherei) — `repository/mittel.go`, `bestellungen_verlauf.mittel`.
 
-**Status (10.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
+**Status (12.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
 Datenmodell mit Nummernkreis, Staffel, Einstellungen, Erstellen aus dem Mahnwesen,
-Nachdruck, Übergabe. Offen bleiben aus Abschnitt 4.7 die Etappen 2 (Massen-Anbindung ans
-Mahnwesen, Rückgabe-Hook) und 4 (Altbriefe abräumen, Staffel-Vorschlag im Schaden-Dialog).
+Nachdruck, Übergabe; seit dem 12.09.2026 auch der Rückgabe-Hook. Offen bleiben aus
+Abschnitt 4.7 der Rest der Etappe 2 (die Folgen der Übergabe: Ausleihen beenden,
+Exemplare `VERLUST`, Übergabe-PDF) und Etappe 4 (Altbriefe abräumen, Staffel-Vorschlag im
+Schaden-Dialog).
 Teil B ist ebenfalls im ersten Schnitt gebaut (Abschnitt 7.3).
 
 **Was der Einbau geworden ist (Absprache 10.09.2026, drei Entscheidungen):** Der Bescheid
@@ -178,7 +180,7 @@ Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 
 | `POST /api/schueler/{id}/bescheide` `{mittel, positionen:[{ausleihe_id \| schadensfall_id, betrag}]}` | Eine Transaktion: Schülerzeile sperren, Positionen prüfen (gehören zum Schüler, Titel passt zum Topf via `ist_lernmittel`), für überfällige Ausleihen je eine Forderung `art = nicht_zurueckgegeben` anlegen (**Ausleihe bleibt offen, Buch wird NICHT ausgesondert** — es kann noch zurückkommen), Nummer ziehen, Frist rechnen, Snapshot schreiben, PDF erzeugen, **erst dann committen** (Muster `erzeugeUndCommitBulkMahnung`: Papier == DB), Audit. |
 | `GET /api/bescheide/{id}/pdf`                                                                         | Nachdruck aus dem Snapshot, dieselbe Nummer, `letzter_druck_am`. Nie eine neue Nummer.                                                                                                                                                                                                                                                                                                                                                                   |
 | `POST /api/bescheide/{id}/uebergeben`                                                                 | Nach Fristablauf, von Hand: Status `uebergeben`; Forderungen `nicht_zurueckgegeben` → Ausleihe beenden + Exemplar `VERLUST` (Ablauf Nr. 7). Liefert Übergabe-PDF: Original + Sammelliste für die Schulaufsicht.                                                                                                                                                                                                                                          |
-| Rückgabe-Hook in `repository/loan.go` (`ReturnBook`)                                                  | Hat die Ausleihe eine offene Forderung `nicht_zurueckgegeben`: Storno mit Grund „Rückgabe am …"; steht der Brief auf `uebergeben` → `schulaufsicht_zu_informieren = true` + Hinweis an der Theke. Das ist der einzige Eingriff in einen Kernpfad — eigener PG-Test, am Rückbau rot gesehen.                                                                                                                                                              |
+| Rückgabe-Hook — **GEBAUT 12.09.2026** in `repository/bescheid_rueckkehr.go` (`VerbucheRueckkehr`), gerufen aus der Reaktivierung beim Scan (`versucheReaktivierung`) | Hat das Exemplar eine offene Forderung `nicht_zurueckgegeben`: Storno mit Grund „Rückgabe am …"; steht der Brief auf `uebergeben`, wird NICHTS storniert — der Bescheid bekommt `rueckgabe_nach_uebergabe` und die Theke den Satz, dass die Aufsicht unverzüglich zu informieren ist. **Nicht in `repository/loan.go`, wie hier geplant:** `ReportDamage` beendet die Ausleihe schon beim Anlegen der Forderung und sondert das Exemplar aus — wenn das Buch zurückkommt, gibt es keine offene Ausleihe mehr, sondern ein ausgesondertes Exemplar am Scanner. Reaktivierung und Storno liegen in EINER Transaktion. |
 | Bezahlt / Storno                                                                                      | unverändert (`/api/schadensfaelle/{id}/bezahlt`, `/storno`). Brief gilt als `erledigt`, wenn keine Position mehr offen ist (abgeleitet, nicht doppelt gespeichert).                                                                                                                                                                                                                                                                                      |
 | `GET /api/bescheide?status=`                                                                          | Liste für das Sekretariat: offen / **Frist abgelaufen** / übergeben / Schulaufsicht zu informieren.                                                                                                                                                                                                                                                                                                                                                      |
 
@@ -248,6 +250,12 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    blockiert); das Recht ist `edit_students` statt eines neuen — ein eigenes Recht bliebe
    ab Werk bei niemandem und wäre eine Tür, die keiner öffnen kann.
 2. Mahnwesen-Anbindung (Auswahl → Bescheide) + Bescheid-Liste + Übergabe + Rückgabe-Hook.
+   Anbindung, Liste und der **Rückgabe-Hook** (12.09.2026) sind gebaut; die Übergabe setzt
+   bisher nur den Status. Offen: ihre Folgen (Ausleihen beenden, Exemplare `VERLUST`,
+   Übergabe-PDF). **Beim Bau zwingend:** Sobald die Übergabe Exemplare auf `VERLUST` setzt,
+   führt der Fehlbestandsbericht („Buch doch gefunden", `MarkiereVerlustAlsGefunden`) zum
+   zweiten Mal in den Umlauf zurück — `VerbucheRueckkehr` gehört dann auch dorthin, sonst
+   endet die Forderung nur an der Theke.
 3. Schulträger-Rechnung + Betriebsbereitschaft-Warnung. **Bis dahin nimmt der Server nur
    `mittel = land` an, und jede Position muss ein Lernmittel sein** (Bestands-Durchgang
    10.09.2026: der Dialog schickte `schultraeger`, sobald kein Lernmittel gewählt war — die
