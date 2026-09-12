@@ -270,6 +270,16 @@ export function createOmniboxStore() {
 		}
 	}
 
+	// Die Rückkehr eines abgeschriebenen Buches (#597): Der Server sagt in `message`, was
+	// er erledigt hat (Forderung storniert — grün), und in `aufsicht_informieren`, was ein
+	// Mensch noch tun muss (der Bescheid liegt bei der Schulaufsicht — Warnung). Zwei
+	// Kanäle, weil es zwei Dinge sind: Eine offene Aufgabe in einer grünen Erfolgsmeldung
+	// wird überlesen.
+	function zeigeRueckkehrHinweise(data, { ohneMeldung = false } = {}) {
+		if (!ohneMeldung && data.message) showToast(data.message, 'success');
+		if (data.aufsicht_informieren) showToast(data.aufsicht_informieren, 'warning');
+	}
+
 	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type.
 	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '') {
 		if (data.type === 'student') {
@@ -306,6 +316,10 @@ export function createOmniboxStore() {
 					'warning'
 				);
 			}
+			// Das Exemplar war abgeschrieben und ist beim Scan zurückgeholt worden (die
+			// Ausleihe folgte im selben Zug): Was dabei mit der Forderung geschah, gehört
+			// gesagt — sonst sieht die Theke nur „ausgeliehen".
+			zeigeRueckkehrHinweise(data);
 			if (reloadProfileCb) reloadProfileCb();
 		} else if (data.type === 'rueckgabe') {
 			verarbeiteRueckgabe(data, reloadProfileCb);
@@ -314,6 +328,7 @@ export function createOmniboxStore() {
 			playSoundSuccess();
 			triggerFlash('green');
 			showToast(data.message, 'success');
+			zeigeRueckkehrHinweise(data, { ohneMeldung: true });
 			if (reloadProfileCb) reloadProfileCb();
 		} else if (data.type === 'search_results') {
 			triggerShake();

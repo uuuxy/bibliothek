@@ -217,6 +217,7 @@ func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionRespons
 		VormerkungTitel:      res.VormerkungTitel,
 		VormerkungUser:       res.VormerkungUser,
 		RegalfreigabeBarcode: res.RegalfreigabeBarcode,
+		AufsichtInformieren:  res.AufsichtInformieren,
 		Abholbereit:          zuAbholbereitInfos(res.Abholbereit),
 	}
 }

@@ -49,6 +49,11 @@ type OmniboxResult struct {
 	// RegalfreigabeBarcode: reserviertes Exemplar, das zurück ins Regal muss (der
 	// Schüler hat ein anderes Exemplar desselben Titels genommen).
 	RegalfreigabeBarcode string
+	// AufsichtInformieren: Das zurückgebrachte Buch steht auf einem Bescheid, der schon
+	// bei der Schulaufsicht liegt — sie ist unverzüglich zu informieren (#597). Eigenes
+	// Feld und nicht Message: Das ist keine Erfolgsmeldung, sondern eine Aufgabe, und die
+	// Theke muss sie als solche sehen.
+	AufsichtInformieren string
 	// Abholbereit: Vormerkungen des GESCANNTEN Schülers, deren Buch im Abholfach
 	// liegt (Betreiber-Entscheidung 01.09.2026). Schüler scannen nicht selbst —
 	// der Hinweis sagt der Mitarbeiterin am Terminal, dass sie ins Abholfach
@@ -343,7 +348,7 @@ func (s *defaultOmniboxService) checkVormerkung(ctx context.Context, titelID str
 // berechtigten Reservierer geholt, wird die Sperre automatisch aufgehoben.
 // fertig=true bedeutet, dass resp bereits final gesetzt wurde (nur reaktiviert);
 // fertig=false ohne Fehler heißt: weiter zur Ausleihe.
-func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.BookCopy, activeStudentID *string, resp *OmniboxResult) (fertig bool, err error) {
+func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.BookCopy, activeStudentID *string, staffID string, resp *OmniboxResult) (fertig bool, err error) {
 	activeLoan, err := s.loanRepo.GetActiveLoanByCopyID(ctx, copy.ID)
 	if err != nil {
 		return false, err
@@ -360,27 +365,23 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 	// Automatisches Reaktivieren, wenn keine aktive Ausleihe vorliegt und das Buch
 	// unreserviert ist oder der berechtigte Schüler es ausleiht.
 	if activeLoan == nil && (!isReserved || reservedForThisStudent) {
-		// Wieder aufgetaucht: zurück in den Umlauf — der Aussonderungs-Grund muss
-		// mit zurückgesetzt werden (CHECK: im Umlauf = kein Grund).
-		tag, err := s.pool.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL, zustand_notiz = '', bestellstatus = NULL WHERE id = $1", copy.ID)
+		befund, err := s.holeExemplarZurueck(ctx, copy.ID, staffID)
 		if err != nil {
 			return false, err
 		}
-		// 0 Zeilen = Exemplar zwischen Lookup und Update entfernt (Race): Ohne diese
-		// Prüfung liefe das In-Memory-Objekt („reaktiviert") der DB davon und die
-		// Meldung „Buch reaktiviert" wäre gelogen (Phantom-Erfolg-Sweep 31.08.2026).
-		if tag.RowsAffected() == 0 {
-			return false, repository.ErrExemplarNichtGefunden
-		}
 		copy.IstAusleihbar = true
+		copy.IstAusgesondert = false
 		copy.ZustandNotiz = ""
+
+		resp.Message = rueckkehrMeldung(befund)
+		resp.AufsichtInformieren = aufsichtHinweis(befund)
 
 		if !reservedForThisStudent {
 			resp.Type = "info"
-			resp.Message = "Buch reaktiviert"
 			return true, nil
 		}
-		// Reaktiviert für den berechtigten Schüler -> Ausleihe folgt im Aufrufer.
+		// Reaktiviert für den berechtigten Schüler -> Ausleihe folgt im Aufrufer. Die
+		// beiden Hinweise bleiben stehen; mapLoanResult rührt sie nicht an.
 		return false, nil
 	}
 
@@ -391,6 +392,64 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 		return false, fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", ErrInvalidState, query)
 	}
 	return false, fmt.Errorf("%w: Buchexemplar ist nicht ausleihbar", ErrInvalidState)
+}
+
+// holeExemplarZurueck bringt ein ausgesondertes/gesperrtes Exemplar in den Umlauf und
+// beendet in DERSELBEN Transaktion die Forderung, die seine Abwesenheit abgerechnet hat.
+// Getrennt wäre eines von beiden möglich: das Buch zurück im Regal und die Forderung
+// weiter offen (das Kind bliebe gesperrt), oder die Forderung storniert, ohne dass das
+// Buch wieder ausleihbar ist.
+func (s *defaultOmniboxService) holeExemplarZurueck(ctx context.Context, exemplarID, staffID string) (repository.RueckkehrBefund, error) {
+	var befund repository.RueckkehrBefund
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return befund, err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	// Wieder aufgetaucht: zurück in den Umlauf — der Aussonderungs-Grund muss
+	// mit zurückgesetzt werden (CHECK: im Umlauf = kein Grund).
+	tag, err := tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL, zustand_notiz = '', bestellstatus = NULL WHERE id = $1", exemplarID)
+	if err != nil {
+		return befund, err
+	}
+	// 0 Zeilen = Exemplar zwischen Lookup und Update entfernt (Race): Ohne diese
+	// Prüfung liefe das In-Memory-Objekt („reaktiviert") der DB davon und die
+	// Meldung „Buch reaktiviert" wäre gelogen (Phantom-Erfolg-Sweep 31.08.2026).
+	if tag.RowsAffected() == 0 {
+		return befund, repository.ErrExemplarNichtGefunden
+	}
+
+	befund, err = repository.VerbucheRueckkehr(ctx, tx, exemplarID, staffID)
+	if err != nil {
+		return repository.RueckkehrBefund{}, err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return repository.RueckkehrBefund{}, err
+	}
+	return befund, nil
+}
+
+// rueckkehrMeldung ist der Satz für die Theke. Er nennt die Folge, nicht den Vorgang:
+// Die Mitarbeiterin muss wissen, ob das Kind jetzt frei ist — und im Fall der schon
+// übergebenen Forderung, dass sie etwas tun muss, das die Anwendung nicht kann.
+func rueckkehrMeldung(b repository.RueckkehrBefund) string {
+	if b.StornierteForderungen > 0 {
+		return fmt.Sprintf("Buch reaktiviert. Die Forderung über %.2f € wurde storniert — das Buch ist zurück.", b.StornierterBetrag)
+	}
+	return "Buch reaktiviert"
+}
+
+// aufsichtHinweis ist der Satz für den Fall, den die Anwendung NICHT erledigen kann: Der
+// Bescheid liegt bei der Schulaufsicht, die Forderung bleibt offen, und jemand muss zum
+// Telefon greifen. Leer, wenn nichts zu tun ist.
+func aufsichtHinweis(b repository.RueckkehrBefund) string {
+	if len(b.AufsichtInformieren) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("Die Forderung steht auf Bescheid %s, der bereits an die Schulaufsicht übergeben wurde — sie ist unverzüglich zu informieren. Die Forderung bleibt bis dahin offen.",
+		strings.Join(b.AufsichtInformieren, ", "))
 }
 
 // istBerechtigterReservierer prüft, ob der aktive Schüler der berechtigte Reservierer
@@ -417,7 +476,7 @@ func (s *defaultOmniboxService) handleBookAction(ctx context.Context, q OmniboxQ
 
 	// Gesperrte/ausgesonderte Exemplare ggf. automatisch reaktivieren.
 	if !copy.IstAusleihbar || copy.IstAusgesondert {
-		fertig, err := s.versucheReaktivierung(ctx, q.Query, copy, q.ActiveStudentID, resp)
+		fertig, err := s.versucheReaktivierung(ctx, q.Query, copy, q.ActiveStudentID, q.StaffID, resp)
 		if err != nil {
 			return err
 		}

@@ -54,6 +54,10 @@ type ActionResponse struct {
 	// RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the
 	// regular shelf because the student took a different copy of the same title.
 	RegalfreigabeBarcode string `json:"regalfreigabe_barcode,omitempty"`
+	// AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen
+	// Schadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).
+	// Getrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.
+	AufsichtInformieren string `json:"aufsicht_informieren,omitempty"`
 	// Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung
 	// 01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten
 	// Schüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;
