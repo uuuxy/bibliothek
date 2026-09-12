@@ -82,6 +82,7 @@ const (
 //	7R1, 9R1 (Realschulzweig)  → gilt bis Ende Jahrgang 10
 //	7G1, 8G2 (Gymnasialzweig)  → gilt bis Ende Jahrgang 10  ← Mittelstufe, NICHT 13
 //	E1, E2, Q1…Q4 (Oberstufe)  → gilt bis Ende Jahrgang 13
+//	ET, 12T, 13T (Oberstufe)   → gilt bis Ende Jahrgang 13  ← Schreibweise dieser Schule
 //
 // Der Gymnasialzweig endet hier bewusst mit 10 und nicht mit 13, obwohl der Schüler die
 // Schule erst nach 13 verlässt: Die Schule stellt Ausweise für die Mittelstufe aus, für
@@ -168,8 +169,18 @@ func abschlussAusZweig(zweigUndZug string) int {
 	rest := strings.TrimSpace(zweigUndZug)
 	if rest != "" {
 		// []rune, damit ein Umlaut nicht zerschnitten wird.
-		if []rune(rest)[0] == 'H' {
+		switch []rune(rest)[0] {
+		case 'H':
 			return AbschlussHauptschule
+		case 'T':
+			// Die Oberstufe DIESER Schule heißt ET, 12T, 13T (so auch in
+			// api/student_create.go). Die beiden letzten tragen eine führende Ziffer
+			// und fallen deshalb nicht in die E/Q-Erkennung, sondern hierher — als
+			// unbekannter Zweig galten sie bis zum 12.09.2026 als Mittelstufe. Für
+			// 12T hieß das: gültig bis Ende Jahrgang 12 statt 13, also ein Jahr zu
+			// früh. Ein zu früh ablaufender Ausweis ist genau der Fall, den diese
+			// Datei sonst überall vermeidet: Er fällt erst an der Ausleihe auf.
+			return AbschlussOberstufe
 		}
 	}
 	return AbschlussMittelstufe

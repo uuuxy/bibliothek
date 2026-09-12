@@ -62,10 +62,22 @@ func TestGueltigBisJahr(t *testing.T) {
 		{"Q3", 2027, "Q3 liegt in Jahrgang 13"},
 		{"Q4", 2027, "Q4 ebenfalls Jahrgang 13"},
 
+		// Oberstufe in der Schreibweise DIESER Schule: ET, 12T, 13T (api/student_create.go
+		// nennt sie ebenso). Sie tragen eine führende Ziffer und fielen damit an der
+		// E/Q-Erkennung vorbei ins Klassenmuster; „T" galt als unbekannter Zweig, also
+		// Mittelstufe. Für 12T hieß das: gültig bis Ende Jahrgang 12 statt 13 — der
+		// Ausweis eines Schülers der Qualifikationsphase lief ein Jahr zu früh ab, und
+		// das fällt erst an der Ausleihe auf (Bestands-Durchgang 10.09.2026).
+		{"12T1", 2028, "Q-Phase dieser Schule: Jahrgang 12 → Ende 13"},
+		{"13T1", 2027, "Jahrgang 13 ist der Abschlussjahrgang selbst"},
+		{"12T", 2028, "auch ohne Zug"},
+		{"ET", 2029, "Einführungsphase mit T — dieselbe Regel wie E1/E2"},
+
 		// Schreibweise darf egal sein.
 		{"7h1", 2029, "Kleinschreibung"},
 		{"  8G2  ", 2029, "Leerzeichen"},
 		{"e1", 2029, "Oberstufe kleingeschrieben"},
+		{"12t1", 2028, "Q-Phase kleingeschrieben"},
 	}
 
 	for _, f := range faelle {
