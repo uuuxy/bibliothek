@@ -529,6 +529,14 @@ func (s *Server) verteileLmfPlan(e *lmfPlanEntwurf) ([]lmfplan.Platz, []LmfPlanA
 	for _, a := range lmfplan.Ausfaelle(ersterTag, letzter, frei) {
 		ausfaelle = append(ausfaelle, LmfPlanAusfall{Datum: a.Datum.Format("2006-01-02"), Grund: a.Grund})
 	}
+	// Je Zeile ein Platz: Beide Verteiler liefern einen Platz je Eintrag in e.Fest, und
+	// e.Fest hat einen je Zeile — außer bei stunden_je_tag < 1, wo beide eine LEERE
+	// Liste zurückgeben. Heute unerreichbar (pruefeLmfPlan verlangt 1 bis 12), und genau
+	// deshalb steht die Zusicherung hier: Vorschau und Speichern greifen gleich darauf
+	// mit plaetze[i] zu, und ein Indexfehler ist keine Meldung, die jemand lesen kann.
+	if len(plaetze) != len(e.Zeilen) {
+		return nil, nil, fmt.Errorf("verteilung: %d Plätze für %d Zeilen", len(plaetze), len(e.Zeilen))
+	}
 	return plaetze, ausfaelle, nil
 }
 

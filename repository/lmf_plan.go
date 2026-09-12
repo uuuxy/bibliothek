@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -194,6 +195,15 @@ func (r *LmfTerminRepository) lmfPlanAusgelassen(ctx context.Context, planID str
 // Eine Hülle mit eigener Transaktion gibt es bewusst nicht mehr: Sie rief niemand, und
 // eine Tür, durch die niemand geht, ist eine, die irgendwann jemand falsch benutzt.
 func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan LmfPlan, zeilen []LmfPlanZeile, plaetze []lmfplan.Platz, ausgelassen []string) (LmfPlanStand, error) {
+	// Je Zeile ein Platz — die Schleife unten greift mit plaetze[i] in die zweite
+	// Scheibe. Bis zum 12.09.2026 sicherte das nur der eine Aufrufer zu (Register,
+	// Paket 5: „vier Zusicherungen halten nur per Verabredung"); hier steht sie an der
+	// Tür, die sie braucht, und VOR dem ersten Schreiben: Ein Missverhältnis wäre sonst
+	// ein Indexfehler mitten in einer offenen Transaktion — halb geschriebener Plan,
+	// keine lesbare Meldung.
+	if len(plaetze) != len(zeilen) {
+		return LmfPlanStand{}, fmt.Errorf("lmf-plan: %d Plätze für %d Zeilen", len(plaetze), len(zeilen))
+	}
 	ersterTag, err := time.ParseInLocation("2006-01-02", plan.ErsterTag, schulzeit.Zone())
 	if err != nil {
 		return LmfPlanStand{}, err
