@@ -29,7 +29,7 @@
 </script>
 
 {#snippet knopf(zusatz)}
-	<span class="relative -m-[10px] inline-grid h-10 w-10 shrink-0 place-items-center {zusatz}">
+	<span class="relative -m-2.5 inline-grid h-10 w-10 shrink-0 place-items-center {zusatz}">
 		<input
 			type="radio"
 			bind:group

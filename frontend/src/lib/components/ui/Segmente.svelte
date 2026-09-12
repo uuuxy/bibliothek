@@ -50,7 +50,7 @@
 				: ''} {gewaehlt ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface'}"
 		>
 			<!-- Immer im Fluss, nur unsichtbar: hält die Breite über alle Zustände fest. -->
-			<Check class="h-[18px] w-[18px] shrink-0 {gewaehlt ? '' : 'invisible'}" aria-hidden="true" />
+			<Check class="h-4.5 w-4.5 shrink-0 {gewaehlt ? '' : 'invisible'}" aria-hidden="true" />
 			{o.text}
 		</button>
 	{/each}
