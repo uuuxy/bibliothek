@@ -152,59 +152,18 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 			return
 		}
 
-		// Brute-Force-Schutz: pro (E-Mail|IP) drosseln — NICHT rein pro IP. Sonst würde in einer
-		// Schule, in der alle Geräte hinter EINER NAT-IP hängen, ein einziger Nutzer mit 5
-		// Fehlversuchen die GESAMTE Schule für 15 Minuten am Login hindern. Der zusammengesetzte
-		// Schlüssel sperrt nur das betroffene Konto auf dieser IP.
-		bruteForceKey := strings.ToLower(strings.TrimSpace(req.Email)) + "|" + clientIP
-		if globalLoginLimiter.isBlocked(bruteForceKey) {
-			apierrors.SendHTTPError(w, http.StatusTooManyRequests,
-				errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
+		bruteForceKey, ok := checkBruteForceLimit(w, req.Email, clientIP)
+		if !ok {
 			return
 		}
 
 		user, verifyErr := verifyIMAPCredentials(ctx, dbPool, req.Email, password)
 		if verifyErr != nil {
-			// Mailserver-Ausfall ≠ falsches Passwort (Ausfallmatrix 20.08.2026): Vorher
-			// bekam der Nutzer bei Server-Down „invalid email or password" UND einen
-			// gezählten Fehlversuch — wer sein richtiges Passwort dann erneut probierte,
-			// sperrte sich selbst für 15 Minuten. Jetzt 503 ohne recordFailure.
-			if errors.Is(verifyErr, ErrMailserverNichtErreichbar) {
-				apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
-				return
-			}
-			// Dasselbe für die Datenbank (31.08.2026): Ein DB-Aussetzer ist kein
-			// Passwortfehler — 503 ohne recordFailure, sonst Selbstsperre mit
-			// korrektem Passwort. Der echte Grund steht im Log.
-			if errors.Is(verifyErr, ErrAnmeldedienstGestoert) {
-				slog.Error("Login: Anmeldedienst gestört", "fehler", verifyErr)
-				apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
-				return
-			}
-			globalLoginLimiter.recordFailure(bruteForceKey)
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+			handleLoginError(w, verifyErr, bruteForceKey)
 			return
 		}
 
-		// Beides ist HTTP 403 und beides bedeutet „Zugangsdaten stimmen, Zugang trotzdem
-		// nicht" — die Unterscheidung ist für den Menschen davor. „Konto deaktiviert" ließe
-		// eine Lehrkraft, die sich gerade zum ersten Mal gemeldet hat, ratlos zurück und
-		// verleitet zum Wiederholen; sie soll wissen, dass sie nur warten muss. Das gilt
-		// für jeden Versuch, solange der Antrag offen ist — bis 11.09.2026 sah nur der
-		// erste „beantragt", jeder weitere „user account is deactivated".
-		//
-		// KEIN recordFailure hier: Das Passwort war richtig. Sonst sperrte sich jemand mit
-		// fünf Versuchen selbst aus, während seine Freischaltung noch aussteht.
-		if user.neuAngelegt || (!user.aktiv && user.beantragt) {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
-			apierrors.SendHTTPError(w, http.StatusForbidden,
-				errors.New("Zugang beantragt — die Bibliothek muss ihn noch freischalten"))
-			return
-		}
-		if !user.aktiv {
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
-			apierrors.SendHTTPError(w, http.StatusForbidden,
-				errors.New("Konto deaktiviert — bitte an die Bibliothek wenden"))
+		if !validateUserStatus(w, user) {
 			return
 		}
 
@@ -491,4 +450,64 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 		w.Header().Set(headerContentType, contentTypeJSON)
 		httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "renewed"})
 	}
+}
+
+func checkBruteForceLimit(w http.ResponseWriter, email string, clientIP string) (string, bool) {
+	// Brute-Force-Schutz: pro (E-Mail|IP) drosseln — NICHT rein pro IP. Sonst würde in einer
+	// Schule, in der alle Geräte hinter EINER NAT-IP hängen, ein einziger Nutzer mit 5
+	// Fehlversuchen die GESAMTE Schule für 15 Minuten am Login hindern. Der zusammengesetzte
+	// Schlüssel sperrt nur das betroffene Konto auf dieser IP.
+	bruteForceKey := strings.ToLower(strings.TrimSpace(email)) + "|" + clientIP
+	if globalLoginLimiter.isBlocked(bruteForceKey) {
+		apierrors.SendHTTPError(w, http.StatusTooManyRequests,
+			errors.New("zu viele fehlgeschlagene Login-Versuche – bitte 15 Minuten warten"))
+		return bruteForceKey, false
+	}
+	return bruteForceKey, true
+}
+
+func handleLoginError(w http.ResponseWriter, verifyErr error, bruteForceKey string) {
+	// Mailserver-Ausfall ≠ falsches Passwort (Ausfallmatrix 20.08.2026): Vorher
+	// bekam der Nutzer bei Server-Down „invalid email or password" UND einen
+	// gezählten Fehlversuch — wer sein richtiges Passwort dann erneut probierte,
+	// sperrte sich selbst für 15 Minuten. Jetzt 503 ohne recordFailure.
+	if errors.Is(verifyErr, ErrMailserverNichtErreichbar) {
+		apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrMailserverNichtErreichbar)
+		return
+	}
+	// Dasselbe für die Datenbank (31.08.2026): Ein DB-Aussetzer ist kein
+	// Passwortfehler — 503 ohne recordFailure, sonst Selbstsperre mit
+	// korrektem Passwort. Der echte Grund steht im Log.
+	if errors.Is(verifyErr, ErrAnmeldedienstGestoert) {
+		slog.Error("Login: Anmeldedienst gestört", "fehler", verifyErr)
+		apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
+		return
+	}
+	globalLoginLimiter.recordFailure(bruteForceKey)
+	apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("invalid email or password"))
+}
+
+func validateUserStatus(w http.ResponseWriter, user loginUser) bool {
+	// Beides ist HTTP 403 und beides bedeutet „Zugangsdaten stimmen, Zugang trotzdem
+	// nicht" — die Unterscheidung ist für den Menschen davor. „Konto deaktiviert" ließe
+	// eine Lehrkraft, die sich gerade zum ersten Mal gemeldet hat, ratlos zurück und
+	// verleitet zum Wiederholen; sie soll wissen, dass sie nur warten muss. Das gilt
+	// für jeden Versuch, solange der Antrag offen ist — bis 11.09.2026 sah nur der
+	// erste „beantragt", jeder weitere „user account is deactivated".
+	//
+	// KEIN recordFailure hier: Das Passwort war richtig. Sonst sperrte sich jemand mit
+	// fünf Versuchen selbst aus, während seine Freischaltung noch aussteht.
+	if user.neuAngelegt || (!user.aktiv && user.beantragt) {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
+		apierrors.SendHTTPError(w, http.StatusForbidden,
+			errors.New("Zugang beantragt — die Bibliothek muss ihn noch freischalten"))
+		return false
+	}
+	if !user.aktiv {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung, steht so im Anmeldeformular
+		apierrors.SendHTTPError(w, http.StatusForbidden,
+			errors.New("Konto deaktiviert — bitte an die Bibliothek wenden"))
+		return false
+	}
+	return true
 }
