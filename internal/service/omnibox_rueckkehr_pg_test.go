@@ -24,21 +24,6 @@ import (
 	"bibliothek/repository"
 )
 
-type rueckkehrAufbau struct {
-	svc          OmniboxService
-	bescheidRepo repository.BescheidRepository
-	pool         interface {
-		Exec(context.Context, string, ...any)
-	}
-	mitarbeiterID  string
-	schuelerID     string
-	titelID        string
-	barcodeOffen   string
-	barcodeUeberg  string
-	bescheidOffen  string
-	bescheidUeberg string
-}
-
 func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
