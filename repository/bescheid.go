@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -414,12 +415,16 @@ type OffeneForderung struct {
 	ISBN           string
 	Kaufpreis      float64
 	IstLernmittel  bool
-	// Ausleihen und JahreImBestand sind die beiden Größen für das Verleihjahr: die Zahl
-	// der Ausleihen dieses Exemplars und sein Alter im Bestand. Beide sind unvollständig
-	// (der Altbestand kam ohne Ausleihhistorie), deshalb rechnet ersatzwert.Verleihjahr
-	// mit dem Maximum.
-	Ausleihen      int
-	JahreImBestand int
+	// Die beiden Größen für das Verleihjahr, und beide zählen SCHULJAHRE: in wie vielen
+	// war das Exemplar ausgeliehen, und wie viele liegen seit seiner Beschaffung. Beide
+	// sind unvollständig (der Altbestand kam ohne Ausleihhistorie), deshalb rechnet
+	// ersatzwert.Verleihjahr mit dem Maximum.
+	//
+	// Bis zum 12.09.2026 standen hier die Zahl der AUSLEIHEN und die Differenz der
+	// KALENDERJAHRE. Sechs Ausleihen in einem Schuljahr ergaben das 6. Verleihjahr (10 %
+	// statt 100 %), und ein im Februar gekauftes Buch blieb bis Silvester im ersten.
+	SchuljahreMitAusleihe int
+	SchuljahreImBestand   int
 }
 
 // EmpfaengerFuerBescheid liest die Angaben des Schülers für Anrede und Anschriftfeld.
@@ -440,12 +445,14 @@ func (r *pgBescheidRepository) EmpfaengerFuerBescheid(ctx context.Context, schue
 
 // OffeneForderungen liest die Forderungen, die noch auf keinem Brief stehen.
 func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error) {
+	// Das SQL liefert Datumswerte, keine Schuljahre: Wann das Schuljahr wechselt, steht
+	// in SchuljahrBeginn und soll nicht ein zweites Mal in einer Abfrage stehen — eine
+	// abweichende Auslegung verschöbe hier jeden Betrag um eine Stufe der Staffel.
 	rows, err := r.db.Query(ctx, `
 		SELECT f.id, f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''),
 		       coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.ist_lernmittel, false),
-		       (SELECT count(*) FROM ausleihen a WHERE a.exemplar_id = e.id)::int,
-		       coalesce(date_part('year', CURRENT_DATE) - date_part('year', e.erworben_am), 0)::int
+		       f.exemplar_id, e.erworben_am
 		FROM schadensfaelle f
 		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
@@ -459,14 +466,92 @@ func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID
 	}
 	defer rows.Close()
 
+	heute := schuljahrVon(schulzeit.Jetzt())
 	out := []OffeneForderung{}
+	// exemplarJeForderung ist indexgleich zu out: Geräteschäden haben kein Exemplar und
+	// stehen deshalb mit leerem String drin.
+	exemplarJeForderung := []string{}
 	for rows.Next() {
 		var f OffeneForderung
+		var exemplarID *string
+		var erworben *time.Time
 		if err := rows.Scan(&f.SchadensfallID, &f.Art, &f.Titel, &f.ISBN, &f.Kaufpreis,
-			&f.IstLernmittel, &f.Ausleihen, &f.JahreImBestand); err != nil {
+			&f.IstLernmittel, &exemplarID, &erworben); err != nil {
 			return nil, err
 		}
+		if erworben != nil {
+			f.SchuljahreImBestand = heute - schuljahrVon(*erworben)
+		}
 		out = append(out, f)
+		exemplarJeForderung = append(exemplarJeForderung, zeigerText(exemplarID))
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	schuljahre, err := r.schuljahreMitAusleihe(ctx, exemplarJeForderung)
+	if err != nil {
+		return nil, err
+	}
+	for i := range out {
+		out[i].SchuljahreMitAusleihe = schuljahre[exemplarJeForderung[i]]
+	}
+	return out, nil
+}
+
+// schuljahreMitAusleihe zählt je Exemplar, in wie vielen SCHULJAHREN es ausgeliehen war.
+//
+// Die Zeitpunkte kommen roh aus der Datenbank, gezählt wird in Go — mit SchuljahrBeginn,
+// derselben Grenze wie überall sonst. Ein „count(DISTINCT …)" im SQL müsste den 1. August
+// ein zweites Mal kennen, und zwei Auslegungen derselben Grenze verschöben den Betrag im
+// Bescheid um eine ganze Stufe der Staffel.
+func (r *pgBescheidRepository) schuljahreMitAusleihe(ctx context.Context, exemplarIDs []string) (map[string]int, error) {
+	je := map[string]int{}
+	gefragt := []string{}
+	gesehen := map[string]bool{}
+	for _, id := range exemplarIDs {
+		if id == "" || gesehen[id] {
+			continue
+		}
+		gesehen[id] = true
+		gefragt = append(gefragt, id)
+	}
+	if len(gefragt) == 0 {
+		return je, nil
+	}
+
+	rows, err := r.db.Query(ctx,
+		`SELECT exemplar_id, ausgeliehen_am FROM ausleihen WHERE exemplar_id = ANY($1)`, gefragt)
+	if err != nil {
+		return nil, fmt.Errorf("ausleihzeitpunkte des exemplars lesen: %w", err)
+	}
+	defer rows.Close()
+
+	jahreJeExemplar := map[string]map[int]bool{}
+	for rows.Next() {
+		var exemplarID string
+		var ausgeliehenAm time.Time
+		if err := rows.Scan(&exemplarID, &ausgeliehenAm); err != nil {
+			return nil, err
+		}
+		if jahreJeExemplar[exemplarID] == nil {
+			jahreJeExemplar[exemplarID] = map[int]bool{}
+		}
+		jahreJeExemplar[exemplarID][schuljahrVon(ausgeliehenAm)] = true
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	for id, jahre := range jahreJeExemplar {
+		je[id] = len(jahre)
+	}
+	return je, nil
+}
+
+// zeigerText macht aus einem nullbaren Textfeld einen String; NULL wird zu "".
+func zeigerText(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }

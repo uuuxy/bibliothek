@@ -51,6 +51,13 @@ func SchuljahrBeginn(t time.Time) time.Time {
 	return time.Date(jahr, time.August, 1, 0, 0, 0, 0, schulzeit.Zone())
 }
 
+// schuljahrVon liefert das Schuljahr eines Zeitpunkts als Zahl — das Jahr seines
+// 1. August (Schuljahr 2026/27 → 2026). Die Differenz zweier solcher Zahlen ist die Zahl
+// der Schuljahre dazwischen; genau das braucht das Verleihjahr im Schadensersatz-Bescheid.
+func schuljahrVon(t time.Time) int {
+	return SchuljahrBeginn(t).Year()
+}
+
 // LmfTerminRepository liest und schreibt den Plan.
 type LmfTerminRepository struct {
 	db db.PgxPoolIface

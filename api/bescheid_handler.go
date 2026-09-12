@@ -136,7 +136,7 @@ func (s *Server) bescheidAngaben(ctx context.Context) (repository.BescheidAngabe
 // Die Herleitung sagt deshalb, dass ersatzweise mit dem Kaufpreis gerechnet wurde —
 // geraten wird nichts.
 func bescheidVorschlagAus(f repository.OffeneForderung) BescheidVorschlagPosition {
-	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(f.Ausleihen, f.JahreImBestand), f.Kaufpreis, 0)
+	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(f.SchuljahreMitAusleihe, f.SchuljahreImBestand), f.Kaufpreis, 0)
 	return BescheidVorschlagPosition{
 		SchadensfallID: f.SchadensfallID,
 		Art:            f.Art,
