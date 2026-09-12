@@ -1,6 +1,7 @@
 package littera
 
 import (
+	"errors"
 	"strings"
 	"testing"
 )
@@ -191,5 +192,21 @@ func TestCSVMitKommaImFeld(t *testing.T) {
 	}
 	if titel[0].ISBN != "978-3-12-000000-0" {
 		t.Errorf("ISBN verrutscht: %q", titel[0].ISBN)
+	}
+}
+
+type fehlerhafterLeser struct{}
+
+func (f fehlerhafterLeser) Read(p []byte) (n int, err error) {
+	return 0, errors.New("simulierter Lesefehler")
+}
+
+func TestLeseTitel_Lesefehler(t *testing.T) {
+	_, err := LeseTitel(fehlerhafterLeser{})
+	if err == nil {
+		t.Fatal("erwartet einen Fehler beim Lesen von fehlerhaftem Stream, bekam nil")
+	}
+	if !strings.Contains(err.Error(), "simulierter Lesefehler") {
+		t.Errorf("erwartet Fehler mit 'simulierter Lesefehler', war: %v", err)
 	}
 }
