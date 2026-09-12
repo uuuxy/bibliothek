@@ -121,7 +121,7 @@ var phantomBestand = map[string]int{
 	"repository/schueler_zusammenfuehren.go:verschiebeVorgaenge":                1,
 	"repository/book_inventory.go:BulkUpsertBookTitles":                         1,
 	"repository/damage.go:MarkCopyDefekt":                                       1,
-	"repository/damage.go:ReportDamage":                                         3,
+	"repository/damage.go:recordDamage":                                         3,
 	"repository/inventur_session_finish.go:FinishInventurSession":               1,
 	"repository/inventur_session_finish.go:RecordInventurScan":                  1,
 	"repository/inventur_session_repo.go:CreateInventurSession":                 1,
