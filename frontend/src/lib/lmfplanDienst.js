@@ -110,11 +110,18 @@ export async function ladeStand(art) {
 }
 
 /** Der leere Entwurf — der Zustand des Planers vor dem ersten Laden.
+ *
+ *  Die drei Stundenzahlen sind dieselbe Vorgabe, die der Server vorschlägt: Beginn in der
+ *  2. Stunde (die 1. gehört der Klassenleitung), Ende in der 4., 6 Stunden je Tag. Sie
+ *  stehen hier ein zweites Mal, weil der Planer einen Zustand vor dem ersten Laden
+ *  braucht — deshalb hält ein Gate sie zusammen (api/lmf_plan_vorgabe_paritaet_test.go).
+ *  Bis zum 12.09.2026 stand die Startstunde hier auf 1; verdeckt, solange der Vorschlag
+ *  des Servers eintrifft und gewinnt.
  *  @returns {PlanEntwurf} */
 export function leererEntwurf() {
 	return {
 		erster_tag: '',
-		startstunde: 1,
+		startstunde: 2,
 		letzter_tag: '',
 		letzte_stunde: 4,
 		stunden_je_tag: 6,
