@@ -87,3 +87,38 @@ export function tastenBefehl(taste, offen) {
 				: { tat: 'nichts', verhindern: false };
 	}
 }
+
+/**
+ * Der Tippsprung mit seinem Puffer: Mehrere Zeichen kurz hintereinander suchen
+ * gemeinsam („be" → Bernd), nach einer Pause beginnt die Eingabe neu — wie beim
+ * nativen select.
+ *
+ * Der Sammler hält den Timer und gibt ihn wieder her: `abbauen` gehört in die
+ * Aufräumfunktion der Komponente. Ein Timer, den niemand räumt, läuft nach dem Abbau
+ * weiter — die Bugklasse „Timer überlebt den Abbau" (docs/sweeps.md, 11.09.2026).
+ *
+ * @param {number} pauseMs Zeit bis der Puffer verfällt
+ */
+export function tippsprungSammler(pauseMs = 600) {
+	let puffer = '';
+	/** @type {ReturnType<typeof setTimeout> | undefined} */
+	let timer;
+	return {
+		/**
+		 * Nimmt ein Zeichen auf und liefert den Index, auf den zu springen ist (−1: kein
+		 * Treffer, die Markierung bleibt stehen).
+		 * @param {string} zeichen
+		 * @param {Array<{ label: string }>} options
+		 */
+		zeichen(zeichen, options) {
+			puffer += zeichen.toLowerCase();
+			clearTimeout(timer);
+			timer = setTimeout(() => (puffer = ''), pauseMs);
+			return tippsprungIndex(options, puffer);
+		},
+		abbauen() {
+			clearTimeout(timer);
+			puffer = '';
+		}
+	};
+}

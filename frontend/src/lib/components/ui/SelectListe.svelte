@@ -17,13 +17,15 @@
 	 *   value: any,
 	 *   aktiv: number,
 	 *   box: { left: number, top: number, breite: number },
-	 *   id?: string,
+	 *   kennung: string,
+	 *   zeilenKennung: (i: number) => string,
 	 *   onwaehlen: (i: number) => void,
 	 *   onaktiv: (i: number) => void,
 	 *   onelement: (el: HTMLDivElement | undefined) => void
 	 * }}
 	 */
-	let { options, value, aktiv, box, id, onwaehlen, onaktiv, onelement } = $props();
+	let { options, value, aktiv, box, kennung, zeilenKennung, onwaehlen, onaktiv, onelement } =
+		$props();
 
 	/** @type {HTMLDivElement | undefined} */
 	let el = $state();
@@ -31,11 +33,19 @@
 	// Select braucht den Knoten, um Klicks außerhalb von Klicks in der Liste zu
 	// unterscheiden.
 	$effect(() => onelement(el));
+
+	// Der aktive Eintrag muss sichtbar bleiben, sonst wandert die Auswahl blind. Das
+	// Scrollen gehört hierher: Diese Datei hält die Liste, Select hält nur den Index
+	// (verschoben am 12.09.2026).
+	$effect(() => {
+		if (aktiv < 0) return;
+		el?.querySelector(`[data-i="${aktiv}"]`)?.scrollIntoView({ block: 'nearest' });
+	});
 </script>
 
 <div
 	bind:this={el}
-	id={id ? `${id}-liste` : undefined}
+	id={`${kennung}-liste`}
 	role="listbox"
 	tabindex="-1"
 	style="position:fixed; left:{box.left}px; top:{box.top}px; width:{box.breite}px; z-index:60;"
@@ -44,6 +54,7 @@
 	{#each options as o, i (o.value)}
 		<div
 			data-i={i}
+			id={zeilenKennung(i)}
 			role="option"
 			aria-selected={o.value === value}
 			aria-disabled={o.disabled || undefined}

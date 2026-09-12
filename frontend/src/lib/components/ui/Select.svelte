@@ -14,7 +14,7 @@
 	import { ChevronDown } from '@lucide/svelte';
 	import SelectListe from './SelectListe.svelte';
 	import { berechneBox } from './selectGeometrie.js';
-	import { naechsterIndex, tippsprungIndex, tastenBefehl } from './selectTastatur.js';
+	import { naechsterIndex, tastenBefehl, tippsprungSammler } from './selectTastatur.js';
 
 	/**
 	 * `class` ERSETZT die Standardbreite w-full — sonst entschiede die
@@ -47,6 +47,15 @@
 		...rest
 	} = $props();
 
+	// Eine Kennung, die dieses Feld und seine Zeilen eindeutig macht: Ohne `id` von außen
+	// vergibt Svelte eine ($props.id). Zwei Felder auf einer Seite verwiesen sonst auf
+	// dieselben Zeilen — der Screenreader läse die des anderen Feldes vor.
+	const eigen = $props.id();
+	const kennung = $derived(id ?? eigen);
+	/** Die Kennung einer Listenzeile — Select und SelectListe müssen dieselbe bilden.
+	 * @param {number} i */
+	const zeilenKennung = (i) => `${kennung}-option-${i}`;
+
 	let offen = $state(false);
 	let aktiv = $state(-1);
 	/** @type {HTMLButtonElement | undefined} */
@@ -54,9 +63,7 @@
 	/** @type {HTMLDivElement | undefined} */
 	let liste = $state();
 	let box = $state({ left: 0, top: 0, breite: 0 });
-	let suchpuffer = '';
-	/** @type {ReturnType<typeof setTimeout> | undefined} */
-	let suchTimer;
+	const tippsprung = tippsprungSammler();
 
 	let gewaehlt = $derived(options.find((o) => o.value === value));
 	let beschriftung = $derived(gewaehlt?.label ?? '');
@@ -90,16 +97,6 @@
 		schliessen();
 	}
 
-	/** Tippen springt zum ersten passenden Eintrag — wie beim nativen select.
-	 * @param {string} zeichen */
-	function tippsprung(zeichen) {
-		suchpuffer += zeichen.toLowerCase();
-		clearTimeout(suchTimer);
-		suchTimer = setTimeout(() => (suchpuffer = ''), 600);
-		const treffer = tippsprungIndex(options, suchpuffer);
-		if (treffer >= 0) aktiv = treffer;
-	}
-
 	/** Die Regeln stehen in selectTastatur.js; hier wird nur ausgeführt.
 	 * @param {KeyboardEvent} e */
 	function taste(e) {
@@ -124,9 +121,11 @@
 			case 'verlassen':
 				schliessen(false);
 				break;
-			case 'tippen':
-				tippsprung(befehl.zeichen ?? '');
+			case 'tippen': {
+				const treffer = tippsprung.zeichen(befehl.zeichen ?? '', options);
+				if (treffer >= 0) aktiv = treffer;
 				break;
+			}
 		}
 	}
 
@@ -141,11 +140,9 @@
 		};
 	});
 
-	// Der aktive Eintrag muss sichtbar bleiben, sonst wandert die Auswahl blind.
-	$effect(() => {
-		if (!offen || aktiv < 0 || !liste) return;
-		liste.querySelector(`[data-i="${aktiv}"]`)?.scrollIntoView({ block: 'nearest' });
-	});
+	// Der Tippsprung-Timer gehört geräumt: Ein Timer, den niemand abbaut, läuft nach dem
+	// Ende der Komponente weiter (Bugklasse „Timer überlebt den Abbau", 11.09.2026).
+	$effect(() => tippsprung.abbauen);
 </script>
 
 <svelte:window
@@ -164,7 +161,8 @@
 	role="combobox"
 	aria-expanded={offen}
 	aria-haspopup="listbox"
-	aria-controls={offen && id ? `${id}-liste` : undefined}
+	aria-controls={offen ? `${kennung}-liste` : undefined}
+	aria-activedescendant={offen && aktiv >= 0 ? zeilenKennung(aktiv) : undefined}
 	onclick={() => (offen ? schliessen() : oeffnen())}
 	onkeydown={taste}
 	class="flex h-9 cursor-pointer items-center gap-2 rounded-xl border bg-surface-container-lowest px-3 text-left text-sm text-on-surface transition-colors focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40
@@ -190,7 +188,8 @@
 		{value}
 		{aktiv}
 		{box}
-		{id}
+		{kennung}
+		{zeilenKennung}
 		onwaehlen={waehlen}
 		onaktiv={(i) => (aktiv = i)}
 		onelement={(el) => (liste = el)}

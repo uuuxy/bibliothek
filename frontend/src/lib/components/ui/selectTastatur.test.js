@@ -1,5 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import { naechsterIndex, tippsprungIndex, tastenBefehl } from './selectTastatur.js';
+import { describe, it, expect, vi } from 'vitest';
+import {
+	naechsterIndex,
+	tippsprungIndex,
+	tastenBefehl,
+	tippsprungSammler
+} from './selectTastatur.js';
 
 // Die Tastaturbedienung des Auswahlfelds — die Regeln, nicht das Markup.
 //
@@ -93,6 +98,37 @@ describe('tastenBefehl', () => {
 		}
 		for (const taste of ['Tab', 'c', 'F5']) {
 			expect(tastenBefehl(taste, true).verhindern, taste).toBe(false);
+		}
+	});
+});
+
+describe('tippsprungSammler', () => {
+	it('sammelt Zeichen und vergisst sie nach der Pause', () => {
+		vi.useFakeTimers();
+		try {
+			const sammler = tippsprungSammler(600);
+			expect(sammler.zeichen('b', optionen)).toBe(1); // „b" → Bernd
+			expect(sammler.zeichen('e', optionen)).toBe(1); // „be" → weiter Bernd
+			// Nach der Pause beginnt die Eingabe neu: „c" allein trifft Cem.
+			vi.advanceTimersByTime(700);
+			expect(sammler.zeichen('c', optionen)).toBe(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	// Die Bugklasse „Timer überlebt den Abbau" (sweeps.md, 11.09.2026): Ein Timer, den
+	// niemand räumt, läuft nach dem Ende der Komponente weiter.
+	it('räumt seinen Timer beim Abbau', () => {
+		vi.useFakeTimers();
+		try {
+			const sammler = tippsprungSammler();
+			sammler.zeichen('a', optionen);
+			expect(vi.getTimerCount()).toBe(1);
+			sammler.abbauen();
+			expect(vi.getTimerCount()).toBe(0);
+		} finally {
+			vi.useRealTimers();
 		}
 	});
 });
