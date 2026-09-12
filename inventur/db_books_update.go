@@ -78,29 +78,8 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	result, err := tx.Exec(
-		ctx,
-		query,
-		book.ISBN,
-		book.Title,
-		book.Author,
-		book.CoverURL,
-		kanonisch[book.Subject],
-		book.GradeLevel,
-		book.Track,
-		book.LastCounted,
-		medientyp,
-		properties,
-		book.JahrgangVon,
-		book.JahrgangBis,
-		book.Untertitel,
-		book.Verlag,
-		book.Erscheinungsjahr,
-		book.Beschreibung,
-		id,
-		book.Signatur,      // $18 — leerer Wert lässt die verklebte Signatur unangetastet
-		book.IstLernmittel, // $19 — die Maske entscheidet ausdrücklich (Migration 093)
-	)
+	args := buildBookArgs(book, kanonisch[book.Subject], medientyp, properties, id, book.Signatur, book.IstLernmittel)
+	result, err := tx.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", handleDbError(err))
 	}
