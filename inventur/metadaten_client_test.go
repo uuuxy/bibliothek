@@ -214,6 +214,27 @@ func TestNeuerMetadatenClient(t *testing.T) {
 	}
 }
 
+func TestAufloeseCover_AlleQuellenSchlagenFehl(t *testing.T) {
+	mockTr := &mockTransport{
+		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			return nil, http.ErrServerClosed
+		},
+	}
+
+	client := NeuerMetadatenClient()
+	client.SetzeHTTPClientFuerTest(&http.Client{Transport: mockTr})
+
+	ergebnis := &MetadatenErgebnis{
+		CoverURL: "http://example.com/cover.jpg",
+	}
+
+	coverURL := client.aufloeseCover(context.Background(), ergebnis, "9783141011540")
+
+	if coverURL != "" {
+		t.Errorf("Erwartet leeren String (kein Cover gefunden), stattdessen erhalten: %q", coverURL)
+	}
+}
+
 func TestSetzeHTTPClientFuerTest(t *testing.T) {
 	client := NeuerMetadatenClient()
 	customHTTPClient := &http.Client{}
