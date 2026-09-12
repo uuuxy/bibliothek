@@ -45,6 +45,28 @@ else
     exit 1
 fi
 
+# 1b. golangci-lint — das Gate, das in der CI VOR allem anderen steht.
+#
+# Am 12.09.2026 brach es an einem toten Typ in einer Testdatei ab (`rueckkehrAufbau`,
+# unused). Weil der Lint-Schritt in der CI vor den Tests kommt, hat er dabei auch die
+# Unit-Tests, das Deadcode-Gate und die Restore-Probe übersprungen: Ein ungenutzter Typ
+# hat die halbe Prüfung ausgeschaltet, und main stand knapp drei Stunden rot. Lokal war
+# davon nichts zu sehen — dieser Hook kannte den Linter nicht, und `go vet` meldet
+# ungenutzte TYPEN nicht (nur ungenutzte Variablen).
+echo "[1b/6] Führe golangci-lint aus..."
+if command -v golangci-lint &> /dev/null; then
+    if golangci-lint run --timeout=5m; then
+        echo -e "${GREEN}✓ golangci-lint bestanden.${NC}"
+    else
+        echo -e "${RED}✗ golangci-lint fehlgeschlagen! Push abgebrochen.${NC}"
+        exit 1
+    fi
+else
+    echo -e "${YELLOW}⚠ golangci-lint nicht installiert — das ERSTE Gate der CI läuft hier NICHT mit.${NC}"
+    echo -e "${YELLOW}  Version bitte wie in .github/workflows/ci.yml halten (dort v2.13.2):${NC}"
+    echo -e "${YELLOW}  https://golangci-lint.run/docs/welcome/install/${NC}"
+fi
+
 # Wie viele Tests hat dieser Lauf gar nicht ausgeführt?
 #
 # Die DB-Integrationstests (*_pg_test.go) hängen an TEST_DATABASE_URL und überspringen
