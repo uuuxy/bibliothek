@@ -1,8 +1,10 @@
 package littera
 
 import (
+	"errors"
 	"strings"
 	"testing"
+	"testing/iotest"
 )
 
 // Werte aus dem echten Export (littera_sav.mdb, 04.08.2026).
@@ -151,5 +153,22 @@ func TestLeserOhneGruppe(t *testing.T) {
 	}
 	if leser[0].Art != ArtUnbekannt || leser[0].Klasse != "" {
 		t.Errorf("nicht aufloesbare Gruppe: %+v", leser[0])
+	}
+}
+
+func TestLeseLeser_FehlerhafterLeser(t *testing.T) {
+	errText := "simulierter Lesefehler"
+	leser, err := LeseLeser(iotest.ErrReader(errors.New(errText)), nil)
+
+	if leser != nil {
+		t.Errorf("erwartete nil Leser-Rückgabe, war %+v", leser)
+	}
+
+	if err == nil {
+		t.Fatal("erwartete einen Fehler, war nil")
+	}
+
+	if !strings.Contains(err.Error(), errText) {
+		t.Errorf("erwartete Fehlermeldung mit %q, war %q", errText, err.Error())
 	}
 }
