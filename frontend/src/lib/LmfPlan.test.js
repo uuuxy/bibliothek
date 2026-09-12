@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import LmfPlan from './LmfPlan.svelte';
 import { apiFetch } from './apiFetch.js';
+import { VORSCHAU_ENTPRELLUNG_MS } from './lmfplanDienst.js';
 
 // Scheitert das Laden, darf der Planer NICHT erscheinen.
 //
@@ -242,8 +243,10 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		const hinweis = screen.getByTestId('lmf-zeitraum-hinweis').textContent ?? '';
 		expect(hinweis).toContain('Sommerferien 2031 sind noch nicht hinterlegt');
 		expect(hinweis).toContain('Einstellungen → LUSD & Versetzung → Sommerferien');
-		// Ohne Anker keine Vorschau und kein Speichern.
-		await new Promise((r) => setTimeout(r, 400));
+		// Ohne Anker keine Vorschau und kein Speichern. Gewartet wird nach der einen Zahl
+		// aus dem Dienst plus Luft — eine eigene Zahl hier hielte nach einer Änderung der
+		// Entprellung nur noch zufällig, was dieser Test zu prüfen behauptet.
+		await new Promise((r) => setTimeout(r, VORSCHAU_ENTPRELLUNG_MS + 150));
 		expect(gesendet).toHaveLength(0);
 		expect(
 			/** @type {HTMLButtonElement} */ (screen.getByRole('button', { name: 'Plan speichern' }))

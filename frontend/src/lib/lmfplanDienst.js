@@ -109,6 +109,13 @@ export async function ladeStand(art) {
 	return await res.json();
 }
 
+/** Die Entprellung der Vorschau: So lange wartet der Planer nach der letzten Änderung,
+ *  bevor er den Server rechnen lässt. Exportiert, weil der Test sie kennen muss — er
+ *  prüft, dass OHNE Anker gar nicht gerechnet wird, und muss dafür sicher über die
+ *  Wartezeit hinaus. Stand die Zahl dort ein zweites Mal, hielte der Test nach einer
+ *  Änderung hier nur noch zufällig, was er zu prüfen behauptet. */
+export const VORSCHAU_ENTPRELLUNG_MS = 250;
+
 /** Der leere Entwurf — der Zustand des Planers vor dem ersten Laden.
  *
  *  Die drei Stundenzahlen sind dieselbe Vorgabe, die der Server vorschlägt: Beginn in der

@@ -31,7 +31,7 @@
 	const z = planer.zustand;
 
 	// Vorschau: der Server rechnet die Plätze, sobald sich etwas ändert, wovon sie
-	// abhängen (dienst.vorschauSchluessel, entprellt um 250 ms). Der Effekt liest den
+	// abhängen (dienst.vorschauSchluessel, entprellt — die Zahl steht im Dienst). Der Effekt liest den
 	// Entwurf und schreibt nichts von dem, was er liest — kein Effekt auf eigenen State.
 	$effect(() => {
 		void dienst.vorschauSchluessel(z.entwurf);
@@ -43,7 +43,7 @@
 					art,
 					untrack(() => JSON.parse(JSON.stringify(z.entwurf)))
 				),
-			250
+			dienst.VORSCHAU_ENTPRELLUNG_MS
 		);
 		return () => clearTimeout(timer);
 	});
