@@ -51,26 +51,32 @@ func istEigeneRueckgabe(chkCtx *checkoutContext, activeLoan *repository.Loan) bo
 	return false
 }
 
-// pruefeSchuelerAusleihlimit erzwingt das Ausleihlimit für Schüler (LMF-Bücher
-// und die eigene Rückgabe sind ausgenommen).
-func (s *defaultLoanService) pruefeSchuelerAusleihlimit(ctx context.Context, chkCtx *checkoutContext, copy *repository.BookCopy, activeLoansCount int, isReturningThis bool) error {
+// pruefeSchuelerAusleihlimit erzwingt das Ausleihlimit für Schüler. Ausgenommen sind
+// LMF-Bücher und jede Rückgabe — bei einer Rückgabe entsteht keine Ausleihe, die gegen
+// das Limit zählen könnte.
+func (s *defaultLoanService) pruefeSchuelerAusleihlimit(ctx context.Context, chkCtx *checkoutContext, copy *repository.BookCopy, activeLoansCount int, neueAusleihe bool) error {
 	if chkCtx.borrowerType != "student" {
+		return nil
+	}
+	if !neueAusleihe {
 		return nil
 	}
 	settings, err := s.querySettings(ctx)
 	if err != nil {
 		return err
 	}
-	if !copy.IstLernmittel && activeLoansCount >= settings.MaxAusleihenSchueler && !isReturningThis {
+	if !copy.IstLernmittel && activeLoansCount >= settings.MaxAusleihenSchueler {
 		return fmt.Errorf("%w: Ausleihlimit von %d Büchern überschritten (aktuell: %d)", ErrBlocked, settings.MaxAusleihenSchueler, activeLoansCount)
 	}
 	return nil
 }
 
 // pruefeVormerkungKonflikt blockiert die Ausleihe, wenn das Exemplar für einen
-// anderen Schüler abholbereit reserviert ist. Bei einer Rückgabe entfällt die Prüfung.
-func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pgx.Tx, copyID string, chkCtx *checkoutContext, isReturningThis bool) error {
-	if isReturningThis {
+// anderen Schüler abholbereit reserviert ist. Bei jeder Rückgabe entfällt die Prüfung —
+// auch bei der Fremdrückgabe, die das Exemplar nur zurücknimmt (die Vormerkung bedient
+// danach processReturnVormerkungTx).
+func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pgx.Tx, copyID string, chkCtx *checkoutContext, neueAusleihe bool) error {
+	if !neueAusleihe {
 		return nil
 	}
 	var reservedSchuelerID, resVorname, resNachname string
@@ -137,25 +143,30 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	}
 
 	isReturningThis := istEigeneRueckgabe(chkCtx, activeLoan)
+	// Eine Ausleihe entsteht nur am freien Exemplar. Beide Rückgabe-Fälle nehmen bloß
+	// zurück — die Fremdrückgabe kennt den Ausleiher der Sitzung nicht einmal
+	// (handleForeignReturn bekommt keinen checkoutContext).
+	neueAusleihe := activeLoan == nil
 
-	// Sperrgründe — nur, wenn es keine eigene Rückgabe ist, wie beim Ausleihlimit. Bis
-	// 11.09.2026 liefen sie beim Auflösen des Ausleihers, bevor feststand, wem das Buch
-	// gehört: Ein wegen Überfälligkeit gesperrtes Kind wurde mit genau diesen Büchern
-	// abgewiesen. Die Ausleihe liegt hier unter FOR UPDATE; „eigene Rückgabe" kann sich bis
-	// zum Commit nicht mehr ändern, ein Wettlauf öffnet also keine Ausleihe an der Sperre vorbei.
-	if chkCtx.student != nil && !isReturningThis {
+	// 3. Die Schranken der Ausleihe — Sperrgründe, Ausleihlimit, fremde Vormerkung — nur,
+	// wenn wirklich eine Ausleihe entsteht. Sie liefen bis zum 11.09.2026 beim Auflösen des
+	// Ausleihers, bevor feststand, wem das Buch gehört (ein wegen Überfälligkeit gesperrtes
+	// Kind wurde mit genau diesen Büchern abgewiesen), und danach bis zum 12.09.2026 an
+	// `!isReturningThis` — was die Fremdrückgabe einschloss: Wer gesperrt oder am Limit war,
+	// konnte das Buch eines Mitschülers nicht abgeben, während dieselbe Rückgabe ohne offene
+	// Sitzung (HandleSimpleReturn) durchging. Die Ausleihe liegt hier unter FOR UPDATE, der
+	// Fall kann sich bis zum Commit nicht mehr ändern.
+	if chkCtx.student != nil && neueAusleihe {
 		if err := s.pruefeSchuelerAusleihbar(ctx, chkCtx.student, chkCtx.borrowerID, staffID, overrideBlock); err != nil {
 			return nil, err
 		}
 	}
 
-	// 3. Ausleihlimit für Schüler prüfen
-	if err := s.pruefeSchuelerAusleihlimit(ctx, chkCtx, copy, activeLoansCount, isReturningThis); err != nil {
+	if err := s.pruefeSchuelerAusleihlimit(ctx, chkCtx, copy, activeLoansCount, neueAusleihe); err != nil {
 		return nil, err
 	}
 
-	// 4. Reservierungsprüfung (Vormerkung)
-	if err := s.pruefeVormerkungKonflikt(ctx, tx, copy.ID, chkCtx, isReturningThis); err != nil {
+	if err := s.pruefeVormerkungKonflikt(ctx, tx, copy.ID, chkCtx, neueAusleihe); err != nil {
 		return nil, err
 	}
 

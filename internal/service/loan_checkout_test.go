@@ -41,7 +41,7 @@ func TestPruefeAusleihlimit_ErreichtesLimitBlockiert(t *testing.T) {
 	defer mock.Close()
 	expectSettings(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 5, false)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 5, true)
 
 	if !errors.Is(err, ErrBlocked) {
 		t.Errorf("erreichtes Limit (5 von 5) soll ErrBlocked liefern, bekam: %v", err)
@@ -53,7 +53,7 @@ func TestPruefeAusleihlimit_UnterLimitErlaubt(t *testing.T) {
 	defer mock.Close()
 	expectSettings(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 4, false)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 4, true)
 
 	if err != nil {
 		t.Errorf("4 von 5 Ausleihen soll erlaubt sein, bekam: %v", err)
@@ -67,7 +67,7 @@ func TestPruefeAusleihlimit_LMFBuchIstAusgenommen(t *testing.T) {
 	defer mock.Close()
 	expectSettings(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), lernmittel("Mathematik 7"), 10, false)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), lernmittel("Mathematik 7"), 10, true)
 
 	if err != nil {
 		t.Errorf("LMF-Buch soll trotz überschrittenem Limit durchgehen, bekam: %v", err)
@@ -84,7 +84,7 @@ func TestPruefeAusleihlimit_LMFNurInSignaturIstAusgenommen(t *testing.T) {
 	expectSettings(mock, "5")
 
 	err := svc.pruefeSchuelerAusleihlimit(
-		context.Background(), schuelerCtx("s1"), lernmittel("Mathematik Neue Wege 9"), 10, false,
+		context.Background(), schuelerCtx("s1"), lernmittel("Mathematik Neue Wege 9"), 10, true,
 	)
 
 	if err != nil {
@@ -92,16 +92,21 @@ func TestPruefeAusleihlimit_LMFNurInSignaturIstAusgenommen(t *testing.T) {
 	}
 }
 
-func TestPruefeAusleihlimit_EigeneRueckgabeIstAusgenommen(t *testing.T) {
-	// Beim Zurückgeben des eigenen Buchs darf das Limit nicht blockieren.
+func TestPruefeAusleihlimit_RueckgabeIstAusgenommen(t *testing.T) {
+	// Bei einer Rückgabe entsteht keine Ausleihe — weder bei der eigenen noch bei der
+	// fremden (das Buch eines Mitschülers, abgegeben während jemand an der Theke steht).
+	// Das Limit darf keine davon blockieren; bis zum 12.09.2026 scheiterte die
+	// Fremdrückgabe am Limit des Kindes in der Sitzung.
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
-	expectSettings(mock, "5")
 
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 10, true)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), schuelerCtx("s1"), buchMitTitel("Der Hobbit"), 10, false)
 
 	if err != nil {
-		t.Errorf("eigene Rückgabe soll trotz Limit durchgehen, bekam: %v", err)
+		t.Errorf("Rückgabe soll trotz Limit durchgehen, bekam: %v", err)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("bei einer Rückgabe darf keine Einstellungs-Abfrage laufen: %v", err)
 	}
 }
 
@@ -112,7 +117,7 @@ func TestPruefeAusleihlimit_LehrerOhneLimit(t *testing.T) {
 	defer mock.Close()
 
 	lehrerCtx := &checkoutContext{borrowerType: "teacher", borrowerID: "l1"}
-	err := svc.pruefeSchuelerAusleihlimit(context.Background(), lehrerCtx, buchMitTitel("Der Hobbit"), 99, false)
+	err := svc.pruefeSchuelerAusleihlimit(context.Background(), lehrerCtx, buchMitTitel("Der Hobbit"), 99, true)
 
 	if err != nil {
 		t.Errorf("Lehrkraft soll kein Ausleihlimit haben, bekam: %v", err)
@@ -306,7 +311,7 @@ func TestVormerkungKonflikt_FremdeReservierungBlockiert(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}).
 			AddRow("s2", "Erika", "Musterfrau"))
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), false)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
 
 	if !errors.Is(err, ErrConflict) {
 		t.Errorf("für s2 reserviertes Exemplar darf nicht an s1 gehen, bekam: %v", err)
@@ -322,7 +327,7 @@ func TestVormerkungKonflikt_EigeneReservierungErlaubt(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"schueler_id", "vorname", "nachname"}).
 			AddRow("s1", "Max", "Mustermann"))
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), false)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
 
 	if err != nil {
 		t.Errorf("eigene Reservierung soll abholbar sein, bekam: %v", err)
@@ -336,7 +341,7 @@ func TestVormerkungKonflikt_OhneReservierungErlaubt(t *testing.T) {
 
 	mock.ExpectQuery(vormerkungQuery).WithArgs("copy1").WillReturnError(pgx.ErrNoRows)
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), false)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
 
 	if err != nil {
 		t.Errorf("ohne Reservierung soll die Ausleihe durchgehen, bekam: %v", err)
@@ -345,12 +350,13 @@ func TestVormerkungKonflikt_OhneReservierungErlaubt(t *testing.T) {
 
 func TestVormerkungKonflikt_BeiRueckgabeKeinePruefung(t *testing.T) {
 	// Eine Rückgabe darf nie an einer Reservierung scheitern — es wird bewusst
-	// gar keine Abfrage erwartet.
+	// gar keine Abfrage erwartet. Das gilt für die eigene wie für die fremde: Beide
+	// nehmen nur zurück, die Vormerkung bedient danach processReturnVormerkungTx.
 	svc, _, mock := newValidationService(t, nil)
 	defer mock.Close()
 	tx := beginTx(t, mock)
 
-	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), true)
+	err := svc.pruefeVormerkungKonflikt(context.Background(), tx, "copy1", schuelerCtx("s1"), false)
 
 	if err != nil {
 		t.Errorf("Rückgabe soll nicht geprüft werden, bekam: %v", err)

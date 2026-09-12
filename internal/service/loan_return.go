@@ -140,9 +140,10 @@ func (s *defaultLoanService) handleLehrerHandapparat(ctx context.Context, tx pgx
 		return nil, fmt.Errorf("%w: dieses Buchexemplar ist ausgesondert", ErrInvalidState)
 	}
 	// Die Lehrkraft ist kein Schüler-Ausleiher → jede aktive Reservierung (abholbereit) auf
-	// dieses Exemplar ist ein Konflikt und blockiert die Handapparat-Buchung.
+	// dieses Exemplar ist ein Konflikt und blockiert die Handapparat-Buchung. Der letzte
+	// Parameter heißt „hier entsteht eine Ausleihe" — die Handapparat-Dauerleihe ist eine.
 	if err := s.pruefeVormerkungKonflikt(ctx, tx, copy.ID,
-		&checkoutContext{borrowerID: staffID, borrowerType: "teacher"}, false); err != nil {
+		&checkoutContext{borrowerID: staffID, borrowerType: "teacher"}, true); err != nil {
 		return nil, err
 	}
 
