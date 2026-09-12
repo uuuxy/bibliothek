@@ -69,7 +69,7 @@ func TestLoeschRueckstand_WaechterUndJobStellenDieselbeFrage(t *testing.T) {
 	s.RunAuditAufbewahrung()
 
 	// Richtung 2: Ist danach Ruhe? Jede verbleibende Zeile heißt, dass der Wächter eine
-	// ANDERE Frage stellt als der Job — die Bugklasse, gegen die diese Datei antritt.
+	// ANDERE Frage stellt als der Job — die Fehlerklasse, gegen die diese Datei antritt.
 	for routine, zeilen := range rueckstandAlsMap(ctx, t, zustand) {
 		if zeilen > 0 {
 			t.Errorf("nach dem Lauf meldet %q noch %d Zeilen — Wächter und Job fragen Verschiedenes", routine, zeilen)

@@ -11,7 +11,7 @@ import (
 )
 
 // TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres schließt die Gate-Lücke, die
-// den GDPR-Anonymisierungs-Bug so lange verborgen hielt (Cron-Matrix-Sweep 20.08.2026):
+// den GDPR-Anonymisierungs-Fehler so lange verborgen hielt (Cron-Matrix-Sweep 20.08.2026):
 // Die harte DSGVO-Löschung fälliger Abgänger (RunGDPRDeleteAbgaenger → PurgeAbgaenger →
 // entferneSchuelerPIIUndLoesche) war NUR mit pgxmock getestet — ein Schema-/Constraint-/
 // FK-Fehler (etwa ein ON DELETE RESTRICT auf einer Nebentabelle) würde still scheitern und

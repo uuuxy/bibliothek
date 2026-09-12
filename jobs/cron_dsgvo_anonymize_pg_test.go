@@ -66,7 +66,7 @@ func TestGDPRAnonymizeOldData_LeertAllePII(t *testing.T) {
 	s := NewScheduler(pool, repository.NewAuditRepository(pool))
 	s.RunGDPRAnonymizeOldData()
 
-	// (a) Die Anonymisierung MUSS gelaufen sein. Vor dem Fix scheiterte die Query still
+	// (a) Die Anonymisierung MUSS gelaufen sein. Vor der Lösung scheiterte die Query still
 	// (foto_url/anonymized_at existierten nicht) → anonymized_at bliebe NULL.
 	var anonymisiert bool
 	if err := pool.QueryRow(ctx,
