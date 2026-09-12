@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-09-05
+> Zuletzt aktualisiert: 2026-09-12
 
 ---
 
@@ -193,7 +193,12 @@ cd /pfad/zur/bibliothek
 docker compose --env-file .env up -d --build
 ```
 
-`docker-compose.yml` verlangt `POSTGRES_PASSWORD`, `IMAP_HOST`, `JWT_SECRET` und `APP_ENCRYPTION_KEY` per `${VAR:?}` — ohne sie bricht `docker compose up` mit der jeweiligen Meldung ab. Für alles Weitere liefert die Datei Defaults. Wer nach dem Pull vom 05.09.2026 diese Meldung sieht, ergänzt die `.env` (`openssl rand -base64 48` für den JWT-Schlüssel, `openssl rand -hex 16` für den 32-Byte-AES-Schlüssel); ein **bestehendes** System behält seinen `APP_ENCRYPTION_KEY` unbedingt — siehe Warnung oben.
+`docker-compose.yml` verlangt `POSTGRES_PASSWORD`, `IMAP_HOST`, `JWT_SECRET` und `APP_ENCRYPTION_KEY` per `${VAR:?}` — ohne sie bricht `docker compose up` mit der jeweiligen Meldung ab. Für alles Weitere liefert die Datei Defaults. Wer nach dem Pull vom 05.09.2026 diese Meldung sieht, ergänzt die `.env` mit denselben Befehlen wie in §2.1 — `openssl rand -hex 32` für den JWT-Schlüssel UND für den AES-Schlüssel (64 Hex-Zeichen = 32 Byte). Ein **bestehendes** System behält seinen `APP_ENCRYPTION_KEY` unbedingt — siehe Warnung oben.
+
+> Hier standen bis zum 12.09.2026 zwei andere Befehle: einer in Base64 — was §2.1 für die
+> ganze Datei ausschließt, weil ein `POSTGRES_PASSWORD` mit `+` oder `/` die DSN zerlegt —
+> und einer mit halber Länge (16 statt der verlangten 32 Byte). Wer danach ging, bekam beim
+> Start eine Schlüssellänge, die der Server ablehnt.
 
 ### 2.4 Deployment-Skript
 
@@ -521,11 +526,23 @@ will, nimmt den Versions-Tag. Beide Tag-Workflows prüfen vorher: striktes Muste
 `v<major>.<minor>.<patch>`, Commit liegt auf `main`, CI des Commits ist grün — ein Tag auf
 einem Feature-Branch oder rotem Stand erzeugt weder Release noch Image.
 
-**Was das Release-Gate prüft — und was nicht** (Erfahrung v1.9.7, 05.09.2026):
-`release.yml` verlangt auf dem getaggten Commit nur den Check-Run `build-and-test` (der im
-Workflow ebenfalls genannte `docker-scan` existiert nicht mehr); `e2e` gehört **nicht** zur
-Schranke. Vor dem Tag deshalb selbst nachsehen, ob `e2e` grün ist — ein Tag auf rotem e2e
-erzeugt Release und Image trotzdem. Der Workflow legt die Notes als Docker-Zeile plus
+**Was das Release-Gate prüft — und was nicht** (Stand 12.09.2026): `release.yml` verlangt
+auf dem getaggten Commit alle vier Jobs aus `ci.yml` —
+`actionlint build-and-test frontend-test e2e`. Dass diese Liste vollständig bleibt, hält
+eine Ratsche fest (`docs/umgebung_paritaet_test.go`,
+`TestReleaseGateVerlangtAlleCIJobs`): Ein neuer CI-Job, der nicht in der Pflichtliste
+steht, macht sie rot — und ein Name in der Liste, den ci.yml nicht baut, ebenfalls.
+
+**Nicht** in der Schranke stehen die vier Jobs aus `security-scan.yml` (`go-vuln-scan`,
+`go-sec-scan`, `npm-audit`, `docker-scan`). Ein Tag auf einem Commit mit rotem Trivy-Scan
+erzeugt also Release und Image. Ob das so bleiben soll, ist eine offene Entscheidung
+(Register: „Security-Jobs im Release-Gate", 10.09.2026) — bis dahin gilt: vor dem Tag
+selbst nachsehen.
+
+Bis zum 12.09.2026 stand hier, das Gate verlange „nur den Check-Run `build-and-test`" und
+`e2e` gehöre nicht dazu, und `docker-scan` „existiert nicht mehr". Beides stimmte nicht
+mehr bzw. nie: Die Pflichtliste wurde am 06.09. auf alle CI-Jobs erweitert, und
+`docker-scan` gibt es — in `security-scan.yml`, nur eben nicht in `ci.yml`. Der Workflow legt die Notes als Docker-Zeile plus
 Commit-Liste an; der Abschnitt „Worum es in diesem Stand geht" wird danach von Hand
 davor gesetzt (`gh release edit vX.Y.Z --notes-file …`). Für die Tag-Annotation lohnt
 ein sprechender Text (`-m "vX.Y.Z — drei Stichworte"`), er ist die einzige Beschreibung

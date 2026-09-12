@@ -51,7 +51,6 @@ services:
       - "127.0.0.1:8084:8084" # Lokaler Zugriff unter http://localhost:8084
     environment:
       - PORT=8084
-      - DB_HOST=postgres-db
       # Lokaler Entwicklungsmodus (APP_ENV=local): COOKIE_SECURE=false, Guard aus.
       # Das DB-Passwort kommt aus der .env (POSTGRES_PASSWORD) — kein committetes
       # Default-Secret mehr; siehe .env.example (cp .env.example .env).
@@ -75,7 +74,6 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
-      - SMTP_SENDER=${SMTP_FROM}
       # Diese Zeilen sind Pflicht, nicht Kür: Compose reicht ohne env_file AUSSCHLIESSLICH
       # die hier gelisteten Schlüssel in den Container. Sie fehlten — der Backup-Job fand
       # deshalb im Container nie einen Schlüssel und übersprang sich STILL, obwohl
