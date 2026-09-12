@@ -333,7 +333,15 @@ func pruefeLmfPlan(art string, req lmfPlanRequest) (lmfPlanEntwurf, error) {
 	e.Zeilen = make([]repository.LmfPlanZeile, 0, len(req.Zeilen))
 	e.Fest = make([]*lmfplan.Platz, 0, len(req.Zeilen))
 	for i, z := range req.Zeilen {
-		zeile := repository.LmfPlanZeile{Vermerk: strings.TrimSpace(z.Vermerk), Fest: z.Fest != nil}
+		// Klassen als leere Liste anlegen, nicht als nil: Die Vorschau lieferte sonst
+		// `klassen: null`, wo der gespeicherte Plan `[]` liefert (schreibeKlassen) — zwei
+		// Formen derselben Zeile, und die Oberfläche müsste beide kennen. Betroffen sind
+		// die Zeilen ohne Klasse, die es im echten Plan gibt („Nachzügler", „Aufräumen").
+		zeile := repository.LmfPlanZeile{
+			Vermerk: strings.TrimSpace(z.Vermerk),
+			Fest:    z.Fest != nil,
+			Klassen: make([]string, 0, len(z.Klassen)),
+		}
 		for _, k := range z.Klassen {
 			if k = strings.TrimSpace(k); k != "" {
 				zeile.Klassen = append(zeile.Klassen, k)
