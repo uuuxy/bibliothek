@@ -341,11 +341,12 @@ des Schulträgers (Schülerbücherei) beschafft wird.
 
 ### 7.3 Bauplan (kleiner als Teil A)
 
-**Stand 10.09.2026 — erster Schnitt gebaut:** Schritte 1, 2, 3 und 5 (Migration 109,
-Warenkorb in zwei Gruppen mit Verschieben, je Gruppe eine Bestellung, Vermerk auf
-Anschreiben und Mail, Lernmittel-Frage im Staging-Fenster, Topf-Chip in Historie und
-Detail, Topf nachträglich mit Grund korrigierbar). Offen als zweiter Schnitt: Schritt 4
-(Berichte und Historie nach Topf getrennt). Schritt 6 ist nach den Antworten unten auf
+**Stand 12.09.2026 — Teil B gebaut:** Schritte 1, 2, 3 und 5 im ersten Schnitt
+(Migration 109, Warenkorb in zwei Gruppen mit Verschieben, je Gruppe eine Bestellung,
+Vermerk auf Anschreiben und Mail, Lernmittel-Frage im Staging-Fenster, Topf-Chip in
+Historie und Detail, Topf nachträglich mit Grund korrigierbar), **Schritt 4 am
+12.09.2026** (Bericht in Blöcken je Topf mit eigener Summe, Topf-Filter für alle drei
+Berichtsarten, Filter und Aufteilung der Kennzahlen in der Historie). Schritt 6 ist nach den Antworten unten auf
 die zweite Kundennummer geschrumpft — eine eigene Rechnungsanschrift je Topf gibt es
 nicht, beide Rechnungen gehen an die Schule. Der Vermerk nennt weder Träger noch
 Behörde, nur den Topf (Peters Vorgabe: kein Rechts- oder Regionalbezug außerhalb der
@@ -374,10 +375,18 @@ Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
    Topfs. EINE Textquelle `api/mittel_vermerk.go`; Platzhalter `{{.Mittel}}` für die
    Vorlage `BESTELLUNG_HAENDLER` (Platzhalter-Paritäts-Gate zieht mit; fehlt der
    Platzhalter, ergänzt der Versand den Vermerk).
-4. **Berichte getrennt (offen):** Monats- und Jahresbericht in zwei Blöcken (Land /
-   Schulträger) mit je eigener Summe, Gesamtsumme darunter; die Lieferantenabrechnung
-   bekommt den Topf-Filter — sie ist das Blatt, gegen das die Händlerrechnung geprüft
-   wird. Bestellhistorie: Filter nach Topf; Kennzahlen der Übersicht je Topf.
+4. **Berichte getrennt — GEBAUT 12.09.2026** (`14e6a56d`, `9f0fca8f`): Die Detailliste
+   steht in Blöcken (Lernmittelfreiheit, Schülerbücherei, zuletzt die Alt-Bestellungen
+   ohne Zuordnung), je mit eigener Summe und der Gesamtsumme darunter; alle drei
+   Berichtsarten nehmen den Topf-Filter (`?mittel=land|schultraeger|ohne`), der Titel
+   nennt ihn. Die Bestellhistorie filtert serverseitig — sie ist gedeckelt, im Browser
+   gefiltert zeigte sie nur den Rest der neuesten 200 —, und die Kennzahlen im Kopf
+   stehen zusätzlich je Topf. Der Filterwert `ohne` ist der Weg zu den Alt-Bestellungen,
+   die der Rückweg (Nr. 6) noch braucht. Gates: `api/bestellbericht_mittel_test.go`
+   (PDF-Inhaltsstrom, Summen je Topf = Gesamt), `api/bestellbericht_mittel_pg_test.go`,
+   `api/bestellhistorie_mittel_pg_test.go` (Aufteilung = Gesamtzahlen),
+   `bestellberichte.test.js`, `BestellHistorieKopf.test.js`,
+   `OrderStaging.test.js` (der DNB-Titel mit Haken).
 5. **Neuer Titel aus der DNB-Suche:** Das Staging-Fenster fragt „Lernmittel?" und setzt
    `ist_lernmittel` über `PUT /api/buecher/titel/{id}/lernmittel` — schließt die Lücke
    aus 7.2.
