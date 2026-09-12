@@ -52,14 +52,26 @@ export function berichtOptionen(mitPreisen) {
 }
 
 /**
+ * Adresse des Berichts-PDFs.
+ *
+ * `mittel` engt den Bericht auf einen Topf ein (leer = beide und die Alt-Bestellungen
+ * ohne Zuordnung). Die Überschrift des Blattes hängt der Server an — dort steht die eine
+ * Beschriftung, die auch Chip und Anschreiben tragen (api/mittel_vermerk.go,
+ * Paritäts-Gate).
+ *
  * @param {{
  *   typ: string, monatJahr: string, jahr: string, vonDatum: string, bisDatum: string,
  *   lieferantId: string, suppliers: Array<{ id: string, name: string }>,
- *   mitPreisen: boolean
+ *   mitPreisen: boolean, mittel?: string
  * }} eingabe
  */
 export function berichtURL(eingabe) {
 	const base = '/api/bestellhistorie/bericht';
+	/** @param {URLSearchParams} params */
+	const mitTopf = (params) => {
+		if (eingabe.mittel) params.set('mittel', eingabe.mittel);
+		return params;
+	};
 	if (eingabe.typ === 'monat') {
 		const [y, m] = eingabe.monatJahr.split('-');
 		const params = new URLSearchParams({
@@ -67,7 +79,7 @@ export function berichtURL(eingabe) {
 			bis: lastOfMonth(eingabe.monatJahr),
 			titel: `Monatsbericht ${MONATE[Number(m) - 1] ?? ''} ${y}`
 		});
-		return `${base}?${params}`;
+		return `${base}?${mitTopf(params)}`;
 	}
 	if (eingabe.typ === 'jahr') {
 		const params = new URLSearchParams({
@@ -76,7 +88,7 @@ export function berichtURL(eingabe) {
 			jahresansicht: 'true',
 			titel: `Jahresbericht ${eingabe.jahr}`
 		});
-		return `${base}?${params}`;
+		return `${base}?${mitTopf(params)}`;
 	}
 	const name = eingabe.suppliers.find((s) => s.id === eingabe.lieferantId)?.name ?? 'Lieferant';
 	const params = new URLSearchParams({
@@ -85,5 +97,5 @@ export function berichtURL(eingabe) {
 		lieferant_id: eingabe.lieferantId,
 		titel: `${eingabe.mitPreisen ? 'Lieferantenabrechnung' : 'Lieferantenübersicht'}: ${name}`
 	});
-	return `${base}?${params}`;
+	return `${base}?${mitTopf(params)}`;
 }

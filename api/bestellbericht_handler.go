@@ -25,7 +25,11 @@ type berichtOrder struct {
 	Bestelldatum    time.Time
 	Gesamtbetrag    float64
 	AnzahlExemplare int
-	Positionen      []berichtPosition
+	// Mittel ist der Topf, aus dem die Bestellung bezahlt wird (Migration 109). Leer =
+	// Alt-Bestellung ohne eindeutige Zuordnung; sie wird als solche ausgewiesen und
+	// niemals einem Topf zugeschlagen.
+	Mittel     string
+	Positionen []berichtPosition
 }
 
 type berichtPosition struct {
@@ -53,30 +57,41 @@ func parseBerichtZeitraum(vonStr, bisStr string) (time.Time, time.Time, error) {
 
 // berichtTitelAbleiten liefert den Berichtstitel: expliziter Titel hat Vorrang,
 // sonst wird er aus dem Kontext (Lieferant / Jahresansicht) abgeleitet.
-func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool) string {
-	if titel != "" {
-		return titel
+func berichtTitelAbleiten(titel, lieferantID string, jahresansicht bool, mittel string) string {
+	if titel == "" {
+		switch {
+		case lieferantID != "":
+			titel = "Lieferantenabrechnung"
+		case jahresansicht:
+			titel = "Jahresbericht"
+		default:
+			titel = "Bestellbericht"
+		}
 	}
-	if lieferantID != "" {
-		return "Lieferantenabrechnung"
+	// Ist der Bericht auf einen Topf gefiltert, gehört das in die Überschrift: Ein Blatt
+	// ohne diesen Zusatz sieht aus wie der Gesamtbericht und wird auch so abgelegt.
+	if beschriftung := mittelBeschriftung(mittel); mittel != "" && beschriftung != "" {
+		titel += " — " + beschriftung
 	}
-	if jahresansicht {
-		return "Jahresbericht"
-	}
-	return "Bestellbericht"
+	return titel
 }
 
 // ladeBestellungen liest die Bestellungen im Zeitraum (optional je Lieferant) und
 // liefert zusätzlich einen Index ID→Position für das Nachladen der Positionen.
-func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Time, lieferantID string) ([]berichtOrder, map[string]int, error) {
+func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Time, lieferantID, mittel string) ([]berichtOrder, map[string]int, error) {
 	orderQuery := `
-		SELECT id, lieferant_name, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare
+		SELECT id, lieferant_name, kundennummer, bestelldatum, gesamtbetrag, anzahl_exemplare,
+		       coalesce(mittel, '')
 		FROM bestellungen_verlauf
 		WHERE bestelldatum >= $1 AND bestelldatum < $2`
 	args := []any{von, bisExklusiv}
 	if lieferantID != "" {
-		orderQuery += " AND lieferant_id = $3"
 		args = append(args, lieferantID)
+		orderQuery += fmt.Sprintf(" AND lieferant_id = $%d", len(args))
+	}
+	if mittel != "" {
+		args = append(args, mittel)
+		orderQuery += fmt.Sprintf(" AND mittel = $%d", len(args))
 	}
 	orderQuery += " ORDER BY bestelldatum ASC"
 
@@ -91,7 +106,7 @@ func (s *Server) ladeBestellungen(ctx context.Context, von, bisExklusiv time.Tim
 	for orderRows.Next() {
 		var o berichtOrder
 		if err := orderRows.Scan(&o.ID, &o.LieferantName, &o.Kundennummer,
-			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare); err != nil {
+			&o.Bestelldatum, &o.Gesamtbetrag, &o.AnzahlExemplare, &o.Mittel); err != nil {
 			return nil, nil, err
 		}
 		orderIndex[o.ID] = len(orders)
@@ -159,10 +174,21 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		bisExklusiv := bis.AddDate(0, 0, 1)
 
 		lieferantID := q.Get("lieferant_id")
+		// Der Topf-Filter macht aus dem Bericht das Blatt, gegen das EINE Rechnung geprüft
+		// wird (Konzept 7.3 Schritt 4). Ein unbekannter Wert ist ein Fehler und kein
+		// stiller Gesamtbericht: Sonst prüfte das Sekretariat die Landes-Rechnung gegen
+		// eine Liste, in der auch die Schülerbücherei steht.
+		mittel := q.Get("mittel")
+		if mittel != "" && !repository.MittelGueltig(mittel) {
+			apierrors.SendHTTPError(w, http.StatusBadRequest,
+				fmt.Errorf("unbekannter Topf %q — erlaubt sind %q und %q",
+					mittel, repository.MittelLand, repository.MittelSchultraeger))
+			return
+		}
 		jahresansicht := q.Get("jahresansicht") == "true"
-		berichtTitel := berichtTitelAbleiten(q.Get("titel"), lieferantID, jahresansicht)
+		berichtTitel := berichtTitelAbleiten(q.Get("titel"), lieferantID, jahresansicht, mittel)
 
-		orders, orderIndex, err := s.ladeBestellungen(ctx, von, bisExklusiv, lieferantID)
+		orders, orderIndex, err := s.ladeBestellungen(ctx, von, bisExklusiv, lieferantID, mittel)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -459,18 +485,80 @@ func zeichneDetailliste(p *gofpdf.Fpdf, tr func(string) string, orders []bericht
 	p.Cell(0, 8, tr("Bestellungen im Detail"))
 	p.Ln(8)
 
+	// Ein Block je Topf statt einer gemischten Liste (Konzept 7.3, Schritt 4): Für das
+	// Schulamt zählt der Landes-Anteil, für den Schulträger seiner. Wer die Summen von
+	// Hand aus einer gemischten Liste zieht, rechnet sie jeden Monat neu — und anders.
 	spalten := spaltenFuerBericht(r.MitPreisen)
-	for _, o := range orders {
-		if p.GetY() > 240 {
-			p.AddPage()
+	for _, topf := range mittelReihenfolge {
+		block := bestellungenMitMittel(orders, topf)
+		if len(block) == 0 {
+			continue
 		}
-		zeichneBestellKopf(p, tr, o)
-		zeichneSpaltenkoepfe(p, tr, spalten, r.MitPreisen)
-		zeichnePositionen(p, tr, o.Positionen, spalten, r.MitPreisen)
-		zeichneBestellSumme(p, tr, o, r.MitPreisen)
+		zeichneTopfKopf(p, tr, topf)
+		for _, o := range block {
+			if p.GetY() > 240 {
+				p.AddPage()
+			}
+			zeichneBestellKopf(p, tr, o)
+			zeichneSpaltenkoepfe(p, tr, spalten, r.MitPreisen)
+			zeichnePositionen(p, tr, o.Positionen, spalten, r.MitPreisen)
+			zeichneBestellSumme(p, tr, o, r.MitPreisen)
+		}
+		zeichneTopfSumme(p, tr, topf, block, r.MitPreisen)
 	}
 
 	zeichneGesamtsumme(p, tr, r)
+}
+
+// bestellungenMitMittel filtert die Bestellungen eines Topfs; "" sind die
+// Alt-Bestellungen ohne eindeutige Zuordnung.
+func bestellungenMitMittel(orders []berichtOrder, mittel string) []berichtOrder {
+	aus := make([]berichtOrder, 0, len(orders))
+	for _, o := range orders {
+		if o.Mittel == mittel {
+			aus = append(aus, o)
+		}
+	}
+	return aus
+}
+
+// summiereBestellungen liefert Betrag und Exemplarzahl einer Gruppe.
+func summiereBestellungen(orders []berichtOrder) (betrag float64, exemplare int) {
+	for _, o := range orders {
+		betrag += o.Gesamtbetrag
+		exemplare += o.AnzahlExemplare
+	}
+	return betrag, exemplare
+}
+
+// zeichneTopfKopf setzt die Überschrift eines Topf-Blocks.
+func zeichneTopfKopf(p *gofpdf.Fpdf, tr func(string) string, mittel string) {
+	if p.GetY() > 235 {
+		p.AddPage()
+	}
+	p.SetFont("Arial", "B", 10)
+	p.SetFillColor(235, 240, 250)
+	p.CellFormat(170, 7, tr(" "+mittelBeschriftung(mittel)), "1", 1, "L", true, 0, "")
+	p.SetFillColor(255, 255, 255)
+	p.Ln(2)
+}
+
+// zeichneTopfSumme setzt die Abschlusszeile eines Topf-Blocks — die Zahl, die in die
+// Abrechnung dieses Topfs geht.
+func zeichneTopfSumme(p *gofpdf.Fpdf, tr func(string) string, mittel string, block []berichtOrder, mitPreisen bool) {
+	betrag, exemplare := summiereBestellungen(block)
+	p.SetFont("Arial", "B", 9)
+	p.SetFillColor(225, 232, 245)
+	beschriftung := fmt.Sprintf("Summe %s (%d Bestellungen, %d Exemplare)",
+		mittelBeschriftung(mittel), len(block), exemplare)
+	if mitPreisen {
+		p.CellFormat(150, 7, tr(beschriftung), "1", 0, "R", true, 0, "")
+		p.CellFormat(20, 7, tr(euroStr(betrag)), "1", 1, "R", true, 0, "")
+	} else {
+		p.CellFormat(170, 7, tr(beschriftung), "1", 1, "R", true, 0, "")
+	}
+	p.SetFillColor(255, 255, 255)
+	p.Ln(6)
 }
 
 type bestellBerichtOpts struct {

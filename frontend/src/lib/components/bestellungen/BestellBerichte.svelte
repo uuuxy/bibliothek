@@ -1,6 +1,7 @@
 <script>
 	import { localISO } from '../../utils/dates.js';
 	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
+	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -28,6 +29,18 @@
 
 	const yearOptions = Array.from({ length: 5 }, (_, i) => String(now.getFullYear() - i));
 
+	// Der Topf gilt für alle drei Berichtsarten: Das Sekretariat prüft die Rechnung des
+	// Händlers gegen das Blatt SEINES Topfes. Leer = beide, dazu die Alt-Bestellungen
+	// ohne eindeutige Zuordnung; sie stehen dann als eigener Block darin.
+	let mittel = $state('');
+	const mittelOptionen = [
+		{ value: '', label: 'Alle Mittel (mit Aufteilung)' },
+		...MITTEL_REIHENFOLGE.map((m) => ({
+			value: m,
+			label: `${MITTEL[m].label} (${MITTEL[m].traeger})`
+		}))
+	];
+
 	const berichtOptionen = $derived(optionen(orderStore.preiseErfassen));
 
 	let rangeInvalid = $derived(typ === 'lieferant' && vonDatum > bisDatum);
@@ -42,7 +55,8 @@
 			bisDatum,
 			lieferantId,
 			suppliers,
-			mitPreisen: orderStore.preiseErfassen
+			mitPreisen: orderStore.preiseErfassen,
+			mittel
 		})
 	);
 </script>
@@ -74,6 +88,11 @@
 	<!-- Parameter -->
 	<section class="space-y-4">
 		<p class="text-sm font-medium text-slate-700">Parameter</p>
+
+		<div class="space-y-1.5">
+			<label class="block text-sm font-medium text-on-surface" for="mittel">Mittelherkunft</label>
+			<Select id="mittel" bind:value={mittel} options={mittelOptionen} />
+		</div>
 
 		{#if typ === 'monat'}
 			<Feld id="monat" label="Monat" type="month" bind:value={monatJahr} />
