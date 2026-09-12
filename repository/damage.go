@@ -213,17 +213,13 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
 	}
 
-	var bestehenderSchaden string
-	err = tx.QueryRow(ctx,
-		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
-		loanID,
-	).Scan(&bestehenderSchaden)
-	if err == nil {
+	bestehenderSchaden, err := r.findExistingDamage(ctx, tx, loanID)
+	if err != nil {
+		return "", err
+	}
+	if bestehenderSchaden != "" {
 		// Schadensfall existiert bereits — idempotent zurückgeben, nichts doppelt buchen.
 		return bestehenderSchaden, nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return "", err
 	}
 
 	// Race-Schutz: Bleibt das Schadensformular offen, während das Buch zurückgegeben
@@ -241,7 +237,34 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 		return "", ErrExemplarNeuVerliehen
 	}
 
-	_, err = tx.Exec(ctx, `
+	schadensID, err := r.recordDamage(ctx, tx, copyID, loanID, loanSchuelerID, benutzerID, beschreibung, art, betrag)
+	if err != nil {
+		return "", err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return "", err
+	}
+	return schadensID, nil
+}
+
+func (r *pgDamageRepository) findExistingDamage(ctx context.Context, tx pgx.Tx, loanID string) (string, error) {
+	var bestehenderSchaden string
+	err := tx.QueryRow(ctx,
+		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
+		loanID,
+	).Scan(&bestehenderSchaden)
+	if err == nil {
+		return bestehenderSchaden, nil
+	}
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return "", err
+	}
+	return "", nil
+}
+
+func (r *pgDamageRepository) recordDamage(ctx context.Context, tx pgx.Tx, copyID, loanID string, loanSchuelerID *string, benutzerID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
+	_, err := tx.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESCHAEDIGUNG',
 		    zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
@@ -280,10 +303,6 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, s
 		WHERE id = $2
 	`, benutzerID, loanID)
 	if err != nil {
-		return "", err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
 		return "", err
 	}
 	return schadensID, nil
