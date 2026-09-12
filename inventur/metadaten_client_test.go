@@ -224,3 +224,26 @@ func TestSetzeHTTPClientFuerTest(t *testing.T) {
 		t.Errorf("Erwartete, dass der httpClient ueberschrieben wurde")
 	}
 }
+
+func TestHoleInhalt_HTTP4xx(t *testing.T) {
+	mockTr := &mockTransport{
+		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusBadRequest, // 400
+				Body:       io.NopCloser(bytes.NewBufferString("")),
+				Header:     make(http.Header),
+			}, nil
+		},
+	}
+	client := &MetadatenClient{
+		httpClient: &http.Client{Transport: mockTr},
+	}
+
+	_, err := client.holeInhalt(context.Background(), "https://services.dnb.de/api")
+	if err == nil {
+		t.Fatal("Expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "status 400") {
+		t.Fatalf("Expected error to contain 'status 400', got: %v", err)
+	}
+}
