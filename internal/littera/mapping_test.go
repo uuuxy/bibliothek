@@ -101,6 +101,16 @@ func TestLeseExemplare_SignaturUndFremdschluessel(t *testing.T) {
 	}
 }
 
+func TestLeseExemplare_Lesefehler(t *testing.T) {
+	ex, err := LeseExemplare(strings.NewReader(""))
+	if err == nil {
+		t.Fatal("erwartete Fehler bei leerer CSV, bekam keinen")
+	}
+	if ex != nil {
+		t.Errorf("erwartete nil Exemplare bei Fehler, bekam %v", ex)
+	}
+}
+
 // TestSignaturTrifftDenInventurScope ist der Test, der die beiden Welten verbindet:
 // Die aus Littera zusammengesetzte Signatur MUSS von der Praefix-Regel des
 // Inventur-Scopes getroffen werden. Sonst zeigt der Katalog ein Regal an, das die
