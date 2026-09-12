@@ -3,6 +3,7 @@ package inventur
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -26,6 +27,7 @@ func TestSucheNachISBN(t *testing.T) {
 	t.Run("Valid ISBN, Found in Google Books", testSucheISBNGoogle)
 	t.Run("Valid ISBN, Found in OpenLibrary", testSucheISBNOpenLibrary)
 	t.Run("Valid ISBN, Not Found Anywhere", testSucheISBNNotFound)
+	t.Run("5xx Error in Source", testHoleInhalt5xx)
 }
 
 func testSucheISBNInvalid(t *testing.T) {
@@ -201,6 +203,27 @@ func testSucheISBNNotFound(t *testing.T) {
 	_, err := client.SucheNachISBN(context.Background(), "9783161484100")
 	if err == nil || !strings.Contains(err.Error(), "keine metadaten für ISBN gefunden") {
 		t.Errorf("Expected not found error, got: %v", err)
+	}
+}
+
+func testHoleInhalt5xx(t *testing.T) {
+	mockTr := &mockTransport{
+		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusInternalServerError,
+				Body:       io.NopCloser(bytes.NewBufferString("")),
+				Header:     make(http.Header),
+			}, nil
+		},
+	}
+
+	client := &MetadatenClient{
+		httpClient: &http.Client{Transport: mockTr},
+	}
+
+	_, err := client.holeInhalt(context.Background(), "https://services.dnb.de/sru/dnb")
+	if err == nil || !errors.Is(err, errQuelleNichtErreichbar) {
+		t.Errorf("Expected errQuelleNichtErreichbar, got: %v", err)
 	}
 }
 
