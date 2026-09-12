@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useStudentProfile } from './useStudentProfile.svelte.js';
 import { apiFetch } from './apiFetch.js';
 
-// Die Akte lädt drei Dinge nebeneinander: Stammdaten, Vormerkungen, Gebühren.
+// Die Akte lädt vier Dinge nebeneinander: Stammdaten, Vormerkungen, Gebühren, Bescheide.
 //
 // Bis zum Rasterdurchgang am 06.09.2026 stand dort dreimal `if (res.ok)` ohne `else` und
 // ohne Sequenznummer. Fiel genau eine der drei Anfragen aus — 500, oder 429 vom
@@ -42,6 +42,35 @@ describe('useStudentProfile.fetchProfile', () => {
 		await st.fetchProfile('B');
 		expect(st.profile?.id).toBe('B');
 		expect(st.gebuehren, 'Gebühren von A stehen unter dem Namen von B').toEqual([]);
+	});
+
+	// Dieselbe Klasse für die Bescheide (seit 12.09.2026 in der Akte): Ein Bescheid nennt
+	// Referenznummer, Betrag und Frist. Der von A unter dem Namen von B wäre die Auskunft,
+	// mit der Eltern in der Bibliothek stehen.
+	it('lässt die Bescheide des vorigen Schülers nicht stehen', async () => {
+		/** @param {string} id */
+		const antworten = (id, bescheideOk) =>
+			vi.mocked(apiFetch).mockImplementation(async (url) => {
+				const u = String(url);
+				if (u.includes('bescheide')) {
+					return /** @type {any} */ (
+						bescheideOk ? ok({ data: [{ id: 'bescheid-' + id }] }) : fehler
+					);
+				}
+				if (u.includes('schadensfaelle')) return /** @type {any} */ (ok({ data: [] }));
+				if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
+				return /** @type {any} */ (ok({ id, vorname: id }));
+			});
+
+		const st = useStudentProfile();
+		antworten('A', true);
+		await st.fetchProfile('A');
+		expect(st.bescheide).toEqual([{ id: 'bescheid-A' }]);
+
+		antworten('B', false);
+		await st.fetchProfile('B');
+		expect(st.profile?.id).toBe('B');
+		expect(st.bescheide, 'der Bescheid von A steht unter dem Namen von B').toEqual([]);
 	});
 
 	it('lässt die überholte Antwort nicht gewinnen', async () => {

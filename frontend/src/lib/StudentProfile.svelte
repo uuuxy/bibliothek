@@ -3,15 +3,13 @@
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import DamageReportModal from './DamageReportModal.svelte';
 	import StudentLockModal from './StudentLockModal.svelte';
-	import BorrowedBooksCard from './BorrowedBooksCard.svelte';
 	import StudentEditSheet from './StudentEditSheet.svelte';
 	import StudentProfileCard from './StudentProfileCard.svelte';
 	import StudentPrintCard from './StudentPrintCard.svelte';
 	import StudentProfileDeleteModal from './StudentProfileDeleteModal.svelte';
 	import StudentDangerZone from './StudentDangerZone.svelte';
 	import StudentProfileStammdaten from './StudentProfileStammdaten.svelte';
-	import StudentVormerkungenCard from './StudentVormerkungenCard.svelte';
-	import StudentGebuehrenCard from './StudentGebuehrenCard.svelte';
+	import StudentProfileAusleihen from './StudentProfileAusleihen.svelte';
 	import StudentProfileActions from './StudentProfileActions.svelte';
 	import StudentPrintReceipt from './StudentPrintReceipt.svelte';
 	import { useStudentProfile } from './useStudentProfile.svelte.js';
@@ -164,26 +162,17 @@
 
 				<div class="flex-1 relative">
 					{#if st.activeTab === 'ausleihen'}
-						{@render rightTop?.()}
-						<div
-							class="col-span-1 md:col-span-1 relative flex flex-col gap-6 h-full min-h-100 animate-fade-in mt-4"
-						>
-							<BorrowedBooksCard
-								books={st.profile.entliehene_buecher || []}
-								{onReturnClick}
-								onDamageClick={rechte.bearbeiten ? st.openDamageModal : undefined}
-							/>
-
-							{#if st.vormerkungen.length > 0}
-								<StudentVormerkungenCard bind:vormerkungen={st.vormerkungen} />
-							{/if}
-
-							<StudentGebuehrenCard
-								gebuehren={st.gebuehren}
-								canEdit={rechte.bearbeiten}
-								onChanged={() => st.fetchProfile(st.profile.id)}
-							/>
-						</div>
+						<StudentProfileAusleihen
+							buecher={st.profile.entliehene_buecher || []}
+							bind:vormerkungen={st.vormerkungen}
+							gebuehren={st.gebuehren}
+							bescheide={st.bescheide}
+							canEdit={rechte.bearbeiten}
+							{onReturnClick}
+							onDamageClick={rechte.bearbeiten ? st.openDamageModal : undefined}
+							onChanged={() => st.fetchProfile(st.profile.id)}
+							{rightTop}
+						/>
 					{:else if st.activeTab === 'stammdaten'}
 						<StudentProfileStammdaten
 							profile={st.profile}

@@ -34,7 +34,7 @@ const BESTAND = {
 	'src/lib/StatsDashboard.svelte': 374,
 	'src/lib/StudentDirectory.svelte': 209,
 	'src/lib/StudentEditSheet.svelte': 206,
-	'src/lib/StudentProfile.svelte': 255,
+	'src/lib/StudentProfile.svelte': 244,
 	'src/lib/UnifiedInventory.svelte': 324,
 	'src/lib/UserManagement.svelte': 257,
 	'src/lib/components/BookExemplarCard.svelte': 211,

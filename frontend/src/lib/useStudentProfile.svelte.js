@@ -8,6 +8,8 @@ export function useStudentProfile() {
 	let vormerkungen = $state([]);
 	/** @type {any[]} */
 	let gebuehren = $state([]);
+	/** @type {any[]} */
+	let bescheide = $state([]);
 	let loading = $state(true);
 	let showWebcam = $state(false);
 	let timestamp = $state(Date.now());
@@ -31,10 +33,11 @@ export function useStudentProfile() {
 		const meine = ++laufNr;
 		loading = true;
 		try {
-			const [resProfile, resVormerkungen, resGebuehren] = await Promise.all([
+			const [resProfile, resVormerkungen, resGebuehren, resBescheide] = await Promise.all([
 				apiFetch(`/api/schueler/${studentId}`),
 				apiFetch(`/api/vormerkungen?schueler_id=${studentId}`),
-				apiFetch(`/api/schueler/${studentId}/schadensfaelle`)
+				apiFetch(`/api/schueler/${studentId}/schadensfaelle`),
+				apiFetch(`/api/schueler/${studentId}/bescheide`)
 			]);
 			if (meine !== laufNr) return; // eine jüngere Akte ist schon unterwegs oder da
 			// Jede der drei Antworten wird ZUGEWIESEN, auch wenn sie scheitert. Bis zum
@@ -49,12 +52,14 @@ export function useStudentProfile() {
 			vormerkungen = resVormerkungen.ok ? await resVormerkungen.json() : [];
 			// 403 (z. B. Kiosk-Rolle ohne view_students) heisst schlicht: keine Liste zeigen.
 			gebuehren = resGebuehren.ok ? (await resGebuehren.json()).data || [] : [];
+			bescheide = resBescheide.ok ? (await resBescheide.json()).data || [] : [];
 		} catch (err) {
 			if (meine !== laufNr) return;
 			console.error('Fehler beim Laden des Schüler-Profils:', err);
 			profile = null;
 			vormerkungen = [];
 			gebuehren = [];
+			bescheide = [];
 		} finally {
 			if (meine === laufNr) loading = false;
 		}
@@ -212,6 +217,9 @@ export function useStudentProfile() {
 		},
 		get gebuehren() {
 			return gebuehren;
+		},
+		get bescheide() {
+			return bescheide;
 		},
 		get loading() {
 			return loading;

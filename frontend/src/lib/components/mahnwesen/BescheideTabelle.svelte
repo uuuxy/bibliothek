@@ -12,7 +12,8 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import StatusChip from '../ui/StatusChip.svelte';
 	import Button from '../ui/Button.svelte';
-	import { AlertTriangle, CheckCircle2, Printer } from '@lucide/svelte';
+	import { bescheidStatus } from '../../bescheidStatus.js';
+	import { Printer } from '@lucide/svelte';
 
 	/** @type {{ darfSchreiben: boolean }} */
 	let { darfSchreiben } = $props();
@@ -56,6 +57,7 @@
 				</thead>
 				<tbody>
 					{#each bescheideStore.liste as b (b.id)}
+						{@const stand = bescheidStatus(b, datum)}
 						<tr>
 							<!-- Optik gehört in die Zelle, nicht an sie (Tabellen-Ratsche): <td> trägt
 							     nur Breite, Ausrichtung, Umbruch und Ziffernform. -->
@@ -77,27 +79,13 @@
 							<td class="text-right tabular-nums">{euro(b.gesamtbetrag)}</td>
 							<td class="tabular-nums">{datum(b.frist_bis)}</td>
 							<td>
-								{#if b.rueckgabe_nach_uebergabe}
-									<StatusChip
-										ton="warten"
-										icon={AlertTriangle}
-										text="Rückgabe nach Übergabe"
-										tip="Das Buch kam zurück, nachdem der Fall abgegeben war — die Aufsicht ist zu informieren."
-									/>
-								{:else if b.status === 'uebergeben'}
-									<StatusChip ton="neutral" text="übergeben" detail={datum(b.uebergeben_am)} />
-								{:else if b.status === 'erledigt'}
-									<StatusChip ton="erfolg" icon={CheckCircle2} text="erledigt" />
-								{:else if b.frist_abgelaufen}
-									<StatusChip
-										ton="fehler"
-										icon={AlertTriangle}
-										text="Frist abgelaufen"
-										tip="Original und Buchungsbeleg gehen jetzt an die Aufsicht."
-									/>
-								{:else}
-									<StatusChip ton="warten" text="offen" />
-								{/if}
+								<StatusChip
+									ton={stand.ton}
+									icon={stand.icon}
+									text={stand.text}
+									tip={stand.tip}
+									detail={stand.detail}
+								/>
 							</td>
 							<td class="space-x-2 text-right whitespace-nowrap">
 								<Button variant="secondary" onclick={() => nachdruck(b)}>
