@@ -21,7 +21,7 @@ import (
 // Einordnung (Jules-Sentinel #601, 09.09.2026, als „HIGH: Path Traversal" gemeldet): Einen
 // Eingang für Angreifer gibt es hier nicht — das Verzeichnis kommt aus BACKUP_DIR (Betreiber),
 // die Namen schreibt der Job selbst, kein Endpunkt nimmt einen Dateinamen entgegen. Die
-// Umstellung ist Hausform und Einhegung, kein Sicherheitsfix; neu sind vor allem die Tests,
+// Umstellung ist Hausform und Einhegung, kein Sicherheitsverbesserung; neu sind vor allem die Tests,
 // die beide Funktionen bis dahin nicht hatten.
 const (
 	backupPraefix = "backup_"
