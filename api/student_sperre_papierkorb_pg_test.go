@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"bibliothek/auth"
 	"bibliothek/db"
@@ -103,4 +104,58 @@ func sperrZustand(t *testing.T, pool *pgxpool.Pool, id string) (gesperrt, manuel
 		t.Fatalf("Sperrzustand lesen: %v", err)
 	}
 	return gesperrt, manuell, grund
+}
+
+// Ein zweites Löschen darf die Lösch-Uhr nicht neu stellen.
+//
+// Fund aus dem Bestands-Durchgang 10.09.2026 (Register): DeleteStudent schrieb
+// `deleted_at = CURRENT_TIMESTAMP` bedingungslos, und geprüft wurde davor nur, DASS es
+// den Schüler gibt — nicht, ob er schon im Papierkorb liegt. Wer eine Zeile ein zweites
+// Mal löschte, verschob damit die 180-Tage-Frist der Anonymisierung
+// (repository.PredikatAnonymisierung liest deleted_at) um die ganze bereits abgelaufene
+// Zeit nach hinten. Still: Die Antwort war beide Male „success", und im Papierkorb sieht
+// man das Datum nur als „gelöscht am".
+func TestPapierkorb_ZweitesLoeschenVerschiebtDieUhrNicht(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	auditRepo := repository.NewAuditRepository(pool)
+	bearbeiter := seedPortalLehrkraft(t, pool, "papierkorb-uhr@test.invalid")
+	schueler := seedSchueler(t, pool, "S-UHR-1", "Uri", "5a")
+
+	loeschen := func() *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodDelete, "/api/schueler/"+schueler, nil)
+		req.SetPathValue("id", schueler)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
+			&auth.Claims{UserID: bearbeiter}))
+		rec := httptest.NewRecorder()
+		srv.DeleteStudentHandler(auditRepo)(rec, req)
+		return rec
+	}
+	geloeschtAm := func() time.Time {
+		t.Helper()
+		var wann time.Time
+		if err := pool.QueryRow(ctx, `SELECT deleted_at FROM schueler WHERE id = $1`, schueler).Scan(&wann); err != nil {
+			t.Fatalf("deleted_at lesen: %v", err)
+		}
+		return wann
+	}
+
+	if rec := loeschen(); rec.Code != http.StatusOK {
+		t.Fatalf("erstes Löschen: HTTP %d: %s", rec.Code, rec.Body.String())
+	}
+	// 179 Tage zurückdatieren: Die Zeile steht einen Tag vor der Anonymisierung.
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET deleted_at = now() - interval '179 days' WHERE id = $1`, schueler); err != nil {
+		t.Fatalf("zurückdatieren: %v", err)
+	}
+	vorher := geloeschtAm()
+
+	loeschen()
+
+	nachher := geloeschtAm()
+	if !nachher.Equal(vorher) {
+		t.Errorf("die Lösch-Uhr wurde neu gestellt: %s → %s — die 180-Tage-Frist beginnt von vorn",
+			vorher.Format(time.RFC3339), nachher.Format(time.RFC3339))
+	}
 }

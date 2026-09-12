@@ -116,8 +116,15 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	// is_manually_blocked=true stehen blieb — Verstoß gegen chk_schueler_block_reason
 	// (gesperrt ⇒ Grund nicht leer), also 23514 → 500. Ein manuell gesperrter Schüler
 	// ließ sich nach dem Löschen nie wiederherstellen, und sein echter Grund war weg.
+	//
+	// COALESCE auf deleted_at (12.09.2026, Register): Liegt die Zeile schon im
+	// Papierkorb, bleibt der ERSTE Zeitpunkt stehen. Er ist die Uhr der Anonymisierung
+	// (repository.PredikatAnonymisierung, 180 Tage); ein zweites Löschen schob sie um
+	// die ganze bereits abgelaufene Zeit nach hinten — still, denn die Antwort lautete
+	// beide Male „success". Löschen bleibt damit wiederholbar, ohne die Frist zu
+	// verlängern.
 	tag, err := tx.Exec(ctx, `UPDATE schueler
-		SET deleted_at = CURRENT_TIMESTAMP,
+		SET deleted_at = COALESCE(deleted_at, CURRENT_TIMESTAMP),
 		    ist_gesperrt = true,
 		    block_reason = COALESCE(NULLIF(btrim(block_reason), ''), 'Systematisch gelöscht')
 		WHERE id = $1`, studentID)
