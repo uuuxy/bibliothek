@@ -7,9 +7,10 @@
 	import { onMount } from 'svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { Archive, ShieldOff } from '@lucide/svelte';
+	import { Archive } from '@lucide/svelte';
 	import { apiFetch, extractApiError } from '../../apiFetch.js';
 	import Suchpille from '../ui/Suchpille.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 
 	/** @type {{ onSelect: (student: any) => void }} */
 	let { onSelect } = $props();
@@ -87,15 +88,7 @@
 		<Ladekreis size="lg" />
 	</div>
 {:else if ladefehler}
-	<!-- Ein gescheiterter Abruf ist kein leeres Archiv: „keine Ehemaligen" wäre hier eine
-	     falsche Auskunft über Menschen, die noch Bücher draußen haben können. -->
-	<div class="py-12 flex flex-col items-center gap-2 px-6 text-center animate-fade-in">
-		<ShieldOff class="h-10 w-10 text-error" aria-hidden="true" />
-		<span class="text-sm font-semibold text-error">{ladefehler}</span>
-		<button onclick={lade} class="text-sm font-semibold text-primary underline cursor-pointer">
-			Erneut versuchen
-		</button>
-	</div>
+	<LadeFehler onerneut={lade} titel="Ehemalige nicht geladen" text={ladefehler} />
 {:else if zeilen.length === 0}
 	<div class="py-12 text-center space-y-3 animate-fade-in">
 		<div

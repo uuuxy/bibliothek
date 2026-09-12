@@ -6,7 +6,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { apiFetch, extractApiError } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -19,6 +20,8 @@
 	/** @type {Anliegen[]} */
 	let anliegen = $state([]);
 	let loading = $state(true);
+	/** Leer heißt leer — ein Ladefehler heißt Ladefehler. */
+	let ladefehler = $state('');
 	/** @type {string | null} */
 	let confirmingId = $state(null);
 	/** @type {string | null} */
@@ -29,9 +32,16 @@
 		loading = true;
 		try {
 			const res = await apiFetch('/api/anliegen/offen');
-			anliegen = res.ok ? await res.json() : [];
+			if (res.ok) {
+				anliegen = (await res.json()) || [];
+				ladefehler = '';
+			} else {
+				anliegen = [];
+				ladefehler = await extractApiError(res);
+			}
 		} catch {
 			anliegen = [];
+			ladefehler = 'Die Anliegen konnten nicht geladen werden (Netzwerkfehler).';
 		} finally {
 			loading = false;
 		}
@@ -165,6 +175,8 @@
 		<div class="py-16 text-center text-on-surface-variant text-base animate-pulse">
 			Lade Anliegen…
 		</div>
+	{:else if ladefehler}
+		<LadeFehler onerneut={loadAnliegen} titel="Anliegen nicht geladen" text={ladefehler} />
 	{:else if anliegen.length === 0}
 		<div class="py-16 text-center text-on-surface-variant text-base">Keine offenen Anliegen.</div>
 	{:else}

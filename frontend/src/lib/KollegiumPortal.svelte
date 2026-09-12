@@ -6,6 +6,7 @@
 	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import { Search } from '@lucide/svelte';
 	import AnliegenWidget from './components/portal/AnliegenWidget.svelte';
+	import { erzeugeEigeneAnliegen } from './components/portal/eigeneAnliegen.svelte.js';
 	import PortalTrefferkarte from './components/portal/PortalTrefferkarte.svelte';
 	import PortalUeberblick from './components/portal/PortalUeberblick.svelte';
 	import PortalLernmittel from './components/portal/PortalLernmittel.svelte';
@@ -21,25 +22,11 @@
 
 	let reiter = $state('buecher');
 
-	/**
-	 * Die eigenen Anliegen liegen HIER und nicht in den zwei Bauteilen, die sie zeigen:
-	 * Der Zähler am Reiter, die Startfläche und der Anliegen-Reiter sprechen sonst über
-	 * denselben Zustand mit drei Abrufen — und nach dem Absenden zeigte der Zähler noch
-	 * den alten Stand.
-	 * @type {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, erstellt_am: string, erledigt_am?: string, erledigt_notiz?: string }[]}
-	 */
-	let eigeneAnliegen = $state([]);
-	const offeneAnliegen = $derived(eigeneAnliegen.filter((a) => !a.erledigt_am).length);
-
-	async function ladeAnliegen() {
-		try {
-			const res = await apiFetch('/api/anliegen/eigene');
-			const daten = res.ok ? await res.json() : [];
-			if (Array.isArray(daten)) eigeneAnliegen = daten;
-		} catch {
-			/* Zusatzinfo — ohne sie bleibt das Portal benutzbar */
-		}
-	}
+	// Die eigenen Anliegen liegen an EINER Stelle (components/portal/eigeneAnliegen.svelte.js)
+	// und nicht in den zwei Bauteilen, die sie zeigen: Der Zähler am Reiter, die
+	// Startfläche und der Anliegen-Reiter sprechen sonst über denselben Zustand mit drei
+	// Abrufen — und nach dem Absenden zeigte der Zähler noch den alten Stand.
+	const eigeneAnliegen = erzeugeEigeneAnliegen();
 
 	let searchQuery = $state('');
 	let searchResults = $state.raw(/** @type {any[]} */ ([]));
@@ -55,7 +42,7 @@
 
 	$effect(() => {
 		listen.lade();
-		ladeAnliegen();
+		eigeneAnliegen.lade();
 	});
 
 	// Formular-Zustand und Absenden je Titel — ausgelagert, Begründung dort.
@@ -124,7 +111,7 @@
 			{ id: 'schulbuecher', label: 'Schulbücher' },
 			// LMF-Plan für alle gleich statt Excel per Mail (Peter, 05.09.2026).
 			{ id: 'lmfplan', label: 'LMF-Plan' },
-			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: offeneAnliegen }
+			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: eigeneAnliegen.offene }
 		]}
 		aktiv={reiter}
 		onwahl={(id) => (reiter = id)}
@@ -180,7 +167,7 @@
 	{:else if reiter === 'lmfplan'}
 		<PortalLmfPlan />
 	{:else}
-		<AnliegenWidget anliegen={eigeneAnliegen} onaktualisiert={ladeAnliegen} />
+		<AnliegenWidget anliegen={eigeneAnliegen.liste} onaktualisiert={eigeneAnliegen.lade} />
 	{/if}
 </PageShell>
 

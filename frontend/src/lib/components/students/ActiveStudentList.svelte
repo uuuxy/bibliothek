@@ -6,10 +6,11 @@
   Sie zeigt ein Profilbild, den Namen, die Klasse, die Anzahl der ausgeliehenen Bücher und den Status an.
 -->
 <script>
-	import { BookOpen, ChevronRight, ShieldOff } from '@lucide/svelte';
+	import { BookOpen, ChevronRight } from '@lucide/svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
 
 	/**
@@ -88,20 +89,11 @@
 			<Ladekreis size="lg" />
 		</div>
 	{:else if ladefehler}
-		<!-- Ein gescheiterter Abruf ist kein leeres Verzeichnis: „keine Schüler gefunden"
-		     wäre hier die Auskunft, mit der jemand einen Ausweis neu anlegt, den es gibt. -->
-		<div class="py-16 flex flex-col items-center justify-center gap-2 px-6 text-center">
-			<ShieldOff class="h-10 w-10 text-error" aria-hidden="true" />
-			<span class="text-sm font-semibold text-error">{ladefehler}</span>
-			{#if onErneut}
-				<button
-					onclick={onErneut}
-					class="text-sm font-semibold text-primary underline cursor-pointer"
-				>
-					Erneut versuchen
-				</button>
-			{/if}
-		</div>
+		<LadeFehler
+			onerneut={onErneut ?? (() => {})}
+			titel="Verzeichnis nicht geladen"
+			text={ladefehler}
+		/>
 	{:else if filteredStudents.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
 			<BookOpen class="h-10 w-10 text-slate-300" aria-hidden="true" />

@@ -1,9 +1,11 @@
 <script>
 	import { onMount } from 'svelte';
-	import { apiFetch, apiClient } from '../apiFetch.js';
+	import { apiClient } from '../apiFetch.js';
+	import { erzeugeGeraeteListe } from './geraeteListe.svelte.js';
 	import { toastStore } from '../stores/toastStore.svelte.js';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
+	import LadeFehler from './ui/LadeFehler.svelte';
 	import { Plus, Wrench, MonitorSmartphone } from '@lucide/svelte';
 
 	/**
@@ -12,9 +14,8 @@
 	 * Anlegen, Liste mit aktuellem Ausleiher, Defekt-Schalter, Stammdaten-Pflege.
 	 */
 
-	/** @type {any[]} */
-	let geraete = $state([]);
-	let laedt = $state(true);
+	// Laden, Ladezustand und Ladefehler liegen in geraeteListe.svelte.js (Größen-Ratsche).
+	const geraete = erzeugeGeraeteListe();
 	let formOffen = $state(false);
 	/** @type {string | null} */
 	let bearbeiteId = $state(null);
@@ -27,19 +28,7 @@
 	});
 	let speichert = $state(false);
 
-	async function lade() {
-		laedt = true;
-		try {
-			const res = await apiFetch('/api/geraete');
-			const data = res.ok ? await res.json() : null;
-			geraete = Array.isArray(data?.data) ? data.data : [];
-		} catch {
-			geraete = [];
-		} finally {
-			laedt = false;
-		}
-	}
-	onMount(lade);
+	onMount(geraete.lade);
 
 	function oeffneAnlegen() {
 		bearbeiteId = null;
@@ -74,7 +63,7 @@
 			if (res.ok) {
 				toastStore.addToast(bearbeiteId ? 'Gerät gespeichert.' : 'Gerät angelegt.', 'success');
 				schliesseForm();
-				lade();
+				geraete.lade();
 			} else {
 				const err = await res.json().catch(() => ({}));
 				toastStore.addToast(err.error || 'Speichern fehlgeschlagen.', 'error');
@@ -96,7 +85,7 @@
 				ist_ausleihbar: !g.ist_ausleihbar
 			});
 			if (res.ok) {
-				lade();
+				geraete.lade();
 			} else {
 				const err = await res.json().catch(() => ({}));
 				toastStore.addToast(err.error || 'Statuswechsel fehlgeschlagen.', 'error');
@@ -110,7 +99,7 @@
 <div class="space-y-6 pt-2">
 	<div class="flex items-center justify-between border-b border-outline-variant pb-3">
 		<div>
-			<h2 class="text-base font-bold text-on-surface">Geräte ({geraete.length})</h2>
+			<h2 class="text-base font-bold text-on-surface">Geräte ({geraete.liste.length})</h2>
 			<p class="mt-0.5 text-sm text-on-surface-variant">
 				Ausgebucht wird am Kiosk über den G--Barcode; das Zubehör wird dort als Checkliste
 				bestätigt.
@@ -144,16 +133,18 @@
 		</div>
 	{/if}
 
-	{#if laedt}
+	{#if geraete.laedt}
 		<p class="py-12 text-center text-sm text-on-surface-variant">Lade Geräte …</p>
-	{:else if geraete.length === 0}
+	{:else if geraete.ladefehler}
+		<LadeFehler onerneut={geraete.lade} titel="Geräte nicht geladen" text={geraete.ladefehler} />
+	{:else if geraete.liste.length === 0}
 		<div class="flex flex-col items-center gap-3 py-16 text-on-surface-variant">
 			<MonitorSmartphone class="h-12 w-12" aria-hidden="true" />
 			<p class="text-sm font-semibold">Noch keine Geräte erfasst.</p>
 		</div>
 	{:else}
 		<ul class="divide-y divide-outline-variant">
-			{#each geraete as g (g.id)}
+			{#each geraete.liste as g (g.id)}
 				<li class="flex items-center justify-between gap-4 py-4">
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-sm font-bold text-on-surface">{g.modellname}</p>
