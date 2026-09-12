@@ -219,12 +219,14 @@ func (r *BetriebszustandRepository) LadeEinstellungswert(ctx context.Context, sc
 // Routine meldet es (Register 05.09.2026, Entscheidung 1: Befund statt Automatismus).
 func (r *BetriebszustandRepository) ZaehleEhemaligeMitOffenenVorgaengen(ctx context.Context, tage int) (int, error) {
 	var n int
+	// Dieselbe Formulierung wie die Löschuhr (AbgangSeit): Ein Abgänger ohne Stempel war
+	// hier unsichtbar — und blieb es, weil der offene Vorgang ihn zugleich vor dem
+	// Löschen schützt. Genau diese Zeilen soll der Wächter zeigen.
 	err := r.pool.QueryRow(ctx, `
 		SELECT count(*)
 		FROM schueler s
 		WHERE s.ist_abgaenger = true AND s.deleted_at IS NULL
-		  AND s.abgaenger_seit IS NOT NULL
-		  AND s.abgaenger_seit < now() - make_interval(days => $1)
+		  AND `+AbgangSeit("s")+` < now() - make_interval(days => $1)
 		  AND (EXISTS (SELECT 1 FROM ausleihen a WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL)
 		    OR EXISTS (SELECT 1 FROM schadensfaelle d WHERE d.schueler_id = s.id AND d.ist_bezahlt = false))`, tage).Scan(&n)
 	return n, err

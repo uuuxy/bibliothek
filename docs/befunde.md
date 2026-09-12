@@ -59,13 +59,6 @@ Zwei Regeln dazu:
   vorher auch); kein Literal der zehn neuen Parameter-Strukturen lässt ein Feld offen.
   Die Bugklasse hat jetzt eine Ratsche (`parameter_strukturen_test.go`, sweeps.md).
 
-  - **Beobachtung, kein Fund (C):** Der Wächter „Ehemalige mit offene Vorgängen"
-    (`ZaehleEhemaligeMitOffenenVorgaengen`) verlangt `abgaenger_seit IS NOT NULL`, das
-    Löschprädikat rechnet mit `COALESCE(abgaenger_seit, aktualisiert_am)`. Zwei
-    Formulierungen derselben Frage „wie lange ist der weg?" — heute ohne Wirkung, weil
-    Migration 094 die Spalte nachgetragen hat und alle drei Schreiber (LUSD, Versetzung,
-    Zusammenführen) sie stempeln; nachgezählt am Code. Beim nächsten Anfassen des
-    Wächters angleichen.
 
 - **Rasterdurchgang 06.09.2026 über die Änderungen desselben Tages** (Peter: „lass bitte
   die Schemata komplett über die heutigen Änderungen laufen"). Elf Fragen plus

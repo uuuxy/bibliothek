@@ -27,6 +27,18 @@ import (
 	"bibliothek/pkg/schulzeit"
 )
 
+// AbgangSeit ist der Ausdruck für „seit wann ist der weg": der Abgangsstempel, und für
+// Altzeilen ohne Stempel ersatzweise die letzte Änderung. EINE Formulierung für die
+// Löschuhr (PredikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
+// (BetriebszustandRepository) — bis zum 12.09.2026 verlangte der Wächter
+// `abgaenger_seit IS NOT NULL` und sah die Altzeilen deshalb nie, obwohl gerade ihr Name
+// auf Dauer stehen bleibt (#593).
+//
+// alias ist der Tabellen-Alias der schueler-Zeile in der jeweiligen Abfrage.
+func AbgangSeit(alias string) string {
+	return "COALESCE(" + alias + ".abgaenger_seit, " + alias + ".aktualisiert_am)"
+}
+
 // ── Schüler-Anonymisierung ──────────────────────────────────────────────────
 
 // PredikatAnonymisierung liefert die Bedingung von RunGDPRAnonymizeOldData.
@@ -55,7 +67,7 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
 		      OR
 		      (ist_abgaenger = true AND GREATEST(
-		          COALESCE(abgaenger_seit, aktualisiert_am),
+		          ` + AbgangSeit("schueler") + `,
 		          (SELECT max(a.rueckgabe_am) FROM ausleihen a WHERE a.schueler_id = schueler.id),
 		          (SELECT max(GREATEST(sf.aktualisiert_am, sf.storniert_am)) FROM schadensfaelle sf
 		            WHERE sf.schueler_id = schueler.id AND sf.ist_bezahlt)
