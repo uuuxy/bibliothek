@@ -10,7 +10,7 @@
      eingeklappt hinter „11 Klassen bleiben draußen" — sonst böte die Seite jedes Jahr
      elf Chips an, die niemand will. „Andere Klasse eintragen" öffnet das kleine Dialogfenster für eine
      Klasse, die das Vokabular noch nicht kennt („07G1" vor dem August-Import). Was hier
-     liegt, wird beim Speichern als ausgelassen gemerkt und gilt nicht als „ohne Termin". -->
+     liegt, wird beim Speichern als ausgelassen gemerkt; der nächste Plan übernimmt das. -->
 <script>
 	import { ChevronDown, ChevronRight } from '@lucide/svelte';
 	import Feld from '../ui/Feld.svelte';

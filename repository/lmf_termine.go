@@ -107,47 +107,6 @@ func nullbaresDatum(t time.Time) *time.Time {
 	return &t
 }
 
-// KlassenOhneRueckgabeTermin nennt die Klassen mit aktiven Schülern, für die ab dem
-// Datum kein Rückgabe-Termin eingetragen ist — der Hinweis auf der Planseite (Register,
-// Entscheidung 3c: leer starten, aber zeigen, wer noch fehlt). Verglichen wird über den
-// Normschlüssel, damit „5f1" und „05F1" dieselbe Klasse sind. Nicht angemahnt werden
-// Klassen ohne führende Ziffer (Oberstufenkurse „Q1", Sonderwerte) und die, die ein
-// Rückgabe-Plan ab dem Datum ausdrücklich auslässt (lmf_plan_ausgelassen, Migration 097:
-// die Oberstufe organisiert sich selbst). Entwürfe zählen nicht (Migration 100): Ein
-// Termin, den das Kollegium nicht sieht, ist noch keiner.
-func (r *LmfTerminRepository) KlassenOhneRueckgabeTermin(ctx context.Context, ab time.Time) ([]string, error) {
-	rows, err := r.db.Query(ctx, `
-		SELECT s.klasse
-		FROM schueler s
-		WHERE s.deleted_at IS NULL AND s.ist_abgaenger = false AND s.klasse ~ '^\d'
-		  AND NOT EXISTS (
-		      SELECT 1 FROM lmf_termin_klassen k
-		      JOIN lmf_termine t ON t.id = k.termin_id
-		      JOIN lmf_plaene p ON p.id = t.plan_id
-		      WHERE t.art = 'rueckgabe' AND t.datum >= $1::date AND p.veroeffentlicht_am IS NOT NULL
-		        AND klassen_normkey(k.klasse) = klassen_normkey(s.klasse))
-		  AND NOT EXISTS (
-		      SELECT 1 FROM lmf_plan_ausgelassen a
-		      JOIN lmf_plaene p ON p.id = a.plan_id
-		      WHERE p.art = 'rueckgabe' AND p.erster_tag >= $1::date AND p.veroeffentlicht_am IS NOT NULL
-		        AND klassen_normkey(a.klasse) = klassen_normkey(s.klasse))
-		GROUP BY s.klasse
-		ORDER BY substring(s.klasse from '^\d+')::int, s.klasse`, ab)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	klassen := []string{}
-	for rows.Next() {
-		var k string
-		if err := rows.Scan(&k); err != nil {
-			return nil, err
-		}
-		klassen = append(klassen, k)
-	}
-	return klassen, rows.Err()
-}
-
 // RueckgabeTerminFuerKlasse liefert den nächsten Rückgabe-Termin der Klasse ab dem
 // Datum (einschließlich) — die Frist ihrer Lernmittel (Register, Entscheidung 3a:
 // „das wäre doch logisch"). ok = false, wenn der Plan für die Klasse nichts nennt;

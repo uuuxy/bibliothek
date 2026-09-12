@@ -15,9 +15,9 @@ import (
 // Der LMF-Plan am echten Postgres (Migration 097): Ein Plan wird als Reihenfolge
 // gespeichert, seine Zeilen tragen die gerechneten Plätze; Klassen laufen durch das
 // Vokabular (Trigger); die Liste sortiert nach Zeitpunkt, „alle" hebt die Schuljahres-
-// grenze auf; der Hinweis „ohne Rückgabe-Termin" kennt Schreibvarianten und mahnt
-// ausgelassene Klassen nicht an; ein zweites Speichern im selben Schuljahr ersetzt, in
-// einem anderen legt es einen neuen Plan an; der neueste gewinnt.
+// grenze auf; die Vorschlags-Reihenfolge kennt Schreibvarianten; ein zweites Speichern
+// im selben Schuljahr ersetzt, in einem anderen legt es einen neuen Plan an; der
+// neueste gewinnt.
 func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -92,8 +92,8 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		t.Errorf("alle hebt die Grenze auf: %d (%v)", len(alle), err)
 	}
 
-	// Hinweis „ohne Rückgabe-Termin": 9H1 hat einen (andere Schreibweise), 8G1 nicht,
-	// Q1 ist ausgelassen und wird nicht angemahnt, 12T1 ebenso.
+	// Vier Klassen mit aktiven Schülern für die Vorschlags-Reihenfolge — 9H1 in anderer
+	// Schreibweise als im Plan, verglichen wird über den Normschlüssel.
 	if _, err := pool.Exec(ctx, `
 		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES
 		('LMFP-1', 'Neun', 'Lmfplantest', '09H1', 2027),
@@ -102,18 +102,6 @@ func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 		('LMFP-4', 'Elf', 'Lmfplantest', '11G1', 2028)`); err != nil {
 		t.Fatal(err)
 	}
-	ohne, err := repo.KlassenOhneRueckgabeTermin(ctx, ab)
-	if err != nil {
-		t.Fatal(err)
-	}
-	hat := map[string]bool{}
-	for _, k := range ohne {
-		hat[klassenNorm(k)] = true
-	}
-	if !hat["8g1"] || !hat["11g1"] || hat["9h1"] || hat["12t1"] {
-		t.Errorf("ohne Rückgabe-Termin: %v — erwartet 8G1 und 11G1 drin, 9H1 und 12T1 (ausgelassen) draußen", ohne)
-	}
-
 	// Vorschlags-Reihenfolge: Abschlussklasse zuerst, dann Jahrgang absteigend; ab 11 Oberstufe.
 	reihe, err := repo.KlassenMitSchuelern(ctx)
 	if err != nil {

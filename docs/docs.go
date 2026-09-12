@@ -1806,7 +1806,7 @@ const docTemplate = `{
         },
         "/lmf-termine": {
             "get": {
-                "description": "Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle), plus Klassen ohne Rückgabe-Termin.",
+                "description": "Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle).",
                 "produces": [
                     "application/json"
                 ],
@@ -3276,13 +3276,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "type": "integer"
-                    }
-                },
-                "ohne_rueckgabe_termin": {
-                    "description": "OhneRueckgabeTermin nennt Klassen mit Schülern, die ab dem Datum keinen\nRückgabe-Termin haben — der Plan startet leer, die Seite zeigt, wer fehlt.",
-                    "type": "array",
-                    "items": {
-                        "type": "string"
                     }
                 },
                 "termine": {

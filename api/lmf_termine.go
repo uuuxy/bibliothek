@@ -27,9 +27,6 @@ type LmfPlanAntwort struct {
 	// Ab ist das Datum, ab dem gelistet wird (Beginn des laufenden Schuljahres), leer bei ?alle=1.
 	Ab      string                 `json:"ab"`
 	Termine []repository.LmfTermin `json:"termine"`
-	// OhneRueckgabeTermin nennt Klassen mit Schülern, die ab dem Datum keinen
-	// Rückgabe-Termin haben — der Plan startet leer, die Seite zeigt, wer fehlt.
-	OhneRueckgabeTermin []string `json:"ohne_rueckgabe_termin"`
 	// Eingangsjahrgaenge (Einstellung): die Jahrgänge, die nach den Ferien Bücher
 	// bekommen — für den erklärenden Satz über der Tabelle.
 	Eingangsjahrgaenge []int `json:"eingangsjahrgaenge"`
@@ -47,7 +44,7 @@ func (s *Server) lmfPlanAb(r *http.Request) time.Time {
 
 // GetLmfTermineHandler listet den Plan.
 // @Summary      LMF-Plan
-// @Description  Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle), plus Klassen ohne Rückgabe-Termin.
+// @Description  Rückgabe- und Ausgabetermine je Klasse ab Beginn des laufenden Schuljahres (?alle=1: alle).
 // @Tags         lernmittel
 // @Produce      json
 // @Success      200  {object}  LmfPlanAntwort
@@ -64,12 +61,9 @@ func (s *Server) GetLmfTermineHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("LMF-Plan laden", err)
 		}
-		antwort := LmfPlanAntwort{Termine: termine, OhneRueckgabeTermin: []string{}, Eingangsjahrgaenge: eingang}
+		antwort := LmfPlanAntwort{Termine: termine, Eingangsjahrgaenge: eingang}
 		if !ab.IsZero() {
 			antwort.Ab = ab.Format("2006-01-02")
-			if antwort.OhneRueckgabeTermin, err = repo.KlassenOhneRueckgabeTermin(r.Context(), ab); err != nil {
-				return apierrors.Internal("Klassen ohne Termin laden", err)
-			}
 		}
 		RespondJSON(w, http.StatusOK, antwort)
 		return nil

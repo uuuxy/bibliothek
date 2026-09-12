@@ -94,7 +94,7 @@ export function artLabel(art) {
 /** Lädt die Termine veröffentlichter Pläne ab Schuljahresbeginn (alle = true: auch
  *  ältere) — die Tabelle des Portals und der PDF.
  *  @param {boolean} [alle]
- *  @returns {Promise<{ ab: string, termine: LmfTermin[], ohne_rueckgabe_termin: string[], eingangsjahrgaenge?: number[] }>} */
+ *  @returns {Promise<{ ab: string, termine: LmfTermin[], eingangsjahrgaenge?: number[] }>} */
 export async function ladePlan(alle = false) {
 	const res = await apiFetch(`/api/lmf-termine${alle ? '?alle=1' : ''}`);
 	if (!res.ok) throw new Error('LMF-Plan konnte nicht geladen werden');

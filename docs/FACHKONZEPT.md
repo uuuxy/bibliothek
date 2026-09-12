@@ -67,14 +67,19 @@ zurück** (`nurRueckgabeSQL`, Markierung `nur_rueckgabe` in Planer, Portal und P
 der **Eingangsjahrgänge** (Einstellung `lmf_eingangsjahrgaenge`, Vorgabe „5, 7",
 `EingangsjahrgaengeAus`); der Vorschlag enthält nur sie. **Entwurf und Veröffentlichung**
 (Migration 100, `lmf_plaene.veroeffentlicht_am`): Speichern legt einen Entwurf an — zentral,
-aber unsichtbar für `GET /api/lmf-termine`, das Portal-PDF, `KlassenOhneRueckgabeTermin`
-und `RueckgabeTerminFuerKlasse` (ein Entwurf setzt auch beim Ausleihen keine Frist);
+aber unsichtbar für `GET /api/lmf-termine`, das Portal-PDF und `RueckgabeTerminFuerKlasse`
+(ein Entwurf setzt auch beim Ausleihen keine Frist);
 `POST /api/lmf-plan/{art}/veroeffentlichen` stempelt ihn und koppelt die Fristen; danach
 gilt jede Speicherung sofort. Das Entwurfs-PDF für die Schulleitung liefert
 `GET /api/lmf-termine/entwurf/pdf` (edit_books). Klassen werden weder angelegt noch
 gelöscht: Der Name im Plan registriert sich im Vokabular (Trigger, Migration 079), und
 eine Klasse ohne aktive Schüler verschwindet von selbst aus jeder Liste — der Planer
-markiert sie „ohne Schüler" (`klassen` = Klassen mit Schülern in der GET-Antwort).
+markiert sie „ohne Schüler" (`klassen` = Klassen mit Schülern in der GET-Antwort). **Wer
+noch keine Zeile hat, steht nur im Planer** über der Tabelle („Noch nicht im Plan",
+`LmfPlanVorrat.svelte`); das Portal zeigt den Plan, nicht die Lücken darin. Bis zum
+12.09.2026 lieferte `GET /api/lmf-termine` dafür ein zweites Feld — gelesen hat es nie
+jemand, und zehn Monate im Jahr nannte es schlicht jede Klasse (gestrichen; die Abfrage
+steht in `git log`).
 
 Die Schule führte den Plan als Excel-Tabelle (Wochentag, Datum, Stunde, Klasse(n),
 Besonderheiten) und mailte ihn dem Kollegium; Korrekturen kamen als Folge-Mail. Der echte
@@ -95,8 +100,8 @@ die Vorbelegung kommt aus der Ferientabelle Hessen (`pkg/lmfplan/ferien.go`, KMK
 und den GERECHNETEN Feldern Datum/Stunde (Portal, PDF und Frist-Kopplung lesen sie wie
 zuvor), `lmf_termin_klassen` (0..n Klassen aus dem Vokabular; „Bücher setzen" = Zeile
 ohne Klasse mit Vermerk), `lmf_plan_ausgelassen` (Klassen, die der Plan bewusst auslässt —
-die Oberstufe organisiert sich an dieser Schule selbst; sie gelten nicht als „ohne
-Termin", der nächste Plan übernimmt die Auslassung). Die Verteilung rechnet
+die Oberstufe organisiert sich an dieser Schule selbst; der nächste Plan übernimmt die
+Auslassung). Die Verteilung rechnet
 `pkg/lmfplan.VerteileMit` bzw. `VerteileRueckwaerts` (Mo–Fr, Feiertage Hessen,
 freie Tage des Plans ausgespart, feste Plätze umflossen) —
 die EINE Stelle; die Vorschau im Planer ist derselbe Aufruf mit
