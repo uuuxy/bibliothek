@@ -42,8 +42,7 @@ const BESTAND = {
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,
 	'src/lib/components/stats/StatsTrendChart.svelte': 243,
 	'src/lib/components/students/LusdImportView.svelte': 311,
-	'src/lib/components/students/PromoteStudentsView.svelte': 209,
-	'src/lib/components/ui/Select.svelte': 207
+	'src/lib/components/students/PromoteStudentsView.svelte': 209
 };
 
 describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {

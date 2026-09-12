@@ -14,6 +14,7 @@
 	import { ChevronDown } from '@lucide/svelte';
 	import SelectListe from './SelectListe.svelte';
 	import { berechneBox } from './selectGeometrie.js';
+	import { naechsterIndex, tippsprungIndex, tastenBefehl } from './selectTastatur.js';
 
 	/**
 	 * `class` ERSETZT die Standardbreite w-full — sonst entschiede die
@@ -89,53 +90,43 @@
 		schliessen();
 	}
 
-	/** @param {number} richtung */
-	function wandern(richtung) {
-		if (!options.length) return;
-		let i = aktiv;
-		for (let n = 0; n < options.length; n++) {
-			i = (i + richtung + options.length) % options.length;
-			if (!options[i].disabled) break;
-		}
-		aktiv = i;
-	}
-
 	/** Tippen springt zum ersten passenden Eintrag — wie beim nativen select.
 	 * @param {string} zeichen */
 	function tippsprung(zeichen) {
 		suchpuffer += zeichen.toLowerCase();
 		clearTimeout(suchTimer);
 		suchTimer = setTimeout(() => (suchpuffer = ''), 600);
-		const treffer = options.findIndex((o) => o.label.toLowerCase().startsWith(suchpuffer));
+		const treffer = tippsprungIndex(options, suchpuffer);
 		if (treffer >= 0) aktiv = treffer;
 	}
 
-	/** @param {KeyboardEvent} e */
+	/** Die Regeln stehen in selectTastatur.js; hier wird nur ausgeführt.
+	 * @param {KeyboardEvent} e */
 	function taste(e) {
-		if (!offen) {
-			if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) {
-				e.preventDefault();
+		const befehl = tastenBefehl(e.key, offen);
+		if (befehl.verhindern) e.preventDefault();
+		switch (befehl.tat) {
+			case 'oeffnen':
 				oeffnen();
-			}
-			return;
-		}
-		const sprung = { ArrowDown: 1, ArrowUp: -1 }[e.key];
-		if (sprung) {
-			e.preventDefault();
-			wandern(sprung);
-		} else if (e.key === 'Escape') {
-			e.preventDefault();
-			schliessen();
-		} else if (e.key === 'Home' || e.key === 'End') {
-			e.preventDefault();
-			aktiv = e.key === 'Home' ? 0 : options.length - 1;
-		} else if (e.key === 'Enter' || e.key === ' ') {
-			e.preventDefault();
-			waehlen(aktiv);
-		} else if (e.key === 'Tab') {
-			schliessen(false);
-		} else if (e.key.length === 1) {
-			tippsprung(e.key);
+				break;
+			case 'wandern':
+				aktiv = naechsterIndex(options, aktiv, befehl.richtung ?? 1);
+				break;
+			case 'springen':
+				aktiv = befehl.ziel === 'anfang' ? 0 : options.length - 1;
+				break;
+			case 'waehlen':
+				waehlen(aktiv);
+				break;
+			case 'schliessen':
+				schliessen();
+				break;
+			case 'verlassen':
+				schliessen(false);
+				break;
+			case 'tippen':
+				tippsprung(befehl.zeichen ?? '');
+				break;
 		}
 	}
 
