@@ -372,8 +372,9 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 		claims, err := authenticator.VerifyToken(cookie.Value)
 		if errors.Is(err, ErrPruefungGestoert) {
 			// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
-			// meldet der Client ab.
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, err)
+			// meldet der Client ab. Der Client liest nur den Sentinel-Satz; die
+			// gewrappte Ursache („sperrliste: connection reset by peer") bleibt im Log.
+			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 			return
 		}
 		if err != nil {
@@ -446,8 +447,9 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 		claims, err := authenticator.VerifyToken(cookie.Value)
 		if errors.Is(err, ErrPruefungGestoert) {
 			// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
-			// meldet der Client ab.
-			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, err)
+			// meldet der Client ab. Der Client liest nur den Sentinel-Satz; die
+			// gewrappte Ursache („sperrliste: connection reset by peer") bleibt im Log.
+			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
 			return
 		}
 		if err != nil {

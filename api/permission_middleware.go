@@ -75,6 +75,18 @@ func (s *Server) claimsAusRequest(r *http.Request) (*auth.Claims, int, error) {
 	return claims, 0, nil
 }
 
+// sendeSitzungsfehler schickt den Fehler aus claimsAusRequest an den Client. Beim 503
+// (Datenbank-Aussetzer) sieht der Client nur den Sentinel-Satz: Die Ursache, die
+// VerifyToken mitwrappt, ist Betriebsinnenleben und gehört ins Log, nicht in die Meldung
+// für die Theke (Register 12.09.2026, siehe apierrors.SendHTTPErrorMitMeldung).
+func sendeSitzungsfehler(w http.ResponseWriter, status int, err error) {
+	if errors.Is(err, auth.ErrPruefungGestoert) {
+		apierrors.SendHTTPErrorMitMeldung(w, status, auth.ErrPruefungGestoert.Error(), err)
+		return
+	}
+	apierrors.SendHTTPError(w, status, err)
+}
+
 // erlaubeZugriff injiziert die Claims in den Request-Kontext und ruft den nächsten
 // Handler auf.
 func erlaubeZugriff(w http.ResponseWriter, r *http.Request, next http.Handler, claims *auth.Claims) {
@@ -161,7 +173,7 @@ func (s *Server) RequireAuthenticated() func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims, status, err := s.claimsAusRequest(r)
 			if err != nil {
-				apierrors.SendHTTPError(w, status, err)
+				sendeSitzungsfehler(w, status, err)
 				return
 			}
 			erlaubeZugriff(w, r, next, claims)
@@ -191,7 +203,7 @@ func (s *Server) RequirePermission(permission string) func(http.Handler) http.Ha
 func (s *Server) pruefeBerechtigung(w http.ResponseWriter, r *http.Request, next http.Handler, permission string) {
 	claims, status, err := s.claimsAusRequest(r)
 	if err != nil {
-		apierrors.SendHTTPError(w, status, err)
+		sendeSitzungsfehler(w, status, err)
 		return
 	}
 

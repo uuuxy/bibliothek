@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -285,7 +286,7 @@ func TestRequirePermission_BlacklistDBDownFailsClosed(t *testing.T) {
 	// Blacklist-Prüfung schlägt fehl → IsBlacklisted gibt fail-closed true → Token gilt als widerrufen.
 	mock.ExpectQuery("revoked_tokens").
 		WithArgs(pgxmock.AnyArg()).
-		WillReturnError(errors.New("db down"))
+		WillReturnError(errors.New("connection reset by peer"))
 
 	req := reqWithToken(t, s, auth.RoleKollegium)
 	rr, reached := serve(s, "buch.ausleihen", req)
@@ -295,6 +296,7 @@ func TestRequirePermission_BlacklistDBDownFailsClosed(t *testing.T) {
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Errorf("fail-closed Blacklist erwartet 503, bekam %d", rr.Code)
 	}
+	pruefeSitzungsfehlerBody(t, rr, "connection reset by peer")
 	if reached {
 		t.Error("bei nicht verifizierbarem Token darf Handler nicht erreicht werden")
 	}
@@ -317,7 +319,32 @@ func TestRequirePermission_KontostatusDBDownIst503(t *testing.T) {
 	if rr.Code != http.StatusServiceUnavailable {
 		t.Errorf("Kontostatus nicht prüfbar: erwartet 503, bekam %d", rr.Code)
 	}
+	pruefeSitzungsfehlerBody(t, rr, "context deadline exceeded")
 	if reached {
 		t.Error("bei nicht prüfbarem Kontostatus darf der Handler nicht erreicht werden")
+	}
+}
+
+// pruefeSitzungsfehlerBody: Die 503-Antwort der Middleware trägt genau den Sentinel-Satz
+// und keine Spur der gewrappten Ursache.
+//
+// Dieselbe Prüfung wie auth.pruefeSentinelOhneUrsache, aber an der anderen Tür: Me und
+// Refresh senden selbst, die RBAC-Middleware über sendeSitzungsfehler. Beide Türen führen
+// denselben Fehler nach draußen, und bis zum 12.09.2026 stand hinter dem Satz für das
+// Personal „: sperrliste: connection reset by peer".
+func pruefeSitzungsfehlerBody(t *testing.T, rr *httptest.ResponseRecorder, ursache string) {
+	t.Helper()
+	var body map[string]string
+	if err := json.Unmarshal(rr.Body.Bytes(), &body); err != nil {
+		t.Fatalf("503-Body ist kein JSON: %q (%v)", rr.Body.String(), err)
+	}
+	msg := body["error"]
+	if msg != auth.ErrPruefungGestoert.Error() {
+		t.Errorf("503-Meldung %q, erwartet genau %q", msg, auth.ErrPruefungGestoert.Error())
+	}
+	for _, leck := range []string{ursache, "sperrliste", "kontostatus"} {
+		if strings.Contains(strings.ToLower(msg), leck) {
+			t.Errorf("Betriebsinnenleben im 503-Body: %q steht in %q", leck, msg)
+		}
 	}
 }

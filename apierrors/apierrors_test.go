@@ -140,3 +140,69 @@ func TestWrap_EchterFehlerBleibt500(t *testing.T) {
 		t.Fatalf("Status = %d, want 500", rec.Code)
 	}
 }
+
+// TestSendHTTPErrorMitMeldung_UrsacheBleibtImLog: Der Client liest den mitgegebenen Satz,
+// die gewrappte Ursache bleibt draußen.
+//
+// Anlass (Register 12.09.2026): Der 503 der Sitzungsprüfung trug „: sperrliste:
+// connection reset by peer" mit hinaus — der Filter kennt SQL und Constraints, aber keine
+// Transportmeldung.
+func TestSendHTTPErrorMitMeldung_UrsacheBleibtImLog(t *testing.T) {
+	rec := httptest.NewRecorder()
+	sentinel := errors.New("sitzung konnte nicht geprüft werden, bitte erneut versuchen")
+	SendHTTPErrorMitMeldung(rec, http.StatusServiceUnavailable, sentinel.Error(),
+		fmt.Errorf("%w: sperrliste: %v", sentinel, errors.New("connection reset by peer")))
+
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Errorf("Status: erwartet 503, war %d", rec.Code)
+	}
+	msg := decodeErrorBody(t, rec.Body.String())
+	if msg != sentinel.Error() {
+		t.Errorf("Meldung %q, erwartet genau %q", msg, sentinel.Error())
+	}
+	for _, leck := range []string{"sperrliste", "connection reset by peer"} {
+		if strings.Contains(msg, leck) {
+			t.Errorf("Ursache im Client-Body: %q steht in %q", leck, msg)
+		}
+	}
+}
+
+// TestSendHTTPErrorMitMeldung_LeereMeldungWieBisher: Ohne Meldung verhält sich die
+// Funktion wie SendHTTPError — sonst wären die beiden Wege zwei Politiken.
+func TestSendHTTPErrorMitMeldung_LeereMeldungWieBisher(t *testing.T) {
+	rec := httptest.NewRecorder()
+	SendHTTPErrorMitMeldung(rec, http.StatusConflict, "", errors.New("Benutzer hat noch aktive Ausleihen"))
+
+	if msg := decodeErrorBody(t, rec.Body.String()); msg != "Benutzer hat noch aktive Ausleihen" {
+		t.Errorf("Meldung verfälscht: %q", msg)
+	}
+}
+
+// TestSendHTTPErrorMitMeldung_500BleibtNeutral: Ein 500 bleibt neutral, auch wenn der
+// Aufrufer eine Meldung mitgibt — sonst wäre die Regel aus Internal() umgehbar.
+func TestSendHTTPErrorMitMeldung_500BleibtNeutral(t *testing.T) {
+	rec := httptest.NewRecorder()
+	SendHTTPErrorMitMeldung(rec, http.StatusInternalServerError, "Tabelle benutzer fehlt",
+		errors.New("pgx: relation \"benutzer\" does not exist"))
+
+	msg := decodeErrorBody(t, rec.Body.String())
+	for _, leck := range []string{"Tabelle", "benutzer", "pgx"} {
+		if strings.Contains(msg, leck) {
+			t.Errorf("500 gibt Detail heraus (%q): %q", leck, msg)
+		}
+	}
+}
+
+// TestSendHTTPErrorMitMeldung_DBWortlautWirdTrotzdemGefiltert: Der Filter liest den Text,
+// der HINAUSGEHT. Eine Meldung ist eine Erlaubnis für einen Satz, kein Freibrief für
+// SQL-Wortlaute — wer aus Versehen den Query-Text durchreicht, kommt damit nicht durch.
+func TestSendHTTPErrorMitMeldung_DBWortlautWirdTrotzdemGefiltert(t *testing.T) {
+	rec := httptest.NewRecorder()
+	SendHTTPErrorMitMeldung(rec, http.StatusConflict,
+		"select * from benutzer schlug fehl", errors.New("konflikt beim speichern"))
+
+	msg := decodeErrorBody(t, rec.Body.String())
+	if strings.Contains(strings.ToLower(msg), "select") {
+		t.Errorf("SQL-Wortlaut in der Meldung durchgereicht: %q", msg)
+	}
+}
