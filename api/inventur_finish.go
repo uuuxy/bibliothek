@@ -13,7 +13,7 @@ import (
 
 // InventurFinishRequest benennt die abzuschließende Session.
 type InventurFinishRequest struct {
-	SessionID string `json:"session_id"`
+	SessionID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 }
 
 // InventurFinishResponse contains the outcome statistics of the completed inventory.
@@ -121,7 +121,10 @@ func (s *Server) handleInventurFinish(w http.ResponseWriter, r *http.Request) {
 // @Router       /inventur/fehlbestand [get]
 func (s *Server) InventurFehlbestandHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		sessionID := r.URL.Query().Get("session_id")
+		sessionID, err := uuidAusQuery(r, "session_id")
+		if err != nil {
+			return apierrors.BadRequest(err.Error(), nil)
+		}
 		if sessionID == "" {
 			return apierrors.BadRequest("session_id fehlt", nil)
 		}

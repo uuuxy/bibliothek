@@ -114,7 +114,7 @@ func (s *Server) ListInventurSessionsHandler() http.HandlerFunc {
 
 // InventurAbortRequest benennt die abzubrechende Session.
 type InventurAbortRequest struct {
-	SessionID string `json:"session_id"`
+	SessionID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 }
 
 // InventurAbortHandler verwirft eine Session ohne Verlustbuchung — für abgebrochene

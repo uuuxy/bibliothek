@@ -22,7 +22,7 @@ import (
 type AnliegenRequest struct {
 	Art       string `json:"art" validate:"required"`
 	TitelText string `json:"titel_text" validate:"required"`
-	TitelID   string `json:"titel_id,omitempty"`
+	TitelID   string `json:"titel_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	ISBN      string `json:"isbn,omitempty"`
 	Klasse    string `json:"klasse,omitempty"`
 	Kommentar string `json:"kommentar,omitempty"`

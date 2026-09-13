@@ -19,9 +19,12 @@ func (handler *APIHandler) handleReorderBooks(writer http.ResponseWriter, reques
 		writeError(writer, http.StatusBadRequest, "ungültiges json")
 		return
 	}
-
 	if len(input.BookIDs) == 0 {
 		writeJSON(writer, http.StatusOK, map[string]string{"message": "nichts zu speichern"})
+		return
+	}
+	if !alleUUIDs(input.BookIDs) {
+		writeError(writer, http.StatusBadRequest, "bookIds enthält eine ungültige Kennung")
 		return
 	}
 

@@ -40,7 +40,7 @@ func inventurWarnungen(isLent bool) []string {
 
 // InventurScanRequest is the payload for checking in an item during inventory.
 type InventurScanRequest struct {
-	SessionID string `json:"session_id"`
+	SessionID string `json:"session_id" validate:"omitempty,uuid_oder_leer"`
 	BarcodeID string `json:"barcode_id"`
 }
 

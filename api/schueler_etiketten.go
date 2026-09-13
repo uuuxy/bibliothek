@@ -27,7 +27,7 @@ const MaxSchuelerEtiketten = 600
 type SchuelerEtikettenRequest struct {
 	FormatID      string   `json:"formatId,omitempty"`
 	StartPosition int      `json:"startPosition,omitempty"`
-	SchuelerIDs   []string `json:"schuelerIds,omitempty"`
+	SchuelerIDs   []string `json:"schuelerIds,omitempty" validate:"omitempty,dive,uuid_oder_leer"`
 	// Muster druckt EIN Beispiel-Etikett statt echter Schüler — der Testdruck des
 	// Ausweis-Designers, mit dem man den Sitz auf dem Klebebogen prüft.
 	Muster bool `json:"muster,omitempty"`

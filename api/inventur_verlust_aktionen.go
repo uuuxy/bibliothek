@@ -5,7 +5,6 @@ package api
 // endgültig gelöscht werden. Vorher war der Bericht reine Anzeige ohne Folgehandlung.
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -54,7 +53,7 @@ func (s *Server) InventurVerlustGefundenHandler() http.HandlerFunc {
 
 // verlustLoeschenRequest benennt die endgültig zu löschenden Exemplare.
 type verlustLoeschenRequest struct {
-	ExemplarIDs []string `json:"exemplar_ids"`
+	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,uuid_oder_leer"`
 }
 
 // InventurVerlusteLoeschenHandler löscht als Verlust gebuchte Exemplare endgültig.
@@ -64,8 +63,8 @@ type verlustLoeschenRequest struct {
 func (s *Server) InventurVerlusteLoeschenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		var req verlustLoeschenRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			return apierrors.BadRequest("ungültiger Request-Body", err)
+		if !DecodeAndValidate(w, r, &req) {
+			return nil
 		}
 		if len(req.ExemplarIDs) == 0 {
 			return apierrors.BadRequest("exemplar_ids fehlt oder ist leer", nil)

@@ -13,8 +13,8 @@ import (
 
 // DefektRequest is the payload for marking a book copy as defective.
 type DefektRequest struct {
-	LoanID       *string `json:"loan_id,omitempty"`
-	SchuelerID   *string `json:"schueler_id,omitempty"`
+	LoanID       *string `json:"loan_id,omitempty" validate:"omitempty,uuid_oder_leer"`
+	SchuelerID   *string `json:"schueler_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	Betrag       float64 `json:"betrag"`
 	Beschreibung string  `json:"beschreibung"`
 }
@@ -74,9 +74,9 @@ func (s *Server) ReportDamageHandler(damageRepo repository.DamageRepository) htt
 		}
 
 		var req struct {
-			LoanID       string `json:"loan_id"`
-			SchuelerID   string `json:"schueler_id"`
-			CopyID       string `json:"copy_id"`
+			LoanID       string `json:"loan_id" validate:"omitempty,uuid_oder_leer"`
+			SchuelerID   string `json:"schueler_id" validate:"omitempty,uuid_oder_leer"`
+			CopyID       string `json:"copy_id" validate:"omitempty,uuid_oder_leer"`
 			Beschreibung string `json:"beschreibung"`
 			// Art: Fallgruppe des Bescheids — Pflicht, ohne stillen Vorgabewert. Bis zum
 			// 10.09.2026 fehlte das Feld, jede Forderung bekam den DEFAULT 'beschaedigt',

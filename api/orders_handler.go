@@ -17,7 +17,7 @@ import (
 
 // OrderItemRequest represents a single item to order from the cart
 type OrderItemRequest struct {
-	TitelID          string  `json:"titel_id"`
+	TitelID          string  `json:"titel_id" validate:"omitempty,uuid_oder_leer"`
 	Menge            int     `json:"menge"`
 	Preis            float64 `json:"preis"`
 	GenerateBarcodes bool    `json:"generate_barcodes"`
@@ -26,8 +26,8 @@ type OrderItemRequest struct {
 // SubmitOrderRequest ist ein kompletter Warenkorb an EINEN Lieferanten. Die Bestellung
 // entsteht daraus in einer Transaktion — schlägt eine Position fehl, geht keine raus.
 type SubmitOrderRequest struct {
-	SupplierID string             `json:"supplier_id"`
-	Items      []OrderItemRequest `json:"items"`
+	SupplierID string             `json:"supplier_id" validate:"omitempty,uuid_oder_leer"`
+	Items      []OrderItemRequest `json:"items" validate:"dive"`
 	// IdempotencyKey: vom Client pro Absende-Vorgang vergeben. Ein Doppelklick schickt
 	// denselben Schlüssel; die zweite Anfrage wird zum No-op (keine zweite Bestellung,
 	// keine zweite Lieferanten-Mail). Optional — ohne Schlüssel läuft alles wie bisher.
@@ -232,7 +232,7 @@ func (s *Server) SearchOrdersHandler() http.HandlerFunc {
 
 // BulkReceiveRequest represents the payload for bulk receiving an order.
 type BulkReceiveRequest struct {
-	ExemplarIDs []string `json:"exemplar_ids"`
+	ExemplarIDs []string `json:"exemplar_ids" validate:"omitempty,dive,uuid_oder_leer"`
 }
 
 // BulkReceiveOrderHandler marks all pre-allocated items for a specific order group as received.

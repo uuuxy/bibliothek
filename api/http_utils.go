@@ -2,17 +2,63 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 // Validate ist der gemeinsame Struct-Validator für alle Eingangs-Payloads. Bewusst EINE
 // Instanz: validator.New() baut bei jedem Aufruf einen eigenen Regel-Cache auf.
-var Validate = validator.New()
+var Validate = neuerValidator()
+
+// regelUUIDOderLeer: Eine Kennung, die als UUID in die Datenbank geht, muss eine sein —
+// sonst kommt `invalid input syntax for type uuid` (22P02) als 500 zurück (ZAP-Lauf
+// 13.09.2026, uuid_eingaben_test.go). Leer bleibt erlaubt: Die Handler melden „… fehlt"
+// selbst, und optionale Felder kommen vom Frontend auch als "". Das eingebaute `uuid` kann
+// das nicht — `omitempty,uuid` weist einen *string, der auf "" zeigt, mit 400 ab.
+// Schreibweise am Feld: `validate:"omitempty,uuid_oder_leer"` (Listen: `omitempty,dive,uuid_oder_leer`).
+const regelUUIDOderLeer = "uuid_oder_leer"
+
+func neuerValidator() *validator.Validate {
+	v := validator.New()
+	if err := v.RegisterValidation(regelUUIDOderLeer, func(fl validator.FieldLevel) bool {
+		wert := fl.Field().String()
+		return wert == "" || uuid.Validate(wert) == nil
+	}); err != nil {
+		panic(err)
+	}
+	return v
+}
+
+// meldeValidierung übersetzt eine ungültige Kennung in einen Satz; alle anderen
+// Validierungsfehler bleiben, wie sie sind.
+func meldeValidierung(err error) error {
+	var fehler validator.ValidationErrors
+	if errors.As(err, &fehler) {
+		for _, f := range fehler {
+			if f.Tag() == regelUUIDOderLeer {
+				return fmt.Errorf("ungültige Kennung im Feld %s", f.Field())
+			}
+		}
+	}
+	return err
+}
+
+// uuidAusQuery liest einen Query-Parameter, der eine UUID sein muss. Leer bleibt leer;
+// alles andere, das keine UUID ist, ist ein Bedienfehler statt eines 500 aus Postgres.
+func uuidAusQuery(r *http.Request, name string) (string, error) {
+	wert := r.URL.Query().Get(name)
+	if wert != "" && uuid.Validate(wert) != nil {
+		return "", fmt.Errorf("%s ist keine gültige Kennung", name)
+	}
+	return wert, nil
+}
 
 // DecodeStrictAndValidate ist DecodeAndValidate mit einem Unterschied: Ein Feld, das
 // das Ziel-Struct nicht kennt, ist ein FEHLER (400) statt eines stillen Verlusts.
@@ -36,7 +82,7 @@ func DecodeStrictAndValidate[T any](w http.ResponseWriter, r *http.Request, targ
 		return false
 	}
 	if err := Validate.Struct(target); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.SendHTTPError(w, http.StatusBadRequest, meldeValidierung(err))
 		return false
 	}
 	return true
@@ -51,7 +97,7 @@ func DecodeAndValidate[T any](w http.ResponseWriter, r *http.Request, target *T)
 		return false
 	}
 	if err := Validate.Struct(target); err != nil {
-		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		apierrors.SendHTTPError(w, http.StatusBadRequest, meldeValidierung(err))
 		return false
 	}
 	return true

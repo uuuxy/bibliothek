@@ -288,7 +288,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 
 		payload := map[string]interface{}{
 			"classNames": []string{"   ", ""},
-			"bookIds":    []string{"123"},
+			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
 		body, err := json.Marshal(payload)
 		if err != nil {
@@ -315,7 +315,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 
 		payload := map[string]interface{}{
 			"classNames": []string{"ThisClassNameIsWayTooLongToBeValidAndShouldBeRejected"},
-			"bookIds":    []string{"123"},
+			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
 		body, err := json.Marshal(payload)
 		if err != nil {
@@ -343,7 +343,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 
 		payload := map[string]interface{}{
 			"classNames": []string{"10A"},
-			"bookIds":    []string{"123"},
+			"bookIds":    []string{"11111111-1111-1111-1111-111111111111"},
 		}
 		body, err := json.Marshal(payload)
 		if err != nil {
@@ -372,7 +372,7 @@ func TestHandleAddClassBooks(t *testing.T) {
 
 		payload := map[string]interface{}{
 			"classNames": []string{"10A", "10B"},
-			"bookIds":    []string{"123", "456"},
+			"bookIds":    []string{"11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"},
 		}
 		body, err := json.Marshal(payload)
 		if err != nil {
@@ -411,7 +411,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:           "Missing Class Name",
 			method:         "POST",
-			body:           `{"bookIds": ["123"]}`,
+			body:           `{"bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "es muss mindestens ein klassenname angegeben werden",
@@ -419,7 +419,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:           "Class Name Too Long",
 			method:         "POST",
-			body:           `{"className": "ThisClassNameIsWayTooLong", "bookIds": ["123"]}`,
+			body:           `{"className": "ThisClassNameIsWayTooLong", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup:      func(mock pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "klassenname darf maximal 20 zeichen lang sein",
@@ -427,7 +427,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:   "Database Error",
 			method: "POST",
-			body:   `{"className": "5A", "bookIds": ["123"]}`,
+			body:   `{"className": "5A", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin().WillReturnError(errTest)
 			},
@@ -437,7 +437,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:   "Success single className",
 			method: "POST",
-			body:   `{"oldClassName": "5A", "className": "5B", "bookIds": ["123"]}`,
+			body:   `{"oldClassName": "5A", "className": "5B", "bookIds": ["11111111-1111-1111-1111-111111111111"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = \\$1$").
@@ -447,7 +447,7 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 					WithArgs([]string{"05B"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec("^INSERT INTO class_books \\(class_name, book_id\\).*").
-					WithArgs([]string{"05B"}, []string{"123"}).
+					WithArgs([]string{"05B"}, []string{"11111111-1111-1111-1111-111111111111"}).
 					WillReturnResult(pgxmock.NewResult("INSERT", 1))
 				mock.ExpectCommit()
 			},
@@ -457,14 +457,14 @@ func TestHandleUpdateClassBooks(t *testing.T) {
 		{
 			name:   "Success multiple classNames",
 			method: "POST",
-			body:   `{"classNames": ["5C", "5D"], "bookIds": ["123", "456"]}`,
+			body:   `{"classNames": ["5C", "5D"], "bookIds": ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]}`,
 			mockSetup: func(mock pgxmock.PgxPoolIface) {
 				mock.ExpectBegin()
 				mock.ExpectExec("^DELETE FROM class_books WHERE class_name = ANY\\(\\$1\\)$").
 					WithArgs([]string{"05C", "05D"}).
 					WillReturnResult(pgxmock.NewResult("DELETE", 0))
 				mock.ExpectExec("^INSERT INTO class_books \\(class_name, book_id\\).*").
-					WithArgs([]string{"05C", "05C", "05D", "05D"}, []string{"123", "456", "123", "456"}).
+					WithArgs([]string{"05C", "05C", "05D", "05D"}, []string{"11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222", "11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"}).
 					WillReturnResult(pgxmock.NewResult("INSERT", 4))
 				mock.ExpectCommit()
 			},

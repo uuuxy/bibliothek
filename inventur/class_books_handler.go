@@ -90,6 +90,10 @@ func (handler *APIHandler) handleUpdateClassBooks(writer http.ResponseWriter, re
 	// We can only rename a single class safely
 	oldName := strings.TrimSpace(input.OldClassName)
 
+	if !alleUUIDs(input.BookIDs) {
+		writeError(writer, http.StatusBadRequest, "bookIds enthält eine ungültige Kennung")
+		return
+	}
 	err := handler.repo.UpdateClassBooks(request.Context(), oldName, targetClasses, input.BookIDs)
 	if err != nil {
 		log.Printf("Fehler beim Aktualisieren der Klassenbücher: %v", err)
@@ -167,6 +171,10 @@ func (handler *APIHandler) handleAddClassBooks(writer http.ResponseWriter, reque
 		}
 	}
 
+	if !alleUUIDs(input.BookIDs) {
+		writeError(writer, http.StatusBadRequest, "bookIds enthält eine ungültige Kennung")
+		return
+	}
 	err := handler.repo.AddBooksToClasses(request.Context(), targetClasses, input.BookIDs)
 	if err != nil {
 		log.Printf("Fehler beim Hinzufügen der Bücher: %v", err)

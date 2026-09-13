@@ -49,7 +49,7 @@ func TestHandleReorderBooks(t *testing.T) {
 		{
 			name: "Transaction Start Error",
 			payload: ReorderRequest{
-				BookIDs: []string{"id1", "id2"},
+				BookIDs: []string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002"},
 			},
 			setupMock: func() {
 				mock.ExpectBegin().WillReturnError(fmt.Errorf("db connection error"))
@@ -60,12 +60,12 @@ func TestHandleReorderBooks(t *testing.T) {
 		{
 			name: "Database Exec Error",
 			payload: ReorderRequest{
-				BookIDs: []string{"id1", "id2"},
+				BookIDs: []string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002"},
 			},
 			setupMock: func() {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge").
-					WithArgs([]string{"id1", "id2"}, []int{1, 2}).
+					WithArgs([]string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002"}, []int{1, 2}).
 					WillReturnError(fmt.Errorf("exec error"))
 				mock.ExpectRollback()
 			},
@@ -75,12 +75,12 @@ func TestHandleReorderBooks(t *testing.T) {
 		{
 			name: "Database Commit Error",
 			payload: ReorderRequest{
-				BookIDs: []string{"id1", "id2"},
+				BookIDs: []string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002"},
 			},
 			setupMock: func() {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge").
-					WithArgs([]string{"id1", "id2"}, []int{1, 2}).
+					WithArgs([]string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002"}, []int{1, 2}).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 2))
 				mock.ExpectCommit().WillReturnError(fmt.Errorf("commit error"))
 				// ExpectRollback is NOT needed here because pgx marks the tx as closed on a Commit failure,
@@ -92,12 +92,12 @@ func TestHandleReorderBooks(t *testing.T) {
 		{
 			name: "Successful Reorder",
 			payload: ReorderRequest{
-				BookIDs: []string{"id1", "id2", "id3"},
+				BookIDs: []string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002", "a0000000-0000-0000-0000-000000000003"},
 			},
 			setupMock: func() {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge").
-					WithArgs([]string{"id1", "id2", "id3"}, []int{1, 2, 3}).
+					WithArgs([]string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002", "a0000000-0000-0000-0000-000000000003"}, []int{1, 2, 3}).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 3))
 				mock.ExpectCommit()
 			},
@@ -112,12 +112,12 @@ func TestHandleReorderBooks(t *testing.T) {
 		{
 			name: "Teilweise unbekannte IDs werden ehrlich gezählt",
 			payload: ReorderRequest{
-				BookIDs: []string{"id1", "id2", "id3"},
+				BookIDs: []string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002", "a0000000-0000-0000-0000-000000000003"},
 			},
 			setupMock: func() {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge").
-					WithArgs([]string{"id1", "id2", "id3"}, []int{1, 2, 3}).
+					WithArgs([]string{"a0000000-0000-0000-0000-000000000001", "a0000000-0000-0000-0000-000000000002", "a0000000-0000-0000-0000-000000000003"}, []int{1, 2, 3}).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 				mock.ExpectCommit()
 			},
@@ -127,12 +127,12 @@ func TestHandleReorderBooks(t *testing.T) {
 		{
 			name: "Keine einzige ID existiert",
 			payload: ReorderRequest{
-				BookIDs: []string{"weg1", "weg2"},
+				BookIDs: []string{"b0000000-0000-0000-0000-000000000001", "b0000000-0000-0000-0000-000000000002"},
 			},
 			setupMock: func() {
 				mock.ExpectBegin()
 				mock.ExpectExec("UPDATE buecher_titel SET sort_order = daten.neue_reihenfolge").
-					WithArgs([]string{"weg1", "weg2"}, []int{1, 2}).
+					WithArgs([]string{"b0000000-0000-0000-0000-000000000001", "b0000000-0000-0000-0000-000000000002"}, []int{1, 2}).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 				mock.ExpectRollback()
 			},

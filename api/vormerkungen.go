@@ -11,9 +11,9 @@ import (
 
 // CreateVormerkungRequest is the body for POST /api/vormerkungen.
 type CreateVormerkungRequest struct {
-	TitelID    string `json:"titel_id" validate:"required"`
+	TitelID    string `json:"titel_id" validate:"required,uuid_oder_leer"`
 	Notiz      string `json:"notiz,omitempty"`
-	SchuelerID string `json:"schueler_id,omitempty"`
+	SchuelerID string `json:"schueler_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 }
 
 // ListVormerkungHandler handles GET /api/vormerkungen?titel_id=...
@@ -21,8 +21,14 @@ func (s *Server) ListVormerkungHandler(vormerkungRepo repository.VormerkungRepos
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		ctx := r.Context()
 
-		titelID := r.URL.Query().Get("titel_id")
-		schuelerID := r.URL.Query().Get("schueler_id")
+		titelID, err := uuidAusQuery(r, "titel_id")
+		if err != nil {
+			return apierrors.BadRequest(err.Error(), nil)
+		}
+		schuelerID, err := uuidAusQuery(r, "schueler_id")
+		if err != nil {
+			return apierrors.BadRequest(err.Error(), nil)
+		}
 
 		result, err := vormerkungRepo.List(ctx, titelID, schuelerID)
 		if err != nil {

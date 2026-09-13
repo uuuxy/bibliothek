@@ -66,9 +66,9 @@ type BescheidErstellenRequest struct {
 	Mittel     string `json:"mittel"`
 	FristBis   string `json:"frist_bis"`
 	Positionen []struct {
-		SchadensfallID string  `json:"schadensfall_id"`
+		SchadensfallID string  `json:"schadensfall_id" validate:"omitempty,uuid_oder_leer"`
 		Betrag         float64 `json:"betrag"`
-	} `json:"positionen"`
+	} `json:"positionen" validate:"dive"`
 }
 
 // BescheidVorschlagHandler liefert die offenen Forderungen eines Schülers mit

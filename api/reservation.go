@@ -16,7 +16,7 @@ import (
 
 // KlassensatzReservierungRequest is the payload for a class-set reservation.
 type KlassensatzReservierungRequest struct {
-	TitelID string `json:"titel_id"`
+	TitelID string `json:"titel_id" validate:"omitempty,uuid_oder_leer"`
 	Klasse  string `json:"klasse"`
 	Anzahl  int    `json:"anzahl"`
 	Notiz   string `json:"notiz,omitempty"`

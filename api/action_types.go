@@ -10,8 +10,8 @@ import (
 // ActionRequest holds the parameters for the Omnibox dispatcher.
 type ActionRequest struct {
 	Query              string  `json:"query" validate:"required"`
-	ActiveStudentID    *string `json:"active_student_id,omitempty"`
-	ActiveTeacherID    *string `json:"active_teacher_id,omitempty"`
+	ActiveStudentID    *string `json:"active_student_id,omitempty" validate:"omitempty,uuid_oder_leer"`
+	ActiveTeacherID    *string `json:"active_teacher_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	ConfirmedChecklist bool    `json:"confirmed_checklist,omitempty"`
 	OverrideBlock      bool    `json:"override_block,omitempty"`
 	IdempotencyKey     string  `json:"idempotency_key,omitempty"`

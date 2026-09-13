@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 // validiereBuchErstellenEingabe prüft ISBN (vorhanden + Format) und Klassenstufe.
@@ -69,6 +71,18 @@ func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.
 	return true
 }
 
+// alleUUIDs: Jede Kennung der Liste ist eine UUID. Eine, die keine ist, ginge sonst an
+// Postgres (`= ANY($1::uuid[])`) und käme als 500 zurück (22P02). uuid_eingaben_test.go
+// erkennt diesen Aufruf als Prüfung.
+func alleUUIDs(ids []string) bool {
+	for _, id := range ids {
+		if uuid.Validate(id) != nil {
+			return false
+		}
+	}
+	return true
+}
+
 // BearbeiteBuecherLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
 // Es erwartet ein JSON-Array mit IDs und löscht diese sicher über das Repository.
 func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter, anfrage *http.Request) {
@@ -82,6 +96,10 @@ func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter,
 
 	if len(eingabe.IDs) == 0 {
 		writeError(antwort, http.StatusBadRequest, "keine IDs übergeben")
+		return
+	}
+	if !alleUUIDs(eingabe.IDs) {
+		writeError(antwort, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
 		return
 	}
 

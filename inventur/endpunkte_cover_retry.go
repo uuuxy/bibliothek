@@ -27,6 +27,10 @@ func (handler *APIHandler) handleRetryExternalCovers(writer http.ResponseWriter,
 		writeError(writer, http.StatusBadRequest, "ungültiges JSON")
 		return
 	}
+	if !alleUUIDs(eingabe.IDs) {
+		writeError(writer, http.StatusBadRequest, "ids enthält eine ungültige Kennung")
+		return
+	}
 
 	var (
 		books []Book

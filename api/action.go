@@ -296,6 +296,17 @@ func (s *Server) processSingleBatchItem(ctx context.Context, k batchKontext, req
 			Error:   "Query ist leer",
 		}
 	}
+	// Kennungen je Eintrag: Der Stapel ist ein Slice und läuft deshalb nicht durch
+	// DecodeAndValidate (siehe Handler). Eine aktive Schüler-ID, die keine UUID ist, ginge
+	// sonst an Postgres und käme als 500 zurück (uuid_eingaben_test.go).
+	if err := Validate.Struct(req); err != nil {
+		return ActionBatchResponseItem{
+			Index:   index,
+			Success: false,
+			Status:  http.StatusBadRequest,
+			Error:   meldeValidierung(err).Error(),
+		}
+	}
 
 	if item, ok := s.cachedBatchItem(ctx, req.IdempotencyKey, index); ok {
 		return item
