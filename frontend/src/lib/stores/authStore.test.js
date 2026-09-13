@@ -152,7 +152,12 @@ describe('authStore Session-Restore (Boot)', () => {
 
 	it('handleLogout invalidiert die Session auch serverseitig', () => {
 		authStore.handleLogout();
-		expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/logout', { method: 'POST' });
+		// keepalive: sonst stirbt die Anfrage mit der Seite (Reload/Tab zu direkt nach dem
+		// Klick). Das Verhalten selbst prüft e2e/abmelden-tab-zu.spec.js.
+		expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/logout', {
+			method: 'POST',
+			keepalive: true
+		});
 		expect(authStore.sessionChecked).toBe(true);
 	});
 });

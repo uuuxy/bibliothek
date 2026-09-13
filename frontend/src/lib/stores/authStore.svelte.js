@@ -205,7 +205,13 @@ class AuthStore {
 		// Serverseitig invalidieren (Token-Blacklist + Cookie löschen) — sonst würde
 		// der Boot-Restore die Session beim nächsten Reload wiederbeleben.
 		// Fire-and-forget: der lokale Zustand wird unabhängig vom Netz geleert.
-		fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+		//
+		// keepalive: Ohne ihn bricht der Browser die Anfrage ab, sobald die Seite
+		// verschwindet — Reload oder Tab zu direkt nach dem Klick, und der Server hat die
+		// Sitzung nie gesperrt. Nach dem nächsten Öffnen war man wieder angemeldet
+		// (CI 13.09.2026: Reload drei Millisekunden nach dem Klick). Nachgestellt in
+		// e2e/abmelden-tab-zu.spec.js.
+		fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
 		this.sessionChecked = true;
 		this.isLoggedIn = false;
 		this.currentUser = null;
