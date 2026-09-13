@@ -61,8 +61,10 @@ func NewDeviceService(pool db.PgxPoolIface, studentRepo repository.StudentReposi
 	}
 }
 
-// ladeGeraet lädt das Gerät anhand der Barcode-ID und prüft die Sicherheitsschranken
-// (nicht gefunden, ausgesondert, gesperrt).
+// ladeGeraet lädt das Gerät anhand der Barcode-ID. Ob es verliehen werden darf, prüft
+// pruefeGeraetAusleihbar, und zwar erst im Ausleih-Zweig: Bis zum 13.09.2026 stand die
+// Prüfung hier, und ein verliehenes Gerät, das danach als defekt gemeldet wurde, ließ sich
+// nicht mehr zurückgeben (geraet_rueckgabe_sperre_pg_test.go).
 func (s *defaultDeviceService) ladeGeraet(ctx context.Context, query string) (repository.Geraet, error) {
 	var g repository.Geraet
 	err := s.pool.QueryRow(ctx, `
@@ -76,41 +78,54 @@ func (s *defaultDeviceService) ladeGeraet(ctx context.Context, query string) (re
 		}
 		return g, err
 	}
-
-	// Ausgesonderte Geräte dürfen unter keinen Umständen ausgeliehen werden.
-	if g.IstAusgesondert {
-		return g, fmt.Errorf("%w: Gerät ist ausgesondert", ErrInvalidState)
-	}
-	// Gesperrte Geräte dürfen nicht ausgeliehen werden (z. B. bei Defekt).
-	if !g.IstAusleihbar {
-		return g, fmt.Errorf("%w: Gerät ist aktuell gesperrt", ErrBlocked)
-	}
 	return g, nil
 }
 
-// ladeAkteur ermittelt den aktiven Schüler bzw. Lehrer aus den gescannten Ausweisen.
-// Gesperrte Schüler blockieren die Ausleihe.
+// pruefeGeraetAusleihbar hält ausgesonderte und gesperrte Geräte (z. B. defekt) von der
+// AUSLEIHE fern. Die Rückgabe prüft sie nicht: Eine offene Ausleihe zu schließen ist immer
+// richtig, auch für ein Gerät, das inzwischen defekt oder ausgesondert ist.
+func pruefeGeraetAusleihbar(g repository.Geraet) error {
+	if g.IstAusgesondert {
+		return fmt.Errorf("%w: Gerät ist ausgesondert", ErrInvalidState)
+	}
+	if !g.IstAusleihbar {
+		return fmt.Errorf("%w: Gerät ist aktuell gesperrt", ErrBlocked)
+	}
+	return nil
+}
+
+// ladeAkteur ermittelt den aktiven Schüler bzw. Lehrer und wendet die Sperren an — für
+// die AUSLEIHE. Die Rückgabe nimmt ladeRueckgeber: Ein gesperrter Schüler muss sein Gerät
+// zurückgeben können.
 func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeStudentID, activeTeacherID *string) (*repository.Student, *repository.User, error) {
+	student, teacher, err := s.ladeRueckgeber(ctx, activeStudentID, activeTeacherID)
+	if err != nil || student == nil {
+		return student, teacher, err
+	}
+	// BEIDE Sperr-Flags prüfen — wie der Buch-Pfad (pruefeGesperrt +
+	// pruefeManuellGesperrt). Zuvor blockierte nur die System-Sperre (ist_gesperrt);
+	// ein von der Bibliothek MANUELL gesperrter Schüler (is_manually_blocked, etwa
+	// wegen unbezahlter Schäden) konnte trotzdem ein Gerät ausleihen — und Geräte
+	// sind wertvoller als Bücher. Geräte kennen bewusst KEIN override_block.
+	if student.IstGesperrt || student.IsManuallyBlocked {
+		return nil, nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
+	}
+	// Dieselben AUTOMATIK-Sperren wie der Buch-Pfad (Betreiber-Entscheidung
+	// 19.08.2026): unbezahlte Schäden und die Überfällig-Automatik gelten auch für
+	// Geräte. Wer kein Buch bekäme, bekommt auch kein iPad. Geräte kennen kein Override.
+	if err := pruefeGeraetAutomatikSperren(ctx, s.pool, *activeStudentID); err != nil {
+		return nil, nil, err
+	}
+	return student, nil, nil
+}
+
+// ladeRueckgeber ermittelt den aktiven Schüler bzw. Lehrer aus den gescannten Ausweisen,
+// ohne Sperrprüfung. Die Rückgabe braucht ihn nur, um eine Fremdrückgabe zu erkennen.
+func (s *defaultDeviceService) ladeRueckgeber(ctx context.Context, activeStudentID, activeTeacherID *string) (*repository.Student, *repository.User, error) {
 	if activeStudentID != nil && *activeStudentID != "" {
 		student, err := s.studentRepo.GetByID(ctx, *activeStudentID)
 		if err != nil {
 			return nil, nil, err
-		}
-		// BEIDE Sperr-Flags prüfen — wie der Buch-Pfad (pruefeGesperrt +
-		// pruefeManuellGesperrt). Zuvor blockierte nur die System-Sperre (ist_gesperrt);
-		// ein von der Bibliothek MANUELL gesperrter Schüler (is_manually_blocked, etwa
-		// wegen unbezahlter Schäden) konnte trotzdem ein Gerät ausleihen — und Geräte
-		// sind wertvoller als Bücher. Geräte kennen bewusst KEIN override_block.
-		if student != nil && (student.IstGesperrt || student.IsManuallyBlocked) {
-			return nil, nil, fmt.Errorf("%w: Die Ausleihe für diese/n Schüler/in ist gesperrt", ErrBlocked)
-		}
-		// Dieselben AUTOMATIK-Sperren wie der Buch-Pfad (Betreiber-Entscheidung
-		// 19.08.2026): unbezahlte Schäden und die Überfällig-Automatik gelten auch für
-		// Geräte. Wer kein Buch bekäme, bekommt auch kein iPad. Geräte kennen kein Override.
-		if student != nil {
-			if err := pruefeGeraetAutomatikSperren(ctx, s.pool, *activeStudentID); err != nil {
-				return nil, nil, err
-			}
 		}
 		return student, nil, nil
 	}
@@ -303,11 +318,6 @@ func (s *defaultDeviceService) HandleDeviceAction(
 		return nil, err
 	}
 
-	student, teacher, err := s.ladeAkteur(ctx, activeStudentID, activeTeacherID)
-	if err != nil {
-		return nil, err
-	}
-
 	// Transaktion starten, um den Ausleihprozess atomar und thread-sicher zu gestalten.
 	tx, err := s.loanRepo.BeginTx(ctx)
 	if err != nil {
@@ -316,6 +326,23 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	defer db.SafeRollback(ctx, tx)
 
 	activeLoan, hasActiveLoan, err := ladeAktiveAusleihe(ctx, tx, g.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Die Sperren (Gerät defekt oder ausgesondert, Schüler gesperrt) gelten der AUSLEIHE.
+	// Bis zum 13.09.2026 standen sie vor dieser Weiche und hielten auch die Rückgabe auf:
+	// 403, die Ausleihe blieb offen (geraet_rueckgabe_sperre_pg_test.go).
+	var student *repository.Student
+	var teacher *repository.User
+	if hasActiveLoan {
+		student, teacher, err = s.ladeRueckgeber(ctx, activeStudentID, activeTeacherID)
+	} else {
+		if err = pruefeGeraetAusleihbar(g); err != nil {
+			return nil, err
+		}
+		student, teacher, err = s.ladeAkteur(ctx, activeStudentID, activeTeacherID)
+	}
 	if err != nil {
 		return nil, err
 	}
