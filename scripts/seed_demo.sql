@@ -11,7 +11,9 @@
 --   * Läuft in EINER Transaktion mit ON_ERROR_STOP: bei jedem Fehler kompletter Rollback.
 --
 -- Aufruf lokal:  docker exec -i bibliothek-db-local psql -U postgres -d bibliothek -v ON_ERROR_STOP=1 < scripts/seed_demo.sql
--- Cleanup:       nur den DELETE-Block (Abschnitt 1) ausführen.
+-- Entfernen:     scripts/entferne_demo_daten.sql (mit Vorschau). Der DELETE-Block unten
+--                macht nur diesen Seed wiederholbar; auf einem benutzten System bricht er
+--                an Schäden ab und lässt Bescheide und Inventur-Verluste ohne Bezug stehen.
 
 BEGIN;
 

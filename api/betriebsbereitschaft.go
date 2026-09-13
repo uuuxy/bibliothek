@@ -695,7 +695,11 @@ func pruefeDemodaten(l Lage) Befund {
 		strconv.Itoa(l.DemoExemplare) + " Demo-Exemplare im Bestand."
 	b.Folge = "Statistik, Mahnwesen und Bestellbedarf mischen echte Zahlen mit Fiktion. " +
 		"Demo-Eltern-Adressen enden auf example.invalid, ein Mahnlauf erreicht sie nie."
-	b.Abhilfe = "Vor dem Echtstart den DEMO-Block aus scripts/seed_demo.sql (Abschnitt 1) ausführen."
+	// Nicht der Block am Anfang von seed_demo.sql: Der bricht auf einem benutzten System an
+	// Schäden ab (RESTRICT) und lässt Bescheide und Inventur-Verluste ohne Bezug stehen.
+	b.Abhilfe = "Vor dem Echtstart scripts/entferne_demo_daten.sql ausführen: erst ohne Schalter " +
+		"(Vorschau, zeigt jede Verflechtung mit echten Daten), dann mit -v ausfuehren=ja. " +
+		"Der Aufruf steht im Kopf der Datei."
 	return b
 }
 
