@@ -106,8 +106,8 @@ services:
       # Jetzt startet der Stack ohne die beiden Werte gar nicht, und die Verweigerung
       # bekannter Beispielwerte ist im Server die Vorgabe (api.ErzwingeProdGeheimnisse);
       # nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet sie für eine Testphase ab.
-      #   JWT_SECRET=<zufällig, >=32 Zeichen>        z. B. openssl rand -base64 48
-      #   APP_ENCRYPTION_KEY=<exakt 32 Byte>         z. B. openssl rand -hex 16
+      #   JWT_SECRET=<zufällig, >=32 Zeichen>        z. B. openssl rand -hex 32
+      #   APP_ENCRYPTION_KEY=<exakt 32 Byte>         z. B. openssl rand -hex 32
       #   POSTGRES_PASSWORD=<eigenes Passwort>
       #   COOKIE_SECURE=true   # hinter Caddy-HTTPS
       - APP_ENV=${APP_ENV:-production}

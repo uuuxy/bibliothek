@@ -31,7 +31,7 @@ Nachtbackups.
   **nicht mehr entschlüsselbar** — lokal wie auf S3. Nach diesem Deploy gibt es bis zum
   nächsten 02:30-UTC-Lauf **kein lesbares Backup**; deshalb direkt nach dem Deploy einen
   manuellen Lauf anstoßen (`docker compose exec backend ./main` kennt keinen Schalter —
-  kürzester Weg: `docker compose exec bibliothek-db pg_dump -U postgres bibliothek | gzip >
+  kürzester Weg: `docker compose exec postgres-db pg_dump -U postgres bibliothek | gzip >
   backups/manuell_$(date +%F).sql.gz` und die Datei nach Eingang des ersten scrypt-Backups
   löschen, sie ist unverschlüsselt). Alte `.enc`-Dateien und S3-Kopien entsorgen.
 - Rotation: die letzten **14** Backups bleiben erhalten.
@@ -139,7 +139,7 @@ grep -c "CREATE TABLE" "$DUMP"     # muss deutlich > 0 sein
 
 # (Ein früherer Schritt 4b entfernte `SET transaction_timeout` aus pg_dump-17-Dumps von
 # vor dem 22.08.2026 — diese Dateien sind seit dem scrypt-Umstieg ohnehin nicht mehr
-# entschlüsselbar, der Schritt ist gegenstandslos. Neue Backups kommen von Client 16.)
+# entschlüsselbar, der Schritt ist gegenstandslos. Neue Backups kommen von Client 18.)
 ```
 
 Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:

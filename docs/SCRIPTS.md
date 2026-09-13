@@ -237,7 +237,8 @@ Backup zeigt.
 hängt ihn ggf. an). Er macht **kein** Backup und **keine** Gesundheitsprüfung.
 
 `./update_caddy.sh` schreibt die Caddy-Konfiguration des Servers neu
-(`/root/caddy/Caddyfile`, alle Dienste des Hosts) und startet Caddy neu. Die Datei
+(`/root/caddy/Caddyfile`, alle Dienste des Hosts) und lädt sie per `caddy reload`
+neu, ohne Caddy neu zu starten. Die Datei
 `Caddyfile` im Repo-Root ist nur eine Vorlage zum Nachschlagen — sie wird nirgends
 ausgeliefert.
 
@@ -355,7 +356,7 @@ Zwei Messfehler, kein Codefehler:
    `sonar_scan.sh` filtert sie seit dem 06.08.2026 über `go list | grep -v node_modules`.
 
 **100 % sind kein Ziel und wären kein gutes.** Der Rest verteilt sich so: `cmd/*`
-(sechs CLI-Werkzeuge, 0 %) und `internal/smtptest` (Testserver, wird von Tests benutzt
+(bei dieser Messung sechs CLI-Werkzeuge, 0 %; am 13.09.2026 sind es neun) und `internal/smtptest` (Testserver, wird von Tests benutzt
 statt getestet) sind strukturell ungedeckt und sollen es bleiben. Das Quality Gate misst
 deshalb **neuen** Code gegen 80 % — die richtige Frage ist nicht „wie hoch ist die Zahl",
 sondern „ist das, was ich gerade geändert habe, abgesichert".

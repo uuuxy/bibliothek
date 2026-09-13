@@ -1,6 +1,6 @@
 # Systemarchitektur & technische Konzepte
 
-> Zuletzt aktualisiert: 2026-09-05
+> Zuletzt aktualisiert: 2026-09-13
 
 ---
 
@@ -16,7 +16,7 @@ HTTP Request
 │  Security-Header → CORS → Logging → │
 │  HTTPS-Redirect → Lesefrist →       │
 │  Body-Limit → Timeout →             │
-│  Rate-Limiter → CSRF → UUID-Check   │
+│  Rate-Limiter → CSRF                │
 └─────────────────┬───────────────────┘
                   │
                   ▼
@@ -26,6 +26,7 @@ HTTP Request
 │  pro Route: RequirePermission(…) /  │
 │  RequireRoles(…) — siehe            │
 │  routes_authz_coverage_test.go      │
+│  RequirePermission prüft auch UUIDs │
 └─────────────────┬───────────────────┘
                   │
                   ▼
@@ -77,7 +78,7 @@ Bis zu 8 Kiosk-Stationen arbeiten zeitgleich. Das System verhindert Race Conditi
 ### 1. Transaktions-Isolation & Row-Level-Locking
 
 - **READ COMMITTED** (PostgreSQL-Standard): hoher Durchsatz bei parallelen Zugriffen
-- **`SELECT … FOR UPDATE`** — welche Zeile gesperrt wird, hängt vom Pfad ab, und das ist keine Formsache (nachgezählt 11.08.2026, es sind genau fünf Stellen):
+- **`SELECT … FOR UPDATE`** — welche Zeile gesperrt wird, hängt vom Pfad ab, und das ist keine Formsache (nachgezählt 11.08.2026, damals genau fünf Stellen; am 13.09.2026 stehen zwölf `FOR UPDATE` in SQL des Go-Codes, die Tabelle nennt die fünf von damals):
 
   | Pfad                      | gesperrte Zeile                                    | Fundstelle                |
   | ------------------------- | -------------------------------------------------- | ------------------------- |
@@ -220,14 +221,16 @@ if err := rows.Err(); err != nil {
 
 | Job                    | Zeitplan                                       | Funktion                                                                                                                                                                                                                    |
 | ---------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| GDPR Anonymisierung    | Startup + täglich                              | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen; `RunGDPRAnonymizeOldData` tilgt fällige Schüler-PII inkl. Audit-Spuren                                                                                      |
-| GDPR Abgänger-Löschung | Startup + täglich                              | `RunGDPRDeleteAbgaenger` — Hard-Delete ab dem 30. Januar des Folgejahres, nur anonymisierte Zeilen; läuft in `RunNaechtlicheDSGVO` NACH der Anonymisierung, damit die Karenz (s. `RunGDPRAnonymizeOldData`) für beides gilt |
+| GDPR Anonymisierung    | Cron täglich 00:00 UTC; Loans auch Startup     | `RunGDPRAnonymizeLoans` — löscht `bearbeiter_id` nach 14 Tagen; `RunGDPRAnonymizeOldData` tilgt fällige Schüler-PII inkl. Audit-Spuren                                                                                      |
+| GDPR Abgänger-Löschung | Cron täglich 00:00 UTC + Startup/alle 24 h     | `RunGDPRDeleteAbgaenger` — Hard-Delete ab dem 30. Januar des Folgejahres, nur anonymisierte Zeilen; läuft in `RunNaechtlicheDSGVO` NACH der Anonymisierung, damit die Karenz (s. `RunGDPRAnonymizeOldData`) für beides gilt |
 | DB-Backup              | täglich 02:30                                  | `pg_dump` → gzip → AES-256-GCM (scrypt-Schlüssel, `internal/backupkrypto`)                                                                                                                                                  |
 | Restore-Probe          | **wöchentlich So 03:30** (`30 3 * * 0`)        | `RunRestoreProbe` — jüngstes Backup in eine Wegwerf-DB einspielen, Ergebnis als Befund der Betriebsbereitschaft (`jobs/restore_probe.go`)                                                                                   |
 | Audit-Aufbewahrung     | täglich 03:00                                  | Löscht Audit-Einträge jenseits der Frist (Vorgabe 24 Monate)                                                                                                                                                                |
 | Idempotenz-TTL         | **stündlich** (`17 * * * *`)                   | Bereinigt Idempotenz-Keys älter als 24 h                                                                                                                                                                                    |
 | Vormerkung-Verfall     | **stündlich** (`23 * * * *`)                   | Räumt abgelaufene „abholbereit"-Reservierungen ab                                                                                                                                                                           |
 | Cover-Sync             | on-demand + **alle 6 Stunden** (`0 */6 * * *`) | Worker-Pool (8), Re-Entrancy-Guard, FAILED-Retry                                                                                                                                                                            |
+
+Die DSGVO-Läufe haben zwei Aufrufer. Der Cron startet täglich um 00:00 UTC `RunNaechtlicheDSGVO` (`jobs/cron.go`): `RunGDPRAnonymizeLoans`, `RunGDPRAnonymizeOldData`, `RunGDPRDeleteAbgaenger`, danach Lesehistorie und Anliegen — in dieser Reihenfolge. Daneben ruft `startGDPRWorker` (`main.go`) beim Start und danach alle 24 h nur `RunGDPRAnonymizeLoans` und `RunGDPRDeleteAbgaenger` auf; `RunGDPRAnonymizeOldData` läuft auf diesem Weg nicht mit.
 
 ---
 
@@ -262,13 +265,13 @@ if err := rows.Err(); err != nil {
 
 ### Komponenten-Regeln
 
-- ≤ 200 Zeilen pro `.svelte`-Datei
+- ≤ 200 Zeilen pro neuer `.svelte`-Datei; der Altbestand darüber steht in der Ratsche `frontend/src/lib/frontend-hygiene-dateigroesse.test.js` und darf nicht wachsen
 - Logik-freie Teilkomponenten mit `{#snippet}` / `{@render}` für DRY
 - Daten-Arrays in `.js`-Metadatendateien auslagern (z. B. `permissionMetadata.js`)
 
 ### State Management
 
-- Svelte 5 Runes (`$state`, `$derived`, `$props`, `$bindable`) — lokal, kein globaler Store
+- Svelte 5 Runes (`$state`, `$derived`, `$props`, `$bindable`) — Komponentenzustand lokal; geteilter Zustand in Store-Singletons unter `frontend/src/lib/stores/*.svelte.js` (z. B. `authStore`, `uiStore`)
 - SSE-Reconnect mit Guards (`isLoggedIn`, Timeout)
 - Offline-Queue: Items nur bei 2xx/permanentem 4xx entfernt; bei 5xx/Netzwerkfehler erhalten
 

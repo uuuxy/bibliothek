@@ -8,7 +8,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 | Komponente | Technologie                                           |
 | ---------- | ----------------------------------------------------- |
-| Backend    | Go 1.27.0 (go.mod = Dockerfile), `net/http`, `pgx/v5` |
+| Backend    | Go 1.27.1 (go.mod = Dockerfile), `net/http`, `pgx/v5` |
 | Frontend   | Svelte 5 (Runes), Tailwind CSS, Vite                  |
 | Datenbank  | PostgreSQL 18                                         |
 | Echtzeit   | Server-Sent Events (SSE)                              |
@@ -54,7 +54,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 | Dokument                                                       | Inhalt                                                                                                                                                                                                                  |
 | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [HANDBUCH.md](HANDBUCH.md)                                     | Benutzerhandbuch — jeder Bereich aus Sicht der Bibliothek, mit den öffentlichen Seiten und den 13 Einstellungs-Kategorien                                                                                               |
+| [HANDBUCH.md](HANDBUCH.md)                                     | Benutzerhandbuch — jeder Bereich aus Sicht der Bibliothek, mit den öffentlichen Seiten und den 14 Einstellungs-Kategorien                                                                                               |
 | [LUSD.md](LUSD.md)                                             | **LUSD-Import ohne Schüler-ID:** was der Bericht enthalten muss, drei Zuordnungsstufen, Umbenennungs-Paarung, Karenzzeit vor der Anonymisierung, Zusammenführen von Hand, Ablauf zum Schuljahreswechsel, Code-Landkarte |
 | [lusd-simulation-2026-09-02.md](lusd-simulation-2026-09-02.md) | Messprotokoll: 1.890 Schüler, drei Schuljahre, 40 Prüfungen — die Zahlen hinter LUSD.md                                                                                                                                 |
 | [FACHKONZEPT.md](FACHKONZEPT.md)                               | Vollständige fachliche Feature-Spezifikation (Ausleihregeln, Mahnwesen, Vormerkungen, DSGVO, RBAC, Katalog …)                                                                                                           |
@@ -89,7 +89,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | [befunde.md](befunde.md)               | Befund-Register: was aufgefallen ist, was davon erledigt wurde                                                                                                                                                                                                                                                                                                                                                  |
 | [mittel_konzept.md](mittel_konzept.md) | Landes- und Kreismittel: Schadensersatz-Bescheide (Teil A, Konzept) und getrennte Töpfe in der Beschaffung (Teil B, erster Schnitt gebaut 10.09.2026)                                                                                                                                                                                                                                                           |
 | [api_inventar.md](api_inventar.md)     | **Vollständiges** Routenverzeichnis (generiert): alle Go-Routen, alle Frontend-Aufrufer, Abgleich in beide Richtungen — `./scripts/api_inventar.sh`                                                                                                                                                                                                                                                             |
-| `docs.go` (Swagger)                    | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 49 Operationen auf 43 Pfaden von 190 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
+| `docs.go` (Swagger)                    | Interaktive API-Doku, **nur bei `APP_ENV=local`/`development`** unter `/swagger`. Deckt die **annotierten** Endpunkte ab (aktuell 63 Operationen auf 54 Pfaden von 206 registrierten Routen) — das vollständige Verzeichnis ist `api_inventar.md`. Neu erzeugen: `swag init -g main.go -o docs`; ein Test (`docs/swagger_drift_test.go`) schlägt fehl, sobald die Datei von den `@Router`-Annotationen abweicht |
 
 > Eine Änderungshistorie gibt es bewusst nicht als Datei — `git log` ist ausführlicher und
 > kann nicht veralten.
@@ -100,7 +100,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 ### Voraussetzungen
 
-- Go 1.27.0 (wie go.mod/Dockerfile)
+- Go 1.27.1 (wie go.mod/Dockerfile)
 - Node.js (npm)
 - PostgreSQL (lokal oder via Docker)
 

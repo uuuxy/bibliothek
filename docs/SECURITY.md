@@ -88,7 +88,7 @@ Ursprung auf (der zweite Hop wäre sichtbar, nicht still falsch). Gates:
 ### `manage_users` ist nicht Administrator (seit 06.08.2026)
 
 `manage_users` ist ein **delegierbares** Recht (seit 24.08.2026 nur noch Konten, Rechte-Matrix und Admin-Audit-Log; Einstellungen und Schüler-Sonderrechte sind eigene Rechte) — der PermissionManager bietet es auch für
-MITARBEITER, LEHRER und HELFER an. Bis zum 06.08.2026 war es damit gleichbedeutend mit
+MITARBEITER, KOLLEGIUM und HELFER an. Bis zum 06.08.2026 war es damit gleichbedeutend mit
 Administrator; drei Wege führten dahin, alle jetzt geschlossen (`api/user_admin_eskalation.go`):
 
 | Weg                  | Vorher                                                                                                                                                                                                                                                                                    | Jetzt                                                                                          |
@@ -372,13 +372,13 @@ Code-Guard war standardmäßig aus: Ein Prod-Deploy ohne gesetzte `.env`-Werte l
 Repo nachlesbaren Schlüsseln. Jetzt greifen beide Schranken — Compose verlangt die Werte,
 der Server lehnt die bekannten ab.
 
-> **Warum die Defaults trotzdem bleiben:** Ein `${JWT_SECRET:?}` würde einen bereits
-> laufenden Stack beim nächsten `./update.sh` nicht mehr starten. Schlimmer wäre der
-> naheliegende „Fix", einfach neue Schlüssel zu erzeugen: Mit einem neuen
+> **Wenn der Stack deshalb nicht startet:** Fehlt einer der beiden Werte in der `.env`,
+> bricht `./update.sh` seit dem 05.09.2026 an `${…:?}` ab. Schlimmer als der Abbruch wäre
+> der naheliegende „Fix", einfach neue Schlüssel zu erzeugen: Mit einem neuen
 > `APP_ENCRYPTION_KEY` sind die AES-verschlüsselten Schülerfotos und das gespeicherte
 > SMTP-Passwort **nicht mehr lesbar**. Der Wechsel ist eine Schlüsselrotation mit
 > Datenmigration, keine Konfigurationsänderung — siehe Checkliste in
-> [DEPLOYMENT.md](DEPLOYMENT.md#22-secret-guard-per-schalter-einschaltbar).
+> [DEPLOYMENT.md](DEPLOYMENT.md#22-secret-guard-vorgabe-scharf).
 
 ---
 
@@ -467,12 +467,16 @@ APP_ENCRYPTION_KEY="$ALT" DATABASE_URL="$DATABASE_URL" \
   go run ./cmd/rotate-encryption-key -neu "$NEU" -pruefen
 ```
 
-> **Reihenfolge beachten, wenn zugleich `ENFORCE_PROD_SECRETS=true` gesetzt werden soll:**
-> erst rotieren, dann den Schlüssel in die `.env`, **dann** den Schalter. Andersherum
-> verweigert der Server den Start, weil er noch den bekannten Default vorfindet.
+> **Reihenfolge beachten, wenn noch `ENFORCE_PROD_SECRETS=false` in der `.env` steht:**
+> Einen Schalter setzt man nicht mehr — der Guard ist seit dem 05.09.2026 von selbst
+> scharf (`api.ErzwingeProdGeheimnisse`). Erst rotieren, dann den Schlüssel in die `.env`,
+> **dann** die `false`-Zeile entfernen. Andersherum verweigert der Server den Start, weil
+> er noch den bekannten Default vorfindet.
 
-> **Steht `APP_ENCRYPTION_KEY` gar nicht in der `.env`?** Dann ist der alte Schlüssel der
-> Compose-Default `super-secure-aes-key-32-chars-ok` — im Container ist er als
+> **Steht `APP_ENCRYPTION_KEY` gar nicht in der `.env`?** Auf dem Prod-Stack startet
+> `docker-compose.yml` dann nicht (`${APP_ENCRYPTION_KEY:?}`, seit 05.09.2026). Nur der
+> lokale Stack (`docker-compose.local.yml`) fällt auf den Default
+> `super-secure-aes-key-32-chars-ok` zurück — dort ist er im Container als
 > Umgebungsvariable gesetzt, das Kommando findet ihn also von selbst.
 
 #### Wenn der Server nach einem Schlüsselwechsel nicht mehr startet
@@ -486,11 +490,17 @@ docker compose logs --tail=20 backend     # zeigt die FATAL-Zeile
 grep -n APP_ENCRYPTION_KEY .env           # steht dort ein unbrauchbarer Wert?
 ```
 
-Ist der Wert kaputt und wurde **noch nicht** rotiert, genügt es, die Zeile zu entfernen —
-dann greift wieder der Compose-Default und die Daten sind lesbar wie zuvor:
+Ist der Wert kaputt und wurde **noch nicht** rotiert, muss der **alte, gültige** Wert
+zurück in die Zeile — mit ihm sind die Daten verschlüsselt. Er steht im Backup der `.env`
+bzw. in der Passwortablage. Die Zeile nur zu entfernen hilft auf dem Prod-Stack nicht:
+`docker-compose.yml` hat seit dem 05.09.2026 keinen Default mehr, ohne die Zeile startet
+der Stack gar nicht.
 
 ```bash
+read -rsp "Alter APP_ENCRYPTION_KEY: " ALT; echo
 sed -i '/^APP_ENCRYPTION_KEY=/d' .env
+echo "APP_ENCRYPTION_KEY=$ALT" >> .env
+grep -c '^APP_ENCRYPTION_KEY=' .env      # genau 1
 docker compose up -d backend
 ```
 
@@ -685,8 +695,9 @@ diesen Schutz auf.
 
 ### Prüfungen vor dem Push (lokal)
 
-- `scripts/git-hooks/pre-push` (installiert per `scripts/install-hooks.sh`): sechs Gates,
-  darunter Go-Tests, `svelte-check` und `npm audit`. Der Hook sagt außerdem an, **was er
+- `scripts/git-hooks/pre-push` (installiert per `scripts/install-hooks.sh`): acht Gates
+  (Schritte 1–6 samt 1b und 2b), darunter Go-Tests, `golangci-lint`, `svelte-check`,
+  Vitest und `npm audit`. Der Hook sagt außerdem an, **was er
   nicht geprüft hat** — die `*_pg_test.go` überspringen sich ohne `TEST_DATABASE_URL`
   still, mit grünem „ok" daneben.
 - `../security-scan.sh`, `scripts/pruefe_secrets.sh`, `scripts/sonar_scan.sh` — siehe
