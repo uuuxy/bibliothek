@@ -165,8 +165,7 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     `VERLUST`. Solange die Rückkehr über die Theke läuft, fällt es nicht auf); `tabula_rasa.sql` leert
     `schadensersatz_nummern` nicht.
   - **Bestand/Katalog (B):** Massenlöschen `DELETE /api/books` hängt an `edit_books`,
-    Einzellöschen an `delete_books`; Ausleiher-Reiter der Buchakte verschweigt
-    Lehrer-Ausleihen (INNER JOIN); ISBN-Eindeutigkeit nur je Schreibweise (mit/ohne
+    Einzellöschen an `delete_books`; ISBN-Eindeutigkeit nur je Schreibweise (mit/ohne
     Bindestrich); `DeleteBooks` liest die Spuren vor der Transaktion; Titel-Etiketten
     drucken ausgesonderte Exemplare mit; Jahrgangs-CHECK erst nach Messung der Prod-Daten.
   - **Bestellwesen (B):** Wareneingang gruppiert nach Datum|Notiztext statt
@@ -175,32 +174,35 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
     Serverzeit; Idempotenz-Schlüssel überlebt eine Änderung des Warenkorbs.
   - **Theke (B):** verliehenes, als defekt gemeldetes Gerät nicht rückgebbar; Sperr-Dialog hängt am
     Fehlertext (Schadens-Sperre ohne Übergehen-Dialog); Geräte-Ausleihe übernimmt
-    `active_teacher_id` ungeprüft; Offline-Warteschlange nur für `B-`-Barcodes; doppelte
-    Vormerkung 500 statt 409.
-  - **Schüler/Frontend (B):** Suchen in Schülerdatei und Ehemaligen mit `res.ok && …`
-    bzw. `res.ok ? … : []` — der Fehlerausgang-Scanner sieht beide Formen nicht
-    (Fundstellen auch AnliegenListe, KollegiumPortal, KlassensatzReservierungen,
-    GeraeteVerwaltung); Abgänger-Druck folgt der Suche nicht, obwohl zwei Kommentare es
-    zusichern; Mail-Knopf an Klassenleitungen ohne `hatRecht('create_orders')`; Theke hält
-    nach dem Zusammenführen die gelöschte Quell-ID; Bearbeiten-Formular schickt das alte
-    `abgaenger_jahr` mit (Klassenwechsel rechnet nie neu); Foto per Barcode ohne
-    `deleted_at`; Ausweis 12T gilt bis 12 statt 13; Purge-Fehler immer 409; DELETE im
-    Papierkorb setzt die 180-Tage-Uhr zurück; Wiederherstellen kollidiert seit Migration
-    108 am Namensindex mit 500.
+    `active_teacher_id` ungeprüft; Offline-Warteschlange nur für `B-`-Barcodes.
+  - **Schüler/Frontend (B):** Theke hält nach dem Zusammenführen die gelöschte Quell-ID;
+    Bearbeiten-Formular schickt das alte `abgaenger_jahr` mit (Klassenwechsel rechnet nie
+    neu); Foto per Barcode ohne `deleted_at`; Purge-Fehler immer 409.
+
+    Erledigt am 12.09.2026: die beiden Suchen und die vier Listen samt erweitertem
+    Fehlerausgang-Scanner (`05391fe6`, `dfc9913f`, `5882d0ca`), der Mail-Knopf ohne Recht
+    (`143926d1`), der Ausweis 12T (`59beb42a`), die zurückgestellte 180-Tage-Uhr
+    (`473bea9c`) und die Wiederherstellung am Namensindex (`39b58be8`). Der
+    Abgänger-Druck steht jetzt unten unter „Entscheidung nötig".
   - **LMF/Statistik (B):** Klasse zweimal im Plan — Ausleihe und Massenabgleich nennen
     zwischen den Terminen verschiedene Fristen; Statistik ohne Sequenznummer und ohne
     Fehlerzustand, Query-Fehler ergeben leere Listen ohne Logzeile.
   - **Gates/Betrieb (B):** Gegenrichtungs-Ratsche blind für UNIQUE/Teilindizes und
-    RESTRICT-FKs, Schema-Parität vergleicht Funktionen nur am Namen; Release-Gate ignoriert
-    `security-scan.yml` (die Begründung „docker-scan gab es nie" stimmt nicht); zwölf
+    RESTRICT-FKs, Schema-Parität vergleicht Funktionen nur am Namen; zwölf
     Ratschen ohne Landkarten-Zeile (Regel 7 hat keine Ratsche); `api/search_debug_test.go`
     mit fester DSN auf die Entwicklungs-DB und Skip ohne Guard; kein Rückweg beim Wechsel
-    des `BACKUP_ENCRYPTION_KEY`; `migrate-fotos` (14-MB-Binary) im öffentlichen Repo
-    getrackt; Escape in einem offenen Select schließt den ganzen Dialog.
-  - **Kleinkram (C):** DEPLOYMENT §8 beschreibt das alte Release-Gate, §2.3 `base64`
-    gegen §2.1 `hex`; `resilience_and_recovery.md` nennt `bibliothek-db` als Dienst;
-    `scripts/backup.sh` exportiert die ganze `.env`; tote Compose-Variablen `DB_HOST`,
-    `SMTP_SENDER`; tote CSS-Klassen in `altlasten.css`; zwei Regexe für die LMF-Kennung.
+    des `BACKUP_ENCRYPTION_KEY`; Escape in einem offenen Select schließt den ganzen Dialog.
+
+    Erledigt am 12.09.2026: `migrate-fotos` ist aus dem Repo und wird im Image gebaut
+    (`357d28fc`) — beim Nachsehen fiel auf, dass docs/SCRIPTS.md seit jeher einen Aufruf
+    nennt, den es im Container nie gab; ein Gate hält jetzt fest, dass jedes Werkzeug
+    einer Anleitung auch im Image liegt. Dass das Release-Gate die vier Security-Jobs
+    nicht verlangt, stimmt weiterhin — es ist eine Entscheidung (siehe unten), kein
+    Versehen; die falsche Begründung stand in DEPLOYMENT §8 und ist berichtigt.
+  - **Kleinkram (C):** `resilience_and_recovery.md` nennt `bibliothek-db` als Dienst;
+    `scripts/backup.sh` exportiert die ganze `.env`; tote CSS-Klassen in `altlasten.css`;
+    zwei Regexe für die LMF-Kennung. (DEPLOYMENT §8/§2.3 und die toten
+    Compose-Variablen: erledigt am 12.09.2026, `e5d8e21f` — je mit Ratsche.)
 
 - **Rasterdurchgang 12.09.2026 über die Änderungen vom 11.09.** (Peter: „wir haben die
   ganzen Schemata komplett drüberlaufen lassen — überprüfe alles sorgfältig und fahre
@@ -230,17 +232,10 @@ lmf_plaene.art`, die Eindeutigkeit von `position`, `letzte_stunde ≤ stunden_je
 
   Offen aus demselben Durchgang:
 
-  - **Der 503 trägt den rohen Datenbank-Text nach draußen (C).** `SendHTTPError` schickt
-    bei allem außer 500 den Fehlertext an den Client und filtert nur, was
-    `istDatenbankFehler` erkennt — SQL-Wortlaute, Constraint-Namen. „connection reset by
-    peer" und „context deadline exceeded" sind keins davon; die Meldung lautet also
-    „sitzung konnte nicht geprüft werden …: sperrliste: connection reset by peer". Kein
-    Schema, keine Daten, aber Betriebsinnenleben in einer Meldung für das Personal.
-  - **Abmelden meldet Erfolg, auch wenn nichts widerrufen wurde (B).** `Blacklist.Add`
-    protokolliert einen Fehlschlag nur als Logzeile; der Handler löscht das Cookie und
-    antwortet `{"status":"ok"}`. Bei einem Datenbank-Aussetzer bleibt das Token bis zum
-    Ablauf gültig (12 h) — die Antwort kommt aus der Eingabe, nicht aus der Wirkung
-    (Frage 5). Gefunden in der Nachbarschaft des Token-Pfads, nicht neu vom 11.09.
+  - Erledigt am 12.09.2026: Der 503 der Sitzungsprüfung nennt nur noch den Satz, nicht die
+    gewrappte Ursache (`2c8fe702`, neue Funktion `apierrors.SendHTTPErrorMitMeldung`), und
+    das Abmelden meldet, was wirklich widerrufen wurde — 503 statt `{"status":"ok"}`, wenn
+    die Sperrliste nicht antwortet (`039145f3`).
   - **Beobachtung, kein Fund (C):** Die Sperrprüfung liest seit dem 11.09. aus dem Pool,
     während die Transaktion des Checkouts offen ist (drei Abfragen über eine zweite
     Verbindung, `FOR UPDATE` gehalten). Bei `MaxConns = 50` und einer Handvoll
@@ -260,6 +255,8 @@ kommt — ein Vorschlag, der nur im Gespräch steht, überlebt die Sitzung nicht
 | **Karenz gegen Lesehistorie** (10.09.2026). Die Uhr vor der Anonymisierung rechnet ab der letzten Rückgabe — über `ausleihen.schueler_id`, die der Lesehistorie-Lauf nach `lesehistorie_tage` trennt. Ist die Karenz länger eingestellt als die Lesehistorie, wird früher anonymisiert als eingestellt. Mit den Vorgaben (90/90) ohne Wirkung. | Soll die Einstellung Karenz ≤ Lesehistorie erzwingen, oder soll die Uhr ihren Zeitpunkt selbst speichern (eigene Spalte)? |
 | **Topf auf Bestätigungsseite und großen Etiketten** (10.09.2026). Der Händler bekommt am selben Tag zwei gleich aussehende Links; auch für eine Schülerbücherei-Bestellung werden die großen Lernmittel-Etiketten mit „Eigentum des Landes" angeboten und angehängt. | Nennt die Bestätigungsseite den Topf? Große Etiketten nur bei `land`? |
 | **Security-Jobs im Release-Gate** (10.09.2026). Die Pflichtliste enthält keinen der vier Security-Jobs (govulncheck, gosec, npm audit, Trivy-Image); ein Tag auf einen Commit mit rotem Trivy erzeugt trotzdem Release und Image. | Gehören sie in die Pflichtliste, oder bleibt es bewusst so (dann begründet festhalten)? |
+| **Abgänger-Druck und die Suche** (10.09.2026, beim Abarbeiten am 12.09. vorgelegt). Zwei Kommentare sichern zu „Was auf dem Bildschirm steht, steht auf dem Papier" — der Druck folgt aber nur dem Klassenfilter. `GET /api/abgaenger/pdf` kennt nur `klasse`; die Suche filtert im Browser über Vorname, Nachname, Klasse und Barcode. | Soll der Druck der Suche folgen (dann bekommt der Endpunkt einen `suche`-Parameter, und dieselbe Auswahl steht zweimal — im Browser und in SQL), oder bleibt er klassenweise (dann fallen die zwei Kommentare)? Ohne Antwort wird hier nichts gebaut: Beides ist vertretbar, und es geht um das, was aus dem Drucker kommt. |
+| **Portal ohne Cover: `AnliegenWidget`** (Paket 5, #593). Die eigenen Wünsche und Meldungen im Kollegiums-Portal zeigen kein Buchcover. Möglich wäre es nur mit einer ISBN am Anliegen — und genau die ist am 05.09.2026 abgelehnt worden („Arbeitslisten bleiben ohne Cover", die zwei Backend-Felder werden nicht gebaut). Das Portal ist aber keine Arbeitsliste der Bibliothek. | Gilt die Entscheidung vom 05.09. auch für die eigene Liste der Lehrkraft — oder bekommt das Anliegen ein ISBN-Feld (Buchauswahl im Wunsch-Formular), damit dort ein Cover stehen kann? |
 
 ## Beobachten (nichts zu tun)
 
@@ -337,4 +334,4 @@ TypeScript-Migration (null TS-Dateien) · Verschmelzung `inventur/` ins Haupt-AP
 sichern mit `internal/uebernahme` geteilten Code · Zukunftsideen API-Versionierung
 (`/api/v1`) und Mandantenfähigkeit (RLS).
 
-Stand: 2026-09-11
+Stand: 2026-09-12

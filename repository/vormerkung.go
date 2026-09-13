@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/db"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // ErrTitelBereitsAusgeliehen signalisiert, dass ein Schüler einen Titel vormerken will, den
@@ -16,6 +17,15 @@ import (
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrTitelBereitsAusgeliehen = errors.New("Buch wird aktuell bereits von diesem Schüler ausgeliehen")
+
+// ErrVormerkungBereitsVorhanden signalisiert die zweite Vormerkung desselben Schülers auf
+// denselben Titel. UNIQUE(titel_id, schueler_id) fängt sie in der Datenbank ab; bis zum
+// 12.09.2026 kam der Constraint-Fehler roh zurück und wurde zum 500 — an der Theke eine
+// Störungsmeldung für den fachlichen Normalfall „steht schon auf der Liste".
+// Nutzer-sichtbar (409).
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
+var ErrVormerkungBereitsVorhanden = errors.New("Dieser Schüler hat den Titel bereits vorgemerkt")
 
 // Vormerkung represents a pending book reservation entry for a student.
 type Vormerkung struct {
@@ -201,6 +211,14 @@ func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, sch
 		VALUES ($1, NULLIF($2, ''), NULLIF($3, '')::uuid)
 		RETURNING id
 	`, titelID, notiz, schuelerID).Scan(&id)
+	// Die Zweitvormerkung ist kein Serverfehler, sondern eine Antwort: Der Schüler steht
+	// schon auf der Liste. Erkannt wird sie am Constraint der Tabelle, nicht an einer
+	// vorgelagerten Abfrage — die hätte zwischen Prüfen und Schreiben ein Fenster
+	// (zwei Arbeitsplätze, derselbe Titel).
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "vormerkungen_titel_id_schueler_id_key" {
+		return "", ErrVormerkungBereitsVorhanden
+	}
 	return id, err
 }
 

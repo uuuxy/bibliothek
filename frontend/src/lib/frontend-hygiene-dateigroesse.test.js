@@ -32,7 +32,6 @@ const BESTAND = {
 	'src/lib/Omnibox.svelte': 282,
 	'src/lib/Router.svelte': 228,
 	'src/lib/StatsDashboard.svelte': 374,
-	'src/lib/StudentDirectory.svelte': 209,
 	'src/lib/StudentEditSheet.svelte': 206,
 	'src/lib/StudentProfile.svelte': 244,
 	'src/lib/UnifiedInventory.svelte': 324,

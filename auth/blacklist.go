@@ -49,8 +49,17 @@ func hashToken(token string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-// Add inserts a token into the revoked_tokens table with its expiration time.
-func (b *TokenBlacklist) Add(token string, expiresAt time.Time) {
+// Add trägt ein Token mit seiner Ablaufzeit in revoked_tokens ein.
+//
+// Der Fehler geht an den Aufrufer zurück, statt nur in einer Logzeile zu enden: Ein
+// gescheiterter Widerruf heißt, dass das Token bis zu seinem natürlichen Ablauf gültig
+// bleibt (bis zu zwölf Stunden). Wer danach „abgemeldet" meldet, meldet etwas, das nicht
+// stattgefunden hat (Register 12.09.2026; Frage 5 in docs/sweeps.md).
+//
+// 0 betroffene Zeilen sind KEIN Fehlschlag: ON CONFLICT DO NOTHING trifft den Fall, dass
+// dasselbe Token schon widerrufen ist — das Ziel ist erreicht. Deshalb wird der
+// CommandTag hier bewusst verworfen (Eintrag im Bestand von phantom_erfolg_test.go).
+func (b *TokenBlacklist) Add(token string, expiresAt time.Time) error {
 	hash := hashToken(token)
 	// We use a short timeout for the DB operation, since this is called on logout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -63,7 +72,9 @@ func (b *TokenBlacklist) Add(token string, expiresAt time.Time) {
 	`, hash, expiresAt); err != nil {
 		// Security-relevant: a failed revocation means the token stays valid until expiry.
 		log.Printf("token-blacklist: WARN Token konnte nicht widerrufen werden: %v", err)
+		return err
 	}
+	return nil
 }
 
 // IsBlacklisted prüft, ob das Token in revoked_tokens steht. Ein Datenbankfehler kommt als

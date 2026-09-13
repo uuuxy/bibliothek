@@ -14,3 +14,11 @@ var ErrAnmeldedienstGestoert = errors.New("anmeldedienst gestört — Anmeldung 
 // statt 401 — eine 401 meldet den Arbeitsplatz im Client ab, und ein kurzer Aussetzer der
 // Datenbank hätte alle Arbeitsplätze abgemeldet.
 var ErrPruefungGestoert = errors.New("sitzung konnte nicht geprüft werden, bitte erneut versuchen")
+
+// ErrWiderrufGestoert heißt: Die Abmeldung konnte die Sitzung nicht widerrufen, weil die
+// Datenbank nicht mitspielte — entweder scheiterte der Eintrag in die Sperrliste selbst,
+// oder schon die Prüfung davor. Das Löschcookie geht trotzdem hinaus (es ist die Hälfte,
+// die stattgefunden hat), die Antwort meldet aber keinen Erfolg: Das Token bleibt bis zu
+// seinem natürlichen Ablauf gültig, und wer das nicht erfährt, hält eine Sitzung für
+// beendet, die es nicht ist.
+var ErrWiderrufGestoert = errors.New("abmeldung unvollständig: die sitzung ließ sich nicht widerrufen, bitte erneut versuchen")

@@ -10,12 +10,16 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {any[]} filteredStudents
 	 * @property {boolean} loading
+	 * @property {string} [ladefehler]  gescheiterter Abruf — dann steht hier kein leeres
+	 *   Verzeichnis, sondern der Grund (die Suche der Schülerdatei setzt ihn)
+	 * @property {() => void} [onErneut]
 	 * @property {(s: any) => void} onSelectStudent
 	 * @property {Set<string>} [auswahl]    markierte Schüler-IDs (Ausweis-Stapeldruck)
 	 * @property {(id: string) => void} [onToggle]
@@ -25,6 +29,8 @@
 	let {
 		filteredStudents = [],
 		loading = false,
+		ladefehler = '',
+		onErneut,
 		onSelectStudent = () => {},
 		auswahl = new Set(),
 		onToggle,
@@ -82,6 +88,12 @@
 		<div class="py-16 flex justify-center items-center">
 			<Ladekreis size="lg" />
 		</div>
+	{:else if ladefehler}
+		<LadeFehler
+			onerneut={onErneut ?? (() => {})}
+			titel="Verzeichnis nicht geladen"
+			text={ladefehler}
+		/>
 	{:else if filteredStudents.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
 			<BookOpen class="h-10 w-10 text-slate-300" aria-hidden="true" />

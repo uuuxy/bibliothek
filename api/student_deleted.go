@@ -8,6 +8,8 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/repository"
+
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 // GetDeletedStudentsHandler liefert eine Liste aller weichgelöschten Schüler für den Papierkorb.
@@ -110,6 +112,15 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 				aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE id = $1 AND deleted_at IS NOT NULL`, id)
 		if err != nil {
+			// Drei Teilindizes gelten nur für AKTIVE Zeilen: Namensindex (Migration 108,
+			// in der Normalform suchnorm), LUSD-ID und Ausweis-Barcode. Solange die Zeile
+			// im Papierkorb liegt, ist ihr Platz frei — ein Import oder eine Handanlage
+			// kann ihn besetzen. Dann ist das Wiederherstellen keine Störung, sondern
+			// eine Lage, die jemand auflösen muss: 409 mit dem Grund und dem Weg heraus.
+			if meldung, ok := restoreKollision(err); ok {
+				apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldung))
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -129,6 +140,29 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 			"message": "Schüler erfolgreich wiederhergestellt",
 		})
 	}
+}
+
+// restoreKollision übersetzt die Eindeutigkeits-Verletzung beim Wiederherstellen in einen
+// Satz, mit dem die Bibliothek etwas anfangen kann. Ohne ihn stand dort „Ein interner
+// Datenbankfehler ist aufgetreten" — eine Sackgasse: Sie nennt weder den Zwilling noch
+// den Weg heraus (Bestands-Durchgang 10.09.2026).
+//
+// Jeder der drei Indizes ist ein Teilindex auf deleted_at IS NULL; sie greifen also genau
+// in dem Moment, in dem die Zeile wieder aktiv würde.
+func restoreKollision(err error) (string, bool) {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+		return "", false
+	}
+	switch pgErr.ConstraintName {
+	case "unique_schueler_name_gebdatum":
+		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits denselben Namen und dasselbe Geburtsdatum. Beide über „Schüler zusammenführen“ vereinen, statt zwei Zeilen für denselben Menschen zu führen.", true
+	case "uniq_schueler_barcode_active":
+		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits denselben Ausweis-Barcode. Erst den Barcode des aktiven Datensatzes ändern.", true
+	case "uniq_schueler_lusd_id_active":
+		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits dieselbe LUSD-ID. Beide über „Schüler zusammenführen“ vereinen.", true
+	}
+	return "", false
 }
 
 // PurgeStudentHandler entfernt einen im Papierkorb liegenden Schüler endgültig und

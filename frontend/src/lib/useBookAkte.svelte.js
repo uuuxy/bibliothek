@@ -1,7 +1,7 @@
 import { appState } from '../inventur/lib/store.svelte.js';
 import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 import { uiStore } from './stores/uiStore.svelte.js';
-import { apiFetch } from './apiFetch.js';
+import { apiFetch, extractApiError } from './apiFetch.js';
 import { coverKandidaten } from './utils/coverSrc.js';
 
 /**
@@ -38,6 +38,8 @@ export function useBookAkte() {
 
 	/** Listen, deren Abruf gescheitert ist — ihre Zahl ist keine Zahl, sondern ein Fragezeichen. */
 	let fehlendeListen = $state(/** @type {string[]} */ ([]));
+	/** Der Kopf des Titels kam nicht an — im Unterschied zu „den Titel gibt es nicht". */
+	let kopfFehler = $state('');
 
 	let coverCandidates = $state([]);
 	let currentCandidateIndex = $state(0);
@@ -78,6 +80,7 @@ export function useBookAkte() {
 		history = [];
 		vormerkungen = [];
 		fehlendeListen = [];
+		kopfFehler = '';
 
 		// Der Kopf läuft durch eine LOKALE Variable, nie durch `book` zurück: Dieser Lauf
 		// steht in einem $effect (BookAkte.svelte). Ein Effekt, der `book` schreibt und im
@@ -93,8 +96,15 @@ export function useBookAkte() {
 				const res = await apiFetch(`/api/books/${id}`, { credentials: 'include' });
 				if (meine !== laufNr) return; // ein jüngerer Titel ist schon unterwegs oder da
 				kopf = res.ok ? await res.json() : null;
+				// „Buch nicht gefunden" ist eine Aussage über den Bestand — die Ansicht
+				// zeigt sie, wenn kein Kopf da ist. Ein 500 oder ein Netzfehler ist etwas
+				// anderes: Das Buch GIBT es womöglich, es kam nur nichts an. Seit dem
+				// 12.09.2026 steht der Unterschied in kopfFehler (Register,
+				// Bestands-Durchgang 10.09.); nur der 404 bleibt „nicht gefunden".
+				kopfFehler = res.ok || res.status === 404 ? '' : await extractApiError(res);
 			} catch (err) {
 				if (meine !== laufNr) return;
+				kopfFehler = 'Der Titel konnte nicht geladen werden (Netzwerkfehler).';
 				console.error('Fehler beim Laden des Buches:', err);
 			}
 		}
@@ -183,6 +193,9 @@ export function useBookAkte() {
 		},
 		get borrowers() {
 			return borrowers;
+		},
+		get kopfFehler() {
+			return kopfFehler;
 		},
 		get fehlendeListen() {
 			return fehlendeListen;

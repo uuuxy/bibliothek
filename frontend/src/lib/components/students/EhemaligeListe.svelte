@@ -8,8 +8,9 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { Archive } from '@lucide/svelte';
-	import { apiFetch } from '../../apiFetch.js';
+	import { apiFetch, extractApiError } from '../../apiFetch.js';
 	import Suchpille from '../ui/Suchpille.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 
 	/** @type {{ onSelect: (student: any) => void }} */
 	let { onSelect } = $props();
@@ -17,6 +18,8 @@
 	/** @type {any[]} */
 	let zeilen = $state.raw([]);
 	let laedt = $state(true);
+	/** Leer heißt leer — ein Ladefehler heißt Ladefehler (wie im Papierkorb). */
+	let ladefehler = $state('');
 	let suche = $state('');
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
@@ -31,8 +34,23 @@
 			const res = await apiFetch(
 				`/api/schueler?status=ehemalige${q ? `&q=${encodeURIComponent(q)}` : ''}`
 			);
-			if (res.ok && nr === ladeNr) zeilen = (await res.json()) || [];
+			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
+			// 12.09.2026 stand hier `if (res.ok && nr === ladeNr)`: Scheiterte der Lauf,
+			// blieben die Treffer der vorigen Suche unter dem neuen Suchtext stehen
+			// (Register, Bestands-Durchgang 10.09.).
+			if (nr !== ladeNr) return;
+			if (res.ok) {
+				zeilen = (await res.json()) || [];
+				ladefehler = '';
+			} else {
+				zeilen = [];
+				ladefehler = await extractApiError(res);
+			}
 		} catch (err) {
+			if (nr === ladeNr) {
+				zeilen = [];
+				ladefehler = 'Die Ehemaligen konnten nicht geladen werden (Netzwerkfehler).';
+			}
 			console.error('Fehler beim Laden der Ehemaligen:', err);
 		} finally {
 			if (nr === ladeNr) laedt = false;
@@ -69,6 +87,8 @@
 	<div class="py-12 flex justify-center items-center">
 		<Ladekreis size="lg" />
 	</div>
+{:else if ladefehler}
+	<LadeFehler onerneut={lade} titel="Ehemalige nicht geladen" text={ladefehler} />
 {:else if zeilen.length === 0}
 	<div class="py-12 text-center space-y-3 animate-fade-in">
 		<div

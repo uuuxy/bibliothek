@@ -12,6 +12,8 @@
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
+	import { erzeugeKlassensatzListe } from './klassensatzListe.svelte.js';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -22,31 +24,15 @@
 
 	/** @typedef {{ id: string, titel_name: string, klasse: string, anzahl: number, verfuegbar: number, notiz?: string, angefordert_von?: string, erledigt: boolean, erledigt_notiz?: string, erledigt_am?: string, erstellt_am: string }} KlassensatzReservierung */
 
-	/** @type {KlassensatzReservierung[]} */
-	let reservierungen = $state([]);
-	let loading = $state(true);
+	// Laden, Ladezustand und Ladefehler liegen in klassensatzListe.svelte.js (Größen-Ratsche).
+	const reservierungen = erzeugeKlassensatzListe();
 	/** @type {string | null} */
 	let confirmingId = $state(null);
 	/** @type {string | null} */
 	let completingId = $state(null);
 	let notiz = $state('');
 
-	// GET liefert die gesamte Historie (erledigt + offen); hier interessieren nur die offenen.
-	const offeneReservierungen = $derived(reservierungen.filter((r) => !r.erledigt));
-
-	async function loadReservierungen() {
-		loading = true;
-		try {
-			const res = await apiFetch('/api/reservierungen/klassensatz');
-			reservierungen = res.ok ? await res.json() : [];
-		} catch {
-			reservierungen = [];
-		} finally {
-			loading = false;
-		}
-	}
-
-	onMount(loadReservierungen);
+	onMount(reservierungen.laden);
 
 	/** @param {string} id */
 	function requestConfirm(id) {
@@ -70,7 +56,7 @@
 			});
 			if (res.status === 404) {
 				// Bereits anderweitig erledigt (z. B. zweiter Admin) — lokal genauso entfernen
-				reservierungen = reservierungen.filter((r) => r.id !== id);
+				reservierungen.entferne(id);
 				confirmingId = null;
 				toastStore.addToast('Reservierung war bereits abgeschlossen.', 'success');
 				return;
@@ -82,9 +68,11 @@
 			// Kein Reload: Die Zeile wandert lokal samt Notiz in „Zuletzt bereitgestellt".
 			// Vorher wurde sie entfernt — die Zusage war bis zum nächsten Laden unauffindbar.
 			const heute = new Date().toLocaleDateString('de-DE', { dateStyle: 'medium' });
-			reservierungen = reservierungen.map((r) =>
-				r.id === id ? { ...r, erledigt: true, erledigt_notiz: notiz.trim(), erledigt_am: heute } : r
-			);
+			reservierungen.aendere(id, {
+				erledigt: true,
+				erledigt_notiz: notiz.trim(),
+				erledigt_am: heute
+			});
 			confirmingId = null;
 			// Der Server meldet, ob die Bereit-Mail wirklich raus ist — ein Mail-Ausfall
 			// war vorher nur eine Server-Logzeile, die Lehrkraft wartete vergeblich.
@@ -182,19 +170,25 @@
 		</p>
 	</div>
 
-	{#if loading}
+	{#if reservierungen.laedt}
 		<div class="py-16 text-center text-slate-400 text-base animate-pulse">Lade Reservierungen…</div>
-	{:else if offeneReservierungen.length === 0}
+	{:else if reservierungen.ladefehler}
+		<LadeFehler
+			onerneut={reservierungen.laden}
+			titel="Reservierungen nicht geladen"
+			text={reservierungen.ladefehler}
+		/>
+	{:else if reservierungen.offene.length === 0}
 		<div class="py-16 text-center text-slate-400 text-base">
 			Keine offenen Klassensatz-Reservierungen.
 		</div>
 	{:else}
 		<ul class="divide-y divide-slate-100">
-			{#each offeneReservierungen as r (r.id)}
+			{#each reservierungen.offene as r (r.id)}
 				{@render reservierungRow(r)}
 			{/each}
 		</ul>
 	{/if}
 
-	<KlassensatzErledigte erledigte={reservierungen.filter((r) => r.erledigt)} />
+	<KlassensatzErledigte erledigte={reservierungen.liste.filter((r) => r.erledigt)} />
 </div>

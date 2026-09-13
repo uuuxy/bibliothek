@@ -986,7 +986,20 @@ ALTER TABLE lmf_termine
     ADD COLUMN plan_id  UUID NOT NULL REFERENCES lmf_plaene(id) ON DELETE CASCADE,
     ADD COLUMN position INTEGER NOT NULL;
 
-CREATE INDEX idx_lmf_termine_plan ON lmf_termine (plan_id, position);
+-- Migration 115: Die drei strukturellen Zusicherungen des Planers. Sie galten vorher nur
+-- per Verabredung (ein Schreiber, SaveLmfPlanIn) — hier stehen sie auch für den Weg, den
+-- kein Go-Code nimmt. uniq_lmf_plaene_id_art ist der Bezugspunkt des zusammengesetzten
+-- Fremdschlüssels; die Art eines Plans ändert sich nie. Der Unique-Index über
+-- (plan_id, position) ersetzt zugleich den früheren idx_lmf_termine_plan.
+ALTER TABLE lmf_plaene
+    ADD CONSTRAINT uniq_lmf_plaene_id_art UNIQUE (id, art),
+    ADD CONSTRAINT chk_lmf_plaene_letzte_stunde_im_tag
+        CHECK (letzte_stunde IS NULL OR letzte_stunde <= stunden_je_tag);
+
+ALTER TABLE lmf_termine
+    ADD CONSTRAINT uniq_lmf_termine_plan_position UNIQUE (plan_id, position),
+    ADD CONSTRAINT fk_lmf_termine_plan_art FOREIGN KEY (plan_id, art)
+        REFERENCES lmf_plaene (id, art) ON DELETE CASCADE;
 
 CREATE TABLE lmf_plan_ausgelassen (
     plan_id UUID NOT NULL REFERENCES lmf_plaene(id) ON DELETE CASCADE,
@@ -1287,7 +1300,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('111_bestellstatus_nur_im_zulauf.sql'),
 ('112_abholfach_folgt_dem_exemplar.sql'),
 ('113_benutzer_email_eindeutig_in_normalform.sql'),
-('114_jahrgang_null_null_repariert.sql')
+('114_jahrgang_null_null_repariert.sql'),
+('115_lmf_plan_zusicherungen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

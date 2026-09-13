@@ -73,7 +73,6 @@ services:
       - "127.0.0.1:8083:8083"
     environment:
       - PORT=8083
-      - DB_HOST=postgres-db
       # Vertrauenswürdige Proxy-Netze für die echte Client-IP (Rate-Limiting,
       # Login-Brute-Force, Audit-Logs). Default = private Docker-Netze, damit die
       # von Caddy angehängte X-Forwarded-For-Client-IP ausgewertet wird.
@@ -139,7 +138,6 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - SMTP_PASS=${SMTP_PASSWORD}
       - SMTP_FROM=${SMTP_FROM}
-      - SMTP_SENDER=${SMTP_FROM}
       # Backup-Variablen MÜSSEN hier stehen: Compose reicht ohne env_file ausschließlich
       # die hier gelisteten Schlüssel durch. Sie fehlten — der nächtliche Backup-Job fand
       # deshalb im Container nie einen Schlüssel und übersprang sich STILL (jobs/backup.go),

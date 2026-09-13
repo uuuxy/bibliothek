@@ -2,10 +2,12 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/pkg/httpresp"
 )
 
@@ -27,9 +29,19 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 
 		// Parse the token to get expiration time
 		claims, err := s.Auth.VerifyToken(cookie.Value)
-		if err == nil && claims.ExpiresAt != nil {
+		// widerrufFehler bleibt nil, solange es nichts zu widerrufen GIBT: Ein
+		// ungültiges, abgelaufenes oder längst widerrufenes Token ist kein Aussetzer,
+		// die Abmeldung ist dann vollständig. Gestört ist es nur, wenn die Datenbank
+		// nicht antwortet — dann bleibt das Token gültig.
+		var widerrufFehler error
+		switch {
+		case errors.Is(err, auth.ErrPruefungGestoert):
+			// Der Widerruf wurde nie versucht: Schon die Prüfung fand keine Datenbank,
+			// und ohne sie ist die Ablaufzeit nicht zu bekommen.
+			widerrufFehler = err
+		case err == nil && claims.ExpiresAt != nil:
 			// Blacklist the token so it can't be reused until it naturally expires
-			s.Auth.Blacklist.Add(cookie.Value, claims.ExpiresAt.Time)
+			widerrufFehler = s.Auth.Blacklist.Add(cookie.Value, claims.ExpiresAt.Time)
 		}
 
 		// #nosec G124 - Secure flag is dynamically configured
@@ -43,6 +55,16 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 			Secure:   s.CookieSecure,
 			SameSite: http.SameSiteStrictMode,
 		})
+
+		// Das Löschcookie steht oben und geht in BEIDEN Fällen hinaus — es ist die
+		// Hälfte, die stattgefunden hat. Die Antwort darunter sagt, ob die andere
+		// Hälfte auch stattgefunden hat: Ein „ok" nach gescheitertem Widerruf käme aus
+		// der Eingabe und nicht aus der Wirkung.
+		if widerrufFehler != nil {
+			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable,
+				auth.ErrWiderrufGestoert.Error(), fmt.Errorf("token-widerruf: %w", widerrufFehler))
+			return
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		httpresp.Write(w, []byte(`{"status":"ok"}`))

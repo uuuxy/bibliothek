@@ -167,3 +167,39 @@ func TestVerfalleAbgelaufeneVormerkungen_ExemplarWeg(t *testing.T) {
 		t.Errorf("nächster Wartender darf ohne freies Exemplar nicht bedient werden, war %q", status)
 	}
 }
+
+// Dieselbe Vormerkung zweimal: Die Tabelle hält UNIQUE(titel_id, schueler_id), und bis
+// zum 12.09.2026 kam der Constraint-Fehler roh aus Create zurück — der Handler machte
+// daraus einen 500 („Fehler beim Erstellen der Vormerkung"). Das ist kein Serverfehler,
+// sondern der fachliche Normalfall: Der Schüler steht schon auf der Liste. An der Theke
+// stand trotzdem eine rote Störungsmeldung, und wer sie sah, wusste nicht, ob die erste
+// Vormerkung noch gilt (Bestands-Durchgang 10.09.2026).
+//
+// Anonyme Vormerkungen bleiben davon unberührt: NULL kollidiert in UNIQUE nicht mit NULL.
+func TestVormerkungCreate_ZweiteIstKonflikt_PG(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	ex := seedSignaturMitExemplaren(t, pool, "VormDup", 1)
+	titelID := titelIDVonExemplar(t, pool, ex[0])
+	schueler := seedSchueler(t, pool, "V-DUP", "Ida", "7a")
+	repo := NewVormerkungRepository(pool)
+
+	if _, err := repo.Create(ctx, titelID, "", schueler); err != nil {
+		t.Fatalf("erste Vormerkung: %v", err)
+	}
+	_, err := repo.Create(ctx, titelID, "", schueler)
+	if !errors.Is(err, ErrVormerkungBereitsVorhanden) {
+		t.Fatalf("zweite Vormerkung: erwartet ErrVormerkungBereitsVorhanden, bekam %v", err)
+	}
+
+	// Gegenprobe: Die anonyme Vormerkung (ohne Schüler) darf mehrfach entstehen — die
+	// Theke merkt damit „ein Exemplar für die Klasse 7b" mehrfach vor.
+	if _, err := repo.Create(ctx, titelID, "anonym 1", ""); err != nil {
+		t.Fatalf("erste anonyme Vormerkung: %v", err)
+	}
+	if _, err := repo.Create(ctx, titelID, "anonym 2", ""); err != nil {
+		t.Fatalf("zweite anonyme Vormerkung darf nicht kollidieren: %v", err)
+	}
+}

@@ -12,6 +12,8 @@
 	import Button from './ui/Button.svelte';
 	import Select from './ui/Select.svelte';
 	import Suchpille from './ui/Suchpille.svelte';
+	import { hatRecht } from '../menu.js';
+	import { authStore } from '../stores/authStore.svelte.js';
 
 	/**
 	 * @type {{
@@ -37,6 +39,13 @@
 		onDrucken,
 		onMailen
 	} = $props();
+
+	// Die Seite selbst hängt an view_graduates, der Versand an create_orders
+	// (api/routes_students.go). Wer die Liste sehen darf, darf also nicht zwangsläufig
+	// mailen — ohne diese Frage stand der Knopf für jeden da und quittierte nach dem
+	// ganzen Versanddialog mit 403. Der Druck daneben bleibt: Er hängt am selben Recht
+	// wie die Seite, und Papier ist hier der Notweg.
+	const darfMailen = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 </script>
 
 <div class="flex flex-col gap-3 border-b border-slate-100 pb-5">
@@ -81,15 +90,17 @@
 					{klasse ? `Kontoauszüge ${klasse}` : 'Kontoauszüge drucken'}
 				{/if}
 			</Button>
-			<Button
-				onclick={onMailen}
-				disabled={gesamt === 0}
-				class="no-print"
-				title="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
-			>
-				<Mail class="h-4 w-4" />
-				An Klassenleitungen mailen
-			</Button>
+			{#if darfMailen}
+				<Button
+					onclick={onMailen}
+					disabled={gesamt === 0}
+					class="no-print"
+					title="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
+				>
+					<Mail class="h-4 w-4" />
+					An Klassenleitungen mailen
+				</Button>
+			{/if}
 			<div
 				class="flex items-center gap-1.5 text-label-small font-semibold text-emerald-600 shrink-0"
 				title="Änderungen an allen Arbeitsplätzen sofort sichtbar (Live-Synchronisation)"

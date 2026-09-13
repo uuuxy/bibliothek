@@ -51,6 +51,13 @@ var fkAktionenBestand = []string{
 	"CASCADE  lmf_plan_freie_tage.plan_id -> lmf_plaene",
 	"CASCADE  lmf_termin_klassen.termin_id -> lmf_termine",
 	"CASCADE  lmf_termine.plan_id -> lmf_plaene",
+	// Befragt am 12.09.2026 (Migration 115): Derselbe Bezug ein zweites Mal, jetzt über
+	// (plan_id, art) — er hält die Art der Zeile an die Art ihres Plans. Die Löschwirkung
+	// ist keine zusätzliche: Fällt der Plan, nimmt ihn schon der Fremdschlüssel darüber
+	// mit; beide zeigen auf dieselbe Zeile. Die Abfrage listet ihn zweimal, weil er zwei
+	// Schlüsselspalten hat.
+	"CASCADE  lmf_termine.art -> lmf_plaene",
+	"CASCADE  lmf_termine.art -> lmf_plaene",
 	// Befragt am 06.09.2026: Die Erfassungen fielen mit dem Exemplar und senkten damit
 	// rückwirkend das Ergebnis abgeschlossener Durchgänge — neben einem
 	// verloren_gemeldet, das feststand. Migration 103 friert die Zahl beim Abschluss ein.
@@ -157,7 +164,14 @@ var checkBedingungenBestand = []string{
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
 	"chk_grade_level_bereich", "chk_inv_session_scope",
 	"chk_ksr_anzahl_positiv", "chk_lmf_plaene_anker", "chk_lmf_plaene_art",
-	"chk_lmf_plaene_letzte_stunde", "chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
+	"chk_lmf_plaene_letzte_stunde",
+	// Migration 115, befragt am 12.09.2026: Die letzte Stunde des Rückgabe-Plans liegt im
+	// Schultag, den derselbe Plan beschreibt. Der Code prüft es an der Tür (api/lmf_plan.go,
+	// pruefeLmfAnker → 400), die Datenbank hält die zweite. Umgekehrt verlässt sich kein
+	// Lesepfad darauf, dass sie es NICHT verbietet: Der Ausgabe-Plan hat keine letzte
+	// Stunde, und NULL lässt der Check ausdrücklich zu.
+	"chk_lmf_plaene_letzte_stunde_im_tag",
+	"chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
 	"chk_lmf_termine_art", "chk_lmf_termine_stunde", "chk_meldebestand_nonneg",
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
 	// Migration 110, befragt am 10.09.2026: Vokabular und Wertebereiche des Bescheids.

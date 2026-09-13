@@ -47,6 +47,47 @@ function endetSicher(node) {
 	return false;
 }
 
+/** Ist der Ausdruck `irgendwas.ok`? */
+function istOkZugriff(node) {
+	return node?.type === 'MemberExpression' && node.property?.name === 'ok';
+}
+
+/**
+ * Fragt die Bedingung nach `.ok` — auch als ein Glied einer UND-Kette?
+ *
+ * Nachtrag 12.09.2026 (Register, Bestands-Durchgang 10.09.): Der Detektor verlangte, dass
+ * die Bedingung GENAU `res.ok` ist. Die Wettlauf-Form der Suchfelder — `if (res.ok && nr
+ * === ladeNr)` — rutschte damit durch, und das ist ausgerechnet die Stelle, an der der
+ * Sweep angefangen hat: die Trefferliste der Theke, die unter dem neuen Suchtext die
+ * Schüler des alten zeigte. Dieselbe Lehre wie bei der e2e-Wächter-Regex (Regel 6): Eine
+ * Ratsche muss über alle FORMEN prüfen, nicht über das Beispiel, das damals vorkam.
+ */
+function fragtNachOk(node) {
+	if (!node) return false;
+	if (istOkZugriff(node)) return true;
+	if (node.type === 'LogicalExpression' && node.operator === '&&') {
+		return fragtNachOk(node.left) || fragtNachOk(node.right);
+	}
+	return false;
+}
+
+/**
+ * Ist das ein neutraler Ersatzwert — einer, den die Oberfläche als „nichts da" zeigt?
+ *
+ * `[]`, `{}`, `null`, `undefined`, `''` und `0`. Genau diese machen aus einem Ladefehler
+ * ein leeres Ergebnis: „Keine Treffer" statt „konnte nicht geladen werden". Ein
+ * Ersatzwert, der etwas AUSSAGT (`'fehlgeschlagen'`, `'error'`), ist Fehlerbehandlung und
+ * gehört nicht in diese Liste.
+ */
+function istNeutralerErsatz(node) {
+	if (!node) return false;
+	if (node.type === 'ArrayExpression') return node.elements.length === 0;
+	if (node.type === 'ObjectExpression') return node.properties.length === 0;
+	if (node.type === 'Identifier') return node.name === 'undefined';
+	if (node.type === 'Literal') return node.value === null || node.value === '' || node.value === 0;
+	return false;
+}
+
 /**
  * @param {string} datei Pfad (bestimmt auch die Parserwahl)
  * @param {string} [quelle] Inhalt; ohne Angabe wird die Datei gelesen
@@ -59,11 +100,21 @@ export function findeVerschluckteFehlantworten(datei, quelle) {
 	for (const prog of programme(datei, inhalt)) {
 		walk(/** @type {any} */ (prog), {
 			enter(/** @type {any} */ node) {
-				if (node.type !== 'IfStatement' || node.alternate) return;
-				const test = node.test;
-				if (test?.type !== 'MemberExpression' || test.property?.name !== 'ok') return;
-				if (endetSicher(node.consequent)) return;
-				zeilen.push(node.loc.start.line);
+				// Form 1: `if (res.ok …) { … }` ohne else, ohne sicheres Ende.
+				if (node.type === 'IfStatement' && !node.alternate) {
+					if (!fragtNachOk(node.test)) return;
+					if (endetSicher(node.consequent)) return;
+					zeilen.push(node.loc.start.line);
+					return;
+				}
+				// Form 2: `res.ok ? … : []` — der Fehlerzweig EXISTIERT, setzt aber einen
+				// neutralen Wert. Auf dem Bildschirm ist das nicht von „nichts gefunden" zu
+				// unterscheiden; „Der Papierkorb ist leer" für einen Papierkorb, der nur
+				// nicht geladen werden konnte, war genau dieser Fall.
+				if (node.type === 'ConditionalExpression' && istOkZugriff(node.test)) {
+					if (!istNeutralerErsatz(node.alternate)) return;
+					zeilen.push(node.loc.start.line);
+				}
 			}
 		});
 	}

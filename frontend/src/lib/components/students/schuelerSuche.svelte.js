@@ -1,4 +1,4 @@
-import { apiFetch } from '../../apiFetch.js';
+import { apiFetch, extractApiError } from '../../apiFetch.js';
 import { uiStore } from '../../stores/uiStore.svelte.js';
 
 /**
@@ -22,6 +22,8 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	/** @type {any[]} */
 	let students = $state.raw([]);
 	let laedt = $state(false);
+	/** Leer heißt leer — ein Ladefehler heißt Ladefehler (wie im Papierkorb). */
+	let ladefehler = $state('');
 	let sucheLaeuft = $state(false);
 	let query = $state('');
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
@@ -42,10 +44,24 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		try {
 			const q = query.trim();
 			const res = await apiFetch(`/api/schueler${q ? `?q=${encodeURIComponent(q)}` : ''}`);
-			if (res.ok && nr === ladeNr) {
+			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
+			// 12.09.2026 hing am `nr === ladeNr` auch das `res.ok`: Scheiterte der Lauf,
+			// blieben die Treffer der vorigen Suche unter dem neuen Suchtext stehen, und
+			// an der Theke hat genau diese Form schon einmal auf den falschen Schüler
+			// gebucht (Sweep „verschluckte Fehlantwort", Register 10.09.2026).
+			if (nr !== ladeNr) return;
+			if (res.ok) {
 				students = (await res.json()) || [];
+				ladefehler = '';
+			} else {
+				students = [];
+				ladefehler = await extractApiError(res);
 			}
 		} catch (err) {
+			if (nr === ladeNr) {
+				students = [];
+				ladefehler = 'Das Schülerverzeichnis konnte nicht geladen werden (Netzwerkfehler).';
+			}
 			console.error('Fehler beim Laden des Schülerverzeichnisses:', err);
 		} finally {
 			if (nr === ladeNr) {
@@ -81,6 +97,9 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		},
 		get beschaeftigt() {
 			return laedt || sucheLaeuft;
+		},
+		get ladefehler() {
+			return ladefehler;
 		},
 		get query() {
 			return query;

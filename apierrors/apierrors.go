@@ -136,7 +136,29 @@ func Wrap(h APIHandler) http.HandlerFunc {
 }
 
 // SendHTTPError logs the detailed internal error to the server console and returns a sanitized JSON error to the client.
+//
+// Achtung: Bei jedem Status außer 500 IST der Fehlertext die Meldung an den Client —
+// gefiltert wird nur, was istDatenbankFehler erkennt. Wer einen Fehler mit einer Ursache
+// wrappt, die dem Client nicht gehört, nimmt SendHTTPErrorMitMeldung.
 func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
+	SendHTTPErrorMitMeldung(w, status, "", internalErr)
+}
+
+// SendHTTPErrorMitMeldung trennt, was der Client liest, von dem, was ins Log geht:
+// `meldung` geht an den Client, `internalErr` vollständig ins Log.
+//
+// Anlass (Rasterdurchgang 12.09.2026): Ein gewrappter Sentinel trug seine Ursache mit
+// nach draußen. `fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)` ist innen
+// richtig — die Ursache gehört in die Kette und ins Log —, aber bei einem 503 las das
+// Personal an der Theke „sitzung konnte nicht geprüft werden, bitte erneut versuchen:
+// sperrliste: connection reset by peer". Der Filter griff nicht: Ein Verbindungsabriss
+// nennt weder SQL noch Constraint. Statt die Wortliste des Filters um jede denkbare
+// Transportmeldung zu verlängern (sie wäre immer unvollständig), sagt der Aufrufer hier,
+// welcher Satz dem Client gilt — die öffentliche Hälfte des Sentinels.
+//
+// Ein leeres `meldung` bedeutet „wie bisher": der Fehlertext selbst. Ein 500 bleibt in
+// jedem Fall neutral, auch mit Meldung — dafür gibt es 400er/409er/502er.
+func SendHTTPErrorMitMeldung(w http.ResponseWriter, status int, meldung string, internalErr error) {
 	if istClientAbbruch(internalErr) {
 		writeClientAbbruch(w)
 		return
@@ -152,12 +174,20 @@ func SendHTTPError(w http.ResponseWriter, status int, internalErr error) {
 	}
 
 	// For user-facing errors (non-500), default to the internalErr string unless it contains SQL/DB details
-	if status != http.StatusInternalServerError && internalErr != nil {
-		msg = internalErr.Error()
+	if status != http.StatusInternalServerError {
+		switch {
+		case meldung != "":
+			msg = meldung
+		case internalErr != nil:
+			msg = internalErr.Error()
+		}
 	}
 
-	// Check if the error is database-related (SQL structure, constraint violation, DB driver logs)
-	isDBError := internalErr != nil && istDatenbankFehler(strings.ToLower(internalErr.Error()))
+	// Check if the outgoing message is database-related (SQL structure, constraint
+	// violation, DB driver logs). Geprüft wird der Text, der HINAUSGEHT, nicht der
+	// interne Fehler: Für den Fall ohne Meldung sind beide identisch, mit Meldung ist es
+	// der, auf den es ankommt.
+	isDBError := istDatenbankFehler(strings.ToLower(msg))
 
 	// Strictly sanitize all internal server errors and database errors
 	if status == http.StatusInternalServerError || isDBError {
