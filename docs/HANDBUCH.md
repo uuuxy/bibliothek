@@ -434,5 +434,10 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
   fehlt und wie es zu beheben ist.
 - **Scanner tippt ins Leere** → einmal ins Scanfeld klicken; die Theke holt den Fokus nach
   jedem Scan selbst zurück.
-- **Netz weg** → weiter scannen; die Theke merkt sich alles lokal und bucht nach, sobald der
-  Server wieder da ist.
+- **Netz weg** → Bücher mit einem Barcode `B-…` lassen sich weiter scannen: Die Theke merkt sie
+  sich lokal und bucht sie nach, sobald der Server wieder da ist. Alles andere — Littera-Nummern,
+  EAN-Strichcodes, `LMF-…` und Ausweise — speichert sie heute **nicht**, sie meldet
+  „Netzwerkfehler". Ein Ausweis wird ohne Netz nicht geladen: Die folgenden `B-`-Bücher gingen an
+  die Person, die vorher geladen war, bei einer geladenen Lehrkraft würden sie als Rückgabe
+  gespeichert. Während eines Ausfalls deshalb keinen neuen Ausweis scannen, die Vorgänge auf
+  Papier notieren und nach der Rückkehr der Verbindung scannen.

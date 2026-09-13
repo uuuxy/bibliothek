@@ -637,9 +637,12 @@ Datenschutz an einem Tresen, an dem Schüler mitlesen können (Kategorie 8).
 
 ### 18.4 Offline-Warteschlange
 
-Fällt das Netz aus, sammelt die Theke Scans in einer lokalen IndexedDB-Warteschlange
-(`offlineQueue.js`, Store `offline_actions`) und spielt sie ein, sobald der Server wieder
-erreichbar ist (`offlineSync`). Ein Offline-Hinweis zeigt den Zustand. Bleibt ein Arbeitsplatz
+Fällt das Netz aus, sammelt die Theke Buch-Scans mit dem Präfix `B-` in einer lokalen
+IndexedDB-Warteschlange (`offlineQueue.js`, Store `offline_actions`) und spielt sie ein, sobald
+der Server wieder erreichbar ist (`offlineSync`). Andere Buchformen (Littera-Mediennummern,
+EAN-13, `LMF-…`) und Ausweise speichert sie nicht, sie meldet „Netzwerkfehler"; ohne geladenen
+Schüler — auch bei geladener Lehrkraft — wird ein Offline-Buchscan als Rückgabe eingereiht. Der
+Umbau steht in [OFFEN.md](OFFEN.md), Abschnitt 2. Ein Offline-Hinweis zeigt den Zustand. Bleibt ein Arbeitsplatz
 dauerhaft offline, lässt sich seine Warteschlange als Datei sichern und unter _Datenverwaltung →
 Offline-Sicherungen einspielen_ nachbuchen.
 
