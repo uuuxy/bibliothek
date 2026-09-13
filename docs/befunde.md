@@ -224,6 +224,16 @@ Zwei Regeln dazu:
     Nicht pauschal taggen: `barcode_id` (16) und `lusd_id` (4) sind keine UUIDs — dieselbe
     Verwechslung, vor der der Kommentar an `uuidPfadParameter` warnt. Eigener Durchgang mit
     namentlicher Liste und Ratsche.
+  - Erledigt am 13.09.2026: Abmelden überlebt einen sofortigen Reload oder das Schließen des
+    Tabs (`95e7a24f`, `keepalive`, am alten Code rot gesehen). Gefunden, weil `auth.spec.js` in
+    der CI rot wurde: Reload drei Millisekunden nach dem Klick, die Sitzung lebte weiter.
+  - **Abmelden liest die Antwort nicht (B).** Seit `039145f2` (12.09.2026) antwortet
+    `POST /api/auth/logout` mit 503, wenn die Sperrliste nicht antwortet — `handleLogout`
+    (`frontend/src/lib/stores/authStore.svelte.js`) wertet die Antwort aber gar nicht aus. Die
+    Theke sieht das Login, auch wenn die Sitzung serverseitig noch gilt. Zu klären: nur ein
+    Hinweis, oder angemeldet bleiben, bis der Server die Sperre bestätigt?
+  - **Toter Abmelde-Weg (C):** `logout()` in `frontend/src/inventur/lib/store.svelte.js` hat
+    keinen Aufrufer.
   - **Beobachtung (C):** `startGDPRWorker` (`main.go`) ruft beim Start und im eigenen
     24-h-Takt nur die Leihen-Anonymisierung und die Abgänger-Löschung; `RunGDPRAnonymizeOldData`
     läuft allein im Cron (`jobs/cron.go`), täglich. Keine Wirkung erkennbar, die Doku
