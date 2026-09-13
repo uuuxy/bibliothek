@@ -10,9 +10,17 @@ import (
 	"testing"
 )
 
+// lookupAnfrage baut den GET für eine ISBN. Den Platzhalter {isbn} füllt im Betrieb der
+// Mux (api_routen.go); die Route selbst prüft er auch.
+func lookupAnfrage(isbn string) *http.Request {
+	req := httptest.NewRequest(http.MethodGet, "/api/lookup/x", nil)
+	req.SetPathValue("isbn", isbn)
+	return req
+}
+
 func TestHandleLookupRejectsInvalidISBN(t *testing.T) {
 	handler := &APIHandler{}
-	req := httptest.NewRequest(http.MethodGet, "/api/lookup/123&foo=bar", nil)
+	req := lookupAnfrage("123&foo=bar")
 	rr := httptest.NewRecorder()
 
 	handler.handleLookup(rr, req)
@@ -47,7 +55,7 @@ func TestHandleLookupSucheFehlschlag(t *testing.T) {
 	}
 
 	// 9783161484100 is a valid ISBN
-	req := httptest.NewRequest(http.MethodGet, "/api/lookup/9783161484100", nil)
+	req := lookupAnfrage("9783161484100")
 	rr := httptest.NewRecorder()
 
 	handler.handleLookup(rr, req)
@@ -102,7 +110,7 @@ func TestHandleLookupHappyPath(t *testing.T) {
 		metadaten: metadaten,
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/lookup/9783161484100", nil)
+	req := lookupAnfrage("9783161484100")
 	rr := httptest.NewRecorder()
 
 	handler.handleLookup(rr, req)
@@ -119,8 +127,8 @@ func TestHandleLookupHappyPath(t *testing.T) {
 
 func TestHandleLookupRejectsMissingISBN(t *testing.T) {
 	handler := &APIHandler{}
-	// Test the case where parts are extracted but isbn is empty string
-	req := httptest.NewRequest(http.MethodGet, "/api/lookup/%20%20%20", nil)
+	// Nur Leerzeichen im Platzhalter: nach dem Trimmen ist die ISBN leer
+	req := lookupAnfrage("   ")
 	rr := httptest.NewRecorder()
 
 	handler.handleLookup(rr, req)
@@ -130,18 +138,5 @@ func TestHandleLookupRejectsMissingISBN(t *testing.T) {
 	}
 	if !strings.Contains(rr.Body.String(), "isbn fehlt") {
 		t.Fatalf("expected response to contain isbn fehlt, got %s", rr.Body.String())
-	}
-}
-
-func TestHandleLookupRejectsInvalidRoute(t *testing.T) {
-	handler := &APIHandler{}
-	// Wrong route
-	req := httptest.NewRequest(http.MethodGet, "/api/something_else/123", nil)
-	rr := httptest.NewRecorder()
-
-	handler.handleLookup(rr, req)
-
-	if rr.Code != http.StatusBadRequest {
-		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
 	}
 }

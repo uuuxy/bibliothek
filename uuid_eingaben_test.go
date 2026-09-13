@@ -133,6 +133,9 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func
 	if prueftLocker(fn.Body) {
 		melde(fmt.Sprintf("%s:%s:lockere UUID-Prüfung", paket, fn.Name.Name), fn.Name.Name)
 	}
+	if pfadSelbstZerlegt(fn.Body) {
+		melde(fmt.Sprintf("%s:%s:Pfad selbst zerlegt", paket, fn.Name.Name), fn.Name.Name)
+	}
 	uuidSichtbar := ruftAuf(fn.Body, "kennung", "IstUUID") || ruftAuf(fn.Body, "uuid", "Parse") ||
 		ruftHelferAuf(fn.Body, "alleUUIDs")
 	validateSichtbar := ruftAuf(fn.Body, "Validate", "Struct", "Var")
@@ -357,6 +360,45 @@ func prueftLocker(body *ast.BlockStmt) bool {
 	return gefunden
 }
 
+// pfadSelbstZerlegt: Der Handler holt ein Segment aus r.URL.Path per strings.Split & Co.
+// statt über einen Platzhalter ({id}) und PathValue. Ein solches Segment sieht weder
+// ValidateUUIDParamsMiddleware (sie liest nur Platzhalter) noch der Rest dieses Detektors
+// (Query und Body). Bis zum 13.09.2026 kamen so PUT /api/books/x, PUT …/x/cover,
+// POST …/x/refresh-cover und POST …/x/cover-upload als 500 zurück (am Stack nachgestellt).
+func pfadSelbstZerlegt(body *ast.BlockStmt) bool {
+	gefunden := false
+	ast.Inspect(body, func(n ast.Node) bool {
+		aufruf, ok := n.(*ast.CallExpr)
+		if !ok {
+			return !gefunden
+		}
+		sel, ok := aufruf.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return !gefunden
+		}
+		if paket, ok := sel.X.(*ast.Ident); !ok || paket.Name != "strings" {
+			return !gefunden
+		}
+		switch sel.Sel.Name {
+		case "Split", "SplitN", "SplitAfter", "SplitAfterN", "Fields", "Cut":
+		default:
+			return !gefunden
+		}
+		for _, arg := range aufruf.Args {
+			ast.Inspect(arg, func(m ast.Node) bool {
+				if pfad, ok := m.(*ast.SelectorExpr); ok && (pfad.Sel.Name == "Path" || pfad.Sel.Name == "RawPath") {
+					if url, ok := pfad.X.(*ast.SelectorExpr); ok && url.Sel.Name == "URL" {
+						gefunden = true
+					}
+				}
+				return !gefunden
+			})
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
 // Gegenprobe am Detektor: ein Sammler, der nichts findet, meldet ewig „alles gut".
 func TestUUIDEingabenDetektorErkenntDieFormen(t *testing.T) {
 	quelle := `package p
@@ -375,6 +417,9 @@ func gKeine(w, r any) { var req kein; DecodeAndValidate(w, r, &req) }
 func iLocker(s string) bool { return uuid.Validate(s) == nil }
 func jParseVerworfen(s string) bool { if _, err := uuid.Parse(s); err != nil { return false }; return true }
 func kParseGenutzt(s string) string { id, _ := uuid.Parse(s); return id.String() }
+func lPfad(r any) string { teile := strings.Split(strings.Trim(r.URL.Path, "/"), "/"); return teile[2] }
+func mPlatzhalter(r any) string { return r.PathValue("id") }
+func nPfadOhneZerlegen(r any) string { return strings.TrimPrefix(r.URL.Path, "/") }
 `
 	datei, err := parser.ParseFile(token.NewFileSet(), "p/probe.go", quelle, 0)
 	if err != nil {
@@ -390,6 +435,7 @@ func kParseGenutzt(s string) string { id, _ := uuid.Parse(s); return id.String()
 		"p:dDirekt:ohne Validierung (dDirekt)",
 		"p:iLocker:lockere UUID-Prüfung (iLocker)",
 		"p:jParseVerworfen:lockere UUID-Prüfung (jParseVerworfen)",
+		"p:lPfad:Pfad selbst zerlegt (lPfad)",
 	}
 	if strings.Join(maengel, "|") != strings.Join(erwartet, "|") {
 		t.Errorf("Detektor meldet\n  %s\nerwartet\n  %s", strings.Join(maengel, "\n  "), strings.Join(erwartet, "\n  "))

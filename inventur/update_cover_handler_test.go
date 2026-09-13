@@ -12,36 +12,39 @@ import (
 )
 
 func TestHandleUpdateCover(t *testing.T) {
-	// Helper function for making requests
-	makeReq := func(method, path string, body map[string]any) *http.Request {
+	const buchID = "0f8fad5b-d9cb-469f-a165-70867728950e"
+
+	// makeReq setzt den Platzhalter {id} selbst — im Betrieb füllt ihn der Mux (api_routen.go).
+	makeReq := func(method, id string, body map[string]any) *http.Request {
 		var reqBody []byte
 		if body != nil {
 			reqBody, _ = json.Marshal(body) //nolint:errcheck
 		}
-		req, _ := http.NewRequestWithContext(context.Background(), method, path, bytes.NewReader(reqBody)) //nolint:errcheck
+		req, _ := http.NewRequestWithContext(context.Background(), method, "/api/books/"+id+"/cover", bytes.NewReader(reqBody)) //nolint:errcheck
+		req.SetPathValue("id", id)
 		return req
 	}
 
 	tests := []struct {
 		name           string
 		method         string
-		path           string
+		id             string
 		body           map[string]any
 		setupMock      func(pgxmock.PgxPoolIface)
 		expectedStatus int
 	}{
 		{
-			name:           "Invalid Route Structure",
+			name:           "Kennung ist keine UUID",
 			method:         http.MethodPut,
-			path:           "/api/books/123/wrong",
-			body:           nil,
+			id:             "123",
+			body:           map[string]any{"coverUrl": "/uploads/cover.jpg"},
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Empty ID",
 			method:         http.MethodPut,
-			path:           "/api/books//cover",
+			id:             "",
 			body:           nil,
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -49,7 +52,7 @@ func TestHandleUpdateCover(t *testing.T) {
 		{
 			name:           "Invalid JSON",
 			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
+			id:             buchID,
 			body:           nil, // Sending nil body will fail decoding in handleUpdateCover
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -57,7 +60,7 @@ func TestHandleUpdateCover(t *testing.T) {
 		{
 			name:           "Empty Cover URL",
 			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
+			id:             buchID,
 			body:           map[string]any{"coverUrl": "   "},
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -65,7 +68,7 @@ func TestHandleUpdateCover(t *testing.T) {
 		{
 			name:           "Invalid Cover URL Prefix",
 			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
+			id:             buchID,
 			body:           map[string]any{"coverUrl": "http://example.com/cover.jpg"},
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -76,7 +79,7 @@ func TestHandleUpdateCover(t *testing.T) {
 			// von jedem Browser, der Katalog oder Monitor öffnet.
 			name:           "Fremder HTTPS-Host wird abgelehnt",
 			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
+			id:             buchID,
 			body:           map[string]any{"coverUrl": "https://angreifer.example/zaehler.jpg"},
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -86,7 +89,7 @@ func TestHandleUpdateCover(t *testing.T) {
 			// über url.Hostname() laufen, nicht über strings.Contains.
 			name:           "Allowlist-Host als Subdomain eines Angreifers",
 			method:         http.MethodPut,
-			path:           "/api/books/123/cover",
+			id:             buchID,
 			body:           map[string]any{"coverUrl": "https://covers.openlibrary.org.angreifer.example/x.jpg"},
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
@@ -94,11 +97,11 @@ func TestHandleUpdateCover(t *testing.T) {
 		{
 			name:   "UpdateBookMetadata Error",
 			method: http.MethodPut,
-			path:   "/api/books/123/cover",
+			id:     buchID,
 			body:   map[string]any{"coverUrl": "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "123").
+					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", buchID).
 					WillReturnError(ErrBookNotFound)
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -106,15 +109,15 @@ func TestHandleUpdateCover(t *testing.T) {
 		{
 			name:   "GetBookByID Error",
 			method: http.MethodPut,
-			path:   "/api/books/123/cover",
+			id:     buchID,
 			body:   map[string]any{"coverUrl": "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "123").
+					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", buchID).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
-					WithArgs("123").
+					WithArgs(buchID).
 					WillReturnError(ErrBookNotFound)
 			},
 			expectedStatus: http.StatusInternalServerError,
@@ -122,19 +125,19 @@ func TestHandleUpdateCover(t *testing.T) {
 		{
 			name:   "Success HTTPS",
 			method: http.MethodPut,
-			path:   "/api/books/123/cover",
+			id:     buchID,
 			body:   map[string]any{"coverUrl": "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "123").
+					WithArgs("", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", buchID).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
-					WithArgs("123").
+					WithArgs(buchID).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
 					}).AddRow(
-						"123", "9781234567890", "Test Title", "Test Author", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
+						buchID, "9781234567890", "Test Title", "Test Author", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
 					))
 			},
 			expectedStatus: http.StatusOK,
@@ -142,19 +145,19 @@ func TestHandleUpdateCover(t *testing.T) {
 		{
 			name:   "Success Local Uploads",
 			method: http.MethodPut,
-			path:   "/api/books/123/cover",
+			id:     buchID,
 			body:   map[string]any{"coverUrl": "/uploads/cover.jpg"},
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", "/uploads/cover.jpg", "123").
+					WithArgs("", "", "/uploads/cover.jpg", buchID).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
-					WithArgs("123").
+					WithArgs(buchID).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
 					}).AddRow(
-						"123", "9781234567890", "Test Title", "Test Author", "", "/uploads/cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
+						buchID, "9781234567890", "Test Title", "Test Author", "", "/uploads/cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
 					))
 			},
 			expectedStatus: http.StatusOK,
@@ -174,7 +177,7 @@ func TestHandleUpdateCover(t *testing.T) {
 
 			tt.setupMock(mock)
 
-			req := makeReq(tt.method, tt.path, tt.body)
+			req := makeReq(tt.method, tt.id, tt.body)
 			w := httptest.NewRecorder()
 
 			handler.handleUpdateCover(w, req)

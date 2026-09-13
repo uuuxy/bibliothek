@@ -7,11 +7,13 @@
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
+- `POST /api/books/{id}/refresh-cover`
 - `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/defekt`
 - `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/public/bestellung/{token}/bestaetigen`
+- `PUT /api/books/{id}/cover`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -21,7 +23,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (204)
+## Alle registrierten Routen (206)
 
 - `/`
 - `/api/admin`
@@ -100,7 +102,7 @@
 - `GET /api/lmf-termine`
 - `GET /api/lmf-termine/entwurf/pdf`
 - `GET /api/lmf-termine/pdf`
-- `GET /api/lookup/`
+- `GET /api/lookup/{isbn}`
 - `GET /api/mahnwesen`
 - `GET /api/mahnwesen/pdf`
 - `GET /api/mahnwesen/ueberfaellig_jahrgang`
@@ -166,8 +168,9 @@
 - `POST /api/bestellungen/bulk-receive`
 - `POST /api/bestellungen/suche`
 - `POST /api/books`
-- `POST /api/books/`
 - `POST /api/books/import`
+- `POST /api/books/{id}/cover-upload`
+- `POST /api/books/{id}/refresh-cover`
 - `POST /api/buecher/aus-isbn`
 - `POST /api/buecher/exemplare/verlust-endgueltig-loeschen`
 - `POST /api/buecher/exemplare/{id}/aussondern`
@@ -215,7 +218,8 @@
 - `PUT /api/bestellungen/{id}/bestaetigen`
 - `PUT /api/bestellungen/{id}/bestaetigungs-link`
 - `PUT /api/bestellungen/{id}/mittel`
-- `PUT /api/books/`
+- `PUT /api/books/{id}`
+- `PUT /api/books/{id}/cover`
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`
 - `PUT /api/buecher/titel/{id}/lernmittel`

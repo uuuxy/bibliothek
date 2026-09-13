@@ -83,6 +83,19 @@ func alleUUIDs(ids []string) bool {
 	return true
 }
 
+// buchIDAusPfad liest die Buch-Kennung aus dem Platzhalter {id} der Route (api_routen.go).
+// Ist sie keine UUID, antwortet sie mit 400, bevor irgendetwas die Datenbank fragt — sonst
+// käme `invalid input syntax for type uuid` als 500 zurück. ok=false: Die Antwort ist
+// geschrieben.
+func buchIDAusPfad(antwort http.ResponseWriter, anfrage *http.Request) (string, bool) {
+	id := anfrage.PathValue("id")
+	if !kennung.IstUUID(id) {
+		writeError(antwort, http.StatusBadRequest, "ungültige Buch-ID")
+		return "", false
+	}
+	return id, true
+}
+
 // BearbeiteBuecherLoeschen verarbeitet DELETE-Anfragen zum Löschen mehrerer Bücher.
 // Es erwartet ein JSON-Array mit IDs und löscht diese sicher über das Repository.
 func (handler *APIHandler) BearbeiteBuecherLoeschen(antwort http.ResponseWriter, anfrage *http.Request) {

@@ -10,15 +10,8 @@ import (
 )
 
 func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, request *http.Request) {
-	parts := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
-	if len(parts) != 4 || parts[0] != "api" || parts[1] != "books" || parts[3] != "refresh-cover" {
-		writeError(writer, http.StatusBadRequest, "ungültige route")
-		return
-	}
-
-	id := parts[2]
-	if id == "" {
-		writeError(writer, http.StatusBadRequest, "id darf nicht leer sein")
+	id, ok := buchIDAusPfad(writer, request)
+	if !ok {
 		return
 	}
 

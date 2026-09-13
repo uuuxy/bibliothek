@@ -11,15 +11,8 @@ import (
 
 // BearbeiteBuchAktualisieren verarbeitet PUT-Anfragen für ein bestehendes Buch.
 func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWriter, anfrage *http.Request) {
-	teile := strings.Split(strings.Trim(anfrage.URL.Path, "/"), "/")
-	if len(teile) != 3 || teile[0] != "api" || teile[1] != "books" {
-		writeError(antwort, http.StatusBadRequest, "ungültige route")
-		return
-	}
-
-	id := teile[2]
-	if id == "" {
-		writeError(antwort, http.StatusBadRequest, "id darf nicht leer sein")
+	id, ok := buchIDAusPfad(antwort, anfrage)
+	if !ok {
 		return
 	}
 

@@ -8,13 +8,7 @@ import (
 )
 
 func (handler *APIHandler) handleLookup(writer http.ResponseWriter, request *http.Request) {
-	parts := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
-	if len(parts) != 3 || parts[0] != "api" || parts[1] != "lookup" {
-		writeError(writer, http.StatusBadRequest, "ungültige route")
-		return
-	}
-
-	isbn := strings.TrimSpace(parts[2])
+	isbn := strings.TrimSpace(request.PathValue("isbn"))
 	if isbn == "" {
 		writeError(writer, http.StatusBadRequest, "isbn fehlt")
 		return

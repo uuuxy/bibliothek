@@ -118,69 +118,6 @@ func TestProcessUploadedImage(t *testing.T) {
 	})
 }
 
-func TestValidateCoverRoute(t *testing.T) {
-	tests := []struct {
-		name       string
-		path       string
-		wantID     string
-		wantOk     bool
-		wantStatus int
-	}{
-		{
-			name:       "Valid Route",
-			path:       "/api/books/123/cover-upload",
-			wantID:     "123",
-			wantOk:     true,
-			wantStatus: http.StatusOK,
-		},
-		{
-			name:       "Invalid Route Parts",
-			path:       "/api/books/123/other",
-			wantID:     "",
-			wantOk:     false,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "Empty ID",
-			path:       "/api/books//cover-upload",
-			wantID:     "",
-			wantOk:     false,
-			wantStatus: http.StatusBadRequest,
-		},
-		{
-			name:       "Missing Parts",
-			path:       "/api/books/123",
-			wantID:     "",
-			wantOk:     false,
-			wantStatus: http.StatusBadRequest,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, tt.path, nil)
-			w := httptest.NewRecorder()
-
-			id, ok := validateCoverRoute(w, req)
-
-			if id != tt.wantID {
-				t.Errorf("validateCoverRoute() id = %v, want %v", id, tt.wantID)
-			}
-			if ok != tt.wantOk {
-				t.Errorf("validateCoverRoute() ok = %v, want %v", ok, tt.wantOk)
-			}
-			if !ok {
-				if w.Code != tt.wantStatus {
-					t.Errorf("validateCoverRoute() status = %v, want %v", w.Code, tt.wantStatus)
-				}
-				if !strings.Contains(w.Body.String(), "error") {
-					t.Errorf("Expected error response, got %s", w.Body.String())
-				}
-			}
-		})
-	}
-}
-
 func TestReadCoverUpload(t *testing.T) {
 	imgData := createDummyImage("jpeg", 100, 100)
 
@@ -306,11 +243,15 @@ func TestSaveCoverFile(t *testing.T) {
 	})
 }
 
+// uploadTestBuchID: eine UUID, weil buchIDAusPfad alles andere mit 400 abweist. Die
+// Upload-Dateien heißen danach (cover_<id>_…), das Aufräumen unten sucht sie so.
+const uploadTestBuchID = "6ba7b810-9dad-41d1-80b4-00c04fd430c8"
+
 func TestHandleUploadCover(t *testing.T) {
 	tests := []struct {
 		name           string
 		method         string
-		path           string
+		id             string
 		bodyData       []byte
 		fileName       string
 		contentType    string
@@ -318,19 +259,19 @@ func TestHandleUploadCover(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:           "Invalid Route Structure",
+			name:           "Kennung ist keine UUID",
 			method:         http.MethodPost,
-			path:           "/api/books/123/wrong",
-			bodyData:       nil,
-			fileName:       "",
-			contentType:    "",
+			id:             "123",
+			bodyData:       createDummyImage("jpeg", 100, 100),
+			fileName:       "test.jpg",
+			contentType:    "multipart/form-data",
 			setupMock:      func(m pgxmock.PgxPoolIface) {},
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "Empty ID",
 			method:         http.MethodPost,
-			path:           "/api/books//cover-upload",
+			id:             "",
 			bodyData:       nil,
 			fileName:       "",
 			contentType:    "",
@@ -340,7 +281,7 @@ func TestHandleUploadCover(t *testing.T) {
 		{
 			name:           "Missing File Data",
 			method:         http.MethodPost,
-			path:           "/api/books/123/cover-upload",
+			id:             uploadTestBuchID,
 			bodyData:       nil,
 			fileName:       "",
 			contentType:    "multipart/form-data",
@@ -350,21 +291,21 @@ func TestHandleUploadCover(t *testing.T) {
 		{
 			name:        "Success Upload",
 			method:      http.MethodPost,
-			path:        "/api/books/123/cover-upload",
+			id:          uploadTestBuchID,
 			bodyData:    createDummyImage("jpeg", 100, 100),
 			fileName:    "test.jpg",
 			contentType: "multipart/form-data",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
-					WithArgs("123").
+					WithArgs(uploadTestBuchID).
 					WillReturnRows(pgxmock.NewRows([]string{
 						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
 					}).AddRow(
-						"123", "9781234567890", "Test Title", "Test Author", "", "/uploads/old_cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
+						uploadTestBuchID, "9781234567890", "Test Title", "Test Author", "", "/uploads/old_cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
 					))
 
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", pgxmock.AnyArg(), "123").
+					WithArgs("", "", pgxmock.AnyArg(), uploadTestBuchID).
 					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 			},
 			expectedStatus: http.StatusOK,
@@ -372,17 +313,17 @@ func TestHandleUploadCover(t *testing.T) {
 		{
 			name:        "Database Update Error",
 			method:      http.MethodPost,
-			path:        "/api/books/123/cover-upload",
+			id:          uploadTestBuchID,
 			bodyData:    createDummyImage("jpeg", 100, 100),
 			fileName:    "test.jpg",
 			contentType: "multipart/form-data",
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
-					WithArgs("123").
+					WithArgs(uploadTestBuchID).
 					WillReturnError(pgx.ErrNoRows) // Not found for old cover delete, handled silently
 
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", pgxmock.AnyArg(), "123").
+					WithArgs("", "", pgxmock.AnyArg(), uploadTestBuchID).
 					WillReturnError(ErrBookNotFound)
 			},
 			expectedStatus: http.StatusNotFound,
@@ -402,6 +343,7 @@ func TestHandleUploadCover(t *testing.T) {
 
 			tt.setupMock(mock)
 
+			pfad := "/api/books/" + tt.id + "/cover-upload"
 			var req *http.Request
 			if tt.contentType == "multipart/form-data" && len(tt.bodyData) > 0 {
 				var b bytes.Buffer
@@ -410,17 +352,19 @@ func TestHandleUploadCover(t *testing.T) {
 				_, _ = fw.Write(tt.bodyData)                    //nolint:errcheck
 				_ = w.Close()                                   //nolint:errcheck
 
-				req = httptest.NewRequest(tt.method, tt.path, &b)
+				req = httptest.NewRequest(tt.method, pfad, &b)
 				req.Header.Set("Content-Type", w.FormDataContentType())
 			} else if tt.contentType == "multipart/form-data" && len(tt.bodyData) == 0 {
 				var b bytes.Buffer
 				w := multipart.NewWriter(&b)
 				_ = w.Close() //nolint:errcheck
-				req = httptest.NewRequest(tt.method, tt.path, &b)
+				req = httptest.NewRequest(tt.method, pfad, &b)
 				req.Header.Set("Content-Type", w.FormDataContentType())
 			} else {
-				req = httptest.NewRequest(tt.method, tt.path, nil)
+				req = httptest.NewRequest(tt.method, pfad, nil)
 			}
+			// Den Platzhalter {id} füllt im Betrieb der Mux (api_routen.go).
+			req.SetPathValue("id", tt.id)
 
 			w := httptest.NewRecorder()
 
@@ -437,7 +381,7 @@ func TestHandleUploadCover(t *testing.T) {
 	}
 
 	// Clean up created upload files during tests
-	filepaths, _ := filepath.Glob("uploads/cover_123_*.jpg") //nolint:errcheck
+	filepaths, _ := filepath.Glob("uploads/cover_" + uploadTestBuchID + "_*.jpg") //nolint:errcheck
 	for _, f := range filepaths {
 		_ = os.Remove(f) //nolint:errcheck
 	}

@@ -71,27 +71,19 @@ func TestFallbackString(t *testing.T) {
 	}
 }
 
-func TestHandleRefreshCover_InvalidRoute(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/api/books/123/wrong", nil)
-	w := httptest.NewRecorder()
+// Die Route prüft der Mux (Platzhalter {id} in api_routen.go); hier nur die Kennung.
+func TestHandleRefreshCover_UngueltigeKennung(t *testing.T) {
+	for _, id := range []string{"", "123", "urn:uuid:0f8fad5b-d9cb-469f-a165-70867728950e"} {
+		req := httptest.NewRequest(http.MethodPost, "/api/books/x/refresh-cover", nil)
+		req.SetPathValue("id", id)
+		w := httptest.NewRecorder()
 
-	handler := &APIHandler{}
-	handler.handleRefreshCover(w, req)
+		handler := &APIHandler{}
+		handler.handleRefreshCover(w, req)
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
-	}
-}
-
-func TestHandleRefreshCover_EmptyID(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/api/books//refresh-cover", nil)
-	w := httptest.NewRecorder()
-
-	handler := &APIHandler{}
-	handler.handleRefreshCover(w, req)
-
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("expected status %d, got %d", http.StatusBadRequest, w.Code)
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("Kennung %q: expected status %d, got %d", id, http.StatusBadRequest, w.Code)
+		}
 	}
 }
 
@@ -109,6 +101,7 @@ func TestHandleRefreshCover_BookNotFound(t *testing.T) {
 		WillReturnError(pgx.ErrNoRows)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
+	req.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
 	w := httptest.NewRecorder()
 
 	handler.handleRefreshCover(w, req)
@@ -138,6 +131,7 @@ func TestHandleRefreshCover_DBFehlerIst500(t *testing.T) {
 		WillReturnError(errTest)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/00000000-0000-0000-0000-000000000000/refresh-cover", nil)
+	req.SetPathValue("id", "00000000-0000-0000-0000-000000000000")
 	w := httptest.NewRecorder()
 
 	handler.handleRefreshCover(w, req)
@@ -183,6 +177,7 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", int16(1), "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
+	req.SetPathValue("id", bookID)
 	req = req.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
@@ -260,6 +255,7 @@ func TestHandleRefreshCover_UpdateFailure(t *testing.T) {
 		WillReturnError(errTest)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
+	req.SetPathValue("id", bookID)
 	req = req.WithContext(context.Background())
 	w := httptest.NewRecorder()
 
@@ -328,6 +324,7 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
+	req.SetPathValue("id", bookID)
 	req = req.WithContext(context.Background())
 	w := httptest.NewRecorder()
 

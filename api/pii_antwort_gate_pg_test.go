@@ -415,7 +415,7 @@ var bewusstAusgelassen = map[string]string{
 	"GET /swagger/": "nur unter APP_ENV=local/development registriert — im Gate-Lauf existiert die Route nicht; " +
 		"Inhalt ist die generierte API-Doku (docs.go), keine Datenbankantwort.",
 	"GET /swagger": "Redirect auf /swagger/, gleiche Begründung.",
-	"GET /api/lookup/": "Proxy für EXTERNE ISBN-Metadaten — ein Aufruf mit echter ISBN ginge ins Internet; " +
+	"GET /api/lookup/{isbn}": "Proxy für EXTERNE ISBN-Metadaten — ein Aufruf mit echter ISBN ginge ins Internet; " +
 		"die Antwort sind fremde Titeldaten ohne jeden Schülerbezug (Stufe 0 per Konstruktion).",
 }
 

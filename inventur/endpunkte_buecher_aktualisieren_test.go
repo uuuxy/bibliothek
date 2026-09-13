@@ -197,7 +197,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 
 		handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"Titel","author":"Autor","subject":"Mathe"}`
-		w := ruf(t, handler, "/api/books/book-1", rumpf)
+		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
 		if w.Code != http.StatusOK {
 			t.Fatalf("Status %d, erwartet 200 — Rumpf: %s", w.Code, w.Body.String())
@@ -216,7 +216,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 
 		handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"","author":"Autor","subject":"Mathe"}`
-		w := ruf(t, handler, "/api/books/book-1", rumpf)
+		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
 		if w.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400 — ein geleerter Titel darf nicht still zu "+
@@ -236,7 +236,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 
 		handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
 		rumpf := `{"isbn":"9783161484100","title":"Titel","author":"","subject":"Mathe"}`
-		w := ruf(t, handler, "/api/books/book-1", rumpf)
+		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
 
 		if w.Code != http.StatusBadRequest {
 			t.Fatalf("Status %d, erwartet 400 — Rumpf: %s", w.Code, w.Body.String())
@@ -244,10 +244,12 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 	})
 }
 
-// ruf schickt einen PUT an den Aktualisieren-Handler.
-func ruf(t *testing.T, handler *APIHandler, pfad, rumpf string) *httptest.ResponseRecorder {
+// ruf schickt einen PUT an den Aktualisieren-Handler. Den Platzhalter {id} füllt im
+// Betrieb der Mux (api_routen.go).
+func ruf(t *testing.T, handler *APIHandler, id, rumpf string) *httptest.ResponseRecorder {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodPut, pfad, strings.NewReader(rumpf))
+	req := httptest.NewRequest(http.MethodPut, "/api/books/"+id, strings.NewReader(rumpf))
+	req.SetPathValue("id", id)
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	handler.BearbeiteBuchAktualisieren(w, req)

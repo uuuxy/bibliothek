@@ -43,6 +43,7 @@ func lookupMit(t *testing.T, transport http.RoundTripper) *httptest.ResponseReco
 	handler := &APIHandler{metadaten: client}
 
 	req := httptest.NewRequest(http.MethodGet, "/api/lookup/9783551551672", nil)
+	req.SetPathValue("isbn", "9783551551672")
 	rec := httptest.NewRecorder()
 	handler.handleLookup(rec, req)
 	return rec

@@ -104,7 +104,7 @@ func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
 }
 
 func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request *http.Request) {
-	id, ok := validateCoverRoute(writer, request)
+	id, ok := buchIDAusPfad(writer, request)
 	if !ok {
 		return
 	}
@@ -149,23 +149,6 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 			"coverUrl": coverURL,
 		},
 	})
-}
-
-// validateCoverRoute validiert die Upload-Route (/api/books/{id}/cover-upload) und
-// extrahiert die Buch-ID. ok=false: die Fehlerantwort wurde bereits geschrieben.
-func validateCoverRoute(writer http.ResponseWriter, request *http.Request) (string, bool) {
-	parts := strings.Split(strings.Trim(request.URL.Path, "/"), "/")
-	if len(parts) != 4 || parts[0] != "api" || parts[1] != "books" || parts[3] != "cover-upload" {
-		writeError(writer, http.StatusBadRequest, "ungültige route")
-		return "", false
-	}
-
-	id := filepath.Base(parts[2])
-	if id == "" || id == "." || id == "/" {
-		writeError(writer, http.StatusBadRequest, "id darf nicht leer sein")
-		return "", false
-	}
-	return id, true
 }
 
 // readCoverUpload liest und validiert das hochgeladene Bild (Größe, Nicht-Leer,

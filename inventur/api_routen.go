@@ -78,7 +78,7 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	handler.mux.Handle("GET /api/books", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuecherListe)))
 	handler.mux.Handle("GET /api/books/{id}", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuchLesen)))
 	handler.mux.Handle("GET /api/class-books", config.RequireViewBooks(http.HandlerFunc(handler.handleClassBooks)))
-	handler.mux.Handle("GET /api/lookup/", config.RequireViewBooks(http.HandlerFunc(handler.handleLookup)))
+	handler.mux.Handle("GET /api/lookup/{isbn}", config.RequireViewBooks(http.HandlerFunc(handler.handleLookup)))
 
 	// Lehrerportal (Betreiber-Entscheidung 24.08.2026): Das Kollegium sieht Bestand
 	// und Mengen der Lernmittel sowie die Klassensatz-Zuordnung — hinter der
@@ -102,9 +102,16 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 
 	handler.mux.Handle("POST /api/books/import", adminH)
 	handler.mux.Handle("POST /api/books", adminH)
-	handler.mux.Handle("POST /api/books/", adminH)
-	handler.mux.Handle("PUT /api/books/", adminH)
 	handler.mux.Handle("DELETE /api/books", adminH)
+
+	// Die Buch-Kennung als Platzhalter statt Sammelroute POST/PUT /api/books/ mit selbst
+	// zerlegtem Pfad: Nur einen Platzhalter sieht ValidateUUIDParamsMiddleware (sie steckt
+	// in RequirePermission, die api/router.go hier einsetzt), und das API-Inventar gleicht
+	// die Routen einzeln ab. Bis zum 13.09.2026 kam PUT /api/books/x als 500 zurück.
+	handler.mux.Handle("PUT /api/books/{id}", config.RequireEditBooks(http.HandlerFunc(handler.BearbeiteBuchAktualisieren)))
+	handler.mux.Handle("PUT /api/books/{id}/cover", config.RequireEditBooks(http.HandlerFunc(handler.handleUpdateCover)))
+	handler.mux.Handle("POST /api/books/{id}/refresh-cover", config.RequireEditBooks(http.HandlerFunc(handler.handleRefreshCover)))
+	handler.mux.Handle("POST /api/books/{id}/cover-upload", config.RequireEditBooks(http.HandlerFunc(handler.handleUploadCover)))
 
 	return handler
 }
