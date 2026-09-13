@@ -128,8 +128,10 @@ Zwei Regeln dazu:
     `bestellung_id` (zwei Töpfe am selben Tag = eine Gruppe; ohne Vorab-Barcode
     „Unbekannter Lieferant"; Datum ohne Schulzeitzone); Mail-Datum und Link-Frist in
     Serverzeit; Idempotenz-Schlüssel überlebt eine Änderung des Warenkorbs.
-  - **Theke (B):** Sperr-Dialog hängt am Fehlertext (Schadens-Sperre ohne Übergehen-Dialog);
-    Offline-Warteschlange nur für `B-`-Barcodes. Dazu beim Abarbeiten gefunden:
+  - **Theke (B):** Offline-Warteschlange nur für `B-`-Barcodes. Den Knopf „Einmalig ignorieren"
+    im Sperr-Dialog sieht jede Rolle, wirken lässt ihn der Server nur mit `edit_students`
+    (`TestOverrideBlockNurMitEditStudents`) — was eine Helferin nach dem Klick sieht, ist nicht
+    nachgesehen. Dazu beim Abarbeiten gefunden:
     `resolveTeacherBorrower` (Buch-Ausleihe an eine Lehrkraft) meldet jeden Datenbankfehler als
     „Aktives Lehrerprofil nicht gefunden" (404) — die Geräte-Seite ordnet ihn seit `cc9e6c8c`
     ein, die Buch-Seite nicht.
