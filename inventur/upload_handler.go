@@ -4,7 +4,6 @@ import (
 	"bibliothek/pkg/imageutil"
 	"bibliothek/pkg/logger"
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -89,17 +88,18 @@ func processUploadedImage(fileBytes []byte, id string) ([]byte, string, error) {
 	return finalBytes, saveExt, nil
 }
 
-func deleteOldCoverFile(ctx context.Context, handler *APIHandler, id string) {
-	altesBook, abfrageErr := handler.repo.GetBookByID(ctx, id)
-	if abfrageErr == nil && altesBook != nil && strings.HasPrefix(altesBook.CoverURL, "/uploads/") {
-		filename := filepath.Base(altesBook.CoverURL)
-		if filename != "" && filename != "/" && filename != "." {
-			// Fehler bewusst nur protokollieren: Das alte Cover aufzuräumen darf den
-			// Upload des neuen nicht scheitern lassen.
-			if err := loescheUploadDatei(filename); err != nil {
-				log.Printf("cover-upload: altes Cover konnte nicht entfernt werden: %v", err)
-			}
-		}
+// loescheCoverDatei entfernt ein Cover aus uploads/, wenn coverURL dorthin zeigt. Fehler
+// werden nur protokolliert: Aufräumen darf die Antwort an den Aufrufer nicht ändern.
+func loescheCoverDatei(coverURL string) {
+	if !strings.HasPrefix(coverURL, "/uploads/") {
+		return
+	}
+	filename := filepath.Base(coverURL)
+	if filename == "" || filename == "/" || filename == "." {
+		return
+	}
+	if err := loescheUploadDatei(filename); err != nil {
+		log.Printf("cover-upload: Cover %s konnte nicht entfernt werden: %v", logger.SanitizeLog(filename), err)
 	}
 }
 
@@ -124,22 +124,46 @@ func (handler *APIHandler) handleUploadCover(writer http.ResponseWriter, request
 		return
 	}
 
+	// Reihenfolge: erst das Buch, dann die Datei, dann das UPDATE, zuletzt das alte Cover.
+	// Bis zum 13.09.2026 lag die neue Datei schon auf der Platte, wenn sich herausstellte,
+	// dass es das Buch nicht gibt, und das alte Cover war schon gelöscht, wenn das UPDATE
+	// scheiterte — die Datenbank zeigte dann auf eine Datei, die fehlte
+	// (cover_upload_reihenfolge_test.go).
+	buch, err := handler.repo.GetBookByID(request.Context(), id)
+	if errors.Is(err, ErrBookNotFound) {
+		writeError(writer, http.StatusNotFound, "buch nicht gefunden")
+		return
+	}
+	if err != nil {
+		log.Printf("cover-upload: buch %s laden: %v", logger.SanitizeLog(id), err)
+		writeError(writer, http.StatusInternalServerError, "buch konnte nicht geladen werden")
+		return
+	}
+
 	coverURL, ok := saveCoverFile(writer, id, finalBytes, saveExt)
 	if !ok {
 		return
 	}
 
-	deleteOldCoverFile(request.Context(), handler, id)
-
+	// Scheitert das UPDATE, geht die neue Datei wieder weg — sonst läge sie verwaist in
+	// uploads/, während die Datenbank weiter auf das alte Cover zeigt.
 	err = handler.repo.UpdateBookMetadata(request.Context(), id, "", "", coverURL)
+	if errors.Is(err, ErrBookNotFound) {
+		loescheCoverDatei(coverURL)
+		writeError(writer, http.StatusNotFound, "buch nicht gefunden")
+		return
+	}
 	if err != nil {
-		if errors.Is(err, ErrBookNotFound) {
-			writeError(writer, http.StatusNotFound, "buch nicht gefunden")
-			return
-		}
+		loescheCoverDatei(coverURL)
 		log.Printf("cover-upload: metadata update failed for book %s: %v", logger.SanitizeLog(id), err)
 		writeError(writer, http.StatusInternalServerError, "metadaten konnten nicht gespeichert werden")
 		return
+	}
+
+	// Zwei Uploads in derselben Sekunde tragen denselben Dateinamen (cover_<id>_<Sekunde>):
+	// Dann IST das alte Cover das neue und darf nicht gelöscht werden.
+	if buch.CoverURL != coverURL {
+		loescheCoverDatei(buch.CoverURL)
 	}
 
 	writeJSON(writer, http.StatusOK, map[string]any{

@@ -311,7 +311,9 @@ func TestHandleUploadCover(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:        "Database Update Error",
+			// Das Buch fehlt: 404, bevor eine Datei geschrieben oder ein UPDATE geschickt
+			// wird (cover_upload_reihenfolge_test.go).
+			name:        "Buch unbekannt",
 			method:      http.MethodPost,
 			id:          uploadTestBuchID,
 			bodyData:    createDummyImage("jpeg", 100, 100),
@@ -320,11 +322,7 @@ func TestHandleUploadCover(t *testing.T) {
 			setupMock: func(m pgxmock.PgxPoolIface) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
 					WithArgs(uploadTestBuchID).
-					WillReturnError(pgx.ErrNoRows) // Not found for old cover delete, handled silently
-
-				m.ExpectExec("(?s)UPDATE buecher_titel.*").
-					WithArgs("", "", pgxmock.AnyArg(), uploadTestBuchID).
-					WillReturnError(ErrBookNotFound)
+					WillReturnError(pgx.ErrNoRows)
 			},
 			expectedStatus: http.StatusNotFound,
 		},
