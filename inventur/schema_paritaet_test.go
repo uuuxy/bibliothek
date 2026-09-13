@@ -35,7 +35,7 @@ var nichtVonUpdateBook = map[string]string{
 	"sort_order":    "manuelle Reihenfolge des Admins, gesetzt in reorder_handler.go (Ziehen und Ablegen)",
 	"search_vector": "GENERATED ALWAYS — Postgres pflegt die Spalte, ein Schreibversuch wäre ein Fehler",
 	"cover_status":  "gehört der asynchronen Cover-Beschaffung (internal/service/cover_service.go)",
-	"ziel_jahrgang": "wird über die Bestandsaufnahme gesetzt (repository/book_inventory.go)",
+	"ziel_jahrgang": "hat KEINEN Schreiber, nur Leser (Ausleihfrist, Suche) — offen im Register unter „LMF-Frist am Rückgabetermin“. Hier stand bis 13.09.2026 ein Schreiber in repository/book_inventory.go, den es nie gab",
 	"meldebestand": "Altbestand: Die Spalte wird NUR gelesen und von keinem Codepfad geschrieben. " +
 		"Die Bestellschwelle kommt seit dem Umbau aus den Einstellungen, der Wert wird laut " +
 		"api/reorders.go nur noch informativ mitgeliefert.",
