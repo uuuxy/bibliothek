@@ -9,9 +9,8 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
-
-	"github.com/google/uuid"
 )
 
 // Zusammenführen zweier Schülerdatensätze — das Sicherheitsnetz hinter der Umbenennungs-
@@ -36,7 +35,7 @@ func (s *Server) ZusammenfuehrenSchuelerHandler(auditRepo repository.AuditReposi
 		if err := json.NewDecoder(r.Body).Decode(&rumpf); err != nil || strings.TrimSpace(rumpf.QuelleID) == "" {
 			return apierrors.BadRequest("quelle_id fehlt", err)
 		}
-		if _, err := uuid.Parse(rumpf.QuelleID); err != nil {
+		if !kennung.IstUUID(rumpf.QuelleID) {
 			return apierrors.BadRequest("quelle_id ist keine gültige Kennung", nil)
 		}
 

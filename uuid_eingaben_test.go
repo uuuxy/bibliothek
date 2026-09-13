@@ -17,12 +17,16 @@ package main
 // oder json.NewDecoder(...).Decode), trägt jedes Feld mit JSON-Namen auf „id"/„ids" vom
 // Typ string, *string oder []string einen validate-Tag mit „uuid" — oder steht mit Grund
 // in uuidEingabenAusnahmen. Liest ein Handler direkt per json.NewDecoder, muss er außerdem
-// selbst prüfen: uuid.Parse/uuid.Validate oder Validate.Struct. Dasselbe für
-// `Query().Get("…id")` mit festem Namen.
+// selbst prüfen: kennung.IstUUID, alleUUIDs, ein uuid.Parse, dessen Wert weitergeht, oder
+// Validate.Struct. Dasselbe für `Query().Get("…id")` mit festem Namen.
+//
+// uuid.Validate und ein uuid.Parse, dessen Ergebnis verworfen wird, zählen NICHT als
+// Prüfung und werden gemeldet (prueftLocker): Beide nehmen `urn:uuid:…` an, Postgres nicht.
 //
 // Reparatur bei Rot: `validate:"omitempty,uuid_oder_leer"` am Feld (api/http_utils.go),
-// für Query-Parameter uuidAusQuery; ist die Kennung keine UUID (Barcode, LUSD-ID),
-// Eintrag in uuidEingabenAusnahmen mit der Spalte, die das belegt.
+// für Query-Parameter uuidAusQuery, sonst kennung.IstUUID (pkg/kennung); ist die Kennung
+// keine UUID (Barcode, LUSD-ID), Eintrag in uuidEingabenAusnahmen mit der Spalte, die das
+// belegt.
 
 import (
 	"fmt"
@@ -126,7 +130,11 @@ func pruefeUUIDEingaben(pakete map[string]*uuidPaket) (maengel []string, gesehen
 
 func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func(schluessel, ort string)) {
 	typen := lokaleVariablen(fn.Body)
-	uuidSichtbar := ruftAuf(fn.Body, "uuid", "Parse", "Validate") || ruftHelferAuf(fn.Body, "alleUUIDs")
+	if prueftLocker(fn.Body) {
+		melde(fmt.Sprintf("%s:%s:lockere UUID-Prüfung", paket, fn.Name.Name), fn.Name.Name)
+	}
+	uuidSichtbar := ruftAuf(fn.Body, "kennung", "IstUUID") || ruftAuf(fn.Body, "uuid", "Parse") ||
+		ruftHelferAuf(fn.Body, "alleUUIDs")
 	validateSichtbar := ruftAuf(fn.Body, "Validate", "Struct", "Var")
 	ast.Inspect(fn.Body, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
@@ -322,6 +330,33 @@ func TestUUIDEingabenWerdenAnDerTuerGeprueft(t *testing.T) {
 	}
 }
 
+// prueftLocker: uuid.Validate oder ein uuid.Parse, dessen Ergebnis verworfen wird. Beide
+// sagen nur ja oder nein, und weiter geht der Rohtext. google/uuid nimmt aber Formen an,
+// die Postgres abweist (`urn:uuid:…`) — die Prüfung war bestanden, die Datenbank meldete
+// 22P02, der Aufrufer bekam 500 (am Stack nachgestellt am 13.09.2026). Ein uuid.Parse,
+// dessen Wert weiterverwendet wird, ist keine Lücke: uuid.UUID schreibt sich kanonisch.
+func prueftLocker(body *ast.BlockStmt) bool {
+	gefunden := ruftAuf(body, "uuid", "Validate")
+	ast.Inspect(body, func(n ast.Node) bool {
+		zuweisung, ok := n.(*ast.AssignStmt)
+		if !ok || len(zuweisung.Lhs) == 0 || len(zuweisung.Rhs) != 1 {
+			return !gefunden
+		}
+		if ziel, ok := zuweisung.Lhs[0].(*ast.Ident); !ok || ziel.Name != "_" {
+			return !gefunden
+		}
+		if aufruf, ok := zuweisung.Rhs[0].(*ast.CallExpr); ok {
+			if sel, ok := aufruf.Fun.(*ast.SelectorExpr); ok {
+				if paket, ok := sel.X.(*ast.Ident); ok && paket.Name == "uuid" && sel.Sel.Name == "Parse" {
+					gefunden = true
+				}
+			}
+		}
+		return !gefunden
+	})
+	return gefunden
+}
+
 // Gegenprobe am Detektor: ein Sammler, der nichts findet, meldet ewig „alles gut".
 func TestUUIDEingabenDetektorErkenntDieFormen(t *testing.T) {
 	quelle := `package p
@@ -333,10 +368,13 @@ func aTag(w, r any) { var req ohneTag; DecodeAndValidate(w, r, &req) }
 func bSauber(w, r any) { var req mitTag; DecodeAndValidate(w, r, &req) }
 func cQuery(r any) { _ = r.URL.Query().Get("titel_id") }
 func dDirekt(r any) { var req mitTag; json.NewDecoder(r.Body).Decode(&req) }
-func eDirektGeprueft(r any) { var req liste; json.NewDecoder(r.Body).Decode(&req); uuid.Validate(req.IDs[0]) }
+func eDirektGeprueft(r any) { var req liste; json.NewDecoder(r.Body).Decode(&req); kennung.IstUUID(req.IDs[0]) }
 func fListe(w, r any) { var req liste; DecodeAndValidate(w, r, &req) }
 func hHelfer(r any) { var req liste; json.NewDecoder(r.Body).Decode(&req); alleUUIDs(req.IDs) }
 func gKeine(w, r any) { var req kein; DecodeAndValidate(w, r, &req) }
+func iLocker(s string) bool { return uuid.Validate(s) == nil }
+func jParseVerworfen(s string) bool { if _, err := uuid.Parse(s); err != nil { return false }; return true }
+func kParseGenutzt(s string) string { id, _ := uuid.Parse(s); return id.String() }
 `
 	datei, err := parser.ParseFile(token.NewFileSet(), "p/probe.go", quelle, 0)
 	if err != nil {
@@ -350,6 +388,8 @@ func gKeine(w, r any) { var req kein; DecodeAndValidate(w, r, &req) }
 		"p.ohneTag.SessionID (aTag)",
 		"p:cQuery:query:titel_id (cQuery)",
 		"p:dDirekt:ohne Validierung (dDirekt)",
+		"p:iLocker:lockere UUID-Prüfung (iLocker)",
+		"p:jParseVerworfen:lockere UUID-Prüfung (jParseVerworfen)",
 	}
 	if strings.Join(maengel, "|") != strings.Join(erwartet, "|") {
 		t.Errorf("Detektor meldet\n  %s\nerwartet\n  %s", strings.Join(maengel, "\n  "), strings.Join(erwartet, "\n  "))

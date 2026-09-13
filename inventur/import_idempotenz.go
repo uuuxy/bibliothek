@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/google/uuid"
+	"bibliothek/pkg/kennung"
 )
 
 // Idempotenz des Listenimports.
@@ -65,7 +65,7 @@ func importSchluessel(writer http.ResponseWriter, request *http.Request) (string
 	if wert == "" {
 		return "", true
 	}
-	if _, err := uuid.Parse(wert); err != nil {
+	if !kennung.IstUUID(wert) {
 		writeError(writer, http.StatusBadRequest, importSchluesselKopf+" muss eine UUID sein")
 		return "", false
 	}

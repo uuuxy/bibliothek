@@ -54,6 +54,11 @@ func antwortOhneDB(t *testing.T, h http.HandlerFunc, methode, pfad, rumpf string
 	return rec.Code
 }
 
+// urnForm besteht uuid.Validate und uuid.Parse (google/uuid kennt das Präfix), Postgres
+// weist sie ab: `invalid input syntax for type uuid`. Am Stack am 13.09.2026 nachgestellt —
+// POST /api/schueler/{id}/zusammenfuehren mit dieser quelle_id kam als 500 zurück.
+const urnForm = "urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"
+
 func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 	s := &Server{}
 	faelle := []struct {
@@ -66,6 +71,9 @@ func TestUngueltigeKennungIst400VorDerDatenbank(t *testing.T) {
 		{"Inventur abschließen", s.InventurFinishHandler(), http.MethodPost, "/api/inventur/finish", `{"session_id":"x"}`},
 		{"Inventur abbrechen", s.InventurAbortHandler(), http.MethodPost, "/api/inventur/abort", `{"session_id":"x"}`},
 		{"Verluste endgültig löschen", s.InventurVerlusteLoeschenHandler(), http.MethodPost, "/api/buecher/exemplare/verlust-endgueltig-loeschen", `{"exemplar_ids":["x"]}`},
+		{"Fehlbestand ?session_id in urn-Form", s.InventurFehlbestandHandler(), http.MethodGet, "/api/inventur/fehlbestand?session_id=" + urnForm, ""},
+		{"Inventur abschließen, urn-Form", s.InventurFinishHandler(), http.MethodPost, "/api/inventur/finish", `{"session_id":"` + urnForm + `"}`},
+		{"Schüler zusammenführen, urn-Form", s.ZusammenfuehrenSchuelerHandler(nil), http.MethodPost, "/api/schueler/11111111-1111-1111-1111-111111111111/zusammenfuehren", `{"quelle_id":"` + urnForm + `"}`},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

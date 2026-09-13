@@ -11,11 +11,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/kennung"
 )
 
 // LangLaufendeFrist gilt für Vorgänge, die naturgemäß Minuten dauern: Katalog- und
@@ -227,8 +227,6 @@ func CORSMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-var uuidRegex = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
-
 // ValidateUUIDParamsMiddleware intercepts requests and validates {id} path parameters
 // against a standard UUID format before they hit the database.
 // uuidPfadParameter nennt die Pfad-Parameter, deren Wert IMMER eine UUID ist —
@@ -252,7 +250,7 @@ func ValidateUUIDParamsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		for _, name := range uuidPfadParameter {
 			wert := r.PathValue(name)
-			if wert != "" && !uuidRegex.MatchString(wert) {
+			if wert != "" && !kennung.IstUUID(wert) {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ungültiges UUID Format im Pfadparameter"))
 				return
 			}

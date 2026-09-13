@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/google/uuid"
+	"bibliothek/pkg/kennung"
 )
 
 // validiereBuchErstellenEingabe prüft ISBN (vorhanden + Format) und Klassenstufe.
@@ -76,7 +76,7 @@ func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.
 // erkennt diesen Aufruf als Prüfung.
 func alleUUIDs(ids []string) bool {
 	for _, id := range ids {
-		if uuid.Validate(id) != nil {
+		if !kennung.IstUUID(id) {
 			return false
 		}
 	}

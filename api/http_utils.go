@@ -8,9 +8,9 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/kennung"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 )
 
 // Validate ist der gemeinsame Struct-Validator für alle Eingangs-Payloads. Bewusst EINE
@@ -29,7 +29,7 @@ func neuerValidator() *validator.Validate {
 	v := validator.New()
 	if err := v.RegisterValidation(regelUUIDOderLeer, func(fl validator.FieldLevel) bool {
 		wert := fl.Field().String()
-		return wert == "" || uuid.Validate(wert) == nil
+		return wert == "" || kennung.IstUUID(wert)
 	}); err != nil {
 		panic(err)
 	}
@@ -54,7 +54,7 @@ func meldeValidierung(err error) error {
 // alles andere, das keine UUID ist, ist ein Bedienfehler statt eines 500 aus Postgres.
 func uuidAusQuery(r *http.Request, name string) (string, error) {
 	wert := r.URL.Query().Get(name)
-	if wert != "" && uuid.Validate(wert) != nil {
+	if wert != "" && !kennung.IstUUID(wert) {
 		return "", fmt.Errorf("%s ist keine gültige Kennung", name)
 	}
 	return wert, nil

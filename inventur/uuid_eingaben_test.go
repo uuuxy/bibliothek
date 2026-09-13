@@ -35,6 +35,8 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 		{"Klassenbücher hinzufügen", handler.handleAddClassBooks, http.MethodPost, `{"classNames":["05G1"],"bookIds":["x"]}`},
 		{"Klassenbücher ändern", handler.handleUpdateClassBooks, http.MethodPut, `{"className":"05G1","bookIds":["x"]}`},
 		{"Cover neu laden", handler.handleRetryExternalCovers, http.MethodPost, `{"ids":["x"]}`},
+		// Besteht uuid.Validate, Postgres weist sie ab (api/uuid_eingaben_test.go, urnForm).
+		{"Bücher löschen, urn-Form", handler.BearbeiteBuecherLoeschen, http.MethodDelete, `{"ids":["urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7"]}`},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -48,5 +50,16 @@ func TestUngueltigeTitelKennungIst400VorDerDatenbank(t *testing.T) {
 				t.Fatalf("Datenbank wurde angesprochen: %v", err)
 			}
 		})
+	}
+}
+
+// Der Import-Schlüssel geht als UUID in idempotency_keys. uuid.Parse nahm die urn-Form an,
+// Postgres nicht: Der Fehler käme erst beim Eintragen, als 500.
+func TestImportSchluesselInUrnFormIst400(t *testing.T) {
+	req := httptest.NewRequest(http.MethodPost, "/api/books/import", nil)
+	req.Header.Set(importSchluesselKopf, "urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7")
+	rec := httptest.NewRecorder()
+	if _, ok := importSchluessel(rec, req); ok || rec.Code != http.StatusBadRequest {
+		t.Fatalf("urn-Form angenommen: ok=%v, Status %d", ok, rec.Code)
 	}
 }
