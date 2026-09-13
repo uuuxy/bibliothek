@@ -40,6 +40,10 @@ Profil oder eine Mitarbeiterin bekam das Gerät (`cc9e6c8c`, jetzt dieselbe Rege
 und Buch-Ausleihe). Der Sperr-Dialog hängt am Merkmal `X-Sperre: uebergehbar` statt am Wortlaut
 der Meldung; die Schadens-Sperre öffnete vorher keinen Dialog (`e107465e`).
 
+**Entscheidungen (Peter).** Acht Fragen beantwortet: Neuladen ohne Netz (4.1, jetzt OFFEN.md
+Abschnitt 2), Abmelden bei 503 (4.2, jetzt 3.4), LMF-Frist am Rückgabetermin (4.3, jetzt 1.4;
+`ziel_jahrgang` bleibt als 4.3 offen) und fünf Fragen zum Offline-Plan (Abschnitt 2).
+
 **Doku zur Offline-Theke.** HANDBUCH („Wenn etwas nicht geht") und FACHKONZEPT 18.4 versprachen,
 dass die Theke ohne Netz alle Scans speichert; gespeichert werden nur Bücher mit `B-`. Beide nennen
 jetzt den heutigen Stand, das Handbuch dazu, was an der Theke während eines Ausfalls zu tun ist (`512585b4`).

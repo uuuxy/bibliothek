@@ -42,8 +42,8 @@ jemandem schaden?"**
    eintragen (8.1).
 2. **1.2** und **1.3** am Stack nachstellen, bei Befund beheben.
 3. **7.1** Release-Tag für den Stand nach v2.11.0.
-4. **3.1–3.3** Theke: was der Offline-Bau voraussetzt.
-5. Frage-Runde **4.1–4.3**: Neuladen ohne Netz, Abmelden bei 503, LMF-Frist am Termintag.
+4. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
+5. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
 6. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
    Freigabe.
 7. **5.1** Schäden und Benutzer.
@@ -99,6 +99,20 @@ Littera-Übernahme (7.2).
 - **Nächster Schritt:** Am Stack mit Tastatureingabe nachstellen (Dialoge und Kamera ausgenommen).
   Vor dem Offline-Bau, weil das Band aus Abschnitt 2 dieselbe Fokuslage ändert.
 
+### 1.4 Lernmittel am Rückgabetermin bekommen eine Frist in den Ferien
+
+- **Was:** Wer am Termintag der Klasse Lernmittel bekommt, erhält den Termin selbst als Frist
+  (`RueckgabeTerminFuerKlasse` in `repository/lmf_termine.go` sucht `t.datum >= heute`); am Tag
+  danach gilt der Stichtag des laufenden Schuljahres, also ein Tag in den Ferien.
+- **Warum A:** Nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt.
+- **Entschieden am 13.09.2026 (Peter):** Die Frist ist dann der Stichtag des folgenden Schuljahres.
+- **Stand:** Am Code gelesen (10.09.2026, 13.09.2026), nicht nachgestellt. Die Frist rechnet mit
+  `time.Now()` (`internal/service/loan_rules.go`); der Offline-Bau bucht künftig mit dem
+  Scan-Zeitpunkt (Abschnitt 2) und braucht dieselbe Regel.
+- **Nächster Schritt:** Test mit fester Uhr für den Tag vor, am und nach dem Termin (Bugklasse
+  „Frist am Tag des Ereignisses" in [sweeps.md](sweeps.md)), am alten Code rot. Spätestens vor dem
+  nächsten Rückgabetermin (Juni 2027). Danach 5.8.
+
 ---
 
 ## 2. Laufende Arbeit: Offline-Betrieb der Theke
@@ -141,23 +155,49 @@ weiter.
   Je Stufe Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am Stack und im Browser,
   dann Peters Freigabe.
 
-**Offen:** Frage 4.1 (Neuladen ohne Netz).
+**Entschieden am 13.09.2026 (Peter), zweite Runde:**
 
-**Stand des Plans (13.09.2026):** Drei Entwürfe, zwei Bewertungen und eine Zusammenführung
-liegen vor. Drei Gegenprüfungen am Code (Zuordnung und Verlust, Betrieb und Grenzen, Code und
-Ratschen) fanden 21 Lücken, 13 davon wichtig, teils doppelt, keine blockierend. Darunter: Die
-Person wird zu spät gelesen (siehe oben). „Buch zurückgeben" im Profil würde offline zur
-Ausleihe. Eine Reaktivierung vor dem Wächter könnte eine Forderung stornieren. Eine Rückgabe, die
-vor der älteren Ausleihe desselben Buchs nachgebucht wird, ließe das Buch auf dem Schüler. Der
-Nachbuch-Bericht nennt den Ausleiher nicht und übersteht das Abmelden mit Personenbezug. Das
-Nachschärfen läuft.
+- Nach einem Neuladen ohne Netz bleibt die Anmeldemaske der Rückfall. Die gespeicherten
+  Offline-Scans bleiben auf dem Rechner und werden nach der nächsten Anmeldung mit Netz
+  nachgebucht.
+- Nachbuch-Meldungen liegen am Server, sichtbar nur mit dem Recht `view_students` (nicht für
+  Helfer). Erledigte werden nach der Lesehistorie-Frist gelöscht, höchstens nach 30 Tagen. Offene
+  erscheinen nach 14 Tagen als Warnung in der Betriebsbereitschaft. Beim Zusammenführen wandern
+  sie mit.
+- Gebucht wird mit dem Scan-Zeitpunkt, höchstens der Serverzeit: Ausleih- und Rückgabedatum,
+  Frist, Mahnwesen und Lesehistorie rechnen ab dem Scan.
+- Ohne Netz sperrt die Theke nicht; geleert wird sie weiter nach 5 Minuten. Kommt das Netz zurück
+  und war länger als 15 Minuten niemand da, sperrt sie sofort.
+- „Sicherung speichern" bleibt auch auf Anmeldemaske und Sperrbildschirm sichtbar; eingespielt wird
+  nur angemeldet.
+- Ziffernfolgen: Der Rechner hält eine Liste aller Buch-Barcodes (keine Personendaten, bei der
+  Anmeldung aktualisiert). Steht eine Ziffernfolge darauf, ist sie ein Buch; sonst gilt sie als
+  unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt.
+
+**Daraus abgeleitet** (Entscheidung (c) und heutiges Verhalten der Online-Theke):
+
+- Beim Vorbesitzer wird immer zurückgenommen. Scheitert die neue Ausleihe an Sperre, Limit oder
+  Vormerkung, wird nur sie als nicht gebucht gemeldet.
+- Hat ein abgebrochener Online-Versand schon eine Rücknahme gebucht, holt das Nachbuchen die
+  fehlende Ausleihe nach (unter Wächter und Schranken).
+- `B-` und `LMF-` werden auch ohne geladene Regeln oder Buchliste gespeichert.
+- `/api/action/batch` bleibt eine Version länger bestehen, für Theken-Tabs mit altem Stand.
+
+**Stand des Plans (13.09.2026):** Ein Endplan mit 27 Commits in drei Stufen liegt vor, nachgeschärft
+nach 21 Lücken der ersten Gegenprüfung. Eine zweite Prüfung am Code bestätigte 38 weitere Punkte,
+17 davon wichtig, keiner blockierend. Darunter: Ein verloren gemeldetes Buch, das offline
+zurückgegeben wird, würde beim Nachbuchen abgewiesen; ein dauerhaft scheiternder Eintrag blockierte
+die Warteschlange eines Rechners; offene Meldungen verschwänden beim Zusammenführen still; ohne
+geladene Regeln speicherte die Theke gar nichts. Der Plan wird mit diesen Punkten und den
+Entscheidungen oben überarbeitet.
 
 **Im Plan festhalten:** Nachgebuchte Rückgaben laufen auch durch `VerbucheRueckkehr`, und der
 Hinweis „Schulaufsicht informieren" erreicht jemanden. Das axe-Gate misst auch den Zustand „Band
 sichtbar". Beim Nachbuchen vieler Ausleihen die Pool-Abfrage in offener Transaktion beobachten
 (6.1).
 
-**Nächster Schritt:** Plan am Code prüfen und in drei Stufen vorlegen.
+**Nächster Schritt:** den überarbeiteten Plan erneut am Code prüfen, dann Stufe 1 zur Freigabe
+vorlegen.
 
 ---
 
@@ -185,40 +225,27 @@ mit `edit_students` wirken und verwirft ihn sonst; der Dialog erscheint dann ern
 still). **Warum vorher:** Sperr-Dialog und Nachbuch-Bericht hängen am selben Merkmal `X-Sperre`.
 **Nächster Schritt:** Knopf nur mit Recht zeigen (`hatRecht`).
 
+### 3.4 Abmelden bei 503 zeigt keinen Hinweis
+
+Seit `039145f2` antwortet `POST /api/auth/logout` mit 503, wenn der Widerruf nicht gelingt;
+`handleLogout` wertet die Antwort nicht aus. Das Löschcookie geht in beiden Fällen hinaus
+(`api/logout_handler.go`), dieser Browser hält die Sitzung danach nicht mehr. **Entschieden am
+13.09.2026 (Peter):** Abmelden wie heute, dazu ein sichtbarer Hinweis, dass die Sperre der
+Sitzung am Server nicht bestätigt ist. **Nächster Schritt:** zusammen mit 1.2 am Stack
+nachstellen, je Fund ein Commit.
+
 ---
 
 ## 4. Entscheidungen (Peter)
 
-### 4.1 Neuladen ohne Netz
+Die Nummern bleiben fest. Beantwortete Fragen wandern in den Punkt, der sie umsetzt (4.1 → Abschnitt
+2, 4.2 → 3.4), oder nach [erledigt.md](erledigt.md).
 
-Nach einem Neuladen ohne Netz erscheint die Anmeldemaske, und die Anmeldung geht nur mit Server
-(`authStore.restoreSession`). Der Service Worker hält nur die Oberfläche vor, keine
-API-Antworten. Die Warteschlange bleibt erhalten und wird nach der nächsten Anmeldung mit Netz
-nachgebucht.
-**Frage:** Soll die Theke nach einem Neuladen ohne Netz weiterarbeiten können — dann bräuchte es
-eine Anmeldung ohne Server, eine eigene Sicherheitsfrage —, oder bleibt die Anmeldemaske der
-Rückfall? **Wann:** vor dem Offline-Plan; die Antwort bestimmt seinen Umfang.
+### 4.3 `ziel_jahrgang`: bauen oder streichen
 
-### 4.2 Abmelden bei 503
-
-Seit `039145f2` antwortet `POST /api/auth/logout` mit 503, wenn der Widerruf nicht gelingt;
-`handleLogout` wertet die Antwort nicht aus. Das Löschcookie geht in beiden Fällen hinaus
-(`api/logout_handler.go`), der Theken-Browser hält die Sitzung danach also nicht mehr; gültig
-bliebe nur ein anderswo kopiertes Token bis zum Ablauf.
-**Frage:** Nur ein Hinweis, oder angemeldet bleiben, bis der Server den Widerruf bestätigt?
-**Vorschlag:** Hinweis. **Wann:** mit 1.2 und dem Offline-Plan.
-
-### 4.3 LMF-Frist am Rückgabetermin
-
-Wer am Termintag der Klasse Lernmittel bekommt, erhält den Termin selbst als Frist
-(`RueckgabeTerminFuerKlasse` sucht `>= heute`); am Tag danach gilt der Stichtag 31.07. — in den
-Ferien. Nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt. Dazu:
-`ziel_jahrgang` (mehrjährige Ausleihe) wird gelesen, aber von keinem Code geschrieben.
-**Frage:** Welche Frist gilt für ein Lernmittel, das am oder nach dem Rückgabetermin der Klasse
-ausgegeben wird — der Stichtag des nächsten Schuljahres oder der Termin des nächsten Plans? Und:
-`ziel_jahrgang` bauen oder streichen? **Wann:** vor dem nächsten Rückgabetermin (Juni 2027) und
-vor dem Offline-Bau, denn eine am Termintag offline ausgegebene Ausleihe wird womöglich erst am
-Folgetag nachgebucht. Danach 5.8.
+`ziel_jahrgang` (mehrjährige Ausleihe) wird in `internal/service/loan_rules.go` gelesen, aber von
+keinem Code geschrieben; die Fristregel verzweigt auf einen Wert, der immer 0 ist. Die Frist am
+Rückgabetermin ist entschieden (1.4). **Frage:** Feld pflegbar machen oder streichen?
 
 ### 4.4 E6: Nach der Übergabe an die Schulaufsicht
 
@@ -431,7 +458,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 ### 5.8 LMF und Statistik
 
 - Steht eine Klasse zweimal im Plan, nennen Ausleihe und Massenabgleich zwischen den Terminen
-  verschiedene Fristen (nach 4.3).
+  verschiedene Fristen (nach 1.4).
 - Die Statistik hat keine Sequenznummer (eine langsame Antwort kann eine schnellere überholen) und
   keinen Fehlerzustand: Ein Query-Fehler ergibt eine leere Liste ohne Logzeile (`api/stats.go`).
 
