@@ -19,8 +19,8 @@ import (
 //
 // Die Gegenrichtung (Go liest etwas, das Compose NICHT durchreicht) ist der teurere Fall
 // — er hat den nächtlichen Backup-Job zweimal still ausfallen lassen. Sie braucht eine
-// Ausnahmeliste für die Werkzeug-Variablen (TEST_DATABASE_URL, PG_DSN, …) und liegt als
-// Betriebsposten in #599; dieses Gate deckt die Richtung, die ohne Liste auskommt.
+// Ausnahmeliste für die Werkzeug-Variablen (TEST_DATABASE_URL, PG_DSN, …) und steht in
+// docs/OFFEN.md (4.7, 5.10); dieses Gate deckt die Richtung, die ohne Liste auskommt.
 var composeVariable = regexp.MustCompile(`^\s+-\s+([A-Z0-9_]+)=`)
 
 // backendBlock liefert den Abschnitt des backend-Dienstes einer Compose-Datei.

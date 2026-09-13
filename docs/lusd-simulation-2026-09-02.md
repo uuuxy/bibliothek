@@ -3,8 +3,10 @@
 > Messprotokoll. Das Konzept, die Spaltenliste für das Sekretariat, die Umbenennungs-Paarung,
 > die Karenzzeit und das Zusammenführen stehen in [LUSD.md](LUSD.md) — dort weiterlesen,
 > wer den Import bedienen oder verstehen will. Die Befunde aus §„Befunde und Empfehlungen"
-> sind am 02.09.2026 umgesetzt (Paarung, Karenz, Zusammenführen, Schuleintritt als zweiter
-> Schlüssel); offen bleibt allein der Wunsch nach einer Schüler-ID im Bericht.
+> sind am 02.09.2026 umgesetzt bzw. entschieden (Paarung, Karenz, Zusammenführen, Schuleintritt
+> als zweiter Schlüssel, keine Eltern-Mail). Offen ist Befund 2, die Meldung „mehrdeutig" bei
+> verschiedenen Klassen ([OFFEN.md](OFFEN.md) 5.6). Den Wunsch nach einer Schüler-ID erfüllt
+> kein LUSD-Bericht ([LUSD.md](LUSD.md)).
 
 Prüfung des LUSD-Imports mit echten Demo-Exporten der Schule und einem synthetischen
 Bestand in Schulgröße, auf dem lokalen Stack (Container 8084, Datenbank vorher geleert).
@@ -27,7 +29,8 @@ Ansprechpartner, also mehrere Zeilen je Schüler):
   bewusst **kein** ID-Alias (Test `TestLusdHeaderMap_AllInklusivBericht`).
 - Klasse kommt aus `Klassen_Klassenbezeichnung`, in der festen Schreibweise (05F1).
 - Gefixt: `Schueler_Postleitzahl` hatte keinen Alias, die PLZ fiel still weg (fdfd09d8).
-- Offen: `Ansprechpartner_Alle_Email` wird nicht gelesen (siehe Empfehlung unten).
+- `Ansprechpartner_Alle_Email` wird bewusst nicht gelesen ([LUSD.md](LUSD.md), siehe auch die
+  Empfehlung unten).
 - **Adressen (Nachprüfung):** SPH-PaedNet enthält **keine** Schüleradresse, nur die
   Adresse der Ansprechpartner (`Ansprechpartner_Alle_Straße/Wohnort`) — die wird bewusst
   nicht übernommen (letzte Zeile wäre sonst z. B. die Großeltern-Adresse). All_Inklusiv

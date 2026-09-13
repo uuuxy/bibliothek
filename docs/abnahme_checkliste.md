@@ -193,6 +193,7 @@ Bibliothek ihn ohne Suchen findet, und nach der Freischaltung nur das Portal sic
 
 ## Nach der Abnahme
 
-- [ ] Ergebnis (bestanden / Auffälligkeiten) im Befund-Register ([befunde.md](befunde.md)) vermerken.
+- [ ] Ergebnis (bestanden / Auffälligkeiten) in [OFFEN.md](OFFEN.md) vermerken: Punkt 7.7
+      anpassen, jede Auffälligkeit als eigenen Punkt eintragen.
 - [ ] Bei Parser-Auffälligkeiten mit der echten LUSD-Datei: die Datei (anonymisiert!)
       als Testfixture sichern, damit die automatischen Tests das echte Format abdecken.

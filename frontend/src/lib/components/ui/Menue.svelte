@@ -9,8 +9,8 @@
 
      Bis zum 06.09.2026 gab es zwei Menüs im Haus, jedes selbst gebaut
      (MahnwesenDruckMenue, StudentProfileActions) — beide in Paletten-Farben und ohne
-     Tastaturbedienung der Einträge. Dieses Bauteil ist die eine Stelle; die beiden
-     alten stehen im Befund-Register zum Umstellen.
+     Tastaturbedienung der Einträge. Dieses Bauteil ist die eine Stelle; beide
+     sind seit dem 07.09.2026 darauf umgestellt (bbad2f39).
 
      POSITION FIXED wie SelectListe: Das Menü öffnet sich in Tabellen und Spalten mit
      overflow, absolut positioniert würde es dort abgeschnitten.

@@ -48,7 +48,7 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 	// 24 statt 12 (02.09.2026): PII_MATRIX.de.md trägt ihren Stand in Zeile 18 — das
 	// Gate sah ihn nicht und blieb grün, während die Matrix Routen „seit 02.09." unter
 	// einem Stand vom 01.09. führte (lügende Ratsche). Die Abschnitts-Stände in
-	// befunde.md/invarianten.md liegen weit außerhalb dieses Fensters.
+	// invarianten.md (bis 13.09.2026 auch im Befund-Register) liegen weit außerhalb dieses Fensters.
 	const kopfZeilen = 24
 
 	dateien, err := filepath.Glob("*.md")
@@ -73,7 +73,7 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 		}
 		inhalt := string(rohdaten)
 
-		// NUR im Kopf suchen, nicht im ganzen Text: In befunde.md steht "Stand: 2026-08-06"
+		// NUR im Kopf suchen, nicht im ganzen Text: Im Befund-Register stand "Stand: 2026-08-06"
 		// als Abschluss eines Abschnitts (Zeile 663), in invarianten.md mitten in einem Satz.
 		// Beides sind Aussagen über einen Abschnitt, keine Zusicherung über das Dokument —
 		// ohne diese Grenze meldete das Gate zwei Dateien falsch-rot. Ein Detektor, der

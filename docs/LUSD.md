@@ -41,8 +41,8 @@ verschlüsselte Littera-Export (`Littera_Export.txt`) ist für dieses System unb
 | `Schueler_Straße`, `Schueler_Postleitzahl`, `Schueler_Ort` | optional     | Anschrift für Mahnbrief und Ersatzforderung               |
 
 Nicht gelesen (bewusst): `Ansprechpartner_Alle_*` — mehrere Kontakte je Schüler, Adresse
-und Mail der Eltern wären ein Ratespiel („letzte Zeile gewinnt" = Großeltern). Eltern-Mail
-bleibt leer, bis geklärt ist, welcher Kontakt die Mahn-Mail bekommen soll.
+und Mail der Eltern wären ein Ratespiel („letzte Zeile gewinnt" = Großeltern). Eltern-Mail bleibt leer: Es gibt bewusst keine Eltern-Mahnmail (Datenschutz A3, 22.08.2026); wer
+sie einführt, klärt vorher den Kontakt und ergänzt VVT und Datenschutzhinweis.
 
 Formate: CSV (Komma/Semikolon, BOM) oder XLSX; mehrere Blätter (eines je Klasse) werden als
 eine Tabelle gelesen; Kopfzeilen in drei Stilen (`Vorname`, `Schueler_Vorname`,

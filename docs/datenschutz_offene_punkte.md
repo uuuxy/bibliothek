@@ -4,6 +4,9 @@ Ergebnis der datenschutzrechtlichen Bewertung gegen den **hessischen** Rahmen. D
 Dokument hält fest, was **noch zu tun** ist — nicht, was schon gebaut ist (das steht in
 [SECURITY.md](SECURITY.md) und [PII_MATRIX.de.md](PII_MATRIX.de.md)).
 
+Was davon noch offen ist und in welcher Reihenfolge, führt [OFFEN.md](OFFEN.md) (Abschnitte 7
+und 8); hier stehen die Punkte mit ihrer Begründung.
+
 **Betriebsannahme:** Das System läuft auf einem **schuleigenen Server in der Schule**
 (on-prem). Der Hetzner-Server `flasch3.herzog-dupont.de` ist ausschließlich Test und
 trägt nie echte Schülerdaten.

@@ -8,9 +8,10 @@ Beide Teile teilen EIN Vokabular für die Mittelherkunft: `land` (Lernmittelfrei
 **Status (12.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
 Datenmodell mit Nummernkreis, Staffel, Einstellungen, Erstellen aus dem Mahnwesen,
 Nachdruck, Übergabe; seit dem 12.09.2026 auch der Rückgabe-Hook. Offen bleiben aus
-Abschnitt 4.7 der Rest der Etappe 2 (die Folgen der Übergabe: Ausleihen beenden,
-Exemplare `VERLUST`, Übergabe-PDF) und Etappe 4 (Altbriefe abräumen, Staffel-Vorschlag im
-Schaden-Dialog).
+Abschnitt 4.7 der Rest der Etappe 2 (die Folgen der Übergabe: Exemplare `VERLUST`,
+Übergabe-PDF), Etappe 3 (Kreis-Rechnung) und Etappe 4 (Altbriefe abräumen,
+Staffel-Vorschlag im Schaden-Dialog). Welche Punkte und Antworten noch offen sind, steht in
+[OFFEN.md](OFFEN.md).
 Teil B ist ebenfalls im ersten Schnitt gebaut (Abschnitt 7.3).
 
 **Was der Einbau geworden ist (Absprache 10.09.2026, drei Entscheidungen):** Der Bescheid
@@ -251,8 +252,8 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    ab Werk bei niemandem und wäre eine Tür, die keiner öffnen kann.
 2. Mahnwesen-Anbindung (Auswahl → Bescheide) + Bescheid-Liste + Übergabe + Rückgabe-Hook.
    Anbindung, Liste und der **Rückgabe-Hook** (12.09.2026) sind gebaut; die Übergabe setzt
-   bisher nur den Status. Offen: ihre Folgen (Ausleihen beenden, Exemplare `VERLUST`,
-   Übergabe-PDF). **Beim Bau zwingend:** Sobald die Übergabe Exemplare auf `VERLUST` setzt,
+   bisher nur den Status. Offen: ihre Folgen (Exemplare `VERLUST`,
+   Übergabe-PDF; die Ausleihe beendet schon `ReportDamage` beim Melden). **Beim Bau zwingend:** Sobald die Übergabe Exemplare auf `VERLUST` setzt,
    führt der Fehlbestandsbericht („Buch doch gefunden", `MarkiereVerlustAlsGefunden`) zum
    zweiten Mal in den Umlauf zurück — `VerbucheRueckkehr` gehört dann auch dorthin, sonst
    endet die Forderung nur an der Theke.

@@ -269,7 +269,7 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
 Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration. Die Durchgänge samt Funden stehen in
-[befunde.md](befunde.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
+[erledigt.md](erledigt.md), was davon offen ist in [OFFEN.md](OFFEN.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
 [sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
 und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 
@@ -347,37 +347,22 @@ das Recht steuert das Menü UND die Route, nie nur eines von beiden.
 Die mittlere Ebene ist nicht ersetzbar: pgxmock kennt keine Constraints, und e2e läuft nur
 Happy-Paths. Genau in dieser Lücke sass der NULL-Bug in Migration 043.
 
-## Restarbeit (Stand 2026-07-23)
+## Restarbeit
 
-**Code:** _(keine offenen Punkte aus dem Katalog)_
+Offene Arbeit steht in [OFFEN.md](OFFEN.md). Die Liste, die hier mit Stand 23.07.2026 stand, ist
+abgearbeitet:
 
-Die Rolle `helfer` hat inzwischen eine e2e-Spec (`helfer-kiosk.spec.js`): Rolle
-vergebbar, Weiche in den Kiosk, kein Zugriff auf fremde Bereiche. Ob ein Helfer im
-Kiosk **scannen** darf, schreibt sie bewusst nicht fest — siehe Punkt 4 unten.
-
-**Betreiber (nur der Betreiber kann sie erledigen):**
-
-1. ~~Oberstufen-Diagnose-Query~~ **ERLEDIGT (2026-07-16):** gegen die lokale DB
-   ausgeführt — alle 12.707 Titel haben `grade_level = NULL`, kein genutzter
-   Import-Pfad befüllt das Feld. Der Clamp-Bug war real, hatte aber nie
-   Datenwirkung. Kein Repair nötig.
-2. Echten LUSD-Export einmal hochladen — Log nennt die erkannten Adressspalten.
-3. ~~DSGVO-Verarbeitungsverzeichnis: Rechtsgrundlage + Aufbewahrung der Adressdaten.~~ **ERLEDIGT (in `SECURITY.md` dokumentiert).**
-4. Branch-Protection: Push auf `main` umgeht die PR-Pflicht per Admin-Bypass — Regel
-   ernst nehmen (PR-Workflow) oder abschaffen.
-5. ~~**`helfer`-Katalogzugriff**~~ **ERLEDIGT (2026-08-08 am Code und an der Datenbank
-   nachgeprüft).**
-
-   Die Kiosk-Kernfunktion ist von `view_students` auf ein eigenes `perform_actions`-Recht
-   entkoppelt (`api/routes_misc.go` — `POST /api/action`, `GET /api/search`). Der frühere
-   Zustand „jeder Scan → 403" ist behoben.
-
-   Der hier als offen geführte Katalogzugriff ist **entschieden und umgesetzt**: `db/seed.go`
-   seedet `HELFER` → `view_books = true` (Betreiber-Entscheidung 30.07.2026, siehe
-   FACHKONZEPT §12). Der Satz „HELFER-Default `false`" stimmte zuletzt vor dieser
-   Entscheidung und widersprach seither dem Fachkonzept — nachgezählt in der laufenden
-   Datenbank: erteilt sind genau `perform_actions` und `view_books`, sonst nichts.
-
-   `GET /api/scan` stand hier als Beleg und existiert seit dem 08.08.2026 nicht mehr: Der
-   Endpunkt hatte im gesamten Repository keinen Aufrufer — weder Frontend noch E2E noch das
-   gebaute Bundle — und wurde ausgebaut. Der Kiosk scannt über die Omnibox.
+- **Oberstufen-Diagnose** (16.07.2026, gegen die lokale DB): alle 12.707 Titel hatten
+  `grade_level = NULL`, kein genutzter Import-Pfad befüllt das Feld. Der Clamp-Bug war real,
+  hatte aber nie Datenwirkung.
+- **Rechtsgrundlage und Aufbewahrung der Adressdaten:** in `SECURITY.md` dokumentiert.
+- **Rolle `helfer`** (am 08.08.2026 am Code und an der Datenbank nachgeprüft): Die
+  Kiosk-Kernfunktion hängt an einem eigenen Recht `perform_actions` statt an `view_students`
+  (`api/routes_misc.go` — `POST /api/action`, `GET /api/search`). `db/seed.go` erteilt
+  `HELFER` genau `perform_actions` und `view_books` (Betreiber-Entscheidung 30.07.2026, siehe
+  FACHKONZEPT Abschnitt 12). `helfer-kiosk.spec.js` prüft: Rolle vergebbar, Weiche in den
+  Kiosk, kein Zugriff auf fremde Bereiche. `GET /api/scan` hatte im ganzen Repository keinen
+  Aufrufer und ist seit dem 08.08.2026 ausgebaut; der Kiosk scannt über die Omnibox.
+- **Echter LUSD-Export:** am 02.09.2026 zwei echte Exporte importiert
+  ([lusd-simulation-2026-09-02.md](lusd-simulation-2026-09-02.md)).
+- **Branch-Protection:** steht als Punkt 7.6 in [OFFEN.md](OFFEN.md).

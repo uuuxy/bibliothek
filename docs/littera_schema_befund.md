@@ -208,9 +208,11 @@ von 61.520** mit der Spalte `Exemplarnummer` überein.
 
 Damit steht fest, dass die vorhandenen Etiketten die Exemplarnummer tragen — der Import
 schreibt sie nach `buecher_exemplare.barcode_id`, und der Bestand bleibt ohne
-Neubeklebung scannbar. **Offen bleibt eine Frage, die nur ein echtes Buch beantwortet:**
-ob die Lesegeräte den Zifferninhalt liefern. Falls nicht, ist `-barcodes neu` der Weg —
-dann brauchen alle 61.520 Exemplare ein neues Etikett.
+Neubeklebung scannbar. Ob die Lesegeräte den Zifferninhalt liefern, konnte nur ein echtes
+Buch beantworten: Zwei Scans in der Bibliothek am 18.08.2026 zeigten, dass der Strichcode
+eine EAN-13 liefert (Nummer rechts auf 8 Stellen genullt, Bibliotheksnummer, Stellenzahl,
+Prüfziffer). Die Theke rechnet sie auf die Nummer zurück, unter der das System das Exemplar
+führt (`84cbe12d`) — `-barcodes neu` ist nicht nötig, kein Exemplar braucht ein neues Etikett.
 
 ### Zwei Fehler, die der Schreibpfad aufgedeckt hat
 

@@ -50,7 +50,7 @@
 //     diesen Overlays. Sie sind bewusst NICHT pauschal geändert worden: Bei
 //     `OmniboxBlockAlert` ist der `border-4 border-rose-500` ein Alarmsignal an
 //     der Theke, kein Dekor — das ist Einzelfallprüfung, kein Suchen-und-Ersetzen.
-//     Der Posten steht in docs/befunde.md.
+//     Der Register-Posten dazu ist am 07.09.2026 geschlossen (dc99bad2).
 //
 // Wer dieses Gate erweitert, erweitert die Öffnerliste — nicht die Regel.
 import { test, expect } from '@playwright/test';
