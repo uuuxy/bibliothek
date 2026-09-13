@@ -11,7 +11,11 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # 1. Go-Routen (alle Registrierungsorte, inkl. Subtree-Mounts ohne Methode)
-grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" \
+#
+# --exclude=*_test.go: Tests bauen sich eigene Muxe mit erfundenen Pfaden
+# (`GET /api/dinge/{id}`, `POST /extend/`); die standen bis 13.09.2026 als Routen im
+# Inventar. Dieselbe Regel wie beim Frontend unten.
+grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" --exclude="*_test.go" \
   | grep -oE '"(GET |POST |PUT |PATCH |DELETE )?/[^"]*"' \
   | tr -d '"' | sed 's/^ *//' | sort -u > "$TMP/go_routes.txt"
 
