@@ -41,7 +41,6 @@ import (
 // @title           Schulbibliothek API
 // @version         1.0
 // @description     Backend-API fuer das Schulbibliothek-Verwaltungssystem.
-// @host            localhost:8080
 // @BasePath        /api
 
 // main is the entry point of the school library system backend application.
