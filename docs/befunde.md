@@ -308,8 +308,10 @@ Die EINE Liste der offenen Betriebs-Punkte. Littera-Details in
   `BACKUP_ENCRYPTION_KEY` gesetzt (nächtliche Backups laufen, Restore-Probe vom 13.09.
   erfolgreich), IMAP gesetzt, SMTP in der Datenbank eingerichtet, `SELBSTANMELDUNG_DOMAIN`
   gesetzt, `SENTRY_DSN` leer. **Offen bleiben dort S3 und die manuelle Restore-Probe am
-  fremden Ziel.** Noch im Bestand: 2.000 `DEMO-S-*` und 2.500 `DEMO-B-*`; 30.676 echte
-  Exemplare zählen als „Etikett offen".
+  fremden Ziel.** Die Demo-Daten (2.000 `DEMO-S-*`, 2.500 `DEMO-B-*`, 1.613 Ausleihen) sind
+  seit dem 13.09.2026 nachmittags entfernt (`scripts/entferne_demo_daten.sql`, Vorschau ohne
+  Verflechtung, nachgeprüft 0/0/0). Weiter offen: 30.676 echte Exemplare zählen als
+  „Etikett offen".
 - **GitHub**: PR-Pflicht abschaffen (Solo-Entscheidung 30.07.; das Ruleset `main` trägt am
   05.09. noch die `pull_request`-Regel), „Block force pushes" und „Restrict deletions"
   anlassen.
