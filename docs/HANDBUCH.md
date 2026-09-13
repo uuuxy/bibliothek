@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-07. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-13. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produktrundgang als
 Video (8 min) zeigt jeden Bereich in Aktion.
@@ -27,17 +27,13 @@ _Einstellungen → Erreichbarkeit & Alarme_ zum Kopieren. (§16)
 
 ---
 
-## Überall suchen (seit 03.09.2026)
+## Suchen
 
-Oben auf jeder Verwaltungsseite steht **eine** Suchleiste (nur für Konten mit dem
-Theken-Recht; sie bietet außerdem nur an, was das eigene Konto auch öffnen darf — wer den
-Medienkatalog sehen darf, aber nicht die Schülerdatei, findet dort keine Ausweise). Sie versteht alles, was die Theke
-versteht — Buch-Barcode, Littera-Etikett, Schülerausweis, ISBN, Name, Klasse, Titel — und
-**springt nur hin:** ein Buch-Barcode oder eine ISBN öffnet die Buchakte, ein Ausweis die
-Schülerakte, ein Name zeigt eine Trefferliste. Gebucht wird nirgends außer an der Theke;
-dort und im Portal gibt es diese Leiste deshalb nicht. Ein Scanner funktioniert direkt
-hinein (Enter entscheidet), die Taste **/** setzt den Fokus, **Esc** leert das Feld. Die
-Filterfelder in den Listen bleiben Filter: Sie sieben nur, was schon auf dem Bildschirm ist.
+Jede Seite hat **eine** Suchleiste oben über der vollen Breite, Filter und Knöpfe stehen in
+der Zeile darunter. Sie sucht, worum es auf der Seite geht: der Medienkatalog Bücher,
+Schülerdatei und Mahnwesen Schüler, die Inventur scannt. Eine seitenübergreifende
+Suchleiste, die von jeder Verwaltungsseite aus zu Buch- oder Schülerakte springt, gibt es
+nicht mehr (zurückgebaut am 04.09.2026). Gebucht wird nur an der Theke.
 
 ## Ausleihe (Theke)
 
@@ -46,7 +42,8 @@ Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status, entliehene
    Bücher, Gebühren, Vormerkungen.
 2. **Buch scannen** → ausgeliehen. Frist wird automatisch berechnet (Lernmittel bis zum
-   Stichtag 31.07., andere Medien nach Tagen; Ferien werden übersprungen). (§2)
+   Stichtag 31.07., andere Medien nach Tagen oder, bei eingeschaltetem Ferien-Leseclub, bis
+   zu dessen festem Rückgabedatum). (§2)
 3. **Dasselbe Buch erneut scannen** → zurückgegeben. Ein Buch ohne geöffnete Theke scannen →
    wird sofort zurückgebucht, auch wenn es auf jemand anderen verbucht war
    („Fremdrückgabe", mit Hinweis).
@@ -185,7 +182,7 @@ Wochentag und Datum tippt niemand mehr — im Excel standen sie zweimal falsch.
   (seit 06.09.2026): _Einstellungen → LUSD & Versetzung → Sommerferien_ zeigt die Jahre
   des Programms und nimmt weitere auf (Beginn und Ende, Quelle
   kmk.org/service/ferienregelung); ein eigener Eintrag für ein Programmjahr gilt vor dem
-  Programm. Zwei Jahre vor dem letzten bekannten Jahr warnt _System →
+  Programm. Zwei Jahre vor dem letzten bekannten Jahr warnt _Einstellungen →
   Betriebsbereitschaft_ („Ferientabelle") und zeigt auf diese Einstellung. Darunter die
   **freien Tage**: Wochenenden und
   die gesetzlichen Feiertage Hessens (Fronleichnam!) überspringt der Plan von selbst;
@@ -245,7 +242,10 @@ Fristen und Ausgabe-Pläne. (§2.3)
 
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
 - **Akte**: _Ausleihen & Historie_ und _Stammdaten & Adresse_. Dokumente: Ausweis drucken,
-  Kontoauszug, Ersatzforderung (nur bei offenem Schaden), DSGVO-Auskunft.
+  Kontoauszug, Ersatzforderung (nur bei offenem Schaden), DSGVO-Auskunft. Gibt es für das
+  Kind einen Schadensersatz-Bescheid, steht unter _Ausleihen & Historie_ die Karte
+  **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
+  und _Nachdruck_ (derselbe Brief mit derselben Nummer).
 - **Gebühren & Schäden**: offen / bezahlt; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. (§14)
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
@@ -272,6 +272,22 @@ Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die 
 Mahnbriefs, nicht beim Mailversand. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
 Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. (§3)
 
+**Schadensersatz-Bescheid:** Im Mahnwesen einen (genau einen) Schüler markieren, dann
+_Schadensersatz-Bescheid_ in der Auswahlleiste. Der Dialog zeigt die offenen Forderungen
+mit einem Betragsvorschlag nach der Staffel der Schule samt Herleitung; Beträge sind
+änderbar, Positionen abwählbar. _Bescheid erstellen_ vergibt die Referenznummer (nie
+zweimal), setzt die Frist als Datum und öffnet den Brief. Die Briefe stehen im vierten
+Reiter **Bescheide**; die Zahl daran sind die abgelaufenen Fristen. Dort gibt es
+_Nachdruck_ (immer derselbe Brief, auch nach einem Umzug) und nach Fristablauf
+_Übergeben_. Die Angaben für den Brief stehen in den Einstellungen unter
+_Schadensersatz_; fehlen sie, sagt der Dialog welche.
+
+**Kommt ein abgerechnetes Buch doch zurück:** Wird ein Buch mit offener Forderung „nicht
+zurückgegeben" an der Theke gescannt, storniert die Theke die Forderung („Buch reaktiviert.
+Die Forderung über … € wurde storniert — das Buch ist zurück."). Liegt der Bescheid dazu
+schon bei der Schulaufsicht (_Übergeben_), storniert sie nichts: Die Theke zeigt den
+Hinweis, dass die Aufsicht unverzüglich zu informieren ist, und die Forderung bleibt offen.
+
 ## Abgänger
 
 Abgänger sind die Abschlussklassen des laufenden Schuljahres — 9H (und das freiwillige 10. Hauptschuljahr), 10R und 13 —, also die Kinder, die zum Schuljahresende gehen. Sie
@@ -289,7 +305,7 @@ Archiv_ — mit offenen Büchern zusätzlich im Mahnwesen. Er bleibt bis zum End
 **Karenzzeit** (Vorgabe 90 Tage; _Einstellungen → Datenschutz & Sitzung_) als gesperrter
 Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu reparieren — und wird danach
 automatisch anonymisiert. Bleibt ein Buch oder eine Forderung dauerhaft offen, meldet
-_System → Betriebsbereitschaft_ nach einem Jahr „Ehemalige mit offenen Vorgängen": In der
+_Einstellungen → Betriebsbereitschaft_ nach einem Jahr „Ehemalige mit offenen Vorgängen": In der
 Akte das Buch als Verlust melden, dann die Forderung bezahlt oder storniert buchen — danach
 löscht das System von selbst. Der Buch-Barcode wird dabei nicht neu vergeben, die
 Ausweisnummer des Kindes nach der Löschung schon. Die Karenz läuft ab dem **späteren**
@@ -299,16 +315,6 @@ erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die
 
 ## Bestellwesen
 
-**Schadensersatz-Bescheid:** Im Mahnwesen einen (genau einen) Schüler markieren, dann
-_Schadensersatz-Bescheid_ in der Auswahlleiste. Der Dialog zeigt die offenen Forderungen
-mit einem Betragsvorschlag nach der Staffel der Schule samt Herleitung; Beträge sind
-änderbar, Positionen abwählbar. _Bescheid erstellen_ vergibt die Referenznummer (nie
-zweimal), setzt die Frist als Datum und öffnet den Brief. Die Briefe stehen im vierten
-Reiter **Bescheide**; die Zahl daran sind die abgelaufenen Fristen. Dort gibt es
-_Nachdruck_ (immer derselbe Brief, auch nach einem Umzug) und nach Fristablauf
-_Übergeben_. Die Angaben für den Brief stehen in den Einstellungen unter
-_Schadensersatz_; fehlen sie, sagt der Dialog welche. (§3)
-
 Sechs Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automatisch; Titel in
 den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
 Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücherei
@@ -316,7 +322,10 @@ Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücher
 sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich der Topf einer
 Bestellung nachträglich mit Grund korrigieren) ·
 **Wareneingang** (Positionen einbuchen → Etiketten) · **Bestellhistorie** (Detail, Status,
-Händlerbestätigung) · **Berichte** (Monat/Jahr/Lieferant als PDF) · **Klassensatz-
+Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
+im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Berichte**
+(Monat/Jahr/Lieferant als PDF; in Blöcken je Topf mit eigener Summe und der Gesamtsumme
+darunter, über _Mittelherkunft_ auch für nur einen Topf) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·
 **Wünsche & Meldungen** (Anliegen aus dem Portal, _Erledigen_ mit Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
@@ -354,7 +363,7 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 
 ## Einstellungen
 
-13 Kategorien, jede einzeln speicherbar (§17):
+14 Kategorien, jede einzeln speicherbar (§17):
 
 | Kategorie               | Wofür                                                                                                                                                                                                                                                                                                                                                                                         |
 | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -364,11 +373,13 @@ Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
 | Mahnwesen-Routing       | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
 | Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                                                                                                                                                                                                                                                                                              |
 | Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                                                                                                                              |
+| Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage)                                                                                                                                                                                 |
 | Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                                                                                                                                                                                                                                                                                              |
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                                                                                                                                                                                                                                                                                          |
 | Mail                    | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler)                                                                                                                                                                                                                                                                                                                 |
 | LMF-Aktionen            | alle Lernmittel einer Klasse auf ein neues Datum verlängern                                                                                                                                                                                                                                                                                                                                   |
 | Datenverwaltung         | Katalog-Import (Littera), Bestands-Import (Kombi-CSV, übernimmt vorhandene Nummern), Listenimport (ISBN + Stückzahl → neue Titel samt Exemplaren mit B-Nummern; der Knopf fehlte vom 21.06. bis 07.09.2026; ein zweiter Klick mit derselben Dateiauswahl legt nichts doppelt an, eine neue Auswahl ist ein neuer Lauf), Cover-Synchronisation, Katalog-Export, Offline-Sicherungen einspielen |
+| LUSD & Versetzung       | LUSD-Abgleich, Versetzung zum Schuljahresende, Sommerferien für den LMF-Plan                                                                                                                                                                                                                                                                                                                  |
 | Betriebsbereitschaft    | Selbstprüfung: eingerichtet, aber nicht in Betrieb? (§15)                                                                                                                                                                                                                                                                                                                                     |
 
 ## Mein Portal (Kollegium)
@@ -411,8 +422,7 @@ Ausblendungen. Meldungen am oberen Rand bleiben stehen, solange die Maus oder de
 darauf liegt. An der Theke hält das Scanfeld den Fokus — das ist gewollt, der Scanner tippt
 blind.
 
-Was nicht ohne Maus geht: die Zeichenfläche des Ausweis-Designers. Und in Auswahlfeldern
-folgt ein Screenreader der Pfeiltasten-Markierung noch nicht (§19, Bekannte Lücken). Ein
+Was nicht ohne Maus geht: die Zeichenfläche des Ausweis-Designers (§19, Bekannte Lücken). Ein
 Durchgang mit einem Screenreader hat nicht stattgefunden.
 
 ## Wenn etwas nicht geht

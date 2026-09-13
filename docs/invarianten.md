@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-06
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-13
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -59,8 +59,8 @@ Postgres abgesichert).
 | Lehrkraft (Handapparat) → Jahresfrist, nur aktive Lehrer                                                                                                                                                                                                       | 🟡 **100 % getestet**                                                                     | `internal/service/loan_checkout_validation.go:162`                             |
 | **Mahnstufe steigt NUR beim PDF-Druck** (physischer Verwaltungsakt), NIE beim Mail-Versand (Massen- wie Einzelversand = „Friendly Reminder"). PDF-Lauf schreibt `mahnstufe` + liest die PDF-Daten in DERSELBEN Tx (Papier == DB)                               | 🟡 nur `mahnwesen_bulk.go` schreibt `mahnstufe`; alle Mail-Pfade bewusst nicht            | `api/mahnwesen_bulk.go`, `api/mahnwesen_bulk_mail.go`, `api/mahnwesen_mail.go` |
 | **Mahnliste geht an die Klassenleitung, nie an Schüler** — je Klasse eine Mail an genau eine Adresse (kein TO/CC über mehrere Betroffene)                                                                                                                      | 🟡 `versendeKlassenMahnungen` überspringt Klassen ohne hinterlegte Adresse; getestet      | `api/mahnwesen_bulk_mail.go`, `api/mahnwesen_bulk_mail_test.go`                |
-| **Massenversand-Auswahl: leer heißt niemand, nicht alle.** Fehlendes `klassen`-Feld = alle (alter Vertrag), leeres Array = 400                                                                                                                                 | 🟡 `parseBulkOverdueRequest`, Zeiger-Semantik + Test                                      | `api/mahnwesen_bulk_mail.go`                                                   |
-| **`override_email` ist die einzige Abweichung** von „jede Lehrkraft nur die eigene Klasse": Ein Empfänger sieht dann mehrere Klassen (Vertretung/Sekretariat). Weiterhin eine Mail je Klasse, kein Sammel-PDF — und die Adresse steht im Klartext im Audit-Log | 🟡 Handler + `bulkOverdueAudit` (zwei Einträge: Absicht vor dem Versand, Ergebnis danach) | `api/mahnwesen_bulk_mail.go`, `frontend/src/lib/Mahnwesen.svelte`              |
+| **Massenversand-Auswahl: leer heißt niemand, nicht alle.** Fehlendes `klassen`-Feld = alle (alter Vertrag), leeres Array = 400                                                                                                                                 | 🟡 `parseKlassenVersandRequest`, Zeiger-Semantik + Test                                   | `api/mahnwesen_bulk_mail.go`                                                   |
+| **`override_email` ist die einzige Abweichung** von „jede Lehrkraft nur die eigene Klasse": Ein Empfänger sieht dann mehrere Klassen (Vertretung/Sekretariat). Weiterhin eine Mail je Klasse, kein Sammel-PDF — und die Adresse steht im Klartext im Audit-Log | 🟡 Handler + `logKlassenVersandAudit` (zwei Einträge: Absicht vor, Ergebnis nach Versand) | `api/mahnwesen_bulk_mail.go`, `frontend/src/lib/Mahnwesen.svelte`              |
 
 **Bewertung:** Sehr robust. Die datenkritischen Invarianten sind bereits auf DB-Ebene. Die
 Geschäftsregeln (Sperre/Limit/Overdue) liegen bewusst im Code (brauchen Kontext + Override) —
@@ -196,7 +196,8 @@ löst nichts mehr aus (`api/reorders.go`).
 | `benutzer.rolle` ∈ Enum — heute `admin`, `kollegium`, `mitarbeiter`, `helfer` (kleingeschr.)                                                                                                                  | 🟢 ENUM                                               | `benutzer_rolle`                                                                                    |
 | **[G5]** **Genau eine** Quelle für die Rolle eines Benutzers: `benutzer.rolle`                                                                                                                                | 🟢 Legacy-Tabelle entfernt + Test verhindert Rückkehr | `migrations/044`, `rollen_vokabular_pg_test.go`                                                     |
 | **Theken-Suche `GET /api/search` nur aus der Omnibox**; Suchfelder außerhalb der Theke haben eigene Türen mit dem Recht ihrer Daten (`/api/buecher/titel/suche` view_books, `/api/schueler?q=` view_students) | 🟢 Quelltext-Ratsche + E2E am Draht                   | `frontend-hygiene-action-endpunkt.test.js`, `suchfelder-eigene-tuer.spec.js`, `api/routes_books.go` |
-| Welche Rechte eine Rolle hat: `role_permissions` (GROSS; Middleware mappt per `UPPER()`)                                                                                                                      | 🟡 konfigurierbar (bewusst)                           | `permission_middleware.go:83`                                                                       |
+| Welche Rechte eine Rolle hat: `role_permissions` (GROSS; Middleware mappt per `UPPER()`)                                                                                                                      | 🟡 konfigurierbar (bewusst)                           | `api/permission_middleware.go` (`ermittleUndCacheBerechtigung`)                                     |
+| Login-Rate-Limit je echter Client-IP (nicht Proxy)                                                                                                                                                            | 🟢 `pkg/clientip` + `TRUSTED_PROXIES`                 | `api/middleware_ratelimit.go`, `pkg/clientip/clientip_test.go`                                      |
 
 > **Zum Rollen-Vokabular (11.08.2026):** `helfer` kam mit Migration 042 dazu, `kollegium`
 > hieß bis Migration 069 `lehrer`. Der alte Name war doppelt belegt und bezeichnet seither
@@ -205,7 +206,6 @@ löst nichts mehr aus (`api/reorders.go`).
 > Rolle auf `create_reservations` zurückgenommen; das ist aber eine **Vorgabe**, keine
 > Invariante: Die Zeile darüber gilt, ein Administrator darf mehr erteilen. Siehe
 > [FACHKONZEPT §12](FACHKONZEPT.md).
-> | Login-Rate-Limit je echter Client-IP (nicht Proxy) | 🟢 `pkg/clientip` (ein Hop, rechtester Eintrag) + `TRUSTED_PROXIES`; Gate `TestResolver_LanClientHinterProxy` | `middleware_ratelimit.go` |
 
 ---
 
@@ -305,7 +305,8 @@ fragt, ob eine Zusicherung des Codes von der Datenbank gehalten wird. Frage 12 f
 umgekehrt nach dem, was die Datenbank ohnehin tut — und wovon der Code nichts weiß.
 
 Mechanischer Teil: `repository/schema_gegenrichtung_pg_test.go` friert die drei Inventare
-ein (31 Fremdschlüssel mit Löschwirkung, 32 CHECK-Bedingungen, 19 Trigger). Jede
+ein (35 Fremdschlüssel mit Löschwirkung, 42 CHECK-Bedingungen, 21 Trigger; die Liste
+führt 36 Fremdschlüssel-Einträge, weil der zweispaltige von `lmf_termine` doppelt steht). Jede
 Schema-Änderung wird damit rot und verlangt die Antwort: **Wer behandelt die Folge?** Die
 schon befragten Einträge tragen ihre Antwort als Kommentar; der Rest ist Arbeitsliste.
 

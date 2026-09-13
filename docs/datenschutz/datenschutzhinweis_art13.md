@@ -43,7 +43,7 @@ Server der Schule verarbeitet und nicht in Länder außerhalb der EU übermittel
 
 **Wie lange wir Daten speichern.** Ein Ausleihvorgang bleibt Ihrem Kind **zwei Jahre nach
 der Rückgabe** zugeordnet (Nachweis für die Lernmittel-Bestandskartei und etwaige
-Schadensfälle), danach wird die Zuordnung automatisch entfernt. Verlässt Ihr Kind die Schule, werden die persönlichen Daten 90 Tage nach dem letzten Vorgang (Abgang, letzte Rückgabe oder Begleichung einer Forderung) anonymisiert und der Datensatz nach Ablauf des Schuljahres endgültig gelöscht. Solange Bücher offen sind oder eine Forderung besteht, bleiben Name und Anschrift für Erinnerung und Abrechnung erhalten. Protokolle werden nach 24 Monaten gelöscht.
+Schadensfälle), danach wird die Zuordnung automatisch entfernt. Verlässt Ihr Kind die Schule, werden die persönlichen Daten 90 Tage nach dem letzten Vorgang (Abgang, letzte Rückgabe oder Begleichung einer Forderung) anonymisiert und der anonymisierte Datensatz ab dem 30. Januar des Folgejahres endgültig gelöscht. Solange Bücher offen sind oder eine Forderung besteht, bleiben Name und Anschrift für Erinnerung und Abrechnung erhalten. Protokolle werden nach 24 Monaten gelöscht.
 
 **Ihre Rechte.** Sie haben das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16),
 Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Widerspruch (Art. 21

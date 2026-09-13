@@ -168,7 +168,7 @@ Schulaufsicht ordnet Zahlungen darüber zu). `mittel` ist dasselbe Vokabular wie
 
 Reine Funktion `Ersatzwert(verleihjahr, kaufpreis, neupreis) (betrag, prozent, basis)`
 nach der Staffel der Schule. `verleihjahr = max(Anzahl Schuljahre mit Ausleihe des
-Exemplars, Jahre seit erworben_am + 1)` — die zweite Größe fängt den Littera-Altbestand
+Exemplars, Schuljahre seit erworben_am + 1)` — die zweite Größe fängt den Littera-Altbestand
 ohne Historie ab (ein 2019 gekauftes Buch ist nicht im 1. Verleihjahr, nur weil wir seine
 Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 60 % von
 24,90 €") und der Mensch bestätigt oder überschreibt — im Ermessen der Schule.
@@ -182,12 +182,12 @@ Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 
 | `POST /api/bescheide/{id}/uebergeben`                                                                 | Nach Fristablauf, von Hand: Status `uebergeben`; Forderungen `nicht_zurueckgegeben` → Ausleihe beenden + Exemplar `VERLUST` (Ablauf Nr. 7). Liefert Übergabe-PDF: Original + Sammelliste für die Schulaufsicht.                                                                                                                                                                                                                                          |
 | Rückgabe-Hook — **GEBAUT 12.09.2026** in `repository/bescheid_rueckkehr.go` (`VerbucheRueckkehr`), gerufen aus der Reaktivierung beim Scan (`versucheReaktivierung`) | Hat das Exemplar eine offene Forderung `nicht_zurueckgegeben`: Storno mit Grund „Rückgabe am …"; steht der Brief auf `uebergeben`, wird NICHTS storniert — der Bescheid bekommt `rueckgabe_nach_uebergabe` und die Theke den Satz, dass die Aufsicht unverzüglich zu informieren ist. **Nicht in `repository/loan.go`, wie hier geplant:** `ReportDamage` beendet die Ausleihe schon beim Anlegen der Forderung und sondert das Exemplar aus — wenn das Buch zurückkommt, gibt es keine offene Ausleihe mehr, sondern ein ausgesondertes Exemplar am Scanner. Reaktivierung und Storno liegen in EINER Transaktion. |
 | Bezahlt / Storno                                                                                      | unverändert (`/api/schadensfaelle/{id}/bezahlt`, `/storno`). Brief gilt als `erledigt`, wenn keine Position mehr offen ist (abgeleitet, nicht doppelt gespeichert).                                                                                                                                                                                                                                                                                      |
-| `GET /api/bescheide?status=`                                                                          | Liste für das Sekretariat: offen / **Frist abgelaufen** / übergeben / Schulaufsicht zu informieren.                                                                                                                                                                                                                                                                                                                                                      |
+| `GET /api/bescheide?status=`                                                                          | Liste für das Sekretariat. Gebaut ist nur `status=offen` (nicht übergeben), ohne Parameter alle; Frist abgelaufen, übergeben und „Rückgabe nach Übergabe" zeigt die Liste als Zustand je Bescheid, nicht als Filter.                                                                                                                                                                                                                                     |
 
 Recht: neu `schadensersatz_bescheide` (ab Werk nur ADMIN — das Sekretariat), Anlegen
 einer Forderung bleibt `edit_students`. PII-Stufe 3 → PII-Matrix + Antwort-Gate.
 
-### 4.4 Briefe: ein Renderer, zwei Varianten (`pdf/schadensersatz.go`)
+### 4.4 Briefe: ein Renderer, zwei Varianten (`api/bescheid_pdf.go`)
 
 Gebaut auf der DIN-5008-Fensterkuvert-Seite aus `reports_pdf.go` (Falzmarken,
 Anschriftfeld, „(keine Adresse hinterlegt)"-Regel).
@@ -265,7 +265,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    keinen Topf. Der erste Brief des zweiten Topfs kollidiert sonst mit dem ersten des
    anderen (23505, Rollback, der Zähler bleibt stehen — der Topf wäre dauerhaft blockiert).
 4. Altbriefe abräumen, Staffel-Vorschlag im Schaden-Dialog, Doku (FACHKONZEPT §3/§14,
-   HANDBUCH, PII-Matrix, invarianten §4, SECURITY/VVT: neuer Zweck „Bescheid").
+   HANDBUCH, PII-Matrix, invarianten §7, SECURITY/VVT: neuer Zweck „Bescheid").
 
 ---
 

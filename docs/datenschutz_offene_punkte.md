@@ -57,4 +57,4 @@ Links: [SchDSV Volltext](https://www.glb-hessen.de/wp-content/uploads/2024/01/DL
 - Geburtsdatum: Anlage 1 (1.7), Zweck Dubletten-Wachhund + LUSD-Abgleich → im VVT begründen.
 - Anschrift: „ggf. Anschrift" im HBDI-Muster; Zweck gedruckte Rechnung/Elternbrief.
 - Rollen ab Werk: nur ADMIN/MITARBEITER sehen Stufe 3 (Adresse, Eltern-Mail, Foto); KOLLEGIUM/HELFER nicht.
-- IP-Adressen werden nicht geloggt; Fotos und Backups verschlüsselt; Auskunft Art. 15 vorhanden; Statistik ohne Personenbezug.
+- IP-Adressen stehen nur im Verwaltungsprotokoll (`audit_logs.ip_adresse`, administrative Eingriffe) und werden mit ihm nach der Aufbewahrungsfrist gelöscht (`audit_aufbewahrung_monate`, Vorgabe 24 Monate, Untergrenze 6); das Anfrage-Log schreibt keine IP; Fotos und Backups verschlüsselt; Auskunft Art. 15 vorhanden; Statistik ohne Personenbezug.

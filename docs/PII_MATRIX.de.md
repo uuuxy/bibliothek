@@ -20,7 +20,7 @@ Fachrecht über den echten Router mit einer Rolle, die das Recht ihrer Zeile
 NICHT hat, und verlangt 403 mit der Begründung des Rechte-Wächters. Damit ist
 auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein Recht, das im
 Seed ohnehin jede Rolle hält.
-Stand: 07.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 13.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen).
 
@@ -89,6 +89,12 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/mahnwesen/pdf`                            | view_students         | 2     | Mahnlisten-PDF                                                                                                                                         |
 | `POST /api/mahnwesen/senden`                        | create_orders         | 2     | versendet Mahn-PDF; Antwort nur Status                                                                                                                 |
 | `POST /api/mail/send-bulk-overdue`                  | create_orders         | 2     | Mahn-PDFs je Klasse; Antwort nur Zähler                                                                                                                |
+| `GET /api/schueler/{id}/bescheid-vorschlag`         | edit_students         | 2     | Name, Klasse, offene Forderungen mit Titeln                                                                                                            |
+| `GET /api/schueler/{id}/bescheide`                  | view_students         | 2     | Bescheide dieses Kindes (Nummer, Frist, Betrag)                                                                                                        |
+| `POST /api/schueler/{id}/bescheide`                 | edit_students         | 3     | Schreibt Anrede, Name und Anschrift als Snapshot                                                                                                       |
+| `GET /api/bescheide`                                | view_students         | 2     | Arbeitsliste: Name, Klasse, Betrag, Frist                                                                                                              |
+| `GET /api/bescheide/{id}/pdf`                       | view_students         | 3     | Der Brief: Anschrift, Titel, Beträge                                                                                                                   |
+| `POST /api/bescheide/{id}/uebergeben`               | edit_students         | 0     | Status                                                                                                                                                 |
 
 ## routes_books.go
 
@@ -187,12 +193,6 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `PUT /api/bestellungen/{id}/bestaetigen`        | create_orders | 0     | Status, Etikettengröße                    |
 | `PUT /api/bestellungen/{id}/bestaetigungs-link` | create_orders | 0     | Link, Gültigkeit                          |
 | `PUT /api/bestellungen/{id}/mittel`             | create_orders | 0     | Topf (Land/Schulträger), Grund            |
-| `GET /api/schueler/{id}/bescheid-vorschlag`     | edit_students | 2     | Name, Klasse, offene Forderungen mit Titeln |
-| `GET /api/schueler/{id}/bescheide`              | view_students | 2     | Bescheide dieses Kindes (Nummer, Frist, Betrag) |
-| `POST /api/schueler/{id}/bescheide`             | edit_students | 3     | Schreibt Anrede, Name und Anschrift als Snapshot |
-| `GET /api/bescheide`                            | view_students | 2     | Arbeitsliste: Name, Klasse, Betrag, Frist |
-| `GET /api/bescheide/{id}/pdf`                   | view_students | 3     | Der Brief: Anschrift, Titel, Beträge      |
-| `POST /api/bescheide/{id}/uebergeben`           | edit_students | 0     | Status                                    |
 
 ## routes_system.go
 
