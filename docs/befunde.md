@@ -218,9 +218,18 @@ Zwei Regeln dazu:
   - Erledigt am 13.09.2026: Eine Kennung aus Query oder Body, die keine UUID ist, wird mit 400
     abgewiesen statt als 500 aus Postgres (22P02) zurückzukommen — geprüft an der Tür, nicht
     zentral in apierrors (das wäre Fehler-Kollaps). Neue Klasse in `sweeps.md`, Gate
-    `uuid_eingaben_test.go`, am alten Code rot gesehen. **Offen daraus (B):** Handler, die ihren
-    Pfad selbst zerlegen statt `PathValue` zu nutzen (`inventur/endpunkte_buecher_aktualisieren.go`,
-    `teile[2]`), sieht weder die Pfad-Middleware noch der Detektor — nicht nachgesehen.
+    `uuid_eingaben_test.go`, am alten Code rot gesehen. Am selben Tag nachgezogen, beides am
+    Stack nachgestellt und am alten Code rot gesehen: Die Prüfung nahm `urn:uuid:…` an, weil
+    `uuid.Validate` die Form kennt und Postgres nicht (`acce59e7`, `pkg/kennung`). Und vier
+    Buch-Handler zerlegten ihren Pfad selbst, sodass `PUT /api/books/x` und die drei
+    Cover-Routen 500 lieferten (`35afea98`, Platzhalter `{id}`). Dabei gefunden: Der
+    Cover-Upload schrieb die Datei, bevor feststand, dass es das Buch gibt, und löschte das
+    alte Cover vor dem UPDATE (`ddee5802`).
+  - **Zwei Routen ohne Aufrufer (C):** `PUT /api/books/{id}/cover` und
+    `POST /api/books/{id}/refresh-cover` ruft weder das Frontend noch ein Skript im Repo auf.
+    Hinter den Sammelrouten `POST`/`PUT /api/books/` war das im API-Inventar nicht zu sehen.
+    Nicht gestrichen, weil ein Grep keinen Aufrufer außerhalb des Repos ausschließt. Zu
+    entscheiden: streichen oder im Buchformular anbieten.
   - Erledigt am 13.09.2026: Abmelden überlebt einen sofortigen Reload oder das Schließen des
     Tabs (`95e7a24f`, `keepalive`, am alten Code rot gesehen). Gefunden, weil `auth.spec.js` in
     der CI rot wurde: Reload drei Millisekunden nach dem Klick, die Sitzung lebte weiter.
