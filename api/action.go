@@ -16,6 +16,15 @@ import (
 
 const insertIdempotencyQuery = "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
 
+// Merkmal einer Sperre, die die Theke übergehen darf (service.IstUebergehbareSperre): Am
+// Header öffnet das Frontend den Override-Dialog, das Cache-Feld trägt es durch eine
+// Wiederholung mit demselben Idempotenz-Schlüssel (sperr_merkmal_test.go).
+const (
+	sperrKopf        = "X-Sperre"
+	sperrUebergehbar = "uebergehbar"
+	sperrCacheFeld   = "sperre"
+)
+
 // ohneSperrgrund nimmt einem Sperr-Fehler den Freitext (block_reason), wenn der
 // Aufrufer ihn nicht sehen darf. Die Theke erfährt weiterhin DASS gesperrt ist
 // (403, generische Meldung) — aber nicht das WARUM: Der Grund kann Zahlungs-
@@ -82,6 +91,9 @@ func (s *Server) serveCachedActionResponse(ctx context.Context, w http.ResponseW
 		if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
 			log.Printf("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
 			return false
+		}
+		if errData[sperrCacheFeld] == sperrUebergehbar {
+			w.Header().Set(sperrKopf, sperrUebergehbar)
 		}
 		apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
 		return true
@@ -177,7 +189,15 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			// VOR dem Cachen kürzen — sonst läge der Freitext im Idempotenz-Cache.
 			err = ohneSperrgrund(err, s.BesitztRecht(r, "view_students"))
 			status := mapServiceErrorToStatus(err)
-			s.saveToCache(ctx, req.IdempotencyKey, map[string]string{"error": err.Error()}, status)
+			cacheDaten := map[string]string{"error": err.Error()}
+			if service.IstUebergehbareSperre(err) {
+				// Merkmal für den Override-Dialog der Theke — im Header, damit der Body die
+				// eine kanonische Fehlerform behält, und im Cache, damit eine Wiederholung
+				// es nicht verliert (sperr_merkmal_test.go).
+				w.Header().Set(sperrKopf, sperrUebergehbar)
+				cacheDaten[sperrCacheFeld] = sperrUebergehbar
+			}
+			s.saveToCache(ctx, req.IdempotencyKey, cacheDaten, status)
 			apierrors.SendHTTPError(w, status, err)
 			return
 		}

@@ -60,7 +60,7 @@ func (s *defaultLoanService) pruefeGesperrt(ctx context.Context, sObj *repositor
 		reason = *sObj.BlockReason
 	}
 	if !overrideBlock {
-		return &SperrGrundFehler{Kern: fmt.Errorf("%w: Ausleihe gesperrt", ErrBlocked), Grund: reason}
+		return &SperrGrundFehler{Kern: UebergehbareSperre(fmt.Errorf("%w: Ausleihe gesperrt", ErrBlocked)), Grund: reason}
 	}
 	s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (gesperrt: "+reason+")")
 	return nil
@@ -76,7 +76,7 @@ func (s *defaultLoanService) pruefeManuellGesperrt(ctx context.Context, sObj *re
 		reason = *sObj.BlockReason
 	}
 	if !overrideBlock {
-		return &SperrGrundFehler{Kern: fmt.Errorf("%w: Manuelle Sperre", ErrBlocked), Grund: reason}
+		return &SperrGrundFehler{Kern: UebergehbareSperre(fmt.Errorf("%w: Manuelle Sperre", ErrBlocked)), Grund: reason}
 	}
 	s.logOverride(ctx, staffID, borrowerID, "Ausleihsperre manuell ignoriert (Manuelle Sperre: "+reason+")")
 	return nil
@@ -94,7 +94,7 @@ func (s *defaultLoanService) pruefeOffeneSchaeden(ctx context.Context, borrowerI
 	}
 	if offeneSchaeden > 0 {
 		if !overrideBlock {
-			return fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offeneSchaeden)
+			return UebergehbareSperre(fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offeneSchaeden))
 		}
 		s.logOverride(ctx, staffID, borrowerID, fmt.Sprintf("Ausleihsperre manuell ignoriert (unbezahlte Schäden: %d)", offeneSchaeden))
 	}
@@ -115,7 +115,7 @@ func (s *defaultLoanService) pruefeUeberfaellig(ctx context.Context, borrowerID,
 	}
 	if overdueCount >= settings.MaxOverdueItems {
 		if !overrideBlock {
-			return fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdueCount)
+			return UebergehbareSperre(fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdueCount))
 		}
 		s.logOverride(ctx, staffID, borrowerID, fmt.Sprintf("Ausleihsperre manuell ignoriert (überfällig: %d Medien)", overdueCount))
 	}

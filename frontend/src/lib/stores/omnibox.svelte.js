@@ -214,12 +214,11 @@ export function createOmniboxStore() {
 			console.debug('Fehlerantwort war kein JSON, nutze Rohtext:', e);
 		}
 
-		if (
-			res.status === 403 &&
-			(errStr.includes('Sperre') ||
-				errStr.includes('Sperr-Automatik') ||
-				errStr.includes('überfällig'))
-		) {
+		// Der Dialog hängt am Merkmal des Servers, nicht am Wortlaut (omniboxSperrDialog.test.js).
+		// Bis zum 13.09.2026 entschieden hier die Wörter „Sperre", „Sperr-Automatik" und
+		// „überfällig": Die Schadens-Sperre traf keins, und bei der System-Sperre hing es am
+		// Sperrgrund, den eine Helferin gar nicht zu sehen bekommt.
+		if (res.status === 403 && res.headers.get('X-Sperre') === 'uebergehbar') {
 			blockAlert = { message: errStr, query: q };
 			throw new Error('BLOCK_ALERT');
 		}

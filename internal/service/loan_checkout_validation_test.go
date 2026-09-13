@@ -225,6 +225,57 @@ func TestSperrpruefung_OffenerSchadenUebergangen(t *testing.T) {
 	}
 }
 
+// Alle vier Sperren der Buch-Ausleihe lassen sich übergehen (overrideBlock) und tragen
+// deshalb das Merkmal, an dem die Theke den Override-Dialog öffnet (X-Sperre in
+// api/action.go). Bis zum 13.09.2026 entschied dort der Wortlaut der Meldung, und die
+// Schadens-Sperre bekam keinen Dialog. Geräte kennen kein Override und tragen es nicht.
+func TestSperrpruefung_UebergehbareSperrenSindMarkiert(t *testing.T) {
+	pruefe := func(t *testing.T, schueler *repository.Student, vorbereiten func(pgxmock.PgxPoolIface)) {
+		t.Helper()
+		svc, _, mock := newValidationService(t, schueler)
+		defer mock.Close()
+		vorbereiten(mock)
+		err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false)
+		if !errors.Is(err, ErrBlocked) {
+			t.Fatalf("erwartet ErrBlocked, bekam %v", err)
+		}
+		if !IstUebergehbareSperre(err) {
+			t.Errorf("übergehbare Sperre ohne Merkmal — die Theke bekommt keinen Override-Dialog: %v", err)
+		}
+	}
+
+	t.Run("System-Sperre", func(t *testing.T) {
+		pruefe(t, &repository.Student{ID: "s1", IstGesperrt: true, BlockReason: strPtr("Abgänger")},
+			func(pgxmock.PgxPoolIface) {})
+	})
+	t.Run("manuelle Sperre", func(t *testing.T) {
+		pruefe(t, &repository.Student{ID: "s1", IsManuallyBlocked: true, BlockReason: strPtr("Buch verloren")},
+			func(pgxmock.PgxPoolIface) {})
+	})
+	t.Run("offener Schaden", func(t *testing.T) {
+		pruefe(t, &repository.Student{ID: "s1"}, func(mock pgxmock.PgxPoolIface) {
+			mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
+				WithArgs("s1").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
+		})
+	})
+	t.Run("überfällige Medien", func(t *testing.T) {
+		pruefe(t, &repository.Student{ID: "s1"}, func(mock pgxmock.PgxPoolIface) {
+			mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
+				WithArgs("s1").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+			mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("max_overdue_items", "1"))
+			mock.ExpectQuery("SELECT COUNT").
+				WithArgs("s1", 14).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(2))
+		})
+	})
+	t.Run("Gegenprobe: gesperrtes Gerät trägt kein Merkmal", func(t *testing.T) {
+		err := pruefeGeraetAusleihbar(repository.Geraet{IstAusleihbar: false})
+		if !errors.Is(err, ErrBlocked) || IstUebergehbareSperre(err) {
+			t.Errorf("Geräte-Sperre: erwartet ErrBlocked ohne Merkmal, bekam %v (Merkmal=%v)", err, IstUebergehbareSperre(err))
+		}
+	})
+}
+
 func TestResolveBorrower_HappyPath(t *testing.T) {
 	svc, _, mock := newValidationService(t, &repository.Student{
 		ID: "s1", Klasse: "5a", Vorname: "Max", Nachname: "Mustermann",
