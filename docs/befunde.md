@@ -128,9 +128,18 @@ Zwei Regeln dazu:
     `bestellung_id` (zwei Töpfe am selben Tag = eine Gruppe; ohne Vorab-Barcode
     „Unbekannter Lieferant"; Datum ohne Schulzeitzone); Mail-Datum und Link-Frist in
     Serverzeit; Idempotenz-Schlüssel überlebt eine Änderung des Warenkorbs.
-  - **Theke (B):** verliehenes, als defekt gemeldetes Gerät nicht rückgebbar; Sperr-Dialog hängt am
-    Fehlertext (Schadens-Sperre ohne Übergehen-Dialog); Geräte-Ausleihe übernimmt
-    `active_teacher_id` ungeprüft; Offline-Warteschlange nur für `B-`-Barcodes.
+  - **Theke (B):** Sperr-Dialog hängt am Fehlertext (Schadens-Sperre ohne Übergehen-Dialog);
+    Offline-Warteschlange nur für `B-`-Barcodes. Dazu beim Abarbeiten gefunden:
+    `resolveTeacherBorrower` (Buch-Ausleihe an eine Lehrkraft) meldet jeden Datenbankfehler als
+    „Aktives Lehrerprofil nicht gefunden" (404) — die Geräte-Seite ordnet ihn seit `cc9e6c8c`
+    ein, die Buch-Seite nicht.
+
+    Erledigt am 13.09.2026, beides am Stack nachgestellt und am alten Code rot gesehen: Ein
+    verliehenes Gerät, das danach als defekt gemeldet wurde, ließ sich nicht zurückgeben (403,
+    die Ausleihe blieb offen), und ein gesperrter Schüler konnte sein Gerät nicht zurückgeben
+    (`3899cf18`). Die Geräte-Ausleihe übernahm `active_teacher_id` ungeprüft — eine unbekannte
+    Kennung ergab 500, ein deaktiviertes Profil oder eine Mitarbeiterin bekam das Gerät
+    (`cc9e6c8c`, jetzt dieselbe Regel wie Lehrerausweis und Buch-Ausleihe).
   - **Schüler/Frontend (B):** Theke hält nach dem Zusammenführen die gelöschte Quell-ID;
     Bearbeiten-Formular schickt das alte `abgaenger_jahr` mit (Klassenwechsel rechnet nie
     neu); Foto per Barcode ohne `deleted_at`; Purge-Fehler immer 409.
