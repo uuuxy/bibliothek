@@ -32,7 +32,7 @@ func handleDbError(err error) error {
 	}
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
-		if pgErr.Code == "23505" && pgErr.ConstraintName == "books_isbn_key" {
+		if pgErr.Code == "23505" && pgErr.ConstraintName == "buecher_titel_isbn_key" {
 			return ErrDuplicateISBN
 		}
 	}

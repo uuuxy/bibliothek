@@ -40,7 +40,7 @@ func TestHandleDbError(t *testing.T) {
 			name: "duplicate ISBN error",
 			inputErr: &pgconn.PgError{
 				Code:           "23505",
-				ConstraintName: "books_isbn_key",
+				ConstraintName: "buecher_titel_isbn_key",
 			},
 			expected: ErrDuplicateISBN,
 		},
