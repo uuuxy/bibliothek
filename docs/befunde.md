@@ -215,15 +215,12 @@ Zwei Regeln dazu:
     den lokalen Stack. Beim Nachsehen fiel mehr auf als der Port: Das Token ging als Bearer mit,
     die Anwendung liest aber nur das Cookie (jeder Lauf war unangemeldet), und ein Lauf ohne
     importierte URL meldete „Scan komplett" (`61ea1357`, am Stack gelaufen).
-  - **UUID aus Query oder Body ungeprüft an die Datenbank → 500 (B).** Aus dem ZAP-Lauf vom
-    13.09.2026, am Stack nachgestellt: `GET /api/inventur/fehlbestand?session_id=x`,
-    `GET /api/vormerkungen?titel_id=x` bzw. `?schueler_id=x`, `POST /api/vormerkungen` mit
-    `{"titel_id":"x"}`, `POST /api/inventur/finish` und `/abort` mit `{"session_id":"x"}` — alle
-    500 statt 400. `ValidateUUIDParamsMiddleware` prüft nur Pfad-Parameter. Gemessen: 82
-    `string`-Felder auf `…id` in Request-Structs (`api/`, `inventur/`), keines mit `uuid`-Tag.
-    Nicht pauschal taggen: `barcode_id` (16) und `lusd_id` (4) sind keine UUIDs — dieselbe
-    Verwechslung, vor der der Kommentar an `uuidPfadParameter` warnt. Eigener Durchgang mit
-    namentlicher Liste und Ratsche.
+  - Erledigt am 13.09.2026: Eine Kennung aus Query oder Body, die keine UUID ist, wird mit 400
+    abgewiesen statt als 500 aus Postgres (22P02) zurückzukommen — geprüft an der Tür, nicht
+    zentral in apierrors (das wäre Fehler-Kollaps). Neue Klasse in `sweeps.md`, Gate
+    `uuid_eingaben_test.go`, am alten Code rot gesehen. **Offen daraus (B):** Handler, die ihren
+    Pfad selbst zerlegen statt `PathValue` zu nutzen (`inventur/endpunkte_buecher_aktualisieren.go`,
+    `teile[2]`), sieht weder die Pfad-Middleware noch der Detektor — nicht nachgesehen.
   - Erledigt am 13.09.2026: Abmelden überlebt einen sofortigen Reload oder das Schließen des
     Tabs (`95e7a24f`, `keepalive`, am alten Code rot gesehen). Gefunden, weil `auth.spec.js` in
     der CI rot wurde: Reload drei Millisekunden nach dem Klick, die Sitzung lebte weiter.
