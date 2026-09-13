@@ -523,9 +523,11 @@ und hat kein versioniertes Image; es bleibt als Historie stehen.
 
 `latest` heißt „neuester main", nicht „neuestes Release" — seit 22.08.2026 auch technisch:
 der Tag-Lauf setzt `latest` nicht mehr (`flavor: latest=false`). Wer einen festen Stand
-will, nimmt den Versions-Tag. Beide Tag-Workflows prüfen vorher: striktes Muster
-`v<major>.<minor>.<patch>`, Commit liegt auf `main`, CI des Commits ist grün — ein Tag auf
-einem Feature-Branch oder rotem Stand erzeugt weder Release noch Image.
+will, nimmt den Versions-Tag. Beide Tag-Workflows prüfen vorher das strikte Muster
+`v<major>.<minor>.<patch>` und dass der Commit auf `main` liegt — ein Tag auf einem
+Feature-Branch erzeugt weder Release noch Image. Die CI des Commits fragt nur `release.yml` ab:
+Ein Tag auf rotem Stand erzeugt kein Release, das Image baut `docker-publish.yml` trotzdem
+(offen, siehe OFFEN.md 5.10).
 
 **Was das Release-Gate prüft — und was nicht** (Stand 12.09.2026): `release.yml` verlangt
 auf dem getaggten Commit alle vier Jobs aus `ci.yml` —

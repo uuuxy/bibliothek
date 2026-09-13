@@ -42,7 +42,11 @@ der Meldung; die Schadens-Sperre öffnete vorher keinen Dialog (`e107465e`).
 
 **Doku zur Offline-Theke.** HANDBUCH („Wenn etwas nicht geht") und FACHKONZEPT 18.4 versprachen,
 dass die Theke ohne Netz alle Scans speichert; gespeichert werden nur Bücher mit `B-`. Beide nennen
-jetzt den heutigen Stand, das Handbuch dazu, was an der Theke während eines Ausfalls zu tun ist.
+jetzt den heutigen Stand, das Handbuch dazu, was an der Theke während eines Ausfalls zu tun ist (`512585b4`).
+
+**Release-Doku.** DEPLOYMENT.md sagte, beide Tag-Workflows prüften vor dem Bau die CI des Commits.
+Nur `release.yml` tut es, `docker-publish.yml` baut das Image auch auf rotem Stand. Die Doku
+beschreibt jetzt, was geprüft wird; das fehlende Gate steht in OFFEN.md 5.10.
 
 **Prüflauf über Issues, Register und Dokumentation** (Peter: „überprüfe alles genau … auch die
 Dokumentation"). Fünf Prüfer, jede Aussage mit Fundstelle, Stichproben am Code. Behoben: Die
