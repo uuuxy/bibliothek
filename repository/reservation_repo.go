@@ -138,16 +138,23 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 		       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
 		       CASE WHEN b.id IS NULL THEN NULL
 		            ELSE btrim(b.vorname || ' ' || b.nachname) END AS angefordert_von,
-		       (SELECT COUNT(*) FROM buecher_exemplare e
-		        WHERE e.titel_id = r.titel_id
-		          AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
-		          AND NOT EXISTS (SELECT 1 FROM ausleihen a
-		                          WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		       ) AS verfuegbar,
+		       coalesce(v.count, 0) AS verfuegbar,
 		       r.erledigt_notiz, r.erledigt_am
 		FROM klassensatz_reservierungen r
 		JOIN buecher_titel t ON r.titel_id = t.id
 		LEFT JOIN benutzer b ON r.angefordert_von = b.id
+		-- Performance-Optimierung: Statt die Verfügbarkeit als korrelierte Unterabfrage für jede
+		-- Reservierungszeile neu zu berechnen (was zu N+1-Abfragen führt), gruppieren und zählen
+		-- wir den verfügbaren Bestand pro Titel einmalig in einer abgeleiteten Tabelle (Derived Table)
+		-- und joinen das Ergebnis an.
+		LEFT JOIN (
+			SELECT e.titel_id, COUNT(*) AS count
+			FROM buecher_exemplare e
+			WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false
+			  AND NOT EXISTS (SELECT 1 FROM ausleihen a
+			                  WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
+			GROUP BY e.titel_id
+		) v ON v.titel_id = r.titel_id
 		ORDER BY r.erledigt ASC,
 		         CASE WHEN r.erledigt THEN r.erstellt_am END DESC,
 		         CASE WHEN NOT r.erledigt THEN r.erstellt_am END ASC
