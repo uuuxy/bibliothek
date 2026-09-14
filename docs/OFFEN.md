@@ -38,14 +38,15 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
-2. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
-   Freigabe.
-3. **5.1** Schäden und Benutzer.
-4. **5.5–5.9** kleine B-Commits.
-5. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
-6. Nach der Antwort zu E5 (**8.3**): **5.4**.
-7. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
+1. **1.5** Schülerakte schweigt bei Ladefehler (A, Verdacht → Rot-Test).
+2. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
+3. **Abschnitt 2** Offline-Betrieb der Theke nach [offline_theke_konzept.md](offline_theke_konzept.md),
+   je Stufe Nachweis und Freigabe.
+4. **5.1** Schäden und Benutzer.
+5. **5.5–5.9** und **5.12** kleine B-Commits.
+6. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
+7. Nach der Antwort zu E5 (**8.3**): **5.4**.
+8. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
    Anlass.
 
 **Parallel bei Peter:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
@@ -56,6 +57,17 @@ Littera-Übernahme (7.2).
 
 ## 1. Sofort (Kategorie A)
 
+### 1.5 Schülerakte: ein gescheiterter Abruf der Bescheide sieht aus wie „kein Bescheid" (Verdacht)
+
+`useStudentProfile.svelte.js` weist bei `!res.ok` für Bescheide und Gebühren `[]` zu; die Karten
+zeigen dann nichts, einen Ladefehler-Hinweis gibt es nicht (anders als `useBookAkte` mit
+`kopfFehler`). Der Bestandseintrag in `fehlerausgang.test.js` („bewusst zugewiesen 06.09.")
+begründet das Leeren beim Schülerwechsel, nicht das Schweigen. Szenario: Eltern stehen mit dem
+Brief in der Bibliothek, `GET /api/schueler/{id}/bescheide` läuft in 503 oder Timeout (nur diese
+Anfrage; die drei anderen gelingen) → die Akte zeigt keine Karte → Auskunft „bei uns liegt kein
+Bescheid vor". Gefunden im Review 14.09.2026 (`006587cd`; die Gebühren-Zeile ist älter).
+**Nächster Schritt:** Rot-Test (503 → Hinweis in der Akte, 403 bleibt leer, leer bleibt leer),
+dann Hinweis wie in der Buch-Akte; Bestandseintrag der Ratsche schrumpft.
 
 ---
 
@@ -127,21 +139,19 @@ weiter.
 - `B-` und `LMF-` werden auch ohne geladene Regeln oder Buchliste gespeichert.
 - `/api/action/batch` bleibt eine Version länger bestehen, für Theken-Tabs mit altem Stand.
 
-**Stand des Plans (13.09.2026):** Ein Endplan mit 27 Commits in drei Stufen liegt vor, nachgeschärft
-nach 21 Lücken der ersten Gegenprüfung. Eine zweite Prüfung am Code bestätigte 38 weitere Punkte,
-17 davon wichtig, keiner blockierend. Darunter: Ein verloren gemeldetes Buch, das offline
-zurückgegeben wird, würde beim Nachbuchen abgewiesen; ein dauerhaft scheiternder Eintrag blockierte
-die Warteschlange eines Rechners; offene Meldungen verschwänden beim Zusammenführen still; ohne
-geladene Regeln speicherte die Theke gar nichts. Der Plan wird mit diesen Punkten und den
-Entscheidungen oben überarbeitet.
+**Stand des Plans (14.09.2026):** Der Plan steht in
+[offline_theke_konzept.md](offline_theke_konzept.md): 17 Commits in drei Stufen (7 vorhandene
+Fehler, 5 Server, 5 Theke). Der Entwurf vom 14.09. wurde am selben Tag von zwei getrennten
+Prüfungen am Code gegengelesen (Theke und Server); die zehn Änderungen daraus stehen dort in
+Abschnitt 5. Die wichtigsten: Commit 6 blockiert die Warteschlange in Stufe 1 nicht mehr, weil ein
+legitimer Fall sonst jeden Rechner gesperrt hätte; die Nachbuch-Tür kommt NACH Migration und
+Meldungstabelle; „Rücknahme bleibt, Ausleihe scheitert" braucht einen Savepoint; der Wächter
+braucht die Ausnahme „gleicher Idempotenz-Schlüssel"; die Sperrreihenfolge ist festgelegt, weil
+der Online-Pfad das Exemplar nie sperrt; in Stufe 3 kommen die neuen Buchformen erst nach der
+neuen Tür.
 
-**Im Plan festhalten:** Nachgebuchte Rückgaben laufen auch durch `VerbucheRueckkehr`, und der
-Hinweis „Schulaufsicht informieren" erreicht jemanden. Das axe-Gate misst auch den Zustand „Band
-sichtbar". Beim Nachbuchen vieler Ausleihen die Pool-Abfrage in offener Transaktion beobachten
-(6.1).
-
-**Nächster Schritt:** den überarbeiteten Plan erneut am Code prüfen, dann Stufe 1 zur Freigabe
-vorlegen.
+**Nächster Schritt:** 3.1–3.4, dann Stufe 1 in einer frischen Sitzung bauen und mit Nachweis zur
+Freigabe vorlegen.
 
 ---
 
@@ -152,8 +162,12 @@ vorlegen.
 `resolveTeacherBorrower` (`internal/service/loan_checkout_validation.go`) macht aus jedem Fehler
 „Aktives Lehrerprofil nicht gefunden"; die Geräte-Seite unterscheidet seit `cc9e6c8c`.
 **Warum vorher:** Mit (d) muss ein Datenbank-Aussetzer als solcher erkennbar sein, und das
-Nachbuchen an Lehrkräfte (b) läuft durch diesen Pfad. **Nächster Schritt:** nur `pgx.ErrNoRows`
-wird 404, alles andere geht als Fehler weiter; Vorbild `cc9e6c8c`.
+Nachbuchen an Lehrkräfte (b) läuft durch diesen Pfad. Dazu (Review 14.09.2026): Die Abfrage
+liest `b.barcode_id` (nullbar) in einen `string`; die Geräte-Seite schreibt `coalesce(barcode_id,
+'')`. An der Theke kommt die Lehrkraft nur über den Ausweis-Scan in den Zustand, dort hat sie also
+immer einen Barcode; über `active_teacher_id` im Stapel ist der Fall aber erreichbar.
+**Nächster Schritt:** nur `pgx.ErrNoRows` wird 404, alles andere geht als Fehler weiter, und
+`coalesce` in derselben Zeile; Vorbild `cc9e6c8c`.
 
 ### 3.2 Nach dem Zusammenführen hält die Theke die gelöschte Kennung
 
@@ -455,6 +469,50 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   nachziehen.
 - HANDBUCH: Hinweis, dass im Vermerk des LMF-Plans keine Schülernamen stehen — er erscheint im
   Portal des ganzen Kollegiums und im PDF.
+- `FACHKONZEPT.md` (zwei Stellen) und `invarianten.md` nennen `RueckgabeTerminFuerKlasse`, die
+  `d3e86287` entfernt hat; nur Abschnitt 2.3 wurde angepasst.
+
+### 5.12 Review der Commits vom 11.–14.09.2026 (14.09.2026)
+
+Rund 85 Commits, von vier getrennten Prüfungen gelesen, die A-Funde selbst am Code nachgeprüft.
+Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind Nachbarn.
+
+- **Rückkehr eines abgeschriebenen Buchs (`e9ac79e6`):** Im Zweig „reserviert für dasselbe
+  Kind" ist die Reaktivierung committet, danach läuft `HandleUnifiedCheckout`; scheitert die an
+  der Sperre (offene Forderung nach `uebergeben`), geht der Fehler zurück und die Antwort mit
+  „Schulaufsicht informieren" wird verworfen. Merker und Liste stehen, der Satz an der Theke
+  nicht. Nicht nachgestellt.
+- **`bescheid_rueckkehr.go`:** Stornierungsgrund „Rückgabe am …" mit rohem `time.Now()`; im
+  Container (UTC) zwischen 0 und 2 Uhr das Vortagsdatum. `schulzeit.Jetzt()` wie die Schwester in
+  `order_pdf.go`.
+- **Wächter „Ehemalige mit offenen Vorgängen" (`fa4a2113`):** Nur der Grundausdruck `AbgangSeit`
+  ist mit der Löschuhr vereint; die Löschuhr rechnet zusätzlich `GREATEST(…, max(rueckgabe_am),
+  max(Schadensfall))`. Ohne Außenwirkung, aber eine dritte Formulierung derselben Frage.
+- **Lehrerportal, eigene Anliegen (`dfc9913a`):** Beim ERSTEN Laden ist der „alte Stand" leer;
+  503 → kein Abschnitt, kein Zähler → das gestern geschickte Anliegen scheint verloren und wird
+  doppelt geschickt. Dieselbe Klasse, die der Commit für drei andere Listen behoben hat.
+- **Demo-Löschskript (`566b9fe3`):** löscht Schäden ECHTER Schüler auf Demo-Exemplaren mit, auch
+  bezahlte und solche auf einem Bescheid (die Vorschau zeigt sie, das Skript sperrt nicht). Am
+  13.09. auf dem Server mit Vorschau 0/0/0 gelaufen, also ohne Wirkung; vor einem zweiten Lauf
+  eine Sperre „auf Bescheid → Abbruch" einbauen.
+- **Zweiter Cover-Schreibpfad (`ddee5802` nicht mitgezogen):** `update_cover_handler.go` setzt
+  `cover_url`, ohne das alte Upload-Cover zu löschen, und meldet ein unbekanntes Buch als 500.
+  Gleiche Reihenfolgefrage in `cover_aktualisierung.go`, `endpunkte_cover_retry.go`,
+  `cover_service.go`.
+- **ISBN-Dublette (`260b1436`):** Der UNIQUE-Constraint fängt nur zeichengleiche Dubletten;
+  geprüft wird auf einer bereinigten Kopie, gespeichert der Rohwert. `9783123456789` und
+  `978-3-12-345678-9` sind zwei Titel. Ob das Frontend vor dem Senden bereinigt, ist ungeprüft.
+- **Ersatzforderung (`436de459`):** Die neue 404-Begründung kommt als roher JSON-Body in den
+  Toast (`useStudentProfile.svelte.js`, `String(e)`); der Mensch liest `Error: {"error":…}`.
+- **Selbstanmeldung (`d9d84fd3`):** Ein abgelehnter Antrag (Konto bleibt inaktiv) liest
+  dauerhaft „Zugang beantragt"; nur `aktiv = true` räumt `zugang_beantragt_am`. Ob gewollt, steht
+  nirgends.
+- **Ratschen mit Umgehungsweg, heute ohne offene Stelle:** UUID-Ratsche sieht `[]struct` ohne
+  `dive`, `x := T{}`, Typen fremder Pakete und `q.Get(…)` nicht; Fehlerausgang-Scanner prüft Form 2
+  (`?:`) nur mit `istOkZugriff`, nicht mit der UND-Kette; Schema-Gegenrichtung führt
+  `lmf_termine.art -> lmf_plaene` doppelt mit falscher Begründung (Mengenvergleich macht es
+  unsichtbar); `uuidPfadParameter` hat keinen Test.
+- **`ActiveStudentList` (`dfc9913a`):** „Erneut versuchen" bekommt ohne Callback einen Leerlauf.
 
 ---
 
