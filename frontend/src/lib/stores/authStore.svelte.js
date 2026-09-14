@@ -10,6 +10,42 @@ import { toastStore } from './toastStore.svelte.js';
 const RESTORE_VERSUCHE = 3;
 const RESTORE_WARTEZEIT_MS = 2000;
 
+// Eine Abmeldung, die den Server nicht erreicht hat (14.09.2026). Das Löschcookie setzt nur die
+// Antwort des Servers (api/logout_handler.go, bei 200 und bei 503). Ohne Netz, oder bei 502/504
+// vom Proxy, kommt keine an: Das HttpOnly-Cookie bleibt im Browser, und JavaScript kann es nicht
+// löschen. Ohne diesen Merker meldete das nächste Neuladen mit Netz die vorige Person wieder an —
+// am geteilten Theken-Rechner arbeitete der Nächste unter fremdem Konto. Der Merker trägt keine
+// Personendaten; er lebt im Browser wie das Cookie selbst. Nachgestellt in
+// e2e/abmelden-ohne-antwort.spec.js.
+const ABMELDUNG_AUSSTEHEND = 'bibliothek.abmeldungAusstehend';
+
+/** @param {boolean} ausstehend */
+function merkeAbmeldung(ausstehend) {
+	try {
+		if (ausstehend) localStorage.setItem(ABMELDUNG_AUSSTEHEND, '1');
+		else localStorage.removeItem(ABMELDUNG_AUSSTEHEND);
+	} catch {
+		/* Ohne Speicher (privates Fenster, gesperrte Website-Daten) bleibt es beim bisherigen Weg. */
+	}
+}
+
+function abmeldungAusstehend() {
+	try {
+		return localStorage.getItem(ABMELDUNG_AUSSTEHEND) === '1';
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * Hat die Antwort das Löschcookie mitgebracht? Das tun genau die zwei Antworten des
+ * Abmelde-Handlers; 429 vom Rate-Limiter und 502/504 vom Proxy tun es nicht.
+ * @param {number} status
+ */
+function abmeldungZugestellt(status) {
+	return status === 200 || status === 503;
+}
+
 class AuthStore {
 	isLoggedIn = $state(false);
 	currentUser = $state(/** @type {any} */ (null));
@@ -76,6 +112,8 @@ class AuthStore {
 	 * @param {Function} [onRoleCallback]
 	 */
 	#applyLogin(user, onRoleCallback) {
+		// Eine neue Anmeldung ist gewollt: Ein alter Merker darf sie beim nächsten Laden nicht beenden.
+		merkeAbmeldung(false);
 		this.currentUser = user;
 		this.isLoggedIn = true;
 		// Grace-Period: direkt nach dem Login gilt die Verbindung als frisch,
@@ -114,6 +152,13 @@ class AuthStore {
 	 */
 	async restoreSession() {
 		try {
+			// Zuerst eine ausstehende Abmeldung nachholen und dann nichts wiederherstellen: Wer
+			// abgemeldet hat, meldet sich neu an. Ohne Netz bleibt der Merker für den nächsten Start.
+			if (abmeldungAusstehend()) {
+				const res = await fetch('/api/auth/logout', { method: 'POST' });
+				if (abmeldungZugestellt(res.status)) merkeAbmeldung(false);
+				return;
+			}
 			for (let versuch = 1; ; versuch++) {
 				const res = await fetch('/api/auth/me');
 				if (res.ok) {
@@ -211,7 +256,15 @@ class AuthStore {
 		// Sitzung nie gesperrt. Nach dem nächsten Öffnen war man wieder angemeldet
 		// (CI 13.09.2026: Reload drei Millisekunden nach dem Klick). Nachgestellt in
 		// e2e/abmelden-tab-zu.spec.js.
-		fetch('/api/auth/logout', { method: 'POST', keepalive: true }).catch(() => {});
+		//
+		// Bis der Server antwortet, steht die Abmeldung als ausstehend im Browser
+		// (ABMELDUNG_AUSSTEHEND); restoreSession holt sie beim nächsten Start nach.
+		merkeAbmeldung(true);
+		fetch('/api/auth/logout', { method: 'POST', keepalive: true })
+			.then((res) => {
+				if (abmeldungZugestellt(res.status)) merkeAbmeldung(false);
+			})
+			.catch(() => {});
 		this.sessionChecked = true;
 		this.isLoggedIn = false;
 		this.currentUser = null;

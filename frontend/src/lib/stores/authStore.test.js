@@ -56,6 +56,8 @@ describe('authStore Session-Restore (Boot)', () => {
 		});
 		authStore.handleLogout();
 		authStore.sessionChecked = false;
+		// Der Abmelde-Merker des Resets gehört nicht zu diesen Fällen (siehe unten).
+		localStorage.clear();
 		vi.clearAllMocks();
 	});
 	afterEach(() => {
@@ -282,5 +284,109 @@ describe('authStore Login-Meldung', () => {
 		expect(authStore.loginError).toBe(
 			'Zugang beantragt — die Bibliothek muss ihn noch freischalten'
 		);
+	});
+});
+
+// Abmelden ohne Antwort des Servers (14.09.2026): Das Löschcookie setzt nur die Antwort des
+// Servers. Ohne Netz oder bei 502 vom Proxy blieb das Cookie im Browser, und das nächste Neuladen
+// meldete die vorige Person wieder an. Den Weg im Browser prüft e2e/abmelden-ohne-antwort.spec.js.
+describe('authStore: Abmeldung, die den Server nicht erreicht', () => {
+	const MERKER = 'bibliothek.abmeldungAusstehend';
+	/** Wartet, bis die nicht abgewartete Abmelde-Anfrage durch ist. */
+	const warteAufAbmeldung = () => new Promise((fertig) => setTimeout(fertig, 0));
+
+	beforeEach(() => {
+		// @ts-expect-error  Test-Double: Stub statt vollständiger EventSource
+		globalThis.EventSource = vi.fn(function () {
+			return { addEventListener: vi.fn(), close: vi.fn() };
+		});
+		localStorage.clear();
+		// Jeder Fall beginnt abgemeldet — ohne dass ein Reset selbst einen Merker hinterlässt.
+		authStore.isLoggedIn = false;
+		authStore.currentUser = null;
+		authStore.sessionChecked = false;
+	});
+	afterEach(() => {
+		authStore.stopSessionRefresh();
+		localStorage.clear();
+	});
+
+	it('ohne Netz bleibt die Abmeldung vermerkt', async () => {
+		globalThis.fetch = vi.fn(async () => {
+			throw new TypeError('Failed to fetch');
+		});
+		authStore.handleLogout();
+		await warteAufAbmeldung();
+		expect(localStorage.getItem(MERKER)).toBe('1');
+	});
+
+	it('502 vom Proxy: das Löschcookie kam nicht an, die Abmeldung bleibt vermerkt', async () => {
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({ ok: false, status: 502 }));
+		authStore.handleLogout();
+		await warteAufAbmeldung();
+		expect(localStorage.getItem(MERKER)).toBe('1');
+	});
+
+	it('eine Antwort des Servers (200 oder 503) löscht den Merker', async () => {
+		for (const status of [200, 503]) {
+			// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+			globalThis.fetch = vi.fn(async () => ({ ok: status === 200, status }));
+			authStore.handleLogout();
+			await warteAufAbmeldung();
+			expect(localStorage.getItem(MERKER), `Status ${status}`).toBeNull();
+		}
+	});
+
+	it('der nächste Start holt die Abmeldung nach und stellt keine Sitzung wieder her', async () => {
+		localStorage.setItem(MERKER, '1');
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({
+			ok: true,
+			status: 200,
+			json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Peter' })
+		}));
+
+		await authStore.restoreSession();
+
+		expect(globalThis.fetch).toHaveBeenCalledWith('/api/auth/logout', { method: 'POST' });
+		expect(
+			globalThis.fetch,
+			'die alte Sitzung darf nicht wiederhergestellt werden'
+		).not.toHaveBeenCalledWith('/api/auth/me');
+		expect(authStore.isLoggedIn).toBe(false);
+		expect(authStore.sessionChecked).toBe(true);
+		expect(localStorage.getItem(MERKER)).toBeNull();
+	});
+
+	it('ist beim Start noch kein Netz da, bleibt der Merker für den nächsten Start', async () => {
+		localStorage.setItem(MERKER, '1');
+		globalThis.fetch = vi.fn(async () => {
+			throw new TypeError('Failed to fetch');
+		});
+
+		await authStore.restoreSession();
+
+		expect(authStore.isLoggedIn).toBe(false);
+		expect(authStore.sessionChecked).toBe(true);
+		expect(localStorage.getItem(MERKER)).toBe('1');
+	});
+
+	it('eine neue Anmeldung löscht den Merker', async () => {
+		localStorage.setItem(MERKER, '1');
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({
+			ok: true,
+			status: 200,
+			json: async () => ({ id: 1, rolle: 'mitarbeiter', vorname: 'Test' }),
+			text: async () => ''
+		}));
+		authStore.loginEmail = 'test@example.com';
+		authStore.loginPassword = 'pw';
+
+		await authStore.handleLogin(null);
+
+		expect(authStore.isLoggedIn).toBe(true);
+		expect(localStorage.getItem(MERKER)).toBeNull();
 	});
 });

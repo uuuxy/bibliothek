@@ -32,6 +32,14 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 14.09.2026
 
+**Abmelden ohne Antwort des Servers (A).** Das Löschcookie setzt nur die Antwort des Servers. Ohne Netz
+kam keine an: Das HttpOnly-Cookie blieb im Browser, und nach dem nächsten Neuladen mit Netz war die
+vorige Person wieder angemeldet. Notiert am 13.09.2026, am Stack nachgestellt am 14.09.2026 (Browser
+offline, Abmelden, online, Neuladen). Jetzt vermerkt die Theke eine ausstehende Abmeldung im Browser
+und holt sie beim nächsten Start nach, bevor sie eine Sitzung wiederherstellt. Gates
+`e2e/abmelden-ohne-antwort.spec.js` und `authStore.test.js`, beide am alten Stand rot gesehen. Dabei
+gemessen: `context.route` fängt die Abmeldung nicht ab, weil sie mit `keepalive` hinausgeht.
+
 **Scanfeld nach dem Wechsel zur Ausleihe (A).** Ein Klick auf den Menüpunkt „Ausleihe" ließ den Fokus auf
 dem Knopf der Seitenleiste; der nächste Scan lief ohne Meldung ins Leere, und das Enter des Scanners
 löste den Menüknopf erneut aus. Dasselbe beim Rückweg aus einem anderen Bereich mit geladenem

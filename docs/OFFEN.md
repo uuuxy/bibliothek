@@ -38,18 +38,17 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **1.2** am Stack nachstellen, bei Befund beheben.
-2. **7.1** Release-Tag für den Stand nach v2.11.0.
-3. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
-4. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
-5. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
+1. **7.1** Release-Tag für den Stand nach v2.11.0.
+2. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
+3. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
+4. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
    Freigabe.
-6. **5.1** Schäden und Benutzer.
-7. **5.5–5.9** kleine B-Commits.
-8. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
-9. Nach der Antwort zu E5 (**8.3**): **5.4**.
-10. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
-    Anlass.
+5. **5.1** Schäden und Benutzer.
+6. **5.5–5.9** kleine B-Commits.
+7. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
+8. Nach der Antwort zu E5 (**8.3**): **5.4**.
+9. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
+   Anlass.
 
 **Parallel bei Peter:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
 Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
@@ -58,19 +57,6 @@ Littera-Übernahme (7.2).
 ---
 
 ## 1. Sofort (Kategorie A)
-
-### 1.2 Verdacht: Abmelden ohne Antwort des Servers lässt die Sitzung im Browser
-
-- **Was:** `handleLogout` (`frontend/src/lib/stores/authStore.svelte.js`) schickt die Abmeldung
-  ab, verwirft jeden Fehler und leert sofort den lokalen Zustand. Das Löschcookie setzt nur die
-  Antwort des Servers (`api/logout_handler.go`). Kommt keine an — kein Netz, 502/504 vom Proxy —,
-  bleibt das HttpOnly-Cookie im Browser. Beim nächsten Laden fragt `restoreSession` mit diesem
-  Cookie `/api/auth/me`.
-- **Warum A (Verdacht):** Am geteilten Theken-Rechner wäre nach einem Neuladen die vorige Person
-  wieder angemeldet, bis ihre Sitzung abläuft.
-- **Stand:** Am Code gelesen am 13.09.2026, nicht nachgestellt. Berührt Offline-Entscheidung (d).
-- **Nächster Schritt:** Am Stack nachstellen (Netz weg, abmelden, Netz zurück, neu laden). Bei
-  Befund Test rot, dann beheben.
 
 ### 1.4 Lernmittel am Rückgabetermin bekommen eine Frist in den Ferien
 
@@ -204,8 +190,8 @@ Seit `039145f2` antwortet `POST /api/auth/logout` mit 503, wenn der Widerruf nic
 `handleLogout` wertet die Antwort nicht aus. Das Löschcookie geht in beiden Fällen hinaus
 (`api/logout_handler.go`), dieser Browser hält die Sitzung danach nicht mehr. **Entschieden am
 13.09.2026 (Peter):** Abmelden wie heute, dazu ein sichtbarer Hinweis, dass die Sperre der
-Sitzung am Server nicht bestätigt ist. **Nächster Schritt:** zusammen mit 1.2 am Stack
-nachstellen, je Fund ein Commit.
+Sitzung am Server nicht bestätigt ist. **Nächster Schritt:** Hinweis bei 503; die Abmeldung ohne Antwort ist seit dem 14.09.2026 abgesichert
+(erledigt.md).
 
 ---
 
