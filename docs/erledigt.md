@@ -32,6 +32,11 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 14.09.2026
 
+**Release v2.12.0** auf `55019206` (32 Commits seit v2.11.0, keine Migration): die drei A-Fixes des Tages,
+Sperr-Dialog am Merkmal, Geräte-Rückgabe und -Ausleihe, ISBN-Dublette, Kennungen 400 statt 500,
+Cover-Upload-Reihenfolge, Prüflauf über Doku und Werkzeuge, OFFEN.md. Der Offline-Bau beginnt damit
+auf einem benannten Stand. Deploy (`git pull`, `./update.sh`) liegt bei Peter.
+
 **Abmelden ohne Antwort des Servers (A).** Das Löschcookie setzt nur die Antwort des Servers. Ohne Netz
 kam keine an: Das HttpOnly-Cookie blieb im Browser, und nach dem nächsten Neuladen mit Netz war die
 vorige Person wieder angemeldet. Notiert am 13.09.2026, am Stack nachgestellt am 14.09.2026 (Browser

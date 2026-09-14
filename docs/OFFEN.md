@@ -38,16 +38,15 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **7.1** Release-Tag für den Stand nach v2.11.0.
-2. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
-3. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
-4. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
+1. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
+2. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
+3. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
    Freigabe.
-5. **5.1** Schäden und Benutzer.
-6. **5.5–5.9** kleine B-Commits.
-7. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
-8. Nach der Antwort zu E5 (**8.3**): **5.4**.
-9. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
+4. **5.1** Schäden und Benutzer.
+5. **5.5–5.9** kleine B-Commits.
+6. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
+7. Nach der Antwort zu E5 (**8.3**): **5.4**.
+8. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
    Anlass.
 
 **Parallel bei Peter:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
@@ -557,11 +556,6 @@ Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides ne
 Geplante Zielumgebung ist der Schulserver; heute ist der Hetzner-Server die einzige Instanz. Beim
 Umzug gilt dieser Abschnitt dort erneut — ebenso das, was am Hetzner-Server schon erfüllt ist
 (siehe [erledigt.md](erledigt.md), 13.09.2026).
-
-### 7.1 Release-Tag
-
-Nach v2.11.0 liegen 25 Commits ohne Tag auf `main` (13.09.2026). Tag nach grüner CI, ohne
-Rückfrage — damit der Offline-Bau auf einem benannten Stand beginnt.
 
 ### 7.2 Frisches Littera-Backup
 
