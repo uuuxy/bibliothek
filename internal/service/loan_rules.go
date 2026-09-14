@@ -155,11 +155,14 @@ type DueDateOptions struct {
 
 // calculateDueDate berechnet das Rückgabedatum auf Basis von Lernmittel-Kennzeichen,
 // Medientyp und den definierten Standardfristen.
-func calculateDueDate(opts DueDateOptions) time.Time {
+//
+// jetzt ist die Uhr des Aufrufers (resolveCheckoutDueDate reicht die des Dienstes durch), damit
+// die Frist um den Rückgabetermin mit fester Uhr prüfbar ist.
+func calculateDueDate(jetzt time.Time, opts DueDateOptions) time.Time {
 	// In Schul-Zeitzone rechnen, damit sowohl der Jahreswechsel-Stichtag (August)
 	// als auch das "Ende des Tages" (23:59:59) deterministisch sind — unabhängig
 	// von der Server-Zeitzone. now.Location() ist dadurch schoolLocation().
-	now := time.Now().In(schoolLocation())
+	now := jetzt.In(schoolLocation())
 
 	// 1. Fall: Lernmittelfreiheit (Schulbücher)
 	// Schulbücher (buecher_titel.ist_lernmittel) werden für das gesamte Schuljahr
@@ -219,6 +222,7 @@ func parseGrade(klasse string) int {
 // Hierbei werden Sonderaktionen wie der Ferien-Leseclub ausgewertet, um reguläre Leihfristen zu überschreiben.
 func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
+	heute := s.heute()
 
 	additionalYears := 0
 	if copy.ZielJahrgang > 0 && borrowerKlasse != "" {
@@ -230,7 +234,7 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 
 	if err != nil {
 		// Bei einem Datenbankfehler greifen wir auf feste Notfall-Standardwerte zurück
-		return calculateDueDate(DueDateOptions{
+		return calculateDueDate(heute, DueDateOptions{
 			IstLernmittel:   copy.IstLernmittel,
 			Medientyp:       copy.Medientyp,
 			LmfStichtag:     repository.StandardLmfStichtag,
@@ -244,11 +248,23 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 	// Rückgabe-Termin, ist der die Frist ihrer Schulbücher — vor dem globalen Stichtag.
 	// Nur für die einjährige Ausleihe; eine mehrjährige rechnet weiter über den Stichtag.
 	// Ein Fehler beim Nachschlagen blockiert die Ausleihe nicht: dann gilt der Stichtag.
+	//
+	// Am oder nach dem Rückgabetermin der Klasse (Entscheidung 13.09.2026, Peter): Wer jetzt
+	// noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück — die Frist ist
+	// dessen Stichtag. Das gilt auch, wenn die Klasse noch einen Nachzügler-Termin vor sich
+	// hat (zweimal im Plan): Nach ihrem Rückgabetermin ist jedes neu ausgegebene Schulbuch
+	// eines fürs nächste Schuljahr, keins für fünf Tage. Bis zum 14.09.2026 war am Termintag
+	// der Termin selbst die Frist (heute 23:59) und danach der Stichtag des laufenden
+	// Schuljahres, ein Tag in den Ferien: Nach den Ferien wäre die ganze Klasse überfällig und
+	// nach 14 Tagen gesperrt gewesen.
 	if copy.IstLernmittel && additionalYears == 0 && borrowerKlasse != "" {
-		heute := time.Now().In(schoolLocation())
-		if termin, ok, err := repository.NewLmfTerminRepository(s.pool).
-			RueckgabeTerminFuerKlasse(ctx, borrowerKlasse, heute); err == nil && ok {
-			return TagesEndeInSchulzeitzone(termin), nil
+		lage, lageErr := repository.NewLmfTerminRepository(s.pool).RueckgabeTerminLage(ctx, borrowerKlasse, heute)
+		if lageErr == nil && lage.Vergangen {
+			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
+			return TagesEndeInSchulzeitzone(repository.LmfStichtagImSchuljahr(folgendes, settings.LmfStichtag)), nil
+		}
+		if lageErr == nil && lage.Bevorstehend {
+			return TagesEndeInSchulzeitzone(lage.Naechster), nil
 		}
 	}
 
@@ -261,14 +277,14 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 		t, parseErr := time.Parse("2006-01-02", *settings.FerienLeseclubZieldatum)
 		if parseErr == nil {
 			end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, schoolLocation())
-			if end.After(time.Now()) {
+			if end.After(heute) {
 				return end, nil
 			}
 		}
 	}
 
 	// Reguläre Fristenberechnung
-	return calculateDueDate(DueDateOptions{
+	return calculateDueDate(heute, DueDateOptions{
 		IstLernmittel:   copy.IstLernmittel,
 		Medientyp:       copy.Medientyp,
 		LmfStichtag:     settings.LmfStichtag,

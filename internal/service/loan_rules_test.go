@@ -60,7 +60,7 @@ func TestParseGrade(t *testing.T) {
 // Rückgabefristen und damit falsches Mahnwesen. ---
 
 func TestCalculateDueDate_RegularBook(t *testing.T) {
-	got := calculateDueDate(DueDateOptions{IstLernmittel: false, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: false, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
 	want := time.Now().AddDate(0, 0, 21)
 	if !sameDay(got, want) {
 		t.Errorf("reguläres Buch: got %v, want Tag %v", got, want)
@@ -69,7 +69,7 @@ func TestCalculateDueDate_RegularBook(t *testing.T) {
 
 func TestCalculateDueDate_Media(t *testing.T) {
 	for _, mt := range []string{"CD", "DVD", "Audio-CD", "dvd"} {
-		got := calculateDueDate(DueDateOptions{IstLernmittel: false, Medientyp: mt, LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: false, Medientyp: mt, LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
 		want := time.Now().AddDate(0, 0, 7)
 		if !sameDay(got, want) {
 			t.Errorf("Medium %q: got %v, want Tag %v", mt, got, want)
@@ -79,7 +79,7 @@ func TestCalculateDueDate_Media(t *testing.T) {
 
 func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 	for _, titel := range []string{"Mathe 9", "Deutsch 5"} {
-		got := calculateDueDate(DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
 
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("LMF %q: Stichtag soll 31.07 sein, got %02d-%02d", titel, got.Month(), got.Day())
@@ -113,14 +113,14 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 // heißen. Das war der Fehler von 2026: ein Klartext-Titel mit „LMF" nur in der Signatur
 // bekam die 21-Tage-Frist.
 func TestCalculateDueDate_LMF_NurInSignatur(t *testing.T) {
-	got := calculateDueDate(DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
 	if got.Month() != time.July || got.Day() != 31 {
 		t.Errorf("LMF nur in Signatur: Stichtag soll 31.07 sein, got %02d-%02d", got.Month(), got.Day())
 	}
 }
 
 func TestCalculateDueDate_LMF_CustomStichtag(t *testing.T) {
-	got := calculateDueDate(DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
 	if got.Month() != time.June || got.Day() != 15 {
 		t.Errorf("benutzerdefinierter Stichtag 06-15: got %02d-%02d", got.Month(), got.Day())
 	}
@@ -128,7 +128,7 @@ func TestCalculateDueDate_LMF_CustomStichtag(t *testing.T) {
 
 func TestCalculateDueDate_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 	for _, bad := range []string{"99-99", "kaputt", "13-40", ""} {
-		got := calculateDueDate(DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("ungültiger Stichtag %q soll auf 31.07 zurückfallen, got %02d-%02d", bad, got.Month(), got.Day())
 		}
@@ -136,8 +136,8 @@ func TestCalculateDueDate_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 }
 
 func TestCalculateDueDate_LMF_AdditionalYears(t *testing.T) {
-	base := calculateDueDate(DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
-	plus2 := calculateDueDate(DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 2})
+	base := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+	plus2 := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 2})
 
 	if plus2.Year() != base.Year()+2 {
 		t.Errorf("additionalYears=2 soll Stichtagsjahr um 2 erhöhen: base %d, got %d", base.Year(), plus2.Year())
@@ -291,8 +291,8 @@ func TestResolveCheckoutDueDate_LMFIgnoresLeseclub(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(rows)
 	// Kein Klassen-Termin im LMF-Plan → der Stichtag bleibt.
-	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"min"}).AddRow((*time.Time)(nil)))
+	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow((*time.Time)(nil), false))
 
 	// LMF-Schulbücher folgen dem Stichtag, nicht dem Leseclub-Zieldatum.
 	copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
@@ -314,8 +314,8 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 	termin := time.Date(2027, time.June, 28, 0, 0, 0, 0, time.UTC)
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
-	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"min"}).AddRow(&termin))
+	mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(&termin, false))
 
 	copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9H1")
@@ -389,5 +389,62 @@ func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 	}
 	if got.FristBuchTage != 21 {
 		t.Errorf("leerer Zahlwert muss Default behalten: FristBuchTage = %d, want 21", got.FristBuchTage)
+	}
+}
+
+// Am oder nach dem Rückgabetermin der Klasse (Entscheidung 13.09.2026, Peter; docs/OFFEN.md 1.4):
+// Die Frist ist der Stichtag des FOLGENDEN Schuljahres. Bis zum 14.09.2026 war sie am Termintag
+// der Termin selbst (heute 23:59) und danach der Stichtag des laufenden Schuljahres — in den
+// Ferien; nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.
+// Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen Fall hat (Bugklasse
+// „Frist am Tag des Ereignisses"); die Lage kommt hier aus dem Mock, am echten Postgres prüft
+// sie lmf_frist_termintag_pg_test.go.
+func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
+	termin := time.Date(2027, time.June, 29, 0, 0, 0, 0, schoolLocation())
+	faelle := []struct {
+		name         string
+		heute        time.Time
+		bevorstehend *time.Time
+		vergangen    bool
+		stichtag     string
+		want         time.Time
+	}{
+		{"Tag davor: der Termin ist die Frist", termin.AddDate(0, 0, -1), &termin, false, "07-31",
+			time.Date(2027, time.June, 29, 23, 59, 59, 0, schoolLocation())},
+		{"am Termintag: Stichtag des folgenden Schuljahres", termin, nil, true, "07-31",
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+		{"Tag danach: Stichtag des folgenden Schuljahres", termin.AddDate(0, 0, 1), nil, true, "07-31",
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+		{"Tag danach, Stichtag im Herbst: der des folgenden Schuljahres", termin.AddDate(0, 0, 1), nil, true, "09-30",
+			time.Date(2027, time.September, 30, 23, 59, 59, 0, schoolLocation())},
+		{"Nachzügler-Termin steht noch an, der erste ist vorbei: trotzdem das folgende Schuljahr",
+			termin, func() *time.Time { z := termin.AddDate(0, 0, 6); return &z }(), true, "07-31",
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+		{"neues Schuljahr, kein Termin mehr: Stichtag des laufenden Schuljahres",
+			time.Date(2027, time.September, 6, 10, 0, 0, 0, schoolLocation()), nil, false, "07-31",
+			time.Date(2028, time.July, 31, 23, 59, 59, 0, schoolLocation())},
+	}
+	for _, fall := range faelle {
+		t.Run(fall.name, func(t *testing.T) {
+			svc, mock := newServiceWithMock(t)
+			defer mock.Close()
+			svc.jetzt = func() time.Time { return fall.heute }
+			mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
+				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).AddRow("lmf_stichtag", fall.stichtag))
+			mock.ExpectQuery("SELECT min\\(t.datum\\)").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
+				WillReturnRows(pgxmock.NewRows([]string{"min", "vergangen"}).AddRow(fall.bevorstehend, fall.vergangen))
+
+			copy := &repository.BookCopy{Titel: "Mathe 9", IstLernmittel: true, Medientyp: "Buch"}
+			got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "9H2")
+			if err != nil {
+				t.Fatalf("unerwarteter Fehler: %v", err)
+			}
+			if !got.Equal(fall.want) {
+				t.Errorf("Frist %v, erwartet %v", got.In(schoolLocation()), fall.want)
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("unerfüllte Erwartungen: %v", err)
+			}
+		})
 	}
 }

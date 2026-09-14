@@ -39,14 +39,13 @@ jemandem schaden?"**
 ## Reihenfolge
 
 1. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
-2. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
-3. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
+2. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
    Freigabe.
-4. **5.1** Schäden und Benutzer.
-5. **5.5–5.9** kleine B-Commits.
-6. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
-7. Nach der Antwort zu E5 (**8.3**): **5.4**.
-8. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
+3. **5.1** Schäden und Benutzer.
+4. **5.5–5.9** kleine B-Commits.
+5. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
+6. Nach der Antwort zu E5 (**8.3**): **5.4**.
+7. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
    Anlass.
 
 **Parallel bei Peter:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
@@ -57,19 +56,6 @@ Littera-Übernahme (7.2).
 
 ## 1. Sofort (Kategorie A)
 
-### 1.4 Lernmittel am Rückgabetermin bekommen eine Frist in den Ferien
-
-- **Was:** Wer am Termintag der Klasse Lernmittel bekommt, erhält den Termin selbst als Frist
-  (`RueckgabeTerminFuerKlasse` in `repository/lmf_termine.go` sucht `t.datum >= heute`); am Tag
-  danach gilt der Stichtag des laufenden Schuljahres, also ein Tag in den Ferien.
-- **Warum A:** Nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt.
-- **Entschieden am 13.09.2026 (Peter):** Die Frist ist dann der Stichtag des folgenden Schuljahres.
-- **Stand:** Am Code gelesen (10.09.2026, 13.09.2026), nicht nachgestellt. Die Frist rechnet mit
-  `time.Now()` (`internal/service/loan_rules.go`); der Offline-Bau bucht künftig mit dem
-  Scan-Zeitpunkt (Abschnitt 2) und braucht dieselbe Regel.
-- **Nächster Schritt:** Test mit fester Uhr für den Tag vor, am und nach dem Termin (Bugklasse
-  „Frist am Tag des Ereignisses" in [sweeps.md](sweeps.md)), am alten Code rot. Spätestens vor dem
-  nächsten Rückgabetermin (Juni 2027). Danach 5.8.
 
 ---
 
@@ -421,7 +407,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 ### 5.8 LMF und Statistik
 
 - Steht eine Klasse zweimal im Plan, nennen Ausleihe und Massenabgleich zwischen den Terminen
-  verschiedene Fristen (nach 1.4).
+  verschiedene Fristen.
 - Die Statistik hat keine Sequenznummer (eine langsame Antwort kann eine schnellere überholen) und
   keinen Fehlerzustand: Ein Query-Fehler ergibt eine leere Liste ohne Logzeile (`api/stats.go`).
 

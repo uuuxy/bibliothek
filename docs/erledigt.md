@@ -32,6 +32,13 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 14.09.2026
 
+**LMF-Frist am Rückgabetermin (A).** Wer am Termintag seiner Klasse ein Schulbuch bekam, hatte den Termin
+selbst als Frist (heute 23:59), am Tag danach den Stichtag des laufenden Schuljahres — in den Ferien;
+nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen. Entschieden am
+13.09.2026: Am oder nach dem Termin ist die Frist der Stichtag des folgenden Schuljahres.
+`RueckgabeTerminLage` liefert beides in einer Abfrage, die Uhr des Ausleihdienstes ist einsetzbar;
+Matrix T−1/T/T+1 am echten Postgres (`lmf_frist_termintag_pg_test.go`), am Rückbau rot gesehen.
+
 **Release v2.12.0** auf `55019206` (32 Commits seit v2.11.0, keine Migration): die drei A-Fixes des Tages,
 Sperr-Dialog am Merkmal, Geräte-Rückgabe und -Ausleihe, ISBN-Dublette, Kennungen 400 statt 500,
 Cover-Upload-Reihenfolge, Prüflauf über Doku und Werkzeuge, OFFEN.md. Der Offline-Bau beginnt damit

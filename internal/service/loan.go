@@ -88,6 +88,18 @@ type defaultLoanService struct {
 	bookRepo    repository.BookRepository
 	loanRepo    repository.LoanRepository
 	auditRepo   repository.AuditRepository
+	// jetzt ist die Uhr der Fristberechnung; nil heißt time.Now. Tests setzen einen festen
+	// Tag, um die Frist am Tag vor, am und nach dem Rückgabetermin zu prüfen (Bugklasse
+	// „Frist am Tag des Ereignisses", docs/sweeps.md).
+	jetzt func() time.Time
+}
+
+// heute liefert den Zeitpunkt der Uhr in der Schulzeitzone.
+func (s *defaultLoanService) heute() time.Time {
+	if s.jetzt != nil {
+		return s.jetzt().In(schoolLocation())
+	}
+	return time.Now().In(schoolLocation())
 }
 
 // NewLoanService erzeugt eine neue Instanz des standardmäßigen LoanService.

@@ -190,7 +190,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 
 // Steht eine Klasse ZWEIMAL im Plan — möglich, wenn für eine Klasse ein Termin nach-
 // geschoben wird —, müssen beide Wege dieselbe Frist nennen: Der
-// Ausleihdienst nimmt den nächsten Termin der Klasse (RueckgabeTerminFuerKlasse = MIN),
+// Ausleihdienst nimmt den nächsten Termin der Klasse (RueckgabeTerminLage = MIN),
 // der Plan-Abgleich muss dieselbe Zeile treffen. Bis 05.09.2026 gewann beim Speichern
 // die LETZTE Zeile — das schon draußen liegende Buch bekam den späteren Termin, das am
 // selben Tag ausgeliehene den früheren. Zwei Regeln für dieselbe Frage.
@@ -228,13 +228,13 @@ func TestLmfPlan_KlasseZweimalImPlan_FruehesterTerminGilt(t *testing.T) {
 
 	// Was der Ausleihdienst beim nächsten Schulbuch sagen würde …
 	repo := repository.NewLmfTerminRepository(pool)
-	beimAusleihen, ok, err := repo.RueckgabeTerminFuerKlasse(ctx, "9H1", tag("2027-06-01"))
-	if err != nil || !ok {
-		t.Fatalf("Termin für 9H1: ok=%v err=%v", ok, err)
+	lage, err := repo.RueckgabeTerminLage(ctx, "9H1", tag("2027-06-01"))
+	if err != nil || !lage.Bevorstehend {
+		t.Fatalf("Termin für 9H1: bevorstehend=%v err=%v", lage.Bevorstehend, err)
 	}
 	// … muss dasselbe sein wie das, was am schon ausgeliehenen Buch steht.
 	ist := fristVon(t, pool, annaLmf)
-	soll := service.TagesEndeInSchulzeitzone(beimAusleihen)
+	soll := service.TagesEndeInSchulzeitzone(lage.Naechster)
 	if !ist.Equal(soll) {
 		t.Errorf("Frist des offenen Buchs %v, der Ausleihdienst nennt %v — zwei Regeln für dieselbe Klasse",
 			ist.In(schulzeit.Zone()), soll.In(schulzeit.Zone()))

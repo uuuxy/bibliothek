@@ -123,8 +123,14 @@ Versetzung in den Einstellungen). Tests: `pkg/lmfplan/layout_test.go`, `reposito
 
 **Kopplung an die Fristen** (`api/lmf_termine_frist.go`, Peter 05.09.2026: „das wäre doch
 logisch"): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen
-liest `resolveCheckoutDueDate` den nächsten Rückgabe-Termin der Klasse ab heute (vor dem
-Stichtag; mehrjährige Ausleihen bleiben beim Stichtag). Beim Speichern eines Plans folgt
+liest `resolveCheckoutDueDate` die Lage der Klasse (`RueckgabeTerminLage`): Steht ein
+Rückgabe-Termin nach heute bevor, ist er die Frist (vor dem Stichtag; mehrjährige Ausleihen
+bleiben beim Stichtag). Lag der Termin der Klasse im laufenden Schuljahr schon heute oder
+davor, ist die Frist der Stichtag des folgenden Schuljahres (Entscheidung 13.09.2026): Wer
+dann noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück — auch wenn die
+Klasse noch einen Nachzügler-Termin vor sich hat. Bis zum
+14.09.2026 war am Termintag der Termin selbst die Frist und danach der Stichtag des laufenden
+Schuljahres — ein Tag in den Ferien. Beim Speichern eines Plans folgt
 der Bestand (`koppleLmfPlanFristen`): Klassen, die aus dem Plan fallen, kehren zum Stichtag
 zurück — genau die Fristen, die auf ihrem alten Termin-Tag lagen —, jede Klasse des neuen
 Plans bekommt ihren Termin (`SetzeLernmittelFristFuerKlassen`: aktive, nicht gesperrte

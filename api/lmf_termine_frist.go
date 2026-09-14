@@ -109,7 +109,7 @@ func ohne(a, b []string) []string {
 // Maßgeblich ist der FRÜHESTE Termin einer Klasse, nicht ihre letzte Zeile. Nichts
 // hindert einen Plan daran, eine Klasse zweimal zu nennen — ein nachgeschobener Termin
 // für eine Klasse, die beim ersten Mal nicht vollständig war —, und der Ausleihdienst
-// nimmt beim Ausleihen den nächsten Termin ab heute (RueckgabeTerminFuerKlasse, MIN).
+// nimmt beim Ausleihen den nächsten Termin nach heute (RueckgabeTerminLage, MIN).
 // (Im Plan der Schule vom Juni 2026 steht jede Klasse genau einmal; „Nachzügler" und
 // „Aufräumen" sind dort Zeilen OHNE Klasse. Der Fall ist also möglich, nicht üblich.)
 // Bis 05.09.2026 abends lief hier eine

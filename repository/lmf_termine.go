@@ -107,26 +107,50 @@ func nullbaresDatum(t time.Time) *time.Time {
 	return &t
 }
 
-// RueckgabeTerminFuerKlasse liefert den nächsten Rückgabe-Termin der Klasse ab dem
-// Datum (einschließlich) — die Frist ihrer Lernmittel (Register, Entscheidung 3a:
-// „das wäre doch logisch"). ok = false, wenn der Plan für die Klasse nichts nennt;
-// dann gilt der globale Stichtag. Verglichen wird über den Normschlüssel. Nur
-// veröffentlichte Pläne (Migration 100): Ein Entwurf setzt keine Frist — auch nicht
-// still beim Ausleihen, während die Schulleitung ihn noch prüft.
-func (r *LmfTerminRepository) RueckgabeTerminFuerKlasse(ctx context.Context, klasse string, ab time.Time) (time.Time, bool, error) {
-	var datum *time.Time
+// LmfTerminLage sagt, wo eine Klasse im veröffentlichten Rückgabe-Plan steht, gesehen von
+// einem Kalendertag aus. Der Ausleihdienst fragt sie beim Ausleihen eines Schulbuchs.
+type LmfTerminLage struct {
+	// Naechster ist der früheste Rückgabe-Termin der Klasse NACH dem Tag (Mitternacht,
+	// Schulzeitzone) — Schreibvariante der Klasse egal, Ausgabe-Zeilen zählen nicht,
+	// Entwürfe zählen nicht (Migration 100).
+	Naechster time.Time
+	// Bevorstehend: es gibt einen solchen Termin.
+	Bevorstehend bool
+	// Vergangen: die Klasse hatte im Schuljahr des Tages schon einen Rückgabe-Termin am
+	// oder vor dem Tag. Dann bekommt ein Schulbuch, das jetzt noch ausgegeben wird, den
+	// Stichtag des FOLGENDEN Schuljahres als Frist (Entscheidung 13.09.2026, Peter). Bis
+	// zum 14.09.2026 galt am Termintag der Termin selbst als Frist (heute 23:59) und danach
+	// der Stichtag des laufenden Schuljahres — ein Tag in den Ferien; nach den Ferien wäre
+	// die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.
+	Vergangen bool
+}
+
+// RueckgabeTerminLage liefert die Lage der Klasse zum Tag: den nächsten Termin danach
+// und ob im laufenden Schuljahr schon einer am oder vor dem Tag lag. Eine Abfrage, damit
+// beide Antworten denselben Stand sehen.
+func (r *LmfTerminRepository) RueckgabeTerminLage(ctx context.Context, klasse string, tag time.Time) (LmfTerminLage, error) {
+	tag = tag.In(schulzeit.Zone())
+	heute := time.Date(tag.Year(), tag.Month(), tag.Day(), 0, 0, 0, 0, schulzeit.Zone())
+	var lage LmfTerminLage
+	var naechster *time.Time
 	err := r.db.QueryRow(ctx, `
-		SELECT min(t.datum)
+		SELECT min(t.datum) FILTER (WHERE t.datum > $1::date),
+		       coalesce(bool_or(t.datum <= $1::date AND t.datum >= $3::date), false)
 		FROM lmf_termine t
 		JOIN lmf_termin_klassen k ON k.termin_id = t.id
 		JOIN lmf_plaene p ON p.id = t.plan_id
-		WHERE t.art = 'rueckgabe' AND t.datum >= $1::date AND p.veroeffentlicht_am IS NOT NULL
-		  AND klassen_normkey(k.klasse) = klassen_normkey($2)`, ab, klasse).Scan(&datum)
-	if err != nil || datum == nil {
-		return time.Time{}, false, err
+		WHERE t.art = 'rueckgabe' AND p.veroeffentlicht_am IS NOT NULL
+		  AND klassen_normkey(k.klasse) = klassen_normkey($2)`,
+		heute, klasse, SchuljahrBeginn(heute)).Scan(&naechster, &lage.Vergangen)
+	if err != nil {
+		return LmfTerminLage{}, err
 	}
-	d := *datum
-	return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, schulzeit.Zone()), true, nil
+	if naechster != nil {
+		d := *naechster
+		lage.Naechster = time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, schulzeit.Zone())
+		lage.Bevorstehend = true
+	}
+	return lage, nil
 }
 
 // SetzeLernmittelFristFuerKlassenIn schreibt die Frist offener Lernmittel-Ausleihen der
