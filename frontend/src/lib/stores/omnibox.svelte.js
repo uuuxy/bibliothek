@@ -6,6 +6,7 @@ import { playSoundSuccess, playSoundError } from '../audio.js';
 import { enqueueOfflineAction } from '../offlineQueue.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { toastStore } from './toastStore.svelte.js';
+import { uiStore } from './uiStore.svelte.js';
 
 // Name des Vorbesitzers bei einer Fremdrückgabe (Schüler bevorzugt, dann Lehrer).
 function formatVorbesitzerName(data) {
@@ -476,6 +477,11 @@ export function createOmniboxStore() {
 		// Nach der Aktion rendert Svelte das Profil neu; erst danach steht das Feld wieder.
 		setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
 	}
+
+	// Auch jeder Wechsel zur Ausleihe gibt dem Scanfeld den Fokus zurück (14.09.2026): Ein
+	// Klick auf „Ausleihe" ließ ihn auf dem Knopf der Seitenleiste, und der nächste Scan lief
+	// ohne Meldung ins Leere (e2e/scanner-fokus-menue.spec.js).
+	uiStore.beimWechselZurTheke = scanfeldWiederScharfstellen;
 
 	return {
 		get activeStudent() {

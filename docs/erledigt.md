@@ -32,6 +32,13 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 14.09.2026
 
+**Scanfeld nach dem Wechsel zur Ausleihe (A).** Ein Klick auf den Menüpunkt „Ausleihe" ließ den Fokus auf
+dem Knopf der Seitenleiste; der nächste Scan lief ohne Meldung ins Leere, und das Enter des Scanners
+löste den Menüknopf erneut aus. Dasselbe beim Rückweg aus einem anderen Bereich mit geladenem
+Schüler. Notiert am 28.07.2026, am Stack nachgestellt am 14.09.2026. Jeder Wechsel zur Ausleihe gibt
+dem Scanfeld jetzt den Fokus zurück (`uiStore.beimWechselZurTheke`); Gates
+`e2e/scanner-fokus-menue.spec.js` und `uiStore.test.js`, beide am Rückbau rot gesehen.
+
 **Ersatzforderung ohne Bescheid-Positionen (A).** Der Knopf „Ersatzforderung" in der Schülerakte nahm
 auch Forderungen auf, die schon auf einem Schadensersatz-Bescheid stehen, und verlangte dafür „bar
 in der Bibliothek" — zwei Zahlungsaufforderungen mit zwei Zahlungswegen für dieselbe Forderung.

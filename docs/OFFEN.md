@@ -38,7 +38,7 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **1.2** und **1.3** am Stack nachstellen, bei Befund beheben.
+1. **1.2** am Stack nachstellen, bei Befund beheben.
 2. **7.1** Release-Tag für den Stand nach v2.11.0.
 3. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
 4. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
@@ -71,17 +71,6 @@ Littera-Übernahme (7.2).
 - **Stand:** Am Code gelesen am 13.09.2026, nicht nachgestellt. Berührt Offline-Entscheidung (d).
 - **Nächster Schritt:** Am Stack nachstellen (Netz weg, abmelden, Netz zurück, neu laden). Bei
   Befund Test rot, dann beheben.
-
-### 1.3 Verdacht: Ein Klick auf „Ausleihe" nimmt dem Scanfeld den Fokus
-
-- **Was:** Die Omnibox fokussiert das Scanfeld nur bei einem Zustandswechsel neu
-  (`frontend/src/lib/Omnibox.svelte`), einen globalen Tastenfang gibt es nicht. Das E2E
-  `kiosk-scannerfokus.spec.js` vermeidet den Klick auf den Menüpunkt ausdrücklich.
-- **Warum A (Verdacht):** Ein folgender Scan ginge ohne Meldung ins Leere, das Buch wäre nicht
-  verbucht.
-- **Stand:** Notiert am 28.07.2026, am Code plausibel, nie nachgestellt.
-- **Nächster Schritt:** Am Stack mit Tastatureingabe nachstellen (Dialoge und Kamera ausgenommen).
-  Vor dem Offline-Bau, weil das Band aus Abschnitt 2 dieselbe Fokuslage ändert.
 
 ### 1.4 Lernmittel am Rückgabetermin bekommen eine Frist in den Ferien
 

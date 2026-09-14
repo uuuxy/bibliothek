@@ -49,3 +49,48 @@ describe('uiStore.activeTab mit Verlassen-Schutz', () => {
 		expect(store.blockierterWechsel, 'kein Wechsel, kein Dialog').toBeNull();
 	});
 });
+
+// Wechsel zur Ausleihe (14.09.2026): Ein Klick auf „Ausleihe" ließ den Fokus auf dem Knopf
+// der Seitenleiste, und der nächste Scan lief ohne Meldung ins Leere. Der Setter ruft deshalb
+// bei JEDEM Wechsel zur Ausleihe den Haken der Omnibox — auch wenn sie schon offen ist, denn
+// genau dann ändert sich kein Zustand, und kein Effekt der Omnibox läuft von selbst. Den Weg im
+// Browser prüft e2e/scanner-fokus-menue.spec.js.
+describe('uiStore.activeTab: Wechsel zur Ausleihe', () => {
+	/** @type {import('./uiStore.svelte.js').uiStore} */
+	let store;
+	beforeEach(async () => {
+		vi.resetModules();
+		({ uiStore: store } = await import('./uiStore.svelte.js'));
+	});
+
+	it('ruft den Haken bei jedem Wechsel zur Ausleihe, auch wenn sie schon offen ist', () => {
+		const haken = vi.fn();
+		store.beimWechselZurTheke = haken;
+
+		store.activeTab = 'kiosk';
+		expect(
+			haken,
+			'schon offen: der Klick auf „Ausleihe" braucht den Fokus trotzdem'
+		).toHaveBeenCalledTimes(1);
+		store.activeTab = 'stats';
+		expect(haken, 'ein anderer Bereich ruft ihn nicht').toHaveBeenCalledTimes(1);
+		store.activeTab = 'kiosk';
+		expect(haken).toHaveBeenCalledTimes(2);
+	});
+
+	it('ruft ihn nicht, solange der Verlassen-Schutz hält, aber nach erzwingeWechsel()', () => {
+		const haken = vi.fn();
+		store.activeTab = 'stats';
+		store.beimWechselZurTheke = haken;
+		store.verlassenSperre = () => true;
+
+		store.activeTab = 'kiosk';
+		expect(
+			haken,
+			'der Wechsel ist angehalten, das Scanfeld steht noch nicht'
+		).not.toHaveBeenCalled();
+		store.erzwingeWechsel();
+		expect(store.activeTab).toBe('kiosk');
+		expect(haken).toHaveBeenCalledTimes(1);
+	});
+});

@@ -14,6 +14,15 @@ class UIStore {
 	verlassenSperre = null;
 	/** Ziel eines angehaltenen Wechsels; null = nichts offen. */
 	blockierterWechsel = $state(/** @type {string | null} */ (null));
+	/**
+	 * Läuft bei jedem Wechsel zur Ausleihe, auch wenn sie schon offen ist. Die Omnibox trägt
+	 * hier ein, was dem Scanfeld den Fokus zurückgibt (14.09.2026): Ein Klick auf „Ausleihe"
+	 * ließ den Fokus auf dem Knopf der Seitenleiste, und der nächste Scan lief ohne Meldung
+	 * ins Leere. Hier und nicht in der Seitenleiste, weil auch Escape, Router und „Zur
+	 * Startseite" zur Ausleihe führen.
+	 * @type {(() => void) | null}
+	 */
+	beimWechselZurTheke = null;
 
 	get activeTab() {
 		return this.#activeTab;
@@ -25,6 +34,7 @@ class UIStore {
 			return;
 		}
 		this.#activeTab = id;
+		if (id === 'kiosk') this.beimWechselZurTheke?.();
 	}
 	/** Der Mensch hat sich fürs Bleiben entschieden: nichts passiert, der Dialog geht zu. */
 	bleibe() {
@@ -36,6 +46,7 @@ class UIStore {
 		this.blockierterWechsel = null;
 		this.verlassenSperre = null;
 		if (ziel !== null) this.#activeTab = ziel;
+		if (ziel === 'kiosk') this.beimWechselZurTheke?.();
 	}
 	selectedBook = $state(/** @type {any} */ (null));
 	isSidebarCollapsed = $state(false);
