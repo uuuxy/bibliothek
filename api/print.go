@@ -33,6 +33,11 @@ import (
 // nur der Schreiber. Deshalb steht das Gerät hier schon als Position: Modellname statt
 // Titel, Geräte-Barcode statt Exemplar-Barcode. Bleibt beides leer, trägt die Beschreibung
 // des Schadensfalls die Zeile; Ausleihdatum ersatzweise das Datum der Forderung.
+//
+// Nicht hierher gehört eine Forderung, die schon auf einem Schadensersatz-Bescheid steht
+// (`bescheid_id`, 14.09.2026): Der Bescheid verlangt die Überweisung mit Referenznummer aufs
+// Konto des Landes, dieser Brief „bar in der Bibliothek". Dieselbe Forderung auf beiden Briefen
+// hieße zwei Zahlungsaufforderungen mit zwei Zahlungswegen.
 func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
 	query := `
 		SELECT COALESCE(t.titel, g.modellname, sf.beschreibung),
@@ -45,6 +50,7 @@ func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID 
 		LEFT JOIN geraete g ON sf.geraet_id = g.id
 		LEFT JOIN ausleihen a ON sf.ausleihe_id = a.id
 		WHERE sf.schueler_id = $1 AND sf.ist_bezahlt = false
+		  AND sf.bescheid_id IS NULL
 	`
 	rows, err := dbPool.Query(ctx, query, schuelerID)
 	if err != nil {
@@ -109,6 +115,21 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 		}
 
 		if len(items) == 0 {
+			// Stehen die offenen Forderungen alle auf einem Bescheid, sagt die Meldung das.
+			// Sonst hieße es „keine offenen Schadensfälle", während die Akte offene Beträge zeigt.
+			var aufBescheid bool
+			if err := dbPool.QueryRow(ctx, `
+				SELECT EXISTS (SELECT 1 FROM schadensfaelle
+				               WHERE schueler_id = $1 AND ist_bezahlt = false AND bescheid_id IS NOT NULL)
+			`, schuelerID).Scan(&aufBescheid); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if aufBescheid {
+				apierrors.SendHTTPError(w, http.StatusNotFound, errors.New(
+					"die offenen Forderungen stehen auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, keine Ersatzforderung"))
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusNotFound, fmt.Errorf("no open damage records found for student"))
 			return
 		}

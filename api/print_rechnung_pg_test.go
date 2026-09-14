@@ -2,7 +2,12 @@ package api
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"bibliothek/db"
 
 	"github.com/google/uuid"
 )
@@ -57,5 +62,79 @@ func TestQueryRechnungItems_ForderungOhneExemplarUndAusleihe(t *testing.T) {
 	}
 	if items[0].Ausleihdatum.IsZero() {
 		t.Error("Ausleihdatum leer — ersatzweise gilt das Datum der Forderung")
+	}
+}
+
+// Eine Forderung, die schon auf einem Schadensersatz-Bescheid steht, gehört nicht auf die
+// Ersatzforderung (docs/OFFEN.md 1.1, 13.09.2026). Der Bescheid verlangt die Überweisung mit
+// Referenznummer aufs Konto des Landes, die Ersatzforderung „bar in der Bibliothek". Stünde
+// dieselbe Forderung auf beiden Briefen, bekämen die Eltern zwei Zahlungsaufforderungen mit zwei
+// verschiedenen Zahlungswegen. Der Bescheid entsteht hier über den echten Handler, damit der Test
+// genau die Form trifft, die der Betrieb schreibt.
+func TestQueryRechnungItems_ForderungAufEinemBescheidBleibtDraussen(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	bescheidReset(t, pool)
+	bescheidAngabenSetzen(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	ctx := context.Background()
+
+	sid := seedSchueler(t, pool, "S-RECH-BESCH", "Rechnungskind", "08G2")
+	titelID := bescheidLernmittel(t, pool, "Deutsch 8")
+	exAufBescheid := exemplar(t, pool, titelID, "RECH-BESCH-1", true, "")
+	exOhneBescheid := exemplar(t, pool, titelID, "RECH-BESCH-2", true, "")
+	fAufBescheid := bescheidForderung(t, pool, sid, exAufBescheid, "nicht_zurueckgegeben", "Deutsch 8 nicht zurück")
+	bescheidForderung(t, pool, sid, exOhneBescheid, "beschaedigt", "Deutsch 8 beschädigt")
+
+	rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+		bescheidRumpf(in28Tagen(), map[string]float64{fAufBescheid: 24.90}))
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
+	}
+
+	items, err := queryRechnungItems(ctx, pool, uuid.MustParse(sid))
+	if err != nil {
+		t.Fatalf("Rechnungspositionen lesen: %v", err)
+	}
+	if len(items) != 1 {
+		t.Fatalf("erwartet 1 Position (die Forderung ohne Bescheid), waren %d — eine Forderung "+
+			"auf einem Bescheid stünde zusätzlich mit „bar in der Bibliothek\" auf der Ersatzforderung", len(items))
+	}
+	if items[0].Barcode != "RECH-BESCH-2" {
+		t.Errorf("Position: erwartet das Exemplar ohne Bescheid (RECH-BESCH-2), war %q", items[0].Barcode)
+	}
+}
+
+// Stehen alle offenen Forderungen auf einem Bescheid, entsteht keine Ersatzforderung — und der
+// Knopf in der Schülerakte sagt, warum, statt „keine offenen Schadensfälle" zu melden, während
+// die Akte offene Beträge zeigt.
+func TestPrintRechnung_AlleForderungenAufBescheid(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	bescheidReset(t, pool)
+	bescheidAngabenSetzen(t, pool)
+	srv := &Server{DB: &db.Database{Pool: pool}}
+
+	sid := seedSchueler(t, pool, "S-RECH-ALLE", "Bescheidkind", "08G2")
+	titelID := bescheidLernmittel(t, pool, "Englisch 8")
+	ex := exemplar(t, pool, titelID, "RECH-ALLE-1", true, "")
+	f := bescheidForderung(t, pool, sid, ex, "nicht_zurueckgegeben", "Englisch 8 nicht zurück")
+	if rec := bescheidErstellenUeberHandler(t, srv, pool, sid,
+		bescheidRumpf(in28Tagen(), map[string]float64{f: 19.50})); rec.Code != http.StatusCreated {
+		t.Fatalf("Bescheid anlegen: Status %d, want 201: %s", rec.Code, rec.Body.String())
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/print/rechnung/"+sid, nil)
+	req.SetPathValue("schueler_id", sid)
+	rec := httptest.NewRecorder()
+	PrintRechnungHandler(pool)(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("Status %d, want 404 — die Forderung steht schon auf einem Bescheid, eine "+
+			"Ersatzforderung mit Barzahlung darf nicht entstehen (Content-Type %q)",
+			rec.Code, rec.Header().Get("Content-Type"))
+	}
+	if !strings.Contains(rec.Body.String(), "Bescheid") {
+		t.Errorf("Meldung nennt den Bescheid nicht: %s", rec.Body.String())
 	}
 }

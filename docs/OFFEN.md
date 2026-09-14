@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 13.09.2026
+Stand: 14.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht: Das Befund-Register (`docs/befunde.md`) und
@@ -38,19 +38,17 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **1.1** Rechnung ohne Bescheid-Positionen (A). Erst danach die Schulamts- und Schulnummer
-   eintragen (8.1).
-2. **1.2** und **1.3** am Stack nachstellen, bei Befund beheben.
-3. **7.1** Release-Tag für den Stand nach v2.11.0.
-4. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
-5. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
-6. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
+1. **1.2** und **1.3** am Stack nachstellen, bei Befund beheben.
+2. **7.1** Release-Tag für den Stand nach v2.11.0.
+3. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
+4. **1.4** LMF-Frist am Rückgabetermin (A, entschieden am 13.09.2026).
+5. **Abschnitt 2** Offline-Betrieb der Theke: Plan in drei Stufen vorlegen, je Stufe Nachweis und
    Freigabe.
-7. **5.1** Schäden und Benutzer.
-8. **5.5–5.9** kleine B-Commits.
-9. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
-10. Nach der Antwort zu E5 (**8.3**): **5.4**.
-11. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
+6. **5.1** Schäden und Benutzer.
+7. **5.5–5.9** kleine B-Commits.
+8. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
+9. Nach der Antwort zu E5 (**8.3**): **5.4**.
+10. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
     Anlass.
 
 **Parallel bei Peter:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
@@ -60,20 +58,6 @@ Littera-Übernahme (7.2).
 ---
 
 ## 1. Sofort (Kategorie A)
-
-### 1.1 Die Rechnung übernimmt Forderungen, die schon auf einem Bescheid stehen
-
-- **Was:** Der Knopf „Ersatzforderung" in der Schülerakte (`StudentProfileActions.svelte`, lädt
-  `GET /api/print/rechnung/{schueler_id}`) nimmt alle unbezahlten Schadensfälle des Schülers auf
-  und verlangt „bar in der Bibliothek".
-  `queryRechnungItems` in `api/print.go` filtert nur `schueler_id` und `ist_bezahlt = false`,
-  nicht `bescheid_id IS NULL`.
-- **Warum A:** Sobald ein Landes-Bescheid existiert, bekommen Eltern für dieselbe Forderung zwei
-  Zahlungsaufforderungen mit zwei verschiedenen Zahlungswegen.
-- **Stand:** Am Code geprüft am 13.09.2026. Ohne Wirkung, solange kein Bescheid existiert; ohne
-  Schulamts- und Schulnummer (8.1) lehnt der Server jeden Bescheid ab.
-- **Nächster Schritt:** Filter und PG-Test, am alten Code rot gesehen. Das Entfernen der
-  Altbriefe folgt in 5.4.
 
 ### 1.2 Verdacht: Abmelden ohne Antwort des Servers lässt die Sitzung im Browser
 
@@ -387,6 +371,11 @@ angleichen. Bezug: 8.5 (B5, B6).
 - `scripts/tabula_rasa.sql` leert `schadensersatz_nummern` nicht; die Bescheide fallen über
   `TRUNCATE … schueler … CASCADE` mit. Nach Tabula rasa sind alle Bescheide weg, der Nummernkreis
   läuft weiter. Vorher festlegen, ob genau das gewollt ist (Nummern nie recyceln).
+- Der Elternbrief je Schadensfall (`GET /api/schadensfaelle/{id}/pdf`, `api/pdf.go`) prüft ebenfalls
+  nicht, ob die Forderung auf einem Bescheid steht, und verlangt „bar in der Bibliothek". Die
+  Oberfläche öffnet ihn nur direkt nach dem Melden, bevor ein Bescheid existieren kann; über die
+  Adresse bleibt er erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher
+  denselben Filter wie bei der Ersatzforderung.
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 
@@ -671,7 +660,7 @@ der Verbindung scannen.
 ### 8.1 E1: Schulamts- und Schulnummer
 
 Für die Referenznummer der Bescheide; die Felder stehen in den Einstellungen und sind am
-13.09.2026 leer. **Erst nach 1.1 eintragen.**
+13.09.2026 leer. **Erst nach 5.2 und 4.5 eintragen:** Mit den Nummern entstehen echte Bescheide.
 
 ### 8.2 E2: E-Mail-Erlass vom 11.06.2018 und aktuelles Musterschreiben
 

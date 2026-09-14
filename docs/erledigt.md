@@ -1,6 +1,6 @@
 # Erledigt
 
-Stand: 13.09.2026
+Stand: 14.09.2026
 
 Archiv zu [OFFEN.md](OFFEN.md): was erledigt oder endgültig entschieden ist, mit Datum und Commit.
 Neu Erledigtes kommt oben in den jüngsten Abschnitt.
@@ -27,6 +27,17 @@ stehen in den geschlossenen Issues #593 bis #600.
   Warteliste ist im Betrieb nicht nötig.
 - **Bestellwesen D1, D3, D4, D5** (10.09.2026): beantwortet bzw. entschieden, Einzelheiten in
   [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.4. Offen ist nur D2 (OFFEN.md 8.4).
+
+---
+
+## 14.09.2026
+
+**Ersatzforderung ohne Bescheid-Positionen (A).** Der Knopf „Ersatzforderung" in der Schülerakte nahm
+auch Forderungen auf, die schon auf einem Schadensersatz-Bescheid stehen, und verlangte dafür „bar
+in der Bibliothek" — zwei Zahlungsaufforderungen mit zwei Zahlungswegen für dieselbe Forderung.
+Ohne Wirkung, solange kein Bescheid existiert. Jetzt bleiben diese Positionen draußen; stehen alle
+offenen Forderungen auf einem Bescheid, sagt die Meldung das. Zwei Postgres-Tests, am alten Code rot
+gesehen (`api/print_rechnung_pg_test.go`).
 
 ---
 
