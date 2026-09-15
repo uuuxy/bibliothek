@@ -8,7 +8,7 @@ import (
 // errKlasseLehrerVerboten lehnt den historischen Spezialwert ab, mit Wegweiser.
 //
 //nolint:staticcheck // ST1005: Endnutzer-Meldung, bewusst großgeschrieben
-var errKlasseLehrerVerboten = errors.New("Lehrkräfte werden nicht als Schüler angelegt. Bitte unter System → Benutzerverwaltung ein Konto (Rolle Kollegium) anlegen — die Ausleihe läuft dann über den Handapparat-Weg")
+var errKlasseLehrerVerboten = errors.New("Lehrkräfte werden nicht als Schüler angelegt. Bitte unter System → Benutzer & Rechte ein Konto mit der Rolle Kollegium anlegen; an der Theke findet man die Lehrkraft dann über ihren Ausweis")
 
 // pruefeKlassenname verteidigt die Trennung aus Migration 072 (Befund F4):
 // 'lehrer' als Klassenname machte eine Schülerzeile heimlich zur Lehrkraft —

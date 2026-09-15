@@ -116,7 +116,9 @@ func TestKlasseLehrerIstGesperrt(t *testing.T) {
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 	s.CreateStudentHandler()(w, req)
-	if w.Code != 400 || !strings.Contains(w.Body.String(), "Benutzerverwaltung") {
+	// Der Wegweiser nennt die Rolle, unter der eine Lehrkraft angelegt wird (Wortlaut:
+	// student_klasse_regel_test.go). „Benutzer & Rechte" steht im JSON als &.
+	if w.Code != 400 || !strings.Contains(w.Body.String(), "Rolle Kollegium") {
 		t.Errorf("POST mit klasse='Lehrer' muss 400 mit Wegweiser liefern, got %d: %s", w.Code, w.Body.String())
 	}
 
