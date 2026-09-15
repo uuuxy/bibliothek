@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 15.09.2026
+Stand: 16.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht: Das Befund-Register (`docs/befunde.md`) und
@@ -13,7 +13,7 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ---
 
-## Was jetzt dran ist — in einfachen Worten (Stand 15.09.2026)
+## Was jetzt dran ist — in einfachen Worten (Stand 16.09.2026)
 
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
@@ -25,10 +25,9 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Peter, 15 Minuten: den Plan für Leserdatei und Rolle Leitung lesen und drei Fragen
-   beantworten** (Abschnitt 5.16, Fragen am Ende). Vorher baue ich davon nichts. Ob eine
-   Lehrkraft ohne Konto-Rolle an der Theke weiter Bücher bekommt, entscheidet, wer in der
-   Leserdatei steht.
+3. **Bei mir: Leserdatei und Rolle Leitung, Stufe 1** (Abschnitt 5.16, am 15.09.2026
+   freigegeben). Zuerst die vorhandenen Fehler, dann zeige ich dir den Stand, bevor die Rolle
+   Leitung kommt.
 4. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -72,8 +71,8 @@ jemandem schaden?"**
 1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
    am Stack (2.3), dann Peters Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** entscheidet
    Peter dabei mit).
-2. **5.16** Leserdatei und Rolle Leitung: Plan steht, Peters Antworten auf drei Fragen und
-   Freigabe, dann Stufe 1.
+2. **5.16** Leserdatei und Rolle Leitung: freigegeben, Stufe 1 läuft; danach Peters Blick auf den
+   Stand, dann Stufe 2.
 3. **5.1** Schäden und Benutzer.
 4. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -546,6 +545,16 @@ angleichen. Bezug: 8.5 (B5, B6).
   Oberfläche öffnet ihn seit dem 15.09.2026 nicht mehr (Mahnverfahren Stufe 1); über die Adresse
   bleibt er erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher denselben
   Filter wie bei der Ersatzforderung.
+- **Drei weitere Kalendertage in der Zeit der Datenbank (UTC), gefunden am 16.09.2026** beim
+  Fix der Bescheid-Frist (die rechnet seitdem mit `sqlSchulHeute` in `repository/bescheid.go`).
+  Bis 2 Uhr Berliner Zeit ist dort noch der Vortag:
+  - Volljährigkeit im Bescheid-Vorschlag (`geburtsdatum <= CURRENT_DATE - INTERVAL '18 years'`,
+    `repository/bescheid.go`): Am 18. Geburtstag gilt das Kind bis 2 Uhr noch als minderjährig.
+  - Mahnlauf „höchstens einmal am Tag" (`letztes_mahndatum::date < CURRENT_DATE`,
+    `api/mahnwesen_bulk.go`): Der Tag wechselt um 2 Uhr statt um Mitternacht.
+  - „Heute zurückgegeben" im Mahnwesen (`DATE(rueckgabe_am) = CURRENT_DATE`,
+    `repository/mahnwesen_repo.go`): Rückgaben zwischen 0 und 2 Uhr zählen zum Vortag.
+  Je Stelle ein Commit mit demselben Zonen-Test wie `bescheid_frist_schulzeit_pg_test.go`.
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 
@@ -836,7 +845,7 @@ Meldung je Schlüssel · ein Serverfehler je Eintrag wird „wiederholen", nicht
 der Ausleihe fängt `check_return_date` · Sperrreihenfolge Schüler → Ausleihe → Exemplar im
 Nachbuchen gehalten · Barcode-Liste ohne Personendaten, Löschen ändert den Stand über die Anzahl.
 
-### 5.16 Leserdatei und Rolle Leitung: Plan in Stufen (Entwurf 15.09.2026, wartet auf Freigabe)
+### 5.16 Leserdatei und Rolle Leitung: Plan in Stufen (freigegeben 15.09.2026, Stufe 1 läuft)
 
 Entschieden am 15.09.2026 spät (Peter): Die Rollen Admin, Leitung, Mitarbeiter und Helfer vergibt
 der Admin; Kollegium bleibt das Portal. Wer eine Rolle hat, leiht an der Theke selbst aus, Helfer
@@ -875,10 +884,13 @@ im Browser, dann Peters Freigabe.
    sie sagt künftig, wo eine Lehrkraft angelegt wird.
 3. Die Theke meldet beim Scan eines Lehrerausweises „Handapparat-Sitzung gestartet für Lehrer/in …"
    (`omnibox.svelte.js`); künftig „Ausleihe für … (Lehrkraft)".
-4. Der Rückgabe-Zweig „ein Kollegiumskonto scannt ein freies Buch" (`handleLehrerHandapparat` in
-   `internal/service/loan_return.go`) ist ab Werk unerreichbar, weil das Kollegium kein Theken-Recht
-   hat. Erst am Postgres nachstellen, dass die Tür für das Kollegium 403 antwortet; nur dann
-   zurückbauen.
+4. ~~Rückgabe-Zweig zurückbauen~~ — am Code geprüft (16.09.2026): nicht tot. Der Zweig
+   „ein angemeldetes Kollegiumskonto scannt ein freies Buch → Ausleihe auf sich selbst"
+   (`handleLehrerHandapparat` in `internal/service/loan_return.go`) ist ab Werk verschlossen, weil
+   das Kollegium kein Theken-Recht hat; der Rechte-Editor bietet das Recht für das Kollegium aber an.
+   Gehört damit zu Stufe 3: Soll ein Scan eines freien Buchs durch eine angemeldete Person mit
+   Rolle auf diese Person buchen? Vorgabe dort: nein — wer Rückläufer sortiert, bucht sonst
+   versehentlich auf sich selbst; ausgeliehen wird über den eigenen Ausweis.
 5. Verdacht nachstellen: Eine aus Littera übernommene Lehrkraft hat eine Platzhalter-Adresse
    (`@littera.invalid`). Meldet sie sich selbst an, findet die Anmeldung sie über die E-Mail nicht
    und legt einen zweiten Eintrag an — Ausweis und Ausleihen am ersten, Portal am zweiten. Bestätigt
@@ -929,17 +941,16 @@ In einer Transaktion wie Migration 072: Ausleihen, Schäden und Ausweisnummer zi
 klären, was der LUSD-Abgleich daraus macht (wer aus der Schülertabelle verschwindet, darf nicht als
 Abgänger gelten). Selten, erst nach Peters Wort.
 
-**Fragen an Peter vor Stufe 2**
+**Entschieden (Peter, 15.09.2026): Die Rolle legt der Admin fest, alle anderen sind Kollegium.**
+Daraus folgt für den Bau:
 
-1. Bekommt eine Lehrkraft, die nur das Portal nutzt, an der Theke weiter Bücher auf ihren Namen,
-   wie heute? Empfehlung: ja, sonst steht sie in der Leserdatei und kann nichts ausleihen.
-2. Leitung ab Werk: alles außer „Benutzer & Rechte" und „Einstellungen", also auch
-   Sicherheits-Logbuch, Auskunft zu gelöschten Exemplaren, Schüler zusammenführen und Versetzung?
-   Empfehlung: ja; was nicht passt, nimmt der Admin im Rechte-Editor weg.
-3. Eine Lehrkraft, die die Bibliothek in der Leserdatei anlegt: Schul-E-Mail Pflicht? Empfehlung:
-   ja. Die Anmeldung erkennt eine Person nur an der E-Mail; ohne sie entsteht bei der ersten
-   Selbstanmeldung ein zweiter Eintrag. Folge: Das Konto ist aktiv (sonst kein Ausleihen), die
-   Lehrkraft kommt damit ohne Freischaltung ins Portal.
+1. Kollegium bekommt an der Theke weiter Bücher auf seinen Namen und steht in der Leserdatei.
+2. Die Leitung startet mit allen Rechten außer „Benutzer & Rechte" und „Einstellungen"; was nicht
+   passt, nimmt der Admin im Rechte-Editor weg.
+3. Eine Lehrkraft, die die Bibliothek in der Leserdatei anlegt, bekommt ihre Schul-E-Mail. Die
+   Anmeldung erkennt eine Person nur an der E-Mail (`auth/handlers.go`); ohne sie entsteht bei
+   der ersten Selbstanmeldung ein zweiter Eintrag. Das Konto ist aktiv, damit sie ausleihen kann,
+   und kommt damit ohne Freischaltung ins Portal.
 
 ---
 
