@@ -640,6 +640,13 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Portal des ganzen Kollegiums und im PDF.
 - `FACHKONZEPT.md` (zwei Stellen) und `invarianten.md` nennen `RueckgabeTerminFuerKlasse`, die
   `d3e86287` entfernt hat; nur Abschnitt 2.3 wurde angepasst.
+- **Server-Pfad:** `DEPLOYMENT.md` (vier Stellen), `SECURITY.md`, `SCRIPTS.md` und der
+  Kopfkommentar von `scripts/pruefe_secrets.sh` sagen `/opt/bibliothek`; auf dem Server liegt
+  der Stack in `/root/bibliothek` (`cd /opt/bibliothek` → „No such file or directory", Peter am
+  15.09.2026, `docker compose exec` aus `~/bibliothek` lief). Jede kopierte Anleitung scheitert
+  am ersten Befehl. **Schritt:** die sieben Stellen auf `/root/bibliothek` — oder, falls Peter
+  den Stack nach `/opt` umzieht, umgekehrt; bis zur Entscheidung ist die Doku falsch, nicht der
+  Server.
 
 ### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
 
@@ -716,12 +723,11 @@ Vitest 620/620. Die Commits vom 11.–14.09. deckt 5.12 schon ab; neu im Fenster
   „Reserviert für: <sein eigener Name>". Der Durchgang vom 15.09. hatte hier zuerst einen
   Idempotenz-Fund gesehen („5xx gibt den Schlüssel frei, obwohl `holeExemplarZurueck` schon
   committet hat") — die Folge stimmt, aber nur in diesem Zweig, und der ist tot; der Test dazu
-  wurde deshalb nicht geschrieben. **Schritt:** Peter zählt in Prod
-  `SELECT count(*) FROM buecher_exemplare WHERE zustand_notiz LIKE 'Reserviert für:%';` — bei 0
-  fällt der Zweig samt `istBerechtigterReservierer`, `checkVormerkung` und dem Struct
-  `vormerkung` mit Rückbau-Probe, sinnvoll zusammen mit Abschnitt 2, Commit 8 (derselbe
-  Baustein `holeExemplarZurueck`); bei mehr als 0 zuerst `coalesce(v.notiz, '')` und die Frage,
-  was die Notizen bedeuten.
+  wurde deshalb nicht geschrieben. In Prod gezählt am 15.09.2026 (Peter, `docker compose exec
+  postgres-db psql … WHERE zustand_notiz LIKE 'Reserviert für:%'`): **0**. **Schritt:** Der
+  Zweig fällt samt `istBerechtigterReservierer`, `checkVormerkung` und dem Struct `vormerkung`
+  mit Rückbau-Probe — zusammen mit Abschnitt 2, Commit 8, weil es derselbe Baustein
+  `holeExemplarZurueck` ist; ein `coalesce` für die Notiz braucht es dann nicht mehr.
 - **„Aktive Lehrkraft" steht zweimal:** `lower(rolle::text) = 'kollegium' AND aktiv = true` in
   `internal/service/device_service.go` (über `id`) und `repository/user.go` (über `barcode_id`).
   Dieselbe Regel, zwei Pakete, kein gemeinsames Prädikat — kommt eine Bedingung dazu (etwa
