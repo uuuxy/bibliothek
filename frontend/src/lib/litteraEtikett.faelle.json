@@ -1,0 +1,31 @@
+{
+	"hinweis": "Gemeinsame Prüffälle für die Rückrechnung eines Littera-Etiketts auf die Exemplarnummer. Gelesen von internal/service/littera_etikett_zwilling_test.go (Server) und frontend/src/lib/litteraEtikett.test.js (Theke). nummer null heißt: kein Littera-Etikett.",
+	"faelle": [
+		{ "scan": "5896800039556", "nummer": "58968", "fall": "gemessen am Buch, Aufdruck 58968" },
+		{ "scan": "1241170039561", "nummer": "124117", "fall": "gemessen am Buch, Aufdruck 124117" },
+		{
+			"scan": "5896800039563",
+			"nummer": "589680",
+			"fall": "Stellenzahl 6: dieselben Ziffern, andere Nummer"
+		},
+		{ "scan": "1234567039572", "nummer": "1234567", "fall": "sieben Stellen" },
+		{ "scan": "1234567839585", "nummer": "12345678", "fall": "acht Stellen, keine Polsterung" },
+		{ "scan": "7000000039515", "nummer": "7", "fall": "eine Stelle" },
+		{
+			"scan": "5896800012351",
+			"nummer": "58968",
+			"fall": "andere Bibliotheksnummer wird nicht geprüft"
+		},
+		{ "scan": "0896800039551", "nummer": null, "fall": "führende Null" },
+		{ "scan": "5896810039553", "nummer": null, "fall": "Polsterung verletzt" },
+		{ "scan": "1234567839592", "nummer": null, "fall": "Stellenzahl 9" },
+		{ "scan": "1234567839509", "nummer": null, "fall": "Stellenzahl 0" },
+		{ "scan": "5896800039557", "nummer": null, "fall": "falsche Prüfziffer" },
+		{ "scan": "9783161484100", "nummer": null, "fall": "Verlags-ISBN" },
+		{ "scan": "589680003955", "nummer": null, "fall": "zwölf Stellen" },
+		{ "scan": "58968000395560", "nummer": null, "fall": "vierzehn Stellen" },
+		{ "scan": "B-58968", "nummer": null, "fall": "Buch-Barcode mit Vorsilbe" },
+		{ "scan": "589680003955A", "nummer": null, "fall": "Buchstabe" },
+		{ "scan": "", "nummer": null, "fall": "leer" }
+	]
+}
