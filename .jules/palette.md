@@ -22,3 +22,6 @@
 ## 2026-09-05 - ARIA Labels on Icon-only Buttons
 **Learning:** When using components like `<Trash2>` inside a `<button>` without visible text, the `title` attribute alone is insufficient for screen readers. An explicit `aria-label` must be provided on the button element itself.
 **Action:** Always ensure icon-only buttons include an `aria-label` attribute describing their function, regardless of whether a `title` attribute (for tooltips) is present.
+## 2026-09-15 - Dynamic titles for disabled buttons
+**Learning:** Disabled buttons should explain why they are disabled in their title attribute, rather than just stating their standard action. This provides better context for users.
+**Action:** Always use dynamic titles for buttons that can be disabled based on state.

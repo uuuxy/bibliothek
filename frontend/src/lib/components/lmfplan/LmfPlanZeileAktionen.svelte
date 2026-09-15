@@ -81,7 +81,7 @@
 	size="sm"
 	onclick={onhoch}
 	disabled={nummer === 1}
-	title="Nach oben"
+	title={nummer === 1 ? 'Zeile ist bereits ganz oben' : 'Nach oben'}
 	aria-label="Zeile {nummer} nach oben"
 >
 	<ArrowUp class="h-4 w-4" aria-hidden="true" />
@@ -91,7 +91,7 @@
 	size="sm"
 	onclick={onrunter}
 	disabled={nummer === anzahl}
-	title="Nach unten"
+	title={nummer === anzahl ? 'Zeile ist bereits ganz unten' : 'Nach unten'}
 	aria-label="Zeile {nummer} nach unten"
 >
 	<ArrowDown class="h-4 w-4" aria-hidden="true" />
