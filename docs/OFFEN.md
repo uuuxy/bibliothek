@@ -25,7 +25,8 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Bei mir: alle Leser in eine Tabelle** (Abschnitt 5.16, freigegeben am 16.09.2026).
+3. **Bei mir: alle Leser in eine Tabelle** (Abschnitt 5.16, freigegeben am 16.09.2026;
+   die Nummer hier ist die Reihenfolge dieser Liste, kein Bauschritt).
    Schüler und Kollegium stehen danach an einem Ort, jeder aktive Leser darf ausleihen,
    und die Theke findet auch Kollegen über den Namen. Das versteckte Feld „Personenart"
    fällt dabei weg — es ist der Grund, warum dein Admin-Konto die Theke heute nicht
@@ -937,6 +938,12 @@ Damit fällt die alte Stufe 3 („wer darf ausleihen") weg: Wenn alle Leser in e
 stehen, ist die Frage nicht mehr „welche Rolle", sondern „ist das ein aktiver Leser". Die
 Rolle sagt dann ausschließlich, was jemand im Programm TUN darf.
 
+**Die Schritte heißen ab hier beim Namen, nicht mehr bei der Nummer.** Ich hatte die frei
+gewordene Nummer 3 für etwas anderes weiterverwendet — dieselbe Nummer für zwei verschiedene
+Sachen ist genau die Verwechslung, die ein Plan verhindern soll (Peter, 16.09.2026: „wieso
+jetzt Stufe 3? ich dachte die löst sich auf“). Erledigt sind die beiden ersten Schritte: die
+vorhandenen Fehler und die Rolle Leitung.
+
 **Die Form (freigegeben: „ok go"): eine Lesertabelle, Konten bleiben Konten.**
 
 Die Schülertabelle wird zur Lesertabelle: ein Feld „Art" (Schüler · Lehrkraft · LiV), Klasse
@@ -950,7 +957,7 @@ AUSGEFÜHRT hat. Von den 14 Verknüpfungen auf die Kontentabelle heißen die mei
 „Bearbeiter", nicht „Ausleiher" — ein Kollege soll als Leser verschwinden können, ohne dass
 die Spur seiner Buchungen verschwindet.
 
-**Stufe 3 — die Lesertabelle (additiv, verwirft nichts)**
+**Schritt „Die Lesertabelle“ (additiv, verwirft nichts)**
 
 - Migration: `art` an der Schülertabelle (`schueler` | `lehrkraft` | `liv`, Vorgabe `schueler`),
   `klasse` und `abgaenger_jahr` nullbar für Nicht-Schüler, `benutzer.leser_id` als Verknüpfung.
@@ -966,7 +973,7 @@ die Spur seiner Buchungen verschwindet.
 - Rot-Test: Ein Import ohne die Kollegen markiert sie NICHT als Abgänger; der Löschjob fasst
   sie nicht an.
 
-**Stufe 4 — eine Ausleihe zeigt auf einen Leser**
+**Schritt „Eine Ausleihe, ein Leser“**
 
 - `ausleihen.ausleiher_benutzer_id` fällt, ebenso die Zwillinge in `nachbuch_meldungen` und
   `schadensfaelle`. Alle Schreib- und Lesepfade gehen über die eine Spalte. Auf dem Testserver
@@ -979,7 +986,7 @@ die Spur seiner Buchungen verschwindet.
   versehentlich Bücher auf den eigenen Namen. Ausgeliehen wird über den Ausweis.
 - Rot-Test: Ein Admin ohne Personenart kann an der Theke ausleihen; ein gesperrter Leser nicht.
 
-**Stufe 5 — Theke und Leserdatei**
+**Schritt „Theke und Leserdatei“**
 
 - Theke: Die Namenssuche findet alle Leser, mit der Art am Treffer (heute sucht
   `GET /api/search` nur Schüler und Buchtitel).
@@ -991,7 +998,7 @@ die Spur seiner Buchungen verschwindet.
   an — ein KONTO entsteht dabei nicht, das holt sich die Lehrkraft über die Selbstanmeldung.
 - Das Feld Personenart fällt aus der Benutzerverwaltung.
 
-**Stufe 6 — Umbenennen (rein mechanisch, eigener Commit)**
+**Schritt „Umbenennen“ (rein mechanisch, eigener Commit)**
 
 `schueler` → `leser`: 408 Fundstellen in 47 Dateien. Zuletzt, damit die Umbenennung nicht mit
 einer Verhaltensänderung in einem Commit liegt; Gate: kein Vorkommen des alten Namens mehr.
