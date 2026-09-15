@@ -32,6 +32,35 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 15.09.2026
 
+**Offline-Betrieb der Theke, Stufe 1 (OFFEN.md 2.2, „vorhandene Fehler"), sieben Commits.** Je
+ein Rot-Test am alten Code; volle Suite mit Postgres 18-alpine, golangci-lint, deadcode, vitest,
+svelte-check, eslint, prettier. Der Nachweis am Stack (2.3) und Peters Freigabe für Stufe 2
+stehen noch aus.
+
+1. **Schnappschuss beim Scan** `0fa4b5a3`: Absicht, Person (Schüler oder Lehrkraft),
+   Scan-Zeitpunkt und Schlüssel werden vor dem Versand festgehalten; der Eintrag ist ein Objekt
+   (Format 2), Format 1 bleibt in IndexedDB und in Sicherungen lesbar (`normalisiereEintrag`).
+   Rot: Anfrage hängt, Schüler geleert, Timeout → Eintrag trug `null`.
+2. **Nur ein gescheiterter Versand wird eingereiht** `18b4887e`: zwei Fehlerzweige in
+   `submitAction`. Rot: 200 mit unauswertbarem Inhalt landete in der Warteschlange. Der Mock in
+   `omniboxOffline.test.js` ist jetzt ein echter Versandfehler — vorher war der Test nur durch
+   diesen Fehler grün.
+3. **„Buch zurückgeben" ist offline eine Rückgabe** `44615c42`: `omniboxStore.gibZurueck` mit
+   Absicht; Draht-Test an `onReturnClick`. Rot: Doppelklick ergab zwei Ausleihen.
+4. **Lehrkraft geladen → Handapparat** `08312c87`: Eintrag mit `lehrer_id`, Payload mit
+   `active_teacher_id`. Rot am Eintrag und am Payload.
+5. **Warteschlangen-Fehler ist laut** `65f9a998`: `enqueueOfflineAction`, `loadQueue`,
+   `dequeueOfflineAction` werfen; Theke „NICHT gespeichert" mit Fehlerton; Band „Warteschlange
+   nicht lesbar" statt 0. Rot mit gemockter IndexedDB.
+6. **Erledigt nur, was wie gescannt gebucht wurde** `6fe6ba8b`: Typvergleich, Schweigen und
+   5xx/429 bleiben liegen, die Runde endet; Intervall 60 s. Rot: Schweigen ausgebucht,
+   Abweichung still, 5xx sofort erneut gesendet.
+7. **Idempotenz hält** `23ca498c`: `repository/idempotenz.go` (Reservierung vor der Arbeit,
+   verwaiste nach 60 s übernommen, Speichern mit `WithoutCancel`, Freigabe nach 5xx); Warten bis
+   3 s, dann 409 `in_arbeit` (Einzel) bzw. 503 (Stapel). `action.go` formuliert kein SQL mehr.
+   Rot am echten Postgres: zweite Anfrage nach Commit, vor Speichern → Rückgabe, null offene
+   Ausleihen.
+
 Die Voraussetzungen des Offline-Baus (OFFEN.md 1.5 und 3.1–3.4), je ein Commit, je ein Test am
 alten Code rot gesehen; volle Suite mit Postgres 18, golangci-lint, deadcode, vitest, svelte-check.
 

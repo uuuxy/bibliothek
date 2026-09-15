@@ -116,9 +116,15 @@ weiter.
 einem Kind liegt, das im System frei ist, oder umgekehrt. Alles, was das verhindert, gehört hinein.
 Alles andere kann warten, bis es im Betrieb vorkommt.
 
-**Nächster Schritt:** Stufe 1 in einer frischen Sitzung bauen und mit Nachweis zur Freigabe
-vorlegen. Die Voraussetzungen 1.5 und 3.1–3.4 sind seit dem 15.09.2026 erledigt
-([erledigt.md](erledigt.md)).
+**Stand 15.09.2026:** Stufe 1 ist gebaut — sieben Commits `0fa4b5a3`, `18b4887e`, `44615c42`,
+`08312c87`, `65f9a998`, `6fe6ba8b`, `23ca498c`, je ein Rot-Test am alten Code, volle Suite mit
+Postgres, Lint und Frontend-Gates grün (Einzelheiten in [erledigt.md](erledigt.md)). Abweichungen
+vom Plan: Der Warteschlangen-Eintrag behält `id` als Schlüssel (der keyPath des bestehenden
+IndexedDB-Schemas, keine Migration); die Absicht heißt `ausleihe`/`rueckgabe` wie die Antworttypen
+des Servers; ein Stapel-Eintrag, dessen Buchung gerade läuft, bekommt 503 (nicht 409), damit der
+Sync ihn liegen lässt.
+**Nächster Schritt:** Nachweis am Stack für Stufe 1 (2.3, frisch gebauter Stack, echter Chrome),
+dann Peters Freigabe für Stufe 2.
 
 ### 2.1 Was heute fehlt (am Code gelesen 13.09., nachgeprüft 14.09.2026)
 
