@@ -15,8 +15,8 @@
 		<div>
 			<h3 class="font-bold text-blue-800">{teacher.vorname} {teacher.nachname}</h3>
 			<p class="text-xs text-blue-600/80 font-medium">
-				Handapparat-Modus aktiv · <span class="underline font-semibold"
-					>Ausleihe erfolgt als dauerhafter Handapparat</span
+				Lehrkraft geladen · <span class="underline font-semibold"
+					>gescannte Bücher gehen auf sie, Frist ein Jahr</span
 				>
 			</p>
 		</div>
@@ -24,12 +24,12 @@
 	<div class="flex items-center space-x-3">
 		<span
 			class="text-xs px-2.5 py-1 rounded-full bg-blue-100/80 border border-blue-200 text-blue-700 font-semibold tracking-wide uppercase"
-			>Handapparat</span
+			>Lehrkraft</span
 		>
 		<button
 			onclick={onDeselect}
 			class="p-1 text-blue-500 hover:text-blue-700 transition-colors cursor-pointer"
-			title="Lehrer abwählen (ESC)"><X class="h-5 w-5" aria-hidden="true" /></button
+			title="Lehrkraft abwählen (ESC)"><X class="h-5 w-5" aria-hidden="true" /></button
 		>
 	</div>
 </div>

@@ -295,9 +295,7 @@ export function createOmniboxStore() {
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
-			showToast(
-				`Handapparat-Sitzung gestartet für Lehrer/in ${data.teacher.vorname} ${data.teacher.nachname}`
-			);
+			showToast(`Lehrkraft geladen: ${data.teacher.vorname} ${data.teacher.nachname}`);
 		} else if (data.type === 'geraet_check') {
 			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
 			checklistAnfrage = { query: q, geraet: data.geraet };
