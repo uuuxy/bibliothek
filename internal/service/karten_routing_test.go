@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"bibliothek/repository"
@@ -72,5 +73,62 @@ func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 	}
 	if resp.Type == "teacher" {
 		t.Fatal("ohne Treffer darf keine Lehrkraft gemeldet werden")
+	}
+}
+
+// TestLitteraErsatznummerFindetDenSchueler: Die Littera-Übernahme gibt einem Schüler ohne
+// eindeutige Ausweisnummer „L-<Littera-Nummer>" (internal/littera, ausweis). Bis zum
+// 15.09.2026 schickte die Theke jedes „L-" in den Lehrkraft-Zweig — der Schüler war weder
+// über den neu gedruckten Ausweis noch über die Namenssuche ladbar (OFFEN.md 5.15).
+func TestLitteraErsatznummerFindetDenSchueler(t *testing.T) {
+	svc := &defaultOmniboxService{
+		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		userRepo: &routingUserRepo{lehrer: map[string]*repository.User{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
+			"L-4711": {ID: "s1", BarcodeID: "L-4711", Vorname: "Ersatz", Nachname: "Nummer"},
+		}},
+	}
+	resp, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "L-4711"})
+	if err != nil {
+		t.Fatalf("der Schüler mit der Ersatznummer muss laden: %v", err)
+	}
+	if resp.Type != "student" || resp.Student == nil || resp.Student.ID != "s1" {
+		t.Fatalf("Schüler erwartet, geliefert: Type=%q Student=%v", resp.Type, resp.Student)
+	}
+}
+
+// TestVorsilbeEntscheidetNichtDieTabelle: „S-" und „L-" sagen nur „Ausweis" — gesucht wird
+// in beiden Tabellen, erst Schüler, dann Lehrkraft. Littera kennt die Vorsilben nicht, und
+// auf dem Ausweis stehen sie auch nicht.
+func TestVorsilbeEntscheidetNichtDieTabelle(t *testing.T) {
+	svc := &defaultOmniboxService{
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		userRepo: &routingUserRepo{lehrer: map[string]*repository.User{
+			"S-0815": {ID: "l1", Vorname: "Anna", Nachname: "Berg"},
+		}},
+	}
+	resp, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: "S-0815"})
+	if err != nil {
+		t.Fatalf("die Lehrkraft mit S-Nummer muss laden: %v", err)
+	}
+	if resp.Type != "teacher" || resp.Teacher == nil || resp.Teacher.ID != "l1" {
+		t.Fatalf("Lehrkraft erwartet, geliefert: Type=%q Teacher=%v", resp.Type, resp.Teacher)
+	}
+}
+
+// TestUnbekannterAusweisMeldetSichLaut: Eine S-/L-Nummer ohne Person bleibt ein Fehler —
+// sie verschwindet nicht leise in der Volltextsuche.
+func TestUnbekannterAusweisMeldetSichLaut(t *testing.T) {
+	svc := &defaultOmniboxService{
+		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
+		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
+		userRepo:    &routingUserRepo{lehrer: map[string]*repository.User{}},
+	}
+	for _, code := range []string{"S-404", "L-404"} {
+		resp, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: code})
+		if !errors.Is(err, ErrNotFound) {
+			t.Errorf("%s: ErrNotFound erwartet, geliefert %v (Type %q)", code, err, resp.Type)
+		}
 	}
 }

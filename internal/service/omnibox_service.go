@@ -122,15 +122,12 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 	resp := &OmniboxResult{}
 
 	// Präfix-Erkennung (Scanner-Steuerung):
-	// S- steht für Schüler (Student)
-	// L- steht für Lehrer (Teacher)
+	// S- und L- stehen für einen Ausweis — Schüler ODER Lehrkraft (handleAusweisAction)
 	// B- steht für Buch (Book)
 	// G- steht für Gerät (Hardware-Geräte)
 	switch {
-	case strings.HasPrefix(q.Query, "S-"):
-		return resp, s.handleStudentAction(ctx, q.Query, resp)
-	case strings.HasPrefix(q.Query, "L-"):
-		return resp, s.handleTeacherAction(ctx, q.Query, resp)
+	case strings.HasPrefix(q.Query, "S-"), strings.HasPrefix(q.Query, "L-"):
+		return resp, s.handleAusweisAction(ctx, q.Query, resp)
 	case strings.HasPrefix(q.Query, "B-"):
 		return resp, s.handleBookAction(ctx, q, resp)
 	case strings.HasPrefix(q.Query, "G-"):
@@ -223,6 +220,31 @@ func (s *defaultOmniboxService) mapDeviceResult(dr *DeviceResult, resp *OmniboxR
 	resp.VorbesitzerUser = dr.VorbesitzerUser
 }
 
+// handleAusweisAction lädt die Person zu einem Ausweis mit Vorsilbe „S-" oder „L-" — erst unter
+// den Schülern, dann unter den Lehrkräften.
+//
+// Bis zum 15.09.2026 entschied die Vorsilbe die Tabelle: „S-" nur Schüler, „L-" nur Lehrkräfte.
+// Littera kennt die Vorsilben nicht, auf dem Ausweis stehen sie nicht, und die Littera-Übernahme
+// gibt einem Schüler ohne eindeutige Nummer „L-<Littera-Nummer>" (internal/littera, ausweis) —
+// der war an der Theke weder über den Ausweis noch über die Namenssuche ladbar (OFFEN.md 5.15).
+// Die Vorsilbe sagt jetzt nur noch „Ausweis": Eine unbekannte Nummer bleibt ein lauter Fehler
+// und verschwindet nicht in der Volltextsuche.
+func (s *defaultOmniboxService) handleAusweisAction(ctx context.Context, query string, resp *OmniboxResult) error {
+	student, err := s.studentRepo.GetByBarcode(ctx, query)
+	if err != nil {
+		return err
+	}
+	if student != nil {
+		s.zeigeSchueler(ctx, student, resp)
+		return nil
+	}
+	err = s.handleTeacherAction(ctx, query, resp)
+	if errors.Is(err, ErrNotFound) {
+		return fmt.Errorf("%w: Ausweis %s ist nicht registriert", ErrNotFound, query)
+	}
+	return err
+}
+
 // handleStudentAction lädt die Schülerdaten bei Scan eines Schüler-Barcodes.
 func (s *defaultOmniboxService) handleStudentAction(ctx context.Context, query string, resp *OmniboxResult) error {
 	student, err := s.studentRepo.GetByBarcode(ctx, query)
@@ -232,10 +254,15 @@ func (s *defaultOmniboxService) handleStudentAction(ctx context.Context, query s
 	if student == nil {
 		return fmt.Errorf("%w: Schüler-Barcode %s ist nicht registriert", ErrNotFound, query)
 	}
+	s.zeigeSchueler(ctx, student, resp)
+	return nil
+}
+
+// zeigeSchueler legt einen gefundenen Schüler in die Antwort, mit dem Abholfach-Hinweis.
+func (s *defaultOmniboxService) zeigeSchueler(ctx context.Context, student *repository.Student, resp *OmniboxResult) {
 	resp.Type = "student"
 	resp.Student = student
 	resp.Abholbereit = s.ladeAbholbereiteVormerkungen(ctx, student.ID)
-	return nil
 }
 
 // ladeAbholbereiteVormerkungen holt die abholbereiten Vormerkungen des Schülers
