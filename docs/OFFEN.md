@@ -23,14 +23,22 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    `gh auth login` mit dem Browser. Der Token stand im Chat-Verlauf.
 2. **Peter, 30 Minuten: die Offline-Theke einmal echt ausprobieren.** Am Stack das Netz
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
-   angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis,
-   den Abschnitt 2.3 verlangt — ohne ihn keine Stufe 2.
-3. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
+   angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
+   für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
+3. **Bei mir, vor Stufe 3: drei Funde aus dem Rasterdurchgang vom Abend, am echten Postgres
+   nachgestellt.** Geht die Uhr eines Theken-Rechners vor, kann das Nachbuchen die neuere
+   Ausleihe eines anderen Kindes beenden. Kam die Antwort einer Online-Ausleihe nicht an und gibt
+   das Kind das Buch zurück, bevor die Theke nachsendet, wird es ihm erneut ausgeliehen — und es
+   wird gemahnt. Und alte Littera-Etiketten stehen nicht in der Barcode-Liste. Alles drei ändert,
+   was der Theken-Rechner schicken und halten muss — deshalb vor Stufe 3. Auf dem Server tragen
+   30.658 von 34.777 Büchern die nackte Nummer: Ohne Korrektur wüsste die Theke offline bei fast
+   neun von zehn Büchern nicht, dass es Bücher sind.
+4. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
-4. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
+5. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
-5. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
+6. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
    nichts zu tun außer nachzufragen, wenn nichts kommt.
 
 Alles andere in dieser Datei — die B-Punkte in Abschnitt 5, die Beobachtungen in 6, die
@@ -65,10 +73,10 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Abschnitt 2** Offline-Betrieb der Theke: Stufe 1 ist gebaut; jetzt der Nachweis am Stack
-   (2.3), dann Peters Freigabe für Stufe 2.
+1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
+   am Stack (2.3) und die Uhr-, Schlüssel- und Etikett-Funde aus **5.15**, dann Peters Freigabe für Stufe 3.
 2. **5.1** Schäden und Benutzer.
-3. **5.5–5.9**, **5.12** und **5.14** kleine B-Commits.
+3. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 4. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 5. Nach der Antwort zu E5 (**8.3**): **5.4**.
@@ -148,8 +156,9 @@ vom Plan: Der Warteschlangen-Eintrag behält `id` als Schlüssel (der keyPath de
 IndexedDB-Schemas, keine Migration); die Absicht heißt `ausleihe`/`rueckgabe` wie die Antworttypen
 des Servers; ein Stapel-Eintrag, dessen Buchung gerade läuft, bekommt 503 (nicht 409), damit der
 Sync ihn liegen lässt.
-**Nächster Schritt:** Nachweis am Stack für Stufe 1 (2.3, frisch gebauter Stack, echter Chrome),
-dann Peters Freigabe für Stufe 2.
+**Stand abends:** Stufe 2 (der Server) ist gebaut und gepusht, die CI ist grün.
+**Nächster Schritt:** Nachweise am Stack für Stufe 1 (von Hand, echter Chrome) und Stufe 2
+(Anfragen an die Tür, 2.3); die Uhr-, Schlüssel- und Etikett-Funde aus 5.15; dann Peters Freigabe für Stufe 3.
 
 ### 2.1 Was heute fehlt (am Code gelesen 13.09., nachgeprüft 14.09.2026)
 
@@ -748,6 +757,130 @@ den Buch-Routen (`adminH` IST `RequireEditBooks`, nur der Name führt in die Irr
 droppt `idx_lmf_termine_plan` (der neue Unique-Index deckt dieselben Spalten in derselben
 Reihenfolge, und alle Lesepfade filtern auf `plan_id` als Präfix).
 
+### 5.15 Rasterdurchgang über die Stufe-2-Commits (15.09.2026, abends)
+
+Sieben Code-Commits seit 5.14 (Idempotenz-Fristen bis Buch-Barcodes): Nachbuch-Tür,
+Bewegungsstempel, Nachbuch-Meldungen, Barcode-Liste. Am Code gelesen, ohne Subagenten, danach
+jeder Punkt am echten Postgres nachgestellt: `internal/service/raster_1509_pg_test.go` und
+`repository/raster_1509_pg_test.go`, Build-Tag `raster` (die roten Nachstellungen stören so
+keine parallele Sitzung): `TEST_DATABASE_URL=… go test -tags raster -run TestRaster_
+./internal/service/ ./repository/`. Zu jedem roten Test läuft eine Gegenprobe, die zeigt, dass
+genau die genannte Ursache ihn rot macht. Die Online-Theke ist dort so nachgebaut, wie sie bucht:
+Fremdrückgabe und Ausleihe als zwei Scans, zwei Transaktionen. Die Tür ist gebaut; scharf werden
+die Tür-Funde mit Stufe 3, wenn die Theke über sie nachsendet.
+
+- **A, bestätigt — eine vorgehende Theken-Uhr beendet die jüngere Ausleihe eines anderen Kindes**
+  (Frage 6; `internal/service/nachbuchen.go`, Kappung des Scan-Zeitpunkts und Wächter;
+  `nachbuchen_buchen.go`, `nachbuchenRueckgabe` → `nimmZurueck`). Der Scan-Zeitpunkt kommt vom
+  Theken-Rechner und wird nur nach oben auf die Serverzeit gekappt; Wächter (Stempel) und
+  `check_return_date` rechnen beide mit dieser Uhr. Szenario: Theke 1 ohne Netz, Uhr 15 Minuten
+  vor. 09:00 Rückgabe von Buch X (Kind A), gespeichert als 09:15. 09:10 leiht Theke 2 online X an
+  Kind B aus, Stempel 09:10. Beim Nachbuchen liegt 09:15 nach dem Stempel; die Rückgabe trifft die
+  aktive Ausleihe — die von B. Ohne Person im Rückgabe-Eintrag gilt das nicht als Fremdrückgabe,
+  eine Meldung entsteht nicht. B hat das Buch, das System sagt frei. Das Fenster ist so groß wie
+  der Versatz der Uhr. **Vorschlag:** Der Rechner schickt mit jeder Portion seine Uhrzeit beim
+  Versand; der Server verschiebt alle Scan-Zeitpunkte der Portion um den gemessenen Versatz und
+  meldet einen großen Versatz. Das ändert den Rumpf der Tür — darum vor Stufe 3, sonst wird der
+  Rechner zweimal gebaut. Nachgestellt: `TestRaster_VorgehendeThekenUhrBeendetJuengereAusleihe`
+  rot (Ergebnis „zurueckgegeben", Bens Ausleihe beendet, keine Meldung); Gegenprobe
+  `TestRaster_Gegenprobe_RichtigeUhr` grün (dieselbe Lage mit richtiger Uhr: veraltet, Bens
+  Ausleihe bleibt).
+- **A, bestätigt — „Schlüssel bekannt" leiht ein zurückgegebenes Buch erneut aus** (Fragen 3 und
+  6; `internal/service/nachbuchen.go`, Wächter; `api/nachbuchen_handler.go`,
+  `schluesselSchonGesehen`). Scheitert ein Online-Versand (Timeout), legt die Theke den Scan mit
+  demselben Schlüssel in die Warteschlange (`frontend/src/lib/stores/omnibox.svelte.js`,
+  `schnappschuss`). Der Server speichert jede Antwort unter 500 (`saveToCache`) — „bekannt" heißt
+  also: Der Online-Versand ist abgeschlossen. Trotzdem lässt der Wächter den Eintrag dann an jeder
+  späteren Bewegung vorbei. Szenario: Online-Ausleihe an Anna, die Antwort kommt nicht an, der Scan
+  liegt in der Warteschlange. Anna gibt das Buch an einer anderen Theke zurück, und erst danach
+  sendet der Rechner nach: Das Buch wird Anna erneut ausgeliehen, sie wird nach Fristablauf für ein
+  abgegebenes Buch gemahnt. Der Bewegungsstempel läuft dabei rückwärts (`COALESCE($2,
+  CURRENT_TIMESTAMP)` statt `GREATEST`). Nachgestellt:
+  `TestRaster_BekannterSchluesselNachVollstaendigerOnlineBuchung` rot; Gegenproben grün:
+  unbekannter Schlüssel → veraltet (`…_UnbekannterSchluessel`); bekannter Schlüssel, Buch
+  inzwischen bei Ben → veraltet, weil `check_return_date` die Rücknahme abweist
+  (`…_BekannterSchluesselBuchBeiBen`). **Die Ausnahme hat einen echten Zweck**
+  (`…_BekannterSchluesselNachFremdrueckgabe` grün): Scannt Annas Sitzung online ein Buch, das auf
+  Ben steht, bucht der Server nur die Fremdrückgabe (Produktentscheidung 10.07.); geht diese
+  Antwort verloren, soll das Nachbuchen die Ausleihe nachholen. **Vorschlag:** Die Tür liest die
+  gespeicherte Antwort, nicht nur ihr Vorhandensein. War sie die Ausleihe selbst, ist der Eintrag
+  „bereits gebucht"; nur eine Fremdrückgabe desselben Exemplars, nach der sich nichts mehr bewegt
+  hat, darf am Wächter vorbei. Der Stempel läuft nie rückwärts.
+- **B, bestätigt, betrifft 88 % des Bestands — alte Littera-Etiketten stehen nicht in der Barcode-Liste** (Frage 3;
+  `repository/buchbarcodes.go`, `internal/service/littera_etikett.go`). Online rechnet der Server
+  ein 13-stelliges Littera-Etikett auf die Exemplarnummer zurück (`dekodiereLitteraEtikett`); die
+  Liste führt nur `barcode_id`. Offline stünde die gescannte Ziffernfolge nicht darauf, gälte als
+  „unklar" und sperrte die Zuordnung — bei jedem Buch des Altbestands. Laut, aber der
+  Offline-Betrieb wäre für den Altbestand unbrauchbar. **Vor Stufe 3, Punkt 15 entscheiden:** Der
+  Rechner rechnet selbst zurück (dann ein Go/JS-Zwilling mit Gate), oder die Liste führt die
+  Etikett-Form mit. Nachgestellt: `TestRaster_BarcodeListeGegenNachbuchTuer` rot (der Server
+  erkennt das Etikett, die Liste führt nur die Mediennummer). Die Littera-Übernahme
+  (`internal/littera/schreiber_barcodes.go`) schreibt den EAN-13 selbst nach `barcode_id` —
+  betroffen sind nur Exemplare mit nackter Mediennummer, etwa aus dem Juni-Import. Auf dem Server
+  sind das **30.658 von 34.777** Exemplaren im Umlauf, keines steht als EAN-13 (Peter, 15.09.2026
+  abends; daneben 4.064 `LMF-` und 55 `B-`): Ohne Korrektur wüsste die Theke offline bei fast neun
+  von zehn Büchern nicht, dass es ein Buch ist. **Empfehlung:** Der Rechner rechnet zurück wie der
+  Server. Die Etikett-Form in der Liste bräuchte die Bibliotheksnummer, die der Server beim
+  Zurückrechnen bewusst nicht prüft; der Go/JS-Zwilling bekommt gemeinsame Prüffälle. Die Abfrage
+  zum Wiederholen:
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FILTER (WHERE barcode_id ~ '^[1-9][0-9]{0,7}$') AS nackte_nummer, count(*) FILTER (WHERE barcode_id ~ '^[0-9]{13}$') AS ean13, count(*) FILTER (WHERE barcode_id LIKE 'B-%') AS b_praefix, count(*) FILTER (WHERE barcode_id LIKE 'LMF-%') AS lmf, count(*) AS alle FROM buecher_exemplare WHERE ist_ausgesondert = false;"`
+- **B, bestätigt — ausgesonderte Exemplare fehlen in der Liste, das Nachbuchen holt sie aber
+  zurück** (Frage 3). Ein abgeschriebenes Buch mit Ziffern-Barcode, das offline zurückkommt, gälte
+  als „unklar"; „nur_reaktiviert" ist für diese Form offline nicht erreichbar. `B-`/`LMF-` sind
+  nicht betroffen. Nachgestellt im selben Test (Nachbuchen → „nur_reaktiviert", die Liste ohne das
+  Exemplar).
+- **Frage, heute ohne Befund, nach dem Personenlauf neu — Ausweis-Formen gegen die Offline-Regel** (Frage 3). Der Plan für Stufe 3,
+  Punkt 15 ordnet offline nach Vorsilbe: `S-`/`L-` Ausweis, `B-`/`LMF-` Buch, Ziffernfolge auf der
+  Liste Buch, sonst unklar. Ein alter Schülerausweis liefert beim Scannen aber `B97601826457`
+  (gemessen, Kopfkommentar in `api/buchbarcodes_handler.go`) — offline wäre er „unklar" und
+  sperrte die Zuordnung, obwohl er eindeutig ist. Und stünde eine Ausweisnummer zugleich als
+  Buch-Barcode im Bestand, buchte die Theke den Ausweis offline als Buch. Die Abfrage (lesend, nur
+  Zahlen, lokal gegen den Stack geprüft):
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM schueler WHERE deleted_at IS NULL) AS schueler, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id LIKE 'S-%') AS schueler_s, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^B[0-9]+$') AS schueler_b_ohne_strich, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^[0-9]+$') AS schueler_ziffern, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id LIKE 'L-%') AS personal_l, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id IS NOT NULL AND barcode_id NOT LIKE 'L-%') AS personal_andere, (SELECT count(*) FROM schueler s JOIN buecher_exemplare e ON e.barcode_id = s.barcode_id) AS gleich_wie_buch_schueler, (SELECT count(*) FROM benutzer b JOIN buecher_exemplare e ON e.barcode_id = b.barcode_id) AS gleich_wie_buch_personal;"`
+  Ergebnis auf dem Server (Peter, 15.09.2026): 32 Schüler, alle `S-`, keine Ausweisnummer gleich
+  einer Buchnummer — die echte Schülerschaft steht dort noch nicht; nach dem Personenlauf neu zählen.
+- **B — Ausweis- und Buchnummer werden nur in der Littera-Übernahme gegeneinander geprüft**
+  (Frage 3). Seit dem 15.09.2026 vergibt der Personenlauf keine Nummer, die schon ein Buch trägt.
+  Wer von Hand eine Ausweisnummer ändert (Schülerakte) oder ein Buch umetikettiert
+  (`UpdateCopyBarcode`), wird nicht gebremst — und die Theke löst eine Nummer ohne Vorsilbe zuerst
+  als Buch auf. Auf dem Server gibt es heute keine Überschneidung (Zählung oben).
+- **B, bestätigt — eine wiederholte Portion erzeugt falsche Meldungen** (Fragen 5 und 6;
+  `api/nachbuchen_handler.go`). Die Tür schreibt ihre Schlüssel nicht in die Idempotenz-Tabelle;
+  die Meldungstabelle schluckt nur ein Doppel desselben Schlüssels. Schickt der Rechner eine
+  Portion nach einem Timeout erneut, obwohl der erste Aufruf gebucht hat, meldet die Wiederholung
+  eine Rückgabe als „nicht_gebucht: Buch war nicht ausgeliehen" und eine Ausleihe, auf die in
+  derselben Portion eine Rückgabe folgte, als „veraltet". Falsch gebucht wird nichts; die Liste
+  zeigt Abweichungen, die es nicht gibt. Mit 20 Sekunden je Portion (Stufe 3, Punkt 14) möglich.
+  Nachgestellt: `TestRaster_WiederholtePortionMeldetGebuchtesAlsAbweichung` rot (zwei falsche
+  Meldungen, keine Doppelbuchung; die Schlüssel stehen nicht in `idempotency_keys`). Dieselbe
+  Korrektur wie beim bekannten Schlüssel: Die Tür legt je Eintrag ihr Ergebnis unter dem Schlüssel
+  ab und antwortet einer Wiederholung damit.
+- **B, am SQL belegt, kein Schaden gefunden — der Bewegungsstempel folgt einer Auswahl, nicht einer Regel** (Fragen 1, 3 und 7;
+  `repository/bewegungsstempel_pg_test.go`). Aussondern, Bestandskorrektur, Schadensmeldung und
+  Soft-Delete stempeln; „Verloren" und Reaktivieren im Status-Editor (`UpdateCopyStatus`), der
+  Inventur-Abschluss (`FinishInventurSession`) und `repository/damage.go` stempeln nicht. Die
+  Wirkung ist nach Lesart harmlos — ein Scan vor einer Verlustbuchung erklärt den Verlust eher, als
+  dass er ihm widerspricht —, aber die Auswahl steht nirgends. Der Test prüft vier Schreiber als
+  feste Liste; ein neuer Schreiber ohne Stempel bliebe grün. Durchgespielt: Ein Scan vor einer
+  Verlustbuchung ohne Stempel bucht die Wirklichkeit (das Kind hatte das Buch), und Status-Editor
+  wie Inventur weisen verliehene Bücher ohnehin ab.
+- **B, Mechanismus bestätigt, heute ohne Auslöser — der Stand-Merker der Barcode-Liste rechnet mit dem Beginn der Transaktion** (Frage 6).
+  `max(aktualisiert_am)` trägt `CURRENT_TIMESTAMP`, also den Transaktionsbeginn. Ändert eine lange
+  Transaktion (Import) ein Etikett und committet nach einem kürzeren Schreiber, ändern sich weder
+  Anzahl noch Maximum: 304, die Theke behält die alte Nummer. Nachgestellt:
+  `TestRaster_StandMerkerUebersiehtLangeTransaktion` rot. Heute ändert aber nur
+  `UpdateCopyBarcode` einen Barcode, als kurzer Einzelbefehl; Einfügen und Aussondern ändern die
+  Anzahl. Erst ein Schreiber, der in einer langen Transaktion umetikettiert, macht es scharf — dann
+  hieße die Folge „unklar".
+
+Geprüft und in Ordnung: Rechte an den neuen Routen (Liste und Quittieren `view_students`; Tür,
+Barcodes und Anzahl `perform_actions`) · Frist der quittierten Meldungen (Job und Rückstands-Wächter
+über dasselbe Prädikat, Obergrenze 30 Tage auch bei 0 oder negativer Einstellung) · keine doppelte
+Meldung je Schlüssel · ein Serverfehler je Eintrag wird „wiederholen", nicht Erfolg · Rückgabe vor
+der Ausleihe fängt `check_return_date` · Sperrreihenfolge Schüler → Ausleihe → Exemplar im
+Nachbuchen gehalten · Barcode-Liste ohne Personendaten, Löschen und Aussondern ändern den Stand über
+die Anzahl.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -843,6 +976,10 @@ teuerste offene Position vor dem Echtstart — früh bei der Schule anfragen.
 LUSD-Import läuft. Der Littera-Personenlauf erkennt Schüler aus der LUSD nicht und legt sie ein
 zweites Mal an ([SCRIPTS.md](SCRIPTS.md), Abschnitt 0). Das Geburtsdatum im Backup ist die Brücke
 für den späteren LUSD-Abgleich — vor dem Lauf prüfen.
+**Vor dem Personenlauf:** Im frischen Backup nachsehen, ob die Tabelle `FremdLeserNummer` gefüllt
+ist (im Stand von 2010 ist sie leer). Sie trägt die Nummern, die die Ausweise beim Scannen liefern;
+nur mit ihr funktionieren die vorhandenen Ausweise ohne Neudruck. Wer dort fehlt, bekommt die
+Lesernummer und steht mit „keine Karte in FremdLeserNummer" im Protokoll des Laufs.
 
 ### 7.3 S3-Auslagerung der Backups
 
