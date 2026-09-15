@@ -1,5 +1,7 @@
 <script>
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
+	import { authStore } from '../stores/authStore.svelte.js';
+	import { schuelerRechte } from '../schuelerRechte.js';
 	import { apiClient } from '../apiFetch.js';
 	import Button from './ui/Button.svelte';
 	import { escapeSchliesst } from './ui/escapeSchliesst.js';
@@ -7,6 +9,12 @@
 
 	/** @type {{ onReload: () => void }} */
 	let { onReload } = $props();
+
+	// Beide Knöpfe folgen dem Recht ihrer Route (edit_students): override_block wirkt am
+	// Server nur damit (api/action.go) und PATCH …/lock verlangt es. Bis zum 15.09.2026 sah
+	// jede Rolle die Knöpfe; die Helferin klickte, der Server verwarf, der Dialog kam wieder
+	// (OFFEN.md 3.3). Sichtbarkeit = Recht, nicht Rolle (frontend-hygiene-rechte.test.js).
+	const darfUebergehen = $derived(schuelerRechte(authStore.currentUser).bearbeiten);
 </script>
 
 {#if omniboxStore.blockAlert}
@@ -31,48 +39,55 @@
 			<p class="text-slate-700 font-medium mb-6">{omniboxStore.blockAlert.message}</p>
 
 			<div class="space-y-3">
-				<Button
-					variant="danger-solid"
-					size="lg"
-					onclick={() => {
-						const q = omniboxStore.blockAlert?.query;
-						if (!q) return;
-						omniboxStore.blockAlert = null;
-						omniboxStore.queryVal = q;
-						omniboxStore.submitAction(null, onReload, true);
-					}}
-					class="w-full text-lg"
-				>
-					Einmalig ignorieren (Override)
-				</Button>
-
-				{#if omniboxStore.activeStudent?.is_manually_blocked}
+				{#if !darfUebergehen}
+					<p class="text-sm text-on-surface-variant">
+						Übergehen kann nur, wer Schülerdaten bearbeiten darf.
+					</p>
+				{/if}
+				{#if darfUebergehen}
 					<Button
-						variant="secondary"
+						variant="danger-solid"
 						size="lg"
-						onclick={async () => {
-							try {
-								const res = await apiClient.patch(
-									`/api/admin/students/${omniboxStore.activeStudent.id}/lock`,
-									{
-										is_locked: false
-									}
-								);
-								if (res.ok) {
-									const q = omniboxStore.blockAlert?.query;
-									omniboxStore.blockAlert = null;
-									if (q) omniboxStore.queryVal = q;
-									omniboxStore.activeStudent.is_manually_blocked = false;
-									omniboxStore.submitAction(null, onReload);
-								}
-							} catch (e) {
-								console.error(e);
-							}
+						onclick={() => {
+							const q = omniboxStore.blockAlert?.query;
+							if (!q) return;
+							omniboxStore.blockAlert = null;
+							omniboxStore.queryVal = q;
+							omniboxStore.submitAction(null, onReload, true);
 						}}
 						class="w-full text-lg"
 					>
-						Sperre dauerhaft aufheben
+						Einmalig ignorieren (Override)
 					</Button>
+
+					{#if omniboxStore.activeStudent?.is_manually_blocked}
+						<Button
+							variant="secondary"
+							size="lg"
+							onclick={async () => {
+								try {
+									const res = await apiClient.patch(
+										`/api/admin/students/${omniboxStore.activeStudent.id}/lock`,
+										{
+											is_locked: false
+										}
+									);
+									if (res.ok) {
+										const q = omniboxStore.blockAlert?.query;
+										omniboxStore.blockAlert = null;
+										if (q) omniboxStore.queryVal = q;
+										omniboxStore.activeStudent.is_manually_blocked = false;
+										omniboxStore.submitAction(null, onReload);
+									}
+								} catch (e) {
+									console.error(e);
+								}
+							}}
+							class="w-full text-lg"
+						>
+							Sperre dauerhaft aufheben
+						</Button>
+					{/if}
 				{/if}
 
 				<Button
