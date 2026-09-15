@@ -13,6 +13,32 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ---
 
+## Was jetzt dran ist — in einfachen Worten (Stand 15.09.2026)
+
+Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
+ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
+
+1. **Peter, 10 Minuten: den GitHub-Token von heute widerrufen** (github.com → Settings →
+   Developer settings → Tokens → den Eintrag vom 15.09. löschen), dann im Terminal
+   `gh auth login` mit dem Browser. Der Token stand im Chat-Verlauf.
+2. **Peter, 30 Minuten: die Offline-Theke einmal echt ausprobieren.** Am Stack das Netz
+   kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
+   angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis,
+   den Abschnitt 2.3 verlangt — ohne ihn keine Stufe 2.
+3. **Peter, ein Wort: Freigabe für Stufe 2 des Offline-Baus.** Danach baue ich die fünf
+   Server-Commits aus Abschnitt 2; die tote Tür „Reserviert für:" (5.14) räume ich dabei mit
+   ab, weil es derselbe Baustein ist.
+4. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
+   ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
+5. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
+   nichts zu tun außer nachzufragen, wenn nichts kommt.
+
+Alles andere in dieser Datei — die B-Punkte in Abschnitt 5, die Beobachtungen in 6, die
+Betriebspunkte in 7 — schadet niemandem, wenn es liegen bleibt, und wird gebündelt erledigt,
+wenn gerade nichts Dringenderes ansteht.
+
+---
+
 ## So wird die Liste geführt
 
 Vor jedem Fund steht dieselbe Frage — nicht „ist das hässlich?", sondern **„kann das still
