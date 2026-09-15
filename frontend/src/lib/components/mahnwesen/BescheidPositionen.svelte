@@ -3,10 +3,17 @@
      Eigene Datei, damit BescheidDialog unter der 200-Zeilen-Marke bleibt. Die beiden
      Fallgruppen des Formulars stehen getrennt, weil der Brief sie getrennt aufführt:
      „nicht ordnungsgemäß zurückgegeben" und „so stark beschädigt, dass eine Nutzung
-     nicht mehr möglich ist". -->
+     nicht mehr möglich ist".
+
+     Jede Zeile hat einen `key` (bescheidFormular.zeilenAus): die Forderung oder, seit
+     Stufe 2, die Ausleihe eines überfälligen Buchs ohne Forderung. Letztere sagt, seit
+     wann es fällig ist und dass der Brief seinen Verlust bucht. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+
+	/** @param {string} iso */
+	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
 
 	/**
 	 * @type {{
@@ -35,11 +42,11 @@
 	{#if g.items.length > 0}
 		<section class="space-y-2">
 			<h3 class="text-xs font-semibold text-on-surface">{g.titel}</h3>
-			{#each g.items as p (p.schadensfall_id)}
+			{#each g.items as p (p.key)}
 				<div class="flex items-start gap-3 border-b border-outline-variant py-2 last:border-0">
 					<div class="pt-1">
 						<Kaestchen
-							bind:checked={gewaehlt[p.schadensfall_id]}
+							bind:checked={gewaehlt[p.key]}
 							label=""
 							aria-label="{p.titel} in den Bescheid aufnehmen"
 							disabled={!p.ist_lernmittel}
@@ -50,6 +57,11 @@
 						<div class="text-xs text-on-surface-variant">
 							{p.isbn || 'ohne ISBN'} · {p.herleitung}
 						</div>
+						{#if p.quelle === 'ausleihe'}
+							<div class="text-xs text-on-surface-variant">
+								Fällig seit {datum(p.faellig_seit)} · wird mit dem Brief als Verlust gebucht
+							</div>
+						{/if}
 						{#if !p.ist_lernmittel}
 							<div class="text-xs text-on-surface-variant">
 								Buch der Schülerbücherei — gehört nicht auf den Bescheid des Landes.
@@ -61,10 +73,10 @@
 							type="number"
 							step="0.01"
 							min="0"
-							bind:value={betraege[p.schadensfall_id]}
+							bind:value={betraege[p.key]}
 							aria-label="Betrag für {p.titel}"
 							feld="w-24 text-right"
-							disabled={!gewaehlt[p.schadensfall_id]}
+							disabled={!gewaehlt[p.key]}
 						/>
 						<span class="text-sm text-on-surface-variant">€</span>
 					</div>

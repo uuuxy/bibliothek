@@ -13,6 +13,9 @@ import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
 // sie. Die letzten sechs Zeichen genügen für einen parallelen Lauf.
 const suffix = uniqueSuffix().slice(-6);
 const NACHNAME = `Bescheidkind${suffix}`;
+// Zweites Kind für Stufe 2: ein überfälliges Buch, KEINE Forderung — der Brief bucht den
+// Verlust selbst.
+const VERLUSTKIND = `Verlustkind${suffix}`;
 
 test.describe('Schadensersatz-Bescheid', () => {
 	test.beforeAll(() => {
@@ -53,6 +56,23 @@ test.describe('Schadensersatz-Bescheid', () => {
 			INSERT INTO schadensfaelle (exemplar_id, schueler_id, ausleihe_id, beschreibung, betrag, art)
 			SELECT e.id, s.id, a.id, 'Bescheidbuch nicht zurückgegeben', 0, 'nicht_zurueckgegeben'
 			FROM e, s, a;`);
+
+		seedSQL(`
+			WITH s AS (
+				INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, strasse, hausnummer, plz, ort)
+				VALUES ('S-VERL-${suffix}', 'Test', '${VERLUSTKIND}', '08G2', 0, 'Musterweg', '14', '61381', 'Musterstadt')
+				RETURNING id
+			), t AS (
+				INSERT INTO buecher_titel (titel, isbn, ist_lernmittel, meldebestand)
+				VALUES ('LMF-Verlustbuch ${suffix}', '978-3-2${suffix}', true, 1)
+				RETURNING id
+			), e AS (
+				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, einkaufspreis, erworben_am)
+				SELECT t.id, 'VERL-EX-${suffix}', true, 24.90, CURRENT_DATE - INTERVAL '2 years' FROM t
+				RETURNING id
+			)
+			INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
+			SELECT e.id, s.id, CURRENT_DATE - 60, CURRENT_DATE - 30 FROM e, s;`);
 	});
 
 	test.afterAll(() => {
@@ -61,14 +81,15 @@ test.describe('Schadensersatz-Bescheid', () => {
 		// Aufräumen ab und lässt Testdaten in der Anlage zurück.
 		seedSQL(`
 			DELETE FROM schadensersatz_bescheide WHERE schueler_id IN
-				(SELECT id FROM schueler WHERE nachname = '${NACHNAME}');
+				(SELECT id FROM schueler WHERE nachname IN ('${NACHNAME}', '${VERLUSTKIND}'));
 			DELETE FROM schadensfaelle WHERE schueler_id IN
-				(SELECT id FROM schueler WHERE nachname = '${NACHNAME}');
+				(SELECT id FROM schueler WHERE nachname IN ('${NACHNAME}', '${VERLUSTKIND}'));
 			DELETE FROM ausleihen WHERE schueler_id IN
-				(SELECT id FROM schueler WHERE nachname = '${NACHNAME}');
-			DELETE FROM schueler WHERE nachname = '${NACHNAME}';
-			DELETE FROM buecher_exemplare WHERE barcode_id = 'BESCH-EX-${suffix}';
-			DELETE FROM buecher_titel WHERE titel LIKE 'LMF-Bescheidbuch ${suffix}%';`);
+				(SELECT id FROM schueler WHERE nachname IN ('${NACHNAME}', '${VERLUSTKIND}'));
+			DELETE FROM schueler WHERE nachname IN ('${NACHNAME}', '${VERLUSTKIND}');
+			DELETE FROM buecher_exemplare WHERE barcode_id IN ('BESCH-EX-${suffix}', 'VERL-EX-${suffix}');
+			DELETE FROM buecher_titel WHERE titel LIKE 'LMF-Bescheidbuch ${suffix}%'
+			   OR titel LIKE 'LMF-Verlustbuch ${suffix}%';`);
 	});
 
 	test('steht als Forderung im vierten Reiter, entsteht aus der Auswahlleiste und bleibt dort', async ({
@@ -144,5 +165,55 @@ test.describe('Schadensersatz-Bescheid', () => {
 			/^5830 \d{4} 1234 \d{4}$/
 		);
 		expect(positionen, 'eine Position auf dem Brief').toBe('1');
+	});
+
+	test('entsteht aus dem überfälligen Buch, das der Brief als Verlust bucht', async ({ page }) => {
+		await uiLogin(page);
+		await gehZu(page, '/mahnwesen');
+
+		// Stufe 2 (15.09.2026): Das Kind steht mit seinem überfälligen Buch in der
+		// Mahnliste und hat KEINE Forderung. Der Knopf öffnet den Dialog trotzdem mit
+		// Inhalt — vorher war er hier eine leere Tür.
+		await page.getByRole('checkbox', { name: new RegExp(`${VERLUSTKIND}.*auswählen`) }).click();
+		await page.getByRole('button', { name: /Schadensersatz-Bescheid/ }).click();
+
+		const dialog = page.getByRole('dialog');
+		await expect(dialog.getByText(`LMF-Verlustbuch ${suffix}`)).toBeVisible();
+		await expect(
+			dialog.getByText(/Fällig seit .* wird mit dem Brief als Verlust gebucht/)
+		).toBeVisible();
+		await expect(
+			dialog.getByRole('checkbox', { name: /LMF-Verlustbuch .* in den Bescheid aufnehmen/ })
+		).toBeChecked();
+		await dialog.getByRole('button', { name: 'Bescheid erstellen' }).click();
+		await expect(page.getByText(/Bescheid 5830 /)).toBeVisible({ timeout: 10000 });
+
+		// Die Ausleihe ist beendet: Das Kind ist aus der Mahnliste verschwunden und steht
+		// im Reiter „Schadensersatz" mit laufender Frist.
+		await expect(
+			page.getByRole('checkbox', { name: new RegExp(`${VERLUSTKIND}.*auswählen`) })
+		).toHaveCount(0);
+		await page.getByRole('tab', { name: /Schadensersatz/ }).click();
+		const zeile = page.getByRole('row', { name: new RegExp(VERLUSTKIND) });
+		await expect(zeile).toContainText('Frist läuft');
+
+		// Papier == Datenbank: Ausleihe beendet, Exemplar VERLUST, Forderung „nicht
+		// zurückgegeben" am Brief mit der Referenznummer in der Beschreibung.
+		const [beendet, grund, art, amBrief, beschreibung] = querySQL(`
+			SELECT a.rueckgabe_am IS NOT NULL, e.aussonderung_grund, f.art, f.bescheid_id IS NOT NULL,
+			       f.beschreibung
+			FROM ausleihen a
+			JOIN buecher_exemplare e ON e.id = a.exemplar_id
+			JOIN schadensfaelle f ON f.ausleihe_id = a.id
+			WHERE e.barcode_id = 'VERL-EX-${suffix}';`)
+			.trim()
+			.split('|');
+		expect(beendet, 'Ausleihe beendet').toBe('t');
+		expect(grund, 'Exemplar als Verlust ausgesondert').toBe('VERLUST');
+		expect(art, 'Fallgruppe des Briefs').toBe('nicht_zurueckgegeben');
+		expect(amBrief, 'Forderung hängt am Brief').toBe('t');
+		expect(beschreibung, 'Referenznummer in der Forderung').toMatch(
+			/Bescheid 5830 \d{4} 1234 \d{4}/
+		);
 	});
 });
