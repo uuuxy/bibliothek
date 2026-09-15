@@ -296,10 +296,13 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/schueler/{id}/bescheid-vorschlag": {URL: "/api/schueler/" + w.schuelerID + "/bescheid-vorschlag", Positiv: []string{"Vogelbeere"}},
 		"GET /api/schueler/{id}/bescheide":          {URL: "/api/schueler/" + w.schuelerID + "/bescheide"},
 		"GET /api/bescheide":                        {URL: "/api/bescheide"},
-		"GET /api/bescheide/{id}/pdf":               {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
-		"GET /api/mahnwesen":                        {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
-		"GET /api/mahnwesen/ueberfaellig_jahrgang":  {URL: "/api/mahnwesen/ueberfaellig_jahrgang"},
-		"GET /api/mahnwesen/pdf":                    {URL: "/api/mahnwesen/pdf"},
+		// Forderungen ohne Brief je Kind (15.09.2026): Der Kanarienvogel hat einen
+		// offenen Schadensfall ohne bescheid_id und steht deshalb mit Namen darin.
+		"GET /api/bescheide/ausstehend":            {URL: "/api/bescheide/ausstehend", Positiv: []string{"Vogelbeere"}},
+		"GET /api/bescheide/{id}/pdf":              {URL: "/api/bescheide/" + w.bescheidID + "/pdf", Positiv: []string{"Vogelbeere", "Kanariweg", "Kanaristadt"}},
+		"GET /api/mahnwesen":                       {URL: "/api/mahnwesen", Positiv: []string{"Vogelbeere"}},
+		"GET /api/mahnwesen/ueberfaellig_jahrgang": {URL: "/api/mahnwesen/ueberfaellig_jahrgang"},
+		"GET /api/mahnwesen/pdf":                   {URL: "/api/mahnwesen/pdf"},
 
 		// routes_books.go
 		"GET /api/buecher/titel/{id}/exemplare":      {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
