@@ -29,7 +29,8 @@
 			</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
 				Für <strong>{book.titel}</strong> ({book.barcode_id}). Die Ausleihe wird beendet und eine
-				Ersatzforderung an die Eltern generiert.
+				Forderung angelegt; sie steht danach unter „Gebühren &amp; Schäden" und im Mahnwesen unter
+				„Schadensersatz". Der Bescheid an die Eltern ist der nächste, eigene Schritt.
 			</p>
 
 			<div class="space-y-4">
@@ -63,7 +64,7 @@
 						onclick={handleSubmit}
 						disabled={isSubmitting || !damageReason.trim() || damageAmount < 0}
 					>
-						{isSubmitting ? 'Wird gemeldet...' : 'Melden & PDF generieren'}
+						{isSubmitting ? 'Wird gemeldet...' : 'Melden'}
 					</Button>
 				</div>
 			</div>

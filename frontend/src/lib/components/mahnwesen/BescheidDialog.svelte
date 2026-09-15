@@ -22,10 +22,12 @@
 	 * @type {{
 	 *   schuelerId: string,
 	 *   onclose: () => void,
-	 *   onErstellt: () => Promise<void> | void
+	 *   onErstellt: () => Promise<void> | void,
+	 *   ebene?: 'basis' | 'darueber'
 	 * }}
 	 */
-	let { schuelerId, onclose, onErstellt } = $props();
+	// ebene „darueber": aus der Schülerakte heraus, die selbst ein Overlay ist.
+	let { schuelerId, onclose, onErstellt, ebene = 'basis' } = $props();
 
 	/** @type {any} */
 	let vorschlag = $state(null);
@@ -108,7 +110,7 @@
 	}
 </script>
 
-<Modal open={true} {onclose} size="2xl" beschriftetDurch="bescheid-titel">
+<Modal open={true} {onclose} size="2xl" {ebene} beschriftetDurch="bescheid-titel">
 	<div class="space-y-5 p-6">
 		<div>
 			<h2 id="bescheid-titel" class="text-lg font-bold text-on-surface">
@@ -138,7 +140,8 @@
 		{:else if positionen.length === 0}
 			<p class="py-8 text-sm text-on-surface-variant">
 				Für dieses Kind ist keine offene Forderung erfasst, die noch auf keinem Bescheid steht. Ein
-				Bescheid entsteht aus einer Forderung — die legt „Schaden melden" bei der Rückgabe an.
+				Bescheid entsteht aus einer Forderung — die legt „Verlust/Schaden melden" in der Schülerakte
+				an der Ausleihzeile an.
 			</p>
 		{:else}
 			<BescheidPositionen {positionen} bind:gewaehlt bind:betraege />

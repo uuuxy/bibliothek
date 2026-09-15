@@ -185,8 +185,13 @@ export function useStudentProfile() {
 				betrag: amount
 			});
 			if (res.ok) {
-				const json = await res.json();
-				window.open(`/api/schadensfaelle/${json.schadens_id}/pdf`, '_blank');
+				// Kein Brief-Fenster mehr: Der frühere Elternbrief verlangte Barzahlung in der
+				// Bibliothek und widersprach dem Bescheid des Landes (OFFEN.md 5.2). Der Brief
+				// ist ein eigener Schritt — „Bescheid erstellen" an der Gebühren-Karte.
+				toastStore.addToast(
+					'Verlust/Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
+					'success'
+				);
 				showDamageModal = false;
 				fetchProfile(studentId);
 			} else {

@@ -1,23 +1,38 @@
 <script>
 	import { apiClient } from './apiFetch.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
-	import { Receipt, CheckCircle2, Ban } from '@lucide/svelte';
+	import { Receipt, CheckCircle2, Ban, FileText } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Modal from './Modal.svelte';
+	import BescheidDialog from './components/mahnwesen/BescheidDialog.svelte';
 
 	/**
 	 * Gebühren/Schäden eines Schülers mit den beiden Erledigungs-Wegen:
 	 * "Bezahlt" (Barzahlung am Tresen) und "Stornieren" (Erlass, mit Pflicht-Grund).
 	 * Buttons nur für Rollen, die Schülerdaten bearbeiten — das Backend erzwingt
 	 * edit_students unabhängig davon.
-	 * @type {{ gebuehren: any[], canEdit: boolean, onChanged: () => void }}
+	 *
+	 * „Bescheid erstellen" steht hier, weil die Forderung hier entsteht („Verlust/Schaden
+	 * melden" beendet die Ausleihe — das Kind fällt damit aus der Mahnliste). Bis zum
+	 * 15.09.2026 gab es den Bescheid nur in der Mahnliste, wo dieses Kind nicht mehr stand.
+	 * Derselbe Dialog wie im Mahnwesen; er entscheidet selbst, welche Forderung auf den
+	 * Brief des Landes darf.
+	 * @type {{ schuelerId?: string, gebuehren: any[], canEdit: boolean, onChanged: () => void }}
 	 */
-	let { gebuehren = [], canEdit = false, onChanged } = $props();
+	let { schuelerId = '', gebuehren = [], canEdit = false, onChanged } = $props();
 
 	let stornoFall = $state(/** @type {any} */ (null));
 	let stornoGrund = $state('');
 	let isSubmitting = $state(false);
+	let bescheidOffen = $state(false);
+
+	// Ein Brief braucht eine offene Forderung, die noch auf keinem Brief steht.
+	const bescheidMoeglich = $derived(
+		canEdit &&
+			schuelerId !== '' &&
+			gebuehren.some((f) => !f.ist_bezahlt && !f.storniert_am && !f.bescheid_id)
+	);
 
 	const euro = (v) => (v ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
@@ -57,6 +72,12 @@
 			<h3 class="text-base font-medium text-on-surface-variant">
 				Gebühren &amp; Schäden ({gebuehren.length})
 			</h3>
+			{#if bescheidMoeglich}
+				<Button variant="secondary" onclick={() => (bescheidOffen = true)}>
+					<FileText class="h-4 w-4" aria-hidden="true" />
+					Bescheid erstellen
+				</Button>
+			{/if}
 		</div>
 
 		<div class="space-y-4">
@@ -118,6 +139,15 @@
 			{/each}
 		</div>
 	</div>
+{/if}
+
+{#if bescheidOffen}
+	<BescheidDialog
+		{schuelerId}
+		ebene="darueber"
+		onclose={() => (bescheidOffen = false)}
+		onErstellt={() => onChanged?.()}
+	/>
 {/if}
 
 {#if stornoFall}

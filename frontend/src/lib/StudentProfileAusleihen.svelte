@@ -16,6 +16,7 @@
 
 	/**
 	 * @type {{
+	 *   schuelerId?: string,
 	 *   buecher: any[],
 	 *   vormerkungen: any[],
 	 *   gebuehren: any[],
@@ -29,6 +30,7 @@
 	 * }}
 	 */
 	let {
+		schuelerId = '',
 		buecher = [],
 		vormerkungen = $bindable([]),
 		gebuehren = [],
@@ -63,7 +65,7 @@
 		<StudentVormerkungenCard bind:vormerkungen />
 	{/if}
 
-	<StudentGebuehrenCard {gebuehren} {canEdit} {onChanged} />
+	<StudentGebuehrenCard {schuelerId} {gebuehren} {canEdit} {onChanged} />
 
 	<StudentBescheideCard {bescheide} />
 </div>

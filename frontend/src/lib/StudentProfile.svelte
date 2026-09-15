@@ -26,7 +26,6 @@
 	 * @property {import('svelte').Snippet} [rightTop] - Optional slot for right content top
 	 * @property {'ausleihen'|'stammdaten'} [defaultTab] - Reiter, der beim Öffnen oben liegt
 	 */
-
 	/** @type {Props} */
 	let {
 		student,
@@ -162,6 +161,7 @@
 				<div class="flex-1 relative">
 					{#if st.activeTab === 'ausleihen'}
 						<StudentProfileAusleihen
+							schuelerId={st.profile.id}
 							buecher={st.profile.entliehene_buecher || []}
 							bind:vormerkungen={st.vormerkungen}
 							gebuehren={st.gebuehren}

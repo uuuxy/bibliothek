@@ -3,7 +3,12 @@ import { render, fireEvent } from '@testing-library/svelte';
 import StudentGebuehrenCard from './StudentGebuehrenCard.svelte';
 import { apiClient } from './apiFetch.js';
 
-vi.mock('./apiFetch.js', () => ({ apiClient: { post: vi.fn() } }));
+// apiGet/apiPost: der Bescheid-Dialog importiert sie; er öffnet in diesen Tests nie.
+vi.mock('./apiFetch.js', () => ({
+	apiClient: { post: vi.fn() },
+	apiGet: vi.fn(),
+	apiPost: vi.fn()
+}));
 
 /**
  * Die zwei Erledigungs-Wege einer Gebühr: Der Storno darf NIE ohne Grund abgehen
@@ -122,5 +127,33 @@ describe('StudentGebuehrenCard', () => {
 		});
 		await fireEvent.click(screen.getByRole('button', { name: /Bezahlt/ }));
 		expect(onChanged).not.toHaveBeenCalled();
+	});
+});
+
+// „Bescheid erstellen" steht an der Gebühren-Karte, weil die Forderung dort entsteht
+// (15.09.2026). Der Knopf gehört nur zu einer offenen Forderung, die noch auf keinem Brief
+// steht — sonst führte er in einen leeren Dialog.
+describe('StudentGebuehrenCard: Bescheid erstellen', () => {
+	const props = (gebuehr, canEdit = true) => ({
+		props: { schuelerId: 's1', gebuehren: [gebuehr], canEdit, onChanged: () => {} }
+	});
+
+	it('bietet den Bescheid bei einer offenen Forderung ohne Brief an', () => {
+		const screen = render(StudentGebuehrenCard, props(OFFEN));
+		expect(screen.getByRole('button', { name: /Bescheid erstellen/ })).toBeTruthy();
+	});
+
+	it.each([
+		['bezahlt', { ...OFFEN, ist_bezahlt: true }],
+		['storniert', STORNIERT],
+		['schon auf einem Bescheid', { ...OFFEN, bescheid_id: 'b1' }]
+	])('bietet ihn nicht an, wenn die Forderung %s ist', (_, gebuehr) => {
+		const screen = render(StudentGebuehrenCard, props(gebuehr));
+		expect(screen.queryByRole('button', { name: /Bescheid erstellen/ })).toBeNull();
+	});
+
+	it('bietet ihn ohne Schreibrecht nicht an', () => {
+		const screen = render(StudentGebuehrenCard, props(OFFEN, false));
+		expect(screen.queryByRole('button', { name: /Bescheid erstellen/ })).toBeNull();
 	});
 });

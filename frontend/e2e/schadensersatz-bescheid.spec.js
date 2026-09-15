@@ -71,12 +71,28 @@ test.describe('Schadensersatz-Bescheid', () => {
 			DELETE FROM buecher_titel WHERE titel LIKE 'LMF-Bescheidbuch ${suffix}%';`);
 	});
 
-	test('entsteht aus der Auswahlleiste und landet im vierten Reiter', async ({ page }) => {
+	test('steht als Forderung im vierten Reiter, entsteht aus der Auswahlleiste und bleibt dort', async ({
+		page
+	}) => {
 		await uiLogin(page);
 		await gehZu(page, '/mahnwesen');
 
-		// Der Reiter „Bescheide" steht in der Reihe nach Dringlichkeit.
-		await expect(page.getByRole('tab', { name: /Bescheide/ })).toBeVisible();
+		// Der Reiter „Schadensersatz" steht in der Reihe nach Dringlichkeit — und zeigt das
+		// Kind SCHON VOR dem Brief: Seit dem 15.09.2026 hat die Stufe „Forderung offen, noch
+		// kein Bescheid" eine eigene Zeile. Vorher war ein Kind mit gemeldetem Verlust
+		// nirgends zu sehen, sobald die Mahnliste neu geladen war (ReportDamage beendet die
+		// Ausleihe).
+		await expect(page.getByRole('tab', { name: /Schadensersatz/ })).toBeVisible();
+		await page.getByRole('tab', { name: /Schadensersatz/ }).click();
+		const wartend = page.getByRole('row', { name: new RegExp(NACHNAME) });
+		await expect(wartend).toContainText('Bescheid noch nicht erstellt');
+		await expect(wartend.getByRole('button', { name: 'Bescheid erstellen' })).toBeVisible();
+
+		// Zweite Tür: der Name führt in die Akte, und dort steht der Knopf an der
+		// Gebühren-Karte — bei der Forderung, aus der der Brief entsteht.
+		await wartend.getByRole('button', { name: /Akte von .* öffnen/ }).click();
+		await expect(page.getByRole('button', { name: /Bescheid erstellen/ })).toBeVisible();
+		await gehZu(page, '/mahnwesen');
 
 		// Ohne Markierung gibt es den Knopf nicht — der Bescheid ist ein Einzelfall.
 		await expect(page.getByRole('button', { name: /Schadensersatz-Bescheid/ })).toHaveCount(0);
@@ -101,14 +117,16 @@ test.describe('Schadensersatz-Bescheid', () => {
 		// Und der Brief steht im vierten Reiter. Gesucht wird in der ZEILE des Kindes:
 		// Die Referenznummer steht auch in der Bestätigungsmeldung, ein Textabgleich über
 		// die ganze Seite träfe beide.
-		await page.getByRole('tab', { name: /Bescheide/ }).click();
+		await page.getByRole('tab', { name: /Schadensersatz/ }).click();
 		const zeile = page.getByRole('row', { name: new RegExp(NACHNAME) });
 		await expect(zeile).toBeVisible();
 		await expect(zeile).toContainText(/5830 \d{4} 1234 \d{4}/);
 		await expect(zeile.getByRole('button', { name: 'Nachdruck' })).toBeVisible();
-		// Der Status ist „offen": Die Frist läuft, die Übergabe ist noch nicht möglich.
-		await expect(zeile).toContainText('offen');
+		// Der Stand nennt den nächsten Schritt: Die Frist läuft, die Übergabe ist noch nicht
+		// möglich — und die Zeile „noch nicht erstellt" ist weg, es gibt genau eine.
+		await expect(zeile).toContainText('Frist läuft');
 		await expect(zeile.getByRole('button', { name: 'Übergeben' })).toHaveCount(0);
+		await expect(page.getByRole('row', { name: new RegExp(NACHNAME) })).toHaveCount(1);
 
 		// Die Datenbank trägt genau einen Brief mit einer Position. querySQL liefert die
 		// Ausgabe von psql als Text (Felder mit „|" getrennt), nicht als Zeilenliste.
