@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { bescheidStatus } from './bescheidStatus.js';
+import { bescheidStatus, liegtBeiDerSchule } from './bescheidStatus.js';
 
 // Fünf Zustände, eine Stelle: Arbeitsliste (Mahnwesen) und Schülerakte lesen dieselbe
 // Funktion. Die Reihenfolge ist der Kern — „Rückgabe nach Übergabe" schlägt alles, weil
@@ -32,12 +32,33 @@ describe('bescheidStatus', () => {
 		expect(s.ton).toBe('fehler');
 	});
 
-	it('meldet sonst offen', () => {
-		expect(bescheidStatus({ status: 'offen', frist_abgelaufen: false }, datum).text).toBe('offen');
+	// Ein frischer Brief sagt, was als Nächstes kommt — bis zum 15.09.2026 stand nur „offen",
+	// und der nächste Schritt stand nirgends auf dem Bildschirm.
+	it('nennt bei laufender Frist das Abwarten und die Übergabe als nächsten Schritt', () => {
+		const s = bescheidStatus({ status: 'offen', frist_abgelaufen: false }, datum);
+		expect(s.text).toBe('Frist läuft');
+		expect(s.tip).toContain('übergeben');
 	});
 
 	// Ein übergebener Brief OHNE Datum darf keinen leeren Zusatz zeigen („übergeben · ").
 	it('lässt das Detail weg, wenn kein Übergabedatum da ist', () => {
 		expect(bescheidStatus({ status: 'uebergeben' }, datum).detail).toBeUndefined();
+	});
+});
+
+// Die Zahl am Reiter „Schadensersatz" zählt, was bei der Schule liegt: offen (Frist läuft
+// oder abgelaufen) und die Rückgabe nach der Übergabe. Übergeben liegt bei der Aufsicht,
+// erledigt ist bezahlt oder storniert — beides zählt nicht.
+describe('liegtBeiDerSchule', () => {
+	it('zählt offene Briefe, ob die Frist läuft oder abgelaufen ist', () => {
+		expect(liegtBeiDerSchule({ status: 'offen', frist_abgelaufen: false })).toBe(true);
+		expect(liegtBeiDerSchule({ status: 'offen', frist_abgelaufen: true })).toBe(true);
+	});
+	it('zählt übergebene und erledigte Briefe nicht', () => {
+		expect(liegtBeiDerSchule({ status: 'uebergeben' })).toBe(false);
+		expect(liegtBeiDerSchule({ status: 'erledigt' })).toBe(false);
+	});
+	it('zählt die Rückgabe nach der Übergabe — die Aufsicht ist zu informieren', () => {
+		expect(liegtBeiDerSchule({ status: 'uebergeben', rueckgabe_nach_uebergabe: true })).toBe(true);
 	});
 });

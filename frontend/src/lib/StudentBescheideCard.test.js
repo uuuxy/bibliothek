@@ -26,7 +26,7 @@ describe('StudentBescheideCard', () => {
 		// Datumsform wie in der Arbeitsliste des Mahnwesens (toLocaleDateString('de-DE')):
 		// ohne führende Null. Zwei Formen für dasselbe Datum wären zwei Wahrheiten.
 		expect(screen.getByText(/Frist: 29\.9\.2026/)).toBeTruthy();
-		expect(screen.getByText('offen')).toBeTruthy();
+		expect(screen.getByText('Frist läuft')).toBeTruthy();
 	});
 
 	// Der Zustand kommt aus bescheidStatus — hier geprüft an dem Fall, der eine Handlung

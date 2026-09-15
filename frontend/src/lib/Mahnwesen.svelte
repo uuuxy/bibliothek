@@ -34,7 +34,7 @@
 		}
 	});
 
-	// Die Zahl am Reiter „Bescheide" steht schon vor dem ersten Blick darauf — sonst
+	// Die Zahl am Reiter „Schadensersatz" steht schon vor dem ersten Blick darauf — sonst
 	// zeigte er 0, solange niemand hineingesehen hat, und wäre damit eine Falschaussage.
 	$effect(() => {
 		if (!bescheideStore.geladen) {
@@ -81,8 +81,8 @@
 				onBescheid={(id) => (bescheidFuer = id)}
 				{darfBescheid}
 			/>
-			{#if mahnwesenStore.activeFilter === 'Bescheide'}
-				<BescheideTabelle darfSchreiben={darfBescheid} />
+			{#if mahnwesenStore.activeFilter === 'Schadensersatz'}
+				<BescheideTabelle darfSchreiben={darfBescheid} onBescheid={(id) => (bescheidFuer = id)} />
 			{:else}
 				<MahnwesenTable />
 			{/if}
