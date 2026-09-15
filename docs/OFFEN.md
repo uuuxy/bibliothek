@@ -592,6 +592,26 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   über beide Tabellen (Migration 118) und die Personenart Lehrkraft/LiV im Kollegium (Migration
   119, nur in der Benutzerverwaltung sichtbar). Der Littera-Lauf übergeht weiter Praktikanten,
   Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
+- **Leserdatei und Rolle Leitung (Peter, 15.09.2026 spät, entschieden; Stufenplan steht aus).**
+  Ersetzt die Entscheidung „Rollennamen bleiben" vom selben Abend.
+  - Rollen, die der Admin vergibt: Admin, **Leitung** (neu), Mitarbeiter, Helfer. Anmeldung über
+    den normalen Link. Leitung startet mit den Rechten des Admins ohne System (Benutzer & Rechte,
+    Einstellungen, Systempflege); der Admin passt sie im Rechte-Editor an.
+  - Kollegium: alle Lehrkräfte, Selbstanmeldung über den Portal-Link, nur „Mein Portal" und
+    Katalog — vormerken, Fehler melden, Bestand ansehen. Unverändert, kein Ausleihen im Portal.
+  - Wer eine Rolle hat (Admin, Leitung, Mitarbeiter), kann an der Theke auch selbst ausleihen;
+    Helfer nicht. Heute entscheidet das die Personenart (Migration 120) — ein Admin ohne
+    Personenart kann nicht ausleihen.
+  - **Leserdatei** statt Schülerdatei: alle Leser an einem Ort, „Neuen Leser anlegen". In
+    „Persönliche Daten" steht Schüler / Lehrkraft / LiV und ist dort änderbar; die Angabe
+    informiert, sie entscheidet nicht über das Ausleihen. Die Benutzerverwaltung regelt nur
+    Anmeldung und Rolle.
+  - Offen für den Plan: Leiht die Bibliothek an der Theke weiter an Kollegiumsmitglieder aus
+    (Handapparat), wie heute?
+  - Mitzunehmen: Die Klassenauswahl beim Anlegen liest die Tabelle `lesergruppen`, die niemand
+    füllt (lokal 0 Zeilen; die Klassen stehen seit Migration 079 in `klassen`, `GET /api/klassen`
+    gibt es) — nur „Manuell eingeben…" erscheint. Die Meldung zu Klasse „Lehrer" verweist noch auf
+    „Rolle Kollegium" (`api/student_klasse_regel.go`).
 ### 5.7 Bestellwesen
 
 - Der Wareneingang gruppiert nach Datum und dem aus `zustand_notiz` abgeleiteten Lieferanten statt
