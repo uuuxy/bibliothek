@@ -7,9 +7,8 @@ import (
 	"net/http"
 
 	"bibliothek/internal/service"
+	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
-
-	"github.com/google/uuid"
 )
 
 // Der Idempotenz-Schlüssel an der Nachbuch-Tür (Rasterdurchgang 15.09.2026, OFFEN.md 5.15).
@@ -93,13 +92,14 @@ func (s *Server) ergreifeNachbuchSchluessel(ctx context.Context, e NachbuchenEin
 
 // nurFremdrueckgabeVorAusleihe: Der Online-Versand hat nur die Fremdrückgabe gebucht, und der
 // Eintrag will ausleihen — die Ausleihe fehlt noch. Ohne gültige Ausleih-Kennung gibt es keine
-// Ausnahme; der Eintrag gilt dann als vollständig gebucht.
+// Ausnahme; der Eintrag gilt dann als vollständig gebucht. Die Kennung geht als UUID an Postgres,
+// darum die strenge Form (kennung.IstUUID) — uuid.Parse nähme auch `urn:uuid:…` an
+// (uuid_eingaben_test.go).
 func nurFremdrueckgabeVorAusleihe(gebucht ActionResponse, absicht string) bool {
 	if gebucht.Type != "rueckgabe" || !gebucht.Fremdrueckgabe || absicht != service.NachbuchAbsichtAusleihe || gebucht.LoanID == nil {
 		return false
 	}
-	_, err := uuid.Parse(*gebucht.LoanID)
-	return err == nil
+	return kennung.IstUUID(*gebucht.LoanID)
 }
 
 func nachbuchNochInArbeit(e NachbuchenEintrag) *NachbuchenErgebnis {
