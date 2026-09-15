@@ -142,8 +142,6 @@
 
 <OmniboxScreenFlash />
 
-<!-- ── Offline / Queue banner was replaced by global OfflineIndicator ── -->
-
 <!-- Die Suchleiste ist oben ANGEDOCKT und bleibt es (Material 3): Sie ist ein
      persistentes Element, aus dem die Ergebnisse aufklappen — sie wechselt nicht selbst
      die Position. Vorher stand sie im Ruhezustand mittig (min-h-[60vh] justify-center)
@@ -223,6 +221,7 @@
 				bind:this={studentProfileComponent}
 				student={omniboxStore.activeStudent}
 				defaultTab="ausleihen"
+				onMerged={omniboxStore.uebernimmZusammengefuehrt}
 				onDeselect={() => {
 					omniboxStore.activeStudent = null;
 					omniboxStore.lastFremdrueckgabe = null;

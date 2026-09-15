@@ -483,6 +483,21 @@ export function createOmniboxStore() {
 	// ohne Meldung ins Leere (e2e/scanner-fokus-menue.spec.js).
 	uiStore.beimWechselZurTheke = scanfeldWiederScharfstellen;
 
+	// Nach dem Zusammenführen zweier Datensätze (StudentProfile → onMerged): Der aktive
+	// Schüler wird auf das Ziel umgehängt. Bis zum 15.09.2026 blieb an der Theke die
+	// gelöschte Kennung stehen — die Akte zeigte schon das Ziel, aber jede weitere Buchung
+	// und jeder Eintrag in der Offline-Warteschlange (enqueueOfflineAction) lief auf einen
+	// Datensatz, den es nicht mehr gab (OFFEN.md 3.2). Die Kennung wird SOFORT gesetzt, damit
+	// kein Scan dazwischen die alte erwischt; Name und Sperrflags kommen nach.
+	/** @param {string} zielId */
+	async function uebernimmZusammengefuehrt(zielId) {
+		activeStudent = { id: zielId };
+		const res = await apiFetch(`/api/schueler/${zielId}`);
+		// Inzwischen ein anderer Ausweis? Dann gehört das Nachgeladene niemandem mehr.
+		if (!res.ok || activeStudent?.id !== zielId) return;
+		activeStudent = await res.json();
+	}
+
 	return {
 		get activeStudent() {
 			return activeStudent;
@@ -615,6 +630,7 @@ export function createOmniboxStore() {
 		triggerFlash,
 		showToast,
 		handleInput,
+		uebernimmZusammengefuehrt,
 		selectDropdownItem,
 		submitAction
 	};
