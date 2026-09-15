@@ -103,6 +103,7 @@ func TestHandleLehrerHandapparat_Erfolg_Und_Konflikt(t *testing.T) {
 		}).AddRow(
 			"l1", &c1, nil, &staff1, time.Now(), time.Now().AddDate(1, 0, 0), nil, &staff1, nil, false, true,
 		))
+		mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").WithArgs(c1).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		mock.ExpectExec(`INSERT INTO audit_log`).WithArgs(
 			"ausleihen", "CHECKOUT", "c1", ptrStaff1, "USER", ptrNil, pgxmock.AnyArg(),

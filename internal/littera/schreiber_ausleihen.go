@@ -29,8 +29,8 @@ const sqlAusleiheEinfuegen = `
 	INSERT INTO ausleihen
 		(exemplar_id, schueler_id, ausleiher_benutzer_id,
 		 ausgeliehen_am, rueckgabe_frist, rueckgabe_am,
-		 ist_handapparat, mahnstufe)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`
+		 ist_handapparat, mahnstufe, erfasst_am)
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$4)`
 
 // SchreibeAusleihen überträgt die Ausleihen.
 //

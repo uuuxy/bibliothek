@@ -105,7 +105,8 @@ func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) erro
 	query := `
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT',
-		    aktualisiert_am = CURRENT_TIMESTAMP, bestellstatus = NULL
+		    aktualisiert_am = CURRENT_TIMESTAMP, bestellstatus = NULL,
+		    letzte_bewegung_am = CURRENT_TIMESTAMP
 		WHERE id = $1
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $1 AND a.rueckgabe_am IS NULL)
 	`

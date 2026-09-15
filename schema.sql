@@ -462,6 +462,10 @@ CREATE TABLE buecher_exemplare (
     bestellstatus TEXT DEFAULT NULL CONSTRAINT chk_exemplar_bestellstatus CHECK (bestellstatus IN ('bestellt', 'im_zulauf')),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Letzte Bewegung (Migration 116): Ausleihe, Rückgabe, Rückholen, Aussonderung — von den
+    -- Schreibern gesetzt, nicht vom aktualisiert_am-Trigger. NULL = keine bekannte Bewegung.
+    -- Der Wächter des Nachbuchens weist Scans ab, die älter sind als dieser Stempel.
+    letzte_bewegung_am TIMESTAMP WITH TIME ZONE,
     -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
     -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
     CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
@@ -558,6 +562,9 @@ CREATE TABLE ausleihen (
     ausgeliehen_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     rueckgabe_frist TIMESTAMP WITH TIME ZONE NOT NULL,
     rueckgabe_am TIMESTAMP WITH TIME ZONE,
+    -- Wann der Vorgang gescannt wurde (Migration 116): online der Moment der Buchung, beim
+    -- Nachbuchen der Scan-Zeitpunkt vom Theken-Rechner, höchstens Serverzeit.
+    erfasst_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
     bearbeiter_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,          -- Staff checking out the book (Nullable for GDPR anonymization)
     rueckgabe_bearbeiter_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,          -- Staff checking in the book
@@ -1301,7 +1308,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('112_abholfach_folgt_dem_exemplar.sql'),
 ('113_benutzer_email_eindeutig_in_normalform.sql'),
 ('114_jahrgang_null_null_repariert.sql'),
-('115_lmf_plan_zusicherungen.sql')
+('115_lmf_plan_zusicherungen.sql'),
+('116_bewegungsstempel.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -95,6 +95,9 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow("loan-1", &copy.ID, &studentID, nil, time.Now(), time.Now(), nil, &staffID, nil, false, false))
+	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
+		WithArgs(copy.ID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	// Delete Vormerkung: liefert jetzt bereitgestellt_exemplar_id via RETURNING
 	// (Regal-Hinweis-Erkennung). Hier ohne offene Vormerkung -> ErrNoRows.
@@ -166,6 +169,9 @@ func TestHandleBookReturn(t *testing.T) {
 	// ReturnLoanTx
 	mock.ExpectExec("UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = \\$1, ist_fremdrueckgabe = \\$2 WHERE id = \\$3 AND rueckgabe_am IS NULL").
 		WithArgs(staffID, false, activeLoanID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+	mock.ExpectExec("UPDATE buecher_exemplare e SET letzte_bewegung_am").
+		WithArgs(activeLoanID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	// Vormerkungs-Zuteilung: niemand wartet. Seit dem 31.08.2026 wird ein Fehler dieser

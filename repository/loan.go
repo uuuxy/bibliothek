@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -132,7 +133,25 @@ func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplar
 		}
 		return nil, err
 	}
+	if err := StempleBewegung(ctx, tx, exemplarID); err != nil {
+		return nil, err
+	}
 	return l, nil
+}
+
+// StempleBewegung setzt buecher_exemplare.letzte_bewegung_am auf jetzt (Migration 116):
+// Der Wächter des Nachbuchens weist Scans ab, die älter sind als die letzte Bewegung.
+// Aufgerufen NACH der Zeile in ausleihen — Sperrreihenfolge Schüler → Ausleihe → Exemplar
+// (docs/invarianten.md, Abschnitt 1); das Nachbuchen hält dieselbe Reihenfolge.
+func StempleBewegung(ctx context.Context, q DBQueryer, exemplarID string) error {
+	tag, err := q.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = CURRENT_TIMESTAMP WHERE id = $1`, exemplarID)
+	if err != nil {
+		return fmt.Errorf("bewegung stempeln: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrExemplarNichtGefunden
+	}
+	return nil
 }
 
 // CreateUserLoanTx erzeugt einen neuen Ausleiheintrag für einen Systembenutzer innerhalb einer Transaktion.
@@ -152,6 +171,9 @@ func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exem
 		}
 		return nil, err
 	}
+	if err := StempleBewegung(ctx, tx, exemplarID); err != nil {
+		return nil, err
+	}
 	return l, nil
 }
 
@@ -168,6 +190,18 @@ func (r *pgLoanRepository) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, 
 	}
 	if tag.RowsAffected() == 0 {
 		return errors.New("loan not active or already returned")
+	}
+	// Bewegungsstempel am Exemplar (Migration 116). Diese Funktion bucht Bücher; Geräte gehen
+	// über device_service — die Ausleihe hier trägt also immer ein Exemplar, 0 Zeilen wäre ein
+	// Widerspruch und kein Normalfall.
+	stempel, err := tx.Exec(ctx, `
+		UPDATE buecher_exemplare e SET letzte_bewegung_am = CURRENT_TIMESTAMP
+		FROM ausleihen a WHERE a.id = $1 AND e.id = a.exemplar_id`, loanID)
+	if err != nil {
+		return fmt.Errorf("bewegung stempeln: %w", err)
+	}
+	if stempel.RowsAffected() == 0 {
+		return ErrExemplarNichtGefunden
 	}
 	return nil
 }

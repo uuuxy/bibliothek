@@ -51,6 +51,9 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 		WithArgs(uuidCopy, "student1", chkCtx.dueTime, staffID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow("loan1", ptr(uuidCopy), ptr("student1"), nilStr, time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, false))
+	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
+		WithArgs(uuidCopy).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	mock.ExpectQuery("DELETE FROM vormerkungen").
 		WithArgs("titel1", "student1").
@@ -115,6 +118,9 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 		WithArgs(uuidCopy, "teacher1", chkCtx.dueTime, staffID, true).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow("loan1", ptr(uuidCopy), nilStr, ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
+	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
+		WithArgs(uuidCopy).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("ausleihen", "CHECKOUT", uuidCopy, ptr(staffID), "USER", nilStr, pgxmock.AnyArg()).
@@ -223,6 +229,9 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 		WithArgs(uuidCopy, "teacher1", chkCtx.dueTime, staffID, true).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
 			AddRow("loan1", ptr(uuidCopy), nilStr, ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
+	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
+		WithArgs(uuidCopy).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	// Die Audit-Zeile steht seit 07.09.2026 VOR dem Commit in derselben Transaktion.
 	mock.ExpectExec("INSERT INTO audit_log").

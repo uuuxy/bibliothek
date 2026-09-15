@@ -24,7 +24,8 @@ func HoleExemplarZurueck(ctx context.Context, q DBQueryer, exemplarID, bearbeite
 	tag, err := q.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL,
-		    zustand_notiz = '', bestellstatus = NULL, aktualisiert_am = CURRENT_TIMESTAMP
+		    zustand_notiz = '', bestellstatus = NULL, aktualisiert_am = CURRENT_TIMESTAMP,
+		    letzte_bewegung_am = CURRENT_TIMESTAMP
 		WHERE id = $1`, exemplarID)
 	if err != nil {
 		return RueckkehrBefund{}, fmt.Errorf("exemplar zurückholen: %w", err)
