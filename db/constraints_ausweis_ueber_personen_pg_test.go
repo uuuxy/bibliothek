@@ -131,11 +131,25 @@ func TestAusweisEindeutigUeberPersonen_Gleichzeitig(t *testing.T) {
 	}()
 
 	// Die zweite Vergabe soll warten, bis die erste feststeht. Kommt sie vorher zurück, hat sie
-	// die Zeile der ersten nicht gesehen.
-	select {
-	case err := <-ergebnis:
-		t.Fatalf("die zweite Vergabe wartete nicht auf die erste (Fehler: %v)", err)
-	case <-time.After(300 * time.Millisecond):
+	// die Zeile der ersten nicht gesehen. Gewartet wird, bis Postgres sie als wartend auf die
+	// Sperre führt — eine feste Wartezeit bewiese auf einem langsamen Rechner nichts: Käme die
+	// zweite Vergabe erst nach dem Festschreiben der ersten an, scheiterte sie auch ohne Sperre.
+	frist := time.Now().Add(10 * time.Second)
+	for wartend := 0; wartend == 0; {
+		select {
+		case err := <-ergebnis:
+			t.Fatalf("die zweite Vergabe wartete nicht auf die erste (Fehler: %v)", err)
+		default:
+		}
+		if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_stat_activity
+			WHERE datname = current_database() AND wait_event_type = 'Lock' AND wait_event = 'advisory'`).
+			Scan(&wartend); err != nil {
+			t.Fatalf("wartende Vergabe suchen: %v", err)
+		}
+		if wartend == 0 && time.Now().After(frist) {
+			t.Fatal("die zweite Vergabe erschien nie als wartend auf die Sperre")
+		}
+		time.Sleep(20 * time.Millisecond)
 	}
 	if err := tx1.Commit(ctx); err != nil {
 		t.Fatalf("erste Transaktion festschreiben: %v", err)
