@@ -25,12 +25,17 @@ var (
 	zoneOnce sync.Once
 )
 
-// Zone liefert die feste Zeitzone der Schule (Europe/Berlin). Fällt das Laden fehl
+// ZonenName ist der Name der Schulzeitzone — für Go (Zone) und für SQL, das den
+// Kalendertag selbst bilden muss (repository: sqlSchulHeute). Die Datenbank-Sitzung läuft
+// in UTC; CURRENT_DATE ist dort bis 2 Uhr Berliner Zeit noch der Vortag.
+const ZonenName = "Europe/Berlin"
+
+// Zone liefert die feste Zeitzone der Schule (ZonenName). Fällt das Laden fehl
 // (fehlende tzdata im Image), wird sicher auf UTC zurückgegriffen — lieber eine
 // Stunde daneben als ein Programm, das nicht startet.
 func Zone() *time.Location {
 	zoneOnce.Do(func() {
-		loc, err := time.LoadLocation("Europe/Berlin")
+		loc, err := time.LoadLocation(ZonenName)
 		if err != nil {
 			loc = time.UTC
 		}

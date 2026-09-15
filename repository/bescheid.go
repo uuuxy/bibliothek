@@ -236,8 +236,19 @@ func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e Besc
 // nach Fristablauf als überfällig und ließ sich an die Schulaufsicht übergeben.
 const bescheidHatOffenePosition = `EXISTS (SELECT 1 FROM schadensfaelle fo WHERE fo.bescheid_id = b.id AND fo.ist_bezahlt = false)`
 
+// sqlSchulHeute ist der heutige Kalendertag in der Schulzeitzone, in SQL gebildet.
+// CURRENT_DATE rechnet in der Zeitzone der Sitzung (im Image UTC) und nennt bis 2 Uhr
+// Berliner Zeit noch den Vortag.
+const sqlSchulHeute = `(now() AT TIME ZONE '` + schulzeit.ZonenName + `')::date`
+
 // bescheidFristAbgelaufen: offen, Frist vorbei, und es ist noch etwas zu zahlen.
-const bescheidFristAbgelaufen = `(b.status = 'offen' AND b.frist_bis < CURRENT_DATE AND ` + bescheidHatOffenePosition + `)`
+//
+// Die Frist ist ein Kalendertag in der Schulzeitzone (api/bescheid_handler.go), also wird
+// sie gegen sqlSchulHeute verglichen. Bis zum 16.09.2026 stand hier CURRENT_DATE: Zwischen
+// Mitternacht in Berlin und Mitternacht UTC galt eine Frist von gestern als nicht
+// abgelaufen, die Übergabe an die Schulaufsicht fand keine Zeile
+// (bescheid_frist_schulzeit_pg_test.go).
+const bescheidFristAbgelaufen = `(b.status = 'offen' AND b.frist_bis < ` + sqlSchulHeute + ` AND ` + bescheidHatOffenePosition + `)`
 
 // bescheidSpalten ist die gemeinsame Auswahl der Leser — EIN Ort, damit Liste, Akte und
 // Einzelabruf dieselben Felder in derselben Reihenfolge liefern.
