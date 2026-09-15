@@ -79,6 +79,8 @@ type BescheidRepository interface {
 	Uebergebe(ctx context.Context, id string) error
 	EmpfaengerFuerBescheid(ctx context.Context, schuelerID string) (BescheidEmpfaengerDaten, error)
 	OffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error)
+	// Ausstehend: je Kind die offenen Forderungen, die noch auf keinem Brief stehen.
+	Ausstehend(ctx context.Context) ([]ForderungOhneBescheid, error)
 }
 
 // BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck.

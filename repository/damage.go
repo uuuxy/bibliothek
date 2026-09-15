@@ -50,6 +50,10 @@ type Schadensfall struct {
 	Stornierungsgrund *string    `json:"stornierungsgrund"`
 	Titel             *string    `json:"titel"`
 	BarcodeID         *string    `json:"barcode_id"`
+	// BescheidID: steht die Forderung schon auf einem Schadensersatz-Bescheid? Die
+	// Akte bietet „Bescheid erstellen" nur an, solange eine offene Forderung ohne
+	// Brief da ist.
+	BescheidID *string `json:"bescheid_id"`
 }
 
 type pgDamageRepository struct {
@@ -66,7 +70,7 @@ func NewDamageRepository(db db.PgxPoolIface) DamageRepository {
 func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, schuelerID string) ([]Schadensfall, error) {
 	rows, err := r.db.Query(ctx, `
 		SELECT sf.id, sf.beschreibung, sf.betrag, sf.ist_bezahlt, sf.erstellt_am,
-		       sf.storniert_am, sf.stornierungsgrund, t.titel, e.barcode_id
+		       sf.storniert_am, sf.stornierungsgrund, t.titel, e.barcode_id, sf.bescheid_id
 		FROM schadensfaelle sf
 		LEFT JOIN buecher_exemplare e ON sf.exemplar_id = e.id
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
@@ -82,7 +86,7 @@ func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, 
 	for rows.Next() {
 		var f Schadensfall
 		if err := rows.Scan(&f.ID, &f.Beschreibung, &f.Betrag, &f.IstBezahlt, &f.ErstelltAm,
-			&f.StorniertAm, &f.Stornierungsgrund, &f.Titel, &f.BarcodeID); err != nil {
+			&f.StorniertAm, &f.Stornierungsgrund, &f.Titel, &f.BarcodeID, &f.BescheidID); err != nil {
 			return nil, err
 		}
 		faelle = append(faelle, f)

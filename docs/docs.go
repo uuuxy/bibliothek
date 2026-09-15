@@ -420,6 +420,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/bescheide/ausstehend": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "Students with open claims that are not on a notice yet",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.ForderungOhneBescheid"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/bescheide/{id}/pdf": {
             "get": {
                 "produces": [
@@ -4016,6 +4038,34 @@ const docTemplate = `{
                 },
                 "theke_leeren_minuten": {
                     "type": "integer"
+                }
+            }
+        },
+        "repository.ForderungOhneBescheid": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "type": "integer"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "lernmittel": {
+                    "description": "Lernmittel: mindestens eine der Forderungen betrifft ein Lernmittel und kann\ndamit auf den Bescheid des Landes. Die Rechnung der Schülerbücherei ist noch\nnicht gebaut (mittel_konzept.md 4.7, Etappe 3).",
+                    "type": "boolean"
+                },
+                "schueler_id": {
+                    "type": "string"
+                },
+                "schueler_name": {
+                    "type": "string"
+                },
+                "seit": {
+                    "description": "Seit: die älteste dieser Forderungen — so lange wartet der Fall schon.",
+                    "type": "string"
+                },
+                "summe": {
+                    "type": "number"
                 }
             }
         },

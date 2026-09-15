@@ -103,6 +103,7 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/schueler/{id}/bescheide", s.RequirePermission("view_students")(s.BescheidSchuelerListeHandler(bescheidRepo)))
 	mux.Handle("POST /api/schueler/{id}/bescheide", s.RequirePermission("edit_students")(s.BescheidErstellenHandler(bescheidRepo, auditRepoGebuehren)))
 	mux.Handle("GET /api/bescheide", s.RequirePermission("view_students")(s.BescheidListeHandler(bescheidRepo)))
+	mux.Handle("GET /api/bescheide/ausstehend", s.RequirePermission("view_students")(s.BescheidAusstehendHandler(bescheidRepo)))
 	mux.Handle("GET /api/bescheide/{id}/pdf", s.RequirePermission("view_students")(s.BescheidPDFHandler(bescheidRepo)))
 	mux.Handle("POST /api/bescheide/{id}/uebergeben", s.RequirePermission("edit_students")(s.BescheidUebergebenHandler(bescheidRepo, auditRepoGebuehren)))
 	mux.Handle("POST /api/schadensfaelle/{id}/bezahlt", s.RequirePermission("edit_students")(s.BezahltGebuehrHandler(auditRepoGebuehren)))
