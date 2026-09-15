@@ -506,6 +506,53 @@ CREATE TRIGGER trg_exemplar_geloescht_abholfach
 BEFORE DELETE ON buecher_exemplare
 FOR EACH ROW EXECUTE FUNCTION abholfach_folgt_dem_exemplar();
 
+-- Migration 118: Eine Ausweisnummer gehört genau einer Person — über Schüler und Kollegium
+-- hinweg. Ein UNIQUE-Index reicht nicht über zwei Tabellen: Der Trigger prüft die andere Tabelle
+-- und sperrt die Nummer vorher bis zum Ende der Transaktion. Gelöschte Schüler geben ihre Nummer
+-- frei; ändert sich die Nummer nicht, prüft er nicht.
+CREATE OR REPLACE FUNCTION ausweis_eindeutig_ueber_personen()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.barcode_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    IF TG_TABLE_NAME = 'schueler' THEN
+        IF NEW.deleted_at IS NOT NULL THEN
+            RETURN NEW;
+        END IF;
+        IF TG_OP = 'UPDATE' THEN
+            IF NEW.barcode_id IS NOT DISTINCT FROM OLD.barcode_id AND OLD.deleted_at IS NULL THEN
+                RETURN NEW;
+            END IF;
+        END IF;
+        PERFORM pg_advisory_xact_lock(hashtext('ausweisnummer'), hashtext(NEW.barcode_id));
+        IF EXISTS (SELECT 1 FROM benutzer WHERE barcode_id = NEW.barcode_id) THEN
+            RAISE EXCEPTION 'Ausweisnummer % trägt bereits eine Lehrkraft', NEW.barcode_id
+                USING ERRCODE = 'unique_violation', CONSTRAINT = 'uniq_ausweis_ueber_personen';
+        END IF;
+    ELSE
+        IF TG_OP = 'UPDATE' THEN
+            IF NEW.barcode_id IS NOT DISTINCT FROM OLD.barcode_id THEN
+                RETURN NEW;
+            END IF;
+        END IF;
+        PERFORM pg_advisory_xact_lock(hashtext('ausweisnummer'), hashtext(NEW.barcode_id));
+        IF EXISTS (SELECT 1 FROM schueler WHERE barcode_id = NEW.barcode_id AND deleted_at IS NULL) THEN
+            RAISE EXCEPTION 'Ausweisnummer % trägt bereits ein Schüler', NEW.barcode_id
+                USING ERRCODE = 'unique_violation', CONSTRAINT = 'uniq_ausweis_ueber_personen';
+        END IF;
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_schueler_ausweis_eindeutig
+BEFORE INSERT OR UPDATE OF barcode_id, deleted_at ON schueler
+FOR EACH ROW EXECUTE FUNCTION ausweis_eindeutig_ueber_personen();
+
+CREATE TRIGGER trg_benutzer_ausweis_eindeutig
+BEFORE INSERT OR UPDATE OF barcode_id ON benutzer
+FOR EACH ROW EXECUTE FUNCTION ausweis_eindeutig_ueber_personen();
+
 
 -- Table: class_books (LMF class to book catalog metadata association)
 CREATE TABLE class_books (
@@ -1310,7 +1357,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('114_jahrgang_null_null_repariert.sql'),
 ('115_lmf_plan_zusicherungen.sql'),
 ('116_bewegungsstempel.sql'),
-('117_nachbuch_meldungen.sql')
+('117_nachbuch_meldungen.sql'),
+('118_ausweis_eindeutig_ueber_personen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -159,6 +159,8 @@ func restoreKollision(err error) (string, bool) {
 		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits denselben Namen und dasselbe Geburtsdatum. Beide über „Schüler zusammenführen“ vereinen, statt zwei Zeilen für denselben Menschen zu führen.", true
 	case "uniq_schueler_barcode_active":
 		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits denselben Ausweis-Barcode. Erst den Barcode des aktiven Datensatzes ändern.", true
+	case "uniq_ausweis_ueber_personen":
+		return "Wiederherstellen nicht möglich: Eine Lehrkraft trägt inzwischen denselben Ausweis-Barcode. Erst einer der beiden Personen eine andere Nummer geben.", true
 	case "uniq_schueler_lusd_id_active":
 		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits dieselbe LUSD-ID. Beide über „Schüler zusammenführen“ vereinen.", true
 	}

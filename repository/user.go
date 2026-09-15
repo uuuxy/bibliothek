@@ -121,15 +121,15 @@ func (r *postgresUserRepo) CheckEmailExists(ctx context.Context, email string, e
 	return exists, err
 }
 
-// CheckBarcodeExists prüft das Vorhandensein eines Barcodes im System.
+// CheckBarcodeExists prüft, ob eine Ausweisnummer schon vergeben ist — im Kollegium und unter den
+// aktiven Schülern. Die Nummer gehört genau einer Person (Migration 118): Die Theke sucht bei
+// jeder Nummer unter beiden. Gelöschte Schüler geben ihre Nummer frei.
 func (r *postgresUserRepo) CheckBarcodeExists(ctx context.Context, barcode string, excludeID string) (bool, error) {
 	var exists bool
-	var err error
-	if excludeID == "" {
-		err = r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1)", barcode).Scan(&exists)
-	} else {
-		err = r.pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1 AND id != $2)", barcode, excludeID).Scan(&exists)
-	}
+	err := r.pool.QueryRow(ctx, `
+		SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1 AND id::text IS DISTINCT FROM NULLIF($2, ''))
+		    OR EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1 AND deleted_at IS NULL)`,
+		barcode, excludeID).Scan(&exists)
 	return exists, err
 }
 

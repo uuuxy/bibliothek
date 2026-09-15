@@ -208,6 +208,11 @@ var checkBedingungenBestand = []string{
 // „05F1" statt „5f1"). Ein NEUER Trigger ist immer eine Frage.
 var triggerBestand = []string{
 	"trg_benutzer_aktualisiert_am @ benutzer",
+	// Migration 118, befragt am 15.09.2026: Beide schreiben nichts um, sie lehnen nur ab — eine
+	// Ausweisnummer, die schon eine Person der anderen Tabelle trägt (unique_violation
+	// uniq_ausweis_ueber_personen). Die Schreibwege prüfen vorher selbst und übersetzen den Fall
+	// in eine Auskunft (api/ausweis_ueber_personen_pg_test.go).
+	"trg_benutzer_ausweis_eindeutig @ benutzer",
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",
@@ -228,6 +233,7 @@ var triggerBestand = []string{
 	"trg_mail_vorlagen_updated_at @ mail_vorlagen",
 	"trg_schadensfaelle_aktualisiert_am @ schadensfaelle",
 	"trg_schueler_aktualisiert_am @ schueler",
+	"trg_schueler_ausweis_eindeutig @ schueler",
 	"trg_schueler_fotos_aktualisiert_am @ schueler_fotos",
 	"trg_schueler_klasse_vokabular @ schueler",
 	"trg_systematik_kategorien_aktualisiert_am @ systematik_kategorien",

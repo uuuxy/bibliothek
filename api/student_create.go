@@ -206,6 +206,11 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
 			return "", "", false
 		}
+		if repository.IstAusweisKollision(err) {
+			apierrors.SendHTTPError(w, http.StatusConflict,
+				fmt.Errorf("die Ausweisnummer '%s' wird bereits von einer anderen Person verwendet", barcodeID))
+			return "", "", false
+		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}
@@ -271,9 +276,11 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 		return fmt.Sprintf("S-%05d", startNum), true
 	}
 
-	// Check if barcode_id already exists
+	// Die Ausweisnummer gehört genau einer Person, auch über das Kollegium hinweg (Migration 118):
+	// Die Theke sucht bei jeder Nummer unter Schülern und Lehrkräften.
 	var exists bool
-	if err := tx.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1)", requested).Scan(&exists); err != nil {
+	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1)
+		OR EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1)`, requested).Scan(&exists); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false
 	}

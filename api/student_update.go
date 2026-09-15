@@ -423,6 +423,13 @@ func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWri
 	query, args := b.build("UPDATE schueler SET aktualisiert_am = CURRENT_TIMESTAMP", id)
 	tag, err := s.DB.Pool.Exec(ctx, query, args...)
 	if err != nil {
+		// Eine vergebene Ausweisnummer (unter den Schülern oder im Kollegium, Migration 118) ist
+		// eine Auskunft, kein Serverfehler.
+		if repository.IstAusweisKollision(err) {
+			apierrors.SendHTTPError(w, http.StatusConflict,
+				errors.New("diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)"))
+			return false
+		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}

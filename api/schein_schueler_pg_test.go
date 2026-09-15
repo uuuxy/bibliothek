@@ -58,6 +58,18 @@ func TestScheinSchuelerUmzug072(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Migration lesen: %v", err)
 	}
+	// 072 legt das Konto mit der Karte an, solange die Schein-Zeile noch aktiv ist, und löscht
+	// sie danach. Der Trigger aus Migration 118 (eine Ausweisnummer je Person) gab es damals
+	// nicht; der Runner führt 072 nie nach 118 aus. Hier läuft 072 auf dem heutigen Schema —
+	// also genau dieser eine Trigger aus, alles andere bleibt scharf.
+	if _, err := pool.Exec(ctx, `ALTER TABLE benutzer DISABLE TRIGGER trg_benutzer_ausweis_eindeutig`); err != nil {
+		t.Fatalf("Trigger aus Migration 118 abschalten: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `ALTER TABLE benutzer ENABLE TRIGGER trg_benutzer_ausweis_eindeutig`); err != nil {
+			t.Errorf("Trigger aus Migration 118 wieder einschalten: %v", err)
+		}
+	})
 	if _, err := pool.Exec(ctx, string(sql)); err != nil {
 		t.Fatalf("Umzug ausführen: %v", err)
 	}
