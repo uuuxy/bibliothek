@@ -1,6 +1,6 @@
 # Erledigt
 
-Stand: 14.09.2026
+Stand: 15.09.2026
 
 Archiv zu [OFFEN.md](OFFEN.md): was erledigt oder endgültig entschieden ist, mit Datum und Commit.
 Neu Erledigtes kommt oben in den jüngsten Abschnitt.
@@ -27,6 +27,45 @@ stehen in den geschlossenen Issues #593 bis #600.
   Warteliste ist im Betrieb nicht nötig.
 - **Bestellwesen D1, D3, D4, D5** (10.09.2026): beantwortet bzw. entschieden, Einzelheiten in
   [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.4. Offen ist nur D2 (OFFEN.md 8.4).
+
+---
+
+## 15.09.2026
+
+Die Voraussetzungen des Offline-Baus (OFFEN.md 1.5 und 3.1–3.4), je ein Commit, je ein Test am
+alten Code rot gesehen; volle Suite mit Postgres 18, golangci-lint, deadcode, vitest, svelte-check.
+
+**Schülerakte: gescheiterter Abruf sah aus wie „kein Bescheid" (A, 1.5).** `useStudentProfile`
+wies bei `!res.ok` für Vormerkungen, Gebühren und Bescheide `[]` zu, ohne Hinweis. Jetzt
+`fehlendeListen` wie in der Buch-Akte: 5xx und Netzfehler werden vermerkt, 403 und eine leere Liste
+nicht; der Reiter zeigt „Nicht geladen: …" mit „Erneut laden". Der Bestandseintrag in
+`fehlerausgang.test.js` schrumpft von 4 auf 1 (der Kopf; der leere Kopf steht als Beobachtung in
+OFFEN.md 5.9). Dabei gefunden: Der `beforeEach` des Tests gab das Mock zurück, und Vitest ruft
+einen zurückgegebenen Funktionswert als Aufräumer auf. `253f3dcd`.
+
+**Lehrkraft-Ausleihe meldete jeden Datenbankfehler als 404 (3.1).** `resolveTeacherBorrower`
+liest jetzt dieselbe Abfrage wie die Geräte-Seite (`ladeAktiveLehrkraft`): nur `pgx.ErrNoRows` wird
+`ErrNotFound`, `coalesce(barcode_id, '')` für die nullbare Spalte — eine Lehrkraft ohne Ausweis
+scheiterte vorher am Scan. `lehrkraft_ohne_ausweis_pg_test.go` (echtes Postgres) und Mock-Test.
+`b97ca463`.
+
+**Theke hielt nach dem Zusammenführen die gelöschte Kennung (3.2).** `Omnibox.svelte` reicht
+`onMerged` durch; `omniboxStore.uebernimmZusammengefuehrt` setzt die Ziel-Kennung sofort und lädt
+Name und Sperrflags nach. `studentProfileEinbau.test.js` prüft am Draht, dass jeder Einbauort von
+`StudentProfile` `onMerged` und jeder von `StudentProfileAusleihen` `fehlendeListen` durchreicht.
+`5082388e`.
+
+**„Einmalig ignorieren" sah jede Rolle (3.3).** Beide Knöpfe des Sperr-Dialogs (`override_block`,
+`PATCH …/lock`) nur mit `edit_students` über `schuelerRechte(...).bearbeiten`; ohne Recht ein Satz,
+wer übergehen kann. `4f8820f6`.
+
+**Abmelden bei 503 ohne Hinweis (3.4).** `authStore.abmeldeHinweis` bei 503 (beim Abmelden und
+beim Nachholen im Boot-Restore), auf der Anmeldemaske sichtbar bis zur nächsten Anmeldung.
+`5311d598`.
+
+Nebenbefund: `TestSuchnorm_ZeichenDurchlaufGoUndSQL` ist gegen das Homebrew-Postgres 18.6
+(macOS-libc) rot (vier Digraphen ǅ ǈ ǋ ǲ, Go „dz" gegen SQL „Dz"), gegen `postgres:18-alpine`
+(Stack und CI) grün. Keine Änderung; wer lokal ohne Docker testet, weiß es jetzt.
 
 ---
 

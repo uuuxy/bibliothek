@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 14.09.2026
+Stand: 15.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht: Das Befund-Register (`docs/befunde.md`) und
@@ -38,15 +38,14 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **1.5** Schülerakte schweigt bei Ladefehler (A, Verdacht → Rot-Test).
-2. **3.1–3.4** Theke: was der Offline-Bau voraussetzt.
-3. **Abschnitt 2** Offline-Betrieb der Theke: 17 Commits in drei Stufen, je Stufe Nachweis und
-   Freigabe.
-4. **5.1** Schäden und Benutzer.
-5. **5.5–5.9** und **5.12** kleine B-Commits.
-6. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
-7. Nach der Antwort zu E5 (**8.3**): **5.4**.
-8. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
+1. **Abschnitt 2** Offline-Betrieb der Theke: 17 Commits in drei Stufen, je Stufe Nachweis und
+   Freigabe. Stufe 1 in einer frischen Sitzung; die Voraussetzungen (1.5, 3.1–3.4) sind seit dem
+   15.09.2026 erledigt.
+2. **5.1** Schäden und Benutzer.
+3. **5.5–5.9** und **5.12** kleine B-Commits.
+4. Vor dem ersten echten Bescheid: **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.3**.
+5. Nach der Antwort zu E5 (**8.3**): **5.4**.
+6. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
    Anlass.
 
 **Parallel bei Peter:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
@@ -57,17 +56,9 @@ Littera-Übernahme (7.2).
 
 ## 1. Sofort (Kategorie A)
 
-### 1.5 Schülerakte: ein gescheiterter Abruf der Bescheide sieht aus wie „kein Bescheid" (Verdacht)
-
-`useStudentProfile.svelte.js` weist bei `!res.ok` für Bescheide und Gebühren `[]` zu; die Karten
-zeigen dann nichts, einen Ladefehler-Hinweis gibt es nicht (anders als `useBookAkte` mit
-`kopfFehler`). Der Bestandseintrag in `fehlerausgang.test.js` („bewusst zugewiesen 06.09.")
-begründet das Leeren beim Schülerwechsel, nicht das Schweigen. Szenario: Eltern stehen mit dem
-Brief in der Bibliothek, `GET /api/schueler/{id}/bescheide` läuft in 503 oder Timeout (nur diese
-Anfrage; die drei anderen gelingen) → die Akte zeigt keine Karte → Auskunft „bei uns liegt kein
-Bescheid vor". Gefunden im Review 14.09.2026 (`006587cd`; die Gebühren-Zeile ist älter).
-**Nächster Schritt:** Rot-Test (503 → Hinweis in der Akte, 403 bleibt leer, leer bleibt leer),
-dann Hinweis wie in der Buch-Akte; Bestandseintrag der Ratsche schrumpft.
+Nichts offen (Stand 15.09.2026). Der letzte Punkt, 1.5 (Schülerakte schwieg bei einem
+gescheiterten Abruf der Bescheide und Gebühren), ist am 15.09.2026 erledigt
+([erledigt.md](erledigt.md)).
 
 ---
 
@@ -125,8 +116,9 @@ weiter.
 einem Kind liegt, das im System frei ist, oder umgekehrt. Alles, was das verhindert, gehört hinein.
 Alles andere kann warten, bis es im Betrieb vorkommt.
 
-**Nächster Schritt:** 1.5, dann 3.1–3.4, dann Stufe 1 in einer frischen Sitzung bauen und mit
-Nachweis zur Freigabe vorlegen.
+**Nächster Schritt:** Stufe 1 in einer frischen Sitzung bauen und mit Nachweis zur Freigabe
+vorlegen. Die Voraussetzungen 1.5 und 3.1–3.4 sind seit dem 15.09.2026 erledigt
+([erledigt.md](erledigt.md)).
 
 ### 2.1 Was heute fehlt (am Code gelesen 13.09., nachgeprüft 14.09.2026)
 
@@ -181,8 +173,8 @@ Nachweis zur Freigabe vorlegen.
 ### 2.2 Der Bau in drei Stufen, 17 Commits
 
 Je Stufe: Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am frisch gebauten Stack und
-im Browser, dann Peters Freigabe. Voraussetzungen aus Abschnitt 3: 3.1 (Lehrkraft-Auflösung
-mit `pgx.ErrNoRows` und `coalesce(barcode_id, '')`), 3.2, 3.3, 3.4.
+im Browser, dann Peters Freigabe. Die Voraussetzungen aus Abschnitt 3 (3.1 Lehrkraft-Auflösung
+über `ladeAktiveLehrkraft`, 3.2, 3.3, 3.4) sind seit dem 15.09.2026 erledigt.
 
 Ratschen, die jeder Commit im Blick hat: 200 Zeilen je Frontend-Datei (`App.svelte` steht auf
 genau 200, `Omnibox.svelte` mit 282 im Bestand und darf nicht wachsen); kein SQL in `api/`
@@ -357,40 +349,10 @@ unter dem beim Sync angemeldeten Konto; steht in der Doku).
 
 ## 3. Theke — vor dem Offline-Bau (Kategorie B)
 
-### 3.1 Die Buch-Ausleihe an eine Lehrkraft meldet jeden Datenbankfehler als 404
-
-`resolveTeacherBorrower` (`internal/service/loan_checkout_validation.go`) macht aus jedem Fehler
-„Aktives Lehrerprofil nicht gefunden"; die Geräte-Seite unterscheidet seit `cc9e6c8c`.
-**Warum vorher:** Mit (d) muss ein Datenbank-Aussetzer als solcher erkennbar sein, und das
-Nachbuchen an Lehrkräfte (b) läuft durch diesen Pfad. Dazu (Review 14.09.2026): Die Abfrage
-liest `b.barcode_id` (nullbar) in einen `string`; die Geräte-Seite schreibt `coalesce(barcode_id,
-'')`. An der Theke kommt die Lehrkraft nur über den Ausweis-Scan in den Zustand, dort hat sie also
-immer einen Barcode; über `active_teacher_id` im Stapel ist der Fall aber erreichbar.
-**Nächster Schritt:** nur `pgx.ErrNoRows` wird 404, alles andere geht als Fehler weiter, und
-`coalesce` in derselben Zeile; Vorbild `cc9e6c8c`.
-
-### 3.2 Nach dem Zusammenführen hält die Theke die gelöschte Kennung
-
-Die Omnibox gibt `StudentProfile` kein `onMerged` mit (`frontend/src/lib/Omnibox.svelte`;
-`StudentDirectory.svelte` tut es). **Warum vorher:** Eine gelöschte Kennung in der Warteschlange
-scheitert beim Nachbuchen. **Nächster Schritt:** nach dem Zusammenführen das Ziel laden, mit
-Test.
-
-### 3.3 „Einmalig ignorieren" sieht jede Rolle
-
-Der Knopf im Sperr-Dialog (`OmniboxBlockAlert.svelte`) prüft kein Recht. Der Server lässt ihn nur
-mit `edit_students` wirken und verwirft ihn sonst; der Dialog erscheint dann erneut (laut, nicht
-still). **Warum vorher:** Sperr-Dialog und Nachbuch-Bericht hängen am selben Merkmal `X-Sperre`.
-**Nächster Schritt:** Knopf nur mit Recht zeigen (`hatRecht`).
-
-### 3.4 Abmelden bei 503 zeigt keinen Hinweis
-
-Seit `039145f2` antwortet `POST /api/auth/logout` mit 503, wenn der Widerruf nicht gelingt;
-`handleLogout` wertet die Antwort nicht aus. Das Löschcookie geht in beiden Fällen hinaus
-(`api/logout_handler.go`), dieser Browser hält die Sitzung danach nicht mehr. **Entschieden am
-13.09.2026 (Peter):** Abmelden wie heute, dazu ein sichtbarer Hinweis, dass die Sperre der
-Sitzung am Server nicht bestätigt ist. **Nächster Schritt:** Hinweis bei 503; die Abmeldung ohne Antwort ist seit dem 14.09.2026 abgesichert
-(erledigt.md).
+Erledigt am 15.09.2026 ([erledigt.md](erledigt.md)): 3.1 Lehrkraft-Ausleihe meldet nur „keine
+Zeile" als 404, 3.2 Theke hängt nach dem Zusammenführen auf das Ziel um, 3.3 „Einmalig
+ignorieren" nur mit `edit_students`, 3.4 Hinweis bei 503 beim Abmelden. Der Offline-Bau
+(Abschnitt 2) kann beginnen.
 
 ---
 
@@ -636,6 +598,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   gesperrt", obwohl kein Schüler betroffen ist: `ErrBlocked` (`internal/service/loan.go`) trägt den
   Schülertext, `internal/service/device_service.go` hängt die Gerätemeldung an. Offen seit
   `3899cf18`.
+- Schülerakte: Scheitert der Abruf des Kopfes (`GET /api/schueler/{id}` in 503 oder Netzfehler),
+  bleibt die Akte leer — `StudentProfile.svelte` hat nach `{:else if st.profile}` kein `{:else}`.
+  Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026 (1.5); der Kopf ist der
+  verbliebene Eintrag in `fehlerausgang.test.js`. Ein `{:else}` mit `LadeFehler` braucht Platz:
+  die Datei steht an der Größen-Ratsche (244 Zeilen). Gefunden beim Bau von 1.5.
 
 ### 5.10 Gates und Werkzeuge
 
