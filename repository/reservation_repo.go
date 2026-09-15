@@ -134,20 +134,26 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 	// verfuegbar zählt wie der OPAC (Paarung!): ausleihbar, nicht ausgesondert,
 	// keine offene Ausleihe.
 	rows, err := r.db.Query(ctx, `
+		WITH verfuegbare_exemplare AS (
+		    SELECT titel_id, COUNT(*) as verfuegbar
+		    FROM buecher_exemplare e
+		    WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false
+		      AND NOT EXISTS (
+		          SELECT 1 FROM ausleihen a
+		          WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
+		      )
+		    GROUP BY titel_id
+		)
 		SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
 		       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
 		       CASE WHEN b.id IS NULL THEN NULL
 		            ELSE btrim(b.vorname || ' ' || b.nachname) END AS angefordert_von,
-		       (SELECT COUNT(*) FROM buecher_exemplare e
-		        WHERE e.titel_id = r.titel_id
-		          AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
-		          AND NOT EXISTS (SELECT 1 FROM ausleihen a
-		                          WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		       ) AS verfuegbar,
+		       COALESCE(v.verfuegbar, 0) AS verfuegbar,
 		       r.erledigt_notiz, r.erledigt_am
 		FROM klassensatz_reservierungen r
 		JOIN buecher_titel t ON r.titel_id = t.id
 		LEFT JOIN benutzer b ON r.angefordert_von = b.id
+		LEFT JOIN verfuegbare_exemplare v ON v.titel_id = r.titel_id
 		ORDER BY r.erledigt ASC,
 		         CASE WHEN r.erledigt THEN r.erstellt_am END DESC,
 		         CASE WHEN NOT r.erledigt THEN r.erstellt_am END ASC
