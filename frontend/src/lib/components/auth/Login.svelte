@@ -51,5 +51,12 @@
 		{#if authStore.loginError}
 			<p class="text-xs text-rose-500 font-semibold animate-slide-up">{authStore.loginError}</p>
 		{/if}
+		{#if authStore.abmeldeHinweis}
+			<!-- Bleibt stehen bis zur nächsten Anmeldung: Ein Toast wäre nach Sekunden weg, und
+			     der Hinweis gilt, solange die Sitzung am Server noch nicht gesperrt ist. -->
+			<p role="status" class="text-xs text-error font-semibold text-center">
+				{authStore.abmeldeHinweis}
+			</p>
+		{/if}
 	</form>
 </main>

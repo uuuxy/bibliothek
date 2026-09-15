@@ -338,6 +338,52 @@ describe('authStore: Abmeldung, die den Server nicht erreicht', () => {
 		}
 	});
 
+	// 503 heißt: Das Löschcookie kam an, der Widerruf am Server nicht (api/logout_handler.go).
+	// Dieser Browser ist abgemeldet, die Sitzung selbst gilt bis zu ihrem Ablauf weiter.
+	// Entschieden am 13.09.2026 (OFFEN.md 3.4): abmelden wie bisher, dazu ein sichtbarer Hinweis.
+	it('503: abgemeldet, aber mit Hinweis, dass die Sperre am Server nicht bestätigt ist', async () => {
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 }));
+		authStore.handleLogout();
+		await warteAufAbmeldung();
+		expect(authStore.isLoggedIn).toBe(false);
+		expect(authStore.abmeldeHinweis).toMatch(/nicht bestätigt/);
+	});
+
+	it('200: kein Hinweis', async () => {
+		authStore.abmeldeHinweis = null;
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({ ok: true, status: 200 }));
+		authStore.handleLogout();
+		await warteAufAbmeldung();
+		expect(authStore.abmeldeHinweis).toBeNull();
+	});
+
+	it('die nächste Anmeldung räumt den Hinweis weg', async () => {
+		authStore.abmeldeHinweis = 'alt';
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({
+			ok: true,
+			status: 200,
+			json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Peter' }),
+			text: async () => ''
+		}));
+		authStore.loginEmail = 'p@schule.invalid';
+		authStore.loginPassword = 'x';
+		await authStore.handleLogin(null);
+		expect(authStore.isLoggedIn).toBe(true);
+		expect(authStore.abmeldeHinweis).toBeNull();
+	});
+
+	it('auch die nachgeholte Abmeldung beim nächsten Start zeigt den Hinweis bei 503', async () => {
+		localStorage.setItem(MERKER, '1');
+		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
+		globalThis.fetch = vi.fn(async () => ({ ok: false, status: 503 }));
+		await authStore.restoreSession();
+		expect(localStorage.getItem(MERKER)).toBeNull();
+		expect(authStore.abmeldeHinweis).toMatch(/nicht bestätigt/);
+	});
+
 	it('der nächste Start holt die Abmeldung nach und stellt keine Sitzung wieder her', async () => {
 		localStorage.setItem(MERKER, '1');
 		// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response

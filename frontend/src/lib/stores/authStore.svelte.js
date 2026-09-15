@@ -57,6 +57,13 @@ class AuthStore {
 	loginPassword = $state('');
 	loginError = $state(/** @type {string | null} */ (null));
 	isLoggingIn = $state(false);
+	/**
+	 * Steht nach einer Abmeldung, deren Widerruf der Server nicht bestätigt hat (503,
+	 * api/logout_handler.go): Das Löschcookie kam an, dieser Browser ist abgemeldet — die
+	 * Sitzung selbst gilt bis zu ihrem Ablauf weiter. Entschieden am 13.09.2026 (OFFEN.md
+	 * 3.4): abmelden wie bisher, dazu dieser Hinweis auf der Anmeldemaske.
+	 */
+	abmeldeHinweis = $state(/** @type {string | null} */ (null));
 
 	/** @type {ReturnType<typeof setInterval> | null} */
 	#refreshTimer = null;
@@ -111,9 +118,24 @@ class AuthStore {
 	 * @param {any} user
 	 * @param {Function} [onRoleCallback]
 	 */
+	/**
+	 * Die Antwort des Abmelde-Handlers auswerten — beim Abmelden selbst und beim Nachholen
+	 * im Boot-Restore.
+	 * @param {{ status: number }} res
+	 */
+	#verarbeiteAbmeldeAntwort(res) {
+		if (abmeldungZugestellt(res.status)) merkeAbmeldung(false);
+		if (res.status === 503) {
+			this.abmeldeHinweis =
+				'Abgemeldet, aber der Server hat die Sperre der Sitzung nicht bestätigt. ' +
+				'Dieser Browser ist abgemeldet; kommt das öfter vor, bitte Bescheid geben.';
+		}
+	}
+
 	#applyLogin(user, onRoleCallback) {
 		// Eine neue Anmeldung ist gewollt: Ein alter Merker darf sie beim nächsten Laden nicht beenden.
 		merkeAbmeldung(false);
+		this.abmeldeHinweis = null;
 		this.currentUser = user;
 		this.isLoggedIn = true;
 		// Grace-Period: direkt nach dem Login gilt die Verbindung als frisch,
@@ -156,7 +178,7 @@ class AuthStore {
 			// abgemeldet hat, meldet sich neu an. Ohne Netz bleibt der Merker für den nächsten Start.
 			if (abmeldungAusstehend()) {
 				const res = await fetch('/api/auth/logout', { method: 'POST' });
-				if (abmeldungZugestellt(res.status)) merkeAbmeldung(false);
+				this.#verarbeiteAbmeldeAntwort(res);
 				return;
 			}
 			for (let versuch = 1; ; versuch++) {
@@ -261,9 +283,7 @@ class AuthStore {
 		// (ABMELDUNG_AUSSTEHEND); restoreSession holt sie beim nächsten Start nach.
 		merkeAbmeldung(true);
 		fetch('/api/auth/logout', { method: 'POST', keepalive: true })
-			.then((res) => {
-				if (abmeldungZugestellt(res.status)) merkeAbmeldung(false);
-			})
+			.then((res) => this.#verarbeiteAbmeldeAntwort(res))
 			.catch(() => {});
 		this.sessionChecked = true;
 		this.isLoggedIn = false;
