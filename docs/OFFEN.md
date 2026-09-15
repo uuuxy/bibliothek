@@ -25,9 +25,9 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Bei mir: Leserdatei und Rolle Leitung, Stufe 1** (Abschnitt 5.16, am 15.09.2026
-   freigegeben). Zuerst die vorhandenen Fehler, dann zeige ich dir den Stand, bevor die Rolle
-   Leitung kommt.
+3. **Peter, ein Wort: Freigabe für Stufe 2 der Leserdatei, die Rolle Leitung.** Stufe 1 (die
+   vorhandenen Fehler) ist am 16.09.2026 gebaut, im Browser nachgewiesen und grün
+   (Abschnitt 5.16).
 4. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -876,7 +876,7 @@ im Browser, dann Peters Freigabe.
 - „Systempflege" ist kein eigenes Recht. Was nur der Admin braucht, heißt `manage_users` (Benutzer &
   Rechte) und `manage_settings` (Einstellungen).
 
-**Stufe 1 — vorhandene Fehler: gebaut am 16.09.2026, Nachweis am Stack steht aus**
+**Stufe 1 — vorhandene Fehler: erledigt am 16.09.2026 (Nachweis am Stack und im Browser)**
 
 Klassenauswahl beim Anlegen, Meldung zu Klasse „Lehrer", Theken-Texte zur Lehrkraft, Meldung beim
 Löschen eines Kontos mit ausgeliehenen Büchern und der Littera-Treffer bei der Zugangsanfrage
