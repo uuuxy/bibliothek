@@ -372,25 +372,25 @@ export function createOmniboxStore() {
 		}
 	}
 
-	// Ordnet einen Fehler aus submitAction ein: Block-Alert, Offline/Netzwerk oder generisch.
-	async function verarbeiteAktionsFehler(e, eintrag) {
+	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der
+	// Server hat den Scan nicht gesehen, der Schnappschuss geht in die Warteschlange.
+	/** @param {unknown} e @param {import('../offlineQueue.js').OfflineEintrag} eintrag */
+	async function verarbeiteVersandfehler(e, eintrag) {
+		console.warn('Scan nicht zugestellt, wird eingereiht:', e);
+		await speichereOfflineAktion(eintrag);
+	}
+
+	// Eine Antwort kam an — nichts ist offline. Was ihre Auswertung wirft, wird gezeigt.
+	/** @param {unknown} e */
+	function verarbeiteAntwortfehler(e) {
 		if (e instanceof Error && e.message === 'BLOCK_ALERT') {
 			triggerScreenFlash('error');
 			playSoundError();
 			return;
 		}
-		if (
-			e instanceof TypeError ||
-			!window.navigator.onLine ||
-			offlineSync.isOffline ||
-			(e instanceof Error && e.message.includes('Timeout'))
-		) {
-			await speichereOfflineAktion(eintrag);
-		} else {
-			// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
-			// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
-			zeigeFehlerBanner(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
-		}
+		// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
+		// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
+		zeigeFehlerBanner(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
 	}
 
 	// Haupt-Scan-Aktion
@@ -442,8 +442,23 @@ export function createOmniboxStore() {
 
 		const eintrag = schnappschuss(q, crypto.randomUUID());
 
+		// Zwei Fehlerklassen, zwei Zweige (OFFEN.md 2.2, Commit 2): Scheitert der VERSAND, hat
+		// der Server nichts gesehen — der Schnappschuss geht in die Warteschlange. Kam eine
+		// Antwort an, ist nichts offline: Was ihre Auswertung wirft, wird gezeigt. Bis zum
+		// 15.09.2026 lag beides in einem catch, und ein TypeError aus der Auswertung einer
+		// 200-Antwort wurde eingereiht — mit demselben Idempotenz-Schlüssel, den der Server
+		// schon kannte; nach Ablauf des Caches (24 h) wäre neu gebucht worden.
+		//
+		// Rot gehört in den Fehlerfall, nicht ins finally: Dort feuerte es bei JEDEM
+		// Scan und überschrieb das Grün, das der Erfolgspfad Millisekunden vorher
+		// gesetzt hatte — die Leiste stand also nach einer geglückten Ausleihe über
+		// eine Sekunde auf Fehlerfarbe (gemessen: bg-red-50/border-red-500 bei t=200
+		// bis t=1200 ms). Dieselbe Zeile schluckte das Orange der Fremdrückgabe.
+		// Wenn Erfolg wie Fehler aussieht, hört man auf, auf die Farbe zu schauen —
+		// und übersieht dann den echten Fehler.
+		let res;
 		try {
-			const res = await apiClient.post('/api/action', {
+			res = await apiClient.post('/api/action', {
 				query: q,
 				active_student_id: eintrag.schueler_id ?? undefined,
 				active_teacher_id: eintrag.lehrer_id ?? undefined,
@@ -451,22 +466,22 @@ export function createOmniboxStore() {
 				override_block: overrideBlock,
 				idempotency_key: eintrag.id
 			});
+		} catch (e) {
+			triggerFlash('red');
+			await verarbeiteVersandfehler(e, eintrag);
+			scanfeldWiederScharfstellen();
+			return;
+		}
 
+		try {
 			if (!res.ok) {
 				await handleActionHttpError(res, q); // wirft immer
 			}
 			const data = await res.json();
 			verarbeiteAktionsErgebnis(data, reloadProfileCb, q);
 		} catch (e) {
-			// Rot gehört in den Fehlerfall, nicht ins finally: Dort feuerte es bei JEDEM
-			// Scan und überschrieb das Grün, das der Erfolgspfad Millisekunden vorher
-			// gesetzt hatte — die Leiste stand also nach einer geglückten Ausleihe über
-			// eine Sekunde auf Fehlerfarbe (gemessen: bg-red-50/border-red-500 bei t=200
-			// bis t=1200 ms). Dieselbe Zeile schluckte das Orange der Fremdrückgabe.
-			// Wenn Erfolg wie Fehler aussieht, hört man auf, auf die Farbe zu schauen —
-			// und übersieht dann den echten Fehler.
 			triggerFlash('red');
-			await verarbeiteAktionsFehler(e, eintrag);
+			verarbeiteAntwortfehler(e);
 		} finally {
 			scanfeldWiederScharfstellen();
 		}

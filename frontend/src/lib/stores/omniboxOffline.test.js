@@ -37,6 +37,10 @@ describe('Omnibox offline', () => {
 	beforeEach(async () => {
 		await leere();
 		vi.clearAllMocks();
+		// Ein ECHTER Versandfehler, wie er im WLAN-Loch entsteht. Bis zum 15.09.2026 lieferte
+		// der Mock undefined, und der TypeError kam aus `res.ok` — der Test maß den Fehler aus
+		// Commit 2 (Auswertung im selben catch), nicht den Netzausfall.
+		vi.mocked(apiClient.post).mockRejectedValue(new TypeError('Failed to fetch'));
 		omniboxStore.activeStudent = null;
 		omniboxStore.queryVal = '';
 	});
@@ -64,6 +68,20 @@ describe('Omnibox offline', () => {
 		expect(q[0].schueler_id, 'die Person vom Scan').toBe('schueler-7');
 		expect(q[0].art, 'die Absicht vom Scan').toBe('ausleihe');
 		expect(q[0].gescannt_am).toBeGreaterThan(0);
+	});
+
+	// Nur ein gescheiterter VERSAND gehört in die Warteschlange (OFFEN.md 2.2, Commit 2). Bis
+	// dahin lag verarbeiteAktionsErgebnis im selben catch: Ein TypeError aus der Auswertung
+	// einer gelungenen 200-Antwort wurde eingereiht — mit demselben Idempotenz-Schlüssel, den
+	// der Server schon kannte; nach Ablauf des Caches (24 h) wäre neu gebucht worden.
+	it('reiht eine gelungene, aber unauswertbare Antwort NICHT ein', async () => {
+		vi.mocked(apiClient.post).mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: true, json: async () => ({ type: 'teacher' }) }) // ohne teacher
+		);
+		omniboxStore.queryVal = 'B-10234';
+		await omniboxStore.submitAction(new Event('submit'));
+		expect(await loadQueue(), 'eine Antwort kam an — das ist kein Netzausfall').toHaveLength(0);
+		expect(omniboxStore.errorMessage, 'der Fehler wird gezeigt, nicht versteckt').toMatch(/Fehler/);
 	});
 
 	it('reiht mit geladenem Schüler eine Ausleihe ein, ohne ihn eine Rückgabe', async () => {
