@@ -30,11 +30,15 @@ type BescheidPositionEingabe struct {
 
 // BescheidEingabe ist alles, was der Aufrufer für einen neuen Bescheid mitbringt.
 type BescheidEingabe struct {
-	SchuelerID  string
-	Mittel      string
-	Kassenjahr  int
-	FristBis    time.Time
-	Positionen  []BescheidPositionEingabe
+	SchuelerID string
+	Mittel     string
+	Kassenjahr int
+	FristBis   time.Time
+	Positionen []BescheidPositionEingabe
+	// Verluste: überfällige Bücher, die mit dem Brief als Verlust gebucht werden (Stufe 2,
+	// bescheid_verlust.go). Ihre Forderungen entstehen in derselben Transaktion und
+	// kommen zu den Positionen dazu.
+	Verluste    []BescheidVerlustEingabe
 	Snapshot    map[string]string
 	ErstelltVon string
 	// Referenznummer baut der Aufrufer aus der laufenden Nummer, die diese Schicht zieht
@@ -81,6 +85,9 @@ type BescheidRepository interface {
 	OffeneForderungen(ctx context.Context, schuelerID string) ([]OffeneForderung, error)
 	// Ausstehend: je Kind die offenen Forderungen, die noch auf keinem Brief stehen.
 	Ausstehend(ctx context.Context) ([]ForderungOhneBescheid, error)
+	// UeberfaelligeAusleihen: die überfälligen Bücher eines Kindes ohne Forderung —
+	// die Kandidaten für den Brief (Stufe 2).
+	UeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error)
 }
 
 // BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck.
@@ -103,9 +110,10 @@ func NewBescheidRepository(pool db.PgxPoolIface) BescheidRepository {
 //
 // Geprüft wird IN der Transaktion, dass jede Position dem Schüler gehört, offen ist und
 // noch auf keinem Bescheid steht — sonst stünde dieselbe Forderung auf zwei Briefen mit
-// zwei Nummern.
+// zwei Nummern. Verluste (Stufe 2) werden nach dem Brief gebucht, damit ihre Forderung
+// die Referenznummer trägt, und vor den Positionen, damit dieselbe Prüfung sie einordnet.
 func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) (*Bescheid, error) {
-	if len(e.Positionen) == 0 {
+	if len(e.Positionen) == 0 && len(e.Verluste) == 0 {
 		return nil, fmt.Errorf("ein Bescheid ohne Positionen ist kein Bescheid")
 	}
 	tx, err := r.db.Begin(ctx)
@@ -128,6 +136,9 @@ func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) 
 	for _, p := range e.Positionen {
 		summe += p.Betrag
 	}
+	for _, v := range e.Verluste {
+		summe += v.Betrag
+	}
 
 	var b Bescheid
 	err = tx.QueryRow(ctx, `
@@ -146,6 +157,12 @@ func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) 
 	}
 	b.Mittel = e.Mittel
 	b.SchuelerID = &e.SchuelerID
+
+	neue, err := bucheVerluste(ctx, tx, e, b.Referenznummer)
+	if err != nil {
+		return nil, err
+	}
+	e.Positionen = append(e.Positionen, neue...)
 
 	zugeordnet, err := ordnePositionenZu(ctx, tx, b.ID, e)
 	if err != nil {

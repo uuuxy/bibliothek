@@ -50,12 +50,27 @@ type BescheidVorschlagPosition struct {
 	IstLernmittel bool `json:"ist_lernmittel"`
 }
 
+// BescheidVorschlagAusleihe ist ein überfälliges Buch ohne Forderung: Es kommt mit dem
+// Brief als Verlust in die Bücher (Stufe 2). Betrag und Herleitung wie bei einer Position.
+type BescheidVorschlagAusleihe struct {
+	AusleiheID    string  `json:"ausleihe_id"`
+	Titel         string  `json:"titel"`
+	ISBN          string  `json:"isbn"`
+	Betrag        float64 `json:"betrag"`
+	Herleitung    string  `json:"herleitung"`
+	IstLernmittel bool    `json:"ist_lernmittel"`
+	FaelligSeit   string  `json:"faellig_seit"`
+}
+
 // BescheidVorschlag ist die Antwort für den Dialog.
 type BescheidVorschlag struct {
 	SchuelerName string                      `json:"schueler_name"`
 	Klasse       string                      `json:"klasse"`
 	FristBis     string                      `json:"frist_bis"`
 	Positionen   []BescheidVorschlagPosition `json:"positionen"`
+	// Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem
+	// 15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.
+	Ausleihen []BescheidVorschlagAusleihe `json:"ausleihen"`
 	// FehlendeAngaben nennt die Einstellungen, ohne die kein Bescheid entstehen kann.
 	// Der Dialog zeigt sie, statt den Knopf stumm zu sperren.
 	FehlendeAngaben []string `json:"fehlende_angaben"`
@@ -69,6 +84,11 @@ type BescheidErstellenRequest struct {
 		SchadensfallID string  `json:"schadensfall_id" validate:"omitempty,uuid_oder_leer"`
 		Betrag         float64 `json:"betrag"`
 	} `json:"positionen" validate:"dive"`
+	// Ausleihen: überfällige Bücher, die mit dem Brief als Verlust gebucht werden.
+	Ausleihen []struct {
+		AusleiheID string  `json:"ausleihe_id" validate:"omitempty,uuid_oder_leer"`
+		Betrag     float64 `json:"betrag"`
+	} `json:"ausleihen" validate:"dive"`
 }
 
 // BescheidVorschlagHandler liefert die offenen Forderungen eines Schülers mit
@@ -97,6 +117,7 @@ func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 			FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(dateFormatISO),
 			FehlendeAngaben: angaben.FehlendeAngaben(schule),
 			Positionen:      []BescheidVorschlagPosition{},
+			Ausleihen:       []BescheidVorschlagAusleihe{},
 		}
 		empfaenger, err := bescheidRepo.EmpfaengerFuerBescheid(ctx, id)
 		if err != nil {
@@ -114,6 +135,13 @@ func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 		}
 		for _, f := range offene {
 			vorschlag.Positionen = append(vorschlag.Positionen, bescheidVorschlagAus(f))
+		}
+		ueberfaellig, err := bescheidRepo.UeberfaelligeAusleihen(ctx, id)
+		if err != nil {
+			return apierrors.Internal("Überfällige Ausleihen konnten nicht gelesen werden", err)
+		}
+		for _, a := range ueberfaellig {
+			vorschlag.Ausleihen = append(vorschlag.Ausleihen, bescheidVorschlagAusAusleihe(a))
 		}
 
 		RespondJSON(w, http.StatusOK, vorschlag)
@@ -145,6 +173,21 @@ func bescheidVorschlagAus(f repository.OffeneForderung) BescheidVorschlagPositio
 		Betrag:         v.Betrag,
 		Herleitung:     bescheidHerleitung(v),
 		IstLernmittel:  f.IstLernmittel,
+	}
+}
+
+// bescheidVorschlagAusAusleihe rechnet den Staffel-Vorschlag für ein überfälliges Buch —
+// dieselbe Rechnung wie für eine Forderung, das Buch trägt nur noch keine.
+func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe) BescheidVorschlagAusleihe {
+	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(a.SchuljahreMitAusleihe, a.SchuljahreImBestand), a.Kaufpreis, 0)
+	return BescheidVorschlagAusleihe{
+		AusleiheID:    a.AusleiheID,
+		Titel:         a.Titel,
+		ISBN:          a.ISBN,
+		Betrag:        v.Betrag,
+		Herleitung:    bescheidHerleitung(v),
+		IstLernmittel: a.IstLernmittel,
+		FaelligSeit:   a.FaelligSeit.In(schulzeit.Zone()).Format(dateFormatISO),
 	}
 }
 
@@ -197,9 +240,9 @@ func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 			return apierrors.Conflict("Ein Bescheid entsteht nur für Lernmittel des Landes. Die Rechnung für Bücher der Schülerbücherei ist noch nicht gebaut.",
 				errors.New("bescheid nur für mittel=land"))
 		}
-		if len(req.Positionen) == 0 {
+		if len(req.Positionen) == 0 && len(req.Ausleihen) == 0 {
 			//nolint:staticcheck // ST1005: ganzer Satz — die Meldung steht so vor der Bibliothekskraft.
-			return apierrors.BadRequest("Bitte mindestens eine Forderung auswählen.", errors.New("keine positionen"))
+			return apierrors.BadRequest("Bitte mindestens ein Buch auswählen.", errors.New("keine positionen"))
 		}
 		frist, err := time.ParseInLocation(dateFormatISO, req.FristBis, schulzeit.Zone())
 		if err != nil {
@@ -241,12 +284,17 @@ func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 			eingabe.Positionen = append(eingabe.Positionen,
 				repository.BescheidPositionEingabe{SchadensfallID: p.SchadensfallID, Betrag: p.Betrag})
 		}
+		for _, a := range req.Ausleihen {
+			eingabe.Verluste = append(eingabe.Verluste,
+				repository.BescheidVerlustEingabe{AusleiheID: a.AusleiheID, Betrag: a.Betrag})
+		}
 
 		bescheid, err := bescheidRepo.Erstelle(ctx, eingabe)
 		if err != nil {
 			// Die Zuordnungs-Prüfung ist ein Bedienfehler (Forderung bezahlt, storniert
-			// oder schon auf einem Brief), kein Serverfehler.
-			if strings.Contains(err.Error(), "zugeordnet werden") {
+			// oder schon auf einem Brief), kein Serverfehler — ebenso ein Buch, das
+			// inzwischen zurück ist, schon gemeldet wurde oder einem anderen Kind gehört.
+			if strings.Contains(err.Error(), "zugeordnet werden") || istBescheidBedienfehler(err) {
 				return apierrors.Conflict(err.Error(), err)
 			}
 			return apierrors.Internal("Bescheid konnte nicht erstellt werden", err)
@@ -264,6 +312,14 @@ func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 		RespondJSON(w, http.StatusCreated, bescheid)
 		return nil
 	})
+}
+
+// istBescheidBedienfehler: Die Lage hat sich geändert, seit der Dialog offen steht.
+func istBescheidBedienfehler(err error) bool {
+	return errors.Is(err, repository.ErrAusleiheInzwischenZurueck) ||
+		errors.Is(err, repository.ErrAusleiheSchonGemeldet) ||
+		errors.Is(err, repository.ErrAusleiheFremd) ||
+		errors.Is(err, repository.ErrExemplarNeuVerliehen)
 }
 
 // bescheidSnapshotAus friert Anrede, Name und Anschrift zum Briefdatum ein.
