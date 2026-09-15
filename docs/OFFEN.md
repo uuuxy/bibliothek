@@ -662,7 +662,8 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
   Kind" ist die Reaktivierung committet, danach läuft `HandleUnifiedCheckout`; scheitert die an
   der Sperre (offene Forderung nach `uebergeben`), geht der Fehler zurück und die Antwort mit
   „Schulaufsicht informieren" wird verworfen. Merker und Liste stehen, der Satz an der Theke
-  nicht. Nicht nachgestellt.
+  nicht. Nicht nachgestellt — und nicht nachstellbar: Der Zweig ist seit `daf6b370` (16.06.2026)
+  ohne Schreiber, siehe 5.14 (tote Tür „Reserviert für:").
 - **`bescheid_rueckkehr.go`:** Stornierungsgrund „Rückgabe am …" mit rohem `time.Now()`; im
   Container (UTC) zwischen 0 und 2 Uhr das Vortagsdatum. `schulzeit.Jetzt()` wie die Schwester in
   `order_pdf.go`.
@@ -703,22 +704,24 @@ golangci-lint 0, `go test ./...` mit den 197 PG-Tests, deadcode deckungsgleich, 
 Vitest 620/620. Die Commits vom 11.–14.09. deckt 5.12 schon ab; neu im Fenster sind die vom
 15.09. (Offline Stufe 1, Mahnverfahren Stufe 2).
 
-- **Ein 5xx gibt den Idempotenz-Schlüssel frei, auch wenn schon committet wurde**
-  (`api/action.go`, `saveToCache`): Bei Status ≥ 500 löscht `GibIdempotenzSchluesselFrei` die
-  Reservierung, damit die Wiederholung neu bucht. In dem Zweig, den 5.12 nennt (`e9ac79e6`), ist
-  zu diesem Zeitpunkt `holeExemplarZurueck` aber bereits committet — die Wiederholung läuft also
-  echt neu statt in eine gespeicherte Antwort. Heute folgenlos, weil die Ausleihe unter
-  `FOR UPDATE` doppelte Buchungen abweist und die Reaktivierung wiederholbar ist; nichts sagt
-  oder prüft das. **Schritt:** entweder nur freigeben, solange nichts committet ist, oder
-  festhalten (Test), dass jede Aktion unter `/api/action` wiederholbar sein muss.
-- **Die 60-Sekunden-Waisenübernahme hat keine Gegenseite** (`repository/idempotenz.go`): Eine
-  Reservierung, die älter als 60 s ist, gilt als verwaist („der Server ist gestorben") und wird
-  übernommen. Der Server hat `ReadTimeout = 30 s` — das begrenzt nur das Einlesen — und **bewusst
-  kein `WriteTimeout`** (`main.go`); die Laufzeit eines Handlers ist damit unbegrenzt. Ein
-  langsamer Handler verliert seinen Schlüssel an die Wiederholung, beide arbeiten, und der
-  Verlierer scheitert in `SpeichereIdempotenzAntwort` mit `ErrIdempotenzNichtReserviert` — das
-  wird nur geloggt. **Schritt:** die 60 s an eine erzwungene Obergrenze der Handler-Laufzeit
-  binden, oder den Verlierer laut machen.
+- **Tote Tür „Reserviert für:" — und ein NULL-Scan dahinter** (`internal/service/omnibox_service.go`,
+  `versucheReaktivierung`): Der Zweig fragt `zustand_notiz` nach dem Präfix „Reserviert für:";
+  geschrieben hat das zuletzt der Schreiber, der am 16.06.2026 mit `daf6b370` fiel (die
+  3-Tage-Reservierung läuft seitdem über `bereitgestellt_exemplar_id`). Der Leser überlebte den
+  Service-Refactor vom 20.06. Hinter der Tür liest `checkVormerkung` die nullbare Spalte
+  `vormerkungen.notiz` in einen nackten `string` — und der Schreiber (`repository/vormerkung.go`,
+  `NULLIF($2, '')`) legt jede Vormerkung ohne Notiz als NULL ab; `istBerechtigterReservierer`
+  schluckt den Scan-Fehler und meldet „nicht berechtigt". Heute unerreichbar; sobald jemand die
+  Notiz wieder schreibt, bekommt das Kind, das den Titel vorgemerkt hat, an der Theke 403
+  „Reserviert für: <sein eigener Name>". Der Durchgang vom 15.09. hatte hier zuerst einen
+  Idempotenz-Fund gesehen („5xx gibt den Schlüssel frei, obwohl `holeExemplarZurueck` schon
+  committet hat") — die Folge stimmt, aber nur in diesem Zweig, und der ist tot; der Test dazu
+  wurde deshalb nicht geschrieben. **Schritt:** Peter zählt in Prod
+  `SELECT count(*) FROM buecher_exemplare WHERE zustand_notiz LIKE 'Reserviert für:%';` — bei 0
+  fällt der Zweig samt `istBerechtigterReservierer`, `checkVormerkung` und dem Struct
+  `vormerkung` mit Rückbau-Probe, sinnvoll zusammen mit Abschnitt 2, Commit 8 (derselbe
+  Baustein `holeExemplarZurueck`); bei mehr als 0 zuerst `coalesce(v.notiz, '')` und die Frage,
+  was die Notizen bedeuten.
 - **„Aktive Lehrkraft" steht zweimal:** `lower(rolle::text) = 'kollegium' AND aktiv = true` in
   `internal/service/device_service.go` (über `id`) und `repository/user.go` (über `barcode_id`).
   Dieselbe Regel, zwei Pakete, kein gemeinsames Prädikat — kommt eine Bedingung dazu (etwa

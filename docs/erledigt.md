@@ -32,6 +32,20 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 15.09.2026
 
+**Idempotenz: Übernahmefrist, Bearbeitungsfrist und Speicherfrist hängen aneinander**
+(`6739a005`, Rasterdurchgang 15.09.2026, OFFEN.md 5.14). Die Waisenübernahme nach 60 s („der
+Server ist gestorben") war nur so lange die einzige Erklärung, wie kein Besitzer länger leben
+kann — und das sicherten 15 s (`TimeoutMiddleware`, `api/router.go`) plus 5 s (`saveToCache`
+mit `WithoutCancel`) als drei Literale in drei Dateien, die nichts verband. Der Durchgang hatte
+die Laufzeit zunächst für unbegrenzt gehalten („bewusst kein `WriteTimeout`"); die Middleware
+begrenzt sie, die Bindung fehlte. Jetzt drei benannte Konstanten (`IdempotenzReservierungsfrist`
+geht als Parameter ins SQL, `StandardBearbeitungsfrist` im Router, `idempotenzSpeicherfrist`),
+und `api/idempotenz_fristen_test.go` hält für `/api/action` und `/api/action/batch`: Bearbeitung
++ Speichern < Übernahme. Rot gesehen mit der Theke unter den lang laufenden Pfaden und mit der
+Übernahme auf 20 s. Der zweite Idempotenz-Punkt des Durchgangs („5xx gibt den Schlüssel frei,
+obwohl schon committet") erwies sich beim Testaufbau als Folge eines toten Zweigs — steht jetzt
+als eigener Posten in OFFEN.md 5.14.
+
 **Abmelden: die Statusliste des Clients hängt am Löschcookie des Handlers** (`55ec612a`,
 Rasterdurchgang 15.09.2026, OFFEN.md 5.14). `abmeldungZugestellt` hielt `200` und `503` für
 „das Löschcookie kam an" — eine Verabredung mit `logout_handler.go`, auf beiden Seiten getestet
