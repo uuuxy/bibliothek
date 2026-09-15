@@ -107,6 +107,14 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 					 gesamtbetrag, empfaenger_snapshot)
 				VALUES ($1, 'land', 2026, 1, '5830 2026 1234 0001', CURRENT_DATE + 28, 24.90,
 					jsonb_build_object('name', $2::text, 'strasse', 'Rundreiseweg'))`, sid, entl)
+		case "benutzer":
+			// Ein Zugangskonto, das auf diesen Leser zeigt (Migration 123). Nach der
+			// Tilgung muss die VERKNÜPFUNG weg sein, das Konto selbst bleibt: Es ist die
+			// Anmeldung samt Rechten und gehört der Anlage, nicht dem Leser.
+			_, err = pool.Exec(ctx, `
+				INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
+				VALUES ('Rundreise', $2::text, 'rundreise-' || $1::text || '@test.invalid',
+				        'kollegium', true, $1::uuid)`, sid, entl)
 		default:
 			t.Fatalf("keine Rundreise-Vorbereitung für Quelle %s — Test mit der Liste nachziehen", q.Tabelle)
 		}
@@ -156,6 +164,10 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 			leer = len(daten.bescheide) == 0
 		case "nachbuch_meldungen":
 			leer = len(daten.nachbuchMeldungen) == 0
+		case "benutzer":
+			// Die Auskunft nennt, DASS ein Zugangskonto auf diesen Leser zeigt — nicht
+			// dessen Anmeldedaten. E-Mail und Rolle gehören zum Konto, nicht zum Leser.
+			leer = daten.stammdaten == nil || !daten.stammdaten.HatZugangskonto
 		default:
 			t.Fatalf("keine Auskunfts-Prüfung für Quelle %s — Test mit der Liste nachziehen", q.Tabelle)
 		}
@@ -197,6 +209,9 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		// Der Bescheid bleibt als Beleg, aber ohne Person: schueler_id ist NULL
 		// (ON DELETE SET NULL) und der Snapshot geleert.
 		"schadensersatz_bescheide": `SELECT count(*) FROM schadensersatz_bescheide WHERE schueler_id = $1`,
+		// Das Konto bleibt (Anmeldung samt Rechten), seine Verknüpfung zum getilgten
+		// Leser nicht — erst durch die Tilgung, dann durch ON DELETE SET NULL.
+		"benutzer": `SELECT count(*) FROM benutzer WHERE leser_id = $1`,
 	} {
 		var n int
 		if err := pool.QueryRow(ctx, zaehler, sid).Scan(&n); err != nil {
@@ -258,9 +273,15 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 	}
 
 	// Welche Spalte(n) der Tabelle auf schueler zeigen, steht im Bezug-Text der Liste:
-	// jedes Wort, das auf schueler_id endet (Migration 117 hat zwei je Tabelle —
-	// ausleiher_schueler_id und vorbesitzer_schueler_id). Ohne Treffer gilt schueler_id.
-	spaltenImBezug := regexp.MustCompile(`\b[a-z_]*schueler_id\b`)
+	// jedes Wort, das auf schueler_id oder leser_id endet (Migration 117 hat zwei je
+	// Tabelle — ausleiher_schueler_id und vorbesitzer_schueler_id). Ohne Treffer gilt
+	// schueler_id.
+	//
+	// leser_id kam mit Migration 123 dazu: Die Tabelle fuehrt seither alle Leser, und die
+	// stillschweigende Annahme „jede Referenz auf schueler heisst *schueler_id" gilt nicht
+	// mehr. Der Detektor erkennt damit MEHR Spalten als vorher, nicht weniger — eine
+	// unbekannte Referenz fiele sonst durch, und genau das ist der Fall, den er sucht.
+	spaltenImBezug := regexp.MustCompile(`\b[a-z_]*(?:schueler_id|leser_id)\b`)
 	inListe := map[string]bool{}
 	for _, q := range dsgvoSchuelerQuellen {
 		if !q.MitFK {

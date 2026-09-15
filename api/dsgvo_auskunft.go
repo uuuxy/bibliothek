@@ -47,6 +47,14 @@ type DsgvoStammdaten struct {
 	AbgaengerSeit    *time.Time `json:"abgaenger_seit"`
 	LusdBestaetigtAm *time.Time `json:"lusd_bestaetigt_am"`
 	AnonymisiertAm   *time.Time `json:"anonymisiert_am"`
+	// Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil
+	// sie über die Person etwas aussagt — und weil sie entscheidet, welche Felder
+	// überhaupt gefüllt sind (ein Kollege hat keine Klasse und kein Abgängerjahr).
+	Art string `json:"art"`
+	// Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)
+	// stehen NICHT hier: Sie gehören zum Konto, nicht zum Leser, und die Auskunft nach
+	// Art. 15 beantwortet, was über DIESE Person als Leser gespeichert ist.
+	HatZugangskonto bool `json:"hat_zugangskonto"`
 }
 
 // dsgvoStammdatenSQL ist die eine Spaltenliste der Auskunft. Sie steht außerhalb der
@@ -56,14 +64,18 @@ type DsgvoStammdaten struct {
 // in nicht-nullbare Go-strings gescannt. Ohne COALESCE scheitert Scan(NULL → *string)
 // mit 500 — das traf jeden Schüler ohne erfasste Adresse (nicht nur Demo-Daten).
 const dsgvoStammdatenSQL = `
-		SELECT id, barcode_id, vorname, nachname, klasse, geburtsdatum::text,
-		       abgaenger_jahr, ist_gesperrt, ist_abgaenger, lusd_id,
+		SELECT id, COALESCE(barcode_id, '') AS barcode_id, vorname, nachname,
+		       COALESCE(klasse, '') AS klasse, geburtsdatum::text,
+		       COALESCE(abgaenger_jahr, 0) AS abgaenger_jahr,
+		       ist_gesperrt, ist_abgaenger, lusd_id,
 		       COALESCE(strasse, '') AS strasse, COALESCE(hausnummer, '') AS hausnummer,
 		       COALESCE(plz, '') AS plz, COALESCE(ort, '') AS ort,
 		       COALESCE(eltern_email, '') AS eltern_email,
 		       is_manually_blocked, block_reason,
 		       erstellt_am, aktualisiert_am, deleted_at,
-		       schul_eintritt_am::text, abgaenger_seit, lusd_bestaetigt_am, anonymized_at
+		       schul_eintritt_am::text, abgaenger_seit, lusd_bestaetigt_am, anonymized_at,
+		       art,
+		       EXISTS (SELECT 1 FROM benutzer b WHERE b.leser_id = schueler.id) AS hat_konto
 		FROM schueler
 		WHERE id = $1`
 
@@ -243,6 +255,7 @@ func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoSta
 		&st.IsManuallyBlocked, &st.BlockReason,
 		&st.ErstelltAm, &st.AktualisiertAm, &st.GeloeschtAm,
 		&st.SchulEintrittAm, &st.AbgaengerSeit, &st.LusdBestaetigtAm, &st.AnonymisiertAm,
+		&st.Art, &st.HatZugangskonto,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, nil

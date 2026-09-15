@@ -148,7 +148,7 @@ func TestDsgvoAuskunftPDFHandler_NotFound(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, barcode_id, vorname`).
+	mock.ExpectQuery(`SELECT id, COALESCE\(barcode_id, ''\) AS barcode_id, vorname`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id"})) // keine Zeile
 

@@ -128,6 +128,10 @@ CREATE TABLE benutzer (
     -- Migration 119: wer jemand im Kollegium ist (Lehrkraft, LiV) — getrennt von der Rolle, die
     -- sagt, was jemand darf. Leer bei Konten, die keine Lehrkräfte sein müssen.
     personenart VARCHAR(20),
+    -- Migration 123 ergaenzt hier leser_id — die Spalte steht NICHT in dieser
+    -- CREATE TABLE, weil benutzer in dieser Datei VOR schueler angelegt wird und eine
+    -- Verknuepfung nach vorn nicht aufloesbar ist. Sie folgt als ALTER TABLE direkt
+    -- hinter der Lesertabelle.
     CONSTRAINT chk_benutzer_personenart CHECK (personenart IN ('lehrkraft', 'liv'))
 );
 
@@ -172,12 +176,17 @@ CREATE TABLE role_permissions (
 -- Verarbeitungstätigkeiten (VVT) sind in docs/SECURITY.de.md dokumentiert.
 CREATE TABLE schueler (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    barcode_id VARCHAR(100) NOT NULL,                 -- Barcode ID on student ID card (Eindeutigkeit: partieller Index uniq_schueler_barcode_active, nur aktive Zeilen — siehe Migration 049)
+    -- Migration 123: Diese Tabelle fuehrt ALLE Leser, nicht nur Schueler. Klasse,
+    -- Abgaengerjahr und Ausweis waren Pflicht, solange jede Zeile ein Schueler war; fuer
+    -- einen Kollegen gelten sie nicht. Die Pflicht ist deshalb nicht aufgegeben, sondern
+    -- an die Art GEPAART (chk_leser_schueler_pflichtfelder weiter unten).
+    art VARCHAR(20) NOT NULL DEFAULT 'schueler',      -- schueler | lehrkraft | liv
+    barcode_id VARCHAR(100),                          -- Ausweisnummer (Eindeutigkeit: partieller Index uniq_schueler_barcode_active, nur aktive Zeilen — siehe Migration 049); NULL bei einem Kollegen ohne gedruckten Ausweis
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
-    klasse VARCHAR(50) NOT NULL,                      -- e.g., '5a', '10b', 'Q2'; FK auf klassen(name), siehe Klassen-Vokabular (Migration 079)
+    klasse VARCHAR(50),                               -- e.g., '5a', '10b', 'Q2'; FK auf klassen(name), siehe Klassen-Vokabular (Migration 079). NULL bei Nicht-Schuelern
     geburtsdatum DATE DEFAULT NULL,                   -- LUSD-Feld; NULL für Altdatensätze
-    abgaenger_jahr INTEGER NOT NULL,                  -- Graduation/leaving year (useful for batch archiving)
+    abgaenger_jahr INTEGER,                           -- Graduation/leaving year (useful for batch archiving); NULL bei Nicht-Schuelern
     ist_gesperrt BOOLEAN NOT NULL DEFAULT false,      -- Flag to suspend borrowing privileges
     lusd_id VARCHAR(64),                              -- Integrated LUSD ID (Eindeutigkeit: partieller Index uniq_schueler_lusd_id_active, nur aktive Zeilen)
     lusd_bestaetigt_am TIMESTAMP WITH TIME ZONE,      -- zuletzt in einem LUSD-Export wiedergefunden/angelegt; NULL = nie (Handanlage/Littera). Migration 084, Namensmodus-Abgänger hängen daran
@@ -211,7 +220,26 @@ CREATE TABLE schueler (
         CHECK (
             (ist_gesperrt = false AND COALESCE(is_manually_blocked, false) = false)
             OR btrim(coalesce(block_reason, '')) <> ''
-        )
+        ),
+    -- Migration 123, drei Constraints fuer die Lesertabelle:
+    CONSTRAINT chk_leser_art CHECK (art IN ('schueler', 'lehrkraft', 'liv')),
+    -- Die Paarung: Was fuer einen Schueler Pflicht ist, bleibt Pflicht. Ohne sie waere aus
+    -- drei Pflichtfeldern fuer alle ein "darf leer sein" fuer alle geworden — und ein
+    -- Schueler ohne Klasse faellt in jeder Klassenliste und jeder Mahnung lautlos hinten
+    -- runter (dieselbe Bugklasse wie die LUSD-Klasse am 14.09.2026).
+    CONSTRAINT chk_leser_schueler_pflichtfelder CHECK (
+        art <> 'schueler'
+        OR (klasse IS NOT NULL AND abgaenger_jahr IS NOT NULL AND barcode_id IS NOT NULL)
+    ),
+    -- Der Schutz gegen den LUSD-Abgleich. Durch die LUSD kommen ausschliesslich Schueler;
+    -- der Abgleich behandelt jede Bestandszeile, die der Export nicht kennt, als Abgaenger
+    -- und anonymisiert sie nach der Karenz. Ein Kollege waere damit beim ersten Import
+    -- Freiwild. Die Abfrage ist auf art='schueler' eingeschraenkt — dieser CHECK ist die
+    -- zweite Schranke, weil ein WHERE nur fuer SEINE Abfrage gilt.
+    CONSTRAINT chk_leser_nur_schueler_werden_abgaenger CHECK (
+        art = 'schueler'
+        OR (ist_abgaenger = false AND anonymized_at IS NULL AND lusd_id IS NULL)
+    )
 );
 
 CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
@@ -247,6 +275,17 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
 
 -- Table: schueler_fotos (Encrypted student photos)
+-- Migration 123: die Leserzeile eines Kontos. Ein Konto ist die Anmeldung samt Rechten,
+-- eine Leserzeile ist der Mensch mit seinen Buechern. Hier und nicht in CREATE TABLE
+-- benutzer, weil jene Tabelle in dieser Datei vor schueler steht.
+ALTER TABLE benutzer
+    ADD COLUMN leser_id UUID REFERENCES schueler(id) ON DELETE SET NULL;
+
+-- Eine Leserzeile gehoert hoechstens einem Konto: Sonst zeigten zwei Anmeldungen auf
+-- dieselbe Person, und an der Theke waere nicht feststellbar, wessen Ausleihen man sieht.
+CREATE UNIQUE INDEX uniq_benutzer_leser ON benutzer (leser_id) WHERE leser_id IS NOT NULL;
+
+
 CREATE TABLE schueler_fotos (
     schueler_id UUID PRIMARY KEY REFERENCES schueler(id) ON DELETE CASCADE,
     foto_encrypted BYTEA NOT NULL,
@@ -1388,7 +1427,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('119_benutzer_personenart.sql'),
 ('120_kollegium_hat_personenart.sql'),
 ('121_rolle_leitung.sql'),
-('122_rechte_leitung.sql')
+('122_rechte_leitung.sql'),
+('123_lesertabelle.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

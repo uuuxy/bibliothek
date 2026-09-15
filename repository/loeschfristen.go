@@ -62,7 +62,8 @@ func AbgangSeit(alias string) string {
 // eine Entscheidung, keine Zuordnung, die sich noch als falsch herausstellen könnte.
 // GREATEST übergeht NULL — ein Schüler ohne je einen Vorgang rechnet allein ab dem Abgang.
 func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
-	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, abgaengerKarenzTage, kulanz}, Where: `anonymized_at IS NULL
+	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, abgaengerKarenzTage, kulanz}, Where: `art = 'schueler'
+		  AND anonymized_at IS NULL
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
 		      OR
@@ -76,6 +77,20 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`}
 }
+
+// Beide Prädikate beginnen seit Migration 123 mit art = 'schueler'.
+//
+// Der Grund liegt im SOFT-DELETE-Zweig der Anonymisierung: Er hängt allein am Papierkorb
+// (deleted_at) und fragt nicht nach der Art. Eine gelöschte Kollegenzeile wäre damit
+// löschreif geworden — und weil chk_leser_nur_schueler_werden_abgaenger das Setzen von
+// anonymized_at bei einem Kollegen verbietet, hätte das UPDATE abgebrochen und den GANZEN
+// Nachtlauf mitgenommen. Eine einzige Zeile hätte die Anonymisierung aller echten
+// Abgänger stillgelegt, Nacht für Nacht, mit einer Zeile im Protokoll (nachgestellt in
+// api/leser_lusd_schutz_pg_test.go).
+//
+// Hier und nicht in den Jobs, weil diese Bedingungen die EINE Quelle sind: Der Wächter der
+// Selbstprüfung stellt dieselbe Frage als count(*). Stünde die Einschränkung nur im Job,
+// zählte der Wächter weiter Kollegen mit und meldete Arbeit, die niemand tun kann.
 
 // ── Abgänger endgültig löschen ($1 Stichjahr) ─────────────────────────────────
 
@@ -91,7 +106,8 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 // einen Bedingung gilt die EINE Einstellung abgaenger_karenz_tage für beides; 0 heißt
 // weiter „sofort", weil dann schon der Import anonymisiert (anonymisiereAbgaenger).
 func PredikatAbgaengerLoeschung(jetzt time.Time) Loeschbedingung {
-	return Loeschbedingung{Args: []any{AbgaengerStichjahr(jetzt)}, Where: `ist_abgaenger = true
+	return Loeschbedingung{Args: []any{AbgaengerStichjahr(jetzt)}, Where: `art = 'schueler'
+		  AND ist_abgaenger = true
 		  AND deleted_at IS NULL
 		  AND anonymized_at IS NOT NULL
 		  AND abgaenger_jahr < $1

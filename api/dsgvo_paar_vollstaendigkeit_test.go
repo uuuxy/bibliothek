@@ -41,6 +41,12 @@ var dsgvoSchuelerQuellen = []struct {
 	// Migration 117: Die Meldung bleibt als Vorgang (Barcode, Ergebnis), beide Personen-
 	// spalten werden bei der Tilgung auf NULL gesetzt.
 	{"nachbuch_meldungen", "ausleiher_schueler_id / vorbesitzer_schueler_id (FK, bei Tilgung -> NULL)", true},
+	// Migration 123: Die Tabelle fuehrt alle Leser, und ein Konto zeigt auf seine
+	// Leserzeile. Die Auskunft nennt, DASS ein Zugangskonto besteht (nicht dessen
+	// Anmeldedaten — die gehoeren zum Konto, nicht zum Leser); die Tilgung loest die
+	// Verknuepfung. Der Fremdschluessel steht auf ON DELETE SET NULL, greift also erst,
+	// wenn die Leserzeile ganz verschwindet.
+	{"benutzer", "leser_id (FK, ON DELETE SET NULL; bei Tilgung -> NULL)", true},
 	{"audit_log", "datensatz_id (tabelle='schueler') bzw. details->>'schueler_id'", false},
 	{"audit_logs", "details->>'schueler_id'", false},
 }

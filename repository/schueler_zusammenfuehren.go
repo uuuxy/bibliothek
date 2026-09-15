@@ -220,7 +220,10 @@ type gewanderteVorgaenge struct {
 	// NachbuchMeldungen (Migration 117): Meldungen, in denen die Quelle als Ausleiher
 	// oder Vorbesitzer stand.
 	NachbuchMeldungen []string
-	Foto              bool
+	// Konten (Migration 123): Zugangskonten, deren Verknüpfung von der Quelle auf das
+	// Ziel gezogen ist. Normalerweise leer — ein Schüler hat kein Konto.
+	Konten []string
+	Foto   bool
 	// ZielFotoGewichen: das Ziel hatte ein älteres Foto, das dem jüngeren der Quelle
 	// gewichen ist — der Rückweg weiß dann, dass ein Foto verloren ist.
 	ZielFotoGewichen bool
@@ -274,6 +277,30 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 		return nil, fmt.Errorf("nachbuch-meldungen verschieben: %w", err)
 	}
 	erg.NachbuchMeldungen = int64(len(g.NachbuchMeldungen))
+	// Zugangskonto (Migration 123): Zeigt eine Anmeldung auf die Quelle, muss sie nach dem
+	// Zusammenführen auf das Ziel zeigen — sonst macht der DELETE der Quelle sie still
+	// leserlos, und die Person könnte sich anmelden, ohne ihre Bücher zu sehen.
+	//
+	// Haben BEIDE Seiten ein Konto, wird nicht geraten: uniq_benutzer_leser verbietet zwei
+	// Anmeldungen auf einer Leserzeile, und welche der beiden bleiben soll, ist eine
+	// Entscheidung über zwei Menschen. Lieber ein klarer Abbruch als eine
+	// Constraint-Meldung, die niemand liest.
+	var zielKonto, quelleKonto bool
+	if err := tx.QueryRow(ctx, `SELECT
+			EXISTS (SELECT 1 FROM benutzer WHERE leser_id = $1),
+			EXISTS (SELECT 1 FROM benutzer WHERE leser_id = $2)`, ziel, quelle).Scan(&zielKonto, &quelleKonto); err != nil {
+		return nil, fmt.Errorf("zugangskonten prüfen: %w", err)
+	}
+	if zielKonto && quelleKonto {
+		return nil, fmt.Errorf("beide Datensätze haben ein eigenes Zugangskonto — " +
+			"zusammenführen würde eine der beiden Anmeldungen verlieren; erst in der " +
+			"Benutzerverwaltung entscheiden, welches Konto bleibt")
+	}
+	if g.Konten, err = idsAus(ctx, tx,
+		`UPDATE benutzer SET leser_id = $1, aktualisiert_am = NOW() WHERE leser_id = $2 RETURNING id`,
+		ziel, quelle); err != nil {
+		return nil, fmt.Errorf("zugangskonto verschieben: %w", err)
+	}
 	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
 	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
 	// das JÜNGERE Foto gewinnt, egal auf welcher Seite (Peter, 03.09.2026). Hat das Ziel

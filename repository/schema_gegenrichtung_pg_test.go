@@ -84,6 +84,14 @@ var fkAktionenBestand = []string{
 	"CASCADE  vormerkungen.schueler_id -> schueler",
 	// Befragt: Ein gelöschter Benutzer soll seine Spuren behalten, nur ohne Person —
 	// deshalb SET NULL statt RESTRICT. Die Lesepfade zeigen dann „unbekannt".
+	// Migration 123, befragt am 16.09.2026: Verschwindet eine Leserzeile endgueltig,
+	// verliert das Konto nur seine Verknuepfung — die Anmeldung samt Rechten bleibt, denn
+	// sie gehoert der Anlage und nicht dem Leser. Wer die Folge behandelt: niemand muss
+	// es, weil ein Konto ohne Leserzeile ein gueltiger Zustand ist (es leiht dann nichts
+	// aus). Wer es merkt: die Tilgung setzt die Spalte ohnehin selbst auf NULL
+	// (repository/audit_users.go, spurTilgungen) und schreibt das ins Protokoll; der
+	// Fremdschluessel ist nur das Netz darunter.
+	"SET NULL  benutzer.leser_id -> schueler",
 	"SET NULL  audit_log.bearbeiter_id -> benutzer",
 	"SET NULL  audit_logs.admin_id -> benutzer",
 	"SET NULL  ausleihen.ausleiher_benutzer_id -> benutzer",
@@ -190,6 +198,27 @@ var checkBedingungenBestand = []string{
 	"chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
 	"chk_lmf_termine_art", "chk_lmf_termine_stunde", "chk_meldebestand_nonneg",
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
+	// Migration 123, befragt am 16.09.2026 — die drei Regeln der Lesertabelle:
+	//
+	// chk_leser_art: schueler | lehrkraft | liv. Der Code schreibt nur diese drei
+	// (api/..., db/seed.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
+	//
+	// chk_leser_schueler_pflichtfelder: Klasse, Abgaengerjahr und Ausweis waren fuer ALLE
+	// Pflicht, solange jede Zeile ein Schueler war. Die Pflicht ist nicht aufgegeben,
+	// sondern an die Art gepaart. Verlaesst sich der Code umgekehrt auf etwas, das der
+	// Check NICHT verbietet? Ja, und zwar bewusst: Jeder Lesepfad, der klasse in einen
+	// nicht-nullbaren Go-string scannt, darf das nur mit art='schueler' im WHERE oder mit
+	// COALESCE. Genau daran ist der LUSD-Bestand aufgefallen, bevor er eingeschraenkt war
+	// (api/leser_lusd_schutz_pg_test.go).
+	//
+	// chk_leser_nur_schueler_werden_abgaenger: Nur ein Schueler kann Abgaenger sein,
+	// anonymisiert sein oder eine LUSD-ID tragen. Das ist der Schutz des Kollegiums vor
+	// dem LUSD-Abgleich, der jede ihm unbekannte Zeile als Abgang behandelt. Der Code
+	// kennt die Regel an zwei Stellen (der Bestand des Abgleichs und die Loeschfristen
+	// sind auf art='schueler' eingeschraenkt); der Check ist die Schranke dahinter, und
+	// er bricht laut ab, statt still Namen zu leeren.
+	"chk_leser_art", "chk_leser_nur_schueler_werden_abgaenger",
+	"chk_leser_schueler_pflichtfelder",
 	// Migration 110, befragt am 10.09.2026: Vokabular und Wertebereiche des Bescheids.
 	// chk_bescheid_mittel und chk_nummern_mittel sind dieselbe Menge wie MittelGueltig
 	// (repository/mittel.go); chk_schaden_art sind genau die zwei Kästchen des Formulars.

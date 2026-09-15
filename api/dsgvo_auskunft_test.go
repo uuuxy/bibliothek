@@ -30,7 +30,7 @@ func dsgvoRequest(t *testing.T, mock pgxmock.PgxPoolIface) *httptest.ResponseRec
 func expectStammdaten(mock pgxmock.PgxPoolIface) {
 	geb := "2010-04-01"
 	now := time.Now()
-	mock.ExpectQuery(`SELECT id, barcode_id, vorname, nachname, klasse, geburtsdatum::text`).
+	mock.ExpectQuery(`SELECT id, COALESCE\(barcode_id, ''\) AS barcode_id, vorname, nachname`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{
 			"id", "barcode_id", "vorname", "nachname", "klasse", "geburtsdatum",
@@ -38,12 +38,15 @@ func expectStammdaten(mock pgxmock.PgxPoolIface) {
 			"strasse", "hausnummer", "plz", "ort", "eltern_email",
 			"is_manually_blocked", "block_reason", "erstellt_am", "aktualisiert_am", "deleted_at",
 			"schul_eintritt_am", "abgaenger_seit", "lusd_bestaetigt_am", "anonymized_at",
+			// Migration 123: die Art des Lesers und ob eine Anmeldung auf ihn zeigt.
+			"art", "hat_konto",
 		}).AddRow(
 			dsgvoTestID, "S-0042", "Max", "Muster", "07B", &geb,
 			2029, false, false, (*string)(nil),
 			"Reisstraße", "1", "61169", "Friedberg", "eltern@example.org",
 			false, (*string)(nil), now, now, (*time.Time)(nil),
 			(*string)(nil), (*time.Time)(nil), &now, (*time.Time)(nil),
+			"schueler", false,
 		))
 }
 
@@ -120,7 +123,7 @@ func TestDsgvoAuskunft_UnbekannterSchuelerIst404(t *testing.T) {
 	}
 	defer mock.Close()
 
-	mock.ExpectQuery(`SELECT id, barcode_id, vorname`).
+	mock.ExpectQuery(`SELECT id, COALESCE\(barcode_id, ''\) AS barcode_id, vorname`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id"})) // keine Zeile
 

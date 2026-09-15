@@ -76,12 +76,23 @@ type LusdBestandsSchueler struct {
 // braucht der Import: Aktive für Klassenwechsel und Abgänger-Erkennung, Abgänger für
 // Rückkehrer. deleted_at IS NULL ist zwingend: Eine Papierkorb-Zeile darf nie matchen,
 // sonst würde der aktive Schüler nie neu angelegt. Läuft in der Import-Transaktion.
+//
+// art = 'schueler' ist seit Migration 123 ebenso zwingend. Die Tabelle führt alle Leser,
+// und durch die LUSD kommen ausschließlich Schüler (Peter, 16.09.2026). Ohne die
+// Einschränkung stünde jeder Kollege im Bestand, den der Export nicht kennt — also jeder —
+// und der Abgleich machte ihn zum Abgänger: gesperrt, und nach der Karenz Name, Adresse
+// und Geburtsdatum geleert. Gemerkt hätte es niemand, bis jemand einen Namen sucht.
+//
+// Der Scan in *string unten wäre dabei schon vorher gestolpert: Ein Kollege hat keine
+// Klasse, und die Spalte ist bei ihm NULL (api/leser_lusd_schutz_pg_test.go zeigt beides).
+// Das ist ein Glücksfall, kein Schutz — ein Absturz wäre die harmlose Hälfte des Fehlers.
+// Die zweite Schranke steht deshalb in der Datenbank: chk_leser_nur_schueler_werden_abgaenger.
 func LadeLusdBestand(ctx context.Context, tx pgx.Tx) ([]LusdBestandsSchueler, error) {
 	rows, err := tx.Query(ctx, `
 		SELECT id, klasse, vorname, nachname, lusd_id, geburtsdatum, ist_abgaenger,
 		       lusd_bestaetigt_am IS NOT NULL, schul_eintritt_am,
 		       COALESCE(strasse, ''), COALESCE(plz, ''), anonymized_at IS NOT NULL
-		FROM schueler WHERE deleted_at IS NULL`)
+		FROM schueler WHERE deleted_at IS NULL AND art = 'schueler'`)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"bibliothek/repository"
@@ -216,6 +217,15 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 			exec(`INSERT INTO nachbuch_meldungen (idempotency_key, barcode, ergebnis, grund, vorbesitzer_schueler_id, gescannt_am)
 				VALUES (gen_random_uuid(), 'B-ZFT-NB', 'umgebucht', 'Zusammenführen-Gate', $1, NOW())`, quelle)
 			zaehlungen = append(zaehlungen, zaehlung{"nachbuch_meldungen", `SELECT count(*) FROM nachbuch_meldungen WHERE ausleiher_schueler_id = $1 OR vorbesitzer_schueler_id = $1`})
+		case "benutzer":
+			// Migration 123: Auf die Quelle zeigt ein Zugangskonto. Nach dem
+			// Zusammenführen muss es auf das Ziel zeigen — sonst macht der DELETE der
+			// Quelle die Anmeldung still leserlos, und die Person sieht ihre Bücher nicht
+			// mehr. (Beide Seiten mit eigenem Konto bricht bewusst ab; das prüft
+			// TestZusammenfuehren_ZweiKontenBrichtAb.)
+			exec(`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
+				VALUES ('Zft', 'Konto', 'zft-konto@test.invalid', 'kollegium', true, $1::uuid)`, quelle)
+			zaehlungen = append(zaehlungen, zaehlung{"benutzer", `SELECT count(*) FROM benutzer WHERE leser_id = $1`})
 		default:
 			t.Fatalf("dsgvoSchuelerQuellen kennt %s (%s), das Zusammenführen-Gate nicht — "+
 				"verschiebeVorgaenge und diesen Test nachziehen", q.Tabelle, q.Bezug)
@@ -423,5 +433,46 @@ func TestZusammenfuehren_JuengeresFotoGewinnt(t *testing.T) {
 	}
 	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler_fotos`); n != 1 {
 		t.Errorf("genau ein Foto erwartet, gefunden %d", n)
+	}
+}
+
+// TestZusammenfuehren_ZweiKontenBrichtAb: Haben beide Datensätze ein eigenes
+// Zugangskonto, wird nicht geraten.
+//
+// uniq_benutzer_leser (Migration 123) verbietet zwei Anmeldungen auf einer Leserzeile.
+// Ohne die Vorprüfung liefe das Zusammenführen in eine Constraint-Meldung, die an der
+// Oberfläche als „Fehler beim Zusammenführen" ankäme; mit ihr steht dort, was zu tun ist.
+// Vor allem aber: Welche der beiden Anmeldungen bleiben soll, ist eine Entscheidung über
+// zwei Menschen — die trifft kein UPDATE.
+func TestZusammenfuehren_ZweiKontenBrichtAb(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	ziel := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Ziel", nachname: "Konto", klasse: "07A", barcode: "ZK-1", geb: datum(2012, 5, 5)})
+	quelle := legeUmbSchuelerAn(t, pool, umbSchueler{vorname: "Quelle", nachname: "Konto", klasse: "08A", barcode: "ZK-2", geb: datum(2012, 5, 5)})
+
+	for i, leser := range []string{ziel, quelle} {
+		if _, err := pool.Exec(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id)
+			VALUES ('Zwei', 'Konten', 'zwei-konten-' || $1::uuid::text || '@test.invalid', 'kollegium', true, $1::uuid)`,
+			leser); err != nil {
+			t.Fatalf("Konto %d anlegen: %v", i, err)
+		}
+	}
+
+	_, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle))
+	if err == nil {
+		t.Fatal("das Zusammenführen ging durch — eine der beiden Anmeldungen wäre verloren")
+	}
+	if !strings.Contains(err.Error(), "Zugangskonto") {
+		t.Errorf("Abbruch kam, nennt aber nicht den Grund: %v", err)
+	}
+
+	// Und es ist wirklich nichts passiert: Die Quelle steht noch, beide Konten hängen noch.
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM schueler WHERE id = $1`, quelle); n != 1 {
+		t.Error("die Quelle ist trotz Abbruch verschwunden — die Transaktion lief nicht zurück")
+	}
+	if n := zfZaehle(t, pool, `SELECT count(*) FROM benutzer WHERE leser_id IN ($1, $1)`, quelle); n != 1 {
+		t.Errorf("das Konto der Quelle hängt nicht mehr an ihr (%d)", n)
 	}
 }

@@ -331,6 +331,17 @@ func SpurTilgungen() []SpurTilgung { return spurTilgungen }
 
 var spurTilgungen = []SpurTilgung{
 	{
+		// Zugangskonto (Migration 123): Das KONTO bleibt — es ist die Anmeldung samt
+		// Rechten und gehoert nicht dem Leser, sondern der Anlage. Was faellt, ist die
+		// Verknuepfung: Nach der Tilgung soll keine Anmeldung mehr auf diese getilgte
+		// Person zeigen. Der Fremdschluessel steht auf ON DELETE SET NULL und greift erst,
+		// wenn die Leserzeile ganz verschwindet; diese Zeile raeumt den Fall davor
+		// (Anonymisierung, Zeile bleibt). Idempotent: NULL bleibt NULL.
+		Beschreibung: "benutzer (Verknuepfung zur Leserzeile)",
+		sql: `UPDATE benutzer SET leser_id = NULL, aktualisiert_am = NOW()
+			WHERE leser_id = ANY($1::uuid[])`,
+	},
+	{
 		// Nachbuch-Meldungen (Migration 117): Die Meldung bleibt als Vorgang — Barcode,
 		// Ergebnis, Grund —, der Personenbezug fällt: beide Schüler-Spalten auf NULL. Die
 		// Fremdschlüssel stehen auf ON DELETE SET NULL, sobald der Datensatz verschwindet;
