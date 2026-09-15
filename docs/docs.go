@@ -57,6 +57,29 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/action/buchbarcodes": {
+            "get": {
+                "description": "Alle Barcodes nicht ausgesonderter Exemplare, damit die Theke ohne Netz Buch von Ausweis unterscheiden kann. Mit ETag; unverändert antwortet 304.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "theke"
+                ],
+                "summary": "Buch-Barcodes für die Theke",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.BuchbarcodesResponse"
+                        }
+                    },
+                    "304": {
+                        "description": "unverändert"
+                    }
+                }
+            }
+        },
         "/action/nachbuch-meldungen": {
             "get": {
                 "produces": [
@@ -3067,6 +3090,26 @@ const docTemplate = `{
                 },
                 "preise_erfassen": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.BuchbarcodesResponse": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "description": "Anzahl spart dem Rechner das Zählen und macht die Antwort im Log lesbar.",
+                    "type": "integer"
+                },
+                "barcodes": {
+                    "description": "Barcodes: alle Buchnummern, aufsteigend — nur Nummern, keine Personendaten.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "stand": {
+                    "description": "Stand ist der Merker dieser Fassung — derselbe Wert wie im ETag. Der Rechner legt\nihn neben die Liste und schickt ihn beim nächsten Holen mit.",
+                    "type": "string"
                 }
             }
         },

@@ -25,9 +25,9 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis,
    den Abschnitt 2.3 verlangt — ohne ihn keine Stufe 2.
-3. **Peter, ein Wort: Freigabe für Stufe 2 des Offline-Baus.** Danach baue ich die fünf
-   Server-Commits aus Abschnitt 2; die tote Tür „Reserviert für:" (5.14) räume ich dabei mit
-   ab, weil es derselbe Baustein ist.
+3. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
+   15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
+   Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
 4. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
 5. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
@@ -252,49 +252,36 @@ liefert `undefined`, der TypeError kommt aus `res.ok`); `offlineSync.test.js` pi
    Rückgabe, danach dieselbe Ausleihe. Der 24-Stunden-Ablauf bleibt; die Nachbuch-Tür (Stufe 2)
    deckt spätere Wiederholungen über den Wächter ab.
 
-#### Stufe 2 — Server (5 Commits)
+#### Stufe 2 — Server: gebaut am 15.09.2026
 
-8. **Rückholen als Transaktions-Baustein.** `holeExemplarZurueck` bekommt eine `tx`-Variante ohne
-   eigenen Commit; der Online-Pfad nutzt sie weiter mit eigener Transaktion, bis Commit 10 sie in
-   die Buchung zieht. Commit-Botschaft nennt den Zwilling `MarkiereVerlustAlsGefunden` (Inventur,
-   ohne `VerbucheRueckkehr`) und warum er bleibt oder mitgezogen wird.
-9. **Migration 116: Bewegungsstempel.** `ausleihen.erfasst_am` (Scan-Zeitpunkt, Default
-   `CURRENT_TIMESTAMP`) und `buecher_exemplare.letzte_bewegung_am` (geschrieben bei Ausleihe,
-   Rückgabe, Rückholen und Aussonderung; NICHT der generische `aktualisiert_am`-Trigger).
-   Sperrreihenfolge wird hier festgelegt und in `docs/invarianten.md` eingetragen: `schueler`,
-   dann Ausleihe, dann Exemplar; Online-Pfad und Nachbuchen halten dieselbe Reihenfolge, sonst
-   verklemmen sie sich. Gates: Schema-Parität (Migration UND `schema.sql`), Schema-Gegenrichtung,
-   Aussonderungs-Parität (Schreibweise der UPDATEs), Restore-Probe.
-10. **Migration 117: Nachbuch-Meldungen** (`nachbuch_meldungen`: Exemplar, Ergebnis, Grund,
-    Ausleiher, Vorbesitzer, Scan-Zeitpunkt, Barcode-Text für nicht auflösbare Personen,
-    quittiert von/am). Liste und Quittieren nur mit `view_students`. Frist: quittierte nach der
-    Lesehistorie-Frist, höchstens 30 Tage, als `PredikatNachbuchMeldungen` in
-    `repository/loeschfristen.go` (Löschjob und Wächter, eine Quelle); offene nach 14 Tagen als
-    Warnung in der Betriebsbereitschaft (Vorbild `pruefeEhemaligeOffen`). BEIDE Personenspalten
-    wandern beim Zusammenführen, werden über `spurTilgungen` getilgt, stehen in der Auskunft und in
-    `dsgvoSchuelerQuellen`. Gates: FK-Rundreise, Zusammenführen-Gate, Schema-Gegenrichtung,
-    PII-Matrix mit Antwort-Gate, Routen-Rechte, Rechte-Parität. Das API-Inventar ist kein Gate,
-    sondern Handarbeit (`scripts/api_inventar.sh`).
-11. **`POST /api/action/nachbuchen`** (`perform_actions`, 1–50 Einträge, UUID-Schlüssel, Absicht,
-    Barcode, Scan-Zeitpunkt, Ausweis-Barcode oder Person). SQL liegt in `repository/`, der Handler
-    ist dünn. Je Eintrag eine Transaktion: Sperren in der Reihenfolge aus Commit 9 → Wächter →
-    Rückholen (Baustein aus 8) → Savepoint → Schranken → buchen. Die Rücknahme beim Vorbesitzer
-    steht VOR dem Savepoint und bleibt, wenn die neue Ausleihe an Sperre, Limit oder Vormerkung
-    scheitert; nur sie meldet `nicht_gebucht`. Der Wächter: Scan älter als `letzte_bewegung_am` →
-    409 `veraltet`, Rollback auch des Rückholens; Ausnahme: Die letzte Bewegung trägt denselben
-    Idempotenz-Schlüssel (abgebrochener Online-Versand, der die Rücknahme schon gebucht hat) → die
-    fehlende Ausleihe wird nachgeholt. Ergebnisse: `ausgeliehen`, `umgebucht`, `bereits_ausgeliehen`,
-    `zurueckgegeben`, `nur_reaktiviert`, `nicht_gebucht` (Grund), `veraltet`, `wiederholen`.
-    Rückgabe eines verloren gemeldeten Buchs läuft durch `VerbucheRueckkehr`; der Hinweis
-    „Schulaufsicht informieren" steht in der Meldung. Zeit: Uhr als Parameter (`heute` je Aufruf),
-    `ausgeliehen_am`/`rueckgabe_am`/`erfasst_am` als Parameter der Repository-Funktionen, höchstens
-    Serverzeit; die beiden Handapparat-Fristen mit rohem `time.Now()` ziehen auf dieselbe Uhr.
-    23514 (`check_return_date`) wird auf 409 gemappt. Die Schranken-Zählungen laufen über `tx`,
-    nicht über `s.pool` (sonst zwei Verbindungen je Eintrag; 6.1). Jede Meldung entsteht in
-    derselben Transaktion; `nicht_gebucht` und `veraltet` nach dem Rollback in eigener.
-12. **`GET /api/action/buchbarcodes`** (`perform_actions`): alle Barcodes nicht ausgesonderter
-    Exemplare, komprimiert, mit ETag. Bewusst ohne LIMIT, im Kopfkommentar begründet; die
-    Antwortgröße wird am Server gemessen (rund 35.000 Einträge erwartet, Seed hat 1).
+Fünf Commits, alle Gates grün, jeder mit Rot-Probe am alten Code. Was jetzt steht:
+
+- **Rückholen als Baustein** — Umlauf und Forderung in der Transaktion des Aufrufers; der
+  Fund im Fehlbestandsbericht nutzt denselben Baustein (vorher stand das UPDATE zweimal da).
+- **Migration 116, Bewegungsstempel** — `ausleihen.erfasst_am` (Scan-Zeitpunkt) und
+  `buecher_exemplare.letzte_bewegung_am`, von den Schreibern gesetzt. Sperrreihenfolge
+  Schüler → Ausleihe → Exemplar steht in [invarianten.md](invarianten.md).
+- **Migration 117, Nachbuch-Meldungen** — jede Abweichung vom Scan bleibt mit Barcode,
+  Grund und Beteiligten stehen, bis jemand sie quittiert. Liste und Quittieren mit
+  `view_students`, Zähler fürs Band mit `perform_actions`. Quittierte fallen nach der
+  Lesehistorie-Frist, höchstens 30 Tage; offene meldet die Betriebsbereitschaft nach
+  14 Tagen. Personenspalten wandern beim Zusammenführen, werden getilgt und stehen in der
+  Auskunft.
+- **`POST /api/action/nachbuchen`** — 1–50 Einträge, je Eintrag eine Transaktion. Wächter
+  gegen veraltete Scans (Ausnahme: derselbe Idempotenz-Schlüssel), Rücknahme beim
+  Vorbesitzer vor dem Savepoint, Zeit ab dem Scan (höchstens Serverzeit), Schranken über
+  die Transaktion des Eintrags. Ein Serverfehler beendet den Aufruf nicht — der Eintrag
+  bekommt „wiederholen" und bleibt auf dem Rechner.
+- **`GET /api/action/buchbarcodes`** — alle Barcodes nicht ausgesonderter Exemplare,
+  bewusst ohne LIMIT (begründet im Kopfkommentar), mit Stand-Merker aus Anzahl und
+  jüngster Änderung; unverändert antwortet der Server 304. Gepackt, weil Caddy nicht
+  komprimiert. Keine Personendaten.
+
+**Offen aus Stufe 2:** der Nachweis am Stack (2.3, Server-Hälfte) — die curl-Fälle gegen
+`/nachbuchen`, `docker stop` der Datenbank während eines Laufs und `pg_stat_activity` beim
+Nachbuchen von 200 Einträgen. Die PG-Tests decken die Fälle fachlich ab; der Nachweis
+zeigt sie am laufenden Stack.
+
 
 #### Stufe 3 — Theke (5 Commits)
 

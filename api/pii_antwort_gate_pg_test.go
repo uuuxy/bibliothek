@@ -298,7 +298,9 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/bescheide":                        {URL: "/api/bescheide"},
 		// Nachbuch-Meldungen (Migration 117): Stufe 1 hinter view_students — die Liste
 		// nennt Ausleiher und Vorbesitzer mit Namen; der Zähler fürs Band ist Stufe 0.
-		"GET /api/action/nachbuch-meldungen":        {URL: "/api/action/nachbuch-meldungen"},
+		"GET /api/action/nachbuch-meldungen": {URL: "/api/action/nachbuch-meldungen"},
+		// Nur Buchnummern, keine Personendaten (Stufe 2, Commit 12) — Stufe 0.
+		"GET /api/action/buchbarcodes":              {URL: "/api/action/buchbarcodes", Positiv: []string{w.buchBarcode}},
 		"GET /api/action/nachbuch-meldungen/anzahl": {URL: "/api/action/nachbuch-meldungen/anzahl"},
 		// Forderungen ohne Brief je Kind (15.09.2026): Der Kanarienvogel hat einen
 		// offenen Schadensfall ohne bescheid_id und steht deshalb mit Namen darin.

@@ -31,6 +31,8 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	mux.Handle("POST /api/action/batch", s.RequirePermission("perform_actions")(s.ActionBatchHandler(omniboxSvc)))
 	// Nachbuchen der Offline-Warteschlange (Stufe 2): dieselbe Theken-Rolle wie der Scan.
 	mux.Handle("POST /api/action/nachbuchen", s.RequirePermission("perform_actions")(s.NachbuchenHandler(nachbuchSvc)))
+	// Buch-Barcodes für die Offline-Einordnung (Stufe 2): nur Nummern, keine Personendaten.
+	mux.Handle("GET /api/action/buchbarcodes", s.RequirePermission("perform_actions")(s.BuchbarcodesHandler()))
 	// Nachbuch-Meldungen (Migration 117): Liste und Quittieren nur mit view_students — die
 	// Zeilen nennen Ausleiher und Vorbesitzer (Entscheidung Peter, 13.09.2026); der Zähler
 	// fürs Band ist eine Zahl und darf jeder Theken-Rolle gehören.
