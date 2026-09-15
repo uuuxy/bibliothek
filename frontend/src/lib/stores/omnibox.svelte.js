@@ -372,15 +372,28 @@ export function createOmniboxStore() {
 	// Speichert einen Scan offline (nur Buchbarcodes „B-…"), sonst Netzwerkfehler-Toast.
 	/** @param {import('../offlineQueue.js').OfflineEintrag} eintrag */
 	async function speichereOfflineAktion(eintrag) {
-		if (eintrag.barcode.startsWith('B-')) {
-			await enqueueOfflineAction(eintrag);
-			offlineSync.updateCount();
-			triggerScreenFlash('warning');
-			playSoundSuccess();
-			showToast(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
-		} else {
+		if (!eintrag.barcode.startsWith('B-')) {
 			showToast('Netzwerkfehler', 'error');
+			return;
 		}
+		try {
+			await enqueueOfflineAction(eintrag);
+		} catch (err) {
+			// Laut, nicht „gespeichert" (Commit 5): Ohne Warteschlange ist der Scan verloren —
+			// das Buch muss zurück ins Regal oder auf den Zettel.
+			console.error('Offline-Eintrag nicht gespeichert:', err);
+			triggerScreenFlash('error');
+			playSoundError();
+			zeigeFehlerBanner(
+				`NICHT gespeichert: „${eintrag.barcode}“ konnte nicht auf diesem Rechner abgelegt werden — Buch zurücklegen und den Vorgang notieren.`
+			);
+			offlineSync.updateCount();
+			return;
+		}
+		offlineSync.updateCount();
+		triggerScreenFlash('warning');
+		playSoundSuccess();
+		showToast(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
 	}
 
 	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der

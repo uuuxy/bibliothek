@@ -96,10 +96,17 @@ function createOfflineSyncStore() {
 	let pendingCount = $state(0);
 	let isSyncing = $state(false);
 	let isOffline = $state(typeof navigator !== 'undefined' ? !navigator.onLine : false);
+	// Die Warteschlange ließ sich nicht lesen (Commit 5): Das Band sagt es, statt 0 zu zeigen.
+	let warteschlangeFehler = $state(false);
 
 	async function updateCount() {
-		const q = await loadQueue();
-		pendingCount = q.length;
+		try {
+			const q = await loadQueue();
+			pendingCount = q.length;
+			warteschlangeFehler = false;
+		} catch {
+			warteschlangeFehler = true;
+		}
 	}
 
 	// Verschickt einen Batch und verarbeitet dessen Ergebnisse. Liefert false, wenn der
@@ -144,7 +151,15 @@ function createOfflineSyncStore() {
 		let syncedAny = false;
 
 		while (navigator.onLine) {
-			const q = await loadQueue();
+			/** @type {import('../offlineQueue.js').OfflineEintrag[]} */
+			let q;
+			try {
+				q = await loadQueue();
+				warteschlangeFehler = false;
+			} catch {
+				warteschlangeFehler = true;
+				break;
+			}
 			if (q.length === 0) break;
 
 			// loadQueue liefert nach Scan-Zeitpunkt geordnet.
@@ -254,6 +269,9 @@ function createOfflineSyncStore() {
 		},
 		get isSyncing() {
 			return isSyncing;
+		},
+		get warteschlangeFehler() {
+			return warteschlangeFehler;
 		},
 		updateCount,
 		startSync,

@@ -84,8 +84,10 @@ export async function loadQueue() {
 			.filter((e) => e !== null)
 			.sort((a, b) => a.gescannt_am - b.gescannt_am);
 	} catch (err) {
-		console.error('Failed to load offline queue from IndexedDB:', err);
-		return [];
+		// Weiterwerfen, nicht [] (Commit 5, 15.09.2026): Ein leeres Ergebnis hieße „nichts
+		// offen" — das Band zeigte 0, und niemand hätte gewusst, dass die Einträge unlesbar sind.
+		console.error('Offline-Warteschlange nicht lesbar:', err);
+		throw err;
 	}
 }
 
@@ -100,7 +102,11 @@ export async function enqueueOfflineAction(eintrag) {
 		const db = await getDB();
 		await db.add(STORE_NAME, { ...eintrag, timestamp: eintrag.gescannt_am });
 	} catch (err) {
-		console.error('Failed to enqueue offline action to IndexedDB:', err);
+		// Weiterwerfen (Commit 5): Bis zum 15.09.2026 wurde jeder IndexedDB-Fehler geschluckt —
+		// privates Fenster, gesperrte Website-Daten, voller Speicher — und die Theke meldete
+		// „gespeichert" mit Erfolgston. Der Scan war weg.
+		console.error('Offline-Eintrag nicht gespeichert:', err);
+		throw err;
 	}
 }
 
@@ -114,6 +120,9 @@ export async function dequeueOfflineAction(id) {
 		const db = await getDB();
 		await db.delete(STORE_NAME, id);
 	} catch (err) {
-		console.error(`Failed to dequeue offline action ${id}:`, err);
+		// Weiterwerfen: Der Sync bricht die Runde ab und sendet den Eintrag später erneut —
+		// derselbe Idempotenz-Schlüssel, also ohne Doppelbuchung.
+		console.error(`Offline-Eintrag ${id} nicht ausgebucht:`, err);
+		throw err;
 	}
 }

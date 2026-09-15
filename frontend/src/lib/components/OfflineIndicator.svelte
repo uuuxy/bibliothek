@@ -7,7 +7,15 @@
 	// isOffline and global events are now handled centrally in offlineSync.svelte.js
 
 	async function handleBackup() {
-		await offlineSync.exportQueueAsJSON();
+		try {
+			await offlineSync.exportQueueAsJSON();
+		} catch (err) {
+			console.error('Sicherung nicht möglich:', err);
+			toastStore.addToast(
+				'Sicherung nicht möglich: Die Warteschlange auf diesem Rechner ist nicht lesbar.',
+				'error'
+			);
+		}
 	}
 
 	/** @type {HTMLInputElement | null} */
@@ -43,7 +51,7 @@
 	}
 </script>
 
-{#if offlineSync.pendingCount > 0 || offlineSync.isOffline}
+{#if offlineSync.pendingCount > 0 || offlineSync.isOffline || offlineSync.warteschlangeFehler}
 	<div
 		class="fixed top-0 left-0 right-0 z-9999 bg-rose-600 text-white shadow-2xl border-b-4 border-rose-800 animate-slide-down"
 	>
@@ -58,16 +66,28 @@
 					<!-- Anweisung statt Angst: "Nicht ausschalten" hält niemand bis Feierabend
 					     durch, und an einem Rechner, der beim Herunterfahren zurückgesetzt
 					     wird, ist die Sicherung der einzige Weg, der wirklich hilft. -->
+					<!-- Nicht 0 zeigen, wenn die Zahl unbekannt ist (Commit 5, 15.09.2026): Die
+					     Warteschlange dieses Rechners ist nicht lesbar — privates Fenster, gesperrte
+					     Website-Daten, voller Speicher. Offline-Scans gehen hier verloren. -->
 					<h1 class="text-xl md:text-2xl font-black tracking-tight drop-shadow-md">
-						Offline — bitte Sicherung speichern, bevor dieser Rechner ausgeschaltet wird
+						{#if offlineSync.warteschlangeFehler}
+							Warteschlange nicht lesbar — Offline-Scans werden auf diesem Rechner NICHT gespeichert
+						{:else}
+							Offline — bitte Sicherung speichern, bevor dieser Rechner ausgeschaltet wird
+						{/if}
 					</h1>
 					<p class="text-rose-100 font-semibold mt-1">
-						{offlineSync.pendingCount} Vorgang{offlineSync.pendingCount === 1 ? '' : 'e'} nur auf diesem
-						Rechner — noch nicht im System, für die anderen Arbeitsplätze unsichtbar.
-						{#if offlineSync.isSyncing}
-							<span class="ml-2">Wird übertragen …</span>
-						{:else if offlineSync.isOffline}
-							Sobald die Verbindung zurück ist, geschieht das von selbst.
+						{#if offlineSync.warteschlangeFehler}
+							Bitte an einem anderen Rechner weiterarbeiten oder die Bibliotheksleitung
+							verständigen; Vorgänge bis dahin auf Papier notieren.
+						{:else}
+							{offlineSync.pendingCount} Vorgang{offlineSync.pendingCount === 1 ? '' : 'e'} nur auf diesem
+							Rechner — noch nicht im System, für die anderen Arbeitsplätze unsichtbar.
+							{#if offlineSync.isSyncing}
+								<span class="ml-2">Wird übertragen …</span>
+							{:else if offlineSync.isOffline}
+								Sobald die Verbindung zurück ist, geschieht das von selbst.
+							{/if}
 						{/if}
 					</p>
 				</div>
