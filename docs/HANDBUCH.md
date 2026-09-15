@@ -286,19 +286,24 @@ abgelaufen_ → _Übergeben_ (Original und Buchungsbeleg an die Aufsicht); _übe
 mehr zu veranlassen; _Rückgabe nach Übergabe_ → die Aufsicht informieren. Die Zahl am Reiter ist,
 was bei der Schule liegt. Erledigte Briefe (bezahlt, storniert) stehen nur noch in der Akte.
 
-**Schadensersatz-Bescheid:** _Bescheid erstellen_ im Reiter _Schadensersatz_ oder in der Akte an
-der Gebühren-Karte (in der Mahnliste außerdem bei genau einem markierten Schüler, der schon eine
-Forderung hat). Der Dialog zeigt die offenen Forderungen mit einem Betragsvorschlag nach der
-Staffel der Schule samt Herleitung; Beträge sind änderbar, Positionen abwählbar. _Bescheid
-erstellen_ vergibt die Referenznummer (nie zweimal), setzt die Frist als Datum und öffnet den
-Brief. _Nachdruck_ ist immer derselbe Brief, auch nach einem Umzug. Die Angaben für den Brief
-stehen in den Einstellungen unter _Schadensersatz_; fehlen sie, sagt der Dialog welche.
+**Schadensersatz-Bescheid:** In der Mahnliste genau einen Schüler markieren und _Schadensersatz-
+Bescheid_ drücken; außerdem _Bescheid erstellen_ im Reiter _Schadensersatz_ oder in der Akte an
+der Gebühren-Karte. Der Dialog zeigt die überfälligen Bücher des Kindes und seine offenen
+Forderungen mit einem Betragsvorschlag nach der Staffel der Schule samt Herleitung; Beträge sind
+änderbar, Zeilen abwählbar. Eine Verlustmeldung je Buch ist vorher nicht nötig: _Bescheid
+erstellen_ bucht die gewählten Bücher als Verlust (die Ausleihe endet, das Kind verschwindet aus
+der Mahnliste), vergibt die Referenznummer (nie zweimal), setzt die Frist als Datum und öffnet den
+Brief; alles zusammen oder nichts. Ist ein Buch inzwischen zurück oder schon gemeldet, weist der
+Dialog ab, ohne eine Nummer zu verbrauchen — neu öffnen genügt. _Nachdruck_ ist immer derselbe
+Brief, auch nach einem Umzug. Die Angaben für den Brief stehen in den Einstellungen unter
+_Schadensersatz_; fehlen sie, sagt der Dialog welche.
 
 **Kommt ein abgerechnetes Buch doch zurück:** Wird ein Buch mit offener Forderung „nicht
 zurückgegeben" an der Theke gescannt, storniert die Theke die Forderung („Buch reaktiviert.
-Die Forderung über … € wurde storniert — das Buch ist zurück."). Liegt der Bescheid dazu
-schon bei der Schulaufsicht (_Übergeben_), storniert sie nichts: Die Theke zeigt den
-Hinweis, dass die Aufsicht unverzüglich zu informieren ist, und die Forderung bleibt offen.
+Die Forderung über … € wurde storniert — das Buch ist zurück."). Dasselbe gilt für _Gefunden_ im
+Fehlbestandsbericht der Inventur. Liegt der Bescheid dazu schon bei der Schulaufsicht
+(_Übergeben_), storniert die Anwendung nichts: Sie zeigt den Hinweis, dass die Aufsicht
+unverzüglich zu informieren ist, und die Forderung bleibt offen.
 
 ## Abgänger
 

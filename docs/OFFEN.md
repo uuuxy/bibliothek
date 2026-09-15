@@ -43,8 +43,8 @@ jemandem schaden?"**
    15.09.2026 erledigt.
 2. **5.1** Schäden und Benutzer.
 3. **5.5–5.9** und **5.12** kleine B-Commits.
-4. Mahnverfahren: **4.18** (Peter), dann **5.13** Stufe 2. Vor dem ersten echten Bescheid:
-   **5.2** und **4.5** (E4), dann **4.4** (E6) und **5.13** Stufe 3 (5.3).
+4. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
+   **5.13** Stufe 3 (5.3).
 5. Nach der Antwort zu E5 (**8.3**): **5.4**.
 6. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
    Anlass.
@@ -482,24 +482,6 @@ angleichen. Bezug: 8.5 (B5, B6).
 
 ---
 
-### 4.18 Mahnverfahren, Stufe 2: Bescheid direkt aus der Mahnliste
-
-Vorschlag vom 15.09.2026 (Peter hat Stufe 1 freigegeben, zu Stufe 2 noch nichts gesagt): Kind in
-der Mahnliste markieren, „Schadensersatz-Bescheid", der Dialog zeigt die überfälligen Lernmittel
-des Kindes vorgewählt mit Staffelbetrag, dazu vorhandene Forderungen. Beim Erstellen bucht der
-Server in einer Transaktion je gewähltem Buch den Verlust (Ausleihe endet, Exemplar `VERLUST`,
-Vormerkung gelöst — dieselben Schritte wie `ReportDamage`), dann Nummer und Brief. Das entspricht
-Schritt 1 der Arbeitshilfe des Landes („Mahnung der Schule" = der Brief über die ausstehenden
-Lehrwerke, ohne vorherige Verlustmeldung je Buch) und fragt den Betrag nur einmal. Kommt das Buch
-zurück, storniert der Theke-Scan die Forderung (`VerbucheRueckkehr`, seit 12.09.2026).
-
-**Frage:** Bauen? **Empfehlung:** ja, als Stufe 2 in 5.13. **Bei nein:** den Knopf
-„Schadensersatz-Bescheid" aus der Auswahlleiste der Mahnliste entfernen — für ein Kind ohne
-gemeldete Forderung öffnet er heute einen leeren Dialog; der Weg bleibt dann Akte → Reiter
-„Schadensersatz".
-
----
-
 ## 5. Abarbeitbar (Kategorie B)
 
 ### 5.1 Schäden und Benutzer
@@ -540,15 +522,13 @@ gemeldete Forderung öffnet er heute einen leeren Dialog; der Weg bleibt dann Ak
 `POST /api/bescheide/{id}/uebergeben` setzt heute nur Status und Zeitpunkt
 (`repository/bescheid.go`). Offen:
 
-- Exemplare auf `VERLUST` umstellen. Heute bleibt `aussonderung_grund` bei `BESCHAEDIGUNG`, auch
-  bei Verlust; der Fehlbestandsbericht findet diese Exemplare nicht.
 - Übergabe-PDF (Original und Sammelliste).
-- „Buch doch gefunden" im Fehlbestandsbericht (`MarkiereVerlustAlsGefunden`) muss
-  `repository.VerbucheRueckkehr` rufen, sonst endet die Forderung nur an der Theke. `VERLUST` und
-  Aufruf gehören in denselben Strang — getrennt entstünde ein A.
 - Die Gates der Übergabe-Folgen.
 
-„Ausleihen beenden" entfällt: `ReportDamage` beendet die Ausleihe schon beim Melden.
+Seit dem 15.09.2026 erledigt (Mahnverfahren Stufe 2, [erledigt.md](erledigt.md)): „nicht
+zurückgegeben" setzt `VERLUST` am Exemplar, und „Gefunden" im Fehlbestandsbericht ruft
+`VerbucheRueckkehr`. „Ausleihen beenden" entfällt: `meldeSchaden` beendet die Ausleihe schon beim
+Melden bzw. mit dem Brief.
 
 ### 5.4 Schadensersatz Teil A, Etappen 3 und 4 (nach 8.3)
 
@@ -661,21 +641,17 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - `FACHKONZEPT.md` (zwei Stellen) und `invarianten.md` nennen `RueckgabeTerminFuerKlasse`, die
   `d3e86287` entfernt hat; nur Abschnitt 2.3 wurde angepasst.
 
-### 5.13 Mahnverfahren: Stufen 2 und 3 (nach 4.18)
+### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
 
-Das Modell seit dem 15.09.2026 (Stufe 1, [erledigt.md](erledigt.md)): Die Reiter „Alle · Akut
-fällig · Eskaliert" fragen „Wer hat Bücher zu spät?", der Reiter „Schadensersatz" fragt „Wer
+Das Modell seit dem 15.09.2026 (Stufen 1 und 2, [erledigt.md](erledigt.md)): Die Reiter „Alle ·
+Akut fällig · Eskaliert" fragen „Wer hat Bücher zu spät?", der Reiter „Schadensersatz" fragt „Wer
 schuldet Geld?". Solange das Buch als ausgeliehen gilt, steht das Kind links; sobald ein Verlust
-oder Schaden gebucht ist, rechts — mit genau einem Stand und einem nächsten Schritt je Zeile.
+oder Schaden gebucht ist, rechts — mit genau einem Stand und einem nächsten Schritt je Zeile. Der
+Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren Verlust.
 
-- **Stufe 2** (4.18): Bescheid direkt aus den überfälligen Büchern. Schreibpfad an Ausleihe und
-  Bestand: `ReportDamage` als Transaktionsfunktion, Vorschlag-Endpunkt liefert die überfälligen
-  Lernmittel als Positionen, Erstellen bucht Verlust + Brief in einer Transaktion (Papier == DB).
-  Dazu aus 5.3: `aussonderung_grund = 'VERLUST'` bei „nicht zurückgegeben" und
-  `MarkiereVerlustAlsGefunden` ruft `VerbucheRueckkehr` — beides gehört in denselben Strang.
-  Staffelbetrag als Vorschlag im `DamageReportModal` (5.4). Rot-Test am alten Code, PG-Suite,
-  Nachweis am Stack, dann Freigabe.
 - **Stufe 3**: Folgen der Übergabe (5.3): Übergabe-PDF und Sammelliste für das Schulamt; E6 (4.4).
+- Offen aus Stufe 2: Staffelbetrag als Vorschlag im `DamageReportModal` (5.4) — der Weg über die
+  Akte fragt den Betrag weiter ohne Vorschlag.
 
 ### 5.12 Review der Commits vom 11.–14.09.2026 (14.09.2026)
 

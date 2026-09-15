@@ -32,6 +32,35 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 15.09.2026
 
+**Mahnverfahren, Stufe 2: der Bescheid entsteht direkt aus den überfälligen Büchern.** Peter
+hat die Empfehlung zu 4.18 bestätigt („du kannst es machen"). Vorher brauchte jedes Buch eine
+eigene Verlustmeldung in der Akte, der Betrag wurde zweimal gefragt, und der Knopf
+„Schadensersatz-Bescheid" in der Mahnliste öffnete für ein Kind ohne Forderung einen leeren
+Dialog. Vier Commits (`f854247f`, `07f6fd55`, `4147a3b1`, Doku):
+
+- `meldeSchaden` (`repository/schaden_melden.go`) ist der Rumpf von `ReportDamage` in der
+  Transaktion des Aufrufers. „Nicht zurückgegeben" setzt `VERLUST` am Exemplar (vorher immer
+  `BESCHAEDIGUNG`), und „Gefunden" im Fehlbestandsbericht ruft `VerbucheRueckkehr` — die Forderung
+  endet wie an der Theke, die Antwort nennt Storno und Aufsichts-Hinweis (OFFEN.md 5.3, beide
+  Punkte). Zwei PG-Tests, rot am alten Code gesehen.
+- Vorschlag (`GET …/bescheid-vorschlag`) nennt zusätzlich die überfälligen Bücher ohne Forderung
+  (`UeberfaelligeAusleihen`, dasselbe Prädikat wie die Mahnliste) mit Staffelbetrag. Erstellen
+  (`POST …/bescheide`, Feld `ausleihen`) bucht je Buch den Verlust und den Brief in EINER
+  Transaktion; die Forderung trägt die Referenznummer. Geprüft an der gesperrten Ausleihe-Zeile:
+  gehört dem Kind, läuft noch, keine Forderung — sonst 409 ohne Nummer. Rot gesehen (Prüfung
+  ausgehängt): zwei Briefe über ein zurückgegebenes und ein schon gemeldetes Buch. Vier PG-Tests,
+  darunter Bücherei-Buch abgewiesen und der Verlust mit zurückgenommen.
+- Dialog (`bescheidFormular.svelte.js`, `BescheidDialog`, `BescheidPositionen`): Bücher und
+  Forderungen in einer Liste, Lernmittel vorgewählt, Buchzeile mit „Fällig seit … · wird mit dem
+  Brief als Verlust gebucht"; Rumpf trennt die Quellen. Vitest (7), svelte-check 0/0.
+- Gates: volle Go-Suite mit Postgres 18 (Jobs mit libpq-18-Pfad), golangci-lint, volle Vitest-Suite
+  (620), E2E am frisch gebauten Stack: Kind mit überfälligem Buch markieren, Brief erstellen,
+  Kind aus der Mahnliste verschwunden, im Reiter „Schadensersatz" mit „Frist läuft", in der DB
+  Ausleihe beendet, Exemplar VERLUST, Forderung am Brief; dazu Schadensfall-, Mahnwesen- und
+  Mahnlauf-Specs.
+
+Offen: Stufe 3 (OFFEN.md 5.13) und der Staffelbetrag im `DamageReportModal` (5.4).
+
 **Mahnverfahren, Stufe 1: die Stufe zwischen Mahnliste und Bescheid ist sichtbar.** Anlass
 (Peter, am Stack nachgestellt): „Verlust melden" beendet die Ausleihe (`ReportDamage`), das Kind
 fällt aus der Mahnliste, und der Bescheid-Knopf der Mahnliste war nur erreichbar, solange die
@@ -55,7 +84,7 @@ Zahl zählt, was bei der Schule liegt; kein automatischer Altbrief nach dem Meld
   E2E `schadensersatz-bescheid.spec.js` am frisch gebauten Stack: Zeile vor dem Brief, Tür in der
   Akte, „Frist läuft" danach, genau eine Zeile je Kind.
 
-Offen: Stufe 2 (OFFEN.md 4.18, 5.13) und Stufe 3 (5.13).
+Offen war Stufe 2 (am selben Tag gebaut, siehe oben) und Stufe 3 (5.13).
 
 **Offline-Betrieb der Theke, Stufe 1 (OFFEN.md 2.2, „vorhandene Fehler"), sieben Commits.** Je
 ein Rot-Test am alten Code; volle Suite mit Postgres 18-alpine, golangci-lint, deadcode, vitest,
