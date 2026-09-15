@@ -93,6 +93,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/schueler/{id}/bescheide`                  | view_students         | 2     | Bescheide dieses Kindes (Nummer, Frist, Betrag)                                                                                                        |
 | `POST /api/schueler/{id}/bescheide`                 | edit_students         | 3     | Schreibt Anrede, Name und Anschrift als Snapshot                                                                                                       |
 | `GET /api/bescheide`                                | view_students         | 2     | Arbeitsliste: Name, Klasse, Betrag, Frist                                                                                                              |
+| `GET /api/bescheide/ausstehend`                     | view_students         | 2     | Kinder mit offener Forderung ohne Brief: Name, Klasse, Anzahl, Summe                                                                                   |
 | `GET /api/bescheide/{id}/pdf`                       | view_students         | 3     | Der Brief: Anschrift, Titel, Beträge                                                                                                                   |
 | `POST /api/bescheide/{id}/uebergeben`               | edit_students         | 0     | Status                                                                                                                                                 |
 

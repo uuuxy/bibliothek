@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-13. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-15. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produktrundgang als
 Video (8 min) zeigt jeden Bereich in Aktion.
@@ -249,7 +249,11 @@ Fristen und Ausgabe-Pläne. (§2.3)
   **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
   und _Nachdruck_ (derselbe Brief mit derselben Nummer).
 - **Gebühren & Schäden**: offen / bezahlt; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
-  Grund. (§14)
+  Grund. Steht eine offene Forderung noch auf keinem Brief, gibt es hier _Bescheid erstellen_
+  (derselbe Dialog wie im Mahnwesen). (§14)
+- **Verlust/Schaden melden** an der Ausleihzeile beendet die Ausleihe und legt die Forderung an.
+  Das Kind steht danach nicht mehr in der Mahnliste, sondern im Mahnwesen unter _Schadensersatz_.
+  Der Brief an die Eltern ist der nächste, eigene Schritt.
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
 - **Neuer Schüler** per Formular; klassenweise besser über den LUSD-Import
   (_Einstellungen → LUSD & Versetzung_).
@@ -274,15 +278,21 @@ Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die 
 Mahnbriefs, nicht beim Mailversand. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
 Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. (§3)
 
-**Schadensersatz-Bescheid:** Im Mahnwesen einen (genau einen) Schüler markieren, dann
-_Schadensersatz-Bescheid_ in der Auswahlleiste. Der Dialog zeigt die offenen Forderungen
-mit einem Betragsvorschlag nach der Staffel der Schule samt Herleitung; Beträge sind
-änderbar, Positionen abwählbar. _Bescheid erstellen_ vergibt die Referenznummer (nie
-zweimal), setzt die Frist als Datum und öffnet den Brief. Die Briefe stehen im vierten
-Reiter **Bescheide**; die Zahl daran sind die abgelaufenen Fristen. Dort gibt es
-_Nachdruck_ (immer derselbe Brief, auch nach einem Umzug) und nach Fristablauf
-_Übergeben_. Die Angaben für den Brief stehen in den Einstellungen unter
-_Schadensersatz_; fehlen sie, sagt der Dialog welche.
+**Zwei Fragen, vier Reiter.** _Alle · Akut fällig · Eskaliert_ fragen, wer Bücher zu spät hat.
+Der vierte Reiter **Schadensersatz** fragt, wer Geld schuldet: Sobald für ein Kind ein Verlust
+oder Schaden gemeldet ist, steht es dort, mit einem Stand und dem nächsten Schritt je Zeile:
+_Bescheid noch nicht erstellt_ → _Bescheid erstellen_; _Frist läuft_ → abwarten; _Frist
+abgelaufen_ → _Übergeben_ (Original und Buchungsbeleg an die Aufsicht); _übergeben_ → nichts
+mehr zu veranlassen; _Rückgabe nach Übergabe_ → die Aufsicht informieren. Die Zahl am Reiter ist,
+was bei der Schule liegt. Erledigte Briefe (bezahlt, storniert) stehen nur noch in der Akte.
+
+**Schadensersatz-Bescheid:** _Bescheid erstellen_ im Reiter _Schadensersatz_ oder in der Akte an
+der Gebühren-Karte (in der Mahnliste außerdem bei genau einem markierten Schüler, der schon eine
+Forderung hat). Der Dialog zeigt die offenen Forderungen mit einem Betragsvorschlag nach der
+Staffel der Schule samt Herleitung; Beträge sind änderbar, Positionen abwählbar. _Bescheid
+erstellen_ vergibt die Referenznummer (nie zweimal), setzt die Frist als Datum und öffnet den
+Brief. _Nachdruck_ ist immer derselbe Brief, auch nach einem Umzug. Die Angaben für den Brief
+stehen in den Einstellungen unter _Schadensersatz_; fehlen sie, sagt der Dialog welche.
 
 **Kommt ein abgerechnetes Buch doch zurück:** Wird ein Buch mit offener Forderung „nicht
 zurückgegeben" an der Theke gescannt, storniert die Theke die Forderung („Buch reaktiviert.

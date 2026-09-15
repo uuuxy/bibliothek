@@ -32,6 +32,31 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 15.09.2026
 
+**Mahnverfahren, Stufe 1: die Stufe zwischen Mahnliste und Bescheid ist sichtbar.** Anlass
+(Peter, am Stack nachgestellt): „Verlust melden" beendet die Ausleihe (`ReportDamage`), das Kind
+fällt aus der Mahnliste, und der Bescheid-Knopf der Mahnliste war nur erreichbar, solange die
+Liste nicht neu geladen war. Ein frischer Bescheid stand mit „0" am Reiter, obwohl eine Zeile
+darin wartete. Entscheidungen (Peter, 15.09.2026, „beginne mit Stufe 1", die empfohlenen
+Antworten): zwei Fragen, vier Reiter, Wechsel beim Verlust; Reiter heißt „Schadensersatz"; die
+Zahl zählt, was bei der Schule liegt; kein automatischer Altbrief nach dem Melden. Gebaut:
+
+- `GET /api/bescheide/ausstehend` (`repository/bescheid_ausstehend.go`): je Kind die offenen
+  Forderungen ohne Brief, älteste zuerst; PG-Test grenzt bezahlt, storniert, Papierkorb und „schon
+  auf einem Bescheid" ab (rot gesehen ohne den `bescheid_id IS NULL`-Filter).
+- Reiter „Schadensersatz" (`BescheideTabelle`): Zeile „Bescheid noch nicht erstellt" mit
+  „Bescheid erstellen" (Bücherei-Bücher ohne Knopf, Etappe 3), darunter die Briefe ohne die
+  erledigten; jeder Stand nennt den nächsten Schritt im Tipp (`bescheidStatus`: „Frist läuft" statt
+  „offen"); Name führt in die Akte. Zahl am Reiter = `liegtBeiDerSchule` + Forderungen ohne Brief.
+- Akte: „Bescheid erstellen" an der Gebühren-Karte (derselbe Dialog, Ebene „darüber"), nur mit
+  Recht und offener Forderung ohne Brief (`schadensfaelle.bescheid_id` in der Gebührenliste).
+- „Verlust/Schaden melden" öffnet kein PDF mehr (der Altbrief verlangte Barzahlung, OFFEN.md 5.2)
+  und sagt, wo die Forderung jetzt steht.
+- Gates: Vitest (Store, Tabelle, Karte, Status), svelte-check 0/0, volle Go-Suite mit Postgres,
+  E2E `schadensersatz-bescheid.spec.js` am frisch gebauten Stack: Zeile vor dem Brief, Tür in der
+  Akte, „Frist läuft" danach, genau eine Zeile je Kind.
+
+Offen: Stufe 2 (OFFEN.md 4.18, 5.13) und Stufe 3 (5.13).
+
 **Offline-Betrieb der Theke, Stufe 1 (OFFEN.md 2.2, „vorhandene Fehler"), sieben Commits.** Je
 ein Rot-Test am alten Code; volle Suite mit Postgres 18-alpine, golangci-lint, deadcode, vitest,
 svelte-check, eslint, prettier. Der Nachweis am Stack (2.3) und Peters Freigabe für Stufe 2
