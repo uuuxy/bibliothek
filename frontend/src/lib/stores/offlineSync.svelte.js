@@ -28,39 +28,63 @@ function baueBatchPayload(batchItems) {
 	});
 }
 
-// Bucht je Item aus, wenn der Server Erfolg oder einen permanenten 4xx-Fehler
-// (außer 429 Too Many Requests) meldet. Gibt die ABGELEHNTEN Vorgänge zurück.
+/** @type {Record<string, string>} */
+const TYPNAME = { ausleihe: 'Ausleihe', rueckgabe: 'Rückgabe' };
+/** @param {string | undefined} typ */
+const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
+
+// Erledigt ist nur, was der Server WIE GESCANNT gebucht hat (OFFEN.md 2.2, Commit 6).
+// Gibt zurück, was der Bediener prüfen muss, und ob die Runde weitergehen darf.
 //
-// Dass ein 4xx nicht ewig wiederholt wird, ist richtig — der Server hat fachlich
-// entschieden (Buch nicht gefunden, Schüler gesperrt, falscher Zustand). Falsch war bis
-// zum Rasterdurchgang am 06.09.2026, dass es niemand erfuhr: Der Eintrag verschwand aus
-// der Warteschlange, `pendingCount` ging auf 0, und der Erfolgston lief. Eine Klasse gibt
-// 18 Bücher offline zurück, vier werden abgelehnt, und niemand weiß es — die Ausleihen
-// bleiben offen und laufen ins Mahnwesen bis zur Rechnung an die Eltern.
+// - Erfolg mit passendem Typ: still ausgebucht.
+// - Erfolg mit anderem Typ (Ausleihe gescannt, Rückgabe gebucht — das Buch war schon bei
+//   diesem Kind): ausgebucht UND gemeldet, mit Barcode und beiden Typen. Blockiert nicht;
+//   das kommt erst mit der Nachbuch-Tür in Stufe 3, die den Fall benennen kann.
+// - 4xx außer 429: ausgebucht und gemeldet. Der Server hat fachlich entschieden (Buch nicht
+//   gefunden, Schüler gesperrt). Bis zum Rasterdurchgang am 06.09.2026 erfuhr das niemand:
+//   Eine Klasse gibt 18 Bücher offline zurück, vier werden abgelehnt, und die Ausleihen
+//   laufen ins Mahnwesen bis zur Rechnung an die Eltern.
+// - 5xx, 429 und ein Index, den der Server nicht beantwortet hat (Schweigen ist kein
+//   Erfolg): bleibt liegen, die Runde endet. Bis zum 15.09.2026 galt „kein Ergebnis" als
+//   erledigt, und ein liegengebliebener Eintrag wurde ohne Pause sofort erneut gesendet.
+/**
+ * @param {any} data
+ * @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems
+ * @returns {Promise<{ pruefen: { barcode: string, meldung: string }[], weiter: boolean }>}
+ */
 async function verarbeiteBatchErgebnisse(data, batchItems) {
-	const abgelehnt = [];
+	/** @type {{ barcode: string, meldung: string }[]} */
+	const pruefen = [];
+	let weiter = true;
 	for (let i = 0; i < batchItems.length; i++) {
 		const item = batchItems[i];
-		const result = data.results?.find((r) => r.index === i);
-
-		// Dequeue on success, on a permanent client error (4xx except 429), or as
-		// failsafe when the backend returned no index for this item (overall 200 OK).
-		if (
-			!result ||
-			result.success ||
-			(result.status >= 400 && result.status < 500 && result.status !== 429)
-		) {
-			if (result && !result.success) {
-				abgelehnt.push({
+		const result = data.results?.find((/** @type {any} */ r) => r.index === i);
+		if (!result) {
+			weiter = false;
+			continue;
+		}
+		if (result.success) {
+			const gebucht = result.data?.type;
+			if (gebucht !== item.art) {
+				pruefen.push({
 					barcode: item.barcode,
-					status: result.status,
-					meldung: result.error || result.message || ''
+					meldung: `als ${nenne(item.art)} gescannt, der Server buchte ${nenne(gebucht)}`
 				});
 			}
 			await dequeueOfflineAction(item.id);
+			continue;
 		}
+		if (result.status >= 400 && result.status < 500 && result.status !== 429) {
+			pruefen.push({
+				barcode: item.barcode,
+				meldung: `nicht angenommen${result.error ? ` (${result.error})` : ''}`
+			});
+			await dequeueOfflineAction(item.id);
+			continue;
+		}
+		weiter = false;
 	}
-	return abgelehnt;
+	return { pruefen, weiter };
 }
 
 async function exportQueueAsJSON() {
@@ -77,17 +101,16 @@ async function exportQueueAsJSON() {
 	URL.revokeObjectURL(url);
 }
 
-// Sagt dem Bediener, was der Server NICHT angenommen hat — mit Barcode, damit er es von
-// Hand klären kann. Das Muster steht im Haus schon fertig (useFehlbestand: „n gelöscht,
-// m übersprungen").
-function meldeAbgelehnte(abgelehnt) {
-	if (abgelehnt.length === 0) return;
-	const liste = abgelehnt.map((a) => a.barcode).join(', ');
-	const grund = abgelehnt[0].meldung ? ` (${abgelehnt[0].meldung})` : '';
+// Sagt dem Bediener, was er von Hand klären muss — mit Barcode und Grund je Eintrag. Das
+// Muster steht im Haus schon fertig (useFehlbestand: „n gelöscht, m übersprungen").
+/** @param {{ barcode: string, meldung: string }[]} pruefen */
+function meldeZuPruefende(pruefen) {
+	if (pruefen.length === 0) return;
+	const liste = pruefen.map((p) => `„${p.barcode}“: ${p.meldung}`).join('; ');
 	showToast(
-		abgelehnt.length === 1
-			? `Offline-Scan „${liste}“ wurde nicht angenommen${grund} — bitte von Hand prüfen.`
-			: `${abgelehnt.length} Offline-Scans wurden nicht angenommen: ${liste} — bitte von Hand prüfen.`,
+		pruefen.length === 1
+			? `Offline-Scan ${liste} — bitte von Hand prüfen.`
+			: `${pruefen.length} Offline-Scans brauchen Prüfung: ${liste} — bitte von Hand prüfen.`,
 		'error'
 	);
 }
@@ -121,9 +144,10 @@ function createOfflineSyncStore() {
 			}
 
 			const data = await res.json();
-			const abgelehnt = await verarbeiteBatchErgebnisse(data, batchItems);
-			meldeAbgelehnte(abgelehnt);
+			const { pruefen, weiter } = await verarbeiteBatchErgebnisse(data, batchItems);
+			meldeZuPruefende(pruefen);
 			await updateCount();
+			if (!weiter) return false;
 
 			// Network Jitter: 200-500 ms Pause vor dem nächsten Batch, damit mehrere
 			// Geräte nach einer Offline-Phase nicht im Gleichtakt auf den Server laufen.
@@ -253,10 +277,11 @@ function createOfflineSyncStore() {
 			});
 
 			window.addEventListener('beforeunload', handleBeforeUnload);
-			// Periodic check every 30s just in case online event missed or transient 5xx errors
+			// Jede Minute ein Anlauf, falls das online-Ereignis fehlte oder ein Eintrag nach
+			// 5xx/429 liegen blieb (die Runde endet dort, statt sofort erneut zu senden).
 			setInterval(() => {
 				if (pendingCount > 0 && !isOffline) startSync();
-			}, 30000);
+			}, 60000);
 		}
 	}
 

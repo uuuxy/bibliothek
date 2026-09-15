@@ -80,7 +80,9 @@ describe('offlineSync.startSync', () => {
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
 				ok: true,
-				json: async () => ({ results: [{ index: 0, success: true }] })
+				json: async () => ({
+					results: [{ index: 0, success: true, data: { type: 'ausleihe' } }]
+				})
 			})
 		);
 
@@ -144,7 +146,7 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 			const results = /** @type {any[]} */ (payload).map((p, i) =>
 				p.query === 'B-10243'
 					? { index: i, success: false, status: 404, error: 'Barcode nicht gefunden' }
-					: { index: i, success: true, status: 200 }
+					: { index: i, success: true, status: 200, data: { type: 'rueckgabe' } }
 			);
 			return /** @type {any} */ ({ ok: true, json: async () => ({ results }) });
 		});
@@ -164,7 +166,9 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
 				ok: true,
-				json: async () => ({ results: [{ index: 0, success: true, status: 200 }] })
+				json: async () => ({
+					results: [{ index: 0, success: true, status: 200, data: { type: 'rueckgabe' } }]
+				})
 			})
 		);
 		await offlineSync.startSync();
@@ -192,7 +196,9 @@ describe('offlineSync: Handapparat trägt die Lehrkraft mit', () => {
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
 				ok: true,
-				json: async () => ({ results: [{ index: 0, success: true, status: 200 }] })
+				json: async () => ({
+					results: [{ index: 0, success: true, status: 200, data: { type: 'ausleihe' } }]
+				})
 			})
 		);
 
@@ -203,6 +209,85 @@ describe('offlineSync: Handapparat trägt die Lehrkraft mit', () => {
 			'lehrkraft-3'
 		);
 		expect(payload[0].active_student_id).toBeUndefined();
+	});
+});
+
+// Erledigt ist nur, was der Server WIE GESCANNT gebucht hat (OFFEN.md 2.2, Commit 6). Bis
+// zum 15.09.2026 galt als erledigt: success, jeder 4xx außer 429 und „Server nannte den Index
+// nicht"; der Antworttyp wurde nie mit der Absicht verglichen, und ein liegengebliebener
+// Eintrag (5xx, 429) wurde ohne Pause sofort erneut gesendet.
+describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
+	beforeEach(async () => {
+		await clearQueue();
+		vi.clearAllMocks();
+	});
+
+	it('Schweigen des Servers (kein Ergebnis zum Index) ist kein Erfolg', async () => {
+		await enqueueOfflineAction(rueckgabe('B-10234'));
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ results: [] }) })
+		);
+		await offlineSync.startSync();
+		expect(await loadQueue(), 'der Eintrag bleibt, bis der Server ihn beantwortet').toHaveLength(1);
+		expect(apiClient.post, 'keine Endlosschleife: die Runde endet').toHaveBeenCalledTimes(1);
+	});
+
+	it('Ausleihe gescannt, Rückgabe gebucht: ausgebucht UND gemeldet, mit Barcode und beiden Typen', async () => {
+		await enqueueOfflineAction(ausleihe('B-10234', 'schueler-7'));
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					results: [{ index: 0, success: true, status: 200, data: { type: 'rueckgabe' } }]
+				})
+			})
+		);
+		await offlineSync.startSync();
+		expect(await loadQueue(), 'blockiert nicht (erst Stufe 3 mit der neuen Tür)').toHaveLength(0);
+		const meldungen = vi
+			.mocked(showToast)
+			.mock.calls.map((c) => String(c[0]))
+			.join(' | ');
+		expect(meldungen).toContain('B-10234');
+		expect(meldungen).toMatch(/Ausleihe/);
+		expect(meldungen).toMatch(/Rückgabe/);
+	});
+
+	it('wie gescannt gebucht: still ausgebucht', async () => {
+		await enqueueOfflineAction(ausleihe('B-10234', 'schueler-7'));
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					results: [{ index: 0, success: true, status: 200, data: { type: 'ausleihe' } }]
+				})
+			})
+		);
+		await offlineSync.startSync();
+		expect(await loadQueue()).toHaveLength(0);
+		expect(showToast).not.toHaveBeenCalled();
+	});
+
+	it('5xx bleibt liegen, und die Runde endet, statt sofort erneut zu senden', async () => {
+		await enqueueOfflineAction(rueckgabe('B-10234'));
+		vi.mocked(apiClient.post)
+			.mockResolvedValueOnce(
+				/** @type {any} */ ({
+					ok: true,
+					json: async () => ({ results: [{ index: 0, success: false, status: 503 }] })
+				})
+			)
+			.mockResolvedValue(
+				/** @type {any} */ ({
+					ok: true,
+					json: async () => ({
+						results: [{ index: 0, success: true, status: 200, data: { type: 'rueckgabe' } }]
+					})
+				})
+			);
+		await offlineSync.startSync();
+		expect(apiClient.post, 'ein Versuch je Runde').toHaveBeenCalledTimes(1);
+		expect(await loadQueue(), 'der Eintrag wartet auf die nächste Runde').toHaveLength(1);
 	});
 });
 
@@ -225,8 +310,8 @@ describe('offlineSync: Ausleihe trägt den Schüler mit', () => {
 				ok: true,
 				json: async () => ({
 					results: [
-						{ index: 0, success: true, status: 200 },
-						{ index: 1, success: true, status: 200 }
+						{ index: 0, success: true, status: 200, data: { type: 'ausleihe' } },
+						{ index: 1, success: true, status: 200, data: { type: 'rueckgabe' } }
 					]
 				})
 			})
