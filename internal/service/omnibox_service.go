@@ -10,8 +10,6 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/repository"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // OmniboxResult beschreibt die Antwortstruktur der Omnibox nach Verarbeitung einer Eingabe (Scan oder Suche).
@@ -310,61 +308,26 @@ func (s *defaultOmniboxService) handleSearchAction(ctx context.Context, query st
 	return nil
 }
 
-type vormerkung struct {
-	ID         string
-	TitelID    string
-	SchuelerID string
-	Notiz      string
-	Status     string
-	ErstelltAm time.Time
-}
-
-// checkVormerkung prüft, ob für einen Buchtitel eine aktive Reservierung vorliegt.
-// Gibt nil, nil zurück, wenn keine wartende Vormerkung existiert.
-func (s *defaultOmniboxService) checkVormerkung(ctx context.Context, titelID string) (*vormerkung, error) {
-	var v vormerkung
-	// Nur Vormerkungen abholberechtigter Schüler zählen als aktive Reservierung — sonst
-	// würde eine Vormerkung eines gelöschten/gesperrten Schülers das Exemplar für andere
-	// blockieren (schuelerAbholberechtigt, siehe loan_return.go).
-	err := s.pool.QueryRow(ctx, `
-		SELECT v.id, v.titel_id, v.schueler_id, v.notiz, v.status, v.erstellt_am
-		FROM vormerkungen v
-		JOIN schueler s ON s.id = v.schueler_id
-		WHERE v.titel_id = $1 AND v.status = 'wartend'
-		  AND `+schuelerAbholberechtigt+`
-		ORDER BY v.erstellt_am ASC LIMIT 1`, titelID).
-		Scan(&v.ID, &v.TitelID, &v.SchuelerID, &v.Notiz, &v.Status, &v.ErstelltAm)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil // Keine Vormerkung gefunden — kein Fehler
-		}
-		return nil, err
-	}
-	return &v, nil
-}
-
-// versucheReaktivierung behandelt gesperrte/ausgesonderte Exemplare: liegt kein
-// aktiver Ausleihvorgang vor und ist das Buch unreserviert bzw. wird es vom
-// berechtigten Reservierer geholt, wird die Sperre automatisch aufgehoben.
-// fertig=true bedeutet, dass resp bereits final gesetzt wurde (nur reaktiviert);
-// fertig=false ohne Fehler heißt: weiter zur Ausleihe.
-func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.BookCopy, activeStudentID *string, staffID string, resp *OmniboxResult) (fertig bool, err error) {
+// versucheReaktivierung behandelt gesperrte/ausgesonderte Exemplare: Liegt keine aktive
+// Ausleihe vor, holt der Scan das Exemplar zurück (Umlauf und Forderung in einer
+// Transaktion) und endet mit „info" — die Ausleihe folgt erst mit dem nächsten Scan.
+// fertig=true bedeutet, dass resp bereits final gesetzt wurde; fertig=false ohne Fehler
+// heißt: weiter zur Ausleihe (heute kein Weg dorthin, siehe unten).
+//
+// Bis zum 15.09.2026 kannte dieser Zweig eine Reservierung über die Zustandsnotiz
+// „Reserviert für:" und hätte für das vormerkende Kind gleich die Ausleihe angeschlossen.
+// Den Schreiber der Notiz hat daf6b370 am 16.06.2026 entfernt (die Reservierung läuft
+// seitdem über bereitgestellt_exemplar_id); der Leser blieb, und in Prod trug kein
+// Exemplar die Notiz (Zählung 15.09.2026). Hinter der toten Tür lag ein stiller NULL-Scan
+// (vormerkungen.notiz in einen string), der dem berechtigten Kind 403 gemeldet hätte.
+// Beides ist mit dem Zweig gefallen (OFFEN.md 5.14).
+func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query string, copy *repository.BookCopy, staffID string, resp *OmniboxResult) (fertig bool, err error) {
 	activeLoan, err := s.loanRepo.GetActiveLoanByCopyID(ctx, copy.ID)
 	if err != nil {
 		return false, err
 	}
 
-	isReserved := strings.HasPrefix(copy.ZustandNotiz, "Reserviert für:")
-
-	// Falls das Exemplar reserviert ist, prüfen wir, ob der aktive Schüler der berechtigte Reservierer ist.
-	reservedForThisStudent := false
-	if isReserved {
-		reservedForThisStudent = s.istBerechtigterReservierer(ctx, copy.TitelID, activeStudentID)
-	}
-
-	// Automatisches Reaktivieren, wenn keine aktive Ausleihe vorliegt und das Buch
-	// unreserviert ist oder der berechtigte Schüler es ausleiht.
-	if activeLoan == nil && (!isReserved || reservedForThisStudent) {
+	if activeLoan == nil {
 		befund, err := s.holeExemplarZurueck(ctx, copy.ID, staffID)
 		if err != nil {
 			return false, err
@@ -375,19 +338,10 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 
 		resp.Message = rueckkehrMeldung(befund)
 		resp.AufsichtInformieren = aufsichtHinweis(befund)
-
-		if !reservedForThisStudent {
-			resp.Type = "info"
-			return true, nil
-		}
-		// Reaktiviert für den berechtigten Schüler -> Ausleihe folgt im Aufrufer. Die
-		// beiden Hinweise bleiben stehen; mapLoanResult rührt sie nicht an.
-		return false, nil
+		resp.Type = "info"
+		return true, nil
 	}
 
-	if isReserved && !reservedForThisStudent {
-		return false, fmt.Errorf("%w: Dieses Buchexemplar ist %s", ErrBlocked, copy.ZustandNotiz)
-	}
 	if copy.IstAusgesondert {
 		return false, fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", ErrInvalidState, query)
 	}
@@ -448,16 +402,6 @@ func aufsichtHinweis(b repository.RueckkehrBefund) string {
 	return b.AufsichtHinweis()
 }
 
-// istBerechtigterReservierer prüft, ob der aktive Schüler der berechtigte Reservierer
-// des (reservierten) Buchtitels ist. Ohne aktiven Schüler ist das Ergebnis false.
-func (s *defaultOmniboxService) istBerechtigterReservierer(ctx context.Context, titelID string, activeStudentID *string) bool {
-	if activeStudentID == nil || *activeStudentID == "" {
-		return false
-	}
-	v, checkErr := s.checkVormerkung(ctx, titelID)
-	return checkErr == nil && v != nil && v.SchuelerID == *activeStudentID
-}
-
 // handleBookAction verarbeitet das Scannen eines Buch-Barcodes.
 // Wenn kein aktiver Ausleiher vorhanden ist, wird das Buch zurückgegeben.
 // Ist ein Schüler oder Lehrer aktiv, wird das Buch an diesen ausgeliehen.
@@ -472,7 +416,7 @@ func (s *defaultOmniboxService) handleBookAction(ctx context.Context, q OmniboxQ
 
 	// Gesperrte/ausgesonderte Exemplare ggf. automatisch reaktivieren.
 	if !copy.IstAusleihbar || copy.IstAusgesondert {
-		fertig, err := s.versucheReaktivierung(ctx, q.Query, copy, q.ActiveStudentID, q.StaffID, resp)
+		fertig, err := s.versucheReaktivierung(ctx, q.Query, copy, q.StaffID, resp)
 		if err != nil {
 			return err
 		}
