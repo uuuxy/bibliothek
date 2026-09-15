@@ -6,9 +6,18 @@ import (
 	"time"
 )
 
-// Die Barcodes der Theke (Stufe 2 des Offline-Baus, Commit 12): alle Nummern nicht
-// ausgesonderter Exemplare, damit der Theken-Rechner ohne Netz eine nackte Ziffernfolge
-// einordnen kann — Buch oder Ausweis. Nur Nummern, keine Personendaten.
+// Die Barcodes der Theke (Stufe 2 des Offline-Baus, Commit 12): die Nummern ALLER Exemplare,
+// damit der Theken-Rechner ohne Netz eine nackte Ziffernfolge einordnen kann — Buch oder
+// Ausweis. Nur Nummern, keine Personendaten.
+//
+// Ausgesonderte gehören dazu (Rasterdurchgang 15.09.2026, OFFEN.md 5.15): Kommt ein verloren
+// gemeldetes Buch offline zurück, holt das Nachbuchen es in den Umlauf. Fehlte seine Nummer,
+// gälte es an der Theke als unklar und sperrte die Zuordnung. barcode_id ist über alle
+// Exemplare eindeutig; eine Nummer bleibt eine Buchnummer, auch wenn das Buch abgeschrieben ist.
+//
+// Littera-Etiketten stehen NICHT als EAN-13 in der Liste, nur als Nummer: Der Rechner rechnet
+// das Etikett selbst zurück (frontend/src/lib/litteraEtikett.js, gleiche Prüffälle wie der
+// Server) und schlägt die Nummer nach.
 
 // BuchbarcodeStand ist die Kennzahl des Bestands: Anzahl und jüngste Änderung. Beides
 // zusammen — die Anzahl allein übersähe eine Umetikettierung, der Zeitstempel allein ein
@@ -23,7 +32,7 @@ type BuchbarcodeStand struct {
 func LiesBuchbarcodeStand(ctx context.Context, q DBQueryer) (BuchbarcodeStand, error) {
 	var s BuchbarcodeStand
 	err := q.QueryRow(ctx, `
-		SELECT count(*), max(aktualisiert_am) FROM buecher_exemplare WHERE ist_ausgesondert = false
+		SELECT count(*), max(aktualisiert_am) FROM buecher_exemplare
 	`).Scan(&s.Anzahl, &s.Juengste)
 	if err != nil {
 		return s, fmt.Errorf("buch-barcodes zählen: %w", err)
@@ -31,7 +40,7 @@ func LiesBuchbarcodeStand(ctx context.Context, q DBQueryer) (BuchbarcodeStand, e
 	return s, nil
 }
 
-// ListeBuchbarcodes liest alle Barcodes nicht ausgesonderter Exemplare, aufsteigend.
+// ListeBuchbarcodes liest die Barcodes aller Exemplare, aufsteigend.
 //
 // Bewusst OHNE LIMIT — anders als jede andere Listen-Abfrage (vgl. api/audit_limit_pg_test.go).
 // Eine gekappte Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
@@ -41,7 +50,7 @@ func LiesBuchbarcodeStand(ctx context.Context, q DBQueryer) (BuchbarcodeStand, e
 func ListeBuchbarcodes(ctx context.Context, q DBQueryer, erwartet int) ([]string, error) {
 	rows, err := q.Query(ctx, `
 		SELECT barcode_id FROM buecher_exemplare
-		WHERE ist_ausgesondert = false AND barcode_id IS NOT NULL AND barcode_id <> ''
+		WHERE barcode_id IS NOT NULL AND barcode_id <> ''
 		ORDER BY barcode_id
 	`)
 	if err != nil {

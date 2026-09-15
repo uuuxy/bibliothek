@@ -24,9 +24,12 @@ import (
 // laufen die folgenden Bücher auf die falsche Person, und das fällt erst beim Nachbuchen
 // auf (Entscheidung Peter, 13.09.2026).
 //
-// Deshalb hält der Rechner die Barcodes aller nicht ausgesonderten Exemplare. Steht eine
-// Ziffernfolge darauf, ist sie ein Buch; sonst gilt sie als unklar und sperrt die
-// Zuordnung, bis ein eindeutiger Ausweis kommt. KEINE Personendaten: nur Buchnummern.
+// Deshalb hält der Rechner die Barcodes aller Exemplare, auch der ausgesonderten (das
+// Nachbuchen holt ein zurückgekommenes Buch in den Umlauf). Ein 13-stelliges Littera-Etikett
+// rechnet der Rechner zuerst selbst auf die Nummer zurück (frontend/src/lib/litteraEtikett.js,
+// dieselben Prüffälle wie der Server); steht die Nummer auf der Liste, ist sie ein Buch; sonst
+// gilt sie als unklar und sperrt die Zuordnung, bis ein eindeutiger Ausweis kommt. KEINE
+// Personendaten: nur Buchnummern.
 //
 // Bewusst OHNE LIMIT — anders als jede andere Listen-Route (vgl. api/audit_limit_pg_test.go).
 // Eine halbe Liste wäre schlimmer als keine: Die fehlenden Bücher gälten offline als
@@ -50,9 +53,9 @@ type BuchbarcodesResponse struct {
 	Barcodes []string `json:"barcodes"`
 }
 
-// BuchbarcodesHandler liefert die Barcodes aller nicht ausgesonderten Exemplare.
+// BuchbarcodesHandler liefert die Barcodes aller Exemplare, auch der ausgesonderten.
 // @Summary      Buch-Barcodes für die Theke
-// @Description  Alle Barcodes nicht ausgesonderter Exemplare, damit die Theke ohne Netz Buch von Ausweis unterscheiden kann. Mit ETag; unverändert antwortet 304.
+// @Description  Alle Barcodes aller Exemplare (auch ausgesonderter), damit die Theke ohne Netz Buch von Ausweis unterscheiden kann. Littera-Etiketten rechnet die Theke selbst auf die Nummer zurück. Mit ETag; unverändert antwortet 304.
 // @Tags         theke
 // @Produce      json
 // @Success      200 {object} BuchbarcodesResponse

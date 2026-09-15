@@ -69,8 +69,12 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 			t.Errorf("Barcode %q fehlt — offline gälte dieses Buch als unklar", b)
 		}
 	}
-	if enthalten["B-BC-WEG"] {
-		t.Error("ein ausgesondertes Exemplar steht in der Liste")
+	// Ein ausgesondertes Exemplar gehört hinein: Kommt ein verloren gemeldetes Buch offline
+	// zurück, holt das Nachbuchen es in den Umlauf („nur_reaktiviert"). Fehlte seine Nummer,
+	// gälte es an der Theke als unklar und sperrte die Zuordnung (Rasterdurchgang 15.09.2026,
+	// OFFEN.md 5.15). Die Nummer bleibt eine Buchnummer, auch wenn das Buch abgeschrieben ist.
+	if !enthalten["B-BC-WEG"] {
+		t.Error("ein ausgesondertes Exemplar fehlt in der Liste — offline gälte es als unklar, obwohl das Nachbuchen es zurückholt")
 	}
 	if antwort.Stand == "" || rec.Header().Get("ETag") != `"`+antwort.Stand+`"` {
 		t.Errorf("Stand %q, ETag %q — sie müssen übereinstimmen", antwort.Stand, rec.Header().Get("ETag"))

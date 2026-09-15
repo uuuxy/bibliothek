@@ -59,7 +59,7 @@ const docTemplate = `{
         },
         "/action/buchbarcodes": {
             "get": {
-                "description": "Alle Barcodes nicht ausgesonderter Exemplare, damit die Theke ohne Netz Buch von Ausweis unterscheiden kann. Mit ETag; unverändert antwortet 304.",
+                "description": "Alle Barcodes aller Exemplare (auch ausgesonderter), damit die Theke ohne Netz Buch von Ausweis unterscheiden kann. Littera-Etiketten rechnet die Theke selbst auf die Nummer zurück. Mit ETag; unverändert antwortet 304.",
                 "produces": [
                     "application/json"
                 ],
