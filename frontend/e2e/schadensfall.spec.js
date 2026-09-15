@@ -1,9 +1,11 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
 
-// Schadensfall: Verlust melden beendet die Ausleihe, erzeugt den Elternbrief
-// (PDF-Popup) und macht die offene Forderung im Profil sichtbar —
-// inkl. Rechnung-PDF-Smoke über den offenen Betrag.
+// Schadensfall: Verlust melden beendet die Ausleihe und macht die offene Forderung im
+// Profil sichtbar — samt „Bescheid erstellen" an der Gebühren-Karte (seit 15.09.2026) und
+// Rechnung-PDF-Smoke über den offenen Betrag. Der frühere Elternbrief (PDF-Popup nach dem
+// Melden) öffnet nicht mehr: Er verlangte Barzahlung in der Bibliothek und widersprach dem
+// Bescheid des Landes (OFFEN.md 5.2); der Brief ist jetzt ein eigener Schritt.
 test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ page }) => {
 	await uiLogin(page);
 	const suffix = uniqueSuffix();
@@ -36,7 +38,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	await scanInput.press('Enter');
 	await expect(page.getByText(`E2E-Schadenbuch-${suffix}`).first()).toBeVisible();
 
-	// Schaden melden → Modal ausfüllen → Elternbrief öffnet als PDF-Popup
+	// Schaden melden → Modal ausfüllen → Hinweis, wo die Forderung jetzt steht.
 	// Am zugänglichen Namen festmachen, nicht am title-Attribut: Der Locator hing an
 	// „Verlust/Schaden melden" und fiel um, als title und aria-label vereinheitlicht
 	// wurden. getByRole prüft, was Nutzer und Screenreader tatsächlich adressieren.
@@ -44,36 +46,13 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	await page.locator('#damage-reason').fill('E2E Wasserschaden');
 	await page.locator('#damage-amount').fill('12.50');
 
-	// Geprüft wird die ANTWORT, die im Fenster ankommt, nicht dessen Adresse.
-	//
-	// Vorher stand hier eine Zusicherung auf popup.url(). Die war grün, während die
-	// Funktion kaputt war: Der Service Worker beantwortete die Navigation aus dem Cache
-	// mit der App-Shell — der Benutzer sah die Ausleihe statt des Elternbriefs, aber die
-	// Adresse des Fensters lautete weiterhin auf /pdf. Der begleitende page.request.get
-	// deckte es nicht auf, weil ein fetch am Service Worker vorbeiging.
-	/** @type {{ url: string, typ: string }[]} */
-	const antworten = [];
-	page.context().on('response', (r) => {
-		if (r.url().includes('/api/schadensfaelle/') && r.url().endsWith('/pdf')) {
-			antworten.push({ url: r.url(), typ: r.headers()['content-type'] ?? '' });
-		}
-	});
-
-	const popupPromise = page.waitForEvent('popup');
-	await page.getByRole('button', { name: 'Melden & PDF generieren' }).click();
-	const popup = await popupPromise;
-
-	await expect
-		.poll(() => antworten.length, { message: 'Elternbrief-Antwort trifft ein' })
-		.toBeGreaterThan(0);
-	expect(antworten[0].typ, 'Elternbrief ist ein PDF').toContain('application/pdf');
-	const elternbriefURL = antworten[0].url;
-	await popup.close();
-
-	// Und die Route liefert auch beim direkten Abruf.
-	const elternbrief = await page.request.get(elternbriefURL);
-	expect(elternbrief.status(), 'Elternbrief-PDF').toBe(200);
-	expect(elternbrief.headers()['content-type']).toContain('application/pdf');
+	// Kein Popup mehr: Wer eines erwartet, sieht es hier — ein neues Fenster wäre der
+	// alte Elternbrief, der zurückgekehrt ist.
+	let popups = 0;
+	page.context().on('page', () => popups++);
+	await page.getByRole('button', { name: 'Melden', exact: true }).click();
+	await expect(page.getByText(/Verlust\/Schaden gebucht/)).toBeVisible();
+	expect(popups, 'kein PDF-Fenster nach dem Melden').toBe(0);
 
 	// Die Ausleihe ist beendet — das Buch verschwindet aus der AUSLEIH-Liste.
 	// Bewusst auf die Karte gescopet (Kartenwurzel = div, dessen Kopfzeilen-div das h3
@@ -90,6 +69,8 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	const gebuehrenKarte = page.locator('div:has(> div > h3:text-matches("Gebühren & Schäden"))');
 	await expect(gebuehrenKarte.getByText(`E2E-Schadenbuch-${suffix}`)).toBeVisible();
 	await expect(gebuehrenKarte.getByText('offen', { exact: true })).toBeVisible();
+	// Zweite Tür zum Bescheid: an der Forderung, aus der er entsteht.
+	await expect(gebuehrenKarte.getByRole('button', { name: /Bescheid erstellen/ })).toBeVisible();
 
 	// Offene Forderung: Rechnung-PDF-Smoke über den ungezahlten Betrag
 	const pdf = await page.request.get(`/api/print/rechnung/${studentId}`);
