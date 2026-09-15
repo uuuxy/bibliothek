@@ -37,6 +37,10 @@ func (s *Server) InventurVerlustGefundenHandler() http.HandlerFunc {
 
 		invRepo := repository.NewInventoryRepository(tx)
 		gefunden, befund, err := invRepo.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
+		if errors.Is(err, repository.ErrExemplarNichtGefunden) {
+			// Zwischen Lesen und Zurückholen verschwunden — kein Serverfehler, nichts gebucht.
+			return apierrors.NotFound("kein offener Verlust mit dieser ID", err)
+		}
 		if err != nil {
 			return apierrors.Internal("Fund konnte nicht verbucht werden", err)
 		}

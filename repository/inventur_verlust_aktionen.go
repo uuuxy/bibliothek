@@ -43,16 +43,10 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 		return false, RueckkehrBefund{}, fmt.Errorf("exemplar für Fund-Meldung lesen fehlgeschlagen: %w", err)
 	}
 
-	if _, err := r.db.Exec(ctx, `
-		UPDATE buecher_exemplare
-		SET ist_ausgesondert = false, ist_ausleihbar = true, aussonderung_grund = NULL,
-		    zustand_notiz = '', bestellstatus = NULL, aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $1
-	`, exemplarID); err != nil {
-		return false, RueckkehrBefund{}, fmt.Errorf("exemplar wiederherstellen fehlgeschlagen: %w", err)
-	}
-
-	befund, err := VerbucheRueckkehr(ctx, r.db, exemplarID, bearbeiterID)
+	// Derselbe Baustein wie an der Theke (seit 15.09.2026, Stufe 2, Commit 8): Umlauf und
+	// Forderung in der Transaktion des Handlers. Bis dahin stand das UPDATE hier ein zweites
+	// Mal — zwei Schreibweisen für eine Rückkehr, die nur zufällig einig waren.
+	befund, err := HoleExemplarZurueck(ctx, r.db, exemplarID, bearbeiterID)
 	if err != nil {
 		return false, RueckkehrBefund{}, err
 	}

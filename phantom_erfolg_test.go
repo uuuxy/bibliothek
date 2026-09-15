@@ -130,7 +130,7 @@ var phantomBestand = map[string]int{
 	"repository/inventur_session_finish.go:RecordInventurScan":                  1,
 	"repository/inventur_session_repo.go:CreateInventurSession":                 1,
 	"repository/inventur_verlust_aktionen.go:EndgueltigLoescheVerlustExemplare": 3,
-	"repository/inventur_verlust_aktionen.go:MarkiereVerlustAlsGefunden":        2,
+	"repository/inventur_verlust_aktionen.go:MarkiereVerlustAlsGefunden":        1,
 	"repository/inventur_verlust_aktionen.go:schreibeAuditLog":                  1,
 	"repository/mail_settings.go:UpdateConfig":                                  2,
 	"repository/system_settings.go:SaveSettings":                                1,

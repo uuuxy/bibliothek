@@ -348,34 +348,17 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 	return false, fmt.Errorf("%w: Buchexemplar ist nicht ausleihbar", ErrInvalidState)
 }
 
-// holeExemplarZurueck bringt ein ausgesondertes/gesperrtes Exemplar in den Umlauf und
-// beendet in DERSELBEN Transaktion die Forderung, die seine Abwesenheit abgerechnet hat.
-// Getrennt wäre eines von beiden möglich: das Buch zurück im Regal und die Forderung
-// weiter offen (das Kind bliebe gesperrt), oder die Forderung storniert, ohne dass das
-// Buch wieder ausleihbar ist.
+// holeExemplarZurueck ist der Online-Scan über dem Baustein repository.HoleExemplarZurueck:
+// eigene Transaktion, weil hier nichts weiter folgt. Das Nachbuchen (Stufe 2) legt den
+// Baustein in seine eigene Buchungstransaktion.
 func (s *defaultOmniboxService) holeExemplarZurueck(ctx context.Context, exemplarID, staffID string) (repository.RueckkehrBefund, error) {
-	var befund repository.RueckkehrBefund
-
 	tx, err := s.pool.Begin(ctx)
 	if err != nil {
-		return befund, err
+		return repository.RueckkehrBefund{}, err
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Wieder aufgetaucht: zurück in den Umlauf — der Aussonderungs-Grund muss
-	// mit zurückgesetzt werden (CHECK: im Umlauf = kein Grund).
-	tag, err := tx.Exec(ctx, "UPDATE buecher_exemplare SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL, zustand_notiz = '', bestellstatus = NULL WHERE id = $1", exemplarID)
-	if err != nil {
-		return befund, err
-	}
-	// 0 Zeilen = Exemplar zwischen Lookup und Update entfernt (Race): Ohne diese
-	// Prüfung liefe das In-Memory-Objekt („reaktiviert") der DB davon und die
-	// Meldung „Buch reaktiviert" wäre gelogen (Phantom-Erfolg-Sweep 31.08.2026).
-	if tag.RowsAffected() == 0 {
-		return befund, repository.ErrExemplarNichtGefunden
-	}
-
-	befund, err = repository.VerbucheRueckkehr(ctx, tx, exemplarID, staffID)
+	befund, err := repository.HoleExemplarZurueck(ctx, tx, exemplarID, staffID)
 	if err != nil {
 		return repository.RueckkehrBefund{}, err
 	}
