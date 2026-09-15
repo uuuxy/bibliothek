@@ -97,13 +97,13 @@ func TestHandleLehrerHandapparat_Erfolg_Und_Konflikt(t *testing.T) {
 		var ptrNil *string
 
 		mock.ExpectQuery(`INSERT INTO ausleihen`).WithArgs(
-			c1, staff1, pgxmock.AnyArg(), staff1, true,
+			c1, staff1, pgxmock.AnyArg(), staff1, true, pgxmock.AnyArg(),
 		).WillReturnRows(pgxmock.NewRows([]string{
 			"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat",
 		}).AddRow(
 			"l1", &c1, nil, &staff1, time.Now(), time.Now().AddDate(1, 0, 0), nil, &staff1, nil, false, true,
 		))
-		mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").WithArgs(c1).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+		mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").WithArgs(c1, pgxmock.AnyArg()).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		mock.ExpectExec(`INSERT INTO audit_log`).WithArgs(
 			"ausleihen", "CHECKOUT", "c1", ptrStaff1, "USER", ptrNil, pgxmock.AnyArg(),
@@ -141,7 +141,7 @@ func TestHandleLehrerHandapparat_Erfolg_Und_Konflikt(t *testing.T) {
 		staff2 := "staff2"
 
 		mock.ExpectQuery(`INSERT INTO ausleihen`).WithArgs(
-			c2, staff2, pgxmock.AnyArg(), staff2, true,
+			c2, staff2, pgxmock.AnyArg(), staff2, true, pgxmock.AnyArg(),
 		).WillReturnError(repository.ErrAusleiheKonflikt)
 
 		res, err := svc.handleLehrerHandapparat(context.Background(), tx, copy, "staff2", resp)

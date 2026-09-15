@@ -79,7 +79,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 	// Rückholen: Stempel rückt vor.
 	warte(t, pool)
 	tx = beginne(t, pool)
-	if _, err := HoleExemplarZurueck(ctx, tx, f.exemplarID, f.bearbeiterID); err != nil {
+	if _, err := HoleExemplarZurueck(ctx, tx, f.exemplarID, f.bearbeiterID, nil); err != nil {
 		t.Fatalf("zurückholen: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {

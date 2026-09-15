@@ -358,7 +358,7 @@ func (s *defaultOmniboxService) holeExemplarZurueck(ctx context.Context, exempla
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	befund, err := repository.HoleExemplarZurueck(ctx, tx, exemplarID, staffID)
+	befund, err := repository.HoleExemplarZurueck(ctx, tx, exemplarID, staffID, nil)
 	if err != nil {
 		return repository.RueckkehrBefund{}, err
 	}

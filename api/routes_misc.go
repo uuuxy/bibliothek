@@ -21,7 +21,7 @@ func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/public/bestellung/{token}/bestaetigen", s.OeffentlichBestaetigenHandler())
 }
 
-func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, omniboxSvc service.OmniboxService) {
+func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, omniboxSvc service.OmniboxService, nachbuchSvc service.NachbuchService) {
 	// Central Omnibox Action Dispatcher.
 	// perform_actions (nicht view_students): das ist die Kiosk-/Terminal-Kernfunktion
 	// (Ausleihe/Rückgabe/Scan/Suche). So kann die Helfer-Rolle am Terminal arbeiten,
@@ -29,6 +29,8 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	actionHandler := s.ActionHandler(omniboxSvc)
 	mux.Handle("POST /api/action", s.RequirePermission("perform_actions")(actionHandler))
 	mux.Handle("POST /api/action/batch", s.RequirePermission("perform_actions")(s.ActionBatchHandler(omniboxSvc)))
+	// Nachbuchen der Offline-Warteschlange (Stufe 2): dieselbe Theken-Rolle wie der Scan.
+	mux.Handle("POST /api/action/nachbuchen", s.RequirePermission("perform_actions")(s.NachbuchenHandler(nachbuchSvc)))
 	// Nachbuch-Meldungen (Migration 117): Liste und Quittieren nur mit view_students — die
 	// Zeilen nennen Ausleiher und Vorbesitzer (Entscheidung Peter, 13.09.2026); der Zähler
 	// fürs Band ist eine Zahl und darf jeder Theken-Rolle gehören.

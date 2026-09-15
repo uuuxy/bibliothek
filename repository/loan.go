@@ -116,15 +116,49 @@ func (r *pgLoanRepository) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.T
 	return l, nil
 }
 
-// CreateLoanTx erzeugt einen neuen Ausleiheintrag innerhalb einer Transaktion.
-func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error) {
-	query := `
-		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id)
-		VALUES ($1, $2, $3, $4)
+// Die drei Schreiber der Ausleihe teilen sich je EINE SQL-Formulierung mit dem Online-Scan
+// und dem Nachbuchen (Stufe 2 des Offline-Baus, Commit 11): Der Zeitpunkt ist ein Parameter.
+// nil heißt „jetzt" (Online-Scan, Default der Spalten); das Nachbuchen gibt den Scan-Zeitpunkt
+// vom Theken-Rechner mit — höchstens Serverzeit, das prüft der Aufrufer. Zwei Formulierungen
+// derselben Buchung (eine mit, eine ohne Zeit) wären zwei Türen zum selben Zustand.
+
+const sqlAusleiheSchueler = `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id, ausgeliehen_am, erfasst_am)
+		VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, CURRENT_TIMESTAMP), COALESCE($5::timestamptz, CURRENT_TIMESTAMP))
 		ON CONFLICT DO NOTHING
 		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
-	l, err := scanLoan(tx.QueryRow(ctx, query, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID))
+
+const sqlAusleiheBenutzer = `
+		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat, ausgeliehen_am, erfasst_am)
+		VALUES ($1, $2, $3, $4, $5, COALESCE($6::timestamptz, CURRENT_TIMESTAMP), COALESCE($6::timestamptz, CURRENT_TIMESTAMP))
+		ON CONFLICT DO NOTHING
+		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
+	`
+
+// CreateLoanTx erzeugt einen neuen Ausleiheintrag innerhalb einer Transaktion — jetzt.
+func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error) {
+	return CreateLoanZumTx(ctx, tx, exemplarID, schuelerID, bearbeiterID, rueckgabeFrist, nil)
+}
+
+// CreateLoanZumTx erzeugt die Ausleihe eines Schülers zum gegebenen Zeitpunkt (nil = jetzt)
+// und stempelt die Bewegung des Exemplars mit demselben Zeitpunkt.
+func CreateLoanZumTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time, zeitpunkt *time.Time) (*Loan, error) {
+	return schreibeAusleihe(ctx, tx, exemplarID, zeitpunkt, sqlAusleiheSchueler, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID, zeitpunkt)
+}
+
+// CreateUserLoanTx erzeugt einen neuen Ausleiheintrag für einen Systembenutzer innerhalb einer Transaktion — jetzt.
+func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error) {
+	return CreateUserLoanZumTx(ctx, tx, exemplarID, ausleiherBenutzerID, bearbeiterID, rueckgabeFrist, istHandapparat, nil)
+}
+
+// CreateUserLoanZumTx erzeugt die Ausleihe einer Lehrkraft zum gegebenen Zeitpunkt (nil = jetzt).
+func CreateUserLoanZumTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool, zeitpunkt *time.Time) (*Loan, error) {
+	return schreibeAusleihe(ctx, tx, exemplarID, zeitpunkt, sqlAusleiheBenutzer, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat, zeitpunkt)
+}
+
+func schreibeAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, zeitpunkt *time.Time, query string, args ...any) (*Loan, error) {
+	l, err := scanLoan(tx.QueryRow(ctx, query, args...))
 	if err != nil {
 		// Keine Zeile heißt hier NICHT "nichts gefunden", sondern "ON CONFLICT hat
 		// den INSERT verworfen" — ein Konflikt, kein Normalfall.
@@ -133,18 +167,19 @@ func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplar
 		}
 		return nil, err
 	}
-	if err := StempleBewegung(ctx, tx, exemplarID); err != nil {
+	if err := StempleBewegungZum(ctx, tx, exemplarID, zeitpunkt); err != nil {
 		return nil, err
 	}
 	return l, nil
 }
 
-// StempleBewegung setzt buecher_exemplare.letzte_bewegung_am auf jetzt (Migration 116):
+// StempleBewegungZum setzt buecher_exemplare.letzte_bewegung_am (Migration 116) auf den
+// Zeitpunkt; nil heißt jetzt (Online-Scan), das Nachbuchen gibt den Scan-Zeitpunkt mit.
 // Der Wächter des Nachbuchens weist Scans ab, die älter sind als die letzte Bewegung.
 // Aufgerufen NACH der Zeile in ausleihen — Sperrreihenfolge Schüler → Ausleihe → Exemplar
 // (docs/invarianten.md, Abschnitt 1); das Nachbuchen hält dieselbe Reihenfolge.
-func StempleBewegung(ctx context.Context, q DBQueryer, exemplarID string) error {
-	tag, err := q.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = CURRENT_TIMESTAMP WHERE id = $1`, exemplarID)
+func StempleBewegungZum(ctx context.Context, q DBQueryer, exemplarID string, zeitpunkt *time.Time) error {
+	tag, err := q.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = COALESCE($2::timestamptz, CURRENT_TIMESTAMP) WHERE id = $1`, exemplarID, zeitpunkt)
 	if err != nil {
 		return fmt.Errorf("bewegung stempeln: %w", err)
 	}
@@ -154,37 +189,20 @@ func StempleBewegung(ctx context.Context, q DBQueryer, exemplarID string) error 
 	return nil
 }
 
-// CreateUserLoanTx erzeugt einen neuen Ausleiheintrag für einen Systembenutzer innerhalb einer Transaktion.
-func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error) {
-	query := `
-		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat)
-		VALUES ($1, $2, $3, $4, $5)
-		ON CONFLICT DO NOTHING
-		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
-	`
-	l, err := scanLoan(tx.QueryRow(ctx, query, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat))
-	if err != nil {
-		// Keine Zeile heißt hier NICHT "nichts gefunden", sondern "ON CONFLICT hat
-		// den INSERT verworfen" — ein Konflikt, kein Normalfall.
-		if errors.Is(err, sql.ErrNoRows) || errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrAusleiheKonflikt
-		}
-		return nil, err
-	}
-	if err := StempleBewegung(ctx, tx, exemplarID); err != nil {
-		return nil, err
-	}
-	return l, nil
+// ReturnLoanTx bucht ein ausgeliehenes Buch innerhalb einer Transaktion zurück — jetzt.
+func (r *pgLoanRepository) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool) error {
+	return ReturnLoanZumTx(ctx, tx, loanID, bearbeiterID, isFremdrueckgabe, nil)
 }
 
-// ReturnLoanTx bucht ein ausgeliehenes Buch innerhalb einer Transaktion zurück.
-func (r *pgLoanRepository) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool) error {
-	query := `
+// ReturnLoanZumTx bucht die Rückgabe zum gegebenen Zeitpunkt (nil = jetzt). Liegt der
+// Zeitpunkt vor der Ausleihe, weist check_return_date (23514) die Rückgabe ab — beim
+// Nachbuchen ist das ein veralteter Scan, kein Serverfehler.
+func ReturnLoanZumTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool, zeitpunkt *time.Time) error {
+	tag, err := tx.Exec(ctx, `
 		UPDATE ausleihen
-		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = $1, ist_fremdrueckgabe = $2
+		SET rueckgabe_am = COALESCE($4::timestamptz, CURRENT_TIMESTAMP), rueckgabe_bearbeiter_id = $1, ist_fremdrueckgabe = $2
 		WHERE id = $3 AND rueckgabe_am IS NULL
-	`
-	tag, err := tx.Exec(ctx, query, bearbeiterID, isFremdrueckgabe, loanID)
+	`, bearbeiterID, isFremdrueckgabe, loanID, zeitpunkt)
 	if err != nil {
 		return err
 	}
@@ -195,8 +213,8 @@ func (r *pgLoanRepository) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, 
 	// über device_service — die Ausleihe hier trägt also immer ein Exemplar, 0 Zeilen wäre ein
 	// Widerspruch und kein Normalfall.
 	stempel, err := tx.Exec(ctx, `
-		UPDATE buecher_exemplare e SET letzte_bewegung_am = CURRENT_TIMESTAMP
-		FROM ausleihen a WHERE a.id = $1 AND e.id = a.exemplar_id`, loanID)
+		UPDATE buecher_exemplare e SET letzte_bewegung_am = COALESCE($2::timestamptz, CURRENT_TIMESTAMP)
+		FROM ausleihen a WHERE a.id = $1 AND e.id = a.exemplar_id`, loanID, zeitpunkt)
 	if err != nil {
 		return fmt.Errorf("bewegung stempeln: %w", err)
 	}

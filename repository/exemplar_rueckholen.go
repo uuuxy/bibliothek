@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 )
 
 // HoleExemplarZurueck bringt ein ausgesondertes oder gesperrtes Exemplar zurück in den
@@ -20,13 +21,14 @@ import (
 //
 // 0 Zeilen heißt: Das Exemplar ist zwischen Lookup und Update verschwunden — dann darf
 // niemand „reaktiviert" melden (Phantom-Erfolg-Sweep 31.08.2026).
-func HoleExemplarZurueck(ctx context.Context, q DBQueryer, exemplarID, bearbeiterID string) (RueckkehrBefund, error) {
+// bewegtAm ist der Zeitpunkt der Rückkehr (nil = jetzt); das Nachbuchen gibt den Scan-Zeitpunkt mit.
+func HoleExemplarZurueck(ctx context.Context, q DBQueryer, exemplarID, bearbeiterID string, bewegtAm *time.Time) (RueckkehrBefund, error) {
 	tag, err := q.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL,
 		    zustand_notiz = '', bestellstatus = NULL, aktualisiert_am = CURRENT_TIMESTAMP,
-		    letzte_bewegung_am = CURRENT_TIMESTAMP
-		WHERE id = $1`, exemplarID)
+		    letzte_bewegung_am = COALESCE($2::timestamptz, CURRENT_TIMESTAMP)
+		WHERE id = $1`, exemplarID, bewegtAm)
 	if err != nil {
 		return RueckkehrBefund{}, fmt.Errorf("exemplar zurückholen: %w", err)
 	}

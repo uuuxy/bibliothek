@@ -72,12 +72,16 @@ var phantomBestand = map[string]int{
 	// schema.sql-Load sind DDL/Setup — 0 Zeilen ist dort kein meldbarer Erfolg.
 	// Vorher stand derselbe Code fünffach in _test.go-Dateien, die die Ratsche
 	// per Konstruktion nicht sieht.
-	"internal/pgtest/pgtest.go:baueTestDB":                              3,
-	"internal/service/cover_service.go:processCover":                    1,
-	"internal/service/cover_service.go:setCoverStatus":                  1,
-	"internal/service/device_service.go:gibGeraetZurueck":               1,
-	"internal/service/import_dynamic.go:schreibeSignaturUpdates":        1,
-	"internal/service/loan_checkout.go:zaehleAktiveSchuelerAusleihen":   1,
+	"internal/pgtest/pgtest.go:baueTestDB":                            3,
+	"internal/service/cover_service.go:processCover":                  1,
+	"internal/service/cover_service.go:setCoverStatus":                1,
+	"internal/service/device_service.go:gibGeraetZurueck":             1,
+	"internal/service/import_dynamic.go:schreibeSignaturUpdates":      1,
+	"internal/service/loan_checkout.go:zaehleAktiveSchuelerAusleihen": 1,
+	// FOR-UPDATE-Lock auf die Schüler-Zeile, bevor das Nachbuchen bucht (Sperrreihenfolge
+	// Schüler → Ausleihe → Exemplar). Das Statement SPERRT, es schreibt nicht; die Existenz
+	// des Schülers steht vorher fest (loesePerson). 0 Zeilen meldet hier niemand als Erfolg.
+	"internal/service/nachbuchen.go:Nachbuchen":                         1,
 	"internal/service/loan_return.go:processReturnVormerkungTx":         1,
 	"internal/service/photo_service.go:UploadStudentPhoto":              1,
 	"inventur/datenbank_klassen.go:AddBooksToClasses":                   1,
@@ -125,7 +129,10 @@ var phantomBestand = map[string]int{
 	// der Bescheid Verlust und Brief in EINER Transaktion bucht); ReportDamage ist nur
 	// noch die Hülle. Die drei Tags sind dieselben wie vorher (Exemplar aussondern,
 	// Vormerkung lösen, Ausleihe beenden) — die Ausleihe ist per FOR UPDATE gelesen.
-	"repository/schaden_melden.go:meldeSchaden":                                 3,
+	"repository/schaden_melden.go:meldeSchaden": 3,
+	// INSERT … ON CONFLICT DO NOTHING: 0 Zeilen ist die Wiederholung desselben Schlüssels
+	// vom Theken-Rechner — kein Phantom, sondern gewollte Idempotenz (Migration 117).
+	"repository/nachbuch_meldungen.go:SchreibeNachbuchMeldung":                  1,
 	"repository/inventur_session_finish.go:FinishInventurSession":               1,
 	"repository/inventur_session_finish.go:RecordInventurScan":                  1,
 	"repository/inventur_session_repo.go:CreateInventurSession":                 1,

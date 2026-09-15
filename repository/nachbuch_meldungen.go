@@ -27,6 +27,21 @@ const (
 	NachbuchVeraltet           = "veraltet"
 )
 
+// NachbuchMeldungEingabe ist, was die Nachbuch-Tür je Abweichung festhält.
+type NachbuchMeldungEingabe struct {
+	IdempotencyKey        string
+	ExemplarID            *string
+	Barcode               string
+	Ergebnis              string
+	Grund                 string
+	AusleiherSchuelerID   *string
+	AusleiherBenutzerID   *string
+	VorbesitzerSchuelerID *string
+	VorbesitzerBenutzerID *string
+	AusweisText           *string
+	GescanntAm            time.Time
+}
+
 // NachbuchMeldung ist eine Zeile der Meldungsliste, mit aufgelösten Namen — die Liste
 // ist nur mit view_students sichtbar, die Namen sind dort erlaubt.
 type NachbuchMeldung struct {
@@ -48,6 +63,26 @@ type NachbuchMeldung struct {
 // ErrNachbuchMeldungNichtOffen heißt: quittiert wurde nichts — die Meldung gibt es nicht oder
 // sie ist schon quittiert. Kein stiller Erfolg (Phantom-Erfolg-Sweep 31.08.2026).
 var ErrNachbuchMeldungNichtOffen = errors.New("nachbuch-meldung nicht offen")
+
+// SchreibeNachbuchMeldung legt eine Meldung ab — in der Transaktion des Aufrufers, damit
+// sie mit der Buchung steht oder fällt. Ein zweiter Eintrag mit demselben Schlüssel wird
+// still übergangen (ON CONFLICT DO NOTHING): Die Wiederholung eines Theken-Rechners ist
+// kein zweiter Vorgang.
+func SchreibeNachbuchMeldung(ctx context.Context, q DBQueryer, m NachbuchMeldungEingabe) error {
+	if _, err := q.Exec(ctx, `
+		INSERT INTO nachbuch_meldungen
+			(idempotency_key, exemplar_id, barcode, ergebnis, grund,
+			 ausleiher_schueler_id, ausleiher_benutzer_id, vorbesitzer_schueler_id, vorbesitzer_benutzer_id,
+			 ausweis_text, gescannt_am)
+		VALUES ($1::uuid, $2::uuid, $3, $4, NULLIF($5, ''), $6::uuid, $7::uuid, $8::uuid, $9::uuid, $10, $11)
+		ON CONFLICT (idempotency_key) DO NOTHING`,
+		m.IdempotencyKey, m.ExemplarID, m.Barcode, m.Ergebnis, m.Grund,
+		m.AusleiherSchuelerID, m.AusleiherBenutzerID, m.VorbesitzerSchuelerID, m.VorbesitzerBenutzerID,
+		m.AusweisText, m.GescanntAm); err != nil {
+		return fmt.Errorf("nachbuch-meldung schreiben: %w", err)
+	}
+	return nil
+}
 
 // nachbuchMeldungSQL ist die Zeile der Liste; Namen kommen aus dem Bestand, sind nach der
 // Tilgung also weg (FK → NULL), der Barcode-Text bleibt.

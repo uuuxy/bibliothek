@@ -46,7 +46,7 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 	// Derselbe Baustein wie an der Theke (seit 15.09.2026, Stufe 2, Commit 8): Umlauf und
 	// Forderung in der Transaktion des Handlers. Bis dahin stand das UPDATE hier ein zweites
 	// Mal — zwei Schreibweisen für eine Rückkehr, die nur zufällig einig waren.
-	befund, err := HoleExemplarZurueck(ctx, r.db, exemplarID, bearbeiterID)
+	befund, err := HoleExemplarZurueck(ctx, r.db, exemplarID, bearbeiterID, nil)
 	if err != nil {
 		return false, RueckkehrBefund{}, err
 	}

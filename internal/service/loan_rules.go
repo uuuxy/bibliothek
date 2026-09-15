@@ -220,9 +220,17 @@ func parseGrade(klasse string) int {
 
 // resolveCheckoutDueDate ermittelt das Fälligkeitsdatum für eine neue Buchausleihe.
 // Hierbei werden Sonderaktionen wie der Ferien-Leseclub ausgewertet, um reguläre Leihfristen zu überschreiben.
+// resolveCheckoutDueDate rechnet die Frist ab der Uhr des Dienstes (jetzt).
 func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string) (time.Time, error) {
+	return s.resolveCheckoutDueDateAm(ctx, copy, borrowerKlasse, s.heute())
+}
+
+// resolveCheckoutDueDateAm rechnet die Frist ab einem gegebenen Tag — beim Nachbuchen der
+// Scan-Zeitpunkt (Entscheidung Peter, 13.09.2026: Frist, Mahnwesen und Lesehistorie rechnen
+// ab dem Scan), am Online-Scan jetzt.
+func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string, heute time.Time) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
-	heute := s.heute()
+	heute = heute.In(schoolLocation())
 
 	additionalYears := 0
 	if copy.ZielJahrgang > 0 && borrowerKlasse != "" {

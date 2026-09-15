@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"bibliothek/db"
 	"bibliothek/repository"
 )
 
@@ -34,16 +33,23 @@ func (s *defaultLoanService) logOverride(ctx context.Context, staffID, borrowerI
 // in einen eigenen Helfer ausgelagert (reine Extract-Method, keine Logikänderung) — die
 // Reihenfolge und das overrideBlock-/Audit-Verhalten sind identisch zum vorherigen Monolithen.
 func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
+	return s.pruefeSchuelerAusleihbarMit(ctx, s.pool, sObj, borrowerID, staffID, overrideBlock)
+}
+
+// pruefeSchuelerAusleihbarMit prüft dieselben vier Sperren über q — beim Nachbuchen die
+// Transaktion des Eintrags (sonst zwei Verbindungen je Eintrag, OFFEN.md 6.1), am
+// Online-Scan der Pool wie bisher.
+func (s *defaultLoanService) pruefeSchuelerAusleihbarMit(ctx context.Context, q repository.DBQueryer, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
 	if err := s.pruefeGesperrt(ctx, sObj, borrowerID, staffID, overrideBlock); err != nil {
 		return err
 	}
 	if err := s.pruefeManuellGesperrt(ctx, sObj, borrowerID, staffID, overrideBlock); err != nil {
 		return err
 	}
-	if err := s.pruefeOffeneSchaeden(ctx, borrowerID, staffID, overrideBlock); err != nil {
+	if err := s.pruefeOffeneSchaeden(ctx, q, borrowerID, staffID, overrideBlock); err != nil {
 		return err
 	}
-	return s.pruefeUeberfaellig(ctx, borrowerID, staffID, overrideBlock)
+	return s.pruefeUeberfaellig(ctx, q, borrowerID, staffID, overrideBlock)
 }
 
 // pruefeGesperrt blockt einen gesperrten Schüler; overrideBlock hebt die Sperre
@@ -87,8 +93,8 @@ func (s *defaultLoanService) pruefeManuellGesperrt(ctx context.Context, sObj *re
 // ist — sonst könnte man Bücher zerstören, die Rechnung ignorieren und sich am nächsten Tag
 // neu eindecken. storniert_am setzt ist_bezahlt = true (repository/audit_system.go), daher
 // genügt ist_bezahlt = false. overrideBlock möglich, wird dann revisionssicher protokolliert.
-func (s *defaultLoanService) pruefeOffeneSchaeden(ctx context.Context, borrowerID, staffID string, overrideBlock bool) error {
-	offeneSchaeden, err := zaehleOffeneSchaeden(ctx, s.pool, borrowerID)
+func (s *defaultLoanService) pruefeOffeneSchaeden(ctx context.Context, q repository.DBQueryer, borrowerID, staffID string, overrideBlock bool) error {
+	offeneSchaeden, err := zaehleOffeneSchaeden(ctx, q, borrowerID)
 	if err != nil {
 		return err
 	}
@@ -103,13 +109,13 @@ func (s *defaultLoanService) pruefeOffeneSchaeden(ctx context.Context, borrowerI
 
 // pruefeUeberfaellig setzt die Overdue-Sperr-Automatik um: ab MaxOverdueItems überfälligen
 // Medien (älter als MaxOverdueDays) ist die Ausleihe gesperrt.
-func (s *defaultLoanService) pruefeUeberfaellig(ctx context.Context, borrowerID, staffID string, overrideBlock bool) error {
+func (s *defaultLoanService) pruefeUeberfaellig(ctx context.Context, q repository.DBQueryer, borrowerID, staffID string, overrideBlock bool) error {
 	settings, err := s.querySettings(ctx)
 	if err != nil {
 		return err
 	}
 
-	overdueCount, errOverdue := zaehleUeberfaelligeMedien(ctx, s.pool, borrowerID, settings.MaxOverdueDays)
+	overdueCount, errOverdue := zaehleUeberfaelligeMedien(ctx, q, borrowerID, settings.MaxOverdueDays)
 	if errOverdue != nil {
 		return errOverdue
 	}
@@ -167,7 +173,7 @@ func (s *defaultLoanService) resolveTeacherBorrower(ctx context.Context, teacher
 	result := &checkoutContext{borrowerType: "teacher", borrowerID: teacherID, teacher: lehrkraft}
 	// Lehrer-Ausleihe = Handapparat/Dauerleihe (1 Jahr), Tagesende Schul-Zeitzone —
 	// dieselbe Normalisierung wie alle anderen Fristen (siehe TagesEndeInSchulzeitzone).
-	result.dueTime = TagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
+	result.dueTime = TagesEndeInSchulzeitzone(s.heute().AddDate(1, 0, 0))
 	return result, nil
 }
 
@@ -192,9 +198,9 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(
 // Schülers. Geteilte Quelle für Buch- (pruefeOffeneSchaeden) und Geräte-Pfad
 // (pruefeGeraetAutomatikSperren) — storniert_am setzt ist_bezahlt=true, daher genügt
 // die Flag-Prüfung.
-func zaehleOffeneSchaeden(ctx context.Context, pool db.PgxPoolIface, schuelerID string) (int, error) {
+func zaehleOffeneSchaeden(ctx context.Context, q repository.DBQueryer, schuelerID string) (int, error) {
 	var n int
-	err := pool.QueryRow(ctx,
+	err := q.QueryRow(ctx,
 		`SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
 		schuelerID).Scan(&n)
 	return n, err
@@ -203,9 +209,9 @@ func zaehleOffeneSchaeden(ctx context.Context, pool db.PgxPoolIface, schuelerID 
 // zaehleUeberfaelligeMedien zählt die überfälligen (älter als maxOverdueDays), noch nicht
 // zurückgegebenen BUCH-Medien eines Schülers (Handapparate und Geräte ausgenommen).
 // Geteilte Quelle für die Überfällig-Sperr-Automatik in Buch- und Geräte-Pfad.
-func zaehleUeberfaelligeMedien(ctx context.Context, pool db.PgxPoolIface, schuelerID string, maxOverdueDays int) (int, error) {
+func zaehleUeberfaelligeMedien(ctx context.Context, q repository.DBQueryer, schuelerID string, maxOverdueDays int) (int, error) {
 	var n int
-	err := pool.QueryRow(ctx, `
+	err := q.QueryRow(ctx, `
 		SELECT COUNT(*)
 		FROM ausleihen
 		WHERE schueler_id = $1

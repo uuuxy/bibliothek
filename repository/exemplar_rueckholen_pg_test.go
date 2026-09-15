@@ -36,7 +36,7 @@ func TestHoleExemplarZurueck_HaeltBeideHaelftenInDerTransaktionDesAufrufers(t *t
 	if err != nil {
 		t.Fatalf("begin: %v", err)
 	}
-	befund, err := HoleExemplarZurueck(ctx, tx, exemplarID, bearbeiterID)
+	befund, err := HoleExemplarZurueck(ctx, tx, exemplarID, bearbeiterID, nil)
 	if err != nil {
 		t.Fatalf("zurückholen in tx: %v", err)
 	}
@@ -55,7 +55,7 @@ func TestHoleExemplarZurueck_HaeltBeideHaelftenInDerTransaktionDesAufrufers(t *t
 	if err != nil {
 		t.Fatalf("begin: %v", err)
 	}
-	if _, err := HoleExemplarZurueck(ctx, tx, exemplarID, bearbeiterID); err != nil {
+	if _, err := HoleExemplarZurueck(ctx, tx, exemplarID, bearbeiterID, nil); err != nil {
 		t.Fatalf("zurückholen in tx: %v", err)
 	}
 	if err := tx.Commit(ctx); err != nil {
@@ -70,7 +70,7 @@ func TestHoleExemplarZurueck_HaeltBeideHaelftenInDerTransaktionDesAufrufers(t *t
 func TestHoleExemplarZurueck_UnbekanntesExemplarIstKeinErfolg(t *testing.T) {
 	pool := pgtest.Pool(t)
 	_, _, bearbeiterID := rueckholenAufbau(t, pool)
-	_, err := HoleExemplarZurueck(context.Background(), pool, "00000000-0000-0000-0000-000000000000", bearbeiterID)
+	_, err := HoleExemplarZurueck(context.Background(), pool, "00000000-0000-0000-0000-000000000000", bearbeiterID, nil)
 	if !errors.Is(err, ErrExemplarNichtGefunden) {
 		t.Fatalf("erwartet ErrExemplarNichtGefunden, bekommen: %v", err)
 	}

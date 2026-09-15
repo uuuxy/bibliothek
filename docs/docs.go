@@ -140,6 +140,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/action/nachbuchen": {
+            "post": {
+                "description": "Bucht je Eintrag die Wirklichkeit (Umbuchung, Rückgabe, Rückholen) und meldet jede Abweichung vom Scan.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "theke"
+                ],
+                "summary": "Offline-Warteschlange nachbuchen",
+                "parameters": [
+                    {
+                        "description": "Einträge der Warteschlange",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.NachbuchenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.NachbuchenResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/permissions": {
             "get": {
                 "description": "Retrieves current allowed/denied flags for permissions across all system roles.",
@@ -2745,6 +2779,124 @@ const docTemplate = `{
                 }
             }
         },
+        "api.AbholbereitInfo": {
+            "type": "object",
+            "properties": {
+                "bereitgestellt_bis": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ActionResponse": {
+            "type": "object",
+            "properties": {
+                "abholbereit": {
+                    "description": "Abholbereit: Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung\n01.09.2026) — die Mitarbeiterin sieht sofort, dass für den gescannten\nSchüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;\nPII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.AbholbereitInfo"
+                    }
+                },
+                "aufsicht_informieren": {
+                    "description": "AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen\nSchadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).\nGetrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.",
+                    "type": "string"
+                },
+                "book": {
+                    "description": "Book copy details if applicable",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.BookCopy"
+                        }
+                    ]
+                },
+                "due_date": {
+                    "description": "Return deadline for check-outs",
+                    "type": "string"
+                },
+                "fremdrueckgabe": {
+                    "description": "Flag for returns from another student/teacher",
+                    "type": "boolean"
+                },
+                "geraet": {
+                    "description": "Hardware details if applicable",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.Geraet"
+                        }
+                    ]
+                },
+                "has_vormerkung": {
+                    "description": "True if returned book has a pending reservation",
+                    "type": "boolean"
+                },
+                "loan_id": {
+                    "description": "Loan UUID (for Undo support on returns)",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Informational message for the frontend",
+                    "type": "string"
+                },
+                "regalfreigabe_barcode": {
+                    "description": "RegalfreigabeBarcode: reserved copy in the hold shelf to be returned to the\nregular shelf because the student took a different copy of the same title.",
+                    "type": "string"
+                },
+                "search_results": {
+                    "description": "Full-text search list",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.BookTitle"
+                    }
+                },
+                "student": {
+                    "description": "The active student, or original borrower (Theken-Sicht, siehe SchuelerKiosk)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.SchuelerKiosk"
+                        }
+                    ]
+                },
+                "teacher": {
+                    "description": "The active teacher borrower (Handapparat; Theken-Sicht, siehe MitarbeiterKiosk)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.MitarbeiterKiosk"
+                        }
+                    ]
+                },
+                "type": {
+                    "description": "\"student\", \"teacher\", \"ausleihe\", \"rueckgabe\", \"search_results\", \"info\"",
+                    "type": "string"
+                },
+                "vorbesitzer": {
+                    "description": "Original student borrower if foreign return (Theken-Sicht)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.SchuelerKiosk"
+                        }
+                    ]
+                },
+                "vorbesitzer_user": {
+                    "description": "Original teacher borrower if foreign return (Theken-Sicht)",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.MitarbeiterKiosk"
+                        }
+                    ]
+                },
+                "vormerkung_titel": {
+                    "description": "Title name of the reserved book",
+                    "type": "string"
+                },
+                "vormerkung_user": {
+                    "description": "Reserved for: student name \u0026 class",
+                    "type": "string"
+                }
+            }
+        },
         "api.AuditLogEntry": {
             "type": "object",
             "properties": {
@@ -3646,6 +3798,23 @@ const docTemplate = `{
                 }
             }
         },
+        "api.MitarbeiterKiosk": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                }
+            }
+        },
         "api.MittelKorrekturRequest": {
             "type": "object",
             "properties": {
@@ -3654,6 +3823,103 @@ const docTemplate = `{
                 },
                 "mittel": {
                     "type": "string"
+                }
+            }
+        },
+        "api.NachbuchenEintrag": {
+            "type": "object",
+            "required": [
+                "absicht",
+                "barcode",
+                "gescannt_am",
+                "schluessel"
+            ],
+            "properties": {
+                "absicht": {
+                    "description": "Absicht: was der Bediener beim Scan meinte (\"ausleihe\" | \"rueckgabe\").",
+                    "type": "string",
+                    "enum": [
+                        "ausleihe",
+                        "rueckgabe"
+                    ]
+                },
+                "ausweis_barcode": {
+                    "description": "… sonst der offline gescannte Ausweis, den der Server auflöst.",
+                    "type": "string"
+                },
+                "barcode": {
+                    "description": "Barcode des Buchs, wie gescannt (B-…, nackte Ziffern, LMF-…).",
+                    "type": "string"
+                },
+                "gescannt_am": {
+                    "description": "GescanntAm ist der Zeitpunkt am Theken-Rechner; der Server nimmt höchstens seine\neigene Zeit (eine falsch gehende Theken-Uhr datiert nichts vor).",
+                    "type": "string"
+                },
+                "lehrer_id": {
+                    "type": "string"
+                },
+                "schluessel": {
+                    "description": "Schluessel ist der Idempotenz-Schlüssel des Eintrags — derselbe, den der\nOnline-Versand benutzt hätte. Daran erkennt der Server einen abgebrochenen Versand.",
+                    "type": "string"
+                },
+                "schueler_id": {
+                    "description": "Person: was der Rechner beim Scan schon auflösen konnte …",
+                    "type": "string"
+                }
+            }
+        },
+        "api.NachbuchenErgebnis": {
+            "type": "object",
+            "properties": {
+                "aufsicht_informieren": {
+                    "description": "AufsichtInformieren: Das Buch stand auf einem Bescheid, der schon bei der\nSchulaufsicht liegt — eigenes Feld, weil das eine Aufgabe ist, keine Meldung.",
+                    "type": "string"
+                },
+                "daten": {
+                    "description": "Daten ist die gebuchte Wirkung in der Form des Theken-Scans (nur bei Erfolg).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.ActionResponse"
+                        }
+                    ]
+                },
+                "ergebnis": {
+                    "description": "Ergebnis: ausgeliehen · umgebucht · bereits_ausgeliehen · zurueckgegeben ·\nnur_reaktiviert · nicht_gebucht · veraltet · wiederholen.",
+                    "type": "string"
+                },
+                "grund": {
+                    "description": "Grund steht bei nicht_gebucht und veraltet — der Satz, den die Meldung trägt.",
+                    "type": "string"
+                },
+                "schluessel": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.NachbuchenRequest": {
+            "type": "object",
+            "required": [
+                "eintraege"
+            ],
+            "properties": {
+                "eintraege": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/api.NachbuchenEintrag"
+                    }
+                }
+            }
+        },
+        "api.NachbuchenResponse": {
+            "type": "object",
+            "properties": {
+                "ergebnisse": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.NachbuchenErgebnis"
+                    }
                 }
             }
         },
@@ -3696,6 +3962,33 @@ const docTemplate = `{
                 },
                 "promoted_count": {
                     "type": "integer"
+                }
+            }
+        },
+        "api.SchuelerKiosk": {
+            "type": "object",
+            "properties": {
+                "barcode_id": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_manually_blocked": {
+                    "type": "boolean"
+                },
+                "ist_gesperrt": {
+                    "description": "Operative Flags, keine Personendaten: Die Theke muss sehen, dass eine\nAusleihe blockiert ist. Der Grund (block_reason) bleibt draußen — er\nkann sensiblen Freitext tragen und kommt bei Bedarf als Fehlermeldung\nder jeweiligen Aktion an.",
+                    "type": "boolean"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
                 }
             }
         },
@@ -4043,6 +4336,158 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.BookCopy": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "description": "AktualisiertAm ist das letzte Änderungsdatum.",
+                    "type": "string"
+                },
+                "autor": {
+                    "description": "Autor ist der Autor des Werks.",
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "description": "BarcodeID ist die physische Inventar- oder Barcode-Nummer des Exemplars.",
+                    "type": "string"
+                },
+                "cover_url": {
+                    "description": "CoverURL ist das Coverbild des Werks.",
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "description": "ErstelltAm ist das System-Erfassungsdatum.",
+                    "type": "string"
+                },
+                "erweiterteEigenschaften": {
+                    "description": "ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "erworben_am": {
+                    "description": "ErworbenAm ist das Kaufdatum oder Zugangsdatum des Exemplars.",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID ist die UUID des konkreten Exemplars.",
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "ISBN ist die ISBN des Werks.",
+                    "type": "string"
+                },
+                "ist_ausgesondert": {
+                    "description": "IstAusgesondert markiert verloren gegangene, beschädigte oder ausgemusterte Bücher.",
+                    "type": "boolean"
+                },
+                "ist_ausleihbar": {
+                    "description": "IstAusleihbar gibt an, ob das Buch verliehen werden darf.",
+                    "type": "boolean"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,\nMigration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.",
+                    "type": "boolean"
+                },
+                "medientyp": {
+                    "description": "Medientyp ist die Medienart (z. B. \"Buch\").",
+                    "type": "string"
+                },
+                "signatur": {
+                    "description": "Signatur speichert die Bibliothekssignatur.",
+                    "type": "string"
+                },
+                "titel": {
+                    "description": "Titel ist der Haupttitel des Werks.",
+                    "type": "string"
+                },
+                "titel_id": {
+                    "description": "TitelID verweist auf die Metadaten des Buchtitels.",
+                    "type": "string"
+                },
+                "verlag": {
+                    "description": "Verlag ist der Verlag des Werks.",
+                    "type": "string"
+                },
+                "ziel_jahrgang": {
+                    "description": "ZielJahrgang definiert die Zielklasse für die Fristberechnung.",
+                    "type": "integer"
+                },
+                "zustand_notiz": {
+                    "description": "ZustandNotiz dokumentiert eventuelle Beschädigungen (z. B. \"Wasserschaden\") oder Reservierungen.",
+                    "type": "string"
+                }
+            }
+        },
+        "repository.BookTitle": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "description": "AktualisiertAm ist der letzte Änderungszeitpunkt.",
+                    "type": "string"
+                },
+                "autor": {
+                    "description": "Autor ist der Name des Autors oder der Autoren.",
+                    "type": "string"
+                },
+                "beschreibung": {
+                    "description": "Beschreibung enthält eine Inhaltsangabe oder Notizen zum Buch.",
+                    "type": "string"
+                },
+                "cover_url": {
+                    "description": "CoverURL verweist auf das Bild des Buchumschlags.",
+                    "type": "string"
+                },
+                "erscheinungsjahr": {
+                    "description": "Erscheinungsjahr ist das Publikationsjahr.",
+                    "type": "integer"
+                },
+                "erstellt_am": {
+                    "description": "ErstelltAm ist der Erstellungszeitpunkt.",
+                    "type": "string"
+                },
+                "erweiterteEigenschaften": {
+                    "description": "ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.",
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "id": {
+                    "description": "ID ist die UUID des Buchtitels.",
+                    "type": "string"
+                },
+                "isbn": {
+                    "description": "ISBN ist die Internationale Standardbuchnummer (ISBN-10 oder ISBN-13).",
+                    "type": "string"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —\nFrist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.",
+                    "type": "boolean"
+                },
+                "medientyp": {
+                    "description": "Medientyp klassifiziert die Art des Mediums (z. B. \"Buch\", \"CD\", \"DVD\").",
+                    "type": "string"
+                },
+                "signatur": {
+                    "description": "Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).",
+                    "type": "string"
+                },
+                "titel": {
+                    "description": "Titel ist der Haupttitel des Werks.",
+                    "type": "string"
+                },
+                "untertitel": {
+                    "description": "Untertitel enthält optionale Zusatzangaben zum Titel.",
+                    "type": "string"
+                },
+                "verlag": {
+                    "description": "Verlag ist der herausgebende Buchverlag.",
+                    "type": "string"
+                },
+                "ziel_jahrgang": {
+                    "description": "ZielJahrgang definiert, bis zu welcher Klasse ein Exemplar dieses Titels bei Schülern bleibt (Default 0 = 1 Jahr).",
+                    "type": "integer"
+                }
+            }
+        },
         "repository.BorrowedBook": {
             "type": "object",
             "properties": {
@@ -4227,6 +4672,51 @@ const docTemplate = `{
                 },
                 "summe": {
                     "type": "number"
+                }
+            }
+        },
+        "repository.Geraet": {
+            "type": "object",
+            "properties": {
+                "aktualisiert_am": {
+                    "description": "AktualisiertAm ist der letzte Aktualisierungszeitpunkt.",
+                    "type": "string"
+                },
+                "barcode_id": {
+                    "description": "BarcodeID ist der Barcode-Aufkleber auf dem Gehäuse.",
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "description": "ErstelltAm ist das Datum der Geräteerfassung.",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID ist die UUID des Geräts.",
+                    "type": "string"
+                },
+                "ist_ausgesondert": {
+                    "description": "IstAusgesondert kennzeichnet Geräte, die dauerhaft aus dem Bestand entfernt wurden.",
+                    "type": "boolean"
+                },
+                "ist_ausleihbar": {
+                    "description": "IstAusleihbar gibt an, ob das Gerät verliehen werden darf (Falsch bei Defekt).",
+                    "type": "boolean"
+                },
+                "modellname": {
+                    "description": "Modellname ist der Name des Gerätemodells (z. B. \"Lenovo ThinkPad L13\").",
+                    "type": "string"
+                },
+                "seriennummer": {
+                    "description": "Seriennummer ist die Hardware-Hersteller-Seriennummer zur eindeutigen Geräteidentifikation.",
+                    "type": "string"
+                },
+                "zubehoer": {
+                    "description": "Zubehoer listet mitgelieferte Zubehörteile auf, die bei Ausleihe geprüft werden müssen (z. B. \"Ladekabel, Stift\").",
+                    "type": "string"
+                },
+                "zustand_notiz": {
+                    "description": "ZustandNotiz beschreibt Vorschäden oder Gebrauchsspuren.",
+                    "type": "string"
                 }
             }
         },
