@@ -12,10 +12,11 @@ import (
 )
 
 // ErrUserHasActiveLoans signalisiert, dass ein Benutzer nicht gelöscht werden kann, weil er
-// noch aktive (nicht zurückgegebene) Handapparat-Ausleihen hat. Nutzer-sichtbar (409).
+// noch Bücher ausgeliehen hat (Ausleihen auf ausleiher_benutzer_id ohne Rückgabe).
+// Nutzer-sichtbar (409) — deshalb ohne Wörter aus dem Code (audit_users_meldung_test.go).
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
-var ErrUserHasActiveLoans = errors.New("Benutzer hat noch aktive Handapparat-Ausleihen — bitte zuerst zurückbuchen")
+var ErrUserHasActiveLoans = errors.New("Das Konto hat noch ausgeliehene Bücher — bitte zuerst zurückbuchen")
 
 // DeleteUser löscht einen Systembenutzer endgültig aus der Datenbank und erfasst die Löschung im Audit-Log.
 func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearbeiterID string) error {
