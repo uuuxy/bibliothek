@@ -226,10 +226,8 @@
 					omniboxStore.activeStudent = null;
 					omniboxStore.lastFremdrueckgabe = null;
 				}}
-				onReturnClick={(barcode) => {
-					omniboxStore.queryVal = barcode;
-					omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile());
-				}}
+				onReturnClick={(barcode) =>
+					omniboxStore.gibZurueck(barcode, () => studentProfileComponent?.reloadProfile())}
 			/>
 		{:else if omniboxStore.activeTeacher}
 			<OmniboxTeacherCard

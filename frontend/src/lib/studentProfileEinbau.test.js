@@ -15,12 +15,27 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 //   (OFFEN.md 1.5).
 
 /**
- * Alle Start-Tags einer Komponente in einer .svelte-Datei, jeweils bis zum schließenden `>`.
+ * Alle Start-Tags einer Komponente in einer .svelte-Datei, jeweils bis zum schließenden `>`
+ * AUSSERHALB geschweifter Klammern — ein `=>` in einem Attributausdruck beendet das Tag nicht.
  * @param {string} quelle @param {string} name
  */
 function einbauorte(quelle, name) {
-	const re = new RegExp(`<${name}(?=[\\s/>])[^>]*>`, 'g');
-	return [...quelle.matchAll(re)].map((m) => m[0]);
+	/** @type {string[]} */
+	const tags = [];
+	const start = new RegExp(`<${name}(?=[\\s/>])`, 'g');
+	for (const m of quelle.matchAll(start)) {
+		let tiefe = 0;
+		for (let i = m.index; i < quelle.length; i++) {
+			const z = quelle[i];
+			if (z === '{') tiefe++;
+			else if (z === '}') tiefe--;
+			else if (z === '>' && tiefe === 0) {
+				tags.push(quelle.slice(m.index, i + 1));
+				break;
+			}
+		}
+	}
+	return tags;
 }
 
 const PFLICHT = [
@@ -30,6 +45,20 @@ const PFLICHT = [
 
 describe('Einbauorte der Schülerakte', () => {
 	const dateien = sammleQuelldateien(srcRoot).filter((p) => p.endsWith('.svelte'));
+
+	// „Buch zurückgeben" an der Theke geht über gibZurueck, das die Absicht kennt — nicht
+	// über queryVal + submitAction, das offline aus dem geladenen Schüler eine Ausleihe
+	// machte (OFFEN.md 2.2, Commit 3, 15.09.2026).
+	it('die Theke gibt aus der Akte über gibZurueck zurück', () => {
+		const omnibox = dateien.find((p) => p.endsWith('/lib/Omnibox.svelte'));
+		expect(omnibox, 'Omnibox.svelte nicht gefunden').toBeTruthy();
+		const tags = einbauorte(
+			readFileSync(/** @type {string} */ (omnibox), 'utf8'),
+			'StudentProfile'
+		);
+		expect(tags).toHaveLength(1);
+		expect(tags[0]).toMatch(/onReturnClick=\{[^}]*gibZurueck\(/);
+	});
 
 	for (const [komponente, prop] of PFLICHT) {
 		it(`reichen ${prop} an ${komponente} durch`, () => {

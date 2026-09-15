@@ -84,6 +84,20 @@ describe('Omnibox offline', () => {
 		expect(omniboxStore.errorMessage, 'der Fehler wird gezeigt, nicht versteckt').toMatch(/Fehler/);
 	});
 
+	// „Buch zurückgeben" in der Akte ist eine RÜCKGABE — auch offline (OFFEN.md 2.2, Commit 3).
+	// Online entscheidet der Server (das Buch liegt beim geladenen Schüler → Rückgabe); offline
+	// entschied bis zum 15.09.2026 nur „Schüler geladen?", und der Knopf reihte eine Ausleihe
+	// ein. Beim Nachbuchen wäre daraus eine Rückgabe geworden (Buch schon bei ihm) — beim
+	// Doppelklick aber die zweite Ausleihe eine echte, und das Kind hätte das Buch wieder.
+	it('„Buch zurückgeben" im Profil ist offline eine Rückgabe, auch beim Doppelklick', async () => {
+		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+		await omniboxStore.gibZurueck('B-10234');
+		await omniboxStore.gibZurueck('B-10234');
+		const q = await loadQueue();
+		expect(q.map((e) => e.art)).toEqual(['rueckgabe', 'rueckgabe']);
+		expect(q.map((e) => e.schueler_id)).toEqual(['schueler-7', 'schueler-7']);
+	});
+
 	it('reiht mit geladenem Schüler eine Ausleihe ein, ohne ihn eine Rückgabe', async () => {
 		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
 		omniboxStore.queryVal = 'B-10234';

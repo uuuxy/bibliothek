@@ -346,11 +346,20 @@ export function createOmniboxStore() {
 	// Schweigen als Rückgabe: Das Buch war schon draußen, die Rückgabe scheiterte, der
 	// Eintrag flog aus der Warteschlange. Das Kind hatte das Buch, das System sagte
 	// „verfügbar".
-	/** @param {string} q @param {string} idempotencyKey @returns {import('../offlineQueue.js').OfflineEintrag} */
-	function schnappschuss(q, idempotencyKey) {
+	//
+	// Die Absicht kann der Aufrufer vorgeben: „Buch zurückgeben" in der Akte ist eine
+	// Rückgabe, auch mit geladenem Schüler (Commit 3). Ohne Vorgabe gilt: Schüler geladen →
+	// Ausleihe, sonst Rückgabe.
+	/**
+	 * @param {string} q
+	 * @param {string} idempotencyKey
+	 * @param {'ausleihe' | 'rueckgabe' | null} absicht
+	 * @returns {import('../offlineQueue.js').OfflineEintrag}
+	 */
+	function schnappschuss(q, idempotencyKey, absicht) {
 		return {
 			id: idempotencyKey,
-			art: activeStudent?.id ? 'ausleihe' : 'rueckgabe',
+			art: absicht ?? (activeStudent?.id ? 'ausleihe' : 'rueckgabe'),
 			barcode: q,
 			schueler_id: activeStudent?.id ?? null,
 			lehrer_id: activeTeacher?.id ?? null,
@@ -393,12 +402,21 @@ export function createOmniboxStore() {
 		zeigeFehlerBanner(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
 	}
 
-	// Haupt-Scan-Aktion
+	// Haupt-Scan-Aktion. `absicht` nur, wenn der Aufrufer sie kennt (gibZurueck); ein Scan
+	// im Feld lässt sie offen.
+	/**
+	 * @param {Event | null} e
+	 * @param {(() => void) | null} [reloadProfileCb]
+	 * @param {boolean} [overrideBlock]
+	 * @param {boolean} [confirmedChecklist]
+	 * @param {'ausleihe' | 'rueckgabe' | null} [absicht]
+	 */
 	async function submitAction(
 		e,
 		reloadProfileCb,
 		overrideBlock = false,
-		confirmedChecklist = false
+		confirmedChecklist = false,
+		absicht = null
 	) {
 		if (e) e.preventDefault();
 		if (isDropdownOpen && selectedDropdownIndex >= 0) {
@@ -440,7 +458,7 @@ export function createOmniboxStore() {
 		// Disable input while processing
 		document.getElementById('omnibox-input')?.blur();
 
-		const eintrag = schnappschuss(q, crypto.randomUUID());
+		const eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
 
 		// Zwei Fehlerklassen, zwei Zweige (OFFEN.md 2.2, Commit 2): Scheitert der VERSAND, hat
 		// der Server nichts gesehen — der Schnappschuss geht in die Warteschlange. Kam eine
@@ -526,6 +544,16 @@ export function createOmniboxStore() {
 		// Inzwischen ein anderer Ausweis? Dann gehört das Nachgeladene niemandem mehr.
 		if (!res.ok || activeStudent?.id !== zielId) return;
 		activeStudent = await res.json();
+	}
+
+	// „Buch zurückgeben" aus der Akte: derselbe Weg wie ein Scan des Barcodes, aber mit
+	// bekannter Absicht. Online entscheidet ohnehin der Server (das Buch liegt beim
+	// geladenen Schüler → Rückgabe); offline hätte „Schüler geladen" bis zum 15.09.2026 eine
+	// Ausleihe eingereiht — beim Doppelklick eine echte zweite (OFFEN.md 2.2, Commit 3).
+	/** @param {string} barcode @param {(() => void) | null} [reloadProfileCb] */
+	function gibZurueck(barcode, reloadProfileCb = null) {
+		queryVal = barcode;
+		return submitAction(null, reloadProfileCb, false, false, 'rueckgabe');
 	}
 
 	return {
@@ -661,6 +689,7 @@ export function createOmniboxStore() {
 		showToast,
 		handleInput,
 		uebernimmZusammengefuehrt,
+		gibZurueck,
 		selectDropdownItem,
 		submitAction
 	};
