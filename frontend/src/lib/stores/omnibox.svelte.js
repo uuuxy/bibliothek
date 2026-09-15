@@ -336,29 +336,44 @@ export function createOmniboxStore() {
 		}
 	}
 
-	// Speichert eine Scan-Aktion offline (nur Buchbarcodes „B-…"), sonst Netzwerkfehler-Toast.
+	// Der Schnappschuss VOM SCAN: Absicht, Person, Zeitpunkt und Idempotenz-Schlüssel, bevor
+	// die Anfrage hinausgeht (OFFEN.md 2.2, Commit 1). Bis zum 15.09.2026 las der Offline-Pfad
+	// Person und Absicht erst NACH der hängenden Anfrage (Timeout 10 s): Escape oder „Theke
+	// leeren" in dieser Zeit, und das Buch ging als Rückgabe ohne Person in die Warteschlange.
 	//
-	// Ist ein Schüler geladen, war der Scan eine AUSLEIHE — bis zum Rasterdurchgang am
-	// 06.09.2026 wurde jeder Offline-Scan als „checkin" abgelegt, und der Server las das
+	// Ist ein Schüler geladen, ist der Scan eine AUSLEIHE — bis zum Rasterdurchgang am
+	// 06.09.2026 wurde jeder Offline-Scan als Rückgabe abgelegt, und der Server las das
 	// Schweigen als Rückgabe: Das Buch war schon draußen, die Rückgabe scheiterte, der
 	// Eintrag flog aus der Warteschlange. Das Kind hatte das Buch, das System sagte
-	// „verfügbar". (Der Payload-Bauer schickte `active_student_id` nur bei „checkout" —
-	// einem Typ, den niemand je einreihte; der Zweig war unerreichbar.)
-	async function speichereOfflineAktion(q, idempotencyKey) {
-		if (q.startsWith('B-')) {
-			const art = activeStudent?.id ? 'checkout' : 'checkin';
-			await enqueueOfflineAction(art, q, activeStudent?.id ?? null, idempotencyKey);
+	// „verfügbar".
+	/** @param {string} q @param {string} idempotencyKey @returns {import('../offlineQueue.js').OfflineEintrag} */
+	function schnappschuss(q, idempotencyKey) {
+		return {
+			id: idempotencyKey,
+			art: activeStudent?.id ? 'ausleihe' : 'rueckgabe',
+			barcode: q,
+			schueler_id: activeStudent?.id ?? null,
+			lehrer_id: activeTeacher?.id ?? null,
+			gescannt_am: Date.now()
+		};
+	}
+
+	// Speichert einen Scan offline (nur Buchbarcodes „B-…"), sonst Netzwerkfehler-Toast.
+	/** @param {import('../offlineQueue.js').OfflineEintrag} eintrag */
+	async function speichereOfflineAktion(eintrag) {
+		if (eintrag.barcode.startsWith('B-')) {
+			await enqueueOfflineAction(eintrag);
 			offlineSync.updateCount();
 			triggerScreenFlash('warning');
 			playSoundSuccess();
-			showToast(`Offline: Aktion für „${q}“ gespeichert.`, 'warning');
+			showToast(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
 		} else {
 			showToast('Netzwerkfehler', 'error');
 		}
 	}
 
 	// Ordnet einen Fehler aus submitAction ein: Block-Alert, Offline/Netzwerk oder generisch.
-	async function verarbeiteAktionsFehler(e, q, idempotencyKey) {
+	async function verarbeiteAktionsFehler(e, eintrag) {
 		if (e instanceof Error && e.message === 'BLOCK_ALERT') {
 			triggerScreenFlash('error');
 			playSoundError();
@@ -370,7 +385,7 @@ export function createOmniboxStore() {
 			offlineSync.isOffline ||
 			(e instanceof Error && e.message.includes('Timeout'))
 		) {
-			await speichereOfflineAktion(q, idempotencyKey);
+			await speichereOfflineAktion(eintrag);
 		} else {
 			// Nur das Inline-Banner an der Omnibox (verschwindet nach 6s von selbst).
 			// Kein zusätzlicher Toast — das war die doppelte Anzeige desselben Fehlers.
@@ -425,16 +440,16 @@ export function createOmniboxStore() {
 		// Disable input while processing
 		document.getElementById('omnibox-input')?.blur();
 
-		const idempotencyKey = crypto.randomUUID();
+		const eintrag = schnappschuss(q, crypto.randomUUID());
 
 		try {
 			const res = await apiClient.post('/api/action', {
 				query: q,
-				active_student_id: activeStudent?.id,
-				active_teacher_id: activeTeacher?.id,
+				active_student_id: eintrag.schueler_id ?? undefined,
+				active_teacher_id: eintrag.lehrer_id ?? undefined,
 				confirmed_checklist: confirmedChecklist,
 				override_block: overrideBlock,
-				idempotency_key: idempotencyKey
+				idempotency_key: eintrag.id
 			});
 
 			if (!res.ok) {
@@ -451,7 +466,7 @@ export function createOmniboxStore() {
 			// Wenn Erfolg wie Fehler aussieht, hört man auf, auf die Farbe zu schauen —
 			// und übersieht dann den echten Fehler.
 			triggerFlash('red');
-			await verarbeiteAktionsFehler(e, q, idempotencyKey);
+			await verarbeiteAktionsFehler(e, eintrag);
 		} finally {
 			scanfeldWiederScharfstellen();
 		}

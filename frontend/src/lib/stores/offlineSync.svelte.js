@@ -1,16 +1,22 @@
-import { loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
+import {
+	loadQueue,
+	dequeueOfflineAction,
+	enqueueOfflineAction,
+	normalisiereEintrag
+} from '../offlineQueue.js';
 import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
-// Baut das Batch-Payload; nur Checkouts mit Schüler-ID tragen active_student_id.
+// Baut das Batch-Payload; nur eine Ausleihe mit Schüler-ID trägt active_student_id.
+/** @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems */
 function baueBatchPayload(batchItems) {
 	return batchItems.map((item) => {
 		const req = {
-			query: item.barcode_id,
+			query: item.barcode,
 			idempotency_key: item.id
 		};
-		if (item.action_type === 'checkout' && item.schueler_id) {
+		if (item.art === 'ausleihe' && item.schueler_id) {
 			req.active_student_id = item.schueler_id;
 		}
 		return req;
@@ -41,7 +47,7 @@ async function verarbeiteBatchErgebnisse(data, batchItems) {
 		) {
 			if (result && !result.success) {
 				abgelehnt.push({
-					barcode: item.barcode_id,
+					barcode: item.barcode,
 					status: result.status,
 					meldung: result.error || result.message || ''
 				});
@@ -136,9 +142,7 @@ function createOfflineSyncStore() {
 			const q = await loadQueue();
 			if (q.length === 0) break;
 
-			// Ensure they are processed in order of creation
-			q.sort((a, b) => a.timestamp - b.timestamp);
-
+			// loadQueue liefert nach Scan-Zeitpunkt geordnet.
 			const batchItems = q.slice(0, 50);
 			const payload = baueBatchPayload(batchItems);
 
@@ -159,11 +163,14 @@ function createOfflineSyncStore() {
 	 *
 	 * item.id MUSS mitwandern: Diese ID ist der Idempotenz-Schlüssel, den der Server
 	 * kennt (siehe baueBatchPayload und idempotency_keys in api/action.go). Ohne sie
-	 * vergibt enqueueOfflineAction eine frische UUID — und dieselbe Datei zweimal
+	 * vergibt normalisiereEintrag eine frische UUID — und dieselbe Datei zweimal
 	 * eingespielt würde jede Aktion ZWEIMAL ausführen. Bei zehn Kiosk-Rechnern mit
 	 * einem gemeinsamen Sicherungsordner ist doppeltes Einspielen der Normalfall,
 	 * nicht der Ausnahmefall: Zwei Admins, oder einer, der unsicher ist, ob er es
 	 * schon getan hat. Mit dem Schlüssel ist der zweite Durchlauf wirkungslos.
+	 *
+	 * Sicherungen in Format 1 (vor dem 15.09.2026, `action_type`/`barcode_id`) und
+	 * Format 2 (`art`/`barcode`, mit Scan-Zeitpunkt) werden gleich behandelt.
 	 * @param {File} file
 	 */
 	async function importQueueFromJSON(file) {
@@ -172,19 +179,12 @@ function createOfflineSyncStore() {
 			const items = JSON.parse(text);
 			if (!Array.isArray(items)) throw new Error('Invalid format');
 
-			const { enqueueOfflineAction } = await import('../offlineQueue.js');
 			let importedCount = 0;
 			const promises = [];
-			for (const item of items) {
-				if (!item.action_type || !item.barcode_id) continue;
-				promises.push(
-					enqueueOfflineAction(
-						item.action_type,
-						item.barcode_id,
-						item.schueler_id || null,
-						item.id || null
-					)
-				);
+			for (const roh of items) {
+				const eintrag = normalisiereEintrag(roh);
+				if (!eintrag) continue;
+				promises.push(enqueueOfflineAction(eintrag));
 				importedCount++;
 			}
 			await Promise.all(promises);

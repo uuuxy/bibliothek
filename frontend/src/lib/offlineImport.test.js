@@ -12,14 +12,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const enqueueSpy = vi.fn();
 
-vi.mock('./offlineQueue.js', () => ({
+vi.mock('./offlineQueue.js', async (importOriginal) => ({
+	// normalisiereEintrag bleibt echt: Der Import übersetzt damit beide Formate.
+	.../** @type {any} */ (await importOriginal()),
 	enqueueOfflineAction: (...args) => {
 		enqueueSpy(...args);
 		return Promise.resolve();
 	},
 	loadQueue: () => Promise.resolve([]),
-	dequeueOfflineAction: () => Promise.resolve(),
-	getQueueCount: () => Promise.resolve(0)
+	dequeueOfflineAction: () => Promise.resolve()
 }));
 
 vi.mock('./audio.js', () => ({ playSoundSuccess: () => {}, playSoundError: () => {} }));
@@ -59,12 +60,29 @@ describe('Einspielen einer Offline-Sicherung', () => {
 		);
 
 		expect(anzahl).toBe(1);
-		expect(enqueueSpy).toHaveBeenCalledWith(
-			'checkin',
-			'B-4711',
-			null,
-			'11111111-2222-3333-4444-555555555555'
-		);
+		// Format 1 aus der Datei kommt als Format-2-Objekt in die Warteschlange (15.09.2026).
+		expect(enqueueSpy).toHaveBeenCalledWith({
+			id: '11111111-2222-3333-4444-555555555555',
+			art: 'rueckgabe',
+			barcode: 'B-4711',
+			schueler_id: null,
+			lehrer_id: null,
+			gescannt_am: 1
+		});
+	});
+
+	it('liest eine Sicherung in Format 2 (Absicht, Person, Scan-Zeitpunkt) unverändert', async () => {
+		const { offlineSync } = await import('./stores/offlineSync.svelte.js');
+		const eintrag = {
+			id: 'f2-1',
+			art: 'ausleihe',
+			barcode: 'B-4712',
+			schueler_id: 'schueler-7',
+			lehrer_id: null,
+			gescannt_am: 1757900000000
+		};
+		await offlineSync.importQueueFromJSON(sicherungsdatei([eintrag]));
+		expect(enqueueSpy).toHaveBeenCalledWith(eintrag);
 	});
 
 	it('vergibt beim zweiten Einspielen derselben Datei KEINE neue ID', async () => {
@@ -77,7 +95,7 @@ describe('Einspielen einer Offline-Sicherung', () => {
 		await offlineSync.importQueueFromJSON(datei());
 		await offlineSync.importQueueFromJSON(datei());
 
-		const idsBeiderLaeufe = enqueueSpy.mock.calls.map((c) => c[3]);
+		const idsBeiderLaeufe = enqueueSpy.mock.calls.map((c) => c[0].id);
 		expect(idsBeiderLaeufe).toEqual(['stabile-id', 'stabile-id']);
 	});
 

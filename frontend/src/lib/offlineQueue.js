@@ -27,13 +27,62 @@ async function getDB() {
 }
 
 /**
- * Loads the current offline queue from IndexedDB.
- * @returns {Promise<any[]>}
+ * Ein Eintrag der Warteschlange (Format 2, seit dem 15.09.2026): der Schnappschuss vom Scan.
+ *
+ * `id` ist der Idempotenz-Schlüssel, den der Server kennt (api/action.go); `art` die Absicht
+ * beim Scan; `schueler_id` ODER `lehrer_id` die Person, die in diesem Moment geladen war;
+ * `gescannt_am` der Scan-Zeitpunkt (ms). Format 1 (`{action_type, barcode_id, schueler_id,
+ * timestamp}`, bis 15.09.2026, auch in alten Sicherungsdateien) wird beim Lesen übersetzt.
+ *
+ * @typedef {{
+ *   id: string,
+ *   art: 'ausleihe' | 'rueckgabe',
+ *   barcode: string,
+ *   schueler_id: string | null,
+ *   lehrer_id: string | null,
+ *   gescannt_am: number
+ * }} OfflineEintrag
+ */
+
+/**
+ * Übersetzt einen gespeicherten oder eingespielten Eintrag beider Formate in Format 2.
+ * Liefert null, wenn Barcode oder Absicht fehlen — so ein Eintrag ließe sich nicht buchen.
+ * @param {any} roh
+ * @returns {OfflineEintrag | null}
+ */
+export function normalisiereEintrag(roh) {
+	if (!roh || typeof roh !== 'object') return null;
+	const barcode = roh.barcode ?? roh.barcode_id;
+	const art =
+		roh.art ??
+		(roh.action_type === 'checkout'
+			? 'ausleihe'
+			: roh.action_type === 'checkin'
+				? 'rueckgabe'
+				: undefined);
+	if (!barcode || (art !== 'ausleihe' && art !== 'rueckgabe')) return null;
+	return {
+		id: roh.id || crypto.randomUUID(),
+		art,
+		barcode: String(barcode),
+		schueler_id: roh.schueler_id ?? null,
+		lehrer_id: roh.lehrer_id ?? null,
+		gescannt_am: Number(roh.gescannt_am ?? roh.timestamp ?? Date.now())
+	};
+}
+
+/**
+ * Lädt die Warteschlange aus IndexedDB, in Format 2, nach Scan-Zeitpunkt geordnet.
+ * @returns {Promise<OfflineEintrag[]>}
  */
 export async function loadQueue() {
 	try {
 		const db = await getDB();
-		return await db.getAll(STORE_NAME);
+		const roh = await db.getAll(STORE_NAME);
+		return roh
+			.map(normalisiereEintrag)
+			.filter((e) => e !== null)
+			.sort((a, b) => a.gescannt_am - b.gescannt_am);
 	} catch (err) {
 		console.error('Failed to load offline queue from IndexedDB:', err);
 		return [];
@@ -41,28 +90,15 @@ export async function loadQueue() {
 }
 
 /**
- * Enqueues a new action to the offline queue in IndexedDB.
- * @param {'checkout' | 'checkin'} action_type
- * @param {string} barcode_id
- * @param {string|null} schueler_id
+ * Reiht den Schnappschuss eines Scans ein. Der Index `timestamp` (Schema-Version 3) wird
+ * weiter befüllt, damit alte und neue Einträge in derselben Ordnung liegen.
+ * @param {OfflineEintrag} eintrag
  * @returns {Promise<void>}
  */
-export async function enqueueOfflineAction(
-	action_type,
-	barcode_id,
-	schueler_id = null,
-	idempotencyKey = null
-) {
+export async function enqueueOfflineAction(eintrag) {
 	try {
 		const db = await getDB();
-		const id = idempotencyKey || crypto.randomUUID();
-		await db.add(STORE_NAME, {
-			id,
-			action_type,
-			barcode_id,
-			schueler_id,
-			timestamp: Date.now()
-		});
+		await db.add(STORE_NAME, { ...eintrag, timestamp: eintrag.gescannt_am });
 	} catch (err) {
 		console.error('Failed to enqueue offline action to IndexedDB:', err);
 	}

@@ -17,6 +17,27 @@ import { enqueueOfflineAction, loadQueue, dequeueOfflineAction } from '../offlin
 import { offlineSync } from './offlineSync.svelte.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
+/** Einträge in Format 2, wie schnappschuss() sie im Omnibox-Store baut. */
+let zaehler = 0;
+/** @param {string} barcode @param {string} schuelerId */
+const ausleihe = (barcode, schuelerId) => ({
+	id: crypto.randomUUID(),
+	art: /** @type {const} */ ('ausleihe'),
+	barcode,
+	schueler_id: schuelerId,
+	lehrer_id: null,
+	gescannt_am: ++zaehler
+});
+/** @param {string} barcode */
+const rueckgabe = (barcode) => ({
+	id: crypto.randomUUID(),
+	art: /** @type {const} */ ('rueckgabe'),
+	barcode,
+	schueler_id: null,
+	lehrer_id: null,
+	gescannt_am: ++zaehler
+});
+
 async function clearQueue() {
 	for (const item of await loadQueue()) {
 		await dequeueOfflineAction(item.id);
@@ -32,15 +53,15 @@ describe('offlineQueue', () => {
 	});
 
 	it('reiht Aktionen mit eindeutigen Idempotenz-Keys ein und entfernt gezielt', async () => {
-		await enqueueOfflineAction('checkin', 'B-1');
-		await enqueueOfflineAction('checkout', 'B-2', 'schueler-1');
+		await enqueueOfflineAction(rueckgabe('B-1'));
+		await enqueueOfflineAction(ausleihe('B-2', 'schueler-1'));
 
 		const q = await loadQueue();
 		expect(q).toHaveLength(2);
 		expect(new Set(q.map((i) => i.id)).size).toBe(2);
 
-		const checkout = q.find((i) => i.action_type === 'checkout');
-		expect(checkout.schueler_id).toBe('schueler-1');
+		const checkout = q.find((i) => i.art === 'ausleihe');
+		expect(checkout?.schueler_id).toBe('schueler-1');
 
 		await dequeueOfflineAction(q[0].id);
 		expect(await loadQueue()).toHaveLength(1);
@@ -54,7 +75,7 @@ describe('offlineSync.startSync', () => {
 	});
 
 	it('synct die Queue als Batch mit Idempotenz-Keys und leert sie bei Erfolg', async () => {
-		await enqueueOfflineAction('checkout', 'B-100', 'schueler-42');
+		await enqueueOfflineAction(ausleihe('B-100', 'schueler-42'));
 
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
@@ -77,7 +98,7 @@ describe('offlineSync.startSync', () => {
 	});
 
 	it('wirft dauerhaft abgelehnte Aktionen (4xx) aus der Queue statt endlos zu hängen', async () => {
-		await enqueueOfflineAction('checkin', 'B-KAPUTT');
+		await enqueueOfflineAction(rueckgabe('B-KAPUTT'));
 
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
@@ -91,7 +112,7 @@ describe('offlineSync.startSync', () => {
 	});
 
 	it('behält die Queue, wenn der Batch-Request selbst scheitert (z. B. 502)', async () => {
-		await enqueueOfflineAction('checkin', 'B-200');
+		await enqueueOfflineAction(rueckgabe('B-200'));
 
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 502 }));
 
@@ -114,8 +135,8 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 	});
 
 	it('meldet abgelehnte Scans mit Barcode, statt sie still zu löschen', async () => {
-		await enqueueOfflineAction('checkin', 'B-10234');
-		await enqueueOfflineAction('checkin', 'B-10243'); // Etikett abgerieben, gibt es nicht
+		await enqueueOfflineAction(rueckgabe('B-10234'));
+		await enqueueOfflineAction(rueckgabe('B-10243')); // Etikett abgerieben, gibt es nicht
 		// Die Antwort wird aus dem Payload gebaut: Die Reihenfolge in der Warteschlange
 		// hängt am Zeitstempel, und zwei Einträge derselben Millisekunde sind nicht
 		// geordnet. Ein Test, der die Reihenfolge rät, misst die falsche Zeile.
@@ -139,7 +160,7 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 	});
 
 	it('schweigt, wenn alles angenommen wurde (Gegenprobe)', async () => {
-		await enqueueOfflineAction('checkin', 'B-10234');
+		await enqueueOfflineAction(rueckgabe('B-10234'));
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
 				ok: true,
@@ -163,8 +184,8 @@ describe('offlineSync: Ausleihe trägt den Schüler mit', () => {
 	});
 
 	it('schickt active_student_id für eine offline gespeicherte Ausleihe', async () => {
-		await enqueueOfflineAction('checkout', 'B-10234', 'schueler-7');
-		await enqueueOfflineAction('checkin', 'B-10235');
+		await enqueueOfflineAction(ausleihe('B-10234', 'schueler-7'));
+		await enqueueOfflineAction(rueckgabe('B-10235'));
 		vi.mocked(apiClient.post).mockResolvedValue(
 			/** @type {any} */ ({
 				ok: true,
@@ -180,11 +201,11 @@ describe('offlineSync: Ausleihe trägt den Schüler mit', () => {
 		await offlineSync.startSync();
 
 		const payload = vi.mocked(apiClient.post).mock.calls[0][1];
-		const ausleihe = payload.find((/** @type {any} */ p) => p.query === 'B-10234');
-		const rueckgabe = payload.find((/** @type {any} */ p) => p.query === 'B-10235');
-		expect(ausleihe.active_student_id, 'ohne Schüler bucht der Server eine Rückgabe').toBe(
+		const mitSchueler = payload.find((/** @type {any} */ p) => p.query === 'B-10234');
+		const ohneSchueler = payload.find((/** @type {any} */ p) => p.query === 'B-10235');
+		expect(mitSchueler.active_student_id, 'ohne Schüler bucht der Server eine Rückgabe').toBe(
 			'schueler-7'
 		);
-		expect(rueckgabe.active_student_id).toBeUndefined();
+		expect(ohneSchueler.active_student_id).toBeUndefined();
 	});
 });
