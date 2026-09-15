@@ -1,0 +1,22 @@
+-- =============================================================================
+-- Migration 121: Rolle 'leitung' im ENUM benutzer_rolle ergänzen
+-- =============================================================================
+-- Die Bibliotheksleitung hatte bisher keine eigene Rolle. Wer die Bibliothek
+-- führt, bekam entweder 'admin' (und damit die Systempflege: Benutzer & Rechte,
+-- Einstellungen, jede E-Mail-Adresse jedes Kontos) oder 'mitarbeiter' (und
+-- damit keinen Blick ins Logbuch und keine Sonderrechte an den Schülerdaten).
+-- Entschieden am 15.09.2026 (Peter): eine Rolle dazwischen — alles außer den
+-- zwei Türen der Systempflege.
+--
+-- Rollen sind Erhebungen, die der Admin an der E-Mail-Adresse vornimmt. Der
+-- Grundzustand jeder Lehrkraft ist 'kollegium' und entsteht ohne Zutun über die
+-- Selbstanmeldung (auth/selbstanmeldung.go) — das ist keine Rolle in diesem
+-- Sinn, sondern der Ausgangspunkt.
+--
+-- Hinweis: ALTER TYPE ... ADD VALUE ist ab PostgreSQL 12 auch innerhalb einer
+-- Transaktion erlaubt (der neue Wert ist erst nach dem Commit benutzbar) —
+-- der Migrations-Läufer fährt jede Datei in einer eigenen TX. Die Rechte der
+-- Rolle stehen deshalb in einer eigenen Datei (122), nicht hier.
+-- =============================================================================
+
+ALTER TYPE benutzer_rolle ADD VALUE IF NOT EXISTS 'leitung';

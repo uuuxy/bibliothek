@@ -20,10 +20,20 @@ type Role string
 const (
 	// RoleAdmin hat volle Berechtigungen für Konfiguration und Stammdaten-Bearbeitung.
 	RoleAdmin Role = "ADMIN"
-	// RoleKollegium repräsentiert Lehrkräfte, die Bücher ausleihen und Klassensätze anfragen
-	// können. Hieß bis Migration 069 „lehrer" — umbenannt, weil schueler.klasse = 'lehrer'
+	// RoleKollegium ist der GRUNDZUSTAND jeder Lehrkraft, keine vergebene Rolle: Wer sich
+	// über „Mein Portal" mit seiner Schuladresse selbst anmeldet, entsteht als Kollegium
+	// (auth/selbstanmeldung.go, inaktiv bis zur Freischaltung) und ist damit niemand
+	// Besonderes — Bestand sehen, vormerken, Fehler melden, an der Theke Bücher auf den
+	// eigenen Namen. Das sind im Grunde alle (Peter, 16.09.2026).
+	//
+	// Hieß bis Migration 069 „lehrer" — umbenannt, weil schueler.klasse = 'lehrer'
 	// dieselbe Person als ENTLEIHER meint und die Doppelung zu Fehlgriffen geführt hat.
 	RoleKollegium Role = "KOLLEGIUM"
+	// RoleLeitung ist die Bibliotheksleitung (Migration 121): alles außer den zwei Türen
+	// der Systempflege — manage_users (Benutzer & Rechte) und manage_settings
+	// (Einstellungen). Eine Erhebung, die der Admin an der E-Mail-Adresse vornimmt, und
+	// KEIN Administrator: Ein Admin-Konto bleibt ihr verschlossen (user_admin_eskalation.go).
+	RoleLeitung Role = "LEITUNG"
 	// RoleMitarbeiter repräsentiert Bibliotheksmitarbeiter, die das tägliche Ausleihgeschäft durchführen.
 	RoleMitarbeiter Role = "MITARBEITER"
 	// RoleHelfer repräsentiert Helfer, die Kiosk-Ausleihen und schnelle Rückgaben durchführen.

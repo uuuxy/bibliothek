@@ -30,9 +30,12 @@ $$;
 -- 1. ENUMS AND CUSTOM TYPES
 -- -------------------------------------------------------------
 -- 'helfer': Kiosk-Ausleihen/Rückgaben (siehe auth/jwt.go RoleHelfer, Router.svelte).
+-- 'leitung': Bibliotheksleitung — alles ausser manage_users und manage_settings
+-- (Migration 121/122, Rechte in db/seed.go).
 -- 'kollegium' hiess bis Migration 069 'lehrer'. Umbenannt, weil das Wort doppelt
--- belegt war: schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER.
-CREATE TYPE benutzer_rolle AS ENUM ('admin', 'kollegium', 'mitarbeiter', 'helfer');
+-- belegt war: schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER. Es ist
+-- der GRUNDZUSTAND jeder Lehrkraft (Selbstanmeldung), keine vergebene Rolle.
+CREATE TYPE benutzer_rolle AS ENUM ('admin', 'leitung', 'kollegium', 'mitarbeiter', 'helfer');
 
 -- -------------------------------------------------------------
 -- 2. REUSABLE TRIGGER FUNCTIONS
@@ -1379,7 +1382,9 @@ INSERT INTO schema_migrations (version) VALUES
 ('117_nachbuch_meldungen.sql'),
 ('118_ausweis_eindeutig_ueber_personen.sql'),
 ('119_benutzer_personenart.sql'),
-('120_kollegium_hat_personenart.sql')
+('120_kollegium_hat_personenart.sql'),
+('121_rolle_leitung.sql'),
+('122_rechte_leitung.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

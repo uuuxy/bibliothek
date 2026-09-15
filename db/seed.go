@@ -83,6 +83,43 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "manage_students_admin", true},
 	{"ADMIN", "merge_students", true},
 
+	// Leitung defaults (Migration 121/122, Peter 15.09.2026): „Die Leitung startet mit
+	// allen Rechten außer ‚Benutzer & Rechte' und ‚Einstellungen'."
+	//
+	// Die Liste ist ADMIN minus zwei Türen — bewusst in derselben Reihenfolge wie der
+	// Admin-Block darüber, damit ein neues Recht beim Nachtragen nicht nur bei einer der
+	// beiden Rollen landet. Das Gate dafür steht in rolle_leitung_test.go: Es leitet das
+	// Soll aus den ADMIN-Zeilen ab und meldet jede fehlende oder überzählige Zeile.
+	//
+	// Warum die Leitung kein manage_users bekommt, obwohl sie die Bibliothek führt: Mit
+	// diesem Recht kann man die E-Mail-Adresse eines Kontos ändern, und die Anmeldung
+	// erkennt eine Person allein an ihrer E-Mail. Die Rechtevergabe ist damit der Weg zu
+	// jedem Konto der Anlage — das bleibt beim Admin. Der Admin kann es ihr erteilen.
+	{"LEITUNG", "perform_actions", true},
+	{"LEITUNG", "view_students", true},
+	{"LEITUNG", "edit_students", true},
+	{"LEITUNG", "create_students", true},
+	{"LEITUNG", "delete_students", true},
+	{"LEITUNG", "import_students", true},
+	{"LEITUNG", "upload_photos", true},
+	{"LEITUNG", "view_books", true},
+	{"LEITUNG", "edit_books", true},
+	{"LEITUNG", "delete_books", true},
+	{"LEITUNG", "inventory_scan", true},
+	{"LEITUNG", "manage_inventory", true},
+	{"LEITUNG", "view_orders", true},
+	{"LEITUNG", "create_orders", true},
+	{"LEITUNG", "create_reservations", true},
+	{"LEITUNG", "manage_vormerkungen", true},
+	{"LEITUNG", "view_graduates", true},
+	{"LEITUNG", "view_stats", true},
+	{"LEITUNG", "audit_logs", true},
+	{"LEITUNG", "audit_details", true},
+	{"LEITUNG", "manage_users", false},
+	{"LEITUNG", "manage_settings", false},
+	{"LEITUNG", "manage_students_admin", true},
+	{"LEITUNG", "merge_students", true},
+
 	// Mitarbeiter defaults
 	{"MITARBEITER", "perform_actions", true},
 	{"MITARBEITER", "view_students", true},
