@@ -839,6 +839,12 @@ die Tür-Funde mit Stufe 3, wenn die Theke über sie nachsendet.
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM schueler WHERE deleted_at IS NULL) AS schueler, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id LIKE 'S-%') AS schueler_s, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^B[0-9]+$') AS schueler_b_ohne_strich, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^[0-9]+$') AS schueler_ziffern, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id LIKE 'L-%') AS personal_l, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id IS NOT NULL AND barcode_id NOT LIKE 'L-%') AS personal_andere, (SELECT count(*) FROM schueler s JOIN buecher_exemplare e ON e.barcode_id = s.barcode_id) AS gleich_wie_buch_schueler, (SELECT count(*) FROM benutzer b JOIN buecher_exemplare e ON e.barcode_id = b.barcode_id) AS gleich_wie_buch_personal;"`
   Ergebnis auf dem Server (Peter, 15.09.2026): 32 Schüler, alle `S-`, keine Ausweisnummer gleich
   einer Buchnummer — die echte Schülerschaft steht dort noch nicht; nach dem Personenlauf neu zählen.
+  **Empfehlung (Handbuch und Backup, 15.09.2026):** Littera zählt Bücher und Leser getrennt, beide
+  ab 1; im Backup ist jede Lesernummer zugleich eine Exemplarnummer. Littera unterscheidet deshalb an
+  der Form des Scans, nicht an der Zahl. Offline genauso: `S-`/`L-` und `B` mit Ziffern ohne
+  Bindestrich sind ein Ausweis; `B-`/`LMF-`, ein 13-stelliges Littera-Etikett (zurückgerechnet wie
+  am Server) und eine Ziffernfolge auf der Liste sind ein Buch; nur was in keine Form passt, ist
+  unklar und sperrt. Entscheidung Peter vor Stufe 3, Punkt 15.
 - **B — Ausweis- und Buchnummer werden nur in der Littera-Übernahme gegeneinander geprüft**
   (Frage 3). Seit dem 15.09.2026 vergibt der Personenlauf keine Nummer, die schon ein Buch trägt.
   Wer von Hand eine Ausweisnummer ändert (Schülerakte) oder ein Buch umetikettiert
@@ -978,8 +984,13 @@ zweites Mal an ([SCRIPTS.md](SCRIPTS.md), Abschnitt 0). Das Geburtsdatum im Back
 für den späteren LUSD-Abgleich — vor dem Lauf prüfen.
 **Vor dem Personenlauf:** Im frischen Backup nachsehen, ob die Tabelle `FremdLeserNummer` gefüllt
 ist (im Stand von 2010 ist sie leer). Sie trägt die Nummern, die die Ausweise beim Scannen liefern;
-nur mit ihr funktionieren die vorhandenen Ausweise ohne Neudruck. Wer dort fehlt, bekommt die
-Lesernummer und steht mit „keine Karte in FremdLeserNummer" im Protokoll des Laufs.
+nur mit ihr funktionieren die vorhandenen Ausweise ohne Neudruck. **Ist sie leer, muss jeder Ausweis
+neu gedruckt werden:** Kein Ausweis liefert beim Scannen die Lesernummer, und Littera zählt Bücher
+und Leser getrennt, beide ab 1 — fast jede Lesernummer ist auf dem Server schon die Nummer eines
+Buchs, der Lauf vergibt dann `L-`-Nummern. Ist sie gefüllt, stehen die einzelnen Personen ohne Karte
+mit „keine Karte in FremdLeserNummer" im Protokoll des Laufs.
+**Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
+Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.
 
 ### 7.3 S3-Auslagerung der Backups
 
