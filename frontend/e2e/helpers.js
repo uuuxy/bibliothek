@@ -98,7 +98,7 @@ export function seedSQL(sql) {
  * Eine Spec, die einen Zustand braucht, stellt ihn selbst her.
  *
  * @param {string} email  Anmeldeadresse (Mock-IMAP nimmt jedes Passwort)
- * @param {string} rolle  benutzer_rolle: admin | kollegium | mitarbeiter | helfer
+ * @param {string} rolle  benutzer_rolle: admin | leitung | kollegium | mitarbeiter | helfer
  */
 export function seedBenutzer(email, rolle) {
 	seedSQL(`

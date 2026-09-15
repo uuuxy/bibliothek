@@ -25,9 +25,11 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Peter, ein Wort: Freigabe für Stufe 2 der Leserdatei, die Rolle Leitung.** Stufe 1 (die
-   vorhandenen Fehler) ist am 16.09.2026 gebaut, im Browser nachgewiesen und grün
-   (Abschnitt 5.16).
+3. **Peter, ein Wort: Freigabe für Stufe 3 der Leserdatei.** Stufe 1 (die vorhandenen
+   Fehler) und Stufe 2 (die Rolle Leitung) sind am 16.09.2026 gebaut und im Browser
+   nachgewiesen. Stufe 3 nimmt das versteckte Feld „Personenart" aus dem Weg: Wer an der
+   Theke Bücher auf seinen Namen bekommt, entscheidet dann die Rolle. Dazu die Frage zu
+   den Einstellungen in Abschnitt 5.16.
 4. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -903,18 +905,24 @@ Löschen eines Kontos mit ausgeliehenen Büchern und der Littera-Treffer bei der
 (Einzelheiten in den Commit-Nachrichten). Der vermeintlich
 tote Rückgabe-Zweig ist nicht tot und steht jetzt unter Stufe 3.
 
-**Stufe 2 — Rolle Leitung**
+**Stufe 2 — Rolle Leitung: gebaut am 16.09.2026, am Browser nachgewiesen**
 
-- Migration 121: neuer Wert `leitung` (eigene Datei, ein neuer Wert ist erst nach dem Commit
-  benutzbar). Migration 122: die Rechte der Leitung ab Werk (Frage 2), dieselbe Liste in
-  `db/seed.go`, damit die Selbstprüfung keine Abweichung meldet.
-- Server: Rolle in `auth` und `normalisiereBenutzerRolle`. Eine Leitung legt keinen Admin an und
-  ändert keinen (die Regel besteht, ein Test für die Leitung kommt dazu).
-- Oberfläche: Leitung in der Rollenauswahl und als Spalte im Rechte-Editor. Die Weiterleitung nach
-  der Anmeldung entscheidet am Recht statt am Rollennamen, damit eine Leitung in die volle
-  Oberfläche kommt und die nächste Rolle nicht wieder dieselbe Stelle braucht.
-- Nachweis im Browser: Eine Leitung meldet sich an, sieht Schülerdatei und Mahnwesen, nicht
-  „Benutzer & Rechte".
+Migration 121 (ENUM-Wert), 122 (Rechte ab Werk, aus den ADMIN-Zeilen abgeleitet statt
+abgeschrieben), Rolle in `auth` und `normalisiereBenutzerRolle`, Rollenauswahl, Spalte im
+Rechte-Editor, Rollen-Abzeichen. Die Login-Weiche entscheidet jetzt am Recht
+(`perform_actions`) statt an einer Aufzählung von Rollennamen — die nächste Rolle braucht
+diese Stelle nicht mehr. Nachweis: `frontend/e2e/rolle-leitung.spec.js` meldet eine Leitung
+am frisch gebauten Stack an und prüft Menü UND Server.
+
+**Ein Fund aus diesem Nachweis, der eine Entscheidung braucht:** „Alles außer Benutzer &
+Rechte und Einstellungen" lässt sich nicht als ein Recht bauen, weil „Einstellungen" kein
+Recht ist, sondern ein Sammelpunkt über sechs Kategorien mit verschiedenen Rechten. Die
+Leitung sieht den Menüpunkt deshalb weiter und darf darin LUSD & Versetzung,
+Datenverwaltung, LMF-Aktionen und Lieferanten bedienen; verschlossen sind Schule, Fristen
+und Mailversand (`manage_settings`) sowie Benutzer & Rechte (`manage_users`). Das ist die
+Lesart, die zur Rolle passt — wer die Bibliothek führt, braucht den LUSD-Import. Soll auch
+das weg, ist es eine eigene Entscheidung: Diese Rechte hängen zugleich an Menüpunkten in
+der Verwaltung, die Rolle verlöre dort also mit.
 
 **Stufe 3 — Ausleihen an der Rolle**
 
