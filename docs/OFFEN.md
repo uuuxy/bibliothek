@@ -592,6 +592,20 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   über beide Tabellen (Migration 118) und die Personenart Lehrkraft/LiV im Kollegium (Migration
   119, nur in der Benutzerverwaltung sichtbar). Der Littera-Lauf übergeht weiter Praktikanten,
   Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
+- **Rasterdurchgang 15.09.2026 spät über Migration 118 und 119 — zwei B-Funde, beide hängen an
+  der Frage, was „Kollegium" künftig heißt (Rollennamen, Peter):**
+  - Theke und Geräteausleihe erkennen eine Lehrkraft an der Rolle `kollegium`, nicht an der
+    Personenart. Eine Lehrkraft mit der Rolle Mitarbeiter findet die Theke über ihren Ausweis
+    nicht (`repository/user.go` GetLehrerByBarcode, `internal/service/device_service.go`
+    ladeAktiveLehrkraft). Nachgestellt: `TestRaster_LehrkraftMitRolleMitarbeiterFindetDieThekeNicht`
+    rot, Gegenprobe mit Rolle kollegium grün.
+  - „Keine Angabe" heißt beim Anlegen eines Kollegiumskontos „Lehrkraft", beim Ändern „leeren";
+    ein Konto, das zur Rolle Kollegium wechselt, bleibt ohne Personenart. Es fehlt nur die
+    Bezeichnung in der Benutzerverwaltung.
+  - Behoben im selben Durchgang: Der Gleichzeitigkeits-Test zu Migration 118 bewies die Sperre nur
+    über eine feste Wartezeit; jetzt wartet er, bis Postgres die zweite Vergabe als wartend führt.
+    Am Rückbau der Sperre rot gesehen.
+  - Ohne Befund: Fragen 1, 4, 5, 6, 8, 9, 10, 11, 12.
 
 ### 5.7 Bestellwesen
 
