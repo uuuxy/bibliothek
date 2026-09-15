@@ -592,10 +592,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   über beide Tabellen (Migration 118) und die Personenart Lehrkraft/LiV im Kollegium (Migration
   119, nur in der Benutzerverwaltung sichtbar). Der Littera-Lauf übergeht weiter Praktikanten,
   Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
-- **Rollennamen (Peter, 15.09.2026, offen):** Peter möchte „Admin / Leitung / Mitarbeiter /
-  Helfer". Zu klären: Wer ist „Leitung", und was darf sie, was ein Mitarbeiter nicht darf? Die
-  Rolle `kollegium` (nur Portal) tragen alle Lehrkräfte; sie ist keine der vier.
-
 ### 5.7 Bestellwesen
 
 - Der Wareneingang gruppiert nach Datum und dem aus `zustand_notiz` abgeleiteten Lieferanten statt
