@@ -585,14 +585,13 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - LUSD: Zwei Zeilen mit gleichem Namen und Geburtsdatum, aber verschiedenen Klassen werden still
   zu einer Person; die Meldung „mehrdeutig" fehlt (dokumentierte Grenze). Vor der LUSD-Abnahme als
   Hinweis in der Vorschau.
-- **Personenart in den Stammdaten (Peter, 15.09.2026 entschieden):** Schüler, Lehrkraft,
-  Referendar. Schüler ist, wer aus der LUSD kommt; Lehrkraft und Referendar unterscheiden sich nur in
-  der Bezeichnung. Das Feld ist bearbeitbar. Nicht `benutzer.rolle` — die steuert Rechte. Ein Wechsel
-  zwischen Schüler und Kollegium ist ein Umzug der Person mit Ausleihen, Schäden und Ausweisnummer
-  (wie Migration 072), kein reines Auswahlfeld: Ein Kollegiumsmitglied in der Schülertabelle gälte
-  beim LUSD-Abgleich als Abgänger. Der Littera-Lauf ordnet dann die Gruppe „Referendar" zu; heute
-  übergeht er sie samt Praktikanten, Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
-  Voraussetzung erledigt: eine Ausweisnummer je Person über beide Tabellen (Migration 118).
+- **Personen zwischen Schülern und Kollegium umtragen (Peter, 15.09.2026: selten, später).** Wer
+  in der falschen Liste steht oder vom Schüler zur Lehrkraft wird, zieht mit Ausleihen, Schäden und
+  Ausweisnummer um (wie Migration 072), kein reines Auswahlfeld: Ein Kollegiumsmitglied in der
+  Schülertabelle gälte beim LUSD-Abgleich als Abgänger. Vorhanden: eine Ausweisnummer je Person
+  über beide Tabellen (Migration 118) und die Personenart Lehrkraft/LiV im Kollegium (Migration
+  119, nur in der Benutzerverwaltung sichtbar). Der Littera-Lauf übergeht weiter Praktikanten,
+  Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
 
 ### 5.7 Bestellwesen
 
