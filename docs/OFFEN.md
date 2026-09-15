@@ -855,6 +855,26 @@ Daten" und entscheidet nichts. Ersetzt die Entscheidung „Rollennamen bleiben" 
 Je Stufe: Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am frisch gebauten Stack und
 im Browser, dann Peters Freigabe.
 
+**Das Modell, wie Peter es am 16.09.2026 beschrieb — am Code belegt, es stimmt überein:**
+
+**Kollegium ist keine Rolle, sondern der Grundzustand.** Jede Lehrkraft meldet sich über „Mein
+Portal" mit ihrer Schuladresse selbst an; der Admin schaltet frei, und damit ist sie im Grunde
+niemand Besonderes — sie sieht den Bestand, merkt vor, meldet Fehler und leiht an der Theke auf
+ihren Namen. Das sind erst einmal alle. Eine Rolle bekommt nur, wen der Admin an seiner
+E-Mail-Adresse dazu erhebt: Leitung, Mitarbeiter, Helfer oder Admin — und dann genau die Rechte
+dieser Rolle. Schüler stehen in einer eigenen Tabelle und kommen aus der LUSD; zwischen den beiden
+Welten wechselt niemand.
+
+Im Programm ist `kollegium` technisch ein Wert desselben Aufzählungstyps wie die Rollen
+(`auth/selbstanmeldung.go` legt ihn an, inaktiv). Das ist in Ordnung, darf aber in der Oberfläche
+nicht so aussehen: In der Rollenauswahl und im Rechte-Editor gehört Kollegium nicht neben Leitung
+und Mitarbeiter, sondern davor — als „keine Rolle", der Ausgangszustand jeder Lehrkraft.
+
+Daraus folgt für den Rest des Plans: Das versteckte Feld „Personenart" widerspricht diesem Modell
+und fällt in Stufe 3 weg (deshalb findet heute ein Admin ohne dieses Feld die Theke nicht). Die
+Leserdatei in Stufe 4 ist eine ANSICHT über beide Tabellen — sie legt Konten nicht an und schaltet
+keine frei; das bleibt in „Benutzer & Rechte".
+
 **Am Code gelesen (15.09.2026):**
 
 - Schüler und Lehrkräfte stehen in zwei Tabellen: Schüler in `schueler` (aus der LUSD), Lehrkräfte
@@ -928,11 +948,10 @@ tote Rückgabe-Zweig ist nicht tot und steht jetzt unter Stufe 3.
   Kollegiumskonto an (Frage 3).
 - Das Feld Personenart fällt aus der Benutzerverwaltung.
 
-**Stufe 5 — Umtragen zwischen Schüler und Lehrkraft (später, eigener Plan)**
+**Stufe 5 — gestrichen (Peter, 16.09.2026): „Ein Schüler kann nie ein Lehrer werden."**
 
-In einer Transaktion wie Migration 072: Ausleihen, Schäden und Ausweisnummer ziehen mit. Vorher
-klären, was der LUSD-Abgleich daraus macht (wer aus der Schülertabelle verschwindet, darf nicht als
-Abgänger gelten). Selten, erst nach Peters Wort.
+Das Umtragen zwischen Schülertabelle und Kollegium war meine Erfindung, nicht sein Bedarf. Die
+beiden Tabellen bleiben getrennt, und niemand wechselt zwischen ihnen. Der Plan endet mit Stufe 4.
 
 **Entschieden (Peter, 15.09.2026): Die Rolle legt der Admin fest, alle anderen sind Kollegium.**
 Daraus folgt für den Bau:
