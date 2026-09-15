@@ -937,7 +937,16 @@ der Verwaltung, die Rolle verlöre dort also mit.
   Code geprüft 16.09.2026). Vorgabe für die neue Regel: Ein Scan eines freien Buchs bucht nie auf
   die angemeldete Person — wer Rückläufer sortiert, bucht sonst versehentlich auf sich selbst;
   ausgeliehen wird über den eigenen Ausweis.
-- Rot-Test am alten Code: Ein Admin ohne Personenart findet die Theke nicht. Danach: Admin, Leitung
+- **Suche an der Theke über den Namen** (Peters Frage, 16.09.2026: „es geht doch dann auch
+  einfach über den Namen, genauso wie bei Schülern"). Heute NICHT: `GET /api/search`
+  (`api/routes_misc.go`, `SearchHandler(studentRepo, bookRepo)`) sucht über Schüler und
+  Buchtitel; ein Kollegiumskonto findet die Theke nur über die Ausweisnummer
+  (`GetLehrerByBarcode`). Das Kollegium kommt in dieselbe Trefferliste, mit der Art am
+  Treffer, damit im Auswahlfenster nicht zwei gleiche Namen ohne Unterschied stehen.
+  Gehört hierher und nicht in Stufe 4: Es ist dieselbe Frage — wer ist an der Theke ein
+  Leser. Dasselbe Recht (`perform_actions`), dieselbe Zeilenform, Obergrenze wie bisher.
+- Rot-Test am alten Code: Ein Admin ohne Personenart findet die Theke nicht, und ein
+  Kollegiumskonto ist über seinen Namen nicht zu finden. Danach: Admin, Leitung
   und Mitarbeiter ja, Helfer nein, deaktiviert nein.
 - Der Einspiel-Hinweis „Personenart Lehrkraft nötig" aus v2.13.0 fällt weg.
 
