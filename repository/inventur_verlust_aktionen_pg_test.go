@@ -50,7 +50,7 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 	bearbeiterID := seedBearbeiter(t, pool)
 	exemplarID := seedVerlorenesExemplar(t, ctx, repo, "Physikbuch 8", "GEF-1")
 
-	gefunden, err := repo.MarkiereVerlustAlsGefunden(ctx, exemplarID, bearbeiterID)
+	gefunden, _, err := repo.MarkiereVerlustAlsGefunden(ctx, exemplarID, bearbeiterID)
 	if err != nil {
 		t.Fatalf("MarkiereVerlustAlsGefunden: %v", err)
 	}
@@ -83,7 +83,7 @@ func TestMarkiereVerlustAlsGefunden(t *testing.T) {
 
 	// Zweiter Aufruf auf dasselbe (jetzt wieder normale) Exemplar: kein Verlust mehr
 	// offen, also nichts zu tun — kein Fehler, aber auch keine Wirkung.
-	nochmal, err := repo.MarkiereVerlustAlsGefunden(ctx, exemplarID, bearbeiterID)
+	nochmal, _, err := repo.MarkiereVerlustAlsGefunden(ctx, exemplarID, bearbeiterID)
 	if err != nil {
 		t.Fatalf("zweiter Aufruf: %v", err)
 	}
@@ -100,7 +100,7 @@ func TestMarkiereVerlustAlsGefunden_UnbekannteID(t *testing.T) {
 	resetInventurDaten(t, pool)
 	repo := NewInventoryRepository(pool)
 
-	gefunden, err := repo.MarkiereVerlustAlsGefunden(context.Background(), "00000000-0000-0000-0000-000000000000", "bearbeiter-1")
+	gefunden, _, err := repo.MarkiereVerlustAlsGefunden(context.Background(), "00000000-0000-0000-0000-000000000000", "bearbeiter-1")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)
 	}

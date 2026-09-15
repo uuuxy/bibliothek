@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -39,6 +40,18 @@ type RueckkehrBefund struct {
 	StornierterBetrag float64
 	// AufsichtInformieren: Referenznummern der Bescheide, die schon übergeben waren.
 	AufsichtInformieren []string
+}
+
+// AufsichtHinweis ist der Satz für den Fall, den die Anwendung NICHT erledigen kann: Der
+// Bescheid liegt bei der Schulaufsicht, die Forderung bleibt offen, und jemand muss zum
+// Telefon greifen. Leer, wenn nichts zu tun ist. Theke und Fehlbestandsbericht sagen
+// denselben Satz.
+func (b RueckkehrBefund) AufsichtHinweis() string {
+	if len(b.AufsichtInformieren) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("Die Forderung steht auf Bescheid %s, der bereits an die Schulaufsicht übergeben wurde — sie ist unverzüglich zu informieren. Die Forderung bleibt bis dahin offen.",
+		strings.Join(b.AufsichtInformieren, ", "))
 }
 
 // VerbucheRueckkehr behandelt die offenen „nicht zurückgegeben"-Forderungen eines

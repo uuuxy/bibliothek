@@ -118,10 +118,14 @@ var phantomBestand = map[string]int{
 	// Umschlüsselung der Protokollspuren beim Zusammenführen (02.09.2026): audit_log/
 	// audit_logs dürfen 0 Zeilen zur Quelle haben — 0 ist kein Phantom, das Ergebnis
 	// (jede Tabelle wandert) misst TestZusammenfuehren_JedeTabelleWandert am Postgres.
-	"repository/schueler_zusammenfuehren.go:verschiebeVorgaenge":                1,
-	"repository/book_inventory.go:BulkUpsertBookTitles":                         1,
-	"repository/damage.go:MarkCopyDefekt":                                       1,
-	"repository/damage.go:ReportDamage":                                         3,
+	"repository/schueler_zusammenfuehren.go:verschiebeVorgaenge": 1,
+	"repository/book_inventory.go:BulkUpsertBookTitles":          1,
+	"repository/damage.go:MarkCopyDefekt":                        1,
+	// Seit 15.09.2026 heißt der Rumpf meldeSchaden (Transaktion des Aufrufers, damit
+	// der Bescheid Verlust und Brief in EINER Transaktion bucht); ReportDamage ist nur
+	// noch die Hülle. Die drei Tags sind dieselben wie vorher (Exemplar aussondern,
+	// Vormerkung lösen, Ausleihe beenden) — die Ausleihe ist per FOR UPDATE gelesen.
+	"repository/schaden_melden.go:meldeSchaden":                                 3,
 	"repository/inventur_session_finish.go:FinishInventurSession":               1,
 	"repository/inventur_session_finish.go:RecordInventurScan":                  1,
 	"repository/inventur_session_repo.go:CreateInventurSession":                 1,

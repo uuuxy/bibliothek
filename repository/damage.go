@@ -183,110 +183,21 @@ func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, 
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrExemplarNeuVerliehen = errors.New("Exemplar wurde zwischenzeitlich neu ausgeliehen — bitte den Vorgang neu laden")
 
-// ReportDamage sets ist_ausgesondert = true, inserts a damage record, and ends the loan.
-func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, art SchadensArt, betrag float64) (string, error) {
+// ReportDamage bucht einen Verlust oder Schaden in eigener Transaktion — der Weg aus der
+// Schülerakte („Verlust/Schaden melden"). Der Rumpf ist meldeSchaden; der Bescheid ruft
+// ihn in seiner eigenen Transaktion (Stufe 2 des Mahnverfahrens). schuelerID ist nur
+// Anzeige: Der Schuldner steht an der Ausleihe.
+func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, _ string, benutzerID string, beschreibung string, art SchadensArt, betrag float64) (string, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return "", err
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Idempotenz + Serialisierung gegen Doppelklick: Zwei parallel abgeschickte
-	// "Schaden melden"-Klicks mit derselben ausleihe_id würden sonst beide den
-	// fremdeAktive-Check passieren und JE einen Schadensfall anlegen — der Schüler würde
-	// für dasselbe Buch doppelt belastet. Wir sperren zuerst die Ausleihe-Zeile
-	// (FOR UPDATE): der zweite Aufruf blockiert, bis der erste committet hat, und liest
-	// danach den bereits angelegten Schadensfall. Existiert für diese Ausleihe schon ein
-	// (nicht stornierter) Schadensfall, geben wir dessen ID idempotent zurück, statt einen
-	// zweiten anzulegen.
-	// Der Schuldner steht an der AUSLEIHE, nicht im Request: Ein beschädigtes Buch
-	// gehört dem, der es geliehen hat. Früher übernahm der INSERT die schueler_id
-	// ungeprüft aus dem Client-Body — eine falsche (vertippte oder manipulierte) ID
-	// hätte den Gebührenbescheid einem unbeteiligten Schüler zugeschrieben. Wir lesen
-	// sie stattdessen aus der ohnehin gesperrten Ausleihe-Zeile; das Client-Feld ist
-	// nur noch Anzeige. FOR UPDATE bleibt dieselbe Sperre wie zuvor.
-	//
-	// *string, weil schueler_id nullable ist (eine Handapparat-Ausleihe hängt an
-	// ausleiher_benutzer_id, nicht am Schüler) — ein Scan in einen nackten string
-	// stürbe an "cannot scan NULL". Ist die Ausleihe schülerlos, wird schueler_id im
-	// Schadensfall NULL (die CHECK erlaubt „kein Verantwortlicher").
-	var loanSchuelerID *string
-	if err := tx.QueryRow(ctx,
-		`SELECT schueler_id FROM ausleihen WHERE id = $1 FOR UPDATE`, loanID,
-	).Scan(&loanSchuelerID); err != nil {
-		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
-	}
-
-	var bestehenderSchaden string
-	err = tx.QueryRow(ctx,
-		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
-		loanID,
-	).Scan(&bestehenderSchaden)
-	if err == nil {
-		// Schadensfall existiert bereits — idempotent zurückgeben, nichts doppelt buchen.
-		return bestehenderSchaden, nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return "", err
-	}
-
-	// Race-Schutz: Bleibt das Schadensformular offen, während das Buch zurückgegeben
-	// und neu ausgeliehen wird, würde der "Melden"-Klick ein aktiv verliehenes Exemplar
-	// aussondern. Gibt es für dieses Exemplar eine aktive Ausleihe, die NICHT die hier
-	// gemeldete ist, brechen wir ab, statt die neue Ausleihe blind zu überschreiben.
-	var fremdeAktive int
-	if err := tx.QueryRow(ctx, `
-		SELECT count(*) FROM ausleihen
-		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
-	`, copyID, loanID).Scan(&fremdeAktive); err != nil {
-		return "", err
-	}
-	if fremdeAktive > 0 {
-		return "", ErrExemplarNeuVerliehen
-	}
-
-	_, err = tx.Exec(ctx, `
-		UPDATE buecher_exemplare
-		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'BESCHAEDIGUNG',
-		    zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $2
-	`, beschreibung, copyID)
+	schadensID, err := meldeSchaden(ctx, tx, copyID, loanID, benutzerID, beschreibung, art, betrag)
 	if err != nil {
 		return "", err
 	}
-
-	// Geister-Zuteilung verhindern: Wurde dieses Exemplar bei der Rückgabe gerade einem
-	// wartenden Schüler als 'abholbereit' zugewiesen und wird nun als beschädigt ausgesondert,
-	// zeigt dessen Profil ein abholbereites, aber physisch defektes Buch. Die Vormerkung
-	// zurück auf 'wartend' setzen und die Exemplar-Bindung lösen — der Schüler rückt damit für
-	// das nächste verfügbare Exemplar wieder in die Warteschlange.
-	if _, err = tx.Exec(ctx, `
-		UPDATE vormerkungen
-		SET status = 'wartend', bereitgestellt_exemplar_id = NULL, bereitgestellt_bis = NULL
-		WHERE bereitgestellt_exemplar_id = $1 AND status = 'abholbereit'
-	`, copyID); err != nil {
-		return "", err
-	}
-
-	var schadensID string
-	err = tx.QueryRow(ctx, `
-		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, art)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id
-	`, copyID, loanID, loanSchuelerID, beschreibung, betrag, string(art)).Scan(&schadensID)
-	if err != nil {
-		return "", err
-	}
-
-	_, err = tx.Exec(ctx, `
-		UPDATE ausleihen
-		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = $1
-		WHERE id = $2
-	`, benutzerID, loanID)
-	if err != nil {
-		return "", err
-	}
-
 	if err := tx.Commit(ctx); err != nil {
 		return "", err
 	}

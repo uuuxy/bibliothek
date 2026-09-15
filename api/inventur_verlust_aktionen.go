@@ -36,7 +36,7 @@ func (s *Server) InventurVerlustGefundenHandler() http.HandlerFunc {
 		defer db.SafeRollback(ctx, tx)
 
 		invRepo := repository.NewInventoryRepository(tx)
-		gefunden, err := invRepo.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
+		gefunden, befund, err := invRepo.MarkiereVerlustAlsGefunden(ctx, id, claims.UserID)
 		if err != nil {
 			return apierrors.Internal("Fund konnte nicht verbucht werden", err)
 		}
@@ -46,9 +46,27 @@ func (s *Server) InventurVerlustGefundenHandler() http.HandlerFunc {
 		if err := tx.Commit(ctx); err != nil {
 			return apierrors.Internal("Transaktion konnte nicht abgeschlossen werden", err)
 		}
-		RespondSuccess(w)
+		// Die Folge für die Forderung steht in der Antwort: Der Bericht sagt, dass die
+		// Forderung storniert ist — oder dass die Aufsicht zu informieren ist, weil der
+		// Bescheid dort schon liegt (dann bleibt sie offen).
+		RespondJSON(w, http.StatusOK, VerlustGefundenResponse{
+			Status:                "ok",
+			StornierteForderungen: befund.StornierteForderungen,
+			StornierterBetrag:     befund.StornierterBetrag,
+			Hinweis:               befund.AufsichtHinweis(),
+		})
 		return nil
 	})
+}
+
+// VerlustGefundenResponse ist die Antwort der Fund-Meldung: was mit der Forderung
+// geschah, die das Buch abgerechnet hatte.
+type VerlustGefundenResponse struct {
+	Status                string  `json:"status"`
+	StornierteForderungen int     `json:"stornierte_forderungen"`
+	StornierterBetrag     float64 `json:"stornierter_betrag"`
+	// Hinweis ist leer, wenn nichts zu tun ist.
+	Hinweis string `json:"hinweis,omitempty"`
 }
 
 // verlustLoeschenRequest benennt die endgültig zu löschenden Exemplare.

@@ -73,6 +73,9 @@ func TestReportDamageNormalfall(t *testing.T) {
 	if ausgesondert := ausgesonderteZahl(t, pool, []string{copyID}); ausgesondert != 1 {
 		t.Error("Exemplar wurde nicht ausgesondert")
 	}
+	if grund := aussonderungsGrund(t, pool, copyID); grund != "BESCHAEDIGUNG" {
+		t.Errorf("aussonderung_grund = %q, want BESCHAEDIGUNG", grund)
+	}
 }
 
 // TestReportDamageIdempotent sichert #4 (Doppelte Rechnungen) ab: Ein doppelt abgeschickter

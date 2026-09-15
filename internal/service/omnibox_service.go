@@ -445,11 +445,7 @@ func rueckkehrMeldung(b repository.RueckkehrBefund) string {
 // Bescheid liegt bei der Schulaufsicht, die Forderung bleibt offen, und jemand muss zum
 // Telefon greifen. Leer, wenn nichts zu tun ist.
 func aufsichtHinweis(b repository.RueckkehrBefund) string {
-	if len(b.AufsichtInformieren) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("Die Forderung steht auf Bescheid %s, der bereits an die Schulaufsicht übergeben wurde — sie ist unverzüglich zu informieren. Die Forderung bleibt bis dahin offen.",
-		strings.Join(b.AufsichtInformieren, ", "))
+	return b.AufsichtHinweis()
 }
 
 // istBerechtigterReservierer prüft, ob der aktive Schüler der berechtigte Reservierer

@@ -54,7 +54,27 @@ export function useFehlbestand() {
 		fehlbestand = fehlbestand.map((e) =>
 			e.exemplar_id === exemplarId ? { ...e, gefunden_am: Date.now() } : e
 		);
-		toastStore.addToast('Als gefunden verbucht — Exemplar ist wieder verfügbar.', 'success');
+		// Der Fund beendet auch die Forderung, die das Buch abgerechnet hatte (seit
+		// 15.09.2026, dieselbe Regel wie an der Theke). Liegt der Bescheid dazu schon bei
+		// der Aufsicht, bleibt sie offen — dann sagt der Server, wer zu informieren ist.
+		const storniert = Number(r.data?.stornierte_forderungen) || 0;
+		toastStore.addToast(
+			storniert > 0
+				? `Als gefunden verbucht — Exemplar ist wieder verfügbar. Die Forderung über ${euro(r.data.stornierter_betrag)} wurde storniert.`
+				: 'Als gefunden verbucht — Exemplar ist wieder verfügbar.',
+			'success'
+		);
+		if (r.data?.hinweis) toastStore.addToast(r.data.hinweis, 'warning');
+	}
+
+	/** @param {number} n */
+	function euro(n) {
+		return (
+			Number(n ?? 0).toLocaleString('de-DE', {
+				minimumFractionDigits: 2,
+				maximumFractionDigits: 2
+			}) + ' €'
+		);
 	}
 
 	/** @param {string[]} exemplarIds */

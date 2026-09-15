@@ -22,7 +22,13 @@ import (
 // Umlauf und trägt den Fund im Fehlbestandsbericht ein. false ohne Fehler heisst: kein
 // offener Verlust mit dieser ID (falsche ID oder schon endgültig gelöscht) — dann gibt
 // es nichts zu tun.
-func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, exemplarID, bearbeiterID string) (bool, error) {
+//
+// Seit dem 15.09.2026 endet mit dem Fund auch die Forderung „nicht zurückgegeben", die
+// das Buch abgerechnet hat (VerbucheRueckkehr, dieselbe Regel wie an der Theke): Vorher
+// stand das Buch wieder im Regal, das Kind blieb gesperrt und die Forderung offen —
+// beendet wurde sie nur, wenn das Buch über die Theke zurückkam (OFFEN.md 5.3). Der
+// Befund sagt, was storniert wurde und ob ein Bescheid schon bei der Aufsicht liegt.
+func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, exemplarID, bearbeiterID string) (bool, RueckkehrBefund, error) {
 	var barcode, titel string
 	err := r.db.QueryRow(ctx,
 		`SELECT e.barcode_id, t.titel FROM buecher_exemplare e
@@ -31,10 +37,10 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 		exemplarID,
 	).Scan(&barcode, &titel)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return false, nil
+		return false, RueckkehrBefund{}, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("exemplar für Fund-Meldung lesen fehlgeschlagen: %w", err)
+		return false, RueckkehrBefund{}, fmt.Errorf("exemplar für Fund-Meldung lesen fehlgeschlagen: %w", err)
 	}
 
 	if _, err := r.db.Exec(ctx, `
@@ -43,7 +49,12 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 		    zustand_notiz = '', bestellstatus = NULL, aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`, exemplarID); err != nil {
-		return false, fmt.Errorf("exemplar wiederherstellen fehlgeschlagen: %w", err)
+		return false, RueckkehrBefund{}, fmt.Errorf("exemplar wiederherstellen fehlgeschlagen: %w", err)
+	}
+
+	befund, err := VerbucheRueckkehr(ctx, r.db, exemplarID, bearbeiterID)
+	if err != nil {
+		return false, RueckkehrBefund{}, err
 	}
 
 	// Alle noch offenen Verlust-Zeilen dieses Exemplars schliessen, nicht nur die einer
@@ -53,7 +64,7 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 		UPDATE inventur_verluste SET gefunden_am = CURRENT_TIMESTAMP
 		WHERE exemplar_id = $1 AND gefunden_am IS NULL
 	`, exemplarID); err != nil {
-		return false, fmt.Errorf("verlustbericht aktualisieren fehlgeschlagen: %w", err)
+		return false, RueckkehrBefund{}, fmt.Errorf("verlustbericht aktualisieren fehlgeschlagen: %w", err)
 	}
 
 	if err := schreibeAuditLog(ctx, r.db, auditEntry{
@@ -62,9 +73,9 @@ func (r *InventoryRepository) MarkiereVerlustAlsGefunden(ctx context.Context, ex
 		Kontext: strPtr("Als Verlust gebuchtes Exemplar beim Nachsuchen gefunden"),
 		Details: map[string]any{"barcode_id": barcode, "titel": titel, "action": "verlust_gefunden"},
 	}); err != nil {
-		return false, err
+		return false, RueckkehrBefund{}, err
 	}
-	return true, nil
+	return true, befund, nil
 }
 
 // EndgueltigLoescheVerlustExemplare entfernt bereits als Verlust gebuchte Exemplare
