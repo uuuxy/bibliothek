@@ -25,11 +25,11 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Peter, ein Wort: Freigabe für Stufe 3 der Leserdatei.** Stufe 1 (die vorhandenen
-   Fehler) und Stufe 2 (die Rolle Leitung) sind am 16.09.2026 gebaut und im Browser
-   nachgewiesen. Stufe 3 nimmt das versteckte Feld „Personenart" aus dem Weg: Wer an der
-   Theke Bücher auf seinen Namen bekommt, entscheidet dann die Rolle. Dazu die Frage zu
-   den Einstellungen in Abschnitt 5.16.
+3. **Bei mir: alle Leser in eine Tabelle** (Abschnitt 5.16, freigegeben am 16.09.2026).
+   Schüler und Kollegium stehen danach an einem Ort, jeder aktive Leser darf ausleihen,
+   und die Theke findet auch Kollegen über den Namen. Das versteckte Feld „Personenart"
+   fällt dabei weg — es ist der Grund, warum dein Admin-Konto die Theke heute nicht
+   findet. Stufen 1 und 2 (vorhandene Fehler, Rolle Leitung) sind erledigt.
 4. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -847,7 +847,7 @@ Meldung je Schlüssel · ein Serverfehler je Eintrag wird „wiederholen", nicht
 der Ausleihe fängt `check_return_date` · Sperrreihenfolge Schüler → Ausleihe → Exemplar im
 Nachbuchen gehalten · Barcode-Liste ohne Personendaten, Löschen ändert den Stand über die Anzahl.
 
-### 5.16 Leserdatei und Rolle Leitung: Plan in Stufen (freigegeben 15.09.2026, Stufe 1 läuft)
+### 5.16 Leserdatei: Plan in Stufen (Stufen 1+2 erledigt, ab Stufe 3 neu gefasst am 16.09.2026)
 
 Entschieden am 15.09.2026 spät (Peter): Die Rollen Admin, Leitung, Mitarbeiter und Helfer vergibt
 der Admin; Kollegium bleibt das Portal. Wer eine Rolle hat, leiht an der Theke selbst aus, Helfer
@@ -924,51 +924,77 @@ Lesart, die zur Rolle passt — wer die Bibliothek führt, braucht den LUSD-Impo
 das weg, ist es eine eigene Entscheidung: Diese Rechte hängen zugleich an Menüpunkten in
 der Verwaltung, die Rolle verlöre dort also mit.
 
-**Stufe 3 — Ausleihen an der Rolle**
+**NEU ENTSCHIEDEN am 16.09.2026 (Peter): Alle Leser in EINE Tabelle, jeder darf ausleihen.**
 
-- Eine Regel ersetzt `SQLAktiveLehrkraft`: aktiv und Rolle Admin, Leitung oder Mitarbeiter, dazu
-  Kollegium nach Frage 1; Helfer nie. Sie gilt an denselben Stellen wie heute, also auch für die
-  Nachbuch-Tür und damit für Stufe 3 des Offline-Baus. Die Reihenfolge der beiden Bauten ist frei.
-- Die Personenart entscheidet nichts mehr. Migration 120 bleibt als Vorgabe (Kollegium ohne
-  Angabe = Lehrkraft), ihr Kommentar wird berichtigt.
-- Der Rückgabe-Zweig „ein angemeldetes Kollegiumskonto scannt ein freies Buch → Ausleihe auf sich
-  selbst" (`handleLehrerHandapparat` in `internal/service/loan_return.go`) ist nicht tot: ab Werk
-  verschlossen, weil das Kollegium kein Theken-Recht hat, im Rechte-Editor aber zuschaltbar (am
-  Code geprüft 16.09.2026). Vorgabe für die neue Regel: Ein Scan eines freien Buchs bucht nie auf
-  die angemeldete Person — wer Rückläufer sortiert, bucht sonst versehentlich auf sich selbst;
-  ausgeliehen wird über den eigenen Ausweis.
-- **Suche an der Theke über den Namen** (Peters Frage, 16.09.2026: „es geht doch dann auch
-  einfach über den Namen, genauso wie bei Schülern"). Heute NICHT: `GET /api/search`
-  (`api/routes_misc.go`, `SearchHandler(studentRepo, bookRepo)`) sucht über Schüler und
-  Buchtitel; ein Kollegiumskonto findet die Theke nur über die Ausweisnummer
-  (`GetLehrerByBarcode`). Das Kollegium kommt in dieselbe Trefferliste, mit der Art am
-  Treffer, damit im Auswahlfenster nicht zwei gleiche Namen ohne Unterschied stehen.
-  Gehört hierher und nicht in Stufe 4: Es ist dieselbe Frage — wer ist an der Theke ein
-  Leser. Dasselbe Recht (`perform_actions`), dieselbe Zeilenform, Obergrenze wie bisher.
-- Rot-Test am alten Code: Ein Admin ohne Personenart findet die Theke nicht, und ein
-  Kollegiumskonto ist über seinen Namen nicht zu finden. Danach: Admin, Leitung
-  und Mitarbeiter ja, Helfer nein, deaktiviert nein.
-- Der Einspiel-Hinweis „Personenart Lehrkraft nötig" aus v2.13.0 fällt weg.
+Peters Worte: „lass es uns zusammenlegen, momentan läuft das System ja noch gar nicht real
+sondern nur im Test" · „eigentlich ist Punkt 3 doch egal, wenn wir sagen würden, alle können
+sich ausleihen was sie wollen" · „oder du löschst eine, die Daten sind egal". Dazu die
+Richtigstellung, dass auch der Hetzner-Server nur sein Test-Server ist — es gibt keine Anlage
+im echten Betrieb. Gezählt dort: 32 Schüler, 9 Konten, 0 Ausleihen auf Konten. Echt ist allein
+der Katalog.
 
-**Stufe 4 — Leserdatei**
+Damit fällt die alte Stufe 3 („wer darf ausleihen") weg: Wenn alle Leser in einer Tabelle
+stehen, ist die Frage nicht mehr „welche Rolle", sondern „ist das ein aktiver Leser". Die
+Rolle sagt dann ausschließlich, was jemand im Programm TUN darf.
 
-- Menüpunkt „Leserdatei" statt „Schülerdatei", dasselbe Recht (`view_students`); die Texte im
-  Rechte-Editor ziehen mit.
-- Liste: Schüler und Lehrkräfte zusammen, Spalte Art, eine Suche über beide. Lehrkraft heißt hier:
-  darf nach Stufe 3 ausleihen und steht in `benutzer` — dieselbe Regel, keine zweite. Neuer
-  Lese-Endpunkt mit Obergrenze, im Personendaten-Gate eingeordnet.
-- Reiter: Aktive Leser · Ehemalige und Papierkorb wie heute (nur Schüler).
-- Akte einer Lehrkraft, als eigene Datei: Persönliche Daten (Name, Ausweisnummer, Art Lehrkraft/LiV
-  änderbar), Ausleihen, Ausweis drucken; Recht `edit_students`. E-Mail, Rolle und Freischaltung
-  bleiben in der Benutzerverwaltung, ein Admin-Konto ändert nur ein Admin.
-- „Neuen Leser anlegen": zuerst die Art. Schüler wie heute, Lehrkraft oder LiV legt ein
-  Kollegiumskonto an (Frage 3).
+**Die Form (freigegeben: „ok go"): eine Lesertabelle, Konten bleiben Konten.**
+
+Die Schülertabelle wird zur Lesertabelle: ein Feld „Art" (Schüler · Lehrkraft · LiV), Klasse
+für Nicht-Schüler leer. Eine Ausleihe zeigt auf EINEN Leser — eine Spalte statt zwei. Eine
+Suche, eine Liste, ein Mahnwesen, ein Ausweisdruck.
+
+Die Kontentabelle bleibt daneben und tut nur noch, wofür sie da ist: Anmeldung und Rechte.
+Jedes Konto zeigt auf seine Leserzeile. Nicht aus Vorsicht, sondern weil sonst drei fremde
+Dinge in einer Tabelle lägen: wer ein Leser ist, wer sich anmelden darf, und wer eine Buchung
+AUSGEFÜHRT hat. Von den 14 Verknüpfungen auf die Kontentabelle heißen die meisten
+„Bearbeiter", nicht „Ausleiher" — ein Kollege soll als Leser verschwinden können, ohne dass
+die Spur seiner Buchungen verschwindet.
+
+**Stufe 3 — die Lesertabelle (additiv, verwirft nichts)**
+
+- Migration: `art` an der Schülertabelle (`schueler` | `lehrkraft` | `liv`, Vorgabe `schueler`),
+  `klasse` und `abgaenger_jahr` nullbar für Nicht-Schüler, `benutzer.leser_id` als Verknüpfung.
+  Für jedes Kollegiumskonto entsteht eine Leserzeile; die Ausweisnummer zieht mit (der
+  Nummernkreis ist seit Migration 118 über beide Tabellen eindeutig, es kann also keine
+  Kollision geben).
+- **Der Schutz, der hier nicht fehlen darf:** Der LUSD-Abgleich setzt heute „Abgänger" und
+  „gesperrt" über die ganze Tabelle (`api/lusd_apply.go`). Stehen Kollegen darin, würde ein
+  Import, der sie nicht kennt, sie als Abgänger markieren. Das muss die Datenbank verhindern,
+  nicht ein WHERE: Prädikat auf `art='schueler'` UND ein Wächter, der ein Anfassen von
+  Nicht-Schülern durch den Abgleich unmöglich macht. Dasselbe für den Löschjob
+  (`[[loeschfristen-eine-quelle]]`: Wächter = Löschjob-Prädikat).
+- Rot-Test: Ein Import ohne die Kollegen markiert sie NICHT als Abgänger; der Löschjob fasst
+  sie nicht an.
+
+**Stufe 4 — eine Ausleihe zeigt auf einen Leser**
+
+- `ausleihen.ausleiher_benutzer_id` fällt, ebenso die Zwillinge in `nachbuch_meldungen` und
+  `schadensfaelle`. Alle Schreib- und Lesepfade gehen über die eine Spalte. Auf dem Testserver
+  und lokal stehen dort 0 Zeilen — es ist nichts umzuhängen, nur zu entfernen.
+- Ausleihen darf: **aktiver Leser.** `repository.SQLAktiveLehrkraft` und das Feld
+  `personenart` fallen weg, ebenso der Einspiel-Hinweis aus v2.13.0. Damit findet auch das
+  Admin-Konto die Theke.
+- Der Zweig „angemeldetes Konto scannt ein freies Buch → Ausleihe auf sich selbst"
+  (`handleLehrerHandapparat`) fällt ganz: Wer Rückläufer sortiert, bucht sich sonst
+  versehentlich Bücher auf den eigenen Namen. Ausgeliehen wird über den Ausweis.
+- Rot-Test: Ein Admin ohne Personenart kann an der Theke ausleihen; ein gesperrter Leser nicht.
+
+**Stufe 5 — Theke und Leserdatei**
+
+- Theke: Die Namenssuche findet alle Leser, mit der Art am Treffer (heute sucht
+  `GET /api/search` nur Schüler und Buchtitel).
+- Menüpunkt „Leserdatei" statt „Schülerdatei", dasselbe Recht (`view_students`); Liste mit
+  Spalte Art, eine Suche über alle. Reiter wie heute.
+- Akte einer Lehrkraft: Persönliche Daten (Name, Ausweisnummer, Art), Ausleihen, Ausweis
+  drucken. E-Mail, Rolle und Freischaltung bleiben in der Benutzerverwaltung.
+- „Neuen Leser anlegen": zuerst die Art. Schüler wie heute; Lehrkraft/LiV legt eine Leserzeile
+  an — ein KONTO entsteht dabei nicht, das holt sich die Lehrkraft über die Selbstanmeldung.
 - Das Feld Personenart fällt aus der Benutzerverwaltung.
 
-**Stufe 5 — gestrichen (Peter, 16.09.2026): „Ein Schüler kann nie ein Lehrer werden."**
+**Stufe 6 — Umbenennen (rein mechanisch, eigener Commit)**
 
-Das Umtragen zwischen Schülertabelle und Kollegium war meine Erfindung, nicht sein Bedarf. Die
-beiden Tabellen bleiben getrennt, und niemand wechselt zwischen ihnen. Der Plan endet mit Stufe 4.
+`schueler` → `leser`: 408 Fundstellen in 47 Dateien. Zuletzt, damit die Umbenennung nicht mit
+einer Verhaltensänderung in einem Commit liegt; Gate: kein Vorkommen des alten Namens mehr.
 
 **Entschieden (Peter, 15.09.2026): Die Rolle legt der Admin fest, alle anderen sind Kollegium.**
 Daraus folgt für den Bau:
