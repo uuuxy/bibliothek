@@ -84,7 +84,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 		UPDATE buecher_exemplare
 		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = $1,
 		    zustand_notiz = $2, aktualisiert_am = CURRENT_TIMESTAMP,
-		    letzte_bewegung_am = CURRENT_TIMESTAMP
+		    letzte_bewegung_am = `+sqlStempelJetzt+`
 		WHERE id = $3
 	`, grund, beschreibung, copyID); err != nil {
 		return "", err

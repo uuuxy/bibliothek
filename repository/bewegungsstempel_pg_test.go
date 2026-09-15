@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"bibliothek/db"
 	"bibliothek/internal/pgtest"
 
 	"github.com/jackc/pgx/v5"
@@ -88,6 +89,112 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 	nachRueckholen := stempel()
 	if nachRueckholen == nil || !nachRueckholen.After(*nachAussonderung) {
 		t.Fatalf("Rückholen rückt den Stempel nicht vor: %v → %v", nachAussonderung, nachRueckholen)
+	}
+}
+
+// Der Stempel läuft nie rückwärts. Der Wächter des Nachbuchens weist Scans ab, die älter sind als
+// die letzte Bewegung; setzt ein Schreiber den Stempel auf einen früheren Zeitpunkt zurück, gilt
+// jeder Scan zwischen diesem Zeitpunkt und der echten letzten Bewegung wieder als frisch — und
+// bucht über die jüngere Wirklichkeit (Rasterdurchgang 15.09.2026, OFFEN.md 5.15). Zwei Wege
+// dorthin: ein Schreiber mit übergebenem Zeitpunkt (Nachbuchen), und ein Schreiber mit
+// CURRENT_TIMESTAMP in einer Transaktion, die vor der letzten Bewegung begonnen hat.
+func TestBewegungsstempel_LaeuftNieRueckwaerts(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	f := stempelAufbau(t, pool)
+	stempel := stempelLeser(t, pool, f.exemplarID)
+	jetzt := time.Now()
+	vorDreissig, vorZwanzig, vorZehn := jetzt.Add(-30*time.Minute), jetzt.Add(-20*time.Minute), jetzt.Add(-10*time.Minute)
+
+	tx := beginne(t, pool)
+	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, jetzt.AddDate(0, 0, 14), &vorDreissig)
+	if err != nil {
+		t.Fatalf("ausleihen: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if err := StempleBewegungZum(ctx, pool, f.exemplarID, nil); err != nil {
+		t.Fatalf("stempeln: %v", err)
+	}
+	zuletzt := stempel()
+
+	if err := StempleBewegungZum(ctx, pool, f.exemplarID, &vorZehn); err != nil {
+		t.Fatalf("früher stempeln: %v", err)
+	}
+	if s := stempel(); !s.Equal(zuletzt) {
+		t.Errorf("StempleBewegungZum mit früherem Zeitpunkt: %v → %v", zuletzt, s)
+	}
+
+	tx = beginne(t, pool)
+	if err := ReturnLoanZumTx(ctx, tx, loan.ID, f.bearbeiterID, false, &vorZwanzig); err != nil {
+		t.Fatalf("zurückgeben: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if s := stempel(); !s.Equal(zuletzt) {
+		t.Errorf("ReturnLoanZumTx mit früherem Zeitpunkt: %v → %v", zuletzt, s)
+	}
+
+	tx = beginne(t, pool)
+	if _, err := HoleExemplarZurueck(ctx, tx, f.exemplarID, f.bearbeiterID, &vorZehn); err != nil {
+		t.Fatalf("zurückholen: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if s := stempel(); !s.Equal(zuletzt) {
+		t.Errorf("HoleExemplarZurueck mit früherem Zeitpunkt: %v → %v", zuletzt, s)
+	}
+}
+
+func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	f := stempelAufbau(t, pool)
+	stempel := stempelLeser(t, pool, f.exemplarID)
+
+	tx := beginne(t, pool)
+	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14), nil)
+	if err != nil {
+		t.Fatalf("ausleihen: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+
+	lang := beginne(t, pool)
+	defer db.SafeRollback(ctx, lang)
+	if _, err := lang.Exec(ctx, `SELECT now()`); err != nil { // legt den Beginn der Transaktion fest
+		t.Fatalf("now: %v", err)
+	}
+	warte(t, pool)
+	if err := StempleBewegungZum(ctx, pool, f.exemplarID, nil); err != nil {
+		t.Fatalf("stempeln: %v", err)
+	}
+	zuletzt := stempel()
+
+	if _, err := meldeSchaden(ctx, lang, f.exemplarID, loan.ID, f.bearbeiterID, "Stempel-Test", SchadensArtNichtZurueck, 10); err != nil {
+		t.Fatalf("Schaden melden: %v", err)
+	}
+	if err := lang.Commit(ctx); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if s := stempel(); !s.Equal(zuletzt) {
+		t.Errorf("Schadensmeldung aus einer früher begonnenen Transaktion: %v → %v", zuletzt, s)
+	}
+}
+
+// stempelLeser liest letzte_bewegung_am; NULL bricht ab, weil jeder Fall hier schon bewegt ist.
+func stempelLeser(t *testing.T, pool *pgxpool.Pool, exemplarID string) func() time.Time {
+	return func() time.Time {
+		t.Helper()
+		var s *time.Time
+		if err := pool.QueryRow(context.Background(), `SELECT letzte_bewegung_am FROM buecher_exemplare WHERE id = $1`, exemplarID).Scan(&s); err != nil || s == nil {
+			t.Fatalf("Stempel lesen: %v %v", s, err)
+		}
+		return *s
 	}
 }
 

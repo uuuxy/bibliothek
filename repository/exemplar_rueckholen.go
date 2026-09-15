@@ -27,7 +27,7 @@ func HoleExemplarZurueck(ctx context.Context, q DBQueryer, exemplarID, bearbeite
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = true, ist_ausgesondert = false, aussonderung_grund = NULL,
 		    zustand_notiz = '', bestellstatus = NULL, aktualisiert_am = CURRENT_TIMESTAMP,
-		    letzte_bewegung_am = COALESCE($2::timestamptz, CURRENT_TIMESTAMP)
+		    letzte_bewegung_am = `+sqlStempelVor(`$2`)+`
 		WHERE id = $1`, exemplarID, bewegtAm)
 	if err != nil {
 		return RueckkehrBefund{}, fmt.Errorf("exemplar zurückholen: %w", err)

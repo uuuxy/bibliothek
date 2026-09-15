@@ -173,13 +173,28 @@ func schreibeAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, zeitpun
 	return l, nil
 }
 
+// sqlStempelVor ist der neue Wert von letzte_bewegung_am für einen Schreiber mit übergebenem
+// Zeitpunkt (nil = jetzt): der spätere von altem Stempel und Zeitpunkt. GREATEST übergeht NULL,
+// ein Exemplar ohne Stempel bekommt also den Zeitpunkt.
+func sqlStempelVor(param string) string {
+	return `GREATEST(letzte_bewegung_am, COALESCE(` + param + `::timestamptz, CURRENT_TIMESTAMP))`
+}
+
+// sqlStempelJetzt ist dasselbe für Schreiber ohne Zeitpunkt. CURRENT_TIMESTAMP ist der Beginn
+// der Transaktion — eine Transaktion, die vor der letzten Bewegung begann, setzte den Stempel
+// sonst zurück (TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck).
+const sqlStempelJetzt = `GREATEST(letzte_bewegung_am, CURRENT_TIMESTAMP)`
+
 // StempleBewegungZum setzt buecher_exemplare.letzte_bewegung_am (Migration 116) auf den
 // Zeitpunkt; nil heißt jetzt (Online-Scan), das Nachbuchen gibt den Scan-Zeitpunkt mit.
 // Der Wächter des Nachbuchens weist Scans ab, die älter sind als die letzte Bewegung.
 // Aufgerufen NACH der Zeile in ausleihen — Sperrreihenfolge Schüler → Ausleihe → Exemplar
 // (docs/invarianten.md, Abschnitt 1); das Nachbuchen hält dieselbe Reihenfolge.
+//
+// Der Stempel läuft nie rückwärts (sqlStempelVor): Ein früherer Zeitpunkt ließe jeden Scan
+// zwischen ihm und der echten letzten Bewegung wieder durch den Wächter.
 func StempleBewegungZum(ctx context.Context, q DBQueryer, exemplarID string, zeitpunkt *time.Time) error {
-	tag, err := q.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = COALESCE($2::timestamptz, CURRENT_TIMESTAMP) WHERE id = $1`, exemplarID, zeitpunkt)
+	tag, err := q.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = `+sqlStempelVor(`$2`)+` WHERE id = $1`, exemplarID, zeitpunkt)
 	if err != nil {
 		return fmt.Errorf("bewegung stempeln: %w", err)
 	}
@@ -213,7 +228,7 @@ func ReturnLoanZumTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string
 	// über device_service — die Ausleihe hier trägt also immer ein Exemplar, 0 Zeilen wäre ein
 	// Widerspruch und kein Normalfall.
 	stempel, err := tx.Exec(ctx, `
-		UPDATE buecher_exemplare e SET letzte_bewegung_am = COALESCE($2::timestamptz, CURRENT_TIMESTAMP)
+		UPDATE buecher_exemplare e SET letzte_bewegung_am = `+sqlStempelVor(`$2`)+`
 		FROM ausleihen a WHERE a.id = $1 AND e.id = a.exemplar_id`, loanID, zeitpunkt)
 	if err != nil {
 		return fmt.Errorf("bewegung stempeln: %w", err)
