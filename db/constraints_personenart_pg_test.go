@@ -23,6 +23,50 @@ func TestBenutzerPersonenartWertebereich(t *testing.T) {
 	})
 }
 
+// Migration 120: Ein Kollegiumskonto hat immer eine Personenart, denn sie entscheidet, wer als
+// Lehrkraft ausleiht. Die Datenbank trägt „lehrkraft" ein, sobald eines ohne geschrieben wird —
+// über jeden Weg, auch beim Wechsel der Rolle. Andere Rollen dürfen leer bleiben, eine LiV bleibt
+// LiV.
+func TestKollegiumHatImmerEinePersonenart(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	lies := func(t *testing.T, tx pgx.Tx, email string) string {
+		t.Helper()
+		var art *string
+		if err := tx.QueryRow(ctx, `SELECT personenart FROM benutzer WHERE email = $1`, email).Scan(&art); err != nil {
+			t.Fatalf("%s lesen: %v", email, err)
+		}
+		if art == nil {
+			return ""
+		}
+		return *art
+	}
+
+	inTx(t, pool, func(tx pgx.Tx) {
+		erwarteErfolg(t, tx, "Kollegium ohne Angabe", `INSERT INTO benutzer (vorname, nachname, email, rolle)
+			VALUES ('K', 'O', 'kh1@test.invalid', 'kollegium')`)
+		erwarteErfolg(t, tx, "Kollegium als LiV", `INSERT INTO benutzer (vorname, nachname, email, rolle, personenart)
+			VALUES ('K', 'L', 'kh2@test.invalid', 'kollegium', 'liv')`)
+		erwarteErfolg(t, tx, "Mitarbeiter ohne Angabe", `INSERT INTO benutzer (vorname, nachname, email, rolle)
+			VALUES ('M', 'O', 'kh3@test.invalid', 'mitarbeiter')`)
+		erwarteErfolg(t, tx, "Mitarbeiter wechselt zu Kollegium", `INSERT INTO benutzer (vorname, nachname, email, rolle)
+			VALUES ('M', 'K', 'kh4@test.invalid', 'mitarbeiter')`)
+		erwarteErfolg(t, tx, "Rollenwechsel", `UPDATE benutzer SET rolle = 'kollegium' WHERE email = 'kh4@test.invalid'`)
+		erwarteErfolg(t, tx, "Kollegium leeren", `UPDATE benutzer SET personenart = NULL WHERE email = 'kh2@test.invalid'`)
+
+		for email, erwartet := range map[string]string{
+			"kh1@test.invalid": "lehrkraft",
+			"kh2@test.invalid": "lehrkraft",
+			"kh3@test.invalid": "",
+			"kh4@test.invalid": "lehrkraft",
+		} {
+			if ist := lies(t, tx, email); ist != erwartet {
+				t.Errorf("%s: Personenart %q, erwartet %q", email, ist, erwartet)
+			}
+		}
+	})
+}
+
 // Die Migration trägt bei jedem vorhandenen Kollegiumskonto „lehrkraft" ein — die anderen Rollen
 // (Admin, Mitarbeiter, Helfer) bleiben leer, sie sind nicht zwingend Lehrkräfte.
 func TestBenutzerPersonenartMigrationTraegtKollegiumNach(t *testing.T) {

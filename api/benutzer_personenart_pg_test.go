@@ -89,11 +89,11 @@ func TestBenutzerPersonenart(t *testing.T) {
 	})
 
 	t.Run("Ändern ohne das Feld lässt die Personenart stehen, leer leert sie", func(t *testing.T) {
-		anlegen(t, `{"vorname":"Eva","nachname":"Aendern","email":"e@personenart.invalid","rolle":"kollegium","personenart":"liv"}`)
+		anlegen(t, `{"vorname":"Eva","nachname":"Aendern","email":"e@personenart.invalid","rolle":"mitarbeiter","personenart":"liv"}`)
 		id, _ := lies(t, "e@personenart.invalid")
 
 		rec := fahre(srv.UpdateUserHandler(userRepo), http.MethodPut, id,
-			`{"vorname":"Eva","nachname":"Neu","email":"e@personenart.invalid","rolle":"kollegium","aktiv":true}`)
+			`{"vorname":"Eva","nachname":"Neu","email":"e@personenart.invalid","rolle":"mitarbeiter","aktiv":true}`)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Ändern ohne Feld: Status %d: %s", rec.Code, rec.Body.String())
 		}
@@ -101,12 +101,27 @@ func TestBenutzerPersonenart(t *testing.T) {
 		erwarte(t, art, "liv")
 
 		rec = fahre(srv.UpdateUserHandler(userRepo), http.MethodPut, id,
-			`{"vorname":"Eva","nachname":"Neu","email":"e@personenart.invalid","rolle":"kollegium","aktiv":true,"personenart":""}`)
+			`{"vorname":"Eva","nachname":"Neu","email":"e@personenart.invalid","rolle":"mitarbeiter","aktiv":true,"personenart":""}`)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("Leeren: Status %d: %s", rec.Code, rec.Body.String())
 		}
 		_, art = lies(t, "e@personenart.invalid")
 		erwarte(t, art, "")
+	})
+
+	// Die Personenart entscheidet, wer als Lehrkraft ausleiht (Migration 120): Ein Kollegiumskonto
+	// ohne Angabe wird Lehrkraft — auch beim Ändern und beim Wechsel zur Rolle Kollegium.
+	t.Run("Kollegium wird beim Ändern nie ohne Personenart", func(t *testing.T) {
+		anlegen(t, `{"vorname":"Gil","nachname":"Wechsel","email":"g@personenart.invalid","rolle":"mitarbeiter"}`)
+		id, _ := lies(t, "g@personenart.invalid")
+
+		rec := fahre(srv.UpdateUserHandler(userRepo), http.MethodPut, id,
+			`{"vorname":"Gil","nachname":"Wechsel","email":"g@personenart.invalid","rolle":"kollegium","aktiv":true,"personenart":""}`)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Wechsel zu Kollegium: Status %d: %s", rec.Code, rec.Body.String())
+		}
+		_, art := lies(t, "g@personenart.invalid")
+		erwarte(t, art, "lehrkraft")
 	})
 
 	t.Run("die Liste der Benutzerverwaltung liefert die Personenart", func(t *testing.T) {

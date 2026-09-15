@@ -55,16 +55,22 @@ func NewUserRepository(pool db.PgxPoolIface) UserRepository {
 	return &postgresUserRepo{pool: pool}
 }
 
-// GetLehrerByBarcode sucht eine aktive Lehrkraft über ihren Ausweis.
+// SQLAktiveLehrkraft ist die EINE Regel, wer als Lehrkraft ausleiht: Theke (GetLehrerByBarcode),
+// Buch- und Geräteausleihe und das Nachbuchen (service.ladeAktiveLehrkraft).
 //
-// rolle ist das ENUM benutzer_rolle ('admin','kollegium','mitarbeiter','helfer') und wird
-// kleingeschrieben verglichen; rolle::text vermeidet „invalid input value for enum".
+// Die Personenart entscheidet, nicht die Rolle (Peter, 15.09.2026): Die Rolle sagt, was jemand in
+// der Software darf. Bis dahin galt nur die Rolle kollegium — eine Lehrkraft, die in der
+// Bibliothek mitarbeitet, fand die Theke über ihren Ausweis nicht. Ein Kollegiumskonto hat immer
+// eine Personenart (Migration 120), eine Mitarbeiterin ohne Personenart ist keine Lehrkraft.
+const SQLAktiveLehrkraft = "personenart IS NOT NULL AND aktiv = true"
+
+// GetLehrerByBarcode sucht eine aktive Lehrkraft über ihren Ausweis (SQLAktiveLehrkraft).
 func (r *postgresUserRepo) GetLehrerByBarcode(ctx context.Context, barcode string) (*User, error) {
 	var u User
 	err := r.pool.QueryRow(ctx, `
 		SELECT id, coalesce(barcode_id, ''), vorname, nachname, rolle
 		FROM benutzer
-		WHERE barcode_id = $1 AND lower(rolle::text) = 'kollegium' AND aktiv = true
+		WHERE barcode_id = $1 AND `+SQLAktiveLehrkraft+`
 		LIMIT 1
 	`, barcode).Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Rolle)
 	if errors.Is(err, pgx.ErrNoRows) {

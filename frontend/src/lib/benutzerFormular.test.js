@@ -4,7 +4,8 @@ import {
 	leeresBenutzerFormular,
 	benutzerFormularAus,
 	benutzerNutzlast,
-	personenartLabel
+	personenartLabel,
+	personenartOptionen
 } from './benutzerFormular.js';
 
 // Die Personenart sagt, wer jemand im Kollegium ist (Lehrkraft oder LiV), die Rolle, was er in
@@ -14,6 +15,18 @@ import {
 describe('benutzerFormular', () => {
 	it('bietet leer, Lehrkraft und LiV an', () => {
 		expect(PERSONENARTEN.map((p) => p.value)).toEqual(['', 'lehrkraft', 'liv']);
+	});
+
+	// Die Personenart entscheidet, wer als Lehrkraft ausleiht (Migration 120): Ein Kollegiumskonto
+	// hat immer eine. „Keine Angabe" gibt es dort nicht — die Datenbank machte stillschweigend
+	// „Lehrkraft" daraus.
+	it('bietet beim Kollegium keine leere Personenart an', () => {
+		expect(personenartOptionen('kollegium').map((p) => p.value)).toEqual(['lehrkraft', 'liv']);
+		expect(personenartOptionen('mitarbeiter').map((p) => p.value)).toEqual([
+			'',
+			'lehrkraft',
+			'liv'
+		]);
 	});
 
 	it('ein neues Formular hat keine Personenart', () => {

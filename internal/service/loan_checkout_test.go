@@ -248,7 +248,7 @@ func TestResolveTeacher_FragtNichtBenutzerRollen(t *testing.T) {
 
 	// Erwartet wird exakt EINE Abfrage — ohne benutzer_rollen. Ein Join-Rückfall
 	// würde hier an der nicht erfüllten Erwartung scheitern.
-	mock.ExpectQuery("FROM benutzer\\s+WHERE id = \\$1 AND lower\\(rolle::text\\) = 'kollegium'").
+	mock.ExpectQuery("FROM benutzer\\s+WHERE id = \\$1 AND personenart IS NOT NULL AND aktiv = true").
 		WithArgs("neu1").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "rolle"}).
 			AddRow("neu1", "B-N1", "Neue", "Lehrkraft", "kollegium"))

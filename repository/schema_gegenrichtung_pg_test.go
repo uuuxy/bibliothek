@@ -217,6 +217,10 @@ var triggerBestand = []string{
 	// uniq_ausweis_ueber_personen). Die Schreibwege prüfen vorher selbst und übersetzen den Fall
 	// in eine Auskunft (api/ausweis_ueber_personen_pg_test.go).
 	"trg_benutzer_ausweis_eindeutig @ benutzer",
+	// Migration 120, befragt am 15.09.2026: schreibt personenart = 'lehrkraft', wenn ein
+	// Kollegiumskonto ohne geschrieben wird. Das ist der Zweck — die Personenart entscheidet, wer
+	// als Lehrkraft ausleiht (SQLAktiveLehrkraft); kein Lesepfad rechnet mit dem leeren Wert.
+	"trg_benutzer_kollegium_personenart @ benutzer",
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",

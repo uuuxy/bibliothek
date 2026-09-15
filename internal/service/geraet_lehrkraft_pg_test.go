@@ -50,6 +50,14 @@ func TestGeraetAusleiheNurAnAktiveLehrkraft(t *testing.T) {
 	svc := NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewLoanRepository(pool),
 		repository.NewAuditRepository(pool))
 
+	// Seit dem 15.09.2026 entscheidet die Personenart, nicht die Rolle (Peter): Eine Lehrkraft,
+	// die in der Bibliothek mitarbeitet, leiht als Lehrkraft aus; eine Mitarbeiterin ohne
+	// Personenart weiter nicht.
+	mitarbeitendeLehrkraft := legeBenutzerAn("MLK", "mitarbeiter", true)
+	if _, err := pool.Exec(ctx, `UPDATE benutzer SET personenart = 'lehrkraft' WHERE id = $1`, mitarbeitendeLehrkraft); err != nil {
+		t.Fatalf("Personenart setzen: %v", err)
+	}
+
 	faelle := []struct {
 		name, kennung string
 		verliehen     bool
@@ -58,6 +66,7 @@ func TestGeraetAusleiheNurAnAktiveLehrkraft(t *testing.T) {
 		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false},
 		{"deaktivierte Lehrkraft", legeBenutzerAn("ALT", "kollegium", false), false},
 		{"Mitarbeiterin ist keine Lehrkraft", mitarbeiterID, false},
+		{"Lehrkraft mit Rolle Mitarbeiter bekommt das Gerät", mitarbeitendeLehrkraft, true},
 	}
 	for i, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {

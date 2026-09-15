@@ -557,6 +557,21 @@ CREATE TRIGGER trg_benutzer_ausweis_eindeutig
 BEFORE INSERT OR UPDATE OF barcode_id ON benutzer
 FOR EACH ROW EXECUTE FUNCTION ausweis_eindeutig_ueber_personen();
 
+-- Migration 120: Ein Kollegiumskonto hat immer eine Personenart — sie entscheidet, wer als
+-- Lehrkraft ausleiht (repository.SQLAktiveLehrkraft). Ohne Angabe wird es Lehrkraft.
+CREATE OR REPLACE FUNCTION kollegium_hat_personenart()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.rolle = 'kollegium' AND NEW.personenart IS NULL THEN
+        NEW.personenart := 'lehrkraft';
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_benutzer_kollegium_personenart
+BEFORE INSERT OR UPDATE OF rolle, personenart ON benutzer
+FOR EACH ROW EXECUTE FUNCTION kollegium_hat_personenart();
+
 
 -- Table: class_books (LMF class to book catalog metadata association)
 CREATE TABLE class_books (
@@ -1363,7 +1378,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('116_bewegungsstempel.sql'),
 ('117_nachbuch_meldungen.sql'),
 ('118_ausweis_eindeutig_ueber_personen.sql'),
-('119_benutzer_personenart.sql')
+('119_benutzer_personenart.sql'),
+('120_kollegium_hat_personenart.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

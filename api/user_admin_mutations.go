@@ -58,19 +58,6 @@ func pruefePersonenart(w http.ResponseWriter, art *string) bool {
 	return false
 }
 
-// personenartBeimAnlegen: Ein Kollegiumskonto ohne Angabe ist eine Lehrkraft — dasselbe, was die
-// Selbstanmeldung und Migration 119 eintragen. Andere Rollen bleiben ohne Angabe leer.
-func personenartBeimAnlegen(art *string, rolle string) *string {
-	if art != nil && *art != "" {
-		return art
-	}
-	if rolle == "kollegium" {
-		lehrkraft := "lehrkraft"
-		return &lehrkraft
-	}
-	return nil
-}
-
 // CreateUserHandler inserts a new user. Es gibt keine lokalen Passwörter — die
 // Authentifizierung läuft über den Schul-Mailserver (IMAP) bzw. Barcode/PIN.
 // @Summary      Create system user
@@ -121,8 +108,9 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
 
+		// Ein Kollegiumskonto ohne Angabe wird Lehrkraft — das trägt die Datenbank ein (Migration 120).
 		if _, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole,
-			personenartBeimAnlegen(req.Personenart, dbEnumRole)); err != nil {
+			req.Personenart); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}

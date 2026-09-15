@@ -57,6 +57,16 @@ export function benutzerNutzlast(form) {
 	};
 }
 
+/**
+ * Die Personenart entscheidet, wer als Lehrkraft ausleiht; ein Kollegiumskonto hat immer eine
+ * (Migration 120). „Keine Angabe" gibt es dort nicht — die Datenbank machte daraus sonst still
+ * „Lehrkraft".
+ * @param {string} rolle
+ */
+export function personenartOptionen(rolle) {
+	return rolle === 'kollegium' ? PERSONENARTEN.filter((p) => p.value !== '') : PERSONENARTEN;
+}
+
 /** @param {string | null | undefined} wert */
 export function personenartLabel(wert) {
 	if (!wert) return '';

@@ -6,20 +6,13 @@
 	import Switch from './components/ui/Switch.svelte';
 	import Select from './components/ui/Select.svelte';
 	import Feld from './components/ui/Feld.svelte';
-	import { PERSONENARTEN } from './benutzerFormular.js';
+	import { personenartOptionen } from './benutzerFormular.js';
 
 	const ROLLEN = [
 		{ value: 'helfer', label: 'Helfer' },
 		{ value: 'mitarbeiter', label: 'Mitarbeiter' },
 		{ value: 'kollegium', label: 'Kollegium (nur Portal)' },
 		{ value: 'admin', label: 'Administrator' }
-	];
-
-	// Die Rolle sagt, was jemand darf; die Personenart, wer jemand im Kollegium ist (Migration 119).
-	// Beide Auswahlfelder in einer Liste — dieselbe Bauform, einmal geschrieben.
-	const AUSWAHLEN = [
-		{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN },
-		{ id: 'personenart', label: 'Personenart', options: PERSONENARTEN }
 	];
 
 	/**
@@ -42,6 +35,14 @@
 		error,
 		handleSaveUser
 	} = $props();
+
+	// Die Rolle sagt, was jemand darf; die Personenart, wer jemand ist (Migration 119). Beide
+	// Auswahlfelder in einer Liste — dieselbe Bauform, einmal geschrieben. Beim Kollegium ohne
+	// „Keine Angabe" (Migration 120).
+	const AUSWAHLEN = $derived([
+		{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN },
+		{ id: 'personenart', label: 'Personenart', options: personenartOptionen(userForm.rolle) }
+	]);
 </script>
 
 <Modal {open} {onclose} size="md">

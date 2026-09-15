@@ -147,15 +147,16 @@ func (s *defaultDeviceService) ladeRueckgeber(ctx context.Context, activeStudent
 
 // ladeAktiveLehrkraft liest das Profil hinter active_teacher_id nach derselben Regel wie
 // die Buch-Ausleihe (resolveTeacherBorrower) und der Lehrerausweis an der Theke
-// (GetLehrerByBarcode): Rolle kollegium, aktiv. Bis zum 13.09.2026 ging die Kennung
-// ungeprüft in die Ausleihe — eine unbekannte endete als Fremdschlüssel-Verletzung (500),
-// ein deaktiviertes Profil bekam das Gerät (geraet_lehrkraft_pg_test.go).
+// (GetLehrerByBarcode): repository.SQLAktiveLehrkraft — Personenart vorhanden, aktiv. Bis zum
+// 13.09.2026 ging die Kennung ungeprüft in die Ausleihe — eine unbekannte endete als
+// Fremdschlüssel-Verletzung (500), ein deaktiviertes Profil bekam das Gerät
+// (geraet_lehrkraft_pg_test.go).
 func ladeAktiveLehrkraft(ctx context.Context, pool db.PgxPoolIface, id string) (*repository.User, error) {
 	lehrkraft := &repository.User{}
 	err := pool.QueryRow(ctx, `
 		SELECT id, coalesce(barcode_id, ''), vorname, nachname, rolle::text
 		FROM benutzer
-		WHERE id = $1 AND lower(rolle::text) = 'kollegium' AND aktiv = true
+		WHERE id = $1 AND `+repository.SQLAktiveLehrkraft+`
 	`, id).Scan(&lehrkraft.ID, &lehrkraft.BarcodeID, &lehrkraft.Vorname, &lehrkraft.Nachname, &lehrkraft.Rolle)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", ErrNotFound)
