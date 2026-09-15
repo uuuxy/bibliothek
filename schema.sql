@@ -35,7 +35,11 @@ $$;
 -- 'kollegium' hiess bis Migration 069 'lehrer'. Umbenannt, weil das Wort doppelt
 -- belegt war: schueler.klasse = 'lehrer' meint die Lehrkraft als ENTLEIHER. Es ist
 -- der GRUNDZUSTAND jeder Lehrkraft (Selbstanmeldung), keine vergebene Rolle.
-CREATE TYPE benutzer_rolle AS ENUM ('admin', 'leitung', 'kollegium', 'mitarbeiter', 'helfer');
+-- Reihenfolge = Anlege-Reihenfolge: ALTER TYPE ... ADD VALUE haengt einen neuen Wert
+-- auf einer gewachsenen Anlage IMMER hinten an. Die Paritaets-Ratsche vergleicht die
+-- Werte als Menge, nicht als Folge — aber eine frische und eine gewachsene Anlage
+-- sollen denselben Typ haben, nicht nur denselben Inhalt.
+CREATE TYPE benutzer_rolle AS ENUM ('admin', 'kollegium', 'mitarbeiter', 'helfer', 'leitung');
 
 -- -------------------------------------------------------------
 -- 2. REUSABLE TRIGGER FUNCTIONS
