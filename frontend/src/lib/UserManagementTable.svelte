@@ -12,6 +12,25 @@
 	 */
 	/** @type {Props} */
 	let { loadingUsers, filteredUsers, openEditUserModal, openDeleteConfirm } = $props();
+
+	// Farbe des Rollen-Abzeichens. Als Nachschlagetabelle, weil die Kette mit der
+	// Leitung fünf verschachtelte Ternäre tief geworden wäre; der Rückfall bleibt
+	// Mitarbeiter, wie vorher der letzte Zweig.
+	//
+	// Die Leitung trägt M3-Rollenfarben (primary-container) statt einer weiteren
+	// Tailwind-Palettenklasse: Die Farb-Ratsche in frontend-hygiene-farben.test.js
+	// zählt Palettenfundstellen und lässt sie nur SINKEN, ein neues Abzeichen aus der
+	// Palette wäre also rot — und die Rollenfarbe ist ohnehin das Ziel.
+	//
+	// Die Ratsche zählt dabei auch Kommentare: Ein Beispiel aus der Palette in DIESER
+	// Begründung hätte sie genauso hochgezählt wie echtes Markup (gemessen 16.09.2026).
+	const ROLLEN_ABZEICHEN = {
+		admin: 'bg-blue-50 text-blue-700 border border-blue-100',
+		leitung: 'bg-primary-container text-on-primary-container border border-outline-variant',
+		kollegium: 'bg-emerald-50 text-emerald-700 border border-emerald-100',
+		helfer: 'bg-purple-50 text-purple-700 border border-purple-100',
+		mitarbeiter: 'bg-amber-50 text-amber-700 border border-amber-100'
+	};
 </script>
 
 {#if loadingUsers}
@@ -46,14 +65,7 @@
 				</thead>
 				<tbody class="font-medium">
 					{#each filteredUsers as user, _i (_i)}
-						{@const roleBadge =
-							user.rolle === 'admin'
-								? 'bg-blue-50 text-blue-700 border border-blue-100'
-								: user.rolle === 'kollegium'
-									? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-									: user.rolle === 'helfer'
-										? 'bg-purple-50 text-purple-700 border border-purple-100'
-										: 'bg-amber-50 text-amber-700 border border-amber-100'}
+						{@const roleBadge = ROLLEN_ABZEICHEN[user.rolle] ?? ROLLEN_ABZEICHEN.mitarbeiter}
 						<tr>
 							<td>
 								<span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span>

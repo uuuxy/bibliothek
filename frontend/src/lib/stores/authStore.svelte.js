@@ -1,6 +1,7 @@
 import { appState } from '../../inventur/lib/store.svelte.js';
 import { apiFetch, registriereSitzungAbgelaufenHandler } from '../apiFetch.js';
 import { abonniere, trenne, verbinde } from '../liveEvents.js';
+import { hatRecht } from '../menu.js';
 import { thekeLeeren } from './thekeLeeren.js';
 import { toastStore } from './toastStore.svelte.js';
 
@@ -145,16 +146,23 @@ class AuthStore {
 		this.connectSSE();
 		this.startSessionRefresh();
 
-		if (user && (user.rolle === 'admin' || user.rolle === 'mitarbeiter')) {
-			appState.adminAuthenticated = true;
-			appState.guestAuthenticated = true;
-			if (onRoleCallback) onRoleCallback(user.rolle);
-		} else if (user?.rolle === 'kollegium') {
-			appState.guestAuthenticated = true;
-			if (onRoleCallback) onRoleCallback('kollegium');
-		} else if (onRoleCallback) {
-			onRoleCallback(user?.rolle || '');
-		}
+		// Portal oder Verwaltung — entschieden am RECHT, nicht am Rollennamen.
+		//
+		// Bis zum 16.09.2026 stand hier `rolle === 'admin' || rolle === 'mitarbeiter'`.
+		// Diese Aufzählung ist beim Bau JEDER weiteren Rolle nachzupflegen, und wer sie
+		// vergisst, schickt die neue Rolle still ins Portal — der Fehler zeigt sich als
+		// „die Leitung sieht nichts", nicht als Meldung. Mit der Rolle Leitung war es
+		// genau diese Stelle, die sonst zweimal zu ändern gewesen wäre.
+		//
+		// perform_actions ist das Recht, an der Theke und im Bestand zu arbeiten
+		// (/api/action, /scan, /search). Wer es hat, gehört in die Verwaltung; das
+		// Kollegium hat es bewusst nicht (db/seed.go) und sieht sein Portal. Entschieden
+		// wird damit nichts Neues: Welchen Bildschirm jemand öffnen darf, liest der
+		// Router ohnehin aus denselben Rechten (Router.svelte, erlaubteTabs).
+		const arbeitetInDerBibliothek = hatRecht(user, 'perform_actions');
+		appState.guestAuthenticated = true;
+		appState.adminAuthenticated = arbeitetInDerBibliothek;
+		if (onRoleCallback) onRoleCallback(user?.rolle || '');
 	}
 
 	/**

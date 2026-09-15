@@ -70,6 +70,7 @@
 								<Switch checked disabled label="Administrator hat immer alle Rechte" />
 							</div>
 
+							{@render roleToggle(item, 'LEITUNG', 'leitung')}
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}
 							{@render roleToggle(item, 'KOLLEGIUM', 'kollegium')}
 							<!-- HELFER fehlte hier: Das Backend fuehrt und liefert die Rechte dieser

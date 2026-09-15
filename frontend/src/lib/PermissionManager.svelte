@@ -38,11 +38,12 @@
 			const data = await res.json();
 
 			/** @type {Record<string, Record<string, boolean>>} */
-			// Alle vier aktiven Rollen vorbelegen, damit ihre Spalte auch ohne Server-Zeile
+			// Alle aktiven Rollen vorbelegen, damit ihre Spalte auch ohne Server-Zeile
 			// erscheint. 'kollegium' statt des seit Migration 069 toten 'lehrer' — der alte
 			// Key wurde von keinem Consumer gelesen (PermissionsEditor liest 'kollegium'),
 			// kollegium selbst entstand bisher nur zufällig über die Rückfallzeile unten.
-			const newState = { admin: {}, mitarbeiter: {}, kollegium: {}, helfer: {} };
+			// 'leitung' seit Migration 121.
+			const newState = { admin: {}, leitung: {}, mitarbeiter: {}, kollegium: {}, helfer: {} };
 			data.forEach((/** @type {any} */ item) => {
 				if (!newState[item.role]) newState[item.role] = {};
 				newState[item.role][item.permission] = item.allowed;

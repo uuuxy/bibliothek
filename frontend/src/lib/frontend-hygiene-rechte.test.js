@@ -23,16 +23,29 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
  * 069). Beides zusammen, weil jedes allein danebengreift: Nur das Literal fängt
  * `activeTab === 'admin'` (ein Reiter-Name), nur der Variablenname übersieht `r ===`.
  */
-const ROLLE = `(?:admin|mitarbeiter|helfer|kollegium|lehrer)`;
+const ROLLE = `(?:admin|leitung|mitarbeiter|helfer|kollegium|lehrer)`;
 const ROLLEN_VERGLEICH = new RegExp(
 	// rolle === 'admin' · r !== "kollegium" · rolle.toLowerCase() === 'admin'
 	`(?:\\b(?:rolle|role|r)|toLowerCase\\(\\))\\s*[!=]==?\\s*['"]${ROLLE}['"]` +
 		// rolle?.toUpperCase() === 'ADMIN'
-		`|toUpperCase\\(\\)\\s*[!=]==?\\s*['"](?:ADMIN|MITARBEITER|HELFER|KOLLEGIUM|LEHRER)['"]` +
+		`|toUpperCase\\(\\)\\s*[!=]==?\\s*['"](?:ADMIN|LEITUNG|MITARBEITER|HELFER|KOLLEGIUM|LEHRER)['"]` +
 		// ['admin', 'mitarbeiter'].includes(rolle)
 		`|\\[[^\\]]*['"]${ROLLE}['"][^\\]]*\\]\\.includes\\(`,
 	'g'
 );
+
+// Am 16.09.2026 sind ZWEI Ausnahmen weggefallen, beide beim Bau der Rolle Leitung:
+//
+// UserManagementTable.svelte beschriftete das Rollen-Abzeichen über eine Kette von
+// Vergleichen; mit der fünften Rolle wäre sie fünf Ternäre tief geworden. Jetzt eine
+// Nachschlagetabelle Rolle → Farbe: keine Vergleiche, und eine weitere Rolle ist eine
+// Zeile.
+//
+// Die Login-Weiche in
+// stores/authStore.svelte.js zählte „admin oder mitarbeiter" auf, um zu entscheiden,
+// wer die Verwaltung und wer das Portal sieht. Beim Bau der Rolle Leitung war das die
+// Stelle, die man übersieht — eine neue Rolle landete still im Portal. Sie fragt jetzt
+// hatRecht(user, 'perform_actions') und braucht bei der nächsten Rolle nichts.
 
 // ── Bewusste Ausnahmen ──────────────────────────────────────────────────────
 // Jede braucht einen Grund, der NICHT „dieses Recht hat nur der Admin" lautet — dafür ist
@@ -43,17 +56,6 @@ const AUSNAHMEN = [
 		grund:
 			'Die EINE Stelle der Regel: Admin-Vorrang in hatRecht/canSeeItem und die Portal-Weiche ' +
 			'für die Rolle kollegium. Alle anderen Dateien rufen hatRecht auf.'
-	},
-	{
-		datei: 'src/lib/stores/authStore.svelte.js',
-		grund:
-			'Login-Weiche: welche Oberfläche (Verwaltung, Kollegiums-Portal) nach der Anmeldung ' +
-			'überhaupt geladen wird. Das ist die Rolle als Rolle, kein Fachrecht.'
-	},
-	{
-		datei: 'src/lib/UserManagementTable.svelte',
-		grund:
-			'Zeigt die Rolle eines Benutzers als Badge — vergleicht die Rolle, um sie zu beschriften.'
 	},
 	{
 		datei: 'src/lib/benutzerFormular.js',

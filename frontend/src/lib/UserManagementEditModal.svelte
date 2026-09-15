@@ -8,10 +8,16 @@
 	import Feld from './components/ui/Feld.svelte';
 	import { personenartOptionen } from './benutzerFormular.js';
 
+	// Kollegium steht OBEN, weil es keine Rolle ist, sondern der Grundzustand: Wer sich
+	// übers Portal selbst anmeldet und freigeschaltet wird, ist Kollegium (Peter,
+	// 16.09.2026: „das sind im Grunde alle"). Darunter die Erhebungen, die der Admin
+	// vornimmt — aufsteigend bis zum Administrator. Stünde Kollegium zwischen Helfer und
+	// Mitarbeiter, läse sich die Liste als Rangfolge mit dem Kollegium als Stufe darin.
 	const ROLLEN = [
+		{ value: 'kollegium', label: 'Kollegium (keine Rolle, nur Portal)' },
 		{ value: 'helfer', label: 'Helfer' },
 		{ value: 'mitarbeiter', label: 'Mitarbeiter' },
-		{ value: 'kollegium', label: 'Kollegium (nur Portal)' },
+		{ value: 'leitung', label: 'Leitung' },
 		{ value: 'admin', label: 'Administrator' }
 	];
 
