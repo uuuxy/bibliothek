@@ -25,9 +25,10 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Bei mir, als Nächstes: ein Plan für die Leserdatei und die Rolle Leitung,** in einfachen
-   Worten und in Stufen. Du gibst ihn frei, bevor ich baue (entschieden am 15.09.2026 abends,
-   Abschnitt 5.6).
+3. **Peter, 15 Minuten: den Plan für Leserdatei und Rolle Leitung lesen und drei Fragen
+   beantworten** (Abschnitt 5.16, Fragen am Ende). Vorher baue ich davon nichts. Ob eine
+   Lehrkraft ohne Konto-Rolle an der Theke weiter Bücher bekommt, entscheidet, wer in der
+   Leserdatei steht.
 4. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -71,7 +72,8 @@ jemandem schaden?"**
 1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
    am Stack (2.3), dann Peters Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** entscheidet
    Peter dabei mit).
-2. **5.6** Leserdatei und Rolle Leitung: Stufenplan, Peters Freigabe.
+2. **5.16** Leserdatei und Rolle Leitung: Plan steht, Peters Antworten auf drei Fragen und
+   Freigabe, dann Stufe 1.
 3. **5.1** Schäden und Benutzer.
 4. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -604,26 +606,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   über beide Tabellen (Migration 118) und die Personenart Lehrkraft/LiV im Kollegium (Migration
   119, nur in der Benutzerverwaltung sichtbar). Der Littera-Lauf übergeht weiter Praktikanten,
   Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
-- **Leserdatei und Rolle Leitung (Peter, 15.09.2026 spät, entschieden; Stufenplan steht aus).**
-  Ersetzt die Entscheidung „Rollennamen bleiben" vom selben Abend.
-  - Rollen, die der Admin vergibt: Admin, **Leitung** (neu), Mitarbeiter, Helfer. Anmeldung über
-    den normalen Link. Leitung startet mit den Rechten des Admins ohne System (Benutzer & Rechte,
-    Einstellungen, Systempflege); der Admin passt sie im Rechte-Editor an.
-  - Kollegium: alle Lehrkräfte, Selbstanmeldung über den Portal-Link, nur „Mein Portal" und
-    Katalog — vormerken, Fehler melden, Bestand ansehen. Unverändert, kein Ausleihen im Portal.
-  - Wer eine Rolle hat (Admin, Leitung, Mitarbeiter), kann an der Theke auch selbst ausleihen;
-    Helfer nicht. Heute entscheidet das die Personenart (Migration 120) — ein Admin ohne
-    Personenart kann nicht ausleihen.
-  - **Leserdatei** statt Schülerdatei: alle Leser an einem Ort, „Neuen Leser anlegen". In
-    „Persönliche Daten" steht Schüler / Lehrkraft / LiV und ist dort änderbar; die Angabe
-    informiert, sie entscheidet nicht über das Ausleihen. Die Benutzerverwaltung regelt nur
-    Anmeldung und Rolle.
-  - Offen für den Plan: Leiht die Bibliothek an der Theke weiter an Kollegiumsmitglieder aus
-    (Handapparat), wie heute?
-  - Mitzunehmen: Die Klassenauswahl beim Anlegen liest die Tabelle `lesergruppen`, die niemand
-    füllt (lokal 0 Zeilen; die Klassen stehen seit Migration 079 in `klassen`, `GET /api/klassen`
-    gibt es) — nur „Manuell eingeben…" erscheint. Die Meldung zu Klasse „Lehrer" verweist noch auf
-    „Rolle Kollegium" (`api/student_klasse_regel.go`).
+- **Leserdatei und Rolle Leitung:** entschieden am 15.09.2026 spät, der Plan in Stufen steht in
+  **5.16** und wartet auf Peters Freigabe. Kollegium bleibt unverändert: Selbstanmeldung über den
+  Portal-Link, vormerken, Fehler melden, Bestand ansehen, kein Ausleihen im Portal.
+
 ### 5.7 Bestellwesen
 
 - Der Wareneingang gruppiert nach Datum und dem aus `zustand_notiz` abgeleiteten Lieferanten statt
@@ -849,6 +835,111 @@ Barcodes und Anzahl `perform_actions`) · Frist der quittierten Meldungen (Job u
 Meldung je Schlüssel · ein Serverfehler je Eintrag wird „wiederholen", nicht Erfolg · Rückgabe vor
 der Ausleihe fängt `check_return_date` · Sperrreihenfolge Schüler → Ausleihe → Exemplar im
 Nachbuchen gehalten · Barcode-Liste ohne Personendaten, Löschen ändert den Stand über die Anzahl.
+
+### 5.16 Leserdatei und Rolle Leitung: Plan in Stufen (Entwurf 15.09.2026, wartet auf Freigabe)
+
+Entschieden am 15.09.2026 spät (Peter): Die Rollen Admin, Leitung, Mitarbeiter und Helfer vergibt
+der Admin; Kollegium bleibt das Portal. Wer eine Rolle hat, leiht an der Theke selbst aus, Helfer
+nicht. Die Leserdatei ersetzt die Schülerdatei; Schüler / Lehrkraft / LiV steht in „Persönliche
+Daten" und entscheidet nichts. Ersetzt die Entscheidung „Rollennamen bleiben" vom selben Abend.
+
+Je Stufe: Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am frisch gebauten Stack und
+im Browser, dann Peters Freigabe.
+
+**Am Code gelesen (15.09.2026):**
+
+- Schüler und Lehrkräfte stehen in zwei Tabellen: Schüler in `schueler` (aus der LUSD), Lehrkräfte
+  und alle Konten in `benutzer`; eine Ausleihe zeigt auf genau eine davon. Die Leserdatei zeigt
+  beide an einem Ort, sie legt die Tabellen nicht zusammen. Wer von Schüler zu Lehrkraft wechselt,
+  zieht mit Ausleihen, Schäden und Ausweisnummer in die andere Tabelle um — das ist Stufe 5.
+- Wer an der Theke als Lehrkraft ausleiht, entscheidet eine Regel für Theke, Buch- und
+  Geräteausleihe und Nachbuch-Tür (`repository.SQLAktiveLehrkraft`): Personenart gesetzt und aktiv.
+  Lokal haben 1 Admin und 3 Mitarbeiter keine Personenart und finden die Theke deshalb nicht.
+- Die Rolle ist ein fester Aufzählungstyp (`benutzer_rolle`). Die Rechte je Rolle stehen in
+  `role_permissions` und in der Vorgabe `db/seed.go`; die Vorgabe schreibt nur fehlende Zeilen und
+  erreicht eine bestehende Anlage deshalb nur über eine Migration.
+- Am Rollennamen hängen: die Weiterleitung nach der Anmeldung (`authStore.svelte.js`: nur admin und
+  mitarbeiter kommen in die volle Oberfläche), `normalisiereBenutzerRolle`, die Rollenauswahl und
+  die festen Spalten im Rechte-Editor.
+- Eine Lehrkraft hat keine Akte. Ihre Ausleihen sieht man nur an der Theke nach dem Scan, ihre Daten
+  pflegt die Benutzerverwaltung (`manage_users`), mit Schutz für Admin-Konten und die E-Mail (die
+  E-Mail ist die Anmeldung).
+- „Systempflege" ist kein eigenes Recht. Was nur der Admin braucht, heißt `manage_users` (Benutzer &
+  Rechte) und `manage_settings` (Einstellungen).
+
+**Stufe 1 — vorhandene Fehler (je ein Commit)**
+
+1. Die Klassenauswahl beim Anlegen liest die leere Tabelle `lesergruppen` (lokal 0 Zeilen, nur
+   „Manuell eingeben…" erscheint); sie liest künftig die Klassen (`klassen`, `GET /api/klassen`).
+2. Die Meldung zu Klasse „Lehrer" verweist auf „Rolle Kollegium" (`api/student_klasse_regel.go`);
+   sie sagt künftig, wo eine Lehrkraft angelegt wird.
+3. Die Theke meldet beim Scan eines Lehrerausweises „Handapparat-Sitzung gestartet für Lehrer/in …"
+   (`omnibox.svelte.js`); künftig „Ausleihe für … (Lehrkraft)".
+4. Der Rückgabe-Zweig „ein Kollegiumskonto scannt ein freies Buch" (`handleLehrerHandapparat` in
+   `internal/service/loan_return.go`) ist ab Werk unerreichbar, weil das Kollegium kein Theken-Recht
+   hat. Erst am Postgres nachstellen, dass die Tür für das Kollegium 403 antwortet; nur dann
+   zurückbauen.
+5. Verdacht nachstellen: Eine aus Littera übernommene Lehrkraft hat eine Platzhalter-Adresse
+   (`@littera.invalid`). Meldet sie sich selbst an, findet die Anmeldung sie über die E-Mail nicht
+   und legt einen zweiten Eintrag an — Ausweis und Ausleihen am ersten, Portal am zweiten. Bestätigt
+   sich das, kommt eine Frage an Peter, wie die beiden verbunden werden.
+
+**Stufe 2 — Rolle Leitung**
+
+- Migration 121: neuer Wert `leitung` (eigene Datei, ein neuer Wert ist erst nach dem Commit
+  benutzbar). Migration 122: die Rechte der Leitung ab Werk (Frage 2), dieselbe Liste in
+  `db/seed.go`, damit die Selbstprüfung keine Abweichung meldet.
+- Server: Rolle in `auth` und `normalisiereBenutzerRolle`. Eine Leitung legt keinen Admin an und
+  ändert keinen (die Regel besteht, ein Test für die Leitung kommt dazu).
+- Oberfläche: Leitung in der Rollenauswahl und als Spalte im Rechte-Editor. Die Weiterleitung nach
+  der Anmeldung entscheidet am Recht statt am Rollennamen, damit eine Leitung in die volle
+  Oberfläche kommt und die nächste Rolle nicht wieder dieselbe Stelle braucht.
+- Nachweis im Browser: Eine Leitung meldet sich an, sieht Schülerdatei und Mahnwesen, nicht
+  „Benutzer & Rechte".
+
+**Stufe 3 — Ausleihen an der Rolle**
+
+- Eine Regel ersetzt `SQLAktiveLehrkraft`: aktiv und Rolle Admin, Leitung oder Mitarbeiter, dazu
+  Kollegium nach Frage 1; Helfer nie. Sie gilt an denselben Stellen wie heute, also auch für die
+  Nachbuch-Tür und damit für Stufe 3 des Offline-Baus. Die Reihenfolge der beiden Bauten ist frei.
+- Die Personenart entscheidet nichts mehr. Migration 120 bleibt als Vorgabe (Kollegium ohne
+  Angabe = Lehrkraft), ihr Kommentar wird berichtigt.
+- Rot-Test am alten Code: Ein Admin ohne Personenart findet die Theke nicht. Danach: Admin, Leitung
+  und Mitarbeiter ja, Helfer nein, deaktiviert nein.
+- Der Einspiel-Hinweis „Personenart Lehrkraft nötig" aus v2.13.0 fällt weg.
+
+**Stufe 4 — Leserdatei**
+
+- Menüpunkt „Leserdatei" statt „Schülerdatei", dasselbe Recht (`view_students`); die Texte im
+  Rechte-Editor ziehen mit.
+- Liste: Schüler und Lehrkräfte zusammen, Spalte Art, eine Suche über beide. Lehrkraft heißt hier:
+  darf nach Stufe 3 ausleihen und steht in `benutzer` — dieselbe Regel, keine zweite. Neuer
+  Lese-Endpunkt mit Obergrenze, im Personendaten-Gate eingeordnet.
+- Reiter: Aktive Leser · Ehemalige und Papierkorb wie heute (nur Schüler).
+- Akte einer Lehrkraft, als eigene Datei: Persönliche Daten (Name, Ausweisnummer, Art Lehrkraft/LiV
+  änderbar), Ausleihen, Ausweis drucken; Recht `edit_students`. E-Mail, Rolle und Freischaltung
+  bleiben in der Benutzerverwaltung, ein Admin-Konto ändert nur ein Admin.
+- „Neuen Leser anlegen": zuerst die Art. Schüler wie heute, Lehrkraft oder LiV legt ein
+  Kollegiumskonto an (Frage 3).
+- Das Feld Personenart fällt aus der Benutzerverwaltung.
+
+**Stufe 5 — Umtragen zwischen Schüler und Lehrkraft (später, eigener Plan)**
+
+In einer Transaktion wie Migration 072: Ausleihen, Schäden und Ausweisnummer ziehen mit. Vorher
+klären, was der LUSD-Abgleich daraus macht (wer aus der Schülertabelle verschwindet, darf nicht als
+Abgänger gelten). Selten, erst nach Peters Wort.
+
+**Fragen an Peter vor Stufe 2**
+
+1. Bekommt eine Lehrkraft, die nur das Portal nutzt, an der Theke weiter Bücher auf ihren Namen,
+   wie heute? Empfehlung: ja, sonst steht sie in der Leserdatei und kann nichts ausleihen.
+2. Leitung ab Werk: alles außer „Benutzer & Rechte" und „Einstellungen", also auch
+   Sicherheits-Logbuch, Auskunft zu gelöschten Exemplaren, Schüler zusammenführen und Versetzung?
+   Empfehlung: ja; was nicht passt, nimmt der Admin im Rechte-Editor weg.
+3. Eine Lehrkraft, die die Bibliothek in der Leserdatei anlegt: Schul-E-Mail Pflicht? Empfehlung:
+   ja. Die Anmeldung erkennt eine Person nur an der E-Mail; ohne sie entsteht bei der ersten
+   Selbstanmeldung ein zweiter Eintrag. Folge: Das Konto ist aktiv (sonst kein Ausleihen), die
+   Lehrkraft kommt damit ohne Freischaltung ins Portal.
 
 ---
 
