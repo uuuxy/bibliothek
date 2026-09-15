@@ -107,7 +107,7 @@ func (w *nbTuer) eintrag(schluessel, absicht string, schueler *string, gescannt 
 
 func (w *nbTuer) nachbuchenMit(t *testing.T, svc service.NachbuchService, eintraege ...map[string]any) []NachbuchenErgebnis {
 	t.Helper()
-	body, err := json.Marshal(map[string]any{"eintraege": eintraege})
+	body, err := json.Marshal(map[string]any{"eintraege": eintraege, "gesendet_am": time.Now()})
 	if err != nil {
 		t.Fatalf("Rumpf: %v", err)
 	}

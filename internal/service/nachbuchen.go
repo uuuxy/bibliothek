@@ -47,10 +47,16 @@ const (
 
 // NachbuchEintrag ist ein Eintrag der Warteschlange eines Theken-Rechners.
 type NachbuchEintrag struct {
-	Schluessel     string // Idempotenz-Schlüssel des Eintrags (UUID)
-	Absicht        string // NachbuchAbsichtAusleihe | NachbuchAbsichtRueckgabe
-	Barcode        string // Buch-Barcode wie gescannt (B-…, Ziffern, LMF-…)
-	GescanntAm     time.Time
+	Schluessel string // Idempotenz-Schlüssel des Eintrags (UUID)
+	Absicht    string // NachbuchAbsichtAusleihe | NachbuchAbsichtRueckgabe
+	Barcode    string // Buch-Barcode wie gescannt (B-…, Ziffern, LMF-…)
+	GescanntAm time.Time
+	// UhrVersatz ist der gemessene Versatz der Uhr des Theken-Rechners: Serverzeit beim Empfang
+	// der Portion minus Sendezeit des Rechners. Er wird auf GescanntAm addiert, bevor der Wächter
+	// vergleicht — Bewegungsstempel sind Serverzeit. Ohne ihn beendete eine offline gebuchte
+	// Rückgabe von einem vorgehenden Rechner die jüngere Online-Ausleihe eines anderen Kindes
+	// (Rasterdurchgang 15.09.2026, OFFEN.md 5.15).
+	UhrVersatz     time.Duration
 	SchuelerID     *string // Person, wenn der Rechner sie beim Scan noch auflösen konnte
 	LehrerID       *string
 	AusweisBarcode *string // sonst der offline gescannte Ausweis
@@ -93,9 +99,9 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 		return nil, fmt.Errorf("%w: unbekannte Absicht %q", ErrInvalidState, e.Absicht)
 	}
 	jetzt := s.heute()
-	gescannt := e.GescanntAm.In(schoolLocation())
+	gescannt := e.GescanntAm.Add(e.UhrVersatz).In(schoolLocation())
 	if gescannt.After(jetzt) {
-		gescannt = jetzt // höchstens Serverzeit — eine falsch gehende Theken-Uhr datiert nichts vor
+		gescannt = jetzt // höchstens Serverzeit — auch nach der Umrechnung datiert nichts vor
 	}
 	l := &nachbuchLage{e: e, gescannt: gescannt}
 

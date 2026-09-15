@@ -5,8 +5,9 @@ package service
 // Nachstellung Rasterdurchgang 15.09.2026 abends (OFFEN.md 5.15). Build-Tag raster: Die Tests
 // laufen nur mit -tags raster, damit die absichtlich roten Nachstellungen keine parallele
 // Sitzung und keinen Hook stören. Jeder Test beschreibt den Schaden; rot heißt „bestätigt".
-// Behobene Funde sind als dauerhafte Tests umgezogen (bekannter Schlüssel und wiederholte
-// Portion: api/nachbuchen_schluessel_pg_test.go).
+// Behobene Funde sind als dauerhafte Tests umgezogen: bekannter Schlüssel und wiederholte
+// Portion nach api/nachbuchen_schluessel_pg_test.go, vorgehende Theken-Uhr nach
+// api/nachbuchen_uhr_pg_test.go.
 
 import (
 	"context"
@@ -20,108 +21,6 @@ import (
 
 	"github.com/google/uuid"
 )
-
-// onlineFremdrueckgabe bucht wie der erste Online-Scan eines Buchs, das auf jemand anderem
-// steht (handleForeignReturn): NUR die Rücknahme dort, eigene Transaktion — kein Umbuchen
-// (Produktentscheidung 10.07.).
-func (w *nbWelt) onlineFremdrueckgabe(t *testing.T) {
-	t.Helper()
-	ctx := context.Background()
-	loans := repository.NewLoanRepository(w.pool)
-	tx, err := w.pool.Begin(ctx)
-	if err != nil {
-		t.Fatalf("begin: %v", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	aktiv, err := loans.GetActiveLoanByCopyIDTx(ctx, tx, w.exemplarID)
-	if err != nil || aktiv == nil {
-		t.Fatalf("aktive Ausleihe für die Fremdrückgabe: %v %v", aktiv, err)
-	}
-	if err := loans.ReturnLoanTx(ctx, tx, aktiv.ID, w.staff, true); err != nil {
-		t.Fatalf("Fremdrückgabe: %v", err)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		t.Fatalf("commit: %v", err)
-	}
-}
-
-// onlineAusleihe bucht wie die Online-Theke: Steht das Buch auf jemand anderem, nimmt der
-// erste Scan es dort zurück (onlineFremdrueckgabe), der zweite leiht aus (handleNewLoan) —
-// zwei Transaktionen, zwei Stempel.
-func (w *nbWelt) onlineAusleihe(t *testing.T, schueler string) string {
-	t.Helper()
-	ctx := context.Background()
-	loans := repository.NewLoanRepository(w.pool)
-	if n, _ := w.offeneAusleihen(t); n > 0 {
-		w.onlineFremdrueckgabe(t)
-	}
-	tx, err := w.pool.Begin(ctx)
-	if err != nil {
-		t.Fatalf("begin: %v", err)
-	}
-	defer func() { _ = tx.Rollback(ctx) }()
-	loan, err := loans.CreateLoanTx(ctx, tx, w.exemplarID, schueler, w.staff, time.Now().AddDate(0, 0, 14))
-	if err != nil {
-		t.Fatalf("ausleihen: %v", err)
-	}
-	if err := tx.Commit(ctx); err != nil {
-		t.Fatalf("commit: %v", err)
-	}
-	return loan.ID
-}
-
-func (w *nbWelt) meldungenDerSchluessel(t *testing.T, schluessel ...string) []string {
-	t.Helper()
-	rows, err := w.pool.Query(context.Background(),
-		`SELECT ergebnis || ': ' || coalesce(grund, '') FROM nachbuch_meldungen WHERE idempotency_key = ANY($1::uuid[]) ORDER BY erstellt_am`, schluessel)
-	if err != nil {
-		t.Fatalf("Meldungen lesen: %v", err)
-	}
-	defer rows.Close()
-	var out []string
-	for rows.Next() {
-		var m string
-		if err := rows.Scan(&m); err != nil {
-			t.Fatalf("Meldung: %v", err)
-		}
-		out = append(out, m)
-	}
-	return out
-}
-
-// Verdacht A: Die Uhr von Theke 1 geht vor. Anna gibt dort offline zurück; danach leiht Ben
-// dasselbe Buch online an Theke 2. Beim Nachbuchen liegt der Scan-Zeitpunkt (Theken-Uhr,
-// gekappt auf Serverzeit) nach Bens Ausleihe — die Rückgabe trifft Bens Ausleihe.
-func TestRaster_VorgehendeThekenUhrBeendetJuengereAusleihe(t *testing.T) {
-	w := nbAufbau(t)
-	ctx := context.Background()
-
-	w.onlineAusleihe(t, w.anna)
-
-	echteRueckgabe := time.Now()
-	thekenUhr := echteRueckgabe.Add(15 * time.Minute) // Theke 1 geht 15 Minuten vor
-	time.Sleep(50 * time.Millisecond)
-
-	benLoan := w.onlineAusleihe(t, w.ben) // nach der echten Rückgabe, an Theke 2
-
-	schluessel := uuid.NewString()
-	erg, err := w.svc.Nachbuchen(ctx, NachbuchEintrag{
-		Schluessel: schluessel, Absicht: NachbuchAbsichtRueckgabe, Barcode: w.code,
-		GescanntAm: thekenUhr, StaffID: w.staff,
-	})
-	if err != nil {
-		t.Fatalf("nachbuchen: %v", err)
-	}
-	var benOffen bool
-	if err := w.pool.QueryRow(ctx, `SELECT rueckgabe_am IS NULL FROM ausleihen WHERE id = $1`, benLoan).Scan(&benOffen); err != nil {
-		t.Fatalf("Bens Ausleihe: %v", err)
-	}
-	meldungen := w.meldungenDerSchluessel(t, schluessel)
-	t.Logf("Ergebnis %q · Bens Ausleihe offen: %v · Meldungen: %v", erg.Ergebnis, benOffen, meldungen)
-	if !benOffen {
-		t.Errorf("NACHGESTELLT: Ben hat das Buch in der Hand, seine Ausleihe ist beendet (Ergebnis %q, Meldungen %v)", erg.Ergebnis, meldungen)
-	}
-}
 
 // litteraEtikett baut den EAN-13 eines Littera-Etiketts (internal/littera.EtikettBarcode,
 // Bibliotheksnummer 395) — die Umkehrung von dekodiereLitteraEtikett.
@@ -190,31 +89,5 @@ func TestRaster_BarcodeListeGegenNachbuchTuer(t *testing.T) {
 	}
 	if erg.Ergebnis == repository.NachbuchNurReaktiviert && !auf[abgeschrieben] {
 		t.Errorf("NACHGESTELLT: Das Nachbuchen holt das ausgesonderte Exemplar %s zurück, die Liste kennt es nicht", abgeschrieben)
-	}
-}
-
-// Gegenprobe zur Uhr: dieselbe Lage mit richtig gehender Theken-Uhr — der Wächter muss greifen.
-// Bleibt diese Probe grün, ist der Uhrversatz (und nichts anderes) die Ursache.
-func TestRaster_Gegenprobe_RichtigeUhr(t *testing.T) {
-	w := nbAufbau(t)
-	ctx := context.Background()
-	w.onlineAusleihe(t, w.anna)
-	echteRueckgabe := time.Now()
-	time.Sleep(50 * time.Millisecond)
-	benLoan := w.onlineAusleihe(t, w.ben)
-	erg, err := w.svc.Nachbuchen(ctx, NachbuchEintrag{
-		Schluessel: uuid.NewString(), Absicht: NachbuchAbsichtRueckgabe, Barcode: w.code,
-		GescanntAm: echteRueckgabe, StaffID: w.staff,
-	})
-	if err != nil {
-		t.Fatalf("nachbuchen: %v", err)
-	}
-	var benOffen bool
-	if err := w.pool.QueryRow(ctx, `SELECT rueckgabe_am IS NULL FROM ausleihen WHERE id = $1`, benLoan).Scan(&benOffen); err != nil {
-		t.Fatalf("Bens Ausleihe: %v", err)
-	}
-	t.Logf("richtige Uhr: Ergebnis %q · Bens Ausleihe offen: %v", erg.Ergebnis, benOffen)
-	if erg.Ergebnis != repository.NachbuchVeraltet || !benOffen {
-		t.Errorf("Gegenprobe: erwartet veraltet und Bens Ausleihe offen, bekam %q, offen=%v", erg.Ergebnis, benOffen)
 	}
 }

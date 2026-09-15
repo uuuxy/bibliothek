@@ -19,17 +19,27 @@ import (
 // zusätzlich als Nachbuch-Meldung am Server, bis jemand sie quittiert — nichts
 // verschwindet still (Entscheidung Peter, 13.09.2026, c).
 //
-// Der Handler ist dünn: Er prüft die Form, klärt den Idempotenz-Schlüssel
-// (nachbuchen_schluessel.go) und reicht durch. Die Regeln liegen im Dienst
-// (internal/service/nachbuchen.go), das SQL im repository — wie überall.
+// Der Handler ist dünn: Er prüft die Form, misst die Uhr des Rechners, klärt den
+// Idempotenz-Schlüssel (nachbuchen_schluessel.go) und reicht durch. Die Regeln liegen im
+// Dienst (internal/service/nachbuchen.go), das SQL im repository — wie überall.
 
 // nachbuchenHoechstens: 1–50 Einträge je Aufruf. Mehr wäre eine Transaktion, die zu lange
 // offen steht; die Theke schickt in Portionen (Stufe 3).
 const nachbuchenHoechstens = 50
 
+// uhrVersatzWarnenAb: Ab diesem Versatz steht die Uhr des Theken-Rechners im Log. Gebucht wird
+// trotzdem richtig (der Versatz wird herausgerechnet); die Zeile sagt nur, dass die Uhr eines
+// Rechners gestellt werden sollte.
+const uhrVersatzWarnenAb = 2 * time.Minute
+
 // NachbuchenRequest ist eine Portion der Warteschlange.
 type NachbuchenRequest struct {
-	Eintraege []NachbuchenEintrag `json:"eintraege" validate:"required,min=1,max=50,dive"`
+	// GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN
+	// Uhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die
+	// Scan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch
+	// gehende Uhr nicht erkennen.
+	GesendetAm time.Time           `json:"gesendet_am" validate:"required"`
+	Eintraege  []NachbuchenEintrag `json:"eintraege" validate:"required,min=1,max=50,dive"`
 }
 
 // NachbuchenEintrag ist ein offline gescannter Vorgang.
@@ -41,8 +51,8 @@ type NachbuchenEintrag struct {
 	Absicht string `json:"absicht" validate:"required,oneof=ausleihe rueckgabe"`
 	// Barcode des Buchs, wie gescannt (B-…, nackte Ziffern, LMF-…).
 	Barcode string `json:"barcode" validate:"required"`
-	// GescanntAm ist der Zeitpunkt am Theken-Rechner; der Server nimmt höchstens seine
-	// eigene Zeit (eine falsch gehende Theken-Uhr datiert nichts vor).
+	// GescanntAm ist der Zeitpunkt am Theken-Rechner, nach seiner Uhr. Der Server rechnet den
+	// Versatz der Uhr heraus (gesendet_am) und nimmt höchstens seine eigene Zeit.
 	GescanntAm time.Time `json:"gescannt_am" validate:"required"`
 	// Person: was der Rechner beim Scan schon auflösen konnte …
 	SchuelerID *string `json:"schueler_id,omitempty" validate:"omitempty,uuid_oder_leer"`
@@ -69,7 +79,10 @@ type NachbuchenErgebnis struct {
 
 // NachbuchenResponse ist die Antwort auf eine Portion.
 type NachbuchenResponse struct {
-	Ergebnisse []NachbuchenErgebnis `json:"ergebnisse"`
+	// UhrVersatzSekunden ist der gemessene Versatz der Rechner-Uhr (Serverzeit minus Rechnerzeit):
+	// negativ = die Uhr des Rechners geht vor. Die Theke kann eine falsch gehende Uhr damit melden.
+	UhrVersatzSekunden int                  `json:"uhr_versatz_sekunden"`
+	Ergebnisse         []NachbuchenErgebnis `json:"ergebnisse"`
 }
 
 // nachbuchWiederholen: Der Server konnte diesen Eintrag nicht beurteilen (Datenbank weg, oder
@@ -93,6 +106,11 @@ const nachbuchBereitsGebucht = "bereits_gebucht"
 // @Router       /action/nachbuchen [post]
 func (s *Server) NachbuchenHandler(nachbuchSvc service.NachbuchService) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
+		// Die Empfangszeit wird VOR dem Einlesen festgehalten. Der gemessene Versatz enthält die
+		// Laufzeit der Anfrage bis hierher: Umgerechnet liegt ein Scan um diese Laufzeit zu spät,
+		// im Schulnetz Millisekunden — weniger, als ein Buch braucht, um von einer Theke zur
+		// anderen zu kommen.
+		empfangen := time.Now()
 		claims, ok := auth.GetClaims(r.Context())
 		if !ok {
 			return apierrors.Unauthorized("nicht angemeldet", errors.New("missing session information"))
@@ -105,10 +123,19 @@ func (s *Server) NachbuchenHandler(nachbuchSvc service.NachbuchService) http.Han
 			return apierrors.BadRequest("höchstens 50 Einträge je Aufruf", errors.New("zu viele einträge"))
 		}
 
+		versatz := empfangen.Sub(req.GesendetAm)
+		if versatz >= uhrVersatzWarnenAb || versatz <= -uhrVersatzWarnenAb {
+			log.Printf("nachbuchen: WARNUNG die Uhr des Theken-Rechners weicht um %s ab (Konto %s) — Scan-Zeitpunkte werden umgerechnet, die Uhr sollte gestellt werden",
+				(-versatz).Round(time.Second), claims.UserID)
+		}
+
 		ctx := r.Context()
-		antwort := NachbuchenResponse{Ergebnisse: make([]NachbuchenErgebnis, 0, len(req.Eintraege))}
+		antwort := NachbuchenResponse{
+			UhrVersatzSekunden: int(versatz.Round(time.Second) / time.Second),
+			Ergebnisse:         make([]NachbuchenErgebnis, 0, len(req.Eintraege)),
+		}
 		for _, e := range req.Eintraege {
-			antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, claims.UserID))
+			antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, claims.UserID, versatz))
 		}
 		RespondJSON(w, http.StatusOK, antwort)
 		return nil
@@ -119,7 +146,7 @@ func (s *Server) NachbuchenHandler(nachbuchSvc service.NachbuchService) http.Han
 // Aufrufs: Die übrigen Einträge sollen durchlaufen, und der gescheiterte bleibt auf dem
 // Rechner liegen („wiederholen"). Schweigen wäre hier das Schlimmste — die Theke hielte
 // ihn für erledigt (Stufe 1, Commit 6: „erledigt ist nur, was der Server gebucht hat").
-func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchService, e NachbuchenEintrag, staffID string) NachbuchenErgebnis {
+func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchService, e NachbuchenEintrag, staffID string, uhrVersatz time.Duration) NachbuchenErgebnis {
 	lage, err := s.ergreifeNachbuchSchluessel(ctx, e)
 	if err != nil {
 		log.Printf("nachbuchen: Schlüssel %s nicht lesbar: %v", e.Schluessel, err)
@@ -131,7 +158,8 @@ func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 		return fertig
 	}
 	erg, err := svc.Nachbuchen(ctx, service.NachbuchEintrag{
-		Schluessel: e.Schluessel, Absicht: e.Absicht, Barcode: e.Barcode, GescanntAm: e.GescanntAm,
+		Schluessel: e.Schluessel, Absicht: e.Absicht, Barcode: e.Barcode,
+		GescanntAm: e.GescanntAm, UhrVersatz: uhrVersatz,
 		SchuelerID: e.SchuelerID, LehrerID: e.LehrerID, AusweisBarcode: e.AusweisBarcode,
 		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, StaffID: staffID,
 	})

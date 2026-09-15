@@ -3898,7 +3898,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "gescannt_am": {
-                    "description": "GescanntAm ist der Zeitpunkt am Theken-Rechner; der Server nimmt höchstens seine\neigene Zeit (eine falsch gehende Theken-Uhr datiert nichts vor).",
+                    "description": "GescanntAm ist der Zeitpunkt am Theken-Rechner, nach seiner Uhr. Der Server rechnet den\nVersatz der Uhr heraus (gesendet_am) und nimmt höchstens seine eigene Zeit.",
                     "type": "string"
                 },
                 "lehrer_id": {
@@ -3945,7 +3945,8 @@ const docTemplate = `{
         "api.NachbuchenRequest": {
             "type": "object",
             "required": [
-                "eintraege"
+                "eintraege",
+                "gesendet_am"
             ],
             "properties": {
                 "eintraege": {
@@ -3955,6 +3956,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/api.NachbuchenEintrag"
                     }
+                },
+                "gesendet_am": {
+                    "description": "GesendetAm ist die Uhrzeit des Theken-Rechners beim Versand dieser Portion — von DERSELBEN\nUhr wie gescannt_am. Der Server misst daran den Versatz der Rechner-Uhr und rechnet die\nScan-Zeitpunkte der Portion auf seine Uhr um. Pflicht: Ohne sie ließe sich eine falsch\ngehende Uhr nicht erkennen.",
+                    "type": "string"
                 }
             }
         },
@@ -3966,6 +3971,10 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/api.NachbuchenErgebnis"
                     }
+                },
+                "uhr_versatz_sekunden": {
+                    "description": "UhrVersatzSekunden ist der gemessene Versatz der Rechner-Uhr (Serverzeit minus Rechnerzeit):\nnegativ = die Uhr des Rechners geht vor. Die Theke kann eine falsch gehende Uhr damit melden.",
+                    "type": "integer"
                 }
             }
         },
