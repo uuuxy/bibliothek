@@ -83,8 +83,8 @@ const BESTAND = {
 		'leere Trefferliste MIT Meldung: die Zeile darunter setzt `fehler` aus extractApiError'
 	],
 	'src/lib/useStudentProfile.svelte.js': [
-		4,
-		'bewusst zugewiesen (06.09.2026): Scheitert eine der vier Anfragen, dürfen NICHT die Werte des vorher geöffneten Schülers stehen bleiben — die Gebühren-Karte schreibt auf die Fall-ID der Zeile'
+		1,
+		'der Kopf, bewusst zugewiesen (06.09.2026): Scheitert sein Abruf, darf NICHT der vorher geöffnete Schüler stehen bleiben. Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026 in fehlendeListen (OFFEN.md 1.5)'
 	]
 };
 

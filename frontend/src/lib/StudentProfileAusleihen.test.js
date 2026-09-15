@@ -41,6 +41,24 @@ describe('StudentProfileAusleihen', () => {
 		expect(screen.getByText('4801-2026-1234-0001')).toBeTruthy();
 	});
 
+	// Der Ausfall eines Abrufs steht ÜBER den Karten, nicht in ihnen: Eine leere Gebühren-
+	// oder Bescheid-Karte sieht sonst aus wie „nichts offen" (OFFEN.md 1.5, 15.09.2026).
+	it('nennt die Listen, deren Abruf gescheitert ist', () => {
+		const screen = render(StudentProfileAusleihen, {
+			...daten,
+			bescheide: [],
+			gebuehren: [],
+			fehlendeListen: ['Gebühren', 'Bescheide']
+		});
+		const hinweis = screen.getByRole('alert');
+		expect(hinweis.textContent).toMatch(/Nicht geladen: Gebühren, Bescheide/);
+	});
+
+	it('schweigt, wenn alles geladen ist', () => {
+		const screen = render(StudentProfileAusleihen, { ...daten, fehlendeListen: [] });
+		expect(screen.queryByRole('alert')).toBeNull();
+	});
+
 	// Ohne Bescheid bleibt die Überschrift weg — eine leere Karte „Schadensersatz-Bescheide"
 	// in jeder Akte läse sich wie eine offene Forderung.
 	it('schweigt über Bescheide, wenn es keine gibt', () => {

@@ -23,7 +23,10 @@ function einbauorte(quelle, name) {
 	return [...quelle.matchAll(re)].map((m) => m[0]);
 }
 
-const PFLICHT = [['StudentProfile', 'onMerged']];
+const PFLICHT = [
+	['StudentProfile', 'onMerged'],
+	['StudentProfileAusleihen', 'fehlendeListen']
+];
 
 describe('Einbauorte der Schülerakte', () => {
 	const dateien = sammleQuelldateien(srcRoot).filter((p) => p.endsWith('.svelte'));

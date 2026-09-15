@@ -19,7 +19,13 @@ const ok = (body) => ({ ok: true, json: async () => body });
 const fehler = { ok: false, status: 500, json: async () => ({}) };
 
 describe('useStudentProfile.fetchProfile', () => {
-	beforeEach(() => vi.mocked(apiFetch).mockReset());
+	// Mit Klammern, ohne Rückgabe: mockReset() gibt das Mock zurück, und Vitest ruft einen
+	// zurückgegebenen Funktionswert nach dem Test als Aufräumer auf — apiFetch() ohne
+	// Argumente. Solange jede Implementierung auflöste, fiel das nicht auf; die erste
+	// ablehnende (Netzwerkfehler-Fall, 15.09.2026) ließ den Aufräumer werfen.
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
 
 	it('lässt die Gebühren des vorigen Schülers nicht stehen', async () => {
 		vi.mocked(apiFetch).mockImplementation(async (url) => {
@@ -71,6 +77,59 @@ describe('useStudentProfile.fetchProfile', () => {
 		await st.fetchProfile('B');
 		expect(st.profile?.id).toBe('B');
 		expect(st.bescheide, 'der Bescheid von A steht unter dem Namen von B').toEqual([]);
+	});
+
+	// Ein gescheiterter Abruf ist kein „kein Bescheid" (Review 14.09.2026, OFFEN.md 1.5): Eltern
+	// stehen mit dem Brief in der Bibliothek, GET …/bescheide läuft in 503 — die Akte zeigte
+	// keine Karte, und die Auskunft lautete „bei uns liegt kein Bescheid vor". Seit dem
+	// 15.09.2026 steht der Ausfall in fehlendeListen, wie in der Buch-Akte (useBookAkte).
+	/** @param {Record<string, any>} je Antwort je Teil-URL; ohne Eintrag: ok und leer */
+	const antwortenJe = (je) =>
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			const u = String(url);
+			for (const [teil, antwort] of Object.entries(je)) if (u.includes(teil)) return antwort;
+			if (u.includes('vormerkungen')) return /** @type {any} */ (ok([]));
+			if (u.includes('schadensfaelle') || u.includes('bescheide'))
+				return /** @type {any} */ (ok({ data: [] }));
+			return /** @type {any} */ (ok({ id: 'A', vorname: 'Anna' }));
+		});
+
+	it('vermerkt einen gescheiterten Abruf, statt ihn als „nichts da" zu zeigen', async () => {
+		antwortenJe({ bescheide: { ok: false, status: 503, json: async () => ({}) } });
+		const st = useStudentProfile();
+		await st.fetchProfile('A');
+		expect(st.bescheide).toEqual([]);
+		expect(st.fehlendeListen, 'der Ausfall muss in der Akte sichtbar sein').toEqual(['Bescheide']);
+
+		antwortenJe({
+			schadensfaelle: fehler,
+			vormerkungen: { ok: false, status: 504, json: async () => ({}) }
+		});
+		await st.fetchProfile('A');
+		expect(st.fehlendeListen).toEqual(['Vormerkungen', 'Gebühren']);
+	});
+
+	it('403 (Rolle ohne Einsicht) und eine leere Liste sind kein Ladefehler', async () => {
+		antwortenJe({ bescheide: { ok: false, status: 403, json: async () => ({}) } });
+		const st = useStudentProfile();
+		await st.fetchProfile('A');
+		expect(st.bescheide).toEqual([]);
+		expect(st.fehlendeListen).toEqual([]);
+
+		antwortenJe({});
+		await st.fetchProfile('A');
+		expect(st.fehlendeListen).toEqual([]);
+	});
+
+	it('ein Netzwerkfehler lässt keinen Vermerk des vorigen Laufs stehen und setzt alle', async () => {
+		antwortenJe({ bescheide: { ok: false, status: 503, json: async () => ({}) } });
+		const st = useStudentProfile();
+		await st.fetchProfile('A');
+		// Der Netzwerkfehler wird im Hook protokolliert (console.error) — hier stumm, wie in liveEvents.test.js.
+		vi.spyOn(console, 'error').mockImplementation(() => {});
+		vi.mocked(apiFetch).mockRejectedValue(new TypeError('Failed to fetch'));
+		await st.fetchProfile('B');
+		expect(st.fehlendeListen).toEqual(['Vormerkungen', 'Gebühren', 'Bescheide']);
 	});
 
 	it('lässt die überholte Antwort nicht gewinnen', async () => {

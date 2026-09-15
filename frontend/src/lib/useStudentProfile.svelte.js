@@ -10,6 +10,11 @@ export function useStudentProfile() {
 	let gebuehren = $state([]);
 	/** @type {any[]} */
 	let bescheide = $state([]);
+	// Listen, deren Abruf gescheitert ist — wie fehlendeListen in der Buch-Akte (useBookAkte).
+	// Ihre Karte ist leer, weil nichts ankam, nicht weil nichts vorläge: Eltern mit dem Brief
+	// in der Bibliothek, GET …/bescheide in 503 — und die Auskunft „bei uns liegt kein
+	// Bescheid vor" (Review 14.09.2026, OFFEN.md 1.5).
+	let fehlendeListen = $state(/** @type {string[]} */ ([]));
 	let loading = $state(true);
 	let showWebcam = $state(false);
 	let timestamp = $state(Date.now());
@@ -40,19 +45,30 @@ export function useStudentProfile() {
 				apiFetch(`/api/schueler/${studentId}/bescheide`)
 			]);
 			if (meine !== laufNr) return; // eine jüngere Akte ist schon unterwegs oder da
-			// Jede der drei Antworten wird ZUGEWIESEN, auch wenn sie scheitert. Bis zum
+			// Jede der vier Antworten wird ZUGEWIESEN, auch wenn sie scheitert. Bis zum
 			// Rasterdurchgang am 06.09.2026 stand hier dreimal `if (ok)` ohne `else`: Fiel
-			// genau eine Anfrage aus (500, oder 429 vom Rate-Limiter — es sind drei
+			// genau eine Anfrage aus (500, oder 429 vom Rate-Limiter — es sind vier
 			// parallele Anfragen je Akte), behielt dieser Teil die Werte des VORHER
 			// geöffneten Schülers, während Kopf und Ausleihen schon zum neuen gehörten.
 			// Bei den Gebühren ist das nicht nur Anzeige: Die Karte schreibt auf die
 			// Fall-ID der ZEILE („Zahlung verbucht", „Storno") — ein Klick hätte die
 			// Zahlung einem fremden Schadensfall gutgeschrieben.
+			//
+			// Und seit dem 15.09.2026 wird der Ausfall VERMERKT: Eine leere Liste nach 503 sah
+			// bis dahin genauso aus wie „nichts offen". 403 (z. B. Kiosk-Rolle ohne
+			// view_students) heißt dagegen schlicht: keine Liste zeigen — kein Ausfall.
+			const fehlend = /** @type {string[]} */ ([]);
+			/** @param {Response} res @param {string} name @param {(json: any) => any[]} auspacken */
+			const listeOderVermerk = async (res, name, auspacken) => {
+				if (res.ok) return auspacken(await res.json()) || [];
+				if (res.status !== 403) fehlend.push(name);
+				return [];
+			};
 			profile = resProfile.ok ? await resProfile.json() : null;
-			vormerkungen = resVormerkungen.ok ? await resVormerkungen.json() : [];
-			// 403 (z. B. Kiosk-Rolle ohne view_students) heisst schlicht: keine Liste zeigen.
-			gebuehren = resGebuehren.ok ? (await resGebuehren.json()).data || [] : [];
-			bescheide = resBescheide.ok ? (await resBescheide.json()).data || [] : [];
+			vormerkungen = await listeOderVermerk(resVormerkungen, 'Vormerkungen', (j) => j);
+			gebuehren = await listeOderVermerk(resGebuehren, 'Gebühren', (j) => j.data);
+			bescheide = await listeOderVermerk(resBescheide, 'Bescheide', (j) => j.data);
+			fehlendeListen = fehlend;
 		} catch (err) {
 			if (meine !== laufNr) return;
 			console.error('Fehler beim Laden des Schüler-Profils:', err);
@@ -60,6 +76,7 @@ export function useStudentProfile() {
 			vormerkungen = [];
 			gebuehren = [];
 			bescheide = [];
+			fehlendeListen = ['Vormerkungen', 'Gebühren', 'Bescheide'];
 		} finally {
 			if (meine === laufNr) loading = false;
 		}
@@ -220,6 +237,9 @@ export function useStudentProfile() {
 		},
 		get bescheide() {
 			return bescheide;
+		},
+		get fehlendeListen() {
+			return fehlendeListen;
 		},
 		get loading() {
 			return loading;

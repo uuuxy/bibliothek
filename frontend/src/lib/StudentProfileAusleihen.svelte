@@ -12,6 +12,7 @@
 	import StudentVormerkungenCard from './StudentVormerkungenCard.svelte';
 	import StudentGebuehrenCard from './StudentGebuehrenCard.svelte';
 	import StudentBescheideCard from './StudentBescheideCard.svelte';
+	import Button from './components/ui/Button.svelte';
 
 	/**
 	 * @type {{
@@ -19,6 +20,7 @@
 	 *   vormerkungen: any[],
 	 *   gebuehren: any[],
 	 *   bescheide: any[],
+	 *   fehlendeListen?: string[],
 	 *   canEdit: boolean,
 	 *   onReturnClick?: (barcode: string) => void,
 	 *   onDamageClick?: (buch: any) => void,
@@ -31,6 +33,7 @@
 		vormerkungen = $bindable([]),
 		gebuehren = [],
 		bescheide = [],
+		fehlendeListen = [],
 		canEdit = false,
 		onReturnClick = undefined,
 		onDamageClick = undefined,
@@ -43,6 +46,17 @@
 <div
 	class="col-span-1 md:col-span-1 relative flex flex-col gap-6 h-full min-h-100 animate-fade-in mt-4"
 >
+	{#if fehlendeListen.length > 0}
+		<!-- Über den Karten, nicht in ihnen: Eine leere Gebühren- oder Bescheid-Karte sähe
+		     sonst aus wie „nichts offen" — die Auskunft, mit der Eltern nach Hause gingen
+		     (OFFEN.md 1.5, 15.09.2026). Dieselbe Zeile wie in der Buch-Akte. -->
+		<p class="text-sm font-semibold text-error" role="alert">
+			Nicht geladen: {fehlendeListen.join(', ')}. Diese Karten sind leer, weil der Abruf gescheitert
+			ist — nicht, weil nichts vorläge.
+			<Button variant="ghost" size="sm" onclick={onChanged}>Erneut laden</Button>
+		</p>
+	{/if}
+
 	<BorrowedBooksCard books={buecher} {onReturnClick} {onDamageClick} />
 
 	{#if vormerkungen.length > 0}

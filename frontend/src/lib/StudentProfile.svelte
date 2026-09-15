@@ -16,7 +16,6 @@
 	import { Info } from '@lucide/svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte } from './schuelerRechte.js';
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} student - The selected student object
@@ -167,6 +166,7 @@
 							bind:vormerkungen={st.vormerkungen}
 							gebuehren={st.gebuehren}
 							bescheide={st.bescheide}
+							fehlendeListen={st.fehlendeListen}
 							canEdit={rechte.bearbeiten}
 							{onReturnClick}
 							onDamageClick={rechte.bearbeiten ? st.openDamageModal : undefined}
