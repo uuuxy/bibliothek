@@ -34,7 +34,7 @@ func (r *eskalationsRepo) CheckBarcodeExists(_ context.Context, _, _ string) (bo
 	return false, nil
 }
 
-func (r *eskalationsRepo) CreateUser(_ context.Context, _ *string, _, _, _, _ string) (string, error) {
+func (r *eskalationsRepo) CreateUser(_ context.Context, _ *string, _, _, _, _ string, _ *string) (string, error) {
 	r.angelegt = true
 	return "neu-1", nil
 }

@@ -33,6 +33,10 @@ const (
 	// ArtSonstige sind Praktikanten, Sekretariat, Fachbereichs-Sammelkonten. Keine Schüler,
 	// aber auch keine Lehrkräfte im Sinne des Portals.
 	ArtSonstige
+	// ArtLiV sind Referendare — in Hessen LiV, Lehrkraft im Vorbereitungsdienst. Sie gehören ins
+	// Kollegium mit der Personenart „liv" (Migration 119). Bis zum 15.09.2026 fielen sie unter
+	// ArtUnbekannt und wurden nicht übernommen.
+	ArtLiV
 )
 
 // Lesergruppe ist eine Zeile aus `Leser_UG` — Klassenbezeichnung plus Art.
@@ -78,6 +82,8 @@ func artAusUntergruppe(bezeichnung string) LeserArt {
 		return ArtSchueler
 	case "Lehrer", "Lehrerin":
 		return ArtLehrkraft
+	case "Referendar", "Referendarin":
+		return ArtLiV
 	case "Abgegangen":
 		return ArtAbgegangen
 	case "Praktikant", "Praktikantin", "Sekretärin":

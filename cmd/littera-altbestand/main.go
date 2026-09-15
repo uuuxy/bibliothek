@@ -123,8 +123,8 @@ func trockenlauf(ab *littera.Altbestand) {
 	for _, l := range ab.Leser {
 		nach[l.Art]++
 	}
-	log.Printf("  Leser: %d Schüler, %d Lehrkräfte, %d abgegangen, %d sonstige, %d unklar",
-		nach[littera.ArtSchueler], nach[littera.ArtLehrkraft], nach[littera.ArtAbgegangen],
+	log.Printf("  Leser: %d Schüler, %d Lehrkräfte, %d LiV, %d abgegangen, %d sonstige, %d unklar",
+		nach[littera.ArtSchueler], nach[littera.ArtLehrkraft], nach[littera.ArtLiV], nach[littera.ArtAbgegangen],
 		nach[littera.ArtSonstige], nach[littera.ArtUnbekannt])
 
 	bekannt := make(map[string]bool, len(ab.Exemplare))

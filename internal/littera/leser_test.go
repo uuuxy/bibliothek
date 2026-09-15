@@ -54,6 +54,16 @@ func TestArtAusUntergruppe(t *testing.T) {
 	}
 }
 
+// Referendare heißen in Hessen LiV (Lehrkraft im Vorbereitungsdienst). Littera führt sie als
+// eigene Gruppe; sie gehören ins Kollegium, nicht unter „unklar".
+func TestReferendareSindLiV(t *testing.T) {
+	for _, bezeichnung := range []string{"Referendar", "Referendarin"} {
+		if art := artAusUntergruppe(bezeichnung); art != ArtLiV {
+			t.Errorf("Untergruppe %q: Art %d, erwartet ArtLiV", bezeichnung, art)
+		}
+	}
+}
+
 // Buchungsnummer ist der INTERNE Schluessel (Ziel von Verleih.Leser), Lesernummer die
 // Ausweisnummer. Die letzte Zeile hat keine Buchungsnummer — sie faellt heraus.
 const leserCSV = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe,Geburtsdatum,eMail,Adresse,PLZ,Ort

@@ -6,12 +6,20 @@
 	import Switch from './components/ui/Switch.svelte';
 	import Select from './components/ui/Select.svelte';
 	import Feld from './components/ui/Feld.svelte';
+	import { PERSONENARTEN } from './benutzerFormular.js';
 
 	const ROLLEN = [
 		{ value: 'helfer', label: 'Helfer' },
 		{ value: 'mitarbeiter', label: 'Mitarbeiter' },
 		{ value: 'kollegium', label: 'Kollegium (nur Portal)' },
 		{ value: 'admin', label: 'Administrator' }
+	];
+
+	// Die Rolle sagt, was jemand darf; die Personenart, wer jemand im Kollegium ist (Migration 119).
+	// Beide Auswahlfelder in einer Liste — dieselbe Bauform, einmal geschrieben.
+	const AUSWAHLEN = [
+		{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN },
+		{ id: 'personenart', label: 'Personenart', options: PERSONENARTEN }
 	];
 
 	/**
@@ -62,10 +70,14 @@
 			bind:value={userForm.barcode_id}
 			placeholder="Z. B. L-001, MA-04 (optional)"
 		/>
-		<div class="space-y-1.5">
-			<label for="rolle" class="block text-xs font-medium text-slate-400">Benutzer-Rolle</label>
-			<Select id="rolle" bind:value={userForm.rolle} options={ROLLEN} />
-		</div>
+		{#each AUSWAHLEN as auswahl (auswahl.id)}
+			<div class="space-y-1.5">
+				<label for={auswahl.id} class="block text-xs font-medium text-slate-400"
+					>{auswahl.label}</label
+				>
+				<Select id={auswahl.id} bind:value={userForm[auswahl.id]} options={auswahl.options} />
+			</div>
+		{/each}
 		{#if isEditingUser}
 			<!-- Vorher ein peer-checked-Nachbau OHNE zugänglichen Namen: Der Screenreader las
 			     „Kontrollkästchen", die danebenstehende Erklärung gehörte niemandem. -->

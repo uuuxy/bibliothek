@@ -30,6 +30,9 @@ type User struct {
 	// ZugangBeantragtAm: von der Selbstanmeldung gesetzt, von der Freischaltung gelöscht
 	// (Migration 086). nil = kein offener Antrag.
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
+	// Personenart: wer jemand im Kollegium ist — "lehrkraft" oder "liv" (Migration 119); nil bei
+	// Konten, die keine Lehrkräfte sein müssen. Die Rolle sagt, was jemand darf.
+	Personenart *string `json:"personenart"`
 }
 
 // Student repräsentiert einen Schüler in der Datenbank (Tabelle `schueler`).

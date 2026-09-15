@@ -15,6 +15,11 @@
 	import UserManagementEditModal from './UserManagementEditModal.svelte';
 	import UserManagementDeleteModal from './UserManagementDeleteModal.svelte';
 	import { apiFetch, extractApiError } from './apiFetch.js';
+	import {
+		leeresBenutzerFormular,
+		benutzerFormularAus,
+		benutzerNutzlast
+	} from './benutzerFormular.js';
 	import Button from './components/ui/Button.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 
@@ -31,20 +36,9 @@
 	// Create / Edit modal state
 	let showUserModal = $state(false);
 	let isEditingUser = $state(false);
-	// Kein Passwortfeld: Staff-Logins laufen über den Schul-Mailserver (IMAP) bzw.
-	// Barcode/PIN — es gibt keine lokale Passwortspalte. Das Formular schickte hier lange
-	// ein `password` mit, das immer leer war und serverseitig verworfen wurde; das
-	// Gegenstück in UpdateUserRequest ist bereits entfernt.
+	// Aufbau, Übernahme und Nutzlast des Formulars: benutzerFormular.js.
 	/** @type {any} */
-	let userForm = $state({
-		id: '',
-		barcode_id: '',
-		vorname: '',
-		nachname: '',
-		email: '',
-		rolle: 'mitarbeiter',
-		aktiv: true
-	});
+	let userForm = $state(leeresBenutzerFormular());
 	let submittingUser = $state(false);
 
 	// Delete confirmation state
@@ -93,14 +87,7 @@
 		try {
 			const url = isEditingUser ? `/api/benutzer/${userForm.id}` : '/api/benutzer';
 			const method = isEditingUser ? 'PUT' : 'POST';
-			const payload = {
-				barcode_id: userForm.barcode_id,
-				vorname: userForm.vorname,
-				nachname: userForm.nachname,
-				email: userForm.email,
-				rolle: userForm.rolle,
-				aktiv: userForm.aktiv
-			};
+			const payload = benutzerNutzlast(userForm);
 			const res = await apiFetch(url, {
 				method,
 				headers: { 'Content-Type': 'application/json' },
@@ -147,15 +134,7 @@
 
 	function openNewUserModal() {
 		isEditingUser = false;
-		userForm = {
-			id: '',
-			barcode_id: '',
-			vorname: '',
-			nachname: '',
-			email: '',
-			rolle: 'mitarbeiter',
-			aktiv: true
-		};
+		userForm = leeresBenutzerFormular();
 		error = null;
 		showUserModal = true;
 	}
@@ -163,15 +142,7 @@
 	/** @param {any} user */
 	function openEditUserModal(user) {
 		isEditingUser = true;
-		userForm = {
-			id: user.id,
-			barcode_id: user.barcode_id || '',
-			vorname: user.vorname,
-			nachname: user.nachname,
-			email: user.email,
-			rolle: user.rolle,
-			aktiv: user.aktiv
-		};
+		userForm = benutzerFormularAus(user);
 		error = null;
 		showUserModal = true;
 	}

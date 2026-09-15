@@ -197,6 +197,10 @@ var checkBedingungenBestand = []string{
 	// Referenznummer „… 0000" gibt es nicht. Alle vier prüft der Code an der Tür (400),
 	// die Datenbank ist die zweite.
 	"chk_bescheid_betrag", "chk_bescheid_laufende_nr", "chk_bescheid_mittel",
+	// Migration 119, befragt am 15.09.2026: Die Personenart ist leer, „lehrkraft" oder „liv".
+	// Der Code kennt dieselben Werte (api/user_admin_mutations.go, personenarten) und weist
+	// andere mit 400 ab, bevor die Datenbank sie sieht.
+	"chk_benutzer_personenart",
 	"chk_bescheid_status", "chk_nummern_letzte_nr", "chk_nummern_mittel",
 	"chk_schaden_art",
 	"chk_verlauf_anzahl_nonneg", "chk_verlauf_gesamtbetrag_nonneg", "chk_vormerkung_status",

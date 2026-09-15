@@ -134,10 +134,10 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 
 	// 2. Der Eintrag existiert — inaktiv, Rolle kollegium, Name aus der Adresse geraten.
 	var aktiv bool
-	var rolle, vorname, nachname string
+	var rolle, vorname, nachname, personenart string
 	if err := pool.QueryRow(ctx, `
-		SELECT aktiv, rolle::text, vorname, nachname FROM benutzer WHERE LOWER(email) = $1
-	`, email).Scan(&aktiv, &rolle, &vorname, &nachname); err != nil {
+		SELECT aktiv, rolle::text, vorname, nachname, coalesce(personenart, '') FROM benutzer WHERE LOWER(email) = $1
+	`, email).Scan(&aktiv, &rolle, &vorname, &nachname, &personenart); err != nil {
 		t.Fatalf("angelegtes Konto lesen: %v", err)
 	}
 	if aktiv {
@@ -145,6 +145,11 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	}
 	if rolle != "kollegium" {
 		t.Errorf("Rolle = %q, erwartet kollegium", rolle)
+	}
+	// Wer sich über das Schulpostfach selbst anmeldet, ist Lehrkraft (Migration 119); eine LiV
+	// trägt die Benutzerverwaltung von Hand um.
+	if personenart != "lehrkraft" {
+		t.Errorf("Personenart = %q, erwartet lehrkraft", personenart)
 	}
 	if vorname != "Erika" || nachname != "Musterfrau" {
 		t.Errorf("Name aus der Adresse = %q %q, erwartet Erika Musterfrau", vorname, nachname)

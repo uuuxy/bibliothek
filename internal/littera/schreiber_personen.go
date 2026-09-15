@@ -65,8 +65,8 @@ const sqlSchuelerEinfuegen = `
 const platzhalterDomain = "@littera.invalid"
 
 const sqlBenutzerEinfuegen = `
-	INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv, erstellt_am)
-	VALUES ($1,$2,$3,$4,'kollegium',$5,$6)
+	INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv, erstellt_am, personenart)
+	VALUES ($1,$2,$3,$4,'kollegium',$5,$6,$7)
 	RETURNING id`
 
 // SchreibePersonen überträgt Schüler und Lehrkräfte.
@@ -233,7 +233,7 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 }
 
 func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
-	if l.Art == ArtLehrkraft {
+	if l.Art == ArtLehrkraft || l.Art == ArtLiV {
 		return p.schreibeLehrkraft(ctx, tx, l)
 	}
 	return p.schreibeSchueler(ctx, tx, l)
@@ -286,12 +286,16 @@ func (p *personenlauf) abgangsjahr(l Leser) (int, bool) {
 }
 
 func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
+	personenart := "lehrkraft"
+	if l.Art == ArtLiV {
+		personenart = "liv"
+	}
 	var id string
 	err := tx.QueryRow(ctx, sqlBenutzerEinfuegen,
 		uebernahme.Nullbar(p.ausweis(l)),
 		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
 		p.kuerze(l, "nachname", l.Nachname, uebernahme.MaxMedientyp),
-		p.mailadresse(l), !p.s.opt.LehrerInaktiv, p.s.opt.Jetzt,
+		p.mailadresse(l), !p.s.opt.LehrerInaktiv, p.s.opt.Jetzt, personenart,
 	).Scan(&id)
 	if err != nil {
 		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)

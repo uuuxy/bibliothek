@@ -117,7 +117,11 @@ CREATE TABLE benutzer (
     -- Die Freischaltung setzt es zurück.
     zugang_beantragt_am TIMESTAMP WITH TIME ZONE,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Migration 119: wer jemand im Kollegium ist (Lehrkraft, LiV) — getrennt von der Rolle, die
+    -- sagt, was jemand darf. Leer bei Konten, die keine Lehrkräfte sein müssen.
+    personenart VARCHAR(20),
+    CONSTRAINT chk_benutzer_personenart CHECK (personenart IN ('lehrkraft', 'liv'))
 );
 
 CREATE INDEX idx_benutzer_barcode ON benutzer (barcode_id) WHERE barcode_id IS NOT NULL;
@@ -1358,7 +1362,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('115_lmf_plan_zusicherungen.sql'),
 ('116_bewegungsstempel.sql'),
 ('117_nachbuch_meldungen.sql'),
-('118_ausweis_eindeutig_ueber_personen.sql')
+('118_ausweis_eindeutig_ueber_personen.sql'),
+('119_benutzer_personenart.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

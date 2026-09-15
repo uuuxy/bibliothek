@@ -1,6 +1,7 @@
 <script>
 	import Button from './components/ui/Button.svelte';
 	import Tabelle from './components/ui/Tabelle.svelte';
+	import { personenartLabel } from './benutzerFormular.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -54,10 +55,15 @@
 										? 'bg-purple-50 text-purple-700 border border-purple-100'
 										: 'bg-amber-50 text-amber-700 border border-amber-100'}
 						<tr>
-							<td
-								><span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span
-								></td
-							>
+							<td>
+								<span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span>
+								<!-- Personenart als Nebenzeile (M3 supporting text), keine eigene Spalte. -->
+								{#if user.personenart}
+									<span class="block text-xs text-on-surface-variant"
+										>{personenartLabel(user.personenart)}</span
+									>
+								{/if}
+							</td>
 							<td>{user.email}</td>
 							<td>
 								{#if user.barcode_id}

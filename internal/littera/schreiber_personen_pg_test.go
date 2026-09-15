@@ -53,6 +53,33 @@ func TestNurSchuelerUndLehrkraefteWerdenGeschrieben(t *testing.T) {
 	}
 }
 
+// TestLehrkraftUndLiVBekommenIhrePersonenart: Littera führt Referendare in einer eigenen Gruppe.
+// Bis zum 15.09.2026 übersprang der Lauf sie als unklar; jetzt kommen sie ins Kollegium, mit der
+// Personenart „liv" (Lehrkraft im Vorbereitungsdienst), Lehrkräfte mit „lehrkraft".
+func TestLehrkraftUndLiVBekommenIhrePersonenart(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+
+	ab := &Altbestand{Leser: []Leser{
+		leser("1", "31", "", ArtLehrkraft),
+		leser("2", "32", "", ArtLiV),
+	}}
+	bericht, err := s.SchreibePersonen(context.Background(), ab)
+	if err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+	if bericht.Lehrkraefte != 2 || !bericht.AbgleichOK {
+		t.Fatalf("beide gehören ins Kollegium, gemeldet: %+v", bericht)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM benutzer WHERE barcode_id = '31' AND personenart = 'lehrkraft'`); n != 1 {
+		t.Errorf("die Lehrkraft soll die Personenart „lehrkraft“ tragen, gefunden: %d", n)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM benutzer WHERE barcode_id = '32' AND personenart = 'liv'`); n != 1 {
+		t.Errorf("die LiV soll die Personenart „liv“ tragen, gefunden: %d", n)
+	}
+}
+
 // TestAbgaengerBekommenEinJahr: schueler.abgaenger_jahr ist NOT NULL, die Gruppe
 // „Abgegangen" trägt als Klassenbezeichnung aber nur „Ab" — daraus rechnet AbgaengerJahr
 // nichts aus. Ohne die Sonderregel scheiterten alle 71 Abgänger am NOT NULL.

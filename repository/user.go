@@ -24,7 +24,8 @@ type UserRepository interface {
 	CheckBarcodeExists(ctx context.Context, barcode string, excludeID string) (bool, error)
 
 	// CreateUser legt einen neuen Systembenutzer in der Datenbank an und gibt dessen generierte ID (UUID) zurück.
-	CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string) (string, error)
+	// personenart nil oder "" legt das Konto ohne Personenart an.
+	CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string, personenart *string) (string, error)
 
 	// UpdateUser aktualisiert die Daten eines bestehenden Systembenutzers.
 	UpdateUser(ctx context.Context, p UpdateUserParams) error
@@ -79,7 +80,7 @@ func (r *postgresUserRepo) GetLehrerByBarcode(ctx context.Context, barcode strin
 func (r *postgresUserRepo) GetUsers(ctx context.Context) ([]User, error) {
 	query := `
 		SELECT id, coalesce(barcode_id, ''), vorname, nachname, email, rolle, aktiv, erstellt_am,
-		       zugang_beantragt_am
+		       zugang_beantragt_am, personenart
 		FROM benutzer
 		ORDER BY nachname, vorname
 	`
@@ -93,7 +94,7 @@ func (r *postgresUserRepo) GetUsers(ctx context.Context) ([]User, error) {
 	for rows.Next() {
 		var u User
 		err := rows.Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Email, &u.Rolle, &u.Aktiv, &u.ErstelltAm,
-			&u.ZugangBeantragtAm)
+			&u.ZugangBeantragtAm, &u.Personenart)
 		if err != nil {
 			return nil, err
 		}
@@ -134,14 +135,14 @@ func (r *postgresUserRepo) CheckBarcodeExists(ctx context.Context, barcode strin
 }
 
 // CreateUser fügt einen neuen Benutzer hinzu.
-func (r *postgresUserRepo) CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string) (string, error) {
+func (r *postgresUserRepo) CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string, personenart *string) (string, error) {
 	var userID string
 	query := `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, $2, $3, $4, $5::benutzer_rolle, true)
+		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv, personenart)
+		VALUES ($1, $2, $3, $4, $5::benutzer_rolle, true, NULLIF($6::text, ''))
 		RETURNING id
 	`
-	err := r.pool.QueryRow(ctx, query, barcode, vorname, nachname, email, rolle).Scan(&userID)
+	err := r.pool.QueryRow(ctx, query, barcode, vorname, nachname, email, rolle, personenart).Scan(&userID)
 	return userID, err
 }
 
@@ -154,6 +155,9 @@ type UpdateUserParams struct {
 	Email    string
 	Rolle    string
 	Aktiv    bool
+	// Personenart: nil lässt den gespeicherten Wert stehen, "" leert ihn. Ein Aufrufer, der das
+	// Feld nicht kennt, löscht damit nichts.
+	Personenart *string
 }
 
 // ErrBenutzerNichtGefunden meldet eine unbekannte Benutzer-ID beim Ändern/Löschen — 0 Zeilen sind
@@ -168,10 +172,16 @@ func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) e
 		    -- Freischalten erledigt den Antrag; ein späteres Deaktivieren soll nicht
 		    -- wieder wie ein Antrag aussehen (Migration 086).
 		    zugang_beantragt_am = CASE WHEN $6 THEN NULL ELSE zugang_beantragt_am END,
+		    personenart = CASE WHEN $8::boolean THEN NULLIF($9::text, '') ELSE personenart END,
 		    aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $7
 	`
-	tag, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID)
+	personenart := ""
+	if p.Personenart != nil {
+		personenart = *p.Personenart
+	}
+	tag, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID,
+		p.Personenart != nil, personenart)
 	if err != nil {
 		return err
 	}
