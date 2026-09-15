@@ -56,6 +56,13 @@ const AUSNAHMEN = [
 			'Zeigt die Rolle eines Benutzers als Badge — vergleicht die Rolle, um sie zu beschriften.'
 	},
 	{
+		datei: 'src/lib/benutzerFormular.js',
+		grund:
+			'Datenregel für das BEARBEITETE Konto, nicht Sichtbarkeit für den Angemeldeten: Ein ' +
+			'Kollegiumskonto hat immer eine Personenart (Migration 120, Trigger), also bietet das ' +
+			'Formular dort kein „Keine Angabe" an. Die Rolle des Kontos ist das Thema.'
+	},
+	{
 		datei: 'src/lib/PermissionManager.svelte',
 		grund:
 			'Die Zeile der Rolle admin ist unveränderlich (Admin darf immer alles). Hier wird über ' +
