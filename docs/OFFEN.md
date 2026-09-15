@@ -5,8 +5,8 @@ Stand: 15.09.2026
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht: Das Befund-Register (`docs/befunde.md`) und
 die Issues #593, #594, #597, #598, #599 und #600 sind am 13.09.2026 hierher umgezogen. Erledigtes
-steht in [erledigt.md](erledigt.md), ältere Stände in `git log -p docs/befunde.md` und in den
-geschlossenen Issues.
+wird gelöscht, nicht archiviert (Peter, 15.09.2026): Die Geschichte steht in den
+Commit-Nachrichten, in `git log -p docs/OFFEN.md` und in den geschlossenen Issues.
 
 Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 [sweeps.md](sweeps.md)), führen aber keine eigene Offen-Liste.
@@ -56,17 +56,17 @@ jemandem schaden?"**
    Fund nachgestellt ist, heißt er „Verdacht".
 3. **Neues kommt nur hierher** — Funde, Fragen an Peter, Betriebspunkte. Kein Issue, kein anderes
    Dokument. Eine Frage steht hier, bevor die Antwort kommt.
-4. **Erledigt heißt:** hier löschen und in [erledigt.md](erledigt.md) mit Datum und Commit
-   eintragen. Eine Antwort bekommt „Entschieden am … (Peter)".
+4. **Erledigt heißt:** hier löschen — Datum und Begründung stehen in der Commit-Nachricht, ein
+   Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am … (Peter)" und fällt weg, sobald
+   sie umgesetzt ist.
 5. **Die Reihenfolge** wird bei jeder Änderung mitgepflegt.
 
 ---
 
 ## Reihenfolge
 
-1. **Abschnitt 2** Offline-Betrieb der Theke: 17 Commits in drei Stufen, je Stufe Nachweis und
-   Freigabe. Stufe 1 in einer frischen Sitzung; die Voraussetzungen (1.5, 3.1–3.4) sind seit dem
-   15.09.2026 erledigt.
+1. **Abschnitt 2** Offline-Betrieb der Theke: Stufe 1 ist gebaut; jetzt der Nachweis am Stack
+   (2.3), dann Peters Freigabe für Stufe 2.
 2. **5.1** Schäden und Benutzer.
 3. **5.5–5.9**, **5.12** und **5.14** kleine B-Commits.
 4. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -83,9 +83,7 @@ Littera-Übernahme (7.2).
 
 ## 1. Sofort (Kategorie A)
 
-Nichts offen (Stand 15.09.2026). Der letzte Punkt, 1.5 (Schülerakte schwieg bei einem
-gescheiterten Abruf der Bescheide und Gebühren), ist am 15.09.2026 erledigt
-([erledigt.md](erledigt.md)).
+Nichts offen (Stand 15.09.2026).
 
 ---
 
@@ -145,7 +143,7 @@ Alles andere kann warten, bis es im Betrieb vorkommt.
 
 **Stand 15.09.2026:** Stufe 1 ist gebaut — sieben Commits `0fa4b5a3`, `18b4887e`, `44615c42`,
 `08312c87`, `65f9a998`, `6fe6ba8b`, `23ca498c`, je ein Rot-Test am alten Code, volle Suite mit
-Postgres, Lint und Frontend-Gates grün (Einzelheiten in [erledigt.md](erledigt.md)). Abweichungen
+Postgres, Lint und Frontend-Gates grün (Einzelheiten in den Commit-Nachrichten). Abweichungen
 vom Plan: Der Warteschlangen-Eintrag behält `id` als Schlüssel (der keyPath des bestehenden
 IndexedDB-Schemas, keine Migration); die Absicht heißt `ausleihe`/`rueckgabe` wie die Antworttypen
 des Servers; ein Stapel-Eintrag, dessen Buchung gerade läuft, bekommt 503 (nicht 409), damit der
@@ -206,8 +204,7 @@ dann Peters Freigabe für Stufe 2.
 ### 2.2 Der Bau in drei Stufen, 17 Commits
 
 Je Stufe: Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am frisch gebauten Stack und
-im Browser, dann Peters Freigabe. Die Voraussetzungen aus Abschnitt 3 (3.1 Lehrkraft-Auflösung
-über `ladeAktiveLehrkraft`, 3.2, 3.3, 3.4) sind seit dem 15.09.2026 erledigt.
+im Browser, dann Peters Freigabe.
 
 Ratschen, die jeder Commit im Blick hat: 200 Zeilen je Frontend-Datei (`App.svelte` steht auf
 genau 200, `Omnibox.svelte` mit 282 im Bestand und darf nicht wachsen); kein SQL in `api/`
@@ -329,7 +326,7 @@ liefert `undefined`, der TypeError kommt aus `res.ok`); `offlineSync.test.js` pi
     Arbeitsplätzen über SSE. Neues Bauteil, eigene Datei.
 17. **Doku:** HANDBUCH („Theke ohne Verbindung"), FACHKONZEPT 18.4, PII-Matrix, invarianten
     (Sperrreihenfolge), VVT und Datenschutzhinweis (Meldungen mit Frist; kurzzeitige Speicherung
-    von Ausweis- und Buchnummern am Theken-Rechner), Rückweg-Anleitung, OFFEN.md und erledigt.md.
+    von Ausweis- und Buchnummern am Theken-Rechner), Rückweg-Anleitung und OFFEN.md.
 
 ### 2.3 Nachweis am Stack (je Stufe, echter Chrome)
 
@@ -382,17 +379,14 @@ unter dem beim Sync angemeldeten Konto; steht in der Doku).
 
 ## 3. Theke — vor dem Offline-Bau (Kategorie B)
 
-Erledigt am 15.09.2026 ([erledigt.md](erledigt.md)): 3.1 Lehrkraft-Ausleihe meldet nur „keine
-Zeile" als 404, 3.2 Theke hängt nach dem Zusammenführen auf das Ziel um, 3.3 „Einmalig
-ignorieren" nur mit `edit_students`, 3.4 Hinweis bei 503 beim Abmelden. Der Offline-Bau
-(Abschnitt 2) kann beginnen.
+Nichts offen (Stand 15.09.2026); die Nummer bleibt, weil Abschnitt 4 auf 3.4 verweist.
 
 ---
 
 ## 4. Entscheidungen (Peter)
 
 Die Nummern bleiben fest. Beantwortete Fragen wandern in den Punkt, der sie umsetzt (4.1 → Abschnitt
-2, 4.2 → 3.4), oder nach [erledigt.md](erledigt.md).
+2, 4.2 → 3.4) oder fallen weg, sobald sie umgesetzt sind.
 
 ### 4.3 `ziel_jahrgang`: bauen oder streichen
 
@@ -551,11 +545,6 @@ angleichen. Bezug: 8.5 (B5, B6).
 - Übergabe-PDF (Original und Sammelliste).
 - Die Gates der Übergabe-Folgen.
 
-Seit dem 15.09.2026 erledigt (Mahnverfahren Stufe 2, [erledigt.md](erledigt.md)): „nicht
-zurückgegeben" setzt `VERLUST` am Exemplar, und „Gefunden" im Fehlbestandsbericht ruft
-`VerbucheRueckkehr`. „Ausleihen beenden" entfällt: `meldeSchaden` beendet die Ausleihe schon beim
-Melden bzw. mit dem Brief.
-
 ### 5.4 Schadensersatz Teil A, Etappen 3 und 4 (nach 8.3)
 
 Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
@@ -676,7 +665,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
 
-Das Modell seit dem 15.09.2026 (Stufen 1 und 2, [erledigt.md](erledigt.md)): Die Reiter „Alle ·
+Das Modell seit dem 15.09.2026 (Stufen 1 und 2): Die Reiter „Alle ·
 Akut fällig · Eskaliert" fragen „Wer hat Bücher zu spät?", der Reiter „Schadensersatz" fragt „Wer
 schuldet Geld?". Solange das Buch als ausgeliehen gilt, steht das Kind links; sobald ein Verlust
 oder Schaden gebucht ist, rechts — mit genau einem Stand und einem nächsten Schritt je Zeile. Der
@@ -793,8 +782,6 @@ Reihenfolge, und alle Lesepfade filtern auf `plan_id` als Präfix).
   CPU-Thema.
 - ZAP am 05.09.2026: `style-src 'unsafe-inline'`, `csrf_token` ohne HttpOnly, „Suspicious
   Comments" — alle drei dokumentierte Entscheidungen.
-- ZAP am 13.09.2026 (angemeldet): 44× „SQL Injection" am Stack widerlegt; der echte Fund daraus
-  (UUID ergab 500) ist erledigt.
 - `startGDPRWorker` (`main.go`) ruft nur die Leihen-Anonymisierung und die Abgänger-Löschung;
   `RunGDPRAnonymizeOldData` läuft allein im Cron. Keine Wirkung erkennbar, die Doku beschreibt
   beide Wege.
@@ -857,7 +844,7 @@ Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides ne
 
 Geplante Zielumgebung ist der Schulserver; heute ist der Hetzner-Server die einzige Instanz. Beim
 Umzug gilt dieser Abschnitt dort erneut — ebenso das, was am Hetzner-Server schon erfüllt ist
-(siehe [erledigt.md](erledigt.md), 13.09.2026).
+(Commit-Geschichte, 13.09.2026).
 
 ### 7.2 Frisches Littera-Backup
 

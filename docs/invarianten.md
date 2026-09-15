@@ -269,7 +269,7 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
 Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration. Die Durchgänge samt Funden stehen in
-[erledigt.md](erledigt.md), was davon offen ist in [OFFEN.md](OFFEN.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
+den Commit-Nachrichten (`git log --grep=Rasterdurchgang`), was davon offen ist in [OFFEN.md](OFFEN.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
 [sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
 und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 
