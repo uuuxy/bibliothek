@@ -110,6 +110,14 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	}
 	stand = append(stand, anliegen)
 
+	// 5b. Quittierte Nachbuch-Meldungen (Migration 117): Lesehistorie-Frist, höchstens 30 Tage.
+	nachbuchTage := NachbuchMeldungenTage(einst)
+	nachbuch := LoeschRueckstand{Routine: "Quittierte Nachbuch-Meldungen", Frist: tageText(nachbuchTage)}
+	if nachbuch.Zeilen, err = r.zaehle(ctx, "nachbuch_meldungen", "", PredikatNachbuchMeldungen(nachbuchTage, KulanzWaechter)); err != nil {
+		return fehler(err)
+	}
+	stand = append(stand, nachbuch)
+
 	// 6. Audit-Aufbewahrung, beide Protokolltabellen.
 	datensatz, err := r.zaehle(ctx, "audit_log", "", PredikatAuditLog(auditMonate, KulanzWaechter))
 	if err != nil {

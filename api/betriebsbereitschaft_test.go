@@ -61,6 +61,8 @@ func lageEingerichtet() Lage {
 		LoeschRueckstand: rueckstandSauber(),
 		// Ehemalige mit offenen Vorgängen: erhoben, keiner.
 		EhemaligeMitOffenenVorgaengen: zahl(0),
+		// Nachbuch-Meldungen: erhoben, keine liegt länger als zwei Wochen.
+		NachbuchMeldungenOffen: zahl(0),
 		// Ferientabelle: reicht weit genug (testJetzt 2026 + 2 ≤ 2030).
 		FerientabelleBis: 2030,
 		// Schadensersatz-Bescheid: erhoben, keine Pflichtangabe fehlt.

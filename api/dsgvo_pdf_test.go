@@ -88,6 +88,9 @@ func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
 	mock.ExpectQuery(`FROM schadensersatz_bescheide`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"referenznummer", "brief_datum", "frist_bis", "gesamtbetrag", "status"}))
+	mock.ExpectQuery(`FROM nachbuch_meldungen`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"rolle", "barcode", "ergebnis", "grund", "gescannt_am", "quittiert_am"}))
 	mock.ExpectQuery(`FROM audit_log`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktion", "akteur", "timestamp", "kontext", "details"}).

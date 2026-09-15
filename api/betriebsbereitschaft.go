@@ -166,6 +166,11 @@ type Lage struct {
 	// Ohne diese Zeile fiel die Lücke erst auf, wenn ein Bescheid gebraucht wurde.
 	// nil: nicht erhoben; leere Liste: alles da.
 	BescheidFehlend []string
+
+	// Nachbuch-Meldungen (Migration 117), die seit mehr als 14 Tagen niemand quittiert
+	// hat: Abweichungen zwischen Offline-Scan und Wirklichkeit, die jemand ansehen muss.
+	// nil: nicht erhoben.
+	NachbuchMeldungenOffen *int
 }
 
 // IstBekanntesDefaultGeheimnis meldet, ob ein Wert eines der mitgelieferten
@@ -227,6 +232,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeRestoreProbe(l, echt),
 		pruefeDsgvoRoutinen(l),
 		pruefeEhemaligeOffen(l),
+		pruefeNachbuchMeldungenOffen(l),
 		pruefeFerientabelle(l),
 		pruefeBescheidAngaben(l),
 	}
@@ -768,5 +774,35 @@ func pruefeKlassenDrift(l Lage) Befund {
 	b.Befund = strings.Join(probleme, " — ")
 	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere — ohne Fehlermeldung."
 	b.Abhilfe = "Unter Mahnwesen → Klassenlehrer die Zuordnung nachziehen oder verwaiste Einträge entfernen."
+	return b
+}
+
+// nachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen (Entscheidung Peter,
+// 13.09.2026). Eine Meldung, die so lange niemand quittiert, hat niemand angesehen.
+const nachbuchOffenSeitTagen = 14
+
+// pruefeNachbuchMeldungenOffen: Abweichungen zwischen Offline-Scan und Wirklichkeit —
+// umgebuchte Bücher, abgewiesene Ausleihen, veraltete Scans — stehen als Meldung, bis
+// jemand aus der Bibliothek sie quittiert. Der Wächter hält fest, DASS sie liegen bleiben;
+// was daraus folgt (Buch suchen, Kind ansprechen), entscheidet ein Mensch.
+func pruefeNachbuchMeldungenOffen(l Lage) Befund {
+	b := Befund{Bereich: "Nachbuch-Meldungen der Theke"}
+	if l.NachbuchMeldungenOffen == nil {
+		b.Stufe = StufeWarnung
+		b.Befund = "Nicht erhoben — die Zählung der offenen Nachbuch-Meldungen ist fehlgeschlagen."
+		b.Folge = "Unklar, ob Abweichungen aus dem Offline-Betrieb unbesehen liegen bleiben."
+		b.Abhilfe = "Datenbankverbindung prüfen; die Zählung läuft bei jedem Aufruf dieser Seite."
+		return b
+	}
+	n := *l.NachbuchMeldungenOffen
+	if n > 0 {
+		b.Stufe = StufeWarnung
+		b.Befund = fmt.Sprintf("%d Nachbuch-Meldungen sind seit mehr als zwei Wochen nicht quittiert.", n)
+		b.Folge = "Ein umgebuchtes oder abgewiesenes Buch aus dem Offline-Betrieb hat niemand angesehen; die Beteiligten stehen mit Namen darin, ohne Frist."
+		b.Abhilfe = "Theke → Meldungen: jede Zeile prüfen und quittieren. Quittierte Meldungen löscht das System nach der Lesehistorie-Frist von selbst."
+		return b
+	}
+	b.Stufe = StufeOK
+	b.Befund = "Keine Nachbuch-Meldung liegt länger als zwei Wochen unquittiert."
 	return b
 }

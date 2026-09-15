@@ -65,6 +65,8 @@ type ZusammenfuehrenErgebnis struct {
 	// DoppelteVormerkungen: Titel, die beide vorgemerkt hatten — die weniger
 	// fortgeschrittene Vormerkung fällt weg (UNIQUE titel_id, schueler_id).
 	DoppelteVormerkungen int64 `json:"doppelte_vormerkungen"`
+	// NachbuchMeldungen: Meldungen der Theke (Migration 117), in denen die Quelle stand.
+	NachbuchMeldungen int64 `json:"nachbuch_meldungen"`
 }
 
 // zusammenfuehrenZeile sind die Felder, die beim Zusammenführen entschieden werden.
@@ -215,7 +217,10 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 type gewanderteVorgaenge struct {
 	Ausleihen, Schadensfaelle, Vormerkungen, VormerkungenDoppelt []string
 	Bescheide                                                    []string
-	Foto                                                         bool
+	// NachbuchMeldungen (Migration 117): Meldungen, in denen die Quelle als Ausleiher
+	// oder Vorbesitzer stand.
+	NachbuchMeldungen []string
+	Foto              bool
 	// ZielFotoGewichen: das Ziel hatte ein älteres Foto, das dem jüngeren der Quelle
 	// gewichen ist — der Rückweg weiß dann, dass ein Foto verloren ist.
 	ZielFotoGewichen bool
@@ -263,6 +268,12 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	if g.Bescheide, err = idsAus(ctx, tx, `UPDATE schadensersatz_bescheide SET schueler_id = $1 WHERE schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
 		return nil, fmt.Errorf("bescheide verschieben: %w", err)
 	}
+	// Nachbuch-Meldungen (Migration 117) hängen per SET NULL: Blieben sie stehen, machte der
+	// DELETE der Quelle sie still personenlos — die Meldung zeigte kein Kind mehr.
+	if g.NachbuchMeldungen, err = idsAus(ctx, tx, `UPDATE nachbuch_meldungen SET ausleiher_schueler_id = CASE WHEN ausleiher_schueler_id = $2 THEN $1 ELSE ausleiher_schueler_id END, vorbesitzer_schueler_id = CASE WHEN vorbesitzer_schueler_id = $2 THEN $1 ELSE vorbesitzer_schueler_id END WHERE ausleiher_schueler_id = $2 OR vorbesitzer_schueler_id = $2 RETURNING id`, ziel, quelle); err != nil {
+		return nil, fmt.Errorf("nachbuch-meldungen verschieben: %w", err)
+	}
+	erg.NachbuchMeldungen = int64(len(g.NachbuchMeldungen))
 	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
 	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
 	// das JÜNGERE Foto gewinnt, egal auf welcher Seite (Peter, 03.09.2026). Hat das Ziel

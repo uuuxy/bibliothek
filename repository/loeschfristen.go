@@ -197,6 +197,32 @@ func PredikatAnliegen(tage, kulanz int) Loeschbedingung {
 		  AND erledigt_am < NOW() - make_interval(days => $1::int + $2::int)`}
 }
 
+// ── Nachbuch-Meldungen ($1 Tage, $2 Kulanz) ─────────────────────────────────────
+//
+// Quittierte Meldungen fallen nach der Lesehistorie-Frist der Schülerbücherei, höchstens
+// nach 30 Tagen (Entscheidung Peter, 13.09.2026): Eine quittierte Meldung ist erledigt,
+// ihre Beteiligten stehen mit Namen darin, und länger als die Lesehistorie darf nichts
+// den Schüler an ein Buch binden. Offene Meldungen haben keine Frist — sie sind Arbeit,
+// die noch aussteht, und der Wächter der Betriebsbereitschaft nennt sie nach 14 Tagen.
+
+// HoechstNachbuchMeldungenTage ist die Obergrenze der Frist, unabhängig von der Einstellung.
+const HoechstNachbuchMeldungenTage = 30
+
+// NachbuchMeldungenTage liefert die Frist: Lesehistorie-Frist, höchstens 30 Tage.
+func NachbuchMeldungenTage(einst *SystemEinstellungen) int {
+	tage := TageOderStandard(einst.LesehistorieTage, StandardLesehistorieTage)
+	if tage <= 0 || tage > HoechstNachbuchMeldungenTage {
+		return HoechstNachbuchMeldungenTage
+	}
+	return tage
+}
+
+// PredikatNachbuchMeldungen ist die Bedingung für quittierte Nachbuch-Meldungen.
+func PredikatNachbuchMeldungen(tage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `quittiert_am IS NOT NULL
+		  AND quittiert_am < NOW() - make_interval(days => $1::int + $2::int)`}
+}
+
 // ── Audit-Aufbewahrung ($1 Monate, $2 Kulanz-Tage) ────────────────────────────
 //
 // Die Kulanz ist hier ein zusätzlicher TAG im selben Intervall, nicht ein zusätzlicher

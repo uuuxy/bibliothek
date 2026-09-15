@@ -231,3 +231,16 @@ func (r *BetriebszustandRepository) ZaehleEhemaligeMitOffenenVorgaengen(ctx cont
 		    OR EXISTS (SELECT 1 FROM schadensfaelle d WHERE d.schueler_id = s.id AND d.ist_bezahlt = false))`, tage).Scan(&n)
 	return n, err
 }
+
+// ZaehleNachbuchMeldungenOffenSeit zählt Nachbuch-Meldungen (Migration 117), die seit
+// mehr als `tage` Tagen niemand quittiert hat. Eine offene Meldung ist eine Abweichung
+// zwischen Offline-Scan und Wirklichkeit, die jemand ansehen muss — ein umgebuchtes Buch,
+// eine abgewiesene Ausleihe. Bleibt sie liegen, hat es niemand angesehen, und die
+// Beteiligten stehen mit Namen darin, ohne Frist (nur quittierte haben eine).
+func (r *BetriebszustandRepository) ZaehleNachbuchMeldungenOffenSeit(ctx context.Context, tage int) (int, error) {
+	var n int
+	err := r.pool.QueryRow(ctx, `
+		SELECT count(*) FROM nachbuch_meldungen
+		WHERE quittiert_am IS NULL AND erstellt_am < now() - make_interval(days => $1)`, tage).Scan(&n)
+	return n, err
+}

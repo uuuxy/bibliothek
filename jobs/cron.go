@@ -174,4 +174,7 @@ func (s *Scheduler) RunNaechtlicheDSGVO() {
 	// Erledigte Anliegen befristen (cron_dsgvo_anliegen.go): Wünsche und Meldungen
 	// aus dem Kollegiums-Portal tragen Freitext, Klasse und den Namen der Lehrkraft.
 	s.RunAnliegenBefristung()
+	// Quittierte Nachbuch-Meldungen befristen (cron_dsgvo_nachbuch.go): Lesehistorie-
+	// Frist, höchstens 30 Tage — sie nennen Ausleiher und Vorbesitzer mit Namen.
+	s.RunNachbuchMeldungenBefristung()
 }

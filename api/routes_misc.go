@@ -29,6 +29,12 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	actionHandler := s.ActionHandler(omniboxSvc)
 	mux.Handle("POST /api/action", s.RequirePermission("perform_actions")(actionHandler))
 	mux.Handle("POST /api/action/batch", s.RequirePermission("perform_actions")(s.ActionBatchHandler(omniboxSvc)))
+	// Nachbuch-Meldungen (Migration 117): Liste und Quittieren nur mit view_students — die
+	// Zeilen nennen Ausleiher und Vorbesitzer (Entscheidung Peter, 13.09.2026); der Zähler
+	// fürs Band ist eine Zahl und darf jeder Theken-Rolle gehören.
+	mux.Handle("GET /api/action/nachbuch-meldungen", s.RequirePermission("view_students")(s.NachbuchMeldungenListeHandler()))
+	mux.Handle("GET /api/action/nachbuch-meldungen/anzahl", s.RequirePermission("perform_actions")(s.NachbuchMeldungenAnzahlHandler()))
+	mux.Handle("POST /api/action/nachbuch-meldungen/{id}/quittieren", s.RequirePermission("view_students")(s.NachbuchMeldungQuittierenHandler()))
 
 	// Unified Fuzzy Search
 	searchHandler := s.SearchHandler(studentRepo, bookRepo)

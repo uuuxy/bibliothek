@@ -66,6 +66,7 @@ func TestLoeschRueckstand_WaechterUndJobStellenDieselbeFrage(t *testing.T) {
 	s.RunGDPRDeleteAbgaenger()
 	s.RunLesehistorieBefristung()
 	s.RunAnliegenBefristung()
+	s.RunNachbuchMeldungenBefristung()
 	s.RunAuditAufbewahrung()
 
 	// Richtung 2: Ist danach Ruhe? Jede verbleibende Zeile heißt, dass der Wächter eine
@@ -197,6 +198,12 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 	must("altes audit_logs", `
 		INSERT INTO audit_logs (aktion, details, zeitstempel)
 		VALUES ('EINSTELLUNG_GEAENDERT', '{}'::jsonb, NOW() - interval '800 days')`)
+
+	// 7. Quittierte Nachbuch-Meldungen (Migration 117): vor 40 Tagen quittiert (Frist höchstens 30).
+	must("Nachbuch-Meldung", `
+		INSERT INTO nachbuch_meldungen (idempotency_key, barcode, ergebnis, gescannt_am, erstellt_am, quittiert_am)
+		VALUES (gen_random_uuid(), 'B-ALT-NB', 'umgebucht', NOW() - interval '45 days',
+		        NOW() - interval '45 days', NOW() - interval '40 days')`)
 }
 
 // TestLesehistorie_ErreichtDieSpurGeloeschterTitel: Wird ein Titel gelöscht, während ein

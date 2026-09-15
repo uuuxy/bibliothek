@@ -1309,7 +1309,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('113_benutzer_email_eindeutig_in_normalform.sql'),
 ('114_jahrgang_null_null_repariert.sql'),
 ('115_lmf_plan_zusicherungen.sql'),
-('116_bewegungsstempel.sql')
+('116_bewegungsstempel.sql'),
+('117_nachbuch_meldungen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -1454,6 +1455,36 @@ CREATE INDEX IF NOT EXISTS idx_inv_erfassung_exemplar
 
 ALTER TABLE vormerkungen
     ADD COLUMN IF NOT EXISTS bereitgestellt_bis TIMESTAMP WITH TIME ZONE;
+
+-- Nachbuch-Meldungen (Migration 117): jede Abweichung vom Offline-Scan beim Nachbuchen —
+-- umgebucht, nur reaktiviert, nicht gebucht, veraltet — mit Barcode, Grund und Beteiligten,
+-- bis jemand aus der Bibliothek sie quittiert. Personenspalten wandern beim Zusammenführen,
+-- werden getilgt (SpurTilgungen) und stehen in der Art.-15-Auskunft. Quittierte fallen nach
+-- der Lesehistorie-Frist, höchstens nach 30 Tagen (PredikatNachbuchMeldungen).
+CREATE TABLE nachbuch_meldungen (
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	idempotency_key UUID NOT NULL,
+	exemplar_id UUID REFERENCES buecher_exemplare(id) ON DELETE SET NULL,
+	barcode TEXT NOT NULL,
+	ergebnis TEXT NOT NULL,
+	grund TEXT,
+	ausleiher_schueler_id UUID REFERENCES schueler(id) ON DELETE SET NULL,
+	ausleiher_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+	vorbesitzer_schueler_id UUID REFERENCES schueler(id) ON DELETE SET NULL,
+	vorbesitzer_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+	ausweis_text TEXT,
+	gescannt_am TIMESTAMP WITH TIME ZONE NOT NULL,
+	erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	quittiert_von UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+	quittiert_am TIMESTAMP WITH TIME ZONE,
+	CONSTRAINT uniq_nachbuch_meldungen_schluessel UNIQUE (idempotency_key),
+	CONSTRAINT chk_nachbuch_ergebnis CHECK (ergebnis IN (
+		'ausgeliehen', 'umgebucht', 'bereits_ausgeliehen', 'zurueckgegeben',
+		'nur_reaktiviert', 'nicht_gebucht', 'veraltet'))
+);
+CREATE INDEX idx_nachbuch_meldungen_offen ON nachbuch_meldungen (erstellt_am) WHERE quittiert_am IS NULL;
+CREATE INDEX idx_nachbuch_meldungen_ausleiher ON nachbuch_meldungen (ausleiher_schueler_id) WHERE ausleiher_schueler_id IS NOT NULL;
+CREATE INDEX idx_nachbuch_meldungen_vorbesitzer ON nachbuch_meldungen (vorbesitzer_schueler_id) WHERE vorbesitzer_schueler_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS mail_settings_config (
     id SERIAL PRIMARY KEY,

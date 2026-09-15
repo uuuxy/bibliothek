@@ -211,6 +211,11 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 		case "audit_logs":
 			exec(`INSERT INTO audit_logs (aktion, details) VALUES ('LUSD_ID_NACHGETRAGEN', jsonb_build_object('schueler_id', $1::text))`, quelle)
 			zaehlungen = append(zaehlungen, zaehlung{"audit_logs", `SELECT count(*) FROM audit_logs WHERE aktion = 'LUSD_ID_NACHGETRAGEN' AND details->>'schueler_id' = $1`})
+		case "nachbuch_meldungen":
+			// Migration 117: die Quelle stand als Vorbesitzer in einer Meldung der Theke.
+			exec(`INSERT INTO nachbuch_meldungen (idempotency_key, barcode, ergebnis, grund, vorbesitzer_schueler_id, gescannt_am)
+				VALUES (gen_random_uuid(), 'B-ZFT-NB', 'umgebucht', 'Zusammenführen-Gate', $1, NOW())`, quelle)
+			zaehlungen = append(zaehlungen, zaehlung{"nachbuch_meldungen", `SELECT count(*) FROM nachbuch_meldungen WHERE ausleiher_schueler_id = $1 OR vorbesitzer_schueler_id = $1`})
 		default:
 			t.Fatalf("dsgvoSchuelerQuellen kennt %s (%s), das Zusammenführen-Gate nicht — "+
 				"verschiebeVorgaenge und diesen Test nachziehen", q.Tabelle, q.Bezug)

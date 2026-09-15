@@ -171,6 +171,7 @@ type DsgvoAuskunftResponse struct {
 	Schadensfaelle       []DsgvoSchadensfall       `json:"schadensfaelle"`
 	Vormerkungen         []DsgvoVormerkung         `json:"vormerkungen"`
 	Bescheide            []DsgvoBescheid           `json:"schadensersatz_bescheide"`
+	NachbuchMeldungen    []DsgvoNachbuchMeldung    `json:"nachbuch_meldungen"`
 	AuditEintraege       []DsgvoAuditEintrag       `json:"protokolleintraege"`
 	Verwaltung           []DsgvoVerwaltungsEintrag `json:"verwaltungsprotokolle"`
 	Verarbeitungsangaben DsgvoVerarbeitungsangaben `json:"verarbeitungsangaben"`
@@ -344,6 +345,43 @@ func (s *Server) dsgvoQueryVormerkungen(ctx context.Context, id string) ([]Dsgvo
 	return out, rows.Err()
 }
 
+// DsgvoNachbuchMeldung ist eine Nachbuch-Meldung der Theke (Migration 117), in der die
+// Person als Ausleiher oder Vorbesitzer steht — mit Rolle, Barcode, Ergebnis und Zeitpunkt.
+type DsgvoNachbuchMeldung struct {
+	Rolle       string     `json:"rolle"` // ausleiher | vorbesitzer
+	Barcode     string     `json:"barcode"`
+	Ergebnis    string     `json:"ergebnis"`
+	Grund       *string    `json:"grund"`
+	GescanntAm  time.Time  `json:"gescannt_am"`
+	QuittiertAm *time.Time `json:"quittiert_am"`
+}
+
+// dsgvoQueryNachbuchMeldungen liest die Nachbuch-Meldungen, in denen diese Person steht.
+// Nach der Tilgung findet die Abfrage nichts mehr: beide Personenspalten sind dann NULL.
+func (s *Server) dsgvoQueryNachbuchMeldungen(ctx context.Context, id string) ([]DsgvoNachbuchMeldung, error) {
+	const q = `
+		SELECT CASE WHEN ausleiher_schueler_id = $1 THEN 'ausleiher' ELSE 'vorbesitzer' END,
+		       barcode, ergebnis, grund, gescannt_am, quittiert_am
+		FROM nachbuch_meldungen
+		WHERE ausleiher_schueler_id = $1 OR vorbesitzer_schueler_id = $1
+		ORDER BY gescannt_am DESC`
+	rows, err := s.DB.Pool.Query(ctx, q, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	out := []DsgvoNachbuchMeldung{}
+	for rows.Next() {
+		var m DsgvoNachbuchMeldung
+		if err := rows.Scan(&m.Rolle, &m.Barcode, &m.Ergebnis, &m.Grund, &m.GescanntAm, &m.QuittiertAm); err != nil {
+			return nil, err
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
 // dsgvoQueryBescheide liest die Schadensersatz-Bescheide dieser Person.
 //
 // Nach der Anonymisierung findet diese Abfrage nichts mehr: schueler_id ist dann NULL
@@ -427,15 +465,16 @@ func (s *Server) dsgvoQueryVerwaltungsEintraege(ctx context.Context, id string) 
 
 // dsgvoDaten bündelt alle personenbezogenen Daten eines Schülers für die Auskunft.
 type dsgvoDaten struct {
-	stammdaten     *DsgvoStammdaten
-	foto           DsgvoFoto
-	ausleihen      []DsgvoAusleihe
-	schaeden       []DsgvoSchadensfall
-	vormerkungen   []DsgvoVormerkung
-	bescheide      []DsgvoBescheid
-	auditEintraege []DsgvoAuditEintrag
-	verwaltung     []DsgvoVerwaltungsEintrag
-	verarbeitung   DsgvoVerarbeitungsangaben
+	stammdaten        *DsgvoStammdaten
+	foto              DsgvoFoto
+	ausleihen         []DsgvoAusleihe
+	schaeden          []DsgvoSchadensfall
+	vormerkungen      []DsgvoVormerkung
+	bescheide         []DsgvoBescheid
+	nachbuchMeldungen []DsgvoNachbuchMeldung
+	auditEintraege    []DsgvoAuditEintrag
+	verwaltung        []DsgvoVerwaltungsEintrag
+	verarbeitung      DsgvoVerarbeitungsangaben
 }
 
 // sammleDsgvoDaten lädt alle personenbezogenen Daten eines Schülers für die
@@ -469,6 +508,10 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Schadensersatz-Bescheide", err)
 	}
+	nachbuchMeldungen, err := s.dsgvoQueryNachbuchMeldungen(ctx, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der Nachbuch-Meldungen", err)
+	}
 	auditEintraege, err := s.dsgvoQueryAuditEintraege(ctx, id)
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Protokolleinträge", err)
@@ -480,15 +523,16 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 	verarbeitung := dsgvoVerarbeitungsangaben(s.dsgvoFristen(ctx))
 
 	return &dsgvoDaten{
-		verarbeitung:   verarbeitung,
-		stammdaten:     stammdaten,
-		foto:           foto,
-		ausleihen:      ausleihen,
-		schaeden:       schaeden,
-		vormerkungen:   vormerkungen,
-		bescheide:      bescheide,
-		auditEintraege: auditEintraege,
-		verwaltung:     verwaltung,
+		verarbeitung:      verarbeitung,
+		stammdaten:        stammdaten,
+		foto:              foto,
+		ausleihen:         ausleihen,
+		schaeden:          schaeden,
+		vormerkungen:      vormerkungen,
+		bescheide:         bescheide,
+		nachbuchMeldungen: nachbuchMeldungen,
+		auditEintraege:    auditEintraege,
+		verwaltung:        verwaltung,
 	}, nil
 }
 
@@ -549,6 +593,7 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 			Schadensfaelle:       daten.schaeden,
 			Vormerkungen:         daten.vormerkungen,
 			Bescheide:            daten.bescheide,
+			NachbuchMeldungen:    daten.nachbuchMeldungen,
 			AuditEintraege:       daten.auditEintraege,
 			Verwaltung:           daten.verwaltung,
 			Verarbeitungsangaben: daten.verarbeitung,

@@ -38,6 +38,9 @@ var dsgvoSchuelerQuellen = []struct {
 	// Migration 110: Der Bescheid bleibt als Beleg (die Referenznummer ordnet Zahlungen
 	// zu), sein Empfänger-Snapshot wird bei der Tilgung geleert.
 	{"schadensersatz_bescheide", "schueler_id (FK, bei Tilgung wird empfaenger_snapshot geleert)", true},
+	// Migration 117: Die Meldung bleibt als Vorgang (Barcode, Ergebnis), beide Personen-
+	// spalten werden bei der Tilgung auf NULL gesetzt.
+	{"nachbuch_meldungen", "ausleiher_schueler_id / vorbesitzer_schueler_id (FK, bei Tilgung -> NULL)", true},
 	{"audit_log", "datensatz_id (tabelle='schueler') bzw. details->>'schueler_id'", false},
 	{"audit_logs", "details->>'schueler_id'", false},
 }

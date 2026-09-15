@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"regexp"
 	"testing"
 
 	"bibliothek/db"
@@ -72,6 +73,10 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		case "vormerkungen":
 			_, err = pool.Exec(ctx, `INSERT INTO vormerkungen (titel_id, schueler_id, status)
 				VALUES ($1, $2, 'wartend')`, titelID, sid)
+		case "nachbuch_meldungen":
+			_, err = pool.Exec(ctx, `INSERT INTO nachbuch_meldungen
+				(idempotency_key, exemplar_id, barcode, ergebnis, grund, vorbesitzer_schueler_id, gescannt_am)
+				VALUES (gen_random_uuid(), $1, 'B-RUNDREISE', 'umgebucht', 'Rundreise', $2, NOW() - interval '1 hour')`, exID, sid)
 		case "audit_log":
 			// Lesehistorie, wie sie die Ausleihe schreibt (repository/audit_books.go) —
 			// je eine Zeile für den Prüfling und den fremden Schüler.
@@ -149,6 +154,8 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 			leer = len(daten.verwaltung) == 0
 		case "schadensersatz_bescheide":
 			leer = len(daten.bescheide) == 0
+		case "nachbuch_meldungen":
+			leer = len(daten.nachbuchMeldungen) == 0
 		default:
 			t.Fatalf("keine Auskunfts-Prüfung für Quelle %s — Test mit der Liste nachziehen", q.Tabelle)
 		}
@@ -250,10 +257,21 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 		t.Fatal("der FK-Scan fand keine einzige Referenz auf schueler — der Detektor misst nichts mehr")
 	}
 
+	// Welche Spalte(n) der Tabelle auf schueler zeigen, steht im Bezug-Text der Liste:
+	// jedes Wort, das auf schueler_id endet (Migration 117 hat zwei je Tabelle —
+	// ausleiher_schueler_id und vorbesitzer_schueler_id). Ohne Treffer gilt schueler_id.
+	spaltenImBezug := regexp.MustCompile(`\b[a-z_]*schueler_id\b`)
 	inListe := map[string]bool{}
 	for _, q := range dsgvoSchuelerQuellen {
-		if q.MitFK {
-			inListe[q.Tabelle+".schueler_id"] = true
+		if !q.MitFK {
+			continue
+		}
+		spalten := spaltenImBezug.FindAllString(q.Bezug, -1)
+		if len(spalten) == 0 {
+			spalten = []string{"schueler_id"}
+		}
+		for _, s := range spalten {
+			inListe[q.Tabelle+"."+s] = true
 		}
 	}
 

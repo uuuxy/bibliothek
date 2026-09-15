@@ -96,6 +96,10 @@ func (s *Server) sammleLage(
 	if n, err := zustandRepo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, ehemaligeOffenSeitTagen); err == nil {
 		lage.EhemaligeMitOffenenVorgaengen = &n
 	}
+	// Nachbuch-Meldungen, die seit zwei Wochen niemand quittiert hat: bei Fehler nil.
+	if n, err := zustandRepo.ZaehleNachbuchMeldungenOffenSeit(ctx, nachbuchOffenSeitTagen); err == nil {
+		lage.NachbuchMeldungenOffen = &n
+	}
 	if mail, err := mailRepo.GetConfig(ctx); err == nil && mail != nil {
 		lage.SmtpHost = strings.TrimSpace(mail.SMTPHost)
 	}

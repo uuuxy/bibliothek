@@ -57,6 +57,89 @@ const docTemplate = `{
                 "responses": {}
             }
         },
+        "/action/nachbuch-meldungen": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "theke"
+                ],
+                "summary": "Nachbuch-Meldungen",
+                "parameters": [
+                    {
+                        "type": "boolean",
+                        "description": "auch quittierte",
+                        "name": "alle",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.NachbuchMeldung"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/action/nachbuch-meldungen/anzahl": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "theke"
+                ],
+                "summary": "Anzahl offener Nachbuch-Meldungen",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/action/nachbuch-meldungen/{id}/quittieren": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "theke"
+                ],
+                "summary": "Nachbuch-Meldung quittieren",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Meldungs-ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/admin/permissions": {
             "get": {
                 "description": "Retrieves current allowed/denied flags for permissions across all system roles.",
@@ -2698,6 +2781,21 @@ const docTemplate = `{
         "api.BescheidErstellenRequest": {
             "type": "object",
             "properties": {
+                "ausleihen": {
+                    "description": "Ausleihen: überfällige Bücher, die mit dem Brief als Verlust gebucht werden.",
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "ausleihe_id": {
+                                "type": "string"
+                            },
+                            "betrag": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
                 "frist_bis": {
                     "type": "string"
                 },
@@ -2723,6 +2821,13 @@ const docTemplate = `{
         "api.BescheidVorschlag": {
             "type": "object",
             "properties": {
+                "ausleihen": {
+                    "description": "Ausleihen: überfällige Bücher, die noch keine Forderung tragen. Seit dem\n15.09.2026 (Stufe 2) braucht es keine Verlustmeldung je Buch mehr vor dem Brief.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.BescheidVorschlagAusleihe"
+                    }
+                },
                 "fehlende_angaben": {
                     "description": "FehlendeAngaben nennt die Einstellungen, ohne die kein Bescheid entstehen kann.\nDer Dialog zeigt sie, statt den Knopf stumm zu sperren.",
                     "type": "array",
@@ -2743,6 +2848,32 @@ const docTemplate = `{
                     }
                 },
                 "schueler_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.BescheidVorschlagAusleihe": {
+            "type": "object",
+            "properties": {
+                "ausleihe_id": {
+                    "type": "string"
+                },
+                "betrag": {
+                    "type": "number"
+                },
+                "faellig_seit": {
+                    "type": "string"
+                },
+                "herleitung": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "ist_lernmittel": {
+                    "type": "boolean"
+                },
+                "titel": {
                     "type": "string"
                 }
             }
@@ -2886,6 +3017,12 @@ const docTemplate = `{
                 "ausweisfoto": {
                     "$ref": "#/definitions/api.DsgvoFoto"
                 },
+                "nachbuch_meldungen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.DsgvoNachbuchMeldung"
+                    }
+                },
                 "protokolleintraege": {
                     "type": "array",
                     "items": {
@@ -2978,6 +3115,30 @@ const docTemplate = `{
                 },
                 "vorhanden": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api.DsgvoNachbuchMeldung": {
+            "type": "object",
+            "properties": {
+                "barcode": {
+                    "type": "string"
+                },
+                "ergebnis": {
+                    "type": "string"
+                },
+                "gescannt_am": {
+                    "type": "string"
+                },
+                "grund": {
+                    "type": "string"
+                },
+                "quittiert_am": {
+                    "type": "string"
+                },
+                "rolle": {
+                    "description": "ausleiher | vorbesitzer",
+                    "type": "string"
                 }
             }
         },
@@ -4201,6 +4362,50 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "vermerk": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.NachbuchMeldung": {
+            "type": "object",
+            "properties": {
+                "ausleiher": {
+                    "type": "string"
+                },
+                "ausleiher_klasse": {
+                    "type": "string"
+                },
+                "ausweis_text": {
+                    "type": "string"
+                },
+                "barcode": {
+                    "type": "string"
+                },
+                "ergebnis": {
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "gescannt_am": {
+                    "type": "string"
+                },
+                "grund": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "quittiert_am": {
+                    "type": "string"
+                },
+                "quittiert_von": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "vorbesitzer": {
                     "type": "string"
                 }
             }

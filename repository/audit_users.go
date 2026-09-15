@@ -330,6 +330,18 @@ func SpurTilgungen() []SpurTilgung { return spurTilgungen }
 
 var spurTilgungen = []SpurTilgung{
 	{
+		// Nachbuch-Meldungen (Migration 117): Die Meldung bleibt als Vorgang — Barcode,
+		// Ergebnis, Grund —, der Personenbezug fällt: beide Schüler-Spalten auf NULL. Die
+		// Fremdschlüssel stehen auf ON DELETE SET NULL, sobald der Datensatz verschwindet;
+		// diese Zeile räumt die Anonymisierung davor (anonymized_at, Zeile bleibt).
+		// Idempotent: NULL bleibt NULL.
+		Beschreibung: "nachbuch_meldungen (Ausleiher und Vorbesitzer)",
+		sql: `UPDATE nachbuch_meldungen
+			SET ausleiher_schueler_id = CASE WHEN ausleiher_schueler_id = ANY($1::uuid[]) THEN NULL ELSE ausleiher_schueler_id END,
+			    vorbesitzer_schueler_id = CASE WHEN vorbesitzer_schueler_id = ANY($1::uuid[]) THEN NULL ELSE vorbesitzer_schueler_id END
+			WHERE ausleiher_schueler_id = ANY($1::uuid[]) OR vorbesitzer_schueler_id = ANY($1::uuid[])`,
+	},
+	{
 		// Schadensersatz-Bescheid (Migration 110): Der Brief BLEIBT als Beleg — über seine
 		// Referenznummer werden Zahlungen zugeordnet, und Rechnungsunterlagen liegen
 		// Jahre. Was fällt, ist der Personenbezug: der Empfänger-Snapshot (Anrede, Name,

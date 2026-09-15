@@ -94,6 +94,17 @@ var fkAktionenBestand = []string{
 	"SET NULL  lehrer_anliegen.angefordert_von -> benutzer",
 	"SET NULL  schadensfaelle.benutzer_id -> benutzer",
 	"SET NULL  schadensfaelle.storniert_von -> benutzer",
+	// Migration 117 (Nachbuch-Meldungen), befragt am 15.09.2026: Fällt eine Person
+	// (Benutzer gelöscht, Schüler endgültig gelöscht) oder das Exemplar, bleibt die Meldung
+	// als Vorgang mit Barcode und Ergebnis stehen — personenlos bzw. exemplarlos. Die
+	// Liste zeigt dann „" statt eines Namens (coalesce in nachbuchMeldungSQL); die
+	// Art.-15-Auskunft findet die Zeile danach nicht mehr, was gewollt ist (Tilgung).
+	"SET NULL  nachbuch_meldungen.ausleiher_benutzer_id -> benutzer",
+	"SET NULL  nachbuch_meldungen.ausleiher_schueler_id -> schueler",
+	"SET NULL  nachbuch_meldungen.exemplar_id -> buecher_exemplare",
+	"SET NULL  nachbuch_meldungen.quittiert_von -> benutzer",
+	"SET NULL  nachbuch_meldungen.vorbesitzer_benutzer_id -> benutzer",
+	"SET NULL  nachbuch_meldungen.vorbesitzer_schueler_id -> schueler",
 	// Befragt am 06.09.2026: LEFT JOIN mit ausdrücklicher Begründung im Code
 	// (bestelldetail_repo.go), beide Geschwister-Pfade halten es genauso.
 	"SET NULL  bestellungen_positionen.titel_id -> buecher_titel",
@@ -171,6 +182,11 @@ var checkBedingungenBestand = []string{
 	// Lesepfad darauf, dass sie es NICHT verbietet: Der Ausgabe-Plan hat keine letzte
 	// Stunde, und NULL lässt der Check ausdrücklich zu.
 	"chk_lmf_plaene_letzte_stunde_im_tag",
+	// Migration 117, befragt am 15.09.2026: Das Ergebnis einer Nachbuch-Meldung ist eines
+	// von sieben Wörtern (repository/nachbuch_meldungen.go, Nachbuch*-Konstanten). Der Code
+	// schreibt nur diese; die Datenbank hält die zweite Tür — ein Reparaturskript mit
+	// einem Tippfehler bricht laut ab, statt einer Zeile, die keine Liste anzeigt.
+	"chk_nachbuch_ergebnis",
 	"chk_lmf_plaene_startstunde", "chk_lmf_plaene_stunden",
 	"chk_lmf_termine_art", "chk_lmf_termine_stunde", "chk_meldebestand_nonneg",
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
