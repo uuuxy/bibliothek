@@ -5,7 +5,7 @@
 	import StudentFormFelder from './components/StudentFormFelder.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
 
-	let { open = false, readerGroups = [], onclose, onsuccess } = $props();
+	let { open = false, klassen = [], onclose, onsuccess } = $props();
 
 	let newVorname = $state('');
 	let newNachname = $state('');
@@ -118,7 +118,7 @@
 			bind:klasse={newKlasse}
 			bind:barcode={newBarcode}
 			bind:freieKlasse={customKlasseInput}
-			{readerGroups}
+			{klassen}
 		/>
 
 		<div class="flex justify-end gap-3 pt-2 border-t border-slate-100">

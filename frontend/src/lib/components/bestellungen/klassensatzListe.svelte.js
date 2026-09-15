@@ -3,7 +3,7 @@ import { apiFetch, extractApiError } from '../../apiFetch.js';
 /**
  * Die Klassensatz-Reservierungen als Liste — eigene Datei, weil die Ansicht an der
  * Größen-Ratsche steht (200 Zeilen) und das Laden mit den Dialogen daneben nichts zu tun
- * hat. Dieselbe Auslagerung wie schuelerSuche, lesergruppen und geraeteListe.
+ * hat. Dieselbe Auslagerung wie schuelerSuche, klassenVorschlaege und geraeteListe.
  *
  * „Keine offenen Klassensatz-Reservierungen" heißt: niemand wartet. Bis zum 12.09.2026
  * stand derselbe Satz da, wenn der Abruf gescheitert war (`reservierungen = res.ok ?

@@ -71,36 +71,3 @@ func (s *Server) GetFaecherHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusOK, faecher)
 	}
 }
-
-// GetReaderGroupsHandler returns all entries from lesergruppen
-func (s *Server) GetReaderGroupsHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		rows, err := s.DB.Pool.Query(ctx, "SELECT id, kuerzel, bezeichnung FROM lesergruppen ORDER BY bezeichnung ASC")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
-			return
-		}
-		defer rows.Close()
-
-		type ReaderGroup struct {
-			ID          string `json:"id"`
-			Kuerzel     string `json:"kuerzel"`
-			Bezeichnung string `json:"bezeichnung"`
-		}
-		var results []ReaderGroup
-
-		for rows.Next() {
-			var rg ReaderGroup
-			if err := rows.Scan(&rg.ID, &rg.Kuerzel, &rg.Bezeichnung); err == nil {
-				results = append(results, rg)
-			}
-		}
-		if err := rows.Err(); err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("database error"))
-			return
-		}
-
-		RespondJSON(w, http.StatusOK, results)
-	}
-}

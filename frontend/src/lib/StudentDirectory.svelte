@@ -12,7 +12,7 @@
 	import StudentBatchPrint from './components/students/StudentBatchPrint.svelte';
 	import { erzeugeAusweisdruck } from './components/students/ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './components/students/schuelerSuche.svelte.js';
-	import { erzeugeLesergruppen } from './components/students/lesergruppen.svelte.js';
+	import { erzeugeKlassenVorschlaege } from './components/students/klassenVorschlaege.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Reiter from './components/ui/Reiter.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
@@ -27,7 +27,7 @@
 	let activeStudent = $state(/** @type {any} */ (null));
 
 	// Vorschlagsliste des Anlegen-Dialogs (eigene Datei, Größen-Ratsche).
-	const gruppen = erzeugeLesergruppen();
+	const klassen = erzeugeKlassenVorschlaege();
 	let showCreateModal = $state(false);
 
 	// Markierte Schüler für den Ausweis-Stapeldruck. Set statt Array: Das Ankreuzen
@@ -83,10 +83,10 @@
 	function handleStudentCreated() {
 		showCreateModal = false;
 		suche.lade();
-		gruppen.lade(); // Klassenliste aktualisieren
+		klassen.lade(); // Klassenliste aktualisieren
 	}
 
-	onMount(gruppen.lade);
+	onMount(klassen.lade);
 
 	// Reiter nach Absicht (siehe StudentProfile): Wer hier selbst gesucht hat, will
 	// Stammdaten — Elternkontakt, Adressabgleich, Abgangsjahr. Wer aus Mahnwesen oder
@@ -172,7 +172,7 @@
 						darfEndgueltigLoeschen={rechte.endgueltigLoeschen}
 						onRestoreSuccess={() => {
 							suche.lade();
-							gruppen.lade();
+							klassen.lade();
 						}}
 					/>
 				</div>
@@ -183,7 +183,7 @@
 
 <StudentCreateModal
 	open={showCreateModal}
-	readerGroups={gruppen.liste}
+	klassen={klassen.liste}
 	onclose={() => (showCreateModal = false)}
 	onsuccess={handleStudentCreated}
 />

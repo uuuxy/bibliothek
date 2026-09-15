@@ -1,8 +1,8 @@
 <!-- @component StudentFormFelder — die Eingabefelder für einen neuen Schüler.
 
-     Die Klasse kommt normalerweise aus den Lesergruppen; „Manuell eingeben" schaltet
-     auf ein Freitextfeld um, weil es Klassen gibt, die noch nicht als Gruppe
-     angelegt sind. Der Weg zurück steht als Knopf IM Feld — sonst säße man in der
+     Die Klasse kommt normalerweise aus den Klassen der Schule (GET /api/klassen);
+     „Manuell eingeben" schaltet auf ein Freitextfeld um, weil eine neue Klasse noch
+     keinen Schüler hat. Der Weg zurück steht als Knopf IM Feld — sonst säße man in der
      Freitexteingabe fest.
 
      Das Geburtsdatum ist Pflicht — nicht als Stammdatum, sondern als SCHLÜSSEL: Der
@@ -17,7 +17,7 @@
 	 * @type {{
 	 *   vorname: string, nachname: string, geburtsdatum: string,
 	 *   klasse: string, barcode: string,
-	 *   freieKlasse: boolean, readerGroups: any[]
+	 *   freieKlasse: boolean, klassen: string[]
 	 * }}
 	 */
 	let {
@@ -27,14 +27,11 @@
 		klasse = $bindable(),
 		barcode = $bindable(),
 		freieKlasse = $bindable(),
-		readerGroups = []
+		klassen = []
 	} = $props();
 
 	const klassenOptionen = $derived([
-		...readerGroups.map((/** @type {any} */ g) => ({
-			value: g.kuerzel,
-			label: `${g.kuerzel} (${g.bezeichnung})`
-		})),
+		...klassen.map((k) => ({ value: k, label: k })),
 		{ value: '__custom__', label: 'Manuell eingeben…' }
 	]);
 </script>
@@ -59,7 +56,7 @@
 				id="schueler-klasse"
 				bind:value={klasse}
 				options={klassenOptionen}
-				placeholder="Lesergruppe / Klasse auswählen"
+				placeholder="Klasse auswählen"
 				onchange={(wert) => {
 					if (wert === '__custom__') {
 						freieKlasse = true;

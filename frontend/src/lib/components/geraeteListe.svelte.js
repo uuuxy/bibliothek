@@ -3,7 +3,7 @@ import { apiFetch, extractApiError } from '../apiFetch.js';
 /**
  * Die Geräteliste (Laptops, Tablets) — eigene Datei, weil GeraeteVerwaltung an der
  * Größen-Ratsche steht (200 Zeilen) und das Laden mit dem Formular daneben nichts zu tun
- * hat. Dieselbe Auslagerung wie schuelerSuche, lesergruppen und eigeneAnliegen.
+ * hat. Dieselbe Auslagerung wie schuelerSuche, klassenVorschlaege und eigeneAnliegen.
  *
  * „Noch keine Geräte erfasst" ist eine Aussage über den Schrank. Bis zum 12.09.2026 stand
  * derselbe Satz da, wenn der Abruf gescheitert war (`const data = res.ok ? await

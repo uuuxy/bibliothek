@@ -6,8 +6,13 @@
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `GET /api/bescheide/ausstehend`
+- `GET /api/action/buchbarcodes`
+- `GET /api/action/nachbuch-meldungen`
+- `GET /api/action/nachbuch-meldungen/anzahl`
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
+- `GET /api/schadensfaelle/{id}/pdf`
+- `POST /api/action/nachbuch-meldungen/{id}/quittieren`
+- `POST /api/action/nachbuchen`
 - `POST /api/books/{id}/refresh-cover`
 - `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/defekt`
@@ -24,7 +29,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (207)
+## Alle registrierten Routen (211)
 
 - `/`
 - `/api/admin`
@@ -50,6 +55,9 @@
 - `DELETE /api/vormerkungen/{id}`
 - `GET /api/abgaenger`
 - `GET /api/abgaenger/pdf`
+- `GET /api/action/buchbarcodes`
+- `GET /api/action/nachbuch-meldungen`
+- `GET /api/action/nachbuch-meldungen/anzahl`
 - `GET /api/admin/`
 - `GET /api/admin/auditlog`
 - `GET /api/admin/permissions`
@@ -120,7 +128,6 @@
 - `GET /api/public/bestellung/{token}`
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
 - `GET /api/public/opac/suche`
-- `GET /api/readergroups`
 - `GET /api/reports/overdue-pdf`
 - `GET /api/reservierungen/klassensatz`
 - `GET /api/reservierungen/klassensatz/anzahl`
@@ -154,6 +161,8 @@
 - `POST /api/abgaenger/mail`
 - `POST /api/action`
 - `POST /api/action/batch`
+- `POST /api/action/nachbuch-meldungen/{id}/quittieren`
+- `POST /api/action/nachbuchen`
 - `POST /api/admin/`
 - `POST /api/admin/import-bestand`
 - `POST /api/admin/mahnungen/bulk-print`
