@@ -10,11 +10,22 @@ package repository
 import (
 	"context"
 	"errors"
+	"time"
 
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
 )
+
+// IdempotenzReservierungsfrist ist die Frist, nach der eine Reservierung (Status 0) als verwaist gilt
+// und wird von der nächsten Anfrage mit demselben Schlüssel übernommen. „Verwaist" heißt: Der
+// Server ist zwischen Reservierung und Antwort gestorben — nicht: er arbeitet noch. Das stimmt
+// nur, solange jede Arbeit unter dem Schlüssel VOR Ablauf dieser Frist abgebrochen und ihre
+// Antwort gespeichert ist: Die TimeoutMiddleware (api.StandardBearbeitungsfrist) beendet die
+// Arbeit, saveToCache (api, idempotenzSpeicherfrist) schreibt danach noch.
+// api/idempotenz_fristen_test.go hält die drei Werte aneinander; bis zum 15.09.2026 standen sie
+// als 60, 15 und 5 Sekunden in drei Dateien, ohne dass etwas sie verband.
+const IdempotenzReservierungsfrist = 60 * time.Second
 
 // IdempotenzAntwort ist, was unter einem Schlüssel steht: die gespeicherte Antwort, oder bei
 // Status 0 eine Reservierung, deren Arbeit noch läuft.
@@ -33,9 +44,9 @@ var ErrIdempotenzNichtReserviert = errors.New("idempotenz: schlüssel nicht rese
 // ReserviereIdempotenzSchluessel versucht, den Schlüssel zu reservieren. reserviert=true: der
 // Aufrufer darf arbeiten und speichert danach die Antwort. Sonst gehört der Schlüssel schon
 // jemandem, und antwort sagt, ob dessen Antwort da ist (Status ≥ 200) oder noch kommt
-// (Status 0). Eine Reservierung, die älter als 60 Sekunden ist, gilt als verwaist (der
-// Server ist zwischen Reservierung und Antwort gestorben) und wird übernommen — unter dem
-// Zeilen-Lock von ON CONFLICT nimmt sie genau einer.
+// (Status 0). Eine Reservierung, die älter als IdempotenzReservierungsfrist ist, gilt als
+// verwaist (der Server ist zwischen Reservierung und Antwort gestorben) und wird übernommen —
+// unter dem Zeilen-Lock von ON CONFLICT nimmt sie genau einer.
 func ReserviereIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface, schluessel string) (reserviert bool, antwort *IdempotenzAntwort, err error) {
 	var k string
 	err = pool.QueryRow(ctx, `
@@ -43,9 +54,9 @@ func ReserviereIdempotenzSchluessel(ctx context.Context, pool db.PgxPoolIface, s
 		VALUES ($1, '{"in_arbeit": true}', 0)
 		ON CONFLICT (idempotency_key) DO UPDATE SET created_at = CURRENT_TIMESTAMP
 		WHERE idempotency_keys.status_code = 0
-		  AND idempotency_keys.created_at < CURRENT_TIMESTAMP - INTERVAL '60 seconds'
+		  AND idempotency_keys.created_at < CURRENT_TIMESTAMP - make_interval(secs => $2)
 		RETURNING idempotency_key
-	`, schluessel).Scan(&k)
+	`, schluessel, IdempotenzReservierungsfrist.Seconds()).Scan(&k)
 	if err == nil {
 		return true, nil, nil
 	}

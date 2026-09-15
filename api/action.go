@@ -102,6 +102,12 @@ func (s *Server) erlangeIdempotenz(ctx context.Context, key string) idempotenzLa
 	}
 }
 
+// idempotenzSpeicherfrist: wie lange saveToCache nach der Arbeit noch schreiben darf — mit
+// WithoutCancel, also auch nach Ablauf der Bearbeitungsfrist. Bearbeitungsfrist plus diese
+// Frist müssen unter repository.IdempotenzReservierungsfrist bleiben, sonst kann die
+// Waisenübernahme einen Besitzer treffen, der noch lebt (idempotenz_fristen_test.go).
+const idempotenzSpeicherfrist = 5 * time.Second
+
 // saveToCache schreibt die Antwort in die Reservierung — mit WithoutCancel (Vorbild
 // mahnwesen_bulk_mail.go): Bricht der Aufrufer ab, nachdem die Buchung committet ist, muss
 // die Antwort trotzdem stehen, sonst bucht die Wiederholung neu. Ein Serverfehler wird nicht
@@ -110,7 +116,7 @@ func (s *Server) saveToCache(ctx context.Context, key string, data interface{}, 
 	if key == "" {
 		return
 	}
-	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), idempotenzSpeicherfrist)
 	defer abbruch()
 	if status >= 500 {
 		if _, err := repository.GibIdempotenzSchluesselFrei(ctx, s.DB.Pool, key); err != nil {

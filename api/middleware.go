@@ -50,6 +50,13 @@ var langLaufendePfade = []string{
 // es sich in ErweitereLesefristFuerLangeUploads.
 const StandardLesefrist = 30 * time.Second
 
+// StandardBearbeitungsfrist ist die Frist der TimeoutMiddleware für einen gewöhnlichen Aufruf
+// (Barcode-Scan, Suche, Formular); lang laufende Pfade bekommen LangLaufendeFrist. Benannt seit
+// dem 15.09.2026, weil die Idempotenz der Theke an ihr hängt: Eine Reservierung des Schlüssels
+// gilt nach repository.IdempotenzReservierungsfrist als verwaist, und das stimmt nur, wenn jede
+// Arbeit vorher abgebrochen und ihre Antwort gespeichert ist (idempotenz_fristen_test.go).
+const StandardBearbeitungsfrist = 15 * time.Second
+
 // RequestFrist bestimmt die Frist für einen Pfad. Ausgelagert, damit die Zuordnung
 // ohne HTTP-Aufbau prüfbar ist — eine Ausnahmeliste, die man nur im Betrieb testen
 // kann, ist genau die Sorte Schutz, die man irrtümlich für wirksam hält.

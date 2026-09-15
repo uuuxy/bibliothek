@@ -21,6 +21,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/internal/service"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
@@ -110,7 +111,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 		// Seit dem 15.09.2026 (Commit 7): Reservierung VOR der Arbeit, Antwort danach in die
 		// Reservierung (repository/idempotenz.go).
 		mock.ExpectQuery("INSERT INTO idempotency_keys").
-			WithArgs(schluessel).
+			WithArgs(schluessel, repository.IdempotenzReservierungsfrist.Seconds()).
 			WillReturnRows(pgxmock.NewRows([]string{"idempotency_key"}).AddRow(schluessel))
 		mock.ExpectExec("UPDATE idempotency_keys SET response_data").
 			WithArgs(schluessel, merkmalImCache{}, http.StatusForbidden).
@@ -136,7 +137,7 @@ func TestSperrMerkmalUeberlebtIdempotenzCache(t *testing.T) {
 		}
 		defer mock.Close()
 		mock.ExpectQuery("INSERT INTO idempotency_keys").
-			WithArgs(schluessel).WillReturnError(pgx.ErrNoRows) // der Schlüssel ist vergeben
+			WithArgs(schluessel, repository.IdempotenzReservierungsfrist.Seconds()).WillReturnError(pgx.ErrNoRows) // der Schlüssel ist vergeben
 		mock.ExpectQuery("SELECT response_data, status_code FROM idempotency_keys").
 			WithArgs(schluessel).
 			WillReturnRows(pgxmock.NewRows([]string{"response_data", "status_code"}).
