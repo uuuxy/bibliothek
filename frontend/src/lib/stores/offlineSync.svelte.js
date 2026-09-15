@@ -8,16 +8,21 @@ import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
-// Baut das Batch-Payload; nur eine Ausleihe mit Schüler-ID trägt active_student_id.
+// Baut das Batch-Payload. Eine Ausleihe trägt ihre Person: Schüler als active_student_id,
+// Lehrkraft als active_teacher_id (Handapparat; der Stapel-Endpunkt kennt das Feld seit
+// jeher, geschickt wurde es bis zum 15.09.2026 nie). Eine Rückgabe trägt keine Person.
 /** @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems */
 function baueBatchPayload(batchItems) {
 	return batchItems.map((item) => {
+		/** @type {{ query: string, idempotency_key: string, active_student_id?: string, active_teacher_id?: string }} */
 		const req = {
 			query: item.barcode,
 			idempotency_key: item.id
 		};
 		if (item.art === 'ausleihe' && item.schueler_id) {
 			req.active_student_id = item.schueler_id;
+		} else if (item.art === 'ausleihe' && item.lehrer_id) {
+			req.active_teacher_id = item.lehrer_id;
 		}
 		return req;
 	});

@@ -348,8 +348,10 @@ export function createOmniboxStore() {
 	// „verfügbar".
 	//
 	// Die Absicht kann der Aufrufer vorgeben: „Buch zurückgeben" in der Akte ist eine
-	// Rückgabe, auch mit geladenem Schüler (Commit 3). Ohne Vorgabe gilt: Schüler geladen →
-	// Ausleihe, sonst Rückgabe.
+	// Rückgabe, auch mit geladenem Schüler (Commit 3). Ohne Vorgabe gilt: Schüler ODER
+	// Lehrkraft geladen → Ausleihe (Handapparat, Entscheidung (b) vom 13.09.2026), sonst
+	// Rückgabe. Bis zum 15.09.2026 entschied nur der Schüler, und ein Buch mit geladener
+	// Lehrkraft wurde als Rückgabe eingereiht (Commit 4).
 	/**
 	 * @param {string} q
 	 * @param {string} idempotencyKey
@@ -359,7 +361,7 @@ export function createOmniboxStore() {
 	function schnappschuss(q, idempotencyKey, absicht) {
 		return {
 			id: idempotencyKey,
-			art: absicht ?? (activeStudent?.id ? 'ausleihe' : 'rueckgabe'),
+			art: absicht ?? (activeStudent?.id || activeTeacher?.id ? 'ausleihe' : 'rueckgabe'),
 			barcode: q,
 			schueler_id: activeStudent?.id ?? null,
 			lehrer_id: activeTeacher?.id ?? null,

@@ -172,6 +172,40 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 	});
 });
 
+// Eine Ausleihe an eine Lehrkraft schickt active_teacher_id (OFFEN.md 2.2, Commit 4). Der
+// Stapel-Endpunkt kennt das Feld seit jeher; der Payload-Bauer schickte es nie.
+describe('offlineSync: Handapparat trägt die Lehrkraft mit', () => {
+	beforeEach(async () => {
+		await clearQueue();
+		vi.clearAllMocks();
+	});
+
+	it('schickt active_teacher_id für eine offline gespeicherte Handapparat-Ausleihe', async () => {
+		await enqueueOfflineAction({
+			id: crypto.randomUUID(),
+			art: 'ausleihe',
+			barcode: 'B-10236',
+			schueler_id: null,
+			lehrer_id: 'lehrkraft-3',
+			gescannt_am: ++zaehler
+		});
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({ results: [{ index: 0, success: true, status: 200 }] })
+			})
+		);
+
+		await offlineSync.startSync();
+
+		const payload = vi.mocked(apiClient.post).mock.calls[0][1];
+		expect(payload[0].active_teacher_id, 'ohne Lehrkraft bucht der Server eine Rückgabe').toBe(
+			'lehrkraft-3'
+		);
+		expect(payload[0].active_student_id).toBeUndefined();
+	});
+});
+
 // Der Offline-Scan mit geladenem Schüler ist eine AUSLEIHE, keine Rückgabe
 // (Rasterdurchgang 06.09.2026). Bis dahin legte die Omnibox jeden Offline-Scan als
 // „checkin" ab, und der Payload-Bauer schickte `active_student_id` nur bei „checkout" —

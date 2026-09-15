@@ -98,6 +98,22 @@ describe('Omnibox offline', () => {
 		expect(q.map((e) => e.schueler_id)).toEqual(['schueler-7', 'schueler-7']);
 	});
 
+	// Mit geladener Lehrkraft ist ein Offline-Buch eine Handapparat-Ausleihe (OFFEN.md 2.2,
+	// Commit 4; Entscheidung (b) vom 13.09.2026). Bis dahin entschied nur activeStudent, und
+	// das Buch ging mit geladener Lehrkraft als Rückgabe in die Warteschlange.
+	it('reiht mit geladener Lehrkraft eine Ausleihe an sie ein', async () => {
+		omniboxStore.activeStudent = null;
+		omniboxStore.activeTeacher = { id: 'lehrkraft-3', vorname: 'Karl', nachname: 'Kraft' };
+		omniboxStore.queryVal = 'B-10234';
+		await omniboxStore.submitAction(new Event('submit'));
+		const q = await loadQueue();
+		expect(q).toHaveLength(1);
+		expect(q[0].art, 'Handapparat, keine Rückgabe').toBe('ausleihe');
+		expect(q[0].lehrer_id).toBe('lehrkraft-3');
+		expect(q[0].schueler_id).toBeNull();
+		omniboxStore.activeTeacher = null;
+	});
+
 	it('reiht mit geladenem Schüler eine Ausleihe ein, ohne ihn eine Rückgabe', async () => {
 		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
 		omniboxStore.queryVal = 'B-10234';
