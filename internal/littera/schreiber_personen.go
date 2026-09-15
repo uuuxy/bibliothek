@@ -87,7 +87,11 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 	}
 
 	lauf := &personenlauf{s: s, bericht: &bericht,
-		belegteAusweise: map[string]bool{}, belegteMails: map[string]bool{}}
+		belegteAusweise: map[string]bool{}, belegteMails: map[string]bool{}, buchBarcodes: map[string]bool{},
+		karten: ab.Ausweisnummern, mehrereKarten: map[string]bool{}}
+	for _, id := range ab.AusweisMehrfach {
+		lauf.mehrereKarten[id] = true
+	}
 	if err := lauf.vorbelegen(ctx); err != nil {
 		return bericht, err
 	}
@@ -121,6 +125,13 @@ type personenlauf struct {
 	bericht         *PersonenBericht
 	belegteAusweise map[string]bool
 	belegteMails    map[string]bool
+	// buchBarcodes sind für Ausweise gesperrt: Die Theke löst eine Nummer ohne Vorsilbe
+	// zuerst als Buch auf (resolveOhnePraefix).
+	buchBarcodes map[string]bool
+	// karten bildet Leser → Herstellernummer des Ausweises ab (FremdLeserNummer);
+	// mehrereKarten nennt die Leser, für die Littera mehr als eine Karte führt.
+	karten        map[string]string
+	mehrereKarten map[string]bool
 }
 
 // vorbelegen liest die schon vergebenen Ausweisnummern und Adressen ein — dieselbe
@@ -131,6 +142,11 @@ func (p *personenlauf) vorbelegen(ctx context.Context) error {
 		return err
 	}
 	if err := p.lade(ctx, `SELECT barcode_id FROM benutzer WHERE barcode_id IS NOT NULL`, p.belegteAusweise); err != nil {
+		return err
+	}
+	// Die Bücher stehen zu diesem Zeitpunkt schon da: Der Lauf schreibt den Bestand vor den
+	// Personen (cmd/littera-altbestand).
+	if err := p.lade(ctx, `SELECT barcode_id FROM buecher_exemplare WHERE barcode_id IS NOT NULL`, p.buchBarcodes); err != nil {
 		return err
 	}
 	return p.lade(ctx, `SELECT lower(email) FROM benutzer`, p.belegteMails)
@@ -286,16 +302,37 @@ func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser
 // ausweis liefert die Ausweisnummer und weicht bei Kollision auf die Littera-interne
 // Nummer aus. schueler.barcode_id ist unter aktiven Zeilen eindeutig; im Altbestand
 // kollidieren zwei Leser über dieselbe Lesernummer.
+//
+// Die Nummer ist die, die der Ausweis beim Scannen liefert: Steht in FremdLeserNummer eine
+// Herstellernummer, gewinnt sie gegen die Lesernummer (fremdnummern.go). Bis zum 15.09.2026
+// wurde sie eingelesen und nie geschrieben — nach dem Personenlauf hätte kein alter Ausweis
+// seine Person gefunden (OFFEN.md 5.15). Vergeben ist außerdem jede Nummer, die schon ein
+// Buch trägt.
 func (p *personenlauf) ausweis(l Leser) string {
 	nummer := l.Lesernummer
-	if nummer != "" && !p.belegteAusweise[nummer] {
+	if karte := p.karten[l.ID]; karte != "" {
+		nummer = karte
+	} else if len(p.karten) > 0 {
+		// Die Schule nutzt Herstellerausweise, für diese Person führt Littera aber keinen: Ein
+		// Ausweis in ihrer Hand findet sie nicht — das muss vor dem ersten Scan jemand wissen.
+		p.s.prot.Warnung(l.ID, nummer,
+			"keine Karte in FremdLeserNummer – Ausweis trägt die Lesernummer, ein vorhandener Herstellerausweis findet die Person nicht")
+	}
+	if p.mehrereKarten[l.ID] {
+		p.s.prot.Warnung(l.ID, nummer,
+			"mehrere Karten hinterlegt – die zuletzt angelegte gilt, mit einer älteren findet die Theke niemanden")
+	}
+	if nummer != "" && !p.belegteAusweise[nummer] && !p.buchBarcodes[nummer] {
 		p.belegteAusweise[nummer] = true
 		return nummer
 	}
 	ersatz := "L-" + l.ID
 	grund := "Ausweisnummer bereits vergeben"
-	if nummer == "" {
+	switch {
+	case nummer == "":
 		grund = "keine Lesernummer im Altbestand"
+	case p.buchBarcodes[nummer]:
+		grund = "Ausweisnummer ist schon der Barcode eines Buchs"
 	}
 	p.s.prot.Warnung(l.ID, nummer, grund+" – Ausweis "+ersatz+" vergeben, Karte muss neu gedruckt werden")
 	p.belegteAusweise[ersatz] = true

@@ -175,6 +175,103 @@ func TestDoppelteAusweisnummerWeichtAus(t *testing.T) {
 	}
 }
 
+// TestFremdLeserNummerGewinnt: Der Ausweis liefert beim Scannen die Nummer seines Herstellers
+// (gemessen „B97601826457"); Littera hält sie in FremdLeserNummer. Steht eine da, wird SIE die
+// Ausweisnummer — nicht die Lesernummer. Bis zum 15.09.2026 wurde die Tabelle eingelesen und
+// nie geschrieben: Nach dem Personenlauf hätte kein alter Ausweis seine Person gefunden
+// (OFFEN.md 5.15).
+func TestFremdLeserNummerGewinnt(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+
+	ab := &Altbestand{
+		Leser: []Leser{
+			leser("1", "24", "07H1", ArtSchueler),
+			leser("2", "25", "07H1", ArtSchueler),
+			leser("3", "26", "", ArtLehrkraft),
+		},
+		Ausweisnummern: map[string]string{"1": "B97601826457", "3": "B97601826458"},
+	}
+	if _, err := s.SchreibePersonen(context.Background(), ab); err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'B97601826457'`); n != 1 {
+		t.Errorf("die Herstellernummer muss der Ausweis des Schülers sein, gefunden: %d", n)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = '24'`); n != 0 {
+		t.Errorf("neben einer Herstellernummer darf die Lesernummer nicht stehen, gefunden: %d", n)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = '25'`); n != 1 {
+		t.Errorf("ohne Herstellernummer bleibt die Lesernummer der Ausweis, gefunden: %d", n)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM benutzer WHERE barcode_id = 'B97601826458'`); n != 1 {
+		t.Errorf("auch die Lehrkraft bekommt die Herstellernummer, gefunden: %d", n)
+	}
+	// Leser 2 hat keine Karte, obwohl die Schule Herstellerausweise nutzt: Ein Ausweis in
+	// seiner Hand findet ihn nicht — das muss jemand erfahren, bevor er an der Theke steht.
+	if text := protokoll(); !strings.Contains(text, "keine Karte in FremdLeserNummer") {
+		t.Errorf("wer ohne Karte übernommen wird, muss im Protokoll stehen:\n%s", text)
+	}
+}
+
+// TestAusweisnummerGleichBuchBarcodeWeichtAus: Lesernummern sind kleine Zahlen, und im Bestand
+// tragen Tausende Bücher nackte Mediennummern (Server, 15.09.2026: 30.658). Die Theke löst eine
+// Nummer ohne Vorsilbe zuerst als Buch auf (resolveOhnePraefix) — ein Schüler mit derselben
+// Nummer buchte beim Klick in der Namenssuche oder beim Scan seines neuen Ausweises das Buch.
+// Eine Nummer, die schon ein Buch trägt, ist deshalb vergeben (OFFEN.md 5.15).
+func TestAusweisnummerGleichBuchBarcodeWeichtAus(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	var titelID string
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, autor, medientyp, ist_lernmittel)
+		VALUES ('Kollisionsband', 'Prüfer', 'Buch', false) RETURNING id`).Scan(&titelID); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, einkaufspreis)
+		VALUES ($1, '24', true, 10.00)`, titelID); err != nil {
+		t.Fatalf("Exemplar anlegen: %v", err)
+	}
+
+	ab := &Altbestand{Leser: []Leser{leser("1", "24", "07H1", ArtSchueler)}}
+	if _, err := s.SchreibePersonen(ctx, ab); err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = '24'`); n != 0 {
+		t.Errorf("die Buchnummer 24 darf kein Ausweis werden, gefunden: %d", n)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'L-1'`); n != 1 {
+		t.Errorf("der Schüler soll die Ersatznummer L-1 tragen, gefunden: %d", n)
+	}
+	if text := protokoll(); !strings.Contains(text, "Barcode eines Buchs") {
+		t.Errorf("die Kollision mit dem Buch muss protokolliert werden:\n%s", text)
+	}
+}
+
+// TestMehrereKartenWerdenProtokolliert: Hat ein Leser mehrere Karten hinterlegt, gilt die
+// zuletzt angelegte (LeseAusweisnummern) — mit einer älteren Karte findet die Theke niemanden.
+// Das gehört ins Protokoll; bis zum 15.09.2026 las niemand AusweisMehrfach.
+func TestMehrereKartenWerdenProtokolliert(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+
+	ab := &Altbestand{
+		Leser:           []Leser{leser("1", "24", "07H1", ArtSchueler)},
+		Ausweisnummern:  map[string]string{"1": "B97601826459"},
+		AusweisMehrfach: []string{"1"},
+	}
+	if _, err := s.SchreibePersonen(context.Background(), ab); err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+	if text := protokoll(); !strings.Contains(text, "mehrere Karten") {
+		t.Errorf("mehrere hinterlegte Karten müssen protokolliert werden:\n%s", text)
+	}
+}
+
 // TestGeburtsdatumLandetNichtInDerZukunft: die Jahrhundertgrenze bei zweistelligen Jahren
 // liegt in Go fest auf 69. Am Altbestand landen dadurch 69 Personen in den Jahren 2046
 // bis 2068 — ein Geburtsdatum in der Zukunft ist immer falsch.
