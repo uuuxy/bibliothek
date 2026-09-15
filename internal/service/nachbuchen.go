@@ -54,12 +54,15 @@ type NachbuchEintrag struct {
 	SchuelerID     *string // Person, wenn der Rechner sie beim Scan noch auflösen konnte
 	LehrerID       *string
 	AusweisBarcode *string // sonst der offline gescannte Ausweis
-	// SchluesselBekannt: Der Server hat diesen Schlüssel schon einmal gesehen — ein
-	// abgebrochener Online-Versand, der die Bewegung schon gebucht hat. Der Wächter lässt
-	// den Eintrag dann durch, obwohl der Scan älter ist als die letzte Bewegung: Die
-	// fehlende Hälfte wird nachgeholt.
-	SchluesselBekannt bool
-	StaffID           string
+	// NachFremdrueckgabeVon: Der Online-Versand unter demselben Schlüssel hat nur die
+	// Fremdrückgabe dieser Ausleihe gebucht (das Buch stand auf jemand anderem), seine Antwort
+	// kam nicht an. Die Ausleihe an die Person des Eintrags fehlt noch. Der Wächter lässt den
+	// Eintrag durch, wenn sich das Exemplar seit dieser Rückgabe nicht bewegt hat; gebucht wird
+	// frühestens ab der Rückgabe. Bis zum 15.09.2026 hieß das SchluesselBekannt und galt für
+	// JEDE gespeicherte Antwort — auch für eine vollständige Ausleihe, nach der das Buch
+	// zurückgegeben worden war: Das Nachbuchen lieh es erneut aus (OFFEN.md 5.15).
+	NachFremdrueckgabeVon *string
+	StaffID               string
 }
 
 // NachbuchErgebnis ist die Antwort je Eintrag.
@@ -137,10 +140,31 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 		return nil, err
 	}
 
+	// Die Ausnahme: Der Online-Versand hat nur die Fremdrückgabe gebucht, die Ausleihe fehlt.
+	// Der Scan wird auf den Zeitpunkt dieser Rückgabe gelegt. Die Ausleihe überlappt die
+	// beendete dann nicht, und der Wächter darunter entscheidet wie immer: Ist die Rückgabe
+	// noch die letzte Bewegung, kommt der Eintrag durch; hat sich das Exemplar danach bewegt
+	// (Rückgabe, Aussonderung), liegt der Stempel später, und er meldet „veraltet". Das trägt
+	// nur, weil der Stempel nie rückwärts läuft (repository.sqlStempelVor) und jede Bewegung
+	// stempelt (docs/invarianten.md).
+	// „Nicht verliehen" ist trotzdem nötig: Eine Ausleihe, die selbst so nachgeholt wurde, liegt
+	// auf demselben Rückgabezeitpunkt und schiebt den Stempel nicht darüber hinaus — ein zweiter
+	// Eintrag mit Verweis auf dieselbe Fremdrückgabe käme sonst durch und buchte sie um
+	// (TestNachbuchen_WaechterUndFremdrueckgabe).
+	if e.NachFremdrueckgabeVon != nil && e.Absicht == NachbuchAbsichtAusleihe && l.activeLoan == nil {
+		rueckgabe, err := repository.LiesFremdrueckgabeZeitpunkt(ctx, tx, *e.NachFremdrueckgabeVon, copy.ID)
+		if err != nil {
+			return nil, err
+		}
+		if rueckgabe != nil && gescannt.Before(*rueckgabe) {
+			gescannt = *rueckgabe
+			l.gescannt = gescannt
+		}
+	}
+
 	// Der Wächter: Ein Scan, der älter ist als die letzte Bewegung, beschreibt eine
-	// Wirklichkeit, die es nicht mehr gibt — außer der Server hat den Schlüssel schon
-	// gesehen (abgebrochener Online-Versand).
-	if letzteBewegung != nil && gescannt.Before(*letzteBewegung) && !e.SchluesselBekannt {
+	// Wirklichkeit, die es nicht mehr gibt.
+	if letzteBewegung != nil && gescannt.Before(*letzteBewegung) {
 		db.SafeRollback(ctx, tx)
 		return s.meldeAbweisung(ctx, l, repository.NachbuchVeraltet,
 			fmt.Sprintf("Scan von %s liegt vor der letzten Bewegung des Exemplars (%s)",

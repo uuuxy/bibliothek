@@ -141,15 +141,16 @@ func TestNachbuchen_UmbuchungDoppelscanUndSperre(t *testing.T) {
 	}
 }
 
-func TestNachbuchen_WaechterUndBekannterSchluessel(t *testing.T) {
+func TestNachbuchen_WaechterUndFremdrueckgabe(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
 	jetzt := time.Now()
 	// Online: Anna lieh vor 20 Minuten, gab vor 5 Minuten zurück — die letzte Bewegung ist -5 min.
-	if _, err := w.pool.Exec(ctx, `
+	var annaAusleihe string
+	if err := w.pool.QueryRow(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, bearbeiter_id, ausgeliehen_am, erfasst_am, rueckgabe_frist, rueckgabe_am)
-		VALUES ($1, $2, $3, $4::timestamptz, $4::timestamptz, $4::timestamptz + interval '14 days', $5::timestamptz)`,
-		w.exemplarID, w.anna, w.staff, jetzt.Add(-20*time.Minute), jetzt.Add(-5*time.Minute)); err != nil {
+		VALUES ($1, $2, $3, $4::timestamptz, $4::timestamptz, $4::timestamptz + interval '14 days', $5::timestamptz) RETURNING id`,
+		w.exemplarID, w.anna, w.staff, jetzt.Add(-20*time.Minute), jetzt.Add(-5*time.Minute)).Scan(&annaAusleihe); err != nil {
 		t.Fatalf("Online-Ausleihe: %v", err)
 	}
 	if _, err := w.pool.Exec(ctx, `UPDATE buecher_exemplare SET letzte_bewegung_am = $2 WHERE id = $1`, w.exemplarID, jetzt.Add(-5*time.Minute)); err != nil {
@@ -165,16 +166,73 @@ func TestNachbuchen_WaechterUndBekannterSchluessel(t *testing.T) {
 		t.Errorf("veralteter Scan ohne Meldung")
 	}
 
-	// Derselbe Scan mit bekanntem Schlüssel (abgebrochener Online-Versand): Die fehlende
-	// Hälfte wird nachgeholt — Anna bekommt das Buch, obwohl der Scan älter ist.
-	e := w.eintrag(NachbuchAbsichtAusleihe, &w.anna, jetzt.Add(-10*time.Minute))
-	e.SchluesselBekannt = true
+	// Die Ausnahme hängt an einer FREMDrückgabe: Annas Rückgabe war eine gewöhnliche — ein
+	// Eintrag, der auf sie verweist, bleibt veraltet.
+	e := w.eintrag(NachbuchAbsichtAusleihe, &w.ben, jetzt.Add(-10*time.Minute))
+	e.NachFremdrueckgabeVon = &annaAusleihe
+	erg, err = w.svc.Nachbuchen(ctx, e)
+	if err != nil || erg.Ergebnis != repository.NachbuchVeraltet {
+		t.Fatalf("Verweis auf eine gewöhnliche Rückgabe: %v %+v", err, erg)
+	}
+
+	// War sie eine Fremdrückgabe (Bens Sitzung scannte online Annas Buch, die Antwort ging
+	// verloren), holt das Nachbuchen Bens Ausleihe nach — ab der Rückgabe, nicht ab dem Scan.
+	if _, err := w.pool.Exec(ctx, `UPDATE ausleihen SET ist_fremdrueckgabe = true WHERE id = $1`, annaAusleihe); err != nil {
+		t.Fatalf("Fremdrückgabe: %v", err)
+	}
+	e = w.eintrag(NachbuchAbsichtAusleihe, &w.ben, jetzt.Add(-10*time.Minute))
+	e.NachFremdrueckgabeVon = &annaAusleihe
 	erg, err = w.svc.Nachbuchen(ctx, e)
 	if err != nil || erg.Ergebnis != repository.NachbuchAusgeliehen {
-		t.Fatalf("bekannter Schlüssel: %v %+v", err, erg)
+		t.Fatalf("nach Fremdrückgabe: %v %+v", err, erg)
 	}
-	if n, s := w.offeneAusleihen(t); n != 1 || s != w.anna {
+	if n, s := w.offeneAusleihen(t); n != 1 || s != w.ben {
 		t.Fatalf("nachgeholt: %d offene, bei %s", n, s)
+	}
+	var ausgeliehen time.Time
+	if err := w.pool.QueryRow(ctx, `SELECT ausgeliehen_am FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, w.exemplarID).Scan(&ausgeliehen); err != nil {
+		t.Fatalf("Ausleihe lesen: %v", err)
+	}
+	if d := ausgeliehen.Sub(jetzt.Add(-5 * time.Minute)); d < -time.Millisecond || d > time.Millisecond {
+		t.Errorf("ausgeliehen_am %v, erwartet die Rückgabe um %v", ausgeliehen, jetzt.Add(-5*time.Minute))
+	}
+
+	// Die Ausnahme gilt nur, solange sich das Exemplar seit der Fremdrückgabe nicht bewegt hat.
+	e = w.eintrag(NachbuchAbsichtAusleihe, &w.anna, jetzt.Add(-10*time.Minute))
+	e.NachFremdrueckgabeVon = &annaAusleihe
+	erg, err = w.svc.Nachbuchen(ctx, e)
+	if err != nil || erg.Ergebnis == repository.NachbuchAusgeliehen || erg.Ergebnis == repository.NachbuchUmgebucht {
+		t.Fatalf("nach einer Bewegung seit der Fremdrückgabe: %v %+v", err, erg)
+	}
+	if n, s := w.offeneAusleihen(t); n != 1 || s != w.ben {
+		t.Fatalf("Bens Ausleihe muss bleiben: %d offene, bei %s", n, s)
+	}
+
+	// Ben gibt das Buch zurück: Es liegt frei im Regal, aber es hat sich seit der Fremdrückgabe
+	// bewegt. Ein Eintrag, der auf dieselbe Fremdrückgabe verweist, ist veraltet.
+	loans := repository.NewLoanRepository(w.pool)
+	tx, err := w.pool.Begin(ctx)
+	if err != nil {
+		t.Fatalf("begin: %v", err)
+	}
+	aktiv, err := loans.GetActiveLoanByCopyIDTx(ctx, tx, w.exemplarID)
+	if err != nil || aktiv == nil {
+		t.Fatalf("Bens Ausleihe: %v %v", aktiv, err)
+	}
+	if err := loans.ReturnLoanTx(ctx, tx, aktiv.ID, w.staff, false); err != nil {
+		t.Fatalf("Rückgabe von Ben: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	e = w.eintrag(NachbuchAbsichtAusleihe, &w.anna, jetzt.Add(-10*time.Minute))
+	e.NachFremdrueckgabeVon = &annaAusleihe
+	erg, err = w.svc.Nachbuchen(ctx, e)
+	if err != nil || erg.Ergebnis != repository.NachbuchVeraltet {
+		t.Fatalf("frei im Regal, aber seit der Fremdrückgabe bewegt: %v %+v — erwartet veraltet", err, erg)
+	}
+	if n, _ := w.offeneAusleihen(t); n != 0 {
+		t.Fatalf("das Buch liegt im Regal, das Nachbuchen hat es verliehen: %d offene", n)
 	}
 }
 

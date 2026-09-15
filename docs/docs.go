@@ -3157,6 +3157,9 @@ const docTemplate = `{
                 "nachname": {
                     "type": "string"
                 },
+                "personenart": {
+                    "type": "string"
+                },
                 "rolle": {
                     "type": "string"
                 },
@@ -3919,7 +3922,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "daten": {
-                    "description": "Daten ist die gebuchte Wirkung in der Form des Theken-Scans (nur bei Erfolg).",
+                    "description": "Daten ist die gebuchte Wirkung in der Form des Theken-Scans (bei Erfolg und bei\nbereits_gebucht die Wirkung des Online-Versands).",
                     "allOf": [
                         {
                             "$ref": "#/definitions/api.ActionResponse"
@@ -3927,11 +3930,11 @@ const docTemplate = `{
                     ]
                 },
                 "ergebnis": {
-                    "description": "Ergebnis: ausgeliehen · umgebucht · bereits_ausgeliehen · zurueckgegeben ·\nnur_reaktiviert · nicht_gebucht · veraltet · wiederholen.",
+                    "description": "Ergebnis: ausgeliehen · umgebucht · bereits_ausgeliehen · zurueckgegeben ·\nnur_reaktiviert · nicht_gebucht · veraltet · bereits_gebucht · wiederholen.",
                     "type": "string"
                 },
                 "grund": {
-                    "description": "Grund steht bei nicht_gebucht und veraltet — der Satz, den die Meldung trägt.",
+                    "description": "Grund steht bei nicht_gebucht, veraltet und wiederholen — der Satz, den die Meldung trägt.",
                     "type": "string"
                 },
                 "schluessel": {
@@ -4237,6 +4240,10 @@ const docTemplate = `{
                 "nachname": {
                     "type": "string"
                 },
+                "personenart": {
+                    "description": "Personenart: nicht geschickt = unverändert, \"\" = leeren (Migration 119).",
+                    "type": "string"
+                },
                 "rolle": {
                     "type": "string"
                 },
@@ -4271,6 +4278,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "personenart": {
+                    "description": "Personenart: \"lehrkraft\", \"liv\" oder null (Migration 119).",
+                    "type": "string"
                 },
                 "rolle": {
                     "type": "string"

@@ -96,6 +96,40 @@ func SpeichereIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schlu
 	return nil
 }
 
+// UebernimmIdempotenzAntwort macht eine gespeicherte Antwort wieder zur Reservierung. Die
+// Nachbuch-Tür braucht das, wenn unter dem Schlüssel eine Antwort des Online-Versands steht und
+// trotzdem noch gebucht werden muss (Fehlerantwort, oder nur die Fremdrückgabe gebucht). Nur wer
+// genau die gelesene Antwort vorfindet, übernimmt — Status UND Inhalt; ein zweiter Aufruf mit
+// derselben Portion findet danach die Reservierung und bucht nicht daneben. created_at rückt vor,
+// damit die Waisenübernahme ab jetzt zählt.
+func UebernimmIdempotenzAntwort(ctx context.Context, pool db.PgxPoolIface, schluessel string, alt IdempotenzAntwort) (bool, error) {
+	tag, err := pool.Exec(ctx, `
+		UPDATE idempotency_keys
+		SET status_code = 0, response_data = '{"in_arbeit": true}', created_at = CURRENT_TIMESTAMP
+		WHERE idempotency_key = $1 AND status_code = $2 AND response_data = $3::jsonb`,
+		schluessel, alt.Status, alt.Daten)
+	if err != nil {
+		return false, err
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
+// StelleIdempotenzAntwortWiederHer legt eine übernommene Antwort zurück in die eigene
+// Reservierung — nach einem Serverfehler der Nachbuch-Tür, damit die nächste Runde die
+// Online-Antwort wieder vorfindet.
+func StelleIdempotenzAntwortWiederHer(ctx context.Context, pool db.PgxPoolIface, schluessel string, alt IdempotenzAntwort) error {
+	tag, err := pool.Exec(ctx,
+		`UPDATE idempotency_keys SET response_data = $2, status_code = $3 WHERE idempotency_key = $1 AND status_code = 0`,
+		schluessel, alt.Daten, alt.Status)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrIdempotenzNichtReserviert
+	}
+	return nil
+}
+
 // GibIdempotenzSchluesselFrei löscht die eigene Reservierung — nach einem Serverfehler, damit
 // die Wiederholung neu bucht statt den Fehler zurückzubekommen. freigegeben=false ohne
 // Fehler: Es gab keine Reservierung (mehr) zu löschen.

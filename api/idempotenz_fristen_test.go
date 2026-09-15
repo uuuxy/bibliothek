@@ -27,7 +27,7 @@ import (
 // Ablauf der Anfrage — die Schranke gilt je Eintrag ab seiner Reservierung und ist damit
 // dieselbe.
 func TestIdempotenz_UebernahmeFristLaengerAlsBearbeitungUndSpeichern(t *testing.T) {
-	for _, pfad := range []string{"/api/action", "/api/action/batch"} {
+	for _, pfad := range []string{"/api/action", "/api/action/batch", "/api/action/nachbuchen"} {
 		arbeit := RequestFrist(pfad, StandardBearbeitungsfrist)
 		spaetestensFertig := arbeit + idempotenzSpeicherfrist
 		if spaetestensFertig >= repository.IdempotenzReservierungsfrist {
