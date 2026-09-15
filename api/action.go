@@ -8,13 +8,13 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
+	"bibliothek/repository"
 )
-
-const insertIdempotencyQuery = "INSERT INTO idempotency_keys (idempotency_key, response_data, status_code) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
 
 // Merkmal einer Sperre, die die Theke übergehen darf (service.IstUebergehbareSperre): Am
 // Header öffnet das Frontend den Override-Dialog, das Cache-Feld trägt es durch eine
@@ -54,15 +54,68 @@ func mapServiceErrorToStatus(err error) int {
 	}
 }
 
-func (s *Server) getCachedResponse(ctx context.Context, key string) ([]byte, int, error) {
-	var cachedRespJSON []byte
-	var cachedStatus int
-	err := s.DB.Pool.QueryRow(ctx, "SELECT response_data, status_code FROM idempotency_keys WHERE idempotency_key = $1", key).Scan(&cachedRespJSON, &cachedStatus)
-	return cachedRespJSON, cachedStatus, err
+// idempotenzLage ist das Ergebnis von erlangeIdempotenz: genau eines der drei gilt, oder
+// keines (kein Schlüssel, oder die Datenbank hat die Reservierung verweigert — dann läuft
+// die Anfrage ohne Schutz, wie vor dem 15.09.2026).
+type idempotenzLage struct {
+	reserviert bool                          // der Schlüssel gehört dieser Anfrage
+	antwort    *repository.IdempotenzAntwort // eine frühere Anfrage hat schon geantwortet
+	inArbeit   bool                          // eine frühere Anfrage arbeitet noch, Warten hat nicht gereicht
 }
 
+// idempotenzWartezeit: wie lange eine Anfrage auf die Antwort einer laufenden mit demselben
+// Schlüssel wartet, bevor sie „in Arbeit" meldet. Tests setzen IdempotenzWartezeit.
+func (s *Server) idempotenzWartezeit() time.Duration {
+	if s.IdempotenzWartezeit > 0 {
+		return s.IdempotenzWartezeit
+	}
+	return 3 * time.Second
+}
+
+// erlangeIdempotenz reserviert den Schlüssel VOR der Arbeit (Commit 7, 15.09.2026). Bis dahin
+// wurde die Antwort erst nach der Arbeit eingefügt: Eine zweite Anfrage mit demselben
+// Schlüssel, die nach dem Commit der ersten und vor dem Speichern ihrer Antwort eintraf,
+// fand nichts und buchte neu — das Buch lag schon beim Kind, also wurde es zurückgenommen
+// (idempotenz_pg_test.go). Läuft die Arbeit noch, wartet die zweite Anfrage auf die Antwort;
+// ist die Reservierung nach einem Serverfehler freigegeben worden, übernimmt sie den Schlüssel.
+func (s *Server) erlangeIdempotenz(ctx context.Context, key string) idempotenzLage {
+	if key == "" {
+		return idempotenzLage{}
+	}
+	frist := time.Now().Add(s.idempotenzWartezeit())
+	for {
+		reserviert, antwort, err := repository.ReserviereIdempotenzSchluessel(ctx, s.DB.Pool, key)
+		if err != nil {
+			log.Printf("idempotenz: Schlüssel nicht reservierbar, Anfrage läuft ohne Schutz: %v", err)
+			return idempotenzLage{}
+		}
+		if reserviert {
+			return idempotenzLage{reserviert: true}
+		}
+		if !antwort.InArbeit() {
+			return idempotenzLage{antwort: antwort}
+		}
+		if ctx.Err() != nil || time.Now().After(frist) {
+			return idempotenzLage{inArbeit: true}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+}
+
+// saveToCache schreibt die Antwort in die Reservierung — mit WithoutCancel (Vorbild
+// mahnwesen_bulk_mail.go): Bricht der Aufrufer ab, nachdem die Buchung committet ist, muss
+// die Antwort trotzdem stehen, sonst bucht die Wiederholung neu. Ein Serverfehler wird nicht
+// gespeichert, sondern gibt den Schlüssel frei: Die Wiederholung soll es neu versuchen.
 func (s *Server) saveToCache(ctx context.Context, key string, data interface{}, status int) {
-	if key == "" || status >= 500 {
+	if key == "" {
+		return
+	}
+	ctx, abbruch := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+	defer abbruch()
+	if status >= 500 {
+		if _, err := repository.GibIdempotenzSchluesselFrei(ctx, s.DB.Pool, key); err != nil {
+			log.Printf("idempotenz: Schlüssel nach Serverfehler nicht freigegeben: %v", err)
+		}
 		return
 	}
 	respData, err := json.Marshal(data)
@@ -70,22 +123,17 @@ func (s *Server) saveToCache(ctx context.Context, key string, data interface{}, 
 		log.Printf("idempotenz: Antwort konnte nicht serialisiert werden: %v", err)
 		return
 	}
-	logExec(s.DB.Pool.Exec(ctx, insertIdempotencyQuery, key, respData, status))
+	if err := repository.SpeichereIdempotenzAntwort(ctx, s.DB.Pool, key, respData, status); err != nil {
+		log.Printf("idempotenz: Antwort nicht gespeichert: %v", err)
+	}
 }
 
-// serveCachedActionResponse liefert eine zwischengespeicherte idempotente Antwort aus,
-// falls vorhanden und unversehrt. true = Antwort wurde gesendet (Aufrufer beendet);
-// false = kein (verwertbarer) Cache-Eintrag, Aufrufer berechnet neu.
-func (s *Server) serveCachedActionResponse(ctx context.Context, w http.ResponseWriter, key string) bool {
-	if key == "" {
-		return false
-	}
-	cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, key)
-	if err != nil {
-		return false
-	}
+// serveCachedActionResponse liefert die gespeicherte Antwort aus, falls unversehrt.
+// true = Antwort wurde gesendet (Aufrufer beendet); false = beschädigter Eintrag, Aufrufer
+// berechnet neu.
+func (s *Server) serveCachedActionResponse(w http.ResponseWriter, antwort *repository.IdempotenzAntwort) bool {
+	cachedRespJSON, cachedStatus := antwort.Daten, antwort.Status
 
-	// Cache Hit
 	if cachedStatus >= 400 {
 		var errData map[string]string
 		if uerr := json.Unmarshal(cachedRespJSON, &errData); uerr != nil {
@@ -108,16 +156,10 @@ func (s *Server) serveCachedActionResponse(ctx context.Context, w http.ResponseW
 	return true
 }
 
-// cachedBatchItem liefert das zwischengespeicherte Batch-Ergebnis für einen Idempotenz-
-// Key. ok=false: kein (verwertbarer) Cache-Eintrag vorhanden — der Aufrufer berechnet neu.
-func (s *Server) cachedBatchItem(ctx context.Context, key string, index int) (ActionBatchResponseItem, bool) {
-	if key == "" {
-		return ActionBatchResponseItem{}, false
-	}
-	cachedRespJSON, cachedStatus, err := s.getCachedResponse(ctx, key)
-	if err != nil {
-		return ActionBatchResponseItem{}, false
-	}
+// cachedBatchItem liefert das gespeicherte Batch-Ergebnis zu einer Antwort. ok=false:
+// beschädigter Eintrag — der Aufrufer berechnet neu.
+func cachedBatchItem(antwort *repository.IdempotenzAntwort, index int) (ActionBatchResponseItem, bool) {
+	cachedRespJSON, cachedStatus := antwort.Daten, antwort.Status
 
 	item := ActionBatchResponseItem{
 		Index:   index,
@@ -164,7 +206,13 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 
 		ctx := r.Context()
 
-		if s.serveCachedActionResponse(ctx, w, req.IdempotencyKey) {
+		lage := s.erlangeIdempotenz(ctx, req.IdempotencyKey)
+		if lage.antwort != nil && s.serveCachedActionResponse(w, lage.antwort) {
+			return
+		}
+		if lage.inArbeit {
+			apierrors.SendHTTPError(w, http.StatusConflict,
+				errors.New("in_arbeit: dieser Scan wird gerade gebucht — bitte einen Moment warten und erneut scannen"))
 			return
 		}
 
@@ -328,8 +376,21 @@ func (s *Server) processSingleBatchItem(ctx context.Context, k batchKontext, req
 		}
 	}
 
-	if item, ok := s.cachedBatchItem(ctx, req.IdempotencyKey, index); ok {
-		return item
+	lage := s.erlangeIdempotenz(ctx, req.IdempotencyKey)
+	if lage.antwort != nil {
+		if item, ok := cachedBatchItem(lage.antwort, index); ok {
+			return item
+		}
+	}
+	if lage.inArbeit {
+		// 503, nicht 409: Der Sync der Theke bucht 4xx aus und meldet; ein Eintrag, dessen
+		// Buchung gerade läuft, soll liegen bleiben und in der nächsten Runde die Antwort
+		// aus dem Cache bekommen (offlineSync.svelte.js).
+		return ActionBatchResponseItem{
+			Index:  index,
+			Status: http.StatusServiceUnavailable,
+			Error:  "wird gerade gebucht — kommt in der nächsten Runde",
+		}
 	}
 
 	res, err := k.omnibox.ProcessQuery(ctx, service.OmniboxQuery{

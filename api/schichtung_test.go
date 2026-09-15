@@ -50,7 +50,6 @@ func ohneKommentare(quelle string) string {
 // Bestand vom 07.08.2026. Wer eine Datei auf repository/ umstellt, nimmt sie hier
 // heraus — der Test meldet beides, neu hinzugekommene UND inzwischen saubere.
 var handlerMitSQL = []string{
-	"action.go",
 	"audit_handler.go",
 	"audit_logs_handler.go",
 	"ausleihe.go",

@@ -52,6 +52,9 @@ type Server struct {
 	// sie — für das, was am Kalender hängt (Saison der Abgängerliste): Sonst bewiese
 	// derselbe Test im Oktober das Gegenteil von dem im Juni.
 	Uhr func() time.Time
+	// IdempotenzWartezeit: wie lange eine Anfrage auf die Antwort einer laufenden mit
+	// demselben Schlüssel wartet (erlangeIdempotenz); 0 = 3 s. Nur Tests setzen es.
+	IdempotenzWartezeit time.Duration
 }
 
 // NewServer constructs and returns a new Server instance.
