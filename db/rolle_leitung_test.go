@@ -69,3 +69,30 @@ func TestRechteVorgabeLeitung(t *testing.T) {
 		}
 	}
 }
+
+// Die Rechte der Leitung sind ein STARTWERT, kein Soll. Peter, 15.09.2026: „Die Leitung
+// startet mit allen Rechten außer Benutzer & Rechte und Einstellungen; was nicht passt,
+// nimmt der Admin im Rechte-Editor weg."
+//
+// Daraus folgt für die Selbstprüfung (api/betriebsbereitschaft.go): Sie darf einen
+// abweichenden LIVE-Wert nicht als Drift melden, sonst steht jede Anlage, die die Rolle
+// einmal angepasst hat, dauerhaft mit einer Warnung da — und Dauerwarnungen erziehen zum
+// Wegsehen (derselbe Grund, aus dem MITARBEITER/manage_settings dort steht). Die EXISTENZ
+// der Zeile prüft sie weiter: Ein fehlendes Recht erreicht eine Bestandsanlage nie von
+// selbst, das bleibt ein Befund.
+func TestRechteDerLeitungSindEinStartwert(t *testing.T) {
+	var leitung int
+	for _, e := range RechteVorgabe {
+		if e.Role != "LEITUNG" {
+			continue
+		}
+		leitung++
+		if !RechteOptional[e.Role+"/"+e.Permission] {
+			t.Errorf("LEITUNG/%s fehlt in RechteOptional — nimmt der Admin dieses Recht "+
+				"weg, meldet die Selbstprüfung dauerhaft eine Abweichung", e.Permission)
+		}
+	}
+	if leitung == 0 {
+		t.Fatal("keine LEITUNG-Zeilen in der Vorgabe — der Test prüft nichts")
+	}
+}

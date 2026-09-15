@@ -226,7 +226,7 @@ var RechteVorgabe = []RechteEintrag{
 // Vorgabe) verlangt weiterhin, dass die Zeile EXISTIERT, vergleicht aber ihren
 // Wert nicht — sonst stünde jede Anlage, die das Recht nutzt, dauerhaft mit
 // einer Warnung da, und Dauerwarnungen erziehen zum Wegsehen.
-var RechteOptional = map[string]bool{
+var RechteOptional = mitLeitungAlsStartwert(map[string]bool{
 	"HELFER/manage_vormerkungen": true,
 	// Seit der Aufteilung von manage_users (24.08.2026) sind diese beiden Rechte
 	// GENAU dafür da, an eine Sekretariats-/Mitarbeiter-Rolle delegiert zu werden.
@@ -236,6 +236,27 @@ var RechteOptional = map[string]bool{
 	// Zusammenführen (03.09.2026 aus manage_students_admin herausgelöst) ist ebenso
 	// eine Delegation ans Sekretariat.
 	"MITARBEITER/merge_students": true,
+})
+
+// mitLeitungAlsStartwert ergänzt JEDES Rolle/Recht-Paar der Leitung.
+//
+// Bei den anderen Rollen ist die Abweichbarkeit die Ausnahme und steht deshalb einzeln
+// oben. Bei der Leitung ist sie die Regel: Peter, 15.09.2026 — „Die Leitung startet mit
+// allen Rechten außer Benutzer & Rechte und Einstellungen; was nicht passt, nimmt der
+// Admin im Rechte-Editor weg." Die Vorgabe ist für diese Rolle also ein STARTWERT, und
+// eine Anlage, die ihn angepasst hat, darf nicht dauerhaft mit einer Warnung dastehen.
+//
+// Abgeleitet aus RechteVorgabe statt 24 Zeichenketten daneben: Eine zweite Liste liefe
+// beim nächsten neuen Recht auseinander, und die Abweichung wäre eine Dauerwarnung —
+// also genau das, was hier verhindert werden soll. Das Gate steht in
+// rolle_leitung_test.go. Die EXISTENZ jeder Zeile prüft die Selbstprüfung weiter.
+func mitLeitungAlsStartwert(m map[string]bool) map[string]bool {
+	for _, e := range RechteVorgabe {
+		if e.Role == "LEITUNG" {
+			m[e.Role+"/"+e.Permission] = true
+		}
+	}
+	return m
 }
 
 // vererbeAufgeteilteRechteSQL: Bis zum 24.08.2026 war manage_users das EINE Recht für
