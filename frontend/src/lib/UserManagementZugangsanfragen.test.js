@@ -37,6 +37,59 @@ describe('UserManagementZugangsanfragen', () => {
 		expect(status.textContent).not.toContain('Alt Konto');
 	});
 
+	// Eine aus Littera übernommene Lehrkraft hat keine E-Mail, nur eine Platzhalter-Adresse
+	// (internal/littera: littera-<id>@littera.invalid). Meldet sie sich selbst an, findet die
+	// Anmeldung sie nicht und legt einen zweiten Eintrag an — Ausweis und Ausleihen am ersten,
+	// Anmeldung am zweiten. Verbunden wird bewusst nicht automatisch (gleicher Name heißt nicht
+	// gleiche Person); die Freischaltung muss den Treffer aber zeigen.
+	it('zeigt beim Antrag den gleichnamigen Eintrag aus der Littera-Übernahme', () => {
+		const screen = render(UserManagementZugangsanfragen, {
+			users: [
+				{
+					vorname: 'Erika',
+					nachname: 'Musterfrau',
+					email: 'erika.musterfrau@schule.example',
+					aktiv: false,
+					zugang_beantragt_am: '2026-09-16T07:00:00Z'
+				},
+				{
+					vorname: 'erika',
+					nachname: 'Musterfrau ',
+					email: 'littera-4908@littera.invalid',
+					barcode_id: 'L-4908',
+					aktiv: true,
+					zugang_beantragt_am: null
+				}
+			]
+		});
+		const text = screen.getByRole('status').textContent ?? '';
+		expect(text).toContain('Ausweis L-4908');
+		expect(text).toContain('Anfrage löschen');
+	});
+
+	it('zeigt keinen Treffer für eine gleichnamige Person mit eigener Adresse', () => {
+		const screen = render(UserManagementZugangsanfragen, {
+			users: [
+				{
+					vorname: 'Erika',
+					nachname: 'Musterfrau',
+					email: 'erika.musterfrau@schule.example',
+					aktiv: false,
+					zugang_beantragt_am: '2026-09-16T07:00:00Z'
+				},
+				{
+					vorname: 'Erika',
+					nachname: 'Musterfrau',
+					email: 'e.musterfrau@schule.example',
+					barcode_id: 'L-77',
+					aktiv: true,
+					zugang_beantragt_am: null
+				}
+			]
+		});
+		expect(screen.getByRole('status').textContent).not.toContain('Anfrage löschen');
+	});
+
 	it('zeigt nichts, wenn kein Antrag offen ist', () => {
 		const screen = render(UserManagementZugangsanfragen, {
 			users: [
