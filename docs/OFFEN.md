@@ -876,25 +876,12 @@ im Browser, dann Peters Freigabe.
 - „Systempflege" ist kein eigenes Recht. Was nur der Admin braucht, heißt `manage_users` (Benutzer &
   Rechte) und `manage_settings` (Einstellungen).
 
-**Stufe 1 — vorhandene Fehler (je ein Commit)**
+**Stufe 1 — vorhandene Fehler: gebaut am 16.09.2026, Nachweis am Stack steht aus**
 
-1. Die Klassenauswahl beim Anlegen liest die leere Tabelle `lesergruppen` (lokal 0 Zeilen, nur
-   „Manuell eingeben…" erscheint); sie liest künftig die Klassen (`klassen`, `GET /api/klassen`).
-2. Die Meldung zu Klasse „Lehrer" verweist auf „Rolle Kollegium" (`api/student_klasse_regel.go`);
-   sie sagt künftig, wo eine Lehrkraft angelegt wird.
-3. Die Theke meldet beim Scan eines Lehrerausweises „Handapparat-Sitzung gestartet für Lehrer/in …"
-   (`omnibox.svelte.js`); künftig „Ausleihe für … (Lehrkraft)".
-4. ~~Rückgabe-Zweig zurückbauen~~ — am Code geprüft (16.09.2026): nicht tot. Der Zweig
-   „ein angemeldetes Kollegiumskonto scannt ein freies Buch → Ausleihe auf sich selbst"
-   (`handleLehrerHandapparat` in `internal/service/loan_return.go`) ist ab Werk verschlossen, weil
-   das Kollegium kein Theken-Recht hat; der Rechte-Editor bietet das Recht für das Kollegium aber an.
-   Gehört damit zu Stufe 3: Soll ein Scan eines freien Buchs durch eine angemeldete Person mit
-   Rolle auf diese Person buchen? Vorgabe dort: nein — wer Rückläufer sortiert, bucht sonst
-   versehentlich auf sich selbst; ausgeliehen wird über den eigenen Ausweis.
-5. Verdacht nachstellen: Eine aus Littera übernommene Lehrkraft hat eine Platzhalter-Adresse
-   (`@littera.invalid`). Meldet sie sich selbst an, findet die Anmeldung sie über die E-Mail nicht
-   und legt einen zweiten Eintrag an — Ausweis und Ausleihen am ersten, Portal am zweiten. Bestätigt
-   sich das, kommt eine Frage an Peter, wie die beiden verbunden werden.
+Klassenauswahl beim Anlegen, Meldung zu Klasse „Lehrer", Theken-Texte zur Lehrkraft, Meldung beim
+Löschen eines Kontos mit ausgeliehenen Büchern und der Littera-Treffer bei der Zugangsanfrage
+(Einzelheiten in den Commit-Nachrichten). Der vermeintlich
+tote Rückgabe-Zweig ist nicht tot und steht jetzt unter Stufe 3.
 
 **Stufe 2 — Rolle Leitung**
 
@@ -916,6 +903,12 @@ im Browser, dann Peters Freigabe.
   Nachbuch-Tür und damit für Stufe 3 des Offline-Baus. Die Reihenfolge der beiden Bauten ist frei.
 - Die Personenart entscheidet nichts mehr. Migration 120 bleibt als Vorgabe (Kollegium ohne
   Angabe = Lehrkraft), ihr Kommentar wird berichtigt.
+- Der Rückgabe-Zweig „ein angemeldetes Kollegiumskonto scannt ein freies Buch → Ausleihe auf sich
+  selbst" (`handleLehrerHandapparat` in `internal/service/loan_return.go`) ist nicht tot: ab Werk
+  verschlossen, weil das Kollegium kein Theken-Recht hat, im Rechte-Editor aber zuschaltbar (am
+  Code geprüft 16.09.2026). Vorgabe für die neue Regel: Ein Scan eines freien Buchs bucht nie auf
+  die angemeldete Person — wer Rückläufer sortiert, bucht sonst versehentlich auf sich selbst;
+  ausgeliehen wird über den eigenen Ausweis.
 - Rot-Test am alten Code: Ein Admin ohne Personenart findet die Theke nicht. Danach: Admin, Leitung
   und Mitarbeiter ja, Helfer nein, deaktiviert nein.
 - Der Einspiel-Hinweis „Personenart Lehrkraft nötig" aus v2.13.0 fällt weg.
