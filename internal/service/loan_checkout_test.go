@@ -169,8 +169,9 @@ func TestMapLoanCreateErr(t *testing.T) {
 // --- Lehrkraft als Entleiher (Handapparat) ---
 
 // Die Rolle kommt aus benutzer.rolle — NICHT mehr aus benutzer_rollen (siehe
-// Regressionstest unten).
-const lehrerQuery = "SELECT b.id, b.barcode_id, b.vorname, b.nachname, b.rolle::text"
+// Regressionstest unten). Seit dem 15.09.2026 ist es die Abfrage der Geräte-Seite
+// (ladeAktiveLehrkraft): barcode_id als coalesce, weil die Spalte nullbar ist.
+const lehrerQuery = "SELECT id, coalesce\\(barcode_id, ''\\), vorname, nachname, rolle::text"
 
 func TestResolveTeacher_AktiveLehrkraftBekommtJahresfrist(t *testing.T) {
 	svc, _, mock := newValidationService(t, nil)
@@ -214,6 +215,27 @@ func TestResolveTeacher_UnbekannteOderInaktiveLehrkraft(t *testing.T) {
 	}
 }
 
+// Ein Datenbank-Aussetzer ist kein „nicht gefunden": Bis zum 15.09.2026 wurde JEDER Fehler
+// zu ErrNotFound (404), und die Theke meldete einen Verbindungsabbruch als Bedienfehler.
+// Für den Offline-Betrieb (OFFEN.md 2, Entscheidung (d)) muss der Aussetzer als solcher
+// durchkommen; die Geräte-Seite (ladeAktiveLehrkraft, cc9e6c8c) tut das seit dem 13.09.2026.
+func TestResolveTeacher_DatenbankfehlerBleibtFehler(t *testing.T) {
+	svc, _, mock := newValidationService(t, nil)
+	defer mock.Close()
+
+	stoerung := errors.New("connection reset by peer")
+	mock.ExpectQuery(lehrerQuery).WithArgs("l1").WillReturnError(stoerung)
+
+	_, err := svc.resolveTeacherBorrower(context.Background(), "l1")
+
+	if errors.Is(err, ErrNotFound) {
+		t.Fatalf("Datenbankfehler wurde als ErrNotFound (404) gemeldet: %v", err)
+	}
+	if !errors.Is(err, stoerung) {
+		t.Errorf("der Datenbankfehler soll unverändert durchkommen, bekam: %v", err)
+	}
+}
+
 // TestResolveTeacher_FragtNichtBenutzerRollen ist der Regressionstest fuer den
 // Handapparat-Bug: benutzer_rollen wird nur beim Bootstrap einmalig befuellt, das
 // Admin-UI schreibt beim Anlegen ausschliesslich benutzer.rolle. Der frühere
@@ -226,7 +248,7 @@ func TestResolveTeacher_FragtNichtBenutzerRollen(t *testing.T) {
 
 	// Erwartet wird exakt EINE Abfrage — ohne benutzer_rollen. Ein Join-Rückfall
 	// würde hier an der nicht erfüllten Erwartung scheitern.
-	mock.ExpectQuery("FROM benutzer b\\s+WHERE b.id = \\$1 AND LOWER\\(b.rolle::text\\) = 'kollegium'").
+	mock.ExpectQuery("FROM benutzer\\s+WHERE id = \\$1 AND lower\\(rolle::text\\) = 'kollegium'").
 		WithArgs("neu1").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "rolle"}).
 			AddRow("neu1", "B-N1", "Neue", "Lehrkraft", "kollegium"))

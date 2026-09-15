@@ -152,17 +152,19 @@ func (s *defaultLoanService) resolveStudentBorrower(ctx context.Context, copy *r
 // die das Admin-UI beim Anlegen schreibt. Früher wurde hier gegen benutzer_rollen
 // gejoint; diese Tabelle wird aber nur einmalig beim Bootstrap befüllt, sodass
 // NEU angelegte Lehrkräfte dort fehlten und keinen Handapparat ausleihen konnten.
+//
+// Seit dem 15.09.2026 dieselbe Abfrage wie die Geräte-Ausleihe (ladeAktiveLehrkraft): Nur
+// „keine Zeile" ist ErrNotFound, ein Datenbankfehler bleibt ein Fehler — vorher wurde jeder
+// Fehler zu 404, und ein Verbindungsabbruch sah an der Theke wie ein Bedienfehler aus. Die
+// nullbare Spalte barcode_id kommt als coalesce; eine Lehrkraft ohne Ausweis (über
+// active_teacher_id im Stapel erreichbar) scheiterte vorher am Scan
+// (lehrkraft_ohne_ausweis_pg_test.go).
 func (s *defaultLoanService) resolveTeacherBorrower(ctx context.Context, teacherID string) (*checkoutContext, error) {
-	result := &checkoutContext{borrowerType: "teacher", borrowerID: teacherID, teacher: &repository.User{}}
-
-	err := s.pool.QueryRow(ctx, `
-		SELECT b.id, b.barcode_id, b.vorname, b.nachname, b.rolle::text
-		FROM benutzer b
-		WHERE b.id = $1 AND LOWER(b.rolle::text) = 'kollegium' AND b.aktiv = true LIMIT 1
-	`, teacherID).Scan(&result.teacher.ID, &result.teacher.BarcodeID, &result.teacher.Vorname, &result.teacher.Nachname, &result.teacher.Rolle)
+	lehrkraft, err := ladeAktiveLehrkraft(ctx, s.pool, teacherID)
 	if err != nil {
-		return nil, fmt.Errorf("%w: Aktives Lehrerprofil nicht gefunden", ErrNotFound)
+		return nil, err
 	}
+	result := &checkoutContext{borrowerType: "teacher", borrowerID: teacherID, teacher: lehrkraft}
 	// Lehrer-Ausleihe = Handapparat/Dauerleihe (1 Jahr), Tagesende Schul-Zeitzone —
 	// dieselbe Normalisierung wie alle anderen Fristen (siehe TagesEndeInSchulzeitzone).
 	result.dueTime = TagesEndeInSchulzeitzone(time.Now().In(schoolLocation()).AddDate(1, 0, 0))
