@@ -326,7 +326,12 @@ func (p *personenlauf) ausweis(l Leser) string {
 		p.belegteAusweise[nummer] = true
 		return nummer
 	}
+	// Auch die Ersatznummer kann schon vergeben sein, etwa von Hand an eine Lehrkraft. Die
+	// Eindeutigkeit gilt nur je Tabelle, und die Theke sucht bei „L-" zuerst unter den Schülern.
 	ersatz := "L-" + l.ID
+	for n := 2; p.belegteAusweise[ersatz] || p.buchBarcodes[ersatz]; n++ {
+		ersatz = fmt.Sprintf("L-%s-%d", l.ID, n)
+	}
 	grund := "Ausweisnummer bereits vergeben"
 	switch {
 	case nummer == "":

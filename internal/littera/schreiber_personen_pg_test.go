@@ -251,6 +251,42 @@ func TestAusweisnummerGleichBuchBarcodeWeichtAus(t *testing.T) {
 	}
 }
 
+// TestErsatznummerWeichtVergebenerNummerAus: Die Ersatznummer „L-<Littera-Nummer>" kann schon
+// vergeben sein, etwa von Hand an eine Lehrkraft. Die Eindeutigkeit gilt nur je Tabelle, und die
+// Theke sucht bei „L-" zuerst unter den Schülern — der Ausweis der Lehrkraft lüde still den
+// Schüler (Rasterdurchgang 15.09.2026).
+func TestErsatznummerWeichtVergebenerNummerAus(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	if _, err := pool.Exec(ctx, `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
+		VALUES ('L-2', 'Hand', 'Vergeben', 'hand@schule.invalid', 'kollegium', true)`); err != nil {
+		t.Fatalf("Lehrkraft anlegen: %v", err)
+	}
+	ab := &Altbestand{Leser: []Leser{
+		leser("1", "24", "07H1", ArtSchueler),
+		leser("2", "24", "08R1", ArtSchueler),
+	}}
+	bericht, err := s.SchreibePersonen(ctx, ab)
+	if err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+	if bericht.Schueler != 2 {
+		t.Fatalf("beide Schüler müssen ankommen, gemeldet: %+v", bericht)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'L-2'`); n != 0 {
+		t.Errorf("L-2 trägt schon die Lehrkraft, kein Schüler darf sie bekommen, gefunden: %d", n)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'L-2-2'`); n != 1 {
+		t.Errorf("der zweite Schüler soll auf L-2-2 ausweichen, gefunden: %d", n)
+	}
+	if text := protokoll(); !strings.Contains(text, "Ausweis L-2-2 vergeben") {
+		t.Errorf("die ausgewichene Ersatznummer muss im Protokoll stehen:\n%s", text)
+	}
+}
+
 // TestMehrereKartenWerdenProtokolliert: Hat ein Leser mehrere Karten hinterlegt, gilt die
 // zuletzt angelegte (LeseAusweisnummern) — mit einer älteren Karte findet die Theke niemanden.
 // Das gehört ins Protokoll; bis zum 15.09.2026 las niemand AusweisMehrfach.
