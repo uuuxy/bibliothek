@@ -57,9 +57,10 @@
 						<tr>
 							<td>
 								<span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span>
-								<!-- Personenart als Nebenzeile (M3 supporting text), keine eigene Spalte. -->
+								<!-- Personenart als Nebenzeile (M3 supporting text), keine eigene Spalte. 14 px
+								     wie jeder Zellen-Text (e2e/typo-rollen.spec.js); die Farbe setzt sie ab. -->
 								{#if user.personenart}
-									<span class="block text-xs text-on-surface-variant"
+									<span class="block text-sm text-on-surface-variant"
 										>{personenartLabel(user.personenart)}</span
 									>
 								{/if}
