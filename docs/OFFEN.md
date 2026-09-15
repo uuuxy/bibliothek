@@ -42,7 +42,7 @@ jemandem schaden?"**
    Freigabe. Stufe 1 in einer frischen Sitzung; die Voraussetzungen (1.5, 3.1–3.4) sind seit dem
    15.09.2026 erledigt.
 2. **5.1** Schäden und Benutzer.
-3. **5.5–5.9** und **5.12** kleine B-Commits.
+3. **5.5–5.9**, **5.12** und **5.14** kleine B-Commits.
 4. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 5. Nach der Antwort zu E5 (**8.3**): **5.4**.
@@ -694,6 +694,48 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
   `lmf_termine.art -> lmf_plaene` doppelt mit falscher Begründung (Mengenvergleich macht es
   unsichtbar); `uuidPfadParameter` hat keinen Test.
 - **`ActiveStudentList` (`dfc9913a`):** „Erneut versuchen" bekommt ohne Callback einen Leerlauf.
+
+### 5.14 Rasterdurchgang 11.–15.09.2026 (15.09.2026)
+
+104 Commits, alle zwölf Fragen über vier Schreibpfade (Bescheid/Schadensersatz, Offline-Theke,
+Buch-Routen, Abmelden), benannte Fragen über sieben weitere. Die Gates liefen dabei grün:
+golangci-lint 0, `go test ./...` mit den 197 PG-Tests, deadcode deckungsgleich, svelte-check 0/0,
+Vitest 620/620. Die Commits vom 11.–14.09. deckt 5.12 schon ab; neu im Fenster sind die vom
+15.09. (Offline Stufe 1, Mahnverfahren Stufe 2).
+
+- **Ein 5xx gibt den Idempotenz-Schlüssel frei, auch wenn schon committet wurde**
+  (`api/action.go`, `saveToCache`): Bei Status ≥ 500 löscht `GibIdempotenzSchluesselFrei` die
+  Reservierung, damit die Wiederholung neu bucht. In dem Zweig, den 5.12 nennt (`e9ac79e6`), ist
+  zu diesem Zeitpunkt `holeExemplarZurueck` aber bereits committet — die Wiederholung läuft also
+  echt neu statt in eine gespeicherte Antwort. Heute folgenlos, weil die Ausleihe unter
+  `FOR UPDATE` doppelte Buchungen abweist und die Reaktivierung wiederholbar ist; nichts sagt
+  oder prüft das. **Schritt:** entweder nur freigeben, solange nichts committet ist, oder
+  festhalten (Test), dass jede Aktion unter `/api/action` wiederholbar sein muss.
+- **Die 60-Sekunden-Waisenübernahme hat keine Gegenseite** (`repository/idempotenz.go`): Eine
+  Reservierung, die älter als 60 s ist, gilt als verwaist („der Server ist gestorben") und wird
+  übernommen. Der Server hat `ReadTimeout = 30 s` — das begrenzt nur das Einlesen — und **bewusst
+  kein `WriteTimeout`** (`main.go`); die Laufzeit eines Handlers ist damit unbegrenzt. Ein
+  langsamer Handler verliert seinen Schlüssel an die Wiederholung, beide arbeiten, und der
+  Verlierer scheitert in `SpeichereIdempotenzAntwort` mit `ErrIdempotenzNichtReserviert` — das
+  wird nur geloggt. **Schritt:** die 60 s an eine erzwungene Obergrenze der Handler-Laufzeit
+  binden, oder den Verlierer laut machen.
+- **„Aktive Lehrkraft" steht zweimal:** `lower(rolle::text) = 'kollegium' AND aktiv = true` in
+  `internal/service/device_service.go` (über `id`) und `repository/user.go` (über `barcode_id`).
+  Dieselbe Regel, zwei Pakete, kein gemeinsames Prädikat — kommt eine Bedingung dazu (etwa
+  „nicht gesperrt"), steht sie an einer Tür und fehlt an der anderen.
+- **Zwei Uhren in `UeberfaelligeAusleihen`** (`repository/bescheid_verlust.go`): gefiltert wird
+  mit `CURRENT_TIMESTAMP` (DB), die Staffel rechnet mit `schulzeit.Jetzt()` (Go). Wirkt nur am
+  Schuljahreswechsel, dann um eine Stufe. Schwester des `time.Now()`-Punkts in 5.12.
+
+Nachgestellt und **fallengelassen** — damit der nächste Durchgang sie nicht noch einmal findet:
+`EmpfaengerFuerBescheid` ohne `deleted_at IS NULL` (Bescheid an ein Kind im Papierkorb —
+`pruefeSchuelerLoeschbar` blockiert das Löschen bei offenen Ausleihen und unbezahlten Schäden, es
+gibt also nichts für den Brief; Rest ist eine Regel in einer anderen Datei) · Rückkehr storniert
+die Forderung, das Buch bleibt ausgesondert (beide Türen nehmen die Aussonderung zurück) ·
+„Pool ODER Tx" nur behauptet (der Handler öffnet die Transaktion wirklich) · Rechte-Asymmetrie an
+den Buch-Routen (`adminH` IST `RequireEditBooks`, nur der Name führt in die Irre) · Migration 115
+droppt `idx_lmf_termine_plan` (der neue Unique-Index deckt dieselben Spalten in derselben
+Reihenfolge, und alle Lesepfade filtern auf `plan_id` als Präfix).
 
 ---
 

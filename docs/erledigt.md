@@ -32,6 +32,20 @@ stehen in den geschlossenen Issues #593 bis #600.
 
 ## 15.09.2026
 
+**Abmelden: die Statusliste des Clients hängt am Löschcookie des Handlers** (`55ec612a`,
+Rasterdurchgang 15.09.2026, OFFEN.md 5.14). `abmeldungZugestellt` hielt `200` und `503` für
+„das Löschcookie kam an" — eine Verabredung mit `logout_handler.go`, auf beiden Seiten getestet
+und nirgends gebunden. Hätte der 503-Zweig das Löschcookie verloren, hätte der Client den Merker
+„Abmeldung ausstehend" trotzdem geräumt: Das Sitzungscookie bleibt, das nächste Neuladen am
+geteilten Theken-Rechner meldet die vorige Person wieder an, beide Tests grün.
+`api/logout_statusliste_test.go` misst die Handler-Antworten am Löschcookie (vier Pfade mit
+Sitzungscookie) und liest im Client nur den Funktionsrumpf ohne Kommentare. Rot gesehen in
+beide Richtungen; ein Kommentar mit 429 im Rumpf bleibt grün; eine umbenannte Funktion scheitert
+laut.
+
+Der Durchgang selbst (104 Commits, 11 Prüfpfade, alle Gates grün) steht mit seinen übrigen vier
+Punkten in OFFEN.md 5.14; fünf nachgestellte und fallengelassene Verdachte sind dort notiert.
+
 **Mahnverfahren, Stufe 2: der Bescheid entsteht direkt aus den überfälligen Büchern.** Peter
 hat die Empfehlung zu 4.18 bestätigt („du kannst es machen"). Vorher brauchte jedes Buch eine
 eigene Verlustmeldung in der Akte, der Betrag wurde zweimal gefragt, und der Knopf
