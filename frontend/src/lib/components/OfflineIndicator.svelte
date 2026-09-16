@@ -137,7 +137,7 @@
 				title="Sicherung eines anderen Rechners übernehmen"
 			>
 				<Upload size={16} strokeWidth={2.5} />
-				Einspielen
+				Sicherung einspielen
 			</Button>
 		</div>
 	</div>

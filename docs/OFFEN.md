@@ -155,7 +155,40 @@ weiter.
 einem Kind liegt, das im System frei ist, oder umgekehrt. Alles, was das verhindert, gehört hinein.
 Alles andere kann warten, bis es im Betrieb vorkommt.
 
-**Stand 15.09.2026:** Stufe 1 ist gebaut — sieben Commits `0fa4b5a3`, `18b4887e`, `44615c42`,
+**Stufe 1 ist NICHT gebaut — richtiggestellt am 16.09.2026, 20:30 Uhr, am Stack gemessen.**
+Der zweite Durchgang des Stufe-1-Nachweises (Netz gekappt, im Kiosk gescannt) endete mit zwei
+Toasts „Netzwerkfehler", und der Scan war weg. Ursache, am Code belegt:
+
+- `speichereOfflineAktion` (`stores/omnibox.svelte.js`) nimmt bis heute NUR `B-`-Barcodes in die
+  Warteschlange; alles andere — Littera-Ziffern, `LMF-`, jeder Ausweis — bekommt einen nackten
+  „Netzwerkfehler" und wird verworfen. Das ist Wort für Wort Punkt 1 von 2.1, also genau das, was
+  Stufe 1 beheben sollte. Die sieben Commits haben die Funktion angefasst (`65f9a998` hat ihren
+  Fehlerfall umgebaut), die Beschränkung aber nie entfernt.
+- Die Tür, die dem Rechner sagt, welche Ziffernfolge ein Buch ist, EXISTIERT am Server
+  (`GET /api/action/buchbarcodes`, `RequirePermission("perform_actions")`) und wurde am 15.09.
+  noch verbessert (ausgesonderte Exemplare). **Kein einziger Aufruf im Browser** — Bugklasse „Nie
+  verdrahtet". Die lokale Buch-Barcode-Liste aus der Entscheidung vom 13.09. gibt es nicht.
+- Kein Gate konnte das sehen: JEDER Fall in `stores/omniboxOffline.test.js` scannt `B-10234`.
+  Geprüft ist genau der eine Weg, der funktioniert.
+
+Folge für den Betrieb: Solange das so ist, ist der Satz im Offline-Band („Scannen geht weiter,
+die Buchungen folgen von selbst") ein Versprechen, das das System nicht hält. Und weil nie etwas
+in die Warteschlange kommt, erscheint auch „Sicherung speichern" nie — der Bediener sieht nur den
+Knopf zum Einspielen und fragt sich zu Recht, wo er denn speichern soll. Beide Beschwerden vom
+16.09. haben diese EINE Ursache.
+
+Daraus die Lehre, die teurer war als der Fehler: „gebaut" hiess hier „Commits liegen vor". Ein
+Nachweis von Hand hat nie stattgefunden, und die Testfälle bestätigten nur den funktionierenden
+Fall. Stufe 3 wurde am 16.09. auf diese Grundlage aufgesetzt — was dort gebaut ist (Band statt
+Vollbild, keine Sperre ohne Netz), gilt weiter und ist getestet; es zeigt nur eine Warteschlange,
+die noch nichts annimmt.
+
+**Nächster Schritt, vor allem Weiteren:** Stufe 1 wirklich bauen — die Barcode-Liste im Browser
+halten und auffrischen, alle Buchformen und Ausweise in die Warteschlange lassen, die
+Ziffernregel aus der Entscheidung vom 13.09. umsetzen, und je Form ein Testfall statt fünfmal
+`B-10234`.
+
+**Stand 15.09.2026 (überholt, siehe oben):** Stufe 1 galt als gebaut — sieben Commits `0fa4b5a3`, `18b4887e`, `44615c42`,
 `08312c87`, `65f9a998`, `6fe6ba8b`, `23ca498c`, je ein Rot-Test am alten Code, volle Suite mit
 Postgres, Lint und Frontend-Gates grün (Einzelheiten in den Commit-Nachrichten). Abweichungen
 vom Plan: Der Warteschlangen-Eintrag behält `id` als Schlüssel (der keyPath des bestehenden
