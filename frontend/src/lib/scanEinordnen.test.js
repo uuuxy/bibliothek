@@ -1,0 +1,69 @@
+import { describe, it, expect } from 'vitest';
+import { ordneScanEin } from './scanEinordnen.js';
+
+// Je FORM ein Fall — das ist der Punkt dieser Datei.
+//
+// Anlass: Der zweite Stufe-1-Nachweis am Stack (16.09.2026) endete mit „Netzwerkfehler",
+// weil die Warteschlange nur `B-` annahm. Kein Gate konnte das sehen: Jeder Fall in
+// stores/omniboxOffline.test.js scannt `B-10234`. Geprueft war genau der eine Weg, der
+// funktionierte — deshalb hier jede Form, die an der Theke wirklich ueber den Tisch geht.
+describe('Scan ohne Netz einordnen', () => {
+	// Die Barcode-Liste des Rechners, klein gehalten: zwei nackte Littera-Nummern.
+	const liste = new Set(['58968', '124117']);
+	/** @param {string} n */
+	const istBuch = (n) => liste.has(n);
+	/** @param {string} s */
+	const ein = (s) => ordneScanEin(s, istBuch);
+
+	it('erkennt die Ausweis-Vorsilben A-, S- und L-', () => {
+		// A- wird seit dem 16.09.2026 vergeben, S-/L- gibt es von frueher.
+		expect(ein('A-00042')).toEqual({ art: 'ausweis', nummer: 'A-00042' });
+		expect(ein('S-00042')).toEqual({ art: 'ausweis', nummer: 'S-00042' });
+		expect(ein('L-4711')).toEqual({ art: 'ausweis', nummer: 'L-4711' });
+	});
+
+	it('erkennt B- und LMF- als Buch — auch ohne Barcode-Liste', () => {
+		// Entscheidung vom 13.09.2026: Die Vorsilbe ist eindeutig, eine fehlende Liste darf
+		// ein klar erkennbares Buch nicht verwerfen.
+		const ohneListe = () => false;
+		expect(ordneScanEin('B-00123', ohneListe)).toEqual({ art: 'buch', nummer: 'B-00123' });
+		expect(ordneScanEin('LMF-2025-0007', ohneListe)).toEqual({
+			art: 'buch',
+			nummer: 'LMF-2025-0007'
+		});
+	});
+
+	it('nimmt eine nackte Nummer, die auf der Liste steht', () => {
+		// Der Altbestand traegt seine Littera-Mediennummer nackt als Exemplar-Barcode.
+		expect(ein('58968')).toEqual({ art: 'buch', nummer: '58968' });
+	});
+
+	it('rechnet ein Littera-Etikett auf die Nummer zurueck und bucht unter DIESER', () => {
+		// Der Strichcode traegt die EAN-13, die Liste die Nummer darin (gemessener Fall
+		// aus litteraEtikett.faelle.json: Aufdruck 58968).
+		expect(ein('5896800039556')).toEqual({ art: 'buch', nummer: '58968' });
+	});
+
+	it('nennt ein Geraet beim Namen statt es still zu verwerfen', () => {
+		// Geraete offline stehen nicht im Umfang (OFFEN.md 2.4) — sie haengen an einer
+		// Checkliste, die es ohne Netz nicht gibt. Der Bediener soll das erfahren.
+		expect(ein('G-17')).toEqual({ art: 'geraet', nummer: 'G-17' });
+	});
+
+	it('haelt eine unbekannte Nummer fuer unklar — und raet NICHT auf Ausweis', () => {
+		// Ein Schuelerausweis des Altbestands liefert gemessen B97601826457, ein
+		// Buchetikett eine 13-stellige EAN. Wer hier raet, schreibt die naechsten Buecher
+		// einem fremden Kind zu.
+		expect(ein('B97601826457')).toEqual({ art: 'unklar', nummer: 'B97601826457' });
+		expect(ein('999999')).toEqual({ art: 'unklar', nummer: '999999' });
+	});
+
+	it('ein Etikett, dessen Nummer nicht auf der Liste steht, bleibt unklar', () => {
+		// Sonst wuerde eine zufaellig gueltige EAN-13 zu einem Buch, das es nicht gibt.
+		expect(ein('1234567039572')).toEqual({ art: 'unklar', nummer: '1234567039572' });
+	});
+
+	it('leerer Scan ist unklar, nicht Buch', () => {
+		expect(ein('   ')).toEqual({ art: 'unklar', nummer: '' });
+	});
+});

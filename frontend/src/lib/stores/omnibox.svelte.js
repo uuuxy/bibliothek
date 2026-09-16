@@ -5,6 +5,8 @@ import { apiFetch, apiClient } from '../apiFetch.js';
 import { playSoundSuccess, playSoundError } from '../audio.js';
 import { enqueueOfflineAction } from '../offlineQueue.js';
 import { offlineSync } from './offlineSync.svelte.js';
+import { buchBarcodes } from './buchBarcodes.svelte.js';
+import { ordneScanEin } from '../scanEinordnen.js';
 import { toastStore } from './toastStore.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 
@@ -415,13 +417,27 @@ export function createOmniboxStore() {
 		};
 	}
 
-	// Speichert einen Scan offline (nur Buchbarcodes „B-…"), sonst Netzwerkfehler-Toast.
+	// Speichert einen Scan offline.
+	//
+	// Bis zum 16.09.2026 stand hier `if (!barcode.startsWith('B-')) { Toast; return; }` —
+	// jede andere Form, also Littera-Ziffern, `LMF-` und JEDER Ausweis, bekam einen nackten
+	// „Netzwerkfehler" und war weg. Das ist Wort fuer Wort der Punkt, den Stufe 1 haette
+	// beheben sollen; gefunden hat es erst der Nachweis von Hand am Stack, weil jeder
+	// Offline-Testfall `B-10234` scannte.
+	//
+	// Eingeordnet wird jetzt wie am Server (scanEinordnen.js, Zwilling von
+	// omnibox_service.go), mit der Barcode-Liste dieses Rechners als Nachschlagewerk.
+	// Gebucht wird unter der NUMMER aus der Einordnung, nicht unter dem Aufdruck: Ein
+	// Littera-Etikett traegt im Strichcode eine EAN-13, der Server kennt nur die Nummer
+	// darin.
 	/** @param {import('../offlineQueue.js').OfflineEintrag} eintrag */
 	async function speichereOfflineAktion(eintrag) {
-		if (!eintrag.barcode.startsWith('B-')) {
-			showToast('Netzwerkfehler', 'error');
+		const einordnung = ordneScanEin(eintrag.barcode, buchBarcodes.istBuch);
+		if (einordnung.art !== 'buch') {
+			verwirfOfflineScan(einordnung);
 			return;
 		}
+		eintrag = { ...eintrag, barcode: einordnung.nummer };
 		try {
 			await enqueueOfflineAction(eintrag);
 		} catch (err) {
@@ -440,6 +456,34 @@ export function createOmniboxStore() {
 		triggerScreenFlash('warning');
 		playSoundSuccess();
 		showToast(`Offline: Aktion für „${eintrag.barcode}“ gespeichert.`, 'warning');
+	}
+
+	// Was die Theke ohne Netz NICHT annimmt — und warum der Bediener das erfahren muss.
+	//
+	// Ein nackter „Netzwerkfehler" war die schlechteste aller Auskuenfte: Er sagte weder,
+	// dass der Scan verworfen wurde, noch warum, noch was jetzt zu tun ist. Wer ihn sah,
+	// durfte annehmen, es habe trotzdem geklappt.
+	/** @param {import('../scanEinordnen.js').ScanEinordnung} einordnung */
+	function verwirfOfflineScan(einordnung) {
+		const meldungen = {
+			// Ausweise ohne Netz bekommen ihren eigenen Weg (Stufe 1, naechster Schritt).
+			// Bis dahin: sagen, dass es nicht geht, statt es stillschweigend zu schlucken.
+			ausweis:
+				`Ohne Netz laesst sich der Ausweis \u201e${einordnung.nummer}\u201c noch nicht laden. ` +
+				`Buecher dieser Person bitte notieren und nach der Rueckkehr der Verbindung buchen.`,
+			// Geraete offline stehen nicht im Umfang (OFFEN.md 2.4): Sie haengen an einer
+			// Checkliste, die es ohne Netz nicht gibt.
+			geraet:
+				`Geraete lassen sich ohne Netz nicht ausgeben oder zuruecknehmen — die Checkliste dazu gibt es nur online. ` +
+				`\u201e${einordnung.nummer}\u201c wurde NICHT gebucht.`,
+			// Die sichere Seite: Wer hier raet, schreibt das naechste Buch einer fremden Person zu.
+			unklar:
+				`\u201e${einordnung.nummer}\u201c ist ohne Netz nicht eindeutig — die Nummer steht nicht in der Buchliste dieses Rechners. ` +
+				`NICHT gebucht; bitte notieren.`
+		};
+		triggerScreenFlash('error');
+		playSoundError();
+		zeigeFehlerBanner(meldungen[einordnung.art] ?? 'Dieser Scan wurde ohne Netz NICHT gebucht.');
 	}
 
 	// Der Versand ist gescheitert (Netzfehler, Timeout, CSRF-Bootstrap ohne Netz): Der

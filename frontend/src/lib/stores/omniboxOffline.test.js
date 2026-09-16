@@ -24,6 +24,18 @@ vi.mock('../audio.js', () => ({
 	playErrorBeep: vi.fn()
 }));
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
+// Die Barcode-Liste wird gestellt: Hier geht es um das EINREIHEN, nicht um das Holen.
+vi.mock('./buchBarcodes.svelte.js', () => ({
+	buchBarcodes: {
+		/** @param {string} n */
+		istBuch: (n) => n === '58968',
+		bereitstellen: vi.fn(),
+		laden: vi.fn(),
+		auffrischen: vi.fn(),
+		anzahl: 1,
+		geholtAm: 0
+	}
+}));
 
 import { apiClient } from '../apiFetch.js';
 import { omniboxStore } from './omnibox.svelte.js';
@@ -151,5 +163,56 @@ describe('Omnibox offline', () => {
 		expect(q).toHaveLength(1);
 		expect(q[0].art).toBe('rueckgabe');
 		expect(q[0].leser_id).toBeNull();
+	});
+
+	// Jede FORM, die an der Theke wirklich ueber den Tisch geht — nicht fuenfmal `B-10234`.
+	//
+	// Genau daran scheiterte der Nachweis am Stack (16.09.2026): `speichereOfflineAktion`
+	// nahm nur `B-` an und warf alles andere mit einem nackten „Netzwerkfehler" weg. Kein
+	// Testfall dieser Datei konnte das sehen, weil jeder `B-10234` scannte.
+	describe('alle Buchformen, nicht nur B-', () => {
+		it('reiht ein LMF-Buch ein — auch ohne Barcode-Liste', async () => {
+			omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+			omniboxStore.queryVal = 'LMF-2025-0007';
+			await omniboxStore.submitAction(new Event('submit'));
+			const q = await loadQueue();
+			expect(q).toHaveLength(1);
+			expect(q[0].barcode).toBe('LMF-2025-0007');
+			expect(q[0].art).toBe('ausleihe');
+		});
+
+		it('reiht eine nackte Littera-Nummer ein, die auf der Liste steht', async () => {
+			omniboxStore.queryVal = '58968';
+			await omniboxStore.submitAction(new Event('submit'));
+			const q = await loadQueue();
+			expect(q).toHaveLength(1);
+			expect(q[0].barcode).toBe('58968');
+		});
+
+		it('bucht ein Littera-Etikett unter der NUMMER, nicht unter dem Strichcode', async () => {
+			// Der Aufdruck lautet 58968, der Strichcode traegt die EAN-13 darum herum.
+			// Der Server kennt nur die Nummer.
+			omniboxStore.queryVal = '5896800039556';
+			await omniboxStore.submitAction(new Event('submit'));
+			const q = await loadQueue();
+			expect(q).toHaveLength(1);
+			expect(q[0].barcode).toBe('58968');
+		});
+
+		it('wirft einen Ausweis nicht stillschweigend weg, sondern sagt es', async () => {
+			omniboxStore.queryVal = 'A-00042';
+			await omniboxStore.submitAction(new Event('submit'));
+			expect(await loadQueue(), 'der Ausweis-Weg kommt erst').toHaveLength(0);
+			// Ein nacktes „Netzwerkfehler" liess offen, ob gebucht wurde.
+			expect(omniboxStore.errorMessage).toMatch(/Ausweis/);
+			expect(omniboxStore.errorMessage).not.toBe('Netzwerkfehler');
+		});
+
+		it('nennt eine unbekannte Nummer unklar und bucht sie NICHT', async () => {
+			omniboxStore.queryVal = 'B97601826457';
+			await omniboxStore.submitAction(new Event('submit'));
+			expect(await loadQueue()).toHaveLength(0);
+			expect(omniboxStore.errorMessage).toMatch(/nicht eindeutig|NICHT gebucht/);
+		});
 	});
 });

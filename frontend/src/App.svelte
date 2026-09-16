@@ -22,6 +22,7 @@
 	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
 	import ToastContainer from './lib/ToastContainer.svelte';
 	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
+	import { buchBarcodes } from './lib/stores/buchBarcodes.svelte.js';
 	import { initTooltips } from './lib/actions/tooltip.js';
 	import * as Sentry from '@sentry/svelte';
 
@@ -69,6 +70,12 @@
 		return () => idleLock.stop();
 	});
 
+	// Die Buch-Barcode-Liste dieses Rechners — ohne sie kann die Theke ohne Netz eine
+	// nackte Ziffernfolge nicht einordnen (Begruendung und Ablauf in buchBarcodes.svelte.js).
+	$effect(() => {
+		if (authStore.isLoggedIn) buchBarcodes.bereitstellen();
+	});
+
 	$effect(() => {
 		if (printQueue.copies) {
 			// 'druck-center' ist der App-Route-Name (Router.svelte); 'labels' ist nur der
@@ -107,14 +114,9 @@
 		     Lieferant hat kein Konto und darf keinen Anmeldebildschirm sehen. -->
 		<BestellBestaetigung />
 	{:else}
-		<!-- Hier lag bis zum 16.09.2026 ein `fixed inset-0`-Vollbild mit Weichzeichner
-		     ("VERBINDUNG VERLOREN / Reconnecting..."), das 25 s nach dem letzten Herzschlag
-		     kam. Es hat die Theke angehalten: Der Stufe-1-Nachweis am echten Chrome ergab
-		     "ich kann nichts buchen", und der auffaellige rote Balken war nur der sichtbare
-		     Teil — blockiert hat dieses Vollbild. Punkt (a) des Offline-Plans verlangt das
-		     Gegenteil: ein nicht blockierendes Band, Scannen geht weiter. Die Lage wird
-		     deshalb im selben Band gemeldet wie der Netzausfall (OfflineIndicator) und
-		     nicht in einer zweiten Schicht darueber: eine Lage, eine Zeile. -->
+		<!-- Hier lag bis zum 16.09.2026 ein Vollbild, das 25 s nach dem letzten Herzschlag
+		     kam und die Theke anhielt. Der Verbindungsverlust steht jetzt im Offline-Band
+		     (unten durchgereicht): eine Lage, eine Zeile. -->
 		{#if !authStore.sessionChecked}
 			<!-- Boot-Restore läuft — kurzer neutraler Zustand statt Login-Flackern -->
 			<div class="fixed inset-0 flex items-center justify-center">
