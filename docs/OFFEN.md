@@ -881,6 +881,81 @@ Im Programm ist `kollegium` technisch ein Wert desselben Aufzählungstyps wie di
 nicht so aussehen: In der Rollenauswahl und im Rechte-Editor gehört Kollegium nicht neben Leitung
 und Mitarbeiter, sondern davor — als „keine Rolle", der Ausgangszustand jeder Lehrkraft.
 
+**Umgesetzt am 16.09.2026, nachdem Peter die Oberfläche angesehen hat.** Drei Befunde, alle drei
+behoben:
+
+1. Im Rechte-Editor stand Kollegium als vierte Spalte neben Leitung, Mitarbeiter und Helfer. Sie
+   ist weg. Was das Kollegium darf, steht fest im Programm (`db/seed.go`): vormerken, den Bestand
+   ansehen, Fehler melden. Das ist eine Produktentscheidung und kein Schalter je Schule.
+2. In der Akte stand nirgends, ob jemand Schüler, Lehrkraft oder LiV ist — die Angabe gab es nur
+   in der Kollegen-Hälfte. Sie steht jetzt in jeder Akte und lässt sich zwischen Lehrkraft und
+   LiV ändern. Über die Schüler-Grenze geht sie nicht: Ein Schüler kommt aus der LUSD und bleibt
+   Schüler.
+3. An einem Kollegen liess sich keine Adresse nachtragen. Das lag nicht nur am fehlenden
+   Bearbeiten-Knopf: `schueler` ist seit Migration 123 eine SICHT auf `leser` mit
+   `WHERE art = 'schueler'`, und der Änderungspfad lief gegen sie — ein Kollege war dort nicht
+   zu finden, das UPDATE traf null Zeilen, die Antwort war 404. Der Pfad schreibt jetzt auf die
+   Tabelle; die Grenze zum Schüler hält der Handler mit einer Begründung statt mit einer 404.
+
+**Eine Maske für jeden (Peter, 16.09.2026).** Der erste Bau blendete die Felder je nach Art ein
+und aus — Peter: „warum eine andere maske als bei schülern? das ist doch schon wieder viel zu
+kompliziert." Zwingend war davon fast nichts. Jetzt stehen für jeden dieselben Felder an derselben
+Stelle; einem Kollegen sind nur drei davon verschlossen (sichtbar, aber nicht zu füllen):
+
+- **Klasse und Abgangsjahr** — „eine klasse muss ja keinem lehrer/liv zugeordnet werden". Das
+  Abgangsjahr leitet der Server aus der Klasse ab, beide gehören zusammen.
+- **LUSD-ID** — die Datenbank verbietet sie einem Nicht-Schüler
+  (`chk_leser_nur_schueler_werden_abgaenger`). Durch die LUSD kommen nur Schüler.
+- Dazu die **Art** über die Schüler-Grenze, in beide Richtungen.
+
+Geburtsdatum, Ausweisnummer, Postanschrift und Eltern-E-Mail stehen jedem offen und bleiben beim
+Kollegen einfach leer. Das Gate dazu misst die FORM, nicht die Werte:
+`frontend/src/lib/leserMaskeEineForm.test.js`.
+
+**Offen dazu — zwei Kleinigkeiten, die niemanden aufhalten:**
+
+**Auch die AKTE hat jetzt eine Form (16.09.2026).** Sie hatte noch eine Weiche, das Formular
+schon nicht mehr — dadurch konnte ein Kollege ein Geburtsdatum eintragen, das seine Akte nicht
+anzeigte. `LeserPersoenlicheDaten.svelte` ist ersatzlos weg, eine Datei weniger; jeder Leser sieht
+dieselben Angaben an derselben Stelle. Die Ausweisnummer steht nur auf der Karte links, nicht
+zweimal. Dabei ist die zusammengelegte Ansicht ganz auf die **M3-Rollen** umgestellt worden
+(Peter: „bei allen dingen bitte an google material 3 design denken") — 0 Palettenklassen in der
+Datei, die Farb-Ratsche ist von 1724 auf 1704 gesunken.
+
+Unterschiedlich sind nur noch HANDLUNGEN, und zwar nicht aus Geschmack: Zusammenführen und
+Löschen schreiben gegen die Sicht `schueler` und träfen bei einem Kollegen null Zeilen. Solange
+das so ist, bleiben die Knöpfe bei ihm weg — ein Knopf, der nichts tut, ist schlimmer als keiner.
+Gate: `frontend/src/lib/leserAkte.test.js`.
+- **Doppelte Leserzeile durch die Selbstanmeldung (Peters Frage vom 16.09.2026).** Ein Kollege,
+  der von Hand angelegt wurde („Neuer Leser" erzeugt eine Leserzeile OHNE Konto) und sich danach
+  selbst anmeldet, steht zweimal in der Leserdatei. `legeZugangsanfrageAn` schreibt das Konto
+  (`auth/selbstanmeldung.go`), und der Wächter `trg_benutzer_hat_leserzeile` legt dazu eine
+  FRISCHE Leserzeile an, ohne zu prüfen, ob die Person schon dasteht. Ergebnis: Ausweis und
+  Ausleihen am ersten Eintrag, die Anmeldung am zweiten. Der Name stammt aus dem Teil vor dem @
+  (`namenAusAdresse`), die Schreibweisen müssen also nicht einmal übereinstimmen.
+
+  Halb abgefangen: `UserManagementZugangsanfragen.svelte` nennt einen gleichnamigen Eintrag — aber
+  nur für aus Littera übernommene KONTEN (`@littera.invalid`). Ein von Hand angelegter Kollege
+  ohne Konto fällt durch. Zu klären, bevor viele Kollegen sich anmelden: entweder derselbe Hinweis
+  auch gegen Leserzeilen ohne Konto, oder die Freischaltung bietet das Zusammenführen an.
+
+  **Entschieden bleibt dabei (16.09.2026):** Die E-Mail eines Kollegen wird NICHT in
+  `leser.eltern_email` abgetippt. Die Spalte gehört dem LUSD-Import (Exportspalte
+  `erziehungsberechtigte_email`) und heisst auch in der DSGVO-Auskunft „Eltern-E-Mail". Die
+  Adresse eines Kollegen steht eindeutig am Konto (`benutzer.email`, UNIQUE lower(email)); eine
+  zweite Kopie ohne Eindeutigkeit und ohne Abgleich wäre die zweite Tür zu derselben Identität.
+  Wenn sie in der Akte sichtbar sein soll, dann gelesen vom Konto über `benutzer.leser_id` und
+  nicht änderbar.
+
+- **Drei tote Türen derselben Ursache:** Papierkorb (`repository/audit_users.go`),
+  Papierkorb-Ansicht (`api/student_deleted.go`) und **Zusammenführen**
+  (`repository/schueler_zusammenfuehren.go`) schreiben weiterhin gegen die Sicht `schueler`. Bei
+  einem Kollegen träfe jede von ihnen null Zeilen. Erreichbar ist heute keine — die Knöpfe sind
+  bei ihm ausgeblendet —, aber das Zusammenführen ist genau das Werkzeug, das der Punkt darüber
+  braucht: Solange es gegen die Sicht arbeitet, ist ein doppelt stehender Kollege von NIEMANDEM
+  zu reparieren, auch nicht vom Admin. Das Recht bleibt dabei, wie es ist (`merge_students`:
+  Admin und Leitung ab Werk, Mitarbeiter nur wenn freigeschaltet).
+
 Daraus folgt für den Rest des Plans: Das versteckte Feld „Personenart" widerspricht diesem Modell
 und fällt in Stufe 3 weg (deshalb findet heute ein Admin ohne dieses Feld die Theke nicht). Die
 Leserdatei in Stufe 4 ist eine ANSICHT über beide Tabellen — sie legt Konten nicht an und schaltet
