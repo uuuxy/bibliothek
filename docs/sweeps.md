@@ -283,7 +283,7 @@ verbotenen FORMEN, nicht nur über das historische Beispiel** — die Gegenprobe
 Drei externe Lookups (DNB/Google/OpenLibrary: `api/isbn_handler.go`, `inventur/isbn_suche.go`,
 `inventur/cover_aktualisierung.go`) antworteten bei Netzausfall „nicht gefunden" — derselbe
 Bildschirm wie ein echter Nicht-Treffer; bei einer WLAN-Störung katalogisierte die Theke
-Bücher von Hand, die längst in der DNB stehen. Entscheidung (Peter): **502 „Katalogdienste
+Bücher von Hand, die längst in der DNB stehen. Entscheidung: **502 „Katalogdienste
 nicht erreichbar"**, 404 nur wenn mindestens eine Quelle geantwortet hat. Umsetzung:
 `inventur.ErrKatalogdiensteNichtErreichbar` (Transportfehler je Quelle als Sentinel in
 `holeInhalt`), `errors.Is` in allen drei Handlern; die drei Ratschen-Ausnahmen sind

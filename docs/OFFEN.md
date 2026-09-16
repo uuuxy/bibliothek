@@ -5,7 +5,7 @@ Stand: 16.09.2026
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht: Das Befund-Register (`docs/befunde.md`) und
 die Issues #593, #594, #597, #598, #599 und #600 sind am 13.09.2026 hierher umgezogen. Erledigtes
-wird gelöscht, nicht archiviert (Peter, 15.09.2026): Die Geschichte steht in den
+wird gelöscht, nicht archiviert (entschieden am 15.09.2026): Die Geschichte steht in den
 Commit-Nachrichten, in `git log -p docs/OFFEN.md` und in den geschlossenen Issues.
 
 Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
@@ -18,18 +18,15 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
 
-1. **Peter, 10 Minuten: den GitHub-Token von heute widerrufen** (github.com → Settings →
-   Developer settings → Tokens → den Eintrag vom 15.09. löschen), dann im Terminal
-   `gh auth login` mit dem Browser. Der Token stand im Chat-Verlauf.
-2. **Peter, 30 Minuten: die Offline-Theke einmal echt ausprobieren.** Am Stack das Netz
+1. **30 Minuten: die Offline-Theke einmal echt ausprobieren.** Am Stack das Netz
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Peter, vier kurze Antworten** (Abschnitt 5.16 B): Wie lange darf ein Kollege ein Buch
+2. **Vier kurze Antworten** (Abschnitt 5.16 B): Wie lange darf ein Kollege ein Buch
    behalten? Soll seine Ausleihhistorie nach einer Frist gelöscht werden? Soll er gemahnt
    werden? Soll er für ein verlorenes Buch zahlen? Ich habe überall gelassen, wie es war —
    ein Jahr, nein, nein; und die Forderung entsteht heute, steht aber in keiner Übersicht.
-4. **Peter, 15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16 A). Sie ist
+3. **15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16 A). Sie ist
    fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
    einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
    den Namen, und „Neuer Leser“ fragt zuerst, wer das ist. Beim Ausweisdruck steht auf der
@@ -38,12 +35,12 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    Zeit davor, trägst du sie dort nach — damit bekommt er seinen Zugang, und die
    Selbstanmeldung legt ihn nicht ein zweites Mal an. Sieh dir an, ob die Wörter stimmen und
    ob dir etwas fehlt.
-5. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
+4. **Ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
-6. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
+5. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
-7. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
+6. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
    nichts zu tun außer nachzufragen, wenn nichts kommt.
 
 Alles andere in dieser Datei — die B-Punkte in Abschnitt 5, die Beobachtungen in 6, die
@@ -65,34 +62,34 @@ jemandem schaden?"**
 
 1. **Ein Fund = ein Commit.** Was beim Reparieren zusätzlich auffällt, kommt hierher, nicht in
    denselben Commit.
-2. **Kategorie A wird belegt, nicht behauptet:** ein Test, der am alten Code rot wird. Bis ein
+1. **Kategorie A wird belegt, nicht behauptet:** ein Test, der am alten Code rot wird. Bis ein
    Fund nachgestellt ist, heißt er „Verdacht".
-3. **Neues kommt nur hierher** — Funde, Fragen an Peter, Betriebspunkte. Kein Issue, kein anderes
+2. **Neues kommt nur hierher** — Funde, offene Fragen, Betriebspunkte. Kein Issue, kein anderes
    Dokument. Eine Frage steht hier, bevor die Antwort kommt.
-4. **Erledigt heißt:** hier löschen — Datum und Begründung stehen in der Commit-Nachricht, ein
-   Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am … (Peter)" und fällt weg, sobald
+3. **Erledigt heißt:** hier löschen — Datum und Begründung stehen in der Commit-Nachricht, ein
+   Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am …" und fällt weg, sobald
    sie umgesetzt ist.
-5. **Die Reihenfolge** wird bei jeder Änderung mitgepflegt.
+4. **Die Reihenfolge** wird bei jeder Änderung mitgepflegt.
 
 ---
 
 ## Reihenfolge
 
 1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
-   am Stack (2.3), dann Peters Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** entscheidet
-   Peter dabei mit).
-2. **5.16** Leserdatei und Rolle Leitung: gebaut. Offen sind Peters Blick auf den Stand,
+   am Stack (2.3), dann die Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** werden
+   dabei mit entschieden).
+1. **5.16** Leserdatei und Rolle Leitung: gebaut. Offen sind der Blick auf den Stand,
    seine vier Antworten zum Betrieb (Frist, Historie, Mahnung, Schadensersatz) und ein Punkt,
    der daran hängt: das Löschen eines Kollegen samt Konto (5.16 C).
-3. **5.1** Schäden und Benutzer.
-4. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
+2. **5.1** Schäden und Benutzer.
+3. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 6. Nach der Antwort zu E5 (**8.3**): **5.4**.
 7. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
    Anlass.
 
-**Parallel bei Peter:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
+**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
 Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
 Littera-Übernahme (7.2).
 
@@ -106,10 +103,10 @@ Nichts offen (Stand 15.09.2026).
 
 ## 2. Laufende Arbeit: Offline-Betrieb der Theke
 
-**Ziel (Peter, 13.09.2026):** Bei einem Verbindungsabbruch geht der Betrieb an der Theke normal
+**Ziel (entschieden am 13.09.2026):** Bei einem Verbindungsabbruch geht der Betrieb an der Theke normal
 weiter.
 
-**Entschieden am 13.09.2026 (Peter):**
+**Entschieden am 13.09.2026:**
 
 - Offline werden alle Buchformen gespeichert: `B-…`, nur Ziffern (auch EAN-13), `LMF-…`.
 - Ein offline gescannter Schülerausweis kommt in die Warteschlange; die folgenden Bücher werden
@@ -124,9 +121,9 @@ weiter.
 - (d) 502/503/504 gelten wie ein Netzausfall.
 - Arbeitsweise: in Stufen — (1) vorhandene Fehler, (2) Server, (3) Theke, Warteschlange und Band.
   Je Stufe Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am Stack und im Browser,
-  dann Peters Freigabe.
+  dann die Freigabe.
 
-**Entschieden am 13.09.2026 (Peter), zweite Runde:**
+**Entschieden am 13.09.2026, zweite Runde:**
 
 - Nach einem Neuladen ohne Netz bleibt die Anmeldemaske der Rückfall. Die gespeicherten
   Offline-Scans bleiben auf dem Rechner und werden nach der nächsten Anmeldung mit Netz
@@ -172,7 +169,7 @@ rechnet den Uhrversatz des Rechners heraus, die Barcode-Liste führt auch ausges
 und die Theke hat eine Rückrechnung der Littera-Etiketten mit denselben Prüffällen wie der Server
 (Einzelheiten in den Commit-Nachrichten).
 **Nächster Schritt:** Nachweise am Stack für Stufe 1 (von Hand, echter Chrome) und Stufe 2
-(Anfragen an die Tür, 2.3); dann Peters Freigabe für Stufe 3.
+(Anfragen an die Tür, 2.3); dann die Freigabe für Stufe 3.
 
 ### 2.1 Was heute fehlt (am Code gelesen 13.09., nachgeprüft 14.09.2026)
 
@@ -227,7 +224,7 @@ und die Theke hat eine Rückrechnung der Littera-Etiketten mit denselben Prüff�
 ### 2.2 Der Bau in drei Stufen, 17 Commits
 
 Je Stufe: Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am frisch gebauten Stack und
-im Browser, dann Peters Freigabe.
+im Browser, dann die Freigabe.
 
 Ratschen, die jeder Commit im Blick hat: 200 Zeilen je Frontend-Datei (`App.svelte` steht auf
 genau 200, `Omnibox.svelte` mit 282 im Bestand und darf nicht wachsen); kein SQL in `api/`
@@ -243,21 +240,21 @@ liefert `undefined`, der TypeError kommt aus `res.ok`); `offlineSync.test.js` pi
    nimmt es entgegen. `offlineImport.test.js` wird einmal auf das Objekt umgestellt, nicht dreimal.
    Format 1 (alte Sicherungen: `{action_type, barcode_id, schueler_id, timestamp}`) bleibt lesbar.
    Rot-Test: Anfrage hängt, Store-Person wird geleert, Timeout → Eintrag trägt die Person vom Scan.
-2. **Nur ein gescheiterter Versand wird eingereiht.** Der `catch` um `verarbeiteAktionsErgebnis`
+1. **Nur ein gescheiterter Versand wird eingereiht.** Der `catch` um `verarbeiteAktionsErgebnis`
    reiht nicht ein. Der Mock in `omniboxOffline.test.js` wird auf einen echten Versandfehler
    umgestellt (`apiClient.post.mockRejectedValue(new TypeError('Failed to fetch'))`); das ist der
    Beweis, dass der Test vorher die falsche Sache maß. Rot-Test: 200 mit `{type:'teacher'}` ohne
    `teacher` → Fehlerbanner, keine Warteschlange.
-3. **„Buch zurückgeben" im Profil ist offline eine Rückgabe.** `onReturnClick` übergibt die
+2. **„Buch zurückgeben" im Profil ist offline eine Rückgabe.** `onReturnClick` übergibt die
    Absicht aus Commit 1. Rot-Test: Doppelklick offline → zwei Rückgaben, keine Ausleihe.
-4. **Lehrkraft geladen: Offline-Buch ist eine Handapparat-Ausleihe.** Der Eintrag trägt
+3. **Lehrkraft geladen: Offline-Buch ist eine Handapparat-Ausleihe.** Der Eintrag trägt
    `lehrer_id`, `baueBatchPayload` sendet `active_teacher_id` (der Stapel-Endpunkt kennt es
    heute schon). Rot-Test am Payload.
-5. **Ein Fehler der Warteschlange heißt nicht „gespeichert".** `enqueueOfflineAction` wirft weiter;
+4. **Ein Fehler der Warteschlange heißt nicht „gespeichert".** `enqueueOfflineAction` wirft weiter;
    die Theke meldet „NICHT gespeichert — Buch zurücklegen" mit Fehlerton. `loadQueue` liefert bei
    Fehler nicht `[]`, sondern wirft; das Band zeigt „Warteschlange nicht lesbar" statt 0.
    Rot-Test: IndexedDB wirft.
-6. **Erledigt ist nur, was der Server wie gescannt gebucht hat.** Die `!result`-Failsafe fällt
+5. **Erledigt ist nur, was der Server wie gescannt gebucht hat.** Die `!result`-Failsafe fällt
    (Schweigen des Servers ist kein Erfolg). Passt der Antworttyp nicht zur Absicht (Ausleihe
    gescannt, `rueckgabe` gebucht), wird der Eintrag ausgebucht UND gemeldet, mit Barcode und
    beiden Typen; er blockiert nicht. 4xx wird weiter ausgebucht und gemeldet. 5xx und 429 bleiben
@@ -266,7 +263,7 @@ liefert `undefined`, der TypeError kommt aus `res.ok`); `offlineSync.test.js` pi
    ersten `wiederholen`-Eintrag kommt erst in Stufe 3 mit der neuen Tür, die den Fall
    `bereits_ausgeliehen` kennt; vorher hätte ein legitimer Fall die Warteschlange gesperrt, ohne
    dass es einen Ort gäbe, ihn aufzulösen.)
-7. **Idempotenz hält.** Die Antwort wird mit `context.WithoutCancel` gespeichert (Vorbild
+6. **Idempotenz hält.** Die Antwort wird mit `context.WithoutCancel` gespeichert (Vorbild
    `mahnwesen_bulk_mail.go`); der Schlüssel wird vor der Arbeit reserviert (Zeile mit Marker,
    `response_data` bekommt eine unterscheidbare Form oder wird nullbar mit `status_code = 0`);
    ein zweiter Aufruf auf einen reservierten Schlüssel wartet oder antwortet 409 `in_arbeit`.
@@ -403,7 +400,7 @@ Nichts offen (Stand 15.09.2026); die Nummer bleibt, weil Abschnitt 4 auf 3.4 ver
 
 ---
 
-## 4. Entscheidungen (Peter)
+## 4. Entscheidungen
 
 Die Nummern bleiben fest. Beantwortete Fragen wandern in den Punkt, der sie umsetzt (4.1 → Abschnitt
 2, 4.2 → 3.4) oder fallen weg, sobald sie umgesetzt sind.
@@ -607,7 +604,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Die Barcode-Höhe des Ausweises ist im Druck fest (`CardFace.svelte`).
 - Die ISBN ist nur je Schreibweise eindeutig (mit oder ohne Bindestrich); ein CHECK auf den
   Jahrgang fehlt, „Jahrgang unbekannt" ist von der Vorgabe nicht zu unterscheiden. Erst Dubletten
-  und Jahrgänge am Server messen (Einzeiler für Peter), dann Schema.
+  und Jahrgänge am Server messen (Einzeiler dafür), dann Schema.
 
 ### 5.6 Schüler und LUSD
 
@@ -696,10 +693,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   `d3e86287` entfernt hat; nur Abschnitt 2.3 wurde angepasst.
 - **Server-Pfad:** `DEPLOYMENT.md` (vier Stellen), `SECURITY.md`, `SCRIPTS.md` und der
   Kopfkommentar von `scripts/pruefe_secrets.sh` sagen `/opt/bibliothek`; auf dem Server liegt
-  der Stack in `/root/bibliothek` (`cd /opt/bibliothek` → „No such file or directory", Peter am
+  der Stack in `/root/bibliothek` (`cd /opt/bibliothek` → „No such file or directory", am
   15.09.2026, `docker compose exec` aus `~/bibliothek` lief). Jede kopierte Anleitung scheitert
-  am ersten Befehl. **Schritt:** die sieben Stellen auf `/root/bibliothek` — oder, falls Peter
-  den Stack nach `/opt` umzieht, umgekehrt; bis zur Entscheidung ist die Doku falsch, nicht der
+  am ersten Befehl. **Schritt:** die sieben Stellen auf `/root/bibliothek` — oder, falls
+  der Stack nach `/opt` umzieht, umgekehrt; bis zur Entscheidung ist die Doku falsch, nicht der
   Server.
 
 ### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
@@ -777,7 +774,7 @@ Vitest 620/620. Die Commits vom 11.–14.09. deckt 5.12 schon ab; neu im Fenster
   „Reserviert für: <sein eigener Name>". Der Durchgang vom 15.09. hatte hier zuerst einen
   Idempotenz-Fund gesehen („5xx gibt den Schlüssel frei, obwohl `holeExemplarZurueck` schon
   committet hat") — die Folge stimmt, aber nur in diesem Zweig, und der ist tot; der Test dazu
-  wurde deshalb nicht geschrieben. In Prod gezählt am 15.09.2026 (Peter, `docker compose exec
+  wurde deshalb nicht geschrieben. In Prod gezählt am 15.09.2026 (`docker compose exec
   postgres-db psql … WHERE zustand_notiz LIKE 'Reserviert für:%'`): **0**. **Schritt:** Der
   Zweig fällt samt `istBerechtigterReservierer`, `checkVormerkung` und dem Struct `vormerkung`
   mit Rückbau-Probe — zusammen mit Abschnitt 2, Commit 8, weil es derselbe Baustein
@@ -817,14 +814,14 @@ weiter hinter dem Build-Tag `raster`: `TEST_DATABASE_URL=… go test -tags raste
   Buch-Barcode im Bestand, buchte die Theke den Ausweis offline als Buch. Die Abfrage (lesend, nur
   Zahlen, lokal gegen den Stack geprüft):
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM schueler WHERE deleted_at IS NULL) AS schueler, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id LIKE 'S-%') AS schueler_s, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^B[0-9]+$') AS schueler_b_ohne_strich, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^[0-9]+$') AS schueler_ziffern, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id LIKE 'L-%') AS personal_l, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id IS NOT NULL AND barcode_id NOT LIKE 'L-%') AS personal_andere, (SELECT count(*) FROM schueler s JOIN buecher_exemplare e ON e.barcode_id = s.barcode_id) AS gleich_wie_buch_schueler, (SELECT count(*) FROM benutzer b JOIN buecher_exemplare e ON e.barcode_id = b.barcode_id) AS gleich_wie_buch_personal;"`
-  Ergebnis auf dem Server (Peter, 15.09.2026): 32 Schüler, alle `S-`, keine Ausweisnummer gleich
+  Ergebnis auf dem Server (15.09.2026): 32 Schüler, alle `S-`, keine Ausweisnummer gleich
   einer Buchnummer — die echte Schülerschaft steht dort noch nicht; nach dem Personenlauf neu zählen.
   **Empfehlung (Handbuch und Backup, 15.09.2026):** Littera zählt Bücher und Leser getrennt, beide
   ab 1; im Backup ist jede Lesernummer zugleich eine Exemplarnummer. Littera unterscheidet deshalb an
   der Form des Scans, nicht an der Zahl. Offline genauso: `S-`/`L-` und `B` mit Ziffern ohne
   Bindestrich sind ein Ausweis; `B-`/`LMF-`, ein 13-stelliges Littera-Etikett (zurückgerechnet mit
   `frontend/src/lib/litteraEtikett.js`) und eine Ziffernfolge auf der Liste sind ein Buch; nur was in keine Form passt, ist
-  unklar und sperrt. Entscheidung Peter vor Stufe 3, Punkt 15.
+  unklar und sperrt. Entscheidung vor Stufe 3, Punkt 15.
 - **B — Ausweis- und Buchnummer werden nur in der Littera-Übernahme gegeneinander geprüft**
   (Frage 3). Seit dem 15.09.2026 vergibt der Personenlauf keine Nummer, die schon ein Buch trägt.
   Wer von Hand eine Ausweisnummer ändert (Schülerakte) oder ein Buch umetikettiert
@@ -875,22 +872,22 @@ Hier steht nur noch, was NICHT fertig ist.
 
 ---
 
-**A. Peter, 15 Minuten: einmal durch die Leserdatei gehen.** Sieh dir an, ob die Wörter
+**A. 15 Minuten: einmal durch die Leserdatei gehen.** Sieh dir an, ob die Wörter
 stimmen und ob dir etwas fehlt. Was ein Kollege bewusst NICHT in seiner Akte hat, und warum:
 
 - **Kontoauszug, Ersatzforderung, DSGVO-Auskunft** — sie gehören der Schülerarbeit und lesen
   alle die Sicht `schueler`. Ausgeblendet statt kaputt.
 - **Löschen** — der Löschpfad schreibt gegen die Sicht und träfe null Zeilen. Siehe C.
 
-**B. Peter, vier kurze Antworten zum Betrieb.** Überall gilt heute das Verhalten von vorher;
+**B. Vier kurze Antworten zum Betrieb.** Überall gilt heute das Verhalten von vorher;
 ich habe nichts geändert:
 
 1. **Wie lange darf ein Kollege ein Buch behalten?** Heute ein Jahr — das war die Regel für
    die Dauerleihe fürs Unterrichten. Wer sich einen Roman mitnimmt, behält ihn damit genauso
    lange wie einen Klassensatz.
-2. **Soll die Befristung der Lesehistorie auch fürs Kollegium gelten?** Heute nein.
-3. **Sollen Kollegen gemahnt werden?** Heute nein.
-4. **Soll ein Kollege für ein verlorenes Buch zahlen?** Heute entsteht die Forderung, steht
+1. **Soll die Befristung der Lesehistorie auch fürs Kollegium gelten?** Heute nein.
+2. **Sollen Kollegen gemahnt werden?** Heute nein.
+3. **Soll ein Kollege für ein verlorenes Buch zahlen?** Heute entsteht die Forderung, steht
    aber in keiner Übersicht — die Einzelheiten in 5.17, Fund 1.
 
 **C. Zwei tote Türen, mit Absicht offen.** Papierkorb (`repository/audit_users.go`) und
@@ -922,7 +919,7 @@ Theke einen Buchscan von einem Ausweisscan unterscheiden kann.**
   Datenverwaltung, LMF-Aktionen und Lieferanten bedienen; verschlossen sind Schule, Fristen
   und Mailversand (`manage_settings`) sowie Benutzer & Rechte (`manage_users`). Ein Menüpunkt
   ist kein Recht, sondern ein Sammelpunkt über sechs Kategorien — was gilt, beweist die
-  Antwort des Servers. Peter hat das am 16.09.2026 bestätigt.
+  Antwort des Servers. Bestätigt am 16.09.2026.
 
 ### 5.17 Rasterdurchgang über den 15. und 16.09.2026 (Funde vom 16.09.2026)
 
@@ -1050,7 +1047,7 @@ Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides ne
 
 ---
 
-## 7. Betrieb (liegt bei Peter)
+## 7. Betrieb (liegt bei der Schulseite)
 
 Geplante Zielumgebung ist der Schulserver; heute ist der Hetzner-Server die einzige Instanz. Beim
 Umzug gilt dieser Abschnitt dort erneut — ebenso das, was am Hetzner-Server schon erfüllt ist

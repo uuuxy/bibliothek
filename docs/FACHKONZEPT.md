@@ -56,7 +56,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 - **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres (`lmf_stichtag`) — **es sei denn, der LMF-Plan (§2.3) nennt für die Klasse einen Rückgabe-Termin: dann ist der die Frist** (`RueckgabeTerminFuerKlasse`, nur einjährige Ausleihe; seit 05.09.2026).
 - **Freihand-Bestand (Sonderbestände):** CDs, DVDs, Hörbücher etc. haben eine rollierende Frist (z. B. +14 oder +28 Tage ab Ausleihe), keine starre Jahresfrist.
-- **Ferien:** Eine automatische Verlängerung „bis zum ersten Schultag nach den Ferien" gibt es NICHT (stand bis 06.09.2026 fälschlich hier; `loan_rules.go` kennt keine Ferien). Das Werkzeug für „Bücher über die Sommerferien mitnehmen" ist der **Ferien-Leseclub** (Kategorie 2, §14): aktiv + Zieldatum → alle Ausleihen bekommen dieses feste Rückgabedatum. Eine Ferien-Pause des Mahnwesens gibt es ebenfalls nicht mehr: Die Tabelle `ferien_schliesszeiten` (Migration 017, Banner + Sperre) hatte nie einen Schreiber und ist mit Migration 102 ausgebaut (Peter, 06.09.2026: „ausbauen" — das Mahnwesen wird nur von Hand bedient).
+- **Ferien:** Eine automatische Verlängerung „bis zum ersten Schultag nach den Ferien" gibt es NICHT (stand bis 06.09.2026 fälschlich hier; `loan_rules.go` kennt keine Ferien). Das Werkzeug für „Bücher über die Sommerferien mitnehmen" ist der **Ferien-Leseclub** (Kategorie 2, §14): aktiv + Zieldatum → alle Ausleihen bekommen dieses feste Rückgabedatum. Eine Ferien-Pause des Mahnwesens gibt es ebenfalls nicht mehr: Die Tabelle `ferien_schliesszeiten` (Migration 017, Banner + Sperre) hatte nie einen Schreiber und ist mit Migration 102 ausgebaut (entschieden am 06.09.2026: „ausbauen" — das Mahnwesen wird nur von Hand bedient).
 - **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr — `AddDate(1, 0, 0)`, also ein **Kalenderjahr**, nicht 365 Tage (im Schaltjahr sind es 366). Wie jede andere Frist läuft sie durch `tagesEndeInSchulzeitzone`; eine zweite, rohe Berechnung gibt es bewusst nicht.
 - **Verlängerungen:** Ausleihen können verlängert werden, es sei denn, der Schüler ist gesperrt oder hat das Ausleihlimit überschritten.
 
@@ -70,7 +70,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 ### 2.3. LMF-Plan: Büchertausch vor und Bücherausgabe nach den Sommerferien (seit 05.09.2026)
 
-Zwei Pläne, zwei Zeitpunkte (Peter, 06.09.2026 — „Rückgabe" und „Ausgabe" allein waren
+Zwei Pläne, zwei Zeitpunkte (entschieden am 06.09.2026 — „Rückgabe" und „Ausgabe" allein waren
 unklar): **Büchertausch vor den Sommerferien** (`art = rueckgabe`): alle Klassen geben ab
 und bekommen direkt die neuen Bücher; Abschlussklassen (`AbschlussklasseSQL`) und Klassen,
 deren nächster Jahrgang ein Eingangsjahrgang ist (die 6er → 7H/7R/7G), geben **nur
@@ -95,7 +95,7 @@ steht in `git log`).
 
 Die Schule führte den Plan als Excel-Tabelle (Wochentag, Datum, Stunde, Klasse(n),
 Besonderheiten) und mailte ihn dem Kollegium; Korrekturen kamen als Folge-Mail. Der echte
-Plan 2026 zeigte die Form (Peter, 05.09. abends): Abschlussklassen zuerst, dann JEDER
+Plan 2026 zeigte die Form (05.09. abends): Abschlussklassen zuerst, dann JEDER
 Schultag Stunde 1–6, eine Klasse je Stunde, die Reihenfolge läuft über die Tage weiter;
 manche teilen sich eine Stunde („10R1/10R2"), am Ende Zeilen ohne Klasse („Nachzügler",
 „Aufräumen"); zwei Datumsfehler von Hand. **Der Plan ist deshalb eine REIHENFOLGE, die
@@ -104,7 +104,7 @@ der Server auf Schultage × Stunden gießt** — nicht eine Liste einzeln angele
 
 Modell (Migration 096 + 097 + 101): `lmf_plaene` je Art und Schuljahr mit dem Rahmen —
 beim Büchertausch das ENDE (`letzter_tag`, `letzte_stunde`: Donnerstag vor den
-Sommerferien, 4. Stunde; Peter 06.09.2026: „es endet immer am gleichen Tag"), die
+Sommerferien, 4. Stunde; 06.09.2026: „es endet immer am gleichen Tag"), die
 Reihenfolge fließt rückwärts davor und `erster_tag`/`startstunde` sind gerechnet; bei
 der Bücherausgabe der Beginn (`erster_tag`, `startstunde`) — plus Stunden je Tag;
 die Vorbelegung kommt aus der Ferientabelle Hessen (`pkg/lmfplan/ferien.go`, KMK bis
@@ -128,12 +128,12 @@ Jahrgang ≥ 11 oder ohne Ziffer = Oberstufe → ausgelassen). `PUT` rechnet und
 (gleiches Schuljahr = ersetzen, anderes = neuer Plan), `DELETE` verwirft den neuesten.
 Lesen für Portal und PDF unverändert: `GET /api/lmf-termine[/pdf]` mit Sitzung. Einzel-
 Termin-Routen gibt es nicht mehr — eine zweite Tür je Zeile gäbe zwei Wahrheiten.
-Seite: Menü _System → Schuljahreswechsel_ (`LmfPlan.svelte`; Peter 05.09.: der Plan
+Seite: Menü _System → Schuljahreswechsel_ (`LmfPlan.svelte`; 05.09.: der Plan
 wird ein- bis zweimal im Jahr gebraucht — Abgänger bleiben unter Verwaltung, LUSD und
 Versetzung in den Einstellungen). Tests: `pkg/lmfplan/layout_test.go`, `repository/lmf_termine_pg_test.go`,
 `api/lmf_termine_frist_pg_test.go`, `frontend/e2e/lmf-plan.spec.js`.
 
-**Kopplung an die Fristen** (`api/lmf_termine_frist.go`, Peter 05.09.2026: „das wäre doch
+**Kopplung an die Fristen** (`api/lmf_termine_frist.go`, 05.09.2026: „das wäre doch
 logisch"): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen
 liest `resolveCheckoutDueDate` die Lage der Klasse (`RueckgabeTerminLage`): Steht ein
 Rückgabe-Termin nach heute bevor, ist er die Frist (vor dem Stichtag; mehrjährige Ausleihen
@@ -443,7 +443,7 @@ Schule — das ist eine Produktentscheidung.
 4. **Helfer (`helfer`):** siehe unten.
 5. **Kollegium (`kollegium`) — der Grundzustand, keine vergebene Rolle:** Zugang zum Kollegiums-Portal mit fünf Reitern (Stand 05.09.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher — Handliste `class_books` plus live aus den Ausleihen abgeleitet, seit 05.09.2026: mehr als die Hälfte der Klasse und mindestens `KlassensatzMindestLeser` Kinder halten den Titel; `GetClassGroups`, Quelle `hand`/`ausleihe`, nie gespeichert), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3), _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`) und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Die Suche läuft über den öffentlichen OPAC, Reservierung und Anliegen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
 
-   **„Mein Portal“ hängt seit 26.08.2026 am Recht `create_reservations`, nicht an der Rolle** (Entscheidung Peter): Eine Lehrkraft, die in Bibliothek oder LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, sieht das Portal ebenfalls und reserviert dort für die eigene Klasse. Vorher stand der Menüpunkt auf `roles: ['kollegium']`, während der Server sie mit demselben Recht längst hineinließ — zwei Wahrheitsquellen, die nur zufällig einig waren.
+   **„Mein Portal“ hängt seit 26.08.2026 am Recht `create_reservations`, nicht an der Rolle** (entschieden): Eine Lehrkraft, die in Bibliothek oder LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, sieht das Portal ebenfalls und reserviert dort für die eigene Klasse. Vorher stand der Menüpunkt auf `roles: ['kollegium']`, während der Server sie mit demselben Recht längst hineinließ — zwei Wahrheitsquellen, die nur zufällig einig waren.
 
    **Der Enum-Wert hieß bis zum 10.08.2026 `lehrer`** (Migration 069). Das Wort war doppelt belegt — als Anmelde-Rolle _und_ als Entleihertyp `schueler.klasse = 'lehrer'` (eigene Behandlung im Mahnwesen). Den zweiten Weg gibt es seit Migration 072 nicht mehr; eine Lehrkraft als Entleiher steht seit Migration 123 in `leser` mit `art = 'lehrkraft'` (§12.3). Die Umbenennung selbst war keine Rechteänderung.
 

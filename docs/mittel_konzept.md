@@ -28,7 +28,7 @@ Betrag, mit der Herleitung daneben.
 riss die Tabellenkopfzeile entzwei. Beide Klassen haben jetzt ein Gate; für das zweite
 liest `internal/pdftest` die Seiten getrennt (`TexteJeSeite`).
 
-**Anlass:** Peter hat am 08./09.09.2026 vier Unterlagen der Schule vorgelegt — die
+**Anlass:** Am 08./09.09.2026 lagen vier Unterlagen der Schule vor — die
 Verfahrensbeschreibung für den Schadensersatz bei Lernmitteln (Stand 2014), die
 Arbeitshilfe dazu, das verbindliche Musteranschreiben an die Erziehungsberechtigten und
 eine Anforderungsliste „Mahnverfahren". Auftrag: das Verfahren in die bestehende
@@ -280,7 +280,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 
 ---
 
-## 6. Entscheidungen (Peter / Sekretariat / Schulträger)
+## 6. Entscheidungen (Schule / Sekretariat / Schulträger)
 
 | #      | Frage                                                                                                                                                                                          | Empfehlung                                                                                                                                |
 | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
@@ -297,7 +297,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 
 ## 7. Teil B — Beschaffung: getrennte Töpfe im Bestellwesen (09.09.2026)
 
-**Anlass:** Peter nach einem Telefonat mit der Schule: Die Bestellungen und Rechnungen
+**Anlass:** Nach einem Telefonat mit der Schule: Die Bestellungen und Rechnungen
 sollen getrennt ausweisen, was aus Landesmitteln (Lernmittelfreiheit) und was aus Mitteln
 des Schulträgers (Schülerbücherei) beschafft wird.
 
@@ -350,7 +350,7 @@ Historie und Detail, Topf nachträglich mit Grund korrigierbar), **Schritt 4 am
 Berichtsarten, Filter und Aufteilung der Kennzahlen in der Historie). Schritt 6 ist nach den Antworten unten auf
 die zweite Kundennummer geschrumpft — eine eigene Rechnungsanschrift je Topf gibt es
 nicht, beide Rechnungen gehen an die Schule. Der Vermerk nennt weder Träger noch
-Behörde, nur den Topf (Peters Vorgabe: kein Rechts- oder Regionalbezug außerhalb der
+Behörde, nur den Topf (Vorgabe: kein Rechts- oder Regionalbezug außerhalb der
 Formulare an Schüler). Gates: `api/bestellung_mittel_pg_test.go`,
 `api/bestellung_mittel_backfill_pg_test.go`, `api/order_pdf_mittel_test.go`,
 `api/bestellmail_mittel_test.go`, `api/titel_lernmittel_pg_test.go`,
