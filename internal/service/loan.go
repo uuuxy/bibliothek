@@ -12,8 +12,15 @@ import (
 var (
 	// ErrNotFound wird zurückgegeben, wenn ein angeforderter Datensatz (z. B. Schüler oder Buch) nicht existiert.
 	ErrNotFound = errors.New("eintrag nicht gefunden")
-	// ErrBlocked wird zurückgegeben, wenn eine Ausleihe aufgrund von Sperren (z. B. blockierter Schüler) verweigert wird.
-	ErrBlocked = errors.New("ausleihe für diese/n Schüler/in ist gesperrt")
+	// ErrBlocked wird zurückgegeben, wenn eine Ausleihe wegen einer Sperre verweigert wird.
+	//
+	// Der Text nennt bewusst KEINE Person: Er ist der Kopf jeder Sperrmeldung, und das
+	// Gerät ist der Gegenbeweis. Bis zum 17.09.2026 stand hier „ausleihe für diese/n
+	// Schüler/in ist gesperrt"; beim gesperrten GERÄT las die Theke damit „ausleihe für
+	// diese/n Schüler/in ist gesperrt: Gerät ist aktuell gesperrt" — die Bibliothekskraft
+	// sucht dann nach einem Kind, das es gar nicht gibt. Wer betroffen ist, sagt der
+	// angehängte Grund; wer an der Theke steht, steht auf dem Bildschirm.
+	ErrBlocked = errors.New("die ausleihe ist gesperrt")
 	// ErrConflict wird zurückgegeben, wenn eine Aktion mit bestehenden Reservierungen oder Sperren kollidiert.
 	ErrConflict = errors.New("conflict")
 	// ErrInvalidState wird zurückgegeben, wenn sich ein Objekt oder eine Transaktion in einem ungültigen Zustand befindet.

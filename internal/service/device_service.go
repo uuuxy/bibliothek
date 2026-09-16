@@ -104,7 +104,7 @@ func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *st
 	// wegen unbezahlter Schäden) konnte trotzdem ein Gerät ausleihen — und Geräte
 	// sind wertvoller als Bücher. Geräte kennen bewusst KEIN override_block.
 	if leser.IstGesperrt || leser.IsManuallyBlocked {
-		return nil, fmt.Errorf("%w: Die Ausleihe für diese Person ist gesperrt", ErrBlocked)
+		return nil, fmt.Errorf("%w: Diese Person ist gesperrt", ErrBlocked)
 	}
 	// Dieselben AUTOMATIK-Sperren wie der Buch-Pfad (Betreiber-Entscheidung
 	// 19.08.2026): unbezahlte Schäden und die Überfällig-Automatik. Wer kein Buch

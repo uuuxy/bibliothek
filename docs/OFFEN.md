@@ -787,10 +787,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Der Stift der Katalog-Kachel: `BuchKarte.svelte` sagt „öffnet die Akte",
   `e2e/cover-aendern.spec.js` sagt „öffnet die Titel-Verwaltung". Im Browser messen, einen
   Kommentar berichtigen.
-- Eine Sperre am Gerät meldet „ausleihe für diese/n Schüler/in ist gesperrt: Gerät ist aktuell
-  gesperrt", obwohl kein Schüler betroffen ist: `ErrBlocked` (`internal/service/loan.go`) trägt den
-  Schülertext, `internal/service/device_service.go` hängt die Gerätemeldung an. Offen seit
-  `3899cf18`.
 - Schülerakte: Scheitert der Abruf des Kopfes (`GET /api/schueler/{id}` in 503 oder Netzfehler),
   bleibt die Akte leer — `StudentProfile.svelte` hat nach `{:else if st.profile}` kein `{:else}`.
   Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026 (1.5); der Kopf ist der
