@@ -25,11 +25,16 @@ func (s *Server) ServeStudentPhotoHandler() http.HandlerFunc {
 			return
 		}
 
-		// Zuerst die UUID des Schülers anhand der Barcode-ID herausfinden und das Foto fetchen
+		// Zuerst die UUID des LESERS anhand der Ausweisnummer herausfinden und das Foto holen.
+		//
+		// `leser`, nicht die Sicht `schueler`: Das Passbild eines Kollegen wurde gespeichert
+		// (schueler_fotos hängt an der Leser-ID), aber nie ausgeliefert — die Auslieferung
+		// verband es über die Sicht mit seiner Person. Die Akte zeigte weiter die Initialen,
+		// und niemand konnte sagen, warum.
 		query := `
 			SELECT sf.foto_encrypted 
 			FROM schueler_fotos sf
-			JOIN schueler s ON s.id = sf.schueler_id
+			JOIN leser s ON s.id = sf.schueler_id
 			WHERE s.barcode_id = $1
 		`
 

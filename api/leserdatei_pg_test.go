@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"bibliothek/auth"
@@ -174,5 +175,80 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 	}
 	if schuelerAkte.Art != "schueler" || schuelerAkte.Klasse != "07A" {
 		t.Errorf("Akte des Schülers: Art %q, Klasse %q", schuelerAkte.Art, schuelerAkte.Klasse)
+	}
+}
+
+// Zwei Türen, die erst mit der Leserdatei erreichbar wurden und über die Sicht `schueler`
+// liefen. Beide stehen in der Akte eines Kollegen sichtbar da:
+//
+//   - Sperren (PATCH /api/admin/students/{id}/lock) antwortete mit „Schüler nicht
+//     gefunden". Ein Knopf, der nur scheitern kann.
+//   - Das Passbild wurde gespeichert, aber nie ausgeliefert: Die Auslieferung verband
+//     das Foto über die Sicht mit seiner Person. Die Akte zeigte weiter die Initialen,
+//     und niemand konnte sagen, warum.
+//
+// Die Sperre selbst wirkt an der richtigen Stelle: Der Ausleihpfad liest den Leser
+// (GetLeserByID), nicht die Sicht.
+func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a129", Rolle: auth.RoleAdmin}
+
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname = 'Sperrtest'`); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	})
+
+	var id string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO leser (barcode_id, vorname, nachname, art)
+		VALUES ('SPERR-1', 'Katrin', 'Sperrtest', 'lehrkraft') RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Lehrkraft anlegen: %v", err)
+	}
+
+	// 1. Sperren
+	req := httptest.NewRequest(http.MethodPatch, "/api/admin/students/"+id+"/lock",
+		strings.NewReader(`{"is_locked":true,"reason":"Buch seit zwei Jahren überfällig"}`))
+	req.Header.Set("Content-Type", "application/json")
+	req.SetPathValue("id", id)
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+	rec := httptest.NewRecorder()
+	srv.LockStudentHandler().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Kollegen sperren: Status %d, %s", rec.Code, rec.Body.String())
+	}
+	var gesperrt bool
+	if err := pool.QueryRow(ctx, `SELECT is_manually_blocked FROM leser WHERE id = $1`, id).Scan(&gesperrt); err != nil {
+		t.Fatalf("Sperrstatus lesen: %v", err)
+	}
+	if !gesperrt {
+		t.Error("die Sperre ist nirgends angekommen")
+	}
+
+	// 2. Passbild ausliefern. Ein Klartextbild genügt nicht — die Spalte ist
+	// verschlüsselt —, aber der Verbund Foto→Person ist genau die Stelle, die brach:
+	// Steht die Zeile nicht, antwortet die Tür mit 404 „kein foto gefunden".
+	if _, err := pool.Exec(ctx,
+		`INSERT INTO schueler_fotos (schueler_id, foto_encrypted) VALUES ($1, $2)`, id, []byte("x")); err != nil {
+		t.Fatalf("Foto anlegen: %v", err)
+	}
+	var zugeordnet bool
+	if err := pool.QueryRow(ctx, `
+		SELECT EXISTS(SELECT 1 FROM schueler_fotos sf JOIN leser l ON l.id = sf.schueler_id
+		               WHERE l.barcode_id = 'SPERR-1')`).Scan(&zugeordnet); err != nil {
+		t.Fatalf("Foto-Zuordnung lesen: %v", err)
+	}
+	if !zugeordnet {
+		t.Fatal("der Test misst nichts — das Foto hängt gar nicht am Kollegen")
+	}
+	fotoReq := httptest.NewRequest(http.MethodGet, "/api/schueler/SPERR-1/photo", nil)
+	fotoReq.SetPathValue("barcode_id", "SPERR-1")
+	fotoReq = fotoReq.WithContext(context.WithValue(fotoReq.Context(), auth.ClaimsContextKey, claims))
+	fotoRec := httptest.NewRecorder()
+	srv.ServeStudentPhotoHandler().ServeHTTP(fotoRec, fotoReq)
+	if fotoRec.Code == http.StatusNotFound {
+		t.Error("das Passbild eines Kollegen wird gespeichert, aber nicht ausgeliefert — die Akte zeigt weiter Initialen")
 	}
 }

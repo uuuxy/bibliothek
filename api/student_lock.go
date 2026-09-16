@@ -40,8 +40,12 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 		// block_reason konsistent zum Sperrzustand pflegen: beim Sperren den Grund setzen;
 		// beim Entsperren nur räumen, wenn KEINE Systemsperre (ist_gesperrt) mehr besteht —
 		// sonst bliebe deren Grund erhalten (chk_schueler_block_reason verlangt ihn dann).
+		// `leser`, nicht die Sicht `schueler`: Die Handsperre gilt jedem Leser. Seit der
+		// Leserdatei steht der Knopf auch in der Akte eines Kollegen, und über die Sicht
+		// antwortete er mit „schüler nicht gefunden". Sie wirkt dort, wo sie muss — der
+		// Ausleihpfad liest den Leser (GetLeserByID), nicht die Sicht.
 		query := `
-			UPDATE schueler
+			UPDATE leser
 			SET is_manually_blocked = $1,
 			    block_reason = CASE
 			        WHEN $1 = true      THEN $3
@@ -50,7 +54,9 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 			    END,
 			    aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE id = $2
-			RETURNING id, vorname, nachname, klasse, is_manually_blocked
+			-- coalesce auf die Klasse: Sie ist seit Migration 123 nullbar (ein Kollege hat
+			-- keine), und ein NULL in *string ist ein 500 („cannot scan NULL into *string").
+			RETURNING id, vorname, nachname, coalesce(klasse, ''), is_manually_blocked
 		`
 
 		var student struct {
@@ -67,7 +73,7 @@ func (s *Server) LockStudentHandler() http.HandlerFunc {
 		)
 		if err != nil {
 			if err.Error() == "no rows in result set" {
-				return apierrors.NotFound("schüler nicht gefunden", err)
+				return apierrors.NotFound("leser nicht gefunden", err)
 			}
 			return apierrors.Internal("Fehler beim Aktualisieren der Sperre", err)
 		}
