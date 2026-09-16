@@ -171,10 +171,14 @@ und die Theke hat eine Rückrechnung der Littera-Etiketten mit denselben Prüff�
 **Stand 16.09.2026, abends — der Stufe-1-Nachweis ist von Hand gelaufen** (echter Chrome, Netz
 gekappt). Zwei Befunde, beide echt, beide Stufe-3-Arbeit:
 
-1. **Das Offline-Band ist kein Band, sondern ein Block.** Es schiebt die Anwendung so weit nach
-   unten, dass an der Theke nichts mehr zu buchen ist — genau der Zustand, den Stufe 3 abschafft.
-   Der Hinweis ist zudem bei null Vorgängen gleich laut wie bei fünfzig („0 Vorgänge nur auf
-   diesem Rechner").
+1. **An der Theke lässt sich nichts mehr buchen — aus ZWEI Gründen, und der zweite ist der
+   eigentliche.** Sichtbar ist der Offline-Hinweis (`components/OfflineIndicator.svelte`): ein
+   `fixed`-Block über der Anwendung, mit Riesenschrift und grossen Knöpfen, und bei null Vorgängen
+   gleich laut wie bei fünfzig („0 Vorgänge nur auf diesem Rechner"). Blockierend ist aber etwas
+   anderes: 25 Sekunden nach dem letzten Herzschlag setzt `App.svelte` `heartbeatOk` auf falsch
+   und legt ein `fixed inset-0`-Vollbild mit Weichzeichner über die ganze Seite („VERBINDUNG
+   VERLOREN / Reconnecting…"). DAS ist das Vollbild aus Punkt (a) des Plans. Wer nur den roten
+   Balken schlanker macht, hat die Theke nicht entsperrt.
 2. **Ohne Netz kommt niemand mehr herein.** Zwei Ursachen, die man auseinanderhalten muss. Der
    Sperrbildschirm nach 15 Minuten wirft die Sitzung NICHT weg (sie hält 12 Stunden und erneuert
    sich alle 30 Minuten) — aufgemacht wird er aber mit dem Passwort gegen den Schul-Mailserver,
