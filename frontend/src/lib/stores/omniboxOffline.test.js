@@ -49,6 +49,14 @@ afterEach(() => omniboxStore.stoppeZeitgeber());
 
 import { loadQueue, dequeueOfflineAction } from '../offlineQueue.js';
 
+/**
+ * Eine Server-Antwort, wie apiClient.post sie liefert.
+ * @param {any} daten
+ */
+function antwort(daten) {
+	return /** @type {any} */ ({ ok: true, status: 200, json: async () => daten });
+}
+
 async function leere() {
 	for (const item of await loadQueue()) await dequeueOfflineAction(item.id);
 }
@@ -279,22 +287,85 @@ describe('Omnibox offline', () => {
 			expect(omniboxStore.offlineAusweis, 'bis zum naechsten eindeutigen Ausweis').toBe('');
 		});
 
-		// DER gefaehrliche Fall: Merker steht, Verbindung ist zurueck. Der Online-Weg
-		// schickte das Buch ohne Person los, und der Server liest das Schweigen als
-		// RUECKGABE — aus einer Ausleihe wuerde still eine Rueckgabe.
-		it('bucht bei zurueckgekehrter Verbindung NICHT weiter, sondern bittet um den Ausweis', async () => {
+		// DER gefaehrliche Fall: Merker steht, und das naechste Buch wird gescannt. Ginge
+		// es einfach online hinaus, schickte es keine Person mit — und der Server liest das
+		// Schweigen als RUECKGABE. Entschieden wird deshalb an der Wirkung eines
+		// Ausweisscans, nicht an `navigator.onLine`.
+		it('loest den Merker auf und bucht das Buch dann normal', async () => {
 			omniboxStore.queryVal = 'S-10001';
 			await omniboxStore.submitAction(new Event('submit'));
 			expect(omniboxStore.offlineAusweis).toBe('S-10001');
 
+			// Die Verbindung ist zurueck: Der Ausweis laedt die Person, das Buch wird gebucht.
 			netz(true);
+			vi.mocked(apiClient.post).mockImplementation(async (_pfad, body) =>
+				body.query === 'S-10001'
+					? antwort({
+							type: 'student',
+							student: { id: 'leser-1', vorname: 'Mia', nachname: 'Klein' }
+						})
+					: antwort({ type: 'ausleihe', book: { titel: 'Momo' } })
+			);
+			omniboxStore.queryVal = 'LMF-2025-0007';
+			await omniboxStore.submitAction(new Event('submit'));
+
+			expect(await loadQueue(), 'online gebucht, nichts eingereiht').toHaveLength(0);
+			expect(omniboxStore.offlineAusweis, 'der Merker ist verbraucht').toBe('');
+			expect(omniboxStore.activeStudent?.id, 'die Person steht an der Theke').toBe('leser-1');
+			// Drei Anfragen: der Ausweisscan ohne Netz (scheitert), die Aufloesung des
+			// Merkers, dann das Buch.
+			const gesendet = vi.mocked(apiClient.post).mock.calls.map((c) => c[1].query);
+			expect(gesendet, 'erst der Ausweis, dann das Buch').toEqual([
+				'S-10001',
+				'S-10001',
+				'LMF-2025-0007'
+			]);
+			expect(
+				vi.mocked(apiClient.post).mock.calls[2][1].active_leser_id,
+				'das Buch traegt die Person — sonst waere es eine Rueckgabe'
+			).toBe('leser-1');
+		});
+
+		// Der haeufigste Ausfall: Der SERVER ist weg, das WLAN steht. `navigator.onLine`
+		// sagt „online" — bis zum 16.09.2026 bat die Theke dann endlos um einen erneuten
+		// Ausweisscan, der wieder nur offline ankam. Kein Buch war mehr buchbar.
+		it('reiht das Buch ein, wenn das WLAN steht, aber der Server weg ist', async () => {
+			netz(true); // WLAN da — der Browser weiss nichts vom Serverausfall
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+			expect(omniboxStore.offlineAusweis, 'der Ausweis wird trotzdem gemerkt').toBe('S-10001');
+
+			omniboxStore.queryVal = 'LMF-2025-0007';
+			await omniboxStore.submitAction(new Event('submit'));
+
+			const q = await loadQueue();
+			expect(q, 'das Buch liegt in der Warteschlange').toHaveLength(1);
+			expect(q[0].ausweis_barcode).toBe('S-10001');
+			expect(q[0].art).toBe('ausleihe');
+			expect(omniboxStore.offlineAusweis, 'der Merker steht weiter').toBe('S-10001');
+		});
+
+		// Der Server antwortet, laedt aber keine Person: Nummer unbekannt, gesperrt,
+		// Suchtreffer. Dann ist nicht sicher, WEM das Buch gehoert.
+		it('bucht nichts, wenn sich der gemerkte Ausweis nicht laden laesst', async () => {
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+
+			netz(true);
+			vi.mocked(apiClient.post).mockResolvedValue(
+				antwort({ type: 'search_results', students: [], books: [] })
+			);
 			omniboxStore.queryVal = 'LMF-2025-0007';
 			await omniboxStore.submitAction(new Event('submit'));
 
 			expect(await loadQueue(), 'nicht gebucht und nicht eingereiht').toHaveLength(0);
-			expect(omniboxStore.errorMessage).toMatch(/noch einmal scannen/);
+			expect(omniboxStore.errorMessage).toMatch(/NICHT gebucht/);
 			expect(omniboxStore.errorMessage).toContain('S-10001');
 			expect(omniboxStore.offlineAusweis, 'der Merker ist verbraucht').toBe('');
+			expect(
+				vi.mocked(apiClient.post).mock.calls.map((c) => c[1].query),
+				'der Ausweis ohne Netz, die Aufloesung — das Buch ging gar nicht erst hinaus'
+			).toEqual(['S-10001', 'S-10001']);
 		});
 
 		it('einen Ausweis laesst sie bei zurueckgekehrter Verbindung durch — er ist der Ausweg', async () => {

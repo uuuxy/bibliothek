@@ -506,39 +506,73 @@ export function createOmniboxStore() {
 
 	/**
 	 * Der gefaehrlichste Fall des Offline-Betriebs: Ein ohne Netz gemerkter Ausweis steht
-	 * noch, und die Verbindung ist zurueck.
+	 * noch, und das naechste Buch wird gescannt.
 	 *
-	 * Der Merker traegt nur die NUMMER; der Online-Weg braucht die Leser-Kennung. Ginge
-	 * das Buch jetzt hinaus, schickte es `active_leser_id` gar nicht mit — und der Server
-	 * liest das Schweigen als RUECKGABE. Aus einer Ausleihe an S-10001 wuerde still eine
-	 * Rueckgabe. Genau davor warnt der Plan (Stufe 3, Commit 15).
+	 * Der Merker traegt nur die NUMMER; der Online-Weg braucht die Leser-Kennung. Ginge das
+	 * Buch einfach hinaus, schickte es `active_leser_id` gar nicht mit — und der Server
+	 * liest das Schweigen als RUECKGABE. Aus einer Ausleihe an A-10001 wuerde still eine
+	 * Rueckgabe.
 	 *
-	 * Deshalb wird ein Buch bei stehendem Merker NICHT gesendet, sondern um einen erneuten
-	 * Ausweis-Scan gebeten. Ein Ausweis selbst darf durch — er ist ja der Ausweg.
+	 * Entschieden wird an der WIRKUNG, nicht an einer Vorhersage. Bis zum 16.09.2026 fragte
+	 * diese Stelle `navigator.onLine` — und lag damit ausgerechnet im haeufigsten Ausfall
+	 * falsch: Faellt der SERVER aus (Neustart, Reverse Proxy, Docker), bleibt das WLAN da.
+	 * `navigator.onLine` sagte dann „online", der Ausweis war aber gerade offline gemerkt
+	 * worden; die Theke bat um einen erneuten Ausweisscan, der wieder nur offline ankam,
+	 * und bat erneut. Eine Schleife, in der sich KEIN Buch mehr auf eine Karte buchen liess
+	 * (Rasterdurchgang 16.09.2026).
 	 *
-	 * Warum an `navigator.onLine` und nicht am Versuch: Der Versuch entscheidet sich erst
-	 * NACH dem Senden, und dann ist es zu spaet. `navigator.onLine` kann luegen (WLAN da,
-	 * Server weg) — dann scheitert auch der erbetene Ausweis-Scan, der Merker entsteht neu,
-	 * und der Preis ist ein zusaetzlicher Scan. Eine falsche Buchung entsteht in KEINEM
-	 * Zweig; das ist der Punkt.
+	 * Deshalb wird der Merker zuerst aufgeloest — mit genau dem Ausweisscan, den die Theke
+	 * sonst vom Bediener verlangt hat. Ein Ausweisscan ist harmlos: Er bucht nichts, er
+	 * laedt eine Person. Aus seinem Ergebnis ergibt sich alles Weitere:
+	 *
+	 *  - Person geladen: Der Merker ist verbraucht, das Buch geht normal online hinaus.
+	 *  - Versand gescheitert: Es gibt wirklich keine Verbindung. Der Merker bleibt stehen,
+	 *    das Buch nimmt seinen gewoehnlichen Weg und landet mit `ausweis_barcode` in der
+	 *    Warteschlange — der Server loest die Karte beim Nachbuchen auf.
+	 *  - Der Server hat geantwortet, aber keine Person geladen (Nummer unbekannt, gesperrt,
+	 *    Suchtreffer): Dann ist nicht sicher, WEM das Buch gehoert. Es wird NICHT gebucht,
+	 *    der Merker faellt, und das steht als Meldung da.
 	 *
 	 * @param {string} q der rohe Scan
-	 * @returns {boolean} false = dieser Scan wurde bewusst nicht ausgefuehrt
+	 * @param {(() => void) | null} [reloadProfileCb]
+	 * @returns {Promise<boolean>} false = dieser Scan wurde bewusst nicht ausgefuehrt
 	 */
-	function merkerVertraegtDiesenScan(q) {
+	async function merkerAufgeloest(q, reloadProfileCb) {
 		if (!offlineAusweis) return true;
-		if (typeof navigator !== 'undefined' && !navigator.onLine) return true;
+		// Ein Ausweis selbst darf durch — er ist der Ausweg und ersetzt den Merker.
 		if (ordneScanEin(q, buchBarcodes.istBuch).art === 'ausweis') {
 			offlineAusweis = '';
 			return true;
 		}
+
 		const gemerkt = offlineAusweis;
+		let res;
+		try {
+			res = await apiClient.post('/api/action', {
+				query: gemerkt,
+				idempotency_key: crypto.randomUUID()
+			});
+		} catch (e) {
+			// Keine Verbindung — der erwartete Fall, kein Fehler. Der Merker bleibt.
+			console.warn('Ausweis-Merker nicht aufloesbar, bleibt stehen:', e);
+			return true;
+		}
+
+		try {
+			if (!res.ok) await handleActionHttpError(res, gemerkt); // wirft immer
+			verarbeiteAktionsErgebnis(await res.json(), reloadProfileCb, gemerkt);
+		} catch (e) {
+			verarbeiteAntwortfehler(e);
+		}
+
 		offlineAusweis = '';
+		if (activeStudent?.id) return true;
+
 		triggerScreenFlash('error');
 		playSoundError();
 		zeigeFehlerBanner(
-			`Die Verbindung ist zurück. Bitte den Ausweis „${gemerkt}" noch einmal scannen — dann wird die Person richtig geladen. ` +
-				`Dieser Scan wurde NICHT gebucht.`
+			`Der ohne Netz gemerkte Ausweis \u201e${gemerkt}\u201c liess sich nicht laden. Dieser Scan wurde NICHT gebucht — ` +
+				`bitte den Ausweis erneut scannen.`
 		);
 		return false;
 	}
@@ -652,9 +686,32 @@ export function createOmniboxStore() {
 		// Disable input while processing
 		document.getElementById('omnibox-input')?.blur();
 
-		if (!merkerVertraegtDiesenScan(q)) return;
+		// Der Schnappschuss entsteht VOR allem Weiteren (OFFEN.md 2.2, Commit 1): Escape
+		// oder „Theke leeren" waehrend einer laufenden Anfrage darf die Absicht des Scans
+		// nicht mehr aendern.
+		let eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
 
-		const eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
+		// Steht ein ohne Netz gemerkter Ausweis, gehoert das naechste Buch IHM — erst
+		// aufloesen, dann buchen (merkerAufgeloest). Ohne Merker bleibt dieser Weg
+		// unberuehrt: kein zusaetzlicher Wartepunkt zwischen Scan und Versand.
+		//
+		// Der Fokus geht zurueck ans Scanfeld, auch wenn der Scan bewusst nicht
+		// ausgefuehrt wird: Ein Handscanner tippt blind, ohne Fokus landet der naechste
+		// Scan im Nichts.
+		if (offlineAusweis) {
+			if (!(await merkerAufgeloest(q, reloadProfileCb))) {
+				scanfeldWiederScharfstellen();
+				return;
+			}
+			// Die Aufloesung hat die Person geladen: Sie gehoert in den Schnappschuss, und
+			// der Merker faellt aus ihm heraus — sonst truege der Eintrag beides, und beim
+			// Nachbuchen entschiede die Reihenfolge der Felder, wem das Buch gehoert.
+			if (eintrag.ausweis_barcode && activeStudent?.id) {
+				const ohneMerker = { ...eintrag };
+				delete ohneMerker.ausweis_barcode;
+				eintrag = { ...ohneMerker, leser_id: activeStudent.id, art: absicht ?? 'ausleihe' };
+			}
+		}
 
 		// Zwei Fehlerklassen, zwei Zweige (OFFEN.md 2.2, Commit 2): Scheitert der VERSAND, hat
 		// der Server nichts gesehen — der Schnappschuss geht in die Warteschlange. Kam eine
