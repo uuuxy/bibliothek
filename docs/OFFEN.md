@@ -37,7 +37,9 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    steht seit dem Abend des 16.09. auch die Schul-E-Mail: Fehlt sie einem Kollegen aus der
    Zeit davor, trägst du sie dort nach — damit bekommt er seinen Zugang, und die
    Selbstanmeldung legt ihn nicht ein zweites Mal an. Sieh dir an, ob die Wörter stimmen und
-   ob dir etwas fehlt.
+   ob dir etwas fehlt. **Eines fehlt schon:** Wer über ein Konto in die Leserdatei gekommen
+   ist, hat keine Ausweisnummer, und der Druck vergibt auch keine — die Karte kommt dann ohne
+   Barcode aus dem Drucker (5.16 E).
 4. **Gebaut am 16.09.2026: das Band statt des Vollbilds, und keine Sperre ohne Netz.** Ein
    Rasterdurchgang über diese Arbeit (5.19) hat zwei Fehler gefunden und behoben: Fiel der
    Server aus, während das WLAN stand, liess sich kein Buch mehr auf eine Karte buchen — die
@@ -998,6 +1000,27 @@ Theke einen Buchscan von einem Ausweisscan unterscheiden kann.**
   und Mailversand (`manage_settings`) sowie Benutzer & Rechte (`manage_users`). Ein Menüpunkt
   ist kein Recht, sondern ein Sammelpunkt über sechs Kategorien — was gilt, beweist die
   Antwort des Servers. Bestätigt am 16.09.2026.
+
+**E. Offen: Wer bekommt eine Ausweisnummer — und wer nicht?** (Frage vom 16.09.2026, am Code
+nachgesehen.) Eine Nummer entsteht heute an genau drei Stellen: „Neuer Leser" (`student_create.go`
+vergibt IMMER eine, auch wenn das Feld leer bleibt), der LUSD-Import und die Littera-Übernahme. Ein
+Konto vergibt keine: `konto_hat_leserzeile` legt die Leserzeile ausdrücklich ohne Ausweis an. Wer
+also über ein KONTO in die Leserdatei gekommen ist — Selbstanmeldung, vom Admin angelegt, oder ein
+Admin-Konto aus der Zeit vor Migration 125 ohne Nummer —, hat keine.
+
+Der Druck vergibt auch keine und warnt nicht: `CardFace.svelte` setzt die Nummer in
+`/api/barcode?content=…`, und ohne Nummer kommt ein kaputtes Bild und eine leere Zeile auf die
+Karte. Genau das zeigt der Lehrerausweis, der die Frage ausgelöst hat.
+
+Von Hand geht es: Das Feld „Ausweisnummer" steht in der Maske für jeden. Nur sagt sein Hinweis beim
+Kollegium „Leer lassen, solange kein Ausweis gedruckt ist" — und beim Anlegen stimmt das nicht,
+weil der Server dann selbst eine zieht.
+
+**Zu entscheiden:** (1) Vergibt der Ausweisdruck die nächste freie Nummer, wenn keine da ist, oder
+bekommt die Akte einen Knopf „Ausweisnummer vergeben"? (2) Soll der Druck ohne Nummer überhaupt
+möglich sein? (3) Soll das Konto beim Anlegen gleich eine Nummer bekommen — dann trägt jeder
+Kollege eine, auch wer nie an die Theke kommt. Vorher am Server zählen, wie viele Leser heute ohne
+Nummer dastehen.
 
 ### 5.17 Rasterdurchgang über den 15. und 16.09.2026 (Funde vom 16.09.2026)
 
