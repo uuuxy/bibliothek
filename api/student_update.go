@@ -207,6 +207,9 @@ func (s *Server) PatchStudentHandler(auditRepo repository.AuditRepository) http.
 		if !ok {
 			return
 		}
+		if !s.pruefeUndSetzeArt(ctx, w, id, req.Art, b) {
+			return
+		}
 		// Ein zweiter Empty-Check: Wenn AUSSER lusd_id nichts drin war und lusd_id ein
 		// No-op ist (gleicher Wert), darf kein leerer UPDATE laufen.
 		if len(b.sets) == 0 {
@@ -252,7 +255,7 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 	neu := strings.TrimSpace(*reqLusd)
 
 	var aktuell string
-	if err := s.DB.Pool.QueryRow(ctx, "SELECT COALESCE(lusd_id, '') FROM schueler WHERE id = $1", id).Scan(&aktuell); err != nil {
+	if err := s.DB.Pool.QueryRow(ctx, "SELECT COALESCE(lusd_id, '') FROM leser WHERE id = $1", id).Scan(&aktuell); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
 			return "", false
@@ -292,6 +295,67 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 	return neu, true
 }
 
+// pruefeUndSetzeArt aendert die Art eines Lesers (Migration 123). Erlaubt ist genau
+// EIN Wechsel: zwischen Lehrkraft und LiV. Beide Richtungen ueber die Grenze zum
+// Schueler sind zu — und zwar nicht aus Vorsicht, sondern weil jede von ihnen einen
+// echten Schaden anrichtet:
+//
+//	Schueler -> Kollege: Die Zeile verliert damit ihre LUSD-Bindung. Traegt sie eine
+//	  lusd_id, bricht chk_leser_nur_schueler_werden_abgaenger; traegt sie keine, waere
+//	  der Schueler beim naechsten Import ein unbekannter Name und liefe als Abgaenger
+//	  samt Anonymisierung durch. Peter, 16.09.2026: "ein Schueler kann nie ein Lehrer
+//	  werden!"
+//	Kollege -> Schueler: chk_leser_schueler_pflichtfelder verlangt Klasse, Abgaengerjahr
+//	  UND Ausweisnummer. Ein Kollege hat die ersten beiden nicht; das UPDATE liefe in
+//	  den CHECK und damit in eine 500.
+//
+// Ein Mensch wechselt die Seite nicht. Wer wirklich falsch angelegt wurde, wird
+// geloescht und neu angelegt — ein sichtbarer Vorgang statt einer stillen Umwidmung.
+//
+// nil heisst "nicht mitgeschickt"; derselbe Wert ist ein No-op, damit das Formular
+// die Art unveraendert mitschicken darf.
+func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, id string, reqArt *string, b *updateBuilder) bool {
+	if reqArt == nil {
+		return true
+	}
+	neu := strings.TrimSpace(*reqArt)
+	// Dieselbe Menge wie beim Anlegen (leserArten, student_create.go) und dieselbe wie
+	// chk_leser_art in der Datenbank. Eine vierte Art ist ein Tippfehler, kein neuer
+	// Personenkreis — und soll als Auskunft zurueckkommen, nicht als CHECK-500.
+	if !leserArten[neu] {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
+		apierrors.SendHTTPError(w, http.StatusBadRequest,
+			fmt.Errorf("Unbekannte Art %q. Möglich sind: Schüler, Lehrkraft, LiV.", neu))
+		return false
+	}
+
+	var aktuell string
+	// `leser` und nicht die Sicht `schueler`: Die Sicht ist auf art='schueler'
+	// eingeschraenkt (schema.sql), ein Kollege steht schlicht nicht darin.
+	if err := s.DB.Pool.QueryRow(ctx, "SELECT art FROM leser WHERE id = $1", id).Scan(&aktuell); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
+			return false
+		}
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+
+	if neu == aktuell {
+		return true // No-op: Formular schickt den unveraenderten Wert mit.
+	}
+	if istSchuelerArt(aktuell) || istSchuelerArt(neu) {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
+		apierrors.SendHTTPError(w, http.StatusBadRequest,
+			errors.New("Ein Schüler lässt sich nicht in eine Lehrkraft umwandeln und umgekehrt. "+
+				"Lege die Person neu an und lösche den falschen Eintrag."))
+		return false
+	}
+
+	b.addStr("art", &neu)
+	return true
+}
+
 // patchStudentRequest bündelt die optional aktualisierbaren Stammdatenfelder (nil = unverändert).
 type patchStudentRequest struct {
 	Vorname       *string `json:"vorname"`
@@ -301,6 +365,14 @@ type patchStudentRequest struct {
 	BarcodeID     *string `json:"barcode_id"`
 	AbgaengerJahr *int    `json:"abgaenger_jahr"`
 	Geburtsdatum  *string `json:"geburtsdatum"`
+	// Art des Lesers (schueler | lehrkraft | liv, Migration 123). Sie steht hier, weil
+	// die Akte sie zeigen und ein Kollege zwischen Lehrkraft und LiV wechseln koennen
+	// muss. Sie hat einen eigenen kontrollierten Pfad (pruefeUndSetzeArt) und liegt
+	// NICHT im generischen Feld-Beutel: Ein Wechsel der Art verschiebt die Zeile
+	// zwischen zwei Pflichtfeld-Welten (chk_leser_schueler_pflichtfelder,
+	// chk_leser_nur_schueler_werden_abgaenger) und liefe roh in einen CHECK — also in
+	// eine 500, die der Sanitizer zu "interner Datenbankfehler" macht.
+	Art *string `json:"art"`
 	// KEINE Sperrfelder hier. Sperren und Entsperren läuft ausschliesslich über
 	// PATCH /api/admin/students/{id}/lock (api/student_lock.go) — und das aus zwei
 	// Gründen, die dieser Weg beide nicht erfüllte:
@@ -420,7 +492,22 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 // fuehreSchuelerUpdateAus baut das dynamische UPDATE und führt es aus. ok=false: die
 // Fehlerantwort (500 bzw. 404 bei unbekanntem Schüler) wurde bereits geschrieben.
 func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWriter, id string, b *updateBuilder) bool {
-	query, args := b.build("UPDATE schueler SET aktualisiert_am = CURRENT_TIMESTAMP", id)
+	// Geschrieben wird auf die TABELLE `leser`, nicht auf die Sicht `schueler`.
+	//
+	// Die Sicht ist `SELECT * FROM leser WHERE art = 'schueler' WITH CHECK OPTION`
+	// (Migration 123/schema.sql). Sie ist ein Schutz und bleibt einer: Jede Abfrage, die
+	// „Schueler" meint, meint durch sie auch wirklich Schueler. Fuer den Aenderungspfad
+	// der Akte ist sie aber die falsche Tuer, seit die Leserdatei alle fuehrt — ein
+	// Kollege steht NICHT in ihr, das UPDATE traf null Zeilen, und der Handler
+	// antwortete 404 „schueler nicht gefunden". Genau das war Peters Befund am
+	// 16.09.2026: „ich kann dort aber keine adressedaten etc nachtragen." Es fehlte
+	// nicht nur der Knopf in der Akte — der Server haette ihn ohnehin abgewiesen.
+	//
+	// Was die Sicht hier verhindert hat, verhindert jetzt pruefeUndSetzeArt mit einer
+	// Begruendung statt mit einer 404, und die Paarungs-CHECKs der Tabelle
+	// (chk_leser_schueler_pflichtfelder, chk_leser_nur_schueler_werden_abgaenger) liegen
+	// unveraendert darunter. Die Zusage ist dieselbe, nur das Mittel hat gewechselt.
+	query, args := b.build("UPDATE leser SET aktualisiert_am = CURRENT_TIMESTAMP", id)
 	tag, err := s.DB.Pool.Exec(ctx, query, args...)
 	if err != nil {
 		// Eine vergebene Ausweisnummer (unter den Schülern oder im Kollegium, Migration 118) ist
@@ -434,7 +521,7 @@ func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWri
 		return false
 	}
 	if tag.RowsAffected() == 0 {
-		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("schüler nicht gefunden"))
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("leser nicht gefunden"))
 		return false
 	}
 	return true

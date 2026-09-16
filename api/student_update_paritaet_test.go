@@ -32,6 +32,14 @@ var nichtInsUpdate = map[string]string{
 	// (Betreiber-Entscheidung 18.08.2026). Das FELD wird also sehr wohl geschrieben —
 	// nur nicht hier, sondern nach eigener Prüfung. Test: TestLusdIDKontrolliertNachtragbar.
 	"lusd_id": "kontrollierter Pfad pruefeUndSetzeLusdID (nur nachtragbar wenn leer, eindeutig, auditiert)",
+	// art ebenso (pruefeUndSetzeArt im Handler): Ein Wechsel der Art verschiebt die Zeile
+	// zwischen zwei Pflichtfeld-Welten. Schüler -> Kollege nähme ihr die LUSD-Bindung und
+	// liesse sie beim nächsten Import als Abgänger durchlaufen; Kollege -> Schüler bricht
+	// chk_leser_schueler_pflichtfelder (Klasse, Abgängerjahr, Ausweis). Roh im generischen
+	// Builder käme beides als CHECK-500 zurück statt als Auskunft. Erlaubt ist nur der
+	// Wechsel zwischen Lehrkraft und LiV; geschrieben wird das Feld sehr wohl, nur nach
+	// eigener Prüfung. Test: TestLeserArtAendern (PG).
+	"art": "kontrollierter Pfad pruefeUndSetzeArt (nur zwischen Lehrkraft und LiV, nie über die Schüler-Grenze)",
 }
 
 // beispielwert liefert einen Wert, den JEDES Feld dieses Typs verträgt.
