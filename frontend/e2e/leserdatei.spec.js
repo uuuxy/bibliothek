@@ -15,12 +15,18 @@ test('Leserdatei: ein Kollege steht in der Liste, hat eine Akte und ist über de
 	const nachname = `Kollegin${s}`;
 
 	// Über die Tür anlegen, die die Leserdatei selbst benutzt: Art zuerst, keine Klasse,
-	// kein Geburtsdatum, kein Konto.
+	// kein Geburtsdatum.
+	//
+	// Die Schul-E-Mail ist seit dem 16.09.2026 PFLICHT (api/student_create.go): Ohne sie
+	// entsteht kein Konto, und ohne Konto stünde die Person zweimal in der Leserdatei,
+	// sobald sie sich selbst anmeldet. Die Domain muss zu SELBSTANMELDUNG_DOMAIN passen —
+	// im lokalen Stack `test.local` (docker-compose.local.yml).
 	await uiLogin(page);
 	const angelegt = await apiPost(page, '/api/schueler', {
 		art: 'lehrkraft',
 		vorname: 'Katrin',
-		nachname
+		nachname,
+		email: `katrin.${nachname.toLowerCase()}@test.local`
 	});
 	expect(angelegt.ok(), `Anlegen fehlgeschlagen: ${angelegt.status()}`).toBeTruthy();
 	const { id, barcode_id: ausweis } = await angelegt.json();
