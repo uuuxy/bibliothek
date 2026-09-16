@@ -974,32 +974,20 @@ die Spur seiner Buchungen verschwindet.
   sie nicht an.
 
 
-**Zu prüfen, bevor dieser Schritt gebaut wird — ein Weg, der die halbe Arbeit spart
-(gefunden 16.09.2026, nicht belegt):** 51 Abfragen in 30 Dateien lesen heute
-`FROM schueler` und meinen damit „Schüler“. Stehen Kollegen in derselben Tabelle, muss
-jede einzelne davon `art = 'schueler'` ergänzen — und wer eine übersieht, hat einen
-Kollegen in einer Klassenliste oder im Mahnlauf.
+**Gebaut am 16.09.2026: Die Tabelle heißt `leser`, `schueler` ist eine Sicht darauf.**
 
-Statt dessen: Die TABELLE heißt `leser`, und `schueler` wird eine **Sicht** darauf
-(`CREATE VIEW schueler AS SELECT * FROM leser WHERE art = 'schueler' WITH CHECK OPTION`).
-Eine solche Sicht ist in Postgres von selbst schreibbar; alle 51 Abfragen behalten damit
-ihre Bedeutung, ohne geändert zu werden, und können einen Kollegen weder sehen noch
-anlegen. Neue Abfragen, die ALLE Leser meinen, nennen `leser`. Die Umbenennung wäre damit
-nicht der letzte, mechanische Schritt, sondern das Mittel.
+51 Abfragen in 30 Dateien lesen `FROM schueler` und meinen „Schüler“. Statt jede einzelne
+um `art = 'schueler'` zu ergänzen — und eine zu übersehen — zeigt die Sicht nur Schüler.
+Alle 51 behalten damit ihre Bedeutung, ohne angefasst zu werden, und können einen Kollegen
+weder sehen noch anlegen (`WITH CHECK OPTION`). Vorher an Postgres 18 nachgemessen:
+`FOR UPDATE`, `INSERT ... RETURNING`, `UPDATE` und `DELETE` gehen durch die Sicht;
+`TRUNCATE` nicht (vier Test-Helfer nennen deshalb `leser`).
 
-Zwei Fragen entscheiden, ob der Weg trägt; beide brauchen eine laufende Datenbank:
-
-1. `SELECT ... FOR UPDATE` auf einer Sicht — der Ausleihweg sperrt die Zeile so
-   (`loan_checkout.go`, `schueler_zusammenfuehren.go`, `nachbuchen.go`). Geht das nicht,
-   fällt der Weg, denn diese Sperre ist der Schutz gegen zwei gleichzeitige Ausleihen.
-2. `TRUNCATE` auf einer Sicht geht sicher NICHT — drei Test-Helfer tun das
-   (`api/pgtest_support_test.go`, `repository/loan_null_bearbeiter_pg_test.go`,
-   `internal/littera/pgtest_support_test.go`). Sie müssten `leser` nennen. Das ist
-   Kleinarbeit, kein Hindernis.
-
-Die Probe dafür steht in einem Satz: eine Sicht anlegen, `SELECT 1 FROM sicht WHERE id =
-... FOR UPDATE` versuchen. Fällt Frage 1 negativ aus, bleibt es beim Durchgang durch alle
-51 Stellen, mit einer Ratsche, die eine Abfrage ohne `art` neu meldet.
+Damit ist der frühere letzte Schritt „Umbenennen“ **erledigt** — er war nicht der
+Abschluss, sondern das Mittel. Zwei Stellen hätte die Umbenennung still beschädigt: der
+Ausweis-Wächter (er vergleicht den Tabellennamen und hätte die falsche Tabelle geprüft —
+zwei Personen mit derselben Ausweisnummer) und die von Postgres selbst erzeugten
+Constraint-Namen, die beim Umbenennen nicht mitwandern.
 
 **Schritt „Eine Ausleihe, ein Leser“**
 
@@ -1026,10 +1014,7 @@ Die Probe dafür steht in einem Satz: eine Sicht anlegen, `SELECT 1 FROM sicht W
   an — ein KONTO entsteht dabei nicht, das holt sich die Lehrkraft über die Selbstanmeldung.
 - Das Feld Personenart fällt aus der Benutzerverwaltung.
 
-**Schritt „Umbenennen“ (rein mechanisch, eigener Commit)**
-
-`schueler` → `leser`: 408 Fundstellen in 47 Dateien. Zuletzt, damit die Umbenennung nicht mit
-einer Verhaltensänderung in einem Commit liegt; Gate: kein Vorkommen des alten Namens mehr.
+**Schritt „Umbenennen“ — erledigt am 16.09.2026, als Mittel statt als Abschluss (siehe oben).**
 
 **Entschieden (Peter, 15.09.2026): Die Rolle legt der Admin fest, alle anderen sind Kollegium.**
 Daraus folgt für den Bau:
