@@ -236,8 +236,9 @@ createdb -U postgres bibliothek_restore_test
 BACKUP_ENCRYPTION_KEY="$KEY" ./restore-backup "$ENC" \
   | psql -U postgres -d bibliothek_restore_test
 
-# Stichprobe, danach Wegwerf-DB entfernen:
-psql -U postgres -d bibliothek_restore_test -c "SELECT count(*) FROM schueler;"
+# Stichprobe, danach Wegwerf-DB entfernen. `leser` und nicht `schueler`: Letzteres ist
+# seit Migration 124 eine Sicht mit WHERE art = 'schueler' und zählt das Kollegium nicht mit.
+psql -U postgres -d bibliothek_restore_test -c "SELECT art, count(*) FROM leser GROUP BY art;"
 dropdb -U postgres bibliothek_restore_test
 ```
 
