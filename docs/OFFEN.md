@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 16.09.2026
+Stand: 17.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht: Das Befund-Register (`docs/befunde.md`) und
@@ -13,7 +13,7 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ---
 
-## Was jetzt dran ist — in einfachen Worten (Stand 16.09.2026)
+## Was jetzt dran ist — in einfachen Worten (Stand 17.09.2026)
 
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
