@@ -858,8 +858,6 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
 - **ISBN-Dublette (`260b1436`):** Der UNIQUE-Constraint fängt nur zeichengleiche Dubletten;
   geprüft wird auf einer bereinigten Kopie, gespeichert der Rohwert. `9783123456789` und
   `978-3-12-345678-9` sind zwei Titel. Ob das Frontend vor dem Senden bereinigt, ist ungeprüft.
-- **Ersatzforderung (`436de459`):** Die neue 404-Begründung kommt als roher JSON-Body in den
-  Toast (`useStudentProfile.svelte.js`, `String(e)`); der Mensch liest `Error: {"error":…}`.
 - **Selbstanmeldung (`d9d84fd3`):** Ein liegengelassener Antrag liest dauerhaft „Zugang
   beantragt"; nur `aktiv = true` räumt `zugang_beantragt_am`. Kleiner geworden, seit ein
   abgelehnter Antrag samt Leserzeile gelöscht wird (16.09.2026): Es geht nur noch um Anträge,

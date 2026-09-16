@@ -1,4 +1,4 @@
-import { apiFetch, apiClient } from './apiFetch.js';
+import { apiFetch, apiClient, extractApiError } from './apiFetch.js';
 import { istKollegium } from './leserArt.js';
 import { toastStore } from './stores/toastStore.svelte.js';
 
@@ -123,8 +123,10 @@ export function useStudentProfile() {
 		try {
 			const res = await apiFetch(`/api/print/rechnung/${profile.id}`);
 			if (!res.ok) {
-				const errText = await res.text();
-				throw new Error(errText || 'Keine ausstehenden Rechnungen gefunden');
+				// extractApiError statt res.text(): Der Server antwortet mit JSON
+				// ({"error": "…"}), und `String(e)` machte daraus „Error: {"error":…}" im
+				// Toast — der Mensch an der Theke las die Klammern mit (OFFEN.md 5.12).
+				throw new Error((await extractApiError(res)) || 'Keine ausstehenden Rechnungen gefunden');
 			}
 			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);
@@ -134,7 +136,7 @@ export function useStudentProfile() {
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			globalErrorToast = String(e);
+			globalErrorToast = e instanceof Error ? e.message : String(e);
 			setTimeout(() => (globalErrorToast = null), 4000);
 		} finally {
 			rechnungPdfLoading = false;
@@ -148,8 +150,7 @@ export function useStudentProfile() {
 		try {
 			const res = await apiFetch(`/api/print/kontoauszug/${profile.id}`);
 			if (!res.ok) {
-				const errText = await res.text();
-				throw new Error(errText || 'Keine aktiven Ausleihen gefunden');
+				throw new Error((await extractApiError(res)) || 'Keine aktiven Ausleihen gefunden');
 			}
 			const blob = await res.blob();
 			const url = URL.createObjectURL(blob);
@@ -159,7 +160,7 @@ export function useStudentProfile() {
 			a.click();
 			URL.revokeObjectURL(url);
 		} catch (e) {
-			globalErrorToast = String(e);
+			globalErrorToast = e instanceof Error ? e.message : String(e);
 			setTimeout(() => (globalErrorToast = null), 4000);
 		} finally {
 			kontoauszugPdfLoading = false;

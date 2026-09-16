@@ -12,7 +12,12 @@ import { apiFetch } from './apiFetch.js';
 // Bei den Gebühren ist das nicht nur Anzeige: StudentGebuehrenCard schreibt auf die
 // Fall-ID der Zeile („Zahlung verbucht", „Storno"). Ein Klick auf der Akte von B hätte
 // die Zahlung einem Schadensfall von A gutgeschrieben — Kopf, Ausdruck und Audit zeigen B.
-vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('./apiFetch.js', async (original) => ({
+	// extractApiError bleibt die ECHTE Funktion: Der Test unten prüft genau, was sie aus
+	// einer Fehlerantwort macht.
+	...(await original()),
+	apiFetch: vi.fn()
+}));
 
 /** @param {any} body */
 const ok = (body) => ({ ok: true, json: async () => body });
@@ -169,5 +174,38 @@ describe('useStudentProfile.fetchProfile', () => {
 			st.showDeleteConfirm,
 			st.showWebcam
 		]).toEqual([false, false, false, false, false]);
+	});
+});
+
+// Der Mensch an der Theke liest den Satz des Servers, nicht seinen JSON-Rumpf.
+//
+// Fund (OFFEN.md 5.12): Die Ersatzforderung antwortet mit {"error": "…"}, und der Toast
+// zeigte `Error: {"error":"…"}` — mit Klammern und Anführungszeichen. Wer an der Theke
+// steht, soll lesen können, was los ist.
+describe('useStudentProfile: Fehlermeldungen', () => {
+	beforeEach(() => {
+		vi.mocked(apiFetch).mockReset();
+	});
+
+	it('zeigt den Satz des Servers statt seines JSON-Rumpfs', async () => {
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			const u = String(url);
+			if (u.includes('/api/print/rechnung/')) {
+				return /** @type {any} */ ({
+					ok: false,
+					status: 404,
+					text: async () => JSON.stringify({ error: 'Keine offene Forderung ohne Bescheid.' })
+				});
+			}
+			return /** @type {any} */ ({ ok: true, json: async () => ({ id: 'A', vorname: 'Anna' }) });
+		});
+
+		const hook = useStudentProfile();
+		await hook.fetchProfile('A');
+		await hook.downloadRechnungPDF();
+
+		expect(hook.globalErrorToast).toBe('Keine offene Forderung ohne Bescheid.');
+		expect(hook.globalErrorToast).not.toContain('{');
+		expect(hook.globalErrorToast).not.toContain('Error:');
 	});
 });
