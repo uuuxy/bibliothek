@@ -2,7 +2,7 @@
  *  kleinen Darstellungsregeln, die Planer und Portal-Reiter teilen.
  *
  *  Der Plan ist eine REIHENFOLGE von Klassen, die der Server auf Schultage × Stunden
- *  gießt (Peter, 05.09.2026, am echten Plan der Schule): Rahmen + Zeilen hin, Plätze
+ *  gießt (Absprache vom 05.09.2026, am echten Plan der Schule): Rahmen + Zeilen hin, Plätze
  *  zurück — auch die Vorschau rechnet der Server, damit es keinen JavaScript-Zwilling
  *  der Verteilung gibt. Das Kollegium liest das Ergebnis im Portal, für alle gleich. */
 import { apiFetch } from './apiFetch.js';
@@ -27,7 +27,7 @@ import { einordnen, klasseTauschen as tauscheInZeile } from './lmfplanZeilen.js'
  *  Schülern; eingangsjahrgaenge aus der Einstellung. */
 /** @typedef {{ plan: { id: string, art: string, erster_tag: string, startstunde: number, letzter_tag: string, letzte_stunde: number, stunden_je_tag: number, freie_tage: FreierTag[], veroeffentlicht_am?: string | null } | null, zeilen: PlanPlatz[], ausgelassen: string[], vorbei: boolean, vorschlag?: { quelle: 'vorjahr' | 'regel', zeilen: PlanZeile[], ausgelassen: string[], rahmen?: RahmenVorgabe }, klassen: string[], ausgelassen_regel?: string[], eingangsjahrgaenge?: number[], sommerferien?: Sommerferien }} PlanStand */
 
-/** Die zwei Pläne — mit den Worten, die sagen, was passiert (Peter, 06.09.2026: „Rückgabe"
+/** Die zwei Pläne — mit den Worten, die sagen, was passiert (Absprache vom 06.09.2026: „Rückgabe"
  *  und „Ausgabe" allein waren unklar, das sind zwei verschiedene Dinge zu verschiedenen
  *  Zeiten). Dieselben Titel schreibt das PDF (api/lmf_termine.go, LmfArtTitel). */
 export const ARTEN = /** @type {const} */ ([
@@ -175,7 +175,7 @@ export function entwurfAus(stand) {
 	};
 }
 
-/** Eine Frage an jede Klasse im Planer (Peter, 06.09.2026: Klassen wechseln mit dem
+/** Eine Frage an jede Klasse im Planer (Absprache vom 06.09.2026: Klassen wechseln mit dem
  *  Schuljahr — mal 3, mal 4, mal 6 je Stufe und Zweig): Hat sie schon Schüler? Ein
  *  „07G6" aus dem Vorjahr oder ein vor dem August-Import getipptes „07G1" hat keine —
  *  es kommt mit dem LUSD-Import oder gehört aus dem Plan. Der Server beantwortet sie,
@@ -369,7 +369,7 @@ export function klasseRaus(e, k) {
 }
 
 /** Tauscht in Zeile i die Klasse `alt` gegen `neu` aus „Nicht im Plan" — ein Klick auf
- *  die Klasse in der Tabelle (06.09.2026, Peter: „einfach anklicken um es zu ändern").
+ *  die Klasse in der Tabelle (06.09.2026, Absprache: „einfach anklicken um es zu ändern").
  *  `neu` verlässt die Auslassungen, `alt` kommt dorthin; die Zeile behält Platz und Vermerk.
  *  @param {PlanEntwurf} e @param {number} i @param {string} alt @param {string} neu
  *  @returns {PlanEntwurf} */

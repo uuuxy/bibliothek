@@ -27,7 +27,7 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	});
 
 	it('Kollegium steht VOR den Rollen — es ist der Grundzustand, keine Rolle', () => {
-		// Peter, 16.09.2026: „Die Selbstregistration ist in dem Sinn keine Rolle. Das sind
+		// Absprache vom 16.09.2026: „Die Selbstregistration ist in dem Sinn keine Rolle. Das sind
 		// einfach alle, alle Lehrer. Nur einige werden anhand ihrer E-Mail zu höheren
 		// Berufen." Steht Kollegium zwischen Mitarbeiter und Administrator, liest die
 		// Liste sich als Rangfolge, in der das Kollegium eine Stufe wäre.
@@ -53,7 +53,7 @@ describe('Rolle Leitung in der Oberfläche', () => {
 	});
 
 	// Die Gegenrichtung zum Test darüber, und der Grund, warum beide hier stehen:
-	// Peter am 16.09.2026, beim Blick auf die Matrix — „was soll der Scheiss dass wir auf
+	// Absprache vom 16.09.2026, beim Blick auf die Matrix — „was soll der Scheiss dass wir auf
 	// einmal jetzt Kollegium bei Rollen haben? das braucht doch niemand!"
 	//
 	// Die Spalte war nicht neu (sie stand dort seit dem 10.08.2026, als die Rolle

@@ -9,7 +9,7 @@
        - Keine Rolle. Eine Rolle vergibt der Administrator eigens; wer keine hat, ist
          Kollegium — der Grundzustand jeder Lehrkraft.
 
-     Die SCHUL-E-MAIL steht seit dem 16.09.2026 hier, und sie ist Pflicht (Peter). Sie ist
+     Die SCHUL-E-MAIL steht seit dem 16.09.2026 hier, und sie ist Pflicht . Sie ist
      keine Kontaktangabe, sondern der Schlüssel: Aus ihr entsteht das Anmeldekonto, und
      weil sie eindeutig ist, findet die spätere Selbstanmeldung über „Mein Portal" genau
      diesen Eintrag wieder. Ohne sie stand die Person danach zweimal in der Leserdatei —

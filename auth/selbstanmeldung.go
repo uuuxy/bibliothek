@@ -94,7 +94,7 @@ func namenAusAdresse(email string) (vorname, nachname string) {
 }
 
 // grossErsterBuchstabe schreibt den ersten Buchstaben groß und lässt den Rest, wie er
-// ist — "flasch" wird zu "Flasch", "McDonald" bleibt "McDonald".
+// ist — "berger" wird zu "Berger", "McDonald" bleibt "McDonald".
 func grossErsterBuchstabe(s string) string {
 	r := []rune(strings.TrimSpace(s))
 	if len(r) == 0 {

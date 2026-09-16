@@ -14,7 +14,7 @@ import (
 
 // Jeder Schreibweg des LMF-Plans muss seine Änderung melden.
 //
-// Peter, 07.09.2026: „änderungen soll und kann man jederzeit eintragen und man sieht es
+// Absprache vom 07.09.2026: „änderungen soll und kann man jederzeit eintragen und man sieht es
 // live!" Getragen wird das von einem SSE-Ereignis (lmf_plan_live.go), das Portal und
 // Planer zum Nachholen bringt. Ein Schreibweg, der es vergisst, fällt nicht auf: Die
 // Antwort an den Aufrufer ist richtig, sein eigener Bildschirm zeigt den neuen Stand,

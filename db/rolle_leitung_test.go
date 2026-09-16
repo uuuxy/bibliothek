@@ -2,7 +2,7 @@ package db
 
 import "testing"
 
-// Die Rolle Leitung (Peter, 15.09.2026): „Die Leitung startet mit allen Rechten außer
+// Die Rolle Leitung (15.09.2026): „Die Leitung startet mit allen Rechten außer
 // ‚Benutzer & Rechte' und ‚Einstellungen'."
 //
 // Dieser Test prüft die PAARUNG, nicht eine abgeschriebene Liste: Er leitet das Soll aus
@@ -70,7 +70,7 @@ func TestRechteVorgabeLeitung(t *testing.T) {
 	}
 }
 
-// Die Rechte der Leitung sind ein STARTWERT, kein Soll. Peter, 15.09.2026: „Die Leitung
+// Die Rechte der Leitung sind ein STARTWERT, kein Soll. Absprache vom 15.09.2026: „Die Leitung
 // startet mit allen Rechten außer Benutzer & Rechte und Einstellungen; was nicht passt,
 // nimmt der Admin im Rechte-Editor weg."
 //

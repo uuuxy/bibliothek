@@ -145,7 +145,7 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 	// PDF-Export (03.09.2026, löst den Excel-Export ab): geprüft wird am fertigen
 	// Dokument — Signatur, Abschluss und die GEDRUCKTEN Textstücke. Ein Export, dessen
 	// Zahlen im Struct stimmen, aber nicht aufs Blatt kommen, wäre sonst grün.
-	// Jahrgang und Schulzweig sind eigene Spalten (Peters Vorgabe: „diese Infos + das
+	// Jahrgang und Schulzweig sind eigene Spalten (Vorgabe: „diese Infos + das
 	// Bild"). Beide bekommen hier einen Wert, den nichts anderes auf dem Blatt trägt —
 	// sonst wäre eine leer gezeichnete Spalte vom richtigen Blatt nicht zu unterscheiden.
 	if _, err := pool.Exec(ctx, `UPDATE buecher_titel SET jahrgang_von = 13, jahrgang_bis = 13, track = 'Gymnasium', last_counted = DATE '2026-04-17' WHERE id = '00000000-0000-0000-0000-00000000a002'`); err != nil {

@@ -1,6 +1,6 @@
 <!-- @component StudentCreateModal — „Neuen Leser anlegen".
 
-     Fragt ZUERST nach der Art (Peter, 16.09.2026): An ihr hängt, welche Angaben Pflicht
+     Fragt ZUERST nach der Art (16.09.2026): An ihr hängt, welche Angaben Pflicht
      sind. Ein Schüler braucht Klasse und Geburtsdatum — der LUSD-Import erkennt ihn nur
      daran wieder —, ein Kollege hat beides nicht und bekommt statt Stammdaten den
      Hinweis, dass hier KEIN Zugang entsteht.

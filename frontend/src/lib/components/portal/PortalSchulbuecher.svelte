@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * @component PortalSchulbuecher
-	 * Schulbücher für die Fachsprecher (Peter, 03.09.2026): „Englisch möchte nur die
+	 * Schulbücher für die Fachsprecher (03.09.2026): „Englisch möchte nur die
 	 * Englisch-Bücher … im Grunde ähnlich wie bei Klassensätzen. Wir brauchen alle
 	 * Fachbereiche, eine Suchfunktion und Filterfunktionen."
 	 *
@@ -70,7 +70,7 @@
 			)
 		).toString()
 	);
-	// Der Export ist ein PDF mit Coverbildern (Peter, 03.09.2026: „es rechnet niemand,
+	// Der Export ist ein PDF mit Coverbildern (Absprache vom 03.09.2026: „es rechnet niemand,
 	// also können wir Excel löschen") und trägt dieselbe Filterung wie die Ansicht.
 	/** @param {string} fach */
 	const exportUrl = (fach) =>

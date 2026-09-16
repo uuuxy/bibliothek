@@ -13,7 +13,7 @@
 --    (schueler_id ODER benutzer_id) — der Fall wechselt einfach die Spalte.
 --  * E-Mail: Platzhalter unter @lehrer-umzug.invalid (benutzer.email ist NOT
 --    NULL UNIQUE; gleiche Technik wie der Littera-Import mit @littera.invalid).
---    Peter ersetzt sie in der Benutzerverwaltung durch die echte Schul-Mail.
+--    Sie wird in der Benutzerverwaltung durch die echte Schul-Mail ersetzt.
 --  * Ausweis-Barcode zieht mit um (Kollision → Präfix UMZUG-), die Karte
 --    scannt also weiter — jetzt über die Lehrer-Stufe der Auflösung.
 --  * ALLE Ausleihen (offene wie Historie) zeigen danach auf das Konto;

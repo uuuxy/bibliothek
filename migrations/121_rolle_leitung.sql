@@ -5,7 +5,7 @@
 -- führt, bekam entweder 'admin' (und damit die Systempflege: Benutzer & Rechte,
 -- Einstellungen, jede E-Mail-Adresse jedes Kontos) oder 'mitarbeiter' (und
 -- damit keinen Blick ins Logbuch und keine Sonderrechte an den Schülerdaten).
--- Entschieden am 15.09.2026 (Peter): eine Rolle dazwischen — alles außer den
+-- Entschieden am 15.09.2026: eine Rolle dazwischen — alles außer den
 -- zwei Türen der Systempflege.
 --
 -- Rollen sind Erhebungen, die der Admin an der E-Mail-Adresse vornimmt. Der

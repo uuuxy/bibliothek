@@ -4847,7 +4847,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "letzter_tag": {
-                    "description": "LetzterTag/LetzteStunde: der Anker des Rückgabe-Plans — Donnerstag vor den\nSommerferien, 4. Stunde (Peter, 06.09.2026); die Reihenfolge fließt rückwärts\ndavor. Beim Ausgabe-Plan leer (\"\" / 0): sein Anker ist der Beginn.",
+                    "description": "LetzterTag/LetzteStunde: der Anker des Rückgabe-Plans — Donnerstag vor den\nSommerferien, 4. Stunde (06.09.2026); die Reihenfolge fließt rückwärts\ndavor. Beim Ausgabe-Plan leer (\"\" / 0): sein Anker ist der Beginn.",
                     "type": "string"
                 },
                 "schuljahr_beginn": {

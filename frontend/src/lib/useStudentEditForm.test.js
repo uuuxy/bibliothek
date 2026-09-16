@@ -86,7 +86,7 @@ describe('useStudentEditForm.save', () => {
 	// Bis zum 16.09.2026 baute save() die Nutzlast für JEDEN gleich: klasse, lusd_id,
 	// abgaenger_jahr und eltern_email standen immer drin. Bei einem Kollegen waren sie
 	// leer — und der leere String heisst bei den Pflichtfeldern "räum das weg", was der
-	// Server mit 400 „Klasse darf nicht leer sein." beantwortet. Peters Befund war
+	// Server mit 400 „Klasse darf nicht leer sein." beantwortet. Der Befund war
 	// deshalb kein fehlendes Feld, sondern ein Formular, das gar nicht speichern KONNTE:
 	// „ich kann dort aber keine adressedaten etc nachtragen."
 	//
@@ -139,7 +139,7 @@ describe('useStudentEditForm.save', () => {
 				).toBe(false);
 			}
 			// Die Eltern-Adresse ist NICHT verschlossen: Seit dem 16.09.2026 hat die Maske
-			// für jeden dieselbe Form (Peter: „bitte nicht verkomplizieren"), und ein Feld,
+			// für jeden dieselbe Form (Absprache: „bitte nicht verkomplizieren"), und ein Feld,
 			// das offen steht, muss auch ankommen. Sie bleibt beim Kollegen einfach leer.
 			expect(Object.hasOwn(payload, 'eltern_email')).toBe(true);
 			expect(payload.strasse).toBe('Kleegartenstr.');
@@ -147,7 +147,7 @@ describe('useStudentEditForm.save', () => {
 			expect(payload.art).toBe('lehrkraft');
 		});
 
-		// UMGEKEHRT am 16.09.2026 (abends), nach Peters Blick auf die fertige Maske: Bis
+		// UMGEKEHRT am 16.09.2026 (abends), nach der Blick auf die fertige Maske: Bis
 		// dahin liess das Formular die leere Ausweisnummer WEG, weil der Server jedes leere
 		// Pflichtfeld mit 400 abwies. Der Preis war ein stilles No-op — wer beim Kollegen
 		// eine falsch eingetragene Nummer räumte, bekam „Änderungen gespeichert" und fand

@@ -2,7 +2,7 @@ package api
 
 // lmf_plan_live.go — der LMF-Plan meldet seine Änderungen über die SSE-Leitung.
 //
-// Peter, 07.09.2026: „der lmf plan soll natürlich jederzeit sichtbar sein, auch
+// Absprache vom 07.09.2026: „der lmf plan soll natürlich jederzeit sichtbar sein, auch
 // Änderungen soll man live sehen — auch die Leute über Mein Portal."
 //
 // Bis hierher stimmte das nur im Moment des Öffnens: PortalLmfPlan lädt den Plan in

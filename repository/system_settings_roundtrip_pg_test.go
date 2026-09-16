@@ -17,7 +17,7 @@ func TestSettingsRoundtrip_AlarmEmpfaenger(t *testing.T) {
 	ctx := context.Background()
 	repo := NewSystemSettingsRepository(pool)
 
-	verteiler := "pflasch@philipp-reis-schule.de, it@schule.example"
+	verteiler := "nberger@philipp-reis-schule.de, it@schule.example"
 	if err := repo.SaveSettings(ctx, &EinstellungenPatch{AlarmEmpfaenger: &verteiler}); err != nil {
 		t.Fatalf("SaveSettings: %v", err)
 	}

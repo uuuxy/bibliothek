@@ -1,7 +1,7 @@
 <!-- @component PortalLmfPlan — der LMF-Plan im Kollegiums-Portal: dieselbe Tabelle wie
      in der Bibliothek, für alle gleich, immer der aktuelle Stand (kein abgelegtes PDF).
      Kein Bezug auf Klassenleitungen: Auch Fachlehrer gehen mit ihren Klassen zum
-     Büchertausch, und nicht jede Klasse hat eine hinterlegte Adresse (Peter, 05.09.2026). -->
+     Büchertausch, und nicht jede Klasse hat eine hinterlegte Adresse (05.09.2026). -->
 <script>
 	import { onMount } from 'svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';

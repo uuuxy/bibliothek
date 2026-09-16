@@ -3,11 +3,11 @@
      Bis zum 16.09.2026 war dieses Formular ein Schüler-Formular: Klasse, Abgangsjahr,
      LUSD-ID und Eltern-E-Mail standen fest darin. Ein Kollege kam gar nicht erst hierher
      (seine Akte hatte keinen Bearbeiten-Knopf) — und hätte er es, wäre er an der leeren
-     Klasse gescheitert, die der Server als Pflichtfeld abweist. Peter am 16.09.2026:
+     Klasse gescheitert, die der Server als Pflichtfeld abweist. Absprache vom 16.09.2026:
      „die Leute die bereits eine Rolle haben stehen zwar in der ausleihliste, ich kann
      dort aber keine adressedaten etc nachtragen."
 
-     Mein erster Versuch blendete die Felder je nach Art ein und aus — zwei Masken. Peter:
+     Mein erster Versuch blendete die Felder je nach Art ein und aus — zwei Masken. Absprache:
      „warum eine andere maske als bei schülern? das ist doch schon wieder viel zu
      kompliziert." Er hat recht: Zwingend ist nur EIN Unterschied, der Rest war Vorsicht.
 
@@ -17,11 +17,11 @@
        - LUSD-ID: Die Datenbank verbietet sie einem Kollegen
          (chk_leser_nur_schueler_werden_abgaenger). Durch die LUSD kommen nur Schüler.
        - Klasse und Abgangsjahr: „eine klasse muss ja keinem lehrer/liv zugeordnet
-         werden" (Peter). Das Abgangsjahr hängt an der Klasse — der Server leitet es aus
+         werden" . Das Abgangsjahr hängt an der Klasse — der Server leitet es aus
          ihr ab (calculateAbgaengerJahr), also gehören beide zusammen.
        - Die Art über die Schüler-Grenze: Ein Schüler bleibt Schüler.
 
-     REIHENFOLGE (16.09.2026, nach Peters Blick auf die fertige Maske): Die Art steht
+     REIHENFOLGE (16.09.2026, nach der Blick auf die fertige Maske): Die Art steht
      ZUERST, nicht am Ende der persönlichen Daten. An ihr hängt, welche Felder überhaupt
      leben — vorher las man erst die graue LUSD-ID mit dem Hinweis „Durch die LUSD kommen
      nur Schüler" und fand den Grund dafür eine Zeile darunter. Der Anlege-Dialog fragt
@@ -66,7 +66,7 @@
 	<Abschnitt titel="Persönliche Daten" />
 
 	<!-- Genau die Angabe, die in der Akte nirgends stand („hier steht nirgends ob jemand
-	     ein Schüler, LiV, oder lehrer ist", Peter am 16.09.2026) — bei Littera steht sie
+	     ein Schüler, LiV, oder lehrer ist", 16.09.2026) — bei Littera steht sie
 	     ebenfalls in den Stammdaten. -->
 	<div class="mb-4">
 		<LeserArtWahl bind:art={formData.art} gesperrt={gesperrteArten} />

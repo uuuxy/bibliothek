@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 123: Aus der Schülertabelle wird die Lesertabelle
 -- =============================================================================
--- Entschieden am 16.09.2026 (Peter): Alle Leser stehen an einem Ort, und
+-- Entschieden am 16.09.2026: Alle Leser stehen an einem Ort, und
 -- ausleihen darf jeder aktive Leser — nicht mehr eine Rolle. Bis heute lagen
 -- Schüler und Kollegium in zwei Tabellen, eine Ausleihe zeigte auf genau eine
 -- davon, und jede Frage über "Leser" musste zweimal gestellt werden.
@@ -18,7 +18,7 @@
 -- =============================================================================
 
 -- 1. Die Art des Lesers. Vorgabe 'schueler', damit jede bestehende Zeile bleibt,
---    was sie ist. „LiV" statt „Referendar" ist Peters Wort (15.09.2026) und nur
+--    was sie ist. „LiV" statt „Referendar" ist das gewählte Wort (15.09.2026) und nur
 --    eine Bezeichnung — entschieden wird daran nichts.
 ALTER TABLE schueler
     ADD COLUMN IF NOT EXISTS art character varying(20) NOT NULL DEFAULT 'schueler';

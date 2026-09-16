@@ -11,7 +11,7 @@ import (
 
 // Der LUSD-Abgleich darf einen Kollegen nicht anfassen.
 //
-// Durch die LUSD kommen ausschließlich Schüler (Peter, 16.09.2026: „durch die LUSD kommen
+// Durch die LUSD kommen ausschließlich Schüler (Absprache vom 16.09.2026: „durch die LUSD kommen
 // keine Lehrer!!!!"). Genau deshalb ist ein Kollege in derselben Tabelle in Gefahr: Der
 // Abgleich lädt den Bestand und behandelt JEDE Zeile, die der Export nicht kennt, als
 // Abgänger — sperren, Grund setzen, nach der Karenz Name, Adresse und Geburtsdatum

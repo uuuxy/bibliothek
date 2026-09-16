@@ -3,7 +3,7 @@
 -- Die Rolle (benutzer.rolle) sagt, was jemand in der Software darf: Admin, Mitarbeiter, Helfer,
 -- Kollegium (nur „Mein Portal"). Wer jemand IST, stand nirgends; „Kollegium" stand für beides.
 -- Eine Lehrkraft, die in der Bibliothek mitarbeitet, hat die Rolle Mitarbeiter und bleibt trotzdem
--- Lehrkraft (Peter, 15.09.2026). Schüler brauchen das Feld nicht: Schüler ist, wer in der Tabelle
+-- Lehrkraft (15.09.2026). Schüler brauchen das Feld nicht: Schüler ist, wer in der Tabelle
 -- schueler steht (aus der LUSD).
 --
 -- Leer ist erlaubt: Helfer (Schülerhilfskräfte, Eltern), Mitarbeiter und Admin sind nicht zwingend

@@ -1,13 +1,13 @@
 package api
 
-// lmf_plan.go — der LMF-Plan als Reihenfolge (Peter, 05.09.2026 abends, nach dem
+// lmf_plan.go — der LMF-Plan als Reihenfolge (Absprache vom 05.09.2026 abends, nach dem
 // echten Plan der Schule): Rahmen plus eine Reihenfolge von Zeilen (Klassen, Vermerk);
 // Datum und Stunde jeder Zeile rechnet der Server (pkg/lmfplan) über die Schultage —
 // Wochenende, gesetzliche Feiertage (Hessen), Ferien und die freien Tage des Plans
 // fallen aus; eine Zeile kann ihren Platz fest vorgeben (die Klasse mit dem Ausflug,
 // Migration 099), die anderen fließen um sie herum. Der Rahmen hängt an der Art
 // (Migration 101): Der Büchertausch vor den Sommerferien ENDET am Donnerstag vor den
-// Ferien in der 4. Stunde (letzter_tag, letzte_stunde — Peter, 06.09.2026: „es endet
+// Ferien in der 4. Stunde (letzter_tag, letzte_stunde — Absprache vom 06.09.2026: „es endet
 // immer am gleichen Tag") und fließt rückwärts, sein Beginn ist gerechnet; die
 // Bücherausgabe nach den Ferien BEGINNT (erster_tag, startstunde) und fließt vorwärts.
 // Die Vorschau im Planer ist DERSELBE Aufruf mit "vorschau": true, damit es keinen
@@ -17,7 +17,7 @@ package api
 // Schüler, nicht Namen). Ohne Vorjahr kommt der Vorschlag aus der Regel: Abschluss-
 // klassen zuerst, dann Jahrgang absteigend; die Oberstufe steht unten („ausgelassen",
 // sie organisiert sich an dieser Schule selbst). Der Ausgabe-Plan nach den Ferien
-// schlägt nur die Eingangsjahrgänge vor (Peter, 06.09.2026: „nach den Sommerferien
+// schlägt nur die Eingangsjahrgänge vor (Absprache vom 06.09.2026: „nach den Sommerferien
 // bekommen nur die neuen 5er und 7er Klassen ihre Bücher"). Gespeichert wird ein
 // ENTWURF; erst das Veröffentlichen macht ihn sichtbar und fristsetzend
 // (lmf_plan_veroeffentlichung.go).
@@ -139,7 +139,7 @@ func (s *Server) GetLmfPlanHandler() http.HandlerFunc {
 		}
 		if antwort.Vorschlag != nil {
 			// „nur Rückgabe" als VORBELEGUNG des Vermerks, nicht als gerechnete Marke
-			// (Peter, 06.09.2026: „es sollte im Feld sein, dass man es ggf. verändern kann").
+			// (Absprache vom 06.09.2026: „es sollte im Feld sein, dass man es ggf. verändern kann").
 			nurRueckgabe, err := s.lmfPlanNurRueckgabe(r.Context(), repo, art, antwort, eingang)
 			if err != nil {
 				return apierrors.Internal("Klassen einordnen", err)
@@ -231,7 +231,7 @@ func lmfPlanVorschlag(art string, eingang []int, vorjahr bool, st repository.Lmf
 		v.Zeilen = append(v.Zeilen, repository.LmfPlanZeile{Klassen: []string{k.Name}})
 	}
 	if v.Quelle == "regel" {
-		// Die zwei Zeilen ohne Klasse, mit denen Peters Pläne enden (Excel „Bücherausgabe"
+		// Die zwei Zeilen ohne Klasse, mit denen die Pläne der Schule enden (Excel „Bücherausgabe"
 		// und „Bücherrückgabe", 06.09.2026): wer nicht dran war, und dann das Aufräumen.
 		// Das Vorjahr bringt sie von selbst mit; die Regel setzt sie, damit der erste Plan
 		// aussieht wie der der Schule.
@@ -244,7 +244,7 @@ func lmfPlanVorschlag(art string, eingang []int, vorjahr bool, st repository.Lmf
 
 // lmfPlanRegelLaesstAus: die EINE Regel, welche Klasse nicht in den Plan einer Art
 // gehört — Büchertausch: die Oberstufe (organisiert sich selbst); Ausgabe nach den
-// Ferien: alles außer den Eingangsjahrgängen (Peter, 06.09.2026: „nach den Sommerferien
+// Ferien: alles außer den Eingangsjahrgängen (Absprache vom 06.09.2026: „nach den Sommerferien
 // bekommen nur die neuen 5er und 7er Klassen ihre Bücher"). Vorschlag und die Liste
 // „bleiben draußen" des Planers lesen sie hier.
 func lmfPlanRegelLaesstAus(art string, eingang []int, k repository.KlasseImPlan) bool {

@@ -129,7 +129,7 @@ func TestLmfPlanRegelLaesstAus(t *testing.T) {
 	}
 }
 
-// Der Regel-Vorschlag endet wie Peters Excel: nach den Klassen „Nachzügler" und
+// Der Regel-Vorschlag endet wie dem Excel der Schule: nach den Klassen „Nachzügler" und
 // „Aufräumen" (Zeilen ohne Klasse); beim Ausgabe-Plan stehen davor nur die
 // Eingangsjahrgänge. Das Vorjahr bringt seine eigenen Zeilen mit — ohne Zusatz.
 func TestLmfPlanVorschlag_RegelEndetMitNachzueglerUndAufraeumen(t *testing.T) {

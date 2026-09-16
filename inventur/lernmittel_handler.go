@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Lehrerportal → Schulbücher je Fach (Peter, 03.09.2026). Beide Türen liegen hinter der
+// Lehrerportal → Schulbücher je Fach (03.09.2026). Beide Türen liegen hinter der
 // Anmeldung, ohne view_books (wie /api/portal/klassensaetze): Sie liefern nur Buch- und
 // Zähldaten, keine Ausleih- oder Personendaten.
 

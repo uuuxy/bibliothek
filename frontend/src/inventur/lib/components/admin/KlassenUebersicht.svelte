@@ -57,7 +57,7 @@
 	);
 
 	// Hoechstens EINE Klasse ausgeklappt. Waeren mehrere offen, waere die Liste nach zwei
-	// Klicks wieder so lang wie vorher — und genau das war Peters Einwand.
+	// Klicks wieder so lang wie vorher — und genau das war der Einwand.
 	let offeneKlasse = $state(/** @type {string|null} */ (null));
 
 	// Bleibt nach dem Filtern genau eine Klasse uebrig, ist die Frage schon beantwortet:

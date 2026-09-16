@@ -1,7 +1,7 @@
 package api
 
 // lmf_termine_frist.go — die Kopplung des Plans an die Fristen (Register, Entscheidung 3a,
-// Peter 05.09.2026: „das wäre doch logisch"). Der Rückgabe-Termin einer Klasse IST die
+// Absprache vom 05.09.2026: „das wäre doch logisch"). Der Rückgabe-Termin einer Klasse IST die
 // Frist ihrer Lernmittel: Beim Ausleihen liest der Ausleihdienst den Termin
 // (internal/service, resolveCheckoutDueDate); hier folgt der Bestand dem Plan, wenn er
 // sich ändert — sonst nützte der Termin nur den Büchern, die NACH dem Eintrag ausgeliehen

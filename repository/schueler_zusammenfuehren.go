@@ -20,7 +20,7 @@ import (
 // diese Funktion beide Zeilen zu einer zusammen. Sie ist das Sicherheitsnetz hinter der
 // Vorschau-Paarung und gilt genauso für Dubletten aus Handanlage + Import.
 //
-// Regeln (Entscheidung Peter, 02.09.2026):
+// Regeln (entschieden am 02.09.2026):
 //   - Das ZIEL bleibt: dieselbe UUID, derselbe Barcode — Ausweis und Historie gelten weiter.
 //   - Die QUELLE geht auf: Ausleihen, Schäden, Vormerkungen, Foto und Protokollspuren
 //     wandern zum Ziel, danach wird die Zeile endgültig gelöscht (kein Papierkorb — eine
@@ -338,7 +338,7 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	}
 	erg.Ausleihen, erg.Schaeden, erg.Vormerkungen = int64(len(g.Ausleihen)), int64(len(g.Schadensfaelle)), int64(len(g.Vormerkungen))
 	// Foto: Es kommt nie aus der LUSD, also gibt es keinen „führenden" Datensatz dafür —
-	// das JÜNGERE Foto gewinnt, egal auf welcher Seite (Peter, 03.09.2026). Hat das Ziel
+	// das JÜNGERE Foto gewinnt, egal auf welcher Seite (03.09.2026). Hat das Ziel
 	// ein älteres, weicht es; der Rückweg-Eintrag hält fest, ob das Quell-Foto gewandert ist.
 	gewichen, err := tx.Exec(ctx, `DELETE FROM schueler_fotos z WHERE z.schueler_id = $1
 		AND EXISTS (SELECT 1 FROM schueler_fotos q WHERE q.schueler_id = $2 AND q.aktualisiert_am > z.aktualisiert_am)`, ziel, quelle)

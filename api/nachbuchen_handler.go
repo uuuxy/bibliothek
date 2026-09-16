@@ -17,7 +17,7 @@ import (
 // Der Theken-Rechner schickt seine Warteschlange, der Server bucht je Eintrag die
 // WIRKLICHKEIT und antwortet je Eintrag mit einem Ergebnis. Abweichungen vom Scan stehen
 // zusätzlich als Nachbuch-Meldung am Server, bis jemand sie quittiert — nichts
-// verschwindet still (Entscheidung Peter, 13.09.2026, c).
+// verschwindet still (entschieden am 13.09.2026, c).
 //
 // Der Handler ist dünn: Er prüft die Form, misst die Uhr des Rechners, klärt den
 // Idempotenz-Schlüssel (nachbuchen_schluessel.go) und reicht durch. Die Regeln liegen im

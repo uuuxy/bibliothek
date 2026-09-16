@@ -1,7 +1,7 @@
 -- Migration 117: Nachbuch-Meldungen (Offline-Betrieb der Theke, Stufe 2).
 --
 -- Ein offline gescannter Vorgang wird später nachgebucht — und dabei wird die
--- Wirklichkeit gebucht, nicht der Scan (Entscheidung Peter, 13.09.2026, c): Lag das Buch
+-- Wirklichkeit gebucht, nicht der Scan (entschieden am 13.09.2026, c): Lag das Buch
 -- inzwischen bei jemand anderem, wird dort zurückgenommen und neu ausgeliehen; ist der
 -- Scan älter als die letzte Bewegung des Exemplars, wird er abgewiesen; scheitert die
 -- Ausleihe an Sperre, Limit oder Vormerkung, bleibt die Rücknahme und die Ausleihe wird

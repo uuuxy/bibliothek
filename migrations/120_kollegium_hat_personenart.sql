@@ -3,7 +3,7 @@
 --
 -- Seit dem 15.09.2026 erkennen Theke, Buch- und Geräteausleihe eine Lehrkraft an der Personenart
 -- (Lehrkraft, LiV), nicht mehr an der Rolle kollegium: Eine Lehrkraft, die in der Bibliothek
--- mitarbeitet (Rolle Mitarbeiter), fand die Theke über ihren Ausweis nicht (Peter: „an der
+-- mitarbeitet (Rolle Mitarbeiter), fand die Theke über ihren Ausweis nicht (Absprache: „an der
 -- Personenart"). Damit darf ein Kollegiumskonto nicht ohne Personenart sein, sonst verlöre es die
 -- Ausleihe als Lehrkraft. Bis hierher trugen nur die Anlage-Wege „lehrkraft" ein; ein Wechsel zur
 -- Rolle kollegium oder „Keine Angabe" beim Ändern ließen sie leer (Rasterdurchgang 15.09.2026).

@@ -6,7 +6,7 @@ import Zaehlerpille from './Zaehlerpille.svelte';
  * Hintergrund (04.09.2026): Das Zähler-Badge gab es in ZWEI Fassungen. Die Seitenleiste
  * kappte die Zahl bei 999, die Reiterleiste nicht — im Druck-Center stand deshalb links
  * „999+" und daneben „30674". Aus der 16 px hohen Pille wurde ein 45 px langer Strich mit
- * 11-px-Ziffern, und Peters Frage dazu war „das entspricht sicherlich nicht Material 3?".
+ * 11-px-Ziffern, und die Frage dazu war „das entspricht sicherlich nicht Material 3?".
  *
  * Sie hatte recht: M3 kappt das Badge bei drei Zeichen. Diese Tests halten die Kappung
  * fest, weil sie an der echten Datenmenge hängt — lokal stehen 740 Etiketten offen, und

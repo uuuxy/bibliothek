@@ -37,7 +37,7 @@ func insertClassBookBindings(ctx context.Context, tx pgx.Tx, newClassNames, book
 // ein Satz.
 const KlassensatzMindestLeser = 5
 
-// GetClassGroups liefert je Klasse ihre Klassensatz-Titel aus ZWEI Quellen (Peter,
+// GetClassGroups liefert je Klasse ihre Klassensatz-Titel aus ZWEI Quellen (Absprache vom
 // 05.09.2026: „über die LUSD wissen wir genau, in welcher Klasse jeder Schüler ist — die
 // Liste kann sich selbstständig aktualisieren"): der von Hand gepflegten Zuordnung
 // (class_books, Quelle „hand" — bleibt unangetastet, nichts wird geschrieben oder

@@ -6,7 +6,7 @@
  * abgeleiteten Titel (`ausleihe`, nie gespeichert). Der Dialog speichert die Auswahl
  * ÜBERSCHREIBEND — UpdateClassBooks löscht die Zuordnungen der Klasse und schreibt die
  * gesendete Liste. Wäre ein abgeleiteter Titel vorgewählt, machte der erste Klick auf
- * Speichern ihn dauerhaft, ohne dass jemand ihn zugeordnet hätte. Peter am 05.09.: „die
+ * Speichern ihn dauerhaft, ohne dass jemand ihn zugeordnet hätte. Absprache vom 05.09.: „die
  * Liste auf dem Server ist die aktuelle, bitte nicht löschen" — dazu gehört auch: nichts
  * still hinzufügen.
  *

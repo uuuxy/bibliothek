@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Der LMF-Plan hängt im Lehrerzimmer und geht als EIN Blatt an die Schulleitung. Peter,
+// Der LMF-Plan hängt im Lehrerzimmer und geht als EIN Blatt an die Schulleitung. Absprache vom
 // 06.09.2026: „Das PDF muss zwingend alles auf einer Seite darstellen." Ein zweites Blatt
 // ist kein Schönheitsfehler, sondern ein verlorener Termin — wer nur Seite 1 abheftet,
 // sieht die Hälfte der Klassen nicht.

@@ -9,7 +9,7 @@
 	import PageShell from './components/layout/PageShell.svelte';
 	import { ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
 
-	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau (Peter 06.09.2026: „wieder grau?").
+	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau (Absprache vom 06.09.2026: „wieder grau?").
 	const FLAECHE = 'bg-surface rounded-xl border border-outline-variant';
 
 	// State Runes (Svelte 5)

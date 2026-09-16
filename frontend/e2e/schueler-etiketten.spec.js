@@ -124,7 +124,7 @@ test.describe('Schüler-Etiketten', () => {
 		expect(bytes.subarray(0, 5).toString()).toBe('%PDF-');
 	});
 
-	// Der sichtbare Einstieg (24.08.2026, auf Peters Ansage): Der Weg über Suche +
+	// Der sichtbare Einstieg (24.08.2026, auf die Ansage): Der Weg über Suche +
 	// Kopf-Kästchen funktioniert, ist aber für neue Benutzer unauffindbar. Der Block
 	// im Druck-Center druckt bewusst nicht selbst — er landet VOR der Aktionsleiste,
 	// damit deren Warnungen auch auf diesem Weg vor dem Stapel stehen.

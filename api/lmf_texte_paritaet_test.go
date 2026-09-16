@@ -18,7 +18,7 @@ import (
 // Rasterdurchgang am 06.09.2026 war das eine Verabredung zwischen zwei Dateien, die
 // niemand prüfte (Raster, Frage 3: zwei Wahrheitsquellen).
 //
-// Wirkung ohne Gate: Peter hat die Begriffe am 06.09.2026 schon einmal umbenannt („nicht
+// Wirkung ohne Gate: Die Begriffe wurden am 06.09.2026 schon einmal umbenannt („nicht
 // Rückgabe und Ausgabe, das sind zwei verschiedene Dinge"). Wird nur die eine Seite
 // angefasst, zeigt der Portal-Reiter den neuen Titel und das PDF, das derselbe Knopf im
 // selben Reiter herunterlädt, den alten.

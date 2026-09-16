@@ -199,7 +199,7 @@
 			</div>
 
 			<!-- Dieselbe 48-px-Suchpille wie die Ausleihe-Omnibox: Werkzeug der Seite, kein
-			     Datenfeld in einer Leiste (Peter, 25.08.: „deutlich kleiner als in Ausleihe"). -->
+			     Datenfeld in einer Leiste (Absprache vom 25.08.: „deutlich kleiner als in Ausleihe"). -->
 			<form
 				onsubmit={(e) => {
 					e.preventDefault();

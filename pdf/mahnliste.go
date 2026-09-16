@@ -85,7 +85,7 @@ func GenerateMahnliste(schuelerListe []MahnungSchueler) ([]byte, error) {
 		))
 
 		// Table Rows: nur die lesbare Nummer — die Liste geht an die Klassenleitung, die
-		// nichts scannt; das Barcode-Bild machte jede Zeile 17 mm hoch (Peter, 03.09.2026).
+		// nichts scannt; das Barcode-Bild machte jede Zeile 17 mm hoch (03.09.2026).
 		for _, buch := range schueler.Buecher {
 			p.Add(row.New(7).Add(
 				col.New(5).Add(text.New(buch.Titel, props.Text{Size: 10})),

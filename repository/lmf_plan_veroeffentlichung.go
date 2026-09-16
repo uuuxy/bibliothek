@@ -9,9 +9,9 @@ import (
 	"time"
 )
 
-// Entwurf und Veröffentlichung des LMF-Plans (Migration 100, Peter 06.09.2026: „der Plan
+// Entwurf und Veröffentlichung des LMF-Plans (Migration 100, Absprache vom 06.09.2026: „der Plan
 // nimmt die Schulleitung immer erst ab") und die zwei Regeln, die den Plan je Art
-// verschieden machen (Peter, 06.09.2026):
+// verschieden machen (06.09.2026):
 //
 //   - Vor den Sommerferien geben ALLE Klassen ihre alten Bücher ab und bekommen direkt die
 //     neuen — außer den Abschlussklassen und den Klassen, die zum neuen Schuljahr neu

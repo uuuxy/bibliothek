@@ -2,7 +2,7 @@
      Klassensatz-Karte (KlassenKarte): Zeile mit Zähler-Chip und Namen, Klick klappt die
      Bücher als Cover-Raster auf.
 
-     Peter am 03.09.2026: „Englisch möchte nur die Englisch-Bücher … im Grunde ähnlich wie
+     Absprache vom 03.09.2026: „Englisch möchte nur die Englisch-Bücher … im Grunde ähnlich wie
      bei Klassensätzen." Genau dieselbe Frage wie dort — „was hat MEINE Klasse / MEIN Fach,
      und stimmt der Bestand?" —, also dieselbe Bauform statt einer dritten. Die Zeile
      beantwortet „wie viel?" schon eingeklappt; das Raster beantwortet „was genau?" für das

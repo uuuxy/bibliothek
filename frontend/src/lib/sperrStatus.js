@@ -5,7 +5,7 @@
 // Bis zum 31.08.2026 las jede Stelle ihre eigene Spalte: Die Schülerliste nur
 // ist_gesperrt (ein manuell Gesperrter stand als „Alles ok" da), das Profil
 // rechnete nach dem Umschalten eine ERFUNDENE Formel (manuell || offene Schäden)
-// und überschrieb den Serverwert — Peters „entsperrt, wieder aktiv, nach Reload
+// und überschrieb den Serverwert — der Befund „entsperrt, wieder aktiv, nach Reload
 // wieder gesperrt". Drei Definitionen, nur zufällig einig.
 //
 // ist_gesperrt bleibt die SYSTEM-Sperre (Papierkorb, Abgänger, Anonymisierung);

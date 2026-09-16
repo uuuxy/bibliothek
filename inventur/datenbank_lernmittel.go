@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// Schulbücher je Fach fürs Lehrerportal (Peter, 03.09.2026): Die Fachsprecher wollen
+// Schulbücher je Fach fürs Lehrerportal (03.09.2026): Die Fachsprecher wollen
 // wissen, wie viele Mathebücher die Schule hat. Grundlage ist ausschließlich der
 // Lernmittel-Schalter (buecher_titel.ist_lernmittel, Migration 093) und das Fach
 // (buecher_titel.subject, FK auf systematik_kategorien). Zählweise wie bei den
@@ -41,7 +41,7 @@ type LernmittelTitel struct {
 	// der Maske. Leer heißt „gilt für alle Zweige", nicht „unbekannt".
 	Track string `json:"track"`
 	// Gezaehlt ist das Datum der letzten Zählung (buecher_titel.last_counted) als
-	// „TT.MM.JJJJ"; leer heißt „noch nie gezählt". Peter, 03.09.2026: Eine Bestandszahl
+	// „TT.MM.JJJJ"; leer heißt „noch nie gezählt". Absprache vom 03.09.2026: Eine Bestandszahl
 	// ohne Datum sagt nicht, wie alt sie ist — im Ausdruck steht sie sonst so da, als
 	// wäre sie von heute.
 	Gezaehlt string `json:"gezaehlt"`

@@ -351,7 +351,7 @@ func (p *personenlauf) ausweis(l Leser) string {
 	}
 	// Auch die Ersatznummer kann schon vergeben sein, etwa von Hand an eine Lehrkraft.
 	//
-	// „A-" wie Ausweis (Peter, 16.09.2026) statt des früheren „L-": Ein Buchstabe auf dem
+	// „A-" wie Ausweis (16.09.2026) statt des früheren „L-": Ein Buchstabe auf dem
 	// Ausweis soll nichts über die Person behaupten — wer jemand ist, steht in den
 	// Stammdaten. Die Theke liest „L-" weiterhin, damit Nummern aus früheren Läufen
 	// scannen; vergeben wird es nicht mehr.

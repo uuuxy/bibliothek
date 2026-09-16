@@ -71,7 +71,7 @@ func (s *Server) GetLmfTermineHandler() http.HandlerFunc {
 }
 
 // LmfArtTitel ist die Überschrift je Art — dieselben Worte wie ARTEN in
-// lmfplanDienst.js. „Rückgabe" und „Ausgabe" allein waren unklar (Peter, 06.09.2026):
+// lmfplanDienst.js. „Rückgabe" und „Ausgabe" allein waren unklar (06.09.2026):
 // Vor den Ferien tauschen die Klassen (alte ab, neue direkt mit), nach den Ferien
 // bekommen nur die neu gebildeten Klassen ihre Bücher.
 func LmfArtTitel(art string) string {

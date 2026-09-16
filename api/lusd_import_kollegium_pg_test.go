@@ -81,7 +81,7 @@ func TestLusdImport_VordertuerMitKollegiumImBestand(t *testing.T) {
 
 	// ── Der Export: Mia wechselt die Klasse, ein Kind kommt neu dazu, Tim fehlt ──
 	// Namen, die es im Bestand als KOLLEGEN gibt, stehen bewusst NICHT darin: Durch die
-	// LUSD kommen keine Lehrkräfte (Peter, 16.09.2026).
+	// LUSD kommen keine Lehrkräfte (16.09.2026).
 	//
 	// OHNE LUSD-ID-Spalte — das ist der NAMENSMODUS, und er ist der gefährliche: Im
 	// ID-Modus hat ein Kollege gar keine Kennung und fiele schon deshalb nur unter

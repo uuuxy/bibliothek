@@ -15,7 +15,7 @@ import (
 // Die Nachbuch-Tür (Stufe 2 des Offline-Baus, Commit 11, OFFEN.md 2.2).
 //
 // Ein offline gescannter Vorgang kommt später an. Gebucht wird die WIRKLICHKEIT, nicht der
-// Scan (Entscheidung Peter, 13.09.2026, c): Lag das Buch inzwischen bei jemand anderem, wird
+// Scan (entschieden am 13.09.2026, c): Lag das Buch inzwischen bei jemand anderem, wird
 // dort zurückgenommen und neu ausgeliehen; beim selben Kind wird nichts umgekehrt; ist der
 // Scan älter als die letzte Bewegung des Exemplars, wird er abgewiesen. Was vom Scan
 // abweicht, steht als Meldung (Migration 117), nichts verschwindet still.

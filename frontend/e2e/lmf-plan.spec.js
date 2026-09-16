@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, csrfToken, seedBenutzer, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
 
-// LMF-Plan als Reihenfolge (Peter, 05.09.2026, am echten Plan der Schule): Der Planer
+// LMF-Plan als Reihenfolge (Absprache vom 05.09.2026, am echten Plan der Schule): Der Planer
 // bekommt Rahmen und Reihenfolge, der Server gießt sie auf Schultage × Stunden. Geprüft
 // über den echten Klickpfad: Klasse aus „Nicht im Plan" holen → ersten Tag setzen →
 // Vorschau zeigt Wochentag/Datum/Stunde passend zur Position → Zeile davor einfügen
@@ -14,7 +14,7 @@ import { uiLogin, csrfToken, seedBenutzer, seedSQL, uniqueSuffix, gehZu } from '
 // api/lmf_termine_frist_pg_test.go am Postgres.
 const LEHRER_EMAIL = 'e2e-lehrer-lmfplan@test.local';
 const ERSTER_TAG = new Date(2027, 7, 9); // Montag 09.08.2027 — erster Schultag nach den Ferien
-const STARTSTUNDE = 2; // Vorgabe des Planers (Peters Plan 2026: Mo 10.08., 2. Std.)
+const STARTSTUNDE = 2; // Vorgabe des Planers (Plan 2026 der Schule: Mo 10.08., 2. Std.)
 const STUNDEN_JE_TAG = 6;
 
 /**
@@ -139,7 +139,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	// wo er nach dem Speichern als Text in der Zeile steht.
 
 	// Und dann mit der Klassenzeile darüber: ZWEI Klassen in EINER Stunde — so stehen
-	// „10R1/10R2" und „6F1/6F2" im Plan der Schule (Peter, 05.09.: „das muss alles super
+	// „10R1/10R2" und „6F1/6F2" im Plan der Schule (Absprache vom 05.09.: „das muss alles super
 	// flexibel ablaufen und planbar sein").
 	await zeilenAktion(page, verschoben, nummer, 'Mit der Zeile davor zusammenlegen');
 	const geteilt = tabelle.getByRole('row').filter({ hasText: klasse });
@@ -148,7 +148,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	await expect(geteilt).toContainText(vorherige);
 	await expect(geteilt).toContainText(klasse);
 
-	// Die getippte Klasse hat noch keine Schüler — der Planer sagt es (Peter, 06.09.2026:
+	// Die getippte Klasse hat noch keine Schüler — der Planer sagt es (Absprache vom 06.09.2026:
 	// Klassen wechseln mit dem Schuljahr; was übrig bleibt, gehört raus oder kommt mit dem Import).
 	await expect(zeile.getByText('ohne Schüler')).toBeVisible();
 	await expect(page.getByTestId('lmf-ohne-schueler')).toContainText(klasse);
@@ -224,7 +224,7 @@ test('LMF-Plan: Reihenfolge planen, im Kollegiums-Portal sehen, PDF laden', asyn
 	}
 });
 
-// Feiertage und Ausflüge (Peter, 05.09.2026 abends): Ein freier Tag des Plans verschiebt
+// Feiertage und Ausflüge (Absprache vom 05.09.2026 abends): Ein freier Tag des Plans verschiebt
 // den Beginn, der Hinweis nennt ihn mit Grund; eine Zeile mit festem Platz behält Datum
 // und Stunde über das Speichern hinweg — im API-Stand als fest markiert, nach dem
 // Neuladen wieder als Eingabefeld. Auch hier die AUSGABE, sie setzt keine Fristen.
@@ -260,7 +260,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	await expect(page.getByTestId('lmf-ausfaelle')).toContainText('Pädagogischer Tag');
 
 	// Unsere Klasse hat am Freitag 20.08. ihren Termin — fest, egal wo sie in der
-	// Reihenfolge steht. Der Weg ist die Zelle selbst (Peter, 06.09.2026: „einfach
+	// Reihenfolge steht. Der Weg ist die Zelle selbst (Absprache vom 06.09.2026: „einfach
 	// anklicken um es zu ändern … statt immer über die 3 Punkte rechts"): Klick auf das
 	// Datum legt die Zeile fest, vorbelegt mit ihrem Platz, der Fokus liegt im Datumsfeld.
 	// Das Zeilenmenü kennt den Weg weiterhin (LmfPlanReihenfolge.test.js).
@@ -326,7 +326,7 @@ test('LMF-Plan: freier Tag verschiebt den Beginn, fester Platz überlebt das Spe
 	}
 });
 
-// Der Büchertausch vor den Sommerferien hängt am ENDE (Peter, 06.09.2026: „es endet immer
+// Der Büchertausch vor den Sommerferien hängt am ENDE (Absprache vom 06.09.2026: „es endet immer
 // am gleichen Tag — Donnerstags vor den Ferien zur vierten Stunde"): Der Planer belegt
 // den letzten Tag aus der Ferientabelle Hessen vor (ein Donnerstag), die letzte Zeile
 // liegt in der 4. Stunde dieses Tages, und der Satz unter dem Rahmen nennt den

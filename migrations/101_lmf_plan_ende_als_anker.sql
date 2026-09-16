@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 101: LMF-Plan — der Büchertausch endet am Donnerstag vor den Sommerferien
 -- =============================================================================
--- Peter 06.09.2026, mit seinem Excel „Bücherrückgabe" in der Hand: „Das Programm kann
+-- Absprache vom 06.09.2026, mit dem Excel „Bücherrückgabe" der Schule in der Hand: „Das Programm kann
 -- das doch sicherlich automatisch setzen — es endet immer am gleichen Tag: Donnerstags
 -- vor den Ferien zur vierten Stunde." Der Rückgabe-Plan hat also einen festen ANKER am
 -- ENDE, nicht am Anfang: Die letzte Zeile liegt auf dem letzten Platz, die übrigen

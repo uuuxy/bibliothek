@@ -5,7 +5,7 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 // Sechste Struktur-Invariante, gleiche Bauart wie die Farb- und Symbol-Ratschen:
 // Suchfelder kommen aus einem Bauteil, nicht aus der Zwischenablage.
 //
-// Warum es diese Ratsche gibt (10.08.2026): Peter legte zwei Bildschirme nebeneinander —
+// Warum es diese Ratsche gibt (10.08.2026): Zwei Bildschirme lagen nebeneinander —
 // „die omnibox bei mein portal und katalog ist eine komplett andere". Gemessen stimmte das
 // an sieben Werten gleichzeitig: Höhe, Radius, Fläche, Fokusfarbe, Schriftgröße,
 // Platzhaltertext und Leerzustand. Nichts davon war je entschieden worden. Es war kopiert

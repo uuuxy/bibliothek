@@ -100,16 +100,16 @@
 	<Reiter
 		etikett="Portal-Bereiche"
 		reiter={[
-			// Drei gleichrangige Aufgaben (25.08.2026, Peters Ansage; „Bestand nach Jahrgang" am
+			// Drei gleichrangige Aufgaben (25.08.2026, die Ansage; „Bestand nach Jahrgang" am
 			// 02.09.2026 gestrichen — Import-Default 5–10 machte die Gruppierung leer): „Lernmittel" stapelte
 			// vorher zwei Listen mit eigenen Überschriften übereinander; und „Bücher &
 			// Klassensätze" hieß fast so wie der Abschnitt „Klassensätze" darin — dreimal
 			// dasselbe Wort für Suchen, Ansehen und den Menüpunkt.
 			{ id: 'buecher', label: 'Suchen & Reservieren' },
 			{ id: 'klassensaetze', label: 'Klassensätze' },
-			// Schulbücher je Fach für die Fachsprecher (Peter, 03.09.2026).
+			// Schulbücher je Fach für die Fachsprecher (03.09.2026).
 			{ id: 'schulbuecher', label: 'Schulbücher' },
-			// LMF-Plan für alle gleich statt Excel per Mail (Peter, 05.09.2026).
+			// LMF-Plan für alle gleich statt Excel per Mail (05.09.2026).
 			{ id: 'lmfplan', label: 'LMF-Plan' },
 			{ id: 'anliegen', label: 'Meine Anliegen', anzahl: eigeneAnliegen.offene }
 		]}

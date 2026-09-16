@@ -15,7 +15,7 @@ import (
 // Die Art eines Lesers (Migration 123) über die Akte ändern — und die eine Grenze, die
 // dabei zu halten ist.
 //
-// Peter am 16.09.2026: „hier steht nirgends ob jemand ein Schüler, LiV, oder lehrer ist."
+// Absprache vom 16.09.2026: „hier steht nirgends ob jemand ein Schüler, LiV, oder lehrer ist."
 // Die Art stand in der Datenbank, im Anlege-Dialog und in der halben Akte, aber der PATCH
 // kannte sie nicht — sie liess sich nirgends berichtigen. Ein Kollege, der als Lehrkraft
 // angelegt wurde und in Wahrheit LiV ist, blieb es für immer.
@@ -153,7 +153,7 @@ func TestLeserArtAendern(t *testing.T) {
 		}
 	})
 
-	// Peters eigentlicher Befund: Wer eine Rolle hat, steht seit Migration 125 mit einer
+	// Der eigentliche Befund: Wer eine Rolle hat, steht seit Migration 125 mit einer
 	// Leserzeile in der Liste — und an ihr liess sich nichts nachtragen. Der Rumpf hier
 	// ist GENAU der, den das Formular fuer einen Kollegen baut: ohne klasse, ohne
 	// abgaenger_jahr, ohne lusd_id, ohne eltern_email. Mit ihnen (leer) antwortete der

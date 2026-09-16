@@ -36,7 +36,7 @@
 	} = $props();
 	const zeilenTitel = 'truncate text-base font-medium text-on-surface';
 	// Feste Mindestbreite + Tabellenziffern: Bei „28 Bücher" war der Chip breiter als bei
-	// „5 Bücher", und der Klassenname rutschte je Zeile nach rechts (Peter, 26.08.2026).
+	// „5 Bücher", und der Klassenname rutschte je Zeile nach rechts (26.08.2026).
 	const zaehlerChip =
 		'bg-secondary-container text-on-secondary-container inline-flex min-w-[6.5rem] shrink-0 justify-center rounded-full px-3 py-0.5 text-xs font-semibold tabular-nums';
 
@@ -45,7 +45,7 @@
 </script>
 
 <!-- Eine Zeile je Klasse, ausklappbar — nicht alle Saetze gleichzeitig ausgebreitet.
-     Peter am 09.08.2026: "jetzt sind die fotos untereinander! bei 20 klassen wird das
+     Absprache vom 09.08.2026: "jetzt sind die fotos untereinander! bei 20 klassen wird das
      unuebersichtlich". Er hat recht, und es war meine Ueberkorrektur: Das Raster hat den
      Seitwaertsscroll je Klasse beseitigt, dafuer standen bei zwanzig Klassen 320 Kacheln
      untereinander — die Klassenliste selbst war dann nicht mehr zu ueberblicken.

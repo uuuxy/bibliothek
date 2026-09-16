@@ -10,7 +10,7 @@ import (
 
 // Zwei Akten desselben Kollegen zusammenführen — und die Grenze, die dabei zu halten ist.
 //
-// Der Anlass (Peter, 16.09.2026): Ein Kollege, der von Hand in die Leserdatei eingetragen
+// Der Anlass (16.09.2026): Ein Kollege, der von Hand in die Leserdatei eingetragen
 // wurde und sich danach über "Mein Portal" selbst anmeldet, steht zweimal da. Der Wächter
 // trg_benutzer_hat_leserzeile legt zu jedem neuen Konto eine frische Leserzeile an, ohne
 // zu prüfen, ob die Person schon dasteht. Ausweis und Ausleihen hängen dann am ersten

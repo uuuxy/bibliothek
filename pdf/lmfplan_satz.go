@@ -1,6 +1,6 @@
 package pdf
 
-// lmfplan_satz.go — der Satzspiegel des LMF-Plans. Peter, 06.09.2026: „Das PDF muss
+// lmfplan_satz.go — der Satzspiegel des LMF-Plans. Absprache vom 06.09.2026: „Das PDF muss
 // zwingend alles auf einer Seite darstellen." Der Plan hängt im Lehrerzimmer und geht als
 // EIN Blatt an die Schulleitung; ein zweites Blatt kostet Termine, weil niemand es sucht.
 //

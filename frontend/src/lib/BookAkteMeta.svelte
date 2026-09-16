@@ -1,5 +1,5 @@
 <!-- @component BookAkteMeta — der Kopf der Buchakte wie eine Play-Store-Detailseite
-     (mit Peter am 02.09.2026 entschieden): Titel groß links, darunter in ruhigem Grau die
+     (entschieden am 02.09.2026): Titel groß links, darunter in ruhigem Grau die
      Einordnung (Fach · Jahrgang · Zweig · Medienart), dann ISBN, Signatur und Standort als
      Textzeilen, eine Zahlenreihe (verfügbar, Ausleiher, Exemplare) und die Aktionen als
      Knopfreihe. Das Cover steht rechts mit Luft.
@@ -147,7 +147,7 @@
 
 	<div class="w-40 shrink-0 sm:w-48">
 		<!-- Der Schatten hebt das Cover als Gegenstand von der weißen Fläche ab — wie auf der
-		     Play-Store-Detailseite (Peter, 02.09.2026). Nur hier am großen Einzel-Cover; die
+		     Play-Store-Detailseite (02.09.2026). Nur hier am großen Einzel-Cover; die
 		     Kacheln im Raster bleiben flach, zwölf Schatten nebeneinander wären Rauschen. -->
 		<div class="aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low shadow-2xl">
 			{#if coverSrc && !coverFailed}

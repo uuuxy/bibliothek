@@ -18,7 +18,7 @@ func TestEchteKartennummerFindetDenSchueler(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
-			karte: {ID: "s1", Vorname: "Peter", Nachname: "Flasch"},
+			karte: {ID: "s1", Vorname: "Nina", Nachname: "Berger"},
 		}},
 	}
 	resp, err := svc.ProcessQuery(context.Background(), OmniboxQuery{Query: karte})
@@ -60,7 +60,7 @@ func TestLehrerausweisOhnePraefix(t *testing.T) {
 
 // TestUnbekannteKarteLandetInDerSuche: die Ausweis-Stufe darf den Rueckfall nicht
 // schlucken. Ein getippter Titel ist genau dieser Fall — er ist weder Buchbarcode noch
-// Ausweis und muss in der Volltextsuche landen (Peters Frage vom 16.09.2026).
+// Ausweis und muss in der Volltextsuche landen (Frage vom 16.09.2026).
 func TestUnbekannteKarteLandetInDerSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},

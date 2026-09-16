@@ -6,7 +6,7 @@
      sich die Liste danach nicht — durch die Aussonderung fallen die Exemplare aus der
      Scope-Bedingung, nach der gerechnet wird.
 
-     Zwei Handlungen, nicht nur Anzeige (05.08.2026, Peter: „ich kann nicht weiter damit
+     Zwei Handlungen, nicht nur Anzeige (05.08.2026, Absprache: „ich kann nicht weiter damit
      machen!"): Ein wiedergefundenes Buch kommt über "Gefunden" zurück in Umlauf, ein
      endgültig fehlendes über den Lösch-Knopf ganz aus dem Katalog — beide Ausgänge, die
      das Regal-Absuchen tatsächlich hat.

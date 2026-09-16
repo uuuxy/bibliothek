@@ -1,6 +1,6 @@
 // Gate für die Detailansicht einer Bestellung.
 //
-// Peter über die alte aufklappende Zeile: „geht das Feld nach unten aber nicht mit
+// Rückmeldung zur alten aufklappenden Zeile: „geht das Feld nach unten aber nicht mit
 // merklichem Mehrwert". Sie zeigte dieselben Angaben wie die Tabellenzeile darüber, nur
 // untereinander. Was fehlte, waren Cover und Exemplarnummern — und die Exemplarnummern
 // waren bis Migration 063 gar nicht zuzuordnen (buecher_exemplare.bestellung_id).

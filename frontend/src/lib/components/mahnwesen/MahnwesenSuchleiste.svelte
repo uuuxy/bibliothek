@@ -1,6 +1,6 @@
 <!-- @component MahnwesenSuchleiste — die EINE Suche dieser Seite, darunter Filter und Knöpfe.
 
-     Peter am 04.09.2026: „eine Leiste! aber nicht 2 … es soll gleich aussehen." Bis dahin
+     Absprache vom 04.09.2026: „eine Leiste! aber nicht 2 … es soll gleich aussehen." Bis dahin
      stand über jeder Verwaltungsseite zusätzlich eine globale Suchleiste, und die eigene
      Suche saß als 36-px-Feld daneben im Werkzeugbalken. Jetzt trägt jede Seite genau eine
      Suche, und zwar in derselben Gestalt wie Medienkatalog, Portal und Theke: die
@@ -10,7 +10,7 @@
 
      Am selben Tag, abends: Die Knopfzeile des Mahnwesens stand bis dahin ÜBER den Reitern
      im `aktionen`-Slot von PageShell — als einzige Seite von sechzehn. Die Pille begann
-     dadurch 84 px tiefer als auf Schülerdatei, Katalog, Abgängern und allen anderen; Peter
+     dadurch 84 px tiefer als auf Schülerdatei, Katalog, Abgängern und allen anderen; die Rückmeldung
      an zwei Bildschirmfotos: „hier ist die Suchleiste immer an anderen Positionen … ich
      empfinde es als Stilbruch". Der Slot war ein Überbleibsel: Er hielt die Knöpfe „neben
      dem Seitentitel", und den Seitentitel hat 68c4810 am 08.08.2026 abgeschafft. Die

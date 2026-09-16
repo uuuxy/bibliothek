@@ -89,11 +89,11 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs("pflasch@schule.de").
+		WithArgs("nberger@schule.de").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true, "peter@example.org", false))
+			AddRow("u-admin", "BC-TEST", "admin", "Nina", "Berger", true, "nina@example.org", false))
 
-	rec := doLogin(t, a, mock, `{"email":"pflasch@schule.de","password":"egal"}`)
+	rec := doLogin(t, a, mock, `{"email":"nberger@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
 	}
@@ -112,7 +112,7 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 	}
 	// Email gehört seit 22.08.2026 in die Antwort: Der Sperrbildschirm meldet damit nach
 	// einem Session-Restore wieder an — ohne sie bliebe er für immer zu.
-	if resp.UserID != "u-admin" || resp.Rolle != RoleAdmin || resp.Vorname != "Peter" || resp.Email != "peter@example.org" {
+	if resp.UserID != "u-admin" || resp.Rolle != RoleAdmin || resp.Vorname != "Nina" || resp.Email != "nina@example.org" {
 		t.Errorf("LoginResponse falsch: %+v", resp)
 	}
 	if len(resp.Permissions) != 1 || resp.Permissions[0] != "*" {
@@ -173,12 +173,12 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 
 	mock.ExpectQuery(benutzerSelect).
-		WithArgs("pflasch@schule.de").
+		WithArgs("nberger@schule.de").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-			AddRow("u-admin", "BC-ECHT", "admin", "Peter", "Flasch", true, "peter@example.org", false))
+			AddRow("u-admin", "BC-ECHT", "admin", "Nina", "Berger", true, "nina@example.org", false))
 
 	rec := doLogin(t, a, mock,
-		`{"email":"pflasch@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
+		`{"email":"nberger@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("erwartet 200, bekam %d: %s", rec.Code, rec.Body.String())
 	}

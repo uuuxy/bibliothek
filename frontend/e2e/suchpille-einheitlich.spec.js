@@ -1,6 +1,6 @@
 // Gate: Alle Suchpillen sehen gleich aus, und die Hero-Felder haben beim Betreten Fokus.
 //
-// Peter am 10.08.2026: „die omnibox bei mein portal und katalog ist eine komplett andere,
+// Absprache vom 10.08.2026: „die omnibox bei mein portal und katalog ist eine komplett andere,
 // es fehlt auch der fokus". Er hatte recht, und zwar an sieben Messwerten gleichzeitig —
 // Höhe (48 gegen 42/58), Radius (Pille gegen 12 px), Fläche, Rahmen, Fokusfarbe,
 // Schriftgröße und Platzhaltertext („… suchen …" gegen „… eingeben …"). Ursache waren
@@ -21,7 +21,7 @@ const PILLEN = [
 	{ name: 'Kiosk (Omnibox)', pfad: '/kiosk', id: 'omnibox-input' },
 	{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' },
 	{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld' },
-	// Eine Suche je Verwaltungsseite, überall dieselbe Pille (Peter, 04.09.2026: „eine
+	// Eine Suche je Verwaltungsseite, überall dieselbe Pille (Absprache vom 04.09.2026: „eine
 	// Leiste … es soll gleich aussehen"). Vorher trugen diese Seiten das 36-px-Suchfeld
 	// im Werkzeugbalken, weil darüber noch die globale Suchleiste stand.
 	{ name: 'Leserdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld' },
@@ -66,8 +66,8 @@ const MESSEN = (/** @type {string} */ id) => {
 		// Die FARBE des Randes, nicht nur seine Breite.
 		//
 		// Bis zum 11.08.2026 verglich dieser Test nur borderTopWidth. Eine Pille mit rotem
-		// statt blauem Fokusrand wäre also durchgegangen — und genau daran hat Peter beim
-		// Nebeneinanderlegen zweier Bildschirme gezweifelt („da fehlt die blaue Linie").
+		// statt blauem Fokusrand wäre also durchgegangen — und genau daran kam beim
+		// Nebeneinanderlegen zweier Bildschirme der Zweifel auf („da fehlt die blaue Linie").
 		// Ein Gate, das die auffälligste Eigenschaft nicht misst, beantwortet die Frage
 		// nicht, für die es gebaut wurde.
 		randfarbe: p.borderTopColor,
@@ -127,7 +127,7 @@ test('Jede Suchpille hat dieselben Maße, Farben und Schriftgröße', async ({ p
 	}
 
 	// Der öffentliche OPAC kommt ohne Anmeldung — deshalb ein eigener Kontext, aber
-	// dieselbe Messung. Er war eine der beiden Stellen, die Peter nebeneinandergelegt hat.
+	// dieselbe Messung. Er war eine der beiden Stellen, die nebeneinandergelegt wurden.
 	await page.context().clearCookies();
 	await page.goto(OPAC.pfad);
 	await page.locator(`#${OPAC.id}`).waitFor();
@@ -176,8 +176,8 @@ test('Im Ruhezustand sind die Pillen gefüllt und randlos — nicht dauerhaft im
 	// „Mein Portal" stand hier zu Unrecht. Die Pille dort trägt `autofokus`
 	// (KollegiumPortal.svelte) und nimmt sich den Fokus beim Mounten. Der Test kam trotzdem
 	// durch, weil er sich mit `document.activeElement.blur()` erst den Zustand herstellte,
-	// den er messen wollte — einen, den kein Nutzer je zu Gesicht bekommt. Peter ist der
-	// blaue Rand auf der Produktion aufgefallen, während dieses Gate grün war. Gemessen am
+	// den er messen wollte — einen, den kein Nutzer je zu Gesicht bekommt. Der
+	// blaue Rand ist auf der Produktion aufgefallen, während dieses Gate grün war. Gemessen am
 	// laufenden Stack:
 	//
 	//   Medienkatalog  Fläche rgb(241,240,244)  Rand transparent      Fokus: nein
@@ -290,7 +290,7 @@ for (const { name, pfad, id, anmelden } of MIT_FOKUS) {
  * Die Seiten, auf denen die Startlinie gilt: eine Verwaltungsseite mit einer Suchpille.
  *
  * Kiosk und OPAC stehen bewusst NICHT hier. Der Kiosk ist ein Ruhebildschirm ohne
- * Seitenleiste (nur Scanfeld und Wasserzeichen, Peters Ansage vom 02.09.2026), der OPAC
+ * Seitenleiste (nur Scanfeld und Wasserzeichen, Ansage vom 02.09.2026), der OPAC
  * eine oeffentliche Seite mit eigenem Kopf. Beide messen ihr AUSSEHEN oben mit — nur ihre
  * Position ist eine andere Frage.
  *
@@ -353,7 +353,7 @@ const STARTLINIE_MESSEN = (/** @type {string} */ id) => {
 };
 
 test('Die Suchpille beginnt auf jeder Seite an derselben Startlinie', async ({ page }) => {
-	// Peter am 04.09.2026 an zwei Bildschirmfotos: „hier ist die Suchleiste immer an
+	// Absprache vom 04.09.2026 an zwei Bildschirmfotos: „hier ist die Suchleiste immer an
 	// anderen Positionen … ich empfinde es an dieser Stelle als Stilbruch."
 	//
 	// Er hatte recht, und das Gate darueber konnte es nicht sehen: Es misst Hoehe, Radius,

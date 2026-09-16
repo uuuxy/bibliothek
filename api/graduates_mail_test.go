@@ -215,13 +215,13 @@ func TestSendAbgaengerKontoauszuege_LeereAuswahlOhneDBZugriff(t *testing.T) {
 func TestWaehleAbgaengerKlassen_SchreibweiseDesMappingsEgal(t *testing.T) {
 	eintraege := []pdf.KontoauszugEintrag{eintrag("Max", "Mustermann", "5a")}
 	adressen := map[string]string{
-		repository.KlassenSchluessel(" 5A "): "pflasch@philipp-reis-schule.de",
+		repository.KlassenSchluessel(" 5A "): "nberger@philipp-reis-schule.de",
 	}
 
 	gewaehlt, _ := waehleAbgaengerKlassen(eintraege, adressen, nil)
 
-	if len(gewaehlt) != 1 || gewaehlt[0].Empfaenger != "pflasch@philipp-reis-schule.de" {
-		t.Fatalf("Empfänger = %q, want pflasch@philipp-reis-schule.de (Schreibweise darf egal sein)", gewaehlt[0].Empfaenger)
+	if len(gewaehlt) != 1 || gewaehlt[0].Empfaenger != "nberger@philipp-reis-schule.de" {
+		t.Fatalf("Empfänger = %q, want nberger@philipp-reis-schule.de (Schreibweise darf egal sein)", gewaehlt[0].Empfaenger)
 	}
 }
 

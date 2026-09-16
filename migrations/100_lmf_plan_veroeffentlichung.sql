@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 100: LMF-Plan — Entwurf bis zur Veröffentlichung
 -- =============================================================================
--- Peter 06.09.2026: „Stille Vorbereitung — der Plan nimmt die Schulleitung immer erst
+-- Absprache vom 06.09.2026: „Stille Vorbereitung — der Plan nimmt die Schulleitung immer erst
 -- ab." Bis hierher galt jeder gespeicherte Plan sofort: Das Portal zeigte ihn, das PDF
 -- las ihn, und ein Rückgabe-Plan setzte beim Speichern die Fristen der Klassen.
 -- Ungespeicherte Arbeit lebte nur im Browser-Tab — gegen die Regel „geteilter Zustand

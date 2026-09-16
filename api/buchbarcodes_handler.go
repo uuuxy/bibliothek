@@ -22,7 +22,7 @@ import (
 // und die alten Ausweise sagen es nicht — ein Schülerausweis liefert gemessen
 // `B97601826457`, ein Buchetikett eine 13-stellige EAN. Verwechselt der Rechner beides,
 // laufen die folgenden Bücher auf die falsche Person, und das fällt erst beim Nachbuchen
-// auf (Entscheidung Peter, 13.09.2026).
+// auf (entschieden am 13.09.2026).
 //
 // Deshalb hält der Rechner die Barcodes aller Exemplare, auch der ausgesonderten (das
 // Nachbuchen holt ein zurückgekommenes Buch in den Umlauf). Ein 13-stelliges Littera-Etikett

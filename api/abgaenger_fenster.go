@@ -11,7 +11,7 @@ import (
 // von August bis April wären das schlicht alle 9H, 10R und 13 mit ihren laufenden
 // Schulbüchern, eine Liste ohne Handlungswert. Gebraucht wird sie zum Einsammeln vor der
 // Entlassung: Der LMF-Plan der Schule legt die Rückgabe der Abschlussklassen auf Ende
-// Juni/Anfang Juli, die Vorbereitung beginnt im Mai (Peter, 05.09.2026: „vielleicht wäre
+// Juni/Anfang Juli, die Vorbereitung beginnt im Mai (Absprache vom 05.09.2026: „vielleicht wäre
 // der Mai gut"). Das Schuljahr endet in Hessen am 31. Juli; danach gehören die Abgänger
 // der LUSD und dem Mahnwesen.
 //

@@ -10,7 +10,7 @@ import (
 )
 
 // Zwei Handlungen für den Fehlbestandsbericht (Migration 061). Vorher war er reine
-// Anzeige — Peter (05.08.2026): „was mache ich [dann]? ich kann nicht weiter damit
+// Anzeige — Rückmeldung aus der Bibliothek (05.08.2026): „was mache ich [dann]? ich kann nicht weiter damit
 // machen!" Beim Regal-Absuchen gibt es genau zwei Ausgänge je Zeile: das Buch taucht
 // doch wieder auf, oder es bleibt endgültig weg. Beide brauchen einen Knopf.
 //

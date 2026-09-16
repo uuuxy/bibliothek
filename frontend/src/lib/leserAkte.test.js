@@ -5,7 +5,7 @@ import StudentProfileStammdaten from './StudentProfileStammdaten.svelte';
 // EINE Akte für jeden Leser — dieselbe Form wie im Formular.
 //
 // Diese Datei hat am 16.09.2026 zweimal die Seite gewechselt, und beide Male aus demselben
-// Grund: Peter sah sich an, was tatsächlich im Browser steht.
+// Grund: Es wurde nachgesehen, was tatsächlich im Browser steht.
 //
 // Zuerst prüfte sie, dass ein Kollege KEINE Postanschrift sieht. Das war falsch — an ihr
 // hängen Mahnung und Bescheid („ich kann dort aber keine adressedaten etc nachtragen").
@@ -67,7 +67,7 @@ describe('Akte eines Lesers', () => {
 	});
 
 	// Der Fund, mit dem alles anfing: „hier steht nirgends ob jemand ein Schüler, LiV,
-	// oder lehrer ist" (Peter, 16.09.2026). Die Art stand nur in der Kollegen-Hälfte der
+	// oder lehrer ist" (16.09.2026). Die Art stand nur in der Kollegen-Hälfte der
 	// Akte — beim Schüler nirgends. Sie ist die erste Frage an einen Leser und gehört
 	// deshalb in JEDE Akte, nicht nur in die der anderen.
 	it.each([

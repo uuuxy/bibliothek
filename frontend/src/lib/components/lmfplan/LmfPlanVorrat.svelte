@@ -1,6 +1,6 @@
 <!-- @component LmfPlanVorrat — „Noch nicht im Plan": die Klassen ohne Zeile, seit dem
      06.09.2026 als Chip-Zeile ÜBER der Tabelle statt als eigener Abschnitt darunter
-     (Peter: „es steht oben was und unten was"). Ein Klick auf den Assist-Chip plant die
+     (Absprache: „es steht oben was und unten was"). Ein Klick auf den Assist-Chip plant die
      Klasse an ihren Platz — hinter die letzte Klasse desselben Jahrgangs und Zweigs
      (lmfplanZeilen.einordnen), nicht ans Ende; ziehen auf eine Zeile setzt sie davor.
      Zwei Gruppen: Offen sichtbar ist nur, was ohne Regel fehlt (die neue Klasse nach
@@ -36,7 +36,7 @@
 </script>
 
 <!-- EINE Zeile: fehlende Klassen, „Andere Klasse eintragen", „… bleiben draußen".
-     Vorher zwei Zeilen übereinander (06.09.2026, Peter: „verschenken wir im oberen
+     Vorher zwei Zeilen übereinander (06.09.2026, Absprache: „verschenken wir im oberen
      Bereich nicht viel Platz?"). -->
 <div class="mt-4 flex flex-wrap items-center gap-2" data-testid="lmf-vorrat">
 	{#if offene.length > 0}

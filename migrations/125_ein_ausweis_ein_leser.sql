@@ -13,7 +13,7 @@
 -- Rechte. Wer eine Buchung AUSGEFÜHRT hat (`bearbeiter_id`), bleibt davon
 -- unberührt; das ist eine andere Frage als „wer hat das Buch".
 --
--- Entschieden am 16.09.2026 (Peter): „eine Tabelle für alle".
+-- Entschieden am 16.09.2026: „eine Tabelle für alle".
 --
 -- Was dabei ERSATZLOS wegfällt, weil es die Zweiteilung nur verwaltet hat:
 --

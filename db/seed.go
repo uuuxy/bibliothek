@@ -86,7 +86,7 @@ var RechteVorgabe = []RechteEintrag{
 	{"ADMIN", "manage_students_admin", true},
 	{"ADMIN", "merge_students", true},
 
-	// Leitung defaults (Migration 121/122, Peter 15.09.2026): „Die Leitung startet mit
+	// Leitung defaults (Migration 121/122, Absprache vom 15.09.2026): „Die Leitung startet mit
 	// allen Rechten außer ‚Benutzer & Rechte' und ‚Einstellungen'."
 	//
 	// Die Liste ist ADMIN minus zwei Türen — bewusst in derselben Reihenfolge wie der
@@ -244,7 +244,7 @@ var RechteOptional = mitLeitungAlsStartwert(map[string]bool{
 // mitLeitungAlsStartwert ergänzt JEDES Rolle/Recht-Paar der Leitung.
 //
 // Bei den anderen Rollen ist die Abweichbarkeit die Ausnahme und steht deshalb einzeln
-// oben. Bei der Leitung ist sie die Regel: Peter, 15.09.2026 — „Die Leitung startet mit
+// oben. Bei der Leitung ist sie die Regel — Absprache vom 15.09.2026: „Die Leitung startet mit
 // allen Rechten außer Benutzer & Rechte und Einstellungen; was nicht passt, nimmt der
 // Admin im Rechte-Editor weg." Die Vorgabe ist für diese Rolle also ein STARTWERT, und
 // eine Anlage, die ihn angepasst hat, darf nicht dauerhaft mit einer Warnung dastehen.
@@ -279,7 +279,7 @@ const vererbeAufgeteilteRechteSQL = `
 `
 
 // vererbeZusammenfuehrenSQL: Bis zum 03.09.2026 hing das Zusammenführen zweier
-// Schülerdatensätze an manage_students_admin. Seit es ein eigenes Recht ist (Peter:
+// Schülerdatensätze an manage_students_admin. Seit es ein eigenes Recht ist (Absprache:
 // „ein weiteres Rollenrecht"), erbt jede Rolle ihren bisherigen Wert — sonst verlöre
 // eine Anlage, die das Sonderrecht ans Sekretariat delegiert hat, den Knopf still.
 const vererbeZusammenfuehrenSQL = `

@@ -31,7 +31,7 @@ type LmfPlan struct {
 	Startstunde  int    `json:"startstunde"`
 	StundenJeTag int    `json:"stunden_je_tag"`
 	// LetzterTag/LetzteStunde: der Anker des Rückgabe-Plans — Donnerstag vor den
-	// Sommerferien, 4. Stunde (Peter, 06.09.2026); die Reihenfolge fließt rückwärts
+	// Sommerferien, 4. Stunde (06.09.2026); die Reihenfolge fließt rückwärts
 	// davor. Beim Ausgabe-Plan leer ("" / 0): sein Anker ist der Beginn.
 	LetzterTag   string `json:"letzter_tag"` // YYYY-MM-DD oder ""
 	LetzteStunde int    `json:"letzte_stunde"`

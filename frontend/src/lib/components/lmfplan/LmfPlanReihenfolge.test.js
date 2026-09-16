@@ -3,7 +3,7 @@ import { render, fireEvent } from '@testing-library/svelte';
 import LmfPlanReihenfolge from './LmfPlanReihenfolge.svelte';
 
 // Zwei Klassen dürfen sich eine Stunde teilen — im Plan der Schule stehen „10R1/10R2"
-// und „6F1/6F2" so (Peter, 05.09.2026: „das muss alles super flexibel ablaufen").
+// und „6F1/6F2" so (Absprache vom 05.09.2026: „das muss alles super flexibel ablaufen").
 // Geprüft wird das Umformen der Reihenfolge selbst: zusammenlegen, wieder trennen,
 // schieben, eine Klasse herausnehmen. Die Plätze kommen vom Server; hier steht, WAS
 // verteilt wird.
@@ -126,7 +126,7 @@ describe('LmfPlanReihenfolge', () => {
 	});
 
 	it('legt eine Zeile fest — vorbelegt mit ihrem Vorschau-Platz — und löst sie wieder', async () => {
-		// Die Klasse mit dem Ausflug (Peter, 05.09.2026): „festlegen" macht aus den
+		// Die Klasse mit dem Ausflug (05.09.2026): „festlegen" macht aus den
 		// gerechneten Spalten Eingabefelder, und zwar mit dem Platz, den die Zeile gerade
 		// hat — sonst spränge sie beim Klick irgendwohin. „lösen" gibt sie dem Fluss zurück.
 		const { container, getByLabelText, getByRole, queryByLabelText } = zeige(
@@ -175,7 +175,7 @@ describe('LmfPlanReihenfolge', () => {
 	});
 
 	it('legt eine Zeile per Klick auf die Stunde fest — Fokus in der Auswahl — und löst sie an der Stecknadel', async () => {
-		// Peter, 06.09.2026: „einfach anklicken um es zu ändern … statt immer über die 3
+		// Absprache vom 06.09.2026: „einfach anklicken um es zu ändern … statt immer über die 3
 		// Punkte rechts". Die Zelle ist der Weg; vorbelegt bleibt der Platz der Zeile.
 		const { getByLabelText, queryByLabelText } = zeige(start.map((z) => ({ ...z })));
 		await fireEvent.click(getByLabelText('Stunde Zeile 2: 4. Std. — festlegen'));

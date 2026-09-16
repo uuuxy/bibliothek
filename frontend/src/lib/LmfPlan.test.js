@@ -127,7 +127,7 @@ describe('LmfPlan: Entwurf und Veröffentlichung', () => {
 	});
 });
 
-// Der Anker des Büchertauschs (Peter, 06.09.2026: „es endet immer am gleichen Tag —
+// Der Anker des Büchertauschs (Absprache vom 06.09.2026: „es endet immer am gleichen Tag —
 // Donnerstags vor den Ferien zur vierten Stunde"): Ein neuer Plan kommt mit dem
 // vorbelegten letzten Tag aus der Ferientabelle, die Vorschau schickt ihn als
 // letzter_tag, und der Satz unter dem Rahmen nennt Ferien und gerechneten Beginn. Fehlt
@@ -236,7 +236,7 @@ describe('LmfPlan: Anker am Ende des Büchertauschs', () => {
 		const feld = /** @type {HTMLInputElement} */ (await screen.findByLabelText('Letzter Tag'));
 		expect(feld.value).toBe('');
 		// Der Satz zeigt auf die EINSTELLUNG, nicht auf ein Programm-Update: Genau das hat
-		// Peter am 06.09.2026 an der Selbstprüfung beanstandet („eine Warnung, die nur ein
+		// Absprache vom 06.09.2026 an der Selbstprüfung beanstandet („eine Warnung, die nur ein
 		// Entwickler beheben kann, ist für den Betreiber keine Abhilfe"). Der Planer sagte
 		// bis zum Rasterdurchgang desselben Tages noch das Alte — und dieser Test hielt es
 		// fest.

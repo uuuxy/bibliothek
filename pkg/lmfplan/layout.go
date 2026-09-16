@@ -1,13 +1,13 @@
 // Package lmfplan gießt die Reihenfolge eines LMF-Plans auf Schultage und Stunden.
 //
-// Der Plan der Schule (Peter, 05.09.2026, Excel „lmf termine 26") ist eine Reihenfolge
+// Der Plan der Schule (Absprache vom 05.09.2026, Excel „lmf termine 26") ist eine Reihenfolge
 // von Klassen: Abschlussklassen zuerst, dann jeder Schultag Stunde 1–6, eine Zeile je
 // Stunde, die Reihenfolge läuft über die Tage weiter. Wochentag und Datum standen im
 // Excel von Hand — und zweimal falsch. Hier rechnet sie eine Funktion, und zwar die
 // EINE: Der Server legt den Plan damit ab, und die Vorschau im Planer ruft denselben
 // Server (PUT … "vorschau": true) statt eines JavaScript-Zwillings.
 //
-// Zwei Ausnahmen von der reinen Reihenfolge (Peter, 05.09.2026 abends): Eine Zeile kann
+// Zwei Ausnahmen von der reinen Reihenfolge (Absprache vom 05.09.2026 abends): Eine Zeile kann
 // einen FESTEN Platz haben (die Klasse mit dem Ausflug), dann fließen die anderen um
 // sie herum; und ein Tag kann ausfallen — Wochenende, gesetzlicher Feiertag (Hessen,
 // feiertage.go), Ferien/Schließzeit, freier Tag des Plans.
@@ -91,7 +91,7 @@ func VerteileMit(r Rahmen, fest []*Platz, istSchultag func(time.Time) bool) []Pl
 	return plaetze
 }
 
-// Ende ist der Anker des Büchertauschs vor den Sommerferien (Peter, 06.09.2026: „es
+// Ende ist der Anker des Büchertauschs vor den Sommerferien (Absprache vom 06.09.2026: „es
 // endet immer am gleichen Tag — Donnerstags vor den Ferien zur vierten Stunde"): die
 // LETZTE Zeile bekommt diesen Platz, die übrigen fließen rückwärts davor. Kommen Zeilen
 // dazu, rückt der Beginn nach vorn, das Ende bleibt.

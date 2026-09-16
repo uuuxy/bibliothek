@@ -225,7 +225,7 @@ func PredikatAnliegen(tage, kulanz int) Loeschbedingung {
 // ── Nachbuch-Meldungen ($1 Tage, $2 Kulanz) ─────────────────────────────────────
 //
 // Quittierte Meldungen fallen nach der Lesehistorie-Frist der Schülerbücherei, höchstens
-// nach 30 Tagen (Entscheidung Peter, 13.09.2026): Eine quittierte Meldung ist erledigt,
+// nach 30 Tagen (entschieden am 13.09.2026): Eine quittierte Meldung ist erledigt,
 // ihre Beteiligten stehen mit Namen darin, und länger als die Lesehistorie darf nichts
 // den Schüler an ein Buch binden. Offene Meldungen haben keine Frist — sie sind Arbeit,
 // die noch aussteht, und der Wächter der Betriebsbereitschaft nennt sie nach 14 Tagen.

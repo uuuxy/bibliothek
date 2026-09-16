@@ -15,7 +15,7 @@ import { srcRoot, sammleQuelldateien } from './hygiene-quellen.js';
 //   Kopf     -> PageShell.svelte (Titel, Unterzeile, Aktionen)
 // KEINE Breitenbegrenzung und KEINE Karten-Wrapper: f2320e1, e81ce75 und 95d5d33
 // haben das Floating-Card-Muster und die max-w-Einengung ausdruecklich abgeschafft.
-// Ich hatte beides am 07.08. wieder eingefuehrt — genau das ist Peter aufgefallen.
+// Ich hatte beides am 07.08. wieder eingefuehrt — genau das ist aufgefallen.
 // Eine Route, die davon etwas selbst setzt, bricht genau eine dieser drei.
 
 // Geprueft wird gegen die Routen, die Router.svelte tatsaechlich rendert — nicht gegen
@@ -70,7 +70,7 @@ describe('Seitengeruest', () => {
 	// Seitenleiste sagt bereits, wo man ist, und ein Satz wie "Bedarf erfassen,
 	// bestellen und Zulauf verbuchen" erklaert einem Sekretariat nichts, das die Seite
 	// taeglich benutzt. Ich hatte beides am 07.08. auf allen 14 Seiten wieder eingebaut
-	// — Peter hat es am 08.08. beanstandet. Diese Regel merkt es beim naechsten Mal.
+	// — am 08.08. wurde es beanstandet. Diese Regel merkt es beim naechsten Mal.
 	it('gibt keiner Route einen eigenen Seitentitel', () => {
 		// Genau eine Ausnahme, und die ist keine: Die Statistik-Detailseite sagt, WELCHE
 		// Liste man sieht (Renner oder Ladenhueter). Das kann die Navigation nicht.

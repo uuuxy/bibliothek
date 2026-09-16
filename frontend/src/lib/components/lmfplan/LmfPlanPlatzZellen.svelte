@@ -1,5 +1,5 @@
 <!-- @component LmfPlanPlatzZellen — die drei gerechneten Zellen einer Planer-Zeile:
-     Wochentag, Datum, Stunde. Seit dem 06.09.2026 (Peter: „einfach anklicken, um es zu
+     Wochentag, Datum, Stunde. Seit dem 06.09.2026 (Absprache: „einfach anklicken, um es zu
      ändern … statt immer über die drei Punkte rechts") sind sie selbst der Weg zum
      festen Platz: Ein Klick auf eine Zelle legt die Zeile fest — vorbelegt mit dem Platz,
      den sie gerade hat, damit der Klick nichts verschiebt — und setzt den Fokus in das

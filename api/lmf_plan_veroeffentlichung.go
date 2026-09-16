@@ -1,7 +1,7 @@
 package api
 
 // lmf_plan_veroeffentlichung.go — Entwurf und Veröffentlichung des LMF-Plans (Migration
-// 100). Peter, 06.09.2026: „Stille Vorbereitung — der Plan nimmt die Schulleitung immer
+// 100). Absprache vom 06.09.2026: „Stille Vorbereitung — der Plan nimmt die Schulleitung immer
 // erst ab." Speichern legt deshalb einen ENTWURF an: zentral, auf jedem PC gleich, aber
 // für Portal, Kollegiums-PDF und Frist-Kopplung unsichtbar. Erst POST …/veroeffentlichen
 // stempelt ihn und setzt bei einem Rückgabe-Plan die Fristen; danach gilt jede weitere

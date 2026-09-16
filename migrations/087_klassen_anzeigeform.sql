@@ -9,7 +9,7 @@
 -- Schulserver trifft es jede Klasse, die nur in Bücherlisten vorkommt (noch keine
 -- Schüler aus der LUSD).
 --
--- Entscheidung Peter: EINE feste Anzeigeform, wie die LUSD sie liefert — Jahrgang
+-- Entscheidung: EINE feste Anzeigeform, wie die LUSD sie liefert — Jahrgang
 -- zweistellig, Rest groß: „05F1", „09G4", „10G1". Nur für Namen, die wie eine
 -- Klasse aussehen (Ziffern, Buchstaben, optional Ziffern). Sonderwerte wie
 -- 'lehrer' (Handapparat-Entleiher), 'ABG' (Versetzungslauf) oder Kursnamen

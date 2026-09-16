@@ -152,7 +152,7 @@ test('Ein PUT ohne Felder wird abgelehnt, statt Erfolg zu melden', async ({ page
 	).toBe(vorher);
 });
 
-// „Ein Feld ist verrutscht" (Peter, 23.08.2026, Bildschirmfoto von flasch3): In
+// „Ein Feld ist verrutscht" (Absprache vom 23.08.2026, Bildschirmfoto von flasch3): In
 // „Datenschutz & Sitzung" bricht die Beschriftung „Lesehistorie Schülerbücherei (Tage)"
 // auf zwei Zeilen um — und ihr Eingabefeld stand dadurch eine Zeilenhöhe tiefer als die
 // drei Nachbarn daneben. Ursache war nicht die lange Beschriftung, sondern dass jedes

@@ -50,7 +50,7 @@ function geseedeteRechte(rolle) {
  * api/permission_middleware.go). Im Menü stand die Portal-Ausnahme aber ÜBER dem
  * Admin-Vorrang. Ergebnis: Ein Admin durfte die Klassensatz-Reservierung aufrufen, sah
  * den Menüpunkt aber nicht — und fand die Funktion deshalb schlicht nicht. Genau so ist
- * es passiert (Peter, 09.08.2026: „Klassensatz reservieren wo und wie?").
+ * es passiert (Absprache vom 09.08.2026: „Klassensatz reservieren wo und wie?").
  *
  * Deshalb prüft der erste Test nicht eine Regel, sondern die Zusage: Der Admin sieht
  * ALLES, ausnahmslos.
@@ -102,7 +102,7 @@ describe('Menü-Sichtbarkeit', () => {
 	});
 
 	it('hängt Abgänger unter Verwaltung an view_graduates und den Schuljahreswechsel unter System an edit_books', () => {
-		// Peter, 05.09.2026 abends: Unter Verwaltung steht nur „Abgänger"; der LMF-Plan
+		// Absprache vom 05.09.2026 abends: Unter Verwaltung steht nur „Abgänger"; der LMF-Plan
 		// heißt im System-Menü „Schuljahreswechsel"; der LUSD-Import bleibt eine
 		// Einstellungs-Kategorie. Eine Sammelseite mit drei Reitern unter Verwaltung gab es
 		// für einen Abend — sie hat nicht getragen.
@@ -139,7 +139,7 @@ describe('Menü-Sichtbarkeit', () => {
 	it('öffnet das Portal für jede Rolle mit create_reservations — und nur für die', () => {
 		// Bis 26.08.2026 hing „Mein Portal" an der Rolle kollegium. Eine Lehrkraft, die
 		// in Bibliothek/LMF mitarbeitet und deshalb Mitarbeiter ist, fand das Portal nicht,
-		// obwohl der Server sie mit create_reservations überall hineinließ (Peter: am
+		// obwohl der Server sie mit create_reservations überall hineinließ (Absprache: am
 		// Recht aufhängen). Der Helfer hat das Recht ab Werk nicht und bleibt draußen.
 		const portal = allePunkte.find((i) => i.id === 'kollegium_portal');
 		// Kein expect(...).toBeTruthy(): Das verengt den Typ nicht, und ohne den Punkt

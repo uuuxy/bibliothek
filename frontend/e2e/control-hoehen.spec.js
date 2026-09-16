@@ -198,7 +198,7 @@ test('Feld und Button stehen in derselben Werkzeugleiste auf einer Linie', async
 
 	// Gemessen wird das AUSWAHLFELD der Werkzeugleiste, nicht die Suche: Seit dem
 	// 04.09.2026 ist die Suche jeder Verwaltungsseite die 48-px-Pille und steht über der
-	// Leiste, nicht darin (Peter: „eine Leiste … es soll gleich aussehen"). Was in der
+	// Leiste, nicht darin (Absprache: „eine Leiste … es soll gleich aussehen"). Was in der
 	// Leiste steht — Auswahlfelder und Knöpfe —, teilt weiterhin die 36-px-Grundlinie.
 	const auswahl = page.getByLabel('Nach Klasse filtern');
 	// Gemessen wird „Daten neu laden" und NICHT „Alle anmahnen": Letzterer steht in

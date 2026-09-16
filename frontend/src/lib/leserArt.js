@@ -5,7 +5,7 @@
 // Stünde die Zuordnung an jeder Stelle einzeln, hieße derselbe Mensch an der Theke
 // „LiV" und in der Leserdatei „Referendar".
 //
-// „LiV" ist Peters Wort (15.09.2026) und nur eine Bezeichnung; entschieden wird an der
+// „LiV" ist das gewählte Wort (15.09.2026) und nur eine Bezeichnung; entschieden wird an der
 // Art nichts — ausleihen darf jeder aktive Leser.
 
 /** @type {Record<string, string>} */

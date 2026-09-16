@@ -4,7 +4,7 @@ import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
 // Der Nachweis für den Schritt „Theke und Leserdatei" (docs/OFFEN.md 5.16), im Browser
 // und gegen den frisch gebauten Stack.
 //
-// Die Frage, um die es geht, ist Peters: Ein Kollege lässt sich an der Theke über seinen
+// Die Frage, um die es geht: Ein Kollege lässt sich an der Theke über seinen
 // Ausweis laden — aber sieht man auch, welche Bücher er hat? Und findet man ihn, wenn er
 // die Karte nicht dabei hat? Beides war bis zum 16.09.2026 nein.
 
@@ -54,7 +54,7 @@ test('Leserdatei: ein Kollege steht in der Liste, hat eine Akte und ist über de
 	const akte = page.locator('main');
 	await expect(akte.getByText(ausweis).first()).toBeVisible();
 	// Dieselben Angaben wie bei einer Schuelerin — die Akte hat nur noch EINE Form
-	// (Peter: „warum eine andere maske als bei schuelern?"). Die Postanschrift gehoert
+	// (Absprache: „warum eine andere maske als bei schuelern?"). Die Postanschrift gehoert
 	// ausdruecklich dazu: An ihr haengen Mahnung und Bescheid.
 	await expect(akte.getByText('Postanschrift')).toBeVisible();
 	await expect(akte.getByText('Art', { exact: true })).toBeVisible();

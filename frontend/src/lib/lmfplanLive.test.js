@@ -4,7 +4,7 @@ import { apiFetch } from './apiFetch.js';
 
 // Der LMF-Plan meldet seine Änderungen über die SSE-Leitung (api/lmf_plan_live.go), damit
 // das Kollegium im Portal und die zweite Bibliothekskraft am anderen PC den neuen Stand
-// sehen, ohne neu zu laden (Peter, 07.09.2026).
+// sehen, ohne neu zu laden (07.09.2026).
 //
 // Für den PLANER ist stilles Nachladen aber nicht immer richtig: `lade()` setzt den
 // Entwurf auf den Server-Stand zurück. Wer gerade eine Reihenfolge zusammengezogen hat

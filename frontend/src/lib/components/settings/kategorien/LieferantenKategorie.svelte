@@ -3,7 +3,7 @@
 	 * @component LieferantenKategorie
 	 * Händler, Kundennummern, Hauptlieferant — Stammdaten, die einmal im Jahr
 	 * angefasst werden. Bis 25.08.2026 ein Reiter im Bestellungs-Workspace, zwischen
-	 * Wareneingang und Bestellhistorie; Peters Entscheidung: Das ist Konfiguration,
+	 * Wareneingang und Bestellhistorie; entschieden: Das ist Konfiguration,
 	 * keine Tagesarbeit, also gehört es zu den Einstellungen. Die Kategorie trägt
 	 * keinen Speichern-Knopf — jede Zeile speichert sich selbst (SupplierManager).
 	 */

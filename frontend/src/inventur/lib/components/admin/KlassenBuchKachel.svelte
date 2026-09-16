@@ -1,7 +1,7 @@
 <!-- @component KlassenBuchKachel — ein Titel im Klassensatz, gebaut wie die Katalog-Kachel
      (BuchKarte, 02.09.2026): Cover ohne Rahmen, darunter Titel und Bestand. Der Bestand
      („82 von 82 verfügbar") stand bis dahin nirgends auf der Kachel, obwohl der
-     Klassensatz-Endpunkt ihn je Titel liefert — Peter wollte ihn beim Zeigen sehen; er
+     Klassensatz-Endpunkt ihn je Titel liefert — beim Zeigen sollte er zu sehen sein; er
      steht jetzt immer da, denn am Tablet gibt es kein Zeigen.
 
      Vorher: weiße Karte mit Rahmen, Schatten und Hochheben, blaues Overlay „Bearbeiten"

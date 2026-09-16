@@ -3,7 +3,7 @@
 	 * @component ArbeitsZeile
 	 * EINE Listenzeile für die Arbeitslisten des Bestell-Workspace (Klassensatz-
 	 * Reservierungen, Wünsche & Meldungen) — nach der Material-3-„list item" mit
-	 * führendem Element (Peters Entscheidung 26.08.2026).
+	 * führendem Element (entschieden am 26.08.2026).
 	 *
 	 * Die Frage, die die Bibliothek an diese Listen stellt, lautet in dieser Reihenfolge:
 	 * WELCHE KLASSE will WELCHES BUCH, und WIE VIELE? Also:

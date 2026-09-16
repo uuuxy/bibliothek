@@ -24,7 +24,7 @@ const (
 	// über „Mein Portal" mit seiner Schuladresse selbst anmeldet, entsteht als Kollegium
 	// (auth/selbstanmeldung.go, inaktiv bis zur Freischaltung) und ist damit niemand
 	// Besonderes — Bestand sehen, vormerken, Fehler melden, an der Theke Bücher auf den
-	// eigenen Namen. Das sind im Grunde alle (Peter, 16.09.2026).
+	// eigenen Namen. Das sind im Grunde alle (16.09.2026).
 	//
 	// Hieß bis Migration 069 „lehrer" — umbenannt, weil schueler.klasse = 'lehrer'
 	// dieselbe Person als ENTLEIHER meint und die Doppelung zu Fehlgriffen geführt hat.

@@ -115,7 +115,7 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 
 	// Geprüft wird JEDE Verwaltungsseite, nicht eine Auswahl. Bis zum 04.09.2026 standen
 	// hier sechs Ansichten — der Standard-Reiter des Druck-Centers war nicht dabei, und
-	// genau dort trugen drei Schritt-Überschriften 14 px (Peter: „die Schrift bei den
+	// genau dort trugen drei Schritt-Überschriften 14 px (Absprache: „die Schrift bei den
 	// Überschriften ist wieder mega klein"). Eine Ratsche, die eine Liste von Bildschirmen
 	// abgeht, wächst nicht mit der Anwendung; sie muss den Bestand abgehen.
 	/** @type {{ name: string, oeffne: () => Promise<void> }[]} */

@@ -226,7 +226,7 @@ func (s *defaultLoanService) resolveCheckoutDueDate(ctx context.Context, copy *r
 }
 
 // resolveCheckoutDueDateAm rechnet die Frist ab einem gegebenen Tag — beim Nachbuchen der
-// Scan-Zeitpunkt (Entscheidung Peter, 13.09.2026: Frist, Mahnwesen und Lesehistorie rechnen
+// Scan-Zeitpunkt (Entscheidung vom 13.09.2026: Frist, Mahnwesen und Lesehistorie rechnen
 // ab dem Scan), am Online-Scan jetzt.
 func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy *repository.BookCopy, borrowerKlasse string, heute time.Time) (time.Time, error) {
 	settings, err := s.querySettings(ctx)
@@ -257,7 +257,7 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 	// Nur für die einjährige Ausleihe; eine mehrjährige rechnet weiter über den Stichtag.
 	// Ein Fehler beim Nachschlagen blockiert die Ausleihe nicht: dann gilt der Stichtag.
 	//
-	// Am oder nach dem Rückgabetermin der Klasse (Entscheidung 13.09.2026, Peter): Wer jetzt
+	// Am oder nach dem Rückgabetermin der Klasse (Entscheidung vom 13.09.2026): Wer jetzt
 	// noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück — die Frist ist
 	// dessen Stichtag. Das gilt auch, wenn die Klasse noch einen Nachzügler-Termin vor sich
 	// hat (zweimal im Plan): Nach ihrem Rückgabetermin ist jedes neu ausgegebene Schulbuch

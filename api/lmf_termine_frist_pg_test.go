@@ -279,7 +279,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if a.Plan != nil || a.Vorschlag == nil || a.Vorschlag.Quelle != "regel" {
 		t.Fatalf("ohne Plan: %+v", a)
 	}
-	// Der Rahmen-Vorschlag (Peter, 06.09.2026): Donnerstag vor den Sommerferien 2027, 4. Stunde.
+	// Der Rahmen-Vorschlag (06.09.2026): Donnerstag vor den Sommerferien 2027, 4. Stunde.
 	if r := a.Vorschlag.Rahmen; r.LetzterTag != "2027-06-24" || r.LetzteStunde != 4 || r.StundenJeTag != 6 || r.ErsterTag != "" {
 		t.Errorf("Rahmen-Vorgabe Rückgabe: %+v", r)
 	}
@@ -287,7 +287,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 		t.Errorf("Sommerferien: %+v", f)
 	}
 	// Das Vokabular zeigt Klassen in seiner Anzeigeform (Migration 087: „09H1"). Am Ende
-	// stehen die zwei Zeilen ohne Klasse, mit denen Peters Excel endet (ab67484a).
+	// stehen die zwei Zeilen ohne Klasse, mit denen dem Excel der Schule endet (ab67484a).
 	if klassenFolge(a.Vorschlag.Zeilen) != "09H1,08G1,," {
 		t.Errorf("Regel-Reihenfolge (Abschluss zuerst): %+v", a.Vorschlag.Zeilen)
 	}
@@ -320,7 +320,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 	if len(a.Klassen) != 5 {
 		t.Errorf("Klassen des Vokabulars: %v", a.Klassen)
 	}
-	// „Nur Rückgabe" vor den Ferien steht als VORBELEGUNG im Vermerk (Peter, 06.09.2026):
+	// „Nur Rückgabe" vor den Ferien steht als VORBELEGUNG im Vermerk (06.09.2026):
 	// 9H1 ist Abschlussklasse und trägt es zusätzlich zum Vorjahres-Vermerk; 8G1 und 7R1
 	// tauschen (Vorgabe der Eingangsjahrgänge 5 und 7: erst die 6er geben nur ab).
 	if z[1].Vermerk != "nur Rückgabe · bis 11. eingesammelt" || z[0].Vermerk != "" || z[2].Vermerk != "" ||
@@ -355,7 +355,7 @@ func TestLmfPlan_VorschlagAusVorjahrOderRegel(t *testing.T) {
 		t.Errorf("Ausgabe-Vorschlag endet wie das Excel: %q", s)
 	}
 	// Der Ausgabe-Plan beginnt am ersten Schultag nach den Ferien 2027 (Montag 09.08.) in
-	// der 2. Stunde — wie Peters Plan 2026 (Mo 10.08., 2. Std.).
+	// der 2. Stunde — wie der Plan 2026 der Schule (Mo 10.08., 2. Std.).
 	if ausgabe.Vorschlag != nil {
 		if r := ausgabe.Vorschlag.Rahmen; r.ErsterTag != "2027-08-09" || r.Startstunde != 2 || r.LetzterTag != "" {
 			t.Errorf("Rahmen-Vorgabe Ausgabe: %+v", r)

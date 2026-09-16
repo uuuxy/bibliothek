@@ -6,7 +6,7 @@
      der Klick auf einen Eintrag ankommt.
 
      Es ist die EINE Suche der Klassensatz-Seite und trägt deshalb seit dem 04.09.2026
-     die 48-px-Suchpille — dieselbe Gestalt wie Medienkatalog, Portal und Theke (Peter:
+     die 48-px-Suchpille — dieselbe Gestalt wie Medienkatalog, Portal und Theke (Absprache:
      „eine Leiste … es soll gleich aussehen"). Bis dahin war es das 36-px-Suchfeld im
      Werkzeugbalken, weil darüber noch die globale Suchleiste stand. Der Pfeil sitzt als
      nachlaufendes Symbol darin, die Vorschlagsliste hängt an der Hülle. -->

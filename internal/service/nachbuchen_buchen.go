@@ -65,7 +65,7 @@ func (s *defaultLoanService) nachbuchenRueckgabe(ctx context.Context, tx pgx.Tx,
 // nachbuchenAusleihe: Absicht „Ausleihe". Beim selben Kind wird nichts umgekehrt
 // (bereits_ausgeliehen). Lag das Buch bei jemand anderem, wird dort zurückgenommen — VOR
 // dem Savepoint, damit die Rücknahme bleibt, wenn die neue Ausleihe an Sperre, Limit oder
-// Vormerkung scheitert (Entscheidung Peter, 13.09.2026, c).
+// Vormerkung scheitert (entschieden am 13.09.2026, c).
 func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, l *nachbuchLage) (*NachbuchErgebnis, error) {
 	if l.activeLoan != nil && gehoert(l) {
 		rollbackStill(ctx, tx)

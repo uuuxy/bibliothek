@@ -55,7 +55,7 @@
 		{:else if klassensaetze.length === 0}
 			<p class="py-4 text-sm text-on-surface-variant">Noch keine Klassensätze zugeordnet.</p>
 		{:else}
-			<!-- Dieselbe Karte wie unter Bibliothek → Klassensätze, nur lesend (Peter,
+			<!-- Dieselbe Karte wie unter Bibliothek → Klassensätze, nur lesend (Absprache vom
 				     25.08.2026: „warum zeigen wir hier nicht einfach die Übersicht der
 				     Klassensätze?"). /api/portal/klassensaetze ist derselbe Handler wie
 				     /api/class-books — die Daten waren schon gleich, nur die Darstellung nicht. -->

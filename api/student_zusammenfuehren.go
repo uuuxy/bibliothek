@@ -19,7 +19,7 @@ import (
 //
 // Recht merge_students (eigenes Recht seit 03.09.2026, vorher manage_students_admin wie
 // Purge und DSGVO-Auskunft): Es ist ein Eingriff in die
-// Identität zweier Datensätze, unumkehrbar, und Peters Vorgabe vom 02.09.2026 ist, dass
+// Identität zweier Datensätze, unumkehrbar, und Vorgabe vom 02.09.2026 ist, dass
 // ein Admin das tut — nicht der Tresen.
 
 type zusammenfuehrenRumpf struct {

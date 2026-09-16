@@ -7,7 +7,7 @@ import { heileAltBaender } from './idDesignAltbestand.js';
 /**
  * Die Aufschrift des Ausweises kommt aus der Art des Lesers.
  *
- * Gemeldet am 16.09.2026 (Peter): „wenn ein Lehrer einen Ausweis drucken möchte, sollte
+ * Gemeldet am 16.09.2026 : „wenn ein Lehrer einen Ausweis drucken möchte, sollte
  * da natürlich Lehrerausweis stehen anstatt schülerausweis". Der Titel war bis dahin ein
  * gewöhnliches Textelement mit fest eingetipptem Inhalt — die Karte einer Lehrkraft trug
  * deshalb das Wort „Schülerausweis".

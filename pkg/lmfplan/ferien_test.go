@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// Die Termine, gegen die Peters Plan 2026 aufgeht: Ferienbeginn Montag 29.06.2026, der
-// Donnerstag davor ist der 25.06. — die letzte Zeile seines Excels (5G5, 4. Stunde).
+// Die Termine, gegen die der Plan 2026 aufgeht: Ferienbeginn Montag 29.06.2026, der
+// Donnerstag davor ist der 25.06. — die letzte Zeile des Excels (5G5, 4. Stunde).
 // Dazu die anderen Jahre aus dem KMK-Beschluss, damit ein Zahlendreher auffällt.
 func TestSommerferienHessen_DonnerstagVor(t *testing.T) {
 	for jahr, soll := range map[int][2]string{

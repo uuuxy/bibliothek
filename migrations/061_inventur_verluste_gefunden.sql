@@ -1,5 +1,5 @@
 -- Handlungsspielraum für den Fehlbestandsbericht: bisher war er reine Anzeige, die
--- „Gefunden"-Spalte ein Kästchen ohne Funktion (☐, kein <input>). Peter (05.08.2026):
+-- „Gefunden"-Spalte ein Kästchen ohne Funktion (☐, kein <input>). Rückmeldung aus der Bibliothek (05.08.2026):
 -- „was mache ich [dann]? ich kann nicht weiter damit machen!"
 --
 -- gefunden_am hält fest, dass ein als Verlust gebuchtes Exemplar beim Regal-Absuchen

@@ -34,7 +34,7 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	// Buch-Barcodes für die Offline-Einordnung (Stufe 2): nur Nummern, keine Personendaten.
 	mux.Handle("GET /api/action/buchbarcodes", s.RequirePermission("perform_actions")(s.BuchbarcodesHandler()))
 	// Nachbuch-Meldungen (Migration 117): Liste und Quittieren nur mit view_students — die
-	// Zeilen nennen Ausleiher und Vorbesitzer (Entscheidung Peter, 13.09.2026); der Zähler
+	// Zeilen nennen Ausleiher und Vorbesitzer (entschieden am 13.09.2026); der Zähler
 	// fürs Band ist eine Zahl und darf jeder Theken-Rolle gehören.
 	mux.Handle("GET /api/action/nachbuch-meldungen", s.RequirePermission("view_students")(s.NachbuchMeldungenListeHandler()))
 	mux.Handle("GET /api/action/nachbuch-meldungen/anzahl", s.RequirePermission("perform_actions")(s.NachbuchMeldungenAnzahlHandler()))

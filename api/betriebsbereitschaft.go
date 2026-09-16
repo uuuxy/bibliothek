@@ -777,7 +777,7 @@ func pruefeKlassenDrift(l Lage) Befund {
 	return b
 }
 
-// nachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen (Entscheidung Peter,
+// nachbuchOffenSeitTagen ist die Schwelle des Wächters: zwei Wochen (Entscheidung vom
 // 13.09.2026). Eine Meldung, die so lange niemand quittiert, hat niemand angesehen.
 const nachbuchOffenSeitTagen = 14
 

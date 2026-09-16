@@ -7,7 +7,7 @@ import (
 	"bibliothek/internal/pgtest"
 )
 
-// Klassensätze aus zwei Quellen (Peter, 05.09.2026): die Handliste bleibt, dazu kommt live,
+// Klassensätze aus zwei Quellen (05.09.2026): die Handliste bleibt, dazu kommt live,
 // was mehr als die Hälfte einer Klasse (mindestens fünf Kinder) gerade ausgeliehen hat.
 // Geprüft am echten Postgres, weil der Kern ein Schwellwert über Klassen-Normschlüssel ist.
 func TestGetClassGroups_HandUndAusAusleihen(t *testing.T) {

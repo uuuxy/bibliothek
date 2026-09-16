@@ -8,7 +8,7 @@
 	import Feld from './components/ui/Feld.svelte';
 
 	// Kollegium steht OBEN, weil es keine Rolle ist, sondern der Grundzustand: Wer sich
-	// übers Portal selbst anmeldet und freigeschaltet wird, ist Kollegium (Peter,
+	// übers Portal selbst anmeldet und freigeschaltet wird, ist Kollegium (Absprache vom
 	// 16.09.2026: „das sind im Grunde alle"). Darunter die Erhebungen, die der Admin
 	// vornimmt — aufsteigend bis zum Administrator. Stünde Kollegium zwischen Helfer und
 	// Mitarbeiter, läse sich die Liste als Rangfolge mit dem Kollegium als Stufe darin.

@@ -32,7 +32,7 @@ type mittelText struct {
 	// Traeger: wer den Topf trägt — „Land" oder „Schulträger". Steht in den Berichten
 	// hinter der Kurzform („Lernmittelfreiheit (Land)"), damit dort ohne Vorwissen
 	// lesbar ist, wessen Geld gemeint ist. Im Anschreiben an den Händler steht er
-	// bewusst NICHT (kein Rechts- oder Regionalbezug, Peters Vorgabe).
+	// bewusst NICHT (kein Rechts- oder Regionalbezug, Vorgabe).
 	Traeger string
 }
 

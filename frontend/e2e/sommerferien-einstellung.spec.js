@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, gehZu, einstellungsKategorie, csrfToken } from './helpers.js';
 
-// Die Sommerferien als Einstellung (Peter, 06.09.2026: „das muss doch dann irgendwo
+// Die Sommerferien als Einstellung (Absprache vom 06.09.2026: „das muss doch dann irgendwo
 // eingestellt werden"): Ein Jahr über der Programmtabelle wird in Einstellungen → LUSD &
 // Versetzung eingetragen, landet in Normalform in system_einstellungen, und die
 // Selbstprüfung (Betriebsbereitschaft) rechnet mit ihm — die Warnung zeigt auf diese

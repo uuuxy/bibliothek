@@ -12,7 +12,7 @@ import (
 // Nachbuch-Meldungen (Migration 117, Stufe 2 des Offline-Baus): Jede Abweichung vom
 // Offline-Scan beim Nachbuchen — umgebucht, nur reaktiviert, nicht gebucht, veraltet —
 // bleibt mit Barcode, Grund und Beteiligten stehen, bis jemand aus der Bibliothek sie
-// quittiert. Nichts verschwindet still (Entscheidung Peter, 13.09.2026, c).
+// quittiert. Nichts verschwindet still (entschieden am 13.09.2026, c).
 
 // Die Ergebnisse des Nachbuchens (OFFEN.md 2.2, Commit 11). `wiederholen` ist keines:
 // Es ist die Antwort für einen Eintrag, den der Server nicht beurteilen konnte (503),

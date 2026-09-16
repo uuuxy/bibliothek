@@ -12,8 +12,8 @@
   KEIN `aktionen`-Slot mehr (04.09.2026). Er war der Rest des Seitentitels: eine
   rechtsbuendige Knopfzeile GANZ OBEN, die neben einer Ueberschrift stand, die es seit
   68c4810 nicht mehr gibt. Von sechzehn Routen hat ihn genau eine benutzt — Mahnwesen —
-  und dort begann die Suchpille dadurch 84 px tiefer als auf jeder anderen Seite. Peter
-  am 04.09. an zwei Bildschirmfotos: „hier ist die Suchleiste immer an anderen
+  und dort begann die Suchpille dadurch 84 px tiefer als auf jeder anderen Seite. Die Rückmeldung
+  vom 04.09. an zwei Bildschirmfotos: „hier ist die Suchleiste immer an anderen
   Positionen … ich empfinde es an dieser Stelle als Stilbruch".
 
   Die Hausordnung ueber der Suche lautet seitdem: Reiterband (wenn es eins gibt), dann

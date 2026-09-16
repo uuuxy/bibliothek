@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * @component KlassenDruckEinstieg
-	 * Sichtbarer Einstieg für den klassenweisen Ausweisdruck (24.08.2026, auf Peters
+	 * Sichtbarer Einstieg für den klassenweisen Ausweisdruck (24.08.2026, auf
 	 * Ansage): Der Weg über die Schülerdatei — Klasse suchen, Kopf-Kästchen anhaken,
 	 * Aktionsleiste — funktioniert, ist aber für neue Benutzer unauffindbar, weil die
 	 * Leiste erst mit der ersten Markierung erscheint.

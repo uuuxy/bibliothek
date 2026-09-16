@@ -41,7 +41,7 @@ func TestMeHandler_ActiveAdminGetsLoginShape(t *testing.T) {
 	mock.ExpectQuery(`SELECT rolle, vorname, nachname, aktiv, email`).
 		WithArgs("user-1").
 		WillReturnRows(pgxmock.NewRows([]string{"rolle", "vorname", "nachname", "aktiv", "email"}).
-			AddRow("admin", "Peter", "Flasch", true, "peter@example.org"))
+			AddRow("admin", "Nina", "Berger", true, "nina@example.org"))
 	// Admin bekommt implizit "*" — kein role_permissions-Query
 
 	rec := doMe(t, a, mock, &http.Cookie{Name: "session_token", Value: token})
@@ -53,7 +53,7 @@ func TestMeHandler_ActiveAdminGetsLoginShape(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort kein LoginResponse-JSON: %v", err)
 	}
-	if resp.UserID != "user-1" || resp.Rolle != RoleAdmin || resp.Vorname != "Peter" || resp.Nachname != "Flasch" || resp.Email != "peter@example.org" {
+	if resp.UserID != "user-1" || resp.Rolle != RoleAdmin || resp.Vorname != "Nina" || resp.Nachname != "Berger" || resp.Email != "nina@example.org" {
 		t.Errorf("Stammdaten falsch: %+v", resp)
 	}
 	if len(resp.Permissions) != 1 || resp.Permissions[0] != "*" {

@@ -1,7 +1,7 @@
 <!-- @component Eine Bestellung als Beleg — Kopf, bestellte Titel, gelieferte Exemplare.
 
      Ersetzt die aufklappende Zeile der Bestellhistorie. Die zeigte dieselben Angaben wie
-     die Tabellenzeile darüber, nur untereinander; Peter: „geht das Feld nach unten aber
+     die Tabellenzeile darüber, nur untereinander; Absprache: „geht das Feld nach unten aber
      nicht mit merklichem Mehrwert". Zwei Dinge fehlten und passen auch nicht in eine
      Tabellenzeile: das Cover und die Exemplarnummern.
 

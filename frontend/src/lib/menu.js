@@ -189,11 +189,11 @@ export const menuGroups = [
 			{ id: 'stats', label: 'Statistiken', icon: 'chart-bar', permission: 'view_stats' },
 			{ id: 'system-logs', label: 'System-Logs', icon: 'shield', permission: 'audit_logs' },
 			{
-				// „Schuljahreswechsel" = der LMF-Plan (Peter, 05.09.2026 abends): Rückgabe- und
+				// „Schuljahreswechsel" = der LMF-Plan (Absprache vom 05.09.2026 abends): Rückgabe- und
 				// Ausgabetermine je Klasse, ein- bis zweimal im Jahr gebraucht — deshalb unter
 				// System und nicht dauerhaft im Bibliotheks-Menü („lenkt nur ab"). Am selben
 				// Abend stand er kurz als Sammelseite unter Verwaltung, mit Abgängern und
-				// LUSD/Versetzung als Reitern; Peter: Abgänger bleibt unter Verwaltung, der
+				// LUSD/Versetzung als Reitern; Absprache: Abgänger bleibt unter Verwaltung, der
 				// LUSD-Import in den Einstellungen, der Plan hierher. edit_books wie die übrige
 				// Lernmittel-Pflege; das Kollegium liest den Plan im Portal.
 				id: 'schuljahr',
@@ -202,7 +202,7 @@ export const menuGroups = [
 				permission: 'edit_books'
 			},
 			// „LMF-Aktionen" stand hier bis zum 24.08.2026 als eigener Punkt (zuvor in
-			// „Verwaltung"). Auf Peters Ansage in die Einstellungen gewandert — die
+			// „Verwaltung"). Auf Ansage in die Einstellungen gewandert — die
 			// Massenverlaengerung wird "fast nie" gebraucht, weil der LUSD-Import
 			// massgebend ist. Damit sieht sie nur noch, wer die Einstellungen sieht.
 			{
@@ -246,7 +246,7 @@ export const menuGroups = [
 	},
 	{
 		name: 'Kollegium',
-		// Am RECHT, nicht an der Rolle (Peter, 26.08.2026): Bis dahin stand hier
+		// Am RECHT, nicht an der Rolle (26.08.2026): Bis dahin stand hier
 		// roles: ['kollegium'] — eine Lehrkraft, die in Bibliothek/LMF mitarbeitet und
 		// deshalb als Mitarbeiter angelegt ist, fand das Portal nicht, obwohl der Server
 		// sie (create_reservations) überall hineinließ. Zwei Wahrheitsquellen, die nur

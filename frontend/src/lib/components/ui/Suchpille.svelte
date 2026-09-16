@@ -6,7 +6,7 @@
 	 * (nicht ein Datenfeld in einem Formular).
 	 *
 	 * Die Bauart gab es schon dreifach: in der Kiosk-Omnibox, in der Medienkatalog-Suche
-	 * und, davon abgewichen, im Kollegiums-Portal und im öffentlichen OPAC. Peter am
+	 * und, davon abgewichen, im Kollegiums-Portal und im öffentlichen OPAC. Absprache vom
 	 * 10.08.2026: „die omnibox bei mein portal und katalog ist eine komplett andere".
 	 * Gemessen stimmte das an sieben Stellen gleichzeitig — Höhe, Radius, Fläche,
 	 * Rahmen, Fokusfarbe, Schriftgröße und der Platzhaltertext („… suchen …" gegen
@@ -20,7 +20,7 @@
 	 * KEIN `focus-within:shadow-md` (entfernt 11.08.2026). Es stand hier, weil die
 	 * Medienkatalog-Fassung es mitbrachte — die Kiosk-Omnibox hatte es nie. Damit sahen die
 	 * Pillen im Fokus unterschiedlich aus, und das Gate merkte es nicht: Es verglich die
-	 * BREITE des Randes, nicht Farbe und Schatten. Peter ist es am Bildschirm aufgefallen.
+	 * BREITE des Randes, nicht Farbe und Schatten. Aufgefallen ist es am Bildschirm.
 	 * Sachlich gehört es ohnehin nicht dazu — M3 hebt eine Suchleiste beim Fokussieren
 	 * nicht an, und Erhebung ist dort ohnehin Farbe (tonal), kein Schlagschatten. Das
 	 * Fokus-Signal ist der Umriss.
@@ -41,7 +41,7 @@
 	 * element: bind:this-Ersatz für Aufrufer, die den Fokus selbst setzen (Inventur-Scan
 	 * nach jedem Treffer). disabled: während ein Scan verarbeitet wird.
 	 *
-	 * WO SIE HINGEHÖRT (Peter, 04.09.2026: „eine Leiste! aber nicht 2 … es soll gleich
+	 * WO SIE HINGEHÖRT (Absprache vom 04.09.2026: „eine Leiste! aber nicht 2 … es soll gleich
 	 * aussehen"): Jede Seite hat GENAU EINE Suche, und die ist diese Pille — über die volle
 	 * Breite, ganz oben im Inhalt. Filter, Auswahlfelder und Knöpfe stehen in einer eigenen
 	 * Zeile DARUNTER und bleiben auf der 36-px-Grundlinie (ui/Suchfeld.svelte); nebeneinander

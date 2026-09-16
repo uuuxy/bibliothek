@@ -3,7 +3,7 @@ import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
 
 // Die Aufschrift des gedruckten Ausweises, gemessen am LIVE-Pfad.
 //
-// Gemeldet am 16.09.2026 (Peter): „wenn ein Lehrer einen Ausweis drucken möchte, sollte da
+// Gemeldet am 16.09.2026 : „wenn ein Lehrer einen Ausweis drucken möchte, sollte da
 // natürlich Lehrerausweis stehen anstatt schülerausweis".
 //
 // Warum das ein e2e-Fall ist und nicht nur ein Unit-Test: Der Titel war ein gewöhnliches

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 099: LMF-Plan — feste Plätze und freie Tage
 -- =============================================================================
--- Peter 05.09.2026, nach dem ersten Plan aus Migration 097: „manchmal gibt es ja auch
+-- Absprache vom 05.09.2026, nach dem ersten Plan aus Migration 097: „manchmal gibt es ja auch
 -- noch gesetzliche Feiertage, oder ich muss eine Klasse komplett auf einen anderen Tag
 -- schieben, weil sie einen Ausflug haben."
 --

@@ -13,13 +13,13 @@ func TestDarfSichSelbstAnmelden(t *testing.T) {
 		erlaub bool
 		warum  string
 	}{
-		{"peter.flasch@philipp-reis-schule.de", true, "regulärer Fall"},
-		{"Peter.Flasch@Philipp-Reis-Schule.DE", true, "Groß-/Kleinschreibung ist egal"},
+		{"nina.berger@philipp-reis-schule.de", true, "regulärer Fall"},
+		{"Nina.Berger@Philipp-Reis-Schule.DE", true, "Groß-/Kleinschreibung ist egal"},
 		{"a@fremde-schule.de", false, "fremde Domain"},
 		{"a@boesephilipp-reis-schule.de", false, "Suffix-Falle: endet auf die Domain, ist sie aber nicht"},
 		{"a@philipp-reis-schule.de.angreifer.net", false, "Domain steckt nur mittendrin"},
 		{"a@angreifer.net/philipp-reis-schule.de", false, "Contains-Falle"},
-		{"peter.flasch@philipp-reis-schule.de@angreifer.net", false, "zweites @ hängt hinten dran"},
+		{"nina.berger@philipp-reis-schule.de@angreifer.net", false, "zweites @ hängt hinten dran"},
 		{"ohne-at-zeichen", false, "gar keine Domain"},
 		{"@philipp-reis-schule.de", false, "leerer Adressteil"},
 	}
@@ -37,7 +37,7 @@ func TestDarfSichSelbstAnmelden(t *testing.T) {
 func TestSelbstanmeldungIstOhneEinstellungAus(t *testing.T) {
 	t.Setenv(selbstanmeldeDomainEnv, "")
 
-	if darfSichSelbstAnmelden("peter.flasch@philipp-reis-schule.de") {
+	if darfSichSelbstAnmelden("nina.berger@philipp-reis-schule.de") {
 		t.Error("ohne SELBSTANMELDUNG_DOMAIN darf sich niemand selbst anlegen")
 	}
 	if got := SelbstanmeldungStatus(); got == "" {
@@ -50,14 +50,14 @@ func TestSelbstanmeldungIstOhneEinstellungAus(t *testing.T) {
 func TestDomainMitFuehrendemAt(t *testing.T) {
 	t.Setenv(selbstanmeldeDomainEnv, "@philipp-reis-schule.de")
 
-	if !darfSichSelbstAnmelden("peter.flasch@philipp-reis-schule.de") {
+	if !darfSichSelbstAnmelden("nina.berger@philipp-reis-schule.de") {
 		t.Error("SELBSTANMELDUNG_DOMAIN mit führendem @ muss genauso wirken")
 	}
 }
 
 func TestNamenAusAdresse(t *testing.T) {
 	faelle := []struct{ email, vorname, nachname string }{
-		{"peter.flasch@philipp-reis-schule.de", "Peter", "Flasch"},
+		{"nina.berger@philipp-reis-schule.de", "Nina", "Berger"},
 		{"anna.maria.weber@schule.de", "Anna", "Maria.weber"}, // nur am ERSTEN Punkt geteilt
 		{"sekretariat@schule.de", "", "Sekretariat"},
 		{"j.doe@schule.de", "J", "Doe"},

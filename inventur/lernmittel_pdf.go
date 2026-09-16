@@ -12,7 +12,7 @@ import (
 	"github.com/jung-kurt/gofpdf"
 )
 
-// Der Schulbuch-Export ist ein PDF, kein Excel (Peter, 03.09.2026): „es rechnet niemand,
+// Der Schulbuch-Export ist ein PDF, kein Excel (03.09.2026): „es rechnet niemand,
 // also können wir Excel löschen." Entscheidend war das Coverbild — in einer .xlsx schwebt
 // ein Bild über der Zelle statt darin, verrutscht beim Sortieren und bläht die Datei.
 // Im PDF steht es fest an seiner Zeile, druckt sauber und öffnet sich ohne Excel.
@@ -56,7 +56,7 @@ func titelBreite(mitGezaehlt bool) float64 {
 // oder "" für alle Fächer), zusatz die aktive Einschränkung als Klartext.
 func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byte, error) {
 	// Die Zählspalte erscheint nur, wenn in dieser Auswahl überhaupt etwas gezählt wurde
-	// (Peter, 03.09.2026). Eine Spalte, die auf jedem Blatt leer bliebe, nähme der
+	// (03.09.2026). Eine Spalte, die auf jedem Blatt leer bliebe, nähme der
 	// Titelspalte 17 mm weg und behauptete zugleich eine Angabe, die es nicht gibt.
 	mitGezaehlt := false
 	for _, t := range titel {

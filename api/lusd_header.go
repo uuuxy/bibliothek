@@ -26,7 +26,7 @@ func normalizeHeader(h string) string {
 // (Individueller Bericht, z. B. "Schueler_Vorname") und ohne (Standardexport,
 // z. B. "Vorname"). Erweiterbar ohne Datenbank-/Migrationsaufwand.
 //
-// Dritter Stil (26.08.2026, eine Klassenliste mit LUSD-Feldkürzeln auf Peters Rechner —
+// Dritter Stil (26.08.2026, eine Klassenliste mit LUSD-Feldkürzeln aus der Schule —
 // kein LUSD-Export, aber dieselben Kürzel): SLR_ (Schüler), KLA_ (Klasse): SLR_Nachname,
 // SLR_Vorname, SLR_Strasse, SLR_PLZ, SLR_ORT, KLA_Klassennamen. Ohne diese Aliase bricht
 // der Import an solchen Köpfen mit „Pflichtspalte 'vorname' fehlt" ab.

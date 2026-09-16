@@ -18,7 +18,7 @@ import { MERKZETTEL } from './global-setup.js';
 // echte Bestellung, deren Lieferant gelöscht wurde, stimmt das — sie ist ein Beleg.
 // Eine E2E-Bestellung belegt nichts. Sie blieb trotzdem liegen, jeder Lauf legte neue
 // nach, und in der Bestellhistorie summierte sich das zu „Gesamtausgaben", die niemand
-// je ausgegeben hat. Peter beim Blick auf die Zahl: „wie kommt denn da oben die zahl
+// je ausgegeben hat. Beim Blick auf die Zahl kam die Frage: „wie kommt denn da oben die zahl
 // 310933 zusammen?" — der Löwenanteil war ein Lasttest, der Rest genau dieser Bodensatz.
 //
 // Erkannt am lieferant_name in der Bestellung selbst, nicht über den Fremdschlüssel:

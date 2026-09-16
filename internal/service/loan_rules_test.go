@@ -392,7 +392,7 @@ func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 	}
 }
 
-// Am oder nach dem Rückgabetermin der Klasse (Entscheidung 13.09.2026, Peter; docs/OFFEN.md 1.4):
+// Am oder nach dem Rückgabetermin der Klasse (Entscheidung vom 13.09.2026; docs/OFFEN.md 1.4):
 // Die Frist ist der Stichtag des FOLGENDEN Schuljahres. Bis zum 14.09.2026 war sie am Termintag
 // der Termin selbst (heute 23:59) und danach der Stichtag des laufenden Schuljahres — in den
 // Ferien; nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.

@@ -115,7 +115,7 @@
 </script>
 
 <div class="w-full space-y-6 animate-fade-in no-print pb-12">
-	<!-- Zwei gleichrangige Aufgaben, zwei M3-Primary-Tabs links oben (Peters Entscheidung
+	<!-- Zwei gleichrangige Aufgaben, zwei M3-Primary-Tabs links oben (entschieden am
 	     26.08.2026): Benutzer zuerst, weil das die häufige Aufgabe ist (Kollegin anlegen,
 	     Rolle zuweisen); Rollen & Rechte dahinter, weil selten und folgenschwer. Vorher: ein
 	     Segmented-Button mit Emoji rechts in der Ecke, 12 px, unter einem Menüpunkt, der

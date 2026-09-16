@@ -4,7 +4,7 @@
 -- Migration 017 (Mahnwesen-PR #287) legte die Tabelle an, damit das Mahnwesen in
 -- Ferien und Schließzeiten pausiert: Banner, Sperre für Mail und PDF. Einen Schreiber
 -- bekam sie nie — keine Oberfläche, kein Import, nur ein PG-Test. Die Tabelle war
--- deshalb immer leer, die Sperre griff nie, das Banner erschien nie. Peter, 06.09.2026,
+-- deshalb immer leer, die Sperre griff nie, das Banner erschien nie. Absprache vom 06.09.2026,
 -- zur Wahl „ausbauen oder aus der Ferientabelle speisen": ausbauen — das Mahnwesen wird
 -- nur von Hand bedient, eine automatische Pause schützt vor nichts Realem.
 -- Der LMF-Plan las die Tabelle seit 099 mit; er hat seine eigenen freien Tage

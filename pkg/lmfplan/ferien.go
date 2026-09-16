@@ -4,12 +4,12 @@ import "time"
 
 // Sommerferien Hessen nach der langfristigen Sommerferienregelung der Kultusminister-
 // konferenz (Beschluss vom 21.09.2022 für 2025–2030, kmk.org/service/ferienregelung).
-// Peter, 06.09.2026: „Das Programm kann das doch sicherlich automatisch setzen — es
+// Absprache vom 06.09.2026: „Das Programm kann das doch sicherlich automatisch setzen — es
 // endet immer am gleichen Tag: Donnerstags vor den Ferien zur vierten Stunde." Die
 // Tabelle IST diese Automatik. Eine Schnittstelle, die ein Schulserver dafür abfragen
 // sollte, gibt es nicht; die KMK beschließt in Blöcken von sechs Jahren. Läuft die
 // Tabelle aus, sagt es der Planer (ok=false); zwei Jahre vorher warnen die Selbstprüfung
-// unter System → Betriebsbereitschaft (Peter, 06.09.2026: „also bekommen wir eine
+// unter System → Betriebsbereitschaft (Absprache vom 06.09.2026: „also bekommen wir eine
 // Warnung, die Termine nachzutragen?") und TestSommerferienHessen_Horizont. Seit dem
 // 06.09.2026 abends trägt die Schule spätere Jahre SELBST ein (Einstellung
 // „sommerferien", ferien_einstellung.go) — diese Tabelle ist die Vorbelegung, der
@@ -41,7 +41,7 @@ func ferien(von, bis string) Zeitraum {
 // Ferientabelle sind die Sommerferien, an denen sich die Pläne ausrichten: die
 // Programmtabelle oben plus das, was die Schule selbst eingetragen hat (Einstellung
 // „sommerferien", ferien_einstellung.go). Ein eigener Eintrag gewinnt über die
-// Programmtabelle für dasselbe Jahr. Peter, 06.09.2026: „Es muss doch dann irgendwo
+// Programmtabelle für dasselbe Jahr. Absprache vom 06.09.2026: „Es muss doch dann irgendwo
 // eingestellt werden" — eine Warnung, die nur ein Entwickler beheben kann, ist für
 // den Betreiber keine Abhilfe.
 type Ferientabelle struct {

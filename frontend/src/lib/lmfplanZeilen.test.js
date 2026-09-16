@@ -12,7 +12,7 @@ import {
 // Die Nachbar-Regel (06.09.2026): Eine Klasse, die in den Plan kommt, landet hinter der
 // letzten Klasse desselben Jahrgangs und Zweigs — nicht am Ende, von wo man sie durch
 // sechzig Zeilen schieben müsste. Das ist die Antwort auf „es steht oben was und unten
-// was" (Peter), nach dem Vorbild von Google Forms und Slides (Neues kommt hinter das,
+// was" , nach dem Vorbild von Google Forms und Slides (Neues kommt hinter das,
 // woran man arbeitet).
 const z = (/** @type {string[]} */ ...klassen) => ({ klassen, vermerk: '', fest: null });
 

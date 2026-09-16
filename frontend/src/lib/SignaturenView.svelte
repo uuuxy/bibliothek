@@ -42,7 +42,7 @@
 	     Suche der Seite und hat damit dieselbe Breite und Kante wie überall sonst. -->
 	<!-- Der Erklaersatz steht UNTER dem Feld, nicht darueber: Er erklaert, wie diese Suche
 	     liest — in M3 die Rolle des „supporting text". Bis zum 04.09.2026 stand er darueber
-	     und schob als einziges Element im Haus die Pille aus der Startlinie (Peter: „die
+	     und schob als einziges Element im Haus die Pille aus der Startlinie (Absprache: „die
 	     Suchleiste ist immer an anderen Positionen"). -->
 	<div class="flex flex-col gap-2">
 		<Suchpille

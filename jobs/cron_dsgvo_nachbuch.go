@@ -11,7 +11,7 @@ import (
 // Quittierte Nachbuch-Meldungen (Migration 117) tragen Ausleiher und Vorbesitzer mit
 // Namen. Erledigt sind sie mit dem Quittieren; danach halten sie nur noch fest, was
 // jemand schon gesehen hat. Sie fallen nach der Lesehistorie-Frist, höchstens nach
-// 30 Tagen (Entscheidung Peter, 13.09.2026). Offene Meldungen haben keine Frist — sie
+// 30 Tagen (entschieden am 13.09.2026). Offene Meldungen haben keine Frist — sie
 // sind ausstehende Arbeit und werden vom Wächter der Betriebsbereitschaft genannt.
 //
 // Das Prädikat kommt aus repository/loeschfristen.go — DERSELBE String wie im

@@ -5,7 +5,7 @@ import LeserEditFelder from './components/students/LeserEditFelder.svelte';
 // EINE Maske für jeden Leser.
 //
 // Der erste Bau blendete die Felder je nach Art ein und aus: Ein Kollege bekam vier
-// Felder weniger und einen anderen Abschnittstitel. Peter am 16.09.2026, beim Blick
+// Felder weniger und einen anderen Abschnittstitel. Absprache vom 16.09.2026, beim Blick
 // darauf: „warum eine andere maske als bei schülern? das ist doch schon wieder viel zu
 // kompliziert." Zwingend ist nur, was die Datenbank verbietet oder was fachlich falsch
 // wäre — nicht, was mir vorsichtig erschien.

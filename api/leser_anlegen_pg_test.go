@@ -14,7 +14,7 @@ import (
 
 // „Neuen Leser anlegen" fragt zuerst nach der Art. Ein Schüler entsteht wie bisher; eine
 // Lehrkraft bekommt eine LESERZEILE und KEIN Konto — das holt sie sich über die
-// Selbstanmeldung mit ihrer Schuladresse (Peter, 16.09.2026).
+// Selbstanmeldung mit ihrer Schuladresse (16.09.2026).
 //
 // Vier Dinge unterscheiden die beiden Wege, und jedes davon wäre einzeln ein stiller
 // Fehler:
@@ -80,7 +80,7 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 	if klasse != "" || abgang != nil {
 		t.Errorf("eine Lehrkraft hat keine Klasse und kein Abgangsjahr: %q / %v", klasse, abgang)
 	}
-	// UMGEKEHRT seit dem 16.09.2026 (Peter): Die Leserdatei legt das Konto MIT an, weil die
+	// UMGEKEHRT seit dem 16.09.2026 : Die Leserdatei legt das Konto MIT an, weil die
 	// Schul-E-Mail beim Anlegen Pflicht ist. Nur so findet die spätere Selbstanmeldung über
 	// „Mein Portal" diesen Eintrag wieder, statt einen zweiten anzulegen — der Doppeleintrag
 	// war sonst unbemerkt und von niemandem zu reparieren. Der Zugang selbst bleibt eine

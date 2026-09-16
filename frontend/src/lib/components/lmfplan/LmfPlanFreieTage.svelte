@@ -6,7 +6,7 @@
      mit drei Spalten für eine Eingabe, die ein- bis zweimal im Jahr vorkommt. Darunter
      die Zeile „Übersprungen", die jeden ausgefallenen Werktag des Plan-Zeitraums mit
      Grund nennt — Feiertage eingeschlossen, damit ein fehlender Donnerstag in der
-     Tabelle erklärt ist (Peter, 05.09.2026). Kein eigener Abschnitt: Das Bauteil ist
+     Tabelle erklärt ist (05.09.2026). Kein eigener Abschnitt: Das Bauteil ist
      die vierte Spalte des Zeitraum-Rasters in LmfPlanRahmen (Subgrid-Zeilen wie
      Feld.svelte), „Übersprungen" liegt darunter über die volle Breite. -->
 <script>

@@ -3,7 +3,7 @@
      nach der Regel, Entwurf, veröffentlichter Plan). Gespeichert wird ein ENTWURF;
      „Veröffentlichen" (Migration 100) macht ihn für Portal und PDF des Kollegiums
      sichtbar und setzt beim Büchertausch die Fristen — vorher nimmt die Schulleitung
-     ihn ab, dafür das PDF (Peter, 06.09.2026). Die Aktionen erscheinen nur, wenn ein
+     ihn ab, dafür das PDF (06.09.2026). Die Aktionen erscheinen nur, wenn ein
      Stand geladen ist — „Plan speichern" auf einem gescheiterten Laden würde den echten
      Plan durch den Entwurf ersetzen (ui/LadeFehler.svelte).
 
@@ -71,7 +71,7 @@
 	</div>
 
 	{#if !laedt && !ladeFehler}
-		<!-- EIN Satz Stand, keine Regelerklärung (Peter, 06.09.2026: „diese seltsamen
+		<!-- EIN Satz Stand, keine Regelerklärung (Absprache vom 06.09.2026: „diese seltsamen
 		     Erklärungstexte müssen weg") — die Regeln stehen im Handbuch. Der Satz
 		     beschreibt, was auf dem Bildschirm steht: „Noch kein Plan" über einer vollen
 		     Tabelle beschrieb die Datenbank, nicht die Seite. -->

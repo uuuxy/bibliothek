@@ -1,11 +1,11 @@
 <!-- @component LmfPlan — der Planer: eine REIHENFOLGE von Klassen, die der Server auf
-     Schultage × Stunden gießt (Peter, 05.09.2026): Rahmen, Reihenfolge mit Vorschau der
+     Schultage × Stunden gießt (05.09.2026): Rahmen, Reihenfolge mit Vorschau der
      Plätze und, darüber, „Noch nicht im Plan". Gespeichert wird ein ENTWURF (Migration
      100), für Portal und Kollegiums-PDF unsichtbar; erst „Veröffentlichen" macht ihn
      gültig und setzt beim Büchertausch die Fristen (die Schulleitung nimmt ihn vorher
      ab). System → „Schuljahreswechsel".
 
-     Aufbau seit 06.09.2026 nach Arbeitsablauf, nicht nach Datenmodell (Peter: „es steht
+     Aufbau seit 06.09.2026 nach Arbeitsablauf, nicht nach Datenmodell (Absprache: „es steht
      oben was und unten was"): Kopf haftet oben, freie Tage als Chips, fehlende Klassen
      direkt über der Reihenfolge; einplanen setzt an den Platz (lmfplanZeilen.js).
 

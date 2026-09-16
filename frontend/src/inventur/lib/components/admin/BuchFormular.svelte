@@ -89,7 +89,7 @@
 		</button>
 	</div>
 
-	<!-- Zwei Spalten wie eine Play-Store-Detailseite (Peter, 02.09.2026): Felder links,
+	<!-- Zwei Spalten wie eine Play-Store-Detailseite (02.09.2026): Felder links,
 	     Cover rechts und beim Scrollen stehend. Vorher saß das Cover klein oben in der
 	     Mitte und jedes Feld lief über die volle Breite — zwei Meter Formular. -->
 	<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_14rem] lg:gap-10">

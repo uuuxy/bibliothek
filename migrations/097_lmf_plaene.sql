@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Migration 097: LMF-Plan als Reihenfolge — Rahmen je Art und Schuljahr
 -- =============================================================================
--- Peter 05.09.2026 abends, nach dem ersten Blick auf die Seite aus Migration 096: Der
+-- Absprache vom 05.09.2026 abends, nach dem ersten Blick auf die Seite aus Migration 096: Der
 -- Plan der Schule ist keine Liste einzeln angelegter Zeilen, sondern eine REIHENFOLGE
 -- von Klassen, die auf Schultage × Stunden gegossen wird — Abschlussklassen zuerst,
 -- dann jeder Schultag Stunde 1–6, eine Klasse je Stunde, die Reihenfolge läuft über

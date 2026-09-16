@@ -208,7 +208,7 @@ func TestSchulEmailNachtragen(t *testing.T) {
 
 // Die Ausweisnummer eines Kollegen lässt sich wieder entfernen — die des Schülers nicht.
 //
-// Peters Blick auf die fertige Maske am 16.09.2026 brachte den Fall ans Licht: Der
+// der Blick auf die fertige Maske am 16.09.2026 brachte den Fall ans Licht: Der
 // Hinweis unter dem Feld sagt dem Kollegen „Leer lassen, solange kein Ausweis gedruckt
 // ist" — leeren ließ es sich aber nicht mehr, sobald einmal etwas drinstand. Das Formular
 // ließ das leere Feld weg und meldete Erfolg, der Server hätte es mit 400 abgewiesen. Ein

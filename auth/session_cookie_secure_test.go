@@ -57,12 +57,12 @@ func TestLoginCookieFolgtDerKonfiguration(t *testing.T) {
 			aktiviereMockIMAP(t)
 			a, mock := newTestAuthenticator(t, 12*time.Hour)
 			mock.ExpectQuery(benutzerSelect).
-				WithArgs("pflasch@schule.de").
+				WithArgs("nberger@schule.de").
 				WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
-					AddRow("u-admin", "BC-TEST", "admin", "Peter", "Flasch", true, "peter@example.org", false))
+					AddRow("u-admin", "BC-TEST", "admin", "Nina", "Berger", true, "nina@example.org", false))
 
 			req := httptest.NewRequest(http.MethodPost, "/login",
-				strings.NewReader(`{"email":"pflasch@schule.de","password":"egal"}`))
+				strings.NewReader(`{"email":"nberger@schule.de","password":"egal"}`))
 			rec := httptest.NewRecorder()
 			LoginHandler(mock, a, secure)(rec, req)
 

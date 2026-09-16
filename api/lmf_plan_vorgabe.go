@@ -1,6 +1,6 @@
 package api
 
-// lmf_plan_vorgabe.go — womit ein neuer LMF-Plan beginnt. Peter, 06.09.2026, mit dem
+// lmf_plan_vorgabe.go — womit ein neuer LMF-Plan beginnt. Absprache vom 06.09.2026, mit dem
 // Excel „Bücherrückgabe" in der Hand: „Das Programm kann das doch sicherlich automatisch
 // setzen — es endet immer am gleichen Tag: Donnerstags vor den Ferien zur vierten
 // Stunde." Der Büchertausch vor den Sommerferien hat seinen Anker deshalb am ENDE
@@ -15,7 +15,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Peters Pläne 2026: Der Tausch endet in der 4. Stunde; die Ausgabe beginnt am ersten
+// Die Pläne 2026 der Schule: Der Tausch endet in der 4. Stunde; die Ausgabe beginnt am ersten
 // Schultag nach den Ferien in der 2. Stunde (die 1. gehört der Klassenleitung); 6 je Tag.
 const (
 	lmfPlanLetzteStundeVorgabe = 4

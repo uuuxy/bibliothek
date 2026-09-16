@@ -72,7 +72,7 @@ describe('authStore Session-Restore (Boot)', () => {
 			json: async () => ({
 				user_id: 'u1',
 				rolle: 'admin',
-				vorname: 'Peter',
+				vorname: 'Nina',
 				nachname: 'F',
 				permissions: ['*']
 			})
@@ -120,7 +120,7 @@ describe('authStore Session-Restore (Boot)', () => {
 				{
 					ok: true,
 					status: 200,
-					json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Peter' })
+					json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Nina' })
 				}
 			];
 			// @ts-expect-error  Test-Double: Teilobjekt statt vollständiger Response
@@ -365,7 +365,7 @@ describe('authStore: Abmeldung, die den Server nicht erreicht', () => {
 		globalThis.fetch = vi.fn(async () => ({
 			ok: true,
 			status: 200,
-			json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Peter' }),
+			json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Nina' }),
 			text: async () => ''
 		}));
 		authStore.loginEmail = 'p@schule.invalid';
@@ -390,7 +390,7 @@ describe('authStore: Abmeldung, die den Server nicht erreicht', () => {
 		globalThis.fetch = vi.fn(async () => ({
 			ok: true,
 			status: 200,
-			json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Peter' })
+			json: async () => ({ user_id: 'u1', rolle: 'admin', vorname: 'Nina' })
 		}));
 
 		await authStore.restoreSession();

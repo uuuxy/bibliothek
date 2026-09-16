@@ -34,7 +34,7 @@
 	}
 </script>
 
-<!-- EINE Ansicht für jeden Leser — dieselbe Regel wie im Formular (Peter, 16.09.2026:
+<!-- EINE Ansicht für jeden Leser — dieselbe Regel wie im Formular (Absprache vom 16.09.2026:
      „bitte nicht verkomplizieren").
 
      Bis zum 16.09.2026 stand hier eine Weiche: Ein Kollege bekam eine eigene Ansicht ohne
@@ -74,7 +74,7 @@
 		<div class="space-y-6">
 			<!-- Die Art stand bis zum 16.09.2026 NUR in der Akte eines Kollegen. In der
 			     Schülerakte fehlte sie ganz — „hier steht nirgends ob jemand ein Schüler,
-			     LiV, oder lehrer ist" (Peter). Seit die Leserdatei alle in einer Tabelle
+			     LiV, oder lehrer ist" . Seit die Leserdatei alle in einer Tabelle
 			     führt, ist sie bei jedem die erste Auskunft, nicht nur bei den anderen. -->
 			<div>
 				<p class="text-xs font-medium text-on-surface-variant mb-1">Art</p>

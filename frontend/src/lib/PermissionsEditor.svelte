@@ -74,7 +74,7 @@
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}
 							<!-- KOLLEGIUM stand hier als vierte Spalte, seit die Rolle „lehrer“ am
 							     10.08.2026 so hieß (15d2806e). Sie ist am 16.09.2026 entfallen, weil
-							     Kollegium keine Rolle ist: Peter — „die Selbstregistration ist in dem
+							     Kollegium keine Rolle ist: „die Selbstregistration ist in dem
 							     Sinn keine Rolle. Das sind einfach alle.“ Eine Rolle vergibt der Admin
 							     (Leitung, Mitarbeiter, Helfer); wer keine hat, ist Kollegium, und das ist
 							     der Ausgangszustand jeder Lehrkraft, kein Rang neben den anderen.

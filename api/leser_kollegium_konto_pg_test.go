@@ -16,14 +16,14 @@ import (
 // „Neuer Leser" legt bei einer Lehrkraft das Anmeldekonto gleich mit an — und genau das
 // verhindert den Doppeleintrag.
 //
-// Der Fall, um den es geht (Peter, 16.09.2026): Eine Lehrkraft wird von Hand in die
+// Der Fall, um den es geht (16.09.2026): Eine Lehrkraft wird von Hand in die
 // Leserdatei eingetragen und meldet sich später über „Mein Portal" selbst an. Bis heute
 // entstand dabei ein zweiter Eintrag — `legeZugangsanfrageAn` schreibt das Konto, und der
 // Wächter trg_benutzer_hat_leserzeile hängt eine FRISCHE Leserzeile daran, ohne zu prüfen,
 // ob die Person schon dasteht. Ausweis und Ausleihen blieben am ersten Eintrag, die
 // Anmeldung am zweiten, und niemand merkte es.
 //
-// Die Lösung ist Peters: Die Schul-E-Mail ist beim Anlegen Pflicht. Damit entsteht das
+// Die Lösung: Die Schul-E-Mail ist beim Anlegen Pflicht. Damit entsteht das
 // Konto sofort — und weil der Anmeldeweg eine Zugangsanfrage NUR anlegt, wenn zu der
 // Adresse gar kein Konto existiert, findet die spätere Selbstanmeldung das vorhandene und
 // legt nichts Zweites an.

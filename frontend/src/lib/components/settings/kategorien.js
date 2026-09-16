@@ -56,7 +56,7 @@ export const KATEGORIEN = [
 		icon: ShoppingCart
 	},
 	{
-		// Bis 25.08.2026 ein Reiter im Bestellungs-Workspace (Peters Entscheidung: das
+		// Bis 25.08.2026 ein Reiter im Bestellungs-Workspace (entschieden: das
 		// ist Konfiguration, keine Tagesarbeit). Rechte wie die Lieferanten-Routen in
 		// routes_orders.go: Schreiben verlangt create_orders.
 		id: 'lieferanten',
@@ -111,12 +111,12 @@ export const KATEGORIEN = [
 		rechte: ['manage_inventory', 'edit_books']
 	},
 	{
-		// Eigene Kategorie (Peters Entscheidung 24.08.2026): gehört ins System-Menü unter
+		// Eigene Kategorie (entschieden am 24.08.2026): gehört ins System-Menü unter
 		// Einstellungen — aber nicht in der Datenverwaltung zwischen Littera-Import und
 		// Cover-Abgleich vergraben, wo es bis dahin stand. Am 05.09.2026 abends war die
-		// Kategorie kurz als Reiter einer Sammelseite unter Verwaltung; Peter: „der LUSD-
+		// Kategorie kurz als Reiter einer Sammelseite unter Verwaltung; Absprache: „der LUSD-
 		// Import gehört unter Einstellungen, da war er ja auch vorher". Hieß bis 06.09.
-		// „Schuljahreswechsel" — derselbe Name wie der LMF-Plan im System-Menü (Peter:
+		// „Schuljahreswechsel" — derselbe Name wie der LMF-Plan im System-Menü (Absprache:
 		// „dringend umbenennen"). Die id bleibt, die Route /einstellungen kennt sie.
 		id: 'schuljahr',
 		titel: 'LUSD & Versetzung',

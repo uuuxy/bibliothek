@@ -42,7 +42,7 @@ func lageEingerichtet() Lage {
 		// Lieferanten: erhoben, keiner trägt eine Kennung des alten Seeds.
 		BeispielLieferanten: []string{},
 		RechteLive:          rechteWieVorgabe(),
-		AdminKonten:         []string{"Peter Flasch (pflasch@philipp-reis-schule.de)"},
+		AdminKonten:         []string{"Nina Berger (nberger@philipp-reis-schule.de)"},
 		// Klassen-Drift (F3): erhoben und leer = alles verbunden.
 		KlassenOhneLehrkraft:  []string{},
 		VerwaisteZuordnungen:  []string{},

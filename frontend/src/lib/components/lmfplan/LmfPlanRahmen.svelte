@@ -1,5 +1,5 @@
 <!-- @component LmfPlanRahmen — Abschnitt „Zeitraum": der Anker des Plans und die freien
-     Tage der Schule (LmfPlanFreieTage). Der Anker hängt an der Art (Peter, 06.09.2026:
+     Tage der Schule (LmfPlanFreieTage). Der Anker hängt an der Art (Absprache vom 06.09.2026:
      „es endet immer am gleichen Tag — Donnerstags vor den Ferien zur vierten Stunde"):
      Der Büchertausch vor den Sommerferien ENDET (letzter Tag, Ende am letzten Tag), die
      Reihenfolge fließt rückwärts davor, und der Server sagt, wo sie beginnt; die
@@ -46,7 +46,7 @@
 	const ferienText = $derived.by(() => {
 		if (!sommerferien) return '';
 		if (!sommerferien.bekannt)
-			// Zeigt auf die EINSTELLUNG, nicht auf ein Programm-Update (Peter, 06.09.2026:
+			// Zeigt auf die EINSTELLUNG, nicht auf ein Programm-Update (Absprache vom 06.09.2026:
 			// „das muss doch dann irgendwo eingestellt werden"). Die Selbstprüfung sagt
 			// seit 47c1d461 dasselbe; hier stand bis zum Rasterdurchgang noch die alte,
 			// für den Betreiber nutzlose Antwort.
@@ -59,7 +59,7 @@
 	<h2 id="lmf-zeitraum-titel" class="text-title-medium font-medium text-on-surface">Zeitraum</h2>
 	<!-- Der EINE Satz unter dem Titel ist der dynamische (Ferien, gerechneter Beginn);
 	     die Regel selbst („endet am Donnerstag vor den Ferien") steht als Hinweis unter
-	     dem Datumsfeld und im Handbuch — als eigener Satz kostete sie eine Zeile (Peter,
+	     dem Datumsfeld und im Handbuch — als eigener Satz kostete sie eine Zeile (Absprache vom
 	     06.09.2026: „verschenken wir im oberen Bereich nicht viel Platz?"). -->
 	{#if ferienText || beginnText}
 		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant" data-testid="lmf-zeitraum-hinweis">

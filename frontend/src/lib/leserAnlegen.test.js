@@ -94,7 +94,7 @@ describe('Neuen Leser anlegen', () => {
 		expect(screen.container.textContent ?? '').toContain('Schul-E-Mail-Adresse fehlt');
 	});
 
-	// UMGEKEHRT seit dem 16.09.2026 (Peter): Aus der Schul-E-Mail entsteht der Zugang gleich
+	// UMGEKEHRT seit dem 16.09.2026 : Aus der Schul-E-Mail entsteht der Zugang gleich
 	// mit. Vorher stand hier ausdrücklich „kein Zugang zum Programm" — das war richtig,
 	// solange die Adresse fehlte, und führte genau zu dem Doppeleintrag, den die Pflicht
 	// jetzt abschafft. Was der Dialog NICHT vergibt, ist eine Rolle.

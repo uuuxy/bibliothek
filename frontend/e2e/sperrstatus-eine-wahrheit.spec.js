@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
 
-// Fund 31.08.2026 (Peter, flasch3): Ein Demo-Schüler stand als „Gesperrt" in Liste
+// Fund 31.08.2026 (auf flasch3): Ein Demo-Schüler stand als „Gesperrt" in Liste
 // und Profil, der Knopf bot trotzdem „Schüler sperren" an; nach Sperren+Entsperren
 // zeigte der Bildschirm „Aktiv", nach einem Reload wieder „Gesperrt".
 //

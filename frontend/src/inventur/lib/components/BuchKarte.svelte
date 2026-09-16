@@ -1,5 +1,5 @@
 <!-- @component BuchKarte — eine Kachel des Medienkatalogs, gebaut wie Google Play Books
-     (02.09.2026, mit Peter entschieden): Das COVER ist die Kachel, der Text steht darunter
+     (entschieden am 02.09.2026): Das COVER ist die Kachel, der Text steht darunter
      auf der Fläche. Kein Kartenrahmen, kein Schatten, kein Trennstrich, kein Kasten um
      das Prüfdatum — beim Zeigen nur die M3-Zustandsschicht (m3-state) als weiche
      Tonfläche um Bild und Text.

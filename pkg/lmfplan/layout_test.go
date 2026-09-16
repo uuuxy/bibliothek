@@ -112,7 +112,7 @@ func TestVerteileMit_FesterPlatzWirdAusgelassen(t *testing.T) {
 	}
 }
 
-// Peters echter Plan 2026 vom Ende her (06.09.2026: „es endet immer am gleichen Tag —
+// Der echte Plan 2026 vom Ende her (06.09.2026: „es endet immer am gleichen Tag —
 // Donnerstags vor den Ferien zur vierten Stunde"): 56 Zeilen, Ende Do 25.06. 4. Stunde,
 // Do 18.06. frei (im Excel steht dort keine Klasse) → Beginn Do 11.06. 3. Stunde, genau
 // wie im Excel. Ohne den freien Tag rückt der Beginn auf Fr 12.06. 3. Stunde — der

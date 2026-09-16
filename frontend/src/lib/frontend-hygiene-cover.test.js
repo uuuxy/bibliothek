@@ -11,7 +11,7 @@ import {
 // Buchcover kommen aus components/ui/BuchCover.svelte — dieselbe Invariante wie bei
 // Suchfeldern, Reitern und Symbolen.
 //
-// Anlass (04.09.2026): Peter fragte, warum der Bestellbedarf keine Cover zeigt. Beim
+// Anlass (04.09.2026): Es kam die Frage, warum der Bestellbedarf keine Cover zeigt. Beim
 // Nachsehen fanden sich FÜNF Größen im Haus (w-7, w-8, w-10, w-12, w-16) und VIER
 // Kopien derselben Ausweich-Logik — BuchKarte, KlassenBuchKachel, BookTableZeile und
 // IsbnLookupDialog liefen jede für sich durch dieselbe Kandidatenliste, mit eigener

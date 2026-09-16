@@ -23,7 +23,7 @@ const (
 
 // LmfTermin ist eine Zeile des Plans, so wie Oberfläche und PDF sie lesen. „Nur
 // Rückgabe" ist seit 06.09.2026 kein gerechnetes Feld mehr, sondern Text im Vermerk —
-// der Planer belegt ihn im Vorschlag vor, die Bibliothek darf ihn ändern (Peter: „fest
+// der Planer belegt ihn im Vorschlag vor, die Bibliothek darf ihn ändern (Absprache: „fest
 // verankert … das ist nicht gut, es sollte im Feld sein").
 type LmfTermin struct {
 	ID      string   `json:"id"`
@@ -118,7 +118,7 @@ type LmfTerminLage struct {
 	Bevorstehend bool
 	// Vergangen: die Klasse hatte im Schuljahr des Tages schon einen Rückgabe-Termin am
 	// oder vor dem Tag. Dann bekommt ein Schulbuch, das jetzt noch ausgegeben wird, den
-	// Stichtag des FOLGENDEN Schuljahres als Frist (Entscheidung 13.09.2026, Peter). Bis
+	// Stichtag des FOLGENDEN Schuljahres als Frist (Entscheidung vom 13.09.2026). Bis
 	// zum 14.09.2026 galt am Termintag der Termin selbst als Frist (heute 23:59) und danach
 	// der Stichtag des laufenden Schuljahres — ein Tag in den Ferien; nach den Ferien wäre
 	// die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.

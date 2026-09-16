@@ -78,7 +78,7 @@ type LusdBestandsSchueler struct {
 // sonst würde der aktive Schüler nie neu angelegt. Läuft in der Import-Transaktion.
 //
 // art = 'schueler' ist seit Migration 123 ebenso zwingend. Die Tabelle führt alle Leser,
-// und durch die LUSD kommen ausschließlich Schüler (Peter, 16.09.2026). Ohne die
+// und durch die LUSD kommen ausschließlich Schüler (16.09.2026). Ohne die
 // Einschränkung stünde jeder Kollege im Bestand, den der Export nicht kennt — also jeder —
 // und der Abgleich machte ihn zum Abgänger: gesperrt, und nach der Karenz Name, Adresse
 // und Geburtsdatum geleert. Gemerkt hätte es niemand, bis jemand einen Namen sucht.

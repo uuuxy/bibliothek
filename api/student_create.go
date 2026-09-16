@@ -105,7 +105,7 @@ type CreateStudentRequest struct {
 	// Art: schueler | lehrkraft | liv. Leer heißt „schueler" — die Vorgabe der Spalte
 	// und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.
 	Art string `json:"art"`
-	// Email ist die Schuladresse einer Lehrkraft oder LiV und dort PFLICHT (Peter,
+	// Email ist die Schuladresse einer Lehrkraft oder LiV und dort PFLICHT (Absprache vom
 	// 16.09.2026). Bei einem Schüler bleibt sie leer — er hat kein Konto.
 	//
 	// Sie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine
@@ -444,7 +444,7 @@ func pruefeLeserNamensdublette(ctx context.Context, tx pgx.Tx, vorname, nachname
 // AusweisPraefix steht auf JEDER Ausweisnummer, die dieses System vergibt — für einen
 // Schüler wie für einen Kollegen.
 //
-// „A" wie Ausweis (Peter, 16.09.2026). Vorher gab es zwei: „S-" aus der Handanlage und
+// „A" wie Ausweis (16.09.2026). Vorher gab es zwei: „S-" aus der Handanlage und
 // dem LUSD-Import, „L-" aus dem Littera-Personenlauf. Beide Buchstaben behaupteten etwas
 // über die PERSON — Schüler, Lehrer —, und das ist seit der Leserdatei falsch: Wer jemand
 // ist, steht in den Stammdaten, nicht auf seinem Ausweis. Ein Nummernkreis, ein Buchstabe.
