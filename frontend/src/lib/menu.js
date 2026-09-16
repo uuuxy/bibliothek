@@ -161,7 +161,10 @@ export const menuGroups = [
 	{
 		name: 'Verwaltung',
 		items: [
-			{ id: 'students_dir', label: 'Schülerdatei', icon: 'users', permission: 'view_students' },
+			// „Leserdatei", nicht „Schülerdatei": Seit Migration 125 stehen Schüler und
+			// Kollegium in einer Tabelle, und die Liste zeigt beide. Das Recht bleibt
+			// view_students — es ist dasselbe Verzeichnis, nur vollständig.
+			{ id: 'students_dir', label: 'Leserdatei', icon: 'users', permission: 'view_students' },
 			{
 				// Seit 24.08.2026 unter Verwaltung (vorher Kiosk): Mahnen ist Schülerarbeit,
 				// keine Thekenarbeit.

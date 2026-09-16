@@ -21,8 +21,8 @@
 		id="schuelerdatei-suchfeld"
 		bind:wert={searchQuery}
 		oninput={onsearch}
-		platzhalter="Name, Klasse oder Barcode eingeben …"
-		etikett="Schüler suchen"
+		platzhalter="Name, Klasse oder Ausweisnummer eingeben …"
+		etikett="Leser suchen"
 	/>
 
 	<div class="flex items-center gap-4">

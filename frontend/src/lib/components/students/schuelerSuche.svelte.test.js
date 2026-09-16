@@ -26,7 +26,7 @@ const fehler = (meldung) =>
 		text: async () => JSON.stringify({ error: meldung })
 	});
 
-describe('Schülerdatei-Suche', () => {
+describe('Leserdatei-Suche', () => {
 	beforeEach(() => vi.mocked(apiFetch).mockReset());
 
 	it('zeigt nach einem gescheiterten Lauf keine Treffer von vorher', async () => {
@@ -54,6 +54,31 @@ describe('Schülerdatei-Suche', () => {
 			await suche.lade();
 			expect(suche.students).toHaveLength(1);
 			expect(suche.ladefehler).toBe('');
+		} finally {
+			stopp();
+		}
+	});
+
+	// Die Leserdatei zeigt Schüler UND Kollegium. Dass sie das tut, hängt an einem
+	// Zusatz an der Adresse: GET /api/schueler liefert ohne `art=alle` nur Schüler —
+	// die Vorgabe gilt den anderen Aufrufern derselben Tür (Reiter „Ehemalige",
+	// Schülersuche des Vormerkungs-Reiters), für die ein Kollege falsch wäre.
+	// Fällt der Zusatz weg, stünde in der Leserdatei wieder nur die Schülerschaft,
+	// und zwar ohne jede Fehlermeldung.
+	it('fragt die Leserdatei an, nicht nur die Schülerschaft', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(ok(treffer));
+		/** @type {any} */
+		let suche;
+		const stopp = $effect.root(() => {
+			suche = erzeugeSchuelerSuche(() => {});
+		});
+		try {
+			await suche.lade();
+			expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe('/api/schueler?art=alle');
+
+			suche.query = 'Wendlandt';
+			await suche.lade();
+			expect(vi.mocked(apiFetch).mock.calls.at(-1)?.[0]).toBe('/api/schueler?art=alle&q=Wendlandt');
 		} finally {
 			stopp();
 		}

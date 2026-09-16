@@ -2,8 +2,13 @@
   @component
   ActiveStudentList
 
-  Diese Komponente rendert die Liste der aktiven Schüler mit Filter- und Sortierfunktionen.
-  Sie zeigt ein Profilbild, den Namen, die Klasse, die Anzahl der ausgeliehenen Bücher und den Status an.
+  Diese Komponente rendert die Liste der aktiven Leser mit Filter- und Sortierfunktionen.
+  Sie zeigt ein Profilbild, den Namen, die Art, die Klasse, die Anzahl der ausgeliehenen
+  Bücher und den Status an.
+
+  Die Spalte „Art" kam am 16.09.2026 dazu: Seit Migration 125 steht das Kollegium in
+  derselben Liste, und ein Kollege hat keine Klasse. Ohne die Art stünde er da wie ein
+  Schüler, bei dem die Klasse fehlt.
 -->
 <script>
 	import { BookOpen, ChevronRight } from '@lucide/svelte';
@@ -12,16 +17,18 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
+	import LeserAvatar from './LeserAvatar.svelte';
+	import { leserArtText, istKollegium } from '../../leserArt.js';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {any[]} filteredStudents
 	 * @property {boolean} loading
 	 * @property {string} [ladefehler]  gescheiterter Abruf — dann steht hier kein leeres
-	 *   Verzeichnis, sondern der Grund (die Suche der Schülerdatei setzt ihn)
+	 *   Verzeichnis, sondern der Grund (die Suche der Leserdatei setzt ihn)
 	 * @property {() => void} [onErneut]
 	 * @property {(s: any) => void} onSelectStudent
-	 * @property {Set<string>} [auswahl]    markierte Schüler-IDs (Ausweis-Stapeldruck)
+	 * @property {Set<string>} [auswahl]    markierte Leser-IDs (Ausweis-Stapeldruck)
 	 * @property {(id: string) => void} [onToggle]
 	 * @property {() => void} [onToggleAlle]
 	 */
@@ -46,27 +53,6 @@
 	);
 	const teilweise = $derived(auswahl.size > 0 && !alleGewaehlt);
 </script>
-
-{#snippet avatar(s)}
-	<div
-		class="relative w-8 h-8 rounded-full overflow-hidden border border-slate-100/80 bg-slate-50 flex items-center justify-center shrink-0"
-	>
-		{#if s.foto_url}
-			<img
-				src={s.foto_url}
-				alt="Passbild von {s.vorname} {s.nachname}"
-				class="w-full h-full object-cover"
-			/>
-		{:else}
-			<div
-				class="w-full h-full flex items-center justify-center bg-slate-100 text-slate-500 font-medium text-sm"
-				aria-hidden="true"
-			>
-				{s.vorname.charAt(0)}{s.nachname.charAt(0)}
-			</div>
-		{/if}
-	</div>
-{/snippet}
 
 {#snippet statusBadge(s)}
 	<div class="inline-flex items-center justify-end gap-1.5 py-1">
@@ -97,11 +83,11 @@
 	{:else if filteredStudents.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
 			<BookOpen class="h-10 w-10 text-slate-300" aria-hidden="true" />
-			<span class="text-xs font-semibold">Keine Schüler im Verzeichnis gefunden.</span>
+			<span class="text-xs font-semibold">Keine Leser im Verzeichnis gefunden.</span>
 		</div>
 	{:else}
 		<div class="overflow-x-auto w-full text-left">
-			<Tabelle beschriftung="Schülerinnen und Schüler">
+			<Tabelle beschriftung="Leserinnen und Leser">
 				<thead class="font-semibold">
 					<tr>
 						{#if auswaehlbar}
@@ -110,12 +96,13 @@
 									checked={alleGewaehlt}
 									indeterminate={teilweise}
 									onchange={onToggleAlle}
-									aria-label="Alle angezeigten Schüler für den Ausweisdruck markieren"
+									aria-label="Alle angezeigten Leser für den Ausweisdruck markieren"
 								/>
 							</th>
 						{/if}
 						<th class="w-16">Foto</th>
 						<th>Name</th>
+						<th class="w-28">Art</th>
 						<th class="w-24">Klasse</th>
 						<th class="w-44 text-right">Geliehene Bücher</th>
 						<th class="w-36 text-right">Status</th>
@@ -139,26 +126,37 @@
 									/>
 								</td>
 							{/if}
-							<td>
-								{@render avatar(s)}
-							</td>
+							<td><LeserAvatar leser={s} /></td>
 							<td class="font-semibold">
 								<button
 									type="button"
 									onclick={() => onSelectStudent(s)}
-									aria-label="Profil von {s.vorname} {s.nachname} (Klasse {s.klasse ||
-										'N/A'}) anzeigen"
+									aria-label="Akte von {s.vorname} {s.nachname} ({istKollegium(s)
+										? leserArtText(s.art)
+										: `Klasse ${s.klasse || 'N/A'}`}) anzeigen"
 									class="text-left font-semibold text-on-surface hover:text-primary hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"
 								>
 									{s.vorname}
 									{s.nachname}
 								</button>
-								<div class="text-sm font-mono text-slate-400 font-normal mt-0.5">
-									{s.barcode_id}
+								<!-- Ein Kollege aus der Selbstanmeldung hat noch keine Ausweisnummer. Das
+								     gehört hingeschrieben: Eine leere Zeile sähe nach einem Anzeigefehler
+								     aus, und ohne Nummer lässt sich kein Ausweis drucken. -->
+								<div
+									class="text-sm text-slate-400 font-normal mt-0.5 {s.barcode_id
+										? 'font-mono'
+										: 'italic'}"
+								>
+									{s.barcode_id || 'ohne Ausweis'}
 								</div>
 							</td>
+							<td>{leserArtText(s.art)}</td>
 							<td class="font-medium">
-								Kl. {s.klasse || 'N/A'}
+								{#if istKollegium(s)}
+									<span class="text-on-surface-variant" aria-label="keine Klasse">—</span>
+								{:else}
+									Kl. {s.klasse || 'N/A'}
+								{/if}
 							</td>
 							<td class="text-right">
 								<span

@@ -29,13 +29,17 @@ type BorrowedBook struct {
 
 // StudentListStat represents a student along with their current loan statistics.
 type StudentListStat struct {
-	ID                string `json:"id"`
-	BarcodeID         string `json:"barcode_id"`
-	Vorname           string `json:"vorname"`
-	Nachname          string `json:"nachname"`
-	Klasse            string `json:"klasse"`
-	AbgaengerJahr     int    `json:"abgaenger_jahr"`
-	IstGesperrt       bool   `json:"ist_gesperrt"`
+	ID            string `json:"id"`
+	BarcodeID     string `json:"barcode_id"`
+	Vorname       string `json:"vorname"`
+	Nachname      string `json:"nachname"`
+	Klasse        string `json:"klasse"`
+	AbgaengerJahr int    `json:"abgaenger_jahr"`
+	IstGesperrt   bool   `json:"ist_gesperrt"`
+	// Art ist Schüler, Lehrkraft oder LiV. Die Leserdatei führt sie als eigene Spalte —
+	// ein Kollege hat keine Klasse, und ohne die Art stünde er in der Liste wie ein
+	// Schüler mit fehlender Angabe.
+	Art               string `json:"art"`
 	IsManuallyBlocked bool   `json:"is_manually_blocked"`
 	HasFoto           bool   `json:"-"`
 	FotoURL           string `json:"foto_url"`
@@ -110,6 +114,9 @@ type StudentRepository interface {
 	// und/oder Suchbegriff eingegrenzt. Die Suche läuft über dieselben SQL-Bausteine
 	// wie SearchStudentsFuzzy und kennt keine 500er-Grenze.
 	ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error)
+	// ListLeserMitStats liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
+	// Dieselben Zeilen, dieselbe Suche; gelesen wird die Tabelle `leser` statt der Sicht.
+	ListLeserMitStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error)
 	// ListEhemaligeWithStats liefert die Weggegangenen (ist_abgaenger = true) für den
 	// Reiter „Ehemalige / Archiv" — dieselben Zeilen und dieselbe Suche wie die Aktiven.
 	ListEhemaligeWithStats(ctx context.Context, suche string) ([]StudentListStat, error)

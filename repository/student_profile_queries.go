@@ -102,7 +102,7 @@ const ListStudentsWithStatsLimit = 500
 // alphabetisch dahinter lag, war über die Suche nicht erreichbar, und zwar abhängig vom
 // Klassennamen, also für den Benutzer ohne erkennbares Muster.
 func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, klasse, suche, false)
+	return repo.listSchuelerMitStats(ctx, klasse, suche, listeAktiveSchueler)
 }
 
 // ListEhemaligeWithStats liefert die Schüler, die die Schule verlassen haben
@@ -111,10 +111,34 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 // wieder die Abschlussklassen meint (noch an der Schule), brauchen die Weggegangenen
 // eine eigene Liste. Jüngster Abgang zuerst, dann Name.
 func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, "", suche, true)
+	return repo.listSchuelerMitStats(ctx, "", suche, listeEhemalige)
 }
 
-func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klasse, suche string, ehemalige bool) ([]StudentListStat, error) {
+// ListLeserMitStats liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
+//
+// Dieselben Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser`
+// statt über die Sicht `schueler`. Bis zum 16.09.2026 stand ein Kollege in keiner Liste;
+// man sah an der Theke, dass er ein Buch bekommen hatte, aber nirgends, welche er hat.
+func (repo *pgStudentRepository) ListLeserMitStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, klasse, suche, listeAlleLeser)
+}
+
+// listenArt sagt, WELCHE Zeilen eine Liste zeigt. Die drei Fälle sind die drei Reiter
+// bzw. Ansichten und schließen einander aus; als zwei bool-Schalter nebeneinander wäre
+// die vierte, sinnlose Kombination („ehemalige UND alle Leser") jederzeit tippbar.
+type listenArt int
+
+const (
+	// listeAktiveSchueler: die Schülerdatei, wie sie war — die Sicht `schueler`.
+	listeAktiveSchueler listenArt = iota
+	// listeEhemalige: der Reiter „Ehemalige / Archiv", ebenfalls nur Schüler. Kollegium
+	// hat kein Abgängerjahr und wird vom LUSD-Abgleich nicht angefasst.
+	listeEhemalige
+	// listeAlleLeser: die Leserdatei über die Tabelle `leser`.
+	listeAlleLeser
+)
+
+func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klasse, suche string, art listenArt) ([]StudentListStat, error) {
 	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
 	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
 	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
@@ -125,8 +149,15 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 	// den Reiter „Ehemalige / Archiv", der über dieselbe Abfrage mit umgekehrtem
 	// Vorzeichen läuft.
 	statusBedingung := "COALESCE(s.ist_abgaenger, false) = false"
-	if ehemalige {
+	if art == listeEhemalige {
 		statusBedingung = "s.ist_abgaenger = true"
+	}
+	// Die Leserdatei liest die TABELLE, die beiden Schüler-Listen die Sicht. Das ist der
+	// einzige Unterschied im Rumpf — alles andere (Suche, Ausleihzahlen, Foto) gilt für
+	// einen Kollegen genauso.
+	quelle := "schueler"
+	if art == listeAlleLeser {
+		quelle = "leser"
 	}
 	bedingungen := []string{"s.deleted_at IS NULL", statusBedingung}
 	args := []any{}
@@ -153,20 +184,33 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 	// Bei einer Suche zuerst die besten Treffer, sonst die gewohnte Kartei-Reihenfolge —
 	// bei den Ehemaligen der jüngste Abgang zuerst (die Klasse ist dort nur noch „ABG").
 	sortierung := "s.klasse, s.nachname, s.vorname"
-	if ehemalige {
+	if art == listeEhemalige {
 		sortierung = "s.abgaenger_jahr DESC, s.nachname, s.vorname"
+	}
+	if art == listeAlleLeser {
+		// Kollegium ZUERST. Nicht aus Höflichkeit: Die ungefilterte Liste ist bei 500
+		// Zeilen gekappt, und bei 875 Schülern stünde ein Kollege am Ende nie darin —
+		// lautlos, denn die Ansicht meldet nur „gekürzt", nicht „eine ganze Gruppe
+		// fehlt". Vorn sind es wenige Zeilen, und die gewohnte Kartei-Reihenfolge der
+		// Schüler beginnt unmittelbar darunter.
+		sortierung = "(s.art = 'schueler'), s.klasse, s.nachname, s.vorname"
 	}
 	if praefix != "" {
 		sortierung = SchuelerSuchRang + ", s.nachname ASC, s.vorname ASC"
 	}
 
+	// coalesce auf Ausweis, Klasse und Abgängerjahr: Seit Migration 123 sind die drei
+	// nullbar (ein Kollege hat keine Klasse und oft keinen gedruckten Ausweis). Ohne das
+	// zerbricht der Scan an der ersten Lehrkraft — dort, wo eben noch eine Liste stand,
+	// stünde ein 500.
 	rows, err := repo.db.Query(ctx, praefix+`
-		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, s.abgaenger_jahr, s.ist_gesperrt,
+		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
+			COALESCE(s.abgaenger_jahr, 0), s.ist_gesperrt, s.art,
 			COALESCE(s.is_manually_blocked, false) as is_manually_blocked,
 			COALESCE(l.ausgeliehen_anzahl, 0) as ausgeliehen_anzahl,
 			COALESCE(l.ueberfaellig_anzahl, 0) as ueberfaellig_anzahl,
 			EXISTS(SELECT 1 FROM schueler_fotos sf WHERE sf.schueler_id = s.id) as has_foto
-		FROM schueler s
+		FROM `+quelle+` s
 		LEFT JOIN LATERAL (
 			SELECT
 				COUNT(*) as ausgeliehen_anzahl,
@@ -185,7 +229,7 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 	var stats []StudentListStat
 	for rows.Next() {
 		var s StudentListStat
-		if err := rows.Scan(&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.IsManuallyBlocked, &s.AusgeliehenCount, &s.UeberfaelligCount, &s.HasFoto); err != nil {
+		if err := rows.Scan(&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.Art, &s.IsManuallyBlocked, &s.AusgeliehenCount, &s.UeberfaelligCount, &s.HasFoto); err != nil {
 			return nil, err
 		}
 		if s.BarcodeID != "" && s.HasFoto {

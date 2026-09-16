@@ -43,7 +43,10 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		laedt = true;
 		try {
 			const q = query.trim();
-			const res = await apiFetch(`/api/schueler${q ? `?q=${encodeURIComponent(q)}` : ''}`);
+			// art=alle: die LESERDATEI. Ohne diesen Zusatz liefert die Tür nur Schüler —
+			// die Vorgabe gilt den anderen Aufrufern (Reiter „Ehemalige", Schülersuche des
+			// Vormerkungs-Reiters), für die ein Kollege in der Liste falsch wäre.
+			const res = await apiFetch(`/api/schueler?art=alle${q ? `&q=${encodeURIComponent(q)}` : ''}`);
 			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
 			// 12.09.2026 hing am `nr === ladeNr` auch das `res.ok`: Scheiterte der Lauf,
 			// blieben die Treffer der vorigen Suche unter dem neuen Suchtext stehen, und
@@ -60,9 +63,9 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		} catch (err) {
 			if (nr === ladeNr) {
 				students = [];
-				ladefehler = 'Das Schülerverzeichnis konnte nicht geladen werden (Netzwerkfehler).';
+				ladefehler = 'Die Leserdatei konnte nicht geladen werden (Netzwerkfehler).';
 			}
-			console.error('Fehler beim Laden des Schülerverzeichnisses:', err);
+			console.error('Fehler beim Laden der Leserdatei:', err);
 		} finally {
 			if (nr === ladeNr) {
 				laedt = false;
