@@ -77,6 +77,26 @@ describe('Scan ohne Netz einordnen', () => {
 		expect(ein('B97601826457').art).toBe('unklar');
 	});
 
+	// Von Hand getippt: Gespeichert sind die Nummern mit grosser Vorsilbe, und der Server
+	// schlaegt exakt nach. Gemeldet am Stack am 16.09.2026: „s-10001 ... hat nicht
+	// funktioniert" — es war klein geschrieben.
+	it('versteht eine klein geschriebene Vorsilbe und bucht unter der grossen', () => {
+		expect(ein('s-10001')).toEqual({ art: 'ausweis', nummer: 'S-10001' });
+		expect(ein('a-00042')).toEqual({ art: 'ausweis', nummer: 'A-00042' });
+		expect(ordneScanEin('b-00123', () => false)).toEqual({ art: 'buch', nummer: 'B-00123' });
+		expect(ordneScanEin('lmf-2025-0007', () => false)).toEqual({
+			art: 'buch',
+			nummer: 'LMF-2025-0007'
+		});
+	});
+
+	it('macht aus „s-bahn" KEINEN Ausweis', () => {
+		// Die Gegenprobe zur Vereinheitlichung: Ohne die Ziffern-Bedingung waere jedes
+		// Wort mit Bindestrich eine Kartennummer.
+		expect(ein('s-bahn').art).not.toBe('ausweis');
+		expect(ein('b-movie').art).not.toBe('buch');
+	});
+
 	it('leerer Scan ist unklar, nicht Buch', () => {
 		expect(ein('   ')).toEqual({ art: 'unklar', nummer: '' });
 	});

@@ -29,6 +29,35 @@
  */
 import { dekodiereLitteraEtikett } from './litteraEtikett.js';
 
+/**
+ * Vereinheitlicht die Vorsilbe eines Scans — `s-10001` wird zu `S-10001`.
+ *
+ * Warum das noetig ist: Gespeichert sind die Nummern mit GROSSER Vorsilbe, und der Server
+ * schlaegt exakt nach (`WHERE barcode_id = $1`). Wer die Nummer von Hand tippt, weil eine
+ * Karte nicht mehr lesbar ist, trifft sonst nichts — weder mit noch ohne Netz. Ein Scanner
+ * liest den Aufdruck gross; ein Mensch tippt, wie er will.
+ *
+ * Warum NICHT einfach alles gross: Jemand sucht nach „s-bahn", und daraus wuerde ein
+ * Ausweis „S-bahn". Deshalb greift die Vereinheitlichung nur, wenn hinter der Vorsilbe
+ * wirklich eine ZIFFER steht — das trennt eine Nummer von einem Wort mit Bindestrich.
+ *
+ * @param {string} roh
+ * @returns {string}
+ */
+export function normalisiereScan(roh) {
+	const scan = (roh ?? '').trim();
+	for (const v of ['LMF-', 'A-', 'S-', 'L-', 'B-', 'G-']) {
+		if (
+			scan.length > v.length &&
+			scan.slice(0, v.length).toUpperCase() === v &&
+			/[0-9]/.test(scan[v.length])
+		) {
+			return v + scan.slice(v.length);
+		}
+	}
+	return scan;
+}
+
 /** Die Vorsilben eines Ausweises — dieselbe Menge wie im Server-Switch. */
 export const AUSWEIS_VORSILBEN = ['A-', 'S-', 'L-'];
 
@@ -47,7 +76,7 @@ export const BUCH_VORSILBEN = ['B-', 'LMF-'];
  * @returns {ScanEinordnung}
  */
 export function ordneScanEin(roh, istBuch) {
-	const scan = (roh ?? '').trim();
+	const scan = normalisiereScan(roh);
 	if (scan === '') return { art: 'unklar', nummer: '' };
 
 	if (AUSWEIS_VORSILBEN.some((v) => scan.startsWith(v))) return { art: 'ausweis', nummer: scan };

@@ -6,7 +6,7 @@ import { playSoundSuccess, playSoundError } from '../audio.js';
 import { enqueueOfflineAction } from '../offlineQueue.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { buchBarcodes } from './buchBarcodes.svelte.js';
-import { ordneScanEin } from '../scanEinordnen.js';
+import { normalisiereScan, ordneScanEin } from '../scanEinordnen.js';
 import { toastStore } from './toastStore.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 
@@ -638,7 +638,10 @@ export function createOmniboxStore() {
 			return;
 		}
 
-		const q = queryVal.trim();
+		// EINMAL vereinheitlichen, gleich am Anfang: Dann gilt derselbe Wert fuer den
+		// Online-Versand, fuer den Schnappschuss und fuer die Einordnung ohne Netz. Ein
+		// von Hand getipptes `s-10001` traf sonst weder hier noch dort etwas.
+		const q = normalisiereScan(queryVal);
 		if (!q) return;
 
 		queryVal = '';

@@ -210,6 +210,22 @@ erste bringt den Nachweis zum Laufen:
   `/api/action/batch`, mit Scan-Zeitpunkt, Schlüssel und Ausweis-Barcode.
 - **C — was nicht durchging, wird sichtbar.** Die Meldungsliste aus Migration 117.
 
+**Offen geblieben (16.09.2026, beim Nachweis gefunden): Der SERVER nimmt eine Nummer nur in
+genau der Schreibweise an, in der sie gespeichert ist.** Gemeldet wurde „s-10001 hat nicht
+funktioniert"; die Ursache liegt nicht im Offline-Teil. `internal/service/omnibox_service.go`
+vergleicht die Vorsilben mit `strings.HasPrefix` gegen `"A-"`, `"S-"`, `"L-"`, `"B-"`, `"G-"`,
+und `GetLeserByBarcode` schlägt mit `WHERE barcode_id = $1` exakt nach. Eine Schicht, die die
+Eingabe vorher vereinheitlicht, gibt es auf keiner Seite. Wer die Nummer von Hand tippt, weil
+eine Karte nicht mehr lesbar ist, traf damit weder mit noch ohne Netz etwas.
+
+Die Theke vereinheitlicht seit dem 16.09.2026 selbst (`frontend/src/lib/scanEinordnen.js`,
+`normalisiereScan`) — und zwar nur, wenn hinter der Vorsilbe eine Ziffer steht, sonst würde aus
+der Suche nach „s-bahn" ein Ausweis. Damit ist der Weg über die Theke geheilt, mit Netz wie
+ohne. **Der Server selbst bleibt empfindlich:** Ein anderer Aufrufer (Skript, zweite Oberfläche,
+direkter API-Aufruf) läuft weiter ins Leere. Ob das dort ebenfalls geheilt wird, ist eine eigene
+Entscheidung — eine Suche über `upper(barcode_id)` nutzt den vorhandenen Index nicht mehr, und
+der hält die Eindeutigkeit der Ausweisnummern.
+
 **Nächster Schritt, vor allem Weiteren:** Stufe 1 wirklich bauen — die Barcode-Liste im Browser
 halten und auffrischen, alle Buchformen und Ausweise in die Warteschlange lassen, die
 Ziffernregel aus der Entscheidung vom 13.09. umsetzen, und je Form ein Testfall statt fünfmal
