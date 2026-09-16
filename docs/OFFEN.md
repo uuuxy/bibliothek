@@ -973,6 +973,34 @@ die Spur seiner Buchungen verschwindet.
 - Rot-Test: Ein Import ohne die Kollegen markiert sie NICHT als Abgänger; der Löschjob fasst
   sie nicht an.
 
+
+**Zu prüfen, bevor dieser Schritt gebaut wird — ein Weg, der die halbe Arbeit spart
+(gefunden 16.09.2026, nicht belegt):** 51 Abfragen in 30 Dateien lesen heute
+`FROM schueler` und meinen damit „Schüler“. Stehen Kollegen in derselben Tabelle, muss
+jede einzelne davon `art = 'schueler'` ergänzen — und wer eine übersieht, hat einen
+Kollegen in einer Klassenliste oder im Mahnlauf.
+
+Statt dessen: Die TABELLE heißt `leser`, und `schueler` wird eine **Sicht** darauf
+(`CREATE VIEW schueler AS SELECT * FROM leser WHERE art = 'schueler' WITH CHECK OPTION`).
+Eine solche Sicht ist in Postgres von selbst schreibbar; alle 51 Abfragen behalten damit
+ihre Bedeutung, ohne geändert zu werden, und können einen Kollegen weder sehen noch
+anlegen. Neue Abfragen, die ALLE Leser meinen, nennen `leser`. Die Umbenennung wäre damit
+nicht der letzte, mechanische Schritt, sondern das Mittel.
+
+Zwei Fragen entscheiden, ob der Weg trägt; beide brauchen eine laufende Datenbank:
+
+1. `SELECT ... FOR UPDATE` auf einer Sicht — der Ausleihweg sperrt die Zeile so
+   (`loan_checkout.go`, `schueler_zusammenfuehren.go`, `nachbuchen.go`). Geht das nicht,
+   fällt der Weg, denn diese Sperre ist der Schutz gegen zwei gleichzeitige Ausleihen.
+2. `TRUNCATE` auf einer Sicht geht sicher NICHT — drei Test-Helfer tun das
+   (`api/pgtest_support_test.go`, `repository/loan_null_bearbeiter_pg_test.go`,
+   `internal/littera/pgtest_support_test.go`). Sie müssten `leser` nennen. Das ist
+   Kleinarbeit, kein Hindernis.
+
+Die Probe dafür steht in einem Satz: eine Sicht anlegen, `SELECT 1 FROM sicht WHERE id =
+... FOR UPDATE` versuchen. Fällt Frage 1 negativ aus, bleibt es beim Durchgang durch alle
+51 Stellen, mit einer Ratsche, die eine Abfrage ohne `art` neu meldet.
+
 **Schritt „Eine Ausleihe, ein Leser“**
 
 - `ausleihen.ausleiher_benutzer_id` fällt, ebenso die Zwillinge in `nachbuch_meldungen` und
