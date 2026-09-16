@@ -525,6 +525,14 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
 
 - Wenn ein Buch als "Verlust" oder "Beschädigt" ausgebucht wird (z.B. bei der Inventur oder manuell am Kiosk), kann das System automatisch eine Kostenforderung (Schadensfall) gegen den verursachenden Schüler anlegen.
 - Offene Schäden blockieren die DSGVO-Löschung eines Schülers und können per PDF-Rechnung ausgedruckt werden.
+- **Gegen einen Kollegen entsteht KEINE Forderung** (seit 16.09.2026). „Verlust/Schaden melden" steht in seiner
+  Akte und bucht, was den Bestand angeht — das Exemplar wird ausgesondert, die Ausleihe endet, eine Vormerkung
+  darauf wird gelöst —, aber ohne Schadensfall. Grund: Der Weg einer Forderung endet im Schadensersatz-Bescheid,
+  und der ist ein Schreiben an Erziehungsberechtigte; er braucht Klasse und Anschrift, die von einer Lehrkraft
+  nirgends stehen. Ersatz von einer Lehrkraft zu verlangen ist Sache der Schulleitung gegenüber dem Dienstherrn
+  und dort auch nur bei Vorsatz oder grober Fahrlässigkeit. Vorher entstand die Forderung und stand in keiner
+  Übersicht: Der Reiter „Schadensersatz" liest die Sicht `schueler`, und „Bescheid erstellen" antwortete
+  „Schüler nicht gefunden".
 - **Erledigt wird eine Gebühr in der Schülerakte** (seit 16.08.2026) auf genau zwei Wegen:
   **„Bezahlt“** (Barzahlung am Tresen) oder **„Stornieren“** mit Pflicht-Begründung
   (Erlass, Buch wiedergefunden, Kulanz). Beides verlangt das Recht `edit_students` —

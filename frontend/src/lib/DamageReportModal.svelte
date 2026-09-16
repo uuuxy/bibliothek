@@ -8,7 +8,18 @@
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Radio from './components/ui/Radio.svelte';
+
+	// `book.ohneForderung` = der Entleiher ist ein Kollege. Gesetzt wird es beim Öffnen
+	// (useStudentProfile: openDamageModal), damit die Entscheidung an EINER Stelle steht. Dann entsteht keine Forderung
+	// (entschieden am 16.09.2026): Der Bescheid ist ein Schreiben an Erziehungsberechtigte
+	// und braucht Klasse und Anschrift, die von einer Lehrkraft nirgends stehen; gehaftet
+	// wird gegenüber dem Dienstherrn und nur bei Vorsatz oder grober Fahrlässigkeit — das
+	// stellt die Schulleitung fest, nicht die Bücherei. Gebucht wird trotzdem, was den
+	// Bestand angeht. Entschieden wird es am Server (repository/schaden_melden.go); hier
+	// steht nur, was der Dialog zeigt und fragt.
+	/** @type {{ book: any, onCancel: () => void, onSubmit: (grund: string, betrag: number, art: string) => void, isSubmitting?: boolean }} */
 	let { book, onCancel, onSubmit, isSubmitting } = $props();
+	const ohneForderung = $derived(!!book?.ohneForderung);
 
 	let damageReason = $state('Verloren');
 	let damageAmount = $state(15.0);
@@ -17,7 +28,7 @@
 	let art = $state('nicht_zurueckgegeben');
 
 	function handleSubmit() {
-		onSubmit(damageReason, damageAmount, art);
+		onSubmit(damageReason, ohneForderung ? 0 : damageAmount, art);
 	}
 </script>
 
@@ -28,9 +39,15 @@
 				Verlust/Schaden melden
 			</h3>
 			<p class="text-sm text-on-surface-variant mb-4">
-				Für <strong>{book.titel}</strong> ({book.barcode_id}). Die Ausleihe wird beendet und eine
-				Forderung angelegt; sie steht danach unter „Gebühren &amp; Schäden" und im Mahnwesen unter
-				„Schadensersatz". Der Bescheid an die Eltern ist der nächste, eigene Schritt.
+				Für <strong>{book.titel}</strong> ({book.barcode_id}).
+				{#if ohneForderung}
+					Die Ausleihe wird beendet und das Exemplar ausgesondert. Eine Forderung entsteht nicht:
+					Ersatz von einer Lehrkraft zu verlangen ist Sache der Schulleitung, nicht der Bücherei.
+				{:else}
+					Die Ausleihe wird beendet und eine Forderung angelegt; sie steht danach unter „Gebühren
+					&amp; Schäden" und im Mahnwesen unter „Schadensersatz". Der Bescheid an die Eltern ist der
+					nächste, eigene Schritt.
+				{/if}
 			</p>
 
 			<div class="space-y-4">
@@ -49,14 +66,16 @@
 					bind:value={damageReason}
 					placeholder="z.B. Wasserschaden, Verloren..."
 				/>
-				<Feld
-					id="damage-amount"
-					label="Ersatzbetrag (€)"
-					type="number"
-					step="0.01"
-					min="0"
-					bind:value={damageAmount}
-				/>
+				{#if !ohneForderung}
+					<Feld
+						id="damage-amount"
+						label="Ersatzbetrag (€)"
+						type="number"
+						step="0.01"
+						min="0"
+						bind:value={damageAmount}
+					/>
+				{/if}
 				<div class="flex gap-3 justify-end pt-4">
 					<Button variant="ghost" onclick={onCancel} disabled={isSubmitting}>Abbrechen</Button>
 					<Button

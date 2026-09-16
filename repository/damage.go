@@ -95,6 +95,11 @@ func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, 
 }
 
 // MarkCopyDefekt marks a book copy as defective and records a damage entry.
+//
+// ACHTUNG, falls diese Tür je eine Oberfläche bekommt (heute hat sie keinen Aufrufer,
+// OFFEN.md 4.16): Für einen Kollegen darf KEINE Forderung entstehen — entschieden am
+// 16.09.2026, Begründung in schaden_melden.go. Anders als dort kommt die Person hier aus
+// dem Request, die Regel wäre also hier eigens zu ziehen.
 func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, loanID, schuelerID *string, benutzerID string, betrag float64, beschreibung string) (string, error) {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {

@@ -47,6 +47,30 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
 	}
 
+	// Ein Kollege bekommt KEINE Forderung (entschieden am 16.09.2026).
+	//
+	// Der Weg, den eine Forderung nimmt, endet im Schadensersatz-Bescheid, und der ist ein
+	// Schreiben an Erziehungsberechtigte: Er braucht Klasse, Anschrift und die Frage der
+	// Volljährigkeit (EmpfaengerFuerBescheid). Von einer Lehrkraft steht davon nichts in der
+	// Akte — bewusst, denn ihre Privatanschrift gehört nicht in die Bücherei. Dazu haftet
+	// eine Lehrkraft ihrem Dienstherrn nur bei Vorsatz oder grober Fahrlässigkeit; das
+	// festzustellen ist Sache der Schulleitung, nicht dieser Anwendung.
+	//
+	// Gebucht wird trotzdem alles, was den BESTAND angeht: Das Exemplar ist weg oder kaputt
+	// und wird ausgesondert, die Ausleihe endet, eine Vormerkung darauf wird gelöst. Nur die
+	// Forderung entsteht nicht. Vorher entstand sie und tauchte in keiner Übersicht auf: Der
+	// Reiter „Schadensersatz" liest die Sicht `schueler`, und „Bescheid erstellen" antwortete
+	// „Schüler nicht gefunden". Das Geld stand offen, und niemand konnte es einziehen
+	// (Rasterdurchgang 16.09.2026, OFFEN.md 5.17).
+	ohneForderung := false
+	if loanSchuelerID != nil {
+		if err := tx.QueryRow(ctx,
+			`SELECT art <> 'schueler' FROM leser WHERE id = $1`, *loanSchuelerID,
+		).Scan(&ohneForderung); err != nil {
+			return "", err
+		}
+	}
+
 	var bestehenderSchaden string
 	err := tx.QueryRow(ctx,
 		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
@@ -103,20 +127,29 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 	}
 
 	var schadensID string
-	if err := tx.QueryRow(ctx, `
-		INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, art)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		RETURNING id
-	`, copyID, loanID, loanSchuelerID, beschreibung, betrag, string(art)).Scan(&schadensID); err != nil {
-		return "", err
+	if !ohneForderung {
+		if err := tx.QueryRow(ctx, `
+			INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, art)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			RETURNING id
+		`, copyID, loanID, loanSchuelerID, beschreibung, betrag, string(art)).Scan(&schadensID); err != nil {
+			return "", err
+		}
 	}
 
+	// `AND rueckgabe_am IS NULL`: Ohne Forderung gibt es keine Zeile, an der die Idempotenz
+	// oben hängt — ein zweiter Klick verschöbe sonst das Rückgabedatum auf JETZT. Für den
+	// Weg mit Forderung ändert die Bedingung nichts; dort ist schon der Schadensfall die
+	// Bremse.
 	if _, err := tx.Exec(ctx, `
 		UPDATE ausleihen
 		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = NULLIF($1, '')::uuid
-		WHERE id = $2
+		WHERE id = $2 AND rueckgabe_am IS NULL
 	`, benutzerID, loanID); err != nil {
 		return "", err
 	}
+	// Ohne Forderung ist die Kennung leer — es gibt keinen Schadensfall, auf den sie zeigen
+	// könnte. Der Bescheid-Weg (bescheid_verlust.go) kommt hier nie mit einem Kollegen an:
+	// Seine Liste liest die Sicht `schueler`.
 	return schadensID, nil
 }

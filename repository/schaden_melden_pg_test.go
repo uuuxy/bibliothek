@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -89,4 +90,98 @@ func aussonderungsGrund(t *testing.T, pool *pgxpool.Pool, copyID string) string 
 		t.Fatalf("Aussonderungsgrund lesen: %v", err)
 	}
 	return grund
+}
+
+// Ein Kollege bekommt KEINE Forderung (entschieden am 16.09.2026): Der Bescheid ist ein
+// Schreiben an Erziehungsberechtigte und braucht Klasse und Anschrift, die von einer
+// Lehrkraft nirgends stehen; gehaftet wird gegenüber dem Dienstherrn und nur bei Vorsatz
+// oder grober Fahrlässigkeit. Gebucht wird trotzdem, was den Bestand angeht.
+//
+// Rot am alten Code: Die Forderung entstand — und stand in keiner Übersicht, weil beide
+// Listen die Sicht `schueler` lesen (OFFEN.md 5.17, Fund 1).
+func TestReportDamage_KollegeOhneForderung(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	copyID := seedSignaturMitExemplaren(t, pool, "KollegeVerlust", 1)[0]
+	kollege := seedKollege(t, pool, "A-90001", "Mara")
+	bearbeiter := seedBearbeiter(t, pool)
+	loan := seedAusleihe(t, pool, copyID, kollege, bearbeiter)
+
+	schadensID, err := NewDamageRepository(pool).ReportDamage(ctx, copyID, loan, kollege, bearbeiter,
+		"nicht zurückgegeben", SchadensArtNichtZurueck, 15.0)
+	if err != nil {
+		t.Fatalf("Verlust melden: %v", err)
+	}
+	if schadensID != "" {
+		t.Errorf("Kennung eines Schadensfalls = %q, erwartet leer", schadensID)
+	}
+
+	var forderungen int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM schadensfaelle WHERE ausleihe_id = $1`, loan).Scan(&forderungen); err != nil {
+		t.Fatal(err)
+	}
+	if forderungen != 0 {
+		t.Errorf("%d Forderung(en) gegen einen Kollegen angelegt — sie stünden in keiner Übersicht", forderungen)
+	}
+
+	// Der Bestand wird trotzdem geführt: Das Buch ist weg, die Ausleihe ist beendet.
+	if grund := aussonderungsGrund(t, pool, copyID); grund != "VERLUST" {
+		t.Errorf("aussonderung_grund = %q, want VERLUST", grund)
+	}
+	var beendet bool
+	if err := pool.QueryRow(ctx,
+		`SELECT rueckgabe_am IS NOT NULL FROM ausleihen WHERE id = $1`, loan).Scan(&beendet); err != nil {
+		t.Fatal(err)
+	}
+	if !beendet {
+		t.Error("die Ausleihe des Kollegen läuft nach dem Verlust weiter")
+	}
+}
+
+// Ohne Forderung gibt es keine Zeile, an der die Idempotenz hängt. Ein zweiter Klick darf
+// deshalb nicht das Rückgabedatum verschieben.
+func TestReportDamage_KollegeZweiterKlickVerschiebtNichts(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	copyID := seedSignaturMitExemplaren(t, pool, "KollegeZweimal", 1)[0]
+	kollege := seedKollege(t, pool, "A-90002", "Tom")
+	bearbeiter := seedBearbeiter(t, pool)
+	loan := seedAusleihe(t, pool, copyID, kollege, bearbeiter)
+	repo := NewDamageRepository(pool)
+
+	if _, err := repo.ReportDamage(ctx, copyID, loan, kollege, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
+		t.Fatalf("erste Meldung: %v", err)
+	}
+	var erste time.Time
+	if err := pool.QueryRow(ctx, `SELECT rueckgabe_am FROM ausleihen WHERE id = $1`, loan).Scan(&erste); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := repo.ReportDamage(ctx, copyID, loan, kollege, bearbeiter, "weg", SchadensArtNichtZurueck, 0); err != nil {
+		t.Fatalf("zweite Meldung: %v", err)
+	}
+	var zweite time.Time
+	if err := pool.QueryRow(ctx, `SELECT rueckgabe_am FROM ausleihen WHERE id = $1`, loan).Scan(&zweite); err != nil {
+		t.Fatal(err)
+	}
+	if !zweite.Equal(erste) {
+		t.Errorf("Rückgabedatum verschoben: %s → %s", erste, zweite)
+	}
+}
+
+// Ein Kollege steht in derselben Tabelle wie ein Schüler, unterschieden nur durch `art`.
+func seedKollege(t *testing.T, pool *pgxpool.Pool, barcode, vorname string) string {
+	t.Helper()
+	var id string
+	if err := pool.QueryRow(context.Background(),
+		`INSERT INTO leser (barcode_id, vorname, nachname, art)
+		 VALUES ($1, $2, 'Lehrkraft', 'lehrkraft') RETURNING id`, barcode, vorname).Scan(&id); err != nil {
+		t.Fatalf("Kollege %q anlegen: %v", barcode, err)
+	}
+	return id
 }

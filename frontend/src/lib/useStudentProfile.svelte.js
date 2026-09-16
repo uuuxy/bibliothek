@@ -1,4 +1,5 @@
 import { apiFetch, apiClient } from './apiFetch.js';
+import { istKollegium } from './leserArt.js';
 import { toastStore } from './stores/toastStore.svelte.js';
 
 export function useStudentProfile() {
@@ -165,8 +166,12 @@ export function useStudentProfile() {
 		}
 	}
 
+	// Der Dialog bekommt die Daten der Ausleihe UND die Auskunft, ob eine Forderung
+	// entsteht: Bei einem Kollegen entsteht keine (entschieden am 16.09.2026, Begründung in
+	// repository/schaden_melden.go). Der Server entscheidet das selbst; hier steht es, damit
+	// der Dialog nicht nach einem Betrag fragt, den niemand fordern wird.
 	function openDamageModal(book) {
-		damageBook = book;
+		damageBook = { ...book, ohneForderung: istKollegium(profile) };
 		showDamageModal = true;
 	}
 
@@ -189,7 +194,9 @@ export function useStudentProfile() {
 				// Bibliothek und widersprach dem Bescheid des Landes (OFFEN.md 5.2). Der Brief
 				// ist ein eigener Schritt — „Bescheid erstellen" an der Gebühren-Karte.
 				toastStore.addToast(
-					'Verlust/Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
+					damageBook.ohneForderung
+						? 'Verlust/Schaden gebucht, das Exemplar ist ausgesondert. Eine Forderung entsteht bei einem Kollegen nicht.'
+						: 'Verlust/Schaden gebucht. Die Forderung steht unter „Gebühren & Schäden"; der Bescheid ist ein eigener Schritt.',
 					'success'
 				);
 				showDamageModal = false;
