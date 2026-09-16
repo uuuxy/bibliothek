@@ -75,11 +75,7 @@
 			<Ladekreis size="lg" />
 		</div>
 	{:else if ladefehler}
-		<LadeFehler
-			onerneut={onErneut ?? (() => {})}
-			titel="Verzeichnis nicht geladen"
-			text={ladefehler}
-		/>
+		<LadeFehler onerneut={onErneut} titel="Verzeichnis nicht geladen" text={ladefehler} />
 	{:else if filteredStudents.length === 0}
 		<div class="py-16 flex flex-col items-center justify-center text-slate-400 space-y-2">
 			<BookOpen class="h-10 w-10 text-slate-300" aria-hidden="true" />

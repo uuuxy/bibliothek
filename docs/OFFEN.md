@@ -867,7 +867,6 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
   (`?:`) nur mit `istOkZugriff`, nicht mit der UND-Kette; Schema-Gegenrichtung führt
   `lmf_termine.art -> lmf_plaene` doppelt mit falscher Begründung (Mengenvergleich macht es
   unsichtbar); `uuidPfadParameter` hat keinen Test.
-- **`ActiveStudentList` (`dfc9913a`):** „Erneut versuchen" bekommt ohne Callback einen Leerlauf.
 
 ### 5.14 Rasterdurchgang 11.–15.09.2026 (15.09.2026) — nur noch die fallengelassenen Verdachte
 

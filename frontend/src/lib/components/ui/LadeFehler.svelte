@@ -11,7 +11,12 @@
 	 *
 	 * Lag bis 05.09.2026 unter components/settings; allgemein, weil die Klasse es ist.
 	 *
-	 * @typedef {{ onerneut: () => void, titel?: string, text?: string }} Props
+	 * `onerneut` ist OPTIONAL: Ohne Rückruf gibt es keinen Knopf. Bis zum 17.09.2026 reichte
+	 * ein Aufrufer `() => {}` durch, wenn er keinen hatte — der Knopf stand da, hiess
+	 * „Erneut versuchen" und tat nichts. Ein Knopf, der nichts tut, ist schlimmer als
+	 * keiner: Wer ihn drückt, wartet auf etwas.
+	 *
+	 * @typedef {{ onerneut?: () => void, titel?: string, text?: string }} Props
 	 */
 	import Button from './Button.svelte';
 
@@ -27,5 +32,7 @@
 <div role="alert" class="flex flex-col items-center gap-4 py-20 text-center">
 	<p class="text-base font-medium text-on-surface">{titel}</p>
 	<p class="max-w-md text-sm text-on-surface-variant">{text}</p>
-	<Button variant="primary" onclick={onerneut}>Erneut versuchen</Button>
+	{#if onerneut}
+		<Button variant="primary" onclick={onerneut}>Erneut versuchen</Button>
+	{/if}
 </div>
