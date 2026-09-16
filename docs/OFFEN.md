@@ -24,10 +24,10 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    sind noch drei Dinge: die Liste der Buchungen, die nicht durchgingen (Schritt C), der
    Nachweis von Hand am Stack — Netz kappen, scannen, Netz zurück — und der Nachweis für den
    Server (Anfragen direkt an die Tür).
-2. **Zwei kurze Antworten** (Abschnitt 5.16 B): Soll die Ausleihhistorie eines Kollegen
-   nach einer Frist gelöscht werden? Soll er für ein verlorenes Buch zahlen? Die beiden
-   anderen Fragen sind am 16.09.2026 beantwortet und gebaut: Ein Kollege hat keine Frist
-   und wird nie gesperrt.
+2. **Erledigt am 16.09.2026: die vier Fragen zum Kollegium sind beantwortet und gebaut.**
+   Ein Kollege hat keine Frist und wird nie gesperrt. Er zahlt nicht für ein verlorenes
+   Buch — gebucht wird der Verlust trotzdem, nur ohne Forderung. Und was er gelesen hat,
+   wird nach der Rückgabe genauso von ihm getrennt wie bei einem Kind.
 3. **15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16 A). Sie ist
    fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
    einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
@@ -84,8 +84,7 @@ jemandem schaden?"**
    am Stack (2.3), dann die Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** werden
    dabei mit entschieden).
 1. **5.16** Leserdatei und Rolle Leitung: gebaut, samt Löschen eines Kollegen mitsamt
-   Konto. Offen sind nur noch der Blick auf den Stand und zwei Antworten zum Betrieb
-   (Lesehistorie, Schadensersatz).
+   Konto. Offen ist nur noch dein Blick auf den Stand.
 2. **5.1** Schäden und Benutzer.
 3. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -1000,17 +999,8 @@ stimmen und ob dir etwas fehlt. Was ein Kollege bewusst NICHT in seiner Akte hat
   Eintrag fällt sein Zugang; wird er aus dem Papierkorb zurückgeholt, kommt er ohne Zugang
   zurück, und die Schul-E-Mail in der Akte legt ihn neu an.
 
-**B. Zwei offene Antworten zum Betrieb.** Zwei der vier Fragen sind am 16.09.2026
-beantwortet und umgesetzt: Ein Kollege hat **keine Frist und wird nie gesperrt**. Seine
-Ausleihe ist eine Dauerleihe, und eine Dauerleihe wird nirgends überfällig — die Akte zeigt
-„ohne Frist", die Leserdatei zählt ihn nicht, die Übersicht führt ihn nicht als Mahnfall,
-und eine Ersatzforderung aus Fristüberschreitung entsteht nicht. Gemahnt wurde er ohnehin
-nie: Der Mahnlauf liest die Sicht `schueler`. Offen bleiben:
-
-1. **Soll die Befristung der Lesehistorie auch fürs Kollegium gelten?** Heute nein.
-2. **Soll ein Kollege für ein verlorenes Buch zahlen?** Heute entsteht die Forderung, steht
-   aber in keiner Übersicht — die Einzelheiten in 5.17, Fund 1. Sie hängt jetzt NICHT mehr
-   an einer Frist; wenn das gewollt ist, ist es eine eigene Entscheidung.
+**B. Die vier Fragen zum Betrieb sind beantwortet** (16.09.2026) und stehen als
+Entscheidung unter D.
 
 **C. Der Nummernkreis bleibt unangetastet — bewusst.** Gemessen auf dem Testserver
 (16.09.2026): Exemplare 1…122.127 (30.658 nackte Littera-Nummern, 4.065 `LMF-`, 65 `B-`),
@@ -1047,26 +1037,16 @@ Git (`4edcf1b8`), das Zusammenführen eines doppelt stehenden Kollegen (`bf36df5
 mehr änderbare Art (`cd46fc44`, `ecd007bd`) und die veralteten Zahlen in
 `docs/invarianten.md`. Übrig sind die beiden, an denen eine Entscheidung hängt.
 
-**1. Ein Kollege bekommt eine Forderung, die in keiner Liste steht.** „Verlust/Schaden melden"
-steht in seiner Akte (`StudentProfile.svelte`, nur am Recht `bearbeiten`, nicht an der Art),
-und `meldeSchaden` nimmt den Schuldner aus der Ausleihe — die Forderung entsteht also. Am
-echten Postgres nachgestellt: In seiner Akte steht sie (1), im Reiter „Schadensersatz" nicht
-(0, `bescheid_ausstehend.go` verbindet mit der Sicht `schueler`), und „Bescheid erstellen"
-antwortet „Schüler nicht gefunden" (404), weil `EmpfaengerFuerBescheid` dieselbe Sicht liest.
-Das Geld ist offen und taucht in der Übersicht nie auf. Zu entscheiden ist zuerst, ob ein
-Kollege überhaupt einen Bescheid bekommt; danach entweder die Liste um ihn erweitern oder die
-Türen in seiner Akte schließen.
+**Übrig aus diesem Durchgang: Ein zweites Konto derselben Person erzeugt eine zweite
+Leserzeile.** Der Wächter `trg_benutzer_hat_leserzeile` hängt jedem Konto ohne Leserzeile
+eine an, und die Zuordnung zur vorhandenen läuft über die Schul-E-Mail, die am KONTO steht.
+Wird ein Konto gelöscht und später ein neues angelegt, entsteht deshalb wieder eine zweite
+Zeile. Repariert wird das mit „das ist dieselbe Person" (Zusammenführen); entstehen lassen
+sollte man es trotzdem nicht. Die Waisen-Zeile einer ABGELEHNTEN Anfrage gibt es seit dem
+16.09.2026 nicht mehr — sie geht mit dem Konto, solange nichts an ihr hängt.
 
-**2. Ein Kollege kommt nicht mehr aus der Leserdatei heraus.** Das Löschen ist in der Akte für
-Kollegen ausgeblendet (richtig so), und `DeleteStudent` schreibt auf die Sicht `schueler` —
-für einen Kollegen also 0 Zeilen und „student not found". Wird sein KONTO gelöscht, bleibt die
-Leserzeile samt Ausweisnummer stehen (`benutzer.leser_id` steht auf ON DELETE SET NULL, und die
-Prüfung davor verweigert nur bei offenen Ausleihen). Ein zweites Konto derselben Person erzeugt
-dann über den Trigger eine zweite Leserzeile. Reparieren lässt sich das seit dem 16.09.2026
-(Zusammenführen, `bf36df57`); es entstehen lassen sollte man es trotzdem nicht. Zu klären ist
-mit dem Löschen zusammen, was mit dem KONTO geschieht, wenn die Leserzeile eines Kollegen
-gelöscht wird — Papierkorb und Papierkorb-Ansicht schreiben deshalb bewusst weiter gegen die
-Sicht.
+Die übrigen Funde dieses Durchgangs sind behoben; die Einzelheiten stehen in den
+Commit-Nachrichten vom 16.09.2026.
 
 **Was der Durchgang ausdrücklich in Ordnung fand:** die Sicht-Falle (`CREATE VIEW … SELECT *`
 friert die Spalten ein) hat ihr eigenes Gate (`db/sicht_schueler_vollstaendig_pg_test.go`); das
@@ -1083,31 +1063,14 @@ in einer Transaktion geschrieben, und ein stiller Null-Treffer ist dort ein Fehl
 Umfang: die 22 Commits seit dem Durchgang aus 5.17, also die ganze Leserdatei-Arbeit
 (Anlegen, Ändern, Löschen, Zusammenführen, Schul-E-Mail, Ausweis-Vorsilbe, keine Frist fürs
 Kollegium). Keine neue Migration in diesem Zeitraum — Frage 12 hing am eingefrorenen Inventar.
-Drei Funde, jeder am laufenden Pfad nachgestellt.
+Drei Funde, jeder am laufenden Pfad nachgestellt; der erste ist behoben.
 
-**1 · Eine abgelehnte Zugangsanfrage lässt ihre Leserzeile stehen (A, teilweise behoben).**
-Die Selbstanmeldung schreibt ein Konto ohne `leser_id`; der Wächter `trg_benutzer_hat_leserzeile`
-hängt eine frische Leserzeile daran. `DeleteUser` (`repository/audit_users.go`) löscht nur die
-Kontozeile — die Leserzeile bleibt als Waise in der Leserdatei stehen, ohne Ausweis, mit dem aus
-der Adresse geratenen Namen. Der **Regelfall** ist seit `e72c11ab` weg: Wer schon in der
-Leserdatei steht, wird über „das ist dieselbe Person" zugeordnet statt gelöscht. **Offen bleibt
-der Ablehnungs-Fall:** eine Anfrage von jemandem, der gar nicht in die Leserdatei gehört, wird
-weiterhin gelöscht und hinterlässt die Waise.
-
-Nachstellung (rot gesehen am echten Postgres, über den Handler): Eine Zeile
-`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, zugang_beantragt_am)
-VALUES (…, 'kollegium', false, CURRENT_TIMESTAMP) RETURNING leser_id` anlegen — der Wächter
-liefert die Leserzeile zurück —, dann `DeleteUserHandler` auf das Konto rufen und zählen, ob die
-Leserzeile noch da ist. Sie ist es.
-
-Die Regel für die Löschung ist die eigentliche Arbeit, nicht der Code: Die Leserzeile darf nur
-mitgehen, wenn sie unberührt ist. Eine Aufzählung im Go-Code hält das nicht — an `leser` hängen
-acht Fremdschlüssel mit gemischter Löschwirkung (`ausleihen` und `schadensfaelle` RESTRICT,
-`schueler_fotos` und `vormerkungen` CASCADE, `schadensersatz_bescheide`, `nachbuch_meldungen`
-zweimal und `benutzer` SET NULL), und die nächste Tabelle, die jemand anhängt, steht in keiner
-Aufzählung. Deshalb: explizite Prüfung PLUS eine Ratsche, die die Fremdschlüssel auf `leser` aus
-der Datenbank liest und gegen eine Liste hält. Der Ausweis ist der Sonderfall, den keine
-Fremdschlüssel-Abfrage sieht — er steht als Spalte in der Zeile.
+Fund 1 (die Waisen-Leserzeile einer abgelehnten Zugangsanfrage) ist am 16.09.2026 behoben:
+Die Leserzeile geht mit dem Konto, solange sie unberührt ist. Welche Tabellen „unberührt"
+umfasst, liest die Prüfung aus dem Fremdschlüssel-Katalog der Datenbank statt aus einer
+Aufzählung im Go-Code — wer eine Tabelle an `leser` hängt, bekommt die Prüfung damit
+geschenkt. Der Ausweis hält die Zeile ebenfalls; ihn sieht keine Fremdschlüssel-Abfrage,
+er steht als Spalte in der Zeile.
 
 **2 · Die Dauerleihe eines Kollegen wird als überfällig gefärbt (B).** In der Akte am 16.09.
 behoben; zwei weitere Ausgänge blieben: `components/BorrowersListe.svelte` und
