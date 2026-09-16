@@ -20,6 +20,12 @@ import (
 // neueste gewinnt.
 func TestLmfPlan_SpeichernListenAuslassen(t *testing.T) {
 	pool := pgTestPool(t)
+	// Eigene Ausgangslage: Der Test zählt weiter unten die Klassen MIT SCHÜLERN
+	// (KlassenMitSchuelern) und erwartet genau vier. Bis zum 16.09.2026 stimmte das nur,
+	// solange kein vorher laufender Test einen Schüler hinterließ — die Reihenfolge der
+	// Testdateien im Paket entschied also über Grün und Rot. Das ist keine Aussage über
+	// den Plan, sondern über die Sortierung der Dateinamen.
+	resetInventurDaten(t, pool)
 	ctx := context.Background()
 	repo := NewLmfTerminRepository(pool)
 	t.Cleanup(func() {
