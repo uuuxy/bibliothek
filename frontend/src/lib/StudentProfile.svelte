@@ -148,7 +148,7 @@
 							? 'border-blue-600 text-blue-600'
 							: 'border-transparent text-slate-600 hover:text-slate-800'}"
 					>
-						{kollege ? 'Persönliche Daten' : 'Stammdaten & Adresse'}
+						Stammdaten & Adresse
 					</button>
 				</div>
 

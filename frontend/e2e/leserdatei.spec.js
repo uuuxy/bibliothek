@@ -42,14 +42,18 @@ test('Leserdatei: ein Kollege steht in der Liste, hat eine Akte und ist über de
 	await zeile.getByRole('button', { name: new RegExp(`Profil von Katrin ${nachname}`) }).click();
 	await expect(page.getByRole('heading', { name: `Katrin ${nachname}` })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Persönliche Daten' }).click();
+	// Der Reiter heisst seit dem 16.09.2026 fuer JEDEN „Stammdaten & Adresse" — eine Akte,
+	// ein Name. Vorher stand ueber derselben Sache beim Kollegium „Persoenliche Daten".
+	await page.getByRole('button', { name: 'Stammdaten & Adresse' }).click();
 	const akte = page.locator('main');
-	await expect(akte.getByText('Ausweisnummer', { exact: true })).toBeVisible();
 	await expect(akte.getByText(ausweis).first()).toBeVisible();
-	// Was ihr nicht gehört, steht auch nicht da: Als „Keine Angabe" behauptete die Akte,
-	// es FEHLE — an eine Elternadresse geht die Vormerkungs- und die Mahnpost.
-	await expect(akte.getByText('Postanschrift')).toHaveCount(0);
-	await expect(akte.getByText('Eltern E-Mail')).toHaveCount(0);
+	// Dieselben Angaben wie bei einer Schuelerin — die Akte hat nur noch EINE Form
+	// (Peter: „warum eine andere maske als bei schuelern?"). Die Postanschrift gehoert
+	// ausdruecklich dazu: An ihr haengen Mahnung und Bescheid.
+	await expect(akte.getByText('Postanschrift')).toBeVisible();
+	await expect(akte.getByText('Art', { exact: true })).toBeVisible();
+	// Was am KONTO haengt, steht weiterhin nicht hier.
+	await expect(akte.getByText(/Benutzer & Rechte/)).toBeVisible();
 
 	// ── 3. Die Theke: über den NAMEN, nicht über den Ausweis ────────────────────
 	// Ein Buch auf ihren Namen, damit die Akte an der Theke etwas zu zeigen hat.
