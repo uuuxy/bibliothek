@@ -47,6 +47,14 @@ export function escapeSchliesst(node, schliessen) {
 	/** @param {KeyboardEvent} e */
 	function beiTaste(e) {
 		if (e.key !== 'Escape') return;
+		// Hat ein Bauteil INNERHALB des Dialogs die Taste schon verarbeitet, ist sie
+		// verbraucht (17.09.2026, OFFEN.md 5.9). Ein offenes Auswahlfeld (ui/Select)
+		// schließt mit Escape seine Liste und ruft preventDefault — dieser Lauscher hängt
+		// am window und kam danach trotzdem dran: EIN Tastendruck schloss die Liste UND
+		// den ganzen Dialog, und die halb ausgefüllte Eingabe war weg. Dieselbe Regel,
+		// mit der escapeIstBelegt() den Router vom Dialog fernhält, gilt damit auch nach
+		// innen.
+		if (e.defaultPrevented) return;
 		if (stapel[stapel.length - 1] !== eintrag) return;
 		e.preventDefault();
 		e.stopPropagation();

@@ -782,8 +782,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.9 Oberfläche
 
-- Escape in einem offenen Select schließt den ganzen Dialog: `ui/Select.svelte` ruft nur
-  `preventDefault`, `escapeSchliesst.js` prüft das nicht.
 - Der Stift der Katalog-Kachel: `BuchKarte.svelte` sagt „öffnet die Akte",
   `e2e/cover-aendern.spec.js` sagt „öffnet die Titel-Verwaltung". Im Browser messen, einen
   Kommentar berichtigen.

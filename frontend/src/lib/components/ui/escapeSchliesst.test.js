@@ -49,6 +49,28 @@ describe('escapeSchliesst', () => {
 		u.destroy();
 	});
 
+	// Ein offenes Auswahlfeld IM Dialog verbraucht die Taste.
+	//
+	// Fund (OFFEN.md 5.9): `ui/Select` schließt mit Escape seine Liste und ruft
+	// preventDefault. Dieser Lauscher hängt am window und kam danach trotzdem dran —
+	// EIN Tastendruck schloss die Liste UND den ganzen Dialog, und die halb ausgefüllte
+	// Eingabe war weg. Wer eine Auswahl wieder zuklappt, will nicht das Formular
+	// verlieren.
+	it('lässt den Dialog offen, wenn ein Bauteil darin die Taste schon verarbeitet hat', () => {
+		const zu = vi.fn();
+		const a = escapeSchliesst(document.createElement('div'), zu);
+
+		const e = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+		e.preventDefault(); // so wie ui/Select es tut, bevor das Ereignis das window erreicht
+		window.dispatchEvent(e);
+		expect(zu, 'die Taste war schon verbraucht').not.toHaveBeenCalled();
+
+		// Gegenprobe: ein unverbrauchtes Escape schließt weiterhin.
+		taste('Escape');
+		expect(zu).toHaveBeenCalledTimes(1);
+		a.destroy();
+	});
+
 	it('nimmt einen ausgetauschten Schließweg an', () => {
 		const alt = vi.fn();
 		const neu = vi.fn();
