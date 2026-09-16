@@ -33,8 +33,11 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
    einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
    den Namen, und „Neuer Leser“ fragt zuerst, wer das ist. Beim Ausweisdruck steht auf der
-   Karte einer Lehrkraft seit dem 16.09. „Lehrerausweis“ statt „Schülerausweis“. Sieh dir
-   an, ob die Wörter stimmen und ob dir etwas fehlt.
+   Karte einer Lehrkraft seit dem 16.09. „Lehrerausweis“ statt „Schülerausweis“. In der Akte
+   steht seit dem Abend des 16.09. auch die Schul-E-Mail: Fehlt sie einem Kollegen aus der
+   Zeit davor, trägst du sie dort nach — damit bekommt er seinen Zugang, und die
+   Selbstanmeldung legt ihn nicht ein zweites Mal an. Sieh dir an, ob die Wörter stimmen und
+   ob dir etwas fehlt.
 5. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -79,9 +82,8 @@ jemandem schaden?"**
    am Stack (2.3), dann Peters Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** entscheidet
    Peter dabei mit).
 2. **5.16** Leserdatei und Rolle Leitung: gebaut. Offen sind Peters Blick auf den Stand,
-   seine vier Antworten zum Betrieb (Frist, Historie, Mahnung, Schadensersatz) und zwei
-   Punkte, die daran hängen: das Löschen eines Kollegen samt Konto (5.16 C) und das Finden
-   von Altbeständen ohne Adresse (5.16 D).
+   seine vier Antworten zum Betrieb (Frist, Historie, Mahnung, Schadensersatz) und ein Punkt,
+   der daran hängt: das Löschen eines Kollegen samt Konto (5.16 C).
 3. **5.1** Schäden und Benutzer.
 4. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -899,16 +901,7 @@ Papierkorb wandert. Heute zeigte das Konto auf eine gelöschte Zeile. Der Schrei
 absichtlich nicht mit umgehängt worden — er würde sonst über die API erreichbar, bevor diese
 Frage beantwortet ist.
 
-**D. Altbestände: Kollegen ohne Adresse werden nicht von allein gefunden.** Seit dem
-16.09.2026 ist die Schul-E-Mail beim Anlegen Pflicht, ein Doppeleintrag kann also nicht mehr
-neu entstehen. Wer vorher ohne Adresse angelegt wurde, kann aber doppelt dastehen. Die Zeile
-über der Benutzertabelle warnt bisher nur bei gleichnamigen KONTEN aus Littera
-(`@littera.invalid`), nicht bei einer Leserzeile ohne Konto. Reparierbar sind diese Fälle
-seit dem 16.09. (Zusammenführen); gefunden werden sie noch nicht. Zu klären, bevor viele
-Kollegen sich anmelden: entweder derselbe Hinweis auch gegen Leserzeilen ohne Konto, oder die
-Freischaltung bietet das Zusammenführen an.
-
-**E. Der Nummernkreis bleibt unangetastet — bewusst.** Gemessen auf dem Testserver
+**D. Der Nummernkreis bleibt unangetastet — bewusst.** Gemessen auf dem Testserver
 (16.09.2026): Exemplare 1…122.127 (30.658 nackte Littera-Nummern, 4.065 `LMF-`, 65 `B-`),
 Leser 33 Zeilen, genau EINE Nummer wäre ohne Vorsilbe doppeldeutig. Aus `littera_sav.mdb`:
 Exemplare 1…61.512, Leser 0…3.531 — 1.990 von 1.991 Lesernummern sind dort zugleich
@@ -917,13 +910,14 @@ gemeinsamer Nummernkreis ohne Vorsilben wäre möglich, brächte aber nichts, so
 Offline-Theke die Vorsilbe braucht: **Ohne Netz ist sie die einzige Information, an der die
 Theke einen Buchscan von einem Ausweisscan unterscheiden kann.**
 
-**F. Entschieden und nicht mehr zu diskutieren** (steht hier, weil die Frage sonst wiederkommt):
+**E. Entschieden und nicht mehr zu diskutieren** (steht hier, weil die Frage sonst wiederkommt):
 
 - Die E-Mail eines Kollegen wird NICHT in `leser.eltern_email` abgetippt. Die Spalte gehört
   dem LUSD-Import und heißt auch in der DSGVO-Auskunft „Eltern-E-Mail". Die Adresse steht
   eindeutig am Konto (`benutzer.email`, `UNIQUE lower(email)`); eine zweite Kopie wäre die
-  zweite Tür zu derselben Identität. Soll sie in der Akte stehen, dann gelesen vom Konto und
-  nicht änderbar.
+  zweite Tür zu derselben Identität. Seit dem 16.09.2026 steht sie in der Akte — gelesen vom
+  Konto, und NACHTRAGBAR, solange keine da ist (dann entsteht das Konto). Steht eine da, ist
+  das Feld eine Anzeige; geändert wird sie in der Benutzerverwaltung.
 - Die Leitung sieht den Menüpunkt „Einstellungen" weiter und darf darin LUSD & Versetzung,
   Datenverwaltung, LMF-Aktionen und Lieferanten bedienen; verschlossen sind Schule, Fristen
   und Mailversand (`manage_settings`) sowie Benutzer & Rechte (`manage_users`). Ein Menüpunkt
