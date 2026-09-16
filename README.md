@@ -1,7 +1,7 @@
 # Bibliothek — Schulbibliotheks-Software
 
 Verwaltung einer Schulbibliothek: Ausleihe am Scanner-Tresen, Medienkatalog, Mahnwesen,
-Inventur, Bestellwesen und Schülerdatei. Entstanden als Ersatz für eine
+Inventur, Bestellwesen und Leserdatei. Entstanden als Ersatz für eine
 Windows-Altanwendung und im Betrieb an einer Gesamtschule — mit allem, was das mit sich
 bringt: gewachsener Altbestand, Barcodes, die nicht neu geklebt werden können, und
 Schülerdaten, die dem Datenschutz unterliegen.
@@ -26,7 +26,8 @@ konkreten Betrieb gebaut, und die Entscheidungen darin sind entsprechend konkret
 - **Inventur** — sitzungsgebunden, damit parallele Zählungen sich nicht überschreiben.
 - **Bestellwesen** — Bedarfsvorschläge aus dem Bestand, Bestellmail samt Barcodebogen,
   Wareneingang, und für Händler, die selbst etikettieren, ein Bestätigungslink.
-- **Druck-Center** für Etiketten und Schülerausweise.
+- **Druck-Center** für Etiketten und Ausweise. Die Aufschrift der Karte richtet sich nach
+  der Art des Lesers — „Schülerausweis" oder „Lehrerausweis".
 - **Geräteausleihe** (Laptops/Tablets) mit Zubehör-Checklisten.
 - **Datenschutz** — Löschroutinen für Abgänger, verschlüsselte Schülerfotos, Audit-Trail.
 - **Öffentliche Seiten ohne Anmeldung** — Katalog (`/katalog`) für Schüler und Eltern mit
@@ -34,7 +35,12 @@ konkreten Betrieb gebaut, und die Entscheidungen darin sind entsprechend konkret
   Bildschirm im Flur (Buch des Monats, Neuzugänge, Beliebt diese Woche). Beide liefern nur
   Titeldaten, nie Ausleiher.
 - **Kollegium** — eigenes Portal, Selbstanmeldung mit dem Schul-Postfach, Klassensatz-
-  Reservierungen, Buchwünsche und Meldungen an die Bibliothek.
+  Reservierungen, Buchwünsche und Meldungen an die Bibliothek. Das ist der Grundzustand
+  jeder Lehrkraft und keine vergebene Rolle; Rollen (Leitung, Mitarbeiter, Helfer, Admin)
+  erhebt der Admin an der E-Mail-Adresse.
+- **Leserdatei** — Schüler und Kollegium in einer Liste. Schüler kommen aus der LUSD,
+  Lehrkräfte und LiV über die Selbstanmeldung oder von Hand; wer wer ist, steht als Art
+  in der Akte und entscheidet keine Rechte.
 - **Statistiken ohne Klarnamen** — Zirkulation, Wiederbeschaffungswert, Renner und Ladenhüter.
 - **Selbstprüfung der Betriebsbereitschaft** — was ist eingerichtet, aber nicht in Betrieb?
 - **Barrierefreiheit** — auf WCAG 2.1 AA gebaut und per Browser-Gate gemessen (axe über den Anfangszustand aller Hauptansichten, Fokusfalle, Tabellen, Bewegung); Tastaturbedienung im [Handbuch](docs/HANDBUCH.md), Umfang, Grenzen und bekannte Lücken in [FACHKONZEPT.md §19](docs/FACHKONZEPT.md).

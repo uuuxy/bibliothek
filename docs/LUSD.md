@@ -156,7 +156,7 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
   Seiten:** War die Quelle manuell gesperrt (Ausweis gestohlen, Hausverbot), trägt das
   Ziel danach diese Sperre mit ihrem Grund.
 - Die Kandidatensuche im Dialog sieht **auch Abgänger und Gesperrte** — die Aktivliste der
-  Schülerdatei blendet sie aus. Anonymisierte lassen sich nicht zusammenführen.
+  Leserdatei blendet sie aus. Anonymisierte lassen sich nicht zusammenführen.
 - **Rückweg:** In derselben Transaktion entsteht in `audit_log` (Tabelle `schueler`,
   Aktion `ZUSAMMENGEFUEHRT`, am Ziel) ein Eintrag mit den vollständigen Stammdaten der
   Quelle, dem Stand des Ziels davor und den Kennungen jeder gewanderten Zeile. Ein falsch
@@ -174,7 +174,7 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
    Klassenwechsel, Rückkehrer, Abgänger, Nicht im Export, Nicht abgleichbar, Mehrdeutig.
 4. **Import finalisieren.** Bei mehr als 30 % Abgängern verlangt der Server die zweite
    Bestätigung (Massenabgang) — beim echten Schuljahreswechsel normal.
-5. Gegenprobe: je Rubrik zwei, drei Schüler in der Schülerdatei aufrufen.
+5. Gegenprobe: je Rubrik zwei, drei Schüler in der Leserdatei aufrufen.
 6. Danach die Versetzung (Klassen hochzählen), falls der Export noch die alten Klassen trug.
 
 ## 7. Datenschutz in einem Absatz

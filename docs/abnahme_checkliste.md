@@ -178,11 +178,13 @@ Kollegium“ grün. Eine Lehrkraft mit Schulpostfach, die **kein** Konto hat.
        Meldung bleibt stehen (verschwindet nicht nach Sekunden).
 2. [ ] System → Benutzer & Rechte: Über der Tabelle steht „1 Zugangsanfrage aus der
        Selbstanmeldung wartet auf Freischaltung: <Name>“; die Zeile trägt „Zugang beantragt“
-       (nicht „Inaktiv“), Rolle Kollegium, Name aus der Adresse geraten.
+       (nicht „Inaktiv“), als Rolle steht dort „Kollegium“ — das ist der Grundzustand und
+       keine Erhebung; im Bearbeiten-Dialog heißt der Eintrag „Kollegium (keine Rolle, nur
+       Portal)“ und steht deshalb ganz oben. Name aus der Adresse geraten.
 3. [ ] Person prüfen (ist das wirklich eine Lehrkraft?), „Bearbeiten“ → „Benutzerkonto ist
        aktiv“ → Speichern. Die Zeile über der Tabelle verschwindet.
 4. [ ] Die Lehrkraft meldet sich erneut an — jetzt kommt sie hinein und sieht **genau einen**
-       Menüpunkt: „Mein Portal“. Kein Kiosk, keine Schülerdatei.
+       Menüpunkt: „Mein Portal“. Kein Kiosk, keine Leserdatei.
 5. [ ] Gegenprobe: Ein Postfach einer **fremden** Domain landet nicht in der Benutzerliste
        (normale „Anmeldung fehlgeschlagen“).
 

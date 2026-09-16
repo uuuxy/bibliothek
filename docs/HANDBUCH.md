@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-15. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-16. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin. Ein Produktrundgang als
 Video (8 min) zeigt jeden Bereich in Aktion.
@@ -31,7 +31,7 @@ _Einstellungen → Erreichbarkeit & Alarme_ zum Kopieren. (§16)
 
 Jede Seite hat **eine** Suchleiste oben über der vollen Breite, Filter und Knöpfe stehen in
 der Zeile darunter. Sie sucht, worum es auf der Seite geht: der Medienkatalog Bücher,
-Schülerdatei und Mahnwesen Schüler, die Inventur scannt. Eine seitenübergreifende
+Leserdatei und Mahnwesen Menschen, die Inventur scannt. Eine seitenübergreifende
 Suchleiste, die von jeder Verwaltungsseite aus zu Buch- oder Schülerakte springt, gibt es
 nicht mehr (zurückgebaut am 04.09.2026). Gebucht wird nur an der Theke.
 
@@ -240,14 +240,33 @@ gehen die Fristen an den allgemeinen Stichtag zurück (_Einstellungen → Auslei
 31.07.). Nicht angefasst: gesperrte Schüler, mehrjährige Ausleihen, von Hand gesetzte
 Fristen und Ausgabe-Pläne. (§2.3)
 
-## Schülerdatei
+## Leserdatei
 
+Bis zum 16.09.2026 hieß dieser Menüpunkt _Schülerdatei_ und führte nur Schüler. Er führt
+jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer Liste.
+
+- **Wer steht hier drin?** Schüler kommen aus der LUSD. Lehrkräfte und LiV entstehen
+  entweder von selbst, sobald sich jemand über „Mein Portal" anmeldet, oder Sie legen sie
+  mit _Neuer Leser_ an. Wer wer ist, steht als **Art** in der Akte — Schüler, Lehrkraft
+  oder LiV. Die Art entscheidet keine Rechte; ausleihen darf jeder aktive Leser.
+- **Reiter**: _Aktive Leser_, _Ehemalige / Archiv_ und (mit dem Recht zum Löschen)
+  _Papierkorb_.
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
-- **Akte**: _Ausleihen & Historie_ und _Stammdaten & Adresse_. Dokumente: Ausweis drucken,
-  Kontoauszug, Ersatzforderung (nur bei offenem Schaden), DSGVO-Auskunft. Gibt es für das
+- **Akte**: _Ausleihen & Historie_ und _Stammdaten & Adresse_ — für jeden dieselben Felder
+  an derselben Stelle. Bei einer Lehrkraft sind drei davon verschlossen, weil sie ihr
+  nicht gehören: Klasse, Abgangsjahr und LUSD-Kennung. Geburtsdatum, Ausweisnummer,
+  Anschrift und Eltern-E-Mail stehen jedem offen und bleiben beim Kollegen meist leer.
+  Die Art lässt sich zwischen Lehrkraft und LiV umstellen; über die Schüler-Grenze geht
+  sie nicht — ein Schüler kommt aus der LUSD und bleibt Schüler.
+- **Dokumente** in der Akte: Ausweis drucken, Kontoauszug, Ersatzforderung (nur bei offenem
+  Schaden), DSGVO-Auskunft. Die drei letzten gibt es nur beim Schüler. Gibt es für das
   Kind einen Schadensersatz-Bescheid, steht unter _Ausleihen & Historie_ die Karte
   **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
   und _Nachdruck_ (derselbe Brief mit derselben Nummer).
+- **Ausweis drucken**: Auf der Karte steht, was sie ist — _Schülerausweis_ oder
+  _Lehrerausweis_. Die Gültigkeit („Gültig bis 31.07. …") trägt nur der Schülerausweis;
+  der Ausweis einer Lehrkraft läuft mit keinem Schuljahr ab. Neue Ausweisnummern beginnen
+  mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen.
 - **Gebühren & Schäden**: offen / bezahlt; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. Steht eine offene Forderung noch auf keinem Brief, gibt es hier _Bescheid erstellen_
   (derselbe Dialog wie im Mahnwesen). (§14)
@@ -255,14 +274,25 @@ Fristen und Ausgabe-Pläne. (§2.3)
   Das Kind steht danach nicht mehr in der Mahnliste, sondern im Mahnwesen unter _Schadensersatz_.
   Der Brief an die Eltern ist der nächste, eigene Schritt.
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
-- **Neuer Schüler** per Formular; klassenweise besser über den LUSD-Import
+- **Neuer Leser** per Formular. Der Dialog fragt zuerst, wer das ist: Schüler, Lehrkraft
+  oder LiV. Klassenweise legt man Schüler besser über den LUSD-Import an
   (_Einstellungen → LUSD & Versetzung_).
+
+  Bei einer Lehrkraft oder LiV ist die **Schul-E-Mail Pflicht**. Sie ist keine
+  Kontaktangabe, sondern der Schlüssel: Mit ihr entsteht zugleich der Zugang zu „Mein
+  Portal", und die Person steht später nicht doppelt da, wenn sie sich selbst anmeldet.
+  Freigeschaltet wird der Zugang nur, wenn Sie auch _Benutzer & Rechte_ dürfen; sonst
+  entsteht eine Zugangsanfrage, die ein Admin freischaltet. Eine **Rolle** vergibt dieses
+  Formular nie.
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**; endgültiges
   Löschen/Anonymisieren nur mit Namensbestätigung (DSGVO-Kette, §8).
 - **Doppelter Datensatz?** (Recht „Schüler zusammenführen", ab Werk nur Admin; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
-  Person zweimal in der Kartei — typisch nach einer Namensänderung in der LUSD, die der
-  Export ohne Schüler-ID nicht wiedererkannt hat —, beide Datensätze zusammenführen. Es
+  Person zweimal in der Kartei, beide Datensätze zusammenführen. Der Grund ist je nach Art
+  ein anderer, und er steht im Dialog: beim Schüler eine Namensänderung in der LUSD, die
+  der Export ohne Schüler-ID nicht wiedererkannt hat; beim Kollegen ein Eintrag von Hand,
+  der sich später selbst angemeldet hat. Schüler und Kollegen lassen sich **nicht**
+  miteinander verschmelzen — Lehrkraft und LiV schon. Es
   bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat; Ausleihen, Gebühren und
   Historie des anderen wandern hinüber, vom Foto bleibt das jüngere. Die Suche im Dialog
   findet auch Ehemalige und Gesperrte. **Wurde für den aufgelösten Datensatz schon ein
@@ -317,7 +347,7 @@ wer alles zurückgegeben hat, verschwindet. Außerhalb dieser Zeit steht hier nu
 Hinweis mit den Daten.
 
 Wer die Schule dann **verlassen** hat (Versetzung: Abschlussklasse; LUSD-Import: fehlt im
-neuen Export), steht nicht mehr hier, sondern in der Schülerdatei unter _Ehemalige /
+neuen Export), steht nicht mehr hier, sondern in der Leserdatei unter _Ehemalige /
 Archiv_ — mit offenen Büchern zusätzlich im Mahnwesen. Er bleibt bis zum Ende der
 **Karenzzeit** (Vorgabe 90 Tage; _Einstellungen → Datenschutz & Sitzung_) als gesperrter
 Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu reparieren — und wird danach
@@ -376,7 +406,19 @@ selbst protokolliert; nach DSGVO-Tilgung zeigt auch dieser Weg nichts mehr. (§1
 
 Reiter **Benutzer** (anlegen, bearbeiten, deaktivieren; **Zugangsanfragen** aus der
 Selbstanmeldung freischalten) und **Rollen & Rechte** (Matrix; Änderungen wirken sofort auf
-Menü und Schnittstelle). Rollen: Admin, Mitarbeit, Helfer, Kollegium. (§12)
+Menü und Schnittstelle).
+
+**Vier Rollen vergeben Sie hier: Admin, Leitung, Mitarbeit, Helfer.** Die Leitung darf
+alles, was der Admin darf, außer zwei Dingen: Benutzer & Rechte und die Einstellungen.
+(Der Grund ist nicht Misstrauen: Wer Benutzerkonten ändert, ändert auch E-Mail-Adressen —
+und die Adresse ist die Anmeldung.)
+
+**Kollegium steht nicht in der Matrix, und das ist Absicht.** Es ist keine Rolle, sondern
+der Ausgangszustand jeder Lehrkraft: Sie meldet sich über „Mein Portal" mit ihrer
+Schuladresse selbst an, Sie schalten sie frei, und damit sieht sie den Bestand, merkt vor,
+meldet Fehler und leiht an der Theke auf ihren Namen. Das sind erst einmal alle. Wer mehr
+können soll, bekommt von Ihnen eine der vier Rollen. Was das Kollegium darf, ist fest
+eingebaut und je Schule nicht verstellbar. (§12)
 
 ## Einstellungen
 

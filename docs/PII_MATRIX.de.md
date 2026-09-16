@@ -20,9 +20,15 @@ Fachrecht über den echten Router mit einer Rolle, die das Recht ihrer Zeile
 NICHT hat, und verlangt 403 mit der Begründung des Rechte-Wächters. Damit ist
 auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein Recht, das im
 Seed ohnehin jede Rolle hält.
-Stand: 13.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 16.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen).
+
+**Seit dem 16.09.2026 stehen hinter denselben Routen auch Daten von Lehrkräften.** Die
+Leserdatei führt Schüler und Kollegium in einer Tabelle (`leser`, FACHKONZEPT §12.3); die
+Stufen unten sind davon unberührt, weil eine Lehrkraft dort weniger hinterlegt hat als ein
+Schüler — keine Klasse, kein Abgangsjahr, keine LUSD-Kennung, keine Eltern-E-Mail. Was
+hier „Schülerdaten" heißt, ist also die obere Schranke und gilt für jeden Leser.
 
 **Stufen** (bemessen an dem, was das Recht der Zeile ALLEIN öffnet — was erst ein
 zusätzliches `view_students` freischaltet, steht als Anmerkung):
@@ -31,7 +37,7 @@ zusätzliches `view_students` freischaltet, steht als Anmerkung):
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- |
 | 0     | keine Schülerdaten                                                                                                                                                                                                 | Katalog, Bestellwesen, System |
 | 1     | Kiosk-Niveau: Name, Klasse, Barcode-ID, Sperrstatus                                                                                                                                                                | Scanner-Suche, Vormerkungen   |
-| 2     | Verwaltung: + Geburtsdatum, Abgängerjahr, Sperrgrund, LUSD-ID, Ausleihhistorie (befristet: nächtlicher Job trennt abgeschlossene Ausleihen nach Einstellungs-Frist vom Schüler, `jobs/cron_dsgvo_lesehistorie.go`) | Schülerdatei, Mahnwesen       |
+| 2     | Verwaltung: + Geburtsdatum, Abgängerjahr, Sperrgrund, LUSD-ID, Ausleihhistorie (befristet: nächtlicher Job trennt abgeschlossene Ausleihen nach Einstellungs-Frist vom Schüler, `jobs/cron_dsgvo_lesehistorie.go`) | Leserdatei, Mahnwesen         |
 | 3     | sensibel: Wohnadresse, Eltern-E-Mail, Foto, Gebühren-/Schadensdaten mit Namen                                                                                                                                      | DSGVO-Auskunft, Rechnungen    |
 
 **Rechte-Spalte:** ein Rechtename aus `db/seed.go` (geprüft gegen

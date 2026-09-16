@@ -24,10 +24,22 @@ kennt überhaupt keine Präfixe — sie hat getrennte Suchfelder, wir haben eine
 **Präfixe sind eine Abkürzung**, kein Muss. Sie überspringen die Auflösung und sprechen
 den Bereich direkt an:
 
-- **`S-[Barcode]` (Schüler):** Lädt das Konto eines Schülers (inkl. offener Ausleihen, Mahnungen und Sperren).
-- **`L-[Barcode]` (Lehrer):** Lädt das Konto eines Lehrers (Handapparat).
+- **`A-[Barcode]` (Leser):** Lädt das Konto eines Lesers (inkl. offener Ausleihen, Mahnungen und Sperren).
+- **`S-[Barcode]`, `L-[Barcode]`:** dasselbe für Nummern von früher. Vergeben werden sie seit dem 16.09.2026 nicht mehr.
 - **`B-[Barcode]` (Buch-Exemplar):** Führt eine Aktion mit einem Buch aus.
 - **`G-[Barcode]` (Gerät):** Führt eine Aktion mit Hardware (z. B. Laptops, iPads) aus.
+
+**Eine Vorsilbe für alle Ausweise: `A-` (seit 16.09.2026).** Vorher gab es zwei, und beide
+behaupteten etwas über die Person: `S-` aus Handanlage und LUSD-Import, `L-` aus dem
+Littera-Personenlauf. Seit die Leserdatei alle führt, ist das die falsche Aussage — wer
+jemand ist, steht in den Stammdaten und nicht auf seinem Ausweis. Gelesen werden `S-` und
+`L-` weiter: Es gibt Karten von früher, und Nummern werden nicht recycelt.
+
+Die Vorsilbe selbst BLEIBT, und der Grund ist nicht offensichtlich: **Ohne Netz ist sie
+die einzige Information, an der die Theke einen Buchscan von einem Ausweisscan
+unterscheiden kann.** Offline gibt es niemanden zu fragen. Littera kommt ohne aus, weil
+dort Nummer und Scanwert zwei verschiedene Felder sind und der Scanwert vom
+Kartenhersteller stammt; dieses zweite Feld haben wir nicht.
 
 **Ablauflogik:**
 
@@ -307,7 +319,7 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 ### 8.2. DSGVO und Lösch-Routinen (Abgänger)
 
-- Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" im Sinne des Imports (`ist_abgaenger = true`): Er ist **weg**. Die Abgänger-Ansicht (§8.x) meint etwas anderes — die Abschlussklassen, die noch da sind; in der Schülerdatei heißt der Reiter der Weggegangenen deshalb „Ehemalige / Archiv".
+- Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" im Sinne des Imports (`ist_abgaenger = true`): Er ist **weg**. Die Abgänger-Ansicht (§8.x) meint etwas anderes — die Abschlussklassen, die noch da sind; in der Leserdatei heißt der Reiter der Weggegangenen deshalb „Ehemalige / Archiv".
 - **Karenzzeit (seit 02.09.2026):** Ein Abgänger ohne offene Vorgänge wird beim Import **nicht mehr sofort anonymisiert**, sondern nur gesperrt (Grund „Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"); der nächtliche Job anonymisiert nach der Karenzzeit aus _Einstellungen → Datenschutz & Sitzung_ (`abgaenger_karenz_tage`, Vorgabe 90, 0 = sofort wie früher). Uhr ist der späteste von drei Zeitpunkten: `schueler.abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, geräumt bei Rückkehr), die letzte Rückgabe einer Ausleihe und der letzte Abschluss eines Schadensfalls (seit 05.09.2026 — vorher zählte nur der Abgang, und der Schutz kippte mit der Rückgabe, weil offene Vorgänge die Zeile bis dahin gehalten hatten); Import, Job und Selbstprüfung teilen Schlüssel und Prädikat (`repository.PredikatAnonymisierung`). Die Karenz ist der Raum, in dem eine falsche Zuordnung ohne Schüler-ID noch repariert werden kann; sie ersetzt die frühere feste Frist von 360 Tagen (kürzer, nicht länger). Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft seit 05.09.2026 nur anonymisierte Datensätze — sie wartet die Karenz ab, statt sie abzuschneiden; im Cron läuft die Anonymisierung deshalb vor der Löschung (`RunNaechtlicheDSGVO`).
 - Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Foto), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Admin-Audit-Log und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
 - **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund: "Automatisierte Abgänger-Sperre (offene Vorgänge)"). Falls die offenen Vorgänge geklärt werden und der Abgänger im Folgejahr in der LUSD wieder als aktiver Schüler auftaucht, hebt das System die Sperre automatisch wieder auf.
@@ -334,7 +346,7 @@ markiert, statt still übersprungen zu werden.
 Historie: Vom 25.06. bis 05.09.2026 filterte die Ansicht `ist_abgaenger = true` (weg laut LUSD) —
 ein Bedeutungswechsel, der als Fix eines echten Fehlers (hartkodierte Klassennamen) durchging
 (Register, Entscheidung 2). Wer weg ist und noch Bücher hat, steht im Mahnwesen
-(`QueryUeberfaelligeNachJahrgang` schließt `ist_abgaenger` ein) und in der Schülerdatei unter
+(`QueryUeberfaelligeNachJahrgang` schließt `ist_abgaenger` ein) und in der Leserdatei unter
 „Ehemalige / Archiv" (`GET /api/schueler?status=ehemalige`, `ListEhemaligeWithStats` — dieselbe
 Liste und Serversuche wie „Aktive Schüler" mit umgekehrtem Vorzeichen; bis 05.09.2026 bettete
 der Reiter die Abgängerliste ein).
@@ -407,27 +419,91 @@ Der Zugang zum System ist strikt reglementiert und wird durch ein Role-Based Acc
 - **Brute-Force-Schutz:** Strenges Rate-Limiting beim Login (Sperre nach mehreren Fehlversuchen pro IP/E-Mail-Kombination).
 - **Selbstanmeldung des Kollegiums (`SELBSTANMELDUNG_DOMAIN`, `auth/selbstanmeldung.go`):** Rund 160 Lehrkräfte legt niemand vorab von Hand an. Meldet sich ein Postfach der eingetragenen Schuldomain an, das noch kein Konto hat, entsteht ein **inaktiver** Eintrag mit Rolle `kollegium` (Name aus `vorname.nachname@…` geraten, `zugang_beantragt_am` gesetzt, Audit-Zeile `SELBSTANMELDUNG`); die Lehrkraft liest „Zugang beantragt — die Bibliothek muss ihn noch freischalten“, kein Fehlversuch wird gezählt. Unter Benutzer & Rechte steht der Eintrag als „Zugang beantragt“ mit Zähler oben; „Aktiv“ setzen schaltet frei, danach sieht die Person nur „Mein Portal“ (Migration 070). IMAP beantwortet „wer bist du“, nicht „darfst du rein“ — die Freischaltung bleibt bewusst bei der Schule (ein Schülerpostfach derselben Domain würde sonst ebenfalls hereinkommen). Ist die Variable leer, ist der Weg zu: richtige Zugangsdaten enden dann in „Anmeldung fehlgeschlagen“, die Selbstprüfung meldet das als Warnung. Wer in Bibliothek oder LMF mitarbeitet (Mitarbeiter, Helfer), wird weiterhin von Hand angelegt.
 
-### 12.2. Das 4-Rollen-Konzept
+### 12.2. Vier Rollen und ein Grundzustand
 
-Das System kennt vier fest verdrahtete Rollen, deren genaue Rechte (z.B. `view_students`, `manage_settings`, `perform_actions`) vom Admin in der Datenbank konfiguriert werden können:
+**Der Admin vergibt vier Rollen** — Admin, Leitung, Mitarbeiter, Helfer —, deren genaue
+Rechte (z.B. `view_students`, `manage_settings`, `perform_actions`) er in der Rechte-Matrix
+einstellt. **Kollegium ist keine davon**, sondern der Grundzustand jeder Lehrkraft; es steht
+unten als Nummer 5, weil es technisch derselbe Enum-Wert ist, und aus keinem anderen Grund.
+
+Bis zum 16.09.2026 stand Kollegium als fünfte Spalte in der Rechte-Matrix, neben Leitung und
+Mitarbeiter. Dort sah es aus wie eine Stufe in einer Rangfolge. Es ist keine: Jede Lehrkraft
+meldet sich über „Mein Portal" selbst an, wird freigeschaltet und ist damit erst einmal
+niemand Besonderes. Eine Rolle bekommt nur, wen der Admin an seiner E-Mail-Adresse dazu
+erhebt. Was das Kollegium darf, steht deshalb fest in `db/seed.go` und ist kein Schalter je
+Schule — das ist eine Produktentscheidung.
 
 1. **Admin (`admin`):** Uneingeschränkter Zugriff auf alle Systembereiche, Einstellungen, Audits und Datenschutz-Routinen.
-2. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Schülerverwaltung, darf aber keine Systemeinstellungen ändern.
-3. **Kollegium (`kollegium`):** Zugang zum Kollegiums-Portal mit fünf Reitern (Stand 05.09.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher — Handliste `class_books` plus live aus den Ausleihen abgeleitet, seit 05.09.2026: mehr als die Hälfte der Klasse und mindestens `KlassensatzMindestLeser` Kinder halten den Titel; `GetClassGroups`, Quelle `hand`/`ausleihe`, nie gespeichert), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3), _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`) und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Die Suche läuft über den öffentlichen OPAC, Reservierung und Anliegen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
+2. **Leitung (`leitung`, Migration 121/122, seit 16.09.2026):** Die Rechte des Admins **minus** `manage_users` (Benutzer & Rechte) und `manage_settings` (Einstellungen) — die Rolle für die Person, die die Bibliothek führt, ohne die Systempflege zu übernehmen.
+
+   **Das Soll wird abgeleitet, nicht abgeschrieben:** Migration 122 erzeugt die Zeilen aus den ADMIN-Zeilen und setzt genau die zwei Ausnahmen auf `false`. Eine abgeschriebene Rechteliste wäre eine zweite Wahrheit neben `db/seed.go` und liefe beim nächsten neuen Recht auseinander — die Leitung bekäme es nicht, und niemand merkte es. Gate: `db/rolle_leitung_test.go` leitet dasselbe aus der Vorgabe ab.
+
+   **Warum ausgerechnet `manage_users` fehlt:** Mit dem Recht ändert man die E-Mail-Adresse eines Kontos, und die Anmeldung erkennt eine Person allein an ihrer E-Mail. Die Rechtevergabe wäre damit der Weg in jedes Konto der Anlage. Der Admin kann das Recht erteilen; ein Admin-KONTO bleibt der Leitung auch dann verschlossen (`api/user_admin_eskalation.go`).
+3. **Mitarbeiter (`mitarbeiter`):** Das Personal für das Tagesgeschäft. Hat Zugriff auf die Scanner-Omnibox, Buchkatalog, Mahnwesen und Leserdatei, darf aber keine Systemeinstellungen ändern.
+4. **Helfer (`helfer`):** siehe unten.
+5. **Kollegium (`kollegium`) — der Grundzustand, keine vergebene Rolle:** Zugang zum Kollegiums-Portal mit fünf Reitern (Stand 05.09.2026): _Suchen & Reservieren_, _Klassensätze_ (welche Klasse hat welche Bücher — Handliste `class_books` plus live aus den Ausleihen abgeleitet, seit 05.09.2026: mehr als die Hälfte der Klasse und mindestens `KlassensatzMindestLeser` Kinder halten den Titel; `GetClassGroups`, Quelle `hand`/`ausleihe`, nie gespeichert), _LMF-Plan_ (Rückgabe- und Ausgabetermine je Klasse, §2.3), _Schulbücher_ (Suche über Titel, ISBN, Autor und Fach; Filter Jahrgang und Schulzweig; je Fach eine aufklappbare Zeile mit Exemplaren, Titeln und Verliehenen; Export je Fach als **PDF** mit Coverbildern, Jahrgang, Schulzweig und Zähldatum; nur Titel mit `ist_lernmittel`; Portal-Routen `/api/portal/lernmittel[/export]`) und _Meine Anliegen_. Erteilt ist weiterhin ein einziges Recht, `create_reservations` (Migration 070): Die Suche läuft über den öffentlichen OPAC, Reservierung und Anliegen über `create_reservations`; die Klassensatz-Sicht hängt an einer eigenen Portal-Route (`/api/portal/klassensaetze`), für die die Anmeldung genügt — bewusst kein `view_books`, das der Rolle den ganzen Medienkatalog öffnen würde. Nichts davon fasst Personendaten an.
 
    **„Mein Portal“ hängt seit 26.08.2026 am Recht `create_reservations`, nicht an der Rolle** (Entscheidung Peter): Eine Lehrkraft, die in Bibliothek oder LMF mitarbeitet und deshalb als Mitarbeiter angelegt ist, sieht das Portal ebenfalls und reserviert dort für die eigene Klasse. Vorher stand der Menüpunkt auf `roles: ['kollegium']`, während der Server sie mit demselben Recht längst hineinließ — zwei Wahrheitsquellen, die nur zufällig einig waren.
 
-   **Die Rolle hieß bis zum 10.08.2026 `lehrer`** (Migration 069). Das Wort war doppelt belegt — als Anmelde-Rolle _und_ als Entleihertyp `schueler.klasse = 'lehrer'` (Handapparat, eigene Behandlung im Mahnwesen). `kollegium` benennt jetzt die Personengruppe mit Zugang, `lehrer` bleibt für den Entleiher frei. Die Umbenennung selbst war keine Rechteänderung.
+   **Der Enum-Wert hieß bis zum 10.08.2026 `lehrer`** (Migration 069). Das Wort war doppelt belegt — als Anmelde-Rolle _und_ als Entleihertyp `schueler.klasse = 'lehrer'` (eigene Behandlung im Mahnwesen). Den zweiten Weg gibt es seit Migration 072 nicht mehr; eine Lehrkraft als Entleiher steht seit Migration 123 in `leser` mit `art = 'lehrkraft'` (§12.3). Die Umbenennung selbst war keine Rechteänderung.
 
    **Der Rechteumfang war es** (Migration 070): Auf dem Schulserver sah ein Kollegiums-Konto am 10.08.2026 zehn von fünfzehn Menüpunkten, darunter Schülerdatei, Mahnwesen, System-Logs und Einstellungen — `role_permissions` führte `manage_users`, `audit_logs`, `view_stats`, `view_students`, `view_books` und `perform_actions` auf `true`. Das war keine reine Anzeigefrage: Dieselbe Tabelle entscheidet in `RequirePermission`, die API hätte es ebenfalls zugelassen. Alles außer `create_reservations` ist entzogen. Wer einer Lehrkraft gezielt mehr geben will, tut das im PermissionManager — Migrationen laufen nur einmal, eine spätere Vergabe wird nicht zurückgedreht.
 
-4. **Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (Entscheidung vom 30.07.2026, Migration 055): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zu Personendaten zieht weiterhin `view_students`.
+**Helfer (`helfer`):** Stark limitierte Rolle für studentische Hilfskräfte oder Eltern. Kiosk-Ansicht (Omnibox) für Ausleihe und Rückgabe, dazu **lesender Katalogzugriff** (Entscheidung vom 30.07.2026, Migration 055): Ein Helfer an der Theke ist die erste Anlaufstelle für „Habt ihr Band 3 noch da?" und musste die Frage sonst weiterreichen. Die Grenze zu Personendaten zieht weiterhin `view_students`.
 
    **Ein Helfer braucht ein Postfach auf dem Schul-Mailserver.** Das ist die Frage, die in der Praxis zuerst kommt, und sie hatte bis zum 08.08.2026 keine Antwort in dieser Doku. Die Anmeldung läuft ausschließlich über E-Mail + Passwort gegen IMAP (`auth/handlers.go`); eine lokale Passwortspalte gibt es seit Migration 012 nicht, und einen Code- oder Barcode-Anmeldeweg gibt es nicht — die Felder `barcode_id`/`pin` standen einmal im `LoginRequest`, wurden nie ausgewertet und sind entfernt. Wer eine Hilfskraft aufnehmen will, lässt also zuerst ein Postfach anlegen und trägt dann unter System → Benutzer & Rechte (Reiter „Benutzer“) die Person mit der Rolle „Helfer" ein (die Benutzerverwaltung sitzt seit 16.08.2026 dort, nicht mehr in den Einstellungen). Die E-Mail ist dabei die Identität: Wer die Spalte `benutzer.email` schreibt, übernimmt das Konto.
 
    Erteilt sind genau zwei Rechte (`db/seed.go`): `perform_actions` (Scannen, Ausleihe, Rückgabe) und `view_books` (Katalog). Erreichbar sind damit Ausleihe, Medienkatalog, Signaturen und Schulklassen — Letztere seit dem 08.08.2026, weil der Klassensatz-Reiter im Katalog aufgelöst wurde und der Blick darauf sonst verloren gegangen wäre. Die Pflege-Aktionen auf diesen Seiten hängen an `edit_books` und bleiben dem Helfer verborgen.
 
    **Welche Seiten eine Rolle erreicht, entscheidet `canSeeItem()` in `frontend/src/lib/menu.js` — und nur diese Funktion.** Der Router fragt dieselbe. Bis zum 08.08.2026 führte er eine zweite, handgepflegte Liste; als das Recht für „Schulklassen" wechselte, liefen beide auseinander, und der Helfer bekam einen Menüpunkt, der ihn beim Klick wortlos an die Theke zurückwarf. Wer eine Rolle oder ein Recht ändert, fasst deshalb `menu.js` an und sonst nichts. Abgesichert durch `e2e/menue-fuehrt-irgendwohin.spec.js`, das für Helfer, Mitarbeiter und Lehrkraft jeden sichtbaren Menüpunkt anklickt.
+
+### 12.3. Leserdatei: eine Tabelle, drei Arten (Migration 123–125, 16.09.2026)
+
+**Rolle und Art sind zwei verschiedene Fragen.** Die Rolle (§12.2) sagt, was jemand im
+Programm DARF. Die Art sagt, WER an der Theke Bücher bekommt. Ein Mensch kann beides haben,
+eines von beidem oder keines: Eine Lehrkraft ohne Konto steht in der Leserdatei und darf
+nichts im Programm; ein Admin muss nicht in der Leserdatei stehen.
+
+Schüler und Kollegium stehen seit Migration 123 in EINER Tabelle `leser` mit der Spalte
+`art`:
+
+| Art         | Wort in der Oberfläche | Woher                                                     |
+| ----------- | ---------------------- | --------------------------------------------------------- |
+| `schueler`  | Schüler                | LUSD-Import oder von Hand                                  |
+| `lehrkraft` | Lehrkraft              | Selbstanmeldung („Mein Portal"), Handanlage, Littera-Bestand |
+| `liv`       | LiV                    | von Hand, oder eine Lehrkraft wird dazu umgestellt          |
+
+Die Art entscheidet **keine Rechte**; ausleihen darf jeder aktive Leser. Ändern lässt sie
+sich nur zwischen Lehrkraft und LiV: Ein Schüler kommt aus der LUSD und bleibt Schüler, in
+beide Richtungen (`chk_leser_nur_schueler_werden_abgaenger`).
+
+**`schueler` ist seither eine Sicht**, nicht mehr eine Tabelle: `WHERE art = 'schueler'`
+mit `WITH CHECK OPTION` (Migration 124). Das trägt die alte Bedeutung weiter — Klassenlisten,
+LUSD-Abgleich, Mahnlauf und die DSGVO-Löschfristen lesen sie und bekommen das Kollegium
+nicht zu sehen. Die Kehrseite ist eine eigene Bugklasse; sie steht in
+[sweeps.md](sweeps.md) („Schreibpfad gegen gefilterte Sicht").
+
+**Eine Maske für jeden.** Akte und Formular zeigen für jede Art dieselben Felder an
+derselben Stelle. Einem Kollegen sind drei verschlossen, und zwar nicht aus Geschmack:
+Klasse und Abgangsjahr (eine Klasse gehört keiner Lehrkraft, und das Abgangsjahr leitet der
+Server aus ihr ab) sowie die LUSD-Kennung (die Datenbank verbietet sie einem Nicht-Schüler).
+Geburtsdatum, Ausweisnummer, Anschrift und Eltern-E-Mail stehen jedem offen und bleiben beim
+Kollegen leer.
+
+**Die Schul-E-Mail ist beim Anlegen einer Lehrkraft oder LiV Pflicht.** Sie ist keine
+Kontaktangabe, sondern der Schlüssel: Mit ihr entsteht sofort das Anmeldekonto, und weil der
+Anmeldeweg eine Zugangsanfrage nur anlegt, wenn zu der Adresse GAR KEIN Konto existiert,
+findet die spätere Selbstanmeldung genau diesen Eintrag. Ohne sie stand die Person danach
+zweimal in der Leserdatei — Ausweis und Ausleihen am ersten Eintrag, die Anmeldung am
+zweiten. Freigeschaltet wird das Konto nur, wenn der Anlegende `manage_users` hat; sonst
+entsteht eine Zugangsanfrage wie bei der Selbstanmeldung. Die Adresse steht dabei an genau
+EINER Stelle, am Konto (`benutzer.email`, `UNIQUE lower(email)`) — eine zweite Spalte an der
+Leserzeile gibt es bewusst nicht.
+
+**Ausweise:** Alle Leser ziehen ihre Nummer aus EINEM Nummernkreis (Migration 125), und
+alle neuen Nummern tragen die Vorsilbe `A-` (§1). Die Aufschrift der gedruckten Karte
+richtet sich nach der Art — „Schülerausweis" oder „Lehrerausweis"; eine Gültigkeit trägt
+nur der Schülerausweis, weil der Ausweis einer Lehrkraft mit keinem Schuljahr abläuft.
 
 ---
 
@@ -701,7 +777,7 @@ der hat nicht stattgefunden.
 - Toasts pausieren unter Maus und Fokus (2.2.1), Fehler-Toasts, Snackbar-Fehler und
   Ladefehler sind `role="alert"`; die Omnibox führt per `aria-activedescendant` durch die
   Trefferliste.
-- Zeile und Kachel sind keine Knöpfe mehr: In Schülerdatei und Signaturen-Regal öffnet der
+- Zeile und Kachel sind keine Knöpfe mehr: In Leserdatei und Signaturen-Regal öffnet der
   **Name bzw. Titel** die Akte, im Medienkatalog der Titel (die Kachelfläche bleibt ein
   Mausziel ohne Rolle).
 

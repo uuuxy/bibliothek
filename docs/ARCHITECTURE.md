@@ -1,6 +1,6 @@
 # Systemarchitektur & technische Konzepte
 
-> Zuletzt aktualisiert: 2026-09-13
+> Zuletzt aktualisiert: 2026-09-16
 
 ---
 
@@ -165,13 +165,40 @@ GIN-Indizes können bei Bedarf auf diese Spalten gelegt werden.
 ### Enum-Casing
 
 `benutzer_rolle` ist ein PostgreSQL-ENUM mit lowercase-Werten: `admin`, `kollegium`,
-`mitarbeiter`, `helfer` (`schema.sql`). SQL-Vergleiche müssen `LOWER(rolle::text)`
-verwenden (kein `= 'KOLLEGIUM'`).
+`mitarbeiter`, `helfer`, `leitung` (`schema.sql`). SQL-Vergleiche müssen
+`LOWER(rolle::text)` verwenden (kein `= 'KOLLEGIUM'`).
 
-`helfer` kam mit Migration 042 dazu; `kollegium` hieß bis Migration 069 `lehrer` — das
-Wort war doppelt belegt und bezeichnet seither nur noch den **Entleihertyp**
-(`schueler.klasse = 'lehrer'`, Handapparat). Wer nach dem alten Namen greppt, findet
-deshalb weiterhin Treffer, die richtig sind.
+`helfer` kam mit Migration 042 dazu, `leitung` mit Migration 121.
+
+**`kollegium` ist technisch ein Enum-Wert wie die übrigen, fachlich aber keine Rolle,
+sondern der Grundzustand.** Wer sich über „Mein Portal" selbst anmeldet, bekommt ihn
+(`auth/selbstanmeldung.go`, inaktiv, bis die Bibliothek freischaltet). Vergeben wird eine
+Rolle nur vom Admin, und dann ist es eine der vier: Admin, Leitung, Mitarbeiter, Helfer.
+Deshalb führt der Rechte-Editor seit dem 16.09.2026 auch nur diese vier Spalten — was das
+Kollegium darf, steht fest in `db/seed.go` und ist kein Schalter je Schule.
+
+`kollegium` hieß bis Migration 069 `lehrer`. Das Wort war damals doppelt belegt: auch
+`schueler.klasse = 'lehrer'` machte eine Zeile zur Lehrkraft. Diesen zweiten Weg gibt es
+seit Migration 072 nicht mehr (`api/student_klasse_regel.go` weist den Klassennamen an
+beiden Türen ab); wer eine Lehrkraft als Entleiher sucht, sucht heute `leser.art`.
+
+### Leser und die Sicht `schueler`
+
+Seit Migration 123 stehen Schüler und Kollegium in EINER Tabelle `leser` mit der Spalte
+`art` (`schueler` | `lehrkraft` | `liv`). `schueler` ist seither keine Tabelle mehr,
+sondern eine **Sicht** auf `leser` mit `WHERE art = 'schueler'` und `WITH CHECK OPTION`
+(Migration 124).
+
+Das ist Absicht und trägt die alte Bedeutung weiter: Jede Abfrage, die wirklich Schüler
+meint — Klassenlisten, LUSD-Abgleich, Mahnlauf, die DSGVO-Löschfristen —, liest die Sicht
+und bekommt das Kollegium nicht zu sehen.
+
+**Die Kehrseite ist eine Bugklasse** (`docs/sweeps.md`, „Schreibpfad gegen gefilterte
+Sicht"): Ein Pfad, der alle Leser meint und weiter gegen `schueler` schreibt, trifft beim
+Kollegen null Zeilen und meldet „nicht gefunden" — ein stiller 404 statt eines Fehlers.
+Genau so sind der Änderungspfad der Stammdaten und das Zusammenführen aufgefallen. Ein
+`JOIN schueler` sieht nach Zugehörigkeit aus und ist ein `WHERE`, das niemand geschrieben
+hat.
 
 ### Migrations-Hygiene
 

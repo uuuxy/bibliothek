@@ -116,6 +116,21 @@ man von dieser Liste aus eigentlich alles anstoßen?".
 **Der Merksatz:** Eine Liste zu erweitern ist eine Änderung an allem, was von ihr abgeht.
 Wer nur die Liste prüft, prüft die eine Stelle, die stimmt.
 
+### Prüflauf 16.09.2026 (zweiter) — die Form darunter
+
+Anlass: der Rasterdurchgang über den 15. und 16.09. Dieselben Funde noch einmal, aber nicht
+nach dem gefragt, was von der Liste ABGEHT, sondern nach der Form, die sie alle teilen. Vier
+von sechs Funden hatten dieselbe: Die alte Tabelle `schueler` ist seit Migration 123/124 eine
+Sicht auf `leser` mit `WHERE art = 'schueler'`.
+
+| Bugklasse                                    | Form                                                                                                                                                                                                                                                                                                                                                                                | Gate                                                                                                                                                                                                                              | Stand                                                                                                                                                                                                                                                                                              |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Schreibpfad gegen gefilterte Sicht**       | Eine Tabelle wird zur Sicht mit `WHERE`, damit die alten Abfragen ihre alte Bedeutung behalten. Jeder Pfad, der seither ALLE Zeilen meint und weiter gegen die Sicht schreibt oder liest, trifft die neue Gruppe nicht: Das `UPDATE` erwischt null Zeilen, der Handler antwortet „nicht gefunden" (404), die Übersicht zeigt eine Forderung nicht an. Nichts davon meldet sich als Fehler — ein `JOIN schueler` sieht nach Zugehörigkeit aus und ist ein `WHERE`, das niemand geschrieben hat | Kein Detektor über die Form allein (`JOIN schueler` ist an vielen Stellen genau richtig). Der Durchgang ist: jeden Treffer auf die Sicht einmal fragen „meint dieser Pfad Schüler oder alle Leser?", und je Schreibpfad ein PG-Test mit einem Kollegen im Bestand | 16.09.: fünf Pfade geprüft. Stammdaten ändern (`cd46fc44`) und Zusammenführen (`bf36df57`) behoben, je mit Rot-Probe; Schadensersatz-Übersicht und Bescheid offen, weil erst zu entscheiden ist, ob ein Kollege einen Bescheid bekommt (OFFEN.md 5.17); Löschen und Papierkorb offen (OFFEN.md 5.16). Mahnlauf, LUSD-Abgleich und Löschjob lesen die Sicht bewusst weiter |
+
+**Der Merksatz:** Eine Tabelle durch eine gefilterte Sicht gleichen Namens zu ersetzen
+verändert nichts am Code und alles an seiner Bedeutung. Der Schutz, den die Sicht den alten
+Abfragen gibt, ist für die neuen Pfade genau der Fehler.
+
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 
 Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das
