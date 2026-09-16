@@ -432,7 +432,7 @@ DATABASE_URL="postgres://…/bibliothek_test" go run ./cmd/seed
 
 ```bash
 ./scripts/pruefe_secrets.sh                 # nutzt ./.env
-./scripts/pruefe_secrets.sh /opt/bibliothek/.env
+./scripts/pruefe_secrets.sh /root/bibliothek/.env
 ```
 
 Liest eine `.env` und meldet die Fehlkonfigurationen, die **still** bleiben: bekannte

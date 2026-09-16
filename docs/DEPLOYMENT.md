@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-09-12
+> Zuletzt aktualisiert: 2026-09-16
 
 ---
 
@@ -60,6 +60,11 @@ Hinter dem Reverse-Proxy sieht er nur seinen internen Namen.
 
 ## 2. Produktions-Deployment (Hetzner/Docker)
 
+**Wo der Stack liegt:** `/root/bibliothek`. Bis zum 16.09.2026 stand in dieser Anleitung an
+sieben Stellen `/opt/bibliothek` — dieses Verzeichnis gibt es auf dem Server nicht, jede
+kopierte Befehlsfolge scheiterte am ersten `cd`. Zieht der Stack einmal um, stehen die Pfade in
+DEPLOYMENT (vier), SECURITY, SCRIPTS und `scripts/pruefe_secrets.sh`.
+
 ### 2.1 `.env`-Datei anlegen
 
 Auf dem Server eine `.env`-Datei (nicht im Repo) anlegen. **Die Geheimnisse werden
@@ -68,7 +73,7 @@ erzeugt, nicht abgetippt** — ein wörtlich übernommenes `<mindestens-32-zeich
 Repository nachzulesen ist:
 
 ```bash
-cd /opt/bibliothek
+cd /root/bibliothek
 
 # Zufällige Geheimnisse direkt in die .env schreiben.
 # ÜBERALL -hex, NIRGENDS -base64 — die Begründung steht direkt darunter.
@@ -117,7 +122,7 @@ Richtig ist: `Database connection pool successfully initialized.` und `health: 2
 Den Rest von Hand ergänzen — das sind Einstellungen, keine Geheimnisse:
 
 ```bash
-# /opt/bibliothek/.env
+# /root/bibliothek/.env
 APP_ENV=production
 # ENFORCE_PROD_SECRETS ist seit 05.09.2026 von selbst scharf — nichts zu setzen
 COOKIE_SECURE=true
@@ -231,7 +236,7 @@ Die Variable steht in der `.env` neben der `docker-compose.yml` (nicht im Repo);
 Compose reicht sie an den Backend-Container durch.
 
 ```bash
-cd /opt/bibliothek
+cd /root/bibliothek
 
 # Zeile anhängen — nur, wenn sie noch nicht da ist
 grep -q '^SELBSTANMELDUNG_DOMAIN=' .env || echo 'SELBSTANMELDUNG_DOMAIN=philipp-reis-schule.de' >> .env
@@ -328,7 +333,7 @@ Reihenfolge auf dem Server (Variablen an die eigene `.env` anpassen, keine Platz
 spitzen Klammern einfügen — in einer Zeile mit `>>` landen sie wörtlich in der Datei):
 
 ```bash
-cd /opt/bibliothek
+cd /root/bibliothek
 DB_USER=$(grep '^POSTGRES_USER=' .env | cut -d= -f2); DB_USER=${DB_USER:-postgres}
 DB_NAME=$(grep '^POSTGRES_DB=' .env | cut -d= -f2);  DB_NAME=${DB_NAME:-bibliothek}
 

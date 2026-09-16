@@ -432,7 +432,7 @@ eingefügt. Die beiden Rotationsbefehle scheiterten harmlos an der bash-Syntax �
 Shell-Sitzung ausführen, damit `$NEU` erhalten bleibt:
 
 ```bash
-cd /opt/bibliothek
+cd /root/bibliothek
 
 # 0. Backup ziehen. Immer.
 docker compose exec -T postgres-db pg_dump -U postgres bibliothek > vor-rotation.sql

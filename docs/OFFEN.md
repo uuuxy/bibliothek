@@ -807,13 +807,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   nachziehen.
 - HANDBUCH: Hinweis, dass im Vermerk des LMF-Plans keine Schülernamen stehen — er erscheint im
   Portal des ganzen Kollegiums und im PDF.
-- **Server-Pfad:** `DEPLOYMENT.md` (vier Stellen), `SECURITY.md`, `SCRIPTS.md` und der
-  Kopfkommentar von `scripts/pruefe_secrets.sh` sagen `/opt/bibliothek`; auf dem Server liegt
-  der Stack in `/root/bibliothek` (`cd /opt/bibliothek` → „No such file or directory", am
-  15.09.2026, `docker compose exec` aus `~/bibliothek` lief). Jede kopierte Anleitung scheitert
-  am ersten Befehl. **Schritt:** die sieben Stellen auf `/root/bibliothek` — oder, falls
-  der Stack nach `/opt` umzieht, umgekehrt; bis zur Entscheidung ist die Doku falsch, nicht der
-  Server.
 
 ### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
 

@@ -13,7 +13,7 @@
 #
 # Aufruf auf dem Zielserver:
 #   ./scripts/pruefe_secrets.sh                 # nutzt ./.env
-#   ./scripts/pruefe_secrets.sh /opt/bibliothek/.env
+#   ./scripts/pruefe_secrets.sh /root/bibliothek/.env
 #
 # Exit: 0 = alles gut, 1 = mindestens ein kritischer Befund.
 
