@@ -250,7 +250,12 @@ func TestSchuelerFremdschluessel_WachsenNurMitDemPaar(t *testing.T) {
 		SELECT c.conrelid::regclass::text, a.attname
 		FROM pg_constraint c
 		JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY(c.conkey)
-		WHERE c.contype = 'f' AND c.confrelid = 'schueler'::regclass
+		-- 'leser'::regclass, nicht 'schueler': Seit Migration 124 ist schueler eine
+		-- SICHT, und auf eine Sicht kann kein Fremdschlüssel zeigen. Stünde hier
+		-- weiter der alte Name, fände der Scan nichts — und der Detektor meldete
+		-- „alles gut", weil er nichts mehr messen kann. Genau davor schützt die
+		-- Notbremse unten (len(imSchema) == 0).
+		WHERE c.contype = 'f' AND c.confrelid = 'leser'::regclass
 		ORDER BY 1, 2`)
 	if err != nil {
 		t.Fatalf("FK-Scan: %v", err)

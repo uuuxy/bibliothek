@@ -15,7 +15,7 @@ func TestGetActiveLoanByCopyID_NullBearbeiterKein500(t *testing.T) {
 	ctx := context.Background()
 
 	if _, err := pool.Exec(ctx,
-		`TRUNCATE buecher_exemplare, buecher_titel, ausleihen, schueler, benutzer RESTART IDENTITY CASCADE`); err != nil {
+		`TRUNCATE buecher_exemplare, buecher_titel, ausleihen, leser, benutzer RESTART IDENTITY CASCADE`); err != nil {
 		t.Fatalf("reset: %v", err)
 	}
 

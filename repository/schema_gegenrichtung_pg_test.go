@@ -76,12 +76,15 @@ var fkAktionenBestand = []string{
 	"CASCADE  inventur_verluste.session_id -> inventur_sessions",
 	// Befragt am 06.09.2026: Das Foto ist PII und MUSS mit dem Kind fallen; beim
 	// Zusammenführen wandert es vorher (das jüngere gewinnt, schueler_zusammenfuehren.go).
-	"CASCADE  schueler_fotos.schueler_id -> schueler",
+	"CASCADE  schueler_fotos.schueler_id -> leser",
 	// Befragt am 06.09.2026: Hier ist der CASCADE nur das Netz — die Spuren-Tilgung
 	// löscht die Vormerkungen selbst (Freitext-Notiz ist PII). Ihr fehlte das
 	// Nachrücken: Ein bereits abholbereit gelegtes Exemplar blieb liegen, statt an den
 	// nächsten Wartenden zu gehen (vormerkung_nachruecken.go).
-	"CASCADE  vormerkungen.schueler_id -> schueler",
+	"CASCADE  vormerkungen.schueler_id -> leser",
+	// Die rechte Seite heisst seit Migration 124 `leser`: Die Tabelle wurde umbenannt,
+	// `schueler` ist eine Sicht darauf, und auf eine Sicht kann kein Fremdschluessel
+	// zeigen. An der Löschwirkung selbst hat sich dadurch nichts geändert.
 	// Befragt: Ein gelöschter Benutzer soll seine Spuren behalten, nur ohne Person —
 	// deshalb SET NULL statt RESTRICT. Die Lesepfade zeigen dann „unbekannt".
 	// Migration 123, befragt am 16.09.2026: Verschwindet eine Leserzeile endgueltig,
@@ -91,7 +94,7 @@ var fkAktionenBestand = []string{
 	// aus). Wer es merkt: die Tilgung setzt die Spalte ohnehin selbst auf NULL
 	// (repository/audit_users.go, spurTilgungen) und schreibt das ins Protokoll; der
 	// Fremdschluessel ist nur das Netz darunter.
-	"SET NULL  benutzer.leser_id -> schueler",
+	"SET NULL  benutzer.leser_id -> leser",
 	"SET NULL  audit_log.bearbeiter_id -> benutzer",
 	"SET NULL  audit_logs.admin_id -> benutzer",
 	"SET NULL  ausleihen.ausleiher_benutzer_id -> benutzer",
@@ -108,11 +111,11 @@ var fkAktionenBestand = []string{
 	// Liste zeigt dann „" statt eines Namens (coalesce in nachbuchMeldungSQL); die
 	// Art.-15-Auskunft findet die Zeile danach nicht mehr, was gewollt ist (Tilgung).
 	"SET NULL  nachbuch_meldungen.ausleiher_benutzer_id -> benutzer",
-	"SET NULL  nachbuch_meldungen.ausleiher_schueler_id -> schueler",
+	"SET NULL  nachbuch_meldungen.ausleiher_schueler_id -> leser",
 	"SET NULL  nachbuch_meldungen.exemplar_id -> buecher_exemplare",
 	"SET NULL  nachbuch_meldungen.quittiert_von -> benutzer",
 	"SET NULL  nachbuch_meldungen.vorbesitzer_benutzer_id -> benutzer",
-	"SET NULL  nachbuch_meldungen.vorbesitzer_schueler_id -> schueler",
+	"SET NULL  nachbuch_meldungen.vorbesitzer_schueler_id -> leser",
 	// Befragt am 06.09.2026: LEFT JOIN mit ausdrücklicher Begründung im Code
 	// (bestelldetail_repo.go), beide Geschwister-Pfade halten es genauso.
 	"SET NULL  bestellungen_positionen.titel_id -> buecher_titel",
@@ -147,7 +150,7 @@ var fkAktionenBestand = []string{
 	// Nachgetragen am 10.09.2026 (Bestands-Durchgang): Es gibt einen ZWEITEN Löschweg —
 	// das Zusammenführen löscht die Quelle. Dort ist SET NULL nicht gewollt, der Bescheid
 	// wandert vorher ans Ziel (verschiebeVorgaenge, Gate TestZusammenfuehren_JedeTabelleWandert).
-	"SET NULL  schadensersatz_bescheide.schueler_id -> schueler",
+	"SET NULL  schadensersatz_bescheide.schueler_id -> leser",
 	// Befragt am 10.09.2026 (Migration 110): Wer den Bescheid erstellt hat, ist eine
 	// Angabe ÜBER den Vorgang, nicht der Vorgang selbst. Verlässt die Bearbeiterin die
 	// Schule und wird ihr Konto gelöscht, bleibt der Brief samt Referenznummer gültig —
@@ -269,10 +272,10 @@ var triggerBestand = []string{
 	"trg_lmf_termine_aktualisiert_am @ lmf_termine",
 	"trg_mail_vorlagen_updated_at @ mail_vorlagen",
 	"trg_schadensfaelle_aktualisiert_am @ schadensfaelle",
-	"trg_schueler_aktualisiert_am @ schueler",
-	"trg_schueler_ausweis_eindeutig @ schueler",
+	"trg_schueler_aktualisiert_am @ leser",
+	"trg_schueler_ausweis_eindeutig @ leser",
 	"trg_schueler_fotos_aktualisiert_am @ schueler_fotos",
-	"trg_schueler_klasse_vokabular @ schueler",
+	"trg_schueler_klasse_vokabular @ leser",
 	"trg_systematik_kategorien_aktualisiert_am @ systematik_kategorien",
 }
 

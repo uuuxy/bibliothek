@@ -27,15 +27,19 @@ func leserZeile(t *testing.T, art, vorname, nachname string) string {
 	t.Helper()
 	pool := pgTestPool(t)
 	var id string
+	// In die TABELLE, nicht durch die Sicht: `schueler` zeigt seit Migration 124 nur
+	// Schüler und weist einen Kollegen mit WITH CHECK OPTION ab. Genau das ist der Zweck
+	// der Sicht — dieser Test legt die Zeile deshalb dort an, wo sie hingehört.
+	//
 	// Klasse, Abgängerjahr und Ausweis bleiben leer — für einen Kollegen ist das der
 	// Normalfall, und chk_leser_schueler_pflichtfelder erlaubt es nur für ihn.
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO schueler (vorname, nachname, art) VALUES ($1, $2, $3) RETURNING id`,
+		`INSERT INTO leser (vorname, nachname, art) VALUES ($1, $2, $3) RETURNING id`,
 		vorname, nachname, art).Scan(&id); err != nil {
 		t.Fatalf("Leserzeile (%s) anlegen: %v", art, err)
 	}
 	t.Cleanup(func() {
-		if _, err := pool.Exec(context.Background(), `DELETE FROM schueler WHERE id = $1`, id); err != nil {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM leser WHERE id = $1`, id); err != nil {
 			t.Logf("Aufräumen der Leserzeile %s: %v", id, err)
 		}
 	})
@@ -54,7 +58,7 @@ func leserZeileSchueler(t *testing.T, barcode, vorname, nachname, klasse string)
 		t.Fatalf("Schüler anlegen: %v", err)
 	}
 	t.Cleanup(func() {
-		if _, err := pool.Exec(context.Background(), `DELETE FROM schueler WHERE id = $1`, id); err != nil {
+		if _, err := pool.Exec(context.Background(), `DELETE FROM leser WHERE id = $1`, id); err != nil {
 			t.Logf("Aufräumen des Schülers %s: %v", id, err)
 		}
 	})
@@ -101,11 +105,16 @@ func TestLusdBestandKenntNurSchueler(t *testing.T) {
 	}
 }
 
-// TestKollegeKannKeinAbgaengerWerden: die zweite Schranke, in der Datenbank. Selbst wenn
-// ein Schreibweg an der Abfrage vorbeigeht und die Lehrkraft direkt sperrt, bricht die
-// Transaktion ab. Ein fehlgeschlagener Import ist ein Ärgernis; anonymisierte
-// Kollegennamen sind ein stiller Datenverlust.
-func TestKollegeKannKeinAbgaengerWerden(t *testing.T) {
+// TestKollegeIstFuerDenAbgleichUnsichtbar: Die ECHTEN Schreibwege des Abgleichs laufen
+// über die Sicht `schueler` (UPDATE schueler SET ... WHERE id = ...). Seit Migration 124
+// zeigt die Sicht nur Schüler — eine Lehrkraft ist für sie also nicht verboten, sondern
+// nicht vorhanden. Die Anweisung trifft null Zeilen und lässt die Zeile unverändert.
+//
+// Das ist stärker als ein Abbruch: Der Abgleich kann einen Kollegen nicht einmal
+// versehentlich adressieren, und der Import läuft für die echten Abgänger weiter. Geprüft
+// wird deshalb am ZUSTAND der Zeile, nicht an einem Fehler — ein Test, der hier einen
+// Fehler erwartet, würde die Sicht für einen Defekt halten.
+func TestKollegeIstFuerDenAbgleichUnsichtbar(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 
@@ -117,33 +126,57 @@ func TestKollegeKannKeinAbgaengerWerden(t *testing.T) {
 	}
 	defer tx.Rollback(ctx) //nolint:errcheck
 
-	// Der ECHTE Schreibweg des Abgleichs, nicht ein nachgebautes UPDATE.
-	err = sperreAbgaenger(ctx, tx, kollegeID, "Automatisierte Abgänger-Sperre")
-	if err == nil {
-		t.Fatal("eine Lehrkraft ließ sich als Abgänger sperren — der CHECK fehlt")
+	if err := sperreAbgaenger(ctx, tx, kollegeID, "Automatisierte Abgänger-Sperre"); err != nil {
+		t.Fatalf("sperreAbgaenger: %v", err)
 	}
-	if !strings.Contains(err.Error(), "chk_leser_nur_schueler_werden_abgaenger") {
-		t.Errorf("Abbruch kam, aber von anderer Stelle: %v", err)
+	if err := anonymisiereAbgaenger(ctx, tx, kollegeID); err != nil {
+		t.Fatalf("anonymisiereAbgaenger: %v", err)
+	}
+
+	var abgaenger, gesperrt bool
+	var vorname string
+	var anonymisiert *string
+	if err := tx.QueryRow(ctx,
+		`SELECT ist_abgaenger, ist_gesperrt, vorname, anonymized_at::text FROM leser WHERE id = $1`,
+		kollegeID).Scan(&abgaenger, &gesperrt, &vorname, &anonymisiert); err != nil {
+		t.Fatalf("Zeile lesen: %v", err)
+	}
+	if abgaenger || gesperrt || anonymisiert != nil || vorname != "Ulf" {
+		t.Errorf("die Lehrkraft wurde angefasst: abgaenger=%v gesperrt=%v vorname=%q anonymisiert=%v",
+			abgaenger, gesperrt, vorname, anonymisiert)
 	}
 }
 
-// TestKollegeKannNichtAnonymisiertWerden: derselbe Schutz für den Schritt, der wirklich
-// Daten vernichtet. Er läuft in der Karenz nach dem Abgang und leert Name, Adresse,
-// Geburtsdatum und Ausweis.
-func TestKollegeKannNichtAnonymisiertWerden(t *testing.T) {
+// TestKollegeKannAuchDirektKeinAbgaengerWerden: die Schranke DAHINTER. Die Sicht schützt
+// jeden Weg, der über sie läuft — ein Reparaturskript oder eine künftige Abfrage auf
+// `leser` läuft nicht über sie. Dann greift der CHECK.
+//
+// Beide Schranken, weil die eine die andere nicht ersetzt: Die Sicht macht den Kollegen
+// unerreichbar, der CHECK macht den Zustand unmöglich.
+func TestKollegeKannAuchDirektKeinAbgaengerWerden(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 
 	kollegeID := leserZeile(t, "liv", "Lea", "Liv")
 
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		t.Fatal(err)
+	_, err := pool.Exec(ctx,
+		`UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Probe'
+		 WHERE id = $1`, kollegeID)
+	if err == nil {
+		t.Fatal("eine LiV ließ sich direkt in der Tabelle zum Abgänger machen — der CHECK fehlt")
 	}
-	defer tx.Rollback(ctx) //nolint:errcheck
+	if !strings.Contains(err.Error(), "chk_leser_nur_schueler_werden_abgaenger") {
+		t.Errorf("Abbruch kam, aber von anderer Stelle: %v", err)
+	}
 
-	if err := anonymisiereAbgaenger(ctx, tx, kollegeID); err == nil {
-		t.Fatal("eine LiV ließ sich anonymisieren — Name und Geburtsdatum wären weg")
+	// Und die Gegenprobe: Bei einem SCHÜLER geht genau dasselbe UPDATE durch. Ohne sie
+	// könnte der CHECK auch aus einem anderen Grund gegriffen haben.
+	schuelerID := leserZeileSchueler(t, "S-CHK-1", "Sven", "Schueler", "9b")
+	if _, err := pool.Exec(ctx,
+		`UPDATE leser SET ist_abgaenger = true, ist_gesperrt = true, block_reason = 'Probe'
+		 WHERE id = $1`, schuelerID); err != nil {
+		t.Errorf("derselbe Schreibvorgang scheitert auch beim Schüler (%v) — der CHECK "+
+			"verbietet mehr als die Art", err)
 	}
 }
 
@@ -168,7 +201,7 @@ func TestNachtJobFasstKollegenNichtAn(t *testing.T) {
 	// Beide liegen lange genug im Papierkorb, dass die Frist abgelaufen ist.
 	for _, id := range []string{kollegeID, schuelerID} {
 		if _, err := pool.Exec(ctx,
-			`UPDATE schueler SET deleted_at = NOW() - interval '400 days' WHERE id = $1`, id); err != nil {
+			`UPDATE leser SET deleted_at = NOW() - interval '400 days' WHERE id = $1`, id); err != nil {
 			t.Fatalf("in den Papierkorb legen: %v", err)
 		}
 	}
@@ -177,7 +210,12 @@ func TestNachtJobFasstKollegenNichtAn(t *testing.T) {
 	trifft := func(id string) bool {
 		args := append(append([]any{}, bedingung.Args...), id)
 		var anzahl int
-		abfrage := `SELECT count(*) FROM schueler WHERE id = $` +
+		// `FROM leser AS schueler` — zwei Gründe. Die Bedingung ist gegen eine Relation
+		// namens schueler geschrieben (sie qualifiziert Unterabfragen mit
+		// `schueler.id`), und geprüft werden soll ihr EIGENER Filter: Auf der Sicht
+		// `schueler` wäre die Lehrkraft ohnehin unsichtbar, und der Test wäre auch dann
+		// grün, wenn die Bedingung selbst nichts einschränkt.
+		abfrage := `SELECT count(*) FROM leser AS schueler WHERE id = $` +
 			strconv.Itoa(len(args)) + ` AND (` + bedingung.Where + `)`
 		if err := pool.QueryRow(ctx, abfrage, args...).Scan(&anzahl); err != nil {
 			t.Fatalf("Bedingung prüfen: %v", err)

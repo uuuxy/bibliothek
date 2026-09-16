@@ -174,7 +174,7 @@ CREATE TABLE role_permissions (
 -- Anonymisierung geleert (siehe api/lusd_apply.go: anonymisiereAbgaenger).
 -- Hinweis: Rechtsgrundlage & Aufbewahrungsfrist für das Verzeichnis von
 -- Verarbeitungstätigkeiten (VVT) sind in docs/SECURITY.de.md dokumentiert.
-CREATE TABLE schueler (
+CREATE TABLE leser (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     -- Migration 123: Diese Tabelle fuehrt ALLE Leser, nicht nur Schueler. Klasse,
     -- Abgaengerjahr und Ausweis waren Pflicht, solange jede Zeile ein Schueler war; fuer
@@ -242,14 +242,14 @@ CREATE TABLE schueler (
     )
 );
 
-CREATE INDEX idx_schueler_barcode ON schueler (barcode_id);
-CREATE INDEX idx_schueler_vorname_trgm ON schueler USING gin (vorname gin_trgm_ops);
-CREATE INDEX idx_schueler_nachname_trgm ON schueler USING gin (nachname gin_trgm_ops);
+CREATE INDEX idx_schueler_barcode ON leser (barcode_id);
+CREATE INDEX idx_schueler_vorname_trgm ON leser USING gin (vorname gin_trgm_ops);
+CREATE INDEX idx_schueler_nachname_trgm ON leser USING gin (nachname gin_trgm_ops);
 -- Die Namenssuche vergleicht suchnorm(spalte); die Indizes müssen exakt diesen
 -- Ausdruck tragen, sonst greifen sie nicht (siehe Migration 054).
-CREATE INDEX idx_schueler_vorname_suchnorm_trgm ON schueler USING gin (suchnorm(vorname) gin_trgm_ops);
-CREATE INDEX idx_schueler_nachname_suchnorm_trgm ON schueler USING gin (suchnorm(nachname) gin_trgm_ops);
-CREATE INDEX idx_schueler_barcode_lower_trgm ON schueler USING gin (lower(barcode_id) gin_trgm_ops);
+CREATE INDEX idx_schueler_vorname_suchnorm_trgm ON leser USING gin (suchnorm(vorname) gin_trgm_ops);
+CREATE INDEX idx_schueler_nachname_suchnorm_trgm ON leser USING gin (suchnorm(nachname) gin_trgm_ops);
+CREATE INDEX idx_schueler_barcode_lower_trgm ON leser USING gin (lower(barcode_id) gin_trgm_ops);
 -- Duplikatsschutz nur bei BEKANNTEM Geburtsdatum: Zwei namensgleiche Schüler ohne
 -- (noch nicht aus der LUSD übernommenes) Geburtsdatum sind nicht automatisch dieselbe
 -- Person. Das frühere coalesce(geburtsdatum, '1900-01-01') stülpte NULL-Geburtsdaten ein
@@ -260,26 +260,50 @@ CREATE INDEX idx_schueler_barcode_lower_trgm ON schueler USING gin (lower(barcod
 -- analog uniq_schueler_lusd_id_active). Siehe Migration 048.
 -- In der Normalform suchnorm (Migration 108): „Anna Müller" und „Anna Mueller" mit gleichem
 -- Geburtsdatum sind EIN Mensch — dieselbe Regel wie der LUSD-Schlüssel (repository/lusd_bestand.go).
-CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON schueler (suchnorm(vorname), suchnorm(nachname), geburtsdatum)
+CREATE UNIQUE INDEX unique_schueler_name_gebdatum ON leser (suchnorm(vorname), suchnorm(nachname), geburtsdatum)
     WHERE geburtsdatum IS NOT NULL AND deleted_at IS NULL AND lusd_id IS NULL;
 -- lusd_id ist nur unter AKTIVEN Schülern eindeutig; eine soft-gelöschte lusd_id
 -- darf bei Wiederanmeldung neu vergeben werden (siehe Migration 035).
-CREATE UNIQUE INDEX uniq_schueler_lusd_id_active ON schueler (lusd_id) WHERE deleted_at IS NULL AND lusd_id IS NOT NULL;
+CREATE UNIQUE INDEX uniq_schueler_lusd_id_active ON leser (lusd_id) WHERE deleted_at IS NULL AND lusd_id IS NOT NULL;
 -- barcode_id ist ebenfalls nur unter AKTIVEN Schülern eindeutig; ein soft-gelöschter
 -- Ausweis-Barcode darf bei Wiederanmeldung/Recycling neu vergeben werden (siehe Migration 049).
-CREATE UNIQUE INDEX uniq_schueler_barcode_active ON schueler (barcode_id) WHERE deleted_at IS NULL;
+CREATE UNIQUE INDEX uniq_schueler_barcode_active ON leser (barcode_id) WHERE deleted_at IS NULL;
 
 CREATE TRIGGER trg_schueler_aktualisiert_am
-BEFORE UPDATE ON schueler
+BEFORE UPDATE ON leser
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
 
 -- Table: schueler_fotos (Encrypted student photos)
+-- ── Migration 124: schueler ist eine SICHT auf leser ──────────────────────────
+--
+-- 51 Abfragen in 30 Dateien lesen `FROM schueler` und meinen „Schueler". Sobald
+-- Kollegen in derselben Tabelle stehen, muesste jede einzelne `art = 'schueler'`
+-- ergaenzen — und wer eine uebersieht, hat einen Kollegen in einer Klassenliste
+-- oder im Mahnlauf. Mit dieser Sicht behalten alle 51 ihre Bedeutung, ohne
+-- angefasst zu werden, und koennen einen Kollegen weder sehen noch anlegen.
+--
+-- Am 16.09.2026 an Postgres 18 nachgemessen: SELECT ... FOR UPDATE, INSERT ...
+-- RETURNING, UPDATE und DELETE gehen durch diese Sicht; ein INSERT mit
+-- art='lehrkraft' wird von WITH CHECK OPTION abgewiesen; TRUNCATE geht nicht
+-- (drei Test-Helfer nennen deshalb `leser`).
+--
+-- WITH CHECK OPTION ist der Kern: Ohne sie koennte ein Schreibweg durch die
+-- Sicht eine Zeile anlegen, die die Sicht danach nicht mehr zeigt.
+--
+-- SELECT * friert die Spaltenliste beim Anlegen ein. Eine neue Spalte in leser
+-- erscheint hier also NICHT von selbst; das Gate dafuer steht in
+-- repository/schema_gegenrichtung_pg_test.go.
+CREATE VIEW schueler AS
+    SELECT * FROM leser WHERE art = 'schueler'
+    WITH CHECK OPTION;
+
+
 -- Migration 123: die Leserzeile eines Kontos. Ein Konto ist die Anmeldung samt Rechten,
 -- eine Leserzeile ist der Mensch mit seinen Buechern. Hier und nicht in CREATE TABLE
 -- benutzer, weil jene Tabelle in dieser Datei vor schueler steht.
 ALTER TABLE benutzer
-    ADD COLUMN leser_id UUID REFERENCES schueler(id) ON DELETE SET NULL;
+    ADD COLUMN leser_id UUID REFERENCES leser(id) ON DELETE SET NULL;
 
 -- Eine Leserzeile gehoert hoechstens einem Konto: Sonst zeigten zwei Anmeldungen auf
 -- dieselbe Person, und an der Theke waere nicht feststellbar, wessen Ausleihen man sieht.
@@ -287,7 +311,7 @@ CREATE UNIQUE INDEX uniq_benutzer_leser ON benutzer (leser_id) WHERE leser_id IS
 
 
 CREATE TABLE schueler_fotos (
-    schueler_id UUID PRIMARY KEY REFERENCES schueler(id) ON DELETE CASCADE,
+    schueler_id UUID PRIMARY KEY REFERENCES leser(id) ON DELETE CASCADE,
     foto_encrypted BYTEA NOT NULL,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -566,7 +590,7 @@ BEGIN
     IF NEW.barcode_id IS NULL THEN
         RETURN NEW;
     END IF;
-    IF TG_TABLE_NAME = 'schueler' THEN
+    IF TG_TABLE_NAME = 'leser' THEN
         IF NEW.deleted_at IS NOT NULL THEN
             RETURN NEW;
         END IF;
@@ -587,7 +611,7 @@ BEGIN
             END IF;
         END IF;
         PERFORM pg_advisory_xact_lock(hashtext('ausweisnummer'), hashtext(NEW.barcode_id));
-        IF EXISTS (SELECT 1 FROM schueler WHERE barcode_id = NEW.barcode_id AND deleted_at IS NULL) THEN
+        IF EXISTS (SELECT 1 FROM leser WHERE barcode_id = NEW.barcode_id AND deleted_at IS NULL) THEN
             RAISE EXCEPTION 'Ausweisnummer % trägt bereits ein Schüler', NEW.barcode_id
                 USING ERRCODE = 'unique_violation', CONSTRAINT = 'uniq_ausweis_ueber_personen';
         END IF;
@@ -596,7 +620,7 @@ BEGIN
 END $$;
 
 CREATE TRIGGER trg_schueler_ausweis_eindeutig
-BEFORE INSERT OR UPDATE OF barcode_id, deleted_at ON schueler
+BEFORE INSERT OR UPDATE OF barcode_id, deleted_at ON leser
 FOR EACH ROW EXECUTE FUNCTION ausweis_eindeutig_ueber_personen();
 
 CREATE TRIGGER trg_benutzer_ausweis_eindeutig
@@ -668,7 +692,7 @@ CREATE TABLE ausleihen (
     geraet_id UUID REFERENCES geraete(id) ON DELETE RESTRICT,
     
     -- Polymorphic borrower association (loan to student OR user/staff)
-    schueler_id UUID REFERENCES schueler(id) ON DELETE RESTRICT,
+    schueler_id UUID REFERENCES leser(id) ON DELETE RESTRICT,
     ausleiher_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
     
     ausgeliehen_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -726,7 +750,7 @@ CREATE TABLE schadensfaelle (
     ausleihe_id UUID REFERENCES ausleihen(id) ON DELETE SET NULL, -- Optional link to corresponding checkout
     
     -- Target person responsible (either student OR user/staff)
-    schueler_id UUID REFERENCES schueler(id) ON DELETE RESTRICT,
+    schueler_id UUID REFERENCES leser(id) ON DELETE RESTRICT,
     benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
     
     beschreibung TEXT NOT NULL,
@@ -851,7 +875,7 @@ CREATE TABLE schadensersatz_bescheide (
     -- DSGVO-Löschung als Beleg OHNE PERSON — Referenznummer und Betrag bleiben, der
     -- Klarname im Snapshot wird bei der Tilgung geleert. RESTRICT hätte die berechtigte
     -- Löschung blockiert; die Sperre bei offenen Vorgängen liegt an der Forderung.
-    schueler_id         UUID REFERENCES schueler(id) ON DELETE SET NULL,
+    schueler_id         UUID REFERENCES leser(id) ON DELETE SET NULL,
     -- Dasselbe Vokabular wie bestellungen_verlauf.mittel (Migration 109).
     mittel              TEXT NOT NULL
         CONSTRAINT chk_bescheid_mittel CHECK (mittel IN ('land', 'schultraeger')),
@@ -1004,7 +1028,7 @@ CREATE INDEX idx_buecher_exemplare_etikett_offen
 CREATE TABLE vormerkungen (
     id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     titel_id    UUID NOT NULL REFERENCES buecher_titel(id) ON DELETE CASCADE,
-    schueler_id UUID REFERENCES schueler(id) ON DELETE CASCADE,
+    schueler_id UUID REFERENCES leser(id) ON DELETE CASCADE,
     notiz       TEXT,
     erstellt_am TIMESTAMPTZ NOT NULL DEFAULT now(),
     status      VARCHAR(50) DEFAULT 'wartend' NOT NULL,
@@ -1209,7 +1233,7 @@ BEGIN
 END $$;
 
 CREATE TRIGGER trg_schueler_klasse_vokabular
-BEFORE INSERT OR UPDATE OF klasse ON schueler
+BEFORE INSERT OR UPDATE OF klasse ON leser
 FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
 
 CREATE TRIGGER trg_klm_klasse_vokabular
@@ -1255,7 +1279,7 @@ CREATE TRIGGER trg_klassen_anzeigeform
 BEFORE INSERT OR UPDATE OF name ON klassen
 FOR EACH ROW EXECUTE FUNCTION klassen_anzeigeform_trigger();
 
-ALTER TABLE schueler
+ALTER TABLE leser
     ADD CONSTRAINT fk_schueler_klasse_vokabular
     FOREIGN KEY (klasse) REFERENCES klassen (name)
     ON UPDATE CASCADE ON DELETE RESTRICT;
@@ -1428,7 +1452,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('120_kollegium_hat_personenart.sql'),
 ('121_rolle_leitung.sql'),
 ('122_rechte_leitung.sql'),
-('123_lesertabelle.sql')
+('123_lesertabelle.sql'),
+('124_leser_tabelle_schueler_sicht.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -1439,7 +1464,7 @@ CREATE INDEX IF NOT EXISTS idx_schadensfaelle_ausleihe ON schadensfaelle (auslei
 CREATE INDEX IF NOT EXISTS idx_vormerkungen_schueler ON vormerkungen(schueler_id) WHERE schueler_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_klassensatz_titel ON klassensatz_reservierungen(titel_id);
 CREATE INDEX IF NOT EXISTS idx_class_books_klasse ON class_books(class_name);
-CREATE INDEX IF NOT EXISTS idx_schueler_klasse ON schueler(klasse);
+CREATE INDEX IF NOT EXISTS idx_schueler_klasse ON leser(klasse);
 CREATE INDEX IF NOT EXISTS idx_titel_subject ON buecher_titel (subject) WHERE subject IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_vormerkungen_status ON vormerkungen(status);
 -- Aus den Migrationen 011/021 — standen dort, waren aber aus schema.sql verloren
@@ -1447,7 +1472,7 @@ CREATE INDEX IF NOT EXISTS idx_vormerkungen_status ON vormerkungen(status);
 CREATE INDEX IF NOT EXISTS idx_ausleihen_ausgeliehen_am ON ausleihen(ausgeliehen_am);
 CREATE INDEX IF NOT EXISTS idx_ausleihen_rueckgabe_am ON ausleihen(rueckgabe_am);
 CREATE INDEX IF NOT EXISTS idx_buecher_titel_erstellt_am ON buecher_titel(erstellt_am);
-CREATE INDEX IF NOT EXISTS idx_schueler_deleted_at ON schueler(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_schueler_deleted_at ON leser(deleted_at) WHERE deleted_at IS NULL;
 
 -- -------------------------------------------------------------
 -- 6. VIEWS
@@ -1586,9 +1611,9 @@ CREATE TABLE nachbuch_meldungen (
 	barcode TEXT NOT NULL,
 	ergebnis TEXT NOT NULL,
 	grund TEXT,
-	ausleiher_schueler_id UUID REFERENCES schueler(id) ON DELETE SET NULL,
+	ausleiher_schueler_id UUID REFERENCES leser(id) ON DELETE SET NULL,
 	ausleiher_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
-	vorbesitzer_schueler_id UUID REFERENCES schueler(id) ON DELETE SET NULL,
+	vorbesitzer_schueler_id UUID REFERENCES leser(id) ON DELETE SET NULL,
 	vorbesitzer_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
 	ausweis_text TEXT,
 	gescannt_am TIMESTAMP WITH TIME ZONE NOT NULL,

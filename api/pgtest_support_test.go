@@ -45,7 +45,7 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 func resetBestandsdaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
-		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, schueler, benutzer, klassen
+		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, leser, benutzer, klassen
 		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {
