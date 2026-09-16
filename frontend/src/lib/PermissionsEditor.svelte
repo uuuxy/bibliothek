@@ -72,7 +72,15 @@
 
 							{@render roleToggle(item, 'LEITUNG', 'leitung')}
 							{@render roleToggle(item, 'MITARBEITER', 'mitarbeiter')}
-							{@render roleToggle(item, 'KOLLEGIUM', 'kollegium')}
+							<!-- KOLLEGIUM stand hier als vierte Spalte, seit die Rolle „lehrer“ am
+							     10.08.2026 so hieß (15d2806e). Sie ist am 16.09.2026 entfallen, weil
+							     Kollegium keine Rolle ist: Peter — „die Selbstregistration ist in dem
+							     Sinn keine Rolle. Das sind einfach alle.“ Eine Rolle vergibt der Admin
+							     (Leitung, Mitarbeiter, Helfer); wer keine hat, ist Kollegium, und das ist
+							     der Ausgangszustand jeder Lehrkraft, kein Rang neben den anderen.
+							     Seine Rechte stehen fest in db/seed.go: vormerken, sonst nichts im
+							     Programm. Das ist Absicht — was „Mein Portal“ kann, ist eine
+							     Produktentscheidung und kein Schalter, den jede Schule anders stellt. -->
 							<!-- HELFER fehlte hier: Das Backend fuehrt und liefert die Rechte dieser
 							     Rolle (seed.go, user_admin_permissions.go), aendern liess sie sich
 							     ueber die Oberflaeche aber nicht — sie war nur ueber die Vorgabe im

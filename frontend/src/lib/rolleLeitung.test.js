@@ -51,6 +51,26 @@ describe('Rolle Leitung in der Oberfläche', () => {
 		const src = quelle('lib/PermissionManager.svelte');
 		expect(src).toMatch(/const newState = \{[^;]*\bleitung:/);
 	});
+
+	// Die Gegenrichtung zum Test darüber, und der Grund, warum beide hier stehen:
+	// Peter am 16.09.2026, beim Blick auf die Matrix — „was soll der Scheiss dass wir auf
+	// einmal jetzt Kollegium bei Rollen haben? das braucht doch niemand!"
+	//
+	// Die Spalte war nicht neu (sie stand dort seit dem 10.08.2026, als die Rolle
+	// „lehrer" in „kollegium" umbenannt wurde, 15d2806e), aber sie widersprach dem
+	// Modell: Kollegium ist der Grundzustand jeder Lehrkraft, keine Rolle neben Leitung
+	// und Mitarbeiter. Seine Rechte stehen fest in db/seed.go und sind eine
+	// Produktentscheidung, kein Schalter je Schule.
+	//
+	// ohneKommentare ist hier Pflicht und keine Sorgfalt: In PermissionsEditor.svelte
+	// steht ein Kommentar, der die entfernte Spalte beim Namen nennt und begründet. Ohne
+	// das Strippen prüfte dieser Test die Begründung statt des Bauteils und bliebe
+	// für immer rot — dieselbe Falle wie bei einer Ratsche, die einen Kommentar liest.
+	it('die Rechte-Matrix hat KEINE Spalte für das Kollegium', () => {
+		const src = ohneKommentare(quelle('lib/PermissionsEditor.svelte'));
+		expect(src).not.toContain('KOLLEGIUM');
+		expect(src).not.toContain("'kollegium'");
+	});
 });
 
 describe('Login-Weiche', () => {
