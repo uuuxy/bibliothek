@@ -84,25 +84,70 @@ export function createOmniboxStore() {
 	let isActive = $derived(!!(activeStudent || isDropdownOpen));
 
 	// UI Feedback-Methoden
+	//
+	// Jeder dieser Zeitgeber bekommt ein HANDLE und wird vor dem Neuplanen verworfen —
+	// dasselbe Muster wie in actions/keyboardNav.js und actions/tooltip.js. Der Grund ist
+	// nicht Ordnungsliebe: Ein Timer, der die Seite überlebt, feuert ins Leere. In der
+	// Testumgebung ist „ins Leere" ein Absturz — nach dem Abbau von jsdom gibt es kein
+	// `document` mehr, und der Rückruf reisst den GANZEN Lauf mit („Unhandled Errors:
+	// document is not defined"), obwohl jeder einzelne Test grün ist. Genau so stand die
+	// CI am 16.09.2026 rot bei 697 grünen Tests; am 11.09.2026 war es keyboardNav.
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let screenFlashTimer = null;
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let shakeTimer = null;
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let flashTimer = null;
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let fokusTimer = null;
+
 	function triggerScreenFlash(type) {
 		screenFlash = type;
-		setTimeout(() => {
+		if (screenFlashTimer) clearTimeout(screenFlashTimer);
+		screenFlashTimer = setTimeout(() => {
+			screenFlashTimer = null;
 			screenFlash = '';
 		}, 300);
 	}
 
 	function triggerShake() {
 		isShaking = true;
-		setTimeout(() => {
+		if (shakeTimer) clearTimeout(shakeTimer);
+		shakeTimer = setTimeout(() => {
+			shakeTimer = null;
 			isShaking = false;
 		}, 500);
 	}
 
 	function triggerFlash(color) {
 		flashBorder = color;
-		setTimeout(() => {
+		if (flashTimer) clearTimeout(flashTimer);
+		flashTimer = setTimeout(() => {
+			flashTimer = null;
 			flashBorder = '';
 		}, 1000);
+	}
+
+	// Stoppt JEDEN laufenden Zeitgeber dieses Stores. Die Theke ruft es beim Verlassen der
+	// Seite (Omnibox.svelte, onDestroy), die Tests beim Abräumen — danach kann kein
+	// Rückruf mehr auf eine Seite greifen, die es nicht mehr gibt.
+	function stoppeZeitgeber() {
+		for (const t of [
+			screenFlashTimer,
+			shakeTimer,
+			flashTimer,
+			fokusTimer,
+			errorMessageTimer,
+			debounceTimer
+		]) {
+			if (t) clearTimeout(t);
+		}
+		screenFlashTimer = null;
+		shakeTimer = null;
+		flashTimer = null;
+		fokusTimer = null;
+		errorMessageTimer = null;
+		debounceTimer = null;
 	}
 
 	// Zeigt das Inline-Fehlerbanner an der Omnibox und blendet es nach 6s automatisch
@@ -537,8 +582,22 @@ export function createOmniboxStore() {
 	 */
 	function scanfeldWiederScharfstellen() {
 		if (showCamera || blockAlert || vormerkungAlert || checklistAnfrage) return;
-		// Nach der Aktion rendert Svelte das Profil neu; erst danach steht das Feld wieder.
-		setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
+		fokussiereScanfeld();
+	}
+
+	// Der Fokussprung selbst — DIE Stelle, an der ein Zeitgeber dieses Stores die Seite
+	// anfasst, und damit die, die nach dem Abbau der Testumgebung den ganzen Lauf riss
+	// (siehe stoppeZeitgeber). Bis zum 16.09.2026 stand derselbe Dreizeiler ein zweites
+	// Mal in Omnibox.svelte; zwei Timer für eine Sache sind auch zwei Stellen, an denen
+	// das Aufräumen fehlen kann.
+	//
+	// Nach der Aktion rendert Svelte das Profil neu; erst danach steht das Feld wieder.
+	function fokussiereScanfeld() {
+		if (fokusTimer) clearTimeout(fokusTimer);
+		fokusTimer = setTimeout(() => {
+			fokusTimer = null;
+			document.getElementById('omnibox-input')?.focus();
+		}, 50);
 	}
 
 	// Auch jeder Wechsel zur Ausleihe gibt dem Scanfeld den Fokus zurück (14.09.2026): Ein
@@ -692,6 +751,8 @@ export function createOmniboxStore() {
 		},
 
 		// Exportierte Methoden
+		stoppeZeitgeber,
+		fokussiereScanfeld,
 		triggerScreenFlash,
 		triggerShake,
 		triggerFlash,

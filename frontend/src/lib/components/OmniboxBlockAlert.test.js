@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 
 // „Einmalig ignorieren" folgt dem Recht seiner Route (OFFEN.md 3.3, 15.09.2026): Der Server
@@ -20,6 +20,14 @@ vi.mock('../audio.js', () => ({
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn(), appState: {} }));
 
 import { omniboxStore } from '../stores/omnibox.svelte.js';
+
+// Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
+// einen Fokussprung über 50 ms, der `document` anfasst — endet die Datei vorher, baut
+// Vitest jsdom ab, und der Rückruf reisst den GANZEN Lauf rot („Unhandled Errors:
+// document is not defined"), obwohl jeder Test grün ist. Genau so stand die CI am
+// 16.09.2026. Belegt in stores/omniboxZeitgeber.test.js.
+afterEach(() => omniboxStore.stoppeZeitgeber());
+
 import { authStore } from '../stores/authStore.svelte.js';
 import OmniboxBlockAlert from './OmniboxBlockAlert.svelte';
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import 'fake-indexeddb/auto';
 
 // Der Hinweis nach dem Scan eines Lehrerausweises beschreibt, was an der Theke passiert: Die
@@ -25,6 +25,13 @@ vi.mock('../audio.js', () => ({
 import { apiClient } from '../apiFetch.js';
 import { toastStore } from './toastStore.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
+
+// Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
+// einen Fokussprung über 50 ms, der `document` anfasst — endet die Datei vorher, baut
+// Vitest jsdom ab, und der Rückruf reisst den GANZEN Lauf rot („Unhandled Errors:
+// document is not defined"), obwohl jeder Test grün ist. Genau so stand die CI am
+// 16.09.2026. Belegt in stores/omniboxZeitgeber.test.js.
+afterEach(() => omniboxStore.stoppeZeitgeber());
 
 describe('Omnibox: Lehrerausweis gescannt', () => {
 	beforeEach(() => {

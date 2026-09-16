@@ -66,10 +66,10 @@
 		return abmelden;
 	});
 
+	// Fokussprung über den Store: EIN Zeitgeber mit Handle statt zweier gleicher Aufrufe.
 	$effect(() => {
-		if (!omniboxStore.isActive && !omniboxStore.isDropdownOpen && !omniboxStore.showCamera) {
-			setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
-		}
+		if (!omniboxStore.isActive && !omniboxStore.isDropdownOpen && !omniboxStore.showCamera)
+			omniboxStore.fokussiereScanfeld();
 	});
 
 	$effect(() => {

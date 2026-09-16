@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Die Theke, wenn ein abgeschriebenes Buch zurückkommt (#597, Etappe 2).
 //
@@ -30,10 +30,21 @@ function antwort(data) {
 	return { ok: true, json: async () => data };
 }
 
+// Jede Instanz hält eigene Zeitgeber (Aufblitzen, Rütteln, Fokussprung). Sie werden nach
+// jedem Fall gestoppt: Ein Timer, der die Datei überlebt, feuert nach dem Abbau von jsdom
+// und reisst den ganzen Lauf rot — so stand die CI am 16.09.2026 bei 697 grünen Tests.
+// Belegt in stores/omniboxZeitgeber.test.js.
+/** @type {ReturnType<typeof createOmniboxStore>[]} */
+const stores = [];
+afterEach(() => {
+	while (stores.length) stores.pop()?.stoppeZeitgeber();
+});
+
 /** @param {any} data */
 async function scanne(data) {
 	vi.mocked(apiClient.post).mockResolvedValue(antwort(data));
 	const store = createOmniboxStore();
+	stores.push(store);
 	store.queryVal = 'B-ZURUECK-1';
 	await store.submitAction(null, null);
 	return store;

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Der Sperr-Dialog („Ausleihe blockiert", mit „Einmalig ignorieren") hängt am Merkmal
 // X-Sperre: uebergehbar, nicht am Wortlaut der Meldung.
@@ -20,6 +20,13 @@ vi.mock('../audio.js', () => ({
 vi.mock('../../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 
 import { omniboxStore } from './omnibox.svelte.js';
+
+// Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
+// einen Fokussprung über 50 ms, der `document` anfasst — endet die Datei vorher, baut
+// Vitest jsdom ab, und der Rückruf reisst den GANZEN Lauf rot („Unhandled Errors:
+// document is not defined"), obwohl jeder Test grün ist. Genau so stand die CI am
+// 16.09.2026. Belegt in stores/omniboxZeitgeber.test.js.
+afterEach(() => omniboxStore.stoppeZeitgeber());
 
 /**
  * Eine 403-Antwort, wie /api/action sie schickt. headers.get ist bewusst von Hand gebaut:

@@ -1,7 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { authStore } from './authStore.svelte.js';
 import { idleLock } from './idleLock.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
+
+// Nach jedem Fall die Zeitgeber der Theke stoppen. `scanfeldWiederScharfstellen` plant
+// einen Fokussprung über 50 ms, der `document` anfasst — endet die Datei vorher, baut
+// Vitest jsdom ab, und der Rückruf reisst den GANZEN Lauf rot („Unhandled Errors:
+// document is not defined"), obwohl jeder Test grün ist. Genau so stand die CI am
+// 16.09.2026. Belegt in stores/omniboxZeitgeber.test.js.
+afterEach(() => omniboxStore.stoppeZeitgeber());
+
 import { uiStore } from './uiStore.svelte.js';
 
 // Der Bedienerwechsel an der Theke.
