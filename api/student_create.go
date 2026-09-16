@@ -91,15 +91,65 @@ func abgaengerJahrAm(klasse string, jetzt time.Time) int {
 	return baseYear + yearsLeft
 }
 
-// CreateStudentRequest defines the payload for creating a new student.
+// CreateStudentRequest defines the payload for creating a new reader.
+//
+// Der Name des Typs ist geblieben, der Inhalt ist mehr: Seit dem 16.09.2026 fragt „Neuen
+// Leser anlegen" ZUERST nach der Art. Klasse und Geburtsdatum sind deshalb nicht mehr am
+// Feld als Pflicht markiert, sondern im Handler AN DIE ART GEPAART (pruefeLeserAngaben) —
+// genau so, wie es die Datenbank tut (chk_leser_schueler_pflichtfelder). Zwei Pflichten,
+// die für alle gelten, wären hier dasselbe wie gar keine: Ein Kollege hat keine Klasse.
 type CreateStudentRequest struct {
-	Vorname   string `json:"vorname" validate:"required"`
-	Nachname  string `json:"nachname" validate:"required"`
-	Klasse    string `json:"klasse" validate:"required"`
+	Vorname  string `json:"vorname" validate:"required"`
+	Nachname string `json:"nachname" validate:"required"`
+	// Art: schueler | lehrkraft | liv. Leer heißt „schueler" — die Vorgabe der Spalte
+	// und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.
+	Art       string `json:"art"`
+	Klasse    string `json:"klasse"`
 	BarcodeID string `json:"barcode_id"`
-	// Geburtsdatum (YYYY-MM-DD) ist Pflicht — geprüft im Handler mit eigener Meldung,
-	// weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe errGeburtsdatumPflicht.
+	// Geburtsdatum (YYYY-MM-DD) ist Pflicht für einen SCHÜLER — geprüft im Handler mit
+	// eigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe
+	// errGeburtsdatumPflicht.
 	Geburtsdatum *string `json:"geburtsdatum"`
+}
+
+// leserArten sind die drei Arten aus chk_leser_art (Migration 123). Eine vierte ist ein
+// Tippfehler und kein neuer Personenkreis: Die Datenbank wiese sie ab, aber als 500
+// „interner Datenbankfehler" statt mit einer Auskunft.
+var leserArten = map[string]bool{"schueler": true, "lehrkraft": true, "liv": true}
+
+// istSchuelerArt sagt, ob für diese Art die Schüler-Pflichten gelten.
+func istSchuelerArt(art string) bool { return art == "schueler" }
+
+// meldungLeserNamensdublette warnt vor dem häufigsten Fall: Der Kollege hat sich längst
+// selbst angemeldet und steht deshalb schon in der Leserdatei. Ein zweiter Eintrag teilt
+// seine Ausleihen auf zwei Akten, ohne dass es jemand merkt — und anders als bei einem
+// Schüler gibt es kein Geburtsdatum, an dem die Doppelprüfung greifen könnte.
+const meldungLeserNamensdublette = "achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten."
+
+// pruefeLeserAngaben paart die Pflichtfelder an die Art — dieselbe Paarung, die
+// chk_leser_schueler_pflichtfelder in der Datenbank hält.
+//
+// Die Paarung ist der Punkt und nicht der Wert: Am 14.09.2026 hat genau diese Bugklasse
+// die LUSD-Klasse getroffen (ein Gate prüfte den Wert, nicht die Paarung). Ein Schüler
+// ohne Klasse fällt in jeder Klassenliste und jeder Mahnung lautlos hinten runter; ein
+// Kollege MIT Klasse stünde umgekehrt in den Klassenlisten und im LUSD-Abgleich.
+func pruefeLeserAngaben(req *CreateStudentRequest) error {
+	if !leserArten[req.Art] {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+		return fmt.Errorf("Unbekannte Art %q. Möglich sind: Schüler, Lehrkraft, LiV.", req.Art)
+	}
+	if istSchuelerArt(req.Art) {
+		if req.Klasse == "" {
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+			return errors.New("Klasse fehlt. Ein Schüler ohne Klasse fällt aus jeder Klassenliste und jeder Mahnung.")
+		}
+		return pruefeKlassenname(req.Klasse)
+	}
+	if req.Klasse != "" {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+		return errors.New("Eine Lehrkraft hat keine Klasse. Mit einer Klasse stünde sie in den Klassenlisten und im LUSD-Abgleich.")
+	}
+	return nil
 }
 
 // errGeburtsdatumPflicht erklärt dem Sekretariat, WARUM das Datum nicht fehlen darf —
@@ -129,19 +179,27 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 		req.Nachname = strings.TrimSpace(req.Nachname)
 		req.Klasse = strings.TrimSpace(req.Klasse)
 		req.BarcodeID = strings.TrimSpace(req.BarcodeID)
+		req.Art = strings.TrimSpace(req.Art)
+		if req.Art == "" {
+			req.Art = "schueler"
+		}
 
-		if err := pruefeKlassenname(req.Klasse); err != nil {
+		if err := pruefeLeserAngaben(&req); err != nil {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 			return
 		}
 
 		ctx := r.Context()
 
-		// Geburtsdatum ist Pflicht — nicht als Stammdatum, sondern als SCHLÜSSEL: Der
-		// LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt einen von Hand
-		// angelegten Schüler ausschließlich über Name + Geburtsdatum wieder (Adoption bzw.
-		// Namensmodus). Ohne Datum entsteht beim nächsten Import zwangsläufig ein Duplikat.
-		if req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) == "" {
+		// Geburtsdatum ist Pflicht für einen SCHÜLER — nicht als Stammdatum, sondern als
+		// SCHLÜSSEL: Der LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt
+		// einen von Hand angelegten Schüler ausschließlich über Name + Geburtsdatum wieder
+		// (Adoption bzw. Namensmodus). Ohne Datum entsteht beim nächsten Import zwangsläufig
+		// ein Duplikat.
+		//
+		// Ein Kollege kommt nie aus der LUSD. Von ihm ein Geburtsdatum zu verlangen, wäre
+		// eine Angabe ohne Zweck — und damit eine, die nicht erhoben gehört.
+		if istSchuelerArt(req.Art) && (req.Geburtsdatum == nil || strings.TrimSpace(*req.Geburtsdatum) == "") {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errGeburtsdatumPflicht)
 			return
 		}
@@ -174,15 +232,33 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// 1. Notfall-Wachhund: Duplikatsprüfung (Vorname, Nachname, Geburtsdatum)
-	isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
-	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return "", "", false
-	}
-	if isDuplicate {
-		apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
-		return "", "", false
+	// 1. Notfall-Wachhund: Doppelprüfung.
+	//
+	// Bei einem Schüler über Name + Geburtsdatum (dieselbe Regel wie der LUSD-Schlüssel),
+	// bei einem Kollegen über den NAMEN allein — er hat kein Geburtsdatum, an dem die
+	// Schüler-Prüfung greifen könnte, und der häufigste Fall ist der Kollege, der sich
+	// über „Mein Portal" längst selbst angemeldet hat.
+	if istSchuelerArt(req.Art) {
+		isDuplicate, err := pruefeSchuelerDuplikat(ctx, tx, req.Vorname, req.Nachname, parsedGebdatum)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return "", "", false
+		}
+		if isDuplicate {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungSchuelerDuplikat))
+			return "", "", false
+		}
+	} else {
+		belegt, err := pruefeLeserNamensdublette(ctx, tx, req.Vorname, req.Nachname)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return "", "", false
+		}
+		if belegt {
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(meldungLeserNamensdublette))
+			return "", "", false
+		}
 	}
 
 	// 2. Resolve/generate barcode_id if not provided
@@ -191,14 +267,27 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		return "", "", false
 	}
 
-	// 3. Insert student
-	abgaengerJahr := calculateAbgaengerJahr(req.Klasse)
+	// 3. Die Leserzeile anlegen.
+	//
+	// Geschrieben wird die TABELLE `leser` und nicht die Sicht `schueler`: Durch die Sicht
+	// könnte ein Kollege gar nicht entstehen (WITH CHECK OPTION). Die Schüler-Pflichten
+	// hält weiter die Datenbank — chk_leser_schueler_pflichtfelder prüft die PAARUNG von
+	// Art und Klasse/Abgangsjahr/Ausweis, nicht die einzelnen Werte.
+	//
+	// Klasse und Abgangsjahr sind bei einem Kollegen NULL, nicht ”: Ein leerer String wäre
+	// eine Klasse namens „nichts", und die Klassenlisten fragen auf NULL.
+	var klasse *string
+	var abgaengerJahr *int
+	if istSchuelerArt(req.Art) {
+		jahr := calculateAbgaengerJahr(req.Klasse)
+		klasse, abgaengerJahr = &req.Klasse, &jahr
+	}
 	qInsert := `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO leser (barcode_id, vorname, nachname, klasse, geburtsdatum, abgaenger_jahr, art)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id
 	`
-	if err := tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, req.Klasse, parsedGebdatum, abgaengerJahr).Scan(&studentID); err != nil {
+	if err := tx.QueryRow(ctx, qInsert, barcodeID, req.Vorname, req.Nachname, klasse, parsedGebdatum, abgaengerJahr, req.Art).Scan(&studentID); err != nil {
 		// Der Index ist die letzte Instanz (zwei Arbeitsplätze gleichzeitig): seine
 		// Verletzung ist ein Bedienfall mit Erklärung, kein 500.
 		var pgErr *pgconn.PgError
@@ -260,6 +349,22 @@ func pruefeSchuelerDuplikat(ctx context.Context, tx pgx.Tx, vorname, nachname st
 	return isDuplicate, err
 }
 
+// pruefeLeserNamensdublette sucht einen aktiven Leser mit demselben Namen — in der
+// Normalform suchnorm, also „Müller" wie „Mueller".
+//
+// Gefragt wird die TABELLE `leser` und über ALLE Arten: Ein Kollege, der schon als
+// Schülerzeile aus dem Altbestand steht, ist derselbe Mensch. Die Prüfung ist bewusst
+// grob — sie weist auch zwei echte Namensvettern ab. Das ist der seltenere Fall, und er
+// meldet sich sofort; ein stiller zweiter Eintrag meldet sich nie.
+func pruefeLeserNamensdublette(ctx context.Context, tx pgx.Tx, vorname, nachname string) (bool, error) {
+	var belegt bool
+	q := `SELECT EXISTS(SELECT 1 FROM leser
+	       WHERE suchnorm(vorname) = suchnorm($1) AND suchnorm(nachname) = suchnorm($2)
+	         AND deleted_at IS NULL)`
+	err := tx.QueryRow(ctx, q, vorname, nachname).Scan(&belegt)
+	return belegt, err
+}
+
 // resolveNeueBarcodeID liefert die zu verwendende Barcode-ID: entweder die vom Client
 // gewünschte (nach Eindeutigkeitsprüfung) oder eine neu generierte S-Nummer aus der
 // zentralen Sequenz. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
@@ -267,7 +372,12 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 	if requested == "" {
 		// Use central repository for sequence generation
 		seqRepo := repository.NewSequenceRepository(tx)
-		startNum, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "S-")
+		// `leser`, nicht die Sicht `schueler`: Die Sicht zeigt nur Schüler, und die
+		// höchste Nummer kann seit Migration 125 an einem KOLLEGEN hängen. Über die Sicht
+		// gerechnet gäbe der Generator sie ein zweites Mal aus — und der eindeutige Index
+		// quittierte das als 500 statt mit einer Auskunft. Ein Nummernkreis, zwei
+		// Generatoren: genau der Fehler aus Migration 068, nur eine Tabelle weiter.
+		startNum, err := seqRepo.GetNextSequence(ctx, "leser", "barcode_id", "S-")
 		if err != nil {
 			db.SafeRollback(ctx, tx)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

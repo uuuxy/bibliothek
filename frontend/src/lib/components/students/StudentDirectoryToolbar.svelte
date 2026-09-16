@@ -27,9 +27,9 @@
 
 	<div class="flex items-center gap-4">
 		{#if darfAnlegen}
-			<Button variant="primary" onclick={oncreate} aria-label="Neuen Schüler anlegen">
+			<Button variant="primary" onclick={oncreate} aria-label="Neuen Leser anlegen">
 				<Plus class="w-4 h-4" />
-				Neuer Schüler
+				Neuer Leser
 			</Button>
 		{/if}
 
