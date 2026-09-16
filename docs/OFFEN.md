@@ -756,8 +756,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 - Das Bearbeiten-Formular schickt das alte `abgaenger_jahr` mit, ein Klassenwechsel rechnet es
   nie neu. Vor der Versetzungs-Abnahme (7.7).
-- Das Schülerfoto per Barcode wird auch für Schüler im Papierkorb ausgeliefert
-  (`api/photo_serve.go`).
 - Purge-Fehler kommen immer als 409 (`api/student_deleted.go`).
 - LUSD: Zwei Zeilen mit gleichem Namen und Geburtsdatum, aber verschiedenen Klassen werden still
   zu einer Person; die Meldung „mehrdeutig" fehlt (dokumentierte Grenze). Vor der LUSD-Abnahme als

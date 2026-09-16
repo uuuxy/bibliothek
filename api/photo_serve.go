@@ -31,11 +31,17 @@ func (s *Server) ServeStudentPhotoHandler() http.HandlerFunc {
 		// (schueler_fotos hängt an der Leser-ID), aber nie ausgeliefert — die Auslieferung
 		// verband es über die Sicht mit seiner Person. Die Akte zeigte weiter die Initialen,
 		// und niemand konnte sagen, warum.
+		// `deleted_at IS NULL`: Das Passbild eines Lesers im Papierkorb wird NICHT mehr
+		// ausgeliefert (17.09.2026). Für alle sichtbaren Wege ist die Person gelöscht;
+		// die Zeile steht nur noch da, damit ein Versehen zurückgeholt werden kann. Ein
+		// Passbild, das über die Ausweisnummer weiter herauskommt, macht aus dem
+		// Papierkorb ein Archiv. Die Zeile in `schueler_fotos` bleibt — wer die Person
+		// zurückholt, bekommt ihr Bild zurück.
 		query := `
 			SELECT sf.foto_encrypted 
 			FROM schueler_fotos sf
 			JOIN leser s ON s.id = sf.schueler_id
-			WHERE s.barcode_id = $1
+			WHERE s.barcode_id = $1 AND s.deleted_at IS NULL
 		`
 
 		var ciphertext []byte
