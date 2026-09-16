@@ -41,6 +41,10 @@ export function createOmniboxStore() {
 	// weggefallen; solange es zwei gab, musste jede Stelle beide abfragen und sich für
 	// eine entscheiden.
 	let activeStudent = $state(/** @type {any} */ (null));
+	// Der ohne Netz gescannte Ausweis — nur die NUMMER, kein Name, keine Ausleihen.
+	// Aufloesen kann ihn nur der Server; bis dahin tragen die folgenden Buecher sie mit
+	// (offlineQueue: `ausweis_barcode`, die Nachbuch-Tuer kennt das Feld).
+	let offlineAusweis = $state('');
 	let queryVal = $state('');
 
 	let flashBorder = $state('');
@@ -413,11 +417,15 @@ export function createOmniboxStore() {
 		// zurueckkommt, also zwischen Scan und Versand. Der Sync rechnet daraus den
 		// Scan-Zeitpunkt neu, solange der Eintrag aus demselben Seitenaufruf stammt
 		// (offlineQueue.js, OfflineEintrag).
+		// Ohne geladene Person, aber mit Ausweis-Merker: Das ist eine AUSLEIHE an die
+		// Person hinter dem Merker. Ohne beides bleibt es eine Rueckgabe.
+		const merker = !activeStudent?.id && offlineAusweis ? offlineAusweis : '';
 		return {
 			id: idempotencyKey,
-			art: absicht ?? (activeStudent?.id ? 'ausleihe' : 'rueckgabe'),
+			art: absicht ?? (activeStudent?.id || merker ? 'ausleihe' : 'rueckgabe'),
 			barcode: q,
 			leser_id: activeStudent?.id ?? null,
+			...(merker ? { ausweis_barcode: merker } : {}),
 			gescannt_am: Date.now(),
 			mono: Math.round(performance.now()),
 			ursprung: Math.round(performance.timeOrigin ?? 0)
@@ -440,7 +448,15 @@ export function createOmniboxStore() {
 	/** @param {import('../offlineQueue.js').OfflineEintrag} eintrag */
 	async function speichereOfflineAktion(eintrag) {
 		const einordnung = ordneScanEin(eintrag.barcode, buchBarcodes.istBuch);
+		if (einordnung.art === 'ausweis') {
+			merkeOfflineAusweis(einordnung.nummer);
+			return;
+		}
 		if (einordnung.art !== 'buch') {
+			// „unklar" sperrt die Zuordnung bis zum naechsten eindeutigen Ausweis
+			// (Entscheidung vom 13.09.2026): Der Merker faellt, damit das naechste Buch
+			// nicht einer Person zugeschrieben wird, bei der niemand mehr sicher ist.
+			if (einordnung.art === 'unklar') offlineAusweis = '';
 			verwirfOfflineScan(einordnung);
 			return;
 		}
@@ -470,6 +486,63 @@ export function createOmniboxStore() {
 	// Ein nackter „Netzwerkfehler" war die schlechteste aller Auskuenfte: Er sagte weder,
 	// dass der Scan verworfen wurde, noch warum, noch was jetzt zu tun ist. Wer ihn sah,
 	// durfte annehmen, es habe trotzdem geklappt.
+	// Der Ausweis ohne Netz: Die Theke merkt sich die NUMMER und sonst nichts. Ein Name
+	// stuende hier nur, wenn Personendaten auf dem Rechner laegen — und genau das soll
+	// nicht sein (Entscheidung vom 13.09.2026). Der Server loest die Nummer beim
+	// Nachbuchen auf.
+	/** @param {string} nummer */
+	function merkeOfflineAusweis(nummer) {
+		offlineAusweis = nummer;
+		// Die zuvor geladene Person weicht: Sonst zeigte die Theke einen Namen, waehrend
+		// die folgenden Buecher an eine ANDERE Person gingen.
+		activeStudent = null;
+		triggerScreenFlash('warning');
+		playSoundSuccess();
+		showToast(
+			`Ohne Netz gemerkt: Ausweis „${nummer}". Die folgenden Bücher werden ihm zugeordnet.`,
+			'warning'
+		);
+	}
+
+	/**
+	 * Der gefaehrlichste Fall des Offline-Betriebs: Ein ohne Netz gemerkter Ausweis steht
+	 * noch, und die Verbindung ist zurueck.
+	 *
+	 * Der Merker traegt nur die NUMMER; der Online-Weg braucht die Leser-Kennung. Ginge
+	 * das Buch jetzt hinaus, schickte es `active_leser_id` gar nicht mit — und der Server
+	 * liest das Schweigen als RUECKGABE. Aus einer Ausleihe an S-10001 wuerde still eine
+	 * Rueckgabe. Genau davor warnt der Plan (Stufe 3, Commit 15).
+	 *
+	 * Deshalb wird ein Buch bei stehendem Merker NICHT gesendet, sondern um einen erneuten
+	 * Ausweis-Scan gebeten. Ein Ausweis selbst darf durch — er ist ja der Ausweg.
+	 *
+	 * Warum an `navigator.onLine` und nicht am Versuch: Der Versuch entscheidet sich erst
+	 * NACH dem Senden, und dann ist es zu spaet. `navigator.onLine` kann luegen (WLAN da,
+	 * Server weg) — dann scheitert auch der erbetene Ausweis-Scan, der Merker entsteht neu,
+	 * und der Preis ist ein zusaetzlicher Scan. Eine falsche Buchung entsteht in KEINEM
+	 * Zweig; das ist der Punkt.
+	 *
+	 * @param {string} q der rohe Scan
+	 * @returns {boolean} false = dieser Scan wurde bewusst nicht ausgefuehrt
+	 */
+	function merkerVertraegtDiesenScan(q) {
+		if (!offlineAusweis) return true;
+		if (typeof navigator !== 'undefined' && !navigator.onLine) return true;
+		if (ordneScanEin(q, buchBarcodes.istBuch).art === 'ausweis') {
+			offlineAusweis = '';
+			return true;
+		}
+		const gemerkt = offlineAusweis;
+		offlineAusweis = '';
+		triggerScreenFlash('error');
+		playSoundError();
+		zeigeFehlerBanner(
+			`Die Verbindung ist zurück. Bitte den Ausweis „${gemerkt}" noch einmal scannen — dann wird die Person richtig geladen. ` +
+				`Dieser Scan wurde NICHT gebucht.`
+		);
+		return false;
+	}
+
 	/** @param {import('../scanEinordnen.js').ScanEinordnung} einordnung */
 	function verwirfOfflineScan(einordnung) {
 		const meldungen = {
@@ -483,6 +556,12 @@ export function createOmniboxStore() {
 			geraet:
 				`Geraete lassen sich ohne Netz nicht ausgeben oder zuruecknehmen — die Checkliste dazu gibt es nur online. ` +
 				`\u201e${einordnung.nummer}\u201c wurde NICHT gebucht.`,
+			// Eine Namenssuche ohne Netz kann es nicht geben: Auf dem Theken-Rechner liegen
+			// keine Personendaten (Entscheidung vom 13.09.2026). Das ist keine Luecke, die
+			// noch zugeht — es ist die Zusage.
+			suche:
+				`Ohne Netz laesst sich nicht nach Namen suchen — auf diesem Rechner stehen keine Personendaten. ` +
+				`Bitte den Ausweis scannen oder den Vorgang notieren.`,
 			// Die sichere Seite: Wer hier raet, schreibt das naechste Buch einer fremden Person zu.
 			unklar:
 				`\u201e${einordnung.nummer}\u201c ist ohne Netz nicht eindeutig — die Nummer steht nicht in der Buchliste dieses Rechners. ` +
@@ -569,6 +648,8 @@ export function createOmniboxStore() {
 
 		// Disable input while processing
 		document.getElementById('omnibox-input')?.blur();
+
+		if (!merkerVertraegtDiesenScan(q)) return;
 
 		const eintrag = schnappschuss(q, crypto.randomUUID(), absicht);
 
@@ -684,6 +765,13 @@ export function createOmniboxStore() {
 	return {
 		get activeStudent() {
 			return activeStudent;
+		},
+		/** Die ohne Netz gemerkte Ausweisnummer ("" = keine). Nur die Nummer, kein Name. */
+		get offlineAusweis() {
+			return offlineAusweis;
+		},
+		set offlineAusweis(v) {
+			offlineAusweis = v;
 		},
 		set activeStudent(v) {
 			activeStudent = v;

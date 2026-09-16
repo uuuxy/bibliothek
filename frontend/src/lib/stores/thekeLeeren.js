@@ -34,6 +34,10 @@ export function thekeLeeren() {
 		}
 	}
 	omniboxStore.activeStudent = null;
+	// Auch der ohne Netz gemerkte Ausweis geht mit: Er ist zwar nur eine Nummer, aber er
+	// entscheidet, WEM die naechsten Buecher zugeschrieben werden. Bliebe er stehen,
+	// liehe der naechste Bediener auf die Karte des vorigen aus.
+	omniboxStore.offlineAusweis = '';
 	omniboxStore.queryVal = '';
 	omniboxStore.isDropdownOpen = false;
 	omniboxStore.unifiedSearchResults = {

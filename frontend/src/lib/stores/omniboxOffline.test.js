@@ -62,6 +62,9 @@ describe('Omnibox offline', () => {
 		// Commit 2 (Auswertung im selben catch), nicht den Netzausfall.
 		vi.mocked(apiClient.post).mockRejectedValue(new TypeError('Failed to fetch'));
 		omniboxStore.activeStudent = null;
+		// Der Ausweis-Merker ueberlebt einen Scan mit Absicht — genau deshalb muss ihn
+		// jeder Fall ausdruecklich raeumen, sonst misst der naechste die Spuren des vorigen.
+		omniboxStore.offlineAusweis = '';
 		omniboxStore.queryVal = '';
 	});
 
@@ -199,13 +202,25 @@ describe('Omnibox offline', () => {
 			expect(q[0].barcode).toBe('58968');
 		});
 
-		it('wirft einen Ausweis nicht stillschweigend weg, sondern sagt es', async () => {
+		it('bucht einen Ausweis nicht, sondern merkt ihn sich', async () => {
+			// Bis zum 16.09.2026 wurde er mit einem nackten „Netzwerkfehler" verworfen;
+			// kurz darauf abgewiesen mit Begruendung; seit dem Ausweis-Merker wird er
+			// gemerkt. Eine Buchung ist er in keinem Fall.
+			Object.defineProperty(navigator, 'onLine', { value: false, configurable: true });
 			omniboxStore.queryVal = 'A-00042';
 			await omniboxStore.submitAction(new Event('submit'));
-			expect(await loadQueue(), 'der Ausweis-Weg kommt erst').toHaveLength(0);
-			// Ein nacktes „Netzwerkfehler" liess offen, ob gebucht wurde.
-			expect(omniboxStore.errorMessage).toMatch(/Ausweis/);
-			expect(omniboxStore.errorMessage).not.toBe('Netzwerkfehler');
+			expect(await loadQueue(), 'ein Ausweis ist keine Buchung').toHaveLength(0);
+			expect(omniboxStore.offlineAusweis).toBe('A-00042');
+			Object.defineProperty(navigator, 'onLine', { value: true, configurable: true });
+		});
+
+		it('sagt bei einem getippten Namen, dass es ohne Netz keine Namenssuche gibt', async () => {
+			omniboxStore.queryVal = 'Mueller';
+			await omniboxStore.submitAction(new Event('submit'));
+			expect(await loadQueue()).toHaveLength(0);
+			expect(omniboxStore.errorMessage).toMatch(/nach Namen/);
+			// Ueber einen Namen von „der Buchliste" zu reden, half niemandem weiter.
+			expect(omniboxStore.errorMessage).not.toMatch(/Buchliste/);
 		});
 
 		it('nennt eine unbekannte Nummer unklar und bucht sie NICHT', async () => {
@@ -213,6 +228,85 @@ describe('Omnibox offline', () => {
 			await omniboxStore.submitAction(new Event('submit'));
 			expect(await loadQueue()).toHaveLength(0);
 			expect(omniboxStore.errorMessage).toMatch(/nicht eindeutig|NICHT gebucht/);
+		});
+	});
+
+	// Der ohne Netz gescannte Ausweis (Stufe 3, Commit 15).
+	//
+	// Die Theke merkt sich die NUMMER und sonst nichts — Personendaten liegen bewusst
+	// nicht auf dem Theken-Rechner. Aufloesen kann sie nur der Server beim Nachbuchen;
+	// die Tuer kennt dafuer `ausweis_barcode`.
+	describe('Ausweis ohne Netz', () => {
+		/** @param {boolean} an */
+		const netz = (an) =>
+			Object.defineProperty(navigator, 'onLine', { value: an, configurable: true });
+
+		beforeEach(() => netz(false));
+		afterEach(() => netz(true));
+
+		it('merkt sich den Ausweis und laesst die vorher geladene Person fallen', async () => {
+			// Sonst zeigte die Theke einen Namen, waehrend die folgenden Buecher an eine
+			// ANDERE Person gingen.
+			omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna' };
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+
+			expect(omniboxStore.offlineAusweis).toBe('S-10001');
+			expect(omniboxStore.activeStudent).toBeNull();
+			expect(await loadQueue(), 'der Ausweis selbst ist keine Buchung').toHaveLength(0);
+		});
+
+		it('schreibt die folgenden Buecher dem gemerkten Ausweis zu', async () => {
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.queryVal = 'LMF-2025-0007';
+			await omniboxStore.submitAction(new Event('submit'));
+
+			const q = await loadQueue();
+			expect(q).toHaveLength(1);
+			expect(q[0].ausweis_barcode).toBe('S-10001');
+			// Ohne Person UND ohne Merker waere es eine Rueckgabe — mit Merker ist es eine
+			// Ausleihe an die Person hinter der Karte.
+			expect(q[0].art).toBe('ausleihe');
+		});
+
+		it('ein unklarer Scan sperrt die Zuordnung: der Merker faellt', async () => {
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+			omniboxStore.queryVal = 'B97601826457'; // weder Buch noch erkennbarer Ausweis
+			await omniboxStore.submitAction(new Event('submit'));
+
+			expect(omniboxStore.offlineAusweis, 'bis zum naechsten eindeutigen Ausweis').toBe('');
+		});
+
+		// DER gefaehrliche Fall: Merker steht, Verbindung ist zurueck. Der Online-Weg
+		// schickte das Buch ohne Person los, und der Server liest das Schweigen als
+		// RUECKGABE — aus einer Ausleihe wuerde still eine Rueckgabe.
+		it('bucht bei zurueckgekehrter Verbindung NICHT weiter, sondern bittet um den Ausweis', async () => {
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+			expect(omniboxStore.offlineAusweis).toBe('S-10001');
+
+			netz(true);
+			omniboxStore.queryVal = 'LMF-2025-0007';
+			await omniboxStore.submitAction(new Event('submit'));
+
+			expect(await loadQueue(), 'nicht gebucht und nicht eingereiht').toHaveLength(0);
+			expect(omniboxStore.errorMessage).toMatch(/noch einmal scannen/);
+			expect(omniboxStore.errorMessage).toContain('S-10001');
+			expect(omniboxStore.offlineAusweis, 'der Merker ist verbraucht').toBe('');
+		});
+
+		it('einen Ausweis laesst sie bei zurueckgekehrter Verbindung durch — er ist der Ausweg', async () => {
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+
+			netz(true);
+			omniboxStore.queryVal = 'S-10001';
+			await omniboxStore.submitAction(new Event('submit'));
+			// Der Online-Weg uebernimmt (hier scheitert er im Test) — entscheidend ist,
+			// dass die Bitte um den Ausweis nicht den Ausweis selbst abweist.
+			expect(omniboxStore.errorMessage ?? '').not.toMatch(/noch einmal scannen/);
 		});
 	});
 });

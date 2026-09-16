@@ -63,6 +63,20 @@ describe('Scan ohne Netz einordnen', () => {
 		expect(ein('1234567039572')).toEqual({ art: 'unklar', nummer: '1234567039572' });
 	});
 
+	it('haelt eine getippte Eingabe fuer eine Suche, nicht fuer eine Nummer', () => {
+		// „steht nicht in der Buchliste" waere ueber einen Namen schlicht falsch. Erkannt
+		// am Fehlen von Ziffern oder an einem Leerzeichen — beides kommt aus keinem
+		// Strichcode.
+		expect(ein('Mueller')).toEqual({ art: 'suche', nummer: 'Mueller' });
+		expect(ein('Anna Mueller')).toEqual({ art: 'suche', nummer: 'Anna Mueller' });
+	});
+
+	it('eine Nummer mit Ziffern bleibt unklar und wird NICHT zur Suche', () => {
+		// Gegenprobe: Ein alter Ausweis liefert gemessen B97601826457 — Ziffern, kein
+		// Leerzeichen. Der gehoert nicht in die Namenssuche.
+		expect(ein('B97601826457').art).toBe('unklar');
+	});
+
 	it('leerer Scan ist unklar, nicht Buch', () => {
 		expect(ein('   ')).toEqual({ art: 'unklar', nummer: '' });
 	});

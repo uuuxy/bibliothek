@@ -36,7 +36,7 @@ export const AUSWEIS_VORSILBEN = ['A-', 'S-', 'L-'];
 export const BUCH_VORSILBEN = ['B-', 'LMF-'];
 
 /**
- * @typedef {{ art: 'buch' | 'ausweis' | 'geraet' | 'unklar', nummer: string }} ScanEinordnung
+ * @typedef {{ art: 'buch' | 'ausweis' | 'geraet' | 'suche' | 'unklar', nummer: string }} ScanEinordnung
  */
 
 /**
@@ -53,6 +53,16 @@ export function ordneScanEin(roh, istBuch) {
 	if (AUSWEIS_VORSILBEN.some((v) => scan.startsWith(v))) return { art: 'ausweis', nummer: scan };
 	if (BUCH_VORSILBEN.some((v) => scan.startsWith(v))) return { art: 'buch', nummer: scan };
 	if (scan.startsWith('G-')) return { art: 'geraet', nummer: scan };
+
+	// Eine EINGABE ist kein Scan: Wer einen Namen tippt, sucht eine Person, und die Suche
+	// braucht den Server — auf dem Theken-Rechner liegen keine Personendaten (Entscheidung
+	// vom 13.09.2026). Das verdient eine eigene Auskunft: „steht nicht in der Buchliste"
+	// waere ueber einen Namen schlicht falsch und half niemandem weiter.
+	//
+	// Erkannt am Fehlen von Ziffern oder an einem Leerzeichen — beides kommt aus keinem
+	// Strichcode. Eine Nummer wie B97601826457 bleibt damit „unklar", ein „Mueller" oder
+	// „Anna Mueller" wird zur Suche.
+	if (!/\d/.test(scan) || /\s/.test(scan)) return { art: 'suche', nummer: scan };
 
 	// Ohne Vorsilbe entscheidet die Liste. Roh zuerst: Der Altbestand traegt seine
 	// Littera-Mediennummer nackt als Exemplar-Barcode.
