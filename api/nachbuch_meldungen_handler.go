@@ -76,6 +76,9 @@ func (s *Server) NachbuchMeldungQuittierenHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Nachbuch-Meldung konnte nicht quittiert werden", err)
 		}
+		// Eine Meldung weniger: Das Band der anderen Arbeitsplätze zeigt sonst weiter die
+		// alte Zahl, bis dort jemand neu anmeldet.
+		s.meldeMeldungsstand()
 		RespondJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return nil
 	})

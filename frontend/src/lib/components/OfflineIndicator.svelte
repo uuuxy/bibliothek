@@ -14,9 +14,13 @@
      Farben aus den M3-Rollen statt aus der Palette (Farb-Ratsche zaehlt die Summe). -->
 <script>
 	import { offlineSync } from '../stores/offlineSync.svelte.js';
-	import { CloudOff, Download, TriangleAlert, Upload } from '@lucide/svelte';
+	import { nachbuchMeldungen } from '../stores/nachbuchMeldungen.svelte.js';
+	import { CloudOff, Download, ListChecks, TriangleAlert, Upload } from '@lucide/svelte';
 	import { toastStore } from '../stores/toastStore.svelte.js';
+	import { hatRecht } from '../menu.js';
+	import { authStore } from '../stores/authStore.svelte.js';
 	import Button from './ui/Button.svelte';
+	import NachbuchMeldungen from './NachbuchMeldungen.svelte';
 
 	// Der Herzschlag kommt von aussen (App.svelte): Bis zum 16.09.2026 legte SEIN Ausfall
 	// ein eigenes Vollbild ueber die Seite. Dieselbe Lage, dieselbe Zeile — nicht zwei.
@@ -24,8 +28,16 @@
 	let { verbindungVerloren = false } = $props();
 
 	let ohneNetz = $derived(offlineSync.isOffline || verbindungVerloren);
+	// Die Liste der Meldungen darf `view_students` sehen; die ZAHL gehört jeder
+	// Theken-Rolle. Ein Helfer sieht also, dass etwas offen ist, und holt jemanden —
+	// besser als eine Meldung, die niemandem auffällt (OFFEN.md 2, Entscheidung 13.09.).
+	let darfMeldungenSehen = $derived(hatRecht(authStore.currentUser, 'view_students'));
 	let sichtbar = $derived(
-		offlineSync.pendingCount > 0 || ohneNetz || offlineSync.warteschlangeFehler
+		offlineSync.pendingCount > 0 ||
+			ohneNetz ||
+			offlineSync.warteschlangeFehler ||
+			nachbuchMeldungen.offen > 0 ||
+			nachbuchMeldungen.geoeffnet
 	);
 
 	async function handleBackup() {
@@ -107,10 +119,29 @@
 					{:else if ohneNetz}
 						Sobald die Verbindung zurück ist, geschieht das von selbst. Vorher bitte sichern.
 					{/if}
+				{:else if nachbuchMeldungen.offen > 0}
+					{nachbuchMeldungen.offen}
+					{nachbuchMeldungen.offen === 1 ? 'Buchung' : 'Buchungen'} aus dem Nachbuchen
+					{nachbuchMeldungen.offen === 1 ? 'braucht' : 'brauchen'} einen Blick.
+					{#if !darfMeldungenSehen}
+						Bitte die Bibliothek ansprechen.
+					{/if}
 				{:else}
 					Keine Verbindung — Scannen geht weiter, die Buchungen folgen von selbst.
 				{/if}
 			</p>
+
+			{#if nachbuchMeldungen.offen > 0 && darfMeldungenSehen}
+				<Button
+					variant="secondary"
+					size="sm"
+					onclick={() => nachbuchMeldungen.oeffne()}
+					class="shrink-0"
+				>
+					<ListChecks size={16} strokeWidth={2.5} />
+					Meldungen ({nachbuchMeldungen.offen})
+				</Button>
+			{/if}
 
 			{#if offlineSync.pendingCount > 0}
 				<Button variant="secondary" size="sm" onclick={handleBackup} class="shrink-0">
@@ -142,3 +173,5 @@
 		</div>
 	</div>
 {/if}
+
+<NachbuchMeldungen />

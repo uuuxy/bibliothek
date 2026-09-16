@@ -21,7 +21,27 @@ const sync = {
 	importQueueFromJSON: vi.fn()
 };
 
+// Die Meldungen aus dem Nachbuchen haengen am selben Band (Schritt C, 16.09.2026).
+const meldungen = {
+	offen: 0,
+	liste: [],
+	laeuft: false,
+	fehler: '',
+	geoeffnet: false,
+	auchQuittierte: false,
+	oeffne: vi.fn(),
+	schliesse: vi.fn(),
+	lade: vi.fn(),
+	quittiere: vi.fn()
+};
+const recht = { wert: true };
+
 vi.mock('../stores/offlineSync.svelte.js', () => ({ offlineSync: sync }));
+vi.mock('../stores/nachbuchMeldungen.svelte.js', () => ({ nachbuchMeldungen: meldungen }));
+vi.mock('../menu.js', () => ({ hatRecht: () => recht.wert }));
+vi.mock('../stores/authStore.svelte.js', () => ({
+	authStore: { currentUser: { rolle: 'admin' } }
+}));
 vi.mock('../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
 
 const { default: OfflineIndicator } = await import('./OfflineIndicator.svelte');
@@ -32,6 +52,10 @@ describe('Offline-Band', () => {
 		sync.isOffline = false;
 		sync.isSyncing = false;
 		sync.warteschlangeFehler = false;
+		meldungen.offen = 0;
+		meldungen.geoeffnet = false;
+		recht.wert = true;
+		vi.clearAllMocks();
 	});
 
 	it('ist kein Vollbild — es deckt die Anwendung nicht zu', () => {
@@ -79,6 +103,35 @@ describe('Offline-Band', () => {
 	});
 
 	it('zeigt gar nichts, wenn alles in Ordnung ist', () => {
+		const screen = render(OfflineIndicator, {});
+		expect(screen.container.querySelector('div')).toBeNull();
+	});
+
+	// Schritt C: Was beim Nachbuchen nicht durchging, muss jemand sehen. Die Zeilen nennen
+	// Ausleiher und Klasse — deshalb die Liste nur mit `view_students`, die ZAHL fuer jede
+	// Theken-Rolle. Ein Helfer sieht also, dass etwas offen ist, und holt jemanden.
+	it('zeigt offene Meldungen aus dem Nachbuchen, auch wenn sonst nichts anliegt', () => {
+		meldungen.offen = 2;
+		const screen = render(OfflineIndicator, {});
+		// Der Quelltext bricht den Satz um; gelesen wird er als eine Zeile.
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+
+		expect(text).toContain('2 Buchungen aus dem Nachbuchen brauchen einen Blick');
+		expect(screen.getByText(/Meldungen \(2\)/)).not.toBeNull();
+	});
+
+	it('bietet einem Helfer keinen Knopf, sondern den Hinweis', () => {
+		meldungen.offen = 1;
+		recht.wert = false;
+		const screen = render(OfflineIndicator, {});
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+
+		expect(text).toContain('1 Buchung aus dem Nachbuchen braucht einen Blick');
+		expect(text).toContain('Bitte die Bibliothek ansprechen');
+		expect(screen.queryByText(/Meldungen \(/)).toBeNull();
+	});
+
+	it('bleibt still, wenn nichts offen ist und die Verbindung steht', () => {
 		const screen = render(OfflineIndicator, {});
 		expect(screen.container.querySelector('div')).toBeNull();
 	});

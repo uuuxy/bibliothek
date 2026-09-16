@@ -11,6 +11,7 @@
 // Zwei Kopien dieser Liste wären die schlechtere Lösung — dann räumt die eine Stelle
 // künftig ein Feld ab, das die andere stehen lässt.
 
+import { nachbuchMeldungen } from './nachbuchMeldungen.svelte.js';
 import { omniboxStore } from './omnibox.svelte.js';
 import { uiStore } from './uiStore.svelte.js';
 
@@ -46,6 +47,9 @@ export function thekeLeeren() {
 		studentsTotal: 0,
 		booksTotal: 0
 	};
+	// Die Meldungsliste nennt Namen und Klassen: Sie geht mit zu, wenn die Theke geleert
+	// wird — sonst stünde sie nach fünf Minuten Pause offen vor dem nächsten Bediener.
+	nachbuchMeldungen.schliesse();
 	omniboxStore.vormerkungAlert = null;
 	omniboxStore.blockAlert = null;
 	omniboxStore.checklistAnfrage = null;

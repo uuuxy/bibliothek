@@ -10,6 +10,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
 	"bibliothek/internal/service"
+	"bibliothek/repository"
 )
 
 // Die Nachbuch-Tür der Theke (Stufe 2 des Offline-Baus, Commit 11, OFFEN.md 2.2).
@@ -133,8 +134,18 @@ func (s *Server) NachbuchenHandler(nachbuchSvc service.NachbuchService) http.Han
 			UhrVersatzSekunden: int(versatz.Round(time.Second) / time.Second),
 			Ergebnisse:         make([]NachbuchenErgebnis, 0, len(req.Eintraege)),
 		}
+		// Die Zahl VOR dem Nachbuchen. Gemeldet wird hinterher an der WIRKUNG, nicht an
+		// einer Liste der Ergebnisse, die eine Meldung erzeugen: Welche das sind, weiß der
+		// Dienst, und eine zweite Liste hier wäre die zweite Wahrheitsquelle — sie stimmte
+		// genau bis zur nächsten Meldung, die jemand hinzufügt.
+		offenVorher, zaehlbar := s.zaehleMeldungen(ctx)
 		for _, e := range req.Eintraege {
 			antwort.Ergebnisse = append(antwort.Ergebnisse, s.bucheEintragNach(ctx, nachbuchSvc, e, claims.UserID, versatz))
+		}
+		if zaehlbar {
+			if offenNachher, ok := s.zaehleMeldungen(ctx); ok && offenNachher != offenVorher {
+				s.meldeMeldungsstand()
+			}
 		}
 		RespondJSON(w, http.StatusOK, antwort)
 		return nil
@@ -176,4 +187,26 @@ func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 	}
 	s.legeNachbuchErgebnisAb(ctx, out)
 	return out
+}
+
+// zaehleMeldungen liefert die Zahl der offenen Nachbuch-Meldungen. Der zweite Wert ist
+// false, wenn sie sich nicht lesen ließ — dann wird nichts gemeldet, statt eine Änderung
+// zu behaupten. Der Zähler holt sich seinen Stand bei der nächsten Anmeldung ohnehin neu.
+func (s *Server) zaehleMeldungen(ctx context.Context) (int, bool) {
+	n, err := repository.ZaehleOffeneNachbuchMeldungen(ctx, s.DB.Pool)
+	if err != nil {
+		log.Printf("nachbuchen: Meldungen nicht zählbar: %v", err)
+		return 0, false
+	}
+	return n, true
+}
+
+// meldeMeldungsstand sagt allen Arbeitsplätzen, dass sich die Zahl der offenen Meldungen
+// geändert hat. Ohne Inhalt: Die Zeilen nennen Schüler und Vorbesitzer, und die Leitung
+// geht an JEDE Sitzung — auch an die eines Helfers, der die Liste nicht sehen darf. Wer
+// sie sehen darf, holt sie sich hinter seinem Recht ab.
+func (s *Server) meldeMeldungsstand() {
+	if s.Broker != nil {
+		s.Broker.Broadcast("nachbuch-meldungen", "{}")
+	}
 }

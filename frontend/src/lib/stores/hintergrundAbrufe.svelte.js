@@ -7,6 +7,7 @@
 import { hatRecht } from '../menu.js';
 import { uiStore } from './uiStore.svelte.js';
 import { offlineSync } from './offlineSync.svelte.js';
+import { nachbuchMeldungen } from './nachbuchMeldungen.svelte.js';
 
 /**
  * @param {any} user  authStore.currentUser
@@ -15,7 +16,13 @@ import { offlineSync } from './offlineSync.svelte.js';
 export function starteHintergrundAbrufe(user) {
 	/** @type {ReturnType<typeof setInterval>[]} */
 	const timer = [];
-	if (hatRecht(user, 'perform_actions')) offlineSync.init(); // POST /api/action/nachbuchen
+	if (hatRecht(user, 'perform_actions')) {
+		offlineSync.init(); // POST /api/action/nachbuchen
+		// GET /api/action/nachbuch-meldungen/anzahl — die Zahl fürs Band, ohne Personenbezug.
+		// Aktuell bleibt sie über die SSE-Leitung; ein Zeitgeber wäre ein zweiter Takt für
+		// dieselbe Zahl.
+		nachbuchMeldungen.init();
+	}
 	if (hatRecht(user, 'view_orders')) {
 		// GET /api/reservierungen/klassensatz/anzahl + /api/anliegen/anzahl — beide view_orders,
 		// beide speisen das Badge an „Bestellungen".
