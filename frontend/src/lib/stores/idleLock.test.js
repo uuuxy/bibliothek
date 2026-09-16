@@ -4,6 +4,10 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 	.../** @type {any} */ (await importOriginal()),
 	apiFetch: vi.fn()
 }));
+// Der Netz-Zustand wird gestellt, nicht gemessen: Die Sperre haengt seit dem 16.09.2026
+// daran, und `navigator.onLine` laesst sich in jsdom nicht zuverlaessig umschalten.
+const netz = vi.hoisted(() => ({ isOffline: false }));
+vi.mock('./offlineSync.svelte.js', () => ({ offlineSync: netz }));
 vi.mock('../liveEvents.js', () => ({
 	abonniere: vi.fn(() => vi.fn()),
 	verbinde: vi.fn(),
@@ -36,6 +40,7 @@ describe('idleLock', () => {
 		omniboxStore.activeStudent = { id: 's1', vorname: 'Mia' };
 		omniboxStore.queryVal = 'Mü';
 		authStore.currentUser = { email: 'theke@schule.example', rolle: 'mitarbeiter' };
+		netz.isOffline = false;
 	});
 
 	afterEach(() => {
@@ -154,5 +159,65 @@ describe('idleLock', () => {
 		omniboxStore.activeStudent = { id: 's2' };
 		vi.advanceTimersByTime(60 * 60_000);
 		expect(omniboxStore.activeStudent).not.toBeNull();
+	});
+
+	// Ohne Netz sperrt die Theke nicht (Stufe 3, entschieden am 13.09.2026, belegt vom
+	// Stufe-1-Nachweis am 16.09.2026).
+	//
+	// Der Sperrbildschirm wird mit dem Passwort gegen den Schul-Mailserver aufgemacht.
+	// Ohne Netz passt der Schluessel nicht ins Schloss: Die Sitzung dahinter laeuft
+	// weiter (12 Stunden, 30-Minuten-Erneuerung), erreichbar ist sie nicht mehr — und
+	// die offline gescannten Vorgaenge liegen hinter einer Tuer, die niemand oeffnen
+	// kann. Peter am Stack: „falls aufgrund von inatkivität sich der bildschirm
+	// abmeldet, kann ich mich nicht mehr anmelden wenn das netz weg ist".
+	describe('ohne Netz', () => {
+		it('leert die Theke, sperrt aber nicht', () => {
+			netz.isOffline = true;
+			lock.start();
+			vi.advanceTimersByTime(4 * 60_000);
+			// Der Datenschutz-Teil greift weiter: Der naechste Bediener sieht das Profil
+			// des vorigen nicht.
+			expect(omniboxStore.activeStudent).toBeNull();
+			expect(omniboxStore.queryVal).toBe('');
+			// Verdecken ohne Aufschliessen waere Aussperren.
+			expect(lock.gesperrt).toBe(false);
+		});
+
+		it('holt die faellige Sperre nach, sobald die Verbindung zurueck ist', () => {
+			netz.isOffline = true;
+			lock.start();
+			vi.advanceTimersByTime(4 * 60_000);
+			expect(lock.gesperrt).toBe(false);
+
+			netz.isOffline = false;
+			window.dispatchEvent(new Event('online'));
+			// Es war laenger als die Frist niemand da, und der Bildschirm stand offen.
+			expect(lock.gesperrt).toBe(true);
+		});
+
+		it('sperrt beim Netzwechsel NICHT, wenn gar keine Sperre faellig war', () => {
+			netz.isOffline = true;
+			lock.start();
+			vi.advanceTimersByTime(30_000);
+			netz.isOffline = false;
+			window.dispatchEvent(new Event('online'));
+			expect(lock.gesperrt).toBe(false);
+		});
+
+		it('nennt beim Entsperren den Grund statt „Netzwerkfehler"', async () => {
+			// Gesperrt wurde MIT Netz; verloren ging es erst danach.
+			lock.start();
+			vi.advanceTimersByTime(4 * 60_000);
+			expect(lock.gesperrt).toBe(true);
+
+			netz.isOffline = true;
+			const ok = await lock.entsperren('geheim');
+			expect(ok).toBe(false);
+			// Die Auskunft muss sagen, dass Warten hilft und nichts verloren ist.
+			expect(lock.entsperrFehler).toContain('Schulserver');
+			expect(lock.entsperrFehler).toContain('bleiben gespeichert');
+			// Ohne Netz wird gar nicht erst gefragt.
+			expect(apiFetch).not.toHaveBeenCalled();
+		});
 	});
 });

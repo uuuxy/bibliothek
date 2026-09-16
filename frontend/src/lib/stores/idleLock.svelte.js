@@ -16,6 +16,7 @@
 import { apiFetch } from '../apiFetch.js';
 import { abonniere } from '../liveEvents.js';
 import { authStore } from './authStore.svelte.js';
+import { offlineSync } from './offlineSync.svelte.js';
 import { thekeLeeren as thekeLeerenAusfuehren } from './thekeLeeren.js';
 
 const AKTIVITAETS_EREIGNISSE = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart'];
@@ -40,6 +41,10 @@ export class IdleLock {
 	#aktivitaetHandler = () => this.aktivitaet();
 	/** @type {(() => void) | null} */
 	#abmeldenFristen = null;
+	// Die Sperre WAR faellig, konnte aber nicht greifen, weil das Netz weg war. Sie wird
+	// nachgeholt, sobald die Verbindung zurueck ist (Stufe 3, 16.09.2026).
+	#sperreFaellig = false;
+	#onlineHandler = () => this.#netzZurueck();
 
 	/** Holt die Fristen vom Server; bei Fehler bleiben die Vorgaben. */
 	async ladeFristen() {
@@ -67,6 +72,7 @@ export class IdleLock {
 		// „Datenschutz & Sitzung" sendet `sitzungsfristen` über die SSE-Leitung — sonst
 		// liefe der zweite Arbeitsplatz bis zum nächsten F5 mit den alten Werten.
 		this.#abmeldenFristen = abonniere('sitzungsfristen', () => this.ladeFristen());
+		window.addEventListener('online', this.#onlineHandler);
 		this.#planeTimer();
 	}
 
@@ -79,7 +85,9 @@ export class IdleLock {
 		}
 		this.#abmeldenFristen?.();
 		this.#abmeldenFristen = null;
+		window.removeEventListener('online', this.#onlineHandler);
 		this.#loescheTimer();
+		this.#sperreFaellig = false;
 		this.gesperrt = false;
 		this.entsperrFehler = null;
 	}
@@ -102,13 +110,43 @@ export class IdleLock {
 		thekeLeerenAusfuehren();
 	}
 
-	/** Sperrbildschirm: Theke leeren und alles verdecken. */
+	/**
+	 * Sperrbildschirm: Theke leeren und alles verdecken.
+	 *
+	 * OHNE NETZ wird NICHT gesperrt (Stufe 3, entschieden am 13.09.2026). Der Grund ist
+	 * kein Komfort: Aufgemacht wird der Sperrbildschirm mit dem Passwort gegen den
+	 * Schul-Mailserver (`entsperren` ruft `/login`, das gegen IMAP prueft). Ohne Netz
+	 * passt der Schluessel nicht ins Schloss — die Sitzung dahinter laeuft weiter, ist
+	 * aber nicht mehr erreichbar, und die offline gescannten Vorgaenge liegen hinter
+	 * einer Tuer, die niemand oeffnen kann. Der Stufe-1-Nachweis am 16.09.2026 hat genau
+	 * das gezeigt.
+	 *
+	 * Was trotzdem passiert: Die Theke wird GELEERT. Das ist der datenschutzrechtliche
+	 * Teil (A4) — der naechste Bediener sieht das Profil des vorigen nicht. Verdeckt
+	 * wird nur nicht, denn Verdecken ohne Aufschliessen ist Aussperren.
+	 *
+	 * Nachgeholt wird die Sperre, sobald die Verbindung zurueck ist (#netzZurueck).
+	 */
 	sperren() {
 		if (!this.#laeuft) return;
 		this.thekeLeeren();
 		this.#loescheTimer();
+		if (offlineSync.isOffline) {
+			this.#sperreFaellig = true;
+			return;
+		}
 		this.entsperrFehler = null;
 		this.gesperrt = true;
+	}
+
+	/**
+	 * Das Netz ist zurueck. War die Sperre faellig, greift sie JETZT — es war laenger
+	 * als die eingestellte Frist niemand da, und der Bildschirm steht seither offen.
+	 */
+	#netzZurueck() {
+		if (!this.#laeuft || !this.#sperreFaellig) return;
+		this.#sperreFaellig = false;
+		this.sperren();
 	}
 
 	/**
@@ -121,6 +159,16 @@ export class IdleLock {
 		const email = authStore.currentUser?.email;
 		if (!email || !passwort) {
 			this.entsperrFehler = 'Bitte Passwort eingeben.';
+			return false;
+		}
+		// Seit dem 16.09.2026 wird ohne Netz gar nicht erst gesperrt. Wer hier trotzdem
+		// landet, wurde NOCH MIT Netz gesperrt und hat es seither verloren. Dann ist
+		// „Netzwerkfehler" die technisch richtige, aber unbrauchbare Auskunft: Sie sagt
+		// nicht, dass Warten hilft und dass die Vorgaenge nicht verloren sind.
+		if (offlineSync.isOffline) {
+			this.entsperrFehler =
+				'Ohne Netz lässt sich das Passwort nicht prüfen — die Anmeldung läuft über den Schulserver. ' +
+				'Sobald die Verbindung zurück ist, geht es hier weiter; gescannte Vorgänge bleiben gespeichert.';
 			return false;
 		}
 		this.entsperreLaeuft = true;
