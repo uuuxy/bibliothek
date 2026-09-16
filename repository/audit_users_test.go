@@ -18,7 +18,8 @@ func snapshotBenutzerRows() *pgxmock.Rows {
 // TestDeleteUser_RejectsWhenActiveLoans sichert Bug 2 (Stranded Handapparat) ab: Hat ein
 // Mitarbeiter/Lehrer noch nicht zurückgegebene Handapparat-Ausleihen, muss DeleteUser mit
 // ErrUserHasActiveLoans abbrechen — und darf das DELETE gar nicht erst absetzen, sonst
-// blieben die Bücher an ausleiher_benutzer_id = NULL (ON DELETE SET NULL) verwaist.
+// verlöre die Leserzeile ihr Konto (benutzer.leser_id, ON DELETE SET NULL) und die Bücher
+// blieben ohne zuordenbaren Ausleiher stehen.
 func TestDeleteUser_RejectsWhenActiveLoans(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -33,7 +34,7 @@ func TestDeleteUser_RejectsWhenActiveLoans(t *testing.T) {
 	mock.ExpectQuery("FROM benutzer WHERE id").
 		WithArgs(userID).
 		WillReturnRows(snapshotBenutzerRows())
-	mock.ExpectQuery("FROM ausleihen WHERE ausleiher_benutzer_id").
+	mock.ExpectQuery("JOIN benutzer b ON b.leser_id = a.schueler_id").
 		WithArgs(userID).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(2))
 	// KEIN ExpectExec("DELETE …"): Die Löschung muss vor dem destruktiven Statement scheitern.
@@ -65,7 +66,7 @@ func TestDeleteUser_SucceedsWhenNoActiveLoans(t *testing.T) {
 	mock.ExpectQuery("FROM benutzer WHERE id").
 		WithArgs(userID).
 		WillReturnRows(snapshotBenutzerRows())
-	mock.ExpectQuery("FROM ausleihen WHERE ausleiher_benutzer_id").
+	mock.ExpectQuery("JOIN benutzer b ON b.leser_id = a.schueler_id").
 		WithArgs(userID).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectExec("DELETE FROM benutzer WHERE id").

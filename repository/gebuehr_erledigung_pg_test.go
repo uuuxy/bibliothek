@@ -37,8 +37,8 @@ func TestGebuehrErledigung_BezahltUndStorno(t *testing.T) {
 	// Race-Test — ein geteilter Testnutzer macht die Reihenfolge zum Schicksal.
 	var bearbeiter string
 	if err := pool.QueryRow(ctx,
-		`INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		 VALUES ('GEB-B', 'Gebuehren', 'Kraft', 'geb@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&bearbeiter); err != nil {
+		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		 VALUES ('Gebuehren', 'Kraft', 'geb@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&bearbeiter); err != nil {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 

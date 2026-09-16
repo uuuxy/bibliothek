@@ -9,12 +9,21 @@ import (
 )
 
 // checkoutContext holds the resolved borrower information and the due time.
+// checkoutContext ist der Ausleiher eines laufenden Vorgangs: EIN Leser (Migration 125).
+// Bis dahin standen hier zwei Paare — borrowerType/borrowerID und student/teacher — und
+// jede Fallunterscheidung im Ausleihpfad musste beide richtig bedienen.
 type checkoutContext struct {
-	borrowerID   string
-	borrowerType string
-	student      *repository.Student
-	teacher      *repository.User
-	dueTime      time.Time
+	borrowerID string
+	// leser ist der Ausleiher. Über die Theke immer gesetzt; er trägt seine Art.
+	leser   *repository.Student
+	dueTime time.Time
+}
+
+// istSchueler sagt, ob die Schülerregeln greifen: Ausleihlimit, Vormerkungen und die
+// Frist aus der Klasse. Sie hängen an der ART des Lesers, nicht mehr daran, aus welcher
+// Tabelle er kam — das war vorher dasselbe und ist es seit Migration 125 nicht mehr.
+func (c *checkoutContext) istSchueler() bool {
+	return c.leser != nil && c.leser.Art == "schueler"
 }
 
 // logOverride schreibt einen Audit-Eintrag, wenn eine Ausleihsperre manuell
@@ -128,70 +137,43 @@ func (s *defaultLoanService) pruefeUeberfaellig(ctx context.Context, q repositor
 	return nil
 }
 
-// resolveStudentBorrower lädt den aktiven Schüler und bestimmt die Leihfrist. Die
-// Sperrgründe prüft HandleUnifiedCheckout erst, wenn feststeht, ob es eine eigene
-// Rückgabe ist (pruefeSchuelerAusleihbar).
-func (s *defaultLoanService) resolveStudentBorrower(ctx context.Context, copy *repository.BookCopy, studentID string) (*checkoutContext, error) {
-	result := &checkoutContext{borrowerType: "student", borrowerID: studentID}
+// resolveBorrowerAndDueTime lädt den aktiven LESER und bestimmt seine Leihfrist.
+//
+// Die Sperrgründe prüft HandleUnifiedCheckout erst, wenn feststeht, ob es eine eigene
+// Rückgabe ist (pruefeSchuelerAusleihbar) — wer sein Buch ZURÜCKgibt, darf gesperrt sein.
+//
+// Die Frist: Für einen Schüler aus der Klasse (Schuljahresende, Lernmittel abweichend),
+// für alle anderen ein Jahr. Das ist unverändert die Regel von vor Migration 125 — dort
+// hieß sie „Lehrerausleihe = Dauerleihgabe". Ob ein Kollege, der sich einen Roman
+// mitnimmt, den wirklich ein Jahr behalten soll, ist eine Frage an den Betrieb und keine,
+// die dieser Umbau nebenbei beantwortet (docs/OFFEN.md 5.16).
+func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy *repository.BookCopy, leserID *string) (*checkoutContext, error) {
+	if leserID == nil || *leserID == "" {
+		return nil, fmt.Errorf("%w: Kein Leser aktiv", ErrInvalidState)
+	}
 
-	sObj, err := s.studentRepo.GetByID(ctx, studentID)
+	leser, err := s.studentRepo.GetLeserByID(ctx, *leserID)
 	if err != nil {
 		return nil, err
 	}
-	if sObj == nil {
-		return nil, fmt.Errorf("%w: Aktives Schülerprofil nicht gefunden", ErrNotFound)
+	if leser == nil {
+		return nil, fmt.Errorf("%w: Aktiver Leser nicht gefunden", ErrNotFound)
 	}
 
-	result.student = sObj
-	dt, err := s.resolveCheckoutDueDate(ctx, copy, result.student.Klasse)
+	result := &checkoutContext{borrowerID: *leserID, leser: leser}
+	if !result.istSchueler() {
+		// Tagesende in der Schul-Zeitzone — dieselbe Normalisierung wie alle Fristen
+		// (TagesEndeInSchulzeitzone).
+		result.dueTime = TagesEndeInSchulzeitzone(s.heute().AddDate(1, 0, 0))
+		return result, nil
+	}
+
+	dt, err := s.resolveCheckoutDueDate(ctx, copy, leser.Klasse)
 	if err != nil {
 		return nil, err
 	}
 	result.dueTime = dt
 	return result, nil
-}
-
-// resolveTeacherBorrower lädt den aktiven Lehrer; für Lehrkräfte gilt eine
-// Leihfrist von 1 Jahr (Dauerleihgabe / Handapparat).
-//
-// Die Rolle kommt aus benutzer.rolle — derselben Quelle, die Login/JWT nutzen und
-// die das Admin-UI beim Anlegen schreibt. Früher wurde hier gegen benutzer_rollen
-// gejoint; diese Tabelle wird aber nur einmalig beim Bootstrap befüllt, sodass
-// NEU angelegte Lehrkräfte dort fehlten und keinen Handapparat ausleihen konnten.
-//
-// Seit dem 15.09.2026 dieselbe Abfrage wie die Geräte-Ausleihe (ladeAktiveLehrkraft): Nur
-// „keine Zeile" ist ErrNotFound, ein Datenbankfehler bleibt ein Fehler — vorher wurde jeder
-// Fehler zu 404, und ein Verbindungsabbruch sah an der Theke wie ein Bedienfehler aus. Die
-// nullbare Spalte barcode_id kommt als coalesce; eine Lehrkraft ohne Ausweis (über
-// active_teacher_id im Stapel erreichbar) scheiterte vorher am Scan
-// (lehrkraft_ohne_ausweis_pg_test.go).
-func (s *defaultLoanService) resolveTeacherBorrower(ctx context.Context, teacherID string) (*checkoutContext, error) {
-	lehrkraft, err := ladeAktiveLehrkraft(ctx, s.pool, teacherID)
-	if err != nil {
-		return nil, err
-	}
-	result := &checkoutContext{borrowerType: "teacher", borrowerID: teacherID, teacher: lehrkraft}
-	// Lehrer-Ausleihe = Handapparat/Dauerleihe (1 Jahr), Tagesende Schul-Zeitzone —
-	// dieselbe Normalisierung wie alle anderen Fristen (siehe TagesEndeInSchulzeitzone).
-	result.dueTime = TagesEndeInSchulzeitzone(s.heute().AddDate(1, 0, 0))
-	return result, nil
-}
-
-// resolveBorrowerAndDueTime löst den Ausleiher (Schüler oder Lehrer) auf und bestimmt die
-// Frist. Keine Sperrprüfung — siehe resolveStudentBorrower.
-func (s *defaultLoanService) resolveBorrowerAndDueTime(
-	ctx context.Context,
-	copy *repository.BookCopy,
-	activeStudentID *string,
-	activeTeacherID *string,
-) (*checkoutContext, error) {
-	if activeStudentID != nil && *activeStudentID != "" {
-		return s.resolveStudentBorrower(ctx, copy, *activeStudentID)
-	}
-	if activeTeacherID != nil && *activeTeacherID != "" {
-		return s.resolveTeacherBorrower(ctx, *activeTeacherID)
-	}
-	return nil, fmt.Errorf("%w: Weder Schüler noch Lehrer aktiv", ErrInvalidState)
 }
 
 // zaehleOffeneSchaeden zählt die unbezahlten, nicht stornierten Schadensfälle eines

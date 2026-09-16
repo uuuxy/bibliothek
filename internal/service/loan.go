@@ -52,10 +52,9 @@ type LoanResult struct {
 	LoanID *string
 	// Fremdrueckgabe gibt an, ob das Buch von jemand anderem als dem Entleiher zurückgegeben wurde.
 	Fremdrueckgabe bool
-	// Vorbesitzer ist der Schüler, der das Buch zuvor ausgeliehen hatte (bei Fremdrückgabe).
+	// Vorbesitzer ist der LESER, der das Buch zuvor ausgeliehen hatte (bei Fremdrückgabe).
+	// Ein zweites Feld für Lehrkräfte gab es bis Migration 125; es gibt nur noch Leser.
 	Vorbesitzer *repository.Student
-	// VorbesitzerUser ist der Lehrer, der das Buch zuvor ausgeliehen hatte (bei Fremdrückgabe).
-	VorbesitzerUser *repository.User
 	// HasVormerkung ist wahr, wenn für das Buch eine Vormerkung vorliegt und es nun für den nächsten Schüler bereitgestellt wurde.
 	HasVormerkung bool
 	// VormerkungTitel ist der Titel des vorgemerkten Buchs.
@@ -71,14 +70,15 @@ type LoanResult struct {
 
 // LoanService steuert die Geschäftsregeln und Transaktionen rund um das Ausleihen und Zurückgeben von Büchern.
 type LoanService interface {
-	// HandleUnifiedCheckout wickelt die Ausleihe eines Buchexemplars an einen Schüler oder Lehrer ab.
+	// HandleUnifiedCheckout wickelt die Ausleihe eines Buchexemplars an den aktiven Leser ab.
 	// Falls das Exemplar bereits von jemand anderem ausgeliehen war, wird dieses zuerst automatisch zurückgegeben
 	// (Fremdrückgabe) und danach für den neuen Ausleiher verbucht.
-	HandleUnifiedCheckout(ctx context.Context, copy *repository.BookCopy, activeStudentID *string, activeTeacherID *string, staffID string, overrideBlock bool) (*LoanResult, error)
+	HandleUnifiedCheckout(ctx context.Context, copy *repository.BookCopy, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error)
 
 	// HandleSimpleReturn wickelt die direkte Rückgabe eines Buchexemplars ab (ohne dass ein neuer Ausleiher aktiv ist).
-	// Wenn eine Lehrkraft das Buch scannt und es frei ist, wird eine Ausleihe an diese Lehrkraft als Handapparat initiiert.
-	HandleSimpleReturn(ctx context.Context, copy *repository.BookCopy, staffID string, staffRole string) (*LoanResult, error)
+	// Ein freies Exemplar ist hier ein Fehler: Ausgeliehen wird über den Ausweis, nicht
+	// dadurch, dass ein angemeldetes Konto ein Buch in die Hand nimmt.
+	HandleSimpleReturn(ctx context.Context, copy *repository.BookCopy, staffID string) (*LoanResult, error)
 }
 
 // defaultLoanService implementiert den LoanService unter Verwendung von Repositories.

@@ -28,9 +28,13 @@ type PersonenBericht struct {
 
 // Entleiher sagt, in welcher Tabelle eine Person gelandet ist. Die Ausleihe muss genau
 // eine der beiden Spalten setzen (check_loan_borrower).
+// Entleiher ist die Leserzeile, an der die Ausleihen dieser Person hängen. Vor
+// Migration 125 standen hier zwei IDs — eine für Schüler, eine für Lehrkräfte —, und der
+// Ausleihteil musste raten, welche gefüllt ist.
 type Entleiher struct {
-	SchuelerID string
-	BenutzerID string
+	LeserID string
+	// IstSchueler trennt nur noch die Zählung im Bericht und die Dauerleihe.
+	IstSchueler bool
 }
 
 // Der DSGVO-Rahmen dieses Imports, bewusst eng gefasst:
@@ -64,10 +68,16 @@ const sqlSchuelerEinfuegen = `
 // die Omnibox für die Ausweis-Suche braucht.
 const platzhalterDomain = "@littera.invalid"
 
+// Das Konto trägt seit Migration 125 weder Ausweis noch Personenart; beides gehört zur
+// Leserzeile, die der Trigger trg_benutzer_hat_leserzeile mit anlegt und deren ID hier
+// zurückkommt.
 const sqlBenutzerEinfuegen = `
-	INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv, erstellt_am, personenart)
-	VALUES ($1,$2,$3,$4,'kollegium',$5,$6,$7)
-	RETURNING id`
+	INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, erstellt_am)
+	VALUES ($1,$2,$3,'kollegium',$4,$5)
+	RETURNING leser_id`
+
+const sqlLeserzeileNachtragen = `
+	UPDATE leser SET barcode_id = $1, art = $2 WHERE id = $3`
 
 // SchreibePersonen überträgt Schüler und Lehrkräfte.
 //
@@ -138,10 +148,8 @@ type personenlauf struct {
 // Vorsichtsmaßnahme wie bei den Barcodes: Eine Kollision mit vorhandenen Zeilen kostet
 // sonst die ganze Person.
 func (p *personenlauf) vorbelegen(ctx context.Context) error {
-	if err := p.lade(ctx, `SELECT barcode_id FROM schueler WHERE deleted_at IS NULL`, p.belegteAusweise); err != nil {
-		return err
-	}
-	if err := p.lade(ctx, `SELECT barcode_id FROM benutzer WHERE barcode_id IS NOT NULL`, p.belegteAusweise); err != nil {
+	// EINE Abfrage über alle Ausweisnummern — sie stehen seit Migration 125 an einem Ort.
+	if err := p.lade(ctx, `SELECT barcode_id FROM leser WHERE deleted_at IS NULL AND barcode_id IS NOT NULL`, p.belegteAusweise); err != nil {
 		return err
 	}
 	// Die Bücher stehen zu diesem Zeitpunkt schon da: Der Lauf schreibt den Bestand vor den
@@ -224,7 +232,7 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 	}
 
 	p.bericht.EntleiherIDs[l.ID] = neu
-	if neu.SchuelerID != "" {
+	if neu.IstSchueler {
 		p.bericht.Schueler++
 	} else {
 		p.bericht.Lehrkraefte++
@@ -267,7 +275,7 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 	if err != nil {
 		return Entleiher{}, fmt.Errorf("beim Schüler %s %s: %w", l.Vorname, l.Nachname, err)
 	}
-	return Entleiher{SchuelerID: id}, nil
+	return Entleiher{LeserID: id, IstSchueler: true}, nil
 }
 
 // abgangsjahr rechnet das Abgangsjahr aus der Klasse.
@@ -286,21 +294,32 @@ func (p *personenlauf) abgangsjahr(l Leser) (int, bool) {
 }
 
 func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
-	personenart := "lehrkraft"
+	art := "lehrkraft"
 	if l.Art == ArtLiV {
-		personenart = "liv"
+		art = "liv"
 	}
-	var id string
+	var leserID string
 	err := tx.QueryRow(ctx, sqlBenutzerEinfuegen,
-		uebernahme.Nullbar(p.ausweis(l)),
 		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
 		p.kuerze(l, "nachname", l.Nachname, uebernahme.MaxMedientyp),
-		p.mailadresse(l), !p.s.opt.LehrerInaktiv, p.s.opt.Jetzt, personenart,
-	).Scan(&id)
+		p.mailadresse(l), !p.s.opt.LehrerInaktiv, p.s.opt.Jetzt,
+	).Scan(&leserID)
 	if err != nil {
 		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)
 	}
-	return Entleiher{BenutzerID: id}, nil
+	tag, err := tx.Exec(ctx, sqlLeserzeileNachtragen,
+		uebernahme.Nullbar(p.ausweis(l)), art, leserID)
+	if err != nil {
+		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: %w", l.Vorname, l.Nachname, err)
+	}
+	// 0 Zeilen hieße: Das Konto kam ohne Leserzeile. Ohne diese Prüfung liefe die
+	// Übernahme durch und meldete eine Lehrkraft als geschrieben, deren Ausweis und Art
+	// nirgends stehen — an der Theke wäre sie nicht auffindbar.
+	if tag.RowsAffected() == 0 {
+		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: die Leserzeile fehlt",
+			l.Vorname, l.Nachname)
+	}
+	return Entleiher{LeserID: leserID}, nil
 }
 
 // ausweis liefert die Ausweisnummer und weicht bei Kollision auf die Littera-interne

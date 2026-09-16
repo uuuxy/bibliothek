@@ -132,8 +132,8 @@ func seedBearbeiter(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		 VALUES ('DMG-B', 'Bibliotheks', 'Kraft', 'dmg@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&id); err != nil {
+		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		 VALUES ('Bibliotheks', 'Kraft', 'dmg@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&id); err != nil {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 	return id

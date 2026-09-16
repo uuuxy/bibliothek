@@ -31,8 +31,8 @@ func TestRollenVokabular(t *testing.T) {
 			// Migration 042: ohne den ENUM-Wert war der fertig gebaute Kiosk-Modus
 			// unerreichbar, weil keine Lehrkraft die Rolle zugewiesen bekommen konnte.
 			erwarteErfolg(t, tx, "Benutzer mit Rolle helfer",
-				`INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-				 VALUES ('h-1', 'H', 'Helfer', 'h@example.org', 'helfer', true)`)
+				`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+				 VALUES ('H', 'Helfer', 'h@example.org', 'helfer', true)`)
 		})
 	})
 }

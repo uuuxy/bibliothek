@@ -37,7 +37,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 
 	// Ausleihe: Stempel gesetzt, erfasst_am an der Ausleihe.
 	tx := beginne(t, pool)
-	loan, err := loans.CreateLoanTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14))
+	loan, err := loans.CreateLoanTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14), false)
 	if err != nil {
 		t.Fatalf("ausleihen: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestBewegungsstempel_LaeuftNieRueckwaerts(t *testing.T) {
 	vorDreissig, vorZwanzig, vorZehn := jetzt.Add(-30*time.Minute), jetzt.Add(-20*time.Minute), jetzt.Add(-10*time.Minute)
 
 	tx := beginne(t, pool)
-	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, jetzt.AddDate(0, 0, 14), &vorDreissig)
+	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, jetzt.AddDate(0, 0, 14), false, &vorDreissig)
 	if err != nil {
 		t.Fatalf("ausleihen: %v", err)
 	}
@@ -156,7 +156,7 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	stempel := stempelLeser(t, pool, f.exemplarID)
 
 	tx := beginne(t, pool)
-	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14), nil)
+	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14), false, nil)
 	if err != nil {
 		t.Fatalf("ausleihen: %v", err)
 	}
@@ -216,9 +216,9 @@ func stempelAufbau(t *testing.T, pool *pgxpool.Pool) stempelFall {
 	var f stempelFall
 	var titelID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Stem', 'Pel', $2, 'mitarbeiter', true) RETURNING id`,
-		"MA-"+suffix, "stempel-"+suffix+"@schule.invalid").Scan(&f.bearbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Stem', 'Pel', $1, 'mitarbeiter', true) RETURNING id`,
+		"stempel-"+suffix+"@schule.invalid").Scan(&f.bearbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `

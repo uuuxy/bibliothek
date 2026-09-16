@@ -22,10 +22,7 @@ func (m *mockLoanRepoReturn) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx
 	return nil, nil
 }
 func (m *mockLoanRepoReturn) BeginTx(ctx context.Context) (pgx.Tx, error) { return nil, nil }
-func (m *mockLoanRepoReturn) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*repository.Loan, error) {
-	return nil, nil
-}
-func (m *mockLoanRepoReturn) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*repository.Loan, error) {
+func (m *mockLoanRepoReturn) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*repository.Loan, error) {
 	return nil, nil
 }
 func (m *mockLoanRepoReturn) ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, istVerlust bool) error {
@@ -38,7 +35,7 @@ func (m *mockLoanRepoReturn) GetActiveBorrowingsByUserTx(ctx context.Context, tx
 	return nil, nil
 }
 
-func TestHandleEigenrueckgabeMitarbeiter_ReturnLoanTxError(t *testing.T) {
+func TestHandleRueckgabe_ReturnLoanTxError(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -47,8 +44,9 @@ func TestHandleEigenrueckgabeMitarbeiter_ReturnLoanTxError(t *testing.T) {
 
 	expectedErr := errors.New("db error")
 	svc := &defaultLoanService{
-		pool:     mockPool,
-		loanRepo: &mockLoanRepoReturn{returnErr: expectedErr},
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{returnErr: expectedErr},
+		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -59,10 +57,13 @@ func TestHandleEigenrueckgabeMitarbeiter_ReturnLoanTxError(t *testing.T) {
 
 	copy := &repository.BookCopy{ID: "copy1"}
 	staffID := "staff1"
-	activeLoan := &repository.Loan{ID: "loan1", AusleiherBenutzerID: &staffID}
+	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
+	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	leserID := "leser1"
+	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
-	result, err := svc.handleEigenrueckgabeMitarbeiter(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("expected %v, got %v", expectedErr, err)
@@ -72,7 +73,7 @@ func TestHandleEigenrueckgabeMitarbeiter_ReturnLoanTxError(t *testing.T) {
 	}
 }
 
-func TestHandleEigenrueckgabeMitarbeiter_CommitError(t *testing.T) {
+func TestHandleRueckgabe_CommitError(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -81,9 +82,10 @@ func TestHandleEigenrueckgabeMitarbeiter_CommitError(t *testing.T) {
 
 	audit := &mockAuditRepo{}
 	svc := &defaultLoanService{
-		pool:      mockPool,
-		loanRepo:  &mockLoanRepoReturn{},
-		auditRepo: audit,
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{},
+		auditRepo:   audit,
+		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -92,9 +94,9 @@ func TestHandleEigenrueckgabeMitarbeiter_CommitError(t *testing.T) {
 		t.Fatalf("failed to begin tx: %v", err)
 	}
 
-	var nilStr *string
+	leserID := "leser1"
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
-		WithArgs("t1", nilStr).
+		WithArgs("t1", &leserID).
 		WillReturnError(pgx.ErrNoRows)
 
 	expectedErr := errors.New("commit error")
@@ -102,10 +104,12 @@ func TestHandleEigenrueckgabeMitarbeiter_CommitError(t *testing.T) {
 
 	copy := &repository.BookCopy{ID: "copy1", TitelID: "t1"}
 	staffID := "staff1"
-	activeLoan := &repository.Loan{ID: "loan1", AusleiherBenutzerID: &staffID}
+	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
+	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
-	result, err := svc.handleEigenrueckgabeMitarbeiter(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if !errors.Is(err, expectedErr) {
 		t.Errorf("expected %v, got %v", expectedErr, err)
@@ -115,7 +119,7 @@ func TestHandleEigenrueckgabeMitarbeiter_CommitError(t *testing.T) {
 	}
 }
 
-func TestHandleEigenrueckgabeMitarbeiter_Success(t *testing.T) {
+func TestHandleRueckgabe_Success(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -124,9 +128,10 @@ func TestHandleEigenrueckgabeMitarbeiter_Success(t *testing.T) {
 
 	audit := &mockAuditRepo{}
 	svc := &defaultLoanService{
-		pool:      mockPool,
-		loanRepo:  &mockLoanRepoReturn{},
-		auditRepo: audit,
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{},
+		auditRepo:   audit,
+		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -135,19 +140,21 @@ func TestHandleEigenrueckgabeMitarbeiter_Success(t *testing.T) {
 		t.Fatalf("failed to begin tx: %v", err)
 	}
 
-	var nilStr *string
+	leserID := "leser1"
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
-		WithArgs("t1", nilStr).
+		WithArgs("t1", &leserID).
 		WillReturnError(pgx.ErrNoRows)
 
 	mockPool.ExpectCommit()
 
 	copy := &repository.BookCopy{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
-	activeLoan := &repository.Loan{ID: "loan1", AusleiherBenutzerID: &staffID}
+	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
+	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
-	result, err := svc.handleEigenrueckgabeMitarbeiter(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -161,7 +168,7 @@ func TestHandleEigenrueckgabeMitarbeiter_Success(t *testing.T) {
 	}
 }
 
-func TestHandleEigenrueckgabeMitarbeiter_VormerkungAktiviert(t *testing.T) {
+func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 	mockPool, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to init pgxmock: %v", err)
@@ -170,9 +177,10 @@ func TestHandleEigenrueckgabeMitarbeiter_VormerkungAktiviert(t *testing.T) {
 
 	audit := &mockAuditRepo{}
 	svc := &defaultLoanService{
-		pool:      mockPool,
-		loanRepo:  &mockLoanRepoReturn{},
-		auditRepo: audit,
+		pool:        mockPool,
+		loanRepo:    &mockLoanRepoReturn{},
+		auditRepo:   audit,
+		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
 	}
 
 	mockPool.ExpectBegin()
@@ -181,9 +189,9 @@ func TestHandleEigenrueckgabeMitarbeiter_VormerkungAktiviert(t *testing.T) {
 		t.Fatalf("failed to begin tx: %v", err)
 	}
 
-	var nilStr *string
+	leserID := "leser1"
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE\\(s.klasse, ''\\)").
-		WithArgs("t1", nilStr).
+		WithArgs("t1", &leserID).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse"}).
 			AddRow("v1", "Max", "Mustermann", "10A"))
 
@@ -196,10 +204,12 @@ func TestHandleEigenrueckgabeMitarbeiter_VormerkungAktiviert(t *testing.T) {
 
 	copy := &repository.BookCopy{ID: "c1", TitelID: "t1", BarcodeID: "b1", Titel: "Test Book"}
 	staffID := "staff1"
-	activeLoan := &repository.Loan{ID: "loan1", AusleiherBenutzerID: &staffID}
+	// Der Ausleiher steht seit Migration 125 in EINER Spalte — auch, wenn es der
+	// Mitarbeiter selbst ist, der das Buch zurückbringt.
+	activeLoan := &repository.Loan{ID: "loan1", SchuelerID: &leserID}
 	resp := &LoanResult{}
 
-	result, err := svc.handleEigenrueckgabeMitarbeiter(context.Background(), tx, copy, activeLoan, staffID, resp)
+	result, err := svc.handleRueckgabe(context.Background(), tx, copy, activeLoan, staffID, resp)
 
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

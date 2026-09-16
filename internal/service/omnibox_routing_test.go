@@ -7,9 +7,14 @@ import (
 	"bibliothek/repository"
 )
 
-// Stubs für das präfixlose Fallback-Routing: Buch → Schülerausweis → Lehrerausweis → Volltextsuche.
+// Stubs für das präfixlose Fallback-Routing: Buch → Ausweis → Volltextsuche.
 // Alle nicht überschriebenen Interface-Methoden stammen aus dem eingebetteten
 // Nil-Interface und dürfen in diesen Tests nicht aufgerufen werden.
+//
+// Seit Migration 125 gibt es EINE Ausweis-Stufe: Der Scan sucht einen LESER, und ob das ein
+// Schüler oder ein Kollege ist, steht als Art an ihm. Vorher waren es zwei Stufen über zwei
+// Tabellen, und ihre Reihenfolge entschied bei einer doppelt vergebenen Nummer still, wen
+// die Theke lädt.
 
 type routingBookRepo struct {
 	repository.BookRepository
@@ -24,21 +29,12 @@ func (r *routingBookRepo) SearchTitles(_ context.Context, _ string) ([]repositor
 	return nil, nil
 }
 
-type routingUserRepo struct {
-	repository.UserRepository
-	lehrer map[string]*repository.User
-}
-
-func (r *routingUserRepo) GetLehrerByBarcode(_ context.Context, barcode string) (*repository.User, error) {
-	return r.lehrer[barcode], nil
-}
-
 type routingStudentRepo struct {
 	repository.StudentRepository
 	students map[string]*repository.Student
 }
 
-func (r *routingStudentRepo) GetByBarcode(_ context.Context, barcode string) (*repository.Student, error) {
+func (r *routingStudentRepo) GetLeserByBarcode(_ context.Context, barcode string) (*repository.Student, error) {
 	return r.students[barcode], nil
 }
 
@@ -48,7 +44,6 @@ func (r *routingStudentRepo) GetByBarcode(_ context.Context, barcode string) (*r
 func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo: &routingBookRepo{copies: map[string]*repository.BookCopy{}},
-		userRepo: &routingUserRepo{lehrer: map[string]*repository.User{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{
 			"20240001737": {ID: "s1", BarcodeID: "20240001737", Vorname: "Mia", Nachname: "Muster"},
 		}},
@@ -68,7 +63,6 @@ func TestProcessQuery_AusweisOhnePraefix(t *testing.T) {
 func TestProcessQuery_UnbekannteNummerFaelltAufSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
-		userRepo:    &routingUserRepo{lehrer: map[string]*repository.User{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 

@@ -57,8 +57,7 @@ type NachbuchEintrag struct {
 	// Rückgabe von einem vorgehenden Rechner die jüngere Online-Ausleihe eines anderen Kindes
 	// (Rasterdurchgang 15.09.2026, OFFEN.md 5.15).
 	UhrVersatz     time.Duration
-	SchuelerID     *string // Person, wenn der Rechner sie beim Scan noch auflösen konnte
-	LehrerID       *string
+	LeserID        *string // Person, wenn der Rechner sie beim Scan noch auflösen konnte
 	AusweisBarcode *string // sonst der offline gescannte Ausweis
 	// NachFremdrueckgabeVon: Der Online-Versand unter demselben Schlüssel hat nur die
 	// Fremdrückgabe dieser Ausleihe gebucht (das Buch stand auf jemand anderem), seine Antwort
@@ -84,8 +83,7 @@ type nachbuchLage struct {
 	e           NachbuchEintrag
 	gescannt    time.Time
 	copy        *repository.BookCopy
-	student     *repository.Student
-	teacher     *repository.User
+	leser       *repository.Student
 	ausweis     *string // nicht auflösbarer Ausweis-Barcode, als Text für die Meldung
 	activeLoan  *repository.Loan
 	befund      repository.RueckkehrBefund
@@ -116,7 +114,7 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 	if err := s.loesePerson(ctx, l); err != nil {
 		return nil, err
 	}
-	if e.Absicht == NachbuchAbsichtAusleihe && l.student == nil && l.teacher == nil {
+	if e.Absicht == NachbuchAbsichtAusleihe && l.leser == nil {
 		grund := "Ausweis unbekannt"
 		if l.ausweis != nil {
 			grund += ": " + *l.ausweis
@@ -130,9 +128,9 @@ func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) 
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Sperren: Schüler, dann die Ausleihe des Exemplars, dann das Exemplar.
-	if l.student != nil {
-		if _, err := tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", l.student.ID); err != nil {
+	// Sperren: Leser, dann die Ausleihe des Exemplars, dann das Exemplar.
+	if l.leser != nil {
+		if _, err := tx.Exec(ctx, "SELECT id FROM leser WHERE id = $1 FOR UPDATE", l.leser.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -207,46 +205,31 @@ func (s *defaultLoanService) loeseExemplar(ctx context.Context, barcode string) 
 }
 
 // loesePerson bestimmt, wer ausleiht: die schon aufgelöste Person des Eintrags, sonst der
-// offline gescannte Ausweis (Schüler vor Lehrkraft). Bleibt der Ausweis unbekannt, steht
-// sein Text in der Meldung.
+// offline gescannte Ausweis. Bleibt der Ausweis unbekannt, steht sein Text in der Meldung.
+//
+// Bis Migration 125 stand hier zweimal dasselbe — einmal für Schüler, einmal für
+// Lehrkräfte, mit der Reihenfolge „Schüler vor Lehrkraft" als stiller Entscheidung für
+// den Fall, dass eine Nummer in beiden Tabellen steht. Diesen Fall gibt es nicht mehr.
 func (s *defaultLoanService) loesePerson(ctx context.Context, l *nachbuchLage) error {
 	e := l.e
-	if e.SchuelerID != nil && *e.SchuelerID != "" {
-		st, err := s.studentRepo.GetByID(ctx, *e.SchuelerID)
+	if e.LeserID != nil && *e.LeserID != "" {
+		leser, err := s.studentRepo.GetLeserByID(ctx, *e.LeserID)
 		if err != nil {
 			return err
 		}
-		l.student = st
-		return nil
-	}
-	if e.LehrerID != nil && *e.LehrerID != "" {
-		lk, err := ladeAktiveLehrkraft(ctx, s.pool, *e.LehrerID)
-		if err != nil && !errors.Is(err, ErrNotFound) {
-			return err
-		}
-		l.teacher = lk
+		l.leser = leser
 		return nil
 	}
 	if e.AusweisBarcode == nil || *e.AusweisBarcode == "" {
 		return nil
 	}
-	st, err := s.studentRepo.GetByBarcode(ctx, *e.AusweisBarcode)
+	leser, err := s.studentRepo.GetLeserByBarcode(ctx, *e.AusweisBarcode)
 	if err != nil {
 		return err
 	}
-	if st != nil {
-		l.student = st
+	if leser != nil {
+		l.leser = leser
 		return nil
-	}
-	if s.userRepo != nil {
-		lk, err := s.userRepo.GetLehrerByBarcode(ctx, *e.AusweisBarcode)
-		if err != nil {
-			return err
-		}
-		if lk != nil {
-			l.teacher = lk
-			return nil
-		}
 	}
 	l.ausweis = e.AusweisBarcode
 	return nil
@@ -270,11 +253,8 @@ func (s *defaultLoanService) meldung(l *nachbuchLage, ergebnis, grund string) re
 	if l.copy != nil {
 		m.ExemplarID = &l.copy.ID
 	}
-	if l.student != nil {
-		m.AusleiherSchuelerID = &l.student.ID
-	}
-	if l.teacher != nil {
-		m.AusleiherBenutzerID = &l.teacher.ID
+	if l.leser != nil {
+		m.AusleiherSchuelerID = &l.leser.ID
 	}
 	return m
 }
@@ -288,14 +268,8 @@ func istPruefungVerletzt(err error) bool {
 
 // gehoert sagt, ob die aktive Ausleihe der Person des Eintrags gehört.
 func gehoert(l *nachbuchLage) bool {
-	if l.activeLoan == nil {
+	if l.activeLoan == nil || l.leser == nil {
 		return false
 	}
-	if l.student != nil {
-		return l.activeLoan.SchuelerID != nil && *l.activeLoan.SchuelerID == l.student.ID
-	}
-	if l.teacher != nil {
-		return l.activeLoan.AusleiherBenutzerID != nil && *l.activeLoan.AusleiherBenutzerID == l.teacher.ID
-	}
-	return false
+	return l.activeLoan.SchuelerID != nil && *l.activeLoan.SchuelerID == l.leser.ID
 }

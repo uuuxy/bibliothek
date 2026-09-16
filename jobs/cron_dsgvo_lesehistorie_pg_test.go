@@ -50,8 +50,8 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	if err := pool.QueryRow(ctx, `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`).Scan(&schuelerID); err != nil {
 		t.Fatalf("Probeschüler: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('L-HIST', 'Hanna', 'Lehr', 'lehr@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Hanna', 'Lehr', 'lehr@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
 		t.Fatalf("Lehrer: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel, signatur) VALUES ('Der Roman', 'Ro Mus') RETURNING id`).Scan(&freihandTitel); err != nil {
@@ -95,9 +95,12 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	ids["L-ALT"] = leihe("L-ALT", exemplar(lmfTitel, "B-L2"), 800)
 	must(`INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
 	      SELECT exemplar_id, id, schueler_id, 'Einband gerissen', 12.50, false FROM ausleihen WHERE id = $1`, ids["F-SCHAD"])
+	// Die Ausleihe einer Lehrkraft hängt seit Migration 125 an ihrer LESERZEILE und steht in
+	// derselben Spalte wie die eines Schülers. Sie bleibt als Dauerleihe gekennzeichnet —
+	// die Lesehistorie-Befristung nimmt sie davon aus.
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, ist_handapparat)
-		VALUES ($1, $2, NOW() - interval '830 days', NOW() - interval '809 days', NOW() - interval '800 days', true) RETURNING id`,
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, ist_handapparat)
+		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), NOW() - interval '830 days', NOW() - interval '809 days', NOW() - interval '800 days', true) RETURNING id`,
 		exemplar(freihandTitel, "B-F5"), lehrerID).Scan(new(string)); err != nil {
 		t.Fatalf("Lehrer-Ausleihe: %v", err)
 	}
@@ -165,8 +168,13 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 			t.Errorf("%s: Schüler zugeordnet = %v, erwartet %v", name, got, bleibt)
 		}
 	}
+	// Die Dauerleihe der Lehrkraft bleibt ihrer Leserzeile zugeordnet — die Befristung der
+	// Lesehistorie trifft sie nicht.
 	var lehrerBleibt bool
-	if err := pool.QueryRow(ctx, `SELECT ausleiher_benutzer_id IS NOT NULL FROM ausleihen WHERE ausleiher_benutzer_id = $1`, lehrerID).Scan(&lehrerBleibt); err != nil || !lehrerBleibt {
+	if err := pool.QueryRow(ctx, `
+		SELECT a.schueler_id IS NOT NULL FROM ausleihen a
+		 JOIN benutzer b ON b.leser_id = a.schueler_id
+		WHERE b.id = $1`, lehrerID).Scan(&lehrerBleibt); err != nil || !lehrerBleibt {
 		t.Errorf("Lehrer-Ausleihe wurde angefasst (err=%v, bleibt=%v)", err, lehrerBleibt)
 	}
 

@@ -41,14 +41,14 @@ func TestNewDeviceService(t *testing.T) {
 	}
 }
 
-// stubStudentRepoSperre liefert einen festen Schüler — nur GetByID wird von ladeAkteur
+// stubStudentRepoSperre liefert einen festen Leser — nur GetLeserByID wird von ladeAkteur
 // aufgerufen, die übrigen Interface-Methoden bleiben ungenutzt (eingebettetes nil).
 type stubStudentRepoSperre struct {
 	repository.StudentRepository
 	student *repository.Student
 }
 
-func (s stubStudentRepoSperre) GetByID(context.Context, string) (*repository.Student, error) {
+func (s stubStudentRepoSperre) GetLeserByID(context.Context, string) (*repository.Student, error) {
 	return s.student, nil
 }
 
@@ -62,7 +62,7 @@ func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 	// Nur manuell gesperrt → blockiert VOR jeder Pool-Nutzung (Flag-Check zuerst).
 	svc := &defaultDeviceService{studentRepo: stubStudentRepoSperre{
 		student: &repository.Student{ID: sid, IstGesperrt: false, IsManuallyBlocked: true}}}
-	if _, _, err := svc.ladeAkteur(context.Background(), &sid, nil); !errors.Is(err, ErrBlocked) {
+	if _, err := svc.ladeAkteur(context.Background(), &sid); !errors.Is(err, ErrBlocked) {
 		t.Fatalf("manuell gesperrter Schüler muss auch fürs Gerät blockiert sein, err=%v", err)
 	}
 }
@@ -84,7 +84,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 
 		svc := &defaultDeviceService{pool: mock, studentRepo: stubStudentRepoSperre{
 			student: &repository.Student{ID: sid}}}
-		if _, _, err := svc.ladeAkteur(context.Background(), &sid, nil); !errors.Is(err, ErrBlocked) {
+		if _, err := svc.ladeAkteur(context.Background(), &sid); !errors.Is(err, ErrBlocked) {
 			t.Fatalf("Schüler mit unbezahltem Schaden muss auch fürs Gerät blockiert sein, err=%v", err)
 		}
 	})
@@ -104,7 +104,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 
 		svc := &defaultDeviceService{pool: mock, studentRepo: stubStudentRepoSperre{
 			student: &repository.Student{ID: sid}}}
-		if _, _, err := svc.ladeAkteur(context.Background(), &sid, nil); err != nil {
+		if _, err := svc.ladeAkteur(context.Background(), &sid); err != nil {
 			t.Fatalf("ungesperrter Schüler ohne offene Vorgänge darf nicht blockiert werden: %v", err)
 		}
 	})

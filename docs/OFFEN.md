@@ -25,18 +25,19 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Bei mir: alle Leser in eine Tabelle** (Abschnitt 5.16, freigegeben am 16.09.2026;
-   die Nummer hier ist die Reihenfolge dieser Liste, kein Bauschritt).
-   Schüler und Kollegium stehen danach an einem Ort, jeder aktive Leser darf ausleihen,
-   und die Theke findet auch Kollegen über den Namen. Das versteckte Feld „Personenart"
-   fällt dabei weg — es ist der Grund, warum dein Admin-Konto die Theke heute nicht
-   findet. Stufen 1 und 2 (vorhandene Fehler, Rolle Leitung) sind erledigt.
-4. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
+3. **Peter, drei kurze Antworten** (Abschnitt 5.16, am Ende): Wie lange darf ein Kollege
+   ein Buch behalten? Soll seine Ausleihhistorie nach einer Frist gelöscht werden? Soll er
+   gemahnt werden? Ich habe überall gelassen, wie es war — ein Jahr, nein, nein.
+4. **Bei mir: alle Leser in eine Tabelle** (Abschnitt 5.16). Schüler und Kollegium stehen
+   jetzt an einem Ort, jeder aktive Leser darf ausleihen, und dein Admin-Konto findet die
+   Theke. Es fehlt noch der letzte Schritt: die Leserdatei — die Akte eines Kollegen, in
+   der man seine Bücher sieht, und die Namenssuche an der Theke.
+5. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
-5. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
+6. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
-6. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
+7. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
    nichts zu tun außer nachzufragen, wenn nichts kommt.
 
 Alles andere in dieser Datei — die B-Punkte in Abschnitt 5, die Beobachtungen in 6, die
@@ -989,20 +990,47 @@ Ausweis-Wächter (er vergleicht den Tabellennamen und hätte die falsche Tabelle
 zwei Personen mit derselben Ausweisnummer) und die von Postgres selbst erzeugten
 Constraint-Namen, die beim Umbenennen nicht mitwandern.
 
-**Schritt „Eine Ausleihe, ein Leser“**
+**Schritt „Eine Ausleihe, ein Leser“ — gebaut am 16.09.2026 (Migration 125).**
 
-- `ausleihen.ausleiher_benutzer_id` fällt, ebenso die Zwillinge in `nachbuch_meldungen` und
-  `schadensfaelle`. Alle Schreib- und Lesepfade gehen über die eine Spalte. Auf dem Testserver
-  und lokal stehen dort 0 Zeilen — es ist nichts umzuhängen, nur zu entfernen.
-- Ausleihen darf: **aktiver Leser.** `repository.SQLAktiveLehrkraft` und das Feld
-  `personenart` fallen weg, ebenso der Einspiel-Hinweis aus v2.13.0. Damit findet auch das
-  Admin-Konto die Theke.
-- Der Zweig „angemeldetes Konto scannt ein freies Buch → Ausleihe auf sich selbst"
-  (`handleLehrerHandapparat`) fällt ganz: Wer Rückläufer sortiert, bucht sich sonst
-  versehentlich Bücher auf den eigenen Namen. Ausgeliehen wird über den Ausweis.
-- Rot-Test: Ein Admin ohne Personenart kann an der Theke ausleihen; ein gesperrter Leser nicht.
+Jedes Konto hat jetzt eine Leserzeile, und der Ausweis gehört dorthin. Weggefallen sind:
+die zweite Ausleiher-Spalte samt ihren Zwillingen bei Nachbuch-Meldungen und
+Schadensfällen, `benutzer.barcode_id`, `benutzer.personenart`, die Regel
+`SQLAktiveLehrkraft`, der Kreuz-Wächter für Ausweisnummern (Migration 118) und der
+Personenart-Wächter (120). Ausleihen darf jetzt jeder aktive Leser — damit findet auch
+das Admin-Konto die Theke.
 
-**Schritt „Theke und Leserdatei“**
+Der Zweig „angemeldetes Konto scannt ein freies Buch → Ausleihe auf sich selbst" ist ganz
+gefallen: Wer Rückläufer sortiert, buchte sich sonst versehentlich Bücher auf den eigenen
+Namen. Ausgeliehen wird über den Ausweis.
+
+**Drei Stellen, an denen ein Schutz nur zufällig bestand** und beim Zusammenlegen still
+weggefallen wäre — alle drei stehen jetzt ausdrücklich da:
+
+- Die Befristung der Lesehistorie hätte auch dem Kollegium seine Ausleihhistorie genommen
+  (sie hing daran, dass eine Lehrerausleihe keine `schueler_id` hatte).
+- Der Flur-Monitor hätte einen Klassensatz an eine Lehrkraft als 30 Leser gezählt — das
+  Klassenbuch der 7 wäre „Buch des Monats" geworden.
+- Das Mahnwesen hätte Kollegen angemahnt. Es liest weiter die Sicht `schueler`.
+
+**Ein Fehlgriff im eigenen Bau, am Test aufgefallen:** Eine schreibende CTE
+(`WITH neu AS (INSERT …) UPDATE …`) sieht ihre eigene Zeile noch nicht — der Ausweis wäre
+still nirgends gelandet. Jetzt zwei Anweisungen, und jedes UPDATE prüft, dass es wirklich
+eine Zeile getroffen hat.
+
+**Drei Fragen an den Betrieb (Peter), die dieser Umbau bewusst NICHT beantwortet hat.**
+Überall gilt weiter das Verhalten von vorher:
+
+1. **Wie lange darf ein Kollege ein Buch behalten?** Heute ein Jahr — das war die Regel für
+   die Dauerleihe fürs Unterrichten. Wer sich einen Roman mitnimmt, behält ihn damit
+   genauso lange wie einen Klassensatz.
+2. **Soll die Befristung der Lesehistorie auch fürs Kollegium gelten?** Heute nein.
+3. **Sollen Kollegen gemahnt werden?** Heute nein.
+
+**Schritt „Theke und Leserdatei“ — der letzte, noch offen**
+
+Die Theke lädt einen Kollegen seit dem 16.09.2026 über seinen Ausweis und zeigt ihn als
+schmale Karte. Was fehlt, ist seine AKTE: Solange es sie nicht gibt, sieht man an der Theke
+nicht, welche Bücher er hat. Offen sind:
 
 - Theke: Die Namenssuche findet alle Leser, mit der Art am Treffer (heute sucht
   `GET /api/search` nur Schüler und Buchtitel).
@@ -1083,6 +1111,12 @@ Daraus folgt für den Bau:
 - Cognitive Complexity: 32 Funktionen über 15 ohne Tests (Messung 05.09.2026); lohnend allenfalls
   `OverrideDueDateHandler` und `behandleAbgaenger`.
 - `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen.
+- `docs/docs.go` (Swagger) nennt noch `personenart`, `lehrer_id` und `active_teacher_id`.
+  Der Generator `swag` läuft unter Go 1.27 nicht mehr durch (er stolpert über die
+  Standardbibliothek); das Drift-Gate prüft nur die Endpunkte, nicht die Feldnamen. Beim
+  nächsten Anfassen der API-Doku mit einer neueren `swag`-Fassung erzeugen.
+- `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
+  als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
 - `LabelHeight >= 30` steht zweimal (`api/label_pdf.go`, `api/schueler_etikett_pdf.go`).
 - Zwei Normalformen für Namen (`repository.Suchnorm`, `normName` in `api/lusd_paarung.go`); beim

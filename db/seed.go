@@ -14,9 +14,12 @@ const (
 		ON CONFLICT (role, permission) DO NOTHING
 	`
 
+	// Ohne Ausweisnummer: Die gehört seit Migration 125 zur Leserzeile, die der Trigger
+	// trg_benutzer_hat_leserzeile mit anlegt. Der Admin bekommt seine Nummer, wenn ein
+	// Ausweis für ihn gedruckt wird.
 	insertInitialAdminSQL = `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('admin', 'System', 'Administrator', $1, 'admin', true)
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('System', 'Administrator', $1, 'admin', true)
 		RETURNING id
 	`
 )

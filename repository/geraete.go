@@ -55,14 +55,13 @@ func (r *pgGeraeteRepository) ListGeraete(ctx context.Context) ([]GeraetMitStatu
 		SELECT g.id, g.modellname, g.seriennummer, g.barcode_id, g.zubehoer,
 		       g.ist_ausleihbar, g.ist_ausgesondert, g.zustand_notiz,
 		       g.erstellt_am, g.aktualisiert_am,
-		       COALESCE(
-		           btrim(s.vorname || ' ' || s.nachname || ' (' || s.klasse || ')'),
-		           btrim(b.vorname || ' ' || b.nachname)
-		       ) AS ausgeliehen_an
+		       btrim(l.vorname || ' ' || l.nachname ||
+		             coalesce(' (' || nullif(l.klasse, '') || ')', '')) AS ausgeliehen_an
 		FROM geraete g
 		LEFT JOIN ausleihen a ON a.geraet_id = g.id AND a.rueckgabe_am IS NULL
-		LEFT JOIN schueler s ON s.id = a.schueler_id
-		LEFT JOIN benutzer b ON b.id = a.ausleiher_benutzer_id
+		-- leser, nicht die Sicht schueler: Sonst stünde bei einem Gerät in der Hand
+		-- eines Kollegen kein Name (Migration 125).
+		LEFT JOIN leser l ON l.id = a.schueler_id
 		WHERE g.ist_ausgesondert = false
 		ORDER BY g.erstellt_am DESC
 	`)

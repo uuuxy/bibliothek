@@ -2,7 +2,7 @@ package api
 
 import "bibliothek/repository"
 
-// SchuelerKiosk ist die Theken-Sicht auf einen Schüler: genau die Felder, die
+// SchuelerKiosk ist die Theken-Sicht auf einen LESER: genau die Felder, die
 // Ausleihe und Suche an der Scanner-Station brauchen — Identität, Klasse und
 // die Sperr-Flags. Wohnanschrift, Eltern-Mail und Geburtsdatum fehlen hier
 // BEWUSST und dürfen nie dazukommen: /api/action und /api/search hängen am
@@ -12,7 +12,11 @@ import "bibliothek/repository"
 // Sicherheitsbefund bewertung/sicherheitsbefund-kiosk-suche.md. Die vollen
 // Profile gibt es weiterhin, aber nur hinter view_students (/api/schueler…).
 type SchuelerKiosk struct {
-	ID        string `json:"id"`
+	ID string `json:"id"`
+	// Art ist Schüler, Lehrkraft oder LiV (Migration 125). Die Theke zeigt sie am
+	// Treffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender
+	// Angabe. Keine Personendaten: Sie sagt nichts, was der Ausweis nicht schon sagt.
+	Art       string `json:"art,omitempty"`
 	BarcodeID string `json:"barcode_id"`
 	Vorname   string `json:"vorname"`
 	Nachname  string `json:"nachname"`
@@ -32,6 +36,7 @@ func zumKioskSchueler(s *repository.Student) *SchuelerKiosk {
 	}
 	return &SchuelerKiosk{
 		ID:                s.ID,
+		Art:               s.Art,
 		BarcodeID:         s.BarcodeID,
 		Vorname:           s.Vorname,
 		Nachname:          s.Nachname,

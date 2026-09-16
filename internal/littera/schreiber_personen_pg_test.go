@@ -72,11 +72,17 @@ func TestLehrkraftUndLiVBekommenIhrePersonenart(t *testing.T) {
 	if bericht.Lehrkraefte != 2 || !bericht.AbgleichOK {
 		t.Fatalf("beide gehören ins Kollegium, gemeldet: %+v", bericht)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM benutzer WHERE barcode_id = '31' AND personenart = 'lehrkraft'`); n != 1 {
-		t.Errorf("die Lehrkraft soll die Personenart „lehrkraft“ tragen, gefunden: %d", n)
+	// Ausweis und Art stehen seit Migration 125 an der Leserzeile des Kontos, nicht am Konto.
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = '31' AND art = 'lehrkraft'`); n != 1 {
+		t.Errorf("die Lehrkraft soll als Art „lehrkraft“ geführt werden, gefunden: %d", n)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM benutzer WHERE barcode_id = '32' AND personenart = 'liv'`); n != 1 {
-		t.Errorf("die LiV soll die Personenart „liv“ tragen, gefunden: %d", n)
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = '32' AND art = 'liv'`); n != 1 {
+		t.Errorf("die LiV soll als Art „liv“ geführt werden, gefunden: %d", n)
+	}
+	// Und beide hängen an einem Konto — sonst könnten sie sich nie anmelden.
+	if n := zaehle(t, pool, `SELECT count(*) FROM benutzer b JOIN leser l ON l.id = b.leser_id
+		WHERE l.barcode_id IN ('31','32')`); n != 2 {
+		t.Errorf("beide Konten müssen auf ihre Leserzeile zeigen, gefunden: %d", n)
 	}
 }
 
@@ -232,7 +238,7 @@ func TestFremdLeserNummerGewinnt(t *testing.T) {
 	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = '25'`); n != 1 {
 		t.Errorf("ohne Herstellernummer bleibt die Lesernummer der Ausweis, gefunden: %d", n)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM benutzer WHERE barcode_id = 'B97601826458'`); n != 1 {
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = 'B97601826458' AND art = 'lehrkraft'`); n != 1 {
 		t.Errorf("auch die Lehrkraft bekommt die Herstellernummer, gefunden: %d", n)
 	}
 	// Leser 2 hat keine Karte, obwohl die Schule Herstellerausweise nutzt: Ein Ausweis in
@@ -279,18 +285,28 @@ func TestAusweisnummerGleichBuchBarcodeWeichtAus(t *testing.T) {
 }
 
 // TestErsatznummerWeichtVergebenerNummerAus: Die Ersatznummer „L-<Littera-Nummer>" kann schon
-// vergeben sein, etwa von Hand an eine Lehrkraft. Die Eindeutigkeit gilt nur je Tabelle, und die
-// Theke sucht bei „L-" zuerst unter den Schülern — der Ausweis der Lehrkraft lüde still den
-// Schüler (Rasterdurchgang 15.09.2026).
+// vergeben sein, etwa von Hand an eine Lehrkraft. Vor Migration 125 galt die Eindeutigkeit nur
+// je Tabelle, und die Theke suchte bei „L-" zuerst unter den Schülern — der Ausweis der
+// Lehrkraft lud still den Schüler (Rasterdurchgang 15.09.2026). Heute wäre es kein stiller
+// Fehlgriff mehr, sondern ein abgewiesener Import; ausweichen soll er trotzdem.
 func TestErsatznummerWeichtVergebenerNummerAus(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
 	s, protokoll := testSchreiber(t, pool, nil)
 	ctx := context.Background()
 
-	if _, err := pool.Exec(ctx, `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('L-2', 'Hand', 'Vergeben', 'hand@schule.invalid', 'kollegium', true)`); err != nil {
+	// Zwei Anweisungen: Eine schreibende CTE sähe das äußere UPDATE nicht (die Zeile liegt
+	// außerhalb seines Schnappschusses) und änderte still 0 Zeilen.
+	var handLeserID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Hand', 'Vergeben', 'hand@schule.invalid', 'kollegium', true)
+		RETURNING leser_id::text`).Scan(&handLeserID); err != nil {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
+	}
+	if _, err := pool.Exec(ctx,
+		`UPDATE leser SET barcode_id = 'L-2' WHERE id = $1`, handLeserID); err != nil {
+		t.Fatalf("Ausweis der Lehrkraft eintragen: %v", err)
 	}
 	ab := &Altbestand{Leser: []Leser{
 		leser("1", "24", "07H1", ArtSchueler),
@@ -382,9 +398,9 @@ func TestAdressenWerdenNichtUebernommen(t *testing.T) {
 }
 
 // TestImportierteLehrkraftIstAmScannerAuffindbar schliesst den Kreis zwischen Import und
-// Ausleihpfad: Die Omnibox filtert Lehrkraefte auf aktiv=true. Legte der Import sie
-// inaktiv an, waere jeder gedruckte Lehrerausweis wertlos — und gemerkt haette man es
-// erst an der Theke.
+// Ausleihpfad: Die Theke sucht bei jedem Ausweis unter den LESERN (Migration 125). Landete
+// die importierte Lehrkraft nur in der Kontentabelle, waere jeder gedruckte Lehrerausweis
+// wertlos — und gemerkt haette man es erst an der Theke.
 //
 // Der Login bleibt trotzdem gesperrt: Er laeuft ausschliesslich ueber IMAP gegen den
 // Schul-Mailserver, und die Platzhalter-Adresse gibt es dort nicht.
@@ -399,15 +415,18 @@ func TestImportierteLehrkraftIstAmScannerAuffindbar(t *testing.T) {
 	}
 
 	// Genau die Abfrage, die die Omnibox stellt.
-	lehrkraft, err := repository.NewUserRepository(pool).
-		GetLehrerByBarcode(context.Background(), "B97601826458")
+	lehrkraft, err := repository.NewStudentRepository(pool).
+		GetLeserByBarcode(context.Background(), "B97601826458")
 	if err != nil {
-		t.Fatalf("Lehrer-Abfrage: %v", err)
+		t.Fatalf("Ausweis-Abfrage: %v", err)
 	}
 	if lehrkraft == nil {
 		t.Fatal("die importierte Lehrkraft ist ueber ihren Ausweis nicht auffindbar")
 	}
 	if lehrkraft.Nachname != "Nach2" {
 		t.Errorf("falsche Lehrkraft geladen: %+v", lehrkraft)
+	}
+	if lehrkraft.Art != "lehrkraft" {
+		t.Errorf("die Theke muss die Art am Treffer sehen, gelesen: %q", lehrkraft.Art)
 	}
 }

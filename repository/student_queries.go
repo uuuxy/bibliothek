@@ -26,6 +26,38 @@ func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) 
 	return s, nil
 }
 
+// spaltenLeser ist die Spaltenliste von scanStudent — einmal, damit die Abfragen über
+// die Sicht `schueler` und die über die Tabelle `leser` nicht auseinanderlaufen können.
+const spaltenLeser = `id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, ''), coalesce(abgaenger_jahr, 0), coalesce(ist_gesperrt, false), lusd_id, coalesce(ist_abgaenger, false), TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, coalesce(is_manually_blocked, false), block_reason, coalesce(strasse, ''), coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''), coalesce(eltern_email, '')`
+
+// GetLeserByBarcode liest einen Leser — Schüler ODER Kollegium — über seine
+// Ausweisnummer. Anders als GetByBarcode geht die Abfrage an die TABELLE `leser` und
+// nicht an die Sicht `schueler`; nur so findet die Theke einen Kollegen.
+func (r *pgStudentRepository) GetLeserByBarcode(ctx context.Context, barcode string) (*Student, error) {
+	return r.leser(ctx, `WHERE barcode_id = $1 AND deleted_at IS NULL`, barcode)
+}
+
+// GetLeserByID liest einen Leser über seine UUID.
+func (r *pgStudentRepository) GetLeserByID(ctx context.Context, id string) (*Student, error) {
+	return r.leser(ctx, `WHERE id = $1 AND deleted_at IS NULL`, id)
+}
+
+// leser führt die beiden Leser-Abfragen aus: dieselbe Spaltenliste, dieselbe Behandlung
+// des Nichttreffers (nil, nil), nur eine andere Bedingung.
+func (r *pgStudentRepository) leser(ctx context.Context, bedingung string, arg any) (*Student, error) {
+	row := r.db.QueryRow(ctx, `SELECT `+spaltenLeser+`, art FROM leser `+bedingung+` LIMIT 1`, arg)
+	var art string
+	s, err := scanStudentMitZusatz(row, &art)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	s.Art = art
+	return s, nil
+}
+
 // GetByID liest einen Schüler anhand seiner UUID aus.
 func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student, error) {
 	query := `

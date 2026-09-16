@@ -141,9 +141,9 @@ func seedEigenerBearbeiter(t *testing.T, pool *pgxpool.Pool, barcode string) str
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(),
-		`INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		 VALUES ($1, 'Klassensatz', 'Kraft', $2, 'mitarbeiter', true) RETURNING id`,
-		barcode, barcode+"@example.org").Scan(&id); err != nil {
+		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		 VALUES ('Klassensatz', 'Kraft', $1, 'mitarbeiter', true) RETURNING id`,
+		barcode+"@example.org").Scan(&id); err != nil {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 	return id

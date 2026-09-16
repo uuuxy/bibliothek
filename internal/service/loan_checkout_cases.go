@@ -25,14 +25,11 @@ func (s *defaultLoanService) erzeugeAusleihe(
 	chkCtx *checkoutContext,
 	staffID string,
 ) (*repository.Loan, error) {
-	var loan *repository.Loan
-	var err error
-
-	if chkCtx.borrowerType == "student" {
-		loan, err = s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime)
-	} else {
-		loan, err = s.loanRepo.CreateUserLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, true)
-	}
+	// Ein Schreiber für jeden Leser (Migration 125). Die Dauerleihe bleibt an die Art
+	// geknüpft — sie war vorher an die Tabelle geknüpft, was dasselbe war: Wer kein
+	// Schüler ist, bekommt das Buch fürs Schuljahr und zählt nicht in die
+	// Überfällig-Automatik (zaehleUeberfaelligeMedien).
+	loan, err := s.loanRepo.CreateLoanTx(ctx, tx, copy.ID, chkCtx.borrowerID, staffID, chkCtx.dueTime, !chkCtx.istSchueler())
 	if err == nil {
 		return loan, nil
 	}
@@ -87,13 +84,10 @@ func (s *defaultLoanService) deuteAusleiheKonflikt(
 	return fmt.Errorf("%w: dieses Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht", ErrConflict)
 }
 
-// istSelberAusleiher prüft, ob die bestehende Ausleihe demselben Schüler bzw.
-// derselben Lehrkraft gehört wie der aktuelle Vorgang.
+// istSelberAusleiher prüft, ob die bestehende Ausleihe demselben Leser gehört wie der
+// aktuelle Vorgang.
 func istSelberAusleiher(aktiv *repository.Loan, chkCtx *checkoutContext) bool {
-	if chkCtx.borrowerType == "student" {
-		return aktiv.SchuelerID != nil && *aktiv.SchuelerID == chkCtx.borrowerID
-	}
-	return aktiv.AusleiherBenutzerID != nil && *aktiv.AusleiherBenutzerID == chkCtx.borrowerID
+	return aktiv.SchuelerID != nil && *aktiv.SchuelerID == chkCtx.borrowerID
 }
 
 // errAusleiheBereitsVorhanden ist kein Fehler nach außen, sondern das Signal an
@@ -158,21 +152,14 @@ func (s *defaultLoanService) handleNewLoan(
 		return nil, err
 	}
 
-	if chkCtx.borrowerType == "student" {
+	if chkCtx.istSchueler() {
 		entferneErfuellteVormerkung(ctx, tx, copy, chkCtx.borrowerID, resp)
 	}
 
-	if chkCtx.borrowerType == "student" {
-		if err := s.auditRepo.LogAusleihe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
-			return nil, err
-		}
-		resp.Student = chkCtx.student
-	} else {
-		if err := s.auditRepo.LogAusleihe(ctx, tx, copy.ID, "", chkCtx.borrowerID, staffID); err != nil {
-			return nil, err
-		}
-		resp.Teacher = chkCtx.teacher
+	if err := s.auditRepo.LogAusleihe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+		return nil, err
 	}
+	resp.Student = chkCtx.leser
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -205,17 +192,10 @@ func (s *defaultLoanService) handleReturn(
 		return nil, err
 	}
 
-	if chkCtx.borrowerType == "student" {
-		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
-			return nil, err
-		}
-		resp.Student = chkCtx.student
-	} else {
-		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, "", chkCtx.borrowerID, staffID); err != nil {
-			return nil, err
-		}
-		resp.Teacher = chkCtx.teacher
+	if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, chkCtx.borrowerID, "", staffID); err != nil {
+		return nil, err
 	}
+	resp.Student = chkCtx.leser
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
@@ -241,23 +221,16 @@ func (s *defaultLoanService) handleForeignReturn(
 	staffID string,
 	resp *LoanResult,
 ) (*LoanResult, error) {
-	var prevStudent *repository.Student
-	var prevTeacher *repository.User
+	// Der Vorbesitzer ist ein Leser — Schüler oder Kollege. Deshalb GetLeserByID und
+	// nicht GetByID: Letzteres liest die Sicht `schueler` und meldete für das Buch eines
+	// Kollegen „Vorbesitzer unbekannt".
+	var prevLeser *repository.Student
 	var err error
 
 	if activeLoan.SchuelerID != nil {
-		prevStudent, err = s.studentRepo.GetByID(ctx, *activeLoan.SchuelerID)
+		prevLeser, err = s.studentRepo.GetLeserByID(ctx, *activeLoan.SchuelerID)
 		if err != nil {
-			log.Printf("fremdrückgabe: Vorbesitzer (Schüler) konnte nicht geladen werden: %v", err)
-		}
-	} else if activeLoan.AusleiherBenutzerID != nil {
-		prevTeacher = &repository.User{}
-		// Rolle aus benutzer.rolle (Quelle von Login/JWT). Der frühere LEFT JOIN auf
-		// benutzer_rollen zeigte für alle nach dem Bootstrap angelegten Benutzer den
-		// COALESCE-Fallback 'HELFER' an, weil dort keine Zeile existiert.
-		err = tx.QueryRow(ctx, "SELECT b.id, b.vorname, b.nachname, b.rolle::text FROM benutzer b WHERE b.id = $1 LIMIT 1", *activeLoan.AusleiherBenutzerID).Scan(&prevTeacher.ID, &prevTeacher.Vorname, &prevTeacher.Nachname, &prevTeacher.Rolle)
-		if errors.Is(err, pgx.ErrNoRows) {
-			prevTeacher = nil
+			log.Printf("fremdrückgabe: Vorbesitzer konnte nicht geladen werden: %v", err)
 		}
 	}
 
@@ -275,10 +248,6 @@ func (s *defaultLoanService) handleForeignReturn(
 		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, *activeLoan.SchuelerID, "", staffID); err != nil {
 			return nil, err
 		}
-	} else if activeLoan.AusleiherBenutzerID != nil {
-		if err := s.auditRepo.LogRueckgabe(ctx, tx, copy.ID, "", *activeLoan.AusleiherBenutzerID, staffID); err != nil {
-			return nil, err
-		}
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -290,9 +259,8 @@ func (s *defaultLoanService) handleForeignReturn(
 	resp.LoanID = &activeLoan.ID
 	// Student = Vorbesitzer: SSE-Livesync zielt auf das Konto, das sich
 	// geändert hat; die aktive Sitzung bleibt clientseitig unangetastet.
-	resp.Student = prevStudent
+	resp.Student = prevLeser
 	resp.Fremdrueckgabe = true
-	resp.Vorbesitzer = prevStudent
-	resp.VorbesitzerUser = prevTeacher
+	resp.Vorbesitzer = prevLeser
 	return resp, nil
 }

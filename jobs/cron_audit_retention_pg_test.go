@@ -34,8 +34,8 @@ func TestAuditAufbewahrung_LoeschtAltesUndProtokolliert(t *testing.T) {
 	// Ein Bearbeiter für die FK-Spalten + je Tabelle ein alter und ein junger Eintrag.
 	var benutzerID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('RET-B', 'Retention', 'Kraft', 'ret@example.org', 'admin', true) RETURNING id`).Scan(&benutzerID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Retention', 'Kraft', 'ret@example.org', 'admin', true) RETURNING id`).Scan(&benutzerID); err != nil {
 		t.Fatalf("Benutzer: %v", err)
 	}
 	seed := func(query string, alterMonate int) {

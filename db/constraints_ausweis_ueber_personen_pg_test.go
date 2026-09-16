@@ -10,19 +10,24 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// Migration 118: Eine Ausweisnummer gehört genau einer Person — über Schüler und Kollegium
-// hinweg. Ob jemand Schüler oder Lehrkraft ist, steht in den Stammdaten, nicht auf dem Ausweis;
-// die Theke sucht bei jeder Nummer unter beiden. Bis Migration 118 galt die Eindeutigkeit nur je
-// Tabelle, und jeder Schreibweg prüfte nur seine eigene: Ein Schüler und eine Lehrkraft konnten
+// Eine Ausweisnummer gehört genau einer Person — Schüler wie Kollegium. Ob jemand Schüler
+// oder Lehrkraft ist, steht in den Stammdaten, nicht auf dem Ausweis; die Theke sucht bei
+// jeder Nummer unter allen Lesern. Bis Migration 118 galt die Eindeutigkeit nur je Tabelle,
+// und jeder Schreibweg prüfte nur seine eigene: Ein Schüler und eine Lehrkraft konnten
 // dieselbe Nummer tragen, und der Scan lud still den Schüler.
+//
+// Seit Migration 125 stehen alle Leser in EINER Tabelle. Der Trigger von 118 ist damit
+// entfallen — die Zusage ist dieselbe geblieben, sie hängt jetzt am partiellen Index
+// uniq_schueler_barcode_active. Dieser Test prüft weiter die ZUSAGE, nicht das Mittel:
+// Käme eine zweite Tabelle mit Ausweisnummern zurück, müsste er neu geschrieben werden.
 const (
-	insSchuelerAktiv = `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+	insLeserSchueler = `INSERT INTO leser (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 	                    VALUES ($1, 'Aus', 'Weis', '7a', 2030)`
-	insSchuelerGeloescht = `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
-	                        VALUES ($1, 'Aus', 'Weis', '7a', 2030, now())`
-	insLehrkraft = `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-	                VALUES ($1, 'Leh', 'Rer', $2, 'kollegium', true)`
-	constraintAusweis = "uniq_ausweis_ueber_personen"
+	insLeserGeloescht = `INSERT INTO leser (barcode_id, vorname, nachname, klasse, abgaenger_jahr, deleted_at)
+	                     VALUES ($1, 'Aus', 'Weis', '7a', 2030, now())`
+	insLeserLehrkraft = `INSERT INTO leser (barcode_id, vorname, nachname, art)
+	                     VALUES ($1, 'Leh', 'Rer', 'lehrkraft')`
+	constraintAusweis = "uniq_schueler_barcode_active"
 )
 
 func TestAusweisEindeutigUeberPersonen(t *testing.T) {
@@ -30,79 +35,74 @@ func TestAusweisEindeutigUeberPersonen(t *testing.T) {
 
 	t.Run("Nummer eines Schülers ist für eine Lehrkraft vergeben", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteErfolg(t, tx, "Schüler", insSchuelerAktiv, "AW-1")
-			erwarteConstraintVerletzung(t, tx, constraintAusweis, insLehrkraft, "AW-1", "aw1@test.invalid")
+			erwarteErfolg(t, tx, "Schüler", insLeserSchueler, "AW-1")
+			erwarteConstraintVerletzung(t, tx, constraintAusweis, insLeserLehrkraft, "AW-1")
 		})
 	})
 
 	t.Run("Nummer einer Lehrkraft ist für einen Schüler vergeben", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteErfolg(t, tx, "Lehrkraft", insLehrkraft, "AW-2", "aw2@test.invalid")
-			erwarteConstraintVerletzung(t, tx, constraintAusweis, insSchuelerAktiv, "AW-2")
+			erwarteErfolg(t, tx, "Lehrkraft", insLeserLehrkraft, "AW-2")
+			erwarteConstraintVerletzung(t, tx, constraintAusweis, insLeserSchueler, "AW-2")
 		})
 	})
 
-	t.Run("gelöschter Schüler gibt die Nummer frei, Wiederherstellen stößt an", func(t *testing.T) {
+	t.Run("gelöschter Leser gibt die Nummer frei, Wiederherstellen stößt an", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteErfolg(t, tx, "gelöschter Schüler", insSchuelerGeloescht, "AW-3")
-			erwarteErfolg(t, tx, "Lehrkraft mit der freigegebenen Nummer", insLehrkraft, "AW-3", "aw3@test.invalid")
+			erwarteErfolg(t, tx, "gelöschter Schüler", insLeserGeloescht, "AW-3")
+			erwarteErfolg(t, tx, "Lehrkraft mit der freigegebenen Nummer", insLeserLehrkraft, "AW-3")
 			erwarteConstraintVerletzung(t, tx, constraintAusweis,
-				`UPDATE schueler SET deleted_at = NULL WHERE barcode_id = $1`, "AW-3")
+				`UPDATE leser SET deleted_at = NULL WHERE barcode_id = $1 AND art = 'schueler'`, "AW-3")
 		})
 	})
 
-	t.Run("Ändern auf die Nummer der anderen Seite", func(t *testing.T) {
+	t.Run("Ändern auf die Nummer der anderen Person", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteErfolg(t, tx, "Schüler", insSchuelerAktiv, "AW-4S")
-			erwarteErfolg(t, tx, "Lehrkraft", insLehrkraft, "AW-4L", "aw4@test.invalid")
+			erwarteErfolg(t, tx, "Schüler", insLeserSchueler, "AW-4S")
+			erwarteErfolg(t, tx, "Lehrkraft", insLeserLehrkraft, "AW-4L")
 			erwarteConstraintVerletzung(t, tx, constraintAusweis,
-				`UPDATE schueler SET barcode_id = $1 WHERE barcode_id = 'AW-4S'`, "AW-4L")
+				`UPDATE leser SET barcode_id = $1 WHERE barcode_id = 'AW-4S'`, "AW-4L")
 			erwarteConstraintVerletzung(t, tx, constraintAusweis,
-				`UPDATE benutzer SET barcode_id = $1 WHERE barcode_id = 'AW-4L'`, "AW-4S")
+				`UPDATE leser SET barcode_id = $1 WHERE barcode_id = 'AW-4L'`, "AW-4S")
 		})
 	})
 
-	t.Run("Gegenprobe: verschiedene Nummern und Lehrkräfte ohne Ausweis", func(t *testing.T) {
+	// Ohne Ausweis dürfen beliebig viele Leser nebeneinander stehen: Ein Kollege bekommt
+	// seine Nummer erst, wenn ein Ausweis gedruckt wird. Der partielle Index lässt NULL
+	// mehrfach zu — stünde dort ein leerer String, wäre schon der zweite Kollege abgewiesen.
+	t.Run("Gegenprobe: verschiedene Nummern und Leser ohne Ausweis", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteErfolg(t, tx, "Schüler", insSchuelerAktiv, "AW-5S")
-			erwarteErfolg(t, tx, "Lehrkraft", insLehrkraft, "AW-5L", "aw5@test.invalid")
-			erwarteErfolg(t, tx, "Lehrkraft ohne Ausweis", insLehrkraft, nil, "aw5a@test.invalid")
-			erwarteErfolg(t, tx, "zweite Lehrkraft ohne Ausweis", insLehrkraft, nil, "aw5b@test.invalid")
+			erwarteErfolg(t, tx, "Schüler", insLeserSchueler, "AW-5S")
+			erwarteErfolg(t, tx, "Lehrkraft", insLeserLehrkraft, "AW-5L")
+			erwarteErfolg(t, tx, "Lehrkraft ohne Ausweis", insLeserLehrkraft, nil)
+			erwarteErfolg(t, tx, "zweite Lehrkraft ohne Ausweis", insLeserLehrkraft, nil)
 		})
 	})
 
-	// Ein Doppel aus der Zeit vor Migration 118 darf weder den Start noch eine Änderung an
-	// anderen Feldern blockieren. Geprüft wird nur, wenn sich die Nummer wirklich ändert.
-	t.Run("Altdoppel blockiert unbeteiligte Änderungen nicht", func(t *testing.T) {
+	// Eine Änderung an anderen Feldern darf nicht an der Nummer scheitern.
+	t.Run("Änderung ohne Nummernwechsel geht durch", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
-			// Nur die Lehrkraft ohne Trigger: Der Schüler braucht den Trigger, der seine Klasse
-			// ins Vokabular einträgt.
-			erwarteErfolg(t, tx, "Schüler", insSchuelerAktiv, "AW-6")
-			erwarteErfolg(t, tx, "Trigger aus", `SET LOCAL session_replication_role = replica`)
-			erwarteErfolg(t, tx, "Lehrkraft mit derselben Nummer", insLehrkraft, "AW-6", "aw6@test.invalid")
-			erwarteErfolg(t, tx, "Trigger an", `SET LOCAL session_replication_role = origin`)
-			erwarteErfolg(t, tx, "Lehrkraft ändern, Nummer gleich",
-				`UPDATE benutzer SET vorname = 'Neu', barcode_id = barcode_id WHERE barcode_id = $1`, "AW-6")
+			erwarteErfolg(t, tx, "Schüler", insLeserSchueler, "AW-6")
 			erwarteErfolg(t, tx, "Schüler ändern, Nummer gleich",
-				`UPDATE schueler SET vorname = 'Neu', barcode_id = barcode_id WHERE barcode_id = $1`, "AW-6")
+				`UPDATE leser SET vorname = 'Neu', barcode_id = barcode_id WHERE barcode_id = $1`, "AW-6")
 		})
 	})
 }
 
 // TestAusweisEindeutigUeberPersonen_Gleichzeitig: Zwei Arbeitsplätze vergeben dieselbe Nummer
-// gleichzeitig, einer an einen Schüler, einer an eine Lehrkraft. Ohne Sperre sieht keine der
-// beiden Prüfungen die noch nicht festgeschriebene Zeile der anderen, und beide kommen durch.
+// gleichzeitig, einer an einen Schüler, einer an eine Lehrkraft. Der zweite muss warten, bis
+// der erste feststeht, und danach abgewiesen werden — ohne diese Serialisierung sieht keine
+// der beiden Prüfungen die noch nicht festgeschriebene Zeile der anderen.
+//
+// Gewartet wird jetzt auf eine ZEILENSPERRE des eindeutigen Index (wait_event 'tuple'), nicht
+// mehr auf die Advisory-Sperre des Triggers aus Migration 118: Postgres hält den zweiten
+// INSERT selbst an, bis der erste committet oder zurückrollt.
 func TestAusweisEindeutigUeberPersonen_Gleichzeitig(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
 	t.Cleanup(func() {
-		for _, q := range []string{
-			`DELETE FROM schueler WHERE barcode_id = 'AW-GLEICH'`,
-			`DELETE FROM benutzer WHERE barcode_id = 'AW-GLEICH'`,
-		} {
-			if _, err := pool.Exec(ctx, q); err != nil {
-				t.Errorf("aufräumen: %v", err)
-			}
+		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE barcode_id = 'AW-GLEICH'`); err != nil {
+			t.Errorf("aufräumen: %v", err)
 		}
 	})
 
@@ -111,7 +111,7 @@ func TestAusweisEindeutigUeberPersonen_Gleichzeitig(t *testing.T) {
 		t.Fatalf("erste Transaktion: %v", err)
 	}
 	defer SafeRollback(ctx, tx1)
-	if _, err := tx1.Exec(ctx, insSchuelerAktiv, "AW-GLEICH"); err != nil {
+	if _, err := tx1.Exec(ctx, insLeserSchueler, "AW-GLEICH"); err != nil {
 		t.Fatalf("Schüler in der ersten Transaktion: %v", err)
 	}
 
@@ -123,7 +123,7 @@ func TestAusweisEindeutigUeberPersonen_Gleichzeitig(t *testing.T) {
 			return
 		}
 		defer SafeRollback(ctx, tx2)
-		if _, err := tx2.Exec(ctx, insLehrkraft, "AW-GLEICH", "awgleich@test.invalid"); err != nil {
+		if _, err := tx2.Exec(ctx, insLeserLehrkraft, "AW-GLEICH"); err != nil {
 			ergebnis <- err
 			return
 		}
@@ -131,9 +131,9 @@ func TestAusweisEindeutigUeberPersonen_Gleichzeitig(t *testing.T) {
 	}()
 
 	// Die zweite Vergabe soll warten, bis die erste feststeht. Kommt sie vorher zurück, hat sie
-	// die Zeile der ersten nicht gesehen. Gewartet wird, bis Postgres sie als wartend auf die
-	// Sperre führt — eine feste Wartezeit bewiese auf einem langsamen Rechner nichts: Käme die
-	// zweite Vergabe erst nach dem Festschreiben der ersten an, scheiterte sie auch ohne Sperre.
+	// die Zeile der ersten nicht gesehen. Gewartet wird, bis Postgres sie als wartend führt —
+	// eine feste Wartezeit bewiese auf einem langsamen Rechner nichts: Käme die zweite Vergabe
+	// erst nach dem Festschreiben der ersten an, scheiterte sie auch ohne Sperre.
 	frist := time.Now().Add(10 * time.Second)
 	for wartend := 0; wartend == 0; {
 		select {
@@ -142,7 +142,7 @@ func TestAusweisEindeutigUeberPersonen_Gleichzeitig(t *testing.T) {
 		default:
 		}
 		if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_stat_activity
-			WHERE datname = current_database() AND wait_event_type = 'Lock' AND wait_event = 'advisory'`).
+			WHERE datname = current_database() AND wait_event_type = 'Lock'`).
 			Scan(&wartend); err != nil {
 			t.Fatalf("wartende Vergabe suchen: %v", err)
 		}

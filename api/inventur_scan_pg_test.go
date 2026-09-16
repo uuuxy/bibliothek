@@ -139,10 +139,11 @@ func TestInventurScan_Fehlerfaelle(t *testing.T) {
 	barcodeLent := "B-L-" + suffix
 	exLent := seedSignaturMitExemplar(t, pool, sigDeutsch, barcodeLent)
 	var userID string
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES ('Test', 'User', 'test@example.com', 'admin', true) RETURNING id`).Scan(&userID); err != nil {
+	// Die Ausleihe hängt an der LESERZEILE des Kontos (Migration 125).
+	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv) VALUES ('Test', 'User', 'test@example.com', 'admin', true) RETURNING leser_id`).Scan(&userID); err != nil {
 		t.Fatalf("User anlegen: %v", err)
 	}
-	if _, err := pool.Exec(ctx, `INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist) VALUES ($1, $2, NOW(), NOW() + interval '14 days')`, exLent, userID); err != nil {
+	if _, err := pool.Exec(ctx, `INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist) VALUES ($1, $2, NOW(), NOW() + interval '14 days')`, exLent, userID); err != nil {
 		t.Fatalf("Ausleihe anlegen: %v", err)
 	}
 

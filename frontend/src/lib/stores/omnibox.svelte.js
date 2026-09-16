@@ -34,8 +34,11 @@ function showToast(message, type = 'success') {
 }
 
 export function createOmniboxStore() {
+	// activeStudent ist der LESER, der gerade an der Theke steht — Schüler oder Kollege,
+	// unterscheidbar an `art`. Ein zweiter Platz für Lehrkräfte ist mit Migration 125
+	// weggefallen; solange es zwei gab, musste jede Stelle beide abfragen und sich für
+	// eine entscheiden.
 	let activeStudent = $state(/** @type {any} */ (null));
-	let activeTeacher = $state(/** @type {any} */ (null));
 	let queryVal = $state('');
 
 	let flashBorder = $state('');
@@ -78,7 +81,7 @@ export function createOmniboxStore() {
 		unifiedSearchResults.students.length + unifiedSearchResults.books.length
 	);
 
-	let isActive = $derived(!!(activeStudent || activeTeacher || isDropdownOpen));
+	let isActive = $derived(!!(activeStudent || isDropdownOpen));
 
 	// UI Feedback-Methoden
 	function triggerScreenFlash(type) {
@@ -236,7 +239,7 @@ export function createOmniboxStore() {
 		triggerFlash('orange');
 		const prevName = formatVorbesitzerName(data);
 		lastFremdrueckgabe = { vorbesitzerName: prevName };
-		const aktiv = activeTeacher?.vorname || activeStudent?.vorname;
+		const aktiv = activeStudent?.vorname;
 		const nachsatz = aktiv ? ` Erneut scannen, um es an ${aktiv} auszuleihen.` : '';
 		showToast(
 			`„${data.book.titel}" war auf ${prevName} verbucht — dort zurückgegeben.${nachsatz}`,
@@ -262,11 +265,9 @@ export function createOmniboxStore() {
 		}
 		if (reloadProfileCb) reloadProfileCb();
 
-		if (data.student && !activeStudent && !activeTeacher) {
+		if (data.student && !activeStudent) {
 			activeStudent = data.student;
 			abholbereit = data.abholbereit ?? [];
-		} else if (data.teacher && !activeStudent && !activeTeacher) {
-			activeTeacher = data.teacher;
 		}
 	}
 
@@ -285,17 +286,15 @@ export function createOmniboxStore() {
 		if (data.type === 'student') {
 			activeStudent = data.student;
 			abholbereit = data.abholbereit ?? [];
-			activeTeacher = null;
 			triggerScreenFlash('success');
 			playSoundSuccess();
 			triggerFlash('green');
-		} else if (data.type === 'teacher') {
-			activeTeacher = data.teacher;
-			activeStudent = null;
-			triggerScreenFlash('success');
-			playSoundSuccess();
-			triggerFlash('green');
-			showToast(`Lehrkraft geladen: ${data.teacher.vorname} ${data.teacher.nachname}`);
+			// Bei einem Kollegen sagen, was der Scan bedeutet: Die Karte daneben zeigt
+			// keine Klasse, und ohne Ansage sieht ein geladener Kollege aus wie ein
+			// Schüler mit fehlender Angabe.
+			if (data.student?.art && data.student.art !== 'schueler') {
+				showToast(`Geladen: ${data.student.vorname} ${data.student.nachname}`);
+			}
 		} else if (data.type === 'geraet_check') {
 			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
 			checklistAnfrage = { query: q, geraet: data.geraet };
@@ -304,7 +303,7 @@ export function createOmniboxStore() {
 			playSoundSuccess();
 			triggerFlash('green');
 			showToast(
-				`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeTeacher ? activeTeacher.vorname : activeStudent?.vorname}.`
+				`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`
 			);
 			// Der Schüler hatte ein ANDERES Exemplar reserviert und ein Freihand-Exemplar
 			// genommen — das reservierte muss zurück ins Regal, sonst bleibt es im Fach liegen.
@@ -347,9 +346,8 @@ export function createOmniboxStore() {
 	//
 	// Die Absicht kann der Aufrufer vorgeben: „Buch zurückgeben" in der Akte ist eine
 	// Rückgabe, auch mit geladenem Schüler (Commit 3). Ohne Vorgabe gilt: Schüler ODER
-	// Lehrkraft geladen → Ausleihe (Handapparat, Entscheidung (b) vom 13.09.2026), sonst
-	// Rückgabe. Bis zum 15.09.2026 entschied nur der Schüler, und ein Buch mit geladener
-	// Lehrkraft wurde als Rückgabe eingereiht (Commit 4).
+	// Ein geladener Leser → Ausleihe, sonst Rückgabe. Bis zum 15.09.2026 entschied nur
+	// der Schüler, und ein Buch mit geladener Lehrkraft wurde als Rückgabe eingereiht.
 	/**
 	 * @param {string} q
 	 * @param {string} idempotencyKey
@@ -359,10 +357,9 @@ export function createOmniboxStore() {
 	function schnappschuss(q, idempotencyKey, absicht) {
 		return {
 			id: idempotencyKey,
-			art: absicht ?? (activeStudent?.id || activeTeacher?.id ? 'ausleihe' : 'rueckgabe'),
+			art: absicht ?? (activeStudent?.id ? 'ausleihe' : 'rueckgabe'),
 			barcode: q,
-			schueler_id: activeStudent?.id ?? null,
-			lehrer_id: activeTeacher?.id ?? null,
+			leser_id: activeStudent?.id ?? null,
 			gescannt_am: Date.now()
 		};
 	}
@@ -491,8 +488,7 @@ export function createOmniboxStore() {
 		try {
 			res = await apiClient.post('/api/action', {
 				query: q,
-				active_student_id: eintrag.schueler_id ?? undefined,
-				active_teacher_id: eintrag.lehrer_id ?? undefined,
+				active_leser_id: eintrag.leser_id ?? undefined,
 				confirmed_checklist: confirmedChecklist,
 				override_block: overrideBlock,
 				idempotency_key: eintrag.id
@@ -578,12 +574,6 @@ export function createOmniboxStore() {
 		},
 		get abholbereit() {
 			return abholbereit;
-		},
-		get activeTeacher() {
-			return activeTeacher;
-		},
-		set activeTeacher(v) {
-			activeTeacher = v;
 		},
 		get queryVal() {
 			return queryVal;

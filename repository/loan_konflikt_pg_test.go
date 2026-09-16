@@ -33,7 +33,7 @@ func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BeginTx: %v", err)
 	}
-	loan, err := repo.CreateLoanTx(ctx, tx1, ex[0], ersterSchueler, bearbeiter, frist)
+	loan, err := repo.CreateLoanTx(ctx, tx1, ex[0], ersterSchueler, bearbeiter, frist, false)
 	if err != nil {
 		t.Fatalf("erste Ausleihe: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
 	}
 	defer db.SafeRollback(ctx, tx2)
 
-	zweite, err := repo.CreateLoanTx(ctx, tx2, ex[0], zweiterSchueler, bearbeiter, frist)
+	zweite, err := repo.CreateLoanTx(ctx, tx2, ex[0], zweiterSchueler, bearbeiter, frist, false)
 
 	if zweite != nil {
 		t.Errorf("zweite Ausleihe lieferte unerwartet eine Zeile: %+v", zweite)
@@ -82,7 +82,7 @@ func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BeginTx 1: %v", err)
 	}
-	erste, err := repo.CreateLoanTx(ctx, tx1, ex[0], schueler, bearbeiter, frist)
+	erste, err := repo.CreateLoanTx(ctx, tx1, ex[0], schueler, bearbeiter, frist, false)
 	if err != nil || erste == nil {
 		db.SafeRollback(ctx, tx1)
 		t.Fatalf("erste Ausleihe: %v", err)
@@ -101,7 +101,7 @@ func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	}
 	defer db.SafeRollback(ctx, tx2)
 
-	zweite, err := repo.CreateLoanTx(ctx, tx2, ex[0], schueler, bearbeiter, frist)
+	zweite, err := repo.CreateLoanTx(ctx, tx2, ex[0], schueler, bearbeiter, frist, false)
 	if err != nil {
 		t.Fatalf("Ausleihe nach Rückgabe schlug fehl: %v", err)
 	}

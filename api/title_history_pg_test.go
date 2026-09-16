@@ -32,8 +32,8 @@ func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
 		VALUES ('S-HIST', 'Mia', 'Muster', '7a', 2030) RETURNING id`).Scan(&schuelerID); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('L-HIST', 'Lena', 'Lehr', 'lehr-hist@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Lena', 'Lehr', 'lehr-hist@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
 		t.Fatal(err)
 	}
 	// Drei abgeschlossene Vorgänge desselben Exemplars, in dieser Reihenfolge (neueste zuerst
@@ -47,8 +47,8 @@ func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
 		{nil, &lehrerID, 400},
 	} {
 		if _, err := pool.Exec(ctx, `
-			INSERT INTO ausleihen (exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
-			VALUES ($1, $2, $3, now() - make_interval(days => $4 + 20), now() - make_interval(days => $4 + 1), now() - make_interval(days => $4))`,
+			INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
+			VALUES ($1, coalesce($2, (SELECT leser_id FROM benutzer WHERE id = $3)), now() - make_interval(days => $4 + 20), now() - make_interval(days => $4 + 1), now() - make_interval(days => $4))`,
 			exemplarID, v.schueler, v.lehrer, v.tage); err != nil {
 			t.Fatalf("Ausleihe (%d Tage): %v", v.tage, err)
 		}

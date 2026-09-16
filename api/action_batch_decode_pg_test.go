@@ -44,8 +44,8 @@ func TestActionBatch_ArrayBodyWirdAngenommen(t *testing.T) {
 
 	var mitarbeiterID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('BATCH-MA-1', 'Betti', 'Batchwart', 'batch-ma@example.org', 'mitarbeiter', true)
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Betti', 'Batchwart', 'batch-ma@example.org', 'mitarbeiter', true)
 		RETURNING id`).Scan(&mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}

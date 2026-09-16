@@ -14,7 +14,7 @@ type etikettLoanSvc struct {
 	zuletzt *repository.BookCopy
 }
 
-func (l *etikettLoanSvc) HandleSimpleReturn(_ context.Context, copy *repository.BookCopy, _ string, _ string) (*LoanResult, error) {
+func (l *etikettLoanSvc) HandleSimpleReturn(_ context.Context, copy *repository.BookCopy, _ string) (*LoanResult, error) {
 	l.zuletzt = copy
 	return &LoanResult{Type: "rueckgabe", Book: copy}, nil
 }
@@ -29,7 +29,6 @@ func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 	loanSvc := &etikettLoanSvc{}
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{"58968": exemplar}},
-		userRepo:    &routingUserRepo{lehrer: map[string]*repository.User{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 		loanSvc:     loanSvc,
 	}
@@ -49,7 +48,6 @@ func TestProcessQuery_LitteraEtikettWirdRueckgerechnet(t *testing.T) {
 func TestProcessQuery_UnbekanntesEtikettFaelltAufSuche(t *testing.T) {
 	svc := &defaultOmniboxService{
 		bookRepo:    &routingBookRepo{copies: map[string]*repository.BookCopy{}},
-		userRepo:    &routingUserRepo{lehrer: map[string]*repository.User{}},
 		studentRepo: &routingStudentRepo{students: map[string]*repository.Student{}},
 	}
 

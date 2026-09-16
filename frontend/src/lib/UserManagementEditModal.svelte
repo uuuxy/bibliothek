@@ -6,7 +6,6 @@
 	import Switch from './components/ui/Switch.svelte';
 	import Select from './components/ui/Select.svelte';
 	import Feld from './components/ui/Feld.svelte';
-	import { personenartOptionen } from './benutzerFormular.js';
 
 	// Kollegium steht OBEN, weil es keine Rolle ist, sondern der Grundzustand: Wer sich
 	// übers Portal selbst anmeldet und freigeschaltet wird, ist Kollegium (Peter,
@@ -42,13 +41,10 @@
 		handleSaveUser
 	} = $props();
 
-	// Die Rolle sagt, was jemand darf; die Personenart, wer jemand ist (Migration 119). Beide
-	// Auswahlfelder in einer Liste — dieselbe Bauform, einmal geschrieben. Beim Kollegium ohne
-	// „Keine Angabe" (Migration 120).
-	const AUSWAHLEN = $derived([
-		{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN },
-		{ id: 'personenart', label: 'Personenart', options: personenartOptionen(userForm.rolle) }
-	]);
+	// Die Rolle sagt, was jemand darf — mehr entscheidet dieses Formular nicht. Das Feld
+	// „Personenart" ist mit Migration 125 weggefallen: Wer jemand ist, steht an seiner
+	// Leserzeile und gehört in die Leserdatei.
+	const AUSWAHLEN = [{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN }];
 </script>
 
 <Modal {open} {onclose} size="md">

@@ -37,8 +37,13 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 		VALUES ('S-AUSL', 'Mia', 'Muster', '7a', 2030) RETURNING id`).Scan(&schuelerID); err != nil {
 		t.Fatal(err)
 	}
-	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('L-AUSL', 'Lena', 'Lehr', 'lehr-ausl@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
+	if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Lena', 'Lehr', 'lehr-ausl@example.org', 'kollegium', true) RETURNING id`).Scan(&lehrerID); err != nil {
+		t.Fatal(err)
+	}
+	// Der Ausweis steht an der Leserzeile (Migration 125) — der Reiter zeigt ihn von dort.
+	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'L-AUSL'
+		WHERE id = (SELECT leser_id FROM benutzer WHERE id = $1)`, lehrerID); err != nil {
 		t.Fatal(err)
 	}
 	// Zwei laufende Ausleihen desselben Titels: eine Schülerin (Frist in 3 Tagen), eine
@@ -49,8 +54,8 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 		t.Fatalf("Schüler-Ausleihe: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `
-		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist)
-		VALUES ($1, $2, now(), now() + interval '10 days')`, ex2, lehrerID); err != nil {
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
+		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), now(), now() + interval '10 days')`, ex2, lehrerID); err != nil {
 		t.Fatalf("Lehrer-Ausleihe: %v", err)
 	}
 

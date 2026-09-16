@@ -37,8 +37,8 @@ func TestGDPRDeleteAbgaenger_HarteLoeschungGegenEchtesPostgres(t *testing.T) {
 	// Bearbeiter (FK-Ziel für Ausleihe/Audit) + Titel + Exemplar.
 	var bearbeiterID, titelID, exemplarID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('DEL-B', 'Del', 'Kraft', 'del@example.org', 'admin', true) RETURNING id`).Scan(&bearbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Del', 'Kraft', 'del@example.org', 'admin', true) RETURNING id`).Scan(&bearbeiterID); err != nil {
 		t.Fatalf("Benutzer: %v", err)
 	}
 	if err := pool.QueryRow(ctx,
@@ -145,8 +145,8 @@ func TestGDPRAnonymizeLoans_GegenEchtesPostgres(t *testing.T) {
 
 	var bearbeiterID, titelID, exemplarID, sid string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('ANL-B', 'Anon', 'Kraft', 'anl@example.org', 'admin', true) RETURNING id`).Scan(&bearbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Anon', 'Kraft', 'anl@example.org', 'admin', true) RETURNING id`).Scan(&bearbeiterID); err != nil {
 		t.Fatalf("Benutzer: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Anon-Buch') RETURNING id`).Scan(&titelID); err != nil {

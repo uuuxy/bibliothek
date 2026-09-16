@@ -24,8 +24,7 @@ const ausleihe = (barcode, schuelerId) => ({
 	id: crypto.randomUUID(),
 	art: /** @type {const} */ ('ausleihe'),
 	barcode,
-	schueler_id: schuelerId,
-	lehrer_id: null,
+	leser_id: schuelerId,
 	gescannt_am: ++zaehler
 });
 /** @param {string} barcode */
@@ -33,8 +32,7 @@ const rueckgabe = (barcode) => ({
 	id: crypto.randomUUID(),
 	art: /** @type {const} */ ('rueckgabe'),
 	barcode,
-	schueler_id: null,
-	lehrer_id: null,
+	leser_id: null,
 	gescannt_am: ++zaehler
 });
 
@@ -61,7 +59,7 @@ describe('offlineQueue', () => {
 		expect(new Set(q.map((i) => i.id)).size).toBe(2);
 
 		const checkout = q.find((i) => i.art === 'ausleihe');
-		expect(checkout?.schueler_id).toBe('schueler-1');
+		expect(checkout?.leser_id).toBe('schueler-1');
 
 		await dequeueOfflineAction(q[0].id);
 		expect(await loadQueue()).toHaveLength(1);
@@ -91,7 +89,7 @@ describe('offlineSync.startSync', () => {
 		expect(apiClient.post).toHaveBeenCalledWith('/api/action/batch', [
 			expect.objectContaining({
 				query: 'B-100',
-				active_student_id: 'schueler-42',
+				active_leser_id: 'schueler-42',
 				idempotency_key: expect.any(String)
 			})
 		]);
@@ -176,21 +174,22 @@ describe('offlineSync: abgelehnte Vorgänge', () => {
 	});
 });
 
-// Eine Ausleihe an eine Lehrkraft schickt active_teacher_id (OFFEN.md 2.2, Commit 4). Der
-// Stapel-Endpunkt kennt das Feld seit jeher; der Payload-Bauer schickte es nie.
-describe('offlineSync: Handapparat trägt die Lehrkraft mit', () => {
+// Eine nachgesendete Ausleihe trägt ihre Person als active_leser_id mit (OFFEN.md 2.2,
+// Commit 4). Seit Migration 125 ist das EIN Feld — vorher schickte der Payload-Bauer für eine
+// Lehrkraft gar nichts, und der Server buchte aus der Ausleihe still eine Rückgabe.
+describe('offlineSync: die Ausleihe trägt ihren Leser mit', () => {
 	beforeEach(async () => {
 		await clearQueue();
 		vi.clearAllMocks();
 	});
 
-	it('schickt active_teacher_id für eine offline gespeicherte Handapparat-Ausleihe', async () => {
+	/** @param {string | null} leserID */
+	async function sendeAusleiheMit(leserID) {
 		await enqueueOfflineAction({
 			id: crypto.randomUUID(),
 			art: 'ausleihe',
 			barcode: 'B-10236',
-			schueler_id: null,
-			lehrer_id: 'lehrkraft-3',
+			leser_id: leserID,
 			gescannt_am: ++zaehler
 		});
 		vi.mocked(apiClient.post).mockResolvedValue(
@@ -201,14 +200,20 @@ describe('offlineSync: Handapparat trägt die Lehrkraft mit', () => {
 				})
 			})
 		);
-
 		await offlineSync.startSync();
+		return vi.mocked(apiClient.post).mock.calls[0][1][0];
+	}
 
-		const payload = vi.mocked(apiClient.post).mock.calls[0][1];
-		expect(payload[0].active_teacher_id, 'ohne Lehrkraft bucht der Server eine Rückgabe').toBe(
-			'lehrkraft-3'
-		);
-		expect(payload[0].active_student_id).toBeUndefined();
+	it('schickt active_leser_id — auch für einen Kollegen', async () => {
+		const req = await sendeAusleiheMit('leser-3');
+		expect(req.active_leser_id, 'ohne Person bucht der Server eine Rückgabe').toBe('leser-3');
+	});
+
+	// Gegenprobe: Ohne Person darf das Feld NICHT mitgehen — sonst würde eine Rückgabe zur
+	// Ausleihe an niemanden.
+	it('schickt ohne Person kein Feld', async () => {
+		const req = await sendeAusleiheMit(null);
+		expect(req.active_leser_id).toBeUndefined();
 	});
 });
 
@@ -293,7 +298,7 @@ describe('offlineSync: erledigt nur, was wie gescannt gebucht wurde', () => {
 
 // Der Offline-Scan mit geladenem Schüler ist eine AUSLEIHE, keine Rückgabe
 // (Rasterdurchgang 06.09.2026). Bis dahin legte die Omnibox jeden Offline-Scan als
-// „checkin" ab, und der Payload-Bauer schickte `active_student_id` nur bei „checkout" —
+// „checkin" ab, und der Payload-Bauer schickte `active_leser_id` nur bei „checkout" —
 // einem Typ, den niemand je einreihte. Der Server las das Schweigen als Rückgabe: Das
 // Buch war schon draußen, die Rückgabe scheiterte, der Eintrag flog aus der Warteschlange.
 describe('offlineSync: Ausleihe trägt den Schüler mit', () => {
@@ -302,7 +307,7 @@ describe('offlineSync: Ausleihe trägt den Schüler mit', () => {
 		vi.clearAllMocks();
 	});
 
-	it('schickt active_student_id für eine offline gespeicherte Ausleihe', async () => {
+	it('schickt active_leser_id für eine offline gespeicherte Ausleihe', async () => {
 		await enqueueOfflineAction(ausleihe('B-10234', 'schueler-7'));
 		await enqueueOfflineAction(rueckgabe('B-10235'));
 		vi.mocked(apiClient.post).mockResolvedValue(
@@ -322,9 +327,9 @@ describe('offlineSync: Ausleihe trägt den Schüler mit', () => {
 		const payload = vi.mocked(apiClient.post).mock.calls[0][1];
 		const mitSchueler = payload.find((/** @type {any} */ p) => p.query === 'B-10234');
 		const ohneSchueler = payload.find((/** @type {any} */ p) => p.query === 'B-10235');
-		expect(mitSchueler.active_student_id, 'ohne Schüler bucht der Server eine Rückgabe').toBe(
+		expect(mitSchueler.active_leser_id, 'ohne Schüler bucht der Server eine Rückgabe').toBe(
 			'schueler-7'
 		);
-		expect(ohneSchueler.active_student_id).toBeUndefined();
+		expect(ohneSchueler.active_leser_id).toBeUndefined();
 	});
 });

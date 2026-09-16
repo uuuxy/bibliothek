@@ -4,7 +4,7 @@ import 'fake-indexeddb/auto';
 // Ein Offline-Scan bei geladenem Schüler ist eine AUSLEIHE (Rasterdurchgang 06.09.2026).
 //
 // Bis dahin legte die Omnibox JEDEN Offline-Scan als „checkin" ab. Der Payload-Bauer des
-// Syncs schickt `active_student_id` nur bei „checkout" — einem Typ, den niemand je
+// Syncs schickt `active_leser_id` nur bei „checkout" — einem Typ, den niemand je
 // einreihte; der Zweig war unerreichbar. Der Server las das Schweigen als Rückgabe: Das
 // Buch war schon draußen, die Rückgabe scheiterte mit 400, und der Eintrag flog aus der
 // Warteschlange. Das Kind hatte das Buch, das System sagte „verfügbar".
@@ -65,7 +65,7 @@ describe('Omnibox offline', () => {
 
 		const q = await loadQueue();
 		expect(q).toHaveLength(1);
-		expect(q[0].schueler_id, 'die Person vom Scan').toBe('schueler-7');
+		expect(q[0].leser_id, 'die Person vom Scan').toBe('schueler-7');
 		expect(q[0].art, 'die Absicht vom Scan').toBe('ausleihe');
 		expect(q[0].gescannt_am).toBeGreaterThan(0);
 	});
@@ -76,7 +76,11 @@ describe('Omnibox offline', () => {
 	// der Server schon kannte; nach Ablauf des Caches (24 h) wäre neu gebucht worden.
 	it('reiht eine gelungene, aber unauswertbare Antwort NICHT ein', async () => {
 		vi.mocked(apiClient.post).mockResolvedValueOnce(
-			/** @type {any} */ ({ ok: true, json: async () => ({ type: 'teacher' }) }) // ohne teacher
+			// Eine Fremdrückgabe ohne Buch: Die Auswertung greift auf data.book.titel zu.
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({ type: 'rueckgabe', fremdrueckgabe: true })
+			})
 		);
 		omniboxStore.queryVal = 'B-10234';
 		await omniboxStore.submitAction(new Event('submit'));
@@ -95,23 +99,29 @@ describe('Omnibox offline', () => {
 		await omniboxStore.gibZurueck('B-10234');
 		const q = await loadQueue();
 		expect(q.map((e) => e.art)).toEqual(['rueckgabe', 'rueckgabe']);
-		expect(q.map((e) => e.schueler_id)).toEqual(['schueler-7', 'schueler-7']);
+		expect(q.map((e) => e.leser_id)).toEqual(['schueler-7', 'schueler-7']);
 	});
 
-	// Mit geladener Lehrkraft ist ein Offline-Buch eine Handapparat-Ausleihe (OFFEN.md 2.2,
+	// Mit geladenem Kollegen ist ein Offline-Buch eine Ausleihe an ihn (OFFEN.md 2.2,
 	// Commit 4; Entscheidung (b) vom 13.09.2026). Bis dahin entschied nur activeStudent, und
 	// das Buch ging mit geladener Lehrkraft als Rückgabe in die Warteschlange.
-	it('reiht mit geladener Lehrkraft eine Ausleihe an sie ein', async () => {
-		omniboxStore.activeStudent = null;
-		omniboxStore.activeTeacher = { id: 'lehrkraft-3', vorname: 'Karl', nachname: 'Kraft' };
+	//
+	// Seit Migration 125 steht ein Kollege in demselben Platz wie ein Schüler — der Eintrag
+	// trägt seine Leser-Kennung im selben Feld.
+	it('reiht mit geladenem Kollegen eine Ausleihe an ihn ein', async () => {
+		omniboxStore.activeStudent = {
+			id: 'leser-3',
+			vorname: 'Karl',
+			nachname: 'Kraft',
+			art: 'lehrkraft'
+		};
 		omniboxStore.queryVal = 'B-10234';
 		await omniboxStore.submitAction(new Event('submit'));
 		const q = await loadQueue();
 		expect(q).toHaveLength(1);
-		expect(q[0].art, 'Handapparat, keine Rückgabe').toBe('ausleihe');
-		expect(q[0].lehrer_id).toBe('lehrkraft-3');
-		expect(q[0].schueler_id).toBeNull();
-		omniboxStore.activeTeacher = null;
+		expect(q[0].art, 'eine Ausleihe, keine Rückgabe').toBe('ausleihe');
+		expect(q[0].leser_id).toBe('leser-3');
+		omniboxStore.activeStudent = null;
 	});
 
 	it('reiht mit geladenem Schüler eine Ausleihe ein, ohne ihn eine Rückgabe', async () => {
@@ -122,7 +132,7 @@ describe('Omnibox offline', () => {
 		let q = await loadQueue();
 		expect(q, 'der Scan wurde offline gespeichert').toHaveLength(1);
 		expect(q[0].art, 'mit Schüler an der Theke ist der Scan eine Ausleihe').toBe('ausleihe');
-		expect(q[0].schueler_id).toBe('schueler-7');
+		expect(q[0].leser_id).toBe('schueler-7');
 
 		// Gegenprobe: ohne Schüler bleibt es eine Rückgabe.
 		await leere();
@@ -132,6 +142,6 @@ describe('Omnibox offline', () => {
 		q = await loadQueue();
 		expect(q).toHaveLength(1);
 		expect(q[0].art).toBe('rueckgabe');
-		expect(q[0].schueler_id).toBeNull();
+		expect(q[0].leser_id).toBeNull();
 	});
 });

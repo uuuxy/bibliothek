@@ -97,24 +97,20 @@ var fkAktionenBestand = []string{
 	"SET NULL  benutzer.leser_id -> leser",
 	"SET NULL  audit_log.bearbeiter_id -> benutzer",
 	"SET NULL  audit_logs.admin_id -> benutzer",
-	"SET NULL  ausleihen.ausleiher_benutzer_id -> benutzer",
 	"SET NULL  ausleihen.bearbeiter_id -> benutzer",
 	"SET NULL  ausleihen.rueckgabe_bearbeiter_id -> benutzer",
 	"SET NULL  inventur_sessions.gestartet_von -> benutzer",
 	"SET NULL  klassensatz_reservierungen.angefordert_von -> benutzer",
 	"SET NULL  lehrer_anliegen.angefordert_von -> benutzer",
-	"SET NULL  schadensfaelle.benutzer_id -> benutzer",
 	"SET NULL  schadensfaelle.storniert_von -> benutzer",
 	// Migration 117 (Nachbuch-Meldungen), befragt am 15.09.2026: Fällt eine Person
 	// (Benutzer gelöscht, Schüler endgültig gelöscht) oder das Exemplar, bleibt die Meldung
 	// als Vorgang mit Barcode und Ergebnis stehen — personenlos bzw. exemplarlos. Die
 	// Liste zeigt dann „" statt eines Namens (coalesce in nachbuchMeldungSQL); die
 	// Art.-15-Auskunft findet die Zeile danach nicht mehr, was gewollt ist (Tilgung).
-	"SET NULL  nachbuch_meldungen.ausleiher_benutzer_id -> benutzer",
 	"SET NULL  nachbuch_meldungen.ausleiher_schueler_id -> leser",
 	"SET NULL  nachbuch_meldungen.exemplar_id -> buecher_exemplare",
 	"SET NULL  nachbuch_meldungen.quittiert_von -> benutzer",
-	"SET NULL  nachbuch_meldungen.vorbesitzer_benutzer_id -> benutzer",
 	"SET NULL  nachbuch_meldungen.vorbesitzer_schueler_id -> leser",
 	// Befragt am 06.09.2026: LEFT JOIN mit ausdrücklicher Begründung im Code
 	// (bestelldetail_repo.go), beide Geschwister-Pfade halten es genauso.
@@ -176,7 +172,7 @@ var checkBedingungenBestand = []string{
 	// Befragt am 10.09.2026: dieselbe Menge wie repository.MittelGueltig — der Code prüft
 	// sie an der Tür (400), die Datenbank hält die zweite Tür (api/bestellung_mittel_pg_test.go).
 	"bestellungen_verlauf_mittel_check", "check_damage_item",
-	"check_damage_responsible", "check_loan_borrower", "check_loan_item",
+	"check_loan_item",
 	"check_positive_amount", "check_return_date", "chk_anliegen_art",
 	"chk_aussonderung_grund", "chk_cover_status", "chk_einkaufspreis_nonneg",
 	"chk_exemplar_bestellstatus",
@@ -229,10 +225,6 @@ var checkBedingungenBestand = []string{
 	// Referenznummer „… 0000" gibt es nicht. Alle vier prüft der Code an der Tür (400),
 	// die Datenbank ist die zweite.
 	"chk_bescheid_betrag", "chk_bescheid_laufende_nr", "chk_bescheid_mittel",
-	// Migration 119, befragt am 15.09.2026: Die Personenart ist leer, „lehrkraft" oder „liv".
-	// Der Code kennt dieselben Werte (api/user_admin_mutations.go, personenarten) und weist
-	// andere mit 400 ab, bevor die Datenbank sie sieht.
-	"chk_benutzer_personenart",
 	"chk_bescheid_status", "chk_nummern_letzte_nr", "chk_nummern_mittel",
 	"chk_schaden_art",
 	"chk_verlauf_anzahl_nonneg", "chk_verlauf_gesamtbetrag_nonneg", "chk_vormerkung_status",
@@ -244,15 +236,18 @@ var checkBedingungenBestand = []string{
 // „05F1" statt „5f1"). Ein NEUER Trigger ist immer eine Frage.
 var triggerBestand = []string{
 	"trg_benutzer_aktualisiert_am @ benutzer",
-	// Migration 118, befragt am 15.09.2026: Beide schreiben nichts um, sie lehnen nur ab — eine
-	// Ausweisnummer, die schon eine Person der anderen Tabelle trägt (unique_violation
-	// uniq_ausweis_ueber_personen). Die Schreibwege prüfen vorher selbst und übersetzen den Fall
-	// in eine Auskunft (api/ausweis_ueber_personen_pg_test.go).
-	"trg_benutzer_ausweis_eindeutig @ benutzer",
-	// Migration 120, befragt am 15.09.2026: schreibt personenart = 'lehrkraft', wenn ein
-	// Kollegiumskonto ohne geschrieben wird. Das ist der Zweck — die Personenart entscheidet, wer
-	// als Lehrkraft ausleiht (SQLAktiveLehrkraft); kein Lesepfad rechnet mit dem leeren Wert.
-	"trg_benutzer_kollegium_personenart @ benutzer",
+	// Migration 125, befragt am 16.09.2026: schreibt beim Anlegen eines Kontos dessen
+	// Leserzeile und trägt deren Kennung in NEW.leser_id ein. Das ist der Zweck — ein Konto
+	// ohne Leserzeile fände die Theke nicht, und fünf Einfüge-Pfade einzeln daran zu
+	// erinnern hieße, dass der sechste es vergisst. Wer die Folge merkt: jeder Aufrufer,
+	// der `RETURNING leser_id` liest (repository.CreateUser, internal/littera).
+	//
+	// Die Trigger trg_benutzer_ausweis_eindeutig (Migration 118),
+	// trg_benutzer_kollegium_personenart (120) und trg_schueler_ausweis_eindeutig (118)
+	// sind mit derselben Migration gefallen: Ausweisnummern stehen nur noch in leser, wo
+	// uniq_schueler_barcode_active sie ohne Trigger eindeutig hält, und eine Personenart
+	// gibt es am Konto nicht mehr.
+	"trg_benutzer_hat_leserzeile @ benutzer",
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",
@@ -273,7 +268,6 @@ var triggerBestand = []string{
 	"trg_mail_vorlagen_updated_at @ mail_vorlagen",
 	"trg_schadensfaelle_aktualisiert_am @ schadensfaelle",
 	"trg_schueler_aktualisiert_am @ leser",
-	"trg_schueler_ausweis_eindeutig @ leser",
 	"trg_schueler_fotos_aktualisiert_am @ schueler_fotos",
 	"trg_schueler_klasse_vokabular @ leser",
 	"trg_systematik_kategorien_aktualisiert_am @ systematik_kategorien",

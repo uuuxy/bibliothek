@@ -61,6 +61,10 @@ func (repo *MahnwesenRepository) QueryUeberfaelligeNachKlasse(ctx context.Contex
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t    ON e.titel_id = t.id
+		-- Die SICHT schueler und nicht die Tabelle leser: Gemahnt werden Schüler, nicht
+		-- das Kollegium (Entscheidung zum Lehrer-Anliegen). Der INNER JOIN lässt die
+		-- Ausleihen von Kollegen aus dem Mahnlauf fallen — vor Migration 125 taten das
+		-- die zwei getrennten Spalten.
 		JOIN schueler s         ON a.schueler_id = s.id
 		WHERE a.rueckgabe_am IS NULL
 		  AND a.rueckgabe_frist < CURRENT_TIMESTAMP

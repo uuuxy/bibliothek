@@ -147,8 +147,8 @@ func TestKlassensatzReservierung_Bestandsdeckelung(t *testing.T) {
 	}
 	var uid string
 	if err := pool.QueryRow(ctx,
-		`INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		 VALUES ('RES-B', 'Res', 'Kraft', 'res@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&uid); err != nil {
+		`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		 VALUES ('Res', 'Kraft', 'res@example.org', 'mitarbeiter', true) RETURNING id`).Scan(&uid); err != nil {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 

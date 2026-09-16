@@ -3,19 +3,13 @@
  * Server. Eigene Datei, weil UserManagement.svelte an der Größen-Ratsche steht und die Abbildung
  * ohne Browser testbar sein soll.
  *
- * Die Personenart sagt, wer jemand im Kollegium ist (Migration 119), die Rolle, was er in der
- * Software darf. Die Nutzlast schickt die Personenart IMMER mit: Fehlt das Feld, lässt der Server
- * den alten Wert stehen — ein geleertes Feld soll aber leeren.
+ * Kein Feld „Personenart" mehr (Migration 125): Wer jemand ist, steht an seiner Leserzeile;
+ * das Konto sagt nur noch, was er darf. Die Ausweisnummer bleibt hier — sie wird in die
+ * Leserzeile geschrieben, bis die Leserdatei sie übernimmt.
  *
  * Kein Passwortfeld: Anmeldungen laufen über den Schul-Mailserver (IMAP), es gibt keine lokale
  * Passwortspalte.
  */
-
-export const PERSONENARTEN = [
-	{ value: '', label: 'Keine Angabe' },
-	{ value: 'lehrkraft', label: 'Lehrkraft' },
-	{ value: 'liv', label: 'LiV' }
-];
 
 export function leeresBenutzerFormular() {
 	return {
@@ -25,7 +19,6 @@ export function leeresBenutzerFormular() {
 		nachname: '',
 		email: '',
 		rolle: 'mitarbeiter',
-		personenart: '',
 		aktiv: true
 	};
 }
@@ -39,7 +32,6 @@ export function benutzerFormularAus(user) {
 		nachname: user.nachname,
 		email: user.email,
 		rolle: user.rolle,
-		personenart: user.personenart || '',
 		aktiv: user.aktiv
 	};
 }
@@ -52,23 +44,6 @@ export function benutzerNutzlast(form) {
 		nachname: form.nachname,
 		email: form.email,
 		rolle: form.rolle,
-		personenart: form.personenart,
 		aktiv: form.aktiv
 	};
-}
-
-/**
- * Die Personenart entscheidet, wer als Lehrkraft ausleiht; ein Kollegiumskonto hat immer eine
- * (Migration 120). „Keine Angabe" gibt es dort nicht — die Datenbank machte daraus sonst still
- * „Lehrkraft".
- * @param {string} rolle
- */
-export function personenartOptionen(rolle) {
-	return rolle === 'kollegium' ? PERSONENARTEN.filter((p) => p.value !== '') : PERSONENARTEN;
-}
-
-/** @param {string | null | undefined} wert */
-export function personenartLabel(wert) {
-	if (!wert) return '';
-	return PERSONENARTEN.find((p) => p.value === wert)?.label ?? '';
 }

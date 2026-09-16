@@ -145,6 +145,13 @@ func (r *MonitorRepository) meistgelesen(ctx context.Context, tage, anzahl int, 
 		JOIN buecher_titel bt ON bt.id = e.titel_id
 		WHERE a.ausgeliehen_am >= NOW() - make_interval(days => $1::int)
 		  AND a.schueler_id IS NOT NULL
+		  -- Dauerleihen zählen nicht: Ein Klassensatz ist EIN Vorgang, keine 30 Leser.
+		  -- Bis Migration 125 fiel er von selbst heraus — er stand in einer anderen
+		  -- Spalte, und die Zählung sah nur schueler_id. Seit alle Leser in einer Tabelle
+		  -- stehen, muss die Regel dastehen, sonst führte das Klassenbuch der 7 den
+		  -- Flur-Monitor an. Ein Kollege, der sich einen Roman mitnimmt, zählt weiter mit:
+		  -- Er ist ein Leser wie jeder andere.
+		  AND NOT a.ist_handapparat
 		  AND `+cover+`
 		  AND `+OeffentlichSichtbar("bt")+`
 		GROUP BY bt.id, bt.titel, bt.autor, bt.cover_url, bt.isbn

@@ -19,13 +19,15 @@ type UserRepository interface {
 	// Mit excludeID kann die ID des aktuell bearbeiteten Benutzers von der Prüfung ausgeschlossen werden.
 	CheckEmailExists(ctx context.Context, email string, excludeID string) (bool, error)
 
-	// CheckBarcodeExists prüft, ob eine Barcode-ID (Mitarbeiter-/Lehrerausweis) bereits vergeben ist.
-	// Mit excludeID kann die ID des aktuell bearbeiteten Benutzers ausgeschlossen werden.
+	// CheckBarcodeExists prüft, ob eine Ausweisnummer bereits vergeben ist. Seit
+	// Migration 125 gibt es dafür nur noch einen Ort — die Lesertabelle.
+	// Mit excludeID kann die Leserzeile des aktuell bearbeiteten Kontos ausgeschlossen werden.
 	CheckBarcodeExists(ctx context.Context, barcode string, excludeID string) (bool, error)
 
-	// CreateUser legt einen neuen Systembenutzer in der Datenbank an und gibt dessen generierte ID (UUID) zurück.
-	// personenart nil oder "" legt das Konto ohne Personenart an.
-	CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string, personenart *string) (string, error)
+	// CreateUser legt ein neues Konto an und gibt dessen generierte ID (UUID) zurück.
+	// Die Leserzeile entsteht dabei von selbst (Trigger trg_benutzer_hat_leserzeile);
+	// barcode nil oder "" lässt sie ohne Ausweisnummer.
+	CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string) (string, error)
 
 	// UpdateUser aktualisiert die Daten eines bestehenden Systembenutzers.
 	UpdateUser(ctx context.Context, p UpdateUserParams) error
@@ -38,11 +40,6 @@ type UserRepository interface {
 	// HEUTE ein Admin ist — und die Bearbeitung damit Admin-Rechte des Aufrufers
 	// verlangt — steht nur in der Datenbank.
 	GetRolleByID(ctx context.Context, id string) (string, error)
-
-	// GetLehrerByBarcode sucht eine AKTIVE Lehrkraft anhand ihres Ausweis-Barcodes.
-	// Kein Treffer liefert (nil, nil) — wie GetCopyByBarcode und GetByBarcode, damit die
-	// Omnibox „nicht gefunden" von einem echten Datenbankfehler unterscheiden kann.
-	GetLehrerByBarcode(ctx context.Context, barcode string) (*User, error)
 }
 
 // postgresUserRepo implementiert das UserRepository für PostgreSQL.
@@ -55,40 +52,19 @@ func NewUserRepository(pool db.PgxPoolIface) UserRepository {
 	return &postgresUserRepo{pool: pool}
 }
 
-// SQLAktiveLehrkraft ist die EINE Regel, wer als Lehrkraft ausleiht: Theke (GetLehrerByBarcode),
-// Buch- und Geräteausleihe und das Nachbuchen (service.ladeAktiveLehrkraft).
-//
-// Die Personenart entscheidet, nicht die Rolle (Peter, 15.09.2026): Die Rolle sagt, was jemand in
-// der Software darf. Bis dahin galt nur die Rolle kollegium — eine Lehrkraft, die in der
-// Bibliothek mitarbeitet, fand die Theke über ihren Ausweis nicht. Ein Kollegiumskonto hat immer
-// eine Personenart (Migration 120), eine Mitarbeiterin ohne Personenart ist keine Lehrkraft.
-const SQLAktiveLehrkraft = "personenart IS NOT NULL AND aktiv = true"
-
-// GetLehrerByBarcode sucht eine aktive Lehrkraft über ihren Ausweis (SQLAktiveLehrkraft).
-func (r *postgresUserRepo) GetLehrerByBarcode(ctx context.Context, barcode string) (*User, error) {
-	var u User
-	err := r.pool.QueryRow(ctx, `
-		SELECT id, coalesce(barcode_id, ''), vorname, nachname, rolle
-		FROM benutzer
-		WHERE barcode_id = $1 AND `+SQLAktiveLehrkraft+`
-		LIMIT 1
-	`, barcode).Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Rolle)
-	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("konnte die Lehrkraft über ihren Barcode nicht lesen: %w", err)
-	}
-	return &u, nil
-}
+// Wer ausleihen darf, entscheidet seit Migration 125 nicht mehr das Konto, sondern die
+// Leserzeile: ein aktiver Leser. Die frühere Regel SQLAktiveLehrkraft („Personenart
+// gesetzt und aktiv") und die Suche GetLehrerByBarcode sind damit ersatzlos gefallen —
+// die Theke sucht einen LESER (StudentRepository.GetLeserByBarcode), nicht ein Konto.
 
 // GetUsers fragt alle registrierten Benutzer ab.
 func (r *postgresUserRepo) GetUsers(ctx context.Context) ([]User, error) {
 	query := `
-		SELECT id, coalesce(barcode_id, ''), vorname, nachname, email, rolle, aktiv, erstellt_am,
-		       zugang_beantragt_am, personenart
-		FROM benutzer
-		ORDER BY nachname, vorname
+		SELECT b.id, coalesce(l.barcode_id, ''), b.vorname, b.nachname, b.email, b.rolle, b.aktiv,
+		       b.erstellt_am, b.zugang_beantragt_am, coalesce(b.leser_id::text, '')
+		FROM benutzer b
+		LEFT JOIN leser l ON l.id = b.leser_id
+		ORDER BY b.nachname, b.vorname
 	`
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
@@ -100,7 +76,7 @@ func (r *postgresUserRepo) GetUsers(ctx context.Context) ([]User, error) {
 	for rows.Next() {
 		var u User
 		err := rows.Scan(&u.ID, &u.BarcodeID, &u.Vorname, &u.Nachname, &u.Email, &u.Rolle, &u.Aktiv, &u.ErstelltAm,
-			&u.ZugangBeantragtAm, &u.Personenart)
+			&u.ZugangBeantragtAm, &u.LeserID)
 		if err != nil {
 			return nil, err
 		}
@@ -128,28 +104,63 @@ func (r *postgresUserRepo) CheckEmailExists(ctx context.Context, email string, e
 	return exists, err
 }
 
-// CheckBarcodeExists prüft, ob eine Ausweisnummer schon vergeben ist — im Kollegium und unter den
-// aktiven Schülern. Die Nummer gehört genau einer Person (Migration 118): Die Theke sucht bei
-// jeder Nummer unter beiden. Gelöschte Schüler geben ihre Nummer frei.
+// CheckBarcodeExists prüft, ob eine Ausweisnummer schon vergeben ist.
+//
+// Seit Migration 125 steht jede Ausweisnummer in derselben Tabelle, und der partielle
+// Index uniq_schueler_barcode_active hält sie dort eindeutig. Die frühere Kreuzprüfung
+// über zwei Tabellen — und der Trigger, der sie erzwang — sind mit der Zweiteilung
+// gefallen. Gelöschte Leser geben ihre Nummer frei.
+//
+// excludeID ist wie bisher die KONTO-ID des gerade bearbeiteten Benutzers; ausgenommen
+// wird seine Leserzeile. Der Aufrufer muss die Leser-ID dafür nicht kennen.
 func (r *postgresUserRepo) CheckBarcodeExists(ctx context.Context, barcode string, excludeID string) (bool, error) {
 	var exists bool
 	err := r.pool.QueryRow(ctx, `
-		SELECT EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1 AND id::text IS DISTINCT FROM NULLIF($2, ''))
-		    OR EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1 AND deleted_at IS NULL)`,
+		SELECT EXISTS(
+		    SELECT 1 FROM leser
+		     WHERE barcode_id = $1
+		       AND deleted_at IS NULL
+		       AND id IS DISTINCT FROM (SELECT leser_id FROM benutzer WHERE id = NULLIF($2, '')::uuid))`,
 		barcode, excludeID).Scan(&exists)
 	return exists, err
 }
 
-// CreateUser fügt einen neuen Benutzer hinzu.
-func (r *postgresUserRepo) CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string, personenart *string) (string, error) {
-	var userID string
-	query := `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv, personenart)
-		VALUES ($1, $2, $3, $4, $5::benutzer_rolle, true, NULLIF($6::text, ''))
-		RETURNING id
-	`
-	err := r.pool.QueryRow(ctx, query, barcode, vorname, nachname, email, rolle, personenart).Scan(&userID)
-	return userID, err
+// CreateUser legt ein Konto an — und mit ihm die Leserzeile, in der der Ausweis landet.
+//
+// Beides in EINER Transaktion: Ein Konto ohne Leserzeile fände die Theke nicht, eine
+// Leserzeile ohne Konto stünde namenlos in der Leserdatei. Die Zeile selbst legt der
+// Trigger an (trg_benutzer_hat_leserzeile); hier wird nur noch der Ausweis nachgetragen,
+// denn den kennt der Trigger nicht.
+func (r *postgresUserRepo) CreateUser(ctx context.Context, barcode *string, vorname, nachname, email, rolle string) (string, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return "", err
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	var userID, leserID string
+	err = tx.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ($1, $2, $3, $4::benutzer_rolle, true)
+		RETURNING id, leser_id::text
+	`, vorname, nachname, email, rolle).Scan(&userID, &leserID)
+	if err != nil {
+		return "", err
+	}
+
+	if barcode != nil && *barcode != "" {
+		tag, err := tx.Exec(ctx, `UPDATE leser SET barcode_id = $1 WHERE id = $2`, *barcode, leserID)
+		if err != nil {
+			return "", err
+		}
+		// 0 Zeilen hieße: Das Konto hat keine Leserzeile bekommen. Der Trigger garantiert
+		// sie, aber ein stiller Erfolg wäre hier ein Konto, dessen Ausweisnummer nirgends
+		// steht — und das an der Theke nicht gefunden wird.
+		if tag.RowsAffected() == 0 {
+			return "", fmt.Errorf("die Leserzeile des neuen Kontos fehlt (id %s)", leserID)
+		}
+	}
+	return userID, tx.Commit(ctx)
 }
 
 // UpdateUserParams bündelt die aktualisierbaren Felder eines Benutzers.
@@ -161,9 +172,6 @@ type UpdateUserParams struct {
 	Email    string
 	Rolle    string
 	Aktiv    bool
-	// Personenart: nil lässt den gespeicherten Wert stehen, "" leert ihn. Ein Aufrufer, der das
-	// Feld nicht kennt, löscht damit nichts.
-	Personenart *string
 }
 
 // ErrBenutzerNichtGefunden meldet eine unbekannte Benutzer-ID beim Ändern/Löschen — 0 Zeilen sind
@@ -171,35 +179,68 @@ type UpdateUserParams struct {
 // sonst einen USER_UPDATE-Audit-Eintrag über eine Änderung, die nie stattfand).
 var ErrBenutzerNichtGefunden = errors.New("benutzer nicht gefunden")
 
+// UpdateUser ändert ein Konto — und führt die Leserzeile mit.
+//
+// Name und Ausweis stehen für die Theke in der Leserzeile, für die Anmeldung am Konto.
+// Liefen sie auseinander, hieße dieselbe Person an der Theke anders als in der
+// Benutzerverwaltung, und der Ausweis, den jemand hier einträgt, bliebe wirkungslos.
+// Deshalb ein Schreibvorgang über beide Tabellen, in EINER Transaktion.
 func (r *postgresUserRepo) UpdateUser(ctx context.Context, p UpdateUserParams) error {
-	query := `
-		UPDATE benutzer
-		SET barcode_id = $1, vorname = $2, nachname = $3, email = $4, rolle = $5::benutzer_rolle, aktiv = $6,
-		    -- Freischalten erledigt den Antrag; ein späteres Deaktivieren soll nicht
-		    -- wieder wie ein Antrag aussehen (Migration 086).
-		    zugang_beantragt_am = CASE WHEN $6 THEN NULL ELSE zugang_beantragt_am END,
-		    personenart = CASE WHEN $8::boolean THEN NULLIF($9::text, '') ELSE personenart END,
-		    aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $7
-	`
-	personenart := ""
-	if p.Personenart != nil {
-		personenart = *p.Personenart
-	}
-	tag, err := r.pool.Exec(ctx, query, p.Barcode, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID,
-		p.Personenart != nil, personenart)
+	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
-	if tag.RowsAffected() == 0 {
+	defer db.SafeRollback(ctx, tx)
+
+	var leserID *string
+	err = tx.QueryRow(ctx, `
+		UPDATE benutzer
+		SET vorname = $1, nachname = $2, email = $3, rolle = $4::benutzer_rolle, aktiv = $5,
+		    -- Freischalten erledigt den Antrag; ein späteres Deaktivieren soll nicht
+		    -- wieder wie ein Antrag aussehen (Migration 086).
+		    zugang_beantragt_am = CASE WHEN $5 THEN NULL ELSE zugang_beantragt_am END,
+		    aktualisiert_am = CURRENT_TIMESTAMP
+		WHERE id = $6
+		RETURNING leser_id::text
+	`, p.Vorname, p.Nachname, p.Email, p.Rolle, p.Aktiv, p.ID).Scan(&leserID)
+	if errors.Is(err, pgx.ErrNoRows) {
 		return ErrBenutzerNichtGefunden
 	}
-	return nil
+	if err != nil {
+		return err
+	}
+
+	if leserID != nil {
+		tag, err := tx.Exec(ctx, `
+			UPDATE leser SET vorname = $1, nachname = $2, barcode_id = NULLIF($3::text, '')
+			WHERE id = $4
+		`, p.Vorname, p.Nachname, barcodeText(p.Barcode), *leserID)
+		if err != nil {
+			return err
+		}
+		// Ein stiller Erfolg hieße: Der Name wurde am Konto geändert, an der Leserzeile
+		// nicht — dieselbe Person hieße an der Theke anders als in der Verwaltung.
+		if tag.RowsAffected() == 0 {
+			return fmt.Errorf("die Leserzeile %s zu Konto %s fehlt", *leserID, p.ID)
+		}
+	}
+	return tx.Commit(ctx)
+}
+
+// barcodeText macht aus dem optionalen Ausweis einen Text: nil und "" heißen beide
+// „kein Ausweis" und werden in der Leserzeile zu NULL. Ein leerer String wäre dort eine
+// vergebene Nummer und würde die Eindeutigkeit gegen den nächsten Leser ohne Ausweis
+// verletzen.
+func barcodeText(b *string) string {
+	if b == nil {
+		return ""
+	}
+	return *b
 }
 
 // GetRolleByID liest die gespeicherte Rolle eines Benutzers.
 //
-// rolle::text wie in GetLehrerByBarcode — die Spalte ist das ENUM benutzer_rolle.
+// rolle::text, denn die Spalte ist das ENUM benutzer_rolle.
 func (r *postgresUserRepo) GetRolleByID(ctx context.Context, id string) (string, error) {
 	var rolle string
 	err := r.pool.QueryRow(ctx, `SELECT UPPER(rolle::text) FROM benutzer WHERE id = $1`, id).Scan(&rolle)

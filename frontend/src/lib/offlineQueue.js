@@ -30,16 +30,21 @@ async function getDB() {
  * Ein Eintrag der Warteschlange (Format 2, seit dem 15.09.2026): der Schnappschuss vom Scan.
  *
  * `id` ist der Idempotenz-Schlüssel, den der Server kennt (api/action.go); `art` die Absicht
- * beim Scan; `schueler_id` ODER `lehrer_id` die Person, die in diesem Moment geladen war;
- * `gescannt_am` der Scan-Zeitpunkt (ms). Format 1 (`{action_type, barcode_id, schueler_id,
- * timestamp}`, bis 15.09.2026, auch in alten Sicherungsdateien) wird beim Lesen übersetzt.
+ * beim Scan; `leser_id` die Person, die in diesem Moment geladen war; `gescannt_am` der
+ * Scan-Zeitpunkt (ms). Format 1 (`{action_type, barcode_id, schueler_id, timestamp}`, bis
+ * 15.09.2026, auch in alten Sicherungsdateien) wird beim Lesen übersetzt.
+ *
+ * Seit Migration 125 gibt es EIN Personenfeld. Das alte `schueler_id` trug schon dieselbe
+ * Kennung wie `leser_id` und wird übersetzt; ein altes `lehrer_id` dagegen zeigte auf ein
+ * KONTO und nicht auf einen Leser — es wird verworfen, statt die Buchung einer falschen
+ * Person zuzuschreiben. Der Eintrag bleibt als Rückgabe bzw. als „Ausweis unbekannt"
+ * stehen und meldet sich, statt still danebenzugreifen.
  *
  * @typedef {{
  *   id: string,
  *   art: 'ausleihe' | 'rueckgabe',
  *   barcode: string,
- *   schueler_id: string | null,
- *   lehrer_id: string | null,
+ *   leser_id: string | null,
  *   gescannt_am: number
  * }} OfflineEintrag
  */
@@ -65,8 +70,7 @@ export function normalisiereEintrag(roh) {
 		id: roh.id || crypto.randomUUID(),
 		art,
 		barcode: String(barcode),
-		schueler_id: roh.schueler_id ?? null,
-		lehrer_id: roh.lehrer_id ?? null,
+		leser_id: roh.leser_id ?? roh.schueler_id ?? null,
 		gescannt_am: Number(roh.gescannt_am ?? roh.timestamp ?? Date.now())
 	};
 }

@@ -27,10 +27,10 @@ type AusleihBericht struct {
 
 const sqlAusleiheEinfuegen = `
 	INSERT INTO ausleihen
-		(exemplar_id, schueler_id, ausleiher_benutzer_id,
+		(exemplar_id, schueler_id,
 		 ausgeliehen_am, rueckgabe_frist, rueckgabe_am,
 		 ist_handapparat, mahnstufe, erfasst_am)
-	VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$4)`
+	VALUES ($1,$2,$3,$4,$5,$6,$7,$3)`
 
 // SchreibeAusleihen überträgt die Ausleihen.
 //
@@ -215,18 +215,15 @@ func (l *ausleihlauf) eineAusleihe(ctx context.Context, tx pgx.Tx, a buchbar) er
 func (l *ausleihlauf) schreibeAusleihe(ctx context.Context, tx pgx.Tx, a buchbar) error {
 	person := l.entleiher[a.LeserID]
 
-	// ist_handapparat kennzeichnet die Ausleihe an eine Lehrkraft — dieselbe Bedeutung,
-	// die die Anwendung dem Feld gibt.
-	istLehrkraft := person.BenutzerID != ""
-
+	// ist_handapparat kennzeichnet die Dauerleihe an jemanden, der kein Schüler ist —
+	// dieselbe Bedeutung, die die Anwendung dem Feld gibt.
 	_, err := tx.Exec(ctx, sqlAusleiheEinfuegen,
 		l.exemplare[a.ExemplarID],
-		uebernahme.Nullbar(person.SchuelerID),
-		uebernahme.Nullbar(person.BenutzerID),
+		uebernahme.Nullbar(person.LeserID),
 		a.AusgeliehenAm,
 		l.frist(a.Ausleihe),
 		a.RueckgabeAm,
-		istLehrkraft,
+		!person.IstSchueler,
 		a.Mahnungen,
 	)
 	if err != nil {

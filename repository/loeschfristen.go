@@ -166,10 +166,17 @@ func klasse(spalte string, lernmittel bool) string {
 
 // PredikatLesehistorieAusleihen liefert die WHERE-Bedingung, mit der die Ausleihe vom
 // Schüler getrennt wird (Alias `a`). Ausleihen mit OFFENEM Schadensfall bleiben
-// zugeordnet — dort ist der Zweck (Forderung) noch nicht erreicht. Lehrer-Ausleihen
-// haben keine schueler_id und sind ohnehin nicht betroffen.
+// zugeordnet — dort ist der Zweck (Forderung) noch nicht erreicht.
+//
+// Die Befristung gilt SCHÜLERN. Bis Migration 125 galt das von selbst: Eine
+// Lehrerausleihe stand in einer anderen Spalte und hatte keine schueler_id. Seit alle
+// Leser in einer Tabelle stehen, muss die Einschränkung dastehen — sonst nähme der
+// Nachtlauf still auch dem Kollegium seine Ausleihhistorie. Ob er das SOLL, ist eine
+// Frage an den Betrieb und keine, die dieser Umbau nebenbei beantwortet
+// (docs/OFFEN.md 5.16); bis dahin bleibt das Verhalten, wie es war.
 func PredikatLesehistorieAusleihen(lernmittel bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `a.schueler_id IS NOT NULL
+		  AND EXISTS (SELECT 1 FROM leser l WHERE l.id = a.schueler_id AND l.art = 'schueler')
 		  AND a.rueckgabe_am IS NOT NULL
 		  AND a.rueckgabe_am < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
@@ -188,6 +195,8 @@ func PredikatLesehistorieAusleihen(lernmittel bool, tage, kulanz int) Loeschbedi
 func PredikatLesehistorieProtokoll(lernmittel bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'ausleihen'
 		  AND al.details ? 'schueler_id'
+		  -- Wie beim Prädikat der Ausleihen: nur Schüler (Migration 125).
+		  AND EXISTS (SELECT 1 FROM leser l WHERE l.id::text = al.details->>'schueler_id' AND l.art = 'schueler')
 		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
 		        SELECT 1 FROM ausleihen a

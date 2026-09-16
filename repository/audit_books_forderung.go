@@ -24,15 +24,13 @@ import (
 func protokolliereOffeneForderungen(ctx context.Context, tx pgx.Tx, titelID string) error {
 	rows, err := tx.Query(ctx, `
 		SELECT sf.id, e.id, e.barcode_id,
-		       coalesce(nullif(trim(coalesce(s.vorname,'') || ' ' || coalesce(s.nachname,'')), ''),
-		                nullif(trim(coalesce(b.vorname,'') || ' ' || coalesce(b.nachname,'')), ''),
+		       coalesce(nullif(trim(coalesce(l.vorname,'') || ' ' || coalesce(l.nachname,'')), ''),
 		                '(unbekannt)'),
 		       sf.schueler_id, to_char(sf.betrag, 'FM9999990.00'), sf.beschreibung,
 		       to_char(sf.erstellt_am, 'YYYY-MM-DD')
 		FROM schadensfaelle sf
 		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
-		LEFT JOIN schueler s     ON sf.schueler_id = s.id
-		LEFT JOIN benutzer b     ON sf.benutzer_id = b.id
+		LEFT JOIN leser l        ON sf.schueler_id = l.id
 		WHERE e.titel_id = $1 AND sf.ist_bezahlt = false AND sf.storniert_am IS NULL
 		ORDER BY e.barcode_id`, titelID)
 	if err != nil {

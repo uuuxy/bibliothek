@@ -84,9 +84,9 @@ func rueckholenAufbau(t *testing.T, pool *pgxpool.Pool) (exemplarID, schadensfal
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 	var schuelerID, titelID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Rück', 'Holer', $2, 'mitarbeiter', true) RETURNING id`,
-		"MA-"+suffix, "rueckholen-"+suffix+"@schule.invalid").Scan(&bearbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Rück', 'Holer', $1, 'mitarbeiter', true) RETURNING id`,
+		"rueckholen-"+suffix+"@schule.invalid").Scan(&bearbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `

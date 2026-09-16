@@ -197,8 +197,8 @@ func adminFuerStorno(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()
 	var id string
 	if err := pool.QueryRow(context.Background(), `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('ADM-STORNO', 'Ada', 'Admin', 'storno@example.org', 'admin', true) RETURNING id`).Scan(&id); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Ada', 'Admin', 'storno@example.org', 'admin', true) RETURNING id`).Scan(&id); err != nil {
 		t.Fatalf("Bearbeiter: %v", err)
 	}
 	return id

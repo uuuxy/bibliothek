@@ -49,15 +49,24 @@ describe('Einbauorte der Schülerakte', () => {
 	// „Buch zurückgeben" an der Theke geht über gibZurueck, das die Absicht kennt — nicht
 	// über queryVal + submitAction, das offline aus dem geladenen Schüler eine Ausleihe
 	// machte (OFFEN.md 2.2, Commit 3, 15.09.2026).
+	//
+	// Die Akte hängt seit dem 16.09.2026 in OmniboxAktiverLeser.svelte: Dort entscheidet die
+	// Art des Lesers, ob die Theke die Akte oder die schmale Karte zeigt (Migration 125).
+	// Omnibox.svelte darf sie deshalb NICHT mehr selbst einbauen — sonst stünden zwei
+	// Einbauorte nebeneinander und nur einer ginge über gibZurueck.
 	it('die Theke gibt aus der Akte über gibZurueck zurück', () => {
-		const omnibox = dateien.find((p) => p.endsWith('/lib/Omnibox.svelte'));
-		expect(omnibox, 'Omnibox.svelte nicht gefunden').toBeTruthy();
-		const tags = einbauorte(
-			readFileSync(/** @type {string} */ (omnibox), 'utf8'),
-			'StudentProfile'
-		);
+		const panel = dateien.find((p) => p.endsWith('/components/OmniboxAktiverLeser.svelte'));
+		expect(panel, 'OmniboxAktiverLeser.svelte nicht gefunden').toBeTruthy();
+		const tags = einbauorte(readFileSync(/** @type {string} */ (panel), 'utf8'), 'StudentProfile');
 		expect(tags).toHaveLength(1);
 		expect(tags[0]).toMatch(/onReturnClick=\{[^}]*gibZurueck\(/);
+
+		const omnibox = dateien.find((p) => p.endsWith('/lib/Omnibox.svelte'));
+		expect(omnibox, 'Omnibox.svelte nicht gefunden').toBeTruthy();
+		expect(
+			einbauorte(readFileSync(/** @type {string} */ (omnibox), 'utf8'), 'StudentProfile'),
+			'die Akte gehört an genau EINEN Ort der Theke'
+		).toHaveLength(0);
 	});
 
 	for (const [komponente, prop] of PFLICHT) {

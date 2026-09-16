@@ -9,9 +9,11 @@ import (
 
 // ActionRequest holds the parameters for the Omnibox dispatcher.
 type ActionRequest struct {
-	Query              string  `json:"query" validate:"required"`
-	ActiveStudentID    *string `json:"active_student_id,omitempty" validate:"omitempty,uuid_oder_leer"`
-	ActiveTeacherID    *string `json:"active_teacher_id,omitempty" validate:"omitempty,uuid_oder_leer"`
+	Query string `json:"query" validate:"required"`
+	// ActiveLeserID ist die Person, die gerade an der Theke steht. Bis Migration 125
+	// gab es active_student_id UND active_teacher_id; welche gefüllt war, entschied,
+	// in welche Spalte die Ausleihe ging.
+	ActiveLeserID      *string `json:"active_leser_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	ConfirmedChecklist bool    `json:"confirmed_checklist,omitempty"`
 	OverrideBlock      bool    `json:"override_block,omitempty"`
 	IdempotencyKey     string  `json:"idempotency_key,omitempty"`
@@ -36,17 +38,15 @@ type ActionBatchResponse struct {
 
 // ActionResponse is the polymorphic output payload returned by the Omnibox.
 type ActionResponse struct {
-	Type            string                 `json:"type"`                       // "student", "teacher", "ausleihe", "rueckgabe", "search_results", "info"
+	Type            string                 `json:"type"`                       // "student", "ausleihe", "rueckgabe", "search_results", "info"
 	Message         string                 `json:"message,omitempty"`          // Informational message for the frontend
-	Student         *SchuelerKiosk         `json:"student,omitempty"`          // The active student, or original borrower (Theken-Sicht, siehe SchuelerKiosk)
-	Teacher         *MitarbeiterKiosk      `json:"teacher,omitempty"`          // The active teacher borrower (Handapparat; Theken-Sicht, siehe MitarbeiterKiosk)
+	Student         *SchuelerKiosk         `json:"student,omitempty"`          // Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)
 	Book            *repository.BookCopy   `json:"book,omitempty"`             // Book copy details if applicable
 	Geraet          *repository.Geraet     `json:"geraet,omitempty"`           // Hardware details if applicable
 	DueDate         *time.Time             `json:"due_date,omitempty"`         // Return deadline for check-outs
 	LoanID          *string                `json:"loan_id,omitempty"`          // Loan UUID (for Undo support on returns)
-	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another student/teacher
-	Vorbesitzer     *SchuelerKiosk         `json:"vorbesitzer,omitempty"`      // Original student borrower if foreign return (Theken-Sicht)
-	VorbesitzerUser *MitarbeiterKiosk      `json:"vorbesitzer_user,omitempty"` // Original teacher borrower if foreign return (Theken-Sicht)
+	Fremdrueckgabe  bool                   `json:"fremdrueckgabe,omitempty"`   // Flag for returns from another reader
+	Vorbesitzer     *SchuelerKiosk         `json:"vorbesitzer,omitempty"`      // Original borrower if foreign return (Theken-Sicht)
 	SearchResults   []repository.BookTitle `json:"search_results,omitempty"`   // Full-text search list
 	HasVormerkung   bool                   `json:"has_vormerkung,omitempty"`   // True if returned book has a pending reservation
 	VormerkungTitel string                 `json:"vormerkung_titel,omitempty"` // Title name of the reserved book
@@ -92,14 +92,9 @@ func (s *Server) broadcastActionEvent(resp ActionResponse) {
 	if resp.Student != nil {
 		studentID = resp.Student.ID
 	}
-	var teacherID string
-	if resp.Teacher != nil {
-		teacherID = resp.Teacher.ID
-	}
 	event := ActionEvent{
 		Event:     resp.Type,
 		StudentID: studentID,
-		TeacherID: teacherID,
 		CopyID:    resp.Book.ID,
 		BarcodeID: resp.Book.BarcodeID,
 		Titel:     resp.Book.Titel,

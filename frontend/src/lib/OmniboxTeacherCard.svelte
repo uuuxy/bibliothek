@@ -1,6 +1,9 @@
 <script>
 	import { GraduationCap, X } from '@lucide/svelte';
 	let { teacher, onDeselect } = $props();
+
+	// Die Art steht am Leser (Migration 125): Lehrkraft oder LiV.
+	const artText = $derived(teacher.art === 'liv' ? 'LiV' : 'Lehrkraft');
 </script>
 
 <div
@@ -15,21 +18,20 @@
 		<div>
 			<h3 class="font-bold text-blue-800">{teacher.vorname} {teacher.nachname}</h3>
 			<p class="text-xs text-blue-600/80 font-medium">
-				Lehrkraft geladen · <span class="underline font-semibold"
-					>gescannte Bücher gehen auf sie, Frist ein Jahr</span
-				>
+				{artText} geladen ·
+				<span class="underline font-semibold">gescannte Bücher gehen auf sie, Frist ein Jahr</span>
 			</p>
 		</div>
 	</div>
 	<div class="flex items-center space-x-3">
 		<span
 			class="text-xs px-2.5 py-1 rounded-full bg-blue-100/80 border border-blue-200 text-blue-700 font-semibold tracking-wide uppercase"
-			>Lehrkraft</span
+			>{artText}</span
 		>
 		<button
 			onclick={onDeselect}
 			class="p-1 text-blue-500 hover:text-blue-700 transition-colors cursor-pointer"
-			title="Lehrkraft abwählen (ESC)"><X class="h-5 w-5" aria-hidden="true" /></button
+			title="Abwählen (ESC)"><X class="h-5 w-5" aria-hidden="true" /></button
 		>
 	</div>
 </div>

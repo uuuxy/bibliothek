@@ -57,9 +57,9 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 
 	var mitarbeiterID, schuelerID, titelID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Idem', 'Potenz', $2, 'mitarbeiter', true) RETURNING id
-	`, "MA-"+suffix, "idempotenz-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Idem', 'Potenz', $1, 'mitarbeiter', true) RETURNING id
+	`, "idempotenz-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `
@@ -92,7 +92,7 @@ func TestIdempotenz_ZweiteAnfrageNachCommitVorSpeichern(t *testing.T) {
 	srv := &Server{DB: &db.Database{Pool: pool}, Broker: sse.NewBroker()}
 	schluessel := "3f2504e0-4f89-11d3-9a0c-0305e82c" + suffix[len(suffix)-4:]
 	anfrage := func() *http.Request {
-		body := fmt.Sprintf(`{"query":%q,"active_student_id":%q,"idempotency_key":%q}`, barcode, schuelerID, schluessel)
+		body := fmt.Sprintf(`{"query":%q,"active_leser_id":%q,"idempotency_key":%q}`, barcode, schuelerID, schluessel)
 		req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
 		return req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
 			&auth.Claims{Rolle: auth.Role("mitarbeiter"), UserID: mitarbeiterID}))

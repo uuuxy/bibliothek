@@ -48,7 +48,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	vorher := uebergangen()
 
 	// Die eigene Rückgabe geht durch — ohne Übergehen.
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &kind, nil, bearbeiter, false); err != nil {
+	if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &kind, bearbeiter, false); err != nil {
 		t.Fatalf("eigene Rückgabe eines gesperrten Kindes abgewiesen: %v", err)
 	}
 	var offen int
@@ -68,7 +68,7 @@ func TestTheke_EigeneRueckgabeTrotzSperre(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Exemplar neu laden: %v", err)
 	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &kind, nil, bearbeiter, false); !errors.Is(err, service.ErrBlocked) {
+	if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &kind, bearbeiter, false); !errors.Is(err, service.ErrBlocked) {
 		t.Errorf("neue Ausleihe an ein gesperrtes Kind: erwartet ErrBlocked, bekam %v", err)
 	}
 }
@@ -127,7 +127,7 @@ func TestTheke_FremdrueckgabeUnabhaengigVonSperreUndLimit(t *testing.T) {
 		}
 		vorher := uebergangen()
 
-		lr, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &inSitzung, nil, bearbeiter, false)
+		lr, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &inSitzung, bearbeiter, false)
 		if err != nil {
 			t.Fatalf("Fremdrückgabe von %s abgewiesen: %v", barcode, err)
 		}

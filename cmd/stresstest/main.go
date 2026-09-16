@@ -71,8 +71,8 @@ func generateAdminToken(secret string) string {
 }
 
 type ActionRequest struct {
-	Query           string  `json:"query"`
-	ActiveStudentID *string `json:"active_student_id,omitempty"`
+	Query         string  `json:"query"`
+	ActiveLeserID *string `json:"active_leser_id,omitempty"`
 }
 
 // stresstestRunner bündelt die geteilte Concurrency-State: die Start-Barriere (damit
@@ -238,8 +238,8 @@ func main() {
 	// Hardcoded test data from seed.sql
 	studentID := "00000000-0000-0000-0000-000000000003" // Max Mustermann
 	reqBody := ActionRequest{
-		Query:           "B-200",
-		ActiveStudentID: &studentID,
+		Query:         "B-200",
+		ActiveLeserID: &studentID,
 	}
 
 	jsonData, err := json.Marshal(reqBody)

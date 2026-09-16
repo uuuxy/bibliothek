@@ -53,8 +53,8 @@ func nbTuerAufbau(t *testing.T) *nbTuer {
 		}
 		return id
 	}
-	w.staff = eins("Mitarbeiter", `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Tür', 'Prüfer', $2, 'mitarbeiter', true) RETURNING id`, "MA-"+suffix, "nbtuer-"+suffix+"@schule.invalid")
+	w.staff = eins("Mitarbeiter", `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Tür', 'Prüfer', $1, 'mitarbeiter', true) RETURNING id`, "nbtuer-"+suffix+"@schule.invalid")
 	w.anna = eins("Anna", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Anna', 'Erste', '07B', 2031) RETURNING id`, "S-TA-"+suffix)
 	w.ben = eins("Ben", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Ben', 'Zweiter', '07B', 2031) RETURNING id`, "S-TB-"+suffix)
 	w.carla = eins("Carla", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, block_reason)
@@ -86,7 +86,7 @@ func (w *nbTuer) onlineScan(t *testing.T, schluessel, schueler string) (int, Act
 	t.Helper()
 	body := fmt.Sprintf(`{"query":%q,"idempotency_key":%q`, w.code, schluessel)
 	if schueler != "" {
-		body += fmt.Sprintf(`,"active_student_id":%q`, schueler)
+		body += fmt.Sprintf(`,"active_leser_id":%q`, schueler)
 	}
 	rec := httptest.NewRecorder()
 	w.srv.ActionHandler(w.online)(rec, w.sitzung(httptest.NewRequest(http.MethodPost, "/api/action", strings.NewReader(body+"}"))))
@@ -100,7 +100,7 @@ func (w *nbTuer) onlineScan(t *testing.T, schluessel, schueler string) (int, Act
 func (w *nbTuer) eintrag(schluessel, absicht string, schueler *string, gescannt time.Time) map[string]any {
 	e := map[string]any{"schluessel": schluessel, "absicht": absicht, "barcode": w.code, "gescannt_am": gescannt}
 	if schueler != nil {
-		e["schueler_id"] = *schueler
+		e["leser_id"] = *schueler
 	}
 	return e
 }

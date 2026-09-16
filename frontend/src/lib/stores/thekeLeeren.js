@@ -34,7 +34,6 @@ export function thekeLeeren() {
 		}
 	}
 	omniboxStore.activeStudent = null;
-	omniboxStore.activeTeacher = null;
 	omniboxStore.queryVal = '';
 	omniboxStore.isDropdownOpen = false;
 	omniboxStore.unifiedSearchResults = {

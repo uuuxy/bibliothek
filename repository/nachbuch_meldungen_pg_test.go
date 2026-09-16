@@ -22,9 +22,9 @@ func TestNachbuchMeldungen_Lebenslauf(t *testing.T) {
 
 	var bearbeiterID, schuelerID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Nach', 'Bucher', $2, 'mitarbeiter', true) RETURNING id`,
-		"MA-"+suffix, "nachbuch-"+suffix+"@schule.invalid").Scan(&bearbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Nach', 'Bucher', $1, 'mitarbeiter', true) RETURNING id`,
+		"nachbuch-"+suffix+"@schule.invalid").Scan(&bearbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `

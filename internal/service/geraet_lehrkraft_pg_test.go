@@ -1,11 +1,12 @@
 package service
 
-// Wer ein Gerät als Lehrkraft ausleiht. Die Buch-Ausleihe nimmt nur ein aktives Profil mit
-// Rolle kollegium (resolveTeacherBorrower), und nur solche Ausweise erkennt die Theke als
-// Lehrerausweis (GetLehrerByBarcode). Die Geräte-Ausleihe übernahm active_teacher_id bis
-// zum 13.09.2026 ungeprüft: Eine unbekannte Kennung endete als Fremdschlüssel-Verletzung
-// und damit als 500 „…da verknüpfte Daten existieren" (am Stack nachgestellt), und ein
-// Profil ohne Lehrer-Rolle oder ein deaktiviertes bekam das Gerät.
+// Wer ein Gerät bekommt: ein aktiver LESER — Schüler wie Kollegium (Migration 125).
+//
+// Bis zum 13.09.2026 übernahm die Geräte-Ausleihe die Kennung des Ausleihers ungeprüft:
+// Eine unbekannte endete als Fremdschlüssel-Verletzung und damit als 500 „…da verknüpfte
+// Daten existieren" (am Stack nachgestellt). Bis zum 16.09.2026 entschied danach die
+// Personenart des KONTOS, wer als Lehrkraft gilt — ein Admin ohne dieses Feld bekam kein
+// Gerät, obwohl er vor der Theke stand. Beides ist hier abgesichert.
 
 import (
 	"context"
@@ -18,28 +19,37 @@ import (
 	"bibliothek/repository"
 )
 
-func TestGeraetAusleiheNurAnAktiveLehrkraft(t *testing.T) {
+func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 	pool := pgtest.Pool(t)
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	legeBenutzerAn := func(kuerzel, rolle string, aktiv bool) string {
+	legeLeserAn := func(kuerzel, art string, gesperrt bool) string {
 		t.Helper()
 		var id string
 		if err := pool.QueryRow(ctx, `
-			INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-			VALUES ($1, 'Geraete', $2, $3, $4, $5) RETURNING id
-		`, "GL-"+kuerzel+"-"+suffix, kuerzel, "geraete-"+kuerzel+"-"+suffix+"@schule.invalid", rolle, aktiv).Scan(&id); err != nil {
-			t.Fatalf("Benutzer %s anlegen: %v", kuerzel, err)
+			INSERT INTO leser (vorname, nachname, art, ist_gesperrt, block_reason)
+			VALUES ('Geraete', $1, $2, $3, CASE WHEN $3 THEN 'Testsperre' END) RETURNING id
+		`, kuerzel, art, gesperrt).Scan(&id); err != nil {
+			t.Fatalf("Leser %s anlegen: %v", kuerzel, err)
 		}
 		return id
 	}
-	mitarbeiterID := legeBenutzerAn("MA", "mitarbeiter", true)
+
+	var mitarbeiterID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Geraete', 'Theke', $1, 'mitarbeiter', true) RETURNING id
+	`, "geraete-theke-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
+		t.Fatalf("Mitarbeiter anlegen: %v", err)
+	}
+
 	t.Cleanup(func() {
 		for _, sql := range []string{
 			`DELETE FROM ausleihen WHERE geraet_id IN (SELECT id FROM geraete WHERE barcode_id LIKE 'G-LK-%-' || $1)`,
 			`DELETE FROM geraete WHERE barcode_id LIKE 'G-LK-%-' || $1`,
-			`DELETE FROM benutzer WHERE barcode_id LIKE 'GL-%-' || $1`,
+			`DELETE FROM benutzer WHERE email LIKE '%-' || $1 || '@schule.invalid'`,
+			`DELETE FROM leser WHERE vorname = 'Geraete' AND $1 = $1`,
 		} {
 			if _, err := pool.Exec(ctx, sql, suffix); err != nil {
 				t.Errorf("Aufräumen (%s): %v", sql, err)
@@ -50,23 +60,15 @@ func TestGeraetAusleiheNurAnAktiveLehrkraft(t *testing.T) {
 	svc := NewDeviceService(pool, repository.NewStudentRepository(pool), repository.NewLoanRepository(pool),
 		repository.NewAuditRepository(pool))
 
-	// Seit dem 15.09.2026 entscheidet die Personenart, nicht die Rolle (Peter): Eine Lehrkraft,
-	// die in der Bibliothek mitarbeitet, leiht als Lehrkraft aus; eine Mitarbeiterin ohne
-	// Personenart weiter nicht.
-	mitarbeitendeLehrkraft := legeBenutzerAn("MLK", "mitarbeiter", true)
-	if _, err := pool.Exec(ctx, `UPDATE benutzer SET personenart = 'lehrkraft' WHERE id = $1`, mitarbeitendeLehrkraft); err != nil {
-		t.Fatalf("Personenart setzen: %v", err)
-	}
-
 	faelle := []struct {
 		name, kennung string
 		verliehen     bool
+		fehler        error
 	}{
-		{"aktive Lehrkraft bekommt das Gerät", legeBenutzerAn("LK", "kollegium", true), true},
-		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false},
-		{"deaktivierte Lehrkraft", legeBenutzerAn("ALT", "kollegium", false), false},
-		{"Mitarbeiterin ist keine Lehrkraft", mitarbeiterID, false},
-		{"Lehrkraft mit Rolle Mitarbeiter bekommt das Gerät", mitarbeitendeLehrkraft, true},
+		{"Lehrkraft bekommt das Gerät", legeLeserAn("LK", "lehrkraft", false), true, nil},
+		{"LiV bekommt das Gerät", legeLeserAn("LIV", "liv", false), true, nil},
+		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false, ErrNotFound},
+		{"gesperrter Leser bekommt nichts", legeLeserAn("GES", "lehrkraft", true), false, ErrBlocked},
 	}
 	for i, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -75,7 +77,7 @@ func TestGeraetAusleiheNurAnAktiveLehrkraft(t *testing.T) {
 				t.Fatalf("Gerät anlegen: %v", err)
 			}
 			kennung := f.kennung
-			res, err := svc.HandleDeviceAction(ctx, barcode, nil, &kennung, true, mitarbeiterID)
+			res, err := svc.HandleDeviceAction(ctx, barcode, &kennung, true, mitarbeiterID)
 
 			var offen int
 			if qerr := pool.QueryRow(ctx, `
@@ -91,8 +93,8 @@ func TestGeraetAusleiheNurAnAktiveLehrkraft(t *testing.T) {
 				}
 				return
 			}
-			if !errors.Is(err, ErrNotFound) {
-				t.Errorf("erwartet ErrNotFound (Bedienfehler statt 500), war %v", err)
+			if !errors.Is(err, f.fehler) {
+				t.Errorf("erwartet %v (Bedienfehler statt 500), war %v", f.fehler, err)
 			}
 			if offen != 0 {
 				t.Errorf("Gerät wurde trotzdem verliehen (%d offen)", offen)

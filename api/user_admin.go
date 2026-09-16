@@ -28,9 +28,7 @@ type UserResponse struct {
 	// ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);
 	// null = keiner. Die Oberfläche unterscheidet daran „wartet" von „deaktiviert".
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
-	// Personenart: "lehrkraft", "liv" oder null (Migration 119).
-	Personenart *string  `json:"personenart"`
-	Permissions []string `json:"permissions"`
+	Permissions       []string   `json:"permissions"`
 }
 
 // ListUsersHandler returns a list of all system users.
@@ -73,7 +71,6 @@ func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.Handl
 				ErstelltAm: u.ErstelltAm,
 
 				ZugangBeantragtAm: u.ZugangBeantragtAm,
-				Personenart:       u.Personenart,
 			}
 
 			// Die echten Rechte aus role_permissions, nicht mehr eine feste Liste.

@@ -15,7 +15,7 @@ import (
 // (FOR UPDATE, gegen parallele Ausleihen) und zählt dessen reguläre (Nicht-LMF-)
 // Ausleihen. Für Nicht-Schüler ist das Ergebnis 0.
 func (s *defaultLoanService) zaehleAktiveSchuelerAusleihen(ctx context.Context, tx pgx.Tx, chkCtx *checkoutContext) (int, error) {
-	if chkCtx.borrowerType != "student" {
+	if !chkCtx.istSchueler() {
 		return 0, nil
 	}
 	if _, err := tx.Exec(ctx, "SELECT id FROM schueler WHERE id = $1 FOR UPDATE", chkCtx.borrowerID); err != nil {
@@ -37,25 +37,20 @@ func (s *defaultLoanService) zaehleAktiveSchuelerAusleihen(ctx context.Context, 
 }
 
 // istEigeneRueckgabe erkennt, ob der aktive Ausleiher sein eigenes Buch scannt
-// (also eine reguläre Rückgabe statt einer Fremdrückgabe).
+// (also eine reguläre Rückgabe statt einer Fremdrückgabe). Eine Spalte, ein Vergleich:
+// Vorher waren es zwei, und ob der richtige griff, entschied der borrowerType.
 func istEigeneRueckgabe(chkCtx *checkoutContext, activeLoan *repository.Loan) bool {
 	if activeLoan == nil {
 		return false
 	}
-	if chkCtx.borrowerType == "student" && activeLoan.SchuelerID != nil && *activeLoan.SchuelerID == chkCtx.borrowerID {
-		return true
-	}
-	if chkCtx.borrowerType == "teacher" && activeLoan.AusleiherBenutzerID != nil && *activeLoan.AusleiherBenutzerID == chkCtx.borrowerID {
-		return true
-	}
-	return false
+	return activeLoan.SchuelerID != nil && *activeLoan.SchuelerID == chkCtx.borrowerID
 }
 
 // pruefeSchuelerAusleihlimit erzwingt das Ausleihlimit für Schüler. Ausgenommen sind
 // LMF-Bücher und jede Rückgabe — bei einer Rückgabe entsteht keine Ausleihe, die gegen
 // das Limit zählen könnte.
 func (s *defaultLoanService) pruefeSchuelerAusleihlimit(ctx context.Context, chkCtx *checkoutContext, copy *repository.BookCopy, activeLoansCount int, neueAusleihe bool) error {
-	if chkCtx.borrowerType != "student" {
+	if !chkCtx.istSchueler() {
 		return nil
 	}
 	if !neueAusleihe {
@@ -89,7 +84,7 @@ func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pg
 		  AND v.bereitgestellt_bis > CURRENT_TIMESTAMP
 	`, copyID).Scan(&reservedSchuelerID, &resVorname, &resNachname)
 	if err == nil {
-		if chkCtx.borrowerType != "student" || chkCtx.borrowerID != reservedSchuelerID {
+		if !chkCtx.istSchueler() || chkCtx.borrowerID != reservedSchuelerID {
 			return fmt.Errorf("%w: Achtung: dieses Exemplar ist noch für %s %s reserviert", ErrConflict, resVorname, resNachname)
 		}
 		return nil
@@ -100,14 +95,13 @@ func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pg
 	return nil
 }
 
-// HandleUnifiedCheckout wickelt die Ausleihe eines Buchexemplars an einen aktiven Schüler oder Lehrer ab.
+// HandleUnifiedCheckout wickelt die Ausleihe eines Buchexemplars an den aktiven LESER ab.
 // Wenn das Buch bereits ausgeliehen ist, entscheidet die Methode, ob es sich um eine reguläre Rückgabe handelt
 // (Ausleiher scannt sein eigenes Buch) oder um eine Fremdrückgabe mit anschließender Neuausleihe.
 func (s *defaultLoanService) HandleUnifiedCheckout(
 	ctx context.Context,
 	copy *repository.BookCopy,
-	activeStudentID *string,
-	activeTeacherID *string,
+	activeLeserID *string,
 	staffID string,
 	overrideBlock bool,
 ) (*LoanResult, error) {
@@ -120,7 +114,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 
 	// 1. Ausleiher und Frist auflösen (loan_checkout_validation.go). Die Sperrprüfung folgt
 	// erst nach dem Lesen der Ausleihe — sie hängt davon ab, ob das Buch diesem Ausleiher gehört.
-	chkCtx, err := s.resolveBorrowerAndDueTime(ctx, copy, activeStudentID, activeTeacherID)
+	chkCtx, err := s.resolveBorrowerAndDueTime(ctx, copy, activeLeserID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,8 +150,8 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	// konnte das Buch eines Mitschülers nicht abgeben, während dieselbe Rückgabe ohne offene
 	// Sitzung (HandleSimpleReturn) durchging. Die Ausleihe liegt hier unter FOR UPDATE, der
 	// Fall kann sich bis zum Commit nicht mehr ändern.
-	if chkCtx.student != nil && neueAusleihe {
-		if err := s.pruefeSchuelerAusleihbar(ctx, chkCtx.student, chkCtx.borrowerID, staffID, overrideBlock); err != nil {
+	if chkCtx.istSchueler() && neueAusleihe {
+		if err := s.pruefeSchuelerAusleihbar(ctx, chkCtx.leser, chkCtx.borrowerID, staffID, overrideBlock); err != nil {
 			return nil, err
 		}
 	}

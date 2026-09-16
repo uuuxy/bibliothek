@@ -45,15 +45,13 @@ type offeneAusleihe struct {
 func (repo *BookRepository) leseOffeneAusleihen(ctx context.Context, ids []string) ([]offeneAusleihe, error) {
 	rows, err := repo.db.Query(ctx, `
 		SELECT a.id, e.id, e.barcode_id, t.titel,
-		       coalesce(nullif(trim(coalesce(s.vorname,'') || ' ' || coalesce(s.nachname,'')), ''),
-		                nullif(trim(coalesce(b.vorname,'') || ' ' || coalesce(b.nachname,'')), ''),
+		       coalesce(nullif(trim(coalesce(l.vorname,'') || ' ' || coalesce(l.nachname,'')), ''),
 		                '(unbekannt)'),
 		       a.schueler_id, to_char(a.ausgeliehen_am, 'YYYY-MM-DD')
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t     ON e.titel_id = t.id
-		LEFT JOIN schueler s     ON a.schueler_id = s.id
-		LEFT JOIN benutzer b     ON a.ausleiher_benutzer_id = b.id
+		LEFT JOIN leser l        ON a.schueler_id = l.id
 		WHERE t.id = ANY($1::uuid[]) AND a.rueckgabe_am IS NULL
 		ORDER BY e.barcode_id`, ids)
 	if err != nil {
@@ -212,16 +210,14 @@ type offenerSchaden struct {
 func (repo *BookRepository) leseOffeneSchaeden(ctx context.Context, ids []string) ([]offenerSchaden, error) {
 	rows, err := repo.db.Query(ctx, `
 		SELECT sf.id, e.id, e.barcode_id, t.titel,
-		       coalesce(nullif(trim(coalesce(s.vorname,'') || ' ' || coalesce(s.nachname,'')), ''),
-		                nullif(trim(coalesce(b.vorname,'') || ' ' || coalesce(b.nachname,'')), ''),
+		       coalesce(nullif(trim(coalesce(l.vorname,'') || ' ' || coalesce(l.nachname,'')), ''),
 		                '(unbekannt)'),
 		       sf.schueler_id, to_char(sf.betrag, 'FM9999990.00'), sf.beschreibung,
 		       to_char(sf.erstellt_am, 'YYYY-MM-DD')
 		FROM schadensfaelle sf
 		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
 		JOIN buecher_titel t     ON e.titel_id = t.id
-		LEFT JOIN schueler s     ON sf.schueler_id = s.id
-		LEFT JOIN benutzer b     ON sf.benutzer_id = b.id
+		LEFT JOIN leser l        ON sf.schueler_id = l.id
 		WHERE t.id = ANY($1::uuid[]) AND sf.ist_bezahlt = false AND sf.storniert_am IS NULL
 		ORDER BY e.barcode_id`, ids)
 	if err != nil {

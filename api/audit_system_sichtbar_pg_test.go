@@ -39,9 +39,9 @@ func TestAuditLogZeigtSystemEintraege(t *testing.T) {
 	// Ein Eintrag MIT Bearbeiter ...
 	var bearbeiterID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Auda', 'Pruefer', $2, 'mitarbeiter', true) RETURNING id
-	`, "AUD-"+suffix, "audit-"+suffix+"@example.org").Scan(&bearbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Auda', 'Pruefer', $1, 'mitarbeiter', true) RETURNING id
+	`, "audit-"+suffix+"@example.org").Scan(&bearbeiterID); err != nil {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 	if _, err := pool.Exec(ctx, `

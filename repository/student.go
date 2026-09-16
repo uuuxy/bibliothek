@@ -64,6 +64,21 @@ type StudentRepository interface {
 	// Liefert nil zurück, wenn kein Schüler gefunden wurde.
 	GetByID(ctx context.Context, id string) (*Student, error)
 
+	// GetLeserByBarcode sucht einen LESER anhand seiner Ausweisnummer — Schüler UND
+	// Kollegium. Das ist die Abfrage der Theke: Dort steht ein Mensch mit einer Karte,
+	// und welcher Art er ist, entscheidet nichts über das Ausleihen (Migration 125).
+	// Liefert nil, wenn die Nummer zu niemandem gehört.
+	//
+	// GetByBarcode daneben liest die Sicht `schueler` und meint wirklich nur Schüler:
+	// Klassenlisten, Mahnläufe, LUSD. Wer die beiden verwechselt, hat entweder einen
+	// Kollegen in einer Klassenliste oder eine Lehrkraft, die an der Theke nicht
+	// existiert.
+	GetLeserByBarcode(ctx context.Context, barcode string) (*Student, error)
+
+	// GetLeserByID sucht einen LESER anhand seiner UUID — wie GetLeserByBarcode, aber
+	// für den bereits an der Theke stehenden Leser.
+	GetLeserByID(ctx context.Context, id string) (*Student, error)
+
 	// SearchStudentsFuzzy sucht tokenweise und diakritikfrei über Vorname, Nachname
 	// und Barcode-ID. Zweiter Rückgabewert ist die Gesamtzahl der Treffer vor dem
 	// Limit — ohne sie kann die Oberfläche eine abgeschnittene Liste nicht als solche

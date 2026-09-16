@@ -39,9 +39,9 @@ func baueTresenWelt(t *testing.T, pool *pgxpool.Pool) tresenTestWelt {
 	w := tresenTestWelt{barcode: "TRS-" + suffix}
 
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Theo', 'Theke', $2, 'admin', true) RETURNING id
-	`, "TRSB-"+suffix, "tresen-"+suffix+"@example.org").Scan(&w.adminID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Theo', 'Theke', $1, 'admin', true) RETURNING id
+	`, "tresen-"+suffix+"@example.org").Scan(&w.adminID); err != nil {
 		t.Fatalf("Bearbeiter anlegen: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `

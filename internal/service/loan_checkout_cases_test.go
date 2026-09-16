@@ -36,10 +36,9 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
-		borrowerType: "student",
-		borrowerID:   "student1",
-		student:      &repository.Student{ID: "student1", Vorname: "Max"},
-		dueTime:      time.Now().Add(14 * 24 * time.Hour),
+		borrowerID: "student1",
+		leser:      &repository.Student{ID: "student1", Vorname: "Max", Art: "schueler"},
+		dueTime:    time.Now().Add(14 * 24 * time.Hour),
 	}
 	staffID := "staff1"
 	resp := &LoanResult{}
@@ -48,9 +47,9 @@ func TestHandleNewLoan_Student_Success(t *testing.T) {
 	var nilTime *time.Time
 
 	mock.ExpectQuery("INSERT INTO ausleihen").
-		WithArgs(uuidCopy, "student1", chkCtx.dueTime, staffID, pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow("loan1", ptr(uuidCopy), ptr("student1"), nilStr, time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, false))
+		WithArgs(uuidCopy, "student1", chkCtx.dueTime, staffID, false, pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
+			AddRow("loan1", ptr(uuidCopy), ptr("student1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, false))
 	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
 		WithArgs(uuidCopy, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -103,10 +102,9 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
-		borrowerType: "teacher",
-		borrowerID:   "teacher1",
-		teacher:      &repository.User{ID: "teacher1", Vorname: "Anna"},
-		dueTime:      time.Now().Add(365 * 24 * time.Hour),
+		borrowerID: "teacher1",
+		leser:      &repository.Student{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
+		dueTime:    time.Now().Add(365 * 24 * time.Hour),
 	}
 	staffID := "staff1"
 	resp := &LoanResult{}
@@ -116,8 +114,8 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 
 	mock.ExpectQuery("INSERT INTO ausleihen").
 		WithArgs(uuidCopy, "teacher1", chkCtx.dueTime, staffID, true, pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow("loan1", ptr(uuidCopy), nilStr, ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
+			AddRow("loan1", ptr(uuidCopy), ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
 	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
 		WithArgs(uuidCopy, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -139,8 +137,8 @@ func TestHandleNewLoan_Teacher_Success(t *testing.T) {
 	if result.Type != "ausleihe" {
 		t.Errorf("expected type ausleihe, got %s", result.Type)
 	}
-	if result.Teacher == nil || result.Teacher.ID != "teacher1" {
-		t.Errorf("expected teacher in result")
+	if result.Student == nil || result.Student.ID != "teacher1" {
+		t.Errorf("die Lehrkraft muss als Leser in der Antwort stehen")
 	}
 }
 
@@ -165,10 +163,9 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
-		borrowerType: "student",
-		borrowerID:   "student1",
-		student:      &repository.Student{ID: "student1", Vorname: "Max"},
-		dueTime:      time.Now().Add(14 * 24 * time.Hour),
+		borrowerID: "student1",
+		leser:      &repository.Student{ID: "student1", Vorname: "Max", Art: "schueler"},
+		dueTime:    time.Now().Add(14 * 24 * time.Hour),
 	}
 	staffID := "staff1"
 	resp := &LoanResult{}
@@ -176,7 +173,7 @@ func TestHandleNewLoan_ErzeugeAusleiheError(t *testing.T) {
 	dbErr := errors.New("db error")
 
 	mock.ExpectQuery("INSERT INTO ausleihen").
-		WithArgs(uuidCopy, "student1", chkCtx.dueTime, staffID, pgxmock.AnyArg()).
+		WithArgs(uuidCopy, "student1", chkCtx.dueTime, staffID, false, pgxmock.AnyArg()).
 		WillReturnError(dbErr)
 
 	result, err := svc.handleNewLoan(context.Background(), tx, copy, chkCtx, staffID, resp)
@@ -214,10 +211,9 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 	uuidCopy := "123e4567-e89b-12d3-a456-426614174000"
 	copy := &repository.BookCopy{ID: uuidCopy, TitelID: "titel1"}
 	chkCtx := &checkoutContext{
-		borrowerType: "teacher",
-		borrowerID:   "teacher1",
-		teacher:      &repository.User{ID: "teacher1", Vorname: "Anna"},
-		dueTime:      time.Now().Add(365 * 24 * time.Hour),
+		borrowerID: "teacher1",
+		leser:      &repository.Student{ID: "teacher1", Vorname: "Anna", Art: "lehrkraft"},
+		dueTime:    time.Now().Add(365 * 24 * time.Hour),
 	}
 	staffID := "staff1"
 	resp := &LoanResult{}
@@ -227,8 +223,8 @@ func TestHandleNewLoan_CommitError(t *testing.T) {
 
 	mock.ExpectQuery("INSERT INTO ausleihen").
 		WithArgs(uuidCopy, "teacher1", chkCtx.dueTime, staffID, true, pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow("loan1", ptr(uuidCopy), nilStr, ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
+			AddRow("loan1", ptr(uuidCopy), ptr("teacher1"), time.Now(), chkCtx.dueTime, nilTime, ptr(staffID), nilStr, false, true))
 	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
 		WithArgs(uuidCopy, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))

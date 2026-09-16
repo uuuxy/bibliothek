@@ -60,10 +60,12 @@ func TestAusleiheTrifftDieRichtigeSpalte(t *testing.T) {
 		`SELECT count(*) FROM ausleihen WHERE schueler_id IS NOT NULL AND NOT ist_handapparat`); n != 1 {
 		t.Errorf("die Schülerausleihe muss an schueler_id hängen, gefunden: %d", n)
 	}
-	// ist_handapparat ist die Kennzeichnung, die die Anwendung für Lehrerausleihen benutzt.
-	if n := zaehle(t, pool,
-		`SELECT count(*) FROM ausleihen WHERE ausleiher_benutzer_id IS NOT NULL AND ist_handapparat`); n != 1 {
-		t.Errorf("die Lehrerausleihe muss an ausleiher_benutzer_id hängen und Handapparat sein, gefunden: %d", n)
+	// Seit Migration 125 hängen beide an derselben Spalte; die Lehrerausleihe erkennt man
+	// an der ART des Lesers und bleibt als Dauerleihe gekennzeichnet (ist_handapparat).
+	if n := zaehle(t, pool, `SELECT count(*) FROM ausleihen a
+		 JOIN leser l ON l.id = a.schueler_id
+		WHERE l.art = 'lehrkraft' AND a.ist_handapparat`); n != 1 {
+		t.Errorf("die Lehrerausleihe muss an der Leserzeile der Lehrkraft hängen und Dauerleihe sein, gefunden: %d", n)
 	}
 }
 

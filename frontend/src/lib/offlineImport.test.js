@@ -53,7 +53,7 @@ describe('Einspielen einer Offline-Sicherung', () => {
 					id: '11111111-2222-3333-4444-555555555555',
 					action_type: 'checkin',
 					barcode_id: 'B-4711',
-					schueler_id: null,
+					leser_id: null,
 					timestamp: 1
 				}
 			])
@@ -65,8 +65,7 @@ describe('Einspielen einer Offline-Sicherung', () => {
 			id: '11111111-2222-3333-4444-555555555555',
 			art: 'rueckgabe',
 			barcode: 'B-4711',
-			schueler_id: null,
-			lehrer_id: null,
+			leser_id: null,
 			gescannt_am: 1
 		});
 	});
@@ -77,8 +76,7 @@ describe('Einspielen einer Offline-Sicherung', () => {
 			id: 'f2-1',
 			art: 'ausleihe',
 			barcode: 'B-4712',
-			schueler_id: 'schueler-7',
-			lehrer_id: null,
+			leser_id: 'schueler-7',
 			gescannt_am: 1757900000000
 		};
 		await offlineSync.importQueueFromJSON(sicherungsdatei([eintrag]));

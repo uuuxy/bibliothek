@@ -37,10 +37,9 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 	// sie stattdessen aus der ohnehin gesperrten Ausleihe-Zeile; das Client-Feld ist
 	// nur noch Anzeige. FOR UPDATE bleibt dieselbe Sperre wie zuvor.
 	//
-	// *string, weil schueler_id nullable ist (eine Handapparat-Ausleihe hängt an
-	// ausleiher_benutzer_id, nicht am Schüler) — ein Scan in einen nackten string
-	// stürbe an "cannot scan NULL". Ist die Ausleihe schülerlos, wird schueler_id im
-	// Schadensfall NULL (die CHECK erlaubt „kein Verantwortlicher").
+	// *string, weil schueler_id nullable ist: Die DSGVO-Anonymisierung löst die Ausleihe
+	// von der Person. Ein Scan in einen nackten string stürbe an "cannot scan NULL". Ist
+	// die Ausleihe personenlos, bleibt schueler_id im Schadensfall NULL.
 	var loanSchuelerID *string
 	if err := tx.QueryRow(ctx,
 		`SELECT schueler_id FROM ausleihen WHERE id = $1 FOR UPDATE`, loanID,

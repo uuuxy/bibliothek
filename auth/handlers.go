@@ -315,11 +315,15 @@ func verifyIMAPCredentials(ctx context.Context, dbPool db.PgxPoolIface, email, p
 
 	// IMAP succeeded, check if the user is registered in our local DB
 	var u loginUser
+	// Die Ausweisnummer steht seit Migration 125 an der Leserzeile des Kontos, nicht am
+	// Konto selbst — LEFT JOIN, weil ein Konto ohne Leserzeile (Altbestand) sich weiter
+	// anmelden können muss.
 	query := `
-		SELECT id, coalesce(barcode_id, ''), rolle, vorname, nachname, aktiv, email,
-		       zugang_beantragt_am IS NOT NULL
-		FROM benutzer
-		WHERE LOWER(email) = LOWER($1)
+		SELECT b.id, coalesce(l.barcode_id, ''), b.rolle, b.vorname, b.nachname, b.aktiv, b.email,
+		       b.zugang_beantragt_am IS NOT NULL
+		FROM benutzer b
+		LEFT JOIN leser l ON l.id = b.leser_id
+		WHERE LOWER(b.email) = LOWER($1)
 		LIMIT 1
 	`
 	if err := dbPool.QueryRow(ctx, query, email).Scan(&u.id, &u.barcodeID, &u.roleStr, &u.vorname, &u.nachname, &u.aktiv, &u.email, &u.beantragt); err != nil {

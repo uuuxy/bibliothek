@@ -42,8 +42,8 @@ func nbAufbau(t *testing.T) *nbWelt {
 		}
 		return id
 	}
-	w.staff = eins("Mitarbeiter", `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Nach', 'Bucher', $2, 'mitarbeiter', true) RETURNING id`, "MA-"+suffix, "nb-"+suffix+"@schule.invalid")
+	w.staff = eins("Mitarbeiter", `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Nach', 'Bucher', $1, 'mitarbeiter', true) RETURNING id`, "nb-"+suffix+"@schule.invalid")
 	w.anna = eins("Anna", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Anna', 'Erste', '07B', 2031) RETURNING id`, "S-A-"+suffix)
 	w.ben = eins("Ben", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ($1, 'Ben', 'Zweiter', '07B', 2031) RETURNING id`, "S-B-"+suffix)
 	w.carla = eins("Carla", `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_gesperrt, block_reason)
@@ -61,7 +61,7 @@ func nbAufbau(t *testing.T) *nbWelt {
 }
 
 func (w *nbWelt) eintrag(absicht string, schueler *string, gescannt time.Time) NachbuchEintrag {
-	return NachbuchEintrag{Schluessel: uuid.NewString(), Absicht: absicht, Barcode: w.code, GescanntAm: gescannt, SchuelerID: schueler, StaffID: w.staff}
+	return NachbuchEintrag{Schluessel: uuid.NewString(), Absicht: absicht, Barcode: w.code, GescanntAm: gescannt, LeserID: schueler, StaffID: w.staff}
 }
 
 func (w *nbWelt) offeneAusleihen(t *testing.T) (n int, schueler string) {

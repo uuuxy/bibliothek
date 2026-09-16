@@ -64,8 +64,14 @@ func TestHandleForeignReturn_Student(t *testing.T) {
 	}
 }
 
-func TestHandleForeignReturn_Teacher(t *testing.T) {
-	svc, _, mockPool := newValidationService(t, nil)
+// Auch das Buch eines Kollegen muss bei der Fremdrückgabe seinen Vorbesitzer NENNEN. Das
+// ging vor Migration 125 über eine zweite Spalte und eine zweite Abfrage in die
+// Kontentabelle; jetzt ist es derselbe Weg wie beim Schüler — GetLeserByID, nicht die
+// Sicht `schueler`, sonst bliebe der Vorbesitzer namenlos.
+func TestHandleForeignReturn_Kollege(t *testing.T) {
+	svc, _, mockPool := newValidationService(t, &repository.Student{
+		ID: "t1", Vorname: "Hans", Nachname: "Lehrer", Art: "lehrkraft",
+	})
 	defer mockPool.Close()
 
 	mockLoan := &mockLoanRepo{}
@@ -74,8 +80,8 @@ func TestHandleForeignReturn_Teacher(t *testing.T) {
 	tx := beginTx(t, mockPool)
 
 	activeLoan := &repository.Loan{
-		ID:                  "loan2",
-		AusleiherBenutzerID: strPtr("t1"),
+		ID:         "loan2",
+		SchuelerID: strPtr("t1"),
 	}
 	copy := &repository.BookCopy{
 		ID:        "copy2",
@@ -84,11 +90,6 @@ func TestHandleForeignReturn_Teacher(t *testing.T) {
 	}
 
 	resp := &LoanResult{}
-
-	// resolve prevTeacher
-	mockPool.ExpectQuery("SELECT b.id, b.vorname, b.nachname, b.rolle::text FROM benutzer b WHERE b.id = \\$1 LIMIT 1").
-		WithArgs("t1").
-		WillReturnRows(pgxmock.NewRows([]string{"id", "vorname", "nachname", "rolle"}).AddRow("t1", "Hans", "Lehrer", "KOLLEGIUM"))
 
 	// mock processReturnVormerkungTx internals
 	mockPool.ExpectQuery("SELECT v.id, s.vorname, s.nachname, COALESCE").WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).WillReturnError(pgx.ErrNoRows)
@@ -103,8 +104,11 @@ func TestHandleForeignReturn_Teacher(t *testing.T) {
 	if res.Type != "rueckgabe" {
 		t.Errorf("expected resp.Type to be 'rueckgabe', got %s", res.Type)
 	}
-	if res.VorbesitzerUser == nil || res.VorbesitzerUser.ID != "t1" {
-		t.Errorf("expected res.VorbesitzerUser to be t1")
+	if res.Vorbesitzer == nil || res.Vorbesitzer.ID != "t1" {
+		t.Errorf("der Kollege muss als Vorbesitzer in der Antwort stehen, bekam: %+v", res.Vorbesitzer)
+	}
+	if res.Vorbesitzer.Art != "lehrkraft" {
+		t.Errorf("die Art des Vorbesitzers fehlt: %+v", res.Vorbesitzer)
 	}
 
 	if err := mockPool.ExpectationsWereMet(); err != nil {

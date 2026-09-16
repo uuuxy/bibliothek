@@ -46,8 +46,7 @@ describe('Warteschlange nicht erreichbar', () => {
 				id: 'k1',
 				art: 'rueckgabe',
 				barcode: 'B-1',
-				schueler_id: null,
-				lehrer_id: null,
+				leser_id: null,
 				gescannt_am: 1
 			})
 		).rejects.toThrow(/IndexedDB/);

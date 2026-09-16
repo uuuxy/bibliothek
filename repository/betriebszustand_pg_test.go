@@ -21,8 +21,8 @@ func TestAktiveAdminMails_NurAktiveAdmins(t *testing.T) {
 		{"MIT-1", "mitarbeiter@example.org", "mitarbeiter", true},
 	} {
 		if _, err := pool.Exec(ctx, `
-			INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-			VALUES ($1, 'T', 'T', $2, $3, $4)`, b.barcode, b.mail, b.rolle, b.aktiv); err != nil {
+			INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+			VALUES ('T', 'T', $1, $2, $3)`, b.mail, b.rolle, b.aktiv); err != nil {
 			t.Fatalf("Seed %s: %v", b.barcode, err)
 		}
 	}

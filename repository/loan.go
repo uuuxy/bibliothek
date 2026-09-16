@@ -35,11 +35,13 @@ type LoanRepository interface {
 	// Aufrufer müssen defer tx.Rollback(ctx) aufrufen und bei Erfolg tx.Commit(ctx) ausführen.
 	BeginTx(ctx context.Context) (pgx.Tx, error)
 
-	// CreateLoanTx legt einen neuen Ausleihdatensatz für einen Schüler innerhalb einer laufenden Transaktion an.
-	CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error)
-
-	// CreateUserLoanTx legt einen neuen Ausleihdatensatz für einen Systembenutzer innerhalb einer Transaktion an.
-	CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error)
+	// CreateLoanTx legt einen neuen Ausleihdatensatz für einen LESER innerhalb einer
+	// laufenden Transaktion an. istDauerleihe kennzeichnet die Ausleihe fürs Schuljahr
+	// (ist_handapparat) — sie zählt nicht in die Überfällig-Automatik.
+	//
+	// Bis Migration 125 gab es hier zwei Funktionen mit zwei SQL-Anweisungen, weil ein
+	// Schüler in einer anderen Spalte stand als eine Lehrkraft.
+	CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Loan, error)
 
 	// ReturnLoanTx markiert eine aktive Ausleihe als zurückgegeben innerhalb einer Transaktion.
 	ReturnLoanTx(ctx context.Context, tx pgx.Tx, loanID, bearbeiterID string, isFremdrueckgabe bool) error
@@ -59,7 +61,7 @@ func NewLoanRepository(db db.PgxPoolIface) LoanRepository {
 func scanLoan(row Scanner) (*Loan, error) {
 	var l Loan
 	err := row.Scan(
-		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusleiherBenutzerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
+		&l.ID, &l.ExemplarID, &l.SchuelerID, &l.AusgeliehenAm, &l.RueckgabeFrist, &l.RueckgabeAm, &l.BearbeiterID, &l.RueckgabeBearbeiterID, &l.IstFremdrueckgabe, &l.IstHandapparat,
 	)
 	if err != nil {
 		return nil, err
@@ -80,7 +82,7 @@ func (r *pgLoanRepository) BeginTx(ctx context.Context) (pgx.Tx, error) {
 // GetActiveLoanByCopyID ruft die aktive Ausleihe ohne Sperre (schreibgeschützt) ab.
 func (r *pgLoanRepository) GetActiveLoanByCopyID(ctx context.Context, copyID string) (*Loan, error) {
 	query := `
-		SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
+		SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 		FROM ausleihen
 		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL
 		LIMIT 1
@@ -100,7 +102,7 @@ func (r *pgLoanRepository) GetActiveLoanByCopyID(ctx context.Context, copyID str
 // dasselbe Exemplar innerhalb desselben Millisekundenfensters doppelt verarbeiten.
 func (r *pgLoanRepository) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.Tx, copyID string) (*Loan, error) {
 	query := `
-		SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
+		SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 		FROM ausleihen
 		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL
 		LIMIT 1
@@ -122,39 +124,22 @@ func (r *pgLoanRepository) GetActiveLoanByCopyIDTx(ctx context.Context, tx pgx.T
 // vom Theken-Rechner mit — höchstens Serverzeit, das prüft der Aufrufer. Zwei Formulierungen
 // derselben Buchung (eine mit, eine ohne Zeit) wären zwei Türen zum selben Zustand.
 
-const sqlAusleiheSchueler = `
-		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id, ausgeliehen_am, erfasst_am)
-		VALUES ($1, $2, $3, $4, COALESCE($5::timestamptz, CURRENT_TIMESTAMP), COALESCE($5::timestamptz, CURRENT_TIMESTAMP))
-		ON CONFLICT DO NOTHING
-		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
-	`
-
-const sqlAusleiheBenutzer = `
-		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, rueckgabe_frist, bearbeiter_id, ist_handapparat, ausgeliehen_am, erfasst_am)
+const sqlAusleihe = `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist, bearbeiter_id, ist_handapparat, ausgeliehen_am, erfasst_am)
 		VALUES ($1, $2, $3, $4, $5, COALESCE($6::timestamptz, CURRENT_TIMESTAMP), COALESCE($6::timestamptz, CURRENT_TIMESTAMP))
 		ON CONFLICT DO NOTHING
-		RETURNING id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
+		RETURNING id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
 
 // CreateLoanTx erzeugt einen neuen Ausleiheintrag innerhalb einer Transaktion — jetzt.
-func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time) (*Loan, error) {
-	return CreateLoanZumTx(ctx, tx, exemplarID, schuelerID, bearbeiterID, rueckgabeFrist, nil)
+func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Loan, error) {
+	return CreateLoanZumTx(ctx, tx, exemplarID, leserID, bearbeiterID, rueckgabeFrist, istDauerleihe, nil)
 }
 
-// CreateLoanZumTx erzeugt die Ausleihe eines Schülers zum gegebenen Zeitpunkt (nil = jetzt)
+// CreateLoanZumTx erzeugt die Ausleihe eines Lesers zum gegebenen Zeitpunkt (nil = jetzt)
 // und stempelt die Bewegung des Exemplars mit demselben Zeitpunkt.
-func CreateLoanZumTx(ctx context.Context, tx pgx.Tx, exemplarID, schuelerID, bearbeiterID string, rueckgabeFrist time.Time, zeitpunkt *time.Time) (*Loan, error) {
-	return schreibeAusleihe(ctx, tx, exemplarID, zeitpunkt, sqlAusleiheSchueler, exemplarID, schuelerID, rueckgabeFrist, bearbeiterID, zeitpunkt)
-}
-
-// CreateUserLoanTx erzeugt einen neuen Ausleiheintrag für einen Systembenutzer innerhalb einer Transaktion — jetzt.
-func (r *pgLoanRepository) CreateUserLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool) (*Loan, error) {
-	return CreateUserLoanZumTx(ctx, tx, exemplarID, ausleiherBenutzerID, bearbeiterID, rueckgabeFrist, istHandapparat, nil)
-}
-
-// CreateUserLoanZumTx erzeugt die Ausleihe einer Lehrkraft zum gegebenen Zeitpunkt (nil = jetzt).
-func CreateUserLoanZumTx(ctx context.Context, tx pgx.Tx, exemplarID, ausleiherBenutzerID, bearbeiterID string, rueckgabeFrist time.Time, istHandapparat bool, zeitpunkt *time.Time) (*Loan, error) {
-	return schreibeAusleihe(ctx, tx, exemplarID, zeitpunkt, sqlAusleiheBenutzer, exemplarID, ausleiherBenutzerID, rueckgabeFrist, bearbeiterID, istHandapparat, zeitpunkt)
+func CreateLoanZumTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool, zeitpunkt *time.Time) (*Loan, error) {
+	return schreibeAusleihe(ctx, tx, exemplarID, zeitpunkt, sqlAusleihe, exemplarID, leserID, rueckgabeFrist, bearbeiterID, istDauerleihe, zeitpunkt)
 }
 
 func schreibeAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, zeitpunkt *time.Time, query string, args ...any) (*Loan, error) {

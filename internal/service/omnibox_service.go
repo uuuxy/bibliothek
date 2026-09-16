@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -14,14 +13,16 @@ import (
 
 // OmniboxResult beschreibt die Antwortstruktur der Omnibox nach Verarbeitung einer Eingabe (Scan oder Suche).
 type OmniboxResult struct {
-	// Type definiert die Art der Antwort (z. B. "student", "teacher", "ausleihe", "rueckgabe", "search_results", "info").
+	// Type definiert die Art der Antwort (z. B. "student", "ausleihe", "rueckgabe", "search_results", "info").
+	//
+	// "teacher" gibt es seit Migration 125 nicht mehr: Ein gescannter Ausweis liefert
+	// immer einen LESER, und ob er Schüler oder Kollege ist, steht als Art an ihm.
 	Type string
 	// Message enthält eine optionale Benachrichtigung für das Frontend.
 	Message string
-	// Student enthält Schülerdaten, wenn ein Schülerausweis gescannt oder eine Aktion durchgeführt wurde.
+	// Student enthält den LESER, dessen Ausweis gescannt oder für den eine Aktion
+	// durchgeführt wurde.
 	Student *repository.Student
-	// Teacher enthält Lehrerdaten, wenn ein Lehrerausweis gescannt oder eine Aktion durchgeführt wurde.
-	Teacher *repository.User
 	// Book enthält die Daten des betroffenen Buchs (Ausleihe/Rückgabe).
 	Book *repository.BookCopy
 	// Geraet enthält die Daten des betroffenen Geräts (Hardware-Ausleihe/Rückgabe).
@@ -32,10 +33,8 @@ type OmniboxResult struct {
 	LoanID *string
 	// Fremdrueckgabe zeigt an, ob die Rückgabe durch eine andere Person erfolgt ist.
 	Fremdrueckgabe bool
-	// Vorbesitzer enthält den Schüler, der das Buch/Gerät zuvor ausgeliehen hatte (bei Fremdrückgabe).
+	// Vorbesitzer enthält den LESER, der das Buch/Gerät zuvor ausgeliehen hatte (bei Fremdrückgabe).
 	Vorbesitzer *repository.Student
-	// VorbesitzerUser enthält den Lehrer, der das Buch/Gerät zuvor ausgeliehen hatte (bei Fremdrückgabe).
-	VorbesitzerUser *repository.User
 	// SearchResults enthält Suchergebnisse bei einer allgemeinen Buchtitel-Suche.
 	SearchResults []repository.BookTitle
 	// HasVormerkung zeigt an, ob für das zurückgegebene Buch eine Reservierung aktiv wurde.
@@ -70,9 +69,11 @@ type AbholbereiteVormerkung struct {
 // OmniboxQuery bündelt die Eingabe und den Sitzungskontext eines Omnibox-Requests,
 // damit ProcessQuery & Co. nicht acht Einzelargumente durchreichen.
 type OmniboxQuery struct {
-	Query              string
-	ActiveStudentID    *string
-	ActiveTeacherID    *string
+	Query string
+	// ActiveLeserID ist die Person, die gerade an der Theke steht — ein Leser, gleich
+	// welcher Art. Bis Migration 125 standen hier zwei Felder, und jede Stelle, die sie
+	// las, musste sich für eines entscheiden.
+	ActiveLeserID      *string
 	ConfirmedChecklist bool
 	StaffID            string
 	StaffRole          string
@@ -131,7 +132,7 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 	case strings.HasPrefix(q.Query, "B-"):
 		return resp, s.handleBookAction(ctx, q, resp)
 	case strings.HasPrefix(q.Query, "G-"):
-		dr, err := s.deviceSvc.HandleDeviceAction(ctx, q.Query, q.ActiveStudentID, q.ActiveTeacherID, q.ConfirmedChecklist, q.StaffID)
+		dr, err := s.deviceSvc.HandleDeviceAction(ctx, q.Query, q.ActiveLeserID, q.ConfirmedChecklist, q.StaffID)
 		if err == nil {
 			s.mapDeviceResult(dr, resp)
 		}
@@ -184,23 +185,17 @@ func (s *defaultOmniboxService) resolveOhnePraefix(ctx context.Context, q Omnibo
 		}
 	}
 
-	student, studentErr := s.studentRepo.GetByBarcode(ctx, q.Query)
-	if studentErr != nil {
-		return fmt.Errorf("datenbankfehler bei Ausweis-Auflösung: %w", studentErr)
+	leser, leserErr := s.studentRepo.GetLeserByBarcode(ctx, q.Query)
+	if leserErr != nil {
+		return fmt.Errorf("datenbankfehler bei Ausweis-Auflösung: %w", leserErr)
 	}
-	if student != nil {
-		return s.handleStudentAction(ctx, q.Query, resp)
-	}
-
-	// handleTeacherAction meldet ErrNotFound, wenn kein Lehrerausweis passt — das ist
-	// hier kein Fehler, sondern der Übergang zur Volltextsuche.
-	teacherErr := s.handleTeacherAction(ctx, q.Query, resp)
-	if teacherErr == nil {
+	if leser != nil {
+		s.zeigeLeser(ctx, leser, resp)
 		return nil
 	}
-	if !errors.Is(teacherErr, ErrNotFound) {
-		return teacherErr
-	}
+
+	// Kein Buch, kein Ausweis: Was jemand getippt hat, ist eine Suche. Diese Stufe
+	// trägt die Titelsuche der Theke und darf nie verschwinden.
 	return s.handleSearchAction(ctx, q.Query, resp)
 }
 
@@ -212,16 +207,13 @@ func (s *defaultOmniboxService) mapDeviceResult(dr *DeviceResult, resp *OmniboxR
 	resp.Type = dr.Type
 	resp.Geraet = dr.Geraet
 	resp.Student = dr.Student
-	resp.Teacher = dr.Teacher
 	resp.DueDate = dr.DueDate
 	resp.LoanID = dr.LoanID
 	resp.Fremdrueckgabe = dr.Fremdrueckgabe
 	resp.Vorbesitzer = dr.Vorbesitzer
-	resp.VorbesitzerUser = dr.VorbesitzerUser
 }
 
-// handleAusweisAction lädt die Person zu einem Ausweis mit Vorsilbe „S-" oder „L-" — erst unter
-// den Schülern, dann unter den Lehrkräften.
+// handleAusweisAction lädt den Leser zu einem Ausweis mit Vorsilbe „S-" oder „L-".
 //
 // Bis zum 15.09.2026 entschied die Vorsilbe die Tabelle: „S-" nur Schüler, „L-" nur Lehrkräfte.
 // Littera kennt die Vorsilben nicht, auf dem Ausweis stehen sie nicht, und die Littera-Übernahme
@@ -230,39 +222,25 @@ func (s *defaultOmniboxService) mapDeviceResult(dr *DeviceResult, resp *OmniboxR
 // Die Vorsilbe sagt jetzt nur noch „Ausweis": Eine unbekannte Nummer bleibt ein lauter Fehler
 // und verschwindet nicht in der Volltextsuche.
 func (s *defaultOmniboxService) handleAusweisAction(ctx context.Context, query string, resp *OmniboxResult) error {
-	student, err := s.studentRepo.GetByBarcode(ctx, query)
+	leser, err := s.studentRepo.GetLeserByBarcode(ctx, query)
 	if err != nil {
 		return err
 	}
-	if student != nil {
-		s.zeigeSchueler(ctx, student, resp)
-		return nil
-	}
-	err = s.handleTeacherAction(ctx, query, resp)
-	if errors.Is(err, ErrNotFound) {
+	if leser == nil {
 		return fmt.Errorf("%w: Ausweis %s ist nicht registriert", ErrNotFound, query)
 	}
-	return err
-}
-
-// handleStudentAction lädt die Schülerdaten bei Scan eines Schüler-Barcodes.
-func (s *defaultOmniboxService) handleStudentAction(ctx context.Context, query string, resp *OmniboxResult) error {
-	student, err := s.studentRepo.GetByBarcode(ctx, query)
-	if err != nil {
-		return err
-	}
-	if student == nil {
-		return fmt.Errorf("%w: Schüler-Barcode %s ist nicht registriert", ErrNotFound, query)
-	}
-	s.zeigeSchueler(ctx, student, resp)
+	s.zeigeLeser(ctx, leser, resp)
 	return nil
 }
 
-// zeigeSchueler legt einen gefundenen Schüler in die Antwort, mit dem Abholfach-Hinweis.
-func (s *defaultOmniboxService) zeigeSchueler(ctx context.Context, student *repository.Student, resp *OmniboxResult) {
+// zeigeLeser legt den gefundenen Leser in die Antwort, mit dem Abholfach-Hinweis.
+//
+// Der Hinweis gilt Vormerkungen, und die legen nur Schüler an — für einen Kollegen ist
+// die Liste leer, ohne dass es hier einer Fallunterscheidung bedarf.
+func (s *defaultOmniboxService) zeigeLeser(ctx context.Context, leser *repository.Student, resp *OmniboxResult) {
 	resp.Type = "student"
-	resp.Student = student
-	resp.Abholbereit = s.ladeAbholbereiteVormerkungen(ctx, student.ID)
+	resp.Student = leser
+	resp.Abholbereit = s.ladeAbholbereiteVormerkungen(ctx, leser.ID)
 }
 
 // ladeAbholbereiteVormerkungen holt die abholbereiten Vormerkungen des Schülers
@@ -302,26 +280,6 @@ func (s *defaultOmniboxService) ladeAbholbereiteVormerkungen(ctx context.Context
 		return nil
 	}
 	return out
-}
-
-// handleTeacherAction lädt die Lehrerdaten bei Scan eines Lehrer-Barcodes.
-// handleTeacherAction lädt eine Lehrkraft über ihren Ausweis.
-//
-// Die Abfrage lag früher als rohes SQL direkt an diesem Service. Sie ist ins
-// UserRepository gewandert, als die Lehrer-Stufe in die präfixlose Auflösung kam: Solange
-// sie nur hinter dem L--Präfix hing, fiel nicht auf, dass sie sich — anders als Buch und
-// Schüler — nicht durch ein Stub-Repository ersetzen ließ und damit ungetestet blieb.
-func (s *defaultOmniboxService) handleTeacherAction(ctx context.Context, query string, resp *OmniboxResult) error {
-	teacher, err := s.userRepo.GetLehrerByBarcode(ctx, query)
-	if err != nil {
-		return fmt.Errorf("datenbankfehler beim Laden des Lehrers: %w", err)
-	}
-	if teacher == nil {
-		return fmt.Errorf("%w: Lehrer-Barcode %s nicht gefunden", ErrNotFound, query)
-	}
-	resp.Type = "teacher"
-	resp.Teacher = teacher
-	return nil
 }
 
 // handleSearchAction führt eine Volltextsuche über Buchtitel, Autoren, ISBN und Systematik aus.
@@ -436,8 +394,8 @@ func (s *defaultOmniboxService) handleBookAction(ctx context.Context, q OmniboxQ
 	}
 
 	// Ausleihe durchführen, falls ein aktiver Ausleiher vorhanden ist
-	if (q.ActiveTeacherID != nil && *q.ActiveTeacherID != "") || (q.ActiveStudentID != nil && *q.ActiveStudentID != "") {
-		lr, err := s.loanSvc.HandleUnifiedCheckout(ctx, copy, q.ActiveStudentID, q.ActiveTeacherID, q.StaffID, q.OverrideBlock)
+	if q.ActiveLeserID != nil && *q.ActiveLeserID != "" {
+		lr, err := s.loanSvc.HandleUnifiedCheckout(ctx, copy, q.ActiveLeserID, q.StaffID, q.OverrideBlock)
 		if err != nil {
 			return err
 		}
@@ -446,7 +404,7 @@ func (s *defaultOmniboxService) handleBookAction(ctx context.Context, q OmniboxQ
 	}
 
 	// Rückgabe durchführen, wenn kein aktiver Ausleiher vorhanden ist
-	lr, err := s.loanSvc.HandleSimpleReturn(ctx, copy, q.StaffID, q.StaffRole)
+	lr, err := s.loanSvc.HandleSimpleReturn(ctx, copy, q.StaffID)
 	if err != nil {
 		return err
 	}
@@ -462,12 +420,10 @@ func (s *defaultOmniboxService) mapLoanResult(lr *LoanResult, resp *OmniboxResul
 	resp.Type = lr.Type
 	resp.Book = lr.Book
 	resp.Student = lr.Student
-	resp.Teacher = lr.Teacher
 	resp.DueDate = lr.DueDate
 	resp.LoanID = lr.LoanID
 	resp.Fremdrueckgabe = lr.Fremdrueckgabe
 	resp.Vorbesitzer = lr.Vorbesitzer
-	resp.VorbesitzerUser = lr.VorbesitzerUser
 	resp.HasVormerkung = lr.HasVormerkung
 	resp.VormerkungTitel = lr.VormerkungTitel
 	resp.VormerkungUser = lr.VormerkungUser

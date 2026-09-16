@@ -276,11 +276,18 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 		return fmt.Sprintf("S-%05d", startNum), true
 	}
 
-	// Die Ausweisnummer gehört genau einer Person, auch über das Kollegium hinweg (Migration 118):
-	// Die Theke sucht bei jeder Nummer unter Schülern und Lehrkräften.
+	// Die Ausweisnummer gehört genau einer Person — Schüler wie Kollegium. Gefragt wird die
+	// TABELLE `leser` und nicht die Sicht `schueler`: Sonst sähe die Prüfung einen Kollegen
+	// nicht, ließe die Nummer durch, und der eindeutige Index quittierte es als 500 statt
+	// mit einer Auskunft an die Bibliothek (Migration 125).
+	//
+	// Gelöschte Leser geben ihre Nummer frei — dieselbe Bedingung wie
+	// uniq_schueler_barcode_active, sonst wiese die Prüfung eine Nummer ab, die die
+	// Datenbank vergeben würde.
 	var exists bool
-	if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM schueler WHERE barcode_id = $1)
-		OR EXISTS(SELECT 1 FROM benutzer WHERE barcode_id = $1)`, requested).Scan(&exists); err != nil {
+	if err := tx.QueryRow(ctx,
+		`SELECT EXISTS(SELECT 1 FROM leser WHERE barcode_id = $1 AND deleted_at IS NULL)`,
+		requested).Scan(&exists); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false
 	}

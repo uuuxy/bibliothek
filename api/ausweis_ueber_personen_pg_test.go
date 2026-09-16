@@ -12,11 +12,12 @@ import (
 	"bibliothek/repository"
 )
 
-// Eine Ausweisnummer gehört genau einer Person, über Schüler und Kollegium hinweg (Migration
-// 118). Bis dahin prüfte jeder Schreibweg nur seine eigene Tabelle — Schüler anlegen nur die
-// Schüler, die Benutzerverwaltung nur das Kollegium, die Schülerakte und das Wiederherstellen gar
-// nicht über die Tabellengrenze. Die Theke sucht bei jeder Nummer unter beiden und lud still den
-// Schüler. Hier über die echten Handler: Die Bibliothek bekommt eine Auskunft, keinen 500.
+// Eine Ausweisnummer gehört genau einer Person — Schüler wie Kollegium. Bis Migration 118
+// prüfte jeder Schreibweg nur seine eigene Tabelle, die Theke suchte unter beiden und lud
+// still den Schüler. Seit Migration 125 stehen alle Leser in EINER Tabelle; die Zusage ist
+// dieselbe geblieben, sie hängt jetzt am partiellen Index statt am Trigger.
+//
+// Hier über die echten Handler: Die Bibliothek bekommt eine Auskunft, keinen 500.
 func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
@@ -25,17 +26,27 @@ func TestAusweisnummer_UeberSchuelerUndKollegium(t *testing.T) {
 	userRepo := repository.NewUserRepository(pool)
 	admin := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a118", Rolle: auth.RoleAdmin}
 	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id IN
+			(SELECT leser_id FROM benutzer WHERE email LIKE '%@ausweis118.invalid')`); err != nil {
+			t.Errorf("Leserzeilen aufräumen: %v", err)
+		}
 		if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE email LIKE '%@ausweis118.invalid'`); err != nil {
 			t.Errorf("Lehrkräfte aufräumen: %v", err)
 		}
 	})
 
+	// Der Ausweis einer Lehrkraft steht an ihrer LESERZEILE (Migration 125) — zwei
+	// Anweisungen, weil eine schreibende CTE ihre eigene Zeile noch nicht sieht.
 	lehrkraft := func(t *testing.T, barcode, email string) string {
 		t.Helper()
-		var id string
-		if err := pool.QueryRow(ctx, `INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-			VALUES ($1, 'Leh', 'Rer', $2, 'kollegium', true) RETURNING id`, barcode, email).Scan(&id); err != nil {
+		var id, leserID string
+		if err := pool.QueryRow(ctx, `INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+			VALUES ('Leh', 'Rer', $1, 'kollegium', true) RETURNING id, leser_id::text`, email).
+			Scan(&id, &leserID); err != nil {
 			t.Fatalf("Lehrkraft anlegen: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = $1 WHERE id = $2`, barcode, leserID); err != nil {
+			t.Fatalf("Ausweis der Lehrkraft eintragen: %v", err)
 		}
 		return id
 	}

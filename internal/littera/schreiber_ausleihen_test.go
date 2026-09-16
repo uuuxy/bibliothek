@@ -120,7 +120,7 @@ func TestBeideEndenGefunden(t *testing.T) {
 		s:         s,
 		bericht:   &AusleihBericht{},
 		exemplare: map[string]string{"E1": "UUID1"},
-		entleiher: map[string]Entleiher{"L1": {SchuelerID: "S1"}},
+		entleiher: map[string]Entleiher{"L1": {LeserID: "S1", IstSchueler: true}},
 	}
 
 	// Gutfall
@@ -202,8 +202,8 @@ func TestAussortieren(t *testing.T) {
 			"E2": "UUID2",
 		},
 		entleiher: map[string]Entleiher{
-			"L1": {SchuelerID: "S1"},
-			"L2": {SchuelerID: "S2"},
+			"L1": {LeserID: "S1", IstSchueler: true},
+			"L2": {LeserID: "S2", IstSchueler: true},
 		},
 	}
 

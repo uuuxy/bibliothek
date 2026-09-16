@@ -47,13 +47,22 @@ func setupDatabase(ctx context.Context) *pgxpool.Pool {
 func generateTestAdmin(ctx context.Context, pool *pgxpool.Pool) {
 	adminID := uuid.New()
 	adminBarcode := "ADMIN-SCANNER-TEST"
-	_, err := pool.Exec(ctx, `
-		INSERT INTO benutzer (id, barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, $2, 'Scanner', 'TestAdmin', 'scanner@test.local', 'admin', true)
+	// Die Ausweisnummer steht an der Leserzeile (Migration 125), die der Trigger beim
+	// Anlegen des Kontos erzeugt. ZWEI Anweisungen und keine schreibende CTE: Eine Zeile,
+	// die dieselbe Anweisung gerade eingefügt hat, liegt außerhalb des Schnappschusses
+	// des äußeren UPDATE — es fände sie nicht und würde still 0 Zeilen ändern.
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO benutzer (id, vorname, nachname, email, rolle, aktiv)
+		VALUES ($1, 'Scanner', 'TestAdmin', 'scanner@test.local', 'admin', true)
 		ON CONFLICT (email) DO NOTHING
-	`, adminID, adminBarcode)
-	if err != nil {
+	`, adminID); err != nil {
 		log.Printf("Warnung: Konnte Test-Admin nicht anlegen: %v\n", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		UPDATE leser SET barcode_id = $2
+		WHERE id = (SELECT leser_id FROM benutzer WHERE id = $1)
+	`, adminID, adminBarcode); err != nil {
+		log.Printf("Warnung: Konnte den Ausweis des Test-Admins nicht eintragen: %v\n", err)
 	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")

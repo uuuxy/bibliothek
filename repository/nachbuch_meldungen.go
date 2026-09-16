@@ -35,9 +35,7 @@ type NachbuchMeldungEingabe struct {
 	Ergebnis              string
 	Grund                 string
 	AusleiherSchuelerID   *string
-	AusleiherBenutzerID   *string
 	VorbesitzerSchuelerID *string
-	VorbesitzerBenutzerID *string
 	AusweisText           *string
 	GescanntAm            time.Time
 }
@@ -72,12 +70,12 @@ func SchreibeNachbuchMeldung(ctx context.Context, q DBQueryer, m NachbuchMeldung
 	if _, err := q.Exec(ctx, `
 		INSERT INTO nachbuch_meldungen
 			(idempotency_key, exemplar_id, barcode, ergebnis, grund,
-			 ausleiher_schueler_id, ausleiher_benutzer_id, vorbesitzer_schueler_id, vorbesitzer_benutzer_id,
+			 ausleiher_schueler_id, vorbesitzer_schueler_id,
 			 ausweis_text, gescannt_am)
-		VALUES ($1::uuid, $2::uuid, $3, $4, NULLIF($5, ''), $6::uuid, $7::uuid, $8::uuid, $9::uuid, $10, $11)
+		VALUES ($1::uuid, $2::uuid, $3, $4, NULLIF($5, ''), $6::uuid, $7::uuid, $8, $9)
 		ON CONFLICT (idempotency_key) DO NOTHING`,
 		m.IdempotencyKey, m.ExemplarID, m.Barcode, m.Ergebnis, m.Grund,
-		m.AusleiherSchuelerID, m.AusleiherBenutzerID, m.VorbesitzerSchuelerID, m.VorbesitzerBenutzerID,
+		m.AusleiherSchuelerID, m.VorbesitzerSchuelerID,
 		m.AusweisText, m.GescanntAm); err != nil {
 		return fmt.Errorf("nachbuch-meldung schreiben: %w", err)
 	}
@@ -88,18 +86,18 @@ func SchreibeNachbuchMeldung(ctx context.Context, q DBQueryer, m NachbuchMeldung
 // Tilgung also weg (FK → NULL), der Barcode-Text bleibt.
 const nachbuchMeldungSQL = `
 	SELECT m.id, m.barcode, coalesce(t.titel, ''), m.ergebnis, coalesce(m.grund, ''),
-	       coalesce(sa.vorname || ' ' || sa.nachname, ba.vorname || ' ' || ba.nachname, ''),
-	       coalesce(sa.klasse, ''),
-	       coalesce(sv.vorname || ' ' || sv.nachname, bv.vorname || ' ' || bv.nachname, ''),
+	       coalesce(la.vorname || ' ' || la.nachname, ''),
+	       coalesce(la.klasse, ''),
+	       coalesce(lv.vorname || ' ' || lv.nachname, ''),
 	       coalesce(m.ausweis_text, ''), m.gescannt_am, m.erstellt_am, m.quittiert_am,
 	       coalesce(bq.vorname || ' ' || bq.nachname, '')
 	FROM nachbuch_meldungen m
 	LEFT JOIN buecher_exemplare e ON e.id = m.exemplar_id
 	LEFT JOIN buecher_titel t ON t.id = e.titel_id
-	LEFT JOIN schueler sa ON sa.id = m.ausleiher_schueler_id
-	LEFT JOIN benutzer ba ON ba.id = m.ausleiher_benutzer_id
-	LEFT JOIN schueler sv ON sv.id = m.vorbesitzer_schueler_id
-	LEFT JOIN benutzer bv ON bv.id = m.vorbesitzer_benutzer_id
+	-- leser und nicht die Sicht schueler: In der Meldungsliste stünde ein Kollege sonst
+	-- ohne Namen da, obwohl sein Scan der Anlass der Meldung war (Migration 125).
+	LEFT JOIN leser la ON la.id = m.ausleiher_schueler_id
+	LEFT JOIN leser lv ON lv.id = m.vorbesitzer_schueler_id
 	LEFT JOIN benutzer bq ON bq.id = m.quittiert_von`
 
 // ListeNachbuchMeldungen liest die offenen Meldungen (nurOffen) oder alle, jüngste zuerst.

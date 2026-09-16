@@ -12,7 +12,7 @@ import (
 )
 
 // ErrUserHasActiveLoans signalisiert, dass ein Benutzer nicht gelöscht werden kann, weil er
-// noch Bücher ausgeliehen hat (Ausleihen auf ausleiher_benutzer_id ohne Rückgabe).
+// noch Bücher ausgeliehen hat (offene Ausleihen auf seiner Leserzeile).
 // Nutzer-sichtbar (409) — deshalb ohne Wörter aus dem Code (audit_users_meldung_test.go).
 //
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
@@ -37,14 +37,16 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 		return fmt.Errorf("failed to snapshot user for audit: %w", err)
 	}
 
-	// Schutz vor verwaisten Handapparat-Ausleihen: Das Schema hat auf
-	// ausleihen.ausleiher_benutzer_id ein ON DELETE SET NULL. Ein DELETE würde die Bücher
-	// eines Lehrers also im Status "ausgeliehen" zurücklassen, aber an NULL (niemand)
-	// gebunden — dauerhaft blockiert und nicht mehr zuordenbar. Deshalb die Löschung
-	// verweigern, solange der Benutzer noch aktive Ausleihen hat.
+	// Schutz vor verwaisten Ausleihen: Die Bücher hängen an der LESERZEILE des Kontos,
+	// und benutzer.leser_id trägt ON DELETE SET NULL. Ein DELETE ließe die Bücher im
+	// Status "ausgeliehen" zurück, während die Leserzeile ihren Namen verliert — dauerhaft
+	// blockiert und nicht mehr zuordenbar. Deshalb die Löschung verweigern, solange offene
+	// Ausleihen bestehen.
 	var aktiveAusleihen int
 	if err = tx.QueryRow(ctx,
-		`SELECT count(*) FROM ausleihen WHERE ausleiher_benutzer_id = $1 AND rueckgabe_am IS NULL`,
+		`SELECT count(*) FROM ausleihen a
+		  JOIN benutzer b ON b.leser_id = a.schueler_id
+		 WHERE b.id = $1 AND a.rueckgabe_am IS NULL`,
 		userID,
 	).Scan(&aktiveAusleihen); err != nil {
 		return fmt.Errorf("failed to check active loans for user: %w", err)

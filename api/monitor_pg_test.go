@@ -173,8 +173,8 @@ func seedLehrkraft(t *testing.T, pool *pgxpool.Pool) string {
 func seedLehrerAusleihe(t *testing.T, pool *pgxpool.Pool, exemplarID, benutzerID string) {
 	t.Helper()
 	if _, err := pool.Exec(context.Background(), `
-		INSERT INTO ausleihen (exemplar_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, ist_handapparat)
-		VALUES ($1, $2, NOW() - interval '2 days', NOW() + interval '180 days', true)`,
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, ist_handapparat)
+		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), NOW() - interval '2 days', NOW() + interval '180 days', true)`,
 		exemplarID, benutzerID); err != nil {
 		t.Fatalf("Lehrer-Ausleihe anlegen: %v", err)
 	}

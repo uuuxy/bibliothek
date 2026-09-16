@@ -308,10 +308,10 @@ func (s *Server) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (
 	var gesperrt bool
 	var blockReason string
 	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT COALESCE(s.ist_gesperrt, false) OR COALESCE(s.is_manually_blocked, false),
-		       COALESCE(s.block_reason, '')
+		SELECT COALESCE(l.ist_gesperrt, false) OR COALESCE(l.is_manually_blocked, false),
+		       COALESCE(l.block_reason, '')
 		FROM ausleihen a
-		LEFT JOIN schueler s ON s.id = a.schueler_id
+		LEFT JOIN leser l ON l.id = a.schueler_id
 		WHERE a.id = $1 AND a.rueckgabe_am IS NULL
 	`, ausleiheID).Scan(&gesperrt, &blockReason)
 	return gesperrt, blockReason, err

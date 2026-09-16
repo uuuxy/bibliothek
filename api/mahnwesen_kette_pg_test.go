@@ -73,7 +73,7 @@ func ausleiheUeberDenDienst(t *testing.T, pool *pgxpool.Pool, barcode, schuelerI
 	if err != nil {
 		t.Fatalf("Exemplar %s laden: %v", barcode, err)
 	}
-	if _, err := loanSvc.HandleUnifiedCheckout(ctx, exemplar, &schuelerID, nil, bearbeiterID, false); err != nil {
+	if _, err := loanSvc.HandleUnifiedCheckout(ctx, exemplar, &schuelerID, bearbeiterID, false); err != nil {
 		t.Fatalf("Ausleihe von %s: %v", barcode, err)
 	}
 

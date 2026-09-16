@@ -99,8 +99,8 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 	// Personal-Konto (Mitarbeiter-Rolle: bekommt je Route genau EIN Recht).
 	// Name bewusst OHNE Kanarienbezug — Personalnamen sind keine Schülerdaten.
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ('GATE-MA-1', 'Greta', 'Gatewart', 'gate-ma@example.org', 'mitarbeiter', true)
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Greta', 'Gatewart', 'gate-ma@example.org', 'mitarbeiter', true)
 		RETURNING id`).Scan(&w.mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}

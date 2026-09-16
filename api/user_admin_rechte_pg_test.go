@@ -36,9 +36,9 @@ func TestListUsersLiefertEchteRechte(t *testing.T) {
 	})
 
 	if _, err := pool.Exec(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Rechte', 'Pruefer', $2, 'mitarbeiter', true)
-	`, "RECHT-"+suffix, email); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Rechte', 'Pruefer', $1, 'mitarbeiter', true)
+	`, email); err != nil {
 		t.Fatalf("Benutzer anlegen: %v", err)
 	}
 

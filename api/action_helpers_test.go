@@ -36,10 +36,10 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 	staffID := "staff-1"
 
 	// Mock StudentRepo.GetByID
-	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason, coalesce\\(strasse, ''\\), coalesce\\(hausnummer, ''\\), coalesce\\(plz, ''\\), coalesce\\(ort, ''\\), coalesce\\(eltern_email, ''\\) FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
+	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason, coalesce\\(strasse, ''\\), coalesce\\(hausnummer, ''\\), coalesce\\(plz, ''\\), coalesce\\(ort, ''\\), coalesce\\(eltern_email, ''\\), art FROM leser WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email"}).
-			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", ""))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email", "art"}).
+			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", "", "schueler"))
 
 	// 2. querySettings inside resolveCheckoutDueDate
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
@@ -61,7 +61,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
 	// 6. Mock GetActiveLoanByCopyIDTx (returns 0 rows -> no active loan)
-	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
 		WithArgs(copy.ID).
 		WillReturnRows(pgxmock.NewRows([]string{}))
 
@@ -92,9 +92,9 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 
 	// Mock CreateLoanTx
 	mock.ExpectQuery("INSERT INTO ausleihen").
-		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID, pgxmock.AnyArg()).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow("loan-1", &copy.ID, &studentID, nil, time.Now(), time.Now(), nil, &staffID, nil, false, false))
+		WithArgs(copy.ID, studentID, pgxmock.AnyArg(), staffID, false, pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
+			AddRow("loan-1", &copy.ID, &studentID, time.Now(), time.Now(), nil, &staffID, nil, false, false))
 	mock.ExpectExec("UPDATE buecher_exemplare SET letzte_bewegung_am").
 		WithArgs(copy.ID, pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
@@ -111,7 +111,7 @@ func TestHandleStudentCheckoutFlow(t *testing.T) {
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
 	mock.ExpectCommit()
 
-	lr, err := loanSvc.HandleUnifiedCheckout(context.Background(), copy, &studentID, nil, staffID, false)
+	lr, err := loanSvc.HandleUnifiedCheckout(context.Background(), copy, &studentID, staffID, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -155,16 +155,16 @@ func TestHandleBookReturn(t *testing.T) {
 	// Mock GetActiveLoanByCopyIDTx -> return an active loan
 	activeLoanID := "loan-1"
 	studentID := "student-1"
-	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausleiher_benutzer_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
+	mock.ExpectQuery("SELECT id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat FROM ausleihen WHERE exemplar_id = \\$1 AND rueckgabe_am IS NULL LIMIT 1 FOR UPDATE").
 		WithArgs(copyID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausleiher_benutzer_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
-			AddRow(activeLoanID, &copyID, &studentID, nil, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, &staffID, nil, false, false))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "schueler_id", "ausgeliehen_am", "rueckgabe_frist", "rueckgabe_am", "bearbeiter_id", "rueckgabe_bearbeiter_id", "ist_fremdrueckgabe", "ist_handapparat"}).
+			AddRow(activeLoanID, &copyID, &studentID, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour), nil, &staffID, nil, false, false))
 
 	// Student lookup fallback
-	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason, coalesce\\(strasse, ''\\), coalesce\\(hausnummer, ''\\), coalesce\\(plz, ''\\), coalesce\\(ort, ''\\), coalesce\\(eltern_email, ''\\) FROM schueler WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
+	mock.ExpectQuery("SELECT id, coalesce\\(barcode_id, ''\\), coalesce\\(vorname, ''\\), coalesce\\(nachname, ''\\), coalesce\\(klasse, ''\\), coalesce\\(abgaenger_jahr, 0\\), coalesce\\(ist_gesperrt, false\\), lusd_id, coalesce\\(ist_abgaenger, false\\), TO_CHAR\\(geburtsdatum, 'YYYY-MM-DD'\\), erstellt_am, aktualisiert_am, coalesce\\(is_manually_blocked, false\\), block_reason, coalesce\\(strasse, ''\\), coalesce\\(hausnummer, ''\\), coalesce\\(plz, ''\\), coalesce\\(ort, ''\\), coalesce\\(eltern_email, ''\\), art FROM leser WHERE id = \\$1 AND deleted_at IS NULL LIMIT 1").
 		WithArgs(studentID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email"}).
-			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", ""))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "vorname", "nachname", "klasse", "abgaenger_jahr", "ist_gesperrt", "lusd_id", "ist_abgaenger", "geburtsdatum", "erstellt_am", "aktualisiert_am", "is_manually_blocked", "block_reason", "strasse", "hausnummer", "plz", "ort", "eltern_email", "art"}).
+			AddRow(studentID, "123456", "Max", "Mustermann", "10A", nil, false, nil, false, nil, time.Now(), time.Now(), false, nil, "", "", "", "", "", "schueler"))
 
 	// ReturnLoanTx
 	mock.ExpectExec("UPDATE ausleihen").

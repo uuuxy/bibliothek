@@ -19,8 +19,8 @@ func TestRolleLeitungVergebbar(t *testing.T) {
 
 	inTx(t, pool, func(tx pgx.Tx) {
 		erwarteErfolg(t, tx, "Benutzer mit Rolle leitung",
-			`INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-			 VALUES ('l-1', 'L', 'Leitung', 'l@example.org', 'leitung', true)`)
+			`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+			 VALUES ('L', 'Leitung', 'l@example.org', 'leitung', true)`)
 	})
 }
 

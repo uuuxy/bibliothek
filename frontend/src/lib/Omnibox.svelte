@@ -1,12 +1,10 @@
 <script>
 	import { onMount } from 'svelte';
-	import StudentProfile from './StudentProfile.svelte';
 	import CameraScanner from './CameraScanner.svelte';
 	import OmniboxInput from './components/OmniboxInput.svelte';
 	import OmniboxResults from './components/OmniboxResults.svelte';
-	import OmniboxTeacherCard from './OmniboxTeacherCard.svelte';
 	import OmniboxVormerkungAlert from './components/OmniboxVormerkungAlert.svelte';
-	import OmniboxThekeHinweise from './components/OmniboxThekeHinweise.svelte';
+	import OmniboxAktiverLeser from './components/OmniboxAktiverLeser.svelte';
 	import OmniboxBlockAlert from './components/OmniboxBlockAlert.svelte';
 	import OmniboxChecklistDialog from './components/OmniboxChecklistDialog.svelte';
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
@@ -80,7 +78,6 @@
 			if (e.key === 'Escape') {
 				omniboxStore.queryVal = '';
 				omniboxStore.activeStudent = null;
-				omniboxStore.activeTeacher = null;
 				omniboxStore.lastFremdrueckgabe = null;
 				omniboxStore.isDropdownOpen = false;
 				if (omniboxStore.showCamera) {
@@ -214,30 +211,7 @@
 			/>
 		{/if}
 
-		{#if omniboxStore.activeStudent}
-			<!-- Fremdrückgabe- und Abholfach-Banner (200-Zeilen-Regel: eigene Datei). -->
-			<OmniboxThekeHinweise />
-			<StudentProfile
-				bind:this={studentProfileComponent}
-				student={omniboxStore.activeStudent}
-				defaultTab="ausleihen"
-				onMerged={omniboxStore.uebernimmZusammengefuehrt}
-				onDeselect={() => {
-					omniboxStore.activeStudent = null;
-					omniboxStore.lastFremdrueckgabe = null;
-				}}
-				onReturnClick={(barcode) =>
-					omniboxStore.gibZurueck(barcode, () => studentProfileComponent?.reloadProfile())}
-			/>
-		{:else if omniboxStore.activeTeacher}
-			<OmniboxTeacherCard
-				teacher={omniboxStore.activeTeacher}
-				onDeselect={() => {
-					omniboxStore.activeTeacher = null;
-					omniboxStore.lastFremdrueckgabe = null;
-				}}
-			/>
-		{/if}
+		<OmniboxAktiverLeser bind:profil={studentProfileComponent} />
 	</div>
 </div>
 

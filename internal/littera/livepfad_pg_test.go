@@ -56,8 +56,10 @@ func TestUebernommeneDatenUeberDenLivePfad(t *testing.T) {
 		if loan.BearbeiterID != nil {
 			t.Errorf("%s: bearbeiter_id soll leer bleiben, gelesen: %v", name, *loan.BearbeiterID)
 		}
-		if (loan.SchuelerID == nil) == (loan.AusleiherBenutzerID == nil) {
-			t.Errorf("%s: genau eine Entleiher-Spalte muss gesetzt sein", name)
+		// Seit Migration 125 gibt es EINE Ausleiher-Spalte; sie muss gesetzt sein — auch
+		// bei der Lehrerausleihe, die vorher in der zweiten stand.
+		if loan.SchuelerID == nil {
+			t.Errorf("%s: die Ausleihe hat keinen Ausleiher", name)
 		}
 	}
 

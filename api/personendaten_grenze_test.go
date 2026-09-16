@@ -135,7 +135,7 @@ func actionSiehtOverride(rolle string) bool {
 	s := &Server{}
 	// Echte UUID: Eine Schüler-ID, die keine ist, weist ActionHandler seit dem 13.09.2026
 	// vor der Rechteprüfung mit 400 ab (uuid_eingaben_test.go).
-	body := `{"query":"B-123","active_student_id":"22222222-2222-2222-2222-222222222222","override_block":true}`
+	body := `{"query":"B-123","active_leser_id":"22222222-2222-2222-2222-222222222222","override_block":true}`
 	req := httptest.NewRequest("POST", "/api/action", strings.NewReader(body))
 	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, &auth.Claims{Rolle: auth.Role(rolle), UserID: "u1"}))
 	w := httptest.NewRecorder()

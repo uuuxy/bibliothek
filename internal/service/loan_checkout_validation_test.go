@@ -23,6 +23,15 @@ type mockStudentRepo struct {
 func (m *mockStudentRepo) GetByID(ctx context.Context, id string) (*repository.Student, error) {
 	return m.student, m.err
 }
+
+// GetLeserByID ist die Abfrage des Ausleihpfads seit Migration 125: Sie liest die TABELLE
+// und findet damit auch einen Kollegen.
+func (m *mockStudentRepo) GetLeserByID(ctx context.Context, id string) (*repository.Student, error) {
+	return m.student, m.err
+}
+func (m *mockStudentRepo) GetLeserByBarcode(ctx context.Context, barcode string) (*repository.Student, error) {
+	return nil, nil
+}
 func (m *mockStudentRepo) GetByBarcode(ctx context.Context, barcode string) (*repository.Student, error) {
 	return nil, nil
 }
@@ -278,20 +287,20 @@ func TestSperrpruefung_UebergehbareSperrenSindMarkiert(t *testing.T) {
 
 func TestResolveBorrower_HappyPath(t *testing.T) {
 	svc, _, mock := newValidationService(t, &repository.Student{
-		ID: "s1", Klasse: "5a", Vorname: "Max", Nachname: "Mustermann",
+		ID: "s1", Klasse: "5a", Vorname: "Max", Nachname: "Mustermann", Art: "schueler",
 	})
 	defer mock.Close()
 
 	expectFristSettings(mock)
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"), nil)
+	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"))
 
 	if err != nil {
 		t.Fatalf("regulärer Schüler ohne Sperre soll durchgehen, bekam: %v", err)
 	}
-	if ctx.borrowerType != "student" || ctx.borrowerID != "s1" {
-		t.Errorf("erwartete borrowerType=student/s1, bekam %q/%q", ctx.borrowerType, ctx.borrowerID)
+	if !ctx.istSchueler() || ctx.borrowerID != "s1" {
+		t.Errorf("erwartete den Schüler s1, bekam Art %q / %q", ctx.leser.Art, ctx.borrowerID)
 	}
 	if ctx.dueTime.IsZero() {
 		t.Error("erwartete gesetztes Fälligkeitsdatum")
@@ -302,20 +311,20 @@ func TestResolveBorrower_HappyPath(t *testing.T) {
 // Checkout danach. Sperrte schon das Auflösen, wäre die eigene Rückgabe wieder gesperrt.
 func TestResolveBorrower_SperrtNicht(t *testing.T) {
 	svc, audit, mock := newValidationService(t, &repository.Student{
-		ID: "s1", Klasse: "5a", IstGesperrt: true, BlockReason: strPtr("überfällig"),
+		ID: "s1", Klasse: "5a", Art: "schueler", IstGesperrt: true, BlockReason: strPtr("überfällig"),
 	})
 	defer mock.Close()
 
 	expectFristSettings(mock)
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"), nil)
+	ctx, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, activeStudent("s1"))
 
 	if err != nil {
 		t.Fatalf("Auflösen darf nicht sperren, bekam: %v", err)
 	}
-	if ctx.student == nil || !ctx.student.IstGesperrt {
-		t.Error("erwartete den gesperrten Schüler im checkoutContext")
+	if ctx.leser == nil || !ctx.leser.IstGesperrt {
+		t.Error("erwartete den gesperrten Leser im checkoutContext")
 	}
 	if audit.adminAktionCalls != 0 {
 		t.Errorf("Auflösen darf kein Übergehen protokollieren, calls=%d", audit.adminAktionCalls)
@@ -327,9 +336,9 @@ func TestResolveBorrower_NoActiveBorrower(t *testing.T) {
 	defer mock.Close()
 
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch", IstAusleihbar: true}
-	_, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, nil, nil)
+	_, err := svc.resolveBorrowerAndDueTime(context.Background(), copy, nil)
 
 	if !errors.Is(err, ErrInvalidState) {
-		t.Errorf("weder Schüler noch Lehrer aktiv soll ErrInvalidState liefern, bekam: %v", err)
+		t.Errorf("ohne aktiven Leser soll ErrInvalidState kommen, bekam: %v", err)
 	}
 }

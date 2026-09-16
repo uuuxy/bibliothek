@@ -55,8 +55,7 @@ type NachbuchenEintrag struct {
 	// Versatz der Uhr heraus (gesendet_am) und nimmt höchstens seine eigene Zeit.
 	GescanntAm time.Time `json:"gescannt_am" validate:"required"`
 	// Person: was der Rechner beim Scan schon auflösen konnte …
-	SchuelerID *string `json:"schueler_id,omitempty" validate:"omitempty,uuid_oder_leer"`
-	LehrerID   *string `json:"lehrer_id,omitempty" validate:"omitempty,uuid_oder_leer"`
+	LeserID *string `json:"leser_id,omitempty" validate:"omitempty,uuid_oder_leer"`
 	// … sonst der offline gescannte Ausweis, den der Server auflöst.
 	AusweisBarcode *string `json:"ausweis_barcode,omitempty"`
 }
@@ -160,7 +159,7 @@ func (s *Server) bucheEintragNach(ctx context.Context, svc service.NachbuchServi
 	erg, err := svc.Nachbuchen(ctx, service.NachbuchEintrag{
 		Schluessel: e.Schluessel, Absicht: e.Absicht, Barcode: e.Barcode,
 		GescanntAm: e.GescanntAm, UhrVersatz: uhrVersatz,
-		SchuelerID: e.SchuelerID, LehrerID: e.LehrerID, AusweisBarcode: e.AusweisBarcode,
+		LeserID: e.LeserID, AusweisBarcode: e.AusweisBarcode,
 		NachFremdrueckgabeVon: lage.fremdrueckgabeVon, StaffID: staffID,
 	})
 	if err != nil {

@@ -5,6 +5,10 @@ import 'fake-indexeddb/auto';
 // Lehrkraft ist geladen, die folgenden Bücher gehen auf sie. Bis zum 16.09.2026 hieß er
 // „Handapparat-Sitzung gestartet für Lehrer/in …" — ein Wort aus dem Code, nicht von der Theke.
 //
+// Seit Migration 125 liefert der Server auch für einen Kollegen `type: "student"` — ein
+// gescannter Ausweis ist ein LESER, und seine Art steht an ihm. Der Hinweis hängt an der Art,
+// nicht mehr an einem eigenen Antworttyp.
+//
 // Der Store meldet über seine eigene showToast → toastStore.addToast (omnibox.svelte.js), nicht
 // über den Inventur-Store. Beobachtet wird deshalb addToast am echten toastStore.
 vi.mock('../apiFetch.js', () => ({
@@ -27,18 +31,17 @@ describe('Omnibox: Lehrerausweis gescannt', () => {
 		vi.restoreAllMocks();
 		vi.clearAllMocks();
 		omniboxStore.activeStudent = null;
-		omniboxStore.activeTeacher = null;
 		omniboxStore.queryVal = '';
 	});
 
-	it('meldet die geladene Lehrkraft ohne Wörter aus dem Code', async () => {
+	it('meldet den geladenen Kollegen ohne Wörter aus dem Code', async () => {
 		const addToast = vi.spyOn(toastStore, 'addToast');
 		vi.mocked(apiClient.post).mockResolvedValueOnce(
 			/** @type {any} */ ({
 				ok: true,
 				json: async () => ({
-					type: 'teacher',
-					teacher: { id: 'l1', vorname: 'Karl', nachname: 'Lehmann' }
+					type: 'student',
+					student: { id: 'l1', vorname: 'Karl', nachname: 'Lehmann', art: 'lehrkraft' }
 				})
 			})
 		);
@@ -46,11 +49,32 @@ describe('Omnibox: Lehrerausweis gescannt', () => {
 
 		await omniboxStore.submitAction(new Event('submit'));
 
-		expect(omniboxStore.activeTeacher?.id).toBe('l1');
+		expect(omniboxStore.activeStudent?.id).toBe('l1');
 		const texte = addToast.mock.calls.map((aufruf) => String(aufruf[0]));
 		const hinweis = texte.find((t) => t.includes('Karl Lehmann'));
 		expect(hinweis, `kein Hinweis mit dem Namen, gemeldet: ${JSON.stringify(texte)}`).toBeTruthy();
-		expect(hinweis).toContain('Lehrkraft');
 		expect(hinweis).not.toContain('Handapparat');
+	});
+
+	// Ein Schüler bekommt KEINEN solchen Hinweis: Sein Profil steht groß daneben, und ein
+	// zusätzlicher Zuruf bei jedem Scan wäre Lärm.
+	it('meldet einen geladenen Schüler nicht eigens', async () => {
+		const addToast = vi.spyOn(toastStore, 'addToast');
+		vi.mocked(apiClient.post).mockResolvedValueOnce(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					type: 'student',
+					student: { id: 's1', vorname: 'Mia', nachname: 'Muster', art: 'schueler' }
+				})
+			})
+		);
+		omniboxStore.queryVal = 'S-1';
+
+		await omniboxStore.submitAction(new Event('submit'));
+
+		expect(omniboxStore.activeStudent?.id).toBe('s1');
+		const texte = addToast.mock.calls.map((aufruf) => String(aufruf[0]));
+		expect(texte.find((t) => t.includes('Mia Muster'))).toBeFalsy();
 	});
 });

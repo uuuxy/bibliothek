@@ -26,15 +26,17 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 
 	var mitarbeiterID, lehrkraftID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Geraete', 'Theke', $2, 'mitarbeiter', true) RETURNING id
-	`, "GR-MA-"+suffix, "geraete-theke-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Geraete', 'Theke', $1, 'mitarbeiter', true) RETURNING id
+	`, "geraete-theke-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
+	// Die Lehrkraft ist ein LESER (Migration 125) — das Gerät hängt an ihrer Leserzeile,
+	// nicht an ihrem Konto.
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Geraete', 'Lehrkraft', $2, 'kollegium', true) RETURNING id
-	`, "GR-LK-"+suffix, "geraete-lehrkraft-"+suffix+"@schule.invalid").Scan(&lehrkraftID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Geraete', 'Lehrkraft', $1, 'kollegium', true) RETURNING leser_id
+	`, "geraete-lehrkraft-"+suffix+"@schule.invalid").Scan(&lehrkraftID); err != nil {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
 	}
 	t.Cleanup(func() {
@@ -42,7 +44,8 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 			`DELETE FROM ausleihen WHERE geraet_id IN (SELECT id FROM geraete WHERE barcode_id LIKE 'G-SP-%-' || $1)`,
 			`DELETE FROM geraete WHERE barcode_id LIKE 'G-SP-%-' || $1`,
 			`DELETE FROM schueler WHERE barcode_id LIKE 'GR-S-%-' || $1`,
-			`DELETE FROM benutzer WHERE barcode_id IN ('GR-MA-' || $1, 'GR-LK-' || $1)`,
+			`DELETE FROM benutzer WHERE email LIKE '%-' || $1 || '@schule.invalid'`,
+			`DELETE FROM leser WHERE vorname = 'Geraete' AND $1 = $1`,
 		} {
 			if _, err := pool.Exec(ctx, sql, suffix); err != nil {
 				t.Errorf("Aufräumen (%s): %v", sql, err)
@@ -102,12 +105,12 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 
 	t.Run("defektes Gerät kommt von der Lehrkraft zurück", func(t *testing.T) {
 		barcode := legeGeraetAn(t, "defekt")
-		if _, err := svc.HandleDeviceAction(ctx, barcode, nil, &lehrkraftID, true, mitarbeiterID); err != nil {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, mitarbeiterID); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		sperreGeraet(t, barcode)
 
-		res, err := svc.HandleDeviceAction(ctx, barcode, nil, nil, true, mitarbeiterID)
+		res, err := svc.HandleDeviceAction(ctx, barcode, nil, true, mitarbeiterID)
 		if err != nil {
 			t.Fatalf("Rückgabe eines verliehenen, danach defekt gemeldeten Geräts abgewiesen: %v", err)
 		}
@@ -119,12 +122,12 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 	t.Run("gesperrter Schüler gibt sein Gerät zurück", func(t *testing.T) {
 		barcode := legeGeraetAn(t, "schueler")
 		schuelerID := legeSchuelerAn(t, "Zurueck")
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, nil, true, mitarbeiterID); err != nil {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, mitarbeiterID); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		sperreSchueler(t, schuelerID)
 
-		res, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, nil, true, mitarbeiterID)
+		res, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, mitarbeiterID)
 		if err != nil {
 			t.Fatalf("Rückgabe durch den gesperrten Schüler abgewiesen: %v", err)
 		}
@@ -137,7 +140,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		barcode := legeGeraetAn(t, "frei")
 		sperreGeraet(t, barcode)
 
-		if _, err := svc.HandleDeviceAction(ctx, barcode, nil, &lehrkraftID, true, mitarbeiterID); !errors.Is(err, ErrBlocked) {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, mitarbeiterID); !errors.Is(err, ErrBlocked) {
 			t.Fatalf("erwartet ErrBlocked, war %v", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {
@@ -150,7 +153,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		schuelerID := legeSchuelerAn(t, "Gesperrt")
 		sperreSchueler(t, schuelerID)
 
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, nil, true, mitarbeiterID); !errors.Is(err, ErrBlocked) {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, mitarbeiterID); !errors.Is(err, ErrBlocked) {
 			t.Fatalf("erwartet ErrBlocked, war %v", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {

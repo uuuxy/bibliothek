@@ -32,9 +32,9 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 	// — Beteiligte —
 	var mitarbeiterID, schuelerID, titelID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Rueck', 'Kehr', $2, 'mitarbeiter', true) RETURNING id
-	`, "MA-"+suffix, "rueckkehr-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Rueck', 'Kehr', $1, 'mitarbeiter', true) RETURNING id
+	`, "rueckkehr-"+suffix+"@schule.invalid").Scan(&mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
 	if err := pool.QueryRow(ctx, `
@@ -100,7 +100,7 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		}
 		// overrideBlock: Der zweite Fall liehe sonst an einem Kind, das der erste Fall
 		// gerade gesperrt hat — der Aufbau soll nicht vom Ausgang des vorigen abhängen.
-		if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &schuelerID, nil, mitarbeiterID, true); err != nil {
+		if _, err := loanSvc.HandleUnifiedCheckout(ctx, ex, &schuelerID, mitarbeiterID, true); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		var loanID string

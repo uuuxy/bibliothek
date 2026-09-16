@@ -9,75 +9,70 @@ import (
 	"bibliothek/repository"
 )
 
-type mockUserRepoForOmnibox struct {
-	repository.UserRepository
-	lehrer *repository.User
-	err    error
+// stubLeserRepo liefert einen festen Leser für die Ausweis-Stufe der Theke.
+type stubLeserRepo struct {
+	repository.StudentRepository
+	leser *repository.Student
+	err   error
 }
 
-func (m *mockUserRepoForOmnibox) GetLehrerByBarcode(ctx context.Context, barcode string) (*repository.User, error) {
-	return m.lehrer, m.err
+func (m *stubLeserRepo) GetLeserByBarcode(ctx context.Context, barcode string) (*repository.Student, error) {
+	return m.leser, m.err
 }
 
-func TestHandleTeacherAction(t *testing.T) {
+// TestHandleAusweisAction: Ein gescannter Ausweis liefert seit Migration 125 EINEN Leser —
+// Schüler wie Kollegium, unterscheidbar an der Art. Eine unbekannte Nummer bleibt ein
+// lauter Fehler und verschwindet nicht in der Volltextsuche; ein Datenbankfehler kommt als
+// solcher durch, statt sich als „nicht registriert" zu tarnen.
+func TestHandleAusweisAction(t *testing.T) {
 	tests := []struct {
 		name        string
-		lehrer      *repository.User
+		leser       *repository.Student
 		err         error
 		expectError bool
-		expectType  string
 	}{
 		{
-			name:        "Happy Path",
-			lehrer:      &repository.User{ID: "teacher-123"},
-			err:         nil,
-			expectError: false,
-			expectType:  "teacher",
+			name:  "Kollege",
+			leser: &repository.Student{ID: "leser-123", Art: "lehrkraft"},
+		},
+		{
+			name:  "Schüler",
+			leser: &repository.Student{ID: "leser-456", Art: "schueler"},
 		},
 		{
 			name:        "Not Found",
-			lehrer:      nil,
-			err:         nil,
 			expectError: true,
-			expectType:  "",
 		},
 		{
 			name:        "Database Error",
-			lehrer:      nil,
 			err:         errors.New("db connection failed"),
 			expectError: true,
-			expectType:  "",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRepo := &mockUserRepoForOmnibox{
-				lehrer: tt.lehrer,
-				err:    tt.err,
-			}
-
 			svc := &defaultOmniboxService{
-				userRepo: mockRepo,
+				studentRepo: &stubLeserRepo{leser: tt.leser, err: tt.err},
 			}
 
 			resp := &OmniboxResult{}
-			err := svc.handleTeacherAction(context.Background(), "L-123", resp)
+			err := svc.handleAusweisAction(context.Background(), "L-123", resp)
 
-			if tt.expectError && err == nil {
-				t.Fatalf("expected an error but got none")
+			if tt.expectError {
+				if err == nil {
+					t.Fatalf("expected an error but got none")
+				}
+				return
 			}
-
-			if !tt.expectError && err != nil {
+			if err != nil {
 				t.Fatalf("did not expect an error, but got: %v", err)
 			}
-
-			if !tt.expectError && resp.Type != tt.expectType {
-				t.Errorf("expected resp.Type to be %q, got %q", tt.expectType, resp.Type)
+			if resp.Type != "student" {
+				t.Errorf("expected resp.Type to be \"student\", got %q", resp.Type)
 			}
-
-			if !tt.expectError && resp.Teacher != tt.lehrer {
-				t.Errorf("expected resp.Teacher to be %v, got %v", tt.lehrer, resp.Teacher)
+			if resp.Student != tt.leser {
+				t.Errorf("expected resp.Student to be %v, got %v", tt.leser, resp.Student)
 			}
 		})
 	}
@@ -154,20 +149,20 @@ func (m *mockBookRepo) GetCopyByBarcode(ctx context.Context, barcode string) (*r
 // mockLoanService is a partial mock for LoanService
 type mockLoanService struct {
 	LoanService
-	mockHandleUnifiedCheckout func(ctx context.Context, copy *repository.BookCopy, activeStudentID *string, activeTeacherID *string, staffID string, overrideBlock bool) (*LoanResult, error)
-	mockHandleSimpleReturn    func(ctx context.Context, copy *repository.BookCopy, staffID string, staffRole string) (*LoanResult, error)
+	mockHandleUnifiedCheckout func(ctx context.Context, copy *repository.BookCopy, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error)
+	mockHandleSimpleReturn    func(ctx context.Context, copy *repository.BookCopy, staffID string) (*LoanResult, error)
 }
 
-func (m *mockLoanService) HandleUnifiedCheckout(ctx context.Context, copy *repository.BookCopy, activeStudentID *string, activeTeacherID *string, staffID string, overrideBlock bool) (*LoanResult, error) {
+func (m *mockLoanService) HandleUnifiedCheckout(ctx context.Context, copy *repository.BookCopy, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error) {
 	if m.mockHandleUnifiedCheckout != nil {
-		return m.mockHandleUnifiedCheckout(ctx, copy, activeStudentID, activeTeacherID, staffID, overrideBlock)
+		return m.mockHandleUnifiedCheckout(ctx, copy, activeLeserID, staffID, overrideBlock)
 	}
 	return nil, nil
 }
 
-func (m *mockLoanService) HandleSimpleReturn(ctx context.Context, copy *repository.BookCopy, staffID string, staffRole string) (*LoanResult, error) {
+func (m *mockLoanService) HandleSimpleReturn(ctx context.Context, copy *repository.BookCopy, staffID string) (*LoanResult, error) {
 	if m.mockHandleSimpleReturn != nil {
-		return m.mockHandleSimpleReturn(ctx, copy, staffID, staffRole)
+		return m.mockHandleSimpleReturn(ctx, copy, staffID)
 	}
 	return nil, nil
 }
@@ -230,8 +225,8 @@ func TestHandleBookAction(t *testing.T) {
 		}
 
 		loanSvc := &mockLoanService{
-			mockHandleUnifiedCheckout: func(ctx context.Context, copy *repository.BookCopy, activeStudentID *string, activeTeacherID *string, staffID string, overrideBlock bool) (*LoanResult, error) {
-				if copy != bookCopy || activeStudentID == nil || *activeStudentID != studentID {
+			mockHandleUnifiedCheckout: func(ctx context.Context, copy *repository.BookCopy, activeLeserID *string, staffID string, overrideBlock bool) (*LoanResult, error) {
+				if copy != bookCopy || activeLeserID == nil || *activeLeserID != studentID {
 					t.Errorf("HandleUnifiedCheckout called with wrong arguments")
 				}
 				return expectedLoanResult, nil
@@ -243,7 +238,7 @@ func TestHandleBookAction(t *testing.T) {
 			loanSvc:  loanSvc,
 		}
 
-		q := OmniboxQuery{Query: "123", ActiveStudentID: &studentID}
+		q := OmniboxQuery{Query: "123", ActiveLeserID: &studentID}
 		resp := &OmniboxResult{}
 		err := svc.handleBookAction(ctx, q, resp)
 
@@ -266,7 +261,7 @@ func TestHandleBookAction(t *testing.T) {
 		}
 
 		loanSvc := &mockLoanService{
-			mockHandleSimpleReturn: func(ctx context.Context, copy *repository.BookCopy, staffID string, staffRole string) (*LoanResult, error) {
+			mockHandleSimpleReturn: func(ctx context.Context, copy *repository.BookCopy, staffID string) (*LoanResult, error) {
 				if copy != bookCopy {
 					t.Errorf("HandleSimpleReturn called with wrong arguments")
 				}

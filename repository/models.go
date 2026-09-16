@@ -30,16 +30,26 @@ type User struct {
 	// ZugangBeantragtAm: von der Selbstanmeldung gesetzt, von der Freischaltung gelöscht
 	// (Migration 086). nil = kein offener Antrag.
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
-	// Personenart: wer jemand im Kollegium ist — "lehrkraft" oder "liv" (Migration 119); nil bei
-	// Konten, die keine Lehrkräfte sein müssen. Die Rolle sagt, was jemand darf.
-	Personenart *string `json:"personenart"`
+	// LeserID ist die Leserzeile dieses Kontos (Migration 125): Dort stehen Ausweis und
+	// Ausleihen. Jedes Konto hat eine — dafür sorgt ein Trigger, nicht der Aufrufer.
+	LeserID string `json:"leser_id"`
 }
 
-// Student repräsentiert einen Schüler in der Datenbank (Tabelle `schueler`).
+// Student repräsentiert einen LESER in der Datenbank (Tabelle `leser`).
+//
+// Der Typ heißt weiter Student, weil die allermeisten Leser Schüler sind und die Listen,
+// Mahnungen und Klassenansichten genau die meinen; sie lesen die Sicht `schueler`. Die
+// Theke dagegen fragt nach einem LESER (GetLeserByBarcode, GetLeserByID) und bekommt auch
+// Kollegen — unterscheidbar an `Art`.
 type Student struct {
-	// ID ist der eindeutige Primärschlüssel (UUID) des Schülers.
+	// ID ist der eindeutige Primärschlüssel (UUID) des Lesers.
 	ID string `json:"id"`
-	// BarcodeID ist der eindeutige Barcode des Schülerausweises.
+	// Art ist Schüler, Lehrkraft oder LiV (Migration 123). Sie entscheidet keine Rechte,
+	// sondern nur, wen der LUSD-Abgleich und der Löschjob erfassen — und was die Theke
+	// am Treffer anzeigt. Leer, wo die Abfrage die Sicht `schueler` liest: dort ist
+	// jede Zeile ein Schüler.
+	Art string `json:"art,omitempty"`
+	// BarcodeID ist der eindeutige Barcode des Ausweises.
 	BarcodeID string `json:"barcode_id"`
 	// Vorname ist der Vorname des Schülers.
 	Vorname string `json:"vorname"`
@@ -186,7 +196,6 @@ type Loan struct {
 	// SchuelerID verweist auf den ausleihenden Schüler (null bei Ausleihe an Lehrkraft).
 	SchuelerID *string `json:"schueler_id,omitempty"`
 	// AusleiherBenutzerID verweist auf die ausleihende Lehrkraft (null bei Ausleihe an Schüler).
-	AusleiherBenutzerID *string `json:"ausleiher_benutzer_id,omitempty"`
 	// AusgeliehenAm ist der genaue Zeitpunkt der Ausleihe.
 	AusgeliehenAm time.Time `json:"ausgeliehen_am"`
 	// RueckgabeFrist definiert den spätesten Abgabetermin.

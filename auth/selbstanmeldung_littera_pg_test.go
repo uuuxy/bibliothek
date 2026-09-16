@@ -34,12 +34,17 @@ func TestSelbstanmeldung_UebernimmtKeinenLitteraEintragUeberDenNamen(t *testing.
 	raeumeKontoAb(t, pool, schulAdresse)
 	raeumeKontoAb(t, pool, platzhalter)
 
-	var litteraID string
+	var litteraID, litteraLeserID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (barcode_id, vorname, nachname, email, rolle, aktiv, personenart)
-		VALUES ($1, 'Hanne', 'Littera', $2, 'kollegium', true, 'lehrkraft')
-		RETURNING id`, litteraAusweis, platzhalter).Scan(&litteraID); err != nil {
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Hanne', 'Littera', $1, 'kollegium', true)
+		RETURNING id, leser_id::text`, platzhalter).Scan(&litteraID, &litteraLeserID); err != nil {
 		t.Fatalf("Littera-Eintrag anlegen: %v", err)
+	}
+	// Der Ausweis gehört zur Leserzeile (Migration 125).
+	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = $1 WHERE id = $2`,
+		litteraAusweis, litteraLeserID); err != nil {
+		t.Fatalf("Ausweis eintragen: %v", err)
 	}
 
 	code, meldung := anmelden(t, pool, schulAdresse)
@@ -51,7 +56,8 @@ func TestSelbstanmeldung_UebernimmtKeinenLitteraEintragUeberDenNamen(t *testing.
 	var email, ausweis string
 	var aktiv bool
 	if err := pool.QueryRow(ctx, `
-		SELECT email, coalesce(barcode_id, ''), aktiv FROM benutzer WHERE id = $1`, litteraID).
+		SELECT b.email, coalesce(l.barcode_id, ''), b.aktiv
+		FROM benutzer b LEFT JOIN leser l ON l.id = b.leser_id WHERE b.id = $1`, litteraID).
 		Scan(&email, &ausweis, &aktiv); err != nil {
 		t.Fatalf("Littera-Eintrag lesen: %v", err)
 	}
@@ -63,7 +69,8 @@ func TestSelbstanmeldung_UebernimmtKeinenLitteraEintragUeberDenNamen(t *testing.
 	var anfrageID, anfrageAusweis string
 	var anfrageAktiv bool
 	if err := pool.QueryRow(ctx, `
-		SELECT id, coalesce(barcode_id, ''), aktiv FROM benutzer WHERE LOWER(email) = $1`, schulAdresse).
+		SELECT b.id, coalesce(l.barcode_id, ''), b.aktiv
+		FROM benutzer b LEFT JOIN leser l ON l.id = b.leser_id WHERE LOWER(b.email) = $1`, schulAdresse).
 		Scan(&anfrageID, &anfrageAusweis, &anfrageAktiv); err != nil {
 		t.Fatalf("Anfrage lesen: %v", err)
 	}

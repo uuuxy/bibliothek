@@ -113,7 +113,6 @@ ON CONFLICT (name) DO NOTHING;
 -- Table: benutzer (System administrators, teachers, and library staff)
 CREATE TABLE benutzer (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    barcode_id VARCHAR(100) UNIQUE,                   -- Barcode ID for fast login
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -124,18 +123,16 @@ CREATE TABLE benutzer (
     -- Die Freischaltung setzt es zurück.
     zugang_beantragt_am TIMESTAMP WITH TIME ZONE,
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    -- Migration 119: wer jemand im Kollegium ist (Lehrkraft, LiV) — getrennt von der Rolle, die
-    -- sagt, was jemand darf. Leer bei Konten, die keine Lehrkräfte sein müssen.
-    personenart VARCHAR(20),
+    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
     -- Migration 123 ergaenzt hier leser_id — die Spalte steht NICHT in dieser
-    -- CREATE TABLE, weil benutzer in dieser Datei VOR schueler angelegt wird und eine
+    -- CREATE TABLE, weil benutzer in dieser Datei VOR leser angelegt wird und eine
     -- Verknuepfung nach vorn nicht aufloesbar ist. Sie folgt als ALTER TABLE direkt
     -- hinter der Lesertabelle.
-    CONSTRAINT chk_benutzer_personenart CHECK (personenart IN ('lehrkraft', 'liv'))
+    --
+    -- Eine Ausweisnummer steht hier NICHT (Migration 125): Der Ausweis gehoert zum
+    -- Leser, nicht zum Konto. Ebenso wenig eine Personenart — wer jemand ist, sagt
+    -- leser.art; das Konto sagt nur, was er darf.
 );
-
-CREATE INDEX idx_benutzer_barcode ON benutzer (barcode_id) WHERE barcode_id IS NOT NULL;
 
 -- Migration 113: eindeutig in der Normalform der Anmeldung (LOWER, auth/handlers.go).
 CREATE UNIQUE INDEX uniq_benutzer_email_lower ON benutzer (lower(email));
@@ -580,67 +577,34 @@ CREATE TRIGGER trg_exemplar_geloescht_abholfach
 BEFORE DELETE ON buecher_exemplare
 FOR EACH ROW EXECUTE FUNCTION abholfach_folgt_dem_exemplar();
 
--- Migration 118: Eine Ausweisnummer gehört genau einer Person — über Schüler und Kollegium
--- hinweg. Ein UNIQUE-Index reicht nicht über zwei Tabellen: Der Trigger prüft die andere Tabelle
--- und sperrt die Nummer vorher bis zum Ende der Transaktion. Gelöschte Schüler geben ihre Nummer
--- frei; ändert sich die Nummer nicht, prüft er nicht.
-CREATE OR REPLACE FUNCTION ausweis_eindeutig_ueber_personen()
+-- Migration 125: Ein Konto ohne Leserzeile darf nicht entstehen. Konten entstehen an
+-- fuenf Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Uebernahme, Seed,
+-- Testaufbauten); die sechste wuerde es vergessen, und ein Kollege, den die Theke nicht
+-- findet, ist genau der Fehler, den der Umbau abschafft. Der Ausweis wird hier NICHT
+-- gesetzt — den bekommt ein Leser, wenn einer gedruckt oder eingetragen wird.
+CREATE OR REPLACE FUNCTION konto_hat_leserzeile()
 RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    neu_id uuid;
 BEGIN
-    IF NEW.barcode_id IS NULL THEN
-        RETURN NEW;
-    END IF;
-    IF TG_TABLE_NAME = 'leser' THEN
-        IF NEW.deleted_at IS NOT NULL THEN
-            RETURN NEW;
-        END IF;
-        IF TG_OP = 'UPDATE' THEN
-            IF NEW.barcode_id IS NOT DISTINCT FROM OLD.barcode_id AND OLD.deleted_at IS NULL THEN
-                RETURN NEW;
-            END IF;
-        END IF;
-        PERFORM pg_advisory_xact_lock(hashtext('ausweisnummer'), hashtext(NEW.barcode_id));
-        IF EXISTS (SELECT 1 FROM benutzer WHERE barcode_id = NEW.barcode_id) THEN
-            RAISE EXCEPTION 'Ausweisnummer % trägt bereits eine Lehrkraft', NEW.barcode_id
-                USING ERRCODE = 'unique_violation', CONSTRAINT = 'uniq_ausweis_ueber_personen';
-        END IF;
-    ELSE
-        IF TG_OP = 'UPDATE' THEN
-            IF NEW.barcode_id IS NOT DISTINCT FROM OLD.barcode_id THEN
-                RETURN NEW;
-            END IF;
-        END IF;
-        PERFORM pg_advisory_xact_lock(hashtext('ausweisnummer'), hashtext(NEW.barcode_id));
-        IF EXISTS (SELECT 1 FROM leser WHERE barcode_id = NEW.barcode_id AND deleted_at IS NULL) THEN
-            RAISE EXCEPTION 'Ausweisnummer % trägt bereits ein Schüler', NEW.barcode_id
-                USING ERRCODE = 'unique_violation', CONSTRAINT = 'uniq_ausweis_ueber_personen';
-        END IF;
+    IF NEW.leser_id IS NULL THEN
+        INSERT INTO leser (vorname, nachname, art)
+        VALUES (NEW.vorname, NEW.nachname, 'lehrkraft')
+        RETURNING id INTO neu_id;
+        NEW.leser_id := neu_id;
     END IF;
     RETURN NEW;
 END $$;
 
-CREATE TRIGGER trg_schueler_ausweis_eindeutig
-BEFORE INSERT OR UPDATE OF barcode_id, deleted_at ON leser
-FOR EACH ROW EXECUTE FUNCTION ausweis_eindeutig_ueber_personen();
+CREATE TRIGGER trg_benutzer_hat_leserzeile
+BEFORE INSERT ON benutzer
+FOR EACH ROW EXECUTE FUNCTION konto_hat_leserzeile();
 
-CREATE TRIGGER trg_benutzer_ausweis_eindeutig
-BEFORE INSERT OR UPDATE OF barcode_id ON benutzer
-FOR EACH ROW EXECUTE FUNCTION ausweis_eindeutig_ueber_personen();
-
--- Migration 120: Ein Kollegiumskonto hat immer eine Personenart — sie entscheidet, wer als
--- Lehrkraft ausleiht (repository.SQLAktiveLehrkraft). Ohne Angabe wird es Lehrkraft.
-CREATE OR REPLACE FUNCTION kollegium_hat_personenart()
-RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN
-    IF NEW.rolle = 'kollegium' AND NEW.personenart IS NULL THEN
-        NEW.personenart := 'lehrkraft';
-    END IF;
-    RETURN NEW;
-END $$;
-
-CREATE TRIGGER trg_benutzer_kollegium_personenart
-BEFORE INSERT OR UPDATE OF rolle, personenart ON benutzer
-FOR EACH ROW EXECUTE FUNCTION kollegium_hat_personenart();
+-- Migration 118 hielt eine Ausweisnummer ueber ZWEI Tabellen eindeutig (Trigger
+-- ausweis_eindeutig_ueber_personen), Migration 120 sorgte dafuer, dass ein
+-- Kollegiumskonto eine Personenart bekommt. Beide sind mit Migration 125 gefallen:
+-- Ausweisnummern stehen nur noch in leser, und uniq_schueler_barcode_active haelt sie
+-- dort ohne Trigger eindeutig.
 
 
 -- Table: class_books (LMF class to book catalog metadata association)
@@ -691,9 +655,12 @@ CREATE TABLE ausleihen (
     exemplar_id UUID REFERENCES buecher_exemplare(id) ON DELETE RESTRICT,
     geraet_id UUID REFERENCES geraete(id) ON DELETE RESTRICT,
     
-    -- Polymorphic borrower association (loan to student OR user/staff)
-    schueler_id UUID REFERENCES leser(id) ON DELETE RESTRICT,
-    ausleiher_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    -- Der Ausleiher: EIN Leser (Migration 125). Nullbar, weil die DSGVO-Anonymisierung
+    -- die Buchung bewusst von der Person loest — die Zahl bleibt, der Mensch geht.
+    -- Der Constraint traegt seinen Namen ausdruecklich: So heisst er auf dem gewachsenen
+    -- Weg auch (Postgres vergibt genau diesen), und der Invarianten-Katalog kann ihn
+    -- nennen (docs/invarianten_fundstellen_test.go).
+    schueler_id UUID CONSTRAINT ausleihen_schueler_id_fkey REFERENCES leser(id) ON DELETE RESTRICT,
     
     ausgeliehen_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     rueckgabe_frist TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -713,13 +680,6 @@ CREATE TABLE ausleihen (
     mahnstufe INTEGER NOT NULL DEFAULT 0,
     letztes_mahndatum TIMESTAMP WITH TIME ZONE,
 
-    -- Constraint: Exactly one borrower must be associated with the loan, or both NULL when anonymized/deleted
-    CONSTRAINT check_loan_borrower CHECK (
-        (schueler_id IS NOT NULL AND ausleiher_benutzer_id IS NULL) OR
-        (schueler_id IS NULL AND ausleiher_benutzer_id IS NOT NULL) OR
-        (schueler_id IS NULL AND ausleiher_benutzer_id IS NULL)
-    ),
-    
     -- Constraint: Exactly one item must be borrowed (book or device)
     CONSTRAINT check_loan_item CHECK (
         (exemplar_id IS NOT NULL AND geraet_id IS NULL) OR
@@ -734,7 +694,6 @@ CREATE TABLE ausleihen (
 
 CREATE INDEX idx_ausleihen_exemplar ON ausleihen (exemplar_id);
 CREATE INDEX idx_ausleihen_schueler ON ausleihen (schueler_id) WHERE schueler_id IS NOT NULL;
-CREATE INDEX idx_ausleihen_benutzer ON ausleihen (ausleiher_benutzer_id) WHERE ausleiher_benutzer_id IS NOT NULL;
 CREATE INDEX idx_ausleihen_aktive ON ausleihen (rueckgabe_am) WHERE rueckgabe_am IS NULL; -- Highly active lookup for current loans
 -- Datenintegrität: höchstens EINE aktive Ausleihe je Exemplar bzw. Gerät (siehe Migration 033).
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_exemplar ON ausleihen (exemplar_id) WHERE rueckgabe_am IS NULL AND exemplar_id IS NOT NULL;
@@ -750,8 +709,7 @@ CREATE TABLE schadensfaelle (
     ausleihe_id UUID REFERENCES ausleihen(id) ON DELETE SET NULL, -- Optional link to corresponding checkout
     
     -- Target person responsible (either student OR user/staff)
-    schueler_id UUID REFERENCES leser(id) ON DELETE RESTRICT,
-    benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
+    schueler_id UUID CONSTRAINT schadensfaelle_schueler_id_fkey REFERENCES leser(id) ON DELETE RESTRICT,
     
     beschreibung TEXT NOT NULL,
     betrag NUMERIC(10, 2) NOT NULL DEFAULT 0.00 CONSTRAINT check_positive_amount CHECK (betrag >= 0.00),
@@ -773,11 +731,6 @@ CREATE TABLE schadensfaelle (
     stornierungsgrund TEXT DEFAULT NULL,
     
     -- Constraint: Exactly one responsible person must be associated, or both NULL when anonymized/deleted
-    CONSTRAINT check_damage_responsible CHECK (
-        (schueler_id IS NOT NULL AND benutzer_id IS NULL) OR
-        (schueler_id IS NULL AND benutzer_id IS NOT NULL) OR
-        (schueler_id IS NULL AND benutzer_id IS NULL)
-    ),
     
     -- Constraint: Exactly one item must be associated
     CONSTRAINT check_damage_item CHECK (
@@ -788,7 +741,6 @@ CREATE TABLE schadensfaelle (
 
 CREATE INDEX idx_schadensfaelle_exemplar ON schadensfaelle (exemplar_id);
 CREATE INDEX idx_schadensfaelle_schueler ON schadensfaelle (schueler_id) WHERE schueler_id IS NOT NULL;
-CREATE INDEX idx_schadensfaelle_benutzer ON schadensfaelle (benutzer_id) WHERE benutzer_id IS NOT NULL;
 CREATE INDEX idx_schadensfaelle_offene ON schadensfaelle (ist_bezahlt) WHERE ist_bezahlt = false; -- Fast extraction of unpaid fees
 
 CREATE TRIGGER trg_schadensfaelle_aktualisiert_am
@@ -1453,7 +1405,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('121_rolle_leitung.sql'),
 ('122_rechte_leitung.sql'),
 ('123_lesertabelle.sql'),
-('124_leser_tabelle_schueler_sicht.sql')
+('124_leser_tabelle_schueler_sicht.sql'),
+('125_ein_ausweis_ein_leser.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -1612,9 +1565,7 @@ CREATE TABLE nachbuch_meldungen (
 	ergebnis TEXT NOT NULL,
 	grund TEXT,
 	ausleiher_schueler_id UUID REFERENCES leser(id) ON DELETE SET NULL,
-	ausleiher_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
 	vorbesitzer_schueler_id UUID REFERENCES leser(id) ON DELETE SET NULL,
-	vorbesitzer_benutzer_id UUID REFERENCES benutzer(id) ON DELETE SET NULL,
 	ausweis_text TEXT,
 	gescannt_am TIMESTAMP WITH TIME ZONE NOT NULL,
 	erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

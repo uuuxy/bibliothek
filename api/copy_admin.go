@@ -200,15 +200,17 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 		// auch dann keinen leeren Namen tragen.
 		query := `
 			SELECT
-			  COALESCE(s.vorname, b.vorname, 'Anonym') AS vorname,
-			  COALESCE(s.nachname, b.nachname, '') AS nachname,
-			  CASE WHEN a.ausleiher_benutzer_id IS NOT NULL THEN 'Lehrer' ELSE COALESCE(s.klasse, '') END AS klasse,
-			  COALESCE(s.barcode_id, b.barcode_id, '') AS ausleiher_barcode,
+			  COALESCE(l.vorname, 'Anonym') AS vorname,
+			  COALESCE(l.nachname, '') AS nachname,
+			  -- „Lehrer" steht jetzt an der Art des Lesers statt an der Spalte, in der
+			  -- er stand (Migration 125). Der Klassenfilter des Reiters liest dieses Feld.
+			  CASE WHEN l.art IS NOT NULL AND l.art <> 'schueler' THEN 'Lehrer'
+			       ELSE COALESCE(l.klasse, '') END AS klasse,
+			  COALESCE(l.barcode_id, '') AS ausleiher_barcode,
 			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			LEFT JOIN schueler s ON a.schueler_id = s.id
-			LEFT JOIN benutzer b ON a.ausleiher_benutzer_id = b.id
+			LEFT JOIN leser l ON a.schueler_id = l.id
 			WHERE e.titel_id = $1 AND a.rueckgabe_am IS NULL
 			ORDER BY a.rueckgabe_frist ASC
 		`
@@ -271,14 +273,14 @@ func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 
 	query := `
 			SELECT 
-			  COALESCE(s.vorname, b.vorname) AS vorname,
-			  COALESCE(s.nachname, b.nachname) AS nachname,
-			  CASE WHEN a.ausleiher_benutzer_id IS NOT NULL THEN 'Lehrer' ELSE s.klasse END AS klasse,
+			  l.vorname AS vorname,
+			  l.nachname AS nachname,
+			  CASE WHEN l.art IS NOT NULL AND l.art <> 'schueler' THEN 'Lehrer'
+			       ELSE l.klasse END AS klasse,
 			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
-			LEFT JOIN schueler s ON a.schueler_id = s.id
-			LEFT JOIN benutzer b ON a.ausleiher_benutzer_id = b.id
+			LEFT JOIN leser l ON a.schueler_id = l.id
 			WHERE e.titel_id = $1
 			ORDER BY a.ausgeliehen_am DESC
 			LIMIT 200

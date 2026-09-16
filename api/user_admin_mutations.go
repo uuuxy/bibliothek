@@ -34,28 +34,11 @@ func (s *Server) auditiereBenutzerMutation(r *http.Request, aktion string, detai
 
 // CreateUserRequest holds payload data for user creation.
 type CreateUserRequest struct {
-	BarcodeID   string  `json:"barcode_id"`
-	Vorname     string  `json:"vorname" validate:"required"`
-	Nachname    string  `json:"nachname" validate:"required"`
-	Email       string  `json:"email" validate:"required,email"`
-	Rolle       string  `json:"rolle" validate:"required"`
-	Personenart *string `json:"personenart"`
-}
-
-// personenarten sind die Werte von benutzer.personenart (Migration 119, chk_benutzer_personenart)
-// plus "" für „keine Angabe". Die Personenart sagt, wer jemand im Kollegium ist; die Rolle, was
-// er in der Software darf.
-var personenarten = map[string]bool{"": true, "lehrkraft": true, "liv": true}
-
-// pruefePersonenart weist eine unbekannte Personenart mit 400 ab, bevor die Datenbank sie sieht.
-// nil (Feld nicht geschickt) ist immer gültig.
-func pruefePersonenart(w http.ResponseWriter, art *string) bool {
-	if art == nil || personenarten[*art] {
-		return true
-	}
-	apierrors.SendHTTPError(w, http.StatusBadRequest,
-		errors.New("unbekannte Personenart — erlaubt sind Lehrkraft, LiV oder keine Angabe"))
-	return false
+	BarcodeID string `json:"barcode_id"`
+	Vorname   string `json:"vorname" validate:"required"`
+	Nachname  string `json:"nachname" validate:"required"`
+	Email     string `json:"email" validate:"required,email"`
+	Rolle     string `json:"rolle" validate:"required"`
 }
 
 // CreateUserHandler inserts a new user. Es gibt keine lokalen Passwörter — die
@@ -79,9 +62,6 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		if req.Vorname == "" || req.Nachname == "" || req.Email == "" || req.Rolle == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("alle Felder sind Pflichtfelder"))
-			return
-		}
-		if !pruefePersonenart(w, req.Personenart) {
 			return
 		}
 
@@ -108,9 +88,9 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		dbEnumRole := normalisiereBenutzerRolle(req.Rolle)
 
-		// Ein Kollegiumskonto ohne Angabe wird Lehrkraft — das trägt die Datenbank ein (Migration 120).
-		if _, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole,
-			req.Personenart); err != nil {
+		// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
+		// von selbst (Trigger trg_benutzer_hat_leserzeile, Migration 125).
+		if _, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -133,8 +113,6 @@ type UpdateUserRequest struct {
 	Email     string `json:"email" validate:"required,email"`
 	Rolle     string `json:"rolle" validate:"required"`
 	Aktiv     bool   `json:"aktiv"`
-	// Personenart: nicht geschickt = unverändert, "" = leeren (Migration 119).
-	Personenart *string `json:"personenart"`
 	// Kein Passwort-Feld: Staff-Logins laufen über den Schul-Mailserver (IMAP) bzw.
 	// Barcode/PIN — es gibt keine lokale Passwortspalte (siehe Migration 012). Ein früher
 	// hier vorhandenes `password`-Feld wurde ersatzlos entfernt, weil der Wert nirgends
@@ -171,9 +149,6 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("vorname, Nachname, E-Mail und Rolle sind Pflichtfelder"))
 			return
 		}
-		if !pruefePersonenart(w, req.Personenart) {
-			return
-		}
 
 		ctx := r.Context()
 
@@ -207,7 +182,7 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		if err := userRepo.UpdateUser(ctx, repository.UpdateUserParams{
 			ID: id, Barcode: barcode, Vorname: req.Vorname, Nachname: req.Nachname,
-			Email: req.Email, Rolle: dbEnumRole, Aktiv: req.Aktiv, Personenart: req.Personenart,
+			Email: req.Email, Rolle: dbEnumRole, Aktiv: req.Aktiv,
 		}); err != nil {
 			// Kein Audit-Eintrag und kein Cache-Invalidate für eine Änderung, die nie
 			// stattfand (Phantom-Erfolg-Sweep 31.08.2026).

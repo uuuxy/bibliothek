@@ -134,10 +134,14 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 
 	// 2. Der Eintrag existiert — inaktiv, Rolle kollegium, Name aus der Adresse geraten.
 	var aktiv bool
-	var rolle, vorname, nachname, personenart string
+	var rolle, vorname, nachname, art string
+	// Die Art steht seit Migration 125 an der LESERZEILE des Kontos — dass es überhaupt
+	// eine gibt, ist Teil der Zusage: Ohne sie fände die Theke die neue Lehrkraft nicht.
 	if err := pool.QueryRow(ctx, `
-		SELECT aktiv, rolle::text, vorname, nachname, coalesce(personenart, '') FROM benutzer WHERE LOWER(email) = $1
-	`, email).Scan(&aktiv, &rolle, &vorname, &nachname, &personenart); err != nil {
+		SELECT b.aktiv, b.rolle::text, b.vorname, b.nachname, coalesce(l.art, '')
+		FROM benutzer b LEFT JOIN leser l ON l.id = b.leser_id
+		WHERE LOWER(b.email) = $1
+	`, email).Scan(&aktiv, &rolle, &vorname, &nachname, &art); err != nil {
 		t.Fatalf("angelegtes Konto lesen: %v", err)
 	}
 	if aktiv {
@@ -146,10 +150,11 @@ func TestSelbstanmeldung_LegtAnAberLaesstNichtRein(t *testing.T) {
 	if rolle != "kollegium" {
 		t.Errorf("Rolle = %q, erwartet kollegium", rolle)
 	}
-	// Wer sich über das Schulpostfach selbst anmeldet, ist Lehrkraft (Migration 119); eine LiV
-	// trägt die Benutzerverwaltung von Hand um.
-	if personenart != "lehrkraft" {
-		t.Errorf("Personenart = %q, erwartet lehrkraft", personenart)
+	// Wer sich über das Schulpostfach selbst anmeldet, ist Lehrkraft; eine LiV trägt die
+	// Leserdatei von Hand um. 'schueler' wäre hier gefährlich: Diese Zeile käme in jede
+	// Klassenliste und würde vom nächsten LUSD-Abgleich als Abgänger markiert.
+	if art != "lehrkraft" {
+		t.Errorf("Art der Leserzeile = %q, erwartet lehrkraft", art)
 	}
 	if vorname != "Erika" || nachname != "Musterfrau" {
 		t.Errorf("Name aus der Adresse = %q %q, erwartet Erika Musterfrau", vorname, nachname)

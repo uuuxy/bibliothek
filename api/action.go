@@ -231,8 +231,7 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 		// nie an, der Schutz war also nur Konvention (bewertung-Muster F1/F4).
 		res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
 			Query:              req.Query,
-			ActiveStudentID:    req.ActiveStudentID,
-			ActiveTeacherID:    req.ActiveTeacherID,
+			ActiveLeserID:      req.ActiveLeserID,
 			ConfirmedChecklist: req.ConfirmedChecklist,
 			StaffID:            claims.UserID,
 			StaffRole:          string(claims.Rolle),
@@ -278,14 +277,12 @@ func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionRespons
 		Type:                 res.Type,
 		Message:              res.Message,
 		Student:              zumKioskSchueler(res.Student),
-		Teacher:              zumKioskMitarbeiter(res.Teacher),
 		Book:                 res.Book,
 		Geraet:               res.Geraet,
 		DueDate:              res.DueDate,
 		LoanID:               res.LoanID,
 		Fremdrueckgabe:       res.Fremdrueckgabe,
 		Vorbesitzer:          zumKioskSchueler(res.Vorbesitzer),
-		VorbesitzerUser:      zumKioskMitarbeiter(res.VorbesitzerUser),
 		SearchResults:        res.SearchResults,
 		HasVormerkung:        res.HasVormerkung,
 		VormerkungTitel:      res.VormerkungTitel,
@@ -401,8 +398,7 @@ func (s *Server) processSingleBatchItem(ctx context.Context, k batchKontext, req
 
 	res, err := k.omnibox.ProcessQuery(ctx, service.OmniboxQuery{
 		Query:              req.Query,
-		ActiveStudentID:    req.ActiveStudentID,
-		ActiveTeacherID:    req.ActiveTeacherID,
+		ActiveLeserID:      req.ActiveLeserID,
 		ConfirmedChecklist: req.ConfirmedChecklist,
 		StaffID:            k.userID,
 		StaffRole:          k.rolle,
