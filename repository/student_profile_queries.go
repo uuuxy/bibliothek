@@ -33,7 +33,8 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			coalesce(t.cover_url, ''),
 			t.ist_lernmittel,
 			a.ausgeliehen_am,
-			a.rueckgabe_frist
+			a.rueckgabe_frist,
+			a.ist_handapparat
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON a.exemplar_id = e.id
 		JOIN buecher_titel t ON e.titel_id = t.id
@@ -60,6 +61,7 @@ func (repo *pgStudentRepository) GetActiveBorrowedBooks(ctx context.Context, stu
 			&b.IstLernmittel,
 			&b.AusgeliehenAm,
 			&b.RueckgabeFrist,
+			&b.IstDauerleihe,
 		); err != nil {
 			return nil, err
 		}
@@ -214,7 +216,15 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 		LEFT JOIN LATERAL (
 			SELECT
 				COUNT(*) as ausgeliehen_anzahl,
-				COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP) as ueberfaellig_anzahl
+				-- Dauerleihen werden NICHT überfällig. Das ist keine neue Regel, sondern
+				-- dieselbe, nach der die Sperr-Automatik seit jeher zählt
+				-- (zaehleUeberfaelligeMedien: ist_handapparat = false). Hier fehlte sie:
+				-- Ein Kollege stand nach einem Jahr mit roter Zahl in der Leserdatei,
+				-- während die Theke ihn anstandslos bediente — zwei Wahrheiten über
+				-- dieselbe Ausleihe. Entschieden am 16.09.2026: „kollegen haben keine
+				-- frist bzw werden einfach nie gesperrt!"
+				COUNT(*) FILTER (WHERE a.rueckgabe_frist < CURRENT_TIMESTAMP
+				                   AND a.ist_handapparat = false) as ueberfaellig_anzahl
 			FROM ausleihen a
 			WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL
 		) l ON true

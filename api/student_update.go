@@ -20,12 +20,14 @@ import (
 // pruefeSchuelerLoeschbar prüft, ob ein Schüler gelöscht werden darf. Rückgabe
 // (0, nil) bedeutet löschbar; andernfalls der passende HTTP-Status samt Fehler.
 func (s *Server) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, error) {
+	// `leser` statt der Sicht `schueler`: Die zeigt nur Schüler, und ein Kollege kam hier
+	// als „nicht gefunden" zurück, bevor auch nur eine Regel geprüft war.
 	var studentExists bool
-	if err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schueler WHERE id = $1)", id).Scan(&studentExists); err != nil {
+	if err := s.DB.Pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM leser WHERE id = $1)", id).Scan(&studentExists); err != nil {
 		return http.StatusInternalServerError, err
 	}
 	if !studentExists {
-		return http.StatusNotFound, errors.New("schüler nicht gefunden")
+		return http.StatusNotFound, errors.New("leser nicht gefunden")
 	}
 
 	var hasActiveLoans bool
@@ -39,7 +41,7 @@ func (s *Server) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, e
 		return http.StatusInternalServerError, err
 	}
 	if hasActiveLoans {
-		return http.StatusBadRequest, errors.New("löschen nicht möglich: Schüler hat noch entliehene Bücher")
+		return http.StatusBadRequest, errors.New("löschen nicht möglich: Dieser Leser hat noch entliehene Bücher")
 	}
 
 	var hasUnpaidDamages bool
@@ -49,7 +51,7 @@ func (s *Server) pruefeSchuelerLoeschbar(ctx context.Context, id string) (int, e
 		return http.StatusInternalServerError, err
 	}
 	if hasUnpaidDamages {
-		return http.StatusBadRequest, errors.New("löschen nicht möglich: Schüler hat noch unbezahlte Schadensfälle/Gebühren")
+		return http.StatusBadRequest, errors.New("löschen nicht möglich: Dieser Leser hat noch unbezahlte Schadensfälle/Gebühren")
 	}
 
 	return 0, nil
@@ -83,6 +85,22 @@ func (s *Server) DeleteStudentHandler(auditRepo repository.AuditRepository) http
 		}
 
 		ctx := r.Context()
+
+		// Niemand löscht seine eigene Leserzeile. Beim Kollegium fiele damit auch das
+		// eigene Konto (DeleteStudent) — der Löschende spielte sich mitten im Vorgang
+		// selbst aus der Anmeldung. Die Benutzerverwaltung hält dieselbe Regel für Konten
+		// (DeleteUserHandler, „eigenes Konto kann nicht gelöscht werden").
+		eigene, err := repository.LeserIDVonKonto(ctx, s.DB.Pool, claims.UserID)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		if eigene != "" && eigene == id {
+			apierrors.SendHTTPError(w, http.StatusForbidden,
+				//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung in der Akte
+				errors.New("Der eigene Eintrag lässt sich nicht löschen — mit ihm fiele der eigene Zugang."))
+			return
+		}
 
 		if status, err := s.pruefeSchuelerLoeschbar(ctx, id); err != nil {
 			apierrors.SendHTTPError(w, status, err)
@@ -329,7 +347,7 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 //	Schueler -> Kollege: Die Zeile verliert damit ihre LUSD-Bindung. Traegt sie eine
 //	  lusd_id, bricht chk_leser_nur_schueler_werden_abgaenger; traegt sie keine, waere
 //	  der Schueler beim naechsten Import ein unbekannter Name und liefe als Abgaenger
-//	  samt Anonymisierung durch. Peter, 16.09.2026: "ein Schueler kann nie ein Lehrer
+//	  samt Anonymisierung durch. Absprache vom 16.09.2026: "ein Schueler kann nie ein Lehrer
 //	  werden!"
 //	Kollege -> Schueler: chk_leser_schueler_pflichtfelder verlangt Klasse, Abgaengerjahr
 //	  UND Ausweisnummer. Ein Kollege hat die ersten beiden nicht; das UPDATE liefe in
@@ -538,7 +556,7 @@ func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWri
 	// „Schueler" meint, meint durch sie auch wirklich Schueler. Fuer den Aenderungspfad
 	// der Akte ist sie aber die falsche Tuer, seit die Leserdatei alle fuehrt — ein
 	// Kollege steht NICHT in ihr, das UPDATE traf null Zeilen, und der Handler
-	// antwortete 404 „schueler nicht gefunden". Genau das war Peters Befund am
+	// antwortete 404 „schueler nicht gefunden". Genau das war der Befund am
 	// 16.09.2026: „ich kann dort aber keine adressedaten etc nachtragen." Es fehlte
 	// nicht nur der Knopf in der Akte — der Server haette ihn ohnehin abgewiesen.
 	//

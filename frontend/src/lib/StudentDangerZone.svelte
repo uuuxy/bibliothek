@@ -4,14 +4,23 @@
 
 	/**
 	 * @component StudentDangerZone
-	 * Admin-only "Gefahrenzone" zum Archivieren/Löschen eines Schülerprofils.
+	 * Admin-only "Gefahrenzone" zum Archivieren/Löschen eines Leser-Profils.
 	 * Wird ausschließlich am unteren Ende des Reiters "Stammdaten & Adresse" gerendert.
 	 *
+	 * Seit dem 16.09.2026 steht sie auch beim Kollegium. Vorher war sie dort ausgeblendet,
+	 * weil der ganze Löschweg gegen die Sicht `schueler` schrieb und bei einem Kollegen
+	 * „nicht gefunden" antwortete. Mit ihm fällt jetzt sein ZUGANG (entschieden am
+	 * 16.09.2026: „wenn ein kollege gelöscht wird dann wird alles gelöscht"). Das muss
+	 * hier stehen, bevor jemand
+	 * klickt: Nach dem Wiederherstellen ist der Zugang nicht von allein zurück, er wird
+	 * über die Schul-E-Mail in der Akte neu angelegt.
+	 *
 	 * @prop {() => void} onDelete - Callback, der den Lösch-/Archivierungsdialog öffnet.
+	 * @prop {boolean} [kollege] - Lehrkraft oder LiV (hat einen Zugang).
 	 */
 
-	/** @type {{ onDelete: () => void }} */
-	let { onDelete } = $props();
+	/** @type {{ onDelete: () => void, kollege?: boolean }} */
+	let { onDelete, kollege = false } = $props();
 </script>
 
 <section
@@ -23,8 +32,13 @@
 			Gefahrenzone
 		</h3>
 		<p class="text-rose-600/80 text-sm mt-1 max-w-xl">
-			Das Löschen dieses Schülerprofils entfernt die Person aus dem regulären System. Offene
-			Ausleihen oder Forderungen müssen vorher beglichen werden.
+			{#if kollege}
+				Das Löschen entfernt die Person aus dem regulären System — und mit ihr den Zugang zu „Mein
+				Portal“. Offene Ausleihen oder Forderungen müssen vorher beglichen werden.
+			{:else}
+				Das Löschen dieses Schülerprofils entfernt die Person aus dem regulären System. Offene
+				Ausleihen oder Forderungen müssen vorher beglichen werden.
+			{/if}
 		</p>
 	</div>
 	<Button
@@ -33,6 +47,6 @@
 		onclick={onDelete}
 		class="shrink-0 px-6 bg-white hover:bg-rose-600 hover:text-white"
 	>
-		Schüler archivieren / löschen
+		{kollege ? 'Kollegen archivieren / löschen' : 'Schüler archivieren / löschen'}
 	</Button>
 </section>

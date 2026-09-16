@@ -122,3 +122,17 @@ func IstAdressenKollision(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
+
+// LeserIDVonKonto liefert die Leserzeile zu einem Konto ("" = unbekanntes Konto).
+//
+// Gebraucht für den Selbstschutz beim Löschen: Wer seine eigene Leserzeile löscht,
+// verliert beim Kollegium im selben Vorgang sein Konto.
+func LeserIDVonKonto(ctx context.Context, pool db.PgxPoolIface, kontoID string) (string, error) {
+	var leserID string
+	err := pool.QueryRow(ctx,
+		`SELECT COALESCE(leser_id::text, '') FROM benutzer WHERE id = $1`, kontoID).Scan(&leserID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	return leserID, err
+}

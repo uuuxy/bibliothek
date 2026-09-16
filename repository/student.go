@@ -25,6 +25,15 @@ type BorrowedBook struct {
 	IstLernmittel  bool      `json:"ist_lernmittel"`
 	AusgeliehenAm  time.Time `json:"ausgeliehen_am"`
 	RueckgabeFrist time.Time `json:"rueckgabe_frist"`
+	// IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist
+	// (`ausleihen.ist_handapparat`, gesetzt in erzeugeAusleihe und im Geräte-Pfad).
+	//
+	// Sie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die
+	// es nicht gibt: Entschieden am 16.09.2026 — „kollegen haben keine frist bzw werden einfach
+	// nie gesperrt!" Die Sperr-Automatik hält das seit jeher (sie zählt nur Ausleihen mit
+	// ist_handapparat = false); die Akte rechnete daneben ihr eigenes „überfällig" aus
+	// dem Datum und färbte die Zeile nach einem Jahr rot.
+	IstDauerleihe bool `json:"ist_dauerleihe"`
 }
 
 // StudentListStat represents a student along with their current loan statistics.

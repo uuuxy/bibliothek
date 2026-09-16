@@ -26,7 +26,7 @@ func (s *Server) GetDeletedStudentsHandler() http.HandlerFunc {
 			SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''),
 			       coalesce(klasse, ''), abgaenger_jahr, coalesce(ist_gesperrt, false), deleted_at,
 			       anonymized_at
-			FROM schueler
+			FROM leser
 			WHERE deleted_at IS NOT NULL
 			ORDER BY deleted_at DESC
 			LIMIT $1
@@ -93,7 +93,7 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 		// „Anonym"-Datensatz in der aktiven Liste (Prüfung 22.08.2026). 409 statt Restore.
 		var anonymisiert bool
 		if err := s.DB.Pool.QueryRow(ctx,
-			`SELECT anonymized_at IS NOT NULL FROM schueler WHERE id = $1 AND deleted_at IS NOT NULL`, id,
+			`SELECT anonymized_at IS NOT NULL FROM leser WHERE id = $1 AND deleted_at IS NOT NULL`, id,
 		).Scan(&anonymisiert); err == nil && anonymisiert {
 			apierrors.SendHTTPError(w, http.StatusConflict,
 				errors.New("dieser Datensatz ist bereits anonymisiert (DSGVO) und kann nicht wiederhergestellt werden"))
@@ -105,7 +105,7 @@ func (s *Server) RestoreStudentHandler() http.HandlerFunc {
 		// Aufheben bliebe der wiederhergestellte Schüler dauerhaft gesperrt (Zombie-Sperre)
 		// und könnte nichts ausleihen. Eine Sperre aus ANDEREM Grund bleibt bestehen.
 		tag, err := s.DB.Pool.Exec(ctx, `
-			UPDATE schueler SET
+			UPDATE leser SET
 				deleted_at = NULL,
 				ist_gesperrt = CASE WHEN block_reason = 'Systematisch gelöscht' THEN false ELSE ist_gesperrt END,
 				block_reason = CASE WHEN block_reason = 'Systematisch gelöscht' THEN NULL ELSE block_reason END,

@@ -64,6 +64,12 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 		WHERE a.schueler_id = $1
 		  AND a.rueckgabe_am IS NULL
 		  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
+		  -- Dauerleihen bleiben aussen vor: Sie werden nicht überfällig (dieselbe Regel wie
+		  -- in der Sperr-Automatik und in der Leserliste), und eine Forderung „wegen
+		  -- Überschreitung der Frist" gegen jemanden, der keine hat, wäre unbegründet.
+		  -- Ob ein Kollege für ein VERLORENES Buch zahlen soll, ist davon unberührt — das
+		  -- ist eine Betriebsfrage (docs/OFFEN.md 5.16 B) und keine Nebenwirkung der Frist.
+		  AND a.ist_handapparat = false
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle f WHERE f.ausleihe_id = a.id AND f.storniert_am IS NULL)
 		ORDER BY a.rueckgabe_frist, t.titel`, schuelerID)
 	if err != nil {

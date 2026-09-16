@@ -22,10 +22,10 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-2. **Vier kurze Antworten** (Abschnitt 5.16 B): Wie lange darf ein Kollege ein Buch
-   behalten? Soll seine Ausleihhistorie nach einer Frist gelöscht werden? Soll er gemahnt
-   werden? Soll er für ein verlorenes Buch zahlen? Ich habe überall gelassen, wie es war —
-   ein Jahr, nein, nein; und die Forderung entsteht heute, steht aber in keiner Übersicht.
+2. **Zwei kurze Antworten** (Abschnitt 5.16 B): Soll die Ausleihhistorie eines Kollegen
+   nach einer Frist gelöscht werden? Soll er für ein verlorenes Buch zahlen? Die beiden
+   anderen Fragen sind am 16.09.2026 beantwortet und gebaut: Ein Kollege hat keine Frist
+   und wird nie gesperrt.
 3. **15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16 A). Sie ist
    fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
    einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
@@ -78,9 +78,9 @@ jemandem schaden?"**
 1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
    am Stack (2.3), dann die Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** werden
    dabei mit entschieden).
-1. **5.16** Leserdatei und Rolle Leitung: gebaut. Offen sind der Blick auf den Stand,
-   seine vier Antworten zum Betrieb (Frist, Historie, Mahnung, Schadensersatz) und ein Punkt,
-   der daran hängt: das Löschen eines Kollegen samt Konto (5.16 C).
+1. **5.16** Leserdatei und Rolle Leitung: gebaut, samt Löschen eines Kollegen mitsamt
+   Konto. Offen sind nur noch der Blick auf den Stand und zwei Antworten zum Betrieb
+   (Lesehistorie, Schadensersatz).
 2. **5.1** Schäden und Benutzer.
 3. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -877,28 +877,23 @@ stimmen und ob dir etwas fehlt. Was ein Kollege bewusst NICHT in seiner Akte hat
 
 - **Kontoauszug, Ersatzforderung, DSGVO-Auskunft** — sie gehören der Schülerarbeit und lesen
   alle die Sicht `schueler`. Ausgeblendet statt kaputt.
-- **Löschen** — der Löschpfad schreibt gegen die Sicht und träfe null Zeilen. Siehe C.
+- **Löschen** — steht seit dem 16.09.2026 auch beim Kollegium in der Gefahrenzone. Mit dem
+  Eintrag fällt sein Zugang; wird er aus dem Papierkorb zurückgeholt, kommt er ohne Zugang
+  zurück, und die Schul-E-Mail in der Akte legt ihn neu an.
 
-**B. Vier kurze Antworten zum Betrieb.** Überall gilt heute das Verhalten von vorher;
-ich habe nichts geändert:
+**B. Zwei offene Antworten zum Betrieb.** Zwei der vier Fragen sind am 16.09.2026
+beantwortet und umgesetzt: Ein Kollege hat **keine Frist und wird nie gesperrt**. Seine
+Ausleihe ist eine Dauerleihe, und eine Dauerleihe wird nirgends überfällig — die Akte zeigt
+„ohne Frist", die Leserdatei zählt ihn nicht, die Übersicht führt ihn nicht als Mahnfall,
+und eine Ersatzforderung aus Fristüberschreitung entsteht nicht. Gemahnt wurde er ohnehin
+nie: Der Mahnlauf liest die Sicht `schueler`. Offen bleiben:
 
-1. **Wie lange darf ein Kollege ein Buch behalten?** Heute ein Jahr — das war die Regel für
-   die Dauerleihe fürs Unterrichten. Wer sich einen Roman mitnimmt, behält ihn damit genauso
-   lange wie einen Klassensatz.
 1. **Soll die Befristung der Lesehistorie auch fürs Kollegium gelten?** Heute nein.
-2. **Sollen Kollegen gemahnt werden?** Heute nein.
-3. **Soll ein Kollege für ein verlorenes Buch zahlen?** Heute entsteht die Forderung, steht
-   aber in keiner Übersicht — die Einzelheiten in 5.17, Fund 1.
+2. **Soll ein Kollege für ein verlorenes Buch zahlen?** Heute entsteht die Forderung, steht
+   aber in keiner Übersicht — die Einzelheiten in 5.17, Fund 1. Sie hängt jetzt NICHT mehr
+   an einer Frist; wenn das gewollt ist, ist es eine eigene Entscheidung.
 
-**C. Zwei tote Türen, mit Absicht offen.** Papierkorb (`repository/audit_users.go`) und
-Papierkorb-Ansicht (`api/student_deleted.go`) schreiben weiter gegen die Sicht `schueler`.
-Sie sind für einen Kollegen nicht erreichbar, und das soll vorerst so bleiben: **Vorher ist
-zu klären, was mit dem KONTO geschieht**, wenn die Leserzeile eines Kollegen in den
-Papierkorb wandert. Heute zeigte das Konto auf eine gelöschte Zeile. Der Schreibweg ist
-absichtlich nicht mit umgehängt worden — er würde sonst über die API erreichbar, bevor diese
-Frage beantwortet ist.
-
-**D. Der Nummernkreis bleibt unangetastet — bewusst.** Gemessen auf dem Testserver
+**C. Der Nummernkreis bleibt unangetastet — bewusst.** Gemessen auf dem Testserver
 (16.09.2026): Exemplare 1…122.127 (30.658 nackte Littera-Nummern, 4.065 `LMF-`, 65 `B-`),
 Leser 33 Zeilen, genau EINE Nummer wäre ohne Vorsilbe doppeldeutig. Aus `littera_sav.mdb`:
 Exemplare 1…61.512, Leser 0…3.531 — 1.990 von 1.991 Lesernummern sind dort zugleich
@@ -907,7 +902,7 @@ gemeinsamer Nummernkreis ohne Vorsilben wäre möglich, brächte aber nichts, so
 Offline-Theke die Vorsilbe braucht: **Ohne Netz ist sie die einzige Information, an der die
 Theke einen Buchscan von einem Ausweisscan unterscheiden kann.**
 
-**E. Entschieden und nicht mehr zu diskutieren** (steht hier, weil die Frage sonst wiederkommt):
+**D. Entschieden und nicht mehr zu diskutieren** (steht hier, weil die Frage sonst wiederkommt):
 
 - Die E-Mail eines Kollegen wird NICHT in `leser.eltern_email` abgetippt. Die Spalte gehört
   dem LUSD-Import und heißt auch in der DSGVO-Auskunft „Eltern-E-Mail". Die Adresse steht

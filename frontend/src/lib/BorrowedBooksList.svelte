@@ -107,11 +107,10 @@
 				<!-- Lernmittel kommt aus dem Feld (Migration 093) — nicht mehr aus einem
 				     „LMF"-Präfix in Titel oder Signatur, den drei Stellen verschieden lasen. -->
 				{@const isLMF = !!book.ist_lernmittel}
-				{@const isOverdue = mode === 'loans' && new Date(book.rueckgabe_frist) < new Date()}
-				<!-- Miniatur und Großansicht ziehen ihre Quelle aus derselben Funktion. Vorher lud
-				     die Miniatur den Pfad direkt, die Großansicht dagegen über den Cover-Proxy —
-				     der lokale Pfade ablehnt. Ergebnis: sichtbares Cover in der Zeile, "Kein
-				     Coverbild hinterlegt" in der Vergrößerung. -->
+				<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Sperr-Automatik. -->
+				{@const dauerleihe = !!book.ist_dauerleihe}
+				{@const frist = new Date(book.rueckgabe_frist)}
+				{@const isOverdue = mode === 'loans' && !dauerleihe && frist < new Date()}
 				{@const miniatur = coverSrc(book.cover_url, book.isbn)}
 				<tr>
 					<td>
@@ -188,7 +187,7 @@
 								</div>
 							{:else}
 								<div class="flex items-center gap-2 group">
-									<span>{new Date(book.rueckgabe_frist).toLocaleDateString('de-DE')}</span>
+									<span>{dauerleihe ? 'ohne Frist' : frist.toLocaleDateString('de-DE')}</span>
 									<!-- Kein opacity-0 mehr (10.08.2026): Der Knopf war unsichtbar, blieb
 									     dabei aber anklickbar und per Tab erreichbar — man konnte ihn also
 									     treffen, ohne ihn je zu sehen, und der Tastaturfokus lag auf etwas
@@ -219,7 +218,7 @@
 							{#if isOverdue}
 								<span class="text-sm font-medium text-rose-600">Überfällig</span>
 							{:else}
-								<span class="text-sm text-slate-500">In Frist</span>
+								<span class="text-sm text-slate-500">{dauerleihe ? 'Dauerleihe' : 'In Frist'}</span>
 							{/if}
 						</td>
 					{/if}

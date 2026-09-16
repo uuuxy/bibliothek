@@ -96,15 +96,21 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Snapshot erstellen: Daten für das Audit-Log vor dem Löschen sichern
-	var vorname, nachname, klasse, barcodeID string
+	// Snapshot erstellen: Daten für das Audit-Log vor dem Löschen sichern.
+	//
+	// Gelesen wird die TABELLE `leser`, nicht die Sicht `schueler`: Die zeigt nur Schüler,
+	// und für einen Kollegen lief dieser ganze Weg bis zum 16.09.2026 ins Leere — der
+	// Snapshot blieb leer, das UPDATE traf null Zeilen, und der Handler antwortete „nicht
+	// gefunden". Deshalb stand der Löschknopf in seiner Akte gar nicht erst (docs/OFFEN.md
+	// 5.16 C).
+	var vorname, nachname, klasse, barcodeID, art string
 	var abgaengerJahr int
 	err = tx.QueryRow(ctx,
 		`SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(klasse,''),
-		        coalesce(barcode_id,''), coalesce(abgaenger_jahr, 0)
-		 FROM schueler WHERE id = $1`,
+		        coalesce(barcode_id,''), coalesce(abgaenger_jahr, 0), art
+		 FROM leser WHERE id = $1`,
 		studentID,
-	).Scan(&vorname, &nachname, &klasse, &barcodeID, &abgaengerJahr)
+	).Scan(&vorname, &nachname, &klasse, &barcodeID, &abgaengerJahr, &art)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to snapshot student for audit: %w", err)
 	}
@@ -126,7 +132,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	// die ganze bereits abgelaufene Zeit nach hinten — still, denn die Antwort lautete
 	// beide Male „success". Löschen bleibt damit wiederholbar, ohne die Frist zu
 	// verlängern.
-	tag, err := tx.Exec(ctx, `UPDATE schueler
+	tag, err := tx.Exec(ctx, `UPDATE leser
 		SET deleted_at = COALESCE(deleted_at, CURRENT_TIMESTAMP),
 		    ist_gesperrt = true,
 		    block_reason = COALESCE(NULLIF(btrim(block_reason), ''), 'Systematisch gelöscht')
@@ -136,6 +142,29 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	}
 	if tag.RowsAffected() == 0 {
 		return fmt.Errorf("student %s not found", studentID)
+	}
+
+	// Beim Kollegium geht das KONTO mit — Entschieden am 16.09.2026: „wenn ein kollege gelöscht
+	// wird dann wird alles gelöscht."
+	//
+	// Es bleibt nicht als abgeschaltete Hülle stehen, und das aus einem nachprüfbaren
+	// Grund: Die Adresse ist der Schlüssel der Anmeldung (`benutzer_email_unique`). Ein
+	// stehengebliebenes Konto hielte sie besetzt, und wer die Person danach neu anlegt,
+	// bekäme „Unter … steht bereits ein Zugang" — über einen Eintrag, der im Papierkorb
+	// liegt und nirgends zu sehen ist. Die Spuren gehen dabei nicht verloren: Jeder
+	// Fremdschlüssel auf `benutzer` trägt ON DELETE SET NULL, die Protokollzeilen bleiben
+	// also stehen und verlieren nur den Verweis.
+	//
+	// Wird die Leserzeile aus dem Papierkorb zurückgeholt, kommt sie OHNE Zugang zurück.
+	// Den legt man an, indem man in der Akte die Schul-E-Mail nachträgt
+	// (api/student_schul_email.go) — derselbe Weg wie beim Altbestand.
+	var kontenGeloescht int64
+	if art != "schueler" {
+		kontoTag, kontoErr := tx.Exec(ctx, `DELETE FROM benutzer WHERE leser_id = $1`, studentID)
+		if kontoErr != nil {
+			return fmt.Errorf("deleting account of reader: %w", kontoErr)
+		}
+		kontenGeloescht = kontoTag.RowsAffected()
 	}
 
 	// Akteur ermitteln (entweder manueller Admin-User oder automatische System-Bereinigung)
@@ -163,6 +192,10 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 			"grund":          grund,
 			"geloescht_am":   time.Now().UTC().Format(time.RFC3339),
 			"action":         "soft_delete",
+			"art":            art,
+			// Wie viele Zugänge dabei erloschen sind — ohne diese Zahl liesse sich später
+			// nicht mehr sagen, ob die Person je einen hatte.
+			"konten_geloescht": kontenGeloescht,
 		},
 	}); err != nil {
 		return fmt.Errorf("writing audit log: %w", err)
@@ -208,7 +241,9 @@ func (r *pgAuditRepository) entferneSchuelerPIIUndLoesche(ctx context.Context, t
 	if err := TilgeSchuelerSpuren(ctx, tx, studentID, "DSGVO-Löschung"); err != nil {
 		return err
 	}
-	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, studentID)
+	// `leser` statt der Sicht `schueler`: Sonst bliebe die Zeile eines Kollegen beim
+	// endgültigen Löschen stehen — mit anonymisierter Historie, aber vorhandenem Namen.
+	tag, err := tx.Exec(ctx, `DELETE FROM leser WHERE id = $1`, studentID)
 	if err != nil {
 		return fmt.Errorf("deleting student: %w", err)
 	}
@@ -243,7 +278,7 @@ func (r *pgAuditRepository) PurgeStudent(ctx context.Context, studentID string, 
 
 	// Nur bereits weichgelöschte Schüler (Papierkorb) dürfen endgültig entfernt werden.
 	var imPapierkorb bool
-	err = tx.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM schueler WHERE id = $1`, studentID).Scan(&imPapierkorb)
+	err = tx.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM leser WHERE id = $1`, studentID).Scan(&imPapierkorb)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("student %s not found", studentID)
 	}

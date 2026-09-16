@@ -176,9 +176,9 @@
 							onMerged={(id) => (st.fetchProfile(id), onMerged?.(id))}
 						/>
 
-						<!-- Gefahrenzone: ausschließlich am unteren Ende des Stammdaten-Reiters -->
-						{#if rechte.loeschen && !kollege}
-							<StudentDangerZone onDelete={() => (st.showDeleteConfirm = true)} />
+						<!-- Gefahrenzone am unteren Ende des Stammdaten-Reiters, seit 16.09.2026 auch beim Kollegium -->
+						{#if rechte.loeschen}
+							<StudentDangerZone {kollege} onDelete={() => (st.showDeleteConfirm = true)} />
 						{/if}
 					{/if}
 				</div>

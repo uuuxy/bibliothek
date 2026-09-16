@@ -44,7 +44,11 @@ func (s *Server) GetDashboardSummaryHandler() http.HandlerFunc {
 			WITH offen AS (
 				SELECT (CURRENT_TIMESTAMP - rueckgabe_frist) AS verzug
 				FROM ausleihen
+				-- Ohne Dauerleihen: Sie werden nicht überfällig (dieselbe Regel wie in der
+				-- Sperr-Automatik und in der Leserliste). Sonst zählt die Übersicht
+				-- Mahnfälle, die es nicht gibt — ein Kollege wird nicht gemahnt.
 				WHERE rueckgabe_am IS NULL AND rueckgabe_frist < CURRENT_TIMESTAMP
+				  AND ist_handapparat = false
 			)
 			SELECT
 				COUNT(*)::int,

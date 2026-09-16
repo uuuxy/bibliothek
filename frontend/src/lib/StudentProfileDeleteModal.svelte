@@ -1,13 +1,20 @@
-<!-- @component StudentProfileDeleteModal — Schülerprofil löschen/archivieren, mit
-     Namens-Bestätigung. Seit 07.09.2026 auf Modal.svelte (Register 05.09.). -->
+<!-- @component StudentProfileDeleteModal — Leserprofil löschen/archivieren, mit
+     Namens-Bestätigung. Seit 07.09.2026 auf Modal.svelte (Register 05.09.).
+
+     Beim Kollegium sagt der Dialog, was sonst niemand erführe: Mit dem Eintrag fällt der
+     ZUGANG. Zurückgeholt wird er nicht durch das Wiederherstellen, sondern indem man in
+     der Akte die Schul-E-Mail erneut einträgt (16.09.2026). -->
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import { TriangleAlert } from '@lucide/svelte';
+	import { istKollegium } from './leserArt.js';
 
 	let { open = false, profile, onclose, onsuccess } = $props();
+
+	const kollege = $derived(istKollegium({ art: profile?.art }));
 
 	let deleteError = $state('');
 	let isDeleting = $state(false);
@@ -26,7 +33,7 @@
 
 	async function deleteStudent() {
 		if (profile?.entliehene_buecher && profile.entliehene_buecher.length > 0) {
-			deleteError = 'Löschen nicht möglich: Schüler hat noch entliehene Bücher';
+			deleteError = 'Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher';
 			return;
 		}
 		deleteError = '';
@@ -62,14 +69,14 @@
 		<div class="p-6 text-on-surface text-left">
 			<h3 id="loeschen-titel" class="text-lg font-bold text-error flex items-center gap-2">
 				<TriangleAlert class="h-6 w-6 text-error" aria-hidden="true" />
-				<span>Schüler löschen</span>
+				<span>{kollege ? 'Kollegen löschen' : 'Schüler löschen'}</span>
 			</h3>
 			{#if profile.entliehene_buecher && profile.entliehene_buecher.length > 0}
 				<div
 					role="alert"
 					class="mt-4 p-4 bg-error-container text-on-error-container rounded-2xl text-sm font-semibold"
 				>
-					Löschen nicht möglich: Schüler hat noch entliehene Bücher
+					Löschen nicht möglich: Dieser Leser hat noch entliehene Bücher
 				</div>
 				<div class="mt-6 flex justify-end">
 					<Button variant="secondary" onclick={handleClose}>Schließen</Button>
@@ -81,6 +88,13 @@
 					> löschen/archivieren möchten? Alle historischen Ausleihen werden anonymisiert. Dieser Vorgang
 					kann in der regulären Oberfläche nicht rückgängig gemacht werden.
 				</p>
+
+				{#if kollege}
+					<p class="mt-2 text-sm text-on-surface-variant leading-relaxed font-sans">
+						Der Zugang zu „Mein Portal“ erlischt dabei. Wird der Eintrag später wiederhergestellt,
+						kommt er ohne Zugang zurück — den legt die Schul-E-Mail in der Akte neu an.
+					</p>
+				{/if}
 
 				<div class="mt-5">
 					<label class="block text-xs font-bold text-on-surface mb-1.5" for="confirm-name">
