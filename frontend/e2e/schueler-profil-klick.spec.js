@@ -105,8 +105,8 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 	// Weg 2: in der Schülerdatei selbst gesucht — die Frage ist "wie erreiche ich die Eltern?"
 	// Erst das offene Profil schließen: Die Abgänger-Ansicht landet in DERSELBEN Ansicht,
 	// solange dort ein Profil offen ist, gibt es keine Liste zum Suchen.
-	await page.getByTitle('Schüler schließen (ESC)').click();
-	await page.getByLabel('Schüler suchen').first().fill(`Reiteraktiv${s}`);
+	await page.getByTitle('Akte schließen (ESC)').click();
+	await page.getByLabel('Leser suchen').first().fill(`Reiteraktiv${s}`);
 	await page.getByText(`Reiteraktiv${s} Testschueler`).first().click();
 
 	await expect(page.getByRole('button', { name: 'Stammdaten & Adresse' })).toHaveClass(

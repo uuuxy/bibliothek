@@ -61,7 +61,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 	test('Abgangsjahr und Rückgabedatum im Profil', async ({ page }) => {
 		await uiLogin(page);
 		await page.goto('/schuelerdatei');
-		await page.getByRole('searchbox', { name: 'Schüler suchen' }).fill(`Rt${s}`);
+		await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(`Rt${s}`);
 		await page.getByText(`Rt${s} Sonde`).first().click();
 		await page.getByRole('button', { name: /^Abgang 2030/ }).click();
 		await page.getByLabel('Abgangsjahr').fill('2031');

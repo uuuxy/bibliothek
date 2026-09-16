@@ -35,7 +35,7 @@ const CONTROL_HOEHE = 36; // Button size="md" (h-9) = M3-Dichte -1
 const SCREENS = [
 	['Einstellungen', '/einstellungen'],
 	['Inventur', '/inventur'],
-	['Schülerdatei', '/schuelerdatei'],
+	['Leserdatei', '/schuelerdatei'],
 	['Klassensätze', '/schulklassen'],
 	['Bestellungen', '/bestellungen'],
 	['Katalog', '/medienkatalog'],

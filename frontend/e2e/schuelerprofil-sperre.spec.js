@@ -10,17 +10,32 @@
 // Deshalb prüft dieser Test bei ZWEI Fensterbreiten. Eine einzelne Breite hätte den
 // Fehler nie gezeigt — er bestand ja darin, dass das Ergebnis von der Breite abhing.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 
 const BREITEN = [
 	{ name: 'breit', viewport: { width: 1680, height: 1000 } },
 	{ name: 'schmal', viewport: { width: 1180, height: 900 } }
 ];
 
-/** Öffnet das erste Schülerprofil der Schülerdatei. */
+/**
+ * Legt einen Schüler an und öffnet seine Akte in der Leserdatei.
+ *
+ * Ausdrücklich EINEN SCHÜLER, nicht die erste Zeile der Liste: Seit dem 16.09.2026 führt
+ * die Leserdatei auch das Kollegium, und das steht vorn. Ein Kollege hat keinen
+ * Kontoauszug und keine Ersatzforderung — die Gegenprobe unten lief damit ins Leere und
+ * meldete einen Fehler, wo keiner war.
+ */
 async function ersterSchueler(page) {
+	const s = uniqueSuffix();
+	seedSQL(`
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
+		VALUES ('E2E-SPERRE-${s}', 'Sperrine', 'Sperrtest${s}', '9A', 2029);
+	`);
 	await page.goto('/schuelerdatei');
-	const treffer = page.locator('tbody tr').first();
+	const suche = page.getByLabel('Leser suchen');
+	await suche.click();
+	await suche.fill(`Sperrtest${s}`);
+	const treffer = page.locator('tbody tr').filter({ hasText: `Sperrtest${s}` });
 	await treffer.waitFor();
 	// Seit 09.09.2026 öffnet der NAME das Profil, nicht die Zeile (nested-interactive).
 	await treffer.getByRole('button', { name: /^Profil von/ }).click();

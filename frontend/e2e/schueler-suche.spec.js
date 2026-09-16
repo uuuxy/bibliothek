@@ -20,9 +20,9 @@ test('Schülerdatei findet auch Schüler hinter der 500er-Grenze', async ({ page
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Schülerdatei').click();
+	await page.getByTitle('Leserdatei').click();
 
-	const suchfeld = page.getByLabel('Schüler suchen');
+	const suchfeld = page.getByLabel('Leser suchen');
 	await suchfeld.click();
 	await suchfeld.fill(nachname);
 
@@ -42,8 +42,8 @@ test('Schülersuche: Reihenfolge und Schreibweise des Namens sind egal', async (
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Schülerdatei').click();
-	const suchfeld = page.getByLabel('Schüler suchen');
+	await page.getByTitle('Leserdatei').click();
+	const suchfeld = page.getByLabel('Leser suchen');
 	const treffer = page.getByText(`Jörg Müllermann${s}`).first();
 
 	for (const eingabe of [
@@ -79,8 +79,8 @@ test('Schülerdatei sucht auch nach Klasse — allein und zusammen mit einem Nam
 	`);
 
 	await uiLogin(page);
-	await page.getByTitle('Schülerdatei').click();
-	const suchfeld = page.getByLabel('Schüler suchen');
+	await page.getByTitle('Leserdatei').click();
+	const suchfeld = page.getByLabel('Leser suchen');
 
 	// Klasse allein: beide Kinder.
 	await suchfeld.fill(klasse);

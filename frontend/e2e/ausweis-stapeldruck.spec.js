@@ -36,17 +36,17 @@ test.describe('Ausweis-Stapeldruck', () => {
 		page
 	}) => {
 		await uiLogin(page);
-		await page.getByTitle('Schülerdatei').click();
+		await page.getByTitle('Leserdatei').click();
 
 		// Auf die drei Testschüler eingrenzen — die Suche läuft auf dem Server.
-		await page.getByLabel('Schüler suchen').fill(`Stapel${marke}`);
+		await page.getByLabel('Leser suchen').fill(`Stapel${marke}`);
 		await expect(page.locator('tbody tr').filter({ hasText: `Stapel${marke}` })).toHaveCount(3);
 
 		// Ohne Markierung darf kein Aktionsbalken stehen.
 		await expect(page.getByRole('region', { name: /Aktionen für die markierten/ })).toBeHidden();
 
 		// Kopf-Checkbox markiert genau die angezeigten Treffer.
-		await page.getByRole('checkbox', { name: /Alle angezeigten Schüler/ }).check();
+		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 
 		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
 		await expect(balken).toBeVisible();
@@ -75,8 +75,8 @@ test.describe('Ausweis-Stapeldruck', () => {
 
 	test('Einzelauswahl öffnet nicht das Profil', async ({ page }) => {
 		await uiLogin(page);
-		await page.getByTitle('Schülerdatei').click();
-		await page.getByLabel('Schüler suchen').fill(`Stapel${marke}`);
+		await page.getByTitle('Leserdatei').click();
+		await page.getByLabel('Leser suchen').fill(`Stapel${marke}`);
 		await expect(page.locator('tbody tr').filter({ hasText: `Stapel${marke}` })).toHaveCount(3);
 
 		// Die ganze Zeile öffnet das Profil. Das Häkchen darf das NICHT auslösen, sonst
@@ -87,7 +87,7 @@ test.describe('Ausweis-Stapeldruck', () => {
 			'1'
 		);
 		// Immer noch die Liste, nicht das Profil.
-		await expect(page.getByLabel('Schüler suchen')).toBeVisible();
+		await expect(page.getByLabel('Leser suchen')).toBeVisible();
 		await expect(page.locator('.print-section-card .print-card-box')).toHaveCount(1);
 	});
 });

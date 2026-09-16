@@ -68,10 +68,10 @@ test('Massendaten: 2.000 Schüler + 50.000 Ausleihen — UI bleibt bedienbar', a
 		await uiLogin(page);
 
 		// Schülerdatei: öffnet und die Suche findet einen konkreten Schüler
-		await page.getByTitle('Schülerdatei').click();
+		await page.getByTitle('Leserdatei').click();
 		// Über das aria-Label statt über den Platzhaltertext: Der Platzhalter ist
 		// Beschriftung und darf sich ändern, ohne dass Tests reihenweise umfallen.
-		const suche = page.getByLabel('Schüler suchen');
+		const suche = page.getByLabel('Leser suchen');
 		await expect(suche).toBeVisible({ timeout: 15000 });
 		await suche.fill('Schueler1234');
 		await expect(page.getByText('Schueler1234').first()).toBeVisible({ timeout: 15000 });

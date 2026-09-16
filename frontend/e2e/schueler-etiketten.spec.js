@@ -75,15 +75,15 @@ test.describe('Schüler-Etiketten', () => {
 		await expect(page.getByText('Zentral gespeichert')).toBeVisible();
 
 		// ── Schülerdatei: derselbe Zustand, anderer Bildschirm ──
-		await page.getByTitle('Schülerdatei').click();
-		await page.getByLabel('Schüler suchen').fill(`Etikett${s}`);
+		await page.getByTitle('Leserdatei').click();
+		await page.getByLabel('Leser suchen').fill(`Etikett${s}`);
 		// GESAMTzahl der Zeilen, nicht nur die passenden: Mit 10.000 Schülern in der DB
 		// standen die zwei gesuchten schon in der ungefilterten ersten Seite (500), die
 		// hasText-Zählung bestand, das Häkchen markierte 500 — und die gefilterte Antwort
 		// kam erst nach dem Klick auf „Drucken" (Netzwerk-Log 26.08.2026).
 		await expect(page.locator('tbody tr')).toHaveCount(2);
 		await expect(page.locator('tbody tr').filter({ hasText: `Etikett${s}` })).toHaveCount(2);
-		await page.getByRole('checkbox', { name: /Alle angezeigten Schüler/ }).check();
+		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 
 		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
 		await expect(balken.getByRole('button', { name: 'Etiketten drucken' })).toBeVisible();
@@ -141,7 +141,7 @@ test.describe('Schüler-Etiketten', () => {
 
 		// Gelandet in der Schülerdatei: Suche vorbefüllt, die Aktionsleiste steht ohne
 		// weiteres Zutun da, und JEDE angezeigte Zeile trägt den Haken.
-		await expect(page.getByLabel('Schüler suchen')).toHaveValue('08G2');
+		await expect(page.getByLabel('Leser suchen')).toHaveValue('08G2');
 		await expect(page.getByRole('region', { name: /Aktionen für die markierten/ })).toBeVisible();
 
 		const zeilen = page.locator('tbody tr');
@@ -156,10 +156,10 @@ test.describe('Schüler-Etiketten', () => {
 		// Gegenprobe zum Test darüber. Ohne sie belegte er nur, dass IRGENDETWAS anders
 		// wird, sobald man den Schalter umlegt — nicht, dass der Kartenweg heil ist.
 		await uiLogin(page);
-		await page.getByTitle('Schülerdatei').click();
-		await page.getByLabel('Schüler suchen').fill(`Etikett${s}`);
+		await page.getByTitle('Leserdatei').click();
+		await page.getByLabel('Leser suchen').fill(`Etikett${s}`);
 		await expect(page.locator('tbody tr').filter({ hasText: `Etikett${s}` })).toHaveCount(2);
-		await page.getByRole('checkbox', { name: /Alle angezeigten Schüler/ }).check();
+		await page.getByRole('checkbox', { name: /Alle angezeigten Leser/ }).check();
 
 		const balken = page.getByRole('region', { name: /Aktionen für die markierten/ });
 		await expect(balken.getByRole('button', { name: 'Ausweise drucken' })).toBeVisible();

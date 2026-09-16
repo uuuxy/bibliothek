@@ -17,7 +17,7 @@ test.describe('Navigation: Material-3-Rollen', () => {
 		page
 	}) => {
 		await uiLogin(page);
-		const ziel = page.getByTitle('Schülerdatei');
+		const ziel = page.getByTitle('Leserdatei');
 		await ziel.click();
 
 		// Auf DIESES Ziel warten, nicht auf "irgendeines ist ausgewählt": Direkt nach dem

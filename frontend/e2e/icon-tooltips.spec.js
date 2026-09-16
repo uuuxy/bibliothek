@@ -15,7 +15,7 @@ import { uiLogin } from './helpers.js';
 const SCREENS = [
 	['Bestellungen', '/bestellungen'],
 	['Mahnwesen', '/mahnwesen'],
-	['Schülerdatei', '/schuelerdatei'],
+	['Leserdatei', '/schuelerdatei'],
 	['Druck-Center', '/druck-center'],
 	['Einstellungen', '/einstellungen']
 ];

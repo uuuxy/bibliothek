@@ -46,8 +46,8 @@ test('Sperrstatus: eine Wahrheit für Liste, Profil und Umschalter', async ({ pa
 
 	// 1) Die LISTE nennt beide „Gesperrt" — vorher stand der manuell Gesperrte
 	//    als „Alles ok" da (Liste las nur ist_gesperrt).
-	await page.getByTitle('Schülerdatei').click();
-	const suche = page.getByPlaceholder(/Name, Klasse oder Barcode/);
+	await page.getByTitle('Leserdatei').click();
+	const suche = page.getByPlaceholder(/Name, Klasse oder Ausweisnummer/);
 	await suche.fill(`Handschloss-${suffix}`);
 	// Die Zeile trägt role="button" (klickbare Zeile) — daher tr-Locator statt Rolle.
 	const zeile1 = page.locator('tr').filter({ hasText: `Handschloss-${suffix}` });

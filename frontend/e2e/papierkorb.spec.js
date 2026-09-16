@@ -35,7 +35,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 	await page.getByRole('button', { name: 'Endgültig archivieren/löschen' }).click();
 
 	// Papierkorb zeigt den Gelöschten, Wiederherstellen bringt ihn zurück
-	await page.getByTitle('Schülerdatei').click();
+	await page.getByTitle('Leserdatei').click();
 	await page.getByRole('tab', { name: 'Papierkorb' }).click();
 	const zeile = page.getByRole('row', { name: new RegExp(`Korb-${suffix}`) });
 	await expect(zeile).toBeVisible();
@@ -108,7 +108,7 @@ test('Papierkorb: Endgültig löschen mit Rückfrage — und Blockade zeigt den 
         SELECT '${studentId}', e.id, 'E2E offener Schaden', 4.50, false FROM e;
     `);
 
-	await page.getByTitle('Schülerdatei').click();
+	await page.getByTitle('Leserdatei').click();
 	await page.getByRole('tab', { name: 'Papierkorb' }).click();
 	const zeile = page.getByRole('row', { name: new RegExp(`Purge-${suffix}`) });
 	await expect(zeile).toBeVisible();

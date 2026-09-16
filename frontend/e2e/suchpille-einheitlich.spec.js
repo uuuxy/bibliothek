@@ -24,7 +24,7 @@ const PILLEN = [
 	// Eine Suche je Verwaltungsseite, überall dieselbe Pille (Peter, 04.09.2026: „eine
 	// Leiste … es soll gleich aussehen"). Vorher trugen diese Seiten das 36-px-Suchfeld
 	// im Werkzeugbalken, weil darüber noch die globale Suchleiste stand.
-	{ name: 'Schülerdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld' },
+	{ name: 'Leserdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld' },
 	{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld' },
 	{ name: 'Klassensätze', pfad: '/schulklassen', id: 'klassensaetze-suchfeld' },
 	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld' },
@@ -299,7 +299,7 @@ for (const { name, pfad, id, anmelden } of MIT_FOKUS) {
  */
 const STARTLINIE = [
 	{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld', reiter: true },
-	{ name: 'Schülerdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld', reiter: true },
+	{ name: 'Leserdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld', reiter: true },
 	{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld', reiter: true },
 	{ name: 'Mein Portal', pfad: '/kollegium-portal', id: 'portal-suchfeld', reiter: true },
 	{ name: 'Benutzer & Rechte', pfad: '/berechtigungen', id: 'benutzer-suchfeld', reiter: true },

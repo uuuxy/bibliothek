@@ -81,7 +81,7 @@ test('Schülerakte: zwei Datensätze zusammenführen', async ({ page }) => {
 	// In die Akte des NEUEN Datensatzes über die Schülerdatei; der alte ist Abgänger und
 	// steht nicht in der Aktivliste — genau das soll die Kandidatensuche überbrücken.
 	await page.goto('/schuelerdatei');
-	await page.getByLabel('Schüler suchen').first().fill(`Neu${s}`);
+	await page.getByLabel('Leser suchen').first().fill(`Neu${s}`);
 	await page.getByText(`Zf${s} Neu${s}`).first().click();
 	await page.getByRole('button', { name: 'Stammdaten & Adresse' }).click();
 	await page.getByRole('button', { name: 'Mit anderem Datensatz zusammenführen' }).click();

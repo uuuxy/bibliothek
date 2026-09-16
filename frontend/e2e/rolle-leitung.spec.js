@@ -28,7 +28,7 @@ test.describe('Rolle Leitung', () => {
 		// Solange sie „admin oder mitarbeiter" aufzählte, wäre eine Leitung hier im
 		// Kollegiums-Portal gelandet — ohne Fehlermeldung, einfach mit dem falschen
 		// Bildschirm.
-		await expect(page.getByTitle('Schülerdatei')).toBeVisible();
+		await expect(page.getByTitle('Leserdatei')).toBeVisible();
 		await expect(page.getByTitle('Mahnwesen')).toBeVisible();
 		await expect(page.getByTitle('Medienkatalog')).toBeVisible();
 

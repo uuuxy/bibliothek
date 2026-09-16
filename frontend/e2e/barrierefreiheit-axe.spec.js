@@ -31,7 +31,7 @@ const INTERN = [
 	['Signaturen', '/signaturen'],
 	['Druck-Center', '/druck-center'],
 	['Klassensätze', '/schulklassen'],
-	['Schülerdatei', '/schuelerdatei'],
+	['Leserdatei', '/schuelerdatei'],
 	['Mahnwesen', '/mahnwesen'],
 	['Abgänger', '/abgaenger'],
 	['Bestellungen', '/bestellungen'],

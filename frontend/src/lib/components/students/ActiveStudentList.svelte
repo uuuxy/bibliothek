@@ -131,7 +131,7 @@
 								<button
 									type="button"
 									onclick={() => onSelectStudent(s)}
-									aria-label="Akte von {s.vorname} {s.nachname} ({istKollegium(s)
+									aria-label="Profil von {s.vorname} {s.nachname} ({istKollegium(s)
 										? leserArtText(s.art)
 										: `Klasse ${s.klasse || 'N/A'}`}) anzeigen"
 									class="text-left font-semibold text-on-surface hover:text-primary hover:underline cursor-pointer rounded focus-visible:outline-2 focus-visible:outline-primary"

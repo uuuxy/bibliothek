@@ -20,7 +20,7 @@ import { uiLogin, seedBestellbedarf } from './helpers.js';
 // müsste man die Deckung zusammenrechnen, und ein geratener Wert wäre schlimmer als kein
 // Wert — er würde entweder Fehlalarm schlagen oder echte Fälle verstecken. Die Zahl der
 // übersprungenen Knoten steht in der Ausgabe, damit die Lücke sichtbar bleibt.
-const SEITEN = ['Mahnwesen', 'Medienkatalog', 'Schülerdatei', 'Bestellungen', 'Signaturen'];
+const SEITEN = ['Mahnwesen', 'Medienkatalog', 'Leserdatei', 'Bestellungen', 'Signaturen'];
 
 // Der Test bringt seinen Bestellbedarf selbst mit (wie bestellung-erreichbar.spec.js):
 // Die Liveness-Schwelle unten (> 300 Textknoten) hing sonst an Daten, die ANDERE Tests

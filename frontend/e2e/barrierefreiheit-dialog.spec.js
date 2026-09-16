@@ -23,7 +23,7 @@ test('Dialog: Fokus wandert hinein, kreist darin und kehrt zum Auslöser zurück
 }) => {
 	await uiLogin(page);
 	await gehZu(page, '/schuelerdatei');
-	const ausloeser = page.getByRole('button', { name: 'Neuen Schüler anlegen' });
+	const ausloeser = page.getByRole('button', { name: 'Neuen Leser anlegen' });
 	await ausloeser.click();
 	await expect(page.getByRole('dialog')).toBeVisible();
 
@@ -47,7 +47,7 @@ test('Tabellen: Beschriftung an der Tabelle, scope an jeder Kopfzelle', async ({
 	/** @type {string[]} */
 	const befunde = [];
 	for (const [name, pfad] of [
-		['Schülerdatei', '/schuelerdatei'],
+		['Leserdatei', '/schuelerdatei'],
 		['Mahnwesen', '/mahnwesen'],
 		// Nicht der Medienkatalog: Der ist ein Kachelraster ohne Tabelle.
 		['Benutzer & Rechte', '/berechtigungen']

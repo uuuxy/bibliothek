@@ -26,7 +26,7 @@ const MIN_FLAECHE = 32; // px — Material 3 Icon-Button „extra small"
 const SCREENS = [
 	['Bestellungen', '/bestellungen'],
 	['Mahnwesen', '/mahnwesen'],
-	['Schülerdatei', '/schuelerdatei'],
+	['Leserdatei', '/schuelerdatei'],
 	['Katalog', '/medienkatalog'],
 	['Druck-Center', '/druck-center'],
 	['Inventur', '/inventur'],

@@ -327,7 +327,7 @@ export async function pruefeFeldreihen(page, kontext) {
 export async function oeffneSchuelerProfil(page, vorname) {
 	const { expect } = await import('@playwright/test');
 	await gehZu(page, '/schuelerdatei');
-	await page.getByRole('searchbox', { name: 'Schüler suchen' }).fill(vorname);
+	await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
 	await page.getByRole('button', { name: new RegExp(`Profil von ${vorname} `) }).click();
 	const reiter = page.getByRole('button', { name: /Ausleihen & Historie/ });
 	await expect(reiter).toBeVisible();

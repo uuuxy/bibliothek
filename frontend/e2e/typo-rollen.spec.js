@@ -159,7 +159,7 @@ test('Lesetext liegt auf der M3-Skala (td 14, th 12, Knopf 14, h2/h3 16, Gewicht
 				await page.locator('[id^="klassensatz-"] h3').first().waitFor();
 			}
 		},
-		{ name: 'Schülerdatei', oeffne: () => page.goto('/schuelerdatei') },
+		{ name: 'Leserdatei', oeffne: () => page.goto('/schuelerdatei') },
 		{ name: 'Mahnwesen', oeffne: () => page.goto('/mahnwesen') },
 		{ name: 'Abgänger', oeffne: () => page.goto('/abgaenger') },
 		{ name: 'Schuljahreswechsel', oeffne: () => page.goto('/schuljahr') },
