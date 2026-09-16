@@ -32,7 +32,7 @@
 	{#if unifiedSearchResults.students.length > 0}
 		<div class="px-4 pt-3 pb-2 text-xs font-medium text-slate-600">
 			{gruppenTitel(
-				'Schüler',
+				'Leser',
 				unifiedSearchResults.students.length,
 				unifiedSearchResults.studentsTotal ?? unifiedSearchResults.students.length
 			)}

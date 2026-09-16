@@ -158,8 +158,17 @@ const SchuelerSuchRang = `
 		  (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.nachname, '')) LIKE tokens.norm || '%') * 2
 		+ (SELECT count(*) FROM tokens WHERE suchnorm(coalesce(s.vorname, ''))  LIKE tokens.norm || '%') DESC`
 
-// SearchStudentsFuzzy durchsucht die Schülerschaft nach Namen oder Barcodes und
+// SearchStudentsFuzzy durchsucht die LESERSCHAFT nach Namen oder Ausweisnummern und
 // liefert zusätzlich die Gesamtzahl der Treffer (nicht nur die des Limits).
+//
+// Gelesen wird die TABELLE `leser`, nicht die Sicht `schueler`: Ein Kollege ließ sich
+// seit Migration 125 über seinen Ausweis laden, über seinen Namen aber nicht — wer die
+// Karte gerade nicht zur Hand hatte, fand ihn an der Theke nicht. Die Art wandert als
+// eigene Spalte mit; ohne sie stünde ein Kollege ohne Klasse in der Trefferliste wie
+// ein Schüler mit fehlender Angabe.
+//
+// Der Name der Funktion bleibt: Sie bedient GET /api/search, und das ist die Theke.
+// Wer wirklich nur Schüler meint (Klassenlisten, Mahnlauf, LUSD), fragt die Sicht.
 //
 // Zwei Eigenschaften, die der frühere Ganzstring-Vergleich nicht hatte:
 //
@@ -182,9 +191,9 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 	}
 
 	query := SchuelerSuchCTE + `
-		SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, ''), coalesce(abgaenger_jahr, 0), coalesce(ist_gesperrt, false), lusd_id, coalesce(ist_abgaenger, false), TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, coalesce(is_manually_blocked, false), block_reason, coalesce(strasse, ''), coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''), coalesce(eltern_email, ''),
+		SELECT ` + spaltenLeser + `, art,
 		       count(*) OVER () AS gesamt
-		FROM schueler s
+		FROM leser s
 		WHERE s.deleted_at IS NULL
 		  AND ` + SchuelerSuchBedingung(false) + `
 		ORDER BY ` + SchuelerSuchRang + `,
@@ -200,11 +209,13 @@ func (r *pgStudentRepository) SearchStudentsFuzzy(ctx context.Context, queryText
 	var results []Student
 	gesamt := 0
 	for rows.Next() {
+		var art string
 		var zeilenGesamt int
-		s, err := scanStudentMitZusatz(rows, &zeilenGesamt)
+		s, err := scanStudentMitZusatz(rows, &art, &zeilenGesamt)
 		if err != nil {
 			return nil, 0, err
 		}
+		s.Art = art
 		gesamt = zeilenGesamt
 		results = append(results, *s)
 	}

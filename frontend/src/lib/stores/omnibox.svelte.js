@@ -191,11 +191,17 @@ export function createOmniboxStore() {
 	}
 
 	// Dropdown-Auswahl
+	//
+	// Ein Leser wird über seine ID geladen, nicht über die Ausweisnummer: Ein Kollege aus
+	// der Selbstanmeldung hat keine, und bis zum 16.09.2026 schickte der Klick auf ihn
+	// eine leere Eingabe los — sichtbar passierte gar nichts. Aufgelöst wird die ID auf
+	// demselben Weg wie ein Scan (POST /api/action), damit der Abholfach-Hinweis und die
+	// Sperrprüfung an beiden Wegen gleich sind.
 	function selectDropdownItem(index, onSelectBook) {
 		const { students, books } = unifiedSearchResults;
 		if (index < students.length) {
 			const student = students[index];
-			queryVal = student.barcode_id;
+			queryVal = `leser:${student.id}`;
 			isDropdownOpen = false;
 			submitAction(null, null); // Ohne Event
 		} else {

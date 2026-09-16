@@ -126,7 +126,14 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 	// S- und L- stehen für einen Ausweis — Schüler ODER Lehrkraft (handleAusweisAction)
 	// B- steht für Buch (Book)
 	// G- steht für Gerät (Hardware-Geräte)
+	//
+	// leser: ist KEIN Scanner-Präfix, sondern die Auswahl aus der Trefferliste der
+	// Namenssuche. Sie schickt die ID und nicht die Ausweisnummer, weil ein Kollege aus
+	// der Selbstanmeldung gar keine hat — die Auswahl hätte sonst eine leere Eingabe
+	// losgeschickt und nichts getan. Ein Doppelpunkt kommt aus keinem Strichcode.
 	switch {
+	case strings.HasPrefix(q.Query, leserIDPraefix):
+		return resp, s.handleLeserIDAction(ctx, strings.TrimPrefix(q.Query, leserIDPraefix), resp)
 	case strings.HasPrefix(q.Query, "S-"), strings.HasPrefix(q.Query, "L-"):
 		return resp, s.handleAusweisAction(ctx, q.Query, resp)
 	case strings.HasPrefix(q.Query, "B-"):
@@ -228,6 +235,29 @@ func (s *defaultOmniboxService) handleAusweisAction(ctx context.Context, query s
 	}
 	if leser == nil {
 		return fmt.Errorf("%w: Ausweis %s ist nicht registriert", ErrNotFound, query)
+	}
+	s.zeigeLeser(ctx, leser, resp)
+	return nil
+}
+
+// leserIDPraefix markiert die Auswahl aus der Trefferliste (siehe ProcessQuery).
+const leserIDPraefix = "leser:"
+
+// handleLeserIDAction lädt den Leser, den jemand in der Trefferliste angeklickt hat.
+//
+// Dieselbe Tür wie der Ausweis-Scan — nur der Schlüssel ist ein anderer: Die
+// Trefferliste kennt die ID, der Scanner die Nummer. Beide enden in zeigeLeser, damit
+// der Abholfach-Hinweis nicht an einem der beiden Wege fehlt.
+//
+// Eine unbekannte ID ist ein lauter Fehler und fällt NICHT in die Volltextsuche: Dort
+// stünde „keine Treffer", und der Klick sähe aus, als sei nichts passiert.
+func (s *defaultOmniboxService) handleLeserIDAction(ctx context.Context, id string, resp *OmniboxResult) error {
+	leser, err := s.studentRepo.GetLeserByID(ctx, id)
+	if err != nil {
+		return fmt.Errorf("datenbankfehler bei der Leser-Auflösung: %w", err)
+	}
+	if leser == nil {
+		return fmt.Errorf("%w: dieser Leser steht nicht mehr in der Leserdatei", ErrNotFound)
 	}
 	s.zeigeLeser(ctx, leser, resp)
 	return nil

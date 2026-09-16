@@ -1,9 +1,11 @@
 <script>
 	import { GraduationCap, X } from '@lucide/svelte';
+	import { leserArtText } from './leserArt.js';
 	let { teacher, onDeselect } = $props();
 
-	// Die Art steht am Leser (Migration 125): Lehrkraft oder LiV.
-	const artText = $derived(teacher.art === 'liv' ? 'LiV' : 'Lehrkraft');
+	// Die Art steht am Leser (Migration 125): Lehrkraft oder LiV. Das Wort kommt aus
+	// leserArt.js, damit derselbe Mensch hier nicht anders heißt als in der Leserdatei.
+	const artText = $derived(leserArtText(teacher.art));
 </script>
 
 <div
