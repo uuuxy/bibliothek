@@ -41,10 +41,22 @@ jobs:
           fetch-depth: 0
 
       # Versioniertes Image nur für ein striktes v-Tag auf main (siehe release.yml).
-      - name: Tag prüfen (Muster, auf main)
+      #
+      # Seit dem 17.09.2026 wird zusätzlich die CI abgefragt — dieselbe Pflichtliste wie in
+      # release.yml. Vorher prüfte dieser Schritt nur Muster und main: Ein Tag auf rotem
+      # Stand erzeugte zwar kein Release, aber sehr wohl ein Image mit einer Versionsnummer.
+      # Solange die Produktion selbst baut (update.sh), war das folgenlos; wer je aus dem
+      # Image deployt, zöge sich einen Stand, den kein Gate gesehen hat. Ein Image mit
+      # Versionsnummer sagt „geprüft" — dann soll es auch stimmen.
+      #
+      # Die Liste wird von docs/umgebung_paritaet_test.go gegen die Jobs in ci.yml gehalten,
+      # genau wie die in release.yml: Ein neuer CI-Job muss hier mitwachsen, und ein Name,
+      # den die CI nicht mehr baut, prüft nichts.
+      - name: Tag prüfen (Muster, auf main, CI grün)
         if: startsWith(github.ref, 'refs/tags/')
         env:
           TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           if ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -54,6 +66,25 @@ jobs:
           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
             echo "::error::Commit $GITHUB_SHA liegt nicht auf main — versionierte Images kommen nur von main."; exit 1
           fi
+          PFLICHT="actionlint build-and-test frontend-test e2e"
+          RUNS=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
+            --jq '.check_runs[] | "\(.name)\t\(.conclusion // "pending")"')
+          FEHLT=""; ROT=""
+          for job in $PFLICHT; do
+            ERGEBNIS=$(printf '%s\n' "$RUNS" | awk -F'\t' -v n="$job" '$1==n {print $2; exit}')
+            if [ -z "$ERGEBNIS" ]; then
+              FEHLT="$FEHLT $job"
+            elif [ "$ERGEBNIS" != "success" ]; then
+              ROT="$ROT $job=$ERGEBNIS"
+            fi
+          done
+          if [ -n "$FEHLT" ]; then
+            echo "::error::Für $GITHUB_SHA fehlen Prüfungen ganz:$FEHLT. Entweder läuft die CI noch, oder ein Job wurde umbenannt — dann diese Liste hier und in release.yml nachziehen."; exit 1
+          fi
+          if [ -n "$ROT" ]; then
+            echo "::error::CI für $GITHUB_SHA ist nicht grün:$ROT. Erst CI grün machen, dann diesen Workflow erneut starten (Re-run)."; exit 1
+          fi
+          echo "Alle Pflicht-Prüfungen grün:$PFLICHT"
 
       - name: An der GitHub Container Registry anmelden
         uses: docker/login-action@v4

@@ -210,6 +210,43 @@ func TestReleaseGateVerlangtAlleCIJobs(t *testing.T) {
 	}
 }
 
+// Dasselbe für das versionierte IMAGE.
+//
+// Bis zum 17.09.2026 prüfte docker-publish.yml beim v-Tag nur Muster und main. Ein Tag auf
+// rotem Stand erzeugte damit zwar kein Release, aber sehr wohl ein Image mit einer
+// Versionsnummer — und eine Versionsnummer sagt „geprüft". Folgenlos war das nur, solange
+// die Produktion selbst baut; wer aus dem Image deployt, zöge einen Stand, den kein Gate
+// gesehen hat.
+//
+// Die beiden Listen müssen NICHT wörtlich gleich sein — sie müssen beide die CI abdecken.
+// Deshalb prüft dieser Test gegen ci.yml und nicht gegen release.yml: Zwei Abschriften
+// voneinander wären zwei Wahrheitsquellen, die Quelle ist die CI.
+func TestImageGateVerlangtAlleCIJobs(t *testing.T) {
+	ausCI := jobNamen(t, "../.github/workflows/ci.yml")
+	if len(ausCI) == 0 {
+		t.Fatal("in ci.yml wurde kein einziger Job gefunden (Datei umformuliert?) — das Gate wäre abgeschaltet")
+	}
+
+	pflicht := leseEinePin(t, "../.github/workflows/docker-publish.yml", regexp.MustCompile(`(?m)^\s*PFLICHT="([^"]+)"`))
+	ausImage := map[string]bool{}
+	for _, name := range strings.Fields(pflicht) {
+		ausImage[name] = true
+	}
+
+	for name := range ausCI {
+		if !ausImage[name] {
+			t.Errorf("CI-Job %q steht nicht in der Pflichtliste von docker-publish.yml — ein "+
+				"v-Tag würde ein versioniertes Image erzeugen, ohne dass dieser Job grün sein muss.", name)
+		}
+	}
+	for name := range ausImage {
+		if !ausCI[name] {
+			t.Errorf("docker-publish.yml verlangt %q, aber ci.yml baut keinen Job dieses Namens — "+
+				"der Name zeigt ins Leere und prüft nichts.", name)
+		}
+	}
+}
+
 // jobNamen liest die Job-Schlüssel eines Workflows: die Einrückungsebene unter `jobs:`.
 // Bewusst ohne YAML-Bibliothek — das Gate soll an der Datei hängen, wie sie dasteht, und
 // nicht an einer Abhängigkeit, die dieses Repo sonst nirgends braucht.

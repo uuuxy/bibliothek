@@ -820,13 +820,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`;
   `cmd/rotate-encryption-key`, `cmd/littera-import` und `cmd/seed` haben keine Tests. Vor einem
   Schlüsselwechsel oder der Littera-Übernahme.
-- `prettier --check` und `gofmt -l` laufen nur im pre-commit-Hook, nicht in CI.
-- Das versionierte Image fragt keinen CI-Check ab: `.github/workflows/docker-publish.yml` prüft beim
-  v-Tag nur das Muster und ob der Commit auf `main` liegt; ein Tag auf roter CI erzeugt
-  `ghcr.io/uuuxy/bibliothek:x.y.z`, nur das Release (`release.yml`) bleibt aus. Die Produktion baut heute
-  selbst (`update.sh`, `docker compose up -d --build`); ein Deploy aus dem Image wäre betroffen.
-  Am Code geprüft am 13.09.2026. **Schritt:** das Image-Workflow dieselbe Pflichtliste abfragen
-  lassen, mit Ratsche in `docs/umgebung_paritaet_test.go`.
 
 ### 5.11 Doku
 

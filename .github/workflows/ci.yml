@@ -89,6 +89,20 @@ jobs:
     - name: Verify dependencies
       run: go mod verify
 
+    # Formatierung: Bis zum 17.09.2026 lief `gofmt -l` NUR im pre-commit-Hook. Ein Hook
+    # greift aber nur bei dem, der ihn installiert hat — bei einem Fremd-PR, nach
+    # `--no-verify` oder aus einem anderen Werkzeug heraus lief er nicht. Dieselbe
+    # Begründung wie bei ESLint (10.08.2026), nur für Go.
+    - name: Formatierung (gofmt)
+      run: |
+        set -euo pipefail
+        NICHT_FORMATIERT=$(gofmt -l . | grep -v '^frontend/' || true)
+        if [ -n "$NICHT_FORMATIERT" ]; then
+          echo "::error::Nicht gofmt-formatiert:"; echo "$NICHT_FORMATIERT"
+          echo "Reparatur: gofmt -w <datei>"
+          exit 1
+        fi
+
     # Action v8 + gepinnte v2-Version: .golangci.yml nutzt das v2-Schema, und
     # goinstall@latest würde über den alten Modulpfad (ohne /v2) v1 installieren,
     # dessen "config verify" das v2-Schema ablehnt. Version = lokaler Stand.
@@ -213,6 +227,13 @@ jobs:
       run: |
         cd frontend
         npm run lint
+
+    # Prettier lief bis zum 17.09.2026 nur im pre-commit-Hook — siehe gofmt oben.
+    # `--check` ändert nichts, es meldet nur; die Reparatur steht in der Meldung.
+    - name: Formatierung (Prettier)
+      run: |
+        cd frontend
+        npx prettier --check src/ e2e/ --log-level warn
 
     # svelte-check lief bis zum 06.09.2026 NUR im pre-push-Hook — dieselbe Lücke, die
     # ESLint bis zum 10.08. hatte, und dieselbe Begründung: Ein Hook greift nur bei dem,
