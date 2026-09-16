@@ -298,4 +298,4 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/books/{id}/cover-upload` | inventur:edit_books | 0     | Cover-Upload                                                                                                                                      |
 | `PUT /api/books/{id}`               | inventur:edit_books | 0     | Buch-Update                                                                                                                                       |
 | `PUT /api/books/{id}/cover`         | inventur:edit_books | 0     | Cover-URL setzen (Upload-Pfad oder zugelassener Cover-Anbieter)                                                                                   |
-| `DELETE /api/books`                 | inventur:edit_books | 0     | nur Meldung                                                                                                                                       |
+| `DELETE /api/books`                 | inventur:delete_books | 0     | nur Meldung                                                                                                                                       |

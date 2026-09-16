@@ -24,6 +24,7 @@ func TestHandleAdminBooks_Routing(t *testing.T) {
 		Metadaten:            metadatenClient,
 		RequireViewBooks:     func(h http.Handler) http.Handler { return h },
 		RequireEditBooks:     func(h http.Handler) http.Handler { return h },
+		RequireDeleteBooks:   func(h http.Handler) http.Handler { return h },
 		RequireAuthenticated: func(h http.Handler) http.Handler { return h },
 	})
 

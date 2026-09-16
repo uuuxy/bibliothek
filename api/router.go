@@ -132,6 +132,7 @@ func (s *Server) registerInventurSubmoduleRoutes(mux *http.ServeMux) {
 		Metadaten:            invMeta,
 		RequireViewBooks:     s.RequirePermission("view_books"),
 		RequireEditBooks:     s.RequirePermission("edit_books"),
+		RequireDeleteBooks:   s.RequirePermission("delete_books"),
 		RequireAuthenticated: s.RequireAuthenticated(),
 	})
 

@@ -104,6 +104,12 @@ func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			})
 		},
+		RequireDeleteBooks: func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("X-Middleware", "DeleteBooks")
+				w.WriteHeader(http.StatusOK)
+			})
+		},
 		RequireAuthenticated: func(next http.Handler) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("X-Middleware", "Authenticated")

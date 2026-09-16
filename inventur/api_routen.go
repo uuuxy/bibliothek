@@ -44,6 +44,12 @@ type APIHandlerConfig struct {
 	Metadaten        *MetadatenClient
 	RequireViewBooks func(http.Handler) http.Handler
 	RequireEditBooks func(http.Handler) http.Handler
+	// RequireDeleteBooks ist das Recht, Bestand zu VERNICHTEN — getrennt von
+	// edit_books, weil Ändern und Löschen verschiedene Fehler sind. Bis zum
+	// 17.09.2026 hing der Massenlöschweg (DELETE /api/books) an edit_books,
+	// während das Löschen eines einzelnen Titels delete_books verlangte: Die
+	// größere Handlung stand unter dem kleineren Recht.
+	RequireDeleteBooks func(http.Handler) http.Handler
 	// RequireAuthenticated verlangt eine gültige Sitzung, aber kein Fachrecht —
 	// für die Nur-Lese-Sichten des Lehrerportals (siehe Portal-Routen unten).
 	RequireAuthenticated func(http.Handler) http.Handler
@@ -102,7 +108,7 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 
 	handler.mux.Handle("POST /api/books/import", adminH)
 	handler.mux.Handle("POST /api/books", adminH)
-	handler.mux.Handle("DELETE /api/books", adminH)
+	handler.mux.Handle("DELETE /api/books", config.RequireDeleteBooks(http.HandlerFunc(handler.handleAdminBooks)))
 
 	// Die Buch-Kennung als Platzhalter statt Sammelroute POST/PUT /api/books/ mit selbst
 	// zerlegtem Pfad: Nur einen Platzhalter sieht ValidateUUIDParamsMiddleware (sie steckt

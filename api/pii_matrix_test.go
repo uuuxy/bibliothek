@@ -144,6 +144,11 @@ func TestPIIMatrixRechtStimmtMitCodeUeberein(t *testing.T) {
 			erwartet = "invHandler" // Schutz liegt im inneren Mux, dessen Routen stehen einzeln in der Matrix
 		case "inventur:view_books":
 			erwartet = "RequireViewBooks("
+		case "inventur:delete_books":
+			// Bestand VERNICHTEN ist ein eigenes Recht, getrennt von edit_books
+			// (17.09.2026): Der Massenlöschweg hing bis dahin an edit_books, während
+			// das Löschen eines einzelnen Titels delete_books verlangte.
+			erwartet = "RequireDeleteBooks("
 		case "inventur:edit_books":
 			// Die Schreibrouten teilen sich einen vorgebauten Handler:
 			// adminH := config.RequireEditBooks(...) — die Variable IST der Wrapper.

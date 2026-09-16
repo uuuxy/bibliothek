@@ -81,6 +81,7 @@ func TestBuchKennungImPfadIst400AmMux(t *testing.T) {
 		Metadaten:            stummerMetadatenClient(),
 		RequireViewBooks:     durch,
 		RequireEditBooks:     durch,
+		RequireDeleteBooks:   durch,
 		RequireAuthenticated: durch,
 	})
 
