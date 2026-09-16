@@ -58,24 +58,6 @@ func (r *pgStudentRepository) leser(ctx context.Context, bedingung string, arg a
 	return s, nil
 }
 
-// GetByID liest einen Schüler anhand seiner UUID aus.
-func (r *pgStudentRepository) GetByID(ctx context.Context, id string) (*Student, error) {
-	query := `
-		SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, ''), coalesce(abgaenger_jahr, 0), coalesce(ist_gesperrt, false), lusd_id, coalesce(ist_abgaenger, false), TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, coalesce(is_manually_blocked, false), block_reason, coalesce(strasse, ''), coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''), coalesce(eltern_email, '')
-		FROM schueler
-		WHERE id = $1 AND deleted_at IS NULL
-		LIMIT 1
-	`
-	s, err := scanStudent(r.db.QueryRow(ctx, query, id))
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return s, nil
-}
-
 // suchTokens zerlegt eine Eingabe in einzelne Suchbegriffe und entschärft die
 // LIKE-Metazeichen. Ohne das Escaping wäre ein getipptes "%" eine Wildcard, die
 // die halbe Schülerschaft zurückgibt, und "_" ein Platzhalter für ein Zeichen.

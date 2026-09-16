@@ -10,9 +10,15 @@
 	 *    gescannten Schüler ein vorgemerktes Buch im Abholfach liegt. Ohne ihn
 	 *    stünde der Schüler an der Theke, während sein Buch im Fach auf den
 	 *    Ablauf der 3-Tage-Frist wartet.
+	 * 3. Kollegium (16.09.2026): Seit die Akte auch einen Kollegen zeigt, sieht die
+	 *    Theke dieselbe Ansicht wie bei einem Schüler — nur ohne Klasse. Der
+	 *    Hinweis sagt, was daran anders ist: Die Frist ist ein Jahr
+	 *    (resolveBorrowerAndDueTime). Vorher stand dafür eine eigene schmale
+	 *    Karte da, weil es die Akte noch nicht gab.
 	 */
-	import { AlertTriangle, PackageCheck } from '@lucide/svelte';
+	import { AlertTriangle, PackageCheck, GraduationCap } from '@lucide/svelte';
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
+	import { leserArtText, istKollegium } from '../leserArt.js';
 </script>
 
 {#if omniboxStore.lastFremdrueckgabe}
@@ -44,6 +50,18 @@
 					: ''}
 			{/each}
 			— bitte direkt mitgeben.
+		</span>
+	</div>
+{/if}
+
+{#if istKollegium(omniboxStore.activeStudent)}
+	<div
+		class="bg-secondary-container text-on-secondary-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
+	>
+		<GraduationCap class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<span>
+			{leserArtText(omniboxStore.activeStudent.art)} geladen — gescannte Bücher gehen auf
+			<strong class="font-medium">{omniboxStore.activeStudent.vorname}</strong>, Frist ein Jahr.
 		</span>
 	</div>
 {/if}

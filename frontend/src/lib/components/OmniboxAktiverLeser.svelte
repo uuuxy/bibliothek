@@ -1,19 +1,19 @@
 <script>
 	import StudentProfile from '../StudentProfile.svelte';
-	import OmniboxTeacherCard from '../OmniboxTeacherCard.svelte';
 	import OmniboxThekeHinweise from './OmniboxThekeHinweise.svelte';
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 
 	let { profil = $bindable(null) } = $props();
 
-	// Seit Migration 125 steht in activeStudent EIN Leser — Schüler oder Kollege. Was die
-	// Theke zeigt, entscheidet seine Art, nicht mehr zwei getrennte Plätze im Store.
+	// Seit Migration 125 steht in activeStudent EIN Leser — Schüler oder Kollege. Seit dem
+	// 16.09.2026 bekommen beide dieselbe AKTE: Die Theke muss sehen, welche Bücher der
+	// Mensch vor ihr hat, und das ist bei einem Kollegen dieselbe Frage wie bei einem Kind.
 	//
-	// Ein Kollege bekommt die schmale Karte, kein Schülerprofil: Die Akte einer Lehrkraft
-	// (Ausleihen, Ausweis drucken) ist der nächste Schritt; bis dahin liefe StudentProfile
-	// in ein 404, weil es die Sicht `schueler` liest.
+	// Vorher stand hier für einen Kollegen eine schmale Karte ohne Ausleihen — nicht aus
+	// Absicht, sondern weil GET /api/schueler/{id} die Sicht `schueler` las und ihn mit
+	// 404 beantwortete. Was an ihm anders ist (keine Klasse, Frist ein Jahr), sagen die
+	// Akte selbst und der Hinweis darüber.
 	const leser = $derived(omniboxStore.activeStudent);
-	const istKollege = $derived(!!leser?.art && leser.art !== 'schueler');
 
 	function abwaehlen() {
 		omniboxStore.activeStudent = null;
@@ -22,18 +22,14 @@
 </script>
 
 {#if leser}
-	<!-- Fremdrückgabe- und Abholfach-Banner (200-Zeilen-Regel: eigene Datei). -->
+	<!-- Fremdrückgabe-, Abholfach- und Kollegiums-Banner (200-Zeilen-Regel: eigene Datei). -->
 	<OmniboxThekeHinweise />
-	{#if istKollege}
-		<OmniboxTeacherCard teacher={leser} onDeselect={abwaehlen} />
-	{:else}
-		<StudentProfile
-			bind:this={profil}
-			student={leser}
-			defaultTab="ausleihen"
-			onMerged={omniboxStore.uebernimmZusammengefuehrt}
-			onDeselect={abwaehlen}
-			onReturnClick={(barcode) => omniboxStore.gibZurueck(barcode, () => profil?.reloadProfile())}
-		/>
-	{/if}
+	<StudentProfile
+		bind:this={profil}
+		student={leser}
+		defaultTab="ausleihen"
+		onMerged={omniboxStore.uebernimmZusammengefuehrt}
+		onDeselect={abwaehlen}
+		onReturnClick={(barcode) => omniboxStore.gibZurueck(barcode, () => profil?.reloadProfile())}
+	/>
 {/if}

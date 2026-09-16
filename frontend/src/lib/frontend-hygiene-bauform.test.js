@@ -60,7 +60,6 @@ const BESTAND = [
 	'src/lib/BorrowedBooksList.svelte',
 	'src/lib/CameraScanner.svelte',
 	'src/lib/LitteraImportWidget.svelte',
-	'src/lib/OmniboxTeacherCard.svelte',
 	'src/lib/PermissionManager.svelte',
 	'src/lib/StudentProfileActions.svelte',
 	'src/lib/UserManagement.svelte',

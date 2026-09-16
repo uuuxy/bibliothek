@@ -100,3 +100,79 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 		t.Error("die Suche der Leserdatei findet den Kollegen nicht")
 	}
 }
+
+// TestLeserdatei_AkteEinerLehrkraft: Die Akte muss jeden Leser öffnen.
+//
+// Bis zum 16.09.2026 las GET /api/schueler/{id} die Sicht `schueler` — bei einer
+// Lehrkraft kam 404 zurück. An der Theke bedeutete das: Der Kollege ist geladen, aber
+// niemand sieht, welche Bücher er hat. Genau deshalb zeigte die Theke ihm nur eine
+// schmale Karte statt seiner Akte.
+func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	studentRepo := repository.NewStudentRepository(pool)
+	claims := &auth.Claims{UserID: "00000000-0000-0000-0000-00000000a127", Rolle: auth.RoleAdmin}
+
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname = 'Aktetest'`); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	})
+
+	var lehrkraftID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO leser (barcode_id, vorname, nachname, art)
+		VALUES ('AKTE-1', 'Katrin', 'Aktetest', 'lehrkraft') RETURNING id`).Scan(&lehrkraftID); err != nil {
+		t.Fatalf("Lehrkraft anlegen: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/api/schueler/"+lehrkraftID, nil)
+	req.SetPathValue("id", lehrkraftID)
+	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+	rec := httptest.NewRecorder()
+	srv.GetStudentProfileHandler(studentRepo).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Akte einer Lehrkraft: Status %d, %s", rec.Code, rec.Body.String())
+	}
+	var akte StudentProfileResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &akte); err != nil {
+		t.Fatalf("Antwort lesen: %v (%s)", err, rec.Body.String())
+	}
+	if akte.ID != lehrkraftID || akte.Nachname != "Aktetest" {
+		t.Fatalf("falsche Akte: %+v", akte)
+	}
+	if akte.Art != "lehrkraft" {
+		t.Errorf("Art in der Akte: %q, erwartet \"lehrkraft\" — ohne sie zeigt die Akte die Felder eines Schülers", akte.Art)
+	}
+	if akte.Klasse != "" || akte.AbgaengerJahr != 0 {
+		t.Errorf("eine Lehrkraft hat keine Klasse und kein Abgangsjahr: Klasse %q, Abgang %d", akte.Klasse, akte.AbgaengerJahr)
+	}
+	if akte.EntlieheneBuecher == nil {
+		t.Error("entliehene_buecher muss ein Array sein, auch ein leeres — sonst bricht die Ausleihliste")
+	}
+
+	// Die Akte eines Schülers bleibt, was sie war.
+	var schuelerID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO leser (barcode_id, vorname, nachname, klasse, abgaenger_jahr, art)
+		VALUES ('AKTE-2', 'Lena', 'Aktetest', '7a', 2030, 'schueler') RETURNING id`).Scan(&schuelerID); err != nil {
+		t.Fatalf("Schüler anlegen: %v", err)
+	}
+	req2 := httptest.NewRequest(http.MethodGet, "/api/schueler/"+schuelerID, nil)
+	req2.SetPathValue("id", schuelerID)
+	req2 = req2.WithContext(context.WithValue(req2.Context(), auth.ClaimsContextKey, claims))
+	rec2 := httptest.NewRecorder()
+	srv.GetStudentProfileHandler(studentRepo).ServeHTTP(rec2, req2)
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("Akte eines Schülers: Status %d, %s", rec2.Code, rec2.Body.String())
+	}
+	var schuelerAkte StudentProfileResponse
+	if err := json.Unmarshal(rec2.Body.Bytes(), &schuelerAkte); err != nil {
+		t.Fatalf("Antwort lesen: %v", err)
+	}
+	if schuelerAkte.Art != "schueler" || schuelerAkte.Klasse != "07A" {
+		t.Errorf("Akte des Schülers: Art %q, Klasse %q", schuelerAkte.Art, schuelerAkte.Klasse)
+	}
+}

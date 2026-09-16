@@ -16,6 +16,8 @@
 	import { Info } from '@lucide/svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte } from './schuelerRechte.js';
+	import { istKollegium } from './leserArt.js';
+	import { druckeAusweis } from './ausweisDruck.js';
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} student - The selected student object
@@ -40,6 +42,11 @@
 	const st = useStudentProfile();
 	// Aktionen folgen dem Recht ihrer Route, nicht der Rolle — Zuordnung in schuelerRechte.js.
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
+
+	// Die Akte zeigt seit dem 16.09.2026 jeden Leser. Was einem Kollegen nicht gehört,
+	// bleibt weg — auch die Gefahrenzone: DELETE /api/schueler geht über die Sicht
+	// `schueler` und liefe bei ihm in ein 404.
+	const kollege = $derived(istKollegium(st.profile));
 
 	// Der Reiter folgt der Absicht, mit der das Profil geöffnet wurde — nicht der
 	// Route: Am Kiosk und aus Mahnwesen/Abgängern heraus geht es um Ausleihen, in der
@@ -77,19 +84,6 @@
 	const gueltigBisEffektiv = $derived(
 		gueltigBisOverride ?? st.profile?.ausweis_gueltig_bis ?? null
 	);
-
-	/** @param {'front'|'back'|'both'} [side] Zu druckende Ausweisseite(n). */
-	function printCard(side = 'both') {
-		const styleEl = document.createElement('style');
-		styleEl.textContent = '@media print { @page { size: 85.6mm 53.98mm; margin: 0; } }';
-		document.head.appendChild(styleEl);
-		document.body.setAttribute('data-print-mode', 'card-single');
-		if (side !== 'both') document.body.setAttribute('data-print-card-side', side);
-		window.print();
-		document.head.removeChild(styleEl);
-		document.body.removeAttribute('data-print-mode');
-		document.body.removeAttribute('data-print-card-side');
-	}
 </script>
 
 {#if st.loading}
@@ -132,7 +126,7 @@
 						rechnungPdfLoading={st.rechnungPdfLoading}
 						downloadKontoauszugPDF={st.downloadKontoauszugPDF}
 						downloadRechnungPDF={st.downloadRechnungPDF}
-						onPrint={printCard}
+						onPrint={druckeAusweis}
 						gueltigBis={gueltigBisEffektiv}
 						onGueltigBis={(jahr) => (gueltigBisOverride = jahr)}
 					/>
@@ -154,7 +148,7 @@
 							? 'border-blue-600 text-blue-600'
 							: 'border-transparent text-slate-600 hover:text-slate-800'}"
 					>
-						Stammdaten & Adresse
+						{kollege ? 'Persönliche Daten' : 'Stammdaten & Adresse'}
 					</button>
 				</div>
 
@@ -183,7 +177,7 @@
 						/>
 
 						<!-- Gefahrenzone: ausschließlich am unteren Ende des Stammdaten-Reiters -->
-						{#if rechte.loeschen}
+						{#if rechte.loeschen && !kollege}
 							<StudentDangerZone onDelete={() => (st.showDeleteConfirm = true)} />
 						{/if}
 					{/if}

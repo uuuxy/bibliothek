@@ -24,10 +24,15 @@ func resolveFotoURL(ctx context.Context, studentRepo repository.StudentRepositor
 
 // StudentProfileResponse returns master data (with photo_url) and currently borrowed books.
 type StudentProfileResponse struct {
-	ID            string `json:"id"`
-	BarcodeID     string `json:"barcode_id"`
-	Vorname       string `json:"vorname"`
-	Nachname      string `json:"nachname"`
+	ID        string `json:"id"`
+	BarcodeID string `json:"barcode_id"`
+	Vorname   string `json:"vorname"`
+	Nachname  string `json:"nachname"`
+	// Art ist Schüler, Lehrkraft oder LiV. Die Akte richtet sich danach: Ein Kollege hat
+	// keine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne
+	// die Art zeigte die Akte ihm diese Felder als „Keine Angabe" und behauptete damit,
+	// dass sie fehlen. Sie gehören ihm gar nicht.
+	Art           string `json:"art"`
 	Klasse        string `json:"klasse"`
 	AbgaengerJahr int    `json:"abgaenger_jahr"`
 	// AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem
@@ -74,10 +79,14 @@ func (s *Server) GetStudentProfileHandler(
 
 		ctx := r.Context()
 
-		// 1. Resolve student details from DB
-		student, err := studentRepo.GetByID(ctx, id)
+		// 1. Den LESER laden — Schüler ODER Kollegium.
+		//
+		// GetLeserByID statt GetByID: Letzteres liest die Sicht `schueler`, und eine
+		// Lehrkraft kam damit als 404 zurück. An der Theke hieß das: Der Kollege ist
+		// geladen, aber niemand sieht, welche Bücher er hat.
+		student, err := studentRepo.GetLeserByID(ctx, id)
 		if err != nil {
-			return apierrors.Internal("Fehler beim Laden des Schülers", err)
+			return apierrors.Internal("Fehler beim Laden des Lesers", err)
 		}
 		if student == nil {
 			return apierrors.NotFound("student record not found", nil)
@@ -107,6 +116,7 @@ func (s *Server) GetStudentProfileHandler(
 			BarcodeID:         student.BarcodeID,
 			Vorname:           student.Vorname,
 			Nachname:          student.Nachname,
+			Art:               student.Art,
 			Klasse:            student.Klasse,
 			AbgaengerJahr:     student.AbgaengerJahr,
 			AusweisGueltigBis: student.AusweisGueltigBis,

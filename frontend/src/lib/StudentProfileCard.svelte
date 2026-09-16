@@ -1,11 +1,10 @@
 <script>
-	import { Camera, Lock, RotateCcw, X } from '@lucide/svelte';
-	import { apiClient } from './apiFetch.js';
+	import { Camera, Lock, X } from '@lucide/svelte';
 	import { ausleiheGesperrt } from './sperrStatus.js';
-	import Button from './components/ui/Button.svelte';
-	import Feld from './components/ui/Feld.svelte';
 	import StudentKontoStatus from './components/students/StudentKontoStatus.svelte';
+	import AbgangsjahrFeld from './components/students/AbgangsjahrFeld.svelte';
 	import { initialen, avatarVerlauf } from './avatarKachel.js';
+	import { leserArtText, istKollegium } from './leserArt.js';
 
 	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void }} */
 	let {
@@ -22,55 +21,10 @@
 	const initials = $derived(initialen(profile));
 	const avatarGradient = $derived(avatarVerlauf(profile));
 
-	let editingAbgang = $state(false); // Abgangsjahr inline bearbeiten
-	let abgangInput = $state(0);
-	let abgangSaving = $state(false);
-	let abgangError = $state('');
 	let imageFailed = $state(false);
-
-	function startEditAbgang() {
-		abgangInput = profile.abgaenger_jahr;
-		abgangError = '';
-		editingAbgang = true;
-	}
-
-	/** Calculates the expected graduation year from a class string (mirrors backend logic) */
-	function calcAbgangFromKlasse(klasse) {
-		const kl = (klasse || '').toLowerCase().trim();
-		const m = kl.match(/^(\d+)(.*)/);
-		if (!m) return new Date().getFullYear() + 5;
-		const grade = parseInt(m[1], 10);
-		const suffix = m[2] || '';
-		const maxGrade = suffix.startsWith('h') ? 9 : grade >= 11 ? 13 : 10;
-		const yearsLeft = Math.max(0, maxGrade - grade);
-		const now = new Date();
-		const base = now.getMonth() >= 7 ? now.getFullYear() + 1 : now.getFullYear();
-		return base + yearsLeft;
-	}
-
-	async function saveAbgang() {
-		const year = parseInt(String(abgangInput), 10);
-		if (isNaN(year) || year < 2000 || year > 2100) {
-			abgangError = 'Bitte ein gültiges Jahr eingeben (2000–2100)';
-			return;
-		}
-		abgangSaving = true;
-		abgangError = '';
-		try {
-			const res = await apiClient.patch(`/api/schueler/${profile.id}`, { abgaenger_jahr: year });
-			if (res.ok) {
-				profile.abgaenger_jahr = year;
-				editingAbgang = false;
-			} else {
-				const d = await res.json().catch(() => ({}));
-				abgangError = d.error || 'Fehler beim Speichern';
-			}
-		} catch {
-			abgangError = 'Netzwerkfehler';
-		} finally {
-			abgangSaving = false;
-		}
-	}
+	// Ein Kollege ist kein Schüler mit fehlenden Angaben: Klasse und Abgangsjahr gibt es
+	// bei ihm nicht, und „Klasse " mit nichts dahinter sähe aus wie ein Datenfehler.
+	const kollege = $derived(istKollegium(profile));
 </script>
 
 <div
@@ -80,7 +34,7 @@
 	<button
 		onclick={onDeselect}
 		class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-full transition-colors cursor-pointer"
-		title="Schüler schließen (ESC)"
+		title="Akte schließen (ESC)"
 	>
 		<X class="w-5 h-5" aria-hidden="true" />
 	</button>
@@ -130,48 +84,22 @@
 			{profile.vorname}
 			{profile.nachname}
 		</h3>
-		<p class="text-lg font-bold text-slate-700">Klasse {profile.klasse}</p>
+		<p class="text-lg font-bold text-slate-700">
+			{kollege ? leserArtText(profile.art) : `Klasse ${profile.klasse}`}
+		</p>
 
-		{#if rechte.bearbeiten}
-			{#if editingAbgang}
-				<div class="flex items-center gap-2 flex-wrap">
-					<Feld
-						type="number"
-						min="2000"
-						max="2100"
-						bind:value={abgangInput}
-						aria-label="Abgangsjahr"
-						feld="w-24 text-center font-bold"
-					/>
-					<Button
-						variant="secondary"
-						size="sm"
-						onclick={() => {
-							abgangInput = calcAbgangFromKlasse(profile.klasse);
-						}}
-						title="Automatisch aus Klasse berechnen"
-						><RotateCcw class="h-3.5 w-3.5" aria-hidden="true" /> Neu berechnen</Button
-					>
-					<Button size="sm" onclick={saveAbgang} disabled={abgangSaving}>
-						{abgangSaving ? '…' : 'Speichern'}
-					</Button>
-					<Button variant="ghost" size="sm" onclick={() => (editingAbgang = false)}>✕</Button>
-				</div>
-				{#if abgangError}<p class="text-xs text-rose-500 mt-1">{abgangError}</p>{/if}
-			{:else}
-				<button
-					onclick={startEditAbgang}
-					class="text-base text-slate-500 font-semibold hover:text-blue-600 hover:underline cursor-pointer transition-colors"
-					title="Abgangsjahr bearbeiten"
-				>
-					Abgang {profile.abgaenger_jahr} ✎
-				</button>
-			{/if}
-		{:else}
-			<p class="text-base text-slate-500 font-semibold">Abgang {profile.abgaenger_jahr}</p>
+		{#if !kollege}
+			<AbgangsjahrFeld bind:profile darfBearbeiten={rechte.bearbeiten} />
 		{/if}
 
-		<p class="text-sm text-slate-400 font-mono tracking-widest">{profile.barcode_id}</p>
+		<!-- Ein Kollege aus der Selbstanmeldung hat noch keine Ausweisnummer. Eine leere
+		     Zeile sähe nach einem Anzeigefehler aus; ohne Nummer gibt es auch keinen
+		     Ausweis zu drucken. Eingetragen wird sie in „Benutzer & Rechte". -->
+		{#if profile.barcode_id}
+			<p class="text-sm text-slate-400 font-mono tracking-widest">{profile.barcode_id}</p>
+		{:else}
+			<p class="text-sm text-on-surface-variant italic">Noch keine Ausweisnummer</p>
+		{/if}
 	</div>
 
 	<StudentKontoStatus {profile} {onLock} />

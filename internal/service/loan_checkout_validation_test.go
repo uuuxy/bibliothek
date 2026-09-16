@@ -20,10 +20,6 @@ type mockStudentRepo struct {
 	err     error
 }
 
-func (m *mockStudentRepo) GetByID(ctx context.Context, id string) (*repository.Student, error) {
-	return m.student, m.err
-}
-
 // GetLeserByID ist die Abfrage des Ausleihpfads seit Migration 125: Sie liest die TABELLE
 // und findet damit auch einen Kollegen.
 func (m *mockStudentRepo) GetLeserByID(ctx context.Context, id string) (*repository.Student, error) {
