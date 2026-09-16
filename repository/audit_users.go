@@ -248,7 +248,7 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 		return fmt.Errorf("soft-deleting student: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("student %s not found", studentID)
+		return fmt.Errorf("%w: %s", ErrLeserNichtGefunden, studentID)
 	}
 
 	// Beim Kollegium geht das KONTO mit — Entschieden am 16.09.2026: „wenn ein kollege gelöscht
@@ -320,14 +320,14 @@ func blockiereBeiOffenenVorgaengen(ctx context.Context, tx pgx.Tx, studentID str
 		return fmt.Errorf("checking open loans: %w", err)
 	}
 	if offeneAusleihen > 0 {
-		return fmt.Errorf("endgültiges Löschen blockiert: %d offene Ausleihe(n)", offeneAusleihen)
+		return fmt.Errorf("%w: %d offene Ausleihe(n)", ErrLoeschenBlockiert, offeneAusleihen)
 	}
 	var offeneSchaeden int
 	if err := tx.QueryRow(ctx, `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`, studentID).Scan(&offeneSchaeden); err != nil {
 		return fmt.Errorf("checking unpaid damages: %w", err)
 	}
 	if offeneSchaeden > 0 {
-		return fmt.Errorf("endgültiges Löschen blockiert: %d unbezahlte(r) Schadensfall/-fälle", offeneSchaeden)
+		return fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle", ErrLoeschenBlockiert, offeneSchaeden)
 	}
 	return nil
 }
@@ -355,7 +355,7 @@ func (r *pgAuditRepository) entferneSchuelerPIIUndLoesche(ctx context.Context, t
 		return fmt.Errorf("deleting student: %w", err)
 	}
 	if tag.RowsAffected() == 0 {
-		return fmt.Errorf("student %s not found", studentID)
+		return fmt.Errorf("%w: %s", ErrLeserNichtGefunden, studentID)
 	}
 
 	var bearbeiterPtr *string
@@ -374,6 +374,18 @@ func (r *pgAuditRepository) entferneSchuelerPIIUndLoesche(ctx context.Context, t
 	return nil
 }
 
+// ErrLoeschenBlockiert meldet: Die Löschung ist nicht möglich, WEIL noch etwas offen ist —
+// eine Ausleihe, ein unbezahlter Schaden, oder die Zeile liegt gar nicht im Papierkorb.
+//
+// Der Handler braucht den Unterschied (17.09.2026, OFFEN.md 5.6): Bis hierher beantwortete
+// er JEDEN Fehler des Purge mit 409 „Konflikt" — auch einen Verbindungsabbruch oder einen
+// kaputten Constraint. Ein Serverfehler, der sich als Konflikt ausgibt, schickt die
+// Bibliothek los, ein Problem zu suchen, das es nicht gibt, und verdeckt das echte
+// (Bugklasse „Fehler-Kollaps", docs/sweeps.md).
+//
+//nolint:staticcheck // ST1005: die Meldung steht so vor dem Menschen.
+var ErrLoeschenBlockiert = errors.New("Endgültiges Löschen blockiert")
+
 // PurgeStudent entfernt einen im Papierkorb liegenden Schüler endgültig und
 // DSGVO-konform. Nur aus dem Papierkorb; offene Ausleihen/unbezahlte Schäden blockieren.
 func (r *pgAuditRepository) PurgeStudent(ctx context.Context, studentID string, bearbeiterID string) error {
@@ -387,13 +399,13 @@ func (r *pgAuditRepository) PurgeStudent(ctx context.Context, studentID string, 
 	var imPapierkorb bool
 	err = tx.QueryRow(ctx, `SELECT deleted_at IS NOT NULL FROM leser WHERE id = $1`, studentID).Scan(&imPapierkorb)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return fmt.Errorf("student %s not found", studentID)
+		return fmt.Errorf("%w: %s", ErrLeserNichtGefunden, studentID)
 	}
 	if err != nil {
 		return fmt.Errorf("checking trash state: %w", err)
 	}
 	if !imPapierkorb {
-		return fmt.Errorf("student %s ist nicht im Papierkorb — erst löschen, dann endgültig entfernen", studentID)
+		return fmt.Errorf("%w: der Datensatz liegt nicht im Papierkorb — erst löschen, dann endgültig entfernen", ErrLoeschenBlockiert)
 	}
 
 	if err = blockiereBeiOffenenVorgaengen(ctx, tx, studentID); err != nil {

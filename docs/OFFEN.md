@@ -765,7 +765,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.6 Schüler und LUSD
 
-- Purge-Fehler kommen immer als 409 (`api/student_deleted.go`).
 - LUSD: Zwei Zeilen mit gleichem Namen und Geburtsdatum, aber verschiedenen Klassen werden still
   zu einer Person; die Meldung „mehrdeutig" fehlt (dokumentierte Grenze). Vor der LUSD-Abnahme als
   Hinweis in der Vorschau.

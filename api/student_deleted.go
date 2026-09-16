@@ -186,9 +186,18 @@ func (s *Server) PurgeStudentHandler(auditRepo repository.AuditRepository) http.
 
 		ctx := r.Context()
 		if err := auditRepo.PurgeStudent(ctx, id, claims.UserID); err != nil {
-			// Blockade (offene Ausleihen / unbezahlte Schäden / nicht im Papierkorb) ist
-			// ein Konflikt, kein Serverfehler.
-			apierrors.SendHTTPError(w, http.StatusConflict, err)
+			// Blockade (offene Ausleihen / unbezahlte Schäden / nicht im Papierkorb) ist ein
+			// Konflikt. Alles andere NICHT: Bis zum 17.09.2026 bekam jeder Fehler die 409 —
+			// auch ein Verbindungsabbruch. Das schickt die Bibliothek los, einen offenen
+			// Vorgang zu suchen, den es nicht gibt, und verdeckt den echten Fehler.
+			switch {
+			case errors.Is(err, repository.ErrLoeschenBlockiert):
+				apierrors.SendHTTPError(w, http.StatusConflict, err)
+			case errors.Is(err, repository.ErrLeserNichtGefunden):
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+			default:
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			}
 			return
 		}
 
