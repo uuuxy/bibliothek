@@ -18,10 +18,10 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
 
-1. **30 Minuten: die Offline-Theke einmal echt ausprobieren.** Am Stack das Netz
-   kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
-   angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
-   für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
+1. **Erledigt am 16.09.2026: die Offline-Theke ist einmal echt ausprobiert.** Dabei kamen zwei
+   Befunde heraus (Abschnitt 2): Der Offline-Hinweis ist so groß, dass sich nichts mehr buchen
+   lässt, und wer ohne Netz ausgesperrt wird, kommt nicht wieder herein. Beides wird in Stufe 3
+   behoben. Offen bleibt der Nachweis für Stufe 2 (Anfragen direkt an den Server).
 2. **Zwei kurze Antworten** (Abschnitt 5.16 B): Soll die Ausleihhistorie eines Kollegen
    nach einer Frist gelöscht werden? Soll er für ein verlorenes Buch zahlen? Die beiden
    anderen Fragen sind am 16.09.2026 beantwortet und gebaut: Ein Kollege hat keine Frist
@@ -35,9 +35,9 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    Zeit davor, trägst du sie dort nach — damit bekommt er seinen Zugang, und die
    Selbstanmeldung legt ihn nicht ein zweites Mal an. Sieh dir an, ob die Wörter stimmen und
    ob dir etwas fehlt.
-4. **Ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
-   15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
-   Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
+4. **Freigegeben am 16.09.2026: Stufe 3 wird gebaut.** Das ist die Theke selbst — ein schmales
+   Band statt des Blocks, keine Sperre ohne Netz, Weiterarbeiten mit gültiger Sitzung, das
+   Nachsenden über die neue Tür und die Meldungsliste.
 5. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
 6. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
@@ -168,8 +168,33 @@ nie rückwärts, die Tür liest die Antwort unter dem Schlüssel und legt ihre E
 rechnet den Uhrversatz des Rechners heraus, die Barcode-Liste führt auch ausgesonderte Exemplare,
 und die Theke hat eine Rückrechnung der Littera-Etiketten mit denselben Prüffällen wie der Server
 (Einzelheiten in den Commit-Nachrichten).
-**Nächster Schritt:** Nachweise am Stack für Stufe 1 (von Hand, echter Chrome) und Stufe 2
-(Anfragen an die Tür, 2.3); dann die Freigabe für Stufe 3.
+**Stand 16.09.2026, abends — der Stufe-1-Nachweis ist von Hand gelaufen** (echter Chrome, Netz
+gekappt). Zwei Befunde, beide echt, beide Stufe-3-Arbeit:
+
+1. **Das Offline-Band ist kein Band, sondern ein Block.** Es schiebt die Anwendung so weit nach
+   unten, dass an der Theke nichts mehr zu buchen ist — genau der Zustand, den Stufe 3 abschafft.
+   Der Hinweis ist zudem bei null Vorgängen gleich laut wie bei fünfzig („0 Vorgänge nur auf
+   diesem Rechner").
+2. **Ohne Netz kommt niemand mehr herein.** Zwei Ursachen, die man auseinanderhalten muss. Der
+   Sperrbildschirm nach 15 Minuten wirft die Sitzung NICHT weg (sie hält 12 Stunden und erneuert
+   sich alle 30 Minuten) — aufgemacht wird er aber mit dem Passwort gegen den Schul-Mailserver,
+   und ohne Netz passt der Schlüssel nicht ins Schloss (`stores/idleLock.svelte.js`, `entsperren`
+   ruft `/login`). Lädt der Tab neu, kommt die volle Anmeldemaske, und die braucht den
+   Mailserver ebenfalls.
+
+**Entschieden am 16.09.2026 — der Nachweis hat die Entscheidung vom 13.09. widerlegt.** Dort
+stand: „Nach einem Neuladen ohne Netz bleibt die Anmeldemaske der Rückfall." Das taugt an der
+Theke nicht; „Tab neu geladen, kein Netz" hieße Nachmittag vorbei. Stattdessen gilt: Ist das
+Sitzungs-Kärtchen im Browser noch gültig, arbeitet die Theke ohne Netz weiter, ohne den
+Mailserver zu fragen — eingeschränkt auf das Nötige, also scannen in die Warteschlange ja,
+Schülerdaten anzeigen nein. Sobald das Netz zurück ist, wird geprüft. Das erweitert den Umfang
+von Stufe 3 um diesen Punkt; die Einschränkung ist der Ersatz für die Prüfung, die gerade nicht
+möglich ist.
+
+**Nächster Schritt:** Stufe 3 bauen — Band statt Block, keine Sperre ohne Netz, die eben
+entschiedene Weiterarbeit mit gültiger Sitzung, Nachsenden, Meldungsliste. Der Nachweis für
+Stufe 2 (Anfragen an die Tür, 2.3) steht weiterhin aus; er gehört dem, der den Umbau gebaut hat,
+denn wer nicht weiß, was dort zugesagt wurde, hakt ihn nur ab.
 
 ### 2.1 Was heute fehlt (am Code gelesen 13.09., nachgeprüft 14.09.2026)
 
@@ -956,6 +981,92 @@ abgeleitet statt abgeschrieben (Migration 122 aus den ADMIN-Zeilen, `db/rolle_le
 aus der Vorgabe); Mahnlauf, LUSD-Abgleich und Löschjob lesen weiter Schüler; die Dauerleihe
 hängt jetzt an der Art statt an der Tabelle; der Name eines Kontos und seiner Leserzeile werden
 in einer Transaktion geschrieben, und ein stiller Null-Treffer ist dort ein Fehler.
+
+---
+
+### 5.18 Rasterdurchgang über die Leserdatei-Arbeit (16.09.2026, abends)
+
+Umfang: die 22 Commits seit dem Durchgang aus 5.17, also die ganze Leserdatei-Arbeit
+(Anlegen, Ändern, Löschen, Zusammenführen, Schul-E-Mail, Ausweis-Vorsilbe, keine Frist fürs
+Kollegium). Keine neue Migration in diesem Zeitraum — Frage 12 hing am eingefrorenen Inventar.
+Drei Funde, jeder am laufenden Pfad nachgestellt.
+
+**1 · Eine abgelehnte Zugangsanfrage lässt ihre Leserzeile stehen (A, teilweise behoben).**
+Die Selbstanmeldung schreibt ein Konto ohne `leser_id`; der Wächter `trg_benutzer_hat_leserzeile`
+hängt eine frische Leserzeile daran. `DeleteUser` (`repository/audit_users.go`) löscht nur die
+Kontozeile — die Leserzeile bleibt als Waise in der Leserdatei stehen, ohne Ausweis, mit dem aus
+der Adresse geratenen Namen. Der **Regelfall** ist seit `e72c11ab` weg: Wer schon in der
+Leserdatei steht, wird über „das ist dieselbe Person" zugeordnet statt gelöscht. **Offen bleibt
+der Ablehnungs-Fall:** eine Anfrage von jemandem, der gar nicht in die Leserdatei gehört, wird
+weiterhin gelöscht und hinterlässt die Waise.
+
+Nachstellung (rot gesehen am echten Postgres, über den Handler): Eine Zeile
+`INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, zugang_beantragt_am)
+VALUES (…, 'kollegium', false, CURRENT_TIMESTAMP) RETURNING leser_id` anlegen — der Wächter
+liefert die Leserzeile zurück —, dann `DeleteUserHandler` auf das Konto rufen und zählen, ob die
+Leserzeile noch da ist. Sie ist es.
+
+Die Regel für die Löschung ist die eigentliche Arbeit, nicht der Code: Die Leserzeile darf nur
+mitgehen, wenn sie unberührt ist. Eine Aufzählung im Go-Code hält das nicht — an `leser` hängen
+acht Fremdschlüssel mit gemischter Löschwirkung (`ausleihen` und `schadensfaelle` RESTRICT,
+`schueler_fotos` und `vormerkungen` CASCADE, `schadensersatz_bescheide`, `nachbuch_meldungen`
+zweimal und `benutzer` SET NULL), und die nächste Tabelle, die jemand anhängt, steht in keiner
+Aufzählung. Deshalb: explizite Prüfung PLUS eine Ratsche, die die Fremdschlüssel auf `leser` aus
+der Datenbank liest und gegen eine Liste hält. Der Ausweis ist der Sonderfall, den keine
+Fremdschlüssel-Abfrage sieht — er steht als Spalte in der Zeile.
+
+**2 · Die Dauerleihe eines Kollegen wird als überfällig gefärbt (B).** In der Akte am 16.09.
+behoben; zwei weitere Ausgänge blieben: `components/BorrowersListe.svelte` und
+`utils/ausleiherDruck.js` färben die Frist rot, sobald das Datum vorbei ist. Beide hängen an
+derselben Abfrage (`api/copy_admin.go`, Ausleiher eines Titels), und die holt `ist_handapparat`
+gar nicht erst ab. Das Gate gehört deshalb an den fertigen Inhalt, nicht an die Komponente.
+
+`repository/ueberfaellig_regel_test.go` konnte das nicht finden: Es sucht den Vergleich
+`rueckgabe_frist < CURRENT_TIMESTAMP` im SQL, aber diese Abfrage vergleicht nichts — sie liefert
+das Datum aus, verglichen wird in JavaScript. Die Ratsche misst die falsche Schicht; der
+Gegenpart im Frontend fehlt.
+
+Am Schulserver gemessen (16.09.2026): 0 offene Kollegen-Ausleihen ohne das Merkmal — bei 0
+offenen Kollegen-Ausleihen überhaupt. Es gibt also nichts zu reparieren, und die erste Zahl
+allein hätte nichts bewiesen. Entschieden wird weiter an `ist_handapparat`, nicht an
+`klasse = 'Lehrer'`: Das wäre die zweite Wahrheitsquelle von der anderen Seite.
+
+**3 · Eine Einstellung außerhalb ihres Bereichs wird still ersetzt (B).**
+`repository/system_settings_patch.go`, Helfer `zahl(key, v, min, ersatz)`: Liegt der Wert unter
+dem Mindestwert, wird er durch einen Ersatzwert getauscht und als „gespeichert" gemeldet. Eine
+Obergrenze gibt es bei keiner der 15 Zahlen. Gemessen: Eingabe 0 für `max_ausleihen_schueler`
+wird als 5 gespeichert; Eingabe 999999 für `max_overdue_items` wird unverändert übernommen — und
+damit lässt sich die Sperr-Automatik, eine Invariante des Katalogs, aus der Oberfläche
+abschalten. Dazu protokolliert `api/settings.go` den Request, also die Eingabe, nicht das
+Gespeicherte: Steht 0 drin, steht 0 im Protokoll.
+
+Die Asymmetrie sitzt in derselben Datei: Sommerferien, Eingangsjahrgänge und LMF-Stichtag werden
+geprüft und bei Unsinn mit 400 abgelehnt — ausdrücklich, weil Unlesbares sonst „gespeichert,
+angezeigt und beim Lesen still auf die Vorgabe zurückgeworfen" wurde (Rasterdurchgang
+06.09.2026). Auf der Zahlen-Seite steht derselbe Fehler noch fünfzehnmal.
+
+**Was daraus für das Raster folgt (Vorschlag, noch nicht umgesetzt).** Eine neue Frage 13 —
+*Bedeutungswechsel unter gleichem Namen: Hat dieser Name seit gestern eine andere Bedeutung, und
+wer liest ihn noch in der alten?* Beleg: Beim Durchgang aus 5.17 gab es 15 Schreibpfade gegen die
+Sicht `schueler`, heute sind es 9; die sechs, die gewandert sind, sind Zeile für Zeile die Funde
+jenes Durchgangs. Dazu der mechanische Anker, ohne den die Frage zum Spruch verrottet: ein
+Bestand der Schreibpfade gegen eine Sicht, je Zeile mit Begründung (heute neun, alle richtig —
+LUSD, Versetzung, Löschjob, Seed, Littera-Schülerlauf). Eine zehnte Zeile ist eine Frage.
+
+Dazu eine Schärfung von Frage 12 ohne neue Nummer: *Wer räumt weg, was die Datenbank selbst
+angelegt hat?* Das Inventar fragt bei Fremdschlüsseln in die Löschrichtung, bei Triggern nur in
+die Anlegerichtung. Vier Trigger schreiben in fremde Tabellen, zwei davon legen Zeilen an, die
+kein Go-Code je löscht: `leser` aus `konto_hat_leserzeile` (Fund 1) und `klassen` — für die es im
+ganzen Go-Code kein `DELETE` gibt, eine vertippte Klasse steht ab dann in jeder Auswahlliste.
+
+**Ausdrücklich NICHT vorgeschlagen**, damit die Frage nicht wiederkommt: eine Frage zur
+Barrierefreiheit (hat ein Gate, andere Achse), zum Betrieb (drei Doku-Tests gaten das schon), zur
+Eingabeform (Gate seit 13.09.) und zum Rückweg eines Releases (Down-Migrationen wären ein großes
+Projekt gegen ein Risiko, das mit dem Nachtbackup bewusst angenommen ist). Geld wurde geprüft und
+für unauffällig befunden: Die Summe eines Bescheids wird zweimal gerechnet, im Browser und in Go,
+beide als Fließkommazahl — eine erreichbare Abweichung liess sich aber nicht konstruieren, weil
+der Fehler bei zweistelligen Eingaben weit unter einem halben Cent liegt und `NUMERIC(10,2)` der
+Anker ist. Bleibt als Fleck ohne Fund notiert, nicht als Arbeit.
 
 ---
 
