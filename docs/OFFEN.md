@@ -93,8 +93,7 @@ jemandem schaden?"**
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 6. Nach der Antwort zu E5 (**8.3**): **5.4**.
-7. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10**, **5.11** und Abschnitt 6 nur mit
-   Anlass.
+7. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10** und Abschnitt 6 nur mit Anlass.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
 Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
@@ -799,8 +798,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.11 Doku
 
-- HANDBUCH: Hinweis, dass im Vermerk des LMF-Plans keine Schülernamen stehen — er erscheint im
-  Portal des ganzen Kollegiums und im PDF.
+Nichts offen (Stand 16.09.2026). Die Nummer bleibt, weil die Reihenfolge oben auf sie verweist.
 
 ### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
 

@@ -229,6 +229,11 @@ gleich und immer auf dem aktuellen Stand; _Als PDF_ liefert die gewohnte Liste (
 Datum, Stunde, Klassen, Besonderheiten — so, wie sie im Planer eingetragen sind),
 getrennt nach Büchertausch und Bücherausgabe.
 
+**In die Spalte „Besonderheiten" gehört kein Schülername.** Was dort steht, liest das ganze
+Kollegium im Portal und steht im PDF, das weitergegeben und ausgedruckt wird — der Plan ordnet
+Klassen und Stunden, nicht einzelne Kinder. „Nachzügler" oder „Restbücher aus 9R2" ist richtig,
+ein Name daneben nicht.
+
 **Der Termin einer Klasse beim Büchertausch ist die Frist ihrer Schulbücher.** Beim
 Veröffentlichen (und bei jeder Speicherung eines veröffentlichten Plans)
 folgen die offenen Schulbuch-Ausleihen der Klassen (die Meldung nennt die Zahl); neue
