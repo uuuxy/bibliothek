@@ -168,15 +168,19 @@ func klasse(spalte string, lernmittel bool) string {
 // Schüler getrennt wird (Alias `a`). Ausleihen mit OFFENEM Schadensfall bleiben
 // zugeordnet — dort ist der Zweck (Forderung) noch nicht erreicht.
 //
-// Die Befristung gilt SCHÜLERN. Bis Migration 125 galt das von selbst: Eine
-// Lehrerausleihe stand in einer anderen Spalte und hatte keine schueler_id. Seit alle
-// Leser in einer Tabelle stehen, muss die Einschränkung dastehen — sonst nähme der
-// Nachtlauf still auch dem Kollegium seine Ausleihhistorie. Ob er das SOLL, ist eine
-// Frage an den Betrieb und keine, die dieser Umbau nebenbei beantwortet
-// (docs/OFFEN.md 5.16); bis dahin bleibt das Verhalten, wie es war.
+// Die Befristung gilt JEDEM LESER — Schülern wie Kollegium (entschieden am 16.09.2026).
+//
+// Bis Migration 125 traf sie von selbst nur Schüler: Eine Lehrerausleihe stand in einer
+// anderen Spalte und hatte keine schueler_id. Der Umbau schrieb die Einschränkung
+// ausdrücklich hin, um nichts nebenbei zu entscheiden; sie war damit eine Spur der alten
+// Tabellenform, kein Beschluss. Entschieden ist jetzt: eine Regel für alle.
+//
+// Warum das nichts kostet: Die Frist läuft ab der RÜCKGABE. Eine Dauerleihe des
+// Kollegiums ist nie zurückgegeben und bleibt darum unberührt, solange sie läuft. Und die
+// Paarung Frist × Medienklasse bleibt: Ein Lernmittel behält seine 730 Tage für die
+// Bestandskartei, ein Buch der Schülerbücherei 90.
 func PredikatLesehistorieAusleihen(lernmittel bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `a.schueler_id IS NOT NULL
-		  AND EXISTS (SELECT 1 FROM leser l WHERE l.id = a.schueler_id AND l.art = 'schueler')
 		  AND a.rueckgabe_am IS NOT NULL
 		  AND a.rueckgabe_am < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
@@ -195,8 +199,7 @@ func PredikatLesehistorieAusleihen(lernmittel bool, tage, kulanz int) Loeschbedi
 func PredikatLesehistorieProtokoll(lernmittel bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'ausleihen'
 		  AND al.details ? 'schueler_id'
-		  -- Wie beim Prädikat der Ausleihen: nur Schüler (Migration 125).
-		  AND EXISTS (SELECT 1 FROM leser l WHERE l.id::text = al.details->>'schueler_id' AND l.art = 'schueler')
+		  -- Wie beim Prädikat der Ausleihen: jeder Leser (16.09.2026).
 		  AND al.timestamp < NOW() - make_interval(days => $1::int + $2::int)
 		  AND NOT EXISTS (
 		        SELECT 1 FROM ausleihen a

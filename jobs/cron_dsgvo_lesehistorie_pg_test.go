@@ -21,7 +21,7 @@ import (
 //	F-JUNG  Freihand, vor 10 Tagen zurück             → bleibt
 //	F-SCHAD Freihand, vor 100 Tagen, offener Schaden  → bleibt
 //	F-OFFEN Freihand, noch ausgeliehen                → bleibt
-//	F-LEHR  Freihand, Lehrer, vor 800 Tagen zurück    → bleibt (dienstlich)
+//	F-LEHR  Freihand, Kollege, vor 800 Tagen zurück   → getrennt (seit 16.09.2026)
 //	G-ALT   Gerät, vor 100 Tagen zurück               → getrennt (kurze Frist)
 //	L-MITTEL Lernmittel, vor 100 Tagen zurück         → bleibt (lange Frist)
 //	L-ALT   Lernmittel, vor 800 Tagen zurück          → getrennt
@@ -96,8 +96,10 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	must(`INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, ist_bezahlt)
 	      SELECT exemplar_id, id, schueler_id, 'Einband gerissen', 12.50, false FROM ausleihen WHERE id = $1`, ids["F-SCHAD"])
 	// Die Ausleihe einer Lehrkraft hängt seit Migration 125 an ihrer LESERZEILE und steht in
-	// derselben Spalte wie die eines Schülers. Sie bleibt als Dauerleihe gekennzeichnet —
-	// die Lesehistorie-Befristung nimmt sie davon aus.
+	// derselben Spalte wie die eines Schülers. Sie ist als Dauerleihe gekennzeichnet — die
+	// Befristung trifft sie trotzdem, sobald sie ZURÜCKGEGEBEN ist (entschieden am
+	// 16.09.2026: eine Regel für jeden Leser). Solange sie läuft, ist sie unberührt, weil
+	// die Frist mit der Rückgabe beginnt; das prüft F-OFFEN.
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, ist_handapparat)
 		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), NOW() - interval '830 days', NOW() - interval '809 days', NOW() - interval '800 days', true) RETURNING id`,
@@ -168,20 +170,24 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 			t.Errorf("%s: Schüler zugeordnet = %v, erwartet %v", name, got, bleibt)
 		}
 	}
-	// Die Dauerleihe der Lehrkraft bleibt ihrer Leserzeile zugeordnet — die Befristung der
-	// Lesehistorie trifft sie nicht.
-	var lehrerBleibt bool
+	// Die zurückgegebene Ausleihe des Kollegen wird getrennt wie die eines Schülers: Vor
+	// dem 16.09.2026 blieb sie ihm auf Dauer zugeordnet, weil das Prädikat nur Schüler sah.
+	// Gezählt wird über die Leserzeile, nicht über das Konto — beim Trennen fällt der
+	// Bezug, und ein JOIN darauf fände die Zeile danach nicht mehr.
+	var kollegeGetrennt bool
 	if err := pool.QueryRow(ctx, `
-		SELECT a.schueler_id IS NOT NULL FROM ausleihen a
-		 JOIN benutzer b ON b.leser_id = a.schueler_id
-		WHERE b.id = $1`, lehrerID).Scan(&lehrerBleibt); err != nil || !lehrerBleibt {
-		t.Errorf("Lehrer-Ausleihe wurde angefasst (err=%v, bleibt=%v)", err, lehrerBleibt)
+		SELECT count(*) = 0 FROM ausleihen a
+		WHERE a.schueler_id = (SELECT leser_id FROM benutzer WHERE id = $1)`, lehrerID).Scan(&kollegeGetrennt); err != nil {
+		t.Fatalf("Ausleihe des Kollegen lesen: %v", err)
+	}
+	if !kollegeGetrennt {
+		t.Error("die zurückgegebene Ausleihe des Kollegen blieb ihm zugeordnet")
 	}
 
 	// Der Lauf protokolliert sich als Systemaktion — mit den Zahlen beider Klassen.
 	var auditZeilen int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND aktion = 'ANONYMIZE'
-		AND details->>'schuelerbuecherei_getrennt' = '2' AND details->>'lernmittel_getrennt' = '1'`).Scan(&auditZeilen); err != nil {
+		AND details->>'schuelerbuecherei_getrennt' = '3' AND details->>'lernmittel_getrennt' = '1'`).Scan(&auditZeilen); err != nil {
 		t.Fatalf("audit_log: %v", err)
 	}
 	if auditZeilen != 1 {

@@ -1,4 +1,4 @@
-# Datenschutz — offene Punkte (Stand 23.08.2026)
+# Datenschutz — offene Punkte (Stand 16.09.2026)
 
 Ergebnis der datenschutzrechtlichen Bewertung gegen den **hessischen** Rahmen. Dieses
 Dokument hält fest, was **noch zu tun** ist — nicht, was schon gebaut ist (das steht in
@@ -35,7 +35,7 @@ Links: [SchDSV Volltext](https://www.glb-hessen.de/wp-content/uploads/2024/01/DL
 
 | # | Punkt | Beleg | Status |
 |---|---|---|---|
-| A1 | **Lesehistorie befristen.** Zurückgegebene Ausleihen behielten `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigte bis zu 200 Entleiher mit Namen. | `jobs/cron_dsgvo_lesehistorie.go` (nächtlich: Schülerbücherei 90 Tage, Lernmittel 730 Tage nach Rückgabe, offener Schadensfall hält, Lehrer unberührt), Einstellungen „Datenschutz & Sitzung" (0 = aus), PG-Gate `cron_dsgvo_lesehistorie_pg_test.go` 2× rot gesehen | **erledigt 22.08.2026** |
+| A1 | **Lesehistorie befristen.** Zurückgegebene Ausleihen behielten `schueler_id` bis zur Schüler-Löschung; die Titel-Historie zeigte bis zu 200 Entleiher mit Namen. | `jobs/cron_dsgvo_lesehistorie.go` (nächtlich: Schülerbücherei 90 Tage, Lernmittel 730 Tage nach Rückgabe, offener Schadensfall hält; seit 16.09.2026 für jeden Leser, auch das Kollegium), Einstellungen „Datenschutz & Sitzung" (0 = aus), PG-Gate `cron_dsgvo_lesehistorie_pg_test.go` 2× rot gesehen | **erledigt 22.08.2026** |
 | A2 | **Rechtsgrundlage in SECURITY.md korrigieren.** Lernmittel → Art. 6 (1) e i. V. m. § 83/§ 153 HSchG; Schülerbücherei → Einwilligung (HBDI-Muster). Zwei Verarbeitungstätigkeiten. | `docs/SECURITY.md` Abschnitt „Adressdaten, Eltern-E-Mail und Rechtsgrundlage" | **erledigt 22.08.2026** |
 | A3 | **Eltern-E-Mail-Aussage an den Code anpassen.** Entscheidung: Doku angeglichen, **keine** Eltern-Mahnmail gebaut (§ 15 SchDSV; gedruckter Brief + Klassenleitung decken das Mahnwesen). Wer sie einführt, ergänzt VVT + Hinweis vorher. | `docs/SECURITY.md`, derselbe Abschnitt | **erledigt 22.08.2026** |
 | A4 | **Theken-Ansicht nach Inaktivität leeren + Sperrbildschirm.** | `frontend/src/lib/stores/idleLock.svelte.js` (Theke 5 min, Sperre 15 min, einstellbar, 0 = aus), `Sperrbildschirm.svelte` (Entsperren = Wiederanmeldung gegen `/login`), `GET /api/einstellungen/sitzung`; Gates: `idleLock.test.js` (rot gesehen) + `e2e/sperrbildschirm.spec.js` (Live-Pfad) | **erledigt 22.08.2026** |

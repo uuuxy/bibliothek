@@ -23,8 +23,12 @@ import (
 // Einstellungen; 0 schaltet die jeweilige Befristung ab.
 //
 // Nicht getrennt werden Ausleihen, an denen ein OFFENER Schadensfall hängt — dort ist
-// der Zweck (Forderung) noch nicht erreicht. Lehrer-Ausleihen (Handapparat) sind
-// dienstlich und bleiben unberührt.
+// der Zweck (Forderung) noch nicht erreicht.
+//
+// Seit dem 16.09.2026 gilt die Befristung JEDEM LESER, auch dem Kollegium: Was ein
+// Erwachsener gelesen hat, muss die Bücherei nach der Rückgabe so wenig wissen wie bei
+// einem Kind. Eine laufende Dauerleihe ist davon nicht betroffen — die Frist beginnt mit
+// der Rückgabe.
 
 // RunLesehistorieBefristung trennt abgeschlossene Ausleihen nach Frist vom Schüler.
 func (s *Scheduler) RunLesehistorieBefristung() {
