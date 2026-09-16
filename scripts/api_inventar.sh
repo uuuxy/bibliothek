@@ -31,8 +31,14 @@ grep -rhE '\.Handle(Func)?\(' api/ inventur/ --include="*.go" --exclude="*_test.
 #       ("geladen aus /api/bestellungen/konfiguration.") — der Satzpunkt wurde Teil des
 #       Pfades, weil '.' in der Zeichenklasse steht. Die Route existiert und ist geschützt.
 #
+# Klammern gehören seit dem 16.09.2026 in die Zeichenklasse: Ohne sie brach der Treffer
+# mitten im Ausdruck ab. `/api/buecher/exemplare/${encodeURIComponent(id)}/gefunden` endete
+# als `/api/buecher/exemplare/${encodeURIComponent`, das `/gefunden` fiel weg — und die
+# Route stand im Bericht unter "ohne Frontend-Aufrufer", obwohl inventurApi.js sie ruft.
+# Das schließende ')' entfernt der sed unten weiterhin, wenn es am Ende steht.
+#
 # Ein Register, das Fehlalarm schlägt, wird nach dem zweiten Mal nicht mehr gelesen.
-grep -rhoE '(/api/[A-Za-z0-9_/${}.?=&-]*)' frontend/src --include="*.js" --include="*.svelte" \
+grep -rhoE '(/api/[A-Za-z0-9_/${}().?=&-]*)' frontend/src --include="*.js" --include="*.svelte" \
   --exclude="*.test.js" --exclude="*.spec.js" \
   | sed 's/[?].*$//' | sed 's/[.,;:)]*$//' | sort -u > "$TMP/fe_calls.txt"
 
