@@ -18,10 +18,12 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
 
-1. **Erledigt am 16.09.2026: die Offline-Theke ist einmal echt ausprobiert.** Dabei kamen zwei
-   Befunde heraus (Abschnitt 2): Der Offline-Hinweis ist so groß, dass sich nichts mehr buchen
-   lässt, und wer ohne Netz ausgesperrt wird, kommt nicht wieder herein. Beides wird in Stufe 3
-   behoben. Offen bleibt der Nachweis für Stufe 2 (Anfragen direkt an den Server).
+1. **Die Theke nimmt ohne Netz jetzt wirklich an, und die Buchungen gehen an die richtige
+   Tür** (Abschnitt 2, Schritte A und B). Gescannt werden alle Buchformen und jeder Ausweis;
+   ein ohne Netz gescannter Ausweis wird gemerkt, die folgenden Bücher gehen an ihn. Offen
+   sind noch drei Dinge: die Liste der Buchungen, die nicht durchgingen (Schritt C), der
+   Nachweis von Hand am Stack — Netz kappen, scannen, Netz zurück — und der Nachweis für den
+   Server (Anfragen direkt an die Tür).
 2. **Zwei kurze Antworten** (Abschnitt 5.16 B): Soll die Ausleihhistorie eines Kollegen
    nach einer Frist gelöscht werden? Soll er für ein verlorenes Buch zahlen? Die beiden
    anderen Fragen sind am 16.09.2026 beantwortet und gebaut: Ein Kollege hat keine Frist
@@ -35,9 +37,12 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    Zeit davor, trägst du sie dort nach — damit bekommt er seinen Zugang, und die
    Selbstanmeldung legt ihn nicht ein zweites Mal an. Sieh dir an, ob die Wörter stimmen und
    ob dir etwas fehlt.
-4. **Freigegeben am 16.09.2026: Stufe 3 wird gebaut.** Das ist die Theke selbst — ein schmales
-   Band statt des Blocks, keine Sperre ohne Netz, Weiterarbeiten mit gültiger Sitzung, das
-   Nachsenden über die neue Tür und die Meldungsliste.
+4. **Gebaut am 16.09.2026: das Band statt des Vollbilds, und keine Sperre ohne Netz.** Ein
+   Rasterdurchgang über diese Arbeit (5.19) hat zwei Fehler gefunden und behoben: Fiel der
+   Server aus, während das WLAN stand, liess sich kein Buch mehr auf eine Karte buchen — die
+   Theke bat endlos um einen erneuten Ausweisscan. Und die ohne Netz fällig gewordene Sperre
+   griff auch dann, wenn längst wieder jemand an der Theke stand. Was aus dem Durchgang offen
+   blieb, steht in 5.19.
 5. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
 6. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
@@ -226,10 +231,19 @@ direkter API-Aufruf) läuft weiter ins Leere. Ob das dort ebenfalls geheilt wird
 Entscheidung — eine Suche über `upper(barcode_id)` nutzt den vorhandenen Index nicht mehr, und
 der hält die Eindeutigkeit der Ausweisnummern.
 
-**Nächster Schritt, vor allem Weiteren:** Stufe 1 wirklich bauen — die Barcode-Liste im Browser
-halten und auffrischen, alle Buchformen und Ausweise in die Warteschlange lassen, die
-Ziffernregel aus der Entscheidung vom 13.09. umsetzen, und je Form ein Testfall statt fünfmal
-`B-10234`.
+**Stand 16.09.2026, spät: Schritt A und Schritt B sind gebaut** (vier Commits, je ein Rot-Test
+am alten Code; volle Go-Suite mit Postgres, Frontend-Suite, Lint und `svelte-check` grün). Die
+Theke hält die Buch-Barcode-Liste im Browser, ordnet jeden Scan selbst ein
+(`frontend/src/lib/scanEinordnen.js`, der Zwilling des Server-Switch), nimmt alle Buchformen und
+jeden Ausweis an, und der Sync schickt an `/api/action/nachbuchen` statt an den Stapel. Ein ohne
+Netz gescannter Ausweis wird als NUMMER gemerkt; die folgenden Bücher tragen ihn, der Server
+löst ihn beim Nachbuchen auf. Je Form ein eigener Testfall statt fünfmal `B-10234`.
+
+**Nächster Schritt, vor allem Weiteren:** Schritt C — die Meldungsliste. Die drei Türen dafür
+stehen am Server (`GET /api/action/nachbuch-meldungen`, `…/anzahl`, `POST …/quittieren`) und
+haben im Browser bis heute keinen Aufrufer; die Warnung nach 14 Tagen in der
+Betriebsbereitschaft gibt es. Danach die Nachweise am Stack (2.3), Stufe 1 und Stufe 3 von Hand,
+Stufe 2 über die Tür.
 
 **Stand 15.09.2026 (überholt, siehe oben):** Stufe 1 galt als gebaut — sieben Commits `0fa4b5a3`, `18b4887e`, `44615c42`,
 `08312c87`, `65f9a998`, `6fe6ba8b`, `23ca498c`, je ein Rot-Test am alten Code, volle Suite mit
@@ -1147,6 +1161,61 @@ für unauffällig befunden: Die Summe eines Bescheids wird zweimal gerechnet, im
 beide als Fließkommazahl — eine erreichbare Abweichung liess sich aber nicht konstruieren, weil
 der Fehler bei zweistelligen Eingaben weit unter einem halben Cent liegt und `NUMERIC(10,2)` der
 Anker ist. Bleibt als Fleck ohne Fund notiert, nicht als Arbeit.
+
+---
+
+### 5.19 Rasterdurchgang über die Offline-Theke im Browser (16.09.2026, nachts)
+
+Umfang: die elf Commits seit dem Durchgang aus 5.18 — das Band statt des Vollbilds, die
+Sperre ohne Netz, die Buch-Barcode-Liste im Browser, die Einordnung jedes Scans, der
+Ausweis-Merker, der Sync an die Nachbuch-Tür und die Zuordnung einer Zugangsanfrage. Alle
+zwölf Fragen, keine ausgelassen. Keine neue Migration in diesem Zeitraum; Frage 12 hing am
+eingefrorenen Inventar und an der einen Stelle, die ein Konto löscht (Platzhalter-Konten beim
+Zusammenführen) — die Fremdschlüssel auf `benutzer` sind daraufhin einzeln durchgesehen, ein
+Platzhalter-Konto kann keinen davon halten. Gates beim Durchgang: golangci-lint ohne Befund,
+`svelte-check` 0/0, Frontend-Suite 749 grün, Go-Suite mit echtem Postgres grün (42 Pakete,
+Exit 0).
+
+Drei Funde, jeder am laufenden Pfad rot nachgestellt und noch in derselben Nacht behoben —
+die Einzelheiten stehen in den Commit-Nachrichten (`c5cddd6e`, `7fb4b387`, `77c5961a`): die
+Endlosschleife bei stehendem WLAN und weggefallenem Server, die nachgeholte Sperre mitten in
+der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
+
+**Offen geblieben** — vier Punkte, alle Kategorie B, keiner hält den Betrieb auf:
+
+1. **Ein abgelehnter Stapel hält den Sync an, ohne es zu sagen.** `sendeBatch`
+   (`stores/offlineSync.svelte.js`) beendet die Runde bei jeder Antwort ab 400 mit einem
+   schlichten `return false` — ohne Meldung. Gedacht ist das für 502/503 (der Server kommt
+   gleich wieder); bei einer Antwort, die sich nicht von selbst ändert (403, weil der gerade
+   angemeldete Mensch kein `perform_actions` hat), läuft der Versuch jede Minute erneut ins
+   Leere. Sichtbar ist nur der Zähler im Band, und der sagt „noch nicht im System", nicht
+   „geht so nicht mehr". Zu tun: unterscheiden, ob Warten hilft, und es sonst sagen.
+2. **Der Zwilling der Vorsilben ist eine Verabredung, kein Gate.** `scanEinordnen.js` trägt
+   `A-`/`S-`/`L-` (Ausweis), `B-`/`LMF-` (Buch) und `G-` (Gerät); dieselbe Liste steht im
+   Switch von `internal/service/omnibox_service.go`. Zusammengehalten wird sie von einem
+   Kommentar. Eine neue Vorsilbe an einer Stelle fällt laut aus (ohne Netz „unklar", beim
+   Nachbuchen „nicht gebucht"), aber erst im Betrieb. Das Muster für die Ratsche steht im
+   Haus: `PlatzhalterDomain` hält beide Seiten mit einem Test gegeneinander.
+3. **Die Barcode-Liste altert unbemerkt.** Geholt wird sie bei der Anmeldung
+   (`stores/buchBarcodes.svelte.js`), und das ist so entschieden. Ein Kiosk-Tab steht aber
+   zwölf Stunden offen: Was am Vormittag neu inventarisiert wurde, ist am Nachmittag ohne Netz
+   eine „unklare" Nummer. Der Zeitpunkt des letzten Abgleichs wird gespeichert und nirgends
+   bewertet. Zu entscheiden: nachfassen (etwa stündlich) oder das Alter anzeigen.
+4. **VVT und Datenschutzhinweis kennen die Ablage am Theken-Rechner nicht.** Seit dem
+   16.09.2026 liegen Ausweis- und Buchnummern in der Warteschlange dieses Rechners und in den
+   Sicherungsdateien, die der Bediener speichert. Das ist Punkt 17 des Plans (2.2) und damit
+   nicht vergessen — der Code steht nur vor der Doku. Vor dem ersten echten Offline-Betrieb
+   muss beides nachgezogen sein.
+
+**Was der Durchgang ausdrücklich in Ordnung fand:** Die Uhr-Frage ist sauber gelöst — der
+Eintrag trägt neben der Wanduhr einen gleichmäßig laufenden Anker, und der Sync rechnet daraus
+den Scan-Zeitpunkt neu, wenn die Wanduhr dazwischen gesprungen ist (genau dann, wenn das Netz
+zurückkommt). Erledigt ist nur, was der Server entschieden hat; Schweigen zu einem Schlüssel
+lässt den Eintrag liegen. Der Merker fällt bei „Theke leeren", beim Abmelden und bei jedem
+unklaren Scan — ein Buch geht nie an eine Person, bei der niemand mehr sicher ist. Die beiden
+Hygiene-Ratschen wurden beim Umbau enger gestellt, nicht gelockert. Und die Zuordnung einer
+Zugangsanfrage schreibt in der richtigen Richtung (der vorhandene Eintrag bleibt, mit Ausweis
+und Büchern), am echten Postgres belegt.
 
 ---
 

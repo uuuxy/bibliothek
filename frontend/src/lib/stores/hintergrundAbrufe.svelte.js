@@ -15,7 +15,7 @@ import { offlineSync } from './offlineSync.svelte.js';
 export function starteHintergrundAbrufe(user) {
 	/** @type {ReturnType<typeof setInterval>[]} */
 	const timer = [];
-	if (hatRecht(user, 'perform_actions')) offlineSync.init(); // POST /api/action/batch
+	if (hatRecht(user, 'perform_actions')) offlineSync.init(); // POST /api/action/nachbuchen
 	if (hatRecht(user, 'view_orders')) {
 		// GET /api/reservierungen/klassensatz/anzahl + /api/anliegen/anzahl — beide view_orders,
 		// beide speisen das Badge an „Bestellungen".
