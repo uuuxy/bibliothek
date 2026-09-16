@@ -7,11 +7,11 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/mailservice"
 	"bibliothek/pdf"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -290,13 +290,13 @@ func baueAbgaengerMailRequest(kl abgaengerKlasse, anhaenge []MailAttachment) Mai
 			"in der Bibliothek abgezeichnet.\n\n"+
 			"Mit freundlichen Grüßen,\nSchulbibliothek",
 		kl.Klasse,
-		time.Now().Format(dateFormatDE),
+		schulzeit.Jetzt().Format(dateFormatDE),
 		len(anhaenge),
 	)
 
 	return MailRequest{
 		To:          kl.Empfaenger,
-		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, time.Now().Format(dateFormatDE)),
+		Subject:     fmt.Sprintf("Kontoauszüge Abgänger – Klasse %s – %s", kl.Klasse, schulzeit.Jetzt().Format(dateFormatDE)),
 		Body:        body,
 		Attachments: anhaenge,
 	}

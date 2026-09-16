@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -116,18 +116,18 @@ func baueMahnMailRequest(req mahnwesenSendenRequest, pdfBytes []byte, totalSchue
 			"Bitte informieren Sie die betroffenen Schüler/innen über die ausstehenden Rückgaben.\n\n"+
 			"Mit freundlichen Grüßen,\nSchulbibliothek",
 		req.Klasse,
-		time.Now().Format(dateFormatDE),
+		schulzeit.Jetzt().Format(dateFormatDE),
 		totalSchueler,
 		totalMedien,
 	)
 
 	return MailRequest{
 		To:      req.Email,
-		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, time.Now().Format(dateFormatDE)),
+		Subject: fmt.Sprintf("Mahnliste Schulbibliothek – Klasse %s – %s", req.Klasse, schulzeit.Jetzt().Format(dateFormatDE)),
 		Body:    emailBody,
 		Attachments: []MailAttachment{
 			{
-				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, time.Now().Format(dateFormatISO)),
+				Name:        fmt.Sprintf("mahnliste_%s_%s.pdf", req.Klasse, schulzeit.Jetzt().Format(dateFormatISO)),
 				ContentType: contentTypePDF,
 				Data:        pdfBytes,
 			},

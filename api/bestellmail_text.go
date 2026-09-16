@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // Der TEXT der Bestellmail: Vorlage laden, Platzhalter ersetzen, Link unterbringen — und
@@ -71,7 +73,7 @@ func (s *Server) loadBestellTemplate(ctx context.Context) (betreff, textBody str
 func resolveBestellMail(betreff, textBody, kundennummer string, anzahlTitel, anzahlExemplare int, link string, gueltigBis *time.Time, mittel string) (subject, body string) {
 	texte := mittelTexte[mittel]
 	replacer := strings.NewReplacer(
-		"{{.Datum}}", time.Now().Format(dateFormatDE),
+		"{{.Datum}}", schulzeit.Jetzt().Format(dateFormatDE),
 		"{{.Kundennummer}}", kundennummer,
 		"{{.AnzahlTitel}}", strconv.Itoa(anzahlTitel),
 		"{{.AnzahlExemplare}}", strconv.Itoa(anzahlExemplare),
