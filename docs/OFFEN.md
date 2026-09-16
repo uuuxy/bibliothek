@@ -831,9 +831,6 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
   „Schulaufsicht informieren" wird verworfen. Merker und Liste stehen, der Satz an der Theke
   nicht. Nicht nachgestellt — und nicht nachstellbar: Der Zweig ist seit `daf6b370` (16.06.2026)
   ohne Schreiber, siehe 5.14 (tote Tür „Reserviert für:").
-- **`bescheid_rueckkehr.go`:** Stornierungsgrund „Rückgabe am …" mit rohem `time.Now()`; im
-  Container (UTC) zwischen 0 und 2 Uhr das Vortagsdatum. `schulzeit.Jetzt()` wie die Schwester in
-  `order_pdf.go`.
 - **Wächter „Ehemalige mit offenen Vorgängen" (`fa4a2113`):** Nur der Grundausdruck `AbgangSeit`
   ist mit der Löschuhr vereint; die Löschuhr rechnet zusätzlich `GREATEST(…, max(rueckgabe_am),
   max(Schadensfall))`. Ohne Außenwirkung, aber eine dritte Formulierung derselben Frage.
@@ -876,10 +873,6 @@ Beim Nachprüfen am 16.09.2026 sind zwei der drei Funde weggefallen: Die tote T�
 „Reserviert für:" samt NULL-Scan dahinter ist mit dem Zweig gefallen, und „Aktive
 Lehrkraft steht zweimal" hat sich mit Migration 125 von selbst erledigt — es gibt nur noch
 einen Weg (`GetLeserByBarcode`).
-
-- **Zwei Uhren in `UeberfaelligeAusleihen`** (`repository/bescheid_verlust.go`): gefiltert wird
-  mit `CURRENT_TIMESTAMP` (DB), die Staffel rechnet mit `schulzeit.Jetzt()` (Go). Wirkt nur am
-  Schuljahreswechsel, dann um eine Stufe. Schwester des `time.Now()`-Punkts in 5.12.
 
 Nachgestellt und **fallengelassen** — damit der nächste Durchgang sie nicht noch einmal findet:
 `EmpfaengerFuerBescheid` ohne `deleted_at IS NULL` (Bescheid an ein Kind im Papierkorb —

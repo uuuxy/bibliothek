@@ -55,6 +55,13 @@ var (
 // Forderung. Dasselbe Prädikat wie die Mahnliste (rueckgabe_frist < jetzt); was schon
 // eine Forderung trägt, steht bei OffeneForderungen.
 func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error) {
+	// EIN Zeitpunkt für beide Rechnungen dieser Funktion: Bis zum 17.09.2026 filterte das
+	// SQL mit CURRENT_TIMESTAMP (Uhr der Datenbank), während die Staffel das Schuljahr aus
+	// schulzeit.Jetzt() (Uhr des Servers) bestimmte. Zwei Uhren, eine Antwort — und am
+	// Schuljahreswechsel konnte die eine schon im neuen Jahr sein, während die andere noch
+	// im alten zählte: Das Buch stand in der Liste, die Staffel nannte eine Stufe daneben.
+	// Der Unterschied ist heute klein (dieselbe Maschine), aber er ist nicht zugesichert.
+	jetzt := schulzeit.Jetzt()
 	rows, err := r.db.Query(ctx, `
 		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.ist_lernmittel, false), a.rueckgabe_frist, e.erworben_am
@@ -63,7 +70,7 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE a.schueler_id = $1
 		  AND a.rueckgabe_am IS NULL
-		  AND a.rueckgabe_frist < CURRENT_TIMESTAMP
+		  AND a.rueckgabe_frist < $2
 		  -- Dauerleihen bleiben aussen vor: Sie werden nicht überfällig (dieselbe Regel wie
 		  -- in der Sperr-Automatik und in der Leserliste), und eine Forderung „wegen
 		  -- Überschreitung der Frist" gegen jemanden, der keine hat, wäre unbegründet.
@@ -71,13 +78,13 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 		  -- ist eine Betriebsfrage (docs/OFFEN.md 5.16 B) und keine Nebenwirkung der Frist.
 		  AND a.ist_handapparat = false
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle f WHERE f.ausleihe_id = a.id AND f.storniert_am IS NULL)
-		ORDER BY a.rueckgabe_frist, t.titel`, schuelerID)
+		ORDER BY a.rueckgabe_frist, t.titel`, schuelerID, jetzt)
 	if err != nil {
 		return nil, fmt.Errorf("überfällige ausleihen lesen: %w", err)
 	}
 	defer rows.Close()
 
-	heute := schuljahrVon(schulzeit.Jetzt())
+	heute := schuljahrVon(jetzt)
 	out := []UeberfaelligeAusleihe{}
 	exemplare := []string{}
 	for rows.Next() {

@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
+
+	"bibliothek/pkg/schulzeit"
 )
 
 // Das abgeschriebene Buch kommt zurück (#597, Etappe 2).
@@ -93,7 +94,12 @@ func VerbucheRueckkehr(ctx context.Context, q DBQueryer, exemplarID, bearbeiterI
 		return befund, fmt.Errorf("offene Forderungen des Exemplars lesen: %w", err)
 	}
 
-	grund := "Rückgabe am " + time.Now().Format("02.01.2006")
+	// Das Datum steht im Stornierungsgrund und damit in der Akte des Kindes und im
+	// Prüfprotokoll. `time.Now()` ist im Container UTC: Eine Rückgabe zwischen 0 und 2 Uhr
+	// Berliner Zeit trug das Datum von GESTERN — dieselbe Zeile, die erklären soll, wann
+	// das Buch wieder da war. schulzeit.Jetzt() wie überall sonst, wo ein Datum vor einem
+	// Menschen landet (pdf/schadensfall.go, pdf/kontoauszug.go).
+	grund := "Rückgabe am " + schulzeit.Jetzt().Format("02.01.2006")
 	for _, f := range offene {
 		if f.bescheidStatus == "uebergeben" {
 			if err := merkeRueckgabeNachUebergabe(ctx, q, f, bearbeiterID); err != nil {
