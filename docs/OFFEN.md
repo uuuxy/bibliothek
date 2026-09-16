@@ -57,6 +57,16 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
   Geräts **erfindet kein Kind mehr**.
 - Die Tür „Defekt melden" ist **gestrichen** (sie war halb kaputt), und das API-Inventar meldete
   drei benutzte Routen zu Unrecht als tot — auch das ist behoben.
+- **In der CI** wird jetzt auch die Formatierung geprüft (lief nur im Hook auf deinem Rechner),
+  und ein versioniertes Image entsteht nur noch auf grüner CI. Der Suchtest, der sich auf jedem
+  fremden Rechner still übersprungen hat, läuft wieder.
+- **Kleinkram mit Wirkung:** Das Demo-Löschskript bricht ab, statt Forderungen echter Leser
+  mitzunehmen. Ausgesonderte Exemplare bekommen kein Etikett mehr (sie verschoben auf dem Bogen
+  alle folgenden). Im Kollegiums-Portal sagt ein gescheiterter erster Abruf das auch, statt
+  „keine Anliegen" zu zeigen — sonst schickt jemand seinen Wunsch ein zweites Mal. Der Toast der
+  Akte zeigt den Satz des Servers statt seines JSON-Rumpfs, „Erneut versuchen" gibt es nur noch,
+  wenn es etwas zu wiederholen gibt, und ein Fehler beim endgültigen Löschen wird nicht mehr
+  pauschal als „da ist noch etwas offen" gemeldet.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
