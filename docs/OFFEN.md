@@ -816,7 +816,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   (Die seit dem 17.09.2026 neu gebauten Ratschen tragen sich beim Bauen selbst ein — der
   Rückstand betrifft die älteren.)
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
-- `api/search_debug_test.go` hat eine feste DSN auf die Entwicklungs-DB und einen Skip ohne Guard.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`;
   `cmd/rotate-encryption-key`, `cmd/littera-import` und `cmd/seed` haben keine Tests. Vor einem
   Schlüsselwechsel oder der Littera-Übernahme.
