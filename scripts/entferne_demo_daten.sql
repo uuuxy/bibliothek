@@ -116,6 +116,30 @@ SELECT s.barcode_id AS schueler, t.titel, e.barcode_id AS demo_exemplar
    AND v.schueler_id NOT IN (SELECT id FROM demo_s)
  ORDER BY s.barcode_id LIMIT 50;
 
+-- SPERRE (17.09.2026): Ein Schadensfall eines ECHTEN Schülers auf einem Demo-Exemplar
+-- wird NICHT mitgelöscht — das Skript bricht ab.
+--
+-- Punkt 3 der Vorschau zeigt diese Zeilen seit jeher an; gelöscht wurden sie trotzdem,
+-- auch bezahlte und solche auf einem Bescheid. Das ist keine Aufräumarbeit mehr: Eine
+-- bezahlte Forderung ist ein Kassenbeleg, eine auf einem Bescheid ist Teil eines
+-- Verwaltungsakts, und eine offene ist Geld, das jemand schuldet. Auf dem Server war die
+-- Vorschau am 13.09.2026 leer (0 Zeilen) — der Lauf blieb also folgenlos; beim nächsten
+-- Mal muss es keiner sein.
+--
+-- Wer solche Zeilen hat, entscheidet sie einzeln (stornieren, umbuchen) und lässt das
+-- Skript danach erneut laufen. Die Meldung nennt die Zahl, die Liste steht darüber.
+DO $$
+DECLARE betroffen int;
+BEGIN
+    SELECT count(*) INTO betroffen
+      FROM schadensfaelle sf
+     WHERE sf.exemplar_id IN (SELECT id FROM demo_b)
+       AND (sf.schueler_id IS NULL OR sf.schueler_id NOT IN (SELECT id FROM demo_s));
+    IF betroffen > 0 THEN
+        RAISE EXCEPTION 'Abbruch: % Schadensfall/-fälle echter Leser hängen an Demo-Exemplaren (Liste in Punkt 3 der Vorschau). Diese Fälle erst einzeln entscheiden — das Skript würde Kassenbelege und Forderungen mitlöschen.', betroffen;
+    END IF;
+END $$;
+
 -- Löschen, von den Blättern zur Wurzel. Reihenfolge wegen RESTRICT: Schäden und Ausleihen
 -- vor Exemplaren und Schülern.
 DELETE FROM schadensfaelle

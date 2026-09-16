@@ -847,10 +847,6 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
 - **Lehrerportal, eigene Anliegen (`dfc9913a`):** Beim ERSTEN Laden ist der „alte Stand" leer;
   503 → kein Abschnitt, kein Zähler → das gestern geschickte Anliegen scheint verloren und wird
   doppelt geschickt. Dieselbe Klasse, die der Commit für drei andere Listen behoben hat.
-- **Demo-Löschskript (`566b9fe3`):** löscht Schäden ECHTER Schüler auf Demo-Exemplaren mit, auch
-  bezahlte und solche auf einem Bescheid (die Vorschau zeigt sie, das Skript sperrt nicht). Am
-  13.09. auf dem Server mit Vorschau 0/0/0 gelaufen, also ohne Wirkung; vor einem zweiten Lauf
-  eine Sperre „auf Bescheid → Abbruch" einbauen.
 - **Zweiter Cover-Schreibpfad (`ddee5802` nicht mitgezogen):** `update_cover_handler.go` setzt
   `cover_url`, ohne das alte Upload-Cover zu löschen, und meldet ein unbekanntes Buch als 500.
   Gleiche Reihenfolgefrage in `cover_aktualisierung.go`, `endpunkte_cover_retry.go`,
