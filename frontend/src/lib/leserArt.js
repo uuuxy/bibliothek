@@ -34,3 +34,18 @@ export function leserArtText(art) {
 export function istKollegium(leser) {
 	return !!leser?.art && leser.art !== 'schueler';
 }
+
+/**
+ * Die Aufschrift des Ausweises. Sie steht auf der Karte und sagt, WAS das Dokument ist —
+ * nicht, wer jemand ist. Ein Kollege bekam bis zum 16.09.2026 einen Ausweis mit der
+ * Aufschrift „Schülerausweis": Der Titel war ein fester Text im Design und kannte die
+ * Art nicht.
+ *
+ * LiV und Lehrkraft bekommen dieselbe Aufschrift. Der Ausweis weist jemanden als
+ * Lehrkraft der Schule aus; die Ausbildungsstufe gehört nicht auf die Karte.
+ * @param {string | null | undefined} art
+ * @returns {string}
+ */
+export function ausweisTitel(art) {
+	return istKollegium({ art }) ? 'Lehrerausweis' : 'Schülerausweis';
+}

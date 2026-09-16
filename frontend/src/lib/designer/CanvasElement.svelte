@@ -9,6 +9,7 @@
 	 * Fensterlistener und ihr Aufräumen gehören an eine Stelle.
 	 */
 	import { User } from '@lucide/svelte';
+	import { ausweisTitel } from '../leserArt.js';
 
 	/**
 	 * @type {{
@@ -24,7 +25,7 @@
 		el.type === 'barcode' || (typeof el.content === 'string' && el.content.includes('{{barcode}}'))
 	);
 	const isText = $derived(
-		!isBarcode && ['header', 'address', 'name', 'validity', 'text'].includes(el.type)
+		!isBarcode && ['header', 'address', 'name', 'validity', 'dokumenttyp', 'text'].includes(el.type)
 	);
 	const isImage = $derived(!isBarcode && (el.type === 'image' || el.type === 'logo'));
 	const isPhoto = $derived(!isBarcode && el.type === 'photo');
@@ -61,10 +62,13 @@
           font-weight: {el.style?.fontWeight ?? 'normal'};
           text-align: {el.style?.textAlign ?? 'left'};
           font-family: {el.style?.fontFamily ?? 'inherit'};
+          text-transform: {el.style?.textTransform ?? 'none'};
         "
 		>
 			{#if el.type === 'name'}
 				{student ? `${student.vorname} ${student.nachname}` : 'Max Mustermann'}
+			{:else if el.type === 'dokumenttyp'}
+				{ausweisTitel(student?.art)}
 			{:else if el.type === 'validity'}
 				{`Gültig bis: 31.07.${student?.ausweis_gueltig_bis ?? '–'}`}
 			{:else}

@@ -10,7 +10,7 @@ import { heileAltBaender } from './idDesignAltbestand.js';
  *
  * --- Element Schema ---
  * id          string   unique within the side
- * type        string   'text'|'name'|'validity'|'header'|'address'|
+ * type        string   'text'|'name'|'validity'|'dokumenttyp'|'header'|'address'|
  *                      'image'|'logo'|'photo'|'barcode'|'box'
  * content     string   static text or base64 data-url (image); '' for box
  * style.color string   text color — for 'box' the fill color (editable in the panel)
@@ -27,6 +27,7 @@ import { heileAltBaender } from './idDesignAltbestand.js';
  *   color       string CSS color
  *   textAlign   string 'left'|'center'|'right'
  *   fontWeight  string 'normal'|'bold'
+ *   textTransform string CSS text-transform ('uppercase' in den Vorlagen)
  */
 
 /** Monotone counter for generating unique element IDs at runtime. */
@@ -55,6 +56,10 @@ export function defaultFrontElements() {
 		// → zweisprachige Unterzeile → Adresse), Logo als Anker rechts oben daneben. Vorher
 		// stand "Schülerausweis" gut versteckt neben dem Barcode; das Dokument nannte
 		// nirgends prominent, WAS es eigentlich ist.
+		//
+		// Der Titel ist ein DYNAMISCHES Feld wie Name und Gültigkeit: Seit die Leserdatei
+		// auch das Kollegium führt, sagt die Art, ob dort "Schülerausweis" oder
+		// "Lehrerausweis" steht (leserArt.js).
 		{
 			id: 'header',
 			type: 'header',
@@ -70,8 +75,8 @@ export function defaultFrontElements() {
 		},
 		{
 			id: 'title',
-			type: 'text',
-			content: 'Schülerausweis',
+			type: 'dokumenttyp',
+			content: '',
 			x: 5,
 			y: 8,
 			width: 58,

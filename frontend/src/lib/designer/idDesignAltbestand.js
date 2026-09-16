@@ -2,7 +2,8 @@
  * @file idDesignAltbestand.js
  * Heilung des zentral gespeicherten Designs beim Laden: Bänder, die eine frühere
  * Vorlagen-Fassung als SVG-BILD gespeichert hat, werden in Farbflächen ('box')
- * übersetzt.
+ * übersetzt, und ein fest eingetippter Titel „Schülerausweis" wird zum
+ * Dokumenttyp-Feld, das die Art des Lesers liest.
  *
  * Warum beim Laden und nicht nur in den Vorlagen: Das Design liegt zentral in der
  * Datenbank; applyDesign() lädt es und überschreibt jede Vorgabe. Eine Installation,
@@ -68,6 +69,35 @@ function kopfbandMitLinie(alt, bandId, linieId, anteilBand) {
 }
 
 /**
+ * Ein fest eingetippter Titel „Schülerausweis" wird zum Dokumenttyp-Feld.
+ *
+ * Bis zum 16.09.2026 war der Titel ein gewöhnliches Textelement. Auf dem Ausweis einer
+ * Lehrkraft stand deshalb „Schülerausweis" — der Text kannte die Art des Lesers nicht.
+ * Das gespeicherte Design der Schule trägt diesen Text weiter, bis er hier ersetzt wird;
+ * derselbe Weg wie bei den Bild-Bändern.
+ *
+ * Die Vorlagen schreiben den Titel in Großbuchstaben. Weil der Inhalt jetzt aus der Art
+ * kommt, wird aus dieser Schreibweise eine Angabe am Stil — sonst stünde auf einer
+ * Karte, die bisher „SCHÜLERAUSWEIS" trug, plötzlich „Lehrerausweis" in gemischter
+ * Schrift.
+ *
+ * @param {any} el
+ * @returns {any|null} das ersetzte Element, oder null wenn dieses hier nicht gemeint ist
+ */
+function heileTitel(el) {
+	if (el?.type !== 'text' || typeof el.content !== 'string') return null;
+	const wort = el.content.trim();
+	if (wort.toLocaleLowerCase('de-DE') !== 'schülerausweis') return null;
+	const grossgeschrieben = wort === wort.toLocaleUpperCase('de-DE');
+	return {
+		...el,
+		type: 'dokumenttyp',
+		content: '',
+		style: grossgeschrieben ? { ...el.style, textTransform: 'uppercase' } : { ...el.style }
+	};
+}
+
+/**
  * @param {any[]} elements Elemente einer Seite, wie aus der Datenbank geladen
  * @returns {any[]} dieselbe Liste, Alt-Bänder durch Farbflächen ersetzt
  */
@@ -75,6 +105,11 @@ export function heileAltBaender(elements) {
 	/** @type {any[]} */
 	const out = [];
 	for (const el of elements) {
+		const geheilterTitel = heileTitel(el);
+		if (geheilterTitel) {
+			out.push(geheilterTitel);
+			continue;
+		}
 		const istAltBild =
 			el?.type === 'image' && typeof el.content === 'string' && el.content.startsWith(SVG_DATA_URI);
 		if (!istAltBild) {

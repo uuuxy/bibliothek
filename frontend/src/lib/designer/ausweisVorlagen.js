@@ -168,7 +168,12 @@ function box(id, farbe, x, y, width, height, zIndex = 0, radius = 0) {
  */
 function personenBlock(farben, x = 30, yTitel = 16.5) {
 	return [
-		el('text', 'title', 'SCHÜLERAUSWEIS', x, yTitel, 50, 4, 1, stil(6, farben.akzent, 'bold')),
+		// Dokumenttyp statt fester Text: Die Aufschrift kommt aus der Art des Lesers
+		// (leserArt.js). Die Großschreibung der Vorlagen ist damit eine Stilangabe.
+		el('dokumenttyp', 'title', '', x, yTitel, 50, 4, 1, {
+			...stil(6, farben.akzent, 'bold'),
+			textTransform: 'uppercase'
+		}),
 		el('name', 'name', '', x, yTitel + 4.5, 51, 8, 1, stil(10, farben.text, 'bold')),
 		el('validity', 'validity', '', x, yTitel + 13, 48, 5, 1, stil(7.5, farben.nebentext))
 	];

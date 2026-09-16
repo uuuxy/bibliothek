@@ -2,15 +2,17 @@
 	/**
 	 * @file CardFace.svelte
 	 * Rendert EINE Ausweisseite (front/back) aus dem zentralen Element-Modell für einen
-	 * konkreten Schüler. Dies ist die EINZIGE Render-Quelle sowohl für den Batch-Druck
+	 * konkreten Leser — Schüler wie Kollegen. Dies ist die EINZIGE Render-Quelle sowohl für den Batch-Druck
 	 * (PrintPreview, DruckCenter) als auch den Einzeldruck (StudentPrintCard, Profil) —
 	 * so fällt an jedem Klick-Pfad exakt derselbe Ausweis heraus (Single Source of Truth).
 	 * Rein für Ausgabe/Vorschau, kein Editier-Chrome.
 	 *
 	 * `student` darf null sein (z. B. Rückseite ohne personenbezogene Elemente); dann
-	 * werden nur statische Elemente (Header/Adresse/Text/Bild) gerendert.
+	 * werden nur statische Elemente (Header/Adresse/Text/Bild) gerendert. Der Dokumenttyp
+	 * gehört nicht dazu: Ohne Leser ist die Vorgabe „Schülerausweis".
 	 */
 	import { idStore } from './idDesignerStore.svelte.js';
+	import { ausweisTitel, istKollegium } from '../leserArt.js';
 
 	/**
 	 * `platzhalter` zeichnet leere Bild-, Logo- und Passbildfelder als gestrichelten
@@ -48,7 +50,8 @@
 	{@const isBarcode =
 		el.type === 'barcode' || (typeof el.content === 'string' && el.content.includes('{{barcode}}'))}
 	{@const isText =
-		!isBarcode && ['header', 'address', 'name', 'validity', 'text'].includes(el.type)}
+		!isBarcode &&
+		['header', 'address', 'name', 'validity', 'dokumenttyp', 'text'].includes(el.type)}
 	{@const isImage = !isBarcode && (el.type === 'image' || el.type === 'logo')}
 	{@const isPhoto = !isBarcode && el.type === 'photo'}
 
@@ -71,13 +74,21 @@
         font-weight: {el.style?.fontWeight ?? 'normal'};
         text-align: {el.style?.textAlign ?? 'left'};
         font-family: {el.style?.fontFamily ?? 'inherit'};
+        text-transform: {el.style?.textTransform ?? 'none'};
         z-index: {el.zIndex};
       "
 		>
 			{#if el.type === 'name' && student}
 				{student.vorname} {student.nachname}
+			{:else if el.type === 'dokumenttyp'}
+				{ausweisTitel(student?.art)}
 			{:else if el.type === 'validity' && student}
-				Gültig bis: 31.07.{student.ausweis_gueltig_bis ?? '–'}
+				<!-- Ein Kollege hat keine Klasse, aus der ein Ablaufjahr zu rechnen wäre, und sein
+				     Ausweis läuft mit keinem Schuljahr ab. Ohne diese Weiche stünde auf seiner
+				     Karte „Gültig bis: 31.07.–". -->
+				{#if !istKollegium(student)}
+					Gültig bis: 31.07.{student.ausweis_gueltig_bis ?? '–'}
+				{/if}
 			{:else}
 				{el.content}
 			{/if}

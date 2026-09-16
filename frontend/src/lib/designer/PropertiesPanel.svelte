@@ -26,11 +26,13 @@
 	);
 
 	const isTextType = $derived(
-		el && ['header', 'address', 'name', 'validity', 'text'].includes(el.type)
+		el && ['header', 'address', 'name', 'validity', 'dokumenttyp', 'text'].includes(el.type)
 	);
 	const isImageType = $derived(el && (el.type === 'image' || el.type === 'logo'));
 	const isBoxType = $derived(el && el.type === 'box');
-	const isDynamic = $derived(el && ['name', 'validity'].includes(el.type));
+	// Dynamisch heisst: Der Inhalt kommt aus den Leserdaten, nicht aus dem Eingabefeld.
+	// Beim Dokumenttyp ist es die Art — „Schülerausweis" oder „Lehrerausweis".
+	const isDynamic = $derived(el && ['name', 'validity', 'dokumenttyp'].includes(el.type));
 
 	const fontFamilies = [
 		{ label: 'System (Standard)', value: 'inherit' },

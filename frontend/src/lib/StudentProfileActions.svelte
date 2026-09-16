@@ -121,15 +121,19 @@
 
 		<!-- Das Ablaufjahr steht NEBEN dem Druckknopf, nicht hinter ihm in einem Dialog:
 		     Wer druckt, soll sehen, was auf die Karte kommt, bevor die Karte im Drucker
-		     liegt. Ein Bestaetigungsdialog haette denselben Wert erst nach dem Klick. -->
-		<AusweisGueltigkeit
-			vorschlag={profile.ausweis_gueltig_bis ?? null}
-			wert={gueltigBis}
-			klasse={profile.klasse ?? ''}
-			onWert={onGueltigBis}
-		/>
+		     liegt. Ein Bestaetigungsdialog haette denselben Wert erst nach dem Klick.
 
+		     Beim Kollegen steht die Wahl nicht: Sein Ausweis traegt keine Gueltigkeit
+		     (CardFace), weil er mit keinem Schuljahr ablaeuft. Eine Auswahl, die auf der
+		     Karte nicht erscheint, waere eine Zusage, die der Druck nicht einloest. -->
 		{#if !kollege}
+			<AusweisGueltigkeit
+				vorschlag={profile.ausweis_gueltig_bis ?? null}
+				wert={gueltigBis}
+				klasse={profile.klasse ?? ''}
+				onWert={onGueltigBis}
+			/>
+
 			<SchuelerDokumente
 				{profile}
 				{darfAuskunft}
