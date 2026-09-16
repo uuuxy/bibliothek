@@ -18,42 +18,48 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
 
-1. **Die Offline-Theke ist fertig gebaut** (Abschnitt 2, Schritte A, B und C). Ohne Netz
-   werden alle Buchformen und jeder Ausweis angenommen, die Buchungen gehen an die richtige
-   Tür, und was dabei nicht durchging, steht an der Theke in einer Liste zum Abhaken. Auch
-   Handbuch, Fachkonzept und die Datenschutz-Unterlagen sind nachgezogen. **Offen ist jetzt
-   nur noch dein Nachweis von Hand:** Netz kappen, Bücher aller Formen und zwei Ausweise
-   scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu der Nachweis für den
-   Server (Anfragen direkt an die Tür).
-2. **Erledigt am 16.09.2026: die vier Fragen zum Kollegium sind beantwortet und gebaut.**
-   Ein Kollege hat keine Frist und wird nie gesperrt. Er zahlt nicht für ein verlorenes
-   Buch — gebucht wird der Verlust trotzdem, nur ohne Forderung. Und was er gelesen hat,
-   wird nach der Rückgabe genauso von ihm getrennt wie bei einem Kind.
-3. **15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16 A). Sie ist
-   fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
-   einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
-   den Namen, und „Neuer Leser“ fragt zuerst, wer das ist. Beim Ausweisdruck steht auf der
-   Karte einer Lehrkraft seit dem 16.09. „Lehrerausweis“ statt „Schülerausweis“. In der Akte
-   steht seit dem Abend des 16.09. auch die Schul-E-Mail: Fehlt sie einem Kollegen aus der
-   Zeit davor, trägst du sie dort nach — damit bekommt er seinen Zugang, und die
-   Selbstanmeldung legt ihn nicht ein zweites Mal an. Sieh dir an, ob die Wörter stimmen und
-   ob dir etwas fehlt. **Eines fehlt schon:** Wer über ein Konto in die Leserdatei gekommen
-   ist, hat keine Ausweisnummer, und der Druck vergibt auch keine — die Karte kommt dann ohne
-   Barcode aus dem Drucker (5.16 E).
-4. **Gebaut am 16.09.2026: das Band statt des Vollbilds, und keine Sperre ohne Netz.** Ein
-   Rasterdurchgang über diese Arbeit (5.19) hat zwei Fehler gefunden und behoben: Fiel der
-   Server aus, während das WLAN stand, liess sich kein Buch mehr auf eine Karte buchen — die
-   Theke bat endlos um einen erneuten Ausweisscan. Und die ohne Netz fällig gewordene Sperre
-   griff auch dann, wenn längst wieder jemand an der Theke stand. Was aus dem Durchgang offen
-   blieb, steht in 5.19.
-5. **Erst wenn ein echter Schadensersatz-Bescheid ansteht:** die kleinen Punkte aus 5.2 (Frist
-   ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
-6. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
-   nichts zu tun außer nachzufragen, wenn nichts kommt.
+**Was DU tun kannst — der Reihe nach:**
 
-Alles andere in dieser Datei — die B-Punkte in Abschnitt 5, die Beobachtungen in 6, die
-Betriebspunkte in 7 — schadet niemandem, wenn es liegen bleibt, und wird gebündelt erledigt,
-wenn gerade nichts Dringenderes ansteht.
+1. **Sieben Fragen beantworten** (Abschnitt 4: 4.7 bis 4.11, 4.13, 4.14). Sie sind der Rest der
+   Fragerunde vom 16.09.; ohne sie bleiben sieben kleine Bauarbeiten liegen. Jede hat einen
+   Vorschlag danebenstehen.
+2. **Zwei Zahlen vom Server holen.** Beide stehen als fertiger Einzeiler in der Liste: Wie viele
+   Titel tragen ein Ziel-Jahrgangsfeld (4.3)? Und wie viele Leser stehen ohne Ausweisnummer da
+   (5.16 E)? Erst danach darf ich das Feld streichen und die Nummern nachtragen — beides ändert
+   echte Daten.
+3. **Zwei Umbauten freigeben**, die ich vorbereitet, aber bewusst NICHT gebaut habe, weil sie
+   die Datenbank ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 E) und die
+   eigene Spalte für die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine
+   Migration — und die schreibt Nummern bzw. Daten, die niemand zurücknimmt.
+4. **Dein Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
+   Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
+   der Nachweis für den Server.
+5. **15 Minuten durch die Leserdatei gehen** (5.16 A): Stimmen die Wörter, fehlt dir etwas?
+6. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
+   ist nichts zu tun außer nachzufragen, wenn nichts kommt.
+
+**Was in der Nacht vom 16. auf den 17.09. gebaut wurde** — alles mit Gates, alles auf `main`:
+
+- Eine Einstellung, die außerhalb ihres Bereichs liegt, wird jetzt **abgelehnt statt still
+  ersetzt**. Vorher wurde aus einer getippten 0 eine 5, gemeldet als „gespeichert" — und die
+  Sperr-Automatik liess sich mit einer großen Zahl unbemerkt abschalten.
+- Ein **geänderter Warenkorb** wird nicht mehr still zur alten Bestellung, wenn die Antwort
+  einmal verloren ging.
+- Die **Theke sagt es**, wenn ihre offenen Vorgänge so nicht ins System kommen (etwa weil die
+  gerade angemeldete Person nicht buchen darf) — vorher lief der Versuch stumm jede Minute ins
+  Leere. Die Buchliste für den Betrieb ohne Netz frischt sich stündlich auf.
+- **Sieben Datumsangaben** rechneten in der Zeit des Servers (UTC) statt in der Zeit der Schule:
+  die Volljährigkeit im Bescheid, der Mahnlauf, „heute zurückgegeben", der Stornierungsgrund und
+  drei Mails — Mahnliste, Kontoauszüge und die Bestellung an den Händler trugen zwischen
+  Mitternacht und 2 Uhr das Datum von gestern. Dagegen gibt es jetzt eine Ratsche.
+- **Kein Passbild mehr aus dem Papierkorb**, ein **Klassenwechsel rechnet das Abgangsjahr wieder
+  neu**, das **Massenlöschen von Titeln verlangt das Löschrecht**, und die Sperrmeldung eines
+  Geräts **erfindet kein Kind mehr**.
+- Die Tür „Defekt melden" ist **gestrichen** (sie war halb kaputt), und das API-Inventar meldete
+  drei benutzte Routen zu Unrecht als tot — auch das ist behoben.
+
+**Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
+Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
 
 ---
 
@@ -83,17 +89,20 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen
-   sind nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die
-   Tür.
-1. **5.16** Leserdatei und Rolle Leitung: gebaut, samt Löschen eines Kollegen mitsamt
-   Konto. Offen ist nur noch dein Blick auf den Stand.
-2. **5.1** Schäden und Benutzer.
-3. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
-5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
+1. **Die sieben offenen Fragen** aus Abschnitt 4 (4.7–4.11, 4.13, 4.14) — sie halten sieben
+   kleine Bauarbeiten auf und kosten zusammen eine halbe Stunde.
+2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
+   (5.16 E). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
+3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
+   nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
+4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand und die Ausweisnummer (E).
+5. **5.5–5.9**, **5.12** und die B-Punkte aus **5.15** — kleine B-Commits, gebündelt.
+6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
-6. Nach der Antwort zu E5 (**8.3**): **5.4**.
-7. Übrige Entscheidungen aus Abschnitt 4 gesammelt; **5.10** und Abschnitt 6 nur mit Anlass.
+7. Nach der Antwort zu E5 (**8.3**): **5.4**.
+8. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass — mit EINER Ausnahme, die
+   vorgezogen gehört: Tests für die Werkzeuge der Littera-Übernahme und den Schlüsselwechsel.
+   Sie laufen einmal gegen echte Daten, und bis heute hat keines von ihnen einen Test.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
 Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
@@ -624,6 +633,10 @@ Kopplung liefe in die falsche Richtung: Um eine längere Karenz zu bekommen, mü
 die Lesehistorie verlängern, also mehr Personendaten länger aufbewahren. Die beiden Fristen
 beantworten verschiedene Fragen und dürfen sich nicht gegenseitig binden.
 
+**Gebaut wird erst nach deinem Ja (17.09.2026)** — die Umsetzung ist eine Migration mit zwei
+Triggern und einer Rückfüllung über den ganzen Bestand. Der Plan steht, der Nachweis ist
+beschrieben; was fehlt, ist die Freigabe für einen Eingriff ins Schema.
+
 Stattdessen bekommt die Leserzeile eine Spalte „letzter Vorgang", die kein anderer Löschlauf
 anfasst; gepflegt von Triggern auf `ausleihen` (Rückgabe) und `schadensfaelle` (bezahlt oder
 storniert), nach dem Muster von `konto_hat_leserzeile` — an der einen Stelle, an der kein
@@ -800,6 +813,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Mindestens zehn Ratschen haben keine Zeile in der Landkarte von [sweeps.md](sweeps.md), u. a.
   `docs/werkzeuge_im_image_test.go`, `docs/compose_variablen_test.go`,
   `frontend-hygiene-dialoge/-ladekreis/-schalter/-tabellen.test.js`; Regel 7 hat keine Ratsche.
+  (Die seit dem 17.09.2026 neu gebauten Ratschen tragen sich beim Bauen selbst ein — der
+  Rückstand betrifft die älteren.)
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - `api/search_debug_test.go` hat eine feste DSN auf die Entwicklungs-DB und einen Skip ohne Guard.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`;
@@ -834,12 +849,6 @@ Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren 
 Rund 85 Commits, von vier getrennten Prüfungen gelesen, die A-Funde selbst am Code nachgeprüft.
 Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind Nachbarn.
 
-- **Rückkehr eines abgeschriebenen Buchs (`e9ac79e6`):** Im Zweig „reserviert für dasselbe
-  Kind" ist die Reaktivierung committet, danach läuft `HandleUnifiedCheckout`; scheitert die an
-  der Sperre (offene Forderung nach `uebergeben`), geht der Fehler zurück und die Antwort mit
-  „Schulaufsicht informieren" wird verworfen. Merker und Liste stehen, der Satz an der Theke
-  nicht. Nicht nachgestellt — und nicht nachstellbar: Der Zweig ist seit `daf6b370` (16.06.2026)
-  ohne Schreiber, siehe 5.14 (tote Tür „Reserviert für:").
 - **Wächter „Ehemalige mit offenen Vorgängen" (`fa4a2113`):** Nur der Grundausdruck `AbgangSeit`
   ist mit der Löschuhr vereint; die Löschuhr rechnet zusätzlich `GREATEST(…, max(rueckgabe_am),
   max(Schadensfall))`. Ohne Außenwirkung, aber eine dritte Formulierung derselben Frage.
@@ -870,18 +879,12 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
   unsichtbar); `uuidPfadParameter` hat keinen Test.
 - **`ActiveStudentList` (`dfc9913a`):** „Erneut versuchen" bekommt ohne Callback einen Leerlauf.
 
-### 5.14 Rasterdurchgang 11.–15.09.2026 (15.09.2026)
+### 5.14 Rasterdurchgang 11.–15.09.2026 (15.09.2026) — nur noch die fallengelassenen Verdachte
 
-104 Commits, alle zwölf Fragen über vier Schreibpfade (Bescheid/Schadensersatz, Offline-Theke,
-Buch-Routen, Abmelden), benannte Fragen über sieben weitere. Die Gates liefen dabei grün:
-golangci-lint 0, `go test ./...` mit den 197 PG-Tests, deadcode deckungsgleich, svelte-check 0/0,
-Vitest 620/620. Die Commits vom 11.–14.09. deckt 5.12 schon ab; neu im Fenster sind die vom
-15.09. (Offline Stufe 1, Mahnverfahren Stufe 2).
-
-Beim Nachprüfen am 16.09.2026 sind zwei der drei Funde weggefallen: Die tote Tür
-„Reserviert für:" samt NULL-Scan dahinter ist mit dem Zweig gefallen, und „Aktive
-Lehrkraft steht zweimal" hat sich mit Migration 125 von selbst erledigt — es gibt nur noch
-einen Weg (`GetLeserByBarcode`).
+Die drei Funde dieses Durchgangs sind erledigt (zwei fielen beim Nachprüfen am 16.09. von
+selbst weg, die zwei Uhren in `UeberfaelligeAusleihen` sind am 17.09. behoben). Was bleibt,
+ist die Liste der geprüften Verdachte — sie steht hier, damit der nächste Durchgang sie nicht
+noch einmal findet.
 
 Nachgestellt und **fallengelassen** — damit der nächste Durchgang sie nicht noch einmal findet:
 `EmpfaengerFuerBescheid` ohne `deleted_at IS NULL` (Bescheid an ein Kind im Papierkorb —
@@ -1014,6 +1017,16 @@ bekommt, bekommt damit eine Ausweisnummer — auch wer nie an die Theke kommt. D
 Zustand „Leserzeile ohne Nummer" nicht mehr, und keine Karte kann ohne Barcode aus dem Drucker
 kommen.
 
+**Gebaut wird erst nach deinem Ja (17.09.2026).** Nicht weil die Entscheidung offen wäre,
+sondern weil die Umsetzung eine Migration braucht: Sie trägt allen Lesern ohne Nummer eine nach,
+und vergebene Nummern werden nie recycelt. Vorher die Zählung am Server:
+
+```sql
+SELECT count(*) FILTER (WHERE barcode_id IS NULL) AS ohne_nummer,
+       count(*)                                   AS leser_gesamt
+FROM leser WHERE deleted_at IS NULL;
+```
+
 Wichtig bei der Umsetzung: **ein Generator.** Die Nummer zieht denselben Weg wie „Neuer Leser"
 (`GetNextSequence` über `leser.barcode_id`, Vorsilbe `A-`); eine zweite Vergabe in SQL wäre der
 Fehler aus Migration 068 in neuer Form (zwei Generatoren, ein Nummernkreis). Dazu zwei kleine
@@ -1101,38 +1114,6 @@ für unauffällig befunden: Die Summe eines Bescheids wird zweimal gerechnet, im
 beide als Fließkommazahl — eine erreichbare Abweichung liess sich aber nicht konstruieren, weil
 der Fehler bei zweistelligen Eingaben weit unter einem halben Cent liegt und `NUMERIC(10,2)` der
 Anker ist. Bleibt als Fleck ohne Fund notiert, nicht als Arbeit.
-
----
-
-### 5.19 Rasterdurchgang über die Offline-Theke im Browser (16.09.2026, nachts)
-
-Umfang: die elf Commits seit dem Durchgang aus 5.18 — das Band statt des Vollbilds, die
-Sperre ohne Netz, die Buch-Barcode-Liste im Browser, die Einordnung jedes Scans, der
-Ausweis-Merker, der Sync an die Nachbuch-Tür und die Zuordnung einer Zugangsanfrage. Alle
-zwölf Fragen, keine ausgelassen. Keine neue Migration in diesem Zeitraum; Frage 12 hing am
-eingefrorenen Inventar und an der einen Stelle, die ein Konto löscht (Platzhalter-Konten beim
-Zusammenführen) — die Fremdschlüssel auf `benutzer` sind daraufhin einzeln durchgesehen, ein
-Platzhalter-Konto kann keinen davon halten. Gates beim Durchgang: golangci-lint ohne Befund,
-`svelte-check` 0/0, Frontend-Suite 749 grün, Go-Suite mit echtem Postgres grün (42 Pakete,
-Exit 0).
-
-Drei Funde, jeder am laufenden Pfad rot nachgestellt und noch in derselben Nacht behoben —
-die Einzelheiten stehen in den Commit-Nachrichten (`c5cddd6e`, `7fb4b387`, `77c5961a`): die
-Endlosschleife bei stehendem WLAN und weggefallenem Server, die nachgeholte Sperre mitten in
-der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
-
-**Offen geblieben:** nichts. Die drei Punkte (still anhaltender Sync, alternde
-Barcode-Liste, Vorsilben ohne Gate) sind am 16./17.09.2026 behoben.
-
-**Was der Durchgang ausdrücklich in Ordnung fand:** Die Uhr-Frage ist sauber gelöst — der
-Eintrag trägt neben der Wanduhr einen gleichmäßig laufenden Anker, und der Sync rechnet daraus
-den Scan-Zeitpunkt neu, wenn die Wanduhr dazwischen gesprungen ist (genau dann, wenn das Netz
-zurückkommt). Erledigt ist nur, was der Server entschieden hat; Schweigen zu einem Schlüssel
-lässt den Eintrag liegen. Der Merker fällt bei „Theke leeren", beim Abmelden und bei jedem
-unklaren Scan — ein Buch geht nie an eine Person, bei der niemand mehr sicher ist. Die beiden
-Hygiene-Ratschen wurden beim Umbau enger gestellt, nicht gelockert. Und die Zuordnung einer
-Zugangsanfrage schreibt in der richtigen Richtung (der vorhandene Eintrag bleibt, mit Ausweis
-und Büchern), am echten Postgres belegt.
 
 ---
 
