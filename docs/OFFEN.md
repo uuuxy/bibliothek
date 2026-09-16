@@ -843,9 +843,6 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
 - **Wächter „Ehemalige mit offenen Vorgängen" (`fa4a2113`):** Nur der Grundausdruck `AbgangSeit`
   ist mit der Löschuhr vereint; die Löschuhr rechnet zusätzlich `GREATEST(…, max(rueckgabe_am),
   max(Schadensfall))`. Ohne Außenwirkung, aber eine dritte Formulierung derselben Frage.
-- **Lehrerportal, eigene Anliegen (`dfc9913a`):** Beim ERSTEN Laden ist der „alte Stand" leer;
-  503 → kein Abschnitt, kein Zähler → das gestern geschickte Anliegen scheint verloren und wird
-  doppelt geschickt. Dieselbe Klasse, die der Commit für drei andere Listen behoben hat.
 - **Zweiter Cover-Schreibpfad (`ddee5802` nicht mitgezogen):** `update_cover_handler.go` setzt
   `cover_url`, ohne das alte Upload-Cover zu löschen, und meldet ein unbekanntes Buch als 500.
   Gleiche Reihenfolgefrage in `cover_aktualisierung.go`, `endpunkte_cover_retry.go`,

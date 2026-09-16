@@ -167,7 +167,11 @@
 	{:else if reiter === 'lmfplan'}
 		<PortalLmfPlan />
 	{:else}
-		<AnliegenWidget anliegen={eigeneAnliegen.liste} onaktualisiert={eigeneAnliegen.lade} />
+		<AnliegenWidget
+			anliegen={eigeneAnliegen.liste}
+			onaktualisiert={eigeneAnliegen.lade}
+			ladefehler={eigeneAnliegen.fehler}
+		/>
 	{/if}
 </PageShell>
 

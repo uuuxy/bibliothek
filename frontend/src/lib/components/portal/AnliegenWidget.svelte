@@ -13,6 +13,7 @@
      Rahmen statt Füllung). Die Regel im Haus: Pille = suchen, Rahmen = eingeben. -->
 <script>
 	import { apiFetch } from '../../apiFetch.js';
+	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
@@ -28,8 +29,8 @@
 	// Die Liste gehört dem Portal: Es braucht sie ohnehin für den Zähler am Reiter und
 	// für die Startfläche. Zwei eigene Abrufe hätten zwei Wahrheiten über denselben
 	// Zustand ergeben — nach dem Absenden hätte der Zähler noch den alten Stand gezeigt.
-	/** @type {{ anliegen: Anliegen[], onaktualisiert: () => void | Promise<void> }} */
-	let { anliegen, onaktualisiert } = $props();
+	/** @type {{ anliegen: Anliegen[], onaktualisiert: () => void | Promise<void>, ladefehler?: boolean }} */
+	let { anliegen, onaktualisiert, ladefehler = false } = $props();
 	const eigene = $derived(anliegen);
 
 	async function absenden() {
@@ -123,7 +124,19 @@
 		</div>
 	</div>
 
-	{#if eigene.length > 0}
+	<!-- Ein gescheiterter ERSTER Abruf sagt nichts über die Anliegen — dann steht hier der
+	     Ausfall und nicht die leere Liste. „Nichts da" hätte einen abgeschickten Wunsch als
+	     verloren erscheinen lassen, und der nächste Schritt wäre gewesen, ihn noch einmal
+	     zu schicken. -->
+	{#if ladefehler}
+		<div class="border-t border-outline-variant pt-6">
+			<LadeFehler
+				onerneut={onaktualisiert}
+				titel="Deine Anliegen konnten nicht geladen werden"
+				text="Bitte später noch einmal versuchen. Schon abgeschickte Wünsche und Meldungen sind nicht verloren — sie sind bei der Bibliothek."
+			/>
+		</div>
+	{:else if eigene.length > 0}
 		<div class="flex flex-col gap-2 border-t border-outline-variant pt-6">
 			<h3 class="text-base font-medium text-on-surface">Deine Anliegen</h3>
 			<ul class="divide-y divide-outline-variant">
