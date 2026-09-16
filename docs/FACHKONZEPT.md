@@ -54,7 +54,7 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 
 ### 2.1. Fristenberechnung
 
-- **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres (`lmf_stichtag`) — **es sei denn, der LMF-Plan (§2.3) nennt für die Klasse einen Rückgabe-Termin: dann ist der die Frist** (`RueckgabeTerminFuerKlasse`, nur einjährige Ausleihe; seit 05.09.2026).
+- **Lernmittelfreiheit (LMF) - "Schulbücher":** Haben ein fixes Rückgabedatum: den **31. Juli** des laufenden (oder bei Sommer-Ausleihe des kommenden) Schuljahres (`lmf_stichtag`) — **es sei denn, der LMF-Plan (§2.3) nennt für die Klasse einen Rückgabe-Termin: dann ist der nächste Termin NACH dem Ausleihtag die Frist** (`RueckgabeTerminLage`, nur einjährige Ausleihe; seit 05.09.2026). Hatte die Klasse im laufenden Schuljahr ihren Rückgabe-Termin schon, gilt der Stichtag des FOLGENDEN Schuljahres — wer danach noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück (seit 14.09.2026).
 - **Freihand-Bestand (Sonderbestände):** CDs, DVDs, Hörbücher etc. haben eine rollierende Frist (z. B. +14 oder +28 Tage ab Ausleihe), keine starre Jahresfrist.
 - **Ferien:** Eine automatische Verlängerung „bis zum ersten Schultag nach den Ferien" gibt es NICHT (stand bis 06.09.2026 fälschlich hier; `loan_rules.go` kennt keine Ferien). Das Werkzeug für „Bücher über die Sommerferien mitnehmen" ist der **Ferien-Leseclub** (Kategorie 2, §14): aktiv + Zieldatum → alle Ausleihen bekommen dieses feste Rückgabedatum. Eine Ferien-Pause des Mahnwesens gibt es ebenfalls nicht mehr: Die Tabelle `ferien_schliesszeiten` (Migration 017, Banner + Sperre) hatte nie einen Schreiber und ist mit Migration 102 ausgebaut (entschieden am 06.09.2026: „ausbauen" — das Mahnwesen wird nur von Hand bedient).
 - **Lehrer (Handapparat):** Erhalten pauschal eine Frist von einem Jahr — `AddDate(1, 0, 0)`, also ein **Kalenderjahr**, nicht 365 Tage (im Schaltjahr sind es 366). Wie jede andere Frist läuft sie durch `tagesEndeInSchulzeitzone`; eine zweite, rohe Berechnung gibt es bewusst nicht.
@@ -79,7 +79,7 @@ zurück** (`nurRueckgabeSQL`, Markierung `nur_rueckgabe` in Planer, Portal und P
 der **Eingangsjahrgänge** (Einstellung `lmf_eingangsjahrgaenge`, Vorgabe „5, 7",
 `EingangsjahrgaengeAus`); der Vorschlag enthält nur sie. **Entwurf und Veröffentlichung**
 (Migration 100, `lmf_plaene.veroeffentlicht_am`): Speichern legt einen Entwurf an — zentral,
-aber unsichtbar für `GET /api/lmf-termine`, das Portal-PDF und `RueckgabeTerminFuerKlasse`
+aber unsichtbar für `GET /api/lmf-termine`, das Portal-PDF und `RueckgabeTerminLage`
 (ein Entwurf setzt auch beim Ausleihen keine Frist);
 `POST /api/lmf-plan/{art}/veroeffentlichen` stempelt ihn und koppelt die Fristen; danach
 gilt jede Speicherung sofort. Das Entwurfs-PDF für die Schulleitung liefert
