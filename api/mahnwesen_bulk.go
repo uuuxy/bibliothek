@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -34,13 +35,22 @@ func (s *Server) erzeugeUndCommitBulkMahnung(ctx context.Context, w http.Respons
 	// rueckgabe_am IS NULL: bereits zurückgegebene Bücher werden nicht gemahnt. Das UPDATE
 	// nimmt zugleich einen Write-Lock auf die getroffenen Zeilen — eine parallele Rückgabe
 	// derselben Ausleihe blockiert bis zu unserem Commit.
+	//
+	// „Höchstens einmal am Tag" meint den Kalendertag der SCHULE. Bis zum 17.09.2026 stand
+	// hier CURRENT_DATE und damit der Tag der Datenbank-Sitzung (im Image UTC): Der Tag
+	// wechselte um 2 Uhr Berliner Zeit statt um Mitternacht. Wer am späten Abend mahnte und
+	// am nächsten Morgen um 1 Uhr noch einmal, erhöhte die Mahnstufe ein zweites Mal für
+	// denselben Tag — und die Mahnstufe ist der Weg in die Rechnung. Auch der Vergleich
+	// LINKS gehört in die Schulzeitzone, sonst wird ein Datum in UTC gegen einen Berliner
+	// Tag gehalten.
 	cmdTag, err := tx.Exec(ctx, `
 		UPDATE ausleihen
 		SET mahnstufe = mahnstufe + 1,
 		    letztes_mahndatum = CURRENT_TIMESTAMP
 		WHERE id = ANY($1) 
 		  AND rueckgabe_am IS NULL
-		  AND (letztes_mahndatum IS NULL OR letztes_mahndatum::date < CURRENT_DATE)
+		  AND (letztes_mahndatum IS NULL
+		       OR (letztes_mahndatum AT TIME ZONE '`+schulzeit.ZonenName+`')::date < `+schulzeit.SQLHeute+`)
 	`, ausleihIDs)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, fmt.Errorf("fehler beim update der mahnstufen: %w", err))

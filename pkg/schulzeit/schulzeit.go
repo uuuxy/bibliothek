@@ -26,9 +26,22 @@ var (
 )
 
 // ZonenName ist der Name der Schulzeitzone — für Go (Zone) und für SQL, das den
-// Kalendertag selbst bilden muss (repository: sqlSchulHeute). Die Datenbank-Sitzung läuft
-// in UTC; CURRENT_DATE ist dort bis 2 Uhr Berliner Zeit noch der Vortag.
+// Kalendertag selbst bilden muss (SQLHeute). Die Datenbank-Sitzung läuft in UTC;
+// CURRENT_DATE ist dort bis 2 Uhr Berliner Zeit noch der Vortag.
 const ZonenName = "Europe/Berlin"
+
+// SQLHeute ist der heutige KALENDERTAG der Schule als SQL-Ausdruck — der Ersatz für
+// CURRENT_DATE überall dort, wo ein Tag gemeint ist und kein Zeitpunkt.
+//
+// Er steht hier und nicht in einem der Pakete, die ihn brauchen: Zwischen Mitternacht in
+// Berlin und Mitternacht UTC liefert CURRENT_DATE den Vortag, und diese zwei Stunden
+// haben in diesem Projekt schon dreimal etwas Falsches erzeugt (Bescheid-Frist,
+// Volljährigkeit, Mahnlauf). Eine zweite Formulierung desselben Ausdrucks wäre die
+// nächste Gelegenheit dazu.
+//
+// NICHT für Vergleiche von Zeitpunkten: „überfällig" ist ein Instant-Vergleich
+// (rueckgabe_frist < CURRENT_TIMESTAMP) und bleibt einer.
+const SQLHeute = `(now() AT TIME ZONE '` + ZonenName + `')::date`
 
 // Zone liefert die feste Zeitzone der Schule (ZonenName). Fällt das Laden fehl
 // (fehlende tzdata im Image), wird sicher auf UTC zurückgegriffen — lieber eine

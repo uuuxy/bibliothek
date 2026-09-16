@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 )
 
 // UeberfaelligesMedium repräsentiert ein einzelnes Buch- oder Medienexemplar, das die Rückgabefrist überschritten hat.
@@ -58,13 +59,20 @@ func NewMahnwesenRepository(pool db.PgxPoolIface) *MahnwesenRepository {
 	return &MahnwesenRepository{db: pool}
 }
 
-// CountReturnsToday queries the database for loans successfully returned today.
+// CountReturnsToday zählt die heute zurückgegebenen Ausleihen — „heute" ist der
+// Kalendertag der SCHULE.
+//
+// Bis zum 17.09.2026 rechneten beide Seiten in der Zeitzone der Sitzung (im Image UTC):
+// Eine Rückgabe zwischen 0 und 2 Uhr Berliner Zeit zählte zum Vortag. Die Zahl steht auf
+// dem Dashboard der Bibliothek; sie ist keine Grundlage für eine Entscheidung, aber eine
+// Zahl, die um zwei Stunden verrutscht, erklärt niemandem, warum die Rückgabe von eben
+// nicht zu sehen ist.
 func (repo *MahnwesenRepository) CountReturnsToday(ctx context.Context) (int, error) {
 	var count int
 	err := repo.db.QueryRow(ctx, `
 		SELECT count(*) FROM ausleihen
 		WHERE rueckgabe_am IS NOT NULL
-		  AND DATE(rueckgabe_am) = CURRENT_DATE
+		  AND (rueckgabe_am AT TIME ZONE '`+schulzeit.ZonenName+`')::date = `+schulzeit.SQLHeute+`
 	`).Scan(&count)
 	return count, err
 }

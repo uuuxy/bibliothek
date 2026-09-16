@@ -239,7 +239,7 @@ const bescheidHatOffenePosition = `EXISTS (SELECT 1 FROM schadensfaelle fo WHERE
 // sqlSchulHeute ist der heutige Kalendertag in der Schulzeitzone, in SQL gebildet.
 // CURRENT_DATE rechnet in der Zeitzone der Sitzung (im Image UTC) und nennt bis 2 Uhr
 // Berliner Zeit noch den Vortag.
-const sqlSchulHeute = `(now() AT TIME ZONE '` + schulzeit.ZonenName + `')::date`
+const sqlSchulHeute = schulzeit.SQLHeute
 
 // bescheidFristAbgelaufen: offen, Frist vorbei, und es ist noch etwas zu zahlen.
 //

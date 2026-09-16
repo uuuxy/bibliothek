@@ -689,14 +689,6 @@ Nichts offen (Stand 16.09.2026).
   Oberfläche öffnet ihn seit dem 15.09.2026 nicht mehr (Mahnverfahren Stufe 1); über die Adresse
   bleibt er erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher denselben
   Filter wie bei der Ersatzforderung.
-- **Drei weitere Kalendertage in der Zeit der Datenbank (UTC), gefunden am 16.09.2026** beim
-  Fix der Bescheid-Frist (die rechnet seitdem mit `sqlSchulHeute` in `repository/bescheid.go`).
-  Bis 2 Uhr Berliner Zeit ist dort noch der Vortag:
-  - Mahnlauf „höchstens einmal am Tag" (`letztes_mahndatum::date < CURRENT_DATE`,
-    `api/mahnwesen_bulk.go`): Der Tag wechselt um 2 Uhr statt um Mitternacht.
-  - „Heute zurückgegeben" im Mahnwesen (`DATE(rueckgabe_am) = CURRENT_DATE`,
-    `repository/mahnwesen_repo.go`): Rückgaben zwischen 0 und 2 Uhr zählen zum Vortag.
-  Je Stelle ein Commit mit demselben Zonen-Test wie `bescheid_frist_schulzeit_pg_test.go`.
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 
