@@ -54,7 +54,13 @@ class OrderStore {
 	 * TOPF: Ein gemischter Warenkorb schickt zwei Bestellungen, und ein wiederholter
 	 * Versuch nach einem Netzfehler darf die schon durchgelaufene nicht verdoppeln, die
 	 * gescheiterte aber nachholen.
-	 * @type {Partial<Record<Mittel, string>>}
+	 *
+	 * Gemerkt wird der Schlüssel MIT dem Inhalt, für den er gilt (`signatur`). Bis zum
+	 * 16.09.2026 stand hier nur der Schlüssel: Ging die Antwort verloren und änderte
+	 * jemand danach den Warenkorb, ging derselbe Schlüssel mit ANDEREM Inhalt raus — der
+	 * Server erkannte die Wiederholung und antwortete mit der alten Bestellung. Der
+	 * geänderte Warenkorb war damit still verschwunden, und die Oberfläche meldete Erfolg.
+	 * @type {Partial<Record<Mittel, { signatur: string, key: string }>>}
 	 */
 	pendingIdempotencyKeys = {};
 	/** Globaler Schalter „Barcodes mitschicken" */
@@ -459,25 +465,36 @@ class OrderStore {
 	 * @param {string} supplierId @param {Warenkorbgruppe} gruppe
 	 */
 	async #bestelleGruppe(supplierId, gruppe) {
+		const rumpf = {
+			supplier_id: supplierId,
+			mittel: gruppe.mittel,
+			items: gruppe.items.map((item) => ({
+				titel_id: item.id,
+				menge: item.menge,
+				// Ohne Preiserfassung wird auch nichts erfasst. Sonst wanderte der
+				// DNB-Vorschlag in die Bestellhistorie, obwohl das Preisfeld gar nicht
+				// sichtbar war — ein Betrag, den nie jemand gesehen oder bestaetigt hat.
+				preis: this.preiseErfassen ? Number(item.preis) || 0 : 0,
+				generate_barcodes: this.attachBarcodes ? item.generate_barcodes : false
+			}))
+		};
+
 		// Idempotenz-Schlüssel pro Absende-Vorgang UND Topf: Überholt ein Doppelklick den
 		// Guard (oder klemmt das Netz und der Client wiederholt), geht DERSELBE Schlüssel
 		// raus — der Server macht daraus ein No-op statt einer zweiten Bestellung + Mail.
-		const key = (this.pendingIdempotencyKeys[gruppe.mittel] ??= crypto.randomUUID());
+		//
+		// Der Schlüssel hängt am INHALT, nicht am Topf: Derselbe Warenkorb wiederholt
+		// denselben Schlüssel, ein GEÄNDERTER bekommt einen neuen. Sonst wäre die
+		// Wiederholung nach einer verlorenen Antwort eine stille Rückkehr zur alten
+		// Bestellung — die Änderung wäre weg, mit grüner Meldung. Die Signatur ist der
+		// Rumpf selbst; damit kann sie nicht vergessen, was mitgeschickt wird.
+		const signatur = JSON.stringify(rumpf);
+		const offen = this.pendingIdempotencyKeys[gruppe.mittel];
+		const key = offen?.signatur === signatur ? offen.key : crypto.randomUUID();
+		this.pendingIdempotencyKeys[gruppe.mittel] = { signatur, key };
+
 		try {
-			const data = await apiPost('/api/bestellungen', {
-				supplier_id: supplierId,
-				idempotency_key: key,
-				mittel: gruppe.mittel,
-				items: gruppe.items.map((item) => ({
-					titel_id: item.id,
-					menge: item.menge,
-					// Ohne Preiserfassung wird auch nichts erfasst. Sonst wanderte der
-					// DNB-Vorschlag in die Bestellhistorie, obwohl das Preisfeld gar nicht
-					// sichtbar war — ein Betrag, den nie jemand gesehen oder bestaetigt hat.
-					preis: this.preiseErfassen ? Number(item.preis) || 0 : 0,
-					generate_barcodes: this.attachBarcodes ? item.generate_barcodes : false
-				}))
-			});
+			const data = await apiPost('/api/bestellungen', { ...rumpf, idempotency_key: key });
 			this.cart = this.cart.filter((i) => i.mittel !== gruppe.mittel);
 			delete this.pendingIdempotencyKeys[gruppe.mittel]; // erfolgreich → nächste Bestellung bekommt neuen Schlüssel
 			const toastType = data?.status === 'warning' ? 'error' : 'success';

@@ -680,10 +680,7 @@ angleichen. Bezug: 8.5 (B5, B6).
 
 ### 5.1 Schäden und Benutzer
 
-- Der Idempotenz-Schlüssel einer Bestellung überlebt eine Änderung des Warenkorbs
-  (`orderStore.svelte.js`, `api/order_service.go`). Ging die Antwort verloren, wird der geänderte
-  Warenkorb still zur alten Bestellung. Nahe A. **Schritt:** Schlüssel bei jeder Änderung neu
-  vergeben.
+Nichts offen (Stand 16.09.2026).
 
 ### 5.2 Bescheid — vor dem ersten echten Bescheid
 

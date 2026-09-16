@@ -464,4 +464,40 @@ describe('orderStore Töpfe (Lernmittelfreiheit / Schülerbücherei)', () => {
 		expect(payloads[2].mittel).toBe('schultraeger');
 		expect(payloads[2].idempotency_key).toBe(ersterSchluessel);
 	});
+
+	// Der Schlüssel gehört zum INHALT, nicht zum Topf.
+	//
+	// Fund vom 16.09.2026 (OFFEN.md 5.1): Ging die Antwort verloren und änderte jemand
+	// danach den Warenkorb, ging derselbe Schlüssel mit anderem Inhalt raus. Der Server
+	// erkennt die Wiederholung und antwortet mit der ALTEN Bestellung — die Änderung war
+	// still verschwunden, und die Oberfläche meldete Erfolg. Genau das ist der Grund,
+	// warum es überhaupt einen Schlüssel gibt: Er soll eine Verdopplung verhindern, nicht
+	// eine Korrektur.
+	it('vergibt nach einer Änderung am Warenkorb einen neuen Schlüssel', async () => {
+		let antworte = false;
+		apiPostMock.mockImplementation(async (/** @type {string} */ url) => {
+			if (url !== '/api/bestellungen') return [];
+			if (!antworte) throw new Error('Antwort ging verloren');
+			return { status: 'success', message: 'ok' };
+		});
+		orderStore.addToCart({ id: 'bib', titel: 'Panem', autor: '', isbn: '2' });
+
+		await orderStore.submitOrder();
+		const ersterSchluessel = bestellPayloads()[0].idempotency_key;
+		expect(orderStore.cart).toHaveLength(1); // gescheitert, bleibt liegen
+
+		// Gleicher Warenkorb, zweiter Versuch: derselbe Schlüssel (Wiederholung).
+		await orderStore.submitOrder();
+		expect(bestellPayloads()[1].idempotency_key).toBe(ersterSchluessel);
+
+		// Jetzt ändert jemand die Menge — das ist eine ANDERE Bestellung.
+		orderStore.cart[0].menge = 5;
+		antworte = true;
+		await orderStore.submitOrder();
+
+		const payloads = bestellPayloads();
+		expect(payloads).toHaveLength(3);
+		expect(payloads[2].items[0].menge).toBe(5);
+		expect(payloads[2].idempotency_key).not.toBe(ersterSchluessel);
+	});
 });
