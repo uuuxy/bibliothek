@@ -24,7 +24,12 @@ describe('Neuen Leser anlegen', () => {
 
 	/** @param {string} art */
 	async function anlegen(art, vorname = 'Katrin', nachname = 'Wendland') {
-		const screen = render(StudentCreateModal, { open: true, klassen: ['07A'] });
+		const screen = render(StudentCreateModal, {
+			open: true,
+			klassen: ['07A'],
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
 		if (art !== 'schueler') {
 			await fireEvent.click(screen.getByLabelText(art === 'liv' ? 'LiV' : 'Lehrkraft'));
 		}
@@ -54,7 +59,12 @@ describe('Neuen Leser anlegen', () => {
 	});
 
 	it('sagt einer Lehrkraft, dass hier kein Zugang entsteht', async () => {
-		const screen = render(StudentCreateModal, { open: true, klassen: [] });
+		const screen = render(StudentCreateModal, {
+			open: true,
+			klassen: [],
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
 		await fireEvent.click(screen.getByLabelText('Lehrkraft'));
 		expect(screen.container.textContent ?? '').toContain('kein Zugang zum Programm');
 	});
