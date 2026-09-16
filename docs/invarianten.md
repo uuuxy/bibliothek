@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-15
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-16
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -319,10 +319,13 @@ fragt, ob eine Zusicherung des Codes von der Datenbank gehalten wird. Frage 12 f
 umgekehrt nach dem, was die Datenbank ohnehin tut — und wovon der Code nichts weiß.
 
 Mechanischer Teil: `repository/schema_gegenrichtung_pg_test.go` friert die drei Inventare
-ein (35 Fremdschlüssel mit Löschwirkung, 42 CHECK-Bedingungen, 21 Trigger; die Liste
-führt 36 Fremdschlüssel-Einträge, weil der zweispaltige von `lmf_termine` doppelt steht). Jede
+ein (Stand 16.09.2026, an der Datenbank gemessen: 38 Fremdschlüssel mit Löschwirkung,
+44 CHECK-Bedingungen, 22 Trigger). Jede
 Schema-Änderung wird damit rot und verlangt die Antwort: **Wer behandelt die Folge?** Die
 schon befragten Einträge tragen ihre Antwort als Kommentar; der Rest ist Arbeitsliste.
+
+Die Zahlen stehen hier zur Einordnung, nicht als Zusicherung — sie veralten mit jeder
+Migration, und rot wird nicht dieser Satz, sondern das Gate.
 
 Bewusst NICHT eingefroren: die 96 nullbaren Spalten. Ihre Gefahr ist die Bugklasse
 „NULL-Scan", und die hat ihre eigene Antwort — echte Postgres-Tests je Lesepfad. Eine

@@ -57,7 +57,6 @@ var fkAktionenBestand = []string{
 	// mit; beide zeigen auf dieselbe Zeile. Die Abfrage listet ihn zweimal, weil er zwei
 	// Schlüsselspalten hat.
 	"CASCADE  lmf_termine.art -> lmf_plaene",
-	"CASCADE  lmf_termine.art -> lmf_plaene",
 	// Befragt am 06.09.2026: Die Erfassungen fielen mit dem Exemplar und senkten damit
 	// rückwirkend das Ergebnis abgeschlossener Durchgänge — neben einem
 	// verloren_gemeldet, das feststand. Migration 103 friert die Zahl beim Abschluss ein.
@@ -231,9 +230,11 @@ var checkBedingungenBestand = []string{
 	"mail_settings_config_single_row_chk",
 }
 
-// Trigger ändern Daten, ohne dass eine Zeile Go-Code davon weiß. Die neunzehn hier sind
-// zwei Sorten: `aktualisiert_am`-Stempel und die Klassen-Normalisierung (Migration 087,
-// „05F1" statt „5f1"). Ein NEUER Trigger ist immer eine Frage.
+// Trigger ändern Daten, ohne dass eine Zeile Go-Code davon weiß. Hier stehen drei Sorten:
+// `aktualisiert_am`-Stempel, die Klassen-Normalisierung (Migration 087, „05F1" statt „5f1")
+// und der Wächter, der jedem Konto seine Leserzeile gibt (Migration 125). Ein NEUER Trigger
+// ist immer eine Frage. (Keine Zahl im Text: Sie veraltet mit jeder Migration, und rot wird
+// die Liste, nicht der Satz darüber.)
 var triggerBestand = []string{
 	"trg_benutzer_aktualisiert_am @ benutzer",
 	// Migration 125, befragt am 16.09.2026: schreibt beim Anlegen eines Kontos dessen
