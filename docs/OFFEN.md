@@ -25,9 +25,11 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Peter, drei kurze Antworten** (Abschnitt 5.16, am Ende): Wie lange darf ein Kollege
+3. **Peter, vier kurze Antworten** (Abschnitt 5.16, am Ende): Wie lange darf ein Kollege
    ein Buch behalten? Soll seine Ausleihhistorie nach einer Frist gelöscht werden? Soll er
-   gemahnt werden? Ich habe überall gelassen, wie es war — ein Jahr, nein, nein.
+   gemahnt werden? Ich habe überall gelassen, wie es war — ein Jahr, nein, nein. Dazu die
+   vierte aus dem Rasterdurchgang (5.17): Soll ein Kollege für ein verlorenes Buch zahlen?
+   Heute entsteht die Forderung, steht aber in keiner Übersicht.
 4. **Peter, 15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16). Sie ist
    fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
    einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
@@ -40,6 +42,10 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
 7. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
    nichts zu tun außer nachzufragen, wenn nichts kommt.
+
+Ein Punkt daneben, der niemanden aufhält, aber nicht liegen bleiben darf: Ein heute
+geschriebener Test über den LUSD-Import ist nicht in Git (5.17, Fund 1) — er müsste committet
+werden, sobald klar ist, wer an ihm arbeitet.
 
 Alles andere in dieser Datei — die B-Punkte in Abschnitt 5, die Beobachtungen in 6, die
 Betriebspunkte in 7 — schadet niemandem, wenn es liegen bleibt, und wird gebündelt erledigt,
@@ -1073,6 +1079,68 @@ Daraus folgt für den Bau:
    Anmeldung erkennt eine Person nur an der E-Mail (`auth/handlers.go`); ohne sie entsteht bei
    der ersten Selbstanmeldung ein zweiter Eintrag. Das Konto ist aktiv, damit sie ausleihen kann,
    und kommt damit ohne Freischaltung ins Portal.
+
+### 5.17 Rasterdurchgang über den 15. und 16.09.2026 (Funde vom 16.09.2026)
+
+Die zwölf Fragen über alle Änderungen beider Tage. Die Commits vom 15.09. hatten ihren
+Durchgang am selben Abend (5.15); alles ab Mitternacht — Rolle Leitung, Migrationen 121 bis
+125, Leserdatei, Theken-Suche — war ungeprüft. Gates beim Durchgang: golangci-lint ohne
+Befund, svelte-check 0/0, Frontend-Tests 668 grün, Go-Suite mit echtem Postgres grün.
+
+**1. Der Nachweis, dass der LUSD-Import keinen Kollegen zum Abgänger macht, liegt unverfolgt
+im Arbeitsbaum.** `api/lusd_import_kollegium_pg_test.go` (205 Zeilen, grün) ist nicht in Git:
+CI kennt ihn nicht, ein `git clean` wäre ihn los, und damit hinge der einzige Test über den
+GANZEN Importweg mit Kollegium im Bestand an einem Arbeitsverzeichnis. Er gehört committet —
+hier nicht getan, weil eine zweite Sitzung im selben Verzeichnis arbeitet und die Datei
+gehören könnte.
+
+Nebenbefund zur Arbeitsweise, kein Programmfehler: Derselbe Test fiel in EINEM von sieben
+Volldurchgängen mit „Vorschau, Abgänger: []". Die Erklärung steht im Zeitstempel — die Datei
+wurde um 13:23 geschrieben, mitten zwischen meinem roten (13:22) und meinem grünen Lauf. Der
+rote Lauf hat also eine Zwischenfassung übersetzt, nicht dieselbe Datei. Danach dreimal in
+Folge grün. Lehre wie am 15.09.: Vor der Deutung eines roten Laufs erst `git status` und `ps`
+(`[[parallelsitzung-zerschiesst-e2e]]`).
+
+**2. Ein Kollege bekommt eine Forderung, die in keiner Liste steht.** „Verlust/Schaden melden"
+steht in seiner Akte (`StudentProfile.svelte`, nur am Recht `bearbeiten`, nicht an der Art),
+und `meldeSchaden` nimmt den Schuldner aus der Ausleihe — die Forderung entsteht also. Am
+echten Postgres nachgestellt: In seiner Akte steht sie (1), im Reiter „Schadensersatz" nicht
+(0, `bescheid_ausstehend.go` verbindet mit der Sicht `schueler`), und „Bescheid erstellen"
+antwortet „Schüler nicht gefunden" (404), weil `EmpfaengerFuerBescheid` dieselbe Sicht liest.
+Das Geld ist offen und taucht in der Übersicht nie auf. Zu entscheiden ist zuerst, ob ein
+Kollege überhaupt einen Bescheid bekommt; danach entweder die Liste um ihn erweitern oder die
+Türen in seiner Akte schließen.
+
+**3. Zwei Einträge desselben Kollegen lassen sich nicht zusammenführen.** Der neue Anlege-Dialog
+warnt genau davor („Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten") — der Weg zurück
+fehlt aber: Kandidatensuche und Zeilen-Lader im Zusammenführen lesen die Sicht `schueler`
+(`repository/schueler_zusammenfuehren.go`), finden einen Kollegen also nicht.
+
+**4. Die Art eines Kollegen ist nicht mehr änderbar.** Der Trigger `konto_hat_leserzeile`
+(Migration 125) legt für jedes neue Konto eine Leserzeile mit `art = 'lehrkraft'` an; ein LiV,
+der sich selbst anmeldet, steht damit dauerhaft als Lehrkraft in der Leserdatei. `art` wird von
+keinem Änderungspfad geschrieben (`api/student_update.go` kennt das Feld nicht). Gefragt wird
+die Art nur beim Anlegen von Hand.
+
+**5. Ein Kollege kommt nicht mehr aus der Leserdatei heraus.** Das Löschen ist in der Akte für
+Kollegen ausgeblendet (richtig so), und `DeleteStudent` schreibt auf die Sicht `schueler` —
+für einen Kollegen also 0 Zeilen und „student not found". Wird sein KONTO gelöscht, bleibt die
+Leserzeile samt Ausweisnummer stehen (`benutzer.leser_id` steht auf ON DELETE SET NULL, und die
+Prüfung davor verweigert nur bei offenen Ausleihen). Ein zweites Konto derselben Person erzeugt
+dann über den Trigger eine zweite Leserzeile — siehe Fund 3.
+
+**6. Zahlen in `docs/invarianten.md` sind veraltet (Kategorie C).** Dort stehen 35 Fremdschlüssel
+mit Löschwirkung, 42 CHECK-Bedingungen und 21 Trigger; die Listen im Gate führen inzwischen 39,
+23 und 22 Einträge, und der Kommentar am Trigger-Inventar spricht weiter von „den neunzehn".
+Das Gate selbst ist grün und gepflegt — nur der erklärende Text daneben nicht.
+
+**Was der Durchgang ausdrücklich in Ordnung fand:** die Sicht-Falle (`CREATE VIEW … SELECT *`
+friert die Spalten ein) hat ihr eigenes Gate (`db/sicht_schueler_vollstaendig_pg_test.go`); das
+Gegenrichtungs-Inventar ist zu allen zehn Migrationen nachgezogen; die Rechte der Leitung sind
+abgeleitet statt abgeschrieben (Migration 122 aus den ADMIN-Zeilen, `db/rolle_leitung_test.go`
+aus der Vorgabe); Mahnlauf, LUSD-Abgleich und Löschjob lesen weiter Schüler; die Dauerleihe
+hängt jetzt an der Art statt an der Tabelle; der Name eines Kontos und seiner Leserzeile werden
+in einer Transaktion geschrieben, und ein stiller Null-Treffer ist dort ein Fehler.
 
 ---
 
