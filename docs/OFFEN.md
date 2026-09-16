@@ -539,6 +539,21 @@ Lesestellen in `repository/book_search.go` und der Zweig in der Fristregel falle
 zugleich das Tor zur LMF-Plan-Frist (sie gilt nur bei `additionalYears == 0`) — ein Wert, den
 niemand setzt, darf diese Regel nicht aushebeln können.
 
+**Vor dem Streichen eine Zählung am Server (16.09.2026).** „Wird von keinem Code geschrieben"
+gilt für den HEUTIGEN Code; im Juni gab es einen Schreiber (`INSERT INTO buecher_titel (…,
+ziel_jahrgang, …)`, Commit `f8dab25a`, mit den Migrationen 029/030). Steht auf dem Server auch
+nur ein Titel mit einem Wert, dann ist die mehrjährige Ausleihe dort nicht tot, sondern in
+Betrieb — und das Streichen gäbe diesen Büchern beim nächsten Ausleihen eine Frist im selben
+Schuljahr statt in einem späteren. Deshalb erst messen, dann bauen:
+
+```sql
+SELECT count(*) AS titel_mit_wert, min(ziel_jahrgang), max(ziel_jahrgang)
+FROM buecher_titel WHERE ziel_jahrgang <> 0;
+```
+
+Ergebnis 0 → streichen wie entschieden. Ergebnis > 0 → die Frage ist eine andere und kommt
+zurück auf den Tisch.
+
 ### 4.4 E6: Nach der Übergabe an die Schulaufsicht
 
 Bleibt der Schüler gesperrt und die Forderung offen, bis das Sekretariat „bezahlt laut
