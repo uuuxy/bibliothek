@@ -116,17 +116,47 @@ describe('Akte eines Lesers', () => {
 		expect(screen.container.textContent ?? '').toContain('LiV');
 	});
 
-	// Zusammenführen und Löschen sind die verbliebenen Unterschiede, und sie liegen NICHT
-	// am Geschmack: Beide schreiben gegen die Sicht `schueler` und träfen bei einem
-	// Kollegen null Zeilen (docs/OFFEN.md 5.16). Der Test hält fest, dass der Knopf so
-	// lange wegbleibt — ein Knopf, der nichts tut, ist schlimmer als keiner.
-	it('bietet einem Kollegen das Zusammenführen nicht an, auch mit dem Recht', () => {
-		const screen = render(StudentProfileStammdaten, {
+	// Zusammenführen: seit dem 16.09.2026 auch beim Kollegium. Vorher blieb der Knopf weg,
+	// weil der Schreibweg gegen die Sicht `schueler` lief und bei einem Kollegen null
+	// Zeilen traf — ein Knopf, der nichts tut, ist schlimmer als keiner. Jetzt tut er
+	// etwas, und er wird gebraucht: Ein doppelt stehender Kollege war sonst von niemandem
+	// zu reparieren, auch nicht vom Administrator.
+	it('bietet das Zusammenführen bei jedem an, der das Recht hat', () => {
+		for (const art of ['schueler', 'lehrkraft', 'liv']) {
+			const screen = render(StudentProfileStammdaten, {
+				profile: akte(art),
+				darfZusammenfuehren: true,
+				onEdit: vi.fn()
+			});
+			expect(screen.container.textContent ?? '', `art=${art}`).toContain('Doppelter Datensatz');
+		}
+	});
+
+	// Der Grund für ein Doppel ist bei beiden ein anderer, und der Text sagt ihn: beim
+	// Schüler der LUSD-Export, beim Kollegen die Selbstanmeldung. Wer den falschen Satz
+	// liest, sucht den Fehler an der falschen Stelle.
+	it('nennt dem Kollegen den richtigen Grund für ein Doppel', () => {
+		const kollege = render(StudentProfileStammdaten, {
 			profile: akte('lehrkraft'),
 			darfZusammenfuehren: true,
 			onEdit: vi.fn()
-		});
-		expect(screen.container.textContent ?? '').not.toContain('Doppelter Datensatz');
+		}).container.textContent;
+		expect(kollege).toContain('Mein Portal');
+		// Geprüft wird der SATZ, nicht die Seite: „LUSD ID" steht seit dem 16.09.2026 als
+		// Feld in jeder Akte (eine Form für jeden, beim Kollegen leer). Gegen das ganze
+		// container.textContent zu prüfen, hiesse dieses Feld mitzumessen — der Test wäre
+		// rot, ohne dass an der Erklärung etwas falsch ist.
+		expect(kollege, 'die Namensänderung in der LUSD ist eine Schülersache').not.toContain(
+			'Namensänderung'
+		);
+
+		const schueler = render(StudentProfileStammdaten, {
+			profile: akte('schueler'),
+			darfZusammenfuehren: true,
+			onEdit: vi.fn()
+		}).container.textContent;
+		expect(schueler).toContain('Namensänderung');
+		expect(schueler).not.toContain('Mein Portal');
 	});
 
 	it('lässt die Akte eines Schülers, wie sie war', () => {

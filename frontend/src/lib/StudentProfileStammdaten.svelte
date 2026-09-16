@@ -130,8 +130,13 @@
 	{/if}
 
 	<!-- Zusammenführen: Admin-Recht, unumkehrbar — deshalb hier unten bei den Stammdaten,
-	     nicht zwischen den Dokument-Knöpfen. Dialog und Suche bringt der Abschnitt mit. -->
-	{#if darfZusammenfuehren && !kollege}
+	     nicht zwischen den Dokument-Knöpfen. Dialog und Suche bringt der Abschnitt mit.
+
+	     Seit dem 16.09.2026 auch beim Kollegium: Ein Kollege, der von Hand eingetragen wurde
+	     und sich später selbst anmeldet, steht zweimal da — und war bis dahin von NIEMANDEM
+	     zu reparieren, weil das Zusammenführen gegen die Sicht `schueler` schrieb. Das Recht
+	     bleibt, wie es war (merge_students: Admin und Leitung ab Werk). -->
+	{#if darfZusammenfuehren}
 		<SchuelerZusammenfuehren {profile} {onMerged} />
 	{/if}
 </div>

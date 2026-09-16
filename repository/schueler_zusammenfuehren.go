@@ -38,6 +38,21 @@ var (
 	ErrZusammenfuehrenNichtGefunden = errors.New("schüler nicht gefunden oder gelöscht")
 	// ErrZusammenfuehrenAnonymisiert meldet: ein anonymisierter Datensatz trägt keine Person mehr.
 	ErrZusammenfuehrenAnonymisiert = errors.New("anonymisierte datensätze lassen sich nicht zusammenführen")
+
+	// ErrZusammenfuehrenVerschiedeneArten hält die Grenze, die bis zum 16.09.2026 die
+	// Sicht `schueler` unbeabsichtigt gestellt hat: Sie zeigt nur Schüler, also konnte
+	// gar nichts anderes zusammengeführt werden.
+	//
+	// Seit die Schreibwege auf der Tabelle `leser` arbeiten (damit ein doppelt stehender
+	// Kollege überhaupt reparierbar ist), fällt dieser zufällige Schutz weg — und ohne
+	// Ersatz ließe sich ein Kollege mit einem Schüler verschmelzen. Das Ergebnis wäre
+	// nicht falsch, sondern unrettbar: Zusammenführen löscht die Quelle, und welche
+	// Angaben zu wem gehörten, steht danach nur noch im Rückweg-Eintrag.
+	//
+	// Die Grenze verläuft am Schüler, nicht an der Art: Lehrkraft und LiV sind zwei
+	// Schreibweisen für denselben Personenkreis und dürfen sich treffen (die
+	// Selbstanmeldung legt jeden als „lehrkraft" an, auch eine LiV).
+	ErrZusammenfuehrenVerschiedeneArten = errors.New("ein schüler lässt sich nicht mit einem kollegen zusammenführen")
 )
 
 // ZusammenfuehrenAuftrag benennt die beiden Datensätze; AbgaengerJahr rechnet das
@@ -80,21 +95,38 @@ type zusammenfuehrenZeile struct {
 	sperrgrund                                         *string
 	abgaengerSeit                                      *time.Time
 	abgaengerJahr                                      int
+	art                                                string
 }
+
+// istKollege sagt, auf welcher Seite der Schüler-Grenze diese Zeile steht. Dieselbe
+// Frage wie istKollegium() im Frontend und wie istSchuelerArt() in api/ — die Antwort
+// muss überall dieselbe sein.
+func (z *zusammenfuehrenZeile) istKollege() bool { return z.art != "schueler" }
 
 func ladeZusammenfuehrenZeile(ctx context.Context, tx pgx.Tx, id string) (*zusammenfuehrenZeile, error) {
 	z := &zusammenfuehrenZeile{}
+	// COALESCE auf barcode_id, klasse und abgaenger_jahr: Seit diese Abfrage auf `leser`
+	// läuft, kommt sie auch an einem Kollegen vorbei — und der hat keines der drei
+	// (Migration 123 hat die NOT-NULL-Pflicht an die Art gepaart). Die Felder der Struktur
+	// sind einfache Typen; ohne COALESCE endet das Zusammenführen an der ersten
+	// Kollegenzeile mit "cannot scan NULL into *string".
+	//
+	// Der Rückweg steht im UPDATE (schreibeZusammengefuehrtesZiel): Dort werden dieselben
+	// drei Spalten an der Art wieder auf NULL gesetzt. Ein leerer String in `klasse` wäre
+	// nicht bloss unschön, sondern ein Fehler — die Spalte hat einen Fremdschlüssel auf
+	// klassen(name), und eine Klasse "" gibt es nicht.
 	err := tx.QueryRow(ctx, `
-		SELECT id, barcode_id, vorname, nachname, klasse, geburtsdatum, schul_eintritt_am,
+		SELECT id, COALESCE(barcode_id, ''), vorname, nachname, COALESCE(klasse, ''),
+		       geburtsdatum, schul_eintritt_am,
 		       strasse, hausnummer, plz, ort, eltern_email, lusd_id, lusd_bestaetigt_am,
 		       anonymized_at IS NOT NULL,
 		       ist_gesperrt, COALESCE(is_manually_blocked, false), ist_abgaenger, block_reason,
-		       abgaenger_seit, abgaenger_jahr
-		FROM schueler WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`, id).Scan(
+		       abgaenger_seit, COALESCE(abgaenger_jahr, 0), art
+		FROM leser WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`, id).Scan(
 		&z.id, &z.barcode, &z.vorname, &z.nachname, &z.klasse, &z.geburtsdatum, &z.eintritt,
 		&z.strasse, &z.hausnummer, &z.plz, &z.ort, &z.elternEmail, &z.lusdID, &z.bestaetigtAm,
 		&z.anonymisiert, &z.gesperrt, &z.manuellGesperrt, &z.abgaenger, &z.sperrgrund,
-		&z.abgaengerSeit, &z.abgaengerJahr)
+		&z.abgaengerSeit, &z.abgaengerJahr, &z.art)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrZusammenfuehrenNichtGefunden
 	}
@@ -172,6 +204,9 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 		zeilen[id] = z
 	}
 	ziel, quelle := zeilen[a.ZielID], zeilen[a.QuelleID]
+	if ziel.istKollege() != quelle.istKollege() {
+		return nil, ErrZusammenfuehrenVerschiedeneArten
+	}
 
 	erg := &ZusammenfuehrenErgebnis{ZielID: ziel.id, BarcodeID: ziel.barcode, QuelleBarcode: quelle.barcode}
 	gewandert, err := verschiebeVorgaenge(ctx, tx, ziel.id, quelle.id, erg)
@@ -186,7 +221,7 @@ func ZusammenfuehrenSchueler(ctx context.Context, pool db.PgxPoolIface, a Zusamm
 	}); err != nil {
 		return nil, err
 	}
-	tag, err := tx.Exec(ctx, `DELETE FROM schueler WHERE id = $1`, quelle.id)
+	tag, err := tx.Exec(ctx, `DELETE FROM leser WHERE id = $1`, quelle.id)
 	if err != nil {
 		return nil, fmt.Errorf("quelle löschen: %w", err)
 	}
@@ -440,12 +475,18 @@ type schreibeZusammengefuehrtesZielParams struct {
 // nicht selbst schon manuell gesperrt ist (dann bleibt dessen Grund).
 func schreibeZusammengefuehrtesZiel(ctx context.Context, tx pgx.Tx, p schreibeZusammengefuehrtesZielParams) error {
 	tag, err := tx.Exec(ctx, `
-		UPDATE schueler SET
-			vorname = $2, nachname = $3, klasse = $4,
+		UPDATE leser SET
+			vorname = $2, nachname = $3,
+			-- Klasse und Abgangsjahr gehören zum Schüler. Bei einem Kollegen müssen sie
+			-- NULL bleiben: Die Klasse hat einen Fremdschlüssel auf klassen(name), und ein
+			-- Abgangsjahr an einer Lehrkraft wäre eine Angabe, die niemand gemacht hat.
+			-- Die Paarung steht HIER und nicht nur im Aufrufer, weil dies der einzige
+			-- Schreibweg des Zusammenführens ist.
+			klasse         = CASE WHEN art = 'schueler' THEN $4::varchar ELSE NULL END,
 			geburtsdatum = $5, schul_eintritt_am = $6,
 			strasse = $7, hausnummer = $8, plz = $9, ort = $10, eltern_email = $11,
 			lusd_id = $12, lusd_bestaetigt_am = $13,
-			abgaenger_jahr = $14,
+			abgaenger_jahr = CASE WHEN art = 'schueler' THEN $14::integer ELSE NULL END,
 			ist_abgaenger = false, abgaenger_seit = NULL,
 			is_manually_blocked = COALESCE(is_manually_blocked, false) OR $15,
 			ist_gesperrt = CASE
@@ -504,12 +545,23 @@ func SucheZusammenfuehrenKandidaten(ctx context.Context, pool db.PgxPoolIface, a
 	if len(tokens) == 0 {
 		return []ZusammenfuehrenKandidat{}, nil
 	}
+	// COALESCE auf barcode_id und klasse ist PFLICHT, seit diese Suche auf `leser` statt
+	// auf der Sicht `schueler` läuft: Ein Kollege hat beides nicht (Migration 123 hat die
+	// NOT-NULL-Pflicht an die Art gepaart), und die Felder im Kandidaten sind `string`,
+	// nicht `*string`. Ohne COALESCE scheitert der Scan an der ersten Kollegenzeile — und
+	// zwar als 500 „interner Datenbankfehler", den nur ein PG-Test findet.
+	//
+	// Der Seitenvergleich unten hält dieselbe Grenze wie ZusammenfuehrenSchueler: Wer von
+	// einem Schüler aus sucht, bekommt Schüler; wer von einem Kollegen aus sucht,
+	// Kollegen. Sonst böte die Liste an, was das Zusammenführen danach ablehnt.
 	rows, err := pool.Query(ctx, SchuelerSuchCTE+`
-		SELECT s.id, s.barcode_id, s.vorname, s.nachname, s.klasse, TO_CHAR(s.geburtsdatum, 'YYYY-MM-DD'),
+		SELECT s.id, COALESCE(s.barcode_id, ''), s.vorname, s.nachname, COALESCE(s.klasse, ''),
+		       TO_CHAR(s.geburtsdatum, 'YYYY-MM-DD'),
 		       s.ist_abgaenger, s.ist_gesperrt,
 		       (SELECT count(*) FROM ausleihen a WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL)
-		FROM schueler s
+		FROM leser s
 		WHERE s.deleted_at IS NULL AND s.anonymized_at IS NULL AND s.id <> $4
+		  AND (s.art = 'schueler') = ((SELECT art FROM leser WHERE id = $4) = 'schueler')
 		  AND `+SchuelerSuchBedingung(true)+`
 		ORDER BY `+SchuelerSuchRang+`, s.nachname, s.vorname
 		LIMIT $3`, tokens, tokens[0], limit, ausserID)

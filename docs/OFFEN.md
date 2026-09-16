@@ -947,14 +947,26 @@ Gate: `frontend/src/lib/leserAkte.test.js`.
   Wenn sie in der Akte sichtbar sein soll, dann gelesen vom Konto über `benutzer.leser_id` und
   nicht änderbar.
 
-- **Drei tote Türen derselben Ursache:** Papierkorb (`repository/audit_users.go`),
-  Papierkorb-Ansicht (`api/student_deleted.go`) und **Zusammenführen**
-  (`repository/schueler_zusammenfuehren.go`) schreiben weiterhin gegen die Sicht `schueler`. Bei
-  einem Kollegen träfe jede von ihnen null Zeilen. Erreichbar ist heute keine — die Knöpfe sind
-  bei ihm ausgeblendet —, aber das Zusammenführen ist genau das Werkzeug, das der Punkt darüber
-  braucht: Solange es gegen die Sicht arbeitet, ist ein doppelt stehender Kollege von NIEMANDEM
-  zu reparieren, auch nicht vom Admin. Das Recht bleibt dabei, wie es ist (`merge_students`:
+- **Zusammenführen kann jetzt auch Kollegen (16.09.2026, erledigt).** Es las und schrieb gegen
+  die Sicht `schueler`; ein doppelt stehender Kollege war deshalb von NIEMANDEM zu reparieren,
+  auch nicht vom Admin. Läuft jetzt auf `leser`. Das Recht ist unverändert (`merge_students`:
   Admin und Leitung ab Werk, Mitarbeiter nur wenn freigeschaltet).
+
+  Dabei fiel ein Schutz weg, den die Sicht zufällig gestellt hatte: dass sich ein Kollege nicht
+  mit einem SCHÜLER verschmelzen lässt. Das wäre unrettbar — Zusammenführen löscht die Quelle.
+  Die Grenze steht jetzt ausdrücklich im Code (`ErrZusammenfuehrenVerschiedeneArten`), die
+  Trefferliste bleibt auf derselben Seite, und Lehrkraft und LiV dürfen sich treffen (die
+  Selbstanmeldung legt jeden als „lehrkraft" an, auch eine LiV). Klasse und Abgangsjahr werden
+  beim Schreiben an die Art gepaart — ein leerer String in `klasse` verletzt den Fremdschlüssel
+  auf `klassen(name)`. Gate: `api/leser_zusammenfuehren_kollegium_pg_test.go`, mit Rot-Probe.
+
+- **Zwei tote Türen bleiben, mit Absicht:** Papierkorb (`repository/audit_users.go`) und
+  Papierkorb-Ansicht (`api/student_deleted.go`) schreiben weiter gegen die Sicht. Sie sind für
+  einen Kollegen nicht erreichbar (die Gefahrenzone wird ihm nicht angezeigt), und das soll
+  vorerst so bleiben: **Vorher ist zu klären, was mit dem KONTO geschieht**, wenn die Leserzeile
+  eines Kollegen in den Papierkorb wandert. Heute zeigte das Konto auf eine gelöschte Zeile.
+  Der Schreibweg ist absichtlich NICHT mit umgehängt worden — er würde sonst über die API
+  erreichbar, bevor diese Frage beantwortet ist.
 
 Daraus folgt für den Rest des Plans: Das versteckte Feld „Personenart" widerspricht diesem Modell
 und fällt in Stufe 3 weg (deshalb findet heute ein Admin ohne dieses Feld die Theke nicht). Die
