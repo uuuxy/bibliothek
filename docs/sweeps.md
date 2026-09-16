@@ -131,6 +131,19 @@ Sicht auf `leser` mit `WHERE art = 'schueler'`.
 verändert nichts am Code und alles an seiner Bedeutung. Der Schutz, den die Sicht den alten
 Abfragen gibt, ist für die neuen Pfade genau der Fehler.
 
+### Prüflauf 17.09.2026 — zwei Klassen mit eigener Ratsche
+
+Anlass: die Abarbeitung der B-Liste in der Nacht. Beide Klassen waren längst bekannt, hatten
+aber nur Einzelfunde und keinen Detektor — die erste war damit in vier Monaten siebenmal da.
+
+| Bugklasse | Form | Ratsche | Stand |
+| --------- | ---- | ------- | ----- |
+| **Tag in der falschen Zeitzone** | `CURRENT_DATE` bzw. `time.Now()` bilden einen KALENDERTAG in der Zone der Sitzung (UTC), gemeint ist der Tag der Schule. Zwischen Mitternacht in Berlin und Mitternacht UTC ist das der Vortag — die Frist gilt zu spät als abgelaufen, das Kind ist am 18. Geburtstag noch minderjährig, der Mahnlauf überspringt sich, die Mail trägt das Datum von gestern | `docs/kalendertag_bestand_test.go` (Bestand je Datei MIT Grund, darf nur sinken; Kommentare vor der Messung entfernt; Selbstprobe) · `repository/kalendertag_schulzeit_pg_test.go` (die beiden Formulierungen gegeneinander, in zwei Sitzungszonen) | 17.09.2026: sieben Stellen umgestellt (Frist, Volljährigkeit, Mahnlauf, „heute zurückgegeben", Stornierungsgrund, drei Mails), elf begründet geduldet (Dateinamen, Anschaffungsdaten, Statistik-Fenster). Prüfmuster: Ist ein TAG gemeint oder ein ZEITPUNKT? Ein Instant-Vergleich (`< CURRENT_TIMESTAMP`) bleibt richtig |
+| **Zwilling in zwei Sprachen** | Dieselbe Liste steht in Go und in JavaScript, zusammengehalten von einem Kommentar. Fällt eine Seite auseinander, merkt es erst der Betrieb | `internal/service/vorsilben_zwilling_test.go` (liest die JS-Datei, vergleicht die BEDEUTUNG je Vorsilbe in beide Richtungen, plus Selbstprobe) | 17.09.2026: beim Aufschreiben des Gates war der Zwilling schon auseinander — `LMF-` fehlte im Server-Switch und kam nur über den Umweg der Auflösung ohne Vorsilbe zum selben Ergebnis. Vorbild: `internal/littera/platzhalter_domain_test.go` |
+
+**Der Merksatz:** Eine Klasse, die schon dreimal dieselbe Zeile in einer anderen Datei war,
+braucht keinen weiteren Einzelfix, sondern eine Liste, die nur mit Begründung wächst.
+
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 
 Anlass: An einem Tag dreimal dieselbe Erfahrung — die Schema-Parität war blind für DDL, das

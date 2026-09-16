@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-16
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-17
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -280,10 +280,12 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.
 
-## Daniels Raster — die zwölf Fragen, und ihre Frontend-Lesart
+## Daniels Raster — die dreizehn Fragen, und ihre Frontend-Lesart
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
-Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration. Die Durchgänge samt Funden stehen in
+Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration,
+Frage 13 immer dann, wenn eine Tabelle, Spalte oder ein Feld ihre Bedeutung ändert, ohne
+den Namen zu wechseln. Die Durchgänge samt Funden stehen in
 den Commit-Nachrichten (`git log --grep=Rasterdurchgang`), was davon offen ist in [OFFEN.md](OFFEN.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
 [sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
 und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
@@ -300,6 +302,7 @@ und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 10. **Rückweg** — ist der Weg zurück begehbar und am Ergebnis bewiesen, nicht am Vorgang?
 11. **Geteilter Zustand** — wer lädt ihn auf diesem Pfad, was gilt vor dem Laden und bei Fehlschlag, überlebt der Lader sein eigenes Ergebnis?
 12. **Gegenrichtung Schema** — was TUT die Datenbank, das im Code nirgends steht? Fremdschlüssel mit Löschwirkung (CASCADE/SET NULL), CHECK-Bedingungen, Trigger.
+13. **Bedeutungswechsel unter gleichem Namen** — hat dieser Name seit gestern eine andere Bedeutung, und wer liest ihn noch in der alten?
 
 ### Zu Frage 12 (neu am 06.09.2026)
 
@@ -334,6 +337,29 @@ Liste von 96 Namen wäre der Dateibaum und würde nichts aussagen.
 
 Eine Frontend-Lesart hat Frage 12 nicht; das Gegenstück dort ist die Bugklasse „Nie
 verdrahtet" (`docs/sweeps.md`): Felder, die der Server liefert und die niemand liest.
+
+### Zu Frage 13 (neu am 17.09.2026)
+
+Ein Name bleibt, seine Bedeutung wechselt — und niemand merkt es, weil der Code
+weiterläuft. `schueler` war bis Migration 124 eine Tabelle und ist seither eine SICHT auf
+`leser` mit `WHERE art = 'schueler'`. Ein `UPDATE schueler` trifft damit beim Kollegium
+null Zeilen: eine stille 404, kein Fehler.
+
+Der Beleg, warum das eine eigene Frage verdient und nicht unter Frage 3 („zwei
+Wahrheitsquellen") fällt: Beim Durchgang vom 16.09.2026 gab es 15 Schreibpfade gegen diese
+Sicht, heute sind es neun — die sechs, die gewandert sind, waren Zeile für Zeile die Funde
+jenes Durchgangs. Sie waren nicht doppelt formuliert, sie meinten schlicht etwas anderes
+als am Vortag.
+
+Mechanischer Teil: `docs/schreibpfade_gegen_sicht_test.go` führt die neun Schreibpfade mit
+je einer Begründung, warum die Filterung dort richtig ist. Alle neun SIND richtig — sie
+führen die Schülerarbeit. Die Regel ist deshalb nicht „gegen eine Sicht schreibt man
+nicht", sondern: **Eine zehnte Zeile ist eine Frage.**
+
+Dazu eine Schärfung von Frage 12 ohne neue Nummer: *Wer räumt weg, was die Datenbank
+selbst angelegt hat?* Das Inventar fragt bei Fremdschlüsseln in die Löschrichtung, bei
+Triggern nur in die Anlegerichtung. Vier Trigger schreiben in fremde Tabellen, zwei davon
+legen Zeilen an, die kein Go-Code je löscht.
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 

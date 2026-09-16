@@ -1077,19 +1077,12 @@ offenen Kollegen-Ausleihen überhaupt. Es gibt also nichts zu reparieren, und di
 allein hätte nichts bewiesen. Entschieden wird weiter an `ist_handapparat`, nicht an
 `klasse = 'Lehrer'`: Das wäre die zweite Wahrheitsquelle von der anderen Seite.
 
-**Was daraus für das Raster folgt (entschieden am 16.09.2026: aufnehmen, mit Bestand).** Eine neue Frage 13 —
-*Bedeutungswechsel unter gleichem Namen: Hat dieser Name seit gestern eine andere Bedeutung, und
-wer liest ihn noch in der alten?* Beleg: Beim Durchgang aus 5.17 gab es 15 Schreibpfade gegen die
-Sicht `schueler`, heute sind es 9; die sechs, die gewandert sind, sind Zeile für Zeile die Funde
-jenes Durchgangs. Dazu der mechanische Anker, ohne den die Frage zum Spruch verrottet: ein
-Bestand der Schreibpfade gegen eine Sicht, je Zeile mit Begründung (heute neun, alle richtig —
-LUSD, Versetzung, Löschjob, Seed, Littera-Schülerlauf). Eine zehnte Zeile ist eine Frage.
-
-Dazu eine Schärfung von Frage 12 ohne neue Nummer: *Wer räumt weg, was die Datenbank selbst
-angelegt hat?* Das Inventar fragt bei Fremdschlüsseln in die Löschrichtung, bei Triggern nur in
-die Anlegerichtung. Vier Trigger schreiben in fremde Tabellen, zwei davon legen Zeilen an, die
-kein Go-Code je löscht: `leser` aus `konto_hat_leserzeile` (Fund 1) und `klassen` — für die es im
-ganzen Go-Code kein `DELETE` gibt, eine vertippte Klasse steht ab dann in jeder Auswahlliste.
+**Raster-Frage 13 ist am 17.09.2026 aufgenommen und gebaut** — Text in `docs/invarianten.md`,
+Anker in `docs/schreibpfade_gegen_sicht_test.go` (neun Schreibpfade gegen die Sicht `schueler`,
+je mit Begründung; eine zehnte Zeile ist eine Frage). Die Schärfung von Frage 12 („Wer räumt weg,
+was die Datenbank selbst angelegt hat?") steht dort ebenfalls; offen bleibt daraus die eine
+Beobachtung: Für `klassen` gibt es im ganzen Go-Code kein `DELETE` — eine vertippte Klasse steht
+ab dann in jeder Auswahlliste.
 
 **Ausdrücklich NICHT vorgeschlagen**, damit die Frage nicht wiederkommt: eine Frage zur
 Barrierefreiheit (hat ein Gate, andere Achse), zum Betrieb (drei Doku-Tests gaten das schon), zur
