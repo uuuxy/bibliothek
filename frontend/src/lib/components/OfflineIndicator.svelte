@@ -36,9 +36,13 @@
 		offlineSync.pendingCount > 0 ||
 			ohneNetz ||
 			offlineSync.warteschlangeFehler ||
+			offlineSync.abgelehntMitStatus !== null ||
 			nachbuchMeldungen.offen > 0 ||
 			nachbuchMeldungen.geoeffnet
 	);
+	// Rot wie der Warteschlangen-Fehler: Beide heißen „hier muss jemand etwas tun",
+	// während der Zähler allein nur „es läuft noch" heißt.
+	let haengt = $derived(offlineSync.warteschlangeFehler || offlineSync.abgelehntMitStatus !== null);
 
 	async function handleBackup() {
 		try {
@@ -87,7 +91,7 @@
 
 {#if sichtbar}
 	<div
-		class="fixed top-0 right-0 left-0 z-9999 border-b {offlineSync.warteschlangeFehler
+		class="fixed top-0 right-0 left-0 z-9999 border-b {haengt
 			? 'bg-error text-on-error border-error'
 			: offlineSync.pendingCount > 0
 				? 'bg-error-container text-on-error-container border-outline-variant'
@@ -96,7 +100,7 @@
 		aria-live="polite"
 	>
 		<div class="mx-auto flex max-w-7xl items-center gap-3 px-4 py-1.5">
-			{#if offlineSync.warteschlangeFehler}
+			{#if haengt}
 				<TriangleAlert size={18} strokeWidth={2.5} class="shrink-0" />
 			{:else}
 				<CloudOff size={18} strokeWidth={2.5} class="shrink-0" />
@@ -106,6 +110,17 @@
 				{#if offlineSync.warteschlangeFehler}
 					Warteschlange nicht lesbar — Offline-Scans werden auf diesem Rechner NICHT gespeichert.
 					Bitte an einem anderen Rechner weiterarbeiten.
+				{:else if offlineSync.abgelehntMitStatus === 401 || offlineSync.abgelehntMitStatus === 403}
+					<!-- Warten hilft hier nicht: Die Vorgänge sind gespeichert, aber diese Anmeldung
+					     darf sie nicht buchen. Ohne diesen Satz lief der Versuch jede Minute ins
+					     Leere, und das Band zeigte weiter nur „noch nicht im System". -->
+					{offlineSync.pendingCount}
+					{offlineSync.pendingCount === 1 ? 'Vorgang wartet' : 'Vorgänge warten'} — diese Anmeldung darf
+					an der Theke nicht buchen. Bitte mit dem Bibliotheks-Konto anmelden; gespeichert bleibt alles.
+				{:else if offlineSync.abgelehntMitStatus !== null}
+					{offlineSync.pendingCount}
+					{offlineSync.pendingCount === 1 ? 'Vorgang lässt' : 'Vorgänge lassen'} sich nicht buchen — der
+					Server weist sie ab. Gespeichert bleibt alles; bitte die Bibliothek verständigen.
 				{:else if offlineSync.pendingCount > 0}
 					<!-- „Vorgänge", nicht „Vorgange": Die Mehrzahl wurde bis zum 16.09.2026 durch
 					     Anhaengen eines „e" an „Vorgang" gebildet, der Umlaut fiel weg. Auf dem

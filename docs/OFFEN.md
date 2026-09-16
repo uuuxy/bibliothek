@@ -1145,22 +1145,15 @@ die Einzelheiten stehen in den Commit-Nachrichten (`c5cddd6e`, `7fb4b387`, `77c5
 Endlosschleife bei stehendem WLAN und weggefallenem Server, die nachgeholte Sperre mitten in
 der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
 
-**Offen geblieben** — drei Punkte, alle Kategorie B, keiner hält den Betrieb auf:
+**Offen geblieben** — zwei Punkte, beide Kategorie B, keiner hält den Betrieb auf (der dritte, der still anhaltende Sync, ist am 16.09.2026 behoben):
 
-1. **Ein abgelehnter Stapel hält den Sync an, ohne es zu sagen.** `sendeBatch`
-   (`stores/offlineSync.svelte.js`) beendet die Runde bei jeder Antwort ab 400 mit einem
-   schlichten `return false` — ohne Meldung. Gedacht ist das für 502/503 (der Server kommt
-   gleich wieder); bei einer Antwort, die sich nicht von selbst ändert (403, weil der gerade
-   angemeldete Mensch kein `perform_actions` hat), läuft der Versuch jede Minute erneut ins
-   Leere. Sichtbar ist nur der Zähler im Band, und der sagt „noch nicht im System", nicht
-   „geht so nicht mehr". Zu tun: unterscheiden, ob Warten hilft, und es sonst sagen.
-2. **Der Zwilling der Vorsilben ist eine Verabredung, kein Gate.** `scanEinordnen.js` trägt
+1. **Der Zwilling der Vorsilben ist eine Verabredung, kein Gate.** `scanEinordnen.js` trägt
    `A-`/`S-`/`L-` (Ausweis), `B-`/`LMF-` (Buch) und `G-` (Gerät); dieselbe Liste steht im
    Switch von `internal/service/omnibox_service.go`. Zusammengehalten wird sie von einem
    Kommentar. Eine neue Vorsilbe an einer Stelle fällt laut aus (ohne Netz „unklar", beim
    Nachbuchen „nicht gebucht"), aber erst im Betrieb. Das Muster für die Ratsche steht im
    Haus: `PlatzhalterDomain` hält beide Seiten mit einem Test gegeneinander.
-3. **Die Barcode-Liste altert unbemerkt.** Geholt wird sie bei der Anmeldung
+2. **Die Barcode-Liste altert unbemerkt.** Geholt wird sie bei der Anmeldung
    (`stores/buchBarcodes.svelte.js`), und das ist so entschieden. Ein Kiosk-Tab steht aber
    zwölf Stunden offen: Was am Vormittag neu inventarisiert wurde, ist am Nachmittag ohne Netz
    eine „unklare" Nummer. Der Zeitpunkt des letzten Abgleichs wird gespeichert und nirgends

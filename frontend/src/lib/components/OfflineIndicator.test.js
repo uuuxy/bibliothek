@@ -17,6 +17,7 @@ const sync = {
 	isOffline: false,
 	isSyncing: false,
 	warteschlangeFehler: false,
+	abgelehntMitStatus: null,
 	exportQueueAsJSON: vi.fn(),
 	importQueueFromJSON: vi.fn()
 };
@@ -52,6 +53,7 @@ describe('Offline-Band', () => {
 		sync.isOffline = false;
 		sync.isSyncing = false;
 		sync.warteschlangeFehler = false;
+		sync.abgelehntMitStatus = null;
 		meldungen.offen = 0;
 		meldungen.geoeffnet = false;
 		recht.wert = true;
@@ -94,6 +96,44 @@ describe('Offline-Band', () => {
 		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
 		expect(text).toContain('NICHT gespeichert');
 		expect(screen.container.querySelector('div')?.className).toContain('bg-error');
+	});
+
+	// Warten hilft nicht — und das Band muss es sagen.
+	//
+	// Fund vom 16.09.2026 (OFFEN.md 5.19): Der Sync endete bei jeder Antwort ab 400 mit
+	// einem schlichten Abbruch. Gedacht war das für 502/503; bei einer Antwort, die sich
+	// von selbst nicht ändert (403, weil der gerade angemeldete Mensch nicht buchen darf),
+	// lief der Versuch jede Minute ins Leere. Sichtbar war nur der Zähler, und der sagt
+	// „noch nicht im System", nicht „geht so nicht mehr".
+	it('sagt es, wenn die Vorgänge mit dieser Anmeldung nicht zu buchen sind', () => {
+		sync.pendingCount = 4;
+		sync.abgelehntMitStatus = 403;
+		const screen = render(OfflineIndicator, {});
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+		expect(text).toContain('darf an der Theke nicht buchen');
+		expect(text).toContain('gespeichert');
+		// Nicht die leise Fassung: Hier muss jemand etwas tun.
+		expect(text).not.toContain('noch nicht im System');
+		expect(screen.container.querySelector('div')?.className).toContain('bg-error');
+	});
+
+	it('nennt eine andere Ablehnung, ohne den Menschen mit einer Zahl allein zu lassen', () => {
+		sync.pendingCount = 1;
+		sync.abgelehntMitStatus = 400;
+		const screen = render(OfflineIndicator, {});
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+		expect(text).toContain('lässt sich nicht buchen');
+		expect(text).toContain('Bibliothek verständigen');
+	});
+
+	// Die Gegenprobe: Ein Server, der gleich wiederkommt, darf die Theke NICHT anschreien.
+	it('bleibt bei 502 leise — dort hilft Warten', () => {
+		sync.pendingCount = 2;
+		sync.abgelehntMitStatus = null; // sendeBatch merkt sich 5xx bewusst nicht
+		const screen = render(OfflineIndicator, {});
+		const text = (screen.container.textContent ?? '').replace(/\s+/g, ' ');
+		expect(text).toContain('noch nicht im System');
+		expect(screen.container.querySelector('div')?.className).not.toContain('bg-error ');
 	});
 
 	it('meldet den ausgefallenen Herzschlag im selben Band statt in einer zweiten Schicht', () => {

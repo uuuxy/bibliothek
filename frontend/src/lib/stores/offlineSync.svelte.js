@@ -200,6 +200,9 @@ function createOfflineSyncStore() {
 	let isOffline = $state(typeof navigator !== 'undefined' ? !navigator.onLine : false);
 	// Die Warteschlange ließ sich nicht lesen (Commit 5): Das Band sagt es, statt 0 zu zeigen.
 	let warteschlangeFehler = $state(false);
+	// Der Server hat den Stapel abgelehnt, und Warten hilft nicht (4xx). Siehe sendeBatch.
+	/** @type {number | null} */
+	let abgelehntMitStatus = $state(null);
 
 	async function updateCount() {
 		try {
@@ -213,14 +216,24 @@ function createOfflineSyncStore() {
 
 	// Verschickt einen Batch und verarbeitet dessen Ergebnisse. Liefert false, wenn der
 	// Sync abbrechen soll (kompletter Batch-Fehler wie 502, oder Netzwerkfehler).
+	//
+	// Dabei wird unterschieden, ob WARTEN HILFT (Rasterdurchgang 16.09.2026, OFFEN.md 5.19):
+	// Ein 502/503 heißt „der Server kommt gleich wieder" — die Runde endet still, in einer
+	// Minute läuft die nächste. Eine Antwort, die sich von selbst nicht ändert (403, weil
+	// der gerade angemeldete Mensch nicht buchen darf; 400 bei einem Rumpf, den der Server
+	// nicht annimmt), lief bis hierher genauso still jede Minute ins Leere. Sichtbar war
+	// nur der Zähler im Band, und der sagt „noch nicht im System", nicht „geht so nicht
+	// mehr". Deshalb merkt sich der Store solche Antworten und das Band sagt sie an.
 	async function sendeBatch(payload, batchItems, queueLength) {
 		try {
 			const res = await apiClient.post('/api/action/nachbuchen', payload);
 
 			if (!res.ok) {
-				// Batch request failed completely (e.g. 502 Bad Gateway), stop syncing
+				// 5xx und 429: Warten hilft. 4xx: Warten hilft nicht — das gehört gesagt.
+				abgelehntMitStatus = res.status < 500 && res.status !== 429 ? res.status : null;
 				return false;
 			}
+			abgelehntMitStatus = null;
 
 			const data = await res.json();
 			const { pruefen, weiter } = await verarbeiteNachbuchErgebnisse(data, batchItems);
@@ -380,6 +393,10 @@ function createOfflineSyncStore() {
 		},
 		get warteschlangeFehler() {
 			return warteschlangeFehler;
+		},
+		/** Status der letzten Ablehnung, bei der Warten nicht hilft — sonst null. */
+		get abgelehntMitStatus() {
+			return abgelehntMitStatus;
 		},
 		updateCount,
 		startSync,

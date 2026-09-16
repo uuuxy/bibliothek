@@ -144,6 +144,36 @@ describe('offlineSync.startSync', () => {
 
 		await offlineSync.startSync();
 		expect(await loadQueue()).toHaveLength(1);
+		// 502 heißt „der Server kommt gleich wieder" — nichts anzusagen, die nächste Runde
+		// läuft in einer Minute.
+		expect(offlineSync.abgelehntMitStatus).toBeNull();
+	});
+
+	// Warten hilft nicht bei einer Antwort, die sich von selbst nicht ändert
+	// (Rasterdurchgang 16.09.2026, OFFEN.md 5.19): 403, weil der gerade angemeldete Mensch
+	// nicht buchen darf. Bis hierher endete die Runde genauso still wie bei 502 und lief
+	// jede Minute erneut ins Leere; im Band stand weiter nur „noch nicht im System".
+	it('merkt sich eine Ablehnung, bei der Warten nicht hilft (403)', async () => {
+		await enqueueOfflineAction(rueckgabe('B-201'));
+
+		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));
+
+		await offlineSync.startSync();
+		expect(await loadQueue(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
+		expect(offlineSync.abgelehntMitStatus).toBe(403);
+	});
+
+	it('vergisst die Ablehnung, sobald ein Stapel wieder durchgeht', async () => {
+		await enqueueOfflineAction(rueckgabe('B-202'));
+		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));
+		await offlineSync.startSync();
+		expect(offlineSync.abgelehntMitStatus).toBe(403);
+
+		vi.mocked(apiClient.post).mockResolvedValue(
+			/** @type {any} */ ({ ok: true, json: async () => ({ ergebnisse: [] }) })
+		);
+		await offlineSync.startSync();
+		expect(offlineSync.abgelehntMitStatus).toBeNull();
 	});
 });
 
