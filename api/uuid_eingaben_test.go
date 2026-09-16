@@ -117,14 +117,17 @@ func TestVormerkungen_UngueltigeKennungErreichtRepositoryNicht(t *testing.T) {
 func TestUUIDOderLeer_LeerUndGueltigGehenDurch(t *testing.T) {
 	leer := ""
 	gut := "11111111-1111-1111-1111-111111111111"
-	if err := Validate.Struct(DefektRequest{LoanID: &leer, SchuelerID: &gut}); err != nil {
-		t.Fatalf("leerer Zeiger und gültige UUID abgewiesen: %v", err)
+	if err := Validate.Struct(ActionRequest{Query: "B-1", ActiveLeserID: &leer}); err != nil {
+		t.Fatalf("leerer Zeiger abgewiesen: %v", err)
 	}
-	if err := Validate.Struct(DefektRequest{}); err != nil {
+	if err := Validate.Struct(ActionRequest{Query: "B-1", ActiveLeserID: &gut}); err != nil {
+		t.Fatalf("gültige UUID abgewiesen: %v", err)
+	}
+	if err := Validate.Struct(ActionRequest{Query: "B-1"}); err != nil {
 		t.Fatalf("nil-Zeiger abgewiesen: %v", err)
 	}
-	if err := Validate.Struct(DefektRequest{LoanID: &[]string{"x"}[0]}); err == nil {
-		t.Fatal("„x“ als loan_id durchgelassen")
+	if err := Validate.Struct(ActionRequest{Query: "B-1", ActiveLeserID: &[]string{"x"}[0]}); err == nil {
+		t.Fatal("„x“ als active_leser_id durchgelassen")
 	} else if msg := meldeValidierung(err).Error(); !strings.Contains(msg, "ungültige Kennung") {
 		t.Fatalf("Meldung %q nennt die Kennung nicht", msg)
 	}

@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"bibliothek/db"
-
-	"github.com/jackc/pgx/v5"
 )
 
 // SchadensArt ist die Fallgruppe einer Forderung — genau die beiden Kästchen des
@@ -30,7 +28,6 @@ func (a SchadensArt) Gueltig() bool {
 
 // DamageRepository defines operations for managing book damages and related loan actions.
 type DamageRepository interface {
-	MarkCopyDefekt(ctx context.Context, copyID string, loanID, schuelerID *string, benutzerID string, betrag float64, beschreibung string) (string, error)
 	ReportDamage(ctx context.Context, copyID, loanID, schuelerID string, benutzerID string, beschreibung string, art SchadensArt, betrag float64) (string, error)
 	// ListSchadensfaelleVonSchueler liefert alle Schadensfälle eines Schülers,
 	// neueste zuerst — die Gebühren-Sektion der Schülerakte.
@@ -92,93 +89,6 @@ func (r *pgDamageRepository) ListSchadensfaelleVonSchueler(ctx context.Context, 
 		faelle = append(faelle, f)
 	}
 	return faelle, rows.Err()
-}
-
-// MarkCopyDefekt marks a book copy as defective and records a damage entry.
-//
-// ACHTUNG, falls diese Tür je eine Oberfläche bekommt (heute hat sie keinen Aufrufer,
-// OFFEN.md 4.16): Für einen Kollegen darf KEINE Forderung entstehen — entschieden am
-// 16.09.2026, Begründung in schaden_melden.go. Anders als dort kommt die Person hier aus
-// dem Request, die Regel wäre also hier eigens zu ziehen.
-func (r *pgDamageRepository) MarkCopyDefekt(ctx context.Context, copyID string, loanID, schuelerID *string, benutzerID string, betrag float64, beschreibung string) (string, error) {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return "", err
-	}
-	defer db.SafeRollback(ctx, tx)
-
-	// Doppelklick-/Doppelrequest-Schutz analog ReportDamage: Wir sperren zuerst die
-	// Exemplar-Zeile (FOR UPDATE). Zwei parallel abgeschickte "Defekt speichern"-Klicks
-	// laufen damit serialisiert; der zweite sieht den vom ersten bereits angelegten
-	// Schadensfall und gibt ihn idempotent zurück, statt den Betrag doppelt zu buchen.
-	// Der Lock ersetzt zugleich die frühere RowsAffected-Existenzprüfung.
-	var vorhanden bool
-	if err := tx.QueryRow(ctx,
-		`SELECT true FROM buecher_exemplare WHERE id = $1 FOR UPDATE`, copyID,
-	).Scan(&vorhanden); err != nil {
-		return "", err // pgx.ErrNoRows: Exemplar existiert nicht
-	}
-
-	// Idempotenz-Schlüssel: bei zugeordneter Ausleihe die ausleihe_id (ein Schaden je
-	// Ausleihe, exakt wie ReportDamage); sonst der bereits offene, nicht stornierte
-	// Exemplarschaden ohne Ausleihbezug. Ein neuer Schaden entsteht erst, wenn der alte
-	// bezahlt oder storniert ist.
-	var bestehenderSchaden string
-	var lookupErr error
-	if loanID != nil && *loanID != "" {
-		lookupErr = tx.QueryRow(ctx,
-			`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
-			*loanID,
-		).Scan(&bestehenderSchaden)
-	} else {
-		lookupErr = tx.QueryRow(ctx,
-			`SELECT id FROM schadensfaelle
-			 WHERE exemplar_id = $1 AND ausleihe_id IS NULL AND storniert_am IS NULL AND ist_bezahlt = false
-			 LIMIT 1`,
-			copyID,
-		).Scan(&bestehenderSchaden)
-	}
-	if lookupErr == nil {
-		return bestehenderSchaden, nil // bereits gebucht — nichts doppelt anlegen
-	}
-	if !errors.Is(lookupErr, pgx.ErrNoRows) {
-		return "", lookupErr
-	}
-
-	if _, err := tx.Exec(ctx, `
-		UPDATE buecher_exemplare
-		SET ist_ausleihbar = false,
-		    zustand_notiz = $1,
-		    aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $2
-	`, beschreibung, copyID); err != nil {
-		return "", err
-	}
-
-	var schadensID string
-	if schuelerID != nil && *schuelerID != "" {
-		err = tx.QueryRow(ctx, `
-			INSERT INTO schadensfaelle
-			    (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id
-		`, copyID, loanID, schuelerID, beschreibung, betrag).Scan(&schadensID)
-	} else {
-		err = tx.QueryRow(ctx, `
-			INSERT INTO schadensfaelle
-			    (exemplar_id, ausleihe_id, benutzer_id, beschreibung, betrag)
-			VALUES ($1, $2, $3, $4, $5)
-			RETURNING id
-		`, copyID, loanID, benutzerID, beschreibung, betrag).Scan(&schadensID)
-	}
-	if err != nil {
-		return "", err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return "", err
-	}
-	return schadensID, nil
 }
 
 // ErrExemplarNeuVerliehen signalisiert, dass das zu meldende Exemplar zwischenzeitlich

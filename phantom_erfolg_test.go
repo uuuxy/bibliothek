@@ -124,7 +124,6 @@ var phantomBestand = map[string]int{
 	// (jede Tabelle wandert) misst TestZusammenfuehren_JedeTabelleWandert am Postgres.
 	"repository/schueler_zusammenfuehren.go:verschiebeVorgaenge": 1,
 	"repository/book_inventory.go:BulkUpsertBookTitles":          1,
-	"repository/damage.go:MarkCopyDefekt":                        1,
 	// Seit 15.09.2026 heißt der Rumpf meldeSchaden (Transaktion des Aufrufers, damit
 	// der Bescheid Verlust und Brief in EINER Transaktion bucht); ReportDamage ist nur
 	// noch die Hülle. Die drei Tags sind dieselben wie vorher (Exemplar aussondern,

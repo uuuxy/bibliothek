@@ -627,12 +627,14 @@ Freitext dabei fallen?
 
 ### 4.16 Routen ohne Aufrufer
 
-Laut API-Inventar (`docs/api_inventar.md`, erzeugt am 13.09.2026) ruft weder das Frontend noch ein
-Skript im Repo diese Routen auf: `PUT /api/books/{id}/cover`, `POST /api/books/{id}/refresh-cover`,
-`POST /api/buecher/exemplare/{id}/schadensnotiz`, `POST /api/buecher/exemplare/{id}/aussondern`
-und `POST /api/buecher/exemplare/{id}/defekt` (dahinter `MarkCopyDefekt`, siehe 5.1). Ein Grep
-schließt Aufrufer außerhalb des Repos nicht aus. **Frage:** je Route streichen oder in der
+Laut API-Inventar (`docs/api_inventar.md`) ruft weder das Frontend noch ein Skript im Repo diese
+Routen auf: `PUT /api/books/{id}/cover`, `POST /api/books/{id}/refresh-cover`,
+`POST /api/buecher/exemplare/{id}/schadensnotiz` und `POST /api/buecher/exemplare/{id}/aussondern`.
+Ein Grep schließt Aufrufer außerhalb des Repos nicht aus. **Frage:** je Route streichen oder in der
 Oberfläche anbieten?
+
+`POST /api/buecher/exemplare/{id}/defekt` ist am 16.09.2026 gestrichen — sie war zur Hälfte kaputt
+(Zweig ohne Schüler in eine Spalte, die Migration 125 entfernt hat), nicht bloß ungenutzt.
 
 ### 4.17 Echte Schülerdaten auf dem Hetzner-Server?
 
@@ -647,12 +649,6 @@ angleichen. Bezug: 8.5 (B5, B6).
 
 ### 5.1 Schäden und Benutzer
 
-- `MarkCopyDefekt` (`repository/damage.go`) schreibt in `schadensfaelle.benutzer_id` — eine
-  Spalte, die Migration 125 entfernt hat (mit ihr die Bedingung `check_damage_responsible`).
-  Der Zweig ohne Schüler läuft damit in einen SQL-Fehler, nicht mehr nur in die falsche
-  Zuordnung. Aufgefallen beim Nachprüfen am 16.09.2026. Die Route dazu
-  (`POST /api/buecher/exemplare/{id}/defekt`) hat keinen Aufrufer (4.16). **Schritt:** Route,
-  Handler und Funktion streichen; ein Weg, der nur noch 500 kann, ist keine Tür.
 - Der Idempotenz-Schlüssel einer Bestellung überlebt eine Änderung des Warenkorbs
   (`orderStore.svelte.js`, `api/order_service.go`). Ging die Antwort verloren, wird der geänderte
   Warenkorb still zur alten Bestellung. Nahe A. **Schritt:** Schlüssel bei jeder Änderung neu

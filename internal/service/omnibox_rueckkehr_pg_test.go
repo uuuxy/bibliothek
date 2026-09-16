@@ -199,8 +199,25 @@ func TestRueckkehrEinesAbgerechnetenBuches(t *testing.T) {
 		VALUES ($1, $2, true, 20.00) RETURNING id`, titelID, barcodeDefekt).Scan(&defektID); err != nil {
 		t.Fatalf("Exemplar anlegen: %v", err)
 	}
-	if _, err := damageRepo.MarkCopyDefekt(ctx, defektID, nil, &schuelerID, mitarbeiterID, 7.50, "Wasserschaden (Test)"); err != nil {
-		t.Fatalf("Defekt melden: %v", err)
+	// Der Schaden entsteht auf dem einzigen Weg, den es dafür gibt: Ausleihe, dann
+	// „Verlust/Schaden melden" aus der Schülerakte mit der Art „beschädigt". Bis zum
+	// 16.09.2026 stand hier MarkCopyDefekt — eine Tür ohne Aufrufer, die mit
+	// Migration 125 zur Hälfte in einen SQL-Fehler lief und deshalb entfernt ist.
+	exDefekt, err := bookRepo.GetCopyByBarcode(ctx, barcodeDefekt)
+	if err != nil {
+		t.Fatalf("Exemplar lesen: %v", err)
+	}
+	if _, err := loanSvc.HandleUnifiedCheckout(ctx, exDefekt, &schuelerID, mitarbeiterID, true); err != nil {
+		t.Fatalf("Ausleihe: %v", err)
+	}
+	var defektLoanID string
+	if err := pool.QueryRow(ctx,
+		`SELECT id FROM ausleihen WHERE exemplar_id = $1 AND rueckgabe_am IS NULL`, defektID).Scan(&defektLoanID); err != nil {
+		t.Fatalf("Ausleihe lesen: %v", err)
+	}
+	if _, err := damageRepo.ReportDamage(ctx, defektID, defektLoanID, schuelerID, mitarbeiterID,
+		"Wasserschaden (Test)", repository.SchadensArtBeschaedigt, 7.50); err != nil {
+		t.Fatalf("Schaden melden: %v", err)
 	}
 	if _, err := svc.ProcessQuery(ctx, OmniboxQuery{Query: barcodeDefekt, StaffID: mitarbeiterID, StaffRole: "mitarbeiter"}); err != nil {
 		t.Fatalf("Scan des defekten Buches: %v", err)

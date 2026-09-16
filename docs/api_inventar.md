@@ -1,21 +1,15 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-09-15. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-09-16. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `GET /api/action/buchbarcodes`
-- `GET /api/action/nachbuch-meldungen`
-- `GET /api/action/nachbuch-meldungen/anzahl`
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
 - `GET /api/schadensfaelle/{id}/pdf`
-- `POST /api/action/nachbuch-meldungen/{id}/quittieren`
-- `POST /api/action/nachbuchen`
 - `POST /api/books/{id}/refresh-cover`
 - `POST /api/buecher/exemplare/{id}/aussondern`
-- `POST /api/buecher/exemplare/{id}/defekt`
 - `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/public/bestellung/{token}/bestaetigen`
@@ -29,7 +23,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (211)
+## Alle registrierten Routen (210)
 
 - `/`
 - `/api/admin`
@@ -185,7 +179,6 @@
 - `POST /api/buecher/aus-isbn`
 - `POST /api/buecher/exemplare/verlust-endgueltig-loeschen`
 - `POST /api/buecher/exemplare/{id}/aussondern`
-- `POST /api/buecher/exemplare/{id}/defekt`
 - `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/damage/report`
