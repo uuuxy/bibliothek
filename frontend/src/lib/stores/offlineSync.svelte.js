@@ -8,79 +8,160 @@ import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
 
-// Baut das Batch-Payload. Eine Ausleihe trägt ihre Person als active_leser_id, eine
-// Rückgabe trägt keine Person. Bis Migration 125 waren es zwei Felder, und welches gesetzt
-// wurde, entschied, in welche Spalte der Server buchte.
-/** @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems */
-function baueBatchPayload(batchItems) {
-	return batchItems.map((item) => {
-		/** @type {{ query: string, idempotency_key: string, active_leser_id?: string }} */
-		const req = {
-			query: item.barcode,
-			idempotency_key: item.id
-		};
-		if (item.art === 'ausleihe' && item.leser_id) {
-			req.active_leser_id = item.leser_id;
-		}
-		return req;
-	});
+// Baut die Portion fuer die Nachbuch-Tuer (POST /api/action/nachbuchen).
+//
+// Bis zum 16.09.2026 ging der Sync an /api/action/batch — die Tuer, die laut Entscheidung
+// vom 13.09. nur noch "eine Version laenger" fuer Theken-Tabs mit altem Stand bestehen
+// bleibt. Die Nachbuch-Tuer war gebaut, geroutet und getestet, und niemand rief sie auf.
+// Sie ist die richtige, weil sie Dinge kann, die der Stapel nicht kann: den
+// Scan-Zeitpunkt buchen, einen Schluessel genau einmal buchen, einen offline gescannten
+// Ausweis aufloesen und jede Abweichung als Meldung festhalten.
+//
+// DIE UHR (Vorgabe aus dem Plan, Stufe 3 Commit 14): `gescannt_am` und `gesendet_am`
+// muessen von DERSELBEN Uhr kommen, sonst rechnet der Server den Versatz falsch. Genau das
+// ist hier kein Randfall: Die Uhr eines Theken-Rechners wird oft in dem Moment korrigiert,
+// in dem das Netz zurueckkommt — also zwischen Scan und Versand.
+//
+// Deshalb wird der Scan-Zeitpunkt neu bestimmt, wenn der Eintrag aus DIESEM Seitenaufruf
+// stammt: `performance.now()` laeuft gleichmaessig weiter und springt nicht. Aus dem
+// Abstand seit dem Scan und der Wanduhr von JETZT ergibt sich ein Scan-Zeitpunkt, der zu
+// `gesendet_am` passt, auch wenn die Wanduhr dazwischen gesprungen ist. Stammt der Eintrag
+// aus einem frueheren Seitenaufruf (Neuladen, eingespielte Sicherung), gilt der
+// gespeicherte Wert — dort gibt es nichts Besseres.
+/**
+ * @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems
+ * @returns {{ gesendet_am: string, eintraege: any[] }}
+ */
+function baueNachbuchPayload(batchItems) {
+	const jetzt = Date.now();
+	const mono = typeof performance !== 'undefined' ? Math.round(performance.now()) : null;
+	const ursprung =
+		typeof performance !== 'undefined' ? Math.round(performance.timeOrigin ?? 0) : null;
+
+	return {
+		gesendet_am: new Date(jetzt).toISOString(),
+		eintraege: batchItems.map((item) => {
+			let gescannt = item.gescannt_am;
+			if (mono !== null && item.ursprung === ursprung && typeof item.mono === 'number') {
+				gescannt = jetzt - (mono - item.mono);
+			}
+			/** @type {any} */
+			const e = {
+				schluessel: item.id,
+				absicht: item.art,
+				barcode: item.barcode,
+				gescannt_am: new Date(gescannt).toISOString()
+			};
+			// Eine Ausleihe traegt ihre Person, eine Rueckgabe nicht — der Server findet
+			// den Vorbesitzer selbst. `ausweis_barcode` kennt die Tuer bereits; gefuellt
+			// wird es, sobald die Theke Ausweise offline annimmt.
+			if (item.art === 'ausleihe' && item.leser_id) e.leser_id = item.leser_id;
+			if (item.ausweis_barcode) e.ausweis_barcode = item.ausweis_barcode;
+			return e;
+		})
+	};
 }
+
+// Endgueltige Ergebnisse: Der Eintrag ist erledigt und fliegt aus der Warteschlange.
+// „wiederholen" ist das einzige, das NICHT endgueltig ist (Server nicht erreichbar, oder
+// der Schluessel wird gerade gebucht) — dort endet die Runde.
+const NACHBUCH_ENDGUELTIG = new Set([
+	'ausgeliehen',
+	'umgebucht',
+	'bereits_ausgeliehen',
+	'zurueckgegeben',
+	'nur_reaktiviert',
+	'nicht_gebucht',
+	'veraltet',
+	'bereits_gebucht'
+]);
 
 /** @type {Record<string, string>} */
 const TYPNAME = { ausleihe: 'Ausleihe', rueckgabe: 'Rückgabe' };
 /** @param {string | undefined} typ */
 const nenne = (typ) => TYPNAME[typ ?? ''] ?? (typ ? `„${typ}“` : 'nichts');
 
-// Erledigt ist nur, was der Server WIE GESCANNT gebucht hat (OFFEN.md 2.2, Commit 6).
-// Gibt zurück, was der Bediener prüfen muss, und ob die Runde weitergehen darf.
+// Erledigt ist nur, was der Server wirklich entschieden hat.
 //
-// - Erfolg mit passendem Typ: still ausgebucht.
-// - Erfolg mit anderem Typ (Ausleihe gescannt, Rückgabe gebucht — das Buch war schon bei
-//   diesem Kind): ausgebucht UND gemeldet, mit Barcode und beiden Typen. Blockiert nicht;
-//   das kommt erst mit der Nachbuch-Tür in Stufe 3, die den Fall benennen kann.
-// - 4xx außer 429: ausgebucht und gemeldet. Der Server hat fachlich entschieden (Buch nicht
-//   gefunden, Schüler gesperrt). Bis zum Rasterdurchgang am 06.09.2026 erfuhr das niemand:
-//   Eine Klasse gibt 18 Bücher offline zurück, vier werden abgelehnt, und die Ausleihen
-//   laufen ins Mahnwesen bis zur Rechnung an die Eltern.
-// - 5xx, 429 und ein Index, den der Server nicht beantwortet hat (Schweigen ist kein
-//   Erfolg): bleibt liegen, die Runde endet. Bis zum 15.09.2026 galt „kein Ergebnis" als
-//   erledigt, und ein liegengebliebener Eintrag wurde ohne Pause sofort erneut gesendet.
+// Die Nachbuch-Tuer antwortet je Schluessel mit einem von neun Woertern. Acht davon sind
+// endgueltig — gebucht, umgebucht, schon dagewesen, abgelehnt: In allen Faellen hat der
+// Server den Fall abschliessend behandelt, und der Eintrag gehoert aus der Warteschlange.
+// Das neunte, „wiederholen", heisst ausdruecklich das Gegenteil: Der Server war nicht
+// erreichbar, oder derselbe Schluessel wird gerade gebucht. Dann bleibt der Eintrag liegen
+// und die Runde endet, statt gegen dieselbe Wand zu laufen.
+//
+// Ein Schluessel, den der Server GAR NICHT beantwortet hat, bleibt ebenfalls liegen.
+// Schweigen ist kein Erfolg — bis zum 15.09.2026 galt es als erledigt.
+//
+// Gemeldet wird, was ein Mensch wissen muss:
+//   - `nicht_gebucht` und `veraltet` tragen ihren Grund; ohne die Meldung erfaehrt niemand,
+//     dass vier von achtzehn Rueckgaben abgelehnt wurden, und die Ausleihen laufen ins
+//     Mahnwesen bis zur Rechnung an die Eltern (Rasterdurchgang 06.09.2026).
+//   - `umgebucht` heisst: Das Buch lag bei jemand anderem, wurde dort zurueckgenommen und
+//     neu ausgeliehen. Ein Buch hat die Person gewechselt — das gehoert gesagt, auch wenn
+//     der Server es zusaetzlich in seiner Meldungsliste festhaelt.
+//   - Weicht die gebuchte Wirkung von der Absicht des Scans ab (als Ausleihe gescannt,
+//     als Rueckgabe gebucht), wird das gemeldet. Derselbe Typvergleich wie bisher, und er
+//     gilt auch fuer `bereits_gebucht`: Das ist die Wirkung des Online-Versands, der
+//     damals durchkam, ohne dass die Theke die Antwort noch sah.
+//   - `aufsicht_informieren` ist keine Meldung, sondern eine Aufgabe: Das Buch stand auf
+//     einem Bescheid, der schon bei der Schulaufsicht liegt.
 /**
  * @param {any} data
  * @param {import('../offlineQueue.js').OfflineEintrag[]} batchItems
  * @returns {Promise<{ pruefen: { barcode: string, meldung: string }[], weiter: boolean }>}
  */
-async function verarbeiteBatchErgebnisse(data, batchItems) {
+async function verarbeiteNachbuchErgebnisse(data, batchItems) {
 	/** @type {{ barcode: string, meldung: string }[]} */
 	const pruefen = [];
 	let weiter = true;
-	for (let i = 0; i < batchItems.length; i++) {
-		const item = batchItems[i];
-		const result = data.results?.find((/** @type {any} */ r) => r.index === i);
-		if (!result) {
+
+	const versatz = Number(data?.uhr_versatz_sekunden ?? 0);
+	if (Math.abs(versatz) > 60) {
+		// Kein Abbruch: Der Server rechnet den Versatz selbst heraus. Die Zeile sagt nur,
+		// dass die Uhr dieses Rechners deutlich falsch geht — das gehoert in die Wartung.
+		console.warn(`Offline-Sync: Uhr dieses Rechners weicht um ${versatz} s ab.`);
+	}
+
+	// Nachschlagewerk als schlichtes Objekt, nicht als Map: In einer `.svelte.js` ist eine
+	// gewoehnliche Map verboten (svelte/prefer-svelte-reactivity), und reaktiv muss hier
+	// nichts sein — das Ding lebt nur fuer die Dauer dieser Auswertung.
+	/** @type {Record<string, any>} */
+	const nachSchluessel = Object.create(null);
+	for (const e of data?.ergebnisse ?? []) if (e?.schluessel) nachSchluessel[e.schluessel] = e;
+
+	for (const item of batchItems) {
+		const erg = nachSchluessel[item.id];
+		if (!erg || !NACHBUCH_ENDGUELTIG.has(erg.ergebnis)) {
 			weiter = false;
 			continue;
 		}
-		if (result.success) {
-			const gebucht = result.data?.type;
-			if (gebucht !== item.art) {
+
+		if (erg.ergebnis === 'nicht_gebucht' || erg.ergebnis === 'veraltet') {
+			pruefen.push({
+				barcode: item.barcode,
+				meldung: erg.grund ? `nicht gebucht (${erg.grund})` : 'nicht gebucht'
+			});
+		} else if (erg.ergebnis === 'umgebucht') {
+			pruefen.push({
+				barcode: item.barcode,
+				meldung: 'lag bei jemand anderem — dort zurückgenommen und neu ausgeliehen'
+			});
+		} else {
+			const gebucht = erg.daten?.type;
+			if (gebucht && gebucht !== item.art) {
 				pruefen.push({
 					barcode: item.barcode,
 					meldung: `als ${nenne(item.art)} gescannt, der Server buchte ${nenne(gebucht)}`
 				});
 			}
-			await dequeueOfflineAction(item.id);
-			continue;
 		}
-		if (result.status >= 400 && result.status < 500 && result.status !== 429) {
-			pruefen.push({
-				barcode: item.barcode,
-				meldung: `nicht angenommen${result.error ? ` (${result.error})` : ''}`
-			});
-			await dequeueOfflineAction(item.id);
-			continue;
+
+		if (erg.aufsicht_informieren) {
+			pruefen.push({ barcode: item.barcode, meldung: erg.aufsicht_informieren });
 		}
-		weiter = false;
+
+		await dequeueOfflineAction(item.id);
 	}
 	return { pruefen, weiter };
 }
@@ -134,7 +215,7 @@ function createOfflineSyncStore() {
 	// Sync abbrechen soll (kompletter Batch-Fehler wie 502, oder Netzwerkfehler).
 	async function sendeBatch(payload, batchItems, queueLength) {
 		try {
-			const res = await apiClient.post('/api/action/batch', payload);
+			const res = await apiClient.post('/api/action/nachbuchen', payload);
 
 			if (!res.ok) {
 				// Batch request failed completely (e.g. 502 Bad Gateway), stop syncing
@@ -142,7 +223,7 @@ function createOfflineSyncStore() {
 			}
 
 			const data = await res.json();
-			const { pruefen, weiter } = await verarbeiteBatchErgebnisse(data, batchItems);
+			const { pruefen, weiter } = await verarbeiteNachbuchErgebnisse(data, batchItems);
 			meldeZuPruefende(pruefen);
 			await updateCount();
 			if (!weiter) return false;
@@ -185,8 +266,12 @@ function createOfflineSyncStore() {
 			if (q.length === 0) break;
 
 			// loadQueue liefert nach Scan-Zeitpunkt geordnet.
-			const batchItems = q.slice(0, 50);
-			const payload = baueBatchPayload(batchItems);
+			//
+			// Portion 25 (Vorgabe des Plans): Die Tuer nimmt bis zu 50, aber jede Portion
+			// laeuft in EINER Transaktion je Eintrag, und eine kleinere Portion laesst nach
+			// einem Abbruch weniger erneut laufen.
+			const batchItems = q.slice(0, 25);
+			const payload = baueNachbuchPayload(batchItems);
 
 			const ok = await sendeBatch(payload, batchItems, q.length);
 			if (!ok) break;
@@ -204,7 +289,7 @@ function createOfflineSyncStore() {
 	 * schiebt sie danach zum Server.
 	 *
 	 * item.id MUSS mitwandern: Diese ID ist der Idempotenz-Schlüssel, den der Server
-	 * kennt (siehe baueBatchPayload und idempotency_keys in api/action.go). Ohne sie
+	 * kennt (siehe baueNachbuchPayload und api/nachbuchen_schluessel.go). Ohne sie
 	 * vergibt normalisiereEintrag eine frische UUID — und dieselbe Datei zweimal
 	 * eingespielt würde jede Aktion ZWEIMAL ausführen. Bei zehn Kiosk-Rechnern mit
 	 * einem gemeinsamen Sicherungsordner ist doppeltes Einspielen der Normalfall,

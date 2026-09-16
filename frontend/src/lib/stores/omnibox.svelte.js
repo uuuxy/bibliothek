@@ -408,12 +408,19 @@ export function createOmniboxStore() {
 	 * @returns {import('../offlineQueue.js').OfflineEintrag}
 	 */
 	function schnappschuss(q, idempotencyKey, absicht) {
+		// Uhr-Anker neben dem Zeitstempel: `performance.now()` laeuft gleichmaessig und
+		// springt nicht, die Wanduhr schon — und zwar gern genau dann, wenn das Netz
+		// zurueckkommt, also zwischen Scan und Versand. Der Sync rechnet daraus den
+		// Scan-Zeitpunkt neu, solange der Eintrag aus demselben Seitenaufruf stammt
+		// (offlineQueue.js, OfflineEintrag).
 		return {
 			id: idempotencyKey,
 			art: absicht ?? (activeStudent?.id ? 'ausleihe' : 'rueckgabe'),
 			barcode: q,
 			leser_id: activeStudent?.id ?? null,
-			gescannt_am: Date.now()
+			gescannt_am: Date.now(),
+			mono: Math.round(performance.now()),
+			ursprung: Math.round(performance.timeOrigin ?? 0)
 		};
 	}
 

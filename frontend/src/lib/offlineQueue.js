@@ -45,8 +45,24 @@ async function getDB() {
  *   art: 'ausleihe' | 'rueckgabe',
  *   barcode: string,
  *   leser_id: string | null,
- *   gescannt_am: number
+ *   gescannt_am: number,
+ *   ausweis_barcode?: string,
+ *   mono?: number,
+ *   ursprung?: number
  * }} OfflineEintrag
+ *
+ * Die drei optionalen Felder, und warum sie optional BLEIBEN muessen:
+ *
+ * `ausweis_barcode` traegt einen ohne Netz gescannten Ausweis, den erst der Server
+ * aufloesen kann (die Nachbuch-Tuer kennt das Feld). Ein Eintrag ohne ihn ist der
+ * Normalfall: Die Person war beim Scan schon geladen und steht in `leser_id`.
+ *
+ * `mono` und `ursprung` sind der Uhr-Anker: `performance.now()` beim Scan und der
+ * Zeitursprung des Seitenaufrufs. Aus ihnen bestimmt der Sync den Scan-Zeitpunkt neu,
+ * wenn der Eintrag aus DEMSELBEN Seitenaufruf stammt — die Wanduhr eines Theken-Rechners
+ * wird gern in dem Moment korrigiert, in dem das Netz zurueckkommt, also zwischen Scan
+ * und Versand. Fehlen sie (Eintrag aus einem frueheren Seitenaufruf, eingespielte
+ * Sicherung, Format 1), gilt `gescannt_am` unveraendert — dort gibt es nichts Besseres.
  */
 
 /**
@@ -66,13 +82,24 @@ export function normalisiereEintrag(roh) {
 				? 'rueckgabe'
 				: undefined);
 	if (!barcode || (art !== 'ausleihe' && art !== 'rueckgabe')) return null;
-	return {
+	/** @type {OfflineEintrag} */
+	const eintrag = {
 		id: roh.id || crypto.randomUUID(),
 		art,
 		barcode: String(barcode),
 		leser_id: roh.leser_id ?? roh.schueler_id ?? null,
 		gescannt_am: Number(roh.gescannt_am ?? roh.timestamp ?? Date.now())
 	};
+	// Nur uebernehmen, was wirklich dasteht: Ein `undefined` in IndexedDB waere ein Feld,
+	// das es gibt und das nichts bedeutet.
+	if (typeof roh.ausweis_barcode === 'string' && roh.ausweis_barcode !== '') {
+		eintrag.ausweis_barcode = roh.ausweis_barcode;
+	}
+	if (Number.isFinite(roh.mono) && Number.isFinite(roh.ursprung)) {
+		eintrag.mono = Number(roh.mono);
+		eintrag.ursprung = Number(roh.ursprung);
+	}
+	return eintrag;
 }
 
 /**
