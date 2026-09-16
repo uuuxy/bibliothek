@@ -25,16 +25,16 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    kappen, an der Theke drei, vier Bücher scannen, Netz wieder an, nachsehen, ob alle Buchungen
    angekommen sind und ob die Theke sagt, was sie nicht annehmen konnte. Das ist der Nachweis
    für Stufe 1. Den Nachweis für Stufe 2 (Anfragen direkt an den Server) führe ich selbst.
-3. **Peter, vier kurze Antworten** (Abschnitt 5.16, am Ende): Wie lange darf ein Kollege
-   ein Buch behalten? Soll seine Ausleihhistorie nach einer Frist gelöscht werden? Soll er
-   gemahnt werden? Ich habe überall gelassen, wie es war — ein Jahr, nein, nein. Dazu die
-   vierte aus dem Rasterdurchgang (5.17): Soll ein Kollege für ein verlorenes Buch zahlen?
-   Heute entsteht die Forderung, steht aber in keiner Übersicht.
-4. **Peter, 15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16). Sie ist
+3. **Peter, vier kurze Antworten** (Abschnitt 5.16 B): Wie lange darf ein Kollege ein Buch
+   behalten? Soll seine Ausleihhistorie nach einer Frist gelöscht werden? Soll er gemahnt
+   werden? Soll er für ein verlorenes Buch zahlen? Ich habe überall gelassen, wie es war —
+   ein Jahr, nein, nein; und die Forderung entsteht heute, steht aber in keiner Übersicht.
+4. **Peter, 15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16 A). Sie ist
    fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
    einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
-   den Namen, und „Neuer Leser“ fragt zuerst, wer das ist. Sieh dir an, ob die Wörter
-   stimmen und ob dir etwas fehlt. Was ein Kollege bewusst NICHT hat, steht in 5.16.
+   den Namen, und „Neuer Leser“ fragt zuerst, wer das ist. Beim Ausweisdruck steht auf der
+   Karte einer Lehrkraft seit dem 16.09. „Lehrerausweis“ statt „Schülerausweis“. Sieh dir
+   an, ob die Wörter stimmen und ob dir etwas fehlt.
 5. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -42,10 +42,6 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    ohne Grenze, Kassenjahr) — vorher braucht sie niemand.
 7. **Liegt bei anderen (Abschnitt 8):** Anfragen an Schule, Schulamt und Schulträger. Hier ist
    nichts zu tun außer nachzufragen, wenn nichts kommt.
-
-Ein Punkt daneben, der niemanden aufhält, aber nicht liegen bleiben darf: Ein heute
-geschriebener Test über den LUSD-Import ist nicht in Git (5.17, Fund 1) — er müsste committet
-werden, sobald klar ist, wer an ihm arbeitet.
 
 Alles andere in dieser Datei — die B-Punkte in Abschnitt 5, die Beobachtungen in 6, die
 Betriebspunkte in 7 — schadet niemandem, wenn es liegen bleibt, und wird gebündelt erledigt,
@@ -82,8 +78,10 @@ jemandem schaden?"**
 1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
    am Stack (2.3), dann Peters Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** entscheidet
    Peter dabei mit).
-2. **5.16** Leserdatei und Rolle Leitung: gebaut. Offen sind nur noch Peters Blick auf den
-   Stand und seine drei Antworten zum Betrieb (Frist, Historie, Mahnung).
+2. **5.16** Leserdatei und Rolle Leitung: gebaut. Offen sind Peters Blick auf den Stand,
+   seine vier Antworten zum Betrieb (Frist, Historie, Mahnung, Schadensersatz) und zwei
+   Punkte, die daran hängen: das Löschen eines Kollegen samt Konto (5.16 C) und das Finden
+   von Altbeständen ohne Adresse (5.16 D).
 3. **5.1** Schäden und Benutzer.
 4. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -619,16 +617,15 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - LUSD: Zwei Zeilen mit gleichem Namen und Geburtsdatum, aber verschiedenen Klassen werden still
   zu einer Person; die Meldung „mehrdeutig" fehlt (dokumentierte Grenze). Vor der LUSD-Abnahme als
   Hinweis in der Vorschau.
-- **Personen zwischen Schülern und Kollegium umtragen (Peter, 15.09.2026: selten, später).** Wer
-  in der falschen Liste steht oder vom Schüler zur Lehrkraft wird, zieht mit Ausleihen, Schäden und
-  Ausweisnummer um (wie Migration 072), kein reines Auswahlfeld: Ein Kollegiumsmitglied in der
-  Schülertabelle gälte beim LUSD-Abgleich als Abgänger. Vorhanden: eine Ausweisnummer je Person
-  über beide Tabellen (Migration 118) und die Personenart Lehrkraft/LiV im Kollegium (Migration
-  119, nur in der Benutzerverwaltung sichtbar). Der Littera-Lauf übergeht weiter Praktikanten,
-  Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
-- **Leserdatei und Rolle Leitung:** entschieden am 15.09.2026 spät, der Plan in Stufen steht in
-  **5.16** und wartet auf Peters Freigabe. Kollegium bleibt unverändert: Selbstanmeldung über den
-  Portal-Link, vormerken, Fehler melden, Bestand ansehen, kein Ausleihen im Portal.
+- **Ein Schüler wird Lehrkraft (oder umgekehrt) — weiter nicht möglich, und das ist Absicht.**
+  Seit Migration 123 stehen alle Leser in einer Tabelle, die Art lässt sich aber nur zwischen
+  Lehrkraft und LiV umstellen. Über die Schüler-Grenze verbietet es die Datenbank
+  (`chk_leser_nur_schueler_werden_abgaenger`), weil ein Schüler aus der LUSD kommt und dort
+  wieder auftauchen würde. Der Fall ist selten (ein ehemaliger Schüler kommt als LiV zurück);
+  heute legt man dafür einen zweiten Leser an. Wenn er öfter vorkommt, ist es ein eigener,
+  kleiner Umzugspfad wie Migration 072 — kein Auswahlfeld.
+  Der Littera-Lauf übergeht weiter Praktikanten, Sekretariat und „Im Ausland"
+  (`internal/littera/leser.go`).
 
 ### 5.7 Bestellwesen
 
@@ -856,369 +853,82 @@ Meldung je Schlüssel · ein Serverfehler je Eintrag wird „wiederholen", nicht
 der Ausleihe fängt `check_return_date` · Sperrreihenfolge Schüler → Ausleihe → Exemplar im
 Nachbuchen gehalten · Barcode-Liste ohne Personendaten, Löschen ändert den Stand über die Anzahl.
 
-### 5.16 Leserdatei: Plan in Stufen (Stufen 1+2 erledigt, ab Stufe 3 neu gefasst am 16.09.2026)
+### 5.16 Leserdatei und Rolle Leitung — was noch offen ist (Stand 16.09.2026)
 
-Entschieden am 15.09.2026 spät (Peter): Die Rollen Admin, Leitung, Mitarbeiter und Helfer vergibt
-der Admin; Kollegium bleibt das Portal. Wer eine Rolle hat, leiht an der Theke selbst aus, Helfer
-nicht. Die Leserdatei ersetzt die Schülerdatei; Schüler / Lehrkraft / LiV steht in „Persönliche
-Daten" und entscheidet nichts. Ersetzt die Entscheidung „Rollennamen bleiben" vom selben Abend.
+Gebaut ist alles: die Lesertabelle, die Rolle Leitung, Theke und Leserdatei, eine Maske für
+jeden, die Pflicht-Schul-E-Mail und das Zusammenführen von Kollegen. Die Geschichte dazu
+steht in den Commit-Nachrichten vom 16.09.2026 (`git log --oneline --since=2026-09-15`).
+Hier steht nur noch, was NICHT fertig ist.
 
-Je Stufe: Rot-Test am alten Code, volle Suite mit Postgres, Nachweis am frisch gebauten Stack und
-im Browser, dann Peters Freigabe.
+**Das Modell in vier Sätzen** — es erklärt die offenen Punkte darunter:
 
-**Das Modell, wie Peter es am 16.09.2026 beschrieb — am Code belegt, es stimmt überein:**
+- Alle Leser stehen in EINER Tabelle `leser` mit der Spalte `art` (Schüler · Lehrkraft ·
+  LiV). Ausleihen darf jeder aktive Leser; die Art entscheidet nichts.
+- `schueler` ist seither eine Sicht auf `leser` mit `WHERE art = 'schueler'`. Sie hält die
+  alte Bedeutung für Klassenlisten, LUSD-Abgleich, Mahnlauf und Löschfristen.
+- Kollegium ist keine Rolle, sondern der Grundzustand. Eine Rolle (Leitung, Mitarbeiter,
+  Helfer, Admin) erhebt der Admin an der E-Mail-Adresse.
+- Konten bleiben daneben und tun nur, wofür sie da sind: Anmeldung und Rechte. Jedes Konto
+  zeigt auf seine Leserzeile.
 
-**Kollegium ist keine Rolle, sondern der Grundzustand.** Jede Lehrkraft meldet sich über „Mein
-Portal" mit ihrer Schuladresse selbst an; der Admin schaltet frei, und damit ist sie im Grunde
-niemand Besonderes — sie sieht den Bestand, merkt vor, meldet Fehler und leiht an der Theke auf
-ihren Namen. Das sind erst einmal alle. Eine Rolle bekommt nur, wen der Admin an seiner
-E-Mail-Adresse dazu erhebt: Leitung, Mitarbeiter, Helfer oder Admin — und dann genau die Rechte
-dieser Rolle. Schüler stehen in einer eigenen Tabelle und kommen aus der LUSD; zwischen den beiden
-Welten wechselt niemand.
+---
 
-Im Programm ist `kollegium` technisch ein Wert desselben Aufzählungstyps wie die Rollen
-(`auth/selbstanmeldung.go` legt ihn an, inaktiv). Das ist in Ordnung, darf aber in der Oberfläche
-nicht so aussehen: In der Rollenauswahl und im Rechte-Editor gehört Kollegium nicht neben Leitung
-und Mitarbeiter, sondern davor — als „keine Rolle", der Ausgangszustand jeder Lehrkraft.
+**A. Peter, 15 Minuten: einmal durch die Leserdatei gehen.** Sieh dir an, ob die Wörter
+stimmen und ob dir etwas fehlt. Was ein Kollege bewusst NICHT in seiner Akte hat, und warum:
 
-**Umgesetzt am 16.09.2026, nachdem Peter die Oberfläche angesehen hat.** Drei Befunde, alle drei
-behoben:
+- **Kontoauszug, Ersatzforderung, DSGVO-Auskunft** — sie gehören der Schülerarbeit und lesen
+  alle die Sicht `schueler`. Ausgeblendet statt kaputt.
+- **Löschen** — der Löschpfad schreibt gegen die Sicht und träfe null Zeilen. Siehe C.
 
-1. Im Rechte-Editor stand Kollegium als vierte Spalte neben Leitung, Mitarbeiter und Helfer. Sie
-   ist weg. Was das Kollegium darf, steht fest im Programm (`db/seed.go`): vormerken, den Bestand
-   ansehen, Fehler melden. Das ist eine Produktentscheidung und kein Schalter je Schule.
-2. In der Akte stand nirgends, ob jemand Schüler, Lehrkraft oder LiV ist — die Angabe gab es nur
-   in der Kollegen-Hälfte. Sie steht jetzt in jeder Akte und lässt sich zwischen Lehrkraft und
-   LiV ändern. Über die Schüler-Grenze geht sie nicht: Ein Schüler kommt aus der LUSD und bleibt
-   Schüler.
-3. An einem Kollegen liess sich keine Adresse nachtragen. Das lag nicht nur am fehlenden
-   Bearbeiten-Knopf: `schueler` ist seit Migration 123 eine SICHT auf `leser` mit
-   `WHERE art = 'schueler'`, und der Änderungspfad lief gegen sie — ein Kollege war dort nicht
-   zu finden, das UPDATE traf null Zeilen, die Antwort war 404. Der Pfad schreibt jetzt auf die
-   Tabelle; die Grenze zum Schüler hält der Handler mit einer Begründung statt mit einer 404.
-
-**Eine Maske für jeden (Peter, 16.09.2026).** Der erste Bau blendete die Felder je nach Art ein
-und aus — Peter: „warum eine andere maske als bei schülern? das ist doch schon wieder viel zu
-kompliziert." Zwingend war davon fast nichts. Jetzt stehen für jeden dieselben Felder an derselben
-Stelle; einem Kollegen sind nur drei davon verschlossen (sichtbar, aber nicht zu füllen):
-
-- **Klasse und Abgangsjahr** — „eine klasse muss ja keinem lehrer/liv zugeordnet werden". Das
-  Abgangsjahr leitet der Server aus der Klasse ab, beide gehören zusammen.
-- **LUSD-ID** — die Datenbank verbietet sie einem Nicht-Schüler
-  (`chk_leser_nur_schueler_werden_abgaenger`). Durch die LUSD kommen nur Schüler.
-- Dazu die **Art** über die Schüler-Grenze, in beide Richtungen.
-
-Geburtsdatum, Ausweisnummer, Postanschrift und Eltern-E-Mail stehen jedem offen und bleiben beim
-Kollegen einfach leer. Das Gate dazu misst die FORM, nicht die Werte:
-`frontend/src/lib/leserMaskeEineForm.test.js`.
-
-**Offen dazu — zwei Kleinigkeiten, die niemanden aufhalten:**
-
-**Eine Vorsilbe für Ausweise: `A-` (Peter, 16.09.2026).** Vorher gab es zwei, und beide
-behaupteten etwas über die Person: `S-` aus Handanlage und LUSD-Import, `L-` aus dem
-Littera-Personenlauf. Seit der Leserdatei ist das falsch — wer jemand ist, steht in den
-Stammdaten, nicht auf seinem Ausweis. Vergeben wird nur noch `A-`; der Scanner liest `S-` und
-`L-` weiter, weil es Nummern von früher gibt und Nummern nie recycelt werden.
-
-Die Vorsilbe BLEIBT, und der Grund ist wichtig genug, ihn festzuhalten: **Ohne Netz ist sie die
-einzige Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheiden kann.**
-Offline gibt es niemanden zu fragen (`frontend/src/lib/stores/omnibox.svelte.js` reiht nur `B-`
-ein). Littera braucht sie nicht, weil dort Nummer und Scanwert zwei verschiedene Felder sind und
-der Scanwert vom Kartenhersteller kommt (`FremdLeserNummer`) — dieses zweite Feld haben wir nicht.
-
-**Im selben Zug ein echter Fehler behoben:** `generateImportBarcode` baute Ausweisnummern aus
-`time.Now().Unix()%1000000` plus Zeilennummer. Der Zeitteil wiederholt sich alle **11,6 Tage**;
-zwei Läufe im richtigen Abstand und ähnlicher Größe erzeugen dieselben Nummern, und der eindeutige
-Index bricht dann den GESAMTEN Import ab. Dazu kannte der Generator die zweite Vergabestelle nicht
-— ein Nummernkreis, zwei Zähler, der Fehler aus Migration 068 eine Tabelle weiter. Beide ziehen
-jetzt aus `GetNextSequence` über `leser`, einmal je Lauf, mit Advisory-Lock.
-
-Der alte Test war grün und konnte es nicht sehen: Er prüfte die Eindeutigkeit INNERHALB eines
-Laufs, und die war nie das Problem. Das neue Gate steht an der echten Datenbank und über ZWEI
-Läufe: `api/lusd_ausweisnummern_pg_test.go`, mit Rot-Probe.
-
-**Nicht angefasst und mit Absicht offen:** der Nummernkreis selbst. Gemessen auf dem Testserver
-(16.09.2026): Exemplare 1…122.127 (30.658 nackte Littera-Nummern, 4.065 `LMF-`, 65 `B-`), Leser
-33 Zeilen, genau EINE Nummer wäre ohne Vorsilbe doppeldeutig. Aus `littera_sav.mdb` gemessen:
-Exemplare 1…61.512, Leser 0…3.531 — 1.990 von 1.991 Lesernummern sind dort zugleich
-Exemplarnummern. Littera lebt damit, weil seine Scanformen sich unterscheiden (13-stellige EAN
-gegen Herstellernummer). Ein gemeinsamer Nummernkreis ohne Vorsilben wäre möglich, brächte aber
-nichts, solange die Offline-Theke die Vorsilbe braucht.
-
-**Auch die AKTE hat jetzt eine Form (16.09.2026).** Sie hatte noch eine Weiche, das Formular
-schon nicht mehr — dadurch konnte ein Kollege ein Geburtsdatum eintragen, das seine Akte nicht
-anzeigte. `LeserPersoenlicheDaten.svelte` ist ersatzlos weg, eine Datei weniger; jeder Leser sieht
-dieselben Angaben an derselben Stelle. Die Ausweisnummer steht nur auf der Karte links, nicht
-zweimal. Dabei ist die zusammengelegte Ansicht ganz auf die **M3-Rollen** umgestellt worden
-(Peter: „bei allen dingen bitte an google material 3 design denken") — 0 Palettenklassen in der
-Datei, die Farb-Ratsche ist von 1724 auf 1704 gesunken.
-
-Unterschiedlich sind nur noch HANDLUNGEN, und zwar nicht aus Geschmack: Zusammenführen und
-Löschen schreiben gegen die Sicht `schueler` und träfen bei einem Kollegen null Zeilen. Solange
-das so ist, bleiben die Knöpfe bei ihm weg — ein Knopf, der nichts tut, ist schlimmer als keiner.
-Gate: `frontend/src/lib/leserAkte.test.js`.
-- **ERLEDIGT am 16.09.2026: Doppelte Leserzeile durch die Selbstanmeldung.** Peters Lösung: Beim
-  Anlegen einer Lehrkraft oder LiV ist die **Schul-E-Mail Pflicht**. Damit entsteht das Konto
-  sofort, und weil der Anmeldeweg eine Zugangsanfrage NUR anlegt, wenn zu der Adresse gar kein
-  Konto existiert, findet die spätere Selbstanmeldung genau diesen Eintrag. Es gibt kein zweites
-  Mal.
-
-  **Freigeschaltet** wird das Konto nur, wenn der Anlegende `manage_users` hat — sonst entsteht
-  eine Zugangsanfrage wie bei der Selbstanmeldung. So bekommt niemand über die Leserdatei ein
-  Recht, das ihm die Benutzerverwaltung verwehrt. Für einen Admin ist es ein Schritt statt zwei:
-  Angemeldet wird über IMAP, ein Passwort speichern wir nicht, die Person kann sofort hinein.
-
-  Nebenbei belegt und ausdrücklich als NICHT-Fehler festgehalten: Der Wächter
-  `trg_benutzer_hat_leserzeile` ist ein BEFORE INSERT und liefe bei einem verworfenen
-  `ON CONFLICT`-Insert ins Leere — seine Leserzeile bliebe als Waise stehen. Auf dem Anmeldeweg
-  passiert das nicht, weil `legeZugangsanfrageAn` nur im `pgx.ErrNoRows`-Zweig aufgerufen wird.
-  Gate dafür: `auth/selbstanmeldung_pg_test.go`.
-
-  Offen bleibt der Fall der **Altbestände**: Kollegen, die vor dieser Änderung ohne Adresse
-  angelegt wurden. Für sie warnt die Zeile über der Benutzertabelle bisher nur bei gleichnamigen
-  KONTEN aus Littera (`@littera.invalid`), nicht bei einer Leserzeile ohne Konto. Reparierbar
-  sind sie seit heute (Zusammenführen), gefunden werden sie noch nicht von allein.
-
-- **Nicht mehr aktuell, hier nur als Geschichte:** Ein Kollege,
-  der von Hand angelegt wurde („Neuer Leser" erzeugte eine Leserzeile OHNE Konto) und sich danach
-  selbst anmeldet, stand zweimal in der Leserdatei. `legeZugangsanfrageAn` schreibt das Konto
-  (`auth/selbstanmeldung.go`), und der Wächter `trg_benutzer_hat_leserzeile` legt dazu eine
-  FRISCHE Leserzeile an, ohne zu prüfen, ob die Person schon dasteht. Ergebnis: Ausweis und
-  Ausleihen am ersten Eintrag, die Anmeldung am zweiten. Der Name stammt aus dem Teil vor dem @
-  (`namenAusAdresse`), die Schreibweisen müssen also nicht einmal übereinstimmen.
-
-  Halb abgefangen: `UserManagementZugangsanfragen.svelte` nennt einen gleichnamigen Eintrag — aber
-  nur für aus Littera übernommene KONTEN (`@littera.invalid`). Ein von Hand angelegter Kollege
-  ohne Konto fällt durch. Zu klären, bevor viele Kollegen sich anmelden: entweder derselbe Hinweis
-  auch gegen Leserzeilen ohne Konto, oder die Freischaltung bietet das Zusammenführen an.
-
-  **Entschieden bleibt dabei (16.09.2026):** Die E-Mail eines Kollegen wird NICHT in
-  `leser.eltern_email` abgetippt. Die Spalte gehört dem LUSD-Import (Exportspalte
-  `erziehungsberechtigte_email`) und heisst auch in der DSGVO-Auskunft „Eltern-E-Mail". Die
-  Adresse eines Kollegen steht eindeutig am Konto (`benutzer.email`, UNIQUE lower(email)); eine
-  zweite Kopie ohne Eindeutigkeit und ohne Abgleich wäre die zweite Tür zu derselben Identität.
-  Wenn sie in der Akte sichtbar sein soll, dann gelesen vom Konto über `benutzer.leser_id` und
-  nicht änderbar.
-
-- **Zusammenführen kann jetzt auch Kollegen (16.09.2026, erledigt).** Es las und schrieb gegen
-  die Sicht `schueler`; ein doppelt stehender Kollege war deshalb von NIEMANDEM zu reparieren,
-  auch nicht vom Admin. Läuft jetzt auf `leser`. Das Recht ist unverändert (`merge_students`:
-  Admin und Leitung ab Werk, Mitarbeiter nur wenn freigeschaltet).
-
-  Dabei fiel ein Schutz weg, den die Sicht zufällig gestellt hatte: dass sich ein Kollege nicht
-  mit einem SCHÜLER verschmelzen lässt. Das wäre unrettbar — Zusammenführen löscht die Quelle.
-  Die Grenze steht jetzt ausdrücklich im Code (`ErrZusammenfuehrenVerschiedeneArten`), die
-  Trefferliste bleibt auf derselben Seite, und Lehrkraft und LiV dürfen sich treffen (die
-  Selbstanmeldung legt jeden als „lehrkraft" an, auch eine LiV). Klasse und Abgangsjahr werden
-  beim Schreiben an die Art gepaart — ein leerer String in `klasse` verletzt den Fremdschlüssel
-  auf `klassen(name)`. Gate: `api/leser_zusammenfuehren_kollegium_pg_test.go`, mit Rot-Probe.
-
-- **Zwei tote Türen bleiben, mit Absicht:** Papierkorb (`repository/audit_users.go`) und
-  Papierkorb-Ansicht (`api/student_deleted.go`) schreiben weiter gegen die Sicht. Sie sind für
-  einen Kollegen nicht erreichbar (die Gefahrenzone wird ihm nicht angezeigt), und das soll
-  vorerst so bleiben: **Vorher ist zu klären, was mit dem KONTO geschieht**, wenn die Leserzeile
-  eines Kollegen in den Papierkorb wandert. Heute zeigte das Konto auf eine gelöschte Zeile.
-  Der Schreibweg ist absichtlich NICHT mit umgehängt worden — er würde sonst über die API
-  erreichbar, bevor diese Frage beantwortet ist.
-
-Daraus folgt für den Rest des Plans: Das versteckte Feld „Personenart" widerspricht diesem Modell
-und fällt in Stufe 3 weg (deshalb findet heute ein Admin ohne dieses Feld die Theke nicht). Die
-Leserdatei in Stufe 4 ist eine ANSICHT über beide Tabellen — sie legt Konten nicht an und schaltet
-keine frei; das bleibt in „Benutzer & Rechte".
-
-**Am Code gelesen (15.09.2026):**
-
-- Schüler und Lehrkräfte stehen in zwei Tabellen: Schüler in `schueler` (aus der LUSD), Lehrkräfte
-  und alle Konten in `benutzer`; eine Ausleihe zeigt auf genau eine davon. Die Leserdatei zeigt
-  beide an einem Ort, sie legt die Tabellen nicht zusammen. Wer von Schüler zu Lehrkraft wechselt,
-  zieht mit Ausleihen, Schäden und Ausweisnummer in die andere Tabelle um — das ist Stufe 5.
-- Wer an der Theke als Lehrkraft ausleiht, entscheidet eine Regel für Theke, Buch- und
-  Geräteausleihe und Nachbuch-Tür (`repository.SQLAktiveLehrkraft`): Personenart gesetzt und aktiv.
-  Lokal haben 1 Admin und 3 Mitarbeiter keine Personenart und finden die Theke deshalb nicht.
-- Die Rolle ist ein fester Aufzählungstyp (`benutzer_rolle`). Die Rechte je Rolle stehen in
-  `role_permissions` und in der Vorgabe `db/seed.go`; die Vorgabe schreibt nur fehlende Zeilen und
-  erreicht eine bestehende Anlage deshalb nur über eine Migration.
-- Am Rollennamen hängen: die Weiterleitung nach der Anmeldung (`authStore.svelte.js`: nur admin und
-  mitarbeiter kommen in die volle Oberfläche), `normalisiereBenutzerRolle`, die Rollenauswahl und
-  die festen Spalten im Rechte-Editor.
-- Eine Lehrkraft hat keine Akte. Ihre Ausleihen sieht man nur an der Theke nach dem Scan, ihre Daten
-  pflegt die Benutzerverwaltung (`manage_users`), mit Schutz für Admin-Konten und die E-Mail (die
-  E-Mail ist die Anmeldung).
-- „Systempflege" ist kein eigenes Recht. Was nur der Admin braucht, heißt `manage_users` (Benutzer &
-  Rechte) und `manage_settings` (Einstellungen).
-
-**Stufe 1 — vorhandene Fehler: erledigt am 16.09.2026 (Nachweis am Stack und im Browser)**
-
-Klassenauswahl beim Anlegen, Meldung zu Klasse „Lehrer", Theken-Texte zur Lehrkraft, Meldung beim
-Löschen eines Kontos mit ausgeliehenen Büchern und der Littera-Treffer bei der Zugangsanfrage
-(Einzelheiten in den Commit-Nachrichten). Der vermeintlich
-tote Rückgabe-Zweig ist nicht tot und steht jetzt unter Stufe 3.
-
-**Stufe 2 — Rolle Leitung: gebaut am 16.09.2026, am Browser nachgewiesen**
-
-Migration 121 (ENUM-Wert), 122 (Rechte ab Werk, aus den ADMIN-Zeilen abgeleitet statt
-abgeschrieben), Rolle in `auth` und `normalisiereBenutzerRolle`, Rollenauswahl, Spalte im
-Rechte-Editor, Rollen-Abzeichen. Die Login-Weiche entscheidet jetzt am Recht
-(`perform_actions`) statt an einer Aufzählung von Rollennamen — die nächste Rolle braucht
-diese Stelle nicht mehr. Nachweis: `frontend/e2e/rolle-leitung.spec.js` meldet eine Leitung
-am frisch gebauten Stack an und prüft Menü UND Server.
-
-**Ein Fund aus diesem Nachweis, der eine Entscheidung braucht:** „Alles außer Benutzer &
-Rechte und Einstellungen" lässt sich nicht als ein Recht bauen, weil „Einstellungen" kein
-Recht ist, sondern ein Sammelpunkt über sechs Kategorien mit verschiedenen Rechten. Die
-Leitung sieht den Menüpunkt deshalb weiter und darf darin LUSD & Versetzung,
-Datenverwaltung, LMF-Aktionen und Lieferanten bedienen; verschlossen sind Schule, Fristen
-und Mailversand (`manage_settings`) sowie Benutzer & Rechte (`manage_users`). Das ist die
-Lesart, die zur Rolle passt — wer die Bibliothek führt, braucht den LUSD-Import.
-
-**Entschieden am 16.09.2026: Es bleibt dabei.** Peter hat die Lesart bestätigt und
-nachgefragt, ob auch diese vier Kategorien zugehen sollen. Sie sollen nicht: Dieselben
-Rechte öffnen Menüpunkte in der Verwaltung, die Rolle verlöre dort mit — und eine Leitung
-ohne LUSD-Import kann die Bibliothek nicht führen. Ein Menüpunkt ist eben kein Recht,
-sondern ein Sammelpunkt; was wirklich gilt, beweist die Antwort des Servers.
-
-**NEU ENTSCHIEDEN am 16.09.2026 (Peter): Alle Leser in EINE Tabelle, jeder darf ausleihen.**
-
-Peters Worte: „lass es uns zusammenlegen, momentan läuft das System ja noch gar nicht real
-sondern nur im Test" · „eigentlich ist Punkt 3 doch egal, wenn wir sagen würden, alle können
-sich ausleihen was sie wollen" · „oder du löschst eine, die Daten sind egal". Dazu die
-Richtigstellung, dass auch der Hetzner-Server nur sein Test-Server ist — es gibt keine Anlage
-im echten Betrieb. Gezählt dort: 32 Schüler, 9 Konten, 0 Ausleihen auf Konten. Echt ist allein
-der Katalog.
-
-Damit fällt die alte Stufe 3 („wer darf ausleihen") weg: Wenn alle Leser in einer Tabelle
-stehen, ist die Frage nicht mehr „welche Rolle", sondern „ist das ein aktiver Leser". Die
-Rolle sagt dann ausschließlich, was jemand im Programm TUN darf.
-
-**Die Schritte heißen ab hier beim Namen, nicht mehr bei der Nummer.** Ich hatte die frei
-gewordene Nummer 3 für etwas anderes weiterverwendet — dieselbe Nummer für zwei verschiedene
-Sachen ist genau die Verwechslung, die ein Plan verhindern soll (Peter, 16.09.2026: „wieso
-jetzt Stufe 3? ich dachte die löst sich auf“). Erledigt sind die beiden ersten Schritte: die
-vorhandenen Fehler und die Rolle Leitung.
-
-**Die Form (freigegeben: „ok go"): eine Lesertabelle, Konten bleiben Konten.**
-
-Die Schülertabelle wird zur Lesertabelle: ein Feld „Art" (Schüler · Lehrkraft · LiV), Klasse
-für Nicht-Schüler leer. Eine Ausleihe zeigt auf EINEN Leser — eine Spalte statt zwei. Eine
-Suche, eine Liste, ein Mahnwesen, ein Ausweisdruck.
-
-Die Kontentabelle bleibt daneben und tut nur noch, wofür sie da ist: Anmeldung und Rechte.
-Jedes Konto zeigt auf seine Leserzeile. Nicht aus Vorsicht, sondern weil sonst drei fremde
-Dinge in einer Tabelle lägen: wer ein Leser ist, wer sich anmelden darf, und wer eine Buchung
-AUSGEFÜHRT hat. Von den 14 Verknüpfungen auf die Kontentabelle heißen die meisten
-„Bearbeiter", nicht „Ausleiher" — ein Kollege soll als Leser verschwinden können, ohne dass
-die Spur seiner Buchungen verschwindet.
-
-**Schritt „Die Lesertabelle“ (additiv, verwirft nichts)**
-
-- Migration: `art` an der Schülertabelle (`schueler` | `lehrkraft` | `liv`, Vorgabe `schueler`),
-  `klasse` und `abgaenger_jahr` nullbar für Nicht-Schüler, `benutzer.leser_id` als Verknüpfung.
-  Für jedes Kollegiumskonto entsteht eine Leserzeile; die Ausweisnummer zieht mit (der
-  Nummernkreis ist seit Migration 118 über beide Tabellen eindeutig, es kann also keine
-  Kollision geben).
-- **Der Schutz, der hier nicht fehlen darf:** Der LUSD-Abgleich setzt heute „Abgänger" und
-  „gesperrt" über die ganze Tabelle (`api/lusd_apply.go`). Stehen Kollegen darin, würde ein
-  Import, der sie nicht kennt, sie als Abgänger markieren. Das muss die Datenbank verhindern,
-  nicht ein WHERE: Prädikat auf `art='schueler'` UND ein Wächter, der ein Anfassen von
-  Nicht-Schülern durch den Abgleich unmöglich macht. Dasselbe für den Löschjob
-  (`[[loeschfristen-eine-quelle]]`: Wächter = Löschjob-Prädikat).
-- Rot-Test: Ein Import ohne die Kollegen markiert sie NICHT als Abgänger; der Löschjob fasst
-  sie nicht an.
-
-
-**Gebaut am 16.09.2026: Die Tabelle heißt `leser`, `schueler` ist eine Sicht darauf.**
-
-51 Abfragen in 30 Dateien lesen `FROM schueler` und meinen „Schüler“. Statt jede einzelne
-um `art = 'schueler'` zu ergänzen — und eine zu übersehen — zeigt die Sicht nur Schüler.
-Alle 51 behalten damit ihre Bedeutung, ohne angefasst zu werden, und können einen Kollegen
-weder sehen noch anlegen (`WITH CHECK OPTION`). Vorher an Postgres 18 nachgemessen:
-`FOR UPDATE`, `INSERT ... RETURNING`, `UPDATE` und `DELETE` gehen durch die Sicht;
-`TRUNCATE` nicht (vier Test-Helfer nennen deshalb `leser`).
-
-Damit ist der frühere letzte Schritt „Umbenennen“ **erledigt** — er war nicht der
-Abschluss, sondern das Mittel. Zwei Stellen hätte die Umbenennung still beschädigt: der
-Ausweis-Wächter (er vergleicht den Tabellennamen und hätte die falsche Tabelle geprüft —
-zwei Personen mit derselben Ausweisnummer) und die von Postgres selbst erzeugten
-Constraint-Namen, die beim Umbenennen nicht mitwandern.
-
-**Schritt „Eine Ausleihe, ein Leser“ — gebaut am 16.09.2026 (Migration 125).**
-
-Jedes Konto hat jetzt eine Leserzeile, und der Ausweis gehört dorthin. Weggefallen sind:
-die zweite Ausleiher-Spalte samt ihren Zwillingen bei Nachbuch-Meldungen und
-Schadensfällen, `benutzer.barcode_id`, `benutzer.personenart`, die Regel
-`SQLAktiveLehrkraft`, der Kreuz-Wächter für Ausweisnummern (Migration 118) und der
-Personenart-Wächter (120). Ausleihen darf jetzt jeder aktive Leser — damit findet auch
-das Admin-Konto die Theke.
-
-Der Zweig „angemeldetes Konto scannt ein freies Buch → Ausleihe auf sich selbst" ist ganz
-gefallen: Wer Rückläufer sortiert, buchte sich sonst versehentlich Bücher auf den eigenen
-Namen. Ausgeliehen wird über den Ausweis.
-
-**Drei Stellen, an denen ein Schutz nur zufällig bestand** und beim Zusammenlegen still
-weggefallen wäre — alle drei stehen jetzt ausdrücklich da:
-
-- Die Befristung der Lesehistorie hätte auch dem Kollegium seine Ausleihhistorie genommen
-  (sie hing daran, dass eine Lehrerausleihe keine `schueler_id` hatte).
-- Der Flur-Monitor hätte einen Klassensatz an eine Lehrkraft als 30 Leser gezählt — das
-  Klassenbuch der 7 wäre „Buch des Monats" geworden.
-- Das Mahnwesen hätte Kollegen angemahnt. Es liest weiter die Sicht `schueler`.
-
-**Ein Fehlgriff im eigenen Bau, am Test aufgefallen:** Eine schreibende CTE
-(`WITH neu AS (INSERT …) UPDATE …`) sieht ihre eigene Zeile noch nicht — der Ausweis wäre
-still nirgends gelandet. Jetzt zwei Anweisungen, und jedes UPDATE prüft, dass es wirklich
-eine Zeile getroffen hat.
-
-**Drei Fragen an den Betrieb (Peter), die dieser Umbau bewusst NICHT beantwortet hat.**
-Überall gilt weiter das Verhalten von vorher:
+**B. Peter, vier kurze Antworten zum Betrieb.** Überall gilt heute das Verhalten von vorher;
+ich habe nichts geändert:
 
 1. **Wie lange darf ein Kollege ein Buch behalten?** Heute ein Jahr — das war die Regel für
-   die Dauerleihe fürs Unterrichten. Wer sich einen Roman mitnimmt, behält ihn damit
-   genauso lange wie einen Klassensatz.
+   die Dauerleihe fürs Unterrichten. Wer sich einen Roman mitnimmt, behält ihn damit genauso
+   lange wie einen Klassensatz.
 2. **Soll die Befristung der Lesehistorie auch fürs Kollegium gelten?** Heute nein.
 3. **Sollen Kollegen gemahnt werden?** Heute nein.
+4. **Soll ein Kollege für ein verlorenes Buch zahlen?** Heute entsteht die Forderung, steht
+   aber in keiner Übersicht — die Einzelheiten in 5.17, Fund 1.
 
-**Schritt „Theke und Leserdatei“ — gebaut am 16.09.2026, wartet auf Peters Blick**
+**C. Zwei tote Türen, mit Absicht offen.** Papierkorb (`repository/audit_users.go`) und
+Papierkorb-Ansicht (`api/student_deleted.go`) schreiben weiter gegen die Sicht `schueler`.
+Sie sind für einen Kollegen nicht erreichbar, und das soll vorerst so bleiben: **Vorher ist
+zu klären, was mit dem KONTO geschieht**, wenn die Leserzeile eines Kollegen in den
+Papierkorb wandert. Heute zeigte das Konto auf eine gelöschte Zeile. Der Schreibweg ist
+absichtlich nicht mit umgehängt worden — er würde sonst über die API erreichbar, bevor diese
+Frage beantwortet ist.
 
-Die Namenssuche an der Theke findet jeden Leser und nennt seine Art am Treffer. Der
-Menüpunkt heißt „Leserdatei“, die Liste führt Schüler und Kollegium mit einer Spalte Art
-und einer Suche über alle. Ein Kollege hat eine Akte — an der Theke dieselbe wie ein
-Schüler, mit seinen Ausleihen und dem Ausweisdruck. „Neuen Leser anlegen“ fragt zuerst
-nach der Art und legt für eine Lehrkraft eine Leserzeile ohne Konto an. Das Feld
-Personenart war schon mit Migration 125 aus der Benutzerverwaltung gefallen.
+**D. Altbestände: Kollegen ohne Adresse werden nicht von allein gefunden.** Seit dem
+16.09.2026 ist die Schul-E-Mail beim Anlegen Pflicht, ein Doppeleintrag kann also nicht mehr
+neu entstehen. Wer vorher ohne Adresse angelegt wurde, kann aber doppelt dastehen. Die Zeile
+über der Benutzertabelle warnt bisher nur bei gleichnamigen KONTEN aus Littera
+(`@littera.invalid`), nicht bei einer Leserzeile ohne Konto. Reparierbar sind diese Fälle
+seit dem 16.09. (Zusammenführen); gefunden werden sie noch nicht. Zu klären, bevor viele
+Kollegen sich anmelden: entweder derselbe Hinweis auch gegen Leserzeilen ohne Konto, oder die
+Freischaltung bietet das Zusammenführen an.
 
-Vier Dinge, die beim Bauen auffielen und mit erledigt sind:
+**E. Der Nummernkreis bleibt unangetastet — bewusst.** Gemessen auf dem Testserver
+(16.09.2026): Exemplare 1…122.127 (30.658 nackte Littera-Nummern, 4.065 `LMF-`, 65 `B-`),
+Leser 33 Zeilen, genau EINE Nummer wäre ohne Vorsilbe doppeldeutig. Aus `littera_sav.mdb`:
+Exemplare 1…61.512, Leser 0…3.531 — 1.990 von 1.991 Lesernummern sind dort zugleich
+Exemplarnummern. Littera lebt damit, weil seine Scanformen sich unterscheiden. Ein
+gemeinsamer Nummernkreis ohne Vorsilben wäre möglich, brächte aber nichts, solange die
+Offline-Theke die Vorsilbe braucht: **Ohne Netz ist sie die einzige Information, an der die
+Theke einen Buchscan von einem Ausweisscan unterscheiden kann.**
 
-- Die Auswahl eines Treffers schickte die Ausweisnummer los. Ein Kollege aus der
-  Selbstanmeldung hat keine — der Klick tat sichtbar gar nichts. Jetzt geht die ID hinaus.
-- Ein markierter Kollege fiel lautlos vom Etikettenbogen: Der Druck gelang, der Bogen war
-  nur kürzer.
-- Sperren antwortete bei einem Kollegen mit „nicht gefunden“, und sein Passbild wurde
-  gespeichert, aber nie ausgeliefert.
-- Der Nummerngenerator las die Sicht `schueler` und hätte eine Nummer, die an einem
-  Kollegen hängt, ein zweites Mal ausgegeben.
+**F. Entschieden und nicht mehr zu diskutieren** (steht hier, weil die Frage sonst wiederkommt):
 
-**Was ein Kollege in seiner Akte NICHT hat** — die Türen dahinter lesen alle die Sicht
-`schueler` und gehören der Schülerarbeit. Sie sind deshalb ausgeblendet statt kaputt:
-
-- Kontoauszug, Ersatzforderung und DSGVO-Auskunft.
-- Bearbeiten und Löschen. Name und Ausweisnummer eines Kollegen mit Konto führt die
-  Benutzerverwaltung — eine zweite Tür zur selben Identität soll es nicht geben. Eine
-  Leserzeile OHNE Konto (aus dem Anlegen-Dialog) lässt sich damit aber auch nicht mehr
-  korrigieren oder entfernen; das ist der nächste kleine Schritt, wenn er gebraucht wird.
-- Zusammenführen (das löst LUSD-Dubletten) und das Abgangsjahr.
-
-**Schritt „Umbenennen“ — erledigt am 16.09.2026, als Mittel statt als Abschluss (siehe oben).**
-
-**Entschieden (Peter, 15.09.2026): Die Rolle legt der Admin fest, alle anderen sind Kollegium.**
-Daraus folgt für den Bau:
-
-1. Kollegium bekommt an der Theke weiter Bücher auf seinen Namen und steht in der Leserdatei.
-2. Die Leitung startet mit allen Rechten außer „Benutzer & Rechte" und „Einstellungen"; was nicht
-   passt, nimmt der Admin im Rechte-Editor weg.
-3. Eine Lehrkraft, die die Bibliothek in der Leserdatei anlegt, bekommt ihre Schul-E-Mail. Die
-   Anmeldung erkennt eine Person nur an der E-Mail (`auth/handlers.go`); ohne sie entsteht bei
-   der ersten Selbstanmeldung ein zweiter Eintrag. Das Konto ist aktiv, damit sie ausleihen kann,
-   und kommt damit ohne Freischaltung ins Portal.
+- Die E-Mail eines Kollegen wird NICHT in `leser.eltern_email` abgetippt. Die Spalte gehört
+  dem LUSD-Import und heißt auch in der DSGVO-Auskunft „Eltern-E-Mail". Die Adresse steht
+  eindeutig am Konto (`benutzer.email`, `UNIQUE lower(email)`); eine zweite Kopie wäre die
+  zweite Tür zu derselben Identität. Soll sie in der Akte stehen, dann gelesen vom Konto und
+  nicht änderbar.
+- Die Leitung sieht den Menüpunkt „Einstellungen" weiter und darf darin LUSD & Versetzung,
+  Datenverwaltung, LMF-Aktionen und Lieferanten bedienen; verschlossen sind Schule, Fristen
+  und Mailversand (`manage_settings`) sowie Benutzer & Rechte (`manage_users`). Ein Menüpunkt
+  ist kein Recht, sondern ein Sammelpunkt über sechs Kategorien — was gilt, beweist die
+  Antwort des Servers. Peter hat das am 16.09.2026 bestätigt.
 
 ### 5.17 Rasterdurchgang über den 15. und 16.09.2026 (Funde vom 16.09.2026)
 
@@ -1227,21 +937,12 @@ Durchgang am selben Abend (5.15); alles ab Mitternacht — Rolle Leitung, Migrat
 125, Leserdatei, Theken-Suche — war ungeprüft. Gates beim Durchgang: golangci-lint ohne
 Befund, svelte-check 0/0, Frontend-Tests 668 grün, Go-Suite mit echtem Postgres grün.
 
-**1. Der Nachweis, dass der LUSD-Import keinen Kollegen zum Abgänger macht, liegt unverfolgt
-im Arbeitsbaum.** `api/lusd_import_kollegium_pg_test.go` (205 Zeilen, grün) ist nicht in Git:
-CI kennt ihn nicht, ein `git clean` wäre ihn los, und damit hinge der einzige Test über den
-GANZEN Importweg mit Kollegium im Bestand an einem Arbeitsverzeichnis. Er gehört committet —
-hier nicht getan, weil eine zweite Sitzung im selben Verzeichnis arbeitet und die Datei
-gehören könnte.
+Sechs Funde, vier davon noch am selben Tag behoben und hier gelöscht: der Test außerhalb von
+Git (`4edcf1b8`), das Zusammenführen eines doppelt stehenden Kollegen (`bf36df57`), die nicht
+mehr änderbare Art (`cd46fc44`, `ecd007bd`) und die veralteten Zahlen in
+`docs/invarianten.md`. Übrig sind die beiden, an denen eine Entscheidung hängt.
 
-Nebenbefund zur Arbeitsweise, kein Programmfehler: Derselbe Test fiel in EINEM von sieben
-Volldurchgängen mit „Vorschau, Abgänger: []". Die Erklärung steht im Zeitstempel — die Datei
-wurde um 13:23 geschrieben, mitten zwischen meinem roten (13:22) und meinem grünen Lauf. Der
-rote Lauf hat also eine Zwischenfassung übersetzt, nicht dieselbe Datei. Danach dreimal in
-Folge grün. Lehre wie am 15.09.: Vor der Deutung eines roten Laufs erst `git status` und `ps`
-(`[[parallelsitzung-zerschiesst-e2e]]`).
-
-**2. Ein Kollege bekommt eine Forderung, die in keiner Liste steht.** „Verlust/Schaden melden"
+**1. Ein Kollege bekommt eine Forderung, die in keiner Liste steht.** „Verlust/Schaden melden"
 steht in seiner Akte (`StudentProfile.svelte`, nur am Recht `bearbeiten`, nicht an der Art),
 und `meldeSchaden` nimmt den Schuldner aus der Ausleihe — die Forderung entsteht also. Am
 echten Postgres nachgestellt: In seiner Akte steht sie (1), im Reiter „Schadensersatz" nicht
@@ -1251,28 +952,16 @@ Das Geld ist offen und taucht in der Übersicht nie auf. Zu entscheiden ist zuer
 Kollege überhaupt einen Bescheid bekommt; danach entweder die Liste um ihn erweitern oder die
 Türen in seiner Akte schließen.
 
-**3. Zwei Einträge desselben Kollegen lassen sich nicht zusammenführen.** Der neue Anlege-Dialog
-warnt genau davor („Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten") — der Weg zurück
-fehlt aber: Kandidatensuche und Zeilen-Lader im Zusammenführen lesen die Sicht `schueler`
-(`repository/schueler_zusammenfuehren.go`), finden einen Kollegen also nicht.
-
-**4. Die Art eines Kollegen ist nicht mehr änderbar.** Der Trigger `konto_hat_leserzeile`
-(Migration 125) legt für jedes neue Konto eine Leserzeile mit `art = 'lehrkraft'` an; ein LiV,
-der sich selbst anmeldet, steht damit dauerhaft als Lehrkraft in der Leserdatei. `art` wird von
-keinem Änderungspfad geschrieben (`api/student_update.go` kennt das Feld nicht). Gefragt wird
-die Art nur beim Anlegen von Hand.
-
-**5. Ein Kollege kommt nicht mehr aus der Leserdatei heraus.** Das Löschen ist in der Akte für
+**2. Ein Kollege kommt nicht mehr aus der Leserdatei heraus.** Das Löschen ist in der Akte für
 Kollegen ausgeblendet (richtig so), und `DeleteStudent` schreibt auf die Sicht `schueler` —
 für einen Kollegen also 0 Zeilen und „student not found". Wird sein KONTO gelöscht, bleibt die
 Leserzeile samt Ausweisnummer stehen (`benutzer.leser_id` steht auf ON DELETE SET NULL, und die
 Prüfung davor verweigert nur bei offenen Ausleihen). Ein zweites Konto derselben Person erzeugt
-dann über den Trigger eine zweite Leserzeile — siehe Fund 3.
-
-**6. Zahlen in `docs/invarianten.md` sind veraltet (Kategorie C).** Dort stehen 35 Fremdschlüssel
-mit Löschwirkung, 42 CHECK-Bedingungen und 21 Trigger; die Listen im Gate führen inzwischen 39,
-23 und 22 Einträge, und der Kommentar am Trigger-Inventar spricht weiter von „den neunzehn".
-Das Gate selbst ist grün und gepflegt — nur der erklärende Text daneben nicht.
+dann über den Trigger eine zweite Leserzeile. Reparieren lässt sich das seit dem 16.09.2026
+(Zusammenführen, `bf36df57`); es entstehen lassen sollte man es trotzdem nicht. Zu klären ist
+mit dem Löschen zusammen, was mit dem KONTO geschieht, wenn die Leserzeile eines Kollegen
+gelöscht wird — Papierkorb und Papierkorb-Ansicht schreiben deshalb bewusst weiter gegen die
+Sicht.
 
 **Was der Durchgang ausdrücklich in Ordnung fand:** die Sicht-Falle (`CREATE VIEW … SELECT *`
 friert die Spalten ein) hat ihr eigenes Gate (`db/sicht_schueler_vollstaendig_pg_test.go`); das
