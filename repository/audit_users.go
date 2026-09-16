@@ -26,13 +26,16 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	// Snapshot erstellen: Benutzerdaten vor dem Löschen sichern
+	// Snapshot erstellen: Benutzerdaten vor dem Löschen sichern. Die `leser_id` wird
+	// mitgelesen, weil sie nach dem DELETE nicht mehr zu finden ist (ON DELETE SET NULL am
+	// Konto, und die Zeile selbst ist dann weg).
 	var vorname, nachname, email, rolle string
+	var leserID *string
 	err = tx.QueryRow(ctx,
-		`SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(email,''), coalesce(rolle::text,'')
+		`SELECT coalesce(vorname,''), coalesce(nachname,''), coalesce(email,''), coalesce(rolle::text,''), leser_id
 		 FROM benutzer WHERE id = $1`,
 		userID,
-	).Scan(&vorname, &nachname, &email, &rolle)
+	).Scan(&vorname, &nachname, &email, &rolle, &leserID)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return fmt.Errorf("failed to snapshot user for audit: %w", err)
 	}
@@ -67,15 +70,119 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 		return ErrBenutzerNichtGefunden
 	}
 
+	// Die Leserzeile des Kontos geht MIT, wenn sie unberührt ist.
+	//
+	// Anlass: Eine abgelehnte Zugangsanfrage. Die Selbstanmeldung legt ein Konto ohne
+	// Leserzeile an, der Wächter `trg_benutzer_hat_leserzeile` hängt eine frische daran.
+	// Wird die Anfrage abgelehnt und das Konto gelöscht, blieb diese Zeile als Waise in der
+	// Leserdatei stehen: ohne Ausweis, ohne Vorgänge, mit dem aus der E-Mail-Adresse
+	// geratenen Namen (Rasterdurchgang 16.09.2026, OFFEN.md 5.18, Fund 1).
+	//
+	// „Unberührt" heißt: kein Ausweis und nichts, was an ihr hängt. Hängt doch etwas daran —
+	// Bücher, ein Schadensfall, ein Foto, eine Vormerkung —, BLEIBT die Zeile stehen; sie
+	// gehört dann einem Menschen, der in der Leserdatei steht, und nicht dem Konto.
+	geloescht, grund, err := loescheUnberuehrteLeserzeile(ctx, tx, leserID)
+	if err != nil {
+		return err
+	}
+
 	if err = r.insertAuditLog(ctx, tx, auditEntry{
 		Tabelle: "benutzer", Aktion: "DELETE", DatensatzID: userID,
 		BearbeiterID: &bearbeiterID, Akteur: "USER",
-		Details: map[string]any{"vorname": vorname, "nachname": nachname, "email": email, "rolle": rolle},
+		Details: map[string]any{"vorname": vorname, "nachname": nachname, "email": email, "rolle": rolle,
+			"leserzeile_geloescht": geloescht, "leserzeile_bleibt_wegen": grund},
 	}); err != nil {
 		return err
 	}
 
 	return tx.Commit(ctx)
+}
+
+// loescheUnberuehrteLeserzeile entfernt die Leserzeile eines gelöschten Kontos, sofern an
+// ihr nichts hängt. Liefert zurück, ob gelöscht wurde, und sonst den Grund.
+//
+// Die Liste der Tabellen kommt aus dem KATALOG der Datenbank, nicht aus dem Go-Code. Das
+// ist der Kern und keine Spielerei: An `leser` hängen Fremdschlüssel mit gemischter
+// Löschwirkung — RESTRICT bei Ausleihen und Schadensfällen, CASCADE bei Fotos und
+// Vormerkungen, SET NULL bei Bescheiden, Nachbuch-Meldungen und Konten. Eine Aufzählung in
+// Go hielte das nur bis zur nächsten Tabelle, die jemand anhängt: Bei CASCADE verschwänden
+// deren Zeilen still mit, bei SET NULL verlören sie ihren Bezug. Wer eine Tabelle anhängt,
+// bekommt die Prüfung hier geschenkt.
+//
+// Der Ausweis ist der Sonderfall, den keine Fremdschlüssel-Abfrage sieht: Er steht als
+// Spalte in der Zeile selbst. Eine Nummer ist vergeben und wird nie recycelt — wer eine
+// hat, steht in der Leserdatei.
+func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *string) (bool, string, error) {
+	if leserID == nil || *leserID == "" {
+		return false, "", nil
+	}
+
+	var hatAusweis bool
+	if err := tx.QueryRow(ctx,
+		`SELECT barcode_id IS NOT NULL AND barcode_id <> '' FROM leser WHERE id = $1`, *leserID,
+	).Scan(&hatAusweis); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, "", nil // schon weg (Papierkorb endgültig geleert)
+		}
+		return false, "", fmt.Errorf("leserzeile lesen: %w", err)
+	}
+	if hatAusweis {
+		return false, "ausweis", nil
+	}
+
+	rows, err := tx.Query(ctx, `
+		SELECT c.conrelid::regclass::text, a.attname
+		  FROM pg_constraint c
+		  JOIN unnest(c.conkey) AS k(attnum) ON true
+		  JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum
+		 WHERE c.contype = 'f' AND c.confrelid = 'leser'::regclass`)
+	if err != nil {
+		return false, "", fmt.Errorf("fremdschlüssel auf leser lesen: %w", err)
+	}
+	type kind struct{ tabelle, spalte string }
+	var kinder []kind
+	for rows.Next() {
+		var k kind
+		if err := rows.Scan(&k.tabelle, &k.spalte); err != nil {
+			rows.Close()
+			return false, "", err
+		}
+		kinder = append(kinder, k)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return false, "", err
+	}
+	// Kein Fremdschlüssel gefunden heißt nicht „nichts hängt daran", sondern dass die
+	// Abfrage nicht getan hat, was sie soll. Dann lieber die Zeile stehen lassen.
+	if len(kinder) == 0 {
+		return false, "katalog leer", nil
+	}
+
+	for _, k := range kinder {
+		// Die Namen stammen aus dem Katalog, nicht aus einer Eingabe; `regclass` liefert sie
+		// bereits so, wie Postgres sie wieder liest.
+		var haengt bool
+		if err := tx.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM `+k.tabelle+` WHERE `+k.spalte+` = $1)`, *leserID,
+		).Scan(&haengt); err != nil {
+			return false, "", fmt.Errorf("%s prüfen: %w", k.tabelle, err)
+		}
+		if haengt {
+			return false, k.tabelle, nil
+		}
+	}
+
+	tag, err := tx.Exec(ctx, `DELETE FROM leser WHERE id = $1`, *leserID)
+	if err != nil {
+		return false, "", fmt.Errorf("leserzeile löschen: %w", err)
+	}
+	// Null Zeilen heißt: Die Zeile war zwischen Prüfung und Löschung schon weg. Kein Fehler,
+	// aber auch kein „gelöscht" — der Audit-Eintrag soll nicht behaupten, was nicht geschah.
+	if tag.RowsAffected() == 0 {
+		return false, "schon weg", nil
+	}
+	return true, "", nil
 }
 
 // DeleteStudent verschiebt einen Schüler in den Papierkorb (Soft-Delete): deleted_at

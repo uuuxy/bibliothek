@@ -11,8 +11,11 @@ import (
 // snapshotBenutzerRows liefert die Stammdaten-Zeile, die DeleteUser vor dem Löschen
 // für das Audit-Log sichert.
 func snapshotBenutzerRows() *pgxmock.Rows {
-	return pgxmock.NewRows([]string{"vorname", "nachname", "email", "rolle"}).
-		AddRow("Erika", "Muster", "erika@schule.de", "KOLLEGIUM")
+	// `leser_id` NULL: Diese Fälle prüfen die Vorab-Prüfung auf offene Ausleihen. Was mit
+	// einer Leserzeile geschieht, prüft der PG-Test (audit_users_leserzeile_pg_test.go) —
+	// er muss es, weil die Prüfung den Fremdschlüssel-Katalog der Datenbank liest.
+	return pgxmock.NewRows([]string{"vorname", "nachname", "email", "rolle", "leser_id"}).
+		AddRow("Erika", "Muster", "erika@schule.de", "KOLLEGIUM", nil)
 }
 
 // TestDeleteUser_RejectsWhenActiveLoans sichert Bug 2 (Stranded Handapparat) ab: Hat ein
