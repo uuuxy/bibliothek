@@ -1145,7 +1145,8 @@ die Einzelheiten stehen in den Commit-Nachrichten (`c5cddd6e`, `7fb4b387`, `77c5
 Endlosschleife bei stehendem WLAN und weggefallenem Server, die nachgeholte Sperre mitten in
 der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
 
-**Offen geblieben** — zwei Punkte, beide Kategorie B, keiner hält den Betrieb auf (der dritte, der still anhaltende Sync, ist am 16.09.2026 behoben):
+**Offen geblieben** — ein Punkt, Kategorie B (der still anhaltende Sync und die alternde
+Barcode-Liste sind am 16./17.09.2026 behoben):
 
 1. **Der Zwilling der Vorsilben ist eine Verabredung, kein Gate.** `scanEinordnen.js` trägt
    `A-`/`S-`/`L-` (Ausweis), `B-`/`LMF-` (Buch) und `G-` (Gerät); dieselbe Liste steht im
@@ -1153,13 +1154,6 @@ der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
    Kommentar. Eine neue Vorsilbe an einer Stelle fällt laut aus (ohne Netz „unklar", beim
    Nachbuchen „nicht gebucht"), aber erst im Betrieb. Das Muster für die Ratsche steht im
    Haus: `PlatzhalterDomain` hält beide Seiten mit einem Test gegeneinander.
-2. **Die Barcode-Liste altert unbemerkt.** Geholt wird sie bei der Anmeldung
-   (`stores/buchBarcodes.svelte.js`), und das ist so entschieden. Ein Kiosk-Tab steht aber
-   zwölf Stunden offen: Was am Vormittag neu inventarisiert wurde, ist am Nachmittag ohne Netz
-   eine „unklare" Nummer. Der Zeitpunkt des letzten Abgleichs wird gespeichert und nirgends
-   bewertet. **Entschieden am 16.09.2026: stündlich nachfassen**, solange Netz da ist — ohne
-   Anzeige an der Theke. Der Abgleich ist billig (der Server antwortet in der Regel mit
-   „unverändert"), und die Bibliothekskraft muss mitten in einer Schlange nichts bewerten.
 
 **Was der Durchgang ausdrücklich in Ordnung fand:** Die Uhr-Frage ist sauber gelöst — der
 Eintrag trägt neben der Wanduhr einen gleichmäßig laufenden Anker, und der Sync rechnet daraus

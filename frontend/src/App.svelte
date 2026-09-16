@@ -22,7 +22,7 @@
 	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
 	import ToastContainer from './lib/ToastContainer.svelte';
 	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
-	import { buchBarcodes } from './lib/stores/buchBarcodes.svelte.js';
+	import ThekenDaten from './lib/components/ThekenDaten.svelte';
 	import { initTooltips } from './lib/actions/tooltip.js';
 	import * as Sentry from '@sentry/svelte';
 
@@ -70,12 +70,6 @@
 		return () => idleLock.stop();
 	});
 
-	// Die Buch-Barcode-Liste dieses Rechners — ohne sie kann die Theke ohne Netz eine
-	// nackte Ziffernfolge nicht einordnen (Begruendung und Ablauf in buchBarcodes.svelte.js).
-	$effect(() => {
-		if (authStore.isLoggedIn) buchBarcodes.bereitstellen();
-	});
-
 	$effect(() => {
 		if (printQueue.copies) {
 			// 'druck-center' ist der App-Route-Name (Router.svelte); 'labels' ist nur der
@@ -100,6 +94,8 @@
 		return () => clearInterval(checker);
 	});
 </script>
+
+<ThekenDaten />
 
 <div
 	class="app min-h-screen bg-surface text-on-surface font-sans selection:bg-slate-200 selection:text-slate-900"

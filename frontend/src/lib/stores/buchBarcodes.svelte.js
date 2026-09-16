@@ -43,6 +43,8 @@ class BuchBarcodes {
 	anzahl = $state(0);
 	/** Wann zuletzt erfolgreich geholt oder bestaetigt (ms), 0 = nie. */
 	geholtAm = $state(0);
+	/** Handle des stuendlichen Abgleichs; null = laeuft nicht. @type {ReturnType<typeof setInterval> | null} */
+	#zeitgeber = null;
 
 	/** Steht diese Nummer als Exemplar-Barcode auf der Liste? */
 	istBuch = (nummer) => this.#nummern.has(nummer);
@@ -111,6 +113,36 @@ class BuchBarcodes {
 	}
 
 	/**
+	 * Stuendlich nachfassen, solange Netz da ist (entschieden am 16.09.2026, OFFEN.md 5.19).
+	 *
+	 * Geholt wird die Liste beim Anmelden — und ein Kiosk-Tab steht zwoelf Stunden offen.
+	 * Was am Vormittag neu inventarisiert wurde, war am Nachmittag ohne Netz eine
+	 * „unklare" Nummer, und niemand konnte das wissen. Der Abgleich kostet fast nichts:
+	 * Der Server antwortet im Normalfall 304, weil sich der Bestand selten aendert.
+	 *
+	 * Ohne Netz wird gar nicht erst gefragt — das waere ein Fehler pro Stunde im Protokoll
+	 * fuer nichts. Das Handle liegt am Store, damit der Aufrufer ihn wegraeumen kann; ein
+	 * ueberlebender Zeitgeber faerbt sonst einen ganzen Testlauf rot
+	 * (frontend-hygiene-thekenzeitgeber.test.js).
+	 *
+	 * @param {number} intervallMs Abstand zweier Abgleiche; die Vorgabe ist eine Stunde.
+	 */
+	starteAbgleich(intervallMs = 60 * 60 * 1000) {
+		this.stoppeZeitgeber();
+		this.#zeitgeber = setInterval(() => {
+			if (typeof navigator === 'undefined' || navigator.onLine) void this.auffrischen();
+		}, intervallMs);
+	}
+
+	/** Den stuendlichen Abgleich beenden (Abmelden, Abbau der Seite, Test-Ende). */
+	stoppeZeitgeber() {
+		if (this.#zeitgeber !== null) {
+			clearInterval(this.#zeitgeber);
+			this.#zeitgeber = null;
+		}
+	}
+
+	/**
 	 * Beim Anmelden: Liste bereitstellen.
 	 *
 	 * Erst aus der eigenen Ablage laden — das ist die Fassung, die ein Neuladen OHNE Netz
@@ -125,10 +157,12 @@ class BuchBarcodes {
 	async bereitstellen() {
 		await this.laden();
 		await this.auffrischen();
+		this.starteAbgleich();
 	}
 
 	/** Nur fuer Tests: Speicher und Ablage leeren. */
 	async _leeren() {
+		this.stoppeZeitgeber();
 		this.#nummern = new Set();
 		this.#stand = '';
 		this.anzahl = 0;

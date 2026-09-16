@@ -17,6 +17,7 @@ const sync = {
 	isOffline: false,
 	isSyncing: false,
 	warteschlangeFehler: false,
+	/** @type {number | null} */
 	abgelehntMitStatus: null,
 	exportQueueAsJSON: vi.fn(),
 	importQueueFromJSON: vi.fn()
