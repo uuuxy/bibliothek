@@ -145,3 +145,58 @@ func TestEtikettenZeilen_LeereListeFragtDieDatenbankNichtAn(t *testing.T) {
 		t.Errorf("erwartet keine Zeilen, bekommen %d", len(zeilen))
 	}
 }
+
+// TestEtikettenZeilen_LaesstKeinenKollegenWeg: Seit dem 16.09.2026 stehen Schüler und
+// Kollegium in derselben Liste, mit demselben Häkchen davor. Wer „alle markieren" drückt
+// und einen Etikettenbogen anfordert, meint auch die Kollegen.
+//
+// Die Abfrage las die Sicht `schueler`. Ein markierter Kollege fiel damit LAUTLOS vom
+// Bogen — der Druck gelang, der Bogen war nur kürzer, und gemerkt hätte man es beim
+// Verteilen. Solange die Kollegen in keiner Liste standen, war die Sicht richtig; mit der
+// Leserdatei wurde sie zum stillen Verlust.
+func TestEtikettenZeilen_LaesstKeinenKollegenWeg(t *testing.T) {
+	pool := pgTestPool(t)
+	resetInventurDaten(t, pool)
+	ctx := context.Background()
+
+	var ids []string
+	for _, f := range []struct{ barcode, vorname, nachname, klasse, art string }{
+		{"ETIK-1", "Anna", "Aal", "7B", "schueler"},
+		{"ETIK-2", "Katrin", "Wendland", "", "lehrkraft"},
+		{"ETIK-3", "Bert", "Bock", "7A", "schueler"},
+	} {
+		var id string
+		var klasse, jahr any
+		if f.art == "schueler" {
+			klasse, jahr = f.klasse, 2031
+		}
+		if err := pool.QueryRow(ctx,
+			`INSERT INTO leser (barcode_id, vorname, nachname, klasse, abgaenger_jahr, art)
+			 VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+			f.barcode, f.vorname, f.nachname, klasse, jahr, f.art).Scan(&id); err != nil {
+			t.Fatalf("Leser %s anlegen: %v", f.barcode, err)
+		}
+		ids = append(ids, id)
+	}
+
+	zeilen, err := NewStudentRepository(pool).EtikettenZeilen(ctx, ids)
+	if err != nil {
+		t.Fatalf("EtikettenZeilen: %v", err)
+	}
+	if len(zeilen) != 3 {
+		namen := make([]string, 0, len(zeilen))
+		for _, z := range zeilen {
+			namen = append(namen, z.Nachname)
+		}
+		t.Fatalf("%d Etiketten statt 3 — ein markierter Leser fiel lautlos vom Bogen: %v", len(zeilen), namen)
+	}
+	// Dieselbe Reihenfolge wie die Liste, aus der markiert wurde: Kollegium zuerst,
+	// dann die Schüler klassenweise. Zwei Ausgaben derselben Auswahl sollen nicht
+	// verschieden sortiert aus dem Drucker kommen.
+	if zeilen[0].Nachname != "Wendland" || zeilen[1].Nachname != "Bock" || zeilen[2].Nachname != "Aal" {
+		t.Errorf("Reihenfolge: %s, %s, %s", zeilen[0].Nachname, zeilen[1].Nachname, zeilen[2].Nachname)
+	}
+	if zeilen[0].Klasse != "" {
+		t.Errorf("ein Kollege hat keine Klasse auf dem Etikett: %q", zeilen[0].Klasse)
+	}
+}
