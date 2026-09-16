@@ -692,8 +692,6 @@ Nichts offen (Stand 16.09.2026).
 - **Drei weitere Kalendertage in der Zeit der Datenbank (UTC), gefunden am 16.09.2026** beim
   Fix der Bescheid-Frist (die rechnet seitdem mit `sqlSchulHeute` in `repository/bescheid.go`).
   Bis 2 Uhr Berliner Zeit ist dort noch der Vortag:
-  - Volljährigkeit im Bescheid-Vorschlag (`geburtsdatum <= CURRENT_DATE - INTERVAL '18 years'`,
-    `repository/bescheid.go`): Am 18. Geburtstag gilt das Kind bis 2 Uhr noch als minderjährig.
   - Mahnlauf „höchstens einmal am Tag" (`letztes_mahndatum::date < CURRENT_DATE`,
     `api/mahnwesen_bulk.go`): Der Tag wechselt um 2 Uhr statt um Mitternacht.
   - „Heute zurückgegeben" im Mahnwesen (`DATE(rueckgabe_am) = CURRENT_DATE`,

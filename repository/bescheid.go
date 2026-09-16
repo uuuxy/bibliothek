@@ -467,7 +467,11 @@ func (r *pgBescheidRepository) EmpfaengerFuerBescheid(ctx context.Context, schue
 	err := r.db.QueryRow(ctx, `
 		SELECT vorname, nachname, coalesce(klasse, ''), coalesce(strasse, ''),
 		       coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''),
-		       coalesce(geburtsdatum <= CURRENT_DATE - INTERVAL '18 years', false)
+		       -- Volljährigkeit am KALENDERTAG der Schule, nicht dem der Sitzung (im Image
+		       -- UTC): Am 18. Geburtstag galt das Kind bis 2 Uhr Berliner Zeit noch als
+		       -- minderjährig, und der Bescheid ging an die Eltern statt an die Person.
+		       -- Dieselbe Rechnung wie die Frist (sqlSchulHeute, 16.09.2026).
+		       coalesce(geburtsdatum <= `+sqlSchulHeute+` - INTERVAL '18 years', false)
 		FROM schueler WHERE id = $1`, schuelerID).
 		Scan(&d.Vorname, &d.Nachname, &d.Klasse, &d.Strasse, &d.Hausnummer, &d.PLZ, &d.Ort, &d.Volljaehrig)
 	return d, err
