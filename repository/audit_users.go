@@ -546,6 +546,25 @@ var spurTilgungen = []SpurTilgung{
 			  AND details->>'schueler_id' = ANY($1::text[])`,
 	},
 	{
+		// Schadensfall-Freitext (entschieden am 16.09.2026, OFFEN.md 4.15): Der FALL bleibt
+		// als Beleg stehen — Betrag, Datum, bezahlt oder storniert; daran hängen
+		// Kassenbuch und Bescheid. Was fällt, ist die Geschichte dazu: „Buch im Bus liegen
+		// gelassen, Mutter angerufen" ist Personenbezug, der die Anonymisierung sonst
+		// überlebt.
+		//
+		// Nur bei ERLEDIGTEN Fällen (ist_bezahlt deckt bezahlt UND storniert ab, siehe
+		// audit_system.go). Eine offene Forderung behält ihre Begründung: Sie wird noch
+		// gebraucht — jemand muss sie einziehen, erklären oder stornieren können. Dass ein
+		// Schüler mit offener Forderung überhaupt anonymisiert wird, verhindert das
+		// Prädikat (loeschfristen.go); diese Bedingung ist der Gürtel dazu.
+		//
+		// Idempotent über `beschreibung <> ''`.
+		Beschreibung: "schadensfaelle (Freitext erledigter Fälle)",
+		sql: `UPDATE schadensfaelle
+			SET beschreibung = ''
+			WHERE schueler_id = ANY($1::uuid[]) AND ist_bezahlt = true AND beschreibung <> ''`,
+	},
+	{
 		// Vormerkungen: die Freitext-Notiz kann personenbezogen sein, und die Vormerkung
 		// eines gelöschten/anonymisierten Schülers ist funktionslos. Beim Purge räumt sie
 		// auch der FK-CASCADE — hier steht sie trotzdem, damit der Cron-Pfad (Schüler

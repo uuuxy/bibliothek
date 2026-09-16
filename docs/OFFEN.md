@@ -645,15 +645,6 @@ sie nicht mit. Am 05.09.2026 entschieden: Arbeitslisten der Bibliothek bleiben o
 **Frage:** Gilt das auch für die eigene Liste der Lehrkraft, oder bekommt das Wunsch-Formular
 eine Buchauswahl?
 
-### 4.15 Freitext bezahlter Schadensfälle nach der Anonymisierung
-
-Beim Anonymisieren wird `schadensfaelle.beschreibung` nicht geleert. **Entschieden am
-16.09.2026: leeren, aber nur bei bezahlten (erledigten) Fällen.** Eine offene Forderung behält
-ihre Begründung — sie wird noch gebraucht; ein erledigter Fall braucht Betrag und Datum, nicht
-die Geschichte. Der Freitext gehört damit in die Statement-Liste der Spuren-Tilgung
-(`repository/audit_users.go`), nicht in einen eigenen Lauf: Purge, LUSD-Abgang und Cron fahren
-dieselbe Liste.
-
 ### 4.16 Routen ohne Aufrufer
 
 Laut API-Inventar (`docs/api_inventar.md`) ruft weder das Frontend noch ein Skript im Repo diese
