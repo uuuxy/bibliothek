@@ -28,10 +28,11 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
 3. **Peter, drei kurze Antworten** (Abschnitt 5.16, am Ende): Wie lange darf ein Kollege
    ein Buch behalten? Soll seine Ausleihhistorie nach einer Frist gelöscht werden? Soll er
    gemahnt werden? Ich habe überall gelassen, wie es war — ein Jahr, nein, nein.
-4. **Bei mir: alle Leser in eine Tabelle** (Abschnitt 5.16). Schüler und Kollegium stehen
-   jetzt an einem Ort, jeder aktive Leser darf ausleihen, und dein Admin-Konto findet die
-   Theke. Es fehlt noch der letzte Schritt: die Leserdatei — die Akte eines Kollegen, in
-   der man seine Bücher sieht, und die Namenssuche an der Theke.
+4. **Peter, 15 Minuten: einmal durch die Leserdatei gehen** (Abschnitt 5.16). Sie ist
+   fertig: Der Menüpunkt heißt jetzt „Leserdatei“ und führt Schüler und Kollegium in
+   einer Liste, ein Kollege hat eine Akte mit seinen Büchern, die Theke findet ihn über
+   den Namen, und „Neuer Leser“ fragt zuerst, wer das ist. Sieh dir an, ob die Wörter
+   stimmen und ob dir etwas fehlt. Was ein Kollege bewusst NICHT hat, steht in 5.16.
 5. **Peter, ein Wort: Freigabe für Stufe 3 des Offline-Baus.** Stufe 2 (der Server) ist am
    15.09.2026 gebaut; Stufe 3 ist die Theke selbst — das Band statt des Vollbilds, keine
    Sperre ohne Netz, das Nachsenden über die neue Tür und die Meldungsliste.
@@ -75,8 +76,8 @@ jemandem schaden?"**
 1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
    am Stack (2.3), dann Peters Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** entscheidet
    Peter dabei mit).
-2. **5.16** Leserdatei und Rolle Leitung: freigegeben, Stufe 1 läuft; danach Peters Blick auf den
-   Stand, dann Stufe 2.
+2. **5.16** Leserdatei und Rolle Leitung: gebaut. Offen sind nur noch Peters Blick auf den
+   Stand und seine drei Antworten zum Betrieb (Frist, Historie, Mahnung).
 3. **5.1** Schäden und Benutzer.
 4. **5.5–5.9**, **5.12**, **5.14** und die B-Punkte aus **5.15** kleine B-Commits.
 5. Mahnverfahren: Vor dem ersten echten Bescheid **5.2** und **4.5** (E4), dann **4.4** (E6) und
@@ -922,9 +923,13 @@ Recht ist, sondern ein Sammelpunkt über sechs Kategorien mit verschiedenen Rech
 Leitung sieht den Menüpunkt deshalb weiter und darf darin LUSD & Versetzung,
 Datenverwaltung, LMF-Aktionen und Lieferanten bedienen; verschlossen sind Schule, Fristen
 und Mailversand (`manage_settings`) sowie Benutzer & Rechte (`manage_users`). Das ist die
-Lesart, die zur Rolle passt — wer die Bibliothek führt, braucht den LUSD-Import. Soll auch
-das weg, ist es eine eigene Entscheidung: Diese Rechte hängen zugleich an Menüpunkten in
-der Verwaltung, die Rolle verlöre dort also mit.
+Lesart, die zur Rolle passt — wer die Bibliothek führt, braucht den LUSD-Import.
+
+**Entschieden am 16.09.2026: Es bleibt dabei.** Peter hat die Lesart bestätigt und
+nachgefragt, ob auch diese vier Kategorien zugehen sollen. Sie sollen nicht: Dieselben
+Rechte öffnen Menüpunkte in der Verwaltung, die Rolle verlöre dort mit — und eine Leitung
+ohne LUSD-Import kann die Bibliothek nicht führen. Ein Menüpunkt ist eben kein Recht,
+sondern ein Sammelpunkt; was wirklich gilt, beweist die Antwort des Servers.
 
 **NEU ENTSCHIEDEN am 16.09.2026 (Peter): Alle Leser in EINE Tabelle, jeder darf ausleihen.**
 
@@ -1026,21 +1031,35 @@ eine Zeile getroffen hat.
 2. **Soll die Befristung der Lesehistorie auch fürs Kollegium gelten?** Heute nein.
 3. **Sollen Kollegen gemahnt werden?** Heute nein.
 
-**Schritt „Theke und Leserdatei“ — der letzte, noch offen**
+**Schritt „Theke und Leserdatei“ — gebaut am 16.09.2026, wartet auf Peters Blick**
 
-Die Theke lädt einen Kollegen seit dem 16.09.2026 über seinen Ausweis und zeigt ihn als
-schmale Karte. Was fehlt, ist seine AKTE: Solange es sie nicht gibt, sieht man an der Theke
-nicht, welche Bücher er hat. Offen sind:
+Die Namenssuche an der Theke findet jeden Leser und nennt seine Art am Treffer. Der
+Menüpunkt heißt „Leserdatei“, die Liste führt Schüler und Kollegium mit einer Spalte Art
+und einer Suche über alle. Ein Kollege hat eine Akte — an der Theke dieselbe wie ein
+Schüler, mit seinen Ausleihen und dem Ausweisdruck. „Neuen Leser anlegen“ fragt zuerst
+nach der Art und legt für eine Lehrkraft eine Leserzeile ohne Konto an. Das Feld
+Personenart war schon mit Migration 125 aus der Benutzerverwaltung gefallen.
 
-- Theke: Die Namenssuche findet alle Leser, mit der Art am Treffer (heute sucht
-  `GET /api/search` nur Schüler und Buchtitel).
-- Menüpunkt „Leserdatei" statt „Schülerdatei", dasselbe Recht (`view_students`); Liste mit
-  Spalte Art, eine Suche über alle. Reiter wie heute.
-- Akte einer Lehrkraft: Persönliche Daten (Name, Ausweisnummer, Art), Ausleihen, Ausweis
-  drucken. E-Mail, Rolle und Freischaltung bleiben in der Benutzerverwaltung.
-- „Neuen Leser anlegen": zuerst die Art. Schüler wie heute; Lehrkraft/LiV legt eine Leserzeile
-  an — ein KONTO entsteht dabei nicht, das holt sich die Lehrkraft über die Selbstanmeldung.
-- Das Feld Personenart fällt aus der Benutzerverwaltung.
+Vier Dinge, die beim Bauen auffielen und mit erledigt sind:
+
+- Die Auswahl eines Treffers schickte die Ausweisnummer los. Ein Kollege aus der
+  Selbstanmeldung hat keine — der Klick tat sichtbar gar nichts. Jetzt geht die ID hinaus.
+- Ein markierter Kollege fiel lautlos vom Etikettenbogen: Der Druck gelang, der Bogen war
+  nur kürzer.
+- Sperren antwortete bei einem Kollegen mit „nicht gefunden“, und sein Passbild wurde
+  gespeichert, aber nie ausgeliefert.
+- Der Nummerngenerator las die Sicht `schueler` und hätte eine Nummer, die an einem
+  Kollegen hängt, ein zweites Mal ausgegeben.
+
+**Was ein Kollege in seiner Akte NICHT hat** — die Türen dahinter lesen alle die Sicht
+`schueler` und gehören der Schülerarbeit. Sie sind deshalb ausgeblendet statt kaputt:
+
+- Kontoauszug, Ersatzforderung und DSGVO-Auskunft.
+- Bearbeiten und Löschen. Name und Ausweisnummer eines Kollegen mit Konto führt die
+  Benutzerverwaltung — eine zweite Tür zur selben Identität soll es nicht geben. Eine
+  Leserzeile OHNE Konto (aus dem Anlegen-Dialog) lässt sich damit aber auch nicht mehr
+  korrigieren oder entfernen; das ist der nächste kleine Schritt, wenn er gebraucht wird.
+- Zusammenführen (das löst LUSD-Dubletten) und das Abgangsjahr.
 
 **Schritt „Umbenennen“ — erledigt am 16.09.2026, als Mittel statt als Abschluss (siehe oben).**
 
