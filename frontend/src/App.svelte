@@ -107,16 +107,14 @@
 		     Lieferant hat kein Konto und darf keinen Anmeldebildschirm sehen. -->
 		<BestellBestaetigung />
 	{:else}
-		{#if authStore.isLoggedIn && !authStore.heartbeatOk}
-			<div
-				class="fixed inset-0 bg-white/45 backdrop-blur-lg z-50 flex flex-col items-center justify-center space-y-4"
-			>
-				<Ladekreis size="lg" />
-				<h2 class="text-lg font-bold text-slate-800 tracking-wide">VERBINDUNG VERLOREN</h2>
-				<p class="text-slate-500 text-xs font-medium">Reconnecting...</p>
-			</div>
-		{/if}
-
+		<!-- Hier lag bis zum 16.09.2026 ein `fixed inset-0`-Vollbild mit Weichzeichner
+		     ("VERBINDUNG VERLOREN / Reconnecting..."), das 25 s nach dem letzten Herzschlag
+		     kam. Es hat die Theke angehalten: Der Stufe-1-Nachweis am echten Chrome ergab
+		     "ich kann nichts buchen", und der auffaellige rote Balken war nur der sichtbare
+		     Teil — blockiert hat dieses Vollbild. Punkt (a) des Offline-Plans verlangt das
+		     Gegenteil: ein nicht blockierendes Band, Scannen geht weiter. Die Lage wird
+		     deshalb im selben Band gemeldet wie der Netzausfall (OfflineIndicator) und
+		     nicht in einer zweiten Schicht darueber: eine Lage, eine Zeile. -->
 		{#if !authStore.sessionChecked}
 			<!-- Boot-Restore läuft — kurzer neutraler Zustand statt Login-Flackern -->
 			<div class="fixed inset-0 flex items-center justify-center">
@@ -154,7 +152,7 @@
 			</div>
 		{/if}
 	{/if}
-	<OfflineIndicator />
+	<OfflineIndicator verbindungVerloren={authStore.isLoggedIn && !authStore.heartbeatOk} />
 	<ToastContainer />
 	<BestaetigungsDialog />
 </div>
