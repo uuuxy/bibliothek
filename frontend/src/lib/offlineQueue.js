@@ -82,13 +82,24 @@ export function normalisiereEintrag(roh) {
 				? 'rueckgabe'
 				: undefined);
 	if (!barcode || (art !== 'ausleihe' && art !== 'rueckgabe')) return null;
+	// Ein unlesbarer Zeitpunkt wird zu JETZT, nicht zu NaN. `Number('2026-09-16T10:00:00Z')`
+	// ist NaN, und aus NaN baut der Sync `new Date(NaN).toISOString()` — das WIRFT. Der Wurf
+	// kam aus dem Bauen der Portion, also ausserhalb jedes Fangnetzes: Die Runde brach ab,
+	// `isSyncing` blieb auf „läuft", und danach lief kein Sync mehr, bis die Seite neu geladen
+	// wurde. Ein einziger Eintrag einer fremden oder von Hand gebauten Sicherungsdatei legte
+	// so die ganze Warteschlange still (Rasterdurchgang 16.09.2026).
+	//
+	// Verworfen wird deshalb NICHT: Der Scan ist eine echte Buchung, und der Server begrenzt
+	// den Zeitpunkt ohnehin auf seine eigene Uhr. Lieber eine Buchung mit dem Zeitpunkt des
+	// Einspielens als eine verlorene.
+	const zeit = Number(roh.gescannt_am ?? roh.timestamp ?? Date.now());
 	/** @type {OfflineEintrag} */
 	const eintrag = {
 		id: roh.id || crypto.randomUUID(),
 		art,
 		barcode: String(barcode),
 		leser_id: roh.leser_id ?? roh.schueler_id ?? null,
-		gescannt_am: Number(roh.gescannt_am ?? roh.timestamp ?? Date.now())
+		gescannt_am: Number.isFinite(zeit) ? zeit : Date.now()
 	};
 	// Nur uebernehmen, was wirklich dasteht: Ein `undefined` in IndexedDB waere ein Feld,
 	// das es gibt und das nichts bedeutet.

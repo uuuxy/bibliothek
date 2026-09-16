@@ -97,6 +97,29 @@ describe('Einspielen einer Offline-Sicherung', () => {
 		expect(idsBeiderLaeufe).toEqual(['stabile-id', 'stabile-id']);
 	});
 
+	// Ein unlesbarer Zeitpunkt wurde zu NaN, und aus NaN baute der Sync
+	// `new Date(NaN).toISOString()` — das wirft, und zwar beim Bauen der Portion, also
+	// ausserhalb jedes Fangnetzes: Die Runde brach ab, `isSyncing` blieb auf „läuft", und
+	// danach lief kein Sync mehr bis zum Neuladen der Seite. Ein einziger Eintrag einer
+	// fremden Datei legte so die ganze Warteschlange still.
+	it('macht aus einem unlesbaren Zeitpunkt JETZT, nicht NaN', async () => {
+		const { offlineSync } = await import('./stores/offlineSync.svelte.js');
+		const vorher = Date.now();
+
+		const anzahl = await offlineSync.importQueueFromJSON(
+			sicherungsdatei([
+				{ id: 'iso', action_type: 'checkout', barcode_id: 'B-9', timestamp: '2026-09-16T10:00:00Z' }
+			])
+		);
+
+		expect(anzahl, 'die Buchung geht nicht verloren').toBe(1);
+		const gescannt = enqueueSpy.mock.calls[0][0].gescannt_am;
+		expect(Number.isFinite(gescannt), 'kein NaN in der Warteschlange').toBe(true);
+		expect(gescannt).toBeGreaterThanOrEqual(vorher);
+		// Und die Portion laesst sich daraus bauen, statt zu werfen.
+		expect(() => new Date(gescannt).toISOString()).not.toThrow();
+	});
+
 	it('überspringt Einträge ohne Barcode, statt sie kaputt weiterzureichen', async () => {
 		const { offlineSync } = await import('./stores/offlineSync.svelte.js');
 
