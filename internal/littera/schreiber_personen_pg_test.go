@@ -200,8 +200,8 @@ func TestDoppelteAusweisnummerWeichtAus(t *testing.T) {
 	if bericht.Schueler != 2 {
 		t.Fatalf("beide Schüler müssen ankommen, gemeldet: %+v", bericht)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'L-2'`); n != 1 {
-		t.Errorf("der zweite Schüler soll die Ersatznummer L-2 tragen, gefunden: %d", n)
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'A-2'`); n != 1 {
+		t.Errorf("der zweite Schüler soll die Ersatznummer A-2 tragen, gefunden: %d", n)
 	}
 	if text := protokoll(); !strings.Contains(text, "Karte muss neu gedruckt werden") {
 		t.Errorf("die Ersatzvergabe muss protokolliert werden — die Karte stimmt nicht mehr:\n%s", text)
@@ -276,8 +276,8 @@ func TestAusweisnummerGleichBuchBarcodeWeichtAus(t *testing.T) {
 	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = '24'`); n != 0 {
 		t.Errorf("die Buchnummer 24 darf kein Ausweis werden, gefunden: %d", n)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'L-1'`); n != 1 {
-		t.Errorf("der Schüler soll die Ersatznummer L-1 tragen, gefunden: %d", n)
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'A-1'`); n != 1 {
+		t.Errorf("der Schüler soll die Ersatznummer A-1 tragen, gefunden: %d", n)
 	}
 	if text := protokoll(); !strings.Contains(text, "Barcode eines Buchs") {
 		t.Errorf("die Kollision mit dem Buch muss protokolliert werden:\n%s", text)
@@ -305,7 +305,7 @@ func TestErsatznummerWeichtVergebenerNummerAus(t *testing.T) {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
 	}
 	if _, err := pool.Exec(ctx,
-		`UPDATE leser SET barcode_id = 'L-2' WHERE id = $1`, handLeserID); err != nil {
+		`UPDATE leser SET barcode_id = 'A-2' WHERE id = $1`, handLeserID); err != nil {
 		t.Fatalf("Ausweis der Lehrkraft eintragen: %v", err)
 	}
 	ab := &Altbestand{Leser: []Leser{
@@ -319,13 +319,13 @@ func TestErsatznummerWeichtVergebenerNummerAus(t *testing.T) {
 	if bericht.Schueler != 2 {
 		t.Fatalf("beide Schüler müssen ankommen, gemeldet: %+v", bericht)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'L-2'`); n != 0 {
-		t.Errorf("L-2 trägt schon die Lehrkraft, kein Schüler darf sie bekommen, gefunden: %d", n)
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'A-2'`); n != 0 {
+		t.Errorf("A-2 trägt schon die Lehrkraft, kein Schüler darf sie bekommen, gefunden: %d", n)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'L-2-2'`); n != 1 {
-		t.Errorf("der zweite Schüler soll auf L-2-2 ausweichen, gefunden: %d", n)
+	if n := zaehle(t, pool, `SELECT count(*) FROM schueler WHERE barcode_id = 'A-2-2'`); n != 1 {
+		t.Errorf("der zweite Schüler soll auf A-2-2 ausweichen, gefunden: %d", n)
 	}
-	if text := protokoll(); !strings.Contains(text, "Ausweis L-2-2 vergeben") {
+	if text := protokoll(); !strings.Contains(text, "Ausweis A-2-2 vergeben") {
 		t.Errorf("die ausgewichene Ersatznummer muss im Protokoll stehen:\n%s", text)
 	}
 }

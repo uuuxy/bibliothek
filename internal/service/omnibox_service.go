@@ -123,7 +123,10 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 	resp := &OmniboxResult{}
 
 	// Präfix-Erkennung (Scanner-Steuerung):
-	// S- und L- stehen für einen Ausweis — Schüler ODER Lehrkraft (handleAusweisAction)
+	// A- steht für einen Ausweis. S- und L- sind die Vorsilben von FRÜHER (Handanlage
+	// bzw. Littera-Personenlauf); vergeben wird seit dem 16.09.2026 nur noch A-, gelesen
+	// werden alle drei — es gibt Nummern aus der Zeit davor, und Nummern werden nie
+	// recycelt (handleAusweisAction)
 	// B- steht für Buch (Book)
 	// G- steht für Gerät (Hardware-Geräte)
 	//
@@ -134,7 +137,8 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 	switch {
 	case strings.HasPrefix(q.Query, leserIDPraefix):
 		return resp, s.handleLeserIDAction(ctx, strings.TrimPrefix(q.Query, leserIDPraefix), resp)
-	case strings.HasPrefix(q.Query, "S-"), strings.HasPrefix(q.Query, "L-"):
+	case strings.HasPrefix(q.Query, "A-"), strings.HasPrefix(q.Query, "S-"),
+		strings.HasPrefix(q.Query, "L-"):
 		return resp, s.handleAusweisAction(ctx, q.Query, resp)
 	case strings.HasPrefix(q.Query, "B-"):
 		return resp, s.handleBookAction(ctx, q, resp)

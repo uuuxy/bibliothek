@@ -365,6 +365,29 @@ func pruefeLeserNamensdublette(ctx context.Context, tx pgx.Tx, vorname, nachname
 	return belegt, err
 }
 
+// AusweisPraefix steht auf JEDER Ausweisnummer, die dieses System vergibt — für einen
+// Schüler wie für einen Kollegen.
+//
+// „A" wie Ausweis (Peter, 16.09.2026). Vorher gab es zwei: „S-" aus der Handanlage und
+// dem LUSD-Import, „L-" aus dem Littera-Personenlauf. Beide Buchstaben behaupteten etwas
+// über die PERSON — Schüler, Lehrer —, und das ist seit der Leserdatei falsch: Wer jemand
+// ist, steht in den Stammdaten, nicht auf seinem Ausweis. Ein Nummernkreis, ein Buchstabe.
+//
+// Die Vorsilbe bleibt, sie ist kein Schmuck: OHNE NETZ ist sie die einzige Information,
+// an der die Theke einen Buchscan von einem Ausweisscan unterscheiden kann — offline gibt
+// es niemanden zu fragen (frontend/src/lib/stores/omnibox.svelte.js). Littera braucht sie
+// nicht, weil dort Nummer und Scanwert zwei verschiedene Felder sind und der Scanwert vom
+// Kartenhersteller kommt.
+//
+// Die alten Vorsilben versteht der Scanner weiterhin (internal/service/omnibox_service.go);
+// vergeben werden sie nicht mehr.
+const AusweisPraefix = "A-"
+
+// AusweisNummer setzt eine laufende Zahl in die Form, die auf den Ausweis gedruckt wird.
+// Fünfstellig mit führenden Nullen, damit die Nummern gleich lang bleiben und sich
+// lexikografisch wie numerisch gleich sortieren.
+func AusweisNummer(n int) string { return fmt.Sprintf("%s%05d", AusweisPraefix, n) }
+
 // resolveNeueBarcodeID liefert die zu verwendende Barcode-ID: entweder die vom Client
 // gewünschte (nach Eindeutigkeitsprüfung) oder eine neu generierte S-Nummer aus der
 // zentralen Sequenz. ok=false bedeutet: die Fehlerantwort wurde bereits geschrieben.
@@ -377,13 +400,13 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 		// gerechnet gäbe der Generator sie ein zweites Mal aus — und der eindeutige Index
 		// quittierte das als 500 statt mit einer Auskunft. Ein Nummernkreis, zwei
 		// Generatoren: genau der Fehler aus Migration 068, nur eine Tabelle weiter.
-		startNum, err := seqRepo.GetNextSequence(ctx, "leser", "barcode_id", "S-")
+		startNum, err := seqRepo.GetNextSequence(ctx, "leser", "barcode_id", AusweisPraefix)
 		if err != nil {
 			db.SafeRollback(ctx, tx)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return "", false
 		}
-		return fmt.Sprintf("S-%05d", startNum), true
+		return AusweisNummer(startNum), true
 	}
 
 	// Die Ausweisnummer gehört genau einer Person — Schüler wie Kollegium. Gefragt wird die

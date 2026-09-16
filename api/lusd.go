@@ -11,7 +11,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/db"
@@ -133,9 +132,22 @@ func readLusdUpload(r *http.Request) (lusdDatei, error) {
 // INNERHALB eines Imports garantiert kollisionsfrei (barcode_id ist UNIQUE —
 // die frühere Nanosekunden-Variante kollidierte per Geburtstagsparadoxon ab
 // ~50 Neuzugängen regelmäßig und brach den gesamten Import ab).
-func generateImportBarcode(counter int) string {
-	return fmt.Sprintf("S-%06d%04d", time.Now().Unix()%1000000, counter)
-}
+// generateImportBarcode formt die Ausweisnummer eines neu importierten Schülers. `nummer`
+// ist eine laufende Zahl aus DERSELBEN Quelle wie die Handanlage (GetNextSequence über
+// `leser`), nicht mehr die Uhr.
+//
+// Vorher stand hier `fmt.Sprintf("S-%06d%04d", time.Now().Unix()%1000000, counter)`, und
+// das war aus zwei Gründen falsch:
+//
+//  1. `Unix() % 1000000` wiederholt sich alle 1.000.000 Sekunden, also alle 11,6 Tage.
+//     Zwei Importe in diesem Abstand und zur selben Stelle des Zyklus erzeugen denselben
+//     sechsstelligen Block; dahinter steht nur die Zeilennummer. Bei Läufen ähnlicher
+//     Größe überlappen die fast vollständig — der eindeutige Index bricht dann den
+//     GESAMTEN Import ab, zu einem Zeitpunkt, den niemand vorhersagen kann.
+//  2. Der Generator wusste nichts von GetNextSequence. Ein Nummernkreis, zwei
+//     Vergabestellen, von denen nur eine mitzählt — genau der Fehler aus Migration 068,
+//     nur eine Tabelle weiter.
+func generateImportBarcode(nummer int) string { return AusweisNummer(nummer) }
 
 // computeLusdLauf vergleicht die Datei mit dem Bestand in einer Transaktion und liefert
 // entweder die Vorschau oder wendet die Änderungen an — samt der Umbenennungs-Wahl des

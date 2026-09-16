@@ -52,20 +52,20 @@ func TestPersonenlaufAusweis(t *testing.T) {
 
 	// 2. Collision case: Lesernummer already used
 	l2 := Leser{ID: "2", Lesernummer: "101"}
-	if got := p.ausweis(l2); got != "L-2" {
-		t.Errorf("expected L-2 due to collision, got %q", got)
+	if got := p.ausweis(l2); got != "A-2" {
+		t.Errorf("expected A-2 due to collision, got %q", got)
 	}
-	if !p.belegteAusweise["L-2"] {
-		t.Errorf("L-2 should be marked as used")
+	if !p.belegteAusweise["A-2"] {
+		t.Errorf("A-2 should be marked as used")
 	}
 
 	// 3. Empty Lesernummer
 	l3 := Leser{ID: "3", Lesernummer: ""}
-	if got := p.ausweis(l3); got != "L-3" {
-		t.Errorf("expected L-3 due to empty lesernummer, got %q", got)
+	if got := p.ausweis(l3); got != "A-3" {
+		t.Errorf("expected A-3 due to empty lesernummer, got %q", got)
 	}
-	if !p.belegteAusweise["L-3"] {
-		t.Errorf("L-3 should be marked as used")
+	if !p.belegteAusweise["A-3"] {
+		t.Errorf("A-3 should be marked as used")
 	}
 }
 
@@ -183,8 +183,8 @@ func TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse(t *testing.T) {
 
 	adresse := "erika.mustermann@philipp-reis-schule.de"
 	// Erste Person belegt die Adresse, die zweite kollidiert damit.
-	p.mailadresse(Leser{ID: "1", Lesernummer: "L-4711", EMail: adresse})
-	p.mailadresse(Leser{ID: "2", Lesernummer: "L-4712", EMail: adresse})
+	p.mailadresse(Leser{ID: "1", Lesernummer: "A-4711", EMail: adresse})
+	p.mailadresse(Leser{ID: "2", Lesernummer: "A-4712", EMail: adresse})
 	prot.Schliessen()
 
 	roh, err := os.ReadFile(pfad)
@@ -200,7 +200,7 @@ func TestPersonenlaufMailadresse_ProtokollOhneEchteAdresse(t *testing.T) {
 		t.Errorf("ein Bestandteil der Adresse steht im Protokoll:\n%s", inhalt)
 	}
 	// Die Zeile muss reparierbar bleiben: Quell-ID und Lesernummer gehören hinein.
-	for _, erwartet := range []string{"littera_id=2", "L-4712", "bereits vergeben"} {
+	for _, erwartet := range []string{"littera_id=2", "A-4712", "bereits vergeben"} {
 		if !strings.Contains(inhalt, erwartet) {
 			t.Errorf("Protokollzeile nennt %q nicht: %s", erwartet, inhalt)
 		}

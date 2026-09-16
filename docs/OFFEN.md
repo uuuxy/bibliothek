@@ -914,6 +914,37 @@ Kollegen einfach leer. Das Gate dazu misst die FORM, nicht die Werte:
 
 **Offen dazu — zwei Kleinigkeiten, die niemanden aufhalten:**
 
+**Eine Vorsilbe für Ausweise: `A-` (Peter, 16.09.2026).** Vorher gab es zwei, und beide
+behaupteten etwas über die Person: `S-` aus Handanlage und LUSD-Import, `L-` aus dem
+Littera-Personenlauf. Seit der Leserdatei ist das falsch — wer jemand ist, steht in den
+Stammdaten, nicht auf seinem Ausweis. Vergeben wird nur noch `A-`; der Scanner liest `S-` und
+`L-` weiter, weil es Nummern von früher gibt und Nummern nie recycelt werden.
+
+Die Vorsilbe BLEIBT, und der Grund ist wichtig genug, ihn festzuhalten: **Ohne Netz ist sie die
+einzige Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheiden kann.**
+Offline gibt es niemanden zu fragen (`frontend/src/lib/stores/omnibox.svelte.js` reiht nur `B-`
+ein). Littera braucht sie nicht, weil dort Nummer und Scanwert zwei verschiedene Felder sind und
+der Scanwert vom Kartenhersteller kommt (`FremdLeserNummer`) — dieses zweite Feld haben wir nicht.
+
+**Im selben Zug ein echter Fehler behoben:** `generateImportBarcode` baute Ausweisnummern aus
+`time.Now().Unix()%1000000` plus Zeilennummer. Der Zeitteil wiederholt sich alle **11,6 Tage**;
+zwei Läufe im richtigen Abstand und ähnlicher Größe erzeugen dieselben Nummern, und der eindeutige
+Index bricht dann den GESAMTEN Import ab. Dazu kannte der Generator die zweite Vergabestelle nicht
+— ein Nummernkreis, zwei Zähler, der Fehler aus Migration 068 eine Tabelle weiter. Beide ziehen
+jetzt aus `GetNextSequence` über `leser`, einmal je Lauf, mit Advisory-Lock.
+
+Der alte Test war grün und konnte es nicht sehen: Er prüfte die Eindeutigkeit INNERHALB eines
+Laufs, und die war nie das Problem. Das neue Gate steht an der echten Datenbank und über ZWEI
+Läufe: `api/lusd_ausweisnummern_pg_test.go`, mit Rot-Probe.
+
+**Nicht angefasst und mit Absicht offen:** der Nummernkreis selbst. Gemessen auf dem Testserver
+(16.09.2026): Exemplare 1…122.127 (30.658 nackte Littera-Nummern, 4.065 `LMF-`, 65 `B-`), Leser
+33 Zeilen, genau EINE Nummer wäre ohne Vorsilbe doppeldeutig. Aus `littera_sav.mdb` gemessen:
+Exemplare 1…61.512, Leser 0…3.531 — 1.990 von 1.991 Lesernummern sind dort zugleich
+Exemplarnummern. Littera lebt damit, weil seine Scanformen sich unterscheiden (13-stellige EAN
+gegen Herstellernummer). Ein gemeinsamer Nummernkreis ohne Vorsilben wäre möglich, brächte aber
+nichts, solange die Offline-Theke die Vorsilbe braucht.
+
 **Auch die AKTE hat jetzt eine Form (16.09.2026).** Sie hatte noch eine Weiche, das Formular
 schon nicht mehr — dadurch konnte ein Kollege ein Geburtsdatum eintragen, das seine Akte nicht
 anzeigte. `LeserPersoenlicheDaten.svelte` ist ersatzlos weg, eine Datei weniger; jeder Leser sieht

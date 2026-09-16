@@ -17,6 +17,18 @@ import (
 // aktualisieren (Klasse + Kontaktdaten) und Neuzugänge anlegen — entlang der
 // Zuordnung aus der Klassifizierung, Zeile für Zeile in Dateireihenfolge.
 func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z lusdZuordnung) error {
+	// Die Ausweisnummern der Neuzugänge kommen aus DERSELBEN Quelle wie die der
+	// Handanlage — einmal je Lauf gezogen, dann fortlaufend weitergezählt.
+	//
+	// Einmal und nicht je Zeile: GetNextSequence hält einen Advisory-Lock in DIESER
+	// Transaktion, bis sie endet. Der Lauf hat den Nummernkreis damit für sich, und die
+	// Nummern sind lückenlos. Gefragt wird die TABELLE `leser`, nicht die Sicht
+	// `schueler`: Die höchste Nummer kann seit Migration 125 an einem Kollegen hängen,
+	// und über die Sicht gerechnet gäbe der Generator sie ein zweites Mal aus.
+	startNum, err := repository.NewSequenceRepository(tx).GetNextSequence(ctx, "leser", "barcode_id", AusweisPraefix)
+	if err != nil {
+		return fmt.Errorf("ausweisnummern für die Neuzugänge: %w", err)
+	}
 	barcodeCounter := 0
 
 	var batchRecords []parsedStudentRow
@@ -53,10 +65,10 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z l
 			}
 		}
 
-		barcodeCounter++
-		if err := legeNeuenSchuelerAn(ctx, tx, rec, barcodeCounter); err != nil {
+		if err := legeNeuenSchuelerAn(ctx, tx, rec, startNum+barcodeCounter); err != nil {
 			return err
 		}
+		barcodeCounter++
 	}
 
 	if len(batchRecords) > 0 {

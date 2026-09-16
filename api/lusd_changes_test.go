@@ -11,19 +11,37 @@ import (
 	"github.com/pashagolub/pgxmock/v4"
 )
 
-// Regressionstest: Die frühere Nanosekunden-Barcode-Generierung kollidierte per
-// Geburtstagsparadoxon (10.000 Buckets) ab ~50 Neuzugängen regelmäßig —
-// barcode_id ist UNIQUE, der gesamte Import brach ab. Der laufende Zähler macht
-// Barcodes innerhalb eines Imports deterministisch eindeutig.
-func TestGenerateImportBarcode_UniqueWithinImport(t *testing.T) {
+// Die Ausweisnummer eines Importzugangs hat DIESELBE Form wie die der Handanlage.
+//
+// Dieser Test hat zweimal die Seite gewechselt, und seine Geschichte ist die Lehre:
+//
+//  1. Ursprünglich baute der Generator die Nummer aus Nanosekunden. Ab ~50 Neuzugängen
+//     kollidierte er per Geburtstagsparadoxon, der Import brach ab. Ein laufender Zähler
+//     kam dazu, und dieser Test bewies: INNERHALB eines Imports ist alles eindeutig.
+//  2. Genau da war die Lücke. „Innerhalb eines Imports" war nie das Problem. Der Zeitteil
+//     `time.Now().Unix()%1000000` wiederholt sich alle 11,6 Tage, und der Zähler ist bloss
+//     die Zeilennummer — zwei Läufe im richtigen Abstand erzeugen dieselben Nummern. Der
+//     Test konnte das nicht sehen, weil er nur EINEN Lauf betrachtete. Ein grünes Gate am
+//     falschen Ort.
+//
+// Seit dem 16.09.2026 gibt es die Frage nicht mehr: Die Nummern kommen aus derselben
+// Sequenz wie die der Handanlage (GetNextSequence über `leser`), einmal je Lauf gezogen
+// und fortlaufend weitergezählt. Dieser Test prüft nur noch die FORM — dass Import und
+// Handanlage dieselbe erzeugen. Dass zwei Läufe sich nicht ins Gehege kommen, prüft
+// api/lusd_ausweisnummern_pg_test.go an der echten Datenbank; an einer reinen
+// Formatfunktion wäre es nicht zu beweisen.
+func TestGenerateImportBarcode_WieDieHandanlage(t *testing.T) {
 	seen := make(map[string]bool, 5000)
 	for i := 1; i <= 5000; i++ {
 		b := generateImportBarcode(i)
 		if seen[b] {
-			t.Fatalf("Barcode-Kollision bei Zähler %d: %s", i, b)
+			t.Fatalf("Barcode-Kollision bei Nummer %d: %s", i, b)
 		}
-		if !strings.HasPrefix(b, "S-") {
-			t.Fatalf("unerwartetes Format: %s", b)
+		if !strings.HasPrefix(b, AusweisPraefix) {
+			t.Fatalf("unerwartetes Format: %s — erwartet die Vorsilbe %q", b, AusweisPraefix)
+		}
+		if b != AusweisNummer(i) {
+			t.Fatalf("Import erzeugt %q, die Handanlage %q — eine Form, eine Quelle", b, AusweisNummer(i))
 		}
 		seen[b] = true
 	}
