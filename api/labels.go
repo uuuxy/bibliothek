@@ -34,11 +34,17 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabelDetail, error) {
 	// erworben_am ist NOT NULL mit Vorgabe CURRENT_DATE — to_char liefert also immer
 	// vier Ziffern und nie NULL.
+	//
+	// Ausgesonderte Exemplare bleiben draußen (17.09.2026, OFFEN.md 5.5): Wer die Etiketten
+	// eines Titels druckt, klebt sie auf Bücher, die im Regal stehen. Ein ausgesondertes
+	// Exemplar gibt es dort nicht mehr — sein Etikett ist ein Blatt Papier für ein Buch,
+	// das niemand findet, und auf einem Bogen mit fortlaufenden Plätzen verschiebt es alle
+	// folgenden. Die Zeile bleibt in der Datenbank; nur gedruckt wird sie nicht.
 	query := `
 		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, '')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
-		WHERE e.titel_id = $1
+		WHERE e.titel_id = $1 AND e.ist_ausgesondert = false
 		ORDER BY e.barcode_id
 	`
 	rows, err := s.DB.Pool.Query(ctx, query, id)
