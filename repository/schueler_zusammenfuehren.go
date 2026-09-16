@@ -55,6 +55,13 @@ var (
 	ErrZusammenfuehrenVerschiedeneArten = errors.New("ein schüler lässt sich nicht mit einem kollegen zusammenführen")
 )
 
+// PlatzhalterDomain ist die Domäne der Ersatzadressen aus der Littera-Übernahme. Sie
+// steht hier und nicht in internal/littera, weil dieses Paket littera nicht importieren
+// darf — littera importiert repository, ein Zyklus wäre die Folge. Die Übernahme hält
+// ihre eigene Konstante dagegen (internal/littera/platzhalter_domain_test.go), damit ein
+// Umbenennen nicht still eine der beiden Seiten stehen lässt.
+const PlatzhalterDomain = "@littera.invalid"
+
 // ZusammenfuehrenAuftrag benennt die beiden Datensätze; AbgaengerJahr rechnet das
 // Abgangsjahr aus der übernommenen Klasse (dieselbe Regel wie bei der Handanlage,
 // api/student_create.go — sie gehört dem Aufrufer, nicht dieser Schicht).
@@ -258,7 +265,12 @@ type gewanderteVorgaenge struct {
 	// Konten (Migration 123): Zugangskonten, deren Verknüpfung von der Quelle auf das
 	// Ziel gezogen ist. Normalerweise leer — ein Schüler hat kein Konto.
 	Konten []string
-	Foto   bool
+	// PlatzhalterKonten: Konten unter der Platzhalter-Domäne, die beim Zusammenführen
+	// entfallen sind. Sie stehen im Rückweg-Eintrag, weil hier als einziger Stelle des
+	// Vorgangs ein Konto GELÖSCHT wird — ohne den Eintrag wäre nicht mehr zu sehen, dass
+	// es eines gab.
+	PlatzhalterKonten []string
+	Foto              bool
 	// ZielFotoGewichen: das Ziel hatte ein älteres Foto, das dem jüngeren der Quelle
 	// gewichen ist — der Rückweg weiß dann, dass ein Foto verloren ist.
 	ZielFotoGewichen bool
@@ -320,6 +332,33 @@ func verschiebeVorgaenge(ctx context.Context, tx pgx.Tx, ziel, quelle string, er
 	// Anmeldungen auf einer Leserzeile, und welche der beiden bleiben soll, ist eine
 	// Entscheidung über zwei Menschen. Lieber ein klarer Abbruch als eine
 	// Constraint-Meldung, die niemand liest.
+	//
+	// EINE Ausnahme, und nur diese: ein Konto unter der Platzhalter-Domäne. Es ist kein
+	// Zugang, sondern Füllmaterial — die Übernahme aus Littera braucht für jedes Konto
+	// eine Adresse, die Leserdatei dort führt aber keine (internal/littera:
+	// schreiber_personen.go). Die Domäne ist nach RFC 2606 dauerhaft reserviert, kein
+	// Mailserver löst sie auf, und die Anmeldung läuft ausschließlich über IMAP gegen den
+	// Schul-Mailserver — mit dieser Adresse kommt niemand hinein.
+	//
+	// Ohne die Räumung stünde der Abbruch genau dort, wo „das ist dieselbe Person"
+	// gebraucht wird: Eine übernommene Lehrkraft, die sich selbst anmeldet, hat dann ein
+	// Platzhalter-Konto und ein echtes — zwei Konten, aber nur ein Zugang.
+	//
+	// Die Bedingung ist eng: Geräumt wird nur, wenn die ANDERE Seite ein ECHTES Konto hat.
+	// Stehen zwei Platzhalter gegeneinander (zwei Littera-Zeilen derselben Person), bleibt
+	// der Abbruch — dort ist nichts zu retten und nichts zu entscheiden, was diese Schicht
+	// wüsste.
+	if g.PlatzhalterKonten, err = idsAus(ctx, tx, `
+		DELETE FROM benutzer b
+		 WHERE b.leser_id IN ($1, $2)
+		   AND lower(b.email) LIKE '%'||$3
+		   AND EXISTS (SELECT 1 FROM benutzer a
+		                WHERE a.leser_id IN ($1, $2) AND a.leser_id <> b.leser_id
+		                  AND lower(a.email) NOT LIKE '%'||$3)
+		RETURNING b.id`, ziel, quelle, PlatzhalterDomain); err != nil {
+		return nil, fmt.Errorf("platzhalter-konto räumen: %w", err)
+	}
+
 	var zielKonto, quelleKonto bool
 	if err := tx.QueryRow(ctx, `SELECT
 			EXISTS (SELECT 1 FROM benutzer WHERE leser_id = $1),
@@ -413,6 +452,9 @@ func schreibeRueckwegEintrag(ctx context.Context, tx pgx.Tx, p rueckwegEintragPa
 			"vormerkungen": p.Gewandert.Vormerkungen, "vormerkungen_doppelt_geloescht": p.Gewandert.VormerkungenDoppelt,
 			"bescheide": p.Gewandert.Bescheide,
 			"foto":      p.Gewandert.Foto, "ziel_foto_gewichen": p.Gewandert.ZielFotoGewichen,
+			// Das einzige, was der Vorgang LÖSCHT statt umzuhängen — steht deshalb im
+			// Rückweg, auch wenn es kein Zugang war.
+			"platzhalter_konten": p.Gewandert.PlatzhalterKonten,
 		},
 	})
 	if err != nil {

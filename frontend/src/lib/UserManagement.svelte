@@ -185,7 +185,7 @@
 	</div>
 {/if}
 
-<UserManagementZugangsanfragen {users} />
+<UserManagementZugangsanfragen {users} onZugeordnet={fetchUsers} />
 
 <!-- `mt-4`: Abstand Reiterband→Pille ist im Haus 24 px + 16 px; er fehlte hier. -->
 <div class="mt-4 mb-4 flex flex-col gap-3">
