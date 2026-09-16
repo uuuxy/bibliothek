@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"bibliothek/apierrors"
+	"bibliothek/auth"
 	"bibliothek/db"
 	"bibliothek/repository"
 
@@ -103,7 +104,16 @@ type CreateStudentRequest struct {
 	Nachname string `json:"nachname" validate:"required"`
 	// Art: schueler | lehrkraft | liv. Leer heißt „schueler" — die Vorgabe der Spalte
 	// und das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.
-	Art       string `json:"art"`
+	Art string `json:"art"`
+	// Email ist die Schuladresse einer Lehrkraft oder LiV und dort PFLICHT (Peter,
+	// 16.09.2026). Bei einem Schüler bleibt sie leer — er hat kein Konto.
+	//
+	// Sie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine
+	// Person (IMAP), und über sie greift `benutzer_email_unique`. Genau das verhindert den
+	// Doppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein
+	// Portal" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite
+	// Leserzeile an.
+	Email     string `json:"email"`
 	Klasse    string `json:"klasse"`
 	BarcodeID string `json:"barcode_id"`
 	// Geburtsdatum (YYYY-MM-DD) ist Pflicht für einen SCHÜLER — geprüft im Handler mit
@@ -126,6 +136,41 @@ func istSchuelerArt(art string) bool { return art == "schueler" }
 // Schüler gibt es kein Geburtsdatum, an dem die Doppelprüfung greifen könnte.
 const meldungLeserNamensdublette = "achtung: Unter diesem Namen steht bereits ein Leser in der Leserdatei. Hat sich die Person über Mein Portal schon selbst angemeldet? Ein zweiter Eintrag teilt ihre Ausleihen auf zwei Akten."
 
+// pruefeKollegiumEmail prüft die Schuladresse einer Lehrkraft oder LiV.
+//
+// PFLICHT, und zwar aus einem Grund, der nichts mit Erreichbarkeit zu tun hat: Ohne sie
+// entsteht kein Konto, und ohne Konto steht die Person zweimal in der Leserdatei, sobald
+// sie sich über „Mein Portal" selbst anmeldet — einmal von Hand, einmal vom Wächter
+// trg_benutzer_hat_leserzeile. Ausweis und Ausleihen hängen dann am ersten Eintrag, die
+// Anmeldung am zweiten, und niemand merkt es.
+//
+// Die Domain wird geprüft, WENN eine freigegeben ist (SELBSTANMELDUNG_DOMAIN). Das ist
+// keine Förmlichkeit: Angemeldet wird über IMAP gegen den Schulserver. Eine fremde
+// Adresse ergäbe ein Konto, an dem sich niemand anmelden kann — besser jetzt eine klare
+// Meldung als später eine unerklärliche Abweisung.
+func pruefeKollegiumEmail(roh string) error {
+	email := strings.TrimSpace(roh)
+	if email == "" {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+		return errors.New("Die Schul-E-Mail-Adresse ist Pflicht: An ihr erkennt die Anmeldung die Person, und sie verhindert einen zweiten Eintrag, wenn sie sich später selbst anmeldet.")
+	}
+	at := strings.LastIndex(email, "@")
+	if at <= 0 || at == len(email)-1 || strings.ContainsAny(email, " \t") {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+		return fmt.Errorf("%q ist keine E-Mail-Adresse.", email)
+	}
+	// Vergleich über das LETZTE „@" und die vollständige Domain — dieselbe Regel wie in
+	// auth.darfSichSelbstAnmelden. Ein Suffix-Vergleich ließe „boesephilipp-reis-schule.de"
+	// durch.
+	if freigegeben := auth.SelbstanmeldeDomain(); freigegeben != "" {
+		if !strings.EqualFold(strings.TrimSpace(email[at+1:]), freigegeben) {
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+			return fmt.Errorf("Die Adresse muss auf @%s enden — angemeldet wird über den Schulserver.", freigegeben)
+		}
+	}
+	return nil
+}
+
 // pruefeLeserAngaben paart die Pflichtfelder an die Art — dieselbe Paarung, die
 // chk_leser_schueler_pflichtfelder in der Datenbank hält.
 //
@@ -137,6 +182,14 @@ func pruefeLeserAngaben(req *CreateStudentRequest) error {
 	if !leserArten[req.Art] {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
 		return fmt.Errorf("Unbekannte Art %q. Möglich sind: Schüler, Lehrkraft, LiV.", req.Art)
+	}
+	if !istSchuelerArt(req.Art) {
+		if err := pruefeKollegiumEmail(req.Email); err != nil {
+			return err
+		}
+	} else if strings.TrimSpace(req.Email) != "" {
+		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+		return errors.New("Ein Schüler bekommt kein Konto und keine E-Mail-Adresse.")
 	}
 	if istSchuelerArt(req.Art) {
 		if req.Klasse == "" {
@@ -208,7 +261,15 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 			return
 		}
 
-		studentID, barcodeID, ok := s.legeSchuelerAn(ctx, w, req, parsedGebdatum)
+		// Freischalten ist eine Entscheidung, kein technischer Schritt: Angemeldet wird über
+		// IMAP, ein Passwort gibt es bei uns nicht. Wer ein Konto freischalten darf, sagt
+		// `manage_users` — und nur wer das Recht hat, legt hier ein AKTIVES Konto an.
+		//
+		// Das Konto entsteht in beiden Fällen. Es muss auch entstehen: Seine eindeutige
+		// E-Mail-Adresse ist das, was den zweiten Eintrag bei der Selbstanmeldung
+		// verhindert. Ob es aktiv ist, ändert daran nichts — wer nicht freischalten darf,
+		// erzeugt eine Zugangsanfrage, wie sie die Selbstanmeldung auch erzeugt.
+		studentID, barcodeID, ok := s.legeSchuelerAn(ctx, w, req, parsedGebdatum, s.BesitztRecht(r, "manage_users"))
 		if !ok {
 			return
 		}
@@ -224,7 +285,7 @@ func (s *Server) CreateStudentHandler() http.HandlerFunc {
 // legeSchuelerAn wickelt die Neuanlage in einer Transaktion ab (Duplikatsprüfung,
 // Barcode-Auflösung/-Generierung, Insert, Commit) und liefert die neue Schüler- und
 // Barcode-ID. ok=false: die Fehlerantwort wurde bereits geschrieben.
-func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req CreateStudentRequest, parsedGebdatum *time.Time) (studentID, barcodeID string, ok bool) {
+func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req CreateStudentRequest, parsedGebdatum *time.Time, darfFreischalten bool) (studentID, barcodeID string, ok bool) {
 	tx, err := s.DB.Pool.Begin(ctx)
 	if err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
@@ -304,11 +365,58 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		return "", "", false
 	}
 
+	// 4. Das Konto einer Lehrkraft — in DERSELBEN Transaktion.
+	//
+	// `leser_id` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
+	// NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
+	// hier die zweite — genau der Doppeleintrag, den diese Änderung abschafft.
+	if !istSchuelerArt(req.Art) {
+		if !s.legeKollegiumskontoAn(ctx, w, tx, req, studentID, darfFreischalten) {
+			return "", "", false
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}
 	return studentID, barcodeID, true
+}
+
+// legeKollegiumskontoAn hängt an die frische Leserzeile das Anmeldekonto.
+//
+// ok=false: Die Fehlerantwort steht bereits. Der wichtigste Fall ist die BELEGTE Adresse
+// — sie heisst fast immer, dass die Person längst im System steht (etwa über die
+// Selbstanmeldung). Das ist eine Auskunft und kein Fehler: Wer sie liest, soll den
+// vorhandenen Eintrag suchen und nicht einen zweiten bauen.
+func (s *Server) legeKollegiumskontoAn(ctx context.Context, w http.ResponseWriter, tx pgx.Tx,
+	req CreateStudentRequest, leserID string, aktiv bool) bool {
+	email := strings.ToLower(strings.TrimSpace(req.Email))
+	tag, err := tx.Exec(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id, zugang_beantragt_am)
+		VALUES ($1, $2, $3, 'kollegium', $4, $5, CASE WHEN $4 THEN NULL ELSE CURRENT_TIMESTAMP END)
+	`, req.Vorname, req.Nachname, email, aktiv, leserID)
+	if err == nil {
+		// Der CommandTag wird geprüft und nicht verworfen: Bliebe die Zeile aus, hätte die
+		// Lehrkraft eine Leserzeile ohne Konto — sie stünde in der Leserdatei, käme aber
+		// nie ins Portal, und der Dialog hätte „angelegt" gemeldet. Genau der Phantom-
+		// Erfolg, den die Ratsche in phantom_erfolg_test.go abfängt.
+		if tag.RowsAffected() != 1 {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError,
+				fmt.Errorf("das Konto zu %s ist nicht entstanden", email))
+			return false
+		}
+		return true
+	}
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
+			fmt.Errorf("Unter %s steht bereits ein Zugang. Die Person ist schon in der Leserdatei — bitte dort suchen, statt einen zweiten Eintrag anzulegen.", email))
+		return false
+	}
+	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+	return false
 }
 
 // parseCreateGeburtsdatum parst das Geburtsdatum (YYYY-MM-DD) aus dem Anlage-Request.

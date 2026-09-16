@@ -957,9 +957,31 @@ Unterschiedlich sind nur noch HANDLUNGEN, und zwar nicht aus Geschmack: Zusammen
 Löschen schreiben gegen die Sicht `schueler` und träfen bei einem Kollegen null Zeilen. Solange
 das so ist, bleiben die Knöpfe bei ihm weg — ein Knopf, der nichts tut, ist schlimmer als keiner.
 Gate: `frontend/src/lib/leserAkte.test.js`.
-- **Doppelte Leserzeile durch die Selbstanmeldung (Peters Frage vom 16.09.2026).** Ein Kollege,
-  der von Hand angelegt wurde („Neuer Leser" erzeugt eine Leserzeile OHNE Konto) und sich danach
-  selbst anmeldet, steht zweimal in der Leserdatei. `legeZugangsanfrageAn` schreibt das Konto
+- **ERLEDIGT am 16.09.2026: Doppelte Leserzeile durch die Selbstanmeldung.** Peters Lösung: Beim
+  Anlegen einer Lehrkraft oder LiV ist die **Schul-E-Mail Pflicht**. Damit entsteht das Konto
+  sofort, und weil der Anmeldeweg eine Zugangsanfrage NUR anlegt, wenn zu der Adresse gar kein
+  Konto existiert, findet die spätere Selbstanmeldung genau diesen Eintrag. Es gibt kein zweites
+  Mal.
+
+  **Freigeschaltet** wird das Konto nur, wenn der Anlegende `manage_users` hat — sonst entsteht
+  eine Zugangsanfrage wie bei der Selbstanmeldung. So bekommt niemand über die Leserdatei ein
+  Recht, das ihm die Benutzerverwaltung verwehrt. Für einen Admin ist es ein Schritt statt zwei:
+  Angemeldet wird über IMAP, ein Passwort speichern wir nicht, die Person kann sofort hinein.
+
+  Nebenbei belegt und ausdrücklich als NICHT-Fehler festgehalten: Der Wächter
+  `trg_benutzer_hat_leserzeile` ist ein BEFORE INSERT und liefe bei einem verworfenen
+  `ON CONFLICT`-Insert ins Leere — seine Leserzeile bliebe als Waise stehen. Auf dem Anmeldeweg
+  passiert das nicht, weil `legeZugangsanfrageAn` nur im `pgx.ErrNoRows`-Zweig aufgerufen wird.
+  Gate dafür: `auth/selbstanmeldung_pg_test.go`.
+
+  Offen bleibt der Fall der **Altbestände**: Kollegen, die vor dieser Änderung ohne Adresse
+  angelegt wurden. Für sie warnt die Zeile über der Benutzertabelle bisher nur bei gleichnamigen
+  KONTEN aus Littera (`@littera.invalid`), nicht bei einer Leserzeile ohne Konto. Reparierbar
+  sind sie seit heute (Zusammenführen), gefunden werden sie noch nicht von allein.
+
+- **Nicht mehr aktuell, hier nur als Geschichte:** Ein Kollege,
+  der von Hand angelegt wurde („Neuer Leser" erzeugte eine Leserzeile OHNE Konto) und sich danach
+  selbst anmeldet, stand zweimal in der Leserdatei. `legeZugangsanfrageAn` schreibt das Konto
   (`auth/selbstanmeldung.go`), und der Wächter `trg_benutzer_hat_leserzeile` legt dazu eine
   FRISCHE Leserzeile an, ohne zu prüfen, ob die Person schon dasteht. Ergebnis: Ausweis und
   Ausleihen am ersten Eintrag, die Anmeldung am zweiten. Der Name stammt aus dem Teil vor dem @

@@ -50,7 +50,7 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 	}
 
 	// 1. Lehrkraft: ohne Klasse, ohne Geburtsdatum — und sie bekommt eine Nummer.
-	rec := anlegen(t, `{"art":"lehrkraft","vorname":"Katrin","nachname":"Anlegetest"}`)
+	rec := anlegen(t, `{"art":"lehrkraft","vorname":"Katrin","nachname":"Anlegetest","email":"katrin.anlegetest@schule.invalid"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("Lehrkraft anlegen: Status %d, %s", rec.Code, rec.Body.String())
 	}
@@ -80,13 +80,20 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 	if klasse != "" || abgang != nil {
 		t.Errorf("eine Lehrkraft hat keine Klasse und kein Abgangsjahr: %q / %v", klasse, abgang)
 	}
-	if hatKonto {
-		t.Error("die Leserdatei legt KEIN Konto an — das holt sich die Lehrkraft über die Selbstanmeldung")
+	// UMGEKEHRT seit dem 16.09.2026 (Peter): Die Leserdatei legt das Konto MIT an, weil die
+	// Schul-E-Mail beim Anlegen Pflicht ist. Nur so findet die spätere Selbstanmeldung über
+	// „Mein Portal" diesen Eintrag wieder, statt einen zweiten anzulegen — der Doppeleintrag
+	// war sonst unbemerkt und von niemandem zu reparieren. Der Zugang selbst bleibt eine
+	// Entscheidung: Freigeschaltet wird nur, wenn der Anlegende `manage_users` hat.
+	if !hatKonto {
+		t.Error("die Leserdatei legt das Konto mit an — sonst steht die Lehrkraft nach der Selbstanmeldung doppelt da")
 	}
 
 	// 2. Derselbe Name ein zweites Mal: Das ist fast immer der Kollege, der sich längst
 	//    selbst angemeldet hat. Zwei Akten teilen seine Ausleihen auf.
-	if rec := anlegen(t, `{"art":"lehrkraft","vorname":"Katrin","nachname":"Anlegetest"}`); rec.Code != http.StatusConflict {
+	// Andere Adresse als oben: Sonst schlüge die eindeutige E-Mail zu, und der Test
+	// prüfte nicht mehr die NAMENS-Dublette, die er prüfen will.
+	if rec := anlegen(t, `{"art":"lehrkraft","vorname":"Katrin","nachname":"Anlegetest","email":"k.anlegetest2@schule.invalid"}`); rec.Code != http.StatusConflict {
 		t.Errorf("zweiter Eintrag mit demselben Namen: Status %d, erwartet 409 — %s", rec.Code, rec.Body.String())
 	}
 
@@ -114,7 +121,7 @@ func TestLeserAnlegen_ArtEntscheidet(t *testing.T) {
 
 	// 4. Eine Lehrkraft MIT Klasse ist ein Widerspruch: Sie stünde in Klassenlisten und
 	//    fiele beim nächsten LUSD-Abgleich auf.
-	if rec := anlegen(t, `{"art":"lehrkraft","vorname":"Falk","nachname":"Anlegetest","klasse":"7a"}`); rec.Code != http.StatusBadRequest {
+	if rec := anlegen(t, `{"art":"lehrkraft","vorname":"Falk","nachname":"Anlegetest","klasse":"7a","email":"falk.anlegetest@schule.invalid"}`); rec.Code != http.StatusBadRequest {
 		t.Errorf("Lehrkraft mit Klasse: Status %d, erwartet 400 — %s", rec.Code, rec.Body.String())
 	}
 

@@ -27,6 +27,7 @@
 	let customKlasseInput = $state(false);
 	let newBarcode = $state('');
 	let newGeburtsdatum = $state('');
+	let newEmail = $state('');
 	let createError = $state('');
 	let duplicateConflict = $state('');
 	let isSaving = $state(false);
@@ -43,6 +44,7 @@
 			newKlasse = '';
 			newBarcode = '';
 			newGeburtsdatum = '';
+			newEmail = '';
 			createError = '';
 			duplicateConflict = '';
 			customKlasseInput = false;
@@ -53,7 +55,15 @@
 	function fehlendeAngabe() {
 		if (!newVorname.trim() || !newNachname.trim())
 			return 'Vorname und Nachname sind Pflichtfelder.';
-		if (kollege) return '';
+		if (kollege) {
+			// Die Schuladresse ist bei einer Lehrkraft Pflicht, und zwar nicht als
+			// Kontaktangabe: Aus ihr entsteht das Anmeldekonto, und weil sie eindeutig ist,
+			// findet die spätere Selbstanmeldung über „Mein Portal" diesen Eintrag wieder
+			// — statt einen zweiten anzulegen.
+			if (!newEmail.trim())
+				return 'Die Schul-E-Mail-Adresse fehlt. Ohne sie steht die Person doppelt in der Leserdatei, sobald sie sich über „Mein Portal“ selbst anmeldet.';
+			return '';
+		}
 		if (!newKlasse.trim()) return 'Klasse ist ein Pflichtfeld.';
 		if (!newGeburtsdatum.trim())
 			return 'Geburtsdatum fehlt. Ohne Geburtsdatum kann der LUSD-Import diesen Schüler später nicht wiedererkennen — er würde doppelt angelegt.';
@@ -73,7 +83,10 @@
 				nachname: newNachname.trim(),
 				klasse: kollege ? '' : newKlasse.trim(),
 				barcode_id: newBarcode.trim(),
-				geburtsdatum: kollege ? null : newGeburtsdatum.trim()
+				geburtsdatum: kollege ? null : newGeburtsdatum.trim(),
+				// Nur beim Kollegen: Ein Schüler bekommt kein Konto, und der Server weist
+				// eine Adresse an einem Schüler ausdrücklich ab.
+				email: kollege ? newEmail.trim() : ''
 			});
 			if (res.ok) {
 				onsuccess?.();
@@ -130,6 +143,7 @@
 				bind:vorname={newVorname}
 				bind:nachname={newNachname}
 				bind:barcode={newBarcode}
+				bind:email={newEmail}
 			/>
 		{:else}
 			<StudentFormFelder

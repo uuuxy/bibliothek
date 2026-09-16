@@ -35,6 +35,13 @@ describe('Neuen Leser anlegen', () => {
 		}
 		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: vorname } });
 		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: nachname } });
+		// Die Schul-E-Mail ist seit dem 16.09.2026 Pflicht — ohne sie kommt das Formular
+		// nicht bis zum Server, und der Test prüfte nur noch seine eigene Vorprüfung.
+		if (art !== 'schueler') {
+			await fireEvent.input(screen.getByLabelText('Schul-E-Mail *'), {
+				target: { value: `${vorname}.${nachname}@schule.invalid`.toLowerCase() }
+			});
+		}
 		await fireEvent.click(screen.getByText('Speichern'));
 		return screen;
 	}
@@ -58,7 +65,20 @@ describe('Neuen Leser anlegen', () => {
 		expect(/** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0][1]).art).toBe('liv');
 	});
 
-	it('sagt einer Lehrkraft, dass hier kein Zugang entsteht', async () => {
+	it('schickt die Schul-E-Mail einer Lehrkraft mit', async () => {
+		await anlegen('lehrkraft');
+		const koerper = /** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0][1]);
+		expect(koerper.email).toBe('katrin.wendland@schule.invalid');
+	});
+
+	// Die Gegenrichtung — dass beim Schüler KEINE Adresse mitgeht — steht bewusst nicht
+	// hier, sondern im Server-Test (api/leser_kollegium_konto_pg_test.go). Hier wäre sie
+	// teuer zu bekommen: Ein Schüler braucht zusätzlich Klasse und Geburtsdatum, sonst
+	// kommt das Formular gar nicht erst los. Und sie ist dort auch besser aufgehoben — der
+	// Server weist eine Adresse an einem Schüler ausdrücklich ab, das Formular schickt sie
+	// nur nicht mit.
+
+	it('lässt eine Lehrkraft ohne Schul-E-Mail gar nicht erst los', async () => {
 		const screen = render(StudentCreateModal, {
 			open: true,
 			klassen: [],
@@ -66,7 +86,29 @@ describe('Neuen Leser anlegen', () => {
 			onsuccess: vi.fn()
 		});
 		await fireEvent.click(screen.getByLabelText('Lehrkraft'));
-		expect(screen.container.textContent ?? '').toContain('kein Zugang zum Programm');
+		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Ohne' } });
+		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Mail' } });
+		await fireEvent.click(screen.getByText('Speichern'));
+
+		expect(vi.mocked(apiClient.post)).not.toHaveBeenCalled();
+		expect(screen.container.textContent ?? '').toContain('Schul-E-Mail-Adresse fehlt');
+	});
+
+	// UMGEKEHRT seit dem 16.09.2026 (Peter): Aus der Schul-E-Mail entsteht der Zugang gleich
+	// mit. Vorher stand hier ausdrücklich „kein Zugang zum Programm" — das war richtig,
+	// solange die Adresse fehlte, und führte genau zu dem Doppeleintrag, den die Pflicht
+	// jetzt abschafft. Was der Dialog NICHT vergibt, ist eine Rolle.
+	it('sagt einer Lehrkraft, dass hier ihr Zugang entsteht — aber keine Rolle', async () => {
+		const screen = render(StudentCreateModal, {
+			open: true,
+			klassen: [],
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
+		await fireEvent.click(screen.getByLabelText('Lehrkraft'));
+		const text = screen.container.textContent ?? '';
+		expect(text).toContain('Zugang zu „Mein Portal');
+		expect(text, 'eine Rolle vergibt der Administrator eigens').toContain('Rolle');
 	});
 
 	it('verlangt vom Schüler weiterhin Klasse und Geburtsdatum', async () => {

@@ -287,3 +287,69 @@ func TestSelbstanmeldung_AbgeschaltetLegtNichtsAn(t *testing.T) {
 		t.Error("bei abgeschalteter Selbstanmeldung darf kein Eintrag entstehen")
 	}
 }
+
+// Ein zweiter Anmeldeversuch hinterlässt keine zweite Leserzeile.
+//
+// Warum das überhaupt eine Zusage ist: Der Wächter trg_benutzer_hat_leserzeile ist ein
+// BEFORE INSERT. Er läuft, BEVOR Postgres einen Konflikt bemerkt, und legt dabei eine
+// frische Leserzeile an. Ein `INSERT ... ON CONFLICT DO NOTHING` auf `benutzer` würde die
+// Kontozeile verwerfen — die Leserzeile des Wächters bliebe stehen, ohne Konto und ohne
+// Ausweisnummer. Am 16.09.2026 nachgestellt und bestätigt.
+//
+// Auf dem Anmeldeweg passiert das NICHT, und zwar nicht durch Zufall: legeZugangsanfrageAn
+// wird nur im `pgx.ErrNoRows`-Zweig aufgerufen, also ausschliesslich, wenn gar kein Konto
+// existiert. Beim zweiten Versuch findet die Abfrage das Konto, und der INSERT wird nie
+// versucht.
+//
+// Dieser Test hält deshalb das ERGEBNIS fest, nicht eine einzelne Zeile: Der Schutz liegt
+// im Zuschnitt des Aufrufers, und ein Umbau, der die Anlage aus diesem Zweig herauszieht,
+// hätte still Waisen zur Folge. Ehrlich benannt: Mit einer kleinen Änderung lässt sich
+// dieser Test nicht rot bekommen — er sichert eine Struktur, keinen Schalter.
+func TestSelbstanmeldung_ZweiterVersuchLaesstKeineLeserzeileZurueck(t *testing.T) {
+	// IMAP-Mock wie im Nachbartest: Ohne ihn scheitert die Anmeldung schon an der
+	// Authentifizierung und käme nie bis zur Anlage.
+	t.Setenv("APP_ENV", "test")
+	t.Setenv("IMAP_HOST", "mock")
+	t.Setenv(selbstanmeldeDomainEnv, "schule-test.invalid")
+	pool := pgPoolFuerSelbstanmeldung(t)
+	const mail = "zweimal.klick@schule-test.invalid"
+	raeumeKontoAb(t, pool, mail)
+	ctx := context.Background()
+
+	zaehleLeserzeilen := func() int {
+		t.Helper()
+		var n int
+		if err := pool.QueryRow(ctx,
+			`SELECT count(*) FROM leser WHERE nachname = 'Klick' AND deleted_at IS NULL`).Scan(&n); err != nil {
+			t.Fatalf("Leserzeilen zählen: %v", err)
+		}
+		return n
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE nachname = 'Klick'`); err != nil {
+			t.Errorf("Aufräumen leser: %v", err)
+		}
+	})
+
+	anmelden(t, pool, mail)
+	nachErstem := zaehleLeserzeilen()
+	if nachErstem != 1 {
+		t.Fatalf("nach dem ersten Versuch stehen %d Leserzeilen da, erwartet 1", nachErstem)
+	}
+
+	anmelden(t, pool, mail)
+	anmelden(t, pool, mail)
+	if n := zaehleLeserzeilen(); n != 1 {
+		t.Fatalf("nach drei Versuchen stehen %d Leserzeilen da, erwartet 1 — die Anlage "+
+			"wird offenbar auch dann versucht, wenn das Konto schon existiert", n)
+	}
+
+	var konten int
+	if err := pool.QueryRow(ctx,
+		`SELECT count(*) FROM benutzer WHERE LOWER(email) = $1`, mail).Scan(&konten); err != nil {
+		t.Fatal(err)
+	}
+	if konten != 1 {
+		t.Fatalf("%d Konten unter derselben Adresse", konten)
+	}
+}
