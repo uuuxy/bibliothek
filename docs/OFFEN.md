@@ -534,7 +534,10 @@ Die Nummern bleiben fest. Beantwortete Fragen wandern in den Punkt, der sie umse
 
 `ziel_jahrgang` (mehrjährige Ausleihe) wird in `internal/service/loan_rules.go` gelesen, aber von
 keinem Code geschrieben; die Fristregel verzweigt auf einen Wert, der immer 0 ist. Die Frist am
-Rückgabetermin ist entschieden (1.4). **Frage:** Feld pflegbar machen oder streichen?
+Rückgabetermin ist entschieden (1.4). **Entschieden am 16.09.2026: streichen.** Spalte, die drei
+Lesestellen in `repository/book_search.go` und der Zweig in der Fristregel fallen. Der Zweig ist
+zugleich das Tor zur LMF-Plan-Frist (sie gilt nur bei `additionalYears == 0`) — ein Wert, den
+niemand setzt, darf diese Regel nicht aushebeln können.
 
 ### 4.4 E6: Nach der Übergabe an die Schulaufsicht
 
@@ -552,11 +555,6 @@ optionales Feld; der Vorschlag nimmt den Listenpreis, sonst den Einkaufspreis, u
 **Wann:** vor dem ersten echten Bescheid — sonst beantwortet der erste Bescheid für ein Buch ab
 dem 2. Verleihjahr die Frage still mit „Kaufpreis". Der Staffel-Vorschlag im Schadensdialog (5.4)
 übernimmt die Antwort später.
-
-### 4.6 E7 und E8 bestätigen
-
-Kein E-Mail- oder App-Versand der Bescheide; keine Eltern-Namen und keine zweite Anschrift im
-Datenbestand. Beides ist so gebaut. **Vorschlag:** bestätigen.
 
 ### 4.7 Sechs Umgebungsvariablen, die Compose nicht durchreicht
 
@@ -604,8 +602,19 @@ der Lesehistorie-Lauf trennt. Ist die Karenz länger eingestellt als die Lesehis
 anonymisiert als eingestellt. Es gibt zwei Lesehistorie-Fristen: Schülerbücherei (Vorgabe 90 Tage)
 und Lernmittel (`lesehistorie_lernmittel_tage`, Vorgabe 730); mit den Vorgaben (Karenz 90) ohne
 Wirkung. **Frage:** Soll die Einstellung Karenz ≤ beide Lesehistorie-Fristen erzwingen, oder
-speichert die Uhr ihren Zeitpunkt selbst (eigene Spalte)? **Vorschlag:** erzwingen, der kleinere
-Eingriff.
+speichert die Uhr ihren Zeitpunkt selbst (eigene Spalte)?
+
+**Entschieden am 16.09.2026: eigene Spalte, per Trigger gepflegt.** Nicht erzwingen — die
+Kopplung liefe in die falsche Richtung: Um eine längere Karenz zu bekommen, müsste die Schule
+die Lesehistorie verlängern, also mehr Personendaten länger aufbewahren. Die beiden Fristen
+beantworten verschiedene Fragen und dürfen sich nicht gegenseitig binden.
+
+Stattdessen bekommt die Leserzeile eine Spalte „letzter Vorgang", die kein anderer Löschlauf
+anfasst; gepflegt von Triggern auf `ausleihen` (Rückgabe) und `schadensfaelle` (bezahlt oder
+storniert), nach dem Muster von `konto_hat_leserzeile` — an der einen Stelle, an der kein
+Schreibweg vorbeikommt. Das Prädikat rechnet dann `GREATEST(AbgangSeit, letzter_vorgang_am)`
+ohne Unterabfragen. Nachweis: ein PG-Test mit Karenz > Lesehistorie, der beweist, dass der
+Lesehistorie-Lauf den Anonymisierungs-Zeitpunkt NICHT verschiebt — am alten Stand rot.
 
 ### 4.13 Abgänger-Druck und die Suche
 
@@ -623,8 +632,12 @@ eine Buchauswahl?
 
 ### 4.15 Freitext bezahlter Schadensfälle nach der Anonymisierung
 
-Beim Anonymisieren wird `schadensfaelle.beschreibung` nicht geleert. **Frage:** Soll der
-Freitext dabei fallen?
+Beim Anonymisieren wird `schadensfaelle.beschreibung` nicht geleert. **Entschieden am
+16.09.2026: leeren, aber nur bei bezahlten (erledigten) Fällen.** Eine offene Forderung behält
+ihre Begründung — sie wird noch gebraucht; ein erledigter Fall braucht Betrag und Datum, nicht
+die Geschichte. Der Freitext gehört damit in die Statement-Liste der Spuren-Tilgung
+(`repository/audit_users.go`), nicht in einen eigenen Lauf: Purge, LUSD-Abgang und Cron fahren
+dieselbe Liste.
 
 ### 4.16 Routen ohne Aufrufer
 
@@ -632,7 +645,9 @@ Laut API-Inventar (`docs/api_inventar.md`) ruft weder das Frontend noch ein Skri
 Routen auf: `PUT /api/books/{id}/cover`, `POST /api/books/{id}/refresh-cover`,
 `POST /api/buecher/exemplare/{id}/schadensnotiz` und `POST /api/buecher/exemplare/{id}/aussondern`.
 Ein Grep schließt Aufrufer außerhalb des Repos nicht aus. **Frage:** je Route streichen oder in der
-Oberfläche anbieten?
+Oberfläche anbieten? **Vorgehen, entschieden am 16.09.2026:** Ich lege je Route einen Befund vor
+(was sie tut, ob sie wie die Defekt-Tür halb kaputt ist, ob die Funktion in der Oberfläche fehlt);
+entschieden wird danach einzeln.
 
 `POST /api/buecher/exemplare/{id}/defekt` ist am 16.09.2026 gestrichen — sie war zur Hälfte kaputt
 (Zweig ohne Schüler in eine Spalte, die Migration 125 entfernt hat), nicht bloß ungenutzt.
@@ -999,11 +1014,17 @@ Von Hand geht es: Das Feld „Ausweisnummer" steht in der Maske für jeden. Nur 
 Kollegium „Leer lassen, solange kein Ausweis gedruckt ist" — und beim Anlegen stimmt das nicht,
 weil der Server dann selbst eine zieht.
 
-**Zu entscheiden:** (1) Vergibt der Ausweisdruck die nächste freie Nummer, wenn keine da ist, oder
-bekommt die Akte einen Knopf „Ausweisnummer vergeben"? (2) Soll der Druck ohne Nummer überhaupt
-möglich sein? (3) Soll das Konto beim Anlegen gleich eine Nummer bekommen — dann trägt jeder
-Kollege eine, auch wer nie an die Theke kommt. Vorher am Server zählen, wie viele Leser heute ohne
-Nummer dastehen.
+**Entschieden am 16.09.2026: Die Nummer entsteht beim Anlegen des Kontos.** Wer ein Konto
+bekommt, bekommt damit eine Ausweisnummer — auch wer nie an die Theke kommt. Damit gibt es den
+Zustand „Leserzeile ohne Nummer" nicht mehr, und keine Karte kann ohne Barcode aus dem Drucker
+kommen.
+
+Wichtig bei der Umsetzung: **ein Generator.** Die Nummer zieht denselben Weg wie „Neuer Leser"
+(`GetNextSequence` über `leser.barcode_id`, Vorsilbe `A-`); eine zweite Vergabe in SQL wäre der
+Fehler aus Migration 068 in neuer Form (zwei Generatoren, ein Nummernkreis). Dazu zwei kleine
+Dinge, die daran hängen: die Leser aus der Zeit davor bekommen ihre Nummer nachgetragen
+(Migration, nicht von Hand), und der Hinweis am Feld „Ausweisnummer" („Leer lassen, solange kein
+Ausweis gedruckt ist") stimmt dann nicht mehr und fällt.
 
 ### 5.17 Rasterdurchgang über den 15. und 16.09.2026 (Funde vom 16.09.2026)
 
@@ -1084,7 +1105,7 @@ geprüft und bei Unsinn mit 400 abgelehnt — ausdrücklich, weil Unlesbares son
 angezeigt und beim Lesen still auf die Vorgabe zurückgeworfen" wurde (Rasterdurchgang
 06.09.2026). Auf der Zahlen-Seite steht derselbe Fehler noch fünfzehnmal.
 
-**Was daraus für das Raster folgt (Vorschlag, noch nicht umgesetzt).** Eine neue Frage 13 —
+**Was daraus für das Raster folgt (entschieden am 16.09.2026: aufnehmen, mit Bestand).** Eine neue Frage 13 —
 *Bedeutungswechsel unter gleichem Namen: Hat dieser Name seit gestern eine andere Bedeutung, und
 wer liest ihn noch in der alten?* Beleg: Beim Durchgang aus 5.17 gab es 15 Schreibpfade gegen die
 Sicht `schueler`, heute sind es 9; die sechs, die gewandert sind, sind Zeile für Zeile die Funde
@@ -1145,7 +1166,9 @@ der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
    (`stores/buchBarcodes.svelte.js`), und das ist so entschieden. Ein Kiosk-Tab steht aber
    zwölf Stunden offen: Was am Vormittag neu inventarisiert wurde, ist am Nachmittag ohne Netz
    eine „unklare" Nummer. Der Zeitpunkt des letzten Abgleichs wird gespeichert und nirgends
-   bewertet. Zu entscheiden: nachfassen (etwa stündlich) oder das Alter anzeigen.
+   bewertet. **Entschieden am 16.09.2026: stündlich nachfassen**, solange Netz da ist — ohne
+   Anzeige an der Theke. Der Abgleich ist billig (der Server antwortet in der Regel mit
+   „unverändert"), und die Bibliothekskraft muss mitten in einer Schlange nichts bewerten.
 
 **Was der Durchgang ausdrücklich in Ordnung fand:** Die Uhr-Frage ist sauber gelöst — der
 Eintrag trägt neben der Wanduhr einen gleichmäßig laufenden Anker, und der Sync rechnet daraus
