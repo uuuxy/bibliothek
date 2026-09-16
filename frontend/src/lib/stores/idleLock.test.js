@@ -195,6 +195,26 @@ describe('idleLock', () => {
 			expect(lock.gesperrt).toBe(true);
 		});
 
+		// Die nachgeholte Sperre steht fuer „es war laenger als die Frist niemand da".
+		// War danach wieder jemand da, gilt das nicht mehr — sonst sperrte der Bildschirm
+		// mitten in der Arbeit, sobald das Netz zurueckkam, und nahm den ohne Netz
+		// gemerkten Ausweis mit (Rasterdurchgang 16.09.2026).
+		it('sperrt nicht nach, wenn nach der faelligen Sperre wieder jemand da war', () => {
+			netz.isOffline = true;
+			lock.start();
+			vi.advanceTimersByTime(4 * 60_000);
+			expect(lock.gesperrt).toBe(false);
+
+			// Jemand arbeitet weiter — ein Handscanner ist eine Tastatur.
+			window.dispatchEvent(new KeyboardEvent('keydown', { key: '1' }));
+			vi.advanceTimersByTime(1_000);
+			window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
+
+			netz.isOffline = false;
+			window.dispatchEvent(new Event('online'));
+			expect(lock.gesperrt, 'es war nicht laenger als die Frist niemand da').toBe(false);
+		});
+
 		it('sperrt beim Netzwechsel NICHT, wenn gar keine Sperre faellig war', () => {
 			netz.isOffline = true;
 			lock.start();

@@ -98,6 +98,11 @@ export class IdleLock {
 		const jetzt = Date.now();
 		if (jetzt - this.#letzteAktivitaet < DROSSEL_MS) return;
 		this.#letzteAktivitaet = jetzt;
+		// Eine offline fällig gewordene Sperre ist damit erledigt: Sie steht für „es war
+		// länger als die Frist niemand da" — und jetzt ist jemand da. Ohne diese Zeile
+		// sperrte der Bildschirm mitten in der Arbeit, sobald das Netz zurückkam, und
+		// nahm den ohne Netz gemerkten Ausweis mit (thekeLeeren).
+		this.#sperreFaellig = false;
 		this.#planeTimer();
 	}
 
