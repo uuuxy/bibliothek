@@ -190,14 +190,20 @@ func (s *Server) PurgeStudentHandler(auditRepo repository.AuditRepository) http.
 			// Konflikt. Alles andere NICHT: Bis zum 17.09.2026 bekam jeder Fehler die 409 —
 			// auch ein Verbindungsabbruch. Das schickt die Bibliothek los, einen offenen
 			// Vorgang zu suchen, den es nicht gibt, und verdeckt den echten Fehler.
-			switch {
-			case errors.Is(err, repository.ErrLoeschenBlockiert):
+			//
+			// Die Form (verschachtelte ifs statt eines switch) ist die im Haus übliche und
+			// keine Geschmacksfrage: Der Fehler-Kollaps-Detektor liest die if-Bedingung und
+			// das ERSTE Statement des Rumpfs. Ein switch darunter sieht er nicht — er hat
+			// diesen Handler beim Umbau am 17.09.2026 zu Recht angemahnt.
+			if errors.Is(err, repository.ErrLoeschenBlockiert) {
 				apierrors.SendHTTPError(w, http.StatusConflict, err)
-			case errors.Is(err, repository.ErrLeserNichtGefunden):
-				apierrors.SendHTTPError(w, http.StatusNotFound, err)
-			default:
-				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
 			}
+			if errors.Is(err, repository.ErrLeserNichtGefunden) {
+				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
