@@ -799,11 +799,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.11 Doku
 
-- Der Kopfkommentar von `frontend/e2e/m3-bauform.spec.js` nennt unter „Was dieses Gate nicht
-  sieht" elf Overlays, die `Modal.svelte` nicht benutzen (StudentLockModal, DamageReportModal,
-  WebcamCapture, OmniboxBlockAlert, …). Seit dem Durchgang bis zum 07.09.2026 (`dc99bad2`)
-  nutzen mindestens `StudentLockModal` und `DamageReportModal` das Bauteil. Die Liste am Code
-  nachziehen.
 - HANDBUCH: Hinweis, dass im Vermerk des LMF-Plans keine Schülernamen stehen — er erscheint im
   Portal des ganzen Kollegiums und im PDF.
 

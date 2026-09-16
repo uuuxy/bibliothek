@@ -43,14 +43,20 @@
 //     unsichtbar (grün), im vollen e2e-Lauf sichtbar (rot) — weil ein anderer
 //     Test die Einstellung verändert hatte. Gefunden wurde er also durch Zufall,
 //     nicht durch Konstruktion.
-//   * Die elf selbstgebauten Overlays, die NICHT Modal.svelte benutzen
-//     (StudentLockModal, DamageReportModal, WebcamCapture, OmniboxBlockAlert, …).
+//   * Die selbstgebauten Overlays, die NICHT Modal.svelte benutzen. Am 16.09.2026
+//     sind das sieben Dateien: App.svelte, StrichcodeScannerOverlay, WebcamCapture,
+//     Monitor, OmniboxVormerkungAlert, OmniboxBlockAlert und Sperrbildschirm.
+//     Nachzählen, statt dieser Liste zu glauben:
+//       grep -rl "fixed inset-0" frontend/src --include='*.svelte' \
+//         | xargs grep -L Modal.svelte | grep -v /Modal.svelte
+//     Bis zum 16.09.2026 standen hier „elf" und als Beispiele StudentLockModal und
+//     DamageReportModal — beide benutzen das Bauteil seit dem Durchgang bis zum
+//     07.09.2026 (dc99bad2), die Liste war also älter als der Code.
 //     Eine Quelltext-Zählung fand am 04.09.2026 vierzig Kandidaten mit Rahmen und
 //     Schatten in derselben Klassenliste; der grösste Teil davon sitzt in genau
 //     diesen Overlays. Sie sind bewusst NICHT pauschal geändert worden: Bei
 //     `OmniboxBlockAlert` ist der `border-4 border-rose-500` ein Alarmsignal an
 //     der Theke, kein Dekor — das ist Einzelfallprüfung, kein Suchen-und-Ersetzen.
-//     Der Register-Posten dazu ist am 07.09.2026 geschlossen (dc99bad2).
 //
 // Wer dieses Gate erweitert, erweitert die Öffnerliste — nicht die Regel.
 import { test, expect } from '@playwright/test';
