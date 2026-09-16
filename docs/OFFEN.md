@@ -799,7 +799,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.11 Doku
 
-- `abnahme_checkliste.md` spricht im Kopf von vier Flows, es sind fünf.
 - Der Kopfkommentar von `frontend/e2e/m3-bauform.spec.js` nennt unter „Was dieses Gate nicht
   sieht" elf Overlays, die `Modal.svelte` nicht benutzen (StudentLockModal, DamageReportModal,
   WebcamCapture, OmniboxBlockAlert, …). Seit dem Durchgang bis zum 07.09.2026 (`dc99bad2`)

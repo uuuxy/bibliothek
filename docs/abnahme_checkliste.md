@@ -1,17 +1,19 @@
 # Abnahme-Checkliste: Admin-Flows mit echten Daten
 
 > Stand: 2026-09-05. Für die Abnahme mit dem Sekretariat.
-> Alle vier Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
+> Alle fünf Flows sind technisch fertig und durch automatische Tests (Go, Vitest, E2E)
 > abgesichert — die Abnahme prüft nur noch, ob die **echten Daten** (Spaltenformat der
 > LUSD-Exportdatei, reale Klassenbezeichnungen, gewachsener Buchbestand) so aussehen wie
 > erwartet.
 >
 > **Sicherheitsnetz für alle Abnahmen:** Vorher ein Backup ziehen
-> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Alle vier Flows haben zusätzlich eine
-> unverbindliche Vorschau-Stufe, die **nichts verändert** — erst der jeweils letzte,
-> deutlich beschriftete Button schreibt in die Datenbank.
+> (siehe [resilience_and_recovery.md](resilience_and_recovery.md)). Die Flows 1 bis 4 haben
+> zusätzlich eine unverbindliche Vorschau-Stufe, die **nichts verändert** — erst der jeweils
+> letzte, deutlich beschriftete Button schreibt in die Datenbank. Flow 5 hat keine Vorschau:
+> Dort entscheidet ein Mensch über eine einzelne Person, und die Freischaltung ist
+> zurücknehmbar.
 >
-> **Ausnahme beachten:** Flow 1–3 lassen sich nachbessern, Flow 4 (Altbestand-Etiketten)
+> **Ausnahme beachten:** Flow 1–3 und 5 lassen sich nachbessern, Flow 4 (Altbestand-Etiketten)
 > **nicht**. Dort ist die Vorschau-Zahl die einzige Kontrolle vor einer endgültigen
 > Änderung — sie verdient einen zweiten Blick.
 
