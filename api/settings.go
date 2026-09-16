@@ -63,6 +63,16 @@ func (s *Server) UpdateSettingsHandler(settingsRepo repository.SystemSettingsRep
 			return apierrors.BadRequest("Es wurde keine einzige Einstellung mitgeschickt.",
 				errors.New("leerer Einstellungs-Patch"))
 		}
+		// Zahlen: innerhalb ihrer Spanne oder gar nicht gespeichert
+		// (repository/system_settings_zahlen.go). Bis zum 16.09.2026 tauschte der
+		// Sammler einen zu kleinen Wert still gegen einen Ersatz und meldete
+		// „gespeichert"; eine Obergrenze gab es bei keiner der fünfzehn Zahlen. Die
+		// Prüfung steht VOR dem Protokoll-Eintrag, damit dort nicht mehr die Eingabe
+		// steht, während in der Datenbank etwas anderes liegt.
+		if err := req.PruefeZahlen(); err != nil {
+			return apierrors.BadRequest(err.Error(), err)
+		}
+
 		// Die Sommerferien tragen jede Frist des LMF-Plans: geprüft und in Normalform,
 		// oder gar nicht gespeichert (pkg/lmfplan/ferien_einstellung.go).
 		if req.Sommerferien != nil {

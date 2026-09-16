@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v4"
@@ -145,14 +146,26 @@ func TestSaveSettings_LeererPatchSchreibtNichts(t *testing.T) {
 
 // Karenz negativ: Für die Nachbarschlüssel ist 0 „aus" (Daten bleiben), für die
 // Abgänger-Karenz ist 0 „sofort anonymisieren" — der destruktivste Wert. Ein Tippfehler
-// „-90" darf deshalb weder beim Speichern noch beim Lesen zur 0 werden, sondern zur
-// Vorgabe (Rasterdurchgang 02.09.2026).
-func TestAbgaengerKarenz_NegativWirdVorgabeNichtNull(t *testing.T) {
-	var s paarSammler
-	s.zahl(AbgaengerKarenzSchluessel, ptr(-5), 0, StandardAbgaengerKarenzTage)
-	if len(s.paare) != 1 || s.paare[0][1] != "90" {
-		t.Errorf("Patch -5 muss als Vorgabe 90 gespeichert werden, bekam %v", s.paare)
+// „-90" darf deshalb weder beim Speichern noch beim Lesen zur 0 werden
+// (Rasterdurchgang 02.09.2026).
+//
+// Seit dem 16.09.2026 unterscheiden sich die beiden Hälften: Beim SPEICHERN wird der
+// Wert abgelehnt statt ersetzt — ein Ersatz, der sich „gespeichert" nennt, ist der
+// Fehler aus OFFEN.md 5.18. Beim LESEN bleibt der Ersatz richtig: Dort steht schon ein
+// Wert in der Datenbank, und die Vorgabe ist die einzige Antwort, die niemandem schadet.
+func TestAbgaengerKarenz_NegativWirdAbgelehntUndBeimLesenVorgabe(t *testing.T) {
+	patch := &EinstellungenPatch{AbgaengerKarenzTage: ptr(-5)}
+	err := patch.PruefeZahlen()
+	if err == nil {
+		t.Fatal("-5 Tage Karenz wurde angenommen — der Wert muss mit einer Meldung abgewiesen werden")
 	}
+	if !strings.Contains(err.Error(), "Karenz") {
+		t.Errorf("die Meldung nennt das Feld nicht: %q", err)
+	}
+	if paare := pairsAusPatch(patch); len(paare) != 1 || paare[0][1] != "-5" {
+		t.Errorf("der Sammler darf nichts mehr ersetzen, bekam %v", paare)
+	}
+
 	einst := &SystemEinstellungen{}
 	wert := "-5"
 	anwendenDatenschutzEinstellung(einst, AbgaengerKarenzSchluessel, &wert)

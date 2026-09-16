@@ -1106,20 +1106,6 @@ offenen Kollegen-Ausleihen überhaupt. Es gibt also nichts zu reparieren, und di
 allein hätte nichts bewiesen. Entschieden wird weiter an `ist_handapparat`, nicht an
 `klasse = 'Lehrer'`: Das wäre die zweite Wahrheitsquelle von der anderen Seite.
 
-**3 · Eine Einstellung außerhalb ihres Bereichs wird still ersetzt (B).**
-`repository/system_settings_patch.go`, Helfer `zahl(key, v, min, ersatz)`: Liegt der Wert unter
-dem Mindestwert, wird er durch einen Ersatzwert getauscht und als „gespeichert" gemeldet. Eine
-Obergrenze gibt es bei keiner der 15 Zahlen. Gemessen: Eingabe 0 für `max_ausleihen_schueler`
-wird als 5 gespeichert; Eingabe 999999 für `max_overdue_items` wird unverändert übernommen — und
-damit lässt sich die Sperr-Automatik, eine Invariante des Katalogs, aus der Oberfläche
-abschalten. Dazu protokolliert `api/settings.go` den Request, also die Eingabe, nicht das
-Gespeicherte: Steht 0 drin, steht 0 im Protokoll.
-
-Die Asymmetrie sitzt in derselben Datei: Sommerferien, Eingangsjahrgänge und LMF-Stichtag werden
-geprüft und bei Unsinn mit 400 abgelehnt — ausdrücklich, weil Unlesbares sonst „gespeichert,
-angezeigt und beim Lesen still auf die Vorgabe zurückgeworfen" wurde (Rasterdurchgang
-06.09.2026). Auf der Zahlen-Seite steht derselbe Fehler noch fünfzehnmal.
-
 **Was daraus für das Raster folgt (entschieden am 16.09.2026: aufnehmen, mit Bestand).** Eine neue Frage 13 —
 *Bedeutungswechsel unter gleichem Namen: Hat dieser Name seit gestern eine andere Bedeutung, und
 wer liest ihn noch in der alten?* Beleg: Beim Durchgang aus 5.17 gab es 15 Schreibpfade gegen die

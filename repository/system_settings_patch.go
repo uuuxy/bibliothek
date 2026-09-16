@@ -100,19 +100,16 @@ func (s *paarSammler) schalter(key string, v *bool) {
 	s.paare = append(s.paare, [2]string{key, wert})
 }
 
-// zahl schreibt eine Zahl; ersatz springt ein, wenn der Wert unterhalb von min liegt.
-// Damit bleiben die bisherigen Vorgaben erhalten (eine 0 in „Tage/Buch" ist keine
-// Frist, sondern ein leer geräumtes Feld), während min=0 die Felder kennzeichnet, in
-// denen die 0 ein echter Wert ist — „sofort sperren", „Befristung aus".
-func (s *paarSammler) zahl(key string, v *int, min int, ersatz int) {
-	if v == nil {
-		return
+// zahlen schreibt alle mitgeschickten Zahlen. Was erlaubt ist, steht in
+// system_settings_zahlen.go und wird VOR dem Speichern geprüft (PruefeZahlen) — hier
+// wird nichts mehr ersetzt: Ein stiller Ersatzwert war genau der Fehler, den der
+// Rasterdurchgang am 16.09.2026 gefunden hat.
+func (s *paarSammler) zahlen(p *EinstellungenPatch) {
+	for _, f := range zahlenFelder(p) {
+		if f.wert != nil {
+			s.paare = append(s.paare, [2]string{f.schluessel, strconv.Itoa(*f.wert)})
+		}
 	}
-	n := *v
-	if n < min {
-		n = ersatz
-	}
-	s.paare = append(s.paare, [2]string{key, strconv.Itoa(n)})
 }
 
 // IstLeer meldet, dass der Patch kein einziges Feld trägt.
@@ -145,15 +142,8 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 		s.text("lmf_eingangsjahrgaenge", p.LmfEingangsjahrgaenge)
 	}
 	s.text(lmfplan.SommerferienSchluessel, p.Sommerferien)
-	s.zahl("max_ausleihen_schueler", p.MaxAusleihenSchueler, 1, 5)
-	s.zahl("frist_buch_tage", p.FristBuchTage, 1, 21)
-	s.zahl("frist_medien_tage", p.FristMedienTage, 1, 7)
-	s.zahl("max_overdue_days", p.MaxOverdueDays, 0, 0)
-	s.zahl("max_overdue_items", p.MaxOverdueItems, 1, 1)
 
 	s.schalter("bestellbedarf_warnung_aktiv", p.BestellbedarfWarnungAktiv)
-	s.zahl("bestellbedarf_schwelle", p.BestellbedarfSchwelle, 1, 3)
-	s.zahl("bestelllink_gueltigkeit_tage", p.BestelllinkGueltigkeitTage, 1, BestelllinkGueltigkeitTageVorgabe)
 	s.schalter("preise_erfassen", p.PreiseErfassen)
 
 	s.text("schule_name", p.SchuleName)
@@ -171,29 +161,11 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.text("bescheid_durchwahl", p.BescheidDurchwahl)
 	s.text("bescheid_zahlstelle", p.BescheidZahlstelle)
 	s.text("bescheid_bankverbindung", p.BescheidBankverbindung)
-	// Untergrenze 1 Tag: Eine Frist von 0 Tagen wäre ein Bescheid, der am Tag des
-	// Drucks bereits abgelaufen ist.
-	s.zahl("bescheid_frist_tage", p.BescheidFristTage, 1, BescheidFristTageVorgabe)
-
 	s.text("oeffentliche_adresse", p.OeffentlicheAdresse)
 	s.text("alarm_empfaenger", p.AlarmEmpfaenger)
 
-	// 0 ist hier „aus" und damit ein Wert; negativ gibt es nicht.
-	s.zahl("lesehistorie_tage", p.LesehistorieTage, 0, 0)
-	s.zahl("lesehistorie_lernmittel_tage", p.LesehistorieLernmittelTage, 0, 0)
-	s.zahl("anliegen_tage", p.AnliegenTage, 0, 0)
-	// Untergrenze 6, Ersatz 24 — anders als bei den drei Fristen darüber ist 0 hier
-	// KEIN gültiger Wert: Ein abgeschaltetes Prüfprotokoll nähme dem System die
-	// Revisionsfähigkeit (wer hat die Gebühr storniert?). Die Oberfläche meldet Werte
-	// unterhalb der Grenze, statt sie still ersetzen zu lassen (einstellungenSpeichern.js).
-	s.zahl(AuditAufbewahrungSchluessel, p.AuditAufbewahrungMonate, MindestAuditAufbewahrungMonate, StandardAuditAufbewahrungMonate)
-	s.zahl("theke_leeren_minuten", p.ThekeLeerenMinuten, 0, 0)
-	s.zahl("sperre_minuten", p.SperreMinuten, 0, 0)
-	// 0 = sofort anonymisieren (Verhalten bis 02.09.2026), also ein echter Wert. Ein
-	// NEGATIVER Wert darf aber nicht zur 0 werden: Für die Nachbarschlüssel heißt 0
-	// „aus" (Daten bleiben), hier heißt 0 „nächste Nacht alle Abgänger anonymisieren" —
-	// der destruktivste Wert des Schalters. Ersatz ist deshalb die Vorgabe.
-	s.zahl(AbgaengerKarenzSchluessel, p.AbgaengerKarenzTage, 0, StandardAbgaengerKarenzTage)
+	// Alle Zahlen auf einmal, in der Reihenfolge von zahlenFelder().
+	s.zahlen(p)
 
 	return s.paare
 }
