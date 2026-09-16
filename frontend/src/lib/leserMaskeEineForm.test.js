@@ -29,7 +29,8 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 		hausnummer: '',
 		plz: '',
 		ort: '',
-		eltern_email: ''
+		eltern_email: '',
+		email: ''
 	});
 
 	/** @param {string} art @returns {string[]} */
@@ -54,11 +55,15 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 		}
 	});
 
-	// Die drei Ausnahmen, und warum es genau diese sind:
+	// Die Ausnahmen, und warum es genau diese sind:
 	//   klasse/abgangsjahr — „eine klasse muss ja keinem lehrer/liv zugeordnet werden"
 	//   lusd_id            — chk_leser_nur_schueler_werden_abgaenger verbietet sie
+	//   eltern_email       — ein Kollege hat keine Eltern. Offen wäre dieses Feld die
+	//                        Falle, in die seine SCHUL-Adresse wandert: Bis zum 16.09.2026
+	//                        war es das einzige E-Mail-Feld der Maske, mit dem Platzhalter
+	//                        „eltern@schule.de", auch in der Akte einer Lehrkraft.
 	// Verschlossen heisst hier disabled: sichtbar an derselben Stelle, aber nicht zu füllen.
-	it('verschliesst dem Kollegen Klasse, Abgangsjahr und LUSD-ID — mehr nicht', () => {
+	it('verschliesst dem Kollegen Klasse, Abgangsjahr, LUSD-ID und die Eltern-Adresse — mehr nicht', () => {
 		const screen = render(LeserEditFelder, { formData: formular('lehrkraft') });
 		// Ohne die Radios: Die gesperrte Art prüft der Test darunter, und sie haben keine
 		// id — sie kämen hier als leerer Name mit und machten die Zusage unlesbar.
@@ -66,10 +71,14 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
 			.map((e) => e.id)
 			.sort();
-		expect(zu).toEqual(['abgangsjahr', 'klasse', 'lusd_id']);
+		expect(zu).toEqual(['abgangsjahr', 'eltern_email', 'klasse', 'lusd_id']);
 	});
 
-	it('lässt einem Schüler alle Felder offen bis auf eine verknüpfte LUSD-ID', () => {
+	// Die Gegenrichtung: Dem Schüler ist genau EIN Feld verschlossen, die Schul-Adresse.
+	// Sie ist kein Kontaktfeld, sondern das Konto — „Ein Schüler bekommt kein Konto und
+	// keine E-Mail-Adresse" weist auch der Server ab (pruefeSchulEmail). Ein offenes Feld,
+	// das beim Speichern mit 400 zurückkommt, wäre die schlechtere Auskunft.
+	it('verschliesst dem Schüler nur die Schul-Adresse', () => {
 		const screen = render(LeserEditFelder, { formData: formular('schueler') });
 		// Ohne die Radios: Die gesperrte Art prüft der Test darunter, und sie haben keine
 		// id — sie kämen hier als leerer Name mit und machten die Zusage unlesbar.
@@ -77,7 +86,7 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
 			.map((e) => e.id)
 			.sort();
-		expect(zu).toEqual([]);
+		expect(zu).toEqual(['schul_email']);
 	});
 
 	// Die Art selbst: Die Grenze zum Schüler ist in BEIDE Richtungen zu, und zwar als

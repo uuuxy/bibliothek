@@ -28,7 +28,12 @@ type UserResponse struct {
 	// ZugangBeantragtAm: offener Antrag aus der Selbstanmeldung (Migration 086);
 	// null = keiner. Die Oberfläche unterscheidet daran „wartet" von „deaktiviert".
 	ZugangBeantragtAm *time.Time `json:"zugang_beantragt_am"`
-	Permissions       []string   `json:"permissions"`
+	// LeserID ist die Leserzeile dieses Kontos (Migration 125). Die Freischaltungs-Zeile
+	// braucht sie, um von einem offenen Antrag aus nach der gleichnamigen Leserzeile zu
+	// suchen, die noch KEIN Konto hat — der Altbestand, bei dem die Selbstanmeldung sonst
+	// einen zweiten Eintrag erzeugt (UserManagementZugangsanfragen.svelte).
+	LeserID     string   `json:"leser_id"`
+	Permissions []string `json:"permissions"`
 }
 
 // ListUsersHandler returns a list of all system users.
@@ -71,6 +76,7 @@ func (s *Server) ListUsersHandler(userRepo repository.UserRepository) http.Handl
 				ErstelltAm: u.ErstelltAm,
 
 				ZugangBeantragtAm: u.ZugangBeantragtAm,
+				LeserID:           u.LeserID,
 			}
 
 			// Die echten Rechte aus role_permissions, nicht mehr eine feste Liste.

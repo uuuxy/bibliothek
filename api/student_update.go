@@ -210,15 +210,41 @@ func (s *Server) PatchStudentHandler(auditRepo repository.AuditRepository) http.
 		if !s.pruefeUndSetzeArt(ctx, w, id, req.Art, b) {
 			return
 		}
+		// Die Schul-E-Mail wird VOR dem Schreiben geprüft und NACH ihm eingetragen: Das
+		// Konto soll nicht an einer Leserzeile hängen, deren Änderung gescheitert ist.
+		// nachzutragen != "" heißt: Es gibt noch kein Konto, und die Adresse ist gültig.
+		nachzutragen, ok := s.pruefeSchulEmail(ctx, w, id, req.Email)
+		if !ok {
+			return
+		}
+		if !s.pruefeAusweisLeerung(ctx, w, id, req.BarcodeID) {
+			return
+		}
 		// Ein zweiter Empty-Check: Wenn AUSSER lusd_id nichts drin war und lusd_id ein
-		// No-op ist (gleicher Wert), darf kein leerer UPDATE laufen.
-		if len(b.sets) == 0 {
+		// No-op ist (gleicher Wert), darf kein leerer UPDATE laufen. Eine nachzutragende
+		// Adresse ist Arbeit, auch wenn an der Leserzeile selbst nichts steht — sonst
+		// wäre „nur die Schul-E-Mail nachtragen" ein 400.
+		if len(b.sets) == 0 && nachzutragen == "" {
 			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("keine zu aktualisierenden Felder angegeben"))
 			return
 		}
 
 		if !s.fuehreSchuelerUpdateAus(ctx, w, id, b) {
 			return
+		}
+
+		if nachzutragen != "" {
+			// Das Konto entsteht immer, AKTIV nur bei manage_users — dieselbe Paarung wie
+			// beim Anlegen (student_create.go). Wer hier nur edit_students hat, bekäme
+			// sonst still das Recht, Zugänge freizuschalten.
+			if !s.trageKontoNach(ctx, w, id, nachzutragen, s.BesitztRecht(r, "manage_users")) {
+				return
+			}
+			if logErr := auditRepo.LogAdminAktion(ctx, claims.UserID, "KOLLEGIUMSKONTO_NACHGETRAGEN", getIP(r), map[string]any{
+				"schueler_id": id,
+			}); logErr != nil {
+				log.Printf("Audit für Kontonachtrag fehlgeschlagen: %v", logErr)
+			}
 		}
 
 		if nachgetragen != "" {
@@ -391,6 +417,13 @@ type patchStudentRequest struct {
 	Plz         *string `json:"plz"`
 	Ort         *string `json:"ort"`
 	ElternEmail *string `json:"eltern_email"`
+	// Email ist die SCHUL-Adresse einer Lehrkraft oder LiV und steht nicht in `leser`,
+	// sondern am Konto (benutzer.email). Sie liegt deshalb ebenfalls nicht im
+	// generischen Feld-Beutel, sondern hat ihren eigenen Pfad (pruefeSchulEmail,
+	// api/student_schul_email.go): nachtragbar, solange keine da ist — dann entsteht
+	// das Konto; steht eine da, ist sie eine Anzeige und wird in der
+	// Benutzerverwaltung geändert.
+	Email *string `json:"email"`
 }
 
 // baueSchuelerUpdate erzeugt aus dem PATCH-Request den dynamischen updateBuilder (inkl.
@@ -424,9 +457,12 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	// nil ("nicht mitgeschickt"). Dieselbe Zufälligkeit hielt die Löschung der
 	// Postanschrift auf — sie kam ebenfalls nie an.
 	//
-	// Der Barcode steht bewusst mit in der Liste: Beim Anlegen darf er fehlen, dann
-	// vergibt ihn das System. Nachträglich entfernen hieße, den Schüler an der Theke
-	// unauffindbar zu machen — dafür gibt es keinen Vorgang.
+	// Die Ausweisnummer steht NICHT mehr in dieser Liste: Ihre Pflicht ist an die Art
+	// gepaart, wie in der Datenbank (chk_leser_schueler_pflichtfelder), und die Art steht
+	// hier nicht fest. Ein Schüler ohne Nummer ist an der Theke unauffindbar; ein Kollege
+	// hat sie erst, wenn ein Ausweis gedruckt ist — und muss sie wieder loswerden können,
+	// wenn sie falsch eingetragen wurde. Geprüft wird sie deshalb im Handler an der
+	// wirklichen Art (pruefeAusweisLeerung).
 	for _, feld := range []struct {
 		bezeichnung string
 		wert        *string
@@ -434,7 +470,6 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 		{"Vorname", req.Vorname},
 		{"Nachname", req.Nachname},
 		{"Klasse", req.Klasse},
-		{"Ausweisnummer", req.BarcodeID},
 	} {
 		if feld.wert != nil && strings.TrimSpace(*feld.wert) == "" {
 			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
@@ -451,7 +486,11 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	// wenn leer, mit Eindeutigkeits-Prüfung und Audit), siehe pruefeUndSetzeLusdID im
 	// Handler. Ein roher Wert im generischen Feld-Beutel verknüpfte den Datensatz sonst
 	// ungeprüft mit einer fremden LUSD-Identität (Betreiber-Entscheidung 18.08.2026).
-	b.addStr("barcode_id", req.BarcodeID)
+	// Leerbar, nicht addStr: Eine geräumte Ausweisnummer gehört als NULL in die Spalte.
+	// Der leere String wäre ein Wert — und `uniq_schueler_barcode_active` ließe genau
+	// einen zweiten Leser mit „" nicht zu, der dritte scheiterte an einer Kollision mit
+	// einer Nummer, die niemand hat.
+	b.addStrLeerbar("barcode_id", req.BarcodeID)
 	b.addStr("klasse", req.Klasse)
 	b.addInt("abgaenger_jahr", req.AbgaengerJahr)
 

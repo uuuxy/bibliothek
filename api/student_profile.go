@@ -39,19 +39,24 @@ type StudentProfileResponse struct {
 	// Bildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.
 	// Der profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt
 	// die Karte "Gültig bis: 31.07.–", obwohl das Repository den Wert kennt.
-	AusweisGueltigBis *int                      `json:"ausweis_gueltig_bis,omitempty"`
-	IstGesperrt       bool                      `json:"ist_gesperrt"`
-	FotoURL           string                    `json:"foto_url"`
-	Geburtsdatum      *string                   `json:"geburtsdatum,omitempty"`
-	LusdID            *string                   `json:"lusd_id,omitempty"`
-	HasOpenDamages    bool                      `json:"has_open_damages"`
-	IsManuallyBlocked bool                      `json:"is_manually_blocked"`
-	BlockReason       *string                   `json:"block_reason"`
-	Strasse           string                    `json:"strasse"`
-	Hausnummer        string                    `json:"hausnummer"`
-	Plz               string                    `json:"plz"`
-	Ort               string                    `json:"ort"`
-	ElternEmail       string                    `json:"eltern_email"`
+	AusweisGueltigBis *int    `json:"ausweis_gueltig_bis,omitempty"`
+	IstGesperrt       bool    `json:"ist_gesperrt"`
+	FotoURL           string  `json:"foto_url"`
+	Geburtsdatum      *string `json:"geburtsdatum,omitempty"`
+	LusdID            *string `json:"lusd_id,omitempty"`
+	HasOpenDamages    bool    `json:"has_open_damages"`
+	IsManuallyBlocked bool    `json:"is_manually_blocked"`
+	BlockReason       *string `json:"block_reason"`
+	Strasse           string  `json:"strasse"`
+	Hausnummer        string  `json:"hausnummer"`
+	Plz               string  `json:"plz"`
+	Ort               string  `json:"ort"`
+	ElternEmail       string  `json:"eltern_email"`
+	// Email ist die SCHUL-Adresse am Konto (benutzer.email), nicht die der Eltern —
+	// bei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.
+	// Leer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte
+	// nachtragbar. Bei einem Schüler steht hier nie etwas.
+	Email             string                    `json:"email"`
 	EntlieheneBuecher []repository.BorrowedBook `json:"entliehene_buecher"`
 }
 
@@ -110,6 +115,15 @@ func (s *Server) GetStudentProfileHandler(
 			log.Printf("student-profile: Prüfung auf offene Schadensfälle fehlgeschlagen: %v", err)
 		}
 
+		// 3.6 Die Schul-Adresse am Konto — nur beim Kollegium (ein Schüler hat keins).
+		schulEmail := ""
+		if !istSchuelerArt(student.Art) {
+			schulEmail, err = s.kontoEmail(ctx, student.ID)
+			if err != nil {
+				return apierrors.Internal("Fehler beim Laden des Zugangs", err)
+			}
+		}
+
 		// 4. Construct response and stream as JSON
 		resp := StudentProfileResponse{
 			ID:                student.ID,
@@ -132,6 +146,7 @@ func (s *Server) GetStudentProfileHandler(
 			Plz:               student.Plz,
 			Ort:               student.Ort,
 			ElternEmail:       student.ElternEmail,
+			Email:             schulEmail,
 			EntlieheneBuecher: borrowedBooks,
 		}
 

@@ -23,7 +23,7 @@ import { istKollegium } from './leserArt.js';
  * @param {() => any} props.getStudent - Liefert den aktuell bearbeiteten Schüler
  * @param {() => void} props.onSave - Callback when the save is successful
  * @param {(msg: string, type: 'success' | 'error') => void} props.showSnackbar - Callback to show notifications
- * @returns {{ formData: any, saving: boolean, syncData: () => void, save: () => Promise<void> }}
+ * @returns {{ formData: any, saving: boolean, kontoVorhanden: boolean, syncData: () => void, save: () => Promise<void> }}
  */
 export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 	let saving = $state(false);
@@ -41,8 +41,17 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 		hausnummer: '',
 		plz: '',
 		ort: '',
-		eltern_email: ''
+		eltern_email: '',
+		// Die SCHUL-Adresse (benutzer.email), nicht die der Eltern. Sie steht nicht an der
+		// Leserzeile, sondern am Konto — die Akte zeigt und trägt sie trotzdem, weil sie
+		// bei Lehrkraft und LiV die Kennung ist, an der die Anmeldung die Person erkennt.
+		email: ''
 	});
+
+	// Ob zu dieser Leserzeile bereits ein Konto besteht. Es ist nicht dasselbe wie „das
+	// Feld ist ausgefüllt": Nachgetragen wird nur in eine LEERE Adresse, danach ist das
+	// Feld eine Anzeige (geändert wird in der Benutzerverwaltung, api/student_schul_email.go).
+	let kontoVorhanden = $state(false);
 
 	/**
 	 * Syncs the form data with the provided student object.
@@ -60,12 +69,17 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 		formData.lusd_id = student.lusd_id || '';
 		formData.klasse = student.klasse || '';
 		formData.barcode_id = student.barcode_id || '';
-		formData.abgaenger_jahr = student.abgaenger_jahr?.toString() || '';
+		// `|| ''` allein greift hier nicht: Die Abfrage liefert für eine leere Spalte die
+		// 0 (COALESCE in student_profile_queries.go), und "0" ist ein wahrer String. Ein
+		// Kollege bekam dadurch ein Abgangsjahr „0" ins Feld geschrieben.
+		formData.abgaenger_jahr = student.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
 		formData.strasse = student.strasse || '';
 		formData.hausnummer = student.hausnummer || '';
 		formData.plz = student.plz || '';
 		formData.ort = student.ort || '';
 		formData.eltern_email = student.eltern_email || '';
+		formData.email = student.email || '';
+		kontoVorhanden = !!student.email;
 	}
 
 	/**
@@ -79,19 +93,25 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 	 * JSON.stringify fallengelassen und kommt im Backend als nil an: Spalte in Ruhe
 	 * lassen.
 	 *
-	 * Die Ausweisnummer steht in der Mitte: Sie gehört jedem Leser, aber ein Kollege darf
-	 * ohne dastehen (Migration 123). Leer lassen heißt bei ihm „hat noch keine", nicht
-	 * „nimm ihm seine" — der Server weist ein leeres Pflichtfeld sonst mit 400 ab.
+	 * Die Ausweisnummer geht IMMER mit — auch leer.
 	 * @returns {Record<string, unknown>}
 	 */
 	function schulfelder() {
 		const kollege = istKollegium({ art: formData.art });
-		// Die Ausweisnummer steht in der Mitte: Sie gehört jedem Leser, aber ein Kollege
-		// darf ohne dastehen (Migration 123). Leer lassen heißt bei ihm „hat noch keine",
-		// nicht „nimm ihm seine" — der Server weist ein leeres Pflichtfeld sonst mit 400 ab.
-		const ausweisLeer = !formData.barcode_id?.trim();
-		const ausweis = kollege && ausweisLeer ? {} : { barcode_id: formData.barcode_id };
-		if (kollege) return ausweis;
+		// Die Ausweisnummer geht IMMER mit, auch leer.
+		//
+		// Bis zum 16.09.2026 wurde sie beim Kollegen weggelassen, sobald das Feld leer war
+		// — damals die einzige Möglichkeit, weil der Server jedes leere Pflichtfeld mit 400
+		// abwies. Der Preis war ein stilles No-op: Wer beim Kollegen eine falsch
+		// eingetragene Nummer räumte, bekam „Änderungen gespeichert" und fand sie beim
+		// nächsten Öffnen wieder vor. Seit die Pflicht im Server an die Art gepaart ist
+		// (pruefeAusweisLeerung), ist das Leeren beim Kollegen ein echter Vorgang: Die
+		// Spalte wird NULL. Beim Schüler kommt die begründete 400 zurück.
+		const ausweis = { barcode_id: formData.barcode_id };
+		// Die Schul-Adresse geht NUR beim Kollegium mit. Bei einem Schüler wäre schon das
+		// Mitschicken eines leeren Strings eine Aussage — der Server weist „E-Mail am
+		// Schüler" mit 400 ab, und zwar zu Recht (pruefeSchulEmail).
+		if (kollege) return { ...ausweis, email: formData.email };
 		return {
 			...ausweis,
 			lusd_id: formData.lusd_id,
@@ -162,6 +182,9 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 	return {
 		get formData() {
 			return formData;
+		},
+		get kontoVorhanden() {
+			return kontoVorhanden;
 		},
 		get saving() {
 			return saving;

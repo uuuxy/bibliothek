@@ -147,13 +147,36 @@ describe('useStudentEditForm.save', () => {
 			expect(payload.art).toBe('lehrkraft');
 		});
 
-		it('schickt eine leere Ausweisnummer nicht mit — ein Kollege darf ohne dastehen', async () => {
+		// UMGEKEHRT am 16.09.2026 (abends), nach Peters Blick auf die fertige Maske: Bis
+		// dahin liess das Formular die leere Ausweisnummer WEG, weil der Server jedes leere
+		// Pflichtfeld mit 400 abwies. Der Preis war ein stilles No-op — wer beim Kollegen
+		// eine falsch eingetragene Nummer räumte, bekam „Änderungen gespeichert" und fand
+		// sie beim nächsten Öffnen wieder vor. Der Hinweis unter dem Feld („Leer lassen,
+		// solange kein Ausweis gedruckt ist") war damit eine Zusage, die die Maske nicht
+		// hielt. Seit die Pflicht im Server an die ART gepaart ist (pruefeAusweisLeerung,
+		// api/student_schul_email.go — TestAusweisnummerLeeren belegt beide Seiten), geht
+		// das leere Feld mit und leert die Spalte wirklich.
+		it('schickt die leere Ausweisnummer beim Kollegen MIT — sonst wäre das Leeren ein stilles No-op', async () => {
 			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
 			const hook = baueKollegenFormular();
 			await hook.save();
 
 			const [, payload] = patchMock.mock.calls[0];
-			expect(Object.hasOwn(payload, 'barcode_id')).toBe(false);
+			expect(Object.hasOwn(payload, 'barcode_id')).toBe(true);
+			expect(payload.barcode_id).toBe('');
+		});
+
+		// Die Schul-Adresse ist das Gegenstück: Sie gehört dem KONTO, nicht der Leserzeile,
+		// und geht nur beim Kollegium mit. Beim Schüler wäre schon der leere String eine
+		// Aussage, die der Server mit 400 abweist („Ein Schüler bekommt kein Konto").
+		it('schickt die Schul-Adresse beim Kollegen mit', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueKollegenFormular();
+			hook.formData.email = 'neu.kollegin@schule.example';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload.email).toBe('neu.kollegin@schule.example');
 		});
 
 		it('schickt eine eingetragene Ausweisnummer sehr wohl mit', async () => {
@@ -175,6 +198,9 @@ describe('useStudentEditForm.save', () => {
 			expect(payload.klasse).toBe('7a');
 			expect(Object.hasOwn(payload, 'eltern_email')).toBe(true);
 			expect(payload.art).toBe('schueler');
+			// Und die Schul-Adresse NICHT: Ein Schüler hat kein Konto. Mitgeschickt wäre
+			// schon der leere String eine Aussage, die der Server mit 400 abweist.
+			expect(Object.hasOwn(payload, 'email')).toBe(false);
 		});
 	});
 

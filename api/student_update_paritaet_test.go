@@ -40,6 +40,15 @@ var nichtInsUpdate = map[string]string{
 	// Wechsel zwischen Lehrkraft und LiV; geschrieben wird das Feld sehr wohl, nur nach
 	// eigener Prüfung. Test: TestLeserArtAendern (PG).
 	"art": "kontrollierter Pfad pruefeUndSetzeArt (nur zwischen Lehrkraft und LiV, nie über die Schüler-Grenze)",
+	// email steht überhaupt nicht in `leser`, sondern am KONTO (benutzer.email). Sie ist
+	// keine Kontaktangabe, sondern der Schlüssel der Anmeldung — geschrieben wird sie
+	// deshalb nicht als Spalte dieser Zeile, sondern indem ein Konto ENTSTEHT
+	// (pruefeSchulEmail + trageKontoNach, api/student_schul_email.go): nachtragbar,
+	// solange keins da ist; danach ist das Feld eine Anzeige und wird in der
+	// Benutzerverwaltung geändert. Verworfen wird sie also nie — ein stilles 200 ohne
+	// Wirkung gibt es hier nicht, jeder andere Fall kommt als 400 oder 409 zurück.
+	// Test: TestSchulEmailNachtragen (PG).
+	"email": "eigener Pfad pruefeSchulEmail (Adresse am Konto, nicht an der Leserzeile — nachtragbar, nicht änderbar)",
 }
 
 // beispielwert liefert einen Wert, den JEDES Feld dieses Typs verträgt.

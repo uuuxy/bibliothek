@@ -371,7 +371,11 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	// NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
 	// hier die zweite — genau der Doppeleintrag, den diese Änderung abschafft.
 	if !istSchuelerArt(req.Art) {
-		if !s.legeKollegiumskontoAn(ctx, w, tx, req, studentID, darfFreischalten) {
+		// Das Konto entsteht in DERSELBEN Transaktion wie die Leserzeile — scheitert es,
+		// darf auch die Zeile nicht stehen bleiben (die belegte Adresse ist der häufige
+		// Fall und heisst: Die Person steht schon da).
+		if err := repository.LegeKollegiumskonto(ctx, tx, req.Vorname, req.Nachname, req.Email, studentID, darfFreischalten); err != nil {
+			antworteAufKontoFehler(w, err, strings.ToLower(strings.TrimSpace(req.Email)))
 			return "", "", false
 		}
 	}
@@ -381,42 +385,6 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		return "", "", false
 	}
 	return studentID, barcodeID, true
-}
-
-// legeKollegiumskontoAn hängt an die frische Leserzeile das Anmeldekonto.
-//
-// ok=false: Die Fehlerantwort steht bereits. Der wichtigste Fall ist die BELEGTE Adresse
-// — sie heisst fast immer, dass die Person längst im System steht (etwa über die
-// Selbstanmeldung). Das ist eine Auskunft und kein Fehler: Wer sie liest, soll den
-// vorhandenen Eintrag suchen und nicht einen zweiten bauen.
-func (s *Server) legeKollegiumskontoAn(ctx context.Context, w http.ResponseWriter, tx pgx.Tx,
-	req CreateStudentRequest, leserID string, aktiv bool) bool {
-	email := strings.ToLower(strings.TrimSpace(req.Email))
-	tag, err := tx.Exec(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id, zugang_beantragt_am)
-		VALUES ($1, $2, $3, 'kollegium', $4, $5, CASE WHEN $4 THEN NULL ELSE CURRENT_TIMESTAMP END)
-	`, req.Vorname, req.Nachname, email, aktiv, leserID)
-	if err == nil {
-		// Der CommandTag wird geprüft und nicht verworfen: Bliebe die Zeile aus, hätte die
-		// Lehrkraft eine Leserzeile ohne Konto — sie stünde in der Leserdatei, käme aber
-		// nie ins Portal, und der Dialog hätte „angelegt" gemeldet. Genau der Phantom-
-		// Erfolg, den die Ratsche in phantom_erfolg_test.go abfängt.
-		if tag.RowsAffected() != 1 {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError,
-				fmt.Errorf("das Konto zu %s ist nicht entstanden", email))
-			return false
-		}
-		return true
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		apierrors.SendHTTPError(w, http.StatusConflict,
-			//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Anlege-Dialog
-			fmt.Errorf("Unter %s steht bereits ein Zugang. Die Person ist schon in der Leserdatei — bitte dort suchen, statt einen zweiten Eintrag anzulegen.", email))
-		return false
-	}
-	apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-	return false
 }
 
 // parseCreateGeburtsdatum parst das Geburtsdatum (YYYY-MM-DD) aus dem Anlage-Request.

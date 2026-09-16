@@ -37,11 +37,19 @@
 	// Getter statt Werte: So liest der Hook bei jedem Zugriff das aktuelle Prop. Direkt
 	// übergeben wären es Schnappschüsse vom Aufbau der Komponente — `save()` hätte das
 	// PATCH dann an den zuvor geöffneten Schüler geschickt. Siehe useStudentEditForm.
-	const { formData, saving, syncData, save } = useStudentEditForm({
+	//
+	// Das Hook-Objekt wird GEHALTEN und nicht ganz auseinandergenommen: `formData` ist ein
+	// Proxy und überlebt die Destrukturierung, ein einfacher Wert nicht. `saving` und
+	// `kontoVorhanden` sind Getter auf $state — einmal herausdestrukturiert, stünde für
+	// immer der Wert vom Aufbau der Komponente da (der Speichern-Knopf hätte nie
+	// „Speichert…" gezeigt). Gelesen werden sie deshalb über `form.`, dort wo sie
+	// gebraucht werden.
+	const form = useStudentEditForm({
 		getStudent: () => student,
 		onSave: () => onSave(),
 		showSnackbar
 	});
+	const { formData, syncData, save } = form;
 
 	// Der Effekt verfolgt `student` über den Getter in syncData — wechselt das Prop,
 	// wird das Formular neu befüllt statt die alten Werte zu behalten.
@@ -85,8 +93,8 @@
 		</div>
 
 		<div class="flex items-center gap-3 shrink-0">
-			<Button size="lg" onclick={save} disabled={saving} class="px-6">
-				{#if saving}
+			<Button size="lg" onclick={save} disabled={form.saving} class="px-6">
+				{#if form.saving}
 					<Ladekreis size="sm" farbe="aktuell" />
 					Speichert…
 				{:else}
@@ -99,7 +107,11 @@
 
 	<!-- ── Scrollable Body ────────────────────────────────────────────────── -->
 	<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
-		<LeserEditFelder {formData} lusdVerknuepft={!!student?.lusd_id} />
+		<LeserEditFelder
+			{formData}
+			lusdVerknuepft={!!student?.lusd_id}
+			kontoVorhanden={form.kontoVorhanden}
+		/>
 
 		<!-- Bottom spacing -->
 		<div class="h-4"></div>
