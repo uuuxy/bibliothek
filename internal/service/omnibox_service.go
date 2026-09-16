@@ -127,8 +127,15 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 	// bzw. Littera-Personenlauf); vergeben wird seit dem 16.09.2026 nur noch A-, gelesen
 	// werden alle drei — es gibt Nummern aus der Zeit davor, und Nummern werden nie
 	// recycelt (handleAusweisAction)
-	// B- steht für Buch (Book)
+	// B- steht für Buch (Book), LMF- ebenso (Lernmittel aus dem Littera-Bestand)
 	// G- steht für Gerät (Hardware-Geräte)
+	//
+	// LMF- stand bis zum 17.09.2026 nicht in diesem Switch. Es funktionierte trotzdem,
+	// weil resolveOhnePraefix zuerst als Buch nachschlägt — aber auf einem anderen Weg
+	// als offline, wo `LMF-` seit jeher eine Buch-Vorsilbe ist (scanEinordnen.js). Zwei
+	// Wege zur selben Antwort sind einer zu viel: Ein Scan muss mit und ohne Netz dasselbe
+	// bedeuten. Seither ist es derselbe Weg — und eine unbekannte LMF-Nummer sagt „nicht
+	// gefunden", statt still in die Namenssuche zu laufen.
 	//
 	// leser: ist KEIN Scanner-Präfix, sondern die Auswahl aus der Trefferliste der
 	// Namenssuche. Sie schickt die ID und nicht die Ausweisnummer, weil ein Kollege aus
@@ -140,7 +147,7 @@ func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery
 	case strings.HasPrefix(q.Query, "A-"), strings.HasPrefix(q.Query, "S-"),
 		strings.HasPrefix(q.Query, "L-"):
 		return resp, s.handleAusweisAction(ctx, q.Query, resp)
-	case strings.HasPrefix(q.Query, "B-"):
+	case strings.HasPrefix(q.Query, "B-"), strings.HasPrefix(q.Query, "LMF-"):
 		return resp, s.handleBookAction(ctx, q, resp)
 	case strings.HasPrefix(q.Query, "G-"):
 		dr, err := s.deviceSvc.HandleDeviceAction(ctx, q.Query, q.ActiveLeserID, q.ConfirmedChecklist, q.StaffID)
