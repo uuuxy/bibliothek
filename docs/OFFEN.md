@@ -647,15 +647,12 @@ angleichen. Bezug: 8.5 (B5, B6).
 
 ### 5.1 Schäden und Benutzer
 
-- `DeleteUser` (`repository/audit_users.go`) prüft offene Schäden nicht: `benutzer_id` steht auf
-  `ON DELETE SET NULL`, `check_damage_responsible` erlaubt beide Bezüge leer — eine offene
-  Forderung verliert still ihren Verantwortlichen. Nahe A. **Schritt:** Löschen verweigern wie
-  bei aktiven Ausleihen.
-- `MarkCopyDefekt` (`repository/damage.go`) trägt ohne Schüler die klickende Bearbeiterin als
-  Verantwortliche der Forderung ein. **Schritt:** zusammen mit dem Punkt davor klären, wer in
-  `benutzer_id` steht; je ein Commit. Die Route dazu
-  (`POST /api/buecher/exemplare/{id}/defekt`) ruft im Repo niemand auf (4.16) — dort zuerst
-  entscheiden.
+- `MarkCopyDefekt` (`repository/damage.go`) schreibt in `schadensfaelle.benutzer_id` — eine
+  Spalte, die Migration 125 entfernt hat (mit ihr die Bedingung `check_damage_responsible`).
+  Der Zweig ohne Schüler läuft damit in einen SQL-Fehler, nicht mehr nur in die falsche
+  Zuordnung. Aufgefallen beim Nachprüfen am 16.09.2026. Die Route dazu
+  (`POST /api/buecher/exemplare/{id}/defekt`) hat keinen Aufrufer (4.16). **Schritt:** Route,
+  Handler und Funktion streichen; ein Weg, der nur noch 500 kann, ist keine Tür.
 - Der Idempotenz-Schlüssel einer Bestellung überlebt eine Änderung des Warenkorbs
   (`orderStore.svelte.js`, `api/order_service.go`). Ging die Antwort verloren, wird der geänderte
   Warenkorb still zur alten Bestellung. Nahe A. **Schritt:** Schlüssel bei jeder Änderung neu
@@ -759,10 +756,9 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.8 LMF und Statistik
 
-- Steht eine Klasse zweimal im Plan, nennen Ausleihe und Massenabgleich zwischen den Terminen
-  verschiedene Fristen.
-- Die Statistik hat keine Sequenznummer (eine langsame Antwort kann eine schnellere überholen) und
-  keinen Fehlerzustand: Ein Query-Fehler ergibt eine leere Liste ohne Logzeile (`api/stats.go`).
+- Die Statistik hat keine Sequenznummer (eine langsame Antwort kann eine schnellere überholen)
+  und im Browser keinen Fehlerzustand: Ein Query-Fehler ergibt eine leere Liste — protokolliert
+  wird er inzwischen (`api/stats.go`), zu sehen ist er nicht.
 
 ### 5.9 Oberfläche
 
@@ -868,9 +864,10 @@ Ein A-Fund (1.5), sonst B und C; die Fixes selbst waren richtig, die Funde sind 
   `978-3-12-345678-9` sind zwei Titel. Ob das Frontend vor dem Senden bereinigt, ist ungeprüft.
 - **Ersatzforderung (`436de459`):** Die neue 404-Begründung kommt als roher JSON-Body in den
   Toast (`useStudentProfile.svelte.js`, `String(e)`); der Mensch liest `Error: {"error":…}`.
-- **Selbstanmeldung (`d9d84fd3`):** Ein abgelehnter Antrag (Konto bleibt inaktiv) liest
-  dauerhaft „Zugang beantragt"; nur `aktiv = true` räumt `zugang_beantragt_am`. Ob gewollt, steht
-  nirgends.
+- **Selbstanmeldung (`d9d84fd3`):** Ein liegengelassener Antrag liest dauerhaft „Zugang
+  beantragt"; nur `aktiv = true` räumt `zugang_beantragt_am`. Kleiner geworden, seit ein
+  abgelehnter Antrag samt Leserzeile gelöscht wird (16.09.2026): Es geht nur noch um Anträge,
+  die weder freigeschaltet noch gelöscht werden. Ob das gewollt ist, steht nirgends.
 - **Ratschen mit Umgehungsweg, heute ohne offene Stelle:** UUID-Ratsche sieht `[]struct` ohne
   `dive`, `x := T{}`, Typen fremder Pakete und `q.Get(…)` nicht; Fehlerausgang-Scanner prüft Form 2
   (`?:`) nur mit `istOkZugriff`, nicht mit der UND-Kette; Schema-Gegenrichtung führt
@@ -886,27 +883,11 @@ golangci-lint 0, `go test ./...` mit den 197 PG-Tests, deadcode deckungsgleich, 
 Vitest 620/620. Die Commits vom 11.–14.09. deckt 5.12 schon ab; neu im Fenster sind die vom
 15.09. (Offline Stufe 1, Mahnverfahren Stufe 2).
 
-- **Tote Tür „Reserviert für:" — und ein NULL-Scan dahinter** (`internal/service/omnibox_service.go`,
-  `versucheReaktivierung`): Der Zweig fragt `zustand_notiz` nach dem Präfix „Reserviert für:";
-  geschrieben hat das zuletzt der Schreiber, der am 16.06.2026 mit `daf6b370` fiel (die
-  3-Tage-Reservierung läuft seitdem über `bereitgestellt_exemplar_id`). Der Leser überlebte den
-  Service-Refactor vom 20.06. Hinter der Tür liest `checkVormerkung` die nullbare Spalte
-  `vormerkungen.notiz` in einen nackten `string` — und der Schreiber (`repository/vormerkung.go`,
-  `NULLIF($2, '')`) legt jede Vormerkung ohne Notiz als NULL ab; `istBerechtigterReservierer`
-  schluckt den Scan-Fehler und meldet „nicht berechtigt". Heute unerreichbar; sobald jemand die
-  Notiz wieder schreibt, bekommt das Kind, das den Titel vorgemerkt hat, an der Theke 403
-  „Reserviert für: <sein eigener Name>". Der Durchgang vom 15.09. hatte hier zuerst einen
-  Idempotenz-Fund gesehen („5xx gibt den Schlüssel frei, obwohl `holeExemplarZurueck` schon
-  committet hat") — die Folge stimmt, aber nur in diesem Zweig, und der ist tot; der Test dazu
-  wurde deshalb nicht geschrieben. In Prod gezählt am 15.09.2026 (`docker compose exec
-  postgres-db psql … WHERE zustand_notiz LIKE 'Reserviert für:%'`): **0**. **Schritt:** Der
-  Zweig fällt samt `istBerechtigterReservierer`, `checkVormerkung` und dem Struct `vormerkung`
-  mit Rückbau-Probe — zusammen mit Abschnitt 2, Commit 8, weil es derselbe Baustein
-  `holeExemplarZurueck` ist; ein `coalesce` für die Notiz braucht es dann nicht mehr.
-- **„Aktive Lehrkraft" steht zweimal:** `lower(rolle::text) = 'kollegium' AND aktiv = true` in
-  `internal/service/device_service.go` (über `id`) und `repository/user.go` (über `barcode_id`).
-  Dieselbe Regel, zwei Pakete, kein gemeinsames Prädikat — kommt eine Bedingung dazu (etwa
-  „nicht gesperrt"), steht sie an einer Tür und fehlt an der anderen.
+Beim Nachprüfen am 16.09.2026 sind zwei der drei Funde weggefallen: Die tote Tür
+„Reserviert für:" samt NULL-Scan dahinter ist mit dem Zweig gefallen, und „Aktive
+Lehrkraft steht zweimal" hat sich mit Migration 125 von selbst erledigt — es gibt nur noch
+einen Weg (`GetLeserByBarcode`).
+
 - **Zwei Uhren in `UeberfaelligeAusleihen`** (`repository/bescheid_verlust.go`): gefiltert wird
   mit `CURRENT_TIMESTAMP` (DB), die Staffel rechnet mit `schulzeit.Jetzt()` (Go). Wirkt nur am
   Schuljahreswechsel, dann um eine Stufe. Schwester des `time.Now()`-Punkts in 5.12.
@@ -930,22 +911,13 @@ Barcode-Liste (Einzelheiten in den Commit-Nachrichten). Die Nachstellung des Sta
 weiter hinter dem Build-Tag `raster`: `TEST_DATABASE_URL=… go test -tags raster -run TestRaster_
 ./repository/`.
 
-- **Frage, heute ohne Befund, nach dem Personenlauf neu — Ausweis-Formen gegen die Offline-Regel** (Frage 3). Der Plan für Stufe 3,
-  Punkt 15 ordnet offline nach Vorsilbe: `S-`/`L-` Ausweis, `B-`/`LMF-` Buch, Ziffernfolge auf der
-  Liste Buch, sonst unklar. Ein alter Schülerausweis liefert beim Scannen aber `B97601826457`
-  (gemessen, Kopfkommentar in `api/buchbarcodes_handler.go`) — offline wäre er „unklar" und
-  sperrte die Zuordnung, obwohl er eindeutig ist. Und stünde eine Ausweisnummer zugleich als
-  Buch-Barcode im Bestand, buchte die Theke den Ausweis offline als Buch. Die Abfrage (lesend, nur
-  Zahlen, lokal gegen den Stack geprüft):
-  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM schueler WHERE deleted_at IS NULL) AS schueler, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id LIKE 'S-%') AS schueler_s, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^B[0-9]+$') AS schueler_b_ohne_strich, (SELECT count(*) FROM schueler WHERE deleted_at IS NULL AND barcode_id ~ '^[0-9]+$') AS schueler_ziffern, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id LIKE 'L-%') AS personal_l, (SELECT count(*) FROM benutzer WHERE aktiv AND barcode_id IS NOT NULL AND barcode_id NOT LIKE 'L-%') AS personal_andere, (SELECT count(*) FROM schueler s JOIN buecher_exemplare e ON e.barcode_id = s.barcode_id) AS gleich_wie_buch_schueler, (SELECT count(*) FROM benutzer b JOIN buecher_exemplare e ON e.barcode_id = b.barcode_id) AS gleich_wie_buch_personal;"`
-  Ergebnis auf dem Server (15.09.2026): 32 Schüler, alle `S-`, keine Ausweisnummer gleich
-  einer Buchnummer — die echte Schülerschaft steht dort noch nicht; nach dem Personenlauf neu zählen.
-  **Empfehlung (Handbuch und Backup, 15.09.2026):** Littera zählt Bücher und Leser getrennt, beide
-  ab 1; im Backup ist jede Lesernummer zugleich eine Exemplarnummer. Littera unterscheidet deshalb an
-  der Form des Scans, nicht an der Zahl. Offline genauso: `S-`/`L-` und `B` mit Ziffern ohne
-  Bindestrich sind ein Ausweis; `B-`/`LMF-`, ein 13-stelliges Littera-Etikett (zurückgerechnet mit
-  `frontend/src/lib/litteraEtikett.js`) und eine Ziffernfolge auf der Liste sind ein Buch; nur was in keine Form passt, ist
-  unklar und sperrt. Entscheidung vor Stufe 3, Punkt 15.
+Die Frage nach den Ausweis-Formen ist am 16.09.2026 entschieden und gebaut
+(`frontend/src/lib/scanEinordnen.js`): Vorsilben zuerst, dann die Barcode-Liste, dann die
+Rückrechnung des Littera-Etiketts, sonst „unklar". Seither bekommt jeder Ausweis die
+Vorsilbe `A-`. Ein Ausweis aus dem Altbestand ohne Vorsilbe (gemessen `B97601826457`) ist ohne
+Netz „unklar" und wird abgewiesen — das hängt am Ausweis-Neudruck aus 7.2 und
+entscheidet sich mit dem frischen Littera-Backup.
+
 - **B — Ausweis- und Buchnummer werden nur in der Littera-Übernahme gegeneinander geprüft**
   (Frage 3). Seit dem 15.09.2026 vergibt der Personenlauf keine Nummer, die schon ein Buch trägt.
   Wer von Hand eine Ausweisnummer ändert (Schülerakte) oder ein Buch umetikettiert
@@ -1041,7 +1013,9 @@ Befund, svelte-check 0/0, Frontend-Tests 668 grün, Go-Suite mit echtem Postgres
 Sechs Funde, vier davon noch am selben Tag behoben und hier gelöscht: der Test außerhalb von
 Git (`4edcf1b8`), das Zusammenführen eines doppelt stehenden Kollegen (`bf36df57`), die nicht
 mehr änderbare Art (`cd46fc44`, `ecd007bd`) und die veralteten Zahlen in
-`docs/invarianten.md`. Übrig sind die beiden, an denen eine Entscheidung hängt.
+`docs/invarianten.md`. Die beiden, an denen eine Entscheidung hing, sind am 16.09.2026
+entschieden und gebaut (keine Forderung gegen einen Kollegen; die Leserzeile geht mit dem
+Konto, solange nichts an ihr hängt). Übrig ist einer.
 
 **Übrig aus diesem Durchgang: Ein zweites Konto derselben Person erzeugt eine zweite
 Leserzeile.** Der Wächter `trg_benutzer_hat_leserzeile` hängt jedem Konto ohne Leserzeile
