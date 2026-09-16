@@ -183,6 +183,33 @@ Fall. Stufe 3 wurde am 16.09. auf diese Grundlage aufgesetzt — was dort gebaut
 Vollbild, keine Sperre ohne Netz), gilt weiter und ist getestet; es zeigt nur eine Warteschlange,
 die noch nichts annimmt.
 
+**Nachtrag, 16.09.2026 gegen 20:45 — Stufe 2 ist am Browser EBENSO wenig angeschlossen.**
+Beim Planen des Stufe-1-Baus gemessen, weil die Frage aufkam, ob die Tür einen offline
+gescannten Ausweis annimmt. Sie tut es (`NachbuchenEintrag.AusweisBarcode`), und mehr:
+
+- `POST /api/action/nachbuchen` ist geroutet und vollständig — Idempotenz je Schlüssel,
+  Uhrversatz des Theken-Rechners, Ausweis-Auflösung, die sieben Ergebniswörter,
+  Meldungsliste. **Kein Aufruf im Browser.**
+- `stores/offlineSync.svelte.js` schickt weiterhin an `POST /api/action/batch` — die Tür, die
+  laut Entscheidung vom 13.09. nur noch „eine Version länger" für Theken-Tabs mit altem Stand
+  bestehen bleibt und deren Rückbau oben schon eingeplant ist.
+
+Damit steht am Server ein vollständiger Offline-Betrieb, von dem an der Theke nichts ankommt.
+Zweimal dieselbe Form (Bugklasse „Nie verdrahtet"), und beide Male sagte die Stand-Angabe
+„gebaut", weil Commits vorlagen.
+
+**Was daraus fuer die Reihenfolge folgt.** Der Bau zerfaellt in drei Schritte, und nur der
+erste bringt den Nachweis zum Laufen:
+
+- **A — die Theke nimmt an.** Barcode-Liste im Browser halten (die Tür liefert sie mit ETag und
+  gepackt), Scans offline einordnen (`B-`/`LMF-` = Buch, `A-`/`S-`/`L-` = Ausweis, Ziffern über
+  `litteraEtikett.js` zurückrechnen und in der Liste nachschlagen, sonst „unklar"), alle Formen
+  und den Ausweis in die Warteschlange lassen. Danach landen Scans, und „Sicherung speichern"
+  erscheint überhaupt erst.
+- **B — die Buchungen kommen richtig an.** Der Sync schickt an `/api/action/nachbuchen` statt an
+  `/api/action/batch`, mit Scan-Zeitpunkt, Schlüssel und Ausweis-Barcode.
+- **C — was nicht durchging, wird sichtbar.** Die Meldungsliste aus Migration 117.
+
 **Nächster Schritt, vor allem Weiteren:** Stufe 1 wirklich bauen — die Barcode-Liste im Browser
 halten und auffrischen, alle Buchformen und Ausweise in die Warteschlange lassen, die
 Ziffernregel aus der Entscheidung vom 13.09. umsetzen, und je Form ein Testfall statt fünfmal
