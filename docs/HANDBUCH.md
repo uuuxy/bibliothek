@@ -492,10 +492,20 @@ Durchgang mit einem Screenreader hat nicht stattgefunden.
   fehlt und wie es zu beheben ist.
 - **Scanner tippt ins Leere** → einmal ins Scanfeld klicken; die Theke holt den Fokus nach
   jedem Scan selbst zurück.
-- **Netz weg** → Bücher mit einem Barcode `B-…` lassen sich weiter scannen: Die Theke merkt sie
-  sich lokal und bucht sie nach, sobald der Server wieder da ist. Alles andere — Littera-Nummern,
-  EAN-Strichcodes, `LMF-…` und Ausweise — speichert sie heute **nicht**, sie meldet
-  „Netzwerkfehler". Ein Ausweis wird ohne Netz nicht geladen: Die folgenden `B-`-Bücher gingen an
-  die Person, die vorher geladen war, bei einer geladenen Lehrkraft würden sie als Rückgabe
-  gespeichert. Während eines Ausfalls deshalb keinen neuen Ausweis scannen, die Vorgänge auf
-  Papier notieren und nach der Rückkehr der Verbindung scannen.
+- **Netz weg** → weiterarbeiten. Oben erscheint ein schmales Band, die Theke bleibt bedienbar,
+  und der Bildschirm sperrt sich nicht. Scanne wie sonst: erst den Ausweis, dann die Bücher.
+  Beides wird auf diesem Rechner gemerkt und gebucht, sobald die Verbindung zurück ist — du musst
+  dafür nichts tun. Der Ausweis zeigt ohne Netz keinen Namen; das Band nennt die Nummer, die es
+  sich gemerkt hat.
+  - Meldet die Theke **„nicht eindeutig"**, kennt sie die Nummer nicht (ein sehr neues Buch, ein
+    fremder Aufkleber). Dieser Scan ist NICHT gebucht — notiere ihn auf Papier.
+  - **Namen suchen** geht ohne Netz nicht: Auf dem Theken-Rechner stehen keine Personendaten.
+  - **Geräte** lassen sich ohne Netz nicht ausgeben oder zurücknehmen.
+  - Muss der Rechner aus, bevor die Verbindung zurück ist: **„Sicherung speichern"** im Band, die
+    Datei später unter _Datenverwaltung → Offline-Sicherungen einspielen_ übernehmen. Zweimal
+    einspielen schadet nicht.
+- **Nach einem Netzausfall: „x Buchungen brauchen einen Blick"** → Der Server hat beim Nachbuchen
+  etwas anders gebucht, als es gescannt wurde — das Buch lag bei jemand anderem, oder eine
+  Rückgabe kam zu spät. Öffne **Meldungen**, sieh die Zeilen durch und setze jede mit „Erledigt"
+  ab, um die du dich gekümmert hast. Steht der Knopf nicht da, fehlt das Recht, Schülerdaten zu
+  sehen — dann bitte die Bibliothek ansprechen.

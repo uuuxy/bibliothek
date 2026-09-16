@@ -725,16 +725,48 @@ nach `sperre_minuten` (Vorgabe 15) erscheint der Sperrbildschirm — die Anwendu
 mehr im DOM; entsperrt wird mit dem Passwort, nicht mit Maus oder Tastatur. Beides ist
 Datenschutz an einem Tresen, an dem Schüler mitlesen können (Kategorie 8).
 
-### 18.4 Offline-Warteschlange
+### 18.4 Die Theke ohne Verbindung
 
-Fällt das Netz aus, sammelt die Theke Buch-Scans mit dem Präfix `B-` in einer lokalen
-IndexedDB-Warteschlange (`offlineQueue.js`, Store `offline_actions`) und spielt sie ein, sobald
-der Server wieder erreichbar ist (`offlineSync`). Andere Buchformen (Littera-Mediennummern,
-EAN-13, `LMF-…`) und Ausweise speichert sie nicht, sie meldet „Netzwerkfehler"; ohne geladenen
-Schüler — auch bei geladener Lehrkraft — wird ein Offline-Buchscan als Rückgabe eingereiht. Der
-Umbau steht in [OFFEN.md](OFFEN.md), Abschnitt 2. Ein Offline-Hinweis zeigt den Zustand. Bleibt ein Arbeitsplatz
-dauerhaft offline, lässt sich seine Warteschlange als Datei sichern und unter _Datenverwaltung →
-Offline-Sicherungen einspielen_ nachbuchen.
+Fällt die Verbindung aus, geht der Betrieb an der Theke weiter. Was dabei geschieht:
+
+**Scannen.** Jeder Scan wird auf dem Theken-Rechner eingeordnet, wie es sonst der Server tut
+(`scanEinordnen.js`, der Zwilling von `omnibox_service.go`): `B-…` und `LMF-…` sind Bücher,
+`A-…`/`S-…`/`L-…` sind Ausweise, `G-…` sind Geräte. Eine nackte Ziffernfolge entscheidet die
+Buch-Barcode-Liste, die der Rechner bei jeder Anmeldung holt (`GET /api/action/buchbarcodes`,
+nur Buchnummern, keine Personendaten); ein Littera-Etikett wird dafür aus der EAN-13
+zurückgerechnet. Steht die Nummer nicht auf der Liste, gilt der Scan als **unklar** und wird
+nicht gebucht — wer hier riete, schriebe das nächste Buch einer fremden Person zu.
+
+**Personen.** Ein ohne Netz gescannter Ausweis wird als NUMMER gemerkt; die folgenden Bücher
+tragen sie, der Server löst sie beim Nachbuchen auf. Personendaten liegen bewusst nicht auf dem
+Rechner — eine Namenssuche gibt es ohne Netz deshalb nicht. Ein unklarer Scan lässt den Merker
+fallen: Ab dann wird nichts mehr zugeordnet, bis ein eindeutiger Ausweis kommt.
+
+**Warteschlange.** Die Scans liegen in einer lokalen IndexedDB (`offlineQueue.js`) mit
+Scan-Zeitpunkt und Idempotenz-Schlüssel. Ein Band oben zeigt den Zustand; die Theke wird dabei
+nicht verdeckt, und ohne Netz sperrt auch der Inaktivitäts-Wächter nicht (aufgeschlossen würde
+gegen den Schul-Mailserver, und der ist dann nicht erreichbar). Geleert wird die Theke weiter.
+
+**Nachbuchen.** Kommt die Verbindung zurück, schickt der Rechner die Warteschlange in Portionen
+an `POST /api/action/nachbuchen`. Der Server bucht die Wirklichkeit: Lag das Buch bei jemand
+anderem, nimmt er es dort zurück und leiht es neu aus; eine Rückgabe hinter einer neueren
+Buchung weist er ab. Gebucht wird mit dem Scan-Zeitpunkt (höchstens der Serverzeit), und jeder
+Schlüssel genau einmal.
+
+**Meldungen.** Jede Abweichung vom Scan hält der Server fest (Migration 117). An der Theke steht
+dafür am Band ein Knopf mit der Zahl der offenen Meldungen; dahinter die Liste mit Zeitpunkt,
+Buch, Person, Ergebnis und Grund, quittierbar mit „Erledigt". Die Zahl gehört jeder Theken-Rolle
+(`perform_actions`), die Liste verlangt `view_students` — sie nennt Namen und Klassen. Offene
+Meldungen erscheinen nach 14 Tagen als Warnung in der Betriebsbereitschaft; quittierte werden
+nach der Lesehistorie-Frist gelöscht, spätestens nach 30 Tagen.
+
+**Sicherung.** Bleibt ein Arbeitsplatz dauerhaft ohne Verbindung, lässt sich seine Warteschlange
+als Datei sichern und an einem anderen Rechner unter _Datenverwaltung → Offline-Sicherungen
+einspielen_ nachbuchen. Der Idempotenz-Schlüssel wandert mit: Dieselbe Datei zweimal eingespielt
+bucht nichts doppelt.
+
+Nicht im Umfang: Anmelden ohne Server, Schülerdaten auf dem Rechner, Geräteausgabe ohne Netz.
+Was davon noch offen ist, steht in [OFFEN.md](OFFEN.md), Abschnitt 2.
 
 ### 18.5 Selbstanmeldung fürs Kollegium
 

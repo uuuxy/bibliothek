@@ -45,6 +45,11 @@ Server der Schule verarbeitet und nicht in Länder außerhalb der EU übermittel
 der Rückgabe** zugeordnet (Nachweis für die Lernmittel-Bestandskartei und etwaige
 Schadensfälle), danach wird die Zuordnung automatisch entfernt. Verlässt Ihr Kind die Schule, werden die persönlichen Daten 90 Tage nach dem letzten Vorgang (Abgang, letzte Rückgabe oder Begleichung einer Forderung) anonymisiert und der anonymisierte Datensatz ab dem 30. Januar des Folgejahres endgültig gelöscht. Solange Bücher offen sind oder eine Forderung besteht, bleiben Name und Anschrift für Erinnerung und Abrechnung erhalten. Protokolle werden nach 24 Monaten gelöscht.
 
+**Wenn das Netz ausfällt.** Damit die Ausgabe an der Theke weitergehen kann, merkt sich der
+Rechner an der Ausleihtheke währenddessen die Nummer des Ausweises und die Nummern der Bücher
+— keine Namen, keine Klassen. Sobald die Verbindung zurück ist, werden die Vorgänge gebucht
+und die Merkzettel gelöscht.
+
 **Ihre Rechte.** Sie haben das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16),
 Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18) und Widerspruch (Art. 21
 DSGVO) — wenden Sie sich an die Schule oder den Datenschutzbeauftragten. Sie können sich
@@ -84,6 +89,9 @@ keine Namen.
 zugeordnet (Rückfragen zu später bemerkten Schäden), danach entfernt das System die
 Zuordnung automatisch. Vormerkungen werden mit Erledigung gelöscht. Beim Verlassen der
 Schule oder nach Widerruf gelten die Löschfristen aus Teil A.
+
+**Wenn das Netz ausfällt.** Wie Teil A: Der Rechner an der Ausleihtheke merkt sich so lange
+nur Ausweis- und Buchnummern und bucht sie nach, sobald die Verbindung zurück ist.
 
 **Ihre Rechte.** Wie Teil A, zusätzlich das Recht, die Einwilligung jederzeit zu
 widerrufen.

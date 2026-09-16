@@ -68,6 +68,18 @@ Trennung von (1) ist nötig, weil Lernmittel weder freiwillig noch per Einwillig
 
 ---
 
+## Zusatz zu Tätigkeit 1 und 2 — Speicherung am Theken-Rechner bei Netzausfall
+
+Gilt seit dem 16.09.2026, für beide Ausleih-Tätigkeiten gleichermaßen.
+
+| Feld                 | Inhalt                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Zweck**            | Der Betrieb an der Ausleihtheke geht bei einem Netzausfall weiter; die Vorgänge werden nachgebucht, sobald die Verbindung zurück ist. Ohne das gingen die Ausleihen einer Pause verloren oder müssten auf Papier geführt werden.                                                                                                                                                                                              |
+| **Was gespeichert wird** | Auf dem Theken-Rechner (Browser-Speicher, IndexedDB): je Vorgang die **Ausweisnummer** (keine Namen, keine Klasse), die **Buchnummer**, Absicht und Zeitpunkt des Scans; getrennt davon eine Liste aller **Buchnummern** des Bestands zum Einordnen der Scans (ohne Personenbezug). Namen, Klassen und Ausleihhistorien liegen **nicht** auf dem Rechner — eine Namenssuche ist ohne Netz deshalb nicht möglich.        |
+| **Dauer**            | Bis zum Nachbuchen, also bis zur Rückkehr der Verbindung; danach wird der Eintrag gelöscht. Wird eine Sicherungsdatei erzeugt (Rechner muss aus, bevor die Verbindung zurück ist), liegt sie auf dem Schulrechner bzw. im Sicherungsordner, bis sie eingespielt ist — sie ist danach zu löschen (organisatorische Pflicht der Schule).                                                                                       |
+| **Meldungen**        | Weicht die nachgebuchte Wirklichkeit vom Scan ab, hält der Server eine Meldung mit Buch, Ausleiher und Vorbesitzer fest. Sichtbar nur mit dem Recht, Schülerdaten zu sehen. Quittierte Meldungen werden nach der Lesehistorie-Frist gelöscht, spätestens nach 30 Tagen; offene bleiben stehen und werden nach 14 Tagen als Betriebswarnung gemeldet.                                                                        |
+| **Maßnahmen**        | Der Rechner steht im Aufsichtsbereich der Bibliothek; die Theke wird nach Inaktivität geleert (Vorgabe 5 Minuten), sodass kein Profil offen stehen bleibt. Der Browser-Speicher ist an Gerät und Profil gebunden.                                                                                                                                                                                                             |
+
 ## Anhang — Technische und organisatorische Maßnahmen (Art. 32 DSGVO, § 6 SchDSV)
 
 Belegt in [SECURITY.md](../SECURITY.md); Kurzfassung für das VVT:

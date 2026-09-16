@@ -18,11 +18,12 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
 
-1. **Die Theke nimmt ohne Netz jetzt wirklich an, und die Buchungen gehen an die richtige
-   Tür** (Abschnitt 2, Schritte A und B). Gescannt werden alle Buchformen und jeder Ausweis;
-   ein ohne Netz gescannter Ausweis wird gemerkt, die folgenden Bücher gehen an ihn. Offen
-   sind noch drei Dinge: die Liste der Buchungen, die nicht durchgingen (Schritt C), der
-   Nachweis von Hand am Stack — Netz kappen, scannen, Netz zurück — und der Nachweis für den
+1. **Die Offline-Theke ist fertig gebaut** (Abschnitt 2, Schritte A, B und C). Ohne Netz
+   werden alle Buchformen und jeder Ausweis angenommen, die Buchungen gehen an die richtige
+   Tür, und was dabei nicht durchging, steht an der Theke in einer Liste zum Abhaken. Auch
+   Handbuch, Fachkonzept und die Datenschutz-Unterlagen sind nachgezogen. **Offen ist jetzt
+   nur noch dein Nachweis von Hand:** Netz kappen, Bücher aller Formen und zwei Ausweise
+   scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu der Nachweis für den
    Server (Anfragen direkt an die Tür).
 2. **Erledigt am 16.09.2026: die vier Fragen zum Kollegium sind beantwortet und gebaut.**
    Ein Kollege hat keine Frist und wird nie gesperrt. Er zahlt nicht für ein verlorenes
@@ -80,9 +81,9 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Abschnitt 2** Offline-Betrieb der Theke: Stufen 1 und 2 sind gebaut; jetzt die Nachweise
-   am Stack (2.3), dann die Freigabe für Stufe 3 (die Ausweis-Formen aus **5.15** werden
-   dabei mit entschieden).
+1. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen
+   sind nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die
+   Tür.
 1. **5.16** Leserdatei und Rolle Leitung: gebaut, samt Löschen eines Kollegen mitsamt
    Konto. Offen ist nur noch dein Blick auf den Stand.
 2. **5.1** Schäden und Benutzer.
@@ -238,11 +239,16 @@ jeden Ausweis an, und der Sync schickt an `/api/action/nachbuchen` statt an den 
 Netz gescannter Ausweis wird als NUMMER gemerkt; die folgenden Bücher tragen ihn, der Server
 löst ihn beim Nachbuchen auf. Je Form ein eigener Testfall statt fünfmal `B-10234`.
 
-**Nächster Schritt, vor allem Weiteren:** Schritt C — die Meldungsliste. Die drei Türen dafür
-stehen am Server (`GET /api/action/nachbuch-meldungen`, `…/anzahl`, `POST …/quittieren`) und
-haben im Browser bis heute keinen Aufrufer; die Warnung nach 14 Tagen in der
-Betriebsbereitschaft gibt es. Danach die Nachweise am Stack (2.3), Stufe 1 und Stufe 3 von Hand,
-Stufe 2 über die Tür.
+**Stand 16.09.2026, nachts: Schritt C ist gebaut.** Am Band hängt ein Knopf mit der Zahl der
+offenen Meldungen, dahinter die Liste mit Zeitpunkt, Buch, Person, Ergebnis und Grund,
+quittierbar mit „Erledigt". Die Zahl gehört jeder Theken-Rolle, die Liste verlangt
+`view_students`; aktuell bleibt beides über die SSE-Leitung, und „Theke leeren" schliesst die
+Liste mit. Doku nachgezogen: Handbuch, Fachkonzept 18.4, VVT und Datenschutzhinweis (die
+kurzzeitige Speicherung von Ausweis- und Buchnummern am Theken-Rechner).
+
+**Nächster Schritt, vor allem Weiteren:** die Nachweise am Stack (2.3) — Stufe 1 und Stufe 3
+von Hand im echten Chrome, Stufe 2 über die Tür. Gebaut ist alles; geprüft ist es erst, wenn es
+einmal von Hand gelaufen ist.
 
 **Stand 15.09.2026 (überholt, siehe oben):** Stufe 1 galt als gebaut — sieben Commits `0fa4b5a3`, `18b4887e`, `44615c42`,
 `08312c87`, `65f9a998`, `6fe6ba8b`, `23ca498c`, je ein Rot-Test am alten Code, volle Suite mit
@@ -1144,7 +1150,7 @@ die Einzelheiten stehen in den Commit-Nachrichten (`c5cddd6e`, `7fb4b387`, `77c5
 Endlosschleife bei stehendem WLAN und weggefallenem Server, die nachgeholte Sperre mitten in
 der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
 
-**Offen geblieben** — vier Punkte, alle Kategorie B, keiner hält den Betrieb auf:
+**Offen geblieben** — drei Punkte, alle Kategorie B, keiner hält den Betrieb auf:
 
 1. **Ein abgelehnter Stapel hält den Sync an, ohne es zu sagen.** `sendeBatch`
    (`stores/offlineSync.svelte.js`) beendet die Runde bei jeder Antwort ab 400 mit einem
@@ -1164,11 +1170,6 @@ der Arbeit, und die eingespielte Sicherung mit unlesbarem Zeitpunkt.
    zwölf Stunden offen: Was am Vormittag neu inventarisiert wurde, ist am Nachmittag ohne Netz
    eine „unklare" Nummer. Der Zeitpunkt des letzten Abgleichs wird gespeichert und nirgends
    bewertet. Zu entscheiden: nachfassen (etwa stündlich) oder das Alter anzeigen.
-4. **VVT und Datenschutzhinweis kennen die Ablage am Theken-Rechner nicht.** Seit dem
-   16.09.2026 liegen Ausweis- und Buchnummern in der Warteschlange dieses Rechners und in den
-   Sicherungsdateien, die der Bediener speichert. Das ist Punkt 17 des Plans (2.2) und damit
-   nicht vergessen — der Code steht nur vor der Doku. Vor dem ersten echten Offline-Betrieb
-   muss beides nachgezogen sein.
 
 **Was der Durchgang ausdrücklich in Ordnung fand:** Die Uhr-Frage ist sauber gelöst — der
 Eintrag trägt neben der Wanduhr einen gleichmäßig laufenden Anker, und der Sync rechnet daraus
@@ -1337,15 +1338,6 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
 - Messung zu 4.17: Liegen echte Schülerdaten auf dem Server?
-
-### 7.9 Bis zum Offline-Bau: Hinweis an die Theke
-
-Ohne Netz speichert die Theke heute nur `B-`-Bücher (Abschnitt 2). Während eines Netzausfalls
-keinen neuen Ausweis scannen — die folgenden Bücher gingen an den vorher geladenen Schüler, bei
-geladener Lehrkraft würden sie zur Rückgabe. Vorgänge auf Papier notieren und nach der Rückkehr
-der Verbindung scannen.
-
----
 
 ## 8. Schule, Schulamt, Schulträger
 
