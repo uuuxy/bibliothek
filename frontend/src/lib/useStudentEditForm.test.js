@@ -33,6 +33,7 @@ describe('useStudentEditForm.save', () => {
 		nachname: 'Muster',
 		geburtsdatum: '2012-04-05',
 		klasse: '7a',
+		abgaenger_jahr: 2031,
 		barcode_id: 'S-1',
 		strasse: 'Hauptstr',
 		hausnummer: '12',
@@ -66,6 +67,51 @@ describe('useStudentEditForm.save', () => {
 				''
 			);
 		}
+	});
+
+	// Ein Klassenwechsel rechnet das Abgangsjahr neu — das tut der Server, sobald eine
+	// Klasse OHNE Abgangsjahr ankommt (calculateAbgaengerJahr). Bis zum 17.09.2026 kam
+	// nie eine an: Dieses Formular schickte immer den geladenen Wert mit. Ein Kind, das
+	// von der 7 in die 10 wechselt, behielt das Abgangsjahr des alten Jahrgangs — und
+	// daran hängen die Abgängerliste, die Versetzung und die Löschuhr.
+	describe('Abgangsjahr beim Klassenwechsel', () => {
+		it('lässt das Abgangsjahr weg, wenn die Klasse wechselt und niemand es angefasst hat', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueFormular();
+
+			hook.formData.klasse = '10a';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload.klasse).toBe('10a');
+			expect(
+				'abgaenger_jahr' in payload,
+				'der Server leitet das Jahr nur ab, wenn keines mitkommt'
+			).toBe(false);
+		});
+
+		it('schickt ein von Hand gesetztes Abgangsjahr mit — auch beim Klassenwechsel', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueFormular();
+
+			hook.formData.klasse = '10a';
+			hook.formData.abgaenger_jahr = '2033';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload.abgaenger_jahr, 'wer beides setzt, meint beides').toBe(2033);
+		});
+
+		it('schickt das Abgangsjahr weiter mit, solange die Klasse bleibt', async () => {
+			patchMock.mockResolvedValueOnce(/** @type {any} */ ({ ok: true }));
+			const hook = baueFormular();
+
+			hook.formData.vorname = 'Mira';
+			await hook.save();
+
+			const [, payload] = patchMock.mock.calls[0];
+			expect(payload.abgaenger_jahr).toBe(2031);
+		});
 	});
 
 	it('schickt geleerte Pflichtfelder ebenfalls als leeren String — der Server lehnt sie ab', async () => {

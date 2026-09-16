@@ -97,6 +97,7 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 	 * @returns {Record<string, unknown>}
 	 */
 	function schulfelder() {
+		const student = getStudent();
 		const kollege = istKollegium({ art: formData.art });
 		// Die Ausweisnummer geht IMMER mit, auch leer.
 		//
@@ -112,12 +113,29 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 		// Mitschicken eines leeren Strings eine Aussage — der Server weist „E-Mail am
 		// Schüler" mit 400 ab, und zwar zu Recht (pruefeSchulEmail).
 		if (kollege) return { ...ausweis, email: formData.email };
-		return {
-			...ausweis,
-			lusd_id: formData.lusd_id,
-			klasse: formData.klasse,
-			abgaenger_jahr: formData.abgaenger_jahr ? Number.parseInt(formData.abgaenger_jahr, 10) : null
-		};
+		// Das Abgangsjahr geht NUR mit, wenn jemand es angefasst hat.
+		//
+		// Der Server leitet es aus der Klasse ab, sobald eine Klasse ohne Abgangsjahr
+		// ankommt (`calculateAbgaengerJahr`). Weil dieses Formular es aber IMMER
+		// mitschickte — den alten Wert —, kam nie eine Klasse ohne Jahr an: Ein
+		// Klassenwechsel liess das Abgangsjahr des alten Jahrgangs stehen. Daran hängen
+		// die Abgängerliste, die Versetzung und die Löschuhr; ein Kind aus der 7 mit dem
+		// Abgangsjahr der 10 verschwindet drei Jahre zu spät oder zu früh.
+		//
+		// Angefasst heisst: Der Wert im Feld ist ein anderer als der geladene. Dann gilt
+		// er — auch beim Klassenwechsel, denn dann hat jemand bewusst beides gesetzt.
+		const geladenesJahr = student?.abgaenger_jahr ? String(student.abgaenger_jahr) : '';
+		const jahrAngefasst = formData.abgaenger_jahr !== geladenesJahr;
+		const klasseGeaendert = formData.klasse !== (student?.klasse || '');
+
+		/** @type {Record<string, unknown>} */
+		const felder = { ...ausweis, lusd_id: formData.lusd_id, klasse: formData.klasse };
+		if (!(klasseGeaendert && !jahrAngefasst)) {
+			felder.abgaenger_jahr = formData.abgaenger_jahr
+				? Number.parseInt(formData.abgaenger_jahr, 10)
+				: null;
+		}
+		return felder;
 	}
 
 	/**
