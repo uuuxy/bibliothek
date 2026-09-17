@@ -370,7 +370,7 @@ erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die
 
 ## Bestellwesen
 
-Sechs Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automatisch; Titel in
+Fünf Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automatisch; Titel in
 den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
 Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücherei
 (Schulträger)_ — je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt
@@ -378,9 +378,7 @@ sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich d
 Bestellung nachträglich mit Grund korrigieren) ·
 **Wareneingang** (Positionen einbuchen → Etiketten) · **Bestellhistorie** (Detail, Status,
 Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
-im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Bestellberichte**
-(Monat/Jahr/Lieferant als PDF; in Blöcken je Topf mit eigener Summe und der Gesamtsumme
-darunter, über _Mittelherkunft_ auch für nur einen Topf) · **Klassensatz-
+im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·
 **Wünsche & Meldungen** (Anliegen aus dem Portal, _Erledigen_ mit Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
@@ -419,6 +417,13 @@ Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum �
 nennt der Ausdruck, statt Vollständigkeit zu behaupten. Im Zugangsbuch stehen Bücher ohne hinterlegte
 Bestellung unter „ohne Zuordnung", weil nicht belegt ist, aus welchem Geld sie bezahlt
 wurden. (§13)
+
+## Bestellberichte
+
+Monatsbericht, Jahresbericht und Lieferantenabrechnung als PDF; in Blöcken je Topf mit
+eigener Summe und der Gesamtsumme darunter, über _Mittelherkunft_ auch für nur einen Topf.
+Ohne Preise im Bestellwesen zählen die Blätter Exemplare statt Euro und heißen
+entsprechend. Bis zum 17.09.2026 ein Reiter im Bestellwesen. (§7)
 
 ## System-Logs
 

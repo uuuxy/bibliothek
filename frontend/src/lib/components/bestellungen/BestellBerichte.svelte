@@ -1,15 +1,36 @@
+<!-- @component Bestellberichte — Monat, Jahr und Lieferant als Blatt zum Abheften.
+
+     Eigener Bildschirm unter „Berichte" seit dem 17.09.2026, vorher ein Reiter im
+     Bestellwesen. Die Trennlinie: Unter „Berichte" steht, was ein Blatt für jemand
+     anderen erzeugt und dabei nichts ändert (Bestandsbücher, Statistiken, diese drei);
+     bei seinem Vorgang bleibt, was eine Folgeaktion hat — der Fehlbestandsbericht mit
+     „Gefunden" und Löschen in der Inventur, die Mahnungen im Mahnwesen.
+
+     Kein zweiter Weg: Der Reiter im Bestellwesen ist dabei ENTFALLEN, nicht verdoppelt
+     worden. Recht bleibt view_orders wie die Route (/api/bestellhistorie/bericht).
+
+     Die Ansicht lädt ihre beiden Angaben selbst, weil sie nicht mehr im Bestellwesen
+     hängt: die Lieferantenliste und den Schalter „Preise im Bestellwesen". Beides steht
+     im geteilten orderStore mit eigener Frist — dieselbe Stelle, aus der auch die
+     Lieferanten-Kategorie der Einstellungen lädt, also kein zweiter Datenweg. -->
 <script>
+	import { onMount } from 'svelte';
 	import { localISO } from '../../utils/dates.js';
 	import { berichtOptionen as optionen, berichtURL } from './bestellberichte.js';
 	import { MITTEL, MITTEL_REIHENFOLGE } from './mittel.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
+	import PageShell from '../layout/PageShell.svelte';
 	import Select from '../ui/Select.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import Radio from '../ui/Radio.svelte';
 	import { Printer } from '@lucide/svelte';
 
-	/** @type {{ suppliers?: { id: string, name: string }[] }} */
-	let { suppliers = [] } = $props();
+	onMount(() => {
+		orderStore.loadSuppliers();
+		orderStore.loadKonfiguration();
+	});
+
+	const suppliers = $derived(orderStore.suppliers);
 
 	/** @type {"monat" | "jahr" | "lieferant"} */
 	let typ = $state(/** @type {'monat' | 'jahr' | 'lieferant'} */ ('monat'));
@@ -22,7 +43,7 @@
 	// Jahresbericht
 	let jahr = $state(String(now.getFullYear()));
 
-	// Lieferantenabrechnung — Vorauswahl folgt den Props, Nutzer-Auswahl überstimmt sie
+	// Lieferantenabrechnung — Vorauswahl folgt der geladenen Liste, Nutzer-Auswahl überstimmt sie
 	let lieferantId = $derived(suppliers[0]?.id ?? '');
 	let vonDatum = $state(localISO(new Date(now.getFullYear(), now.getMonth(), 1)));
 	let bisDatum = $state(localISO(now));
@@ -61,98 +82,91 @@
 	);
 </script>
 
-<div class="max-w-3xl space-y-8 overflow-y-auto">
-	<!-- Berichtstyp: flache Liste, kein Kachel-Design -->
-	<section class="space-y-3">
-		<div class="border-b border-slate-200 pb-3">
-			<h2 class="text-lg font-bold text-slate-800">Bestellbericht erstellen</h2>
-			<!-- Hinweiszeile statt eines zweiten Wegs: Wer hier nach dem Zugangsbuch sucht,
-			     sucht das Richtige am falschen Ort — die drei Berichte hier rechnen über
-			     BESTELLUNGEN (Zeitraum, Lieferant, Topf), die Bestandsbücher über den
-			     BESTAND, und im Zugangsbuch stehen auch Exemplare ohne jede Bestellung.
-			     Ein Reiter oder Knopf dorthin wäre eine zweite Tür zur selben Ansicht mit
-			     anderem Recht (view_orders statt view_books); ein Satz genügt. -->
-			<p class="text-on-surface-variant mt-1 text-sm">
-				Zugangs- und Abgangsbuch stehen unter Berichte → Bestandsbücher.
-			</p>
-		</div>
-		<div class="divide-y divide-slate-100">
-			{#each berichtOptionen as opt, _i (_i)}
-				<label
-					class="flex items-start gap-3 py-3 pl-3 border-l-2 cursor-pointer transition-colors {typ ===
-					opt.value
-						? 'border-blue-600 bg-blue-50/40'
-						: 'border-transparent hover:bg-slate-50/60'}"
-				>
-					<Radio bind:group={typ} value={opt.value} />
-					<div>
-						<div class="font-bold text-sm text-slate-800">{opt.label}</div>
-						<div class="text-xs text-slate-500">{opt.desc}</div>
-					</div>
-				</label>
-			{/each}
-		</div>
-	</section>
-
-	<!-- Parameter -->
-	<section class="space-y-4">
-		<p class="text-sm font-medium text-slate-700">Parameter</p>
-
-		<div class="space-y-1.5">
-			<label class="block text-sm font-medium text-on-surface" for="mittel">Mittelherkunft</label>
-			<Select id="mittel" bind:value={mittel} options={mittelOptionen} />
-		</div>
-
-		{#if typ === 'monat'}
-			<Feld id="monat" label="Monat" type="month" bind:value={monatJahr} />
-		{:else if typ === 'jahr'}
-			<div class="space-y-1.5">
-				<label class="block text-sm font-medium text-slate-700" for="jahr">Jahr</label>
-				<Select
-					id="jahr"
-					bind:value={jahr}
-					options={yearOptions.map((/** @type {any} */ y) => ({ value: y, label: String(y) }))}
-				/>
+<PageShell>
+	<div class="max-w-3xl space-y-8 overflow-y-auto">
+		<!-- Berichtstyp: flache Liste, kein Kachel-Design -->
+		<section class="space-y-3">
+			<div class="border-b border-slate-200 pb-3">
+				<h2 class="text-lg font-bold text-slate-800">Bestellbericht erstellen</h2>
 			</div>
-		{:else}
+			<div class="divide-y divide-slate-100">
+				{#each berichtOptionen as opt, _i (_i)}
+					<label
+						class="flex items-start gap-3 py-3 pl-3 border-l-2 cursor-pointer transition-colors {typ ===
+						opt.value
+							? 'border-blue-600 bg-blue-50/40'
+							: 'border-transparent hover:bg-slate-50/60'}"
+					>
+						<Radio bind:group={typ} value={opt.value} />
+						<div>
+							<div class="font-bold text-sm text-slate-800">{opt.label}</div>
+							<div class="text-xs text-slate-500">{opt.desc}</div>
+						</div>
+					</label>
+				{/each}
+			</div>
+		</section>
+
+		<!-- Parameter -->
+		<section class="space-y-4">
+			<p class="text-sm font-medium text-slate-700">Parameter</p>
+
 			<div class="space-y-1.5">
-				<label class="block text-sm font-medium text-slate-700" for="lieferant">Lieferant</label>
-				{#if suppliers.length === 0}
-					<p class="text-sm text-slate-400 italic">Keine Lieferanten vorhanden.</p>
-				{:else}
+				<label class="block text-sm font-medium text-on-surface" for="mittel">Mittelherkunft</label>
+				<Select id="mittel" bind:value={mittel} options={mittelOptionen} />
+			</div>
+
+			{#if typ === 'monat'}
+				<Feld id="monat" label="Monat" type="month" bind:value={monatJahr} />
+			{:else if typ === 'jahr'}
+				<div class="space-y-1.5">
+					<label class="block text-sm font-medium text-slate-700" for="jahr">Jahr</label>
 					<Select
-						id="lieferant"
-						bind:value={lieferantId}
-						options={suppliers.map((/** @type {any} */ s) => ({ value: s.id, label: s.name }))}
+						id="jahr"
+						bind:value={jahr}
+						options={yearOptions.map((/** @type {any} */ y) => ({ value: y, label: String(y) }))}
 					/>
+				</div>
+			{:else}
+				<div class="space-y-1.5">
+					<label class="block text-sm font-medium text-slate-700" for="lieferant">Lieferant</label>
+					{#if suppliers.length === 0}
+						<p class="text-sm text-slate-400 italic">Keine Lieferanten vorhanden.</p>
+					{:else}
+						<Select
+							id="lieferant"
+							bind:value={lieferantId}
+							options={suppliers.map((/** @type {any} */ s) => ({ value: s.id, label: s.name }))}
+						/>
+					{/if}
+				</div>
+				<div class="grid grid-cols-2 gap-4">
+					<Feld id="von" label="Von" type="date" bind:value={vonDatum} ungueltig={rangeInvalid} />
+					<Feld id="bis" label="Bis" type="date" bind:value={bisDatum} ungueltig={rangeInvalid} />
+				</div>
+				{#if rangeInvalid}
+					<p class="text-sm text-rose-600 font-medium">Das Von-Datum liegt nach dem Bis-Datum.</p>
 				{/if}
-			</div>
-			<div class="grid grid-cols-2 gap-4">
-				<Feld id="von" label="Von" type="date" bind:value={vonDatum} ungueltig={rangeInvalid} />
-				<Feld id="bis" label="Bis" type="date" bind:value={bisDatum} ungueltig={rangeInvalid} />
-			</div>
-			{#if rangeInvalid}
-				<p class="text-sm text-rose-600 font-medium">Das Von-Datum liegt nach dem Bis-Datum.</p>
 			{/if}
-		{/if}
-	</section>
+		</section>
 
-	<!-- Download -->
-	<section class="space-y-3">
-		<a
-			href={canDownload ? downloadURL : undefined}
-			target="_blank"
-			rel="noopener"
-			aria-disabled={!canDownload}
-			class="inline-flex items-center gap-2 px-6 py-3 font-bold rounded-lg transition-colors text-sm {canDownload
-				? 'bg-blue-600 hover:bg-blue-700 text-white'
-				: 'bg-slate-200 text-slate-400 pointer-events-none'}"
-		>
-			<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
-			PDF herunterladen
-		</a>
-		<p class="text-xs text-slate-400">
-			Das PDF öffnet sich im Browser — von dort ausdrucken oder als Datei speichern.
-		</p>
-	</section>
-</div>
+		<!-- Download -->
+		<section class="space-y-3">
+			<a
+				href={canDownload ? downloadURL : undefined}
+				target="_blank"
+				rel="noopener"
+				aria-disabled={!canDownload}
+				class="inline-flex items-center gap-2 px-6 py-3 font-bold rounded-lg transition-colors text-sm {canDownload
+					? 'bg-blue-600 hover:bg-blue-700 text-white'
+					: 'bg-slate-200 text-slate-400 pointer-events-none'}"
+			>
+				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
+				PDF herunterladen
+			</a>
+			<p class="text-xs text-slate-400">
+				Das PDF öffnet sich im Browser — von dort ausdrucken oder als Datei speichern.
+			</p>
+		</section>
+	</div>
+</PageShell>

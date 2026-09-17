@@ -11,21 +11,20 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 // Berichte fielen nur zuerst auf, weil sie fast nur aus solchen Feldern bestehen.
 test('Escape in einem Eingabefeld verlässt die Ansicht nicht', async ({ page }) => {
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('tab', { name: 'Bestellberichte', exact: true }).click();
-	await expect(page.getByText('Bericht erstellen')).toBeVisible();
+	await page.getByTitle('Bestellberichte').click();
+	await expect(page.getByText('Bestellbericht erstellen')).toBeVisible();
 
 	// So bedient man ein Monatsfeld: anklicken, Auswahlfenster mit Escape schließen.
 	await page.locator('#monat').click();
 	await page.keyboard.press('Escape');
 
-	await expect(page.getByText('Bericht erstellen')).toBeVisible();
+	await expect(page.getByText('Bestellbericht erstellen')).toBeVisible();
 
 	// Auch im Auswahlfeld des Jahresberichts.
 	await page.getByRole('radio', { name: /Jahresbericht/ }).check();
 	await page.locator('#jahr').click();
 	await page.keyboard.press('Escape');
-	await expect(page.getByText('Bericht erstellen')).toBeVisible();
+	await expect(page.getByText('Bestellbericht erstellen')).toBeVisible();
 });
 
 // Die Gegenrichtung: Ohne Fokus in einem Feld muss der Kurzbefehl weiter funktionieren —
@@ -33,7 +32,7 @@ test('Escape in einem Eingabefeld verlässt die Ansicht nicht', async ({ page })
 test('Escape außerhalb von Eingabefeldern führt weiter zur Ausleihe', async ({ page }) => {
 	await uiLogin(page);
 	await page.getByTitle('Bestellungen').click();
-	await expect(page.getByRole('tab', { name: 'Bestellberichte', exact: true })).toBeVisible();
+	await expect(page.getByRole('tab', { name: 'Bestellhistorie', exact: true })).toBeVisible();
 
 	await page.locator('body').click({ position: { x: 5, y: 5 } });
 	await page.keyboard.press('Escape');

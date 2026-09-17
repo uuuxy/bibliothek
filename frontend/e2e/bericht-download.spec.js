@@ -15,8 +15,9 @@ import { uiLogin } from './helpers.js';
 // Antwort, die im neuen Tab ankommt.
 test('Bericht-Download liefert das PDF, nicht die App', async ({ page, context }) => {
 	await uiLogin(page);
-	await page.getByTitle('Bestellungen').click();
-	await page.getByRole('tab', { name: 'Bestellberichte', exact: true }).click();
+	// Eigener Bildschirm unter „Berichte" seit dem 17.09.2026 (vorher ein Reiter im
+	// Bestellwesen) — der Klick geht über den Menüpunkt, damit der Weg mitgeprüft wird.
+	await page.getByTitle('Bestellberichte').click();
 
 	const link = page.getByRole('link', { name: /PDF herunterladen/ });
 	await expect(link).toHaveAttribute('href', /\/api\/bestellhistorie\/bericht\?/);

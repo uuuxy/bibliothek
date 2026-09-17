@@ -215,6 +215,24 @@ export const menuGroups = [
 				label: 'Bestandsbücher',
 				icon: 'book-marked',
 				permission: 'view_books'
+			},
+			{
+				// Monats-, Jahresbericht und Lieferantenabrechnung — bis zum 17.09.2026 ein
+				// Reiter im Bestellwesen. Eine Sektion „Berichte" ohne das, was wörtlich
+				// Bericht heißt, hätte dieselbe Suche ins Leere laufen lassen, die dieser
+				// Umbau beenden soll.
+				//
+				// Die Linie: Unter „Berichte" steht, was ein Blatt für jemand anderen
+				// erzeugt und dabei nichts ändert. Bei seinem Vorgang bleibt, was eine
+				// Folgeaktion hat — der Fehlbestandsbericht (Knöpfe „Gefunden" und Löschen)
+				// in der Inventur, die Mahnungen im Mahnwesen.
+				//
+				// view_orders wie die Route dahinter (/api/bestellhistorie/bericht): Wer
+				// keine Bestellungen sehen darf, sieht hier zwei Einträge statt drei.
+				id: 'bestellberichte',
+				label: 'Bestellberichte',
+				icon: 'file-text',
+				permission: 'view_orders'
 			}
 		]
 	},

@@ -190,25 +190,36 @@ describe('Menü-Sichtbarkeit', () => {
 		expect(gruppe('bestandsbuecher')).toBe('Berichte');
 		expect(gruppe('system-logs')).toBe('System');
 
+		expect(gruppe('bestellberichte')).toBe('Berichte');
+
 		const punkt = (/** @type {string} */ id) => allePunkte.find((i) => i.id === id);
 		expect(punkt('stats')?.permission).toBe('view_stats');
 		expect(punkt('bestandsbuecher')?.permission).toBe('view_books');
+		expect(punkt('bestellberichte')?.permission).toBe('view_orders');
 
+		// Der Helfer sieht den Bestandsnachweis (view_books ab Werk), die Bestellberichte
+		// nicht (view_orders ab Werk nicht). Zwei Einträge statt drei — genau dafür hängt
+		// jeder Punkt an seinem eigenen Recht und die Sektion an keinem.
 		const bestandsbuecher = punkt('bestandsbuecher');
-		if (!bestandsbuecher) throw new Error('Menüpunkt fehlt — Test läuft ins Leere');
+		const bestellberichte = punkt('bestellberichte');
+		if (!bestandsbuecher || !bestellberichte)
+			throw new Error('Menüpunkt fehlt — Test läuft ins Leere');
 		expect(canSeeItem(bestandsbuecher, helfer), 'Helfer sieht die Bestandsbücher').toBe(true);
+		expect(canSeeItem(bestellberichte, helfer), 'Helfer sieht die Bestellberichte NICHT').toBe(
+			false
+		);
 	});
 
-	it('vergibt das Wort „Berichte" nur einmal — der Reiter im Bestellwesen heißt „Bestellberichte"', () => {
-		// Der Grund des ganzen Umbaus: Es gab zwei Orte namens „Berichte" — die Sektion in
-		// der Seitenleiste und den Reiter im Bestellwesen. Wer die Bestandsbücher suchte,
-		// vermutete sie bei den Bestellberichten, obwohl dort über BESTELLUNGEN gerechnet
-		// wird (Zeitraum, Lieferant, Topf) und im Zugangsbuch auch Exemplare ohne jede
-		// Bestellung stehen.
+	it('führt die Bestellberichte an EINER Stelle — als Bildschirm, nicht zusätzlich als Reiter', () => {
+		// Es gab zwei Orte namens „Berichte": die Sektion in der Seitenleiste und einen
+		// Reiter im Bestellwesen. Der Reiter ist am 17.09.2026 entfallen, der Bildschirm
+		// hat ihn abgelöst — beides nebeneinander wären zwei Türen zur selben Ansicht,
+		// und die zweite kennt die Regeln der ersten nicht.
 		//
 		// M3 zu Reitern: „As a set, all tabs are unified by a shared topic" (Tabs,
-		// Guidelines). Die Leiste trägt das Etikett „Bereiche des Bestellwesens" — also
-		// nennt der Reiter sein Thema.
+		// Guidelines). Die Leiste trägt das Etikett „Bereiche des Bestellwesens"; ein
+		// Berichtsreiter darin hätte kein gemeinsames Thema mit Bestellen, Wareneingang
+		// und Historie.
 		let verzeichnis = process.cwd();
 		while (!existsSync(resolve(verzeichnis, 'src/lib/BestellWorkspace.svelte'))) {
 			const eltern = dirname(verzeichnis);
@@ -218,10 +229,12 @@ describe('Menü-Sichtbarkeit', () => {
 		const quelle = readFileSync(resolve(verzeichnis, 'src/lib/BestellWorkspace.svelte'), 'utf8');
 
 		// Nicht-leer-Garantie: Ohne sie wäre der Test auch dann grün, wenn die Reiterliste
-		// umgebaut wird und beide Muster ins Leere greifen.
-		expect(quelle).toMatch(/id: 'berichte'/);
-		expect(quelle).toMatch(/label: 'Bestellberichte'/);
-		expect(quelle).not.toMatch(/label: 'Berichte'/);
+		// ganz verschwindet und die Muster unten ins Leere greifen.
+		expect(quelle).toMatch(/id: 'wareneingang'/);
+		expect(quelle).toMatch(/id: 'historie'/);
+
+		expect(quelle).not.toMatch(/id: 'berichte'/);
+		expect(quelle).not.toMatch(/BestellBerichte/);
 		expect(menuGroups.filter((g) => g.name === 'Berichte')).toHaveLength(1);
 	});
 
