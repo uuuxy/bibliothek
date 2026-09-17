@@ -146,7 +146,7 @@ func TestKollegeWirdNichtUeberfaellig(t *testing.T) {
 			// ListLeserMitStats ist die Abfrage der LESERDATEI — sie führt Schüler und
 			// Kollegium in einer Liste und ist damit die Stelle, an der ein Kollege
 			// überhaupt mit einer Zahl auftauchen kann.
-			stats, err := repository.NewStudentRepository(pool).ListLeserMitStats(ctx, nil, "Frist")
+			stats, err := repository.NewStudentRepository(pool).ListLeserMitStats(ctx, nil, "Frist", repository.SchuelerSortierung{})
 			if err != nil {
 				t.Fatalf("Leserliste: %v", err)
 			}

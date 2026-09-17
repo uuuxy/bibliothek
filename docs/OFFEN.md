@@ -1559,10 +1559,19 @@ Suche; gefiltert wird auf dem Server (`?jahrgang=`), die besetzten Jahrgänge ne
 `ausweis.AblaufJahrgang`, damit „ET" als elfter Jahrgang mitkommt und es keine zweite
 Auslegung des Klassenschemas gibt.
 
-**Noch offen: die SORTIERUNG.** Die Spaltenköpfe in `ActiveStudentList.svelte` sind weiter
-reine `<th>` ohne Sortierknopf; sortiert wird fest nach Klasse, Nachname, Vorname (in der
-Leserdatei das Kollegium zuerst). Das Protokoll nennt „Sortier- ODER Filteroption" — die eine
-Hälfte steht, die andere nicht.
+**Sortierung: GEBAUT am 17.09.2026.** Drei Spaltenköpfe sind Knöpfe (Name, Klasse, Geliehene
+Bücher), erster Klick aufsteigend, zweiter dreht um. Sortiert wird am SERVER, aus demselben
+Grund wie bei Suche und Filter: Im Browser sortiert säße es hinter der Kappung bei 500 Zeilen
+und ordnete die ersten 500 der Kartei-Reihenfolge um statt der ersten 500 der gewählten Spalte.
+
+Zwei Dinge, die dabei entschieden wurden: Die erlaubten Spalten sind eine geschlossene Menge
+(ein durchgereichter Spaltenname wäre eine SQL-Injektion, ein unbekannter Wert ist ein 400 mit
+den erlaubten Namen). Und das **Kollegium bleibt oben**, auch beim Sortieren — diese
+Reihenfolge ist der Schutz gegen die Kappung, ohne sie stünde ein Kollege unter „Z" und wäre
+lautlos nicht mehr in der Liste. Sortiert wird innerhalb der Gruppen.
+
+Der sortierbare Spaltenkopf ist ein eigenes Bauteil (`ui/TabelleSortKopf.svelte`) — der erste
+der Anwendung, und die Frage kommt bei jeder weiteren Liste wieder.
 
 Beim Bauen nebenbei gefunden und mit behoben: `StudentDirectory.svelte` stand exakt auf der
 200-Zeilen-Ratsche (Markierung jetzt in `leserAuswahl.svelte.js`), und der Handler holte sich

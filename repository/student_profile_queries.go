@@ -107,8 +107,8 @@ const ListStudentsWithStatsLimit = 500
 // JAHRGANG genau das ist: die Klassen, die zu ihm gehören. Die Zuordnung steht nicht
 // hier, sondern an einer Stelle in der API — sie braucht das Klassenschema der Schule
 // („ET" ist Jahrgang 11), und das kann SQL nicht.
-func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klassen []string, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAktiveSchueler)
+func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAktiveSchueler, sortierung)
 }
 
 // ListEhemaligeWithStats liefert die Schüler, die die Schule verlassen haben
@@ -116,8 +116,8 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 // Schülerdatei. Bis zum 05.09.2026 bettete der Reiter die Abgängerliste ein; seit die
 // wieder die Abschlussklassen meint (noch an der Schule), brauchen die Weggegangenen
 // eine eigene Liste. Jüngster Abgang zuerst, dann Name.
-func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, nil, suche, listeEhemalige)
+func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, nil, suche, listeEhemalige, sortierung)
 }
 
 // ListLeserMitStats liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
@@ -125,8 +125,8 @@ func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suc
 // Dieselben Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser`
 // statt über die Sicht `schueler`. Bis zum 16.09.2026 stand ein Kollege in keiner Liste;
 // man sah an der Theke, dass er ein Buch bekommen hatte, aber nirgends, welche er hat.
-func (repo *pgStudentRepository) ListLeserMitStats(ctx context.Context, klassen []string, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAlleLeser)
+func (repo *pgStudentRepository) ListLeserMitStats(ctx context.Context, klassen []string, suche string, sortierung SchuelerSortierung) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAlleLeser, sortierung)
 }
 
 // listenArt sagt, WELCHE Zeilen eine Liste zeigt. Die drei Fälle sind die drei Reiter
@@ -144,7 +144,7 @@ const (
 	listeAlleLeser
 )
 
-func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen []string, suche string, art listenArt) ([]StudentListStat, error) {
+func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen []string, suche string, art listenArt, sortierung SchuelerSortierung) ([]StudentListStat, error) {
 	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
 	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
 	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
@@ -192,23 +192,14 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 		bedingungen = append(bedingungen, fmt.Sprintf("s.klasse = ANY($%d)", len(args)))
 	}
 
-	// Bei einer Suche zuerst die besten Treffer, sonst die gewohnte Kartei-Reihenfolge —
-	// bei den Ehemaligen der jüngste Abgang zuerst (die Klasse ist dort nur noch „ABG").
-	sortierung := "s.klasse, s.nachname, s.vorname"
-	if art == listeEhemalige {
-		sortierung = "s.abgaenger_jahr DESC, s.nachname, s.vorname"
-	}
-	if art == listeAlleLeser {
-		// Kollegium ZUERST. Nicht aus Höflichkeit: Die ungefilterte Liste ist bei 500
-		// Zeilen gekappt, und bei 875 Schülern stünde ein Kollege am Ende nie darin —
-		// lautlos, denn die Ansicht meldet nur „gekürzt", nicht „eine ganze Gruppe
-		// fehlt". Vorn sind es wenige Zeilen, und die gewohnte Kartei-Reihenfolge der
-		// Schüler beginnt unmittelbar darunter.
-		sortierung = "(s.art = 'schueler'), s.klasse, s.nachname, s.vorname"
-	}
+	// Die Reihenfolge — Vorgabe, Suchrang oder die vom Benutzer gewählte Spalte. Die
+	// Regeln stehen in schueler_sortierung.go, samt der Begründung, warum das Kollegium
+	// auch beim Sortieren oben bleibt.
+	suchRang := ""
 	if praefix != "" {
-		sortierung = SchuelerSuchRang + ", s.nachname ASC, s.vorname ASC"
+		suchRang = SchuelerSuchRang
 	}
+	orderBy := sortierung.sqlOrderBy(art, suchRang)
 
 	// coalesce auf Ausweis, Klasse und Abgängerjahr: Seit Migration 123 sind die drei
 	// nullbar (ein Kollege hat keine Klasse und oft keinen gedruckten Ausweis). Ohne das
@@ -238,7 +229,7 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 			WHERE a.schueler_id = s.id AND a.rueckgabe_am IS NULL
 		) l ON true
 		WHERE `+strings.Join(bedingungen, " AND ")+`
-		ORDER BY `+sortierung+limit, args...)
+		ORDER BY `+orderBy+limit, args...)
 
 	if err != nil {
 		return nil, err

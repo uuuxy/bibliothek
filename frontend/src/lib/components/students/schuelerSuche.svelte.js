@@ -30,6 +30,12 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	 *  Ein Filter im Browser säße hinter der Kappung bei 500 Zeilen und zeigte dann einen
 	 *  Teil des Jahrgangs, ohne das zu sagen. */
 	let jahrgang = $state('');
+	/** Sortierung, '' = Reihenfolge der Kartei (17.09.2026, OFFEN.md 9.5, zweite Hälfte).
+	 *  Serverseitig wie Suche und Filter: Im Browser sortiert säße die Sortierung HINTER
+	 *  der Kappung bei 500 Zeilen — sie ordnete dann die ersten 500 der Kartei-Reihenfolge
+	 *  um, statt die ersten 500 der gewählten. Das sieht richtig aus und ist es nicht. */
+	let sortSpalte = $state('');
+	let sortAbsteigend = $state(false);
 	/** Die besetzten Jahrgänge fürs Auswahlfeld — vom Server, damit die Ableitung
 	 *  „Klassenname → Jahrgang" nicht ein zweites Mal in JavaScript entsteht. */
 	let jahrgaenge = $state.raw(/** @type {number[]} */ ([]));
@@ -56,11 +62,14 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		try {
 			const q = query.trim();
 			const jg = jahrgang ? `&jahrgang=${encodeURIComponent(jahrgang)}` : '';
+			const so = sortSpalte
+				? `&sortierung=${encodeURIComponent(sortSpalte)}&richtung=${sortAbsteigend ? 'ab' : 'auf'}`
+				: '';
 			// art=alle: die LESERDATEI. Ohne diesen Zusatz liefert die Tür nur Schüler —
 			// die Vorgabe gilt den anderen Aufrufern (Reiter „Ehemalige", Schülersuche des
 			// Vormerkungs-Reiters), für die ein Kollege in der Liste falsch wäre.
 			const res = await apiFetch(
-				`/api/schueler?art=alle${q ? `&q=${encodeURIComponent(q)}` : ''}${jg}`
+				`/api/schueler?art=alle${q ? `&q=${encodeURIComponent(q)}` : ''}${jg}${so}`
 			);
 			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
 			// 12.09.2026 hing am `nr === ladeNr` auch das `res.ok`: Scheiterte der Lauf,
@@ -162,6 +171,22 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		},
 		set query(wert) {
 			query = wert;
+		},
+		get sortierung() {
+			return { spalte: sortSpalte, absteigend: sortAbsteigend };
+		},
+		/** Ein Klick auf einen Spaltenkopf: fremde Spalte → aufsteigend, dieselbe →
+		 *  Richtung umdrehen. Kein dritter Zustand „unsortiert": Eine Liste ist immer
+		 *  irgendwie sortiert, und ein Klick, der die Ordnung wegnimmt, verwirrt mehr
+		 *  als er hilft. */
+		sortiere(spalte) {
+			if (sortSpalte === spalte) {
+				sortAbsteigend = !sortAbsteigend;
+			} else {
+				sortSpalte = spalte;
+				sortAbsteigend = false;
+			}
+			lade();
 		},
 		get suchend() {
 			return query.trim().length > 0 || jahrgang !== '';

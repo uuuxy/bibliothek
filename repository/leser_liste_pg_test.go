@@ -29,7 +29,7 @@ func TestListLeserMitStats_ZeigtKollegium(t *testing.T) {
 	repo := NewStudentRepository(pool)
 
 	// Die Schülerdatei-Sicht bleibt, was sie war.
-	nurSchueler, err := repo.ListStudentsWithStats(ctx, nil, "")
+	nurSchueler, err := repo.ListStudentsWithStats(ctx, nil, "", SchuelerSortierung{})
 	if err != nil {
 		t.Fatalf("Schülerliste: %v", err)
 	}
@@ -37,7 +37,7 @@ func TestListLeserMitStats_ZeigtKollegium(t *testing.T) {
 		t.Errorf("ohne Art-Angabe darf die Liste nur Schüler zeigen, bekommen: %+v", nurSchueler)
 	}
 
-	alle, err := repo.ListLeserMitStats(ctx, nil, "")
+	alle, err := repo.ListLeserMitStats(ctx, nil, "", SchuelerSortierung{})
 	if err != nil {
 		t.Fatalf("Leserliste: %v", err)
 	}
@@ -56,7 +56,7 @@ func TestListLeserMitStats_ZeigtKollegium(t *testing.T) {
 	}
 
 	// Die Suche läuft über alle — genau das ist „eine Suche über alle Leser".
-	treffer, err := repo.ListLeserMitStats(ctx, nil, "Wendlandt")
+	treffer, err := repo.ListLeserMitStats(ctx, nil, "Wendlandt", SchuelerSortierung{})
 	if err != nil {
 		t.Fatalf("Suche in der Leserdatei: %v", err)
 	}

@@ -13,6 +13,7 @@
 <script>
 	import { BookOpen, ChevronRight } from '@lucide/svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
+	import TabelleSortKopf from '../ui/TabelleSortKopf.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
@@ -31,6 +32,9 @@
 	 * @property {Set<string>} [auswahl]    markierte Leser-IDs (Ausweis-Stapeldruck)
 	 * @property {(id: string) => void} [onToggle]
 	 * @property {() => void} [onToggleAlle]
+	 * @property {{ spalte: string, absteigend: boolean }} [sortierung]  gewählte Spalte;
+	 *   ohne onsortiere bleiben die Köpfe unsortierbar (Kiosk, Abgänger, Vormerkung)
+	 * @property {(spalte: string) => void} [onsortiere]
 	 */
 	/** @type {Props} */
 	let {
@@ -41,7 +45,9 @@
 		onSelectStudent = () => {},
 		auswahl = new Set(),
 		onToggle,
-		onToggleAlle
+		onToggleAlle,
+		sortierung = { spalte: '', absteigend: false },
+		onsortiere
 	} = $props();
 
 	// Die Auswahlspalte erscheint nur, wenn der Aufrufer sie auch verarbeitet. So bleibt
@@ -97,10 +103,16 @@
 							</th>
 						{/if}
 						<th class="w-16">Foto</th>
-						<th>Name</th>
+						<TabelleSortKopf {sortierung} {onsortiere} spalte="name" text="Name" />
 						<th class="w-28">Art</th>
-						<th class="w-24">Klasse</th>
-						<th class="w-44 text-right">Geliehene Bücher</th>
+						<TabelleSortKopf {sortierung} {onsortiere} spalte="klasse" text="Klasse" class="w-24" />
+						<TabelleSortKopf
+							{sortierung}
+							{onsortiere}
+							spalte="ausgeliehen"
+							text="Geliehene Bücher"
+							class="w-44 text-right"
+						/>
 						<th class="w-36 text-right">Status</th>
 						<th class="w-10"></th>
 					</tr>

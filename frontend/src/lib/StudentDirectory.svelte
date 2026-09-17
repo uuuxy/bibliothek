@@ -136,6 +136,8 @@
 							onToggle={gewaehlt.umschalten}
 							onToggleAlle={gewaehlt.alleUmschalten}
 							onSelectStudent={oeffneStammdaten}
+							sortierung={suche.sortierung}
+							onsortiere={suche.sortiere}
 						/>
 					</div>
 				</div>

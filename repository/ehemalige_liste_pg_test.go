@@ -27,11 +27,11 @@ func TestListEhemaligeWithStats_GegenstueckDerAktiven(t *testing.T) {
 		}
 	})
 
-	ehemalige, err := repo.ListEhemaligeWithStats(ctx, "Ehemtest")
+	ehemalige, err := repo.ListEhemaligeWithStats(ctx, "Ehemtest", SchuelerSortierung{})
 	if err != nil {
 		t.Fatalf("ListEhemaligeWithStats: %v", err)
 	}
-	aktive, err := repo.ListStudentsWithStats(ctx, nil, "Ehemtest")
+	aktive, err := repo.ListStudentsWithStats(ctx, nil, "Ehemtest", SchuelerSortierung{})
 	if err != nil {
 		t.Fatalf("ListStudentsWithStats: %v", err)
 	}
@@ -52,7 +52,7 @@ func TestListEhemaligeWithStats_GegenstueckDerAktiven(t *testing.T) {
 	}
 
 	// Ohne Suchbegriff: jüngster Abgang zuerst.
-	alle, err := repo.ListEhemaligeWithStats(ctx, "")
+	alle, err := repo.ListEhemaligeWithStats(ctx, "", SchuelerSortierung{})
 	if err != nil {
 		t.Fatal(err)
 	}
