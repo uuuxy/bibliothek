@@ -19,6 +19,9 @@ import { GELESENE_FORMATE } from '../src/inventur/lib/components/scanner/barcode
  * Formatliste allein wäre blind für Fehler 1, eines am Generator allein blind für Fehler 2.
  */
 const NUMMERN = ['B-10001', 'A-10003', 'LMF-4711'];
+// Ausweis-Designer und Etikettendruck bieten den QR als zweite Form an — auch der muss
+// gelesen werden, sonst verliert ein QR-Ausweis still seine Funktion.
+const QR_NUMMERN = ['A-10003'];
 
 test('Der gedruckte Barcode liest sich als das, was auf dem Papier steht', async ({ page }) => {
 	await uiLogin(page);
@@ -29,6 +32,13 @@ test('Der gedruckte Barcode liest sich als das, was auf dem Papier steht', async
 		const antwort = await page.request.get(`/api/barcode?content=${encodeURIComponent(nummer)}`);
 		expect(antwort.status(), `/api/barcode für ${nummer}`).toBe(200);
 		bilder[nummer] = 'data:image/png;base64,' + (await antwort.body()).toString('base64');
+	}
+	for (const nummer of QR_NUMMERN) {
+		const antwort = await page.request.get(
+			`/api/barcode?content=${encodeURIComponent(nummer)}&qr=true`
+		);
+		expect(antwort.status(), `/api/barcode (QR) für ${nummer}`).toBe(200);
+		bilder[nummer + ' (QR)'] = 'data:image/png;base64,' + (await antwort.body()).toString('base64');
 	}
 
 	// Gelesen wird auf einer leeren Seite: Die Anwendung selbst verbietet per CSP jedes
@@ -43,6 +53,7 @@ test('Der gedruckte Barcode liest sich als das, was auf dem Papier steht', async
 			const nachZahl = {
 				code_39: F.CODE_39,
 				code_128: F.CODE_128,
+				qr_code: F.QR_CODE,
 				ean_13: F.EAN_13,
 				ean_8: F.EAN_8,
 				upc_a: F.UPC_A,
@@ -78,11 +89,11 @@ test('Der gedruckte Barcode liest sich als das, was auf dem Papier steht', async
 	);
 	await leer.close();
 
-	for (const nummer of NUMMERN) {
+	for (const nummer of [...NUMMERN, ...QR_NUMMERN.map((n) => n + ' (QR)')]) {
 		expect(
 			gelesen[nummer],
 			`Aufdruck „${nummer}" wird als „${gelesen[nummer]}" gelesen — Aufdruck und Scanwert müssen ` +
 				`gleich sein, sonst sucht der Server eine Nummer, die es nicht gibt`
-		).toBe(nummer);
+		).toBe(nummer.replace(' (QR)', ''));
 	}
 });

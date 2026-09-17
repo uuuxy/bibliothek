@@ -24,7 +24,8 @@
 		$props();
 
 	const BARCODE_TYPEN = [
-		{ value: 'code39', label: 'Code39 (1D)' },
+		// Wert historisch 'code39', gedruckt wird Code 128 — siehe LabelLayoutOptionen.
+		{ value: 'code39', label: 'Strichcode (Code 128)' },
 		{ value: 'qr', label: 'QR-Code (2D)' }
 	];
 </script>

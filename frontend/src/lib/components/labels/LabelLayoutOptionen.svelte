@@ -9,7 +9,10 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { ETIKETT_FORMATE } from '../../etikettformate.js';
 	const BARCODE_AUSGABE = [
-		{ value: 'code39', label: 'Code39 (1D Standard)' },
+		// Der Wert heisst aus der Anfangszeit 'code39'; gedruckt wird seit dem 17.09.2026
+		// Code 128 (barcode_generate.go). Der gespeicherte Wert bleibt, weil er in den
+		// Ausweis-Layouts steht — die Beschriftung sagt, was tatsaechlich herauskommt.
+		{ value: 'code39', label: 'Strichcode (Code 128)' },
 		{ value: 'qr', label: 'QR-Code (2D)' }
 	];
 </script>

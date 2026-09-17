@@ -5,13 +5,23 @@
  * `code_128` ist, was die Anwendung selbst druckt (Ausweise, Buchetiketten, Mahnbriefe).
  * `code_39` stand bis zum 17.09.2026 auf unseren eigenen Etiketten und bleibt lesbar —
  * gedruckte Karten aus dieser Zeit sollen weiter funktionieren. Die EAN/UPC-Arten sind
- * die Littera-Altetiketten und die aufgedruckten Verlags-Barcodes.
+ * die Littera-Altetiketten und die aufgedruckten Verlags-Barcodes. `qr_code` steht drauf,
+ * weil Ausweis-Designer und Etikettendruck den QR als Alternative anbieten — die Theke
+ * konnte ihn immer lesen, und das soll so bleiben.
  *
  * Die Liste kannte bis zum 17.09.2026 `code_39` NICHT — also genau die Art, die wir selbst
  * druckten. Die Kamera im Inventur-Bereich konnte einen Schülerausweis deshalb nie lesen,
  * und weil ein nicht erkannter Code keine Meldung erzeugt, sah es aus wie „nichts passiert".
  */
-export const GELESENE_FORMATE = ['code_128', 'code_39', 'ean_13', 'ean_8', 'upc_a', 'upc_e'];
+export const GELESENE_FORMATE = [
+	'code_128',
+	'code_39',
+	'qr_code',
+	'ean_13',
+	'ean_8',
+	'upc_a',
+	'upc_e'
+];
 
 export async function createBarcodeDetector() {
 	if ('BarcodeDetector' in window) {
@@ -45,6 +55,7 @@ export async function createBarcodeDetector() {
 			formatsToSupport: [
 				Html5QrcodeSupportedFormats.CODE_128,
 				Html5QrcodeSupportedFormats.CODE_39,
+				Html5QrcodeSupportedFormats.QR_CODE,
 				Html5QrcodeSupportedFormats.EAN_13,
 				Html5QrcodeSupportedFormats.EAN_8,
 				Html5QrcodeSupportedFormats.UPC_A,
