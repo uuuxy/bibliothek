@@ -46,6 +46,29 @@ Benutzungsordnung verlangt den Neuwert, und zur Bücherei sagt das Land nichts. 
 Fehler mit heraus, der niemandem aufgefallen war: Der Brief rechnete Büchereibücher nach der
 Staffel des Landes und nannte für ein zehn Jahre altes Buch 1,40 € statt 14,00 €.
 
+**Was am Abend des 17.09.2026 dazugekommen ist — drei weitere Punkte des Protokolls sind
+damit erledigt:**
+
+- **Bücher ohne Exemplare sagen es jetzt** (Punkt 4). In der Trefferliste an der Theke steht
+  neben jedem Buch, wie viele Stück da sind und wie viele davon frei — und bei einem Titel,
+  zu dem es gar kein Exemplar gibt, steht das abgesetzt daneben. Niemand läuft mehr ins Regal
+  und sucht etwas, das es dort nie gab.
+- **Die beiden alten Briefe verlangen kein Bargeld mehr.** Für ein Schulbuch des Landes nennen
+  sie das Konto, das auch der Bescheid nennt — Barzahlung ist dort laut Erlass nicht der Weg.
+  Für ein Buch der Bücherei steht dort, dass die Bankverbindung des Schulträgers fehlt: Wohin
+  dieses Geld gehen soll, ist eine Frage an den Träger (8.3), und ein Brief darf sich das nicht
+  ausdenken. Trägt eine Rechnung beides, stehen beide Wege mit ihrer eigenen Summe da.
+- **Das Abgangsbuch gibt es** (Punkt 1, halb). Im Medienkatalog steht ein neuer Reiter: Welche
+  Bücher sind in diesem Halbjahr aus dem Bestand gegangen, warum, und wann — getrennt nach
+  Land und Schulträger, mit einem Blatt zum Ausdrucken und Abheften. **Wichtig:** Bücher, die
+  VOR heute ausgesondert wurden, haben kein Abgangsdatum; ihre Zahl steht unter dem Blatt.
+  Nachträglich ein Datum zu erfinden wäre schlimmer als die ehrliche Lücke. Das Zugangsbuch
+  (die Gegenrichtung) fehlt weiterhin.
+
+**Dafür muss beim nächsten Aufspielen die Datenbank erweitert werden** (Migration 128, eine
+neue Spalte am Exemplar). Das passiert beim Start von allein; Daten gehen dabei keine verloren,
+und nachgetragen wird nichts.
+
 ---
 
 **Was DU tun kannst — der Reihe nach:**
