@@ -1532,12 +1532,21 @@ zeigen und Titel ohne verfügbares Exemplar erkennbar machen, statt sie zu verst
 
 ### 9.5 Schülerdatei ohne Sortierung und Filter (Protokoll 5)
 
-Bestätigt. `StudentDirectoryToolbar.svelte` hat nur das Suchfeld („Name, Klasse oder
-Ausweisnummer eingeben …"), die Spaltenköpfe in `ActiveStudentList.svelte` sind reine `<th>`
-ohne Sortierknopf. Die Beobachtung „Eine Auswahl anhand eines eingegebenen Merkmals ist jedoch
-möglich" beschreibt genau diese Serversuche. Zu beachten: Die ungefilterte Liste ist bei 500
-Zeilen gekappt (`ListStudentsWithStatsLimit`) — ein Klassen- oder Jahrgangsfilter muss deshalb
-auf dem SERVER laufen, nicht im Browser.
+**Filter: GEBAUT am 17.09.2026.** Die Leserdatei hat ein Auswahlfeld „Jahrgang" neben der
+Suche; gefiltert wird auf dem Server (`?jahrgang=`), die besetzten Jahrgänge nennt
+`GET /api/jahrgaenge`. Die Ableitung „Klassenname → Jahrgang" läuft über
+`ausweis.AblaufJahrgang`, damit „ET" als elfter Jahrgang mitkommt und es keine zweite
+Auslegung des Klassenschemas gibt.
+
+**Noch offen: die SORTIERUNG.** Die Spaltenköpfe in `ActiveStudentList.svelte` sind weiter
+reine `<th>` ohne Sortierknopf; sortiert wird fest nach Klasse, Nachname, Vorname (in der
+Leserdatei das Kollegium zuerst). Das Protokoll nennt „Sortier- ODER Filteroption" — die eine
+Hälfte steht, die andere nicht.
+
+Beim Bauen nebenbei gefunden und mit behoben: `StudentDirectory.svelte` stand exakt auf der
+200-Zeilen-Ratsche (Markierung jetzt in `leserAuswahl.svelte.js`), und der Handler holte sich
+die Klassenliste über `s.DB.Pool` statt als Parameter — ein Test ohne Datenbank stürzte darauf
+mit SIGSEGV ab.
 
 ### 9.6 A: Mehrjahresbände — die Entscheidung von 4.3 kippt
 
