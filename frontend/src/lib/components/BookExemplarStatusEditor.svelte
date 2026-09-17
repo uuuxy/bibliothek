@@ -78,6 +78,10 @@
 				if (typeof antwort.ersatzwert === 'number') {
 					ex.ersatzwert = antwort.ersatzwert;
 					ex.ersatzwert_herleitung = antwort.ersatzwert_herleitung ?? '';
+					// Die Auskunft „liegt ein Preis zugrunde?" muss MITgehen. Bliebe der alte
+					// Wert stehen, zeigte die Karte nach dem Speichern eine Zeile, die zur neuen
+					// Zahl nicht mehr passt — oder ließe sie weg, obwohl es jetzt eine gibt.
+					ex.ersatzwert_bekannt = antwort.ersatzwert_bekannt === true;
 				}
 				onDone();
 				showToast('Status erfolgreich gespeichert', 'success');

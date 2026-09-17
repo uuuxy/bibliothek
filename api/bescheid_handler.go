@@ -208,7 +208,9 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 // kann. Eine Zahl ohne ihn ist für sie dasselbe wie die feste 15,00 €, die bis zum
 // 17.09.2026 im Melde-Dialog stand.
 func bescheidHerleitung(v ersatzwert.Vorschlag) string {
-	if v.BasisPreis <= 0 {
+	// Dieselbe Regel wie das Feld `bekannt` der Antwort — eine Funktion, nicht zwei
+	// Bedingungen, die zufällig dasselbe sagen.
+	if !v.PreisBekannt() {
 		return "kein Preis hinterlegt — Betrag bitte eintragen"
 	}
 	basis := "Kaufpreis"

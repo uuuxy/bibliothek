@@ -160,6 +160,10 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 			// Forderung nie zwei Zahlen für dasselbe Buch zeigen.
 			Ersatzwert           float64 `json:"ersatzwert"`
 			ErsatzwertHerleitung string  `json:"ersatzwert_herleitung"`
+			// ErsatzwertBekannt: Liegt dem Betrag ein Preis zugrunde? Ohne dieses Feld
+			// müsste die Karte die Antwort aus dem Herleitungssatz lesen — und 0,00 € heißt
+			// zweierlei (Totalschaden oder kein Preis erfasst).
+			ErsatzwertBekannt bool `json:"ersatzwert_bekannt"`
 		}
 
 		copies := []CopyResponse{}
@@ -191,6 +195,7 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 				v := ersatzwertVorschlagAus(g, quelle)
 				copies[i].Ersatzwert = v.Betrag
 				copies[i].ErsatzwertHerleitung = v.Herleitung
+				copies[i].ErsatzwertBekannt = v.Bekannt
 			}
 		}
 

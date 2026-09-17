@@ -18,7 +18,7 @@
 	import { formatEuro } from '../utils/format.js';
 	import { ersatzwertBekannt } from './exemplarErsatzwert.js';
 
-	/** @type {{ ex: { zustand_notiz?: string, zustand_abwertung_prozent?: number, ersatzwert?: number, ersatzwert_herleitung?: string } }} */
+	/** @type {{ ex: { zustand_notiz?: string, zustand_abwertung_prozent?: number, ersatzwert?: number, ersatzwert_herleitung?: string, ersatzwert_bekannt?: boolean } }} */
 	let { ex } = $props();
 
 	const notiz = $derived(ex.zustand_notiz || '');

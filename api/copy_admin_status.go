@@ -132,6 +132,7 @@ func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bes
 			v := ersatzwertVorschlagAus(g, s.preisquelle(ctx))
 			antwort["ersatzwert"] = v.Betrag
 			antwort["ersatzwert_herleitung"] = v.Herleitung
+			antwort["ersatzwert_bekannt"] = v.Bekannt
 		}
 		RespondJSON(w, http.StatusOK, antwort)
 	}

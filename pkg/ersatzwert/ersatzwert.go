@@ -78,6 +78,22 @@ type Vorschlag struct {
 	ZustandAbschlag int
 }
 
+// PreisBekannt sagt, ob dem Vorschlag überhaupt ein Preis zugrunde liegt.
+//
+// Die EINE Stelle für diese Unterscheidung, und sie ist wichtiger, als sie aussieht:
+// 0,00 € heißt zweierlei. Bei 100 % Wertverlust ist die Null das ERGEBNIS und gehört auf
+// den Bildschirm — gerade dort. Bei einem Titel ohne Preis ist sie keine Aussage, und
+// „Ersatzwert heute: 0,00 €" wäre eine falsche: Das Buch ist nicht wertlos, sein Preis ist
+// bloß nicht erfasst.
+//
+// Bis zum 17.09.2026 beantwortete die Oberfläche das, indem sie den deutschen
+// Herleitungssatz las („beginnt mit ‚kein Preis hinterlegt'"). Ein Satz als Schnittstelle
+// hält genau so lange, bis ihn jemand umformuliert — und danach zeigt die Karte still
+// 0,00 € für ein Buch ohne Preis (Rasterdurchgang 17.09.2026, Frage 3).
+func (v Vorschlag) PreisBekannt() bool {
+	return v.BasisPreis > 0
+}
+
 // Rechne liefert den Vorschlag für ein Exemplar.
 //
 // verleihjahr wird bei 1 abgeschnitten: Ein Buch, das gerade neu im Regal steht, ist im

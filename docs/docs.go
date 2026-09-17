@@ -2097,6 +2097,18 @@ const docTemplate = `{
                         "description": "Leer = nur Schüler; 'alle' = die Leserdatei (Schüler und Kollegium)",
                         "name": "art",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Spalte: name | klasse | ausgeliehen; leer = Reihenfolge der Kartei",
+                        "name": "sortierung",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "auf | ab (Vorgabe: auf)",
+                        "name": "richtung",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -3565,6 +3577,10 @@ const docTemplate = `{
         "api.ErsatzwertVorschlag": {
             "type": "object",
             "properties": {
+                "bekannt": {
+                    "description": "Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €\nerst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?\n\nSie steht als eigenes Feld hier, weil die Oberfläche sie sonst aus dem deutschen\nHerleitungssatz lesen müsste, und das tat sie bis zum 17.09.2026 auch\n(` + "`" + `startsWith(\"kein Preis hinterlegt\")` + "`" + `). Ein Satz als Schnittstelle hält bis zur\nersten Umformulierung; danach zeigt die Karte still „Ersatzwert heute: 0,00 €\" über\neinem Buch, dessen Preis bloß niemand erfasst hat.",
+                    "type": "boolean"
+                },
                 "betrag": {
                     "description": "Betrag ist der Vorschlag in Euro; 0 heißt „kein Preis hinterlegt\".",
                     "type": "number"
@@ -4280,6 +4296,12 @@ const docTemplate = `{
                 "ist_ausleihbar": {
                     "type": "boolean"
                 },
+                "zustand_abwertung_prozent": {
+                    "description": "ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,\nAnforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert\nsetzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet\". Ohne diese\nUnterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.\n\n0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung\nhier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.",
+                    "type": "integer",
+                    "maximum": 100,
+                    "minimum": 0
+                },
                 "zustand_notiz": {
                     "type": "string"
                 }
@@ -4577,6 +4599,10 @@ const docTemplate = `{
                     "description": "Beschreibung enthält eine Inhaltsangabe oder Notizen zum Buch.",
                     "type": "string"
                 },
+                "bestand": {
+                    "description": "Bestand und Verfuegbar füllen NUR die Suchabfragen (SearchTitles,\nSearchTitlesFuzzy) — Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:\n„Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf.\"\nEin Titel ohne Exemplare ist ein legitimer Zustand (angelegt ohne\nBestandsangabe, Altbestand aus Littera) — verstecken wäre falsch, aber die\nTrefferliste muss es SAGEN.\n\nZeiger, weil „nicht mitgeliefert\" und „null Exemplare\" zwei verschiedene\nDinge sind: Jede andere Abfrage, die einen Titel liefert (Katalog, Import,\nBestellwesen), lässt die Felder nil, und die Oberfläche schreibt dann gar\nnichts statt „0 Exemplare\" über einen Titel, dessen Bestand niemand gezählt\nhat.",
+                    "type": "integer"
+                },
                 "cover_url": {
                     "description": "CoverURL verweist auf das Bild des Buchumschlags.",
                     "type": "string"
@@ -4621,6 +4647,9 @@ const docTemplate = `{
                 "untertitel": {
                     "description": "Untertitel enthält optionale Zusatzangaben zum Titel.",
                     "type": "string"
+                },
+                "verfuegbar": {
+                    "type": "integer"
                 },
                 "verlag": {
                     "description": "Verlag ist der herausgebende Buchverlag.",
@@ -4729,7 +4758,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "ersatzwert_immer_kaufpreis": {
-                    "description": "ErsatzwertImmerKaufpreis: Gilt ab dem zweiten Verleihjahr immer der Einkaufspreis der Schule statt des heutigen Listenpreises? Nicht gesetzt = nein, also die Regel der Arbeitshilfe.",
+                    "description": "ErsatzwertImmerKaufpreis: siehe SystemEinstellungen — nicht mitgeschickt heißt\n„unangetastet\", false heißt ausdrücklich „Listenpreis bevorzugen\".",
                     "type": "boolean"
                 },
                 "etikett_eigentumsvermerk": {
@@ -5158,7 +5187,7 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "ersatzwert_immer_kaufpreis": {
-                    "description": "ErsatzwertImmerKaufpreis: Gilt ab dem zweiten Verleihjahr immer der Einkaufspreis der Schule statt des heutigen Listenpreises? Nicht gesetzt = nein, also die Regel der Arbeitshilfe.",
+                    "description": "ErsatzwertImmerKaufpreis: Gilt ab dem zweiten Verleihjahr immer der Einkaufspreis\nder Schule statt des heutigen Listenpreises? (Anforderungsliste Nr. 3, OFFEN.md 9.8\nStufe 4.)\n\nDie Frage ist bewusst so gestellt, dass NEIN die Vorgabe ist: Ein nicht gesetzter\nSchlüssel liest sich als false, und false ist die Regel der Arbeitshilfe („80 % des\nNeupreises zum Zeitpunkt des Verlusts\"). Hieße das Feld umgekehrt\n„ListenpreisBevorzugen\", rechnete jede bestehende Anlage nach dem Update plötzlich\nmit dem alten Einkaufspreis, ohne dass jemand etwas geändert hätte.",
                     "type": "boolean"
                 },
                 "etikett_eigentumsvermerk": {

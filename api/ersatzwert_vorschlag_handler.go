@@ -48,6 +48,15 @@ type ErsatzwertVorschlag struct {
 	Herleitung string `json:"herleitung"`
 	// IstLernmittel unterscheidet die beiden Regeln; der Dialog benennt sie.
 	IstLernmittel bool `json:"ist_lernmittel"`
+	// Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €
+	// erst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?
+	//
+	// Sie steht als eigenes Feld hier, weil die Oberfläche sie sonst aus dem deutschen
+	// Herleitungssatz lesen müsste, und das tat sie bis zum 17.09.2026 auch
+	// (`startsWith("kein Preis hinterlegt")`). Ein Satz als Schnittstelle hält bis zur
+	// ersten Umformulierung; danach zeigt die Karte still „Ersatzwert heute: 0,00 €" über
+	// einem Buch, dessen Preis bloß niemand erfasst hat.
+	Bekannt bool `json:"bekannt"`
 }
 
 // ErsatzwertVorschlagHandler liefert den Betragsvorschlag für ein Exemplar.
@@ -124,6 +133,7 @@ func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.P
 		Betrag:        v.Betrag,
 		Herleitung:    bescheidHerleitung(v),
 		IstLernmittel: g.IstLernmittel,
+		Bekannt:       v.PreisBekannt(),
 	}
 }
 

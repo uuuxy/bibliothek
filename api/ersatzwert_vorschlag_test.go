@@ -25,6 +25,9 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 		wantBetrag    float64
 		wantImSatz    string
 		wantNichtSatz string
+		// wantOhnePreis: Dem Betrag liegt KEIN Preis zugrunde. Die Vorgabe ist bewusst
+		// „Preis vorhanden" — ein neuer Fall, der ihn vergisst, wird laut statt still.
+		wantOhnePreis bool
 	}{
 		{
 			name: "Lernmittel im 1. Verleihjahr — voller Kaufpreis",
@@ -60,8 +63,9 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 				Kaufpreis: 0, IstLernmittel: true,
 				SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 			},
-			wantBetrag: 0,
-			wantImSatz: "kein Preis hinterlegt",
+			wantBetrag:    0,
+			wantImSatz:    "kein Preis hinterlegt",
+			wantOhnePreis: true,
 		},
 		{
 			name: "Büchereibuch, neu — Neuwert",
@@ -91,8 +95,9 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 				Kaufpreis: 0, IstLernmittel: false,
 				SchuljahreMitAusleihe: 2, SchuljahreImBestand: 3,
 			},
-			wantBetrag: 0,
-			wantImSatz: "kein Preis hinterlegt",
+			wantBetrag:    0,
+			wantImSatz:    "kein Preis hinterlegt",
+			wantOhnePreis: true,
 		},
 	}
 
@@ -106,6 +111,14 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 			}
 			if !strings.Contains(got.Herleitung, f.wantImSatz) {
 				t.Errorf("Herleitung = %q, erwartet darin %q", got.Herleitung, f.wantImSatz)
+			}
+			// Das Feld, NICHT der Satz: Die Oberfläche entscheidet daran, ob sie „Ersatzwert
+			// heute: 0,00 €" schreibt oder schweigt. Bis zum 17.09.2026 las sie stattdessen
+			// den Anfang der Herleitung — ein deutscher Satz als Schnittstelle, den dieser
+			// Test hier hätte umformulieren können, ohne dass vorn etwas rot geworden wäre.
+			if got.Bekannt == f.wantOhnePreis {
+				t.Errorf("Bekannt = %v bei Betrag %.2f (%q) — erwartet %v",
+					got.Bekannt, got.Betrag, got.Herleitung, !f.wantOhnePreis)
 			}
 			if f.wantNichtSatz != "" && strings.Contains(got.Herleitung, f.wantNichtSatz) {
 				t.Errorf("Herleitung = %q — darf %q NICHT enthalten: Für den Bestand des "+
