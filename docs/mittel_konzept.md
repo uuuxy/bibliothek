@@ -1,17 +1,21 @@
-# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 12.09.2026)
+# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 17.09.2026)
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
 Beide Teile teilen EIN Vokabular für die Mittelherkunft: `land` (Lernmittelfreiheit) und
 `schultraeger` (Schülerbücherei) — `repository/mittel.go`, `bestellungen_verlauf.mittel`.
 
-**Status (12.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
+**Status (17.09.2026):** Teil A ist im ERSTEN SCHNITT GEBAUT — der Bescheid als Brief,
 Datenmodell mit Nummernkreis, Staffel, Einstellungen, Erstellen aus dem Mahnwesen,
-Nachdruck, Übergabe; seit dem 12.09.2026 auch der Rückgabe-Hook. Offen bleiben aus
-Abschnitt 4.7 der Rest der Etappe 2 (die Folgen der Übergabe: Exemplare `VERLUST`,
-Übergabe-PDF), Etappe 3 (Kreis-Rechnung) und Etappe 4 (Altbriefe abräumen,
-Staffel-Vorschlag im Schaden-Dialog). Welche Punkte und Antworten noch offen sind, steht in
-[OFFEN.md](OFFEN.md).
+Nachdruck, Übergabe; seit dem 12.09.2026 auch der Rückgabe-Hook. Am 17.09.2026 kam die
+BEWERTUNG dazu: Listenpreis am Titel (Migration 127, aus der DNB gefüllt),
+Beschädigungsgrad am Exemplar, der gerechnete Betragsvorschlag samt Herleitung in jedem
+Weg — Melde-Dialog, Bescheid aus einer Forderung, Bescheid aus einer überfälligen Ausleihe
+— und die wählbare Berechnungsgrundlage. Damit ist auch der „Staffel-Vorschlag im
+Schaden-Dialog" aus Etappe 4 erledigt. Offen bleiben aus Abschnitt 4.7 der Rest der
+Etappe 2 (die Folgen der Übergabe: Exemplare `VERLUST`, Übergabe-PDF), Etappe 3
+(Kreis-Rechnung) und der Rest der Etappe 4 (Altbriefe abräumen). Welche Punkte und
+Antworten noch offen sind, steht in [OFFEN.md](OFFEN.md).
 Teil B ist ebenfalls im ersten Schnitt gebaut (Abschnitt 7.3).
 
 **Was der Einbau geworden ist (Absprache 10.09.2026, drei Entscheidungen):** Der Bescheid
@@ -68,8 +72,10 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
   vorgeschriebener Schlussabsatz mit Einspruchsfrist von einem Monat. Nach Fristablauf
   Original + Buchungsbeleg an die Schulaufsicht, Kopie bleibt; **spätere Rückgabe →
   Schulaufsicht unverzüglich informieren.**
-- Praxis einer Nachbarschule: Rechnung mit Zeitwert, **nur Überweisung, keine
-  Barzahlung**; bis zur Zahlung Sperre für weitere Ausleihen.
+- **Ohne Quelle:** Die Sperre weiterer Ausleihen bis zur Zahlung steht in keiner der
+  vorliegenden Unterlagen des Landes; sie war eine Annahme. Das Sichtungsprotokoll vom
+  16.09.2026 sagt, LMF untersage sie — offen, siehe [OFFEN.md](OFFEN.md) 9.3 c. „Nur
+  Überweisung, keine Barzahlung" ist dagegen belegt (Arbeitshilfe, Abschnitt 1).
 
 **Zwei Dinge, die die Schule wissen muss:**
 
@@ -87,6 +93,13 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
   gehört ihm.
 - Das Benutzungsverhältnis folgt der Benutzungsordnung der Schule: zuerst
   Ersatzbeschaffung, sonst Geld in Höhe des Neuwerts.
+- **Umgesetzt seit 17.09.2026:** „Neuwert" ist der LISTENPREIS, nicht der Einkaufspreis —
+  was ein Ersatz heute kostet. Vorher rechnete das Programm mit dem Kaufpreis, weil es
+  keinen anderen kannte; ein 2015 für 8 € beschaffter Roman wurde mit 8 € ersetzt, obwohl
+  er heute 14 € kostet. Die Staffel des Landes gilt hier NICHT (kein Altersabschlag), ein
+  erfasster Beschädigungsgrad dagegen schon. Zur Schülerbücherei sagt weder der Erlass vom
+  17.12.2014 noch die Arbeitshilfe etwas — beide sprechen ausschließlich von Lehrwerken
+  der Lernmittelfreiheit (am 17.09.2026 nachgesehen).
 
 Folge: Für den Bestand der Schülerbücherei gibt es **keinen förmlichen Bescheid, keine
 Referenznummer im Landesformat** — sondern eine gewöhnliche Rechnung/Zahlungsaufforderung
@@ -100,14 +113,14 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 
 | Baustein                             | Fundstelle                                                                                                                                                    | Stand                                                                                                                                                              |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Forderung anlegen                    | `repository/damage.go` (`ReportDamage` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `DamageReportModal.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. **Betrag ist Freitext, Vorgabe 15,00 €** — keine Staffel, kein Bezug zum Preis.               |
+| Forderung anlegen                    | `repository/damage.go` (`ReportDamage` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `DamageReportModal.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung (seit 17.09.2026; vorher Freitext mit der Vorgabe 15,00 € ohne Bezug zum Preis) — überschreibbar, denn er liegt im Ermessen der Schule.               |
 | Forderung erledigen                  | `api/damage_resolve.go`, `repository/audit_system.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet heute **Barzahlung am Tresen**.                                                                                                              |
 | Brief 1: Elternbrief je Schadensfall | `pdf/schadensfall.go`, `api/pdf.go` (`elternbrief_generiert`)                                                                                                 | 14-Tage-Frist, „bar in der Bibliothek", „Schulbibliotheksordnung", Unterschrift „Bibliotheksleitung". Für Lernmittel in vier Punkten falsch.                       |
 | Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/print.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), aber „bar in der Bibliothek", keine Nummer, kein Topf.                                                            |
 | Brief 3: Eltern-Mahnbrief            | `api/reports_pdf.go`, Vorlage `MAHNUNG_ELTERN`                                                                                                                | DIN-5008-Fensterkuvert, Falzmarken, Tabelle der überfälligen Bücher — **die Bauform, die der Bescheid braucht.**                                                   |
 | Mahnwesen                            | `api/mahnwesen*.go`, `repository/mahnwesen_*.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse/Jahrgang, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days`.            |
 | Schulstammdaten                      | `SchuleKategorie.svelte`, `system_settings*.go`                                                                                                               | Name, Anschrift, Eigentumsvermerk. **Fehlt:** Schulnummer, Schulaufsicht (Nr. + Anschrift), Bankverbindungen, Schulleitung, Geschäftszeichen/Bearbeiter/Durchwahl. |
-| Preise                               | `buecher_exemplare.einkaufspreis` (aus Littera übernommen), `erworben_am` = Littera-Zugangsdatum (echt, nicht Importdatum)                                    | Kein Listenpreis/Neupreis.                                                                                                                                         |
+| Preise                               | `buecher_exemplare.einkaufspreis` (aus Littera übernommen), `erworben_am` = Littera-Zugangsdatum (echt, nicht Importdatum), `buecher_titel.listenpreis` und `buecher_exemplare.zustand_abwertung_prozent` (Migration 127) | ✅ seit 17.09.2026. Der Listenpreis kommt beim Anlegen über die ISBN aus der DNB (MARC21 020 $c) und ist von Hand überschreibbar; leer heißt „nicht erfasst", dann weicht die Staffel auf den Kaufpreis aus und sagt es. |
 | Ausleihhistorie je Exemplar          | `ausleihen` (Zeilen bleiben nach der Anonymisierung ohne Person)                                                                                              | Zählbar. Aus Littera kamen nur die **offenen** Ausleihen — für den Altbestand ist die Zahl der Verleihjahre unbekannt.                                             |
 | Volljährigkeit                       | `schueler.geburtsdatum` (NULL bei Altdaten)                                                                                                                   | Anrede „Erziehungsberechtigte" vs. volljährig ableitbar.                                                                                                           |
 | Rollen                               | ADMIN / MITARBEITER / KOLLEGIUM / HELFER; Sekretariat = ADMIN                                                                                                 | Neues Recht nach dem Muster `merge_students` (db/seed.go, permissionMetadata.js, schuelerRechte.js, permissions.spec.js, PII-Matrix, FACHKONZEPT).                 |
@@ -125,9 +138,9 @@ Fassungen derselben Sache und werden zu **einem Renderer mit zwei Varianten**.
 
 | Nr. | Wunsch                                                                                                              | Bewertung                                                                                                                                                                                                                                                                                                                    |
 | --- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Automatische Abwertung (10 %/Jahr oder je Ausleihe)                                                                 | **Nicht als Dauerzustand bauen.** Die Staffel der Schule (100/80/60/40/20/10 %) wird beim Anlegen einer Forderung als **Vorschlag** berechnet. Ein laufend „abgewerteter Buchwert" hat außerhalb der Forderung keinen Zweck.                                                                                                 |
-| 2   | Beschädigung mit Prozentwert bei Katalogisierung/Rückgabe                                                           | Zustandsnotiz gibt es (`zustand_notiz`). Ein Prozentwert ohne Forderung steuert nichts. Bei der Rückgabe „Schaden melden" → Forderung mit Staffel-Vorschlag, Betrag im Ermessen der Schule.                                                                                                                                  |
-| 3   | Einkaufspreis UND Listenpreis, wählbar                                                                              | Einkaufspreis ist da. Neupreis zum Zeitpunkt des Verlusts (ab 2. Verleihjahr) fehlt → **Entscheidung E4.**                                                                                                                                                                                                                   |
+| 1   | Automatische Abwertung (10 %/Jahr oder je Ausleihe)                                                                 | ✅ **gebaut am 17.09.2026**, anders als hier zunächst bewertet. Der Einwand war, ein laufend abgewerteter Buchwert habe außerhalb der Forderung keinen Zweck; er hat einen — man will vor dem Schadensfall wissen, was ein Buch noch wert ist. Ein ZWEITER, frei eingestellter Abwertungssatz wäre trotzdem falsch geblieben (zwei Beträge für dasselbe Buch, einer davon im Bescheid): Gebaut ist die Staffel des Erlasses selbst, jetzt auch sichtbar an jedem Exemplar. |
+| 2   | Beschädigung mit Prozentwert bei Katalogisierung/Rückgabe                                                           | ✅ **gebaut am 17.09.2026**: `zustand_abwertung_prozent` am Exemplar, Feld im Zustands-Dialog der Buchakte, wirkt auf jeden künftigen Ersatzbetrag (auch für den Bücherei-Bestand). Der Wert ist ein ZUSTAND, keine Forderung — er erzeugt von sich aus keinen Betrag. Nicht an der Theke: Die ist ein Scanfeld, kein Formular (entschieden 17.09.2026); erfasst wird nach der Rückgabe in der Buchakte. |
+| 3   | Einkaufspreis UND Listenpreis, wählbar                                                                              | ✅ **gebaut am 17.09.2026** (Migration 127 + Einstellung „Immer mit dem Einkaufspreis rechnen" in der Kategorie Schadensersatz). Aus = der heutige Listenpreis, wie es die Arbeitshilfe verlangt; an = immer der Einkaufspreis. Die Herleitung nennt, welcher Preis gegolten hat, und unterscheidet „kein Listenpreis hinterlegt" von „so eingestellt". |
 | 4   | Übersicht Verluste/Beschädigungen                                                                                   | Gibt es (Mahnwesen, Fehlbestand, Gebühren in der Akte). Neu: Liste der Bescheide mit Fristablauf.                                                                                                                                                                                                                            |
 | 5   | Versand per Post/E-Mail/App; Referenznummer, jährlich neu                                                           | **Nur Druck/Post.** Das Verfahren verlangt Schriftform; Datenschutz-Entscheidung A3 vom 22.08.2026 (keine Eltern-Mahnmail). Referenznummer ja; „Zurücksetzen zu Jahresbeginn" ergibt sich, weil das Kassenjahr Teil der Nummer ist.                                                                                          |
 | 6   | Zahlung bestätigen; Rückgabe → Buch wieder verfügbar, Saldo null; Zahlung ohne Rückgabe → „verloren" + **gelöscht** | Bezahlt gibt es. Rückgabe → Forderung automatisch stornieren (neu). **Gelöscht wird nie**: Die Bestandskartei muss die Aussonderung nachweisen → `ist_ausgesondert`/`aussonderung_grund = 'VERLUST'`, genau wie heute.                                                                                                       |
@@ -267,8 +280,9 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
    läuft je Topf, `referenznummer` ist aber global UNIQUE, und die heutige Nummer enthält
    keinen Topf. Der erste Brief des zweiten Topfs kollidiert sonst mit dem ersten des
    anderen (23505, Rollback, der Zähler bleibt stehen — der Topf wäre dauerhaft blockiert).
-4. Altbriefe abräumen, Staffel-Vorschlag im Schaden-Dialog, Doku (FACHKONZEPT §3/§14,
-   HANDBUCH, PII-Matrix, invarianten §7, SECURITY/VVT: neuer Zweck „Bescheid").
+4. Altbriefe abräumen, Doku (FACHKONZEPT §3/§14, HANDBUCH, PII-Matrix, invarianten §7,
+   SECURITY/VVT: neuer Zweck „Bescheid"). Der Staffel-Vorschlag im Schaden-Dialog stand
+   hier und ist am 17.09.2026 gebaut.
 
 ---
 
@@ -289,7 +303,7 @@ Anonymisierung tilgt den Snapshot, lässt die Nummer (DSGVO-Paar-Gate) · Recht 
 | **E1** | Bereichs-Nr. (4-stellig) und Schulnummer (4-stellig) für die Referenznummer — beides kennt nur das Sekretariat bzw. die Schulaufsicht.                                                         | Sekretariat fragt nach; bis dahin Platzhalter, Betriebsbereitschaft warnt.                                                                |
 | **E2** | Aktuelle Fassung des Verfahrens samt Musterschreiben bei der Schulaufsicht anfordern? Ich baue nach dem 2014er Muster; der Text ist an einer Stelle austauschbar.                              | Ja, anfordern — parallel bauen.                                                                                                           |
 | **E3** | Frist 28 Tage (Verfahren) oder 6 Wochen (Anforderungsliste)?                                                                                                                                   | 28 Tage, einstellbar.                                                                                                                     |
-| **E4** | Preisbasis ab dem 2. Verleihjahr: neues Feld „Listenpreis" am Titel (von Hand gepflegt) oder Einkaufspreis als Näherung?                                                                       | Feld `listenpreis` am Titel, optional; Vorschlag nimmt Listenpreis, sonst Einkaufspreis, und sagt, welchen. Der Mensch bestätigt ohnehin. |
+| **E4** | Preisbasis ab dem 2. Verleihjahr: neues Feld „Listenpreis" am Titel (von Hand gepflegt) oder Einkaufspreis als Näherung?                                                                       | ✅ **entschieden und gebaut am 17.09.2026.** Feld `listenpreis` am Titel, optional — aber NICHT von Hand gepflegt: Die DNB liefert den Ladenpreis in jeder ISBN-Abfrage mit, er stand dort ungenutzt. Der Vorschlag nimmt den Listenpreis, sonst den Einkaufspreis, und sagt welchen; welcher gilt, ist zusätzlich einstellbar. |
 | **E5** | Zahlungsweg für die Schülerbücherei (Kasse des Trägers + Kassenzeichen? Budgetkonto? bar mit Quittung?) — mit dem Schulträger klären.                                                          | Bis zur Antwort: Schulträger-Rechnung druckt sichtbar „(Bankverbindung des Schulträgers nicht hinterlegt)" — nie ein erfundenes Konto.    |
 | **E6** | Nach Übergabe an die Schulaufsicht: bleibt der Schüler gesperrt und die Forderung offen, bis das Sekretariat „bezahlt laut Finanzbericht" bucht — oder gilt Übergabe schulseitig als erledigt? | Sperre bleibt, Löschblockade fällt (Übergabe ≙ erledigt für die DSGVO-Kette, sonst hängt der Datensatz ewig an der Schulaufsicht).        |
 | **E7** | Kein E-Mail-/App-Versand der Bescheide — bestätigen?                                                                                                                                           | Ja.                                                                                                                                       |
