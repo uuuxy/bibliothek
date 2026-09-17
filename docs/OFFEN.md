@@ -1485,19 +1485,22 @@ ohne Prüfzeichen.
 **9.3 a) Restwertberechnung beim Melden — GEBAUT am 17.09.2026.** Der Dialog holt den Vorschlag
 jetzt vom Server (`GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag`) und zeigt die
 Herleitung unter dem Feld; die feste 15,00 € ist weg. Zwei Regeln: Lernmittel nach der Staffel
-der Arbeitshilfe, Bücherei-Bestand zum Neuwert ohne Abschlag (Benutzungsordnung, Konzept 1.2).
-Die Schuljahr-Zählung teilt sich die Quelle mit dem Bescheid-Weg.
+der Arbeitshilfe, Bücherei-Bestand zum Neuwert (Benutzungsordnung, Konzept 1.2) — dort ohne
+Altersabschlag, aber mit dem Beschädigungsgrad. Die Schuljahr-Zählung teilt sich die Quelle mit
+dem Bescheid-Weg.
 
-**Offen bleibt an diesem Punkt:** der Beschädigungsgrad in Prozent (Anforderungsliste Nr. 2 —
-bewusste Abweichung, siehe 9.7 Frage 2) und der Listenpreis (9.3 b).
+**An diesem Punkt ist nichts mehr offen:** Der Beschädigungsgrad in Prozent
+(Anforderungsliste Nr. 2) und der Listenpreis (Nr. 3) sind am 17.09.2026 gebaut — 9.8.
 
-**9.3 b) Der Listenpreis fehlt — und die Arbeitshilfe verlangt ihn.** Bisher als Komfortfrage
+**9.3 b) Der Listenpreis — GEBAUT am 17.09.2026 (Migration 127).** Er kommt aus der DNB, die
+ihn in jeder ISBN-Abfrage mitliefert; welcher Preis gilt, ist zusätzlich einstellbar. Der
+Befund, der dahin geführt hat, bleibt hier stehen, weil er die Entscheidung trägt: Bisher als Komfortfrage
 geführt (**4.5**, E4). Die Arbeitshilfe ist eindeutig: ab dem zweiten Verleihjahr sind es 80 %
 „des Neupreises des Lehrwerks **zum Zeitpunkt des Verlusts**", und die Anforderungsliste Nr. 3
 verlangt beide Preise „auswählbar … welcher Preis als Berechnungsgrundlage verwendet wird".
-Heute übergibt `api/bescheid_handler.go` als Neupreis hart `0`; der Dialog schreibt dann
-„Kaufpreis (kein Neupreis hinterlegt)" — ehrlich, aber nicht die Vorgabe. Damit ist 4.5 keine
-Komfortfrage mehr, sondern Teil dieses Gates.
+Bis zum 17.09.2026 übergab `api/bescheid_handler.go` als Neupreis hart `0`, und der Dialog
+schrieb „Kaufpreis (kein Neupreis hinterlegt)" — ehrlich, aber nicht die Vorgabe. Damit war 4.5
+keine Komfortfrage, sondern Teil dieses Gates.
 
 **9.3 c) Sperrung bei offener Bearbeitung — LMF untersagt das.**
 `internal/service/loan_checkout_validation.go` (`pruefeOffeneSchaeden`) sperrt bei jedem
@@ -1521,9 +1524,9 @@ Neuanschaffungen"), steht dort aber unter „Später, kein Teil dieses Pakets".
 
 | Nr. | Verlangt                                        | Stand am 17.09.2026                                                                       |
 | --- | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 1   | Automatische Abwertung, zeitbasiert             | Als **Vorschlag** gebaut (`pkg/ersatzwert`), nicht als Dauerzustand — bewusste Abweichung, begründet in [mittel_konzept.md](mittel_konzept.md) Abschnitt 3. Das Medienzentrum sieht es anders. |
-| 2   | Beschädigungsgrad in Prozent, Buchwert sinkt    | Nicht gebaut — dieselbe bewusste Abweichung.                                               |
-| 3   | Einkaufspreis UND Listenpreis, wählbar          | **Echte Lücke** → 9.3 b) und 4.5.                                                          |
+| 1   | Automatische Abwertung, zeitbasiert             | ✅ **gebaut am 17.09.2026.** Der Buchwert steht an jedem Exemplar der Buchakte, mit Herleitung. Ein ZWEITER, frei eingestellter Abwertungssatz bleibt bewusst aus (zwei Beträge für dasselbe Buch) — gerechnet wird die Staffel des Erlasses. |
+| 2   | Beschädigungsgrad in Prozent, Buchwert sinkt    | ✅ **gebaut am 17.09.2026** (`zustand_abwertung_prozent`). Nicht an der Theke: Dort wird gescannt, nicht ausgefüllt — erfasst wird nach der Rückgabe in der Buchakte. |
+| 3   | Einkaufspreis UND Listenpreis, wählbar          | ✅ **gebaut am 17.09.2026** (Migration 127 + Einstellung in der Kategorie Schadensersatz). |
 | 5   | Versand per Post, E-Mail oder App               | Nur Post — begründet (Schriftform, Datenschutz-Entscheidung A3 vom 22.08.2026).            |
 | 6   | Zahlung ohne Rückgabe → Buch **gelöscht**       | Wird ausgesondert statt gelöscht — begründet (die Bestandskartei muss den Abgang nachweisen). |
 | 7   | Mahnfrist **sechs** Wochen                      | Vier Wochen — Arbeitshilfe und Verfahrensbeschreibung sagen vier, mit Datum.                |
