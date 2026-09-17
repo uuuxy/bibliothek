@@ -46,7 +46,7 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 8. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
    ist nichts zu tun außer nachzufragen, wenn nichts kommt.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 128). Das passiert
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 129). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
