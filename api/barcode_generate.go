@@ -9,18 +9,37 @@ import (
 	"image/png"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
 
 	"github.com/boombuler/barcode"
-	"github.com/boombuler/barcode/code39"
+	"github.com/boombuler/barcode/code128"
 	"github.com/boombuler/barcode/qr"
 )
 
-// GenerateBarcodePNG creates a high-resolution PNG barcode image from a string.
-// Supports Code39 and QR-code. Scales the output to the specified dimensions.
+// GenerateBarcodePNG erzeugt den Strichcode eines Ausweises, Etiketts oder Briefes als PNG.
+// Code 128, oder QR, wenn isQR gesetzt ist; skaliert auf die gewünschte Größe.
+//
+// Bis zum 17.09.2026 stand hier `code39.Encode(strings.ToUpper(content), true, true)`. Das
+// mittlere `true` heißt „Prüfzeichen anhängen", und dieses Zeichen steht IN den
+// Strichcode-Daten: Ein Leser gibt es als Teil der Nummer zurück, solange er es nicht selbst
+// prüft und entfernt (die Voreinstellung fast aller Geräte ist „nicht prüfen").
+//
+// Auf dem Ausweis stand also „A-10003" und im Strichcode darüber „A-100037", auf dem
+// Buchetikett „B-10001" gegen „B-100016". Der Server sucht dann eine Nummer, die es nicht
+// gibt — und weil ein unbekannter Scan nur eine leere Trefferliste erzeugt, sah es an der
+// Theke aus, als täte der Scanner gar nichts. Gemessen mit zwei unabhängigen Erkennern und
+// am fertigen PDF des Druck-Centers (Gate: frontend/e2e/barcode-lesbar.spec.js).
+//
+// Code 128 statt Code 39 ohne Prüfzeichen, aus drei Gründen: Es trägt kein Prüfzeichen im
+// Text, es braucht für dieselbe Nummer rund die halbe Breite (auf einem Ausweisetikett der
+// Unterschied zwischen „liest sofort" und „liest manchmal"), und es kennt Klein- wie
+// Großbuchstaben — der Aufdruck ist damit Zeichen für Zeichen das, was in der Datenbank
+// steht. Das `ToUpper` von früher war eine Eigenheit von Code 39 und fällt mit ihm weg.
+//
+// GELESEN werden Code 39 und die EAN-Arten weiterhin (frontend .../barcode_detector.js):
+// Karten und Etiketten aus der Zeit davor sollen weiter funktionieren.
 func GenerateBarcodePNG(content string, isQR bool, width, height int) ([]byte, error) {
 	var bc barcode.Barcode
 	var err error
@@ -28,8 +47,7 @@ func GenerateBarcodePNG(content string, isQR bool, width, height int) ([]byte, e
 	if isQR {
 		bc, err = qr.Encode(content, qr.M, qr.Auto)
 	} else {
-		// Code39 is case-sensitive, capitalize content for compatibility
-		bc, err = code39.Encode(strings.ToUpper(content), true, true)
+		bc, err = code128.Encode(content)
 	}
 
 	if err != nil {
