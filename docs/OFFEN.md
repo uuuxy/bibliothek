@@ -79,6 +79,31 @@ Testvorlage der Datenbank etwas in den Mund legte, was diese nie antwortet. Die
 Sicherheitswarnung von GitHub war ein Fehlalarm des Prüfwerkzeugs und ist mit Begründung
 geschlossen.
 
+**Spät am 17.09.2026: Der Prüfraster ist über den ganzen Tag gelaufen** — über alles, was seit
+der Nacht gebaut wurde. Vier Dinge kamen dabei heraus, alle behoben:
+
+- **Das Abgangsbuch verlor Zeilen, ohne es zu sagen.** Wird ein Titel gelöscht, verschwinden
+  seine Exemplare wirklich — auch aus einem Nachweis, den vielleicht schon jemand
+  unterschrieben hat. Das Blatt zählt diese Fälle jetzt und schreibt sie darunter, statt
+  Vollständigkeit zu behaupten.
+- **Die Leserdatei gab eine abgeschnittene Liste als vollständig aus**, sobald nach Jahrgang
+  gefiltert war. Sie sagt jetzt, wenn sie nur den Anfang zeigt.
+- **In der Buchakte hing eine Anzeige an einem Satz**, den der Server schreibt. Wer den Satz
+  umformuliert hätte, hätte dort still „0,00 €" über Büchern gesehen, deren Preis nur niemand
+  erfasst hat.
+- **Der Ausdruck der Bestandsbücher konnte einen anderen Zeitraum abdecken als der
+  Bildschirm** — wenn jemand ein Datum änderte und sofort druckte, ohne vorher zu schauen.
+
+**Zugangs- und Abgangsbuch sind umgezogen:** Sie stehen jetzt unter „System" als ein Punkt
+„Bestandsbücher" mit zwei Reitern, nicht mehr als zwei Reiter im Medienkatalog. Sie werden ein-
+bis zweimal im Jahr gebraucht und standen im täglichen Weg. Wer sie sehen darf, hat sich dabei
+nicht geändert.
+
+**Eine Sache ist offen und braucht zwei Zahlen vom Server** (die Befehle stehen in Abschnitt
+5.19): Steht ein Kollege in der Warteschlange für ein Buch, rückt er möglicherweise nie nach —
+die Abfrage dahinter kennt nur Schülerinnen und Schüler. Ob das heute jemanden betrifft, lässt
+sich nur an der echten Datenbank sehen.
+
 ---
 
 **Was DU tun kannst — der Reihe nach:**
@@ -1275,6 +1300,70 @@ beide als Fließkommazahl — eine erreichbare Abweichung liess sich aber nicht 
 der Fehler bei zweistelligen Eingaben weit unter einem halben Cent liegt und `NUMERIC(10,2)` der
 Anker ist. Bleibt als Fleck ohne Fund notiert, nicht als Arbeit.
 
+### 5.19 Rasterdurchgang über den 17.09.2026 (abends)
+
+Umfang: die 45 Commits seit dem Durchgang der Nacht, also der ganze Tag — Auflage und
+Dublettenkontrolle, Kamera und Barcode, Leserdatei mit Jahrgangsfilter und Sortierung, der
+Schadensersatz samt Abwertung, Zugangs- und Abgangsbuch. Drei Migrationen (126, 127, 128),
+Frage 12 deshalb bei jeder einzeln. Vier Funde, alle am laufenden Pfad nachgestellt und alle
+behoben; ein fünfter gehört nicht in dieses Fenster und steht unten als eigene Achse.
+
+**Behoben am 17.09.2026 (abends):**
+
+1. **Ein gelöschter Titel riss Zeilen aus dem Abgangsbuch** (Frage 12). Drei Türen entfernen
+   ein Exemplar körperlich statt es auszusondern — Titel löschen einzeln und als Massenaktion,
+   und „Verlust endgültig löschen" in der Inventur. Danach steht das Exemplar in keiner
+   Abfrage mehr, auch nicht im Nachweis: An der Datenbank nachgestellt verschwand eine Zeile
+   rückwirkend aus einem Halbjahr. Jetzt zählt das Abgangsbuch sie und schreibt sie unter die
+   Liste, auf dem Bildschirm wie auf dem Blatt. Die Protokoll-Marker der drei Türen sind eine
+   Konstante geworden, und `docs/koerperliche_loeschung_bestand_test.go` hält fest: eine
+   fünfte Lösch-Anweisung ist eine Frage.
+2. **Der Jahrgangsfilter gab eine gekappte Liste als vollständig aus** (Frage 5). Die Kappung
+   bei 500 hängt allein am Suchtext, nicht am Filter — am echten Postgres nachgemessen: 520
+   Leser einer Klasse ergeben 500 Zeilen. Der Kommentar im Code behauptete das Gegenteil.
+   Zusätzlich gewann in der Anzeige „Treffer: 500" vor dem Hinweis auf die Kappung; jetzt
+   gewinnt die Kappung, egal warum die Liste eingegrenzt ist.
+3. **Ein deutscher Satz war die Schnittstelle** (Frage 3). Ob an einem Exemplar „Ersatzwert
+   heute" steht, entschied die Oberfläche daran, ob die Herleitung des Servers mit „kein Preis
+   hinterlegt" beginnt. Wer den Satz umformuliert, hätte den Go-Test rot gesehen, ihn
+   nachgezogen — und die Karte hätte fortan still 0,00 € über einem Buch ohne Preis gezeigt.
+   Der Server schickt die Auskunft jetzt als eigenes Feld.
+4. **Blatt und Bildschirm konnten verschiedene Zeiträume zeigen** (Frage 3). Der
+   Ausdruck-Knopf der Bestandsbücher las die Datumsfelder, die Liste den zuletzt geladenen
+   Zeitraum. Wer ein Datum änderte und direkt druckte, heftete ein Blatt ab, das er nie
+   geprüft hatte. Der Ausdruck nimmt jetzt den geladenen Zeitraum.
+
+**Offen — eine eigene Achse: Lesepfade gegen die Sicht `schueler`.**
+Die Ratsche aus Frage 13 führt neun SCHREIBpfade gegen die Sicht, je mit Begründung. Gelesen
+wird gegen sie an 32 Stellen, und die zählt niemand. An der Datenbank nachgestellt: Steht eine
+Vormerkung für einen Kollegen, findet die Abfrage, die beim Rückgabe-Vorgang den Nächsten
+bedient, null Kandidaten — die Zeile ist da, die Warteschlange geht über sie hinweg. Die Tabelle
+`vormerkungen` zeigt auf `leser`, die Abfrage joint die auf Schüler gefilterte Sicht. Ob es solche
+Zeilen heute gibt, ist NICHT gemessen; der Weg durch die Oberfläche ist nicht nachgestellt.
+
+Zwei Zahlen vom Server, bevor daran etwas gebaut wird:
+
+```
+SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
+SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
+```
+
+Sind beide 0, ist es eine Vorsorge-Arbeit (Ratsche für Lesepfade) und keine Reparatur. Ist eine
+davon größer als 0, steht in der Bücherei eine Person in einer Warteschlange, die sie nie
+erreicht.
+
+**Zwei Kleinigkeiten, ebenfalls zum Messen:**
+
+- Titel, die vor dem 17.09.2026 ohne ISBN angelegt wurden, tragen dort einen leeren Text statt
+  „nichts". Die neue Dublettenkontrolle sucht nach „nichts" und findet sie deshalb nicht.
+  Gemessen wird es mit `SELECT count(*) FROM buecher_titel WHERE isbn = '';` — ist die Zahl 0,
+  erledigt sich der Punkt, und neue Titel entstehen ohnehin richtig.
+- Ein negativer Listenpreis wird von der Datenbank abgelehnt; die Antwort ist ein sauberer
+  Fehlercode, sagt aber nicht, was erlaubt ist. Das Schwesterfeld derselben Migration (der
+  Beschädigungsgrad) nennt seinen Bereich. Kosmetik an einer Stelle, die niemand trifft,
+  solange die Maske ihre Grenze hat — notiert, damit es nicht ein zweites Mal auffällt.
+
+---
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
