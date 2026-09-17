@@ -115,7 +115,12 @@ for id_, stellen in sorted(betroffen.items()):
         continue
     print("• %s — bekannt und begründet, Wiedervorlage %s" % (id_, a["wiedervorlage"]))
     print("  %s" % titel.get(id_, ""))
-    print("  Nachweis: %s" % "; ".join(a["nachweis"]))
+    # Je Nachweis eine Zeile — und BEWUSST nicht im Format "datei.go: Text":
+    # actions/setup-go registriert in der CI einen Problem-Matcher für Go, der solche
+    # Zeilen für Compiler-Meldungen hält und daraus eine rote Markierung an einem
+    # grünen Job macht (17.09.2026 genau so passiert).
+    for n in a["nachweis"]:
+        print("  Nachweis: %s" % n)
 
 for id_ in sorted(set(ausnahmen) - set(betroffen)):
     fehler.append(
