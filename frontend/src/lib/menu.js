@@ -187,6 +187,24 @@ export const menuGroups = [
 		name: 'System',
 		items: [
 			{ id: 'stats', label: 'Statistiken', icon: 'chart-bar', permission: 'view_stats' },
+			{
+				// Zugangs- und Abgangsbuch, ein Punkt (Betreiber-Entscheidung 17.09.2026). Sie
+				// standen bis dahin als zwei weitere Reiter im Medienkatalog — fachlich am
+				// richtigen Ort, im Weg der täglichen Arbeit aber zwei zu viel. Es ist ein
+				// Nachweis zum Stichtag (15.3./15.9.), den jemand ausdruckt und abheftet:
+				// dieselbe Begründung, mit der der Schuljahreswechsel hier unter System steht
+				// und nicht im Bibliotheks-Menü.
+				//
+				// Recht: view_books wie der übrige Blick auf den Bestand — die vier Türen
+				// dahinter verlangen dasselbe (api/routes_books.go), und ein Menüpunkt, der
+				// enger ist als seine Route, schützt nichts: Die Adresse bleibt offen. Wer den
+				// Nachweis wirklich auf das Sekretariat begrenzen will, hängt BEIDE Seiten auf
+				// manage_inventory um (Helfer und Kollegium haben es ab Werk nicht, db/seed.go).
+				id: 'bestandsbuecher',
+				label: 'Bestandsbücher',
+				icon: 'book-marked',
+				permission: 'view_books'
+			},
 			{ id: 'system-logs', label: 'System-Logs', icon: 'shield', permission: 'audit_logs' },
 			{
 				// „Schuljahreswechsel" = der LMF-Plan (Absprache vom 05.09.2026 abends): Rückgabe- und

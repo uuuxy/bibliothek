@@ -13,24 +13,20 @@
 // eine Spec pro Seite findet sie nur dort, wo jemand hingeschaut hat. Deshalb: alle
 // Routen, drei Zusagen, automatisch mitwachsend.
 //
-// Die Routenliste wird aus Router.svelte GELESEN, nicht hier gepflegt. Eine
+// Die Routenliste wird aus der Routen-Tabelle GELESEN, nicht hier gepflegt. Eine
 // handgepflegte Liste veraltet still — genau das ist am 10.08. passiert, als zwei Gates
 // weiter /lehrer-portal besuchten und deshalb den Kiosk zweimal massen.
+//
+// Seit dem 17.09.2026 steht die Tabelle in src/lib/routenTabelle.js statt in Router.svelte
+// (sie ist Daten, und der Router ist eine geduldete Datei über 200 Zeilen). Der Umzug hat
+// genau diesen Test rot gemacht — die volle Suite war der Grund, warum es auffiel.
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { tabToPath } from '../src/lib/routenTabelle.js';
 import { uiLogin, gehZu } from './helpers.js';
 
-const hier = dirname(fileURLToPath(import.meta.url));
-const ROUTER = join(hier, '../src/lib/Router.svelte');
-
-/** Liest die Pfade aus dem tabToPath-Block in Router.svelte. */
+/** Die Pfade der Routen-Tabelle — importiert, nicht aus Quelltext gelesen. */
 function routen() {
-	const quelle = readFileSync(ROUTER, 'utf8');
-	const block = quelle.match(/const tabToPath = \{([\s\S]*?)\};/);
-	if (!block) throw new Error('tabToPath in Router.svelte nicht gefunden — Struktur geändert?');
-	return [...block[1].matchAll(/'(\/[a-z0-9/-]+)'/g)].map((m) => m[1]);
+	return Object.values(tabToPath);
 }
 
 const ROUTEN = routen();

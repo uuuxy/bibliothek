@@ -28,7 +28,8 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 	`);
 
 	await uiLogin(page);
-	await gehZu(page, '/medienkatalog');
+	// Seit dem 17.09.2026 unter „System → Bestandsbücher" statt im Medienkatalog.
+	await gehZu(page, '/bestandsbuecher');
 	await page.getByRole('tab', { name: 'Zugangsbuch' }).click();
 
 	// 1. Der Zugang aus der Bestellung steht unter dem Topf des Landes, mit Lieferant.

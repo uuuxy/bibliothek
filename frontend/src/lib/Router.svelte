@@ -11,6 +11,7 @@
 	import BestellWorkspace from './BestellWorkspace.svelte';
 	import UnifiedInventory from './UnifiedInventory.svelte';
 	import MediaCatalog from './MediaCatalog.svelte';
+	import Bestandsbuecher from './components/bestand/Bestandsbuecher.svelte';
 	import SignaturenView from './SignaturenView.svelte';
 	import StatsDashboard from './StatsDashboard.svelte';
 	import StudentDirectory from './StudentDirectory.svelte';
@@ -24,36 +25,7 @@
 	import Graduates from './Graduates.svelte';
 	import LmfPlan from './LmfPlan.svelte';
 	import RouteFallback from './components/layout/RouteFallback.svelte';
-
-	// Zentrale Tab→Pfad-Zuordnung. Bewusst nur EINMAL definiert: Vorher lag dieselbe
-	// Map dupliziert im Routing-$effect und im popstate-Handler — dadurch wurde ein
-	// neu ergänzter Tab (das Kollegiums-Portal) in beiden Kopien vergessen, seine URL nie
-	// gesetzt/wiederhergestellt, und ein Refresh warf die Lehrkraft aus dem Portal.
-	//
-	// media_catalog liegt auf /medienkatalog und NICHT auf dem Pfad des öffentlichen
-	// OPAC. Solange beide denselben beanspruchten, landete ein angemeldeter Benutzer
-	// nach F5 im öffentlichen Katalog — und die UI-Gates (control-hoehen,
-	// icon-trefferflaechen) vermaßen still den OPAC statt des internen Katalogs.
-	// Audit-Befund vom 01.08.2026.
-	/** @type {Record<string, string>} */
-	const tabToPath = {
-		settings: '/einstellungen',
-		inventory: '/inventur',
-		students_dir: '/schuelerdatei',
-		schulklassen: '/schulklassen',
-		orders: '/bestellungen',
-		media_catalog: '/medienkatalog',
-		signaturen: '/signaturen',
-		graduates: '/abgaenger',
-		schuljahr: '/schuljahr',
-		stats: '/statistiken',
-		mahnwesen: '/mahnwesen',
-		kollegium_portal: '/kollegium-portal',
-		'system-logs': '/system-logs',
-		berechtigungen: '/berechtigungen',
-		'druck-center': '/druck-center',
-		kiosk: '/kiosk'
-	};
+	import { tabToPath } from './routenTabelle.js';
 
 	/**
 	 * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad. BEWUSST die einzige Quelle für
@@ -191,6 +163,8 @@
 		<div class="w-full animate-fade-in h-full"><DruckCenter /></div>
 	{:else if uiStore.activeTab === 'media_catalog'}
 		<div class="w-full animate-fade-in"><MediaCatalog /></div>
+	{:else if uiStore.activeTab === 'bestandsbuecher'}
+		<div class="w-full animate-fade-in"><Bestandsbuecher /></div>
 	{:else if uiStore.activeTab === 'signaturen'}
 		<div class="w-full animate-fade-in"><SignaturenView /></div>
 	{:else if uiStore.activeTab === 'inventory'}

@@ -60,19 +60,16 @@
 //
 // Wer dieses Gate erweitert, erweitert die Öffnerliste — nicht die Regel.
 import { test, expect } from '@playwright/test';
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { tabToPath } from '../src/lib/routenTabelle.js';
 import { uiLogin } from './helpers.js';
 
-const hier = dirname(fileURLToPath(import.meta.url));
-
-/** Routenliste aus Router.svelte lesen — eine handgepflegte Liste veraltet still. */
+/** Die Pfade der Routen-Tabelle — eine handgepflegte Liste veraltet still. */
 function routen() {
-	const quelle = readFileSync(join(hier, '../src/lib/Router.svelte'), 'utf8');
-	const block = quelle.match(/const tabToPath = \{([\s\S]*?)\};/);
-	if (!block) throw new Error('tabToPath in Router.svelte nicht gefunden — Struktur geändert?');
-	return [...block[1].matchAll(/'(\/[a-z0-9/-]+)'/g)].map((m) => m[1]);
+	// Importiert statt geparst (17.09.2026): Die Tabelle ist ein eigenes Modul, seit sie
+	// aus Router.svelte gezogen wurde. Ein Regex über fremden Quelltext bricht bei jedem
+	// Umzug — und diese Spec war danach rot, während die Schwester im Unit-Test still auf
+	// eine leere Liste fiel.
+	return Object.values(tabToPath);
 }
 
 /** Läuft IM BROWSER. Liefert je Fund Tag, Grösse, Klasse und die gemessenen Werte. */

@@ -4,13 +4,12 @@
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
-	import Bestandsbuch from './components/bestand/Bestandsbuch.svelte';
 
-	// Zugangs- und Abgangsbuch stehen HIER und nicht im Druck-Center: Sie sind
-	// Bestandsnachweise, kein Etikettendruck — und der Bestand ist dieser Bildschirm
-	// (docs/OFFEN.md 9.3 d). Sie stehen nebeneinander, weil sie zusammengehören: was kam,
-	// was ging.
-	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete" | "zugangsbuch" | "abgangsbuch"
+	// Zugangs- und Abgangsbuch standen hier bis zum 17.09.2026 als zwei weitere Reiter.
+	// Sie sind unter „System → Bestandsbücher" gewandert (components/bestand/
+	// Bestandsbuecher.svelte): ein Nachweis zum Stichtag ist etwas anderes als die tägliche
+	// Arbeit am Katalog, und fünf Reiter über der Suche waren zwei zu viel.
+	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete"
 
 	$effect(() => {
 		if (appState.requestAdminView) {
@@ -79,34 +78,6 @@
 				<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></span>
 			{/if}
 		</button>
-		<button
-			onclick={() => (activeView = 'zugangsbuch')}
-			class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {activeView ===
-			'zugangsbuch'
-				? 'text-primary'
-				: 'text-on-surface-variant hover:text-on-surface'}"
-			role="tab"
-			aria-selected={activeView === 'zugangsbuch'}
-		>
-			Zugangsbuch
-			{#if activeView === 'zugangsbuch'}
-				<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></span>
-			{/if}
-		</button>
-		<button
-			onclick={() => (activeView = 'abgangsbuch')}
-			class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {activeView ===
-			'abgangsbuch'
-				? 'text-primary'
-				: 'text-on-surface-variant hover:text-on-surface'}"
-			role="tab"
-			aria-selected={activeView === 'abgangsbuch'}
-		>
-			Abgangsbuch
-			{#if activeView === 'abgangsbuch'}
-				<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></span>
-			{/if}
-		</button>
 	</div>
 
 	<!-- Content -->
@@ -117,31 +88,6 @@
 			<InventurAdmin />
 		{:else if activeView === 'geraete'}
 			<GeraeteVerwaltung />
-		{:else if activeView === 'zugangsbuch'}
-			<Bestandsbuch
-				pfad="zugangsbuch"
-				buchname="Zugangsbuch"
-				wortSingular="Zugang"
-				spalten={[
-					{ kopf: 'Zugang', feld: 'datum', klasse: 'whitespace-nowrap' },
-					{ kopf: 'Nummer', feld: 'barcode', klasse: 'whitespace-nowrap font-mono' },
-					{ kopf: 'Titel', feld: 'titel' },
-					{ kopf: 'Lieferant', feld: 'lieferant', klasse: 'whitespace-nowrap' }
-				]}
-			/>
-		{:else if activeView === 'abgangsbuch'}
-			<Bestandsbuch
-				pfad="abgangsbuch"
-				buchname="Abgangsbuch"
-				wortSingular="Abgang"
-				spalten={[
-					{ kopf: 'Abgang', feld: 'datum', klasse: 'whitespace-nowrap' },
-					{ kopf: 'Nummer', feld: 'barcode', klasse: 'whitespace-nowrap font-mono' },
-					{ kopf: 'Titel', feld: 'titel' },
-					{ kopf: 'Signatur', feld: 'signatur', klasse: 'whitespace-nowrap' },
-					{ kopf: 'Grund', feld: 'grund_text', klasse: 'whitespace-nowrap' }
-				]}
-			/>
 		{/if}
 	</div>
 </PageShell>

@@ -28,7 +28,8 @@
 		ChartColumn,
 		ShieldCheck,
 		KeyRound,
-		Settings
+		Settings,
+		BookMarked
 	} from '@lucide/svelte';
 
 	/** @type {{ name: string, class?: string }} */
@@ -51,6 +52,8 @@
 		clipboard: ClipboardCheck,
 		clock: Clock,
 		'chart-bar': ChartColumn,
+		// Bestandsbücher (Zugang/Abgang) — ein Nachweis zum Abheften, kein Katalog.
+		'book-marked': BookMarked,
 		shield: ShieldCheck,
 		key: KeyRound,
 		cog: Settings

@@ -32,7 +32,8 @@ test('Abgangsbuch: Abgänge des Halbjahres, nach Topf getrennt — und als PDF',
 	`);
 
 	await uiLogin(page);
-	await gehZu(page, '/medienkatalog');
+	// Seit dem 17.09.2026 unter „System → Bestandsbücher" statt im Medienkatalog.
+	await gehZu(page, '/bestandsbuecher');
 	await page.getByRole('tab', { name: 'Abgangsbuch' }).click();
 
 	// 1. Beide Abschnitte stehen da, jeder mit seiner Stückzahl im Kopf.
