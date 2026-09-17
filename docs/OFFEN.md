@@ -73,26 +73,31 @@ und nachgetragen wird nichts.
 
 **Was DU tun kannst — der Reihe nach:**
 
-1. **Sieben Fragen beantworten** (Abschnitt 4: 4.7 bis 4.11, 4.13, 4.14). Sie sind der Rest der
+1. **Die Antwort ans Medienzentrum lesen und abschicken**
+   ([medienzentrum_antwort.md](medienzentrum_antwort.md), Entwurf vom 17.09.2026). Sie beantwortet
+   jeden Punkt des Protokolls, stellt zwei Fragen zurück (Sperre bei offener Forderung,
+   Mehrjahresbände) und nennt drei bewusste Abweichungen. An den zwei Fragen hängen zwei
+   gestoppte Entscheidungen — solange sie offen sind, wird an beiden Stellen nichts gebaut.
+2. **Sieben Fragen beantworten** (Abschnitt 4: 4.7 bis 4.11, 4.13, 4.14). Sie sind der Rest der
    Fragerunde vom 16.09.; ohne sie bleiben sieben kleine Bauarbeiten liegen. Jede hat einen
    Vorschlag danebenstehen.
-2. **Zwei Zahlen vom Server holen.** Beide stehen als fertiger Einzeiler in der Liste: Wie viele
-   Titel tragen ein Ziel-Jahrgangsfeld (4.3)? Und wie viele Leser stehen ohne Ausweisnummer da
-   (5.16 E)? Erst danach darf ich das Feld streichen und die Nummern nachtragen — beides ändert
-   echte Daten.
-3. **Zwei Umbauten freigeben**, die ich vorbereitet, aber bewusst NICHT gebaut habe, weil sie
+3. **Eine Zahl vom Server holen.** Sie steht als fertiger Einzeiler in der Liste: Wie viele Leser
+   stehen ohne Ausweisnummer da (5.16 E)? Erst danach trage ich Nummern nach — das ändert echte
+   Daten. (Die zweite Messung aus 4.3 ist gestoppt, bis die Frage nach den Mehrjahresbänden
+   beantwortet ist.)
+4. **Zwei Umbauten freigeben**, die ich vorbereitet, aber bewusst NICHT gebaut habe, weil sie
    die Datenbank ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 E) und die
    eigene Spalte für die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine
    Migration — und die schreibt Nummern bzw. Daten, die niemand zurücknimmt.
-4. **Dein Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
+5. **Dein Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
-5. **15 Minuten durch die Leserdatei gehen** (5.16 A): Stimmen die Wörter, fehlt dir etwas?
-6. **Neu am 17.09.: Schulbücher in neuer Auflage** (4.18). Die Richtung ist entschieden — der
+6. **15 Minuten durch die Leserdatei gehen** (5.16 A): Stimmen die Wörter, fehlt dir etwas?
+7. **Neu am 17.09.: Schulbücher in neuer Auflage** (4.18). Die Richtung ist entschieden — der
    Bedarf rechnet über die Auflagen hinweg, die Ausgabe warnt bei gemischten Auflagen, und
    zusammengelegt wird nichts. Gebaut ist davon nichts: Der erste Schritt ist klein (das Feld
    „Auflage"), der dritte ändert das Schema und braucht deine Freigabe.
-7. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
+8. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
    ist nichts zu tun außer nachzufragen, wenn nichts kommt.
 
 **Was in der Nacht vom 16. auf den 17.09. gebaut wurde** — alles mit Gates, alles auf `main`:
@@ -641,7 +646,12 @@ Finanzbericht" bucht — oder gilt die Übergabe schulseitig als erledigt? **Vor
 Sperre bleibt, Löschblockade fällt. **Wann:** sobald ein erster echter Bescheid absehbar ist;
 blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt 6.
 
-### 4.5 E4: Feld „Listenpreis" am Titel
+### 4.5 E4: Feld „Listenpreis" am Titel — ERLEDIGT am 17.09.2026
+
+**Gebaut (Migration 127, siehe 9.3 b): Das Feld steht am Titel, wird beim Anlegen über die ISBN
+aus der DNB gefüllt und ist von Hand überschreibbar; welcher Preis die Grundlage ist, steht als
+Einstellung in der Kategorie Schadensersatz. Der Abschnitt bleibt als Begründung stehen und ist
+keine offene Frage mehr.**
 
 **Keine Komfortfrage mehr (17.09.2026, siehe 9.3 b).** Die Arbeitshilfe verlangt ab dem zweiten
 Verleihjahr den Neupreis zum Zeitpunkt des Verlusts, die Anforderungsliste Nr. 3 beide Preise
@@ -1475,7 +1485,10 @@ Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
 
 Protokoll vom 16.09.2026, 09:00–11:00 Uhr (Teilnehmende CN, SW, HMP; Protokoll HMP). Die
 Einschätzung schließt mit: „Wenn o.g. Mängel abgestellt sind, wäre das Programm nach aktueller
-Einschätzung für Schulen nutzbar." Damit ist diese Liste das Abnahme-Gate einer fremden Stelle —
+Einschätzung für Schulen nutzbar." Zwei weitere Sätze stehen daneben und sind keine Mängel,
+sondern Bedingungen — Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept, „dies
+könnte ein Ausschlusskriterium sein" (**9.9**, am 17.09.2026 nachgetragen). Damit ist diese
+Liste das Abnahme-Gate einer fremden Stelle —
 sie steht hier vollständig, mit dem Stand am Code, geprüft am 17.09.2026.
 
 Zwei Quellen liegen dem zugrunde und sind am 17.09.2026 erstmals im Original gelesen worden:
@@ -1705,6 +1718,32 @@ die es dafür schon gibt. **Die Entscheidung gehört zurück auf den Tisch, bevo
    **4.3 bleibt bis dahin gestoppt.**
 4. **Alte Strichcodes** — **entschieden am 17.09.2026: sie sollen weiter funktionieren, das war
    von Anfang an gefordert.** Gebaut, siehe 9.2.
+
+### 9.9 Die Einschätzung sagt mehr als die Mängelliste (Fund 17.09.2026)
+
+Beim Aufsetzen der Antwort ist aufgefallen, dass **zwei Sätze des Protokolls in dieser Liste
+bisher fehlten**. Sie stehen nicht unter „Beobachtungen", sondern in der Einschätzung am Ende —
+und der zweite wiegt schwerer als jeder Einzelpunkt darüber:
+
+> „Ein Nachweis der DSVGO-Konformität liegt nicht vor.
+> Hosting- und Programmpflegekonzepte sind nicht geplant. Dies könnte ein Ausschlusskriterium
+> sein."
+
+- **Nachweis der DSGVO-Konformität.** Das Material liegt vor und ist vollständiger, als der Satz
+  vermuten lässt: VVT-Entwurf, Datenschutzhinweis-Entwurf, die PII-Matrix über jede Route, die
+  Löschfristen samt nächtlichem Job. Was fehlt, ist ein Dokument, das man einer prüfenden Stelle
+  GIBT — und die Beschlussfassung der Schule (8.5, B1–B7). Das Zusammenstellen ist Arbeit an der
+  Doku, keine Bauarbeit.
+- **Hosting- und Programmpflegekonzept.** Hier fehlt wirklich etwas. Betrieb, Sicherung,
+  Wiederherstellung und Aktualisierung sind beschrieben — aber als Anleitung für den Betreiber
+  (DEPLOYMENT.md, resilience_and_recovery.md, SCRIPTS.md), nicht als Konzept, das jemand prüft:
+  Wer betreibt das Programm, wer pflegt es, was gilt, wenn die Pflege endet, wie kommen
+  Aktualisierungen zu einer Schule, die es einsetzt. Das ist zugleich die Frage, ob das Programm
+  über die eigene Schule hinaus verwendbar ist — sie lässt sich nicht aus dem Code beantworten.
+
+**Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.** Der Entwurf der Antwort
+([medienzentrum_antwort.md](medienzentrum_antwort.md), Abschnitt 4) sagt zu beidem zu, was
+kommt; die Zusage muss eingelöst werden.
 
 ### 9.8 Abwertung und Beschädigungsgrad — Bauplan (nach Entscheidung vom 17.09.2026)
 
