@@ -7,7 +7,9 @@ import (
 
 func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repository.StudentRepository, mahnRepo *repository.MahnwesenRepository, auditRepo repository.AuditRepository) {
 	// ── SCHUELER (Students) ──
-	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.ListStudentsHandler(studentRepo)))
+	// Die Klassenliste hinter Jahrgangsfilter und Jahrgangs-Auswahlfeld (OFFEN.md 9.5).
+	lmfKlassenRepo := repository.NewLmfTerminRepository(s.DB.Pool)
+	mux.Handle("GET /api/schueler", s.RequirePermission("view_students")(s.ListStudentsHandler(studentRepo, lmfKlassenRepo)))
 	mux.Handle("GET /api/schueler/{id}", s.RequirePermission("view_students")(s.GetStudentProfileHandler(studentRepo)))
 	mux.Handle("POST /api/schueler", s.RequirePermission("create_students")(s.CreateStudentHandler()))
 
@@ -58,6 +60,8 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 
 	// Klassen
 	mux.Handle("GET /api/klassen", s.RequirePermission("view_students")(s.GetClassesHandler(studentRepo)))
+	// Die besetzten Jahrgänge fürs Filter-Auswahlfeld der Leserdatei (OFFEN.md 9.5).
+	mux.Handle("GET /api/jahrgaenge", s.RequirePermission("view_students")(s.JahrgaengeHandler(lmfKlassenRepo)))
 	mux.Handle("GET /api/klassen-mapping", s.RequirePermission("manage_settings")(s.GetKlassenMappingHandler()))
 	mux.Handle("POST /api/klassen-mapping", s.RequirePermission("manage_settings")(s.UpsertKlassenMappingHandler()))
 	mux.Handle("DELETE /api/klassen-mapping/{klasse}", s.RequirePermission("manage_settings")(s.DeleteKlassenMappingHandler()))

@@ -36,7 +36,12 @@ func TestListStudentsLeereListeIstArray(t *testing.T) {
 		}))
 
 	server := &Server{}
-	handler := server.ListStudentsHandler(repository.NewStudentRepository(mock))
+	// lmfRepo = nil: Der Server hat in diesem Test keine Datenbank, und ohne
+	// Jahrgangsfilter darf die Klassenliste gar nicht erst angefasst werden. Bis zum
+	// 17.09.2026 holte der Handler sie sich über s.DB.Pool — bei einem Server ohne DB
+	// ein nil-Zeiger, und dieser Test stürzte mit SIGSEGV ab statt zu prüfen, was er
+	// prüfen soll. Dass hier nil stehen DARF, ist die Zusicherung.
+	handler := server.ListStudentsHandler(repository.NewStudentRepository(mock), nil)
 
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/schueler", nil))

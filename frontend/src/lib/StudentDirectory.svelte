@@ -13,7 +13,7 @@
 	import { erzeugeAusweisdruck } from './components/students/ausweisdruck.svelte.js';
 	import { erzeugeSchuelerSuche } from './components/students/schuelerSuche.svelte.js';
 	import { erzeugeKlassenVorschlaege } from './components/students/klassenVorschlaege.svelte.js';
-	import { SvelteSet } from 'svelte/reactivity';
+	import { erzeugeLeserAuswahl } from './components/students/leserAuswahl.svelte.js';
 	import Reiter from './components/ui/Reiter.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte } from './schuelerRechte.js';
@@ -30,13 +30,8 @@
 	const klassen = erzeugeKlassenVorschlaege();
 	let showCreateModal = $state(false);
 
-	// Markierte Schüler für den Ausweis-Stapeldruck. Set statt Array: Das Ankreuzen
-	// fragt bei jeder Zeile "ist die dabei?" — das ist der Zugriff, den ein Set kann.
-	//
-	// SvelteSet statt Set: Ein einfaches Set ist für Svelte 5 ein undurchsichtiger Wert;
-	// .add()/.delete() lösten kein Neuzeichnen aus, und die Haken blieben beim Klicken
-	// stehen. SvelteSet macht die Mitgliedschaft selbst reaktiv.
-	const auswahl = new SvelteSet();
+	// Markierung für den Ausweis-Stapeldruck (leserAuswahl.svelte.js, Größen-Ratsche).
+	const gewaehlt = erzeugeLeserAuswahl(() => suche.students);
 
 	// Serversuche & Laden der Liste liegen in schuelerSuche.svelte.js (Größen-Ratsche);
 	// die erste Ladung stößt das Modul selbst an. Der Rückruf läuft nach dem Sprung aus
@@ -44,36 +39,13 @@
 	// geladen, hier werden die Treffer markiert.
 	const suche = erzeugeSchuelerSuche(() => {
 		activeTab = 'active';
-		auswahl.clear();
-		for (const s of suche.students) auswahl.add(s.id);
+		gewaehlt.alleSichtbarenMarkieren();
 	});
-
-	const markierte = $derived(suche.students.filter((/** @type {any} */ s) => auswahl.has(s.id)));
-	// Karten ohne ableitbares Ablaufjahr würden "31.07.–" tragen. Der Balken sagt das
-	// VOR dem Druck, nicht der fertige Stapel hinterher.
-	const ohneDatum = $derived(
-		markierte.filter((/** @type {any} */ s) => s.ausweis_gueltig_bis == null).length
-	);
 
 	/** Selbst gesucht und angeklickt = Datenpflege-Absicht: Profil öffnet Stammdaten. @param {any} s */
 	function oeffneStammdaten(s) {
 		profilReiter = 'stammdaten';
 		activeStudent = s;
-	}
-
-	/** @param {string} id */
-	function toggle(id) {
-		if (!auswahl.delete(id)) auswahl.add(id);
-	}
-
-	function toggleAlle() {
-		// Bezugsgröße ist die ANGEZEIGTE Liste, nicht der Gesamtbestand: Wer nach "7H"
-		// sucht und "alle" ankreuzt, meint die Treffer vor sich — nicht 875 Schüler.
-		const alle = markierte.length === suche.students.length;
-		auswahl.clear();
-		if (!alle) {
-			for (const s of suche.students) auswahl.add(s.id);
-		}
 	}
 
 	// Ausweiskarten oder Klebeetiketten — die Entscheidung steht im zentral
@@ -133,6 +105,9 @@
 				<div class="w-full no-print animate-fade-in">
 					<StudentDirectoryToolbar
 						bind:searchQuery={suche.query}
+						bind:jahrgang={suche.jahrgang}
+						jahrgaenge={suche.jahrgaenge}
+						jahrgaengeFehler={suche.jahrgaengeFehler}
 						darfAnlegen={rechte.anlegen}
 						trefferzahl={suche.students.length}
 						suchend={suche.suchend}
@@ -142,13 +117,13 @@
 					/>
 
 					<AuswahlAktionsleiste
-						anzahl={markierte.length}
-						{ohneDatum}
+						anzahl={gewaehlt.markierte.length}
+						ohneDatum={gewaehlt.ohneDatum}
 						etikettModus={druck.etikettModus}
 						maxPosition={druck.maxPosition}
 						bind:startPosition={druck.startPosition}
-						onDrucken={() => druck.drucke(markierte)}
-						onLeeren={() => auswahl.clear()}
+						onDrucken={() => druck.drucke(gewaehlt.markierte)}
+						onLeeren={gewaehlt.leeren}
 					/>
 
 					<div class="mt-6">
@@ -157,9 +132,9 @@
 							loading={suche.beschaeftigt}
 							ladefehler={suche.ladefehler}
 							onErneut={() => suche.lade()}
-							{auswahl}
-							onToggle={toggle}
-							onToggleAlle={toggleAlle}
+							auswahl={gewaehlt.auswahl}
+							onToggle={gewaehlt.umschalten}
+							onToggleAlle={gewaehlt.alleUmschalten}
 							onSelectStudent={oeffneStammdaten}
 						/>
 					</div>
@@ -195,6 +170,6 @@
      unsichtbarer Kartensatz im DOM. Im Etikettenmodus gar nicht: Der Bogen kommt als
      PDF vom Server, und jede Karte hier zöge ein Barcode-Bild über die Leitung, das
      niemand zu sehen bekommt. -->
-{#if markierte.length > 0 && !druck.etikettModus}
-	<StudentBatchPrint students={markierte} />
+{#if gewaehlt.markierte.length > 0 && !druck.etikettModus}
+	<StudentBatchPrint students={gewaehlt.markierte} />
 {/if}

@@ -31,7 +31,7 @@ func TestListEhemaligeWithStats_GegenstueckDerAktiven(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListEhemaligeWithStats: %v", err)
 	}
-	aktive, err := repo.ListStudentsWithStats(ctx, "", "Ehemtest")
+	aktive, err := repo.ListStudentsWithStats(ctx, nil, "Ehemtest")
 	if err != nil {
 		t.Fatalf("ListStudentsWithStats: %v", err)
 	}

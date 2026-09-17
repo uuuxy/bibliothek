@@ -1886,6 +1886,28 @@ const docTemplate = `{
                 }
             }
         },
+        "/jahrgaenge": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "students"
+                ],
+                "summary": "List year groups that currently have students",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/klassen": {
             "get": {
                 "description": "Retrieves all unique school class names currently assigned to students.",
@@ -2050,6 +2072,12 @@ const docTemplate = `{
                         "type": "string",
                         "description": "School class to filter by",
                         "name": "klasse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Jahrgang (1–13); filtert über alle Klassen dieses Jahrgangs, Oberstufe eingeschlossen",
+                        "name": "jahrgang",
                         "in": "query"
                     },
                     {

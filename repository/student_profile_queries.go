@@ -103,8 +103,12 @@ const ListStudentsWithStatsLimit = 500
 // filterte die Schülerdatei im Browser über die ersten 500 gelieferten Zeilen — wer
 // alphabetisch dahinter lag, war über die Suche nicht erreichbar, und zwar abhängig vom
 // Klassennamen, also für den Benutzer ohne erkennbares Muster.
-func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, klasse, suche, listeAktiveSchueler)
+// klassen grenzt auf eine ODER MEHRERE Klassen ein (leer = alle). Mehrere, weil ein
+// JAHRGANG genau das ist: die Klassen, die zu ihm gehören. Die Zuordnung steht nicht
+// hier, sondern an einer Stelle in der API — sie braucht das Klassenschema der Schule
+// („ET" ist Jahrgang 11), und das kann SQL nicht.
+func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klassen []string, suche string) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAktiveSchueler)
 }
 
 // ListEhemaligeWithStats liefert die Schüler, die die Schule verlassen haben
@@ -113,7 +117,7 @@ func (repo *pgStudentRepository) ListStudentsWithStats(ctx context.Context, klas
 // wieder die Abschlussklassen meint (noch an der Schule), brauchen die Weggegangenen
 // eine eigene Liste. Jüngster Abgang zuerst, dann Name.
 func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, "", suche, listeEhemalige)
+	return repo.listSchuelerMitStats(ctx, nil, suche, listeEhemalige)
 }
 
 // ListLeserMitStats liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
@@ -121,8 +125,8 @@ func (repo *pgStudentRepository) ListEhemaligeWithStats(ctx context.Context, suc
 // Dieselben Zeilen und dieselbe Suche wie die Schülerliste, nur über die Tabelle `leser`
 // statt über die Sicht `schueler`. Bis zum 16.09.2026 stand ein Kollege in keiner Liste;
 // man sah an der Theke, dass er ein Buch bekommen hatte, aber nirgends, welche er hat.
-func (repo *pgStudentRepository) ListLeserMitStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error) {
-	return repo.listSchuelerMitStats(ctx, klasse, suche, listeAlleLeser)
+func (repo *pgStudentRepository) ListLeserMitStats(ctx context.Context, klassen []string, suche string) ([]StudentListStat, error) {
+	return repo.listSchuelerMitStats(ctx, klassen, suche, listeAlleLeser)
 }
 
 // listenArt sagt, WELCHE Zeilen eine Liste zeigt. Die drei Fälle sind die drei Reiter
@@ -140,7 +144,7 @@ const (
 	listeAlleLeser
 )
 
-func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klasse, suche string, art listenArt) ([]StudentListStat, error) {
+func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klassen []string, suche string, art listenArt) ([]StudentListStat, error) {
 	// Die Bedingungen werden zusammengesetzt, weil jede für sich optional ist. Die
 	// Platzhalternummern stehen fest ($1/$2 Suche, $3 Klasse) und die zugehörigen
 	// Argumente werden nur dann angehängt, wenn ihre Bedingung auch im SQL landet —
@@ -178,9 +182,14 @@ func (repo *pgStudentRepository) listSchuelerMitStats(ctx context.Context, klass
 		limit = fmt.Sprintf(" LIMIT %d", ListStudentsWithStatsLimit)
 	}
 
-	if klasse != "" {
-		args = append(args, klasse)
-		bedingungen = append(bedingungen, fmt.Sprintf("s.klasse = $%d", len(args)))
+	// = ANY statt =, seit der Filter auch einen ganzen Jahrgang meinen kann (17.09.2026,
+	// OFFEN.md 9.5). Eine Klasse ist der Sonderfall mit einem Element; die leere Liste
+	// filtert nicht — sonst zeigte ein Jahrgang ohne Klassen versehentlich ALLE Leser
+	// statt keinem. Genau umgekehrt wäre es aber richtig, deshalb die Trennung in der
+	// API: Ein Jahrgang, den es nicht gibt, kommt dort gar nicht erst hierher.
+	if len(klassen) > 0 {
+		args = append(args, klassen)
+		bedingungen = append(bedingungen, fmt.Sprintf("s.klasse = ANY($%d)", len(args)))
 	}
 
 	// Bei einer Suche zuerst die besten Treffer, sonst die gewohnte Kartei-Reihenfolge —

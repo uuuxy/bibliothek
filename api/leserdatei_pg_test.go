@@ -49,7 +49,7 @@ func TestLeserdatei_ListeUeberAlleLeser(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, adresse, nil)
 		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
 		rec := httptest.NewRecorder()
-		srv.ListStudentsHandler(studentRepo).ServeHTTP(rec, req)
+		srv.ListStudentsHandler(studentRepo, repository.NewLmfTerminRepository(pool)).ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("GET %s: Status %d, %s", adresse, rec.Code, rec.Body.String())
 		}

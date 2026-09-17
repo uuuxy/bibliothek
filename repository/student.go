@@ -122,10 +122,10 @@ type StudentRepository interface {
 	// ListStudentsWithStats liefert Schüler samt Ausleihzahlen, optional nach Klasse
 	// und/oder Suchbegriff eingegrenzt. Die Suche läuft über dieselben SQL-Bausteine
 	// wie SearchStudentsFuzzy und kennt keine 500er-Grenze.
-	ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error)
+	ListStudentsWithStats(ctx context.Context, klassen []string, suche string) ([]StudentListStat, error)
 	// ListLeserMitStats liefert ALLE Leser — Schüler und Kollegium — für die Leserdatei.
 	// Dieselben Zeilen, dieselbe Suche; gelesen wird die Tabelle `leser` statt der Sicht.
-	ListLeserMitStats(ctx context.Context, klasse, suche string) ([]StudentListStat, error)
+	ListLeserMitStats(ctx context.Context, klassen []string, suche string) ([]StudentListStat, error)
 	// ListEhemaligeWithStats liefert die Weggegangenen (ist_abgaenger = true) für den
 	// Reiter „Ehemalige / Archiv" — dieselben Zeilen und dieselbe Suche wie die Aktiven.
 	ListEhemaligeWithStats(ctx context.Context, suche string) ([]StudentListStat, error)

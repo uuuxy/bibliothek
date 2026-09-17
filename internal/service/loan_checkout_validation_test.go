@@ -45,10 +45,10 @@ func (m *mockStudentRepo) GetDistinctClasses(ctx context.Context) ([]string, err
 func (m *mockStudentRepo) EtikettenZeilen(ctx context.Context, ids []string) ([]repository.SchuelerEtikettZeile, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) ListStudentsWithStats(ctx context.Context, klasse, suche string) ([]repository.StudentListStat, error) {
+func (m *mockStudentRepo) ListStudentsWithStats(ctx context.Context, klassen []string, suche string) ([]repository.StudentListStat, error) {
 	return nil, nil
 }
-func (m *mockStudentRepo) ListLeserMitStats(ctx context.Context, klasse, suche string) ([]repository.StudentListStat, error) {
+func (m *mockStudentRepo) ListLeserMitStats(ctx context.Context, klassen []string, suche string) ([]repository.StudentListStat, error) {
 	return nil, nil
 }
 func (m *mockStudentRepo) ListEhemaligeWithStats(ctx context.Context, suche string) ([]repository.StudentListStat, error) {

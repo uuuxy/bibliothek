@@ -26,6 +26,18 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 	let ladefehler = $state('');
 	let sucheLaeuft = $state(false);
 	let query = $state('');
+	/** Jahrgangsfilter, '' = alle (17.09.2026, OFFEN.md 9.5). Serverseitig wie die Suche:
+	 *  Ein Filter im Browser säße hinter der Kappung bei 500 Zeilen und zeigte dann einen
+	 *  Teil des Jahrgangs, ohne das zu sagen. */
+	let jahrgang = $state('');
+	/** Die besetzten Jahrgänge fürs Auswahlfeld — vom Server, damit die Ableitung
+	 *  „Klassenname → Jahrgang" nicht ein zweites Mal in JavaScript entsteht. */
+	let jahrgaenge = $state.raw(/** @type {number[]} */ ([]));
+	/** Wahr, wenn die Jahrgänge nicht geladen werden konnten. Leer heißt leer, ein
+	 *  Ladefehler heißt Ladefehler — dieselbe Regel wie bei der Liste darüber. Ohne
+	 *  diesen Zustand stünde im Auswahlfeld nur „Alle Jahrgänge", und das sähe aus wie
+	 *  „diese Schule hat keine Jahrgänge". */
+	let jahrgaengeFehler = $state(false);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let timer;
 
@@ -43,10 +55,13 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		laedt = true;
 		try {
 			const q = query.trim();
+			const jg = jahrgang ? `&jahrgang=${encodeURIComponent(jahrgang)}` : '';
 			// art=alle: die LESERDATEI. Ohne diesen Zusatz liefert die Tür nur Schüler —
 			// die Vorgabe gilt den anderen Aufrufern (Reiter „Ehemalige", Schülersuche des
 			// Vormerkungs-Reiters), für die ein Kollege in der Liste falsch wäre.
-			const res = await apiFetch(`/api/schueler?art=alle${q ? `&q=${encodeURIComponent(q)}` : ''}`);
+			const res = await apiFetch(
+				`/api/schueler?art=alle${q ? `&q=${encodeURIComponent(q)}` : ''}${jg}`
+			);
 			// Nur die jüngste Anfrage schreibt — aber sie schreibt IN JEDEM FALL. Bis zum
 			// 12.09.2026 hing am `nr === ladeNr` auch das `res.ok`: Scheiterte der Lauf,
 			// blieben die Treffer der vorigen Suche unter dem neuen Suchtext stehen, und
@@ -94,9 +109,47 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 		lade().then(nachKlassenDruck);
 	});
 
+	/** Die Jahrgangsliste einmal holen.
+	 *
+	 *  Scheitert der Abruf, sagt das Auswahlfeld es und sperrt sich, statt eine leere
+	 *  Liste anzubieten: Ein Filter, der keine Jahrgänge kennt, sieht sonst aus wie
+	 *  einer, der nichts zu filtern findet. Dieselbe Entscheidung wie im
+	 *  Kollegiums-Portal am 17.09.2026 — ein gescheiterter erster Abruf sagt das auch,
+	 *  statt „nichts da" zu zeigen. Die Leserdatei selbst bleibt benutzbar; gesucht
+	 *  werden kann weiter. */
+	async function ladeJahrgaenge() {
+		try {
+			const res = await apiFetch('/api/jahrgaenge');
+			if (res.ok) {
+				jahrgaenge = (await res.json()) || [];
+				jahrgaengeFehler = false;
+			} else {
+				jahrgaenge = [];
+				jahrgaengeFehler = true;
+			}
+		} catch (err) {
+			jahrgaenge = [];
+			jahrgaengeFehler = true;
+			console.error('Jahrgänge konnten nicht geladen werden:', err);
+		}
+	}
+	ladeJahrgaenge();
+
 	return {
 		get students() {
 			return students;
+		},
+		get jahrgang() {
+			return jahrgang;
+		},
+		set jahrgang(wert) {
+			jahrgang = wert;
+		},
+		get jahrgaenge() {
+			return jahrgaenge;
+		},
+		get jahrgaengeFehler() {
+			return jahrgaengeFehler;
 		},
 		get beschaeftigt() {
 			return laedt || sucheLaeuft;
@@ -111,10 +164,13 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			query = wert;
 		},
 		get suchend() {
-			return query.trim().length > 0;
+			return query.trim().length > 0 || jahrgang !== '';
 		},
 		get gekuerzt() {
-			return !query.trim() && students.length >= LISTEN_GRENZE;
+			// Ein Jahrgangsfilter grenzt wie eine Suche ein — und wie die Suche läuft er
+			// auf dem Server OHNE Kappung. Stünde hier trotzdem „Erste 500 — zum Finden
+			// bitte suchen", zweifelte das Personal an einer Liste, die vollständig ist.
+			return !query.trim() && jahrgang === '' && students.length >= LISTEN_GRENZE;
 		},
 		lade,
 

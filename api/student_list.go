@@ -14,16 +14,33 @@ import (
 // @Tags         students
 // @Accept       json
 // @Produce      json
-// @Param        klasse  query     string  false  "School class to filter by"
+// @Param        klasse    query   string  false  "School class to filter by"
+// @Param        jahrgang  query   string  false  "Jahrgang (1–13); filtert über alle Klassen dieses Jahrgangs, Oberstufe eingeschlossen"
 // @Param        q       query     string  false  "Search term (name or barcode); searches server-side over all students"
 // @Param        status  query     string  false  "Leer = aktive Schüler; 'ehemalige' = wer die Schule verlassen hat (ist_abgaenger)"
 // @Param        art     query     string  false  "Leer = nur Schüler; 'alle' = die Leserdatei (Schüler und Kollegium)"
 // @Success      200     {array}   repository.StudentListStat
 // @Failure      500     {object}  map[string]string
 // @Router       /schueler [get]
-func (s *Server) ListStudentsHandler(studentRepo repository.StudentRepository) http.HandlerFunc {
+// lmfRepo liefert die Klassen für den Jahrgangsfilter. Als PARAMETER, nicht über s.DB:
+// Die Handler dieses Pakets bekommen ihre Repositories von außen, und ein Griff nach
+// s.DB.Pool sprengt jeden Test, der den Server ohne Datenbank baut — genau daran ist
+// TestListStudentsLeereListeIstArray am 17.09.2026 mit einem nil-Zeiger abgestürzt.
+func (s *Server) ListStudentsHandler(studentRepo repository.StudentRepository, lmfRepo *repository.LmfTerminRepository) http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		klasse := r.URL.Query().Get("klasse")
+		// Klasse ODER Jahrgang — die Klasse gewinnt, wenn beides kommt (sie ist die
+		// genauere Angabe). Die Übersetzung steht in schueler_jahrgang_filter.go.
+		klassen, ohneTreffer, filterErr := klassenFilter(r.Context(), lmfRepo,
+			r.URL.Query().Get("klasse"), r.URL.Query().Get("jahrgang"))
+		if filterErr != nil {
+			return apierrors.Internal("Klassen des Jahrgangs konnten nicht gelesen werden", filterErr)
+		}
+		if ohneTreffer {
+			// Zu diesem Jahrgang gibt es keine Klasse. Eine leere Liste ist die richtige
+			// Antwort; ohne diesen Zweig stünde hier die ganze Kartei.
+			RespondJSON(w, http.StatusOK, []repository.StudentListStat{})
+			return nil
+		}
 		// q sucht auf dem Server. Ohne das filterte die Schülerdatei im Browser über die
 		// gelieferten (gekappten) Zeilen und fand niemanden dahinter.
 		suche := strings.TrimSpace(r.URL.Query().Get("q"))
@@ -43,9 +60,9 @@ func (s *Server) ListStudentsHandler(studentRepo repository.StudentRepository) h
 		case r.URL.Query().Get("status") == "ehemalige":
 			students, err = studentRepo.ListEhemaligeWithStats(r.Context(), suche)
 		case r.URL.Query().Get("art") == "alle":
-			students, err = studentRepo.ListLeserMitStats(r.Context(), klasse, suche)
+			students, err = studentRepo.ListLeserMitStats(r.Context(), klassen, suche)
 		default:
-			students, err = studentRepo.ListStudentsWithStats(r.Context(), klasse, suche)
+			students, err = studentRepo.ListStudentsWithStats(r.Context(), klassen, suche)
 		}
 		if err != nil {
 			return apierrors.Internal("Fehler beim Abrufen der Leserliste", err)

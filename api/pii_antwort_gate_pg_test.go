@@ -275,13 +275,19 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/schueler/deleted":                         {URL: "/api/schueler/deleted"},
 		"GET /api/schueler/{barcode_id}/photo":              {URL: "/api/schueler/SBK-KANARI-1/photo"},
 		"GET /api/klassen":                                  {URL: "/api/klassen"},
-		"GET /api/lmf-termine":                              {URL: "/api/lmf-termine"},
-		"GET /api/lmf-termine/pdf":                          {URL: "/api/lmf-termine/pdf"},
-		"GET /api/lmf-termine/entwurf/pdf":                  {URL: "/api/lmf-termine/entwurf/pdf"},
-		"GET /api/lmf-plan/{art}":                           {URL: "/api/lmf-plan/rueckgabe"},
-		"GET /api/klassen-mapping":                          {URL: "/api/klassen-mapping"},
-		"GET /api/abgaenger":                                {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
-		"GET /api/abgaenger/pdf":                            {URL: "/api/abgaenger/pdf"},
+		// Die besetzten Jahrgänge (17.09.2026, OFFEN.md 9.5): Stufe 0, die Antwort ist eine
+		// Liste von Zahlen. Keine Positiv-Kontrolle mit einem Kanarienwert möglich — es gibt
+		// in dieser Antwort keinen Text. Das Gate prüft hier also nur, dass nichts
+		// Personenbezogenes durchfällt; DASS die Zahlen stimmen, steht in
+		// schueler_jahrgang_filter_pg_test.go.
+		"GET /api/jahrgaenge":              {URL: "/api/jahrgaenge"},
+		"GET /api/lmf-termine":             {URL: "/api/lmf-termine"},
+		"GET /api/lmf-termine/pdf":         {URL: "/api/lmf-termine/pdf"},
+		"GET /api/lmf-termine/entwurf/pdf": {URL: "/api/lmf-termine/entwurf/pdf"},
+		"GET /api/lmf-plan/{art}":          {URL: "/api/lmf-plan/rueckgabe"},
+		"GET /api/klassen-mapping":         {URL: "/api/klassen-mapping"},
+		"GET /api/abgaenger":               {URL: "/api/abgaenger", Positiv: []string{"Zugvogel"}},
+		"GET /api/abgaenger/pdf":           {URL: "/api/abgaenger/pdf"},
 		// Auch der dritte Fensterkuvert-Brief trägt seit dem 01.09.2026 die Anschrift
 		// (vorher Unterstrich-Zeilen) — Kanariweg als Positiv-Kontrolle wie bei den
 		// Geschwistern overdue-pdf und print/rechnung.
