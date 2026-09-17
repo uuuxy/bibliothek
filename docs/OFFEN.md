@@ -899,6 +899,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.9 Oberfläche
 
+- Scannen fehlt im Medienkatalog und bei den Bestellungen: ein Suchfeld gibt es dort, aber keine
+  Möglichkeit, einen Barcode mit dem Handgerät oder der Kamera einzulesen. Die Kamera-Erkennung
+  hängt heute allein an der Theke (`Omnibox.svelte` mit `CameraScanner.svelte`); `MediaCatalog.svelte`
+  und der Bestellbereich haben nur ein getipptes Feld. Peter am 17.09.2026 angemerkt — noch nicht
+  entschieden, ob beide Wege (Handgerät und Kamera) an beide Stellen gehören.
 - Der Stift der Katalog-Kachel: `BuchKarte.svelte` sagt „öffnet die Akte",
   `e2e/cover-aendern.spec.js` sagt „öffnet die Titel-Verwaltung". Im Browser messen, einen
   Kommentar berichtigen.
@@ -921,6 +926,14 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   (Die seit dem 17.09.2026 neu gebauten Ratschen tragen sich beim Bauen selbst ein — der
   Rückstand betrifft die älteren.)
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
+- `routes_authz_coverage_test.go` liest die `mux.Handle`-ZEILE. Eine Registrierung, die
+  zwischen Adresse und Wrapper umbricht, meldet es als „hat KEINEN Autorisierungs-Wrapper",
+  obwohl sie geschützt ist (am 17.09.2026 beim Einhängen des Ersatzwert-Vorschlags gesehen).
+  Nur ein Fehlalarm, kein Loch: Ein Umbruch kann nie ein falsches GRÜN erzeugen, immer nur ein
+  falsches Rot. Trotzdem kostet er beim nächsten Mal wieder eine Viertelstunde Suche, und die
+  Meldung schickt einen in die falsche Richtung („schütze die Route" — sie ist geschützt).
+  Reparatur: den Aufruf als Ausdruck über Zeilengrenzen lesen, wie es der Fehler-Kollaps-Detektor
+  über den AST schon tut.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`;
   `cmd/rotate-encryption-key`, `cmd/littera-import` und `cmd/seed` haben keine Tests. Vor einem
   Schlüsselwechsel oder der Littera-Übernahme.
@@ -1453,12 +1466,14 @@ Kommentar wahr machen**, weil niemand weiß, wie viele Karten schon im Umlauf si
 
 ### 9.3 Vorgaben des Landes (Protokoll 1)
 
-**9.3 a) Keine Preise, keine Beschädigungsgrade, keine Restwertberechnung beim Melden.**
-`DamageReportModal.svelte` startet mit `damageAmount = $state(15.0)` — einer festen Zahl ohne
-jeden Bezug zum Buch. Die Staffel gibt es seit dem 12.09.2026 (`pkg/ersatzwert`), aber nur im
-Bescheid-Dialog des Mahnwesens. Steht als Bauarbeit schon in **5.4** („Staffel-Vorschlag mit
-Herleitung statt Startwert 15 €"), dort aber hinter 8.3 geparkt. **Das Parken war falsch:** Der
-Staffel-Vorschlag hängt an keiner der offenen Fragen; nur die Kreis-Rechnung tut das.
+**9.3 a) Restwertberechnung beim Melden — GEBAUT am 17.09.2026.** Der Dialog holt den Vorschlag
+jetzt vom Server (`GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag`) und zeigt die
+Herleitung unter dem Feld; die feste 15,00 € ist weg. Zwei Regeln: Lernmittel nach der Staffel
+der Arbeitshilfe, Bücherei-Bestand zum Neuwert ohne Abschlag (Benutzungsordnung, Konzept 1.2).
+Die Schuljahr-Zählung teilt sich die Quelle mit dem Bescheid-Weg.
+
+**Offen bleibt an diesem Punkt:** der Beschädigungsgrad in Prozent (Anforderungsliste Nr. 2 —
+bewusste Abweichung, siehe 9.7 Frage 2) und der Listenpreis (9.3 b).
 
 **9.3 b) Der Listenpreis fehlt — und die Arbeitshilfe verlangt ihn.** Bisher als Komfortfrage
 geführt (**4.5**, E4). Die Arbeitshilfe ist eindeutig: ab dem zweiten Verleihjahr sind es 80 %
