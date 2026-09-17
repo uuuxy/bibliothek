@@ -58,6 +58,14 @@
 				<p class="mt-1 text-sm text-slate-500">
 					Wähle die Positionen aus, die eingetroffen sind und ins System aufgenommen werden sollen.
 				</p>
+				<!-- Der Hinweis steht hier und nicht in einer Meldung nach dem Einbuchen: Er erklärt,
+				     warum das Einbuchen überhaupt nötig ist. Seit Migration 129 ist das Datum im
+				     Zugangsbuch der Tag dieser Buchung; was im Zulauf bleibt, steht in keinem
+				     Nachweis. M3: supporting text in body-medium auf on-surface-variant. -->
+				<p class="mt-1 text-sm text-on-surface-variant">
+					Eingebuchte Exemplare erscheinen mit dem heutigen Tag im Zugangsbuch (System →
+					Bestandsbücher). Was im Zulauf bleibt, steht in keinem Bestandsnachweis.
+				</p>
 			</div>
 		</div>
 
