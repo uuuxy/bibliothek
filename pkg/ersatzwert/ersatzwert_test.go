@@ -78,3 +78,88 @@ func TestVerleihjahrNimmtDasMaximum(t *testing.T) {
 		}
 	}
 }
+
+// Der Zustands-Abschlag (Migration 127, Anforderungsliste Nr. 2: „20 % durch
+// Wasserschaden"). Bis hierher rief JEDER Test oben ihn mit 0 — der Zweig war ungeprüft,
+// obwohl seine Zahl in einem Bescheid an Eltern landet.
+//
+// Die Regel, die hier festgenagelt wird: Der Abschlag wirkt NACH der Staffel, nicht
+// neben ihr und nicht statt ihr. Erst der Zeitwert des Werks, dann der Abzug für dieses
+// eine Stück.
+func TestZustandAbschlagMindertDenZeitwert(t *testing.T) {
+	faelle := []struct {
+		name                string
+		verleihjahr         int
+		kaufpreis, neupreis float64
+		abschlag            int
+		wantBetrag          float64
+		wantProzent         int
+	}{
+		// Der Fall aus dem Bauplan: 60 % von 41,50 € = 24,90 €, davon 20 % ab.
+		{"3. Verleihjahr, 20 % Wasserschaden", 3, 20, 41.50, 20, 19.92, 60},
+		{"derselbe Fall ohne Abschlag", 3, 20, 41.50, 0, 24.90, 60},
+		// Der Abschlag wirkt auch im ersten Jahr — ein neues Buch kann beschädigt sein.
+		{"1. Verleihjahr, 50 % auf den Kaufpreis", 1, 20, 25, 50, 10, 100},
+		// … und er ersetzt die Staffel nicht: 10 % vom Neupreis, davon 20 % ab.
+		{"6. Verleihjahr, Staffel UND Abschlag", 6, 20, 30, 20, 2.40, 10},
+		// Totalschaden erfasst: 0 €. Das ist ein Zustand, keine Forderung.
+		{"100 % Abschlag ergibt 0 €", 3, 20, 41.50, 100, 0, 60},
+		// Ohne Preis bleibt es bei 0 — der Abschlag erfindet keinen Betrag.
+		{"kein Preis, mit Abschlag", 3, 0, 0, 30, 0, 60},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			got := Rechne(f.verleihjahr, f.kaufpreis, f.neupreis, f.abschlag)
+			if got.Betrag != f.wantBetrag {
+				t.Errorf("Betrag = %.2f, want %.2f — die Zahl steht in einem Bescheid",
+					got.Betrag, f.wantBetrag)
+			}
+			// Der Abschlag darf die Staffel nicht verschieben: Prozentsatz und Basispreis
+			// sind das, was die Herleitung nennt („60 % von 41,50 €, abzüglich 20 %").
+			if got.Prozent != f.wantProzent {
+				t.Errorf("Prozent = %d, want %d — der Abschlag verschiebt die Staffel nicht",
+					got.Prozent, f.wantProzent)
+			}
+			if got.ZustandAbschlag != f.abschlag {
+				t.Errorf("ZustandAbschlag = %d, want %d — ohne dieses Feld kann die "+
+					"Herleitung den Abzug nicht nennen", got.ZustandAbschlag, f.abschlag)
+			}
+		})
+	}
+}
+
+// Unmögliche Abschläge werden gekappt, nicht abgelehnt. Der teure Fall ist der negative:
+// Er würde den Betrag ERHÖHEN — eine Forderung über mehr als den Zeitwert, ausgelöst von
+// einem Tippfehler.
+func TestZustandAbschlagWirdGekappt(t *testing.T) {
+	ohne := Rechne(3, 20, 41.50, 0)
+
+	negativ := Rechne(3, 20, 41.50, -20)
+	if negativ.Betrag != ohne.Betrag {
+		t.Errorf("Betrag bei -20 %% = %.2f, want %.2f — ein negativer Abschlag darf die "+
+			"Forderung nicht erhöhen", negativ.Betrag, ohne.Betrag)
+	}
+	if negativ.ZustandAbschlag != 0 {
+		t.Errorf("ZustandAbschlag = %d, want 0 — die Herleitung darf keinen Abzug nennen, "+
+			"den es nicht gibt", negativ.ZustandAbschlag)
+	}
+
+	ueber := Rechne(3, 20, 41.50, 140)
+	if ueber.Betrag != 0 {
+		t.Errorf("Betrag bei 140 %% = %.2f, want 0", ueber.Betrag)
+	}
+	if ueber.ZustandAbschlag != 100 {
+		t.Errorf("ZustandAbschlag = %d, want 100 — gekappt, und die Herleitung nennt den "+
+			"gekappten Wert", ueber.ZustandAbschlag)
+	}
+}
+
+// Gerundet wird EINMAL, am Ende. Würde der Zeitwert vor dem Abschlag auf Cent gerundet,
+// käme bei 24,99 € im dritten Verleihjahr mit 20 % Abschlag 11,99 € heraus statt 12,00 €.
+// Ein Cent in einem Bescheid ist kein Rundungsfehler, sondern eine falsche Zahl.
+func TestZustandAbschlagRundetNurEinmal(t *testing.T) {
+	if got := Rechne(3, 0, 24.99, 20).Betrag; got != 12.00 {
+		t.Errorf("60 %% von 24,99 €, abzüglich 20 %% = %.4f, want 12.00 "+
+			"(11,99 hieße: zweimal gerundet)", got)
+	}
+}

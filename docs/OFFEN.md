@@ -1606,20 +1606,20 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
   über die ISBN das Feld. Verdrahtet über alle vier Schreibwege; Feld in der Katalog-Maske.
 - **Stufe 2a GEBAUT.** `ersatzwert.Rechne` nimmt den Zustands-Abschlag, und alle drei
   Vorschlagswege liefern Listenpreis und Abschlag durch. Die Herleitung sagt „Listenpreis"
-  statt „Neupreis" — ein Wort für eine Sache.
+  statt „Neupreis" — ein Wort für eine Sache. **Geprüft** seit dem 17.09.2026: die Rechnung in
+  `pkg/ersatzwert` (Abschlag nach der Staffel, Kappung 0–100, einmal gerundet) und der Satz der
+  Herleitung in `api` — beide am Rückbau rot gesehen.
 
 **Was als Nächstes dran ist:**
 
-1. **Tests für den Zustands-Abschlag** in `pkg/ersatzwert` — bisher rufen ihn alle Tests mit 0,
-   der neue Zweig ist also ungeprüft. Das ist die kleinste und dringendste Lücke.
-2. **Stufe 3: die Tür zur Abwertung.** Die Spalte hat noch keinen Schreiber in der Oberfläche —
+1. **Stufe 3: die Tür zur Abwertung.** Die Spalte hat noch keinen Schreiber in der Oberfläche —
    ein Prozentfeld bei der Rückgabe und in der Exemplar-Akte, neben der vorhandenen
    `zustand_notiz`. Vorher prüfen, was es dafür schon gibt (es gab bis zum 16.09.2026 eine Tür
    `POST /api/buecher/exemplare/{id}/schadensnotiz`).
-3. **Stufe 2b: der Buchwert sichtbar** am Exemplar — Basis, Verleihjahr, Staffelsatz,
+2. **Stufe 2b: der Buchwert sichtbar** am Exemplar — Basis, Verleihjahr, Staffelsatz,
    Zustandsabschlag, Ergebnis. Das ist der Punkt, den die Anforderungsliste mit „Medien
    automatisch abwerten" meint.
-4. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
+3. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
 
 **Die vier Stufen im Einzelnen:**
 
