@@ -4,8 +4,12 @@
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
+	import Abgangsbuch from './components/bestand/Abgangsbuch.svelte';
 
-	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete"
+	// Das Abgangsbuch steht HIER und nicht im Druck-Center: Es ist ein Bestandsnachweis,
+	// kein Etikettendruck — und der Bestand ist dieser Bildschirm. Nebenan ist Platz für
+	// das Zugangsbuch, wenn es kommt (docs/OFFEN.md 9.3 d).
+	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete" | "abgangsbuch"
 
 	$effect(() => {
 		if (appState.requestAdminView) {
@@ -74,6 +78,20 @@
 				<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></span>
 			{/if}
 		</button>
+		<button
+			onclick={() => (activeView = 'abgangsbuch')}
+			class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {activeView ===
+			'abgangsbuch'
+				? 'text-primary'
+				: 'text-on-surface-variant hover:text-on-surface'}"
+			role="tab"
+			aria-selected={activeView === 'abgangsbuch'}
+		>
+			Abgangsbuch
+			{#if activeView === 'abgangsbuch'}
+				<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></span>
+			{/if}
+		</button>
 	</div>
 
 	<!-- Content -->
@@ -84,6 +102,8 @@
 			<InventurAdmin />
 		{:else if activeView === 'geraete'}
 			<GeraeteVerwaltung />
+		{:else if activeView === 'abgangsbuch'}
+			<Abgangsbuch />
 		{/if}
 	</div>
 </PageShell>

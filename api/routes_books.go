@@ -44,6 +44,12 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("POST /api/exemplare/etiketten-zuruecksetzen", s.RequirePermission("edit_books")(s.EtikettenZuruecksetzenHandler()))
 	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.EtikettenAltbestandHandler()))
 
+	// Das Abgangsbuch: welche Exemplare in einem Zeitraum aus dem Bestand gingen
+	// (Protokoll des Medienzentrums vom 16.09.2026, Punkt 1). view_books wie der übrige
+	// Blick auf den Bestand — es ist ein Nachweis, der nichts ändert.
+	mux.Handle("GET /api/bestand/abgangsbuch", s.RequirePermission("view_books")(s.AbgangsbuchHandler()))
+	mux.Handle("GET /api/bestand/abgangsbuch/pdf", s.RequirePermission("view_books")(s.AbgangsbuchPDFHandler()))
+
 	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler(auditRepo)))
 
 	// Update specific copy fields

@@ -71,3 +71,34 @@ func TagesEnde(t time.Time) time.Time {
 	d := t.In(loc)
 	return time.Date(d.Year(), d.Month(), d.Day(), 23, 59, 59, 0, loc)
 }
+
+// Halbjahr liefert das Schulhalbjahr, in dem ein Tag liegt — als Kalendertage von/bis.
+//
+// Die Stichtage sind der 15.3. und der 15.9.: An ihnen verlangt die Arbeitshilfe den
+// Ausdruck der Bestandskartei, und „je Schulhalbjahr ein Ausdruck der Neuanschaffungen"
+// meint dieselben zwei Schnitte (docs/mittel_konzept.md 7.1). Ein Halbjahr läuft also vom
+// 16.3. bis 15.9. und vom 16.9. bis 15.3. des Folgejahres.
+//
+// Das ist NICHT das Schuljahr (1.8.–31.7.), und die Unterscheidung ist der Grund für diese
+// Funktion: Wer beides im Kopf zusammenzieht, bekommt eine Liste, die einen Stichtag
+// verfehlt — und der Nachweis, den die Schule abheftet, deckt dann einen anderen Zeitraum
+// ab als den, den er behauptet.
+func Halbjahr(t time.Time) (von, bis time.Time) {
+	loc := Zone()
+	d := t.In(loc)
+	tag := func(jahr int, monat time.Month, tag int) time.Time {
+		return time.Date(jahr, monat, tag, 0, 0, 0, 0, loc)
+	}
+	fruehling := tag(d.Year(), time.March, 16)  // Beginn des Sommerhalbjahres
+	herbst := tag(d.Year(), time.September, 16) // Beginn des Winterhalbjahres
+
+	switch {
+	case d.Before(fruehling):
+		// Januar bis 15.3.: Das Halbjahr hat im Vorjahr begonnen.
+		return tag(d.Year()-1, time.September, 16), tag(d.Year(), time.March, 15)
+	case d.Before(herbst):
+		return fruehling, tag(d.Year(), time.September, 15)
+	default:
+		return herbst, tag(d.Year()+1, time.March, 15)
+	}
+}

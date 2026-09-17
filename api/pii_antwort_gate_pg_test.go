@@ -329,11 +329,17 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/mahnwesen/pdf":                   {URL: "/api/mahnwesen/pdf"},
 
 		// routes_books.go
-		"GET /api/buecher/titel/{id}/exemplare":      {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
-		"GET /api/buecher/titel/suche":               {URL: "/api/buecher/titel/suche?q=Antwortgate", Positiv: []string{"Antwortgate Testband"}},
-		"GET /api/buecher/titel/{id}/ausleiher":      {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
-		"GET /api/buecher/titel/{id}/historie":       {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
-		"GET /api/buecher/titel/{id}/etiketten":      {URL: "/api/buecher/titel/" + w.titelID + "/etiketten"},
+		"GET /api/buecher/titel/{id}/exemplare": {URL: "/api/buecher/titel/" + w.titelID + "/exemplare"},
+		"GET /api/buecher/titel/suche":          {URL: "/api/buecher/titel/suche?q=Antwortgate", Positiv: []string{"Antwortgate Testband"}},
+		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
+		"GET /api/buecher/titel/{id}/historie":  {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
+		"GET /api/buecher/titel/{id}/etiketten": {URL: "/api/buecher/titel/" + w.titelID + "/etiketten"},
+		// Das Abgangsbuch (17.09.2026, OFFEN.md 9.3 d): Stufe 0. Es nennt Exemplare, keine
+		// Leser — auch nicht beim Grund „Verlust", obwohl dort ein Schüler dahintersteht.
+		// Genau das prüft das Gate hier mit: Der Kanarienvogel darf auf diesem Blatt nicht
+		// auftauchen. Zeitraum weit genug, dass die Aussonderung der Kanarienwelt hineinfällt.
+		"GET /api/bestand/abgangsbuch":               {URL: "/api/bestand/abgangsbuch?von=2000-01-01&bis=2099-12-31"},
+		"GET /api/bestand/abgangsbuch/pdf":           {URL: "/api/bestand/abgangsbuch/pdf?von=2000-01-01&bis=2099-12-31"},
 		"GET /api/exemplare/etiketten-offen":         {URL: "/api/exemplare/etiketten-offen"},
 		"GET /api/exemplare/etiketten-offen/anzahl":  {URL: "/api/exemplare/etiketten-offen/anzahl"},
 		"GET /api/vormerkungen":                      {URL: "/api/vormerkungen?titel_id=" + w.titelID, Positiv: []string{"Pruefkanari"}},
