@@ -617,11 +617,20 @@ Die Pflichtliste in `.github/workflows/release.yml` enthält keinen der Security
 das Release; für das Image siehe 5.10. **Frage:** aufnehmen oder begründet so lassen? Bei Ja prüft
 `docs/umgebung_paritaet_test.go` auch `security-scan.yml`. **Wann:** vor dem nächsten Release.
 
-### 4.10 Zwei offene Jules-PRs
+### 4.10 Offene PRs (Stand 17.09.2026)
 
-#621 (CTE für die Klassensatz-Verfügbarkeit; laut Messung vom 13.09.2026 langsamer als die
-bestehende Abfrage, nicht wiederholt) und #620 (`title` an gesperrten Knöpfen des Planers). Dazu
-die Remote-Branch des geschlossenen PR #611. **Vorschlag:** beide schließen, Branch löschen.
+**Fünf Jules-PRs, aber nur zwei Themen.** #621, #624 und #626 schlagen dreimal dieselbe Sache vor
+(CTE für die Klassensatz-Verfügbarkeit; laut Messung vom 13.09.2026 langsamer als die bestehende
+Abfrage, nicht wiederholt), #620 und #625 zweimal dieselbe (`title` an gesperrten Knöpfen des
+Planers). Dazu die Remote-Branch des geschlossenen PR #611
+(`fix/cron-dsgvo-test-comment-5377838966258287578`). **Vorschlag:** alle schließen, Branches
+löschen.
+
+**Zwei Dependabot-PRs, seit dem 14.09.2026 offen** — sie standen bis heute in keiner Liste:
+#622 (Go, sechs Pakete; `build-and-test` ist ROT) und #623 (npm, sieben Pakete, Prüfungen grün).
+Auto-Merge ist aus, also entscheidet sie jemand von Hand. **Vorschlag:** #623 übernehmen; bei #622
+zuerst die rote Prüfung ansehen — ein blankes Update hat den Build schon einmal gebrochen, deshalb
+gilt „gezielt statt in einem Rutsch".
 
 ### 4.11 Topf auf der Bestätigungsseite und den großen Etiketten
 
@@ -810,7 +819,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   bleibt die Akte leer — `StudentProfile.svelte` hat nach `{:else if st.profile}` kein `{:else}`.
   Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026 (1.5); der Kopf ist der
   verbliebene Eintrag in `fehlerausgang.test.js`. Ein `{:else}` mit `LadeFehler` braucht Platz:
-  die Datei steht an der Größen-Ratsche (244 Zeilen). Gefunden beim Bau von 1.5.
+  die Datei steht an der Größen-Ratsche (238 Zeilen). Gefunden beim Bau von 1.5.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -818,9 +827,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   prüft nur die Gegenrichtung.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT; die Schema-Parität
   vergleicht Funktionen nur am Namen.
-- Mindestens zehn Ratschen haben keine Zeile in der Landkarte von [sweeps.md](sweeps.md), u. a.
-  `docs/werkzeuge_im_image_test.go`, `docs/compose_variablen_test.go`,
-  `frontend-hygiene-dialoge/-ladekreis/-schalter/-tabellen.test.js`; Regel 7 hat keine Ratsche.
+- Mehrere Ratschen haben keine Zeile in der Landkarte von [sweeps.md](sweeps.md), heute noch
+  `frontend-hygiene-dialoge/-ladekreis/-schalter.test.js`; Regel 7 hat keine Ratsche.
+  (`docs/werkzeuge_im_image_test.go`, `docs/compose_variablen_test.go` und
+  `frontend-hygiene-tabellen.test.js` stehen inzwischen drin — am 17.09.2026 nachgezählt.)
   (Die seit dem 17.09.2026 neu gebauten Ratschen tragen sich beim Bauen selbst ein — der
   Rückstand betrifft die älteren.)
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
