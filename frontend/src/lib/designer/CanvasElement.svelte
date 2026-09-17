@@ -1,4 +1,5 @@
 <script>
+	import { strichcodeBildUrl } from '../strichcodeBild.js';
 	/**
 	 * @file CanvasElement.svelte
 	 * EIN Element auf dem Reißbrett des Ausweis-Designers: Darstellung je Elementart
@@ -101,8 +102,11 @@
 		<div class="w-full h-full flex flex-col items-center justify-center">
 			{#if student}
 				<img
-					src="/api/barcode?content={student.barcode_id}&qr={barcodeType ===
-						'qr'}&width={barcodeType === 'qr' ? 80 : 200}&height={barcodeType === 'qr' ? 80 : 50}"
+					src={strichcodeBildUrl(student.barcode_id, {
+						qr: barcodeType === 'qr',
+						width: barcodeType === 'qr' ? 80 : 200,
+						height: barcodeType === 'qr' ? 80 : 50
+					})}
 					class="max-w-full max-h-full object-contain pointer-events-none"
 					alt="Barcode"
 				/>

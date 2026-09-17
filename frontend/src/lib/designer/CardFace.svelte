@@ -1,4 +1,5 @@
 <script>
+	import { strichcodeBildUrl } from '../strichcodeBild.js';
 	/**
 	 * @file CardFace.svelte
 	 * Rendert EINE Ausweisseite (front/back) aus dem zentralen Element-Modell für einen
@@ -128,8 +129,11 @@
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
 		>
 			<img
-				src="/api/barcode?content={student.barcode_id}&qr={barcodeType ===
-					'qr'}&width={barcodeType === 'qr' ? 80 : 200}&height={barcodeType === 'qr' ? 80 : 50}"
+				src={strichcodeBildUrl(student.barcode_id, {
+					qr: barcodeType === 'qr',
+					width: barcodeType === 'qr' ? 80 : 200,
+					height: barcodeType === 'qr' ? 80 : 50
+				})}
 				class="{barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[8mm]'} object-contain"
 				alt="Barcode"
 			/>

@@ -1,4 +1,5 @@
 <script>
+	import { strichcodeBildUrl } from '../../strichcodeBild.js';
 	import { formatKurzname } from '../../etikettformate.js';
 	import { labelStore } from '../../stores/labels.svelte.js';
 	import { printQueue } from '../../stores/printQueue.svelte.js';
@@ -73,8 +74,11 @@
 							</div>
 							<div class="flex flex-col items-center justify-center grow pt-0.5">
 								<img
-									src="/api/barcode?content={lbl.barcode_id}&qr={labelStore.barcodeType ===
-										'qr'}&width=150&height=50"
+									src={strichcodeBildUrl(lbl.barcode_id, {
+										qr: labelStore.barcodeType === 'qr',
+										width: 150,
+										height: 50
+									})}
 									class="{labelStore.barcodeType === 'qr'
 										? 'h-6 w-6'
 										: 'h-4 w-full'} object-contain"
