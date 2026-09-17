@@ -23,22 +23,53 @@ import (
 // Arbeitsverzeichnis des Servers.
 const Wurzel = "uploads"
 
+// zerlegeCoverURL prüft die Cover-URL und liefert den Dateipfad zweimal: einmal relativ
+// zur Wurzel (so verlangt es os.Root) und einmal vollständig, weil die PDF-Erzeuger ihn
+// als Namen ihres Bildspeichers führen. ok=false heißt: nicht verwendbar.
+//
+// Die Herkunftsprüfung ganz oben ist KEIN Schutz — das ist os.Root beim Zugriff (siehe
+// oeffneWurzel), und nur der ließ sich am Rückbau rot zeigen. Sie steht hier als
+// Vorfilter: Die allermeisten Titel haben gar kein Cover (gemessen am 17.09.2026: 3168
+// von 3233 mit leerem cover_url), und für die soll kein Verzeichnis geöffnet werden.
+// Eine zweite Textprüfung auf „beginnt mit uploads/" stand hier bis zum 17.09.2026;
+// sie war gegenüber os.Root wirkungslos und ist ersatzlos entfallen.
+func zerlegeCoverURL(coverURL string) (rel, pfad string, ok bool) {
+	if !strings.HasPrefix(coverURL, "/"+Wurzel+"/") {
+		return "", "", false
+	}
+	pfad = filepath.Clean(strings.TrimPrefix(coverURL, "/"))
+	rel, err := filepath.Rel(Wurzel, pfad)
+	if err != nil {
+		return "", "", false
+	}
+	return rel, pfad, true
+}
+
+// oeffneWurzel öffnet das Upload-Verzeichnis als os.Root. Erst diese Klammer hält auch den
+// Fall auf, den die Textprüfung oben nicht sehen kann: eine Verknüpfung INNERHALB von
+// uploads, die nach draußen zeigt. os.Stat würde ihr folgen, root.Stat verweigert sie.
+func oeffneWurzel() (*os.Root, bool) {
+	wurzel, err := os.OpenRoot(Wurzel)
+	if err != nil {
+		return nil, false
+	}
+	return wurzel, true
+}
+
 // Pfad löst die Cover-URL eines Titels in einen lesbaren lokalen Dateipfad auf.
 // Rückgabe "" heißt: kein verwendbares Cover — der Aufrufer zeichnet dann nur den Rahmen.
-//
-// Der Clean-und-Prefix-Test ist kein Selbstzweck: Ohne ihn würde eine Cover-URL wie
-// "/uploads/../../etc/passwd" aus dem Upload-Verzeichnis ausbrechen und beliebige
-// Dateien in ein PDF einbetten lassen. Die Cover-URL stammt aus der Datenbank und
-// damit aus Importen — sie ist keine geprüfte Eingabe.
 func Pfad(coverURL string) string {
-	if !strings.HasPrefix(coverURL, "/"+Wurzel+"/") {
+	rel, pfad, ok := zerlegeCoverURL(coverURL)
+	if !ok {
 		return ""
 	}
-	pfad := filepath.Clean(strings.TrimPrefix(coverURL, "/"))
-	if pfad != Wurzel && !strings.HasPrefix(pfad, Wurzel+string(filepath.Separator)) {
+	wurzel, ok := oeffneWurzel()
+	if !ok {
 		return ""
 	}
-	info, err := os.Stat(pfad)
+	defer closeutil.LogClose(wurzel, "coverdatei wurzel")
+
+	info, err := wurzel.Stat(rel)
 	if err != nil || info.IsDir() {
 		return ""
 	}
@@ -50,22 +81,19 @@ func Pfad(coverURL string) string {
 //
 // Jeder Fehler führt zu ok=false statt zu einem Fehlerwert: Ein unlesbares, defektes
 // oder überdimensioniertes Cover darf nie das ganze Dokument kosten. Es fehlt dann
-// still — genau eine Zeile ohne Bild statt einer Liste, die mit 500 endet.
+// still — genau eine Zeile ohne Bild statt einer Liste, die mit 500 endet. Ein
+// Verzeichnis braucht keine eigene Abweisung: io.ReadAll scheitert daran von selbst.
 func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
-	pfad = Pfad(coverURL)
-	if pfad == "" {
+	rel, pfad, ok := zerlegeCoverURL(coverURL)
+	if !ok {
 		return nil, "", false
 	}
-	wurzel, err := os.OpenRoot(Wurzel)
-	if err != nil {
+	wurzel, ok := oeffneWurzel()
+	if !ok {
 		return nil, "", false
 	}
 	defer closeutil.LogClose(wurzel, "coverdatei wurzel")
 
-	rel, err := filepath.Rel(Wurzel, pfad)
-	if err != nil {
-		return nil, "", false
-	}
 	f, err := wurzel.Open(rel)
 	if err != nil {
 		return nil, "", false
