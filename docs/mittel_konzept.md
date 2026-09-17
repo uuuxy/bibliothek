@@ -185,8 +185,9 @@ Schulaufsicht ordnet Zahlungen darüber zu). `mittel` ist dasselbe Vokabular wie
 
 ### 4.2 Betrag: Vorschlag, kein Automat (`pkg/ersatzwert`)
 
-Reine Funktion `Ersatzwert(verleihjahr, kaufpreis, neupreis) (betrag, prozent, basis)`
-nach der Staffel der Schule. `verleihjahr = max(Anzahl Schuljahre mit Ausleihe des
+Reine Funktion `Rechne(verleihjahr, kaufpreis, neupreis, zustandAbschlag, quelle) Vorschlag`
+nach der Staffel der Schule (seit dem 17.09.2026 mit dem Zustands-Abschlag des Exemplars und
+der eingestellten Preisquelle; `RechneNeuwert` ist derselbe Weg ohne Staffel). `verleihjahr = max(Anzahl Schuljahre mit Ausleihe des
 Exemplars, Schuljahre seit erworben_am + 1)` — die zweite Größe fängt den Littera-Altbestand
 ohne Historie ab (ein 2019 gekauftes Buch ist nicht im 1. Verleihjahr, nur weil wir seine
 Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 60 % von

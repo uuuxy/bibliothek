@@ -58,7 +58,7 @@ damit erledigt:**
   Für ein Buch der Bücherei steht dort, dass die Bankverbindung des Schulträgers fehlt: Wohin
   dieses Geld gehen soll, ist eine Frage an den Träger (8.3), und ein Brief darf sich das nicht
   ausdenken. Trägt eine Rechnung beides, stehen beide Wege mit ihrer eigenen Summe da.
-- **Zugangs- und Abgangsbuch gibt es** (Punkt 1). Im Medienkatalog stehen zwei neue Reiter:
+- **Zugangs- und Abgangsbuch gibt es** (Punkt 1). Zwei Listen mit je einem Reiter:
   Welche Bücher sind in diesem Halbjahr in den Bestand gekommen (mit Lieferant) und welche
   sind hinausgegangen (mit Grund) — getrennt nach Land und Schulträger, jedes mit einem Blatt
   zum Ausdrucken und Abheften. **Zwei Dinge sagen die Blätter ausdrücklich:** Bücher, die VOR
@@ -1688,14 +1688,15 @@ Quelltext-Ratsche gegen Schreiber am Datum) und
 `inventur/abgangsdatum_bestandskorrektur_pg_test.go` (die zwei Türen im anderen Paket). Am
 Trigger-losen Schema rot gesehen.
 
-**Der Ausdruck ist gebaut (17.09.2026).** Medienkatalog → Reiter „Abgangsbuch": Zeitraum
+**Der Ausdruck ist gebaut (17.09.2026).** System → „Bestandsbücher", Reiter „Abgangsbuch"
+(bis zum Abend im Medienkatalog): Zeitraum
 vorbelegt mit dem laufenden Schulhalbjahr (Stichtage 15.3./15.9., dieselben wie die
 Bestandskartei), beide Felder überschreibbar; zwei Abschnitte je Topf mit eigener Stückzahl;
 Blatt zum Abheften über `GET /api/bestand/abgangsbuch/pdf`. Der Zeitraum wird am Server
 bestimmt — die Oberfläche rechnet ihn nicht selbst nach, sonst deckte der Ausdruck einen
 anderen ab als die Liste davor. Unter dem Blatt steht die Zahl der Abgänge OHNE Zeitpunkt,
-statt Vollständigkeit zu behaupten. Er sitzt im Medienkatalog und nicht im Druck-Center: Er
-ist ein Bestandsnachweis, kein Etikettendruck — und daneben ist Platz für das Zugangsbuch.
+statt Vollständigkeit zu behaupten. Er sitzt nicht im Druck-Center: Er ist ein
+Bestandsnachweis, kein Etikettendruck — und neben ihm ist Platz für das Zugangsbuch.
 
 Gates: `api/abgangsbuch_pg_test.go` (Ränder des Halbjahres, Topf-Trennung, Zurückgeholtes,
 Blatt aus dem Inhaltsstrom), `frontend/e2e/abgangsbuch.spec.js` (am Draht, am Rückbau der

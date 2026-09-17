@@ -73,7 +73,11 @@ beides einstellbar (_Datenschutz & Sitzung_).
 - **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur; Kartenansicht mit
   Cover und Signatur.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
-  (Warteliste mit Schüler-Suche), Historie.
+  (Warteliste mit Schüler-Suche), Historie. An jedem Exemplar steht, **was es heute noch
+  wert ist**, samt Herleitung („3. Verleihjahr → 60 % von 24,90 €"). Ist ein Buch
+  beschädigt, tragen Sie im Zustands-Dialog einen Prozentwert ein (z. B. 20 % für einen
+  Wasserschaden): Er mindert jeden künftigen Ersatzbetrag, zieht das Buch aber nicht aus
+  dem Verkehr. Erfasst wird das nach der Rückgabe hier, nicht an der Theke. (§14)
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
   Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen, Meldebestand,
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben
@@ -397,6 +401,21 @@ Bestand, aktuell verliehen, Zirkulationsquote, Wiederbeschaffungswert; Ausleihen
 nicht ausgeliehen) mit Detailseite und Filter. Ohne Schülernamen — die Statistik zählt
 Ausleihen, nicht Personen. (§11)
 
+## Bestandsbücher
+
+Zwei Reiter, beide mit einem Blatt zum Ausdrucken und Abheften: **Zugangsbuch** (welche
+Exemplare in einem Zeitraum in den Bestand gekommen sind — Eingangsdatum, Nummer, Titel,
+Lieferant) und **Abgangsbuch** (welche hinausgegangen sind — Datum, Nummer, Titel,
+Signatur, Grund). Vorbelegt ist das laufende Schulhalbjahr mit den Stichtagen 15.3. und
+15.9.; beide Datumsfelder lassen sich überschreiben. Land und Schulträger stehen getrennt,
+jeweils mit eigener Stückzahl.
+
+**Was nicht auf dem Blatt steht, steht ausdrücklich darunter:** Exemplare, die vor der
+Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum — ihre Zahl
+nennt der Ausdruck, statt Vollständigkeit zu behaupten. Im Zugangsbuch stehen Bücher ohne hinterlegte
+Bestellung unter „ohne Zuordnung", weil nicht belegt ist, aus welchem Geld sie bezahlt
+wurden. (§13)
+
 ## System-Logs
 
 _Allgemeines Logbuch_ (jede Buchung) und _Admin-Audit-Log_ (wer hat wann was geändert).
@@ -436,7 +455,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Mahnwesen-Routing       | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
 | Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                                                                                                                                                                                                                                                                                              |
 | Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                                                                                                                              |
-| Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage)                                                                                                                                                                                 |
+| Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage); **„Immer mit dem Einkaufspreis rechnen"** — aus gilt der heutige Listenpreis (so verlangt es die Arbeitshilfe), an immer der Preis, den die Schule damals bezahlt hat                                                                                                                                                                                 |
 | Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                                                                                                                                                                                                                                                                                              |
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                                                                                                                                                                                                                                                                                          |
 | Mail                    | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler)                                                                                                                                                                                                                                                                                                                 |

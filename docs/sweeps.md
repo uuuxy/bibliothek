@@ -1,7 +1,7 @@
 # Sweeps — der Prüfvorrat über den Bestand
 
-**Zweck:** Daniels Raster (siehe `invarianten.md`, zwölf Fragen) prüft
-eine **Änderung**: Wenn ein Schreibpfad seine Form wechselt, werden die elf Fragen
+**Zweck:** Daniels Raster (siehe `invarianten.md`, dreizehn Fragen) prüft
+eine **Änderung**: Wenn ein Schreibpfad seine Form wechselt, werden sie
 gestellt. Es sieht nicht, was schon da ist. Diese Seite ist die zweite Achse — der
 **Bestand**: bekannte Bugklassen, je mit einem Suchmuster, das über den ganzen Code
 läuft, und einem Gate, das die Klasse danach nicht mehr hereinlässt.
