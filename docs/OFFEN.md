@@ -1562,15 +1562,58 @@ Gegenteil dessen, was die prüfende Stelle verlangt — und mit der Spalte fiele
 die es dafür schon gibt. **Die Entscheidung gehört zurück auf den Tisch, bevor die Messung aus
 4.3 läuft.** Solange sie offen ist, wird `ziel_jahrgang` nicht angefasst.
 
-### 9.7 Fragen an Peter
+### 9.7 Stand der Fragen
 
-1. **Sperre bei offener Forderung** (9.3 c): ganz abschaffen, nur für Lernmittel aussetzen, oder
-   beim Medienzentrum nachfragen, worauf sich „LMF untersagt dies" stützt? *Vorschlag:
-   nachfragen und bis dahin für Lernmittel aussetzen* — ein Kind ohne Schulbuch ist ein
-   Unterrichtsproblem, ein Kind ohne Roman nicht.
-2. **Abwertung und Beschädigungsgrad als Dauerzustand** (9.3 e, Nr. 1 und 2): Die begründete
-   Abweichung beibehalten und dem Medienzentrum erklären, oder bauen, was die Liste wörtlich
-   verlangt? *Vorschlag: erklären* — ein laufend abgewerteter Buchwert steuert außerhalb einer
-   Forderung nichts.
-3. **Mehrjahresbände** (9.6): bauen statt streichen — bestätigst du das?
-4. **Alte Strichcodes** (9.2): Nachsicht bauen oder alles neu drucken?
+1. **Sperre bei offener Forderung** (9.3 c): Die Frage geht ans Medienzentrum (Text am
+   17.09.2026 formuliert): Gilt das Verbot nur für Lernmittel oder für jede Ausleihe, worauf
+   stützt es sich, und zählt eine übergehbare Abweisung schon als „Sperrung"? Bis zur Antwort
+   bleibt es, wie es ist.
+2. **Abwertung und Beschädigungsgrad** — **entschieden am 17.09.2026: so wie das Medienzentrum
+   es sagt.** Umsetzung und der Konflikt, der darin steckt: 9.8.
+3. **Mehrjahresbände** (9.6): Was das Medienzentrum wörtlich sagt, ist nur der eine Satz „Bei
+   den Ausleihfristen fehlt das Jahr. Mehrjahresbände lassen sich nicht abbilden." Mehr steht
+   nicht im Protokoll. Die Deutung geht mit an das Medienzentrum (Frage 2 des Schreibens).
+   **4.3 bleibt bis dahin gestoppt.**
+4. **Alte Strichcodes** — **entschieden am 17.09.2026: sie sollen weiter funktionieren, das war
+   von Anfang an gefordert.** Gebaut, siehe 9.2.
+
+### 9.8 Abwertung und Beschädigungsgrad — Bauplan (nach Entscheidung vom 17.09.2026)
+
+Umzusetzen sind die Punkte 1, 2 und 3 der Anforderungsliste „Mahnverfahren":
+
+1. Medien automatisch abwerten, zeitbasiert (z. B. 10 % pro Jahr) oder nutzungsbasiert.
+2. Beschädigungen bei Katalogisierung und Rückgabe mit einem Prozentwert erfassen (z. B. 20 %
+   durch Wasserschaden); der Buchwert sinkt dadurch.
+3. Einkaufspreis UND Listenpreis hinterlegen, für das Mahnwesen auswählbar, welcher gilt.
+
+**Der Konflikt, der in Nr. 1 steckt — und warum er auflösbar ist.** „10 % pro Jahr" ist nicht
+die Staffel des Erlasses vom 17.12.2014 (100/80/60/40/20, ab dem 6. Jahr 10 %). Für Lernmittel
+ist die Staffel bindend; ein zweiter, frei eingestellter Abwertungssatz ergäbe für dasselbe Buch
+zwei Beträge, und im Bescheid an Eltern stünde der falsche. Aufzulösen ist das, weil die Staffel
+SELBST die zeitbasierte Abwertung ist — sie wird heute nur nicht als Dauerzustand geführt,
+sondern erst im Dialog gerechnet. Was fehlt, ist die Sichtbarkeit, nicht die Rechnung.
+
+Nr. 2 ist dagegen ohne Konflikt: Die Arbeitshilfe stellt den Betrag ausdrücklich ins Ermessen
+der Schule „je nach Zustand des Lehrwerks, Ausleihhäufigkeit etc." — ein erfasster
+Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
+
+**Vier Stufen; Stufe 1 ändert das Schema und braucht Peters Freigabe:**
+
+1. **Migration.** `buecher_titel.listenpreis` (Neupreis zum heutigen Tag, nullbar) und
+   `buecher_exemplare.zustand_abwertung_prozent` (0–100, Vorgabe 0). Zwei Spalten, keine
+   Trigger, keine Rückfüllung — Altbestand startet mit 0 und leerem Listenpreis.
+2. **Der Buchwert wird sichtbar.** Am Exemplar steht, was es heute wert ist: Basis (Listenpreis,
+   sonst Kaufpreis), Verleihjahr, Staffelsatz, Zustandsabschlag, Ergebnis. Dieselbe Rechnung wie
+   der Vorschlag im Melde-Dialog — `pkg/ersatzwert` bekommt den Abschlag als weiteren Faktor,
+   eine zweite Rechnung entsteht nicht.
+3. **Beschädigung erfassen.** Bei der Rückgabe und in der Exemplar-Akte ein Prozentfeld neben
+   der vorhandenen `zustand_notiz`. Der Wert ist ein ZUSTAND des Exemplars, keine Forderung —
+   er wirkt auf jeden künftigen Ersatzbetrag, erzeugt aber von sich aus keinen.
+4. **Berechnungsgrundlage wählbar.** Eine Einstellung in der Kategorie „Schadensersatz":
+   Listenpreis bevorzugen oder immer Einkaufspreis. Die Herleitung nennt weiterhin, welcher
+   Preis benutzt wurde.
+
+**Offene Frage vor Stufe 2:** Gilt der Zustandsabschlag auch für den Bestand der
+Schülerbücherei? Dort ist der Ersatz der Neuwert ohne Altersabschlag (Benutzungsordnung) — ein
+Abschlag für Beschädigung wäre aber auch dort plausibel. *Vorschlag: ja, er zählt; der
+ALTERSabschlag bleibt auf Lernmittel beschränkt.*
