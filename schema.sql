@@ -638,13 +638,18 @@ CREATE INDEX IF NOT EXISTS idx_exemplare_ausgesondert_am
 -- Migration 129: das Gegenstück zum Abgangsdatum. Gestempelt wird nur, solange die Spalte
 -- NULL ist — ein zweites Update verschiebt den Zugang nicht. Ausgesondert wird nicht
 -- gestempelt: Ein bestelltes Exemplar, das nie ankam, ist kein Zugang.
+--
+-- Migration 130: der Tag kommt aus der SCHULZEITZONE, nicht aus CURRENT_DATE. Die
+-- Sitzung läuft in UTC; bis 2 Uhr Berliner Zeit ist CURRENT_DATE dort noch der Vortag,
+-- und ein Wareneingang um halb eins landete damit im falschen Halbjahr des
+-- Zugangsbuchs. Gleiche Rechnung wie pkg/schulzeit (SQLHeute).
 CREATE OR REPLACE FUNCTION stempel_zugang_am()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         NEW.zugang_am := NEW.erworben_am;
     ELSE
-        NEW.zugang_am := CURRENT_DATE;
+        NEW.zugang_am := (now() AT TIME ZONE 'Europe/Berlin')::date;
     END IF;
     RETURN NEW;
 END $$;
@@ -1498,7 +1503,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('126_auflage_am_titel.sql'),
 ('127_listenpreis_und_zustandsabwertung.sql'),
 ('128_abgangsdatum_am_exemplar.sql'),
-('129_zugangsdatum_am_exemplar.sql')
+('129_zugangsdatum_am_exemplar.sql'),
+('130_zugang_am_in_schulzeit.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
