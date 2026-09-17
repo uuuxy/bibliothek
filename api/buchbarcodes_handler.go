@@ -156,6 +156,15 @@ func schreibeVielleichtGepackt(w http.ResponseWriter, r *http.Request, daten any
 
 // zaehlendeSchreiber zählt, wie viel wirklich über die Leitung ging — die Zahl im Log
 // soll die ausgelieferte Größe nennen, nicht die vor dem Packen.
+//
+// CodeQL meldet hier go/reflected-xss (Alarm 30, 15.09.2026) und liegt falsch. Der
+// gemeldete Weg führt vom Anfragekörper des Mahnwesens über api/mail_sender.go zu
+// `part.Write([]byte(req.Body))` — und von dort hierher: `part` ist ein io.Writer, und
+// CodeQL löst den Aufruf gegen JEDE Write([]byte)-Methode des Programms auf, auch gegen
+// diese. In Wirklichkeit schreibt die Mail nie in diesen Schreiber, und die Antwort
+// dieses Handlers enthält keinen Wert aus der Anfrage: nur den Stand (SHA-256 über
+// Bestandszahlen), die Anzahl und die Barcodes aus der Datenbank. Wer den Alarm erneut
+// sieht: Es ist die Überannäherung der Schnittstellen-Auflösung, nicht der Content-Type.
 type zaehlendeSchreiber struct {
 	w http.ResponseWriter
 	n int
