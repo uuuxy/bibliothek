@@ -514,33 +514,27 @@ Zwei Dinge laufen automatisch, ein drittes bewusst nicht:
 | Git-Tag `v1.2.3`      | Image `1.2.3` und `1.2` (**kein** `latest`, siehe unten) **und** GitHub-Release mit generierten Notes | `docker-publish.yml` + `release.yml` |
 | Deploy auf dem Server | **nicht** automatisch — `./update.sh` (git pull + lokaler Build), siehe §2                            | —                                    |
 
-**Welche Zahl steigt** (entschieden am 17.09.2026, weil die Frage beim Release v2.14.0 aufkam):
+**Welche Zahl steigt** (entschieden am 17.09.2026, weil die Frage beim Release nach v2.13.0 aufkam):
 
 Die mittlere Zahl ist ein ZÄHLER, kein Nachkommawert: Auf v2.13.0 folgt v2.14.0, nicht
 v2.5.0. Das klingt selbstverständlich, sieht im Verzeichnis aber falsch sortiert aus, wenn
 Werkzeuge alphabetisch listen — daher der Satz hier.
 
-Die erste Zahl ist für den Fall reserviert, in dem ein Aufspielen **Handarbeit** verlangt:
-ein Umzug auf einen anderen Server, ein Schlüsselwechsel, eine Migration, die eine
-Entscheidung über Daten braucht. Nicht für „viel Neues" und auch nicht automatisch dafür,
-dass eine Route verschwindet.
+Die erste Zahl steigt, wenn sich **die Form ändert, nicht nur der Umfang**: das Datenmodell,
+das Vokabular der Fachlichkeit oder eine Schnittstelle, die es vorher gab und danach nicht
+mehr. Nicht für „viel Neues" — 175 Commits allein sind kein Grund.
 
-Der Prüfstein ist nicht die Menge der Änderung, sondern die Frage: **Bricht sie jemandem
-etwas, der sie benutzt?** v2.14.0 ist das Beispiel, an dem sich das zeigt — es war der
-größte Stand der 2er-Reihe (175 Commits, acht Migrationen, aus der Schülerdatei wurde die
-Leserdatei, `schueler` ist seither eine Sicht), und trotzdem eine Minor-Version:
+**v3.0.0 ist das Beispiel dafür.** Aus der Schülerdatei wurde die Leserdatei: `schueler` ist
+seit Migration 124 keine Tabelle mehr, sondern eine Sicht auf `leser`; Kollegium und
+Schülerschaft stehen in einem Verzeichnis mit einem Nummernkreis; zwei Routen
+(`GET /api/readergroups`, `POST /api/buecher/exemplare/{id}/defekt`) sind ersatzlos
+entfallen. Dass beide Routen niemand mehr aufrief und das Aufspielen ein Selbstläufer bleibt,
+ändert daran nichts: Wer in einem halben Jahr sucht, wann aus Schülern Leser wurden, soll die
+Stelle an der Nummer finden und nicht in 175 Commit-Nachrichten.
 
-- Die zwei entfallenen Routen (`GET /api/readergroups`,
-  `POST /api/buecher/exemplare/{id}/defekt`) wurden entfernt, WEIL sie niemand aufrief
-  (OFFEN.md 4.16). Eine Tür abzureißen, durch die nie jemand ging, bricht nichts.
-- Die einzige Anwendung, die diese Schnittstellen benutzt, ist die Oberfläche — und die
-  liegt im selben Image, aus demselben Commit. Es gibt keinen fremden Aufrufer, der auf
-  einer alten Fassung stehen bliebe.
-- Das Aufspielen bleibt ein Selbstläufer: Die Migrationen laufen beim Start, Daten gehen
-  keine verloren.
-
-Eine Hauptversion, die für „großen Umbau" vergeben wird, entwertet das Signal für den Tag,
-an dem wirklich jemand von Hand ran muss. Dafür ist sie da.
+Woran man es NICHT festmacht: an der Menge der Commits, an der Zahl der Migrationen und
+daran, ob beim Aufspielen Handarbeit nötig ist. Das Letzte gehört in die Release-Notiz — und
+zwar immer, auch bei einer Minor-Version.
 
 **Release machen** (auf grünem `main`, vom Repo-Root):
 
