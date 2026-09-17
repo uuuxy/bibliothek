@@ -140,6 +140,21 @@ type BookTitle struct {
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
 	// ErweiterteEigenschaften speichert zusätzliche dynamische Metadaten als JSON-Map.
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften,omitempty"`
+
+	// Bestand und Verfuegbar füllen NUR die Suchabfragen (SearchTitles,
+	// SearchTitlesFuzzy) — Protokoll des Medienzentrums vom 16.09.2026, Punkt 4:
+	// „Bücher, zu denen es keine Exemplare gibt, tauchen in der Trefferliste auf."
+	// Ein Titel ohne Exemplare ist ein legitimer Zustand (angelegt ohne
+	// Bestandsangabe, Altbestand aus Littera) — verstecken wäre falsch, aber die
+	// Trefferliste muss es SAGEN.
+	//
+	// Zeiger, weil „nicht mitgeliefert" und „null Exemplare" zwei verschiedene
+	// Dinge sind: Jede andere Abfrage, die einen Titel liefert (Katalog, Import,
+	// Bestellwesen), lässt die Felder nil, und die Oberfläche schreibt dann gar
+	// nichts statt „0 Exemplare" über einen Titel, dessen Bestand niemand gezählt
+	// hat.
+	Bestand    *int `json:"bestand,omitempty"`
+	Verfuegbar *int `json:"verfuegbar,omitempty"`
 }
 
 // BookCopy repräsentiert ein physisches Einzelexemplar eines Buchs (Tabelle `buecher_exemplare`).

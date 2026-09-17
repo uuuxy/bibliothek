@@ -1544,12 +1544,24 @@ Rechnung über den Knopf in `StudentProfileActions.svelte` schon. Steht als Abr�
 
 ### 9.4 Titel mit 0 Exemplaren (Protokoll 4)
 
-`repository/book_search.go` (`SearchTitles`) filtert nicht auf vorhandene Exemplare und liefert
-auch keine Bestandszahl — die Theke zeigt solche Titel also ohne jeden Hinweis in der
-Trefferliste. Der Katalog schreibt immerhin „Keine Exemplare" (`BuchKarte.svelte`). Ein Titel
-ohne Exemplare ist ein legitimer Zustand (Anlegen ohne Bestandsangabe, Altbestand aus Littera),
-deshalb ist Ausblenden nicht ohne Weiteres richtig. **Vorschlag: Bestand in der Trefferliste
-zeigen und Titel ohne verfügbares Exemplar erkennbar machen, statt sie zu verstecken.**
+Entschieden: Ein Titel ohne Exemplare ist ein legitimer Zustand (Anlegen ohne Bestandsangabe,
+Altbestand aus Littera) — verstecken wäre falsch. Die Trefferliste muss es SAGEN.
+
+**Hälfte 1 GEBAUT am 17.09.2026 (Daten).** Beide Suchtüren (`SearchTitles` für den
+Aktionspfad, `SearchTitlesFuzzy` für die Theke) liefern jetzt `bestand` und `verfuegbar` je
+Titel. Die beiden Prädikate stehen an EINER Stelle (`repository/book_bestand.go`) und sind
+wörtlich die der Klassenbuch-Abfrage — zwei Auslegungen von „verfügbar" ergäben zwei Zahlen
+über denselben Titel, und an der Theke entscheidet diese Zahl, ob jemand ins Regal läuft. Die
+Felder sind ZEIGER: Jede andere Abfrage lässt sie nil, damit die Oberfläche nicht „0 Exemplare"
+über einen Titel schreibt, dessen Bestand niemand gezählt hat. Vier Ursachen für „kein
+Exemplar da" sind am echten Postgres geprüft (gar keins, alle ausgesondert, alle verliehen,
+alles im Zulauf).
+
+**Hälfte 2 OFFEN (Anzeige).** Die Theken-Trefferliste (`Omnibox.svelte` →
+`unifiedSearchResults.books`) zeigt die Zahlen noch nicht. Zu bauen: je Treffer „x von y
+verfügbar" und ein erkennbarer Hinweis, wenn `bestand === 0` — dann ist es kein
+Verfügbarkeitsproblem, sondern ein Titel ohne Bestand. Dazu ein Gate am Draht
+(`frontend/e2e/`) mit einem Titel ohne Exemplare.
 
 ### 9.5 Schülerdatei ohne Sortierung und Filter (Protokoll 5)
 

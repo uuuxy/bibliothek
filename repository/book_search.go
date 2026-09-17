@@ -32,15 +32,16 @@ func (r *pgBookRepository) GetCopyByBarcode(ctx context.Context, barcode string)
 func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) ([]BookTitle, error) {
 	query := `
 		SELECT 
-			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(auflage, ''), coalesce(ziel_jahrgang, 0), ist_lernmittel, erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb)
-		FROM buecher_titel
+			b.id, coalesce(b.titel, ''), coalesce(b.untertitel, ''), coalesce(b.autor, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''), coalesce(b.erscheinungsjahr, 0), coalesce(b.beschreibung, ''), coalesce(b.cover_url, ''), coalesce(b.medientyp, ''), coalesce(b.signatur, ''), coalesce(b.auflage, ''), coalesce(b.ziel_jahrgang, 0), b.ist_lernmittel, b.erstellt_am, b.aktualisiert_am, coalesce(b.erweiterte_eigenschaften, '{}'::jsonb),
+			` + SQLBestandGesamt + `, ` + SQLBestandVerfuegbar + `
+		FROM buecher_titel b
 		WHERE 
-			search_vector @@ plainto_tsquery('german', $1::text) 
-			OR titel ILIKE '%' || $1::text || '%'
-			OR autor ILIKE '%' || $1::text || '%'
-			OR isbn ILIKE '%' || $1::text || '%'
-			OR replace(isbn, '-', '') = replace($1::text, '-', '')
-		ORDER BY ts_rank(search_vector, plainto_tsquery('german', $1::text)) DESC, titel ASC
+			b.search_vector @@ plainto_tsquery('german', $1::text) 
+			OR b.titel ILIKE '%' || $1::text || '%'
+			OR b.autor ILIKE '%' || $1::text || '%'
+			OR b.isbn ILIKE '%' || $1::text || '%'
+			OR replace(b.isbn, '-', '') = replace($1::text, '-', '')
+		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel ASC
 		LIMIT 50
 	`
 	rows, err := r.db.Query(ctx, query, queryText)
@@ -51,7 +52,7 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 
 	var results []BookTitle
 	for rows.Next() {
-		t, err := scanBookTitle(rows)
+		t, err := scanBookTitleMitBestand(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +85,8 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 		)
 		SELECT
 			id, coalesce(titel, ''), coalesce(untertitel, ''), coalesce(autor, ''), coalesce(isbn, ''), coalesce(verlag, ''), coalesce(erscheinungsjahr, 0), coalesce(beschreibung, ''), coalesce(cover_url, ''), coalesce(medientyp, ''), coalesce(signatur, ''), coalesce(auflage, ''), coalesce(ziel_jahrgang, 0), ist_lernmittel, erstellt_am, aktualisiert_am, coalesce(erweiterte_eigenschaften, '{}'::jsonb),
-			count(*) OVER () AS gesamt
+			` + SQLBestandGesamt + `, ` + SQLBestandVerfuegbar + `,
+			count(*) OVER () AS treffer_gesamt
 		FROM buecher_titel b
 		WHERE (
 			-- Index-Anker: erstes Token als direkte LIKE-Bedingung, damit der Planer
@@ -124,7 +126,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 	gesamt := 0
 	for rows.Next() {
 		var zeilenGesamt int
-		t, err := scanBookTitleMitZusatz(rows, &zeilenGesamt)
+		t, err := scanBookTitleMitBestand(rows, &zeilenGesamt)
 		if err != nil {
 			return nil, 0, err
 		}

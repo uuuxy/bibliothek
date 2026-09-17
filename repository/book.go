@@ -105,11 +105,6 @@ func scanBookCopy(row Scanner) (*BookCopy, error) {
 	return &bc, nil
 }
 
-// scanBookTitle ist eine Hilfsfunktion zum Einlesen einer Zeile in ein BookTitle-Objekt.
-func scanBookTitle(row Scanner) (*BookTitle, error) {
-	return scanBookTitleMitZusatz(row)
-}
-
 // scanBookTitleMitZusatz scannt die Standard-Spaltenliste und danach beliebige
 // Zusatzspalten (z. B. count(*) OVER () für die Gesamttrefferzahl) — siehe
 // scanStudentMitZusatz, gleiche Begründung.
