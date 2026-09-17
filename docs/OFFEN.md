@@ -18,6 +18,22 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
 
+**Neu am 17.09.2026: Das Medienzentrum hat das Programm gesichtet.** Ein Protokoll vom
+16.09.2026 listet zwölf Punkte und schließt mit: Sind sie abgestellt, wäre das Programm für
+Schulen nutzbar. Das ist damit das Gate, an dem alles andere hängt — es steht vollständig in
+**Abschnitt 9**, jeder Punkt am Code nachgeprüft.
+
+Zwei davon waren schon gelöst (der Scanner ging weder per Handgerät noch per Kamera — das war
+gestern Abend und heute früh die ganze Arbeit; und Littera-Barcodes kann das Programm lesen).
+Zwei sind neu und wiegen schwer: Erstens sind **alle Ausweise und Etiketten, die vor heute
+gedruckt wurden, weiterhin unlesbar** — der Strichcode trug eine Ziffer zu viel. Zweitens
+verlangt das Medienzentrum **Bücher, die über mehrere Jahre bei einem Kind bleiben** — genau
+das, was wir vorgestern zu streichen beschlossen hatten. Diese Entscheidung ist gestoppt.
+
+**Vier Fragen dazu stehen in 9.7** und halten den Rest auf.
+
+---
+
 **Was DU tun kannst — der Reihe nach:**
 
 1. **Sieben Fragen beantworten** (Abschnitt 4: 4.7 bis 4.11, 4.13, 4.14). Sie sind der Rest der
@@ -555,6 +571,10 @@ Die Nummern bleiben fest. Beantwortete Fragen wandern in den Punkt, der sie umse
 
 ### 4.3 `ziel_jahrgang`: bauen oder streichen
 
+> **Gestoppt am 17.09.2026 (siehe 9.6).** Das Medienzentrum verlangt ausdrücklich
+> Mehrjahresbände. Bis die Frage neu entschieden ist, wird `ziel_jahrgang` nicht angefasst und
+> die Messung unten nicht gefahren.
+
 `ziel_jahrgang` (mehrjährige Ausleihe) wird in `internal/service/loan_rules.go` gelesen, aber von
 keinem Code geschrieben; die Fristregel verzweigt auf einen Wert, der immer 0 ist. Die Frist am
 Rückgabetermin ist entschieden (1.4). **Entschieden am 16.09.2026: streichen.** Spalte, die drei
@@ -585,6 +605,10 @@ Sperre bleibt, Löschblockade fällt. **Wann:** sobald ein erster echter Beschei
 blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt 6.
 
 ### 4.5 E4: Feld „Listenpreis" am Titel
+
+**Keine Komfortfrage mehr (17.09.2026, siehe 9.3 b).** Die Arbeitshilfe verlangt ab dem zweiten
+Verleihjahr den Neupreis zum Zeitpunkt des Verlusts, die Anforderungsliste Nr. 3 beide Preise
+wählbar. Das Feld gehört damit zum Abnahme-Gate des Medienzentrums.
 
 Für die Staffel ab dem 2. Verleihjahr. Der Bescheid-Handler übergibt heute als Neupreis 0
 (`api/bescheid_handler.go`); die Staffel nimmt dann ersatzweise den Kaufpreis, der Dialog zeigt
@@ -828,7 +852,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   `api/routes_system.go` ← Knopf in `StudentProfileActions.svelte`; dazu
   `api/print_rechnung_pg_test.go` und `elternbrief_generiert*`. Der Eltern-Mahnbrief bleibt.
 - **`DamageReportModal`:** Staffel-Vorschlag mit Herleitung statt Startwert 15 €, kein
-  automatisches PDF-Fenster.
+  automatisches PDF-Fenster. **Vorgezogen (17.09.2026, siehe 9.3 a):** Dieser Punkt hängt an
+  keiner der offenen Fragen — nur die Kreis-Rechnung hängt an 8.3.
 - **Doku:** FACHKONZEPT Abschnitt 3 (Mahnwesen ohne Bescheid) und 14 (PDF-Rechnung, Barzahlung am
   Tresen); SECURITY und VVT-Entwurf mit dem Zweck „Schadensersatz-Bescheid". Den VVT-Satz
   vorziehen, bevor die Schule den Entwurf beschließt (8.5).
@@ -1384,3 +1409,142 @@ Zuerst B3 und B4 anstoßen.
 Gilt für das System die Pflicht zur Barrierefreiheit — mit Erklärung zur Barrierefreiheit und
 barrierefreien PDFs (HTML-Druckweg oder begründete Ausnahme)? Bis zur Antwort geparkt; was die
 Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
+
+---
+
+## 9. Sichtung des Medienzentrums (16.09.2026)
+
+Protokoll vom 16.09.2026, 09:00–11:00 Uhr (Teilnehmende CN, SW, HMP; Protokoll HMP). Die
+Einschätzung schließt mit: „Wenn o.g. Mängel abgestellt sind, wäre das Programm nach aktueller
+Einschätzung für Schulen nutzbar." Damit ist diese Liste das Abnahme-Gate einer fremden Stelle —
+sie steht hier vollständig, mit dem Stand am Code, geprüft am 17.09.2026.
+
+Zwei Quellen liegen dem zugrunde und sind am 17.09.2026 erstmals im Original gelesen worden:
+`~/Downloads/Arbeitshilfe_Mahnschreiben.pdf` (Erlass vom 17.12.2014, Az. 674.100.002-00178) und
+`~/Downloads/Ablauf Mahnverfahren.pdf` (die Anforderungsliste, abgeglichen in
+[mittel_konzept.md](mittel_konzept.md) Abschnitt 3).
+
+### 9.1 Gelöst — mit Nachweis
+
+- **Barcode-Scan ging weder per USB-Handscanner noch per Kamera** (Protokoll 2). EINE Ursache für
+  beide Geräte: `code39.Encode(inhalt, true, true)` hängte ein Prüfzeichen an, das IN den
+  Strichcode-Daten steht. Aufdruck „A-10003", Strichcode „A-100037" — der Server suchte eine
+  Nummer, die es nicht gibt, und ein unbekannter Scan erzeugt nur eine leere Trefferliste.
+  Behoben am 17.09.2026 (`dfe14222`, Code 128), dazu die fehlende `code_39` in der Formatliste
+  der Kamera (`4fe4388e`), zwei Startstellen für eine Kamera (`a840fdb8`), der stille
+  Rückfall-Erkenner (`7bd631f6`) und das ein Jahr lang gecachte Strichcode-Bild (`ea0c4118`).
+- **Littera-Barcodes einlesbar?** (Protokoll 3) Ja. Littera druckt die Mediennummer im Klartext
+  und codiert eine EAN-13; sie wird zurückgerechnet — an der Theke
+  (`internal/service/littera_etikett.go`) und ohne Netz (`frontend/src/lib/litteraEtikett.js`),
+  beide gegen dieselben Prüffälle (`litteraEtikett.faelle.json`).
+
+### 9.2 A: Alte Ausdrucke sind weiter unlesbar, und ein Kommentar behauptet das Gegenteil
+
+Jeder Ausweis und jedes Etikett, das VOR dem 17.09.2026 gedruckt wurde, trägt Code 39 mit
+Prüfzeichen. Die Kamera liest Code 39 weiterhin (`GELESENE_FORMATE`) und liefert dann „B-100016"
+— eine Nummer, die es nicht gibt. Der Kommentar in `api/barcode_generate.go` sagt „Karten und
+Etiketten aus der Zeit davor sollen weiter funktionieren"; es gibt aber keine Stelle, die das
+Prüfzeichen entfernt. Ein Schutz, den nur ein Kommentar behauptet.
+
+Zwei Wege: alles neu drucken (dann muss der Kommentar weg), oder eine Nachsicht beim erfolglosen
+Scan (Mod-43-Prüfzeichen abschneiden und ein zweites Mal nachschlagen — nur wenn der erste
+Versuch nichts fand, sonst entstehen falsche Treffer). **Vorschlag: die Nachsicht bauen und den
+Kommentar wahr machen**, weil niemand weiß, wie viele Karten schon im Umlauf sind.
+
+### 9.3 Vorgaben des Landes (Protokoll 1)
+
+**9.3 a) Keine Preise, keine Beschädigungsgrade, keine Restwertberechnung beim Melden.**
+`DamageReportModal.svelte` startet mit `damageAmount = $state(15.0)` — einer festen Zahl ohne
+jeden Bezug zum Buch. Die Staffel gibt es seit dem 12.09.2026 (`pkg/ersatzwert`), aber nur im
+Bescheid-Dialog des Mahnwesens. Steht als Bauarbeit schon in **5.4** („Staffel-Vorschlag mit
+Herleitung statt Startwert 15 €"), dort aber hinter 8.3 geparkt. **Das Parken war falsch:** Der
+Staffel-Vorschlag hängt an keiner der offenen Fragen; nur die Kreis-Rechnung tut das.
+
+**9.3 b) Der Listenpreis fehlt — und die Arbeitshilfe verlangt ihn.** Bisher als Komfortfrage
+geführt (**4.5**, E4). Die Arbeitshilfe ist eindeutig: ab dem zweiten Verleihjahr sind es 80 %
+„des Neupreises des Lehrwerks **zum Zeitpunkt des Verlusts**", und die Anforderungsliste Nr. 3
+verlangt beide Preise „auswählbar … welcher Preis als Berechnungsgrundlage verwendet wird".
+Heute übergibt `api/bescheid_handler.go` als Neupreis hart `0`; der Dialog schreibt dann
+„Kaufpreis (kein Neupreis hinterlegt)" — ehrlich, aber nicht die Vorgabe. Damit ist 4.5 keine
+Komfortfrage mehr, sondern Teil dieses Gates.
+
+**9.3 c) Sperrung bei offener Bearbeitung — LMF untersagt das.**
+`internal/service/loan_checkout_validation.go` (`pruefeOffeneSchaeden`) sperrt bei jedem
+unbezahlten Schadensfall jede weitere Ausleihe — **ohne Ausnahme für Lernmittel**. Dasselbe im
+Geräte-Pfad (`pruefeGeraetAutomatikSperren`). Übergehbar ist es nur von Hand mit Audit-Eintrag;
+der Grundzustand ist die Sperre. Die Unterlagen sind hier uneinheitlich: Die Praxis der
+Nachbarschule im Konzept lautet „bis zur Zahlung Sperre für weitere Ausleihen", das
+Medienzentrum sagt, LMF untersage genau das. **Frage an Peter, siehe 9.7.**
+
+**9.3 d) Zugangs- und Abgangsbuch fehlen.** `erworben_am` trägt das echte Littera-Zugangsdatum,
+`aussonderung_grund` trennt VERLUST / AUSSORTIERT / BESTANDSKORREKTUR. Aber: **es gibt kein
+Abgangsdatum.** `ist_ausgesondert` ist ein Ja/Nein ohne Zeitpunkt, `letzte_bewegung_am` wird von
+jeder späteren Bewegung überschrieben. Ein Abgangsbuch braucht also eine Migration, nicht nur
+einen Ausdruck. Das Zugangsbuch ist aus den Daten ableitbar
+([mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1: „je Schulhalbjahr ein Ausdruck der
+Neuanschaffungen"), steht dort aber unter „Später, kein Teil dieses Pakets".
+
+**9.3 e) Mahnwesen entspricht nicht den Vorgaben.** Aufgeschlüsselt gegen die Anforderungsliste:
+
+| Nr. | Verlangt                                        | Stand am 17.09.2026                                                                       |
+| --- | ----------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | Automatische Abwertung, zeitbasiert             | Als **Vorschlag** gebaut (`pkg/ersatzwert`), nicht als Dauerzustand — bewusste Abweichung, begründet in [mittel_konzept.md](mittel_konzept.md) Abschnitt 3. Das Medienzentrum sieht es anders. |
+| 2   | Beschädigungsgrad in Prozent, Buchwert sinkt    | Nicht gebaut — dieselbe bewusste Abweichung.                                               |
+| 3   | Einkaufspreis UND Listenpreis, wählbar          | **Echte Lücke** → 9.3 b) und 4.5.                                                          |
+| 5   | Versand per Post, E-Mail oder App               | Nur Post — begründet (Schriftform, Datenschutz-Entscheidung A3 vom 22.08.2026).            |
+| 6   | Zahlung ohne Rückgabe → Buch **gelöscht**       | Wird ausgesondert statt gelöscht — begründet (die Bestandskartei muss den Abgang nachweisen). |
+| 7   | Mahnfrist **sechs** Wochen                      | Vier Wochen — Arbeitshilfe und Verfahrensbeschreibung sagen vier, mit Datum.                |
+
+Die Staffel selbst ist **richtig gebaut**: 1. Verleihjahr voller Kaufpreis, dann 80/60/40/20 %,
+ab dem 6. Jahr 10 %. Die Arbeitshilfe sagt „Nach 5 Jahren und für jedes weitere Jahr … 10 %" —
+also ab dem sechsten. Am 17.09.2026 am Original nachgelesen.
+
+Was gegen die Vorgabe verstößt, ist der **Zahlungsweg der Altbriefe**: Die Arbeitshilfe schreibt
+„Es darf kein Schulgirokonto, kein anderes Bankkonto und **keine Bargeldannahme** vorgesehen
+werden." `pdf/schadensfall.go` und `pdf/rechnung.go` verlangen beide „bar in der Bibliothek".
+Der Elternbrief ist seit dem 15.09.2026 aus der Oberfläche heraus nicht mehr erreichbar, die
+Rechnung über den Knopf in `StudentProfileActions.svelte` schon. Steht als Abräum-Arbeit in
+**5.4**; der Bargeld-Satz macht daraus mehr als Aufräumen.
+
+### 9.4 Titel mit 0 Exemplaren (Protokoll 4)
+
+`repository/book_search.go` (`SearchTitles`) filtert nicht auf vorhandene Exemplare und liefert
+auch keine Bestandszahl — die Theke zeigt solche Titel also ohne jeden Hinweis in der
+Trefferliste. Der Katalog schreibt immerhin „Keine Exemplare" (`BuchKarte.svelte`). Ein Titel
+ohne Exemplare ist ein legitimer Zustand (Anlegen ohne Bestandsangabe, Altbestand aus Littera),
+deshalb ist Ausblenden nicht ohne Weiteres richtig. **Vorschlag: Bestand in der Trefferliste
+zeigen und Titel ohne verfügbares Exemplar erkennbar machen, statt sie zu verstecken.**
+
+### 9.5 Schülerdatei ohne Sortierung und Filter (Protokoll 5)
+
+Bestätigt. `StudentDirectoryToolbar.svelte` hat nur das Suchfeld („Name, Klasse oder
+Ausweisnummer eingeben …"), die Spaltenköpfe in `ActiveStudentList.svelte` sind reine `<th>`
+ohne Sortierknopf. Die Beobachtung „Eine Auswahl anhand eines eingegebenen Merkmals ist jedoch
+möglich" beschreibt genau diese Serversuche. Zu beachten: Die ungefilterte Liste ist bei 500
+Zeilen gekappt (`ListStudentsWithStatsLimit`) — ein Klassen- oder Jahrgangsfilter muss deshalb
+auf dem SERVER laufen, nicht im Browser.
+
+### 9.6 A: Mehrjahresbände — die Entscheidung von 4.3 kippt
+
+Protokoll 5, zweiter Spiegelstrich: „Bei den Ausleihfristen fehlt das Jahr. Mehrjahresbände
+lassen sich nicht abbilden."
+
+Die Mechanik ist vollständig da: `ziel_jahrgang` → `AdditionalYears` →
+`stichtag.AddDate(jahre, 0, 0)` in `internal/service/loan_rules.go`. Es fehlt allein die Tür,
+die den Wert setzt. **4.3 hält fest: „Entschieden am 16.09.2026: streichen."** Das ist genau das
+Gegenteil dessen, was die prüfende Stelle verlangt — und mit der Spalte fiele auch die Rechnung,
+die es dafür schon gibt. **Die Entscheidung gehört zurück auf den Tisch, bevor die Messung aus
+4.3 läuft.** Solange sie offen ist, wird `ziel_jahrgang` nicht angefasst.
+
+### 9.7 Fragen an Peter
+
+1. **Sperre bei offener Forderung** (9.3 c): ganz abschaffen, nur für Lernmittel aussetzen, oder
+   beim Medienzentrum nachfragen, worauf sich „LMF untersagt dies" stützt? *Vorschlag:
+   nachfragen und bis dahin für Lernmittel aussetzen* — ein Kind ohne Schulbuch ist ein
+   Unterrichtsproblem, ein Kind ohne Roman nicht.
+2. **Abwertung und Beschädigungsgrad als Dauerzustand** (9.3 e, Nr. 1 und 2): Die begründete
+   Abweichung beibehalten und dem Medienzentrum erklären, oder bauen, was die Liste wörtlich
+   verlangt? *Vorschlag: erklären* — ein laufend abgewerteter Buchwert steuert außerhalb einer
+   Forderung nichts.
+3. **Mehrjahresbände** (9.6): bauen statt streichen — bestätigst du das?
+4. **Alte Strichcodes** (9.2): Nachsicht bauen oder alles neu drucken?
