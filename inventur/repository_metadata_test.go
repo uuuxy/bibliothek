@@ -28,12 +28,12 @@ func TestGetBookByID(t *testing.T) {
 				"id", "isbn", "title", "author", "signatur", "cover_url",
 				"subject", "grade_level", "track", "stock", "last_counted",
 				"sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
-				"erweiterte_eigenschaften",
+				"erweiterte_eigenschaften", "auflage",
 			}).AddRow(
 				"valid-id", "1234567890", "Test Title", "Test Author", "SIG", "http://cover",
 				"Math", int16(5), "A", 10, &lastCounted,
 				1, "Buch", 5, 10,
-				map[string]any{"key": "value"},
+				map[string]any{"key": "value"}, "4. Aufl. 2023",
 			))
 
 		book, err := repo.GetBookByID(ctx, "valid-id")

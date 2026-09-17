@@ -113,6 +113,10 @@ type BookTitle struct {
 	Erscheinungsjahr int `json:"erscheinungsjahr,omitempty"`
 	// Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).
 	Signatur string `json:"signatur,omitempty"`
+	// Auflage ist die Auflagenbezeichnung („4. Aufl. 2023", Migration 126). Eine neue
+	// Auflage trägt eine eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt,
+	// welcher von zwei gleich heißenden Zeilen man vor sich hat.
+	Auflage string `json:"auflage,omitempty"`
 	// ZielJahrgang definiert, bis zu welcher Klasse ein Exemplar dieses Titels bei Schülern bleibt (Default 0 = 1 Jahr).
 	ZielJahrgang int `json:"ziel_jahrgang"`
 	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —

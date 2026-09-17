@@ -32,7 +32,8 @@
 	 *     coverUrl: string,
 	 *     lastCounted?: string,
 	 *     signatur?: string,
-	 *     medientyp?: string
+	 *     medientyp?: string,
+	 *     auflage?: string
 	 *   },
 	 *   onclick?: (event: Event) => void,
 	 *   onEditClick?: () => void
@@ -133,6 +134,12 @@
 				{book.title}
 			</button>
 		</h2>
+
+		<!-- Die Auflage steht direkt unter dem Titel: Zwei Zeilen „Lambacher Schweizer 7"
+		     im Katalog sind zwei verschiedene Bücher, und das sieht man sonst nirgends. -->
+		{#if book.auflage}
+			<p class="truncate text-xs" title={book.auflage}>{book.auflage}</p>
+		{/if}
 
 		<button
 			class="flex cursor-pointer items-center gap-1.5 text-left font-mono transition-colors hover:text-primary"

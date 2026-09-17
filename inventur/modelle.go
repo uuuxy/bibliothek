@@ -16,16 +16,20 @@ type Book struct {
 	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Vorher stand das
 	// im Text („LMF" vor Titel oder Signatur); heute schaltet die Maske es, Importe
 	// lesen es aus Litteras Kennung.
-	IstLernmittel           bool           `json:"istLernmittel" db:"ist_lernmittel"`
-	Stock                   int            `json:"stock" db:"stock"`
-	Verfuegbar              int            `json:"verfuegbar"`
-	Gesamt                  int            `json:"gesamt"`
-	LastCounted             *string        `json:"lastCounted" db:"last_counted"`
-	SortOrder               int            `json:"sortOrder" db:"sort_order"`
-	Medientyp               string         `json:"medientyp" db:"medientyp"`
-	JahrgangVon             int            `json:"jahrgangVon" db:"jahrgang_von"`
-	JahrgangBis             int            `json:"jahrgangBis" db:"jahrgang_bis"`
-	Untertitel              string         `json:"untertitel" db:"untertitel"`
+	IstLernmittel bool    `json:"istLernmittel" db:"ist_lernmittel"`
+	Stock         int     `json:"stock" db:"stock"`
+	Verfuegbar    int     `json:"verfuegbar"`
+	Gesamt        int     `json:"gesamt"`
+	LastCounted   *string `json:"lastCounted" db:"last_counted"`
+	SortOrder     int     `json:"sortOrder" db:"sort_order"`
+	Medientyp     string  `json:"medientyp" db:"medientyp"`
+	JahrgangVon   int     `json:"jahrgangVon" db:"jahrgang_von"`
+	JahrgangBis   int     `json:"jahrgangBis" db:"jahrgang_bis"`
+	Untertitel    string  `json:"untertitel" db:"untertitel"`
+	// Auflage: die Auflagenbezeichnung („4. Aufl. 2023", Migration 126). Eine neue
+	// Auflage ist ein eigener Titel mit eigener ISBN — dieses Feld unterscheidet die
+	// beiden Zeilen in Liste, Akte und Ausgabe.
+	Auflage                 string         `json:"auflage" db:"auflage"`
 	Verlag                  string         `json:"verlag" db:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr" db:"erscheinungsjahr"`
 	Beschreibung            string         `json:"beschreibung" db:"beschreibung"`

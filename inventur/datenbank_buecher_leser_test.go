@@ -26,11 +26,11 @@ func TestBookRepository_ListBooks(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{
 				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
-				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
+				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage",
 			}).AddRow(
 				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
 				2, 3, &lastCounted, 1, "Buch", 5, 6,
-				"", "", 2020, "", map[string]any{},
+				"", "", 2020, "", map[string]any{}, "4. Aufl. 2023",
 			))
 
 		books, err := repo.ListBooks(ctx, "Math", &grade5, "algebra")
@@ -149,11 +149,11 @@ func TestBookRepository_ListBooksByIDs(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{
 				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
-				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften",
+				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage",
 			}).AddRow(
 				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
 				2, 3, &lastCounted, 1, "Buch", 5, 6,
-				"", "", 2020, "desc", map[string]any{},
+				"", "", 2020, "desc", map[string]any{}, "4. Aufl. 2023",
 			))
 
 		books, err := repo.ListBooksByIDs(ctx, ids)

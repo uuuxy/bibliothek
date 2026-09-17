@@ -51,6 +51,7 @@
 					? `Jahrgang ${book.gradeLevel}`
 					: '',
 			book.istLernmittel ? 'Lernmittel' : '',
+			book.auflage || '',
 			book.medientyp && book.medientyp !== 'Buch' ? book.medientyp : ''
 		]
 			.filter(Boolean)

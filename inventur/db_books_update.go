@@ -55,6 +55,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			beschreibung = $16,
 			signatur = COALESCE(NULLIF($18, ''), signatur),
 			ist_lernmittel = $19,
+			auflage = NULLIF($20, ''),
 			aktualisiert_am = NOW()
 		WHERE id = $17`
 
@@ -100,6 +101,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		id,
 		book.Signatur,      // $18 — leerer Wert lässt die verklebte Signatur unangetastet
 		book.IstLernmittel, // $19 — die Maske entscheidet ausdrücklich (Migration 093)
+		book.Auflage,       // $20 — die Maske ist der Ort der Angabe, leer heißt „keine"
 	)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", handleDbError(err))

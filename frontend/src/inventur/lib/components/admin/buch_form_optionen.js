@@ -5,7 +5,7 @@ export const klassenStufen = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13];
  * zweimal wörtlich in routes/admin/+page.svelte (Anfangszustand und „Neues Buch"); beim
  * Nachtragen des Schulzweigs fiel auf, dass ein neues Feld an beiden Stellen gepflegt
  * werden muss — vergisst man eine, schickt genau einer der beiden Wege das Feld nie mit.
- * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, gradeLevel: number, istLernmittel: boolean, track: string, stock: number, coverUrl: string, lastCounted: string, medientyp: string }}
+ * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, gradeLevel: number, istLernmittel: boolean, track: string, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string }}
  */
 export function leeresBuchFormular() {
 	return {
@@ -20,6 +20,7 @@ export function leeresBuchFormular() {
 		stock: 0,
 		coverUrl: '',
 		lastCounted: '',
-		medientyp: 'Buch'
+		medientyp: 'Buch',
+		auflage: ''
 	};
 }

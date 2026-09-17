@@ -111,7 +111,7 @@ func scanBookTitle(row Scanner) (*BookTitle, error) {
 func scanBookTitleMitZusatz(row Scanner, zusatz ...any) (*BookTitle, error) {
 	var t BookTitle
 	ziele := []any{
-		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.Signatur, &t.ZielJahrgang, &t.IstLernmittel, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
+		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.Signatur, &t.Auflage, &t.ZielJahrgang, &t.IstLernmittel, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
 	}
 	if err := row.Scan(append(ziele, zusatz...)...); err != nil {
 		return nil, err

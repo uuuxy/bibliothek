@@ -135,9 +135,9 @@ func TestHandleUpdateCover(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
 					WithArgs(buchID).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage",
 					}).AddRow(
-						buchID, "9781234567890", "Test Title", "Test Author", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
+						buchID, "9781234567890", "Test Title", "Test Author", "", "https://covers.openlibrary.org/b/isbn/9781234567890-L.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil, "",
 					))
 			},
 			expectedStatus: http.StatusOK,
@@ -155,9 +155,9 @@ func TestHandleUpdateCover(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
 					WithArgs(buchID).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage",
 					}).AddRow(
-						buchID, "9781234567890", "Test Title", "Test Author", "", "/uploads/cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil,
+						buchID, "9781234567890", "Test Title", "Test Author", "", "/uploads/cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil, "",
 					))
 			},
 			expectedStatus: http.StatusOK,

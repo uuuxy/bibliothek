@@ -460,6 +460,10 @@ CREATE TABLE buecher_titel (
     medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf location, notes)
     ziel_jahrgang INTEGER NOT NULL DEFAULT 0,          -- Target grade level for loan duration calculation (0 = 1 year default)
+    -- Migration 126: Auflagenbezeichnung („4. Aufl. 2023"). Eine neue Auflage ist ein
+    -- eigener Titel mit eigener ISBN; dieses Feld ist das, was die beiden Zeilen in einer
+    -- Liste unterscheidbar macht.
+    auflage VARCHAR(50),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
@@ -1406,7 +1410,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('122_rechte_leitung.sql'),
 ('123_lesertabelle.sql'),
 ('124_leser_tabelle_schueler_sicht.sql'),
-('125_ein_ausweis_ein_leser.sql')
+('125_ein_ausweis_ein_leser.sql'),
+('126_auflage_am_titel.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

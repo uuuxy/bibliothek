@@ -128,6 +128,16 @@
 		/>
 	</div>
 
+	<!-- Auflage: Bei Schulbüchern ist sie das einzige Merkmal, das zwei gleich heißende
+	     Titel unterscheidet — die neue Auflage hat eine eigene ISBN und deshalb eine
+	     eigene Zeile. Andere Seitenzahlen heißen andere Hausaufgaben. -->
+	<Feld
+		id="buch-auflage"
+		label="Auflage"
+		bind:value={formular.auflage}
+		hint="Wie auf dem Titelblatt, z. B. „4. Aufl. 2023“. Leer lassen, wenn es nur eine gibt."
+	/>
+
 	<BuchEingabefelderKategorisierung bind:formular {systematikListe} />
 
 	<BuchEingabefelderInventar bind:formular />
