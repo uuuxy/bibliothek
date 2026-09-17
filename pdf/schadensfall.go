@@ -29,11 +29,18 @@ type SchadensfallInfo struct {
 	Ort             string
 	BuchTitel       string
 	ExemplarBarcode string
+	// IstLernmittel entscheidet den Zahlungsweg: Lernmittel gehen an das Land, alles
+	// andere an den Schulträger (zahlungsweg.go).
+	IstLernmittel bool
 }
 
 // GenerateSchadensfallPDF generates a formal PDF notification letter ("Elternbrief")
 // for a student responsible for library book damage.
-func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo) ([]byte, error) {
+//
+// `zahlung` nennt das Konto des Landes (Zahlstelle und Bankverbindung aus den
+// Einstellungen). Bis zum 17.09.2026 stand hier „bar in der Bibliothek" — für ein
+// Lernmittel ist das der Weg, den die Arbeitshilfe ausdrücklich untersagt.
+func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo, zahlung Zahlungsangaben) ([]byte, error) {
 	// Create new A4 PDF page in portrait mode
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
@@ -44,7 +51,7 @@ func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo) ([]byte, 
 
 	addSchadensfallHeader(pdf, schule, tr)
 	addSchadensfallAddress(pdf, data, tr)
-	addSchadensfallBody(pdf, data, tr)
+	addSchadensfallBody(pdf, data, zahlung, tr)
 	addSchadensfallSignatures(pdf, tr)
 
 	var buf bytes.Buffer
@@ -97,7 +104,7 @@ func addSchadensfallAddress(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(str
 	pdf.Ln(30)
 }
 
-func addSchadensfallBody(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(string) string) {
+func addSchadensfallBody(pdf *gofpdf.Fpdf, data SchadensfallInfo, zahlung Zahlungsangaben, tr func(string) string) {
 	// Letter Subject
 	pdf.SetFont("Arial", "B", 12)
 	pdf.Cell(0, 8, tr("Ersatzforderung für ein beschädigtes oder verlorenes Bibliotheksbuch"))
@@ -125,11 +132,11 @@ func addSchadensfallBody(pdf *gofpdf.Fpdf, data SchadensfallInfo, tr func(string
 	dueTime := schulzeit.Jetzt().AddDate(0, 0, 14).Format(dateFormatDE)
 	instructions := fmt.Sprintf("Gemäß der Schulbibliotheksordnung bitten wir Sie, für den entstandenen Schaden "+
 		"einen Ersatzbetrag von %.2f EUR bis spätestens zum %s zu begleichen.\n\n"+
-		"Bitte bezahlen Sie den Betrag bar in der Bibliothek zu den Öffnungszeiten.\n\n"+
+		"%s\n\n"+
 		"Sollten Sie Fragen zum Schadensfall haben, können Sie sich gerne zu den Öffnungszeiten "+
 		"an das Bibliotheksteam wenden.\n\n"+
 		"Vielen Dank für Ihr Verständnis und Ihre Kooperation.",
-		data.Betrag, dueTime)
+		data.Betrag, dueTime, strings.Join(ZahlungswegZeilen(data.IstLernmittel, zahlung), "\n"))
 	pdf.MultiCell(0, 5, tr(instructions), "", "L", false)
 	pdf.Ln(15)
 }

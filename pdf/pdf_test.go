@@ -44,6 +44,15 @@ func testSchule() SchuleInfo {
 	}
 }
 
+// testZahlung sind die Vorgaben des Musterschreibens, wie sie repository.BescheidAngabenAus
+// einsetzt, wenn die Schule nichts eingetragen hat.
+func testZahlung() Zahlungsangaben {
+	return Zahlungsangaben{
+		Zahlstelle:     "HCC-Schulbereich bei der Landesbank Hessen-Thüringen",
+		Bankverbindung: "Konto-Nr. 1002401\nIBAN DE86500500000001002401",
+	}
+}
+
 func TestGenerateRechnung(t *testing.T) {
 	schueler := Schueler{
 		Vorname: "Änne", Nachname: "Müller-Lüdenscheidt",
@@ -54,7 +63,7 @@ func TestGenerateRechnung(t *testing.T) {
 		{Titel: "Zweites Buch", Barcode: "B-00002", Ausleihdatum: time.Now().AddDate(0, -2, 0), Ersatzpreis: 7.50},
 	}
 
-	got, err := GenerateRechnung(schueler, items, testSchule())
+	got, err := GenerateRechnung(schueler, items, testSchule(), testZahlung())
 	if err != nil {
 		t.Fatalf("GenerateRechnung: %v", err)
 	}
@@ -70,7 +79,7 @@ func TestRechnungSummeRundetAufCent(t *testing.T) {
 		items[i] = RechnungItem{Titel: "Posten", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 0.10}
 	}
 
-	got, err := GenerateRechnung(Schueler{Vorname: "A", Nachname: "B"}, items, testSchule())
+	got, err := GenerateRechnung(Schueler{Vorname: "A", Nachname: "B"}, items, testSchule(), testZahlung())
 	if err != nil {
 		t.Fatalf("GenerateRechnung: %v", err)
 	}
@@ -92,7 +101,7 @@ func TestRechnungSummeRundetAufCent(t *testing.T) {
 func TestGenerateRechnungOhnePosten(t *testing.T) {
 	// Eine Forderung ohne Posten ist fachlich unsinnig, darf den Server aber nicht
 	// umbringen — Handler dürfen sich auf einen Fehler statt eines Panics verlassen.
-	got, err := GenerateRechnung(Schueler{Vorname: "Leer", Nachname: "Fall"}, nil, testSchule())
+	got, err := GenerateRechnung(Schueler{Vorname: "Leer", Nachname: "Fall"}, nil, testSchule(), testZahlung())
 	if err != nil {
 		t.Fatalf("GenerateRechnung ohne Posten: %v", err)
 	}
@@ -111,7 +120,7 @@ func TestGenerateSchadensfallPDF(t *testing.T) {
 		ExemplarBarcode:  "B-04711",
 	}
 
-	got, err := GenerateSchadensfallPDF(data, testSchule())
+	got, err := GenerateSchadensfallPDF(data, testSchule(), testZahlung())
 	if err != nil {
 		t.Fatalf("GenerateSchadensfallPDF: %v", err)
 	}
@@ -196,6 +205,7 @@ func TestUeberlangeEingabenBringenKeinDokumentUm(t *testing.T) {
 		Schueler{Vorname: lang, Nachname: lang, Strasse: lang, Ort: lang},
 		[]RechnungItem{{Titel: lang, Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 1}},
 		SchuleInfo{Name: lang, Strasse: lang, Ort: lang},
+		testZahlung(),
 	)
 	if err != nil {
 		t.Fatalf("überlange Eingaben: %v", err)

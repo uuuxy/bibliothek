@@ -84,8 +84,11 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
    öffentlich. Das Sekretariat sollte sie samt aktuellem Musterschreiben bei der
    Schulaufsicht anfordern. Die Bauweise unten hält den Brieftext an EINER Stelle
    austauschbar; Struktur, Nummer, Konto und Frist dürften unverändert sein.
-2. Barzahlung „in der Bibliothek" — was die drei heutigen Briefe verlangen — ist für
-   Landeseigentum die **Ausnahme, nicht der Weg**.
+2. Barzahlung „in der Bibliothek" ist für Landeseigentum die **Ausnahme, nicht der Weg**.
+   Die beiden Briefe, die sie verlangten, nennen seit dem 17.09.2026 das Konto des Landes
+   (Elternbrief und Rechnung, `pdf/zahlungsweg.go`); der Mahnbrief verlangt ohnehin kein
+   Geld. Bar angenommenes Geld bleibt möglich — als Einzelfall mit Quittung, nicht als
+   Weg, den ein Brief vorsieht.
 
 ### 1.2 Schülerbücherei (Mittel des Schulträgers)
 
@@ -115,8 +118,8 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Forderung anlegen                    | `repository/damage.go` (`ReportDamage` beendet Ausleihe + sondert aus `BESCHAEDIGUNG`), `DamageReportModal.svelte` | ✅ inkl. Idempotenz, Schuldner aus der Ausleihe, 409 bei Neuverleih. Der Betrag ist ein gerechneter VORSCHLAG mit Herleitung (seit 17.09.2026; vorher Freitext mit der Vorgabe 15,00 € ohne Bezug zum Preis) — überschreibbar, denn er liegt im Ermessen der Schule.               |
 | Forderung erledigen                  | `api/damage_resolve.go`, `repository/audit_system.go` (Bezahlt / Storno mit Grund, Audit, 409 bei Doppelbuchung)                                              | ✅ „Bezahlt" bedeutet heute **Barzahlung am Tresen**.                                                                                                              |
-| Brief 1: Elternbrief je Schadensfall | `pdf/schadensfall.go`, `api/pdf.go` (`elternbrief_generiert`)                                                                                                 | 14-Tage-Frist, „bar in der Bibliothek", „Schulbibliotheksordnung", Unterschrift „Bibliotheksleitung". Für Lernmittel in vier Punkten falsch.                       |
-| Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/print.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), aber „bar in der Bibliothek", keine Nummer, kein Topf.                                                            |
+| Brief 1: Elternbrief je Schadensfall | `pdf/schadensfall.go`, `api/pdf.go` (`elternbrief_generiert`)                                                                                                 | 14-Tage-Frist, „Schulbibliotheksordnung", Unterschrift „Bibliotheksleitung". Der Zahlungsweg stimmt seit 17.09.2026 (Konto des Landes bzw. offener Weg des Trägers); die übrigen Punkte bleiben für ein Lernmittel falsch. |
+| Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/print.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf seit 17.09.2026 — aber weiterhin ohne Nummer und ohne Frist im Landesformat.                  |
 | Brief 3: Eltern-Mahnbrief            | `api/reports_pdf.go`, Vorlage `MAHNUNG_ELTERN`                                                                                                                | DIN-5008-Fensterkuvert, Falzmarken, Tabelle der überfälligen Bücher — **die Bauform, die der Bescheid braucht.**                                                   |
 | Mahnwesen                            | `api/mahnwesen*.go`, `repository/mahnwesen_*.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse/Jahrgang, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days`.            |
 | Schulstammdaten                      | `SchuleKategorie.svelte`, `system_settings*.go`                                                                                                               | Name, Anschrift, Eigentumsvermerk. **Fehlt:** Schulnummer, Schulaufsicht (Nr. + Anschrift), Bankverbindungen, Schulleitung, Geschäftszeichen/Bearbeiter/Durchwahl. |

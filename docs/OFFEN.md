@@ -823,7 +823,13 @@ in Stufen mit Nachweis und erst nach deiner Freigabe.
 
 ### 5.1 Schäden und Benutzer
 
-Nichts offen (Stand 16.09.2026).
+- **Was „Bezahlt" bedeutet** (17.09.2026, Folge aus 9.3 e): Der Knopf in der Schülerakte
+  verbucht heute eine Barzahlung am Tresen. Für Lernmittel des Landes sieht die Arbeitshilfe
+  Bargeld nur als Ausnahme vor — mit Quittung und Weiterleitung binnen 14 Tagen. Die Briefe
+  nennen inzwischen das Konto; ein eingehender Betrag kommt also in aller Regel als
+  Überweisung, und niemand an der Theke sieht ihn. Zu klären mit der Schule: Wer bucht eine
+  Zahlung ein, die auf dem Kontoauszug steht? Keine Bauarbeit, bevor das beantwortet ist —
+  eine erfundene Antwort steht sonst als Vorgang in der Akte.
 
 ### 5.2 Bescheid — vor dem ersten echten Bescheid
 
@@ -836,11 +842,12 @@ Nichts offen (Stand 16.09.2026).
 - `scripts/tabula_rasa.sql` leert `schadensersatz_nummern` nicht; die Bescheide fallen über
   `TRUNCATE … schueler … CASCADE` mit. Nach Tabula rasa sind alle Bescheide weg, der Nummernkreis
   läuft weiter. Vorher festlegen, ob genau das gewollt ist (Nummern nie recyceln).
-- Der Elternbrief je Schadensfall (`GET /api/schadensfaelle/{id}/pdf`, `api/pdf.go`) prüft ebenfalls
-  nicht, ob die Forderung auf einem Bescheid steht, und verlangt „bar in der Bibliothek". Die
-  Oberfläche öffnet ihn seit dem 15.09.2026 nicht mehr (Mahnverfahren Stufe 1); über die Adresse
-  bleibt er erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher denselben
-  Filter wie bei der Ersatzforderung.
+- Der Elternbrief je Schadensfall (`GET /api/schadensfaelle/{id}/pdf`, `api/pdf.go`) prüft nicht,
+  ob die Forderung auf einem Bescheid steht — dann stünde dieselbe Forderung auf zwei Briefen mit
+  zwei Fristen. Den Zahlungsweg nennt er seit dem 17.09.2026 richtig (9.3 e). Die Oberfläche
+  öffnet ihn seit dem 15.09.2026 nicht mehr (Mahnverfahren Stufe 1); über die Adresse bleibt er
+  erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher denselben Filter wie
+  bei der Ersatzforderung.
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 
@@ -860,7 +867,9 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   steht sichtbar „(Bankverbindung des Schulträgers nicht hinterlegt)". Warnung in der
   Betriebsbereitschaft. Topf in die Referenznummer, sonst kollidieren Land und Kreis an der
   UNIQUE-Spalte. Heute lehnt der Server jeden Topf außer `land` mit 409 ab.
-- **Altbriefe entfernen:** Elternbrief `pdf/schadensfall.go` ← `api/pdf.go`
+- **Altbriefe entfernen** (der Zahlungsweg ist seit 17.09.2026 in Ordnung, 9.3 e — es geht nur
+  noch darum, ob es sie neben dem Bescheid überhaupt weiter geben soll): Elternbrief
+  `pdf/schadensfall.go` ← `api/pdf.go`
   (`GenerateDamagePDFHandler`) ← Route in `api/routes_students.go` ← `useStudentProfile.svelte.js`;
   Rechnung `pdf/rechnung.go` ← `api/print.go` ← `GET /api/print/rechnung/{schueler_id}` in
   `api/routes_system.go` ← Knopf in `StudentProfileActions.svelte`; dazu
@@ -1535,12 +1544,30 @@ Die Staffel selbst ist **richtig gebaut**: 1. Verleihjahr voller Kaufpreis, dann
 ab dem 6. Jahr 10 %. Die Arbeitshilfe sagt „Nach 5 Jahren und für jedes weitere Jahr … 10 %" —
 also ab dem sechsten. Am 17.09.2026 am Original nachgelesen.
 
-Was gegen die Vorgabe verstößt, ist der **Zahlungsweg der Altbriefe**: Die Arbeitshilfe schreibt
-„Es darf kein Schulgirokonto, kein anderes Bankkonto und **keine Bargeldannahme** vorgesehen
-werden." `pdf/schadensfall.go` und `pdf/rechnung.go` verlangen beide „bar in der Bibliothek".
+**Der Zahlungsweg der Altbriefe — GELÖST am 17.09.2026.** Die Arbeitshilfe schreibt „Es darf
+kein Schulgirokonto, kein anderes Bankkonto und **keine Bargeldannahme** vorgesehen werden."
+`pdf/schadensfall.go` und `pdf/rechnung.go` verlangten beide „bar in der Bibliothek".
+
+Kein pauschales Streichen, sondern zwei Töpfe, zwei Wege (`pdf/zahlungsweg.go`): Für ein
+Lernmittel nennen beide Briefe jetzt Zahlstelle und Bankverbindung des Landes — aus derselben
+Einstellung wie der Bescheid, eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.
+Für ein Buch der Schülerbücherei ist der Weg nicht entschieden (E5, 8.3): Dort steht die
+beschlossene Zeile „(Bankverbindung des Schulträgers nicht hinterlegt)" und sonst nichts —
+„bar gegen Quittung" ist dort ausdrücklich möglich, aber niemand hat es beschlossen, und ein
+Brief, der sich einen Zahlungsweg ausdenkt, schickt Geld an die falsche Stelle.
+
+Eine Rechnung kann beide Töpfe tragen (sie listet ALLE offenen Forderungen und sucht sich ihre
+Positionen nicht aus). Dann stehen beide Wege mit ihrer Teilsumme da. Gate am fertigen PDF:
+`pdf/zahlungsweg_test.go`, am alten Fuß rot gesehen.
+
+Bar angenommenes Geld bleibt möglich — als Einzelfall mit Quittung und Weiterleitung binnen
+14 Tagen, wie es die Arbeitshilfe vorsieht. Was nicht mehr geht, ist ein Brief, der es
+VORSIEHT. Offen bleibt die Frage dahinter: Der Knopf „Bezahlt" in der Schülerakte bedeutet
+heute Barzahlung am Tresen — für Landesmittel ist das die Ausnahme, nicht der Regelweg (5.1).
+
 Der Elternbrief ist seit dem 15.09.2026 aus der Oberfläche heraus nicht mehr erreichbar, die
-Rechnung über den Knopf in `StudentProfileActions.svelte` schon. Steht als Abräum-Arbeit in
-**5.4**; der Bargeld-Satz macht daraus mehr als Aufräumen.
+Rechnung über den Knopf in `StudentProfileActions.svelte` schon. Ob die Altbriefe ganz
+weichen, entscheidet **5.4**.
 
 ### 9.4 Titel mit 0 Exemplaren (Protokoll 4)
 

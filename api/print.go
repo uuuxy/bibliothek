@@ -35,15 +35,20 @@ import (
 // des Schadensfalls die Zeile; Ausleihdatum ersatzweise das Datum der Forderung.
 //
 // Nicht hierher gehört eine Forderung, die schon auf einem Schadensersatz-Bescheid steht
-// (`bescheid_id`, 14.09.2026): Der Bescheid verlangt die Überweisung mit Referenznummer aufs
-// Konto des Landes, dieser Brief „bar in der Bibliothek". Dieselbe Forderung auf beiden Briefen
-// hieße zwei Zahlungsaufforderungen mit zwei Zahlungswegen.
+// (`bescheid_id`, 14.09.2026): Dieselbe Forderung auf beiden Briefen wäre zweimal dieselbe
+// Zahlungsaufforderung, mit zwei Fristen und zwei Nummern. Seit dem 17.09.2026 nennen beide
+// Briefe für ein Lernmittel dasselbe Konto (pdf/zahlungsweg.go) — bis dahin verlangte dieser
+// hier „bar in der Bibliothek", was die Arbeitshilfe untersagt.
 func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID uuid.UUID) ([]pdf.RechnungItem, error) {
 	query := `
 		SELECT COALESCE(t.titel, g.modellname, sf.beschreibung),
 		       COALESCE(e.barcode_id, g.barcode_id, ''),
 		       COALESCE(a.ausgeliehen_am, sf.erstellt_am),
-		       sf.betrag
+		       sf.betrag,
+		       -- Der Topf der Position und damit ihr Zahlungsweg. Ohne Titel (Geräteschaden)
+		       -- ist es kein Lernmittel des Landes: COALESCE, sonst scannt NULL in einen
+		       -- nicht-nullbaren bool (NULL-Scan-Bugklasse).
+		       COALESCE(t.ist_lernmittel, false)
 		FROM schadensfaelle sf
 		LEFT JOIN buecher_exemplare e ON sf.exemplar_id = e.id
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
@@ -63,7 +68,7 @@ func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID 
 		var item pdf.RechnungItem
 		// Kein `continue`: Eine Rechnung, der still eine Position fehlt, nennt einen zu
 		// kleinen Betrag — und niemand erfährt es. Lieber gar kein Brief als ein falscher.
-		if err := rows.Scan(&item.Titel, &item.Barcode, &item.Ausleihdatum, &item.Ersatzpreis); err != nil {
+		if err := rows.Scan(&item.Titel, &item.Barcode, &item.Ausleihdatum, &item.Ersatzpreis, &item.IstLernmittel); err != nil {
 			return nil, err
 		}
 		items = append(items, item)
@@ -143,7 +148,12 @@ func PrintRechnungHandler(dbPool db.PgxPoolIface) http.HandlerFunc {
 			Ort:     settings.SchuleOrt,
 		}
 
-		pdfBytes, err := pdf.GenerateRechnung(s, items, schule)
+		// Zahlstelle und Bankverbindung des Landes aus derselben Einstellung wie im
+		// Bescheid — eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.
+		angaben := repository.BescheidAngabenAus(settings)
+		zahlung := pdf.Zahlungsangaben{Zahlstelle: angaben.Zahlstelle, Bankverbindung: angaben.Bankverbindung}
+
+		pdfBytes, err := pdf.GenerateRechnung(s, items, schule, zahlung)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

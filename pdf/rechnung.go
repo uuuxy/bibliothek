@@ -36,10 +36,19 @@ type RechnungItem struct {
 	Barcode      string
 	Ausleihdatum time.Time
 	Ersatzpreis  float64
+	// IstLernmittel entscheidet den Topf und damit den Zahlungsweg dieser Position:
+	// Lernmittel gehen an das Land, alles andere (Bücherei, Geräte) an den Schulträger
+	// (siehe zahlungsweg.go). Eine Rechnung kann beides tragen — sie listet alle offenen
+	// Forderungen eines Schülers und sucht sie sich nicht aus.
+	IstLernmittel bool
 }
 
 // GenerateRechnung creates a DIN 5008 compliant invoice PDF.
-func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo) ([]byte, error) {
+//
+// `zahlung` nennt das Konto des Landes (Zahlstelle und Bankverbindung aus den
+// Einstellungen). Bis zum 17.09.2026 stand am Fuß „bar in der Bibliothek" — für ein
+// Lernmittel ist das der Weg, den die Arbeitshilfe ausdrücklich untersagt.
+func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo, zahlung Zahlungsangaben) ([]byte, error) {
 	cfg := config.NewBuilder().
 		WithPageSize("A4").
 		WithLeftMargin(25). // Left margin 25mm for DIN 5008 A/B
@@ -53,7 +62,7 @@ func GenerateRechnung(schueler Schueler, items []RechnungItem, schule SchuleInfo
 	buildHeaderBlock(m)
 	buildIntroBlock(m)
 	buildItemsTableBlock(m, items)
-	buildFooterBlock(m)
+	buildFooterBlock(m, items, zahlung)
 
 	doc, err := m.Generate()
 	if err != nil {
@@ -170,17 +179,32 @@ func buildItemsTableBlock(m core.Maroto, items []RechnungItem) {
 	)
 }
 
-func buildFooterBlock(m core.Maroto) {
-	// Footer: cash-payment note
-	m.AddRow(40, col.New(12))
-	m.AddRow(10,
-		col.New(12).Add(
-			text.New("Bitte begleichen Sie den Betrag bar in der Bibliothek zu den Öffnungszeiten.", props.Text{
-				Size:  8,
-				Align: align.Center,
-			}),
-		),
-	)
+// buildFooterBlock zeichnet den Zahlungsweg — je Topf einen, damit Geld des Landes und
+// Geld des Schulträgers nicht in einer Summe auf einem Konto landen (zahlungsweg.go).
+func buildFooterBlock(m core.Maroto, items []RechnungItem, zahlung Zahlungsangaben) {
+	var land, traeger float64
+	for _, item := range items {
+		if item.IstLernmittel {
+			land += item.Ersatzpreis
+			continue
+		}
+		traeger += item.Ersatzpreis
+	}
+	land = math.Round(land*100) / 100
+	traeger = math.Round(traeger*100) / 100
+
+	m.AddRow(20, col.New(12))
+	for _, block := range ZahlungswegBloecke(land, traeger, zahlung) {
+		if block.Ueberschrift != "" {
+			m.AddRow(6, col.New(12).Add(
+				text.New(block.Ueberschrift, props.Text{Size: 9, Style: fontstyle.Bold}),
+			))
+		}
+		for _, zeile := range block.Zeilen {
+			m.AddRow(5, col.New(12).Add(text.New(zeile, props.Text{Size: 9})))
+		}
+		m.AddRow(6, col.New(12))
+	}
 }
 
 // generateItemRow liefert zwei Zeilen: den Rechnungsposten mit Barcode-Bild und darunter

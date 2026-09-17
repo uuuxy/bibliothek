@@ -533,6 +533,13 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   und dort auch nur bei Vorsatz oder grober Fahrlässigkeit. Vorher entstand die Forderung und stand in keiner
   Übersicht: Der Reiter „Schadensersatz" liest die Sicht `schueler`, und „Bescheid erstellen" antwortete
   „Schüler nicht gefunden".
+- **Wohin gezahlt wird, steht im Brief** (seit 17.09.2026, `pdf/zahlungsweg.go`): Für ein
+  Lernmittel des Landes nennen Elternbrief und Rechnung die Zahlstelle und die Bankverbindung
+  aus den Einstellungen — dieselbe Angabe wie im Schadensersatz-Bescheid. Für ein Buch der
+  Schülerbücherei steht dort, dass der Weg des Schulträgers noch nicht hinterlegt ist; er ist
+  eine offene Frage an den Träger. Trägt eine Rechnung beides, stehen beide Wege mit ihrer
+  Teilsumme da. Bis dahin verlangten beide Briefe „bar in der Bibliothek" — für Landeseigentum
+  ist das die Ausnahme mit Quittung, nicht der Weg, den ein Brief vorsieht.
 - **Erledigt wird eine Gebühr in der Schülerakte** (seit 16.08.2026) auf genau zwei Wegen:
   **„Bezahlt“** (Barzahlung am Tresen) oder **„Stornieren“** mit Pflicht-Begründung
   (Erlass, Buch wiedergefunden, Kulanz). Beides verlangt das Recht `edit_students` —

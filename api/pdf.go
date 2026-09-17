@@ -46,7 +46,12 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 			Ort:     settings.SchuleOrt,
 		}
 
-		pdfBytes, err := pdf.GenerateSchadensfallPDF(info, schule)
+		// Zahlstelle und Bankverbindung des Landes aus derselben Einstellung wie im
+		// Bescheid — eine zweite Kontoangabe im selben Haus wäre eine zweite Wahrheit.
+		angaben := repository.BescheidAngabenAus(settings)
+		zahlung := pdf.Zahlungsangaben{Zahlstelle: angaben.Zahlstelle, Bankverbindung: angaben.Bankverbindung}
+
+		pdfBytes, err := pdf.GenerateSchadensfallPDF(info, schule, zahlung)
 		if err != nil {
 			log.Printf("PDF Generator: Generation error for case %s: %v", id, err)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("failed to generate PDF"))
@@ -73,6 +78,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 	var sVorname, sNachname, sKlasse string
 	var sStrasse, sHausnummer, sPLZ, sOrt string
 	var tTitel, eBarcode string
+	var istLernmittel bool
 
 	// COALESCE auf den Adressspalten: nullbar in der DB, nicht-nullbar in Go
 	// (NULL-Scan-Bugklasse). Anschrift fürs Fensterkuvert, siehe SchadensfallInfo.
@@ -82,7 +88,9 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 			s.vorname, s.nachname, s.klasse,
 			COALESCE(s.strasse, ''), COALESCE(s.hausnummer, ''),
 			COALESCE(s.plz, ''), COALESCE(s.ort, ''),
-			t.titel, e.barcode_id
+			t.titel, e.barcode_id,
+			-- Der Topf und damit der Zahlungsweg des Briefs (pdf/zahlungsweg.go).
+			COALESCE(t.ist_lernmittel, false)
 		FROM schadensfaelle sf
 		JOIN schueler s ON sf.schueler_id = s.id
 		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
@@ -94,7 +102,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		&beschreibung, &betrag, &erstelltAm,
 		&sVorname, &sNachname, &sKlasse,
 		&sStrasse, &sHausnummer, &sPLZ, &sOrt,
-		&tTitel, &eBarcode,
+		&tTitel, &eBarcode, &istLernmittel,
 	)
 	if err != nil {
 		return pdf.SchadensfallInfo{}, err
@@ -113,6 +121,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		Ort:              sOrt,
 		BuchTitel:        tTitel,
 		ExemplarBarcode:  eBarcode,
+		IstLernmittel:    istLernmittel,
 	}, nil
 }
 
