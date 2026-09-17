@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/repository"
 )
 
 // Die Verfügbarkeitsspalte der Exemplarliste hatte keinen Test — aufgefallen erst, als
@@ -38,7 +39,7 @@ func exemplarZeilen(t *testing.T, srv *Server, titelID string) []struct {
 	req.SetPathValue("id", titelID)
 	rec := httptest.NewRecorder()
 
-	srv.GetTitleCopiesHandler()(rec, req)
+	srv.GetTitleCopiesHandler(repository.NewBescheidRepository(srv.DB.Pool))(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Exemplarliste: Status %d, Body %s", rec.Code, rec.Body.String())

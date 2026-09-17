@@ -117,7 +117,7 @@ func (s *Server) DeleteTitleHandler(auditRepo repository.AuditRepository) http.H
 // @Failure      400  {object}  map[string]string
 // @Failure      500  {object}  map[string]string
 // @Router       /buecher/titel/{id}/exemplare [get]
-func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
+func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -154,6 +154,12 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 			IstAusleihbar           bool `json:"ist_ausleihbar"`
 			IstAusgesondert         bool `json:"ist_ausgesondert"`
 			IstVerfuegbar           bool `json:"ist_verfuegbar"`
+			// Ersatzwert und Herleitung: was ein Ersatz für DIESES Exemplar heute kostet
+			// (OFFEN.md 9.8, Stufe 2b). Gerechnet wird mit ersatzwertVorschlagAus —
+			// derselben Funktion wie im Melde-Dialog, damit die Buchakte und die
+			// Forderung nie zwei Zahlen für dasselbe Buch zeigen.
+			Ersatzwert           float64 `json:"ersatzwert"`
+			ErsatzwertHerleitung string  `json:"ersatzwert_herleitung"`
 		}
 
 		copies := []CopyResponse{}
@@ -167,6 +173,24 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 		if err := rows.Err(); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
+		}
+
+		// Der Ersatzwert je Exemplar: EINE Abfrage für den ganzen Titel, dann die
+		// Staffel im Speicher. Ein Aufruf je Karte wäre bei einem Klassensatz mit
+		// 30 Bänden 30 Abfragen für eine Seite.
+		//
+		// Scheitert das, bleibt die Liste stehen und die Werte fehlen: Der Ersatzwert
+		// ist eine Auskunft, kein Grund, die Exemplar-Liste zu verweigern.
+		if groessen, err := bescheidRepo.GroessenFuerTitel(ctx, id); err == nil {
+			for i := range copies {
+				g, da := groessen[copies[i].ID]
+				if !da {
+					continue
+				}
+				v := ersatzwertVorschlagAus(g)
+				copies[i].Ersatzwert = v.Betrag
+				copies[i].ErsatzwertHerleitung = v.Herleitung
+			}
 		}
 
 		RespondJSON(w, http.StatusOK, copies)

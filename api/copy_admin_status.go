@@ -80,7 +80,7 @@ type UpdateStatusRequest struct {
 // @Failure      400   {object}  map[string]string
 // @Failure      500   {object}  map[string]string
 // @Router       /buecher/exemplare/{id}/status [put]
-func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository) http.HandlerFunc {
+func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bescheidRepo repository.BescheidRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -120,7 +120,20 @@ func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository) htt
 			return
 		}
 
-		RespondSuccess(w)
+		// Die Antwort trägt den NEUEN Ersatzwert zurück (OFFEN.md 9.8, Stufe 2b):
+		// Wer den Wertverlust gerade eingetragen hat, sieht sofort, was das Buch damit
+		// noch wert ist. Gerechnet wird dabei am Server, mit derselben Funktion wie im
+		// Melde-Dialog — die Oberfläche soll diese Zahl nie selbst ausrechnen.
+		//
+		// Scheitert die Nachfrage, bleibt es bei der Erfolgsmeldung: Gespeichert ist
+		// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
+		antwort := map[string]any{"status": "success"}
+		if g, groessenErr := bescheidRepo.GroessenFuerExemplar(ctx, id); groessenErr == nil {
+			v := ersatzwertVorschlagAus(g)
+			antwort["ersatzwert"] = v.Betrag
+			antwort["ersatzwert_herleitung"] = v.Herleitung
+		}
+		RespondJSON(w, http.StatusOK, antwort)
 	}
 }
 

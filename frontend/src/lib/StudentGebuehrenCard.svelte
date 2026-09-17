@@ -5,6 +5,7 @@
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Modal from './Modal.svelte';
+	import { formatEuro as euro } from './utils/format.js';
 	import BescheidDialog from './components/mahnwesen/BescheidDialog.svelte';
 
 	/**
@@ -33,8 +34,6 @@
 			schuelerId !== '' &&
 			gebuehren.some((f) => !f.ist_bezahlt && !f.storniert_am && !f.bescheid_id)
 	);
-
-	const euro = (v) => (v ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
 	function schliesseStornoModal() {
 		// Zustand vollständig zurücksetzen — ein stehen gebliebener Grund würde

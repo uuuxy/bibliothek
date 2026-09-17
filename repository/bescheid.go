@@ -91,6 +91,10 @@ type BescheidRepository interface {
 	// GroessenFuerExemplar: die Zahlen des Staffel-Vorschlags für EIN Exemplar, für den
 	// Dialog „Verlust/Schaden melden" — dort gibt es noch keine Forderung zu lesen.
 	GroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error)
+
+	// GroessenFuerTitel: dieselben Zahlen für ALLE Exemplare eines Titels, in einer
+	// Abfrage — die Buchakte zeigt den heutigen Buchwert an jeder Exemplar-Karte.
+	GroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error)
 }
 
 // BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck.

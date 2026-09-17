@@ -1606,6 +1606,13 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
   einer Quelle, die es schon gab: Die DNB liefert den Ladenpreis aus MARC21 020 $c in jeder
   Antwort mit (`metadaten_preis.go`), er stand dort ungenutzt — jetzt füllt er beim Anlegen
   über die ISBN das Feld. Verdrahtet über alle vier Schreibwege; Feld in der Katalog-Maske.
+- **Stufe 2b GEBAUT.** An jedem Exemplar der Buchakte steht, was ein Ersatz heute kostet —
+  mit der Herleitung darunter („3. Verleihjahr → 60 % von 41,50 € (Listenpreis), abzüglich
+  20 % für den Zustand"). Die Zahl kommt aus derselben Funktion wie der Vorschlag im
+  Melde-Dialog; die Oberfläche rechnet nichts. Für den ganzen Titel eine Abfrage, nicht eine
+  je Karte. Und die Status-Tür antwortet mit dem NEUEN Wert: Wer den Wertverlust einträgt,
+  sieht sofort, was das Buch damit noch wert ist, statt den alten Betrag daneben stehen zu
+  sehen.
 - **Stufe 3 GEBAUT (Exemplar-Akte).** Der Wertverlust steht im Status-Editor der Buchakte,
   neben der Notiz, und die Karte zeigt ihn an. Er reist über die BESTEHENDE Tür
   (`PUT /api/buecher/exemplare/{id}/status`) — keine zweite für denselben Zustand. Drei Regeln
@@ -1620,11 +1627,8 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
 
 **Was als Nächstes dran ist:**
 
-1. **Stufe 2b: der Buchwert sichtbar** am Exemplar — Basis, Verleihjahr, Staffelsatz,
-   Zustandsabschlag, Ergebnis. Das ist der Punkt, den die Anforderungsliste mit „Medien
-   automatisch abwerten" meint.
-2. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
-3. **Der Wertverlust bei der RÜCKGABE — eine Frage an dich.** Die Anforderungsliste nennt
+1. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
+2. **Der Wertverlust bei der RÜCKGABE — eine Frage an dich.** Die Anforderungsliste nennt
    „Katalogisierung und Rückgabe". Die Katalogisierung ist erledigt (Stufe 3, siehe oben), die
    Rückgabe nicht — und zwar mit Absicht: Die Theke ist ein Scanfeld, kein Formular. Ein Buch
    kommt zurück, indem es gescannt wird; es gibt dort keinen Dialog, in den ein Prozentwert

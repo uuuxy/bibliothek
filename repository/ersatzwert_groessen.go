@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"bibliothek/pkg/schulzeit"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Die Größen des Staffel-Vorschlags für EIN Exemplar — für den Dialog „Verlust/Schaden
@@ -51,37 +53,81 @@ type ErsatzwertGroessen struct {
 // gelöscht worden sein. Ein 500 an dieser Stelle nähme dem Personal die Möglichkeit,
 // den Schaden überhaupt zu melden — es soll dann nur den Betrag selbst eintragen.
 func (r *pgBescheidRepository) GroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error) {
-	var g ErsatzwertGroessen
-	var erworben *time.Time
+	alle, err := r.groessen(ctx, "e.id = $1", exemplarID)
+	if err != nil {
+		return ErsatzwertGroessen{}, err
+	}
+	g, da := alle[exemplarID]
+	if !da {
+		// pgx.ErrNoRows, nicht ein eigener Fehler: Der Aufrufer unterscheidet daran
+		// „Exemplar gibt es nicht" (404) von „Abfrage kaputt" (500).
+		return ErsatzwertGroessen{}, pgx.ErrNoRows
+	}
+	return g, nil
+}
 
-	// coalesce auf den Listenpreis: Die Spalte ist nullbar (NULL = nicht erfasst), und
-	// 0 bedeutet für die Staffel dasselbe — sie weicht dann auf den Kaufpreis aus. Ein
-	// Scan in float64 ohne coalesce wäre ein 500 beim ersten Titel ohne Preis.
-	err := r.db.QueryRow(ctx, `
-		SELECT coalesce(e.einkaufspreis, 0)::float8,
+// GroessenFuerTitel liest dieselben Größen für ALLE Exemplare eines Titels — in einer
+// Abfrage, nicht einer pro Exemplar.
+//
+// Die Buchakte zeigt den heutigen Buchwert an jedem Exemplar (OFFEN.md 9.8, Stufe 2b).
+// Ein Aufruf je Karte wäre bei einem Klassensatz mit 30 Bänden 30 Abfragen für eine
+// Seite; die Zählung der Schuljahre nimmt ohnehin eine Liste.
+func (r *pgBescheidRepository) GroessenFuerTitel(ctx context.Context, titelID string) (map[string]ErsatzwertGroessen, error) {
+	return r.groessen(ctx, "e.titel_id = $1", titelID)
+}
+
+// groessen ist die EINE Abfrage hinter beiden Wegen. Zwei Fassungen desselben SELECTs
+// wären zwei Auslegungen derselben Staffel — und die Zahl steht in einem Bescheid.
+//
+// coalesce auf den Listenpreis: Die Spalte ist nullbar (NULL = nicht erfasst), und
+// 0 bedeutet für die Staffel dasselbe — sie weicht dann auf den Kaufpreis aus. Ein
+// Scan in float64 ohne coalesce wäre ein 500 beim ersten Titel ohne Preis.
+func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, wert any) (map[string]ErsatzwertGroessen, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT e.id,
+		       coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8,
 		       e.zustand_abwertung_prozent,
 		       coalesce(t.ist_lernmittel, false),
 		       e.erworben_am
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE e.id = $1`, exemplarID).
-		Scan(&g.Kaufpreis, &g.Listenpreis, &g.ZustandAbschlag, &g.IstLernmittel, &erworben)
+		WHERE `+bedingung, wert)
 	if err != nil {
-		return ErsatzwertGroessen{}, err
+		return nil, err
 	}
+	defer rows.Close()
 
-	// Dieselbe Rechnung wie in OffeneForderungen: Schuljahre, nicht Kalenderjahre.
-	if erworben != nil {
-		g.SchuljahreImBestand = schuljahrVon(schulzeit.Jetzt()) - schuljahrVon(*erworben)
+	alle := map[string]ErsatzwertGroessen{}
+	ids := []string{}
+	for rows.Next() {
+		var id string
+		var g ErsatzwertGroessen
+		var erworben *time.Time
+		if err := rows.Scan(&id, &g.Kaufpreis, &g.Listenpreis, &g.ZustandAbschlag,
+			&g.IstLernmittel, &erworben); err != nil {
+			return nil, err
+		}
+		// Dieselbe Rechnung wie in OffeneForderungen: Schuljahre, nicht Kalenderjahre.
+		if erworben != nil {
+			g.SchuljahreImBestand = schuljahrVon(schulzeit.Jetzt()) - schuljahrVon(*erworben)
+		}
+		alle[id] = g
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	// Geteilter Zähler mit dem Bescheid-Weg statt einer zweiten Abfrage daneben.
-	schuljahre, err := r.schuljahreMitAusleihe(ctx, []string{exemplarID})
+	schuljahre, err := r.schuljahreMitAusleihe(ctx, ids)
 	if err != nil {
-		return ErsatzwertGroessen{}, err
+		return nil, err
 	}
-	g.SchuljahreMitAusleihe = schuljahre[exemplarID]
+	for id, g := range alle {
+		g.SchuljahreMitAusleihe = schuljahre[id]
+		alle[id] = g
+	}
 
-	return g, nil
+	return alle, nil
 }

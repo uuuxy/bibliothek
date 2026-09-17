@@ -2,6 +2,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { coverSrc } from './utils/coverSrc.js';
+	import { formatEuro as euro } from './utils/format.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
 	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
@@ -50,7 +51,6 @@
 	const aktiveAnalyse = $derived(ANALYSEN.find((a) => a.value === analyse) ?? ANALYSEN[0]);
 
 	/** @param {number} v */
-	const euro = (v) => (v ?? 0).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' });
 
 	/** Ganzzahl mit deutscher Tausender-Trennung (33166 → „33.166"). @param {number} v */
 	const num = (v) => (v ?? 0).toLocaleString('de-DE');

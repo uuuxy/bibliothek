@@ -29,7 +29,7 @@ func TestCopyStatusVerloren_ZaehltAlsVerlust(t *testing.T) {
 	}
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	handler := srv.UpdateCopyStatusHandler(repository.NewBookRepository(pool))
+	handler := srv.UpdateCopyStatusHandler(repository.NewBookRepository(pool), repository.NewBescheidRepository(pool))
 	req := httptest.NewRequest(http.MethodPut, "/api/buecher/exemplare/"+exID+"/status",
 		strings.NewReader(`{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"aus Ranzen verloren"}`))
 	req.SetPathValue("id", exID)

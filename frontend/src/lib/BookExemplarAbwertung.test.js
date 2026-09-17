@@ -79,6 +79,37 @@ describe('Beschädigungsgrad im Status-Editor', () => {
 		);
 	});
 
+	it('übernimmt den neuen Ersatzwert aus der Antwort des Servers', async () => {
+		// Die Karte zeigt den Ersatzwert. Ohne diese Übernahme stünde dort nach dem
+		// Speichern der ALTE Betrag — direkt neben dem Wertverlust, den der Mensch
+		// gerade eingetragen hat.
+		vi.mocked(apiClient.put).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => ({
+					status: 'success',
+					ersatzwert: 19.92,
+					ersatzwert_herleitung: '3. Verleihjahr → 60 % von 41,50 €, abzüglich 20 %'
+				})
+			})
+		);
+		const ex = {
+			id: 'ex-5',
+			ist_ausleihbar: true,
+			zustand_notiz: '',
+			zustand_abwertung_prozent: 0,
+			ersatzwert: 24.9,
+			ersatzwert_herleitung: 'alt'
+		};
+		const screen = render(BookExemplarStatusEditor, { props: { ex, onDone: () => {} } });
+
+		await fireEvent.input(feldWert(screen), { target: { value: '20' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+
+		expect(ex.ersatzwert).toBe(19.92);
+		expect(ex.ersatzwert_herleitung).toContain('abzüglich 20 %');
+	});
+
 	it('zeigt das Feld auch bei „Verfügbar" — der Abschlag überlebt den Status', () => {
 		const ex = {
 			id: 'ex-4',

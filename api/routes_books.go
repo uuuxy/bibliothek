@@ -20,7 +20,11 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// dieselbe Suche wie GET /api/search, aber nur Titel und hinter view_books statt
 	// perform_actions (05.09.2026, Befund-Register Entscheidung 3).
 	mux.Handle("GET /api/buecher/titel/suche", s.RequirePermission("view_books")(s.TitelSucheHandler(bookRepo)))
-	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler()))
+	// Die Exemplar-Liste trägt seit dem 17.09.2026 den heutigen Ersatzwert je Exemplar
+	// (OFFEN.md 9.8, Stufe 2b). Recht bleibt view_books: Was ein Ersatz kostet, ist eine
+	// Angabe über das BUCH — kein Schülerdatum. Gerechnet wird mit derselben Funktion wie
+	// im Melde-Dialog, gelesen über das Bescheid-Repository, dem die Staffel-Größen gehören.
+	mux.Handle("GET /api/buecher/titel/{id}/exemplare", s.RequirePermission("view_books")(s.GetTitleCopiesHandler(repository.NewBescheidRepository(s.DB.Pool))))
 	// Ausleiher und Historie hinter view_students, nicht view_books: Beide
 	// verknüpfen Schülernamen mit Titeln (die Historie über Jahre) — dieselbe
 	// Befundklasse wie die Vormerkungen (bewertung/sicherheitsbefund-*.md),
@@ -45,7 +49,7 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Update specific copy fields
 	mux.Handle("POST /api/buecher/exemplare/{id}/schadensnotiz", s.RequirePermission("edit_books")(s.UpdateDamageNoteHandler(bookRepo)))
 	mux.Handle("PUT /api/buecher/exemplare/{id}/barcode", s.RequirePermission("edit_books")(s.UpdateCopyBarcodeHandler(bookRepo)))
-	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.UpdateCopyStatusHandler(bookRepo)))
+	mux.Handle("PUT /api/buecher/exemplare/{id}/status", s.RequirePermission("edit_books")(s.UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(s.DB.Pool))))
 	mux.Handle("POST /api/buecher/exemplare/{id}/aussondern", s.RequirePermission("edit_books")(s.AussondernCopyHandler(bookRepo)))
 
 	// ── AUSLEIHEN (Loans) ──

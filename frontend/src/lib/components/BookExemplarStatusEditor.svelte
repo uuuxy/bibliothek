@@ -68,6 +68,14 @@
 				if ('zustand_abwertung_prozent' in koerper) {
 					ex.zustand_abwertung_prozent = grad;
 				}
+				// Der neue Ersatzwert kommt aus der Antwort, nicht aus einer Rechnung
+				// hier: Sonst stünde an der Karte eine zweite Zahl für dasselbe Buch —
+				// und ohne ihn zeigte sie nach dem Speichern den alten Wert.
+				const antwort = await res.json().catch(() => ({}));
+				if (typeof antwort.ersatzwert === 'number') {
+					ex.ersatzwert = antwort.ersatzwert;
+					ex.ersatzwert_herleitung = antwort.ersatzwert_herleitung ?? '';
+				}
 				onDone();
 				showToast('Status erfolgreich gespeichert', 'success');
 			} else {

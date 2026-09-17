@@ -45,7 +45,7 @@ func TestAussondern_BeideTuerenPruefenAusleihe(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		(&Server{}).UpdateCopyStatusHandler(bookRepo)(rec, req)
+		(&Server{}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, req)
 		return rec
 	}
 	istAusgesondert := func(id string) bool {
