@@ -15,13 +15,26 @@
 	 * eigenen Ausweise aus der Zeit vor Code 128.
 	 */
 	import KameraScanner from '../inventur/lib/components/scanner/KameraScanner.svelte';
+	import { omniboxStore } from './stores/omnibox.svelte.js';
 	import { X } from '@lucide/svelte';
+	import { onDestroy } from 'svelte';
 
 	let { stopCamera, queryVal = $bindable(), submitAction } = $props();
 
 	/** @type {any} */
 	let scanner = $state(null);
 	let meldung = $state('Kamera wird gestartet …');
+
+	// Der Griff zum Abschalten liegt am Store, solange die Kamera offen ist: „Theke leeren"
+	// und der Sperrbildschirm müssen den Strom abwürgen können, ohne dieses Bauteil zu
+	// kennen. Ein Scanner, der hinter der Sperre weiterläuft, bucht ein vorgehaltenes Buch
+	// (Prüfung 22.08.2026, A6) — deshalb hängt hier ein Gate dran (idleLock.test.js).
+	$effect(() => {
+		if (scanner) omniboxStore.cameraScanner = { stop: () => scanner?.stopScanner() };
+	});
+	onDestroy(() => {
+		omniboxStore.cameraScanner = null;
+	});
 
 	function beiTreffer(code) {
 		queryVal = String(code).trim();

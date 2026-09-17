@@ -81,17 +81,9 @@
 				omniboxStore.lastFremdrueckgabe = null;
 				omniboxStore.isDropdownOpen = false;
 				if (omniboxStore.showCamera) {
-					omniboxStore.showCamera = false;
-					if (omniboxStore.cameraScanner) {
-						try {
-							omniboxStore.cameraScanner.stop();
-						} catch {}
-						try {
-							omniboxStore.cameraScanner.clear();
-						} catch {}
-						omniboxStore.cameraScanner = null;
-					}
-					setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
+					// Escape schliesst die Kamera. Das Abschalten selbst gehoert dem Bauteil
+					// (CameraScanner → KameraScanner): Es haelt den Strom, es raeumt ihn auf.
+					stopCamera();
 				}
 			}
 		}
@@ -99,40 +91,21 @@
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	});
 
-	// HTML5 Kamera-Scanner (Mobile)
-	async function startCamera() {
+	// Die Kamera. Hier steht nur noch, DASS sie gezeigt wird — wie sie startet, liest und
+	// aufhoert, steht in CameraScanner.svelte.
+	//
+	// Bis zum 17.09.2026 startete diese Datei eine ZWEITE Kamera: `new Html5Qrcode(...)`
+	// gegen das DOM-Element `camera-scan-region`, das im Bauteil lag. Zwei Stellen fuer
+	// eine Kamera — und als das Bauteil sein Element wechselte, blieb hier ein Aufruf ins
+	// Leere zurueck („Kamera konnte nicht gestartet werden"). Der Strom gehoert dem
+	// Bauteil, das ihn anfordert.
+	function startCamera() {
 		omniboxStore.showCamera = true;
-		await new Promise((r) => setTimeout(r, 80));
-		try {
-			const { Html5Qrcode } = await import('html5-qrcode');
-			omniboxStore.cameraScanner = new Html5Qrcode('camera-scan-region');
-			await omniboxStore.cameraScanner.start(
-				{ facingMode: 'environment' },
-				{ fps: 10, qrbox: { width: 260, height: 120 } },
-				(/** @type {string} */ decodedText) => {
-					omniboxStore.queryVal = decodedText.trim();
-					stopCamera();
-					omniboxStore.submitAction(null, () => studentProfileComponent?.reloadProfile());
-				},
-				() => {}
-			);
-		} catch {
-			omniboxStore.showCamera = false;
-			omniboxStore.showToast('Kamera konnte nicht gestartet werden', 'error');
-		}
 	}
 
-	async function stopCamera() {
+	function stopCamera() {
 		omniboxStore.showCamera = false;
-		if (omniboxStore.cameraScanner) {
-			try {
-				await omniboxStore.cameraScanner.stop();
-			} catch {}
-			try {
-				omniboxStore.cameraScanner.clear();
-			} catch {}
-			omniboxStore.cameraScanner = null;
-		}
+		// Ein Handscanner tippt blind: Ohne Fokus landet der naechste Scan im Nichts.
 		setTimeout(() => document.getElementById('omnibox-input')?.focus(), 50);
 	}
 </script>
