@@ -38,8 +38,12 @@ import (
 // Großbuchstaben — der Aufdruck ist damit Zeichen für Zeichen das, was in der Datenbank
 // steht. Das `ToUpper` von früher war eine Eigenheit von Code 39 und fällt mit ihm weg.
 //
-// GELESEN werden Code 39 und die EAN-Arten weiterhin (frontend .../barcode_detector.js):
-// Karten und Etiketten aus der Zeit davor sollen weiter funktionieren.
+// GELESEN werden Code 39 und die EAN-Arten weiterhin (frontend .../barcode_detector.js).
+// Das allein genügte NICHT: Die Kamera erkannte den alten Code zwar, lieferte aber die
+// Nummer samt Prüfzeichen, und die gibt es in keiner Tabelle. Karten und Etiketten aus
+// der Zeit davor funktionieren, seit der Scan sie als zweiten Versuch ohne Prüfzeichen
+// nachschlägt (pkg/code39, internal/service/omnibox_service.go, scanEinordnen.js).
+// Bis zum 17.09.2026 stand hier nur der Satz, sie sollten weiter funktionieren.
 func GenerateBarcodePNG(content string, isQR bool, width, height int) ([]byte, error) {
 	var bc barcode.Barcode
 	var err error

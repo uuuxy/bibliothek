@@ -1451,18 +1451,20 @@ Zwei Quellen liegen dem zugrunde und sind am 17.09.2026 erstmals im Original gel
   (`internal/service/littera_etikett.go`) und ohne Netz (`frontend/src/lib/litteraEtikett.js`),
   beide gegen dieselben Prüffälle (`litteraEtikett.faelle.json`).
 
-### 9.2 A: Alte Ausdrucke sind weiter unlesbar, und ein Kommentar behauptet das Gegenteil
+### 9.2 Alte Ausdrucke — GELÖST am 17.09.2026
 
-Jeder Ausweis und jedes Etikett, das VOR dem 17.09.2026 gedruckt wurde, trägt Code 39 mit
-Prüfzeichen. Die Kamera liest Code 39 weiterhin (`GELESENE_FORMATE`) und liefert dann „B-100016"
-— eine Nummer, die es nicht gibt. Der Kommentar in `api/barcode_generate.go` sagt „Karten und
-Etiketten aus der Zeit davor sollen weiter funktionieren"; es gibt aber keine Stelle, die das
-Prüfzeichen entfernt. Ein Schutz, den nur ein Kommentar behauptet.
+Jeder Ausweis und jedes Etikett von VOR dem 17.09.2026 trägt Code 39 mit Prüfzeichen; das
+Lesegerät liefert „B-100016", und die Nummer gibt es in keiner Tabelle. Entschieden (Peter,
+17.09.2026): Alte Barcodes sollen weiter funktionieren — das war von Anfang an gefordert.
 
-Zwei Wege: alles neu drucken (dann muss der Kommentar weg), oder eine Nachsicht beim erfolglosen
-Scan (Mod-43-Prüfzeichen abschneiden und ein zweites Mal nachschlagen — nur wenn der erste
-Versuch nichts fand, sonst entstehen falsche Treffer). **Vorschlag: die Nachsicht bauen und den
-Kommentar wahr machen**, weil niemand weiß, wie viele Karten schon im Umlauf sind.
+Gebaut: Findet ein Scan nichts, wird er ein zweites Mal ohne Mod-43-Prüfzeichen nachgeschlagen
+(`pkg/code39`, in `ProcessQuery` an EINER Stelle, offline in `scanEinordnen.js`). Nur als
+ZWEITER Versuch — bei 43 möglichen Zeichen sieht sonst jeder 43. gültige Code zufällig so aus.
+Beide Seiten teilen 15 Prüffälle; die Rechnung ist an den Balken der Druck-Bibliothek
+gegengeprüft. Der Kommentar in `api/barcode_generate.go` stimmt jetzt.
+
+Neu drucken muss die Schule damit nichts. Wer es trotzdem tut, bekommt Code 128 — schmaler und
+ohne Prüfzeichen.
 
 ### 9.3 Vorgaben des Landes (Protokoll 1)
 
