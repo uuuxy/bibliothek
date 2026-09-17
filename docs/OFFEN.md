@@ -1597,7 +1597,31 @@ Nr. 2 ist dagegen ohne Konflikt: Die Arbeitshilfe stellt den Betrag ausdrücklic
 der Schule „je nach Zustand des Lehrwerks, Ausleihhäufigkeit etc." — ein erfasster
 Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
 
-**Vier Stufen; Stufe 1 ändert das Schema und braucht Peters Freigabe:**
+**Stand am 17.09.2026 (Peter hat die volle Umsetzung freigegeben):**
+
+- **Stufe 1 GEBAUT** (Migration 127). `buecher_titel.listenpreis` (nullbar) und
+  `buecher_exemplare.zustand_abwertung_prozent` (NOT NULL, 0–100). Der Listenpreis hängt an
+  einer Quelle, die es schon gab: Die DNB liefert den Ladenpreis aus MARC21 020 $c in jeder
+  Antwort mit (`metadaten_preis.go`), er stand dort ungenutzt — jetzt füllt er beim Anlegen
+  über die ISBN das Feld. Verdrahtet über alle vier Schreibwege; Feld in der Katalog-Maske.
+- **Stufe 2a GEBAUT.** `ersatzwert.Rechne` nimmt den Zustands-Abschlag, und alle drei
+  Vorschlagswege liefern Listenpreis und Abschlag durch. Die Herleitung sagt „Listenpreis"
+  statt „Neupreis" — ein Wort für eine Sache.
+
+**Was als Nächstes dran ist:**
+
+1. **Tests für den Zustands-Abschlag** in `pkg/ersatzwert` — bisher rufen ihn alle Tests mit 0,
+   der neue Zweig ist also ungeprüft. Das ist die kleinste und dringendste Lücke.
+2. **Stufe 3: die Tür zur Abwertung.** Die Spalte hat noch keinen Schreiber in der Oberfläche —
+   ein Prozentfeld bei der Rückgabe und in der Exemplar-Akte, neben der vorhandenen
+   `zustand_notiz`. Vorher prüfen, was es dafür schon gibt (es gab bis zum 16.09.2026 eine Tür
+   `POST /api/buecher/exemplare/{id}/schadensnotiz`).
+3. **Stufe 2b: der Buchwert sichtbar** am Exemplar — Basis, Verleihjahr, Staffelsatz,
+   Zustandsabschlag, Ergebnis. Das ist der Punkt, den die Anforderungsliste mit „Medien
+   automatisch abwerten" meint.
+4. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
+
+**Die vier Stufen im Einzelnen:**
 
 1. **Migration.** `buecher_titel.listenpreis` (Neupreis zum heutigen Tag, nullbar) und
    `buecher_exemplare.zustand_abwertung_prozent` (0–100, Vorgabe 0). Zwei Spalten, keine
