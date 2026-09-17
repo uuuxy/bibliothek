@@ -8,6 +8,7 @@
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Radio from './components/ui/Radio.svelte';
+	import { apiFetch } from './apiFetch.js';
 
 	// `book.ohneForderung` = der Entleiher ist ein Kollege. Gesetzt wird es beim Öffnen
 	// (useStudentProfile: openDamageModal), damit die Entscheidung an EINER Stelle steht. Dann entsteht keine Forderung
@@ -22,10 +23,52 @@
 	const ohneForderung = $derived(!!book?.ohneForderung);
 
 	let damageReason = $state('Verloren');
-	let damageAmount = $state(15.0);
+	// Startwert 0, nicht 15: Bis zum 17.09.2026 stand hier eine feste 15,00 € ohne jeden
+	// Bezug zum Buch — das Protokoll des Medienzentrums vom 16.09.2026 nennt genau das
+	// („fehlende Restwertberechnung z.Zt. Handeingabe"). Der Server rechnet den Vorschlag
+	// und sagt dazu, WIE er entstanden ist; bis seine Antwort da ist, steht hier lieber 0
+	// als eine Zahl, die gleich wegspringt.
+	let damageAmount = $state(0);
+	/** Der Satz unter dem Betragsfeld: Herleitung, Ladehinweis oder Fehlermeldung. */
+	let herleitung = $state('');
 	// Die Fallgruppe steht im Bescheid an die Eltern (welches Kästchen, ob Rückgabe
 	// verlangt wird) — deshalb eine Wahl, kein Rückschluss aus dem Freitext.
 	let art = $state('nicht_zurueckgegeben');
+
+	// Der Vorschlag kommt vom Server, weil dort die Regeln liegen: die Staffel der
+	// Arbeitshilfe für Lernmittel, der Neuwert ohne Abschlag für den Bücherei-Bestand
+	// (api/ersatzwert_vorschlag_handler.go). Zwei Rechnungen an zwei Orten wären dieselbe
+	// Geschichte wie bei den Fristen — und die Zahl landet in einer Forderung.
+	//
+	// Ohne Forderung (Kollege) wird nicht gefragt: Dann gibt es kein Betragsfeld.
+	$effect(() => {
+		const exemplarId = book?.id;
+		if (!exemplarId || ohneForderung) return;
+
+		let abgebrochen = false;
+		herleitung = 'Vorschlag wird berechnet …';
+
+		apiFetch(`/api/buecher/exemplare/${exemplarId}/ersatzwert-vorschlag`)
+			.then(async (res) => {
+				if (!res.ok) throw new Error(String(res.status));
+				return res.json();
+			})
+			.then((v) => {
+				if (abgebrochen) return;
+				damageAmount = v.betrag ?? 0;
+				herleitung = v.herleitung ?? '';
+			})
+			.catch(() => {
+				if (abgebrochen) return;
+				// Kein stilles 0,00 €: Wer hier nichts liest, hielte den Startwert für
+				// einen berechneten Vorschlag.
+				herleitung = 'Vorschlag konnte nicht berechnet werden — bitte Betrag selbst eintragen.';
+			});
+
+		return () => {
+			abgebrochen = true;
+		};
+	});
 
 	function handleSubmit() {
 		onSubmit(damageReason, ohneForderung ? 0 : damageAmount, art);
@@ -69,12 +112,15 @@
 				{#if !ohneForderung}
 					<Feld
 						id="damage-amount"
-						label="Ersatzbetrag (€)"
+						label="Ersatzbetrag"
 						type="number"
 						step="0.01"
 						min="0"
+						hint={herleitung}
 						bind:value={damageAmount}
-					/>
+					>
+						{#snippet nachlaufend()}€{/snippet}
+					</Feld>
 				{/if}
 				<div class="flex gap-3 justify-end pt-4">
 					<Button variant="ghost" onclick={onCancel} disabled={isSubmitting}>Abbrechen</Button>

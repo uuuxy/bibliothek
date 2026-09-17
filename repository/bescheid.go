@@ -88,6 +88,9 @@ type BescheidRepository interface {
 	// UeberfaelligeAusleihen: die überfälligen Bücher eines Kindes ohne Forderung —
 	// die Kandidaten für den Brief (Stufe 2).
 	UeberfaelligeAusleihen(ctx context.Context, schuelerID string) ([]UeberfaelligeAusleihe, error)
+	// GroessenFuerExemplar: die Zahlen des Staffel-Vorschlags für EIN Exemplar, für den
+	// Dialog „Verlust/Schaden melden" — dort gibt es noch keine Forderung zu lesen.
+	GroessenFuerExemplar(ctx context.Context, exemplarID string) (ErsatzwertGroessen, error)
 }
 
 // BescheidBriefPosition ist eine Zeile des Briefs, gelesen für Druck und Nachdruck.

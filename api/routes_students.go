@@ -100,6 +100,9 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	// keiner öffnen kann; die Entscheidung steht als E-Frage im Konzept.
 	bescheidRepo := repository.NewBescheidRepository(s.DB.Pool)
 	mux.Handle("GET /api/schueler/{id}/bescheid-vorschlag", s.RequirePermission("edit_students")(s.BescheidVorschlagHandler(bescheidRepo)))
+	// Der Betragsvorschlag des Melde-Dialogs (OFFEN.md 9.3 a): dasselbe Recht wie das
+	// Melden selbst — wer die Forderung anlegen darf, darf auch den Vorschlag dafür sehen.
+	mux.Handle("GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag", s.RequirePermission("edit_students")(s.ErsatzwertVorschlagHandler(bescheidRepo)))
 	mux.Handle("GET /api/schueler/{id}/bescheide", s.RequirePermission("view_students")(s.BescheidSchuelerListeHandler(bescheidRepo)))
 	mux.Handle("POST /api/schueler/{id}/bescheide", s.RequirePermission("edit_students")(s.BescheidErstellenHandler(bescheidRepo, auditRepoGebuehren)))
 	mux.Handle("GET /api/bescheide", s.RequirePermission("view_students")(s.BescheidListeHandler(bescheidRepo)))

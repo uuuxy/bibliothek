@@ -295,7 +295,19 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// Gate prüft, dass NICHTS Unerwartetes durchfällt, nicht dass etwas da ist.
 		"GET /api/schueler/{id}/bescheid-vorschlag": {URL: "/api/schueler/" + w.schuelerID + "/bescheid-vorschlag", Positiv: []string{"Vogelbeere"}},
 		"GET /api/schueler/{id}/bescheide":          {URL: "/api/schueler/" + w.schuelerID + "/bescheide"},
-		"GET /api/bescheide":                        {URL: "/api/bescheide"},
+		// Betragsvorschlag des Melde-Dialogs (17.09.2026, OFFEN.md 9.3 a): Stufe 0 — die
+		// Antwort kennt nur Betrag, Herleitung und ist_lernmittel, also Zahlen zu EINEM
+		// Exemplar. Kein Name, keine Klasse, nicht einmal der Titel. Genau das prüft der
+		// Eintrag: dass an dieser Tür nichts Personenbezogenes herausfällt.
+		//
+		// Positiv-Kontrolle auf den Leerfall-Satz: Das Exemplar der Kanarienwelt ist ohne
+		// Einkaufspreis angelegt, und sein Titel ist kein Lernmittel — der Vorschlag ist
+		// deshalb 0 mit „kein Preis hinterlegt". Das beweist, dass die Route wirklich
+		// geantwortet hat (ohne Positiv-Kontrolle misst dieses Gate nichts). Dass die
+		// RECHNUNG stimmt, steht woanders: repository/ersatzwert_groessen_pg_test.go und
+		// api/ersatzwert_vorschlag_test.go.
+		"GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag": {URL: "/api/buecher/exemplare/" + w.exemplarID + "/ersatzwert-vorschlag", Positiv: []string{"kein Preis hinterlegt"}},
+		"GET /api/bescheide": {URL: "/api/bescheide"},
 		// Nachbuch-Meldungen (Migration 117): Stufe 1 hinter view_students — die Liste
 		// nennt Ausleiher und Vorbesitzer mit Namen; der Zähler fürs Band ist Stufe 0.
 		"GET /api/action/nachbuch-meldungen": {URL: "/api/action/nachbuch-meldungen"},

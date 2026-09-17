@@ -908,6 +908,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/buecher/exemplare/{id}/ersatzwert-vorschlag": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "schadensersatz"
+                ],
+                "summary": "Suggest a replacement amount for a copy",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Copy ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErsatzwertVorschlag"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/apierrors.APIError"
+                        }
+                    }
+                }
+            }
+        },
         "/buecher/exemplare/{id}/gefunden": {
             "post": {
                 "responses": {}
@@ -2029,6 +2063,12 @@ const docTemplate = `{
                         "description": "Leer = aktive Schüler; 'ehemalige' = wer die Schule verlassen hat (ist_abgaenger)",
                         "name": "status",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Leer = nur Schüler; 'alle' = die Leserdatei (Schüler und Kollegium)",
+                        "name": "art",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2840,7 +2880,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "fremdrueckgabe": {
-                    "description": "Flag for returns from another student/teacher",
+                    "description": "Flag for returns from another reader",
                     "type": "boolean"
                 },
                 "geraet": {
@@ -2875,38 +2915,22 @@ const docTemplate = `{
                     }
                 },
                 "student": {
-                    "description": "The active student, or original borrower (Theken-Sicht, siehe SchuelerKiosk)",
+                    "description": "Der aktive Leser oder der Vorbesitzer (Theken-Sicht, siehe SchuelerKiosk)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/api.SchuelerKiosk"
-                        }
-                    ]
-                },
-                "teacher": {
-                    "description": "The active teacher borrower (Handapparat; Theken-Sicht, siehe MitarbeiterKiosk)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.MitarbeiterKiosk"
                         }
                     ]
                 },
                 "type": {
-                    "description": "\"student\", \"teacher\", \"ausleihe\", \"rueckgabe\", \"search_results\", \"info\"",
+                    "description": "\"student\", \"ausleihe\", \"rueckgabe\", \"search_results\", \"info\"",
                     "type": "string"
                 },
                 "vorbesitzer": {
-                    "description": "Original student borrower if foreign return (Theken-Sicht)",
+                    "description": "Original borrower if foreign return (Theken-Sicht)",
                     "allOf": [
                         {
                             "$ref": "#/definitions/api.SchuelerKiosk"
-                        }
-                    ]
-                },
-                "vorbesitzer_user": {
-                    "description": "Original teacher borrower if foreign return (Theken-Sicht)",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/api.MitarbeiterKiosk"
                         }
                     ]
                 },
@@ -3116,16 +3140,23 @@ const docTemplate = `{
         "api.CreateStudentRequest": {
             "type": "object",
             "required": [
-                "klasse",
                 "nachname",
                 "vorname"
             ],
             "properties": {
+                "art": {
+                    "description": "Art: schueler | lehrkraft | liv. Leer heißt „schueler\" — die Vorgabe der Spalte\nund das Verhalten jedes Aufrufers, den es vor dem 16.09.2026 gab.",
+                    "type": "string"
+                },
                 "barcode_id": {
                     "type": "string"
                 },
+                "email": {
+                    "description": "Email ist die Schuladresse einer Lehrkraft oder LiV und dort PFLICHT (Absprache vom\n16.09.2026). Bei einem Schüler bleibt sie leer — er hat kein Konto.\n\nSie ist nicht Kontaktangabe, sondern SCHLÜSSEL: An ihr erkennt die Anmeldung eine\nPerson (IMAP), und über sie greift ` + "`" + `benutzer_email_unique` + "`" + `. Genau das verhindert den\nDoppeleintrag, um den es hier geht — meldet sich die Lehrkraft später über „Mein\nPortal\" selbst an, findet die Selbstanmeldung ihr Konto und legt keine zweite\nLeserzeile an.",
+                    "type": "string"
+                },
                 "geburtsdatum": {
-                    "description": "Geburtsdatum (YYYY-MM-DD) ist Pflicht — geprüft im Handler mit eigener Meldung,\nweil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe errGeburtsdatumPflicht.",
+                    "description": "Geburtsdatum (YYYY-MM-DD) ist Pflicht für einen SCHÜLER — geprüft im Handler mit\neigener Meldung, weil der Grund erklärt werden muss (LUSD-Wiedererkennung), siehe\nerrGeburtsdatumPflicht.",
                     "type": "string"
                 },
                 "klasse": {
@@ -3155,9 +3186,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "nachname": {
-                    "type": "string"
-                },
-                "personenart": {
                     "type": "string"
                 },
                 "rolle": {
@@ -3375,6 +3403,10 @@ const docTemplate = `{
                 "anonymisiert_am": {
                     "type": "string"
                 },
+                "art": {
+                    "description": "Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil\nsie über die Person etwas aussagt — und weil sie entscheidet, welche Felder\nüberhaupt gefüllt sind (ein Kollege hat keine Klasse und kein Abgängerjahr).",
+                    "type": "string"
+                },
                 "barcode_id": {
                     "type": "string"
                 },
@@ -3389,6 +3421,10 @@ const docTemplate = `{
                 },
                 "geloescht_am": {
                     "type": "string"
+                },
+                "hat_zugangskonto": {
+                    "description": "Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)\nstehen NICHT hier: Sie gehören zum Konto, nicht zum Leser, und die Auskunft nach\nArt. 15 beantwortet, was über DIESE Person als Leser gespeichert ist.",
+                    "type": "boolean"
                 },
                 "hausnummer": {
                     "type": "string"
@@ -3495,6 +3531,23 @@ const docTemplate = `{
                 },
                 "titel": {
                     "type": "string"
+                }
+            }
+        },
+        "api.ErsatzwertVorschlag": {
+            "type": "object",
+            "properties": {
+                "betrag": {
+                    "description": "Betrag ist der Vorschlag in Euro; 0 heißt „kein Preis hinterlegt\".",
+                    "type": "number"
+                },
+                "herleitung": {
+                    "description": "Herleitung sagt dem Personal, WARUM dieser Betrag vorgeschlagen wird — damit im\nDialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung\nlandet.",
+                    "type": "string"
+                },
+                "ist_lernmittel": {
+                    "description": "IstLernmittel unterscheidet die beiden Regeln; der Dialog benennt sie.",
+                    "type": "boolean"
                 }
             }
         },
@@ -3844,23 +3897,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api.MitarbeiterKiosk": {
-            "type": "object",
-            "properties": {
-                "barcode_id": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "nachname": {
-                    "type": "string"
-                },
-                "vorname": {
-                    "type": "string"
-                }
-            }
-        },
         "api.MittelKorrekturRequest": {
             "type": "object",
             "properties": {
@@ -3901,15 +3937,12 @@ const docTemplate = `{
                     "description": "GescanntAm ist der Zeitpunkt am Theken-Rechner, nach seiner Uhr. Der Server rechnet den\nVersatz der Uhr heraus (gesendet_am) und nimmt höchstens seine eigene Zeit.",
                     "type": "string"
                 },
-                "lehrer_id": {
+                "leser_id": {
+                    "description": "Person: was der Rechner beim Scan schon auflösen konnte …",
                     "type": "string"
                 },
                 "schluessel": {
                     "description": "Schluessel ist der Idempotenz-Schlüssel des Eintrags — derselbe, den der\nOnline-Versand benutzt hätte. Daran erkennt der Server einen abgebrochenen Versand.",
-                    "type": "string"
-                },
-                "schueler_id": {
-                    "description": "Person: was der Rechner beim Scan schon auflösen konnte …",
                     "type": "string"
                 }
             }
@@ -4023,6 +4056,10 @@ const docTemplate = `{
         "api.SchuelerKiosk": {
             "type": "object",
             "properties": {
+                "art": {
+                    "description": "Art ist Schüler, Lehrkraft oder LiV (Migration 125). Die Theke zeigt sie am\nTreffer an — sonst stünde ein Kollege ohne Klasse da wie ein Schüler mit fehlender\nAngabe. Keine Personendaten: Sie sagt nichts, was der Ausweis nicht schon sagt.",
+                    "type": "string"
+                },
                 "barcode_id": {
                     "type": "string"
                 },
@@ -4113,6 +4150,10 @@ const docTemplate = `{
                 "abgaenger_jahr": {
                     "type": "integer"
                 },
+                "art": {
+                    "description": "Art ist Schüler, Lehrkraft oder LiV. Die Akte richtet sich danach: Ein Kollege hat\nkeine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne\ndie Art zeigte die Akte ihm diese Felder als „Keine Angabe\" und behauptete damit,\ndass sie fehlen. Sie gehören ihm gar nicht.",
+                    "type": "string"
+                },
                 "ausweis_gueltig_bis": {
                     "description": "AusweisGueltigBis ist das Ablaufjahr des Schülerausweises (31.07.), aus dem\nBildungsgang gerechnet — NICHT AbgaengerJahr, das die DSGVO-Löschung steuert.\nDer profilseitige Ausweisdruck liest genau dieses Feld; fehlt es hier, druckt\ndie Karte \"Gültig bis: 31.07.–\", obwohl das Repository den Wert kennt.",
                     "type": "integer"
@@ -4124,6 +4165,10 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "eltern_email": {
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Email ist die SCHUL-Adresse am Konto (benutzer.email), nicht die der Eltern —\nbei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.\nLeer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte\nnachtragbar. Bei einem Schüler steht hier nie etwas.",
                     "type": "string"
                 },
                 "entliehene_buecher": {
@@ -4249,10 +4294,6 @@ const docTemplate = `{
                 "nachname": {
                     "type": "string"
                 },
-                "personenart": {
-                    "description": "Personenart: nicht geschickt = unverändert, \"\" = leeren (Migration 119).",
-                    "type": "string"
-                },
                 "rolle": {
                     "type": "string"
                 },
@@ -4279,6 +4320,10 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "leser_id": {
+                    "description": "LeserID ist die Leserzeile dieses Kontos (Migration 125). Die Freischaltungs-Zeile\nbraucht sie, um von einem offenen Antrag aus nach der gleichnamigen Leserzeile zu\nsuchen, die noch KEIN Konto hat — der Altbestand, bei dem die Selbstanmeldung sonst\neinen zweiten Eintrag erzeugt (UserManagementZugangsanfragen.svelte).",
+                    "type": "string"
+                },
                 "nachname": {
                     "type": "string"
                 },
@@ -4287,10 +4332,6 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
-                },
-                "personenart": {
-                    "description": "Personenart: \"lehrkraft\", \"liv\" oder null (Migration 119).",
-                    "type": "string"
                 },
                 "rolle": {
                     "type": "string"
@@ -4322,6 +4363,14 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "kuerzel": {
+                    "type": "string"
+                }
+            }
+        },
+        "apierrors.APIError": {
+            "type": "object",
+            "properties": {
+                "error": {
                     "type": "string"
                 }
             }
@@ -4488,6 +4537,10 @@ const docTemplate = `{
                     "description": "AktualisiertAm ist der letzte Änderungszeitpunkt.",
                     "type": "string"
                 },
+                "auflage": {
+                    "description": "Auflage ist die Auflagenbezeichnung („4. Aufl. 2023\", Migration 126). Eine neue\nAuflage trägt eine eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt,\nwelcher von zwei gleich heißenden Zeilen man vor sich hat.",
+                    "type": "string"
+                },
                 "autor": {
                     "description": "Autor ist der Name des Autors oder der Autoren.",
                     "type": "string"
@@ -4575,6 +4628,10 @@ const docTemplate = `{
                 "isbn": {
                     "description": "ISBN wird nicht angezeigt, sondern gebraucht: Ohne sie kann die Ausleihliste kein\nCover nachladen, wenn keins am Titel gespeichert ist (CoverPeek fragt darüber den\nCover-Proxy) — und das ist bei importierten Beständen der Normalfall.",
                     "type": "string"
+                },
+                "ist_dauerleihe": {
+                    "description": "IstDauerleihe ist die Ausleihe an jemanden, der kein Schüler ist\n(` + "`" + `ausleihen.ist_handapparat` + "`" + `, gesetzt in erzeugeAusleihe und im Geräte-Pfad).\n\nSie steht hier, weil die Oberfläche sonst eine Frist anzeigt und überschreitet, die\nes nicht gibt: Entschieden am 16.09.2026 — „kollegen haben keine frist bzw werden einfach\nnie gesperrt!\" Die Sperr-Automatik hält das seit jeher (sie zählt nur Ausleihen mit\nist_handapparat = false); die Akte rechnete daneben ihr eigenes „überfällig\" aus\ndem Datum und färbte die Zeile nach einem Jahr rot.",
+                    "type": "boolean"
                 },
                 "ist_lernmittel": {
                     "description": "IstLernmittel steuert die Marke „Lernmittel\" an der Ausleihzeile — aus der\nSpalte (Migration 093), nicht mehr aus einem LMF-Präfix in Titel oder Signatur.",
@@ -4968,6 +5025,10 @@ const docTemplate = `{
             "properties": {
                 "abgaenger_jahr": {
                     "type": "integer"
+                },
+                "art": {
+                    "description": "Art ist Schüler, Lehrkraft oder LiV. Die Leserdatei führt sie als eigene Spalte —\nein Kollege hat keine Klasse, und ohne die Art stünde er in der Liste wie ein\nSchüler mit fehlender Angabe.",
+                    "type": "string"
                 },
                 "ausgeliehen_count": {
                     "type": "integer"
