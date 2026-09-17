@@ -555,6 +555,12 @@ CREATE TABLE buecher_exemplare (
     -- Schreibern gesetzt, nicht vom aktualisiert_am-Trigger. NULL = keine bekannte Bewegung.
     -- Der Wächter des Nachbuchens weist Scans ab, die älter sind als dieser Stempel.
     letzte_bewegung_am TIMESTAMP WITH TIME ZONE,
+    -- Abgangsdatum (Migration 128): WANN das Exemplar aus dem Bestand ging. Gesetzt vom
+    -- Trigger trg_exemplar_abgangsdatum, nicht von den sechs Schreibern — der siebte würde
+    -- es vergessen. NULL bei einem Exemplar im Bestand UND bei Altbestand, der schon vor
+    -- der Migration ausgesondert war: „Zeitpunkt unbekannt" ist die Wahrheit über diese
+    -- Zeilen; ein erfundenes Datum stünde als Tatsache in einem Bestandsnachweis.
+    ausgesondert_am TIMESTAMP WITH TIME ZONE,
     -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
     -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
     CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
@@ -594,6 +600,34 @@ EXECUTE FUNCTION abholfach_folgt_dem_exemplar();
 CREATE TRIGGER trg_exemplar_geloescht_abholfach
 BEFORE DELETE ON buecher_exemplare
 FOR EACH ROW EXECUTE FUNCTION abholfach_folgt_dem_exemplar();
+
+-- Migration 128: Das Abgangsdatum für das Abgangsbuch (Protokoll 1 des Medienzentrums).
+-- Am Zustandswechsel, nicht an den sechs Schreibern: Status-Editor, Aussondern, Ausbuchen,
+-- Schaden melden und zweimal die Bestandskorrektur der Inventur. Zurückgeholt heißt, der
+-- Abgang war ein Irrtum — dann muss das Datum weg, sonst führte das Abgangsbuch Bücher,
+-- die im Regal stehen.
+CREATE OR REPLACE FUNCTION stempel_ausgesondert_am()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.ist_ausgesondert THEN
+        NEW.ausgesondert_am := CURRENT_TIMESTAMP;
+    ELSE
+        NEW.ausgesondert_am := NULL;
+    END IF;
+    RETURN NEW;
+END $$;
+
+-- Nur der WECHSEL zählt: Ein zweites UPDATE auf ein bereits ausgesondertes Exemplar (etwa
+-- eine Notiz) darf das Abgangsdatum nicht auf heute schieben.
+CREATE TRIGGER trg_exemplar_abgangsdatum
+BEFORE UPDATE OF ist_ausgesondert ON buecher_exemplare
+FOR EACH ROW
+WHEN (NEW.ist_ausgesondert IS DISTINCT FROM OLD.ist_ausgesondert)
+EXECUTE FUNCTION stempel_ausgesondert_am();
+
+CREATE INDEX IF NOT EXISTS idx_exemplare_ausgesondert_am
+    ON buecher_exemplare (ausgesondert_am DESC)
+    WHERE ist_ausgesondert = true;
 
 -- Migration 125: Ein Konto ohne Leserzeile darf nicht entstehen. Konten entstehen an
 -- fuenf Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Uebernahme, Seed,
@@ -1426,7 +1460,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('124_leser_tabelle_schueler_sicht.sql'),
 ('125_ein_ausweis_ein_leser.sql'),
 ('126_auflage_am_titel.sql'),
-('127_listenpreis_und_zustandsabwertung.sql')
+('127_listenpreis_und_zustandsabwertung.sql'),
+('128_abgangsdatum_am_exemplar.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

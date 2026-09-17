@@ -1521,13 +1521,29 @@ zur Sperre nichts (beide am 17.09.2026 im Original gelesen). Die Zeile im Konzep
 als fremde Praxis auswies, war unbelegt und ist entfernt. **Frage geht an das
 Medienzentrum, siehe 9.7.**
 
-**9.3 d) Zugangs- und Abgangsbuch fehlen.** `erworben_am` trägt das echte Littera-Zugangsdatum,
-`aussonderung_grund` trennt VERLUST / AUSSORTIERT / BESTANDSKORREKTUR. Aber: **es gibt kein
-Abgangsdatum.** `ist_ausgesondert` ist ein Ja/Nein ohne Zeitpunkt, `letzte_bewegung_am` wird von
-jeder späteren Bewegung überschrieben. Ein Abgangsbuch braucht also eine Migration, nicht nur
-einen Ausdruck. Das Zugangsbuch ist aus den Daten ableitbar
-([mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1: „je Schulhalbjahr ein Ausdruck der
-Neuanschaffungen"), steht dort aber unter „Später, kein Teil dieses Pakets".
+**9.3 d) Zugangs- und Abgangsbuch.** `erworben_am` trägt das echte Littera-Zugangsdatum,
+`aussonderung_grund` trennt VERLUST / AUSSORTIERT / BESTANDSKORREKTUR.
+
+**Das Abgangsdatum ist gebaut (17.09.2026, Migration 128).** `ist_ausgesondert` war ein Ja/Nein
+ohne Zeitpunkt, und `letzte_bewegung_am` wird von jeder späteren Bewegung überschrieben — ein
+Abgangsbuch daraus hätte rückwirkend seine Zeilen geändert. Jetzt steht `ausgesondert_am` am
+Exemplar, gesetzt von einem TRIGGER: Ausgesondert wird an sechs Stellen im Code (Status-Editor,
+Aussondern, Ausbuchen, Schaden melden, zweimal Bestandskorrektur der Inventur), und die siebte
+hätte den Stempel vergessen. Zurückgeholt löscht ihn wieder — sonst führte das Abgangsbuch
+Bücher, die im Regal stehen.
+
+Kein Nachtragen für den Altbestand: Was vor der Migration ausgesondert wurde, hat NULL. Ein
+erfundenes Abgangsdatum sähe aus wie eine Tatsache und stünde falsch in einem Bestandsnachweis;
+der Ausdruck schreibt „Zeitpunkt unbekannt" hin. Gates: `api/abgangsdatum_pg_test.go` (vier
+Türen, keine Verschiebung beim zweiten Update, Rückholen, kein erfundenes Datum, dazu eine
+Quelltext-Ratsche gegen Schreiber am Datum) und
+`inventur/abgangsdatum_bestandskorrektur_pg_test.go` (die zwei Türen im anderen Paket). Am
+Trigger-losen Schema rot gesehen.
+
+**Offen bleibt der Ausdruck:** die Liste der Abgänge eines Zeitraums, zum Abheften. Das
+Zugangsbuch ist aus den Daten ableitbar ([mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1:
+„je Schulhalbjahr ein Ausdruck der Neuanschaffungen"), steht dort aber unter „Später, kein Teil
+dieses Pakets".
 
 **9.3 e) Mahnwesen entspricht nicht den Vorgaben.** Aufgeschlüsselt gegen die Anforderungsliste:
 

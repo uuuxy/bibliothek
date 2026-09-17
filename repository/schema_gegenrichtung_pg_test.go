@@ -262,6 +262,14 @@ var triggerBestand = []string{
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",
+	// Migration 128, befragt am 17.09.2026: Schreibt beim WECHSEL von ist_ausgesondert das
+	// Abgangsdatum (ausgesondert_am) bzw. löscht es beim Zurückholen. Frage 12: Kein
+	// Lesepfad rechnete vorher mit dem Wert — die Spalte entsteht mit dem Trigger. Die
+	// Folge, die man kennen muss: Ein Schreiber, der das Datum SELBST setzt, wird
+	// überschrieben; deshalb hält api/abgangsdatum_pg_test.go eine Quelltext-Ratsche
+	// dagegen. Zweck ist das Abgangsbuch (Protokoll 1 des Medienzentrums) über alle sechs
+	// Aussonder-Türen, auch die, die es noch nicht gibt.
+	"trg_exemplar_abgangsdatum @ buecher_exemplare",
 	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
 	// ist genau der Zweck — vorher kannte sie nur ReportDamage, sechs andere Aussonder- und
 	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).
