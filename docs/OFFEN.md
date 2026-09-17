@@ -657,6 +657,31 @@ steht eine Person in einer Warteschlange, die sie nie erreicht.
 
 ---
 
+### 5.20 Das Zugangsbuch datiert nach dem Bestelltag, nicht nach der Lieferung
+
+Beim Bestellen entstehen die Exemplare sofort (`api/order_service.go`, `BulkInsertCopiesTx`),
+und `erworben_am` steht dabei nicht in der Spaltenliste — es greift der Vorgabewert der Tabelle
+(`erworben_am DATE NOT NULL DEFAULT CURRENT_DATE`, `schema.sql`). Der Wareneingang ändert daran
+nichts: Die Freigabe aus dem Zulauf setzt nur `bestellstatus = NULL`
+(`repository/book_inventory.go`). Zwei Folgen:
+
+- Ein im Dezember bestelltes, im Februar geliefertes Buch steht im Zugangsbuch im **Dezember**.
+  Die Arbeitshilfe verlangt das Eingangsdatum der Lieferung (mittel_konzept 7.1).
+- Exemplare, die noch im Zulauf sind, stehen schon als Zugang darin: `LadeZugangsbuch`
+  (`repository/zugangsbuch.go`) filtert `bestellstatus` nicht.
+
+Damit ist das Zugangsbuch für bestellte Bücher heute nahe an einer Kopie der Bestellhistorie.
+Für Altbestand, Handanlage und Listenimport stimmt das Datum (Tag der Anlage), für den
+Littera-Altbestand steht das echte Datum aus der Altanwendung.
+
+**Vorschlag:** `erworben_am` beim Wareneingang auf den Tag der Freigabe setzen und Exemplare im
+Zulauf aus dem Zugangsbuch nehmen. Keine Migration nötig, aber eine Entscheidung: Bereits
+gelieferte Exemplare aus der Zeit davor behalten ihr Bestelldatum — rückwirkend etwas anderes
+einzutragen wäre ein erfundenes Datum. Zu beachten: `erworben_am` zählt auch die Verleihjahre im
+Ersatzwert (`repository/ersatzwert_groessen.go`); dort wird die Zahl damit eher richtiger.
+
+---
+
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
 
 ### 6.1 Beobachtungen
