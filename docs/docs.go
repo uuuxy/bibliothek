@@ -4728,6 +4728,10 @@ const docTemplate = `{
                 "bestelllink_gueltigkeit_tage": {
                     "type": "integer"
                 },
+                "ersatzwert_immer_kaufpreis": {
+                    "description": "ErsatzwertImmerKaufpreis: Gilt ab dem zweiten Verleihjahr immer der Einkaufspreis der Schule statt des heutigen Listenpreises? Nicht gesetzt = nein, also die Regel der Arbeitshilfe.",
+                    "type": "boolean"
+                },
                 "etikett_eigentumsvermerk": {
                     "type": "string"
                 },
@@ -5152,6 +5156,10 @@ const docTemplate = `{
                 "bestelllink_gueltigkeit_tage": {
                     "description": "BestelllinkGueltigkeitTage: Lebensdauer des Bestätigungs-Links in Tagen, den der\nHauptlieferant mit der Bestellmail bekommt (Einstellung seit 08.09.2026; vorher\nfest 21). Gilt für neu erzeugte Links; laufende behalten ihr Ablaufdatum.",
                     "type": "integer"
+                },
+                "ersatzwert_immer_kaufpreis": {
+                    "description": "ErsatzwertImmerKaufpreis: Gilt ab dem zweiten Verleihjahr immer der Einkaufspreis der Schule statt des heutigen Listenpreises? Nicht gesetzt = nein, also die Regel der Arbeitshilfe.",
+                    "type": "boolean"
                 },
                 "etikett_eigentumsvermerk": {
                     "description": "EtikettEigentumsvermerk steht als letzte Zeile auf jedem Buchetikett\n(\"Eigentum des Landes Hessen\"). Konfigurierbar und nicht fest verdrahtet, weil\nder Träger je nach Bundesland und Schulform ein anderer ist — und weil ein\nEigentumsvermerk, der nicht stimmt, schlechter ist als keiner.",

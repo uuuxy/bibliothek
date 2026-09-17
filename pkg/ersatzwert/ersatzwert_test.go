@@ -36,7 +36,7 @@ func TestStaffelNachArbeitshilfe(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := Rechne(f.verleihjahr, f.kaufpreis, f.neupreis, 0)
+			got := Rechne(f.verleihjahr, f.kaufpreis, f.neupreis, 0, PreisquelleListenpreis)
 			if got.Betrag != f.wantBetrag {
 				t.Errorf("Betrag = %.2f, want %.2f", got.Betrag, f.wantBetrag)
 			}
@@ -53,10 +53,10 @@ func TestStaffelNachArbeitshilfe(t *testing.T) {
 // Kaufmännisch auf Cent: In einem Bescheid darf kein Betrag mit vier Nachkommastellen
 // stehen, und 33,33 € muss 33,33 € bleiben.
 func TestBetragAufCentGerundet(t *testing.T) {
-	if got := Rechne(3, 0, 55.55, 0).Betrag; got != 33.33 {
+	if got := Rechne(3, 0, 55.55, 0, PreisquelleListenpreis).Betrag; got != 33.33 {
 		t.Errorf("60 %% von 55,55 = %.4f, want 33.33", got)
 	}
-	if got := Rechne(2, 0, 12.345, 0).Betrag; got != 9.88 {
+	if got := Rechne(2, 0, 12.345, 0, PreisquelleListenpreis).Betrag; got != 9.88 {
 		t.Errorf("80 %% von 12,345 = %.4f, want 9.88", got)
 	}
 }
@@ -109,7 +109,7 @@ func TestZustandAbschlagMindertDenZeitwert(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := Rechne(f.verleihjahr, f.kaufpreis, f.neupreis, f.abschlag)
+			got := Rechne(f.verleihjahr, f.kaufpreis, f.neupreis, f.abschlag, PreisquelleListenpreis)
 			if got.Betrag != f.wantBetrag {
 				t.Errorf("Betrag = %.2f, want %.2f — die Zahl steht in einem Bescheid",
 					got.Betrag, f.wantBetrag)
@@ -132,9 +132,9 @@ func TestZustandAbschlagMindertDenZeitwert(t *testing.T) {
 // Er würde den Betrag ERHÖHEN — eine Forderung über mehr als den Zeitwert, ausgelöst von
 // einem Tippfehler.
 func TestZustandAbschlagWirdGekappt(t *testing.T) {
-	ohne := Rechne(3, 20, 41.50, 0)
+	ohne := Rechne(3, 20, 41.50, 0, PreisquelleListenpreis)
 
-	negativ := Rechne(3, 20, 41.50, -20)
+	negativ := Rechne(3, 20, 41.50, -20, PreisquelleListenpreis)
 	if negativ.Betrag != ohne.Betrag {
 		t.Errorf("Betrag bei -20 %% = %.2f, want %.2f — ein negativer Abschlag darf die "+
 			"Forderung nicht erhöhen", negativ.Betrag, ohne.Betrag)
@@ -144,7 +144,7 @@ func TestZustandAbschlagWirdGekappt(t *testing.T) {
 			"den es nicht gibt", negativ.ZustandAbschlag)
 	}
 
-	ueber := Rechne(3, 20, 41.50, 140)
+	ueber := Rechne(3, 20, 41.50, 140, PreisquelleListenpreis)
 	if ueber.Betrag != 0 {
 		t.Errorf("Betrag bei 140 %% = %.2f, want 0", ueber.Betrag)
 	}
@@ -158,8 +158,69 @@ func TestZustandAbschlagWirdGekappt(t *testing.T) {
 // käme bei 24,99 € im dritten Verleihjahr mit 20 % Abschlag 11,99 € heraus statt 12,00 €.
 // Ein Cent in einem Bescheid ist kein Rundungsfehler, sondern eine falsche Zahl.
 func TestZustandAbschlagRundetNurEinmal(t *testing.T) {
-	if got := Rechne(3, 0, 24.99, 20).Betrag; got != 12.00 {
+	if got := Rechne(3, 0, 24.99, 20, PreisquelleListenpreis).Betrag; got != 12.00 {
 		t.Errorf("60 %% von 24,99 €, abzüglich 20 %% = %.4f, want 12.00 "+
 			"(11,99 hieße: zweimal gerundet)", got)
+	}
+}
+
+// Die wählbare Berechnungsgrundlage (Anforderungsliste Nr. 3, OFFEN.md 9.8 Stufe 4).
+//
+// Der Nullwert MUSS die Regel der Arbeitshilfe sein — der Fall einer Schule, die die
+// Einstellung nie angefasst hat. Wäre es umgekehrt, rechnete jede bestehende Anlage nach
+// dem ersten Update mit dem alten Einkaufspreis statt mit dem heutigen Neupreis, ohne
+// dass jemand etwas geändert hätte.
+func TestPreisquelleWaehltDieGrundlage(t *testing.T) {
+	// Drittes Verleihjahr: 60 %. Kaufpreis 20 €, Listenpreis 41,50 €.
+	nachVorgabe := Rechne(3, 20, 41.50, 0, PreisquelleListenpreis)
+	if nachVorgabe.Betrag != 24.90 || nachVorgabe.Basis != BasisNeupreis {
+		t.Errorf("Vorgabe: Betrag %.2f, Basis %q — erwartet 24.90 auf dem Listenpreis",
+			nachVorgabe.Betrag, nachVorgabe.Basis)
+	}
+
+	gewaehlt := Rechne(3, 20, 41.50, 0, PreisquelleKaufpreis)
+	if gewaehlt.Betrag != 12.00 {
+		t.Errorf("mit gewähltem Kaufpreis: Betrag %.2f, erwartet 12.00 (60 %% von 20 €)",
+			gewaehlt.Betrag)
+	}
+	// Eine EIGENE Basis, nicht die ersatzweise: Die Herleitung muss „so eingestellt" von
+	// „kein Listenpreis hinterlegt" unterscheiden können — sonst behauptet der Bescheid
+	// eine Datenlage, die es nicht gibt.
+	if gewaehlt.Basis != BasisKaufpreisGewaehlt {
+		t.Errorf("Basis = %q, erwartet %q", gewaehlt.Basis, BasisKaufpreisGewaehlt)
+	}
+	if nachVorgabe.BasisPreis != 41.50 || gewaehlt.BasisPreis != 20 {
+		t.Errorf("BasisPreis: Vorgabe %.2f, gewählt %.2f — erwartet 41,50 und 20,00",
+			nachVorgabe.BasisPreis, gewaehlt.BasisPreis)
+	}
+
+	// Der ungesetzte Typ ist die Vorgabe: Das ist der Fall einer Anlage ohne die
+	// Einstellung und der eines Aufrufers, der die Frage nicht kennt.
+	var ungesetzt Preisquelle
+	if Rechne(3, 20, 41.50, 0, ungesetzt).Betrag != 24.90 {
+		t.Error("eine ungesetzte Preisquelle muss die Regel der Arbeitshilfe ergeben")
+	}
+}
+
+// Im ERSTEN Verleihjahr ändert die Einstellung nichts: Dort gilt ohnehin der Kaufpreis.
+// Sonst stünde im Bescheid „so eingestellt", wo die Arbeitshilfe es ohnehin vorschreibt.
+func TestPreisquelleAendertDasErsteJahrNicht(t *testing.T) {
+	for _, quelle := range []Preisquelle{PreisquelleListenpreis, PreisquelleKaufpreis} {
+		got := Rechne(1, 20, 41.50, 0, quelle)
+		if got.Betrag != 20 || got.Basis != BasisKaufpreis {
+			t.Errorf("Quelle %q: Betrag %.2f, Basis %q — erwartet 20,00 auf %q",
+				quelle, got.Betrag, got.Basis, BasisKaufpreis)
+		}
+	}
+}
+
+// Ohne Kaufpreis kann die Einstellung nicht greifen — dann zählt der Listenpreis, und
+// die Basis sagt es. Eine 0 in einer Forderung wäre schlimmer als eine benannte
+// Abweichung von der Einstellung.
+func TestPreisquelleKaufpreisOhneKaufpreis(t *testing.T) {
+	got := Rechne(3, 0, 41.50, 0, PreisquelleKaufpreis)
+	if got.Betrag != 24.90 || got.Basis != BasisNeupreis {
+		t.Errorf("Betrag %.2f, Basis %q — erwartet 24,90 auf dem Listenpreis",
+			got.Betrag, got.Basis)
 	}
 }

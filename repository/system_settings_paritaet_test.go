@@ -57,6 +57,9 @@ func TestEinstellungen_SchreibpfadUndLesepfadSindDeckungsgleich(t *testing.T) {
 // Ein Wert, der zufällig der Vorgabe entspricht, würde den Test blind machen.
 func probewert(key string) string {
 	switch {
+	// Vorgabe false (= Regel der Arbeitshilfe), also unterscheidet nur "true".
+	case key == "ersatzwert_immer_kaufpreis":
+		return "true"
 	case strings.HasSuffix(key, "_aktiv"), key == "preise_erfassen":
 		// Beide Schalter haben unterschiedliche Vorgaben; "false" weicht von
 		// bestellbedarf_warnung_aktiv und preise_erfassen ab, "true" von leseclub.

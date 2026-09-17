@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/pkg/ersatzwert"
 	"bibliothek/repository"
 )
 
@@ -97,7 +98,7 @@ func TestErsatzwertVorschlagWaehltDieRichtigeRegel(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := ersatzwertVorschlagAus(f.groessen)
+			got := ersatzwertVorschlagAus(f.groessen, ersatzwert.PreisquelleListenpreis)
 
 			if got.Betrag != f.wantBetrag {
 				t.Errorf("Betrag = %.2f, want %.2f — die Zahl landet in einer Forderung "+
@@ -132,7 +133,7 @@ func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 		Kaufpreis: 20.00, Listenpreis: 41.50, ZustandAbschlag: 20, IstLernmittel: true,
 		SchuljahreMitAusleihe: 3, SchuljahreImBestand: 2,
 	}
-	got := ersatzwertVorschlagAus(mitAbschlag)
+	got := ersatzwertVorschlagAus(mitAbschlag, ersatzwert.PreisquelleListenpreis)
 
 	if got.Betrag != 19.92 {
 		t.Errorf("Betrag = %.2f, want 19.92 (Herleitung: %q)", got.Betrag, got.Herleitung)
@@ -148,7 +149,7 @@ func TestErsatzwertVorschlagNenntDenZustandsAbschlag(t *testing.T) {
 	// Fehler und lädt zur Rückfrage ein, die es nicht braucht.
 	ohneAbschlag := mitAbschlag
 	ohneAbschlag.ZustandAbschlag = 0
-	ohne := ersatzwertVorschlagAus(ohneAbschlag)
+	ohne := ersatzwertVorschlagAus(ohneAbschlag, ersatzwert.PreisquelleListenpreis)
 	if ohne.Betrag != 24.90 {
 		t.Errorf("Betrag ohne Abschlag = %.2f, want 24.90", ohne.Betrag)
 	}

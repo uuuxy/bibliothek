@@ -210,3 +210,102 @@ func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 		}
 	}
 }
+
+// Die wählbare Berechnungsgrundlage AM DRAHT (OFFEN.md 9.8, Stufe 4).
+//
+// Eine Einstellung, deren Wirkung niemand am Live-Pfad geprüft hat, ist ein Schalter
+// ohne Leitung: Er speichert, die Oberfläche zeigt ihn an, und gerechnet wird weiter wie
+// vorher. Deshalb steht hier der ganze Weg — Schlüssel in der Tabelle, Aufruf der
+// Exemplar-Liste, Betrag und Begründung in der Antwort.
+func TestExemplarliste_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+
+	ausleihbaresExemplar(t, pool, "Geschichte 9", "B-GRD-1")
+	var exID, titelID string
+	if err := pool.QueryRow(ctx,
+		`SELECT id, titel_id FROM buecher_exemplare WHERE barcode_id = 'B-GRD-1'`,
+	).Scan(&exID, &titelID); err != nil {
+		t.Fatalf("Exemplar lesen: %v", err)
+	}
+	// Drittes Verleihjahr (60 %), Kaufpreis 20 €, Listenpreis 41,50 €.
+	if _, err := pool.Exec(ctx, `
+		UPDATE buecher_titel SET ist_lernmittel = true, listenpreis = 41.50 WHERE id = $1`,
+		titelID); err != nil {
+		t.Fatalf("Titel vorbereiten: %v", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		UPDATE buecher_exemplare
+		SET einkaufspreis = 20.00, erworben_am = now() - interval '2 years'
+		WHERE id = $1`, exID); err != nil {
+		t.Fatalf("Exemplar vorbereiten: %v", err)
+	}
+	t.Cleanup(func() {
+		if _, err := pool.Exec(context.Background(),
+			`DELETE FROM system_einstellungen WHERE schluessel = 'ersatzwert_immer_kaufpreis'`); err != nil {
+			t.Errorf("Einstellung aufräumen: %v", err)
+		}
+	})
+
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	lies := func(t *testing.T) (float64, string) {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/exemplare", nil)
+		req.SetPathValue("id", titelID)
+		rec := httptest.NewRecorder()
+		srv.GetTitleCopiesHandler(repository.NewBescheidRepository(pool)).ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("Exemplare lesen: %d — %s", rec.Code, rec.Body.String())
+		}
+		var gelesen []struct {
+			Ersatzwert           float64 `json:"ersatzwert"`
+			ErsatzwertHerleitung string  `json:"ersatzwert_herleitung"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &gelesen); err != nil {
+			t.Fatalf("Antwort lesen: %v", err)
+		}
+		if len(gelesen) != 1 {
+			t.Fatalf("erwartet ein Exemplar, waren %d", len(gelesen))
+		}
+		return gelesen[0].Ersatzwert, gelesen[0].ErsatzwertHerleitung
+	}
+
+	setzeGrundlage := func(t *testing.T, wert string) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO system_einstellungen (schluessel, wert)
+			VALUES ('ersatzwert_immer_kaufpreis', $1)
+			ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert`, wert); err != nil {
+			t.Fatalf("Einstellung setzen: %v", err)
+		}
+	}
+
+	// 1. Ohne die Einstellung gilt die Arbeitshilfe: 60 % vom Listenpreis.
+	betrag, satz := lies(t)
+	if betrag != 24.90 {
+		t.Errorf("ohne Einstellung: %.2f, erwartet 24.90 (Herleitung: %q)", betrag, satz)
+	}
+	if !strings.Contains(satz, "Listenpreis") {
+		t.Errorf("Herleitung = %q, erwartet den Listenpreis", satz)
+	}
+
+	// 2. Ausdrücklich auf „false" gesetzt — dasselbe Ergebnis. Das ist der Zustand nach
+	//    einem Speichern, in dem der Schalter aus ist.
+	setzeGrundlage(t, "false")
+	if betrag, satz = lies(t); betrag != 24.90 {
+		t.Errorf("mit false: %.2f, erwartet 24.90 (Herleitung: %q)", betrag, satz)
+	}
+
+	// 3. Angehakt: 60 % vom Einkaufspreis — und die Begründung sagt WARUM. „kein
+	//    Listenpreis hinterlegt" wäre hier eine falsche Auskunft über die Datenlage.
+	setzeGrundlage(t, "true")
+	betrag, satz = lies(t)
+	if betrag != 12.00 {
+		t.Errorf("mit true: %.2f, erwartet 12.00 (60 %% von 20 €) — die Einstellung wirkt "+
+			"nicht am Live-Pfad (Herleitung: %q)", betrag, satz)
+	}
+	if !strings.Contains(satz, "so eingestellt") {
+		t.Errorf("Herleitung = %q, erwartet „Kaufpreis (so eingestellt)\"", satz)
+	}
+}

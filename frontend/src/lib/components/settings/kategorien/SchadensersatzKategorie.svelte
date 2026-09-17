@@ -9,6 +9,7 @@
 	 * Bankverbindung). Was leer bleiben darf, bleibt im Brief einfach weg.
 	 */
 	import Feld from '../../ui/Feld.svelte';
+	import Switch from '../../ui/Switch.svelte';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import { untrack } from 'svelte';
 	import { speichereKategorie } from '../../../einstellungenSpeichern.js';
@@ -30,10 +31,16 @@
 	let zahlstelle = $state(start.bescheid_zahlstelle ?? '');
 	let bankverbindung = $state(start.bescheid_bankverbindung ?? '');
 	let fristTage = $state(start.bescheid_frist_tage ?? 28);
+	// Welcher Preis die Grundlage ist (Anforderungsliste des Medienzentrums Nr. 3).
+	// Die Frage steht als „immer Einkaufspreis", damit NICHT angehakt die Regel der
+	// Arbeitshilfe ist — eine Anlage, in der niemand etwas einstellt, rechnet mit dem
+	// heutigen Listenpreis, so wie es der Erlass verlangt.
+	let immerKaufpreis = $state(start.ersatzwert_immer_kaufpreis === true);
 
 	const speichern = () =>
 		speichereKategorie({
 			felder: {
+				ersatzwert_immer_kaufpreis: immerKaufpreis,
 				bescheid_bereich_nr: bereichNr,
 				bescheid_schulnummer: schulnummer,
 				bescheid_aufsicht: aufsicht,
@@ -58,10 +65,15 @@
 
 <KategorieRahmen
 	titel="Schadensersatz"
-	kurz="Angaben für den Bescheid: Referenznummer, Frist, Zahlungsweg."
+	kurz="Grundlage der Berechnung und die Angaben für den Bescheid."
 	{speichern}
 >
 	{#snippet mehr()}
+		<p>
+			Welcher Preis die Grundlage ist, entscheidet über den Betrag: Der Listenpreis ist, was ein
+			Ersatz heute kostet, der Einkaufspreis, was die Schule damals bezahlt hat. Im ersten
+			Verleihjahr gilt ohnehin immer der Einkaufspreis — dort ändert der Schalter nichts.
+		</p>
 		<p>
 			Die Referenznummer setzt sich aus vier vierstelligen Blöcken zusammen: Nummer des
 			Schulamtsbereichs, Kassenjahr, Schulnummer und einer laufenden Nummer, die das Programm je
@@ -73,6 +85,21 @@
 			Bankverbindung sind mit den Angaben aus dem Musterschreiben vorbelegt.
 		</p>
 	{/snippet}
+
+	<!-- Die Grundlage der Rechnung steht VOR den Briefangaben: Sie entscheidet über den
+	     BETRAG, die Felder darunter nur über die Form des Schreibens. Bauform wie in
+	     „Bestellwesen": Titel, ein Satz, Schalter rechts. -->
+	<div class="flex items-start justify-between gap-4 border-b border-outline-variant pb-6">
+		<div class="flex flex-col gap-1">
+			<span class="text-sm font-medium text-on-surface">Immer mit dem Einkaufspreis rechnen</span>
+			<span class="text-sm text-on-surface-variant"
+				>Aus: Ab dem zweiten Verleihjahr gilt der Listenpreis, wenn einer erfasst ist — so verlangt
+				es die Arbeitshilfe des Landes. An: Es gilt immer der Preis, den die Schule bezahlt hat; die
+				Begründung im Bescheid sagt das.</span
+			>
+		</div>
+		<Switch bind:checked={immerKaufpreis} label="Berechnungsgrundlage umschalten" />
+	</div>
 
 	<div class="grid gap-5 sm:grid-cols-2">
 		<Feld

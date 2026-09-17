@@ -97,6 +97,16 @@ type SystemEinstellungen struct {
 	BescheidZahlstelle        string `json:"bescheid_zahlstelle"`
 	BescheidBankverbindung    string `json:"bescheid_bankverbindung"`
 	BescheidFristTage         *int   `json:"bescheid_frist_tage"`
+	// ErsatzwertImmerKaufpreis: Gilt ab dem zweiten Verleihjahr immer der Einkaufspreis
+	// der Schule statt des heutigen Listenpreises? (Anforderungsliste Nr. 3, OFFEN.md 9.8
+	// Stufe 4.)
+	//
+	// Die Frage ist bewusst so gestellt, dass NEIN die Vorgabe ist: Ein nicht gesetzter
+	// Schlüssel liest sich als false, und false ist die Regel der Arbeitshilfe („80 % des
+	// Neupreises zum Zeitpunkt des Verlusts"). Hieße das Feld umgekehrt
+	// „ListenpreisBevorzugen", rechnete jede bestehende Anlage nach dem Update plötzlich
+	// mit dem alten Einkaufspreis, ohne dass jemand etwas geändert hätte.
+	ErsatzwertImmerKaufpreis bool `json:"ersatzwert_immer_kaufpreis"`
 }
 
 // StandardEigentumsvermerk greift, solange in den Einstellungen nichts hinterlegt ist.
@@ -177,6 +187,8 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		return
 	}
 	switch key {
+	case "ersatzwert_immer_kaufpreis":
+		settings.ErsatzwertImmerKaufpreis = val != nil && *val == "true"
 	case "ferien_leseclub_aktiv":
 		settings.FerienLeseclubAktiv = val != nil && *val == "true"
 	case "ferien_leseclub_zieldatum":

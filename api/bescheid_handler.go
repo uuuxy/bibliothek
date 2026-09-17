@@ -112,6 +112,8 @@ func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 		if err != nil {
 			return apierrors.Internal("Einstellungen konnten nicht gelesen werden", err)
 		}
+		// Welcher Preis die Grundlage ist, steht in denselben Einstellungen (Stufe 4).
+		quelle := s.preisquelle(ctx)
 
 		vorschlag := BescheidVorschlag{
 			FristBis:        schulzeit.Jetzt().AddDate(0, 0, angaben.FristTage).Format(dateFormatISO),
@@ -134,14 +136,14 @@ func (s *Server) BescheidVorschlagHandler(bescheidRepo repository.BescheidReposi
 			return apierrors.Internal("Offene Forderungen konnten nicht gelesen werden", err)
 		}
 		for _, f := range offene {
-			vorschlag.Positionen = append(vorschlag.Positionen, bescheidVorschlagAus(f))
+			vorschlag.Positionen = append(vorschlag.Positionen, bescheidVorschlagAus(f, quelle))
 		}
 		ueberfaellig, err := bescheidRepo.UeberfaelligeAusleihen(ctx, id)
 		if err != nil {
 			return apierrors.Internal("Überfällige Ausleihen konnten nicht gelesen werden", err)
 		}
 		for _, a := range ueberfaellig {
-			vorschlag.Ausleihen = append(vorschlag.Ausleihen, bescheidVorschlagAusAusleihe(a))
+			vorschlag.Ausleihen = append(vorschlag.Ausleihen, bescheidVorschlagAusAusleihe(a, quelle))
 		}
 
 		RespondJSON(w, http.StatusOK, vorschlag)
@@ -164,9 +166,9 @@ func (s *Server) bescheidAngaben(ctx context.Context) (repository.BescheidAngabe
 // Arbeitshilfe verlangt ab dem zweiten Verleihjahr den Neupreis zum Zeitpunkt des
 // Verlusts. Bis zum 17.09.2026 stand hier eine harte 0, und die Staffel wich immer auf
 // den Kaufpreis aus. Ist kein Listenpreis erfasst, tut sie das weiterhin — und sagt es.
-func bescheidVorschlagAus(f repository.OffeneForderung) BescheidVorschlagPosition {
+func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisquelle) BescheidVorschlagPosition {
 	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(f.SchuljahreMitAusleihe, f.SchuljahreImBestand),
-		f.Kaufpreis, f.Listenpreis, f.ZustandAbschlag)
+		f.Kaufpreis, f.Listenpreis, f.ZustandAbschlag, quelle)
 	return BescheidVorschlagPosition{
 		SchadensfallID: f.SchadensfallID,
 		Art:            f.Art,
@@ -180,9 +182,9 @@ func bescheidVorschlagAus(f repository.OffeneForderung) BescheidVorschlagPositio
 
 // bescheidVorschlagAusAusleihe rechnet den Staffel-Vorschlag für ein überfälliges Buch —
 // dieselbe Rechnung wie für eine Forderung, das Buch trägt nur noch keine.
-func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe) BescheidVorschlagAusleihe {
+func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ersatzwert.Preisquelle) BescheidVorschlagAusleihe {
 	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(a.SchuljahreMitAusleihe, a.SchuljahreImBestand),
-		a.Kaufpreis, a.Listenpreis, a.ZustandAbschlag)
+		a.Kaufpreis, a.Listenpreis, a.ZustandAbschlag, quelle)
 	return BescheidVorschlagAusleihe{
 		AusleiheID:    a.AusleiheID,
 		Titel:         a.Titel,
@@ -209,6 +211,10 @@ func bescheidHerleitung(v ersatzwert.Vorschlag) string {
 		basis = "Listenpreis"
 	case ersatzwert.BasisKaufpreisErsatzweise:
 		basis = "Kaufpreis (kein Listenpreis hinterlegt)"
+	case ersatzwert.BasisKaufpreisGewaehlt:
+		// „so eingestellt" statt „kein Listenpreis hinterlegt": Der Satz sagt, dass die
+		// Schule die Grundlage gewählt hat, und behauptet nichts über die Datenlage.
+		basis = "Kaufpreis (so eingestellt)"
 	case ersatzwert.BasisKaufpreis:
 		basis = "Kaufpreis"
 	}

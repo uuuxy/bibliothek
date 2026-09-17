@@ -76,6 +76,9 @@ type EinstellungenPatch struct {
 	BescheidZahlstelle        *string `json:"bescheid_zahlstelle,omitempty"`
 	BescheidBankverbindung    *string `json:"bescheid_bankverbindung,omitempty"`
 	BescheidFristTage         *int    `json:"bescheid_frist_tage,omitempty"`
+	// ErsatzwertImmerKaufpreis: siehe SystemEinstellungen — nicht mitgeschickt heißt
+	// „unangetastet", false heißt ausdrücklich „Listenpreis bevorzugen".
+	ErsatzwertImmerKaufpreis *bool `json:"ersatzwert_immer_kaufpreis,omitempty"`
 }
 
 // paarSammler sammelt die Upsert-Paare eines Patches. Jede Hinzufügung geht durch
@@ -161,6 +164,7 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.text("bescheid_durchwahl", p.BescheidDurchwahl)
 	s.text("bescheid_zahlstelle", p.BescheidZahlstelle)
 	s.text("bescheid_bankverbindung", p.BescheidBankverbindung)
+	s.schalter("ersatzwert_immer_kaufpreis", p.ErsatzwertImmerKaufpreis)
 	s.text("oeffentliche_adresse", p.OeffentlicheAdresse)
 	s.text("alarm_empfaenger", p.AlarmEmpfaenger)
 

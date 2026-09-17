@@ -129,7 +129,7 @@ func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository, bes
 		// gespeichert, und eine fehlende Auskunft darf daraus keinen Fehler machen.
 		antwort := map[string]any{"status": "success"}
 		if g, groessenErr := bescheidRepo.GroessenFuerExemplar(ctx, id); groessenErr == nil {
-			v := ersatzwertVorschlagAus(g)
+			v := ersatzwertVorschlagAus(g, s.preisquelle(ctx))
 			antwort["ersatzwert"] = v.Betrag
 			antwort["ersatzwert_herleitung"] = v.Herleitung
 		}

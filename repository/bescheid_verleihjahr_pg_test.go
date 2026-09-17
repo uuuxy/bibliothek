@@ -133,7 +133,7 @@ func TestVerleihjahrZaehltSchuljahre(t *testing.T) {
 		if got := verleihjahr[f.id]; got != f.erwartet {
 			t.Errorf("%s: Verleihjahr %d, erwartet %d — %s (Staffel: %d %% statt %d %%)",
 				f.name, got, f.erwartet, f.warum,
-				ersatzwert.Rechne(got, 30, 0, 0).Prozent, ersatzwert.Rechne(f.erwartet, 30, 0, 0).Prozent)
+				ersatzwert.Rechne(got, 30, 0, 0, ersatzwert.PreisquelleListenpreis).Prozent, ersatzwert.Rechne(f.erwartet, 30, 0, 0, ersatzwert.PreisquelleListenpreis).Prozent)
 		}
 	}
 }

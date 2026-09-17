@@ -72,7 +72,7 @@ export const KATEGORIEN = [
 		// entscheidet die Route, nicht diese Kategorie.
 		id: 'schadensersatz',
 		titel: 'Schadensersatz',
-		kurz: 'Referenznummer, Frist, Zahlungsweg des Bescheids',
+		kurz: 'Grundlage der Berechnung, Referenznummer, Frist, Zahlungsweg',
 		icon: Receipt
 	},
 	{

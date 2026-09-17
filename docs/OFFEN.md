@@ -32,6 +32,19 @@ das, was wir vorgestern zu streichen beschlossen hatten. Diese Entscheidung ist 
 
 **Vier Fragen dazu stehen in 9.7** und halten den Rest auf.
 
+**Was seither gebaut ist (17.09.2026, nachmittags):** Das Programm rechnet jetzt aus, was ein
+Buch heute noch wert ist — und schreibt dazu, wie die Zahl entstanden ist. An jedem Exemplar in
+der Buchakte steht der Betrag samt Begründung, ein beschädigtes Buch bekommt einen Prozentwert
+für seinen Zustand (der den Betrag mindert und ein Buch nicht aus dem Verkehr zieht), und in den
+Einstellungen kann die Schule wählen, ob der heutige Listenpreis oder der bezahlte Einkaufspreis
+die Grundlage ist. Damit sind die drei Punkte der Anforderungsliste zur Abwertung abgearbeitet.
+
+**Drei Dinge dazu brauchen dich:** Ob der Wertverlust auch AN DER THEKE eingetragen werden soll
+(ich rate ab — die Theke ist ein Scanfeld, kein Formular), und zwei Fragen zum Bestand der
+Schülerbücherei: ob ein Beschädigungs-Abschlag dort zählt, und ob dort der heutige Preis statt
+des damals bezahlten gelten soll. Beim zweiten geht es um Geld eines fremden Trägers, deshalb
+habe ich nichts geändert. Alle drei stehen mit Vorschlag in 9.8.
+
 ---
 
 **Was DU tun kannst — der Reihe nach:**
@@ -1606,6 +1619,14 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
   einer Quelle, die es schon gab: Die DNB liefert den Ladenpreis aus MARC21 020 $c in jeder
   Antwort mit (`metadaten_preis.go`), er stand dort ungenutzt — jetzt füllt er beim Anlegen
   über die ISBN das Feld. Verdrahtet über alle vier Schreibwege; Feld in der Katalog-Maske.
+- **Stufe 4 GEBAUT.** In den Einstellungen unter „Schadensersatz" steht jetzt der Schalter
+  „Immer mit dem Einkaufspreis rechnen". AUS (die Vorgabe, und auch der Zustand jeder Anlage,
+  in der niemand etwas einstellt) heißt: ab dem zweiten Verleihjahr der Listenpreis, so wie es
+  die Arbeitshilfe verlangt. AN heißt: immer der Preis, den die Schule bezahlt hat — und die
+  Herleitung sagt dann „Kaufpreis (so eingestellt)" statt „kein Listenpreis hinterlegt", denn
+  das wäre eine falsche Auskunft über die Datenlage. Im ersten Verleihjahr ändert der Schalter
+  nichts; dort gilt ohnehin der Kaufpreis. Am Draht geprüft: Schlüssel in der Tabelle → Aufruf
+  der Exemplar-Liste → Betrag und Begründung in der Antwort.
 - **Stufe 2b GEBAUT.** An jedem Exemplar der Buchakte steht, was ein Ersatz heute kostet —
   mit der Herleitung darunter („3. Verleihjahr → 60 % von 41,50 € (Listenpreis), abzüglich
   20 % für den Zustand"). Die Zahl kommt aus derselben Funktion wie der Vorschlag im
@@ -1627,8 +1648,7 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
 
 **Was als Nächstes dran ist:**
 
-1. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
-2. **Der Wertverlust bei der RÜCKGABE — eine Frage an dich.** Die Anforderungsliste nennt
+1. **Der Wertverlust bei der RÜCKGABE — eine Frage an dich.** Die Anforderungsliste nennt
    „Katalogisierung und Rückgabe". Die Katalogisierung ist erledigt (Stufe 3, siehe oben), die
    Rückgabe nicht — und zwar mit Absicht: Die Theke ist ein Scanfeld, kein Formular. Ein Buch
    kommt zurück, indem es gescannt wird; es gibt dort keinen Dialog, in den ein Prozentwert
@@ -1655,7 +1675,15 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
    Listenpreis bevorzugen oder immer Einkaufspreis. Die Herleitung nennt weiterhin, welcher
    Preis benutzt wurde.
 
-**Offene Frage vor Stufe 2:** Gilt der Zustandsabschlag auch für den Bestand der
-Schülerbücherei? Dort ist der Ersatz der Neuwert ohne Altersabschlag (Benutzungsordnung) — ein
-Abschlag für Beschädigung wäre aber auch dort plausibel. *Vorschlag: ja, er zählt; der
-ALTERSabschlag bleibt auf Lernmittel beschränkt.*
+**Zwei offene Fragen zum Bestand der Schülerbücherei** — beide betreffen nur ihn, nicht die
+Lernmittel:
+
+1. Gilt der Zustandsabschlag auch dort? Der Ersatz ist der Neuwert ohne Altersabschlag
+   (Benutzungsordnung) — ein Abschlag für Beschädigung wäre aber auch dort plausibel.
+   *Vorschlag: ja, er zählt; der ALTERSabschlag bleibt auf Lernmittel beschränkt.*
+2. **Neu bemerkt am 17.09.2026:** Für Büchereibücher rechnet das Programm mit dem
+   EINKAUFSPREIS, obwohl die Benutzungsordnung „Geld in Höhe des Neuwerts" verlangt — und der
+   Neuwert ist genau der Listenpreis, den es seit Migration 127 gibt. Ein 2015 für 8 € gekaufter
+   Roman, der heute 14 € kostet, wird also mit 8 € ersetzt. Geändert habe ich nichts: Das
+   verschiebt Beträge, und das Geld gehört dem Schulträger. *Vorschlag: den Listenpreis nehmen,
+   wenn einer erfasst ist, sonst den Kaufpreis — beides benannt in der Herleitung.*

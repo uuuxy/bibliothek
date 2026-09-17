@@ -37,6 +37,30 @@ const (
 	// aber keiner hinterlegt — gerechnet wird mit dem Kaufpreis. Der Dialog sagt das, damit
 	// niemand eine Genauigkeit annimmt, die die Zahl nicht hat.
 	BasisKaufpreisErsatzweise Basis = "kaufpreis_ersatzweise"
+	// BasisKaufpreisGewaehlt heißt: Es GIBT einen Listenpreis, die Schule hat aber
+	// eingestellt, dass immer der Kaufpreis gilt. Ein eigener Wert, weil die Herleitung
+	// beides unterscheiden muss — „kein Listenpreis hinterlegt" wäre hier eine falsche
+	// Auskunft über die Datenlage, und in einem Bescheid steht keine falsche Auskunft.
+	BasisKaufpreisGewaehlt Basis = "kaufpreis_gewaehlt"
+)
+
+// Preisquelle sagt, welcher Preis ab dem zweiten Verleihjahr die Grundlage ist
+// (Anforderungsliste Nr. 3: „Einkaufspreis UND Listenpreis hinterlegen, für das
+// Mahnwesen auswählbar, welcher gilt").
+//
+// Der Nullwert ist PreisquelleListenpreis, und das ist kein Zufall: Die Arbeitshilfe
+// zum Erlass vom 17.12.2014 verlangt ab dem zweiten Verleihjahr „80 % des Neupreises
+// zum Zeitpunkt des Verlusts". Wer diesen Typ nicht setzt — eine ungesetzte Einstellung,
+// ein Aufrufer, der die Frage nicht kennt —, bekommt also die bindende Regel und nicht
+// die Abweichung davon.
+type Preisquelle string
+
+const (
+	// PreisquelleListenpreis ist die Vorgabe: der heutige Neupreis, wenn einer erfasst ist.
+	PreisquelleListenpreis Preisquelle = ""
+	// PreisquelleKaufpreis heißt: immer der Einkaufspreis der Schule, auch wenn ein
+	// Listenpreis erfasst ist. Eine Wahl der Schule, die die Herleitung benennt.
+	PreisquelleKaufpreis Preisquelle = "kaufpreis"
 )
 
 // Vorschlag ist das Ergebnis: der Betrag, der Prozentsatz, die Basis und der Preis, auf
@@ -71,7 +95,7 @@ type Vorschlag struct {
 // Werte außerhalb 0–100 werden gekappt statt abgelehnt: Die Spalte lässt sie ohnehin nicht
 // zu (chk_zustand_abwertung_bereich), und ein negativer Abschlag, der den Betrag ERHÖHT,
 // wäre in einer Forderung schlimmer als ein ignorierter Tippfehler.
-func Rechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int) Vorschlag {
+func Rechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int, quelle Preisquelle) Vorschlag {
 	if verleihjahr < 1 {
 		verleihjahr = 1
 	}
@@ -86,7 +110,7 @@ func Rechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int) V
 		zustandAbschlag = 100
 	}
 
-	basis, preis := basisFuer(verleihjahr, kaufpreis, neupreis)
+	basis, preis := basisFuer(verleihjahr, kaufpreis, neupreis, quelle)
 	zeitwert := preis * float64(prozent) / 100
 	return Vorschlag{
 		Betrag:          rundeAufCent(zeitwert * float64(100-zustandAbschlag) / 100),
@@ -100,12 +124,24 @@ func Rechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int) V
 
 // basisFuer wählt den Preis: im ersten Jahr der Kaufpreis, danach der Neupreis — und
 // wenn es keinen gibt, ersatzweise der Kaufpreis (benannt, nicht verschwiegen).
-func basisFuer(verleihjahr int, kaufpreis, neupreis float64) (Basis, float64) {
+//
+// Die eingestellte Preisquelle greift erst ab dem zweiten Jahr, weil im ersten ohnehin
+// der Kaufpreis gilt: Das Buch war neu, als es verliehen wurde. Eine Einstellung, die
+// dort etwas änderte, änderte nichts — außer der Begründung, und die wäre dann falsch.
+func basisFuer(verleihjahr int, kaufpreis, neupreis float64, quelle Preisquelle) (Basis, float64) {
 	if verleihjahr == 1 {
 		if kaufpreis > 0 {
 			return BasisKaufpreis, kaufpreis
 		}
 		// Kein Kaufpreis erfasst, aber ein Neupreis: besser als nichts, und benannt.
+		return BasisNeupreis, neupreis
+	}
+	if quelle == PreisquelleKaufpreis {
+		// So eingestellt. Ohne Kaufpreis bleibt nur der Listenpreis — eine 0 in einer
+		// Forderung wäre schlimmer als eine benannte Abweichung von der Einstellung.
+		if kaufpreis > 0 {
+			return BasisKaufpreisGewaehlt, kaufpreis
+		}
 		return BasisNeupreis, neupreis
 	}
 	if neupreis > 0 {

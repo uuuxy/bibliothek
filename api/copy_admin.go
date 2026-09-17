@@ -182,12 +182,13 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 		// Scheitert das, bleibt die Liste stehen und die Werte fehlen: Der Ersatzwert
 		// ist eine Auskunft, kein Grund, die Exemplar-Liste zu verweigern.
 		if groessen, err := bescheidRepo.GroessenFuerTitel(ctx, id); err == nil {
+			quelle := s.preisquelle(ctx)
 			for i := range copies {
 				g, da := groessen[copies[i].ID]
 				if !da {
 					continue
 				}
-				v := ersatzwertVorschlagAus(g)
+				v := ersatzwertVorschlagAus(g, quelle)
 				copies[i].Ersatzwert = v.Betrag
 				copies[i].ErsatzwertHerleitung = v.Herleitung
 			}

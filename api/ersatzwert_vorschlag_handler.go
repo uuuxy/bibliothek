@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -74,13 +75,13 @@ func (s *Server) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepo
 			return apierrors.Internal("Ersatzwert konnte nicht berechnet werden", err)
 		}
 
-		RespondJSON(w, http.StatusOK, ersatzwertVorschlagAus(groessen))
+		RespondJSON(w, http.StatusOK, ersatzwertVorschlagAus(groessen, s.preisquelle(r.Context())))
 		return nil
 	})
 }
 
 // ersatzwertVorschlagAus wählt die Regel und formuliert die Herleitung.
-func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen) ErsatzwertVorschlag {
+func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.Preisquelle) ErsatzwertVorschlag {
 	if !g.IstLernmittel {
 		return buechereiVorschlag(g.Kaufpreis)
 	}
@@ -88,7 +89,7 @@ func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen) ErsatzwertVorschlag
 	// Seit Migration 127 mit echtem Listenpreis und dem Zustand des Exemplars. Ist kein
 	// Listenpreis erfasst (0), weicht die Staffel auf den Kaufpreis aus und sagt das.
 	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
-		g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag)
+		g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag, quelle)
 	return ErsatzwertVorschlag{
 		Betrag:        v.Betrag,
 		Herleitung:    bescheidHerleitung(v),
@@ -107,4 +108,18 @@ func buechereiVorschlag(kaufpreis float64) ErsatzwertVorschlag {
 			euroBetrag(kaufpreis)),
 		IstLernmittel: false,
 	}
+}
+
+// preisquelle liest aus den Einstellungen, welcher Preis ab dem zweiten Verleihjahr die
+// Grundlage ist (Anforderungsliste Nr. 3, OFFEN.md 9.8 Stufe 4).
+//
+// Scheitert das Lesen, gilt die Regel der Arbeitshilfe. Das ist die einzige Richtung, die
+// hier zu vertreten ist: Ein Fehler beim Lesen einer Einstellung darf nicht dazu führen,
+// dass eine Forderung nach einer anderen Grundlage entsteht als die davor.
+func (s *Server) preisquelle(ctx context.Context) ersatzwert.Preisquelle {
+	einst, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
+	if err != nil || einst == nil || !einst.ErsatzwertImmerKaufpreis {
+		return ersatzwert.PreisquelleListenpreis
+	}
+	return ersatzwert.PreisquelleKaufpreis
 }

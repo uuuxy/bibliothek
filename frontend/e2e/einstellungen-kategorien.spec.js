@@ -43,7 +43,8 @@ function ausgangsstand() {
 			('ferien_leseclub_aktiv', 'true'),
 			('preise_erfassen', 'true'),
 			('lmf_stichtag', '08-15'),
-			('sperre_minuten', '15')
+			('sperre_minuten', '15'),
+			('ersatzwert_immer_kaufpreis', 'true')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;
 	`);
 }
@@ -61,7 +62,8 @@ test.afterEach(() => {
 			('ferien_leseclub_aktiv', 'false'),
 			('preise_erfassen', 'true'),
 			('lmf_stichtag', '07-31'),
-			('sperre_minuten', '15')
+			('sperre_minuten', '15'),
+			('ersatzwert_immer_kaufpreis', 'false')
 		ON CONFLICT (schluessel) DO UPDATE SET wert = EXCLUDED.wert;
 	`);
 });
@@ -92,7 +94,8 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 			bestelllink_gueltigkeit_tage: wert('bestelllink_gueltigkeit_tage'),
 			ferien_leseclub_aktiv: wert('ferien_leseclub_aktiv'),
 			preise_erfassen: wert('preise_erfassen'),
-			lmf_stichtag: wert('lmf_stichtag')
+			lmf_stichtag: wert('lmf_stichtag'),
+			ersatzwert_immer_kaufpreis: wert('ersatzwert_immer_kaufpreis')
 		},
 		'Speichern in „Datenschutz & Sitzung" hat fremde Einstellungen überschrieben'
 	).toEqual({
@@ -103,7 +106,8 @@ test('Eine Kategorie speichern lässt alle anderen unangetastet', async ({ page 
 		bestelllink_gueltigkeit_tage: '30',
 		ferien_leseclub_aktiv: 'true',
 		preise_erfassen: 'true',
-		lmf_stichtag: '08-15'
+		lmf_stichtag: '08-15',
+		ersatzwert_immer_kaufpreis: 'true'
 	});
 });
 
