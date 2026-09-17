@@ -35,7 +35,11 @@ ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Re
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
 5. **15 Minuten durch die Leserdatei gehen** (5.16 A): Stimmen die Wörter, fehlt dir etwas?
-6. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
+6. **Neu am 17.09.: Schulbücher in neuer Auflage** (4.18). Die Richtung ist entschieden — der
+   Bedarf rechnet über die Auflagen hinweg, die Ausgabe warnt bei gemischten Auflagen, und
+   zusammengelegt wird nichts. Gebaut ist davon nichts: Der erste Schritt ist klein (das Feld
+   „Auflage"), der dritte ändert das Schema und braucht deine Freigabe.
+7. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
    ist nichts zu tun außer nachzufragen, wenn nichts kommt.
 
 **Was in der Nacht vom 16. auf den 17.09. gebaut wurde** — alles mit Gates, alles auf `main`:
@@ -719,6 +723,64 @@ angleichen. Bezug: 8.5 (B5, B6).
 
 ---
 
+### 4.18 Neue Auflage eines Schulbuchs — ein Werk über den Auflagen
+
+**Der Fall (gefragt am 17.09.2026):** Ein Schulbuch wird nachbestellt, es gibt es aber nur noch in
+der nächsten Auflage — neue ISBN, also ein neuer Titel. Es geht ausdrücklich NUR um Schulbücher.
+
+**Was heute passiert.** `buecher_titel.isbn` ist UNIQUE; die neue Auflage wird zwangsläufig eine
+zweite Titelzeile, und das ist richtig so — es sind zwei verschiedene Bücher. Nur hängen
+`meldebestand` und der Gesamtbestand am TITEL (`api/reorders.go`): Die alte Zeile behält den
+Meldebestand 95 und zählt ihre 65 Restexemplare, die neue startet mit der Vorgabe 5 und hat 30.
+Die Nachbestell-Liste steht damit für dasselbe Buch zweimal da, und beide Zahlen sind falsch.
+Dasselbe gilt für den Klassensatz (`class_books`), Vormerkungen und Reservierungen — sie alle
+hängen am Titel.
+
+**Wie Littera es macht** (Handbuch, am 17.09.2026 gelesen): Jede Auflage ist ein eigener Titel mit
+eigenem Feld „Auflage" („z. B. 3. Aufl."). Beim Anlegen läuft eine Dublettenkontrolle über die
+ISBN — ohne ISBN über Verfasser und Haupttitel — und bietet an, statt eines neuen Titels ein
+weiteres EXEMPLAR anzulegen. Verbunden werden Auflagen über eine Verweisung „Früherer Titel",
+damit die Recherche beide findet. Ein Zusammenführen von Titeln gibt es nicht, eine Ebene über dem
+Titel auch nicht. Das ist allerdings die BIBLIOTHEKS-Software; die Lernmittelverwaltung ist bei
+Littera ein eigenes Programm. Littera beantwortet also „finde beide Auflagen", nicht „wie viele
+Mathe 7 haben wir".
+
+**Entschieden am 17.09.2026:**
+
+- **Der Bedarf rechnet am Werk**, nicht an der Auflage: „95 Stück Mathe 7, egal welche Auflage."
+  Die Suche zeigt einen Treffer mit der Gesamtzahl und darunter die Aufschlüsselung je Auflage.
+- **Die Ausgabe warnt**, wenn eine Klasse gemischte Auflagen bekommt. Still darf das nicht
+  passieren: verschiedene Auflagen heißen verschiedene Seitenzahlen.
+- **Zusammengelegt wird nichts.** Zwei Titelzeilen zu einer zu machen und die Exemplare umzuhängen
+  verliert die Auflage — und genau die ist bei Schulbüchern die Information, die zählt. Jedes
+  Exemplar bleibt an seiner Auflage.
+- **Die Form:** eine schmale Tabelle `werke` (Id, Name) und eine NULLBARE Spalte `werk_id` am
+  Titel; gruppiert wird über `COALESCE(werk_id, id)`. Jeder Titel ohne Werk ist damit sein eigenes
+  Werk — es gibt keinen Zwischenzustand „halber Bestand gepflegt", und jeder Lesepfad, den die
+  Frage nicht betrifft, bleibt unverändert. Am Werk rechnen Meldebestand, Bedarf und
+  Nachbestellung; an der Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe.
+
+**Offen: Wer legt das Werk an?** (Am 17.09.2026 ohne Meinung geblieben.) **Vorschlag:** Der
+Vorschlag entsteht automatisch, das Ja kommt von einem Menschen. Vollautomatisch über den Namen zu
+gruppieren verbindet früher oder später zwei „Deutschbuch 7" verschiedener Verlage; rein von Hand
+pflegt es niemand, und der Bedarf bleibt falsch. Auf dem Weg über die Nachbestellung ist der
+Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
+
+**Reihenfolge, wenn freigegeben:**
+
+1. **„Auflage" als echtes Feld am Titel.** Heute gibt es das Wort im ganzen System nur als
+   Freitext in `erweiterte_eigenschaften` aus dem Listenimport. Ohne das Feld stehen zwei Zeilen
+   „Lambacher Schweizer 7" in jeder Liste, die niemand unterscheiden kann — unabhängig davon, was
+   danach kommt. Kleinster Schritt, nützt sofort.
+2. **Dublettenkontrolle beim Anlegen** wie bei Littera (ISBN, sonst Autor und Titel). Sie löst den
+   anderen Fall — dasselbe Buch versehentlich zweimal —, der als Fund schon in 5.5 und 5.12 steht.
+3. **Das Werk** samt Migration, Gruppierung im Bedarf und Warnung in der Ausgabe.
+
+**Nicht gebaut.** Schritt 3 ändert das Schema und rechnet die Nachbestell-Liste anders. Das geht
+in Stufen mit Nachweis und erst nach deiner Freigabe.
+
+---
+
 ## 5. Abarbeitbar (Kategorie B)
 
 ### 5.1 Schäden und Benutzer
@@ -1223,6 +1285,12 @@ neu gedruckt werden:** Kein Ausweis liefert beim Scannen die Lesernummer, und Li
 und Leser getrennt, beide ab 1 — fast jede Lesernummer ist auf dem Server schon die Nummer eines
 Buchs, der Lauf vergibt dann `L-`-Nummern. Ist sie gefüllt, stehen die einzelnen Personen ohne Karte
 mit „keine Karte in FremdLeserNummer" im Protokoll des Laufs.
+**Am 17.09.2026 aufgefallen:** In `~/Downloads` und auf dem Schreibtisch liegen seit dem
+09.09.2026 zwei Littera-Sicherungen vom 01. und 02.09.2026 (856 KB und 602 KB). Ob das die
+Datensicherung aus dem laufenden Littera ist, ist UNGEPRÜFT — für eine Vollsicherung wären
+100 MB+ zu erwarten, die Größe spricht eher für einen Teilexport. Zum Nachsehen fehlt auf dem
+Rechner ein Entpacker für `.7z`.
+
 **Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
 Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.
 
