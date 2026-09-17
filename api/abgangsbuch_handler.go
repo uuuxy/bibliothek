@@ -27,6 +27,9 @@ type AbgangsbuchAntwort struct {
 	Abschnitte    []Abschnitt[repository.AbgangsZeile] `json:"abschnitte"`
 	Gesamt        int                                  `json:"gesamt"`
 	OhneZeitpunkt int                                  `json:"ohne_zeitpunkt"`
+	// AusKatalogGeloescht: die im Zeitraum körperlich gelöschten Exemplare. Sie stehen in
+	// keinem Abschnitt oben — mit der Zeile ist auch ihr Titel gegangen (abgangsbuch.go).
+	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
 }
 
 func abgangsbuchAntwort(buch repository.Abgangsbuch) AbgangsbuchAntwort {
@@ -36,6 +39,8 @@ func abgangsbuchAntwort(buch repository.Abgangsbuch) AbgangsbuchAntwort {
 		Abschnitte:    abschnitteAus(buch.Zeilen, func(z repository.AbgangsZeile) string { return z.Topf }),
 		Gesamt:        len(buch.Zeilen),
 		OhneZeitpunkt: buch.OhneZeitpunkt,
+
+		AusKatalogGeloescht: buch.AusKatalogGeloescht,
 	}
 }
 

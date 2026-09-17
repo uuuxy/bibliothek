@@ -108,11 +108,12 @@ func abgangsbuchSpaltenkoepfe(p *gofpdf.Fpdf, tr func(string) string) {
 	p.CellFormat(abgangSpalteGrund, abgangZeilenHoehe, tr("Grund"), "TBR", 1, "L", false, 0, "")
 }
 
-// abgangsbuchFuss nennt die Gesamtzahl — und die Abgänge OHNE bekannten Zeitpunkt.
+// abgangsbuchFuss nennt die Gesamtzahl — und darunter, was NICHT in der Liste steht.
 //
-// Die zweite Zeile ist die wichtigere: Was vor Migration 128 ausgesondert wurde, trägt kein
-// Datum und steht in KEINER Halbjahresliste. Ein Nachweis, der das verschweigt, behauptet
-// Vollständigkeit, die er nicht hat — und ein erfundenes Datum wäre schlimmer gewesen.
+// Die beiden Hinweise sind die wichtigeren Zeilen: Was vor Migration 128 ausgesondert wurde,
+// trägt kein Datum und steht in KEINER Halbjahresliste; was körperlich gelöscht wurde, steht
+// in gar keiner Abfrage mehr (Rasterdurchgang 17.09.2026). Ein Nachweis, der das verschweigt,
+// behauptet Vollständigkeit, die er nicht hat — und erfundene Zeilen wären schlimmer.
 func abgangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, buch repository.Abgangsbuch) {
 	if p.GetY() > abgangUmbruchAbY {
 		p.AddPage()
@@ -130,6 +131,20 @@ func abgangsbuchFuss(p *gofpdf.Fpdf, tr func(string) string, buch repository.Abg
 			"Hinweis: %d weitere Exemplare sind ausgesondert, ohne dass ein Abgangsdatum bekannt ist. "+
 				"Sie wurden vor der Einführung des Abgangsbuchs ausgebucht und können keinem Zeitraum "+
 				"zugeordnet werden; sie stehen deshalb in keiner Halbjahresliste.", buch.OhneZeitpunkt)),
+			"", "L", false)
+		p.SetTextColor(0, 0, 0)
+	}
+
+	if buch.AusKatalogGeloescht > 0 {
+		p.Ln(4)
+		p.SetFont("Arial", "I", 9)
+		p.SetTextColor(90, 90, 90)
+		p.MultiCell(180, 5, tr(fmt.Sprintf(
+			"Hinweis: %d Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht, statt "+
+				"ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust. "+
+				"Titel, Signatur und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen "+
+				"deshalb in keiner Liste oben. Ihre Nummern sind im Protokoll nachschlagbar.",
+			buch.AusKatalogGeloescht)),
 			"", "L", false)
 		p.SetTextColor(0, 0, 0)
 	}

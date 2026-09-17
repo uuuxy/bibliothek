@@ -55,7 +55,8 @@ func AbgangsgrundText(grund string) string {
 	}
 }
 
-// Abgangsbuch bündelt Zeitraum, Zeilen und die Zahl der Abgänge OHNE bekannten Zeitpunkt.
+// Abgangsbuch bündelt Zeitraum, Zeilen und die beiden Zahlen, die sagen, was NICHT in der
+// Liste steht.
 //
 // OhneZeitpunkt ist kein Schönheitsfehler, sondern die wichtigste Zahl auf dem Blatt: Was
 // vor Migration 128 ausgesondert wurde, hat kein Abgangsdatum und kann keinem Zeitraum
@@ -66,6 +67,20 @@ type Abgangsbuch struct {
 	Bis           time.Time      `json:"bis"`
 	Zeilen        []AbgangsZeile `json:"zeilen"`
 	OhneZeitpunkt int            `json:"ohne_zeitpunkt"`
+	// AusKatalogGeloescht ist die zweite Lücke dieses Nachweises, gefunden im
+	// Rasterdurchgang vom 17.09.2026 (Frage 12) und an der Datenbank nachgestellt: Drei
+	// Türen entfernen ein Exemplar KÖRPERLICH statt es auszusondern — Titel löschen
+	// (einzeln und als Massenaktion) und „Verlust endgültig löschen" in der Inventur.
+	// Danach steht die Zeile in keiner Abfrage über `buecher_exemplare` mehr, auch nicht
+	// in diesem Buch: Ein Exemplar, das gestern noch mit Abgangsdatum hier stand,
+	// verschwindet mit seinem Titel rückwirkend aus einem Halbjahr, das vielleicht schon
+	// unterschrieben ist.
+	//
+	// Gezählt wird, was das Protokoll hergibt — mehr nicht. Titel, Signatur und
+	// Abgangsgrund sind mit dem Exemplar gegangen; sie hier aus dem Protokolltext zu
+	// rekonstruieren hieße, einen Nachweis aus Bruchstücken zu bauen. Die Zahl mit dem
+	// Verweis aufs Protokoll ist die ehrliche Auskunft, die fehlende Zeile ist es nicht.
+	AusKatalogGeloescht int `json:"aus_katalog_geloescht"`
 }
 
 // LadeAbgangsbuch liest die Abgänge eines Zeitraums. `von` und `bis` sind Kalendertage der
@@ -115,6 +130,20 @@ func LadeAbgangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Abga
 		SELECT count(*) FROM buecher_exemplare
 		WHERE ist_ausgesondert = true AND ausgesondert_am IS NULL
 	`).Scan(&buch.OhneZeitpunkt); err != nil {
+		return buch, err
+	}
+
+	// Die körperlich gelöschten Exemplare des Zeitraums — die einzige Spur, die von ihnen
+	// bleibt. Gezählt wird am Zeitpunkt der LÖSCHUNG, und das ist hier auch der richtige
+	// Zeitpunkt: Für ein Exemplar, das aus der Tabelle verschwindet, IST die Löschung der
+	// Abgang. Ein Ausbuchen davor stünde ohnehin schon in der Liste oben.
+	if err := q.QueryRow(ctx, `
+		SELECT count(*) FROM audit_log
+		WHERE tabelle = 'buecher_exemplare' AND aktion = 'DELETE'
+		  AND details->>'action' = ANY($1)
+		  AND timestamp >= $2 AND timestamp < $3
+	`, []string{AuditAktionTitelGeloescht, AuditAktionVerlustEndgueltigGeloescht},
+		abVon, bisAusschliesslich).Scan(&buch.AusKatalogGeloescht); err != nil {
 		return buch, err
 	}
 	return buch, nil

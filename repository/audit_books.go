@@ -179,7 +179,7 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 			BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 			Details: map[string]any{
 				"barcode_id": ex.barcode, "titel": titel, "titel_id": titleID,
-				"action": "titel_geloescht",
+				"action": AuditAktionTitelGeloescht,
 			},
 		}); err != nil {
 			return err
@@ -192,6 +192,22 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 // DeleteCopy bucht ein physisches Exemplar aus dem System aus (Soft-Delete) und protokolliert dies im Audit-Log.
 // Da historische Ausleihdaten und Schadensfälle für statistische Zwecke erhalten bleiben müssen, wird das Exemplar
 // nicht physisch aus der Tabelle gelöscht, sondern als ausgesondert markiert.
+// Die Protokoll-Marker der drei Türen, die ein Exemplar KÖRPERLICH entfernen.
+//
+// Warum als Konstante und nicht als getippter Text an drei Stellen: Seit dem 17.09.2026
+// liest das Abgangsbuch sie (abgangsbuch.go). Ein Exemplar, das gelöscht statt
+// ausgesondert wird, fällt aus jeder Abfrage über `buecher_exemplare` — der Nachweis kann
+// es nur über diese Spur zählen. Wer den Text an einer Tür umbenennt, ohne die Abfrage zu
+// kennen, senkt die Zahl still auf 0, und ein Nachweis, der schweigt, sieht aus wie einer,
+// der vollständig ist. So ist die Umbenennung eine Änderung an EINEM Wort.
+const (
+	// AuditAktionTitelGeloescht: Das Exemplar ging mit seinem Titel (beide Lösch-Türen).
+	AuditAktionTitelGeloescht = "titel_geloescht"
+	// AuditAktionVerlustEndgueltigGeloescht: Ein als Verlust gebuchtes Exemplar wurde in
+	// der Inventur endgültig entfernt (inventur_verlust_aktionen.go).
+	AuditAktionVerlustEndgueltigGeloescht = "verlust_endgueltig_geloescht"
+)
+
 func (r *pgAuditRepository) DeleteCopy(ctx context.Context, copyID string, bearbeiterID string) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {

@@ -160,7 +160,7 @@ func (r *InventoryRepository) EndgueltigLoescheVerlustExemplare(ctx context.Cont
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: s.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER",
 			Kontext: strPtr("Als Verlust gebuchtes Exemplar endgültig gelöscht"),
-			Details: map[string]any{"barcode_id": s.barcode, "titel": s.titel, "action": "verlust_endgueltig_geloescht"},
+			Details: map[string]any{"barcode_id": s.barcode, "titel": s.titel, "action": AuditAktionVerlustEndgueltigGeloescht},
 		}); err != nil {
 			return nil, err
 		}

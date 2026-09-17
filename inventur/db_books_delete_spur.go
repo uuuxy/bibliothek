@@ -21,6 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -165,7 +167,7 @@ func protokolliereGeloeschteExemplare(ctx context.Context, tx pgx.Tx, snaps []ex
 		details, err := json.Marshal(map[string]any{
 			"barcode_id": s.Barcode,
 			"titel":      s.Titel,
-			"action":     "titel_geloescht",
+			"action":     repository.AuditAktionTitelGeloescht,
 		})
 		if err != nil {
 			return fmt.Errorf("protokoll des gelöschten exemplars: %w", err)

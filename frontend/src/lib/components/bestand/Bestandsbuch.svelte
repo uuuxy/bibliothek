@@ -41,9 +41,23 @@
 	let fehler = $state('');
 
 	const abschnitte = $derived(buch?.abschnitte ?? []);
-	const druckAdresse = $derived(
-		`/api/bestand/${pfad}/pdf?von=${encodeURIComponent(von)}&bis=${encodeURIComponent(bis)}`
+
+	// Der Ausdruck nimmt den GELADENEN Zeitraum, nicht den in den Eingabefeldern.
+	//
+	// Bis zum 17.09.2026 las er `von`/`bis` — und damit das, was gerade im Feld stand. Wer
+	// ein Datum änderte und direkt auf „Ausdrucken" klickte, ohne „Anzeigen" zu drücken,
+	// heftete ein Blatt ab, dessen Zeitraum er nie geprüft hatte: auf dem Bildschirm das
+	// eine Halbjahr, auf dem Papier ein anderes. Bei einem Nachweis, der unterschrieben
+	// wird, ist das der teuerste Unterschied von allen (Rasterdurchgang 17.09.2026, Frage 3).
+	//
+	// Vor der ersten Antwort bleibt die Adresse ohne Zeitraum — dann antwortet der Server
+	// mit dem laufenden Halbjahr, und genau das steht gleich darauf auch auf dem Schirm.
+	const druckZeitraum = $derived(
+		buch
+			? `?von=${encodeURIComponent(String(buch.von).slice(0, 10))}&bis=${encodeURIComponent(String(buch.bis).slice(0, 10))}`
+			: ''
 	);
+	const druckAdresse = $derived(`/api/bestand/${pfad}/pdf${druckZeitraum}`);
 
 	async function laden() {
 		laeuft = true;
@@ -129,12 +143,22 @@
 
 		<!-- Was NICHT auf der Liste steht, gehört darunter — sonst behauptet ein Nachweis
 		     Vollständigkeit, die er nicht hat. Beim Abgangsbuch sind das die Exemplare ohne
-		     Abgangsdatum, beim Zugangsbuch die ohne hinterlegte Bestellung. -->
+		     Abgangsdatum UND die körperlich gelöschten (Rasterdurchgang 17.09.2026), beim
+		     Zugangsbuch die ohne hinterlegte Bestellung. Das jeweils fremde Feld fehlt in der
+		     Antwort schlicht, und `undefined > 0` ist falsch — der Block bleibt dann weg. -->
 		{#if buch.ohne_zeitpunkt > 0}
 			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
 				{buch.ohne_zeitpunkt} weitere Exemplare sind ausgesondert, ohne dass ein Abgangsdatum bekannt
 				ist. Sie wurden vor der Einführung des Abgangsbuchs ausgebucht und lassen sich keinem Zeitraum
 				zuordnen.
+			</p>
+		{/if}
+		{#if buch.aus_katalog_geloescht > 0}
+			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
+				{buch.aus_katalog_geloescht} Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht, statt
+				ausgesondert zu werden — mit ihrem Titel oder als endgültig entfernter Verlust. Titel, Signatur
+				und Abgangsgrund sind mit ihnen gelöscht worden; sie stehen deshalb in keiner Liste oben. Ihre
+				Nummern sind in den System-Logs nachschlagbar.
 			</p>
 		{/if}
 		{#if abschnitte.some((/** @type {any} */ a) => a.topf === '' && a.zeilen.length > 0)}

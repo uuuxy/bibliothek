@@ -148,6 +148,10 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 				Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: repository.MittelSchultraeger},
 		},
 		OhneZeitpunkt: 7,
+		// Die zweite Lücke des Nachweises (Rasterdurchgang 17.09.2026): körperlich
+		// gelöschte Exemplare stehen in keiner Liste oben. Gemessen wird sie am fertigen
+		// Blatt, weil genau dieses Blatt unterschrieben und abgeheftet wird.
+		AusKatalogGeloescht: 3,
 	}
 
 	roh, err := generateAbgangsbuchPDF(buch, pdf.SchuleInfo{Name: "Philipp-Reis-Schule", Strasse: "Schulstr. 1", PLZ: "61440", Ort: "Oberursel"})
@@ -164,6 +168,7 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 		"Summe " + mittelBeschriftung(repository.MittelLand) + ": 1 Exemplare",
 		"Summe " + mittelBeschriftung(repository.MittelSchultraeger) + ": 1 Exemplare",
 		"7 weitere Exemplare", // der Hinweis auf die Abgänge ohne Zeitpunkt
+		"3 Exemplare wurden in diesem Zeitraum aus dem Katalog gelöscht", // die zweite Lücke
 	} {
 		if !strings.Contains(blatt, muss) {
 			t.Errorf("auf dem Blatt fehlt %q:\n%s", muss, blatt)
@@ -186,5 +191,80 @@ func TestAbgangsbuchPDF_LeererZeitraumSagtEs(t *testing.T) {
 	blatt := strings.Join(pdftest.Texte(t, roh), " ")
 	if !strings.Contains(blatt, "kein Exemplar aus dem Bestand gegangen") {
 		t.Errorf("leerer Zeitraum sagt es nicht:\n%s", blatt)
+	}
+}
+
+// Ein Exemplar, das GELÖSCHT statt ausgesondert wird, fällt aus jeder Abfrage über
+// `buecher_exemplare` — auch aus diesem Nachweis, rückwirkend und ohne ein Wort.
+//
+// Gefunden im Rasterdurchgang vom 17.09.2026 (Frage 12) und hier festgenagelt: Der Abgang
+// verschwindet aus der Liste, und genau deshalb MUSS die Zahl darunter ihn nennen. Ein
+// Halbjahr, das jemand unterschrieben hat, darf nicht stillschweigend eine Zeile verlieren.
+func TestAbgangsbuch_GeloeschterTitelWirdGezaehlt(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	loc := schulzeit.Zone()
+
+	var bearbeiterID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Abgang', 'Loescher', 'abgangsbuch-loeschen@test.invalid', 'admin', true)
+		ON CONFLICT (email) DO UPDATE SET vorname = EXCLUDED.vorname
+		RETURNING id`).Scan(&bearbeiterID); err != nil {
+		t.Fatalf("Bearbeiter anlegen: %v", err)
+	}
+
+	titelID := titelMitSignatur(t, pool, "Bald geloescht", "Loe 1", 0)
+	exID := exemplar(t, pool, titelID, "AB-WEG", true, "")
+	if _, err := pool.Exec(ctx, `
+		UPDATE buecher_exemplare
+		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT'
+		WHERE id = $1`, exID); err != nil {
+		t.Fatalf("aussondern: %v", err)
+	}
+
+	von := time.Date(2026, time.March, 16, 0, 0, 0, 0, loc)
+	bis := time.Date(2027, time.March, 15, 0, 0, 0, 0, loc)
+
+	// Vorher: Das Exemplar steht als Zeile im Buch.
+	vorher, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
+	if err != nil {
+		t.Fatalf("Abgangsbuch vorher: %v", err)
+	}
+	if len(vorher.Zeilen) != 1 {
+		t.Fatalf("vor dem Löschen erwartet: eine Zeile, bekommen: %d", len(vorher.Zeilen))
+	}
+	if vorher.AusKatalogGeloescht != 0 {
+		t.Fatalf("vor dem Löschen erwartet: 0 gelöschte, bekommen: %d", vorher.AusKatalogGeloescht)
+	}
+
+	// Durch die ECHTE Tür löschen, nicht per SQL: Gemessen wird der Weg, den das Personal
+	// nimmt — samt der Protokollspur, aus der die Zahl entsteht.
+	if err := repository.NewAuditRepository(pool).DeleteTitle(ctx, titelID, bearbeiterID); err != nil {
+		t.Fatalf("Titel löschen: %v", err)
+	}
+
+	nachher, err := repository.LadeAbgangsbuch(ctx, pool, von, bis)
+	if err != nil {
+		t.Fatalf("Abgangsbuch nachher: %v", err)
+	}
+	if len(nachher.Zeilen) != 0 {
+		t.Errorf("die Zeile steht noch in der Liste (%d) — dann misst dieser Test nichts", len(nachher.Zeilen))
+	}
+	if nachher.AusKatalogGeloescht != 1 {
+		t.Errorf("gelöschtes Exemplar wird nicht gezählt: %d — der Nachweis behauptet Vollständigkeit, die er nicht hat",
+			nachher.AusKatalogGeloescht)
+	}
+
+	// Und die Zahl gehört zum ZEITRAUM: Ein Blatt über ein anderes Halbjahr darf sie nicht
+	// mitschleppen, sonst stünde dieselbe Löschung auf jedem Ausdruck der Schule.
+	fremd, err := repository.LadeAbgangsbuch(ctx,
+		pool, time.Date(2020, time.March, 16, 0, 0, 0, 0, loc), time.Date(2020, time.September, 15, 0, 0, 0, 0, loc))
+	if err != nil {
+		t.Fatalf("fremdes Halbjahr: %v", err)
+	}
+	if fremd.AusKatalogGeloescht != 0 {
+		t.Errorf("die Löschung zählt in einem fremden Halbjahr mit: %d", fremd.AusKatalogGeloescht)
 	}
 }
