@@ -167,8 +167,11 @@ func (s *Server) bescheidAngaben(ctx context.Context) (repository.BescheidAngabe
 // Verlusts. Bis zum 17.09.2026 stand hier eine harte 0, und die Staffel wich immer auf
 // den Kaufpreis aus. Ist kein Listenpreis erfasst, tut sie das weiterhin — und sagt es.
 func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisquelle) BescheidVorschlagPosition {
-	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(f.SchuljahreMitAusleihe, f.SchuljahreImBestand),
-		f.Kaufpreis, f.Listenpreis, f.ZustandAbschlag, quelle)
+	v := ersatzwertEingabe{
+		Kaufpreis: f.Kaufpreis, Listenpreis: f.Listenpreis, ZustandAbschlag: f.ZustandAbschlag,
+		SchuljahreMitAusleihe: f.SchuljahreMitAusleihe, SchuljahreImBestand: f.SchuljahreImBestand,
+		IstLernmittel: f.IstLernmittel,
+	}.rechne(quelle)
 	return BescheidVorschlagPosition{
 		SchadensfallID: f.SchadensfallID,
 		Art:            f.Art,
@@ -183,8 +186,11 @@ func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisq
 // bescheidVorschlagAusAusleihe rechnet den Staffel-Vorschlag für ein überfälliges Buch —
 // dieselbe Rechnung wie für eine Forderung, das Buch trägt nur noch keine.
 func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ersatzwert.Preisquelle) BescheidVorschlagAusleihe {
-	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(a.SchuljahreMitAusleihe, a.SchuljahreImBestand),
-		a.Kaufpreis, a.Listenpreis, a.ZustandAbschlag, quelle)
+	v := ersatzwertEingabe{
+		Kaufpreis: a.Kaufpreis, Listenpreis: a.Listenpreis, ZustandAbschlag: a.ZustandAbschlag,
+		SchuljahreMitAusleihe: a.SchuljahreMitAusleihe, SchuljahreImBestand: a.SchuljahreImBestand,
+		IstLernmittel: a.IstLernmittel,
+	}.rechne(quelle)
 	return BescheidVorschlagAusleihe{
 		AusleiheID:    a.AusleiheID,
 		Titel:         a.Titel,
@@ -210,7 +216,8 @@ func bescheidHerleitung(v ersatzwert.Vorschlag) string {
 	case ersatzwert.BasisNeupreis:
 		basis = "Listenpreis"
 	case ersatzwert.BasisKaufpreisErsatzweise:
-		basis = "Kaufpreis (kein Listenpreis hinterlegt)"
+		// Ohne Klammer in der Klammer: Der Satz steht in einem Brief.
+		basis = "Kaufpreis, kein Listenpreis hinterlegt"
 	case ersatzwert.BasisKaufpreisGewaehlt:
 		// „so eingestellt" statt „kein Listenpreis hinterlegt": Der Satz sagt, dass die
 		// Schule die Grundlage gewählt hat, und behauptet nichts über die Datenlage.
@@ -218,8 +225,16 @@ func bescheidHerleitung(v ersatzwert.Vorschlag) string {
 	case ersatzwert.BasisKaufpreis:
 		basis = "Kaufpreis"
 	}
-	satz := fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
-		v.Verleihjahr, v.Prozent, euroBetrag(v.BasisPreis), basis)
+	// Verleihjahr 0 heißt: die Neuwert-Regel der Benutzungsordnung (Bestand des
+	// Schulträgers). Dort gibt es keinen Staffelsatz zu nennen — und der Satz muss
+	// ausdrücklich „ohne ALTERSabschlag" sagen, weil ein Zustandsabschlag gleich
+	// dahinter stehen kann.
+	satz := fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Altersabschlag, %s (%s)",
+		euroBetrag(v.BasisPreis), basis)
+	if v.Verleihjahr > 0 {
+		satz = fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
+			v.Verleihjahr, v.Prozent, euroBetrag(v.BasisPreis), basis)
+	}
 	if v.ZustandAbschlag > 0 {
 		satz += fmt.Sprintf(", abzüglich %d %% für den Zustand", v.ZustandAbschlag)
 	}

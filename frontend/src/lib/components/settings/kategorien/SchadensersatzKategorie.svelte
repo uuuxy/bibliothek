@@ -71,8 +71,11 @@
 	{#snippet mehr()}
 		<p>
 			Welcher Preis die Grundlage ist, entscheidet über den Betrag: Der Listenpreis ist, was ein
-			Ersatz heute kostet, der Einkaufspreis, was die Schule damals bezahlt hat. Im ersten
-			Verleihjahr gilt ohnehin immer der Einkaufspreis — dort ändert der Schalter nichts.
+			Ersatz heute kostet, der Einkaufspreis, was die Schule damals bezahlt hat. Ist der Schalter
+			aus, gilt ab dem zweiten Verleihjahr der Listenpreis — so verlangt es die Arbeitshilfe des
+			Landes — und ohne erfassten Listenpreis ersatzweise der Einkaufspreis. Ist er an, gilt immer
+			der Einkaufspreis; die Begründung im Bescheid sagt das. Im ersten Verleihjahr ändert der
+			Schalter nichts, dort gilt ohnehin der Einkaufspreis.
 		</p>
 		<p>
 			Die Referenznummer setzt sich aus vier vierstelligen Blöcken zusammen: Nummer des
@@ -92,10 +95,9 @@
 	<div class="flex items-start justify-between gap-4 border-b border-outline-variant pb-6">
 		<div class="flex flex-col gap-1">
 			<span class="text-sm font-medium text-on-surface">Immer mit dem Einkaufspreis rechnen</span>
+			<!-- EIN Satz wie in den Nachbarkategorien; das Ausführliche steht unter „Mehr". -->
 			<span class="text-sm text-on-surface-variant"
-				>Aus: Ab dem zweiten Verleihjahr gilt der Listenpreis, wenn einer erfasst ist — so verlangt
-				es die Arbeitshilfe des Landes. An: Es gilt immer der Preis, den die Schule bezahlt hat; die
-				Begründung im Bescheid sagt das.</span
+				>Aus: der heutige Listenpreis, wie es die Arbeitshilfe verlangt.</span
 			>
 		</div>
 		<Switch bind:checked={immerKaufpreis} label="Berechnungsgrundlage umschalten" />

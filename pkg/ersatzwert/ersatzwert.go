@@ -122,6 +122,57 @@ func Rechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int, q
 	}
 }
 
+// RechneNeuwert liefert den Vorschlag für den Bestand, der dem SCHULTRÄGER gehört —
+// die Schülerbücherei.
+//
+// Zwei Regeln, nicht eine: Die Staffel der Arbeitshilfe gilt hier NICHT. Sie steht in
+// einer Arbeitshilfe für Lehrwerke der Lernmittelfreiheit, und das Land bezahlt diese
+// Bücher; für die Bücherei gilt die Benutzungsordnung: „zuerst Ersatzbeschaffung, sonst
+// Geld in Höhe des Neuwerts" (mittel_konzept.md 1.2). Zur Bücherei sagt weder der Erlass
+// vom 17.12.2014 noch die Arbeitshilfe ein Wort — am 17.09.2026 nachgesehen.
+//
+// „Neuwert" ist deshalb der LISTENPREIS, nicht der Kaufpreis: Was ein Ersatz heute
+// kostet, ist der heutige Preis. Bis zum 17.09.2026 rechnete das Programm hier mit dem
+// Einkaufspreis, weil es keinen anderen kannte — ein 2015 für 8 € gekaufter Roman, der
+// heute 14 € kostet, wurde mit 8 € ersetzt, und die fehlenden 6 € waren Geld eines
+// fremden Trägers.
+//
+// Der Zustandsabschlag zählt auch hier (Anforderungsliste Nr. 2 nennt „Medien", nicht
+// „Lernmittel"). Was NICHT zählt, ist das Alter: Ein zehn Jahre alter Roman kostet in der
+// Ersatzbeschaffung so viel wie ein neuer.
+func RechneNeuwert(kaufpreis, listenpreis float64, zustandAbschlag int, quelle Preisquelle) Vorschlag {
+	if zustandAbschlag < 0 {
+		zustandAbschlag = 0
+	}
+	if zustandAbschlag > 100 {
+		zustandAbschlag = 100
+	}
+
+	basis, preis := neuwertBasis(kaufpreis, listenpreis, quelle)
+	return Vorschlag{
+		Betrag:     rundeAufCent(preis * float64(100-zustandAbschlag) / 100),
+		Prozent:    100,
+		Basis:      basis,
+		BasisPreis: preis,
+		// Verleihjahr 0 heißt: Diese Rechnung kennt kein Verleihjahr. Daran unterscheidet
+		// die Herleitung die beiden Regeln, ohne ein zweites Feld dafür zu brauchen.
+		Verleihjahr:     0,
+		ZustandAbschlag: zustandAbschlag,
+	}
+}
+
+// neuwertBasis wählt den Preis für die Neuwert-Regel: der Listenpreis, wenn es einen
+// gibt und die Schule nichts anderes eingestellt hat, sonst der Kaufpreis — benannt.
+func neuwertBasis(kaufpreis, listenpreis float64, quelle Preisquelle) (Basis, float64) {
+	if quelle == PreisquelleKaufpreis && kaufpreis > 0 {
+		return BasisKaufpreisGewaehlt, kaufpreis
+	}
+	if listenpreis > 0 {
+		return BasisNeupreis, listenpreis
+	}
+	return BasisKaufpreisErsatzweise, kaufpreis
+}
+
 // basisFuer wählt den Preis: im ersten Jahr der Kaufpreis, danach der Neupreis — und
 // wenn es keinen gibt, ersatzweise der Kaufpreis (benannt, nicht verschwiegen).
 //

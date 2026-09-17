@@ -39,11 +39,12 @@ für seinen Zustand (der den Betrag mindert und ein Buch nicht aus dem Verkehr z
 Einstellungen kann die Schule wählen, ob der heutige Listenpreis oder der bezahlte Einkaufspreis
 die Grundlage ist. Damit sind die drei Punkte der Anforderungsliste zur Abwertung abgearbeitet.
 
-**Drei Dinge dazu brauchen dich:** Ob der Wertverlust auch AN DER THEKE eingetragen werden soll
-(ich rate ab — die Theke ist ein Scanfeld, kein Formular), und zwei Fragen zum Bestand der
-Schülerbücherei: ob ein Beschädigungs-Abschlag dort zählt, und ob dort der heutige Preis statt
-des damals bezahlten gelten soll. Beim zweiten geht es um Geld eines fremden Trägers, deshalb
-habe ich nichts geändert. Alle drei stehen mit Vorschlag in 9.8.
+**Die drei Fragen dazu sind entschieden** (17.09.2026): An der Theke wird kein Wertverlust
+eingetragen — sie bleibt ein Scanfeld. Für die Schülerbücherei zählt der Abschlag für
+Beschädigung ebenfalls, und ersetzt wird dort der heutige Preis statt des damals bezahlten: Die
+Benutzungsordnung verlangt den Neuwert, und zur Bücherei sagt das Land nichts. Dabei kam ein
+Fehler mit heraus, der niemandem aufgefallen war: Der Brief rechnete Büchereibücher nach der
+Staffel des Landes und nannte für ein zehn Jahre altes Buch 1,40 € statt 14,00 €.
 
 ---
 
@@ -1646,18 +1647,9 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
   `pkg/ersatzwert` (Abschlag nach der Staffel, Kappung 0–100, einmal gerundet) und der Satz der
   Herleitung in `api` — beide am Rückbau rot gesehen.
 
-**Was als Nächstes dran ist:**
-
-1. **Der Wertverlust bei der RÜCKGABE — eine Frage an dich.** Die Anforderungsliste nennt
-   „Katalogisierung und Rückgabe". Die Katalogisierung ist erledigt (Stufe 3, siehe oben), die
-   Rückgabe nicht — und zwar mit Absicht: Die Theke ist ein Scanfeld, kein Formular. Ein Buch
-   kommt zurück, indem es gescannt wird; es gibt dort keinen Dialog, in den ein Prozentwert
-   passen würde, und einen einzubauen wäre der Rückbau dessen, was am 15.09.2026 entschieden
-   wurde. Der Weg heute: Das beschädigte Buch wird an der Theke zurückgenommen, danach in der
-   Buchakte mit seinem Wertverlust versehen — zwei Handgriffe statt einem.
-   *Vorschlag: so lassen.* Wenn es EIN Handgriff werden soll, wäre der schonendste Weg ein
-   Hinweis in der Rückgabe-Meldung („Zustand erfassen?"), der die Buchakte öffnet — kein Feld
-   an der Theke.
+**Was als Nächstes dran ist:** nichts mehr an dieser Baustelle — die drei Punkte der
+Anforderungsliste zur Abwertung sind abgearbeitet, und die drei offenen Fragen sind am
+17.09.2026 entschieden (siehe unten).
 
 **Die vier Stufen im Einzelnen:**
 
@@ -1675,15 +1667,24 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
    Listenpreis bevorzugen oder immer Einkaufspreis. Die Herleitung nennt weiterhin, welcher
    Preis benutzt wurde.
 
-**Zwei offene Fragen zum Bestand der Schülerbücherei** — beide betreffen nur ihn, nicht die
-Lernmittel:
+**Die drei Fragen von heute — entschieden am 17.09.2026:**
 
-1. Gilt der Zustandsabschlag auch dort? Der Ersatz ist der Neuwert ohne Altersabschlag
-   (Benutzungsordnung) — ein Abschlag für Beschädigung wäre aber auch dort plausibel.
-   *Vorschlag: ja, er zählt; der ALTERSabschlag bleibt auf Lernmittel beschränkt.*
-2. **Neu bemerkt am 17.09.2026:** Für Büchereibücher rechnet das Programm mit dem
-   EINKAUFSPREIS, obwohl die Benutzungsordnung „Geld in Höhe des Neuwerts" verlangt — und der
-   Neuwert ist genau der Listenpreis, den es seit Migration 127 gibt. Ein 2015 für 8 € gekaufter
-   Roman, der heute 14 € kostet, wird also mit 8 € ersetzt. Geändert habe ich nichts: Das
-   verschiebt Beträge, und das Geld gehört dem Schulträger. *Vorschlag: den Listenpreis nehmen,
-   wenn einer erfasst ist, sonst den Kaufpreis — beides benannt in der Herleitung.*
+1. **Wertverlust an der Theke eintragen? NEIN.** Die Theke ist ein Scanfeld, kein Formular
+   (Peter hat zugestimmt). Der Weg bleibt: Buch an der Theke zurücknehmen, danach in der
+   Buchakte den Wertverlust eintragen.
+2. **Zählt der Zustandsabschlag auch für die Schülerbücherei? JA — gebaut.** Zur Bücherei sagt
+   weder der Erlass vom 17.12.2014 noch die Arbeitshilfe ein Wort; beide sprechen ausschließlich
+   von Lehrwerken der Lernmittelfreiheit (am 17.09.2026 in der Arbeitshilfe nachgesehen). Was
+   dort gilt, ist die Benutzungsordnung. Die Anforderungsliste des Medienzentrums nennt unter
+   Nr. 2 „Medien" und nicht „Lernmittel" — also zählt der Abschlag dort auch. Der ALTERSabschlag
+   bleibt auf Lernmittel beschränkt.
+3. **Neuwert für die Bücherei = Listenpreis. GEBAUT.** Die Benutzungsordnung verlangt „Geld in
+   Höhe des Neuwerts", und der Neuwert ist der heutige Preis, nicht der von 2015. Vorher wurde
+   mit dem Einkaufspreis gerechnet, weil es keinen anderen gab.
+
+**Dabei aufgefallen und mitbehoben:** Den Betrag rechneten DREI Türen — der Melde-Dialog, der
+Bescheid-Vorschlag aus einer Forderung und der aus einer überfälligen Ausleihe. Nur der erste
+unterschied Lernmittel von Büchereibuch; die beiden Bescheid-Wege wendeten die Staffel des
+Landes auf alles an. Für ein zehn Jahre altes Büchereibuch nannte der Dialog 14,00 € und der
+Brief 1,40 € — und der Brief war der falsche. Jetzt rechnen alle drei durch dieselbe Funktion,
+und ein Test vergleicht sie mit denselben Zahlen gegeneinander.

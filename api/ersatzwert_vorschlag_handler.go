@@ -3,7 +3,6 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"bibliothek/apierrors"
@@ -80,33 +79,51 @@ func (s *Server) ErsatzwertVorschlagHandler(bescheidRepo repository.BescheidRepo
 	})
 }
 
-// ersatzwertVorschlagAus wählt die Regel und formuliert die Herleitung.
-func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.Preisquelle) ErsatzwertVorschlag {
-	if !g.IstLernmittel {
-		return buechereiVorschlag(g.Kaufpreis)
-	}
+// ersatzwertEingabe sind die Größen, aus denen JEDER Betragsvorschlag entsteht — egal ob
+// er aus einem Exemplar (Melde-Dialog), einer offenen Forderung oder einer überfälligen
+// Ausleihe kommt (Bescheid-Vorschlag).
+//
+// Bis zum 17.09.2026 waren es drei Wege mit ZWEI Rechnungen: Der Melde-Dialog wählte die
+// Regel nach IstLernmittel, die beiden Bescheid-Wege wendeten die Staffel der
+// Arbeitshilfe auf ALLES an — auch auf Büchereibücher, für die sie nicht gilt. Für
+// dasselbe Buch nannten Dialog und Brief damit verschiedene Beträge, und der Brief war
+// der falsche. Ein Typ, eine Rechnung, eine Herleitung.
+type ersatzwertEingabe struct {
+	Kaufpreis       float64
+	Listenpreis     float64
+	ZustandAbschlag int
+	// Die beiden Größen des Verleihjahrs — nur die Staffel benutzt sie.
+	SchuljahreMitAusleihe int
+	SchuljahreImBestand   int
+	// IstLernmittel entscheidet über die REGEL, nicht über einen Faktor: Staffel des
+	// Landes oder Neuwert der Benutzungsordnung.
+	IstLernmittel bool
+}
 
-	// Seit Migration 127 mit echtem Listenpreis und dem Zustand des Exemplars. Ist kein
-	// Listenpreis erfasst (0), weicht die Staffel auf den Kaufpreis aus und sagt das.
-	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
-		g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag, quelle)
-	return ErsatzwertVorschlag{
-		Betrag:        v.Betrag,
-		Herleitung:    bescheidHerleitung(v),
-		IstLernmittel: true,
+func (e ersatzwertEingabe) rechne(quelle ersatzwert.Preisquelle) ersatzwert.Vorschlag {
+	if !e.IstLernmittel {
+		return ersatzwert.RechneNeuwert(e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
+	}
+	return ersatzwert.Rechne(ersatzwert.Verleihjahr(e.SchuljahreMitAusleihe, e.SchuljahreImBestand),
+		e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
+}
+
+// eingabeAusGroessen: der Weg des Melde-Dialogs.
+func eingabeAusGroessen(g repository.ErsatzwertGroessen) ersatzwertEingabe {
+	return ersatzwertEingabe{
+		Kaufpreis: g.Kaufpreis, Listenpreis: g.Listenpreis, ZustandAbschlag: g.ZustandAbschlag,
+		SchuljahreMitAusleihe: g.SchuljahreMitAusleihe, SchuljahreImBestand: g.SchuljahreImBestand,
+		IstLernmittel: g.IstLernmittel,
 	}
 }
 
-// buechereiVorschlag setzt die Regel der Benutzungsordnung um: Neuwert ohne Abschlag.
-func buechereiVorschlag(kaufpreis float64) ErsatzwertVorschlag {
-	if kaufpreis <= 0 {
-		return ErsatzwertVorschlag{Herleitung: "kein Preis hinterlegt — Betrag bitte eintragen"}
-	}
+// ersatzwertVorschlagAus rechnet und formuliert die Herleitung.
+func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.Preisquelle) ErsatzwertVorschlag {
+	v := eingabeAusGroessen(g).rechne(quelle)
 	return ErsatzwertVorschlag{
-		Betrag: kaufpreis,
-		Herleitung: fmt.Sprintf("Bücherei-Bestand: Neuwert ohne Abschlag (%s, kein Neupreis hinterlegt)",
-			euroBetrag(kaufpreis)),
-		IstLernmittel: false,
+		Betrag:        v.Betrag,
+		Herleitung:    bescheidHerleitung(v),
+		IstLernmittel: g.IstLernmittel,
 	}
 }
 

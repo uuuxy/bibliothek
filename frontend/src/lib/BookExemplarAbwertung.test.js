@@ -23,7 +23,7 @@ vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
 const ERFOLG = /** @type {any} */ ({ ok: true, json: async () => ({}) });
 
 function feldWert(screen) {
-	return screen.getByLabelText(/Wertverlust durch Beschädigung/);
+	return screen.getByLabelText(/Wertverlust/);
 }
 
 beforeEach(() => {

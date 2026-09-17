@@ -3,6 +3,9 @@
 	import { apiClient } from '../apiFetch.js';
 	import Select from './ui/Select.svelte';
 	import Feld from './ui/Feld.svelte';
+	import Button from './ui/Button.svelte';
+	import { formatEuro } from '../utils/format.js';
+	import { ersatzwertBekannt } from './exemplarErsatzwert.js';
 
 	const STATUS = ['Verfügbar', 'Gesperrt (Defekt/Reserviert)', 'Verloren'].map((s) => ({
 		value: s,
@@ -88,7 +91,7 @@
 	}
 </script>
 
-<div class="mt-2 bg-slate-50 p-3 rounded-lg border border-slate-200">
+<div class="mt-2 rounded-xl border border-outline-variant bg-surface-container-low p-3">
 	<div class="flex items-center gap-2 mb-2">
 		<Select bind:value={editStatusType} options={STATUS} aria-label="Status des Exemplars" />
 	</div>
@@ -105,35 +108,43 @@
 		/>
 	{/if}
 	<!-- Immer sichtbar, auch bei „Verfügbar": Der Abschlag ist eine Eigenschaft des
-	     Buchs, kein Status. 0 heißt „kein Schaden erfasst". -->
-	<Feld
-		bind:value={editAbwertung}
-		type="number"
-		min="0"
-		max="100"
-		step="5"
-		aria-label="Wertverlust durch Beschädigung in Prozent"
-		feld="mb-2 w-24"
-		onkeydown={(e) => {
-			if (e.key === 'Enter') saveStatus();
-			if (e.key === 'Escape') onDone();
-		}}
-	>
-		{#snippet nachlaufend()}% Wertverlust{/snippet}
-	</Feld>
-	<div class="flex items-center justify-between">
-		<button
-			onclick={onDone}
-			class="text-label-small text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
-			>Abbrechen</button
-		>
-		<button
-			onclick={saveStatus}
-			class="text-label-small bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded font-semibold cursor-pointer"
-			>Speichern</button
-		>
+	     Buchs, kein Status. 0 heißt „kein Schaden erfasst".
+
+	     SICHTBARE Beschriftung statt nachlaufendem Text im Feld: Der Zusatz stand am
+	     rechten Rand des Feldkastens und damit weit weg von der Zahl — „20" links,
+	     „% Wertverlust" 15 cm daneben. Eine Beschriftung über dem Feld ist die Bauform
+	     des Hauses (Feld.svelte) und benennt das Feld auch für den Screenreader. -->
+	<div class="mb-2 max-w-40">
+		<Feld
+			bind:value={editAbwertung}
+			label="Wertverlust (%)"
+			type="number"
+			min="0"
+			max="100"
+			step="5"
+			feld="w-24"
+			onkeydown={(e) => {
+				if (e.key === 'Enter') saveStatus();
+				if (e.key === 'Escape') onDone();
+			}}
+		/>
+	</div>
+	{#if ersatzwertBekannt(ex)}
+		<!-- Die Herleitung steht HIER und nicht auf der Karte: Nachgerechnet wird der
+		     Betrag dort, wo man ihn beeinflusst. Nach dem Speichern trägt die Antwort des
+		     Servers den neuen Wert — gerechnet wird nie in der Oberfläche. -->
+		<p class="text-label-small mb-2 text-on-surface-variant">
+			<span class="font-semibold text-on-surface"
+				>Ersatzwert heute: {formatEuro(ex.ersatzwert ?? 0)}</span
+			>
+			<span class="block">{ex.ersatzwert_herleitung}</span>
+		</p>
+	{/if}
+	<div class="flex items-center justify-between gap-2">
+		<Button variant="ghost" size="sm" onclick={onDone}>Abbrechen</Button>
+		<Button size="sm" onclick={saveStatus}>Speichern</Button>
 	</div>
 	{#if statusError}
-		<p class="text-label-small text-rose-600 mt-1">{statusError}</p>
+		<p class="text-label-small text-error mt-1">{statusError}</p>
 	{/if}
 </div>

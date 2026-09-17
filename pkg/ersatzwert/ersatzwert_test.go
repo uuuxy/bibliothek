@@ -224,3 +224,64 @@ func TestPreisquelleKaufpreisOhneKaufpreis(t *testing.T) {
 			got.Betrag, got.Basis)
 	}
 }
+
+// Die Neuwert-Regel für den Bestand des Schulträgers (Schülerbücherei).
+//
+// Der teure Fehler wäre hier der Kaufpreis: Die Benutzungsordnung verlangt „Geld in Höhe
+// des NEUWERTS", und der Neuwert eines 2015 für 8 € gekauften Romans ist der Preis, den
+// ein Ersatz HEUTE kostet. Bis zum 17.09.2026 rechnete das Programm mit den 8 €, weil es
+// keinen anderen Preis kannte — die fehlenden 6 € waren Geld eines fremden Trägers.
+func TestNeuwertRegelNimmtDenListenpreis(t *testing.T) {
+	faelle := []struct {
+		name                   string
+		kaufpreis, listenpreis float64
+		abschlag               int
+		quelle                 Preisquelle
+		wantBetrag             float64
+		wantBasis              Basis
+	}{
+		{"Listenpreis erfasst — er gilt", 8, 14, 0, PreisquelleListenpreis, 14, BasisNeupreis},
+		{"kein Listenpreis — ersatzweise der Kaufpreis, benannt", 8, 0, 0, PreisquelleListenpreis, 8, BasisKaufpreisErsatzweise},
+		{"Zustandsabschlag zählt auch hier", 8, 14, 25, PreisquelleListenpreis, 10.50, BasisNeupreis},
+		{"100 % Abschlag ergibt 0 €", 8, 14, 100, PreisquelleListenpreis, 0, BasisNeupreis},
+		{"Einstellung immer-Kaufpreis gilt auch hier", 8, 14, 0, PreisquelleKaufpreis, 8, BasisKaufpreisGewaehlt},
+		{"Einstellung ohne Kaufpreis — dann der Listenpreis", 0, 14, 0, PreisquelleKaufpreis, 14, BasisNeupreis},
+		{"kein Preis bekannt", 0, 0, 0, PreisquelleListenpreis, 0, BasisKaufpreisErsatzweise},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			got := RechneNeuwert(f.kaufpreis, f.listenpreis, f.abschlag, f.quelle)
+			if got.Betrag != f.wantBetrag {
+				t.Errorf("Betrag = %.2f, want %.2f", got.Betrag, f.wantBetrag)
+			}
+			if got.Basis != f.wantBasis {
+				t.Errorf("Basis = %q, want %q", got.Basis, f.wantBasis)
+			}
+			// Verleihjahr 0 ist das Kennzeichen dieser Regel: Daran unterscheidet die
+			// Herleitung sie von der Staffel, ohne ein zweites Feld dafür zu brauchen.
+			if got.Verleihjahr != 0 {
+				t.Errorf("Verleihjahr = %d, want 0 — diese Rechnung kennt keines", got.Verleihjahr)
+			}
+			if got.Prozent != 100 {
+				t.Errorf("Prozent = %d, want 100 — kein Altersabschlag", got.Prozent)
+			}
+		})
+	}
+}
+
+// Das Alter zählt hier NICHT — der eigentliche Unterschied zur Staffel. Ein zehn Jahre
+// alter Roman kostet in der Ersatzbeschaffung so viel wie ein neuer, und die Funktion
+// hat deshalb gar kein Verleihjahr als Parameter. Dieser Test hält die Trennung fest:
+// Dieselben Zahlen ergeben nach der Staffel 10 %, nach der Neuwert-Regel 100 %.
+func TestNeuwertRegelKenntKeinenAltersabschlag(t *testing.T) {
+	nachStaffel := Rechne(9, 8, 14, 0, PreisquelleListenpreis)
+	if nachStaffel.Betrag != 1.40 {
+		t.Fatalf("Staffel im 9. Verleihjahr: %.2f, erwartet 1.40 (10 %% von 14 €)", nachStaffel.Betrag)
+	}
+	nachNeuwert := RechneNeuwert(8, 14, 0, PreisquelleListenpreis)
+	if nachNeuwert.Betrag != 14.00 {
+		t.Errorf("Neuwert-Regel: %.2f, erwartet 14.00 — das Alter darf hier nichts abziehen; "+
+			"1,40 € hieße, die Staffel des Landes gilt auch für den Bestand des Schulträgers",
+			nachNeuwert.Betrag)
+	}
+}
