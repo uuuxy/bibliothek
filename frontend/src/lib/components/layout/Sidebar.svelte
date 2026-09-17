@@ -150,8 +150,15 @@
 								{/if}
 							{:else}
 								{#if !zu}
+									<!-- Sektions-Überschrift in der M3-Form: title-small auf on-surface-variant
+									     (Material Components Android, NavigationView: `subheaderTextAppearance` =
+									     `textAppearanceTitleSmall`, `subheaderColor` = `colorOnSurfaceVariant`).
+									     Hier stand `text-xs` = body-small, eine Stufe zu klein — während die
+									     Überschrift „System" zwölf Zeilen weiter oben schon `text-sm` trug. Zwei
+									     Maße für dieselbe Sache, und die Gruppen lasen sich unterschiedlich
+									     gewichtig, obwohl sie gleichrangig sind. -->
 									<span
-										class="text-on-surface-variant animate-fade-in mb-2 block px-3 text-xs font-medium"
+										class="text-on-surface-variant animate-fade-in mb-2 block px-3 text-sm font-medium"
 										>{group.name}</span
 									>
 								{/if}

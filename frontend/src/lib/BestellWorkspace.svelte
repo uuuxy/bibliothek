@@ -167,7 +167,7 @@
 			{ id: 'bestellungen', label: 'Bestellungen' },
 			{ id: 'wareneingang', label: 'Wareneingang', anzahl: zulaufExemplare },
 			{ id: 'historie', label: 'Bestellhistorie' },
-			{ id: 'berichte', label: 'Berichte' },
+			{ id: 'berichte', label: 'Bestellberichte' },
 			{
 				id: 'klassensaetze',
 				label: 'Klassensatz-Reservierungen',

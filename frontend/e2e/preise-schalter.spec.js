@@ -58,7 +58,7 @@ test('Preise aus: Warenkorb, Historie und Berichte zeigen Mengen statt Geld', as
 
 	// Berichte: "Lieferantenabrechnung" waere ohne Preise schlicht falsch — abgerechnet
 	// wird nichts.
-	await page.getByRole('tab', { name: 'Berichte', exact: true }).click();
+	await page.getByRole('tab', { name: 'Bestellberichte', exact: true }).click();
 	await expect(page.getByText('Lieferantenübersicht')).toBeVisible();
 	await expect(page.getByText('Lieferantenabrechnung')).toHaveCount(0);
 

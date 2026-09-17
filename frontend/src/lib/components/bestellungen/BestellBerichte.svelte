@@ -65,7 +65,16 @@
 	<!-- Berichtstyp: flache Liste, kein Kachel-Design -->
 	<section class="space-y-3">
 		<div class="border-b border-slate-200 pb-3">
-			<h2 class="text-lg font-bold text-slate-800">Bericht erstellen</h2>
+			<h2 class="text-lg font-bold text-slate-800">Bestellbericht erstellen</h2>
+			<!-- Hinweiszeile statt eines zweiten Wegs: Wer hier nach dem Zugangsbuch sucht,
+			     sucht das Richtige am falschen Ort — die drei Berichte hier rechnen über
+			     BESTELLUNGEN (Zeitraum, Lieferant, Topf), die Bestandsbücher über den
+			     BESTAND, und im Zugangsbuch stehen auch Exemplare ohne jede Bestellung.
+			     Ein Reiter oder Knopf dorthin wäre eine zweite Tür zur selben Ansicht mit
+			     anderem Recht (view_orders statt view_books); ein Satz genügt. -->
+			<p class="text-on-surface-variant mt-1 text-sm">
+				Zugangs- und Abgangsbuch stehen unter Berichte → Bestandsbücher.
+			</p>
 		</div>
 		<div class="divide-y divide-slate-100">
 			{#each berichtOptionen as opt, _i (_i)}

@@ -378,7 +378,7 @@ sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich d
 Bestellung nachträglich mit Grund korrigieren) ·
 **Wareneingang** (Positionen einbuchen → Etiketten) · **Bestellhistorie** (Detail, Status,
 Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
-im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Berichte**
+im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Bestellberichte**
 (Monat/Jahr/Lieferant als PDF; in Blöcken je Topf mit eigener Summe und der Gesamtsumme
 darunter, über _Mittelherkunft_ auch für nur einen Topf) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·

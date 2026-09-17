@@ -32,7 +32,11 @@ test.describe('Rolle Leitung', () => {
 		await expect(page.getByTitle('Mahnwesen')).toBeVisible();
 		await expect(page.getByTitle('Medienkatalog')).toBeVisible();
 
-		// Die Gruppe „System" ist zugeklappt (so gebaut) — genau dort stehen die Punkte,
+		// „Statistiken" steht seit dem 17.09.2026 in der Sektion „Berichte" und ist damit
+		// OHNE Aufklappen sichtbar — deshalb steht die Prüfung vor dem Klick auf „System".
+		await expect(page.getByTitle('Statistiken')).toBeVisible();
+
+		// Die Gruppe „System" ist zugeklappt (so gebaut) — dort stehen die übrigen Punkte,
 		// um die es hier geht. Also aufklappen und DANN hinsehen: Die Prüfung soll den
 		// Unterschied zwischen „darf nicht" und „ist gerade zugeklappt" nicht verwischen.
 		await page.getByRole('button', { name: 'System', exact: true }).click();
@@ -40,7 +44,6 @@ test.describe('Rolle Leitung', () => {
 		// Das Logbuch gehört zur Führung der Bibliothek (audit_logs) und unterscheidet
 		// die Leitung vom Mitarbeiter, der es ab Werk nicht sieht.
 		await expect(page.getByTitle('System-Logs')).toBeVisible();
-		await expect(page.getByTitle('Statistiken')).toBeVisible();
 
 		// „Benutzer & Rechte" bleibt weg — der Punkt hängt an genau einem Recht.
 		await expect(page.getByTitle('Benutzer & Rechte')).toHaveCount(0);

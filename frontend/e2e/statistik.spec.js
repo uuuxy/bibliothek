@@ -6,8 +6,10 @@ import { uiLogin } from './helpers.js';
 test('Statistik: Drill-Down-Panel öffnen, filtern, schließen', async ({ page }) => {
 	await uiLogin(page);
 
-	// „Statistiken" liegt in der eingeklappten System-Gruppe der Sidebar
-	await page.getByRole('button', { name: 'System' }).click();
+	// „Statistiken" steht seit dem 17.09.2026 in der Sektion „Berichte" und ist damit ohne
+	// Aufklappen sichtbar. Vorher lag es in der Gruppe „System", die beim Laden zugeklappt
+	// ist — deshalb stand hier ein Klick auf „System" davor. Fällt der Punkt dorthin
+	// zurück, findet dieser Klick den Knopf nicht mehr.
 	await page.getByRole('button', { name: 'Statistiken' }).click();
 
 	// Neue Kennzahl-Kacheln sind da

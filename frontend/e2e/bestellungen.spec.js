@@ -22,7 +22,7 @@ test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
 	// Berichte-Tab: Lieferantenabrechnung wählen — zurück in den Workspace, die
 	// Lieferanten wohnen seit dem Umzug in den Einstellungen.
 	await page.goto('/bestellungen');
-	await page.getByRole('tab', { name: 'Berichte' }).click();
+	await page.getByRole('tab', { name: 'Bestellberichte' }).click();
 	await page.getByRole('radio').nth(2).check();
 
 	// Bewusst kein getByRole('link'): im disabled-Zustand entfällt das href,

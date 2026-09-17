@@ -359,7 +359,7 @@ des Schulträgers (Schülerbücherei) beschafft wird.
   blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
 - Der Wareneingang hängt an `buecher_exemplare.bestellung_id` (Migration 063) — das
   Zugangsbuch war damit aus den Daten ableitbar, nur nicht ausgedruckt. **Seit dem
-  17.09.2026 gibt es den Ausdruck** (System → „Bestandsbücher", Reiter Zugangsbuch und
+  17.09.2026 gibt es den Ausdruck** (Berichte → „Bestandsbücher", Reiter Zugangsbuch und
   Abgangsbuch, je Halbjahr und Topf; FACHKONZEPT.md Abschnitt 13).
 
 ### 7.3 Bauplan (kleiner als Teil A)
