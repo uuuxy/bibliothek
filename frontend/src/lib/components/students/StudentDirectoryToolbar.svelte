@@ -74,12 +74,17 @@
 
 		<!-- Sagt, was tatsächlich zu sehen ist. Vorher stand hier "500 / 500", während die
 		     Schule 875 Schüler hatte — die Zahl bestätigte dem Benutzer eine Vollständigkeit,
-		     die es nicht gab, und machte das Fehlen einzelner Namen unerklärlich. -->
+		     die es nicht gab, und machte das Fehlen einzelner Namen unerklärlich.
+
+		     Die Kappung steht ZUERST, seit dem 17.09.2026. Vorher gewann `suchend`, und ein
+		     Jahrgangsfilter zählt dazu: Eine bei 500 abgeschnittene Jahrgangsliste meldete
+		     „Treffer: 500" — dieselbe falsche Vollständigkeit wie damals, nur eine Ebene
+		     tiefer. Was gekappt ist, muss es sagen, egal warum die Liste eingegrenzt wurde. -->
 		<div class="ml-auto shrink-0 text-xs font-semibold text-slate-500">
-			{#if suchend}
-				Treffer: {trefferzahl}
-			{:else if gekuerzt}
+			{#if gekuerzt}
 				Erste {trefferzahl} — zum Finden bitte suchen
+			{:else if suchend}
+				Treffer: {trefferzahl}
 			{:else}
 				Einträge: {trefferzahl}
 			{/if}

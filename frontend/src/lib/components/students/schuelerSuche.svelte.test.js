@@ -83,4 +83,38 @@ describe('Leserdatei-Suche', () => {
 			stopp();
 		}
 	});
+	// Die Kappung hängt am SUCHTEXT, nicht am Filter (Rasterdurchgang 17.09.2026).
+	//
+	// Bis dahin meldete `gekuerzt` bei gesetztem Jahrgang `false` — mit der Begründung, ein
+	// Filter laufe „wie die Suche auf dem Server ohne Kappung". Am echten Postgres
+	// nachgemessen stimmt das nicht: Das LIMIT 500 hängt allein daran, ob ein Suchtext da
+	// ist; 520 Leser einer Klasse ergeben 500 Zeilen. Eine gekappte Liste, die sich für
+	// vollständig ausgibt, ist genau der Fehler, gegen den diese Anzeige einmal gebaut wurde.
+	it('meldet eine gekappte Liste auch dann, wenn nach Jahrgang gefiltert ist', async () => {
+		const fuenfhundert = Array.from({ length: 500 }, (_, i) => ({
+			id: `s${i}`,
+			vorname: 'P',
+			nachname: `Nr${i}`,
+			klasse: '05F1'
+		}));
+		vi.mocked(apiFetch).mockResolvedValue(ok(fuenfhundert));
+		/** @type {any} */
+		let suche;
+		const stopp = $effect.root(() => {
+			suche = erzeugeSchuelerSuche(() => {});
+		});
+		try {
+			suche.jahrgang = '5';
+			await suche.lade();
+			expect(suche.students).toHaveLength(500);
+			expect(suche.gekuerzt, 'die gefilterte Liste gibt sich als vollständig aus').toBe(true);
+
+			// Mit Suchtext gibt es kein LIMIT — dann ist die Liste wirklich vollständig.
+			suche.query = 'Nr';
+			await suche.lade();
+			expect(suche.gekuerzt).toBe(false);
+		} finally {
+			stopp();
+		}
+	});
 });

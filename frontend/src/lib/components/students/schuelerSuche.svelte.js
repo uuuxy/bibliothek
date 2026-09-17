@@ -192,10 +192,16 @@ export function erzeugeSchuelerSuche(nachKlassenDruck) {
 			return query.trim().length > 0 || jahrgang !== '';
 		},
 		get gekuerzt() {
-			// Ein Jahrgangsfilter grenzt wie eine Suche ein — und wie die Suche läuft er
-			// auf dem Server OHNE Kappung. Stünde hier trotzdem „Erste 500 — zum Finden
-			// bitte suchen", zweifelte das Personal an einer Liste, die vollständig ist.
-			return !query.trim() && jahrgang === '' && students.length >= LISTEN_GRENZE;
+			// NUR der Suchtext hebt die Kappung auf, ein Filter NICHT.
+			//
+			// Hier stand bis zum 17.09.2026 zusätzlich `jahrgang === ''` — mit dem Kommentar,
+			// ein Jahrgangsfilter laufe „wie die Suche auf dem Server OHNE Kappung". Der Satz
+			// war falsch: Das LIMIT 500 hängt allein daran, ob ein SUCHTEXT da ist
+			// (repository/student_profile_queries.go), der Klassenfilter wird erst danach
+			// angehängt. Am echten Postgres nachgemessen: 520 Leser einer Klasse ergeben 500
+			// Zeilen. Ein Jahrgang dieser Schule bleibt darunter, aber das ist Glück und keine
+			// Zusicherung — und ein Schutz, den nur ein Kommentar behauptet, ist keiner.
+			return !query.trim() && students.length >= LISTEN_GRENZE;
 		},
 		lade,
 
