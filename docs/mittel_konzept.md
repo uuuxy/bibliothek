@@ -60,8 +60,10 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
   werden.
 - Musteranschreiben und Arbeitshilfe: Referenznummer = Bereichs-Nr. (4) · Kassenjahr (4)
   · Schulnummer (4) · laufende Nr. (4), **je Brief, nie doppelt**. Vierwochenfrist **mit
-  Datum**. Staffel: 1. Verleihjahr voller Kaufpreis; 2. Jahr 80 %, dann je Jahr −20 % des
-  **Neupreises zum Zeitpunkt des Verlusts**; ab dem 5. Jahr 10 %. Zwei Fallgruppen (nicht
+  Datum**. Staffel über Verleihjahre, bezogen auf den **Neupreis zum Zeitpunkt des
+  Verlusts** (nur im ersten Jahr auf den Kaufpreis): 1→100 %, 2→80 %, 3→60 %, 4→40 %,
+  5→20 %, 6+→10 %. Die Arbeitshilfe schreibt „Nach 5 Jahren und für jedes weitere Jahr …
+  insgesamt 10 %" — also ab dem SECHSTEN Verleihjahr. Zwei Fallgruppen (nicht
   zurückgegeben / so stark beschädigt, dass unbenutzbar), Unterschrift der Schulleitung,
   vorgeschriebener Schlussabsatz mit Einspruchsfrist von einem Monat. Nach Fristablauf
   Original + Buchungsbeleg an die Schulaufsicht, Kopie bleibt; **spätere Rückgabe →
