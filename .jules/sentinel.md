@@ -35,3 +35,8 @@
 **Vulnerability:** A Path Traversal vulnerability was found in `inventur/db_books_delete.go` when cleaning up cover images. It used `os.Remove(filepath.Join("uploads", name))` directly, which bypasses the safer, centralized `os.OpenRoot` wrapper implementation in the package.
 **Learning:** Even when `filepath.Base()` is used for sanitization, calling `os.Remove` on a joined path remains vulnerable to traversal logic bugs and is flagged by security analyzers (e.g. gosec G304). Rely on standard wrapper functions that use the OS-level `os.OpenRoot` sandbox.
 **Prevention:** Rather than directly interacting with the filesystem using `os.Remove` in business logic, use centralized file access abstractions like `loescheUploadDatei` that employ Go 1.24's `os.OpenRoot()` and `root.Remove()` to guarantee safe directory confinement.
+
+## 2026-09-17 - Mitigate Path Traversal (G304) Using Go 1.24 os.OpenRoot in coverdatei
+**Vulnerability:** A Path Traversal vulnerability existed in `pkg/coverdatei/coverdatei.go` where user-provided `coverURL` strings were checked via `filepath.Clean` and `strings.HasPrefix` rather than natively isolating access.
+**Learning:** Relying on path-cleaning strings is error-prone. We should enforce sandbox confinement using `os.OpenRoot` which intercepts directory traversal at the OS level.
+**Prevention:** Utilize `os.OpenRoot` and rely on the returned root handler to stat or open requested file paths safely, rather than manual path operations.

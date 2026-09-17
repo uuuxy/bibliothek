@@ -35,10 +35,19 @@ func Pfad(coverURL string) string {
 		return ""
 	}
 	pfad := filepath.Clean(strings.TrimPrefix(coverURL, "/"))
-	if pfad != Wurzel && !strings.HasPrefix(pfad, Wurzel+string(filepath.Separator)) {
+
+	root, err := os.OpenRoot(Wurzel)
+	if err != nil {
 		return ""
 	}
-	info, err := os.Stat(pfad)
+	defer closeutil.LogClose(root, "coverdatei wurzel")
+
+	rel, err := filepath.Rel(Wurzel, pfad)
+	if err != nil {
+		return ""
+	}
+
+	info, err := root.Stat(rel)
 	if err != nil || info.IsDir() {
 		return ""
 	}
