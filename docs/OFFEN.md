@@ -99,6 +99,15 @@ der Nacht gebaut wurde. Vier Dinge kamen dabei heraus, alle behoben:
 bis zweimal im Jahr gebraucht und standen im täglichen Weg. Wer sie sehen darf, hat sich dabei
 nicht geändert.
 
+**Beim Hochladen kam noch etwas dazwischen, und es ist erledigt:** Seit gestern gibt es
+eine gemeldete Schwachstelle in der Bibliothek, mit der das Programm Excel-Dateien liest —
+ohne eine reparierte Fassung, auf die man ausweichen könnte. Damit ging kein Hochladen mehr,
+für niemanden. Nachgemessen zeigte sich: Das Programm ist davon nicht betroffen, weil es
+beim Einlesen zwei Grenzen gleich setzt und der gefährliche Weg dadurch nie beschritten
+wird. Das steht jetzt als Prüfung im Programm (vier Stück), und die Ausnahme für diese eine
+Meldung ist mit Begründung und Wiedervorlage hinterlegt — bei jeder anderen Meldung schlägt
+die Prüfung weiter an.
+
 **Eine Sache ist offen und braucht zwei Zahlen vom Server** (die Befehle stehen in Abschnitt
 5.19): Steht ein Kollege in der Warteschlange für ein Buch, rückt er möglicherweise nie nach —
 die Abfrage dahinter kennt nur Schülerinnen und Schüler. Ob das heute jemanden betrifft, lässt
@@ -1019,6 +1028,16 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Meldung schickt einen in die falsche Richtung („schütze die Route" — sie ist geschützt).
   Reparatur: den Aufruf als Ausdruck über Zeilengrenzen lesen, wie es der Fehler-Kollaps-Detektor
   über den AST schon tut.
+- **Wiedervorlage 17. November 2026: `GO-2026-6452` (excelize).** Am 16.09.2026 erschien eine
+  Schwachstelle ohne heile Fassung — der Eintrag führt alle Versionen ab 0 und nennt keine
+  mit Fix. Sie trifft uns nicht: Der gewöhnliche Weg hat den Bereichsschutz seit v2.11.0,
+  und der ungeschützte Auslagerungs-Weg ist unerreichbar, weil `xlsxgrenze.Optionen()` beide
+  Entpackgrenzen gleich setzt (nachgemessen, vier Tests). Solange das so ist, steht sie als
+  begründete Ausnahme in `security/vuln-ausnahmen.json`; das Gate
+  (`scripts/govulncheck-gate.sh`) wird von allein rot, sobald die Wiedervorlage abläuft, die
+  Ausnahme überflüssig wird oder irgendeine andere Schwachstelle unseren Code trifft. Zu tun:
+  nachsehen, ob excelize inzwischen eine Fassung mit Fix hat — dann Ausnahme löschen und
+  heben.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`;
   `cmd/rotate-encryption-key`, `cmd/littera-import` und `cmd/seed` haben keine Tests. Vor einem
   Schlüsselwechsel oder der Littera-Übernahme.
