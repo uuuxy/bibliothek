@@ -40,8 +40,11 @@ jobs:
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run govulncheck
-        # govulncheck exits with code 3 if vulnerabilities are found → fail the build
-        run: govulncheck ./...
+        # Über das Gate-Skript statt direkt: Es kennt eine benannte Ausnahmeliste
+        # (security/vuln-ausnahmen.json) mit Grund, Nachweis und Wiedervorlage und wird
+        # rot bei allem, was nicht drinsteht — und ebenso bei einer abgelaufenen oder
+        # überflüssig gewordenen Ausnahme. Dieselbe Prüfung wie im pre-push-Hook.
+        run: ./scripts/govulncheck-gate.sh
 
   # ── Go: gosec (static security analysis) ─────────────────────────────────
   go-sec-scan:

@@ -134,16 +134,18 @@ fi
 cd ..
 
 # 4. govulncheck (Backend Dependency Security)
+#
+# Über das Gate-Skript statt direkt: Es kennt eine benannte Ausnahmeliste
+# (security/vuln-ausnahmen.json) und wird trotzdem rot bei allem, was nicht drinsteht,
+# bei einer abgelaufenen Wiedervorlage und bei einer Ausnahme, die niemand mehr braucht.
+# Anlass war GO-2026-6452 am 16.09.2026: eine Schwachstelle ohne heile Fassung, die jeden
+# Push blockierte, obwohl der verwundbare Weg hier nachweislich unerreichbar ist.
 echo "[4/6] Führe govulncheck (Backend) aus..."
-if command -v govulncheck &> /dev/null; then
-    if govulncheck ./...; then
-        echo -e "${GREEN}✓ govulncheck bestanden.${NC}"
-    else
-        echo -e "${RED}✗ govulncheck fehlgeschlagen! Kritische Backend-Schwachstellen gefunden.${NC}"
-        exit 1
-    fi
+if ./scripts/govulncheck-gate.sh; then
+    echo -e "${GREEN}✓ govulncheck bestanden.${NC}"
 else
-    echo -e "${YELLOW}⚠ govulncheck nicht installiert. Überspringe Scan. (go install golang.org/x/vuln/cmd/govulncheck@latest)${NC}"
+    echo -e "${RED}✗ govulncheck fehlgeschlagen! Ungeklärte Backend-Schwachstelle.${NC}"
+    exit 1
 fi
 
 # 5. Trivy (Container Security)

@@ -1,0 +1,26 @@
+{
+  "_zweck": "Bekannte Schwachstellen, die dieses Programm NICHT treffen — je mit Nachweis und Wiedervorlage. Alles andere macht das Gate rot. Geprüft von scripts/govulncheck-gate.sh.",
+  "_regeln": [
+    "Ein Eintrag braucht einen Nachweis, der als Test im Repo steht — keine Einschätzung, sondern etwas, das rot wird, wenn die Annahme fällt.",
+    "Ein Eintrag mit abgelaufener Wiedervorlage macht das Gate rot. Eine Ausnahme, die niemand mehr ansieht, ist eine Lücke.",
+    "Ein Eintrag, den govulncheck nicht mehr meldet, macht das Gate ebenfalls rot: Dann gibt es einen Fix, und die Ausnahme gehört gelöscht."
+  ],
+  "ausnahmen": [
+    {
+      "id": "GO-2026-6452",
+      "alias": "CVE-2026-59162",
+      "paket": "github.com/xuri/excelize/v2",
+      "titel": "Panic via negative shared-string index",
+      "geprueft_am": "2026-09-17",
+      "wiedervorlage": "2026-11-17",
+      "grund": "Am Quelltext von v2.11.0 nachgemessen: Der gewöhnliche Weg (Zeichenkettentabelle im Speicher) HAT den Bereichsschutz, cell.go prüft 'xlsxSI < 0 || xlsxSI >= len(d.SI)'. Ungeschützt ist allein der Auslagerungs-Weg (getFromStringItem prüft nur die obere Grenze). Der ist bei uns unerreichbar, weil xlsxgrenze.Optionen() Gesamt- und XML-Grenze GLEICH setzt: Eine Datei, deren Zeichenkettentabelle groß genug zum Auslagern wäre, überschreitet damit zwangsläufig die Gesamtgrenze, und die prüft excelize vorher. Der Eintrag in der Datenbank führt alle Versionen ab 0 und nennt keine mit Fix — es gibt also keine Fassung, auf die man ausweichen könnte.",
+      "nachweis": [
+        "pkg/xlsxgrenze/negativer_sharedstring_test.go: TestNegativerSharedStringIndex_IstEineEchteGefahr (zeigt den echten Panic, wenn die Grenzen auseinandergezogen sind)",
+        "pkg/xlsxgrenze/negativer_sharedstring_test.go: TestNegativerSharedStringIndex_UnsereOptionenWehrenAb",
+        "pkg/xlsxgrenze/negativer_sharedstring_test.go: TestOptionenSetzenBeideGrenzenGleich",
+        "docs/xlsx_leser_grenzen_test.go: TestXlsxLeser_JederMitGrenzen (ein vierter Leser ohne diese Optionen ist rot)"
+      ],
+      "restrisiko": "Die drei Import-Türen stehen hinter manage_inventory bzw. import_students; ein Panic würde zudem von PanicRecoveryMiddleware aufgefangen (500 auf die eine Anfrage, kein Absturz)."
+    }
+  ]
+}
