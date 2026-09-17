@@ -39,12 +39,13 @@ func TestUpdateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	updateQuery := `UPDATE buecher_titel SET isbn = \$1, titel = \$2, autor = \$3, cover_url = \$4, subject = NULLIF\(\$5, ''\), grade_level = \$6, track = \$7, last_counted = NULLIF\(\$8::text, ''\)::date, medientyp = \$9, erweiterte_eigenschaften = \$10, jahrgang_von = \$11, jahrgang_bis = \$12, untertitel = \$13, verlag = \$14, erscheinungsjahr = \$15, beschreibung = \$16, signatur = COALESCE\(NULLIF\(\$18, ''\), signatur\), ist_lernmittel = \$19, auflage = NULLIF\(\$20, ''\), aktualisiert_am = NOW\(\) WHERE id = \$17`
+	updateQuery := `UPDATE buecher_titel SET isbn = NULLIF\(\$1, ''\), titel = \$2, autor = \$3, cover_url = \$4, subject = NULLIF\(\$5, ''\), grade_level = \$6, track = \$7, last_counted = NULLIF\(\$8::text, ''\)::date, medientyp = \$9, erweiterte_eigenschaften = \$10, jahrgang_von = \$11, jahrgang_bis = \$12, untertitel = \$13, verlag = \$14, erscheinungsjahr = \$15, beschreibung = \$16, signatur = COALESCE\(NULLIF\(\$18, ''\), signatur\), ist_lernmittel = \$19, auflage = NULLIF\(\$20, ''\), aktualisiert_am = NOW\(\) WHERE id = \$17`
 	// also note syncBookStock will be called
 
 	t.Run("success", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject) // läuft auf dem Pool, vor der Tx
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage,
@@ -65,6 +66,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("not found", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage,
@@ -80,6 +82,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("db error", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage,
@@ -98,6 +101,7 @@ func TestUpdateBook(t *testing.T) {
 	t.Run("sync-fehler wird zurückgegeben und rollt zurück", func(t *testing.T) {
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage,

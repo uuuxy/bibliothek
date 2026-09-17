@@ -160,6 +160,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		JahrgangVon:             eingabe.JahrgangVon,
 		JahrgangBis:             eingabe.JahrgangBis,
 		Untertitel:              strings.TrimSpace(eingabe.Untertitel),
+		Auflage:                 strings.TrimSpace(eingabe.Auflage),
 		Verlag:                  strings.TrimSpace(eingabe.Verlag),
 		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
 		Beschreibung:            strings.TrimSpace(eingabe.Beschreibung),

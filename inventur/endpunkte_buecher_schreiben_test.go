@@ -232,6 +232,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 		// CreateBook ist atomar (Tx): Begin, INSERT, Commit — kein Stock im Body, also
 		// wird syncBookStock nicht aufgerufen.
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectQuery(`INSERT INTO buecher_titel`).
 			WithArgs(
 				"978-3-16-148410-0", // isbn

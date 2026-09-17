@@ -33,7 +33,7 @@ func TestCreateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	insertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel, auflage\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, COALESCE\(NULLIF\(\$11, 0\), 5\), COALESCE\(NULLIF\(\$12, 0\), 10\), \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18, NULLIF\(\$19, ''\)\) RETURNING id`
+	insertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel, auflage\) VALUES \(NULLIF\(\$1, ''\), \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, COALESCE\(NULLIF\(\$11, 0\), 5\), COALESCE\(NULLIF\(\$12, 0\), 10\), \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18, NULLIF\(\$19, ''\)\) RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -45,6 +45,7 @@ func TestCreateBook(t *testing.T) {
 
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage,
@@ -77,6 +78,7 @@ func TestCreateBook(t *testing.T) {
 
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage,
@@ -99,6 +101,7 @@ func TestCreateBook(t *testing.T) {
 
 		erwarteFachBekannt(mock, book.Subject)
 		mock.ExpectBegin()
+		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
 				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage,

@@ -126,6 +126,8 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// UpdateBook ist atomar (Tx): Begin, UPDATE, syncBookStock-COUNT (Stock=0 → keine
 	// weiteren Schreibvorgänge), Commit.
 	mock.ExpectBegin()
+	// Keine Erwartung für die Dublettenkontrolle: Sie fragt die Datenbank nur, wenn eine
+	// ISBN oder ein Titel da ist — hier wird mit einem leeren Buch gemessen.
 	mock.ExpectExec("").WithArgs(beliebig...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectQuery("").WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))

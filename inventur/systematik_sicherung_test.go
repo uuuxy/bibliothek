@@ -156,3 +156,13 @@ func TestStelleFaecherSicher_Mehrere(t *testing.T) {
 		t.Errorf("offene Erwartungen: %v", err)
 	}
 }
+
+// erwarteKeineDublette: die Dublettenkontrolle vor jedem Anlegen und Ändern (4.18, Stufe 2)
+// fragt EINMAL nach einem Titel mit derselben Nummer bzw. demselben Titel. „Nichts
+// gefunden" ist der Normalfall — die Mock-Tests hier prüfen den Schreibpfad, nicht die
+// Kontrolle; die hat ihren eigenen Test am echten Postgres.
+func erwarteKeineDublette(mock pgxmock.PgxPoolIface) {
+	mock.ExpectQuery(`SELECT (titel|id::text) FROM buecher_titel`).
+		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnError(pgx.ErrNoRows)
+}

@@ -191,6 +191,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}
+		erwarteKeineDublette(mock)
 		mock.ExpectExec("UPDATE buecher_titel").WithArgs(beliebig...).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectCommit()

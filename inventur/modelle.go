@@ -48,15 +48,18 @@ type BuchEingabe struct {
 	// — eine fehlende 0 sonderte bis zum 23.08.2026 den GESAMTEN Bestand aus, im
 	// Rückfallzweig auch ausgeliehene Exemplare. `Number(undefined)` im Formular wird zu
 	// NaN und in JSON zu null; genau das ist der Weg dorthin.
-	Bestand                 *int           `json:"stock"`
-	Titel                   string         `json:"title"`
-	Autor                   string         `json:"author"`
-	CoverURL                string         `json:"coverUrl"`
-	ZaehlDatum              *string        `json:"lastCounted"`
-	Medientyp               string         `json:"medientyp"`
-	JahrgangVon             int            `json:"jahrgangVon"`
-	JahrgangBis             int            `json:"jahrgangBis"`
-	Untertitel              string         `json:"untertitel"`
+	Bestand     *int    `json:"stock"`
+	Titel       string  `json:"title"`
+	Autor       string  `json:"author"`
+	CoverURL    string  `json:"coverUrl"`
+	ZaehlDatum  *string `json:"lastCounted"`
+	Medientyp   string  `json:"medientyp"`
+	JahrgangVon int     `json:"jahrgangVon"`
+	JahrgangBis int     `json:"jahrgangBis"`
+	Untertitel  string  `json:"untertitel"`
+	// Auflage: Auflagenbezeichnung des Titels (Migration 126). Ohne dieses Feld käme der
+	// Wert aus der Maske nie am Repository an — die Tür wäre gebaut und nicht verdrahtet.
+	Auflage                 string         `json:"auflage"`
 	Verlag                  string         `json:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
 	Beschreibung            string         `json:"beschreibung"`

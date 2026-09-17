@@ -19,6 +19,9 @@ type BookRepository struct {
 var (
 	ErrBookNotFound  = errors.New("kein buch mit dieser ID gefunden")
 	ErrDuplicateISBN = errors.New("ein buch mit dieser ISBN existiert bereits")
+	// ErrDubletteTitel: derselbe Titel desselben Autors steht ohne ISBN schon im
+	// Katalog — die Dublettenkontrolle ohne Nummer (OFFEN.md 4.18, Stufe 2).
+	ErrDubletteTitel = errors.New("dieser titel steht ohne ISBN bereits im katalog")
 )
 
 // NewBookRepository bindet das Inventur-Repository an einen Verbindungspool.

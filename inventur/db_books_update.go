@@ -37,7 +37,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 
 	query := `
 		UPDATE buecher_titel
-		SET isbn = $1,
+		SET isbn = NULLIF($1, ''),
 			titel = $2,
 			autor = $3,
 			cover_url = $4,
@@ -78,6 +78,12 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
+
+	// Wie beim Anlegen: Eine geänderte ISBN darf nicht in anderer Schreibweise auf einen
+	// vorhandenen Titel zeigen (OFFEN.md 4.18). Die eigene Zeile ist ausgenommen.
+	if err := pruefeDublette(ctx, tx, book, id); err != nil {
+		return err
+	}
 
 	result, err := tx.Exec(
 		ctx,
