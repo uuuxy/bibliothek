@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/pdftest"
+	"bibliothek/internal/service"
 	"bibliothek/pdf"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -157,4 +158,62 @@ func TestZugangsbuchPDF_LeererZeitraum(t *testing.T) {
 	if strings.Contains(blatt, "keine Bestellung hinterlegt") {
 		t.Errorf("Hinweis auf „ohne Zuordnung\" ohne solche Zeilen:\n%s", blatt)
 	}
+}
+
+// Der Zugang ist die Lieferung, nicht die Bestellung (Migration 129). Vorher las das Buch
+// `erworben_am` — den Tag, an dem die Zeile entstand, und die entsteht im Bestellweg beim
+// Bestellen. Ein im Dezember bestelltes, im Februar geliefertes Buch stand damit im
+// Dezember, und Bücher, die noch beim Händler lagen, standen mit im Nachweis.
+func TestZugangsbuch_ZulaufIstKeinZugang(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	loc := schulzeit.Zone()
+	heute := time.Now().In(loc)
+
+	titelID := titelMitSignatur(t, pool, "Zulauf-Titel", "Zul 1", 0)
+
+	var bestellID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, mittel)
+		VALUES ('Buchhandlung Zulauf', 'haendler@example.org', $1) RETURNING id`,
+		repository.MittelLand).Scan(&bestellID); err != nil {
+		t.Fatalf("Bestellung: %v", err)
+	}
+
+	// Beide Exemplare sind heute „bestellt" worden — erworben_am trägt bei beiden den
+	// heutigen Tag, weil das Bestellwesen die Zeile beim Bestellen anlegt.
+	bestellt := func(barcode string) string {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus, bestellung_id)
+			VALUES ($1, $2, false, 'im_zulauf', $3) RETURNING id`, titelID, barcode, bestellID).Scan(&id); err != nil {
+			t.Fatalf("Bestellung %s: %v", barcode, err)
+		}
+		return id
+	}
+	unterwegs := bestellt("ZUL-UNTERWEGS")
+	geliefert := bestellt("ZUL-GELIEFERT")
+
+	if _, err := service.BulkReceiveOrder(ctx, pool, repository.NewAuditRepository(pool), service.BulkReceiveParams{
+		ExemplarIDs: []string{geliefert},
+	}); err != nil {
+		t.Fatalf("Wareneingang: %v", err)
+	}
+
+	tagVon := time.Date(heute.Year(), heute.Month(), heute.Day(), 0, 0, 0, 0, loc)
+	buch, err := repository.LadeZugangsbuch(ctx, pool, tagVon, tagVon)
+	if err != nil {
+		t.Fatalf("Zugangsbuch laden: %v", err)
+	}
+
+	var barcodes []string
+	for _, z := range buch.Zeilen {
+		barcodes = append(barcodes, z.Barcode)
+	}
+	if len(buch.Zeilen) != 1 || barcodes[0] != "ZUL-GELIEFERT" {
+		t.Fatalf("Zugangsbuch von heute: %v — erwartet allein das gelieferte Exemplar", barcodes)
+	}
+	_ = unterwegs
 }

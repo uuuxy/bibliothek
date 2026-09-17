@@ -410,6 +410,10 @@ Signatur, Grund). Vorbelegt ist das laufende Schulhalbjahr mit den Stichtagen 15
 15.9.; beide Datumsfelder lassen sich überschreiben. Land und Schulträger stehen getrennt,
 jeweils mit eigener Stückzahl.
 
+Ein bestelltes Buch erscheint im Zugangsbuch erst, wenn Sie es unter _Bestellungen →
+Wareneingang_ eingebucht haben — mit dem Tag der Lieferung, nicht dem der Bestellung.
+Was noch im Zulauf steht, gehört nicht in den Nachweis: Es liegt noch beim Händler.
+
 **Was nicht auf dem Blatt steht, steht ausdrücklich darunter:** Exemplare, die vor der
 Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum — ihre Zahl
 nennt der Ausdruck, statt Vollständigkeit zu behaupten. Im Zugangsbuch stehen Bücher ohne hinterlegte
