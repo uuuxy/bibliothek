@@ -48,6 +48,27 @@ func abgangsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
 	return von, bis, nil
 }
 
+// AbgangsbuchAntwort ist das Abgangsbuch, wie Bildschirm und Blatt es lesen: fertig in
+// Abschnitte geteilt, mit den Überschriften des Servers. Die Oberfläche gruppiert NICHT
+// selbst — sonst stünden auf dem Blatt und auf dem Bildschirm zwei Wörter für denselben Topf.
+type AbgangsbuchAntwort struct {
+	Von           time.Time                            `json:"von"`
+	Bis           time.Time                            `json:"bis"`
+	Abschnitte    []Abschnitt[repository.AbgangsZeile] `json:"abschnitte"`
+	Gesamt        int                                  `json:"gesamt"`
+	OhneZeitpunkt int                                  `json:"ohne_zeitpunkt"`
+}
+
+func abgangsbuchAntwort(buch repository.Abgangsbuch) AbgangsbuchAntwort {
+	return AbgangsbuchAntwort{
+		Von:           buch.Von,
+		Bis:           buch.Bis,
+		Abschnitte:    abschnitteAus(buch.Zeilen, func(z repository.AbgangsZeile) string { return z.Topf }),
+		Gesamt:        len(buch.Zeilen),
+		OhneZeitpunkt: buch.OhneZeitpunkt,
+	}
+}
+
 // AbgangsbuchHandler liefert die Abgänge eines Zeitraums für den Bildschirm.
 // GET /api/bestand/abgangsbuch?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (s *Server) AbgangsbuchHandler() http.HandlerFunc {
@@ -60,7 +81,7 @@ func (s *Server) AbgangsbuchHandler() http.HandlerFunc {
 		if err != nil {
 			return apierrors.Internal("Abgangsbuch konnte nicht gelesen werden", err)
 		}
-		RespondJSON(w, http.StatusOK, buch)
+		RespondJSON(w, http.StatusOK, abgangsbuchAntwort(buch))
 		return nil
 	})
 }

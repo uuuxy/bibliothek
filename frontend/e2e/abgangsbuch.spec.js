@@ -36,7 +36,9 @@ test('Abgangsbuch: Abgänge des Halbjahres, nach Topf getrennt — und als PDF',
 	await page.getByRole('tab', { name: 'Abgangsbuch' }).click();
 
 	// 1. Beide Abschnitte stehen da, jeder mit seiner Stückzahl im Kopf.
-	const lernmittel = page.getByRole('table', { name: /Lernmittel \(Land\)/ });
+	// Die Überschrift kommt vom Server (mittelBeschriftung) — hier steht sie deshalb so,
+	// wie sie auch auf dem Ausdruck steht.
+	const lernmittel = page.getByRole('table', { name: /Lernmittelfreiheit \(Land\)/ });
 	const buecherei = page.getByRole('table', { name: /Schülerbücherei/ });
 	await expect(lernmittel.getByText(`E2E-Abgang-Lernmittel ${s}`)).toBeVisible();
 	await expect(buecherei.getByText(`E2E-Abgang-Buecherei ${s}`)).toBeVisible();

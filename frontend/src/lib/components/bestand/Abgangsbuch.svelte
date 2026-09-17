@@ -27,13 +27,10 @@
 	let laeuft = $state(true);
 	let fehler = $state('');
 
-	const abschnitte = $derived([
-		{ titel: 'Lernmittel (Land)', zeilen: (buch?.zeilen ?? []).filter((z) => z.ist_lernmittel) },
-		{
-			titel: 'Schülerbücherei (Schulträger)',
-			zeilen: (buch?.zeilen ?? []).filter((z) => !z.ist_lernmittel)
-		}
-	]);
+	// Die Abschnitte kommen FERTIG vom Server, samt Überschrift. Hier selbst zu gruppieren
+	// war der erste Entwurf — und ließ Blatt und Bildschirm sofort auseinanderlaufen: Der
+	// Ausdruck schrieb „Lernmittelfreiheit (Land)", die Oberfläche „Lernmittel (Land)".
+	const abschnitte = $derived(buch?.abschnitte ?? []);
 
 	const druckAdresse = $derived(
 		`/api/bestand/abgangsbuch/pdf?von=${encodeURIComponent(von)}&bis=${encodeURIComponent(bis)}`
@@ -89,7 +86,7 @@
 	{:else if fehler}
 		<LadeFehler titel="Abgangsbuch nicht geladen" text={fehler} onerneut={laden} />
 	{:else if buch}
-		{#each abschnitte as abschnitt (abschnitt.titel)}
+		{#each abschnitte as abschnitt (abschnitt.topf)}
 			<section class="space-y-2">
 				<h3 class="text-sm font-semibold text-on-surface">
 					{abschnitt.titel} · {abschnitt.zeilen.length}

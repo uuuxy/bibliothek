@@ -79,10 +79,10 @@ func TestAbgangsbuch_ZeitraumUndToepfe(t *testing.T) {
 		t.Fatalf("Zeilen im Halbjahr: %v — erwartet AB-LMF und AB-BUE", barcodes)
 	}
 	// Lernmittel zuerst: Der Ausdruck trägt sie als ersten Abschnitt.
-	if buch.Zeilen[0].Barcode != "AB-LMF" || !buch.Zeilen[0].IstLernmittel {
+	if buch.Zeilen[0].Barcode != "AB-LMF" || buch.Zeilen[0].Topf != repository.MittelLand {
 		t.Errorf("erste Zeile: %+v — erwartet das Lernmittel", buch.Zeilen[0])
 	}
-	if buch.Zeilen[1].Barcode != "AB-BUE" || buch.Zeilen[1].IstLernmittel {
+	if buch.Zeilen[1].Barcode != "AB-BUE" || buch.Zeilen[1].Topf != repository.MittelSchultraeger {
 		t.Errorf("zweite Zeile: %+v — erwartet das Büchereibuch", buch.Zeilen[1])
 	}
 	if buch.Zeilen[0].GrundText != "Verlust" {
@@ -142,10 +142,10 @@ func TestAbgangsbuchPDF_ZweiAbschnitteUndHinweis(t *testing.T) {
 		Zeilen: []repository.AbgangsZeile{
 			{Datum: time.Date(2026, time.April, 12, 10, 0, 0, 0, schulzeit.Zone()),
 				Barcode: "B-00042", Titel: "Mathebuch 7", Signatur: "Mat 7",
-				Grund: "VERLUST", GrundText: "Verlust", IstLernmittel: true},
+				Grund: "VERLUST", GrundText: "Verlust", Topf: repository.MittelLand},
 			{Datum: time.Date(2026, time.May, 3, 10, 0, 0, 0, schulzeit.Zone()),
 				Barcode: "B-00815", Titel: "Gregs Tagebuch", Signatur: "Jug Gre",
-				Grund: "AUSSORTIERT", GrundText: "Aussortiert"},
+				Grund: "AUSSORTIERT", GrundText: "Aussortiert", Topf: repository.MittelSchultraeger},
 		},
 		OhneZeitpunkt: 7,
 	}

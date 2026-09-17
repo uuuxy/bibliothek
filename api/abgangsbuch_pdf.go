@@ -38,8 +38,8 @@ func generateAbgangsbuchPDF(buch repository.Abgangsbuch, schule pdf.SchuleInfo) 
 	abgangsbuchKopf(p, tr, buch, schule)
 
 	gezeigt := 0
-	for _, lernmittel := range []bool{true, false} {
-		gezeigt += abgangsbuchAbschnitt(p, tr, buch, lernmittel)
+	for _, abschnitt := range abschnitteAus(buch.Zeilen, func(z repository.AbgangsZeile) string { return z.Topf }) {
+		gezeigt += abgangsbuchAbschnitt(p, tr, abschnitt)
 	}
 	if gezeigt == 0 {
 		p.SetFont("Arial", "I", 10)
@@ -84,27 +84,21 @@ func abgangsbuchKopf(p *gofpdf.Fpdf, tr func(string) string, buch repository.Abg
 }
 
 // abgangsbuchAbschnitt zeichnet einen Topf und liefert die Zahl seiner Zeilen.
-func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, buch repository.Abgangsbuch, lernmittel bool) int {
-	zeilen := make([]repository.AbgangsZeile, 0, len(buch.Zeilen))
-	for _, z := range buch.Zeilen {
-		if z.IstLernmittel == lernmittel {
-			zeilen = append(zeilen, z)
-		}
-	}
+//
+// Leere Abschnitte überspringt das Blatt: Eine Überschrift ohne Inhalt hilft niemandem, der
+// den Nachweis abheftet. Auf dem Bildschirm steht sie, siehe bestandsbuch_abschnitte.go.
+func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abschnitt[repository.AbgangsZeile]) int {
+	zeilen := abschnitt.Zeilen
 	if len(zeilen) == 0 {
 		return 0
 	}
 
-	topf := repository.MittelSchultraeger
-	if lernmittel {
-		topf = repository.MittelLand
-	}
 	if p.GetY() > abgangUmbruchAbY-20 {
 		p.AddPage()
 	}
 	p.SetFont("Arial", "B", 10)
 	p.SetFillColor(235, 240, 250)
-	p.CellFormat(180, 7, tr(" "+mittelBeschriftung(topf)), "1", 1, "L", true, 0, "")
+	p.CellFormat(180, 7, tr(" "+abschnitt.Titel), "1", 1, "L", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(2)
 
@@ -125,7 +119,7 @@ func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, buch repositor
 	p.SetFont("Arial", "B", 9)
 	p.SetFillColor(225, 232, 245)
 	p.CellFormat(180, 7, tr(fmt.Sprintf("Summe %s: %d Exemplare  ",
-		mittelBeschriftung(topf), len(zeilen))), "1", 1, "R", true, 0, "")
+		abschnitt.Titel, len(zeilen))), "1", 1, "R", true, 0, "")
 	p.SetFillColor(255, 255, 255)
 	p.Ln(6)
 	return len(zeilen)

@@ -27,8 +27,11 @@ type AbgangsZeile struct {
 	// GrundText ist derselbe Grund in Klartext. Er kommt vom Server, damit Ausdruck und
 	// Bildschirm dieselben vier Wörter benutzen — zwei Übersetzungen desselben
 	// Schlüssels laufen auseinander, sobald einer davon geändert wird.
-	GrundText     string `json:"grund_text"`
-	IstLernmittel bool   `json:"ist_lernmittel"`
+	GrundText string `json:"grund_text"`
+	// Topf: 'land' für ein Lernmittel, sonst 'schultraeger' — dasselbe Vokabular wie bei
+	// Bestellung und Bescheid (Migrationen 109/110). Beim Abgang entscheidet ihn der
+	// Titel: Ein Buch des Landes bleibt eines, egal wie es einmal beschafft wurde.
+	Topf string `json:"topf"`
 }
 
 // AbgangsgrundText übersetzt den gespeicherten Grund (chk_aussonderung_grund) in die
@@ -82,7 +85,8 @@ func LadeAbgangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Abga
 
 	rows, err := q.Query(ctx, `
 		SELECT e.ausgesondert_am, e.barcode_id, t.titel,
-		       COALESCE(t.signatur, ''), COALESCE(e.aussonderung_grund, ''), t.ist_lernmittel
+		       COALESCE(t.signatur, ''), COALESCE(e.aussonderung_grund, ''),
+		       CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE e.ist_ausgesondert = true
@@ -96,7 +100,7 @@ func LadeAbgangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Abga
 
 	for rows.Next() {
 		var z AbgangsZeile
-		if err := rows.Scan(&z.Datum, &z.Barcode, &z.Titel, &z.Signatur, &z.Grund, &z.IstLernmittel); err != nil {
+		if err := rows.Scan(&z.Datum, &z.Barcode, &z.Titel, &z.Signatur, &z.Grund, &z.Topf); err != nil {
 			return buch, err
 		}
 		z.Datum = z.Datum.In(loc)

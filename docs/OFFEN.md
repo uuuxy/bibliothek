@@ -73,11 +73,10 @@ und nachgetragen wird nichts.
 
 **Was DU tun kannst — der Reihe nach:**
 
-1. **Die Antwort ans Medienzentrum lesen und abschicken**
-   ([medienzentrum_antwort.md](medienzentrum_antwort.md), Entwurf vom 17.09.2026). Sie beantwortet
-   jeden Punkt des Protokolls, stellt zwei Fragen zurück (Sperre bei offener Forderung,
-   Mehrjahresbände) und nennt drei bewusste Abweichungen. An den zwei Fragen hängen zwei
-   gestoppte Entscheidungen — solange sie offen sind, wird an beiden Stellen nichts gebaut.
+1. **Die Antwort ans Medienzentrum abschicken.** Das Schreiben ist fertig (bei Peter,
+   17.09.2026). Daran hängen zwei gestoppte Entscheidungen: die Sperre bei offener Forderung
+   (9.3 c) und die Mehrjahresbände (9.6, hält 4.3 auf). Solange die Antwort aussteht, wird an
+   beiden Stellen nichts gebaut.
 2. **Sieben Fragen beantworten** (Abschnitt 4: 4.7 bis 4.11, 4.13, 4.14). Sie sind der Rest der
    Fragerunde vom 16.09.; ohne sie bleiben sieben kleine Bauarbeiten liegen. Jede hat einen
    Vorschlag danebenstehen.
@@ -1741,9 +1740,9 @@ und der zweite wiegt schwerer als jeder Einzelpunkt darüber:
   Aktualisierungen zu einer Schule, die es einsetzt. Das ist zugleich die Frage, ob das Programm
   über die eigene Schule hinaus verwendbar ist — sie lässt sich nicht aus dem Code beantworten.
 
-**Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.** Der Entwurf der Antwort
-([medienzentrum_antwort.md](medienzentrum_antwort.md), Abschnitt 4) sagt zu beidem zu, was
-kommt; die Zusage muss eingelöst werden.
+**Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk** — und beides steht in keinem
+der vier Punkte darüber. Wer die Mängelliste abarbeitet und diese zwei Sätze überliest, hat das
+Gate nicht bestanden.
 
 ### 9.8 Abwertung und Beschädigungsgrad — Bauplan (nach Entscheidung vom 17.09.2026)
 
