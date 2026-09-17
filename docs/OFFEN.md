@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 17.09.2026
+Stand: 18.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -45,6 +45,11 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    Freigabe.
 8. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
    ist nichts zu tun außer nachzufragen, wenn nichts kommt.
+9. **Aus dem Abgleich mit Littera** (4.19, 4.20): **Ferienkalender** — heute mahnen wir das Kind,
+   dessen Frist in die Herbstferien fiel. Richtung und Form sind am 18.09.2026 entschieden
+   (Ferien als iCal-Datei, Fristen rutschen mit); gebaut ist nichts, und eine Frage steht noch
+   offen (Feiertage als zweite Datei oder gerechnet). Dazu die Frage, ob die Schülerbücherei eine
+   Themensuche bekommt (4.20).
 
 **Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 129). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
@@ -355,6 +360,132 @@ Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 
 **Nicht gebaut.** Schritt 3 ändert das Schema und rechnet die Nachbestell-Liste anders. Das geht
 in Stufen mit Nachweis und erst nach deiner Freigabe.
+
+### 4.19 Frist fällt in die Ferien
+
+**Der Fall.** Ausleihe am letzten Schultag vor den Herbstferien, Frist 21 Tage: fällig mitten in
+den Ferien. Das Kind kann nicht zurückgeben, steht danach in der Mahnliste und ab einem
+überfälligen Medium mit gesperrtem Ausweis an der Theke (`MaxOverdueItems`, Vorgabe 1).
+
+**Was heute passiert.** `calculateDueDate` (`internal/service/loan_rules.go`) rechnet
+Kalendertage: Stichtag bei Lernmitteln, feste Tageszahl sonst. Kein Kalender geht ein. Der einzige
+Behelf ist der Ferien-Leseclub — ein festes Zieldatum für ALLE Ausleihen, von Hand ein- und
+auszuschalten.
+
+**Wie Littera es macht** (Handbuch 5.4.18, Kapitel *Grundeinstellungen für Verleih* und *Verleih*,
+gelesen am 17.09.2026): zwei Einstellungen. *Öffnungstage* sind die Wochentage, an denen die
+Bibliothek geöffnet hat. *Schließtage* sind einzelne Tage mit Bezeichnung, wahlweise als Zeitraum
+eingetragen („Sommerferien, Inventur, Betriebsurlaub"), dazu ein Knopf, der die gesetzlichen
+Feiertage eines Landes für ein Kalenderjahr übernimmt — jedes Jahr neu zu drücken. Fällt die Frist
+auf einen Schließtag, „errechnet LITTERA automatisch den nächsten möglichen Rückgabetermin, trägt
+diesen dann ein und stellt den Zeitraum zwischen errechnetem und tatsächlich möglichem
+Rückgabetermin mahn- und gebührenfrei". Einstellbar ist, ob bis zum nächsten Öffnungstag oder bis
+zum nächsten gleichen Wochentag verschoben wird.
+
+**Woher kämen die Tage bei uns?** Das ist die eigentliche Frage. Gebaut ist bisher nur, was der
+LMF-Plan braucht:
+
+- **Feiertage Hessens:** gerechnet, kein Pflegeaufwand (`pkg/lmfplan/feiertage.go`; die gesetzlichen
+  Feiertage Hessens samt Fronleichnam).
+- **Sommerferien:** Programmtabelle nach dem KMK-Beschluss bis 2030 plus eigene Einträge der
+  Schule (Einstellungen → LUSD & Versetzung → Sommerferien). Läuft die Tabelle aus, warnt die
+  Betriebsbereitschaft zwei Jahre vorher.
+- **Bewegliche Ferientage, pädagogische Tage, Brückentage:** `lmf_plan_freie_tage` — sie hängen
+  aber am einzelnen Plan (`plan_id`), nicht am Schuljahr.
+- **Herbst-, Weihnachts- und Osterferien gibt es nirgends**, Öffnungstage der Bibliothek auch
+  nicht. Genau diese Ferien sind die, in die eine 21-Tage-Frist fällt.
+
+Eine Tabelle `ferien_schliesszeiten` gab es; Migration 102 hat sie am 06.09.2026 ausgebaut, weil
+sie nie einen Schreiber bekam und die automatische Mahnpause vor nichts Realem schützte. Das galt
+dem Mahnwesen. Hier geht es um den Schreibpfad der Frist — um die Zahl, die auf dem Kontoauszug
+steht und die das Mahnwesen später liest.
+
+**Entschieden am 18.09.2026:**
+
+- **Öffnungstage gibt es nicht** — die Bibliothek hat keine festen Öffnungszeiten. Damit besteht
+  der Kalender aus Ferien, Feiertagen und Wochenenden; die Hälfte, die Littera „Öffnungstage"
+  nennt, entfällt ersatzlos.
+- **Laufende Ausleihen rutschen mit.** Wer im September ausgeliehen hat und im Oktober die
+  Herbstferien nachgetragen bekommt, soll nicht gemahnt werden, weil die Eintragung zu spät kam.
+  Das Muster dafür steht schon: Beim Veröffentlichen des LMF-Plans folgen die offenen
+  Schulbuch-Ausleihen dem Termin ihrer Klasse (`api/lmf_termine_frist.go`), und die Meldung nennt
+  die Zahl.
+- **Die Ferien kommen als Datei** (iCal), nicht als Tipparbeit: sechs Zeiträume je Schuljahr von
+  Hand einzutragen, macht niemand zweimal. Die Datei holt die Schule selbst, z. B. bei
+  `schulferien.org/deutschland/ical/`; hochgeladen wird sie in den Einstellungen. Zur Laufzeit
+  fragt der Server nichts ab — dieselbe Linie wie bei der Sommerferien-Tabelle.
+- **Ein Warner**, wenn der Kalender ausläuft: in der Betriebsbereitschaft, wo schon die
+  Ferientabelle steht. Ein Kalender, der still endet, rechnet ab dem ersten fehlenden Tag wieder
+  falsch, ohne dass es jemand merkt.
+
+**Beim Mitrutschen gilt dieselbe Ausnahmeliste wie beim LMF-Plan:** nur offene Ausleihen, nur nach
+hinten, und nicht angefasst werden von Hand gesetzte Fristen, Lernmittel mit Termin aus dem Plan
+und die Fristen des Ferien-Leseclubs. Jede Verschiebung steht im Protokoll, und die Meldung nennt
+die Zahl der betroffenen Ausleihen.
+
+**Offen — zwei Dateien oder eine?** Vorgeschlagen war je eine Datei für Ferien und für Feiertage.
+Für die Ferien ist das richtig. Bei den Feiertagen rate ich ab: Die rechnet das Programm bereits
+exakt für Hessen (`pkg/lmfplan/feiertage.go`, Fronleichnam eingeschlossen), ohne Pflege und ohne
+Ablaufdatum. Eine hochgeladene Datei daneben wäre eine zweite Quelle für denselben Zustand — die
+teuerste Bugklasse dieses Projekts: Wer die Datei eines anderen Bundeslandes erwischt, verschiebt
+Fristen auf einen Tag, an dem die Schule offen hat, und niemand sieht warum. *Vorschlag:* die
+zweite Datei annehmen, aber nur als **Gegenprobe** — das Programm vergleicht sie mit seiner
+Rechnung und meldet Abweichungen, statt sie zu übernehmen. Das kostet wenig und fängt genau den
+Fall, in dem unsere Rechnung falsch wäre.
+
+**Was beim Bauen die Fallen sind** (vorab notiert, weil sie still danebengehen):
+
+1. **`DTEND` ist bei ganztägigen Terminen exklusiv.** Ein Ferienzeitraum „bis 31.10." steht in der
+   Datei als `DTEND:20261101`. Wer das direkt übernimmt, hängt einen Tag an oder verliert einen —
+   und der erste Schultag wird zum Ferientag. Gate genau darauf.
+2. **Eine Vorschau vor dem Übernehmen**, wie beim LUSD-Import: „Diese 6 Zeiträume werden
+   eingetragen." Die Quelle ist austauschbar (`schulferien.org` ist eine von mehreren und nicht
+   amtlich), und auch der Dateiname ist keine Prüfung — er heißt zwar „Ferien Hessen", ist aber
+   in zwei Sekunden umbenannt. Geprüft wird der Inhalt, von einem Menschen an der Vorschau.
+   **Die Maschine kann dabei eine harte Probe beisteuern:** Jede Ferien-Datei enthält die
+   Sommerferien, und die kennen wir für Hessen bis 2030 aus der Programmtabelle. Weichen sie ab,
+   stimmt das Bundesland oder das Jahr nicht — dann warnt der Upload, statt die Fristen der
+   ganzen Schule auf fremde Termine zu schieben.
+3. **Die Sommerferien gibt es schon** — als JSON-Liste unter dem Schlüssel `sommerferien`
+   (`pkg/lmfplan/ferien_einstellung.go`), gelesen von Planer und Selbstprüfung. Der neue Kalender
+   muss sie aufnehmen, nicht neben ihnen stehen, sonst gibt es zwei Listen von Sommerferien. Der
+   Upload ist dann ein Weg in EINE Tabelle, das Tippen von Hand der andere.
+4. **Nur Datei, kein Adressfeld.** Eine URL, die der Server selbst abruft, wäre ein Abruf nach
+   außen aus dem Schulnetz heraus — der Grund, aus dem schon die Ferientabelle im Programm steht.
+
+**Reihenfolge, wenn freigegeben:** (1) Kalender-Tabelle samt Übernahme der Sommerferien,
+(2) iCal-Upload mit Vorschau, (3) Frist rechnet gegen den Kalender, (4) Mitrutschen bei Nachtrag,
+(5) Warner in der Betriebsbereitschaft.
+
+**Nicht gebaut.** Ändert einen Schreibpfad und braucht eine Migration; Gate am Rückweg, vorher rot
+gesehen.
+
+### 4.20 „Ich will was Gruseliges" — der Bestand hat kein Thema
+
+**Was heute da ist.** Am Titel stehen Fach (Systematik), Signatur, Jahrgang, Schulzweig und die
+Beschreibung, die im Volltext mitsucht. Das Fach ist die Schulfach-Systematik: für Lernmittel
+richtig, für die Schülerbücherei nicht — „Jugendliteratur" ist kein Thema.
+
+**Wie Littera es macht:** Schlagworte (frei, mit Verweisen für Schreibvarianten und Pseudonyme)
+und daneben Interessenkreise — „eine thematische Gliederung des Belletristikbereiches (z. B.
+Krimi, Heimat…)". Beides ist in der Recherche filterbar und als Liste auswertbar.
+
+**Was dabei heute verloren geht:** Der Littera-Altbestand bringt Schlagworte mit (MAB 710). Der
+Import liest sie, leitet daraus das Fach ab und wirft sie danach weg
+(`internal/service/import_service.go`); gespeichert wird keines. Wer sie haben will, spielt den
+Import gegen das frische Backup neu ein (7.2).
+
+**Fragen:** Braucht die Schülerbücherei die Themensuche im öffentlichen Katalog — und wer pflegt
+sie bei Neuzugängen? Ein Feld, das nach dem Import nie wieder gefüllt wird, kennt nach zwei Jahren
+nur noch die Vergangenheit.
+
+**Vorschlag:** Erst am Backup messen, wie viele Titel überhaupt brauchbare Schlagworte tragen;
+darunter erübrigt sich die Frage. Trägt der Altbestand, dann ein geschlossenes Vokabular von
+zwölf bis zwanzig Wörtern statt freier Schlagworte — als Auswahl am Titel und als Filter im
+Katalog und im Portal. Freie Schlagworte brauchen Normdatenpflege (Littera hat dafür ein eigenes
+Modul); die haben wir nicht.
+
+**Nicht gebaut.**
 
 ---
 
