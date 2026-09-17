@@ -70,6 +70,15 @@ damit erledigt:**
 neue Spalte am Exemplar). Das passiert beim Start von allein; Daten gehen dabei keine verloren,
 und nachgetragen wird nichts.
 
+**Die neun offenen Pull Requests sind entschieden** (17.09.2026). Sieben davon schlugen
+Änderungen vor, die das Programm schlechter gemacht hätten oder schon mehrfach abgelehnt waren;
+einer hatte eine richtige Idee, die jetzt selbst gebaut ist — beim Einbetten eines Buchcovers
+in ein PDF verweigert nun das Betriebssystem den Ausbruch aus dem Bilderverzeichnis, und das
+Paket hat erstmals Tests. Die beiden Paket-Updates sind übernommen; dabei kam heraus, dass eine
+Testvorlage der Datenbank etwas in den Mund legte, was diese nie antwortet. Die
+Sicherheitswarnung von GitHub war ein Fehlalarm des Prüfwerkzeugs und ist mit Begründung
+geschlossen.
+
 ---
 
 **Was DU tun kannst — der Reihe nach:**
@@ -692,20 +701,15 @@ Die Pflichtliste in `.github/workflows/release.yml` enthält keinen der Security
 das Release; für das Image siehe 5.10. **Frage:** aufnehmen oder begründet so lassen? Bei Ja prüft
 `docs/umgebung_paritaet_test.go` auch `security-scan.yml`. **Wann:** vor dem nächsten Release.
 
-### 4.10 Offene PRs (Stand 17.09.2026)
+### 4.10 Branches geschlossener PRs löschen
 
-**Fünf Jules-PRs, aber nur zwei Themen.** #621, #624 und #626 schlagen dreimal dieselbe Sache vor
-(CTE für die Klassensatz-Verfügbarkeit; laut Messung vom 13.09.2026 langsamer als die bestehende
-Abfrage, nicht wiederholt), #620 und #625 zweimal dieselbe (`title` an gesperrten Knöpfen des
-Planers). Dazu die Remote-Branch des geschlossenen PR #611
-(`fix/cron-dsgvo-test-comment-5377838966258287578`). **Vorschlag:** alle schließen, Branches
-löschen.
+Alle neun PRs sind am 17.09.2026 entschieden (sieben geschlossen, die beiden Dependabot-Gruppen
+übernommen). Sieben Remote-Branches stehen aber noch da; `gh pr close --delete-branch` meldete
+Erfolg, gelöscht hat es sie nicht. **Zu tun** — ein Befehl:
 
-**Zwei Dependabot-PRs, seit dem 14.09.2026 offen** — sie standen bis heute in keiner Liste:
-#622 (Go, sechs Pakete; `build-and-test` ist ROT) und #623 (npm, sieben Pakete, Prüfungen grün).
-Auto-Merge ist aus, also entscheidet sie jemand von Hand. **Vorschlag:** #623 übernehmen; bei #622
-zuerst die rote Prüfung ansehen — ein blankes Update hat den Build schon einmal gebrochen, deshalb
-gilt „gezielt statt in einem Rutsch".
+```
+git push origin --delete bolt/optimize-klassensatz-query-14927972019696966478 bolt/optimize-klassensatz-reservierungen-14387266038906353607 bolt-optimize-klassensatz-reservations-14071621768838592211 fix/cron-dsgvo-test-comment-5377838966258287578 palette-dynamic-disabled-titles-13427865062014033447 palette-dynamic-titles-4699914075555571471 palette-row-reordering-titles-5117473175837266680
+```
 
 ### 4.11 Topf auf der Bestätigungsseite und den großen Etiketten
 
