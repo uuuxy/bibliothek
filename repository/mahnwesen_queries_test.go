@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // medienAnzahl liefert die Anzahl der Medien des Schülers mit der gegebenen ID

@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"bibliothek/inventur"
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 type orderMockTransport struct {

@@ -11,7 +11,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Gate: Die Antwort des Abmeldens kommt aus der WIRKUNG, nicht aus der Eingabe.

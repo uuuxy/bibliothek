@@ -10,7 +10,7 @@ import (
 
 	"bibliothek/db"
 	"bibliothek/internal/service"
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 	"github.com/stretchr/testify/assert"
 )
 

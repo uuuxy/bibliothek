@@ -8,7 +8,7 @@ import (
 
 	"bibliothek/db"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Die Ausweisnummer eines Importzugangs hat DIESELBE Form wie die der Handanlage.

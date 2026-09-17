@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // TestVormerkungCreate_RejectsWhenTitleAlreadyBorrowed sichert Bug 4 (Vormerkungs-

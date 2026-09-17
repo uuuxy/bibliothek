@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Diese Datei schließt eine Lücke, die am 04.09.2026 beim Nachprüfen der abgewiesenen

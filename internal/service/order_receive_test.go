@@ -5,7 +5,7 @@ import (
 
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Der UPDATE…RETURNING-Kern von BulkReceiveOrder (Regex für pgxmock).

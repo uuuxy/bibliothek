@@ -7,7 +7,7 @@ import (
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func TestNewCoverService(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Kann die Datenbank bei der Token-Prüfung nicht antworten, ist das keine abgelaufene

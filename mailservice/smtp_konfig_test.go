@@ -10,7 +10,7 @@ import (
 
 	"bibliothek/internal/crypto"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 const testSchluessel = "0123456789abcdef0123456789abcdef" // 32 Zeichen für AES-256

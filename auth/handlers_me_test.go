@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func doMe(t *testing.T, a *Authenticator, mock pgxmock.PgxPoolIface, cookie *http.Cookie) *httptest.ResponseRecorder {

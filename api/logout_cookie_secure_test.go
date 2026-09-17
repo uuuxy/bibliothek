@@ -9,7 +9,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Dritte Sitzungscookie-Stelle neben Login und Refresh (siehe

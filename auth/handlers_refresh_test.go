@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 const testSecret = "test-secret-with-at-least-32-bytes!!"

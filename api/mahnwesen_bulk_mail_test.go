@@ -16,7 +16,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // smtpKonfigAusUmgebung pinnt den paketglobalen smtpKonfigLader für die Testdauer

@@ -8,7 +8,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func TestNewDeviceService(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Bewusst nur der Tabellenteil: pgxmock vergleicht per REGEX, und die Spaltenliste

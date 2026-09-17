@@ -8,7 +8,7 @@ import (
 
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Diese Tests halten den achten Aussonderungs-Schreibpfad fest, der bei der Umstellung

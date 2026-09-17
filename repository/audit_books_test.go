@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // snapshotTitelRows liefert die Zeile, die DeleteTitle vor dem Löschen für das Audit-Log

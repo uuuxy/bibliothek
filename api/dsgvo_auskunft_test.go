@@ -11,7 +11,7 @@ import (
 
 	"bibliothek/db"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 const dsgvoTestID = "11111111-1111-1111-1111-111111111111"

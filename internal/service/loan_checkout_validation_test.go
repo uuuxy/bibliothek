@@ -9,7 +9,7 @@ import (
 
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // --- Mocks: nur die im Checkout-Pfad genutzten Methoden tragen Logik,

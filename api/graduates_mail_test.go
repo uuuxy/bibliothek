@@ -13,7 +13,7 @@ import (
 	"bibliothek/pdf"
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func eintrag(vorname, nachname, klasse string) pdf.KontoauszugEintrag {

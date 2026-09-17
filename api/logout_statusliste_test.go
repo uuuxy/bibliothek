@@ -14,7 +14,7 @@ import (
 
 	"bibliothek/auth"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Gate: Die Statusliste des Clients ist genau die Menge der Abmelde-Antworten MIT Löschcookie.

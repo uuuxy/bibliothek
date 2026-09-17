@@ -18,7 +18,7 @@ import (
 
 	"bibliothek/db"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Der Fund vom 05.09.2026, am Handler nachgestellt: Ohne Bindung bestimmte der erste

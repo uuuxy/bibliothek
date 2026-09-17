@@ -9,7 +9,7 @@ import (
 
 	"bibliothek/db"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // reorderSpalten spiegelt die Projektion aus queryReorders.

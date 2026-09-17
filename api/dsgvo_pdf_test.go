@@ -10,7 +10,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/pdf"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // TestGenerateDsgvoAuskunftPDF stellt sicher, dass der Auskunfts-Generator aus

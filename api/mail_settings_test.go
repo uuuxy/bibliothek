@@ -23,7 +23,7 @@ import (
 	"bibliothek/mailservice"
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func mailTestServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {

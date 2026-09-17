@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Ein DB-Ausfall ist kein falsches Passwort.

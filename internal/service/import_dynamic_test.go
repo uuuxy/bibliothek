@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func TestCleanISBN(t *testing.T) {

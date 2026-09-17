@@ -10,7 +10,7 @@ import (
 	"bibliothek/auth"
 	"bibliothek/db"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 func promotionTestServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {

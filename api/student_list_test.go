@@ -8,7 +8,7 @@ import (
 
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // TestListStudentsLeereListeIstArray hält den Fehler fest, an dem die Schülerdatei

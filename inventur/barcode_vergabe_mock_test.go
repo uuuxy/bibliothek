@@ -3,7 +3,7 @@ package inventur
 import (
 	"fmt"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // erwarteBarcodeVergabe stellt die zwei Abfragen von repository.ZieheFreieExemplarBarcodes

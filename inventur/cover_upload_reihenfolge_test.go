@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // Reihenfolge beim Cover-Upload. Bis zum 13.09.2026 schrieb handleUploadCover die neue

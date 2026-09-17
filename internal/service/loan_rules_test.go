@@ -8,7 +8,7 @@ import (
 
 	"bibliothek/repository"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // sameDay vergleicht zwei Zeitpunkte auf Kalendertag-Ebene (Jahr/Monat/Tag) — beide

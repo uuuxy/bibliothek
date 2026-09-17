@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pashagolub/pgxmock/v4"
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // mockTransportCover is a local mock transport to avoid unexported type dependency
