@@ -138,6 +138,26 @@
 		hint="Wie auf dem Titelblatt, z. B. „4. Aufl. 2023“. Leer lassen, wenn es nur eine gibt."
 	/>
 
+	<!-- Listenpreis: was ein Ersatz HEUTE kostet — die Grundlage, auf die die Staffel des
+	     Erlasses ab dem zweiten Verleihjahr rechnet (Migration 127). Beim Anlegen über die
+	     ISBN füllt ihn die DNB von selbst; hier steht er, damit ein Mensch ihn prüfen und
+	     überschreiben kann.
+
+	     LEER heißt „nicht erfasst", nicht „kostet nichts": Bei leerem Feld weicht die
+	     Staffel auf den Kaufpreis aus und sagt das in ihrer Herleitung. Eine getippte 0
+	     ergäbe dagegen einen Ersatzbetrag von 0,00 €. -->
+	<Feld
+		id="buch-listenpreis"
+		label="Listenpreis"
+		type="number"
+		step="0.01"
+		min="0"
+		bind:value={formular.listenpreis}
+		hint="Was ein Ersatz heute kostet. Leer lassen, wenn unbekannt — dann rechnet der Schadensersatz mit dem Einkaufspreis."
+	>
+		{#snippet nachlaufend()}€{/snippet}
+	</Feld>
+
 	<BuchEingabefelderKategorisierung bind:formular {systematikListe} />
 
 	<BuchEingabefelderInventar bind:formular />

@@ -254,6 +254,9 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				"",                  // signatur
 				false,               // ist_lernmittel
 				"",                  // auflage
+				// listenpreis: nil, weil dieser Test keine ISBN-Metadaten liefert. Bei
+				// einem echten Nachschlagen füllt ihn der DNB-Ladenpreis (Migration 127).
+				pgxmock.AnyArg(),
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("11111111-1111-1111-1111-111111111111"))
 		mock.ExpectCommit()

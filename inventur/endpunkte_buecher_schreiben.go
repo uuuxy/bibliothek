@@ -29,10 +29,39 @@ func validiereBuchErstellenEingabe(antwort http.ResponseWriter, isbn string, kla
 	return true
 }
 
-// ergaenzeBuchMetadaten füllt fehlende Titel/Autor/Cover aus dem ISBN-Nachschlagen und
-// setzt anschließend sichere Defaults für Titel und Autor.
+// listenpreisAusNachschlagen entscheidet, ob der Ladenpreis der DNB den Listenpreis füllt.
+//
+// Eigene Funktion, weil hier zwei Regeln zusammenkommen, die beide am Ende in einem
+// Bescheid an Erziehungsberechtigte landen — und weil sie so prüfbar sind, ohne eine
+// DNB-Antwort nachzubauen:
+//
+//  1. Was ein Mensch eingetragen hat, gewinnt IMMER. Ein Nachschlagen, das die Eingabe
+//     der Bibliothekskraft überschreibt, wäre schlimmer als gar keines.
+//  2. Ein gefundener Preis von 0 füllt NICHTS. Die DNB-Regeln liefern 0, wenn der Satz
+//     nur D-Mark kennt (metadaten_preis.go); eine 0 in der Spalte hieße „kostet heute
+//     nichts" und ergäbe einen Ersatzbetrag von 0,00 €.
+func listenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
+	if vorhanden != nil || gefunden <= 0 {
+		return vorhanden
+	}
+	return &gefunden
+}
+
+// ergaenzeBuchMetadaten füllt fehlende Titel/Autor/Cover/Listenpreis aus dem
+// ISBN-Nachschlagen und setzt anschließend sichere Defaults für Titel und Autor.
+//
+// Der LISTENPREIS kommt aus derselben Quelle (Migration 127, OFFEN.md 9.8): Die DNB
+// liefert den Ladenpreis aus MARC21 020 $c in jeder Antwort mit, und er stand bisher
+// ungenutzt darin (metadaten_preis.go). Ohne das wäre das Feld eine leere Spalte, die
+// jemand für 4.000 Titel von Hand füllen müsste — mit ihm bringt jedes neu angelegte
+// Buch mit ISBN seinen Preis gleich mit.
+//
+// Nur wenn keiner angegeben ist: Was der Mensch in die Maske getippt hat, gewinnt immer.
+// Und nur ein Preis über 0 — die DNB-Regeln (kein DM, keine Umrechnung aus der
+// Umstellungszeit) liefern sonst 0, und eine 0 hieße hier „kostet nichts" statt „nicht
+// ermittelbar".
 func (handler *APIHandler) ergaenzeBuchMetadaten(ctx context.Context, buch *Book) {
-	if buch.Title == "" || buch.Author == "" || buch.CoverURL == "" {
+	if buch.Title == "" || buch.Author == "" || buch.CoverURL == "" || buch.Listenpreis == nil {
 		nachschlagen, _ := handler.metadaten.SucheNachISBN(ctx, buch.ISBN) //nolint:errcheck
 		if nachschlagen != nil {
 			if buch.Title == "" {
@@ -44,6 +73,7 @@ func (handler *APIHandler) ergaenzeBuchMetadaten(ctx context.Context, buch *Book
 			if buch.CoverURL == "" {
 				buch.CoverURL = strings.TrimSpace(nachschlagen.CoverURL)
 			}
+			buch.Listenpreis = listenpreisAusNachschlagen(buch.Listenpreis, nachschlagen.Preis)
 		}
 	}
 	if buch.Title == "" {
@@ -161,6 +191,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		JahrgangBis:             eingabe.JahrgangBis,
 		Untertitel:              strings.TrimSpace(eingabe.Untertitel),
 		Auflage:                 strings.TrimSpace(eingabe.Auflage),
+		Listenpreis:             eingabe.Listenpreis,
 		Verlag:                  strings.TrimSpace(eingabe.Verlag),
 		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
 		Beschreibung:            strings.TrimSpace(eingabe.Beschreibung),

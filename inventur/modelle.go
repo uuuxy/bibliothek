@@ -29,7 +29,16 @@ type Book struct {
 	// Auflage: die Auflagenbezeichnung („4. Aufl. 2023", Migration 126). Eine neue
 	// Auflage ist ein eigener Titel mit eigener ISBN — dieses Feld unterscheidet die
 	// beiden Zeilen in Liste, Akte und Ausgabe.
-	Auflage                 string         `json:"auflage" db:"auflage"`
+	Auflage string `json:"auflage" db:"auflage"`
+	// Listenpreis: was ein Ersatz HEUTE kostet (Migration 127) — der „Neupreis zum
+	// Zeitpunkt des Verlusts" der Arbeitshilfe, in der Sprache des Medienzentrums der
+	// Listenpreis. Ab dem zweiten Verleihjahr rechnet die Staffel darauf.
+	//
+	// ZEIGER, nicht float64: „nicht erfasst" (nil) und „kostet nichts" (0) sind zwei
+	// verschiedene Aussagen, und der Unterschied steht am Ende in einem Bescheid an
+	// Erziehungsberechtigte. Bei nil weicht die Staffel auf den Kaufpreis aus und sagt
+	// das; bei 0 nennte sie 0,00 €.
+	Listenpreis             *float64       `json:"listenpreis" db:"listenpreis"`
 	Verlag                  string         `json:"verlag" db:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr" db:"erscheinungsjahr"`
 	Beschreibung            string         `json:"beschreibung" db:"beschreibung"`
@@ -59,7 +68,10 @@ type BuchEingabe struct {
 	Untertitel  string  `json:"untertitel"`
 	// Auflage: Auflagenbezeichnung des Titels (Migration 126). Ohne dieses Feld käme der
 	// Wert aus der Maske nie am Repository an — die Tür wäre gebaut und nicht verdrahtet.
-	Auflage                 string         `json:"auflage"`
+	Auflage string `json:"auflage"`
+	// Listenpreis aus der Maske (Migration 127). Zeiger aus demselben Grund wie oben:
+	// Ein leeres Feld ist „nicht erfasst", eine getippte 0 ist eine Aussage.
+	Listenpreis             *float64       `json:"listenpreis"`
 	Verlag                  string         `json:"verlag"`
 	Erscheinungsjahr        int            `json:"erscheinungsjahr"`
 	Beschreibung            string         `json:"beschreibung"`

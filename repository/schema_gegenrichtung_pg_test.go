@@ -180,6 +180,16 @@ var checkBedingungenBestand = []string{
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
 	"chk_grade_level_bereich", "chk_inv_session_scope",
+	// Migration 127, befragt am 17.09.2026: Beide Werte gehen in einen Ersatzbetrag ein,
+	// der in einem Bescheid an Erziehungsberechtigte steht. Der Code prüft sie an der Tür
+	// (der Listenpreis kommt aus der Maske oder von der DNB, die Abwertung aus einem Feld
+	// mit min/max), die Datenbank hält die zweite (db/constraints_listenpreis_abwertung_pg_test.go).
+	//
+	// Die Gegenfrage von Frage 12 — verlässt sich der Code auf etwas, das die Regel NICHT
+	// verbietet? Ja, an einer Stelle: chk_listenpreis_nonneg erlaubt 0, und 0 bedeutet
+	// „kostet heute nichts", nicht „nicht erfasst". Dafür ist die Spalte NULLBAR; wer sie
+	// je auf NOT NULL DEFAULT 0 zöge, machte aus jeder Lücke einen Ersatzbetrag von 0,00 €.
+	"chk_listenpreis_nonneg", "chk_zustand_abwertung_bereich",
 	"chk_ksr_anzahl_positiv", "chk_lmf_plaene_anker", "chk_lmf_plaene_art",
 	"chk_lmf_plaene_letzte_stunde",
 	// Migration 115, befragt am 12.09.2026: Die letzte Stunde des Rückgabe-Plans liegt im

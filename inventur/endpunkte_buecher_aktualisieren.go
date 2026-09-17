@@ -63,6 +63,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		JahrgangBis:             eingabe.JahrgangBis,
 		Untertitel:              eingabe.Untertitel,
 		Auflage:                 strings.TrimSpace(eingabe.Auflage),
+		Listenpreis:             eingabe.Listenpreis,
 		Verlag:                  eingabe.Verlag,
 		Erscheinungsjahr:        eingabe.Erscheinungsjahr,
 		Beschreibung:            eingabe.Beschreibung,

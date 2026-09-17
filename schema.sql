@@ -464,6 +464,13 @@ CREATE TABLE buecher_titel (
     -- eigener Titel mit eigener ISBN; dieses Feld ist das, was die beiden Zeilen in einer
     -- Liste unterscheidbar macht.
     auflage VARCHAR(50),
+    -- Migration 127: Was ein Ersatz HEUTE kostet — der „Neupreis zum Zeitpunkt des
+    -- Verlusts" der Arbeitshilfe, in der Sprache des Medienzentrums der Listenpreis.
+    -- NULLBAR mit Absicht: NULL heißt „nicht erfasst" (die Staffel weicht dann auf den
+    -- Kaufpreis aus und sagt das), eine 0 hieße „kostet heute nichts" und ergäbe einen
+    -- Ersatzbetrag von 0,00 € in einem Bescheid an Eltern.
+    listenpreis DECIMAL(10, 2) CONSTRAINT chk_listenpreis_nonneg
+        CHECK (listenpreis IS NULL OR listenpreis >= 0),
     erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     
@@ -526,6 +533,13 @@ CREATE TABLE buecher_exemplare (
     etikett_gedruckt BOOLEAN NOT NULL DEFAULT false,   -- True if barcode label has been printed
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf position, condition details)
     einkaufspreis DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    -- Migration 127: Abschlag für den Zustand DIESES Exemplars in Prozent („20 % durch
+    -- Wasserschaden", Anforderungsliste Nr. 2). Anders als der Listenpreis NOT NULL mit
+    -- Vorgabe 0: „kein Schaden erfasst" und „0 % abgewertet" sind dasselbe, und jedes
+    -- Exemplar hat einen Zustand. 100 ist erlaubt — ein unbenutzbares Buch ist die zweite
+    -- Fallgruppe des Musteranschreibens, und sein Ersatzbetrag ist dann 0.
+    zustand_abwertung_prozent SMALLINT NOT NULL DEFAULT 0
+        CONSTRAINT chk_zustand_abwertung_bereich CHECK (zustand_abwertung_prozent BETWEEN 0 AND 100),
     -- Bestellung, aus der dieses Exemplar entstanden ist (Migration 063). Der
     -- Fremdschlüssel steht weiter unten: bestellungen_verlauf entsteht erst nach
     -- dieser Tabelle. NULL bei Altbestand und Handanlage.
@@ -1411,7 +1425,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('123_lesertabelle.sql'),
 ('124_leser_tabelle_schueler_sicht.sql'),
 ('125_ein_ausweis_ein_leser.sql'),
-('126_auflage_am_titel.sql')
+('126_auflage_am_titel.sql'),
+('127_listenpreis_und_zustandsabwertung.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -118,8 +118,9 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// AnyArg für jedes Argument: Hier interessiert die ANWEISUNG, nicht was hineinfliesst.
 	// Ohne diese Zeile erwartet pgxmock null Argumente und bricht ab — der Test waere
 	// rot, ohne etwas ueber das Schema zu sagen. (18 seit dem Fall der stock-Spalte,
-	// Migration 073; 19 mit ist_lernmittel, Migration 093; 20 mit auflage, Migration 126.)
-	beliebig := make([]any, 20)
+	// Migration 073; 19 mit ist_lernmittel, Migration 093; 20 mit auflage, Migration 126;
+	// 21 mit listenpreis, Migration 127.)
+	beliebig := make([]any, 21)
 	for i := range beliebig {
 		beliebig[i] = pgxmock.AnyArg()
 	}
