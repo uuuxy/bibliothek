@@ -2,6 +2,7 @@
 	import { apiFetch, apiClient } from '../apiFetch.js';
 	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
 	import BookExemplarZustand from './BookExemplarZustand.svelte';
+	import StatusChip from './ui/StatusChip.svelte';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
 	import Kaestchen from './ui/Kaestchen.svelte';
@@ -63,10 +64,11 @@
      Bedienelemente im Bedienelement (nested-interactive, 50 Verstöße im
      Medienkatalog). Ausgewählt wird über das Kästchen, das ohnehin da war und bis
      dahin nur Anzeige war (pointer-events-none). -->
+<!-- Rahmen XOR Erhebung: `shadow-sm` ist weg, der Rahmen dafür sichtbarer. -->
 <div
-	class="bg-white rounded-xl border p-4 shadow-sm transition-colors {selected
-		? 'border-blue-500 bg-blue-50/30 ring-1 ring-blue-500'
-		: 'border-slate-200 hover:border-slate-300'}"
+	class="rounded-xl border bg-surface-container-lowest p-4 transition-colors {selected
+		? 'border-primary bg-primary-container/30 ring-1 ring-primary'
+		: 'border-outline-variant hover:border-outline'}"
 >
 	<div class="flex items-start justify-between mb-3">
 		{#if editingBarcode}
@@ -117,12 +119,15 @@
 						aria-label="Exemplar {ex.barcode_id} auswählen"
 					/>
 				{/if}
-				<div class="flex items-center gap-2">
+				<!-- Chip-Form (siehe StatusChip), amber heißt Platzhalternummer; nowrap,
+				     weil „Barcode scannen" sonst wortweise umbrach. -->
+				<div class="flex flex-wrap items-center gap-2">
 					<span
-						class="text-xs font-bold {ex.barcode_id.startsWith('AUTO-') ||
-						ex.barcode_id.startsWith('SYS-')
-							? 'text-amber-700 bg-amber-50 border-amber-100'
-							: 'text-blue-700 bg-blue-50 border-blue-100'} border px-2 py-0.5 rounded font-mono"
+						class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap {ex.barcode_id.startsWith(
+							'AUTO-'
+						) || ex.barcode_id.startsWith('SYS-')
+							? 'bg-amber-100 text-amber-700'
+							: 'bg-primary-container text-on-primary-container'}"
 					>
 						{ex.barcode_id}
 					</span>
@@ -132,14 +137,14 @@
 								href={`/api/print/etikett/${ex.id}`}
 								target="_blank"
 								title="Ersatz-Etikett drucken"
-								class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1"
+								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center gap-1"
 							>
 								<Printer class="w-3.5 h-3.5" aria-hidden="true" />
 							</a>
 						{/if}
 						{#if ex.barcode_id.startsWith('AUTO-') || ex.barcode_id.startsWith('SYS-')}
 							<button
-								class="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-800 font-semibold rounded shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+								class="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
 								onclick={() => {
 									editingBarcode = true;
 									editBarcodeValue = ''; // Leer lassen für den Scanner
@@ -153,7 +158,7 @@
 							<button
 								title="Barcode zuweisen/ändern"
 								aria-label="Barcode zuweisen oder ändern"
-								class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer flex items-center gap-1"
+								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center gap-1"
 								onclick={() => {
 									editingBarcode = true;
 									editBarcodeValue = ex.barcode_id;
@@ -168,20 +173,15 @@
 			</div>
 		{/if}
 		<div class="flex items-center gap-2">
-			<span
-				class="text-label-small font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar
-					? 'bg-rose-50 text-rose-700 border border-rose-100'
-					: !ex.ist_verfuegbar
-						? 'bg-amber-50 text-amber-700 border border-amber-100'
-						: 'bg-emerald-50 text-emerald-700 border border-emerald-100'}"
-			>
-				{!ex.ist_ausleihbar ? 'Gesperrt' : !ex.ist_verfuegbar ? 'Ausgeliehen' : 'Verfügbar'}
-			</span>
+			<StatusChip
+				ton={!ex.ist_ausleihbar ? 'fehler' : !ex.ist_verfuegbar ? 'warten' : 'erfolg'}
+				text={!ex.ist_ausleihbar ? 'Gesperrt' : !ex.ist_verfuegbar ? 'Ausgeliehen' : 'Verfügbar'}
+			/>
 			{#if !editingStatus}
 				<button
 					title="Status ändern"
 					aria-label="Status ändern"
-					class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
+					class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
 					onclick={() => {
 						editingStatus = true;
 					}}
@@ -191,7 +191,7 @@
 				<button
 					title="Exemplar löschen"
 					aria-label="Exemplar löschen"
-					class="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
+					class="text-on-surface-variant hover:text-error transition-colors cursor-pointer"
 					onclick={() => {
 						onDelete();
 					}}

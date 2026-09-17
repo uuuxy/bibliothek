@@ -63,7 +63,6 @@ const BESTAND = [
 	'src/lib/PermissionManager.svelte',
 	'src/lib/StudentProfileActions.svelte',
 	'src/lib/UserManagement.svelte',
-	'src/lib/components/BookExemplarCard.svelte',
 	'src/lib/components/OmniboxBlockAlert.svelte',
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/auth/Login.svelte',
