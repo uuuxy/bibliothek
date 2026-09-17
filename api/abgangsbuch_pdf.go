@@ -7,7 +7,6 @@ import (
 	"github.com/jung-kurt/gofpdf"
 
 	"bibliothek/pdf"
-	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -35,7 +34,7 @@ func generateAbgangsbuchPDF(buch repository.Abgangsbuch, schule pdf.SchuleInfo) 
 	tr := p.UnicodeTranslatorFromDescriptor("")
 	p.AddPage()
 
-	abgangsbuchKopf(p, tr, buch, schule)
+	bestandsbuchKopf(p, tr, "Abgangsbuch", buch.Von, buch.Bis, schule)
 
 	gezeigt := 0
 	for _, abschnitt := range abschnitteAus(buch.Zeilen, func(z repository.AbgangsZeile) string { return z.Topf }) {
@@ -56,31 +55,6 @@ func generateAbgangsbuchPDF(buch repository.Abgangsbuch, schule pdf.SchuleInfo) 
 		return nil, err
 	}
 	return buf.Bytes(), nil
-}
-
-func abgangsbuchKopf(p *gofpdf.Fpdf, tr func(string) string, buch repository.Abgangsbuch, schule pdf.SchuleInfo) {
-	p.SetFont("Arial", "B", 12)
-	p.Cell(0, 8, tr(schule.Name))
-	p.Ln(5)
-	p.SetFont("Arial", "", 8)
-	p.SetTextColor(100, 100, 100)
-	p.Cell(0, 4, tr(schule.Absenderzeile()))
-	p.SetTextColor(0, 0, 0)
-	p.Ln(10)
-
-	p.SetFont("Arial", "", 10)
-	p.CellFormat(0, 6, tr(schule.OrtDatum(schulzeit.Jetzt().Format(dateFormatDE))), "", 1, "R", false, 0, "")
-	p.Ln(4)
-
-	p.SetFont("Arial", "B", 14)
-	p.Cell(0, 10, tr("Abgangsbuch"))
-	p.Ln(7)
-	p.SetFont("Arial", "", 10)
-	p.SetTextColor(80, 80, 80)
-	p.Cell(0, 6, tr(fmt.Sprintf("Zeitraum: %s bis %s",
-		buch.Von.Format(dateFormatDE), buch.Bis.Format(dateFormatDE))))
-	p.SetTextColor(0, 0, 0)
-	p.Ln(12)
 }
 
 // abgangsbuchAbschnitt zeichnet einen Topf und liefert die Zahl seiner Zeilen.

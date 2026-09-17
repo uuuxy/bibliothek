@@ -58,12 +58,13 @@ damit erledigt:**
   Für ein Buch der Bücherei steht dort, dass die Bankverbindung des Schulträgers fehlt: Wohin
   dieses Geld gehen soll, ist eine Frage an den Träger (8.3), und ein Brief darf sich das nicht
   ausdenken. Trägt eine Rechnung beides, stehen beide Wege mit ihrer eigenen Summe da.
-- **Das Abgangsbuch gibt es** (Punkt 1, halb). Im Medienkatalog steht ein neuer Reiter: Welche
-  Bücher sind in diesem Halbjahr aus dem Bestand gegangen, warum, und wann — getrennt nach
-  Land und Schulträger, mit einem Blatt zum Ausdrucken und Abheften. **Wichtig:** Bücher, die
-  VOR heute ausgesondert wurden, haben kein Abgangsdatum; ihre Zahl steht unter dem Blatt.
-  Nachträglich ein Datum zu erfinden wäre schlimmer als die ehrliche Lücke. Das Zugangsbuch
-  (die Gegenrichtung) fehlt weiterhin.
+- **Zugangs- und Abgangsbuch gibt es** (Punkt 1). Im Medienkatalog stehen zwei neue Reiter:
+  Welche Bücher sind in diesem Halbjahr in den Bestand gekommen (mit Lieferant) und welche
+  sind hinausgegangen (mit Grund) — getrennt nach Land und Schulträger, jedes mit einem Blatt
+  zum Ausdrucken und Abheften. **Zwei Dinge sagen die Blätter ausdrücklich:** Bücher, die VOR
+  heute ausgesondert wurden, haben kein Abgangsdatum (ihre Zahl steht unter der Liste), und
+  Bücher ohne hinterlegte Bestellung stehen unter „ohne Zuordnung", weil nicht belegt ist, aus
+  welchem Geld sie bezahlt wurden. Etwas zu erfinden wäre schlimmer als die ehrliche Lücke.
 
 **Dafür muss beim nächsten Aufspielen die Datenbank erweitert werden** (Migration 128, eine
 neue Spalte am Exemplar). Das passiert beim Start von allein; Daten gehen dabei keine verloren,
@@ -1588,10 +1589,29 @@ Gates: `api/abgangsbuch_pg_test.go` (Ränder des Halbjahres, Topf-Trennung, Zur�
 Blatt aus dem Inhaltsstrom), `frontend/e2e/abgangsbuch.spec.js` (am Draht, am Rückbau der
 Topf-Trennung rot gesehen), `pkg/schulzeit/halbjahr_test.go`.
 
-**Offen bleibt das Zugangsbuch:** aus den Daten ableitbar
-([mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1: „je Schulhalbjahr ein Ausdruck der
-Neuanschaffungen"), steht dort aber unter „Später, kein Teil dieses Pakets". Der Reiter im
-Medienkatalog hat Platz dafür.
+**Das Zugangsbuch ist gebaut (17.09.2026, abends).** Zweiter Reiter neben dem Abgangsbuch,
+gleicher Aufbau, gleiches Bauteil — Zeitraum, Abschnitte je Topf, Blatt zum Abheften. Die
+Spalten sind die der Arbeitshilfe: Eingangsdatum, Nummer, Titel, Lieferant. Keine Migration
+nötig: `erworben_am` trägt das Zugangsdatum, bei Littera-Altbestand das echte aus der
+Altanwendung.
+
+Zwei Entscheidungen stecken darin:
+
+- **Der Topf kommt aus der BESTELLUNG, nicht aus dem Titel.** Beim Zugang geht es darum, aus
+  welchem Geld ein Buch bezahlt wurde, und das steht an der Bestellung (Migration 109, „eine
+  Bestellung = ein Topf"); der Titel ist dort nur ein Vorschlag und darf im Warenkorb
+  umgehängt werden. Exemplare ohne hinterlegte Bestellung stehen deshalb unter „ohne
+  Zuordnung" — geraten wird nichts —, und Blatt wie Bildschirm sagen dazu, was das heißt:
+  Altbestand, Handanlage oder Bestandskorrektur, Zugangsdatum ist der Tag der Anlage.
+- **Ein später ausgesondertes Exemplar bleibt im Zugangsbuch.** Es ist trotzdem zugegangen;
+  sein Abgang steht im Abgangsbuch. Sonst änderte sich rückwirkend eine Zahl, die jemand
+  unterschrieben hat.
+
+Gates: `api/zugangsbuch_pg_test.go` (Ränder des Halbjahres, Topf aus der Bestellung, „ohne
+Zuordnung", Blatt aus dem Inhaltsstrom), `frontend/e2e/zugangsbuch.spec.js`. Am Rückbau
+(Topf aus `ist_lernmittel` statt aus der Bestellung) rot gesehen.
+
+**Damit ist Punkt 1 des Protokolls am Zugangs- und Abgangsbuch abgearbeitet.**
 
 **9.3 e) Mahnwesen entspricht nicht den Vorgaben.** Aufgeschlüsselt gegen die Anforderungsliste:
 

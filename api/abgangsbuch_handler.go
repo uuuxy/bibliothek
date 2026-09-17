@@ -1,14 +1,12 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
-	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -19,34 +17,6 @@ import (
 // Oberfläche ihn selbst vorbelegen, gäbe es zwei Auslegungen von „laufendes Halbjahr" —
 // und der Ausdruck deckte am Ende einen anderen Zeitraum ab als die Liste, aus der er
 // entstand.
-
-// abgangsbuchZeitraum liest von/bis aus der Anfrage; fehlt eines, gilt das laufende
-// Schulhalbjahr (Stichtage 15.3./15.9., siehe schulzeit.Halbjahr).
-func abgangsbuchZeitraum(r *http.Request) (von, bis time.Time, err error) {
-	von, bis = schulzeit.Halbjahr(schulzeit.Jetzt())
-	lies := func(schluessel string, ziel *time.Time) error {
-		roh := r.URL.Query().Get(schluessel)
-		if roh == "" {
-			return nil
-		}
-		t, fehler := time.ParseInLocation(dateFormatISO, roh, schulzeit.Zone())
-		if fehler != nil {
-			return fmt.Errorf("%s muss ein Datum sein (JJJJ-MM-TT)", schluessel)
-		}
-		*ziel = t
-		return nil
-	}
-	if err = lies("von", &von); err != nil {
-		return von, bis, err
-	}
-	if err = lies("bis", &bis); err != nil {
-		return von, bis, err
-	}
-	if bis.Before(von) {
-		return von, bis, errors.New("das Ende des Zeitraums liegt vor seinem Anfang")
-	}
-	return von, bis, nil
-}
 
 // AbgangsbuchAntwort ist das Abgangsbuch, wie Bildschirm und Blatt es lesen: fertig in
 // Abschnitte geteilt, mit den Überschriften des Servers. Die Oberfläche gruppiert NICHT
@@ -73,7 +43,7 @@ func abgangsbuchAntwort(buch repository.Abgangsbuch) AbgangsbuchAntwort {
 // GET /api/bestand/abgangsbuch?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (s *Server) AbgangsbuchHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		von, bis, err := abgangsbuchZeitraum(r)
+		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), err)
 		}
@@ -90,7 +60,7 @@ func (s *Server) AbgangsbuchHandler() http.HandlerFunc {
 // GET /api/bestand/abgangsbuch/pdf?von=JJJJ-MM-TT&bis=JJJJ-MM-TT
 func (s *Server) AbgangsbuchPDFHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		von, bis, err := abgangsbuchZeitraum(r)
+		von, bis, err := bestandsbuchZeitraum(r)
 		if err != nil {
 			return apierrors.BadRequest(err.Error(), err)
 		}

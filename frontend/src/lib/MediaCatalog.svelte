@@ -4,12 +4,13 @@
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import GeraeteVerwaltung from './components/GeraeteVerwaltung.svelte';
-	import Abgangsbuch from './components/bestand/Abgangsbuch.svelte';
+	import Bestandsbuch from './components/bestand/Bestandsbuch.svelte';
 
-	// Das Abgangsbuch steht HIER und nicht im Druck-Center: Es ist ein Bestandsnachweis,
-	// kein Etikettendruck — und der Bestand ist dieser Bildschirm. Nebenan ist Platz für
-	// das Zugangsbuch, wenn es kommt (docs/OFFEN.md 9.3 d).
-	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete" | "abgangsbuch"
+	// Zugangs- und Abgangsbuch stehen HIER und nicht im Druck-Center: Sie sind
+	// Bestandsnachweise, kein Etikettendruck — und der Bestand ist dieser Bildschirm
+	// (docs/OFFEN.md 9.3 d). Sie stehen nebeneinander, weil sie zusammengehören: was kam,
+	// was ging.
+	let activeView = $state('catalog'); // "catalog" | "admin" | "geraete" | "zugangsbuch" | "abgangsbuch"
 
 	$effect(() => {
 		if (appState.requestAdminView) {
@@ -79,6 +80,20 @@
 			{/if}
 		</button>
 		<button
+			onclick={() => (activeView = 'zugangsbuch')}
+			class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {activeView ===
+			'zugangsbuch'
+				? 'text-primary'
+				: 'text-on-surface-variant hover:text-on-surface'}"
+			role="tab"
+			aria-selected={activeView === 'zugangsbuch'}
+		>
+			Zugangsbuch
+			{#if activeView === 'zugangsbuch'}
+				<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"></span>
+			{/if}
+		</button>
+		<button
 			onclick={() => (activeView = 'abgangsbuch')}
 			class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {activeView ===
 			'abgangsbuch'
@@ -102,8 +117,31 @@
 			<InventurAdmin />
 		{:else if activeView === 'geraete'}
 			<GeraeteVerwaltung />
+		{:else if activeView === 'zugangsbuch'}
+			<Bestandsbuch
+				pfad="zugangsbuch"
+				buchname="Zugangsbuch"
+				wortSingular="Zugang"
+				spalten={[
+					{ kopf: 'Zugang', feld: 'datum', klasse: 'whitespace-nowrap' },
+					{ kopf: 'Nummer', feld: 'barcode', klasse: 'whitespace-nowrap font-mono' },
+					{ kopf: 'Titel', feld: 'titel' },
+					{ kopf: 'Lieferant', feld: 'lieferant', klasse: 'whitespace-nowrap' }
+				]}
+			/>
 		{:else if activeView === 'abgangsbuch'}
-			<Abgangsbuch />
+			<Bestandsbuch
+				pfad="abgangsbuch"
+				buchname="Abgangsbuch"
+				wortSingular="Abgang"
+				spalten={[
+					{ kopf: 'Abgang', feld: 'datum', klasse: 'whitespace-nowrap' },
+					{ kopf: 'Nummer', feld: 'barcode', klasse: 'whitespace-nowrap font-mono' },
+					{ kopf: 'Titel', feld: 'titel' },
+					{ kopf: 'Signatur', feld: 'signatur', klasse: 'whitespace-nowrap' },
+					{ kopf: 'Grund', feld: 'grund_text', klasse: 'whitespace-nowrap' }
+				]}
+			/>
 		{/if}
 	</div>
 </PageShell>

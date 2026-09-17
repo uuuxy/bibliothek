@@ -340,6 +340,8 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		// auftauchen. Zeitraum weit genug, dass die Aussonderung der Kanarienwelt hineinfällt.
 		"GET /api/bestand/abgangsbuch":               {URL: "/api/bestand/abgangsbuch?von=2000-01-01&bis=2099-12-31"},
 		"GET /api/bestand/abgangsbuch/pdf":           {URL: "/api/bestand/abgangsbuch/pdf?von=2000-01-01&bis=2099-12-31"},
+		"GET /api/bestand/zugangsbuch":               {URL: "/api/bestand/zugangsbuch?von=2000-01-01&bis=2099-12-31"},
+		"GET /api/bestand/zugangsbuch/pdf":           {URL: "/api/bestand/zugangsbuch/pdf?von=2000-01-01&bis=2099-12-31"},
 		"GET /api/exemplare/etiketten-offen":         {URL: "/api/exemplare/etiketten-offen"},
 		"GET /api/exemplare/etiketten-offen/anzahl":  {URL: "/api/exemplare/etiketten-offen/anzahl"},
 		"GET /api/vormerkungen":                      {URL: "/api/vormerkungen?titel_id=" + w.titelID, Positiv: []string{"Pruefkanari"}},

@@ -49,6 +49,8 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Blick auf den Bestand — es ist ein Nachweis, der nichts ändert.
 	mux.Handle("GET /api/bestand/abgangsbuch", s.RequirePermission("view_books")(s.AbgangsbuchHandler()))
 	mux.Handle("GET /api/bestand/abgangsbuch/pdf", s.RequirePermission("view_books")(s.AbgangsbuchPDFHandler()))
+	mux.Handle("GET /api/bestand/zugangsbuch", s.RequirePermission("view_books")(s.ZugangsbuchHandler()))
+	mux.Handle("GET /api/bestand/zugangsbuch/pdf", s.RequirePermission("view_books")(s.ZugangsbuchPDFHandler()))
 
 	mux.Handle("DELETE /api/buecher/exemplare/{id}", s.RequirePermission("delete_books")(s.DeleteCopyHandler(auditRepo)))
 
