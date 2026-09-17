@@ -13,7 +13,7 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ---
 
-## Was jetzt dran ist — in einfachen Worten (Stand 17.09.2026)
+## Was jetzt dran ist
 
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
