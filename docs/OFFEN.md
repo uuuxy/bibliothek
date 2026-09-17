@@ -18,17 +18,16 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Mehr als diesen Block muss niemand lesen, um zu wissen, was als Nächstes kommt. Alles darunter
 ist die ausführliche Fassung mit Begründungen; sie ändert nichts an dieser Reihenfolge.
 
-**Neu am 17.09.2026: Das Medienzentrum hat das Programm gesichtet.** Ein Protokoll vom
-16.09.2026 listet zwölf Punkte und schließt mit: Sind sie abgestellt, wäre das Programm für
-Schulen nutzbar. Das ist damit das Gate, an dem alles andere hängt — es steht vollständig in
-**Abschnitt 9**, jeder Punkt am Code nachgeprüft.
+**Zwölf Punkte aus der Sichtung vom 16.09.2026** gehen allem anderen vor. Sind sie
+abgestellt, ist das Programm für Schulen nutzbar. Sie stehen vollständig in **Abschnitt 9**,
+jeder am Code nachgeprüft.
 
 Zwei davon waren schon gelöst (der Scanner ging weder per Handgerät noch per Kamera — das war
 gestern Abend und heute früh die ganze Arbeit; und Littera-Barcodes kann das Programm lesen).
 Zwei sind neu und wiegen schwer: Erstens sind **alle Ausweise und Etiketten, die vor heute
-gedruckt wurden, weiterhin unlesbar** — der Strichcode trug eine Ziffer zu viel. Zweitens
-verlangt das Medienzentrum **Bücher, die über mehrere Jahre bei einem Kind bleiben** — genau
-das, was wir vorgestern zu streichen beschlossen hatten. Diese Entscheidung ist gestoppt.
+gedruckt wurden, weiterhin unlesbar** — der Strichcode trug eine Ziffer zu viel. Zweitens sind
+**Bücher gefordert, die über mehrere Jahre bei einem Kind bleiben** — genau das, was wir
+vorgestern zu streichen beschlossen hatten. Diese Entscheidung ist gestoppt.
 
 **Vier Fragen dazu stehen in 9.7** und halten den Rest auf.
 
@@ -117,8 +116,7 @@ sich nur an der echten Datenbank sehen.
 
 **Was DU tun kannst — der Reihe nach:**
 
-1. **Die Antwort ans Medienzentrum abschicken.** Das Schreiben ist fertig (bei Peter,
-   17.09.2026). Daran hängen zwei gestoppte Entscheidungen: die Sperre bei offener Forderung
+1. **Das Antwortschreiben abschicken.** Es ist fertig (17.09.2026). Daran hängen zwei gestoppte Entscheidungen: die Sperre bei offener Forderung
    (9.3 c) und die Mehrjahresbände (9.6, hält 4.3 auf). Solange die Antwort aussteht, wird an
    beiden Stellen nichts gebaut.
 2. **Sieben Fragen beantworten** (Abschnitt 4: 4.7 bis 4.11, 4.13, 4.14). Sie sind der Rest der
@@ -656,7 +654,7 @@ Die Nummern bleiben fest. Beantwortete Fragen wandern in den Punkt, der sie umse
 
 ### 4.3 `ziel_jahrgang`: bauen oder streichen
 
-> **Gestoppt am 17.09.2026 (siehe 9.6).** Das Medienzentrum verlangt ausdrücklich
+> **Gestoppt am 17.09.2026 (siehe 9.6).** Die Sichtung verlangt ausdrücklich
 > Mehrjahresbände. Bis die Frage neu entschieden ist, wird `ziel_jahrgang` nicht angefasst und
 > die Messung unten nicht gefahren.
 
@@ -698,7 +696,7 @@ keine offene Frage mehr.**
 
 **Keine Komfortfrage mehr (17.09.2026, siehe 9.3 b).** Die Arbeitshilfe verlangt ab dem zweiten
 Verleihjahr den Neupreis zum Zeitpunkt des Verlusts, die Anforderungsliste Nr. 3 beide Preise
-wählbar. Das Feld gehört damit zum Abnahme-Gate des Medienzentrums.
+wählbar. Das Feld gehört damit zum Abnahme-Gate der Sichtung.
 
 Für die Staffel ab dem 2. Verleihjahr. Der Bescheid-Handler übergibt heute als Neupreis 0
 (`api/bescheid_handler.go`); die Staffel nimmt dann ersatzweise den Kaufpreis, der Dialog zeigt
@@ -822,15 +820,6 @@ Ein Grep schließt Aufrufer außerhalb des Repos nicht aus.
 
 `POST /api/buecher/exemplare/{id}/defekt` ist am 16.09.2026 gestrichen — sie war zur Hälfte kaputt
 (Zweig ohne Schüler in eine Spalte, die Migration 125 entfernt hat), nicht bloß ungenutzt.
-
-### 4.17 Echte Schülerdaten auf dem Hetzner-Server?
-
-[datenschutz_offene_punkte.md](datenschutz_offene_punkte.md) nimmt an, der Hetzner-Server trage
-nie echte Schülerdaten; er ist aber die einzige laufende Instanz. Ob echte LUSD-Schülerdaten dort
-liegen, ist nicht gemessen. **Nächster Schritt:** Messung (7.8), dann Doku oder Datenlage
-angleichen. Bezug: 8.5 (B5, B6).
-
----
 
 ### 4.18 Neue Auflage eines Schulbuchs — ein Werk über den Auflagen
 
@@ -996,7 +985,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Scannen fehlt im Medienkatalog und bei den Bestellungen: ein Suchfeld gibt es dort, aber keine
   Möglichkeit, einen Barcode mit dem Handgerät oder der Kamera einzulesen. Die Kamera-Erkennung
   hängt heute allein an der Theke (`Omnibox.svelte` mit `CameraScanner.svelte`); `MediaCatalog.svelte`
-  und der Bestellbereich haben nur ein getipptes Feld. Peter am 17.09.2026 angemerkt — noch nicht
+  und der Bestellbereich haben nur ein getipptes Feld. Am 17.09.2026 angemerkt — noch nicht
   entschieden, ob beide Wege (Handgerät und Kamera) an beide Stellen gehören.
 - Der Stift der Katalog-Kachel: `BuchKarte.svelte` sagt „öffnet die Akte",
   `e2e/cover-aendern.spec.js` sagt „öffnet die Titel-Verwaltung". Im Browser messen, einen
@@ -1450,7 +1439,7 @@ erreicht.
 - Zwei Normalformen für Namen (`repository.Suchnorm`, `normName` in `api/lusd_paarung.go`); beim
   Anfassen der Paarung zusammenführen.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
-- Jules-Erbe: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
+- Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
 - Klone: Go 9 Gruppen (05.09.2026), Frontend 0,41 %.
 - 52 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/`; der Bestand ist seit dem
   07.08.2026 eingefroren (`handlerMitSQL` in `api/schichtung_test.go`). Umstellen beim fachlichen
@@ -1545,7 +1534,6 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
-- Messung zu 4.17: Liegen echte Schülerdaten auf dem Server?
 
 ## 8. Schule, Schulamt, Schulträger
 
@@ -1593,9 +1581,9 @@ Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
 
 ---
 
-## 9. Sichtung des Medienzentrums (16.09.2026)
+## 9. Sichtung vom 16.09.2026
 
-Protokoll vom 16.09.2026, 09:00–11:00 Uhr (Teilnehmende CN, SW, HMP; Protokoll HMP). Die
+Protokoll vom 16.09.2026, 09:00–11:00 Uhr. Die
 Einschätzung schließt mit: „Wenn o.g. Mängel abgestellt sind, wäre das Programm nach aktueller
 Einschätzung für Schulen nutzbar." Zwei weitere Sätze stehen daneben und sind keine Mängel,
 sondern Bedingungen — Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept, „dies
@@ -1625,8 +1613,8 @@ Zwei Quellen liegen dem zugrunde und sind am 17.09.2026 erstmals im Original gel
 ### 9.2 Alte Ausdrucke — GELÖST am 17.09.2026
 
 Jeder Ausweis und jedes Etikett von VOR dem 17.09.2026 trägt Code 39 mit Prüfzeichen; das
-Lesegerät liefert „B-100016", und die Nummer gibt es in keiner Tabelle. Entschieden (Peter,
-17.09.2026): Alte Barcodes sollen weiter funktionieren — das war von Anfang an gefordert.
+Lesegerät liefert „B-100016", und die Nummer gibt es in keiner Tabelle. Entschieden am
+17.09.2026: Alte Barcodes sollen weiter funktionieren — das war von Anfang an gefordert.
 
 Gebaut: Findet ein Scan nichts, wird er ein zweites Mal ohne Mod-43-Prüfzeichen nachgeschlagen
 (`pkg/code39`, in `ProcessQuery` an EINER Stelle, offline in `scanEinordnen.js`). Nur als
@@ -1666,8 +1654,8 @@ Geräte-Pfad (`pruefeGeraetAutomatikSperren`). Übergehbar ist es nur von Hand m
 der Grundzustand ist die Sperre. Woher diese Regel stammt, ist nicht belegt: In der
 Arbeitshilfe zum Erlass vom 17.12.2014 und in der Anforderungsliste „Mahnverfahren" steht
 zur Sperre nichts (beide am 17.09.2026 im Original gelesen). Die Zeile im Konzept, die sie
-als fremde Praxis auswies, war unbelegt und ist entfernt. **Frage geht an das
-Medienzentrum, siehe 9.7.**
+als fremde Praxis auswies, war unbelegt und ist entfernt. **Die Frage ist gestellt,
+siehe 9.7.**
 
 **9.3 d) Zugangs- und Abgangsbuch.** `erworben_am` trägt das echte Littera-Zugangsdatum,
 `aussonderung_grund` trennt VERLUST / AUSSORTIERT / BESTANDSKORREKTUR.
@@ -1838,15 +1826,15 @@ die es dafür schon gibt. **Die Entscheidung gehört zurück auf den Tisch, bevo
 
 ### 9.7 Stand der Fragen
 
-1. **Sperre bei offener Forderung** (9.3 c): Die Frage geht ans Medienzentrum (Text am
+1. **Sperre bei offener Forderung** (9.3 c): Die Frage ist gestellt (Text am
    17.09.2026 formuliert): Gilt das Verbot nur für Lernmittel oder für jede Ausleihe, worauf
    stützt es sich, und zählt eine übergehbare Abweisung schon als „Sperrung"? Bis zur Antwort
    bleibt es, wie es ist.
-2. **Abwertung und Beschädigungsgrad** — **entschieden am 17.09.2026: so wie das Medienzentrum
+2. **Abwertung und Beschädigungsgrad** — **entschieden am 17.09.2026: so wie die Sichtung
    es sagt.** Umsetzung und der Konflikt, der darin steckt: 9.8.
-3. **Mehrjahresbände** (9.6): Was das Medienzentrum wörtlich sagt, ist nur der eine Satz „Bei
+3. **Mehrjahresbände** (9.6): Was das Protokoll wörtlich sagt, ist nur der eine Satz „Bei
    den Ausleihfristen fehlt das Jahr. Mehrjahresbände lassen sich nicht abbilden." Mehr steht
-   nicht im Protokoll. Die Deutung geht mit an das Medienzentrum (Frage 2 des Schreibens).
+   nicht im Protokoll. Die Deutung geht mit dem Schreiben zurück (Frage 2).
    **4.3 bleibt bis dahin gestoppt.**
 4. **Alte Strichcodes** — **entschieden am 17.09.2026: sie sollen weiter funktionieren, das war
    von Anfang an gefordert.** Gebaut, siehe 9.2.
@@ -1897,7 +1885,7 @@ Nr. 2 ist dagegen ohne Konflikt: Die Arbeitshilfe stellt den Betrag ausdrücklic
 der Schule „je nach Zustand des Lehrwerks, Ausleihhäufigkeit etc." — ein erfasster
 Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
 
-**Stand am 17.09.2026 (Peter hat die volle Umsetzung freigegeben):**
+**Stand am 17.09.2026 (die volle Umsetzung ist freigegeben):**
 
 - **Stufe 1 GEBAUT** (Migration 127). `buecher_titel.listenpreis` (nullbar) und
   `buecher_exemplare.zustand_abwertung_prozent` (NOT NULL, 0–100). Der Listenpreis hängt an
@@ -1954,12 +1942,12 @@ Anforderungsliste zur Abwertung sind abgearbeitet, und die drei offenen Fragen s
 **Die drei Fragen von heute — entschieden am 17.09.2026:**
 
 1. **Wertverlust an der Theke eintragen? NEIN.** Die Theke ist ein Scanfeld, kein Formular
-   (Peter hat zugestimmt). Der Weg bleibt: Buch an der Theke zurücknehmen, danach in der
+   (zugestimmt). Der Weg bleibt: Buch an der Theke zurücknehmen, danach in der
    Buchakte den Wertverlust eintragen.
 2. **Zählt der Zustandsabschlag auch für die Schülerbücherei? JA — gebaut.** Zur Bücherei sagt
    weder der Erlass vom 17.12.2014 noch die Arbeitshilfe ein Wort; beide sprechen ausschließlich
    von Lehrwerken der Lernmittelfreiheit (am 17.09.2026 in der Arbeitshilfe nachgesehen). Was
-   dort gilt, ist die Benutzungsordnung. Die Anforderungsliste des Medienzentrums nennt unter
+   dort gilt, ist die Benutzungsordnung. Die Anforderungsliste nennt unter
    Nr. 2 „Medien" und nicht „Lernmittel" — also zählt der Abschlag dort auch. Der ALTERSabschlag
    bleibt auf Lernmittel beschränkt.
 3. **Neuwert für die Bücherei = Listenpreis. GEBAUT.** Die Benutzungsordnung verlangt „Geld in

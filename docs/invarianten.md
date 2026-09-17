@@ -280,7 +280,7 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.
 
-## Daniels Raster — die dreizehn Fragen, und ihre Frontend-Lesart
+## Das Raster — die dreizehn Fragen, und ihre Frontend-Lesart
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
 Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration,

@@ -16,7 +16,7 @@ import (
 //
 // Anlass (29.08.2026): GetBookByID nannte JEDEN Fehler „buch nicht gefunden" — ein
 // Scan-Fehler (NULL in string, Schema-Drift) wäre als 404 verkleidet gewesen, und ein
-// Jules-PR (#529) wollte genau das per Test festschreiben. Dieselbe Form stand in
+// Ein zugelieferter PR (#529) wollte genau das per Test festschreiben. Dieselbe Form stand in
 // CreateKlassensatzReservierung: `if err != nil || !exists { 404 }`. Die Klasse:
 // Eine Bedingung, die einen ECHTEN Fehler (err != nil) und einen fachlichen
 // Nicht-Treffer in dieselbe harmlose Antwort (404/401/403) presst. Die Diagnose
