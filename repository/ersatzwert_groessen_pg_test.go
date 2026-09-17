@@ -124,7 +124,7 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 			t.Fatalf("SchuljahreImBestand = %d, want 4", g.SchuljahreImBestand)
 		}
 		v := ersatzwert.Rechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
-			g.Kaufpreis, 0)
+			g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag)
 		if v.Prozent != 20 {
 			t.Errorf("Prozent = %d, want 20 — fünftes Verleihjahr", v.Prozent)
 		}
@@ -148,7 +148,7 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 				g.SchuljahreMitAusleihe)
 		}
 		v := ersatzwert.Rechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
-			g.Kaufpreis, 0)
+			g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag)
 		if v.Betrag != 40.00 {
 			t.Errorf("Betrag = %.2f, want 40.00 (voller Kaufpreis im ersten Verleihjahr)", v.Betrag)
 		}

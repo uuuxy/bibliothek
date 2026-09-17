@@ -85,10 +85,10 @@ func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen) ErsatzwertVorschlag
 		return buechereiVorschlag(g.Kaufpreis)
 	}
 
-	// Neupreis 0: Das System führt heute keinen Listenpreis (OFFEN.md 4.5 / 9.3 b). Die
-	// Staffel nimmt dann ersatzweise den Kaufpreis und sagt das in der Herleitung.
+	// Seit Migration 127 mit echtem Listenpreis und dem Zustand des Exemplars. Ist kein
+	// Listenpreis erfasst (0), weicht die Staffel auf den Kaufpreis aus und sagt das.
 	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand),
-		g.Kaufpreis, 0)
+		g.Kaufpreis, g.Listenpreis, g.ZustandAbschlag)
 	return ErsatzwertVorschlag{
 		Betrag:        v.Betrag,
 		Herleitung:    bescheidHerleitung(v),

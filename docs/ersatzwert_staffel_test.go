@@ -65,7 +65,7 @@ func TestStaffelImKonzeptStimmtMitDerRechnung(t *testing.T) {
 		// Wahl zwischen Kauf- und Neupreis (dafür gibt es ersatzwert_test.go).
 		pruefe := func(j int) {
 			t.Helper()
-			ist := ersatzwert.Rechne(j, 100, 100).Prozent
+			ist := ersatzwert.Rechne(j, 100, 100, 0).Prozent
 			if ist != erwartet {
 				t.Errorf("mittel_konzept.md schreibt %s→%d %%, ersatzwert.Rechne rechnet für "+
 					"das %d. Verleihjahr %d %% — eine der beiden Stellen ist falsch, und die "+

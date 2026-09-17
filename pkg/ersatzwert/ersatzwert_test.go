@@ -36,7 +36,7 @@ func TestStaffelNachArbeitshilfe(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := Rechne(f.verleihjahr, f.kaufpreis, f.neupreis)
+			got := Rechne(f.verleihjahr, f.kaufpreis, f.neupreis, 0)
 			if got.Betrag != f.wantBetrag {
 				t.Errorf("Betrag = %.2f, want %.2f", got.Betrag, f.wantBetrag)
 			}
@@ -53,10 +53,10 @@ func TestStaffelNachArbeitshilfe(t *testing.T) {
 // Kaufmännisch auf Cent: In einem Bescheid darf kein Betrag mit vier Nachkommastellen
 // stehen, und 33,33 € muss 33,33 € bleiben.
 func TestBetragAufCentGerundet(t *testing.T) {
-	if got := Rechne(3, 0, 55.55).Betrag; got != 33.33 {
+	if got := Rechne(3, 0, 55.55, 0).Betrag; got != 33.33 {
 		t.Errorf("60 %% von 55,55 = %.4f, want 33.33", got)
 	}
-	if got := Rechne(2, 0, 12.345).Betrag; got != 9.88 {
+	if got := Rechne(2, 0, 12.345, 0).Betrag; got != 9.88 {
 		t.Errorf("80 %% von 12,345 = %.4f, want 9.88", got)
 	}
 }

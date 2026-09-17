@@ -22,13 +22,17 @@ import (
 // UeberfaelligeAusleihe ist ein überfälliges Buch eines Kindes, das noch keine Forderung
 // trägt — ein Kandidat für den Brief.
 type UeberfaelligeAusleihe struct {
-	AusleiheID    string
-	ExemplarID    string
-	Titel         string
-	ISBN          string
-	Kaufpreis     float64
-	IstLernmittel bool
-	FaelligSeit   time.Time
+	AusleiheID string
+	ExemplarID string
+	Titel      string
+	ISBN       string
+	Kaufpreis  float64
+	// Listenpreis und ZustandAbschlag seit Migration 127 — dieselben Größen wie in
+	// OffeneForderung, damit beide Wege denselben Betrag vorschlagen.
+	Listenpreis     float64
+	ZustandAbschlag int
+	IstLernmittel   bool
+	FaelligSeit     time.Time
 	// Dieselben beiden Größen wie bei OffeneForderung, für die Staffel.
 	SchuljahreMitAusleihe int
 	SchuljahreImBestand   int
@@ -64,6 +68,7 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 	jetzt := schulzeit.Jetzt()
 	rows, err := r.db.Query(ctx, `
 		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
+		       coalesce(t.listenpreis, 0)::float8, coalesce(e.zustand_abwertung_prozent, 0),
 		       coalesce(t.ist_lernmittel, false), a.rueckgabe_frist, e.erworben_am
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
@@ -91,6 +96,7 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 		var a UeberfaelligeAusleihe
 		var erworben *time.Time
 		if err := rows.Scan(&a.AusleiheID, &a.ExemplarID, &a.Titel, &a.ISBN, &a.Kaufpreis,
+			&a.Listenpreis, &a.ZustandAbschlag,
 			&a.IstLernmittel, &a.FaelligSeit, &erworben); err != nil {
 			return nil, err
 		}

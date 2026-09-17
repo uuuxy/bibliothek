@@ -28,6 +28,12 @@ import (
 type ErsatzwertGroessen struct {
 	// Kaufpreis ist der Einkaufspreis des Exemplars; 0, wenn keiner erfasst ist.
 	Kaufpreis float64
+	// Listenpreis ist, was ein Ersatz HEUTE kostet (Migration 127) — der „Neupreis zum
+	// Zeitpunkt des Verlusts" der Arbeitshilfe. 0 heißt „nicht erfasst"; die Staffel
+	// weicht dann auf den Kaufpreis aus und sagt das in der Herleitung.
+	Listenpreis float64
+	// ZustandAbschlag ist der Prozentsatz für den Zustand DIESES Exemplars (0–100).
+	ZustandAbschlag int
 	// Die beiden Größen für das Verleihjahr, beide in SCHULJAHREN — dieselbe Bedeutung
 	// wie in OffeneForderung, weil ersatzwert.Verleihjahr das Maximum von beiden nimmt.
 	SchuljahreMitAusleihe int
@@ -48,13 +54,19 @@ func (r *pgBescheidRepository) GroessenFuerExemplar(ctx context.Context, exempla
 	var g ErsatzwertGroessen
 	var erworben *time.Time
 
+	// coalesce auf den Listenpreis: Die Spalte ist nullbar (NULL = nicht erfasst), und
+	// 0 bedeutet für die Staffel dasselbe — sie weicht dann auf den Kaufpreis aus. Ein
+	// Scan in float64 ohne coalesce wäre ein 500 beim ersten Titel ohne Preis.
 	err := r.db.QueryRow(ctx, `
 		SELECT coalesce(e.einkaufspreis, 0)::float8,
+		       coalesce(t.listenpreis, 0)::float8,
+		       e.zustand_abwertung_prozent,
 		       coalesce(t.ist_lernmittel, false),
 		       e.erworben_am
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE e.id = $1`, exemplarID).Scan(&g.Kaufpreis, &g.IstLernmittel, &erworben)
+		WHERE e.id = $1`, exemplarID).
+		Scan(&g.Kaufpreis, &g.Listenpreis, &g.ZustandAbschlag, &g.IstLernmittel, &erworben)
 	if err != nil {
 		return ErsatzwertGroessen{}, err
 	}

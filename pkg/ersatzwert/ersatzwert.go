@@ -47,6 +47,11 @@ type Vorschlag struct {
 	Basis       Basis
 	BasisPreis  float64
 	Verleihjahr int
+	// ZustandAbschlag ist der Prozentsatz, der für den Zustand DIESES Exemplars vom
+	// Zeitwert abgezogen wurde (0 = keiner). Er steht hier, damit die Herleitung ihn
+	// nennen kann: „60 % von 41,50 €, abzüglich 20 % für den Zustand" ist nachvollziehbar,
+	// eine Zahl ohne diesen Satz nicht.
+	ZustandAbschlag int
 }
 
 // Rechne liefert den Vorschlag für ein Exemplar.
@@ -55,7 +60,18 @@ type Vorschlag struct {
 // ersten Verleihjahr — eine 0 aus einer unvollständigen Historie darf nicht zu 0 € führen.
 // Fehlen beide Preise, ist der Betrag 0 und der Mensch trägt ihn selbst ein; ein geratener
 // Betrag wäre in einem Bescheid schlimmer als ein leeres Feld.
-func Rechne(verleihjahr int, kaufpreis, neupreis float64) Vorschlag {
+//
+// zustandAbschlag ist der Prozentsatz für den Zustand DIESES Exemplars (Migration 127,
+// Anforderungsliste Nr. 2: „20 % durch Wasserschaden"). Er wirkt NACH der Staffel, nicht
+// neben ihr: erst der Zeitwert des Werks, dann der Abzug für dieses eine Stück. Die
+// Reihenfolge ist die Lesart des Satzes „60 % von 41,50 €, davon 20 % ab für den
+// Wasserschaden" — andersherum käme dieselbe Zahl heraus, aber die Herleitung wäre nicht
+// mehr die, die ein Mensch im Bescheid nachrechnet.
+//
+// Werte außerhalb 0–100 werden gekappt statt abgelehnt: Die Spalte lässt sie ohnehin nicht
+// zu (chk_zustand_abwertung_bereich), und ein negativer Abschlag, der den Betrag ERHÖHT,
+// wäre in einer Forderung schlimmer als ein ignorierter Tippfehler.
+func Rechne(verleihjahr int, kaufpreis, neupreis float64, zustandAbschlag int) Vorschlag {
 	if verleihjahr < 1 {
 		verleihjahr = 1
 	}
@@ -63,14 +79,22 @@ func Rechne(verleihjahr int, kaufpreis, neupreis float64) Vorschlag {
 	if verleihjahr <= len(prozentstaffel) {
 		prozent = prozentstaffel[verleihjahr-1]
 	}
+	if zustandAbschlag < 0 {
+		zustandAbschlag = 0
+	}
+	if zustandAbschlag > 100 {
+		zustandAbschlag = 100
+	}
 
 	basis, preis := basisFuer(verleihjahr, kaufpreis, neupreis)
+	zeitwert := preis * float64(prozent) / 100
 	return Vorschlag{
-		Betrag:      rundeAufCent(preis * float64(prozent) / 100),
-		Prozent:     prozent,
-		Basis:       basis,
-		BasisPreis:  preis,
-		Verleihjahr: verleihjahr,
+		Betrag:          rundeAufCent(zeitwert * float64(100-zustandAbschlag) / 100),
+		Prozent:         prozent,
+		Basis:           basis,
+		BasisPreis:      preis,
+		Verleihjahr:     verleihjahr,
+		ZustandAbschlag: zustandAbschlag,
 	}
 }
 

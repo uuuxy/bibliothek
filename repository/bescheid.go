@@ -447,7 +447,12 @@ type OffeneForderung struct {
 	Titel          string
 	ISBN           string
 	Kaufpreis      float64
-	IstLernmittel  bool
+	// Listenpreis und ZustandAbschlag seit Migration 127: Die Arbeitshilfe rechnet ab
+	// dem zweiten Verleihjahr auf den Neupreis, und der Zustand dieses Exemplars zieht
+	// davon ab. 0 beim Listenpreis heißt „nicht erfasst".
+	Listenpreis     float64
+	ZustandAbschlag int
+	IstLernmittel   bool
 	// Die beiden Größen für das Verleihjahr, und beide zählen SCHULJAHRE: in wie vielen
 	// war das Exemplar ausgeliehen, und wie viele liegen seit seiner Beschaffung. Beide
 	// sind unvollständig (der Altbestand kam ohne Ausleihhistorie), deshalb rechnet
@@ -488,6 +493,8 @@ func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID
 	rows, err := r.db.Query(ctx, `
 		SELECT f.id, f.art, coalesce(t.titel, f.beschreibung), coalesce(t.isbn, ''),
 		       coalesce(e.einkaufspreis, 0)::float8,
+		       coalesce(t.listenpreis, 0)::float8,
+		       coalesce(e.zustand_abwertung_prozent, 0),
 		       coalesce(t.ist_lernmittel, false),
 		       f.exemplar_id, e.erworben_am
 		FROM schadensfaelle f
@@ -513,7 +520,7 @@ func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID
 		var exemplarID *string
 		var erworben *time.Time
 		if err := rows.Scan(&f.SchadensfallID, &f.Art, &f.Titel, &f.ISBN, &f.Kaufpreis,
-			&f.IstLernmittel, &exemplarID, &erworben); err != nil {
+			&f.Listenpreis, &f.ZustandAbschlag, &f.IstLernmittel, &exemplarID, &erworben); err != nil {
 			return nil, err
 		}
 		if erworben != nil {

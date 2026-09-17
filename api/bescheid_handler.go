@@ -160,11 +160,13 @@ func (s *Server) bescheidAngaben(ctx context.Context) (repository.BescheidAngabe
 
 // bescheidVorschlagAus rechnet den Staffel-Vorschlag für eine offene Forderung.
 //
-// Neupreis ist 0: Das System führt heute keinen Listenpreis (Entscheidung E4 im Konzept).
-// Die Herleitung sagt deshalb, dass ersatzweise mit dem Kaufpreis gerechnet wurde —
-// geraten wird nichts.
+// Seit Migration 127 mit echtem Listenpreis und dem Zustand des Exemplars: Die
+// Arbeitshilfe verlangt ab dem zweiten Verleihjahr den Neupreis zum Zeitpunkt des
+// Verlusts. Bis zum 17.09.2026 stand hier eine harte 0, und die Staffel wich immer auf
+// den Kaufpreis aus. Ist kein Listenpreis erfasst, tut sie das weiterhin — und sagt es.
 func bescheidVorschlagAus(f repository.OffeneForderung) BescheidVorschlagPosition {
-	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(f.SchuljahreMitAusleihe, f.SchuljahreImBestand), f.Kaufpreis, 0)
+	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(f.SchuljahreMitAusleihe, f.SchuljahreImBestand),
+		f.Kaufpreis, f.Listenpreis, f.ZustandAbschlag)
 	return BescheidVorschlagPosition{
 		SchadensfallID: f.SchadensfallID,
 		Art:            f.Art,
@@ -179,7 +181,8 @@ func bescheidVorschlagAus(f repository.OffeneForderung) BescheidVorschlagPositio
 // bescheidVorschlagAusAusleihe rechnet den Staffel-Vorschlag für ein überfälliges Buch —
 // dieselbe Rechnung wie für eine Forderung, das Buch trägt nur noch keine.
 func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe) BescheidVorschlagAusleihe {
-	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(a.SchuljahreMitAusleihe, a.SchuljahreImBestand), a.Kaufpreis, 0)
+	v := ersatzwert.Rechne(ersatzwert.Verleihjahr(a.SchuljahreMitAusleihe, a.SchuljahreImBestand),
+		a.Kaufpreis, a.Listenpreis, a.ZustandAbschlag)
 	return BescheidVorschlagAusleihe{
 		AusleiheID:    a.AusleiheID,
 		Titel:         a.Titel,
@@ -192,6 +195,10 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe) BescheidVo
 }
 
 // bescheidHerleitung formuliert, wie der Vorschlag zustande kommt.
+//
+// Der Satz ist kein Beiwerk: Er ist das, was eine Bibliothekskraft im Bescheid nachrechnen
+// kann. Eine Zahl ohne ihn ist für sie dasselbe wie die feste 15,00 €, die bis zum
+// 17.09.2026 im Melde-Dialog stand.
 func bescheidHerleitung(v ersatzwert.Vorschlag) string {
 	if v.BasisPreis <= 0 {
 		return "kein Preis hinterlegt — Betrag bitte eintragen"
@@ -199,14 +206,18 @@ func bescheidHerleitung(v ersatzwert.Vorschlag) string {
 	basis := "Kaufpreis"
 	switch v.Basis {
 	case ersatzwert.BasisNeupreis:
-		basis = "Neupreis"
+		basis = "Listenpreis"
 	case ersatzwert.BasisKaufpreisErsatzweise:
-		basis = "Kaufpreis (kein Neupreis hinterlegt)"
+		basis = "Kaufpreis (kein Listenpreis hinterlegt)"
 	case ersatzwert.BasisKaufpreis:
 		basis = "Kaufpreis"
 	}
-	return fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
+	satz := fmt.Sprintf("%d. Verleihjahr → %d %% von %s (%s)",
 		v.Verleihjahr, v.Prozent, euroBetrag(v.BasisPreis), basis)
+	if v.ZustandAbschlag > 0 {
+		satz += fmt.Sprintf(", abzüglich %d %% für den Zustand", v.ZustandAbschlag)
+	}
+	return satz
 }
 
 // BescheidErstellenHandler schreibt den Bescheid und liefert ihn zurück.
