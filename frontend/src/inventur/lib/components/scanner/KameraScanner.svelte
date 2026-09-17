@@ -16,6 +16,7 @@
 	let starting = false;
 	let lastDecoded = '';
 	let lastDecodeTime = 0;
+	let fehlerInFolge = 0;
 
 	// Cooldown: gleichen Code nicht doppelt innerhalb von 3 Sekunden melden
 	const DECODE_COOLDOWN_MS = 3000;
@@ -81,6 +82,7 @@
 
 			try {
 				const barcodes = await detector.detect(videoEl);
+				fehlerInFolge = 0;
 				if (barcodes && barcodes.length > 0) {
 					const code = barcodes[0].rawValue;
 					const now = Date.now();
@@ -92,8 +94,17 @@
 						onDecode(code);
 					}
 				}
-			} catch {
-				// Einzelne Frame-Fehler ignorieren, weiter scannen
+			} catch (fehler) {
+				// Ein einzelnes misslungenes Bild ist belanglos — aber wenn JEDES Bild
+				// scheitert, arbeitet die Erkennung gar nicht, und genau das sah bis zum
+				// 17.09.2026 aus wie „Kamera laeuft, findet nur nichts". Nach drei Bildern
+				// in Folge wird der Grund gemeldet; danach wird weiter gescannt, falls es
+				// sich um eine Eigenheit einzelner Bilder handelt.
+				fehlerInFolge += 1;
+				if (fehlerInFolge === 3) {
+					const text = fehler instanceof Error ? fehler.message : String(fehler);
+					onStatusChange(`Erkennung meldet: ${text}`);
+				}
 			}
 
 			// Nächsten Frame nach kurzer Pause analysieren (~15fps)

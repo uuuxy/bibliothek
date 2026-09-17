@@ -23,6 +23,27 @@ export const GELESENE_FORMATE = [
 	'upc_e'
 ];
 
+/**
+ * Unterscheidet „in diesem Bild ist kein Code" von „die Erkennung ist kaputt".
+ *
+ * Die Rückfall-Bibliothek meldet beides als Fehler; nur der Wortlaut trennt sie. Der
+ * Normalfall darf nicht gemeldet werden (er tritt bei jedem Bild ohne Code ein), der
+ * echte Fehler muss es.
+ *
+ * @param {unknown} fehler
+ * @returns {boolean}
+ */
+export function istNichtsGefunden(fehler) {
+	const text = String(
+		fehler instanceof Error ? fehler.message : typeof fehler === 'string' ? fehler : (fehler ?? '')
+	);
+	return (
+		text.includes('NotFound') ||
+		text.includes('able to detect') ||
+		text.includes('No MultiFormat Readers')
+	);
+}
+
 export async function createBarcodeDetector() {
 	if ('BarcodeDetector' in window) {
 		const BarcodeDetector = /** @type {any} */ (window).BarcodeDetector;
@@ -76,14 +97,21 @@ export async function createBarcodeDetector() {
 					if (context) context.drawImage(source, 0, 0, canvas.width, canvas.height);
 
 					const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+					if (!blob) throw new Error('Der Browser liefert kein Bild aus der Kamera (toBlob).');
 					const file = new File([blob], 'frame.jpg', { type: 'image/jpeg' });
 
 					try {
-						// Set showImage to false to avoid manipulating DOM unnecessarily
+						// showImage=false: kein Bild in den versteckten Knoten malen.
 						const result = await scanner.scanFileV2(file, false);
 						return [{ rawValue: result.decodedText }];
-					} catch {
-						return [];
+					} catch (fehler) {
+						// „Kein Code in diesem Bild" ist der Normalfall, zehnmal in der Sekunde —
+						// alles andere ist ein Grund, warum die Erkennung NICHT arbeitet, und der
+						// gehoert nach oben. Bis zum 17.09.2026 fiel beides in dasselbe leere
+						// catch: Ein Browser, der `File` nicht kennt oder kein Bild liefert, sah
+						// danach genauso aus wie eine Kamera, die nur nichts vor der Linse hat.
+						if (istNichtsGefunden(fehler)) return [];
+						throw fehler instanceof Error ? fehler : new Error(String(fehler));
 					}
 				}
 			}
