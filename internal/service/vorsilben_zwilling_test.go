@@ -124,13 +124,20 @@ func vorsilbenAusOmniboxSwitch(t *testing.T) map[string]string {
 		t.Fatalf("omnibox_service.go nicht lesbar: %v", err)
 	}
 	quelle := string(roh)
-	start := strings.Index(quelle, "func (s *defaultOmniboxService) ProcessQuery")
+	// Gelesen wird `verarbeite`, nicht ProcessQuery: Dort steht der Switch seit dem
+	// 17.09.2026: ProcessQuery ist seither die Hülle, die einem Aufdruck mit
+	// Code-39-Prüfzeichen eine zweite Chance gibt, und enthält selbst keine Vorsilbe mehr.
+	// Aufgefallen ist der Umzug genau hier — der Sanity-Floor am Ende dieser Funktion
+	// meldete „nichts gemessen (js=6, go=0)", statt still grün zu bleiben.
+	const switchFunktion = "func (s *defaultOmniboxService) verarbeite"
+	start := strings.Index(quelle, switchFunktion)
 	if start < 0 {
-		t.Fatal("ProcessQuery nicht gefunden — der Detektor misst nichts")
+		t.Fatalf("%s nicht gefunden — der Detektor misst nichts. Wurde die Funktion "+
+			"umbenannt, die den Vorsilben-Switch enthält?", switchFunktion)
 	}
 	ende := strings.Index(quelle[start:], "\n}\n")
 	if ende < 0 {
-		t.Fatal("Ende von ProcessQuery nicht gefunden")
+		t.Fatalf("Ende von %s nicht gefunden", switchFunktion)
 	}
 	rumpf := quelle[start : start+ende]
 

@@ -101,3 +101,45 @@ describe('Scan ohne Netz einordnen', () => {
 		expect(ein('   ')).toEqual({ art: 'unklar', nummer: '' });
 	});
 });
+
+// Ein Etikett von VOR dem 17.09.2026 (OFFEN.md 9.2). Damals druckte die Anwendung Code 39
+// MIT Prüfzeichen; das Lesegerät gibt es als Teil der Nummer zurück. Online löst der
+// Server das auf — ohne Netz muss die Theke dasselbe können, sonst gälte ein Buch offline
+// als unklar, das online gebucht wird.
+describe('Aufdruck mit Code-39-Prüfzeichen (Etiketten von früher)', () => {
+	// „58968" ist eine nackte Littera-Mediennummer aus dem Altbestand; ihr Prüfzeichen ist
+	// ein Bindestrich (code39.faelle.json).
+	const listeKennt58968 = (/** @type {string} */ n) => n === '58968';
+
+	it('findet das Buch über die gekürzte Nummer', () => {
+		expect(ordneScanEin('58968-', listeKennt58968)).toEqual({ art: 'buch', nummer: '58968' });
+	});
+
+	it('bucht unter der NUMMER, nicht unter dem Aufdruck', () => {
+		// Der Server kennt nur „58968". Käme hier der volle Scan zurück, scheiterte das
+		// Nachbuchen später — und zwar erst, wenn das Netz wieder da ist.
+		expect(ordneScanEin('58968-', listeKennt58968).nummer).not.toBe('58968-');
+	});
+
+	it('rät nicht, wenn die gekürzte Nummer nicht in der Liste steht', () => {
+		// Die Nachsicht darf nichts erfinden: Kennt die Liste die Nummer nicht, bleibt der
+		// Scan unklar — und die Theke sperrt die Zuordnung, statt auf ein fremdes Buch zu
+		// buchen.
+		expect(ordneScanEin('58968-', () => false).art).toBe('unklar');
+	});
+
+	it('lässt einen Scan OHNE Prüfzeichen unverändert', () => {
+		// Der Normalfall seit dem 17.09.2026: Code 128. Er wird roh gefunden, und die
+		// Nachsicht fasst ihn nie an.
+		expect(ordneScanEin('58968', listeKennt58968)).toEqual({ art: 'buch', nummer: '58968' });
+	});
+
+	it('greift erst NACH der Littera-Rückrechnung', () => {
+		// Ein gültiges Littera-Etikett muss über seinen eigenen Weg aufgelöst werden. Die
+		// Reihenfolge ist die Zusicherung: roh, Littera, dann erst das Prüfzeichen.
+		expect(ordneScanEin('5896800039556', (n) => n === '58968')).toEqual({
+			art: 'buch',
+			nummer: '58968'
+		});
+	});
+});

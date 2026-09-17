@@ -1,0 +1,53 @@
+{
+	"hinweis": "Gemeinsame Prüffälle für das Code-39-Prüfzeichen, das bis zum 17.09.2026 auf jedem Ausweis und Buchetikett stand. Gelesen von pkg/code39/zwilling_test.go (Server) und frontend/src/lib/code39Pruefzeichen.test.js (Theke ohne Netz). kern null heißt: kein abtrennbares Prüfzeichen, der Scan bleibt wie er ist.",
+	"faelle": [
+		{
+			"scan": "B-100016",
+			"kern": "B-10001",
+			"fall": "am echten Buchetikett gemessen (17.09.2026, zwei unabhängige Erkenner)"
+		},
+		{
+			"scan": "A-100037",
+			"kern": "A-10003",
+			"fall": "am echten Schülerausweis gemessen (17.09.2026)"
+		},
+		{
+			"scan": "S-10001N",
+			"kern": "S-10001",
+			"fall": "Ausweis-Vorsilbe von früher — am 17.09.2026 auf einem Bildschirmfoto gemeldet"
+		},
+		{ "scan": "L-42K", "kern": "L-42", "fall": "Lehrer-Vorsilbe aus dem Littera-Personenlauf" },
+		{ "scan": "LMF-77M", "kern": "LMF-77", "fall": "Lernmittel aus dem Littera-Bestand" },
+		{ "scan": "G-1A", "kern": "G-1", "fall": "Gerät" },
+		{
+			"scan": "58968-",
+			"kern": "58968",
+			"fall": "nackte Littera-Mediennummer — hier ist das Prüfzeichen ein BINDESTRICH, kein Buchstabe"
+		},
+		{ "scan": "B-999996", "kern": "B-99999", "fall": "fünfstellig" },
+
+		{
+			"scan": "B-10001",
+			"kern": null,
+			"fall": "unser eigener Aufdruck OHNE Prüfzeichen — so druckt Code 128 seit dem 17.09.2026"
+		},
+		{
+			"scan": "4006381333931",
+			"kern": null,
+			"fall": "EAN-13 eines Verlags; ihre Prüfziffer ist eine ganz andere Rechnung"
+		},
+		{ "scan": "", "kern": null, "fall": "leer" },
+		{ "scan": "B", "kern": null, "fall": "ein Zeichen" },
+		{ "scan": "B-", "kern": null, "fall": "zwei Zeichen — nach dem Kürzen bliebe eines übrig" },
+		{
+			"scan": "müller",
+			"kern": null,
+			"fall": "Kleinbuchstaben und Umlaut kennt der Zeichensatz von Code 39 nicht"
+		},
+		{
+			"scan": "B-10001X",
+			"kern": null,
+			"fall": "ein FALSCHES Prüfzeichen wird nicht abgetrennt — sonst verkürzte die Nachsicht beliebige Scans"
+		}
+	]
+}

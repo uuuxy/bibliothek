@@ -28,6 +28,7 @@
  * die Zuordnung, bis ein eindeutiger Ausweis kommt.
  */
 import { dekodiereLitteraEtikett } from './litteraEtikett.js';
+import { ohnePruefzeichen } from './code39Pruefzeichen.js';
 
 /**
  * Vereinheitlicht die Vorsilbe eines Scans — `s-10001` wird zu `S-10001`.
@@ -101,6 +102,19 @@ export function ordneScanEin(roh, istBuch) {
 	// Gebucht wird unter der NUMMER, nicht unter dem Aufdruck — der Server kennt nur sie.
 	const ausEtikett = dekodiereLitteraEtikett(scan);
 	if (ausEtikett !== null && istBuch(ausEtikett)) return { art: 'buch', nummer: ausEtikett };
+
+	// Zuletzt ein Aufdruck von FRUEHER: Bis zum 17.09.2026 druckte die Anwendung Code 39
+	// MIT Pruefzeichen, und das Lesegeraet gibt es als Teil der Nummer zurueck (aus
+	// „58968" wird „58968-"). Die Karten und Etiketten von damals sind im Umlauf und
+	// sollen weiter funktionieren; der Server macht online dasselbe
+	// (internal/service/omnibox_service.go).
+	//
+	// ZULETZT und nur mit Treffer in der Liste: Bei 43 moeglichen Zeichen sieht im Schnitt
+	// jeder 43. gueltige Code zufaellig so aus, als haenge ein Pruefzeichen dran. Erst
+	// hier unten, nachdem roh und Littera nichts ergeben haben, ist ein falscher Treffer
+	// nur dort moeglich, wo die gekuerzte Nummer existiert und die volle nicht.
+	const ohneZeichen = ohnePruefzeichen(scan);
+	if (ohneZeichen !== null && istBuch(ohneZeichen)) return { art: 'buch', nummer: ohneZeichen };
 
 	return { art: 'unklar', nummer: scan };
 }

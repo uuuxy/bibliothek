@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/code39"
 	"bibliothek/repository"
 )
 
@@ -119,7 +121,71 @@ func NewOmniboxService(
 }
 
 // ProcessQuery leitet gescannte Barcodes oder Suchanfragen anhand von Präfixen an die jeweilige Fachlogik weiter.
+// ProcessQuery beantwortet einen Scan — und gibt einem Aufdruck von FRÜHER eine zweite
+// Chance.
+//
+// Bis zum 17.09.2026 druckte die Anwendung Code 39 MIT Prüfzeichen. Das Zeichen steht in
+// den Strichcode-Daten, und ein Lesegerät gibt es als Teil der Nummer zurück: Unter der
+// Karte steht „A-10003", gescannt wird „A-100037". Der Server suchte dann eine Nummer,
+// die es nicht gibt, und weil ein unbekannter Scan nur eine leere Trefferliste erzeugt,
+// sah es an der Theke aus, als täte der Scanner gar nichts. Gedruckt wird seither Code
+// 128 ohne Prüfzeichen — aber die Karten und Etiketten von vorher sind im Umlauf und
+// sollen weiter funktionieren (Anforderung von Anfang an, OFFEN.md 9.2).
+//
+// Die Nachsicht greift NUR, wenn der Scan so, wie er kam, nichts ergeben hat. Das ist
+// wichtig: Bei 43 möglichen Zeichen sieht im Schnitt jeder 43. gültige Code zufällig so
+// aus, als hinge ein Prüfzeichen dran. Erst als zweiter Versuch ist ein falscher Treffer
+// nur dort möglich, wo der gekürzte Wert existiert und der volle nicht — und genau das
+// ist der Fall, den sie auflösen soll.
+//
+// Hier und nicht in den einzelnen Zweigen, weil der Aufdruck von früher jede Form haben
+// kann: „A-100037" geht über den Ausweis-Zweig, „B-100016" über den Buch-Zweig, eine
+// nackte Littera-Nummer über die Volltextsuche. Drei Stellen wären drei Gelegenheiten,
+// eine zu vergessen.
 func (s *defaultOmniboxService) ProcessQuery(ctx context.Context, q OmniboxQuery) (*OmniboxResult, error) {
+	resp, err := s.verarbeite(ctx, q)
+	if !scanBliebOhneTreffer(resp, err) {
+		return resp, err
+	}
+
+	kern, hatPruefzeichen := code39.OhnePruefzeichen(q.Query)
+	if !hatPruefzeichen {
+		return resp, err
+	}
+
+	zweiterVersuch := q
+	zweiterVersuch.Query = kern
+	resp2, err2 := s.verarbeite(ctx, zweiterVersuch)
+	if scanBliebOhneTreffer(resp2, err2) {
+		// Auch gekürzt nichts. Dann die ERSTE Antwort zurückgeben: Sie nennt die Nummer,
+		// die wirklich gescannt wurde. Eine Meldung über „B-10001" wäre verwirrend, wenn
+		// auf dem Etikett „B-1000" steht und der Scanner „B-10001" gelesen hat.
+		return resp, err
+	}
+	return resp2, err2
+}
+
+// scanBliebOhneTreffer erkennt den Zustand „der Scanner tut nichts" in seinen ZWEI
+// Formen: der laute Fehler der Vorsilben-Zweige (ErrNotFound) und die stille leere
+// Trefferliste, in die eine unbekannte nackte Nummer fällt.
+//
+// Ein Fehler, der KEIN ErrNotFound ist (Datenbank weg, Sperre, Gerät ohne Checkliste),
+// gilt ausdrücklich nicht als „ohne Treffer": Ihn ein zweites Mal auszulösen hieße, eine
+// Sperrmeldung doppelt zu schreiben oder eine echte Störung zu verschleiern.
+func scanBliebOhneTreffer(resp *OmniboxResult, err error) bool {
+	if err != nil {
+		return errors.Is(err, ErrNotFound)
+	}
+	return resp != nil && resp.Type == "search_results" && len(resp.SearchResults) == 0
+}
+
+// verarbeite ist der Scan-Weg selbst — unverändert der Schalter, der er immer war.
+//
+// ACHTUNG beim Umbenennen: vorsilben_zwilling_test.go liest den Rumpf DIESER Funktion,
+// um die Vorsilben gegen die Offline-Einordnung zu halten. Der Test hat einen
+// Sanity-Floor und wird laut, wenn er ins Leere greift — aber die Meldung liest sich
+// dann nach „Vorsilbe fehlt" und nicht nach „Funktion umbenannt".
+func (s *defaultOmniboxService) verarbeite(ctx context.Context, q OmniboxQuery) (*OmniboxResult, error) {
 	resp := &OmniboxResult{}
 
 	// Präfix-Erkennung (Scanner-Steuerung):
