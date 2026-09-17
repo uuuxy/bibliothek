@@ -70,7 +70,11 @@ func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, bar
 // Katalog, Kiosk und Inventur, während der Schüler in der Mahnstrecke blieb (Bugklasse
 // „Zwei Türen zum selben Zustand"). Unbekannte IDs waren zudem stille „Erfolge"
 // (RowsAffected prüfte niemand).
-func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error {
+//
+// Der Beschädigungsgrad (Migration 127) reist mit, weil er im selben Dialog steht — aber
+// nur, wenn er mitgeschickt wird: COALESCE($5, alter Wert). Ohne das wäre jeder
+// Statuswechsel eine stille 0, und der Ersatzbetrag stiege wieder auf den vollen Zeitwert.
+func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int) error {
 	query := `
 		UPDATE buecher_exemplare
 		SET ist_ausleihbar = $1,
@@ -80,6 +84,7 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 		        ELSE NULL
 		    END,
 		    zustand_notiz = $3, aktualisiert_am = CURRENT_TIMESTAMP,
+		    zustand_abwertung_prozent = COALESCE($5::smallint, zustand_abwertung_prozent),
 		    -- Freigeben oder Aussondern ist ein Ausgang aus dem Zulauf wie der Wareneingang:
 		    -- bliebe bestellstatus stehen, zählten OPAC, Inventur und Katalog das Exemplar nie.
 		    bestellstatus = CASE WHEN $1 OR $2 THEN NULL ELSE bestellstatus END
@@ -87,7 +92,7 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 		  AND NOT ($2::boolean AND EXISTS (
 		      SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $4 AND a.rueckgabe_am IS NULL))
 	`
-	tag, err := r.db.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id)
+	tag, err := r.db.Exec(ctx, query, istAusleihbar, istAusgesondert, zustandNotiz, id, zustandAbwertungProzent)
 	if err != nil {
 		return err
 	}

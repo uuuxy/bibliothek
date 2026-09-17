@@ -31,6 +31,12 @@
 	);
 	// svelte-ignore state_referenced_locally
 	let editStatusNote = $state(ex.zustand_notiz || '');
+	// Der Beschädigungsgrad (Migration 127): Was das Buch durch seinen Zustand an Wert
+	// verloren hat. Er steht in DIESEM Dialog, weil er zum Zustand gehört — und er
+	// überlebt „Verfügbar", anders als die Notiz: Ein Band mit Wasserrand darf
+	// ausleihbar sein und trägt seinen Abschlag weiter in jeden künftigen Ersatzbetrag.
+	// svelte-ignore state_referenced_locally
+	let editAbwertung = $state(ex.zustand_abwertung_prozent ?? 0);
 	let statusError = $state('');
 
 	async function saveStatus() {
@@ -39,15 +45,29 @@
 			const isAusleihbar = editStatusType === 'Verfügbar';
 			const isAusgesondert = editStatusType === 'Verloren' ? true : false;
 			const notiz = isAusleihbar ? '' : editStatusNote.trim();
-			const res = await apiClient.put(`/api/buecher/exemplare/${ex.id}/status`, {
+			/** @type {Record<string, any>} */
+			const koerper = {
 				ist_ausleihbar: isAusleihbar,
 				ist_ausgesondert: isAusgesondert,
 				zustand_notiz: notiz
-			});
+			};
+			// Der Grad reist nur mit, wenn wir wissen, was drinstand, oder wenn hier
+			// etwas eingetragen ist. Hätte eine alte Antwort das Feld nicht geliefert,
+			// wäre die 0 aus dem Startwert sonst eine stille Löschung eines erfassten
+			// Schadens — der Server lässt ein FEHLENDES Feld ausdrücklich unangetastet.
+			const grad = Number(editAbwertung);
+			const bekannt = typeof ex.zustand_abwertung_prozent === 'number';
+			if (Number.isFinite(grad) && (bekannt || grad !== 0)) {
+				koerper.zustand_abwertung_prozent = grad;
+			}
+			const res = await apiClient.put(`/api/buecher/exemplare/${ex.id}/status`, koerper);
 			if (res.ok) {
 				ex.ist_ausleihbar = isAusleihbar;
 				ex.ist_ausgesondert = isAusgesondert;
 				ex.zustand_notiz = notiz;
+				if ('zustand_abwertung_prozent' in koerper) {
+					ex.zustand_abwertung_prozent = grad;
+				}
 				onDone();
 				showToast('Status erfolgreich gespeichert', 'success');
 			} else {
@@ -76,6 +96,23 @@
 			}}
 		/>
 	{/if}
+	<!-- Immer sichtbar, auch bei „Verfügbar": Der Abschlag ist eine Eigenschaft des
+	     Buchs, kein Status. 0 heißt „kein Schaden erfasst". -->
+	<Feld
+		bind:value={editAbwertung}
+		type="number"
+		min="0"
+		max="100"
+		step="5"
+		aria-label="Wertverlust durch Beschädigung in Prozent"
+		feld="mb-2 w-24"
+		onkeydown={(e) => {
+			if (e.key === 'Enter') saveStatus();
+			if (e.key === 'Escape') onDone();
+		}}
+	>
+		{#snippet nachlaufend()}% Wertverlust{/snippet}
+	</Feld>
 	<div class="flex items-center justify-between">
 		<button
 			onclick={onDone}

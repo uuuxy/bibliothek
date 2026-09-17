@@ -55,7 +55,7 @@ func TestUpdateCopyStatus_AussondernFuehrtGrundMit(t *testing.T) {
 	mock, handler := neuerCopyStatusAufbau(t)
 
 	mock.ExpectExec(updateCopyStatusPattern).
-		WithArgs(false, true, "Wasserschaden", "ex-1").
+		WithArgs(false, true, "Wasserschaden", "ex-1", (*int)(nil)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	rec := sendeStatusUpdate(t, handler, `{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"Wasserschaden"}`)
@@ -74,7 +74,7 @@ func TestUpdateCopyStatus_ReaktivierenLoeschtGrund(t *testing.T) {
 	// Der Handler erzwingt bei ist_ausleihbar=true den Weg zurück in den Umlauf
 	// (ist_ausgesondert=false, Notiz geleert) — der ELSE-Zweig muss den Grund räumen.
 	mock.ExpectExec(updateCopyStatusPattern).
-		WithArgs(true, false, "", "ex-1").
+		WithArgs(true, false, "", "ex-1", (*int)(nil)).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	rec := sendeStatusUpdate(t, handler, `{"ist_ausleihbar":true,"ist_ausgesondert":true,"zustand_notiz":"war mal Verlust"}`)
@@ -84,5 +84,96 @@ func TestUpdateCopyStatus_ReaktivierenLoeschtGrund(t *testing.T) {
 	}
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Errorf("Reaktivieren räumt aussonderung_grund nicht: %v", err)
+	}
+}
+
+// Der Beschädigungsgrad (Migration 127) fährt im Status-Editor mit — und das Feld hat
+// DREI Zustände, nicht zwei.
+//
+// Das Muster prüft die COALESCE-Zeile selbst: Stünde dort ein nacktes $5, wäre jeder
+// Aufruf ohne das Feld eine stille 0 — ein erfasster Wasserschaden verschwände beim
+// Sperren oder Freigeben, und die Schule verlangte beim nächsten Verlust wieder den
+// vollen Zeitwert (Bugklasse Upsert-Blanking).
+const updateCopyAbwertungPattern = `zustand_abwertung_prozent = COALESCE\(\$5::smallint, zustand_abwertung_prozent\)`
+
+func TestUpdateCopyStatus_BeschaedigungsgradWirdGeschrieben(t *testing.T) {
+	mock, handler := neuerCopyStatusAufbau(t)
+
+	zwanzig := 20
+	mock.ExpectExec(updateCopyAbwertungPattern).
+		WithArgs(false, false, "Wasserrand, lesbar", "ex-1", &zwanzig).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	rec := sendeStatusUpdate(t, handler,
+		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"Wasserrand, lesbar","zustand_abwertung_prozent":20}`)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("der Beschädigungsgrad kommt nicht an der Spalte an: %v", err)
+	}
+}
+
+// Fehlt das Feld, muss nil ankommen — nicht 0. Das ist der Fall JEDES Aufrufers, der
+// den Beschädigungsgrad gar nicht kennt.
+func TestUpdateCopyStatus_OhneFeldBleibtDerGradUnangetastet(t *testing.T) {
+	mock, handler := neuerCopyStatusAufbau(t)
+
+	mock.ExpectExec(updateCopyAbwertungPattern).
+		WithArgs(false, false, "gesperrt", "ex-1", (*int)(nil)).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	rec := sendeStatusUpdate(t, handler,
+		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"gesperrt"}`)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("ein fehlendes Feld kommt nicht als nil an — dann ist es eine stille 0: %v", err)
+	}
+}
+
+// „Verfügbar" räumt die Notiz (bestehende Regel), aber NICHT den Beschädigungsgrad: Ein
+// Band mit Wasserrand darf ausleihbar sein und trägt seinen Abschlag weiter.
+func TestUpdateCopyStatus_VerfuegbarBehaeltDenBeschaedigungsgrad(t *testing.T) {
+	mock, handler := neuerCopyStatusAufbau(t)
+
+	dreissig := 30
+	mock.ExpectExec(updateCopyAbwertungPattern).
+		WithArgs(true, false, "", "ex-1", &dreissig).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	rec := sendeStatusUpdate(t, handler,
+		`{"ist_ausleihbar":true,"ist_ausgesondert":false,"zustand_notiz":"Wasserrand","zustand_abwertung_prozent":30}`)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("erwartet 200, war %d: %s", rec.Code, rec.Body.String())
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Freigeben räumt den Beschädigungsgrad — er ist eine Eigenschaft des "+
+			"Buchs, kein Status: %v", err)
+	}
+}
+
+// Ein unmöglicher Grad ist eine Auskunft, kein 500. Die Spalte lehnt ihn ohnehin ab
+// (chk_zustand_abwertung_bereich); ohne Prüfung hier käme der CHECK-Fehler als
+// „Serverfehler" zurück und niemand wüsste, was erlaubt ist.
+func TestUpdateCopyStatus_UnmoeglicherGradIstEin400(t *testing.T) {
+	for _, koerper := range []string{
+		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"x","zustand_abwertung_prozent":140}`,
+		`{"ist_ausleihbar":false,"ist_ausgesondert":false,"zustand_notiz":"x","zustand_abwertung_prozent":-5}`,
+	} {
+		mock, handler := neuerCopyStatusAufbau(t)
+		rec := sendeStatusUpdate(t, handler, koerper)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("%s → %d, erwartet 400: %s", koerper, rec.Code, rec.Body.String())
+		}
+		// Kein Exec erwartet: Der Aufruf darf die Datenbank nicht erreichen.
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Errorf("unerwarteter DB-Zugriff: %v", err)
+		}
 	}
 }

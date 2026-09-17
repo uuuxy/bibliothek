@@ -58,6 +58,14 @@ type UpdateStatusRequest struct {
 	IstAusleihbar   bool   `json:"ist_ausleihbar"`
 	IstAusgesondert bool   `json:"ist_ausgesondert"`
 	ZustandNotiz    string `json:"zustand_notiz"`
+	// ZustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127,
+	// Anforderungsliste Nr. 2). Ein ZEIGER, weil das Feld drei Zustände hat: ein Wert
+	// setzt, 0 setzt auf null zurück, und FEHLT heißt „unangetastet". Ohne diese
+	// Unterscheidung löschte jeder andere Aufruf dieser Tür einen erfassten Wasserschaden.
+	//
+	// 0–100, weil die Spalte es auch tut (chk_zustand_abwertung_bereich): Ohne Prüfung
+	// hier käme eine 140 als 500 zurück statt als Auskunft, was erlaubt ist.
+	ZustandAbwertungProzent *int `json:"zustand_abwertung_prozent" validate:"omitempty,min=0,max=100"`
 }
 
 // UpdateCopyStatusHandler updates the status of a physical book copy.
@@ -88,12 +96,18 @@ func (s *Server) UpdateCopyStatusHandler(bookRepo repository.BookRepository) htt
 		ctx := r.Context()
 
 		// Wenn ein Buch manuell auf "Verfügbar" gesetzt wird, zwingend Notizen und Ausgesondert-Flag löschen
+		//
+		// Der Beschädigungsgrad wird dabei AUSDRÜCKLICH nicht geräumt: Er ist eine
+		// Eigenschaft des Buchs, kein Status. Ein Band mit Wasserrand darf ausleihbar sein
+		// und trägt seinen Abschlag weiter — sonst verlangte die Schule beim nächsten
+		// Verlust wieder den vollen Zeitwert für ein sichtbar beschädigtes Buch.
 		if req.IstAusleihbar {
 			req.ZustandNotiz = ""
 			req.IstAusgesondert = false
 		}
 
-		if err := bookRepo.UpdateCopyStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert, req.ZustandNotiz); err != nil {
+		if err := bookRepo.UpdateCopyStatus(ctx, id, req.IstAusleihbar, req.IstAusgesondert,
+			req.ZustandNotiz, req.ZustandAbwertungProzent); err != nil {
 			if errors.Is(err, repository.ErrExemplarNochVerliehen) {
 				apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 				return

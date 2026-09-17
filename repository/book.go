@@ -34,7 +34,12 @@ type BookRepository interface {
 	UpdateCopyBarcode(ctx context.Context, id string, barcode string) error
 
 	// UpdateCopyStatus ändert den Ausleih- und Aussonderungsstatus eines Exemplars.
-	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string) error
+	//
+	// zustandAbwertungProzent ist der Beschädigungsgrad dieses Exemplars (Migration 127).
+	// nil heißt UNANGETASTET, nicht 0: Der Status-Editor schickt das Feld nur mit, wenn ein
+	// Mensch es angefasst hat, und ein Statuswechsel darf einen erfassten Wasserschaden
+	// nicht stillschweigend auf 0 zurückstellen (Upsert-Blanking).
+	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int) error
 
 	// DecommissionCopy kennzeichnet ein Exemplar als dauerhaft ausgesondert und sperrt die Ausleihe.
 	DecommissionCopy(ctx context.Context, id string) error

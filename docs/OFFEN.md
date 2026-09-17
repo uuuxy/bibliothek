@@ -1489,9 +1489,11 @@ Komfortfrage mehr, sondern Teil dieses Gates.
 `internal/service/loan_checkout_validation.go` (`pruefeOffeneSchaeden`) sperrt bei jedem
 unbezahlten Schadensfall jede weitere Ausleihe — **ohne Ausnahme für Lernmittel**. Dasselbe im
 Geräte-Pfad (`pruefeGeraetAutomatikSperren`). Übergehbar ist es nur von Hand mit Audit-Eintrag;
-der Grundzustand ist die Sperre. Die Unterlagen sind hier uneinheitlich: Die Praxis der
-Nachbarschule im Konzept lautet „bis zur Zahlung Sperre für weitere Ausleihen", das
-Medienzentrum sagt, LMF untersage genau das. **Frage an Peter, siehe 9.7.**
+der Grundzustand ist die Sperre. Woher diese Regel stammt, ist nicht belegt: In der
+Arbeitshilfe zum Erlass vom 17.12.2014 und in der Anforderungsliste „Mahnverfahren" steht
+zur Sperre nichts (beide am 17.09.2026 im Original gelesen). Die Zeile im Konzept, die sie
+als fremde Praxis auswies, war unbelegt und ist entfernt. **Frage geht an das
+Medienzentrum, siehe 9.7.**
 
 **9.3 d) Zugangs- und Abgangsbuch fehlen.** `erworben_am` trägt das echte Littera-Zugangsdatum,
 `aussonderung_grund` trennt VERLUST / AUSSORTIERT / BESTANDSKORREKTUR. Aber: **es gibt kein
@@ -1604,6 +1606,12 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
   einer Quelle, die es schon gab: Die DNB liefert den Ladenpreis aus MARC21 020 $c in jeder
   Antwort mit (`metadaten_preis.go`), er stand dort ungenutzt — jetzt füllt er beim Anlegen
   über die ISBN das Feld. Verdrahtet über alle vier Schreibwege; Feld in der Katalog-Maske.
+- **Stufe 3 GEBAUT (Exemplar-Akte).** Der Wertverlust steht im Status-Editor der Buchakte,
+  neben der Notiz, und die Karte zeigt ihn an. Er reist über die BESTEHENDE Tür
+  (`PUT /api/buecher/exemplare/{id}/status`) — keine zweite für denselben Zustand. Drei Regeln
+  hängen an Tests: Ein fehlendes Feld lässt den Wert unangetastet (sonst löschte jeder
+  Statuswechsel einen erfassten Wasserschaden), „Verfügbar" räumt die Notiz, aber NICHT den
+  Wertverlust, und ein unmöglicher Wert ist ein 400 statt eines 500.
 - **Stufe 2a GEBAUT.** `ersatzwert.Rechne` nimmt den Zustands-Abschlag, und alle drei
   Vorschlagswege liefern Listenpreis und Abschlag durch. Die Herleitung sagt „Listenpreis"
   statt „Neupreis" — ein Wort für eine Sache. **Geprüft** seit dem 17.09.2026: die Rechnung in
@@ -1612,14 +1620,20 @@ Beschädigungsgrad ist genau die Begründung für dieses Ermessen.
 
 **Was als Nächstes dran ist:**
 
-1. **Stufe 3: die Tür zur Abwertung.** Die Spalte hat noch keinen Schreiber in der Oberfläche —
-   ein Prozentfeld bei der Rückgabe und in der Exemplar-Akte, neben der vorhandenen
-   `zustand_notiz`. Vorher prüfen, was es dafür schon gibt (es gab bis zum 16.09.2026 eine Tür
-   `POST /api/buecher/exemplare/{id}/schadensnotiz`).
-2. **Stufe 2b: der Buchwert sichtbar** am Exemplar — Basis, Verleihjahr, Staffelsatz,
+1. **Stufe 2b: der Buchwert sichtbar** am Exemplar — Basis, Verleihjahr, Staffelsatz,
    Zustandsabschlag, Ergebnis. Das ist der Punkt, den die Anforderungsliste mit „Medien
    automatisch abwerten" meint.
-3. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
+2. **Stufe 4: Berechnungsgrundlage wählbar** (Einstellung in der Kategorie „Schadensersatz").
+3. **Der Wertverlust bei der RÜCKGABE — eine Frage an dich.** Die Anforderungsliste nennt
+   „Katalogisierung und Rückgabe". Die Katalogisierung ist erledigt (Stufe 3, siehe oben), die
+   Rückgabe nicht — und zwar mit Absicht: Die Theke ist ein Scanfeld, kein Formular. Ein Buch
+   kommt zurück, indem es gescannt wird; es gibt dort keinen Dialog, in den ein Prozentwert
+   passen würde, und einen einzubauen wäre der Rückbau dessen, was am 15.09.2026 entschieden
+   wurde. Der Weg heute: Das beschädigte Buch wird an der Theke zurückgenommen, danach in der
+   Buchakte mit seinem Wertverlust versehen — zwei Handgriffe statt einem.
+   *Vorschlag: so lassen.* Wenn es EIN Handgriff werden soll, wäre der schonendste Weg ein
+   Hinweis in der Rückgabe-Meldung („Zustand erfassen?"), der die Buchakte öffnet — kein Feld
+   an der Theke.
 
 **Die vier Stufen im Einzelnen:**
 

@@ -50,7 +50,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 1. Status-Editor: auf „verfügbar" gestellt → kein Zulauf mehr, im OPAC gezählt.
 	frei := zulauf("Zulauf-Editor-Titel", "ZL-EDIT")
-	if err := books.UpdateCopyStatus(ctx, frei, true, false, ""); err != nil {
+	if err := books.UpdateCopyStatus(ctx, frei, true, false, "", nil); err != nil {
 		t.Fatalf("UpdateCopyStatus: %v", err)
 	}
 	if s := bestellstatus(frei); s != nil {

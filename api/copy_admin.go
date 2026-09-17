@@ -129,6 +129,7 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 
 		query := `
 			SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
+			       coalesce(e.zustand_abwertung_prozent, 0),
 			       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar
 			FROM buecher_exemplare e
 			WHERE e.titel_id = $1
@@ -143,18 +144,23 @@ func (s *Server) GetTitleCopiesHandler() http.HandlerFunc {
 
 		// CopyResponse is the per-copy DTO returned by this handler.
 		type CopyResponse struct {
-			ID              string `json:"id"`
-			BarcodeID       string `json:"barcode_id"`
-			ZustandNotiz    string `json:"zustand_notiz"`
-			IstAusleihbar   bool   `json:"ist_ausleihbar"`
-			IstAusgesondert bool   `json:"ist_ausgesondert"`
-			IstVerfuegbar   bool   `json:"ist_verfuegbar"`
+			ID           string `json:"id"`
+			BarcodeID    string `json:"barcode_id"`
+			ZustandNotiz string `json:"zustand_notiz"`
+			// ZustandAbwertungProzent ist der erfasste Beschädigungsgrad (Migration 127).
+			// Er steht hier, weil die Buchakte ihn anzeigt UND ihr Status-Editor ihn
+			// zurückschickt — ohne den Lesewert wäre jedes Speichern eine Neueingabe.
+			ZustandAbwertungProzent int  `json:"zustand_abwertung_prozent"`
+			IstAusleihbar           bool `json:"ist_ausleihbar"`
+			IstAusgesondert         bool `json:"ist_ausgesondert"`
+			IstVerfuegbar           bool `json:"ist_verfuegbar"`
 		}
 
 		copies := []CopyResponse{}
 		for rows.Next() {
 			var cp CopyResponse
-			if err := rows.Scan(&cp.ID, &cp.BarcodeID, &cp.ZustandNotiz, &cp.IstAusleihbar, &cp.IstAusgesondert, &cp.IstVerfuegbar); err == nil {
+			if err := rows.Scan(&cp.ID, &cp.BarcodeID, &cp.ZustandNotiz, &cp.IstAusleihbar,
+				&cp.IstAusgesondert, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar); err == nil {
 				copies = append(copies, cp)
 			}
 		}

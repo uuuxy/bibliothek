@@ -1,6 +1,7 @@
 <script>
 	import { apiFetch, apiClient } from '../apiFetch.js';
 	import BookExemplarStatusEditor from './BookExemplarStatusEditor.svelte';
+	import BookExemplarZustand from './BookExemplarZustand.svelte';
 	import Button from './ui/Button.svelte';
 	import Feld from './ui/Feld.svelte';
 	import Kaestchen from './ui/Kaestchen.svelte';
@@ -202,10 +203,7 @@
 	</div>
 	{#if editingStatus}
 		<BookExemplarStatusEditor {ex} onDone={() => (editingStatus = false)} />
-	{:else if ex.zustand_notiz}
-		<p class="text-xs text-slate-500">
-			<span class="font-semibold text-slate-400">Zustand:</span>
-			{ex.zustand_notiz}
-		</p>
+	{:else}
+		<BookExemplarZustand {ex} />
 	{/if}
 </div>
