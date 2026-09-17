@@ -26,7 +26,7 @@
 		? ''
 		: `, Klasse ${student.klasse}`}, Ausweis {ausweis}"
 	tabindex="-1"
-	class="grid grid-cols-[minmax(0,1fr)_6rem_11rem] items-center gap-4 px-4 h-12 cursor-pointer {selected
+	class="grid grid-cols-[minmax(0,1fr)_6rem_11rem_10rem] items-center gap-4 px-4 h-12 cursor-pointer {selected
 		? 'bg-blue-50 text-blue-900'
 		: 'text-slate-900 hover:bg-slate-50'}"
 	onclick={() => onSelect(index)}
@@ -44,4 +44,8 @@
 			? 'text-blue-700'
 			: 'text-slate-600'}">{ausweis}</span
 	>
+	<!-- Leere vierte Spalte: Sie gehört den Büchern (dort steht der Bestand, seit
+	     17.09.2026). Ohne sie wären die Spalten der beiden Gruppen um 10rem gegeneinander
+	     versetzt — das Raster ist der Grund, warum man hier untereinander lesen kann. -->
+	<span></span>
 </div>

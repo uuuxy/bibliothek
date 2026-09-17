@@ -1557,11 +1557,21 @@ Felder sind ZEIGER: Jede andere Abfrage lässt sie nil, damit die Oberfläche ni
 Exemplar da" sind am echten Postgres geprüft (gar keins, alle ausgesondert, alle verliehen,
 alles im Zulauf).
 
-**Hälfte 2 OFFEN (Anzeige).** Die Theken-Trefferliste (`Omnibox.svelte` →
-`unifiedSearchResults.books`) zeigt die Zahlen noch nicht. Zu bauen: je Treffer „x von y
-verfügbar" und ein erkennbarer Hinweis, wenn `bestand === 0` — dann ist es kein
-Verfügbarkeitsproblem, sondern ein Titel ohne Bestand. Dazu ein Gate am Draht
-(`frontend/e2e/`) mit einem Titel ohne Exemplare.
+**Hälfte 2 GEBAUT am 17.09.2026 (Anzeige).** Die Theken-Trefferliste trägt eine vierte
+Spalte: „1 von 2 verfügbar", und bei einem Titel ohne Exemplare abgesetzt „Keine
+Exemplare". Nur dieser Fall wird hervorgehoben — „0 von 5 verfügbar" ist der Normalfall
+im Schuljahr; sähe beides gleich aus, wäre nichts gewonnen. Die Zeile steht auch im
+`aria-label`, damit sie nicht allein an der Farbe hängt.
+
+Der Wortlaut kommt jetzt aus `utils/format.js` (`bestandSatz`). Er stand vorher zweimal
+im Katalog — mit zwei verschiedenen Antworten auf den Fall „Zahl fehlt": Die Katalog-Kachel
+schrieb dort „Keine Exemplare", die Klassensatz-Kachel nichts. Richtig ist nichts, denn
+die Zahlen sind Zeiger und nur die Suchabfragen füllen sie.
+
+Nachweis: `frontend/e2e/theke-bestand-im-treffer.spec.js`, am alten Bauteil rot gesehen —
+der Titel stand in der Liste und sagte nichts.
+
+**Damit ist Punkt 4 des Protokolls abgeschlossen.**
 
 ### 9.5 Schülerdatei ohne Sortierung und Filter (Protokoll 5)
 

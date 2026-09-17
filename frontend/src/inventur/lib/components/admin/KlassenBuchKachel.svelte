@@ -8,6 +8,7 @@
      erst bei :hover, Zweig-Abzeichen auf dem Cover, Autor auf der Attrappe. -->
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
+	import { bestandSatz } from '../../../../lib/utils/format.js';
 	import BuchKarteCover from '../BuchKarteCover.svelte';
 
 	/**
@@ -38,13 +39,7 @@
 	let coverFailed = $state(false);
 
 	/** Bestand als Satz wie auf der Katalog-Kachel; ohne Zahlen im Payload bleibt die Zeile leer. */
-	const bestand = $derived(
-		book.gesamt == null
-			? ''
-			: book.gesamt
-				? `${book.verfuegbar ?? 0} von ${book.gesamt} verfügbar`
-				: 'Keine Exemplare'
-	);
+	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar));
 
 	// Lokale Liste statt Lesen des eigenen $state im selben Effekt (sonst Endlosschleife,
 	// siehe BuchKarte.svelte).

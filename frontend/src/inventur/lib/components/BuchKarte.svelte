@@ -16,7 +16,7 @@
 <script>
 	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
 	import BuchKarteCover from './BuchKarteCover.svelte';
-	import { formatDatum } from '../../../lib/utils/format.js';
+	import { bestandSatz, formatDatum } from '../../../lib/utils/format.js';
 	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
 
 	/**
@@ -53,10 +53,9 @@
 	/** Bestand als Satz: „27 von 28 verfügbar", „Keine Exemplare" bei einem Titel ohne
 	 *  Exemplare — der frühere rote Punkt sah für beides gleich aus. Bewusst OHNE Rot bei
 	 *  0: Im Schuljahr ist fast jedes Lernmittel komplett verliehen; ein Katalog, der
-	 *  überall rot ist, sagt nichts mehr. */
-	const bestand = $derived(
-		book.gesamt ? `${book.verfuegbar ?? 0} von ${book.gesamt} verfügbar` : 'Keine Exemplare'
-	);
+	 *  überall rot ist, sagt nichts mehr. Der Wortlaut kommt aus format.js, weil ihn
+	 *  seit dem 17.09.2026 auch die Theke braucht. */
+	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar));
 
 	const geprueft = $derived(book.lastCounted ? formatDatum(book.lastCounted) : '');
 

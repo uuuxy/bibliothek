@@ -61,3 +61,28 @@ export function formatZeitpunkt(wert) {
 		minute: '2-digit'
 	});
 }
+
+/**
+ * Der Bestand eines Titels als Satz: „3 von 5 verfügbar", „Keine Exemplare",
+ * und nichts, wenn niemand gezählt hat.
+ *
+ * Die drei Fälle sind der Grund für diese Funktion. Bis zum 17.09.2026 stand die
+ * Zeile zweimal im Katalog (BuchKarte, KlassenBuchKachel) — mit zwei verschiedenen
+ * Antworten auf den dritten Fall. Die Theke braucht sie jetzt als dritte Stelle
+ * (Protokoll des Medienzentrums vom 16.09.2026, Punkt 4), und drei Auslegungen
+ * derselben Zahl über denselben Titel wären zwei zu viel.
+ *
+ * `null`/`undefined` heißt NICHT null: Nur die Suchabfragen liefern die Zahlen mit
+ * (siehe repository/models.go, Bestand/Verfuegbar als Zeiger); alle anderen lassen
+ * sie weg. Über einen Titel, dessen Bestand niemand gezählt hat, schreibt die
+ * Oberfläche gar nichts statt „Keine Exemplare".
+ *
+ * @param {number | null | undefined} gesamt
+ * @param {number | null | undefined} verfuegbar
+ * @returns {string} leer, wenn keine Zahl vorliegt
+ */
+export function bestandSatz(gesamt, verfuegbar) {
+	if (gesamt == null) return '';
+	if (gesamt === 0) return 'Keine Exemplare';
+	return `${verfuegbar ?? 0} von ${gesamt} verfügbar`;
+}
