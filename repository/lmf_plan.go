@@ -248,7 +248,7 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 		for i := 0; i < len(plan.FreieTage); i++ {
 			var t LmfFreierTag
 			if err := br.QueryRow().Scan(&t.Datum, &t.Grund); err != nil {
-				_ = br.Close()
+				_ = br.Close() //nolint:errcheck
 				return st, err
 			}
 			st.Plan.FreieTage = append(st.Plan.FreieTage, t)
