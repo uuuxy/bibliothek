@@ -17,110 +17,117 @@ import (
 
 func TestLadeCoverBytes(t *testing.T) {
 	ctx := context.Background()
+	expectedBytes := []byte("fake_image_data")
 
-	t.Run("empty url", func(t *testing.T) {
-		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, "")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
-		}
-	})
-
-	t.Run("openLibrary placeholder url", func(t *testing.T) {
-		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, openLibraryLeeresCover)
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
-		}
-	})
-
-	t.Run("invalid url format", func(t *testing.T) {
-		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, "http://%42")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
-		}
-	})
-
-	t.Run("disallowed host", func(t *testing.T) {
-		client := &http.Client{}
-		res := ladeCoverBytes(ctx, client, "https://evil.com/img.png")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
-		}
-	})
-
-	t.Run("client error", func(t *testing.T) {
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					return nil, errors.New("network error")
+	tests := []struct {
+		name          string
+		url           string
+		client        *http.Client
+		expectedBytes []byte
+	}{
+		{
+			name:          "empty url",
+			url:           "",
+			client:        &http.Client{},
+			expectedBytes: nil,
+		},
+		{
+			name:          "openLibrary placeholder url",
+			url:           openLibraryLeeresCover,
+			client:        &http.Client{},
+			expectedBytes: nil,
+		},
+		{
+			name:          "invalid url format",
+			url:           "http://%42",
+			client:        &http.Client{},
+			expectedBytes: nil,
+		},
+		{
+			name:          "disallowed host",
+			url:           "https://evil.com/img.png",
+			client:        &http.Client{},
+			expectedBytes: nil,
+		},
+		{
+			name: "client error",
+			url:  "https://covers.openlibrary.org/b/id/1-L.jpg",
+			client: &http.Client{
+				Transport: &mockTransport{
+					roundTripFunc: func(req *http.Request) (*http.Response, error) {
+						return nil, errors.New("network error")
+					},
 				},
 			},
-		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
-		}
-	})
-
-	t.Run("non 200 status code", func(t *testing.T) {
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					return &http.Response{
-						StatusCode: http.StatusNotFound,
-						Body:       io.NopCloser(bytes.NewBufferString("not found")),
-					}, nil
+			expectedBytes: nil,
+		},
+		{
+			name: "non 200 status code",
+			url:  "https://covers.openlibrary.org/b/id/1-L.jpg",
+			client: &http.Client{
+				Transport: &mockTransport{
+					roundTripFunc: func(req *http.Request) (*http.Response, error) {
+						return &http.Response{
+							StatusCode: http.StatusNotFound,
+							Body:       io.NopCloser(bytes.NewBufferString("not found")),
+						}, nil
+					},
 				},
 			},
-		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
-		}
-	})
-
-	t.Run("bot protection html response", func(t *testing.T) {
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					resp := &http.Response{
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewBufferString("<html><head>bot check</head></html>")),
-						Header:     make(http.Header),
-					}
-					resp.Header.Set("Content-Type", "text/html; charset=utf-8")
-					return resp, nil
+			expectedBytes: nil,
+		},
+		{
+			name: "bot protection html response",
+			url:  "https://covers.openlibrary.org/b/id/1-L.jpg",
+			client: &http.Client{
+				Transport: &mockTransport{
+					roundTripFunc: func(req *http.Request) (*http.Response, error) {
+						resp := &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       io.NopCloser(bytes.NewBufferString("<html><head>bot check</head></html>")),
+							Header:     make(http.Header),
+						}
+						resp.Header.Set("Content-Type", "text/html; charset=utf-8")
+						return resp, nil
+					},
 				},
 			},
-		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if res != nil {
-			t.Errorf("expected nil, got %v", res)
-		}
-	})
-
-	t.Run("valid image response", func(t *testing.T) {
-		expectedBytes := []byte("fake_image_data")
-		client := &http.Client{
-			Transport: &mockTransport{
-				roundTripFunc: func(req *http.Request) (*http.Response, error) {
-					resp := &http.Response{
-						StatusCode: http.StatusOK,
-						Body:       io.NopCloser(bytes.NewReader(expectedBytes)),
-						Header:     make(http.Header),
-					}
-					resp.Header.Set("Content-Type", "image/jpeg")
-					return resp, nil
+			expectedBytes: nil,
+		},
+		{
+			name: "valid image response",
+			url:  "https://covers.openlibrary.org/b/id/1-L.jpg",
+			client: &http.Client{
+				Transport: &mockTransport{
+					roundTripFunc: func(req *http.Request) (*http.Response, error) {
+						resp := &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       io.NopCloser(bytes.NewReader(expectedBytes)),
+							Header:     make(http.Header),
+						}
+						resp.Header.Set("Content-Type", "image/jpeg")
+						return resp, nil
+					},
 				},
 			},
-		}
-		res := ladeCoverBytes(ctx, client, "https://covers.openlibrary.org/b/id/1-L.jpg")
-		if !bytes.Equal(res, expectedBytes) {
-			t.Errorf("expected %v, got %v", expectedBytes, res)
-		}
-	})
+			expectedBytes: expectedBytes,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := ladeCoverBytes(ctx, tt.client, tt.url)
+			if tt.expectedBytes == nil {
+				if res != nil {
+					t.Errorf("expected nil, got %v", res)
+				}
+			} else {
+				if !bytes.Equal(res, tt.expectedBytes) {
+					t.Errorf("expected %v, got %v", tt.expectedBytes, res)
+				}
+			}
+		})
+	}
 }
 
 func TestSpeichereCoverDatei(t *testing.T) {
