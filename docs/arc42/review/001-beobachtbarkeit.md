@@ -38,14 +38,8 @@ Betrieb", nicht „langsam".
 Das ist kein akutes Risiko — ein Schulserver mit acht Arbeitsplätzen fällt selten und
 sichtbar aus. Es ist der Grund, warum man **nach** dem Ausfall nichts lernt.
 
-**Was daraus folgt.** Kein Beobachtbarkeits-Stapel für einen Host. Die kleinste Stufe, die
-den Befund erledigt, sind drei Dinge in dieser Reihenfolge:
-
-1. **Dauer und Status in die bestehende Zeile** — sie wird ohnehin für jede Anfrage
-   geschrieben, es fehlt ein `time.Since` und das Feld.
-2. **Eine Anfragekennung**, erzeugt in der äußersten Middleware, über den Kontext
-   durchgereicht und in jeder Logzeile mitgeschrieben. Der Aufwand ist gering, weil `slog`
-   als JSON-Handler schon überall eingehängt ist.
-3. **Eine Aufbewahrungsentscheidung** — 3 × 10 MB sind eine Vorgabe, keine Wahl.
-
-Erst wenn das steht und nicht reicht, lohnt die Frage nach Metriken.
+**Was daraus folgt.** Kein Beobachtbarkeits-Stapel für einen Host. Der Vorschlag — eine
+Logzeile je Anfrage statt zwei, eine Anfragekennung bis in die Fehlermeldung, ein
+Abschnitts-Helfer bei Bedarf, eine Aufbewahrungsentscheidung — steht als
+[Idee 005](../ideen/005-log-und-trace-ohne-neue-bauteile.md) und wird dort geführt, damit
+der Plan nicht an zwei Stellen liegt. Hier bleibt der Befund.
