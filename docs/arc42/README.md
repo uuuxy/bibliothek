@@ -1,6 +1,6 @@
 # arc42-Architekturdokumentation — Bibliothek (Schulbibliotheks-Software)
 
-Stand: 17.09.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch)
+Stand: 18.09.2026 · Gliederung nach [arc42](https://arc42.org) (Template 8.2, deutsch)
 
 ---
 
@@ -11,8 +11,9 @@ Kapitel je Datei. Sie beschreibt **den gebauten Stand**, nicht einen Plan: Jede 
 am Code, an `schema.sql`, an den Migrationen, am `Dockerfile`, an den CI-Workflows oder an
 einem Gate nachgelesen, und wo eine Fundstelle die Aussage trägt, steht sie dabei.
 
-Diese Dokumentation **ergänzt** die bestehenden Dokumente unter [`docs/`](../README.md),
-sie ersetzt sie nicht. Die Arbeitsteilung:
+Diese Dokumentation ist **die** Architekturbeschreibung des Systems; die frühere Kurzfassung
+`ARCHITECTURE.md` ist am 18.09.2026 darin aufgegangen. Die Arbeitsteilung mit den übrigen
+Dokumenten unter [`docs/`](../README.md):
 
 | Frage                                                        | Dort steht die Antwort                                     |
 | ------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -24,7 +25,6 @@ sie ersetzt sie nicht. Die Arbeitsteilung:
 | Was muss **immer** wahr sein, und auf welcher Ebene?         | [invarianten.md](../invarianten.md)                        |
 | Welche Bugklassen kennt das Projekt, und wer detektiert sie? | [sweeps.md](../sweeps.md)                                  |
 | Was ist **offen**?                                           | [OFFEN.md](../OFFEN.md) — die einzige Offen-Liste          |
-| Kurzfassung Schichten/Concurrency/Frontend                   | [ARCHITECTURE.md](../ARCHITECTURE.md)                      |
 
 > **Diese Dokumentation führt keine eigene Offen-Liste.** Kapitel 11 benennt Risiken und
 > technische Schulden, verweist für den Bearbeitungsstand aber auf `OFFEN.md`. Zwei Listen

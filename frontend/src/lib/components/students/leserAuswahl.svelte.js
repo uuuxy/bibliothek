@@ -5,7 +5,7 @@ import { SvelteSet } from 'svelte/reactivity';
  * sind.
  *
  * Eigene Datei aus demselben Grund wie ausweisdruck.svelte.js und schuelerSuche.svelte.js:
- * StudentDirectory.svelte steht an der Größen-Ratsche (200 Zeilen, docs/ARCHITECTURE.md),
+ * StudentDirectory.svelte steht an der Größen-Ratsche (200 Zeilen, docs/arc42/05-bausteinsicht.md 5.3),
  * und das Ankreuzen ist ein Stück für sich — es hat nichts damit zu tun, WELCHE Leser die
  * Liste führt.
  *

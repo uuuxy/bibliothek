@@ -291,7 +291,7 @@ einzigen unbrauchbaren Meldung kollabieren.
 | Wie wird der Lernmittel-Stichtag berechnet? | 31. Juli des laufenden bzw. kommenden Schuljahres — es sei denn, der LMF-Plan nennt für die Klasse einen Rückgabetermin; dann gilt der nächste Termin **nach** dem Ausleihtag |
 | Feiertage?                    | `pkg/lmfplan` rechnet Ostersonntag nach der Gauß'schen Osterformel (Fassung Lichtenberg) und leitet die beweglichen Feiertage ab |
 | Bestandsstichtage?            | 15.3. und 15.9. (`pkg/schulzeit`) — geprüft wird an den **Rändern**, weil dort entschieden wird, ob ein Abgang noch in den Nachweis gehört |
-| Und die Uhr des Kiosk-Rechners? | Wird beim Nachbuchen gemessen; der Versatz wird herausgerechnet und ab einer Schwelle protokolliert (siehe [6.5](06-laufzeitsicht.md#65-theke-ohne-netz-und-das-nachbuchen)) |
+| Und die Uhr des Kiosk-Rechners? | Wird beim Nachbuchen gemessen; der Versatz wird herausgerechnet und ab einer Schwelle protokolliert (siehe [6.5](06-laufzeitsicht.md#65-theke-ohne-netz--und-das-nachbuchen)) |
 
 Eine **Ferienautomatik gibt es nicht.** Das Werkzeug für „Bücher über die Sommerferien
 mitnehmen" ist der Ferien-Leseclub (aktiv + Zieldatum ⇒ feste Rückgabefrist für alle

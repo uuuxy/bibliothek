@@ -190,7 +190,10 @@ oder eine zweite Sperrmeldung wäre falsch.
 desselben Schlüssels wartet begrenzt. Aufbewahrung 24 h, TTL-Lauf **stündlich** — bis zum
 11.08.2026 stand in der Doku „täglich (24h-Cron)", die beiden Zahlen waren verwechselt.
 
-**Fundstelle.** `repository/idempotenz.go`, `jobs/cron.go` (`17 * * * *`).
+**Fundstelle.** `repository/idempotenz.go`, `jobs/cron.go` (`17 * * * *`). Offline ist der
+Schlüssel die `item.id` des Warteschlangen-Eintrags (`frontend/src/lib/stores/offlineSync.svelte.js`);
+sie wandert beim Nachbuchen als `schluessel` mit (`api/nachbuchen_schluessel.go`) — eine
+zweimal eingespielte Sicherung führt deshalb nichts doppelt aus.
 
 ---
 
@@ -227,7 +230,9 @@ gefilterte Sicht": eine **stille 404** statt eines Fehlers. `chk_leser_nur_schue
 verhindert, dass ein Schüler seine Art wechselt; Lehrkraft ⇄ LiV ist erlaubt.
 
 **Fundstelle.** Migrationen 123–125, `docs/schreibpfade_gegen_sicht_test.go`,
-`db/sicht_schueler_vollstaendig_pg_test.go`.
+`db/sicht_schueler_vollstaendig_pg_test.go`. Der frühere Umweg ist seit Migration 072
+geschlossen; `api/student_klasse_regel.go` weist `lehrer` als Klassennamen an beiden Türen
+ab (`student_create.go`, `student_update.go`).
 
 ---
 
@@ -252,7 +257,9 @@ System-Logs und Einstellungen — und es war keine reine Anzeigefrage: Dieselbe 
 entscheidet in `RequirePermission`. Migration 070 hat alles außer `create_reservations`
 entzogen.
 
-**Fundstelle.** `db/seed.go`, Migration 070, `auth/selbstanmeldung.go`.
+**Fundstelle.** `db/seed.go`, `auth/selbstanmeldung.go`; Migrationen 042 (`helfer` kommt in
+das Enum), 069 (`lehrer` → `kollegium`, weil das Wort doppelt belegt war), 070 (Rechte des
+Kollegiums auf das Portal zurückgenommen), 121 (`leitung`).
 
 ---
 

@@ -3,7 +3,7 @@
 
      Herausgelöst am 12.09.2026 beim Einbau der Aufteilung nach Mittelherkunft (#596):
      Mit ihr und dem Filter überschritt BestellHistorie.svelte die 200-Zeilen-Regel aus
-     ARCHITECTURE.md. Reine Verschiebung — dieselben Zeilen, dieselbe Reihenfolge. -->
+     docs/arc42/05-bausteinsicht.md (5.3). Reine Verschiebung — dieselben Zeilen, dieselbe Reihenfolge. -->
 <script>
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Select from '../ui/Select.svelte';

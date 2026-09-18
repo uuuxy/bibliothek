@@ -2,7 +2,7 @@
   @component
   LeserAvatar — das runde Passbild einer Listenzeile, sonst die Initialen.
 
-  Eigene Datei wegen der 200-Zeilen-Regel (docs/ARCHITECTURE.md): ActiveStudentList hat
+  Eigene Datei wegen der 200-Zeilen-Regel (docs/arc42/05-bausteinsicht.md, 5.3): ActiveStudentList hat
   mit der Spalte „Art" die Grenze erreicht, und das Bild ist das Stück, das nichts mit
   dem Führen der Liste zu tun hat.
 -->

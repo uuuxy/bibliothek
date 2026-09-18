@@ -1,6 +1,6 @@
 # 6. Laufzeitsicht
 
-Stand: 17.09.2026
+Stand: 18.09.2026
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -12,7 +12,7 @@ nichts.
 | 2  | [Scan am Tresen](#62-scan-am-tresen-der-kernablauf)          | Auflösung, Transaktion, Sperren, Konflikt, Echtzeit          |
 | 3  | [Rückgabe mit Vormerkung](#63-rückgabe-mit-vormerkung)       | `SKIP LOCKED`, Nachrücken, Abholfach                         |
 | 4  | [Doppelscan von zwei Stationen](#64-doppelscan-von-zwei-stationen) | Q1 im Ernstfall: warum der Index trägt                 |
-| 5  | [Theke ohne Netz](#65-theke-ohne-netz-und-das-nachbuchen)    | Offline-Warteschlange, Uhrenversatz, neun Urteile            |
+| 5  | [Theke ohne Netz](#65-theke-ohne-netz--und-das-nachbuchen)    | Offline-Warteschlange, Uhrenversatz, neun Urteile            |
 | 6  | [LUSD-Import](#66-lusd-import-zum-schuljahreswechsel)        | Zuordnung ohne Schlüssel, Karenz statt Sofort-Tilgung        |
 | 7  | [Mahnlauf](#67-mahnlauf-und-die-mahnstufe)                   | Eine Schreibstelle, physischer Verwaltungsakt                |
 | 8  | [Nachtlauf](#68-der-nachtlauf-dsgvo-backup-restore-probe)    | Reihenfolge, Verschlüsselung, Beweis statt Hoffnung          |
@@ -170,9 +170,10 @@ Welcher Pfad welche Zeile sperrt:
 | Schaden erfassen           | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
 | Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventur_session_finish.go`, `schueler_zusammenfuehren.go`, `bestellung_mittel.go`, `audit_system.go` |
 
-> **Korrektur gegenüber [ARCHITECTURE.md](../ARCHITECTURE.md):** Dort steht für „Schaden
-> erfassen" die Exemplar-Zeile (`buecher_exemplare`, Fundstelle `damage.go`). Am
-> 17.09.2026 am Code nachgemessen sperrt dieser Pfad die **Ausleihe**-Zeile
+> **Warum hier die Ausleihe-Zeile steht:** Die frühere Kurzfassung `ARCHITECTURE.md` (bis
+> 18.09.2026) nannte für „Schaden erfassen" die Exemplar-Zeile (`buecher_exemplare`,
+> Fundstelle `damage.go`); `damage.go` enthält kein `FOR UPDATE`. Am 17.09.2026 am Code
+> nachgemessen sperrt dieser Pfad die **Ausleihe**-Zeile
 > (`SELECT schueler_id FROM ausleihen WHERE id = $1 FOR UPDATE` in
 > `repository/schaden_melden.go`) — und zwar mit Absicht: Zwei parallele
 > „Schaden melden"-Klicks würden sonst beide den Prüfschritt passieren und je einen

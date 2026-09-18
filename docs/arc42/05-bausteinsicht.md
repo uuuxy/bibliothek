@@ -1,6 +1,6 @@
 # 5. Bausteinsicht
 
-Stand: 17.09.2026 · alle Umfangszahlen gemessen am 17.09.2026
+Stand: 18.09.2026 · alle Umfangszahlen gemessen am 17.09.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -159,6 +159,34 @@ entstand in `cmd/migrate` gegen echtes PostgreSQL. Eine zweite Kopie für Litter
 bedeutet, dass die zweite Fassung dieselben Fehler noch einmal macht — der fehlende
 Savepoint war jahrelang unbemerkt und kostete im Fehlerfall ganze Batches.
 
+### 5.2.5 Fremdbibliotheken des Backends
+
+Maßgeblich ist `go.mod` (23 direkte Abhängigkeiten am 18.09.2026). Die Tabelle nennt, **wo**
+jede eingesetzt wird — gemessen über die Importe des Produktivcodes, nicht abgeschrieben:
+
+| Modul                                                          | eingesetzt in                                                    | Rolle                                                                                   |
+| -------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `jackc/pgx/v5`                                                 | überall, wo SQL läuft (`repository`, `db`, `api`, `auth`, `jobs`, `inventur`, `internal/*`, `cmd/*`) | Postgres-Treiber und Pool, keine ORM-Schicht (T3)                            |
+| `golang-jwt/jwt/v5`                                            | `auth`, `cmd/stresstest`                                         | Sitzungs-Token HS256; die Prüfung akzeptiert nur HMAC (`auth/jwt.go`)                   |
+| `emersion/go-imap`                                             | `auth`                                                           | Anmeldung gegen den Schul-Mailserver (A2)                                               |
+| `go-playground/validator/v10`                                  | `api`                                                            | Strukturprüfung von Request-Körpern                                                     |
+| `getsentry/sentry-go`                                          | `main.go`, `api`                                                 | Fehlerweitergabe, nur mit `SENTRY_DSN`                                                  |
+| `chai2010/webp`                                                | `api`, `pkg/imageutil`                                           | WebP-Dekodierung der Cover — der Grund für CGO (T4)                                     |
+| `jung-kurt/gofpdf`, `phpdave11/gofpdf`, `johnfercher/maroto/v2` | `pdf`, `api`, `inventur`                                        | Erzeugte Dokumente (8.9)                                                                |
+| `boombuler/barcode`                                            | `api`                                                            | Code 128, Code 39 und QR auf Aufdrucken (A14)                                           |
+| `xuri/excelize/v2`                                             | `api`, `inventur`, `pkg/xlsxgrenze`                              | Excel lesen (`OpenReader`) und schreiben (`NewFile`); Grenzprüfung in `pkg/xlsxgrenze`  |
+| `robfig/cron/v3`                                               | `jobs`                                                           | Zeitplan der Hintergrundläufe, auf UTC (A16)                                            |
+| `minio/minio-go/v7`                                            | `jobs`                                                           | optionaler S3-Upload des Backups (A17)                                                  |
+| `google/uuid`                                                  | `api`, `cmd/seed`                                                | Kennungen erzeugen                                                                      |
+| `swaggo/swag`, `swaggo/http-swagger`                           | `docs`, `api`                                                    | Swagger, nur lokal (A23)                                                                |
+| `golang.org/x/crypto`                                          | `internal/backupkrypto`                                          | scrypt-Schlüsselableitung des Backups                                                   |
+| `golang.org/x/image`, `golang.org/x/net`, `golang.org/x/text`  | `pkg/imageutil`, `inventur`, `internal/service`, `repository`    | Bildformate; Zeichensatz-Erkennung (`html/charset`); Unicode-Normalisierung (`unicode/norm`) |
+| `go-sql-driver/mysql`                                          | nur `cmd/migrate`                                                | Einmal-Werkzeug, nicht im Server                                                        |
+| `pashagolub/pgxmock/v5`, `stretchr/testify`                    | nur `*_test.go`                                                  | Prüfhilfen                                                                              |
+
+Nachmessen: `awk '/^require \(/{f=1;next} /^\)/{f=0} f&&!/indirect/{print $1}' go.mod` und je
+Modul `grep -rl '"<modul>' --include='*.go' . | grep -v _test.go`.
+
 ---
 
 ## 5.3 Level 2 — Frontend, Whitebox
@@ -198,6 +226,8 @@ frontend/src
 - **Geteilter Zustand nur in `stores/*.svelte.js`**, Komponentenzustand lokal mit Runes.
 - **Datenarrays in `.js`-Metadatendateien** (z. B. `permissionMetadata.js`) statt in
   Komponenten.
+- **Logikfreie Teilkomponenten mit `{#snippet}` / `{@render}`** statt kopierter
+  Markup-Blöcke (gemessen 18.09.2026: 67 Dateien).
 - **Flat & Edge-to-Edge:** Trennung über `border-b`, nicht über Karten; Karten bleiben
   Modals, Toasts, Dropdowns und Cover-Kacheln.
 
@@ -337,9 +367,10 @@ find . -name '*.go' -not -name '*_test.go' -not -path './node_modules/*' \
 find . -name '*_test.go' -not -path './node_modules/*' | wc -l
 find . -name '*_test.go' -not -path './node_modules/*' | xargs cat | wc -l
 
-# Frontend
-find frontend/src -name '*.svelte' | wc -l
-find frontend/src -name '*.svelte' -o -name '*.js' | xargs cat | wc -l
+# Frontend — node_modules ausschließen: Vitest legt einen Cache unter
+# frontend/src/lib/node_modules an (gitignored); mit ihm zählt der Befehl das Doppelte.
+find frontend/src -name '*.svelte' -not -path '*/node_modules/*' | wc -l
+find frontend/src \( -name '*.svelte' -o -name '*.js' \) -not -path '*/node_modules/*' | xargs cat | wc -l
 ls frontend/e2e | wc -l
 
 # Routen und Schema

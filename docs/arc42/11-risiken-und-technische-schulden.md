@@ -182,7 +182,7 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 ## 11.4 Das aktuelle Abnahme-Gate
 
 Über allem steht derzeit ein fachliches, nicht ein technisches Risiko: Das
-**Anforderungsprotokoll des Medienzentrums** vom 16.09.2026 nennt zwölf Punkte und schließt
+**Anforderungsprotokoll vom 16.09.2026** nennt zwölf Punkte und schließt
 damit, dass das Programm nach deren Abstellen für Schulen nutzbar wäre. Architektonisch
 wiegen zwei:
 
