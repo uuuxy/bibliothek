@@ -1,5 +1,6 @@
 <script>
 	import { Search, Camera } from '@lucide/svelte';
+	import { tick } from 'svelte';
 
 	/**
 	 * Das Suchfeld IN einer Werkzeugleiste — die kleine Schwester der Suchpille.
@@ -66,7 +67,7 @@
 	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
 	// läuft also exakt so los, als hätte jemand den Code eingetippt. Kein zweiter Suchweg.
 	let kameraOffen = $state(false);
-	function nachScan() {
+	async function nachScan() {
 		kameraOffen = false;
 		// Mit `onscan` entscheidet der Aufrufer, was ein Scan auslöst — die Titelsuche der
 		// Bestellung legt den eindeutigen Treffer direkt in die Übernahme, statt eine Liste
@@ -76,6 +77,10 @@
 			onscan(wert);
 			return;
 		}
+		// `await tick()` vor dem Ereignis: An DEMSELBEN input-Ereignis hängt Svelte die
+		// Rückschreibung von bind:value. Ohne das Warten liest sie den noch leeren DOM-Wert
+		// zurück und löscht den gescannten Code — Begründung und Messung in Suchpille.
+		await tick();
 		feld?.dispatchEvent(new Event('input', { bubbles: true }));
 	}
 </script>
