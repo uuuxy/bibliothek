@@ -235,15 +235,27 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 		return st, err
 	}
 	st.Plan.FreieTage = []LmfFreierTag{}
-	for _, f := range plan.FreieTage {
-		var t LmfFreierTag
-		if err := tx.QueryRow(ctx, `
-			INSERT INTO lmf_plan_freie_tage (plan_id, datum, grund) VALUES ($1, $2::date, $3)
-			ON CONFLICT (plan_id, datum) DO UPDATE SET grund = EXCLUDED.grund
-			RETURNING to_char(datum, 'YYYY-MM-DD'), grund`, st.Plan.ID, f.Datum, f.Grund).Scan(&t.Datum, &t.Grund); err != nil {
+	if len(plan.FreieTage) > 0 {
+		batch := &pgx.Batch{}
+		for _, f := range plan.FreieTage {
+			batch.Queue(`
+				INSERT INTO lmf_plan_freie_tage (plan_id, datum, grund) VALUES ($1, $2::date, $3)
+				ON CONFLICT (plan_id, datum) DO UPDATE SET grund = EXCLUDED.grund
+				RETURNING to_char(datum, 'YYYY-MM-DD'), grund`, st.Plan.ID, f.Datum, f.Grund)
+		}
+
+		br := tx.SendBatch(ctx, batch)
+		for i := 0; i < len(plan.FreieTage); i++ {
+			var t LmfFreierTag
+			if err := br.QueryRow().Scan(&t.Datum, &t.Grund); err != nil {
+				_ = br.Close() //nolint:errcheck
+				return st, err
+			}
+			st.Plan.FreieTage = append(st.Plan.FreieTage, t)
+		}
+		if err := br.Close(); err != nil {
 			return st, err
 		}
-		st.Plan.FreieTage = append(st.Plan.FreieTage, t)
 	}
 	st.Zeilen = make([]LmfPlanZeile, 0, len(zeilen))
 	for i, z := range zeilen {
