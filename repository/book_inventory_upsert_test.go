@@ -20,7 +20,7 @@ func neuerUpsertContext() *titelUpsertContext {
 	}
 }
 
-// Regressionstest für den Dubletten-Bug beim Katalogisat-Import: Die Bestands-CSV
+// Regressionstest für den Dubletten-Fehler beim Katalogisat-Import: Die Bestands-CSV
 // legt Titel OHNE ISBN an. Kommt danach das MAB2-XML mit ISBN, muss der Datensatz
 // über den TITEL gematcht werden (UPDATE mit ISBN-Nachtrag) — vor dem Fix wurde
 // nur über die ISBN gematcht und für jeden CSV-Titel eine Dublette angelegt.
