@@ -150,7 +150,7 @@ func TestSystematikLoeschenGeschuetzt(t *testing.T) {
 	}
 }
 
-// TestSystematikRenameZiehtTitelMit belegt den F3-Fix: Wird eine Sachgruppe
+// TestSystematikRenameZiehtTitelMit belegt die F3-Korrektur: Wird eine Sachgruppe
 // umbenannt, wandert die neue Bezeichnung auf die Titel (buecher_titel.subject) —
 // sonst blieben sie lautlos auf dem alten Fachnamen und fielen aus der Fach-Auswahl.
 // Die Signatur (Kürzel am Buchrücken) bleibt bewusst unberührt.
