@@ -55,24 +55,13 @@ func TestBuchEingabeDecodesAlleFelder(t *testing.T) {
 	}
 }
 
-func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
+func TestBereinigeUndValidiereBuchEingabe_Validierung(t *testing.T) {
 	tests := []struct {
-		name        string
-		eingabe     BuchEingabe
-		wantErr     bool
-		errMsg      string
-		wantEingabe *BuchEingabe
+		name    string
+		eingabe BuchEingabe
+		wantErr bool
+		errMsg  string
 	}{
-		{
-			name: "Valid input",
-			eingabe: BuchEingabe{
-				ISBN:         "978-3-16-148410-0",
-				KlassenStufe: 5,
-				Bestand:      zeigerAuf(10),
-				Titel:        " Test Titel ",
-			},
-			wantErr: false,
-		},
 		{
 			name: "Empty ISBN",
 			eingabe: BuchEingabe{
@@ -123,6 +112,43 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 			wantErr: true,
 			errMsg:  "stock muss >= 0 sein",
 		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := bereinigeUndValidiereBuchEingabe(&tt.eingabe)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("bereinigeUndValidiereBuchEingabe() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr && err.Error() != tt.errMsg {
+				t.Errorf("bereinigeUndValidiereBuchEingabe() expected error message %q, got %q", tt.errMsg, err.Error())
+			}
+		})
+	}
+}
+
+func TestBereinigeUndValidiereBuchEingabe_Bereinigung(t *testing.T) {
+	tests := []struct {
+		name        string
+		eingabe     BuchEingabe
+		wantEingabe *BuchEingabe
+	}{
+		{
+			name: "Valid input without trailing spaces",
+			eingabe: BuchEingabe{
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: 5,
+				Bestand:      zeigerAuf(10),
+				Titel:        "Test Titel",
+			},
+			wantEingabe: &BuchEingabe{
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: 5,
+				Bestand:      zeigerAuf(10),
+				Titel:        "Test Titel",
+			},
+		},
 		{
 			name: "Trims spaces from fields",
 			eingabe: BuchEingabe{
@@ -137,7 +163,6 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 				Verlag:       "  Verlag  ",
 				Beschreibung: "  Beschreibung  ",
 			},
-			wantErr: false,
 			wantEingabe: &BuchEingabe{
 				ISBN:         "978-3-16-148410-0",
 				Titel:        "Titel",
@@ -156,14 +181,11 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := bereinigeUndValidiereBuchEingabe(&tt.eingabe)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("bereinigeUndValidiereBuchEingabe() error = %v, wantErr %v", err, tt.wantErr)
+			if err != nil {
+				t.Errorf("bereinigeUndValidiereBuchEingabe() unexpected error = %v", err)
 				return
 			}
-			if tt.wantErr && err.Error() != tt.errMsg {
-				t.Errorf("bereinigeUndValidiereBuchEingabe() expected error message %q, got %q", tt.errMsg, err.Error())
-			}
-			if !tt.wantErr && tt.wantEingabe != nil {
+			if tt.wantEingabe != nil {
 				assert.Equal(t, *tt.wantEingabe, tt.eingabe)
 			}
 		})
