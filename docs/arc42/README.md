@@ -30,6 +30,16 @@ Dokumenten unter [`docs/`](../README.md):
 > technische Schulden, verweist für den Bearbeitungsstand aber auf `OFFEN.md`. Zwei Listen
 > wären genau die Fehlerart, gegen die dieses Projekt antritt.
 
+Daneben liegen zwei Ordner für das, was **noch keine** Architekturbeschreibung ist:
+
+| Ordner | Inhalt | Wann etwas hineingehört |
+| --- | --- | --- |
+| [`review/`](review/) | Befunde aus der Durchsicht — wo der gebaute Stand von dem abweicht, was er sein sollte | wenn es **gemessen** ist |
+| [`ideen/`](ideen/) | kurze Einträge zu Gedanken, die noch nicht entschieden sind | wenn die Frage „wäre das besser?" lautet |
+
+Beide sind ausdrücklich **keine** zweite Offen-Liste: Was entschieden ist, wandert nach
+`OFFEN.md` und wird dort verwaltet; der Eintrag hier wird gelöscht.
+
 ---
 
 ## Die zwölf Kapitel
