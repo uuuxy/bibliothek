@@ -826,6 +826,11 @@ steht eine Person in einer Warteschlange, die sie nie erreicht.
   verdrahten.
 - `scripts/backup.sh` exportiert die ganze `.env` — als einziger Punkt hier mit leichtem
   Sicherheitsbezug zuerst.
+- `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
+  Testprozesses; unter `TZ=Pacific/Midway` ist das der Vortag und der Zähler nennt 0. Kein
+  Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
+  auf `schulzeit.Zone()` umstellen (gefunden am 18.09.2026, als die volle Suite einmal unter einer
+  fremden Prozesszone lief).
 - Tote CSS-Klassen in `altlasten.css`; toter `logout()` in
   `frontend/src/inventur/lib/store.svelte.js`.
 - Zwei Regexe für die LMF-Kennung (`pkg/lmf/lmf.go`, `internal/service/import_lmf.go`).
