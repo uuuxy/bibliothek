@@ -60,7 +60,7 @@ func TestBulkUpsertBookTitles_LeereFelderUeberschreibenBestandNicht(t *testing.T
 }
 
 // Ein Reimport MIT neuen Werten darf die alten weiterhin ersetzen (Enrichment) —
-// der Fix darf kein Deadlock in Richtung "nie mehr ändern" werden.
+// die Anpassung darf kein Deadlock in Richtung "nie mehr ändern" werden.
 func TestBulkUpsertBookTitles_NichtLeereFelderUeberschreibenBestand(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
