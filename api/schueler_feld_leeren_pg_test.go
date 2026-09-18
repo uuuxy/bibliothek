@@ -82,7 +82,7 @@ func TestSchuelerFeldLeeren_WirktInDerDatenbank(t *testing.T) {
 
 // Die Gegenrichtung derselben Regel: Pflichtfelder lassen sich NICHT wegräumen.
 //
-// Ohne diese Hälfte wäre der Fix oben ein Tausch von einem Schaden gegen einen
+// Ohne diese Hälfte wäre die Korrektur oben ein Tausch von einem Schaden gegen einen
 // grösseren: Sobald das Formular geräumte Felder als leeren String schickt, würde ein
 // leerer Vorname genauso ankommen — und der PATCH schrieb ihn bis zum 23.08.2026 mit
 // 200 durch. Bei der Klasse kam ein zweiter Schaden dazu: calculateAbgaengerJahr
