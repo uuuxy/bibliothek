@@ -92,6 +92,15 @@ func LeserName(ctx context.Context, pool db.PgxPoolIface, leserID string) (vorna
 // stünde in der Leserdatei und käme nie ins Portal.
 var ErrKontoNichtEntstanden = errors.New("das Konto ist nicht entstanden")
 
+// LegeKollegiumskontoParams fasst die Parameter für LegeKollegiumskonto zusammen.
+type LegeKollegiumskontoParams struct {
+	Vorname  string
+	Nachname string
+	Email    string
+	LeserID  string
+	Aktiv    bool
+}
+
 // LegeKollegiumskonto hängt an eine Leserzeile das Anmeldekonto.
 //
 // `leserID` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
@@ -103,11 +112,11 @@ var ErrKontoNichtEntstanden = errors.New("das Konto ist nicht entstanden")
 //
 // Eine belegte Adresse kommt als pgconn.PgError 23505 zurück; der Aufrufer macht daraus
 // eine Auskunft (409), keine Störung.
-func LegeKollegiumskonto(ctx context.Context, q KontoSchreiber, vorname, nachname, email, leserID string, aktiv bool) error {
+func LegeKollegiumskonto(ctx context.Context, q KontoSchreiber, params LegeKollegiumskontoParams) error {
 	tag, err := q.Exec(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id, zugang_beantragt_am)
 		VALUES ($1, $2, $3, 'kollegium', $4, $5, CASE WHEN $4 THEN NULL ELSE CURRENT_TIMESTAMP END)
-	`, vorname, nachname, strings.ToLower(strings.TrimSpace(email)), aktiv, leserID)
+	`, params.Vorname, params.Nachname, strings.ToLower(strings.TrimSpace(params.Email)), params.Aktiv, params.LeserID)
 	if err != nil {
 		return err
 	}

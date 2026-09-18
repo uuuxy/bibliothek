@@ -122,7 +122,14 @@ func (s *Server) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}
-	if err := repository.LegeKollegiumskonto(ctx, s.DB.Pool, vorname, nachname, email, leserID, aktiv); err != nil {
+	params := repository.LegeKollegiumskontoParams{
+		Vorname:  vorname,
+		Nachname: nachname,
+		Email:    email,
+		LeserID:  leserID,
+		Aktiv:    aktiv,
+	}
+	if err := repository.LegeKollegiumskonto(ctx, s.DB.Pool, params); err != nil {
 		antworteAufKontoFehler(w, err, email)
 		return false
 	}
