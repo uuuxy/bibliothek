@@ -258,7 +258,7 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 		ids := make([]string, len(zeilen))
 		for i := 0; i < len(zeilen); i++ {
 			if err := br.QueryRow().Scan(&ids[i]); err != nil {
-				br.Close()
+				_ = br.Close()
 				return st, err
 			}
 		}
