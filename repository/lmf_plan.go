@@ -286,7 +286,9 @@ func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klass
 		return kanonisch, nil
 	}
 	br := tx.SendBatch(ctx, batch)
-	defer br.Close()
+	defer func() {
+		_ = br.Close()
+	}()
 	for i := 0; i < expected; i++ {
 		var name string
 		err := br.QueryRow().Scan(&name)
