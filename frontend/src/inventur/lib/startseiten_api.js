@@ -1,4 +1,5 @@
 import { apiFetch } from '../../lib/apiFetch.js';
+import { isbnFormen, normalisiereIsbn } from '../../lib/utils/isbnFormen.js';
 /**
  * startseiten_api.js
  *
@@ -73,10 +74,19 @@ export function buecherSuchen(buecherArray, searchQuery) {
 		terms = terms.filter((t) => !['klasse', 'kl', 'kl.', 'jahrgang', 'jg', 'jg.'].includes(t));
 	}
 
+	// Je Suchbegriff EINMAL vorab: Ist er eine ISBN, und in welchen Schreibweisen kann
+	// dieselbe ISBN im Bestand stehen? Ohne das findet ein gescannter Strichcode nur den
+	// Bestand, der zeichengleich gespeichert ist — Bindestriche oder eine zehnstellige
+	// Alt-ISBN reichten, damit die Suche leer blieb (18.09.2026). Der Aufwand je Buch
+	// entsteht nur bei ISBN-Begriffen; getippter Text läuft wie bisher.
+	const isbnJeTerm = terms.map((term) => isbnFormen(term));
+
 	return (Array.isArray(buecherArray) ? buecherArray : []).filter((/** @type {any} */ b) =>
-		terms.every((term) => {
+		terms.every((term, i) => {
 			if (b.title && b.title.toLowerCase().includes(term)) return true;
 			if (b.isbn && b.isbn.toLowerCase().includes(term)) return true;
+			if (b.isbn && isbnJeTerm[i].length > 0 && isbnJeTerm[i].includes(normalisiereIsbn(b.isbn)))
+				return true;
 			if (b.author && b.author.toLowerCase().includes(term)) return true;
 			if (b.subject && b.subject.toLowerCase().includes(term)) return true;
 			if (b.istLernmittel && 'lernmittel'.includes(term)) return true;

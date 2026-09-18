@@ -12,6 +12,8 @@
 	import { appState } from '$lib/store.svelte.js';
 	import BuchRasterStartseite from '$lib/components/BuchRasterStartseite.svelte';
 	import StartseitenFilter from '$lib/components/StartseitenFilter.svelte';
+	import SuchZustand from '../../lib/components/ui/SuchZustand.svelte';
+	import { Search } from '@lucide/svelte';
 	import Button from '../../lib/components/ui/Button.svelte';
 	import { hatRecht } from '../../lib/menu.js';
 	import { authStore } from '../../lib/stores/authStore.svelte.js';
@@ -76,6 +78,20 @@
 	<StartseitenFilter bind:searchQuery />
 
 	<div class="relative">
+		<!-- „Nichts gefunden" muss zu sehen sein. Das Raster zeigte bei null Treffern eine
+		     leere Fläche — und damit sah eine Suche ohne Ergebnis genauso aus wie eine, die
+		     gar nicht stattgefunden hat. Beim Scannen ist das der Unterschied zwischen
+		     „dieses Buch haben wir nicht" und „die Kamera hat nichts gelesen" (Rückmeldung
+		     18.09.2026). Der Hinweis wiederholt den Suchtext: Bei einem Scan steht dort der
+		     gelesene Code. Form und Wortlaut wie im OPAC und im Kollegiums-Portal
+		     (ui/SuchZustand); die M3-Seite zur Suche trifft dazu keine Aussage. -->
+		{#if searchQuery.trim() !== '' && filteredBooks.length === 0}
+			<SuchZustand
+				symbol={Search}
+				titel="Keine Bücher gefunden"
+				hinweis={`Kein Titel passt zu „${searchQuery.trim()}".`}
+			/>
+		{/if}
 		<BuchRasterStartseite
 			filteredBooks={paginatedBooks}
 			onBookClick={(book) => navigateToDetail(book)}
