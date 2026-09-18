@@ -32,11 +32,28 @@ type NachbuchService interface {
 	Nachbuchen(ctx context.Context, e NachbuchEintrag) (*NachbuchErgebnis, error)
 }
 
+// NachbuchServiceParams bündelt die Abhängigkeiten für den NachbuchService.
+type NachbuchServiceParams struct {
+	Pool        db.PgxPoolIface
+	StudentRepo repository.StudentRepository
+	BookRepo    repository.BookRepository
+	UserRepo    repository.UserRepository
+	LoanRepo    repository.LoanRepository
+	AuditRepo   repository.AuditRepository
+}
+
 // NewNachbuchService baut die Tür auf demselben Rumpf wie der Ausleih-Service — dieselben
 // Schranken, dieselben Schreiber. userRepo löst Lehrerausweise auf, die offline gescannt
 // wurden.
-func NewNachbuchService(pool db.PgxPoolIface, studentRepo repository.StudentRepository, bookRepo repository.BookRepository, userRepo repository.UserRepository, loanRepo repository.LoanRepository, auditRepo repository.AuditRepository) NachbuchService {
-	return &defaultLoanService{pool: pool, studentRepo: studentRepo, bookRepo: bookRepo, userRepo: userRepo, loanRepo: loanRepo, auditRepo: auditRepo}
+func NewNachbuchService(params NachbuchServiceParams) NachbuchService {
+	return &defaultLoanService{
+		pool:        params.Pool,
+		studentRepo: params.StudentRepo,
+		bookRepo:    params.BookRepo,
+		userRepo:    params.UserRepo,
+		loanRepo:    params.LoanRepo,
+		auditRepo:   params.AuditRepo,
+	}
 }
 
 // Absichten eines Eintrags: was der Theken-Rechner beim Scan meinte.
