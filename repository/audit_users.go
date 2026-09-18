@@ -159,18 +159,24 @@ func loescheUnberuehrteLeserzeile(ctx context.Context, tx pgx.Tx, leserID *strin
 		return false, "katalog leer", nil
 	}
 
-	for _, k := range kinder {
-		// Die Namen stammen aus dem Katalog, nicht aus einer Eingabe; `regclass` liefert sie
-		// bereits so, wie Postgres sie wieder liest.
-		var haengt bool
-		if err := tx.QueryRow(ctx,
-			`SELECT EXISTS (SELECT 1 FROM `+k.tabelle+` WHERE `+k.spalte+` = $1)`, *leserID,
-		).Scan(&haengt); err != nil {
-			return false, "", fmt.Errorf("%s prüfen: %w", k.tabelle, err)
+	// Die Namen stammen aus dem Katalog, nicht aus einer Eingabe; `regclass` liefert sie
+	// bereits so, wie Postgres sie wieder liest.
+	query := "SELECT tabelle FROM ("
+	for i, k := range kinder {
+		if i > 0 {
+			query += " UNION ALL "
 		}
-		if haengt {
-			return false, k.tabelle, nil
-		}
+		query += "SELECT '" + k.tabelle + "' AS tabelle FROM " + k.tabelle + " WHERE " + k.spalte + " = $1"
+	}
+	query += ") t LIMIT 1"
+
+	var haengtTabelle string
+	err = tx.QueryRow(ctx, query, *leserID).Scan(&haengtTabelle)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return false, "", fmt.Errorf("fremdschlüssel auf leser prüfen: %w", err)
+	}
+	if haengtTabelle != "" {
+		return false, haengtTabelle, nil
 	}
 
 	tag, err := tx.Exec(ctx, `DELETE FROM leser WHERE id = $1`, *leserID)
