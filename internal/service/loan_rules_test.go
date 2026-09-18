@@ -366,7 +366,7 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 }
 
 // Regressionstest: Eine NULL-wert-Zeile (z. B. nie gesetztes
-// ferien_leseclub_zieldatum) machte vor dem coalesce-Fix JEDEN Checkout zum 500 —
+// ferien_leseclub_zieldatum) machte vor dem coalesce-Umbau JEDEN Checkout zum 500 —
 // der Scan in string brach die pgx-Iteration ab und rows.Err() schlug durch.
 // Mit coalesce kommt sie als leerer String an und fällt auf Defaults zurück.
 func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
@@ -396,7 +396,7 @@ func TestQuerySettings_LeererWertFaelltAufDefaultsZurueck(t *testing.T) {
 // Die Frist ist der Stichtag des FOLGENDEN Schuljahres. Bis zum 14.09.2026 war sie am Termintag
 // der Termin selbst (heute 23:59) und danach der Stichtag des laufenden Schuljahres — in den
 // Ferien; nach den Ferien wäre die ganze Klasse überfällig und nach 14 Tagen gesperrt gewesen.
-// Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen Fall hat (Bugklasse
+// Die Uhr ist fest, damit der Tag vor, am und nach dem Termin je einen Fall hat (Fehlerklasse
 // „Frist am Tag des Ereignisses"); die Lage kommt hier aus dem Mock, am echten Postgres prüft
 // sie lmf_frist_termintag_pg_test.go.
 func TestResolveCheckoutDueDate_AmOderNachDemTerminGiltDerStichtagDesFolgendenSchuljahres(t *testing.T) {
