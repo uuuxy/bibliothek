@@ -246,21 +246,35 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 		st.Plan.FreieTage = append(st.Plan.FreieTage, t)
 	}
 	st.Zeilen = make([]LmfPlanZeile, 0, len(zeilen))
-	for i, z := range zeilen {
-		var id string
-		if err := tx.QueryRow(ctx, `
-			INSERT INTO lmf_termine (plan_id, position, datum, stunde, fest, art, vermerk)
-			VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-			st.Plan.ID, i+1, plaetze[i].Datum, plaetze[i].Stunde, z.Fest, plan.Art, z.Vermerk).Scan(&id); err != nil {
+	if len(zeilen) > 0 {
+		b := &pgx.Batch{}
+		for i, z := range zeilen {
+			b.Queue(`
+				INSERT INTO lmf_termine (plan_id, position, datum, stunde, fest, art, vermerk)
+				VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+				st.Plan.ID, i+1, plaetze[i].Datum, plaetze[i].Stunde, z.Fest, plan.Art, z.Vermerk)
+		}
+		br := tx.SendBatch(ctx, b)
+		ids := make([]string, len(zeilen))
+		for i := 0; i < len(zeilen); i++ {
+			if err := br.QueryRow().Scan(&ids[i]); err != nil {
+				br.Close()
+				return st, err
+			}
+		}
+		if err := br.Close(); err != nil {
 			return st, err
 		}
-		kanonisch, err := schreibeKlassen(ctx, tx, `INSERT INTO lmf_termin_klassen (termin_id, klasse) VALUES ($1, $2)
-			ON CONFLICT DO NOTHING RETURNING klasse`, id, z.Klassen)
-		if err != nil {
-			return st, err
+
+		for i, z := range zeilen {
+			kanonisch, err := schreibeKlassen(ctx, tx, `INSERT INTO lmf_termin_klassen (termin_id, klasse) VALUES ($1, $2)
+				ON CONFLICT DO NOTHING RETURNING klasse`, ids[i], z.Klassen)
+			if err != nil {
+				return st, err
+			}
+			st.Zeilen = append(st.Zeilen, LmfPlanZeile{Position: i + 1, Datum: plaetze[i].Datum.Format("2006-01-02"),
+				Stunde: plaetze[i].Stunde, Fest: z.Fest, Klassen: kanonisch, Vermerk: z.Vermerk})
 		}
-		st.Zeilen = append(st.Zeilen, LmfPlanZeile{Position: i + 1, Datum: plaetze[i].Datum.Format("2006-01-02"),
-			Stunde: plaetze[i].Stunde, Fest: z.Fest, Klassen: kanonisch, Vermerk: z.Vermerk})
 	}
 	if st.Ausgelassen, err = schreibeKlassen(ctx, tx, `INSERT INTO lmf_plan_ausgelassen (plan_id, klasse) VALUES ($1, $2)
 		ON CONFLICT DO NOTHING RETURNING klasse`, st.Plan.ID, ausgelassen); err != nil {
@@ -272,13 +286,29 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 // schreibeKlassen fügt Klassen einer Elternzeile hinzu und liefert die vom Vokabular-
 // Trigger kanonisierten Namen („5f1" → „05F1"); Leerwerte und Dubletten fallen weg.
 func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klassen []string) ([]string, error) {
+	if len(klassen) == 0 {
+		return []string{}, nil
+	}
 	kanonisch := make([]string, 0, len(klassen))
+	b := &pgx.Batch{}
+	queries := 0
 	for _, k := range klassen {
 		if k = strings.TrimSpace(k); k == "" {
 			continue
 		}
+		b.Queue(sql, elternID, k)
+		queries++
+	}
+	if queries == 0 {
+		return kanonisch, nil
+	}
+
+	br := tx.SendBatch(ctx, b)
+	defer br.Close()
+
+	for i := 0; i < queries; i++ {
 		var name string
-		err := tx.QueryRow(ctx, sql, elternID, k).Scan(&name)
+		err := br.QueryRow().Scan(&name)
 		if err == pgx.ErrNoRows {
 			continue
 		}
@@ -287,6 +317,7 @@ func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klass
 		}
 		kanonisch = append(kanonisch, name)
 	}
+
 	return kanonisch, nil
 }
 
