@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestGetNextSequence_NumerischNichtLexikografisch sichert den Fix gegen den
+// TestGetNextSequence_NumerischNichtLexikografisch sichert die Lösung gegen den
 // lexikografischen Kollaps (#1) ab: Liegen 'B-99999' und 'B-100000' im Bestand, muss die
 // nächste Nummer 100001 sein — nicht 100000. Lexikografisch gilt 'B-99999' > 'B-100000'
 // (die '9' schlägt die '1'); die alte ORDER-BY-DESC-Query hätte 99999 als Maximum
