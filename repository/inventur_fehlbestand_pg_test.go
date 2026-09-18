@@ -109,7 +109,7 @@ func TestInventurFehlbestandNenntDieBuecher(t *testing.T) {
 	}
 }
 
-// TestInventurScanFinishKoordination belegt den Nebenläufigkeits-Fix (19.08.2026):
+// TestInventurScanFinishKoordination belegt die Nebenläufigkeits-Korrektur (19.08.2026):
 // Im Multi-Scanner-Betrieb darf ein Scan, der zeitgleich zum Abschluss eintrifft, ein
 // physisch vorliegendes Buch NICHT als Verlust hinterlassen. Der Scan hält die Session
 // FOR SHARE, der Abschluss FOR UPDATE — entweder committet der Scan zuerst (dann sieht
