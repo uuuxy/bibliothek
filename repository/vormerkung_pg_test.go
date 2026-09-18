@@ -19,7 +19,7 @@ func titelIDVonExemplar(t *testing.T, pool *pgxpool.Pool, exID string) string {
 	return titelID
 }
 
-// Bug 4 (Vormerkungs-Monopolisierung), DB-Seite: Der EXISTS-Join ausleihen→buecher_exemplare
+// Fehler 4 (Vormerkungs-Monopolisierung), DB-Seite: Der EXISTS-Join ausleihen→buecher_exemplare
 // in Create muss eine aktive Eigen-Ausleihe am selben TITEL korrekt erkennen (ausleihen hängt
 // am Exemplar, nicht am Titel). Nur ein echter DB-Test prüft, dass Join und titel_id-Filter
 // tatsächlich greifen — pgxmock spielt nur nachgestellte Antworten zurück.
