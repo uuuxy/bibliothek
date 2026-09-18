@@ -110,24 +110,26 @@ func findeAktivenSchuelerNachLusdID(ctx context.Context, tx pgx.Tx, lusdID strin
 // Geburtsdatum aus dem Export nachgetragen (COALESCE: ein vorhandenes bleibt). Klasse und
 // Bestätigung übernimmt danach der Bestands-Batch über zielID.
 func adoptiereWaisen(ctx context.Context, tx pgx.Tx, adoptionen []AdoptionDiff) error {
+	if len(adoptionen) == 0 {
+		return nil
+	}
+	batch := &pgx.Batch{}
 	for _, a := range adoptionen {
 		var geb *string
 		if a.Geburtsdatum != "" {
 			g := a.Geburtsdatum
 			geb = &g
 		}
-		if _, err := tx.Exec(ctx, `
+		batch.Queue(`
 			UPDATE schueler SET
 				lusd_id = COALESCE(NULLIF($1, ''), lusd_id),
 				geburtsdatum = COALESCE(geburtsdatum, $4::date),
 				aktualisiert_am = NOW()
 			WHERE id = $2 AND ($1 = '' OR lusd_id IS NULL OR lusd_id LIKE $3)
 			  AND NOT EXISTS (SELECT 1 FROM schueler WHERE $1 <> '' AND lusd_id = $1 AND deleted_at IS NULL)`,
-			a.LusdID, a.SchuelerID, litteraHerkunftPraefix+"%", geb); err != nil {
-			return err
-		}
+			a.LusdID, a.SchuelerID, litteraHerkunftPraefix+"%", geb)
 	}
-	return nil
+	return tx.SendBatch(ctx, batch).Close()
 }
 
 // legeNeuenSchuelerAn legt einen per LUSD neu hinzugekommenen Schüler an.
