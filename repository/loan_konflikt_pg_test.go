@@ -65,7 +65,7 @@ func TestCreateLoanTx_MeldetKonfliktStattStillemNichts(t *testing.T) {
 }
 
 // Gegenprobe: Nach einer Rückgabe ist der Index wieder frei, dieselbe Signatur darf
-// erneut ausgeliehen werden. Sonst hätte der Fix den Normalbetrieb kaputtgemacht.
+// erneut ausgeliehen werden. Sonst hätte die Korrektur den Normalbetrieb kaputtgemacht.
 func TestCreateLoanTx_NachRueckgabeWiederAusleihbar(t *testing.T) {
 	pool := pgTestPool(t)
 	resetInventurDaten(t, pool)
