@@ -4,7 +4,6 @@
 	import CoverPeek from '../ui/CoverPeek.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import Button from '../ui/Button.svelte';
-
 	let { recommendations, onAddToCart } = $props();
 
 	// Nur die ersten Einträge ins DOM (Muster wie BookTable/Inventur-Startseite).
@@ -108,6 +107,7 @@
 
 		{#if recommendations.length}
 			<Suchpille
+				kamera
 				id="bestellbedarf-suchfeld"
 				bind:wert={filter}
 				platzhalter="In {recommendations.length} Titeln filtern …"

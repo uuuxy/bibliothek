@@ -77,6 +77,7 @@
 			>Titel suchen &amp; hinzufügen</label
 		>
 		<Suchfeld
+			kamera
 			id="book"
 			bind:wert={orderStore.searchQuery}
 			oninput={() => orderStore.handleSearchInput()}

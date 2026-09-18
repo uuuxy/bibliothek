@@ -1,5 +1,5 @@
 <script>
-	import { Search } from '@lucide/svelte';
+	import { Search, Camera } from '@lucide/svelte';
 
 	/**
 	 * Das Suchfeld IN einer Werkzeugleiste — die kleine Schwester der Suchpille.
@@ -29,7 +29,8 @@
 	 *   oninput?: (e: Event) => void,
 	 *   onfocus?: (e: FocusEvent) => void,
 	 *   onblur?: (e: FocusEvent) => void,
-	 *   nachlaufend?: import('svelte').Snippet
+	 *   nachlaufend?: import('svelte').Snippet,
+	 *   kamera?: boolean
 	 * }}
 	 */
 	let {
@@ -41,8 +42,22 @@
 		oninput,
 		onfocus,
 		onblur,
-		nachlaufend
+		nachlaufend,
+		kamera = false
 	} = $props();
+
+	/** @type {HTMLInputElement | undefined} */
+	let feld = $state();
+	import CameraScanner from '../../CameraScanner.svelte';
+
+	// Kamera-Scanner (seit 18.09.2026, Schalter `kamera`, Standard aus): Der erkannte Code
+	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
+	// läuft also exakt so los, als hätte jemand den Code eingetippt. Kein zweiter Suchweg.
+	let kameraOffen = $state(false);
+	function nachScan() {
+		kameraOffen = false;
+		feld?.dispatchEvent(new Event('input', { bubbles: true }));
+	}
 </script>
 
 <div class="relative {klasse}">
@@ -54,17 +69,46 @@
 		{id}
 		type="search"
 		autocomplete="off"
+		bind:this={feld}
 		bind:value={wert}
 		{oninput}
 		{onfocus}
 		{onblur}
 		aria-label={etikett}
 		placeholder={platzhalter}
-		class="h-9 w-full rounded-xl border border-outline bg-surface-container-lowest pl-9 {nachlaufend
+		class="h-9 w-full rounded-xl border border-outline bg-surface-container-lowest pl-9 {nachlaufend ||
+		kamera
 			? 'pr-10'
 			: 'pr-3'} text-sm text-on-surface transition-colors placeholder:text-outline focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 	/>
-	{#if nachlaufend}
-		<div class="absolute right-3 top-1/2 -translate-y-1/2">{@render nachlaufend()}</div>
-	{/if}
+	<div class="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-1">
+		{#if nachlaufend}
+			<span class="mr-2">{@render nachlaufend()}</span>
+		{/if}
+		<!-- Kamera-Scanner (Mobilgerät) als nachlaufendes Symbol der Suche — dieselbe Bauart wie
+	     an der Theke (OmniboxInput). Ein Handscanner braucht ihn nicht: Der tippt wie eine
+	     Tastatur ins Feld und löst dieselbe Suche aus. -->
+		{#if kamera}
+			<button
+				type="button"
+				onclick={() => (kameraOffen = !kameraOffen)}
+				title="Kamera-Scanner (Mobilgerät)"
+				aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
+				class="h-9 w-9 shrink-0 flex items-center justify-center rounded-full transition-colors {kameraOffen
+					? 'bg-secondary-container text-on-secondary-container'
+					: 'text-on-surface-variant hover:text-primary'}"
+			>
+				<Camera class="h-5 w-5" aria-hidden="true" />
+			</button>
+		{/if}
+	</div>
 </div>
+{#if kameraOffen}
+	<div class="mt-2">
+		<CameraScanner
+			stopCamera={() => (kameraOffen = false)}
+			bind:queryVal={wert}
+			submitAction={nachScan}
+		/>
+	</div>
+{/if}

@@ -1,5 +1,5 @@
 <script>
-	import { Search } from '@lucide/svelte';
+	import { Search, Camera } from '@lucide/svelte';
 
 	/**
 	 * Die Suchpille — EIN Bauteil für alle Suchfelder, die das Werkzeug einer Seite sind
@@ -36,7 +36,8 @@
 	 *   oninput?: (e: Event) => void,
 	 *   onfocus?: (e: FocusEvent) => void,
 	 *   onblur?: (e: FocusEvent) => void,
-	 *   nachlaufend?: import('svelte').Snippet
+	 *   nachlaufend?: import('svelte').Snippet,
+	 *   kamera?: boolean
 	 * }}
 	 * element: bind:this-Ersatz für Aufrufer, die den Fokus selbst setzen (Inventur-Scan
 	 * nach jedem Treffer). disabled: während ein Scan verarbeitet wird.
@@ -61,11 +62,23 @@
 		oninput,
 		onfocus,
 		onblur,
-		nachlaufend
+		nachlaufend,
+		kamera = false
 	} = $props();
 
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
+	import CameraScanner from '../../CameraScanner.svelte';
+
+	// Kamera-Scanner (seit 18.09.2026, Schalter `kamera`, Standard aus): Der erkannte Code
+	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
+	// läuft also exakt so los, als hätte jemand den Code eingetippt. Kein zweiter Suchweg.
+	let kameraOffen = $state(false);
+	function nachScan() {
+		kameraOffen = false;
+		feld?.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
 	$effect(() => {
 		element = feld;
 	});
@@ -119,4 +132,29 @@
 	{#if nachlaufend}
 		{@render nachlaufend()}
 	{/if}
+	<!-- Kamera-Scanner (Mobilgerät) als nachlaufendes Symbol der Suche — dieselbe Bauart wie
+	     an der Theke (OmniboxInput). Ein Handscanner braucht ihn nicht: Der tippt wie eine
+	     Tastatur ins Feld und löst dieselbe Suche aus. -->
+	{#if kamera}
+		<button
+			type="button"
+			onclick={() => (kameraOffen = !kameraOffen)}
+			title="Kamera-Scanner (Mobilgerät)"
+			aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
+			class="h-12 w-12 -mr-4 shrink-0 flex items-center justify-center rounded-full transition-colors {kameraOffen
+				? 'bg-secondary-container text-on-secondary-container'
+				: 'text-on-surface-variant hover:text-primary'}"
+		>
+			<Camera class="h-5 w-5" aria-hidden="true" />
+		</button>
+	{/if}
 </div>
+{#if kameraOffen}
+	<div class="mt-2">
+		<CameraScanner
+			stopCamera={() => (kameraOffen = false)}
+			bind:queryVal={wert}
+			submitAction={nachScan}
+		/>
+	</div>
+{/if}

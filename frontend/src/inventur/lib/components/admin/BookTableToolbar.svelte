@@ -21,6 +21,7 @@
 
 <div class="flex flex-col gap-4 border-b border-slate-100 bg-white px-4 py-4 md:px-6">
 	<Suchpille
+		kamera
 		id="titelverwaltung-suchfeld"
 		bind:wert={appState.searchQuery}
 		platzhalter="Titel, Autor oder ISBN eingeben …"
