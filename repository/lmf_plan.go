@@ -273,12 +273,25 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 // Trigger kanonisierten Namen („5f1" → „05F1"); Leerwerte und Dubletten fallen weg.
 func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klassen []string) ([]string, error) {
 	kanonisch := make([]string, 0, len(klassen))
+	batch := &pgx.Batch{}
+	expected := 0
 	for _, k := range klassen {
 		if k = strings.TrimSpace(k); k == "" {
 			continue
 		}
+		batch.Queue(sql, elternID, k)
+		expected++
+	}
+	if expected == 0 {
+		return kanonisch, nil
+	}
+	br := tx.SendBatch(ctx, batch)
+	defer func() {
+		_ = br.Close()
+	}()
+	for i := 0; i < expected; i++ {
 		var name string
-		err := tx.QueryRow(ctx, sql, elternID, k).Scan(&name)
+		err := br.QueryRow().Scan(&name)
 		if err == pgx.ErrNoRows {
 			continue
 		}
