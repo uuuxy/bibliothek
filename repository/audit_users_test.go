@@ -18,7 +18,7 @@ func snapshotBenutzerRows() *pgxmock.Rows {
 		AddRow("Erika", "Muster", "erika@schule.de", "KOLLEGIUM", nil)
 }
 
-// TestDeleteUser_RejectsWhenActiveLoans sichert Bug 2 (Stranded Handapparat) ab: Hat ein
+// TestDeleteUser_RejectsWhenActiveLoans sichert Fehler 2 (Stranded Handapparat) ab: Hat ein
 // Mitarbeiter/Lehrer noch nicht zurückgegebene Handapparat-Ausleihen, muss DeleteUser mit
 // ErrUserHasActiveLoans abbrechen — und darf das DELETE gar nicht erst absetzen, sonst
 // verlöre die Leserzeile ihr Konto (benutzer.leser_id, ON DELETE SET NULL) und die Bücher
