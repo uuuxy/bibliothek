@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-16 (Rollenkonzept: `leitung` ergänzt — Admin minus
+> Zuletzt aktualisiert: 2026-09-17 (das Vuln-Gate mit benannten Ausnahmen:
+> `scripts/govulncheck-gate.sh` und `security/vuln-ausnahmen.json`).
+> Davor 2026-09-16 (Rollenkonzept: `leitung` ergänzt — Admin minus
 > `manage_users` und `manage_settings`, Migration 122; Kollegium als Grundzustand statt
 > als vergebene Rolle beschrieben).
 > Davor 2026-09-11 (Token-Prüfung: Ist die Datenbank beim Abgleich mit
@@ -657,6 +659,15 @@ Code, der sich nicht geändert hat) und auf Knopfdruck:
 | `gosec`                   | Muster im Go-Quelltext (SAST), Ausschlussliste im Workflow                                                                                                         | Zusammenhänge über Funktionsgrenzen |
 | `npm audit`               | CVEs in Frontend-Abhängigkeiten (`--audit-level=high --omit=dev`)                                                                                                  | Eigener Code                        |
 | `trivy` + Container-Smoke | Das gebaute Image; dazu: läuft es unprivilegiert, sind die per `exec.Command` gerufenen Werkzeuge da (`pg_dump`), ist jedes Volume-Ziel für `appuser` beschreibbar | Anwendungslogik                     |
+
+**`govulncheck` läuft seit dem 17.09.2026 über `scripts/govulncheck-gate.sh`**, in der CI
+wie im pre-push. Der Unterschied zum nackten `govulncheck ./...`: Das Gate kennt benannte
+Ausnahmen (`security/vuln-ausnahmen.json`) — je mit Grund, einem Nachweis, der als Test im
+Repo steht, und einer Wiedervorlage. Es wird rot bei allem, was nicht in der Liste steht,
+bei einer überfälligen Wiedervorlage und auch dann, wenn eine Ausnahme gar nicht mehr
+gemeldet wird: Dann gibt es einen Fix, und der Eintrag gehört gelöscht. Anlass war
+GO-2026-6452 (excelize) — für alle Versionen ab 0, ohne eine mit Fix; ohne Ausnahme wäre
+kein Push mehr möglich gewesen, und `--no-verify` wäre zur Gewohnheit geworden.
 
 **CodeQL läuft daneben, ohne Datei im Repository.** Für dieses Repository ist GitHubs
 **Standard-Setup** aktiv (Settings → Code security → Code scanning). Es analysiert `go`,

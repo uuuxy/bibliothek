@@ -1,7 +1,7 @@
 package main
 
 // Bugklasse „Parameter-Struktur mit vergessenem Feld" (Rasterdurchgang 05.09.2026 abends,
-// Frage 2 „Spezialwert"): Zehn Jules-PRs formten lange Parameterlisten in Strukturen um
+// Frage 2 „Spezialwert"): Zehn zugelieferte PRs formten lange Parameterlisten in Strukturen um
 // (1359408b). Der Gewinn ist echt — benachbarte Argumente desselben Typs lassen sich nicht
 // mehr stumm vertauschen. Der Preis steht in derselben Commit-Botschaft: Aus einem
 // Pflichtargument wird ein Feld, und ein VERGESSENES Feld ist kein Compilerfehler, sondern

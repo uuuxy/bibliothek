@@ -14,8 +14,11 @@ import (
 // Titel, Anzahl, Lieferant, Inventarnummer; bei EDV-Führung je Schulhalbjahr ein Ausdruck
 // der Neuanschaffungen" (docs/mittel_konzept.md 7.1).
 //
-// Anders als beim Abgang braucht es dafür KEINE Migration: `erworben_am` trägt das
-// Zugangsdatum seit jeher und ist bei der Littera-Übernahme das echte Datum aus der
+// Das Datum kommt aus `zugang_am` (Migration 129): der Tag, an dem das Exemplar in den
+// Bestand kam. Bis dahin las das Buch `erworben_am` — den Tag, an dem die ZEILE entstand,
+// und die entsteht im Bestellweg beim Bestellen. Ein im Dezember bestelltes, im Februar
+// geliefertes Buch stand damit im Dezember, und Exemplare im Zulauf standen darin, obwohl
+// sie nicht da waren. Bei der Littera-Übernahme ist es weiterhin das echte Datum aus der
 // Altanwendung, nicht das des Imports.
 
 // ZugangsZeile ist ein Zugang, wie er im Buch steht.
@@ -55,17 +58,22 @@ func LadeZugangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Zuga
 
 	buch := Zugangsbuch{Von: abVon, Bis: bisTag, Zeilen: []ZugangsZeile{}}
 
-	// `erworben_am` ist ein DATUM, kein Zeitpunkt — hier wird deshalb auf Tagen verglichen,
+	// Gelesen wird `zugang_am` (Migration 129), nicht `erworben_am`: Im Bestellweg entsteht
+	// die Exemplarzeile beim BESTELLEN, der Zugang ist erst der Wareneingang. Exemplare im
+	// Zulauf tragen NULL und fallen damit heraus — ein Nachweis über den Bestand führt keine
+	// Bücher, die noch beim Händler liegen.
+	//
+	// `zugang_am` ist ein DATUM, kein Zeitpunkt — hier wird deshalb auf Tagen verglichen,
 	// anders als beim Abgangsbuch. Ein AT TIME ZONE darum herum wäre nicht nur überflüssig,
 	// sondern falsch: Es machte aus dem 16.09. je nach Sitzungszeitzone den 15.
 	rows, err := q.Query(ctx, `
-		SELECT e.erworben_am, e.barcode_id, t.titel, COALESCE(t.signatur, ''),
+		SELECT e.zugang_am, e.barcode_id, t.titel, COALESCE(t.signatur, ''),
 		       COALESCE(b.lieferant_name, ''), COALESCE(b.mittel, '')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		LEFT JOIN bestellungen_verlauf b ON b.id = e.bestellung_id
-		WHERE e.erworben_am >= $1::date AND e.erworben_am <= $2::date
-		ORDER BY e.erworben_am, t.titel, e.barcode_id
+		WHERE e.zugang_am >= $1::date AND e.zugang_am <= $2::date
+		ORDER BY e.zugang_am, t.titel, e.barcode_id
 	`, abVon, bisTag)
 	if err != nil {
 		return buch, err

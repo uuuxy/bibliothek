@@ -12,6 +12,7 @@
 	import UnifiedInventory from './UnifiedInventory.svelte';
 	import MediaCatalog from './MediaCatalog.svelte';
 	import Bestandsbuecher from './components/bestand/Bestandsbuecher.svelte';
+	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import SignaturenView from './SignaturenView.svelte';
 	import StatsDashboard from './StatsDashboard.svelte';
 	import StudentDirectory from './StudentDirectory.svelte';
@@ -25,52 +26,7 @@
 	import Graduates from './Graduates.svelte';
 	import LmfPlan from './LmfPlan.svelte';
 	import RouteFallback from './components/layout/RouteFallback.svelte';
-	import { tabToPath } from './routenTabelle.js';
-
-	/**
-	 * Setzt Tab (+ ggf. Store-Parameter) aus einem Pfad. BEWUSST die einzige Quelle für
-	 * Initial-Match UND popstate — vorher lag die book_detail-Logik dupliziert in beiden,
-	 * neue Routen wurden leicht in einer Kopie vergessen (siehe Portal-Bug oben).
-	 * @param {string} path
-	 */
-	function applyPathToState(path) {
-		if (path === '/lmf-plan') {
-			// Alte Adresse (Menüpunkt am 05.09.2026): jetzt System → Schuljahreswechsel.
-			uiStore.activeTab = 'schuljahr';
-			return;
-		}
-		if (path === '/lmf-aktionen') {
-			// Alte Adresse (Menüpunkt bis 24.08.2026): jetzt Einstellungs-Kategorie.
-			uiStore.activeTab = 'settings';
-			uiStore.requestedSettingsTab = 'lmf';
-			return;
-		}
-		if (path.startsWith('/medienkatalog/buch/')) {
-			uiStore.activeTab = 'book_detail';
-			appState.activeBookId = path.replace('/medienkatalog/buch/', '');
-			return;
-		}
-		// Parametrisierte Sonderroute: der Tab braucht einen Zusatzparameter, passt nicht in tabToPath.
-		const statsKind = path.startsWith('/statistiken/') && path.replace('/statistiken/', '');
-		if (statsKind && ['renner', 'ladenhueter'].includes(statsKind)) {
-			uiStore.activeTab = 'stats_detail';
-			uiStore.statsDetailKind = /** @type {'renner'|'ladenhueter'} */ (statsKind);
-			return;
-		}
-		const matchedTab = Object.keys(tabToPath).find((key) => tabToPath[key] === path);
-		if (matchedTab) uiStore.activeTab = matchedTab;
-	}
-
-	/** Zielpfad für den aktuellen Tab — inkl. der parametrisierten Sonderrouten. */
-	function currentTargetPath() {
-		if (uiStore.activeTab === 'book_detail' && appState.activeBookId) {
-			return `/medienkatalog/buch/${appState.activeBookId}`;
-		}
-		if (uiStore.activeTab === 'stats_detail') {
-			return `/statistiken/${uiStore.statsDetailKind}`;
-		}
-		return tabToPath[uiStore.activeTab];
-	}
+	import { applyPathToState, currentTargetPath } from './routenAnwenden.js';
 
 	// ── Wer darf welchen Bildschirm? EINE Regel, nicht zwei ────────────────────
 	// Bis zum 08.08.2026 stand hier eine handgepflegte Helfer-Liste ('kiosk',
@@ -163,6 +119,8 @@
 		<div class="w-full animate-fade-in h-full"><DruckCenter /></div>
 	{:else if uiStore.activeTab === 'media_catalog'}
 		<div class="w-full animate-fade-in"><MediaCatalog /></div>
+	{:else if uiStore.activeTab === 'bestellberichte'}
+		<BestellBerichte />
 	{:else if uiStore.activeTab === 'bestandsbuecher'}
 		<div class="w-full animate-fade-in"><Bestandsbuecher /></div>
 	{:else if uiStore.activeTab === 'signaturen'}

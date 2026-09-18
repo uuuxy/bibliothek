@@ -11,7 +11,6 @@
 	import WareneingangView from './components/bestellungen/WareneingangView.svelte';
 	import OrderRecommendations from './components/bestellungen/OrderRecommendations.svelte';
 	import BestellHistorie from './components/bestellungen/BestellHistorie.svelte';
-	import BestellBerichte from './components/bestellungen/BestellBerichte.svelte';
 	import BestelllinkHinweis from './components/bestellungen/BestelllinkHinweis.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
 	import KlassensatzReservierungen from './components/bestellungen/KlassensatzReservierungen.svelte';
@@ -148,11 +147,12 @@
 
 	     Seit 04.09.2026 aus ui/Reiter.svelte statt von Hand — der letzte der vier
 	     Bestandsfaelle aus der Reiter-Hygiene, „bei ihrem naechsten fachlichen Anfassen
-	     nachgezogen". Anlass war die Hoehe: Im Browser gemessen waren diese sechs Reiter
-	     34 px hoch, alle uebrigen 32. Die zwei Pixel kamen vom `border-b-2`, das den
-	     Indikator IM TEXTFLUSS zeichnete und die Hoehe damit vergroesserte; das Bauteil
-	     legt ihn absolut darueber. 34 px liegt auf keiner Stufe der M3-Dichteskala
-	     (Reiter: 48 / 44 / 40 / 36 / 32 / 28) — es war schlicht ein Rechenfehler der
+	     nachgezogen". Anlass war die Hoehe: Im Browser gemessen waren diese Reiter 34 px
+	     hoch, alle uebrigen 32 (damals sechs Stueck; „Bestellberichte" ist am 17.09.2026
+	     ein eigener Bildschirm unter „Berichte" geworden). Die zwei Pixel kamen vom
+	     `border-b-2`, das den Indikator IM TEXTFLUSS zeichnete und die Hoehe damit
+	     vergroesserte; das Bauteil legt ihn absolut darueber. 34 px liegt auf keiner Stufe
+	     der M3-Dichteskala (Reiter: 48 / 44 / 40 / 36 / 32 / 28) — es war schlicht ein Rechenfehler der
 	     Bauform, kein gewaehltes Mass.
 
 	     Der Zaehler faellt damit ebenfalls an seinen Platz: Hier stand eine zweite,
@@ -167,7 +167,6 @@
 			{ id: 'bestellungen', label: 'Bestellungen' },
 			{ id: 'wareneingang', label: 'Wareneingang', anzahl: zulaufExemplare },
 			{ id: 'historie', label: 'Bestellhistorie' },
-			{ id: 'berichte', label: 'Berichte' },
 			{
 				id: 'klassensaetze',
 				label: 'Klassensatz-Reservierungen',
@@ -275,10 +274,6 @@
 
 	{#if activeTab === 'historie'}
 		<BestellHistorie />
-	{/if}
-
-	{#if activeTab === 'berichte'}
-		<BestellBerichte suppliers={orderStore.suppliers} />
 	{/if}
 
 	{#if activeTab === 'klassensaetze'}

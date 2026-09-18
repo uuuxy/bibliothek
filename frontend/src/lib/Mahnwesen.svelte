@@ -27,6 +27,13 @@
 	// Schreiben verlangt edit_students wie die Route (UI entscheidet nach Recht, nicht
 	// nach Rolle); LESEN darf jeder, der das Mahnwesen sieht.
 	const darfBescheid = $derived(hatRecht(authStore.currentUser, 'edit_students'));
+	// „Alle anmahnen" schickt an POST /api/mail/send-bulk-overdue, und die Route verlangt
+	// create_orders — nicht view_students, an dem diese Seite hängt. Bis zum 18.09.2026
+	// stand der Knopf für jeden, der die Seite sah; wer ihn ohne das Recht drückte, bekam
+	// nach dem Versanddialog samt Klassenauswahl einen 403. Dieselbe Lücke wie bei den
+	// Abgänger-Mails (AbgaengerKopfzeile, 12.09.2026), derselbe Schluss: Sichtbarkeit
+	// einer Aktion = hatRecht(user, '<Recht der Route>') — frontend-hygiene-rechte.test.js.
+	const darfMahnlauf = $derived(hatRecht(authStore.currentUser, 'create_orders'));
 
 	$effect(() => {
 		if (offlineSync.pendingCount === 0) {
@@ -80,6 +87,7 @@
 				onMahnlauf={() => (mahnlaufOffen = true)}
 				onBescheid={(id) => (bescheidFuer = id)}
 				{darfBescheid}
+				{darfMahnlauf}
 			/>
 			{#if mahnwesenStore.activeFilter === 'Schadensersatz'}
 				<BescheideTabelle darfSchreiben={darfBescheid} onBescheid={(id) => (bescheidFuer = id)} />

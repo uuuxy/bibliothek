@@ -18,7 +18,7 @@ import (
 // von außen (inventur/uploads_pfad.go): Die Wurzel bindet jeden Zugriff OS-seitig an das
 // Verzeichnis; ein Symlink darin wird als Link gesehen und als Link gelöscht, nie sein Ziel.
 //
-// Einordnung (Jules-Sentinel #601, 09.09.2026, als „HIGH: Path Traversal" gemeldet): Einen
+// Einordnung (gemeldet in PR #601, 09.09.2026, als „HIGH: Path Traversal"): Einen
 // Eingang für Angreifer gibt es hier nicht — das Verzeichnis kommt aus BACKUP_DIR (Betreiber),
 // die Namen schreibt der Job selbst, kein Endpunkt nimmt einen Dateinamen entgegen. Die
 // Umstellung ist Hausform und Einhegung, kein Sicherheitsfix; neu sind vor allem die Tests,

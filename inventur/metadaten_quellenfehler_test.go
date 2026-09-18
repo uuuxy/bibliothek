@@ -15,7 +15,7 @@ import (
 // Am Sentinel errQuelleNichtErreichbar hängt die Antwort nach draußen: 502 („Netz weg,
 // später noch einmal") statt 404 („Buch unbekannt, von Hand erfassen"). Wer die beiden
 // verwechselt, schickt die Bibliothek bei einem DNB-Ausfall ans Abtippen — oder lässt sie
-// bei einem wirklich unbekannten Titel warten. (Zusammengeführt aus den Jules-PRs #606
+// bei einem wirklich unbekannten Titel warten. (Zusammengeführt aus den PRs #606
 // und #608; #608 prüfte nur den Text, nicht, dass der 4xx das Sentinel NICHT trägt.)
 func TestHoleInhalt_KaputteQuelleIstNichtLeer(t *testing.T) {
 	antwort := func(status int) func(*http.Request) (*http.Response, error) {
@@ -54,7 +54,7 @@ func TestHoleInhalt_KaputteQuelleIstNichtLeer(t *testing.T) {
 
 // aufloeseCover fragt die Quellen der Reihe nach; eine scheiternde hält die nächste nicht
 // auf, und scheitern alle, bleibt das Cover leer — der Titel selbst wird trotzdem angelegt.
-// (Aus Jules-PR #610; ergänzt um die Prüfung, dass die Rückfallquellen wirklich gefragt
+// (Aus PR #610; ergänzt um die Prüfung, dass die Rückfallquellen wirklich gefragt
 // wurden — sonst wäre auch ein Abbruch nach der ersten Quelle grün.)
 func TestAufloeseCover_AlleQuellenScheitern(t *testing.T) {
 	var gefragt []string

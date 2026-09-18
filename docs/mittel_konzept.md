@@ -185,8 +185,9 @@ Schulaufsicht ordnet Zahlungen darüber zu). `mittel` ist dasselbe Vokabular wie
 
 ### 4.2 Betrag: Vorschlag, kein Automat (`pkg/ersatzwert`)
 
-Reine Funktion `Ersatzwert(verleihjahr, kaufpreis, neupreis) (betrag, prozent, basis)`
-nach der Staffel der Schule. `verleihjahr = max(Anzahl Schuljahre mit Ausleihe des
+Reine Funktion `Rechne(verleihjahr, kaufpreis, neupreis, zustandAbschlag, quelle) Vorschlag`
+nach der Staffel der Schule (seit dem 17.09.2026 mit dem Zustands-Abschlag des Exemplars und
+der eingestellten Preisquelle; `RechneNeuwert` ist derselbe Weg ohne Staffel). `verleihjahr = max(Anzahl Schuljahre mit Ausleihe des
 Exemplars, Schuljahre seit erworben_am + 1)` — die zweite Größe fängt den Littera-Altbestand
 ohne Historie ab (ein 2019 gekauftes Buch ist nicht im 1. Verleihjahr, nur weil wir seine
 Ausleihen nicht kennen). Der Dialog zeigt die Herleitung („3. Verleihjahr → 60 % von
@@ -357,7 +358,9 @@ des Schulträgers (Schülerbücherei) beschafft wird.
   bekam **kein** `ist_lernmittel` — ein neues Schulbuch entstand als Bücherei-Titel und
   blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
 - Der Wareneingang hängt an `buecher_exemplare.bestellung_id` (Migration 063) — das
-  Zugangsbuch ist damit aus den Daten ableitbar, nur nicht ausgedruckt.
+  Zugangsbuch war damit aus den Daten ableitbar, nur nicht ausgedruckt. **Seit dem
+  17.09.2026 gibt es den Ausdruck** (Berichte → „Bestandsbücher", Reiter Zugangsbuch und
+  Abgangsbuch, je Halbjahr und Topf; FACHKONZEPT.md Abschnitt 13).
 
 ### 7.3 Bauplan (kleiner als Teil A)
 

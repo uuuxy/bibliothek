@@ -561,6 +561,12 @@ CREATE TABLE buecher_exemplare (
     -- der Migration ausgesondert war: „Zeitpunkt unbekannt" ist die Wahrheit über diese
     -- Zeilen; ein erfundenes Datum stünde als Tatsache in einem Bestandsnachweis.
     ausgesondert_am TIMESTAMP WITH TIME ZONE,
+    -- Zugangsdatum (Migration 129): WANN das Exemplar in den Bestand kam. Nicht dasselbe wie
+    -- erworben_am: Im Bestellweg entsteht die Zeile beim BESTELLEN, der Zugang ist erst der
+    -- Wareneingang. Gesetzt vom Trigger trg_exemplar_zugangsdatum (Eintreffen) bzw.
+    -- trg_exemplar_zugangsdatum_neu (Anlage außerhalb des Bestellwegs). NULL = steht noch im
+    -- Zulauf, ist also kein Zugang — nicht „unbekannt".
+    zugang_am DATE,
     -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
     -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
     CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
@@ -628,6 +634,41 @@ EXECUTE FUNCTION stempel_ausgesondert_am();
 CREATE INDEX IF NOT EXISTS idx_exemplare_ausgesondert_am
     ON buecher_exemplare (ausgesondert_am DESC)
     WHERE ist_ausgesondert = true;
+
+-- Migration 129: das Gegenstück zum Abgangsdatum. Gestempelt wird nur, solange die Spalte
+-- NULL ist — ein zweites Update verschiebt den Zugang nicht. Ausgesondert wird nicht
+-- gestempelt: Ein bestelltes Exemplar, das nie ankam, ist kein Zugang.
+--
+-- Migration 130: der Tag kommt aus der SCHULZEITZONE, nicht aus CURRENT_DATE. Die
+-- Sitzung läuft in UTC; bis 2 Uhr Berliner Zeit ist CURRENT_DATE dort noch der Vortag,
+-- und ein Wareneingang um halb eins landete damit im falschen Halbjahr des
+-- Zugangsbuchs. Gleiche Rechnung wie pkg/schulzeit (SQLHeute).
+CREATE OR REPLACE FUNCTION stempel_zugang_am()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        NEW.zugang_am := NEW.erworben_am;
+    ELSE
+        NEW.zugang_am := (now() AT TIME ZONE 'Europe/Berlin')::date;
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_exemplar_zugangsdatum_neu
+BEFORE INSERT ON buecher_exemplare
+FOR EACH ROW
+WHEN (NEW.zugang_am IS NULL AND NEW.bestellstatus IS NULL)
+EXECUTE FUNCTION stempel_zugang_am();
+
+CREATE TRIGGER trg_exemplar_zugangsdatum
+BEFORE UPDATE ON buecher_exemplare
+FOR EACH ROW
+WHEN (NEW.zugang_am IS NULL AND NEW.bestellstatus IS NULL AND NEW.ist_ausgesondert = false)
+EXECUTE FUNCTION stempel_zugang_am();
+
+CREATE INDEX IF NOT EXISTS idx_exemplare_zugang_am
+    ON buecher_exemplare (zugang_am)
+    WHERE zugang_am IS NOT NULL;
 
 -- Migration 125: Ein Konto ohne Leserzeile darf nicht entstehen. Konten entstehen an
 -- fuenf Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Uebernahme, Seed,
@@ -1461,7 +1502,9 @@ INSERT INTO schema_migrations (version) VALUES
 ('125_ein_ausweis_ein_leser.sql'),
 ('126_auflage_am_titel.sql'),
 ('127_listenpreis_und_zustandsabwertung.sql'),
-('128_abgangsdatum_am_exemplar.sql')
+('128_abgangsdatum_am_exemplar.sql'),
+('129_zugangsdatum_am_exemplar.sql'),
+('130_zugang_am_in_schulzeit.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -6,7 +6,6 @@ Dieser Bericht untersucht die Datenbank hinter dem selbst gebauten Bibliothekssy
 
 | | |
 |---|---|
-| Erstellt für | **Daniel** |
 | Datum | **13.08.2026** |
 | Grundlage | **Datenbank-Diagramm + alle 74 Änderungsskripte + Programmcode** |
 | Modus | **nur lesend, nichts verändert** |

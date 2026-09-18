@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-16. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-17. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -73,7 +73,11 @@ beides einstellbar (_Datenschutz & Sitzung_).
 - **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur; Kartenansicht mit
   Cover und Signatur.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
-  (Warteliste mit Schüler-Suche), Historie.
+  (Warteliste mit Schüler-Suche), Historie. An jedem Exemplar steht, **was es heute noch
+  wert ist**, samt Herleitung („3. Verleihjahr → 60 % von 24,90 €"). Ist ein Buch
+  beschädigt, tragen Sie im Zustands-Dialog einen Prozentwert ein (z. B. 20 % für einen
+  Wasserschaden): Er mindert jeden künftigen Ersatzbetrag, zieht das Buch aber nicht aus
+  dem Verkehr. Erfasst wird das nach der Rückgabe hier, nicht an der Theke. (§14)
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
   Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen, Meldebestand,
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben
@@ -366,7 +370,7 @@ erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die
 
 ## Bestellwesen
 
-Sechs Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automatisch; Titel in
+Fünf Reiter: **Bestellbedarf** (Lernmittel unter der Bedarfsschwelle — automatisch; Titel in
 den Warenkorb, Lieferant wählen, Bestellung geht als Mail mit Bestätigungs-Link raus; der
 Warenkorb zeigt zwei Abschnitte _Lernmittelfreiheit (Land)_ und _Schülerbücherei
 (Schulträger)_ — je Abschnitt geht eine eigene Bestellung an den Händler, eine Position lässt
@@ -374,9 +378,7 @@ sich per Knopf in den anderen Abschnitt schieben; im Bestelldetail lässt sich d
 Bestellung nachträglich mit Grund korrigieren) ·
 **Wareneingang** (Positionen einbuchen → Etiketten) · **Bestellhistorie** (Detail, Status,
 Händlerbestätigung; Filter _Mittelherkunft_ nach Topf oder „ohne Zuordnung", die Kennzahlen
-im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Berichte**
-(Monat/Jahr/Lieferant als PDF; in Blöcken je Topf mit eigener Summe und der Gesamtsumme
-darunter, über _Mittelherkunft_ auch für nur einen Topf) · **Klassensatz-
+im Kopf zusätzlich je Topf, sobald mehr als ein Topf Bestellungen hat) · **Klassensatz-
 Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Bereit-Mail) ·
 **Wünsche & Meldungen** (Anliegen aus dem Portal, _Erledigen_ mit Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
@@ -396,6 +398,32 @@ Bestand, aktuell verliehen, Zirkulationsquote, Wiederbeschaffungswert; Ausleihen
 Überfällige nach Dauer; **Renner** (meistausgeliehen) und **Ladenhüter** (seit über zwei Jahren
 nicht ausgeliehen) mit Detailseite und Filter. Ohne Schülernamen — die Statistik zählt
 Ausleihen, nicht Personen. (§11)
+
+## Bestandsbücher
+
+Zwei Reiter, beide mit einem Blatt zum Ausdrucken und Abheften: **Zugangsbuch** (welche
+Exemplare in einem Zeitraum in den Bestand gekommen sind — Eingangsdatum, Nummer, Titel,
+Lieferant) und **Abgangsbuch** (welche hinausgegangen sind — Datum, Nummer, Titel,
+Signatur, Grund). Vorbelegt ist das laufende Schulhalbjahr mit den Stichtagen 15.3. und
+15.9.; beide Datumsfelder lassen sich überschreiben. Land und Schulträger stehen getrennt,
+jeweils mit eigener Stückzahl.
+
+Ein bestelltes Buch erscheint im Zugangsbuch erst, wenn Sie es unter _Bestellungen →
+Wareneingang_ eingebucht haben — mit dem Tag der Lieferung, nicht dem der Bestellung.
+Was noch im Zulauf steht, gehört nicht in den Nachweis: Es liegt noch beim Händler.
+
+**Was nicht auf dem Blatt steht, steht ausdrücklich darunter:** Exemplare, die vor der
+Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum — ihre Zahl
+nennt der Ausdruck, statt Vollständigkeit zu behaupten. Im Zugangsbuch stehen Bücher ohne hinterlegte
+Bestellung unter „ohne Zuordnung", weil nicht belegt ist, aus welchem Geld sie bezahlt
+wurden. (§13)
+
+## Bestellberichte
+
+Monatsbericht, Jahresbericht und Lieferantenabrechnung als PDF; in Blöcken je Topf mit
+eigener Summe und der Gesamtsumme darunter, über _Mittelherkunft_ auch für nur einen Topf.
+Ohne Preise im Bestellwesen zählen die Blätter Exemplare statt Euro und heißen
+entsprechend. Bis zum 17.09.2026 ein Reiter im Bestellwesen. (§7)
 
 ## System-Logs
 
@@ -436,7 +464,7 @@ eingebaut und je Schule nicht verstellbar. (§12)
 | Mahnwesen-Routing       | Klasse → Klassenleitung (Empfänger für Mahnlauf und Abgänger-Kontoauszüge)                                                                                                                                                                                                                                                                                                                    |
 | Bestellwesen            | Bedarfswarnung, Bedarfsschwelle, Preise erfassen                                                                                                                                                                                                                                                                                                                                              |
 | Lieferanten             | Händler, Kundennummern, genau ein Hauptlieferant                                                                                                                                                                                                                                                                                                                                              |
-| Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage)                                                                                                                                                                                 |
+| Schadensersatz          | Angaben für den Schadensersatz-Bescheid: Schulamtsbereich und Schulnummer (Teil der Referenznummer), Aufsicht, Schulleitung, Geschäftszeichen, Zahlstelle und Bankverbindung, Zahlungsfrist (Vorgabe 28 Tage); **„Immer mit dem Einkaufspreis rechnen"** — aus gilt der heutige Listenpreis (so verlangt es die Arbeitshilfe), an immer der Preis, den die Schule damals bezahlt hat                                                                                                                                                                                 |
 | Datenschutz & Sitzung   | Löschfristen, Abgänger-Karenzzeit, Theke leeren, Sperrbildschirm                                                                                                                                                                                                                                                                                                                              |
 | Erreichbarkeit & Alarme | öffentliche Adresse (Basis für Bestätigungs-Link, Katalog, Monitor), Alarm-Empfänger                                                                                                                                                                                                                                                                                                          |
 | Mail                    | Postausgang mit Verbindungstest, Mail-Vorlagen (Mahnung, Bestellung, Händler)                                                                                                                                                                                                                                                                                                                 |

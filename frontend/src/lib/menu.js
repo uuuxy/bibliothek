@@ -184,16 +184,27 @@ export const menuGroups = [
 		]
 	},
 	{
-		name: 'System',
+		// Eigene Sektion statt zweier Punkte im Sammeltopf „System" (17.09.2026). Beide
+		// standen dort — und „System" ist beim Laden zugeklappt (Sidebar.svelte): Wer einen
+		// Nachweis oder eine Zahl suchte, sah gar nichts und musste erst eine Gruppe
+		// aufklappen, deren Name nichts davon ankündigt.
+		//
+		// M3 nennt genau dieses Mittel: „Short subhead section labels can help group related
+		// destinations in the navigation drawer" (Navigation drawer, Guidelines). Gruppiert
+		// wird nach VERWANDTSCHAFT, nicht nach Gattung — deshalb bleiben die Bestellberichte
+		// im Bestellwesen, wo ihr Gegenstand liegt, und heißen dort auch so.
+		//
+		// „Berichte" ist in der Oberfläche seither nur EINMAL vergeben: Der Reiter im
+		// Bestellwesen heißt „Bestellberichte". Zwei gleich benannte Orte waren der Grund,
+		// warum man die Bestandsbücher bei den Bestellberichten vermutete.
+		name: 'Berichte',
 		items: [
 			{ id: 'stats', label: 'Statistiken', icon: 'chart-bar', permission: 'view_stats' },
 			{
 				// Zugangs- und Abgangsbuch, ein Punkt (Betreiber-Entscheidung 17.09.2026). Sie
 				// standen bis dahin als zwei weitere Reiter im Medienkatalog — fachlich am
 				// richtigen Ort, im Weg der täglichen Arbeit aber zwei zu viel. Es ist ein
-				// Nachweis zum Stichtag (15.3./15.9.), den jemand ausdruckt und abheftet:
-				// dieselbe Begründung, mit der der Schuljahreswechsel hier unter System steht
-				// und nicht im Bibliotheks-Menü.
+				// Nachweis zum Stichtag (15.3./15.9.), den jemand ausdruckt und abheftet.
 				//
 				// Recht: view_books wie der übrige Blick auf den Bestand — die vier Türen
 				// dahinter verlangen dasselbe (api/routes_books.go), und ein Menüpunkt, der
@@ -205,6 +216,29 @@ export const menuGroups = [
 				icon: 'book-marked',
 				permission: 'view_books'
 			},
+			{
+				// Monats-, Jahresbericht und Lieferantenabrechnung — bis zum 17.09.2026 ein
+				// Reiter im Bestellwesen. Eine Sektion „Berichte" ohne das, was wörtlich
+				// Bericht heißt, hätte dieselbe Suche ins Leere laufen lassen, die dieser
+				// Umbau beenden soll.
+				//
+				// Die Linie: Unter „Berichte" steht, was ein Blatt für jemand anderen
+				// erzeugt und dabei nichts ändert. Bei seinem Vorgang bleibt, was eine
+				// Folgeaktion hat — der Fehlbestandsbericht (Knöpfe „Gefunden" und Löschen)
+				// in der Inventur, die Mahnungen im Mahnwesen.
+				//
+				// view_orders wie die Route dahinter (/api/bestellhistorie/bericht): Wer
+				// keine Bestellungen sehen darf, sieht hier zwei Einträge statt drei.
+				id: 'bestellberichte',
+				label: 'Bestellberichte',
+				icon: 'file-text',
+				permission: 'view_orders'
+			}
+		]
+	},
+	{
+		name: 'System',
+		items: [
 			{ id: 'system-logs', label: 'System-Logs', icon: 'shield', permission: 'audit_logs' },
 			{
 				// „Schuljahreswechsel" = der LMF-Plan (Absprache vom 05.09.2026 abends): Rückgabe- und

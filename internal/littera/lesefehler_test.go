@@ -17,7 +17,7 @@ import (
 // Anfang.
 //
 // Alle drei Leser gehen durch leseTabelle; geprüft wird trotzdem jeder, weil jeder den
-// Fehler selbst weiterreichen muss. (Zusammengeführt aus den Jules-PRs #603, #605, #612,
+// Fehler selbst weiterreichen muss. (Zusammengeführt aus den PRs #603, #605, #612,
 // die denselben Kopfzeilen-Zweig dreimal abdeckten und den Abbruch nach der Kopfzeile
 // keinmal.)
 func TestLeseTabellen_KaputterExportIstEinFehler(t *testing.T) {

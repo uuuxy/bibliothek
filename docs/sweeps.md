@@ -1,14 +1,14 @@
 # Sweeps — der Prüfvorrat über den Bestand
 
-**Zweck:** Daniels Raster (siehe `invarianten.md`, zwölf Fragen) prüft
-eine **Änderung**: Wenn ein Schreibpfad seine Form wechselt, werden die elf Fragen
+**Zweck:** Das Raster (siehe `invarianten.md`, dreizehn Fragen) prüft
+eine **Änderung**: Wenn ein Schreibpfad seine Form wechselt, werden sie
 gestellt. Es sieht nicht, was schon da ist. Diese Seite ist die zweite Achse — der
 **Bestand**: bekannte Bugklassen, je mit einem Suchmuster, das über den ganzen Code
 läuft, und einem Gate, das die Klasse danach nicht mehr hereinlässt.
 
-Anlass (29.08.2026): Ein Jules-PR (#529) wollte per Test festschreiben, dass
+Anlass (29.08.2026): Ein zugelieferter PR (#529) wollte per Test festschreiben, dass
 `GetBookByID` jeden DB-Fehler „buch nicht gefunden" nennt. Der Fund kam nicht vom
-Werkzeug, sondern vom Lesen des Codes daneben — Jules' Wert ist der Zeigefinger in
+Werkzeug, sondern vom Lesen des Codes daneben — der Wert solcher Zulieferungen ist der Zeigefinger in
 Ecken, die niemand anfasst. Genau das leistet ein Sweep systematisch: eine Klasse,
 der ganze Bestand, eine Ratsche.
 

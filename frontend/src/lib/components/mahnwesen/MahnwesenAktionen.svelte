@@ -27,9 +27,9 @@
 	 * onBescheid bekommt die ID des einen markierten Schülers. Als Prop, weil den Dialog
 	 * Mahnwesen.svelte auf oberster Ebene rendert — ein Overlay hat in dieser Flex-Zeile
 	 * mit `print:hidden` nichts verloren (dieselbe Regel wie beim Mahnlauf-Dialog).
-	 * @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean }}
+	 * @type {{ onMahnlauf: () => void, onBescheid: (schuelerId: string) => void, darfBescheid: boolean, darfMahnlauf: boolean }}
 	 */
-	let { onMahnlauf, onBescheid, darfBescheid } = $props();
+	let { onMahnlauf, onBescheid, darfBescheid, darfMahnlauf } = $props();
 
 	// Der Bescheid ist ein Einzelfall, kein Massenlauf: Jeder Betrag ist eine
 	// Ermessensentscheidung, und jede Referenznummer wird unwiderruflich verbraucht.
@@ -118,8 +118,10 @@
 
 	<!-- „Alle anmahnen" ist die EINZIGE echte E-Mail-Aktion → nur hier das Umschlag-Icon.
 	     Getönt statt gefüllt (M3: EIN gefüllter Knopf je Bereich — das ist „Mahnbriefe");
-	     bis 24.08.2026 standen zwei gefüllte nebeneinander, blau und rot. -->
-	{#if countAlle > 0}
+	     bis 24.08.2026 standen zwei gefüllte nebeneinander, blau und rot.
+	     Nur mit dem Recht der Route dahinter (create_orders, entschieden in Mahnwesen.svelte);
+	     Drucken bleibt — das hängt wie die Seite an view_students, Papier ist der Notweg. -->
+	{#if darfMahnlauf && countAlle > 0}
 		<Button
 			variant="danger"
 			onclick={() => onMahnlauf()}

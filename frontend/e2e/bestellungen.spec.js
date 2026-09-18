@@ -19,10 +19,10 @@ test('Lieferant anlegen und Berichte-Validierung', async ({ page }) => {
 	// Der neue Lieferant erscheint in der Verwaltung
 	await expect(page.getByText(name)).toBeVisible();
 
-	// Berichte-Tab: Lieferantenabrechnung wählen — zurück in den Workspace, die
-	// Lieferanten wohnen seit dem Umzug in den Einstellungen.
-	await page.goto('/bestellungen');
-	await page.getByRole('tab', { name: 'Berichte' }).click();
+	// Bestellberichte: Lieferantenabrechnung wählen. Seit dem 17.09.2026 ein eigener
+	// Bildschirm unter „Berichte"; die Lieferanten wohnen seit ihrem Umzug in den
+	// Einstellungen.
+	await page.goto('/bestellberichte');
 	await page.getByRole('radio').nth(2).check();
 
 	// Bewusst kein getByRole('link'): im disabled-Zustand entfällt das href,

@@ -30,6 +30,7 @@ export const tabToPath = {
 	students_dir: '/schuelerdatei',
 	schulklassen: '/schulklassen',
 	orders: '/bestellungen',
+	bestellberichte: '/bestellberichte',
 	media_catalog: '/medienkatalog',
 	bestandsbuecher: '/bestandsbuecher',
 	signaturen: '/signaturen',

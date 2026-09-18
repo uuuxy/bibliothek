@@ -14,7 +14,7 @@ import (
 // nennt das Recht davor. Dieses Gate hält Dokument und Code deckungsgleich:
 //
 //  1. Jede registrierte Route braucht eine Zeile in der Matrix — eine NEUE Route
-//     ohne Einstufung wird rot. Genau das war Daniels Kern von F2: "Adresse
+//     ohne Einstufung wird rot. Genau das war der Kern von Frage 2: "Adresse
 //     vergessen zu entfernen" darf nicht lautlos möglich sein.
 //  2. Jede Matrix-Zeile braucht ihre Route — das Dokument kann nicht veralten.
 //  3. Das dokumentierte Recht muss dem RequirePermission(...) der Registrierung
