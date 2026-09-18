@@ -66,7 +66,8 @@ var phantomBestand = map[string]int{
 	"db/migrations.go:ensureMigrationsTable":                  1,
 	// 3 seit 03.09.2026: zweite Vererbung (manage_students_admin → merge_students), ebenfalls
 	// INSERT … ON CONFLICT DO NOTHING — 0 Zeilen beim zweiten Start sind der Normalfall.
-	"db/seed.go:seedRolePermissions":                           3,
+	"db/seed.go:vererbeHistorischeRechte":                      2,
+	"db/seed.go:schreibeRechteVorgabe":                         1,
 	"internal/littera/schreiber_ausleihen.go:schreibeAusleihe": 1,
 	// Test-Harness (nur von *_test.go importiert): advisory_lock, DROP SCHEMA und
 	// schema.sql-Load sind DDL/Setup — 0 Zeilen ist dort kein meldbarer Erfolg.
