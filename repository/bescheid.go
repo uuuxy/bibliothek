@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"bibliothek/db"
@@ -213,25 +214,39 @@ func ziehLaufendeNummer(ctx context.Context, tx pgx.Tx, mittel string, kassenjah
 // Briefs: Lernmittel auf den Brief des Landes, alles andere nicht (ein Brief = ein Topf,
 // Konzept 4.6). Eine Forderung ohne Exemplar (Geräteschaden) gehört in keinen der beiden.
 func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e BescheidEingabe) (int, error) {
-	var zugeordnet int
-	for _, p := range e.Positionen {
-		tag, err := tx.Exec(ctx, `
-			UPDATE schadensfaelle
-			   SET bescheid_id = $1, betrag = $2, aktualisiert_am = CURRENT_TIMESTAMP
-			 WHERE id = $3
-			   AND schueler_id = $4
-			   AND bescheid_id IS NULL
-			   AND ist_bezahlt = false
-			   AND storniert_am IS NULL
-			   AND EXISTS (SELECT 1 FROM buecher_exemplare ex JOIN buecher_titel t ON t.id = ex.titel_id
-			               WHERE ex.id = schadensfaelle.exemplar_id AND t.ist_lernmittel = ($5 = 'land'))`,
-			bescheidID, p.Betrag, p.SchadensfallID, e.SchuelerID, e.Mittel)
-		if err != nil {
-			return 0, fmt.Errorf("position %s zuordnen: %w", p.SchadensfallID, err)
-		}
-		zugeordnet += int(tag.RowsAffected())
+	if len(e.Positionen) == 0 {
+		return 0, nil
 	}
-	return zugeordnet, nil
+
+	var args []any
+	args = append(args, bescheidID, e.SchuelerID, e.Mittel)
+
+	var placeholders []string
+	for i, p := range e.Positionen {
+		base := 3 + i*2
+		placeholders = append(placeholders, fmt.Sprintf("($%d::uuid, $%d::numeric)", base+1, base+2))
+		args = append(args, p.SchadensfallID, p.Betrag)
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE schadensfaelle
+		   SET bescheid_id = $1, betrag = v.betrag, aktualisiert_am = CURRENT_TIMESTAMP
+		  FROM (VALUES %s) AS v(id, betrag)
+		 WHERE schadensfaelle.id = v.id
+		   AND schueler_id = $2
+		   AND bescheid_id IS NULL
+		   AND ist_bezahlt = false
+		   AND storniert_am IS NULL
+		   AND EXISTS (SELECT 1 FROM buecher_exemplare ex JOIN buecher_titel t ON t.id = ex.titel_id
+		               WHERE ex.id = schadensfaelle.exemplar_id AND t.ist_lernmittel = ($3 = 'land'))`,
+		strings.Join(placeholders, ", "))
+
+	tag, err := tx.Exec(ctx, query, args...)
+	if err != nil {
+		return 0, fmt.Errorf("positionen zuordnen: %w", err)
+	}
+
+	return int(tag.RowsAffected()), nil
 }
 
 // bescheidHatOffenePosition: Steht auf dem Brief b noch eine unbezahlte Forderung?
