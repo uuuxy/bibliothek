@@ -153,7 +153,14 @@ func bucheVerluste(ctx context.Context, tx pgx.Tx, e BescheidEingabe, referenznu
 		case zurueck:
 			return nil, ErrAusleiheInzwischenZurueck
 		}
-		schadensfallID, err := meldeSchaden(ctx, tx, exemplarID, v.AusleiheID, e.ErstelltVon, beschreibung, SchadensArtNichtZurueck, v.Betrag)
+		schadensfallID, err := meldeSchaden(ctx, tx, meldeSchadenParams{
+			copyID:       exemplarID,
+			loanID:       v.AusleiheID,
+			benutzerID:   e.ErstelltVon,
+			beschreibung: beschreibung,
+			art:          SchadensArtNichtZurueck,
+			betrag:       v.Betrag,
+		})
 		if errors.Is(err, ErrExemplarNeuVerliehen) {
 			return nil, err // Bedienfall, unverpackt: der Satz steht so vor der Bibliothekskraft
 		}

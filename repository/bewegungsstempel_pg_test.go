@@ -175,7 +175,14 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	}
 	zuletzt := stempel()
 
-	if _, err := meldeSchaden(ctx, lang, f.exemplarID, loan.ID, f.bearbeiterID, "Stempel-Test", SchadensArtNichtZurueck, 10); err != nil {
+	if _, err := meldeSchaden(ctx, lang, meldeSchadenParams{
+		copyID:       f.exemplarID,
+		loanID:       loan.ID,
+		benutzerID:   f.bearbeiterID,
+		beschreibung: "Stempel-Test",
+		art:          SchadensArtNichtZurueck,
+		betrag:       10,
+	}); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}
 	if err := lang.Commit(ctx); err != nil {
