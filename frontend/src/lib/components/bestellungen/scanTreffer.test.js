@@ -44,17 +44,12 @@ describe('scanTreffer', () => {
 });
 
 describe('scanUebernehmen', () => {
-	const store = (treffer) => ({
-		showDropdown: true,
-		sucheSofort: async (q) => {
-			store.zuletzt = q;
-			return treffer;
-		}
-	});
+	/** @param {any[]} treffer */
+	const store = (treffer) => ({ showDropdown: true, sucheSofort: async () => treffer });
 
 	it('sucht sofort und übergibt den eindeutigen Treffer zur Übernahme', async () => {
 		const s = store([buch('9783060130764', 'Gescannt')]);
-		let uebernommen = null;
+		let uebernommen = /** @type {any} */ (null);
 		const direkt = await scanUebernehmen('9783060130764', s, (t) => (uebernommen = t));
 		expect(direkt).toBe(true);
 		expect(uebernommen?.titel).toBe('Gescannt');
@@ -64,7 +59,7 @@ describe('scanUebernehmen', () => {
 
 	it('lässt die Trefferliste stehen, wenn der Scan nicht eindeutig ist', async () => {
 		const s = store([buch('111', 'A'), buch('222', 'B')]);
-		let uebernommen = null;
+		let uebernommen = /** @type {any} */ (null);
 		const direkt = await scanUebernehmen('9783060130764', s, (t) => (uebernommen = t));
 		expect(direkt).toBe(false);
 		expect(uebernommen).toBeNull();
