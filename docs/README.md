@@ -50,7 +50,8 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | etwas abnehmen (LUSD, Versetzung, Klassensatz)                                                                                  | [abnahme_checkliste.md](abnahme_checkliste.md)                                                                                   |
 | Datenschutz beurteilen (welche Daten, welche Fristen, welche Rechte)                                                            | [SECURITY.md](SECURITY.md), [PII_MATRIX.de.md](PII_MATRIX.de.md), [datenschutz/](datenschutz/)                                   |
 | Barrierefreiheit beurteilen (was die Gates prüfen, was offen ist)                                                               | [FACHKONZEPT.md §19](FACHKONZEPT.md), [HANDBUCH.md](HANDBUCH.md) „Bedienung ohne Maus"                                           |
-| am Code arbeiten                                                                                                                | [ARCHITECTURE.md](ARCHITECTURE.md), [invarianten.md](invarianten.md), [api_inventar.md](api_inventar.md), [sweeps.md](sweeps.md) |
+| am Code arbeiten                                                                                                                | [arc42/05-bausteinsicht.md](arc42/05-bausteinsicht.md), [invarianten.md](invarianten.md), [api_inventar.md](api_inventar.md), [sweeps.md](sweeps.md) |
+| die **Architektur** verstehen oder beurteilen — Ziele, Kontext, Bausteine, Laufzeit, Verteilung, Entscheidungen, Risiken        | [arc42/](arc42/README.md) — die vollständige Architekturdokumentation in zwölf Kapiteln                                          |
 
 ### Bedienen und fachlich verstehen
 
@@ -85,7 +86,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 | Dokument                               | Inhalt                                                                                                                                                                                                                                                                                                                                                                                                          |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [ARCHITECTURE.md](ARCHITECTURE.md)     | Schichtenarchitektur, Concurrency-Modell, Datenbankdesign, Frontend, Komponenten-Regeln                                                                                                                                                                                                                                                                                                                         |
+| [arc42/](arc42/README.md)              | **arc42-Architekturdokumentation** (12 Kapitel, je eine Datei): Ziele und Stakeholder, Randbedingungen, Kontext, Lösungsstrategie, Bausteinsicht, zehn Laufzeitszenarien, Verteilung/CI, querschnittliche Konzepte, 24 Architekturentscheidungen als ADR, Qualitätsszenarien mit Gate, Risiken und Schulden, Glossar. Die frühere Kurzfassung ARCHITECTURE.md ist am 18.09.2026 darin aufgegangen |
 | [invarianten.md](invarianten.md)       | Invarianten-Katalog: was immer gelten muss und auf welcher Ebene es durchgesetzt ist                                                                                                                                                                                                                                                                                                                            |
 | [sweeps.md](sweeps.md)                 | Die Prüfachsen: Bugklassen, ihre Detektoren und Ratschen — neben dem Raster die Bestands-Achse                                                                                                                                                                                                                                                                                                              |
 | [OFFEN.md](OFFEN.md)                   | **Die eine Liste** alles Offenen — Fehler, Entscheidungen, Betrieb, Schule — mit Reihenfolge; neue Funde kommen nur hierher                                                                                                                                                                                                                                                                                     |
@@ -175,7 +176,7 @@ Handler (api/) → Service (internal/service/) → Repository (repository/)
 SSE Broker (Echtzeit)                         PostgreSQL (pgx/v5)
 ```
 
-Details: [ARCHITECTURE.md](ARCHITECTURE.md)
+Details: [arc42/05-bausteinsicht.md](arc42/05-bausteinsicht.md), Abschnitt 5.2.1 (Anfragekette)
 
 ---
 

@@ -5,7 +5,7 @@ import { apiFetch, extractApiError } from './apiFetch.js';
  * zieht dorthin um, die Leserzeile des Antrags geht darin auf.
  *
  * Steht als eigene Funktion neben der Komponente, weil die Komponente sonst über die
- * 200-Zeilen-Regel liefe (docs/ARCHITECTURE.md) — und weil die RICHTUNG damit an einer
+ * 200-Zeilen-Regel liefe (docs/arc42/05-bausteinsicht.md, 5.3) — und weil die RICHTUNG damit an einer
  * Stelle steht, die man lesen kann, ohne durch Markup zu blättern.
  *
  * Die Richtung ist der Kern: `zielID` ist der vorhandene Eintrag. Er BLEIBT, mit Ausweis,

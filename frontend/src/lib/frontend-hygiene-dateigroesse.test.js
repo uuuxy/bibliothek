@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 
 // Ratsche auf die Komponenten-Regel „≤ 200 Zeilen pro .svelte-Datei"
-// (docs/ARCHITECTURE.md, Abschnitt „Komponenten-Regeln").
+// (docs/arc42/05-bausteinsicht.md, Abschnitt 5.3).
 //
 // Die Regel steht dort ohne Einschränkung — geprüft hat sie nie jemand. Am 23.08.2026
 // brachen sie 43 von 206 Dateien, die größte mit 412 Zeilen. Eine Regel, die ein
@@ -19,7 +19,7 @@ import { srcRoot, relPfad, sammleQuelldateien } from './hygiene-quellen.js';
 //   - Wer eine Datei unter 200 bringt, muss sie austragen. Der Bestand ist damit eine
 //     Arbeitsliste, keine Duldung.
 //
-// Bewusst NICHT: ein Limit für .js/.go. Die Regel in ARCHITECTURE.md gilt den
+// Bewusst NICHT: ein Limit für .js/.go. Die Regel in docs/arc42/05-bausteinsicht.md (5.3) gilt den
 // Svelte-Komponenten, und nur dafür steht hier ein Gate.
 const BESTAND = {
 	'src/inventur/lib/components/admin/BookTable.svelte': 222,
@@ -65,7 +65,7 @@ describe('Komponenten-Regel: hoechstens 200 Zeilen je .svelte-Datei', () => {
 		}
 		expect(
 			neu,
-			'Neue Komponente ueber 200 Zeilen. docs/ARCHITECTURE.md verlangt hoechstens 200 — ' +
+			'Neue Komponente ueber 200 Zeilen. docs/arc42/05-bausteinsicht.md (5.3) verlangt hoechstens 200 — ' +
 				'aufteilen (Teilkomponente, {#snippet}, Daten nach .js) oder die Regel dort aendern.'
 		).toEqual([]);
 	});

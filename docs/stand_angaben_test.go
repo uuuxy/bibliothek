@@ -111,6 +111,6 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 
 	if geprueft < 5 {
 		t.Errorf("nur %d Dokumente mit Stand-Angabe erkannt — das Kopfmuster greift vermutlich nicht mehr "+
-			"(erwartet werden mindestens ARCHITECTURE, DEPLOYMENT, SECURITY, HANDBUCH, datenschutz_offene_punkte)", geprueft)
+			"(erwartet werden mindestens DEPLOYMENT, SECURITY, HANDBUCH, datenschutz_offene_punkte, arc42/README)", geprueft)
 	}
 }
