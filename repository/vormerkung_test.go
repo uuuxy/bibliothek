@@ -8,7 +8,7 @@ import (
 	"github.com/pashagolub/pgxmock/v5"
 )
 
-// TestVormerkungCreate_RejectsWhenTitleAlreadyBorrowed sichert Bug 4 (Vormerkungs-
+// TestVormerkungCreate_RejectsWhenTitleAlreadyBorrowed sichert Fehler 4 (Vormerkungs-
 // Monopolisierung) ab: Hat der Schüler ein Exemplar dieses Titels bereits selbst
 // ausgeliehen, darf er ihn nicht zusätzlich vormerken — sonst könnte er das Buch bei der
 // Rückgabe sofort wieder für sich abgreifen. Create muss ErrTitelBereitsAusgeliehen liefern
