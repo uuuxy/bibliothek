@@ -113,7 +113,7 @@ var phantomBestand = map[string]int{
 	"repository/lmf_plan.go:SaveLmfPlanIn":                    3,
 	"repository/audit.go:LogAdminAktion":                      1,
 	"repository/audit.go:insertAuditLog":                      1,
-	"repository/audit_books.go:DeleteTitle":                   3,
+	"repository/audit_books.go:deleteTitleDependencies":       3,
 	"repository/audit_system.go:BezahltGebuehr":               1,
 	"repository/audit_system.go:StornierungGebuehr":           1,
 	"repository/audit_users.go:TilgeSchuelerSpuren":           1,

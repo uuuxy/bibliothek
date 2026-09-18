@@ -35,6 +35,8 @@ var (
 	ErrTitelNichtGefunden = errors.New("titel nicht gefunden")
 )
 
+type exemplarSnapshot struct{ id, barcode string }
+
 // DeleteTitle entfernt einen Buchtitel vollständig aus dem Katalog und erstellt einen revisionssicheren Audit-Eintrag.
 // Vor dem Löschen wird geprüft, ob noch Exemplare dieses Titels verliehen sind (was das Löschen blockiert).
 // Historische Ausleihen und ALLE Schadensfälle des Titels werden bereinigt, um
@@ -57,6 +59,71 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("failed to snapshot title for audit: %w", err)
 	}
 
+	if err := checkActiveLoans(ctx, tx, titleID); err != nil {
+		return err
+	}
+
+	exemplare, err := snapshotCopies(ctx, tx, titleID)
+	if err != nil {
+		return err
+	}
+
+	// Unbezahlte Forderungen fallen mit dem Titel — vorher festhalten, WER wie viel wofür
+	// schuldete (Rasterdurchgang 06.09.2026, Frage 8). Ein unbezahlter Schadensfall ist
+	// Geld, das ein Schüler der Schule schuldet, und er steuert sechs Entscheidungen:
+	// Kontoanzeige, Lösch-Sperre, Zusammenführen, Abgänger-Wächter,
+	// LUSD-Anonymisierungsbremse und das DSGVO-Löschprädikat. Bis heute verschwand er mit
+	// dem Titel spurlos, und der Kommentar über dieser Funktion behauptete sogar, nur
+	// ABGESCHLOSSENE Fälle würden bereinigt. Für die offenen Ausleihen gibt es die Spur
+	// seit dem 23.08.2026 (inventur/db_books_delete_spur.go), fürs Geld nicht.
+	if err = protokolliereOffeneForderungen(ctx, tx, titleID); err != nil {
+		return err
+	}
+	// Und wer auf den Titel wartet, fällt ebenfalls mit ihm — per ON DELETE CASCADE, den
+	// keine Zeile dieses Verfahrens erwähnte (Frage 12 „Gegenrichtung Schema",
+	// 06.09.2026). Dieselbe Regel wie in der Massenaktion der Bestandstabelle: EIN Ort
+	// (titel_loeschen_wartende.go), zwei Türen.
+	wartende, err := LeseWartendeBezuege(ctx, tx, []string{titleID})
+	if err != nil {
+		return err
+	}
+	if err = ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
+		return err
+	}
+
+	if err := deleteTitleDependencies(ctx, tx, titleID); err != nil {
+		return err
+	}
+
+	// Eigentlichen Titel-Datensatz löschen. 0 Zeilen = unbekannte ID: Vorher lief eine
+	// unbekannte Titel-ID glatt durch (Snapshot toleriert ErrNoRows, 0 aktive Ausleihen)
+	// und hinterließ einen DELETE-Audit-Eintrag über einen Titel, den es nie gab
+	// (Phantom-Erfolg-Sweep 31.08.2026; die Exemplar-Schwester unten prüft längst).
+	tag, err := tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID)
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrTitelNichtGefunden
+	}
+
+	// Löschung im Audit-Log vermerken
+	if err = r.insertAuditLog(ctx, tx, auditEntry{
+		Tabelle: "buecher_titel", Aktion: "DELETE", DatensatzID: titleID,
+		BearbeiterID: &bearbeiterID, Akteur: "USER",
+		Details: map[string]any{"titel": titel, "autor": autor, "isbn": isbn},
+	}); err != nil {
+		return err
+	}
+
+	if err := r.logDeletedCopies(ctx, tx, titleID, titel, bearbeiterID, exemplare); err != nil {
+		return err
+	}
+
+	return tx.Commit(ctx)
+}
+
+func checkActiveLoans(ctx context.Context, tx pgx.Tx, titleID string) error {
 	// Sicherheitsschranke: Prüfen, ob irgendein Exemplar dieses Titels aktuell ausgeliehen ist
 	var activeLoans []string
 	rows, err := tx.Query(ctx, `
@@ -85,6 +152,10 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		return fmt.Errorf("%w: %v", ErrTitelHatAktiveAusleihen, activeLoans)
 	}
 
+	return nil
+}
+
+func snapshotCopies(ctx context.Context, tx pgx.Tx, titleID string) ([]exemplarSnapshot, error) {
 	// Exemplar-Snapshots VOR dem Löschen: Die Tresen-Auskunft findet gelöschte
 	// Exemplare ausschließlich über audit_log-Zeilen mit tabelle='buecher_exemplare'
 	// und details->>'barcode_id' (SucheTresenExemplare). DeleteCopy und das
@@ -92,18 +163,17 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	// (Befund-Register 01.09.2026): Wer so ein Buch später am Tresen scannte, bekam
 	// „nie gesehen" statt „gelöscht am …". Geschrieben wird sie unten, NACH der
 	// RowsAffected-Prüfung — für einen Phantom-Titel entsteht auch kein Phantom-Snapshot.
-	type exemplarSnapshot struct{ id, barcode string }
 	var exemplare []exemplarSnapshot
 	exRows, err := tx.Query(ctx,
 		`SELECT id::text, barcode_id FROM buecher_exemplare WHERE titel_id = $1`, titleID)
 	if err != nil {
-		return fmt.Errorf("failed to snapshot copies for audit: %w", err)
+		return nil, fmt.Errorf("failed to snapshot copies for audit: %w", err)
 	}
 	for exRows.Next() {
 		var s exemplarSnapshot
 		if err := exRows.Scan(&s.id, &s.barcode); err != nil {
 			exRows.Close()
-			return fmt.Errorf("failed to scan copy snapshot: %w", err)
+			return nil, fmt.Errorf("failed to scan copy snapshot: %w", err)
 		}
 		exemplare = append(exemplare, s)
 	}
@@ -111,70 +181,35 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	// Bricht die Iteration vorzeitig ab, fehlten Snapshots STILL — genau das Loch,
 	// das dieser Schritt schließt.
 	if err := exRows.Err(); err != nil {
-		return fmt.Errorf("failed to read copy snapshots: %w", err)
+		return nil, fmt.Errorf("failed to read copy snapshots: %w", err)
 	}
 
-	// Unbezahlte Forderungen fallen mit dem Titel — vorher festhalten, WER wie viel wofür
-	// schuldete (Rasterdurchgang 06.09.2026, Frage 8). Ein unbezahlter Schadensfall ist
-	// Geld, das ein Schüler der Schule schuldet, und er steuert sechs Entscheidungen:
-	// Kontoanzeige, Lösch-Sperre, Zusammenführen, Abgänger-Wächter,
-	// LUSD-Anonymisierungsbremse und das DSGVO-Löschprädikat. Bis heute verschwand er mit
-	// dem Titel spurlos, und der Kommentar über dieser Funktion behauptete sogar, nur
-	// ABGESCHLOSSENE Fälle würden bereinigt. Für die offenen Ausleihen gibt es die Spur
-	// seit dem 23.08.2026 (inventur/db_books_delete_spur.go), fürs Geld nicht.
-	if err = protokolliereOffeneForderungen(ctx, tx, titleID); err != nil {
-		return err
-	}
-	// Und wer auf den Titel wartet, fällt ebenfalls mit ihm — per ON DELETE CASCADE, den
-	// keine Zeile dieses Verfahrens erwähnte (Frage 12 „Gegenrichtung Schema",
-	// 06.09.2026). Dieselbe Regel wie in der Massenaktion der Bestandstabelle: EIN Ort
-	// (titel_loeschen_wartende.go), zwei Türen.
-	wartende, err := LeseWartendeBezuege(ctx, tx, []string{titleID})
-	if err != nil {
-		return err
-	}
-	if err = ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
-		return err
-	}
+	return exemplare, nil
+}
+
+func deleteTitleDependencies(ctx context.Context, tx pgx.Tx, titleID string) error {
 	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden
-	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
+	if _, err := tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
 		return fmt.Errorf("failed to delete damage records for title: %w", err)
 	}
-	if _, err = tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1) AND rueckgabe_am IS NOT NULL", titleID); err != nil {
+	if _, err := tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1) AND rueckgabe_am IS NOT NULL", titleID); err != nil {
 		return fmt.Errorf("failed to delete past loans for title: %w", err)
 	}
 
 	// Alle zugehörigen Exemplare löschen
-	if _, err = tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE titel_id = $1", titleID); err != nil {
+	if _, err := tx.Exec(ctx, "DELETE FROM buecher_exemplare WHERE titel_id = $1", titleID); err != nil {
 		return fmt.Errorf("failed to delete associated copies: %w", err)
 	}
 
-	// Eigentlichen Titel-Datensatz löschen. 0 Zeilen = unbekannte ID: Vorher lief eine
-	// unbekannte Titel-ID glatt durch (Snapshot toleriert ErrNoRows, 0 aktive Ausleihen)
-	// und hinterließ einen DELETE-Audit-Eintrag über einen Titel, den es nie gab
-	// (Phantom-Erfolg-Sweep 31.08.2026; die Exemplar-Schwester unten prüft längst).
-	tag, err := tx.Exec(ctx, "DELETE FROM buecher_titel WHERE id = $1", titleID)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return ErrTitelNichtGefunden
-	}
+	return nil
+}
 
-	// Löschung im Audit-Log vermerken
-	if err = r.insertAuditLog(ctx, tx, auditEntry{
-		Tabelle: "buecher_titel", Aktion: "DELETE", DatensatzID: titleID,
-		BearbeiterID: &bearbeiterID, Akteur: "USER",
-		Details: map[string]any{"titel": titel, "autor": autor, "isbn": isbn},
-	}); err != nil {
-		return err
-	}
-
+func (r *pgAuditRepository) logDeletedCopies(ctx context.Context, tx pgx.Tx, titleID, titel, bearbeiterID string, exemplare []exemplarSnapshot) error {
 	// Je Exemplar der Barcode-Snapshot im Format der Geschwister-Pfade (DeleteCopy,
 	// Verlust-Löschen) — dieselbe Transaktion: entweder Löschung UND Spur, oder keins.
 	kontext := "Titel gelöscht — Exemplar mit entfernt"
 	for _, ex := range exemplare {
-		if err = r.insertAuditLog(ctx, tx, auditEntry{
+		if err := r.insertAuditLog(ctx, tx, auditEntry{
 			Tabelle: "buecher_exemplare", Aktion: "DELETE", DatensatzID: ex.id,
 			BearbeiterID: &bearbeiterID, Akteur: "USER", Kontext: &kontext,
 			Details: map[string]any{
@@ -186,7 +221,7 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		}
 	}
 
-	return tx.Commit(ctx)
+	return nil
 }
 
 // DeleteCopy bucht ein physisches Exemplar aus dem System aus (Soft-Delete) und protokolliert dies im Audit-Log.
