@@ -1,101 +1,29 @@
 package api
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"log"
-	"net/http"
 
-	"bibliothek/apierrors"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
-// mahnwesenSendenRequest is the payload for POST /api/mahnwesen/senden.
+// Bausteine der Klassen-Mahnliste per E-Mail: Statistik und Mail-Aufbau. Benutzt vom
+// Massenversand (mahnwesen_bulk_mail.go), der je gewählte Klasse eine Liste an die
+// Klassenleitung schickt.
+//
+// Bis zum 18.09.2026 stand hier auch der Einzelversand POST /api/mahnwesen/senden — eine
+// Klasse, eine frei eingetippte Adresse. Sein Knopf in der Mahnwesen-Tabelle war am
+// 21.06.2026 in einem Refactoring verschwunden; seitdem war die Route ohne Aufrufer und
+// die Fähigkeit doppelt, denn der Massenversand kann dasselbe (Klassenauswahl plus
+// abweichende Adresse). Eine Adresse ohne Aufrufer ist Angriffsfläche und Pflege für
+// nichts; sie ist mit Handler, Dialog und Audit-Test (EINZEL_MAHN_MAIL) entfernt.
+
+// mahnwesenSendenRequest: Klasse und Zieladresse einer Klassen-Mahnliste.
 type mahnwesenSendenRequest struct {
 	Klasse string `json:"klasse"`
 	Email  string `json:"email"`
 }
 
-// SendMahnwesenHandler generates the class-specific PDF and e-mails it to the teacher.
-// POST /api/mahnwesen/senden  { "klasse": "5b", "email": "teacher@example.com" }
-func (s *Server) SendMahnwesenHandler(mahnRepo *repository.MahnwesenRepository) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req mahnwesenSendenRequest
-		if !DecodeAndValidate(w, r, &req) {
-			return
-		}
-		if req.Klasse == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("klasse ist erforderlich"))
-			return
-		}
-		if req.Email == "" {
-			apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("email ist erforderlich"))
-			return
-		}
-
-		ctx := r.Context()
-
-		mailReq, ok := bereiteKlassenMahnung(ctx, w, mahnRepo, req)
-		if !ok {
-			return
-		}
-
-		if !smtpKonfiguriert() {
-			log.Printf("MAHNWESEN: kein SMTP-Server hinterlegt – Versand für Klasse %s übersprungen", req.Klasse)
-			RespondJSON(w, http.StatusOK, map[string]string{
-				"status":  "pdf_only",
-				"message": "SMTP nicht konfiguriert – E-Mail wurde nicht gesendet",
-			})
-			return
-		}
-
-		if err := SendEmail(mailReq); err != nil {
-			apierrors.SendHTTPError(w, mailFehlerStatus(err), fmt.Errorf("E-Mail-Versand fehlgeschlagen: %w", err))
-			return
-		}
-
-		// Rechenschaftspflicht (Art. 5 (2) DSGVO) wie beim Massenversand: Der
-		// Einzelversand geht immer an eine von Hand eingetippte Adresse — genau das,
-		// was ein Betroffener später wissen können muss (wer schickte die Mahnliste
-		// dieser Klasse an WEN). Die Adresse steht deshalb im Klartext im Audit.
-		s.logKlassenVersandAudit(r, "EINZEL_MAHN_MAIL", klassenVersandAudit{
-			Phase:         "ende",
-			Klassen:       []string{req.Klasse},
-			OverrideEmail: req.Email,
-			Sent:          1,
-		})
-
-		RespondJSON(w, http.StatusOK, map[string]string{
-			"status":  "sent",
-			"message": fmt.Sprintf("Mahnliste für Klasse %s an %s gesendet.", req.Klasse, req.Email),
-		})
-	}
-}
-
-// bereiteKlassenMahnung lädt die überfälligen Ausleihen der Klasse, erzeugt das PDF und
-// baut die versandfertige E-Mail. ok=false: die Fehlerantwort wurde bereits geschrieben.
-// (Die Ferien-/Schließzeit-Sperre von Migration 017 ist seit 102 ausgebaut — sie hatte
-// nie einen Schreiber und griff nie.)
-func bereiteKlassenMahnung(ctx context.Context, w http.ResponseWriter, mahnRepo *repository.MahnwesenRepository, req mahnwesenSendenRequest) (MailRequest, bool) {
-	klassen, err := mahnRepo.QueryUeberfaelligeNachKlasse(ctx, req.Klasse)
-	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return MailRequest{}, false
-	}
-
-	pdfBytes, err := generateMahnPDF(klassen)
-	if err != nil {
-		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-		return MailRequest{}, false
-	}
-
-	totalSchueler, totalMedien := zaehleMahnStatistik(klassen)
-	return baueMahnMailRequest(req, pdfBytes, totalSchueler, totalMedien), true
-}
-
-// zaehleMahnStatistik summiert betroffene Schüler und überfällige Medien über alle Klassen.
 func zaehleMahnStatistik(klassen []repository.MahnwesenKlasse) (totalSchueler, totalMedien int) {
 	for _, kl := range klassen {
 		totalSchueler += len(kl.Schueler)

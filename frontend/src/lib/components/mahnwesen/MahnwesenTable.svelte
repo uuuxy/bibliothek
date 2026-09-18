@@ -2,7 +2,6 @@
 	import { mahnwesenStore } from '../../stores/mahnwesen.svelte.js';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
-	import MahnlisteMailDialog from './MahnlisteMailDialog.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import { Mail } from '@lucide/svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
@@ -164,5 +163,3 @@
 
 <!-- Die Auswahl-Aktion („Mahnbriefe drucken") lebt jetzt in der kontextuellen Toolbar oben
      (MahnwesenFilters) — kein separater Schwebe-Balken mehr. -->
-
-<MahnlisteMailDialog />

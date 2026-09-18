@@ -220,28 +220,8 @@ function createMahnwesenStore() {
 		selectAllSchueler,
 		deselectAllSchueler,
 
-		// Expose mail store methods and state directly
-		get modalOpen() {
-			return mailStore.modalOpen;
-		},
-		get modalKlasse() {
-			return mailStore.modalKlasse;
-		},
-		get modalEmail() {
-			return mailStore.modalEmail;
-		},
-		set modalEmail(v) {
-			mailStore.modalEmail = v;
-		},
-		get modalSending() {
-			return mailStore.modalSending;
-		},
-		get modalMsg() {
-			return mailStore.modalMsg;
-		},
-		openModal: mailStore.openModal,
-		closeModal: mailStore.closeModal,
-		sendMahnliste: mailStore.sendMahnliste,
+		// Mail: nur noch der Massenversand (Einzelversand je Klasse entfernt am 18.09.2026,
+		// siehe mahnwesenMail.svelte.js).
 		sendBulkOverdueMails: mailStore.sendBulkOverdueMails,
 
 		// Expose pdf store methods and state directly

@@ -120,7 +120,6 @@ func (s *Server) registerStudentRoutes(mux *http.ServeMux, studentRepo repositor
 	mux.Handle("GET /api/mahnwesen", s.RequirePermission("view_students")(s.GetMahnwesenHandler(mahnRepo)))
 	mux.Handle("GET /api/mahnwesen/ueberfaellig_jahrgang", s.RequirePermission("view_students")(s.GetMahnwesenJahrgangHandler(mahnRepo)))
 	mux.Handle("GET /api/mahnwesen/pdf", s.RequirePermission("view_students")(s.GetMahnwesenPDFHandler(mahnRepo)))
-	mux.Handle("POST /api/mahnwesen/senden", s.RequirePermission("create_orders")(s.SendMahnwesenHandler(mahnRepo)))
 	// Massenversand: je überfällige Klasse eine Mahnliste an die Klassenleitung
 	// (privacy-by-design — nie direkt an Schüler; siehe mahnwesen_bulk_mail.go).
 	mux.Handle("POST /api/mail/send-bulk-overdue", s.RequirePermission("create_orders")(s.SendBulkOverdueHandler(mahnRepo)))
