@@ -112,7 +112,14 @@ func (s *defaultLoanService) nachbuchenAusleihe(ctx context.Context, tx pgx.Tx, 
 		return s.meldeAbweisung(ctx, l, repository.NachbuchNichtGebucht, err.Error())
 	}
 
-	loan, err := repository.CreateLoanZumTx(ctx, sp, l.copy.ID, l.leser.ID, l.e.StaffID, chkCtx.dueTime, !chkCtx.istSchueler(), &l.gescannt)
+	loan, err := repository.CreateLoanZumTx(ctx, sp, repository.CreateLoanParams{
+		ExemplarID:     l.copy.ID,
+		LeserID:        l.leser.ID,
+		BearbeiterID:   l.e.StaffID,
+		RueckgabeFrist: chkCtx.dueTime,
+		IstDauerleihe:  !chkCtx.istSchueler(),
+		Zeitpunkt:      &l.gescannt,
+	})
 	if err != nil {
 		if errors.Is(err, repository.ErrAusleiheKonflikt) {
 			if rbErr := sp.Rollback(ctx); rbErr != nil {
