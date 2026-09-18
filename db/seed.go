@@ -34,7 +34,10 @@ const (
 // jetzt aus Migration 106 bzw. schema.sql; das Gate inventur/kein_ddl_im_schreibpfad_test.go
 // hält DDL aus dem Boot heraus.
 func (db *Database) InitPermissions(ctx context.Context) error {
-	return db.seedRolePermissions(ctx)
+	if err := db.vererbeHistorischeRechte(ctx); err != nil {
+		return err
+	}
+	return db.schreibeRechteVorgabe(ctx)
 }
 
 // RechteEintrag ist eine Zeile der Rechte-Vorgabe.
@@ -290,14 +293,19 @@ const vererbeZusammenfuehrenSQL = `
 	ON CONFLICT (role, permission) DO NOTHING
 `
 
-// seedRolePermissions schreibt die Rechte-Vorgabe in die Datenbank (nur fehlende Zeilen).
-func (db *Database) seedRolePermissions(ctx context.Context) error {
+// vererbeHistorischeRechte sichert Rechte-Übergänge für Bestandsanlagen.
+func (db *Database) vererbeHistorischeRechte(ctx context.Context) error {
 	if _, err := db.Pool.Exec(ctx, vererbeAufgeteilteRechteSQL); err != nil {
 		return fmt.Errorf("vererbung manage_users → manage_settings/manage_students_admin: %w", err)
 	}
 	if _, err := db.Pool.Exec(ctx, vererbeZusammenfuehrenSQL); err != nil {
 		return fmt.Errorf("vererbung manage_students_admin → merge_students: %w", err)
 	}
+	return nil
+}
+
+// schreibeRechteVorgabe schreibt die Rechte-Vorgabe in die Datenbank (nur fehlende Zeilen).
+func (db *Database) schreibeRechteVorgabe(ctx context.Context) error {
 	for _, d := range RechteVorgabe {
 		_, err := db.Pool.Exec(ctx, seedRolePermissionSQL, d.Role, d.Permission, d.Allowed)
 		if err != nil {
