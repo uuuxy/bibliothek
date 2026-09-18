@@ -45,6 +45,7 @@
 <!-- Flach und edge-to-edge: kein Kachel-Container, nur dezenter Abstand zu den Tabs. -->
 <div class="mt-4 flex flex-col gap-3">
 	<Suchpille
+		kamera
 		id="schuelerdatei-suchfeld"
 		bind:wert={searchQuery}
 		oninput={onsearch}

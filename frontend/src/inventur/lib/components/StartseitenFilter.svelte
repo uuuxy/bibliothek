@@ -17,6 +17,7 @@
 <header class="pt-4 pb-6">
 	<div class="w-full">
 		<Suchpille
+			kamera
 			id="katalog-suchfeld"
 			bind:wert={searchQuery}
 			platzhalter="Titel, Fach oder Klasse eingeben …"
