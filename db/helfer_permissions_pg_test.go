@@ -8,7 +8,7 @@ import (
 // TestHelferPermissions_KioskJaMahnwesenNein sichert die Helfer-Rechte ab: Die
 // Kiosk-Rolle darf am Terminal arbeiten (perform_actions: Ausleihe/Rückgabe/Scan/Suche),
 // aber NICHT auf Schülerlisten und Mahnwesen/Bulk-Mahndruck zugreifen (view_students).
-// Vor dem Fix waren ALLE Helfer-Rechte false — die Rolle war unbenutzbar, ein Helfer
+// Vor der Korrektur waren ALLE Helfer-Rechte false — die Rolle war unbenutzbar, ein Helfer
 // konnte nicht einmal die Kiosk-Ausleihe durchführen, für die es die Rolle gibt.
 func TestHelferPermissions_KioskJaMahnwesenNein(t *testing.T) {
 	pool := pgTestPool(t)
