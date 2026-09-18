@@ -93,6 +93,7 @@
 				type="button"
 				onclick={() => (kameraOffen = !kameraOffen)}
 				title="Kamera-Scanner (Mobilgerät)"
+				data-tip="Kamera-Scanner (Mobilgerät)"
 				aria-label="Kamera-Barcode-Scanner ein- oder ausschalten"
 				class="h-9 w-9 shrink-0 flex items-center justify-center rounded-full transition-colors {kameraOffen
 					? 'bg-secondary-container text-on-secondary-container'
