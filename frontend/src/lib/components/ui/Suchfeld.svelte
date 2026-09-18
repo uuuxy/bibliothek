@@ -30,7 +30,8 @@
 	 *   onfocus?: (e: FocusEvent) => void,
 	 *   onblur?: (e: FocusEvent) => void,
 	 *   nachlaufend?: import('svelte').Snippet,
-	 *   kamera?: boolean
+	 *   kamera?: boolean,
+	 *   autofokus?: boolean
 	 * }}
 	 */
 	let {
@@ -43,8 +44,17 @@
 		onfocus,
 		onblur,
 		nachlaufend,
-		kamera = false
+		kamera = false,
+		autofokus = false
 	} = $props();
+
+	// Fokus beim Betreten — dieselbe Begründung wie in Suchpille: Ohne ihn geht der erste
+	// Anschlag ins Leere, und bei einem Handscanner heißt das, der Scan ist weg, ohne dass
+	// jemand einen Fehler sieht. Gemessen am 18.09.2026: Auf /bestellungen, /medienkatalog
+	// und /schuelerdatei lag der Fokus auf <body>, blind getipptes landete nirgends.
+	$effect(() => {
+		if (autofokus) feld?.focus();
+	});
 
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();

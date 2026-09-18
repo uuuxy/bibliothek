@@ -18,6 +18,7 @@
 	<div class="w-full">
 		<Suchpille
 			kamera
+			autofokus
 			id="katalog-suchfeld"
 			bind:wert={searchQuery}
 			platzhalter="Titel, Fach oder Klasse eingeben …"

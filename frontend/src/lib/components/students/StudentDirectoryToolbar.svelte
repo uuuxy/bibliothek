@@ -46,6 +46,7 @@
 <div class="mt-4 flex flex-col gap-3">
 	<Suchpille
 		kamera
+		autofokus
 		id="schuelerdatei-suchfeld"
 		bind:wert={searchQuery}
 		oninput={onsearch}

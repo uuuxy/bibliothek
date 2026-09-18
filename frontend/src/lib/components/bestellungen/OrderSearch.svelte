@@ -35,8 +35,7 @@
 						// Der Preisvorschlag steht am DNB-Treffer, nicht am eben angelegten
 						// lokalen Titel — sonst ginge er beim Umweg über /aus-isbn verloren.
 						preis_vorschlag: book.preis_vorschlag,
-						// Ein eben angelegter Titel ist noch kein Lernmittel — das Staging-
-						// Fenster fragt nach (OrderStaging).
+						// Ein eben angelegter Titel ist noch kein Lernmittel — OrderStaging fragt nach.
 						ist_lernmittel: Boolean(localBook.ist_lernmittel)
 					});
 				} else {
@@ -78,6 +77,7 @@
 		>
 		<Suchfeld
 			kamera
+			autofokus
 			id="book"
 			bind:wert={orderStore.searchQuery}
 			oninput={() => orderStore.handleSearchInput()}
