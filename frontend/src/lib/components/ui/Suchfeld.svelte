@@ -31,7 +31,8 @@
 	 *   onblur?: (e: FocusEvent) => void,
 	 *   nachlaufend?: import('svelte').Snippet,
 	 *   kamera?: boolean,
-	 *   autofokus?: boolean
+	 *   autofokus?: boolean,
+	 *   onscan?: (code: string) => void
 	 * }}
 	 */
 	let {
@@ -45,7 +46,8 @@
 		onblur,
 		nachlaufend,
 		kamera = false,
-		autofokus = false
+		autofokus = false,
+		onscan
 	} = $props();
 
 	// Fokus beim Betreten — dieselbe Begründung wie in Suchpille: Ohne ihn geht der erste
@@ -66,6 +68,14 @@
 	let kameraOffen = $state(false);
 	function nachScan() {
 		kameraOffen = false;
+		// Mit `onscan` entscheidet der Aufrufer, was ein Scan auslöst — die Titelsuche der
+		// Bestellung legt den eindeutigen Treffer direkt in die Übernahme, statt eine Liste
+		// zum Antippen zu zeigen (18.09.2026). Ohne `onscan` bleibt es beim Alten: tippen,
+		// als hätte es jemand eingegeben.
+		if (onscan) {
+			onscan(wert);
+			return;
+		}
 		feld?.dispatchEvent(new Event('input', { bubbles: true }));
 	}
 </script>

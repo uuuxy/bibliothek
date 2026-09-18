@@ -308,6 +308,19 @@ class OrderStore {
 		this.#searchTimeout = setTimeout(() => this.#performSearch(raw), 300);
 	}
 
+	/**
+	 * Sofort suchen statt nach 300 ms — für den Scanner. Ein gescannter Code ist
+	 * vollständig; die Wartezeit der Tippsuche bremst hier nur. Bewusst derselbe Weg
+	 * (#performSearch), damit es nicht zwei Suchen mit verschiedenen Regeln gibt.
+	 * @param {string} query
+	 */
+	async sucheSofort(query) {
+		clearTimeout(this.#searchTimeout);
+		this.searchQuery = query;
+		await this.#performSearch(String(query).trim());
+		return this.searchResults;
+	}
+
 	/** @param {string} query */
 	async #performSearch(query) {
 		// Sequenznummer verwirft Out-of-Order-Antworten (DNB/Google-Latenzen schwanken stark)
