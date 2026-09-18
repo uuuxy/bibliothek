@@ -156,7 +156,11 @@
 				<p class="text-xs text-error">{form.error}</p>
 			{/if}
 			<div class="flex justify-end">
-				<Button onclick={onsenden} disabled={form.loading}>
+				<Button
+					onclick={onsenden}
+					disabled={form.loading}
+					title={form.loading ? 'Anfrage wird gesendet' : 'Anfrage senden'}
+				>
 					{form.loading ? 'Wird gesendet …' : 'Anfrage senden'}
 				</Button>
 			</div>

@@ -118,7 +118,15 @@
 			/>
 		</div>
 		<div class="flex justify-end">
-			<Button onclick={absenden} disabled={sending || !titelText.trim()}>
+			<Button
+				onclick={absenden}
+				disabled={sending || !titelText.trim()}
+				title={sending
+					? 'Nachricht wird gesendet'
+					: !titelText.trim()
+						? 'Bitte erst ein Anliegen eintragen'
+						: 'Anliegen absenden'}
+			>
 				{sending ? 'Wird gesendet …' : 'Absenden'}
 			</Button>
 		</div>
