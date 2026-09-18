@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"bibliothek/internal/service"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,7 +46,13 @@ func TestZugangsdatum_ErstBeimEintreffen(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
-	heute := time.Now()
+	// Der Kalendertag der SCHULE, nicht der des Testprozesses: zugang_am ist ein DATE,
+	// und der Trigger bildet es seit Migration 130 in Europe/Berlin. Mit time.Now() hing
+	// die Erwartung an der Zone, in der der Test zufällig lief — lokal (MESZ) und in der
+	// CI (UTC) wichen die beiden zwischen Mitternacht und 2 Uhr um einen Tag ab, und der
+	// Lauf vom 18.09.2026 war in der CI genau deshalb rot. Gleiche Lesart wie im
+	// Nachbartest (zugangsbuch_pg_test.go).
+	heute := time.Now().In(schulzeit.Zone())
 	titelID := titelMitSignatur(t, pool, "Zugangsdatum-Titel", "Zdt 1", 0)
 
 	// 1. Ein Exemplar im Zulauf hat KEIN Zugangsdatum. Es ist bestellt, nicht da.
