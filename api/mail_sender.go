@@ -118,8 +118,16 @@ func sendEmailSMTP(req MailRequest) error {
 	req.To = parsedTo.Address
 
 	// Sanitize subject to prevent CRLF injection
-	req.Subject = strings.ReplaceAll(req.Subject, "\r", "")
-	req.Subject = strings.ReplaceAll(req.Subject, "\n", "")
+	// ⚡ Bolt: High-performance string cleaning using a single pass to avoid multiple strings.ReplaceAll allocations.
+	if strings.ContainsAny(req.Subject, "\r\n") {
+		b := make([]byte, 0, len(req.Subject))
+		for i := 0; i < len(req.Subject); i++ {
+			if req.Subject[i] != '\r' && req.Subject[i] != '\n' {
+				b = append(b, req.Subject[i])
+			}
+		}
+		req.Subject = string(b)
+	}
 
 	msg, err := baueMailNachricht(req, from)
 	if err != nil {
