@@ -51,3 +51,4 @@ Stand: TT.MM.JJJJ
 | --- | --- | --- |
 | [001](001-beobachtbarkeit.md) | Nach einem Vorfall ist nichts nachzusehen: keine Dauer, keine Anfragekennung, kurze Aufbewahrung | offen |
 | [002](002-umfang-gegen-anwendungsfall.md) | Umfang gegen Anwendungsfall — die Gegenrechnung zum Verdacht „zu komplex" | zur Kenntnis |
+| [003](003-restore-jenseits-der-datenbank.md) | Der Restore endet an der `.env`: Der Schlüssel zur Sicherung liegt nur auf dem Host | Doku korrigiert, eine Entscheidung offen |

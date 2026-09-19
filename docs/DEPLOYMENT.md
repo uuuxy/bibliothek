@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-09-17
+> Zuletzt aktualisiert: 2026-09-19
 
 ---
 
@@ -410,20 +410,47 @@ mitgesichert:
 
 - **Schülerfotos** liegen verschlüsselt in der Datenbank (`schueler_fotos.foto_encrypted`)
   und sind damit vom pg_dump abgedeckt — es gehen keine personenbezogenen Daten verloren.
-- **Cover sind reproduzierbar**: Der Cover-Sync-Job (alle 6 h + bei Serverstart,
-  `internal/service/cover_service.go`) lädt PENDING/FAILED-Titel gedrosselt
+- **Cover sind größtenteils reproduzierbar**: Der Cover-Sync-Job (alle 6 h + bei
+  Serverstart, `internal/service/cover_service.go`) lädt PENDING/FAILED-Titel gedrosselt
   (2 Titel/s) von DNB/Google/OpenLibrary nach. **Achtung:** Titel mit Status
   `FOUND` und totem `/uploads/`-Pfad überspringt der Job — nach einem Restore
-  ohne Volume einmalig zurücksetzen, dann heilt der nächste Lauf alles nach:
+  ohne Volume einmalig zurücksetzen, dann heilt der nächste Lauf das Nachladbare nach:
   ```sql
   UPDATE buecher_titel SET cover_status = 'PENDING'
   WHERE cover_url LIKE '/uploads/%';
   ```
+  **Nicht nachladbar sind von Hand hochgeladene Cover** (`inventur/upload_handler.go`,
+  `handleUploadCover`): Sie stammen aus keiner externen Quelle. Das Zurücksetzen oben
+  trifft sie mit und lädt an ihrer Stelle ein fremdes Cover — oder bei einem Titel ohne
+  ISBN gar keins. Wer sie behalten will, sichert das Volume mit (Einzeiler unten).
+  Hier stand bis zum 19.09.2026 pauschal „Cover sind reproduzierbar"; der manuelle
+  Upload war dabei übersehen.
 - **Etiketten/PDFs** werden on-demand generiert und nie persistiert.
 
-Wer das Nachladen nach einem Restore vermeiden will (z. B. Offline-Betrieb), kann das
-Volume zusätzlich mit `docker run --rm -v bibliothek_uploads:/data alpine tar czf - /data`
-wegsichern — Pflicht ist es nicht.
+Wer das Nachladen nach einem Restore vermeiden will (z. B. Offline-Betrieb) oder die von
+Hand hochgeladenen Cover behalten muss, sichert das Volume zusätzlich mit
+`docker run --rm -v bibliothek_uploads:/data alpine tar czf - /data` weg.
+
+### Was ebenfalls nicht im Backup liegt — und ohne das der Restore scheitert
+
+Die **`.env`** ist in keiner Sicherung enthalten. Das ist eine Ringabhängigkeit:
+
+- **`BACKUP_ENCRYPTION_KEY`** schließt die Sicherung auf und liegt nicht in ihr. Ohne ihn
+  ist die Datei nicht zu entschlüsseln — mit keinem Werkzeug.
+- **`APP_ENCRYPTION_KEY`** wird für die *wiederhergestellte* Datenbank gebraucht:
+  `schueler_fotos.foto_encrypted` und das gespeicherte SMTP-Passwort sind damit
+  verschlüsselt. Fehlt er, gelingt der Restore und die Fotos bleiben für immer Chiffrat.
+- Dazu `POSTGRES_PASSWORD`, `JWT_SECRET`, die IMAP- und SMTP-Angaben, `TRUSTED_PROXIES`,
+  `ALLOWED_ORIGIN`, `SELBSTANMELDUNG_DOMAIN`.
+
+**Eine Kopie der `.env` gehört deshalb an einen zweiten Ort** — getrennt vom Backup und
+selbst verschlüsselt, sonst liegt der Schlüssel neben der Tür, die er aufschließt. Sie
+ändert sich selten; eine Kopie nach jeder Änderung genügt. Wo dieser zweite Ort sein soll,
+ist noch nicht entschieden: [OFFEN.md](OFFEN.md) 7.3 und
+[docs/arc42/ideen/006](arc42/ideen/006-zweiter-ort-ohne-s3.md).
+
+Der vollständige Weg zurück — Host, `.env`, Code, Datenbank, Cover, Caddy — steht in
+[resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2f.
 
 ---
 

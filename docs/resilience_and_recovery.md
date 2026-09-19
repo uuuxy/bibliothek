@@ -244,6 +244,67 @@ dropdb -U postgres bibliothek_restore_test
 
 Anschließend die Anwendung neu starten.
 
+### 2f. Totalverlust des Hosts — der ganze Weg zurück
+
+Die Abschnitte 2a bis 2e stellen die **Datenbank** wieder her. Ist der Server selbst weg,
+fehlt mehr. Diese Reihenfolge ist am Code und an der Compose-Datei hergeleitet, aber
+**noch nicht an fremder Hardware erprobt** (offen: [OFFEN.md](OFFEN.md) 7.4) — wer sie das
+erste Mal geht, notiert bitte, wo sie von der Wirklichkeit abweicht.
+
+**Was gebraucht wird, bevor irgendetwas beginnt:**
+
+| Teil | Woher |
+| --- | --- |
+| **Die `.env`** | Aus der Kopie am zweiten Ort. **Ohne `BACKUP_ENCRYPTION_KEY` endet die Wiederherstellung hier** — die Sicherung ist dann mit keinem Werkzeug zu öffnen |
+| Die jüngste `backup_*.sql.gz.enc` | Volume `bibliothek_backups`, zweiter Ort oder S3 |
+| Der Code | `git clone`; ausgecheckt wird ein Stand, der **nicht älter** ist als die Daten — Migrationen laufen nur vorwärts |
+| Optional: `bibliothek_uploads` | Nur nötig, wenn von Hand hochgeladene Cover erhalten bleiben sollen |
+
+```bash
+# 1. Host aufsetzen: Docker, dann das externe Netz, das Compose erwartet
+docker network create caddy_global_net
+
+# 2. Code holen und auf den passenden Stand bringen
+git clone <repo> bibliothek && cd bibliothek
+git checkout <commit-oder-tag>
+
+# 3. .env einspielen (aus der Kopie am zweiten Ort) und Rechte eng setzen
+cp /pfad/zur/kopie/.env .env && chmod 600 .env
+
+# 4. Image bauen — es enthält restore-backup und den psql-Client.
+#    Henne und Ei: Das Entschlüsselungswerkzeug liegt IM Image. Der Build braucht
+#    aber keine Datenbank, deshalb geht das an dieser Stelle.
+docker compose build backend
+docker compose up -d postgres-db     # nur die Datenbank
+
+# 5. Sicherung entschlüsseln und VOR dem Einspielen gegenprüfen (wie in 2a)
+docker compose run --rm backend ./restore-backup backups/backup_<zeit>.sql.gz.enc dump.sql
+head -20 dump.sql && wc -l dump.sql   # hat Inhalt? sieht aus wie ein pg_dump?
+
+# 6. Einspielen, dann den Rest hochziehen — die Migrationen laufen beim Start von allein
+docker compose exec -T postgres-db psql -U postgres -d bibliothek < dump.sql
+docker compose up -d
+
+# 7. Cover nachladen lassen (siehe DEPLOYMENT.md, Backup-Umfang):
+#    ACHTUNG, das trifft auch von Hand hochgeladene Cover — nur ausführen, wenn das
+#    uploads-Volume nicht mitgesichert war.
+#    UPDATE buecher_titel SET cover_status='PENDING' WHERE cover_url LIKE '/uploads/%';
+
+# 8. Caddy-Block nachtragen (update_caddy.sh auf dem Host), DNS auf den neuen Host zeigen.
+#    Das Zertifikat holt Caddy per ACME neu — auf die Let's-Encrypt-Limits achten.
+```
+
+**Gegenprobe zum Schluss**, in dieser Reihenfolge: `/health` antwortet · Anmeldung gegen
+IMAP gelingt · die Selbstprüfung der Betriebsbereitschaft ist ohne kritischen Befund ·
+ein Schülerfoto wird angezeigt (beweist, dass der `APP_ENCRYPTION_KEY` der richtige ist) ·
+eine Ausleihe an der Theke lässt sich öffnen.
+
+> **Der Punkt, an dem es in der Praxis scheitert, ist Schritt 3.** Die `.env` liegt in
+> keiner Sicherung; `BACKUP_ENCRYPTION_KEY` schließt die Sicherung auf und steht nicht in
+> ihr, und ohne `APP_ENCRYPTION_KEY` bleiben Schülerfotos und das gespeicherte
+> SMTP-Passwort auch nach einem gelungenen Restore Chiffrat. Befund und Vorschlag:
+> [docs/arc42/review/003](arc42/review/003-restore-jenseits-der-datenbank.md).
+
 ## 3. Soft-Deletes und Datenintegrität
 
 Die Bibliothek implementiert für zentrale Entitäten wie **Schüler** sogenannte *Soft-Deletes*.

@@ -78,3 +78,4 @@ gehört als Konzeptdokument nach `docs/` und wird von hier verlinkt.
 | [003](003-schlankerer-schnitt.md) | Was könnte weg? Umfang gegen Nutzen prüfen | Kapitel 5, 11 |
 | [004](004-vergleich-mit-openlibry-und-openbiblio.md) | Architektur- und Anforderungsvergleich mit OpenLibry und OpenBiblio | Kapitel 1, 4, 5 |
 | [005](005-log-und-trace-ohne-neue-bauteile.md) | Log und Trace ohne ein neues Bauteil | Kapitel 8.11, [review/001](../review/001-beobachtbarkeit.md) |
+| [006](006-zweiter-ort-ohne-s3.md) | Ein zweiter Ort für die Sicherungen, der kein S3 sein muss | Kapitel 7.7, [review/003](../review/003-restore-jenseits-der-datenbank.md) |
