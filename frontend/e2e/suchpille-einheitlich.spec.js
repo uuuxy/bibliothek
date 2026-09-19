@@ -186,7 +186,15 @@ test('Im Ruhezustand sind die Pillen gefüllt und randlos — nicht dauerhaft im
 	// Das `blur()` ist deshalb ersatzlos weg: Was gemessen wird, muss der Zustand beim
 	// Laden sein. Für das Portal steht die Zusage jetzt im Test darunter — als das, was sie
 	// ist, nämlich Absicht.
-	const RUHIG = [{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' }];
+	// Der Medienkatalog ist am 18.09.2026 aus dieser Liste gewandert: Seine Pille trägt
+	// seitdem `autofokus`, damit ein Handscanner dort ohne Mausklick trifft (gemessen
+	// vorher: Fokus auf <body>, blind Getipptes landete nirgends). Die Zusage dafür steht
+	// als eigener Test unten — dieselbe Form wie beim Portal. Damit dieses Gate nicht
+	// stumm wird, messen hier jetzt zwei Seiten, deren Pille weiterhin ruht.
+	const RUHIG = [
+		{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld' },
+		{ name: 'Signaturen', pfad: '/signaturen', id: 'signaturen-suchfeld' }
+	];
 
 	for (const { name, pfad, id } of RUHIG) {
 		await gehZu(page, pfad);
@@ -431,5 +439,40 @@ test('Die Suchpille beginnt auf jeder Seite an derselben Startlinie', async ({ p
 				`Beide tragen ein Reiterband — der Abstand Reiter→Pille ist im Haus derselbe ` +
 				`(gap-6 der Hülle + mt-4 der Suchzeile).`
 		).toBe(linie.werte.start);
+	}
+});
+
+// Dieselbe Zusage wie für „Mein Portal", für die Seiten, an denen seit dem 18.09.2026
+// gescannt wird: Medienkatalog, Leserdatei und die Titelsuche der Bestellungen.
+//
+// Der Grund ist nicht Gestaltung, sondern ein gemessener Verlust: Ein Handscanner tippt in
+// das FOKUSSIERTE Element. Ohne Autofokus lag der Fokus dort auf <body>, ein Scan ging
+// spurlos verloren — kein Fehler, keine Meldung, nur nichts. Dass die Pille dadurch beim
+// Laden weiß und blau umrandet ist, ist der Preis und ausdrücklich gewollt.
+//
+// Nimmt jemand `autofokus` heraus, wird dieser Test rot und erzwingt die Entscheidung,
+// statt sie stillschweigend zu kippen.
+test('Die Scanner-Seiten nehmen den Fokus beim Laden — damit der erste Scan nicht verloren geht', async ({
+	page
+}) => {
+	await uiLogin(page);
+	const SCANNER = [
+		{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld' },
+		{ name: 'Leserdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld' },
+		{ name: 'Bestellungen (Titelsuche)', pfad: '/bestellungen', id: 'book' }
+	];
+	for (const { name, pfad, id } of SCANNER) {
+		await gehZu(page, pfad);
+		await page.locator(`#${id}`).waitFor();
+		await expect(
+			page.locator(`#${id}`),
+			`${name}: Suchfeld hat beim Laden den Fokus`
+		).toBeFocused();
+
+		// Der eigentliche Beweis: blind tippen, wie es der Scanner tut.
+		await page.keyboard.type('E2E-SCAN-1');
+		await expect(page.locator(`#${id}`), `${name}: blind Getipptes landet im Feld`).toHaveValue(
+			'E2E-SCAN-1'
+		);
 	}
 });

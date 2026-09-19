@@ -89,6 +89,7 @@ services:
       - S3_SECRET_KEY=${S3_SECRET_KEY:-}
       - S3_BUCKET=${S3_BUCKET:-}
       - S3_USE_SSL=${S3_USE_SSL:-true}
+      - SENTRY_DSN=${SENTRY_DSN:-}
     volumes:
       - bibliothek_uploads_local:/app/uploads
       - bibliothek_backups_local:/app/backups

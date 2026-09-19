@@ -1,5 +1,6 @@
 <script>
 	import Suchfeld from '../ui/Suchfeld.svelte';
+	import { scanUebernehmen } from './scanTreffer.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiPost } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
@@ -29,14 +30,11 @@
 						isbn: localBook.isbn,
 						verlag: localBook.verlag,
 						cover_url: localBook.cover_url,
-						// exists=false: signatur ist hier nur ein VORSCHLAG aus der DNB-
-						// Genre-/Altersheuristik (leer, wenn keine Kategorie erkannt wurde).
+						// exists=false: signatur ist nur ein VORSCHLAG aus der DNB-Heuristik.
 						signatur: localBook.signatur ?? '',
-						// Der Preisvorschlag steht am DNB-Treffer, nicht am eben angelegten
-						// lokalen Titel — sonst ginge er beim Umweg über /aus-isbn verloren.
+						// Preisvorschlag vom DNB-Treffer — über /aus-isbn ginge er sonst verloren.
 						preis_vorschlag: book.preis_vorschlag,
-						// Ein eben angelegter Titel ist noch kein Lernmittel — das Staging-
-						// Fenster fragt nach (OrderStaging).
+						// Ein eben angelegter Titel ist noch kein Lernmittel — OrderStaging fragt nach.
 						ist_lernmittel: Boolean(localBook.ist_lernmittel)
 					});
 				} else {
@@ -78,6 +76,8 @@
 		>
 		<Suchfeld
 			kamera
+			onscan={(code) => scanUebernehmen(code, orderStore, openStaging)}
+			autofokus
 			id="book"
 			bind:wert={orderStore.searchQuery}
 			oninput={() => orderStore.handleSearchInput()}

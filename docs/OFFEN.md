@@ -592,11 +592,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.9 Oberfläche
 
-- Scannen fehlt im Medienkatalog und bei den Bestellungen: ein Suchfeld gibt es dort, aber keine
-  Möglichkeit, einen Barcode mit dem Handgerät oder der Kamera einzulesen. Die Kamera-Erkennung
-  hängt heute allein an der Theke (`Omnibox.svelte` mit `CameraScanner.svelte`); `MediaCatalog.svelte`
-  und der Bestellbereich haben nur ein getipptes Feld. Am 17.09.2026 angemerkt — noch nicht
-  entschieden, ob beide Wege (Handgerät und Kamera) an beide Stellen gehören.
 - Der Stift der Katalog-Kachel: `BuchKarte.svelte` sagt „öffnet die Akte",
   `e2e/cover-aendern.spec.js` sagt „öffnet die Titel-Verwaltung". Im Browser messen, einen
   Kommentar berichtigen.

@@ -1,5 +1,6 @@
 <script>
 	import { Search, Camera } from '@lucide/svelte';
+	import { tick } from 'svelte';
 
 	/**
 	 * Das Suchfeld IN einer Werkzeugleiste — die kleine Schwester der Suchpille.
@@ -30,7 +31,9 @@
 	 *   onfocus?: (e: FocusEvent) => void,
 	 *   onblur?: (e: FocusEvent) => void,
 	 *   nachlaufend?: import('svelte').Snippet,
-	 *   kamera?: boolean
+	 *   kamera?: boolean,
+	 *   autofokus?: boolean,
+	 *   onscan?: (code: string) => void
 	 * }}
 	 */
 	let {
@@ -43,8 +46,18 @@
 		onfocus,
 		onblur,
 		nachlaufend,
-		kamera = false
+		kamera = false,
+		autofokus = false,
+		onscan
 	} = $props();
+
+	// Fokus beim Betreten — dieselbe Begründung wie in Suchpille: Ohne ihn geht der erste
+	// Anschlag ins Leere, und bei einem Handscanner heißt das, der Scan ist weg, ohne dass
+	// jemand einen Fehler sieht. Gemessen am 18.09.2026: Auf /bestellungen, /medienkatalog
+	// und /schuelerdatei lag der Fokus auf <body>, blind getipptes landete nirgends.
+	$effect(() => {
+		if (autofokus) feld?.focus();
+	});
 
 	/** @type {HTMLInputElement | undefined} */
 	let feld = $state();
@@ -54,8 +67,20 @@
 	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
 	// läuft also exakt so los, als hätte jemand den Code eingetippt. Kein zweiter Suchweg.
 	let kameraOffen = $state(false);
-	function nachScan() {
+	async function nachScan() {
 		kameraOffen = false;
+		// Mit `onscan` entscheidet der Aufrufer, was ein Scan auslöst — die Titelsuche der
+		// Bestellung legt den eindeutigen Treffer direkt in die Übernahme, statt eine Liste
+		// zum Antippen zu zeigen (18.09.2026). Ohne `onscan` bleibt es beim Alten: tippen,
+		// als hätte es jemand eingegeben.
+		if (onscan) {
+			onscan(wert);
+			return;
+		}
+		// `await tick()` vor dem Ereignis: An DEMSELBEN input-Ereignis hängt Svelte die
+		// Rückschreibung von bind:value. Ohne das Warten liest sie den noch leeren DOM-Wert
+		// zurück und löscht den gescannten Code — Begründung und Messung in Suchpille.
+		await tick();
 		feld?.dispatchEvent(new Event('input', { bubbles: true }));
 	}
 </script>

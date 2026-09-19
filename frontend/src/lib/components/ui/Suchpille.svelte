@@ -1,5 +1,6 @@
 <script>
 	import { Search, Camera } from '@lucide/svelte';
+	import { tick } from 'svelte';
 
 	/**
 	 * Die Suchpille — EIN Bauteil für alle Suchfelder, die das Werkzeug einer Seite sind
@@ -73,9 +74,18 @@
 	// Kamera-Scanner (seit 18.09.2026, Schalter `kamera`, Standard aus): Der erkannte Code
 	// landet als Suchtext im Feld, dann geht ein input-Ereignis an das Feld — die Suche
 	// läuft also exakt so los, als hätte jemand den Code eingetippt. Kein zweiter Suchweg.
+	//
+	// `await tick()` ist dabei kein Feinschliff, sondern der Unterschied zwischen „der Scan
+	// sucht" und „der Scan verschwindet": An DEMSELBEN input-Ereignis hängt Svelte die
+	// Rückschreibung von bind:value. Ohne das Warten steht im DOM-Feld noch der alte Wert,
+	// Svelte liest ihn zurück — und überschreibt den gerade gescannten Code mit Leer.
+	// Gemessen am 18.09.2026 im Medienkatalog: wert = "9783060130764", einen Takt später
+	// wert = "", die Seite erfuhr nie davon. Am Bildschirm sah das aus wie „die Kamera geht
+	// eine Millisekunde auf und dann passiert nichts".
 	let kameraOffen = $state(false);
-	function nachScan() {
+	async function nachScan() {
 		kameraOffen = false;
+		await tick();
 		feld?.dispatchEvent(new Event('input', { bubbles: true }));
 	}
 
