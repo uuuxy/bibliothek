@@ -6,7 +6,7 @@ import "strings"
 // to prevent Log Injection (CWE-117) vulnerabilities.
 func SanitizeLog(s string) string {
 	// ⚡ Bolt: Fast-path check to avoid allocations when the string is already clean.
-	if strings.IndexAny(s, "\n\r") < 0 {
+	if !strings.ContainsAny(s, "\n\r") {
 		return s
 	}
 
