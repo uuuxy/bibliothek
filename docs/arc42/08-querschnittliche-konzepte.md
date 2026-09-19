@@ -1,6 +1,6 @@
 # 8. Querschnittliche Konzepte
 
-Stand: 17.09.2026
+Stand: 18.09.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -375,7 +375,7 @@ Drucksektionen am gebauten Frontend.
 | Mittel                       | Inhalt                                                                                                              |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `slog` als JSON auf stdout   | Ein Handler für alles — auch für die noch vorhandenen `log.Printf`-Aufrufe (seit Go 1.21 hängt `log` mit daran). Das ist zugleich der Log-Injection-Schutz |
-| Anfrage-Logzeile             | Methode, Pfad (Token maskiert), Status, Dauer — **keine** IP                                                         |
+| Anfrage-Logzeile             | Methode und Pfad (Token maskiert) je Anfrage; eine zweite Zeile mit dem Status **nur bei 5xx**. **Keine** IP, **keine** Dauer, **keine** Anfragekennung — Befund [review/001](review/001-beobachtbarkeit.md) |
 | 500er                        | Stack schreibt `PanicRecoveryMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
 | Docker-Logs                  | json-file, 3 × 10 MB je Container                                                                                    |
 | Sentry (optional)            | `SENTRY_DSN`; `Repanic: true`, damit die eigene Recovery weiterhin greift                                            |

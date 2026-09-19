@@ -1,6 +1,6 @@
 # 7. Verteilungssicht
 
-Stand: 17.09.2026 · Betriebsanleitung: [DEPLOYMENT.md](../DEPLOYMENT.md)
+Stand: 19.09.2026 · Betriebsanleitung: [DEPLOYMENT.md](../DEPLOYMENT.md)
 
 ---
 
@@ -186,9 +186,16 @@ wöchentlich So 03:30  Restore-Probe in eine Wegwerf-Datenbank  →  Befund der 
 Aufbewahrung  Backups > 30 Tage werden von update.sh aufgeräumt
 ```
 
-**Gesichert wird nur die Datenbank** — eine bewusste Entscheidung vom 11.07.2026. Cover
-unter `/app/uploads` sind aus ISBN und Quelle reproduzierbar; Schülerfotos liegen
-verschlüsselt **in** der Datenbank und sind damit im Dump enthalten.
+**Gesichert wird nur die Datenbank** — eine bewusste Entscheidung vom 11.07.2026.
+Schülerfotos liegen verschlüsselt **in** der Datenbank und sind damit im Dump enthalten.
+
+Was damit **nicht** gesichert ist, und was daraus folgt (nachgemessen 19.09.2026):
+
+| Nicht im Backup | Folge |
+| --- | --- |
+| **Die `.env`** | Eine Ringabhängigkeit: `BACKUP_ENCRYPTION_KEY` schließt die Sicherung auf und liegt nicht in ihr. Ohne `APP_ENCRYPTION_KEY` bleibt die *wiederhergestellte* Datenbank teilweise Chiffrat — `schueler_fotos.foto_encrypted` und das gespeicherte SMTP-Passwort. Der Restore gelingt, und die Fotos sind fort. Befund: [review/003](review/003-restore-jenseits-der-datenbank.md) |
+| Cover unter `/app/uploads` | Aus DNB, Google Books und OpenLibrary nachladbar — **außer den von Hand hochgeladenen** (`inventur/upload_handler.go`, `handleUploadCover`). Die kommen aus keiner externen Quelle zurück, und das in [DEPLOYMENT.md](../DEPLOYMENT.md) genannte Zurücksetzen auf `PENDING` lädt an ihrer Stelle ein fremdes oder gar kein Cover |
+| Caddy-Konfiguration | Liegt auf dem Host (`/root/caddy/Caddyfile`); die Datei im Repo ist ausdrücklich nicht maßgeblich |
 
 Das Passwort erreicht `pg_dump` über eine temporär angelegte `.pgpass` mit engen Rechten,
 **nicht** über `PGPASSWORD` — Umgebungsvariablen sind für andere Prozesse desselben Systems
@@ -196,4 +203,5 @@ sichtbar (`.jules/sentinel.md`).
 
 Der Rückweg steht Schritt für Schritt in
 [resilience_and_recovery.md](../resilience_and_recovery.md), inklusive der Gegenprobe
-**vor** dem Löschen und der Sicherung des aktuellen Stands **vor** dem Einspielen.
+**vor** dem Löschen und der Sicherung des aktuellen Stands **vor** dem Einspielen —
+Abschnitt 2a für die Datenbank allein, Abschnitt 2f für den Totalverlust des Hosts.

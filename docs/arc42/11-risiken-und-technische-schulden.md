@@ -1,6 +1,6 @@
 # 11. Risiken und technische Schulden
 
-Stand: 17.09.2026
+Stand: 19.09.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](../OFFEN.md). Hier
@@ -116,6 +116,12 @@ Ohne vollständige S3-Zugangsdaten liegen alle Sicherungen im Volume **desselben
 Der Job sagt es („S3 credentials not fully configured – skipping offsite upload"), und die
 Selbstprüfung macht ein fehlendes Backup-Geheimnis sichtbar. Ein Host-Verlust ohne Offsite
 ist trotzdem ein Datenverlust.
+
+**Verschärfung, gefunden am 19.09.2026:** Selbst eine ausgelagerte Sicherung genügt nicht,
+solange die `.env` nirgends liegt — `BACKUP_ENCRYPTION_KEY` schließt sie auf und steht nur
+auf dem verlorenen Host. Befund und Wege:
+[review/003](review/003-restore-jenseits-der-datenbank.md),
+[ideen/006](ideen/006-zweiter-ort-ohne-s3.md).
 
 ### R9 — Kein externes Uptime-Signal
 
