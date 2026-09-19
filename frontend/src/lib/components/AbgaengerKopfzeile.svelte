@@ -81,6 +81,11 @@
 				onclick={onDrucken}
 				disabled={druckLaeuft || gesamt === 0}
 				class="no-print"
+				title={gesamt === 0
+					? 'Keine Abgänger vorhanden'
+					: druckLaeuft
+						? 'Kontoauszüge werden geladen…'
+						: 'Kontoauszüge drucken'}
 			>
 				{#if druckLaeuft}
 					<Ladekreis size="sm" />
@@ -95,7 +100,9 @@
 					onclick={onMailen}
 					disabled={gesamt === 0}
 					class="no-print"
-					title="Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger"
+					title={gesamt === 0
+						? 'Keine Abgänger vorhanden'
+						: 'Je Klasse eine Mail an die Klassenleitung, darin ein Kontoauszug je Abgänger'}
 				>
 					<Mail class="h-4 w-4" />
 					An Klassenleitungen mailen
