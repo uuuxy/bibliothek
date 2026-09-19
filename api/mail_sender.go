@@ -3,6 +3,7 @@ package api
 import (
 	"bibliothek/db"
 	"bibliothek/mailservice"
+	"bibliothek/pkg/logger"
 	"bytes"
 	"context"
 	"encoding/base64"
@@ -118,8 +119,7 @@ func sendEmailSMTP(req MailRequest) error {
 	req.To = parsedTo.Address
 
 	// Sanitize subject to prevent CRLF injection
-	req.Subject = strings.ReplaceAll(req.Subject, "\r", "")
-	req.Subject = strings.ReplaceAll(req.Subject, "\n", "")
+	req.Subject = logger.SanitizeLog(req.Subject)
 
 	msg, err := baueMailNachricht(req, from)
 	if err != nil {
