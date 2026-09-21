@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 18.09.2026
+Stand: 21.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -25,8 +25,8 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 1. **Das Antwortschreiben abschicken.** Es ist fertig (17.09.2026). Daran hängen zwei gestoppte
    Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die Mehrjahresbände (9.6, hält
    4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen nichts gebaut.
-2. **Sieben Fragen beantworten** (Abschnitt 4: 4.7 bis 4.11, 4.13, 4.14). Ohne sie bleiben
-   sieben kleine Bauarbeiten liegen. Jede hat einen Vorschlag danebenstehen.
+2. **Sechs Fragen beantworten** (Abschnitt 4: 4.7 bis 4.9, 4.11, 4.13, 4.14). Ohne sie bleiben
+   sechs kleine Bauarbeiten liegen. Jede hat einen Vorschlag danebenstehen.
 3. **Drei Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
    in der er nie nachrückt (5.19)? Erst danach werden Nummern nachgetragen — das ändert echte
@@ -85,7 +85,7 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die sieben offenen Fragen** aus Abschnitt 4 (4.7–4.11, 4.13, 4.14) — sie halten sieben
+1. **Die sechs offenen Fragen** aus Abschnitt 4 (4.7–4.9, 4.11, 4.13, 4.14) — sie halten sechs
    kleine Bauarbeiten auf und kosten zusammen eine halbe Stunde.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
@@ -190,15 +190,16 @@ Finanzbericht" bucht — oder gilt die Übergabe schulseitig als erledigt? **Vor
 Sperre bleibt, Löschblockade fällt. **Wann:** sobald ein erster echter Bescheid absehbar ist;
 blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt 6.
 
-### 4.7 Sechs Umgebungsvariablen, die Compose nicht durchreicht
+### 4.7 Fünf Umgebungsvariablen, die Compose nicht durchreicht
 
-`ALLOWED_ORIGIN`, `RATE_LIMIT`, `SENTRY_DSN`, `IMAP_PORT`, `SMTP_ALLOW_INSECURE_TLS` und
+`ALLOWED_ORIGIN`, `RATE_LIMIT`, `IMAP_PORT`, `SMTP_ALLOW_INSECURE_TLS` und
 `SMTP_ALLOW_PLAINTEXT` liest der Server; `docker-compose.yml` reicht keine davon durch, im
-Container gilt also immer die eingebaute Vorgabe. Die beiden `SMTP_ALLOW_*` führte das Register
+Container gilt also immer die eingebaute Vorgabe. `SENTRY_DSN` wird seit 6125527b (18.09.2026)
+durchgereicht, leer heißt aus; gesetzt wird sie in Produktion nur nach Datenschutz A6 (leer oder
+EU-Instanz). Die beiden `SMTP_ALLOW_*` führte das Register
 als Werkzeug-Variablen — der Server liest sie in `mailservice/versand.go`. Auf dem Server am
 13.09.2026 im Container leer.
-**Frage:** Je Variable: Ist die Vorgabe gewollt? Sonst durchreichen. `SENTRY_DSN` bleibt leer
-(Datenschutz A6). **Danach:** Ratsche in 5.10.
+**Frage:** Je Variable: Ist die Vorgabe gewollt? Sonst durchreichen. **Danach:** Ratsche in 5.10.
 
 ### 4.8 Etiketten-Altbestand nachtragen?
 
@@ -216,16 +217,6 @@ Die Pflichtliste in `.github/workflows/release.yml` enthält keinen der Security
 (govulncheck, gosec, npm audit, Trivy); ein Tag auf einen Commit mit rotem Trivy erzeugt trotzdem
 das Release; für das Image siehe 5.10. **Frage:** aufnehmen oder begründet so lassen? Bei Ja prüft
 `docs/umgebung_paritaet_test.go` auch `security-scan.yml`. **Wann:** vor dem nächsten Release.
-
-### 4.10 Branches geschlossener PRs löschen
-
-Alle neun PRs sind am 17.09.2026 entschieden (sieben geschlossen, die beiden Dependabot-Gruppen
-übernommen). Sieben Remote-Branches stehen aber noch da; `gh pr close --delete-branch` meldete
-Erfolg, gelöscht hat es sie nicht. **Zu tun** — ein Befehl:
-
-```
-git push origin --delete bolt/optimize-klassensatz-query-14927972019696966478 bolt/optimize-klassensatz-reservierungen-14387266038906353607 bolt-optimize-klassensatz-reservations-14071621768838592211 fix/cron-dsgvo-test-comment-5377838966258287578 palette-dynamic-disabled-titles-13427865062014033447 palette-dynamic-titles-4699914075555571471 palette-row-reordering-titles-5117473175837266680
-```
 
 ### 4.11 Topf auf der Bestätigungsseite und den großen Etiketten
 
