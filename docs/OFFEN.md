@@ -25,13 +25,15 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 1. **Das Antwortschreiben abschicken.** Es ist fertig (17.09.2026). Daran hängen zwei gestoppte
    Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die Mehrjahresbände (9.6, hält
    4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen nichts gebaut.
-2. **Sechs Fragen beantworten** (Abschnitt 4: 4.7 bis 4.9, 4.11, 4.13, 4.14). Ohne sie bleiben
-   sechs kleine Bauarbeiten liegen. Jede hat einen Vorschlag danebenstehen.
-3. **Drei Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
+2. **Die sechs Fragen sind beantwortet** (21.09.2026: 4.7 bis 4.9, 4.11, 4.13, 4.14; dabei kam
+   4.21 neu dazu). Gebaut ist davon noch nichts. Bei dir liegt daraus nur der Blick auf den
+   Server im nächsten Punkt.
+3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
    in der er nie nachrückt (5.19)? Erst danach werden Nummern nachgetragen — das ändert echte
-   Daten. Die Messung aus 4.3 ist gestoppt, bis die Frage nach den Mehrjahresbänden beantwortet
-   ist.
+   Daten. Neu seit dem 21.09.2026: die fünf Namen in der `.env` (4.7, vor dem Aufspielen) und
+   die Verteilung der Erwerbsdaten (4.8, vor dem Nachtragen der Etiketten). Die Messung aus 4.3
+   ist gestoppt, bis die Frage nach den Mehrjahresbänden beantwortet ist.
 4. **Zwei Umbauten freigeben**, die vorbereitet, aber nicht gebaut sind, weil sie die Datenbank
    ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für
    die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine Migration, die Nummern
@@ -51,7 +53,7 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    offen (Feiertage als zweite Datei oder gerechnet). Dazu die Frage, ob die Schülerbücherei eine
    Themensuche bekommt (4.20).
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 129). Das passiert
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 130). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
@@ -85,8 +87,9 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die sechs offenen Fragen** aus Abschnitt 4 (4.7–4.9, 4.11, 4.13, 4.14) — sie halten sechs
-   kleine Bauarbeiten auf und kosten zusammen eine halbe Stunde.
+1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7–4.9, 4.11, 4.13, 4.14, 4.21), je ein Commit.
+   Zuerst, was ohne den Server geht: 4.9, 4.13, 4.14, 4.11. Dann 4.7 und 4.8 nach dem Blick auf
+   den Server. 4.21 in Stufen.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
@@ -199,7 +202,24 @@ durchgereicht, leer heißt aus; gesetzt wird sie in Produktion nur nach Datensch
 EU-Instanz). Die beiden `SMTP_ALLOW_*` führte das Register
 als Werkzeug-Variablen — der Server liest sie in `mailservice/versand.go`. Auf dem Server am
 13.09.2026 im Container leer.
-**Frage:** Je Variable: Ist die Vorgabe gewollt? Sonst durchreichen. **Danach:** Ratsche in 5.10.
+**Entschieden am 21.09.2026: alle fünf durchreichen**, als `${NAME:-}`. Am Code geprüft: Ein
+leerer Wert ergibt bei allen fünf die eingebaute Vorgabe (`RATE_LIMIT` leer = 50, `IMAP_PORT`
+leer = 993, die beiden `SMTP_ALLOW_*` wirken nur bei `true`, `ALLOWED_ORIGIN` leer = Rückfall
+auf den Host). Am Verhalten ändert sich nichts, solange die `.env` sie nicht setzt. Dazu warnt
+die Betriebsbereitschaft, wenn einer der beiden `SMTP_ALLOW_*` auf `true` steht; heute schreibt
+nur der Klartext-Schalter eine Logzeile, der TLS-Schalter nichts.
+
+**Vor dem Aufspielen die `.env` am Server ansehen** — was dort steht, wirkt ab dann:
+
+```
+grep -nE '^(ALLOWED_ORIGIN|RATE_LIMIT|IMAP_PORT|SMTP_ALLOW_INSECURE_TLS|SMTP_ALLOW_PLAINTEXT)=' .env
+```
+
+Erwartet: `IMAP_PORT=993` oder nichts. Ein anderer Port bricht die Anmeldung (die Verbindung
+ist TLS von Anfang an, kein STARTTLS). **Danach:** die Ratsche in 5.10. Gemessen am 21.09.2026:
+Außer diesen fünf liest der Server nichts, was Compose nicht gibt; übrig bleiben drei
+Werkzeug-Variablen unter `cmd/` (`FOTOS_BEHALTEN`, `MYSQL_DSN`, `PG_DSN`). Vier Lesestellen
+nennen die Variable über eine Konstante statt als Text — die Ratsche muss sie auflösen.
 
 ### 4.8 Etiketten-Altbestand nachtragen?
 
@@ -207,22 +227,59 @@ als Werkzeug-Variablen — der Server liest sie in `mailservice/versand.go`. Auf
 mit verschiedener Bedingung: das Druck-Center („Fehlende Etiketten" → „Altbestand aufräumen",
 `POST /api/exemplare/etiketten-altbestand`, mit Vorschau und Stichtag; Abnahme-Flow 4) und
 `scripts/repair_altbestand_etiketten.sql` (alles ohne `B-`, also auch jedes `LMF-`-Exemplar). Ob
-das Skript schon einmal lief, ist nicht belegt. Beides ist nicht umkehrbar.
-**Frage:** Nachtragen, und über welchen Weg? Tragen die LMF-Exemplare ein Etikett? **Wann:** vor
-Abnahme-Flow 4; kommt eine neue Littera-Übernahme (7.2), erst danach.
+das Skript schon einmal lief, ist nicht belegt.
+
+**Entschieden am 21.09.2026: über das Druck-Center; das Skript fällt.** Die LMF-Exemplare
+tragen ihr Etikett (Auskunft vom 21.09.2026) und dürfen mit vermerkt werden. „Nicht umkehrbar"
+stimmte nur halb: Einzelne Exemplare holt „Etikett zurücksetzen" in der Nachdruck-Liste zurück;
+den ganzen Lauf nimmt nichts zurück.
+
+Der Stichtag vergleicht `erworben_am`. Das ist bei der Littera-Übernahme das echte Zugangsdatum
+(ohne lesbaren Wert der Tag des Laufs), beim Listenimport der Importtag und im Bestellweg der
+Tag der BESTELLUNG — auch für Exemplare, die noch im Zulauf sind. Ob ein Stichtag den
+Altbestand von den echten Neuzugängen trennt, zeigt erst diese Zählung am Server:
+
+```sql
+SELECT (barcode_id LIKE 'B-%') AS b_nummer, (bestellstatus IS NOT NULL) AS im_zulauf,
+       date_trunc('month', erworben_am)::date AS monat, count(*)
+FROM buecher_exemplare
+WHERE etikett_gedruckt = false AND ist_ausgesondert = false
+GROUP BY 1, 2, 3 ORDER BY 3, 1;
+```
+
+**Wann:** vor Abnahme-Flow 4. Kommt eine neue Littera-Übernahme mit Neuaufbau (7.2), erledigt
+sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
 
 ### 4.9 Security-Jobs im Release-Gate
 
 Die Pflichtliste in `.github/workflows/release.yml` enthält keinen der Security-Jobs
 (govulncheck, gosec, npm audit, Trivy); ein Tag auf einen Commit mit rotem Trivy erzeugt trotzdem
-das Release; für das Image siehe 5.10. **Frage:** aufnehmen oder begründet so lassen? Bei Ja prüft
-`docs/umgebung_paritaet_test.go` auch `security-scan.yml`. **Wann:** vor dem nächsten Release.
+das Release. Dasselbe gilt für das Image-Gate in `docker-publish.yml`.
+
+**Entschieden am 21.09.2026: alle vier aufnehmen**, in beide Gates. Der übliche Einwand trifft
+hier nicht: Trivy läuft mit `ignore-unfixed`, govulncheck hat die Ausnahmeliste mit
+Wiedervorlage, npm audit läuft mit `--omit=dev` ab HIGH — rot heißt bei allen, dass es einen Fix
+gibt, der nicht eingespielt ist. Gemessen: die letzten 25 Läufe auf main waren grün.
+
+**Beim Bauen:** Die Prüfläufe heißen wie das Feld `name:` („Go – govulncheck"), nicht wie der
+Job-Schlüssel, und tragen Leerzeichen — die Liste braucht eine Zeile je Name. Ein Commit kann
+denselben Namen zweimal tragen (Push und Wochenlauf, gesehen an `1bedaec7`); verlangt wird,
+dass ALLE grün sind, heute zählt der erste Treffer. Der Paritätstest
+(`docs/umgebung_paritaet_test.go`) liest dann auch `security-scan.yml`. **Wann:** vor dem
+nächsten Release.
 
 ### 4.11 Topf auf der Bestätigungsseite und den großen Etiketten
 
 Der Händler bekommt am selben Tag zwei gleich aussehende Links; auch zu einer
 Schülerbücherei-Bestellung werden die großen Lernmittel-Etiketten „Eigentum des Landes"
-angeboten. **Frage:** Nennt die Bestätigungsseite den Topf? Große Etiketten nur bei `land`?
+angeboten.
+
+**Entschieden am 21.09.2026: beides.** Die Seite nennt den Topf mit dem Wort des Anschreibens
+(`api/mittel_vermerk.go`, eine Quelle). Das große Lernmittel-Etikett entfällt, wenn die
+Bestellung der Schülerbücherei gilt — auf der Seite, im Mailanhang an den Hauptlieferanten
+(`etikettenboegen`) und an der Tür selbst: `GET /api/public/bestellung/{token}/etiketten/gross`
+liefert dann kein PDF; ein versteckter Knopf allein ließe die Adresse offen. Alt-Bestellungen
+ohne Zuordnung (`mittel` ist NULL) behalten beide Größen und nennen keinen Topf.
 
 ### 4.12 Karenz gegen Lesehistorie
 
@@ -252,16 +309,26 @@ Lesehistorie-Lauf den Anonymisierungs-Zeitpunkt NICHT verschiebt — am alten St
 ### 4.13 Abgänger-Druck und die Suche
 
 Zwei Kommentare sichern zu „Was auf dem Bildschirm steht, steht auf dem Papier";
-`GET /api/abgaenger/pdf` kennt aber nur `klasse`, die Suche filtert im Browser. **Frage:** Folgt
-der Druck der Suche (neuer Parameter, dieselbe Auswahl zweimal), oder bleibt er klassenweise
-(dann fallen die zwei Kommentare)? Ohne Antwort wird nichts gebaut.
+`GET /api/abgaenger/pdf` kennt aber nur `klasse`, die Suche filtert im Browser. Wer „Müller"
+sucht und druckt, bekommt heute alle Kontoauszüge.
+
+**Entschieden am 21.09.2026: Der Druck folgt der Suche.** Ist eine Suche aktiv, schickt der
+Browser die Kennungen der sichtbaren Zeilen mit; der Server schneidet sie mit seiner eigenen
+Abgänger-Abfrage — Saisonfenster, Recht und „hat offene Bücher" bleiben die Grenze (Liste und
+PDF lesen schon heute dieselbe Menge). Die Suche wird damit nicht ein zweites Mal formuliert.
+Anlass über die Kommentare hinaus: Der Einzeldruck in der Schülerakte hat keine Freigabezeile
+(`pdf.GenerateKontoauszug`), ein einzelner Laufzettel ließ sich also nicht nachdrucken. Prüfbar
+nur mit gestellter Uhr — außerhalb von Mai bis Juli ist die Liste leer.
 
 ### 4.14 Cover im Kollegiums-Portal (`AnliegenWidget`)
 
 Tabelle und API tragen `isbn` und `titel_id` am Anliegen schon; nur das Wunsch-Formular schickt
 sie nicht mit. Am 05.09.2026 entschieden: Arbeitslisten der Bibliothek bleiben ohne Cover.
-**Frage:** Gilt das auch für die eigene Liste der Lehrkraft, oder bekommt das Wunsch-Formular
-eine Buchauswahl?
+
+**Entschieden am 21.09.2026: ohne Cover, das Formular bleibt Freitext.** Ein Wunsch gilt meist
+einem Buch, das nicht im Bestand ist; für ein vorhandenes gibt es die Klassensatz-Reservierung
+im selben Portal. `isbn` und `titel_id` fallen aus der Annahme-Tür (`POST /api/anliegen`) —
+geprüft: ein Schreiber, ein Aufrufer, und der hat sie nie geschickt. Die Spalten bleiben.
 
 ### 4.16 Routen ohne Aufrufer
 
@@ -478,6 +545,27 @@ Modul); die haben wir nicht.
 
 **Nicht gebaut.**
 
+### 4.21 Eigentumsvermerk auf Büchern der Schülerbücherei
+
+Gefunden am 21.09.2026 beim Prüfen von 4.11. Der Eigentumsvermerk ist EINE Einstellung
+(`etikett_eigentumsvermerk`, Vorgabe „Eigentum des Landes Hessen"). Er steht auf jedem Etikett
+ab 30 mm Höhe — das Standardformat L4760 (38,1 mm) gehört dazu — und auf dem großen
+Lernmittel-Etikett. Ein Buch der Schülerbücherei, bezahlt vom Schulträger, trägt denselben
+Aufdruck.
+
+**Entschieden am 21.09.2026:** eine zweite Einstellung „Eigentumsvermerk Schülerbücherei",
+Vorgabe leer; leer heißt kein Vermerk.
+
+**Welcher Vermerk gilt, entscheidet der Topf des Exemplars** — das Eigentum folgt dem Geld:
+zuerst die Zuordnung seiner Bestellung (`bestellungen_verlauf.mittel`), und wo es keine gibt
+(Altbestand, Alt-Bestellungen ohne Zuordnung), das Feld `ist_lernmittel` am Titel. Dieselbe
+Regel wie beim Nachtragen in Migration 109. Ein Ausdruck, an EINER Stelle formuliert, für alle
+vier Wege, die Etikettendaten bauen (`queryLabelItems`, `ergaenzeServerfelder`, der Mailanhang
+in `api/order_service.go`, der Lieferanten-Link in `ladeBestellEtiketten`).
+
+**Reihenfolge:** (1) die Regel samt PG-Test, (2) die Einstellung in der Kategorie „Schule",
+(3) die vier Wege, mit Gate am fertigen PDF. **Nicht gebaut.**
+
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
@@ -572,12 +660,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 
 ### 5.9 Oberfläche
-
-- Schülerakte: Scheitert der Abruf des Kopfes (`GET /api/schueler/{id}` in 503 oder Netzfehler),
-  bleibt die Akte leer — `StudentProfile.svelte` hat nach `{:else if st.profile}` kein `{:else}`.
-  Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026; der Kopf ist der
-  verbliebene Eintrag in `fehlerausgang.test.js`. Ein `{:else}` mit `LadeFehler` braucht Platz:
-  die Datei steht an der Größen-Ratsche (238 Zeilen).
 
 ### 5.10 Gates und Werkzeuge
 
@@ -743,6 +825,37 @@ steht eine Person in einer Warteschlange, die sie nie erreicht.
   `SELECT count(*) FROM buecher_titel WHERE isbn = '';` — ist die Zahl 0, erledigt sich der Punkt.
 - Ein negativer Listenpreis wird von der Datenbank abgelehnt; die Antwort sagt nicht, was erlaubt
   ist. Das Schwesterfeld derselben Migration nennt seinen Bereich.
+
+### 5.20 Aus der Durchsicht von PR 631 (21.09.2026) — was am Code hält
+
+Der PR (nur Doku, 603 Zeilen) ist nicht übernommen; ob er es wird, ist nicht entschieden. Diese
+Punkte daraus sind nachgeprüft und gelten unabhängig davon:
+
+- **Das Cover-Rezept nach einem Restore ist wirkungslos** (eigener Fund, steht auch im PR
+  falsch). `DEPLOYMENT.md` setzt `cover_status = 'PENDING'` für `/uploads/`-Pfade; der Sync
+  fasst einen Titel mit lokalem Pfad seit dem 10.09.2026 aber nie an, egal was der Status sagt
+  (`coverSyncAuswahl`; `TestCoverSyncAuswahl_LaesstLokaleCoverInRuhe` hält genau diesen Fall
+  fest, am 21.09.2026 gegen Postgres gelaufen). Ohne das Volume blieben alle Cover tot. Das
+  Rezept muss `cover_url` mit leeren. Dazu stimmt „Cover sind reproduzierbar" nur für geladene:
+  Von Hand hochgeladene kommen nicht zurück, und die Datenbank unterscheidet beide nicht.
+- **Anfrage-Log:** Der Kommentar über `LoggingMiddleware` (`api/middleware.go`) und arc42
+  Kapitel 5 und 8 sagen „Status und Dauer". Geschrieben wird eine Zeile je Anfrage mit Methode
+  und Pfad (`api/router.go`), der Status nur bei 5xx, eine Dauer nirgends; eine
+  Anfragekennung gibt es nicht. Kommentar und zwei Doku-Zeilen richtigstellen; ob Dauer und
+  Kennung gebaut werden, ist eine eigene Frage.
+- **`APP_ENCRYPTION_KEY` nach einem Restore:** Die Doku verlangt „außerhalb des Servers
+  aufbewahren" nur für den Backup-Schlüssel. Und nichts prüft, ob der App-Schlüssel zum Bestand
+  passt: Der Server startet mit jedem Schlüssel richtiger Länge, Schülerfotos und das
+  SMTP-Passwort bleiben dann unlesbar, ohne Meldung. Vorschlag: eine Probe in der
+  Betriebsbereitschaft (ein Foto oder das SMTP-Passwort entschlüsseln), und derselbe Satz in
+  `DEPLOYMENT.md` für beide Schlüssel.
+- **Totalverlust des Servers ist nicht beschrieben** (gehört zu 7.4). Der Entwurf im PR ist
+  nach eigener Angabe unerprobt und scheitert in Schritt 5: Das Backend hat nur benannte
+  Volumes, die Sicherung vom zweiten Ort liegt also nicht im Container, und die entschlüsselte
+  Datei entsteht in einem Wegwerf-Container und ist danach fort. Schreiben und an einem fremden
+  Ziel durchspielen, nicht herleiten.
+- **Zu 7.3:** Der zweite Ort muss kein S3 sein — ein zweiter Rechner per Kopierbefehl oder
+  eine getauschte Platte tun dasselbe ohne Vertragsfrage. Eine Betriebsentscheidung.
 
 ---
 
