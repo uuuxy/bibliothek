@@ -574,9 +574,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.8 LMF und Statistik
 
-- Die Statistik hat keine Sequenznummer (eine langsame Antwort kann eine schnellere überholen)
-  und im Browser keinen Fehlerzustand: Ein Query-Fehler ergibt eine leere Liste — protokolliert
-  wird er inzwischen (`api/stats.go`), zu sehen ist er nicht.
 
 ### 5.9 Oberfläche
 

@@ -30,7 +30,7 @@ const BESTAND = {
 	'src/lib/BestellWorkspace.svelte': 286,
 	'src/lib/BorrowedBooksList.svelte': 282,
 	'src/lib/Omnibox.svelte': 226,
-	'src/lib/StatsDashboard.svelte': 374,
+	'src/lib/StatsDashboard.svelte': 370,
 	'src/lib/StudentProfile.svelte': 238,
 	'src/lib/UnifiedInventory.svelte': 324,
 	'src/lib/UserManagement.svelte': 228,

@@ -1,5 +1,4 @@
 <script>
-	import { apiFetch } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { coverSrc } from './utils/coverSrc.js';
 	import { formatEuro as euro } from './utils/format.js';
@@ -8,15 +7,16 @@
 	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
 	import Button from './components/ui/Button.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
+	import { statistikAbruf } from './components/stats/statistikAbruf.svelte.js';
 	import { ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
 
 	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau (Absprache vom 06.09.2026: „wieder grau?").
 	const FLAECHE = 'bg-surface rounded-xl border border-outline-variant';
 
-	// State Runes (Svelte 5)
-	/** @type {any} */
-	let stats = $state(null);
-	let loading = $state(true);
+	// State Runes (Svelte 5). Abruf, Reihenfolge-Schutz und Fehlerzustand: statistikAbruf.
+	const abruf = statistikAbruf();
+	const stats = $derived(abruf.daten);
 	let selectedTimeframe = $state('all');
 	/** Bestandsfilter: '' = Gesamt, 'freihand' = Schülerbücherei, 'lmf' = Lernmittel */
 	let selectedType = $state('');
@@ -75,24 +75,14 @@
 		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'warn' : null
 	);
 
-	// Fetch statistics from backend API.
 	// limit=100 lädt die Drill-Down-Daten gleich mit — das Panel braucht
 	// dadurch keinen einzigen weiteren API-Call.
-	async function fetchStats() {
-		loading = true;
-		try {
-			// eslint-disable-next-line svelte/prefer-svelte-reactivity
-			const params = new URLSearchParams({ limit: '100' });
-			if (selectedTimeframe !== 'all') params.set('zeitraum', selectedTimeframe);
-			if (selectedType) params.set('type', selectedType);
-			const res = await apiFetch(`/api/statistiken?${params}`);
-			if (!res.ok) throw new Error('Fehler beim Laden');
-			stats = await res.json();
-		} catch (err) {
-			console.error('Stats loading error:', err);
-		} finally {
-			loading = false;
-		}
+	function fetchStats() {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const params = new URLSearchParams({ limit: '100' });
+		if (selectedTimeframe !== 'all') params.set('zeitraum', selectedTimeframe);
+		if (selectedType) params.set('type', selectedType);
+		abruf.laden(params);
 	}
 
 	// Re-fetch whenever timeframe or Bestandsfilter changes
@@ -298,8 +288,14 @@
 			</div>
 		</div>
 
-		{#if loading}
+		{#if abruf.loading}
 			{@render skeleton()}
+		{:else if abruf.fehler}
+			<LadeFehler
+				onerneut={fetchStats}
+				titel="Statistik nicht geladen"
+				text="Die Kennzahlen konnten nicht abgerufen werden."
+			/>
 		{:else if stats}
 			<!-- 1) KPI-Reihe: vier gleichwertige Kacheln in EINEM durchgehenden 4er-Grid. -->
 			<div class="shrink-0 grid grid-cols-2 lg:grid-cols-4 gap-4">

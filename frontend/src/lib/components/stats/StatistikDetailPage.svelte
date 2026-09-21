@@ -3,8 +3,9 @@
      URL (/statistiken/renner|ladenhueter), funktionierender Zurück-Button, refresh-fest.
      Lädt die volle Liste selbst (limit=100); alle Filter laufen rein clientseitig. -->
 <script>
-	import { apiFetch } from '../../apiFetch.js';
 	import Ladekreis from '../ui/Ladekreis.svelte';
+	import LadeFehler from '../ui/LadeFehler.svelte';
+	import { statistikAbruf } from './statistikAbruf.svelte.js';
 	import { coverSrc } from '../../utils/coverSrc.js';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
@@ -28,25 +29,14 @@
 			: 'Seit über 2 Jahren nicht ausgeliehen — oder noch nie.'
 	);
 
-	/** @type {StatRow[]} */
-	let items = $state([]);
-	let loading = $state(true);
-
 	// Refresh-fest: die Seite lädt ihre Daten selbst (kein Übergabe-Prop vom Dashboard).
-	async function fetchListe() {
-		loading = true;
-		try {
-			const res = await apiFetch('/api/statistiken?limit=100');
-			if (!res.ok) throw new Error('Fehler beim Laden');
-			const data = await res.json();
-			items = (kind === 'renner' ? data.popular_titles : data.shelf_warmers) ?? [];
-		} catch (err) {
-			console.error('Statistik-Detail laden fehlgeschlagen:', err);
-			items = [];
-		} finally {
-			loading = false;
-		}
-	}
+	// Reihenfolge-Schutz und Fehlerzustand: statistikAbruf.
+	const abruf = statistikAbruf();
+	/** @type {StatRow[]} */
+	const items = $derived(
+		(kind === 'renner' ? abruf.daten?.popular_titles : abruf.daten?.shelf_warmers) ?? []
+	);
+	const fetchListe = () => abruf.laden('limit=100');
 
 	$effect(() => {
 		// eslint-disable-next-line @typescript-eslint/no-unused-expressions
@@ -116,17 +106,23 @@
 				aria-label="Nach Systematik filtern"
 			/>
 		</div>
-		{#if !loading}
+		{#if !abruf.loading}
 			<p class="text-label-small text-slate-400 font-medium">
 				{gefiltert.length} von {items.length} Einträgen
 			</p>
 		{/if}
 	</header>
 
-	{#if loading}
+	{#if abruf.loading}
 		<div class="py-20 flex justify-center">
 			<Ladekreis size="lg" />
 		</div>
+	{:else if abruf.fehler}
+		<LadeFehler
+			onerneut={fetchListe}
+			titel="Statistik nicht geladen"
+			text="Die Liste konnte nicht abgerufen werden."
+		/>
 	{:else if gefiltert.length === 0}
 		<div class="py-20 text-center text-slate-400 text-sm">
 			{items.length === 0 ? 'Noch keine Daten vorhanden.' : 'Keine Einträge für diese Filter.'}
