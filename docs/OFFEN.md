@@ -97,8 +97,9 @@ jemandem schaden?"**
    **5.13** Stufe 3 (5.3).
 7. Nach der Antwort zu E5 (**8.3**): **5.4**.
 8. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass — mit EINER Ausnahme, die
-   vorgezogen gehört: Tests für die Werkzeuge der Littera-Übernahme und den Schlüsselwechsel.
-   Sie laufen einmal gegen echte Daten, und bis heute hat keines von ihnen einen Test.
+   vorgezogen gehört: Tests für die Hülle der Littera-Übernahme (`cmd/littera-import`) und
+   `cmd/seed`. Sie laufen einmal gegen echte Daten und haben keinen Test; der Kern
+   (`internal/littera`) hat sie. Der Schlüsselwechsel ist seit dem 21.09.2026 abgedeckt.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
 Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
@@ -624,8 +625,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   nachsehen, ob excelize inzwischen eine Fassung mit Fix hat — dann Ausnahme löschen und
   heben.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`;
-  `cmd/rotate-encryption-key`, `cmd/littera-import` und `cmd/seed` haben keine Tests. Vor einem
-  Schlüsselwechsel oder der Littera-Übernahme.
+  `cmd/littera-import` und `cmd/seed` haben keine Tests. Vor der Littera-Übernahme.
 
 ### 5.11 Doku
 
