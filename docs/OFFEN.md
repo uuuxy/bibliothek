@@ -637,7 +637,7 @@ Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren 
   freigeschaltet noch gelöscht werden. Ob das gewollt ist, steht nirgends.
 - **Ratschen mit Umgehungsweg, heute ohne offene Stelle:** Die UUID-Ratsche sieht `[]struct` ohne
   `dive`, `x := T{}`, Typen fremder Pakete und `q.Get(…)` nicht; der Fehlerausgang-Scanner prüft
-  Form 2 (`?:`) nur mit `istOkZugriff`; `uuidPfadParameter` hat keinen Test.
+  Form 2 (`?:`) nur mit `istOkZugriff`.
 
 ### 5.14 Fallengelassene Verdachte (15.09.2026)
 
