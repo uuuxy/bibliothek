@@ -93,8 +93,9 @@ jemandem schaden?"**
    Ziel-Jahrgang (4.3) wartet auf die Antwort zu den Mehrjahresbänden.
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
-4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand und die Ausweisnummer (E).
-5. **5.5–5.9**, **5.12** und die B-Punkte aus **5.15** — kleine B-Commits, gebündelt.
+4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand (A) und die Ausweisnummer (C).
+5. **5.5**, **5.6**, **5.12** und die B-Punkte aus **5.15** bis **5.19** — kleine B-Commits,
+   gebündelt.
 6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 7. Nach der Antwort zu E5 (**8.3**): **5.4**.
@@ -517,9 +518,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Rechnung `pdf/rechnung.go` ← `api/print.go` ← `GET /api/print/rechnung/{schueler_id}` in
   `api/routes_system.go` ← Knopf in `StudentProfileActions.svelte`; dazu
   `api/print_rechnung_pg_test.go` und `elternbrief_generiert*`. Der Eltern-Mahnbrief bleibt.
-- **`DamageReportModal`:** Staffel-Vorschlag mit Herleitung statt Startwert 15 €, kein
-  automatisches PDF-Fenster. **Vorgezogen (17.09.2026, siehe 9.3 a):** Dieser Punkt hängt an
-  keiner der offenen Fragen — nur die Kreis-Rechnung hängt an 8.3.
 - **Doku:** FACHKONZEPT Abschnitt 3 (Mahnwesen ohne Bescheid) und 14 (PDF-Rechnung, Barzahlung am
   Tresen); SECURITY und VVT-Entwurf mit dem Zweck „Schadensersatz-Bescheid". Den VVT-Satz
   vorziehen, bevor die Schule den Entwurf beschließt (8.5).
@@ -547,13 +545,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Der Littera-Lauf übergeht weiter Praktikanten, Sekretariat und „Im Ausland"
   (`internal/littera/leser.go`).
 
-### 5.7 Bestellwesen
+### 5.7 bis 5.9 Bestellwesen · LMF und Statistik · Oberfläche
 
-
-### 5.8 LMF und Statistik
-
-
-### 5.9 Oberfläche
+Nichts offen (Stand 21.09.2026). Die Nummern bleiben vergeben, weil Kommentare im Code auf sie
+als Herkunft eines Fundes verweisen.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -586,8 +581,6 @@ oder Schaden gebucht ist, rechts — mit genau einem Stand und einem nächsten S
 Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren Verlust.
 
 - **Stufe 3**: Folgen der Übergabe (5.3): Übergabe-PDF und Sammelliste für das Schulamt; E6 (4.4).
-- Offen aus Stufe 2: Staffelbetrag als Vorschlag im `DamageReportModal` (5.4) — der Weg über die
-  Akte fragt den Betrag weiter ohne Vorschlag.
 
 ### 5.12 Offene Nachbarn aus dem Review vom 14.09.2026
 
