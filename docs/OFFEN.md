@@ -754,9 +754,10 @@ steht eine Person in einer Warteschlange, die sie nie erreicht.
 
 ### 5.20 Aus der Durchsicht von PR 631 (21.09.2026) — was offen bleibt
 
-Der PR (nur Doku, 603 Zeilen) ist nicht übernommen. Was daraus am Code hielt, ist am
-21.09.2026 einzeln auf `main` gebaut (Cover-Rezept, Anfrage-Log in Kommentar und arc42,
-Schlüssel-Probe in der Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
+Der PR (nur Doku, 603 Zeilen) ist nicht übernommen und am 21.09.2026 mit Begründung
+geschlossen. Was daraus am Code hielt, ist am selben Tag einzeln auf `main` gebaut
+(Cover-Rezept, Anfrage-Log in Kommentar und arc42, Schlüssel-Probe in der
+Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
 
 - **Anfrage-Log mit Dauer und Anfragekennung:** nicht gebaut, nur die Doku auf den Ist-Stand
   gezogen. Mehr Logzeilen am Schulserver sind eine Betriebsfrage.
