@@ -27,6 +27,15 @@ var ErrTitelBereitsAusgeliehen = errors.New("Buch wird aktuell bereits von diese
 //nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
 var ErrVormerkungBereitsVorhanden = errors.New("Dieser Schüler hat den Titel bereits vorgemerkt")
 
+// ErrVormerkungNurFuerSchueler signalisiert eine Vormerkung für eine Leser-Id, die kein
+// Schüler ist (oder die es nicht gibt). Die Warteschlange liest die Sicht `schueler` —
+// eine Vormerkung für einen Kollegen würde nie bedient und stünde ohne Namen in der Liste.
+// Die Regel steht deshalb an der Tür (Create) und nicht nur in der Oberfläche, die zum
+// Vormerken ohnehin nur Schüler anbietet. Nutzer-sichtbar (409).
+//
+//nolint:staticcheck // ST1005: bewusst großgeschrieben, Endnutzer-Meldung
+var ErrVormerkungNurFuerSchueler = errors.New("Vormerken lässt sich nur für Schüler")
+
 // Vormerkung represents a pending book reservation entry for a student.
 type Vormerkung struct {
 	ID           string    `json:"id"`
@@ -189,6 +198,18 @@ func (r *pgVormerkungRepository) List(ctx context.Context, titelID, schuelerID s
 // Vormerkungen (ohne Schüler) sind davon nicht betroffen.
 func (r *pgVormerkungRepository) Create(ctx context.Context, titelID, notiz, schuelerID string) (string, error) {
 	if schuelerID != "" {
+		// Gegen die SICHT, mit Absicht: Sie ist dieselbe Frage, die die Warteschlange beim
+		// Bedienen stellt (siehe ErrVormerkungNurFuerSchueler).
+		var istSchueler bool
+		if err := r.db.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM schueler WHERE id = $1)`, schuelerID,
+		).Scan(&istSchueler); err != nil {
+			return "", err
+		}
+		if !istSchueler {
+			return "", ErrVormerkungNurFuerSchueler
+		}
+
 		var bereitsAusgeliehen bool
 		if err := r.db.QueryRow(ctx, `
 			SELECT EXISTS (

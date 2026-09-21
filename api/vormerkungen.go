@@ -60,13 +60,15 @@ func (s *Server) CreateVormerkungHandler(vormerkungRepo repository.VormerkungRep
 
 		id, err := vormerkungRepo.Create(ctx, req.TitelID, req.Notiz, req.SchuelerID)
 		if err != nil {
-			// Zwei fachliche Konflikte (409), kein Serverfehler: Der Schüler hat den Titel
-			// bereits selbst ausgeliehen und darf ihn nicht zusätzlich vormerken — oder er
-			// steht längst auf der Liste (UNIQUE(titel_id, schueler_id)). Beide Male soll
+			// Drei fachliche Konflikte (409), kein Serverfehler: Der Schüler hat den Titel
+			// bereits selbst ausgeliehen und darf ihn nicht zusätzlich vormerken, er steht
+			// längst auf der Liste (UNIQUE(titel_id, schueler_id)) — oder die Id gehört
+			// keinem Schüler, und die Warteschlange würde sie nie bedienen. Jedes Mal soll
 			// die Theke den Satz lesen, der die Lage beschreibt, statt einer
 			// Störungsmeldung, nach der unklar bleibt, ob die erste Vormerkung noch gilt.
 			if errors.Is(err, repository.ErrTitelBereitsAusgeliehen) ||
-				errors.Is(err, repository.ErrVormerkungBereitsVorhanden) {
+				errors.Is(err, repository.ErrVormerkungBereitsVorhanden) ||
+				errors.Is(err, repository.ErrVormerkungNurFuerSchueler) {
 				return apierrors.Conflict(err.Error(), err)
 			}
 			return apierrors.Internal("Fehler beim Erstellen der Vormerkung", err)

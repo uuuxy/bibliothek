@@ -13,7 +13,7 @@ import (
 //
 // `schueler` ist seit Migration 124 eine Sicht auf `leser` mit `WHERE art = 'schueler'`.
 // schreibpfade_gegen_sicht_test.go führt die Schreibpfade. Gelesen wird gegen die Sicht an
-// 47 Stellen in 32 Dateien, und die zählte bis zum 21.09.2026 niemand. Ein Lesepfad, der
+// rund 50 Stellen in 32 Dateien, und die zählte bis zum 21.09.2026 niemand. Ein Lesepfad, der
 // die Sicht nimmt, wo er `leser` meint, scheitert nicht — er findet beim Kollegium nur
 // nichts. An der Datenbank nachgestellt (OFFEN.md 5.19): Steht eine Vormerkung für einen
 // Kollegen, findet die Abfrage, die bei der Rückgabe den Nächsten bedient, null Kandidaten.
@@ -42,11 +42,19 @@ var lesepfadeGeprueft = map[string]struct {
 	"api/student_promotion.go":               {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
 	"jobs/cron_dsgvo.go":                     {2, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
 	"internal/littera/schreiber_personen.go": {1, "Zählt nach dem Littera-Schülerlauf die Schüler — das Kollegium zählt derselbe Befehl aus benutzer"},
+	// Durchsicht der Theken-Pfade, 21.09.2026 (OFFEN.md 5.19).
+	"internal/service/loan_checkout.go":    {2, "Zeilensperre fürs Ausleihlimit nur hinter istSchueler(); Abholfach-Prüfung liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungRepository.Create, TestVormerkungCreate_NurFuerSchueler)"},
+	"internal/service/loan_return.go":      {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
+	"repository/vormerkung.go":             {3, "Create prüft gegen die Sicht, DASS es ein Schüler ist; die zwei Listen zeigen deshalb nur Schüler oder Vormerkungen ohne Person"},
+	"repository/vormerkung_nachruecken.go": {1, "Nachrücken im Abholfach — Vormerkungen gibt es nur für Schüler (Tür: Create)"},
+	"api/ausleihe.go":                      {1, "Massen-Verlängerung der Lernmittel einer KLASSE; ein Kollege leiht auf Dauer (ist_handapparat) und soll keine Klassenfrist bekommen"},
+	"repository/mahnwesen_queries.go":      {3, "Gemahnt werden Schüler, nicht das Kollegium (Entscheidung zum Lehrer-Anliegen, Kommentar an der ersten Abfrage); die zwei anderen folgen derselben Auswahl bzw. rechnen über die Klassenstufe"},
+	"repository/bescheid.go":               {4, "Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
+	"repository/bescheid_ausstehend.go":    {1, "Offene Forderungen ohne Bescheid — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 }
 
 // lesepfadeUngeprueft: Stand der Messung vom 21.09.2026. NUR SCHRUMPFEN.
 var lesepfadeUngeprueft = map[string]int{
-	"api/ausleihe.go":                       1,
 	"api/dsgvo_auskunft.go":                 1,
 	"api/graduates.go":                      2,
 	"api/pdf.go":                            1,
@@ -56,24 +64,17 @@ var lesepfadeUngeprueft = map[string]int{
 	"api/student_update.go":                 1,
 	"cmd/migrate-fotos/main.go":             1,
 	"internal/littera/schreiber.go":         1,
-	"internal/service/loan_checkout.go":     2,
-	"internal/service/loan_return.go":       1,
 	"internal/service/photo_service.go":     1,
 	"inventur/datenbank_klassen.go":         2,
 	"jobs/cron_dsgvo_abgaenger.go":          1,
 	"repository/audit_tresen.go":            1,
-	"repository/bescheid.go":                4,
-	"repository/bescheid_ausstehend.go":     1,
 	"repository/betriebszustand.go":         3,
 	"repository/lmf_plan.go":                1,
 	"repository/lmf_termine.go":             1,
 	"repository/lusd_bestand.go":            1,
-	"repository/mahnwesen_queries.go":       3,
 	"repository/student_profile_queries.go": 1,
 	"repository/student_queries.go":         1,
 	"repository/titel_loeschen_wartende.go": 1,
-	"repository/vormerkung.go":              2,
-	"repository/vormerkung_nachruecken.go":  1,
 }
 
 var musterLesepfad = regexp.MustCompile(`(?i)\b(FROM|JOIN)\s+schueler\b`)

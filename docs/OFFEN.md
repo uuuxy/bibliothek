@@ -703,13 +703,17 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 **Gemessen am Testserver am 21.09.2026: beide 0.** Es ist Vorsorge und keine Reparatur. Auf
 einer Anlage mit anderem Bestand vorher neu zählen.
 
-**Die Ratsche steht** (`docs/lesepfade_gegen_sicht_test.go`, 21.09.2026): 47 Lesestellen in 32
-Dateien. Vier Dateien sind mit Begründung geprüft; 28 stehen als ungeprüft mit ihrer Zahl und
-dürfen nur schrumpfen, eine neue Datei ist rot. **Offen ist die Durchsicht der 28** — je Datei
-die Frage, ob Lehrkräfte dort unsichtbar sein sollen, am besten an einem PG-Test mit einer
-Lehrkraft. Zuerst die Pfade der Theke: `internal/service/loan_checkout.go`, `loan_return.go`,
-`api/ausleihe.go`, `repository/vormerkung*.go`, `repository/mahnwesen_queries.go`,
-`repository/bescheid*.go`.
+**Die Ratsche steht** (`docs/lesepfade_gegen_sicht_test.go`, 21.09.2026). Zwölf Dateien sind
+mit Begründung geprüft, darunter seit dem 21.09.2026 die Pfade der Theke (Ausleihe, Rückgabe,
+Vormerkung, Mahnwesen, Bescheide); 20 stehen als ungeprüft mit ihrer Zahl und dürfen nur
+schrumpfen, eine neue Datei ist rot. **Offen ist die Durchsicht der 20** — je Datei die Frage,
+ob Lehrkräfte dort unsichtbar sein sollen, am besten an einem PG-Test mit einer Lehrkraft.
+Als Nächstes die Pfade der Akte und des Drucks: `repository/student_profile_queries.go`,
+`repository/student_queries.go`, `api/print.go`, `api/pdf.go`, `api/student_update.go`.
+
+**Eine Frage daraus:** Vormerken lässt sich nur für Schüler — so bietet es die Oberfläche an,
+und seit dem 21.09.2026 lehnt es auch die Tür ab. Soll ein Kollege vormerken können, ist das
+ein eigener Umbau über vier Lesepfade der Warteschlange, kein Schalter.
 
 **Eine Kleinigkeit:**
 

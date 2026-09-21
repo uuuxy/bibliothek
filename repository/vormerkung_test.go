@@ -22,6 +22,10 @@ func TestVormerkungCreate_RejectsWhenTitleAlreadyBorrowed(t *testing.T) {
 
 	repo := NewVormerkungRepository(mock)
 
+	// Zuerst die Tür-Frage: Ist die Id ein Schüler? (ErrVormerkungNurFuerSchueler)
+	mock.ExpectQuery("FROM schueler WHERE id").
+		WithArgs("schueler-1").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs("titel-1", "schueler-1").
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
@@ -47,6 +51,10 @@ func TestVormerkungCreate_AllowsWhenNotBorrowed(t *testing.T) {
 
 	repo := NewVormerkungRepository(mock)
 
+	// Zuerst die Tür-Frage: Ist die Id ein Schüler? (ErrVormerkungNurFuerSchueler)
+	mock.ExpectQuery("FROM schueler WHERE id").
+		WithArgs("schueler-1").
+		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(true))
 	mock.ExpectQuery("FROM ausleihen a").
 		WithArgs("titel-1", "schueler-1").
 		WillReturnRows(pgxmock.NewRows([]string{"exists"}).AddRow(false))
