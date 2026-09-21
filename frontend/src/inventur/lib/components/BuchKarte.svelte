@@ -99,10 +99,11 @@
      (echter <button> in der Überschrift, per Tastatur und Screenreader erreichbar). Der
      Klick auf die ganze Fläche bleibt für Maus und Finger erhalten — als reiner
      Maus-Komfort ohne Rolle, deshalb die beiden Ausnahmen darunter; die Tastatur hat
-     den Titel. Die inneren Knöpfe stoppen die Weitergabe wie zuvor. (Gemessen am
-     09.09.2026: Der Stift öffnet trotzdem die Akte, weil dieser Flächen-Handler als
-     direkter Listener vor Sveltes Delegation feuert — e2e/cover-aendern.spec.js
-     schreibt genau das fest, also bleibt es so.) -->
+     den Titel. Die inneren Knöpfe stoppen die Weitergabe, und das wirkt: Der Stift
+     öffnet NUR die Bearbeitung, nicht auch die Akte (BuchKarte.test.js misst es am
+     gebauten Bauteil; im Kompilat ist auch dieser Flächen-Handler delegiert, kein
+     direkter Listener). Bis zum 21.09.2026 behauptete dieser Kommentar das Gegenteil
+     und berief sich auf e2e/cover-aendern.spec.js — der sagt das Richtige. -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="m3-state group flex h-full cursor-pointer flex-col gap-3 rounded-2xl p-3" {onclick}>

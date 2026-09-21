@@ -580,9 +580,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.9 Oberfläche
 
-- Der Stift der Katalog-Kachel: `BuchKarte.svelte` sagt „öffnet die Akte",
-  `e2e/cover-aendern.spec.js` sagt „öffnet die Titel-Verwaltung". Im Browser messen, einen
-  Kommentar berichtigen.
 - Schülerakte: Scheitert der Abruf des Kopfes (`GET /api/schueler/{id}` in 503 oder Netzfehler),
   bleibt die Akte leer — `StudentProfile.svelte` hat nach `{:else if st.profile}` kein `{:else}`.
   Die drei Listen daneben vermerken ihren Ausfall seit dem 15.09.2026; der Kopf ist der
