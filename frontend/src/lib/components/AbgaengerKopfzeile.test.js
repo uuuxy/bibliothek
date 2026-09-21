@@ -43,4 +43,24 @@ describe('AbgaengerKopfzeile', () => {
 		// mit dem diese Seite überhaupt offen ist. Papier ist hier der Notweg.
 		expect(ohne.queryByRole('button', { name: /Kontoauszüge/ })).toBeTruthy();
 	});
+
+	// Der Druck folgt der Suche (seit 21.09.2026): gedruckt wird, was die Liste zeigt. Zeigt
+	// die Suche niemanden, gibt es nichts zu drucken — der Knopf ist dann gesperrt, statt
+	// eine Anfrage zu schicken, die der Server abweist. M3 (Interaction states): „A disabled
+	// state communicates when a component or element isn't interactive."
+	//
+	// Vorher hing die Sperre an `gesamt`: Bei fünf Abgängern und einer Suche ohne Treffer war
+	// der Knopf bedienbar und druckte alle fünf.
+	it('sperrt den Druck, wenn die Suche niemanden zeigt', () => {
+		alsBenutzerMit(['view_graduates']);
+		const leer = render(AbgaengerKopfzeile, { ...PROPS, suche: 'zzz', gesamt: 5, gefiltert: 0 });
+		expect(leer.getByRole('button', { name: /Kontoauszüge/ }).hasAttribute('disabled')).toBe(true);
+		leer.unmount();
+
+		// Die Gegenprobe: mit Treffern ist er bedienbar.
+		const treffer = render(AbgaengerKopfzeile, { ...PROPS, suche: 'mü', gesamt: 5, gefiltert: 1 });
+		expect(treffer.getByRole('button', { name: /Kontoauszüge/ }).hasAttribute('disabled')).toBe(
+			false
+		);
+	});
 });

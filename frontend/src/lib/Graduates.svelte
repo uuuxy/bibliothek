@@ -67,7 +67,7 @@
 	async function printKontoauszuege() {
 		loadingKontoauszuege = true;
 		try {
-			await dienst.ladeKontoauszuege(selectedKlasse);
+			await dienst.ladeKontoauszuege(selectedKlasse, suche, filteredGraduates);
 		} catch (err) {
 			showToast(`Kontoauszüge konnten nicht erstellt werden: ${err}`, 'error');
 		} finally {

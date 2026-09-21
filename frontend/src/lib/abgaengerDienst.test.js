@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('./apiFetch.js', () => ({ apiFetch: vi.fn() }));
 import { apiFetch } from './apiFetch.js';
-import { sendeKontoauszuege } from './abgaengerDienst.js';
+import { sendeKontoauszuege, kontoauszugAdresse, ladeKontoauszuege } from './abgaengerDienst.js';
 
 // Der Versand der Kontoauszüge an die Klassenleitungen hat im Browser nur ein Saisonfenster:
 // Die beiden e2e-Specs (abgaenger-versand, schueler-profil-klick) überspringen sich vom
@@ -49,5 +49,40 @@ describe('abgaengerDienst.sendeKontoauszuege', () => {
 		);
 		const erg = await sendeKontoauszuege({ klassen: ['09H1'] });
 		expect(erg).toEqual({ ok: false, meldung: 'Mailserver nicht erreichbar' });
+	});
+});
+
+// Der Druck folgt der Suche (seit 21.09.2026). Auch das sieht im Browser nur die Saison:
+// Außerhalb von Mai bis Juli ist die Liste leer und der Druck 404. Die Adresse wird deshalb
+// hier festgehalten — was der Server aus ihr macht, hält api/abgaenger_druck_auswahl_pg_test.go.
+describe('abgaengerDienst.kontoauszugAdresse', () => {
+	const SICHTBAR = [{ id: 'a-1' }, { id: 'b-2' }];
+
+	it('ohne Suche gilt der Klassenfilter allein — wie bisher', () => {
+		expect(kontoauszugAdresse('', '', SICHTBAR)).toBe('/api/abgaenger/pdf');
+		expect(kontoauszugAdresse('10R1', '', SICHTBAR)).toBe('/api/abgaenger/pdf?klasse=10R1');
+		// Nur Leerzeichen ist keine Suche: Die Liste filtert dann auch nicht.
+		expect(kontoauszugAdresse('', '   ', SICHTBAR)).toBe('/api/abgaenger/pdf');
+	});
+
+	it('bei aktiver Suche gehen die Kennungen der sichtbaren Zeilen mit', () => {
+		const adresse = new URL(kontoauszugAdresse('', 'müller', SICHTBAR), 'http://x');
+		expect(adresse.pathname).toBe('/api/abgaenger/pdf');
+		expect(adresse.searchParams.get('ids')).toBe('a-1,b-2');
+		expect(adresse.searchParams.has('klasse')).toBe(false);
+	});
+
+	it('Klasse und Suche gelten zusammen', () => {
+		const adresse = new URL(kontoauszugAdresse('09H1', 'an', [{ id: 'a-1' }]), 'http://x');
+		expect(adresse.searchParams.get('klasse')).toBe('09H1');
+		expect(adresse.searchParams.get('ids')).toBe('a-1');
+	});
+
+	it('eine Suche ohne Treffer ist ein Fehler — nie `ids=`, das hieße „alle"', async () => {
+		expect(() => kontoauszugAdresse('', 'zzz', [])).toThrow(/niemanden/);
+
+		vi.mocked(apiFetch).mockReset();
+		await expect(ladeKontoauszuege('', 'zzz', [])).rejects.toThrow(/niemanden/);
+		expect(apiFetch).not.toHaveBeenCalled();
 	});
 });

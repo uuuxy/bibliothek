@@ -12,12 +12,16 @@ package api
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/kennung"
 	"bibliothek/repository"
 )
 
@@ -123,7 +127,12 @@ func (s *Server) GetGraduatesHandler() http.HandlerFunc {
 //
 // Ein leerer klasse-Filter ("") liefert alle Abgänger; sonst nur die genannte Klasse (für
 // den klassenweisen Druck via /api/abgaenger/pdf?klasse=…).
-func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) ([]pdf.KontoauszugEintrag, error) {
+//
+// nurIDs engt zusätzlich auf genannte Schüler ein (nil = keine Einengung). Es ist ein
+// SCHNITT mit dieser Abfrage, keine zweite Auswahl: Wer nicht Abgänger mit offenem Buch
+// ist, bekommt auch mit seiner Kennung keine Seite. So folgt der Druck der Suche der
+// Oberfläche, ohne dass der Server die Suche ein zweites Mal formuliert.
+func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string, nurIDs []string) ([]pdf.KontoauszugEintrag, error) {
 	detailQuery := `
 		SELECT s.id, s.vorname, s.nachname, s.klasse,
 		       t.titel,
@@ -136,9 +145,10 @@ func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) (
 		JOIN buecher_titel t ON e.titel_id = t.id
 		WHERE ` + abgaengerBedingung + `
 		  AND ($1 = '' OR s.klasse = $1)
+		  AND ($2::uuid[] IS NULL OR s.id = ANY($2::uuid[]))
 		ORDER BY s.klasse, s.nachname, t.titel
 	`
-	rows, err := s.DB.Pool.Query(ctx, detailQuery, klasse)
+	rows, err := s.DB.Pool.Query(ctx, detailQuery, klasse, nurIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -187,6 +197,8 @@ func (s *Server) queryAbgaengerKontoauszug(ctx context.Context, klasse string) (
 // @Description  Generates a printable PDF for graduating students with their unreturned books (season 01.05.–31.07.).
 // @Tags         admin
 // @Produce      application/pdf
+// @Param        klasse  query  string  false  "nur diese Klasse"
+// @Param        ids     query  string  false  "nur diese Schüler (Kennungen, mit Komma getrennt) — der Schnitt mit der Abgängerliste"
 // @Router       /abgaenger/pdf [get]
 func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -202,7 +214,14 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 		// Optionaler Klassenfilter: /api/abgaenger/pdf?klasse=10a druckt nur diese Klasse.
 		klasse := r.URL.Query().Get("klasse")
 
-		result, err := s.queryAbgaengerKontoauszug(ctx, klasse)
+		// Optional: nur die Schüler, die die Oberfläche gerade zeigt (aktive Suche).
+		nurIDs, err := abgaengerAuswahlAusQuery(r.URL.Query())
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
+
+		result, err := s.queryAbgaengerKontoauszug(ctx, klasse, nurIDs)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -222,7 +241,10 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 		}
 
 		filename := "Kontoauszuege_Abgaenger.pdf"
-		if klasse != "" {
+		switch {
+		case nurIDs != nil:
+			filename = "Kontoauszuege_Auswahl.pdf"
+		case klasse != "":
 			filename = fmt.Sprintf("Kontoauszuege_Klasse_%s.pdf", klasse)
 		}
 
@@ -231,4 +253,36 @@ func (s *Server) GetGraduatesPDFHandler() http.HandlerFunc {
 		w.Header().Set(headerContentLength, fmt.Sprint(len(pdfBytes)))
 		http.ServeContent(w, r, filename, time.Now(), bytes.NewReader(pdfBytes))
 	}
+}
+
+// abgaengerAuswahlAusQuery liest den Parameter `ids` des Kontoauszug-Drucks: die Kennungen
+// der Schüler, die die Oberfläche bei aktiver Suche gerade zeigt, mit Komma getrennt.
+//
+// Drei Fälle, und der mittlere ist der gefährliche:
+//
+//   - `ids` fehlt → nil: keine Einengung, es gilt nur der Klassenfilter (wie bisher).
+//   - `ids` ist da, aber leer → Fehler. Eine Suche ohne Treffer darf nicht als „keine
+//     Einengung" gelesen werden — sonst druckte „nichts gefunden" alle Kontoauszüge.
+//     Fehlendes Feld und leeres Feld bedeuten hier Verschiedenes.
+//   - jede Kennung muss eine UUID in der Form sein, die die Datenbank annimmt (400 statt
+//     500, pkg/kennung).
+func abgaengerAuswahlAusQuery(q url.Values) ([]string, error) {
+	if !q.Has("ids") {
+		return nil, nil
+	}
+	var ids []string
+	for _, teil := range strings.Split(q.Get("ids"), ",") {
+		id := strings.TrimSpace(teil)
+		if id == "" {
+			continue
+		}
+		if !kennung.IstUUID(id) {
+			return nil, fmt.Errorf("ids: %q ist keine gültige Kennung", id)
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		return nil, errors.New("ids ist leer — es ist niemand ausgewählt")
+	}
+	return ids, nil
 }

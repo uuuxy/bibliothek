@@ -64,7 +64,7 @@ func (s *Server) SendAbgaengerKontoauszuegeHandler() http.HandlerFunc {
 
 		// Dieselbe Abfrage, die auch der Druck benutzt (leerer Filter = alle Klassen).
 		// Papier und Mail zeigen damit garantiert denselben Stand.
-		eintraege, err := s.queryAbgaengerKontoauszug(ctx, "")
+		eintraege, err := s.queryAbgaengerKontoauszug(ctx, "", nil)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return

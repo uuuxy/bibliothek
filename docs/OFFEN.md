@@ -25,8 +25,8 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 1. **Das Antwortschreiben abschicken.** Es ist fertig (17.09.2026). Daran hängen zwei gestoppte
    Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die Mehrjahresbände (9.6, hält
    4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen nichts gebaut.
-2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9 und 4.14 sind gebaut; offen zum
-   Bauen sind 4.7, 4.8, 4.11, 4.13 und das neu dazugekommene 4.21. Bei dir liegt daraus nur
+2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9, 4.13 und 4.14 sind gebaut; offen
+   zum Bauen sind 4.7, 4.8, 4.11 und das neu dazugekommene 4.21. Bei dir liegt daraus nur
    der Blick auf den Server im nächsten Punkt.
 3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
@@ -87,9 +87,9 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8, 4.11, 4.13, 4.21), je ein Commit.
-   Zuerst, was ohne den Server geht: 4.13, 4.11. Dann 4.7 und 4.8 nach dem Blick auf den
-   Server. 4.21 in Stufen.
+1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8, 4.11, 4.21), je ein Commit.
+   Zuerst, was ohne den Server geht: 4.11. Dann 4.7 und 4.8 nach dem Blick auf den Server.
+   4.21 in Stufen.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
@@ -287,20 +287,6 @@ storniert), nach dem Muster von `konto_hat_leserzeile` — an der einen Stelle, 
 Schreibweg vorbeikommt. Das Prädikat rechnet dann `GREATEST(AbgangSeit, letzter_vorgang_am)`
 ohne Unterabfragen. Nachweis: ein PG-Test mit Karenz > Lesehistorie, der beweist, dass der
 Lesehistorie-Lauf den Anonymisierungs-Zeitpunkt NICHT verschiebt — am alten Stand rot.
-
-### 4.13 Abgänger-Druck und die Suche
-
-Zwei Kommentare sichern zu „Was auf dem Bildschirm steht, steht auf dem Papier";
-`GET /api/abgaenger/pdf` kennt aber nur `klasse`, die Suche filtert im Browser. Wer „Müller"
-sucht und druckt, bekommt heute alle Kontoauszüge.
-
-**Entschieden am 21.09.2026: Der Druck folgt der Suche.** Ist eine Suche aktiv, schickt der
-Browser die Kennungen der sichtbaren Zeilen mit; der Server schneidet sie mit seiner eigenen
-Abgänger-Abfrage — Saisonfenster, Recht und „hat offene Bücher" bleiben die Grenze (Liste und
-PDF lesen schon heute dieselbe Menge). Die Suche wird damit nicht ein zweites Mal formuliert.
-Anlass über die Kommentare hinaus: Der Einzeldruck in der Schülerakte hat keine Freigabezeile
-(`pdf.GenerateKontoauszug`), ein einzelner Laufzettel ließ sich also nicht nachdrucken. Prüfbar
-nur mit gestellter Uhr — außerhalb von Mai bis Juli ist die Liste leer.
 
 ### 4.16 Routen ohne Aufrufer
 

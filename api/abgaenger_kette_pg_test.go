@@ -64,7 +64,7 @@ func namenAus(liste []AbgaengerZeile) map[string]bool {
 
 func kontoauszugNamen(t *testing.T, srv *Server) map[string]bool {
 	t.Helper()
-	eintraege, err := srv.queryAbgaengerKontoauszug(context.Background(), "")
+	eintraege, err := srv.queryAbgaengerKontoauszug(context.Background(), "", nil)
 	if err != nil {
 		t.Fatalf("Kontoauszug laden: %v", err)
 	}

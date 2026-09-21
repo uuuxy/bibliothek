@@ -18,23 +18,51 @@ export async function ladeAbgaenger() {
 	return await res.json();
 }
 
+/** Baut die Adresse des Kontoauszug-Drucks: Was auf dem Bildschirm steht, steht auf dem
+ *  Papier.
+ *
+ *  Ohne Suche gilt der Klassenfilter allein (`ids` fehlt). Bei aktiver Suche gehen die
+ *  Kennungen der SICHTBAREN Zeilen mit; der Server schneidet sie mit seiner eigenen
+ *  Abgänger-Abfrage, die Suche wird dort nicht ein zweites Mal formuliert. Bis zum
+ *  21.09.2026 ging nur die Klasse mit — wer „Müller" suchte und druckte, bekam alle.
+ *
+ *  Eine Suche ohne Treffer ist ein Fehler und keine leere Liste: `ids=` hieße für einen
+ *  nachlässigen Empfänger „keine Einengung", also alle Kontoauszüge. Der Server weist es
+ *  ebenfalls ab; hier fällt es auf, bevor eine Anfrage hinausgeht.
+ *  @param {string} klasse
+ *  @param {string} suche
+ *  @param {{ id: string }[]} sichtbar */
+export function kontoauszugAdresse(klasse, suche = '', sichtbar = []) {
+	const parameter = new URLSearchParams();
+	if (klasse) parameter.set('klasse', klasse);
+	if (suche.trim()) {
+		if (sichtbar.length === 0) throw new Error('Die Suche zeigt niemanden.');
+		parameter.set('ids', sichtbar.map((s) => s.id).join(','));
+	}
+	const query = parameter.toString();
+	return query ? `/api/abgaenger/pdf?${query}` : '/api/abgaenger/pdf';
+}
+
 /** Lädt den Kontoauszug als PDF herunter.
  *
  *  Das PDF heißt serverseitig noch /abgaenger/pdf, ist aber seit Langem der
  *  Kontoauszug mit Freigabezeile — eine Seite je Abgänger. Ist eine Klasse gewählt,
- *  druckt er gezielt nur diese.
- *  @param {string} klasse */
-export async function ladeKontoauszuege(klasse) {
-	const endpoint = klasse
-		? `/api/abgaenger/pdf?klasse=${encodeURIComponent(klasse)}`
-		: '/api/abgaenger/pdf';
-	const response = await apiFetch(endpoint);
+ *  druckt er gezielt nur diese; ist eine Suche aktiv, nur die sichtbaren Zeilen.
+ *  @param {string} klasse
+ *  @param {string} [suche]
+ *  @param {{ id: string }[]} [sichtbar] */
+export async function ladeKontoauszuege(klasse, suche = '', sichtbar = []) {
+	const response = await apiFetch(kontoauszugAdresse(klasse, suche, sichtbar));
 	if (!response.ok) throw new Error('Failed to load PDF');
 
 	const url = window.URL.createObjectURL(await response.blob());
 	const a = document.createElement('a');
 	a.href = url;
-	a.download = klasse ? `Kontoauszuege_${klasse}.pdf` : 'Kontoauszuege_Abgaenger.pdf';
+	a.download = suche.trim()
+		? 'Kontoauszuege_Auswahl.pdf'
+		: klasse
+			? `Kontoauszuege_${klasse}.pdf`
+			: 'Kontoauszuege_Abgaenger.pdf';
 	document.body.appendChild(a);
 	a.click();
 	window.URL.revokeObjectURL(url);

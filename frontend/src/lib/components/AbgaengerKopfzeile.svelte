@@ -79,7 +79,7 @@
 			<Button
 				variant="secondary"
 				onclick={onDrucken}
-				disabled={druckLaeuft || gesamt === 0}
+				disabled={druckLaeuft || gefiltert === 0}
 				class="no-print"
 			>
 				{#if druckLaeuft}

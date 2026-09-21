@@ -354,6 +354,10 @@ Einsammeln vor der Entlassung. Kontoauszüge drucken oder an die Klassenleitunge
 wer alles zurückgegeben hat, verschwindet. Außerhalb dieser Zeit steht hier nur der
 Hinweis mit den Daten.
 
+**Gedruckt wird, was die Liste zeigt:** mit gewählter Klasse nur diese, mit einer Suche nur
+die Gefundenen. So lässt sich auch ein einzelner Kontoauszug mit Freigabezeile nachdrucken —
+Namen suchen, drucken. Der Versand per Mail bleibt klassenweise.
+
 Wer die Schule dann **verlassen** hat (Versetzung: Abschlussklasse; LUSD-Import: fehlt im
 neuen Export), steht nicht mehr hier, sondern in der Leserdatei unter _Ehemalige /
 Archiv_ — mit offenen Büchern zusätzlich im Mahnwesen. Er bleibt bis zum Ende der
