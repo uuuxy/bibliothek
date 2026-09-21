@@ -707,8 +707,16 @@ SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l
 SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
 ```
 
-**Gemessen am Testserver am 21.09.2026: beide 0.** Es ist Vorsorge (Ratsche für Lesepfade)
-und keine Reparatur. Auf einer Anlage mit anderem Bestand vorher neu zählen.
+**Gemessen am Testserver am 21.09.2026: beide 0.** Es ist Vorsorge und keine Reparatur. Auf
+einer Anlage mit anderem Bestand vorher neu zählen.
+
+**Die Ratsche steht** (`docs/lesepfade_gegen_sicht_test.go`, 21.09.2026): 47 Lesestellen in 32
+Dateien. Vier Dateien sind mit Begründung geprüft; 28 stehen als ungeprüft mit ihrer Zahl und
+dürfen nur schrumpfen, eine neue Datei ist rot. **Offen ist die Durchsicht der 28** — je Datei
+die Frage, ob Lehrkräfte dort unsichtbar sein sollen, am besten an einem PG-Test mit einer
+Lehrkraft. Zuerst die Pfade der Theke: `internal/service/loan_checkout.go`, `loan_return.go`,
+`api/ausleihe.go`, `repository/vormerkung*.go`, `repository/mahnwesen_queries.go`,
+`repository/bescheid*.go`.
 
 **Eine Kleinigkeit:**
 

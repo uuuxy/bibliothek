@@ -124,6 +124,11 @@ func TestComposeReichtDieFuenfVariablenDurch(t *testing.T) {
 // Compose-Zeile ist rot, und ein Eintrag hier, den niemand mehr liest oder den Compose
 // inzwischen durchreicht, ebenfalls — eine Liste, die Erledigtes weiterführt, verliert ihre
 // Aussage.
+//
+// BLINDHEIT: Gesehen werden os.Getenv und os.LookupEnv mit einem Text oder einer
+// auflösbaren Konstante. Ein Name, der zusammengesetzt wird oder über eine Hilfsfunktion
+// mit Parameter gelesen wird, bleibt unsichtbar (heute gibt es keine solche Stelle —
+// gemessen am 21.09.2026). Geprüft wird nur docker-compose.yml, nicht die lokale Datei.
 var composeAusnahmen = map[string]string{
 	"FOTOS_BEHALTEN":    "Werkzeug cmd/migrate-fotos, von Hand gestartet — kein Teil des Servers",
 	"MYSQL_DSN":         "Werkzeug cmd/migrate (Littera-Übernahme), von Hand gestartet",
