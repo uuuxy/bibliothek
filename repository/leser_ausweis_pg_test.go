@@ -5,8 +5,8 @@ package repository
 // Kontentabelle und die Personenart; eine Lehrkraft ohne dieses Feld fand die Theke nicht.
 //
 // Die Gegenprobe steht mit im selben Test und ist der eigentliche Punkt: Dieselbe Person
-// darf über die SICHT `schueler` NICHT auffindbar sein. Liefe GetByBarcode auf die Tabelle,
-// stünde ein Kollege in Klassenlisten, Mahnläufen und der Abgänger-Versetzung.
+// darf über die SICHT `schueler` NICHT auffindbar sein. Zeigte die Sicht auch Kollegen,
+// stünde einer in Klassenlisten, Mahnläufen und der Abgänger-Versetzung.
 
 import (
 	"context"
@@ -61,12 +61,12 @@ func TestGetLeserByBarcode_FindetSchuelerUndKollegium(t *testing.T) {
 
 	// Gegenprobe über die Sicht: nur der Schüler.
 	for barcode, sichtbar := range map[string]bool{"LP-SCH": true, "LP-LK": false, "LP-LIV": false} {
-		s, err := repo.GetByBarcode(ctx, barcode)
-		if err != nil {
+		var gefunden bool
+		if err := pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM schueler WHERE barcode_id = $1)`, barcode).Scan(&gefunden); err != nil {
 			t.Fatalf("%s über die Sicht: %v", barcode, err)
 		}
-		if (s != nil) != sichtbar {
-			t.Errorf("%s: über die Sicht schueler gefunden=%v, erwartet %v", barcode, s != nil, sichtbar)
+		if gefunden != sichtbar {
+			t.Errorf("%s: über die Sicht schueler gefunden=%v, erwartet %v", barcode, gefunden, sichtbar)
 		}
 	}
 }

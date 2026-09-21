@@ -703,13 +703,23 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 **Gemessen am Testserver am 21.09.2026: beide 0.** Es ist Vorsorge und keine Reparatur. Auf
 einer Anlage mit anderem Bestand vorher neu zählen.
 
-**Die Ratsche steht** (`docs/lesepfade_gegen_sicht_test.go`, 21.09.2026). Zwölf Dateien sind
-mit Begründung geprüft, darunter seit dem 21.09.2026 die Pfade der Theke (Ausleihe, Rückgabe,
-Vormerkung, Mahnwesen, Bescheide); 20 stehen als ungeprüft mit ihrer Zahl und dürfen nur
-schrumpfen, eine neue Datei ist rot. **Offen ist die Durchsicht der 20** — je Datei die Frage,
-ob Lehrkräfte dort unsichtbar sein sollen, am besten an einem PG-Test mit einer Lehrkraft.
-Als Nächstes die Pfade der Akte und des Drucks: `repository/student_profile_queries.go`,
-`repository/student_queries.go`, `api/print.go`, `api/pdf.go`, `api/student_update.go`.
+**Die Ratsche steht** (`docs/lesepfade_gegen_sicht_test.go`, 21.09.2026). 16 Dateien sind mit
+Begründung geprüft, darunter seit dem 21.09.2026 die Pfade der Theke (Ausleihe, Rückgabe,
+Vormerkung, Mahnwesen, Bescheide) und ein Teil der Akte und des Drucks; 15 stehen als ungeprüft
+mit ihrer Zahl und dürfen nur schrumpfen, eine neue Datei ist rot. **Offen ist die Durchsicht
+der 15** — je Datei die Frage, ob Lehrkräfte dort unsichtbar sein sollen, am besten an einem
+PG-Test mit einer Lehrkraft. Als Nächstes: `api/print.go`, `api/graduates.go`,
+`repository/betriebszustand.go`, `repository/lmf_plan.go`, `repository/lmf_termine.go`.
+
+Zwei Dinge aus der Durchsicht, die stehen bleiben:
+
+- **`api/student_update.go`:** Die Vorprüfung der LUSD-ID liest die Sicht, der Index
+  `uniq_schueler_lusd_id_active` liegt auf der Tabelle `leser`. Trüge eine Lehrkraft dieselbe
+  LUSD-ID, käme 500 statt 409. Laut, und die LUSD kennt keine Lehrkräfte — beim Anfassen die
+  Prüfung gegen `leser` lesen, mit PG-Test.
+- **`api/dsgvo_auskunft.go`:** Die Auskunft liest die Sicht; für einen Kollegen gibt es sie
+  nicht (5.16 A nennt das als Absicht). **Frage:** Auch eine Lehrkraft kann Auskunft über ihre
+  Daten verlangen — soll die Auskunft für jeden Leser gehen?
 
 **Eine Frage daraus:** Vormerken lässt sich nur für Schüler — so bietet es die Oberfläche an,
 und seit dem 21.09.2026 lehnt es auch die Tür ab. Soll ein Kollege vormerken können, ist das

@@ -8,31 +8,13 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// GetByBarcode liest einen Schüler anhand seiner Barcode-ID aus.
-func (r *pgStudentRepository) GetByBarcode(ctx context.Context, barcode string) (*Student, error) {
-	query := `
-		SELECT id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, ''), coalesce(abgaenger_jahr, 0), coalesce(ist_gesperrt, false), lusd_id, coalesce(ist_abgaenger, false), TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, coalesce(is_manually_blocked, false), block_reason, coalesce(strasse, ''), coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''), coalesce(eltern_email, '')
-		FROM schueler
-		WHERE barcode_id = $1 AND deleted_at IS NULL
-		LIMIT 1
-	`
-	s, err := scanStudent(r.db.QueryRow(ctx, query, barcode))
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return s, nil
-}
-
-// spaltenLeser ist die Spaltenliste von scanStudent — einmal, damit die Abfragen über
+// spaltenLeser ist die Spaltenliste von scanStudentMitZusatz — einmal, damit die Abfragen über
 // die Sicht `schueler` und die über die Tabelle `leser` nicht auseinanderlaufen können.
 const spaltenLeser = `id, coalesce(barcode_id, ''), coalesce(vorname, ''), coalesce(nachname, ''), coalesce(klasse, ''), coalesce(abgaenger_jahr, 0), coalesce(ist_gesperrt, false), lusd_id, coalesce(ist_abgaenger, false), TO_CHAR(geburtsdatum, 'YYYY-MM-DD'), erstellt_am, aktualisiert_am, coalesce(is_manually_blocked, false), block_reason, coalesce(strasse, ''), coalesce(hausnummer, ''), coalesce(plz, ''), coalesce(ort, ''), coalesce(eltern_email, '')`
 
 // GetLeserByBarcode liest einen Leser — Schüler ODER Kollegium — über seine
-// Ausweisnummer. Anders als GetByBarcode geht die Abfrage an die TABELLE `leser` und
-// nicht an die Sicht `schueler`; nur so findet die Theke einen Kollegen.
+// Ausweisnummer. Die Abfrage geht an die TABELLE `leser` und nicht an die Sicht
+// `schueler`; nur so finden Theke und Suchleiste einen Kollegen.
 func (r *pgStudentRepository) GetLeserByBarcode(ctx context.Context, barcode string) (*Student, error) {
 	return r.leser(ctx, `WHERE barcode_id = $1 AND deleted_at IS NULL`, barcode)
 }

@@ -69,19 +69,13 @@ type Scanner interface {
 
 // StudentRepository definiert die Operationen zur Abfrage und zum Abgleich von Schülern in der Datenbank.
 type StudentRepository interface {
-	// GetByBarcode sucht einen Schüler anhand seiner Barcode-ID (Schülerausweis).
-	// Liefert nil zurück, wenn kein Schüler gefunden wurde.
-	GetByBarcode(ctx context.Context, barcode string) (*Student, error)
-
 	// GetLeserByBarcode sucht einen LESER anhand seiner Ausweisnummer — Schüler UND
 	// Kollegium. Das ist die Abfrage der Theke: Dort steht ein Mensch mit einer Karte,
 	// und welcher Art er ist, entscheidet nichts über das Ausleihen (Migration 125).
 	// Liefert nil, wenn die Nummer zu niemandem gehört.
 	//
-	// GetByBarcode daneben liest die Sicht `schueler` und meint wirklich nur Schüler:
-	// Klassenlisten, Mahnläufe, LUSD. Wer die beiden verwechselt, hat entweder einen
-	// Kollegen in einer Klassenliste oder eine Lehrkraft, die an der Theke nicht
-	// existiert.
+	// Eine Schwester über die Sicht `schueler` (GetByBarcode) gab es bis zum 21.09.2026;
+	// ihr letzter Aufrufer war die Scan-Erkennung der Suchleiste, und die meint den Leser.
 	GetLeserByBarcode(ctx context.Context, barcode string) (*Student, error)
 
 	// GetLeserByID sucht einen LESER anhand seiner UUID — wie GetLeserByBarcode, aber
@@ -139,11 +133,6 @@ type pgStudentRepository struct {
 // NewStudentRepository erzeugt eine neue Instanz des PostgreSQL-basierten StudentRepositorys.
 func NewStudentRepository(db db.PgxPoolIface) StudentRepository {
 	return &pgStudentRepository{db: db}
-}
-
-// scanStudent ist eine Hilfsfunktion zum Einlesen einer Datenbankzeile in das Student-Modell.
-func scanStudent(row Scanner) (*Student, error) {
-	return scanStudentMitZusatz(row)
 }
 
 // scanStudentMitZusatz scannt die Standard-Spaltenliste und danach beliebige

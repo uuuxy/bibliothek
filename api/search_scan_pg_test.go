@@ -25,6 +25,14 @@ func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 		VALUES ('S-SPRUNG-1', 'Greta', 'Sprung', '07A', 2031) RETURNING id`).Scan(&schuelerID); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE barcode_id = 'A-KOLL-77'`); err != nil {
+		t.Fatal(err)
+	}
+	var kollegeID string
+	if err := pool.QueryRow(ctx, `INSERT INTO leser (barcode_id, vorname, nachname, art)
+		VALUES ('A-KOLL-77', 'Kim', 'Kollegin', 'lehrkraft') RETURNING id`).Scan(&kollegeID); err != nil {
+		t.Fatal(err)
+	}
 	s := &Server{}
 	h := s.SearchHandler(repository.NewStudentRepository(pool), repository.NewBookRepository(pool))
 	suche := func(q string) UnifiedSearchResult {
@@ -46,6 +54,13 @@ func TestSearch_ErkenntScansOhneZuBuchen(t *testing.T) {
 	}
 	if r := suche("S-SPRUNG-1"); r.Treffer == nil || r.Treffer.Typ != "schueler" || r.Treffer.ID != schuelerID {
 		t.Errorf("Ausweis: %+v", r.Treffer)
+	}
+	// Der Ausweis eines Kollegen ist derselbe Sprung: Die Akte ist eine Maske für jeden, und
+	// die Theke löst ihn längst über GetLeserByBarcode auf. Bis zum 21.09.2026 fragte die
+	// Scan-Erkennung als einzige Stelle noch die Sicht `schueler` — Treffer nil, und die
+	// Suchleiste fiel auf die unscharfe Namenssuche zurück (OFFEN.md 5.19).
+	if r := suche("A-KOLL-77"); r.Treffer == nil || r.Treffer.Typ != "schueler" || r.Treffer.ID != kollegeID {
+		t.Errorf("Ausweis eines Kollegen: %+v — want Treffer auf %s", r.Treffer, kollegeID)
 	}
 	if r := suche("Sprung"); r.Treffer != nil || len(r.Students) != 1 || len(r.Books) != 1 {
 		t.Errorf("Freitext: treffer=%+v schueler=%d buecher=%d", r.Treffer, len(r.Students), len(r.Books))

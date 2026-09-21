@@ -51,16 +51,18 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/mahnwesen_queries.go":      {3, "Gemahnt werden Schüler, nicht das Kollegium (Entscheidung zum Lehrer-Anliegen, Kommentar an der ersten Abfrage); die zwei anderen folgen derselben Auswahl bzw. rechnen über die Klassenstufe"},
 	"repository/bescheid.go":               {4, "Bescheide hängen an Forderungen, und ein Kollege bekommt keine (Tür: schaden_melden.go, ohneForderung)"},
 	"repository/bescheid_ausstehend.go":    {1, "Offene Forderungen ohne Bescheid — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
+	// Durchsicht der Akte und des Drucks, 21.09.2026.
+	"repository/student_profile_queries.go": {1, "Liste der Klassen — Klassen haben nur Schüler"},
+	"api/student_create.go":                 {1, "Dublette über Name UND Geburtsdatum gibt es nur bei Schülern; für alle Leser prüft direkt danach pruefeLeserNamensdublette gegen die Tabelle"},
+	"api/pdf.go":                            {1, "Elternbrief je Schadensfall — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
+	"api/reports_pdf.go":                    {1, "Mahnbriefe an Eltern — gemahnt werden Schüler, nicht das Kollegium (wie mahnwesen_queries.go)"},
 }
 
 // lesepfadeUngeprueft: Stand der Messung vom 21.09.2026. NUR SCHRUMPFEN.
 var lesepfadeUngeprueft = map[string]int{
 	"api/dsgvo_auskunft.go":                 1,
 	"api/graduates.go":                      2,
-	"api/pdf.go":                            1,
 	"api/print.go":                          3,
-	"api/reports_pdf.go":                    1,
-	"api/student_create.go":                 1,
 	"api/student_update.go":                 1,
 	"cmd/migrate-fotos/main.go":             1,
 	"internal/littera/schreiber.go":         1,
@@ -72,8 +74,6 @@ var lesepfadeUngeprueft = map[string]int{
 	"repository/lmf_plan.go":                1,
 	"repository/lmf_termine.go":             1,
 	"repository/lusd_bestand.go":            1,
-	"repository/student_profile_queries.go": 1,
-	"repository/student_queries.go":         1,
 	"repository/titel_loeschen_wartende.go": 1,
 }
 

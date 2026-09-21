@@ -19,7 +19,7 @@ type ScanTreffer struct {
 }
 
 // ErkenneScan löst einen Wert exakt auf: erst Exemplar-Barcode, dann Littera-Etikett
-// (EAN-13 → Mediennummer), dann Schülerausweis. Dieselbe Reihenfolge wie
+// (EAN-13 → Mediennummer), dann Ausweis (Schüler oder Kollegium). Dieselbe Reihenfolge wie
 // resolveOhnePraefix in der Theke, nur ohne Buchung.
 func ErkenneScan(ctx context.Context, bookRepo repository.BookRepository, studentRepo repository.StudentRepository, q string) (*ScanTreffer, error) {
 	for _, kandidat := range exemplarKandidaten(q) {
@@ -31,7 +31,10 @@ func ErkenneScan(ctx context.Context, bookRepo repository.BookRepository, studen
 			return &ScanTreffer{Typ: "exemplar", ID: copy.ID, TitelID: copy.TitelID, Barcode: copy.BarcodeID}, nil
 		}
 	}
-	student, err := studentRepo.GetByBarcode(ctx, q)
+	// Ein LESER, nicht nur ein Schüler: Die Akte ist eine Maske für jeden, und die Theke
+	// löst denselben Ausweis über dieselbe Funktion auf. Der Typ heißt weiter "schueler" —
+	// er benennt das Sprungziel (die Akte), nicht die Art der Person.
+	student, err := studentRepo.GetLeserByBarcode(ctx, q)
 	if err != nil {
 		return nil, fmt.Errorf("ausweis auflösen: %w", err)
 	}
