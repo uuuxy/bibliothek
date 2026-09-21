@@ -12,9 +12,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Die Reihenfolge ist hier der Prüfgegenstand — pgxmock verlangt sie genau so, wie sie
+// erwartet wird: Begin ZUERST, dann jeder Leser in der Transaktion, dann die beiden
+// Löschbefehle, die ihre Spur per RETURNING liefern. Bis zum 21.09.2026 standen die
+// Leser vor dem Begin (OFFEN.md 5.5): Ein Rückbau dorthin lässt diesen Test rot werden,
+// weil dann eine Abfrage VOR dem erwarteten Begin ankommt.
 func TestDeleteBooks(t *testing.T) {
 	ctx := context.Background()
 	ids := []string{"id-1", "id-2"}
+
+	// Die Leser in der Transaktion, in ihrer Reihenfolge — den Erfolgs- und den
+	// Nicht-gefunden-Fall unterscheidet erst der Titel-DELETE danach.
+	erwarteLeser := func(mock pgxmock.PgxPoolIface, cover string) {
+		mock.ExpectBegin()
+		// Barcode-Snapshots ALLER Exemplare vor den DELETEs — die Tresen-Auskunft
+		// findet gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
+		mock.ExpectQuery(`FROM buecher_exemplare e`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}).
+				AddRow("ex-1", "BC-1", "Titel Eins"))
+		// Die drei CASCADE-Kinder des Titels, die niemand nannte, bis Frage 12
+		// („Gegenrichtung Schema", 06.09.2026) die DDL gelesen hat: Vormerkungen,
+		// Klassensatz-Reservierungen, Klassensatz-Zuordnungen.
+		mock.ExpectQuery(`FROM vormerkungen v`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
+		mock.ExpectQuery(`FROM klassensatz_reservierungen r`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse", "status", "seit"}))
+		mock.ExpectQuery(`FROM class_books c`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
+		zeilen := pgxmock.NewRows([]string{"cover_url"})
+		if cover != "" {
+			zeilen.AddRow(cover)
+		}
+		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\) AND cover_url LIKE '/uploads/%'`).
+			WithArgs(ids).
+			WillReturnRows(zeilen)
+	}
+	schadenSpalten := []string{"id", "exemplar_id", "barcode_id", "titel", "schuldner", "schueler_id", "betrag", "beschreibung", "seit"}
+	ausleiheSpalten := []string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "schueler_id", "seit"}
 
 	t.Run("empty ids", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -27,21 +65,26 @@ func TestDeleteBooks(t *testing.T) {
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	// Ein Fehler beim Lesen der laufenden Ausleihen muss den Lauf STOPPEN, bevor
-	// irgendetwas gelöscht ist: Ohne diese Liste gäbe es keine Protokollspur, und ein
-	// verliehenes Buch verschwände lautlos. Kein Begin, kein DELETE.
-	t.Run("laufende Ausleihen nicht lesbar", func(t *testing.T) {
+	// Scheitert das Löschen der Ausleihen, bleibt NICHTS stehen: kein Titel-DELETE,
+	// keine Spur, Rollback. Ohne die Spur verschwände ein verliehenes Buch lautlos.
+	t.Run("Ausleihen nicht löschbar", func(t *testing.T) {
+		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
 		repo := NewBookRepository(mock)
 
-		mock.ExpectQuery(`FROM ausleihen a`).
+		erwarteLeser(mock, "")
+		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
+			WithArgs(ids).
+			WillReturnRows(pgxmock.NewRows(schadenSpalten))
+		mock.ExpectQuery(`DELETE FROM ausleihen a`).
 			WithArgs(ids).
 			WillReturnError(fmt.Errorf("db error"))
+		mock.ExpectRollback()
 
 		err = repo.DeleteBooks(ctx, ids)
-		assert.ErrorContains(t, err, "laufende ausleihen konnten nicht gelesen werden")
+		assert.ErrorContains(t, err, "ausleihen konnten nicht gelöscht werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
 
@@ -52,48 +95,16 @@ func TestDeleteBooks(t *testing.T) {
 		defer mock.Close()
 		repo := NewBookRepository(mock)
 
-		mock.ExpectQuery(`FROM ausleihen a`).
+		erwarteLeser(mock, "/uploads/cover1.jpg")
+		// Offene Forderungen und laufende Ausleihen kommen als Spur aus dem Löschbefehl
+		// selbst (RETURNING) — eine unbezahlte Forderung ist Geld, das ein Schüler
+		// schuldet, und sie verschwand bis zum 06.09.2026 spurlos mit dem Titel.
+		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
-
-		// Offene Forderungen werden VOR dem Löschen gelesen und protokolliert
-		// (Rasterdurchgang 06.09.2026): Ein unbezahlter Schadensfall ist Geld, das ein
-		// Schüler schuldet, und er verschwand bis dahin spurlos mit dem Titel.
-		mock.ExpectQuery(`FROM schadensfaelle sf`).
+			WillReturnRows(pgxmock.NewRows(schadenSpalten))
+		mock.ExpectQuery(`DELETE FROM ausleihen a`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
-				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
-
-		// Und die drei CASCADE-Kinder des Titels, die niemand nannte, bis Frage 12
-		// („Gegenrichtung Schema", 06.09.2026) die DDL gelesen hat: Vormerkungen,
-		// Klassensatz-Reservierungen, Klassensatz-Zuordnungen.
-		mock.ExpectQuery(`FROM vormerkungen v`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
-		mock.ExpectQuery(`FROM klassensatz_reservierungen r`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse", "status", "seit"}))
-		mock.ExpectQuery(`FROM class_books c`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
-
-		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\) AND cover_url LIKE '/uploads/%'`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover1.jpg"))
-
-		mock.ExpectBegin()
-		// Barcode-Snapshots ALLER Exemplare vor den DELETEs — die Tresen-Auskunft
-		// findet gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
-		mock.ExpectQuery(`FROM buecher_exemplare e`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}).
-				AddRow("ex-1", "BC-1", "Titel Eins"))
-		mock.ExpectExec(`DELETE FROM schadensfaelle WHERE exemplar_id IN \(SELECT id FROM buecher_exemplare WHERE titel_id = ANY\(\$1::uuid\[\]\)\)`).
-			WithArgs(ids).
-			WillReturnResult(pgxmock.NewResult("DELETE", 1))
-		mock.ExpectExec(`DELETE FROM ausleihen WHERE exemplar_id IN \(SELECT id FROM buecher_exemplare WHERE titel_id = ANY\(\$1::uuid\[\]\)\)`).
-			WithArgs(ids).
-			WillReturnResult(pgxmock.NewResult("DELETE", 1))
+			WillReturnRows(pgxmock.NewRows(ausleiheSpalten))
 		mock.ExpectExec(`DELETE FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\)`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 2))
@@ -114,42 +125,13 @@ func TestDeleteBooks(t *testing.T) {
 		defer mock.Close()
 		repo := NewBookRepository(mock)
 
-		mock.ExpectQuery(`FROM ausleihen a`).
+		erwarteLeser(mock, "/uploads/cover1.jpg")
+		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
-
-		mock.ExpectQuery(`FROM schadensfaelle sf`).
+			WillReturnRows(pgxmock.NewRows(schadenSpalten))
+		mock.ExpectQuery(`DELETE FROM ausleihen a`).
 			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
-				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
-
-		// Und die drei CASCADE-Kinder des Titels, die niemand nannte, bis Frage 12
-		// („Gegenrichtung Schema", 06.09.2026) die DDL gelesen hat: Vormerkungen,
-		// Klassensatz-Reservierungen, Klassensatz-Zuordnungen.
-		mock.ExpectQuery(`FROM vormerkungen v`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "wer", "status", "seit", "schueler_id"}))
-		mock.ExpectQuery(`FROM klassensatz_reservierungen r`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse", "status", "seit"}))
-		mock.ExpectQuery(`FROM class_books c`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
-
-		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover1.jpg"))
-
-		mock.ExpectBegin()
-		mock.ExpectQuery(`FROM buecher_exemplare e`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}))
-		mock.ExpectExec(`DELETE FROM schadensfaelle`).
-			WithArgs(ids).
-			WillReturnResult(pgxmock.NewResult("DELETE", 0))
-		mock.ExpectExec(`DELETE FROM ausleihen`).
-			WithArgs(ids).
-			WillReturnResult(pgxmock.NewResult("DELETE", 0))
+			WillReturnRows(pgxmock.NewRows(ausleiheSpalten))
 		mock.ExpectExec(`DELETE FROM buecher_titel`).
 			WithArgs(ids).
 			WillReturnResult(pgxmock.NewResult("DELETE", 0))
@@ -170,13 +152,12 @@ func TestSammleLokaleCoverPfade(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
 
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
 			WithArgs(ids).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/test1.jpg").AddRow("/uploads/test2.png"))
 
-		paths, err := repo.sammleLokaleCoverPfade(ctx, ids)
+		paths, err := sammleLokaleCoverPfade(ctx, mock, ids)
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"/uploads/test1.jpg", "/uploads/test2.png"}, paths)
 		assert.NoError(t, mock.ExpectationsWereMet())
@@ -186,13 +167,12 @@ func TestSammleLokaleCoverPfade(t *testing.T) {
 		mock, err := pgxmock.NewPool()
 		require.NoError(t, err)
 		defer mock.Close()
-		repo := NewBookRepository(mock)
 
 		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
 			WithArgs(ids).
 			WillReturnError(fmt.Errorf("db error"))
 
-		paths, err := repo.sammleLokaleCoverPfade(ctx, ids)
+		paths, err := sammleLokaleCoverPfade(ctx, mock, ids)
 		assert.ErrorContains(t, err, "cover-dateien konnten nicht ermittelt werden")
 		assert.Nil(t, paths)
 		assert.NoError(t, mock.ExpectationsWereMet())

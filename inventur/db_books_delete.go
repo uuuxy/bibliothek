@@ -36,54 +36,47 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return nil
 	}
 
-	offene, err := repo.leseOffeneAusleihen(ctx, ids)
-	if err != nil {
-		return err
-	}
-
-	// Unbezahlte Forderungen fallen mit dem Titel — auch sie brauchen eine Spur
-	// (db_books_delete_spur.go, Rasterdurchgang 06.09.2026).
-	offeneSchaeden, err := repo.leseOffeneSchaeden(ctx, ids)
-	if err != nil {
-		return err
-	}
-
-	// Vormerkungen, Klassensatz-Reservierungen und Klassensatz-Zuordnungen fallen per
-	// ON DELETE CASCADE mit dem Titel — die DDL sagt das, der Code sagte es nicht
-	// (Frage 12 „Gegenrichtung Schema", 06.09.2026). Vorher lesen, danach ist es weg.
-	wartende, err := repository.LeseWartendeBezuege(ctx, repo.db, ids)
-	if err != nil {
-		return err
-	}
-
-	localCovers, err := repo.sammleLokaleCoverPfade(ctx, ids)
-	if err != nil {
-		return err
-	}
-
 	tx, err := repo.db.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("löschen konnte nicht begonnen werden: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
 
+	// Alles, was eine Spur braucht, wird IN der Transaktion gelesen. Bis zum 21.09.2026
+	// standen drei Leser vor dem Begin (OFFEN.md 5.5): Was sie sahen, war nicht
+	// zwingend das, was fiel.
+	//
 	// Barcode-Snapshots ALLER Exemplare, bevor die Zeilen fallen — die Tresen-Auskunft
 	// findet gelöschte Exemplare nur darüber (Begründung an leseExemplarSnapshots).
 	exemplarSnaps, err := leseExemplarSnapshots(ctx, tx, ids)
 	if err != nil {
 		return err
 	}
+	// Vormerkungen, Klassensatz-Reservierungen und Klassensatz-Zuordnungen fallen per
+	// ON DELETE CASCADE mit dem Titel — die DDL sagt das, der Code sagte es nicht
+	// (Frage 12 „Gegenrichtung Schema", 06.09.2026). Vorher lesen, danach ist es weg.
+	wartende, err := repository.LeseWartendeBezuege(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	localCovers, err := sammleLokaleCoverPfade(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
 
 	// Zugehörige Datensätze ALLER Exemplare dieser Titel entfernen, sonst greift der
-	// ON DELETE RESTRICT der FKs. Reihenfolge erzwingen die RESTRICT-FKs, Atomarität die Tx.
-	if _, err := tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
-		return fmt.Errorf("failed to delete damage records for titles: %w", err)
+	// ON DELETE RESTRICT der FKs. Die Reihenfolge (Schadensfall → Ausleihe → Exemplar)
+	// erzwingen die RESTRICT-FKs, Atomarität die Tx. Beide Löschbefehle liefern ihre Spur
+	// gleich mit (RETURNING): die unbezahlten Forderungen und die laufenden Ausleihen —
+	// genau die Zeilen, die fallen, nicht die, die ein Leser kurz davor sah. Was hier
+	// verschwindet, steht vor dem Commit im Audit-Log.
+	offeneSchaeden, err := loescheSchaedenMitSpur(ctx, tx, ids)
+	if err != nil {
+		return err
 	}
-	// Ohne Einschränkung auf rueckgabe_am: Auch die laufenden Ausleihen gehen mit, sonst
-	// hielte ihr ON DELETE RESTRICT das Exemplar fest und der ganze Lauf scheiterte an
-	// einer FK-Verletzung. Was hier verschwindet, steht vorher im Audit-Log.
-	if _, err := tx.Exec(ctx, "DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))", ids); err != nil {
-		return fmt.Errorf("failed to delete loans for titles: %w", err)
+	offene, err := loescheAusleihenMitSpur(ctx, tx, ids)
+	if err != nil {
+		return err
 	}
 
 	result, err := tx.Exec(ctx, `DELETE FROM buecher_titel WHERE id = ANY($1::uuid[])`, ids)
@@ -120,8 +113,8 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 
 // sammleLokaleCoverPfade liefert die lokal gespeicherten Cover-Pfade (/uploads/...)
 // der angegebenen Titel, damit sie nach dem Löschen entfernt werden können.
-func (repo *BookRepository) sammleLokaleCoverPfade(ctx context.Context, ids []string) ([]string, error) {
-	coverRows, err := repo.db.Query(ctx, "SELECT cover_url FROM buecher_titel WHERE id = ANY($1::uuid[]) AND cover_url LIKE '/uploads/%'", ids)
+func sammleLokaleCoverPfade(ctx context.Context, q zeilenLeser, ids []string) ([]string, error) {
+	coverRows, err := q.Query(ctx, "SELECT cover_url FROM buecher_titel WHERE id = ANY($1::uuid[]) AND cover_url LIKE '/uploads/%'", ids)
 	if err != nil {
 		return nil, fmt.Errorf("cover-dateien konnten nicht ermittelt werden: %w", err)
 	}

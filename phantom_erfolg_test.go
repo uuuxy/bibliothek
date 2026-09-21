@@ -90,7 +90,6 @@ var phantomBestand = map[string]int{
 	"inventur/datenbank_klassen.go:UpdateClassBooks":                    2,
 	"inventur/datenbank_klassen.go:insertClassBookBindings":             1,
 	"inventur/db_books_create.go:legeImportExemplareAn":                 1,
-	"inventur/db_books_delete.go:DeleteBooks":                           2,
 	"inventur/db_books_delete_spur.go:protokolliereGeloeschteExemplare": 1,
 	"inventur/db_books_delete_spur.go:protokolliereOffeneAusleihen":     1,
 	// Dieselbe Bauart wie die Zeile darüber (Rasterdurchgang 06.09.2026): ein INSERT ins

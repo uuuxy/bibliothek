@@ -106,18 +106,18 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 	})
 
 	t.Run("Success", func(t *testing.T) {
+		imTestVerzeichnis(t) // das Aufräumen der Cover-Dateien legt sonst inventur/uploads im Repo an
 
-		// Expected database operations for DeleteBooks. Erste Abfrage: die laufenden
-		// Ausleihen, die der Lauf mit abräumt und vorher protokolliert (hier: keine).
-		mock.ExpectQuery(`FROM ausleihen a`).
-			WithArgs(pgxmock.AnyArg()).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "seit"}))
+		// Die Erwartungen in der Reihenfolge von DeleteBooks (seit 21.09.2026: Begin
+		// ZUERST, jeder Leser in der Transaktion, die Löschbefehle liefern ihre Spur
+		// per RETURNING). Die Reihenfolge selbst prüft db_books_delete_test.go; hier
+		// zählt, dass der Endpunkt mit 200 antwortet.
+		mock.ExpectBegin()
 
-		// Offene Forderungen vor dem Löschen (Rasterdurchgang 06.09.2026); hier: keine.
-		mock.ExpectQuery(`FROM schadensfaelle sf`).
+		// Barcode-Snapshots vor den DELETEs (Tresen-Auskunft; hier: keine Exemplare).
+		mock.ExpectQuery(`FROM buecher_exemplare e`).
 			WithArgs(pgxmock.AnyArg()).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
-				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}))
 
 		// Die drei CASCADE-Kinder des Titels, seit Frage 12 („Gegenrichtung Schema",
 		// 06.09.2026) im Protokoll: Vormerkungen, Klassensatz-Reservierungen,
@@ -136,22 +136,15 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover.jpg"))
 
-		// Die drei abhängigen DELETEs laufen jetzt in EINER Transaktion (Atomarität —
-		// sonst Halbzustand: Historie/Gebühren gelöscht, Buch bleibt).
-		mock.ExpectBegin()
-
-		// Barcode-Snapshots vor den DELETEs (Tresen-Auskunft; hier: keine Exemplare).
-		mock.ExpectQuery(`FROM buecher_exemplare e`).
+		// Offene Forderungen und laufende Ausleihen kommen als Spur aus dem Löschbefehl
+		// selbst (hier: keine).
+		mock.ExpectQuery(`DELETE FROM schadensfaelle sf`).
 			WithArgs(pgxmock.AnyArg()).
-			WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "titel"}))
-
-		mock.ExpectExec("DELETE FROM schadensfaelle").
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel",
+				"schuldner", "schueler_id", "betrag", "beschreibung", "seit"}))
+		mock.ExpectQuery(`DELETE FROM ausleihen a`).
 			WithArgs(pgxmock.AnyArg()).
-			WillReturnResult(pgxmock.NewResult("DELETE", 0))
-
-		mock.ExpectExec("DELETE FROM ausleihen").
-			WithArgs(pgxmock.AnyArg()).
-			WillReturnResult(pgxmock.NewResult("DELETE", 0))
+			WillReturnRows(pgxmock.NewRows([]string{"id", "exemplar_id", "barcode_id", "titel", "entleiher", "schueler_id", "seit"}))
 
 		mock.ExpectExec("DELETE FROM buecher_titel").
 			WithArgs(pgxmock.AnyArg()).

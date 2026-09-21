@@ -37,27 +37,47 @@ type offeneAusleihe struct {
 	Seit       string
 }
 
-// leseOffeneAusleihen sammelt die laufenden Ausleihen der zu löschenden Titel — VOR der
-// Löschung, denn danach sind sie nicht mehr da.
+// zeilenLeser ist, was die Leser vor dem Löschen brauchen — Pool oder Transaktion.
+type zeilenLeser interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+// loescheAusleihenMitSpur entfernt ALLE Ausleihen der Titel (die laufenden wie die
+// abgeschlossenen — sonst hielte ihr ON DELETE RESTRICT das Exemplar fest) und liefert
+// die laufenden als Spur zurück: aus demselben Befehl, der sie entfernt.
+//
+// Bis zum 21.09.2026 wurden die laufenden Ausleihen VOR der Transaktion gelesen und erst
+// Befehle später gelöscht: Eine Ausleihe, die dazwischen zustande kam, fiel ohne Spur
+// (OFFEN.md 5.5). DELETE … RETURNING schließt das Fenster ohne zusätzliche Sperre — und
+// ohne die Sperrreihenfolge Schüler → Ausleihe → Exemplar anzutasten, die eine vorgezogene
+// Exemplar-Sperre gekippt hätte (docs/invarianten.md, Abschnitt 1; die Rückgabe hält
+// erst die Ausleihe, dann stempelt sie das Exemplar).
 //
 // Schüler UND Kollegium (Handapparat): Beide Entleiher-Spalten sind polymorph, und ein
 // Handapparat-Buch ist genauso weg wie ein Schülerbuch. „(unbekannt)" statt eines
 // leeren Feldes, damit die Protokollzeile auch dann etwas aussagt, wenn die Zuordnung
 // bereits von der Lesehistorie-Befristung getrennt wurde.
-func (repo *BookRepository) leseOffeneAusleihen(ctx context.Context, ids []string) ([]offeneAusleihe, error) {
-	rows, err := repo.db.Query(ctx, `
-		SELECT a.id, e.id, e.barcode_id, t.titel,
+func loescheAusleihenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]offeneAusleihe, error) {
+	// Die schreibende CTE sieht sich selbst nicht; die äußere Abfrage liest nur Tabellen,
+	// die dieser Befehl nicht anfasst (Exemplare fallen erst mit dem Titel).
+	rows, err := tx.Query(ctx, `
+		WITH weg AS (
+			DELETE FROM ausleihen a
+			WHERE a.exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))
+			RETURNING a.id, a.exemplar_id, a.schueler_id, a.ausgeliehen_am, a.rueckgabe_am
+		)
+		SELECT w.id, e.id, e.barcode_id, t.titel,
 		       coalesce(nullif(trim(coalesce(l.vorname,'') || ' ' || coalesce(l.nachname,'')), ''),
 		                '(unbekannt)'),
-		       a.schueler_id, to_char(a.ausgeliehen_am, 'YYYY-MM-DD')
-		FROM ausleihen a
-		JOIN buecher_exemplare e ON a.exemplar_id = e.id
+		       w.schueler_id, to_char(w.ausgeliehen_am, 'YYYY-MM-DD')
+		FROM weg w
+		JOIN buecher_exemplare e ON w.exemplar_id = e.id
 		JOIN buecher_titel t     ON e.titel_id = t.id
-		LEFT JOIN leser l        ON a.schueler_id = l.id
-		WHERE t.id = ANY($1::uuid[]) AND a.rueckgabe_am IS NULL
+		LEFT JOIN leser l        ON w.schueler_id = l.id
+		WHERE w.rueckgabe_am IS NULL
 		ORDER BY e.barcode_id`, ids)
 	if err != nil {
-		return nil, fmt.Errorf("laufende ausleihen konnten nicht gelesen werden: %w", err)
+		return nil, fmt.Errorf("ausleihen konnten nicht gelöscht werden: %w", err)
 	}
 	defer rows.Close()
 
@@ -65,12 +85,12 @@ func (repo *BookRepository) leseOffeneAusleihen(ctx context.Context, ids []strin
 	for rows.Next() {
 		var o offeneAusleihe
 		if err := rows.Scan(&o.AusleiheID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Entleiher, &o.SchuelerID, &o.Seit); err != nil {
-			return nil, fmt.Errorf("laufende ausleihen konnten nicht gelesen werden: %w", err)
+			return nil, fmt.Errorf("spur der laufenden ausleihen konnte nicht gelesen werden: %w", err)
 		}
 		offene = append(offene, o)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("laufende ausleihen konnten nicht gelesen werden: %w", err)
+		return nil, fmt.Errorf("spur der laufenden ausleihen konnte nicht gelesen werden: %w", err)
 	}
 	return offene, nil
 }
@@ -197,8 +217,9 @@ type offenerSchaden struct {
 	Seit       string
 }
 
-// leseOffeneSchaeden sammelt die unbezahlten, nicht stornierten Schadensfälle der zu
-// löschenden Titel — VOR der Löschung.
+// loescheSchaedenMitSpur entfernt ALLE Schadensfälle der Titel und liefert die
+// unbezahlten, nicht stornierten als Spur zurück — aus demselben Befehl, wie bei den
+// Ausleihen.
 //
 // Warum das eine eigene Spur braucht (Rasterdurchgang 06.09.2026): Beide Löschwege
 // räumen `schadensfaelle` ohne Rücksicht auf `ist_bezahlt` ab; der Funktionskommentar in
@@ -209,21 +230,27 @@ type offenerSchaden struct {
 // verschwand die Forderung samt allen sechs Wirkungen, und niemand konnte es später
 // sehen. Für die offenen AUSLEIHEN gibt es diese Spur seit dem 23.08.2026; fürs Geld
 // fehlte sie.
-func (repo *BookRepository) leseOffeneSchaeden(ctx context.Context, ids []string) ([]offenerSchaden, error) {
-	rows, err := repo.db.Query(ctx, `
-		SELECT sf.id, e.id, e.barcode_id, t.titel,
+func loescheSchaedenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]offenerSchaden, error) {
+	rows, err := tx.Query(ctx, `
+		WITH weg AS (
+			DELETE FROM schadensfaelle sf
+			WHERE sf.exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = ANY($1::uuid[]))
+			RETURNING sf.id, sf.exemplar_id, sf.schueler_id, sf.betrag, sf.beschreibung,
+			          sf.erstellt_am, sf.ist_bezahlt, sf.storniert_am
+		)
+		SELECT w.id, e.id, e.barcode_id, t.titel,
 		       coalesce(nullif(trim(coalesce(l.vorname,'') || ' ' || coalesce(l.nachname,'')), ''),
 		                '(unbekannt)'),
-		       sf.schueler_id, to_char(sf.betrag, 'FM9999990.00'), sf.beschreibung,
-		       to_char(sf.erstellt_am, 'YYYY-MM-DD')
-		FROM schadensfaelle sf
-		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
+		       w.schueler_id, to_char(w.betrag, 'FM9999990.00'), w.beschreibung,
+		       to_char(w.erstellt_am, 'YYYY-MM-DD')
+		FROM weg w
+		JOIN buecher_exemplare e ON w.exemplar_id = e.id
 		JOIN buecher_titel t     ON e.titel_id = t.id
-		LEFT JOIN leser l        ON sf.schueler_id = l.id
-		WHERE t.id = ANY($1::uuid[]) AND sf.ist_bezahlt = false AND sf.storniert_am IS NULL
+		LEFT JOIN leser l        ON w.schueler_id = l.id
+		WHERE w.ist_bezahlt = false AND w.storniert_am IS NULL
 		ORDER BY e.barcode_id`, ids)
 	if err != nil {
-		return nil, fmt.Errorf("offene schadensfälle konnten nicht gelesen werden: %w", err)
+		return nil, fmt.Errorf("schadensfälle konnten nicht gelöscht werden: %w", err)
 	}
 	defer rows.Close()
 	var alle []offenerSchaden
@@ -231,12 +258,12 @@ func (repo *BookRepository) leseOffeneSchaeden(ctx context.Context, ids []string
 		var o offenerSchaden
 		if err := rows.Scan(&o.ID, &o.ExemplarID, &o.Barcode, &o.Titel, &o.Schuldner,
 			&o.SchuelerID, &o.Betrag, &o.Grund, &o.Seit); err != nil {
-			return nil, fmt.Errorf("offene schadensfälle konnten nicht gelesen werden: %w", err)
+			return nil, fmt.Errorf("spur der offenen schadensfälle konnte nicht gelesen werden: %w", err)
 		}
 		alle = append(alle, o)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("offene schadensfälle konnten nicht gelesen werden: %w", err)
+		return nil, fmt.Errorf("spur der offenen schadensfälle konnte nicht gelesen werden: %w", err)
 	}
 	return alle, nil
 }
