@@ -815,6 +815,28 @@ Punkte daraus sind nachgeprüft und gelten unabhängig davon:
 - **Zu 7.3:** Der zweite Ort muss kein S3 sein — ein zweiter Rechner per Kopierbefehl oder
   eine getauschte Platte tun dasselbe ohne Vertragsfrage. Eine Betriebsentscheidung.
 
+### 5.21 Band „Keine Verbindung" am Testserver, obwohl der Server antwortet (21.09.2026)
+
+**Beobachtet:** Das Band stand am Testserver dauerhaft, auch nach wiederholtem Neuladen; die
+Seite darunter lud ihre Daten normal. **Ursache offen.** Das Band hat zwei Quellen
+(`OfflineIndicator`): `navigator.onLine` und den Herzschlag der Live-Leitung — 25 s ohne
+`ping` von `/events` (`App.svelte`, `liveEvents.js`).
+
+**Nachgeprüft am selben Abend:** `/health` am Testserver 200, API antwortet. Kein Commit seit
+dem 17.09.2026 berührt Live-Leitung oder Band. Am lokalen Stack liefert `/events` sofort
+`connected` und nach 15 s `ping`; im echten Browser (Playwright) erscheint das Band weder nach
+40 s noch 40 s nach einem Neuladen. Der Service Worker (Workbox, nur Precache) fasst `/events`
+nicht an. Damit liegt die Ursache zwischen Browser und Testserver, nicht im Code.
+
+**Nächster Schritt:** im betroffenen Browser DevTools → Network → `events`: Status, und ob im
+Reiter „EventStream" `connected`/`ping` ankommen. Dazu die Gegenproben Inkognito-Fenster und
+ein zweites Netz (Mobilfunk).
+
+**Verdacht daneben, nicht nachgestellt:** Der Wächter unterscheidet nicht zwischen „25 s kein
+Ping gekommen" und „der Tab selbst stand" (Standby, eingefrorener Hintergrund-Tab). Beim
+Aufwachen wäre der Herzschlag alt und das Band erschiene bis zum nächsten Ping. Erklärt den
+Fall oben nicht (er überlebte das Neuladen).
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
