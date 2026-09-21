@@ -112,33 +112,33 @@
 	}
 </script>
 
-<main class="min-h-screen bg-slate-50 px-4 py-10">
+<main class="bg-surface min-h-screen px-4 py-10">
 	<div class="mx-auto max-w-2xl space-y-6">
 		{#if zustand === 'laedt'}
-			<p class="text-center text-slate-400">Bestellung wird geladen …</p>
+			<p class="text-on-surface-variant text-center">Bestellung wird geladen …</p>
 		{:else if zustand === 'ungueltig'}
-			<div class="rounded-xl bg-white p-8 text-center shadow-sm">
-				<h1 class="text-lg font-bold text-slate-800">Dieser Link ist nicht mehr gültig</h1>
-				<p class="mt-2 text-sm text-slate-500">
+			<div class="bg-surface-container-lowest rounded-xl p-8 text-center shadow-sm">
+				<h1 class="text-on-surface text-lg">Dieser Link ist nicht mehr gültig</h1>
+				<p class="text-on-surface-variant mt-2 text-sm">
 					Bestätigungs-Links laufen nach einiger Zeit ab und gehören immer zu genau einer
 					Bestellung. Bitte wenden Sie sich an die Schulbibliothek, wenn Sie einen neuen benötigen.
 				</p>
 			</div>
 		{:else}
-			<div class="rounded-xl bg-white p-8 shadow-sm">
-				<p class="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+			<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+				<p class="text-on-surface-variant text-xs font-medium">
 					{bestellung.schule_name || 'Schulbibliothek'}
 				</p>
 				{#if bestellung.schule_anschrift}
-					<p class="text-xs text-slate-400">{bestellung.schule_anschrift}</p>
+					<p class="text-on-surface-variant text-xs">{bestellung.schule_anschrift}</p>
 				{/if}
-				<h1 class="mt-2 text-xl font-bold text-slate-800">
+				<h1 class="text-on-surface mt-2 text-xl">
 					Bestellung vom {datum(bestellung.bestelldatum)}
 				</h1>
 				<!-- Eine Zeichenkette statt zusammengesetzter Markup-Schnipsel: Zwischen
 				     {#if}-Blöcken verschluckt der Formatierer die Leerzeichen, und im Browser
 				     stand „Naacher· Kundennummer". -->
-				<p class="mt-1 text-sm text-slate-500">{kopfzeile}</p>
+				<p class="text-on-surface-variant mt-1 text-sm">{kopfzeile}</p>
 				<Tabelle beschriftung="Bestellte Titel" class="mt-6">
 					<thead>
 						<tr>
@@ -163,32 +163,32 @@
 				<BestaetigungEtiketten {bestellung} {token} bind:formatId bind:geoeffneteGroesse />
 			{/if}
 
-			<div class="rounded-xl bg-white p-8 shadow-sm">
+			<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
 				{#if bestellung.bestaetigt_am}
-					<h2 class="text-base font-bold text-emerald-700">Bestellung bestätigt</h2>
-					<p class="mt-1 text-sm text-slate-500">
+					<h2 class="text-primary text-base font-medium">Bestellung bestätigt</h2>
+					<p class="text-on-surface-variant mt-1 text-sm">
 						Eingegangen am {datum(bestellung.bestaetigt_am)}. Die Schulbibliothek sieht die
 						Bestätigung in ihrer Bestellhistorie — Sie müssen nichts weiter tun.{bestellung.link_gueltig_bis
 							? ` Diese Seite und die Etiketten bleiben bis zum ${datum(bestellung.link_gueltig_bis)} erreichbar.`
 							: ''}
 					</p>
 				{:else}
-					<h2 class="text-base font-bold text-slate-800">Bestellung bestätigen</h2>
-					<p class="mt-1 text-sm text-slate-500">
+					<h2 class="text-on-surface text-base font-medium">Bestellung bestätigen</h2>
+					<p class="text-on-surface-variant mt-1 text-sm">
 						Damit meldet sich die Bestellung in der Schulbibliothek als von Ihnen bestätigt. Das ist
 						einmal möglich.{bestellung.link_gueltig_bis
 							? ` Dieser Link gilt bis zum ${datum(bestellung.link_gueltig_bis)}; danach hilft die Schulbibliothek mit einem neuen.`
 							: ''}
 					</p>
 					{#if fehler}
-						<p class="mt-3 text-sm font-medium text-rose-600">{fehler}</p>
+						<p class="text-error mt-3 text-sm font-medium">{fehler}</p>
 					{/if}
 					<Button size="lg" class="mt-4" disabled={sendet} onclick={bestaetigen}>
 						{sendet ? 'Wird gesendet …' : 'Bestellung jetzt bestätigen'}
 					</Button>
 				{/if}
 			</div>
-			<p class="pb-4 text-center text-xs text-slate-400">
+			<p class="text-on-surface-variant pb-4 text-center text-xs">
 				Fragen zu dieser Bestellung? Antworten Sie einfach auf die Bestellmail der Schulbibliothek.
 			</p>
 		{/if}

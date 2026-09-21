@@ -107,7 +107,12 @@ test('Schülerbücherei: die Seite nennt den Topf, das große Lernmittel-Etikett
 	await page.goto(`/bestellung/${token}`);
 	await expect(page.getByRole('heading', { name: /Bestellung vom/ })).toBeVisible();
 	await expect(page.getByText(/^Schülerbücherei · E2E-Naacher/)).toBeVisible();
-	await expect(page.getByRole('button', { name: /Kleine Etiketten/ })).toBeVisible();
+	// Eine Größe, also kein „klein": Das Wort braucht ein Gegenstück.
+	await expect(
+		page.getByRole('button', { name: 'Etiketten (Bogen A4)', exact: true })
+	).toBeVisible();
+	await expect(page.getByLabel('Bogenraster der Etiketten', { exact: true })).toBeVisible();
+	await expect(page.getByText(/klein/i)).toHaveCount(0);
 	await expect(page.getByRole('button', { name: GROSSER_KNOPF })).toHaveCount(0);
 
 	// Die Tür, nicht nur der Knopf: Wer die Adresse kennt, bekommt das Etikett auch nicht.
@@ -127,6 +132,7 @@ test('Lernmittelfreiheit: die Seite nennt den Topf und bietet beide Größen an'
 	await page.goto(`/bestellung/${token}`);
 	await expect(page.getByText(/^Lernmittelfreiheit · E2E-Naacher/)).toBeVisible();
 	await expect(page.getByRole('button', { name: GROSSER_KNOPF })).toBeVisible();
+	await expect(page.getByRole('button', { name: /Kleine Etiketten/ })).toBeVisible();
 	const gross = await page.request.get(`/api/public/bestellung/${token}/etiketten/gross`);
 	expect(gross.status()).toBe(200);
 });

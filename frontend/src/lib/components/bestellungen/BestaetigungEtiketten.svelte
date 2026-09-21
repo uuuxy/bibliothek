@@ -12,6 +12,12 @@
 	/** @type {{ bestellung: any, token: string, formatId?: string, geoeffneteGroesse?: string }} */
 	let { bestellung, token, formatId = $bindable(''), geoeffneteGroesse = $bindable('') } = $props();
 
+	// „Klein" sagt die Seite nur, wenn es ein „Groß" daneben gibt. Bei einer Bestellung für
+	// die Schülerbücherei gibt es EINE Größe — dort heißt sie schlicht „Etiketten".
+	let rasterBeschriftung = $derived(
+		bestellung.grosses_etikett ? 'Bogenraster der kleinen Etiketten' : 'Bogenraster der Etiketten'
+	);
+
 	/** @param {'klein' | 'gross'} groesse */
 	function etikettenOeffnen(groesse) {
 		geoeffneteGroesse = groesse;
@@ -27,8 +33,8 @@
 	}
 </script>
 
-<div class="rounded-xl bg-white p-8 shadow-sm">
-	<h2 class="text-on-surface text-base font-bold">Etiketten drucken</h2>
+<div class="bg-surface-container-lowest rounded-xl p-8 shadow-sm">
+	<h2 class="text-on-surface text-base font-medium">Etiketten drucken</h2>
 	<p class="text-on-surface-variant mt-1 text-sm">
 		{#if bestellung.grosses_etikett}
 			Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail — Sie wählen nur das
@@ -41,7 +47,7 @@
 	{#if bestellung.etiketten_formate?.length}
 		<div class="mt-5 max-w-md space-y-1.5">
 			<label for="etikettenformat" class="text-on-surface-variant block text-xs font-medium">
-				Bogenraster der kleinen Etiketten
+				{rasterBeschriftung}
 			</label>
 			<Select
 				id="etikettenformat"
@@ -50,7 +56,7 @@
 					value: f.id,
 					label: f.name
 				}))}
-				aria-label="Bogenraster der kleinen Etiketten"
+				aria-label={rasterBeschriftung}
 			/>
 			<p class="text-on-surface-variant text-xs">
 				Passend zu den Etikettenbögen in Ihrem Drucker.
@@ -65,7 +71,7 @@
 	<div class="mt-4 flex flex-wrap gap-3">
 		<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('klein')}>
 			{#if geoeffneteGroesse === 'klein'}<Check size={16} aria-hidden="true" />{/if}
-			Kleine Etiketten (Bogen A4)
+			{bestellung.grosses_etikett ? 'Kleine Etiketten (Bogen A4)' : 'Etiketten (Bogen A4)'}
 		</Button>
 		{#if bestellung.grosses_etikett}
 			<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>

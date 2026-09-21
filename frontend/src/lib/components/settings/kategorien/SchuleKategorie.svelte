@@ -103,9 +103,13 @@
 				class="col-span-2"
 			/>
 		</div>
+		<!-- md:col-start-1: Die zwei Vermerke gehören zusammen und stehen in EINER Zeile. Ohne den
+		     Zeilenanfang rutschte der erste neben PLZ/Ort und der zweite stand allein darunter
+		     (am 21.09.2026 am gerenderten Raster gemessen). -->
 		<Feld
 			bind:value={eigentumsvermerk}
 			label="Eigentumsvermerk"
+			class="md:col-start-1"
 			type="text"
 			maxlength={80}
 			placeholder="z. B. Eigentum des Landes Hessen"
