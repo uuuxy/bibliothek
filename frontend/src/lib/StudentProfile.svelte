@@ -1,6 +1,8 @@
 <script>
 	import WebcamCapture from './WebcamCapture.svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import LadeFehler from './components/ui/LadeFehler.svelte';
+	import Reiter from './components/ui/Reiter.svelte';
 	import DamageReportModal from './DamageReportModal.svelte';
 	import StudentLockModal from './StudentLockModal.svelte';
 	import StudentEditSheet from './StudentEditSheet.svelte';
@@ -132,25 +134,15 @@
 					/>
 				{/if}
 
-				<!-- Tabs -->
-				<div class="flex gap-6 border-b border-slate-200">
-					<button
-						onclick={() => (st.activeTab = 'ausleihen')}
-						class="pb-2 text-sm font-bold transition-all border-b-2 {st.activeTab === 'ausleihen'
-							? 'border-blue-600 text-blue-600'
-							: 'border-transparent text-slate-600 hover:text-slate-800'}"
-					>
-						Ausleihen & Historie
-					</button>
-					<button
-						onclick={() => (st.activeTab = 'stammdaten')}
-						class="pb-2 text-sm font-bold transition-all border-b-2 {st.activeTab === 'stammdaten'
-							? 'border-blue-600 text-blue-600'
-							: 'border-transparent text-slate-600 hover:text-slate-800'}"
-					>
-						Stammdaten & Adresse
-					</button>
-				</div>
+				<Reiter
+					etikett="Leserakte"
+					reiter={[
+						{ id: 'ausleihen', label: 'Ausleihen & Historie' },
+						{ id: 'stammdaten', label: 'Stammdaten & Adresse' }
+					]}
+					aktiv={st.activeTab}
+					onwahl={(id) => (st.activeTab = id)}
+				/>
 
 				<div class="flex-1 relative">
 					{#if st.activeTab === 'ausleihen'}
@@ -191,6 +183,12 @@
 			onSave={() => st.handleSaveEdit(st.profile.id)}
 		/>
 	{/if}
+{:else}
+	<LadeFehler
+		onerneut={reloadProfile}
+		titel="Akte nicht geladen"
+		text="Die Daten dieses Lesers konnten nicht abgerufen werden."
+	/>
 {/if}
 
 {#if st.showWebcam}

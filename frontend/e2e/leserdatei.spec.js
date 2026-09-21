@@ -50,7 +50,7 @@ test('Leserdatei: ein Kollege steht in der Liste, hat eine Akte und ist über de
 
 	// Der Reiter heisst seit dem 16.09.2026 fuer JEDEN „Stammdaten & Adresse" — eine Akte,
 	// ein Name. Vorher stand ueber derselben Sache beim Kollegium „Persoenliche Daten".
-	await page.getByRole('button', { name: 'Stammdaten & Adresse' }).click();
+	await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
 	const akte = page.locator('main');
 	await expect(akte.getByText(ausweis).first()).toBeVisible();
 	// Dieselben Angaben wie bei einer Schuelerin — die Akte hat nur noch EINE Form

@@ -69,7 +69,7 @@ test.describe.serial('Round-Trip-Sonde migrierter Felder', () => {
 		await expect
 			.poll(() => querySQL(`SELECT abgaenger_jahr FROM schueler WHERE barcode_id = 'RT-${s}'`))
 			.toBe('2031');
-		await page.getByRole('button', { name: /Ausleihen & Historie/ }).click();
+		await page.getByRole('tab', { name: /Ausleihen & Historie/ }).click();
 		await page.getByRole('button', { name: 'Rückgabedatum bearbeiten' }).first().click();
 		await page.getByLabel('Rückgabedatum', { exact: true }).fill('2026-12-24');
 		await page.getByRole('button', { name: 'Rückgabedatum speichern' }).click();

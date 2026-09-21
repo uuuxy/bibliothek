@@ -329,7 +329,7 @@ export async function oeffneSchuelerProfil(page, vorname) {
 	await gehZu(page, '/schuelerdatei');
 	await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
 	await page.getByRole('button', { name: new RegExp(`Profil von ${vorname} `) }).click();
-	const reiter = page.getByRole('button', { name: /Ausleihen & Historie/ });
+	const reiter = page.getByRole('tab', { name: /Ausleihen & Historie/ });
 	await expect(reiter).toBeVisible();
 	await reiter.click();
 }

@@ -95,11 +95,11 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 		.getByRole('button', { name: new RegExp(`Profil von Reiter${s} Testschueler`) })
 		.click();
 
-	const ausleihReiter = page.getByRole('button', { name: 'Ausleihen & Historie' });
+	const ausleihReiter = page.getByRole('tab', { name: 'Ausleihen & Historie' });
 	await expect(ausleihReiter).toBeVisible();
-	// Der aktive Reiter trägt die blaue Unterkante — daran hängt die Zusicherung,
-	// nicht an der Sichtbarkeit der Schaltfläche (beide sind immer sichtbar).
-	await expect(ausleihReiter).toHaveClass(/border-blue-600/);
+	// Der aktive Reiter ist als gewählt ausgezeichnet (aria-selected, ui/Reiter) — daran
+	// hängt die Zusicherung, nicht an der Sichtbarkeit (beide sind immer sichtbar).
+	await expect(ausleihReiter).toHaveAttribute('aria-selected', 'true');
 	await expect(page.getByText(`E2E-Reiter-Titel ${s}`).first()).toBeVisible();
 
 	// Weg 2: in der Schülerdatei selbst gesucht — die Frage ist "wie erreiche ich die Eltern?"
@@ -109,7 +109,8 @@ test('Profil-Reiter folgt der Absicht: Abgänger → Ausleihen, eigene Suche →
 	await page.getByLabel('Leser suchen').first().fill(`Reiteraktiv${s}`);
 	await page.getByText(`Reiteraktiv${s} Testschueler`).first().click();
 
-	await expect(page.getByRole('button', { name: 'Stammdaten & Adresse' })).toHaveClass(
-		/border-blue-600/
+	await expect(page.getByRole('tab', { name: 'Stammdaten & Adresse' })).toHaveAttribute(
+		'aria-selected',
+		'true'
 	);
 });

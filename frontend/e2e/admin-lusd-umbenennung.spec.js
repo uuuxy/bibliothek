@@ -83,7 +83,7 @@ test('Schülerakte: zwei Datensätze zusammenführen', async ({ page }) => {
 	await page.goto('/schuelerdatei');
 	await page.getByLabel('Leser suchen').first().fill(`Neu${s}`);
 	await page.getByText(`Zf${s} Neu${s}`).first().click();
-	await page.getByRole('button', { name: 'Stammdaten & Adresse' }).click();
+	await page.getByRole('tab', { name: 'Stammdaten & Adresse' }).click();
 	await page.getByRole('button', { name: 'Mit anderem Datensatz zusammenführen' }).click();
 
 	const dialog = page.getByRole('dialog', { name: 'Datensatz zusammenführen' });
