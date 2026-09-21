@@ -585,12 +585,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   prüft nur die Gegenrichtung.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT; die Schema-Parität
   vergleicht Funktionen nur am Namen.
-- Mehrere Ratschen haben keine Zeile in der Landkarte von [sweeps.md](sweeps.md), heute noch
-  `frontend-hygiene-dialoge/-ladekreis/-schalter.test.js`; Regel 7 hat keine Ratsche.
-  (`docs/werkzeuge_im_image_test.go`, `docs/compose_variablen_test.go` und
-  `frontend-hygiene-tabellen.test.js` stehen inzwischen drin — am 17.09.2026 nachgezählt.)
-  (Die seit dem 17.09.2026 neu gebauten Ratschen tragen sich beim Bauen selbst ein — der
-  Rückstand betrifft die älteren.)
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - **Wiedervorlage 17. November 2026: `GO-2026-6452` (excelize).** Am 16.09.2026 erschien eine
   Schwachstelle ohne heile Fassung — der Eintrag führt alle Versionen ab 0 und nennt keine
