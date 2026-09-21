@@ -236,7 +236,7 @@ func TestRotiere_JedeVerschluesselteSpalteStehtInDerListe(t *testing.T) {
 
 	inDerListe := map[string]bool{}
 	for _, e := range tabellen {
-		inDerListe[e.tabelle+"."+e.datenSpalte] = true
+		inDerListe[e.Tabelle+"."+e.DatenSpalte] = true
 	}
 	for spalte := range inDerDB {
 		if !inDerListe[spalte] {

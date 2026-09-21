@@ -77,6 +77,9 @@ type Lage struct {
 	EnforceProdSecrets bool
 	JWTSecret          string
 	AppEncryptionKey   string
+	// SchluesselProbe: Ließ sich je verschlüsselter Spalte ein Wert mit dem laufenden
+	// APP_ENCRYPTION_KEY entschlüsseln? nil: nicht lesbar.
+	SchluesselProbe *repository.SchluesselProbe
 
 	// Anmeldung
 	ImapHost string
@@ -219,6 +222,7 @@ func Pruefe(l Lage) []Befund {
 	befunde := []Befund{
 		pruefeAuslagerung(l),
 		pruefeGeheimnisse(l, echt),
+		pruefeSchluesselPasstZumBestand(l),
 		pruefeAnmeldung(l, echt),
 		pruefeSelbstanmeldung(l),
 		pruefeBestelllink(l),
@@ -588,6 +592,40 @@ func pruefeGeheimnisse(l Lage, echt bool) Befund {
 	default:
 		b.Stufe = StufeOK
 		b.Befund = befundNichtImEchtbetrieb("Beispiel-Geheimnisse", l.AppEnv)
+	}
+	return b
+}
+
+// pruefeSchluesselPasstZumBestand: Passt APP_ENCRYPTION_KEY zu dem, was in der Datenbank
+// verschlüsselt liegt? Der Fall dahinter ist die Wiederherstellung auf einem neuen Server:
+// Die Sicherung bringt die Daten zurück, die .env nicht — sie steht in keiner Sicherung.
+// Mit einem neuen Schlüssel startet das System ohne Meldung, und gemerkt wird es erst am
+// leeren Schülerfoto oder an der Mahnmail, die nicht rausgeht.
+//
+// Kritisch ohne Blick auf APP_ENV: Ein unlesbarer Bestand ist auf jedem System ein Fehler.
+func pruefeSchluesselPasstZumBestand(l Lage) Befund {
+	b := Befund{Bereich: "Schlüssel und Bestand"}
+	switch {
+	case l.SchluesselProbe == nil:
+		b.Stufe = StufeWarnung
+		b.Befund = "Ob APP_ENCRYPTION_KEY zum Bestand passt, ließ sich nicht prüfen."
+		b.Folge = "Ein falscher Schlüssel bliebe unbemerkt, bis ein Foto leer bleibt oder der Mailversand scheitert."
+		b.Abhilfe = abhilfeDbNeuLaden
+	case len(l.SchluesselProbe.NichtLesbar) > 0:
+		b.Stufe = StufeKritisch
+		b.Befund = "APP_ENCRYPTION_KEY passt nicht zum Bestand — nicht entschlüsselbar: " +
+			strings.Join(l.SchluesselProbe.NichtLesbar, ", ") + "."
+		b.Folge = "Schülerfotos bleiben leer, und ohne lesbares SMTP-Passwort geht keine Mail hinaus. " +
+			"Die Daten sind nicht verloren, solange der ursprüngliche Schlüssel noch existiert."
+		b.Abhilfe = "Den APP_ENCRYPTION_KEY der Anlage, von der die Daten stammen, in die .env eintragen " +
+			"und den Stack neu starten. Ist er verloren: SMTP-Passwort in den Einstellungen neu " +
+			"eingeben, Fotos neu einspielen."
+	case l.SchluesselProbe.Geprueft == 0:
+		b.Stufe = StufeOK
+		b.Befund = "Es liegt noch nichts verschlüsselt in der Datenbank — der Schlüssel kann nichts verfehlen."
+	default:
+		b.Stufe = StufeOK
+		b.Befund = "APP_ENCRYPTION_KEY passt zum Bestand (Stichprobe je verschlüsselter Spalte)."
 	}
 	return b
 }

@@ -583,7 +583,9 @@ nächtliche Backup-Job (Schlüssel stand in der `.env`, kam aber nicht im Contai
 und der Bestell-Bestätigungslink (`oeffentliche_adresse` nie gesetzt — die Mails gingen
 raus, nur ohne den Link, um dessentwillen es sie gibt).
 
-**Geprüft werden achtzehn Bereiche**, darunter: Auslagerung der Backups, Geheimnisse, Anmeldung
+**Geprüft werden neunzehn Bereiche**, darunter: Auslagerung der Backups, Geheimnisse, Schlüssel und
+Bestand (seit 21.09.2026: lässt sich je verschlüsselter Spalte ein Wert mit dem laufenden
+`APP_ENCRYPTION_KEY` entschlüsseln — der Fall dahinter ist die Wiederherstellung mit neuer `.env`), Anmeldung
 (IMAP), Bestell-Bestätigungslink, Mailversand (Mahnwesen), Demo-Daten (Schüler UND
 Exemplare aus `seed_demo.sql`), Lieferanten (seit 07.09.2026, kritisch: Reste der drei
 Beispiel-Lieferanten, die der Programmstart vom 30.05. bis Migration 107 bei leerer Tabelle

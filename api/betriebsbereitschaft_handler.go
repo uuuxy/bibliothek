@@ -138,6 +138,10 @@ func (s *Server) sammleLage(
 		}
 	}
 
+	if probe, err := repository.PruefeSchluesselGegenBestand(ctx, s.DB.Pool); err == nil {
+		lage.SchluesselProbe = &probe
+	}
+
 	// Backup-Zustand aus derselben Quelle wie das Dashboard-Badge (backup_status.go).
 	encKey := os.Getenv("BACKUP_ENCRYPTION_KEY")
 	lage.BackupKeySet = encKey != ""

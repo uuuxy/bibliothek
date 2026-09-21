@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"bibliothek/internal/crypto"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,17 +17,11 @@ import (
 // steht und nicht zwischen Flag-Auswertung und Ausgabe verschwindet.
 
 // umschluesselung beschreibt eine Tabelle mit einer verschlüsselten Spalte.
-type umschluesselung struct {
-	beschreibung string
-	tabelle      string
-	idSpalte     string
-	datenSpalte  string
-}
+type umschluesselung = repository.VerschluesselteSpalte
 
-var tabellen = []umschluesselung{
-	{"Schülerfotos", "schueler_fotos", "schueler_id", "foto_encrypted"},
-	{"SMTP-Passwort", "mail_settings_config", "id", "smtp_password_encrypted"},
-}
+// tabellen ist die eine Liste aus dem Repository — dieselbe, an der die
+// Betriebsbereitschaft prüft, ob der Schlüssel zum Bestand passt.
+var tabellen = repository.VerschluesselteSpalten
 
 // rotiere schlüsselt alle betroffenen Tabellen in EINER Transaktion um.
 func rotiere(ctx context.Context, pool *pgxpool.Pool, alt, neu []byte, nurPruefen bool) (int, error) {
@@ -42,9 +37,9 @@ func rotiere(ctx context.Context, pool *pgxpool.Pool, alt, neu []byte, nurPruefe
 	for _, t := range tabellen {
 		anzahl, err := rotiereTabelle(ctx, tx, t, alt, neu)
 		if err != nil {
-			return 0, fmt.Errorf("%s: %w", t.beschreibung, err)
+			return 0, fmt.Errorf("%s: %w", t.Beschreibung, err)
 		}
-		log.Printf("%s: %d Datensätze umgeschlüsselt.", t.beschreibung, anzahl)
+		log.Printf("%s: %d Datensätze umgeschlüsselt.", t.Beschreibung, anzahl)
 		gesamt += anzahl
 	}
 
@@ -65,7 +60,7 @@ func rotiereTabelle(ctx context.Context, tx pgx.Tx, t umschluesselung, alt, neu 
 	// oben, nie aus einer Eingabe.
 	abfrage := fmt.Sprintf(
 		`SELECT %s::text, %s FROM %s WHERE %s IS NOT NULL`,
-		t.idSpalte, t.datenSpalte, t.tabelle, t.datenSpalte)
+		t.IDSpalte, t.DatenSpalte, t.Tabelle, t.DatenSpalte)
 
 	rows, err := tx.Query(ctx, abfrage)
 	if err != nil {
@@ -90,7 +85,7 @@ func rotiereTabelle(ctx context.Context, tx pgx.Tx, t umschluesselung, alt, neu 
 		return 0, fmt.Errorf("lesen: %w", err)
 	}
 
-	aktualisieren := fmt.Sprintf(`UPDATE %s SET %s = $1 WHERE %s = $2`, t.tabelle, t.datenSpalte, t.idSpalte)
+	aktualisieren := fmt.Sprintf(`UPDATE %s SET %s = $1 WHERE %s = $2`, t.Tabelle, t.DatenSpalte, t.IDSpalte)
 
 	for _, d := range gelesen {
 		klartext, err := crypto.DecryptMit(alt, d.wert)

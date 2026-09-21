@@ -67,6 +67,8 @@ func lageEingerichtet() Lage {
 		FerientabelleBis: 2030,
 		// Schadensersatz-Bescheid: erhoben, keine Pflichtangabe fehlt.
 		BescheidFehlend: []string{},
+		// Schlüssel und Bestand: geprüft, beide Spalten lesbar.
+		SchluesselProbe: &repository.SchluesselProbe{Geprueft: 2},
 	}
 }
 
@@ -134,6 +136,22 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Auslagerung der Backups",
 			stufe:    StufeKritisch,
 			enthaelt: "S3_BUCKET",
+		},
+		{
+			name: "Schlüssel passt nicht zum Bestand",
+			aendere: func(l *Lage) {
+				l.SchluesselProbe = &repository.SchluesselProbe{Geprueft: 2, NichtLesbar: []string{"SMTP-Passwort"}}
+			},
+			bereich:  "Schlüssel und Bestand",
+			stufe:    StufeKritisch,
+			enthaelt: "SMTP-Passwort",
+		},
+		{
+			name:     "Schlüssel-Probe nicht lesbar",
+			aendere:  func(l *Lage) { l.SchluesselProbe = nil },
+			bereich:  "Schlüssel und Bestand",
+			stufe:    StufeWarnung,
+			enthaelt: "nicht prüfen",
 		},
 		{
 			name:     "Bescheid ohne Schulnummer",
