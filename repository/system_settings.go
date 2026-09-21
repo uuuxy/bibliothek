@@ -55,6 +55,12 @@ type SystemEinstellungen struct {
 	// der Träger je nach Bundesland und Schulform ein anderer ist — und weil ein
 	// Eigentumsvermerk, der nicht stimmt, schlechter ist als keiner.
 	EtikettEigentumsvermerk string `json:"etikett_eigentumsvermerk"`
+	// EtikettEigentumsvermerkSchuelerbuecherei steht an derselben Stelle auf Büchern, die
+	// aus Mitteln des Schulträgers angeschafft sind (ExemplarTopfSQL). Ein Buch der
+	// Schülerbücherei trug bis zum 21.09.2026 denselben Aufdruck wie ein Lernmittel.
+	// Anders als oben gibt es KEINE Werksvorgabe: leer heißt kein Vermerk — wem diese
+	// Bücher gehören, weiß nur die Schule.
+	EtikettEigentumsvermerkSchuelerbuecherei string `json:"etikett_eigentumsvermerk_schuelerbuecherei"`
 	// OeffentlicheAdresse ist die Adresse, unter der DRITTE dieses System erreichen —
 	// z. B. "https://bibliothek.schule.de". Aus ihr entsteht der Bestätigungs-Link, den
 	// der Lieferant mit der Bestellmail bekommt.
@@ -232,6 +238,8 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 		setzeStringRoh(val, &settings.SchuleOrt)
 	case "etikett_eigentumsvermerk":
 		setzeStringRoh(val, &settings.EtikettEigentumsvermerk)
+	case "etikett_eigentumsvermerk_schuelerbuecherei":
+		setzeStringRoh(val, &settings.EtikettEigentumsvermerkSchuelerbuecherei)
 	case "bescheid_bereich_nr":
 		setzeStringRoh(val, &settings.BescheidBereichNr)
 	case "bescheid_schulnummer":

@@ -138,6 +138,13 @@ func (s *OrderService) ProcessOrder(ctx context.Context, req SubmitOrderRequest)
 		orderSummaryItems = append(orderSummaryItems, res.summary)
 		positionen = append(positionen, res.position)
 		copyInserts = append(copyInserts, res.copies...)
+		// Der Topf jedes Etiketts ist der Topf DIESER Bestellung — derselbe Wert, den
+		// repository.ExemplarTopfSQL später aus bestellungen_verlauf.mittel liest. Die
+		// Exemplare entstehen erst in dieser Transaktion; abgefragt werden können sie
+		// noch nicht. TestEtikettenWegeDruckenDasselbe hält die Wege am PDF zusammen.
+		for i := range res.labels {
+			res.labels[i].Topf = req.Mittel
+		}
 		labels = append(labels, res.labels...)
 		gesamtbetrag += res.betrag
 		totalAllocated += res.position.menge

@@ -71,7 +71,7 @@ func probewert(key string) string {
 		return "01-02"
 	case key == "ferien_leseclub_zieldatum":
 		return "2030-01-02"
-	case strings.HasPrefix(key, "schule_"), key == "etikett_eigentumsvermerk",
+	case strings.HasPrefix(key, "schule_"), strings.HasPrefix(key, "etikett_eigentumsvermerk"),
 		key == "oeffentliche_adresse", key == "alarm_empfaenger":
 		return "Probewert"
 	default:

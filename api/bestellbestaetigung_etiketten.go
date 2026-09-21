@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/repository"
 )
 
 // Die Etikettenseite des Lieferanten-Links. Sie druckt GENAU die Etiketten, die auch im
@@ -25,9 +26,11 @@ import (
 func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) ([]BarcodeLabelDetail, error) {
 	rows, err := s.DB.Pool.Query(ctx, `
 		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.signatur, ''),
-		       to_char(e.erworben_am, 'YYYY')
+		       to_char(e.erworben_am, 'YYYY'),
+		       `+repository.ExemplarTopfSQL+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
+		`+repository.ExemplarTopfJoin+`
 		WHERE e.bestellung_id = $1
 		  AND EXISTS (SELECT 1 FROM bestellungen_positionen p
 		               WHERE p.bestellung_id = e.bestellung_id
@@ -43,7 +46,7 @@ func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) 
 	etiketten := []BarcodeLabelDetail{}
 	for rows.Next() {
 		var d BarcodeLabelDetail
-		if err := rows.Scan(&d.BarcodeID, &d.Titel, &d.Autor, &d.ISBN, &d.Signatur, &d.AnschaffungsJahr); err != nil {
+		if err := rows.Scan(&d.BarcodeID, &d.Titel, &d.Autor, &d.ISBN, &d.Signatur, &d.AnschaffungsJahr, &d.Topf); err != nil {
 			return nil, err
 		}
 		// Das Anschaffungsjahr gehört auf das Etikett: Auf der physischen Vorlage der Schule

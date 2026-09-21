@@ -54,6 +54,20 @@ const docTemplate = `{
                     "admin"
                 ],
                 "summary": "Get Kontoauszug PDF",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "nur diese Klasse",
+                        "name": "klasse",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "nur diese Schüler (Kennungen, mit Komma getrennt) — der Schnitt mit der Abgängerliste",
+                        "name": "ids",
+                        "in": "query"
+                    }
+                ],
                 "responses": {}
             }
         },
@@ -4764,6 +4778,10 @@ const docTemplate = `{
                 "etikett_eigentumsvermerk": {
                     "type": "string"
                 },
+                "etikett_eigentumsvermerk_schuelerbuecherei": {
+                    "description": "Der Vermerk für Bücher der Schülerbücherei; leer heißt kein Vermerk.",
+                    "type": "string"
+                },
                 "ferien_leseclub_aktiv": {
                     "type": "boolean"
                 },
@@ -5192,6 +5210,10 @@ const docTemplate = `{
                 },
                 "etikett_eigentumsvermerk": {
                     "description": "EtikettEigentumsvermerk steht als letzte Zeile auf jedem Buchetikett\n(\"Eigentum des Landes Hessen\"). Konfigurierbar und nicht fest verdrahtet, weil\nder Träger je nach Bundesland und Schulform ein anderer ist — und weil ein\nEigentumsvermerk, der nicht stimmt, schlechter ist als keiner.",
+                    "type": "string"
+                },
+                "etikett_eigentumsvermerk_schuelerbuecherei": {
+                    "description": "EtikettEigentumsvermerkSchuelerbuecherei steht an derselben Stelle auf Büchern, die\naus Mitteln des Schulträgers angeschafft sind (ExemplarTopfSQL). Ein Buch der\nSchülerbücherei trug bis zum 21.09.2026 denselben Aufdruck wie ein Lernmittel.\nAnders als oben gibt es KEINE Werksvorgabe: leer heißt kein Vermerk — wem diese\nBücher gehören, weiß nur die Schule.",
                     "type": "string"
                 },
                 "ferien_leseclub_aktiv": {

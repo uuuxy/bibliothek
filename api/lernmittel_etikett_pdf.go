@@ -133,10 +133,10 @@ func zeichneLernmittelEtikett(pdf *gofpdf.Fpdf, tr func(string) string, item Bar
 	pdf.CellFormat(breite, 5, tr("Exemplar-Nr.: "+item.BarcodeID), "", 0, "C", false, 0, "")
 
 	y += 7
-	if kopf.Eigentumsvermerk != "" {
+	if vermerk := kopf.vermerkFuer(item.Topf); vermerk != "" {
 		pdf.SetFont("Arial", "", 8)
 		pdf.SetXY(x, y)
-		pdf.CellFormat(breite, 4, tr(kuerzeAufZeichen(kopf.Eigentumsvermerk, 48)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(breite, 4, tr(kuerzeAufZeichen(vermerk, 48)), "", 0, "C", false, 0, "")
 		y += 8
 	}
 

@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"bibliothek/pdf"
 	"bibliothek/repository"
 )
 
@@ -22,8 +21,9 @@ func testEtikettLabels() []BarcodeLabelDetail {
 }
 
 func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
-	boegen, err := etikettenboegen(testEtikettLabels(), pdf.SchuleInfo{Name: "Testschule"}, false,
-		"Eigentum des Kreises Wetterau", repository.MittelLand)
+	kopf := etikettKopfAus(&repository.SystemEinstellungen{
+		SchuleName: "Testschule", EtikettEigentumsvermerk: "Eigentum des Kreises Wetterau"})
+	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, repository.MittelLand)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -42,7 +42,8 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 }
 
 func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T) {
-	boegen, err := etikettenboegen(testEtikettLabels(), pdf.SchuleInfo{Name: "Testschule"}, false, "", repository.MittelLand)
+	kopf := etikettKopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
+	boegen, err := etikettenboegen(testEtikettLabels(), kopf, false, repository.MittelLand)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -70,8 +71,8 @@ func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			boegen, err := etikettenboegen(testEtikettLabels(), pdf.SchuleInfo{Name: "Testschule"},
-				f.istHauptlieferant, "", f.mittel)
+			kopf := etikettKopfAus(&repository.SystemEinstellungen{SchuleName: "Testschule"})
+			boegen, err := etikettenboegen(testEtikettLabels(), kopf, f.istHauptlieferant, f.mittel)
 			if err != nil {
 				t.Fatalf("etikettenboegen: %v", err)
 			}
@@ -85,6 +86,51 @@ func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
 			}
 			if hatGross != f.wantGross {
 				t.Errorf("großes Lernmittel-Etikett im Anhang = %v, erwartet %v", hatGross, f.wantGross)
+			}
+		})
+	}
+}
+
+// Der Eigentumsvermerk folgt dem Topf des Exemplars (OFFEN.md 4.21, entschieden am
+// 21.09.2026) — am fertigen PDF beider Erzeuger. Bis dahin trug ein Buch der
+// Schülerbücherei, bezahlt vom Schulträger, den Aufdruck „Eigentum des Landes Hessen".
+func TestEtikettEigentumsvermerkFolgtDemTopf(t *testing.T) {
+	const land, stadt = "Eigentum des Landes Hessen", "Eigentum der Stadt Friedrichsdorf"
+
+	faelle := []struct {
+		name        string
+		vermerkSB   string // Einstellung „Eigentumsvermerk Schülerbücherei"
+		topf        string
+		want, nicht string
+	}{
+		{"Lernmittel trägt den allgemeinen Vermerk", stadt, repository.MittelLand, land, stadt},
+		{"Schülerbücherei trägt ihren eigenen", stadt, repository.MittelSchultraeger, stadt, land},
+		{"Schülerbücherei ohne Einstellung: kein Vermerk", "", repository.MittelSchultraeger, "", "Eigentum"},
+		{"unbekanntes Exemplar (Vorab-Druck): wie bisher", stadt, "", land, stadt},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			kopf := etikettKopfAus(&repository.SystemEinstellungen{
+				SchuleName: "Testschule", EtikettEigentumsvermerkSchuelerbuecherei: f.vermerkSB})
+			labels := testEtikettLabels()
+			labels[0].Topf = f.topf
+
+			// Hauptlieferant + Land-Bestellung: beide Bögen entstehen, klein UND groß.
+			boegen, err := etikettenboegen(labels, kopf, true, repository.MittelLand)
+			if err != nil {
+				t.Fatalf("etikettenboegen: %v", err)
+			}
+			if len(boegen) != 2 {
+				t.Fatalf("erwartet kleinen und großen Bogen, bekam %d", len(boegen))
+			}
+			for _, b := range boegen {
+				text := pdfText(t, b.Data)
+				if f.want != "" && !strings.Contains(text, f.want) {
+					t.Errorf("%s: Vermerk %q fehlt", b.Name, f.want)
+				}
+				if strings.Contains(text, f.nicht) {
+					t.Errorf("%s: %q steht auf dem Etikett und gehört dort nicht hin", b.Name, f.nicht)
+				}
 			}
 		})
 	}

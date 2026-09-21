@@ -41,9 +41,11 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 	// das niemand findet, und auf einem Bogen mit fortlaufenden Plätzen verschiebt es alle
 	// folgenden. Die Zeile bleibt in der Datenbank; nur gedruckt wird sie nicht.
 	query := `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, '')
+		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, ''),
+		       ` + repository.ExemplarTopfSQL + `
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
+		` + repository.ExemplarTopfJoin + `
 		WHERE e.titel_id = $1 AND e.ist_ausgesondert = false
 		ORDER BY e.barcode_id
 	`
@@ -56,7 +58,7 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 	var items []BarcodeLabelDetail
 	for rows.Next() {
 		var item BarcodeLabelDetail
-		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr, &item.Signatur); err == nil {
+		if err := rows.Scan(&item.BarcodeID, &item.Titel, &item.Autor, &item.AnschaffungsJahr, &item.Signatur, &item.Topf); err == nil {
 			items = append(items, item)
 		}
 	}
@@ -73,13 +75,27 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 // in die Irre. Der Eigentumsvermerk hat dagegen eine sinnvolle Vorgabe, weil er für
 // alle Bücher desselben Trägers gleich lautet.
 func (s *Server) etikettKopf(ctx context.Context) EtikettKopf {
-	kopf := EtikettKopf{Eigentumsvermerk: repository.StandardEigentumsvermerk}
 	settings, err := repository.NewSystemSettingsRepository(s.DB.Pool).GetSettings(ctx)
 	if err != nil {
 		log.Printf("Etiketten: Einstellungen nicht lesbar, drucke ohne Schulnamen: %v", err)
-		return kopf
+		return EtikettKopf{Eigentumsvermerk: repository.StandardEigentumsvermerk}
 	}
-	kopf.Schulname = settings.SchuleName
+	return etikettKopfAus(settings)
+}
+
+// etikettKopfAus baut den Kopf aus den Einstellungen — EINE Stelle für Selbstdruck,
+// Lieferanten-Link und Mailanhang. Bis zum 21.09.2026 baute der Mailweg seinen Kopf selbst
+// (pdf_service.go) und wiederholte die Regel „leer = Werksvorgabe"; eine zweite Einstellung
+// wäre dort die nächste Stelle gewesen, die jemand vergisst.
+//
+// Die Werksvorgabe gilt nur für den allgemeinen Vermerk. Der Vermerk der Schülerbücherei
+// bleibt leer, wenn nichts hinterlegt ist — leer heißt dort kein Vermerk.
+func etikettKopfAus(settings *repository.SystemEinstellungen) EtikettKopf {
+	kopf := EtikettKopf{
+		Schulname:                         settings.SchuleName,
+		Eigentumsvermerk:                  repository.StandardEigentumsvermerk,
+		EigentumsvermerkSchuelerbuecherei: settings.EtikettEigentumsvermerkSchuelerbuecherei,
+	}
 	if settings.EtikettEigentumsvermerk != "" {
 		kopf.Eigentumsvermerk = settings.EtikettEigentumsvermerk
 	}
@@ -129,6 +145,7 @@ func (s *Server) LabelsHandler() http.HandlerFunc {
 type serverEtikettFelder struct {
 	jahr     string
 	signatur string
+	topf     string
 }
 
 // ergaenzeServerfelder füllt die Etikettenfelder nach, die NICHT aus der Anfrage
@@ -161,9 +178,11 @@ func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelD
 	}
 
 	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT e.barcode_id, to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, '')
+		SELECT e.barcode_id, to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, ''),
+		       `+repository.ExemplarTopfSQL+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
+		`+repository.ExemplarTopfJoin+`
 		WHERE e.barcode_id = ANY($1)
 	`, barcodes)
 	if err != nil {
@@ -176,7 +195,7 @@ func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelD
 	for rows.Next() {
 		var barcode string
 		var felder serverEtikettFelder
-		if err := rows.Scan(&barcode, &felder.jahr, &felder.signatur); err == nil {
+		if err := rows.Scan(&barcode, &felder.jahr, &felder.signatur, &felder.topf); err == nil {
 			bekannt[barcode] = felder
 		}
 	}
@@ -189,6 +208,7 @@ func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelD
 		if felder, ok := bekannt[items[i].BarcodeID]; ok {
 			items[i].AnschaffungsJahr = felder.jahr
 			items[i].Signatur = felder.signatur
+			items[i].Topf = felder.topf
 		}
 	}
 }

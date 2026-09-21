@@ -26,8 +26,10 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    zwei gestoppte Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die
    Mehrjahresbände (9.6, hält 4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen
    nichts gebaut.
-2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9, 4.11, 4.13 und 4.14 sind gebaut;
-   offen zum Bauen sind 4.7, 4.8 und das neu dazugekommene 4.21. Bei dir liegt daraus nur
+2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9, 4.11, 4.13, 4.14 und 4.21 sind
+   gebaut; offen zum Bauen sind 4.7 und 4.8. Neu seit 4.21: In den Einstellungen unter
+   „Schule" steht das Feld „Eigentumsvermerk Schülerbücherei" — leer heißt, diese Bücher
+   tragen keinen Vermerk. Den Wortlaut kennt nur die Schule. Bei dir liegt daraus nur
    der Blick auf den Server im nächsten Punkt.
 3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
@@ -88,8 +90,8 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8, 4.21), je ein Commit.
-   4.21 geht ohne den Server und in Stufen; 4.7 und 4.8 nach dem Blick auf den Server.
+1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8), je ein Commit — beide nach dem
+   Blick auf den Server.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
@@ -489,27 +491,6 @@ Katalog und im Portal. Freie Schlagworte brauchen Normdatenpflege (Littera hat d
 Modul); die haben wir nicht.
 
 **Nicht gebaut.**
-
-### 4.21 Eigentumsvermerk auf Büchern der Schülerbücherei
-
-Gefunden am 21.09.2026 beim Prüfen von 4.11. Der Eigentumsvermerk ist EINE Einstellung
-(`etikett_eigentumsvermerk`, Vorgabe „Eigentum des Landes Hessen"). Er steht auf jedem Etikett
-ab 30 mm Höhe — das Standardformat L4760 (38,1 mm) gehört dazu — und auf dem großen
-Lernmittel-Etikett. Ein Buch der Schülerbücherei, bezahlt vom Schulträger, trägt denselben
-Aufdruck.
-
-**Entschieden am 21.09.2026:** eine zweite Einstellung „Eigentumsvermerk Schülerbücherei",
-Vorgabe leer; leer heißt kein Vermerk.
-
-**Welcher Vermerk gilt, entscheidet der Topf des Exemplars** — das Eigentum folgt dem Geld:
-zuerst die Zuordnung seiner Bestellung (`bestellungen_verlauf.mittel`), und wo es keine gibt
-(Altbestand, Alt-Bestellungen ohne Zuordnung), das Feld `ist_lernmittel` am Titel. Dieselbe
-Regel wie beim Nachtragen in Migration 109. Ein Ausdruck, an EINER Stelle formuliert, für alle
-vier Wege, die Etikettendaten bauen (`queryLabelItems`, `ergaenzeServerfelder`, der Mailanhang
-in `api/order_service.go`, der Lieferanten-Link in `ladeBestellEtiketten`).
-
-**Reihenfolge:** (1) die Regel samt PG-Test, (2) die Einstellung in der Kategorie „Schule",
-(3) die vier Wege, mit Gate am fertigen PDF. **Nicht gebaut.**
 
 ---
 

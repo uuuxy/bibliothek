@@ -137,11 +137,11 @@ func zeichneBarcodeLabel(pdf *gofpdf.Fpdf, tr func(string) string, format LabelF
 	}
 	pdf.CellFormat(format.LabelWidth, 3.5, tr(beschriftung), "", 0, "C", false, 0, "")
 
-	if grossesEtikett && kopf.Eigentumsvermerk != "" {
+	if vermerk := kopf.vermerkFuer(item.Topf); grossesEtikett && vermerk != "" {
 		y += 4.5
 		pdf.SetFont("Arial", "", 7)
 		pdf.SetXY(pos.X, y)
-		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufZeichen(kopf.Eigentumsvermerk, 45)), "", 0, "C", false, 0, "")
+		pdf.CellFormat(format.LabelWidth, 3, tr(kuerzeAufZeichen(vermerk, 45)), "", 0, "C", false, 0, "")
 	}
 }
 

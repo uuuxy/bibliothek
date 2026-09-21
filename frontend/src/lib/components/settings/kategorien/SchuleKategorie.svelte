@@ -36,6 +36,9 @@
 	let plz = $state(start.schule_plz ?? '');
 	let ort = $state(start.schule_ort ?? '');
 	let eigentumsvermerk = $state(start.etikett_eigentumsvermerk ?? '');
+	let eigentumsvermerkSchuelerbuecherei = $state(
+		start.etikett_eigentumsvermerk_schuelerbuecherei ?? ''
+	);
 
 	const speichern = () =>
 		speichereKategorie({
@@ -44,7 +47,8 @@
 				schule_strasse: strasse,
 				schule_plz: plz,
 				schule_ort: ort,
-				etikett_eigentumsvermerk: eigentumsvermerk
+				etikett_eigentumsvermerk: eigentumsvermerk,
+				etikett_eigentumsvermerk_schuelerbuecherei: eigentumsvermerkSchuelerbuecherei
 			},
 			onSaved
 		});
@@ -61,6 +65,12 @@
 			Anschrift bildet den Briefkopf von Mahnungen, Bestellungen und Berichten.
 		</p>
 		<p>
+			Welcher Eigentumsvermerk auf ein Etikett kommt, richtet sich danach, woraus das Buch bezahlt
+			wurde: nach der Zuordnung seiner Bestellung, und bei Büchern ohne Bestellung danach, ob der
+			Titel ein Lernmittel ist. Für die Schülerbücherei gibt es keine Vorgabe — bleibt das Feld
+			leer, tragen diese Bücher keinen Vermerk.
+		</p>
+		<p>
 			Grauer Text im Feld ist ein Beispiel, kein gespeicherter Wert. Ein Feld, das Sie leeren, wird
 			auch gespeichert geleert — der Ausweis fällt dann auf seinen Musterkopf zurück.
 		</p>
@@ -73,14 +83,6 @@
 			type="text"
 			maxlength={120}
 			placeholder="z. B. Städtisches Gymnasium Musterstadt"
-		/>
-		<Feld
-			bind:value={eigentumsvermerk}
-			label="Eigentumsvermerk"
-			type="text"
-			maxlength={80}
-			placeholder="z. B. Eigentum des Landes Hessen"
-			hint="Letzte Zeile auf dem Buchetikett. Leer = Vorgabe."
 		/>
 		<Feld
 			bind:value={strasse}
@@ -101,5 +103,21 @@
 				class="col-span-2"
 			/>
 		</div>
+		<Feld
+			bind:value={eigentumsvermerk}
+			label="Eigentumsvermerk"
+			type="text"
+			maxlength={80}
+			placeholder="z. B. Eigentum des Landes Hessen"
+			hint="Letzte Zeile auf dem Etikett der Lernmittel. Leer = Vorgabe."
+		/>
+		<Feld
+			bind:value={eigentumsvermerkSchuelerbuecherei}
+			label="Eigentumsvermerk Schülerbücherei"
+			type="text"
+			maxlength={80}
+			placeholder="z. B. Eigentum der Stadt Musterstadt"
+			hint="Für Bücher aus Mitteln des Schulträgers. Leer = kein Vermerk."
+		/>
 	</div>
 </KategorieRahmen>

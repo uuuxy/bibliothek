@@ -53,6 +53,8 @@ type EinstellungenPatch struct {
 	SchulePLZ               *string `json:"schule_plz,omitempty"`
 	SchuleOrt               *string `json:"schule_ort,omitempty"`
 	EtikettEigentumsvermerk *string `json:"etikett_eigentumsvermerk,omitempty"`
+	// Der Vermerk für Bücher der Schülerbücherei; leer heißt kein Vermerk.
+	EtikettEigentumsvermerkSchuelerbuecherei *string `json:"etikett_eigentumsvermerk_schuelerbuecherei,omitempty"`
 
 	OeffentlicheAdresse *string `json:"oeffentliche_adresse,omitempty"`
 	AlarmEmpfaenger     *string `json:"alarm_empfaenger,omitempty"`
@@ -154,6 +156,7 @@ func pairsAusPatch(p *EinstellungenPatch) [][2]string {
 	s.text("schule_plz", p.SchulePLZ)
 	s.text("schule_ort", p.SchuleOrt)
 	s.text("etikett_eigentumsvermerk", p.EtikettEigentumsvermerk)
+	s.text("etikett_eigentumsvermerk_schuelerbuecherei", p.EtikettEigentumsvermerkSchuelerbuecherei)
 
 	s.text("bescheid_bereich_nr", p.BescheidBereichNr)
 	s.text("bescheid_schulnummer", p.BescheidSchulnummer)

@@ -9,6 +9,7 @@ import (
 	"bibliothek/pkg/csvutil"
 	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
+	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -35,6 +36,11 @@ type BarcodeLabelDetail struct {
 	// Signatur ist buecher_titel.signatur (z. B. "LMF-Deutsch 5"). Leer = Zeile entfällt,
 	// genau wie bei AnschaffungsJahr.
 	Signatur string
+	// Topf ist der Topf des Exemplars (repository.ExemplarTopfSQL) und entscheidet, welcher
+	// Eigentumsvermerk auf dem Etikett steht (EtikettKopf.vermerkFuer). Er kommt IMMER vom
+	// Server — json:"-", damit ihn kein Druckauftrag aus dem Browser mitbringen kann.
+	// Leer = Exemplar unbekannt (Vorab-Druck): Dann gilt der allgemeine Vermerk wie bisher.
+	Topf string `json:"-"`
 }
 
 // EtikettKopf trägt die schulweiten Angaben, die auf JEDEM Etikett stehen — sie kommen
@@ -46,6 +52,21 @@ type BarcodeLabelDetail struct {
 type EtikettKopf struct {
 	Schulname        string // z. B. "Philipp-Reis-Schule, Friedrichsdorf"
 	Eigentumsvermerk string // z. B. "Eigentum des Landes Hessen"
+	// EigentumsvermerkSchuelerbuecherei gilt für Exemplare aus Mitteln des Schulträgers.
+	// Leer heißt kein Vermerk — eine Werksvorgabe gibt es hier bewusst nicht.
+	EigentumsvermerkSchuelerbuecherei string
+}
+
+// vermerkFuer wählt den Eigentumsvermerk nach dem Topf des Exemplars — das Eigentum folgt
+// dem Geld. Bis zum 21.09.2026 trug ein Buch der Schülerbücherei, bezahlt vom Schulträger,
+// denselben Aufdruck „Eigentum des Landes Hessen" wie ein Lernmittel.
+//
+// EINE Stelle für beide Erzeuger (kleines Etikett ab 30 mm, großes Lernmittel-Etikett).
+func (k EtikettKopf) vermerkFuer(topf string) string {
+	if topf == repository.MittelSchultraeger {
+		return k.EigentumsvermerkSchuelerbuecherei
+	}
+	return k.Eigentumsvermerk
 }
 
 // etikettenWeg beschreibt, WIE der Lieferant an die Aufkleber kommt. Er entscheidet über

@@ -121,7 +121,7 @@ func (s *Server) SubmitOrderHandler(orderSvc *OrderService, pdfSvc *PDFService) 
 			IstHauptlieferant:    res.IstHauptlieferant,
 			MitBestaetigungsLink: link != "",
 			Schule:               schule,
-			Eigentumsvermerk:     settings.EtikettEigentumsvermerk,
+			EtikettKopf:          etikettKopfAus(settings),
 			Mittel:               res.Mittel,
 		}); err != nil {
 			RespondJSON(w, http.StatusOK, map[string]any{

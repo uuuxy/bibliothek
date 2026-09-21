@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"bibliothek/pdf"
-	"bibliothek/repository"
 )
 
 // PDFService handles the generation of PDF documents and email dispatch.
@@ -40,14 +39,13 @@ type BestellMail struct {
 	// MitBestaetigungsLink: In der Mail steht der Link auf die Bestellseite. Dann liegen
 	// die Etikettenbögen DORT und nicht an der Mail — siehe bestellAnhaenge.
 	MitBestaetigungsLink bool
-	// Eigentumsvermerk: der konfigurierte Etiketten-Aufdruck (Einstellung
-	// etikett_eigentumsvermerk); leer = Werksvorgabe. Bis zum 01.09.2026 nagelte
-	// dieser Mailweg den Vermerk auf die Werksvorgabe fest, während Selbstdruck
-	// und Lieferanten-Link die Einstellung lasen — zwei Wege zum selben Buch,
-	// zwei verschiedene Aufkleber (genau die Divergenz, die der Kommentar in
-	// bestellbestaetigung_etiketten.go ausschließen will).
-	Eigentumsvermerk string
-	Schule           pdf.SchuleInfo
+	// EtikettKopf: Schulname und Eigentumsvermerke für die Etikettenbögen, fertig gebaut
+	// von etikettKopfAus. Bis zum 01.09.2026 nagelte dieser Mailweg den Vermerk auf die
+	// Werksvorgabe fest, während Selbstdruck und Lieferanten-Link die Einstellung lasen —
+	// zwei Wege zum selben Buch, zwei verschiedene Aufkleber. Seit dem 21.09.2026 baut
+	// er den Kopf gar nicht mehr selbst.
+	EtikettKopf EtikettKopf
+	Schule      pdf.SchuleInfo
 	// Mittel: der Topf der Bestellung (repository.MittelLand / MittelSchultraeger) —
 	// bestimmt Betreff und Vermerk des Anschreibens. Pflicht: Ohne gültigen Topf gibt es
 	// kein Anschreiben und damit keine Mail (mittelTexteFuer).
@@ -123,7 +121,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 		return anhaenge, nil
 	}
 
-	boegen, err := etikettenboegen(m.Etiketten, m.Schule, m.IstHauptlieferant, m.Eigentumsvermerk, m.Mittel)
+	boegen, err := etikettenboegen(m.Etiketten, m.EtikettKopf, m.IstHauptlieferant, m.Mittel)
 	if err != nil {
 		return nil, err
 	}
@@ -134,15 +132,10 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 // den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett — er
 // wählt die Größe, Bibliosys entscheidet sie nicht vorab. Gilt die Bestellung der
 // Schülerbücherei, entfällt das große Etikett (grossesLernmittelEtikettFuer).
-func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHauptlieferant bool, eigentumsvermerk, mittel string) ([]MailAttachment, error) {
-	// Konfigurierter Vermerk vor Werksvorgabe — dieselbe Regel wie s.etikettKopf
-	// (Selbstdruck) und der Lieferanten-Link, damit alle drei Wege zum selben
-	// Buch denselben Aufkleber ergeben.
-	if eigentumsvermerk == "" {
-		eigentumsvermerk = repository.StandardEigentumsvermerk
-	}
-	kopf := EtikettKopf{Schulname: schule.Name, Eigentumsvermerk: eigentumsvermerk}
-
+//
+// Der Kopf kommt fertig herein (etikettKopfAus) — derselbe wie im Selbstdruck und hinter
+// dem Lieferanten-Link, damit alle drei Wege zum selben Buch denselben Aufkleber ergeben.
+func etikettenboegen(labels []BarcodeLabelDetail, kopf EtikettKopf, istHauptlieferant bool, mittel string) ([]MailAttachment, error) {
 	// Derselbe Etiketten-Generator wie im Selbstdruck (Druck-Center) — voller Inhalt
 	// (Schulname, Signatur, Eigentumsvermerk) statt des früheren schmalen Bogens ohne
 	// diese Angaben.
