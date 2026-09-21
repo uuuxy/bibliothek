@@ -26,17 +26,16 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    zwei gestoppte Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die
    Mehrjahresbände (9.6, hält 4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen
    nichts gebaut.
-2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9, 4.11, 4.13, 4.14 und 4.21 sind
-   gebaut; offen zum Bauen sind 4.7 und 4.8. Neu seit 4.21: In den Einstellungen unter
+2. **Die sechs Fragen sind beantwortet und gebaut** (21.09.2026: 4.7, 4.9, 4.11, 4.13, 4.14,
+   4.21). Von 4.8 steht nur noch der Lauf im Druck-Center aus — er ändert Daten und liegt bei
+   dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
    „Schule" steht das Feld „Eigentumsvermerk Schülerbücherei" — leer heißt, diese Bücher
-   tragen keinen Vermerk. Den Wortlaut kennt nur die Schule. Bei dir liegt daraus nur
-   der Blick auf den Server im nächsten Punkt.
+   tragen keinen Vermerk. Den Wortlaut kennt nur die Schule.
 3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
    in der er nie nachrückt (5.19)? Erst danach werden Nummern nachgetragen — das ändert echte
-   Daten. Neu seit dem 21.09.2026: die fünf Namen in der `.env` (4.7, vor dem Aufspielen) und
-   die Verteilung der Erwerbsdaten (4.8, vor dem Nachtragen der Etiketten). Die Messung aus 4.3
-   ist gestoppt, bis die Frage nach den Mehrjahresbänden beantwortet ist.
+   Daten. Die Messung aus 4.3 ist gestoppt, bis die Frage nach den Mehrjahresbänden
+   beantwortet ist.
 4. **Zwei Umbauten freigeben**, die vorbereitet, aber nicht gebaut sind, weil sie die Datenbank
    ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für
    die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine Migration, die Nummern
@@ -90,8 +89,7 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8), je ein Commit — beide nach dem
-   Blick auf den Server.
+1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
@@ -195,55 +193,26 @@ Finanzbericht" bucht — oder gilt die Übergabe schulseitig als erledigt? **Vor
 Sperre bleibt, Löschblockade fällt. **Wann:** sobald ein erster echter Bescheid absehbar ist;
 blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt 6.
 
-### 4.7 Fünf Umgebungsvariablen, die Compose nicht durchreicht
+### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
 
-`ALLOWED_ORIGIN`, `RATE_LIMIT`, `IMAP_PORT`, `SMTP_ALLOW_INSECURE_TLS` und
-`SMTP_ALLOW_PLAINTEXT` liest der Server; `docker-compose.yml` reicht keine davon durch, im
-Container gilt also immer die eingebaute Vorgabe. `SENTRY_DSN` wird seit 6125527b (18.09.2026)
-durchgereicht, leer heißt aus; gesetzt wird sie in Produktion nur nach Datenschutz A6 (leer oder
-EU-Instanz). Die beiden `SMTP_ALLOW_*` führte das Register
-als Werkzeug-Variablen — der Server liest sie in `mailservice/versand.go`. Auf dem Server am
-13.09.2026 im Container leer.
-**Entschieden am 21.09.2026: alle fünf durchreichen**, als `${NAME:-}`. Am Code geprüft: Ein
-leerer Wert ergibt bei allen fünf die eingebaute Vorgabe (`RATE_LIMIT` leer = 50, `IMAP_PORT`
-leer = 993, die beiden `SMTP_ALLOW_*` wirken nur bei `true`, `ALLOWED_ORIGIN` leer = Rückfall
-auf den Host). Am Verhalten ändert sich nichts, solange die `.env` sie nicht setzt. Dazu warnt
-die Betriebsbereitschaft, wenn einer der beiden `SMTP_ALLOW_*` auf `true` steht; heute schreibt
-nur der Klartext-Schalter eine Logzeile, der TLS-Schalter nichts.
+Entschieden am 21.09.2026: über das Druck-Center („Fehlende Etiketten" → „Altbestand
+aufräumen", mit Vorschau und Stichtag); `scripts/repair_altbestand_etiketten.sql` ist gelöscht.
 
-**Vor dem Aufspielen die `.env` am Server ansehen** — was dort steht, wirkt ab dann:
+**Gemessen am Testserver am 21.09.2026** (Exemplare ohne Etikett-Vermerk, nicht ausgesondert,
+nach `erworben_am`): 30.654 Exemplare ohne `B-`-Nummer, alle am 15.07.2026 — dem Tag der
+Littera-Übernahme. Jede `B-`-Nummer liegt danach: 23.07. (8, davon 1 im Zulauf), 31.07. (7),
+02.08. (1), 10.09. (2, beide im Zulauf), 16.09. (9). Der Lauf vergleicht
+`erworben_am <= Stichtag`; **der Stichtag 15.07.2026 trifft genau den Altbestand** und lässt
+die 27 Neuzugänge offen.
 
-```
-grep -nE '^(ALLOWED_ORIGIN|RATE_LIMIT|IMAP_PORT|SMTP_ALLOW_INSECURE_TLS|SMTP_ALLOW_PLAINTEXT)=' .env
-```
-
-Erwartet: `IMAP_PORT=993` oder nichts. Ein anderer Port bricht die Anmeldung (die Verbindung
-ist TLS von Anfang an, kein STARTTLS). **Danach:** die Ratsche in 5.10. Gemessen am 21.09.2026:
-Außer diesen fünf liest der Server nichts, was Compose nicht gibt; übrig bleiben drei
-Werkzeug-Variablen unter `cmd/` (`FOTOS_BEHALTEN`, `MYSQL_DSN`, `PG_DSN`). Vier Lesestellen
-nennen die Variable über eine Konstante statt als Text — die Ratsche muss sie auflösen.
-
-### 4.8 Etiketten-Altbestand nachtragen?
-
-30.676 echte Exemplare zählen auf dem Server als „Etikett offen" (13.09.2026). Es gibt zwei Wege
-mit verschiedener Bedingung: das Druck-Center („Fehlende Etiketten" → „Altbestand aufräumen",
-`POST /api/exemplare/etiketten-altbestand`, mit Vorschau und Stichtag; Abnahme-Flow 4) und
-`scripts/repair_altbestand_etiketten.sql` (alles ohne `B-`, also auch jedes `LMF-`-Exemplar). Ob
-das Skript schon einmal lief, ist nicht belegt.
-
-**Entschieden am 21.09.2026: über das Druck-Center; das Skript fällt.** Die LMF-Exemplare
-tragen ihr Etikett (Auskunft vom 21.09.2026) und dürfen mit vermerkt werden. „Nicht umkehrbar"
-stimmte nur halb: Einzelne Exemplare holt „Etikett zurücksetzen" in der Nachdruck-Liste zurück;
-den ganzen Lauf nimmt nichts zurück.
-
-Der Stichtag vergleicht `erworben_am`. Das ist bei der Littera-Übernahme das echte Zugangsdatum
-(ohne lesbaren Wert der Tag des Laufs), beim Listenimport der Importtag und im Bestellweg der
-Tag der BESTELLUNG — auch für Exemplare, die noch im Zulauf sind. Ob ein Stichtag den
-Altbestand von den echten Neuzugängen trennt, zeigt erst diese Zählung am Server:
+**Der Lauf selbst:** Stichtag 15.07.2026 eintragen; die Vorschau muss 30.654 zeigen. Den ganzen
+Lauf nimmt nichts zurück (einzelne Exemplare holt „Etikett zurücksetzen" in der
+Nachdruck-Liste zurück). Am Schulserver vorher dieselbe Zählung wiederholen — die Zahlen oben
+gelten für den Testserver:
 
 ```sql
 SELECT (barcode_id LIKE 'B-%') AS b_nummer, (bestellstatus IS NOT NULL) AS im_zulauf,
-       date_trunc('month', erworben_am)::date AS monat, count(*)
+       erworben_am::date AS tag, count(*)
 FROM buecher_exemplare
 WHERE etikett_gedruckt = false AND ist_ausgesondert = false
 GROUP BY 1, 2, 3 ORDER BY 3, 1;
@@ -589,8 +558,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.10 Gates und Werkzeuge
 
-- Keine Ratsche „Go liest, Compose reicht nicht durch" (nach 4.7); `docs/compose_variablen_test.go`
-  prüft nur die Gegenrichtung.
+- Keine allgemeine Ratsche „Go liest, Compose reicht nicht durch". `docs/compose_variablen_test.go`
+  prüft die Gegenrichtung und hält seit dem 21.09.2026 die fünf Namen aus der Entscheidung zu
+  den Umgebungsvariablen fest. Gemessen am selben Tag: Außer diesen fünf las der Server
+  nichts, was Compose nicht gibt; übrig bleiben drei Werkzeug-Variablen unter `cmd/`
+  (`FOTOS_BEHALTEN`, `MYSQL_DSN`, `PG_DSN`). Vier Lesestellen nennen die Variable über eine
+  Konstante statt als Text — die Ratsche muss sie auflösen.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT; die Schema-Parität
   vergleicht Funktionen nur am Namen.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
