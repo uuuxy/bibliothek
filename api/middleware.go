@@ -315,9 +315,14 @@ func maskiereToken(pfad string) string {
 	return pfad
 }
 
-// LoggingMiddleware protokolliert jede Anfrage mit Status und Dauer. Der Pfad läuft
-// vorher durch die Maskierung darüber: Ein Geheimnis im Pfad (Bestätigungs-Token) darf
-// nicht im Klartext im Log landen.
+// LoggingMiddleware schreibt eine Zeile, wenn eine Anfrage mit 5xx endet: Status, Methode,
+// Pfad. Mehr nicht — keine Dauer, keine Anfragekennung, und bei 2xx bis 4xx gar nichts.
+// Die Zeile je Anfrage („Incoming Request", Methode und Pfad, VOR der Verarbeitung) schreibt
+// wrapMiddleware in router.go. Bis zum 21.09.2026 stand hier „jede Anfrage mit Status und Dauer";
+// das hat diese Funktion nie getan.
+//
+// Der Pfad läuft an beiden Stellen durch die Maskierung darüber: Ein Geheimnis im Pfad
+// (Bestätigungs-Token) darf nicht im Klartext im Log landen.
 func LoggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		recorder := &statusRecorder{

@@ -1,6 +1,7 @@
 package docs
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -51,15 +52,22 @@ func TestStandAngabenNichtVeraltet(t *testing.T) {
 	// invarianten.md (bis 13.09.2026 auch im Befund-Register) liegen weit außerhalb dieses Fensters.
 	const kopfZeilen = 24
 
-	dateien, err := filepath.Glob("*.md")
+	// Rekursiv statt zweier Globs (21.09.2026): Bis hierher sammelte das Gate `*.md` und
+	// `*/*.md`. Ein Dokument in einem dritten Ordner — etwa docs/arc42/review/ — wäre mit
+	// veraltetem Kopf still durchgefallen, und das Gate hätte dabei grün ausgesehen.
+	var dateien []string
+	err := filepath.WalkDir(".", func(pfad string, eintrag fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if !eintrag.IsDir() && strings.HasSuffix(pfad, ".md") {
+			dateien = append(dateien, pfad)
+		}
+		return nil
+	})
 	if err != nil {
 		t.Fatalf("Dokumente suchen: %v", err)
 	}
-	unterordner, err := filepath.Glob("*/*.md")
-	if err != nil {
-		t.Fatalf("Unterordner durchsuchen: %v", err)
-	}
-	dateien = append(dateien, unterordner...)
 
 	if len(dateien) < 10 {
 		t.Fatalf("nur %d Dokumente gefunden — der Sammler greift vermutlich nicht mehr", len(dateien))

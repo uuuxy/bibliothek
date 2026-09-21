@@ -375,7 +375,7 @@ Drucksektionen am gebauten Frontend.
 | Mittel                       | Inhalt                                                                                                              |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `slog` als JSON auf stdout   | Ein Handler für alles — auch für die noch vorhandenen `log.Printf`-Aufrufe (seit Go 1.21 hängt `log` mit daran). Das ist zugleich der Log-Injection-Schutz |
-| Anfrage-Logzeile             | Methode, Pfad (Token maskiert), Status, Dauer — **keine** IP                                                         |
+| Anfrage-Logzeile             | Methode und Pfad (Token maskiert), geschrieben VOR der Verarbeitung — **keine** IP, kein Status, keine Dauer, keine Anfragekennung. Endet die Anfrage mit 5xx, folgt eine zweite Zeile mit dem Status |
 | 500er                        | Stack schreibt `PanicRecoveryMiddleware`; die Logging-Middleware hängt **keinen** eigenen Stack an (der zeigte nur auf sie selbst) |
 | Docker-Logs                  | json-file, 3 × 10 MB je Container                                                                                    |
 | Sentry (optional)            | `SENTRY_DSN`; `Repanic: true`, damit die eigene Recovery weiterhin greift                                            |

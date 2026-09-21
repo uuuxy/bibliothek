@@ -51,7 +51,7 @@ HTTP-Anfrage
    ├─ 2 Sentry (Repanic: true) ─ Fehlerweitergabe, optional
    ├─ 3 SecurityHeaders ──────── CSP, HSTS, X-Content-Type-Options … (internal/middleware)
    ├─ 4 CORS ─────────────────── nur die konfigurierte Schuldomain (ALLOWED_ORIGIN)
-   ├─ 5 Logging ──────────────── Status + Dauer, ohne IP, Token im Pfad maskiert
+   ├─ 5 Logging ──────────────── nur 5xx: Status, Methode, Pfad — ohne IP, Token maskiert
    ├─ 6 HTTPSRedirect ────────── nur wenn der Proxy es anzeigt
    ├─ 7 Lesefrist-Erweiterung ── hebt ReadTimeout für Import-Routen an (VOR dem Body-Lesen)
    ├─ 8 BodyLimit (100 MB) ───── MaxBytesReader, puffert nichts
