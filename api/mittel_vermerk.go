@@ -75,6 +75,18 @@ func mittelBeschriftung(mittel string) string {
 	return t.Kurz + " (" + t.Traeger + ")"
 }
 
+// grossesLernmittelEtikettFuer meldet, ob zu einer Bestellung dieses Topfs das große
+// Lernmittel-Etikett („Eigentum des Landes") gehört.
+//
+// EINE Regel für die drei Stellen, die das Etikett anbieten: die Bestätigungsseite des
+// Lieferanten, die Tür dahinter und der Mailanhang an den Hauptlieferanten. Ein Buch der
+// Schülerbücherei ist kein Lernmittel; ein versteckter Knopf allein ließe die Adresse
+// offen. Der leere Wert ist die Alt-Bestellung ohne Zuordnung (Migration 109) — sie
+// behält beide Größen, weil ihr Topf nicht geraten wird.
+func grossesLernmittelEtikettFuer(mittel string) bool {
+	return mittel != repository.MittelSchultraeger
+}
+
 // mittelTexteFuer liefert die Texte zum Topf. Ein unbekannter Wert ist ein Fehler und
 // kein leerer Vermerk: Ein Anschreiben ohne Vermerk wäre genau das Dokument, das diese
 // Datei abschaffen soll.

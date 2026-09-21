@@ -35,8 +35,12 @@ type OeffentlicheBestellung struct {
 	// SchuleAnschrift steht unter dem Namen. Für einen Empfänger, der diesen Link aus
 	// einer Mail öffnet, ist die Absenderangabe der einzige Beleg, wessen Bestellung er
 	// vor sich hat — die Seite verlangt ja bewusst keine Anmeldung.
-	SchuleAnschrift string                 `json:"schule_anschrift"`
-	LieferantName   string                 `json:"lieferant_name"`
+	SchuleAnschrift string `json:"schule_anschrift"`
+	LieferantName   string `json:"lieferant_name"`
+	// Mittel nennt den Topf mit dem Wort des Anschreibens (mittel_vermerk.go): Der Händler
+	// bekommt am selben Tag zwei gleich aussehende Links und muss sie auseinanderhalten.
+	// Leer bei Alt-Bestellungen ohne Zuordnung — ihr Topf wird nicht geraten.
+	Mittel          string                 `json:"mittel"`
 	Kundennummer    string                 `json:"kundennummer"`
 	Bestelldatum    time.Time              `json:"bestelldatum"`
 	AnzahlExemplare int                    `json:"anzahl_exemplare"`
@@ -44,6 +48,9 @@ type OeffentlicheBestellung struct {
 	// EtikettenVorhanden: Standen Positionen mit Vorab-Barcode in dieser Bestellung?
 	// Ohne sie zeigt die Seite keine Druckknöpfe, statt leere PDFs anzubieten.
 	EtikettenVorhanden bool `json:"etiketten_vorhanden"`
+	// GrossesEtikett: Gehört zu dieser Bestellung das große Lernmittel-Etikett? Bei einer
+	// Bestellung für die Schülerbücherei nicht — die Tür liefert es dann auch nicht.
+	GrossesEtikett bool `json:"grosses_etikett"`
 	// EtikettenFormate sind die Bogenraster, unter denen der Lieferant für die KLEINEN
 	// Etiketten wählen kann — er druckt auf sein eigenes Material, und davon gibt es
 	// verschiedene. Die Liste kommt aus dem Backend, damit ein neues Format nicht an
@@ -108,17 +115,23 @@ func (s *Server) OeffentlicheBestellungHandler() http.HandlerFunc {
 // ladeOeffentlicheBestellung baut die Ansicht aus Kopf, Positionen und Schulname.
 func (s *Server) ladeOeffentlicheBestellung(ctx context.Context, bestellungID string) (*OeffentlicheBestellung, error) {
 	var a OeffentlicheBestellung
+	var mittel string
 	err := s.DB.Pool.QueryRow(ctx, `
 		SELECT b.lieferant_name, b.kundennummer, b.bestelldatum, b.anzahl_exemplare, b.bestaetigt_am,
 		       b.token_gueltig_bis,
 		       EXISTS (SELECT 1 FROM bestellungen_positionen p
-		                WHERE p.bestellung_id = b.id AND p.mit_vorab_barcode)
+		                WHERE p.bestellung_id = b.id AND p.mit_vorab_barcode),
+		       COALESCE(b.mittel, '')
 		FROM bestellungen_verlauf b WHERE b.id = $1
 	`, bestellungID).Scan(&a.LieferantName, &a.Kundennummer, &a.Bestelldatum, &a.AnzahlExemplare,
-		&a.BestaetigtAm, &a.LinkGueltigBis, &a.EtikettenVorhanden)
+		&a.BestaetigtAm, &a.LinkGueltigBis, &a.EtikettenVorhanden, &mittel)
 	if err != nil {
 		return nil, err
 	}
+	if t, err := mittelTexteFuer(mittel); err == nil {
+		a.Mittel = t.Kurz
+	}
+	a.GrossesEtikett = grossesLernmittelEtikettFuer(mittel)
 
 	rows, err := s.DB.Pool.Query(ctx, `
 		SELECT titel_name, isbn, menge FROM bestellungen_positionen

@@ -123,7 +123,7 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 		return anhaenge, nil
 	}
 
-	boegen, err := etikettenboegen(m.Etiketten, m.Schule, m.IstHauptlieferant, m.Eigentumsvermerk)
+	boegen, err := etikettenboegen(m.Etiketten, m.Schule, m.IstHauptlieferant, m.Eigentumsvermerk, m.Mittel)
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +132,9 @@ func bestellAnhaenge(m BestellMail) ([]MailAttachment, error) {
 
 // etikettenboegen erzeugt die Etiketten-PDFs für die Mail: immer den kleinen Bogen, für
 // den selbst beklebenden Hauptlieferanten zusätzlich das große Lernmittel-Etikett — er
-// wählt die Größe, Bibliosys entscheidet sie nicht vorab.
-func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHauptlieferant bool, eigentumsvermerk string) ([]MailAttachment, error) {
+// wählt die Größe, Bibliosys entscheidet sie nicht vorab. Gilt die Bestellung der
+// Schülerbücherei, entfällt das große Etikett (grossesLernmittelEtikettFuer).
+func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHauptlieferant bool, eigentumsvermerk, mittel string) ([]MailAttachment, error) {
 	// Konfigurierter Vermerk vor Werksvorgabe — dieselbe Regel wie s.etikettKopf
 	// (Selbstdruck) und der Lieferanten-Link, damit alle drei Wege zum selben
 	// Buch denselben Aufkleber ergeben.
@@ -157,7 +158,7 @@ func etikettenboegen(labels []BarcodeLabelDetail, schule pdf.SchuleInfo, istHaup
 		{Name: datiertName("etiketten_klein", "pdf"), ContentType: contentTypePDF, Data: labelBuf.Bytes()},
 	}
 
-	if !istHauptlieferant {
+	if !istHauptlieferant || !grossesLernmittelEtikettFuer(mittel) {
 		return boegen, nil
 	}
 

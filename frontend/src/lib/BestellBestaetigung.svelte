@@ -8,8 +8,7 @@
 	import { apiFetch } from './apiFetch.js';
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import Button from './components/ui/Button.svelte';
-	import Select from './components/ui/Select.svelte';
-	import { Check } from '@lucide/svelte';
+	import BestaetigungEtiketten from './components/bestellungen/BestaetigungEtiketten.svelte';
 
 	const token = window.location.pathname.replace(/^\/bestellung\//, '').replace(/\/+$/, '');
 
@@ -48,20 +47,6 @@
 	}
 	laden();
 
-	/** @param {'klein' | 'gross'} groesse */
-	function etikettenOeffnen(groesse) {
-		geoeffneteGroesse = groesse;
-		// Das Raster gilt nur für die kleinen Etiketten. Das große Lernmittel-Etikett hat
-		// ein festes Raster (4 Stück auf A4) und wird ausgeschnitten, nicht auf
-		// vorgestanzte Bögen gedruckt.
-		const query = groesse === 'klein' && formatId ? `?format=${encodeURIComponent(formatId)}` : '';
-		window.open(
-			`/api/public/bestellung/${encodeURIComponent(token)}/etiketten/${groesse}${query}`,
-			'_blank',
-			'noopener'
-		);
-	}
-
 	async function bestaetigen() {
 		sendet = true;
 		fehler = '';
@@ -99,9 +84,11 @@
 		}
 	}
 
-	// Lieferant · Kundennummer · Anzahl — leere Angaben fallen samt Trenner weg.
+	// Topf · Lieferant · Kundennummer · Anzahl — leere Angaben fallen samt Trenner weg.
+	// Der Topf steht vorn: Der Händler bekommt am selben Tag zwei gleich aussehende Links.
 	let kopfzeile = $derived(
 		[
+			bestellung?.mittel,
 			bestellung?.lieferant_name,
 			bestellung?.kundennummer ? `Kundennummer ${bestellung.kundennummer}` : null,
 			`${bestellung?.anzahl_exemplare} Exemplare`
@@ -173,52 +160,7 @@
 			</div>
 
 			{#if bestellung.etiketten_vorhanden}
-				<div class="rounded-xl bg-white p-8 shadow-sm">
-					<h2 class="text-base font-bold text-slate-800">Etiketten drucken</h2>
-					<p class="mt-1 text-sm text-slate-500">
-						Beide Bögen enthalten dieselben Barcodes wie der Anhang der Bestellmail — Sie wählen nur
-						das Format.
-					</p>
-
-					{#if bestellung.etiketten_formate?.length}
-						<div class="mt-5 max-w-md space-y-1.5">
-							<label for="etikettenformat" class="block text-xs font-medium text-slate-500">
-								Bogenraster der kleinen Etiketten
-							</label>
-							<Select
-								id="etikettenformat"
-								bind:value={formatId}
-								options={bestellung.etiketten_formate.map((/** @type {any} */ f) => ({
-									value: f.id,
-									label: f.name
-								}))}
-								aria-label="Bogenraster der kleinen Etiketten"
-							/>
-							<p class="text-xs text-slate-400">
-								Passend zu den Etikettenbögen in Ihrem Drucker. Gilt nicht für die großen
-								Lernmittel-Etiketten — die liegen zu viert auf einem A4-Blatt und werden
-								ausgeschnitten.
-							</p>
-						</div>
-					{/if}
-
-					<div class="mt-4 flex flex-wrap gap-3">
-						<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('klein')}>
-							{#if geoeffneteGroesse === 'klein'}<Check size={16} aria-hidden="true" />{/if}
-							Kleine Etiketten (Bogen A4)
-						</Button>
-						<Button size="lg" variant="secondary" onclick={() => etikettenOeffnen('gross')}>
-							{#if geoeffneteGroesse === 'gross'}<Check size={16} aria-hidden="true" />{/if}
-							Große Lernmittel-Etiketten (4 je A4-Blatt)
-						</Button>
-					</div>
-					{#if geoeffneteGroesse}
-						<p class="mt-3 text-xs text-slate-500">
-							Der Bogen wurde in einem neuen Tab geöffnet. Erscheint er nicht, ist er vom Browser
-							blockiert worden — dann bitte den Knopf erneut drücken.
-						</p>
-					{/if}
-				</div>
+				<BestaetigungEtiketten {bestellung} {token} bind:formatId bind:geoeffneteGroesse />
 			{/if}
 
 			<div class="rounded-xl bg-white p-8 shadow-sm">

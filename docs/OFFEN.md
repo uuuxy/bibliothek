@@ -22,11 +22,12 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Das Antwortschreiben abschicken.** Es ist fertig (17.09.2026). Daran hängen zwei gestoppte
-   Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die Mehrjahresbände (9.6, hält
-   4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen nichts gebaut.
-2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9, 4.13 und 4.14 sind gebaut; offen
-   zum Bauen sind 4.7, 4.8, 4.11 und das neu dazugekommene 4.21. Bei dir liegt daraus nur
+1. **Auf die Antwort zum Schreiben warten.** Es ist am 21.09.2026 abgeschickt. Daran hängen
+   zwei gestoppte Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die
+   Mehrjahresbände (9.6, hält 4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen
+   nichts gebaut.
+2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9, 4.11, 4.13 und 4.14 sind gebaut;
+   offen zum Bauen sind 4.7, 4.8 und das neu dazugekommene 4.21. Bei dir liegt daraus nur
    der Blick auf den Server im nächsten Punkt.
 3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
@@ -87,9 +88,8 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8, 4.11, 4.21), je ein Commit.
-   Zuerst, was ohne den Server geht: 4.11. Dann 4.7 und 4.8 nach dem Blick auf den Server.
-   4.21 in Stufen.
+1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8, 4.21), je ein Commit.
+   4.21 geht ohne den Server und in Stufen; 4.7 und 4.8 nach dem Blick auf den Server.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
@@ -249,19 +249,6 @@ GROUP BY 1, 2, 3 ORDER BY 3, 1;
 
 **Wann:** vor Abnahme-Flow 4. Kommt eine neue Littera-Übernahme mit Neuaufbau (7.2), erledigt
 sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
-
-### 4.11 Topf auf der Bestätigungsseite und den großen Etiketten
-
-Der Händler bekommt am selben Tag zwei gleich aussehende Links; auch zu einer
-Schülerbücherei-Bestellung werden die großen Lernmittel-Etiketten „Eigentum des Landes"
-angeboten.
-
-**Entschieden am 21.09.2026: beides.** Die Seite nennt den Topf mit dem Wort des Anschreibens
-(`api/mittel_vermerk.go`, eine Quelle). Das große Lernmittel-Etikett entfällt, wenn die
-Bestellung der Schülerbücherei gilt — auf der Seite, im Mailanhang an den Hauptlieferanten
-(`etikettenboegen`) und an der Tür selbst: `GET /api/public/bestellung/{token}/etiketten/gross`
-liefert dann kein PDF; ein versteckter Knopf allein ließe die Adresse offen. Alt-Bestellungen
-ohne Zuordnung (`mittel` ist NULL) behalten beide Größen und nennen keinen Topf.
 
 ### 4.12 Karenz gegen Lesehistorie
 

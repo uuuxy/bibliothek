@@ -23,7 +23,7 @@ func testEtikettLabels() []BarcodeLabelDetail {
 
 func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 	boegen, err := etikettenboegen(testEtikettLabels(), pdf.SchuleInfo{Name: "Testschule"}, false,
-		"Eigentum des Kreises Wetterau")
+		"Eigentum des Kreises Wetterau", repository.MittelLand)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -42,7 +42,7 @@ func TestBestellmailEtikettenTragenKonfiguriertenVermerk(t *testing.T) {
 }
 
 func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T) {
-	boegen, err := etikettenboegen(testEtikettLabels(), pdf.SchuleInfo{Name: "Testschule"}, false, "")
+	boegen, err := etikettenboegen(testEtikettLabels(), pdf.SchuleInfo{Name: "Testschule"}, false, "", repository.MittelLand)
 	if err != nil {
 		t.Fatalf("etikettenboegen: %v", err)
 	}
@@ -50,5 +50,42 @@ func TestBestellmailEtikettenFallenOhneKonfigurationAufWerksvorgabe(t *testing.T
 		if !strings.Contains(pdfText(t, b.Data), repository.StandardEigentumsvermerk) {
 			t.Errorf("%s: ohne Konfiguration muss die Werksvorgabe drucken", b.Name)
 		}
+	}
+}
+
+// Das große Lernmittel-Etikett („Eigentum des Landes") geht nur mit, wenn die Bestellung
+// nicht der Schülerbücherei gilt (OFFEN.md 4.11, entschieden am 21.09.2026). Die
+// Alt-Bestellung ohne Zuordnung behält beide Größen.
+func TestBestellmailGrossesEtikettFolgtDemTopf(t *testing.T) {
+	faelle := []struct {
+		name              string
+		istHauptlieferant bool
+		mittel            string
+		wantGross         bool
+	}{
+		{"Hauptlieferant, Lernmittelfreiheit", true, repository.MittelLand, true},
+		{"Hauptlieferant, Schülerbücherei", true, repository.MittelSchultraeger, false},
+		{"Hauptlieferant, ohne Zuordnung", true, "", true},
+		{"anderer Lieferant, Lernmittelfreiheit", false, repository.MittelLand, false},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			boegen, err := etikettenboegen(testEtikettLabels(), pdf.SchuleInfo{Name: "Testschule"},
+				f.istHauptlieferant, "", f.mittel)
+			if err != nil {
+				t.Fatalf("etikettenboegen: %v", err)
+			}
+			hatGross, hatKlein := false, false
+			for _, b := range boegen {
+				hatGross = hatGross || strings.HasPrefix(b.Name, "etiketten_gross")
+				hatKlein = hatKlein || strings.HasPrefix(b.Name, "etiketten_klein")
+			}
+			if !hatKlein {
+				t.Error("der kleine Bogen fehlt — er geht in jedem Fall mit")
+			}
+			if hatGross != f.wantGross {
+				t.Errorf("großes Lernmittel-Etikett im Anhang = %v, erwartet %v", hatGross, f.wantGross)
+			}
+		})
 	}
 }

@@ -26,7 +26,6 @@ const BESTAND = {
 	'src/inventur/lib/components/admin/BookTableZeile.svelte': 202,
 	'src/inventur/lib/components/admin/ClassAssignmentDialog.svelte': 207,
 	'src/inventur/lib/components/admin/KlassenUebersicht.svelte': 212,
-	'src/lib/BestellBestaetigung.svelte': 254,
 	'src/lib/BestellWorkspace.svelte': 286,
 	'src/lib/BorrowedBooksList.svelte': 282,
 	'src/lib/Omnibox.svelte': 226,

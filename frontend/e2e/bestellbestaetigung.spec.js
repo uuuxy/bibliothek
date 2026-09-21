@@ -11,8 +11,12 @@ import { seedSQL, querySQL, uniqueSuffix, uiLogin } from './helpers.js';
 //
 // Der Test meldet sich deshalb bewusst NIE an.
 
-/** Legt Lieferant + Bestellung samt Token an und liefert den Klartext-Token zurück. */
-function seedBestellungMitLink(token, { gueltigTage = 30 } = {}) {
+/**
+ * Legt Lieferant + Bestellung samt Token an und liefert den Klartext-Token zurück.
+ * `mittel` ist der Topf ('land' | 'schultraeger'); ohne Angabe bleibt die Spalte NULL —
+ * die Alt-Bestellung ohne Zuordnung (Migration 109).
+ */
+function seedBestellungMitLink(token, { gueltigTage = 30, mittel = null } = {}) {
 	const s = uniqueSuffix();
 	seedSQL(`
 		-- Erst räumen, dann setzen — genau wie setzeHauptlieferant im Handler.
@@ -37,10 +41,11 @@ function seedBestellungMitLink(token, { gueltigTage = 30 } = {}) {
 		b AS (
 			INSERT INTO bestellungen_verlauf
 				(lieferant_id, lieferant_name, lieferant_email, kundennummer, anzahl_exemplare,
-				 bestaetigungs_token_hash, token_gueltig_bis)
+				 bestaetigungs_token_hash, token_gueltig_bis, mittel)
 			SELECT l.id, 'E2E-Naacher ${s}', 'e2e-${s}@example.invalid', 'K-${s}', 2,
 			       encode(sha256('${token}'::bytea), 'hex'),
-			       now() + make_interval(days => ${gueltigTage})
+			       now() + make_interval(days => ${gueltigTage}),
+			       ${mittel ? `'${mittel}'` : 'NULL'}
 			FROM l RETURNING id
 		),
 		p AS (
@@ -86,6 +91,44 @@ test('Lieferant öffnet den Link ohne Anmeldung, druckt Etiketten und bestätigt
 	// Nach dem Neuladen bleibt es bei der Quittung — kein zweiter Bestätigen-Knopf.
 	await page.reload();
 	await expect(page.getByRole('button', { name: 'Bestellung jetzt bestätigen' })).toHaveCount(0);
+});
+
+// Der Händler bekommt am selben Tag zwei gleich aussehende Links (OFFEN.md 4.11, entschieden
+// am 21.09.2026): Die Seite nennt den Topf, und zur Bestellung für die Schülerbücherei gibt es
+// das große Lernmittel-Etikett „Eigentum des Landes" nicht — weder als Knopf noch an der Tür.
+const GROSSER_KNOPF = /Große Lernmittel-Etiketten/;
+
+test('Schülerbücherei: die Seite nennt den Topf, das große Lernmittel-Etikett gibt es nicht', async ({
+	page
+}) => {
+	const token = `E2E-SB-${uniqueSuffix()}`;
+	seedBestellungMitLink(token, { mittel: 'schultraeger' });
+
+	await page.goto(`/bestellung/${token}`);
+	await expect(page.getByRole('heading', { name: /Bestellung vom/ })).toBeVisible();
+	await expect(page.getByText(/^Schülerbücherei · E2E-Naacher/)).toBeVisible();
+	await expect(page.getByRole('button', { name: /Kleine Etiketten/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: GROSSER_KNOPF })).toHaveCount(0);
+
+	// Die Tür, nicht nur der Knopf: Wer die Adresse kennt, bekommt das Etikett auch nicht.
+	const gross = await page.request.get(`/api/public/bestellung/${token}/etiketten/gross`);
+	expect(gross.status()).toBe(404);
+	const klein = await page.request.get(`/api/public/bestellung/${token}/etiketten/klein`);
+	expect(klein.status()).toBe(200);
+});
+
+// Gegenprobe: Bei der Lernmittel-Bestellung steht der Topf ebenso da, und beide Größen gehen.
+test('Lernmittelfreiheit: die Seite nennt den Topf und bietet beide Größen an', async ({
+	page
+}) => {
+	const token = `E2E-LMF-${uniqueSuffix()}`;
+	seedBestellungMitLink(token, { mittel: 'land' });
+
+	await page.goto(`/bestellung/${token}`);
+	await expect(page.getByText(/^Lernmittelfreiheit · E2E-Naacher/)).toBeVisible();
+	await expect(page.getByRole('button', { name: GROSSER_KNOPF })).toBeVisible();
+	const gross = await page.request.get(`/api/public/bestellung/${token}/etiketten/gross`);
+	expect(gross.status()).toBe(200);
 });
 
 test('Ein ungültiger Link zeigt keine Daten und keinen Anmeldebildschirm', async ({ page }) => {

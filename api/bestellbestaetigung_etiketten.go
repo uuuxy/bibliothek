@@ -90,6 +90,24 @@ func (s *Server) OeffentlicheEtikettenHandler() http.HandlerFunc {
 			return
 		}
 
+		// Das große Lernmittel-Etikett gibt es zu einer Bestellung für die Schülerbücherei
+		// nicht — auch nicht für den, der die Adresse kennt. Die Seite blendet den Knopf
+		// aus; die Tür ist es, die das Etikett verweigert.
+		if groesse == "gross" {
+			var mittel string
+			if err := s.DB.Pool.QueryRow(ctx,
+				`SELECT COALESCE(mittel, '') FROM bestellungen_verlauf WHERE id = $1`,
+				bestellungID).Scan(&mittel); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if !grossesLernmittelEtikettFuer(mittel) {
+				apierrors.SendHTTPError(w, http.StatusNotFound,
+					errors.New("zu dieser Bestellung gibt es kein großes Lernmittel-Etikett"))
+				return
+			}
+		}
+
 		etiketten, err := s.ladeBestellEtiketten(ctx, bestellungID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)

@@ -43,6 +43,12 @@ func etikettenBogenHolen(t *testing.T, srv *Server, token, groesse, format strin
 // bestellungMitEtiketten legt eine Bestellung mit `menge` Vorab-Barcodes an.
 func bestellungMitEtiketten(t *testing.T, srv *Server, pool *pgxpool.Pool, menge int) string {
 	t.Helper()
+	return bestellungMitEtikettenAus(t, srv, pool, menge, repository.MittelLand)
+}
+
+// bestellungMitEtikettenAus wie oben, aber mit wählbarem Topf.
+func bestellungMitEtikettenAus(t *testing.T, srv *Server, pool *pgxpool.Pool, menge int, mittel string) string {
+	t.Helper()
 	ctx := context.Background()
 	svc := NewOrderService(srv.DB, repository.NewBookRepository(pool))
 
@@ -50,7 +56,7 @@ func bestellungMitEtiketten(t *testing.T, srv *Server, pool *pgxpool.Pool, menge
 	titel := titelMitMeldebestand(t, pool, "LMF-Formatprobe", 0)
 
 	res, err := svc.ProcessOrder(ctx, SubmitOrderRequest{
-		Mittel:     repository.MittelLand,
+		Mittel:     mittel,
 		SupplierID: lieferant,
 		Items:      []OrderItemRequest{{TitelID: titel, Menge: menge, Preis: 10, GenerateBarcodes: true}},
 	})
