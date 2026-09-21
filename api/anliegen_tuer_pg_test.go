@@ -16,8 +16,8 @@ import (
 // schickt — Art, Text, Klasse, Anmerkung — und nichts darüber hinaus.
 //
 // Bis zum 21.09.2026 nahm sie zusätzlich `titel_id` und `isbn` an und schrieb beide in die
-// Zeile. Kein Formular hat sie je geschickt; entschieden ist, dass das Formular Freitext
-// bleibt (docs/OFFEN.md 4.14). Der Test schickt beide Felder trotzdem mit, und zwar mit
+// Zeile. Kein Formular hat sie je geschickt; entschieden ist (21.09.2026), dass das
+// Formular Freitext bleibt. Der Test schickt beide Felder trotzdem mit, und zwar mit
 // Werten, die die alte Tür angenommen hätte: eine echte Titel-Kennung (der Fremdschlüssel
 // hielte) und eine ISBN. Am alten Stand landen beide in der Zeile — dann ist er rot.
 func TestCreateAnliegen_NimmtNurDieFelderDesFormulars(t *testing.T) {
