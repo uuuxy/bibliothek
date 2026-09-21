@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/pdfzeichen"
 	"bytes"
 	"fmt"
 
@@ -158,7 +159,7 @@ func GenerateLabelsPDF(formatId string, startPosition int, isQR bool, items []Ba
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
 
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	zeichneRaster(pdf, format, startPosition, len(items), func(i int, pos labelPos) {
 		item := items[i]

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"bibliothek/pkg/coverdatei"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jung-kurt/gofpdf"
@@ -71,7 +72,7 @@ func SchulbuecherAlsPDF(titel []LernmittelTitel, fachName, zusatz string) ([]byt
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(randLinks, 16, randLinks)
 	pdf.SetAutoPageBreak(true, 16)
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	ueberschrift := "Schulbücher"
 	if fachName != "" {

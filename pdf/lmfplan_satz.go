@@ -21,6 +21,7 @@ package pdf
 // und genau die entscheiden über die letzte Zeile.
 
 import (
+	"bibliothek/pkg/pdfzeichen"
 	"math"
 	"strings"
 
@@ -127,7 +128,7 @@ type lmfMesser struct {
 
 func lmfNeuerMesser() *lmfMesser {
 	p := gofpdf.New("P", "mm", "A4", "")
-	return &lmfMesser{pdf: p, tr: p.UnicodeTranslatorFromDescriptor("")}
+	return &lmfMesser{pdf: p, tr: pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))}
 }
 
 // groessteWortBreite ist die Breite des breitesten Wortes — ein einzelnes Wort bricht

@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -74,7 +75,7 @@ func generateDsgvoAuskunftPDF(daten *dsgvoDaten, schule pdf.SchuleInfo) ([]byte,
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
-	tr := p.UnicodeTranslatorFromDescriptor("") // UTF-8 → Latin-1 für Umlaute
+	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor("")) // UTF-8 → Latin-1 für Umlaute
 	p.AddPage()
 
 	dsgvoKopf(p, tr, schule, daten.stammdaten)

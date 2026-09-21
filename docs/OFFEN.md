@@ -547,8 +547,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 ### 5.5 Bestand, Katalog, Druck
 
 - `DeleteBooks` liest die Spuren vor der Transaktion.
-- Buchetiketten haben keinen Ersatz für Zeichen außerhalb cp1252; ş und ł werden zum Punkt
-  (`api/label_pdf.go`).
 - Die Barcode-Höhe des Ausweises ist im Druck fest (`CardFace.svelte`).
 - Die ISBN ist nur je Schreibweise eindeutig (mit oder ohne Bindestrich); ein CHECK auf den
   Jahrgang fehlt, „Jahrgang unbekannt" ist von der Vorgabe nicht zu unterscheiden. Erst Dubletten

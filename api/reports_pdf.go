@@ -3,6 +3,7 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 	"bytes"
@@ -300,7 +301,7 @@ func (s *Server) GetOverdueReportsPDFHandler() http.HandlerFunc {
 
 		// 3. Generate PDF Document
 		doc := gofpdf.New("P", "mm", "A4", "")
-		tr := doc.UnicodeTranslatorFromDescriptor("") // To correctly render German umlauts in standard fonts
+		tr := pdfzeichen.Uebersetzer(doc.UnicodeTranslatorFromDescriptor("")) // To correctly render German umlauts in standard fonts
 
 		for _, student := range students {
 			zeichneElternMahnbrief(doc, tr, student, betreff, textBody, absender)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/pdf"
+	"bibliothek/pkg/pdfzeichen"
 
 	"github.com/jung-kurt/gofpdf"
 )
@@ -117,12 +118,10 @@ type BescheidBrief struct {
 // GenerateBescheidPDF zeichnet den Bescheid.
 func GenerateBescheidPDF(b BescheidBrief) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
-	roh := p.UnicodeTranslatorFromDescriptor("")
-	// EIN Ort für die Zeichenersetzung: Jede Zeichenkette, die auf das Papier geht, läuft
-	// hier durch. Ohne sie kam „Ayşe" als „Ay.e" aus dem Drucker — cp1252 kennt das ş
-	// nicht (dieselbe Falle wie beim Schüler-Etikett, siehe cp1252Ersatz). Ein Bescheid
-	// mit entstelltem Namen ist ein fehlerhafter Bescheid.
-	tr := func(text string) string { return roh(cp1252Ersatz.Replace(text)) }
+	// Jede Zeichenkette, die auf das Papier geht, läuft durch pdfzeichen: Ohne die
+	// Ersetzung kam „Ayşe" als „Ay.e" aus dem Drucker — cp1252 kennt das ş nicht. Ein
+	// Bescheid mit entstelltem Namen ist ein fehlerhafter Bescheid.
+	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
 	// Ab der zweiten Seite die Seitenzahl mittig oben, wie im Original („- 2 -").
 	p.SetHeaderFunc(func() {
 		if p.PageNo() < 2 {

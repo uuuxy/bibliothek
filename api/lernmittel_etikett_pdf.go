@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/pdfzeichen"
 	"bytes"
 	"fmt"
 
@@ -55,7 +56,7 @@ func GenerateLernmittelEtikettenPDF(items []BarcodeLabelDetail, kopf EtikettKopf
 	// sobald der Inhalt in die untere 2-cm-Zone reicht. Die Position jedes Feldes rechnen
 	// wir selbst aus — automatische Umbrüche würden sie verschieben.
 	pdf.SetAutoPageBreak(false, 0)
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	for i, item := range items {
 		if i%lernmittelProSeite == 0 {

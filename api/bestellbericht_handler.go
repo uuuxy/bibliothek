@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/pdf"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -579,7 +580,7 @@ func generateBestellBerichtPDF(orders []berichtOrder, schule pdf.SchuleInfo, opt
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
-	tr := p.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
 	p.AddPage()
 
 	// Briefkopf

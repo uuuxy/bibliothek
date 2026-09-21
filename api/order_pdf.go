@@ -7,6 +7,7 @@ import (
 
 	"bibliothek/pdf"
 	"bibliothek/pkg/csvutil"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 
 	"github.com/jung-kurt/gofpdf"
@@ -119,7 +120,7 @@ func GenerateOrderSummaryPDF(items []OrderedItem, schule pdf.SchuleInfo, weg eti
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.AddPage()
 	p.SetMargins(20, 20, 20)
-	tr := p.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
 
 	// Letter Header / Sender info
 	p.SetFont("Arial", "B", 12)
@@ -208,7 +209,7 @@ func GenerateSingleLabelPDFA6(label BarcodeLabelDetail) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A6", "")
 	pdf.AddPage()
 	pdf.SetMargins(10, 10, 10)
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	pdf.SetFont("Arial", "B", 14)
 	pdf.CellFormat(0, 10, tr("Ersatz-Etikett"), "", 1, "C", false, 0, "")

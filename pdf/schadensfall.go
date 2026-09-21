@@ -8,6 +8,7 @@ import (
 
 	"github.com/jung-kurt/gofpdf"
 
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 )
 
@@ -47,7 +48,7 @@ func GenerateSchadensfallPDF(data SchadensfallInfo, schule SchuleInfo, zahlung Z
 	pdf.SetMargins(20, 20, 20)
 
 	// UTF-8 to ISO-8859-1 conversion to support German umlauts (ä, ö, ü, ß) in standard PDF fonts
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	addSchadensfallHeader(pdf, schule, tr)
 	addSchadensfallAddress(pdf, data, tr)

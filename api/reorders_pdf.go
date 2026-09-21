@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"bibliothek/apierrors"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -52,7 +53,7 @@ func baueBestelllistePDF(reorders []ReorderTitle, schwelle int) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.AddPage()
 	pdf.SetMargins(15, 15, 15)
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	pdf.SetFont("Arial", "B", 16)
 	pdf.Cell(0, 10, tr("Schulbibliothek - Bestellliste"))

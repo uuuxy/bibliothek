@@ -8,6 +8,7 @@ import (
 	"bibliothek/apierrors"
 	"bibliothek/pkg/coverdatei"
 	"bibliothek/pkg/httpresp"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
@@ -176,7 +177,7 @@ func zeichneMahnSeite(pdf *gofpdf.Fpdf, tr func(string) string, sch repository.U
 func generateMahnPDF(klassen []repository.MahnwesenKlasse) ([]byte, error) {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	pdf.SetMargins(18, 18, 18)
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	printedFirst := false
 	for _, kl := range klassen {

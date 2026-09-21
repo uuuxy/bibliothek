@@ -7,6 +7,7 @@ import (
 	"github.com/jung-kurt/gofpdf"
 
 	"bibliothek/pdf"
+	"bibliothek/pkg/pdfzeichen"
 	"bibliothek/repository"
 )
 
@@ -28,7 +29,7 @@ func generateZugangsbuchPDF(buch repository.Zugangsbuch, schule pdf.SchuleInfo) 
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
-	tr := p.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor(""))
 	p.AddPage()
 
 	bestandsbuchKopf(p, tr, "Zugangsbuch", buch.Von, buch.Bis, schule)

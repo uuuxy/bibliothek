@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bibliothek/pkg/pdfzeichen"
 	"bytes"
 	"fmt"
 	"strings"
@@ -28,25 +29,6 @@ type SchuelerEtikett struct {
 	Nachname  string
 	Klasse    string
 }
-
-// cp1252Ersatz bildet Buchstaben ab, die der PDF-Zeichensatz nicht kennt.
-//
-// gofpdf zeichnet über UnicodeTranslatorFromDescriptor("") in cp1252. Alles darüber
-// hinaus wird zu einem Punkt: „Ayşe" kam als „Ay.e" aus dem Drucker. Ein Etikett mit
-// entstelltem Namen ist schlimmer als eines ohne Häkchen unter dem s — deshalb wird
-// vorher ersetzt statt hinterher verstümmelt.
-//
-// Abgedeckt sind die Buchstaben, die an einer hessischen Schule tatsächlich vorkommen:
-// türkisch, polnisch, rumänisch, tschechisch/kroatisch. Was cp1252 kennt (ä, ö, ü, ß,
-// é, à, ç, ñ …), steht hier bewusst NICHT — das druckt richtig.
-var cp1252Ersatz = strings.NewReplacer(
-	"ş", "s", "Ş", "S", "ğ", "g", "Ğ", "G", "ı", "i", "İ", "I",
-	"ć", "c", "Ć", "C", "č", "c", "Č", "C", "ł", "l", "Ł", "L",
-	"ń", "n", "Ń", "N", "ś", "s", "Ś", "S", "ż", "z", "Ż", "Z", "ź", "z", "Ź", "Z",
-	"ą", "a", "Ą", "A", "ę", "e", "Ę", "E", "ő", "o", "Ő", "O", "ű", "u", "Ű", "U",
-	"ș", "s", "Ș", "S", "ț", "t", "Ț", "T", "ř", "r", "Ř", "R", "ě", "e", "Ě", "E",
-	"š", "s", "Š", "S", "ž", "z", "Ž", "Z", "đ", "d", "Đ", "D",
-)
 
 // name liefert "Nachname, Vorname" — die Form, in der die Theke sucht und sortiert.
 func (e SchuelerEtikett) name() string {
@@ -83,7 +65,7 @@ func GenerateSchuelerEtikettenPDF(formatID string, startPosition int, etiketten 
 	pdf.SetMargins(format.MarginLeft, format.MarginTop, format.MarginLeft)
 	pdf.SetAutoPageBreak(false, 0)
 	pdf.AddPage()
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	tr := pdfzeichen.Uebersetzer(pdf.UnicodeTranslatorFromDescriptor(""))
 
 	zeichneRaster(pdf, format, startPosition, len(etiketten), func(i int, pos labelPos) {
 		zeichneSchuelerEtikett(pdf, tr, format, etiketten[i], pos)
@@ -129,9 +111,9 @@ func zeichneSchuelerEtikett(pdf *gofpdf.Fpdf, tr func(string) string, format Lab
 	linkerRand := pos.X + 3
 	textbreite := format.LabelWidth - 6
 
-	// EIN Ort für die Zeichenersetzung: Jede Zeichenkette, die auf das Papier geht,
-	// läuft hier durch. Ein zweiter Aufrufpfad, der sie vergisst, druckt wieder Punkte.
-	druck := func(text string) string { return tr(cp1252Ersatz.Replace(text)) }
+	// tr trägt die Zeichenersetzung schon (pdfzeichen): „Ayşe" kam bis dahin als „Ay.e"
+	// aus dem Drucker.
+	druck := tr
 	kuerze := func(text string, breite float64) string {
 		return kuerzeAufBreite(pdf, druck, text, breite)
 	}
