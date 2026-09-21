@@ -18,8 +18,6 @@ type Anliegen struct {
 	ID         string     `json:"id"`
 	Art        string     `json:"art"` // 'wunsch' | 'meldung'
 	TitelText  string     `json:"titel_text"`
-	TitelID    *string    `json:"titel_id,omitempty"`
-	ISBN       string     `json:"isbn,omitempty"`
 	Klasse     string     `json:"klasse"`
 	Kommentar  string     `json:"kommentar,omitempty"`
 	ErstelltAm time.Time  `json:"erstellt_am"`
@@ -51,14 +49,15 @@ func NewAnliegenRepository(pool db.PgxPoolIface) *AnliegenRepository {
 }
 
 // NeuesAnliegen sind die Felder eines neu angelegten Anliegens. Bewusst ein Struct
-// statt sieben Strings in Reihe (go:S107): Wer bei sieben gleichartigen Parametern
-// Klasse und ISBN vertauscht, bekommt kein Compilerwort — nur eine falsch
-// einsortierte Meldung in der LMF-Liste.
+// statt gleichartiger Strings in Reihe (go:S107): Wer dabei Klasse und Kommentar
+// vertauscht, bekommt kein Compilerwort — nur eine falsch einsortierte Meldung in der
+// LMF-Liste.
+//
+// Die Spalten titel_id und isbn der Tabelle schreibt seit dem 21.09.2026 niemand mehr
+// (api/anliegen.go): Sie bleiben auf ihrer Vorgabe, NULL und leerer Text.
 type NeuesAnliegen struct {
 	Art            string
 	TitelText      string
-	TitelID        string
-	ISBN           string
 	Klasse         string
 	Kommentar      string
 	AngefordertVon string // Benutzer-ID der Lehrkraft
@@ -68,10 +67,10 @@ type NeuesAnliegen struct {
 func (r *AnliegenRepository) Create(ctx context.Context, a NeuesAnliegen) (string, error) {
 	var id string
 	err := r.pool.QueryRow(ctx, `
-		INSERT INTO lehrer_anliegen (art, titel_text, titel_id, isbn, klasse, kommentar, angefordert_von)
-		VALUES ($1, $2, NULLIF($3, '')::uuid, $4, $5, $6, $7)
+		INSERT INTO lehrer_anliegen (art, titel_text, klasse, kommentar, angefordert_von)
+		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id`,
-		a.Art, a.TitelText, a.TitelID, a.ISBN, a.Klasse, a.Kommentar, a.AngefordertVon).Scan(&id)
+		a.Art, a.TitelText, a.Klasse, a.Kommentar, a.AngefordertVon).Scan(&id)
 	return id, err
 }
 
@@ -79,7 +78,7 @@ func (r *AnliegenRepository) Create(ctx context.Context, a NeuesAnliegen) (strin
 // (wie die Klassensatz-Warteschlange: wer zuerst fragt, ist zuerst dran).
 func (r *AnliegenRepository) ListOffene(ctx context.Context) ([]Anliegen, error) {
 	return r.list(ctx, `
-		SELECT a.id, a.art, a.titel_text, a.titel_id::text, COALESCE(a.isbn, ''), a.klasse,
+		SELECT a.id, a.art, a.titel_text, a.klasse,
 		       a.kommentar, a.erstellt_am, a.erledigt_am, a.erledigt_notiz,
 		       COALESCE(btrim(b.vorname || ' ' || b.nachname), '')
 		FROM lehrer_anliegen a
@@ -99,7 +98,7 @@ func (r *AnliegenRepository) CountOffene(ctx context.Context) (int, error) {
 // zuerst und auf die letzten 50 begrenzt — das Portal ist kein Archiv.
 func (r *AnliegenRepository) ListEigene(ctx context.Context, benutzerID string) ([]Anliegen, error) {
 	return r.list(ctx, `
-		SELECT a.id, a.art, a.titel_text, a.titel_id::text, COALESCE(a.isbn, ''), a.klasse,
+		SELECT a.id, a.art, a.titel_text, a.klasse,
 		       a.kommentar, a.erstellt_am, a.erledigt_am, a.erledigt_notiz, ''
 		FROM lehrer_anliegen a
 		WHERE a.angefordert_von = $1
@@ -117,7 +116,7 @@ func (r *AnliegenRepository) list(ctx context.Context, query string, args ...any
 	anliegen := []Anliegen{}
 	for rows.Next() {
 		var a Anliegen
-		if err := rows.Scan(&a.ID, &a.Art, &a.TitelText, &a.TitelID, &a.ISBN, &a.Klasse,
+		if err := rows.Scan(&a.ID, &a.Art, &a.TitelText, &a.Klasse,
 			&a.Kommentar, &a.ErstelltAm, &a.ErledigtAm, &a.ErledigtNotiz, &a.Von); err != nil {
 			return nil, err
 		}

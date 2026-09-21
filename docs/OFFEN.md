@@ -25,9 +25,9 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 1. **Das Antwortschreiben abschicken.** Es ist fertig (17.09.2026). Daran hängen zwei gestoppte
    Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die Mehrjahresbände (9.6, hält
    4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen nichts gebaut.
-2. **Die sechs Fragen sind beantwortet** (21.09.2026: 4.7 bis 4.9, 4.11, 4.13, 4.14; dabei kam
-   4.21 neu dazu). Gebaut ist davon noch nichts. Bei dir liegt daraus nur der Blick auf den
-   Server im nächsten Punkt.
+2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.14 ist gebaut; offen zum Bauen sind
+   4.7 bis 4.9, 4.11, 4.13 und das neu dazugekommene 4.21. Bei dir liegt daraus nur der Blick
+   auf den Server im nächsten Punkt.
 3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
    in der er nie nachrückt (5.19)? Erst danach werden Nummern nachgetragen — das ändert echte
@@ -87,8 +87,8 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7–4.9, 4.11, 4.13, 4.14, 4.21), je ein Commit.
-   Zuerst, was ohne den Server geht: 4.9, 4.13, 4.14, 4.11. Dann 4.7 und 4.8 nach dem Blick auf
+1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7–4.9, 4.11, 4.13, 4.21), je ein Commit.
+   Zuerst, was ohne den Server geht: 4.9, 4.13, 4.11. Dann 4.7 und 4.8 nach dem Blick auf
    den Server. 4.21 in Stufen.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
@@ -319,16 +319,6 @@ PDF lesen schon heute dieselbe Menge). Die Suche wird damit nicht ein zweites Ma
 Anlass über die Kommentare hinaus: Der Einzeldruck in der Schülerakte hat keine Freigabezeile
 (`pdf.GenerateKontoauszug`), ein einzelner Laufzettel ließ sich also nicht nachdrucken. Prüfbar
 nur mit gestellter Uhr — außerhalb von Mai bis Juli ist die Liste leer.
-
-### 4.14 Cover im Kollegiums-Portal (`AnliegenWidget`)
-
-Tabelle und API tragen `isbn` und `titel_id` am Anliegen schon; nur das Wunsch-Formular schickt
-sie nicht mit. Am 05.09.2026 entschieden: Arbeitslisten der Bibliothek bleiben ohne Cover.
-
-**Entschieden am 21.09.2026: ohne Cover, das Formular bleibt Freitext.** Ein Wunsch gilt meist
-einem Buch, das nicht im Bestand ist; für ein vorhandenes gibt es die Klassensatz-Reservierung
-im selben Portal. `isbn` und `titel_id` fallen aus der Annahme-Tür (`POST /api/anliegen`) —
-geprüft: ein Schreiber, ein Aufrufer, und der hat sie nie geschickt. Die Spalten bleiben.
 
 ### 4.16 Routen ohne Aufrufer
 

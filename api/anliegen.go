@@ -19,11 +19,15 @@ import (
 // Kommentar-Threads oder Genehmigungsketten.
 
 // AnliegenRequest ist die Eingabe der Lehrkraft im Kollegiums-Portal.
+//
+// Bewusst Freitext: Ein Wunsch gilt meist einem Buch, das NICHT im Bestand ist, und für
+// ein vorhandenes gibt es die Klassensatz-Reservierung im selben Portal. Bis zum 21.09.2026
+// nahm die Tür zusätzlich `titel_id` und `isbn` an — kein Formular hat sie je geschickt
+// (seit dem ersten Commit vom 18.08.2026 nicht), und eine Tür, die Felder annimmt, die
+// niemand füllt, sieht aus wie eine Funktion. Die Spalten in lehrer_anliegen bleiben.
 type AnliegenRequest struct {
 	Art       string `json:"art" validate:"required"`
 	TitelText string `json:"titel_text" validate:"required"`
-	TitelID   string `json:"titel_id,omitempty" validate:"omitempty,uuid_oder_leer"`
-	ISBN      string `json:"isbn,omitempty"`
 	Klasse    string `json:"klasse,omitempty"`
 	Kommentar string `json:"kommentar,omitempty"`
 }
@@ -55,14 +59,11 @@ func (s *Server) CreateAnliegenHandler() http.HandlerFunc {
 		req.TitelText = kuerze(req.TitelText, 300)
 		req.Klasse = kuerze(strings.TrimSpace(req.Klasse), 50)
 		req.Kommentar = kuerze(strings.TrimSpace(req.Kommentar), 1000)
-		req.ISBN = kuerze(strings.TrimSpace(req.ISBN), 20)
 
 		repo := repository.NewAnliegenRepository(s.DB.Pool)
 		id, err := repo.Create(r.Context(), repository.NeuesAnliegen{
 			Art:            req.Art,
 			TitelText:      req.TitelText,
-			TitelID:        strings.TrimSpace(req.TitelID),
-			ISBN:           req.ISBN,
 			Klasse:         req.Klasse,
 			Kommentar:      req.Kommentar,
 			AngefordertVon: claims.UserID,

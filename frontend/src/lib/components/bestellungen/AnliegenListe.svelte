@@ -15,7 +15,7 @@
 	import Feld from '../ui/Feld.svelte';
 	import { Check } from '@lucide/svelte';
 
-	/** @typedef {{ id: string, art: string, titel_text: string, isbn?: string, klasse: string, kommentar?: string, von?: string, erstellt_am: string }} Anliegen */
+	/** @typedef {{ id: string, art: string, titel_text: string, klasse: string, kommentar?: string, von?: string, erstellt_am: string }} Anliegen */
 
 	/** @type {Anliegen[]} */
 	let anliegen = $state([]);
@@ -106,13 +106,7 @@
 	<ArbeitsZeile
 		klasse={a.klasse || '–'}
 		titel={a.titel_text}
-		neben={[
-			a.von,
-			new Date(a.erstellt_am).toLocaleDateString('de-DE'),
-			a.isbn ? `ISBN ${a.isbn}` : ''
-		]
-			.filter(Boolean)
-			.join(' · ')}
+		neben={[a.von, new Date(a.erstellt_am).toLocaleDateString('de-DE')].filter(Boolean).join(' · ')}
 		notiz={a.kommentar ?? ''}
 		art={a.art === 'wunsch'
 			? { text: 'Wunsch', ton: 'neutral' }

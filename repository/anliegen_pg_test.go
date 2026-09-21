@@ -24,7 +24,7 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 
 	repo := NewAnliegenRepository(pool)
 	id1, err := repo.Create(ctx, NeuesAnliegen{
-		Art: "wunsch", TitelText: "Markl Biologie 2", ISBN: "978-3-12-150010-9",
+		Art: "wunsch", TitelText: "Markl Biologie 2",
 		Klasse: "8G3", Kommentar: "bitte zum Halbjahr", AngefordertVon: lehrkraftID,
 	})
 	if err != nil {
@@ -51,13 +51,25 @@ func TestAnliegenLebenszyklus(t *testing.T) {
 		t.Fatalf("offene Liste falsch (älteste zuerst erwartet): %+v", eigene)
 	}
 
-	// Jedes Feld in seiner eigenen Spalte. Sieben gleichartige Strings gingen bis
-	// 23.08. als Positionsparameter in Create; ein Dreher zwischen ISBN und Klasse
-	// hätte hier keinen Compilerfehler ausgelöst, sondern eine ISBN in der
-	// Klassenspalte der LMF-Liste.
-	if a := eigene[0]; a.Art != "wunsch" || a.ISBN != "978-3-12-150010-9" ||
-		a.Klasse != "8G3" || a.Kommentar != "bitte zum Halbjahr" {
+	// Jedes Feld in seiner eigenen Spalte. Gleichartige Strings gingen bis 23.08. als
+	// Positionsparameter in Create; ein Dreher zwischen Klasse und Kommentar hätte hier
+	// keinen Compilerfehler ausgelöst, sondern eine Anmerkung in der Klassenspalte der
+	// LMF-Liste.
+	if a := eigene[0]; a.Art != "wunsch" || a.Klasse != "8G3" || a.Kommentar != "bitte zum Halbjahr" {
 		t.Errorf("Felder vertauscht: %+v", a)
+	}
+
+	// titel_id und isbn schreibt seit dem 21.09.2026 niemand mehr; die Spalten bleiben.
+	// Der INSERT nennt sie nicht — hier steht, dass die Tabelle das trägt (isbn ist
+	// NOT NULL mit Vorgabe) und beide auf ihrer Vorgabe landen.
+	var ohneTitel bool
+	var isbn string
+	if err := pool.QueryRow(ctx, `SELECT titel_id IS NULL, isbn FROM lehrer_anliegen WHERE id = $1`,
+		id1).Scan(&ohneTitel, &isbn); err != nil {
+		t.Fatalf("Vorgaben lesen: %v", err)
+	}
+	if !ohneTitel || isbn != "" {
+		t.Errorf("titel_id leer = %v, isbn = %q; erwartet NULL und leer", ohneTitel, isbn)
 	}
 
 	// Abhaken: Mail-Daten kommen genau einmal.
