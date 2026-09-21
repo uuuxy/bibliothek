@@ -7,6 +7,19 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// meldeSchadenParams trägt die Angaben einer Schadensmeldung. Als Struktur, weil vier
+// Kennungen und Texte (Exemplar, Ausleihe, Bearbeiter, Beschreibung) nebeneinander
+// string sind: Positionsweise vertauscht, liefe die Meldung ohne Fehler auf das falsche
+// Exemplar oder die falsche Ausleihe.
+type meldeSchadenParams struct {
+	copyID       string
+	loanID       string
+	benutzerID   string
+	beschreibung string
+	art          SchadensArt
+	betrag       float64
+}
+
 // meldeSchaden bucht einen Verlust oder Schaden an einer Ausleihe: Exemplar aussondern,
 // Forderung anlegen, Ausleihe beenden, Abholfach lösen — alles innerhalb der
 // Transaktion des Aufrufers.
@@ -21,7 +34,7 @@ import (
 // „beschädigt" BESCHAEDIGUNG. Bis zum 15.09.2026 stand bei beiden BESCHAEDIGUNG; das
 // endgültige Löschen und die Fund-Meldung des Fehlbestandsberichts kennen aber nur
 // VERLUST (OFFEN.md 5.3), und die Verlustquote (api/stats.go) zählt beide.
-func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, beschreibung string, art SchadensArt, betrag float64) (string, error) {
+func meldeSchaden(ctx context.Context, tx pgx.Tx, params meldeSchadenParams) (string, error) {
 	// Idempotenz + Serialisierung gegen Doppelklick: Zwei parallel abgeschickte
 	// "Schaden melden"-Klicks mit derselben ausleihe_id würden sonst beide den
 	// fremdeAktive-Check passieren und JE einen Schadensfall anlegen — der Schüler würde
@@ -42,7 +55,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 	// die Ausleihe personenlos, bleibt schueler_id im Schadensfall NULL.
 	var loanSchuelerID *string
 	if err := tx.QueryRow(ctx,
-		`SELECT schueler_id FROM ausleihen WHERE id = $1 FOR UPDATE`, loanID,
+		`SELECT schueler_id FROM ausleihen WHERE id = $1 FOR UPDATE`, params.loanID,
 	).Scan(&loanSchuelerID); err != nil {
 		return "", err // pgx.ErrNoRows: Ausleihe existiert nicht
 	}
@@ -74,7 +87,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 	var bestehenderSchaden string
 	err := tx.QueryRow(ctx,
 		`SELECT id FROM schadensfaelle WHERE ausleihe_id = $1 AND storniert_am IS NULL LIMIT 1`,
-		loanID,
+		params.loanID,
 	).Scan(&bestehenderSchaden)
 	if err == nil {
 		// Schadensfall existiert bereits — idempotent zurückgeben, nichts doppelt buchen.
@@ -92,7 +105,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 	if err := tx.QueryRow(ctx, `
 		SELECT count(*) FROM ausleihen
 		WHERE exemplar_id = $1 AND rueckgabe_am IS NULL AND id <> $2
-	`, copyID, loanID).Scan(&fremdeAktive); err != nil {
+	`, params.copyID, params.loanID).Scan(&fremdeAktive); err != nil {
 		return "", err
 	}
 	if fremdeAktive > 0 {
@@ -100,7 +113,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 	}
 
 	grund := "BESCHAEDIGUNG"
-	if art == SchadensArtNichtZurueck {
+	if params.art == SchadensArtNichtZurueck {
 		grund = "VERLUST"
 	}
 	if _, err := tx.Exec(ctx, `
@@ -109,7 +122,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 		    zustand_notiz = $2, aktualisiert_am = CURRENT_TIMESTAMP,
 		    letzte_bewegung_am = `+sqlStempelJetzt+`
 		WHERE id = $3
-	`, grund, beschreibung, copyID); err != nil {
+	`, grund, params.beschreibung, params.copyID); err != nil {
 		return "", err
 	}
 
@@ -122,7 +135,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 		UPDATE vormerkungen
 		SET status = 'wartend', bereitgestellt_exemplar_id = NULL, bereitgestellt_bis = NULL
 		WHERE bereitgestellt_exemplar_id = $1 AND status = 'abholbereit'
-	`, copyID); err != nil {
+	`, params.copyID); err != nil {
 		return "", err
 	}
 
@@ -132,7 +145,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 			INSERT INTO schadensfaelle (exemplar_id, ausleihe_id, schueler_id, beschreibung, betrag, art)
 			VALUES ($1, $2, $3, $4, $5, $6)
 			RETURNING id
-		`, copyID, loanID, loanSchuelerID, beschreibung, betrag, string(art)).Scan(&schadensID); err != nil {
+		`, params.copyID, params.loanID, loanSchuelerID, params.beschreibung, params.betrag, string(params.art)).Scan(&schadensID); err != nil {
 			return "", err
 		}
 	}
@@ -145,7 +158,7 @@ func meldeSchaden(ctx context.Context, tx pgx.Tx, copyID, loanID, benutzerID, be
 		UPDATE ausleihen
 		SET rueckgabe_am = CURRENT_TIMESTAMP, rueckgabe_bearbeiter_id = NULLIF($1, '')::uuid
 		WHERE id = $2 AND rueckgabe_am IS NULL
-	`, benutzerID, loanID); err != nil {
+	`, params.benutzerID, params.loanID); err != nil {
 		return "", err
 	}
 	// Ohne Forderung ist die Kennung leer — es gibt keinen Schadensfall, auf den sie zeigen

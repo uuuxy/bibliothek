@@ -131,15 +131,34 @@ const sqlAusleihe = `
 		RETURNING id, exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am, bearbeiter_id, rueckgabe_bearbeiter_id, ist_fremdrueckgabe, ist_handapparat
 	`
 
+// CreateLoanParams trägt die Angaben einer Ausleihe. Als Struktur, weil Exemplar, Leser
+// und Bearbeiter drei Kennungen vom selben Typ sind — positionsweise vertauscht, liefe die
+// Buchung ohne Fehler auf die falsche Person. Zeitpunkt nil heißt jetzt.
+type CreateLoanParams struct {
+	ExemplarID     string
+	LeserID        string
+	BearbeiterID   string
+	RueckgabeFrist time.Time
+	IstDauerleihe  bool
+	Zeitpunkt      *time.Time
+}
+
 // CreateLoanTx erzeugt einen neuen Ausleiheintrag innerhalb einer Transaktion — jetzt.
 func (r *pgLoanRepository) CreateLoanTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool) (*Loan, error) {
-	return CreateLoanZumTx(ctx, tx, exemplarID, leserID, bearbeiterID, rueckgabeFrist, istDauerleihe, nil)
+	return CreateLoanZumTx(ctx, tx, CreateLoanParams{
+		ExemplarID:     exemplarID,
+		LeserID:        leserID,
+		BearbeiterID:   bearbeiterID,
+		RueckgabeFrist: rueckgabeFrist,
+		IstDauerleihe:  istDauerleihe,
+		Zeitpunkt:      nil,
+	})
 }
 
 // CreateLoanZumTx erzeugt die Ausleihe eines Lesers zum gegebenen Zeitpunkt (nil = jetzt)
 // und stempelt die Bewegung des Exemplars mit demselben Zeitpunkt.
-func CreateLoanZumTx(ctx context.Context, tx pgx.Tx, exemplarID, leserID, bearbeiterID string, rueckgabeFrist time.Time, istDauerleihe bool, zeitpunkt *time.Time) (*Loan, error) {
-	return schreibeAusleihe(ctx, tx, exemplarID, zeitpunkt, sqlAusleihe, exemplarID, leserID, rueckgabeFrist, bearbeiterID, istDauerleihe, zeitpunkt)
+func CreateLoanZumTx(ctx context.Context, tx pgx.Tx, params CreateLoanParams) (*Loan, error) {
+	return schreibeAusleihe(ctx, tx, params.ExemplarID, params.Zeitpunkt, sqlAusleihe, params.ExemplarID, params.LeserID, params.RueckgabeFrist, params.BearbeiterID, params.IstDauerleihe, params.Zeitpunkt)
 }
 
 func schreibeAusleihe(ctx context.Context, tx pgx.Tx, exemplarID string, zeitpunkt *time.Time, query string, args ...any) (*Loan, error) {

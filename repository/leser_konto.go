@@ -92,22 +92,33 @@ func LeserName(ctx context.Context, pool db.PgxPoolIface, leserID string) (vorna
 // stünde in der Leserdatei und käme nie ins Portal.
 var ErrKontoNichtEntstanden = errors.New("das Konto ist nicht entstanden")
 
+// LegeKollegiumskontoParams trägt die Angaben des neuen Kontos. Als Struktur, weil
+// Vorname, Nachname, E-Mail und Leserzeile nebeneinander string sind: Vor- und Nachname
+// positionsweise vertauscht, stünde die Person ohne jeden Fehler falsch im Konto.
+type LegeKollegiumskontoParams struct {
+	Vorname  string
+	Nachname string
+	Email    string
+	LeserID  string
+	Aktiv    bool
+}
+
 // LegeKollegiumskonto hängt an eine Leserzeile das Anmeldekonto.
 //
-// `leserID` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
+// `LeserID` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
 // NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
 // die zweite — genau der Doppeleintrag, um den es geht.
 //
-// aktiv=false hinterlässt einen Antrag (zugang_beantragt_am), den die Freischaltungs-Zeile
+// Aktiv=false hinterlässt einen Antrag (zugang_beantragt_am), den die Freischaltungs-Zeile
 // der Benutzerverwaltung zeigt.
 //
 // Eine belegte Adresse kommt als pgconn.PgError 23505 zurück; der Aufrufer macht daraus
 // eine Auskunft (409), keine Störung.
-func LegeKollegiumskonto(ctx context.Context, q KontoSchreiber, vorname, nachname, email, leserID string, aktiv bool) error {
+func LegeKollegiumskonto(ctx context.Context, q KontoSchreiber, params LegeKollegiumskontoParams) error {
 	tag, err := q.Exec(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id, zugang_beantragt_am)
 		VALUES ($1, $2, $3, 'kollegium', $4, $5, CASE WHEN $4 THEN NULL ELSE CURRENT_TIMESTAMP END)
-	`, vorname, nachname, strings.ToLower(strings.TrimSpace(email)), aktiv, leserID)
+	`, params.Vorname, params.Nachname, strings.ToLower(strings.TrimSpace(params.Email)), params.Aktiv, params.LeserID)
 	if err != nil {
 		return err
 	}

@@ -374,7 +374,14 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 		// Das Konto entsteht in DERSELBEN Transaktion wie die Leserzeile — scheitert es,
 		// darf auch die Zeile nicht stehen bleiben (die belegte Adresse ist der häufige
 		// Fall und heisst: Die Person steht schon da).
-		if err := repository.LegeKollegiumskonto(ctx, tx, req.Vorname, req.Nachname, req.Email, studentID, darfFreischalten); err != nil {
+		params := repository.LegeKollegiumskontoParams{
+			Vorname:  req.Vorname,
+			Nachname: req.Nachname,
+			Email:    req.Email,
+			LeserID:  studentID,
+			Aktiv:    darfFreischalten,
+		}
+		if err := repository.LegeKollegiumskonto(ctx, tx, params); err != nil {
 			antworteAufKontoFehler(w, err, strings.ToLower(strings.TrimSpace(req.Email)))
 			return "", "", false
 		}

@@ -109,7 +109,14 @@ func (r *pgDamageRepository) ReportDamage(ctx context.Context, copyID, loanID, _
 	}
 	defer db.SafeRollback(ctx, tx)
 
-	schadensID, err := meldeSchaden(ctx, tx, copyID, loanID, benutzerID, beschreibung, art, betrag)
+	schadensID, err := meldeSchaden(ctx, tx, meldeSchadenParams{
+		copyID:       copyID,
+		loanID:       loanID,
+		benutzerID:   benutzerID,
+		beschreibung: beschreibung,
+		art:          art,
+		betrag:       betrag,
+	})
 	if err != nil {
 		return "", err
 	}

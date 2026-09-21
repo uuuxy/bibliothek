@@ -107,7 +107,14 @@ func TestBewegungsstempel_LaeuftNieRueckwaerts(t *testing.T) {
 	vorDreissig, vorZwanzig, vorZehn := jetzt.Add(-30*time.Minute), jetzt.Add(-20*time.Minute), jetzt.Add(-10*time.Minute)
 
 	tx := beginne(t, pool)
-	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, jetzt.AddDate(0, 0, 14), false, &vorDreissig)
+	loan, err := CreateLoanZumTx(ctx, tx, CreateLoanParams{
+		ExemplarID:     f.exemplarID,
+		LeserID:        f.schuelerID,
+		BearbeiterID:   f.bearbeiterID,
+		RueckgabeFrist: jetzt.AddDate(0, 0, 14),
+		IstDauerleihe:  false,
+		Zeitpunkt:      &vorDreissig,
+	})
 	if err != nil {
 		t.Fatalf("ausleihen: %v", err)
 	}
@@ -156,7 +163,14 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	stempel := stempelLeser(t, pool, f.exemplarID)
 
 	tx := beginne(t, pool)
-	loan, err := CreateLoanZumTx(ctx, tx, f.exemplarID, f.schuelerID, f.bearbeiterID, time.Now().AddDate(0, 0, 14), false, nil)
+	loan, err := CreateLoanZumTx(ctx, tx, CreateLoanParams{
+		ExemplarID:     f.exemplarID,
+		LeserID:        f.schuelerID,
+		BearbeiterID:   f.bearbeiterID,
+		RueckgabeFrist: time.Now().AddDate(0, 0, 14),
+		IstDauerleihe:  false,
+		Zeitpunkt:      nil,
+	})
 	if err != nil {
 		t.Fatalf("ausleihen: %v", err)
 	}
@@ -175,7 +189,14 @@ func TestBewegungsstempel_LangeTransaktionSetztIhnNichtZurueck(t *testing.T) {
 	}
 	zuletzt := stempel()
 
-	if _, err := meldeSchaden(ctx, lang, f.exemplarID, loan.ID, f.bearbeiterID, "Stempel-Test", SchadensArtNichtZurueck, 10); err != nil {
+	if _, err := meldeSchaden(ctx, lang, meldeSchadenParams{
+		copyID:       f.exemplarID,
+		loanID:       loan.ID,
+		benutzerID:   f.bearbeiterID,
+		beschreibung: "Stempel-Test",
+		art:          SchadensArtNichtZurueck,
+		betrag:       10,
+	}); err != nil {
 		t.Fatalf("Schaden melden: %v", err)
 	}
 	if err := lang.Commit(ctx); err != nil {
