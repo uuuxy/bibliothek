@@ -557,12 +557,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.10 Gates und Werkzeuge
 
-- Keine allgemeine Ratsche „Go liest, Compose reicht nicht durch". `docs/compose_variablen_test.go`
-  prüft die Gegenrichtung und hält seit dem 21.09.2026 die fünf Namen aus der Entscheidung zu
-  den Umgebungsvariablen fest. Gemessen am selben Tag: Außer diesen fünf las der Server
-  nichts, was Compose nicht gibt; übrig bleiben drei Werkzeug-Variablen unter `cmd/`
-  (`FOTOS_BEHALTEN`, `MYSQL_DSN`, `PG_DSN`). Vier Lesestellen nennen die Variable über eine
-  Konstante statt als Text — die Ratsche muss sie auflösen.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT; die Schema-Parität
   vergleicht Funktionen nur am Namen.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
