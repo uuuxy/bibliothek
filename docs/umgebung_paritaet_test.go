@@ -170,47 +170,65 @@ func TestNodeMajorUeberallGleich(t *testing.T) {
 	}
 }
 
-// Vierter Zwilling (07.09.2026): Die Jobs der CI und die Pflichtliste des
-// Release-Workflows sind dasselbe Versprechen an zwei Orten — „bevor ein Tag ein Release
-// und ein Image erzeugt, muss geprüft sein, was diese Anwendung prüft".
+// Vierter Zwilling (07.09.2026): Die Jobs der Workflows und die Pflichtliste des Tag-Gates
+// sind dasselbe Versprechen an zwei Orten — „bevor ein Tag ein Release und ein Image
+// erzeugt, muss geprüft sein, was diese Anwendung prüft".
 //
 // Sie liefen auseinander, und zwar in beide Richtungen gleichzeitig: release.yml
 // verlangte `build-and-test` und `docker-scan`. Der erste Name stimmte, der zweite zeigte
-// ins Leere — einen Job dieses Namens gibt es in keinem Workflow dieses Repos. In der
-// alten jq-Zeile fiel das nicht auf: `[…] | all(.conclusion=="success")` ist für die
-// leere Menge WAHR. Zugleich fehlten `frontend-test` und vor allem `e2e`. Am 06.09.2026
-// war main vier Stunden rot, genau in e2e; ein Tag in diesem Fenster hätte ein Release
-// samt Image erzeugt, und das Gate hätte grün dazu genickt.
+// ins Leere — einen Prüflauf dieses Namens gab es nie. In der alten jq-Zeile fiel das
+// nicht auf: `[…] | all(.conclusion=="success")` ist für die leere Menge WAHR. Zugleich
+// fehlten `frontend-test` und vor allem `e2e`. Am 06.09.2026 war main vier Stunden rot,
+// genau in e2e; ein Tag in diesem Fenster hätte ein Release samt Image erzeugt, und das
+// Gate hätte grün dazu genickt.
 //
-// Deshalb Gleichheit als MENGE, nicht Teilmenge: Ein neuer CI-Job, den release.yml nicht
-// kennt, ist genauso ein Loch wie ein Name in release.yml, den die CI nicht mehr baut.
-func TestReleaseGateVerlangtAlleCIJobs(t *testing.T) {
-	ausCI := jobNamen(t, "../.github/workflows/ci.yml")
-	if len(ausCI) == 0 {
-		t.Fatal("in ci.yml wurde kein einziger Job gefunden (Datei umformuliert?) — das Gate wäre abgeschaltet")
-	}
-
-	pflicht := leseEinePin(t, "../.github/workflows/release.yml", regexp.MustCompile(`(?m)^\s*PFLICHT="([^"]+)"`))
-	ausRelease := map[string]bool{}
-	for _, name := range strings.Fields(pflicht) {
-		ausRelease[name] = true
-	}
-
-	for name := range ausCI {
-		if !ausRelease[name] {
-			t.Errorf("CI-Job %q steht nicht in der Pflichtliste von release.yml — ein Tag würde "+
-				"ein Release erzeugen, ohne dass dieser Job grün sein muss.", name)
+// Deshalb Gleichheit als MENGE, nicht Teilmenge: Ein neuer Job, den die Liste nicht kennt,
+// ist genauso ein Loch wie ein Name in der Liste, den kein Workflow mehr baut.
+//
+// Seit dem 21.09.2026 steht die Liste EINMAL in scripts/tag-gate.sh —
+// vorher wörtlich in release.yml und docker-publish.yml —, und die Quelle sind ZWEI
+// Workflows: Zu den Jobs der CI kommen die vier Security-Jobs. Anlass war ein Fall, den es
+// wirklich gab: Am Commit bbad2f39 (07.09.2026) waren alle vier CI-Jobs grün und der
+// Trivy-Scan rot; ein Tag darauf hätte ein Release erzeugt.
+//
+// Verglichen wird der Name, unter dem GitHub den Prüflauf führt: das Feld `name:` des Jobs,
+// und wo es fehlt, der Job-Schlüssel. Die Security-Jobs tragen ein `name:` — mit dem
+// Schlüssel (`docker-scan`) in der Liste zeigte der Name wieder ins Leere.
+func TestTagGateVerlangtAllePrueflaeufe(t *testing.T) {
+	ausWorkflows := map[string]bool{}
+	for _, workflow := range []string{"../.github/workflows/ci.yml", "../.github/workflows/security-scan.yml"} {
+		namen := prueflaufNamen(t, workflow)
+		// Nicht-leer-Garantie je Quelle: Eine umformulierte Datei, aus der kein Job mehr
+		// gelesen wird, schaltete sonst ihre Hälfte des Gates still ab.
+		if len(namen) == 0 {
+			t.Fatalf("in %s wurde kein einziger Job gefunden (Datei umformuliert?) — das Gate wäre für sie abgeschaltet", workflow)
+		}
+		for name := range namen {
+			ausWorkflows[name] = true
 		}
 	}
-	for name := range ausRelease {
-		if !ausCI[name] {
-			t.Errorf("release.yml verlangt %q, aber ci.yml baut keinen Job dieses Namens — der "+
-				"Name zeigt ins Leere und prüft nichts (genau der Fall 'docker-scan').", name)
+
+	imGate := map[string]bool{}
+	for _, name := range tagGatePflichtliste(t) {
+		imGate[name] = true
+	}
+
+	for name := range ausWorkflows {
+		if !imGate[name] {
+			t.Errorf("Prüflauf %q steht nicht in der Pflichtliste von scripts/tag-gate.sh — ein Tag "+
+				"würde Release und Image erzeugen, ohne dass er grün sein muss.", name)
+		}
+	}
+	for name := range imGate {
+		if !ausWorkflows[name] {
+			t.Errorf("scripts/tag-gate.sh verlangt %q, aber weder ci.yml noch security-scan.yml führen "+
+				"einen Prüflauf dieses Namens — der Name zeigt ins Leere (der Fall 'docker-scan'). "+
+				"Gemeint ist das Feld `name:` des Jobs, nicht sein Schlüssel.", name)
 		}
 	}
 }
 
-// Dasselbe für das versionierte IMAGE.
+// Die Liste nützt nur, wenn beide Tag-Workflows sie auch befragen.
 //
 // Bis zum 17.09.2026 prüfte docker-publish.yml beim v-Tag nur Muster und main. Ein Tag auf
 // rotem Stand erzeugte damit zwar kein Release, aber sehr wohl ein Image mit einer
@@ -218,45 +236,70 @@ func TestReleaseGateVerlangtAlleCIJobs(t *testing.T) {
 // die Produktion selbst baut; wer aus dem Image deployt, zöge einen Stand, den kein Gate
 // gesehen hat.
 //
-// Die beiden Listen müssen NICHT wörtlich gleich sein — sie müssen beide die CI abdecken.
-// Deshalb prüft dieser Test gegen ci.yml und nicht gegen release.yml: Zwei Abschriften
-// voneinander wären zwei Wahrheitsquellen, die Quelle ist die CI.
-func TestImageGateVerlangtAlleCIJobs(t *testing.T) {
-	ausCI := jobNamen(t, "../.github/workflows/ci.yml")
-	if len(ausCI) == 0 {
-		t.Fatal("in ci.yml wurde kein einziger Job gefunden (Datei umformuliert?) — das Gate wäre abgeschaltet")
-	}
-
-	pflicht := leseEinePin(t, "../.github/workflows/docker-publish.yml", regexp.MustCompile(`(?m)^\s*PFLICHT="([^"]+)"`))
-	ausImage := map[string]bool{}
-	for _, name := range strings.Fields(pflicht) {
-		ausImage[name] = true
-	}
-
-	for name := range ausCI {
-		if !ausImage[name] {
-			t.Errorf("CI-Job %q steht nicht in der Pflichtliste von docker-publish.yml — ein "+
-				"v-Tag würde ein versioniertes Image erzeugen, ohne dass dieser Job grün sein muss.", name)
+// Eine eigene Liste im Workflow ist seit dem 21.09.2026 ebenfalls ein Fehler: Sie wäre die
+// zweite Abschrift, die dieses Skript gerade abgeschafft hat — und sie kennte die
+// Security-Jobs nicht.
+func TestTagWorkflowsRufenDasTagGate(t *testing.T) {
+	for _, workflow := range []string{"../.github/workflows/release.yml", "../.github/workflows/docker-publish.yml"} {
+		inhalt, err := os.ReadFile(workflow)
+		if err != nil {
+			t.Fatalf("%s lesen: %v", workflow, err)
 		}
-	}
-	for name := range ausImage {
-		if !ausCI[name] {
-			t.Errorf("docker-publish.yml verlangt %q, aber ci.yml baut keinen Job dieses Namens — "+
-				"der Name zeigt ins Leere und prüft nichts.", name)
+		// Kommentarzeilen zählen nicht: Ein Aufruf, der nur noch im Kommentar steht, prüft
+		// nichts (Bugklasse „lügende Ratsche durch Kommentar").
+		var ohneKommentare []string
+		for _, zeile := range strings.Split(string(inhalt), "\n") {
+			if !strings.HasPrefix(strings.TrimSpace(zeile), "#") {
+				ohneKommentare = append(ohneKommentare, zeile)
+			}
+		}
+		text := strings.Join(ohneKommentare, "\n")
+		if !regexp.MustCompile(`(?m)^\s*\./scripts/tag-gate\.sh\s*$`).MatchString(text) {
+			t.Errorf("%s ruft ./scripts/tag-gate.sh nicht (mehr) auf — ein v-Tag erzeugte sein "+
+				"Ergebnis, ohne dass irgendein Prüflauf grün sein muss.", workflow)
+		}
+		if regexp.MustCompile(`(?m)^\s*PFLICHT=`).MatchString(text) {
+			t.Errorf("%s führt wieder eine eigene PFLICHT-Liste — die Liste steht einmal, in "+
+				"scripts/tag-gate.sh.", workflow)
 		}
 	}
 }
 
-// jobNamen liest die Job-Schlüssel eines Workflows: die Einrückungsebene unter `jobs:`.
-// Bewusst ohne YAML-Bibliothek — das Gate soll an der Datei hängen, wie sie dasteht, und
-// nicht an einer Abhängigkeit, die dieses Repo sonst nirgends braucht.
-func jobNamen(t *testing.T, pfad string) map[string]bool {
+// tagGatePflichtliste liest die Pflichtliste aus scripts/tag-gate.sh: eine Zeile je Name,
+// weil die Namen Leerzeichen tragen. Eine leere Liste ist ein Fehler — jedes Gate, das auf
+// ihr aufbaut, wäre sonst still grün.
+func tagGatePflichtliste(t *testing.T) []string {
+	t.Helper()
+	pflicht := leseEinePin(t, "../scripts/tag-gate.sh", regexp.MustCompile(`(?m)^PFLICHT="([^"]+)"`))
+	var namen []string
+	for _, zeile := range strings.Split(pflicht, "\n") {
+		if name := strings.TrimSpace(zeile); name != "" {
+			namen = append(namen, name)
+		}
+	}
+	if len(namen) == 0 {
+		t.Fatal("scripts/tag-gate.sh hat keine Pflichtliste mehr — dieses Gate wäre still grün")
+	}
+	return namen
+}
+
+// prueflaufNamen liest, unter welchen Namen GitHub die Jobs eines Workflows als Prüfläufe
+// führt: das Feld `name:` direkt unter dem Job-Schlüssel, und wo es fehlt, der Schlüssel
+// selbst. Bewusst ohne YAML-Bibliothek — das Gate soll an der Datei hängen, wie sie
+// dasteht, und nicht an einer Abhängigkeit, die dieses Repo sonst nirgends braucht.
+func prueflaufNamen(t *testing.T, pfad string) map[string]bool {
 	t.Helper()
 	inhalt, err := os.ReadFile(pfad)
 	if err != nil {
 		t.Fatalf("%s lesen: %v", pfad, err)
 	}
-	namen := map[string]bool{}
+	schluesselMuster := regexp.MustCompile(`^  ([A-Za-z][A-Za-z0-9_-]*):\s*$`)
+	// Genau vier Leerzeichen: das `name:` des Jobs. Die `- name:` der Schritte stehen tiefer.
+	nameMuster := regexp.MustCompile(`^    name:\s*(.+?)\s*$`)
+
+	// Je Job-Schlüssel der Anzeigename; leer heißt: kein `name:`, der Schlüssel gilt.
+	anzeige := map[string]string{}
+	aktuell := ""
 	inJobs := false
 	for _, zeile := range strings.Split(string(inhalt), "\n") {
 		if strings.HasPrefix(zeile, "jobs:") {
@@ -270,9 +313,22 @@ func jobNamen(t *testing.T, pfad string) map[string]bool {
 		if zeile != "" && !strings.HasPrefix(zeile, " ") {
 			break
 		}
-		if treffer := regexp.MustCompile(`^  ([A-Za-z][A-Za-z0-9_-]*):\s*$`).FindStringSubmatch(zeile); treffer != nil {
-			namen[treffer[1]] = true
+		if treffer := schluesselMuster.FindStringSubmatch(zeile); treffer != nil {
+			aktuell = treffer[1]
+			anzeige[aktuell] = ""
+			continue
 		}
+		if treffer := nameMuster.FindStringSubmatch(zeile); treffer != nil && aktuell != "" {
+			anzeige[aktuell] = strings.Trim(treffer[1], `"'`)
+		}
+	}
+
+	namen := map[string]bool{}
+	for schluessel, name := range anzeige {
+		if name == "" {
+			name = schluessel
+		}
+		namen[name] = true
 	}
 	return namen
 }

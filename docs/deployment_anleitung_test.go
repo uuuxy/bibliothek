@@ -1,7 +1,6 @@
 package docs
 
 import (
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -31,21 +30,18 @@ func TestDeploymentErzeugtSchluesselNurInHex(t *testing.T) {
 	}
 }
 
-// Die Anleitung beschreibt, was das Release-Gate prüft. Sie stand auf dem Stand vor dem
-// 06.09.2026 („nur build-and-test, e2e gehört nicht dazu") — inzwischen verlangt
-// release.yml alle vier CI-Jobs. Eine Anleitung, die weniger verspricht als die Schranke
-// hält, ist harmlos; eine, die MEHR verspricht, wäre gefährlich. Beides fängt derselbe
-// Abgleich: Jeder Name aus der Pflichtliste steht auch in der Anleitung.
+// Die Anleitung beschreibt, was das Tag-Gate prüft. Sie stand auf dem Stand vor dem
+// 06.09.2026 („nur build-and-test, e2e gehört nicht dazu") — inzwischen verlangt das Gate
+// alle vier CI-Jobs und seit dem 21.09.2026 die vier Security-Jobs dazu. Eine Anleitung,
+// die weniger verspricht als die Schranke hält, ist harmlos; eine, die MEHR verspricht,
+// wäre gefährlich. Beides fängt derselbe Abgleich: Jeder Name aus der Pflichtliste steht
+// auch in der Anleitung — wörtlich, so wie GitHub den Prüflauf führt. Die Liste steht in
+// scripts/tag-gate.sh (vorher in release.yml).
 func TestDeploymentNenntDiePflichtlisteDesReleaseGates(t *testing.T) {
-	pflicht := leseEinePin(t, "../.github/workflows/release.yml", regexp.MustCompile(`(?m)^\s*PFLICHT="([^"]+)"`))
-	namen := strings.Fields(pflicht)
-	if len(namen) == 0 {
-		t.Fatal("release.yml hat keine Pflichtliste mehr — dieses Gate wäre still grün")
-	}
 	anleitung := lies(t, "DEPLOYMENT.md")
-	for _, name := range namen {
+	for _, name := range tagGatePflichtliste(t) {
 		if !strings.Contains(anleitung, name) {
-			t.Errorf("release.yml verlangt den Job %q, DEPLOYMENT.md §8 nennt ihn nicht — "+
+			t.Errorf("scripts/tag-gate.sh verlangt den Prüflauf %q, DEPLOYMENT.md §8 nennt ihn nicht — "+
 				"wer die Anleitung liest, hält das Gate für durchlässiger, als es ist", name)
 		}
 	}

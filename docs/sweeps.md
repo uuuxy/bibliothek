@@ -258,7 +258,7 @@ steht im Kopfkommentar der Datei.
 | `scripts/git-hooks/pre-push`      | Zieht nie selbst ein Postgres hoch: Stack aus ⇒ ALLE `*_pg_test.go` laufen nicht (Warnung mit Dateizahl, blockiert nicht). Keine Playwright-Specs, kein Druck-Gate. `--no-verify` umgeht alles. |
 | `scripts/deadcode_gate.sh`        | Tote Interface-Methoden (Methodentabelle gilt als erreichbar); was nur Tests am Leben halten.                                                                                                   |
 | CI-Skip-Bilanz (`build-and-test`) | Schreibt nur ins Log — ein neuer stiller Skip ohne Guard bleibt grün.                                                                                                                           |
-| `release.yml` Voraussetzungen     | Nur Check-Runs desselben Commits; ein CI-Job außerhalb der Pflichtliste (dafür `TestReleaseGateVerlangtAlleCIJobs`).                                                                            |
+| `scripts/tag-gate.sh`             | Nur Prüfläufe desselben Commits, und nur zum Zeitpunkt des Tags — eine Lücke, die danach bekannt wird, sieht es nicht. Ein Job außerhalb der Pflichtliste (dafür `TestTagGateVerlangtAllePrueflaeufe`); ein Workflow, der das Skript nicht mehr ruft (dafür `TestTagWorkflowsRufenDasTagGate`).|
 | `security-scan.yml`               | gosec um 13 Regeln entschärft (G304/G401/G101/G204/…); CodeQL läuft über GitHubs Default-Setup — fällt das ab, merkt es dieser Workflow nicht.                                                  |
 
 **Läuft NIRGENDS automatisch (nur von Hand):** `scripts/pruefe_secrets.sh` (Default-Secrets,

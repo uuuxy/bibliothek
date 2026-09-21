@@ -25,9 +25,9 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 1. **Das Antwortschreiben abschicken.** Es ist fertig (17.09.2026). Daran hängen zwei gestoppte
    Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die Mehrjahresbände (9.6, hält
    4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen nichts gebaut.
-2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.14 ist gebaut; offen zum Bauen sind
-   4.7 bis 4.9, 4.11, 4.13 und das neu dazugekommene 4.21. Bei dir liegt daraus nur der Blick
-   auf den Server im nächsten Punkt.
+2. **Die sechs Fragen sind beantwortet** (21.09.2026). 4.9 und 4.14 sind gebaut; offen zum
+   Bauen sind 4.7, 4.8, 4.11, 4.13 und das neu dazugekommene 4.21. Bei dir liegt daraus nur
+   der Blick auf den Server im nächsten Punkt.
 3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
    stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
    in der er nie nachrückt (5.19)? Erst danach werden Nummern nachgetragen — das ändert echte
@@ -87,9 +87,9 @@ jemandem schaden?"**
 
 ## Reihenfolge
 
-1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7–4.9, 4.11, 4.13, 4.21), je ein Commit.
-   Zuerst, was ohne den Server geht: 4.9, 4.13, 4.11. Dann 4.7 und 4.8 nach dem Blick auf
-   den Server. 4.21 in Stufen.
+1. **Die Entscheidungen vom 21.09.2026 bauen** (4.7, 4.8, 4.11, 4.13, 4.21), je ein Commit.
+   Zuerst, was ohne den Server geht: 4.13, 4.11. Dann 4.7 und 4.8 nach dem Blick auf den
+   Server. 4.21 in Stufen.
 2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
    (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
@@ -249,24 +249,6 @@ GROUP BY 1, 2, 3 ORDER BY 3, 1;
 
 **Wann:** vor Abnahme-Flow 4. Kommt eine neue Littera-Übernahme mit Neuaufbau (7.2), erledigt
 sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
-
-### 4.9 Security-Jobs im Release-Gate
-
-Die Pflichtliste in `.github/workflows/release.yml` enthält keinen der Security-Jobs
-(govulncheck, gosec, npm audit, Trivy); ein Tag auf einen Commit mit rotem Trivy erzeugt trotzdem
-das Release. Dasselbe gilt für das Image-Gate in `docker-publish.yml`.
-
-**Entschieden am 21.09.2026: alle vier aufnehmen**, in beide Gates. Der übliche Einwand trifft
-hier nicht: Trivy läuft mit `ignore-unfixed`, govulncheck hat die Ausnahmeliste mit
-Wiedervorlage, npm audit läuft mit `--omit=dev` ab HIGH — rot heißt bei allen, dass es einen Fix
-gibt, der nicht eingespielt ist. Gemessen: die letzten 25 Läufe auf main waren grün.
-
-**Beim Bauen:** Die Prüfläufe heißen wie das Feld `name:` („Go – govulncheck"), nicht wie der
-Job-Schlüssel, und tragen Leerzeichen — die Liste braucht eine Zeile je Name. Ein Commit kann
-denselben Namen zweimal tragen (Push und Wochenlauf, gesehen an `1bedaec7`); verlangt wird,
-dass ALLE grün sind, heute zählt der erste Treffer. Der Paritätstest
-(`docs/umgebung_paritaet_test.go`) liest dann auch `security-scan.yml`. **Wann:** vor dem
-nächsten Release.
 
 ### 4.11 Topf auf der Bestätigungsseite und den großen Etiketten
 

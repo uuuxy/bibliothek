@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-09-17
+> Zuletzt aktualisiert: 2026-09-21
 
 ---
 
@@ -552,22 +552,31 @@ und hat kein versioniertes Image; es bleibt als Historie stehen.
 der Tag-Lauf setzt `latest` nicht mehr (`flavor: latest=false`). Wer einen festen Stand
 will, nimmt den Versions-Tag. Beide Tag-Workflows prüfen vorher das strikte Muster
 `v<major>.<minor>.<patch>` und dass der Commit auf `main` liegt — ein Tag auf einem
-Feature-Branch erzeugt weder Release noch Image. Die CI des Commits fragt nur `release.yml` ab:
-Ein Tag auf rotem Stand erzeugt kein Release, das Image baut `docker-publish.yml` trotzdem
-(offen, siehe OFFEN.md 5.10).
+Feature-Branch erzeugt weder Release noch Image. Beide fragen außerdem die Prüfläufe des
+Commits ab, über dasselbe Skript (`scripts/tag-gate.sh`): Ein Tag auf rotem Stand erzeugt
+weder Release noch versioniertes Image.
 
-**Was das Release-Gate prüft — und was nicht** (Stand 12.09.2026): `release.yml` verlangt
-auf dem getaggten Commit alle vier Jobs aus `ci.yml` —
-`actionlint build-and-test frontend-test e2e`. Dass diese Liste vollständig bleibt, hält
-eine Ratsche fest (`docs/umgebung_paritaet_test.go`,
-`TestReleaseGateVerlangtAlleCIJobs`): Ein neuer CI-Job, der nicht in der Pflichtliste
-steht, macht sie rot — und ein Name in der Liste, den ci.yml nicht baut, ebenfalls.
+**Was das Tag-Gate prüft** (Stand 21.09.2026): Auf dem getaggten Commit müssen acht
+Prüfläufe grün sein — die vier Jobs aus `ci.yml` (`actionlint`, `build-and-test`,
+`frontend-test`, `e2e`) und die vier aus `security-scan.yml`, unter dem Namen, den GitHub
+ihnen gibt: `Go – govulncheck`, `Go – gosec static analysis`, `npm – audit (frontend)` und
+`Docker – Trivy image scan`. Es zählt JEDER Lauf eines Namens: Ein Commit trägt denselben
+Namen zweimal, wenn der Wochenlauf ihn noch einmal prüft. Fehlt ein Name ganz, ist das ein Fehler, kein Freifahrtschein. Die Liste steht
+einmal, im Skript. Dass sie vollständig bleibt, hält eine Ratsche fest
+(`docs/umgebung_paritaet_test.go`, `TestTagGateVerlangtAllePrueflaeufe`): Ein neuer Job in
+einem der beiden Workflows, der nicht in der Liste steht, macht sie rot — und ein Name in
+der Liste, den kein Workflow führt, ebenfalls. `TestTagWorkflowsRufenDasTagGate` hält fest,
+dass beide Workflows das Skript aufrufen und keine eigene Liste führen.
 
-**Nicht** in der Schranke stehen die vier Jobs aus `security-scan.yml` (`go-vuln-scan`,
-`go-sec-scan`, `npm-audit`, `docker-scan`). Ein Tag auf einem Commit mit rotem Trivy-Scan
-erzeugt also Release und Image. Ob das so bleiben soll, ist eine offene Entscheidung
-([OFFEN.md](OFFEN.md) 4.9) — bis dahin gilt: vor dem Tag
-selbst nachsehen.
+Die Security-Jobs gehören seit dem 21.09.2026 dazu. Den Fall gab es: Am Commit `bbad2f39`
+(07.09.2026) waren alle vier CI-Jobs grün und der Trivy-Scan rot; ein Tag darauf hätte
+Release und Image erzeugt. Dass eine fremde Lücke ohne Fix ein Release sperrt, ist nicht zu
+befürchten — Trivy läuft mit `ignore-unfixed`, govulncheck mit der Ausnahmeliste samt
+Wiedervorlage. Nachstellen lässt sich das Gate an jedem Commit:
+
+```bash
+GITHUB_REPOSITORY=uuuxy/bibliothek GITHUB_SHA="$(git rev-parse origin/main)" ./scripts/tag-gate.sh
+```
 
 Bis zum 12.09.2026 stand hier, das Gate verlange „nur den Check-Run `build-and-test`" und
 `e2e` gehöre nicht dazu, und `docker-scan` „existiert nicht mehr". Beides stimmte nicht

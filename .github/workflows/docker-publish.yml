@@ -49,9 +49,10 @@ jobs:
       # Image deployt, zöge sich einen Stand, den kein Gate gesehen hat. Ein Image mit
       # Versionsnummer sagt „geprüft" — dann soll es auch stimmen.
       #
-      # Die Liste wird von docs/umgebung_paritaet_test.go gegen die Jobs in ci.yml gehalten,
-      # genau wie die in release.yml: Ein neuer CI-Job muss hier mitwachsen, und ein Name,
-      # den die CI nicht mehr baut, prüft nichts.
+      # Liste und Auswertung stehen seit dem 21.09.2026 EINMAL in scripts/tag-gate.sh, für
+      # diesen Schritt und für release.yml; seitdem gehören auch die vier Security-Jobs
+      # dazu. docs/umgebung_paritaet_test.go hält die Liste gegen ci.yml und
+      # security-scan.yml und prüft, dass beide Workflows das Skript auch aufrufen.
       - name: Tag prüfen (Muster, auf main, CI grün)
         if: startsWith(github.ref, 'refs/tags/')
         env:
@@ -66,25 +67,7 @@ jobs:
           if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
             echo "::error::Commit $GITHUB_SHA liegt nicht auf main — versionierte Images kommen nur von main."; exit 1
           fi
-          PFLICHT="actionlint build-and-test frontend-test e2e"
-          RUNS=$(gh api "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/check-runs" \
-            --jq '.check_runs[] | "\(.name)\t\(.conclusion // "pending")"')
-          FEHLT=""; ROT=""
-          for job in $PFLICHT; do
-            ERGEBNIS=$(printf '%s\n' "$RUNS" | awk -F'\t' -v n="$job" '$1==n {print $2; exit}')
-            if [ -z "$ERGEBNIS" ]; then
-              FEHLT="$FEHLT $job"
-            elif [ "$ERGEBNIS" != "success" ]; then
-              ROT="$ROT $job=$ERGEBNIS"
-            fi
-          done
-          if [ -n "$FEHLT" ]; then
-            echo "::error::Für $GITHUB_SHA fehlen Prüfungen ganz:$FEHLT. Entweder läuft die CI noch, oder ein Job wurde umbenannt — dann diese Liste hier und in release.yml nachziehen."; exit 1
-          fi
-          if [ -n "$ROT" ]; then
-            echo "::error::CI für $GITHUB_SHA ist nicht grün:$ROT. Erst CI grün machen, dann diesen Workflow erneut starten (Re-run)."; exit 1
-          fi
-          echo "Alle Pflicht-Prüfungen grün:$PFLICHT"
+          ./scripts/tag-gate.sh
 
       - name: An der GitHub Container Registry anmelden
         uses: docker/login-action@v4
