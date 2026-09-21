@@ -108,12 +108,16 @@ func ergaenzeMittelVermerk(subject, body, rohBetreff, rohText string, texte mitt
 // ein stiller Ausfall des ganzen Ablaufs.
 const linkAbsatz = "\n\nEtiketten wählen, drucken und Bestellung bestätigen:\n%s\n\nDer Link ist bis zum %s gültig und gehört nur zu dieser Bestellung."
 
-// linkFrist formatiert den Ablauf für Mail und Platzhalter {{.LinkGueltigBis}}.
+// linkFrist formatiert den Ablauf für Mail und Platzhalter {{.LinkGueltigBis}} — als
+// Kalendertag der Schule. Der Wert kommt als TIMESTAMPTZ aus der Datenbank und trägt die
+// Zone des Servers (im Container UTC): Ein Ablauf um 00:30 Uhr in Friedrichsdorf stand
+// bis zum 21.09.2026 mit dem Vortag in der Mail, und der Händler hätte den Link einen Tag
+// zu früh für abgelaufen gehalten.
 func linkFrist(gueltigBis *time.Time) string {
 	if gueltigBis == nil {
 		return ""
 	}
-	return gueltigBis.Format(dateFormatDE)
+	return gueltigBis.In(schulzeit.Zone()).Format(dateFormatDE)
 }
 
 // ergaenzeLinkAbsatz hängt den Link an, falls die Vorlage keinen Platzhalter dafür hat.

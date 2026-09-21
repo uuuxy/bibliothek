@@ -144,3 +144,14 @@ func TestBestellmail_FristStehtAlsDatumInDerMail(t *testing.T) {
 		t.Errorf("Platzhalter {{.LinkGueltigBis}} nicht ersetzt:\n%s", body)
 	}
 }
+
+// Die Frist ist der Kalendertag der SCHULE. Der Ablauf kommt als TIMESTAMPTZ aus der
+// Datenbank und trägt die Zone des Servers (im Container UTC): 22:30 UTC am 29.09. ist in
+// Friedrichsdorf schon der 30.09. — bis zum 21.09.2026 stand in der Mail der 29.
+func TestBestellmail_FristIstDerKalendertagDerSchule(t *testing.T) {
+	bis := time.Date(2026, 9, 29, 22, 30, 0, 0, time.UTC)
+	_, body := resolveBestellMail("Betreff", "anbei die Bestellung.", "K-1", 2, 5, testLink, &bis, "")
+	if !strings.Contains(body, "bis zum 30.09.2026 gültig") {
+		t.Errorf("Frist steht nicht als Schultag (30.09.2026) in der Mail:\n%s", body)
+	}
+}
