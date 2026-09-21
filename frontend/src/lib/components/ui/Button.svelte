@@ -4,6 +4,7 @@
 	 *   variant?: 'primary' | 'secondary' | 'danger' | 'success' | 'danger-solid' | 'ghost',
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   class?: string,
+	 *   disabledReason?: string,
 	 *   element?: HTMLButtonElement,
 	 *   [key: string]: any
 	 * }} */
@@ -12,6 +13,7 @@
 		variant = 'primary',
 		size = 'md',
 		class: className = '',
+		disabledReason,
 		element = $bindable(),
 		...rest
 	} = $props();
@@ -121,6 +123,7 @@
 <button
 	bind:this={element}
 	class="{baseClasses} {sizes[size]} {variantClasses} {className}"
+	title={rest.disabled && disabledReason ? disabledReason : rest.title}
 	{...rest}
 >
 	{@render children?.()}

@@ -84,3 +84,29 @@ describe('Button — Farb-Overrides des Aufrufers', () => {
 		}
 	});
 });
+
+describe('Button — Accessibility: disabledReason', () => {
+	it('setzt title auf disabledReason, wenn der Button disabled ist', () => {
+		const { getByRole } = render(Button, { disabled: true, disabledReason: 'Nicht erlaubt' });
+		expect(getByRole('button').getAttribute('title')).toBe('Nicht erlaubt');
+	});
+
+	it('setzt title NICHT auf disabledReason, wenn der Button aktiv ist', () => {
+		const { getByRole } = render(Button, { disabled: false, disabledReason: 'Nicht erlaubt' });
+		expect(getByRole('button').getAttribute('title')).toBeNull();
+	});
+
+	it('behält den originalen title bei, wenn aktiv', () => {
+		const { getByRole } = render(Button, {
+			disabled: false,
+			disabledReason: 'Nicht erlaubt',
+			title: 'Original'
+		});
+		expect(getByRole('button').getAttribute('title')).toBe('Original');
+	});
+
+	it('behält den originalen title bei, wenn disabled aber ohne disabledReason', () => {
+		const { getByRole } = render(Button, { disabled: true, title: 'Original' });
+		expect(getByRole('button').getAttribute('title')).toBe('Original');
+	});
+});
