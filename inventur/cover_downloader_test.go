@@ -124,15 +124,11 @@ func TestLadeCoverBytes(t *testing.T) {
 }
 
 func TestSpeichereCoverDatei(t *testing.T) {
-	// Clean up uploads dir if it exists
-	if err := os.RemoveAll("uploads"); err != nil {
-		t.Fatalf("cleanup uploads: %v", err)
-	}
-	defer func() {
-		if err := os.RemoveAll("uploads"); err != nil {
-			t.Logf("cleanup uploads: %v", err)
-		}
-	}()
+	// Im temporären Verzeichnis, nicht im Paketverzeichnis: Bis zum 21.09.2026 legte
+	// der Test inventur/uploads im Repo an und räumte es per RemoveAll wieder weg —
+	// während die Ratschen im Wurzelpaket (WalkDir) parallel den Baum lasen und über
+	// das verschwundene Verzeichnis stolperten („open inventur/uploads: no such file").
+	imTestVerzeichnis(t)
 
 	t.Run("successful save", func(t *testing.T) {
 		res := speichereCoverDatei([]byte("dummy data"), "1234567890", ".webp")
@@ -160,14 +156,7 @@ func TestSpeichereCoverDatei(t *testing.T) {
 
 func TestDownloadAndSaveCoverLocally(t *testing.T) {
 	ctx := context.Background()
-	if err := os.RemoveAll("uploads"); err != nil {
-		t.Fatalf("cleanup uploads: %v", err)
-	}
-	defer func() {
-		if err := os.RemoveAll("uploads"); err != nil {
-			t.Logf("cleanup uploads: %v", err)
-		}
-	}()
+	imTestVerzeichnis(t) // siehe TestSpeichereCoverDatei
 
 	t.Run("invalid image data fails decode", func(t *testing.T) {
 		client := &http.Client{
