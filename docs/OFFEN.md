@@ -31,11 +31,9 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
    „Schule" steht das Feld „Eigentumsvermerk Schülerbücherei" — leer heißt, diese Bücher
    tragen keinen Vermerk. Den Wortlaut kennt nur die Schule.
-3. **Zahlen vom Server holen.** Die Befehle stehen fertig in der Liste: Wie viele Leser
-   stehen ohne Ausweisnummer da (5.16 C)? Und steht heute ein Kollege in einer Warteschlange,
-   in der er nie nachrückt (5.19)? Erst danach werden Nummern nachgetragen — das ändert echte
-   Daten. Die Messung aus 4.3 ist gestoppt, bis die Frage nach den Mehrjahresbänden
-   beantwortet ist.
+3. **Die Zahlen vom Testserver liegen vor** (21.09.2026): 8 Leser ohne Ausweisnummer, alle
+   Lehrkräfte (5.16 C); kein Kollege in einer Warteschlange, in der er nie nachrückt (5.19).
+   Die Messung aus 4.3 ist gestoppt, bis die Frage nach den Mehrjahresbänden beantwortet ist.
 4. **Zwei Umbauten freigeben**, die vorbereitet, aber nicht gebaut sind, weil sie die Datenbank
    ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für
    die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine Migration, die Nummern
@@ -90,8 +88,9 @@ jemandem schaden?"**
 ## Reihenfolge
 
 1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen.
-2. **Die zwei Messungen am Server**: Ziel-Jahrgang (4.3) und Leser ohne Ausweisnummer
-   (5.16 C). Danach die beiden Migrationen, die daran hängen — und die Karenz-Spalte (4.12).
+2. **Die zwei Migrationen nach der Freigabe**: Ausweisnummer beim Anlegen des Kontos (5.16 C,
+   gemessen: 8 Lehrkräfte ohne Nummer) und die Karenz-Spalte (4.12). Die Messung zum
+   Ziel-Jahrgang (4.3) wartet auf die Antwort zu den Mehrjahresbänden.
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
 4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand und die Ausweisnummer (E).
@@ -664,7 +663,9 @@ Nummer an drei Stellen — „Neuer Leser", LUSD-Import, Littera-Übernahme. Ein
 (`konto_hat_leserzeile` legt die Leserzeile ohne Ausweis an), und der Druck warnt nicht: Ohne
 Nummer kommt ein kaputtes Bild und eine leere Zeile auf die Karte. Entschieden am 16.09.2026,
 gebaut wird nach der Freigabe — die Umsetzung braucht eine Migration, die allen Lesern ohne
-Nummer eine nachträgt. Vorher die Zählung am Server:
+Nummer eine nachträgt. **Gemessen am Testserver am 21.09.2026:** 8 von 41 Lesern ohne Nummer,
+alle 8 Lehrkräfte (8 von 9); von den 32 Schülern keiner. Die Zählung, vor der Migration auf
+jeder Anlage zu wiederholen:
 
 ```sql
 SELECT count(*) FILTER (WHERE barcode_id IS NULL) AS ohne_nummer,
@@ -705,23 +706,18 @@ Die Ratsche aus Frage 13 führt neun SCHREIBpfade gegen die Sicht, je mit Begrü
 gegen sie an 32 Stellen, und die zählt niemand. An der Datenbank nachgestellt: Steht eine
 Vormerkung für einen Kollegen, findet die Abfrage, die beim Rückgabe-Vorgang den Nächsten
 bedient, null Kandidaten — die Zeile ist da, die Warteschlange geht über sie hinweg. Ob es solche
-Zeilen heute gibt, ist NICHT gemessen.
-
-Zwei Zahlen vom Server, bevor daran etwas gebaut wird:
+Zeilen gibt, zeigen zwei Zählungen:
 
 ```
 SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
 SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
 ```
 
-Sind beide 0, ist es Vorsorge (Ratsche für Lesepfade) und keine Reparatur. Ist eine größer als 0,
-steht eine Person in einer Warteschlange, die sie nie erreicht.
+**Gemessen am Testserver am 21.09.2026: beide 0.** Es ist Vorsorge (Ratsche für Lesepfade)
+und keine Reparatur. Auf einer Anlage mit anderem Bestand vorher neu zählen.
 
-**Zwei Kleinigkeiten, ebenfalls zum Messen:**
+**Eine Kleinigkeit:**
 
-- Titel, die vor dem 17.09.2026 ohne ISBN angelegt wurden, tragen dort einen leeren Text statt
-  „nichts"; die Dublettenkontrolle sucht nach „nichts" und findet sie nicht. Gemessen mit
-  `SELECT count(*) FROM buecher_titel WHERE isbn = '';` — ist die Zahl 0, erledigt sich der Punkt.
 - Ein negativer Listenpreis wird von der Datenbank abgelehnt; die Antwort sagt nicht, was erlaubt
   ist. Das Schwesterfeld derselben Migration nennt seinen Bereich.
 
