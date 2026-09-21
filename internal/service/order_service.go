@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"log"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
 	"bibliothek/db"
 	"bibliothek/inventur"
 	"bibliothek/pkg/isbnutil"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -35,13 +35,25 @@ type GroupedItem struct {
 	ExemplarIDs []string `json:"exemplar_ids"`
 }
 
-// GetIncomingShipments returns a list of ordered copies that are currently in transit.
+// GetIncomingShipments liefert die bestellten, noch nicht eingetroffenen Exemplare —
+// gruppiert nach BESTELLUNG.
+//
+// Bis zum 21.09.2026 war der Schlüssel „Datum + aus zustand_notiz abgeleiteter
+// Lieferant" (OFFEN.md 5.7): Zwei Töpfe am selben Tag beim selben Händler ergaben eine
+// Gruppe, eine Bestellung ohne Vorab-Barcode stand als „Unbekannter Lieferant" (ihre Notiz
+// heißt seit Migration 071 „Bestellt (ohne Vorab-Barcode) - …", was der Ableiter nicht
+// kannte), und das Datum war der Kalendertag des Servers, nicht der Schule. Seit Migration
+// 063 trägt jedes bestellte Exemplar seine bestellung_id, und die Bestellung kennt
+// Lieferant und Datum — das ist der Schlüssel. Ohne bestellung_id (Altbestand vor 063)
+// bleibt der alte Weg über die Notiz.
 func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*ShipmentGroup, error) {
 	query := `
-		SELECT e.id, e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel, COALESCE(t.isbn, ''), 
-		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END)
+		SELECT e.id, e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel, COALESCE(t.isbn, ''),
+		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
+		       e.bestellung_id::text, b.lieferant_name, b.bestelldatum
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
+		LEFT JOIN bestellungen_verlauf b ON b.id = e.bestellung_id
 		WHERE e.ist_ausleihbar = false
 		  AND e.bestellstatus IS NOT NULL
 		  AND e.ist_ausgesondert = false
@@ -59,21 +71,41 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 	for rows.Next() {
 		var exemplarID, titelID, zustandNotiz, titel, isbn, coverURL string
 		var erstelltAm time.Time
-		if err := rows.Scan(&exemplarID, &titelID, &erstelltAm, &zustandNotiz, &titel, &isbn, &coverURL); err != nil {
+		// Die drei Bestellspalten sind NULL bei Altbestand ohne bestellung_id — als Zeiger,
+		// sonst bricht der Scan die Iteration ab und die ganze Liste wäre ein 500.
+		var bestellungID, lieferantName *string
+		var bestelldatum *time.Time
+		if err := rows.Scan(&exemplarID, &titelID, &erstelltAm, &zustandNotiz, &titel, &isbn, &coverURL,
+			&bestellungID, &lieferantName, &bestelldatum); err != nil {
 			return nil, err
 		}
 
-		supplierName := resolveSupplierName(zustandNotiz)
-		dateStr := erstelltAm.Format("02.01.2006")
-		groupKey := dateStr + "|" + supplierName
+		// Kalendertag der Schule: Ein Abend-Auftrag um 23:30 gehört zu seinem Tag, nicht
+		// zum nächsten in UTC.
+		zeitpunkt := erstelltAm
+		groupKey := ""
+		groupID := ""
+		supplierName := ""
+		switch {
+		case bestellungID != nil && lieferantName != nil && bestelldatum != nil:
+			zeitpunkt = *bestelldatum
+			groupKey = "bestellung|" + *bestellungID
+			groupID = *bestellungID
+			supplierName = *lieferantName
+		default:
+			supplierName = resolveSupplierName(zustandNotiz)
+			groupKey = zeitpunkt.In(schulzeit.Zone()).Format("02.01.2006") + "|" + supplierName
+			groupID = groupKey
+		}
+		dateStr := zeitpunkt.In(schulzeit.Zone()).Format("02.01.2006")
 
 		group, exists := groupsMap[groupKey]
 		if !exists {
 			group = &ShipmentGroup{
-				ID:           strconv.FormatInt(erstelltAm.UnixNano(), 10),
+				ID:           groupID,
 				SupplierName: supplierName,
 				Date:         dateStr,
-				Timestamp:    erstelltAm,
+				Timestamp:    zeitpunkt,
 				Items:        []*GroupedItem{},
 			}
 			groupsMap[groupKey] = group
@@ -103,7 +135,9 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 	return groups, nil
 }
 
-// resolveSupplierName leitet den Lieferantennamen aus der Zustandsnotiz eines Exemplars ab.
+// resolveSupplierName leitet den Lieferantennamen aus der Zustandsnotiz eines Exemplars ab —
+// nur noch für Altbestand ohne bestellung_id (vor Migration 063); seither kommt der Name
+// aus der Bestellung.
 func resolveSupplierName(zustandNotiz string) string {
 	switch {
 	case strings.HasPrefix(zustandNotiz, "Im Zulauf - "):

@@ -568,9 +568,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.7 Bestellwesen
 
-- Der Wareneingang gruppiert nach Datum und dem aus `zustand_notiz` abgeleiteten Lieferanten statt
-  nach `bestellung_id`: zwei Töpfe am selben Tag ergeben eine Gruppe, ohne Vorab-Barcode
-  „Unbekannter Lieferant", das Datum ohne Schulzeitzone.
 
 ### 5.8 LMF und Statistik
 
