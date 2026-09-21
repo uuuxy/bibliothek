@@ -602,14 +602,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   (Die seit dem 17.09.2026 neu gebauten Ratschen tragen sich beim Bauen selbst ein — der
   Rückstand betrifft die älteren.)
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
-- `routes_authz_coverage_test.go` liest die `mux.Handle`-ZEILE. Eine Registrierung, die
-  zwischen Adresse und Wrapper umbricht, meldet es als „hat KEINEN Autorisierungs-Wrapper",
-  obwohl sie geschützt ist (am 17.09.2026 beim Einhängen des Ersatzwert-Vorschlags gesehen).
-  Nur ein Fehlalarm, kein Loch: Ein Umbruch kann nie ein falsches GRÜN erzeugen, immer nur ein
-  falsches Rot. Trotzdem kostet er beim nächsten Mal wieder eine Viertelstunde Suche, und die
-  Meldung schickt einen in die falsche Richtung („schütze die Route" — sie ist geschützt).
-  Reparatur: den Aufruf als Ausdruck über Zeilengrenzen lesen, wie es der Fehler-Kollaps-Detektor
-  über den AST schon tut.
 - **Wiedervorlage 17. November 2026: `GO-2026-6452` (excelize).** Am 16.09.2026 erschien eine
   Schwachstelle ohne heile Fassung — der Eintrag führt alle Versionen ab 0 und nennt keine
   mit Fix. Sie trifft uns nicht: Der gewöhnliche Weg hat den Bereichsschutz seit v2.11.0,
