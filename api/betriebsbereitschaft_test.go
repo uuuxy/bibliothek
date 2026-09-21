@@ -154,6 +154,20 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			enthaelt: "nicht prüfen",
 		},
 		{
+			name:     "Mailversand darf Klartext",
+			aendere:  func(l *Lage) { l.SmtpAllowPlaintext = true },
+			bereich:  "Mailversand (Mahnwesen)",
+			stufe:    StufeWarnung,
+			enthaelt: "SMTP_ALLOW_PLAINTEXT",
+		},
+		{
+			name:     "Mailversand prüft das Zertifikat nicht",
+			aendere:  func(l *Lage) { l.SmtpAllowInsecureTLS = true },
+			bereich:  "Mailversand (Mahnwesen)",
+			stufe:    StufeWarnung,
+			enthaelt: "SMTP_ALLOW_INSECURE_TLS",
+		},
+		{
 			name:     "Bescheid ohne Schulnummer",
 			aendere:  func(l *Lage) { l.BescheidFehlend = []string{"Schulnummer"} },
 			bereich:  "Schadensersatz-Bescheid",

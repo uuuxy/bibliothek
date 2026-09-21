@@ -95,3 +95,22 @@ func TestComposeVariablenWerdenGelesen(t *testing.T) {
 		}
 	}
 }
+
+// Fünf Variablen, die der Server liest und die docker-compose.yml bis zum 21.09.2026 nicht
+// durchreichte (OFFEN.md 4.7): Im Container galt immer die eingebaute Vorgabe, egal was in
+// der .env stand. Dieses Gate hält genau diese fünf fest. Die allgemeine Ratsche „Go liest,
+// Compose reicht nicht durch" steht weiter in OFFEN.md 5.10 — sie braucht eine
+// Ausnahmeliste für Werkzeug-Variablen und muss Konstanten auflösen.
+func TestComposeReichtDieFuenfVariablenDurch(t *testing.T) {
+	block := backendBlock(t, lies(t, "../docker-compose.yml"))
+	for _, name := range []string{
+		"ALLOWED_ORIGIN", "RATE_LIMIT", "IMAP_PORT", "SMTP_ALLOW_INSECURE_TLS", "SMTP_ALLOW_PLAINTEXT",
+	} {
+		// Als ${NAME:-}: Leer ergibt die eingebaute Vorgabe. Ein fester Wert hier würde die
+		// Vorgabe des Servers überstimmen, ohne dass es jemand in der .env sieht.
+		if !strings.Contains(block, "      - "+name+"=${"+name+":-}\n") {
+			t.Errorf("docker-compose.yml reicht %s nicht als ${%s:-} an das Backend durch — "+
+				"im Container gälte immer die eingebaute Vorgabe, egal was in der .env steht", name, name)
+		}
+	}
+}

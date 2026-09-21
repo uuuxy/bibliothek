@@ -53,16 +53,19 @@ func (s *Server) sammleLage(
 	zustandRepo *repository.BetriebszustandRepository,
 ) Lage {
 	lage := Lage{
-		AppEnv:              strings.ToLower(os.Getenv("APP_ENV")),
-		S3Endpoint:          os.Getenv("S3_ENDPOINT"),
-		S3AccessKey:         os.Getenv("S3_ACCESS_KEY"),
-		S3SecretKey:         os.Getenv("S3_SECRET_KEY"),
-		S3Bucket:            os.Getenv("S3_BUCKET"),
-		EnforceProdSecrets:  ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS")),
-		JWTSecret:           os.Getenv("JWT_SECRET"),
-		AppEncryptionKey:    os.Getenv("APP_ENCRYPTION_KEY"),
-		ImapHost:            os.Getenv("IMAP_HOST"),
-		SelbstanmeldeDomain: auth.SelbstanmeldeDomain(),
+		AppEnv:             strings.ToLower(os.Getenv("APP_ENV")),
+		S3Endpoint:         os.Getenv("S3_ENDPOINT"),
+		S3AccessKey:        os.Getenv("S3_ACCESS_KEY"),
+		S3SecretKey:        os.Getenv("S3_SECRET_KEY"),
+		S3Bucket:           os.Getenv("S3_BUCKET"),
+		EnforceProdSecrets: ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS")),
+		JWTSecret:          os.Getenv("JWT_SECRET"),
+		AppEncryptionKey:   os.Getenv("APP_ENCRYPTION_KEY"),
+		ImapHost:           os.Getenv("IMAP_HOST"),
+		// Derselbe Vergleich wie in mailservice/versand.go: Nur "true" schaltet.
+		SmtpAllowInsecureTLS: os.Getenv("SMTP_ALLOW_INSECURE_TLS") == "true",
+		SmtpAllowPlaintext:   os.Getenv("SMTP_ALLOW_PLAINTEXT") == "true",
+		SelbstanmeldeDomain:  auth.SelbstanmeldeDomain(),
 	}
 
 	// Öffentliche Adresse und SMTP-Host kommen aus der DATENBANK, nicht aus der .env:

@@ -154,6 +154,16 @@ services:
       - S3_BUCKET=${S3_BUCKET:-}
       - S3_USE_SSL=${S3_USE_SSL:-true}
       - SENTRY_DSN=${SENTRY_DSN:-}
+      # Fünf Variablen, die der Server liest und die bis zum 21.09.2026 nie im Container
+      # ankamen — dort galt immer die eingebaute Vorgabe, egal was in der .env stand. Leer
+      # ergibt bei allen fünf weiter die Vorgabe (RATE_LIMIT 50, IMAP_PORT 993,
+      # ALLOWED_ORIGIN = Host der Anfrage; die beiden SMTP_ALLOW_* wirken nur bei "true",
+      # und dann warnt System → Betriebsbereitschaft). Gate: docs/compose_variablen_test.go.
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-}
+      - RATE_LIMIT=${RATE_LIMIT:-}
+      - IMAP_PORT=${IMAP_PORT:-}
+      - SMTP_ALLOW_INSECURE_TLS=${SMTP_ALLOW_INSECURE_TLS:-}
+      - SMTP_ALLOW_PLAINTEXT=${SMTP_ALLOW_PLAINTEXT:-}
     volumes:
       - bibliothek_uploads:/app/uploads
       - bibliothek_backups:/app/backups

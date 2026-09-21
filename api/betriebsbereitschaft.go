@@ -90,6 +90,11 @@ type Lage struct {
 	// Aus den Einstellungen (Datenbank, nicht .env — siehe api/mail_settings.go)
 	OeffentlicheAdresse string
 	SmtpHost            string
+	// Die beiden Ausnahmeschalter des Mailversands (mailservice/versand.go), jeweils
+	// „steht auf true". Bis zum 21.09.2026 reichte Compose sie nicht durch; seitdem wirken
+	// sie im Container, und nur der Klartext-Schalter schrieb je eine Logzeile.
+	SmtpAllowInsecureTLS bool
+	SmtpAllowPlaintext   bool
 
 	// Bestand: was scripts/seed_demo.sql angelegt hat (Schüler DEMO-S-, Exemplare DEMO-B-).
 	DemoSchueler  int
@@ -690,6 +695,26 @@ func pruefeBestelllink(l Lage) Befund {
 
 func pruefeMailversand(l Lage) Befund {
 	b := Befund{Bereich: "Mailversand (Mahnwesen)"}
+	// Die Ausnahmeschalter zuerst: Sie schwächen den Versand auch dann, wenn sonst alles
+	// eingerichtet ist — und genau dann sähe der Bereich ohne diese Zeilen „ok" aus.
+	var schalter []string
+	if l.SmtpAllowPlaintext {
+		schalter = append(schalter, "SMTP_ALLOW_PLAINTEXT")
+	}
+	if l.SmtpAllowInsecureTLS {
+		schalter = append(schalter, "SMTP_ALLOW_INSECURE_TLS")
+	}
+	if len(schalter) > 0 {
+		b.Stufe = StufeWarnung
+		b.Befund = "Der Mailversand läuft mit abgeschwächter Absicherung: " +
+			strings.Join(schalter, " und ") + " steht auf true."
+		b.Folge = "SMTP_ALLOW_PLAINTEXT schickt Mails ohne Verschlüsselung, wenn der Server kein STARTTLS " +
+			"anbietet; SMTP_ALLOW_INSECURE_TLS prüft das Zertifikat des Mailservers nicht. Mahnungen " +
+			"tragen Schülernamen und Elternadressen."
+		b.Abhilfe = "Die Zeile aus der .env entfernen und den Stack neu starten — außer der Mailserver " +
+			"der Schule verlangt die Ausnahme wirklich (altes Relay, selbstsigniertes Zertifikat)."
+		return b
+	}
 	if l.SmtpHost != "" {
 		b.Stufe = StufeOK
 		b.Befund = "Versand über " + l.SmtpHost + "."
