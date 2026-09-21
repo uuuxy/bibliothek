@@ -8,6 +8,18 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 // daran, und `navigator.onLine` laesst sich in jsdom nicht zuverlaessig umschalten.
 const netz = vi.hoisted(() => ({ isOffline: false }));
 vi.mock('./offlineSync.svelte.js', () => ({ offlineSync: netz }));
+// Die Rückkehr des Netzes meldet netzLage (gemessen an /health), nicht mehr das
+// `online`-Ereignis des Fensters: Ein Browser, der dauerhaft „offline" meldet, feuert es nie.
+const rueckkehr = vi.hoisted(() => /** @type {Set<() => void>} */ (new Set()));
+vi.mock('./netzLage.svelte.js', () => ({
+	netzLage: {
+		beiRueckkehr: (/** @type {() => void} */ h) => {
+			rueckkehr.add(h);
+			return () => rueckkehr.delete(h);
+		}
+	}
+}));
+const netzIstZurueck = () => [...rueckkehr].forEach((h) => h());
 vi.mock('../liveEvents.js', () => ({
 	abonniere: vi.fn(() => vi.fn()),
 	verbinde: vi.fn(),
@@ -190,7 +202,7 @@ describe('idleLock', () => {
 			expect(lock.gesperrt).toBe(false);
 
 			netz.isOffline = false;
-			window.dispatchEvent(new Event('online'));
+			netzIstZurueck();
 			// Es war laenger als die Frist niemand da, und der Bildschirm stand offen.
 			expect(lock.gesperrt).toBe(true);
 		});
@@ -211,7 +223,7 @@ describe('idleLock', () => {
 			window.dispatchEvent(new KeyboardEvent('keydown', { key: '2' }));
 
 			netz.isOffline = false;
-			window.dispatchEvent(new Event('online'));
+			netzIstZurueck();
 			expect(lock.gesperrt, 'es war nicht laenger als die Frist niemand da').toBe(false);
 		});
 
@@ -220,7 +232,7 @@ describe('idleLock', () => {
 			lock.start();
 			vi.advanceTimersByTime(30_000);
 			netz.isOffline = false;
-			window.dispatchEvent(new Event('online'));
+			netzIstZurueck();
 			expect(lock.gesperrt).toBe(false);
 		});
 

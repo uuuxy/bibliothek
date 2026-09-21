@@ -16,6 +16,7 @@
 import { apiFetch } from '../apiFetch.js';
 import { abonniere } from '../liveEvents.js';
 import { authStore } from './authStore.svelte.js';
+import { netzLage } from './netzLage.svelte.js';
 import { offlineSync } from './offlineSync.svelte.js';
 import { thekeLeeren as thekeLeerenAusfuehren } from './thekeLeeren.js';
 
@@ -41,6 +42,8 @@ export class IdleLock {
 	#aktivitaetHandler = () => this.aktivitaet();
 	/** @type {(() => void) | null} */
 	#abmeldenFristen = null;
+	/** @type {(() => void) | null} */
+	#abmeldenNetz = null;
 	// Die Sperre WAR faellig, konnte aber nicht greifen, weil das Netz weg war. Sie wird
 	// nachgeholt, sobald die Verbindung zurueck ist (Stufe 3, 16.09.2026).
 	#sperreFaellig = false;
@@ -72,7 +75,7 @@ export class IdleLock {
 		// „Datenschutz & Sitzung" sendet `sitzungsfristen` über die SSE-Leitung — sonst
 		// liefe der zweite Arbeitsplatz bis zum nächsten F5 mit den alten Werten.
 		this.#abmeldenFristen = abonniere('sitzungsfristen', () => this.ladeFristen());
-		window.addEventListener('online', this.#onlineHandler);
+		this.#abmeldenNetz = netzLage.beiRueckkehr(this.#onlineHandler);
 		this.#planeTimer();
 	}
 
@@ -85,7 +88,8 @@ export class IdleLock {
 		}
 		this.#abmeldenFristen?.();
 		this.#abmeldenFristen = null;
-		window.removeEventListener('online', this.#onlineHandler);
+		this.#abmeldenNetz?.();
+		this.#abmeldenNetz = null;
 		this.#loescheTimer();
 		this.#sperreFaellig = false;
 		this.gesperrt = false;

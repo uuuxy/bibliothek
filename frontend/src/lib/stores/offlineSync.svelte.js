@@ -7,6 +7,7 @@ import {
 import { apiClient } from '../apiFetch.js';
 import { playSoundSuccess } from '../audio.js';
 import { showToast } from '../../inventur/lib/store.svelte.js';
+import { netzLage } from './netzLage.svelte.js';
 
 // Baut die Portion fuer die Nachbuch-Tuer (POST /api/action/nachbuchen).
 //
@@ -197,7 +198,6 @@ function meldeZuPruefende(pruefen) {
 function createOfflineSyncStore() {
 	let pendingCount = $state(0);
 	let isSyncing = $state(false);
-	let isOffline = $state(typeof navigator !== 'undefined' ? !navigator.onLine : false);
 	// Die Warteschlange ließ sich nicht lesen (Commit 5): Das Band sagt es, statt 0 zu zeigen.
 	let warteschlangeFehler = $state(false);
 	// Der Server hat den Stapel abgelehnt, und Warten hilft nicht (4xx). Siehe sendeBatch.
@@ -261,12 +261,12 @@ function createOfflineSyncStore() {
 	}
 
 	async function startSync() {
-		if (isSyncing || !navigator.onLine) return;
+		if (isSyncing || netzLage.offline) return;
 		isSyncing = true;
 
 		let syncedAny = false;
 
-		while (navigator.onLine) {
+		while (!netzLage.offline) {
 			/** @type {import('../offlineQueue.js').OfflineEintrag[]} */
 			let q;
 			try {
@@ -360,30 +360,23 @@ function createOfflineSyncStore() {
 		if (initialisiert) return;
 		initialisiert = true;
 		if (typeof window !== 'undefined') {
-			isOffline = !navigator.onLine;
 			updateCount();
 
-			window.addEventListener('online', () => {
-				isOffline = false;
-				startSync();
-			});
-
-			window.addEventListener('offline', () => {
-				isOffline = true;
-			});
+			// Ob das Netz da ist, misst netzLage — navigator.onLine allein ist eine Behauptung.
+			netzLage.beiRueckkehr(() => startSync());
 
 			window.addEventListener('beforeunload', handleBeforeUnload);
 			// Jede Minute ein Anlauf, falls das online-Ereignis fehlte oder ein Eintrag nach
 			// 5xx/429 liegen blieb (die Runde endet dort, statt sofort erneut zu senden).
 			setInterval(() => {
-				if (pendingCount > 0 && !isOffline) startSync();
+				if (pendingCount > 0 && !netzLage.offline) startSync();
 			}, 60000);
 		}
 	}
 
 	return {
 		get isOffline() {
-			return isOffline;
+			return netzLage.offline;
 		},
 		get pendingCount() {
 			return pendingCount;
