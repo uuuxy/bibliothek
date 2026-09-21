@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"os"
+	"regexp"
 	"testing"
 
 	"bibliothek/internal/pgtest"
@@ -63,5 +65,60 @@ func TestCoverSyncAuswahl_LaesstLokaleCoverInRuhe(t *testing.T) {
 		if gewaehlt[name] != f.gewaehlt {
 			t.Errorf("%s: vom Sync gewählt = %v, want %v", name, gewaehlt[name], f.gewaehlt)
 		}
+	}
+}
+
+// Das Rezept aus docs/DEPLOYMENT.md („nach einem Restore ohne Volume") — wörtlich
+// ausgeführt. Bis zum 21.09.2026 setzte es nur cover_status = 'PENDING'; die Auswahl oben
+// schließt lokale Pfade aber seit dem 10.09.2026 aus, das Rezept tat also nichts, und die
+// Doku versprach „dann heilt der nächste Lauf alles nach".
+//
+// In einer Transaktion, die zurückgerollt wird: Das Rezept trifft JEDEN Titel mit lokalem
+// Pfad, und die Pakete teilen sich eine Datenbank.
+func TestCoverRezeptNachRestore_WirktAufDieAuswahl(t *testing.T) {
+	roh, err := os.ReadFile("../../docs/DEPLOYMENT.md")
+	if err != nil {
+		t.Fatalf("DEPLOYMENT.md lesen: %v", err)
+	}
+	treffer := regexp.MustCompile("(?s)```sql\\s*(UPDATE buecher_titel SET cover_status[^`]*?)```").FindSubmatch(roh)
+	if treffer == nil {
+		t.Fatal("DEPLOYMENT.md trägt das Cover-Rezept nicht mehr als ```sql-Block, der mit " +
+			"„UPDATE buecher_titel SET cover_status“ beginnt — Rezept oder Gate nachziehen")
+	}
+	rezept := string(treffer[1])
+
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := tx.Rollback(ctx); err != nil {
+			t.Logf("Rollback: %v", err)
+		}
+	}()
+
+	var id string
+	if err := tx.QueryRow(ctx, `INSERT INTO buecher_titel (titel, isbn, cover_status, cover_url)
+		VALUES ('Rezeptprobe', '978-9-99-100000-9', 'FOUND', '/uploads/covers/weg.webp') RETURNING id`).Scan(&id); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	gewaehlt := func() bool {
+		var n int
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM (`+coverSyncAuswahl+`) a WHERE a.id = $1`, id).Scan(&n); err != nil {
+			t.Fatalf("Auswahl lesen: %v", err)
+		}
+		return n == 1
+	}
+	if gewaehlt() {
+		t.Fatal("Gegenprobe: Der Titel mit lokalem Pfad steht schon VOR dem Rezept in der Auswahl — der Test misst nichts")
+	}
+	if _, err := tx.Exec(ctx, rezept); err != nil {
+		t.Fatalf("Rezept aus DEPLOYMENT.md ausführen: %v\n%s", err, rezept)
+	}
+	if !gewaehlt() {
+		t.Errorf("Nach dem Rezept aus DEPLOYMENT.md fasst der Cover-Sync den Titel weiter nicht an — "+
+			"das Rezept ist wirkungslos:\n%s", rezept)
 	}
 }

@@ -141,8 +141,12 @@ Einstellung in der Oberfläche maßgeblich (`mail_settings_config`).
 > per **scrypt** (speicherhart, gesalzen) — das erschwert den Offline-Rateangriff auf eine
 > entwendete Backup-Datei erheblich, ersetzt aber keine Passphrase-Entropie; eine kurze
 > bleibt kurz.
-> Und: Diesen Schlüssel **aufbewahren**, außerhalb des Servers. Ohne ihn ist kein
-> verschlüsseltes Backup wiederherstellbar.
+> Und: **Beide** Schlüssel **aufbewahren**, außerhalb des Servers — die `.env` steht in
+> keiner Sicherung. Ohne `BACKUP_ENCRYPTION_KEY` ist kein verschlüsseltes Backup
+> wiederherstellbar. Ohne `APP_ENCRYPTION_KEY` bringt die Wiederherstellung zwar die
+> Datenbank zurück, aber Schülerfotos und das gespeicherte SMTP-Passwort bleiben unlesbar.
+> Ob der laufende Schlüssel zum Bestand passt, meldet System → Betriebsbereitschaft
+> („Schlüssel und Bestand").
 
 Kontrolle, bevor der Stack startet:
 
@@ -410,15 +414,20 @@ mitgesichert:
 
 - **Schülerfotos** liegen verschlüsselt in der Datenbank (`schueler_fotos.foto_encrypted`)
   und sind damit vom pg_dump abgedeckt — es gehen keine personenbezogenen Daten verloren.
-- **Cover sind reproduzierbar**: Der Cover-Sync-Job (alle 6 h + bei Serverstart,
+- **Geladene Cover sind reproduzierbar**: Der Cover-Sync-Job (alle 6 h + bei Serverstart,
   `internal/service/cover_service.go`) lädt PENDING/FAILED-Titel gedrosselt
-  (2 Titel/s) von DNB/Google/OpenLibrary nach. **Achtung:** Titel mit Status
-  `FOUND` und totem `/uploads/`-Pfad überspringt der Job — nach einem Restore
-  ohne Volume einmalig zurücksetzen, dann heilt der nächste Lauf alles nach:
+  (2 Titel/s) von DNB/Google/OpenLibrary nach. **Achtung:** Einen Titel mit lokalem
+  `/uploads/`-Pfad fasst der Job nie an, egal was `cover_status` sagt — nach einem Restore
+  ohne Volume deshalb Status UND Pfad einmalig zurücksetzen, dann lädt der nächste Lauf nach:
   ```sql
-  UPDATE buecher_titel SET cover_status = 'PENDING'
+  UPDATE buecher_titel SET cover_status = 'PENDING', cover_url = NULL
   WHERE cover_url LIKE '/uploads/%';
   ```
+  Bis zum 21.09.2026 setzte dieses Rezept nur den Status und blieb damit wirkungslos
+  (`TestCoverRezeptNachRestore_WirktAufDieAuswahl` führt es jetzt wörtlich aus).
+  **Von Hand hochgeladene Cover kommen so nicht zurück:** Die Datenbank unterscheidet sie
+  nicht von geladenen, der Lauf ersetzt sie durch den Treffer der Katalogdienste — und ein
+  Titel ohne ISBN bleibt ohne Cover. Wer Hand-Uploads hat, sichert das Volume (siehe unten).
 - **Etiketten/PDFs** werden on-demand generiert und nie persistiert.
 
 Wer das Nachladen nach einem Restore vermeiden will (z. B. Offline-Betrieb), kann das

@@ -752,29 +752,14 @@ steht eine Person in einer Warteschlange, die sie nie erreicht.
 - Ein negativer Listenpreis wird von der Datenbank abgelehnt; die Antwort sagt nicht, was erlaubt
   ist. Das Schwesterfeld derselben Migration nennt seinen Bereich.
 
-### 5.20 Aus der Durchsicht von PR 631 (21.09.2026) — was am Code hält
+### 5.20 Aus der Durchsicht von PR 631 (21.09.2026) — was offen bleibt
 
-Der PR (nur Doku, 603 Zeilen) ist nicht übernommen; ob er es wird, ist nicht entschieden. Diese
-Punkte daraus sind nachgeprüft und gelten unabhängig davon:
+Der PR (nur Doku, 603 Zeilen) ist nicht übernommen. Was daraus am Code hielt, ist am
+21.09.2026 einzeln auf `main` gebaut (Cover-Rezept, Anfrage-Log in Kommentar und arc42,
+Schlüssel-Probe in der Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
 
-- **Das Cover-Rezept nach einem Restore ist wirkungslos** (eigener Fund, steht auch im PR
-  falsch). `DEPLOYMENT.md` setzt `cover_status = 'PENDING'` für `/uploads/`-Pfade; der Sync
-  fasst einen Titel mit lokalem Pfad seit dem 10.09.2026 aber nie an, egal was der Status sagt
-  (`coverSyncAuswahl`; `TestCoverSyncAuswahl_LaesstLokaleCoverInRuhe` hält genau diesen Fall
-  fest, am 21.09.2026 gegen Postgres gelaufen). Ohne das Volume blieben alle Cover tot. Das
-  Rezept muss `cover_url` mit leeren. Dazu stimmt „Cover sind reproduzierbar" nur für geladene:
-  Von Hand hochgeladene kommen nicht zurück, und die Datenbank unterscheidet beide nicht.
-- **Anfrage-Log:** Der Kommentar über `LoggingMiddleware` (`api/middleware.go`) und arc42
-  Kapitel 5 und 8 sagen „Status und Dauer". Geschrieben wird eine Zeile je Anfrage mit Methode
-  und Pfad (`api/router.go`), der Status nur bei 5xx, eine Dauer nirgends; eine
-  Anfragekennung gibt es nicht. Kommentar und zwei Doku-Zeilen richtigstellen; ob Dauer und
-  Kennung gebaut werden, ist eine eigene Frage.
-- **`APP_ENCRYPTION_KEY` nach einem Restore:** Die Doku verlangt „außerhalb des Servers
-  aufbewahren" nur für den Backup-Schlüssel. Und nichts prüft, ob der App-Schlüssel zum Bestand
-  passt: Der Server startet mit jedem Schlüssel richtiger Länge, Schülerfotos und das
-  SMTP-Passwort bleiben dann unlesbar, ohne Meldung. Vorschlag: eine Probe in der
-  Betriebsbereitschaft (ein Foto oder das SMTP-Passwort entschlüsseln), und derselbe Satz in
-  `DEPLOYMENT.md` für beide Schlüssel.
+- **Anfrage-Log mit Dauer und Anfragekennung:** nicht gebaut, nur die Doku auf den Ist-Stand
+  gezogen. Mehr Logzeilen am Schulserver sind eine Betriebsfrage.
 - **Totalverlust des Servers ist nicht beschrieben** (gehört zu 7.4). Der Entwurf im PR ist
   nach eigener Angabe unerprobt und scheitert in Schritt 5: Das Backend hat nur benannte
   Volumes, die Sicherung vom zweiten Ort liegt also nicht im Container, und die entschlüsselte
