@@ -574,6 +574,11 @@ func (s *Server) fuehreSchuelerUpdateAus(ctx context.Context, w http.ResponseWri
 				errors.New("diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)"))
 			return false
 		}
+		if repository.IstNummerBuchOderAusweisKollision(err) {
+			apierrors.SendHTTPError(w, http.StatusConflict,
+				errors.New("diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein"))
+			return false
+		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return false
 	}

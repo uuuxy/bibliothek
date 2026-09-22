@@ -163,6 +163,8 @@ func restoreKollision(err error) (string, bool) {
 		return "Wiederherstellen nicht möglich: Eine Lehrkraft trägt inzwischen denselben Ausweis-Barcode. Erst einer der beiden Personen eine andere Nummer geben.", true
 	case "uniq_schueler_lusd_id_active":
 		return "Wiederherstellen nicht möglich: Ein aktiver Datensatz trägt bereits dieselbe LUSD-ID. Beide über „Schüler zusammenführen“ vereinen.", true
+	case repository.ConstraintNummerUeberBuchUndAusweis:
+		return "Wiederherstellen nicht möglich: Die Ausweisnummer ist inzwischen der Barcode eines Buchs. Erst dem Buch eine andere Nummer geben.", true
 	}
 	return "", false
 }

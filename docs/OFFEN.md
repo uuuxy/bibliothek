@@ -54,7 +54,7 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    offen (Feiertage als zweite Datei oder gerechnet). Dazu die Frage, ob die Schülerbücherei eine
    Themensuche bekommt (4.20).
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 130). Das passiert
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 131). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
@@ -608,10 +608,6 @@ bleibt ausgesondert · „Pool ODER Tx" nur behauptet · Rechte-Asymmetrie an de
 
 ### 5.15 Offene Punkte aus dem Durchgang vom 15.09.2026
 
-- **Ausweis- und Buchnummer werden nur in der Littera-Übernahme gegeneinander geprüft.** Wer von
-  Hand eine Ausweisnummer ändert oder ein Buch umetikettiert (`UpdateCopyBarcode`), wird nicht
-  gebremst — und die Theke löst eine Nummer ohne Vorsilbe zuerst als Buch auf. Auf dem Server
-  gibt es heute keine Überschneidung.
 - **Der Bewegungsstempel folgt einer Auswahl, nicht einer Regel** (`repository/bewegungsstempel_pg_test.go`).
   Aussondern, Bestandskorrektur, Schadensmeldung und Soft-Delete stempeln; „Verloren" und
   Reaktivieren im Status-Editor, der Inventur-Abschluss und `repository/damage.go` nicht. Kein

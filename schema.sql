@@ -699,6 +699,56 @@ FOR EACH ROW EXECUTE FUNCTION konto_hat_leserzeile();
 -- Ausweisnummern stehen nur noch in leser, und uniq_schueler_barcode_active haelt sie
 -- dort ohne Trigger eindeutig.
 
+-- Migration 131: Eine Nummer ist entweder ein Buch oder ein Ausweis — nie beides. Die
+-- Theke löst einen Scan ohne Vorsilbe zuerst als Buch auf; trüge ein Leser die Nummer
+-- eines Exemplars, lüde sein Ausweis das Buch. Bis dahin prüfte das allein die
+-- Littera-Übernahme für ihren eigenen Lauf. Muster von Migration 118: ein Wächter an
+-- beiden Tabellen, CONSTRAINT-Name für den Code — ohne Advisory-Lock je Nummer, der bei
+-- einem Massen-Import die Sperrtabelle füllt (65.000 Zeilen → out of shared memory,
+-- gemessen 22.09.2026). Leser zählen
+-- nur aktiv (deleted_at IS NULL, wie uniq_schueler_barcode_active; Wiederherstellen
+-- stößt an), Exemplare in jeder Zeile — auch ausgesondert tragen sie ihren Barcode.
+CREATE OR REPLACE FUNCTION nummer_ist_buch_oder_ausweis()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.barcode_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    IF TG_TABLE_NAME = 'leser' THEN
+        IF NEW.deleted_at IS NOT NULL THEN
+            RETURN NEW;
+        END IF;
+        IF TG_OP = 'UPDATE' THEN
+            IF NEW.barcode_id IS NOT DISTINCT FROM OLD.barcode_id AND OLD.deleted_at IS NULL THEN
+                RETURN NEW;
+            END IF;
+        END IF;
+        IF EXISTS (SELECT 1 FROM buecher_exemplare WHERE barcode_id = NEW.barcode_id) THEN
+            RAISE EXCEPTION 'Nummer % ist schon der Barcode eines Buchs', NEW.barcode_id
+                USING ERRCODE = 'unique_violation', CONSTRAINT = 'uniq_nummer_ueber_buch_und_ausweis';
+        END IF;
+    ELSE
+        IF TG_OP = 'UPDATE' THEN
+            IF NEW.barcode_id IS NOT DISTINCT FROM OLD.barcode_id THEN
+                RETURN NEW;
+            END IF;
+        END IF;
+        IF EXISTS (SELECT 1 FROM leser WHERE barcode_id = NEW.barcode_id AND deleted_at IS NULL) THEN
+            RAISE EXCEPTION 'Nummer % ist schon der Ausweis eines Lesers', NEW.barcode_id
+                USING ERRCODE = 'unique_violation', CONSTRAINT = 'uniq_nummer_ueber_buch_und_ausweis';
+        END IF;
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_leser_nummer_ist_kein_buch
+BEFORE INSERT OR UPDATE OF barcode_id, deleted_at ON leser
+FOR EACH ROW EXECUTE FUNCTION nummer_ist_buch_oder_ausweis();
+
+CREATE TRIGGER trg_exemplar_nummer_ist_kein_ausweis
+BEFORE INSERT OR UPDATE OF barcode_id ON buecher_exemplare
+FOR EACH ROW EXECUTE FUNCTION nummer_ist_buch_oder_ausweis();
+
 
 -- Table: class_books (LMF class to book catalog metadata association)
 CREATE TABLE class_books (
@@ -1504,7 +1554,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('127_listenpreis_und_zustandsabwertung.sql'),
 ('128_abgangsdatum_am_exemplar.sql'),
 ('129_zugangsdatum_am_exemplar.sql'),
-('130_zugang_am_in_schulzeit.sql')
+('130_zugang_am_in_schulzeit.sql'),
+('131_nummer_ist_buch_oder_ausweis.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

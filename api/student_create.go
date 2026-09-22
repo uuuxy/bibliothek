@@ -361,6 +361,11 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 				fmt.Errorf("die Ausweisnummer '%s' wird bereits von einer anderen Person verwendet", barcodeID))
 			return "", "", false
 		}
+		if repository.IstNummerBuchOderAusweisKollision(err) {
+			apierrors.SendHTTPError(w, http.StatusConflict,
+				fmt.Errorf("die Nummer '%s' ist der Barcode eines Buchs und kann kein Ausweis sein", barcodeID))
+			return "", "", false
+		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", "", false
 	}

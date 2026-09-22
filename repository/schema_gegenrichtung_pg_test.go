@@ -279,6 +279,11 @@ var triggerBestand = []string{
 	// trägt NULL und steht in keinem Zugangsbuch — das ist der Zweck, nicht eine Lücke.
 	"trg_exemplar_zugangsdatum @ buecher_exemplare",
 	"trg_exemplar_zugangsdatum_neu @ buecher_exemplare",
+	// Migration 131, befragt am 22.09.2026: Eine Nummer ist entweder Buch oder Ausweis. Die
+	// Theke löst einen Scan zuerst als Buch auf; bis dahin prüfte das allein die
+	// Littera-Übernahme (db/constraints_nummer_ueber_buch_und_ausweis_pg_test.go).
+	"trg_exemplar_nummer_ist_kein_ausweis @ buecher_exemplare",
+	"trg_leser_nummer_ist_kein_buch @ leser",
 	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
 	// ist genau der Zweck — vorher kannte sie nur ReportDamage, sechs andere Aussonder- und
 	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).
