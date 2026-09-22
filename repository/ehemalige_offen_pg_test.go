@@ -107,3 +107,85 @@ func TestWaechterSiehtAuchAbgaengerOhneStempel(t *testing.T) {
 			"eine Altzeile ohne abgaenger_seit bleibt unsichtbar, obwohl ihr Name auf Dauer stehen bleibt", neu)
 	}
 }
+
+// Der Wächter und die Löschuhr rechnen mit DERSELBEN Uhr (KarenzUhr): dem spätesten von
+// Abgang, letzter Rückgabe und letztem Schadensabschluss. Bis zum 22.09.2026 nahm der
+// Wächter allein den Abgang (OFFEN.md 5.12, „dritte Formulierung derselben Frage"): Wer vor
+// zwei Jahren wegging, vor zehn Tagen an der Theke ein Buch zurückgab und ein zweites noch
+// hat, stand als „Karenz abgelaufen, offener Vorgang" auf der Liste — während die Löschuhr
+// für ihn erst seit zehn Tagen läuft. Zwei Antworten auf „ist die Karenz vorbei?".
+func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	repo := NewBetriebszustandRepository(pool)
+	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
+	vorher, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
+	if err != nil {
+		t.Fatalf("Wächter lesen: %v", err)
+	}
+	var titelID, schuelerID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO buecher_titel (titel, autor, medientyp) VALUES ('Karenzuhr-Testband', 'P', 'Buch')
+		RETURNING id`).Scan(&titelID); err != nil {
+		t.Fatalf("Titel anlegen: %v", err)
+	}
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, abgaenger_seit)
+		VALUES ($1, 'Kurz', 'Zurueck', '10A', 2024, true, now() - interval '2 years') RETURNING id`,
+		"W-Uhr-"+suffix).Scan(&schuelerID); err != nil {
+		t.Fatalf("Abgänger anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		auf := context.Background()
+		for _, schritt := range []struct{ sql, arg string }{
+			{`DELETE FROM ausleihen WHERE schueler_id = $1`, schuelerID},
+			{`DELETE FROM buecher_exemplare WHERE titel_id = $1`, titelID},
+			{`DELETE FROM buecher_titel WHERE id = $1`, titelID},
+			{`DELETE FROM schueler WHERE id = $1`, schuelerID},
+		} {
+			if _, err := pool.Exec(auf, schritt.sql, schritt.arg); err != nil {
+				t.Errorf("aufräumen (%s): %v", schritt.sql, err)
+			}
+		}
+	})
+	ausleihe := func(t *testing.T, barcode string, rueckgabe any) {
+		t.Helper()
+		var exemplarID string
+		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
+			titelID, barcode+"-"+suffix).Scan(&exemplarID); err != nil {
+			t.Fatalf("Exemplar: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `
+			INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, rueckgabe_am)
+			VALUES ($1, $2, now() - interval '400 days', now() - interval '379 days', $3)`,
+			exemplarID, schuelerID, rueckgabe); err != nil {
+			t.Fatalf("Ausleihe: %v", err)
+		}
+	}
+	// Vor zehn Tagen ein Buch zurückgegeben (die Uhr der Löschfrist läuft ab hier) …
+	ausleihe(t, "B-U1", time.Now().AddDate(0, 0, -10))
+	// … und ein zweites noch offen (der Vorgang, der die Löschung blockiert).
+	ausleihe(t, "B-U2", nil)
+
+	nachher, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
+	if err != nil {
+		t.Fatalf("Wächter lesen: %v", err)
+	}
+	if neu := nachher - vorher; neu != 0 {
+		t.Errorf("der Wächter meldet %d neue Fälle, erwartet 0 — die Karenz läuft seit der Rückgabe vor zehn Tagen, "+
+			"die Löschuhr (PredikatAnonymisierung) rechnet genau so", neu)
+	}
+	// Gegenprobe: Ist die Rückgabe älter als die Karenz, meldet der Wächter — wie die
+	// Löschuhr, die ihn dann nur wegen des offenen Buchs stehen lässt.
+	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() - interval '400 days'
+		WHERE schueler_id = $1 AND rueckgabe_am IS NOT NULL`, schuelerID); err != nil {
+		t.Fatal(err)
+	}
+	spaeter, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
+	if err != nil {
+		t.Fatalf("Wächter lesen: %v", err)
+	}
+	if neu := spaeter - vorher; neu != 1 {
+		t.Errorf("mit alter Rückgabe meldet der Wächter %d neue Fälle, erwartet 1", neu)
+	}
+}

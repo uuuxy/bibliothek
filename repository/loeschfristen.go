@@ -39,6 +39,25 @@ func AbgangSeit(alias string) string {
 	return "COALESCE(" + alias + ".abgaenger_seit, " + alias + ".aktualisiert_am)"
 }
 
+// KarenzUhr ist der Zeitpunkt, ab dem die Karenz eines Abgängers läuft: der SPÄTESTE von
+// Abgang (AbgangSeit), letzter Rückgabe einer Ausleihe und letztem Abschluss eines
+// Schadensfalls (Bezahlung oder Storno — beides setzt ist_bezahlt). EINE Formulierung für
+// die Löschuhr (PredikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
+// (ZaehleEhemaligeMitOffenenVorgaengen) — bis zum 22.09.2026 rechnete der Wächter allein
+// mit dem Abgang und meldete „Karenz abgelaufen", wo die Löschuhr noch lief (OFFEN.md 5.12).
+// GREATEST übergeht NULL — ein Schüler ohne je einen Vorgang rechnet allein ab dem Abgang.
+//
+// Die eigene Spalte aus OFFEN.md 4.12 (letzter Vorgang, per Trigger) ändert diesen Ausdruck
+// hier — an einer Stelle.
+func KarenzUhr(alias string) string {
+	return `GREATEST(
+		          ` + AbgangSeit(alias) + `,
+		          (SELECT max(a.rueckgabe_am) FROM ausleihen a WHERE a.schueler_id = ` + alias + `.id),
+		          (SELECT max(GREATEST(sf.aktualisiert_am, sf.storniert_am)) FROM schadensfaelle sf
+		            WHERE sf.schueler_id = ` + alias + `.id AND sf.ist_bezahlt)
+		      )`
+}
+
 // ── Schüler-Anonymisierung ──────────────────────────────────────────────────
 
 // PredikatAnonymisierung liefert die Bedingung von RunGDPRAnonymizeOldData.
@@ -47,11 +66,11 @@ func AbgangSeit(alias string) string {
 // Konstante; die Abgänger-Frist ist die einstellbare Karenzzeit (abgaengerKarenzTage,
 // Migration 094).
 //
-// Die Uhr der Karenz ist der SPÄTESTE von drei Zeitpunkten: der Abgang (abgaenger_seit;
-// aktualisiert_am nur als Rückfall für Altzeilen ohne Stempel), die letzte Rückgabe
-// einer Ausleihe und der letzte Abschluss eines Schadensfalls (Bezahlung oder Storno —
-// beides setzt ist_bezahlt, repository/audit_system.go). Bis 05.09.2026 zählte nur der
-// Abgang. Weil offene Vorgänge die Zeile schützen, kippte der Schutz damit genau mit der
+// Die Uhr der Karenz (KarenzUhr) ist der SPÄTESTE von drei Zeitpunkten: der Abgang
+// (abgaenger_seit; aktualisiert_am nur als Rückfall für Altzeilen ohne Stempel), die letzte
+// Rückgabe einer Ausleihe und der letzte Abschluss eines Schadensfalls (Bezahlung oder
+// Storno — beides setzt ist_bezahlt, repository/audit_system.go). Bis 05.09.2026 zählte nur
+// der Abgang. Weil offene Vorgänge die Zeile schützen, kippte der Schutz damit genau mit der
 // Rückgabe: Wer am Tag 10 zurückgab, hatte 80 Tage Reparaturfenster; wer am Tag 120
 // zurückgab, wurde in der Folgenacht anonymisiert. Die Karenz ist für die Korrektur an
 // der Theke da, und die Rückgabe IST der Thekenkontakt. Die endgültige Löschung
@@ -60,19 +79,13 @@ func AbgangSeit(alias string) string {
 //
 // Der Soft-Delete-Zweig behält seine eigene Uhr (deleted_at): Eine Löschung von Hand ist
 // eine Entscheidung, keine Zuordnung, die sich noch als falsch herausstellen könnte.
-// GREATEST übergeht NULL — ein Schüler ohne je einen Vorgang rechnet allein ab dem Abgang.
 func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, abgaengerKarenzTage, kulanz}, Where: `art = 'schueler'
 		  AND anonymized_at IS NULL
 		  AND (
 		      (deleted_at IS NOT NULL AND deleted_at < NOW() - make_interval(days => $1::int + $3::int))
 		      OR
-		      (ist_abgaenger = true AND GREATEST(
-		          ` + AbgangSeit("schueler") + `,
-		          (SELECT max(a.rueckgabe_am) FROM ausleihen a WHERE a.schueler_id = schueler.id),
-		          (SELECT max(GREATEST(sf.aktualisiert_am, sf.storniert_am)) FROM schadensfaelle sf
-		            WHERE sf.schueler_id = schueler.id AND sf.ist_bezahlt)
-		      ) < NOW() - make_interval(days => $2::int + $3::int))
+		      (ist_abgaenger = true AND ` + KarenzUhr("schueler") + ` < NOW() - make_interval(days => $2::int + $3::int))
 		  )
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = schueler.id AND rueckgabe_am IS NULL)
 		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = schueler.id AND ist_bezahlt = false)`}

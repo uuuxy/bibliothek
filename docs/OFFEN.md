@@ -95,8 +95,7 @@ jemandem schaden?"**
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
 4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand (A) und die Ausweisnummer (C).
-5. **5.5**, **5.6**, **5.12** und die B-Punkte aus **5.15** bis **5.19** — kleine B-Commits,
-   gebündelt.
+5. **5.5**, **5.6**, **5.12**, **5.17** und **5.19** — kleine B-Commits, gebündelt.
 6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 7. Nach der Antwort zu E5 (**8.3**): **5.4**.
@@ -242,8 +241,8 @@ beschrieben; was fehlt, ist die Freigabe für einen Eingriff ins Schema.
 Stattdessen bekommt die Leserzeile eine Spalte „letzter Vorgang", die kein anderer Löschlauf
 anfasst; gepflegt von Triggern auf `ausleihen` (Rückgabe) und `schadensfaelle` (bezahlt oder
 storniert), nach dem Muster von `konto_hat_leserzeile` — an der einen Stelle, an der kein
-Schreibweg vorbeikommt. Das Prädikat rechnet dann `GREATEST(AbgangSeit, letzter_vorgang_am)`
-ohne Unterabfragen. Nachweis: ein PG-Test mit Karenz > Lesehistorie, der beweist, dass der
+Schreibweg vorbeikommt. `repository.KarenzUhr` (seit 22.09.2026 die eine Formulierung für
+Löschuhr und Wächter) rechnet dann `GREATEST(AbgangSeit, letzter_vorgang_am)` ohne Unterabfragen. Nachweis: ein PG-Test mit Karenz > Lesehistorie, der beweist, dass der
 Lesehistorie-Lauf den Anonymisierungs-Zeitpunkt NICHT verschiebt — am alten Stand rot.
 
 ### 4.16 Routen ohne Aufrufer
@@ -582,9 +581,6 @@ Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren 
 
 ### 5.12 Offene Nachbarn aus dem Review vom 14.09.2026
 
-- **Wächter „Ehemalige mit offenen Vorgängen" (`fa4a2113`):** Nur der Grundausdruck `AbgangSeit`
-  ist mit der Löschuhr vereint; die Löschuhr rechnet zusätzlich `GREATEST(…, max(rueckgabe_am),
-  max(Schadensfall))`. Ohne Außenwirkung, aber eine dritte Formulierung derselben Frage.
 - **Zweiter Cover-Schreibpfad:** `inventur/update_cover_handler.go` setzt `cover_url`, ohne das
   alte Upload-Cover zu löschen, und meldet ein unbekanntes Buch als 500. Gleiche
   Reihenfolgefrage in `cover_aktualisierung.go`, `endpunkte_cover_retry.go`, `cover_service.go`.
@@ -606,17 +602,11 @@ Nachgestellt und widerlegt — damit der nächste Durchgang sie nicht noch einma
 bleibt ausgesondert · „Pool ODER Tx" nur behauptet · Rechte-Asymmetrie an den Buch-Routen
 (`adminH` IST `RequireEditBooks`) · Migration 115 droppt `idx_lmf_termine_plan`.
 
-### 5.15 Offene Punkte aus dem Durchgang vom 15.09.2026
+### 5.15 Durchgang vom 15.09.2026
 
-- **Der Stand-Merker der Barcode-Liste rechnet mit dem Beginn der Transaktion.** Ändert eine
-  lange Transaktion ein Etikett und committet nach einem kürzeren Schreiber, bleibt es bei 304.
-  Nachgestellt hinter dem Build-Tag `raster`
-  (`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_ ./repository/`). Heute ändert nur
-  `UpdateCopyBarcode` einen Barcode, als kurzer Einzelbefehl — scharf wird es erst mit einem
-  Schreiber, der in einer langen Transaktion umetikettiert.
-- **Ein Ausweis aus dem Altbestand ohne Vorsilbe** (gemessen `B97601826457`) ist ohne Netz
-  „unklar" und wird abgewiesen. Hängt am Ausweis-Neudruck und entscheidet sich mit dem frischen
-  Littera-Backup (7.2).
+Nichts offen (Stand 22.09.2026): Nummernkreis und Bewegungsstempel sind mit den Migrationen 131
+und 132 Regeln der Datenbank, die zwei Beobachtungen stehen in 6.1. Die Nummer bleibt vergeben,
+weil Kommentare im Code auf sie als Herkunft eines Fundes verweisen.
 
 ### 5.16 Leserdatei und Rolle Leitung — was noch offen ist
 
@@ -726,6 +716,15 @@ Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
 
 ### 6.1 Beobachtungen
 
+- Der Stand-Merker der Barcode-Liste (Anzahl + `max(aktualisiert_am)`) rechnet mit dem Beginn
+  der Transaktion: Ändert eine lange Transaktion ein Etikett und committet nach einem kürzeren
+  Schreiber, bleibt es bei 304. Nachgestellt hinter dem Build-Tag `raster`
+  (`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_ ./repository/`). Heute ändert nur
+  `UpdateCopyBarcode` einen Barcode, als kurzer Einzelbefehl — scharf wird es erst mit einem
+  Schreiber, der in einer langen Transaktion umetikettiert (Durchgang 15.09.2026).
+- Ein Ausweis aus dem Altbestand ohne Vorsilbe (gemessen `B97601826457`) ist ohne Netz „unklar"
+  und wird abgewiesen. Hängt am Ausweis-Neudruck und entscheidet sich mit dem frischen
+  Littera-Backup (7.2).
 - Band „Keine Verbindung": Der Herzschlag-Wächter (`App.svelte`, 25 s ohne `ping`) unterscheidet
   nicht zwischen „kein Ping gekommen" und „der Tab selbst stand" (Standby, eingefrorener
   Hintergrund-Tab). Beim Aufwachen wäre der Herzschlag alt und das Band stünde bis zum nächsten
