@@ -31,7 +31,7 @@
 	/** @type {{ onUebergeben?: () => void }} */
 	let { onUebergeben } = $props();
 
-	/** @type {{ barcode_id: string, titel: string, autor: string, erworben_am: string, etikett_gedruckt: boolean }[]} */
+	/** @type {{ barcode_id: string, titel: string, autor: string, zugang_am: string, etikett_gedruckt: boolean }[]} */
 	let offen = $state.raw([]);
 	let laedt = $state(true);
 	let suche = $state('');

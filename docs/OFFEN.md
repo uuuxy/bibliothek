@@ -490,6 +490,18 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.5 Bestand, Katalog, Druck
 
+- Zugangsdatum beim Anlegen außerhalb des Bestellwegs (Rasterdurchgang 22.09.2026, Frage 6):
+  Handanlage, Sammelimport und Bestand-Nachziehen lassen `erworben_am` auf der Vorgabe
+  `CURRENT_DATE`, der Listenimport schreibt sie selbst — alle vier in der UTC-Sitzung der
+  Datenbank. Zwischen Mitternacht und zwei Uhr ist das der Vortag, und der INSERT-Trigger aus
+  Migration 129 übernimmt ihn als Zugang; Migration 130 hat nur den UPDATE-Zweig (Wareneingang)
+  auf die Schulzeit gestellt. Fix: Vorgabe der Spalte auf `(now() AT TIME ZONE 'Europe/Berlin')::date`
+  (Migration) und im Listenimport `schulzeit.SQLHeute`. Nicht gebaut, weil Migration.
+- Listenimport gegen den Nummern-Wächter (Migration 131): Trägt eine Zeile der Datei die
+  Ausweisnummer eines Lesers als Buch-Barcode, lehnt der Wächter ab und der ganze Import
+  bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
+  nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
+  Kategorie C, bis es einmal vorkommt.
 - ISBN: Seit Migration 133 (22.09.2026) bringt die Datenbank jede geschriebene ISBN an jeder Tür
   in EINE Schreibweise; Import-Zuordnung, Schnellanlage und die fünf Suchfelder vergleichen die
   Normalform. Der Altbestand ist noch nicht zurückgeschrieben: erst am Server messen, ob zwei

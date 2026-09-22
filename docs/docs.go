@@ -3495,14 +3495,15 @@ const docTemplate = `{
                 "barcode_id": {
                     "type": "string"
                 },
-                "erworben_am": {
-                    "type": "string"
-                },
                 "etikett_gedruckt": {
                     "description": "EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen\nkann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht\nnicht unterscheiden, welche Zeile noch ein Etikett braucht.",
                     "type": "boolean"
                 },
                 "titel": {
+                    "type": "string"
+                },
+                "zugang_am": {
+                    "description": "ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, Migration 129;\nRückfall erworben_am für Zeilen ohne Zugangsdatum). Bis zum 22.09.2026 hieß das Feld\nerworben_am und trug im Bestellweg den Bestelltag.",
                     "type": "string"
                 }
             }

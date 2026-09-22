@@ -32,7 +32,10 @@ func parseLabelParams(r *http.Request) (formatId string, startPos int, isQR bool
 
 // queryLabelItems lädt alle Exemplare (Barcode, Titel, Autor, Anschaffungsjahr, Signatur) eines Titels.
 func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabelDetail, error) {
-	// erworben_am ist NOT NULL mit Vorgabe CURRENT_DATE — to_char liefert also immer
+	// Das Jahr ist das des Zugangs (zugang_am, Migration 129) — im Bestellweg ist erworben_am
+	// der Bestelltag, und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs
+	// Etikett und mit dem neuen ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL,
+	// Vorgabe CURRENT_DATE) deckt Zeilen ohne Zugangsdatum; to_char liefert damit immer
 	// vier Ziffern und nie NULL.
 	//
 	// Ausgesonderte Exemplare bleiben draußen (17.09.2026, OFFEN.md 5.5): Wer die Etiketten
@@ -41,7 +44,7 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 	// das niemand findet, und auf einem Bogen mit fortlaufenden Plätzen verschiebt es alle
 	// folgenden. Die Zeile bleibt in der Datenbank; nur gedruckt wird sie nicht.
 	query := `
-		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, ''),
+		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),
 		       ` + repository.ExemplarTopfSQL + `
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id
@@ -178,7 +181,7 @@ func (s *Server) ergaenzeServerfelder(ctx context.Context, items []BarcodeLabelD
 	}
 
 	rows, err := s.DB.Pool.Query(ctx, `
-		SELECT e.barcode_id, to_char(e.erworben_am, 'YYYY'), coalesce(t.signatur, ''),
+		SELECT e.barcode_id, to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'), coalesce(t.signatur, ''),
 		       `+repository.ExemplarTopfSQL+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON e.titel_id = t.id

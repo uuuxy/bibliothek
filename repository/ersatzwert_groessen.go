@@ -89,7 +89,12 @@ func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, w
 		       coalesce(t.listenpreis, 0)::float8,
 		       e.zustand_abwertung_prozent,
 		       coalesce(t.ist_lernmittel, false),
-		       e.erworben_am
+		       -- Der Zugang, nicht der Bestelltag (Migration 129): Im Bestellweg entsteht die
+		       -- Zeile beim Bestellen, in den Bestand kommt das Buch mit der Lieferung — bei
+		       -- Lernmitteln regelmäßig im nächsten Schuljahr. Altbestand trägt in zugang_am
+		       -- dasselbe Datum wie in erworben_am; NULL (noch im Zulauf) kann hier nicht
+		       -- vorkommen, der Rückfall steht für Zeilen aus der Zeit vor der Migration.
+		       COALESCE(e.zugang_am, e.erworben_am)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE `+bedingung, wert)
@@ -103,14 +108,14 @@ func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, w
 	for rows.Next() {
 		var id string
 		var g ErsatzwertGroessen
-		var erworben *time.Time
+		var zugang *time.Time
 		if err := rows.Scan(&id, &g.Kaufpreis, &g.Listenpreis, &g.ZustandAbschlag,
-			&g.IstLernmittel, &erworben); err != nil {
+			&g.IstLernmittel, &zugang); err != nil {
 			return nil, err
 		}
 		// Dieselbe Rechnung wie in OffeneForderungen: Schuljahre, nicht Kalenderjahre.
-		if erworben != nil {
-			g.SchuljahreImBestand = schuljahrVon(schulzeit.Jetzt()) - schuljahrVon(*erworben)
+		if zugang != nil {
+			g.SchuljahreImBestand = schuljahrVon(schulzeit.Jetzt()) - schuljahrVon(*zugang)
 		}
 		alle[id] = g
 		ids = append(ids, id)

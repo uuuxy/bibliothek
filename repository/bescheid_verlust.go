@@ -69,7 +69,8 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 	rows, err := r.db.Query(ctx, `
 		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8, coalesce(e.zustand_abwertung_prozent, 0),
-		       coalesce(t.ist_lernmittel, false), a.rueckgabe_frist, e.erworben_am
+		       -- Zugang statt Bestelltag (Migration 129, Begründung an ersatzwert_groessen.go).
+		       coalesce(t.ist_lernmittel, false), a.rueckgabe_frist, COALESCE(e.zugang_am, e.erworben_am)
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
 		JOIN buecher_titel t ON t.id = e.titel_id
@@ -94,14 +95,14 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 	exemplare := []string{}
 	for rows.Next() {
 		var a UeberfaelligeAusleihe
-		var erworben *time.Time
+		var zugang *time.Time
 		if err := rows.Scan(&a.AusleiheID, &a.ExemplarID, &a.Titel, &a.ISBN, &a.Kaufpreis,
 			&a.Listenpreis, &a.ZustandAbschlag,
-			&a.IstLernmittel, &a.FaelligSeit, &erworben); err != nil {
+			&a.IstLernmittel, &a.FaelligSeit, &zugang); err != nil {
 			return nil, err
 		}
-		if erworben != nil {
-			a.SchuljahreImBestand = heute - schuljahrVon(*erworben)
+		if zugang != nil {
+			a.SchuljahreImBestand = heute - schuljahrVon(*zugang)
 		}
 		out = append(out, a)
 		exemplare = append(exemplare, a.ExemplarID)

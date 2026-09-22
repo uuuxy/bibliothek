@@ -14,7 +14,7 @@
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	/** @type {{
-	 *   zeilen: { barcode_id: string, titel: string, autor: string, erworben_am: string, etikett_gedruckt: boolean }[],
+	 *   zeilen: { barcode_id: string, titel: string, autor: string, zugang_am: string, etikett_gedruckt: boolean }[],
 	 *   gewaehlt: string[],
 	 *   status: 'offen' | 'erledigt' | 'alle',
 	 *   onumschalten: (barcode: string) => void,
@@ -84,7 +84,7 @@
 						{e.barcode_id}
 					</td>
 					<td class="text-right whitespace-nowrap tabular-nums">
-						{datum(e.erworben_am)}
+						{datum(e.zugang_am)}
 					</td>
 				</tr>
 			{/each}

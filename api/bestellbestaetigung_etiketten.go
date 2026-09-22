@@ -26,7 +26,7 @@ import (
 func (s *Server) ladeBestellEtiketten(ctx context.Context, bestellungID string) ([]BarcodeLabelDetail, error) {
 	rows, err := s.DB.Pool.Query(ctx, `
 		SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), coalesce(t.isbn, ''), coalesce(t.signatur, ''),
-		       to_char(e.erworben_am, 'YYYY'),
+		       to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY'),
 		       `+repository.ExemplarTopfSQL+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id

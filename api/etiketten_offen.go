@@ -54,10 +54,13 @@ func etikettenStatusBedingung(status string) string {
 // autor sind KEIN Zufall: In genau dieser Form nimmt der Etikettendruck seine Aufträge
 // entgegen (printQueue → labels.svelte.js), die Liste kann also direkt übergeben werden.
 type ExemplarOhneEtikett struct {
-	BarcodeID  string `json:"barcode_id"`
-	Titel      string `json:"titel"`
-	Autor      string `json:"autor"`
-	ErworbenAm string `json:"erworben_am"`
+	BarcodeID string `json:"barcode_id"`
+	Titel     string `json:"titel"`
+	Autor     string `json:"autor"`
+	// ZugangAm ist der Tag, an dem das Exemplar in den Bestand kam (zugang_am, Migration 129;
+	// Rückfall erworben_am für Zeilen ohne Zugangsdatum). Bis zum 22.09.2026 hieß das Feld
+	// erworben_am und trug im Bestellweg den Bestelltag.
+	ZugangAm string `json:"zugang_am"`
 
 	// EtikettGedruckt gehört dazu, seit die Liste auch bereits erledigte Exemplare zeigen
 	// kann (status=erledigt|alle). Ohne das Feld liesse sich in der gemischten Ansicht
@@ -94,13 +97,13 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 		statusBedingung := etikettenStatusBedingung(r.URL.Query().Get("status"))
 
 		rows, err := s.DB.Pool.Query(r.Context(), `
-			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(e.erworben_am, 'YYYY-MM-DD'),
+			SELECT e.barcode_id, t.titel, coalesce(t.autor, ''), to_char(COALESCE(e.zugang_am, e.erworben_am), 'YYYY-MM-DD'),
 			       e.etikett_gedruckt
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
 			WHERE `+statusBedingung+`
 			  AND ($1 = '' OR t.titel ILIKE '%' || $1 || '%' OR e.barcode_id ILIKE '%' || $1 || '%')
-			ORDER BY e.erworben_am DESC, e.erstellt_am DESC, e.barcode_id
+			ORDER BY COALESCE(e.zugang_am, e.erworben_am) DESC, e.erstellt_am DESC, e.barcode_id
 			LIMIT $2
 		`, suche, etikettenOffenLimit)
 		if err != nil {
@@ -113,7 +116,7 @@ func (s *Server) EtikettenOffenHandler() http.HandlerFunc {
 		liste := make([]ExemplarOhneEtikett, 0)
 		for rows.Next() {
 			var e ExemplarOhneEtikett
-			if err := rows.Scan(&e.BarcodeID, &e.Titel, &e.Autor, &e.ErworbenAm, &e.EtikettGedruckt); err != nil {
+			if err := rows.Scan(&e.BarcodeID, &e.Titel, &e.Autor, &e.ZugangAm, &e.EtikettGedruckt); err != nil {
 				return apierrors.Internal("Fehler beim Lesen der offenen Etiketten", err)
 			}
 			liste = append(liste, e)
@@ -169,7 +172,7 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 			FROM buecher_exemplare e
 			JOIN buecher_titel t ON t.id = e.titel_id
 			WHERE `+etikettenStatusBedingung(r.URL.Query().Get("status"))+`
-			  AND ($1::date IS NULL OR e.erworben_am <= $1)
+			  AND ($1::date IS NULL OR COALESCE(e.zugang_am, e.erworben_am) <= $1)
 			  AND ($2 = '' OR t.titel ILIKE '%' || $2 || '%' OR e.barcode_id ILIKE '%' || $2 || '%')`,
 			bis, strings.TrimSpace(r.URL.Query().Get("q")),
 		).Scan(&anzahl)
@@ -236,7 +239,7 @@ func (s *Server) EtikettenAltbestandHandler() http.HandlerFunc {
 
 		tag, err := s.DB.Pool.Exec(r.Context(), `
 			UPDATE buecher_exemplare e SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
-			WHERE `+etikettenOffenBedingung+` AND e.erworben_am <= $1
+			WHERE `+etikettenOffenBedingung+` AND COALESCE(e.zugang_am, e.erworben_am) <= $1
 		`, bis)
 		if err != nil {
 			return apierrors.Internal("Fehler beim Vermerken des Altbestands", err)

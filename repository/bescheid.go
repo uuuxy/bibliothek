@@ -500,7 +500,8 @@ func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID
 		       coalesce(t.listenpreis, 0)::float8,
 		       coalesce(e.zustand_abwertung_prozent, 0),
 		       coalesce(t.ist_lernmittel, false),
-		       f.exemplar_id, e.erworben_am
+		       -- Zugang statt Bestelltag (Migration 129, Begründung an ersatzwert_groessen.go).
+		       f.exemplar_id, COALESCE(e.zugang_am, e.erworben_am)
 		FROM schadensfaelle f
 		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
@@ -522,13 +523,13 @@ func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID
 	for rows.Next() {
 		var f OffeneForderung
 		var exemplarID *string
-		var erworben *time.Time
+		var zugang *time.Time
 		if err := rows.Scan(&f.SchadensfallID, &f.Art, &f.Titel, &f.ISBN, &f.Kaufpreis,
-			&f.Listenpreis, &f.ZustandAbschlag, &f.IstLernmittel, &exemplarID, &erworben); err != nil {
+			&f.Listenpreis, &f.ZustandAbschlag, &f.IstLernmittel, &exemplarID, &zugang); err != nil {
 			return nil, err
 		}
-		if erworben != nil {
-			f.SchuljahreImBestand = heute - schuljahrVon(*erworben)
+		if zugang != nil {
+			f.SchuljahreImBestand = heute - schuljahrVon(*zugang)
 		}
 		out = append(out, f)
 		exemplarJeForderung = append(exemplarJeForderung, zeigerText(exemplarID))

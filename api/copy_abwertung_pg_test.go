@@ -173,7 +173,9 @@ func TestExemplarliste_ZeigtDenHeutigenErsatzwert(t *testing.T) {
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare
 		SET einkaufspreis = 20.00, zustand_abwertung_prozent = 20,
-		    erworben_am = now() - interval '2 years'
+		    -- Beide Daten, wie beim Altbestand: Die Staffel liest den Zugang (Migration 129),
+		    -- und ein UPDATE von erworben_am allein zieht ihn nicht nach (Trigger nur bei INSERT).
+		    erworben_am = now() - interval '2 years', zugang_am = now() - interval '2 years'
 		WHERE id = $1`, exID); err != nil {
 		t.Fatalf("Exemplar vorbereiten: %v", err)
 	}
@@ -237,7 +239,8 @@ func TestExemplarliste_BerechnungsgrundlageIstWaehlbar(t *testing.T) {
 	}
 	if _, err := pool.Exec(ctx, `
 		UPDATE buecher_exemplare
-		SET einkaufspreis = 20.00, erworben_am = now() - interval '2 years'
+		SET einkaufspreis = 20.00,
+		    erworben_am = now() - interval '2 years', zugang_am = now() - interval '2 years'
 		WHERE id = $1`, exID); err != nil {
 		t.Fatalf("Exemplar vorbereiten: %v", err)
 	}
