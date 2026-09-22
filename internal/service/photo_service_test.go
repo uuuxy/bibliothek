@@ -24,7 +24,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery("SELECT barcode_id FROM schueler WHERE id = \\$1").
+		mock.ExpectQuery("SELECT COALESCE\\(barcode_id, ''\\) FROM leser WHERE id = \\$1").
 			WithArgs("student-123").
 			WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("barcode-123"))
 
@@ -54,7 +54,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery("SELECT barcode_id FROM schueler WHERE id = \\$1").
+		mock.ExpectQuery("SELECT COALESCE\\(barcode_id, ''\\) FROM leser WHERE id = \\$1").
 			WithArgs("student-not-found").
 			WillReturnError(pgx.ErrNoRows)
 
@@ -83,7 +83,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery("SELECT barcode_id FROM schueler WHERE id = \\$1").
+		mock.ExpectQuery("SELECT COALESCE\\(barcode_id, ''\\) FROM leser WHERE id = \\$1").
 			WithArgs("student-123").
 			WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("barcode-123"))
 
@@ -108,7 +108,7 @@ func TestUploadStudentPhoto(t *testing.T) {
 		}
 		defer mock.Close()
 
-		mock.ExpectQuery("SELECT barcode_id FROM schueler WHERE id = \\$1").
+		mock.ExpectQuery("SELECT COALESCE\\(barcode_id, ''\\) FROM leser WHERE id = \\$1").
 			WithArgs("student-123").
 			WillReturnRows(pgxmock.NewRows([]string{"barcode_id"}).AddRow("barcode-123"))
 

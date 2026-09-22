@@ -17,9 +17,14 @@ import (
 // UploadStudentPhoto verarbeitet den Base64-String eines Fotos, konvertiert ihn zu WebP,
 // verschlüsselt ihn per AES und speichert ihn in der Datenbank ab.
 func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID string, base64DataStr string) (string, error) {
-	// 1. Resolve student's barcode ID from database
+	// 1. Die Ausweisnummer des LESERS — Tabelle `leser`, nicht die Sicht `schueler`: Die
+	// Akte bietet den Kamera-Knopf jedem Leser an, und die Auslieferung (api/photo_serve.go)
+	// liest sein Bild über dieselbe Tabelle. Über die Sicht bekam ein Kollege hier 404
+	// (TestUploadStudentPhoto_AuchFuerKollegen). COALESCE, weil ein Kollege aus der
+	// Selbstanmeldung noch keine Nummer hat (OFFEN.md 5.16 C) — das Bild wird gespeichert,
+	// eine Bild-URL gibt es wie in resolveFotoURL erst mit der Nummer.
 	var barcodeID string
-	err := dbPool.QueryRow(ctx, "SELECT barcode_id FROM schueler WHERE id = $1", studentID).Scan(&barcodeID)
+	err := dbPool.QueryRow(ctx, "SELECT COALESCE(barcode_id, '') FROM leser WHERE id = $1", studentID).Scan(&barcodeID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return "", errors.New("schüler nicht gefunden")
@@ -61,6 +66,9 @@ func UploadStudentPhoto(ctx context.Context, dbPool db.PgxPoolIface, studentID s
 		return "", fmt.Errorf("fehler beim speichern des fotos in der db: %w", err)
 	}
 
+	if barcodeID == "" {
+		return "", nil
+	}
 	photoURL := fmt.Sprintf("/api/schueler/%s/photo", barcodeID)
 	return photoURL, nil
 }

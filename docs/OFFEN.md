@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 21.09.2026
+Stand: 22.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -690,7 +690,7 @@ kein `DELETE` — eine vertippte Klasse steht ab dann in jeder Auswahlliste.
 ### 5.19 Lesepfade gegen die Sicht `schueler` — eine eigene Achse
 
 Die Ratsche aus Frage 13 führt neun SCHREIBpfade gegen die Sicht, je mit Begründung. Gelesen wird
-gegen sie an 32 Stellen, und die zählt niemand. An der Datenbank nachgestellt: Steht eine
+gegen sie in 29 Dateien; die Lese-Ratsche zählt sie seit dem 21.09.2026. An der Datenbank nachgestellt: Steht eine
 Vormerkung für einen Kollegen, findet die Abfrage, die beim Rückgabe-Vorgang den Nächsten
 bedient, null Kandidaten — die Zeile ist da, die Warteschlange geht über sie hinweg. Ob es solche
 Zeilen gibt, zeigen zwei Zählungen:
@@ -703,27 +703,20 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 **Gemessen am Testserver am 21.09.2026: beide 0.** Es ist Vorsorge und keine Reparatur. Auf
 einer Anlage mit anderem Bestand vorher neu zählen.
 
-**Die Ratsche steht** (`docs/lesepfade_gegen_sicht_test.go`, 21.09.2026). 16 Dateien sind mit
-Begründung geprüft, darunter seit dem 21.09.2026 die Pfade der Theke (Ausleihe, Rückgabe,
-Vormerkung, Mahnwesen, Bescheide) und ein Teil der Akte und des Drucks; 15 stehen als ungeprüft
-mit ihrer Zahl und dürfen nur schrumpfen, eine neue Datei ist rot. **Offen ist die Durchsicht
-der 15** — je Datei die Frage, ob Lehrkräfte dort unsichtbar sein sollen, am besten an einem
-PG-Test mit einer Lehrkraft. Als Nächstes: `api/print.go`, `api/graduates.go`,
-`repository/betriebszustand.go`, `repository/lmf_plan.go`, `repository/lmf_termine.go`.
+**Die Durchsicht ist abgeschlossen (22.09.2026).** Alle 29 Dateien, die gegen die Sicht
+lesen, stehen in `docs/lesepfade_gegen_sicht_test.go` mit Begründung; die Liste der Ungeprüften
+ist leer, eine neue Datei ist rot. Vier Funde sind behoben (Vormerkung nur für Schüler,
+Suchleiste erkennt den Kollegen-Ausweis, Tresen-Auskunft nennt den Kollegen, Passbild-Upload
+für Kollegen) — je mit einem PG-Test, der am alten Stand rot war.
 
-Zwei Dinge aus der Durchsicht, die stehen bleiben:
+**Zwei Fragen daraus:**
 
-- **`api/student_update.go`:** Die Vorprüfung der LUSD-ID liest die Sicht, der Index
-  `uniq_schueler_lusd_id_active` liegt auf der Tabelle `leser`. Trüge eine Lehrkraft dieselbe
-  LUSD-ID, käme 500 statt 409. Laut, und die LUSD kennt keine Lehrkräfte — beim Anfassen die
-  Prüfung gegen `leser` lesen, mit PG-Test.
-- **`api/dsgvo_auskunft.go`:** Die Auskunft liest die Sicht; für einen Kollegen gibt es sie
-  nicht (5.16 A nennt das als Absicht). **Frage:** Auch eine Lehrkraft kann Auskunft über ihre
-  Daten verlangen — soll die Auskunft für jeden Leser gehen?
-
-**Eine Frage daraus:** Vormerken lässt sich nur für Schüler — so bietet es die Oberfläche an,
-und seit dem 21.09.2026 lehnt es auch die Tür ab. Soll ein Kollege vormerken können, ist das
-ein eigener Umbau über vier Lesepfade der Warteschlange, kein Schalter.
+- **DSGVO-Auskunft** (`api/dsgvo_auskunft.go`): Für einen Kollegen gibt es sie nicht (5.16 A
+  nennt das als Absicht). Auch eine Lehrkraft kann Auskunft über ihre Daten verlangen — soll
+  die Auskunft für jeden Leser gehen?
+- **Vormerken** lässt sich nur für Schüler — so bietet es die Oberfläche an, und seit dem
+  21.09.2026 lehnt es auch die Tür ab. Soll ein Kollege vormerken können, ist das ein eigener
+  Umbau über vier Lesepfade der Warteschlange, kein Schalter.
 
 **Eine Kleinigkeit:**
 

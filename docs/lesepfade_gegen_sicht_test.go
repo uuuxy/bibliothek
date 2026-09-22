@@ -56,25 +56,25 @@ var lesepfadeGeprueft = map[string]struct {
 	"api/student_create.go":                 {1, "Dublette über Name UND Geburtsdatum gibt es nur bei Schülern; für alle Leser prüft direkt danach pruefeLeserNamensdublette gegen die Tabelle"},
 	"api/pdf.go":                            {1, "Elternbrief je Schadensfall — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	"api/reports_pdf.go":                    {1, "Mahnbriefe an Eltern — gemahnt werden Schüler, nicht das Kollegium (wie mahnwesen_queries.go)"},
+	// Rest der Durchsicht, 22.09.2026 — die Liste der Ungeprüften ist damit leer.
+	"api/dsgvo_auskunft.go":                 {1, "Auskunft nur für Schüler — Entscheidung vom 16.09.2026 (OFFEN.md 5.16 A: ausgeblendet statt kaputt); ob Kollegen sie bekommen sollen, ist als Frage in OFFEN.md 5.19 notiert"},
+	"api/student_update.go":                 {1, "Vorprüfung der LUSD-ID: chk_leser_nur_schueler_werden_abgaenger erzwingt lusd_id IS NULL für jeden Nicht-Schüler — Sicht und Tabelle liefern hier dasselbe"},
+	"cmd/migrate-fotos/main.go":             {1, "Einmal-Werkzeug für Littera-Schülerfotos; eine Nummer ohne Schüler steht als Warnung im Lauf, nicht still"},
+	"internal/littera/schreiber.go":         {1, "Zielbestand-Probe zählt die littera:-Herkunft, die nur schreibeSchueler setzt; Kollegen aus Littera werden Konten (benutzer)"},
+	"inventur/datenbank_klassen.go":         {2, "Klassengruppen der Inventur — Klassen haben nur Schüler"},
+	"jobs/cron_dsgvo_abgaenger.go":          {1, "Löschung der Abgänger; das Kollegium hat keine Abgangslogik (wie cron_dsgvo.go)"},
+	"repository/betriebszustand.go":         {3, "Demo-Zähler (scripts/seed_demo.sql legt nur Schüler an, Präfix DEMO-S-), Klassenliste und Wächter Ehemalige (ist_abgaenger gibt es nur bei Schülern)"},
+	"repository/lmf_plan.go":                {1, "Klassen im LMF-Plan — Klassen haben nur Schüler"},
+	"repository/lmf_termine.go":             {1, "Fristübernahme je KLASSE für Lernmittel; ein Kollege hat keine Klasse und leiht auf Dauer (wie api/ausleihe.go)"},
+	"repository/lusd_bestand.go":            {1, "LUSD-Abgleich kennt nur Schüler; die Abfrage sagt es zusätzlich mit art = 'schueler'"},
+	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungRepository.Create)"},
+	"api/graduates.go":                      {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
+	"api/print.go":                          {3, "Rechnung (ein Kollege bekommt keine Forderung, schaden_melden.go), Mahnung je Klasse (gemahnt werden Schüler) und Kontoauszug (für Kollegen bewusst nicht, OFFEN.md 5.16 A)"},
 }
 
-// lesepfadeUngeprueft: Stand der Messung vom 21.09.2026. NUR SCHRUMPFEN.
-var lesepfadeUngeprueft = map[string]int{
-	"api/dsgvo_auskunft.go":                 1,
-	"api/graduates.go":                      2,
-	"api/print.go":                          3,
-	"api/student_update.go":                 1,
-	"cmd/migrate-fotos/main.go":             1,
-	"internal/littera/schreiber.go":         1,
-	"internal/service/photo_service.go":     1,
-	"inventur/datenbank_klassen.go":         2,
-	"jobs/cron_dsgvo_abgaenger.go":          1,
-	"repository/betriebszustand.go":         3,
-	"repository/lmf_plan.go":                1,
-	"repository/lmf_termine.go":             1,
-	"repository/lusd_bestand.go":            1,
-	"repository/titel_loeschen_wartende.go": 1,
-}
+// lesepfadeUngeprueft: seit dem 22.09.2026 leer (28 Dateien am 21./22.09. durchgesehen). NUR SCHRUMPFEN —
+// eine neue Datei gehört nach oben, mit Begründung, nicht hierher.
+var lesepfadeUngeprueft = map[string]int{}
 
 var musterLesepfad = regexp.MustCompile(`(?i)\b(FROM|JOIN)\s+schueler\b`)
 
