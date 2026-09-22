@@ -60,6 +60,14 @@ func TestGetIncomingShipments_AmPostgres(t *testing.T) {
 		}
 	}
 
+	// Ein Exemplar im Zulauf ohne Notiz: zustand_notiz ist nullbar. Die Bestellung schreibt
+	// sie immer, aber ein anderer Schreiber muss es nicht — bis zum 22.09.2026 machte
+	// dieses eine Exemplar den ganzen Wareneingang zum 500 („cannot scan NULL into *string").
+	if _, err := pool.Exec(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
+		VALUES ($1, 'ZUL-PROBE-5', false, 'bestellt')`, titelID); err != nil {
+		t.Fatalf("Exemplar ohne Notiz anlegen: %v", err)
+	}
+
 	groups, err := GetIncomingShipments(ctx, pool)
 	if err != nil {
 		t.Fatalf("GetIncomingShipments: %v", err)
@@ -95,5 +103,14 @@ func TestGetIncomingShipments_AmPostgres(t *testing.T) {
 	}
 	if !altGefunden {
 		t.Errorf("Altbestand ohne Bestellung fehlt als eigene Gruppe „Altlieferant\": %v", menge)
+	}
+	ohneNotiz := false
+	for schluessel, n := range menge {
+		if strings.HasPrefix(schluessel, "Unbekannter Lieferant/") && n >= 1 {
+			ohneNotiz = true
+		}
+	}
+	if !ohneNotiz {
+		t.Errorf("Exemplar ohne Notiz fehlt unter „Unbekannter Lieferant\": %v", menge)
 	}
 }

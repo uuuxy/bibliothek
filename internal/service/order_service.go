@@ -48,7 +48,7 @@ type GroupedItem struct {
 // bleibt der alte Weg über die Notiz.
 func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*ShipmentGroup, error) {
 	query := `
-		SELECT e.id, e.titel_id, e.erstellt_am, e.zustand_notiz, t.titel, COALESCE(t.isbn, ''),
+		SELECT e.id, e.titel_id, e.erstellt_am, COALESCE(e.zustand_notiz, ''), t.titel, COALESCE(t.isbn, ''),
 		       COALESCE(NULLIF(t.cover_url, ''), CASE WHEN t.isbn IS NOT NULL AND t.isbn != '' THEN 'https://portal.dnb.de/opac/mvb/cover?isbn=' || replace(t.isbn, '-', '') ELSE '' END),
 		       e.bestellung_id::text, b.lieferant_name, b.bestelldatum
 		FROM buecher_exemplare e
@@ -72,7 +72,10 @@ func GetIncomingShipments(ctx context.Context, pool db.PgxPoolIface) ([]*Shipmen
 		var exemplarID, titelID, zustandNotiz, titel, isbn, coverURL string
 		var erstelltAm time.Time
 		// Die drei Bestellspalten sind NULL bei Altbestand ohne bestellung_id — als Zeiger,
-		// sonst bricht der Scan die Iteration ab und die ganze Liste wäre ein 500.
+		// sonst bricht der Scan die Iteration ab und die ganze Liste wäre ein 500. Aus
+		// demselben Grund COALESCE auf zustand_notiz: Die Spalte ist nullbar, und ein
+		// einziges Exemplar ohne Notiz legte bis zum 22.09.2026 den ganzen Wareneingang
+		// lahm; es landet jetzt unter „Unbekannter Lieferant" (resolveSupplierName).
 		var bestellungID, lieferantName *string
 		var bestelldatum *time.Time
 		if err := rows.Scan(&exemplarID, &titelID, &erstelltAm, &zustandNotiz, &titel, &isbn, &coverURL,
