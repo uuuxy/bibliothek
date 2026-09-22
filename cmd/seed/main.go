@@ -1,8 +1,15 @@
+// cmd/seed füllt eine Wegwerf-Datenbank mit Test-Admin, Schülern, Titeln und Exemplaren —
+// die Vorstufe zum k6-Lasttest (docs/SCRIPTS.md). Es fragt nicht, bevor es schreibt.
+//
+// Der Lauf selbst steht in seed(): Umfang und Ausgabe kommen von außen, Fehler kommen
+// zurück. main() liefert die Umgebung (DATABASE_URL, JWT_SECRET) und den vollen Umfang;
+// main_pg_test.go fährt denselben Lauf klein gegen die Test-Datenbank.
 package main
 
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"os"
@@ -15,72 +22,110 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// Umfang ist die Größe eines Laufs. Exemplare werden in Portionen von Chunk eingefügt.
+type Umfang struct {
+	Schueler, Titel, Exemplare, Chunk int
+}
+
+// vollerUmfang ist die Größe für den Lasttest.
+var vollerUmfang = Umfang{Schueler: 2000, Titel: 5000, Exemplare: 80000, Chunk: 10000}
+
+const (
+	adminEmail   = "scanner@test.local"
+	adminBarcode = "ADMIN-SCANNER-TEST"
+)
+
 func main() {
 	ctx := context.Background()
-	pool := setupDatabase(ctx)
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		log.Fatal("DATABASE_URL environment variable is required")
+	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if len(jwtSecret) < 32 {
+		log.Fatalf("FATAL: JWT_SECRET environment variable must be at least 32 characters long for security")
+	}
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		log.Fatalf("Fehler beim Verbinden mit der Datenbank: %v\n", err)
+	}
 	defer pool.Close()
 
 	fmt.Println("Starte massiven Daten-Import für den Stresstest...")
 	startTime := time.Now()
 
-	generateTestAdmin(ctx, pool)
-	generateStudents(ctx, pool)
-	titleIDs := generateTitles(ctx, pool)
-	generateExemplare(ctx, pool, titleIDs)
-
-	fmt.Printf("🎉 Fertig in %v. Die Datenbank ist jetzt voll und bereit für k6.\n", time.Since(startTime))
-}
-
-func setupDatabase(ctx context.Context) *pgxpool.Pool {
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		log.Fatal("DATABASE_URL environment variable is required")
-	}
-
-	pool, err := pgxpool.New(ctx, dsn)
+	adminID, err := seed(ctx, pool, vollerUmfang, os.Stdout)
 	if err != nil {
-		log.Fatalf("Fehler beim Verbinden mit der Datenbank: %v\n", err)
-	}
-	return pool
-}
-
-func generateTestAdmin(ctx context.Context, pool *pgxpool.Pool) {
-	adminID := uuid.New()
-	adminBarcode := "ADMIN-SCANNER-TEST"
-	// Die Ausweisnummer steht an der Leserzeile (Migration 125), die der Trigger beim
-	// Anlegen des Kontos erzeugt. ZWEI Anweisungen und keine schreibende CTE: Eine Zeile,
-	// die dieselbe Anweisung gerade eingefügt hat, liegt außerhalb des Schnappschusses
-	// des äußeren UPDATE — es fände sie nicht und würde still 0 Zeilen ändern.
-	if _, err := pool.Exec(ctx, `
-		INSERT INTO benutzer (id, vorname, nachname, email, rolle, aktiv)
-		VALUES ($1, 'Scanner', 'TestAdmin', 'scanner@test.local', 'admin', true)
-		ON CONFLICT (email) DO NOTHING
-	`, adminID); err != nil {
-		log.Printf("Warnung: Konnte Test-Admin nicht anlegen: %v\n", err)
-	}
-	if _, err := pool.Exec(ctx, `
-		UPDATE leser SET barcode_id = $2
-		WHERE id = (SELECT leser_id FROM benutzer WHERE id = $1)
-	`, adminID, adminBarcode); err != nil {
-		log.Printf("Warnung: Konnte den Ausweis des Test-Admins nicht eintragen: %v\n", err)
-	}
-
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if len(jwtSecret) < 32 {
-		log.Fatalf("FATAL: JWT_SECRET environment variable must be at least 32 characters long for security")
+		log.Fatalf("%v\n", err)
 	}
 	authenticator, err := auth.NewAuthenticator(jwtSecret, pool, 8760*time.Hour) // 1 Jahr gültig
 	if err == nil {
-		token, _ := authenticator.GenerateToken(adminID.String(), adminBarcode, auth.RoleAdmin) //nolint:errcheck
+		token, _ := authenticator.GenerateToken(adminID, adminBarcode, auth.RoleAdmin) //nolint:errcheck
 		fmt.Printf("\n========================================================\n")
 		fmt.Printf("🛡️ DAST/SAST Scanner JWT (1 Jahr gültig):\n%s\n", token)
 		fmt.Printf("========================================================\n\n")
 	}
+
+	fmt.Printf("🎉 Fertig in %v. Die Datenbank ist jetzt voll und bereit für k6.\n", time.Since(startTime))
 }
 
-func generateStudents(ctx context.Context, pool *pgxpool.Pool) {
+// seed führt den Lauf aus und liefert die Id des Test-Admins — die gespeicherte, auch
+// wenn das Konto schon vom vorigen Lauf da war. Jeder Schritt ist wiederholbar: Was es
+// schon gibt, wird übersprungen (ON CONFLICT DO NOTHING), nichts entsteht doppelt.
+func seed(ctx context.Context, pool *pgxpool.Pool, u Umfang, out io.Writer) (string, error) {
+	adminID, err := generateTestAdmin(ctx, pool)
+	if err != nil {
+		return "", err
+	}
+	if err := generateStudents(ctx, pool, u.Schueler, out); err != nil {
+		return "", err
+	}
+	titleIDs, err := generateTitles(ctx, pool, u.Titel, out)
+	if err != nil {
+		return "", err
+	}
+	if err := generateExemplare(ctx, pool, titleIDs, u.Exemplare, u.Chunk, out); err != nil {
+		return "", err
+	}
+	return adminID, nil
+}
+
+// generateTestAdmin legt das Scanner-Konto an oder findet es. Bis zum 22.09.2026 stand
+// hier eine frische UUID mit ON CONFLICT DO NOTHING: Beim zweiten Lauf blieb die Zeile
+// unberührt, der Ausweis fand keine Leserzeile, und das JWT trug eine Id, die es nicht
+// gibt — still, mit einer Warnung im Log (TestSeed_ZweiterLaufIstDerselbeAdmin).
+func generateTestAdmin(ctx context.Context, pool *pgxpool.Pool) (string, error) {
+	// ON CONFLICT … DO UPDATE statt DO NOTHING: Nur so liefert RETURNING auch die
+	// vorhandene Zeile. Geändert wird nichts (aktiv bleibt, was es ist).
+	var adminID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
+		VALUES ('Scanner', 'TestAdmin', $1, 'admin', true)
+		ON CONFLICT (email) DO UPDATE SET aktiv = benutzer.aktiv
+		RETURNING id
+	`, adminEmail).Scan(&adminID); err != nil {
+		return "", fmt.Errorf("test-Admin anlegen: %w", err)
+	}
+	// Die Ausweisnummer steht an der Leserzeile (Migration 125), die der Trigger beim
+	// Anlegen des Kontos erzeugt. ZWEI Anweisungen und keine schreibende CTE: Eine Zeile,
+	// die dieselbe Anweisung gerade eingefügt hat, liegt außerhalb des Schnappschusses
+	// des äußeren UPDATE — es fände sie nicht und würde still 0 Zeilen ändern.
+	tag, err := pool.Exec(ctx, `
+		UPDATE leser SET barcode_id = $2
+		WHERE id = (SELECT leser_id FROM benutzer WHERE id = $1)
+	`, adminID, adminBarcode)
+	if err != nil {
+		return "", fmt.Errorf("ausweis des Test-Admins eintragen: %w", err)
+	}
+	if tag.RowsAffected() != 1 {
+		return "", fmt.Errorf("ausweis des Test-Admins eintragen: %d Leserzeilen statt 1", tag.RowsAffected())
+	}
+	return adminID, nil
+}
+
+func generateStudents(ctx context.Context, pool *pgxpool.Pool, n int, out io.Writer) error {
 	studentBatch := &pgx.Batch{}
-	for i := 1; i <= 2000; i++ {
+	for i := 1; i <= n; i++ {
 		barcodeID := fmt.Sprintf("S%06d", i)
 		vorname := fmt.Sprintf("Vorname%d", i)
 		nachname := fmt.Sprintf("Nachname%d", i)
@@ -96,45 +141,55 @@ func generateStudents(ctx context.Context, pool *pgxpool.Pool) {
 
 	br := pool.SendBatch(ctx, studentBatch)
 	if err := br.Close(); err != nil {
-		log.Fatalf("Fehler beim Einfügen der Schüler: %v\n", err)
+		return fmt.Errorf("schüler einfügen: %w", err)
 	}
-	fmt.Printf("✅ 2.000 Schüler erfolgreich generiert.\n")
+	fmt.Fprintf(out, "✅ %d Schüler erfolgreich generiert.\n", n) //nolint:errcheck // Fortschrittszeile
+	return nil
 }
 
-func generateTitles(ctx context.Context, pool *pgxpool.Pool) []uuid.UUID {
+// generateTitles liefert die Ids der Titel, an die die Exemplare gehängt werden. Titel,
+// die es schon gab (zweiter Lauf), behalten ihre gespeicherte Id — die frische aus
+// dem INSERT wäre eine Id ohne Zeile, und jedes Exemplar daran ein Fremdschlüssel-Fehler.
+func generateTitles(ctx context.Context, pool *pgxpool.Pool, n int, out io.Writer) ([]uuid.UUID, error) {
 	titleBatch := &pgx.Batch{}
-	titleIDs := make([]uuid.UUID, 5000)
-	for i := 0; i < 5000; i++ {
-		titleIDs[i] = uuid.New()
-		titelName := fmt.Sprintf("Titel %d", i+1)
-		isbn := fmt.Sprintf("ISBN-%010d", i+1)
-
+	for i := 0; i < n; i++ {
 		titleBatch.Queue(`
-			INSERT INTO buecher_titel (id, titel, isbn) 
+			INSERT INTO buecher_titel (id, titel, isbn)
 			VALUES ($1, $2, $3)
 			ON CONFLICT (isbn) DO NOTHING
-		`, titleIDs[i], titelName, isbn)
+		`, uuid.New(), fmt.Sprintf("Titel %d", i+1), fmt.Sprintf("ISBN-%010d", i+1))
 	}
 	tRes := pool.SendBatch(ctx, titleBatch)
 	if err := tRes.Close(); err != nil {
-		log.Fatalf("Fehler beim Einfügen der Titel: %v\n", err)
+		return nil, fmt.Errorf("titel einfügen: %w", err)
 	}
-	fmt.Printf("✅ 5.000 Titel erfolgreich generiert.\n")
-	return titleIDs
+	rows, err := pool.Query(ctx, `SELECT id FROM buecher_titel WHERE isbn LIKE 'ISBN-%' ORDER BY isbn LIMIT $1`, n)
+	if err != nil {
+		return nil, fmt.Errorf("titel-Ids lesen: %w", err)
+	}
+	titleIDs, err := pgx.CollectRows(rows, pgx.RowTo[uuid.UUID])
+	if err != nil {
+		return nil, fmt.Errorf("titel-Ids lesen: %w", err)
+	}
+	if len(titleIDs) != n {
+		return nil, fmt.Errorf("%d Titel gespeichert, %d erwartet", len(titleIDs), n)
+	}
+	fmt.Fprintf(out, "✅ %d Titel erfolgreich generiert.\n", n) //nolint:errcheck // Fortschrittszeile
+	return titleIDs, nil
 }
 
-func generateExemplare(ctx context.Context, pool *pgxpool.Pool, titleIDs []uuid.UUID) {
-	chunkSize := 10000
-	totalExemplare := 80000
-
-	for i := 0; i < totalExemplare; i += chunkSize {
+func generateExemplare(ctx context.Context, pool *pgxpool.Pool, titleIDs []uuid.UUID, total, chunk int, out io.Writer) error {
+	for i := 0; i < total; i += chunk {
+		// Die letzte Portion ist kürzer, wenn total kein Vielfaches von chunk ist —
+		// sonst entstünden mehr Exemplare als bestellt (TestSeed_LegtGenauDenUmfangAn).
+		bis := min(chunk, total-i)
 		bookBatch := &pgx.Batch{}
-		for j := 1; j <= chunkSize; j++ {
+		for j := 1; j <= bis; j++ {
 			barcode := fmt.Sprintf("B%07d", i+j) // Generiert Barcodes wie B0000001
-			titelID := titleIDs[rand.Intn(5000)] // Wähle zufälligen Titel
+			titelID := titleIDs[rand.Intn(len(titleIDs))]
 
 			bookBatch.Queue(`
-				INSERT INTO buecher_exemplare (barcode_id, titel_id, ist_ausleihbar) 
+				INSERT INTO buecher_exemplare (barcode_id, titel_id, ist_ausleihbar)
 				VALUES ($1, $2, true)
 				ON CONFLICT (barcode_id) DO NOTHING
 			`, barcode, titelID)
@@ -142,10 +197,11 @@ func generateExemplare(ctx context.Context, pool *pgxpool.Pool, titleIDs []uuid.
 
 		bRes := pool.SendBatch(ctx, bookBatch)
 		if err := bRes.Close(); err != nil {
-			log.Fatalf("Fehler beim Einfügen der Bücher (Chunk %d): %v\n", i, err)
+			return fmt.Errorf("exemplare einfügen (Portion ab %d): %w", i, err)
 		}
-		fmt.Printf("⏳ %d / %d Exemplare eingefügt...\n", i+chunkSize, totalExemplare)
+		fmt.Fprintf(out, "⏳ %d / %d Exemplare eingefügt...\n", i+bis, total) //nolint:errcheck // Fortschrittszeile
 	}
 
-	fmt.Printf("✅ Alle %d Exemplare erfolgreich generiert.\n", totalExemplare)
+	fmt.Fprintf(out, "✅ Alle %d Exemplare erfolgreich generiert.\n", total) //nolint:errcheck // Fortschrittszeile
+	return nil
 }

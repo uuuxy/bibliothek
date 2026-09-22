@@ -60,7 +60,6 @@ var phantomBestand = map[string]int{
 	"auth/selbstanmeldung.go:legeZugangsanfrageAn":            1,
 	"cmd/migrate-fotos/main.go:migriereFoto":                  1,
 	"cmd/migrate/pg_writer.go:insertExemplare":                1,
-	"cmd/seed/main.go:generateTestAdmin":                      2,
 	"db/migrations.go:applyMigration":                         2,
 	"db/migrations.go:ensureBaselineSchema":                   1,
 	"db/migrations.go:ensureMigrationsTable":                  1,

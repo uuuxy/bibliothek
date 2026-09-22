@@ -418,8 +418,9 @@ Fremdschlüssel stehen auf `SET NULL`.
 ### Testdaten-Generator (`cmd/seed`)
 
 Füllt eine Datenbank mit Test-Admin, Schülern, Titeln und Exemplaren — die Vorstufe zum
-k6-Lasttest (Abschnitt 5). Liest `DATABASE_URL` aus der Umgebung, kennt keine Flags und
-fragt **nicht** nach, bevor es schreibt:
+k6-Lasttest (Abschnitt 5). Liest `DATABASE_URL` und `JWT_SECRET` aus der Umgebung, kennt
+keine Flags und fragt **nicht** nach, bevor es schreibt. Ein zweiter Lauf legt nichts
+doppelt an und nennt dasselbe Scanner-Konto (`cmd/seed/main_pg_test.go`):
 
 ```bash
 DATABASE_URL="postgres://…/bibliothek_test" go run ./cmd/seed

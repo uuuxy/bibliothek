@@ -99,9 +99,8 @@ jemandem schaden?"**
 6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 7. Nach der Antwort zu E5 (**8.3**): **5.4**.
-8. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass — mit EINER Ausnahme, die
-   vorgezogen gehört: ein Test für `cmd/seed` (läuft gegen echte Daten, hat keinen).
-   Schlüsselwechsel und Littera-Import-Hülle sind seit dem 21.09.2026 abgedeckt.
+8. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass. Schlüsselwechsel,
+   Littera-Import-Hülle und `cmd/seed` sind seit dem 21./22.09.2026 abgedeckt.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
 Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
@@ -565,8 +564,7 @@ als Herkunft eines Fundes verweisen.
   Ausnahme überflüssig wird oder irgendeine andere Schwachstelle unseren Code trifft. Zu tun:
   nachsehen, ob excelize inzwischen eine Fassung mit Fix hat — dann Ausnahme löschen und
   heben.
-- Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`;
-  `cmd/seed` hat keinen Test.
+- Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
 
 ### 5.11 Doku
 
