@@ -459,7 +459,6 @@ CREATE TABLE buecher_titel (
     sort_order SERIAL,                                -- Integrated from books table
     medientyp VARCHAR(100) NOT NULL DEFAULT 'Buch',   -- Media type (Book, CD, DVD, etc.)
     erweiterte_eigenschaften JSONB NOT NULL DEFAULT '{}', -- Flexible key-value metadata (e.g. shelf location, notes)
-    ziel_jahrgang INTEGER NOT NULL DEFAULT 0,          -- Target grade level for loan duration calculation (0 = 1 year default)
     -- Migration 126: Auflagenbezeichnung („4. Aufl. 2023"). Eine neue Auflage ist ein
     -- eigener Titel mit eigener ISBN; dieses Feld ist das, was die beiden Zeilen in einer
     -- Liste unterscheidbar macht.
@@ -1606,7 +1605,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('130_zugang_am_in_schulzeit.sql'),
 ('131_nummer_ist_buch_oder_ausweis.sql'),
 ('132_bewegungsstempel_bei_zustandswechsel.sql'),
-('133_isbn_normalform.sql')
+('133_isbn_normalform.sql'),
+('134_mehrjahresband.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -1682,6 +1682,21 @@ CREATE INDEX IF NOT EXISTS idx_idempotency_keys_created_at ON idempotency_keys(c
 ALTER TABLE buecher_titel
     ADD COLUMN IF NOT EXISTS jahrgang_von INTEGER NOT NULL DEFAULT 5,
     ADD COLUMN IF NOT EXISTS jahrgang_bis INTEGER NOT NULL DEFAULT 10;
+
+-- Migration 134: Ein Mehrjahresband ist ein Schalter am Werk; die Jahreszahl, bis zu der
+-- das Buch beim Kind bleibt, ist jahrgang_bis. Nur an einem Lernmittel und nur mit einer
+-- Spanne über mehr als einen Jahrgang. Die frühere Spalte ziel_jahrgang (Migration 030) ist
+-- damit weg — gemessen am 22.09.2026 ohne Wert.
+ALTER TABLE buecher_titel
+    ADD COLUMN IF NOT EXISTS mehrjahresband BOOLEAN NOT NULL DEFAULT false;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'chk_mehrjahresband_spanne') THEN
+        ALTER TABLE buecher_titel ADD CONSTRAINT chk_mehrjahresband_spanne
+            CHECK (NOT mehrjahresband
+                   OR (ist_lernmittel AND coalesce(jahrgang_bis, 0) > coalesce(jahrgang_von, 0)));
+    END IF;
+END $$;
 
 -- Inventur als Sessions (siehe Migration 045). Jede Inventur hat eigenen Scope und
 -- session-gebundenen Fortschritt; damit ist Parallelbetrieb ohne gegenseitiges

@@ -329,10 +329,10 @@ func TestResolveCheckoutDueDate_LMFFolgtDemKlassenTermin(t *testing.T) {
 		t.Errorf("unerfüllte Erwartungen: %v", err)
 	}
 
-	// Mehrjährig (Ziel-Jahrgang über dem aktuellen): kein Lookup, Stichtag im Zieljahr.
+	// Mehrjahresband (Spanne bis über den aktuellen Jahrgang): kein Lookup, Stichtag im Zieljahr.
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
-	mehrjahr := &repository.BookCopy{Titel: "Atlas", IstLernmittel: true, Medientyp: "Buch", ZielJahrgang: 10}
+	mehrjahr := &repository.BookCopy{Titel: "Atlas", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 10}
 	got, err = svc.resolveCheckoutDueDate(context.Background(), mehrjahr, "9H1")
 	if err != nil {
 		t.Fatalf("unerwarteter Fehler: %v", err)

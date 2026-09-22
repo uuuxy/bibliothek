@@ -91,7 +91,7 @@ func scanBookCopy(row Scanner) (*BookCopy, error) {
 	var bc BookCopy
 	err := row.Scan(
 		&bc.ID, &bc.TitelID, &bc.BarcodeID, &bc.ZustandNotiz, &bc.ErworbenAm, &bc.IstAusleihbar, &bc.IstAusgesondert, &bc.ErstelltAm, &bc.AktualisiertAm,
-		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL, &bc.Medientyp, &bc.Signatur, &bc.ZielJahrgang, &bc.IstLernmittel, &bc.ErweiterteEigenschaften,
+		&bc.Titel, &bc.Autor, &bc.Verlag, &bc.ISBN, &bc.CoverURL, &bc.Medientyp, &bc.Signatur, &bc.Mehrjahresband, &bc.JahrgangBis, &bc.IstLernmittel, &bc.ErweiterteEigenschaften,
 	)
 	if err != nil {
 		return nil, err
@@ -105,7 +105,7 @@ func scanBookCopy(row Scanner) (*BookCopy, error) {
 func scanBookTitleMitZusatz(row Scanner, zusatz ...any) (*BookTitle, error) {
 	var t BookTitle
 	ziele := []any{
-		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.Signatur, &t.Auflage, &t.ZielJahrgang, &t.IstLernmittel, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
+		&t.ID, &t.Titel, &t.Untertitel, &t.Autor, &t.ISBN, &t.Verlag, &t.Erscheinungsjahr, &t.Beschreibung, &t.CoverURL, &t.Medientyp, &t.Signatur, &t.Auflage, &t.Mehrjahresband, &t.IstLernmittel, &t.ErstelltAm, &t.AktualisiertAm, &t.ErweiterteEigenschaften,
 	}
 	if err := row.Scan(append(ziele, zusatz...)...); err != nil {
 		return nil, err

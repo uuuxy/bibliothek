@@ -4442,9 +4442,16 @@ const docTemplate = `{
                     "description": "IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,\nMigration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.",
                     "type": "boolean"
                 },
+                "jahrgang_bis": {
+                    "type": "integer"
+                },
                 "medientyp": {
                     "description": "Medientyp ist die Medienart (z. B. \"Buch\").",
                     "type": "string"
+                },
+                "mehrjahresband": {
+                    "description": "Mehrjahresband und JahrgangBis kommen vom Titel (Migration 134): Bleibt das Buch über\nmehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,\nin dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).",
+                    "type": "boolean"
                 },
                 "signatur": {
                     "description": "Signatur speichert die Bibliothekssignatur.",
@@ -4461,10 +4468,6 @@ const docTemplate = `{
                 "verlag": {
                     "description": "Verlag ist der Verlag des Werks.",
                     "type": "string"
-                },
-                "ziel_jahrgang": {
-                    "description": "ZielJahrgang definiert die Zielklasse für die Fristberechnung.",
-                    "type": "integer"
                 },
                 "zustand_notiz": {
                     "description": "ZustandNotiz dokumentiert eventuelle Beschädigungen (z. B. \"Wasserschaden\") oder Reservierungen.",
@@ -4528,6 +4531,10 @@ const docTemplate = `{
                     "description": "Medientyp klassifiziert die Art des Mediums (z. B. \"Buch\", \"CD\", \"DVD\").",
                     "type": "string"
                 },
+                "mehrjahresband": {
+                    "description": "Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026): Das Buch bleibt über\ndie Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet bis zum Stichtag des\nSchuljahres, in dem das Kind JahrgangBis beendet. Die Jahreszahl ist JahrgangBis, eine\nzweite gibt es nicht.",
+                    "type": "boolean"
+                },
                 "signatur": {
                     "description": "Signatur speichert die Bibliothekssignatur (z. B. Standort/Regal).",
                     "type": "string"
@@ -4546,10 +4553,6 @@ const docTemplate = `{
                 "verlag": {
                     "description": "Verlag ist der herausgebende Buchverlag.",
                     "type": "string"
-                },
-                "ziel_jahrgang": {
-                    "description": "ZielJahrgang definiert, bis zu welcher Klasse ein Exemplar dieses Titels bei Schülern bleibt (Default 0 = 1 Jahr).",
-                    "type": "integer"
                 }
             }
         },

@@ -232,11 +232,14 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 	settings, err := s.querySettings(ctx)
 	heute = heute.In(schoolLocation())
 
+	// Mehrjahresband (Migration 134): Das Buch bleibt bis zum Ende von JahrgangBis beim Kind.
+	// Die Jahre über das laufende Schuljahr hinaus sind der Abstand zwischen der Klasse des
+	// Kindes und JahrgangBis; ein Kind über der Spanne bekommt ein Schuljahr wie jedes andere.
 	additionalYears := 0
-	if copy.ZielJahrgang > 0 && borrowerKlasse != "" {
+	if copy.Mehrjahresband && copy.JahrgangBis > 0 && borrowerKlasse != "" {
 		currentGrade := parseGrade(borrowerKlasse)
-		if currentGrade > 0 && copy.ZielJahrgang >= currentGrade {
-			additionalYears = copy.ZielJahrgang - currentGrade
+		if currentGrade > 0 && copy.JahrgangBis >= currentGrade {
+			additionalYears = copy.JahrgangBis - currentGrade
 		}
 	}
 

@@ -117,8 +117,11 @@ type BookTitle struct {
 	// Auflage trägt eine eigene ISBN und ist damit ein eigener Titel; dieses Feld sagt,
 	// welcher von zwei gleich heißenden Zeilen man vor sich hat.
 	Auflage string `json:"auflage,omitempty"`
-	// ZielJahrgang definiert, bis zu welcher Klasse ein Exemplar dieses Titels bei Schülern bleibt (Default 0 = 1 Jahr).
-	ZielJahrgang int `json:"ziel_jahrgang"`
+	// Mehrjahresband (Migration 134, Antwort der Schule vom 22.09.2026): Das Buch bleibt über
+	// die Spanne JahrgangVon..JahrgangBis beim Kind; die Frist rechnet bis zum Stichtag des
+	// Schuljahres, in dem das Kind JahrgangBis beendet. Die Jahreszahl ist JahrgangBis, eine
+	// zweite gibt es nicht.
+	Mehrjahresband bool `json:"mehrjahresband"`
 	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Die Regeln —
 	// Frist, Limit, öffentlicher Katalog, Löschfrist — lesen dieses Feld, nicht den Text.
 	IstLernmittel bool `json:"ist_lernmittel"`
@@ -195,8 +198,11 @@ type BookCopy struct {
 	Medientyp string `json:"medientyp,omitempty"`
 	// Signatur speichert die Bibliothekssignatur.
 	Signatur string `json:"signatur,omitempty"`
-	// ZielJahrgang definiert die Zielklasse für die Fristberechnung.
-	ZielJahrgang int `json:"ziel_jahrgang"`
+	// Mehrjahresband und JahrgangBis kommen vom Titel (Migration 134): Bleibt das Buch über
+	// mehrere Schuljahre beim Kind, rechnet die Fristregel bis zum Stichtag des Schuljahres,
+	// in dem das Kind JahrgangBis beendet (internal/service/loan_rules.go).
+	Mehrjahresband bool `json:"mehrjahresband"`
+	JahrgangBis    int  `json:"jahrgang_bis"`
 	// IstLernmittel: Schulbuch der Lernmittelfreiheit (buecher_titel.ist_lernmittel,
 	// Migration 093) — Schuljahresfrist statt Tage, zählt nicht ins Ausleihlimit.
 	IstLernmittel bool `json:"ist_lernmittel"`

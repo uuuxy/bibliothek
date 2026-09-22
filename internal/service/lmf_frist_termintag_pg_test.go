@@ -105,8 +105,8 @@ func rueckgabePlanJuni2027(t *testing.T, pool *pgxpool.Pool) {
 
 }
 
-// Mehrjahresband (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6): Ein Titel, der
-// „bis Jahrgang 11" beim Kind bleibt, bekommt bei einem Kind der 9 den Stichtag zwei
+// Mehrjahresband (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6): Ein Titel mit
+// Spanne bis Jahrgang 11 und gesetztem Schalter bekommt bei einem Kind der 9 den Stichtag zwei
 // Schuljahre später — der Rückgabetermin der Klasse geht ihn nichts an. Ist der Termin
 // schon vorbei, rechnet die Frist vom folgenden Schuljahr aus, und eines der Jahre steckt
 // in diesem Sprung: 31.07.2029, nicht 2030. Rot gesehen am Rückbau von AddDate und -1.
@@ -116,7 +116,7 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 	rueckgabePlanJuni2027(t, pool)
 
 	svc := &defaultLoanService{pool: pool}
-	band := &repository.BookCopy{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", ZielJahrgang: 11}
+	band := &repository.BookCopy{Titel: "Mathe 9-11", IstLernmittel: true, Medientyp: "Buch", Mehrjahresband: true, JahrgangBis: 11}
 	tag := func(d string) time.Time {
 		x, err := time.ParseInLocation("2006-01-02", d, schulzeit.Zone())
 		if err != nil {
@@ -134,7 +134,7 @@ func TestLmfFrist_MehrjahresbandRechnetUeberDenStichtagHinaus(t *testing.T) {
 		{"am Termintag: folgendes Schuljahr plus das verbleibende Jahr", "9H2", tag("2027-06-29"), TagesEndeInSchulzeitzone(tag("2029-07-31"))},
 		{"Tag danach: dasselbe", "9H2", tag("2027-06-30"), TagesEndeInSchulzeitzone(tag("2029-07-31"))},
 		{"Kind der 11: der letzte Jahrgang, ein Schuljahr wie bisher", "ET", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2027-07-31"))},
-		{"Kind über dem Zieljahrgang: ein Schuljahr", "12T", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2027-07-31"))},
+		{"Kind über der Spanne: ein Schuljahr", "12T", tag("2027-06-28"), TagesEndeInSchulzeitzone(tag("2027-07-31"))},
 	}
 	for _, fall := range faelle {
 		t.Run(fall.name, func(t *testing.T) {

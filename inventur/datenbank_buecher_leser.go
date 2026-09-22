@@ -25,14 +25,14 @@ const buchListenSelect = `
 		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
 		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, COALESCE(bt.beschreibung, '') AS beschreibung,
-		bt.erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, COALESCE(bt.ziel_jahrgang, 0) AS ziel_jahrgang
+		bt.erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband
 	FROM buecher_titel bt
 	LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 `
 
 const buchListenGroupBy = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.ziel_jahrgang
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband
 `
 
 // buchListenSelectSchlank ist die LISTEN-Variante: identische Spaltenzahl/-reihenfolge
@@ -54,7 +54,7 @@ const buchListenSelectSchlank = `
 		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
 		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, '' AS beschreibung,
-		'{}'::jsonb AS erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, COALESCE(bt.ziel_jahrgang, 0) AS ziel_jahrgang
+		'{}'::jsonb AS erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband
 	FROM buecher_titel bt
 	LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
@@ -63,7 +63,7 @@ const buchListenSelectSchlank = `
 // buchListenGroupBySchlank lässt die beiden Konstanten-Spalten aus der Gruppierung weg
 // (Konstanten müssen nicht gruppiert werden — spart dem Server das Hashen großer Werte).
 const buchListenGroupBySchlank = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.ziel_jahrgang
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband
 `
 
 // listBooksSicherheitsLimit kappt die Katalogliste als reine Runaway-/Speicher-Bremse.
@@ -103,7 +103,7 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 			&book.ErweiterteEigenschaften,
 			&book.Auflage,
 			&book.Listenpreis,
-			&book.ZielJahrgang,
+			&book.Mehrjahresband,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)

@@ -26,8 +26,9 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 1. **Die Antwort der Schule ist da (22.09.2026) — alle drei Dinge sind gebaut.** Keine
    automatische Sperre für Lernmittel, auch keine übergehbare (9.3 c). Titel ohne Exemplare
    stehen in keinem Katalog mehr (9.4). Mehrjahresbände am Werk, das Schuljahr steckt in der
-   Frist (9.6). Offen ist nur noch die E2E-Suite vor dem Push und dein Blick auf die zwei neuen
-   Bedienstellen (Umschalter in der Titel-Verwaltung, Feld im Buchformular).
+   Frist (9.6). Offen ist dein Blick auf die zwei neuen Bedienstellen (Umschalter „Mit
+   Exemplaren | Ohne Exemplare" in der Titel-Verwaltung, Schalter „Mehrjahresband" im
+   Buchformular).
 2. **Die sechs Fragen sind beantwortet und gebaut** (21.09.2026: 4.7, 4.9, 4.11, 4.13, 4.14,
    4.21). Von 4.8 steht nur noch der Lauf im Druck-Center aus — er ändert Daten und liegt bei
    dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
@@ -56,7 +57,7 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    offen (Feiertage als zweite Datei oder gerechnet). Dazu die Frage, ob die Schülerbücherei eine
    Themensuche bekommt (4.20).
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 132). Das passiert
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 134). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
@@ -495,7 +496,21 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Normalform. Der Altbestand ist noch nicht zurückgeschrieben: erst am Server messen, ob zwei
   Altzeilen sich nur in der Schreibweise unterscheiden (Einzeiler unten), dann eine Migration,
   die `isbn = isbn_normalform(isbn)` setzt. Ein CHECK auf den Jahrgang fehlt, „Jahrgang
-  unbekannt" ist von der Vorgabe nicht zu unterscheiden (hängt an 4.3 / 9.6).
+  unbekannt" ist von der Vorgabe nicht zu unterscheiden — und seit dem Mehrjahresband (9.6)
+  hängt eine Frist an „bis": Wer den Schalter auf einem Titel mit der Vorgabe 5 bis 10
+  umlegt, bekommt die 10. Ein CHECK allein löst das nicht; eine Vorgabe „unbekannt" (NULL)
+  bräuchte die drei Leser (Mahnwesen „Jahrgang", Inventur, Portal-Filter) mit.
+- Ein Titel, dessen Exemplare alle im Zulauf sind, steht seit 9.4 im Katalog und in der
+  Theken-Trefferliste (Zulauf zählt als vorhanden) — der Bestandssatz dort sagt aber
+  „Keine Exemplare", weil er nur zählt, was im Regal oder verliehen ist. Richtig wäre
+  „2 bestellt": eine dritte Zahl in `bestandSatz` und in den zwei Suchabfragen. Kein
+  Schaden, nur eine Auskunft, die den Kollegen ins Regal schickt; beim nächsten Anfassen
+  der Trefferliste.
+- Drei Jahrgangsangaben am Titel (22.09.2026): „Klasse" (`grade_level`) und „von … bis"
+  (`jahrgang_von/bis`) sagen mit denselben Zahlen fast dasselbe; der Import setzt „Klasse"
+  aus der Spanne, wenn sie einen Jahrgang umfasst, der Portal-Filter liest beide. Eine
+  Doppelung von früher, nicht angefasst; beim nächsten Rundgang über die Buchmaske
+  entscheiden, ob „Klasse" fällt.
 
   ```sql
   SELECT isbn_normalform(isbn) AS normalform, count(*) AS titel, string_agg(isbn, ' | ') AS schreibweisen
@@ -958,15 +973,17 @@ funktioniert nicht nach der Logik ‚Vorrücken', es werden jeweils die verschie
 aufgerufen und nebeneinander gespeichert. Aus diesem Grund muss hier auch das Schuljahr
 definiert werden."
 
-Gemessen am Testserver am 22.09.2026: kein Titel trägt einen Wert. Gebaut in zwei Stufen:
-die Fristregel (Rückgabetermin der Klasse geht ein Mehrjahresband nichts an; nach dem Termin
-rechnet sie vom folgenden Schuljahr aus) und die Tür am Werk (Feld „Bleibt beim Kind bis
-Jahrgang" in der Titel-Verwaltung, nur bei Lernmitteln, an beiden Schreibpfaden geprüft).
-Das Schuljahr, das Littera getrennt führt, steckt im Datum der Frist. Gates am Rückbau rot
-gesehen: Fristregel an beiden Stellen, Schreibpfad beim Anlegen und beim Ändern.
+Gebaut in drei Schritten am 22.09.2026: die Fristregel (Rückgabetermin der Klasse geht ein
+Mehrjahresband nichts an; nach dem Termin rechnet sie vom folgenden Schuljahr aus), dann eine
+Tür am Werk als zweite Jahreszahl — und noch am selben Tag ihr Ersatz, weil die Zahl neben
+„Jahrgang von … bis" doppelt war (Migration 134): Am Werk steht ein Schalter „Mehrjahresband",
+die Zahl ist `jahrgang_bis`, die Spalte `ziel_jahrgang` ist weg (gemessen am Testserver: ohne
+Wert). Der Schalter gilt nur an einem Lernmittel und nur mit einer Spanne über mehr als einen
+Jahrgang, an beiden Türen der Titel-Verwaltung und als CHECK in der Datenbank. Das Schuljahr,
+das Littera getrennt führt, steckt im Datum der Frist. Gates am Rückbau rot gesehen: Fristregel,
+beide Schreibpfade, CHECK.
 
-**Noch anzusehen, bei dir:** das Feld in der Maske am Bildschirm, und die E2E-Suite vor dem
-Push (siehe 9.4).
+**Noch anzusehen, bei dir:** der Schalter in der Maske am Bildschirm.
 
 ### 9.7 Reihenfolge der drei Bauten
 

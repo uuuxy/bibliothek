@@ -35,7 +35,6 @@ var nichtVonUpdateBook = map[string]string{
 	"sort_order":    "manuelle Reihenfolge des Admins, gesetzt in reorder_handler.go (Ziehen und Ablegen)",
 	"search_vector": "GENERATED ALWAYS — Postgres pflegt die Spalte, ein Schreibversuch wäre ein Fehler",
 	"cover_status":  "gehört der asynchronen Cover-Beschaffung (internal/service/cover_service.go)",
-	"ziel_jahrgang": "hat KEINEN Schreiber, nur Leser (Ausleihfrist, Suche) — offen im Register unter „LMF-Frist am Rückgabetermin“. Hier stand bis 13.09.2026 ein Schreiber in repository/book_inventory.go, den es nie gab",
 	"meldebestand": "Altbestand: Die Spalte wird NUR gelesen und von keinem Codepfad geschrieben. " +
 		"Die Bestellschwelle kommt seit dem Umbau aus den Einstellungen, der Wert wird laut " +
 		"api/reorders.go nur noch informativ mitgeliefert.",
@@ -119,9 +118,9 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// Ohne diese Zeile erwartet pgxmock null Argumente und bricht ab — der Test waere
 	// rot, ohne etwas ueber das Schema zu sagen. (18 seit dem Fall der stock-Spalte,
 	// Migration 073; 19 mit ist_lernmittel, Migration 093; 20 mit auflage, Migration 126;
-	// 21 mit listenpreis, Migration 127; 22 mit ziel_jahrgang am 22.09.2026 — die Tür zum
-	// Mehrjahresband, die Spalte gab es seit Migration 030.)
-	beliebig := make([]any, 22) // 22 mit ziel_jahrgang, 22.09.2026
+	// 21 mit listenpreis, Migration 127; 22 mit mehrjahresband, Migration 134 — der Schalter
+	// ersetzt ziel_jahrgang aus Migration 030, das nie einen Schreiber hatte.)
+	beliebig := make([]any, 22) // 22 mit mehrjahresband, Migration 134
 	for i := range beliebig {
 		beliebig[i] = pgxmock.AnyArg()
 	}

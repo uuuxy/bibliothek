@@ -6,7 +6,10 @@
      Konvention über Freitext, die zweimal in Produktion falsch lief. Jetzt ist es eine
      Entscheidung, die man sieht. -->
 <script>
-	import { klassenStufen, zielJahrgangOptionen } from '$lib/components/admin/buch_form_optionen.js';
+	import {
+		klassenStufen,
+		mehrjahresbandHinweis
+	} from '$lib/components/admin/buch_form_optionen.js';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import Switch from '../../../../lib/components/ui/Switch.svelte';
@@ -45,13 +48,13 @@
 			Ausleihlimit, erscheint nicht im öffentlichen Katalog.
 		</p>
 	</div>
-	<!-- Kein Lernmittel, kein Mehrjahresband: Der Server weist einen Zieljahrgang am
-	     Bibliotheksbuch ab, deshalb fällt er hier mit dem Schalter. -->
+	<!-- Kein Lernmittel, kein Mehrjahresband: Der Server weist den Schalter am
+	     Bibliotheksbuch ab, deshalb fällt er hier mit dem Lernmittel-Schalter. -->
 	<Switch
 		id="buch-lernmittel"
 		bind:checked={formular.istLernmittel}
 		onchange={(an) => {
-			if (!an) formular.zielJahrgang = 0;
+			if (!an) formular.mehrjahresband = false;
 		}}
 	/>
 </div>
@@ -86,26 +89,14 @@
 			Nur setzen, wenn das Buch wirklich einem Zweig gehört — leer heißt „gilt für alle".
 		</p>
 	</div>
-	<div>
-		<label for="buch-zieljahrgang" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
-			>Bleibt beim Kind bis Jahrgang</label
-		>
-		<Select
-			id="buch-zieljahrgang"
-			bind:value={formular.zielJahrgang}
-			options={zielJahrgangOptionen}
-		/>
-		<p class="mt-1 text-xs text-on-surface-variant">
-			Mehrjahresband: Die Frist ist der Stichtag des Schuljahres, in dem das Kind diesen Jahrgang
-			beendet. Ein Kind der 7 gibt ein Buch „bis Jahrgang 9" nach drei Schuljahren zurück.
-		</p>
-	</div>
 {/if}
 
 <div class="grid grid-cols-2 gap-4">
+	<!-- Bei einem Lernmittel ist die Spanne der Unterricht, kein Lesealter — und bei einem
+	     Mehrjahresband die Laufzeit beim Kind (die Zahl kommt aus „bis", OFFEN.md 9.6). -->
 	<Feld
 		id="buch-jahrgang-von"
-		label="Geeignet für Jahrgang von"
+		label={formular.istLernmittel ? 'Im Unterricht von Jahrgang' : 'Geeignet für Jahrgang von'}
 		type="number"
 		min="1"
 		max="13"
@@ -120,3 +111,19 @@
 		bind:value={formular.jahrgangBis}
 	/>
 </div>
+
+{#if formular.istLernmittel}
+	<div
+		class="flex items-center justify-between gap-4 rounded-xl border border-outline-variant px-4 py-3"
+	>
+		<div class="min-w-0">
+			<label for="buch-mehrjahresband" class="block text-sm font-medium text-on-surface"
+				>Mehrjahresband</label
+			>
+			<p class="text-xs text-on-surface-variant">
+				{mehrjahresbandHinweis(formular.mehrjahresband, formular.jahrgangVon, formular.jahrgangBis)}
+			</p>
+		</div>
+		<Switch id="buch-mehrjahresband" bind:checked={formular.mehrjahresband} />
+	</div>
+{/if}

@@ -174,6 +174,10 @@ var checkBedingungenBestand = []string{
 	"check_loan_item",
 	"check_positive_amount", "check_return_date", "chk_anliegen_art",
 	"chk_aussonderung_grund", "chk_cover_status", "chk_einkaufspreis_nonneg",
+	// Migration 134: Ein Mehrjahresband nur an einem Lernmittel und nur mit einer Spanne über
+	// mehr als einen Jahrgang; die Türen der Titel-Verwaltung prüfen dieselbe Regel
+	// (inventur/mehrjahresband.go), die Datenbank hält sie für jeden anderen Schreiber.
+	"chk_mehrjahresband_spanne",
 	"chk_exemplar_bestellstatus",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur

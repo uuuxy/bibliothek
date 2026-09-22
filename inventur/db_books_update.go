@@ -57,7 +57,7 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			ist_lernmittel = $19,
 			auflage = NULLIF($20, ''),
 			listenpreis = $21,
-			ziel_jahrgang = $22,
+			mehrjahresband = $22,
 			aktualisiert_am = NOW()
 		WHERE id = $17`
 
@@ -107,11 +107,11 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Erscheinungsjahr,
 		book.Beschreibung,
 		id,
-		book.Signatur,      // $18 — leerer Wert lässt die verklebte Signatur unangetastet
-		book.IstLernmittel, // $19 — die Maske entscheidet ausdrücklich (Migration 093)
-		book.Auflage,       // $20 — die Maske ist der Ort der Angabe, leer heißt „keine"
-		book.Listenpreis,   // $21 — Zeiger: nil löscht den Wert, das ist hier gewollt
-		book.ZielJahrgang,  // $22 — Mehrjahresband: bis zu welchem Jahrgang das Buch beim Kind bleibt, 0 = ein Schuljahr
+		book.Signatur,       // $18 — leerer Wert lässt die verklebte Signatur unangetastet
+		book.IstLernmittel,  // $19 — die Maske entscheidet ausdrücklich (Migration 093)
+		book.Auflage,        // $20 — die Maske ist der Ort der Angabe, leer heißt „keine"
+		book.Listenpreis,    // $21 — Zeiger: nil löscht den Wert, das ist hier gewollt
+		book.Mehrjahresband, // $22 — Mehrjahresband: bleibt über die Spanne beim Kind (Migration 134)
 	)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", handleDbError(err))
