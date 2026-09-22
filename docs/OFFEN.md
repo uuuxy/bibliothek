@@ -548,9 +548,6 @@ Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren 
   seit dem 17.09.2026 beide Schreibweisen (`inventur/dublettenkontrolle.go`); über die Importe
   sind `9783123456789` und `978-3-12-345678-9` weiter zwei Titel. Der Index auf der bereinigten
   Nummer wartet auf die Messung am Server (5.5).
-- **Selbstanmeldung:** Ein liegengelassener Antrag liest dauerhaft „Zugang beantragt"; nur
-  `aktiv = true` räumt `zugang_beantragt_am`. Es geht nur noch um Anträge, die weder
-  freigeschaltet noch gelöscht werden. Ob das gewollt ist, steht nirgends.
 
 ### 5.14 Fallengelassene Verdachte (15.09.2026)
 
