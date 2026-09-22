@@ -62,22 +62,30 @@ func TestSichereURL(t *testing.T) {
 	}
 }
 
+// erlaubt: Prüfhelfer der Tests. Die Produktivform IstErlaubt (nur prüfen, nicht neu
+// bauen) ist am 22.09.2026 mit dem manuellen Cover-Update gefallen; wer eine URL
+// anfasst, ruft sie auch ab und nimmt SichereURL.
+func erlaubt(rohURL string, erlaubte []string) bool {
+	_, ok := SichereURL(rohURL, erlaubte)
+	return ok
+}
+
 // Die Metadaten-Liste ist bewusst enger als die Cover-Liste. Der Test hält den
 // Unterschied fest, damit er nicht beim nächsten Aufräumen "vereinheitlicht" wird.
 func TestMetadatenHostsSindEngerAlsCoverHosts(t *testing.T) {
 	// Von Google Books holt das Inventur-Modul nur Bilder, keine Datensätze.
 	const googleBooks = "https://books.google.com/books/content?id=abc"
-	if !IstErlaubt(googleBooks, CoverHosts) {
+	if !erlaubt(googleBooks, CoverHosts) {
 		t.Error("books.google.com muss für Cover erlaubt sein")
 	}
-	if IstErlaubt(googleBooks, MetadatenHosts) {
+	if erlaubt(googleBooks, MetadatenHosts) {
 		t.Error("books.google.com darf für Metadaten NICHT erlaubt sein")
 	}
 
 	// Jeder Metadaten-Host muss auch Cover liefern dürfen — sonst ist die engere Liste
 	// nicht enger, sondern schlicht anders, und das wäre ein Versehen.
 	for _, h := range MetadatenHosts {
-		if !IstErlaubt("https://"+h+"/x", CoverHosts) {
+		if !erlaubt("https://"+h+"/x", CoverHosts) {
 			t.Errorf("Metadaten-Host %q fehlt in CoverHosts — die Listen sind auseinandergelaufen", h)
 		}
 	}
@@ -89,7 +97,7 @@ func TestMetadatenHostsSindEngerAlsCoverHosts(t *testing.T) {
 // anfassen — dieser Test macht sichtbar, dass ein Eintrag hier allein nicht reicht.
 func TestLobidIstNichtFreigegeben(t *testing.T) {
 	const lobid = "https://lobid.org/resources/search?q=isbn:123"
-	if IstErlaubt(lobid, MetadatenHosts) || IstErlaubt(lobid, CoverHosts) {
+	if erlaubt(lobid, MetadatenHosts) || erlaubt(lobid, CoverHosts) {
 		t.Error("lobid.org ist freigegeben — dann gehört auch der tote Aufrufpfad sucheLobid angeschlossen")
 	}
 }

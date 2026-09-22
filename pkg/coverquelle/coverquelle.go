@@ -80,10 +80,3 @@ func SichereURL(rohURL string, erlaubte []string) (string, bool) {
 	}
 	return sicher, true
 }
-
-// IstErlaubt meldet, ob rohURL von einem zugelassenen Host stammt — für Stellen, die
-// eine URL nur SPEICHERN und nicht selbst abrufen (manuelles Cover-Update).
-func IstErlaubt(rohURL string, erlaubte []string) bool {
-	_, ok := SichereURL(rohURL, erlaubte)
-	return ok
-}
