@@ -110,6 +110,8 @@ const titelBeiKonflikt = `ON CONFLICT (isbn) DO UPDATE SET
 			autor = COALESCE(NULLIF(buecher_titel.autor, ''), EXCLUDED.autor),
 			cover_url = COALESCE(NULLIF(buecher_titel.cover_url, ''), EXCLUDED.cover_url),
 			subject = COALESCE(buecher_titel.subject, EXCLUDED.subject),
+			-- Unbekannte Klasse kommt als NULL an (parseKlassenStufe) und füllt nichts; eine
+			-- gepflegte bleibt, eine fehlende wird aus der Datei ergänzt.
 			grade_level = COALESCE(NULLIF(buecher_titel.grade_level, 0), EXCLUDED.grade_level),
 			track = COALESCE(NULLIF(buecher_titel.track, ''), EXCLUDED.track),
 			last_counted = COALESCE(buecher_titel.last_counted, EXCLUDED.last_counted),
@@ -224,7 +226,7 @@ func (repo *BookRepository) executeUpsertBatchQuery(ctx context.Context, q dbSch
 	// diese Spalte darf ein markiertes Schulbuch nicht zum Bibliotheksbuch machen.
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
-		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), t.grade_level, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, COALESCE(NULLIF(t.jahrgang_von, 0), 5), COALESCE(NULLIF(t.jahrgang_bis, 0), 10), t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, ''), t.ist_lernmittel, NULLIF(t.auflage, ''), t.listenpreis
+		SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF(t.subject, ''), NULLIF(t.grade_level, 0)::smallint, t.track, NULLIF(t.last_counted_text, '')::date, t.medientyp, COALESCE(NULLIF(t.jahrgang_von, 0), 5), COALESCE(NULLIF(t.jahrgang_bis, 0), 10), t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF(t.signatur, ''), t.ist_lernmittel, NULLIF(t.auflage, ''), t.listenpreis
 		FROM UNNEST($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::smallint[], $7::text[], $8::text[], $9::text[], $10::int[], $11::int[], $12::text[], $13::text[], $14::int[], $15::text[], $16::jsonb[], $17::text[], $18::boolean[], $19::text[], $20::numeric[])
 		AS t(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
 		` + titelBeiKonflikt + `
@@ -356,7 +358,7 @@ func (repo *BookRepository) UpsertBook(ctx context.Context, book Book) (string, 
 
 	query := `
 		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis)
-		VALUES ($1, $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10), $12, $13, $14, $15, $16, NULLIF($17, ''), $18, NULLIF($19, ''), $20)
+		VALUES ($1, $2, $3, $4, NULLIF($5, ''), NULLIF($6, 0)::smallint, $7, NULLIF($8::text, '')::date, $9, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10), $12, $13, $14, $15, $16, NULLIF($17, ''), $18, NULLIF($19, ''), $20)
 		` + titelBeiKonflikt + `
 		RETURNING id`
 

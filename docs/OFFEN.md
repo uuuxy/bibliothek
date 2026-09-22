@@ -521,7 +521,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Mehrjährige Bände tragen ein einziges Jahr („Natur und Technik - Biologie 7 - 10" und
   „Pontes Gesamtband": Klasse 7), Klasse und Signatur widersprechen sich („Forum Geschichte
   4 (Schulbuch Klasse 9)": Signatur Ges9, Klasse 10). Woher die Werte stammen, ist nicht
-  belegt. Nächster Schritt: je Titel entscheiden, welche Spanne gilt (Liste per Einzeiler
+  belegt. Seit dem 22.09.2026 rät der Listenimport keine Klasse mehr (früher: erste Zahl im
+  Titel, sonst 5) und schreibt ohne Spalte „klasse" NULL; eine Klasse 5 aus einem älteren
+  Listenimport ist von einer gepflegten nicht zu unterscheiden. Nächster Schritt: je Titel
+  entscheiden, welche Spanne gilt (Liste per Einzeiler
   unten), dann die Spalte mit genau diesen Werten ablösen. Dabei mitentscheiden: die Spalte
   „klasse" des Listenimports und der Klassenvorschlag der ISBN-Suche, der auch aus
   „Band 2", „Level 9" und jeder Zahl von 5 bis 13 im Titel eine Klasse macht.

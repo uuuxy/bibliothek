@@ -1,26 +1,10 @@
 package inventur
 
 import (
-	"regexp"
-	"strconv"
 	"strings"
 
 	"bibliothek/pkg/lmf"
 )
-
-var gradeFromTitlePattern = regexp.MustCompile(`(?i)(?:^|[^0-9])(1[0-3]|[1-9])(?:[^0-9]|$)`)
-
-func inferGradeLevelFromTitle(title string) int {
-	match := gradeFromTitlePattern.FindStringSubmatch(title)
-	if len(match) < 2 {
-		return 0
-	}
-	grade, err := strconv.Atoi(match[1])
-	if err != nil {
-		return 0
-	}
-	return grade
-}
 
 // inferSubjectFromTitle rät das Fach aus dem Titel — über dieselbe Liste wie der
 // ISBN-Lookup (pkg/lmf), damit beide Wege dasselbe Fach registrieren.

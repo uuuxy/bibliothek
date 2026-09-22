@@ -52,7 +52,7 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 		Title:       title,
 		Author:      author,
 		Subject:     subject,
-		GradeLevel:  parseKlassenStufe(getCol("klasse"), title),
+		GradeLevel:  parseKlassenStufe(getCol("klasse")),
 		Stock:       parseBestand(getCol("bestand")),
 		LastCounted: nil,
 	}
@@ -68,22 +68,28 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 	return &book, nil
 }
 
-// parseKlassenStufe versucht die Klassenstufe aus einem String zu extrahieren.
-// Gültig ist 5–13 (kooperative Gesamtschule inkl. Oberstufe); außerhalb gilt der
-// Default 5. Early Return statt Clamp-Zuweisung: die int16-Konvertierung muss auf
+// parseKlassenStufe liest die Klassenstufe aus der Spalte „klasse". Gültig ist 5–13
+// (kooperative Gesamtschule inkl. Oberstufe). Fehlt die Spalte, ist sie leer oder liegt der
+// Wert daneben, ist die Klasse unbekannt (0); beide Upserts schreiben dafür NULL — dieselbe
+// Regel wie Littera-Übernahme und Sammelimport (NULLIF(…, 0)).
+//
+// Bis zum 22.09.2026 riet der Import stattdessen: erst die erste Zahl im Titel („Die 13½
+// Leben des Käpt'n Blaubär" bekam Klasse 13), sonst die Vorgabe 5. Eine geratene Klasse ist
+// in der Datenbank von einer gepflegten nicht zu unterscheiden, und das Upsert behält eine
+// vorhandene Klasse ungleich 0 — eine spätere Liste mit der echten Klasse kam gegen die
+// geratene nicht mehr an (docs/OFFEN.md 5.5).
+//
+// Early Return statt Clamp-Zuweisung: die int16-Konvertierung muss auf
 // einem Pfad liegen, den der Bounds-Check exklusiv kontrolliert — nach einem Merge
 // mit dem Default-Zweig gilt der Check statisch nicht mehr als Guard
 // (go/incorrect-integer-conversion).
-func parseKlassenStufe(gradeStr string, title string) int16 {
+func parseKlassenStufe(gradeStr string) int16 {
 	gradeLevel := 0
 	if g, err := strconv.Atoi(gradeStr); err == nil {
 		gradeLevel = g
 	}
-	if gradeLevel == 0 {
-		gradeLevel = inferGradeLevelFromTitle(title)
-	}
 	if gradeLevel < 5 || gradeLevel > 13 {
-		return 5
+		return 0
 	}
 	return int16(gradeLevel)
 }
