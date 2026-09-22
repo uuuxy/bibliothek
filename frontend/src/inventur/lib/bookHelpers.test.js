@@ -1,32 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import {
-	getSubjectColor,
-	getSubjectGradient,
-	getSpineGradient,
-	formatDate
-} from './bookHelpers.js';
+import { getSubjectGradient, getSpineGradient, formatDate } from './bookHelpers.js';
 
 describe('bookHelpers', () => {
-	describe('getSubjectColor', () => {
-		it('returns correct color for known subject', () => {
-			expect(getSubjectColor('Mathe')).toBe('bg-blue-50 border border-blue-200 text-blue-700');
-			expect(getSubjectColor('Biologie')).toBe(
-				'bg-green-50 border border-green-200 text-green-700'
-			);
-		});
-
-		it('returns default color for unknown subject', () => {
-			expect(getSubjectColor('Unbekannt')).toBe(
-				'bg-slate-50 border border-slate-200 text-slate-600'
-			);
-		});
-
-		it('returns default color for empty or undefined subject', () => {
-			expect(getSubjectColor('')).toBe('bg-slate-50 border border-slate-200 text-slate-600');
-			expect(getSubjectColor(undefined)).toBe('bg-slate-50 border border-slate-200 text-slate-600');
-		});
-	});
-
 	describe('getSubjectGradient', () => {
 		it('returns correct gradient for Math variations', () => {
 			const expected =

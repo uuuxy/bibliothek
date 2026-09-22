@@ -1,35 +1,3 @@
-export const subjectColors = {
-	Mathe: 'bg-blue-50 border border-blue-200 text-blue-700',
-	Deutsch: 'bg-red-50 border border-red-200 text-red-700',
-	Englisch: 'bg-indigo-50 border border-indigo-200 text-indigo-700',
-	Französisch: 'bg-indigo-50 border border-indigo-200 text-indigo-700',
-	Geographie: 'bg-emerald-50 border border-emerald-200 text-emerald-700',
-	Geschichte: 'bg-amber-50 border border-amber-200 text-amber-700',
-	Biologie: 'bg-green-50 border border-green-200 text-green-700',
-	Chemie: 'bg-yellow-50 border border-yellow-200 text-yellow-700',
-	Physik: 'bg-emerald-50 border border-emerald-200 text-emerald-700',
-	Musik: 'bg-pink-50 border border-pink-200 text-pink-700',
-	Arbeitslehre: 'bg-orange-50 border border-orange-200 text-orange-700',
-	Politik: 'bg-rose-50 border border-rose-200 text-rose-700',
-	Informatik: 'bg-cyan-50 border border-cyan-200 text-cyan-700',
-	Latein: 'bg-sky-50 border border-sky-200 text-sky-700',
-	Spanisch: 'bg-emerald-50 border border-emerald-200 text-emerald-700',
-	'kath. Religion': 'bg-violet-50 border border-violet-200 text-violet-700',
-	'ev. Religion': 'bg-violet-50 border border-violet-200 text-violet-700',
-	Ethik: 'bg-teal-50 border border-teal-200 text-teal-700'
-};
-
-/**
- * @param {string | null | undefined} subject
- * @returns {string}
- */
-export function getSubjectColor(subject) {
-	if (subject && subject in subjectColors) {
-		return subjectColors[/** @type {keyof typeof subjectColors} */ (subject)];
-	}
-	return 'bg-slate-50 border border-slate-200 text-slate-600';
-}
-
 /**
  * @param {string | null | undefined} subject
  * @returns {string}
