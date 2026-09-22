@@ -65,6 +65,10 @@ type LusdPreviewResult struct {
 	ActiveDbStudents int `json:"active_db_students"`
 	SkippedNoID      int `json:"skipped_no_id"`      // ID-Modus: CSV-Zeilen ohne LUSD-ID — werden nie importiert
 	DublettenInDatei int `json:"dubletten_in_datei"` // Zeilen mit demselben Schlüssel, letzte gewann
+	// DublettenAbweichend: die davon, deren Zeilen verschiedene Klassen trugen — die
+	// Vorschau nennt sie beim Namen, damit ein stiller Zusammenfall zweier Schüler
+	// (gleicher Name, Tippfehler im Geburtsdatum) vor dem Import auffällt.
+	DublettenAbweichend []StudentDiff `json:"dubletten_abweichend"`
 }
 
 // lusdImportLockKey serialisiert gleichzeitige LUSD-Importe (Advisory-Lock). Eigener
@@ -199,6 +203,7 @@ func (s *Server) computeLusdLauf(ctx context.Context, datei lusdDatei, lauf lusd
 		DublettenInDatei: datei.DublettenInDatei,
 		KarenzTage:       karenzTage,
 	}
+	res.DublettenAbweichend = append([]StudentDiff{}, datei.Zusammengelegt...)
 
 	// Erster Durchlauf: nur klassifizieren — der Schwellen-Check muss VOR dem
 	// ersten destruktiven Statement entscheiden.
@@ -338,6 +343,7 @@ func (s *Server) protokolliereLusdImport(r *http.Request, res *LusdPreviewResult
 		"nicht_im_export":          len(res.NichtImExport),
 		"nicht_abgleichbar":        len(res.NichtAbgleichbar),
 		"mehrdeutig":               len(res.Mehrdeutig),
+		"dubletten_abweichend":     len(res.DublettenAbweichend),
 		"umbenennungen_bestaetigt": zaehleBestaetigte(res.Umbenennungen),
 		"karenz_tage":              res.KarenzTage,
 		"massenabgang_bestaetigt":  massenabgangBestaetigt,

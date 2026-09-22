@@ -111,6 +111,28 @@ func TestParseLusdDatei_NamensmodusDublettenLetzteGewinnt(t *testing.T) {
 	if datei.Zeilen[0].Klasse != "6a" || datei.Zeilen[1].Nachname != "Beispiel" {
 		t.Errorf("letzte Zeile muss an erster Position gewinnen: %+v", datei.Zeilen)
 	}
+	// Die Klassen unterschieden sich — das nennt die Vorschau beim Namen (OFFEN.md 5.6):
+	// Ein Schulformwechsler, oder zwei Kinder mit demselben Namen und einem Tippfehler im
+	// Geburtsdatum. Eine bloße Zahl („1 zusammengelegt") verschwieg, WER zusammenfiel.
+	if len(datei.Zusammengelegt) != 1 {
+		t.Fatalf("erwartet 1 zusammengelegte Zeile mit abweichender Klasse, waren %d: %+v", len(datei.Zusammengelegt), datei.Zusammengelegt)
+	}
+	if z := datei.Zusammengelegt[0]; z.ID != "zeile-4" || z.Nachname != "MUSTERMANN" || z.AlteKlasse != "5a" || z.NeueKlasse != "6a" {
+		t.Errorf("Vorschau-Eintrag nennt nicht Zeile, Namen und beide Klassen: %+v", z)
+	}
+}
+
+func TestParseLusdDatei_NamensmodusDoppelzeileGleicherKlasseIstNurEineZahl(t *testing.T) {
+	// Dieselbe Zeile zweimal (Klasse nur anders geschrieben): eine Doppelzeile, kein
+	// Zusammenfall zweier Menschen — gezählt, aber nicht als Hinweis gelistet.
+	csv := "vorname,nachname,klasse,geburtsdatum\nMax,Mustermann,5a,01.02.2012\nMax,Mustermann,05A,01.02.2012\n"
+	datei, err := parseLusdDatei([]byte(csv))
+	if err != nil {
+		t.Fatalf("unerwarteter Fehler: %v", err)
+	}
+	if len(datei.Zeilen) != 1 || datei.DublettenInDatei != 1 || len(datei.Zusammengelegt) != 0 {
+		t.Fatalf("Doppelzeile gleicher Klasse: %d Zeilen, %d Dubletten, %d Hinweise (erwartet 1/1/0)", len(datei.Zeilen), datei.DublettenInDatei, len(datei.Zusammengelegt))
+	}
 }
 
 func TestParseLusdDatei_IDModusDublettenGezaehlt(t *testing.T) {

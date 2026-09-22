@@ -6,7 +6,7 @@
  * @typedef {{ id: string, vorname: string, nachname: string, alte_klasse?: string, neue_klasse?: string }} StudentDiff
  * @typedef {{ schueler_id: string, lusd_id: string, vorname: string, nachname: string, geburtsdatum: string, alte_klasse?: string, neue_klasse?: string }} AdoptionDiff
  * @typedef {{ zeile: number, schueler_id: string, alt_vorname: string, alt_nachname: string, alt_klasse: string, alt_geburtsdatum?: string, neu_vorname: string, neu_nachname: string, neu_klasse: string, neu_geburtsdatum?: string, grund: string, sicher: boolean, war_abgaenger: boolean, bestaetigt: boolean }} UmbenennungDiff
- * @typedef {{ modus: 'lusd_id' | 'name_geburtsdatum' | 'name', new_students: StudentDiff[], class_changes: StudentDiff[], adoptions: AdoptionDiff[], rueckkehrer: StudentDiff[], graduates: StudentDiff[], nicht_im_export: StudentDiff[], nicht_abgleichbar: StudentDiff[], mehrdeutig: StudentDiff[], umbenennungen: UmbenennungDiff[], karenz_tage: number, total_csv_records: number, active_db_students: number, skipped_no_id: number, dubletten_in_datei: number }} LusdPreviewResult
+ * @typedef {{ modus: 'lusd_id' | 'name_geburtsdatum' | 'name', new_students: StudentDiff[], class_changes: StudentDiff[], adoptions: AdoptionDiff[], rueckkehrer: StudentDiff[], graduates: StudentDiff[], nicht_im_export: StudentDiff[], nicht_abgleichbar: StudentDiff[], mehrdeutig: StudentDiff[], umbenennungen: UmbenennungDiff[], karenz_tage: number, total_csv_records: number, active_db_students: number, skipped_no_id: number, dubletten_in_datei: number, dubletten_abweichend?: StudentDiff[] }} LusdPreviewResult
  * @typedef {{ key: string, label: string, hint: string, items: StudentDiff[], valueClass: string }} Rubrik
  */
 
@@ -39,6 +39,19 @@ export function abgaengerHinweis(karenzTage) {
 	return karenzTage > 0
 		? `Fehlen in der Datei — werden als Abgänger gesperrt; ohne offene Vorgänge nach ${karenzTage} Tagen Karenz anonymisiert (Einstellungen › Datenschutz & Sitzung)`
 		: 'Fehlen in der Datei — werden als Abgänger markiert; ohne offene Vorgänge sofort anonymisiert (Karenzzeit 0)';
+}
+
+/**
+ * Zwei Zeilen mit demselben Schlüssel, aber verschiedenen Klassen: Die spätere gilt.
+ * Ohne Schüler-ID kann das ein Schulformwechsler sein, den LUSD doppelt führt — oder zwei
+ * Schüler gleichen Namens mit einem Tippfehler im Geburtsdatum. Mit ID ist es dieselbe
+ * Person, nur die Klasse ist zu prüfen.
+ * @param {LusdPreviewResult['modus'] | undefined} modus
+ */
+export function dublettenHinweis(modus) {
+	return modus === 'lusd_id'
+		? 'Dieselbe LUSD-ID zweimal mit verschiedenen Klassen — die spätere Zeile gilt'
+		: 'Gleicher Name und Geburtsdatum zweimal, in verschiedenen Klassen — die spätere Zeile gilt. Sind es zwei Schüler, Geburtsdatum in der Datei prüfen';
 }
 
 /**
@@ -97,6 +110,13 @@ export function rubriken(r) {
 			label: 'Nicht abgleichbar',
 			hint: 'Ohne Geburtsdatum im Bestand und nicht eindeutig über den Namen zuzuordnen — bleiben unverändert; Geburtsdatum im Profil nachtragen',
 			items: r.nicht_abgleichbar || [],
+			valueClass: 'text-on-surface-variant'
+		},
+		{
+			key: 'mergedRows',
+			label: 'Doppelt in der Datei',
+			hint: dublettenHinweis(r.modus),
+			items: r.dubletten_abweichend || [],
 			valueClass: 'text-on-surface-variant'
 		},
 		{

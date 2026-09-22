@@ -108,6 +108,14 @@ type lusdDatei struct {
 	// späteren überschrieben wurden (ID- und Name+Geburtsdatum-Modus: letzte gewinnt).
 	// Im Nur-Name-Modus wird NICHT zusammengelegt — gleiche Namen sind dort mehrdeutig.
 	DublettenInDatei int
+	// Zusammengelegt nennt die Dubletten, deren Zeilen sich in der KLASSE unterschieden
+	// (AlteKlasse = überschriebene Zeile, NeueKlasse = gewonnene, ID = Zeilennummer der
+	// gewonnenen). Im Name+Geburtsdatum-Modus kann das ein Schulformwechsler sein, den
+	// LUSD doppelt führt — oder zwei Schüler mit demselben Namen und einem Tippfehler im
+	// Datum. Die Zahl allein (DublettenInDatei) verschwieg den Fall; die Vorschau nennt
+	// ihn beim Namen (OFFEN.md 5.6, 22.09.2026). Gleiche Klasse ist eine bloße
+	// Doppelzeile und bleibt eine Zahl.
+	Zusammengelegt []StudentDiff
 }
 
 // spaltenWert liest eine optionale Spalte getrimmt aus; fehlt sie oder ist die
@@ -266,6 +274,9 @@ func legeDublettenZusammen(zeilen []parsedStudentRow, modus lusdModus, schluesse
 			continue
 		}
 		if idx, gesehen := platz[key]; gesehen {
+			if vorher := datei.Zeilen[idx]; !klassenGleich(vorher.Klasse, z.Klasse) {
+				datei.Zusammengelegt = append(datei.Zusammengelegt, diffZeile(fmt.Sprintf("zeile-%d", z.LineNum), z, vorher.Klasse, z.Klasse))
+			}
 			datei.Zeilen[idx] = z
 			datei.DublettenInDatei++
 			continue

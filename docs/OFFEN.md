@@ -530,9 +530,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.6 Schüler und LUSD
 
-- LUSD: Zwei Zeilen mit gleichem Namen und Geburtsdatum, aber verschiedenen Klassen werden still
-  zu einer Person; die Meldung „mehrdeutig" fehlt (dokumentierte Grenze). Vor der LUSD-Abnahme als
-  Hinweis in der Vorschau.
 - **Ein Schüler wird Lehrkraft (oder umgekehrt) — weiter nicht möglich, und das ist Absicht.**
   Seit Migration 123 stehen alle Leser in einer Tabelle, die Art lässt sich aber nur zwischen
   Lehrkraft und LiV umstellen. Über die Schüler-Grenze verbietet es die Datenbank
