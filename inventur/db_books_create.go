@@ -19,8 +19,8 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 	}
 
 	query := `
-		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel, auflage, listenpreis)
-		VALUES (NULLIF($1, ''), $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, COALESCE(NULLIF($11, 0), 5), COALESCE(NULLIF($12, 0), 10), $13, $14, $15, $16, NULLIF($17, ''), $18, NULLIF($19, ''), $20)
+		INSERT INTO buecher_titel (isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel, auflage, listenpreis, ziel_jahrgang)
+		VALUES (NULLIF($1, ''), $2, $3, $4, NULLIF($5, ''), $6, $7, NULLIF($8::text, '')::date, $9, $10, COALESCE(NULLIF($11, 0), 5), COALESCE(NULLIF($12, 0), 10), $13, $14, $15, $16, NULLIF($17, ''), $18, NULLIF($19, ''), $20, $21)
 		RETURNING id`
 
 	medientyp := book.Medientyp
@@ -73,6 +73,7 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		book.IstLernmittel,
 		book.Auflage,
 		book.Listenpreis,
+		book.ZielJahrgang,
 	).Scan(&id)
 	if err != nil {
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))

@@ -1,11 +1,22 @@
 export const klassenStufen = [0, 5, 6, 7, 8, 9, 10, 11, 12, 13];
 
 /**
+ * Mehrjahresband (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6): bis zu welchem
+ * Jahrgang ein Lernmittel beim Kind bleibt. 0 ist die Vorgabe — ein Schuljahr. Dieselben
+ * Grenzen wie am Server (inventur/ziel_jahrgang.go: 5 bis 13).
+ * @type {Array<{ value: number, label: string }>}
+ */
+export const zielJahrgangOptionen = [
+	{ value: 0, label: 'Ein Schuljahr (Vorgabe)' },
+	...klassenStufen.filter((k) => k >= 5).map((k) => ({ value: k, label: `Bis Jahrgang ${k}` }))
+];
+
+/**
  * leeresBuchFormular: die EINE Vorlage für ein neues Buch. Sie stand bis zum 03.09.2026
  * zweimal wörtlich in routes/admin/+page.svelte (Anfangszustand und „Neues Buch"); beim
  * Nachtragen des Schulzweigs fiel auf, dass ein neues Feld an beiden Stellen gepflegt
  * werden muss — vergisst man eine, schickt genau einer der beiden Wege das Feld nie mit.
- * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, gradeLevel: number, istLernmittel: boolean, track: string, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string, listenpreis: number|null }}
+ * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, gradeLevel: number, istLernmittel: boolean, track: string, zielJahrgang: number, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string, listenpreis: number|null }}
  */
 export function leeresBuchFormular() {
 	return {
@@ -17,6 +28,7 @@ export function leeresBuchFormular() {
 		gradeLevel: 5,
 		istLernmittel: false,
 		track: '',
+		zielJahrgang: 0,
 		stock: 0,
 		coverUrl: '',
 		lastCounted: '',

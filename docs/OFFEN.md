@@ -23,11 +23,11 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Die Antwort der Schule ist da (22.09.2026) — zwei von drei Dingen sind gebaut.** Keine
-   automatische Sperre für Lernmittel, auch keine übergehbare (9.3 c, gebaut). Titel ohne
-   Exemplare stehen in keinem Katalog mehr (9.4, gebaut). Offen: Mehrjahresbände am Werk,
-   das Schuljahr steht in der Frist (9.6, damit kippt 4.3 zurück auf „bauen") — vorher die
-   Messung aus 4.3 am Server.
+1. **Die Antwort der Schule ist da (22.09.2026) — alle drei Dinge sind gebaut.** Keine
+   automatische Sperre für Lernmittel, auch keine übergehbare (9.3 c). Titel ohne Exemplare
+   stehen in keinem Katalog mehr (9.4). Mehrjahresbände am Werk, das Schuljahr steckt in der
+   Frist (9.6). Offen ist nur noch die E2E-Suite vor dem Push und dein Blick auf die zwei neuen
+   Bedienstellen (Umschalter in der Titel-Verwaltung, Feld im Buchformular).
 2. **Die sechs Fragen sind beantwortet und gebaut** (21.09.2026: 4.7, 4.9, 4.11, 4.13, 4.14,
    4.21). Von 4.8 steht nur noch der Lauf im Druck-Center aus — er ändert Daten und liegt bei
    dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
@@ -35,7 +35,7 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    tragen keinen Vermerk. Den Wortlaut kennt nur die Schule.
 3. **Die Zahlen vom Testserver liegen vor** (21.09.2026): 8 Leser ohne Ausweisnummer, alle
    Lehrkräfte (5.16 C); kein Kollege in einer Warteschlange, in der er nie nachrückt (5.19).
-   Die Messung aus 4.3 läuft jetzt — vor dem Bau der Tür, nicht vor dem Streichen.
+   Die Messung aus 4.3 ist gelaufen (22.09.2026: kein Titel mit Wert); 4.3 ist gebaut und weg.
 4. **Zwei Umbauten freigeben**, die vorbereitet, aber nicht gebaut sind, weil sie die Datenbank
    ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für
    die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine Migration, die Nummern
@@ -92,8 +92,7 @@ jemandem schaden?"**
 
 1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen.
 2. **Die zwei Migrationen nach der Freigabe**: Ausweisnummer beim Anlegen des Kontos (5.16 C,
-   gemessen: 8 Lehrkräfte ohne Nummer) und die Karenz-Spalte (4.12). Die Messung zum
-   Ziel-Jahrgang (4.3) läuft vor dem Bau der Mehrjahresbände (9.6).
+   gemessen: 8 Lehrkräfte ohne Nummer) und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
 4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand (A) und die Ausweisnummer (C).
@@ -158,30 +157,6 @@ der Doku).
 ## 4. Entscheidungen
 
 Die Nummern bleiben fest; beantwortete Fragen fallen weg, sobald sie umgesetzt sind.
-
-### 4.3 `ziel_jahrgang`: bleibt und bekommt eine Tür
-
-**Entschieden am 22.09.2026: bauen, nicht streichen.** Die Schule hat die Mehrjahresbände
-bestätigt (9.6). Die Entscheidung vom 16.09.2026 („streichen") ist damit hinfällig — die
-Spalte, die drei Lesestellen in `repository/book_search.go` und der Zweig in
-`internal/service/loan_rules.go` (`stichtag.AddDate(additionalYears, 0, 0)`) bleiben. Was
-fehlt, ist die Tür, die den Wert setzt: Kein Schreibpfad schreibt `ziel_jahrgang`
-(`repository/book_inventory.go` nennt die Spalte weder im INSERT noch im UPDATE, kein
-Formular hat das Feld). Der Bauplan steht in 9.6.
-
-**Vor dem Bauen eine Zählung am Server.** Im Juni gab es einen Schreiber (`INSERT INTO
-buecher_titel (…, ziel_jahrgang, …)`, Commit `f8dab25a`, mit den Migrationen 029/030). Steht
-auf dem Server ein Titel mit einem Wert, dann rechnet die Fristregel dort heute schon
-mehrjährig — die Tür macht das sichtbar, und die Werte müssen zum Klassenschema passen
-(05F/05G … 10, ET/12T/13T):
-
-```sql
-SELECT count(*) AS titel_mit_wert, min(ziel_jahrgang), max(ziel_jahrgang)
-FROM buecher_titel WHERE ziel_jahrgang <> 0;
-```
-
-Ergebnis 0 → die Tür wird an leeren Werten gebaut. Ergebnis > 0 → die Werte vor dem Bau
-ansehen: Ein Wert unter der Klasse des Kindes ergibt heute stumm die einjährige Frist.
 
 ### 4.4 E6: Nach der Übergabe an die Schulaufsicht
 
@@ -974,43 +949,24 @@ Segmented Button, Bauteil `Segmente`). Und die E2E-Suite vor dem nächsten Push 
 am 22.09.2026 nicht, weil eine zweite Sitzung den Stack hielt; eine Spec ist angepasst
 (`suchfelder-eigene-tuer.spec.js` bekommt ein Exemplar).
 
-### 9.6 A: Mehrjahresbände — entschieden am 22.09.2026, 4.3 kippt zurück auf „bauen"
+### 9.6 A: Mehrjahresbände — entschieden und gebaut am 22.09.2026
 
 Protokoll 5, zweiter Spiegelstrich: „Bei den Ausleihfristen fehlt das Jahr. Mehrjahresbände
-lassen sich nicht abbilden."
+lassen sich nicht abbilden." Die Antwort der Schule, wörtlich: „Ja, Ihre Vermutung trifft zu.
+Die Einstellung ‚Mehrjahres-Band' wird am Titel/Werk hinterlegt (s. Screenshot). Littera Lm
+funktioniert nicht nach der Logik ‚Vorrücken', es werden jeweils die verschiedenen Schuljahre
+aufgerufen und nebeneinander gespeichert. Aus diesem Grund muss hier auch das Schuljahr
+definiert werden."
 
-Die Antwort der Schule, wörtlich: „Ja, Ihre Vermutung trifft zu. Die Einstellung
-‚Mehrjahres-Band' wird am Titel/Werk hinterlegt (s. Screenshot). Littera Lm funktioniert nicht
-nach der Logik ‚Vorrücken', es werden jeweils die verschiedenen Schuljahre aufgerufen und
-nebeneinander gespeichert. Aus diesem Grund muss hier auch das Schuljahr definiert werden."
-Der Screenshot liegt nicht im Ordner der Quelldokumente; die Antwort trägt ohne ihn.
+Gemessen am Testserver am 22.09.2026: kein Titel trägt einen Wert. Gebaut in zwei Stufen:
+die Fristregel (Rückgabetermin der Klasse geht ein Mehrjahresband nichts an; nach dem Termin
+rechnet sie vom folgenden Schuljahr aus) und die Tür am Werk (Feld „Bleibt beim Kind bis
+Jahrgang" in der Titel-Verwaltung, nur bei Lernmitteln, an beiden Schreibpfaden geprüft).
+Das Schuljahr, das Littera getrennt führt, steckt im Datum der Frist. Gates am Rückbau rot
+gesehen: Fristregel an beiden Stellen, Schreibpfad beim Anlegen und beim Ändern.
 
-**Was das am Code heißt.** Die Rechnung ist da: `ziel_jahrgang` am Titel → `AdditionalYears`
-→ `stichtag.AddDate(jahre, 0, 0)` in `internal/service/loan_rules.go`. Die Frist trägt damit
-das Jahr, das Littera über sein Schuljahr abbildet: Ein Buch, das „bis Jahrgang 10" beim Kind
-bleibt, bekommt beim Ausgeben an ein Kind der 8 den Stichtag zwei Schuljahre später. Das ist
-genauer als Litteras Schaltjahr-Flag, weil ein Kind, das im zweiten Jahr des Bandes dazukommt,
-die richtige Frist bekommt und nicht die volle Laufzeit. Es fehlt allein die Tür:
-
-1. **Feld am Werk** — im Titel-Formular, nur bei Lernmitteln: „Bleibt beim Kind bis Jahrgang".
-   Werte aus dem Klassenschema der Schule (5 bis 10, 12T/13T als Oberstufe); leer heißt ein
-   Schuljahr. Der Schreibpfad ist `repository/book_inventory.go` (INSERT und UPDATE nennen
-   die Spalte heute nicht). Kein zweiter Weg.
-2. **Zwei Stellen in der Fristregel prüfen**, die den Zweig bisher nur für `additionalYears
-   == 0` kennen: die LMF-Plan-Frist (Rückgabetermin der Klasse) und der Fall „Termin der
-   Klasse schon vorbei → nächstes Schuljahr". Ein Mehrjahresband, das nach dem Rückgabetermin
-   ausgegeben wird, muss ebenfalls vom folgenden Schuljahr aus rechnen — sonst endet es ein
-   Jahr zu früh.
-3. **Anzeige der Frist** in Ausleihliste, Ausweis-Akte und Mahnwesen: ein Datum mit Jahr
-   steht dort schon; das Jahr muss nur einmal in einem E2E-Lauf mit einem Mehrjahresband
-   gesehen werden.
-
-**Vorher die Messung aus 4.3** — sie sagt, ob der Server schon Werte trägt.
-
-**Gate.** Fristtest mit fester Uhr: Kind der 8, Titel bis Jahrgang 10 → Stichtag des
-übernächsten Schuljahres; Kind der 10, Titel bis Jahrgang 10 → Stichtag des laufenden;
-Ausgabe nach dem Rückgabetermin der Klasse → ein Schuljahr weiter. Rot gesehen am Rückbau
-des `AddDate`.
+**Noch anzusehen, bei dir:** das Feld in der Maske am Bildschirm, und die E2E-Suite vor dem
+Push (siehe 9.4).
 
 ### 9.7 Reihenfolge der drei Bauten
 
@@ -1019,8 +975,7 @@ aufgemacht. Vorschlag für die Reihenfolge, jede Stufe mit eigenem Commit und Ga
 
 1. **9.3 c** — gebaut am 22.09.2026.
 2. **9.4** — gebaut am 22.09.2026 (drei Türen, Aufräumsicht).
-3. **9.6** — Feld, Schreibpfad, zwei Zweige in der Fristregel; kein Schema (die Spalte gibt es),
-   aber vorher die Messung aus 4.3 am Server.
+3. **9.6** — gebaut am 22.09.2026 (Fristregel und Tür am Werk).
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 

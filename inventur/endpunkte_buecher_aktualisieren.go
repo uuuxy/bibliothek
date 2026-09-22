@@ -61,6 +61,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Medientyp:               eingabe.Medientyp,
 		JahrgangVon:             eingabe.JahrgangVon,
 		JahrgangBis:             eingabe.JahrgangBis,
+		ZielJahrgang:            eingabe.ZielJahrgang,
 		Untertitel:              eingabe.Untertitel,
 		Auflage:                 strings.TrimSpace(eingabe.Auflage),
 		Listenpreis:             eingabe.Listenpreis,
@@ -115,8 +116,7 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	if eingabe.Bestand != nil && *eingabe.Bestand < 0 {
 		return errors.New("stock muss >= 0 sein")
 	}
-
-	return nil
+	return pruefeZielJahrgang(eingabe.IstLernmittel, eingabe.ZielJahrgang)
 }
 
 // ergaenzeFehlendeMetadatenFuerAktualisierung sucht fehlende Buchinformationen über den

@@ -177,6 +177,10 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	if !validiereBuchErstellenEingabe(antwort, eingabe.ISBN, eingabe.KlassenStufe) {
 		return
 	}
+	if fehler := pruefeZielJahrgang(eingabe.IstLernmittel, eingabe.ZielJahrgang); fehler != nil {
+		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		return
+	}
 
 	buch := Book{
 		ISBN:                    strings.TrimSpace(eingabe.ISBN),
@@ -189,6 +193,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Medientyp:               strings.TrimSpace(eingabe.Medientyp),
 		JahrgangVon:             eingabe.JahrgangVon,
 		JahrgangBis:             eingabe.JahrgangBis,
+		ZielJahrgang:            eingabe.ZielJahrgang,
 		Untertitel:              strings.TrimSpace(eingabe.Untertitel),
 		Auflage:                 strings.TrimSpace(eingabe.Auflage),
 		Listenpreis:             eingabe.Listenpreis,

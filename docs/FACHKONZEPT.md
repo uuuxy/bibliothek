@@ -137,8 +137,8 @@ Versetzung in den Einstellungen). Tests: `pkg/lmfplan/layout_test.go`, `reposito
 **Kopplung an die Fristen** (`api/lmf_termine_frist.go`, 05.09.2026: „das wäre doch
 logisch"): Der Rückgabe-Termin einer Klasse ist die Frist ihrer Lernmittel. Beim Ausleihen
 liest `resolveCheckoutDueDate` die Lage der Klasse (`RueckgabeTerminLage`): Steht ein
-Rückgabe-Termin nach heute bevor, ist er die Frist (vor dem Stichtag; mehrjährige Ausleihen
-bleiben beim Stichtag). Lag der Termin der Klasse im laufenden Schuljahr schon heute oder
+Rückgabe-Termin nach heute bevor, ist er die Frist (vor dem Stichtag; ein Mehrjahresband
+bleibt beim Stichtag plus die verbleibenden Jahre, siehe unten). Lag der Termin der Klasse im laufenden Schuljahr schon heute oder
 davor, ist die Frist der Stichtag des folgenden Schuljahres (Entscheidung 13.09.2026): Wer
 dann noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück — auch wenn die
 Klasse noch einen Nachzügler-Termin vor sich hat. Bis zum
@@ -513,6 +513,7 @@ nur der Schülerausweis, weil der Ausweis einer Lehrkraft mit keinem Schuljahr a
 Das System bietet umfassende Werkzeuge zur Pflege des Buchkatalogs:
 
 - **Titel ohne Exemplar stehen in keinem Katalog (seit 22.09.2026, Antwort der Schule auf Punkt 4 der Sichtung vom 16.09.2026):** Die drei Türen, über die ein Kollegium Titel sieht — die Katalogliste `GET /api/books` (Portal und Titel-Verwaltung), die Theken-Suche (`SearchTitlesFuzzy`) und die Aktionssuche der Omnibox (`SearchTitles`) — zeigen nur Titel mit mindestens einem nicht ausgesonderten Exemplar; der Zulauf zählt als vorhanden. EIN Prädikat, `repository.SQLTitelHatExemplar` (`book_bestand.go`). Der Titel bleibt in der Tabelle, sonst legt ihn jemand ein zweites Mal an: Die Titel-Verwaltung erreicht ihn über die Aufräumsicht `GET /api/books?bestand=ohne` (dasselbe Prädikat mit NOT, Umschalter „Mit Exemplaren | Ohne Exemplare"), die Bestellliste führt ihn unter der Schwelle. Der öffentliche Katalog und der Monitor haben eine engere eigene Regel (`OeffentlichSichtbar`: kein Lernmittel, kein Zulauf). Belegt: `repository/titel_bestand_pg_test.go`, `inventur/titel_ohne_exemplar_pg_test.go`.
+- **Mehrjahresband (seit 22.09.2026, Antwort der Schule auf Protokoll 5 der Sichtung vom 16.09.2026):** Am Werk steht `ziel_jahrgang`, „bleibt beim Kind bis Jahrgang N" (Maske: Titel-Verwaltung, nur bei Lernmitteln, 0 = ein Schuljahr, Werte 5 bis 13, geprüft an beiden Türen `inventur/ziel_jahrgang.go`). Die Frist ist der Stichtag des Schuljahres, in dem das Kind diesen Jahrgang beendet: `AdditionalYears = ziel_jahrgang − Jahrgang der Klasse`, dann `AddDate` am Stichtag (`internal/service/loan_rules.go`). Vor dem Rückgabetermin der Klasse geht der Termin das Buch nichts an; ist er vorbei, rechnet die Frist vom folgenden Schuljahr aus, und eines der Jahre steckt in diesem Sprung. Das Schuljahr, das Littera getrennt führt, steckt hier im Datum der Frist. Belegt: `internal/service/lmf_frist_termintag_pg_test.go`, `inventur/mehrjahresband_am_titel_pg_test.go`.
 - **Systematiken & Signaturen:** Bücher können hierarchisch nach Systematiken (Kategorien/Themen) und spezifischen Signaturen (Regal-/Standort-Kennung) klassifiziert werden.
 - **Automatische Cover-Synchronisation:** Ein Hintergrund-Worker (`Cover-Sync`) sucht über ISBNs automatisch in externen Buch-APIs (z.B. Google Books) nach Buchcovern, lädt diese herunter und speichert sie datensparsam im WebP-Format.
 - **Legacy-Import-Engine:** Für die initiale Einrichtung oder Datenübernahme bietet das System eine dynamische Import-Schnittstelle (`/api/import/littera`), um Altbestände aus Legacy-Programmen (wie z. B. _Littera_) per CSV einzulesen und zu mappen.

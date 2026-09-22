@@ -250,6 +250,7 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				// listenpreis: nil, weil dieser Test keine ISBN-Metadaten liefert. Bei
 				// einem echten Nachschlagen füllt ihn der DNB-Ladenpreis (Migration 127).
 				pgxmock.AnyArg(),
+				0, // ziel_jahrgang: ein Schuljahr (Mehrjahresband, 22.09.2026)
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("11111111-1111-1111-1111-111111111111"))
 		mock.ExpectCommit()

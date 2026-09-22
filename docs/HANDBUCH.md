@@ -87,6 +87,10 @@ beides einstellbar (_Datenschutz & Sitzung_).
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
   Etiketten_. (§13)
+- **Mehrjahresband**: Bleibt ein Schulbuch über mehrere Schuljahre beim Kind, steht das am
+  Titel („Bleibt beim Kind bis Jahrgang", nur bei Lernmitteln). Die Frist ist dann der
+  Stichtag des Schuljahres, in dem das Kind diesen Jahrgang beendet — ein Kind der 7 gibt
+  ein Buch „bis Jahrgang 9" nach drei Schuljahren zurück. Leer heißt ein Schuljahr. (§2)
 - **Titel ohne Exemplar** stehen in keinem Katalog und in keiner Trefferliste — weder im
   Portal noch an der Theke (seit 22.09.2026; ein bestelltes Exemplar zählt schon). Sie sind
   aber nicht weg: In der Titel-Verwaltung schaltet der Umschalter _Mit Exemplaren | Ohne

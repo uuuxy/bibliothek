@@ -25,7 +25,11 @@ type Book struct {
 	Medientyp     string  `json:"medientyp" db:"medientyp"`
 	JahrgangVon   int     `json:"jahrgangVon" db:"jahrgang_von"`
 	JahrgangBis   int     `json:"jahrgangBis" db:"jahrgang_bis"`
-	Untertitel    string  `json:"untertitel" db:"untertitel"`
+	// ZielJahrgang: Mehrjahresband (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6) —
+	// bis zu welchem Jahrgang das Buch beim Kind bleibt; 0 = ein Schuljahr. Die Fristregel
+	// liest ihn über repository.BookCopy (internal/service/loan_rules.go).
+	ZielJahrgang int    `json:"zielJahrgang" db:"ziel_jahrgang"`
+	Untertitel   string `json:"untertitel" db:"untertitel"`
 	// Auflage: die Auflagenbezeichnung („4. Aufl. 2023", Migration 126). Eine neue
 	// Auflage ist ein eigener Titel mit eigener ISBN — dieses Feld unterscheidet die
 	// beiden Zeilen in Liste, Akte und Ausgabe.
@@ -57,15 +61,16 @@ type BuchEingabe struct {
 	// — eine fehlende 0 sonderte bis zum 23.08.2026 den GESAMTEN Bestand aus, im
 	// Rückfallzweig auch ausgeliehene Exemplare. `Number(undefined)` im Formular wird zu
 	// NaN und in JSON zu null; genau das ist der Weg dorthin.
-	Bestand     *int    `json:"stock"`
-	Titel       string  `json:"title"`
-	Autor       string  `json:"author"`
-	CoverURL    string  `json:"coverUrl"`
-	ZaehlDatum  *string `json:"lastCounted"`
-	Medientyp   string  `json:"medientyp"`
-	JahrgangVon int     `json:"jahrgangVon"`
-	JahrgangBis int     `json:"jahrgangBis"`
-	Untertitel  string  `json:"untertitel"`
+	Bestand      *int    `json:"stock"`
+	Titel        string  `json:"title"`
+	Autor        string  `json:"author"`
+	CoverURL     string  `json:"coverUrl"`
+	ZaehlDatum   *string `json:"lastCounted"`
+	Medientyp    string  `json:"medientyp"`
+	JahrgangVon  int     `json:"jahrgangVon"`
+	JahrgangBis  int     `json:"jahrgangBis"`
+	ZielJahrgang int     `json:"zielJahrgang"`
+	Untertitel   string  `json:"untertitel"`
 	// Auflage: Auflagenbezeichnung des Titels (Migration 126). Ohne dieses Feld käme der
 	// Wert aus der Maske nie am Repository an — die Tür wäre gebaut und nicht verdrahtet.
 	Auflage string `json:"auflage"`
