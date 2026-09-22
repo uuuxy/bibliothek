@@ -184,7 +184,11 @@ func (b *marcBibDaten) verarbeitePublikation(subfelder []marcSubfield) {
 	}
 }
 
-// verarbeiteGenre sammelt Genre-/Formangaben aus Tag 655 $a (GND-Vokabular).
+// verarbeiteGenre sammelt Genre-/Formangaben aus Tag 655 $a (GND-Vokabular) — die
+// Gattungsbegriffe. Bis zum 22.09.2026 wurde daraus ein Signaturvorschlag „BIB Jugendbuch"
+// abgeleitet; die Signaturen der Schülerbücherei sind aber die Littera-Codes am Regal. Die
+// gesammelten Begriffe sind die Quelle der Themensuche (docs/OFFEN.md 4.20), die als
+// Nächstes eine Zuordnung DNB-Wert → Thema bekommt.
 func (b *marcBibDaten) verarbeiteGenre(subfelder []marcSubfield) {
 	for _, unterFeld := range subfelder {
 		if unterFeld.Code == "a" {
@@ -250,14 +254,13 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	}
 
 	return &MetadatenErgebnis{
-		ISBN:         isbn,
-		Titel:        titel,
-		Autor:        finalerAutor,
-		Verlag:       akk.verlag,
-		Jahr:         akk.jahr,
-		Zielgruppe:   akk.zielgruppe,
-		Preis:        akk.preis,
-		BibKategorie: leiteBibKategorieAb(akk.genres, akk.zielgruppe),
+		ISBN:       isbn,
+		Titel:      titel,
+		Autor:      finalerAutor,
+		Verlag:     akk.verlag,
+		Jahr:       akk.jahr,
+		Zielgruppe: akk.zielgruppe,
+		Preis:      akk.preis,
 	}, nil
 }
 

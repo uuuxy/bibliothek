@@ -11,6 +11,7 @@
      Eigene Datei, seit OrderSearch mit dem Fenster über der 200-Zeilen-Marke lag. -->
 <script>
 	import { apiPut } from '../../apiFetch.js';
+	import { ladeSignaturen } from '../../utils/signaturen.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -37,6 +38,21 @@
 	// unverändert übernommen wird nie ein zusätzlicher Request ausgelöst (weder für einen
 	// unangetasteten Vorschlag noch für eine bereits vorhandene Angabe).
 	const signaturBeiStart = untrack(() => book.signatur ?? '');
+
+	// Die Signaturen der Schülerbücherei sind die Littera-Codes am Regal. Sie kommen aus
+	// dem BESTAND (GET /api/signaturen) — bis zum 22.09.2026 schlug die DNB-Kategorie hier
+	// „BIB Jugendbuch" vor, ein Wort, das in keinem Regal steht.
+	/** @type {{ signatur: string, titel: number }[]} */
+	let vorhandene = $state([]);
+	$effect(() => {
+		let abgebrochen = false;
+		ladeSignaturen().then((liste) => {
+			if (!abgebrochen) vorhandene = liste;
+		});
+		return () => {
+			abgebrochen = true;
+		};
+	});
 	const lernmittelBeiStart = untrack(() => Boolean(book.ist_lernmittel));
 
 	async function uebernehmen() {
@@ -85,15 +101,21 @@
 		<label for="stagedSignaturInput" class="text-xs font-medium text-slate-500">
 			Signatur
 			{#if !signaturBeiStart}
-				<span class="text-amber-600 font-normal">(Vorschlag, bitte prüfen)</span>
+				<span class="text-amber-600 font-normal">(bitte eintragen)</span>
 			{/if}
 		</label>
 		<Feld
 			id="stagedSignaturInput"
 			bind:value={signatur}
-			placeholder="z. B. BIB Jugendbuch"
+			list="staging-signatur-vorschlaege"
+			placeholder="Regaladresse wählen"
 			feld="font-medium"
 		/>
+		<datalist id="staging-signatur-vorschlaege">
+			{#each vorhandene as s (s.signatur)}
+				<option value={s.signatur}>{s.signatur} — {s.titel} Titel</option>
+			{/each}
+		</datalist>
 	</div>
 
 	<!-- Die Antwort entscheidet über den Topf: Lernmittel bestellt das Land (Lernmittel-

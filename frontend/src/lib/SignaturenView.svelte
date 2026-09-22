@@ -49,11 +49,11 @@
 			id="signaturen-suchfeld"
 			bind:wert={suche}
 			etikett="Signatur suchen"
-			platzhalter="Signatur suchen, z. B. BIB …"
+			platzhalter="Signatur suchen"
 		/>
 		<p class="text-sm text-slate-500">
-			Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „BIB Deu“
-			meint das ganze Regal, „BIB Deu 5 KRÜ“ ein einzelnes Fach darin.
+			Die Signatur ist die Regaladresse auf dem Buchrücken. Sie wird als Präfix gelesen: „LMF Deu 7“
+			meint das ganze Regal, „LMF Deu 7 / Bie“ ein einzelnes Buch darin.
 		</p>
 	</div>
 

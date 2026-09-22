@@ -8,44 +8,22 @@ import (
 	"bibliothek/inventur"
 )
 
-func TestSignaturVorschlagAusMetadaten(t *testing.T) {
-	tests := []struct {
-		name         string
-		bibKategorie string
-		want         string
-	}{
-		{"keine Kategorie ermittelt", "", ""},
-		{"Jugendbuch", "Jugendbuch", "BIB Jugendbuch"},
-		{"Manga", "Manga", "BIB Manga"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			meta := &inventur.MetadatenErgebnis{BibKategorie: tt.bibKategorie}
-			if got := signaturVorschlagAusMetadaten(meta); got != tt.want {
-				t.Errorf("signaturVorschlagAusMetadaten(%q) = %q, want %q", tt.bibKategorie, got, tt.want)
-			}
-		})
-	}
-}
-
-// TestUpsertTitelAusMetadaten_SchreibtSignaturVorschlagUndFach belegt, dass ein neu
-// über die DNB-Bestellsuche angelegter Titel nicht mehr ohne Systematik im Katalog
-// landet: Die Genre-/Alters-Heuristik der DNB-Suche liefert einen Signatur-Vorschlag
-// ("BIB Jugendbuch") und die Fach-Heuristik den subject-Wert, beide werden beim
-// INSERT geschrieben statt wie vorher verworfen.
-func TestUpsertTitelAusMetadaten_SchreibtSignaturVorschlagUndFach(t *testing.T) {
+// Ein neu über die DNB-Bestellsuche angelegter Titel bekommt das Fach aus der Heuristik —
+// und KEINE Signatur. Die Signaturen der Schülerbücherei sind die Littera-Codes am Regal
+// („Sk", „JF", „MANGA"); bis zum 22.09.2026 stand hier „BIB Jugendbuch", ein Wort, das in
+// keinem Regal vorkommt (gemessen am Testserver am 22.09.2026: 0 Titel mit „BIB").
+func TestUpsertTitelAusMetadaten_SchreibtFachUndKeineErfundeneSignatur(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 	srv := &Server{DB: &db.Database{Pool: pool}}
 
 	meta := &inventur.MetadatenErgebnis{
-		Titel:        "Die Tribute von Panem",
-		Autor:        "Collins, Suzanne",
-		Verlag:       "Oetinger",
-		Jahr:         "2009",
-		Fach:         "Deutsch",
-		BibKategorie: "Jugendbuch",
+		Titel:  "Die Tribute von Panem",
+		Autor:  "Collins, Suzanne",
+		Verlag: "Oetinger",
+		Jahr:   "2009",
+		Fach:   "Deutsch",
 	}
 
 	resp, err := srv.upsertTitelAusMetadaten(ctx, "9783841421001", meta)
@@ -55,8 +33,8 @@ func TestUpsertTitelAusMetadaten_SchreibtSignaturVorschlagUndFach(t *testing.T) 
 	if resp.Exists {
 		t.Error("Exists = true, want false (neu angelegter Titel)")
 	}
-	if resp.Signatur != "BIB Jugendbuch" {
-		t.Errorf("Signatur = %q, want %q", resp.Signatur, "BIB Jugendbuch")
+	if resp.Signatur != "" {
+		t.Errorf("Signatur = %q — ein neuer Titel bekommt keine erfundene Signatur", resp.Signatur)
 	}
 
 	var subject string

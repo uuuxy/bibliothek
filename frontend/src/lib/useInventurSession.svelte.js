@@ -17,7 +17,7 @@ export function useInventurSession(opts = {}) {
 	let sessionId = $state('');
 	let scopeType = $state('global');
 	// Die Signatur ist der Text vom Buchruecken, kein Fremdschluessel mehr. Sie wirkt
-	// als Praefix: "BIB Deu" erfasst auch "BIB Deu 5 KRUE" (Migration 060).
+	// als Praefix: "LMF Deu 7" erfasst auch "LMF Deu 7 / Bie" (Migration 060).
 	let selectedSignatur = $state('');
 	let signaturen = $state(/** @type {any[]} */ ([]));
 	// Filter-Scope: gezielte Teil-Inventur nach Fach und/oder Klasse ("nur Mathe, Kl. 5").

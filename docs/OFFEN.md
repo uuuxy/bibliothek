@@ -477,19 +477,15 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.5 Bestand, Katalog, Druck
 
-- Bestellen per ISBN legt den Titel aus der DNB an (`upsertTitelAusMetadaten`), speichert aber
-  nur Titel, Autor, ISBN, Verlag, Jahr, Cover, Fach und als Signatur „BIB " plus eine von vier
-  Kategorien — ohne das Kürzel des Titels, das die Littera-Signaturen tragen („Regal / Kürzel").
-  Verworfen werden Untertitel, Altersangabe (`Zielgruppe`), Ladenpreis (Spalte `listenpreis`
-  seit Migration 127) und die Gattungsbegriffe. Vorschlag (22.09.2026): alles als Vorschlag
-  speichern, im Bestellkorb editierbar, die Signatur vollständig nach dem Schema der
-  Schülerbücherei; die Gattung kommt mit 4.20. Vorher messen, wie die Signaturen der
-  Schülerbücherei am Testserver aussehen:
-
-  ```sql
-  SELECT split_part(signatur, ' / ', 1) AS regal, count(*) FROM buecher_titel
-  WHERE NOT ist_lernmittel AND signatur IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 25;
-  ```
+- Bestellen per ISBN legt den Titel aus der DNB an (`upsertTitelAusMetadaten`) und speichert
+  Titel, Autor, ISBN, Verlag, Jahr, Cover und Fach. **Verworfen** werden weiterhin Untertitel,
+  Altersangabe (`Zielgruppe`) und Ladenpreis, obwohl es für den Preis seit Migration 127 die
+  Spalte `listenpreis` gibt. Die Gattungsbegriffe (MARC 655) liest der DNB-Leser, gespeichert
+  werden sie nicht — sie sind die Quelle der Themensuche (4.20).
+  Die Signatur ist seit dem 22.09.2026 kein erfundener Vorschlag mehr: Gemessen am Testserver
+  tragen die Titel der Schülerbücherei die Littera-Codes am Regal (`Sk` 499, `Pg` 464,
+  `Lernhilfe` 390, `JF` 351 …) und KEIN zweites Signaturteil; „BIB Kinderbuch" kam in keinem
+  Regal vor. Buchformular und Bestellkorb bieten jetzt die Adressen aus dem Bestand an.
 
 - Zugangsdatum beim Anlegen außerhalb des Bestellwegs (Rasterdurchgang 22.09.2026, Frage 6):
   Handanlage, Sammelimport und Bestand-Nachziehen lassen `erworben_am` auf der Vorgabe

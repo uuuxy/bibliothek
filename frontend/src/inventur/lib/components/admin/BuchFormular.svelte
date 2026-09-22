@@ -25,7 +25,7 @@
 
 	// Neuanlage eines Bibliotheksbuchs ohne Signatur ist gesperrt — die Signatur
 	// muss aufs Rücken-Etikett. Lernmittel tragen keins (Migration 093). Die DNB
-	// liefert höchstens einen Kategorie-Vorschlag (Kinder-/Jugendbuch → "BIB …"),
+	// liefert Titel, Autor, Verlag, Jahr, Cover, Fach und Klasse als Vorschlag,
 	// die Entscheidung bleibt beim Menschen. Altbestand (formular.id) bleibt
 	// speicherbar, damit leere Littera-Importe pflegbar sind.
 	const speichernGesperrt = $derived(
@@ -50,11 +50,6 @@
 					if (data.coverUrl) formular.coverUrl = data.coverUrl;
 					if (data.subject) formular.subject = data.subject;
 					if (data.grade) formular.gradeLevel = parseInt(data.grade) || formular.gradeLevel;
-					// DNB-Altersstufe → Signatur-Vorschlag "BIB {Kategorie}",
-					// nur solange das Pflichtfeld noch leer ist.
-					if (data.bibKategorie && !(formular.signatur ?? '').trim()) {
-						formular.signatur = `BIB ${data.bibKategorie}`;
-					}
 				} else {
 					// Sweep „verschluckte Fehlantwort" (06.09.2026): Vorher blieb das Formular
 					// nach dem Scan einfach leer — nicht zu unterscheiden von „zu dieser ISBN

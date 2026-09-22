@@ -37,8 +37,7 @@ type MetadatenErgebnis struct {
 	// Preis ist der DNB-Ladenpreis (MARC21 020 $c) als VORSCHLAG. 0 = keiner ermittelbar.
 	// Er gilt zum Erscheinungszeitpunkt und ist NICHT der Schulpreis — die Oberflaeche
 	// darf ihn nur vorschlagen, nie als erfasste Ausgabe verbuchen.
-	Preis        float64 `json:"preis,omitempty"`
-	BibKategorie string  `json:"bibKategorie"` // Signatur-Kategorie der Schülerbücherei (Kinderbuch, Jugendbuch, Comic, Manga)
+	Preis float64 `json:"preis,omitempty"`
 }
 
 // NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,

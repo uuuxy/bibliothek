@@ -123,8 +123,8 @@
 	<div>
 		<h2 class="font-bold text-slate-900">Sachgruppen</h2>
 		<p class="text-sm text-slate-500 mt-0.5">
-			Das Vokabular, aus dem das Buchformular die Signatur vorschlägt — aus „Deu“ wird „BIB Deu“
-			bzw. „LMF Deu“.
+			Das Fach-Vokabular des Katalogs. Die Signatur am Regal schlägt es nicht mehr vor: Dort gelten
+			die Adressen aus dem Bestand.
 		</p>
 	</div>
 

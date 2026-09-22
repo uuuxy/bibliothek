@@ -3,7 +3,7 @@ import { render } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiPut: vi.fn(async () => ({ ok: true, json: async () => ({}) })),
-	apiFetch: vi.fn(),
+	apiFetch: vi.fn(async () => ({ ok: true, json: async () => [] })),
 	apiClient: { post: vi.fn() }
 }));
 vi.mock('../../stores/toastStore.svelte.js', () => ({ toastStore: { addToast: vi.fn() } }));
@@ -11,7 +11,7 @@ vi.mock('../../stores/orderStore.svelte.js', () => ({
 	orderStore: { addToCart: vi.fn(), preiseErfassen: true }
 }));
 
-import { apiPut } from '../../apiFetch.js';
+import { apiPut, apiFetch } from '../../apiFetch.js';
 import { orderStore } from '../../stores/orderStore.svelte.js';
 import OrderStaging from './OrderStaging.svelte';
 
@@ -77,5 +77,37 @@ describe('OrderStaging: die Frage „Lernmittel?"', () => {
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/lernmittel', {
 			ist_lernmittel: false
 		});
+	});
+});
+
+// Die Signatur der Schülerbücherei ist die Regaladresse aus Littera („Sk", „JF", „MANGA").
+// Bis zum 22.09.2026 schlug das Fenster „BIB {Kategorie}" aus der DNB-Gattung vor — ein
+// Wort, das in keinem Regal der Schule vorkommt; damit entstand neben Litteras Vokabular
+// ein zweites. Jetzt bietet das Feld die Adressen AUS DEM BESTAND an und erfindet keine.
+describe('OrderStaging: die Signatur kommt aus dem Bestand', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	it('bietet die vorhandenen Regaladressen an und füllt nichts Erfundenes vor', async () => {
+		vi.mocked(apiFetch).mockResolvedValue(
+			/** @type {any} */ ({
+				ok: true,
+				json: async () => [
+					{ signatur: 'JF', titel: 351, exemplare: 400 },
+					{ signatur: 'MANGA', titel: 155, exemplare: 160 }
+				]
+			})
+		);
+		const screen = fenster({ ...titel, signatur: '' });
+
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Signatur/));
+		expect(feld.value, 'ein neuer Titel bekommt keine erfundene Signatur').toBe('');
+
+		await vi.waitFor(() => {
+			const optionen = [...screen.container.querySelectorAll('datalist option')].map(
+				(o) => /** @type {HTMLOptionElement} */ (o).value
+			);
+			expect(optionen).toEqual(['JF', 'MANGA']);
+		});
+		expect(apiFetch).toHaveBeenCalledWith('/api/signaturen');
 	});
 });

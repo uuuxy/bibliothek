@@ -88,15 +88,15 @@
 			{#if state.scopeType === 'signature'}
 				<div transition:slide>
 					<!-- Freie Eingabe MIT Vorschlagsliste: Die Signatur wird als Präfix gelesen,
-					     "BIB Deu" erfasst also auch "BIB Deu 5 KRÜ". Eine reine Auswahlliste
+					     "LMF Deu 7" erfasst also auch "LMF Deu 7 / Bie". Eine reine Auswahlliste
 					     könnte nur exakt vorhandene Werte anbieten und damit kein ganzes Regal. -->
 					<Feld
 						id="inv-signatur"
 						label="Signatur auswählen"
 						list="inv-signatur-vorschlaege"
 						bind:value={state.selectedSignatur}
-						placeholder="z. B. BIB Deu"
-						hint="Erfasst alles, was mit dieser Signatur beginnt — „BIB Deu“ also auch „BIB Deu 5 KRÜ“."
+						placeholder="z. B. LMF Deu 7"
+						hint="Erfasst alles, was mit dieser Signatur beginnt — „LMF Deu 7“ also auch „LMF Deu 7 / Bie“."
 					/>
 					<datalist id="inv-signatur-vorschlaege">
 						{#each state.signaturen as sig (sig.signatur)}

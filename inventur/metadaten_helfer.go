@@ -3,7 +3,6 @@ package inventur
 import (
 	"bibliothek/pkg/lmf"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"bibliothek/pkg/isbnutil"
@@ -57,39 +56,6 @@ var (
 	stufenRegex      = regexp.MustCompile(`(?i)(klasse|band|stufe|teil|level|jahrgangsstufe)\s*(\d{1,2})`)
 	klassenZahlRegex = regexp.MustCompile(`\b([5-9]|1[0-3])\b`)
 )
-
-var zielgruppenAlterRegex = regexp.MustCompile(`\d{1,2}`)
-
-// leiteBibKategorieAb übersetzt die DNB-Genre-Begriffe (MARC 655, z. B.
-// "Kinderbücher bis 11 Jahre", "Jugendbücher ab 12 Jahre") in die
-// Signatur-Kategorien der Schülerbücherei — dieselben Werte wie
-// bibKategorien in signatur_optionen.js, damit der Vorschlag direkt als
-// "BIB {Kategorie}" auf dem Rücken-Etikett landen kann. Fehlt ein
-// Genre-Treffer, entscheidet die Altersangabe der Zielgruppe (DNB-Grenze:
-// bis 11 Jahre Kinderbuch, ab 12 Jahre Jugendbuch).
-func leiteBibKategorieAb(genres []string, zielgruppe string) string {
-	alle := strings.ToLower(strings.Join(genres, " | "))
-	switch {
-	case strings.Contains(alle, "manga"):
-		return "Manga"
-	case strings.Contains(alle, "comic"):
-		return "Comic"
-	case strings.Contains(alle, "jugendbuch"), strings.Contains(alle, "jugendbücher"):
-		return "Jugendbuch"
-	case strings.Contains(alle, "kinderbuch"), strings.Contains(alle, "kinderbücher"):
-		return "Kinderbuch"
-	}
-
-	if treffer := zielgruppenAlterRegex.FindString(zielgruppe); treffer != "" {
-		if alter, err := strconv.Atoi(treffer); err == nil {
-			if alter >= 12 {
-				return "Jugendbuch"
-			}
-			return "Kinderbuch"
-		}
-	}
-	return ""
-}
 
 // automatischeKategorisierung liest Titel und Untertitel eines Buches und
 // versucht mit Regex-Wörterbüchern ein passendes Fach und die Klassenstufe

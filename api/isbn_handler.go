@@ -47,29 +47,8 @@ func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLooku
 	return nil, err
 }
 
-// signaturVorschlagAusMetadaten baut den Signatur-Vorschlag "BIB {Kategorie}" aus der
-// DNB-Genre-/Altersheuristik (dieselbe Ableitung wie im Buchformular, IsbnFeld.svelte).
-// Leer, wenn die Heuristik keine Kategorie ermitteln konnte — dann bleibt das Feld leer
-// und muss wie im Buchformular manuell gesetzt werden, statt einen sinnlosen "BIB "-Wert
-// zu erzeugen.
-func signaturVorschlagAusMetadaten(meta *inventur.MetadatenErgebnis) string {
-	if meta.BibKategorie == "" {
-		return ""
-	}
-	return "BIB " + meta.BibKategorie
-}
-
-// upsertTitelAusMetadaten legt einen neuen Titel aus den Nachschlage-Metadaten an
-// (ON CONFLICT (isbn) als Schutz gegen parallele Inserts) und liefert die Antwort.
-//
-// Läuft nur, wenn findeLokalenTitel zuvor NICHTS gefunden hat — ein bestehender Titel
-// erreicht diese Funktion nie, das ON CONFLICT ist reine Race-Condition-Absicherung
-// gegen einen zeitgleichen zweiten Import derselben ISBN. Deshalb dürfen signatur/subject
-// hier ungeschützt geschrieben werden: Es gibt nichts Bestehendes, das verloren gehen
-// könnte (anders als bei BulkUpsertBookTitles, siehe [[upsert-blanking-bugklasse]]).
 func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
 	jahrInt := parseErscheinungsjahr(meta.Jahr)
-	signatur := signaturVorschlagAusMetadaten(meta)
 
 	// subject ist FK auf die Systematik (Migration 078): das Fach aus der
 	// Titel-Heuristik erst registrieren, die kanonische Schreibweise schreiben.
@@ -80,8 +59,8 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 
 	resp := ISBNLookupResponse{ISBN: isbn}
 	err = s.DB.Pool.QueryRow(ctx, `
-		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, signatur, subject)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NULLIF($8, ''))
+		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, subject)
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''))
 		ON CONFLICT (isbn) DO UPDATE
 			SET titel      = EXCLUDED.titel,
 			    autor      = EXCLUDED.autor,
@@ -90,7 +69,7 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 			    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
 			    aktualisiert_am = CURRENT_TIMESTAMP
 		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel
-	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, signatur, kanonisch[meta.Fach]).
+	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, kanonisch[meta.Fach]).
 		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel)
 	if err != nil {
 		return ISBNLookupResponse{}, err
@@ -110,9 +89,11 @@ type ISBNLookupResponse struct {
 	Verlag   string `json:"verlag,omitempty"`
 	CoverURL string `json:"cover_url,omitempty"`
 	// Signatur ist bei exists=true die BEREITS VORHANDENE Regalsignatur (unverändert
-	// übernommen) und bei exists=false ein VORSCHLAG aus der DNB-Kategorisierung — in
-	// beiden Fällen im Bestellkorb vor dem Bestellen editierbar, siehe
-	// PUT /api/buecher/titel/{id}/signatur.
+	// übernommen) und bei exists=false leer: Die Signaturen der Schülerbücherei sind die
+	// Littera-Codes am Regal („Sk", „JF", „MANGA"), und die kennt nur der Bestand — bis zum
+	// 22.09.2026 schlug die DNB-Kategorie hier „BIB Jugendbuch" vor, ein Wort, das in keinem
+	// Regal steht. Eingetragen wird sie im Bestellkorb, mit der Vorschlagsliste aus dem
+	// Bestand (GET /api/signaturen); siehe PUT /api/buecher/titel/{id}/signatur.
 	Signatur string `json:"signatur,omitempty"`
 	// IstLernmittel: bei exists=true das Kennzeichen des vorhandenen Titels, bei
 	// exists=false immer false — ein über die DNB neu angelegter Titel ist bis zur

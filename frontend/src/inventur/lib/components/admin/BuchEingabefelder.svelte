@@ -38,19 +38,6 @@
 		}
 	});
 
-	let lastAutoSignatur = '';
-
-	// Belletristik-Vorschlag: erste 3 Buchstaben des Autor-Nachnamens
-	// ("Rowling, J.K." → "Row", "Joanne K. Rowling" → "Row") — die klassische
-	// Freihand-Systematik. Greift nur, wenn kein Fach gewählt ist.
-	const autorKuerzel = $derived.by(() => {
-		const autor = (formular.author ?? '').trim();
-		if (!autor) return '';
-		const nachname = autor.includes(',') ? autor.split(',')[0] : (autor.split(/\s+/).pop() ?? '');
-		const k = nachname.trim().slice(0, 3);
-		return k ? k.charAt(0).toUpperCase() + k.slice(1).toLowerCase() : '';
-	});
-
 	/** Neuanlage eines Bibliotheksbuchs ohne Signatur → Speichern gesperrt (Material-
 	 *  Error-State am Feld). Lernmittel tragen kein Rückenetikett (Migration 093), für
 	 *  sie ist die Signatur frei. */
@@ -68,28 +55,6 @@
 		// Defaults for Jahrgang
 		if (formular.jahrgangVon === undefined) formular.jahrgangVon = 5;
 		if (formular.jahrgangBis === undefined) formular.jahrgangBis = 10;
-
-		// Auto-Signatur-Vorschlag (bestehendes Guard-Muster: überschreibt nie
-		// eine manuelle Eingabe, nur den eigenen letzten Vorschlag).
-		// Ziel ist seit Migration 038 die ECHTE Spalte formular.signatur. Nur für
-		// Bibliotheksbücher — das Etikett eines Lernmittels gibt es nicht, und „LMF"
-		// steht seit Migration 093 im Feld, nicht mehr im Text.
-		let autoSig = '';
-		if (formular.istLernmittel) {
-			autoSig = '';
-		} else if (formular.subject) {
-			const sys = systematikListe.find((s) => s.bezeichnung === formular.subject);
-			autoSig = sys?.kuerzel ? `BIB ${sys.kuerzel}` : 'BIB';
-		} else if (!formular.id && autorKuerzel) {
-			autoSig = autorKuerzel; // Belletristik/Freihand-Neuzugang
-		}
-
-		if (autoSig) {
-			if (!formular.signatur || formular.signatur === lastAutoSignatur) {
-				formular.signatur = autoSig;
-				lastAutoSignatur = autoSig;
-			}
-		}
 	});
 </script>
 
@@ -116,7 +81,7 @@
 		<IsbnFeld bind:formular bind:wirdGescannt />
 	</div>
 
-	<SignaturFeld bind:formular {signaturFehlt} {autorKuerzel} />
+	<SignaturFeld bind:formular {signaturFehlt} />
 
 	<div class="grid grid-cols-2 gap-4">
 		<Feld id="buch-verlag" label="Verlag" bind:value={formular.verlag} />
