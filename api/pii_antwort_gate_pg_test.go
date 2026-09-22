@@ -682,11 +682,6 @@ func bauePIIPostAufrufe(w kanarienWelt) map[string][]piiPostFall {
 				return jsonPost("/api/action", `{"query":"SBK-KANARI-1"}`)
 			}, Positiv: []string{"Pruefkanari"}},
 		},
-		"POST /api/action/batch": {
-			{Name: "Batch-Scan", Anfrage: func(t *testing.T) *http.Request {
-				return jsonPost("/api/action/batch", `[{"query":"SBK-KANARI-2"}]`)
-			}, Positiv: []string{"Zugvogel"}},
-		},
 		"POST /api/lusd/preview": {
 			{Name: "Vorschau Klassenwechsel", Anfrage: lusdVorschau, Positiv: []string{"Pruefkanari"}},
 		},

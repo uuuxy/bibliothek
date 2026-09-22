@@ -151,8 +151,8 @@ Index nicht mehr, und der hält die Eindeutigkeit der Ausweisnummern.
 ### 2.4 Nicht im Umfang
 
 Anmeldung ohne Server · Schülerdaten auf dem Rechner · Umbuchen im Online-Weg · Geräte offline ·
-Rückbau von `/api/action/batch` (nächste Version) · scannende Person im Protokoll (nachgebucht wird
-unter dem beim Sync angemeldeten Konto; steht in der Doku).
+scannende Person im Protokoll (nachgebucht wird unter dem beim Sync angemeldeten Konto; steht in
+der Doku).
 
 ## 4. Entscheidungen
 

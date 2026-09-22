@@ -11,9 +11,9 @@ import { netzLage } from './netzLage.svelte.js';
 
 // Baut die Portion fuer die Nachbuch-Tuer (POST /api/action/nachbuchen).
 //
-// Bis zum 16.09.2026 ging der Sync an /api/action/batch — die Tuer, die laut Entscheidung
-// vom 13.09. nur noch "eine Version laenger" fuer Theken-Tabs mit altem Stand bestehen
-// bleibt. Die Nachbuch-Tuer war gebaut, geroutet und getestet, und niemand rief sie auf.
+// Bis zum 16.09.2026 ging der Sync an die Stapel-Tuer (POST …/action/batch); sie blieb eine
+// Version laenger (v3.0.0) fuer Theken-Tabs mit altem Stand und ist seit v3.1.0 weg. Die
+// Nachbuch-Tuer war gebaut, geroutet und getestet, und niemand rief sie auf.
 // Sie ist die richtige, weil sie Dinge kann, die der Stapel nicht kann: den
 // Scan-Zeitpunkt buchen, einen Schluessel genau einmal buchen, einen offline gescannten
 // Ausweis aufloesen und jede Abweichung als Meldung festhalten.

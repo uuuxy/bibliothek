@@ -22,12 +22,12 @@ import (
 // aufnimmt (5 Minuten) oder die Übernahme kürzt, bekäme zwei Besitzer desselben Schlüssels:
 // Beide buchen, und der Verlierer meldet das nur im Log.
 //
-// Geprüft werden die Pfade, die den Schlüssel reservieren. Beim Stapel reserviert jeder
+// Geprüft werden die Pfade, die den Schlüssel reservieren. Beim Nachbuchen reserviert jeder
 // Eintrag erst vor seiner eigenen Arbeit, also frühestens am Anfang und spätestens kurz vor
 // Ablauf der Anfrage — die Schranke gilt je Eintrag ab seiner Reservierung und ist damit
 // dieselbe.
 func TestIdempotenz_UebernahmeFristLaengerAlsBearbeitungUndSpeichern(t *testing.T) {
-	for _, pfad := range []string{"/api/action", "/api/action/batch", "/api/action/nachbuchen"} {
+	for _, pfad := range []string{"/api/action", "/api/action/nachbuchen"} {
 		arbeit := RequestFrist(pfad, StandardBearbeitungsfrist)
 		spaetestensFertig := arbeit + idempotenzSpeicherfrist
 		if spaetestensFertig >= repository.IdempotenzReservierungsfrist {

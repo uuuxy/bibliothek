@@ -28,7 +28,6 @@ func (s *Server) registerCoreActionRoutes(mux *http.ServeMux, studentRepo reposi
 	// OHNE die breiten view_students-Rechte (Schülerlisten, Mahnwesen, Bulk-Mahndruck).
 	actionHandler := s.ActionHandler(omniboxSvc)
 	mux.Handle("POST /api/action", s.RequirePermission("perform_actions")(actionHandler))
-	mux.Handle("POST /api/action/batch", s.RequirePermission("perform_actions")(s.ActionBatchHandler(omniboxSvc)))
 	// Nachbuchen der Offline-Warteschlange (Stufe 2): dieselbe Theken-Rolle wie der Scan.
 	mux.Handle("POST /api/action/nachbuchen", s.RequirePermission("perform_actions")(s.NachbuchenHandler(nachbuchSvc)))
 	// Buch-Barcodes für die Offline-Einordnung (Stufe 2): nur Nummern, keine Personendaten.

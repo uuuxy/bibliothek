@@ -38,7 +38,8 @@ describe('Buchungs-Tür /api/action', () => {
 		]) {
 			expect(MUSTER.test(form), form).toBe(true);
 		}
-		expect(MUSTER.test("post('/api/action/batch'")).toBe(false);
+		// Die Nachbuch-Tür ist eine eigene Route mit eigenem Aufrufer (offlineSync) — kein Treffer.
+		expect(MUSTER.test("post('/api/action/nachbuchen'")).toBe(false);
 	});
 });
 

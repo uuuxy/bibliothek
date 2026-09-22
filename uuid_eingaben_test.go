@@ -55,9 +55,6 @@ var uuidEingabenAusnahmen = map[string]string{
 	"api.PrintLabelsRequest.FormatID":         "Formatschlüssel aus api/label_formats.go (zweckform_l4760), keine Spalte",
 	"api.SchuelerEtikettenRequest.FormatID":   "Formatschlüssel aus api/label_formats.go (zweckform_l4760), keine Spalte",
 	"api.EtikettenGedrucktRequest.BarcodeIDs": "Exemplar-Barcodes, gehen in buecher_exemplare.barcode_id (VARCHAR)",
-	// Der Stapel ist ein Slice und läuft nicht durch DecodeAndValidate; geprüft wird je
-	// Eintrag in processSingleBatchItem (Validate.Struct), das dieser Detektor nicht sieht.
-	"api:ActionBatchHandler:ohne Validierung": "Validate.Struct je Eintrag in processSingleBatchItem",
 }
 
 type uuidPaket struct {
