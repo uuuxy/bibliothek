@@ -21,7 +21,8 @@ import (
 // von Hand vergebene Nummer kam bei der nächsten Bestellung erneut und lief in den
 // UNIQUE-Constraint. Weil die Exemplare einer Bestellung in EINER Transaktion per
 // CopyFrom entstehen, kostete das nicht die Position, sondern die ganze Bestellung.
-// GetNextSequence bedient nur noch die Schülerausweise ("S-").
+// Der Ausweis-Generator (seit Migration 136 ausweis_nummer_start in der Datenbank) bedient
+// nur die Ausweisnummern („A-").
 
 // barcodeZiehVersuche begrenzt die Nachzieh-Runden. Nach dem Heben der Sequenz über den
 // Bestand liegt der nächste Zug garantiert im freien Bereich; mehr als eine

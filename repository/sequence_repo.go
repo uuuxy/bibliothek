@@ -3,8 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
-	"unicode/utf8"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -23,8 +21,7 @@ type DBQueryer interface {
 	Begin(ctx context.Context) (pgx.Tx, error)
 }
 
-// SequenceRepository provides methods to calculate sequential strings,
-// such as auto-incrementing barcodes with prefixes (e.g., "B-10001").
+// SequenceRepository vergibt die laufenden Ausweisnummern („A-10001").
 type SequenceRepository struct {
 	db DBQueryer
 }
@@ -34,87 +31,23 @@ func NewSequenceRepository(db DBQueryer) *SequenceRepository {
 	return &SequenceRepository{db: db}
 }
 
-// sequenceStartNum ist die erste vergebene laufende Nummer, wenn noch kein Barcode
-// mit dem Präfix existiert (Format z. B. "S-10001" / "B-10001").
-const sequenceStartNum = 10001
-
-// advisoryLockKey leitet aus Tabelle+Spalte einen stabilen 64-Bit-Schlüssel für den
-// transaktionalen Advisory-Lock ab. Verschiedene Sequenzen (z. B. Schüler "S-" vs.
-// Exemplare "B-") bekommen verschiedene Schlüssel und blockieren sich gegenseitig
-// nicht.
-func advisoryLockKey(tableName, colName string) int64 {
-	h := fnv.New64a()
-	_, _ = h.Write([]byte(tableName + "\x00" + colName))
-	return int64(h.Sum64())
-}
-
-// GetNextSequence fetches the highest existing barcode with a given prefix,
-// increments the numeric part by one, and returns it.
-// Default fallback starts at 10001 if no prior entry is found.
+// NaechsteAusweisnummer liefert die nächste freie laufende Ausweisnummer (ohne Vorsilbe;
+// die gedruckte Form setzt api.AusweisNummer). Der Generator steht seit Migration 136 in
+// der Datenbank (ausweis_nummer_start), weil auch der Trigger aktives_konto_hat_ausweis ihn
+// braucht: Ein Nummernkreis hat EINEN Zähler — zwei daneben waren der Fehler aus Migration
+// 068. Bis dahin rechnete GetNextSequence dieselbe Regel in Go.
 //
-// NUR für die Schülerausweise ("S-"). Die Exemplarnummern der Bücher ("B-") kommen aus
-// der Sequenz barcode_seq (repository/barcode_vergabe.go) — dieser Generator darf sie
-// nicht mehr bedienen. Er leitet die nächste Nummer aus dem BESTAND ab und gibt sie
-// damit nach einem Löschen erneut aus; parallel dazu zählte barcode_seq weiter, sodass
-// beide Stellen dieselbe Nummer vergaben und die nächste Bestellung am
-// UNIQUE-Constraint zerbrach (Migration 068).
+// Die Regeln: numerisch statt lexikografisch (A-100000 > A-99999), Fallback 10001, Nummern
+// mit mehr als 15 Ziffern (verrutschter Scan) werden übergangen. Der Advisory-Lock hält bis
+// zum Ende der Transaktion — wer mehrere Nummern braucht (LUSD-Lauf), zieht einmal und zählt
+// in derselben Transaktion selbst weiter.
 //
-// Note: Since table and column names cannot be parameterized in Postgres,
-// they are securely formatted using Sprintf. We trust the inputs as they are
-// developer-defined constants (never user-provided).
-//
-// Zwei Fehler dieser Funktion sind hier zentral behoben, weil sie ALLE laufenden
-// Barcodes (Schüler "S-", Exemplare "B-") speist:
-//
-//  1. Lexikografischer Kollaps: Das frühere ORDER BY <spalte> DESC sortierte den
-//     Barcode als String. Damit gilt 'B-99999' > 'B-100000' (die '9' schlägt die '1').
-//     Ab dem Übergang auf sechsstellige Nummern lieferte die Query dauerhaft 'B-99999'
-//     als Maximum; das System versuchte endlos, erneut 'B-100000' anzulegen, und lief
-//     jedes Mal in den UNIQUE-Constraint. Fix: Das Zahlensuffix NACH dem Präfix wird
-//     numerisch verglichen (Cast auf bigint), nicht lexikografisch.
-//
-//  2. Race-Condition: "Höchsten Wert lesen und in Go +1 rechnen" ist ohne Sperre nicht
-//     atomar — zwei gleichzeitige Anlagen lesen denselben Maximalwert und erzeugen
-//     denselben nächsten Barcode; einer läuft in eine Constraint-Verletzung (harter
-//     500er). Fix: pg_advisory_xact_lock serialisiert die Vergabe pro Sequenz. Der Lock
-//     wird in der Transaktion des Aufrufers gehalten, bis dieser den zugehörigen INSERT
-//     committet — der zweite Aufrufer blockiert so lange und liest danach den bereits
-//     erhöhten Maximalwert. Läuft die Funktion (Preview-Endpunkt) ohne umschließende
-//     Transaktion auf dem Pool, wird der Lock am Statement-Ende sofort wieder frei —
-//     dort wird nichts eingefügt, also ist keine Serialisierung nötig.
-func (r *SequenceRepository) GetNextSequence(ctx context.Context, tableName, colName, prefix string) (int, error) {
-	// Das Zahlensuffix beginnt direkt hinter dem Präfix (1-indizierte Startposition).
-	suffixStart := utf8.RuneCountInString(prefix) + 1
-
-	// Der Advisory-Lock steht auf der IMMER vorhandenen Lock-Zeile (LEFT JOIN von links),
-	// damit er auch bei leerer Tabelle (allererster Barcode) sicher genommen wird — ein
-	// CROSS JOIN mit leerer Tabelle würde die Lock-Zeile nie auswerten.
-	//
-	// Die Ziffernlänge ist begrenzt (15 statt beliebig): Der Ausweis-Barcode darf beim
-	// Anlegen frei eingegeben werden — ein verrutschter Scan wie "S-999999999999999999999"
-	// landete so in der Tabelle und ließ danach JEDE automatische Vergabe am Cast auf
-	// bigint scheitern ("value out of range"). Zu lange Nummern werden hier ignoriert
-	// statt die Vergabe für alle zu blockieren.
-	query := fmt.Sprintf(`
-		SELECT coalesce(max(substr(t.%[1]s, $2)::bigint), 0)
-		FROM (SELECT pg_advisory_xact_lock($3)) AS _lock
-		LEFT JOIN %[2]s t
-		       ON t.%[1]s LIKE $1
-		      AND substr(t.%[1]s, $2) ~ '^[0-9]{1,15}$'
-	`, colName, tableName)
-
-	var lastNum int64
-	err := r.db.QueryRow(ctx, query,
-		prefix+"%",                          // $1
-		suffixStart,                         // $2
-		advisoryLockKey(tableName, colName), // $3
-	).Scan(&lastNum)
-	if err != nil {
-		return 0, fmt.Errorf("failed to query next sequence: %w", err)
+// Die Exemplarnummern der Bücher kommen NICHT von hier, sondern aus barcode_seq
+// (repository/barcode_vergabe.go).
+func (r *SequenceRepository) NaechsteAusweisnummer(ctx context.Context) (int, error) {
+	var n int64
+	if err := r.db.QueryRow(ctx, `SELECT ausweis_nummer_start()`).Scan(&n); err != nil {
+		return 0, fmt.Errorf("nächste ausweisnummer: %w", err)
 	}
-
-	if lastNum > 0 {
-		return int(lastNum) + 1, nil
-	}
-	return sequenceStartNum, nil
+	return int(n), nil
 }

@@ -20,12 +20,12 @@ func wendeLusdAenderungenAn(ctx context.Context, tx pgx.Tx, datei lusdDatei, z l
 	// Die Ausweisnummern der Neuzugänge kommen aus DERSELBEN Quelle wie die der
 	// Handanlage — einmal je Lauf gezogen, dann fortlaufend weitergezählt.
 	//
-	// Einmal und nicht je Zeile: GetNextSequence hält einen Advisory-Lock in DIESER
-	// Transaktion, bis sie endet. Der Lauf hat den Nummernkreis damit für sich, und die
+	// Einmal und nicht je Zeile: NaechsteAusweisnummer (ausweis_nummer_start, Migration 136)
+	// hält einen Advisory-Lock in DIESER Transaktion, bis sie endet. Der Lauf hat den Nummernkreis damit für sich, und die
 	// Nummern sind lückenlos. Gefragt wird die TABELLE `leser`, nicht die Sicht
 	// `schueler`: Die höchste Nummer kann seit Migration 125 an einem Kollegen hängen,
 	// und über die Sicht gerechnet gäbe der Generator sie ein zweites Mal aus.
-	startNum, err := repository.NewSequenceRepository(tx).GetNextSequence(ctx, "leser", "barcode_id", AusweisPraefix)
+	startNum, err := repository.NewSequenceRepository(tx).NaechsteAusweisnummer(ctx)
 	if err != nil {
 		return fmt.Errorf("ausweisnummern für die Neuzugänge: %w", err)
 	}

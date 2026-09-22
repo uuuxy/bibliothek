@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"bibliothek/db"
@@ -10,118 +11,214 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// TestGetNextSequence_NumerischNichtLexikografisch sichert den Fix gegen den
-// lexikografischen Kollaps (#1) ab: Liegen 'B-99999' und 'B-100000' im Bestand, muss die
-// nächste Nummer 100001 sein — nicht 100000. Lexikografisch gilt 'B-99999' > 'B-100000'
-// (die '9' schlägt die '1'); die alte ORDER-BY-DESC-Query hätte 99999 als Maximum
-// geliefert und das System endlos 'B-100000' neu anlegen lassen (UNIQUE-Crash, Einfrieren
-// der Barcode-Vergabe). Der zentrale Generator speist ALLE Schüler- und Exemplar-Barcodes.
-func TestGetNextSequence_NumerischNichtLexikografisch(t *testing.T) {
-	pool := pgTestPool(t)
-	resetBestandsdaten(t, pool)
+// Der Ausweis-Generator steht seit Migration 136 in der Datenbank (ausweis_nummer_start),
+// weil der Trigger konto_hat_leserzeile ihn braucht und ein Nummernkreis EINEN Zähler hat.
+// Die Regeln sind die, die bis dahin GetNextSequence in Go absicherte — hier an der
+// Funktion, die jetzt alle rufen.
+
+// naechsteAusweisnummer zieht die nächste Nummer in einer eigenen, zurückgerollten Transaktion.
+func naechsteAusweisnummer(t *testing.T, pool *pgxpool.Pool) int {
+	t.Helper()
 	ctx := context.Background()
-
-	titel := titelMitMeldebestand(t, pool, "Seq-Test", 0)
-	exemplar(t, pool, titel, "B-99999", true, "")
-	exemplar(t, pool, titel, "B-100000", true, "") // lexikografisch KLEINER als B-99999
-
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
-
-	seqRepo := repository.NewSequenceRepository(tx)
-	got, err := seqRepo.GetNextSequence(ctx, "buecher_exemplare", "barcode_id", "B-")
+	n, err := repository.NewSequenceRepository(tx).NaechsteAusweisnummer(ctx)
 	if err != nil {
-		t.Fatalf("GetNextSequence: %v", err)
+		t.Fatalf("NaechsteAusweisnummer: %v", err)
 	}
-	if got != 100001 {
-		t.Errorf("nächste Nummer: erwartet 100001, war %d "+
-			"(lexikografische Sortierung hätte 100000 geliefert -> UNIQUE-Crash)", got)
+	return n
+}
+
+// Numerisch, nicht lexikografisch: Lexikografisch gilt 'A-99999' > 'A-100000' (die '9'
+// schlägt die '1'); eine Sortierung als Text lieferte dauerhaft 99999 als Maximum und
+// danach endlos 'A-100000' in den eindeutigen Index.
+func TestAusweisnummer_NumerischNichtLexikografisch(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	schueler(t, pool, "A-99999")
+	schueler(t, pool, "A-100000")
+	if got := naechsteAusweisnummer(t, pool); got != 100001 {
+		t.Errorf("nächste Nummer %d, erwartet 100001 (Text-Sortierung hätte 100000 geliefert)", got)
 	}
 }
 
-// TestGetNextSequence_LeererBestandFallback: Ohne passende Barcodes startet die Sequenz
-// beim Fallback 10001 — auch bei komplett leerer Tabelle. Der Advisory-Lock muss auch dann
-// sauber genommen werden (die Lock-Zeile ist der treibende LEFT-JOIN-Partner).
-func TestGetNextSequence_LeererBestandFallback(t *testing.T) {
+// Ohne A-Nummer im Bestand beginnt der Kreis bei 10001 — auch bei leerer Tabelle. Nummern
+// anderer Vorsilben (die alten S-Ausweise) zählen nicht mit.
+func TestAusweisnummer_LeererBestandFallback(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
-	ctx := context.Background()
-
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		t.Fatal(err)
+	if got := naechsteAusweisnummer(t, pool); got != 10001 {
+		t.Errorf("leere Tabelle: %d, erwartet 10001", got)
 	}
-	defer db.SafeRollback(ctx, tx)
-
-	seqRepo := repository.NewSequenceRepository(tx)
-	got, err := seqRepo.GetNextSequence(ctx, "buecher_exemplare", "barcode_id", "B-")
-	if err != nil {
-		t.Fatalf("GetNextSequence: %v", err)
-	}
-	if got != 10001 {
-		t.Errorf("Fallback: erwartet 10001, war %d", got)
+	schueler(t, pool, "S-20000")
+	if got := naechsteAusweisnummer(t, pool); got != 10001 {
+		t.Errorf("nur eine S-Nummer im Bestand: %d, erwartet 10001", got)
 	}
 }
 
-// TestGetNextSequence_UeberlangeNummerBlockiertNicht: Der Ausweis-Barcode darf beim
-// Anlegen eines Schülers frei eingegeben werden. Ein verrutschter Scan legt damit eine
-// Nummer an, die keine bigint mehr ist — und ließ danach JEDE automatische Vergabe mit
-// "value out of range for type bigint" scheitern. Ein einziger krummer Datensatz legte
-// also die Ausweisvergabe für alle lahm. Zu lange Nummern werden übergangen.
-func TestGetNextSequence_UeberlangeNummerBlockiertNicht(t *testing.T) {
+// Ein verrutschter Scan legte eine Nummer an, die keine bigint mehr ist — und ließ danach
+// JEDE automatische Vergabe mit "value out of range for type bigint" scheitern. Zu lange
+// Nummern werden übergangen.
+func TestAusweisnummer_UeberlangeNummerBlockiertNicht(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
-	ctx := context.Background()
-
-	schueler(t, pool, "S-10005")
-	schueler(t, pool, "S-999999999999999999999") // 21 Ziffern, sprengt bigint
-
-	tx, err := pool.Begin(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.SafeRollback(ctx, tx)
-
-	seqRepo := repository.NewSequenceRepository(tx)
-	got, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "S-")
-	if err != nil {
-		t.Fatalf("GetNextSequence: %v", err)
-	}
-	if got != 10006 {
-		t.Errorf("nächste Ausweisnummer: erwartet 10006, war %d", got)
+	schueler(t, pool, "A-10005")
+	schueler(t, pool, "A-999999999999999999999") // 21 Ziffern, sprengt bigint
+	if got := naechsteAusweisnummer(t, pool); got != 10006 {
+		t.Errorf("nächste Nummer %d, erwartet 10006", got)
 	}
 }
 
-// TestGetNextSequence_MultibytePrefix: Wenn das Präfix Multibyte-Zeichen enthält
-// (wie "Schüler-", wo 'ü' 2 Bytes belegt), darf len(prefix)+1 nicht als Offset
-// für die substr-Funktion in PostgreSQL verwendet werden, da diese 1-basiert über
-// Characters (Runes) iteriert und nicht über Bytes. Dieser Test sichert ab, dass
-// utf8.RuneCountInString genutzt wird.
-func TestGetNextSequence_MultibytePrefix(t *testing.T) {
+// Go und Datenbank setzen dieselbe gedruckte Form: Der Trigger schreibt mit
+// ausweisnummer(n), die Handanlage und der LUSD-Import mit AusweisNummer(n).
+func TestAusweisnummer_FormGleichInGoUndSQL(t *testing.T) {
+	pool := pgTestPool(t)
+	for _, n := range []int{7, 10001, 99999, 100000, 1234567} {
+		var sql string
+		if err := pool.QueryRow(context.Background(), `SELECT ausweisnummer($1)`, n).Scan(&sql); err != nil {
+			t.Fatal(err)
+		}
+		if sql != AusweisNummer(n) {
+			t.Errorf("n=%d: Datenbank %q, Go %q", n, sql, AusweisNummer(n))
+		}
+	}
+}
+
+// Ein Konto bekommt beim Anlegen eine Ausweisnummer — aus demselben Kreis wie ein Schüler
+// (docs/OFFEN.md 5.16). Bis Migration 136 legte konto_hat_leserzeile die Leserzeile ohne
+// Nummer an, und der Ausweisdruck lieferte eine leere Zeile.
+func TestAusweisnummer_KontoBekommtEineBeimAnlegen(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	schueler(t, pool, "A-10041")
+
+	// Zwei Anweisungen: Die Leserzeile, die der Trigger anlegt, sähe eine äußere Abfrage
+	// derselben Anweisung nicht (schreibende CTE, gleicher Schnappschuss).
+	var leserID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (email, vorname, nachname, rolle)
+		VALUES ('ausweis-konto@example.org', 'Konto', 'Probe', 'kollegium') RETURNING leser_id`).Scan(&leserID); err != nil {
+		t.Fatalf("Konto anlegen: %v", err)
+	}
+	var nummer *string
+	if err := pool.QueryRow(ctx, `SELECT barcode_id FROM leser WHERE id = $1`, leserID).Scan(&nummer); err != nil {
+		t.Fatal(err)
+	}
+	if nummer == nil || *nummer != "A-10042" {
+		t.Errorf("Ausweis des neuen Kontos %s, erwartet A-10042", nummerOderNull(nummer))
+	}
+}
+
+// Eine offene Zugangsanfrage (inaktiv) bekommt keine Nummer — sonst bliebe ihre Leserzeile
+// nach einer Ablehnung als Waise stehen (repository.loescheUnberuehrteLeserzeile). Die
+// Freischaltung vergibt sie, auch wenn derselbe Vorgang danach die Leserzeile mit leerem
+// Ausweisfeld schreibt (repository.UpdateUser): Der Trigger wartet bis zum Commit. Und eine
+// Nummer, die die Verwaltung an einem aktiven Konto leert, bleibt leer.
+func TestAusweisnummer_AnfrageKeineFreischaltungEine(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	// "Schüler-" hat 9 Bytes, aber 8 Zeichen.
-	schueler(t, pool, "Schüler-123")
+	var kontoID, leserID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (email, vorname, nachname, rolle, aktiv, zugang_beantragt_am)
+		VALUES ('ausweis-anfrage@example.org', 'Anfrage', 'Probe', 'kollegium', false, now())
+		RETURNING id, leser_id`).Scan(&kontoID, &leserID); err != nil {
+		t.Fatalf("Anfrage anlegen: %v", err)
+	}
+	ausweis := func() *string {
+		t.Helper()
+		var n *string
+		if err := pool.QueryRow(ctx, `SELECT barcode_id FROM leser WHERE id = $1`, leserID).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		return n
+	}
+	if n := ausweis(); n != nil {
+		t.Fatalf("offene Anfrage trägt Ausweis %s, erwartet keinen", *n)
+	}
 
+	// Freischaltung wie UpdateUser: erst das Konto, dann die Leserzeile mit leerem Feld.
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
+	if _, err := tx.Exec(ctx, `UPDATE benutzer SET aktiv = true, zugang_beantragt_am = NULL WHERE id = $1`, kontoID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := tx.Exec(ctx, `UPDATE leser SET barcode_id = NULLIF('', '') WHERE id = $1`, leserID); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("Freischaltung: %v", err)
+	}
+	if n := ausweis(); n == nil || *n != "A-10001" {
+		t.Fatalf("nach der Freischaltung Ausweis %s, erwartet A-10001", nummerOderNull(n))
+	}
 
-	seqRepo := repository.NewSequenceRepository(tx)
-	got, err := seqRepo.GetNextSequence(ctx, "schueler", "barcode_id", "Schüler-")
+	// Die Verwaltung leert die Nummer eines aktiven Kontos: Das bleibt so.
+	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = NULL WHERE id = $1`, leserID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `UPDATE benutzer SET aktiv = true, vorname = 'Anfrage2' WHERE id = $1`, kontoID); err != nil {
+		t.Fatal(err)
+	}
+	if n := ausweis(); n != nil {
+		t.Errorf("geleerte Nummer an einem aktiven Konto kam als %s zurück", *n)
+	}
+}
+
+// Der Nachtrag der Migration: Jeder aktive Leser ohne Nummer bekommt eine, fortlaufend in
+// der Reihenfolge seiner Anlage; ein gelöschter nicht, und ein zweiter Lauf ändert nichts.
+// Ausgeführt wird die Migrationsdatei selbst — sie ist idempotent geschrieben.
+func TestAusweisnummer_MigrationTraegtFehlendeNach(t *testing.T) {
+	pool := pgTestPool(t)
+	resetBestandsdaten(t, pool)
+	ctx := context.Background()
+	schueler(t, pool, "A-10100")
+	for _, sql := range []string{
+		`INSERT INTO leser (vorname, nachname, art, erstellt_am) VALUES ('Erste', 'Lehrkraft', 'lehrkraft', '2026-01-01')`,
+		`INSERT INTO leser (vorname, nachname, art, erstellt_am) VALUES ('Zweite', 'Lehrkraft', 'lehrkraft', '2026-02-01')`,
+		`INSERT INTO leser (vorname, nachname, art, deleted_at) VALUES ('Geloescht', 'Lehrkraft', 'lehrkraft', now())`,
+		// Die Leserzeile einer offenen Zugangsanfrage legt der Trigger an; sie bleibt ohne.
+		`INSERT INTO benutzer (email, vorname, nachname, rolle, aktiv, zugang_beantragt_am)
+		 VALUES ('nachtrag-anfrage@example.org', 'Offen', 'Anfrage', 'kollegium', false, now())`,
+	} {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatal(err)
+		}
+	}
+	migration, err := os.ReadFile("../migrations/136_ausweisnummer_beim_konto.sql")
 	if err != nil {
-		t.Fatalf("GetNextSequence: %v", err)
+		t.Fatal(err)
 	}
-	if got != 124 {
-		t.Errorf("nächste Ausweisnummer für Multibyte-Präfix: erwartet 124, war %d", got)
+	for lauf := 1; lauf <= 2; lauf++ {
+		if _, err := pool.Exec(ctx, string(migration)); err != nil {
+			t.Fatalf("Migration, Lauf %d: %v", lauf, err)
+		}
+		soll := map[string]*string{"Erste": ptr("A-10101"), "Zweite": ptr("A-10102"), "Geloescht": nil, "Offen": nil}
+		for vorname, erwartet := range soll {
+			var ist *string
+			if err := pool.QueryRow(ctx, `SELECT barcode_id FROM leser WHERE vorname = $1`, vorname).Scan(&ist); err != nil {
+				t.Fatal(err)
+			}
+			if (ist == nil) != (erwartet == nil) || (ist != nil && *ist != *erwartet) {
+				t.Errorf("Lauf %d, %s: Ausweis %v, erwartet %v", lauf, vorname, nummerOderNull(ist), nummerOderNull(erwartet))
+			}
+		}
 	}
+}
+
+func nummerOderNull(s *string) string {
+	if s == nil {
+		return "NULL"
+	}
+	return *s
 }
 
 // schueler legt einen aktiven Schüler mit gegebenem Ausweis-Barcode an.

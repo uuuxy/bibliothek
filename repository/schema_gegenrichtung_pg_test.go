@@ -263,6 +263,12 @@ var triggerBestand = []string{
 	// uniq_schueler_barcode_active sie ohne Trigger eindeutig hält, und eine Personenart
 	// gibt es am Konto nicht mehr.
 	"trg_benutzer_hat_leserzeile @ benutzer",
+	// Migration 136, befragt am 22.09.2026: Schreibt beim Commit leser.barcode_id eines
+	// AKTIVEN Kontos, das keine Nummer hat (Anlegen, Freischaltung). Lesepfade, die mit
+	// „Kollege ohne Nummer" rechneten: loescheUnberuehrteLeserzeile (eine Nummer heißt
+	// „bleibt stehen") — deshalb bekommt eine offene Zugangsanfrage keine; der Ausleihpfad
+	// trägt eine geleerte Nummer weiter (lehrkraft_ohne_ausweis_pg_test.go).
+	"trg_aktives_konto_hat_ausweis @ benutzer",
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",

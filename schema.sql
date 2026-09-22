@@ -178,7 +178,7 @@ CREATE TABLE leser (
     -- einen Kollegen gelten sie nicht. Die Pflicht ist deshalb nicht aufgegeben, sondern
     -- an die Art GEPAART (chk_leser_schueler_pflichtfelder weiter unten).
     art VARCHAR(20) NOT NULL DEFAULT 'schueler',      -- schueler | lehrkraft | liv
-    barcode_id VARCHAR(100),                          -- Ausweisnummer (Eindeutigkeit: partieller Index uniq_schueler_barcode_active, nur aktive Zeilen — siehe Migration 049); NULL bei einem Kollegen ohne gedruckten Ausweis
+    barcode_id VARCHAR(100),                          -- Ausweisnummer (Eindeutigkeit: partieller Index uniq_schueler_barcode_active, nur aktive Zeilen — siehe Migration 049); seit Migration 136 bekommt auch jedes Konto eine
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
     klasse VARCHAR(50),                               -- e.g., '5a', '10b', 'Q2'; FK auf klassen(name), siehe Klassen-Vokabular (Migration 079). NULL bei Nicht-Schuelern
@@ -701,8 +701,32 @@ CREATE INDEX IF NOT EXISTS idx_exemplare_zugang_am
 -- Migration 125: Ein Konto ohne Leserzeile darf nicht entstehen. Konten entstehen an
 -- fuenf Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Uebernahme, Seed,
 -- Testaufbauten); die sechste wuerde es vergessen, und ein Kollege, den die Theke nicht
--- findet, ist genau der Fehler, den der Umbau abschafft. Der Ausweis wird hier NICHT
--- gesetzt — den bekommt ein Leser, wenn einer gedruckt oder eingetragen wird.
+-- findet, ist genau der Fehler, den der Umbau abschafft.
+-- Migration 136: EIN Generator für Ausweisnummern, in der Datenbank — der Trigger
+-- aktives_konto_hat_ausweis und Go (repository.SequenceRepository.NaechsteAusweisnummer) rufen ihn. Numerisch statt
+-- lexikografisch, Fallback 10001, überlange Nummern werden übergangen; der Advisory-Lock
+-- hält bis zum Ende der Transaktion.
+CREATE OR REPLACE FUNCTION ausweis_nummer_start()
+RETURNS bigint LANGUAGE plpgsql AS $$
+DECLARE
+    letzte bigint;
+BEGIN
+    PERFORM pg_advisory_xact_lock(hashtextextended('leser.barcode_id.A-', 0));
+    SELECT coalesce(max(substr(barcode_id, 3)::bigint), 0) INTO letzte
+    FROM leser
+    WHERE barcode_id LIKE 'A-%' AND substr(barcode_id, 3) ~ '^[0-9]{1,15}$';
+    IF letzte > 0 THEN
+        RETURN letzte + 1;
+    END IF;
+    RETURN 10001;
+END $$;
+
+-- Die gedruckte Form, gleich api.AusweisNummer: „A-" und mindestens fünf Ziffern.
+CREATE OR REPLACE FUNCTION ausweisnummer(n bigint)
+RETURNS text LANGUAGE sql IMMUTABLE AS $$
+    SELECT 'A-' || CASE WHEN length(n::text) < 5 THEN lpad(n::text, 5, '0') ELSE n::text END
+$$;
+
 CREATE OR REPLACE FUNCTION konto_hat_leserzeile()
 RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE
@@ -720,6 +744,30 @@ END $$;
 CREATE TRIGGER trg_benutzer_hat_leserzeile
 BEFORE INSERT ON benutzer
 FOR EACH ROW EXECUTE FUNCTION konto_hat_leserzeile();
+
+-- Migration 136: Ein AKTIVES Konto hat eine Ausweisnummer — vergeben beim Anlegen oder bei
+-- der Freischaltung, aufgeschoben bis zum Commit, damit ein Schreiber der Leserzeile in
+-- derselben Transaktion (repository.UpdateUser) sie nicht wieder leert. Eine offene
+-- Zugangsanfrage bekommt keine (Waisen-Regel, repository.loescheUnberuehrteLeserzeile).
+CREATE OR REPLACE FUNCTION aktives_konto_hat_ausweis()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NOT NEW.aktiv OR NEW.leser_id IS NULL THEN
+        RETURN NULL;
+    END IF;
+    IF TG_OP = 'UPDATE' AND OLD.aktiv THEN
+        RETURN NULL;
+    END IF;
+    UPDATE leser
+    SET barcode_id = ausweisnummer(ausweis_nummer_start()), aktualisiert_am = CURRENT_TIMESTAMP
+    WHERE id = NEW.leser_id AND barcode_id IS NULL AND deleted_at IS NULL AND anonymized_at IS NULL;
+    RETURN NULL;
+END $$;
+
+CREATE CONSTRAINT TRIGGER trg_aktives_konto_hat_ausweis
+AFTER INSERT OR UPDATE OF aktiv ON benutzer
+DEFERRABLE INITIALLY DEFERRED
+FOR EACH ROW EXECUTE FUNCTION aktives_konto_hat_ausweis();
 
 -- Migration 118 hielt eine Ausweisnummer ueber ZWEI Tabellen eindeutig (Trigger
 -- ausweis_eindeutig_ueber_personen), Migration 120 sorgte dafuer, dass ein
@@ -1606,7 +1654,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('131_nummer_ist_buch_oder_ausweis.sql'),
 ('132_bewegungsstempel_bei_zustandswechsel.sql'),
 ('133_isbn_normalform.sql'),
-('134_mehrjahresband.sql')
+('134_mehrjahresband.sql'),
+('136_ausweisnummer_beim_konto.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

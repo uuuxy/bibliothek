@@ -33,6 +33,12 @@ func TestResolveBorrower_LehrkraftOhneAusweis(t *testing.T) {
 	`, "ohne-ausweis-"+suffix+"@schule.invalid").Scan(&leserID); err != nil {
 		t.Fatalf("Lehrkraft ohne Ausweis anlegen: %v", err)
 	}
+	// Seit Migration 136 bekommt ein aktives Konto beim Anlegen eine Nummer. Ohne Nummer ist
+	// eine Lehrkraft seitdem, wenn die Verwaltung sie geleert hat — der Zustand bleibt
+	// möglich, und der Ausleihpfad muss ihn weiter tragen.
+	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = NULL WHERE id = $1`, leserID); err != nil {
+		t.Fatalf("Nummer leeren: %v", err)
+	}
 	t.Cleanup(func() {
 		if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE email = $1`,
 			"ohne-ausweis-"+suffix+"@schule.invalid"); err != nil {

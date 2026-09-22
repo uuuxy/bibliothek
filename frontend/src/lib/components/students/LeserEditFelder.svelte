@@ -132,7 +132,6 @@
 			label="Ausweisnummer{schuelerPflicht}"
 			bind:value={formData.barcode_id}
 			feld="font-mono"
-			hint={kollege ? 'Leer lassen, solange kein Ausweis gedruckt ist.' : undefined}
 		/>
 
 		<!-- Kein Status-Dropdown: „status" ist ein abgeleiteter Lesewert

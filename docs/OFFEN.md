@@ -35,9 +35,9 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 3. **Die Zahlen vom Testserver liegen vor** (21.09.2026): 8 Leser ohne Ausweisnummer, alle
    Lehrkräfte (5.16 C); kein Kollege in einer Warteschlange, in der er nie nachrückt (5.19).
    Die Messung aus 4.3 ist gelaufen (22.09.2026: kein Titel mit Wert); 4.3 ist gebaut und weg.
-4. **Zwei Umbauten, freigegeben am 22.09.2026, noch nicht gebaut:** die Ausweisnummer schon
-   beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für die Karenz-Uhr (4.12). Beide
-   brauchen eine Migration, die Nummern bzw. Daten schreibt, die niemand zurücknimmt.
+4. **Die Karenz-Uhr (4.12), freigegeben am 22.09.2026, noch nicht gebaut:** eine eigene
+   Spalte, eine Migration mit Rückfüllung über den ganzen Bestand. Die Ausweisnummer beim
+   Anlegen eines Kontos ist gebaut (Migration 136).
 5. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
@@ -54,8 +54,10 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    entschieden (4.20): Als Nächstes wird gemessen, was die DNB für den Katalog liefert, danach
    folgt die Wortliste — gebaut ist nichts.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 134). Das passiert
-beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 136; 135 gibt es
+nicht, sie ist zurückgenommen). Das passiert beim Start von allein; Daten gehen nicht verloren.
+Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Testserver am
+21.09.2026: 8 Lehrkräfte).
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
@@ -89,11 +91,10 @@ jemandem schaden?"**
 ## Reihenfolge
 
 1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen.
-2. **Die zwei Migrationen nach der Freigabe**: Ausweisnummer beim Anlegen des Kontos (5.16 C,
-   gemessen: 8 Lehrkräfte ohne Nummer) und die Karenz-Spalte (4.12).
+2. **Die Karenz-Spalte** (4.12), freigegeben.
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
-4. **5.16** Leserdatei: gebaut und abgenommen. Offen ist die Ausweisnummer (C), freigegeben.
+4. **5.16** Leserdatei: gebaut und abgenommen; die Ausweisnummer beim Konto ist seit Migration 136 gebaut.
 5. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits (5.6, 5.12 und 5.17 am 22.09.2026 erledigt).
 6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
@@ -616,25 +617,10 @@ bedienen; verschlossen sind Schule, Fristen und Mailversand (`manage_settings`) 
 Rechte (`manage_users`). Der Nummernkreis bleibt unangetastet: Ohne Netz ist die Vorsilbe die
 einzige Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheidet.
 
-**Offen: Die Ausweisnummer soll beim Anlegen des Kontos entstehen.** Heute entsteht eine
-Nummer an drei Stellen — „Neuer Leser", LUSD-Import, Littera-Übernahme. Ein Konto vergibt keine
-(`konto_hat_leserzeile` legt die Leserzeile ohne Ausweis an), und der Druck warnt nicht: Ohne
-Nummer kommt ein kaputtes Bild und eine leere Zeile auf die Karte. Entschieden am 16.09.2026,
-gebaut wird nach der Freigabe — die Umsetzung braucht eine Migration, die allen Lesern ohne
-Nummer eine nachträgt. **Gemessen am Testserver am 21.09.2026:** 8 von 41 Lesern ohne Nummer,
-alle 8 Lehrkräfte (8 von 9); von den 32 Schülern keiner. Die Zählung, vor der Migration auf
-jeder Anlage zu wiederholen:
-
-```sql
-SELECT count(*) FILTER (WHERE barcode_id IS NULL) AS ohne_nummer,
-       count(*)                                   AS leser_gesamt
-FROM leser WHERE deleted_at IS NULL;
-```
-
-Bei der Umsetzung gilt: **ein Generator** (`GetNextSequence` über `leser.barcode_id`, Vorsilbe
-`A-`) — eine zweite Vergabe in SQL wäre der Fehler aus Migration 068 in neuer Form. Der Hinweis
-am Feld „Ausweisnummer" („Leer lassen, solange kein Ausweis gedruckt ist") stimmt dann nicht mehr
-und fällt.
+**Offen, eine Frage:** Seit Migration 136 hat jedes aktive Konto eine Ausweisnummer. Die
+Verwaltung kann sie an einem Kollegen weiter leeren (`TestAusweisnummerLeeren`, entschieden
+am 16.09.2026, als der Hinweis am Feld noch „Leer lassen" sagte) — dann fehlt sie wieder, und
+der Druck liefert eine leere Zeile. Soll Leeren dort eine neue Nummer ziehen statt keine?
 
 ### 5.18 Klassen ohne Löschweg
 

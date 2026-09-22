@@ -488,7 +488,7 @@ func resolveNeueBarcodeID(ctx context.Context, tx pgx.Tx, w http.ResponseWriter,
 		// gerechnet gäbe der Generator sie ein zweites Mal aus — und der eindeutige Index
 		// quittierte das als 500 statt mit einer Auskunft. Ein Nummernkreis, zwei
 		// Generatoren: genau der Fehler aus Migration 068, nur eine Tabelle weiter.
-		startNum, err := seqRepo.GetNextSequence(ctx, "leser", "barcode_id", AusweisPraefix)
+		startNum, err := seqRepo.NaechsteAusweisnummer(ctx)
 		if err != nil {
 			db.SafeRollback(ctx, tx)
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
