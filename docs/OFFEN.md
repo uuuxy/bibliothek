@@ -95,7 +95,7 @@ jemandem schaden?"**
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
 4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand (A) und die Ausweisnummer (C).
-5. **5.5**, **5.6**, **5.12**, **5.17** und **5.19** — kleine B-Commits, gebündelt.
+5. **5.5**, **5.12** und **5.19** — kleine B-Commits, gebündelt (5.6 und 5.17 am 22.09.2026 erledigt).
 6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 7. Nach der Antwort zu E5 (**8.3**): **5.4**.
@@ -638,21 +638,6 @@ Bei der Umsetzung gilt: **ein Generator** (`GetNextSequence` über `leser.barcod
 `A-`) — eine zweite Vergabe in SQL wäre der Fehler aus Migration 068 in neuer Form. Der Hinweis
 am Feld „Ausweisnummer" („Leer lassen, solange kein Ausweis gedruckt ist") stimmt dann nicht mehr
 und fällt.
-
-### 5.17 Ein zweites Konto derselben Person erzeugt eine zweite Leserzeile
-
-Der Wächter `trg_benutzer_hat_leserzeile` hängt jedem Konto ohne Leserzeile eine an. Die
-Benutzerverwaltung bremst seit dem 22.09.2026: Steht für den Namen schon ein Kollege ohne Konto
-in der Leserdatei, antwortet sie 409 und verweist auf die Schul-E-Mail in der Akte — der Weg,
-der das Konto an die vorhandene Zeile hängt.
-
-**Offen: die Selbstanmeldung** (`auth/selbstanmeldung.go`). Wer sich selbst anmeldet, hat keine
-Akte, zu der man ihn schicken könnte; ein Kollege aus der Littera-Übernahme oder mit gelöschtem
-Konto bekommt dort weiter eine zweite Leserzeile. Automatisch an die vorhandene hängen geht
-nicht — Identität über den Namen wäre ein fremdes Konto an fremden Ausleihen. Der ehrliche Weg:
-Beim Freischalten des Antrags nennt die Benutzerverwaltung den Namensvetter ohne Konto, und wer
-freischaltet, entscheidet „dieselbe Person" (Zusammenführen) oder nicht. Nur, wenn die
-Selbstanmeldung überhaupt in Betrieb geht (7.7, Flow 5).
 
 ### 5.18 Klassen ohne Löschweg
 
