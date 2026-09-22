@@ -229,3 +229,40 @@ func TestTresenAuskunftOhneBarcode(t *testing.T) {
 		t.Errorf("erwartet 400 ohne barcode, war %d", rec.Code)
 	}
 }
+
+// Ein Kollege leiht seit Migration 125 wie jeder Leser: LogAusleihe bekommt seine Leser-Id
+// als schuelerID, benutzerID bleibt leer (alle acht Aufrufer). Die Auskunft löste den Namen
+// bis zum 22.09.2026 über die SICHT `schueler` auf — für einen Kollegen fand sie nichts und
+// meldete „Personenbezug getilgt", obwohl Person und Bezug da sind (OFFEN.md 5.19).
+func TestTresenAuskunftNenntDenKollegen(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	w := baueTresenWelt(t, pool)
+
+	var kollegeID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO leser (barcode_id, vorname, nachname, art)
+		VALUES ($1, 'Kim', 'Kollegin', 'liv') RETURNING id
+	`, "TRSK-"+w.barcode).Scan(&kollegeID); err != nil {
+		t.Fatalf("Kollege anlegen: %v", err)
+	}
+	t.Cleanup(func() {
+		aufraeumen(t, pool, `DELETE FROM audit_log WHERE datensatz_id = $1`, kollegeID)
+		aufraeumen(t, pool, `DELETE FROM leser WHERE id = $1`, kollegeID)
+	})
+
+	auditRepo := repository.NewAuditRepository(pool)
+	inTx(t, pool, func(tx pgx.Tx) error {
+		return auditRepo.LogAusleihe(ctx, tx, w.exemplarID, kollegeID, "", w.adminID)
+	})
+
+	auskunft := rufeTresenAuskunft(t, srv, w.adminID, w.barcode)
+	if len(auskunft.Ereignisse) != 1 {
+		t.Fatalf("erwartet 1 Ereignis, waren %d", len(auskunft.Ereignisse))
+	}
+	e := auskunft.Ereignisse[0]
+	if e.PersonenbezugGetilgt || e.Entleiher != "Kim Kollegin" || e.Klasse != "LiV" {
+		t.Errorf("Kollege als Entleiher: erwartet Kim Kollegin / LiV ohne Tilgung, war: %+v", e)
+	}
+}

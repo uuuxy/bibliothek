@@ -69,7 +69,6 @@ var lesepfadeUngeprueft = map[string]int{
 	"internal/service/photo_service.go":     1,
 	"inventur/datenbank_klassen.go":         2,
 	"jobs/cron_dsgvo_abgaenger.go":          1,
-	"repository/audit_tresen.go":            1,
 	"repository/betriebszustand.go":         3,
 	"repository/lmf_plan.go":                1,
 	"repository/lmf_termine.go":             1,

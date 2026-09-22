@@ -23,12 +23,17 @@ type TresenExemplarZeile struct {
 // TresenEreignisZeile ist ein CHECKOUT/RETURN-Protokolleintrag mit aufgelösten
 // Klarnamen. Leere Namen heißen: Personenbezug getilgt oder Person gelöscht —
 // die Deutung trifft der Handler, nicht die Abfrage.
+//
+// LeserName/LeserArt: der Entleiher aus `details->>'schueler_id'` — seit Migration 125
+// jeder Leser, Schüler wie Kollegium. KontoName: Einträge vor Migration 125 trugen einen
+// Kollegen als Konto unter `benutzer_id`; heute schreibt das kein Aufrufer mehr.
 type TresenEreignisZeile struct {
 	Zeitpunkt      time.Time
 	Aktion         string
-	SchuelerName   string
-	SchuelerKlasse string
-	LehrkraftName  string
+	LeserName      string
+	LeserKlasse    string
+	LeserArt       string // schueler | lehrkraft | liv; leer ohne Treffer
+	KontoName      string
 	BearbeiterName string
 }
 
@@ -81,10 +86,14 @@ func SucheTresenEreignisse(ctx context.Context, db DBQueryer, exemplarIDs []stri
 		SELECT l.timestamp, l.aktion,
 		       COALESCE(TRIM(sch.vorname || ' ' || sch.nachname), ''),
 		       COALESCE(sch.klasse, ''),
+		       COALESCE(sch.art, ''),
 		       COALESCE(TRIM(lk.vorname || ' ' || lk.nachname), ''),
 		       COALESCE(TRIM(bb.vorname || ' ' || bb.nachname), '')
 		FROM audit_log l
-		LEFT JOIN schueler sch ON sch.id::text = l.details->>'schueler_id'
+		-- Die TABELLE leser, nicht die Sicht schueler: Unter schueler_id steht seit
+		-- Migration 125 jeder Entleiher, auch ein Kollege. Über die Sicht hieß der
+		-- Kollege „Personenbezug getilgt" (TestTresenAuskunftNenntDenKollegen).
+		LEFT JOIN leser sch ON sch.id::text = l.details->>'schueler_id'
 		LEFT JOIN benutzer lk ON lk.id::text = l.details->>'benutzer_id'
 		LEFT JOIN benutzer bb ON bb.id = l.bearbeiter_id
 		WHERE l.tabelle = 'ausleihen'
@@ -102,7 +111,7 @@ func SucheTresenEreignisse(ctx context.Context, db DBQueryer, exemplarIDs []stri
 	for rows.Next() {
 		var z TresenEreignisZeile
 		if err := rows.Scan(&z.Zeitpunkt, &z.Aktion,
-			&z.SchuelerName, &z.SchuelerKlasse, &z.LehrkraftName, &z.BearbeiterName); err != nil {
+			&z.LeserName, &z.LeserKlasse, &z.LeserArt, &z.KontoName, &z.BearbeiterName); err != nil {
 			return nil, err
 		}
 		zeilen = append(zeilen, z)
