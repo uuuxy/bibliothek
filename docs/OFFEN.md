@@ -505,12 +505,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   SELECT isbn_normalform(isbn) AS normalform, count(*) AS titel, string_agg(isbn, ' | ') AS schreibweisen
   FROM buecher_titel WHERE isbn IS NOT NULL GROUP BY 1 HAVING count(*) > 1 ORDER BY 2 DESC;
   ```
-- Ein Titel, dessen Exemplare alle im Zulauf sind, steht seit 9.4 im Katalog und in der
-  Theken-Trefferliste (Zulauf zählt als vorhanden) — der Bestandssatz dort sagt aber
-  „Keine Exemplare", weil er nur zählt, was im Regal oder verliehen ist. Richtig wäre
-  „2 bestellt": eine dritte Zahl in `bestandSatz` und in den zwei Suchabfragen. Kein
-  Schaden, nur eine Auskunft, die den Kollegen ins Regal schickt; beim nächsten Anfassen
-  der Trefferliste.
 - „Klasse" neben der Spanne (22.09.2026): Zwei Jahrgangsangaben am Titel, „Klasse"
   (`grade_level`) und „von … bis" (`jahrgang_von/bis`). Mahnwesen „nach Jahrgang", Inventur
   nach Klasse und die Mehrjahresband-Frist lesen nur die Spanne; Titel-Tabelle,

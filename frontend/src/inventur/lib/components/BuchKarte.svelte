@@ -29,6 +29,7 @@
 	 *     subject: string,
 	 *     verfuegbar?: number,
 	 *     gesamt?: number,
+	 *     imZulauf?: number,
 	 *     coverUrl: string,
 	 *     lastCounted?: string,
 	 *     signatur?: string,
@@ -55,7 +56,7 @@
 	 *  0: Im Schuljahr ist fast jedes Lernmittel komplett verliehen; ein Katalog, der
 	 *  überall rot ist, sagt nichts mehr. Der Wortlaut kommt aus format.js, weil ihn
 	 *  seit dem 17.09.2026 auch die Theke braucht. */
-	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar));
+	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar, book.imZulauf));
 
 	const geprueft = $derived(book.lastCounted ? formatDatum(book.lastCounted) : '');
 

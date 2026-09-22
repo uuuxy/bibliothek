@@ -33,4 +33,15 @@ describe('format.js — eine deutsche Schreibweise', () => {
 		// Zahl da, Verfügbarkeit fehlt: lieber 0 behaupten als „NaN von 3".
 		expect(bestandSatz(3, undefined)).toBe('0 von 3 verfügbar');
 	});
+
+	// Nichts im Regal, alles bestellt: Der Titel steht in der Trefferliste, weil der Zulauf
+	// als vorhanden zählt — der Satz muss sagen, warum (docs/OFFEN.md 5.5).
+	it('Bestand: „2 bestellt" statt „Keine Exemplare", wenn nur der Zulauf etwas hat', () => {
+		expect(bestandSatz(0, 0, 2)).toBe('2 bestellt');
+		expect(bestandSatz(0, 0, 0)).toBe('Keine Exemplare');
+		expect(bestandSatz(0, 0, undefined)).toBe('Keine Exemplare');
+		// Etwas im Regal: Die Zahl dort beantwortet die Frage an der Theke, der Zulauf nicht.
+		expect(bestandSatz(1, 1, 2)).toBe('1 von 1 verfügbar');
+		expect(bestandSatz(null, null, 2)).toBe('');
+	});
 });

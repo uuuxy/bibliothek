@@ -21,6 +21,7 @@
 	 *     coverUrl: string,
 	 *     verfuegbar?: number,
 	 *     gesamt?: number,
+	 *     imZulauf?: number,
 	 *     quelle?: string,
 	 *     leser?: number
 	 *   },
@@ -39,7 +40,7 @@
 	let coverFailed = $state(false);
 
 	/** Bestand als Satz wie auf der Katalog-Kachel; ohne Zahlen im Payload bleibt die Zeile leer. */
-	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar));
+	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar, book.imZulauf));
 
 	// Lokale Liste statt Lesen des eigenen $state im selben Effekt (sonst Endlosschleife,
 	// siehe BuchKarte.svelte).

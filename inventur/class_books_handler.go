@@ -17,6 +17,7 @@ type ClassBook struct {
 	ISBN       string `json:"isbn"`
 	Verfuegbar int    `json:"verfuegbar"`
 	Gesamt     int    `json:"gesamt"`
+	ImZulauf   int    `json:"imZulauf"`
 	// Quelle: "hand" = in class_books gepflegt; "ausleihe" = live aus den laufenden
 	// Ausleihen abgeleitet (mehr als die Hälfte der Klasse hält den Titel). Leser = wie
 	// viele Kinder der Klasse ihn gerade haben (nur bei "ausleihe" gefüllt).

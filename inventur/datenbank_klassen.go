@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -80,6 +82,7 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 			COALESCE(b.isbn, '') AS isbn,
 			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
+			` + repository.SQLFilterImZulauf + ` AS im_zulauf,
 			cb.quelle, cb.leser
 		FROM zuordnung cb
 		JOIN buecher_titel b ON cb.book_id = b.id
@@ -122,7 +125,7 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 	for rows.Next() {
 		var className string
 		var book ClassBook
-		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.Quelle, &book.Leser)
+		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.ImZulauf, &book.Quelle, &book.Leser)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
 		}

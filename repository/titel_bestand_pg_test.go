@@ -65,6 +65,13 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 	verliehen := titel(t, "Alles verliehen "+marke)
 	exID := exemplar(t, verliehen, "B-BST-V"+suffix, true, false, nil)
 
+	// Teils da, teils bestellt: Die Theke nennt das Regal, der Zulauf steht daneben.
+	teils := titel(t, "Eins da zwei bestellt "+marke)
+	exemplar(t, teils, "B-BST-T1"+suffix, true, false, nil)
+	imZulaufStatus := "im_zulauf"
+	exemplar(t, teils, "B-BST-T2"+suffix, false, false, &imZulaufStatus)
+	exemplar(t, teils, "B-BST-T3"+suffix, false, false, &bestellt)
+
 	frei := titel(t, "Zwei frei eines weg "+marke)
 	exemplar(t, frei, "B-BST-F1"+suffix, true, false, nil)
 	exemplar(t, frei, "B-BST-F2"+suffix, true, false, nil)
@@ -103,10 +110,13 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 	// Seit dem 22.09.2026 (Antwort der Schule, docs/OFFEN.md 9.4) zeigt keine der beiden
 	// Türen einen Titel ohne ein nicht ausgesondertes Exemplar. Der Zulauf zählt als
 	// vorhanden: Die Bücher kommen. Rot gesehen am Rückbau des Prädikats.
-	erwartet := map[string][2]int{
-		"Nur im Zulauf":       {0, 0}, // bestellt heißt: noch nicht im Regal — der Titel bleibt sichtbar
-		"Alles verliehen":     {1, 0},
-		"Zwei frei eines weg": {2, 2},
+	// {Bestand, verfügbar, im Zulauf}. Die dritte Zahl seit dem 22.09.2026: Ohne sie sagte
+	// die Trefferliste über „Nur im Zulauf" „Keine Exemplare" (docs/OFFEN.md 5.5).
+	erwartet := map[string][3]int{
+		"Nur im Zulauf":         {0, 0, 1}, // bestellt heißt: noch nicht im Regal — der Titel bleibt sichtbar
+		"Eins da zwei bestellt": {1, 1, 2},
+		"Alles verliehen":       {1, 0, 0},
+		"Zwei frei eines weg":   {2, 2, 0}, // das ausgesonderte zählt nirgends
 	}
 	versteckt := []string{"Ohne Exemplar", "Nur ausgesondert"}
 
@@ -127,14 +137,14 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 					continue
 				}
 				gefunden++
-				if z.Bestand == nil || z.Verfuegbar == nil {
+				if z.Bestand == nil || z.Verfuegbar == nil || z.ImZulauf == nil {
 					t.Errorf("%s/%s: keine Bestandszahlen — die Trefferliste kann dann "+
 						"nichts über den Bestand sagen", tuer, name)
 					continue
 				}
-				if *z.Bestand != soll[0] || *z.Verfuegbar != soll[1] {
-					t.Errorf("%s/%s: Bestand %d, verfügbar %d — erwartet %d und %d",
-						tuer, name, *z.Bestand, *z.Verfuegbar, soll[0], soll[1])
+				if *z.Bestand != soll[0] || *z.Verfuegbar != soll[1] || *z.ImZulauf != soll[2] {
+					t.Errorf("%s/%s: Bestand %d, verfügbar %d, im Zulauf %d — erwartet %d, %d und %d",
+						tuer, name, *z.Bestand, *z.Verfuegbar, *z.ImZulauf, soll[0], soll[1], soll[2])
 				}
 			}
 		}

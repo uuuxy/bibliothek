@@ -11,8 +11,9 @@
 	// Fehlt die Zahl, bleibt die Spalte leer: `bestand` ist ein Zeiger und nur die
 	// Suchabfragen füllen ihn (repository/models.go). „Keine Exemplare" über einen
 	// Titel zu schreiben, den niemand gezählt hat, wäre eine Behauptung.
-	const satz = $derived(bestandSatz(book.bestand, book.verfuegbar));
-	const ohneBestand = $derived(book.bestand === 0);
+	const satz = $derived(bestandSatz(book.bestand, book.verfuegbar, book.im_zulauf));
+	// „2 bestellt" ist kein Titel ohne Bestand: Die Bücher kommen (docs/OFFEN.md 5.5).
+	const ohneBestand = $derived(book.bestand === 0 && !book.im_zulauf);
 </script>
 
 <!-- Gleiches Spaltenraster wie StudentResultItem, damit beide Gruppen im selben

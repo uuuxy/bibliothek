@@ -13,6 +13,10 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 //
 // Rot gesehen am 22.09.2026 an der alten Erwartung (der Titel ohne Exemplar stand in der
 // Liste) — dieselbe Spec, andere Erwartung.
+//
+// Ein Titel, dessen Exemplare alle bestellt sind, steht in der Liste (der Zulauf zählt als
+// vorhanden) und sagt seit dem 22.09.2026 „2 bestellt" statt „Keine Exemplare" — sonst
+// schickte die Liste den Kollegen ins Regal (docs/OFFEN.md 5.5).
 test('Theke: die Trefferliste sagt den Bestand — und zeigt keinen Titel ohne Exemplare', async ({
 	page
 }) => {
@@ -20,6 +24,11 @@ test('Theke: die Trefferliste sagt den Bestand — und zeigt keinen Titel ohne E
 
 	seedSQL(`
 		INSERT INTO buecher_titel (titel) VALUES ('E2E-Bestand-Ohne ${s}');
+
+		WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('E2E-Bestand-Bestellt ${s}') RETURNING id)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, bestellstatus)
+		SELECT id, 'E2E-BST-Z1-${s}', false, 'bestellt' FROM t
+		UNION ALL SELECT id, 'E2E-BST-Z2-${s}', false, 'im_zulauf' FROM t;
 
 		WITH t AS (INSERT INTO buecher_titel (titel) VALUES ('E2E-Bestand-Mit ${s}') RETURNING id),
 		ex AS (INSERT INTO buecher_exemplare (titel_id, barcode_id)
@@ -43,6 +52,7 @@ test('Theke: die Trefferliste sagt den Bestand — und zeigt keinen Titel ohne E
 	const liste = page.locator('#omnibox-dropdown');
 	const ohne = liste.getByRole('option', { name: new RegExp(`E2E-Bestand-Ohne ${s}`) });
 	const mit = liste.getByRole('option', { name: new RegExp(`E2E-Bestand-Mit ${s}`) });
+	const bestellt = liste.getByRole('option', { name: new RegExp(`E2E-Bestand-Bestellt ${s}`) });
 
 	// 1. Der Titel mit Exemplaren steht in der Liste und nennt die Zahlen: zwei Exemplare,
 	//    eines verliehen.
@@ -50,7 +60,12 @@ test('Theke: die Trefferliste sagt den Bestand — und zeigt keinen Titel ohne E
 	await expect(mit).toContainText('1 von 2 verfügbar');
 	await expect(mit).not.toContainText('Keine Exemplare');
 
-	// 2. Der Titel ohne Exemplar steht nicht darin — dieselbe Suche, dieselbe Liste. Erst
+	// 2. Der Titel, dessen Exemplare alle bestellt sind: steht in der Liste und sagt es.
+	await expect(bestellt).toBeVisible();
+	await expect(bestellt).toContainText('2 bestellt');
+	await expect(bestellt).not.toContainText('Keine Exemplare');
+
+	// 3. Der Titel ohne Exemplar steht nicht darin — dieselbe Suche, dieselbe Liste. Erst
 	//    geprüft, nachdem die Liste da ist (Schritt 1), sonst zählte eine leere Liste als
 	//    Beweis.
 	await expect(ohne).toHaveCount(0);

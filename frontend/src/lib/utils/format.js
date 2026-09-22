@@ -64,7 +64,7 @@ export function formatZeitpunkt(wert) {
 
 /**
  * Der Bestand eines Titels als Satz: „3 von 5 verfügbar", „Keine Exemplare",
- * und nichts, wenn niemand gezählt hat.
+ * „2 bestellt", und nichts, wenn niemand gezählt hat.
  *
  * Die drei Fälle sind der Grund für diese Funktion. Bis zum 17.09.2026 stand die
  * Zeile zweimal im Katalog (BuchKarte, KlassenBuchKachel) — mit zwei verschiedenen
@@ -77,12 +77,18 @@ export function formatZeitpunkt(wert) {
  * sie weg. Über einen Titel, dessen Bestand niemand gezählt hat, schreibt die
  * Oberfläche gar nichts statt „Keine Exemplare".
  *
+ * Steht nichts im Regal, aber etwas im Zulauf, heißt der Satz „2 bestellt" statt „Keine
+ * Exemplare" (docs/OFFEN.md 5.5, 22.09.2026): Der Titel steht in der Trefferliste, WEIL
+ * der Zulauf als vorhanden zählt — und „Keine Exemplare" schickte den Kollegen ins Regal.
+ *
  * @param {number | null | undefined} gesamt
  * @param {number | null | undefined} verfuegbar
+ * @param {number | null | undefined} [imZulauf] bestellt, noch nicht eingetroffen
  * @returns {string} leer, wenn keine Zahl vorliegt
  */
-export function bestandSatz(gesamt, verfuegbar) {
+export function bestandSatz(gesamt, verfuegbar, imZulauf) {
 	if (gesamt == null) return '';
+	if (gesamt === 0 && imZulauf) return `${imZulauf} bestellt`;
 	if (gesamt === 0) return 'Keine Exemplare';
 	return `${verfuegbar ?? 0} von ${gesamt} verfügbar`;
 }

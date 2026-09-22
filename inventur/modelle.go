@@ -20,6 +20,7 @@ type Book struct {
 	Stock         int     `json:"stock" db:"stock"`
 	Verfuegbar    int     `json:"verfuegbar"`
 	Gesamt        int     `json:"gesamt"`
+	ImZulauf      int     `json:"imZulauf"` // bestellt, noch nicht eingetroffen (repository.SQLBestandImZulauf)
 	LastCounted   *string `json:"lastCounted" db:"last_counted"`
 	SortOrder     int     `json:"sortOrder" db:"sort_order"`
 	Medientyp     string  `json:"medientyp" db:"medientyp"`

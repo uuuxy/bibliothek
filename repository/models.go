@@ -158,6 +158,9 @@ type BookTitle struct {
 	// hat.
 	Bestand    *int `json:"bestand,omitempty"`
 	Verfuegbar *int `json:"verfuegbar,omitempty"`
+	// ImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare
+	// (SQLBestandImZulauf) — gleiche Zeiger-Regel wie Bestand.
+	ImZulauf *int `json:"im_zulauf,omitempty"`
 }
 
 // BookCopy repräsentiert ein physisches Einzelexemplar eines Buchs (Tabelle `buecher_exemplare`).

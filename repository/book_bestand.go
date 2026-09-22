@@ -14,6 +14,9 @@ package repository
 //   - gesamt:     im Bestand, nicht ausgesondert, nicht mehr im Zulauf
 //     (bestellstatus IS NULL — ein bestelltes Buch steht noch nicht im Regal).
 //   - verfuegbar: davon die ausleihbaren, die gerade niemand hat.
+//   - im Zulauf:  bestellt, noch nicht eingetroffen. Ohne diese dritte Zahl sagte die
+//     Trefferliste über einen Titel, dessen Exemplare alle unterwegs sind, „Keine
+//     Exemplare" — und schickte den Kollegen ins Regal (docs/OFFEN.md 5.5).
 const (
 	// SQLBestandGesamt zählt die Exemplare eines Titels, die im Bestand stehen.
 	// Einzusetzen in eine SELECT-Liste; der Titel muss als `b` gebunden sein.
@@ -25,7 +28,17 @@ const (
 		WHERE e.titel_id = b.id AND e.ist_ausgesondert = false AND e.ist_ausleihbar = true
 		  AND NOT EXISTS (SELECT 1 FROM ausleihen a
 		                  WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL))`
+
+	// SQLBestandImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare.
+	// Dieselbe Grenze wie SQLBestandGesamt, nur die andere Seite von bestellstatus: Beide
+	// zusammen sind alle nicht ausgesonderten Exemplare (SQLTitelHatExemplar).
+	SQLBestandImZulauf = `(SELECT count(*) FROM buecher_exemplare e
+		WHERE e.titel_id = b.id AND e.ist_ausgesondert = false AND e.bestellstatus IS NOT NULL)`
 )
+
+// SQLFilterImZulauf ist dieselbe Grenze als COUNT-FILTER für Abfragen, die die Exemplare
+// als `e` joinen (Katalogliste, Klassenbücher) statt je Titel zu zählen.
+const SQLFilterImZulauf = `COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NOT NULL)`
 
 // SQLTitelHatExemplar sagt, ob ein Titel überhaupt ein Exemplar hat, das nicht
 // ausgesondert ist — im Regal, verliehen oder im Zulauf. Titel ohne ein solches Exemplar
@@ -48,12 +61,13 @@ func SQLTitelHatExemplar(titelAlias string) string {
 // Bestandszahlen. Getrennt von scanBookTitle, weil die übrigen Abfragen sie nicht
 // mitliefern — und ein Titel mit nil-Bestand sagt „nicht gezählt", nicht „keine da".
 func scanBookTitleMitBestand(row Scanner, zusatz ...any) (*BookTitle, error) {
-	var gesamt, verfuegbar int
-	t, err := scanBookTitleMitZusatz(row, append([]any{&gesamt, &verfuegbar}, zusatz...)...)
+	var gesamt, verfuegbar, imZulauf int
+	t, err := scanBookTitleMitZusatz(row, append([]any{&gesamt, &verfuegbar, &imZulauf}, zusatz...)...)
 	if err != nil {
 		return nil, err
 	}
 	t.Bestand = &gesamt
 	t.Verfuegbar = &verfuegbar
+	t.ImZulauf = &imZulauf
 	return t, nil
 }
