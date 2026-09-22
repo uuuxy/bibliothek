@@ -42,9 +42,10 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
 6. **15 Minuten durch die Leserdatei gehen** (5.16 A): Stimmen die Wörter, fehlt etwas?
-7. **Schulbücher in neuer Auflage** (4.18). Die Richtung ist entschieden, gebaut ist nichts. Der
-   erste Schritt ist klein (das Feld „Auflage"), der dritte ändert das Schema und braucht eine
-   Freigabe.
+7. **Schulbücher in neuer Auflage** (4.18). Das Feld „Auflage" und die Dublettenkontrolle beim
+   Anlegen sind seit dem 17.09.2026 gebaut. Offen ist die dritte Stufe, das Werk über den
+   Auflagen — sie ändert das Schema und braucht eine Freigabe — und die Frage, wer ein Werk
+   anlegt.
 8. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
    ist nichts zu tun außer nachzufragen, wenn nichts kommt.
 9. **Aus dem Abgleich mit Littera** (4.19, 4.20): **Ferienkalender** — heute mahnen wir das Kind,
@@ -321,18 +322,17 @@ gruppieren verbindet früher oder später zwei „Deutschbuch 7" verschiedener V
 pflegt es niemand, und der Bedarf bleibt falsch. Auf dem Weg über die Nachbestellung ist der
 Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 
-**Reihenfolge, wenn freigegeben:**
+**Stand:**
 
-1. **„Auflage" als echtes Feld am Titel.** Heute gibt es das Wort im ganzen System nur als
-   Freitext in `erweiterte_eigenschaften` aus dem Listenimport. Ohne das Feld stehen zwei Zeilen
-   „Lambacher Schweizer 7" in jeder Liste, die niemand unterscheiden kann — unabhängig davon, was
-   danach kommt. Kleinster Schritt, nützt sofort.
-2. **Dublettenkontrolle beim Anlegen** wie bei Littera (ISBN, sonst Autor und Titel). Sie löst den
-   anderen Fall — dasselbe Buch versehentlich zweimal —, der als Fund schon in 5.5 und 5.12 steht.
-3. **Das Werk** samt Migration, Gruppierung im Bedarf und Warnung in der Ausgabe.
-
-**Nicht gebaut.** Schritt 3 ändert das Schema und rechnet die Nachbestell-Liste anders. Das geht
-in Stufen mit Nachweis und erst nach deiner Freigabe.
+1. **„Auflage" als Feld am Titel — gebaut am 17.09.2026** (Migration 126, `553efd7c`): Spalte,
+   Feld in der Maske, Anzeige in Katalogkarte und Buch-Akte; der Listenimport leert sie nicht.
+2. **Dublettenkontrolle beim Anlegen — gebaut am 17.09.2026** (`e5fa346c`): in der Maske beim
+   Anlegen und Ändern, über die ISBN in jeder Schreibweise, ohne ISBN über Titel und Autor; eine
+   gefüllte Auflage hebt den Verdacht auf. Die Importe (Excel, Liste, ISBN-Abruf, Littera)
+   verlassen sich weiter auf `ON CONFLICT (isbn)`, also zeichengleich — das ist 5.5.
+3. **Das Werk** samt Migration, Gruppierung im Bedarf und Warnung in der Ausgabe — **nicht
+   gebaut.** Ändert das Schema und rechnet die Nachbestell-Liste anders. Das geht in Stufen mit
+   Nachweis und erst nach deiner Freigabe.
 
 ### 4.19 Frist fällt in die Ferien
 
@@ -588,9 +588,10 @@ Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren 
 - **Zweiter Cover-Schreibpfad:** `inventur/update_cover_handler.go` setzt `cover_url`, ohne das
   alte Upload-Cover zu löschen, und meldet ein unbekanntes Buch als 500. Gleiche
   Reihenfolgefrage in `cover_aktualisierung.go`, `endpunkte_cover_retry.go`, `cover_service.go`.
-- **ISBN-Dublette:** Der UNIQUE-Constraint fängt nur zeichengleiche Dubletten; geprüft wird auf
-  einer bereinigten Kopie, gespeichert der Rohwert. `9783123456789` und `978-3-12-345678-9` sind
-  zwei Titel.
+- **ISBN-Dublette:** Der UNIQUE-Constraint fängt nur zeichengleiche Dubletten. Die Maske prüft
+  seit dem 17.09.2026 beide Schreibweisen (`inventur/dublettenkontrolle.go`); über die Importe
+  sind `9783123456789` und `978-3-12-345678-9` weiter zwei Titel. Der Index auf der bereinigten
+  Nummer wartet auf die Messung am Server (5.5).
 - **Selbstanmeldung:** Ein liegengelassener Antrag liest dauerhaft „Zugang beantragt"; nur
   `aktiv = true` räumt `zugang_beantragt_am`. Es geht nur noch um Anträge, die weder
   freigeschaltet noch gelöscht werden. Ob das gewollt ist, steht nirgends.
