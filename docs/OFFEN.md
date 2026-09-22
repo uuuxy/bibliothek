@@ -647,10 +647,18 @@ und fällt.
 
 ### 5.17 Ein zweites Konto derselben Person erzeugt eine zweite Leserzeile
 
-Der Wächter `trg_benutzer_hat_leserzeile` hängt jedem Konto ohne Leserzeile eine an, und die
-Zuordnung zur vorhandenen läuft über die Schul-E-Mail am Konto. Wird ein Konto gelöscht und
-später ein neues angelegt, entsteht wieder eine zweite Zeile. Repariert wird das mit „das ist
-dieselbe Person" (Zusammenführen); entstehen lassen sollte man es trotzdem nicht.
+Der Wächter `trg_benutzer_hat_leserzeile` hängt jedem Konto ohne Leserzeile eine an. Die
+Benutzerverwaltung bremst seit dem 22.09.2026: Steht für den Namen schon ein Kollege ohne Konto
+in der Leserdatei, antwortet sie 409 und verweist auf die Schul-E-Mail in der Akte — der Weg,
+der das Konto an die vorhandene Zeile hängt.
+
+**Offen: die Selbstanmeldung** (`auth/selbstanmeldung.go`). Wer sich selbst anmeldet, hat keine
+Akte, zu der man ihn schicken könnte; ein Kollege aus der Littera-Übernahme oder mit gelöschtem
+Konto bekommt dort weiter eine zweite Leserzeile. Automatisch an die vorhandene hängen geht
+nicht — Identität über den Namen wäre ein fremdes Konto an fremden Ausleihen. Der ehrliche Weg:
+Beim Freischalten des Antrags nennt die Benutzerverwaltung den Namensvetter ohne Konto, und wer
+freischaltet, entscheidet „dieselbe Person" (Zusammenführen) oder nicht. Nur, wenn die
+Selbstanmeldung überhaupt in Betrieb geht (7.7, Flow 5).
 
 ### 5.18 Klassen ohne Löschweg
 

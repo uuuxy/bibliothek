@@ -24,6 +24,11 @@ type UserRepository interface {
 	// Mit excludeID kann die Leserzeile des aktuell bearbeiteten Kontos ausgeschlossen werden.
 	CheckBarcodeExists(ctx context.Context, barcode string, excludeID string) (bool, error)
 
+	// LeserzeileOhneKonto prüft, ob ein Kollege dieses Namens schon eine Leserzeile
+	// ohne Konto hat (OFFEN.md 5.17). Ein neues Konto bekäme vom Trigger eine zweite,
+	// leere Zeile; der Weg zur vorhandenen ist die Schul-E-Mail in der Akte.
+	LeserzeileOhneKonto(ctx context.Context, vorname, nachname string) (bool, error)
+
 	// CreateUser legt ein neues Konto an und gibt dessen generierte ID (UUID) zurück.
 	// Die Leserzeile entsteht dabei von selbst (Trigger trg_benutzer_hat_leserzeile);
 	// barcode nil oder "" lässt sie ohne Ausweisnummer.
@@ -123,6 +128,25 @@ func (r *postgresUserRepo) CheckBarcodeExists(ctx context.Context, barcode strin
 		       AND id IS DISTINCT FROM (SELECT leser_id FROM benutzer WHERE id = NULLIF($2, '')::uuid))`,
 		barcode, excludeID).Scan(&exists)
 	return exists, err
+}
+
+// LeserzeileOhneKonto sagt, ob für den Namen schon ein Kollege OHNE Konto in der
+// Leserdatei steht — so bleibt seine Zeile nach dem Löschen des Kontos zurück (die
+// Ausleihen hängen daran), und so kommt sie aus der Littera-Übernahme.
+//
+// Nur das Kollegium zählt (ein Schüler gleichen Namens ist eine andere Person), und nur
+// Zeilen ohne Konto: Hat der Namensvetter schon eines, ist der Neue ein zweiter Mensch.
+// Verglichen wird in suchnorm wie bei der Namensdublette beim Anlegen eines Lesers.
+func (r *postgresUserRepo) LeserzeileOhneKonto(ctx context.Context, vorname, nachname string) (bool, error) {
+	var vorhanden bool
+	err := r.pool.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1 FROM leser l
+			WHERE l.art <> 'schueler' AND l.deleted_at IS NULL
+			  AND suchnorm(l.vorname) = suchnorm($1) AND suchnorm(l.nachname) = suchnorm($2)
+			  AND NOT EXISTS (SELECT 1 FROM benutzer b WHERE b.leser_id = l.id))`,
+		vorname, nachname).Scan(&vorhanden)
+	return vorhanden, err
 }
 
 // CreateUser legt ein Konto an — und mit ihm die Leserzeile, in der der Ausweis landet.

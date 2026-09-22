@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -46,6 +47,28 @@ func pruefeEmailEindeutig(ctx context.Context, w http.ResponseWriter, userRepo r
 	}
 	if exists {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("ein Benutzer mit dieser E-Mail existiert bereits"))
+		return false
+	}
+	return true
+}
+
+// pruefeKeineLeserzeileOhneKonto bremst, wenn ein Kollege gleichen Namens schon eine
+// Leserzeile OHNE Konto hat (OFFEN.md 5.17): nach dem Löschen seines Kontos oder aus der
+// Littera-Übernahme. Der Wächter trg_benutzer_hat_leserzeile hängt jedem neuen Konto eine
+// frische Leserzeile an — dieselbe Person stünde dann zweimal in der Leserdatei, einmal mit
+// Ausweis und Geschichte, einmal leer. Der Weg zum Konto an der vorhandenen Zeile ist die
+// Schul-E-Mail in der Akte (LegeKollegiumskonto); dorthin verweist die Antwort (409).
+//
+// Was zählt, entscheidet UserRepository.LeserzeileOhneKonto.
+func pruefeKeineLeserzeileOhneKonto(ctx context.Context, w http.ResponseWriter, userRepo repository.UserRepository, vorname, nachname string) bool {
+	vorhanden, err := userRepo.LeserzeileOhneKonto(ctx, vorname, nachname)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return false
+	}
+	if vorhanden {
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			fmt.Errorf("für %s %s steht schon eine Leserzeile ohne Konto in der Leserdatei — das Konto entsteht über die Schul-E-Mail in der Akte, sonst gäbe es dieselbe Person zweimal", vorname, nachname))
 		return false
 	}
 	return true

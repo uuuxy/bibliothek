@@ -76,6 +76,9 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 		if !pruefeEmailEindeutig(ctx, w, userRepo, req.Email, "") {
 			return
 		}
+		if !pruefeKeineLeserzeileOhneKonto(ctx, w, userRepo, req.Vorname, req.Nachname) {
+			return
+		}
 
 		barcode, ok := pruefeBarcodeEindeutig(ctx, w, userRepo, BarcodePruefOptionen{
 			BarcodeID:   req.BarcodeID,
