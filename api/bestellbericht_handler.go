@@ -176,7 +176,13 @@ func (s *Server) GetBestellBerichtPDFHandler() http.HandlerFunc {
 		}
 		bisExklusiv := bis.AddDate(0, 0, 1)
 
-		lieferantID := q.Get("lieferant_id")
+		// Geprüft wie jede Kennung aus der Query (uuidAusQuery): Bis zum 22.09.2026 ging
+		// der Rohtext in `AND lieferant_id = $n`, und `x` kam als 500 zurück (22P02).
+		lieferantID, err := uuidAusQuery(r, "lieferant_id")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
 		// Der Topf-Filter macht aus dem Bericht das Blatt, gegen das EINE Rechnung geprüft
 		// wird (Konzept 7.3 Schritt 4). Ein unbekannter Wert ist ein Fehler und kein
 		// stiller Gesamtbericht: Sonst prüfte das Sekretariat die Landes-Rechnung gegen

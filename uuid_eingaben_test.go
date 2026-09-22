@@ -60,6 +60,9 @@ var uuidEingabenAusnahmen = map[string]string{
 type uuidPaket struct {
 	typen   map[string]ast.Expr
 	dateien []*ast.File
+	// alle: die anderen Pakete nach Namen — für Request-Typen aus einem fremden Paket
+	// (`var req repository.X`), die der Detektor bis zum 22.09.2026 überging.
+	alle map[string]*uuidPaket
 }
 
 func ladeUUIDPakete(t *testing.T, wurzeln ...string) map[string]*uuidPaket {
@@ -102,6 +105,13 @@ func nimmUUIDDatei(p *uuidPaket, datei *ast.File) {
 // pruefeUUIDEingaben liefert jede Stelle, an der eine Kennung ungeprüft hereinkommt.
 func pruefeUUIDEingaben(pakete map[string]*uuidPaket) (maengel []string, gesehen map[string]bool) {
 	gesehen = map[string]bool{}
+	nachName := map[string]*uuidPaket{}
+	for verz, p := range pakete {
+		nachName[filepath.Base(verz)] = p
+	}
+	for _, p := range pakete {
+		p.alle = nachName
+	}
 	melde := func(schluessel, ort string) {
 		if gesehen[schluessel] {
 			return
@@ -136,12 +146,13 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func
 	uuidSichtbar := ruftAuf(fn.Body, "kennung", "IstUUID") || ruftAuf(fn.Body, "uuid", "Parse") ||
 		ruftHelferAuf(fn.Body, "alleUUIDs")
 	validateSichtbar := ruftAuf(fn.Body, "Validate", "Struct", "Var")
+	queryVars := queryVariablen(fn.Body)
 	ast.Inspect(fn.Body, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
 		if !ok {
 			return true
 		}
-		if name, ok := queryIDName(call); ok {
+		if name, ok := queryIDName(call, queryVars); ok {
 			melde(fmt.Sprintf("%s:%s:query:%s", paket, fn.Name.Name, name), fn.Name.Name)
 		}
 		ziel, direkt := dekodierZiel(call)
@@ -157,17 +168,82 @@ func pruefeUUIDFunktion(p *uuidPaket, paket string, fn *ast.FuncDecl, melde func
 	})
 }
 
+// lokaleVariablen: `var req T`, `var req = T{}` und `req := T{}` / `req := &T{}`. Die
+// Kurzform übersah der Detektor bis zum 22.09.2026 — ein Handler in dieser Schreibweise
+// war für ihn unsichtbar (OFFEN.md 5.12).
 func lokaleVariablen(body *ast.BlockStmt) map[string]ast.Expr {
 	typen := map[string]ast.Expr{}
 	ast.Inspect(body, func(n ast.Node) bool {
-		if vs, ok := n.(*ast.ValueSpec); ok && vs.Type != nil {
-			for _, name := range vs.Names {
-				typen[name.Name] = vs.Type
+		switch st := n.(type) {
+		case *ast.ValueSpec:
+			for i, name := range st.Names {
+				if st.Type != nil {
+					typen[name.Name] = st.Type
+				} else if i < len(st.Values) {
+					if typ := kompositTyp(st.Values[i]); typ != nil {
+						typen[name.Name] = typ
+					}
+				}
+			}
+		case *ast.AssignStmt:
+			if st.Tok != token.DEFINE || len(st.Lhs) != len(st.Rhs) {
+				return true
+			}
+			for i, lhs := range st.Lhs {
+				if id, ok := lhs.(*ast.Ident); ok {
+					if typ := kompositTyp(st.Rhs[i]); typ != nil {
+						typen[id.Name] = typ
+					}
+				}
 			}
 		}
 		return true
 	})
 	return typen
+}
+
+// kompositTyp: der Typ hinter `T{}` oder `&T{}`, sonst nil.
+func kompositTyp(e ast.Expr) ast.Expr {
+	if u, ok := e.(*ast.UnaryExpr); ok && u.Op == token.AND {
+		e = u.X
+	}
+	if lit, ok := e.(*ast.CompositeLit); ok {
+		return lit.Type
+	}
+	return nil
+}
+
+// queryVariablen: Namen, die `….Query()` halten (`q := r.URL.Query()`). Ein `q.Get("…id")`
+// darauf ist dieselbe Tür wie `r.URL.Query().Get("…id")` — bis zum 22.09.2026 sah der
+// Detektor nur die zweite Schreibweise; so kam `lieferant_id` am Bestellbericht durch.
+func queryVariablen(body *ast.BlockStmt) map[string]bool {
+	namen := map[string]bool{}
+	istQueryAufruf := func(e ast.Expr) bool {
+		call, ok := e.(*ast.CallExpr)
+		if !ok {
+			return false
+		}
+		sel, ok := call.Fun.(*ast.SelectorExpr)
+		return ok && sel.Sel.Name == "Query" && len(call.Args) == 0
+	}
+	ast.Inspect(body, func(n ast.Node) bool {
+		switch st := n.(type) {
+		case *ast.AssignStmt:
+			for i, lhs := range st.Lhs {
+				if id, ok := lhs.(*ast.Ident); ok && i < len(st.Rhs) && istQueryAufruf(st.Rhs[i]) {
+					namen[id.Name] = true
+				}
+			}
+		case *ast.ValueSpec:
+			for i, name := range st.Names {
+				if i < len(st.Values) && istQueryAufruf(st.Values[i]) {
+					namen[name.Name] = true
+				}
+			}
+		}
+		return true
+	})
+	return namen
 }
 
 // ruftAuf: irgendwo im Rumpf steht paket.Name(…) mit einem der Namen.
@@ -226,17 +302,23 @@ func dekodierZiel(call *ast.CallExpr) (string, bool) {
 	return "", false
 }
 
-// queryIDName: `….Query().Get("…id")` mit festem Namen.
-func queryIDName(call *ast.CallExpr) (string, bool) {
+// queryIDName: `….Query().Get("…id")` oder `q.Get("…id")` (q aus queryVariablen) mit
+// festem Namen.
+func queryIDName(call *ast.CallExpr, queryVars map[string]bool) (string, bool) {
 	sel, ok := call.Fun.(*ast.SelectorExpr)
 	if !ok || sel.Sel.Name != "Get" || len(call.Args) != 1 {
 		return "", false
 	}
-	inner, ok := sel.X.(*ast.CallExpr)
-	if !ok {
-		return "", false
-	}
-	if q, ok := inner.Fun.(*ast.SelectorExpr); !ok || q.Sel.Name != "Query" {
+	switch x := sel.X.(type) {
+	case *ast.CallExpr:
+		if q, ok := x.Fun.(*ast.SelectorExpr); !ok || q.Sel.Name != "Query" {
+			return "", false
+		}
+	case *ast.Ident:
+		if !queryVars[x.Name] {
+			return "", false
+		}
+	default:
 		return "", false
 	}
 	lit, ok := call.Args[0].(*ast.BasicLit)
@@ -276,6 +358,15 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 	case *ast.StarExpr:
 		pruefeStructFelder(p, paket, funktion, k.X, besucht, melde, kennungen)
 		return
+	case *ast.SelectorExpr:
+		// Typ aus einem fremden Paket (`repository.EinstellungenPatch`): dort nachschlagen,
+		// der Schlüssel trägt dann dessen Paketnamen.
+		if pkg, ok := k.X.(*ast.Ident); ok && p.alle[pkg.Name] != nil {
+			// Als Ident weiterreichen, damit der Schlüssel den TYPNAMEN trägt (fremd.Anfrage.ID),
+			// nicht den der aufrufenden Funktion.
+			pruefeStructFelder(p.alle[pkg.Name], pkg.Name, funktion, &ast.Ident{Name: k.Sel.Name}, besucht, melde, kennungen)
+		}
+		return
 	}
 	if st == nil {
 		return
@@ -286,19 +377,40 @@ func pruefeStructFelder(p *uuidPaket, paket, funktion string, typ ast.Expr, besu
 			tag = reflect.StructTag(strings.Trim(feld.Tag.Value, "`"))
 		}
 		jsonName := strings.Split(tag.Get("json"), ",")[0]
+		validate := tag.Get("validate")
 		if istTextKennung(feld.Type) && istKennungsName(jsonName) {
 			for _, n := range feld.Names {
 				schluessel := fmt.Sprintf("%s.%s.%s", paket, name, n.Name)
 				if _, ausnahme := uuidEingabenAusnahmen[schluessel]; !ausnahme {
 					*kennungen++
 				}
-				if !strings.Contains(tag.Get("validate"), "uuid") {
+				if !strings.Contains(validate, "uuid") {
 					melde(schluessel, funktion)
+				} else if istListe(feld.Type) && !strings.Contains(validate, "dive") {
+					melde(schluessel+":ohne dive", funktion)
 				}
 			}
+			continue
 		}
+		// Liste von Structs: Der Validator steigt in Elemente nur mit `dive` hinab. Ein
+		// `[]Eintrag` mit geprüftem `id` im Element, aber ohne `dive` am Feld, ist so
+		// ungeprüft wie ohne Tag — bis zum 22.09.2026 für den Detektor unsichtbar.
+		vorher := *kennungen
 		pruefeStructFelder(p, paket, funktion, feld.Type, besucht, melde, kennungen)
+		if istListe(feld.Type) && *kennungen > vorher && !strings.Contains(validate, "dive") {
+			for _, n := range feld.Names {
+				melde(fmt.Sprintf("%s.%s.%s:ohne dive", paket, name, n.Name), funktion)
+			}
+		}
 	}
+}
+
+func istListe(typ ast.Expr) bool {
+	if s, ok := typ.(*ast.StarExpr); ok {
+		typ = s.X
+	}
+	_, ok := typ.(*ast.ArrayType)
+	return ok
 }
 
 func istTextKennung(typ ast.Expr) bool {
@@ -417,22 +529,50 @@ func kParseGenutzt(s string) string { id, _ := uuid.Parse(s); return id.String()
 func lPfad(r any) string { teile := strings.Split(strings.Trim(r.URL.Path, "/"), "/"); return teile[2] }
 func mPlatzhalter(r any) string { return r.PathValue("id") }
 func nPfadOhneZerlegen(r any) string { return strings.TrimPrefix(r.URL.Path, "/") }
+type ohneTag2 struct { SessionID string ` + "`json:\"session_id\"`" + ` }
+type eintrag struct { ID string ` + "`json:\"id\" validate:\"uuid_oder_leer\"`" + ` }
+type stapel struct { Eintraege []eintrag ` + "`json:\"eintraege\"`" + ` }
+type stapelDive struct { Eintraege []eintrag ` + "`json:\"eintraege\" validate:\"dive\"`" + ` }
+type listeOhneDive struct { IDs []string ` + "`json:\"ids\" validate:\"omitempty,uuid_oder_leer\"`" + ` }
+func oKurz(w, r any) { req := ohneTag2{}; DecodeAndValidate(w, r, &req) }
+func pQueryVar(r any) { q := r.URL.Query(); _ = q.Get("schueler_id") }
+func qStapel(w, r any) { var req stapel; DecodeAndValidate(w, r, &req) }
+func rStapelDive(w, r any) { var req stapelDive; DecodeAndValidate(w, r, &req) }
+func sListeOhneDive(w, r any) { var req listeOhneDive; DecodeAndValidate(w, r, &req) }
+func tFremd(w, r any) { var req fremd.Anfrage; DecodeAndValidate(w, r, &req) }
+`
+	fremdQuelle := `package fremd
+type Anfrage struct { ID string ` + "`json:\"id\"`" + ` }
 `
 	datei, err := parser.ParseFile(token.NewFileSet(), "p/probe.go", quelle, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
+	fremdDatei, err := parser.ParseFile(token.NewFileSet(), "fremd/probe.go", fremdQuelle, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 	p := &uuidPaket{typen: map[string]ast.Expr{}}
 	nimmUUIDDatei(p, datei)
-	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p})
+	fremd := &uuidPaket{typen: map[string]ast.Expr{}}
+	nimmUUIDDatei(fremd, fremdDatei)
+	maengel, _ := pruefeUUIDEingaben(map[string]*uuidPaket{"p": p, "fremd": fremd})
+	// Seit dem 22.09.2026 auch: Kurzform `req := T{}` (oKurz), Query-Variable (pQueryVar),
+	// Liste von Structs ohne `dive` (qStapel), Kennungsliste ohne `dive` (sListeOhneDive),
+	// Typ aus fremdem Paket (tFremd). rStapelDive ist die saubere Gegenprobe.
 	erwartet := []string{
+		"fremd.Anfrage.ID (tFremd)",
 		"p.liste.IDs (fListe)",
+		"p.listeOhneDive.IDs:ohne dive (sListeOhneDive)",
 		"p.ohneTag.SessionID (aTag)",
+		"p.ohneTag2.SessionID (oKurz)",
+		"p.stapel.Eintraege:ohne dive (qStapel)",
 		"p:cQuery:query:titel_id (cQuery)",
 		"p:dDirekt:ohne Validierung (dDirekt)",
 		"p:iLocker:lockere UUID-Prüfung (iLocker)",
 		"p:jParseVerworfen:lockere UUID-Prüfung (jParseVerworfen)",
 		"p:lPfad:Pfad selbst zerlegt (lPfad)",
+		"p:pQueryVar:query:schueler_id (pQueryVar)",
 	}
 	if strings.Join(maengel, "|") != strings.Join(erwartet, "|") {
 		t.Errorf("Detektor meldet\n  %s\nerwartet\n  %s", strings.Join(maengel, "\n  "), strings.Join(erwartet, "\n  "))

@@ -111,9 +111,21 @@ export function findeVerschluckteFehlantworten(datei, quelle) {
 				// neutralen Wert. Auf dem Bildschirm ist das nicht von „nichts gefunden" zu
 				// unterscheiden; „Der Papierkorb ist leer" für einen Papierkorb, der nur
 				// nicht geladen werden konnte, war genau dieser Fall.
-				if (node.type === 'ConditionalExpression' && istOkZugriff(node.test)) {
-					if (!istNeutralerErsatz(node.alternate)) return;
-					zeilen.push(node.loc.start.line);
+				//
+				// Seit dem 22.09.2026 über alle Formen der Bedingung (OFFEN.md 5.12): auch die
+				// UND-Kette (`res.ok && nr === ladeNr ? … : []`) wie in Form 1, und die
+				// Verneinung (`!res.ok ? [] : …`), bei der der neutrale Wert im ERSTEN Zweig steht.
+				if (node.type === 'ConditionalExpression') {
+					if (fragtNachOk(node.test) && istNeutralerErsatz(node.alternate)) {
+						zeilen.push(node.loc.start.line);
+					} else if (
+						node.test.type === 'UnaryExpression' &&
+						node.test.operator === '!' &&
+						fragtNachOk(node.test.argument) &&
+						istNeutralerErsatz(node.consequent)
+					) {
+						zeilen.push(node.loc.start.line);
+					}
 				}
 			}
 		});

@@ -588,9 +588,6 @@ Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren 
 - **Selbstanmeldung:** Ein liegengelassener Antrag liest dauerhaft „Zugang beantragt"; nur
   `aktiv = true` räumt `zugang_beantragt_am`. Es geht nur noch um Anträge, die weder
   freigeschaltet noch gelöscht werden. Ob das gewollt ist, steht nirgends.
-- **Ratschen mit Umgehungsweg, heute ohne offene Stelle:** Die UUID-Ratsche sieht `[]struct` ohne
-  `dive`, `x := T{}`, Typen fremder Pakete und `q.Get(…)` nicht; der Fehlerausgang-Scanner prüft
-  Form 2 (`?:`) nur mit `istOkZugriff`.
 
 ### 5.14 Fallengelassene Verdachte (15.09.2026)
 

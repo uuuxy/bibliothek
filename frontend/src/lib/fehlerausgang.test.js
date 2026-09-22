@@ -136,6 +136,17 @@ describe('Sweep: verschluckte Fehlantworten', () => {
 			}`;
 		expect(findeVerschluckteFehlantworten('probe.js', neutralerErsatz)).toHaveLength(1);
 
+		// Dieselbe Form 2 in der UND-Kette und in der Verneinung (OFFEN.md 5.12, 22.09.2026):
+		// Bis dahin verlangte der Dreisatz GENAU `res.ok` als Bedingung — dieselbe Lücke,
+		// die Form 1 am 12.09.2026 hatte.
+		const undKetteDreisatz = `
+			async function f() {
+				const res = await fetch('/x');
+				liste = res.ok && nr === ladeNr ? await res.json() : [];
+				zustand = !res.ok ? null : await res.json();
+			}`;
+		expect(findeVerschluckteFehlantworten('probe.js', undKetteDreisatz)).toHaveLength(2);
+
 		// Ein Ersatzwert, der etwas AUSSAGT, ist Fehlerbehandlung — kein Fund. Sonst
 		// stünde die halbe Anwendung im Bestand und die Ratsche wäre wertlos.
 		const sprechenderErsatz = `
