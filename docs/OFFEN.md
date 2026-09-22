@@ -796,8 +796,6 @@ Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
   Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
   auf `schulzeit.Zone()` umstellen (gefunden am 18.09.2026, als die volle Suite einmal unter einer
   fremden Prozesszone lief).
-- Tote CSS-Klassen in `altlasten.css`; toter `logout()` in
-  `frontend/src/inventur/lib/store.svelte.js`.
 - Zwei Regexe für die LMF-Kennung (`pkg/lmf/lmf.go`, `internal/service/import_lmf.go`).
 - `migrations/110_schadensersatz_bescheide.sql` nennt drei Barzahlungs-Briefe, es sind zwei;
   eingespielte Migrationen bleiben unverändert.
@@ -812,10 +810,6 @@ Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
 - Cognitive Complexity: 32 Funktionen über 15 ohne Tests (Messung 05.09.2026); lohnend allenfalls
   `OverrideDueDateHandler` und `behandleAbgaenger`.
 - `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen.
-- `docs/docs.go` (Swagger) nennt noch `personenart`, `lehrer_id` und `active_teacher_id`.
-  Der Generator `swag` läuft unter Go 1.27 nicht mehr durch (er stolpert über die
-  Standardbibliothek); das Drift-Gate prüft nur die Endpunkte, nicht die Feldnamen. Beim
-  nächsten Anfassen der API-Doku mit einer neueren `swag`-Fassung erzeugen.
 - `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
   als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.

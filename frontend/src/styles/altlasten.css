@@ -8,18 +8,13 @@
 :root {
 	--primary-50: #f7f9ff;
 	--primary-100: #d0e4ff;
-	--primary-200: #9ccaff;
 	--primary-500: #2a7cc0;
 	--primary-600: #0061a4;
 	--primary-700: #004880;
-	--primary-800: #00315e;
 	--primary-900: #001c38;
 	--primary-950: #001129;
 
 	--surface-variant: #42474e;
-
-	--error-50: #fff8f7;
-	--error-600: #ba1a1a;
 }
 
 /* Die drei .bg-surface-container*-Klassen standen bis zum 06.08.2026 hier und waren
@@ -40,14 +35,8 @@
 .text-primary-950 {
 	color: var(--primary-950);
 }
-.text-primary-600 {
-	color: var(--primary-600);
-}
 .text-primary-700 {
 	color: var(--primary-700);
-}
-.text-primary-800 {
-	color: var(--primary-800);
 }
 .bg-primary-50 {
 	background-color: var(--primary-50);
@@ -58,32 +47,11 @@
 .bg-primary-600 {
 	background-color: var(--primary-600);
 }
-.hover\:bg-primary-100:hover {
-	background-color: var(--primary-100);
-}
-.hover\:bg-primary-700:hover {
-	background-color: var(--primary-700);
-}
-.border-primary-500 {
-	border-color: var(--primary-500);
-}
-.ring-primary-100 {
-	--tw-ring-color: var(--primary-100);
-}
 .ring-primary-500 {
 	--tw-ring-color: var(--primary-500);
 }
-.shadow-primary-600\/30 {
-	--tw-shadow-color: rgba(5, 150, 105, 0.3);
-}
 .text-surface-variant {
 	color: var(--surface-variant);
-}
-.bg-surface-variant\/10 {
-	background-color: rgba(92, 85, 107, 0.1);
-}
-.bg-surface-variant\/20 {
-	background-color: rgba(92, 85, 107, 0.2);
 }
 .border-surface-variant\/10 {
 	border-color: rgba(92, 85, 107, 0.1);
@@ -91,11 +59,7 @@
 .border-surface-variant\/20 {
 	border-color: rgba(92, 85, 107, 0.2);
 }
-.border-surface-variant\/30 {
-	border-color: rgba(92, 85, 107, 0.3);
-}
 
-/* SUBTLE FLOATING PARTICLE BACKGROUND EFFECT STYLES */
 /* Hide spin-buttons for number inputs globally */
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
