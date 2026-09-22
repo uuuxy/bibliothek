@@ -26,9 +26,7 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 1. **Die Antwort der Schule ist da (22.09.2026) — alle drei Dinge sind gebaut.** Keine
    automatische Sperre für Lernmittel, auch keine übergehbare (9.3 c). Titel ohne Exemplare
    stehen in keinem Katalog mehr (9.4). Mehrjahresbände am Werk, das Schuljahr steckt in der
-   Frist (9.6). Offen ist dein Blick auf die zwei neuen Bedienstellen (Umschalter „Mit
-   Exemplaren | Ohne Exemplare" in der Titel-Verwaltung, Schalter „Mehrjahresband" im
-   Buchformular).
+   Frist (9.6). Die Bedienstellen sind am 22.09.2026 am Bildschirm abgenommen.
 2. **Die sechs Fragen sind beantwortet und gebaut** (21.09.2026: 4.7, 4.9, 4.11, 4.13, 4.14,
    4.21). Von 4.8 steht nur noch der Lauf im Druck-Center aus — er ändert Daten und liegt bei
    dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
@@ -37,21 +35,19 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 3. **Die Zahlen vom Testserver liegen vor** (21.09.2026): 8 Leser ohne Ausweisnummer, alle
    Lehrkräfte (5.16 C); kein Kollege in einer Warteschlange, in der er nie nachrückt (5.19).
    Die Messung aus 4.3 ist gelaufen (22.09.2026: kein Titel mit Wert); 4.3 ist gebaut und weg.
-4. **Zwei Umbauten freigeben**, die vorbereitet, aber nicht gebaut sind, weil sie die Datenbank
-   ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für
-   die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine Migration, die Nummern
-   bzw. Daten schreibt, die niemand zurücknimmt.
+4. **Zwei Umbauten, freigegeben am 22.09.2026, noch nicht gebaut:** die Ausweisnummer schon
+   beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für die Karenz-Uhr (4.12). Beide
+   brauchen eine Migration, die Nummern bzw. Daten schreibt, die niemand zurücknimmt.
 5. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
-6. **15 Minuten durch die Leserdatei gehen** (5.16 A): Stimmen die Wörter, fehlt etwas?
-7. **Schulbücher in neuer Auflage** (4.18). Das Feld „Auflage" und die Dublettenkontrolle beim
+6. **Schulbücher in neuer Auflage** (4.18). Das Feld „Auflage" und die Dublettenkontrolle beim
    Anlegen sind seit dem 17.09.2026 gebaut. Offen ist die dritte Stufe, das Werk über den
    Auflagen — sie ändert das Schema und braucht eine Freigabe — und die Frage, wer ein Werk
    anlegt.
-8. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
+7. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
    ist nichts zu tun außer nachzufragen, wenn nichts kommt.
-9. **Aus dem Abgleich mit Littera** (4.19, 4.20): **Ferienkalender** — heute mahnen wir das Kind,
+8. **Aus dem Abgleich mit Littera** (4.19, 4.20): **Ferienkalender** — heute mahnen wir das Kind,
    dessen Frist in die Herbstferien fiel. Richtung und Form sind am 18.09.2026 entschieden
    (Ferien als iCal-Datei, Fristen rutschen mit); gebaut ist nichts, und eine Frage steht noch
    offen (Feiertage als zweite Datei oder gerechnet). Die **Themensuche** ist am 22.09.2026
@@ -97,7 +93,7 @@ jemandem schaden?"**
    gemessen: 8 Lehrkräfte ohne Nummer) und die Karenz-Spalte (4.12).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
-4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand (A) und die Ausweisnummer (C).
+4. **5.16** Leserdatei: gebaut und abgenommen. Offen ist die Ausweisnummer (C), freigegeben.
 5. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits (5.6, 5.12 und 5.17 am 22.09.2026 erledigt).
 6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
@@ -480,6 +476,20 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.5 Bestand, Katalog, Druck
 
+- Bestellen per ISBN legt den Titel aus der DNB an (`upsertTitelAusMetadaten`), speichert aber
+  nur Titel, Autor, ISBN, Verlag, Jahr, Cover, Fach und als Signatur „BIB " plus eine von vier
+  Kategorien — ohne das Kürzel des Titels, das die Littera-Signaturen tragen („Regal / Kürzel").
+  Verworfen werden Untertitel, Altersangabe (`Zielgruppe`), Ladenpreis (Spalte `listenpreis`
+  seit Migration 127) und die Gattungsbegriffe. Vorschlag (22.09.2026): alles als Vorschlag
+  speichern, im Bestellkorb editierbar, die Signatur vollständig nach dem Schema der
+  Schülerbücherei; die Gattung kommt mit 4.20. Vorher messen, wie die Signaturen der
+  Schülerbücherei am Testserver aussehen:
+
+  ```sql
+  SELECT split_part(signatur, ' / ', 1) AS regal, count(*) FROM buecher_titel
+  WHERE NOT ist_lernmittel AND signatur IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 25;
+  ```
+
 - Zugangsdatum beim Anlegen außerhalb des Bestellwegs (Rasterdurchgang 22.09.2026, Frage 6):
   Handanlage, Sammelimport und Bestand-Nachziehen lassen `erworben_am` auf der Vorgabe
   `CURRENT_DATE`, der Listenimport schreibt sie selbst — alle vier in der UTC-Sitzung der
@@ -596,11 +606,9 @@ weil Kommentare im Code auf sie als Herkunft eines Fundes verweisen.
 Gebaut ist alles: Lesertabelle, Rolle Leitung, Theke und Leserdatei, eine Maske für jeden, die
 Pflicht-Schul-E-Mail und das Zusammenführen von Kollegen.
 
-**A. 15 Minuten: einmal durch die Leserdatei gehen.** Stimmen die Wörter, fehlt etwas? Was ein
-Kollege bewusst NICHT in seiner Akte hat: Kontoauszug, Ersatzforderung und DSGVO-Auskunft — sie
-gehören der Schülerarbeit und lesen die Sicht `schueler`, ausgeblendet statt kaputt.
-
-**B. Entschieden, damit die Frage nicht wiederkommt:** Die E-Mail eines Kollegen steht am Konto
+**Entschieden, damit die Frage nicht wiederkommt:** Ein Kollege hat bewusst keinen
+Kontoauszug, keine Ersatzforderung und keine DSGVO-Auskunft in seiner Akte — sie gehören der
+Schülerarbeit und lesen die Sicht `schueler`, ausgeblendet statt kaputt. Die E-Mail eines Kollegen steht am Konto
 (`benutzer.email`, `UNIQUE lower(email)`) und nicht in `leser.eltern_email`; in der Akte wird sie
 vom Konto gelesen und ist nachtragbar, solange keine da ist. Die Leitung sieht den Menüpunkt
 „Einstellungen" und darf darin LUSD & Versetzung, Datenverwaltung, LMF-Aktionen und Lieferanten
@@ -608,7 +616,7 @@ bedienen; verschlossen sind Schule, Fristen und Mailversand (`manage_settings`) 
 Rechte (`manage_users`). Der Nummernkreis bleibt unangetastet: Ohne Netz ist die Vorsilbe die
 einzige Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheidet.
 
-**C. Offen: Die Ausweisnummer soll beim Anlegen des Kontos entstehen.** Heute entsteht eine
+**Offen: Die Ausweisnummer soll beim Anlegen des Kontos entstehen.** Heute entsteht eine
 Nummer an drei Stellen — „Neuer Leser", LUSD-Import, Littera-Übernahme. Ein Konto vergibt keine
 (`konto_hat_leserzeile` legt die Leserzeile ohne Ausweis an), und der Druck warnt nicht: Ohne
 Nummer kommt ein kaputtes Bild und eine leere Zeile auf die Karte. Entschieden am 16.09.2026,
@@ -657,7 +665,7 @@ für Kollegen) — je mit einem PG-Test, der am alten Stand rot war.
 
 **Zwei Fragen daraus:**
 
-- **DSGVO-Auskunft** (`api/dsgvo_auskunft.go`): Für einen Kollegen gibt es sie nicht (5.16 A
+- **DSGVO-Auskunft** (`api/dsgvo_auskunft.go`): Für einen Kollegen gibt es sie nicht (5.16
   nennt das als Absicht). Auch eine Lehrkraft kann Auskunft über ihre Daten verlangen — soll
   die Auskunft für jeden Leser gehen?
 - **Vormerken** lässt sich nur für Schüler — so bietet es die Oberfläche an, und seit dem
@@ -972,9 +980,6 @@ Aufräumhilfe, die die Schule mit „Inventur" meint; die eigene Inventur zählt
 findet einen Titel ohne Exemplar deshalb nicht. Die Bestellliste führt ihn weiter (Bestand
 unter jeder Schwelle). Gates am Rückbau des Prädikats rot gesehen, an allen drei Türen.
 
-**Noch anzusehen, bei dir:** der Umschalter in der Titel-Verwaltung am Bildschirm (M3
-Segmented Button, Bauteil `Segmente`).
-
 ### 9.6 A: Mehrjahresbände — entschieden und gebaut am 22.09.2026
 
 Protokoll 5, zweiter Spiegelstrich: „Bei den Ausleihfristen fehlt das Jahr. Mehrjahresbände
@@ -993,8 +998,6 @@ Wert). Der Schalter gilt nur an einem Lernmittel und nur mit einer Spanne über 
 Jahrgang, an beiden Türen der Titel-Verwaltung und als CHECK in der Datenbank. Das Schuljahr,
 das Littera getrennt führt, steckt im Datum der Frist. Gates am Rückbau rot gesehen: Fristregel,
 beide Schreibpfade, CHECK.
-
-**Noch anzusehen, bei dir:** der Schalter in der Maske am Bildschirm.
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 
