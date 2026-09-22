@@ -53,9 +53,10 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 		VALUES ($1, $2, now(), now() + interval '3 days')`, ex1, schuelerID); err != nil {
 		t.Fatalf("Schüler-Ausleihe: %v", err)
 	}
+	// ist_handapparat wie der echte Schreiber (erzeugeAusleihe: jeder Nicht-Schüler).
 	if _, err := pool.Exec(ctx, `
-		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
-		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), now(), now() + interval '10 days')`, ex2, lehrerID); err != nil {
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, ist_handapparat)
+		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), now(), now() + interval '10 days', true)`, ex2, lehrerID); err != nil {
 		t.Fatalf("Lehrer-Ausleihe: %v", err)
 	}
 
@@ -85,5 +86,13 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 	}
 	if got[1].SchuelerBarcode != "L-AUSL" || got[1].ExemplarBarcode != "B-AUSL-2" {
 		t.Errorf("Lehrer-Ausleihe: Barcodes falsch: %+v", got[1])
+	}
+	// Die Dauerleihe trägt ihr Merkmal, die Schüler-Ausleihe nicht: Danach entscheiden
+	// Liste und Druck, ob eine abgelaufene Frist rot wird (OFFEN.md 5.18).
+	if !got[1].IstDauerleihe {
+		t.Errorf("Lehrer-Ausleihe ohne ist_dauerleihe — Liste und Druck färben sie nach einem Jahr rot: %+v", got[1])
+	}
+	if got[0].IstDauerleihe {
+		t.Errorf("Schüler-Ausleihe als Dauerleihe markiert: %+v", got[0])
 	}
 }

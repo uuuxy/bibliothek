@@ -17,6 +17,9 @@
 <div class="w-full">
 	<ul class="divide-y divide-slate-50">
 		{#each zeilen as b, _i (_i)}
+			<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Akte. -->
+			{@const dauerleihe = !!b.ist_dauerleihe}
+			{@const ueberfaellig = !dauerleihe && new Date(b.rueckgabe_frist) < new Date()}
 			<li
 				class="px-5 py-3.5 hover:bg-slate-50 transition-colors flex items-center justify-between group"
 			>
@@ -52,12 +55,8 @@
 					</div>
 					<div class="text-right">
 						<p class="text-label-small font-medium text-slate-400">Rückgabe bis</p>
-						<p
-							class="text-sm font-bold {new Date(b.rueckgabe_frist) < new Date()
-								? 'text-rose-600'
-								: 'text-slate-700'}"
-						>
-							{fmtDate(b.rueckgabe_frist)}
+						<p class="text-sm font-bold {ueberfaellig ? 'text-rose-600' : 'text-slate-700'}">
+							{dauerleihe ? 'ohne Frist' : fmtDate(b.rueckgabe_frist)}
 						</p>
 					</div>
 				</div>

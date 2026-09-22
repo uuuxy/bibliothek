@@ -212,6 +212,10 @@ type TitleBorrower struct {
 	ExemplarBarcode string    `json:"exemplar_barcode"`
 	AusgeliehenAm   time.Time `json:"ausgeliehen_am"`
 	RueckgabeFrist  time.Time `json:"rueckgabe_frist"`
+	// IstDauerleihe: Ausleihe an jemanden, der kein Schüler ist (`ausleihen.ist_handapparat`).
+	// Ohne das Merkmal färbten die Ausleiher-Liste und ihr Druck die Frist eines Kollegen
+	// nach einem Jahr rot — die Akte wusste es seit dem 16.09.2026 besser (OFFEN.md 5.18).
+	IstDauerleihe bool `json:"ist_dauerleihe"`
 }
 
 // GetTitleBorrowersHandler lists all active borrowers for a book title.
@@ -243,7 +247,7 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 			  CASE WHEN l.art IS NOT NULL AND l.art <> 'schueler' THEN 'Lehrer'
 			       ELSE COALESCE(l.klasse, '') END AS klasse,
 			  COALESCE(l.barcode_id, '') AS ausleiher_barcode,
-			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist
+			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist, a.ist_handapparat
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
 			LEFT JOIN leser l ON a.schueler_id = l.id
@@ -260,7 +264,7 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 		borrowers := []TitleBorrower{}
 		for rows.Next() {
 			var b TitleBorrower
-			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.AusgeliehenAm, &b.RueckgabeFrist); err != nil {
+			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.AusgeliehenAm, &b.RueckgabeFrist, &b.IstDauerleihe); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}

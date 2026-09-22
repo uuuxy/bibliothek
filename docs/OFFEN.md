@@ -671,20 +671,10 @@ Zuordnung zur vorhandenen läuft über die Schul-E-Mail am Konto. Wird ein Konto
 später ein neues angelegt, entsteht wieder eine zweite Zeile. Repariert wird das mit „das ist
 dieselbe Person" (Zusammenführen); entstehen lassen sollte man es trotzdem nicht.
 
-### 5.18 Die Dauerleihe eines Kollegen wird als überfällig gefärbt
+### 5.18 Klassen ohne Löschweg
 
-In der Akte am 16.09.2026 behoben; zwei Ausgänge blieben: `components/BorrowersListe.svelte` und
-`utils/ausleiherDruck.js` färben die Frist rot, sobald das Datum vorbei ist. Beide hängen an
-derselben Abfrage (`api/copy_admin.go`), und die holt `ist_handapparat` gar nicht erst ab. Das
-Gate gehört an den fertigen Inhalt, nicht an die Komponente:
-`repository/ueberfaellig_regel_test.go` sucht den Vergleich im SQL, aber diese Abfrage vergleicht
-nichts — verglichen wird in JavaScript.
-
-Am Schulserver gemessen (16.09.2026): 0 offene Kollegen-Ausleihen. Es gibt nichts zu reparieren.
-Entschieden wird weiter an `ist_handapparat`, nicht an `klasse = 'Lehrer'`.
-
-Aus der Schärfung von Frage 12 bleibt eine Beobachtung: Für `klassen` gibt es im ganzen Go-Code
-kein `DELETE` — eine vertippte Klasse steht ab dann in jeder Auswahlliste.
+Aus der Schärfung von Frage 12 (16.09.2026) bleibt eine Beobachtung: Für `klassen` gibt es im
+ganzen Go-Code kein `DELETE` — eine vertippte Klasse steht ab dann in jeder Auswahlliste.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — eine eigene Achse
 

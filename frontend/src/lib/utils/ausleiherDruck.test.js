@@ -75,6 +75,29 @@ describe('baueAusleiherDruckHtml', () => {
 		expect(html.match(/class="overdue"/g) ?? []).toHaveLength(1);
 	});
 
+	// Dauerleihe (Kollegium): keine Frist, nie überfällig — dieselbe Regel wie in der Akte
+	// (BorrowedBooksList). Bis zum 22.09.2026 kannte der Druck das Merkmal nicht und
+	// markierte den Kollegen nach einem Jahr rot (OFFEN.md 5.18).
+	it('markiert eine Dauerleihe nicht und schreibt „ohne Frist“ statt des Datums', () => {
+		const jetzt = new Date('2026-03-01T12:00:00Z');
+		const html = baueAusleiherDruckHtml(
+			[
+				{
+					schueler_name: 'Kim',
+					schueler_nachname: 'Kollegin',
+					rueckgabe_frist: '2025-02-01',
+					ist_dauerleihe: true
+				}
+			],
+			{ title: 'X' },
+			'Alle',
+			jetzt
+		);
+		expect(html).not.toContain('class="overdue"');
+		expect(html).toContain('ohne Frist');
+		expect(html).not.toContain('1.2.2025');
+	});
+
 	it('maskiert Anführungszeichen auch im Titel-Element', () => {
 		const html = baueAusleiherDruckHtml([], { title: '"><b>weg</b>' }, 'Alle');
 		expect(html).not.toContain('<b>weg</b>');

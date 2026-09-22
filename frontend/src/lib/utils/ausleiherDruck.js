@@ -34,14 +34,17 @@ export function baueAusleiherDruckHtml(ausleiher, buch, filterKlasse, jetzt = ne
 
 	const zeilen = ausleiher
 		.map((b) => {
-			const ueberfaellig = new Date(b.rueckgabe_frist) < jetzt;
+			// Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Akte.
+			const dauerleihe = !!b.ist_dauerleihe;
+			const ueberfaellig = !dauerleihe && new Date(b.rueckgabe_frist) < jetzt;
+			const frist = dauerleihe ? 'ohne Frist' : fmtDateDE(b.rueckgabe_frist);
 			return `
         <tr>
           <td>${escapeHtml(b.schueler_name)} ${escapeHtml(b.schueler_nachname)}</td>
           <td>${escapeHtml(b.klasse || '-')}</td>
           <td style="font-family: monospace; font-size: 0.875rem;">${escapeHtml(b.exemplar_barcode)}</td>
           <td>${escapeHtml(fmtDateDE(b.ausgeliehen_am))}</td>
-          <td class="${ueberfaellig ? 'overdue' : ''}">${escapeHtml(fmtDateDE(b.rueckgabe_frist))}</td>
+          <td class="${ueberfaellig ? 'overdue' : ''}">${escapeHtml(frist)}</td>
         </tr>`;
 		})
 		.join('');
