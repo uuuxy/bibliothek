@@ -99,3 +99,24 @@ func pruefeBarcodeEindeutig(ctx context.Context, w http.ResponseWriter, userRepo
 	}
 	return &opt.BarcodeID, true
 }
+
+// meldeAusweisKollision übersetzt die Ablehnung der Datenbank beim Eintragen einer
+// Ausweisnummer in eine Auskunft (409) und sagt, ob sie geschrieben wurde. Zwei Wächter
+// greifen hinter der Vorprüfung (pruefeBarcodeEindeutig, sie kennt nur die Leserzeilen):
+// dieselbe Nummer bei einer anderen Person (Migration 118/125, zwei Arbeitsplätze
+// gleichzeitig) und die Nummer eines Buchs (Migration 131). Bis zum 22.09.2026 kam beides
+// als 500 „interner Fehler“ an — die drei Schüler-Türen übersetzen es seit ihrer Anlage
+// (Rasterdurchgang 22.09.2026, Frage 5).
+func meldeAusweisKollision(w http.ResponseWriter, err error) bool {
+	switch {
+	case repository.IstNummerBuchOderAusweisKollision(err):
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			errors.New("diese Nummer ist der Barcode eines Buchs und kann kein Ausweis sein"))
+		return true
+	case repository.IstAusweisKollision(err):
+		apierrors.SendHTTPError(w, http.StatusConflict,
+			errors.New("diese Ausweisnummer trägt bereits eine andere Person (Schüler oder Kollegium)"))
+		return true
+	}
+	return false
+}

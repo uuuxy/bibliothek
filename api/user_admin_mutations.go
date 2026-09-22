@@ -94,6 +94,9 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 		// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
 		// von selbst (Trigger trg_benutzer_hat_leserzeile, Migration 125).
 		if _, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole); err != nil {
+			if meldeAusweisKollision(w, err) {
+				return
+			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
@@ -191,6 +194,9 @@ func (s *Server) UpdateUserHandler(userRepo repository.UserRepository) http.Hand
 			// stattfand (Phantom-Erfolg-Sweep 31.08.2026).
 			if errors.Is(err, repository.ErrBenutzerNichtGefunden) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
+				return
+			}
+			if meldeAusweisKollision(w, err) {
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
