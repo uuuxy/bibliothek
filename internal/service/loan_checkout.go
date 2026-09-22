@@ -151,7 +151,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	// Sitzung (HandleSimpleReturn) durchging. Die Ausleihe liegt hier unter FOR UPDATE, der
 	// Fall kann sich bis zum Commit nicht mehr ändern.
 	if chkCtx.istSchueler() && neueAusleihe {
-		if err := s.pruefeSchuelerAusleihbar(ctx, chkCtx.leser, chkCtx.borrowerID, staffID, overrideBlock); err != nil {
+		if err := s.pruefeSchuelerAusleihbar(ctx, chkCtx.leser, chkCtx.borrowerID, staffID, overrideBlock, copy.IstLernmittel); err != nil {
 			return nil, err
 		}
 	}

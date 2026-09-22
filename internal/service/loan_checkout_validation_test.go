@@ -131,7 +131,7 @@ func TestSperrpruefung_GesperrterSchuelerAbgewiesen(t *testing.T) {
 	svc, _, mock := newValidationService(t, schueler)
 	defer mock.Close()
 
-	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false)
+	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false, false)
 
 	if !errors.Is(err, ErrBlocked) {
 		t.Errorf("gesperrter Schüler soll ErrBlocked liefern, bekam: %v", err)
@@ -143,7 +143,7 @@ func TestSperrpruefung_ManuelleSperreAbgewiesen(t *testing.T) {
 	svc, _, mock := newValidationService(t, schueler)
 	defer mock.Close()
 
-	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false)
+	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false, false)
 
 	if !errors.Is(err, ErrBlocked) {
 		t.Errorf("manuell gesperrter Schüler soll ErrBlocked liefern, bekam: %v", err)
@@ -157,7 +157,7 @@ func TestSperrpruefung_UebergehenLaesstDurchUndProtokolliert(t *testing.T) {
 
 	expectSettingsAndOverdue(mock, 0)
 
-	if err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", true); err != nil {
+	if err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", true, false); err != nil {
 		t.Fatalf("override soll Sperre umgehen, bekam Fehler: %v", err)
 	}
 	if audit.adminAktionCalls < 1 {
@@ -180,7 +180,7 @@ func TestSperrpruefung_UeberfaelligSperrtAutomatisch(t *testing.T) {
 		WithArgs("s1", 14).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(2))
 
-	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false)
+	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false, false)
 
 	if !errors.Is(err, ErrBlocked) {
 		t.Errorf("überfällige Medien über Limit sollen automatisch sperren, bekam: %v", err)
@@ -198,7 +198,7 @@ func TestSperrpruefung_OffenerSchadenSperrt(t *testing.T) {
 		WithArgs("s1").
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
 
-	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false)
+	err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false, false)
 
 	if !errors.Is(err, ErrBlocked) {
 		t.Errorf("offener Schadensfall soll automatisch sperren, bekam: %v", err)
@@ -222,7 +222,7 @@ func TestSperrpruefung_OffenerSchadenUebergangen(t *testing.T) {
 		WithArgs("s1", 14).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 
-	if err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", true); err != nil {
+	if err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", true, false); err != nil {
 		t.Fatalf("override soll offene Schäden umgehen, bekam Fehler: %v", err)
 	}
 	if audit.adminAktionCalls < 1 {
@@ -240,7 +240,7 @@ func TestSperrpruefung_UebergehbareSperrenSindMarkiert(t *testing.T) {
 		svc, _, mock := newValidationService(t, schueler)
 		defer mock.Close()
 		vorbereiten(mock)
-		err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false)
+		err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false, false)
 		if !errors.Is(err, ErrBlocked) {
 			t.Fatalf("erwartet ErrBlocked, bekam %v", err)
 		}
@@ -336,5 +336,46 @@ func TestResolveBorrower_NoActiveBorrower(t *testing.T) {
 
 	if !errors.Is(err, ErrInvalidState) {
 		t.Errorf("ohne aktiven Leser soll ErrInvalidState kommen, bekam: %v", err)
+	}
+}
+
+// Antwort der Schule vom 22.09.2026 (docs/OFFEN.md 9.3 c): Für ein Lernmittel gibt es keine
+// automatische Abweisung — weder wegen einer offenen Forderung noch über die
+// Überfällig-Automatik, und auch keine übergehbare. Der Mock erwartet KEINE Abfrage: Zählt
+// eine der zwei Automatiken doch, meldet pgxmock die unerwartete Query als Fehler.
+// Rot gesehen am Rückbau der Weiche (22.09.2026).
+func TestSperrpruefung_LernmittelOhneAutomatik(t *testing.T) {
+	schueler := &repository.Student{ID: "s1", Klasse: "5a"}
+	svc, audit, mock := newValidationService(t, schueler)
+	defer mock.Close()
+
+	if err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false, true); err != nil {
+		t.Fatalf("Lernmittel: die Automatik darf nicht abweisen, bekam %v", err)
+	}
+	if audit.adminAktionCalls != 0 {
+		t.Errorf("nichts wurde übergangen, trotzdem %d Einträge protokolliert", audit.adminAktionCalls)
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Error(err)
+	}
+}
+
+// Die zwei Schalter am Leser gelten auch beim Lernmittel: Sie sind die Entscheidung eines
+// Menschen (oder des Abgänger-Verfahrens), keine Automatik.
+func TestSperrpruefung_LernmittelSchalterBleiben(t *testing.T) {
+	faelle := map[string]*repository.Student{
+		"gesperrt": {ID: "s1", Klasse: "5a", IstGesperrt: true, BlockReason: strPtr("Test")},
+		"von Hand": {ID: "s1", Klasse: "5a", IsManuallyBlocked: true, BlockReason: strPtr("Test")},
+	}
+	for name, schueler := range faelle {
+		t.Run(name, func(t *testing.T) {
+			svc, _, mock := newValidationService(t, schueler)
+			defer mock.Close()
+
+			err := svc.pruefeSchuelerAusleihbar(context.Background(), schueler, "s1", "staff1", false, true)
+			if !errors.Is(err, ErrBlocked) {
+				t.Errorf("Schalter am Leser muss auch beim Lernmittel abweisen, bekam %v", err)
+			}
+		})
 	}
 }

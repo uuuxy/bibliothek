@@ -16,16 +16,18 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 Dieser Block nennt die Reihenfolge. Alles darunter ist die ausführliche Fassung mit
 Begründungen.
 
-**Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): zwölf Punkte, acht davon erledigt.
-Offen sind zwei Fragen (9.7) und zwei Bedingungen, die neben der Mängelliste stehen — der
-Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
+**Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): zwölf Punkte, sieben davon erledigt.
+Die Antwort der Schule vom 22.09.2026 hat drei Punkte entschieden, die jetzt zu bauen sind
+(9.3 c, 9.4, 9.6). Daneben stehen zwei Bedingungen neben der Mängelliste — der Nachweis der
+DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Auf die Antwort zum Schreiben warten.** Es ist am 21.09.2026 abgeschickt. Daran hängen
-   zwei gestoppte Entscheidungen: die Sperre bei offener Forderung (9.3 c) und die
-   Mehrjahresbände (9.6, hält 4.3 auf). Solange die Antwort aussteht, wird an beiden Stellen
-   nichts gebaut.
+1. **Die Antwort der Schule ist da (22.09.2026) — eins von drei Dingen ist gebaut.** Keine
+   automatische Sperre für Lernmittel, auch keine übergehbare (9.3 c, gebaut). Titel ohne
+   Exemplare verschwinden aus dem Katalog (9.4). Mehrjahresbände am Werk, das Schuljahr steht
+   in der Frist (9.6, damit kippt 4.3 zurück auf „bauen") — vorher die Messung aus 4.3 am
+   Server.
 2. **Die sechs Fragen sind beantwortet und gebaut** (21.09.2026: 4.7, 4.9, 4.11, 4.13, 4.14,
    4.21). Von 4.8 steht nur noch der Lauf im Druck-Center aus — er ändert Daten und liegt bei
    dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
@@ -33,7 +35,7 @@ Nachweis der DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    tragen keinen Vermerk. Den Wortlaut kennt nur die Schule.
 3. **Die Zahlen vom Testserver liegen vor** (21.09.2026): 8 Leser ohne Ausweisnummer, alle
    Lehrkräfte (5.16 C); kein Kollege in einer Warteschlange, in der er nie nachrückt (5.19).
-   Die Messung aus 4.3 ist gestoppt, bis die Frage nach den Mehrjahresbänden beantwortet ist.
+   Die Messung aus 4.3 läuft jetzt — vor dem Bau der Tür, nicht vor dem Streichen.
 4. **Zwei Umbauten freigeben**, die vorbereitet, aber nicht gebaut sind, weil sie die Datenbank
    ändern: die Ausweisnummer schon beim Anlegen eines Kontos (5.16 C) und die eigene Spalte für
    die Karenz-Uhr (4.12). Beide sind entschieden, beide brauchen eine Migration, die Nummern
@@ -91,7 +93,7 @@ jemandem schaden?"**
 1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen.
 2. **Die zwei Migrationen nach der Freigabe**: Ausweisnummer beim Anlegen des Kontos (5.16 C,
    gemessen: 8 Lehrkräfte ohne Nummer) und die Karenz-Spalte (4.12). Die Messung zum
-   Ziel-Jahrgang (4.3) wartet auf die Antwort zu den Mehrjahresbänden.
+   Ziel-Jahrgang (4.3) läuft vor dem Bau der Mehrjahresbände (9.6).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
 4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand (A) und die Ausweisnummer (C).
@@ -157,39 +159,36 @@ der Doku).
 
 Die Nummern bleiben fest; beantwortete Fragen fallen weg, sobald sie umgesetzt sind.
 
-### 4.3 `ziel_jahrgang`: bauen oder streichen
+### 4.3 `ziel_jahrgang`: bleibt und bekommt eine Tür
 
-> **Gestoppt am 17.09.2026 (siehe 9.6).** Die Sichtung verlangt ausdrücklich
-> Mehrjahresbände. Bis die Frage neu entschieden ist, wird `ziel_jahrgang` nicht angefasst und
-> die Messung unten nicht gefahren.
+**Entschieden am 22.09.2026: bauen, nicht streichen.** Die Schule hat die Mehrjahresbände
+bestätigt (9.6). Die Entscheidung vom 16.09.2026 („streichen") ist damit hinfällig — die
+Spalte, die drei Lesestellen in `repository/book_search.go` und der Zweig in
+`internal/service/loan_rules.go` (`stichtag.AddDate(additionalYears, 0, 0)`) bleiben. Was
+fehlt, ist die Tür, die den Wert setzt: Kein Schreibpfad schreibt `ziel_jahrgang`
+(`repository/book_inventory.go` nennt die Spalte weder im INSERT noch im UPDATE, kein
+Formular hat das Feld). Der Bauplan steht in 9.6.
 
-`ziel_jahrgang` (mehrjährige Ausleihe) wird in `internal/service/loan_rules.go` gelesen, aber von
-keinem Code geschrieben; die Fristregel verzweigt auf einen Wert, der immer 0 ist. Die Frist am
-Rückgabetermin ist entschieden. **Entschieden am 16.09.2026: streichen.** Spalte, die drei
-Lesestellen in `repository/book_search.go` und der Zweig in der Fristregel fallen. Der Zweig ist
-zugleich das Tor zur LMF-Plan-Frist (sie gilt nur bei `additionalYears == 0`) — ein Wert, den
-niemand setzt, darf diese Regel nicht aushebeln können.
-
-**Vor dem Streichen eine Zählung am Server (16.09.2026).** „Wird von keinem Code geschrieben"
-gilt für den HEUTIGEN Code; im Juni gab es einen Schreiber (`INSERT INTO buecher_titel (…,
-ziel_jahrgang, …)`, Commit `f8dab25a`, mit den Migrationen 029/030). Steht auf dem Server auch
-nur ein Titel mit einem Wert, dann ist die mehrjährige Ausleihe dort nicht tot, sondern in
-Betrieb — und das Streichen gäbe diesen Büchern beim nächsten Ausleihen eine Frist im selben
-Schuljahr statt in einem späteren. Deshalb erst messen, dann bauen:
+**Vor dem Bauen eine Zählung am Server.** Im Juni gab es einen Schreiber (`INSERT INTO
+buecher_titel (…, ziel_jahrgang, …)`, Commit `f8dab25a`, mit den Migrationen 029/030). Steht
+auf dem Server ein Titel mit einem Wert, dann rechnet die Fristregel dort heute schon
+mehrjährig — die Tür macht das sichtbar, und die Werte müssen zum Klassenschema passen
+(05F/05G … 10, ET/12T/13T):
 
 ```sql
 SELECT count(*) AS titel_mit_wert, min(ziel_jahrgang), max(ziel_jahrgang)
 FROM buecher_titel WHERE ziel_jahrgang <> 0;
 ```
 
-Ergebnis 0 → streichen wie entschieden. Ergebnis > 0 → die Frage ist eine andere und kommt
-zurück auf den Tisch.
+Ergebnis 0 → die Tür wird an leeren Werten gebaut. Ergebnis > 0 → die Werte vor dem Bau
+ansehen: Ein Wert unter der Klasse des Kindes ergibt heute stumm die einjährige Frist.
 
 ### 4.4 E6: Nach der Übergabe an die Schulaufsicht
 
 Bleibt der Schüler gesperrt und die Forderung offen, bis das Sekretariat „bezahlt laut
 Finanzbericht" bucht — oder gilt die Übergabe schulseitig als erledigt? **Vorschlag (Konzept):**
-Sperre bleibt, Löschblockade fällt. **Wann:** sobald ein erster echter Bescheid absehbar ist;
+Sperre bleibt, Löschblockade fällt. **Seit dem 22.09.2026 gilt „Sperre bleibt" nur noch für
+die Schülerbücherei:** Für Lernmittel darf keine Forderung eine Ausleihe abweisen (9.3 c). **Wann:** sobald ein erster echter Bescheid absehbar ist;
 blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt 6.
 
 ### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
@@ -907,11 +906,12 @@ Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
 
 ## 9. Sichtung vom 16.09.2026
 
-Zwölf Punkte, jeder am Code geprüft. Acht sind erledigt und stehen deshalb nicht mehr hier:
+Zwölf Punkte, jeder am Code geprüft. Sieben sind erledigt und stehen deshalb nicht mehr hier:
 Strichcode-Scan mit Handgerät und Kamera, Littera-Barcodes, alte Ausdrucke, Restwert beim
-Melden, Listenpreis am Titel, Zugangs- und Abgangsbuch, Titel ohne Exemplare, Sortierung und
-Filter der Leserdatei. Die Arbeit steht in den Commits vom 17.09.2026. Offen ist, was hier
-folgt.
+Melden, Listenpreis am Titel, Zugangs- und Abgangsbuch, Sortierung und Filter der Leserdatei.
+Die Arbeit steht in den Commits vom 17.09.2026. Am 22.09.2026 hat die Schule die drei
+Rückfragen vom 21.09.2026 beantwortet; die Antworten stehen wörtlich bei 9.3 c, 9.4 und 9.6.
+Offen ist, was hier folgt.
 
 Zwei Quellen liegen dem zugrunde: `~/Downloads/Arbeitshilfe_Mahnschreiben.pdf` (Erlass vom
 17.12.2014, Az. 674.100.002-00178) und `~/Downloads/Ablauf Mahnverfahren.pdf` (die
@@ -919,15 +919,24 @@ Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschni
 
 ### 9.3 Vorgaben des Landes (Protokoll 1)
 
-**9.3 c) Sperrung bei offener Bearbeitung — LMF untersagt das.**
-`internal/service/loan_checkout_validation.go` (`pruefeOffeneSchaeden`) sperrt bei jedem
-unbezahlten Schadensfall jede weitere Ausleihe — **ohne Ausnahme für Lernmittel**. Dasselbe im
-Geräte-Pfad (`pruefeGeraetAutomatikSperren`). Übergehbar ist es nur von Hand mit Audit-Eintrag;
-der Grundzustand ist die Sperre. Woher diese Regel stammt, ist nicht belegt: In der
-Arbeitshilfe zum Erlass vom 17.12.2014 und in der Anforderungsliste „Mahnverfahren" steht
-zur Sperre nichts (beide am 17.09.2026 im Original gelesen). Die Zeile im Konzept, die sie
-als fremde Praxis auswies, war unbelegt und ist entfernt. **Die Frage ist gestellt,
-siehe 9.7.**
+**9.3 c) Sperrung bei offener Bearbeitung — entschieden und gebaut am 22.09.2026.**
+
+Die Antwort der Schule, wörtlich: „a) Dies bezieht sich nur auf die Lernmittel wegen der
+rechtlichen Grundlage der Lernmittelfreiheit in Hessen. b) Für die Lernmittel darf es keinerlei
+automatische ‚Sperrung' geben, auch nicht eine Sperrung, die bestimmte Personen aufheben
+können. Für die Schulbibliothek gilt dies nicht."
+
+Gebaut als Weiche in `pruefeSchuelerAusleihbarMit`
+(`internal/service/loan_checkout_validation.go`): Bei einem Lernmittel entfallen die zwei
+Automatiken (offene Forderung, Überfällig-Automatik); die zwei Schalter am Leser bleiben.
+Theke und Nachbuchung laufen über dieselbe Funktion. Gates: Mock-Test ohne erwartete Abfrage
+und PG-Test am Live-Pfad der Theke, beide am Rückbau rot gesehen.
+
+**Offen, bei dir:** Ein Kind mit überfälligen Lernmitteln, das ein Buch der Schülerbücherei
+will — die Automatik weist es heute ab, weil sie Medien zählt, nicht Töpfe. Die Antwort der
+Schule verbietet nur die Abweisung des Lernmittels; ob die Bücherei wegen überfälliger
+Schulbücher zumacht, entscheidet die Schule selbst. Vorschlag: so lassen, es ist eine
+Einstellung (`MaxOverdueItems`).
 
 **9.3 e) Mahnwesen — drei begründete Abweichungen.** Die Punkte 1 bis 3 der Anforderungsliste
 (Abwertung, Beschädigungsgrad, wählbare Preisgrundlage) sind am 17.09.2026 gebaut. Es bleiben
@@ -944,27 +953,86 @@ Tresen; für Lernmittel ist das die Ausnahme mit Quittung, nicht der Regelweg (5
 Zahlungsweg für ein Buch der Schülerbücherei ist nicht entschieden — die Briefe schreiben
 dort „(Bankverbindung des Schulträgers nicht hinterlegt)" (E5, 8.3).
 
-### 9.6 A: Mehrjahresbände — die Entscheidung von 4.3 kippt
+### 9.4 Titel ohne Exemplare — wieder offen, die Schule will sie nicht im Katalog
+
+Am 17.09.2026 war entschieden, Titel ohne Exemplare NICHT zu verstecken, sondern den Bestand
+an jedem Treffer zu sagen (Commits `0c22140c`, `295a846c`). Die Antwort der Schule vom
+22.09.2026, wörtlich: „Ein Titel/Werk ohne (verliehene oder verfügbare) Exemplare im Bestand
+sollte aus unserer Sicht nicht im Katalog erscheinen, da dies zu Verwirrungen führen könnte.
+Vielleicht wäre eine Inventur hilfreich, um den Bestand genau zu erfassen und den Titeln
+entweder Exemplare zuzuweisen oder sie zu entfernen?"
+
+**Was gebaut wird.** Der Katalog zeigt nur Titel mit mindestens einem Exemplar im Bestand.
+„Im Bestand" ist das Prädikat aus `repository/book_bestand.go` (nicht ausgesondert, nicht im
+Zulauf) — dieselbe Zahl, die die Trefferliste heute nennt; eine zweite Definition gibt es
+nicht. Betroffen sind die Türen, die ein Kollegium sieht: das Portal Schulbücher (`/api/books`,
+`BuchRasterStartseite`) und die Trefferliste an der Theke (`SearchTitlesFuzzy`). Der Titel
+selbst bleibt: Er verschwindet aus der Sicht, nicht aus der Tabelle, sonst legt ihn jemand ein
+zweites Mal an — der Grund für die Entscheidung vom 17.09.2026 gilt weiter.
+
+**Wo er weiter steht.** Auf der Bestellliste: `api/reorders.go` zählt je Titel und nimmt
+alles unter der Schwelle, null eingeschlossen (geprüft am 22.09.2026) — nachbestellen geht
+also ohne den Katalog. Und in der Verwaltung als eigene Liste „Titel ohne Exemplare" mit
+zwei Wegen je Zeile: Exemplare anlegen oder Titel löschen. Das ist die Aufräumhilfe, die die
+Schule mit „Inventur" meint — die eigene Inventur (`repository/inventur_session_repo.go`)
+zählt Exemplare und kann einen Titel ohne Exemplar deshalb nicht finden.
+
+**Entschieden am 22.09.2026:** Ein Titel, dessen Exemplare alle im Zulauf sind (bestellt,
+noch nicht da), gilt als vorhanden — die Bücher kommen, und wer die Bestellung sieht, soll
+den Titel finden. Versteckt wird nur, wer weder im Bestand noch im Zulauf ein Exemplar hat.
+
+**Gate.** PG-Test an beiden Türen mit den vier Ursachen aus `0c22140c` (gar keins, alle
+ausgesondert, alle verliehen, alles im Zulauf): „alle verliehen" und „alles im Zulauf" bleiben
+sichtbar, die zwei anderen verschwinden. Rot am Rückbau des WHERE.
+
+### 9.6 A: Mehrjahresbände — entschieden am 22.09.2026, 4.3 kippt zurück auf „bauen"
 
 Protokoll 5, zweiter Spiegelstrich: „Bei den Ausleihfristen fehlt das Jahr. Mehrjahresbände
 lassen sich nicht abbilden."
 
-Die Mechanik ist vollständig da: `ziel_jahrgang` → `AdditionalYears` →
-`stichtag.AddDate(jahre, 0, 0)` in `internal/service/loan_rules.go`. Es fehlt allein die Tür,
-die den Wert setzt. **4.3 hält fest: „Entschieden am 16.09.2026: streichen."** Das ist genau das
-Gegenteil dessen, was die prüfende Stelle verlangt — und mit der Spalte fiele auch die Rechnung,
-die es dafür schon gibt. **Die Entscheidung gehört zurück auf den Tisch, bevor die Messung aus
-4.3 läuft.** Solange sie offen ist, wird `ziel_jahrgang` nicht angefasst.
+Die Antwort der Schule, wörtlich: „Ja, Ihre Vermutung trifft zu. Die Einstellung
+‚Mehrjahres-Band' wird am Titel/Werk hinterlegt (s. Screenshot). Littera Lm funktioniert nicht
+nach der Logik ‚Vorrücken', es werden jeweils die verschiedenen Schuljahre aufgerufen und
+nebeneinander gespeichert. Aus diesem Grund muss hier auch das Schuljahr definiert werden."
+Der Screenshot liegt nicht im Ordner der Quelldokumente; die Antwort trägt ohne ihn.
 
-### 9.7 Offene Fragen
+**Was das am Code heißt.** Die Rechnung ist da: `ziel_jahrgang` am Titel → `AdditionalYears`
+→ `stichtag.AddDate(jahre, 0, 0)` in `internal/service/loan_rules.go`. Die Frist trägt damit
+das Jahr, das Littera über sein Schuljahr abbildet: Ein Buch, das „bis Jahrgang 10" beim Kind
+bleibt, bekommt beim Ausgeben an ein Kind der 8 den Stichtag zwei Schuljahre später. Das ist
+genauer als Litteras Schaltjahr-Flag, weil ein Kind, das im zweiten Jahr des Bandes dazukommt,
+die richtige Frist bekommt und nicht die volle Laufzeit. Es fehlt allein die Tür:
 
-1. **Sperre bei offener Forderung** (9.3 c): Die Frage ist gestellt (Text am 17.09.2026
-   formuliert): Gilt das Verbot nur für Lernmittel oder für jede Ausleihe, worauf stützt es
-   sich, und zählt eine übergehbare Abweisung schon als „Sperrung"? Bis zur Antwort bleibt es,
-   wie es ist.
-2. **Mehrjahresbände** (9.6): Wörtlich steht im Protokoll nur der eine Satz „Bei den
-   Ausleihfristen fehlt das Jahr. Mehrjahresbände lassen sich nicht abbilden." Die Deutung geht
-   mit dem Schreiben zurück. **4.3 bleibt bis dahin gestoppt.**
+1. **Feld am Werk** — im Titel-Formular, nur bei Lernmitteln: „Bleibt beim Kind bis Jahrgang".
+   Werte aus dem Klassenschema der Schule (5 bis 10, 12T/13T als Oberstufe); leer heißt ein
+   Schuljahr. Der Schreibpfad ist `repository/book_inventory.go` (INSERT und UPDATE nennen
+   die Spalte heute nicht). Kein zweiter Weg.
+2. **Zwei Stellen in der Fristregel prüfen**, die den Zweig bisher nur für `additionalYears
+   == 0` kennen: die LMF-Plan-Frist (Rückgabetermin der Klasse) und der Fall „Termin der
+   Klasse schon vorbei → nächstes Schuljahr". Ein Mehrjahresband, das nach dem Rückgabetermin
+   ausgegeben wird, muss ebenfalls vom folgenden Schuljahr aus rechnen — sonst endet es ein
+   Jahr zu früh.
+3. **Anzeige der Frist** in Ausleihliste, Ausweis-Akte und Mahnwesen: ein Datum mit Jahr
+   steht dort schon; das Jahr muss nur einmal in einem E2E-Lauf mit einem Mehrjahresband
+   gesehen werden.
+
+**Vorher die Messung aus 4.3** — sie sagt, ob der Server schon Werte trägt.
+
+**Gate.** Fristtest mit fester Uhr: Kind der 8, Titel bis Jahrgang 10 → Stichtag des
+übernächsten Schuljahres; Kind der 10, Titel bis Jahrgang 10 → Stichtag des laufenden;
+Ausgabe nach dem Rückgabetermin der Klasse → ein Schuljahr weiter. Rot gesehen am Rückbau
+des `AddDate`.
+
+### 9.7 Reihenfolge der drei Bauten
+
+Beide Rückfragen vom 21.09.2026 sind beantwortet (9.3 c, 9.6); die Schule hat dazu 9.4 neu
+aufgemacht. Vorschlag für die Reihenfolge, jede Stufe mit eigenem Commit und Gate:
+
+1. **9.3 c** — gebaut am 22.09.2026.
+2. **9.4** — ein WHERE an zwei Lesetüren plus die Aufräumliste; kein Schema. Entschieden am
+   22.09.2026: im Zulauf gilt als vorhanden.
+3. **9.6** — Feld, Schreibpfad, zwei Zweige in der Fristregel; kein Schema (die Spalte gibt es),
+   aber vorher die Messung aus 4.3 am Server.
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 

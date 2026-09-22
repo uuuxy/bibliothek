@@ -63,7 +63,8 @@ Das System unterscheidet zwischen verschiedenen Medien und Leihertypen:
 ### 2.2. Blockaden und Limits
 
 - **Ausleihlimit:** Es gibt ein konfigurierbares Maximum an gleichzeitigen Ausleihen pro Schüler (LMF-Bücher ausgenommen).
-- **Sperre bei Überfälligkeit:** Hat ein Schüler mehr als `MaxOverdueItems` überfällige Medien, wird das Konto automatisch für neue Ausleihen gesperrt.
+- **Sperre bei Überfälligkeit:** Hat ein Schüler mehr als `MaxOverdueItems` überfällige Medien, wird das Konto automatisch für neue Ausleihen der Schülerbücherei gesperrt. Dasselbe gilt bei einer unbezahlten Forderung.
+- **Lernmittel kennen keine automatische Sperre** (Entscheidung der Schule vom 22.09.2026, Grundlage: Lernmittelfreiheit in Hessen): Ein Schulbuch wird auch bei offener Forderung oder überfälligen Medien ausgegeben, ohne dass jemand etwas übergehen muss. Nur die von Hand gesetzten Schalter am Konto (gesperrt, manuell gesperrt) gelten für beide Töpfe.
 - **Manuelle Sperre:** Administratoren können Schüler manuell sperren (z. B. bei massivem Fehlverhalten). Ein verpflichtender Begründungstext (`block_reason`) wird stets verlangt und den Helfern angezeigt.
 
 ---

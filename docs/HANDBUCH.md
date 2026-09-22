@@ -57,6 +57,9 @@ die Forderung landet in der Akte, der Elternbrief kommt als PDF).
   nächste Leserin wartet. (§4)
 - Ein **gesperrter** Ausweis wird angehalten — mit dem hinterlegten Grund. Ausleihen ist nur
   bewusst per Override möglich; die Sperre aufheben nur mit dem Recht dazu. (§2.2)
+- Eine **offene Forderung** oder zu viele überfällige Bücher halten nur die Schülerbücherei an.
+  Ein Schulbuch geht immer raus — die Lernmittelfreiheit lässt keine Sperre zu, und darum
+  fragt die Theke dabei auch nicht nach einem Override.
 - **Überfällige** Bücher und die Mahnstufe stehen direkt an der Ausleihzeile.
 
 **Außerdem:** Geräte (iPads, Taschenrechner, Beamer) laufen über dieselbe Theke, mit

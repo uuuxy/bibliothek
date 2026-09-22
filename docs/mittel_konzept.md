@@ -1,4 +1,4 @@
-# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 17.09.2026)
+# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 22.09.2026)
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
@@ -72,10 +72,12 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
   vorgeschriebener Schlussabsatz mit Einspruchsfrist von einem Monat. Nach Fristablauf
   Original + Buchungsbeleg an die Schulaufsicht, Kopie bleibt; **spätere Rückgabe →
   Schulaufsicht unverzüglich informieren.**
-- **Ohne Quelle:** Die Sperre weiterer Ausleihen bis zur Zahlung steht in keiner der
-  vorliegenden Unterlagen des Landes; sie war eine Annahme. Das Sichtungsprotokoll vom
-  16.09.2026 sagt, LMF untersage sie — offen, siehe [OFFEN.md](OFFEN.md) 9.3 c. „Nur
-  Überweisung, keine Barzahlung" ist dagegen belegt (Arbeitshilfe, Abschnitt 1).
+- **Keine Sperre bei Lernmitteln:** Die Sperre weiterer Ausleihen bis zur Zahlung steht in
+  keiner der vorliegenden Unterlagen des Landes; sie war eine Annahme. Die Schule hat am
+  22.09.2026 entschieden: Für Lernmittel gibt es keinerlei automatische Sperre, auch keine
+  übergehbare; für die Schülerbücherei bleibt sie. Gebaut in
+  `internal/service/loan_checkout_validation.go`. „Nur Überweisung, keine Barzahlung" ist
+  dagegen belegt (Arbeitshilfe, Abschnitt 1).
 
 **Zwei Dinge, die die Schule wissen muss:**
 
@@ -121,7 +123,7 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 | Brief 1: Elternbrief je Schadensfall | `pdf/schadensfall.go`, `api/pdf.go` (`elternbrief_generiert`)                                                                                                 | 14-Tage-Frist, „Schulbibliotheksordnung", Unterschrift „Bibliotheksleitung". Der Zahlungsweg stimmt seit 17.09.2026 (Konto des Landes bzw. offener Weg des Trägers); die übrigen Punkte bleiben für ein Lernmittel falsch. |
 | Brief 2: Rechnung je Schüler         | `pdf/rechnung.go`, `api/print.go` (alle offenen Forderungen)                                                                                                  | DIN 5008, LEFT JOINs (Geräteschaden vorgesehen), Zahlungsweg je Topf seit 17.09.2026 — aber weiterhin ohne Nummer und ohne Frist im Landesformat.                  |
 | Brief 3: Eltern-Mahnbrief            | `api/reports_pdf.go`, Vorlage `MAHNUNG_ELTERN`                                                                                                                | DIN-5008-Fensterkuvert, Falzmarken, Tabelle der überfälligen Bücher — **die Bauform, die der Bescheid braucht.**                                                   |
-| Mahnwesen                            | `api/mahnwesen*.go`, `repository/mahnwesen_*.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse/Jahrgang, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days`.            |
+| Mahnwesen                            | `api/mahnwesen*.go`, `repository/mahnwesen_*.go`, `Mahnwesen.svelte` + `components/mahnwesen/`                                                                | Überfällige nach Klasse/Jahrgang, Auswahl → „Mahnbriefe drucken" (Mahnstufe steigt nur beim Druck), Klassenleitungs-Mail, Sperre ab `max_overdue_days` (nur Schülerbücherei). |
 | Schulstammdaten                      | `SchuleKategorie.svelte`, `system_settings*.go`                                                                                                               | Name, Anschrift, Eigentumsvermerk. **Fehlt:** Schulnummer, Schulaufsicht (Nr. + Anschrift), Bankverbindungen, Schulleitung, Geschäftszeichen/Bearbeiter/Durchwahl. |
 | Preise                               | `buecher_exemplare.einkaufspreis` (aus Littera übernommen), `erworben_am` = Littera-Zugangsdatum (echt, nicht Importdatum), `buecher_titel.listenpreis` und `buecher_exemplare.zustand_abwertung_prozent` (Migration 127) | ✅ seit 17.09.2026. Der Listenpreis kommt beim Anlegen über die ISBN aus der DNB (MARC21 020 $c) und ist von Hand überschreibbar; leer heißt „nicht erfasst", dann weicht die Staffel auf den Kaufpreis aus und sagt es. |
 | Ausleihhistorie je Exemplar          | `ausleihen` (Zeilen bleiben nach der Anonymisierung ohne Person)                                                                                              | Zählbar. Aus Littera kamen nur die **offenen** Ausleihen — für den Altbestand ist die Zahl der Verleihjahre unbekannt.                                             |
@@ -129,8 +131,8 @@ klären. Sicher ist nur: nicht auf das Konto des Landes.
 | Rollen                               | ADMIN / MITARBEITER / KOLLEGIUM / HELFER; Sekretariat = ADMIN                                                                                                 | Neues Recht nach dem Muster `merge_students` (db/seed.go, permissionMetadata.js, schuelerRechte.js, permissions.spec.js, PII-Matrix, FACHKONZEPT).                 |
 | Nummernkreise                        | `barcode_seq`; Regel: EIN Generator, nie recyceln (Register 068)                                                                                              | Für die Referenznummer braucht es einen Zähler je Kassenjahr.                                                                                                      |
 
-**Kern-Befund:** Die Forderung (`schadensfaelle`) ist die richtige Wahrheit — Sperre,
-Löschblockade, DSGVO-Auskunft, Zusammenführen, Bezahlt/Storno hängen alle daran. Es fehlt
+**Kern-Befund:** Die Forderung (`schadensfaelle`) ist die richtige Wahrheit — Sperre (nur
+Schülerbücherei), Löschblockade, DSGVO-Auskunft, Zusammenführen, Bezahlt/Storno hängen alle daran. Es fehlt
 ihr die **Art** (nicht zurückgegeben / beschädigt), der **Topf** (Land / Schulträger) und
 der **Brief** als eigener Datensatz mit Nummer, Frist und Status. Die drei Briefe sind drei
 Fassungen derselben Sache und werden zu **einem Renderer mit zwei Varianten**.

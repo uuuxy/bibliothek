@@ -41,19 +41,31 @@ func (s *defaultLoanService) logOverride(ctx context.Context, staffID, borrowerI
 // pruefeSchuelerAusleihbar führt die vier Sperr-Checks der Reihe nach aus. Jeder Check ist
 // in einen eigenen Helfer ausgelagert (reine Extract-Method, keine Logikänderung) — die
 // Reihenfolge und das overrideBlock-/Audit-Verhalten sind identisch zum vorherigen Monolithen.
-func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
-	return s.pruefeSchuelerAusleihbarMit(ctx, s.pool, sObj, borrowerID, staffID, overrideBlock)
+//
+// lernmittel sagt, ob das Buch, um das es geht, ein Lernmittel ist — dann entfallen die
+// zwei Automatiken (siehe pruefeSchuelerAusleihbarMit).
+func (s *defaultLoanService) pruefeSchuelerAusleihbar(ctx context.Context, sObj *repository.Student, borrowerID, staffID string, overrideBlock, lernmittel bool) error {
+	return s.pruefeSchuelerAusleihbarMit(ctx, s.pool, sObj, borrowerID, staffID, overrideBlock, lernmittel)
 }
 
 // pruefeSchuelerAusleihbarMit prüft dieselben vier Sperren über q — beim Nachbuchen die
 // Transaktion des Eintrags (sonst zwei Verbindungen je Eintrag, OFFEN.md 6.1), am
 // Online-Scan der Pool wie bisher.
-func (s *defaultLoanService) pruefeSchuelerAusleihbarMit(ctx context.Context, q repository.DBQueryer, sObj *repository.Student, borrowerID, staffID string, overrideBlock bool) error {
+//
+// Lernmittel (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.3 c): Die
+// Lernmittelfreiheit in Hessen lässt keine automatische Sperre zu — auch keine, die jemand
+// übergehen kann. Die zwei Automatiken (offene Forderung, Überfällig-Automatik) laufen
+// deshalb nur für ein Buch der Schülerbücherei. Die zwei Schalter am Leser (gesperrt, von
+// Hand gesperrt) gelten weiter: Sie sind die Entscheidung eines Menschen, keine Automatik.
+func (s *defaultLoanService) pruefeSchuelerAusleihbarMit(ctx context.Context, q repository.DBQueryer, sObj *repository.Student, borrowerID, staffID string, overrideBlock, lernmittel bool) error {
 	if err := s.pruefeGesperrt(ctx, sObj, borrowerID, staffID, overrideBlock); err != nil {
 		return err
 	}
 	if err := s.pruefeManuellGesperrt(ctx, sObj, borrowerID, staffID, overrideBlock); err != nil {
 		return err
+	}
+	if lernmittel {
+		return nil
 	}
 	if err := s.pruefeOffeneSchaeden(ctx, q, borrowerID, staffID, overrideBlock); err != nil {
 		return err

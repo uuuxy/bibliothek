@@ -214,7 +214,7 @@ func (s *defaultLoanService) nachbuchKontext(ctx context.Context, tx pgx.Tx, l *
 // Sperr-Override gibt es beim Nachbuchen nicht: Niemand steht daneben.
 func (s *defaultLoanService) nachbuchSchranken(ctx context.Context, q pgx.Tx, l *nachbuchLage, chkCtx *checkoutContext) error {
 	if chkCtx.istSchueler() {
-		if err := s.pruefeSchuelerAusleihbarMit(ctx, q, l.leser, l.leser.ID, l.e.StaffID, false); err != nil {
+		if err := s.pruefeSchuelerAusleihbarMit(ctx, q, l.leser, l.leser.ID, l.e.StaffID, false, l.copy.IstLernmittel); err != nil {
 			return err
 		}
 		anzahl, err := s.zaehleAktiveSchuelerAusleihen(ctx, q, chkCtx)
