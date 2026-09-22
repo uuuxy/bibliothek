@@ -236,18 +236,16 @@ func TestNachbuchen_WaechterUndFremdrueckgabe(t *testing.T) {
 	}
 }
 
+// Ein verloren gemeldetes Buch kommt zurück: Der Scan liegt NACH der Verlustmeldung — das
+// Kind bringt das Buch, nachdem die Mahnung es abgeschrieben hat. Die Verlustmeldung ist eine
+// Bewegung (seit Migration 132 auch über den Status-Editor, der nicht selbst stempelte);
+// ein Scan davor wäre veraltet (TestNachbuchen_RueckgabeVorDerVerlustmeldungIstVeraltet).
 func TestNachbuchen_VerlorenGemeldetesBuchKommtZurueck(t *testing.T) {
 	w := nbAufbau(t)
 	ctx := context.Background()
-	var schadensfallID string
-	if _, err := w.pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausleihbar = false, ist_ausgesondert = true, aussonderung_grund = 'VERLUST' WHERE id = $1`, w.exemplarID); err != nil {
-		t.Fatalf("aussondern: %v", err)
-	}
-	if err := w.pool.QueryRow(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
-		VALUES ($1, $2, 'Nicht zurückgegeben', 12.00, 'nicht_zurueckgegeben') RETURNING id`, w.exemplarID, w.anna).Scan(&schadensfallID); err != nil {
-		t.Fatalf("Forderung: %v", err)
-	}
-	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now().Add(-time.Minute)))
+	schadensfallID := verlorenGemeldet(t, w)
+	time.Sleep(50 * time.Millisecond)
+	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now()))
 	if err != nil || erg.Ergebnis != repository.NachbuchNurReaktiviert {
 		t.Fatalf("Rückkehr: %v %+v", err, erg)
 	}
@@ -260,6 +258,48 @@ func TestNachbuchen_VerlorenGemeldetesBuchKommtZurueck(t *testing.T) {
 	}
 	if w.meldungen(t, repository.NachbuchNurReaktiviert) != 1 {
 		t.Errorf("Rückkehr ohne Meldung")
+	}
+}
+
+// verlorenGemeldet bucht den Verlust so, wie der Status-Editor es tut (ohne eigenen Stempel;
+// den setzt seit Migration 132 die Datenbank), und legt die Forderung dazu.
+func verlorenGemeldet(t *testing.T, w *nbWelt) string {
+	t.Helper()
+	ctx := context.Background()
+	if _, err := w.pool.Exec(ctx, `UPDATE buecher_exemplare SET ist_ausleihbar = false, ist_ausgesondert = true, aussonderung_grund = 'VERLUST' WHERE id = $1`, w.exemplarID); err != nil {
+		t.Fatalf("aussondern: %v", err)
+	}
+	var schadensfallID string
+	if err := w.pool.QueryRow(ctx, `INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag, art)
+		VALUES ($1, $2, 'Nicht zurückgegeben', 12.00, 'nicht_zurueckgegeben') RETURNING id`, w.exemplarID, w.anna).Scan(&schadensfallID); err != nil {
+		t.Fatalf("Forderung: %v", err)
+	}
+	return schadensfallID
+}
+
+// Die Gegenprobe: Ein Rückgabe-Scan, der VOR der Verlustmeldung liegt, beschreibt eine
+// Wirklichkeit, die es nicht mehr gibt — „eine Rückgabe hinter einer neueren Buchung weist
+// er ab" (FACHKONZEPT 18.4). Bis zum 22.09.2026 kam er durch, wenn der Verlust über den
+// Status-Editor gebucht war (kein Stempel), und wurde abgewiesen, wenn er über „Schaden
+// melden" kam (Stempel) — zwei Türen, zwei Antworten (OFFEN.md 5.15). Das Buch bleibt
+// abgeschrieben, die Forderung bleibt offen; die Meldung nennt den Grund.
+func TestNachbuchen_RueckgabeVorDerVerlustmeldungIstVeraltet(t *testing.T) {
+	w := nbAufbau(t)
+	ctx := context.Background()
+	schadensfallID := verlorenGemeldet(t, w)
+	erg, err := w.svc.Nachbuchen(ctx, w.eintrag(NachbuchAbsichtRueckgabe, nil, time.Now().Add(-time.Minute)))
+	if err != nil || erg.Ergebnis != repository.NachbuchVeraltet {
+		t.Fatalf("Rückgabe vor der Verlustmeldung: %v %+v — erwartet veraltet", err, erg)
+	}
+	var storniert, ausgesondert bool
+	if err := w.pool.QueryRow(ctx, `SELECT f.storniert_am IS NOT NULL, e.ist_ausgesondert FROM schadensfaelle f JOIN buecher_exemplare e ON e.id = f.exemplar_id WHERE f.id = $1`, schadensfallID).Scan(&storniert, &ausgesondert); err != nil {
+		t.Fatalf("Lage: %v", err)
+	}
+	if storniert || !ausgesondert {
+		t.Errorf("Forderung storniert=%v, ausgesondert=%v — ein veralteter Scan darf nichts buchen", storniert, ausgesondert)
+	}
+	if w.meldungen(t, repository.NachbuchVeraltet) != 1 {
+		t.Errorf("veralteter Scan ohne Meldung")
 	}
 }
 

@@ -268,3 +268,69 @@ func beginne(t *testing.T, pool *pgxpool.Pool) pgx.Tx {
 	}
 	return tx
 }
+
+// Die Regel statt der Auswahl (OFFEN.md 5.15, Migration 132): Bis zum 22.09.2026 stempelten
+// Aussondern, Bestandskorrektur, Schadensmeldung und Soft-Delete — „Verloren" und
+// Reaktivieren im Status-Editor, der Inventur-Abschluss und repository/damage.go nicht. Der
+// Test oben prüft eine feste Liste; ein neuer Schreiber ohne Stempel bliebe grün. Jetzt
+// stempelt die Datenbank jeden Wechsel von ist_ausgesondert oder ist_ausleihbar, den ein
+// Schreiber nicht selbst stempelt — geprüft an ROHEN Updates, wie sie jeder vergessliche
+// Schreiber schickt.
+func TestBewegungsstempel_ZustandswechselStempeltAuchOhneSchreiber(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	f := stempelAufbau(t, pool)
+	stempel := func() *time.Time {
+		var s *time.Time
+		if err := pool.QueryRow(ctx, `SELECT letzte_bewegung_am FROM buecher_exemplare WHERE id = $1`, f.exemplarID).Scan(&s); err != nil {
+			t.Fatalf("Stempel lesen: %v", err)
+		}
+		return s
+	}
+	roh := func(was, sql string) {
+		t.Helper()
+		if _, err := pool.Exec(ctx, sql, f.exemplarID); err != nil {
+			t.Fatalf("%s: %v", was, err)
+		}
+	}
+
+	// „Verloren" (roh, ohne Stempel): der erste Stempel überhaupt.
+	roh("verloren", `UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST' WHERE id = $1`)
+	nachVerlust := stempel()
+	if nachVerlust == nil {
+		t.Fatal("Verloren ohne eigenen Stempel: letzte_bewegung_am bleibt NULL, der Wächter des Nachbuchens hält hier still")
+	}
+
+	// Reaktivieren (roh): rückt vor.
+	warte(t, pool)
+	roh("reaktivieren", `UPDATE buecher_exemplare SET ist_ausgesondert = false, ist_ausleihbar = true, aussonderung_grund = NULL WHERE id = $1`)
+	nachReaktivierung := stempel()
+	if nachReaktivierung == nil || !nachReaktivierung.After(*nachVerlust) {
+		t.Fatalf("Reaktivieren rückt den Stempel nicht vor: %v → %v", nachVerlust, nachReaktivierung)
+	}
+
+	// Ein Update ohne Zustandswechsel stempelt NICHT (Etiketten-Lauf, Notiz, Preis).
+	warte(t, pool)
+	roh("Etikett", `UPDATE buecher_exemplare SET etikett_gedruckt = true, zustand_notiz = 'Notiz' WHERE id = $1`)
+	if s := stempel(); !s.Equal(*nachReaktivierung) {
+		t.Fatalf("ein Update ohne Zustandswechsel hat gestempelt: %v → %v", nachReaktivierung, s)
+	}
+
+	// Ein Schreiber, der selbst mit Scan-Zeit stempelt (Rückholen beim Nachbuchen), behält
+	// seine Zeit: Die Datenbank überschreibt einen gesetzten Stempel nicht mit „jetzt" —
+	// sonst gälte jeder spätere Offline-Scan desselben Bandes als veraltet.
+	warte(t, pool)
+	roh("aussondern", `UPDATE buecher_exemplare SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'VERLUST' WHERE id = $1`)
+	nachAussonderung := stempel()
+	scan := nachAussonderung.Add(500 * time.Millisecond)
+	tx := beginne(t, pool)
+	if _, err := HoleExemplarZurueck(ctx, tx, f.exemplarID, f.bearbeiterID, &scan); err != nil {
+		t.Fatalf("zurückholen mit Scan-Zeit: %v", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		t.Fatalf("commit: %v", err)
+	}
+	if s := stempel(); !s.Equal(scan) {
+		t.Fatalf("Rückholen mit Scan-Zeit: Stempel ist %v, erwartet die Scan-Zeit %v", s, scan)
+	}
+}

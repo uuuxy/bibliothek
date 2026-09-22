@@ -749,6 +749,26 @@ CREATE TRIGGER trg_exemplar_nummer_ist_kein_ausweis
 BEFORE INSERT OR UPDATE OF barcode_id ON buecher_exemplare
 FOR EACH ROW EXECUTE FUNCTION nummer_ist_buch_oder_ausweis();
 
+-- Migration 132: Jeder Wechsel von ist_ausgesondert oder ist_ausleihbar stempelt
+-- letzte_bewegung_am (Migration 116) — als Regel, nicht als Auswahl der Schreiber. Einen
+-- Stempel, den der Schreiber selbst setzt (Rückholen mit Scan-Zeit), lässt der Trigger
+-- stehen; Ausleihe und Rückgabe stempeln weiter selbst (sqlStempelVor). GREATEST: nie
+-- rückwärts, auch nicht aus einer früher begonnenen Transaktion.
+CREATE OR REPLACE FUNCTION stempel_bewegung_bei_zustandswechsel()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF (NEW.ist_ausgesondert IS DISTINCT FROM OLD.ist_ausgesondert
+        OR NEW.ist_ausleihbar IS DISTINCT FROM OLD.ist_ausleihbar)
+       AND NEW.letzte_bewegung_am IS NOT DISTINCT FROM OLD.letzte_bewegung_am THEN
+        NEW.letzte_bewegung_am := GREATEST(OLD.letzte_bewegung_am, CURRENT_TIMESTAMP);
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_exemplar_bewegung_bei_zustandswechsel
+BEFORE UPDATE OF ist_ausgesondert, ist_ausleihbar ON buecher_exemplare
+FOR EACH ROW EXECUTE FUNCTION stempel_bewegung_bei_zustandswechsel();
+
 
 -- Table: class_books (LMF class to book catalog metadata association)
 CREATE TABLE class_books (
@@ -1555,7 +1575,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('128_abgangsdatum_am_exemplar.sql'),
 ('129_zugangsdatum_am_exemplar.sql'),
 ('130_zugang_am_in_schulzeit.sql'),
-('131_nummer_ist_buch_oder_ausweis.sql')
+('131_nummer_ist_buch_oder_ausweis.sql'),
+('132_bewegungsstempel_bei_zustandswechsel.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

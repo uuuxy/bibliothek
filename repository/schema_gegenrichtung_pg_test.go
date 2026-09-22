@@ -284,6 +284,11 @@ var triggerBestand = []string{
 	// Littera-Übernahme (db/constraints_nummer_ueber_buch_und_ausweis_pg_test.go).
 	"trg_exemplar_nummer_ist_kein_ausweis @ buecher_exemplare",
 	"trg_leser_nummer_ist_kein_buch @ leser",
+	// Migration 132, befragt am 22.09.2026: Jeder Wechsel von ist_ausgesondert/ist_ausleihbar
+	// stempelt letzte_bewegung_am, wenn der Schreiber es nicht selbst tut — die Regel statt
+	// der Auswahl (bewegungsstempel_pg_test.go). Frage 12: Der Wächter des Nachbuchens liest
+	// den Stempel; ein Schreiber ohne Stempel ließ ihn dort still.
+	"trg_exemplar_bewegung_bei_zustandswechsel @ buecher_exemplare",
 	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
 	// ist genau der Zweck — vorher kannte sie nur ReportDamage, sechs andere Aussonder- und
 	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).
