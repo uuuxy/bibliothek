@@ -17,8 +17,8 @@ Dieser Block nennt die Reihenfolge. Alles darunter ist die ausführliche Fassung
 Begründungen.
 
 **Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): zwölf Punkte, sieben davon erledigt.
-Die Antwort der Schule vom 22.09.2026 hat drei Punkte entschieden, die jetzt zu bauen sind
-(9.3 c, 9.4, 9.6). Daneben stehen zwei Bedingungen neben der Mängelliste — der Nachweis der
+Die Antwort der Schule vom 22.09.2026 hat drei Punkte entschieden; alle drei sind gebaut
+(9.3 c, 9.4, 9.6), offen ist dort nur dein Blick. Daneben stehen zwei Bedingungen neben der Mängelliste — der Nachweis der
 DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 
 **Was bei dir liegt — der Reihe nach:**
@@ -54,8 +54,9 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 9. **Aus dem Abgleich mit Littera** (4.19, 4.20): **Ferienkalender** — heute mahnen wir das Kind,
    dessen Frist in die Herbstferien fiel. Richtung und Form sind am 18.09.2026 entschieden
    (Ferien als iCal-Datei, Fristen rutschen mit); gebaut ist nichts, und eine Frage steht noch
-   offen (Feiertage als zweite Datei oder gerechnet). Dazu die Frage, ob die Schülerbücherei eine
-   Themensuche bekommt (4.20).
+   offen (Feiertage als zweite Datei oder gerechnet). Die **Themensuche** ist am 22.09.2026
+   entschieden (4.20): Als Nächstes wird gemessen, was die DNB für den Katalog liefert, danach
+   folgt die Wortliste — gebaut ist nichts.
 
 **Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 134). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
@@ -972,9 +973,7 @@ findet einen Titel ohne Exemplar deshalb nicht. Die Bestellliste führt ihn weit
 unter jeder Schwelle). Gates am Rückbau des Prädikats rot gesehen, an allen drei Türen.
 
 **Noch anzusehen, bei dir:** der Umschalter in der Titel-Verwaltung am Bildschirm (M3
-Segmented Button, Bauteil `Segmente`). Und die E2E-Suite vor dem nächsten Push — sie lief
-am 22.09.2026 nicht, weil eine zweite Sitzung den Stack hielt; eine Spec ist angepasst
-(`suchfelder-eigene-tuer.spec.js` bekommt ein Exemplar).
+Segmented Button, Bauteil `Segmente`).
 
 ### 9.6 A: Mehrjahresbände — entschieden und gebaut am 22.09.2026
 
@@ -996,15 +995,6 @@ das Littera getrennt führt, steckt im Datum der Frist. Gates am Rückbau rot ge
 beide Schreibpfade, CHECK.
 
 **Noch anzusehen, bei dir:** der Schalter in der Maske am Bildschirm.
-
-### 9.7 Reihenfolge der drei Bauten
-
-Beide Rückfragen vom 21.09.2026 sind beantwortet (9.3 c, 9.6); die Schule hat dazu 9.4 neu
-aufgemacht. Vorschlag für die Reihenfolge, jede Stufe mit eigenem Commit und Gate:
-
-1. **9.3 c** — gebaut am 22.09.2026.
-2. **9.4** — gebaut am 22.09.2026 (drei Türen, Aufräumsicht).
-3. **9.6** — gebaut am 22.09.2026 (Fristregel und Tür am Werk).
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 
