@@ -4,14 +4,16 @@ import { uiLogin, seedSQL, uniqueSuffix } from './helpers.js';
 // Punkt 4 des Protokolls vom 16.09.2026: „Bücher, zu denen es keine Exemplare gibt,
 // tauchen in der Trefferliste auf."
 //
-// Entschieden ist, sie NICHT zu verstecken — ein Titel ohne Exemplare ist ein legitimer
-// Zustand (angelegt ohne Bestandsangabe, Altbestand aus Littera). Die Liste muss es
-// SAGEN, sonst läuft jemand ins Regal und sucht etwas, das es dort nie gab.
+// Am 17.09.2026 war entschieden, sie NICHT zu verstecken, sondern den Bestand zu sagen. Die
+// Schule hat am 22.09.2026 anders entschieden (docs/OFFEN.md 9.4): Ein Titel ohne Exemplar
+// steht in keinem Katalog und in keiner Trefferliste — die Verwaltung erreicht ihn über die
+// Aufräumsicht der Titel-Verwaltung. Der Titel mit Exemplaren sagt weiter seinen Bestand:
+// „0 von 2 verfügbar" ist im Schuljahr der Normalfall und darf nicht wie eine Sackgasse
+// aussehen.
 //
-// Der Test misst beide Fälle an EINER Trefferliste, weil der Unterschied der Punkt ist:
-// „Keine Exemplare" ist eine Sackgasse, „0 von 2 verfügbar" ist der Normalfall im
-// Schuljahr. Sähen beide gleich aus, wäre nichts gewonnen.
-test('Theke: die Trefferliste sagt den Bestand — und nennt einen Titel ohne Exemplare', async ({
+// Rot gesehen am 22.09.2026 an der alten Erwartung (der Titel ohne Exemplar stand in der
+// Liste) — dieselbe Spec, andere Erwartung.
+test('Theke: die Trefferliste sagt den Bestand — und zeigt keinen Titel ohne Exemplare', async ({
 	page
 }) => {
 	const s = uniqueSuffix();
@@ -42,18 +44,14 @@ test('Theke: die Trefferliste sagt den Bestand — und nennt einen Titel ohne Ex
 	const ohne = liste.getByRole('option', { name: new RegExp(`E2E-Bestand-Ohne ${s}`) });
 	const mit = liste.getByRole('option', { name: new RegExp(`E2E-Bestand-Mit ${s}`) });
 
-	// 1. Beide Titel stehen in der Liste — der ohne Exemplare wird nicht versteckt.
-	await expect(ohne).toBeVisible();
+	// 1. Der Titel mit Exemplaren steht in der Liste und nennt die Zahlen: zwei Exemplare,
+	//    eines verliehen.
 	await expect(mit).toBeVisible();
-
-	// 2. Der Titel ohne Exemplare sagt es. Bis zum 17.09.2026 stand hier nur der Name.
-	await expect(ohne).toContainText('Keine Exemplare');
-
-	// 3. Der andere nennt die Zahlen: zwei Exemplare, eines verliehen.
 	await expect(mit).toContainText('1 von 2 verfügbar');
 	await expect(mit).not.toContainText('Keine Exemplare');
 
-	// 4. Und der Screenreader hört dasselbe — die Zeile trägt es im Namen, nicht nur
-	//    als Farbe (BITV: eine Auszeichnung allein über die Farbe zählt nicht).
-	await expect(ohne).toHaveAttribute('aria-label', /Keine Exemplare/);
+	// 2. Der Titel ohne Exemplar steht nicht darin — dieselbe Suche, dieselbe Liste. Erst
+	//    geprüft, nachdem die Liste da ist (Schritt 1), sonst zählte eine leere Liste als
+	//    Beweis.
+	await expect(ohne).toHaveCount(0);
 });
