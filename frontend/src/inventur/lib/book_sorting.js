@@ -22,8 +22,8 @@ export const subjectOrder = [
  * @returns {number} Sorting result
  */
 /**
- * @param {{subject?: string, title: string, track?: string}} a
- * @param {{subject?: string, title: string, track?: string}} b
+ * @param {{subject?: string, title: string, gradeLevel?: string|number, track?: string}} a
+ * @param {{subject?: string, title: string, gradeLevel?: string|number, track?: string}} b
  */
 export function sortBooksBySubjectAndTitle(a, b) {
 	let subjA = (a.subject || '').toLowerCase().trim();

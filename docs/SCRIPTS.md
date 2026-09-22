@@ -129,8 +129,8 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
   Standortfeld MAB 108a die LMF-Kennung trägt. Der Import setzt es nur, löscht es nie.
 - **Fach und Jahrgang** kommen aus der Lernmittelsignatur („LMF Bio 7" → Biologie, 7;
   `pkg/lmf.Zerlege`), sonst aus Litteras Schlagwörtern (MAB 710, nur wenn sie genau ein
-  Fach nennen) und der Zielgruppe (MAB 070b: Sek I → 5–10, Sek II → 11–13). Das Fach
-  füllt nur Leerstellen, die Jahrgangsspanne folgt der Quelle.
+  Fach nennen) und der Zielgruppe (MAB 070b: Sek I → 5–10, Sek II → 11–13). Fach und
+  Klassenstufe füllen nur Leerstellen, die Jahrgangsspanne folgt der Quelle.
 - **Re-Import als Reparatur:** Ein Bestand, der vor Migration 093 importiert wurde, bekommt
   durch einen erneuten Lauf derselben Datei Fach und Jahrgang nachgetragen — die Migration
   hat Titel und Lernmittel-Feld bereits bereinigt, die Titel matchen also.

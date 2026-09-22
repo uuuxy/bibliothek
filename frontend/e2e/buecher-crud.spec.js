@@ -25,8 +25,7 @@ test('Bücher: anlegen, Exemplare, Katalog-Suche, Signatur übersteht Littera-Im
 			signatur: 'E2E SIG',
 			coverUrl: '/covers/e2e-dummy.jpg',
 			subject: '',
-			jahrgangVon: 7,
-			jahrgangBis: 7,
+			gradeLevel: 7,
 			track: '',
 			stock: 2
 		});
@@ -104,8 +103,7 @@ test('Bücher: Bearbeiten ohne Änderung erhält Beschreibung und erweiterte Eig
 			signatur: 'E2E SIG',
 			coverUrl: '/covers/e2e-dummy.jpg',
 			subject: '',
-			jahrgangVon: 7,
-			jahrgangBis: 7,
+			gradeLevel: 7,
 			track: '',
 			stock: 1,
 			beschreibung,

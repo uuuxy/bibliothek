@@ -66,17 +66,19 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		{
 			name: "Valid input",
 			eingabe: BuchEingabe{
-				ISBN:    "978-3-16-148410-0",
-				Bestand: zeigerAuf(10),
-				Titel:   " Test Titel ",
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: 5,
+				Bestand:      zeigerAuf(10),
+				Titel:        " Test Titel ",
 			},
 			wantErr: false,
 		},
 		{
 			name: "Empty ISBN",
 			eingabe: BuchEingabe{
-				ISBN:    "",
-				Bestand: zeigerAuf(10),
+				ISBN:         "",
+				KlassenStufe: 5,
+				Bestand:      zeigerAuf(10),
 			},
 			wantErr: true,
 			errMsg:  "isbn darf nicht leer sein",
@@ -84,17 +86,39 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 		{
 			name: "Invalid ISBN format",
 			eingabe: BuchEingabe{
-				ISBN:    "123",
-				Bestand: zeigerAuf(10),
+				ISBN:         "123",
+				KlassenStufe: 5,
+				Bestand:      zeigerAuf(10),
 			},
 			wantErr: true,
 			errMsg:  "ungültiges ISBN-Format",
 		},
 		{
+			name: "Negative gradeLevel",
+			eingabe: BuchEingabe{
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: -1,
+				Bestand:      zeigerAuf(10),
+			},
+			wantErr: true,
+			errMsg:  "gradeLevel muss zwischen 0 und 13 sein",
+		},
+		{
+			name: "gradeLevel too high",
+			eingabe: BuchEingabe{
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: 14,
+				Bestand:      zeigerAuf(10),
+			},
+			wantErr: true,
+			errMsg:  "gradeLevel muss zwischen 0 und 13 sein",
+		},
+		{
 			name: "Negative stock",
 			eingabe: BuchEingabe{
-				ISBN:    "978-3-16-148410-0",
-				Bestand: zeigerAuf(-1),
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: 5,
+				Bestand:      zeigerAuf(-1),
 			},
 			wantErr: true,
 			errMsg:  "stock muss >= 0 sein",
@@ -163,7 +187,7 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		// Kein einziger syncBookStock-Aufruf darf folgen: Das Feld "stock" fehlt im Rumpf.
 		erwarteFachBekannt(mock, "Mathe")
 		mock.ExpectBegin()
-		beliebig := make([]any, 21) // 21: mehrjahresband kam mit 134 dazu, grade_level fiel mit 135
+		beliebig := make([]any, 22) // 22 seit mehrjahresband, Migration 134 (21 seit listenpreis, Migration 127)
 		for i := range beliebig {
 			beliebig[i] = pgxmock.AnyArg()
 		}

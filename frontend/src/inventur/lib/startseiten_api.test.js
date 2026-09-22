@@ -25,8 +25,7 @@ const bestand = [
 		signatur: 'Mat Ana',
 		verfuegbar: 0,
 		gesamt: 5,
-		jahrgangVon: 11,
-		jahrgangBis: 11
+		gradeLevel: 11
 	}),
 	buch({ title: 'Ohne Bestand', subject: 'Deutsch', signatur: '', verfuegbar: 0, gesamt: 0 }),
 	buch({ title: 'Hörbuch', subject: 'Englisch', medientyp: 'CD', verfuegbar: 1, gesamt: 1 })

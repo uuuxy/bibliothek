@@ -232,15 +232,19 @@ func fuegeNeueTitelEin(ctx context.Context, tx pgx.Tx, newTitlesMap map[string]*
 	batch := &pgx.Batch{}
 	qInsertTitel := `
 		INSERT INTO buecher_titel (titel, autor, verlag, isbn, erscheinungsjahr, subject, signatur,
-		                           ist_lernmittel, jahrgang_von, jahrgang_bis)
+		                           ist_lernmittel, grade_level, jahrgang_von, jahrgang_bis)
 		VALUES ($1, $2, $3, NULLIF($4, ''), NULLIF($5, 0), NULLIF($6, ''), NULLIF($7, ''),
-		        $8, COALESCE(NULLIF($9, 0), 5), COALESCE(NULLIF($10, 0), 10))
+		        $8, NULLIF($9, 0)::smallint, COALESCE(NULLIF($10, 0), 5), COALESCE(NULLIF($11, 0), 10))
 		RETURNING id
 	`
 	for _, key := range newTitlesOrder {
 		t := newTitlesMap[key]
+		stufe := 0
+		if t.JahrgangVon > 0 && t.JahrgangVon == t.JahrgangBis {
+			stufe = t.JahrgangVon
+		}
 		batch.Queue(qInsertTitel, t.Titel, t.Autor, t.Verlag, t.ISBN, t.Jahr, kanonisch[fachDerZeile(t)], t.Signatur,
-			t.IstLernmittel, t.JahrgangVon, t.JahrgangBis)
+			t.IstLernmittel, stufe, t.JahrgangVon, t.JahrgangBis)
 	}
 
 	br := tx.SendBatch(ctx, batch)

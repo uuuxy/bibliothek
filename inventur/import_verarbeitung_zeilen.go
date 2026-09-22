@@ -47,16 +47,12 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 	// überall sonst „ohne Fach", und genau das ist hier gemeint.
 	subject := lmf.FachExakt(getCol("fach"))
 
-	// Die Spalte „klasse" wird die Jahrgangsspanne (ein Jahrgang, Migration 135); ohne
-	// Angabe bleibt sie 0 und die Datenbank setzt die Vorgabe 5 bis 10.
-	stufe := parseKlassenStufe(getCol("klasse"), title)
 	book := Book{
 		ISBN:        isbn,
 		Title:       title,
 		Author:      author,
 		Subject:     subject,
-		JahrgangVon: int(stufe),
-		JahrgangBis: int(stufe),
+		GradeLevel:  parseKlassenStufe(getCol("klasse"), title),
 		Stock:       parseBestand(getCol("bestand")),
 		LastCounted: nil,
 	}
@@ -73,8 +69,8 @@ func verarbeiteImportZeile(cfg ImportConfig) (*Book, error) {
 }
 
 // parseKlassenStufe versucht die Klassenstufe aus einem String zu extrahieren.
-// Gültig ist 5–13 (kooperative Gesamtschule inkl. Oberstufe); außerhalb ist es 0 —
-// „nicht angegeben", die Jahrgangsspanne bleibt dann auf der Vorgabe der Datenbank. Early Return statt Clamp-Zuweisung: die int16-Konvertierung muss auf
+// Gültig ist 5–13 (kooperative Gesamtschule inkl. Oberstufe); außerhalb gilt der
+// Default 5. Early Return statt Clamp-Zuweisung: die int16-Konvertierung muss auf
 // einem Pfad liegen, den der Bounds-Check exklusiv kontrolliert — nach einem Merge
 // mit dem Default-Zweig gilt der Check statisch nicht mehr als Guard
 // (go/incorrect-integer-conversion).
@@ -87,7 +83,7 @@ func parseKlassenStufe(gradeStr string, title string) int16 {
 		gradeLevel = inferGradeLevelFromTitle(title)
 	}
 	if gradeLevel < 5 || gradeLevel > 13 {
-		return 0
+		return 5
 	}
 	return int16(gradeLevel)
 }

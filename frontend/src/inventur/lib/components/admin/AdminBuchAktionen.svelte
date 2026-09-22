@@ -55,6 +55,7 @@
 				},
 				body: JSON.stringify({
 					...formular,
+					gradeLevel: Number(formular.gradeLevel),
 					istLernmittel: !!formular.istLernmittel,
 					// Keine Zahl im Feld heisst "nicht anfassen", nicht "null Exemplare".
 					// `Number(undefined)` ist NaN und wird in JSON zu null; der Server las das

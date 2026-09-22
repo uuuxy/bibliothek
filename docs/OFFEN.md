@@ -57,7 +57,7 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    offen (Feiertage als zweite Datei oder gerechnet). Dazu die Frage, ob die Schülerbücherei eine
    Themensuche bekommt (4.20).
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 135). Das passiert
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 134). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
@@ -500,16 +500,36 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   hängt eine Frist an „bis": Wer den Schalter auf einem Titel mit der Vorgabe 5 bis 10
   umlegt, bekommt die 10. Ein CHECK allein löst das nicht; eine Vorgabe „unbekannt" (NULL)
   bräuchte die drei Leser (Mahnwesen „Jahrgang", Inventur, Portal-Filter) mit.
+
+  ```sql
+  SELECT isbn_normalform(isbn) AS normalform, count(*) AS titel, string_agg(isbn, ' | ') AS schreibweisen
+  FROM buecher_titel WHERE isbn IS NOT NULL GROUP BY 1 HAVING count(*) > 1 ORDER BY 2 DESC;
+  ```
 - Ein Titel, dessen Exemplare alle im Zulauf sind, steht seit 9.4 im Katalog und in der
   Theken-Trefferliste (Zulauf zählt als vorhanden) — der Bestandssatz dort sagt aber
   „Keine Exemplare", weil er nur zählt, was im Regal oder verliehen ist. Richtig wäre
   „2 bestellt": eine dritte Zahl in `bestandSatz` und in den zwei Suchabfragen. Kein
   Schaden, nur eine Auskunft, die den Kollegen ins Regal schickt; beim nächsten Anfassen
   der Trefferliste.
+- „Klasse" neben der Spanne (22.09.2026): Zwei Jahrgangsangaben am Titel, „Klasse"
+  (`grade_level`) und „von … bis" (`jahrgang_von/bis`). Mahnwesen „nach Jahrgang", Inventur
+  nach Klasse und die Mehrjahresband-Frist lesen nur die Spanne; Titel-Tabelle,
+  Klassenzuweisung und Listenfilter lesen die Klasse, der Portal-Filter liest beide. Die
+  Zusammenlegung (Migration 135) ist zurückgenommen: Sie machte aus Klasse N die Spanne N
+  bis N, und das trifft die Daten nicht. Lesend gemessen auf dem Testserver: 153 Titel mit
+  Klasse, 129 davon Klasse 6–13 bei der Vorgabe 5 bis 10, 89 dieser 129 Lernmittel.
+  Mehrjährige Bände tragen ein einziges Jahr („Natur und Technik - Biologie 7 - 10" und
+  „Pontes Gesamtband": Klasse 7), Klasse und Signatur widersprechen sich („Forum Geschichte
+  4 (Schulbuch Klasse 9)": Signatur Ges9, Klasse 10). Woher die Werte stammen, ist nicht
+  belegt. Nächster Schritt: je Titel entscheiden, welche Spanne gilt (Liste per Einzeiler
+  unten), dann die Spalte mit genau diesen Werten ablösen. Dabei mitentscheiden: die Spalte
+  „klasse" des Listenimports und der Klassenvorschlag der ISBN-Suche, der auch aus
+  „Band 2", „Level 9" und jeder Zahl von 5 bis 13 im Titel eine Klasse macht.
 
   ```sql
-  SELECT isbn_normalform(isbn) AS normalform, count(*) AS titel, string_agg(isbn, ' | ') AS schreibweisen
-  FROM buecher_titel WHERE isbn IS NOT NULL GROUP BY 1 HAVING count(*) > 1 ORDER BY 2 DESC;
+  SELECT grade_level, jahrgang_von, jahrgang_bis, ist_lernmittel, signatur, titel
+  FROM buecher_titel WHERE grade_level BETWEEN 1 AND 13
+  ORDER BY ist_lernmittel DESC, signatur NULLS LAST, titel;
   ```
 
 ### 5.6 Schüler und LUSD

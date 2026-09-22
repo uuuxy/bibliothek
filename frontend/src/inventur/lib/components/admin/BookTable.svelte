@@ -177,7 +177,7 @@
 					<th class="w-20">Cover</th>
 					<th>Titel</th>
 					<th>Fach</th>
-					<th>Jahrgang</th>
+					<th>Klasse</th>
 					<th>Art</th>
 					<th>Standort</th>
 					<th class="text-right">Zuletzt geprüft</th>

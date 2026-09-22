@@ -1,7 +1,6 @@
 <script>
 	import { Book, Check } from '@lucide/svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
-	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
 	// buecherFehler: Der Abruf der Bücher ist gescheitert (Sweep „verschluckte
 	// Fehlantwort", 06.09.2026). Ein leeres Gitter sähe sonst aus wie „kein Buch im
 	// Bestand" — der Dialog wäre unbenutzbar, ohne zu sagen, warum.
@@ -141,11 +140,11 @@
 							>{book.subject}</span
 						>
 					{/if}
-					{#if jahrgangSpanne(book.jahrgangVon, book.jahrgangBis)}
+					{#if book.gradeLevel}
 						<span
 							class="px-2.5 py-0.5 bg-surface-container-high text-surface-variant text-xs font-black rounded-lg"
 						>
-							Jg. {jahrgangSpanne(book.jahrgangVon, book.jahrgangBis)}
+							Kl. {book.gradeLevel}
 						</span>
 					{/if}
 				</div>

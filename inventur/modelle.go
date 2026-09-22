@@ -8,10 +8,11 @@ type Book struct {
 	Author string `json:"author" db:"author"`
 	// Signatur steht physisch auf dem Buchrücken-Etikett (Littera-Systematik,
 	// z. B. "Bio 5" oder "Row") — Importe dürfen befüllte Werte NIE leeren.
-	Signatur string `json:"signatur" db:"signatur"`
-	CoverURL string `json:"coverUrl" db:"cover_url"`
-	Subject  string `json:"subject" db:"subject"`
-	Track    string `json:"track" db:"track"`
+	Signatur   string `json:"signatur" db:"signatur"`
+	CoverURL   string `json:"coverUrl" db:"cover_url"`
+	Subject    string `json:"subject" db:"subject"`
+	GradeLevel int16  `json:"gradeLevel" db:"grade_level"`
+	Track      string `json:"track" db:"track"`
 	// IstLernmittel: Schulbuch der Lernmittelfreiheit (Migration 093). Vorher stand das
 	// im Text („LMF" vor Titel oder Signatur); heute schaltet die Maske es, Importe
 	// lesen es aus Litteras Kennung.
@@ -54,6 +55,7 @@ type Book struct {
 type BuchEingabe struct {
 	ISBN          string `json:"isbn"`
 	Fach          string `json:"subject"`
+	KlassenStufe  int16  `json:"gradeLevel"`
 	Schulzweig    string `json:"track"`
 	IstLernmittel bool   `json:"istLernmittel"`
 	// Zeiger, nicht int: "nicht mitgeschickt" muss sich von "null" unterscheiden lassen.

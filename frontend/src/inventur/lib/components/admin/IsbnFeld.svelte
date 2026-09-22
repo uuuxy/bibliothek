@@ -38,12 +38,10 @@
 			if (daten.jahr) formular.erscheinungsjahr = parseInt(daten.jahr) || formular.erscheinungsjahr;
 			if (daten.coverUrl) formular.coverUrl = daten.coverUrl;
 			if (daten.subject) formular.subject = daten.subject;
-			// Der erkannte Jahrgang wird die Spanne von = bis (Migration 135).
 			if (daten.grade) {
-				const jahrgang = parseInt(daten.grade);
-				if (jahrgang >= 5 && jahrgang <= 13) {
-					formular.jahrgangVon = jahrgang;
-					formular.jahrgangBis = jahrgang;
+				const parsedGrade = parseInt(daten.grade);
+				if (!Number.isNaN(parsedGrade)) {
+					formular.gradeLevel = parsedGrade;
 				}
 			}
 			// DNB-Altersstufe ("Kinderbuch", "Jugendbücher ab 12 Jahre") →

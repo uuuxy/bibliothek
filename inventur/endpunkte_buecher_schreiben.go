@@ -11,15 +11,19 @@ import (
 	"bibliothek/pkg/kennung"
 )
 
-// validiereBuchErstellenEingabe prüft die ISBN (vorhanden + Format).
+// validiereBuchErstellenEingabe prüft ISBN (vorhanden + Format) und Klassenstufe.
 // ok=false: die Fehlerantwort wurde bereits geschrieben.
-func validiereBuchErstellenEingabe(antwort http.ResponseWriter, isbn string) bool {
+func validiereBuchErstellenEingabe(antwort http.ResponseWriter, isbn string, klassenStufe int16) bool {
 	if isbn == "" {
 		writeError(antwort, http.StatusBadRequest, "isbn ist erforderlich")
 		return false
 	}
 	if !validiereISBN(isbn) {
 		writeError(antwort, http.StatusBadRequest, "ungültiges ISBN-Format")
+		return false
+	}
+	if klassenStufe < 0 || klassenStufe > 13 {
+		writeError(antwort, http.StatusBadRequest, "gradeLevel muss zwischen 0 und 13 sein")
 		return false
 	}
 	return true
@@ -170,7 +174,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		return
 	}
 
-	if !validiereBuchErstellenEingabe(antwort, eingabe.ISBN) {
+	if !validiereBuchErstellenEingabe(antwort, eingabe.ISBN, eingabe.KlassenStufe) {
 		return
 	}
 	if fehler := pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis); fehler != nil {
@@ -181,6 +185,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 	buch := Book{
 		ISBN:                    strings.TrimSpace(eingabe.ISBN),
 		Subject:                 strings.TrimSpace(eingabe.Fach),
+		GradeLevel:              eingabe.KlassenStufe,
 		Track:                   strings.TrimSpace(eingabe.Schulzweig),
 		IstLernmittel:           eingabe.IstLernmittel,
 		Stock:                   bestandOderNull(eingabe.Bestand),

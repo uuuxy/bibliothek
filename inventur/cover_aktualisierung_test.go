@@ -130,8 +130,8 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 	// mock GetBookByID
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(bookID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
-			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
+			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", int16(1), "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
 	req.SetPathValue("id", bookID)
@@ -206,8 +206,8 @@ func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	// mock GetBookByID
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(bookID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
-			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
+			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", int16(1), "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
 	req.SetPathValue("id", bookID)
@@ -296,8 +296,8 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 	// mock GetBookByID
 	mock.ExpectQuery(`SELECT id, COALESCE\(isbn, ''\)`).
 		WithArgs(bookID).
-		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
-			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
+		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
+			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", int16(1), "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
 	// mock UpdateBookMetadata: Titel und Autor LEER, nur das Cover.
 	mock.ExpectExec(`UPDATE buecher_titel`).

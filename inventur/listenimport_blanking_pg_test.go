@@ -42,13 +42,13 @@ func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 		var id string
 		if err := pool.QueryRow(ctx, `
 			INSERT INTO buecher_titel (isbn, titel, autor, verlag, untertitel, beschreibung, erscheinungsjahr,
-				cover_url, cover_status, track, medientyp, jahrgang_von, jahrgang_bis, erweiterte_eigenschaften)
+				cover_url, cover_status, grade_level, track, medientyp, jahrgang_von, jahrgang_bis, erweiterte_eigenschaften)
 			VALUES ($1, 'Mathematik Neue Wege 7', 'Lütticken', 'Westermann', 'Arbeitsheft', 'Kuratiert', 2019,
-				'/uploads/covers/hand.webp', 'FOUND', 'G', 'DVD', 7, 8, '{"auflage":"3"}')
+				'/uploads/covers/hand.webp', 'FOUND', 7, 'G', 'DVD', 7, 8, '{"auflage":"3"}')
 			ON CONFLICT (isbn) DO UPDATE SET titel = EXCLUDED.titel, autor = EXCLUDED.autor, verlag = EXCLUDED.verlag,
 				untertitel = EXCLUDED.untertitel, beschreibung = EXCLUDED.beschreibung,
 				erscheinungsjahr = EXCLUDED.erscheinungsjahr, cover_url = EXCLUDED.cover_url,
-				track = EXCLUDED.track, medientyp = EXCLUDED.medientyp,
+				grade_level = EXCLUDED.grade_level, track = EXCLUDED.track, medientyp = EXCLUDED.medientyp,
 				jahrgang_von = EXCLUDED.jahrgang_von, jahrgang_bis = EXCLUDED.jahrgang_bis,
 				erweiterte_eigenschaften = EXCLUDED.erweiterte_eigenschaften
 			RETURNING id`, isbn).Scan(&id); err != nil {
@@ -67,14 +67,14 @@ func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 		}
 
 		var titel, autor, verlag, untertitel, beschreibung, cover, track, medientyp, auflage string
-		var jahr, von, bis, exemplare int
+		var jahr, stufe, von, bis, exemplare int
 		if err := pool.QueryRow(ctx, `
 			SELECT titel, coalesce(autor,''), coalesce(verlag,''), coalesce(untertitel,''), coalesce(beschreibung,''),
 			       coalesce(cover_url,''), coalesce(track,''), coalesce(medientyp,''), coalesce(erweiterte_eigenschaften->>'auflage',''),
-			       coalesce(erscheinungsjahr,0), jahrgang_von, jahrgang_bis,
+			       coalesce(erscheinungsjahr,0), coalesce(grade_level,0), jahrgang_von, jahrgang_bis,
 			       (SELECT count(*) FROM buecher_exemplare e WHERE e.titel_id = t.id)::int
 			FROM buecher_titel t WHERE id = $1`, id).Scan(&titel, &autor, &verlag, &untertitel, &beschreibung,
-			&cover, &track, &medientyp, &auflage, &jahr, &von, &bis, &exemplare); err != nil {
+			&cover, &track, &medientyp, &auflage, &jahr, &stufe, &von, &bis, &exemplare); err != nil {
 			t.Fatal(err)
 		}
 		soll := map[string][2]any{
@@ -82,7 +82,7 @@ func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 			"untertitel": {untertitel, "Arbeitsheft"}, "beschreibung": {beschreibung, "Kuratiert"},
 			"cover_url": {cover, "/uploads/covers/hand.webp"}, "track": {track, "G"}, "medientyp": {medientyp, "DVD"},
 			"erweiterte_eigenschaften.auflage": {auflage, "3"}, "erscheinungsjahr": {jahr, 2019},
-			"jahrgang_von": {von, 7}, "jahrgang_bis": {bis, 8},
+			"grade_level": {stufe, 7}, "jahrgang_von": {von, 7}, "jahrgang_bis": {bis, 8},
 		}
 		for spalte, paar := range soll {
 			if paar[0] != paar[1] {

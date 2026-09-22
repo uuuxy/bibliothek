@@ -86,24 +86,3 @@ export function bestandSatz(gesamt, verfuegbar) {
 	if (gesamt === 0) return 'Keine Exemplare';
 	return `${verfuegbar ?? 0} von ${gesamt} verfügbar`;
 }
-
-/**
- * Die Jahrgangsspanne eines Titels als Text: „7", „7–9", und nichts, wenn die Spanne
- * fehlt oder noch die Vorgabe der Maske trägt (5 bis 10 = keine Aussage).
- *
- * Seit Migration 135 ist die Spanne die eine Jahrgangsangabe am Titel; „Klasse" ist
- * gefallen. Dieselbe Regel wie im Lernmittel-PDF (inventur/lernmittel_pdf.go,
- * jahrgangText) — vier Stellen der Oberfläche lesen sie, und die Vorgabe 5–10 stünde
- * sonst an jedem zweiten Titel als Behauptung.
- *
- * @param {number | string | null | undefined} von
- * @param {number | string | null | undefined} bis
- * @returns {string} leer, wenn keine Aussage vorliegt
- */
-export function jahrgangSpanne(von, bis) {
-	const v = Number(von);
-	const b = Number(bis);
-	if (!v || !b || (v === 5 && b === 10)) return '';
-	if (v === b) return String(v);
-	return `${v}–${b}`;
-}

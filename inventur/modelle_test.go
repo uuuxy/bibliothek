@@ -18,6 +18,7 @@ func TestBook_JSONMarshaling(t *testing.T) {
 		Signatur:                "Test-Sig",
 		CoverURL:                "https://example.com/cover.jpg",
 		Subject:                 "Math",
+		GradeLevel:              5,
 		Track:                   "A",
 		Stock:                   10,
 		Verfuegbar:              8,
