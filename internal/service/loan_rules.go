@@ -257,6 +257,14 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 	// Nur für die einjährige Ausleihe; eine mehrjährige rechnet weiter über den Stichtag.
 	// Ein Fehler beim Nachschlagen blockiert die Ausleihe nicht: dann gilt der Stichtag.
 	//
+	// Mehrjahresband (Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.6): Der
+	// Rückgabetermin der Klasse geht das Buch nichts an, es bleibt beim Kind — außer der
+	// Termin ist schon vorbei. Dann ist das laufende Schuljahr für diese Klasse zu Ende, und
+	// die Frist rechnet vom folgenden Schuljahr aus: Von den verbleibenden Jahren steckt
+	// eines bereits in diesem Sprung, deshalb additionalYears-1. Ein Kind der 7 mit einem
+	// Band bis Jahrgang 9, ausgegeben nach dem Termin im Juli 2027, gibt ihn am 31.07.2029
+	// zurück — nicht 2030.
+	//
 	// Am oder nach dem Rückgabetermin der Klasse (Entscheidung vom 13.09.2026): Wer jetzt
 	// noch ein Schulbuch bekommt, gibt es erst im nächsten Schuljahr zurück — die Frist ist
 	// dessen Stichtag. Das gilt auch, wenn die Klasse noch einen Nachzügler-Termin vor sich
@@ -265,13 +273,14 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 	// der Termin selbst die Frist (heute 23:59) und danach der Stichtag des laufenden
 	// Schuljahres, ein Tag in den Ferien: Nach den Ferien wäre die ganze Klasse überfällig und
 	// nach 14 Tagen gesperrt gewesen.
-	if copy.IstLernmittel && additionalYears == 0 && borrowerKlasse != "" {
+	if copy.IstLernmittel && borrowerKlasse != "" {
 		lage, lageErr := repository.NewLmfTerminRepository(s.pool).RueckgabeTerminLage(ctx, borrowerKlasse, heute)
 		if lageErr == nil && lage.Vergangen {
 			folgendes := repository.SchuljahrBeginn(heute).AddDate(1, 0, 0)
-			return TagesEndeInSchulzeitzone(repository.LmfStichtagImSchuljahr(folgendes, settings.LmfStichtag)), nil
+			stichtag := repository.LmfStichtagImSchuljahr(folgendes, settings.LmfStichtag)
+			return TagesEndeInSchulzeitzone(stichtag.AddDate(max(additionalYears-1, 0), 0, 0)), nil
 		}
-		if lageErr == nil && lage.Bevorstehend {
+		if lageErr == nil && lage.Bevorstehend && additionalYears == 0 {
 			return TagesEndeInSchulzeitzone(lage.Naechster), nil
 		}
 	}
