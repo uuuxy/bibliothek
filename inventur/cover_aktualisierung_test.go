@@ -4,12 +4,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/jackc/pgx/v5"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -23,55 +29,6 @@ func (m *mockTransportCover) RoundTrip(req *http.Request) (*http.Response, error
 	return m.roundTripFunc(req)
 }
 
-func TestFallbackString(t *testing.T) {
-	tests := []struct {
-		name     string
-		value    string
-		fallback string
-		want     string
-	}{
-		{
-			name:     "non-empty value, empty fallback",
-			value:    "primary",
-			fallback: "",
-			want:     "primary",
-		},
-		{
-			name:     "empty value, non-empty fallback",
-			value:    "",
-			fallback: "secondary",
-			want:     "secondary",
-		},
-		{
-			name:     "both non-empty",
-			value:    "primary",
-			fallback: "secondary",
-			want:     "primary",
-		},
-		{
-			name:     "both empty",
-			value:    "",
-			fallback: "",
-			want:     "",
-		},
-		{
-			name:     "whitespace value is considered non-empty",
-			value:    "   ",
-			fallback: "secondary",
-			want:     "   ",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := fallbackString(tt.value, tt.fallback); got != tt.want {
-				t.Errorf("fallbackString() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-// Die Route prüft der Mux (Platzhalter {id} in api_routen.go); hier nur die Kennung.
 func TestHandleRefreshCover_UngueltigeKennung(t *testing.T) {
 	for _, id := range []string{"", "123", "urn:uuid:0f8fad5b-d9cb-469f-a165-70867728950e"} {
 		req := httptest.NewRequest(http.MethodPost, "/api/books/x/refresh-cover", nil)
@@ -192,7 +149,7 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 
-	if response["error"] != "Keine neuen Metadaten gefunden" {
+	if response["error"] != "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel" {
 		t.Errorf("unexpected error message: %v", response["error"])
 	}
 
@@ -201,7 +158,10 @@ func TestHandleRefreshCover_MetadataSearchFailure(t *testing.T) {
 	}
 }
 
-func TestHandleRefreshCover_UpdateFailure(t *testing.T) {
+// Metadaten gefunden, aber kein Bild: 404 — und KEIN Schreibzugriff. Bis zum 22.09.2026
+// schrieb die Tür hier "New Title"/"New Author" ins Buch, obwohl der Aufrufer nur ein
+// Cover wollte; der Mock hätte jedes UPDATE gemeldet, das jetzt noch käme.
+func TestHandleRefreshCover_KeinCoverIst404OhneSchreiben(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
 		t.Fatalf("failed to create pgxmock: %v", err)
@@ -249,11 +209,6 @@ func TestHandleRefreshCover_UpdateFailure(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
 			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", int16(1), "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
-	// mock UpdateBookMetadata returning error
-	mock.ExpectExec(`UPDATE buecher_titel`).
-		WithArgs("New Title", "New Author", "", bookID).
-		WillReturnError(errTest)
-
 	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
 	req.SetPathValue("id", bookID)
 	req = req.WithContext(context.Background())
@@ -261,8 +216,11 @@ func TestHandleRefreshCover_UpdateFailure(t *testing.T) {
 
 	handler.handleRefreshCover(w, req)
 
-	if w.Code != http.StatusInternalServerError {
-		t.Errorf("expected status %d, got %d", http.StatusInternalServerError, w.Code)
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d: %s", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), "kein Cover") {
+		t.Errorf("die Antwort sagt nicht, dass es KEIN Cover gibt: %s", w.Body.String())
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {
@@ -270,6 +228,9 @@ func TestHandleRefreshCover_UpdateFailure(t *testing.T) {
 	}
 }
 
+// Erfolg: Google liefert Metadaten, DNB das Bild. Geschrieben wird NUR das Cover — Titel
+// und Autor gehen mit leeren Werten an UpdateBookMetadata (COALESCE(NULLIF($1,”), titel)),
+// die Antwort trägt den alten Titel und den neuen lokalen Cover-Pfad.
 func TestHandleRefreshCover_Success(t *testing.T) {
 	mock, err := pgxmock.NewPool()
 	if err != nil {
@@ -277,8 +238,28 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 	}
 	defer mock.Close()
 
+	bild := image.NewRGBA(image.Rect(0, 0, 15, 15))
+	for x := 0; x < 15; x++ {
+		for y := 0; y < 15; y++ {
+			bild.Set(x, y, color.RGBA{255, 0, 0, 255})
+		}
+	}
+	var pngBytes bytes.Buffer
+	if err := png.Encode(&pngBytes, bild); err != nil {
+		t.Fatalf("png encode: %v", err)
+	}
+
 	mockTr := &mockTransportCover{
 		roundTripFunc: func(req *http.Request) (*http.Response, error) {
+			if strings.Contains(req.URL.String(), "portal.dnb.de/opac/mvb/cover") {
+				resp := &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewReader(pngBytes.Bytes())),
+					Header:     make(http.Header),
+				}
+				resp.Header.Set("Content-Type", "image/png")
+				return resp, nil
+			}
 			if strings.Contains(req.URL.String(), "googleapis.com") {
 				googleJSON := `{
 					"items": [{
@@ -318,9 +299,9 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage"}).
 			AddRow(bookID, "9783161484100", "Old Title", "Old Author", "Sig", "", "Subject", int16(1), "Track", 1, &lastCounted, 1, "Buch", 5, 10, map[string]any{}, "4. Aufl. 2023"))
 
-	// mock UpdateBookMetadata success
+	// mock UpdateBookMetadata: Titel und Autor LEER, nur das Cover.
 	mock.ExpectExec(`UPDATE buecher_titel`).
-		WithArgs("New Title", "New Author", "", bookID).
+		WithArgs("", "", pgxmock.AnyArg(), bookID).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	req := httptest.NewRequest(http.MethodPost, "/api/books/"+bookID+"/refresh-cover", nil)
@@ -347,8 +328,12 @@ func TestHandleRefreshCover_Success(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected data field in response")
 	}
-	if data["title"] != "New Title" || data["author"] != "New Author" || data["coverUrl"] != "" {
-		t.Errorf("unexpected updated data: %v", data)
+	coverURL, ok := data["coverUrl"].(string)
+	if !ok || data["title"] != "Old Title" || data["author"] != "Old Author" || !strings.HasPrefix(coverURL, "/uploads/cover_auto_") {
+		t.Fatalf("erwartet: Titel und Autor unverändert, Cover lokal — bekommen: %v", data)
+	}
+	if err := os.Remove(filepath.Join("uploads", filepath.Base(coverURL))); err != nil {
+		t.Errorf("heruntergeladenes Testbild aufräumen: %v", err)
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

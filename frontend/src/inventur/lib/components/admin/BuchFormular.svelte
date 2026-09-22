@@ -14,6 +14,7 @@
 		onClose,
 		onSave,
 		onCoverUpload,
+		onCoverNeuHolen,
 		onAssignClass,
 		onDelete = undefined
 	} = $props();
@@ -107,7 +108,7 @@
 			{/if}
 		</div>
 		<aside class="mt-8 lg:mt-0 lg:sticky lg:top-24 lg:self-start">
-			<BuchCoverUpload bind:formular {onCoverUpload} />
+			<BuchCoverUpload bind:formular {onCoverUpload} {onCoverNeuHolen} />
 		</aside>
 	</div>
 

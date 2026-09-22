@@ -165,6 +165,7 @@
 			onClose={() => (istBearbeitenModus = false)}
 			onSave={() => buchAktionen.saveChanges()}
 			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.handleCoverUpload(ereignis)}
+			onCoverNeuHolen={() => buchAktionen.handleCoverNeuHolen()}
 			onAssignClass={() => (klassenZuweisenIds = formular.id ? [formular.id] : [])}
 			onDelete={buchAktionen?.darfLoeschen() ? () => buchAktionen.titelLoeschen() : undefined}
 		/>

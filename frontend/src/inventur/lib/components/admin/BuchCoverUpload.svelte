@@ -1,7 +1,20 @@
 <script>
-	let { formular = $bindable(), onCoverUpload } = $props();
+	import Button from '../../../../lib/components/ui/Button.svelte';
+
+	let { formular = $bindable(), onCoverUpload, onCoverNeuHolen } = $props();
 	/** @type {HTMLInputElement|null} */
 	let fileInput = $state(null);
+	let holtCover = $state(false);
+
+	async function coverNeuHolen() {
+		if (holtCover) return;
+		holtCover = true;
+		try {
+			await onCoverNeuHolen?.();
+		} finally {
+			holtCover = false;
+		}
+	}
 
 	/** @param {Event} e */
 	function handleFileChange(e) {
@@ -81,11 +94,17 @@
 			onchange={handleFileChange}
 			accept="image/*"
 		/>
-		<button
-			class="text-sm text-emerald-600 font-medium hover:text-emerald-700"
-			onclick={() => fileInput?.click()}
-		>
-			Cover ändern
-		</button>
+		<!-- Zwei Aktionen niedrigster Priorität unter dem Bild: M3 Buttons, „Text style":
+		     „The text button style should be used for the lowest priority actions,
+		     especially when presenting multiple options." Beide über das gemeinsame Bauteil
+		     (ghost), statt einer eigenen Farbe je Knopf. -->
+		<div class="flex flex-wrap justify-center gap-1">
+			<Button variant="ghost" size="sm" onclick={() => fileInput?.click()}>Cover ändern</Button>
+			{#if onCoverNeuHolen}
+				<Button variant="ghost" size="sm" disabled={holtCover} onclick={coverNeuHolen}>
+					{holtCover ? 'Wird geholt …' : 'Cover neu holen'}
+				</Button>
+			{/if}
+		</div>
 	{/if}
 </div>

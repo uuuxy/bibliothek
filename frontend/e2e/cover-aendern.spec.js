@@ -38,6 +38,10 @@ test('Cover: das Bild ist kein verstecktes Bedienelement, „Cover ändern" blei
 	const aendern = page.getByRole('button', { name: 'Cover ändern' });
 	await expect(aendern, 'die sichtbare Aktion muss da sein').toBeVisible();
 
+	// Seit dem 22.09.2026 steht daneben „Cover neu holen" (OFFEN.md 4.16): die automatische
+	// Suche für EINEN Titel statt des Sammellaufs über den ganzen Bestand.
+	await expect(page.getByRole('button', { name: 'Cover neu holen' })).toBeVisible();
+
 	// Das versteckte Dateifeld gehört dazu — ohne es klickt „Cover ändern" ins Leere.
 	await expect(page.locator('#cover-upload-drawer')).toHaveCount(1);
 

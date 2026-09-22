@@ -245,16 +245,6 @@ Schreibweg vorbeikommt. `repository.KarenzUhr` (seit 22.09.2026 die eine Formuli
 Löschuhr und Wächter) rechnet dann `GREATEST(AbgangSeit, letzter_vorgang_am)` ohne Unterabfragen. Nachweis: ein PG-Test mit Karenz > Lesehistorie, der beweist, dass der
 Lesehistorie-Lauf den Anonymisierungs-Zeitpunkt NICHT verschiebt — am alten Stand rot.
 
-### 4.16 Routen ohne Aufrufer
-
-Von den vier Routen ohne Aufrufer (API-Inventar, 17.09.2026) sind am 22.09.2026 drei
-gestrichen: `PUT /api/books/{id}/cover` (Cover-Adresse von Hand; Upload und automatische Suche
-decken den Zweck), `POST …/schadensnotiz` (die Notiz bleibt Spur der Vorgänge) und
-`POST …/aussondern` (dritte Tür zum selben Zustand; es bleiben Ausbuchen und Status-Editor).
-
-Offen: `POST /api/books/{id}/refresh-cover` holt das Cover EINES Buches neu bei den
-Katalogdiensten, sauber gebaut, ohne Knopf. Er kommt als „Cover neu holen" in die Titel-Akte.
-
 ### 4.18 Neue Auflage eines Schulbuchs — ein Werk über den Auflagen
 
 **Der Fall (gefragt am 17.09.2026):** Ein Schulbuch wird nachbestellt, es gibt es aber nur noch in

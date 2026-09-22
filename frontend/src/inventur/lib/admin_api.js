@@ -144,3 +144,30 @@ export async function loescheTitel(id) {
 		throw new Error(json.error || 'Titel konnte nicht gelöscht werden.');
 	}
 }
+
+/**
+ * Holt das Cover EINES Titels neu bei den Katalogdiensten (DNB, Google Books,
+ * OpenLibrary). Der Server ändert nur das Bild, nie Titel oder Autor.
+ * @param {string} id
+ * @returns {Promise<string>} der neue Cover-Pfad
+ * @throws {Error} mit der Auskunft des Servers: kein Cover (404), Dienste nicht
+ *   erreichbar (502) — beides ist eine Meldung an den Menschen, kein Absturz.
+ */
+export async function coverNeuHolen(id) {
+	const res = await apiFetch(`/api/books/${encodeURIComponent(id)}/refresh-cover`, {
+		method: 'POST',
+		credentials: 'include'
+	});
+	if (!res.ok) {
+		let meldung = 'Cover konnte nicht neu geholt werden';
+		try {
+			const json = await res.json();
+			meldung = json?.error || json?.message || meldung;
+		} catch {
+			// keine JSON-Antwort: die Vorgabe bleibt
+		}
+		throw new Error(meldung);
+	}
+	const json = await res.json();
+	return json.data.coverUrl;
+}

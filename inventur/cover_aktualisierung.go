@@ -34,27 +34,28 @@ func (handler *APIHandler) handleRefreshCover(writer http.ResponseWriter, reques
 			writeError(writer, http.StatusBadGateway, "Katalogdienste (DNB, Google, OpenLibrary) nicht erreichbar — bitte später erneut versuchen")
 			return
 		}
-		writeError(writer, http.StatusNotFound, "Keine neuen Metadaten gefunden")
+		writeError(writer, http.StatusNotFound, "Kein Cover: Zu dieser ISBN kennen DNB, Google Books und OpenLibrary keinen Titel")
 		return
 	}
 
-	err = handler.repo.UpdateBookMetadata(request.Context(), id, lookup.Titel, lookup.Autor, lookup.CoverURL)
+	// Nur das Cover. Bis zum 22.09.2026 schrieb die Tür auch Titel und Autor aus der
+	// Suche zurück — ohne Aufrufer fiel das nicht auf. Mit dem Knopf „Cover neu holen" in
+	// der Titel-Akte wäre es ein stilles Überschreiben von Handkorrekturen: Wer „Mathe 7,
+	// Ausgabe Hessen" eingetippt hat, bekäme den Katalogtitel zurück, ohne es zu sehen.
+	// Der Knopf verspricht ein Bild, also ändert die Tür nur das Bild.
+	coverURL := strings.TrimSpace(lookup.CoverURL)
+	if coverURL == "" {
+		writeError(writer, http.StatusNotFound, "Bei DNB, Google Books und OpenLibrary gibt es kein Cover zu dieser ISBN")
+		return
+	}
+
+	err = handler.repo.UpdateBookMetadata(request.Context(), id, "", "", coverURL)
 	if err != nil {
-		log.Printf("cover-refresh: update fehlgeschlagen für buch %s: %v", id, err)
-		writeError(writer, http.StatusInternalServerError, "metadaten konnten nicht aktualisiert werden")
+		log.Printf("cover-refresh: update fehlgeschlagen für buch %s: %v", logger.SanitizeLog(id), err)
+		writeError(writer, http.StatusInternalServerError, "cover konnte nicht gespeichert werden")
 		return
 	}
 
-	book.Title = fallbackString(strings.TrimSpace(lookup.Titel), book.Title)
-	book.Author = fallbackString(strings.TrimSpace(lookup.Autor), book.Author)
-	book.CoverURL = fallbackString(strings.TrimSpace(lookup.CoverURL), book.CoverURL)
-
+	book.CoverURL = coverURL
 	writeJSON(writer, http.StatusOK, map[string]any{"message": "cover aktualisiert", "data": book})
-}
-
-func fallbackString(value, fallback string) string {
-	if value != "" {
-		return value
-	}
-	return fallback
 }

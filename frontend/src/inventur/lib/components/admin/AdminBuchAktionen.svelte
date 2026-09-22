@@ -2,7 +2,7 @@
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { bestaetigen, loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { appState, showToast } from '$lib/store.svelte.js';
-	import { loescheTitel } from '../../admin_api.js';
+	import { loescheTitel, coverNeuHolen } from '../../admin_api.js';
 	import { hatRecht } from '../../../../lib/menu.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 
@@ -134,6 +134,19 @@
 			img.onerror = () => reject(new Error('Invalid image'));
 			img.src = URL.createObjectURL(file);
 		});
+	}
+
+	/** „Cover neu holen": nur das Bild, Titel und Autor bleiben (Server-Regel). */
+	export async function handleCoverNeuHolen() {
+		if (!formular.id) return;
+		try {
+			const coverUrl = await coverNeuHolen(formular.id);
+			formular.coverUrl = coverUrl;
+			books = books.map((/** @type {any} */ b) => (b.id === formular.id ? { ...b, coverUrl } : b));
+			showToast('Cover neu geholt', 'success');
+		} catch (err) {
+			showToast(err instanceof Error ? err.message : String(err), 'error');
+		}
 	}
 
 	/** @param {Event} e */
