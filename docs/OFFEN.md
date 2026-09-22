@@ -424,7 +424,21 @@ zwölf bis zwanzig Wörtern statt freier Schlagworte — als Auswahl am Titel un
 Katalog und im Portal. Freie Schlagworte brauchen Normdatenpflege (Littera hat dafür ein eigenes
 Modul); die haben wir nicht.
 
-**Nicht gebaut.**
+**Stand 22.09.2026 — entschieden: bauen.** Die Quelle für das Vokabular ist die DNB, nicht
+der Altbestand: Jeder DNB-Satz trägt drei geschlossene Vokabulare, die der Code heute
+verwirft — die Warengruppe des Buchhandels (653 `(VLB-WN)`, z. B. „1250 Kinderbücher bis
+11 Jahre", „1120 Belletristik/Spannung"), die Thema-Kategorien (655 `$2 gatbeg`, z. B.
+„Spannung") und die Sachgruppe (082/084, K = Kinder- und Jugendliteratur). Die freien
+Verlagsschlagworte in 653 („Gruselgeschichte", aber auch „Minecraft Buch Kinder") sind
+Suchmaschinentext und werden nicht gespeichert; der Klappentext (856 Inhaltstext) wird
+nicht übernommen. Google Books fällt als Themenquelle aus: ohne API-Key antwortet es mit
+429 (Tageskontingent geteilt), und seine Kategorien sind englische Grobklassen.
+
+Stufen: (1) ohne Migration — der DNB-Leser liest `(Lesealter)` neben `(Zielgruppe)` und
+liefert aus den drei Vokabularen einen Themen-Vorschlag; (2) Migration — ein Feld „Thema"
+am Titel mit geschlossenem Vokabular (Vorschlag aus der ISBN-Suche, Auswahl in der Maske,
+Filter im Katalog und im Portal). Vor Stufe 2 zu klären: die Wortliste (zwölf bis zwanzig),
+ein Thema je Titel oder mehrere, und wer es bei Titeln ohne DNB-Treffer pflegt.
 
 ---
 
