@@ -6,42 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestIstErlaubteCoverHerkunft(t *testing.T) {
-	tests := []struct {
-		name     string
-		rohURL   string
-		expected bool
-	}{
-		{
-			name:     "allowed host OpenLibrary",
-			rohURL:   "https://covers.openlibrary.org/b/id/12345-L.jpg",
-			expected: true,
-		},
-		{
-			name:     "allowed host Google Books",
-			rohURL:   "http://books.google.com/books/content?id=123",
-			expected: true,
-		},
-		{
-			name:     "disallowed host",
-			rohURL:   "https://evil.com/cover.jpg",
-			expected: false,
-		},
-		{
-			name:     "unparseable URL",
-			rohURL:   "://invalid",
-			expected: false,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			result := IstErlaubteCoverHerkunft(tc.rohURL)
-			assert.Equal(t, tc.expected, result)
-		})
-	}
-}
-
 func TestSichereCoverURL(t *testing.T) {
 	tests := []struct {
 		name        string

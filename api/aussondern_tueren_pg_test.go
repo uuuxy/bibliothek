@@ -7,12 +7,11 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/db"
 	"bibliothek/repository"
-
-	_ "github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Zwei Türen zum selben Zustand — beide ohne die Schranke der dritten.
+// Die Status-Tür prüft die Ausleihe — wie das Ausbuchen.
 //
 // „Ausgesondert" erreichte man auf drei Wegen: DELETE (Ausbuchen, MIT Ausleih-Prüfung
 // und Audit), POST …/aussondern und PUT …/status — die letzten beiden bis zum
@@ -21,7 +20,12 @@ import (
 // blieb in der Mahnstrecke, und bei der Rückgabe war das Exemplar gesperrt — ohne
 // dass irgendjemand nachvollziehen konnte, wer es ausgebucht hatte. Unbekannte IDs
 // waren auf beiden Türen ein stiller „Erfolg".
-func TestAussondern_BeideTuerenPruefenAusleihe(t *testing.T) {
+//
+// POST …/aussondern ist am 22.09.2026 gestrichen (OFFEN.md 4.16): keine Oberfläche rief
+// sie, und ein dritter Weg zum selben Zustand muss jede künftige Regel kennen. Es
+// bleiben das Ausbuchen und der Status-Editor; dieser Test hält die Schranke am
+// Status-Editor.
+func TestAussondern_StatusTuerPrueftAusleihe(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	bookRepo := repository.NewBookRepository(pool)
@@ -32,20 +36,14 @@ func TestAussondern_BeideTuerenPruefenAusleihe(t *testing.T) {
 	sid := seedSchueler(t, pool, "S-TUER-1", "Mia", "5a")
 	seedLeserAusleihe(t, pool, verliehen, sid)
 
-	aussondern := func(id string) *httptest.ResponseRecorder {
-		req := httptest.NewRequest(http.MethodPost, "/api/buecher/exemplare/"+id+"/aussondern", nil)
-		req.SetPathValue("id", id)
-		rec := httptest.NewRecorder()
-		(&Server{}).AussondernCopyHandler(bookRepo)(rec, req)
-		return rec
-	}
 	statusAussondern := func(id string) *httptest.ResponseRecorder {
 		req := httptest.NewRequest(http.MethodPut, "/api/buecher/exemplare/"+id+"/status",
 			strings.NewReader(`{"ist_ausleihbar":false,"ist_ausgesondert":true,"zustand_notiz":"weg damit"}`))
 		req.Header.Set("Content-Type", "application/json")
 		req.SetPathValue("id", id)
 		rec := httptest.NewRecorder()
-		(&Server{}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, req)
+		// Server MIT Datenbank: Der Erfolgsfall fragt den Ersatzwert nach (9.8, Stufe 2b).
+		(&Server{DB: &db.Database{Pool: pool}}).UpdateCopyStatusHandler(bookRepo, repository.NewBescheidRepository(pool))(rec, req)
 		return rec
 	}
 	istAusgesondert := func(id string) bool {
@@ -57,34 +55,23 @@ func TestAussondern_BeideTuerenPruefenAusleihe(t *testing.T) {
 		return aus
 	}
 
-	// Tür 1: POST /aussondern auf ein verliehenes Exemplar — muss abgelehnt werden.
-	if rec := aussondern(verliehen); rec.Code != http.StatusBadRequest {
-		t.Errorf("aussondern verliehen: HTTP %d, erwartet 400: %s", rec.Code, rec.Body.String())
-	}
-	if istAusgesondert(verliehen) {
-		t.Error("Tür 1 hat ein verliehenes Exemplar ausgesondert")
-	}
-
-	// Tür 2: PUT /status mit ist_ausgesondert=true — dieselbe Schranke.
+	// PUT /status mit ist_ausgesondert=true auf ein verliehenes Exemplar — abgelehnt.
 	if rec := statusAussondern(verliehen); rec.Code != http.StatusBadRequest {
 		t.Errorf("status→ausgesondert verliehen: HTTP %d, erwartet 400: %s", rec.Code, rec.Body.String())
 	}
 	if istAusgesondert(verliehen) {
-		t.Error("Tür 2 hat ein verliehenes Exemplar ausgesondert")
+		t.Error("die Status-Tür hat ein verliehenes Exemplar ausgesondert")
 	}
 
-	// Unbekannte ID: 404 statt stillem Erfolg — auf beiden Türen.
+	// Unbekannte ID: 404 statt stillem Erfolg.
 	unbekannt := "00000000-0000-0000-0000-000000000d0d"
-	if rec := aussondern(unbekannt); rec.Code != http.StatusNotFound {
-		t.Errorf("aussondern unbekannt: HTTP %d, erwartet 404: %s", rec.Code, rec.Body.String())
-	}
 	if rec := statusAussondern(unbekannt); rec.Code != http.StatusNotFound {
 		t.Errorf("status unbekannt: HTTP %d, erwartet 404: %s", rec.Code, rec.Body.String())
 	}
 
-	// Freies Exemplar: beide Türen funktionieren weiter.
-	if rec := aussondern(frei); rec.Code != http.StatusOK {
-		t.Fatalf("aussondern frei: HTTP %d: %s", rec.Code, rec.Body.String())
+	// Freies Exemplar: die Tür funktioniert weiter.
+	if rec := statusAussondern(frei); rec.Code != http.StatusOK {
+		t.Fatalf("status→ausgesondert frei: HTTP %d: %s", rec.Code, rec.Body.String())
 	}
 	if !istAusgesondert(frei) {
 		t.Error("freies Exemplar wurde nicht ausgesondert")

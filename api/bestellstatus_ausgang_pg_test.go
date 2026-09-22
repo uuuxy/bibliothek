@@ -62,7 +62,7 @@ func TestBestellstatus_JederAusgangRaeumt(t *testing.T) {
 
 	// 2. Aussondern: kein Zulauf mehr, nicht im Wareneingang, und einbuchen belebt es nicht.
 	weg := zulauf("Zulauf-Storno-Titel", "ZL-STORNO")
-	if err := books.DecommissionCopy(ctx, weg); err != nil {
+	if err := books.UpdateCopyStatus(ctx, weg, false, true, "", nil); err != nil {
 		t.Fatalf("DecommissionCopy: %v", err)
 	}
 	if s := bestellstatus(weg); s != nil {

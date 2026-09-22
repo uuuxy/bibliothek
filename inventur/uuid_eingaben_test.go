@@ -89,7 +89,6 @@ func TestBuchKennungImPfadIst400AmMux(t *testing.T) {
 	faelle := []struct{ name, methode, pfad, rumpf string }{
 		{"Buch ändern", http.MethodPut, "/api/books/x", buch},
 		{"Buch ändern, urn-Form", http.MethodPut, "/api/books/urn:uuid:7c9e6679-7425-40de-944b-e07fc1f90ae7", buch},
-		{"Cover-URL setzen", http.MethodPut, "/api/books/x/cover", `{"coverUrl":"/uploads/a.jpg"}`},
 		{"Cover neu nachschlagen", http.MethodPost, "/api/books/x/refresh-cover", ""},
 		{"Cover hochladen", http.MethodPost, "/api/books/x/cover-upload", ""},
 	}

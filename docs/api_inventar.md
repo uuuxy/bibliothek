@@ -8,9 +8,6 @@
 
 - `GET /api/schadensfaelle/{id}/pdf`
 - `POST /api/books/{id}/refresh-cover`
-- `POST /api/buecher/exemplare/{id}/aussondern`
-- `POST /api/buecher/exemplare/{id}/schadensnotiz`
-- `PUT /api/books/{id}/cover`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -20,7 +17,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (214)
+## Alle registrierten Routen (211)
 
 - `/`
 - `/api/admin`
@@ -180,9 +177,7 @@
 - `POST /api/books/{id}/refresh-cover`
 - `POST /api/buecher/aus-isbn`
 - `POST /api/buecher/exemplare/verlust-endgueltig-loeschen`
-- `POST /api/buecher/exemplare/{id}/aussondern`
 - `POST /api/buecher/exemplare/{id}/gefunden`
-- `POST /api/buecher/exemplare/{id}/schadensnotiz`
 - `POST /api/damage/report`
 - `POST /api/exemplare/etiketten-altbestand`
 - `POST /api/exemplare/etiketten-gedruckt`
@@ -224,7 +219,6 @@
 - `PUT /api/bestellungen/{id}/bestaetigungs-link`
 - `PUT /api/bestellungen/{id}/mittel`
 - `PUT /api/books/{id}`
-- `PUT /api/books/{id}/cover`
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`
 - `PUT /api/buecher/titel/{id}/lernmittel`

@@ -8,12 +8,10 @@ import "bibliothek/pkg/coverquelle"
 // auseinandergelaufen: Die dritte Kopie in metadaten_client.go kannte books.google.*
 // nicht. Alle drei fragen jetzt pkg/coverquelle.
 
-// IstErlaubteCoverHerkunft prüft, ob eine Cover-URL von einem zugelassenen Host
-// stammt. Für Stellen, die eine URL nur SPEICHERN (manuelles Cover-Update) — wer sie
-// auch abruft, nimmt SichereCoverURL und schickt die neu gebaute Fassung los.
-func IstErlaubteCoverHerkunft(rohURL string) bool {
-	return coverquelle.IstErlaubt(rohURL, coverquelle.CoverHosts)
-}
+// IstErlaubteCoverHerkunft (nur speichern, nicht abrufen) ist am 22.09.2026 mit dem
+// manuellen Cover-Update PUT /api/books/{id}/cover gefallen — der einzigen Stelle, die
+// eine URL nur speicherte. Wer eine Cover-URL anfasst, ruft sie auch ab und nimmt
+// SichereCoverURL.
 
 // SichereCoverURL liefert die aus geprüften Teilen neu gebaute Cover-URL.
 // ok=false heißt: Host nicht erlaubt oder URL unlesbar.

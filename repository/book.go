@@ -27,9 +27,6 @@ type BookRepository interface {
 	// GetTitleByIDTx sucht einen Buchtitel anhand seiner UUID, optimiert für Transaktionen.
 	GetTitleByIDTx(ctx context.Context, tx pgx.Tx, id string) (*BookTitle, error)
 
-	// UpdateCopyDamageNote aktualisiert die Zustandsnotiz (z. B. Beschädigungen) eines Buchexemplars.
-	UpdateCopyDamageNote(ctx context.Context, id string, note string) error
-
 	// UpdateCopyBarcode ändert den zugewiesenen Barcode eines physischen Exemplars.
 	UpdateCopyBarcode(ctx context.Context, id string, barcode string) error
 
@@ -40,9 +37,6 @@ type BookRepository interface {
 	// Mensch es angefasst hat, und ein Statuswechsel darf einen erfassten Wasserschaden
 	// nicht stillschweigend auf 0 zurückstellen (Upsert-Blanking).
 	UpdateCopyStatus(ctx context.Context, id string, istAusleihbar bool, istAusgesondert bool, zustandNotiz string, zustandAbwertungProzent *int) error
-
-	// DecommissionCopy kennzeichnet ein Exemplar als dauerhaft ausgesondert und sperrt die Ausleihe.
-	DecommissionCopy(ctx context.Context, id string) error
 
 	// GenerateBarcodes erzeugt eine Serie fortlaufender Buch-Barcodes (Präfix "B-") über eine DB-Sequence.
 	GenerateBarcodes(ctx context.Context, count int) ([]string, error)

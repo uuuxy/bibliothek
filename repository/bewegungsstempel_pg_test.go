@@ -69,7 +69,7 @@ func TestBewegungsstempel_JederSchreiberSetztIhn(t *testing.T) {
 
 	// Aussonderung (Soft-Delete): Stempel rückt vor.
 	warte(t, pool)
-	if err := NewBookRepository(pool).DecommissionCopy(ctx, f.exemplarID); err != nil {
+	if err := NewBookRepository(pool).UpdateCopyStatus(ctx, f.exemplarID, false, true, "", nil); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
 	nachAussonderung := stempel()

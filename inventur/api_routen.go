@@ -115,7 +115,6 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	// in RequirePermission, die api/router.go hier einsetzt), und das API-Inventar gleicht
 	// die Routen einzeln ab. Bis zum 13.09.2026 kam PUT /api/books/x als 500 zurück.
 	handler.mux.Handle("PUT /api/books/{id}", config.RequireEditBooks(http.HandlerFunc(handler.BearbeiteBuchAktualisieren)))
-	handler.mux.Handle("PUT /api/books/{id}/cover", config.RequireEditBooks(http.HandlerFunc(handler.handleUpdateCover)))
 	handler.mux.Handle("POST /api/books/{id}/refresh-cover", config.RequireEditBooks(http.HandlerFunc(handler.handleRefreshCover)))
 	handler.mux.Handle("POST /api/books/{id}/cover-upload", config.RequireEditBooks(http.HandlerFunc(handler.handleUploadCover)))
 

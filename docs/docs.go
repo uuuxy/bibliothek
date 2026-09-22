@@ -798,59 +798,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/buecher/exemplare/{id}/aussondern": {
-            "post": {
-                "description": "Marks a physical copy as decommissioned: sets ist_ausgesondert=true and ist_ausleihbar=false.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin"
-                ],
-                "summary": "Decommission a book copy",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Book copy ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/buecher/exemplare/{id}/barcode": {
             "put": {
                 "description": "Updates the barcode of a physical book copy, replacing placeholders like AUTO-.",
@@ -959,68 +906,6 @@ const docTemplate = `{
         "/buecher/exemplare/{id}/gefunden": {
             "post": {
                 "responses": {}
-            }
-        },
-        "/buecher/exemplare/{id}/schadensnotiz": {
-            "post": {
-                "description": "Updates the custom damage or condition note text of a physical book copy.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin"
-                ],
-                "summary": "Update damage note",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Book copy ID (UUID)",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Damage note payload",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api.DamageNoteRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
             }
         },
         "/buecher/exemplare/{id}/status": {
@@ -3246,14 +3131,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vorname": {
-                    "type": "string"
-                }
-            }
-        },
-        "api.DamageNoteRequest": {
-            "type": "object",
-            "properties": {
-                "note": {
                     "type": "string"
                 }
             }

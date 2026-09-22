@@ -247,36 +247,13 @@ Lesehistorie-Lauf den Anonymisierungs-Zeitpunkt NICHT verschiebt — am alten St
 
 ### 4.16 Routen ohne Aufrufer
 
-Laut API-Inventar (`docs/api_inventar.md`) ruft weder das Frontend noch ein Skript im Repo diese
-Routen auf: `PUT /api/books/{id}/cover`, `POST /api/books/{id}/refresh-cover`,
-`POST /api/buecher/exemplare/{id}/schadensnotiz` und `POST /api/buecher/exemplare/{id}/aussondern`.
-Ein Grep schließt Aufrufer außerhalb des Repos nicht aus.
+Von den vier Routen ohne Aufrufer (API-Inventar, 17.09.2026) sind am 22.09.2026 drei
+gestrichen: `PUT /api/books/{id}/cover` (Cover-Adresse von Hand; Upload und automatische Suche
+decken den Zweck), `POST …/schadensnotiz` (die Notiz bleibt Spur der Vorgänge) und
+`POST …/aussondern` (dritte Tür zum selben Zustand; es bleiben Ausbuchen und Status-Editor).
 
-**Die vier Befunde (17.09.2026, am Code gelesen) — zu entscheiden ist je Route:**
-
-1. **`PUT /api/books/{id}/cover`** (`inventur/update_cover_handler.go`) setzt eine Cover-Adresse
-   von Hand, mit Herkunftsprüfung. Sie ist die Tür, die 5.12 schon nennt: Ein unbekanntes Buch
-   ergibt 500 statt 404, und ein altes hochgeladenes Cover bleibt als Datei liegen. In der
-   Oberfläche gibt es den Upload (`/cover-upload`) und den Sammellauf (`/admin/sync-covers`) —
-   eine Adresse von Hand einzutragen, kann heute niemand. *Vorschlag: streichen.* Wer ein
-   bestimmtes Bild will, lädt es hoch; das ist derselbe Zweck ohne Fremd-URL in der Datenbank.
-2. **`POST /api/books/{id}/refresh-cover`** (`inventur/cover_aktualisierung.go`) holt das Cover
-   EINES Buches neu bei den Katalogdiensten. Sauber gebaut (404 bei unbekanntem Buch,
-   unterscheidet Netzausfall von Nicht-Treffer, eigene Tests). In der Oberfläche gibt es nur den
-   Sammellauf über den ganzen Bestand. *Vorschlag: anbieten* — ein Knopf „Cover neu holen" in der
-   Titel-Akte ist die kleinere Handlung als „alle Cover abgleichen", und die Tür ist fertig.
-3. **`POST /api/buecher/exemplare/{id}/schadensnotiz`** (`api/copy_admin_status.go`) schreibt die
-   Zustandsnotiz eines Exemplars. Kein Aufrufer; die Notiz entsteht heute nebenbei beim Melden
-   eines Schadens und beim Aussondern. *Frage: Soll die Bibliothek eine Notiz am Exemplar von
-   Hand ändern können — oder ist die Notiz bewusst nur eine Spur der Vorgänge?*
-4. **`POST /api/buecher/exemplare/{id}/aussondern`** (`api/copy_admin_status.go`) sondert ein
-   Exemplar aus, mit der richtigen Sperre („noch verliehen" → 409). Ausgesondert wird heute über
-   den Status-Editor und über die Schadensmeldung. *Frage: doppelte Tür zum selben Zustand
-   (Bugklasse „zwei Türen") — oder der bewusste kurze Weg?* Wenn doppelt: streichen, sonst in der
-   Exemplar-Liste anbieten.
-
-`POST /api/buecher/exemplare/{id}/defekt` ist am 16.09.2026 gestrichen — sie war zur Hälfte kaputt
-(Zweig ohne Schüler in eine Spalte, die Migration 125 entfernt hat), nicht bloß ungenutzt.
+Offen: `POST /api/books/{id}/refresh-cover` holt das Cover EINES Buches neu bei den
+Katalogdiensten, sauber gebaut, ohne Knopf. Er kommt als „Cover neu holen" in die Titel-Akte.
 
 ### 4.18 Neue Auflage eines Schulbuchs — ein Werk über den Auflagen
 
@@ -578,9 +555,6 @@ Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren 
 
 ### 5.12 Offene Nachbarn aus dem Review vom 14.09.2026
 
-- **Zweiter Cover-Schreibpfad:** `inventur/update_cover_handler.go` setzt `cover_url`, ohne das
-  alte Upload-Cover zu löschen, und meldet ein unbekanntes Buch als 500. Gleiche
-  Reihenfolgefrage in `cover_aktualisierung.go`, `endpunkte_cover_retry.go`, `cover_service.go`.
 - **ISBN-Dublette:** Der UNIQUE-Constraint fängt nur zeichengleiche Dubletten. Die Maske prüft
   seit dem 17.09.2026 beide Schreibweisen (`inventur/dublettenkontrolle.go`); über die Importe
   sind `9783123456789` und `978-3-12-345678-9` weiter zwei Titel. Der Index auf der bereinigten

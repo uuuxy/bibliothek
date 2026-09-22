@@ -112,7 +112,7 @@ func TestAbgangsbuch_ZurueckgeholtesStehtNichtDrin(t *testing.T) {
 
 	titelID := titelMitSignatur(t, pool, "Irrtum", "Irr 1", 0)
 	id := exemplar(t, pool, titelID, "AB-IRRTUM", true, "")
-	if err := bookRepo.DecommissionCopy(ctx, id); err != nil {
+	if err := bookRepo.UpdateCopyStatus(ctx, id, false, true, "", nil); err != nil {
 		t.Fatalf("aussondern: %v", err)
 	}
 	von, bis := schulzeit.Halbjahr(schulzeit.Jetzt())

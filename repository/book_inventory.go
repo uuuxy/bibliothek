@@ -18,25 +18,6 @@ func NormalisiereTitelKey(titel string) string {
 	return strings.Join(strings.Fields(strings.ReplaceAll(titel, `"`, "")), " ")
 }
 
-// UpdateCopyDamageNote setzt den Zustandstext eines Exemplars. 0 Zeilen = unbekannte ID
-// (Phantom-Erfolg-Sweep 31.08.2026 — die Schwestern UpdateCopyStatus/DecommissionCopy
-// prüften bereits, diese beiden hier waren übersehen).
-func (r *pgBookRepository) UpdateCopyDamageNote(ctx context.Context, id string, note string) error {
-	query := `
-		UPDATE buecher_exemplare
-		SET zustand_notiz = $1, aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $2
-	`
-	tag, err := r.db.Exec(ctx, query, note, id)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return ErrExemplarNichtGefunden
-	}
-	return nil
-}
-
 // UpdateCopyBarcode ändert die Barcode-Zuordnung eines Exemplars.
 func (r *pgBookRepository) UpdateCopyBarcode(ctx context.Context, id string, barcode string) error {
 	query := `
@@ -101,26 +82,6 @@ func (r *pgBookRepository) UpdateCopyStatus(ctx context.Context, id string, istA
 			return r.deuteAussonderungsHindernis(ctx, id)
 		}
 		return ErrExemplarNichtGefunden
-	}
-	return nil
-}
-
-// DecommissionCopy sortiert ein Buch aus und sperrt es dauerhaft.
-func (r *pgBookRepository) DecommissionCopy(ctx context.Context, id string) error {
-	query := `
-		UPDATE buecher_exemplare
-		SET ist_ausgesondert = true, ist_ausleihbar = false, aussonderung_grund = 'AUSSORTIERT',
-		    aktualisiert_am = CURRENT_TIMESTAMP, bestellstatus = NULL,
-		    letzte_bewegung_am = ` + sqlStempelJetzt + `
-		WHERE id = $1
-		  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $1 AND a.rueckgabe_am IS NULL)
-	`
-	tag, err := r.db.Exec(ctx, query, id)
-	if err != nil {
-		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return r.deuteAussonderungsHindernis(ctx, id)
 	}
 	return nil
 }
