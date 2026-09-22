@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/svelte';
 import CardFace from './CardFace.svelte';
 import { idStore } from './idDesignerStore.svelte.js';
+import { strichcodeBildOptionenFuerElement } from '../strichcodeBild.js';
 
 /**
  * Der Testdruck des Ausweis-Designers und der echte Ausweis rendern beide über
@@ -122,5 +123,44 @@ describe('CardFace: leere Bildfelder', () => {
 
 		expect(queryByText('LOGO')).toBeNull();
 		expect(getByAltText('Bild')).toBeTruthy();
+	});
+});
+
+// OFFEN.md 5.5 (22.09.2026): Auf dem Papier war die Barcode-Höhe fest (8 mm, QR 11 mm),
+// während die Leinwand das Bild ins Element skalierte. Wer das Element im Designer höher
+// zog, sah es auf dem Bildschirm größer und auf dem Ausweis unverändert. Jetzt füllt das
+// Bild das Element, und seine Pixelgröße kommt aus den Millimetern des Elements — für
+// beide Renderer aus strichcodeBildOptionenFuerElement.
+describe('CardFace: Strichcode folgt dem Element', () => {
+	const barcodeElement = (/** @type {number} */ hoehe) => ({
+		id: 'barcode',
+		type: 'barcode',
+		content: '',
+		x: 28,
+		y: 40,
+		width: 30,
+		height: hoehe,
+		zIndex: 1,
+		show: true
+	});
+
+	it('fordert das Bild in der Größe des Elements an, nicht in festen Pixeln', () => {
+		idStore.front.elements = [barcodeElement(20)];
+		const { container } = render(CardFace, {
+			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
+		});
+		const img = /** @type {HTMLImageElement} */ (container.querySelector('img[alt="Barcode"]'));
+		const erwartet = strichcodeBildOptionenFuerElement(barcodeElement(20), 'code39');
+		expect(img.getAttribute('src')).toContain(`width=${erwartet.width}&height=${erwartet.height}`);
+	});
+
+	it('gibt dem Bild keine feste Höhe mehr — es füllt das Element', () => {
+		idStore.front.elements = [barcodeElement(20)];
+		const { container } = render(CardFace, {
+			props: { side: 'front', student: SCHUELER_OHNE_FOTO, barcodeType: 'code39' }
+		});
+		const img = /** @type {HTMLImageElement} */ (container.querySelector('img[alt="Barcode"]'));
+		expect(img.className).not.toMatch(/h-\[\d+mm\]/);
+		expect(img.className).toContain('max-h-full');
 	});
 });

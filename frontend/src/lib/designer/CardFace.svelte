@@ -1,5 +1,5 @@
 <script>
-	import { strichcodeBildUrl } from '../strichcodeBild.js';
+	import { strichcodeBildUrl, strichcodeBildOptionenFuerElement } from '../strichcodeBild.js';
 	/**
 	 * @file CardFace.svelte
 	 * Rendert EINE Ausweisseite (front/back) aus dem zentralen Element-Modell für einen
@@ -128,13 +128,15 @@
 			class="absolute flex flex-col items-center justify-center"
 			style="left: {el.x}mm; top: {el.y}mm; width: {el.width}mm; height: {el.height}mm; z-index: {el.zIndex};"
 		>
+			<!-- Größe aus dem Element, wie auf der Leinwand (CanvasElement): Bis zum 22.09.2026
+			     stand hier eine feste Höhe (8 mm, QR 11 mm), und der Designer log — höher
+			     gezogen war auf dem Papier nichts höher (OFFEN.md 5.5). -->
 			<img
-				src={strichcodeBildUrl(student.barcode_id, {
-					qr: barcodeType === 'qr',
-					width: barcodeType === 'qr' ? 80 : 200,
-					height: barcodeType === 'qr' ? 80 : 50
-				})}
-				class="{barcodeType === 'qr' ? 'h-[11mm] w-[11mm]' : 'h-[8mm]'} object-contain"
+				src={strichcodeBildUrl(
+					student.barcode_id,
+					strichcodeBildOptionenFuerElement(el, barcodeType)
+				)}
+				class="max-w-full max-h-full object-contain"
 				alt="Barcode"
 			/>
 			<span class="font-bold mt-0.5 text-[6.5pt] tracking-widest text-zinc-800"
