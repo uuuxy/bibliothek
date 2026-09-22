@@ -183,7 +183,7 @@ var checkBedingungenBestand = []string{
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
-	"chk_grade_level_bereich", "chk_inv_session_scope",
+	"chk_inv_session_scope",
 	// Migration 127, befragt am 17.09.2026: Beide Werte gehen in einen Ersatzbetrag ein,
 	// der in einem Bescheid an Erziehungsberechtigte steht. Der Code prüft sie an der Tür
 	// (der Listenpreis kommt aus der Maske oder von der DNB, die Abwertung aus einem Feld

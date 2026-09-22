@@ -120,7 +120,7 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// Migration 073; 19 mit ist_lernmittel, Migration 093; 20 mit auflage, Migration 126;
 	// 21 mit listenpreis, Migration 127; 22 mit mehrjahresband, Migration 134 — der Schalter
 	// ersetzt ziel_jahrgang aus Migration 030, das nie einen Schreiber hatte.)
-	beliebig := make([]any, 22) // 22 mit mehrjahresband, Migration 134
+	beliebig := make([]any, 21) // 21: mehrjahresband kam mit 134 dazu, grade_level fiel mit 135
 	for i := range beliebig {
 		beliebig[i] = pgxmock.AnyArg()
 	}

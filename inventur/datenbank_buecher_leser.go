@@ -18,7 +18,7 @@ const buchListenSelect = `
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
 		COALESCE(bt.signatur, '') AS signatur,
 		COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject,
-		COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
+		COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
 		COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 		COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
 		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
@@ -32,7 +32,7 @@ const buchListenSelect = `
 `
 
 const buchListenGroupBy = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband
 `
 
 // buchListenSelectSchlank ist die LISTEN-Variante: identische Spaltenzahl/-reihenfolge
@@ -47,7 +47,7 @@ const buchListenSelectSchlank = `
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
 		COALESCE(bt.signatur, '') AS signatur,
 		COALESCE(bt.cover_url, '') AS cover_url, COALESCE(bt.subject, '') AS subject,
-		COALESCE(bt.grade_level, 0) AS grade_level, COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
+		COALESCE(bt.track, '') AS track, bt.ist_lernmittel,
 		COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 		COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
 		TO_CHAR(bt.last_counted, 'YYYY-MM-DD') as last_counted, bt.sort_order, COALESCE(bt.medientyp, 'Buch') AS medientyp,
@@ -63,7 +63,7 @@ const buchListenSelectSchlank = `
 // buchListenGroupBySchlank lässt die beiden Konstanten-Spalten aus der Gruppierung weg
 // (Konstanten müssen nicht gruppiert werden — spart dem Server das Hashen großer Werte).
 const buchListenGroupBySchlank = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband
 `
 
 // listBooksSicherheitsLimit kappt die Katalogliste als reine Runaway-/Speicher-Bremse.
@@ -86,7 +86,6 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 			&book.Signatur,
 			&book.CoverURL,
 			&book.Subject,
-			&book.GradeLevel,
 			&book.Track,
 			&book.IstLernmittel,
 			&book.Verfuegbar,
@@ -135,7 +134,7 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 	query := buchListenSelectSchlank + `
 		WHERE ` + sicht + `
 		  AND ($1 = '' OR bt.subject = $1)
-		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
+		  AND ($2::smallint IS NULL OR (bt.jahrgang_von <= $2 AND bt.jahrgang_bis >= $2))
 		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
 	` + buchListenGroupBySchlank + `
 		ORDER BY bt.sort_order ASC, bt.titel ASC

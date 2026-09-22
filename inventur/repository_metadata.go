@@ -16,7 +16,7 @@ import (
 // festschreiben wollte.
 func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, error) {
 	query := `
-		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(grade_level, 0) AS grade_level, COALESCE(track, '') AS track,
+		SELECT id, COALESCE(isbn, '') AS isbn, titel AS title, COALESCE(autor, '') AS author, COALESCE(signatur, '') AS signatur, COALESCE(cover_url, '') AS cover_url, COALESCE(subject, '') AS subject, COALESCE(track, '') AS track,
 		       (SELECT COUNT(*)::int FROM buecher_exemplare e WHERE e.titel_id = buecher_titel.id AND e.ist_ausgesondert = false) AS stock,
 		       TO_CHAR(last_counted, 'YYYY-MM-DD') as last_counted, sort_order, COALESCE(medientyp, 'Buch') AS medientyp, COALESCE(jahrgang_von, 5) AS jahrgang_von, COALESCE(jahrgang_bis, 10) AS jahrgang_bis, erweiterte_eigenschaften, COALESCE(auflage, '') AS auflage
 		FROM buecher_titel
@@ -31,7 +31,6 @@ func (repo *BookRepository) GetBookByID(ctx context.Context, id string) (*Book, 
 		&book.Signatur,
 		&book.CoverURL,
 		&book.Subject,
-		&book.GradeLevel,
 		&book.Track,
 		&book.Stock,
 		&book.LastCounted,
@@ -75,24 +74,23 @@ func (repo *BookRepository) UpdateBookMetadata(ctx context.Context, id string, t
 	return nil
 }
 
-// UpdateBookCategory setzt Fach und Jahrgangsstufe. gradeLevel ist per
-// chk_grade_level_bereich auf 0..13 begrenzt — ein Wert daneben scheitert an der
-// Datenbank, nicht erst in der Auswertung.
-func (repo *BookRepository) UpdateBookCategory(ctx context.Context, id string, subject string, gradeLevel int16) error {
+// UpdateBookCategory setzt Fach und Jahrgangsspanne. 0 lässt die Spanne stehen — seit
+// Migration 135 ist die Spanne die eine Jahrgangsangabe am Titel; die Klasse
+// (grade_level) ist mit ihr gefallen.
+func (repo *BookRepository) UpdateBookCategory(ctx context.Context, id string, subject string, jahrgangVon, jahrgangBis int) error {
 	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
 	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
 	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{subject})
 	if err != nil {
 		return err
 	}
-
 	query := `
 		UPDATE buecher_titel
 		SET subject = NULLIF($1, ''),
-		    grade_level = $2
-		WHERE id = $3::uuid`
-
-	result, err := repo.db.Exec(ctx, query, kanonisch[subject], gradeLevel, id)
+		    jahrgang_von = COALESCE(NULLIF($2, 0), jahrgang_von),
+		    jahrgang_bis = COALESCE(NULLIF($3, 0), jahrgang_bis)
+		WHERE id = $4::uuid`
+	result, err := repo.db.Exec(ctx, query, kanonisch[subject], jahrgangVon, jahrgangBis, id)
 	if err != nil {
 		return fmt.Errorf("kategorie konnte nicht aktualisiert werden: %w", err)
 	}

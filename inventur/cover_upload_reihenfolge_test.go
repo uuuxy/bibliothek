@@ -22,7 +22,7 @@ import (
 const reihenfolgeBuchID = "9f1c2b3a-4d5e-4f60-8a7b-1c2d3e4f5a6b"
 
 var reihenfolgeBuchSpalten = []string{
-	"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock",
+	"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock",
 	"last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage",
 }
 
@@ -75,7 +75,7 @@ func altesCover(t *testing.T, id string) (name string, zeile *pgxmock.Rows) {
 		t.Fatal(err)
 	}
 	zeile = pgxmock.NewRows(reihenfolgeBuchSpalten).AddRow(
-		id, "9781234567890", "Titel", "Autor", "", "/uploads/"+name, "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil, "",
+		id, "9781234567890", "Titel", "Autor", "", "/uploads/"+name, "", "", 1, nil, 1, "Buch", 5, 10, nil, "",
 	)
 	return name, zeile
 }

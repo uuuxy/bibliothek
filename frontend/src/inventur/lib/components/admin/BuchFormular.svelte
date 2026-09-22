@@ -49,7 +49,12 @@
 						formular.erscheinungsjahr = parseInt(data.jahr) || formular.erscheinungsjahr;
 					if (data.coverUrl) formular.coverUrl = data.coverUrl;
 					if (data.subject) formular.subject = data.subject;
-					if (data.grade) formular.gradeLevel = parseInt(data.grade) || formular.gradeLevel;
+					// Der erkannte Jahrgang wird die Spanne von = bis (Migration 135).
+					const jahrgang = parseInt(data.grade ?? '');
+					if (jahrgang >= 5 && jahrgang <= 13) {
+						formular.jahrgangVon = jahrgang;
+						formular.jahrgangBis = jahrgang;
+					}
 					// DNB-Altersstufe → Signatur-Vorschlag "BIB {Kategorie}",
 					// nur solange das Pflichtfeld noch leer ist.
 					if (data.bibKategorie && !(formular.signatur ?? '').trim()) {

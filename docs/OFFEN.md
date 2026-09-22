@@ -57,7 +57,7 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    offen (Feiertage als zweite Datei oder gerechnet). Dazu die Frage, ob die Schülerbücherei eine
    Themensuche bekommt (4.20).
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 134). Das passiert
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 135). Das passiert
 beim Start von allein; Daten gehen nicht verloren, nachgetragen wird nichts.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
@@ -506,11 +506,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   „2 bestellt": eine dritte Zahl in `bestandSatz` und in den zwei Suchabfragen. Kein
   Schaden, nur eine Auskunft, die den Kollegen ins Regal schickt; beim nächsten Anfassen
   der Trefferliste.
-- Drei Jahrgangsangaben am Titel (22.09.2026): „Klasse" (`grade_level`) und „von … bis"
-  (`jahrgang_von/bis`) sagen mit denselben Zahlen fast dasselbe; der Import setzt „Klasse"
-  aus der Spanne, wenn sie einen Jahrgang umfasst, der Portal-Filter liest beide. Eine
-  Doppelung von früher, nicht angefasst; beim nächsten Rundgang über die Buchmaske
-  entscheiden, ob „Klasse" fällt.
 
   ```sql
   SELECT isbn_normalform(isbn) AS normalform, count(*) AS titel, string_agg(isbn, ' | ') AS schreibweisen

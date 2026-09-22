@@ -1,5 +1,6 @@
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
+	import { jahrgangSpanne } from '../../../../lib/utils/format.js';
 	import { ChevronRight, Menu } from '@lucide/svelte';
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
 
@@ -11,7 +12,7 @@
 	 *     title: string,
 	 *     author: string,
 	 *     subject: string,
-	 *     gradeLevel: number,
+	 *     jahrgangVon: number, jahrgangBis: number,
 	 *     istLernmittel: boolean,
 	 *     stock: number,
 	 *     verfuegbar: number,
@@ -141,10 +142,9 @@
 			<span class="text-slate-400 text-sm">–</span>
 		{/if}
 	</td>
-	<!-- Klasse 0 = nicht zugeordnet: „–" statt einer sinnlosen „Kl. 0". -->
+	<!-- Vorgabe 5–10 = keine Aussage: „–" statt einer Spanne, die niemand gepflegt hat. -->
 	<td class="px-6 py-3 text-slate-600 text-sm">
-		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-slate-400 text-sm">–</span
-			>{/if}
+		{jahrgangSpanne(book.jahrgangVon, book.jahrgangBis) || '–'}
 	</td>
 
 	<td class="px-6 py-3">

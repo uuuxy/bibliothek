@@ -7,12 +7,7 @@
 	import Button from '../../../lib/components/ui/Button.svelte';
 	import { escapeSchliesst } from '../../../lib/components/ui/escapeSchliesst.js';
 
-	let {
-		subject = 'Mathematik',
-		gradeLevel = 5,
-		onClose = () => {},
-		onCreated = () => {}
-	} = $props();
+	let { subject = 'Mathematik', onClose = () => {}, onCreated = () => {} } = $props();
 	let status = $state('Bereit zum Scannen.');
 	let scanning = $state(false);
 	let busy = $state(false);
@@ -62,8 +57,7 @@
 				title: '',
 				author: '',
 				coverUrl: '',
-				subject,
-				grade: String(gradeLevel)
+				subject
 			};
 			status = 'Keine Metadaten gefunden. Bitte manuell ergänzen.';
 		} finally {

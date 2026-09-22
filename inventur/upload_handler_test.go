@@ -299,9 +299,9 @@ func TestHandleUploadCover(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT id, COALESCE.*").
 					WithArgs(uploadTestBuchID).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "track", "stock", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "erweiterte_eigenschaften", "auflage",
 					}).AddRow(
-						uploadTestBuchID, "9781234567890", "Test Title", "Test Author", "", "/uploads/old_cover.jpg", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil, "",
+						uploadTestBuchID, "9781234567890", "Test Title", "Test Author", "", "/uploads/old_cover.jpg", "", "", 1, nil, 1, "Buch", 5, 10, nil, "",
 					))
 
 				m.ExpectExec("(?s)UPDATE buecher_titel.*").

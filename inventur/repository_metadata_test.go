@@ -26,12 +26,12 @@ func TestGetBookByID(t *testing.T) {
 			WithArgs("valid-id").
 			WillReturnRows(pgxmock.NewRows([]string{
 				"id", "isbn", "title", "author", "signatur", "cover_url",
-				"subject", "grade_level", "track", "stock", "last_counted",
+				"subject", "track", "stock", "last_counted",
 				"sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
 				"erweiterte_eigenschaften", "auflage",
 			}).AddRow(
 				"valid-id", "1234567890", "Test Title", "Test Author", "SIG", "http://cover",
-				"Math", int16(5), "A", 10, &lastCounted,
+				"Math", "A", 10, &lastCounted,
 				1, "Buch", 5, 10,
 				map[string]any{"key": "value"}, "4. Aufl. 2023",
 			))
@@ -140,10 +140,10 @@ func TestUpdateBookCategory(t *testing.T) {
 
 		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
-			WithArgs("Science", int16(6), "valid-id").
+			WithArgs("Science", 6, 6, "valid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
-		err = repo.UpdateBookCategory(ctx, "valid-id", "Science", int16(6))
+		err = repo.UpdateBookCategory(ctx, "valid-id", "Science", 6, 6)
 		assert.NoError(t, err)
 	})
 
@@ -155,10 +155,10 @@ func TestUpdateBookCategory(t *testing.T) {
 
 		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
-			WithArgs("Science", int16(6), "invalid-id").
+			WithArgs("Science", 6, 6, "invalid-id").
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 
-		err = repo.UpdateBookCategory(ctx, "invalid-id", "Science", int16(6))
+		err = repo.UpdateBookCategory(ctx, "invalid-id", "Science", 6, 6)
 		assert.ErrorIs(t, err, ErrBookNotFound)
 	})
 
@@ -171,10 +171,10 @@ func TestUpdateBookCategory(t *testing.T) {
 		mockErr := errors.New("db error")
 		erwarteFachBekannt(mock, "Science")
 		mock.ExpectExec(queryRegex).
-			WithArgs("Science", int16(6), "error-id").
+			WithArgs("Science", 6, 6, "error-id").
 			WillReturnError(mockErr)
 
-		err = repo.UpdateBookCategory(ctx, "error-id", "Science", int16(6))
+		err = repo.UpdateBookCategory(ctx, "error-id", "Science", 6, 6)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "kategorie konnte nicht aktualisiert werden: db error")
 	})
@@ -190,7 +190,7 @@ func TestUpdateBookCategory(t *testing.T) {
 			WithArgs("Science").
 			WillReturnError(mockErr)
 
-		err = repo.UpdateBookCategory(ctx, "valid-id", "Science", int16(6))
+		err = repo.UpdateBookCategory(ctx, "valid-id", "Science", 6, 6)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, mockErr)
 	})

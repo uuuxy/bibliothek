@@ -9,6 +9,7 @@
 <script>
 	import { Copy, MapPin, SquarePen, Trash2 } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import { jahrgangSpanne } from './utils/format.js';
 	import BuchKarteCover from '../inventur/lib/components/BuchKarteCover.svelte';
 
 	/**
@@ -43,13 +44,9 @@
 	const einordnung = $derived(
 		[
 			book.subject,
-			book.jahrgangVon && book.jahrgangBis
-				? book.jahrgangVon === book.jahrgangBis
-					? `Jahrgang ${book.jahrgangVon}`
-					: `Jahrgang ${book.jahrgangVon}–${book.jahrgangBis}`
-				: book.gradeLevel
-					? `Jahrgang ${book.gradeLevel}`
-					: '',
+			jahrgangSpanne(book.jahrgangVon, book.jahrgangBis)
+				? `Jahrgang ${jahrgangSpanne(book.jahrgangVon, book.jahrgangBis)}`
+				: '',
 			book.istLernmittel ? 'Lernmittel' : '',
 			book.auflage || '',
 			book.medientyp && book.medientyp !== 'Buch' ? book.medientyp : ''

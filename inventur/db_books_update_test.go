@@ -24,7 +24,6 @@ func TestUpdateBook(t *testing.T) {
 		Author:                  "Author",
 		CoverURL:                "URL",
 		Subject:                 "Math",
-		GradeLevel:              5,
 		Track:                   "A",
 		Stock:                   10,
 		LastCounted:             nil, // handle date logic if needed
@@ -39,7 +38,7 @@ func TestUpdateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	updateQuery := `UPDATE buecher_titel SET isbn = NULLIF\(\$1, ''\), titel = \$2, autor = \$3, cover_url = \$4, subject = NULLIF\(\$5, ''\), grade_level = \$6, track = \$7, last_counted = NULLIF\(\$8::text, ''\)::date, medientyp = \$9, erweiterte_eigenschaften = \$10, jahrgang_von = \$11, jahrgang_bis = \$12, untertitel = \$13, verlag = \$14, erscheinungsjahr = \$15, beschreibung = \$16, signatur = COALESCE\(NULLIF\(\$18, ''\), signatur\), ist_lernmittel = \$19, auflage = NULLIF\(\$20, ''\), listenpreis = \$21, mehrjahresband = \$22, aktualisiert_am = NOW\(\) WHERE id = \$17`
+	updateQuery := `UPDATE buecher_titel SET isbn = NULLIF\(\$1, ''\), titel = \$2, autor = \$3, cover_url = \$4, subject = NULLIF\(\$5, ''\), track = \$6, last_counted = NULLIF\(\$7::text, ''\)::date, medientyp = \$8, erweiterte_eigenschaften = \$9, jahrgang_von = \$10, jahrgang_bis = \$11, untertitel = \$12, verlag = \$13, erscheinungsjahr = \$14, beschreibung = \$15, signatur = COALESCE\(NULLIF\(\$17, ''\), signatur\), ist_lernmittel = \$18, auflage = NULLIF\(\$19, ''\), listenpreis = \$20, mehrjahresband = \$21, aktualisiert_am = NOW\(\) WHERE id = \$16`
 	// also note syncBookStock will be called
 
 	t.Run("success", func(t *testing.T) {
@@ -48,7 +47,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
@@ -69,7 +68,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 		mock.ExpectRollback()
@@ -85,7 +84,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
@@ -104,7 +103,7 @@ func TestUpdateBook(t *testing.T) {
 		erwarteKeineDublette(mock)
 		mock.ExpectExec(updateQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, "book-123", book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare`).

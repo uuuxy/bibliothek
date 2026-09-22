@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { formatProzent, formatDatum, formatZeitpunkt, formatZahl, bestandSatz } from './format.js';
+import {
+	formatProzent,
+	formatDatum,
+	formatZeitpunkt,
+	formatZahl,
+	bestandSatz,
+	jahrgangSpanne
+} from './format.js';
 
 describe('format.js — eine deutsche Schreibweise', () => {
 	it('Prozent: Komma, eine Nachkommastelle, geschütztes Leerzeichen; Rohstring vom Backend geht auch', () => {
@@ -32,5 +39,15 @@ describe('format.js — eine deutsche Schreibweise', () => {
 		expect(bestandSatz(undefined, undefined)).toBe('');
 		// Zahl da, Verfügbarkeit fehlt: lieber 0 behaupten als „NaN von 3".
 		expect(bestandSatz(3, undefined)).toBe('0 von 3 verfügbar');
+	});
+
+	it('Jahrgangsspanne: ein Jahrgang als Zahl, zwei als Spanne, die Vorgabe 5–10 und Fehlendes leer', () => {
+		expect(jahrgangSpanne(7, 7)).toBe('7');
+		expect(jahrgangSpanne(7, 9)).toBe('7–9');
+		expect(jahrgangSpanne('11', '13')).toBe('11–13');
+		expect(jahrgangSpanne(5, 10)).toBe('');
+		expect(jahrgangSpanne(0, 0)).toBe('');
+		expect(jahrgangSpanne(undefined, undefined)).toBe('');
+		expect(jahrgangSpanne(null, 9)).toBe('');
 	});
 });

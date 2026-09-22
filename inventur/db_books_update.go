@@ -42,24 +42,23 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 			autor = $3,
 			cover_url = $4,
 			subject = NULLIF($5, ''),
-			grade_level = $6,
-			track = $7,
-			last_counted = NULLIF($8::text, '')::date,
-			medientyp = $9,
-			erweiterte_eigenschaften = $10,
-			jahrgang_von = $11,
-			jahrgang_bis = $12,
-			untertitel = $13,
-			verlag = $14,
-			erscheinungsjahr = $15,
-			beschreibung = $16,
-			signatur = COALESCE(NULLIF($18, ''), signatur),
-			ist_lernmittel = $19,
-			auflage = NULLIF($20, ''),
-			listenpreis = $21,
-			mehrjahresband = $22,
+			track = $6,
+			last_counted = NULLIF($7::text, '')::date,
+			medientyp = $8,
+			erweiterte_eigenschaften = $9,
+			jahrgang_von = $10,
+			jahrgang_bis = $11,
+			untertitel = $12,
+			verlag = $13,
+			erscheinungsjahr = $14,
+			beschreibung = $15,
+			signatur = COALESCE(NULLIF($17, ''), signatur),
+			ist_lernmittel = $18,
+			auflage = NULLIF($19, ''),
+			listenpreis = $20,
+			mehrjahresband = $21,
 			aktualisiert_am = NOW()
-		WHERE id = $17`
+		WHERE id = $16`
 
 	medientyp := book.Medientyp
 	if medientyp == "" {
@@ -95,7 +94,6 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Author,
 		book.CoverURL,
 		kanonisch[book.Subject],
-		book.GradeLevel,
 		book.Track,
 		book.LastCounted,
 		medientyp,
@@ -107,11 +105,11 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		book.Erscheinungsjahr,
 		book.Beschreibung,
 		id,
-		book.Signatur,       // $18 — leerer Wert lässt die verklebte Signatur unangetastet
-		book.IstLernmittel,  // $19 — die Maske entscheidet ausdrücklich (Migration 093)
-		book.Auflage,        // $20 — die Maske ist der Ort der Angabe, leer heißt „keine"
-		book.Listenpreis,    // $21 — Zeiger: nil löscht den Wert, das ist hier gewollt
-		book.Mehrjahresband, // $22 — Mehrjahresband: bleibt über die Spanne beim Kind (Migration 134)
+		book.Signatur,       // $17 — leerer Wert lässt die verklebte Signatur unangetastet
+		book.IstLernmittel,  // $18 — die Maske entscheidet ausdrücklich (Migration 093)
+		book.Auflage,        // $19 — die Maske ist der Ort der Angabe, leer heißt „keine"
+		book.Listenpreis,    // $20 — Zeiger: nil löscht den Wert, das ist hier gewollt
+		book.Mehrjahresband, // $21 — Mehrjahresband: bleibt über die Spanne beim Kind (Migration 134)
 	)
 	if err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", handleDbError(err))

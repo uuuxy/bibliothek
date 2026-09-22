@@ -69,7 +69,7 @@ func TestFachAutoRegistrierung(t *testing.T) {
 	}
 
 	// 3) Leeres Fach bleibt NULL (der FK gilt nur für Nicht-NULL-Werte).
-	if err := repo.UpdateBookCategory(ctx, id, "", 5); err != nil {
+	if err := repo.UpdateBookCategory(ctx, id, "", 0, 0); err != nil {
 		t.Fatalf("UpdateBookCategory mit leerem Fach: %v", err)
 	}
 	var istNull bool

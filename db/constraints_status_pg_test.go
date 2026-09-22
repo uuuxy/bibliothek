@@ -26,17 +26,8 @@ func TestStatusConstraints(t *testing.T) {
 	// Migration 045: Die Spalte inventur_status existiert nicht mehr, der Inventur-
 	// Fortschritt ist session-gebunden (siehe repository/inventur_session_repo_test.go).
 
-	t.Run("grade_level nur 0-13", func(t *testing.T) {
-		inTx(t, pool, func(tx pgx.Tx) {
-			erwarteConstraintVerletzung(t, tx, "chk_grade_level_bereich",
-				`INSERT INTO buecher_titel (titel, grade_level) VALUES ('X', 14)`)
-			erwarteConstraintVerletzung(t, tx, "chk_grade_level_bereich",
-				`INSERT INTO buecher_titel (titel, grade_level) VALUES ('X', -1)`)
-			// 13 muss durchgehen: kooperative Gesamtschule inkl. Oberstufe.
-			erwarteErfolg(t, tx, "grade_level = 13 (Oberstufe)",
-				`INSERT INTO buecher_titel (titel, grade_level) VALUES ('X', 13)`)
-		})
-	})
+	// „grade_level nur 0-13" entfiel mit Migration 135: Die Spalte ist gefallen, die
+	// Jahrgangsangabe ist die Spanne jahrgang_von/bis.
 
 	t.Run("cover_status nur bekannte Werte", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {

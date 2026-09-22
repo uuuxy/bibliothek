@@ -44,14 +44,13 @@ const suchSynonyme = new Map([
 ]);
 
 /**
- * Trifft ein Buch den Jahrgang? Entweder über gradeLevel oder über die gepflegte
- * Spanne von–bis. Eine Regel für Suche UND Filter — zwei Definitionen wären nur
- * zufällig einig.
+ * Trifft ein Buch den Jahrgang? Über die Spanne von–bis, die seit Migration 135 die
+ * eine Jahrgangsangabe am Titel ist. Eine Regel für Suche UND Filter — zwei
+ * Definitionen wären nur zufällig einig.
  * @param {any} b
  * @param {number} jahrgang
  */
 function trifftJahrgang(b, jahrgang) {
-	if (b.gradeLevel && Number(b.gradeLevel) === jahrgang) return true;
 	return (
 		!!b.jahrgangVon && !!b.jahrgangBis && jahrgang >= b.jahrgangVon && jahrgang <= b.jahrgangBis
 	);
@@ -59,7 +58,7 @@ function trifftJahrgang(b, jahrgang) {
 
 /**
  * Die Buch-Suche der Startseite: jeder Begriff muss mindestens ein Feld treffen;
- * Zahlen zählen als Jahrgang (trifft gradeLevel ODER die Spanne von–bis), Füllwörter
+ * Zahlen zählen als Jahrgang (trifft die Spanne von–bis), Füllwörter
  * wie „Klasse"/„Jg." fallen dann weg.
  * @param {any[]} buecherArray
  * @param {string} searchQuery

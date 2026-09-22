@@ -16,53 +16,35 @@ import (
 
 func TestValidiereBuchErstellenEingabe(t *testing.T) {
 	tests := []struct {
-		name         string
-		isbn         string
-		klassenStufe int16
-		wantResult   bool
-		wantStatus   int
+		name       string
+		isbn       string
+		wantResult bool
+		wantStatus int
 	}{
 		{
-			name:         "Valid Input",
-			isbn:         "978-3-16-148410-0",
-			klassenStufe: 5,
-			wantResult:   true,
-			wantStatus:   http.StatusOK, // default status for httptest.ResponseRecorder if no error
+			name:       "Valid Input",
+			isbn:       "978-3-16-148410-0",
+			wantResult: true,
+			wantStatus: http.StatusOK, // default status for httptest.ResponseRecorder if no error
 		},
 		{
-			name:         "Empty ISBN",
-			isbn:         "",
-			klassenStufe: 5,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
+			name:       "Empty ISBN",
+			isbn:       "",
+			wantResult: false,
+			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:         "Invalid ISBN Format",
-			isbn:         "123",
-			klassenStufe: 5,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
-		},
-		{
-			name:         "Invalid Grade Level Negative",
-			isbn:         "978-3-16-148410-0",
-			klassenStufe: -1,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
-		},
-		{
-			name:         "Invalid Grade Level Too High",
-			isbn:         "978-3-16-148410-0",
-			klassenStufe: 14,
-			wantResult:   false,
-			wantStatus:   http.StatusBadRequest,
+			name:       "Invalid ISBN Format",
+			isbn:       "123",
+			wantResult: false,
+			wantStatus: http.StatusBadRequest,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			recorder := httptest.NewRecorder()
-			result := validiereBuchErstellenEingabe(recorder, tt.isbn, tt.klassenStufe)
+			result := validiereBuchErstellenEingabe(recorder, tt.isbn)
 			if result != tt.wantResult {
 				t.Errorf("got result %v, want %v", result, tt.wantResult)
 			}
@@ -233,7 +215,6 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 				"Test Author",       // author
 				"test.jpg",          // cover_url
 				"Math",              // subject
-				int16(5),            // grade_level
 				"",                  // track
 				pgxmock.AnyArg(),    // last_counted
 				"Buch",              // medientyp

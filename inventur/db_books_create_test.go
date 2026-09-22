@@ -18,7 +18,6 @@ func TestCreateBook(t *testing.T) {
 		Author:                  "Author",
 		CoverURL:                "URL",
 		Subject:                 "Math",
-		GradeLevel:              5,
 		Track:                   "A",
 		Stock:                   10,
 		LastCounted:             nil,
@@ -33,7 +32,7 @@ func TestCreateBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	insertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel, auflage, listenpreis, mehrjahresband\) VALUES \(NULLIF\(\$1, ''\), \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, \$10, COALESCE\(NULLIF\(\$11, 0\), 5\), COALESCE\(NULLIF\(\$12, 0\), 10\), \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18, NULLIF\(\$19, ''\), \$20, \$21\) RETURNING id`
+	insertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, erweiterte_eigenschaften, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, signatur, ist_lernmittel, auflage, listenpreis, mehrjahresband\) VALUES \(NULLIF\(\$1, ''\), \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, NULLIF\(\$7::text, ''\)::date, \$8, \$9, COALESCE\(NULLIF\(\$10, 0\), 5\), COALESCE\(NULLIF\(\$11, 0\), 10\), \$12, \$13, \$14, \$15, NULLIF\(\$16, ''\), \$17, NULLIF\(\$18, ''\), \$19, \$20\) RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -48,7 +47,7 @@ func TestCreateBook(t *testing.T) {
 		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -81,7 +80,7 @@ func TestCreateBook(t *testing.T) {
 		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
@@ -104,7 +103,7 @@ func TestCreateBook(t *testing.T) {
 		erwarteKeineDublette(mock)
 		mock.ExpectQuery(insertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.ErweiterteEigenschaften, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis, book.Mehrjahresband,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -126,7 +125,6 @@ func TestUpsertBook(t *testing.T) {
 		Author:                  "Author",
 		CoverURL:                "URL",
 		Subject:                 "Math",
-		GradeLevel:              5,
 		Track:                   "A",
 		Stock:                   2,
 		LastCounted:             nil,
@@ -141,7 +139,7 @@ func TestUpsertBook(t *testing.T) {
 		Signatur:                "SIG-123",
 	}
 
-	upsertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, \$7, NULLIF\(\$8::text, ''\)::date, \$9, COALESCE\(NULLIF\(\$10, 0\), 5\), COALESCE\(NULLIF\(\$11, 0\), 10\), \$12, \$13, \$14, \$15, \$16, NULLIF\(\$17, ''\), \$18, NULLIF\(\$19, ''\), \$20\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel RETURNING id`
+	upsertQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) VALUES \(\$1, \$2, \$3, \$4, NULLIF\(\$5, ''\), \$6, NULLIF\(\$7::text, ''\)::date, \$8, COALESCE\(NULLIF\(\$9, 0\), 5\), COALESCE\(NULLIF\(\$10, 0\), 10\), \$11, \$12, \$13, \$14, \$15, NULLIF\(\$16, ''\), \$17, NULLIF\(\$18, ''\), \$19\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel RETURNING id`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -155,7 +153,7 @@ func TestUpsertBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
@@ -185,7 +183,7 @@ func TestUpsertBook(t *testing.T) {
 		mock.ExpectBegin()
 		mock.ExpectQuery(upsertQuery).
 			WithArgs(
-				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.GradeLevel, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
+				book.ISBN, book.Title, book.Author, book.CoverURL, book.Subject, book.Track, book.LastCounted, book.Medientyp, book.JahrgangVon, book.JahrgangBis, book.Untertitel, book.Verlag, book.Erscheinungsjahr, book.Beschreibung, book.ErweiterteEigenschaften, book.Signatur, book.IstLernmittel, book.Auflage, book.Listenpreis,
 			).
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
@@ -204,7 +202,6 @@ func TestUpsertBooksBatch(t *testing.T) {
 			Author:                  "Author",
 			CoverURL:                "URL",
 			Subject:                 "Math",
-			GradeLevel:              5,
 			Track:                   "A",
 			Stock:                   2,
 			LastCounted:             nil,
@@ -220,7 +217,7 @@ func TestUpsertBooksBatch(t *testing.T) {
 		},
 	}
 
-	batchQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF\(t.subject, ''\), t.grade_level, t.track, NULLIF\(t.last_counted_text, ''\)::date, t.medientyp, COALESCE\(NULLIF\(t.jahrgang_von, 0\), 5\), COALESCE\(NULLIF\(t.jahrgang_bis, 0\), 10\), t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF\(t.signatur, ''\), t.ist_lernmittel, NULLIF\(t.auflage, ''\), t.listenpreis FROM UNNEST\(\$1::text\[\], \$2::text\[\], \$3::text\[\], \$4::text\[\], \$5::text\[\], \$6::smallint\[\], \$7::text\[\], \$8::text\[\], \$9::text\[\], \$10::int\[\], \$11::int\[\], \$12::text\[\], \$13::text\[\], \$14::int\[\], \$15::text\[\], \$16::jsonb\[\], \$17::text\[\], \$18::boolean\[\], \$19::text\[\], \$20::numeric\[\]\) AS t\(isbn, titel, autor, cover_url, subject, grade_level, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel`
+	batchQuery := `INSERT INTO buecher_titel \(isbn, titel, autor, cover_url, subject, track, last_counted, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) SELECT t.isbn, t.titel, t.autor, t.cover_url, NULLIF\(t.subject, ''\), t.track, NULLIF\(t.last_counted_text, ''\)::date, t.medientyp, COALESCE\(NULLIF\(t.jahrgang_von, 0\), 5\), COALESCE\(NULLIF\(t.jahrgang_bis, 0\), 10\), t.untertitel, t.verlag, t.erscheinungsjahr, t.beschreibung, t.erweiterte_eigenschaften, NULLIF\(t.signatur, ''\), t.ist_lernmittel, NULLIF\(t.auflage, ''\), t.listenpreis FROM UNNEST\(\$1::text\[\], \$2::text\[\], \$3::text\[\], \$4::text\[\], \$5::text\[\], \$6::text\[\], \$7::text\[\], \$8::text\[\], \$9::int\[\], \$10::int\[\], \$11::text\[\], \$12::text\[\], \$13::int\[\], \$14::text\[\], \$15::jsonb\[\], \$16::text\[\], \$17::boolean\[\], \$18::text\[\], \$19::numeric\[\]\) AS t\(isbn, titel, autor, cover_url, subject, track, last_counted_text, medientyp, jahrgang_von, jahrgang_bis, untertitel, verlag, erscheinungsjahr, beschreibung, erweiterte_eigenschaften, signatur, ist_lernmittel, auflage, listenpreis\) ON CONFLICT \(isbn\) DO UPDATE SET titel = COALESCE\(NULLIF\(buecher_titel.titel, ''\), EXCLUDED.titel\), .+ ist_lernmittel = buecher_titel.ist_lernmittel OR EXCLUDED.ist_lernmittel`
 
 	t.Run("success", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -242,7 +239,6 @@ func TestUpsertBooksBatch(t *testing.T) {
 				[]string{books[0].Author},
 				[]string{books[0].CoverURL},
 				[]string{books[0].Subject},
-				[]int16{books[0].GradeLevel},
 				[]string{books[0].Track},
 				[]*string{books[0].LastCounted},
 				[]string{books[0].Medientyp},
@@ -307,7 +303,6 @@ func TestUpsertBooksBatch(t *testing.T) {
 				[]string{books[0].Author},
 				[]string{books[0].CoverURL},
 				[]string{books[0].Subject},
-				[]int16{books[0].GradeLevel},
 				[]string{books[0].Track},
 				[]*string{books[0].LastCounted},
 				[]string{books[0].Medientyp},
