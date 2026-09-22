@@ -72,7 +72,7 @@ const lernmittelFilterSQL = `
 	AND ($1 = 0 OR (b.jahrgang_von <= $1 AND b.jahrgang_bis >= $1))
 	AND ($2 = '' OR ($2 = '` + ZweigOhne + `' AND COALESCE(b.track, '') = '')
 	     OR ($2 <> '` + ZweigOhne + `' AND (COALESCE(b.track, '') = '' OR b.track = $2)))
-	AND ($3 = '' OR b.titel ILIKE '%' || $3 || '%' OR COALESCE(b.isbn, '') ILIKE '%' || $3 || '%'
+	AND ($3 = '' OR b.titel ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%'
 	     OR COALESCE(b.autor, '') ILIKE '%' || $3 || '%' OR COALESCE(b.subject, '') ILIKE '%' || $3 || '%')`
 
 const lernmittelZaehlung = `

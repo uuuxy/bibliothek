@@ -232,7 +232,7 @@ func searchLocalOrders(ctx context.Context, pool db.PgxPoolIface, query string) 
 				t.search_vector @@ plainto_tsquery('german', $1)
 				OR t.titel ILIKE '%' || $1 || '%'
 				OR t.autor ILIKE '%' || $1 || '%'
-				OR t.isbn ILIKE '%' || $1 || '%'
+				OR regexp_replace(coalesce(t.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1, '[- ]', '', 'g') || '%'
 				OR replace(t.isbn, '-', '') = replace($1, '-', '')
 			ORDER BY ts_rank(t.search_vector, plainto_tsquery('german', $1)) DESC, t.titel ASC
 			LIMIT 50

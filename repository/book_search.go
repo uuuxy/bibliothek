@@ -39,7 +39,7 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 			b.search_vector @@ plainto_tsquery('german', $1::text) 
 			OR b.titel ILIKE '%' || $1::text || '%'
 			OR b.autor ILIKE '%' || $1::text || '%'
-			OR b.isbn ILIKE '%' || $1::text || '%'
+			OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1::text, '[- ]', '', 'g') || '%'
 			OR replace(b.isbn, '-', '') = replace($1::text, '-', '')
 		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel ASC
 		LIMIT 50

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 	"context"
 	"testing"
@@ -21,8 +22,8 @@ func TestCleanISBN(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if got := cleanISBN(tt.val); got != tt.want {
-			t.Errorf("cleanISBN(%q) = %q, want %q", tt.val, got, tt.want)
+		if got := isbnutil.CleanISBN(tt.val); got != tt.want {
+			t.Errorf("isbnutil.CleanISBN(%q) = %q, want %q", tt.val, got, tt.want)
 		}
 	}
 }

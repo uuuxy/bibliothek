@@ -35,7 +35,7 @@ func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLooku
 	resp := ISBNLookupResponse{ISBN: isbn}
 	err := s.DB.Pool.QueryRow(ctx, `
 		SELECT id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel
-		FROM buecher_titel WHERE replace(isbn, '-', '') = $1 LIMIT 1
+		FROM buecher_titel WHERE isbn_normalform(isbn) = isbn_normalform($1) LIMIT 1
 	`, isbn).Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel)
 	if err == nil {
 		resp.Exists = true

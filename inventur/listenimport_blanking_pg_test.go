@@ -36,7 +36,7 @@ func TestListenimport_UeberschreibtVorhandeneStammdatenNicht(t *testing.T) {
 
 	for weg, importiere := range wege {
 		isbn := isbns[weg]
-		if _, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn = $1)`, isbn); err != nil {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_exemplare WHERE titel_id IN (SELECT id FROM buecher_titel WHERE isbn = isbn_normalform($1))`, isbn); err != nil {
 			t.Fatal(err)
 		}
 		var id string

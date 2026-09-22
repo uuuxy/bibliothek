@@ -289,6 +289,12 @@ var triggerBestand = []string{
 	// der Auswahl (bewegungsstempel_pg_test.go). Frage 12: Der Wächter des Nachbuchens liest
 	// den Stempel; ein Schreiber ohne Stempel ließ ihn dort still.
 	"trg_exemplar_bewegung_bei_zustandswechsel @ buecher_exemplare",
+	// Migration 133, befragt am 22.09.2026: Jede geschriebene ISBN bekommt EINE Schreibweise
+	// (ohne Bindestriche und Leerzeichen, X groß) — nur, wenn das Ergebnis eine ISBN ist;
+	// anderes bleibt wie geschrieben (repository/isbn_normalform_pg_test.go). Frage 12: Wer
+	// eine ISBN vergleicht, vergleicht die Normalform — Go über isbnutil.Normalform, SQL
+	// über isbn_normalform(); die Parität prüft repository/isbn_normalform_pg_test.go.
+	"trg_titel_isbn_normalform @ buecher_titel",
 	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
 	// ist genau der Zweck — vorher kannte sie nur ReportDamage, sechs andere Aussonder- und
 	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).

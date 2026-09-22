@@ -95,7 +95,7 @@ jemandem schaden?"**
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
 4. **5.16** Leserdatei: gebaut. Offen ist dein Blick auf den Stand (A) und die Ausweisnummer (C).
-5. **5.5**, **5.12** und **5.19** — kleine B-Commits, gebündelt (5.6 und 5.17 am 22.09.2026 erledigt).
+5. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits (5.6, 5.12 und 5.17 am 22.09.2026 erledigt).
 6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
    **5.13** Stufe 3 (5.3).
 7. Nach der Antwort zu E5 (**8.3**): **5.4**.
@@ -490,9 +490,17 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.5 Bestand, Katalog, Druck
 
-- Die ISBN ist nur je Schreibweise eindeutig (mit oder ohne Bindestrich); ein CHECK auf den
-  Jahrgang fehlt, „Jahrgang unbekannt" ist von der Vorgabe nicht zu unterscheiden. Erst Dubletten
-  und Jahrgänge am Server messen (Einzeiler dafür), dann Schema.
+- ISBN: Seit Migration 133 (22.09.2026) bringt die Datenbank jede geschriebene ISBN an jeder Tür
+  in EINE Schreibweise; Import-Zuordnung, Schnellanlage und die fünf Suchfelder vergleichen die
+  Normalform. Der Altbestand ist noch nicht zurückgeschrieben: erst am Server messen, ob zwei
+  Altzeilen sich nur in der Schreibweise unterscheiden (Einzeiler unten), dann eine Migration,
+  die `isbn = isbn_normalform(isbn)` setzt. Ein CHECK auf den Jahrgang fehlt, „Jahrgang
+  unbekannt" ist von der Vorgabe nicht zu unterscheiden (hängt an 4.3 / 9.6).
+
+  ```sql
+  SELECT isbn_normalform(isbn) AS normalform, count(*) AS titel, string_agg(isbn, ' | ') AS schreibweisen
+  FROM buecher_titel WHERE isbn IS NOT NULL GROUP BY 1 HAVING count(*) > 1 ORDER BY 2 DESC;
+  ```
 
 ### 5.6 Schüler und LUSD
 
@@ -541,13 +549,6 @@ oder Schaden gebucht ist, rechts — mit genau einem Stand und einem nächsten S
 Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren Verlust.
 
 - **Stufe 3**: Folgen der Übergabe (5.3): Übergabe-PDF und Sammelliste für das Schulamt; E6 (4.4).
-
-### 5.12 Offene Nachbarn aus dem Review vom 14.09.2026
-
-- **ISBN-Dublette:** Der UNIQUE-Constraint fängt nur zeichengleiche Dubletten. Die Maske prüft
-  seit dem 17.09.2026 beide Schreibweisen (`inventur/dublettenkontrolle.go`); über die Importe
-  sind `9783123456789` und `978-3-12-345678-9` weiter zwei Titel. Der Index auf der bereinigten
-  Nummer wartet auf die Messung am Server (5.5).
 
 ### 5.14 Fallengelassene Verdachte (15.09.2026)
 

@@ -4,6 +4,7 @@ import (
 	"bibliothek/db"
 	"bibliothek/inventur"
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/lmf"
 	"bibliothek/repository"
 	"context"
@@ -107,8 +108,8 @@ func ladeVorhandeneTitel(ctx context.Context, tx pgx.Tx) (titelLookup, error) {
 	for dbRows.Next() {
 		var id, isbn, titel string
 		if err := dbRows.Scan(&id, &isbn, &titel); err == nil {
-			if isbn != "" {
-				lookup.isbnToID[isbn] = id
+			if n := isbnutil.Normalform(isbn); n != "" {
+				lookup.isbnToID[n] = id
 			}
 			lookup.titelToID[repository.NormalisiereTitelKey(titel)] = id
 		}
@@ -143,31 +144,12 @@ func sammleNeueTitel(rows [][]string, headerMap map[string]int, lookup titelLook
 
 // matchTitelID liefert die bekannte Titel-ID über ISBN (bevorzugt) oder Titel; "" wenn
 // noch unbekannt. Der Titel-Lookup läuft über den normalisierten Schlüssel.
-// cleanISBN entfernt effizient Bindestriche und Leerzeichen aus einer ISBN
-func cleanISBN(val string) string {
-	var count int
-	for i := 0; i < len(val); i++ {
-		if val[i] == '-' || val[i] == ' ' {
-			count++
-		}
-	}
-	if count == 0 {
-		return val
-	}
-	b := make([]byte, len(val)-count)
-	var j int
-	for i := 0; i < len(val); i++ {
-		if val[i] != '-' && val[i] != ' ' {
-			b[j] = val[i]
-			j++
-		}
-	}
-	return string(b)
-}
-
+// matchTitelID liefert die bekannte Titel-ID über ISBN (bevorzugt) oder Titel; "" wenn
+// noch unbekannt. Beide Seiten in der Normalform (isbnutil.Normalform, Migration 133) —
+// die Datenbank speichert sie so, der Bestand kann noch anders geschrieben sein.
 func matchTitelID(isbn, titel string, lookup titelLookup) string {
-	if isbn != "" && lookup.isbnToID[isbn] != "" {
-		return lookup.isbnToID[isbn]
+	if n := isbnutil.Normalform(isbn); n != "" && lookup.isbnToID[n] != "" {
+		return lookup.isbnToID[n]
 	}
 	return lookup.titelToID[repository.NormalisiereTitelKey(titel)]
 }
@@ -182,7 +164,7 @@ func baueNeuTitelAusZeile(row []string, headerMap map[string]int, lookup titelLo
 		return "", nil, false
 	}
 
-	isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
+	isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
 
 	if matchTitelID(isbn, z.titel, lookup) != "" {
 		return "", nil, false // schon vorhanden
@@ -314,7 +296,7 @@ func sammleExemplare(rows [][]string, headerMap map[string]int, lookup titelLook
 			continue
 		}
 
-		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
+		isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
 		titelID := matchTitelID(isbn, titel, lookup)
 
 		// Optionale Zustand-Spalte (nur in der Bestandsdatei vorhanden):
@@ -353,7 +335,7 @@ func sammleSignaturUpdates(rows [][]string, headerMap map[string]int, lookup tit
 		if z.titel == "" || z.signatur == "" {
 			continue
 		}
-		isbn := cleanISBN(spaltenWert(row, headerMap, "isbn"))
+		isbn := isbnutil.CleanISBN(spaltenWert(row, headerMap, "isbn"))
 		if id := matchTitelID(isbn, z.titel, lookup); id != "" {
 			updates[id] = z.signatur
 		}

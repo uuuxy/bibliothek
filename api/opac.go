@@ -82,7 +82,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			searchConditions = append(searchConditions, `(bt.search_vector @@ plainto_tsquery('german', $1)
 			   OR bt.titel ILIKE '%' || $2 || '%'
 			   OR bt.autor ILIKE '%' || $2 || '%'
-			   OR bt.isbn ILIKE '%' || $2 || '%')`)
+			   OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%')`)
 		}
 
 		whereClause := ""

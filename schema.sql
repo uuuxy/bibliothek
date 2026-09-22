@@ -489,6 +489,35 @@ CREATE TABLE buecher_titel (
     ) STORED
 );
 
+-- Migration 133: Eine ISBN hat EINE Schreibweise — ohne Bindestriche und Leerzeichen,
+-- Prüfzeichen groß, aber nur, wenn das Ergebnis eine ISBN ist; anderes bleibt wie
+-- geschrieben, leer wird NULL. Die Datenbank normalisiert an jeder Tür; so greift der
+-- UNIQUE-Index über alle Schreibweisen. Kein Rückschreiben des Bestands (erst messen).
+CREATE OR REPLACE FUNCTION isbn_normalform(roh text)
+RETURNS text LANGUAGE sql IMMUTABLE AS $$
+    -- Nur, was eine ISBN IST: Bindestriche und Leerzeichen weg, Prüfzeichen groß — und
+    -- das Ergebnis muss 10 oder 13 Zeichen aus Ziffern und X haben. Alles andere bleibt,
+    -- wie es geschrieben wurde (getrimmt): Ein Wert, der keine ISBN ist, wird nicht still
+    -- zu einer anderen Zeichenkette oder zu NULL.
+    SELECT CASE
+        WHEN regexp_replace(roh, '[- ]', '', 'g') = '' THEN NULL
+        WHEN upper(regexp_replace(roh, '[- ]', '', 'g')) ~ '^([0-9]{9}[0-9X]|[0-9]{13})$'
+            THEN upper(regexp_replace(roh, '[- ]', '', 'g'))
+        ELSE btrim(roh)
+    END
+$$;
+
+CREATE OR REPLACE FUNCTION titel_isbn_in_normalform()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.isbn := isbn_normalform(NEW.isbn);
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_titel_isbn_normalform
+BEFORE INSERT OR UPDATE OF isbn ON buecher_titel
+FOR EACH ROW EXECUTE FUNCTION titel_isbn_in_normalform();
+
 CREATE INDEX idx_buecher_titel_search ON buecher_titel USING GIN (search_vector);
 CREATE INDEX idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);
 CREATE INDEX idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);
@@ -1576,7 +1605,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('129_zugangsdatum_am_exemplar.sql'),
 ('130_zugang_am_in_schulzeit.sql'),
 ('131_nummer_ist_buch_oder_ausweis.sql'),
-('132_bewegungsstempel_bei_zustandswechsel.sql')
+('132_bewegungsstempel_bei_zustandswechsel.sql'),
+('133_isbn_normalform.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

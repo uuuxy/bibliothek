@@ -123,7 +123,7 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 	query := buchListenSelectSchlank + `
 		WHERE ($1 = '' OR bt.subject = $1)
 		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
-		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR bt.isbn ILIKE '%' || $3 || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
+		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
 	` + buchListenGroupBySchlank + `
 		ORDER BY bt.sort_order ASC, bt.titel ASC
 		LIMIT $4`
