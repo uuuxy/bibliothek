@@ -13,9 +13,14 @@ test('Etiketten-Titelsuche im Druck-Center fragt die Titel-Tür, nicht die Theke
 	page
 }) => {
 	const s = uniqueSuffix();
+	// Mit Exemplar: Seit dem 22.09.2026 zeigt keine Katalogtür einen Titel ohne Exemplar.
 	seedSQL(`
-        INSERT INTO buecher_titel (isbn, titel, autor, verlag)
-        VALUES ('978t${s}', 'E2E Tuersuche ${s}', 'Tuer Autor', 'Tuerverlag');
+        WITH t AS (
+            INSERT INTO buecher_titel (isbn, titel, autor, verlag)
+            VALUES ('978t${s}', 'E2E Tuersuche ${s}', 'Tuer Autor', 'Tuerverlag') RETURNING id
+        )
+        INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+        SELECT id, 'B-TUER-${s}', true FROM t;
     `);
 
 	await uiLogin(page);

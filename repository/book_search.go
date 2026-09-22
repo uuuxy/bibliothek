@@ -35,12 +35,13 @@ func (r *pgBookRepository) SearchTitles(ctx context.Context, queryText string) (
 			b.id, coalesce(b.titel, ''), coalesce(b.untertitel, ''), coalesce(b.autor, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''), coalesce(b.erscheinungsjahr, 0), coalesce(b.beschreibung, ''), coalesce(b.cover_url, ''), coalesce(b.medientyp, ''), coalesce(b.signatur, ''), coalesce(b.auflage, ''), coalesce(b.ziel_jahrgang, 0), b.ist_lernmittel, b.erstellt_am, b.aktualisiert_am, coalesce(b.erweiterte_eigenschaften, '{}'::jsonb),
 			` + SQLBestandGesamt + `, ` + SQLBestandVerfuegbar + `
 		FROM buecher_titel b
-		WHERE 
+		WHERE (
 			b.search_vector @@ plainto_tsquery('german', $1::text) 
 			OR b.titel ILIKE '%' || $1::text || '%'
 			OR b.autor ILIKE '%' || $1::text || '%'
 			OR regexp_replace(coalesce(b.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($1::text, '[- ]', '', 'g') || '%'
 			OR replace(b.isbn, '-', '') = replace($1::text, '-', '')
+		) AND ` + SQLTitelHatExemplar("b") + `
 		ORDER BY ts_rank(b.search_vector, plainto_tsquery('german', $1::text)) DESC, b.titel ASC
 		LIMIT 50
 	`
@@ -111,6 +112,7 @@ func (r *pgBookRepository) SearchTitlesFuzzy(ctx context.Context, queryText stri
 				FROM tokens
 			   )
 		  )
+		  AND ` + SQLTitelHatExemplar("b") + `
 		ORDER BY
 			(SELECT count(*) FROM tokens WHERE suchnorm(coalesce(b.titel, '')) LIKE tokens.norm || '%') DESC,
 			b.titel ASC

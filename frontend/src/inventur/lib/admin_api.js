@@ -2,10 +2,11 @@ import { apiFetch } from '../../lib/apiFetch.js';
 import { appState } from './store.svelte.js';
 
 export async function holeBuecherListe() {
-	const suchParameter = appState.searchQuery
-		? `?q=${encodeURIComponent(appState.searchQuery)}`
-		: '';
-	const res = await apiFetch(`/api/books${suchParameter}`, {
+	const parameter = new URLSearchParams();
+	if (appState.searchQuery) parameter.set('q', appState.searchQuery);
+	if (appState.bestandsAnsicht === 'ohne') parameter.set('bestand', 'ohne');
+	const anhang = parameter.size > 0 ? `?${parameter}` : '';
+	const res = await apiFetch(`/api/books${anhang}`, {
 		credentials: 'include'
 	});
 	if (!res.ok) {

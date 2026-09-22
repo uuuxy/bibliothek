@@ -26,6 +26,7 @@ func TestTitelSuche_LiefertNurTitelMitThekenSuchguete(t *testing.T) {
 	ctx := context.Background()
 
 	titelID := titelMitSignatur(t, pool, "Türsuche Testband", "TUER 7", 1)
+	exemplar(t, pool, titelID, "B-TUER-1", true, "") // ohne Exemplar zeigt die Tür keinen Titel (OFFEN.md 9.4)
 	// Ein Schüler mit demselben Suchwort — er darf in der Antwort nicht auftauchen.
 	if _, err := pool.Exec(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
 		VALUES ('S-TUER-1', 'Tilda', 'Türsuche', '07A', 2031)`); err != nil {

@@ -34,7 +34,7 @@ func TestBookRepository_ListBooks(t *testing.T) {
 				"", "", 2020, "", map[string]any{}, "4. Aufl. 2023", nil,
 			))
 
-		books, err := repo.ListBooks(ctx, "Math", &grade5, "algebra")
+		books, err := repo.ListBooks(ctx, "Math", &grade5, "algebra", false)
 		assert.NoError(t, err)
 		assert.Len(t, books, 1)
 		if len(books) > 0 {
@@ -54,7 +54,7 @@ func TestBookRepository_ListBooks(t *testing.T) {
 			WithArgs("", (*int16)(nil), "", 50000).
 			WillReturnError(fmt.Errorf("db connection failed"))
 
-		books, err := repo.ListBooks(ctx, "", nil, "")
+		books, err := repo.ListBooks(ctx, "", nil, "", false)
 		assert.ErrorContains(t, err, "bücher konnten nicht geladen werden")
 		assert.Nil(t, books)
 		assert.NoError(t, mock.ExpectationsWereMet())

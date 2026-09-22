@@ -100,13 +100,15 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 		}
 	})
 
+	// Seit dem 22.09.2026 (Antwort der Schule, docs/OFFEN.md 9.4) zeigt keine der beiden
+	// Türen einen Titel ohne ein nicht ausgesondertes Exemplar. Der Zulauf zählt als
+	// vorhanden: Die Bücher kommen. Rot gesehen am Rückbau des Prädikats.
 	erwartet := map[string][2]int{
-		"Ohne Exemplar":       {0, 0},
-		"Nur ausgesondert":    {0, 0},
-		"Nur im Zulauf":       {0, 0}, // bestellt heißt: noch nicht im Regal
+		"Nur im Zulauf":       {0, 0}, // bestellt heißt: noch nicht im Regal — der Titel bleibt sichtbar
 		"Alles verliehen":     {1, 0},
 		"Zwei frei eines weg": {2, 2},
 	}
+	versteckt := []string{"Ohne Exemplar", "Nur ausgesondert"}
 
 	// BEIDE Türen prüfen: Die Theke sucht über SearchTitlesFuzzy, der
 	// Katalog/Aktionspfad über SearchTitles. Eine der beiden zu vergessen wäre genau
@@ -115,6 +117,11 @@ func TestTitelSucheNenntDenBestand(t *testing.T) {
 		t.Helper()
 		gefunden := 0
 		for _, z := range zeilen {
+			for _, name := range versteckt {
+				if strings.HasPrefix(z.Titel, name) {
+					t.Errorf("%s: %q steht im Katalog, hat aber kein Exemplar", tuer, z.Titel)
+				}
+			}
 			for name, soll := range erwartet {
 				if !strings.HasPrefix(z.Titel, name) {
 					continue

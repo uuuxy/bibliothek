@@ -16,6 +16,12 @@ func seedSuchTitel(t *testing.T, pool *pgxpool.Pool, titel, autor, isbn, signatu
 		 VALUES ($1, $2, $3, $4) RETURNING id`, titel, autor, isbn, signatur).Scan(&id); err != nil {
 		t.Fatalf("Titel %q anlegen: %v", titel, err)
 	}
+	// Mit Exemplar: Seit dem 22.09.2026 zeigt keine Suchtür einen Titel ohne Exemplar
+	// (docs/OFFEN.md 9.4); hier geht es um die Suchgüte, nicht um den Bestand.
+	if _, err := pool.Exec(context.Background(),
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-SUCHE-' || $2)`, id, id); err != nil {
+		t.Fatalf("Exemplar zu %q anlegen: %v", titel, err)
+	}
 	return id
 }
 

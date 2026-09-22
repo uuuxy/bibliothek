@@ -50,7 +50,7 @@ func TestListBooksSchlank_KeineSchwerenFelder(t *testing.T) {
 	}
 
 	// Listenansicht: Titel da, aber die schweren Felder leer.
-	liste, err := repo.ListBooks(ctx, "", nil, "")
+	liste, err := repo.ListBooks(ctx, "", nil, "", false)
 	if err != nil {
 		t.Fatalf("ListBooks: %v", err)
 	}

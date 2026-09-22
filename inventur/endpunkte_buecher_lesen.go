@@ -41,7 +41,14 @@ func (handler *APIHandler) BearbeiteBuecherListe(antwort http.ResponseWriter, an
 		klassenStufe = &stufenWert
 	}
 
-	buecher, fehler := handler.repo.ListBooks(anfrage.Context(), fach, klassenStufe, suchbegriff)
+	// bestand=ohne ist die Aufräumsicht der Verwaltung: nur Titel ohne ein einziges
+	// nicht ausgesondertes Exemplar. Ohne den Parameter ist es der Katalog.
+	sicht := strings.TrimSpace(anfrageParameter.Get("bestand"))
+	if sicht != "" && sicht != "ohne" {
+		writeError(antwort, http.StatusBadRequest, "ungültiger query-parameter bestand (erlaubt: ohne)")
+		return
+	}
+	buecher, fehler := handler.repo.ListBooks(anfrage.Context(), fach, klassenStufe, suchbegriff, sicht == "ohne")
 	if fehler != nil {
 		log.Printf("Fehler beim Laden der Bücherliste: %v", fehler)
 		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler beim Laden der Bücher")

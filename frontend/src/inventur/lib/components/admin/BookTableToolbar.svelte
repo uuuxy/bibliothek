@@ -2,6 +2,7 @@
 	import { appState } from '$lib/store.svelte.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
+	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
 	import { BookOpen, Plus, RefreshCw, Settings, Trash2 } from '@lucide/svelte';
 
 	/**
@@ -30,9 +31,22 @@
 	/>
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
-		<h2 class="mr-auto shrink-0 text-lg font-bold text-slate-900">
+		<h2 class="shrink-0 text-lg font-bold text-slate-900">
 			Bücher ({booksLength})
 		</h2>
+		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,
+		     switch views, or sort elements"): der Katalog und die Aufräumsicht mit den Titeln,
+		     die er nicht zeigt — Antwort der Schule vom 22.09.2026, docs/OFFEN.md 9.4. -->
+		<Segmente
+			klasse="mr-auto"
+			etikett="Sicht der Titelliste"
+			optionen={[
+				{ wert: 'mit', text: 'Mit Exemplaren' },
+				{ wert: 'ohne', text: 'Ohne Exemplare' }
+			]}
+			wert={appState.bestandsAnsicht}
+			onwahl={(wert) => (appState.bestandsAnsicht = wert === 'ohne' ? 'ohne' : 'mit')}
+		/>
 		{#if selectedCount > 0}
 			<Button
 				variant="secondary"

@@ -23,11 +23,11 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Die Antwort der Schule ist da (22.09.2026) — eins von drei Dingen ist gebaut.** Keine
+1. **Die Antwort der Schule ist da (22.09.2026) — zwei von drei Dingen sind gebaut.** Keine
    automatische Sperre für Lernmittel, auch keine übergehbare (9.3 c, gebaut). Titel ohne
-   Exemplare verschwinden aus dem Katalog (9.4). Mehrjahresbände am Werk, das Schuljahr steht
-   in der Frist (9.6, damit kippt 4.3 zurück auf „bauen") — vorher die Messung aus 4.3 am
-   Server.
+   Exemplare stehen in keinem Katalog mehr (9.4, gebaut). Offen: Mehrjahresbände am Werk,
+   das Schuljahr steht in der Frist (9.6, damit kippt 4.3 zurück auf „bauen") — vorher die
+   Messung aus 4.3 am Server.
 2. **Die sechs Fragen sind beantwortet und gebaut** (21.09.2026: 4.7, 4.9, 4.11, 4.13, 4.14,
    4.21). Von 4.8 steht nur noch der Lauf im Druck-Center aus — er ändert Daten und liegt bei
    dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
@@ -953,37 +953,26 @@ Tresen; für Lernmittel ist das die Ausnahme mit Quittung, nicht der Regelweg (5
 Zahlungsweg für ein Buch der Schülerbücherei ist nicht entschieden — die Briefe schreiben
 dort „(Bankverbindung des Schulträgers nicht hinterlegt)" (E5, 8.3).
 
-### 9.4 Titel ohne Exemplare — wieder offen, die Schule will sie nicht im Katalog
+### 9.4 Titel ohne Exemplare — entschieden und gebaut am 22.09.2026
 
-Am 17.09.2026 war entschieden, Titel ohne Exemplare NICHT zu verstecken, sondern den Bestand
-an jedem Treffer zu sagen (Commits `0c22140c`, `295a846c`). Die Antwort der Schule vom
-22.09.2026, wörtlich: „Ein Titel/Werk ohne (verliehene oder verfügbare) Exemplare im Bestand
-sollte aus unserer Sicht nicht im Katalog erscheinen, da dies zu Verwirrungen führen könnte.
-Vielleicht wäre eine Inventur hilfreich, um den Bestand genau zu erfassen und den Titeln
-entweder Exemplare zuzuweisen oder sie zu entfernen?"
+Die Antwort der Schule, wörtlich: „Ein Titel/Werk ohne (verliehene oder verfügbare) Exemplare
+im Bestand sollte aus unserer Sicht nicht im Katalog erscheinen, da dies zu Verwirrungen
+führen könnte. Vielleicht wäre eine Inventur hilfreich, um den Bestand genau zu erfassen und
+den Titeln entweder Exemplare zuzuweisen oder sie zu entfernen?"
 
-**Was gebaut wird.** Der Katalog zeigt nur Titel mit mindestens einem Exemplar im Bestand.
-„Im Bestand" ist das Prädikat aus `repository/book_bestand.go` (nicht ausgesondert, nicht im
-Zulauf) — dieselbe Zahl, die die Trefferliste heute nennt; eine zweite Definition gibt es
-nicht. Betroffen sind die Türen, die ein Kollegium sieht: das Portal Schulbücher (`/api/books`,
-`BuchRasterStartseite`) und die Trefferliste an der Theke (`SearchTitlesFuzzy`). Der Titel
-selbst bleibt: Er verschwindet aus der Sicht, nicht aus der Tabelle, sonst legt ihn jemand ein
-zweites Mal an — der Grund für die Entscheidung vom 17.09.2026 gilt weiter.
+Gebaut als EIN Prädikat (`repository.SQLTitelHatExemplar`) an den drei Türen, über die ein
+Kollegium Titel sieht: Katalogliste `GET /api/books` (Portal und Titel-Verwaltung),
+Theken-Suche, Aktionssuche. Der Zulauf zählt als vorhanden (entschieden am 22.09.2026). Der
+Titel bleibt in der Tabelle; die Titel-Verwaltung erreicht ihn über den Umschalter „Mit
+Exemplaren | Ohne Exemplare" (`?bestand=ohne`, dasselbe Prädikat mit NOT) — das ist die
+Aufräumhilfe, die die Schule mit „Inventur" meint; die eigene Inventur zählt Exemplare und
+findet einen Titel ohne Exemplar deshalb nicht. Die Bestellliste führt ihn weiter (Bestand
+unter jeder Schwelle). Gates am Rückbau des Prädikats rot gesehen, an allen drei Türen.
 
-**Wo er weiter steht.** Auf der Bestellliste: `api/reorders.go` zählt je Titel und nimmt
-alles unter der Schwelle, null eingeschlossen (geprüft am 22.09.2026) — nachbestellen geht
-also ohne den Katalog. Und in der Verwaltung als eigene Liste „Titel ohne Exemplare" mit
-zwei Wegen je Zeile: Exemplare anlegen oder Titel löschen. Das ist die Aufräumhilfe, die die
-Schule mit „Inventur" meint — die eigene Inventur (`repository/inventur_session_repo.go`)
-zählt Exemplare und kann einen Titel ohne Exemplar deshalb nicht finden.
-
-**Entschieden am 22.09.2026:** Ein Titel, dessen Exemplare alle im Zulauf sind (bestellt,
-noch nicht da), gilt als vorhanden — die Bücher kommen, und wer die Bestellung sieht, soll
-den Titel finden. Versteckt wird nur, wer weder im Bestand noch im Zulauf ein Exemplar hat.
-
-**Gate.** PG-Test an beiden Türen mit den vier Ursachen aus `0c22140c` (gar keins, alle
-ausgesondert, alle verliehen, alles im Zulauf): „alle verliehen" und „alles im Zulauf" bleiben
-sichtbar, die zwei anderen verschwinden. Rot am Rückbau des WHERE.
+**Noch anzusehen, bei dir:** der Umschalter in der Titel-Verwaltung am Bildschirm (M3
+Segmented Button, Bauteil `Segmente`). Und die E2E-Suite vor dem nächsten Push — sie lief
+am 22.09.2026 nicht, weil eine zweite Sitzung den Stack hielt; eine Spec ist angepasst
+(`suchfelder-eigene-tuer.spec.js` bekommt ein Exemplar).
 
 ### 9.6 A: Mehrjahresbände — entschieden am 22.09.2026, 4.3 kippt zurück auf „bauen"
 
@@ -1029,8 +1018,7 @@ Beide Rückfragen vom 21.09.2026 sind beantwortet (9.3 c, 9.6); die Schule hat d
 aufgemacht. Vorschlag für die Reihenfolge, jede Stufe mit eigenem Commit und Gate:
 
 1. **9.3 c** — gebaut am 22.09.2026.
-2. **9.4** — ein WHERE an zwei Lesetüren plus die Aufräumliste; kein Schema. Entschieden am
-   22.09.2026: im Zulauf gilt als vorhanden.
+2. **9.4** — gebaut am 22.09.2026 (drei Türen, Aufräumsicht).
 3. **9.6** — Feld, Schreibpfad, zwei Zweige in der Fristregel; kein Schema (die Spalte gibt es),
    aber vorher die Messung aus 4.3 am Server.
 

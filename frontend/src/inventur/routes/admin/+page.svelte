@@ -35,6 +35,7 @@
 	let suchVerzoegerung = null;
 	$effect(() => {
 		const suchAnfrage = appState.searchQuery;
+		void appState.bestandsAnsicht; // die Sicht lädt die Liste genauso neu wie die Suche
 		if (suchVerzoegerung) clearTimeout(suchVerzoegerung);
 		suchVerzoegerung = setTimeout(() => {
 			if (appState.adminAuthenticated && typeof suchAnfrage === 'string') {

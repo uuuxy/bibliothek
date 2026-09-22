@@ -27,6 +27,23 @@ const (
 		                  WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL))`
 )
 
+// SQLTitelHatExemplar sagt, ob ein Titel überhaupt ein Exemplar hat, das nicht
+// ausgesondert ist — im Regal, verliehen oder im Zulauf. Titel ohne ein solches Exemplar
+// erscheinen seit dem 22.09.2026 in keinem Katalog mehr (Antwort der Schule auf Punkt 4 des
+// Protokolls: „Ein Titel/Werk ohne (verliehene oder verfügbare) Exemplare im Bestand sollte
+// aus unserer Sicht nicht im Katalog erscheinen"). Der Zulauf zählt als vorhanden: Die
+// Bücher kommen, und wer die Bestellung sieht, soll den Titel finden.
+//
+// Der Titel bleibt in der Tabelle — er verschwindet aus der Sicht, nicht aus dem Bestand,
+// sonst legt ihn jemand ein zweites Mal an. Die Verwaltung erreicht ihn über die Sicht
+// „Ohne Exemplare" derselben Liste (inventur.ListBooks) und die Bestellliste.
+//
+// titelAlias ist der Alias der Titeltabelle in der umgebenden Abfrage (`b`, `bt`).
+func SQLTitelHatExemplar(titelAlias string) string {
+	return `EXISTS (SELECT 1 FROM buecher_exemplare hx
+		WHERE hx.titel_id = ` + titelAlias + `.id AND hx.ist_ausgesondert = false)`
+}
+
 // scanBookTitleMitBestand scannt die Standard-Spaltenliste und danach die beiden
 // Bestandszahlen. Getrennt von scanBookTitle, weil die übrigen Abfragen sie nicht
 // mitliefern — und ein Titel mit nil-Bestand sagt „nicht gezählt", nicht „keine da".

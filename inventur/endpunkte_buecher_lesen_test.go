@@ -103,6 +103,26 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 			expectedBody:   `{"data":[]}`,
 		},
 		{
+			// Die Aufräumsicht der Verwaltung: dasselbe Prädikat mit NOT (OFFEN.md 9.4).
+			name: "Success - Aufräumsicht bestand=ohne",
+			url:  "/api/books?bestand=ohne",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT.*WHERE NOT EXISTS.*").
+					WithArgs("", pgxmock.AnyArg(), "", 50000).
+					WillReturnRows(pgxmock.NewRows([]string{
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis",
+					}))
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"data":[]}`,
+		},
+		{
+			name:           "Error - unbekannte Sicht",
+			url:            "/api/books?bestand=alle",
+			expectedStatus: http.StatusBadRequest,
+			expectedBody:   `{"error":"ungültiger query-parameter bestand (erlaubt: ohne)"}`,
+		},
+		{
 			name:           "Error - query string too long",
 			url:            "/api/books?q=" + strings.Repeat("a", 201),
 			expectedStatus: http.StatusBadRequest,

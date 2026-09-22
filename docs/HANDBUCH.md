@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-17. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-22. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -87,6 +87,11 @@ beides einstellbar (_Datenschutz & Sitzung_).
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
   Etiketten_. (§13)
+- **Titel ohne Exemplar** stehen in keinem Katalog und in keiner Trefferliste — weder im
+  Portal noch an der Theke (seit 22.09.2026; ein bestelltes Exemplar zählt schon). Sie sind
+  aber nicht weg: In der Titel-Verwaltung schaltet der Umschalter _Mit Exemplaren | Ohne
+  Exemplare_ auf die Aufräumsicht. Dort bekommt so ein Titel Exemplare, oder er wird
+  gelöscht. Auf der Bestellliste steht er ohnehin, sein Bestand liegt unter jeder Schwelle.
 - **Geräte**: anlegen mit Modell, Seriennummer, Barcode `G-…` und Zubehör-Checkliste.
 
 ## Signaturen

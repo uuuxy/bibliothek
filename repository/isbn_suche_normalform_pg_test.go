@@ -19,7 +19,10 @@ func TestSuche_FindetISBNInJederSchreibweise(t *testing.T) {
 			t.Errorf("aufräumen: %v", err)
 		}
 	})
-	if _, err := pool.Exec(ctx, `INSERT INTO buecher_titel (titel, isbn) VALUES ('Suchprobe Normalform', '978-3-16-148410-0')`); err != nil {
+	// Mit Exemplar: ohne eines zeigt die Suche keinen Titel (docs/OFFEN.md 9.4, 22.09.2026).
+	if _, err := pool.Exec(ctx, `WITH t AS (
+			INSERT INTO buecher_titel (titel, isbn) VALUES ('Suchprobe Normalform', '978-3-16-148410-0') RETURNING id)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id) SELECT id, 'B-NORMALFORM-1' FROM t`); err != nil {
 		t.Fatal(err)
 	}
 	repo := NewBookRepository(pool)

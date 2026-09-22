@@ -1,9 +1,12 @@
 import { toastStore } from '../../lib/stores/toastStore.svelte.js';
 // src/lib/store.svelte.js
 
-/** @type {{ searchQuery: string, selectedBook: any, activeBookId: string | null, adminAuthenticated: boolean, guestAuthenticated: boolean, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
+/** @type {{ searchQuery: string, bestandsAnsicht: 'mit' | 'ohne', selectedBook: any, activeBookId: string | null, adminAuthenticated: boolean, guestAuthenticated: boolean, triggerStudentScan: string, bookToEdit: any, requestAdminView: boolean }} */
 export const appState = $state({
 	searchQuery: '',
+	// Sicht der Titelverwaltung: der Katalog ('mit') oder die Aufräumsicht ('ohne'
+	// Exemplare). Das Portal kennt nur den Katalog.
+	bestandsAnsicht: 'mit',
 	selectedBook: null,
 	activeBookId: null,
 	adminAuthenticated: false,

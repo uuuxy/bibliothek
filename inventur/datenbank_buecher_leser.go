@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5"
 )
 
@@ -119,9 +121,19 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 // Nutzt die schlanke Listen-Variante (ohne beschreibung/erweiterte_eigenschaften) und
 // eine Sicherheits-Kappung gegen unbegrenztes Wachstum — siehe buchListenSelectSchlank
 // bzw. listBooksSicherheitsLimit.
-func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string) ([]Book, error) {
+//
+// nurOhneExemplare wählt die Sicht: false ist der Katalog (nur Titel mit mindestens einem
+// nicht ausgesonderten Exemplar, repository.SQLTitelHatExemplar), true die Aufräumsicht
+// der Verwaltung mit genau den Titeln, die der Katalog nicht zeigt. Beide Sichten sind
+// dasselbe Prädikat mit und ohne NOT — eine dritte Zahl über denselben Titel gibt es nicht.
+func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string, nurOhneExemplare bool) ([]Book, error) {
+	sicht := repository.SQLTitelHatExemplar("bt")
+	if nurOhneExemplare {
+		sicht = "NOT " + sicht
+	}
 	query := buchListenSelectSchlank + `
-		WHERE ($1 = '' OR bt.subject = $1)
+		WHERE ` + sicht + `
+		  AND ($1 = '' OR bt.subject = $1)
 		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
 		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
 	` + buchListenGroupBySchlank + `
