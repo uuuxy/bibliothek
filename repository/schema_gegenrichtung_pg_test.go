@@ -179,6 +179,12 @@ var fkAktionenBestand = []string{
 // Bedingungen, die die Datenbank durchsetzt. Der Code muss sie kennen — sonst schreibt
 // er Daten, die abgewiesen werden, oder er verlässt sich auf eine Form, die die
 // Datenbank ausdrücklich zulässt (check_damage_item war genau das).
+//
+// Die Antwort auf eine NEUE Bedingung zählt jeden Schreiber der beteiligten Spalten auf,
+// nicht nur die Tür, die gerade entsteht, und sagt je Schreiber, was er bekommt: einen
+// Satz (400/409) oder einen Abbruch (Raster-Frage 12, zweite Schärfung vom 23.09.2026).
+// „Die Datenbank hält sie für jeden anderen Schreiber" ist wahr, aber keine Antwort — so
+// stand es an chk_mehrjahresband_spanne, und zwei Schreiber liefen dagegen.
 var checkBedingungenBestand = []string{
 	"audit_log_akteur_check", "bestellungen_verlauf_bestaetigt_durch_check",
 	"bestellungen_verlauf_etiketten_groesse_check",
@@ -189,8 +195,13 @@ var checkBedingungenBestand = []string{
 	"check_positive_amount", "check_return_date", "chk_anliegen_art",
 	"chk_aussonderung_grund", "chk_cover_status", "chk_einkaufspreis_nonneg",
 	// Migration 134: Ein Mehrjahresband nur an einem Lernmittel und nur mit einer Spanne über
-	// mehr als einen Jahrgang; die Türen der Titel-Verwaltung prüfen dieselbe Regel
-	// (inventur/mehrjahresband.go), die Datenbank hält sie für jeden anderen Schreiber.
+	// mehr als einen Jahrgang. Wer gegen die Regel läuft, nachgezählt im Rasterdurchgang
+	// 23.09.2026 — jeder Schreiber der vier Spalten: Die Titel-Verwaltung prüft sie an beiden
+	// Türen (inventur/mehrjahresband.go, 400). Die Lernmittel-Tür des Bestellfensters nimmt
+	// den Schalter mit, wenn das Kennzeichen fällt (war 500). Der Katalogisat-Import lässt die
+	// Spanne eines Mehrjahresbands stehen (brach vorher mit dem ganzen Import ab). Listen- und
+	// Sammelimport behalten eine vorhandene Spanne und setzen das Kennzeichen nur per OR; die
+	// Littera-Übernahme legt nur neu an.
 	"chk_mehrjahresband_spanne",
 	// Migration 138, befragt am 23.09.2026: Ein Schlagwort ist getrimmt, nicht leer und
 	// höchstens 80 Zeichen lang. Der Code kennt die Regel: repository.NormalisiereSchlagworte

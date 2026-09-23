@@ -281,12 +281,13 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.
 
-## Das Raster — die dreizehn Fragen, und ihre Frontend-Lesart
+## Das Raster — die vierzehn Fragen, und ihre Frontend-Lesart
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
 Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration,
 Frage 13 immer dann, wenn eine Tabelle, Spalte oder ein Feld ihre Bedeutung ändert, ohne
-den Namen zu wechseln. Die Durchgänge samt Funden stehen in
+den Namen zu wechseln, Frage 14 bei jeder Migration und jedem Import, der vorhandene Werte
+überträgt, umdeutet oder löscht. Die Durchgänge samt Funden stehen in
 den Commit-Nachrichten (`git log --grep=Rasterdurchgang`), was davon offen ist in [OFFEN.md](OFFEN.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
 [sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
 und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
@@ -304,6 +305,7 @@ und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 11. **Geteilter Zustand** — wer lädt ihn auf diesem Pfad, was gilt vor dem Laden und bei Fehlschlag, überlebt der Lader sein eigenes Ergebnis?
 12. **Gegenrichtung Schema** — was TUT die Datenbank, das im Code nirgends steht? Fremdschlüssel mit Löschwirkung (CASCADE/SET NULL), CHECK-Bedingungen, Trigger.
 13. **Bedeutungswechsel unter gleichem Namen** — hat dieser Name seit gestern eine andere Bedeutung, und wer liest ihn noch in der alten?
+14. **Datenlage** — was steht in den Zeilen, auf die der Pfad trifft, gemessen am echten Bestand und nicht an der Seed-Datenbank? Trägt die neue Regel jede Form, die dort vorkommt?
 
 ### Zu Frage 12 (neu am 06.09.2026)
 
@@ -339,6 +341,16 @@ Liste von 96 Namen wäre der Dateibaum und würde nichts aussagen.
 Eine Frontend-Lesart hat Frage 12 nicht; das Gegenstück dort ist die Bugklasse „Nie
 verdrahtet" (`docs/sweeps.md`): Felder, die der Server liefert und die niemand liest.
 
+Zweite Schärfung ohne neue Nummer (23.09.2026): *Wer läuft gegen die Regel?* Eine neue
+CHECK-Bedingung oder ein Wächter-Trigger gilt für jeden Schreiber der beteiligten Spalten,
+nicht nur für die Tür, die gerade entsteht. Die Antwort in der Ratsche zählt die Schreiber
+auf und sagt je Schreiber, was er bekommt: einen Satz (400/409) oder einen Abbruch. Belege
+vom 22. und 23.09.2026: der Nummern-Wächter am Kollegiumskonto (500 statt 409, `66e0d30f`), der
+negative Listenpreis beim Ändern (500, `1bec2f99`), der Mehrjahresband im
+Katalogisat-Import (der ganze Import fiel) und an der Lernmittel-Tür des Bestellfensters
+(500). An `chk_mehrjahresband_spanne` stand als Antwort „die Datenbank hält sie für jeden
+anderen Schreiber" — wahr, aber keine Antwort darauf, was aus diesen Schreibern wird.
+
 ### Zu Frage 13 (neu am 17.09.2026)
 
 Ein Name bleibt, seine Bedeutung wechselt — und niemand merkt es, weil der Code
@@ -361,6 +373,25 @@ Dazu eine Schärfung von Frage 12 ohne neue Nummer: *Wer räumt weg, was die Dat
 selbst angelegt hat?* Das Inventar fragt bei Fremdschlüsseln in die Löschrichtung, bei
 Triggern nur in die Anlegerichtung. Vier Trigger schreiben in fremde Tabellen, zwei davon
 legen Zeilen an, die kein Go-Code je löscht.
+
+### Zu Frage 14 (neu am 23.09.2026)
+
+Die dreizehn Fragen davor lesen Code und Schema; keine fragt die Zeilen, auf die eine
+Änderung trifft. Migration 135 („Klasse N wird Spanne N bis N", 22.09.2026) war an der
+lokalen Datenbank entworfen, in der ein einziger Testtitel eine Klasse trug. Auf dem
+Testserver trugen 153 Titel eine, darunter mehrjährige Bände mit nur einem Jahr und
+Klassen, die der Signatur widersprechen. Die Migration lief dort, wurde zurückgenommen und
+brauchte ein Reparaturskript aus der Vorab-Sicherung (`7981e347`, `bf91c54d`). Dieselbe
+Form schon einmal ohne Migration: Eine Empfehlung zur Cover-Abdeckung aus der
+Seed-Datenbank lag um den Faktor 27 daneben (04.09.2026).
+
+Gemessen wird lesend am Testserver. Die lokale Datenbank ist ein Seed-Bestand; Fragen nach
+Mengen, Verteilungen und Altformen beantwortet sie nicht.
+
+Mechanischer Teil: `docs/migration_datenlage_test.go` verlangt ab Migration 145 von jeder
+Migration, die vorhandene Zeilen ändert oder Daten wegnimmt, im Kopf einen Satz mit
+„gemessen" und dem Datum oder „Ohne Messung:" mit Grund. Die Zeile beweist nicht, dass
+gemessen wurde; sie stellt die Frage dort, wo die Migration entsteht.
 
 ### Frontend-Lesart (ergänzt 31.08.2026)
 

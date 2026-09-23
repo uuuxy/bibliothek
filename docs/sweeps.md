@@ -1,6 +1,6 @@
 # Sweeps — der Prüfvorrat über den Bestand
 
-**Zweck:** Das Raster (siehe `invarianten.md`, dreizehn Fragen) prüft
+**Zweck:** Das Raster (siehe `invarianten.md`, vierzehn Fragen) prüft
 eine **Änderung**: Wenn ein Schreibpfad seine Form wechselt, werden sie
 gestellt. Es sieht nicht, was schon da ist. Diese Seite ist die zweite Achse — der
 **Bestand**: bekannte Bugklassen, je mit einem Suchmuster, das über den ganzen Code
@@ -191,6 +191,7 @@ steht im Kopfkommentar der Datei.
 | `docs/invarianten_fundstellen_test.go`          | Nur, ob ein Backtick-Bezeichner in schema.sql und ein Dateiverweis im Baum EXISTIERT; ob er noch das Gemeinte bezeichnet, nicht. |
 | `docs/koerperliche_loeschung_bestand_test.go`   | Textmuster `DELETE FROM buecher_(exemplare|titel)` je Datei mit Zählstand; ein Löschen über eine Sicht, eine CTE unter anderem Namen oder ein CASCADE sieht sie nicht. |
 | `docs/schreibpfade_gegen_sicht_test.go`         | Textmuster `INSERT INTO|UPDATE|DELETE FROM schueler` je Datei mit Zählstand; SQL aus Variablen und Schreibpfade über andere Sichten nicht. |
+| `docs/migration_datenlage_test.go`              | Nur `migrations/*.sql` ab Nummer 145 und nur SQL in Textform: dynamisches SQL (`EXECUTE format(…)`), Datenskripte in `scripts/` und `cmd/` und Importe aus Go nicht; ob der Satz mit „gemessen" die richtige Messung nennt (Migration 131 nennt eine der Sperrtabelle), liest ein Mensch. |
 | `docs/lesepfade_gegen_sicht_test.go`            | Textmuster `FROM|JOIN schueler` je Datei mit Zählstand, in zwei Listen (geprüft mit Begründung / ungeprüft, nur schrumpfend); SQL aus Variablen, Komma-Joins, Namen in Anführungszeichen und Lesepfade über andere Sichten nicht. Ob eine Begründung stimmt, liest ein Mensch. |
 | `docs/vuln_ausnahmen_form_test.go`              | Nur die FORM der Ausnahmeliste (Kennung, Grund, Nachweis, Daten, die „datei.go:"-Falle); ob der genannte Nachweis-Test existiert und rot werden kann, prüft erst das Gate im Push. |
 | `docs/xlsx_leser_grenzen_test.go`               | Nur die Zeile mit `excelize.OpenReader(`; ein Leser über `excelize.OpenFile` oder mit in einer Variablen weitergereichten Optionen bleibt unsichtbar. |
