@@ -48,7 +48,7 @@ Einstieg.
 | **Schlagwort**              | Freies Wort am Titel (Thema, Gattung), mehrere je Titel, wie in Littera; ein Wort ist seine Kleinschreibung. Gepflegt unter Einstellungen → Schlagworte                 | `schlagworte`, `titel_schlagworte`, `repository.SetzeSchlagworte` |
 | **Signatur / Systematik**   | Ordnungsbegriff und Standort im Regal                                                                                                                                    | `systematik_kategorien`, `repository/signatur_praefix.go`     |
 | **Theke / Tresen**          | Der Arbeitsplatz mit Scanner; „Kiosk" meint dasselbe aus Sicht der Bauform                                                                                               | `frontend/src/lib/Omnibox.svelte`, `stores/thekeLeeren.js`    |
-| **Verweis**                 | Schreibweise, die auf ein Schlagwort umleitet („Tierfantasy“ → „Fantasy“); wer sie am Titel einträgt, bekommt das Ziel. Trägt selbst keine Titel                        | `schlagworte.verweis_auf` (Migration 143)                    |
+| **Verweis**                 | Schreibweise, die auf ein Schlagwort umleitet („Tierfantasy“ → „Fantasy“): am Titel und in der Suche gilt das Ziel. Trägt selbst keine Titel                           | `schlagworte.verweis_auf` (Migration 143)                  |
 | **Vormerkung**              | Reservierung eines Exemplars durch einen Leser; rückt bei Rückgabe nach und wird „abholbereit"                                                                           | `vormerkungen`, `repository/vormerkung_nachruecken.go`        |
 
 ---

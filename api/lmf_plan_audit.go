@@ -6,7 +6,7 @@ package api
 // Speichern eines veröffentlichten Plans und Verwerfen schreiben über
 // koppleLmfPlanFristen die Rückgabefristen ALLER Klassen des Plans um und löschen dabei,
 // wo die neue Frist in der Zukunft liegt, Mahnstufe und Mahndatum der betroffenen
-// Ausleihen (repository.SetzeLernmittelFristFuerKlassen). Im Plan der Schule sind das rund
+// Ausleihen (repository.LmfTerminRepository.SetzeLernmittelFristFuerKlassenIn). Im Plan der Schule sind das rund
 // siebzig Klassen in einem Klick.
 //
 // Für die Frist EINER Ausleihe hat dieses Projekt die Antwort längst gegeben

@@ -93,11 +93,11 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 67.833 Zeilen (ohne das generierte `docs/docs.go`) |
-| Go-Tests                          | 87.933 Zeilen in 627 Testdateien           |
-| Svelte/JavaScript (`frontend/src`) | 64.894 Zeilen, davon 293 `.svelte`-Dateien |
-| e2e-Spezifikationen (Playwright)  | 109 Dateien                                |
-| Registrierte HTTP-Routen          | 216 (davon 78 Operationen Swagger-annotiert) |
+| Go-Produktivcode                  | 68.178 Zeilen (ohne das generierte `docs/docs.go`) |
+| Go-Tests                          | 88.639 Zeilen in 633 Testdateien           |
+| Svelte/JavaScript (`frontend/src`) | 65.601 Zeilen, davon 294 `.svelte`-Dateien |
+| e2e-Spezifikationen (Playwright)  | 110 Dateien                                |
+| Registrierte HTTP-Routen          | 217 (davon 78 Operationen Swagger-annotiert) |
 | Datenbank-Migrationen             | 147                                        |
 | Tabellen / Sichten in `schema.sql`| 44 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 

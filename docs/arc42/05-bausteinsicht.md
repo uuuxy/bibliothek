@@ -14,8 +14,8 @@ Stand: 23.09.2026 · alle Umfangszahlen gemessen am 23.09.2026
 │  ┌────────────────────────────┐        ┌───────────────────────────────────┐ │
 │  │  Frontend (SPA + PWA)      │        │  Backend (Go)                     │ │
 │  │  Svelte 5 Runes, Tailwind  │◄──────►│  net/http, pgx/v5                 │ │
-│  │  293 .svelte, 64.894 Zeilen│  JSON  │  67.833 Zeilen Produktivcode      │ │
-│  │  IndexedDB-Warteschlange   │  SSE   │  216 Routen, 147 Migrationen      │ │
+│  │  294 .svelte, 65.601 Zeilen│  JSON  │  68.178 Zeilen Produktivcode      │ │
+│  │  IndexedDB-Warteschlange   │  SSE   │  217 Routen, 147 Migrationen      │ │
 │  └────────────────────────────┘        └──────────────┬────────────────────┘ │
 │           ausgeliefert AUS dem Backend                │                       │
 │           (frontend/dist, os.OpenRoot)                │ pgx-Pool              │
@@ -88,10 +88,10 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 28.335 Zeilen, 156 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Selbstprüfung, Mail-Routen, LUSD-Parser und -Anwendung, öffentliche Seiten     |
-| `repository/`           | 13.800 Zeilen, 81 Dateien  | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
+| `api/`                  | 28.415 Zeilen, 156 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Selbstprüfung, Mail-Routen, LUSD-Parser und -Anwendung, öffentliche Seiten     |
+| `repository/`           | 13.987 Zeilen, 83 Dateien  | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
 | `internal/service/`     | Teil von 8.547 Zeilen  | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
-| `inventur/`             | 5.875 Zeilen, 43 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
+| `inventur/`             | 5.953 Zeilen, 43 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.342 Zeilen, 8 Dateien    | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh                  |
 | `jobs/`                 | 1.536 Zeilen, 11 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 715 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |

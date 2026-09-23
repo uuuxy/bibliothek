@@ -1,6 +1,6 @@
 # 9. Architekturentscheidungen
 
-Stand: 17.09.2026
+Stand: 23.09.2026
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -101,7 +101,7 @@ Vollständigkeitspflicht — deshalb das Coverage-Gate mit Allowlist für die be
 
 ## A4 — UUID-Prüfung hinter das Routing verlegt
 
-**Entscheidung.** `ValidateUUIDParams` sitzt **in** `RequirePermission`, nicht als globale
+**Entscheidung.** `ValidateUUIDParamsMiddleware` sitzt **in** `RequirePermission`, nicht als globale
 Middleware um den Mux.
 
 **Anlass.** Audit-Befund vom 01.08.2026: Von außen um den Mux gelegt las die Middleware
@@ -451,8 +451,8 @@ festhalten.
 ausdrücklich das Gegenteil. Ein Schlüssel, den der Server **gar nicht** beantwortet hat,
 bleibt liegen — bis zum 15.09.2026 galt Schweigen als erledigt. Die Uhr des Kiosk-Rechners
 wird über `performance.now()` gegen die Wanduhr gehalten, weil sie oft genau dann gestellt
-wird, wenn das Netz zurückkommt. Die Stapel-Tür besteht nur noch „eine Version länger" für
-Theken-Tabs mit altem Stand.
+wird, wenn das Netz zurückkommt. Die Stapel-Tür blieb „eine Version länger" für Theken-Tabs mit
+altem Stand (v3.0.0) und ist seit dem 22.09.2026 entfernt.
 
 **Fundstelle.** `api/nachbuchen_handler.go`, `internal/service/nachbuchen.go`,
 `frontend/src/lib/stores/offlineSync.svelte.js`.

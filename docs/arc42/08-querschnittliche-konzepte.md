@@ -287,7 +287,7 @@ einzigen unbrauchbaren Meldung kollabieren.
 
 | Frage                        | Antwort                                                                                                          |
 | ---------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Welche Zeitzone rechnet Fristen? | `Europe/Berlin`, im Code gepinnt (`tagesEndeInSchulzeitzone`). Eine zweite, rohe Berechnung gibt es bewusst nicht |
+| Welche Zeitzone rechnet Fristen? | `Europe/Berlin`, im Code gepinnt (`TagesEndeInSchulzeitzone` → `schulzeit.TagesEnde`). Eine zweite, rohe Berechnung gibt es bewusst nicht |
 | Welche Zeitzone fährt den Cron?  | **UTC**, genagelt über `cron.WithLocation(time.UTC)` — sonst verschluckt die Umstellnacht den 02:30-Job          |
 | Was ist „jetzt" für die Fachlogik? | `pkg/schulzeit`; in Tests über `Server.Uhr` gestellt, sonst bewiese derselbe Test im Oktober das Gegenteil von dem im Juni |
 | Wie wird der Lernmittel-Stichtag berechnet? | 31. Juli des laufenden bzw. kommenden Schuljahres — es sei denn, der LMF-Plan nennt für die Klasse einen Rückgabetermin; dann gilt der nächste Termin **nach** dem Ausleihtag |
