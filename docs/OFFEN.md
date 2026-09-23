@@ -34,12 +34,13 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
-1. **4.20** Schlagworte: DNB-Vorschlag (die Littera-Schlagworte mit dem Backup, 7.2).
-2. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
-3. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
-4. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
-5. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
-6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+1. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
+2. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
+3. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
+4. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+
+Von 4.20 (Schlagworte) bleiben nur die Littera-Schlagworte; sie kommen mit dem Backup (7.2).
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
 die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
@@ -287,18 +288,9 @@ Die 15 bis 20 Wörter, die im Portal als Filter stehen, markiert die Pflegeseite
 Titel steht seit Migration 138; selbst gesetzt und änderbar sind dort die Grenzen: 30 Wörter je
 Titel, 80 Zeichen je Wort, Vorschlagsliste die 500 häufigsten.
 
-**Freigegeben am 23.09.2026, in dieser Reihenfolge** (die Pflegeseite unter Einstellungen
-steht seit dem 23.09.2026):
-
-1. **DNB-Vorschlag beim Bestellen per ISBN:** Vorgeschlagen wird nur, was es schon als
-   Schlagwort oder Verweis gibt. Gemessen am 23.09.2026 an 13 aktuellen Sätzen: Die Gattung
-   (655 `gatbeg`) nennt ein Genre nur bei Jugendbüchern ab 12 („Science Fiction", „Dystopie
-   und Utopie"), bei Kinderbüchern nur „Kinderbücher bis 11 Jahre". Die freien Verlagswörter
-   (653) tragen „Fantasy" und „Freundschaft", aber auch bis zu 98 Werbewörter je Titel
-   („TikTok", „Must Read") — deshalb der Abgleich gegen die eigene Liste.
-2. **Littera-Schlagworte** (MAB 710) beim nächsten Einspielen des Backups mitnehmen (7.2).
-   Heute liest der Import sie, leitet das Fach ab und verwirft sie. Vorher messen, wie viele
-   Titel welche tragen.
+**Offen (freigegeben am 23.09.2026):** die **Littera-Schlagworte** (MAB 710) beim nächsten
+Einspielen des Backups mitnehmen (7.2). Heute liest der Import sie, leitet das Fach ab und
+verwirft sie. Vorher messen, wie viele Titel welche tragen.
 
 **Aus Littera nur, wenn die Bücherei es braucht** (entschieden am 23.09.2026): die
 Schlagwortliste drucken, den Schlagwortkatalog in eine Datei schreiben und aus einer lesen. Ein

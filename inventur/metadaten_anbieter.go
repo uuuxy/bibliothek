@@ -63,7 +63,12 @@ type marcBibDaten struct {
 	jahr               string
 	isbn               string
 	genres             []string
-	zielgruppe         string
+	// freieWoerter: 653 $a ohne Vorsatz — die Verlagswörter („Burgen", „Erste Liebe").
+	// Einträge mit Vorsatz sind Angaben anderer Art: „(Zielgruppe)", „(Lesealter)",
+	// „(Produktform)", „(VLB-WN)", „(BISAC Subject Heading)", „(Produktgruppe)" (gesehen an
+	// DNB-Sätzen vom 23.09.2026).
+	freieWoerter []string
+	zielgruppe   string
 	// preis ist der Ladenpreis aus MARC21 020 $c — ein VORSCHLAG, keine Tatsache:
 	// Er gilt zum Erscheinungszeitpunkt und ist nicht der Schulpreis.
 	preis float64
@@ -84,6 +89,7 @@ func (b *marcBibDaten) verarbeiteFeld(feld marcDatafield) {
 		b.verarbeiteGenre(feld.Subfield)
 	case "653":
 		b.verarbeiteZielgruppe(feld.Subfield)
+		b.verarbeiteFreieWoerter(feld.Subfield)
 	}
 }
 
@@ -188,7 +194,7 @@ func (b *marcBibDaten) verarbeitePublikation(subfelder []marcSubfield) {
 // Gattungsbegriffe. Bis zum 22.09.2026 wurde daraus ein Signaturvorschlag „BIB Jugendbuch"
 // abgeleitet; die Signaturen der Schülerbücherei sind aber die Littera-Codes am Regal. Die
 // gesammelten Begriffe sind eine Quelle des Schlagwort-Vorschlags (docs/OFFEN.md 4.20,
-// Stufe 3): vorgeschlagen wird nur, was es schon als Schlagwort oder Verweis gibt.
+// stichwoerter): vorgeschlagen wird nur, was es schon als Schlagwort oder Verweis gibt.
 func (b *marcBibDaten) verarbeiteGenre(subfelder []marcSubfield) {
 	for _, unterFeld := range subfelder {
 		if unterFeld.Code == "a" {
@@ -208,6 +214,23 @@ func (b *marcBibDaten) verarbeiteZielgruppe(subfelder []marcSubfield) {
 			b.zielgruppe = strings.TrimSpace(strings.TrimPrefix(wert, "(Zielgruppe)"))
 		}
 	}
+}
+
+// verarbeiteFreieWoerter sammelt die Verlagswörter aus Tag 653 $a — alles ohne Vorsatz in
+// Klammern. Sie sind ungeprüfter Text und taugen nur als Treffer gegen die eigene Liste.
+func (b *marcBibDaten) verarbeiteFreieWoerter(subfelder []marcSubfield) {
+	for _, unterFeld := range subfelder {
+		wert := strings.TrimSpace(unterFeld.Value)
+		if unterFeld.Code == "a" && wert != "" && !strings.HasPrefix(wert, "(") {
+			b.freieWoerter = append(b.freieWoerter, wert)
+		}
+	}
+}
+
+// stichwoerter sind die Kandidaten des Schlagwort-Vorschlags: Gattungsbegriffe und
+// Verlagswörter in der Reihenfolge des Satzes.
+func (b *marcBibDaten) stichwoerter() []string {
+	return append(append([]string{}, b.genres...), b.freieWoerter...)
 }
 
 func (b *marcBibDaten) titel() string {
@@ -254,13 +277,14 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	}
 
 	return &MetadatenErgebnis{
-		ISBN:       isbn,
-		Titel:      titel,
-		Autor:      finalerAutor,
-		Verlag:     akk.verlag,
-		Jahr:       akk.jahr,
-		Zielgruppe: akk.zielgruppe,
-		Preis:      akk.preis,
+		ISBN:         isbn,
+		Titel:        titel,
+		Autor:        finalerAutor,
+		Verlag:       akk.verlag,
+		Jahr:         akk.jahr,
+		Zielgruppe:   akk.zielgruppe,
+		Preis:        akk.preis,
+		Stichwoerter: akk.stichwoerter(),
 	}, nil
 }
 

@@ -108,3 +108,38 @@ describe('ChipFeld ohne geladene Werte', () => {
 		expect(/** @type {HTMLInputElement} */ (getByLabelText('Schlagworte')).disabled).toBe(true);
 	});
 });
+
+// Angebote (M3 Suggestion chips): Werte zum Anklicken unter den Chips — zuerst der
+// Schlagwort-Vorschlag aus der DNB beim Bestellen per ISBN (docs/OFFEN.md 4.20). Eingetragen
+// ist nichts, bis jemand klickt; und ein Angebot unterliegt denselben Regeln wie Getipptes.
+describe('ChipFeld mit Angeboten', () => {
+	const angebot = (/** @type {any} */ screen, /** @type {string} */ wert) =>
+		screen.queryByRole('button', { name: `„${wert}“ übernehmen` });
+
+	it('übernimmt ein Angebot mit einem Klick und nimmt es aus der Zeile', async () => {
+		const screen = aufbau({ angebote: ['Krieg', 'Erste Liebe'], angeboteEtikett: 'Aus der DNB' });
+		expect(chips(screen.container)).toEqual([]);
+		expect(screen.getByRole('group', { name: 'Aus der DNB' })).toBeTruthy();
+		await fireEvent.click(angebot(screen, 'Krieg'));
+		expect(chips(screen.container)).toEqual(['Krieg']);
+		expect(angebot(screen, 'Krieg')).toBeNull();
+		expect(angebot(screen, 'Erste Liebe')).toBeTruthy();
+	});
+
+	it('bietet nicht an, was schon gewählt ist — ohne Rücksicht auf Groß- und Kleinschreibung', () => {
+		const screen = aufbau({ werte: ['krieg'], angebote: ['Krieg'] });
+		expect(angebot(screen, 'Krieg')).toBeNull();
+		expect(screen.queryByRole('group')).toBeNull();
+	});
+
+	it('hält die Obergrenze auch für Angebote und sperrt sie mit dem Feld', async () => {
+		const voll = aufbau({ werte: ['A', 'B'], max: 2, angebote: ['C'] });
+		await fireEvent.click(angebot(voll, 'C'));
+		expect(chips(voll.container)).toEqual(['A', 'B']);
+		expect(voll.getByText(/Höchstens 2/)).toBeTruthy();
+		voll.unmount();
+
+		const gesperrt = aufbau({ angebote: ['C'], disabled: true });
+		expect(/** @type {HTMLButtonElement} */ (angebot(gesperrt, 'C')).disabled).toBe(true);
+	});
+});

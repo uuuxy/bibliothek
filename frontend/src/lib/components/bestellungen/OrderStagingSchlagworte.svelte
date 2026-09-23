@@ -17,8 +17,14 @@
 	import ChipFeld from '../ui/ChipFeld.svelte';
 	import { untrack } from 'svelte';
 
-	/** @type {{ titelId: string }} */
-	let { titelId } = $props();
+	/**
+	 * angebote: der Schlagwort-Vorschlag aus der DNB (POST /api/buecher/aus-isbn) — Wörter der
+	 * eigenen Liste, die der DNB-Satz nennt. Angeboten zum Anklicken, nicht eingetragen: Der
+	 * Satz nennt etwa „Deutsch" für die Sprache, und ein gleichnamiges Schlagwort für das Fach
+	 * stünde sonst still am Titel.
+	 * @type {{ titelId: string, angebote?: string[] }}
+	 */
+	let { titelId, angebote = [] } = $props();
 
 	/** @type {string[]} */
 	let schlagworte = $state([]);
@@ -76,6 +82,8 @@
 		aria-label="Schlagworte"
 		bind:werte={schlagworte}
 		{vorschlaege}
+		{angebote}
+		angeboteEtikett="Vorschläge aus der DNB"
 		disabled={beiStart === null}
 		hint={fehlen
 			? 'Konnten nicht geladen werden — bitte später im Buchformular eintragen.'

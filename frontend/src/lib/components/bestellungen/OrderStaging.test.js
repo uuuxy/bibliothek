@@ -176,6 +176,37 @@ describe('OrderStaging: Schlagworte', () => {
 		});
 	});
 
+	// Der Vorschlag aus der DNB (docs/OFFEN.md 4.20): angeboten, nicht eingetragen. Ein
+	// Klick übernimmt ihn in die Chips, gespeichert wird mit „In den Warenkorb" — und nur,
+	// was jemand übernommen hat.
+	it('bietet den DNB-Vorschlag an und schreibt nur, was jemand übernimmt', async () => {
+		antworten([]);
+		const screen = fenster({ ...titel, schlagwort_vorschlaege: ['Krieg', 'Erste Liebe'] });
+		await feldBereit(screen);
+		expect(screen.getByRole('group', { name: 'Vorschläge aus der DNB' })).toBeTruthy();
+
+		await fireEvent.click(screen.getByRole('button', { name: '„Krieg“ übernehmen' }));
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+
+		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
+			schlagworte: ['Krieg']
+		});
+	});
+
+	it('schreibt keinen Vorschlag, den niemand übernommen hat', async () => {
+		antworten([]);
+		const screen = fenster({ ...titel, schlagwort_vorschlaege: ['Krieg'] });
+		await feldBereit(screen);
+
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		expect(apiPut).not.toHaveBeenCalledWith(
+			'/api/buecher/titel/t-1/schlagworte',
+			expect.anything()
+		);
+	});
+
 	it('bleibt gesperrt und schreibt nichts, wenn die vorhandenen nicht zu laden sind', async () => {
 		antworten(null);
 		const screen = fenster();

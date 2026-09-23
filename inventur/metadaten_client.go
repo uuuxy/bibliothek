@@ -38,6 +38,12 @@ type MetadatenErgebnis struct {
 	// Er gilt zum Erscheinungszeitpunkt und ist NICHT der Schulpreis — die Oberflaeche
 	// darf ihn nur vorschlagen, nie als erfasste Ausgabe verbuchen.
 	Preis float64 `json:"preis,omitempty"`
+	// Stichwoerter sind die Gattungsbegriffe (655 $a) und die freien Verlagswörter (653 $a
+	// ohne Vorsatz) der DNB — Kandidaten für den Schlagwort-Vorschlag beim Bestellen per
+	// ISBN (docs/OFFEN.md 4.20, repository.SchlagworteAusStichwoertern). Nie gespeichert
+	// und nie ausgeliefert: Ein Satz trägt bis zu 98 Verlagswörter, darunter Werbung
+	// („TikTok", „Must Read"); vorgeschlagen wird nur, was es in der eigenen Liste gibt.
+	Stichwoerter []string `json:"-"`
 }
 
 // NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,

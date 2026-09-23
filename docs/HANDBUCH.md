@@ -405,6 +405,13 @@ Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Be
 **Wünsche & Meldungen** (Anliegen aus dem Portal, _Erledigen_ mit Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
 
+Über _Titel suchen & hinzufügen_ kommen auch Titel dazu, die es noch nicht gibt; vor dem
+Warenkorb steht ein Fenster mit Signatur, Schlagworten, der Frage „Lernmittel?" und der Menge.
+Entsteht der Titel dabei neu aus der DNB, stehen unter den Schlagworten die Wörter, die der
+DNB-Satz nennt und die es unter _Einstellungen → Schlagworte_ schon gibt (auch über einen
+Verweis), als _Vorschläge aus der DNB_: Ein Klick übernimmt eines; eingetragen wird nur, was
+jemand übernommen hat.
+
 ## Inventur
 
 _Neue Bestandsprüfung starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →

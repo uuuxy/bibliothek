@@ -129,7 +129,11 @@
 		</datalist>
 	</div>
 
-	<OrderStagingSchlagworte bind:this={schlagwortTeil} titelId={book.id} />
+	<OrderStagingSchlagworte
+		bind:this={schlagwortTeil}
+		titelId={book.id}
+		angebote={book.schlagwort_vorschlaege ?? []}
+	/>
 
 	<!-- Die Antwort entscheidet über den Topf: Lernmittel bestellt das Land (Lernmittel-
 	     freiheit), alles andere die Schülerbücherei aus Mitteln des Schulträgers. -->

@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/inventur"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -110,6 +111,28 @@ type ISBNLookupResponse struct {
 	// Bis zum 10.09.2026 gab es diese Rückfrage nicht: Jedes neue Schulbuch entstand als
 	// Bücherei-Titel und blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
 	IstLernmittel bool `json:"ist_lernmittel"`
+	// SchlagwortVorschlaege: nur bei exists=false — die Wörter der eigenen Liste, die der
+	// DNB-Satz als Gattung oder Verlagswort nennt (repository.SchlagworteAusStichwoertern,
+	// docs/OFFEN.md 4.20). Ein Vorschlag, kein Eintrag: Am Titel steht davon nichts, bis im
+	// Bestellkorb jemand einen übernimmt.
+	SchlagwortVorschlaege []string `json:"schlagwort_vorschlaege,omitempty"`
+}
+
+// titelAusNachschlagen legt den Titel aus einem Treffer der Katalogdienste an und gibt den
+// Schlagwort-Vorschlag mit. Der Vorschlag wird VOR dem Anlegen gelesen: Scheitert die
+// Abfrage, entsteht kein Titel — sonst stünde ein angelegter Titel hinter einer
+// Fehlermeldung, und der zweite Versuch fände ihn als vorhanden, ohne Vorschlag.
+func (s *Server) titelAusNachschlagen(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
+	vorschlaege, err := repository.SchlagworteAusStichwoertern(ctx, s.DB.Pool, meta.Stichwoerter)
+	if err != nil {
+		return ISBNLookupResponse{}, err
+	}
+	resp, err := s.upsertTitelAusMetadaten(ctx, isbn, meta)
+	if err != nil {
+		return ISBNLookupResponse{}, err
+	}
+	resp.SchlagwortVorschlaege = vorschlaege
+	return resp, nil
 }
 
 // ISBNZuTitelHandler handles POST /api/buecher/aus-isbn.
@@ -118,7 +141,13 @@ type ISBNLookupResponse struct {
 // creates a new buecher_titel record. The response always contains a titel_id
 // that the order workspace can add to the cart immediately.
 func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
-	metaClient := inventur.NeuerMetadatenClient()
+	return s.isbnZuTitel(inventur.NeuerMetadatenClient())
+}
+
+// isbnZuTitel ist die Tür mit ihrem Client für die Katalogdienste als Parameter: Ein Test
+// stellt die DNB-Antwort nach (MetadatenClient.SetzeHTTPClientFuerTest), statt sie im Netz
+// abzufragen — so ist auch geprüft, dass die Tür den Schlagwort-Vorschlag weitergibt.
+func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			ISBN string `json:"isbn"`
@@ -160,7 +189,7 @@ func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 		}
 
 		// 3. Insert new title; use ON CONFLICT as safety net for concurrent inserts.
-		resp, err := s.upsertTitelAusMetadaten(ctx, req.ISBN, meta)
+		resp, err := s.titelAusNachschlagen(ctx, req.ISBN, meta)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
