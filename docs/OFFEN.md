@@ -13,51 +13,45 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ## Was jetzt dran ist
 
-Dieser Block nennt die Reihenfolge. Alles darunter ist die ausführliche Fassung mit
-Begründungen.
-
-**Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): zwölf Punkte, sieben davon erledigt.
-Die Antwort der Schule vom 22.09.2026 hat drei Punkte entschieden; alle drei sind gebaut
-(9.3 c, 9.4, 9.6), offen ist dort nur dein Blick. Daneben stehen zwei Bedingungen neben der Mängelliste — der Nachweis der
-DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
+**Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): Offen sind dort eine Frage (9.3 c)
+und die zwei Bedingungen neben der Mängelliste — der Nachweis der DSGVO-Konformität und ein
+Hosting- und Pflegekonzept (9.9).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Die Antwort der Schule ist da (22.09.2026) — alle drei Dinge sind gebaut.** Keine
-   automatische Sperre für Lernmittel, auch keine übergehbare (9.3 c). Titel ohne Exemplare
-   stehen in keinem Katalog mehr (9.4). Mehrjahresbände am Werk, das Schuljahr steckt in der
-   Frist (9.6). Die Bedienstellen sind am 22.09.2026 am Bildschirm abgenommen.
-2. **Die sechs Fragen sind beantwortet und gebaut** (21.09.2026: 4.7, 4.9, 4.11, 4.13, 4.14,
-   4.21). Von 4.8 steht nur noch der Lauf im Druck-Center aus — er ändert Daten und liegt bei
-   dir (Stichtag 15.07.2026, gemessen). Neu seit 4.21: In den Einstellungen unter
-   „Schule" steht das Feld „Eigentumsvermerk Schülerbücherei" — leer heißt, diese Bücher
-   tragen keinen Vermerk. Den Wortlaut kennt nur die Schule.
-3. **Die Zahlen vom Testserver liegen vor** (21.09.2026): 8 Leser ohne Ausweisnummer, alle
-   Lehrkräfte (5.16 C); kein Kollege in einer Warteschlange, in der er nie nachrückt (5.19).
-   Die Messung aus 4.3 ist gelaufen (22.09.2026: kein Titel mit Wert); 4.3 ist gebaut und weg.
-4. **Gebaut am 23.09.2026:** die Karenz-Uhr (Migration 137, eigene Spalte am Leser mit
-   Rückfüllung) und die Ausweisnummer beim Anlegen eines Kontos (Migration 136).
-5. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
+1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen. Er ändert Daten.
+2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
-6. **Schulbücher in neuer Auflage** (4.18). Das Feld „Auflage" und die Dublettenkontrolle beim
-   Anlegen sind seit dem 17.09.2026 gebaut. Offen ist die dritte Stufe, das Werk über den
-   Auflagen — sie ändert das Schema und braucht eine Freigabe — und die Frage, wer ein Werk
-   anlegt.
-7. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
-   ist nichts zu tun außer nachzufragen, wenn nichts kommt.
-8. **Aus dem Abgleich mit Littera** (4.19, 4.20): **Ferienkalender** — heute mahnen wir das Kind,
-   dessen Frist in die Herbstferien fiel. Seit dem 22.09.2026 ist auch die letzte Frage
-   entschieden: Ferien UND Feiertage kommen als iCal-Datei, die Datei gewinnt vor der Rechnung,
-   Fristen rutschen mit, und ein auslaufender Kalender meldet sich an der Theke und per Mail an
-   die Leitung. Gebaut ist nichts. Die **Schlagworte** sind am 23.09.2026
-   neu entschieden (4.20): frei eintragbar wie in Littera, mit Pflegeseite und Verweisen. Das
-   Feld am Titel steht; offen sind Pflegeseite, Suche, DNB-Vorschlag und Littera-Übernahme.
+3. **Drei Freigaben, jede mit Migration:** das Werk über den Auflagen (4.18, dazu die Frage, wer
+   ein Werk anlegt), der Ferienkalender (4.19), die Pflegeseite der Schlagworte (4.20).
+4. **Die Palettenfarben** (5.21): Buchformular und Bestellfenster folgen direkt; für den Rest der
+   Anwendung fehlt die Freigabe.
+5. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
+   5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
+   Schulbücher).
+6. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
+   der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
+   diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
+   kommt.
 
 **Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 138; 135 gibt es
 nicht, sie ist zurückgenommen). Das passiert beim Start von allein; Daten gehen nicht verloren.
 Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Testserver am
 21.09.2026: 8 Lehrkräfte). Migration 138 legt zwei leere Tabellen für die Schlagworte an.
+
+**Im Code, in dieser Reihenfolge:**
+
+1. **5.21** Buchformular und Bestellfenster auf Farbrollen (86 Fundstellen).
+2. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
+3. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
+   Stufe 3 (5.3).
+4. Nach der Antwort zu E5 (**8.3**): **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+
+**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
+die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
+echten LUSD-Import erst nach der Littera-Übernahme (7.2).
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
@@ -83,28 +77,11 @@ jemandem schaden?"**
    Dokument. Eine Frage steht hier, bevor die Antwort kommt.
 3. **Erledigt heißt:** hier löschen — Datum und Begründung stehen in der Commit-Nachricht, ein
    Archiv gibt es nicht. Eine Antwort bekommt „Entschieden am …" und fällt weg, sobald
-   sie umgesetzt ist.
+   sie umgesetzt ist. Die Nummer eines gelöschten Punkts wird nicht wieder vergeben —
+   Kommentare im Code nennen sie als Herkunft.
 4. **Die Reihenfolge** wird bei jeder Änderung mitgepflegt.
 
 ---
-
-## Reihenfolge
-
-1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen.
-2. **Die Karenz-Spalte**, gebaut am 23.09.2026 (Migration 137).
-3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
-   nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
-4. **5.16** Leserdatei: gebaut und abgenommen; die Ausweisnummer beim Konto ist seit Migration 136 gebaut.
-5. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits (5.6, 5.12 und 5.17 am 22.09.2026 erledigt).
-6. Mahnverfahren: Vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und
-   **5.13** Stufe 3 (5.3).
-7. Nach der Antwort zu E5 (**8.3**): **5.4**.
-8. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass. Schlüsselwechsel,
-   Littera-Import-Hülle und `cmd/seed` sind seit dem 21./22.09.2026 abgedeckt.
-
-**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2), die
-Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
-Littera-Übernahme (7.2).
 
 ---
 
@@ -117,9 +94,8 @@ nicht durchging, steht als Meldungsliste am Band. Wie sich das verhält, steht i
 
 Zwei Dinge sind offen.
 
-**Der Nachweis von Hand (2.3).** Gebaut heißt nicht geprüft: Am 16.09.2026 stand zweimal
-„gebaut", weil Commits vorlagen — angeschlossen war beide Male nichts. Stufe 1 und 3 gehören
-von Hand in den echten Chrome, Stufe 2 über die Tür.
+**Der Nachweis (2.3).** Stufe 1 und 3 gehören von Hand in den echten Chrome, Stufe 2 über die
+Tür.
 
 **Der Server nimmt eine Nummer nur in der Schreibweise an, in der sie gespeichert ist.**
 `internal/service/omnibox_service.go` vergleicht die Vorsilben mit `strings.HasPrefix` gegen
@@ -167,8 +143,8 @@ blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt
 
 ### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
 
-Entschieden am 21.09.2026: über das Druck-Center („Fehlende Etiketten" → „Altbestand
-aufräumen", mit Vorschau und Stichtag); `scripts/repair_altbestand_etiketten.sql` ist gelöscht.
+Der Lauf geht über das Druck-Center („Fehlende Etiketten" → „Altbestand aufräumen", mit
+Vorschau und Stichtag).
 
 **Gemessen am Testserver am 21.09.2026** (Exemplare ohne Etikett-Vermerk, nicht ausgesondert,
 nach `erworben_am`): 30.654 Exemplare ohne `B-`-Nummer, alle am 15.07.2026 — dem Tag der
@@ -206,15 +182,6 @@ Die Nachbestell-Liste steht damit für dasselbe Buch zweimal da, und beide Zahle
 Dasselbe gilt für den Klassensatz (`class_books`), Vormerkungen und Reservierungen — sie alle
 hängen am Titel.
 
-**Wie Littera es macht** (Handbuch, am 17.09.2026 gelesen): Jede Auflage ist ein eigener Titel mit
-eigenem Feld „Auflage" („z. B. 3. Aufl."). Beim Anlegen läuft eine Dublettenkontrolle über die
-ISBN — ohne ISBN über Verfasser und Haupttitel — und bietet an, statt eines neuen Titels ein
-weiteres EXEMPLAR anzulegen. Verbunden werden Auflagen über eine Verweisung „Früherer Titel",
-damit die Recherche beide findet. Ein Zusammenführen von Titeln gibt es nicht, eine Ebene über dem
-Titel auch nicht. Das ist allerdings die BIBLIOTHEKS-Software; die Lernmittelverwaltung ist bei
-Littera ein eigenes Programm. Littera beantwortet also „finde beide Auflagen", nicht „wie viele
-Mathe 7 haben wir".
-
 **Entschieden am 17.09.2026:**
 
 - **Der Bedarf rechnet am Werk**, nicht an der Auflage: „95 Stück Mathe 7, egal welche Auflage."
@@ -236,17 +203,9 @@ gruppieren verbindet früher oder später zwei „Deutschbuch 7" verschiedener V
 pflegt es niemand, und der Bedarf bleibt falsch. Auf dem Weg über die Nachbestellung ist der
 Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 
-**Stand:**
-
-1. **„Auflage" als Feld am Titel — gebaut am 17.09.2026** (Migration 126, `553efd7c`): Spalte,
-   Feld in der Maske, Anzeige in Katalogkarte und Buch-Akte; der Listenimport leert sie nicht.
-2. **Dublettenkontrolle beim Anlegen — gebaut am 17.09.2026** (`e5fa346c`): in der Maske beim
-   Anlegen und Ändern, über die ISBN in jeder Schreibweise, ohne ISBN über Titel und Autor; eine
-   gefüllte Auflage hebt den Verdacht auf. Die Importe (Excel, Liste, ISBN-Abruf, Littera)
-   verlassen sich weiter auf `ON CONFLICT (isbn)`, also zeichengleich — das ist 5.5.
-3. **Das Werk** samt Migration, Gruppierung im Bedarf und Warnung in der Ausgabe — **nicht
-   gebaut.** Ändert das Schema und rechnet die Nachbestell-Liste anders. Das geht in Stufen mit
-   Nachweis und erst nach deiner Freigabe.
+**Nicht gebaut:** das Werk samt Migration, Gruppierung im Bedarf und Warnung in der Ausgabe.
+Ändert das Schema und rechnet die Nachbestell-Liste anders. Das geht in Stufen mit Nachweis und
+erst nach deiner Freigabe.
 
 ### 4.19 Frist fällt in die Ferien
 
@@ -258,16 +217,6 @@ den Ferien. Das Kind kann nicht zurückgeben, steht danach in der Mahnliste und 
 Kalendertage: Stichtag bei Lernmitteln, feste Tageszahl sonst. Kein Kalender geht ein. Der einzige
 Behelf ist der Ferien-Leseclub — ein festes Zieldatum für ALLE Ausleihen, von Hand ein- und
 auszuschalten.
-
-**Wie Littera es macht** (Handbuch 5.4.18, Kapitel *Grundeinstellungen für Verleih* und *Verleih*,
-gelesen am 17.09.2026): zwei Einstellungen. *Öffnungstage* sind die Wochentage, an denen die
-Bibliothek geöffnet hat. *Schließtage* sind einzelne Tage mit Bezeichnung, wahlweise als Zeitraum
-eingetragen („Sommerferien, Inventur, Betriebsurlaub"), dazu ein Knopf, der die gesetzlichen
-Feiertage eines Landes für ein Kalenderjahr übernimmt — jedes Jahr neu zu drücken. Fällt die Frist
-auf einen Schließtag, „errechnet LITTERA automatisch den nächsten möglichen Rückgabetermin, trägt
-diesen dann ein und stellt den Zeitraum zwischen errechnetem und tatsächlich möglichem
-Rückgabetermin mahn- und gebührenfrei". Einstellbar ist, ob bis zum nächsten Öffnungstag oder bis
-zum nächsten gleichen Wochentag verschoben wird.
 
 **Woher kämen die Tage bei uns?** Das ist die eigentliche Frage. Gebaut ist bisher nur, was der
 LMF-Plan braucht:
@@ -281,11 +230,6 @@ LMF-Plan braucht:
   aber am einzelnen Plan (`plan_id`), nicht am Schuljahr.
 - **Herbst-, Weihnachts- und Osterferien gibt es nirgends**, Öffnungstage der Bibliothek auch
   nicht. Genau diese Ferien sind die, in die eine 21-Tage-Frist fällt.
-
-Eine Tabelle `ferien_schliesszeiten` gab es; Migration 102 hat sie am 06.09.2026 ausgebaut, weil
-sie nie einen Schreiber bekam und die automatische Mahnpause vor nichts Realem schützte. Das galt
-dem Mahnwesen. Hier geht es um den Schreibpfad der Frist — um die Zahl, die auf dem Kontoauszug
-steht und die das Mahnwesen später liest.
 
 **Entschieden am 18.09.2026:**
 
@@ -355,14 +299,13 @@ gesehen.
 
 ### 4.20 Schlagworte am Titel — frei eintragbar wie in Littera
 
-**Entschieden am 23.09.2026** (ersetzt die Entscheidung vom 22.09. für ein geschlossenes
-Vokabular): Schlagworte werden frei eingetragen, mehrere je Titel, mit Vorschlägen aus dem
-Bestand — wie Littera („Schlagworte (Wertehilfe)"). Zusammengehalten wird die Liste wie dort
-durch Pflege: Umbenennen und Zusammenführen ändern alle Titel auf einmal, Verweise leiten
-Schreibweisen auf ein Wort („Tierfantasy" → „Fantasy"). Eine Liste, nicht zwei: Die 15 bis 20
-Wörter, die im Portal als Filter stehen, markiert die Pflegeseite. Seit Migration 138 gibt es
-das Feld am Titel (Buchformular, Bestellkorb); die Grenzen dort: 30 Wörter je Titel, 80 Zeichen
-je Wort, Vorschlagsliste die 500 häufigsten.
+**Entschieden am 23.09.2026:** Schlagworte werden frei eingetragen, mehrere je Titel, mit
+Vorschlägen aus dem Bestand — wie Littera („Schlagworte (Wertehilfe)"). Zusammengehalten wird
+die Liste wie dort durch Pflege: Umbenennen und Zusammenführen ändern alle Titel auf einmal,
+Verweise leiten Schreibweisen auf ein Wort („Tierfantasy" → „Fantasy"). Eine Liste, nicht zwei:
+Die 15 bis 20 Wörter, die im Portal als Filter stehen, markiert die Pflegeseite. Das Feld am
+Titel steht seit Migration 138; selbst gesetzt und änderbar sind dort die Grenzen: 30 Wörter je
+Titel, 80 Zeichen je Wort, Vorschlagsliste die 500 häufigsten.
 
 **Offen, in dieser Reihenfolge — jede Stufe mit Freigabe:**
 
@@ -391,7 +334,8 @@ eigenen Personensatz; das wäre ein eigener Umbau.
 
 ### 5.1 Schäden und Benutzer
 
-- **Was „Bezahlt" bedeutet** (17.09.2026, Folge aus 9.3 e): Der Knopf in der Schülerakte
+- **Was „Bezahlt" bedeutet** (17.09.2026, aus dem Abgleich der Anforderungsliste,
+  [mittel_konzept.md](mittel_konzept.md) Abschnitt 3): Der Knopf in der Schülerakte
   verbucht heute eine Barzahlung am Tresen. Für Lernmittel des Landes sieht die Arbeitshilfe
   Bargeld nur als Ausnahme vor — mit Quittung und Weiterleitung binnen 14 Tagen. Die Briefe
   nennen inzwischen das Konto; ein eingehender Betrag kommt also in aller Regel als
@@ -412,10 +356,9 @@ eigenen Personensatz; das wäre ein eigener Umbau.
   läuft weiter. Vorher festlegen, ob genau das gewollt ist (Nummern nie recyceln).
 - Der Elternbrief je Schadensfall (`GET /api/schadensfaelle/{id}/pdf`, `api/pdf.go`) prüft nicht,
   ob die Forderung auf einem Bescheid steht — dann stünde dieselbe Forderung auf zwei Briefen mit
-  zwei Fristen. Den Zahlungsweg nennt er seit dem 17.09.2026 richtig (9.3 e). Die Oberfläche
-  öffnet ihn seit dem 15.09.2026 nicht mehr (Mahnverfahren Stufe 1); über die Adresse bleibt er
-  erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher denselben Filter wie
-  bei der Ersatzforderung.
+  zwei Fristen. Die Oberfläche öffnet ihn nicht mehr (Mahnverfahren Stufe 1); über die Adresse
+  bleibt er erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher denselben
+  Filter wie bei der Ersatzforderung.
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 
@@ -435,8 +378,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   steht sichtbar „(Bankverbindung des Schulträgers nicht hinterlegt)". Warnung in der
   Betriebsbereitschaft. Topf in die Referenznummer, sonst kollidieren Land und Kreis an der
   UNIQUE-Spalte. Heute lehnt der Server jeden Topf außer `land` mit 409 ab.
-- **Altbriefe entfernen** (der Zahlungsweg ist seit 17.09.2026 in Ordnung, 9.3 e — es geht nur
-  noch darum, ob es sie neben dem Bescheid überhaupt weiter geben soll): Elternbrief
+- **Altbriefe entfernen** (es geht darum, ob es sie neben dem Bescheid überhaupt weiter geben
+  soll): Elternbrief
   `pdf/schadensfall.go` ← `api/pdf.go`
   (`GenerateDamagePDFHandler`) ← Route in `api/routes_students.go` ← `useStudentProfile.svelte.js`;
   Rechnung `pdf/rechnung.go` ← `api/print.go` ← `GET /api/print/rechnung/{schueler_id}` in
@@ -454,10 +397,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Altersangabe (`Zielgruppe`) und Ladenpreis, obwohl es für den Preis seit Migration 127 die
   Spalte `listenpreis` gibt. Die Gattungsbegriffe (MARC 655) liest der DNB-Leser, gespeichert
   werden sie nicht — sie sind eine Quelle des Schlagwort-Vorschlags (4.20, Stufe 3).
-  Die Signatur ist seit dem 22.09.2026 kein erfundener Vorschlag mehr: Gemessen am Testserver
-  tragen die Titel der Schülerbücherei die Littera-Codes am Regal (`Sk` 499, `Pg` 464,
-  `Lernhilfe` 390, `JF` 351 …) und KEIN zweites Signaturteil; „BIB Kinderbuch" kam in keinem
-  Regal vor. Buchformular und Bestellkorb bieten jetzt die Adressen aus dem Bestand an.
 
 - Zugangsdatum beim Anlegen außerhalb des Bestellwegs (Rasterdurchgang 22.09.2026, Frage 6):
   Handanlage, Sammelimport und Bestand-Nachziehen lassen `erworben_am` auf der Vorgabe
@@ -476,7 +415,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Normalform. Der Altbestand ist noch nicht zurückgeschrieben: erst am Server messen, ob zwei
   Altzeilen sich nur in der Schreibweise unterscheiden (Einzeiler unten), dann eine Migration,
   die `isbn = isbn_normalform(isbn)` setzt. Ein CHECK auf den Jahrgang fehlt, „Jahrgang
-  unbekannt" ist von der Vorgabe nicht zu unterscheiden — und seit dem Mehrjahresband (9.6)
+  unbekannt" ist von der Vorgabe nicht zu unterscheiden — und seit dem Mehrjahresband (Migration 134)
   hängt eine Frist an „bis": Wer den Schalter auf einem Titel mit der Vorgabe 5 bis 10
   umlegt, bekommt die 10. Ein CHECK allein löst das nicht; eine Vorgabe „unbekannt" (NULL)
   bräuchte die drei Leser (Mahnwesen „Jahrgang", Inventur, Portal-Filter) mit.
@@ -509,23 +448,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   ORDER BY ist_lernmittel DESC, signatur NULLS LAST, titel;
   ```
 
-### 5.6 Schüler und LUSD
-
-- **Ein Schüler wird Lehrkraft (oder umgekehrt) — weiter nicht möglich, und das ist Absicht.**
-  Seit Migration 123 stehen alle Leser in einer Tabelle, die Art lässt sich aber nur zwischen
-  Lehrkraft und LiV umstellen. Über die Schüler-Grenze verbietet es die Datenbank
-  (`chk_leser_nur_schueler_werden_abgaenger`), weil ein Schüler aus der LUSD kommt und dort
-  wieder auftauchen würde. Der Fall ist selten (ein ehemaliger Schüler kommt als LiV zurück);
-  heute legt man dafür einen zweiten Leser an. Wenn er öfter vorkommt, ist es ein eigener,
-  kleiner Umzugspfad wie Migration 072 — kein Auswahlfeld.
-  Der Littera-Lauf übergeht weiter Praktikanten, Sekretariat und „Im Ausland"
-  (`internal/littera/leser.go`).
-
-### 5.7 bis 5.9 Bestellwesen · LMF und Statistik · Oberfläche
-
-Nichts offen (Stand 21.09.2026). Die Nummern bleiben vergeben, weil Kommentare im Code auf sie
-als Herkunft eines Fundes verweisen.
-
 ### 5.10 Gates und Werkzeuge
 
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT; die Schema-Parität
@@ -543,37 +465,12 @@ als Herkunft eines Fundes verweisen.
   heben.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
 
-### 5.11 Doku
-
-Nichts offen (Stand 16.09.2026). Die Nummer bleibt, weil die Reihenfolge oben auf sie verweist.
-
 ### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
 
-Das Modell seit dem 15.09.2026 (Stufen 1 und 2): Die Reiter „Alle ·
-Akut fällig · Eskaliert" fragen „Wer hat Bücher zu spät?", der Reiter „Schadensersatz" fragt „Wer
-schuldet Geld?". Solange das Buch als ausgeliehen gilt, steht das Kind links; sobald ein Verlust
-oder Schaden gebucht ist, rechts — mit genau einem Stand und einem nächsten Schritt je Zeile. Der
-Bescheid entsteht direkt aus den überfälligen Büchern; der Brief bucht ihren Verlust.
-
-- **Stufe 3**: Folgen der Übergabe (5.3): Übergabe-PDF und Sammelliste für das Schulamt; E6 (4.4).
-
-### 5.14 Fallengelassene Verdachte (15.09.2026)
-
-Nachgestellt und widerlegt — damit der nächste Durchgang sie nicht noch einmal prüft:
-`EmpfaengerFuerBescheid` ohne `deleted_at IS NULL` · Rückkehr storniert die Forderung, das Buch
-bleibt ausgesondert · „Pool ODER Tx" nur behauptet · Rechte-Asymmetrie an den Buch-Routen
-(`adminH` IST `RequireEditBooks`) · Migration 115 droppt `idx_lmf_termine_plan`.
-
-### 5.15 Durchgang vom 15.09.2026
-
-Nichts offen (Stand 22.09.2026): Nummernkreis und Bewegungsstempel sind mit den Migrationen 131
-und 132 Regeln der Datenbank, die zwei Beobachtungen stehen in 6.1. Die Nummer bleibt vergeben,
-weil Kommentare im Code auf sie als Herkunft eines Fundes verweisen.
+Folgen der Übergabe (5.3): Übergabe-PDF und Sammelliste für das Schulamt; E6 (4.4). Das Modell
+der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
 
 ### 5.16 Leserdatei und Rolle Leitung — was noch offen ist
-
-Gebaut ist alles: Lesertabelle, Rolle Leitung, Theke und Leserdatei, eine Maske für jeden, die
-Pflicht-Schul-E-Mail und das Zusammenführen von Kollegen.
 
 **Entschieden, damit die Frage nicht wiederkommt:** Ein Kollege hat bewusst keinen
 Kontoauszug, keine Ersatzforderung und keine DSGVO-Auskunft in seiner Akte — sie gehören der
@@ -595,29 +492,9 @@ der Druck liefert eine leere Zeile. Soll Leeren dort eine neue Nummer ziehen sta
 Aus der Schärfung von Frage 12 (16.09.2026) bleibt eine Beobachtung: Für `klassen` gibt es im
 ganzen Go-Code kein `DELETE` — eine vertippte Klasse steht ab dann in jeder Auswahlliste.
 
-### 5.19 Lesepfade gegen die Sicht `schueler` — eine eigene Achse
+### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
-Die Ratsche aus Frage 13 führt neun SCHREIBpfade gegen die Sicht, je mit Begründung. Gelesen wird
-gegen sie in 29 Dateien; die Lese-Ratsche zählt sie seit dem 21.09.2026. An der Datenbank nachgestellt: Steht eine
-Vormerkung für einen Kollegen, findet die Abfrage, die beim Rückgabe-Vorgang den Nächsten
-bedient, null Kandidaten — die Zeile ist da, die Warteschlange geht über sie hinweg. Ob es solche
-Zeilen gibt, zeigen zwei Zählungen:
-
-```
-SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
-SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
-```
-
-**Gemessen am Testserver am 21.09.2026: beide 0.** Es ist Vorsorge und keine Reparatur. Auf
-einer Anlage mit anderem Bestand vorher neu zählen.
-
-**Die Durchsicht ist abgeschlossen (22.09.2026).** Alle 29 Dateien, die gegen die Sicht
-lesen, stehen in `docs/lesepfade_gegen_sicht_test.go` mit Begründung; die Liste der Ungeprüften
-ist leer, eine neue Datei ist rot. Vier Funde sind behoben (Vormerkung nur für Schüler,
-Suchleiste erkennt den Kollegen-Ausweis, Tresen-Auskunft nennt den Kollegen, Passbild-Upload
-für Kollegen) — je mit einem PG-Test, der am alten Stand rot war.
-
-**Zwei Fragen daraus:**
+**Zwei Fragen:**
 
 - **DSGVO-Auskunft** (`api/dsgvo_auskunft.go`): Für einen Kollegen gibt es sie nicht (5.16
   nennt das als Absicht). Auch eine Lehrkraft kann Auskunft über ihre Daten verlangen — soll
@@ -631,12 +508,17 @@ für Kollegen) — je mit einem PG-Test, der am alten Stand rot war.
 - Ein negativer Listenpreis wird von der Datenbank abgelehnt; die Antwort sagt nicht, was erlaubt
   ist. Das Schwesterfeld derselben Migration nennt seinen Bereich.
 
-### 5.20 Aus der Durchsicht von PR 631 (21.09.2026) — was offen bleibt
+**Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
+sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
+hinweg. Am Testserver waren am 21.09.2026 beide Zählungen 0; neue Vormerkungen für Kollegen
+lehnt die Tür seit dem 21.09.2026 ab.
 
-Der PR (nur Doku, 603 Zeilen) ist nicht übernommen und am 21.09.2026 mit Begründung
-geschlossen. Was daraus am Code hielt, ist am selben Tag einzeln auf `main` gebaut
-(Cover-Rezept, Anfrage-Log in Kommentar und arc42, Schlüssel-Probe in der
-Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
+```
+SELECT count(*) FROM vormerkungen v JOIN leser l ON l.id = v.schueler_id WHERE l.art <> 'schueler';
+SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHERE l.art <> 'schueler';
+```
+
+### 5.20 Aus der Durchsicht von PR 631 (21.09.2026) — was offen bleibt
 
 - **Anfrage-Log mit Dauer und Anfragekennung:** nicht gebaut, nur die Doku auf den Ist-Stand
   gezogen. Mehr Logzeilen am Schulserver sind eine Betriebsfrage.
@@ -681,8 +563,6 @@ Freigabe.
 - Die Sperrprüfung liest aus dem Pool, während die Checkout-Transaktion mit `FOR UPDATE` offen ist
   (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim Nachbuchen
   vieler Ausleihen (Abschnitt 2) beobachten.
-- `pg_dump` und `psql` werden im Backup und in der Restore-Probe per Namen über `PATH` aufgelöst:
-  keine Shell, keine Injection, im Container ist `PATH` fest.
 - `golang.org/x/crypto/openpgp` (`GO-2026-5932`): kein Fix verfügbar, transitiv, kein Aufrufer im
   eigenen Code.
 - Designer: Wer den Browser binnen 800 ms schließt, verliert die letzte Auto-Save-Änderung;
@@ -691,8 +571,6 @@ Freigabe.
   gelaufen, nur relevant für eine weitere gewachsene Datenbank.
 - Die Rate-Limiter-Maps räumen erst ab 5.000 Einträgen; nur mit vielen frischen Adressen ein
   CPU-Thema.
-- ZAP am 05.09.2026: `style-src 'unsafe-inline'`, `csrf_token` ohne HttpOnly, „Suspicious
-  Comments" — alle drei dokumentierte Entscheidungen.
 - `startGDPRWorker` (`main.go`) ruft nur die Leihen-Anonymisierung und die Abgänger-Löschung;
   `RunGDPRAnonymizeOldData` läuft allein im Cron. Keine Wirkung erkennbar, die Doku beschreibt
   beide Wege.
@@ -743,7 +621,6 @@ Freigabe.
 - 52 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/`; der Bestand ist seit dem
   07.08.2026 eingefroren (`handlerMitSQL` in `api/schichtung_test.go`). Umstellen beim fachlichen
   Anfassen einer Datei, nicht in einem Rutsch.
-- Tabellen-Bauteil: gebaut (`4a55c52f`); offen allenfalls eine Sichtabnahme.
 
 ### 6.3 Parkdeck (bewusste Nicht-Entscheidungen)
 
@@ -752,7 +629,10 @@ verschmelzen · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `i
 geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (26 Dateien
 mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
 Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt
-[mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut).
+[mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·
+ein Schüler wird Lehrkraft (die Datenbank verbietet es, `chk_leser_nur_schueler_werden_abgaenger`;
+heute ein zweiter Leser, bei Häufung ein Umzugspfad wie Migration 072) · der Littera-Personenlauf
+übergeht Praktikanten, Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
 
 ---
 
@@ -809,7 +689,7 @@ einrichten.
 ### 7.6 Ruleset `main`
 
 PR-Pflicht entfernen (Solo-Entscheidung 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 13.09.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
+deletions" anlassen. Am 23.09.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
 Admin-Bypass.
 
 ### 7.7 Abnahmen
@@ -817,7 +697,7 @@ Admin-Bypass.
 Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 
 - Flows 1–3 mit dem Sekretariat: LUSD-Import, Versetzung (vor dem Schuljahreswechsel),
-  Klassensatz erledigen. Dabei um Geburtsdatum und Eintrittsdatum im LUSD-Bericht bitten. Vorher 5.6. Ein
+  Klassensatz erledigen. Dabei um Geburtsdatum und Eintrittsdatum im LUSD-Bericht bitten. Ein
   LUSD-Import mit echten Schülern erst nach der Littera-Übernahme (7.2).
 - Flow 4 (Altbestand-Etiketten, nicht umkehrbar) erst nach 4.8.
 - Flow 5: Selbstanmeldung einer Lehrkraft.
@@ -826,8 +706,6 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 
 ### 7.8 Am Server nachsehen (lesend, Einzeiler)
 
-- Laut Serverlesung vom 13.09.2026 läuft `a841e6cd` (Container-Start 12:59 UTC); `/health` nennt
-  keinen Commit.
 - „Neuer Text" im Ausweis-Layout: laut Serverlesung vom 13.09.2026 in keinem Wert von
   `system_einstellungen`. Bestätigen, dann erledigt.
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
@@ -882,12 +760,9 @@ Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
 
 ## 9. Sichtung vom 16.09.2026
 
-Zwölf Punkte, jeder am Code geprüft. Sieben sind erledigt und stehen deshalb nicht mehr hier:
-Strichcode-Scan mit Handgerät und Kamera, Littera-Barcodes, alte Ausdrucke, Restwert beim
-Melden, Listenpreis am Titel, Zugangs- und Abgangsbuch, Sortierung und Filter der Leserdatei.
-Die Arbeit steht in den Commits vom 17.09.2026. Am 22.09.2026 hat die Schule die drei
-Rückfragen vom 21.09.2026 beantwortet; die Antworten stehen wörtlich bei 9.3 c, 9.4 und 9.6.
-Offen ist, was hier folgt.
+Zwölf Punkte, jeder am Code geprüft. Offen ist nur, was hier folgt; das Übrige steht in den
+Commits vom 17. und 22.09.2026, die drei begründeten Abweichungen im Mahnwesen (nur Post, nie
+löschen, vier statt sechs Wochen) in [mittel_konzept.md](mittel_konzept.md) Abschnitt 3.
 
 Zwei Quellen liegen dem zugrunde: `~/Downloads/Arbeitshilfe_Mahnschreiben.pdf` (Erlass vom
 17.12.2014, Az. 674.100.002-00178) und `~/Downloads/Ablauf Mahnverfahren.pdf` (die
@@ -895,74 +770,12 @@ Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschni
 
 ### 9.3 Vorgaben des Landes (Protokoll 1)
 
-**9.3 c) Sperrung bei offener Bearbeitung — entschieden und gebaut am 22.09.2026.**
-
-Die Antwort der Schule, wörtlich: „a) Dies bezieht sich nur auf die Lernmittel wegen der
-rechtlichen Grundlage der Lernmittelfreiheit in Hessen. b) Für die Lernmittel darf es keinerlei
-automatische ‚Sperrung' geben, auch nicht eine Sperrung, die bestimmte Personen aufheben
-können. Für die Schulbibliothek gilt dies nicht."
-
-Gebaut als Weiche in `pruefeSchuelerAusleihbarMit`
-(`internal/service/loan_checkout_validation.go`): Bei einem Lernmittel entfallen die zwei
-Automatiken (offene Forderung, Überfällig-Automatik); die zwei Schalter am Leser bleiben.
-Theke und Nachbuchung laufen über dieselbe Funktion. Gates: Mock-Test ohne erwartete Abfrage
-und PG-Test am Live-Pfad der Theke, beide am Rückbau rot gesehen.
-
-**Offen, bei dir:** Ein Kind mit überfälligen Lernmitteln, das ein Buch der Schülerbücherei
-will — die Automatik weist es heute ab, weil sie Medien zählt, nicht Töpfe. Die Antwort der
-Schule verbietet nur die Abweisung des Lernmittels; ob die Bücherei wegen überfälliger
-Schulbücher zumacht, entscheidet die Schule selbst. Vorschlag: so lassen, es ist eine
-Einstellung (`MaxOverdueItems`).
-
-**9.3 e) Mahnwesen — drei begründete Abweichungen.** Die Punkte 1 bis 3 der Anforderungsliste
-(Abwertung, Beschädigungsgrad, wählbare Preisgrundlage) sind am 17.09.2026 gebaut. Es bleiben
-drei Stellen, an denen das Programm bewusst etwas anderes tut:
-
-| Nr. | Verlangt                                  | Stand                                                                                     |
-| --- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 5   | Versand per Post, E-Mail oder App         | Nur Post — Schriftform, dazu die Datenschutz-Entscheidung A3 vom 22.08.2026.               |
-| 6   | Zahlung ohne Rückgabe → Buch **gelöscht** | Wird ausgesondert statt gelöscht — die Bestandskartei muss den Abgang nachweisen.          |
-| 7   | Mahnfrist **sechs** Wochen                | Vier Wochen — Arbeitshilfe und Verfahrensbeschreibung nennen vier, mit Datum.              |
-
-Offen bleibt daneben: Der Knopf „Bezahlt" in der Schülerakte bedeutet heute Barzahlung am
-Tresen; für Lernmittel ist das die Ausnahme mit Quittung, nicht der Regelweg (5.1). Und der
-Zahlungsweg für ein Buch der Schülerbücherei ist nicht entschieden — die Briefe schreiben
-dort „(Bankverbindung des Schulträgers nicht hinterlegt)" (E5, 8.3).
-
-### 9.4 Titel ohne Exemplare — entschieden und gebaut am 22.09.2026
-
-Die Antwort der Schule, wörtlich: „Ein Titel/Werk ohne (verliehene oder verfügbare) Exemplare
-im Bestand sollte aus unserer Sicht nicht im Katalog erscheinen, da dies zu Verwirrungen
-führen könnte. Vielleicht wäre eine Inventur hilfreich, um den Bestand genau zu erfassen und
-den Titeln entweder Exemplare zuzuweisen oder sie zu entfernen?"
-
-Gebaut als EIN Prädikat (`repository.SQLTitelHatExemplar`) an den drei Türen, über die ein
-Kollegium Titel sieht: Katalogliste `GET /api/books` (Portal und Titel-Verwaltung),
-Theken-Suche, Aktionssuche. Der Zulauf zählt als vorhanden (entschieden am 22.09.2026). Der
-Titel bleibt in der Tabelle; die Titel-Verwaltung erreicht ihn über den Umschalter „Mit
-Exemplaren | Ohne Exemplare" (`?bestand=ohne`, dasselbe Prädikat mit NOT) — das ist die
-Aufräumhilfe, die die Schule mit „Inventur" meint; die eigene Inventur zählt Exemplare und
-findet einen Titel ohne Exemplar deshalb nicht. Die Bestellliste führt ihn weiter (Bestand
-unter jeder Schwelle). Gates am Rückbau des Prädikats rot gesehen, an allen drei Türen.
-
-### 9.6 A: Mehrjahresbände — entschieden und gebaut am 22.09.2026
-
-Protokoll 5, zweiter Spiegelstrich: „Bei den Ausleihfristen fehlt das Jahr. Mehrjahresbände
-lassen sich nicht abbilden." Die Antwort der Schule, wörtlich: „Ja, Ihre Vermutung trifft zu.
-Die Einstellung ‚Mehrjahres-Band' wird am Titel/Werk hinterlegt (s. Screenshot). Littera Lm
-funktioniert nicht nach der Logik ‚Vorrücken', es werden jeweils die verschiedenen Schuljahre
-aufgerufen und nebeneinander gespeichert. Aus diesem Grund muss hier auch das Schuljahr
-definiert werden."
-
-Gebaut in drei Schritten am 22.09.2026: die Fristregel (Rückgabetermin der Klasse geht ein
-Mehrjahresband nichts an; nach dem Termin rechnet sie vom folgenden Schuljahr aus), dann eine
-Tür am Werk als zweite Jahreszahl — und noch am selben Tag ihr Ersatz, weil die Zahl neben
-„Jahrgang von … bis" doppelt war (Migration 134): Am Werk steht ein Schalter „Mehrjahresband",
-die Zahl ist `jahrgang_bis`, die Spalte `ziel_jahrgang` ist weg (gemessen am Testserver: ohne
-Wert). Der Schalter gilt nur an einem Lernmittel und nur mit einer Spanne über mehr als einen
-Jahrgang, an beiden Türen der Titel-Verwaltung und als CHECK in der Datenbank. Das Schuljahr,
-das Littera getrennt führt, steckt im Datum der Frist. Gates am Rückbau rot gesehen: Fristregel,
-beide Schreibpfade, CHECK.
+**9.3 c) Sperrung bei offener Bearbeitung — eine Frage bei dir.** Nach der Antwort der Schule
+vom 22.09.2026 darf ein Lernmittel nie automatisch gesperrt werden; für die Schulbibliothek gilt
+das nicht. Offen: Ein Kind mit überfälligen Lernmitteln, das ein Buch der Schülerbücherei will —
+die Automatik weist es heute ab, weil sie Medien zählt, nicht Töpfe. Ob die Bücherei wegen
+überfälliger Schulbücher zumacht, entscheidet die Schule selbst. Vorschlag: so lassen, es ist
+eine Einstellung (`MaxOverdueItems`).
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 
@@ -985,6 +798,4 @@ stehen:
   Aktualisierungen zu einer Schule, die es einsetzt. Das ist zugleich die Frage, ob das Programm
   über die eigene Schule hinaus verwendbar ist — sie lässt sich nicht aus dem Code beantworten.
 
-**Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk** — und beides steht in keinem
-der vier Punkte darüber. Wer die Mängelliste abarbeitet und diese zwei Sätze überliest, hat das
-Gate nicht bestanden.
+**Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.**

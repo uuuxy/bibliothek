@@ -4,9 +4,10 @@
 > die Karenzzeit und das Zusammenführen stehen in [LUSD.md](LUSD.md) — dort weiterlesen,
 > wer den Import bedienen oder verstehen will. Die Befunde aus §„Befunde und Empfehlungen"
 > sind am 02.09.2026 umgesetzt bzw. entschieden (Paarung, Karenz, Zusammenführen, Schuleintritt
-> als zweiter Schlüssel, keine Eltern-Mail). Offen ist Befund 2, die Meldung „mehrdeutig" bei
-> verschiedenen Klassen ([OFFEN.md](OFFEN.md) 5.6). Den Wunsch nach einer Schüler-ID erfüllt
-> kein LUSD-Bericht ([LUSD.md](LUSD.md)).
+> als zweiter Schlüssel, keine Eltern-Mail). Befund 2, die Meldung bei verschiedenen Klassen,
+> ist seit dem 22.09.2026 umgesetzt: Die Vorschau nennt zusammengelegte Zeilen mit
+> verschiedenen Klassen beim Namen. Den Wunsch nach einer Schüler-ID erfüllt kein LUSD-Bericht
+> ([LUSD.md](LUSD.md)).
 
 Prüfung des LUSD-Imports mit echten Demo-Exporten der Schule und einem synthetischen
 Bestand in Schulgröße, auf dem lokalen Stack (Container 8084, Datenbank vorher geleert).
