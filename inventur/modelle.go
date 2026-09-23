@@ -56,6 +56,11 @@ type Book struct {
 	// Aussage": Die Katalogliste lädt sie nicht, und beim Speichern lässt nil die
 	// vorhandenen unangetastet. Eine leere Liste ist eine Aussage — keine Schlagworte.
 	Schlagworte []string `json:"schlagworte"`
+	// Suchwoerter: die Wörter, über die die Katalogsuche im Browser den Titel findet —
+	// seine Schlagworte und die Verweise darauf (repository.SuchwoerterDerTitel). Nur in
+	// der Katalogliste. Ein Suchindex, keine Anzeige und kein Schreibweg: Ein Verweis ist
+	// kein Schlagwort des Titels, und das Speichern liest das Feld nicht.
+	Suchwoerter []string `json:"suchwoerter,omitempty"`
 }
 
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.

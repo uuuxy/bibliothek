@@ -64,6 +64,7 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 		// Join only buecher_titel and buecher_exemplare.
 		// The LEFT JOIN on ausleihen is filtered to active loans (rueckgabe_am IS NULL)
 		// only to determine availability — no ausleihe column values are returned.
+		// Die Suchbedingung liest dazu die Schlagworte (Katalogdaten, kein Personenbezug).
 		args := []any{}
 
 		// Was ohne Anmeldung sichtbar ist (kein Lernmittel, mindestens ein Exemplar im
@@ -78,11 +79,15 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			// öffentlich, und ein nacktes "%" oder "_" in $1 machte aus dem Teilstring-
 			// Vergleich einen Treffer auf den ganzen Bestand — LIMIT 50 hinter einem GROUP
 			// BY über alle Titel, Exemplare und Ausleihen, 50-mal pro Sekunde und Adresse.
+			//
+			// Seit dem 23.09.2026 trifft der Suchtext auch die Schlagworte und die Verweise
+			// darauf (docs/OFFEN.md 4.20) — über dieselbe Tür sucht „Mein Portal".
 			args = append(args, q, maskiereLikeJoker(q))
 			searchConditions = append(searchConditions, `(bt.search_vector @@ plainto_tsquery('german', $1)
 			   OR bt.titel ILIKE '%' || $2 || '%'
 			   OR bt.autor ILIKE '%' || $2 || '%'
-			   OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%')`)
+			   OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%'
+			   OR `+repository.SQLTitelUeberSchlagwort("bt", "$2")+`)`)
 		}
 
 		whereClause := ""

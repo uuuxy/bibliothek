@@ -34,7 +34,7 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
-1. **4.20** Schlagworte: Suche, DNB-Vorschlag (die Littera-Schlagworte mit dem Backup, 7.2).
+1. **4.20** Schlagworte: Filter im Portal, DNB-Vorschlag (die Littera-Schlagworte mit dem Backup, 7.2).
 2. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
 3. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
 4. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
@@ -290,8 +290,8 @@ Titel, 80 Zeichen je Wort, Vorschlagsliste die 500 häufigsten.
 **Freigegeben am 23.09.2026, in dieser Reihenfolge** (die Pflegeseite unter Einstellungen
 steht seit dem 23.09.2026):
 
-1. **Suche:** Katalog und Portal finden über Schlagwort und Verweis; die markierten Wörter
-   stehen im Portal als Filter.
+1. **Filter im Portal:** Die markierten Wörter stehen in _Mein Portal → Suchen & Reservieren_
+   als Filter.
 2. **DNB-Vorschlag beim Bestellen per ISBN:** Vorgeschlagen wird nur, was es schon als
    Schlagwort oder Verweis gibt. Gemessen am 23.09.2026 an 13 aktuellen Sätzen: Die Gattung
    (655 `gatbeg`) nennt ein Genre nur bei Jugendbüchern ab 12 („Science Fiction", „Dystopie

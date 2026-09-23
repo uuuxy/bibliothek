@@ -73,8 +73,11 @@ beides einstellbar (_Datenschutz & Sitzung_).
 
 ## Medienkatalog
 
-- **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur; Kartenansicht mit
-  Cover und Signatur.
+- **Suche & Filter**: ein Feld für Titel, Autor, Fach, Klasse, Signatur und Schlagwort;
+  Kartenansicht mit Cover und Signatur. Ein Verweis findet sein Schlagwort: „Tierfantasy"
+  findet die Bücher mit „Fantasy", wenn es unter _Einstellungen → Schlagworte_ so
+  eingetragen ist. Dasselbe gilt für die Suche der Titel-Verwaltung, den öffentlichen
+  Katalog und _Mein Portal_.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
   (Warteliste mit Schüler-Suche), Historie. An jedem Exemplar steht, **was es heute noch
   wert ist**, samt Herleitung („3. Verleihjahr → 60 % von 24,90 €"). Ist ein Buch

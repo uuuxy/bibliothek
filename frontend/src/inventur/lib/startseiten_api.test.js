@@ -36,3 +36,31 @@ describe('buecherSuchen: Signatur', () => {
 		expect(buecherSuchen(bestand, 'goe').map((b) => b.title)).toEqual(['Faust']);
 	});
 });
+
+// Schlagworte (docs/OFFEN.md 4.20): Welche Wörter einen Titel finden, sagt der Server je
+// Titel — seine Schlagworte und die Verweise darauf (`suchwoerter`, siehe
+// repository.SuchwoerterDerTitel). Die Suche prüft sie wie Titel und Autor.
+describe('buecherSuchen: Schlagworte und Verweise', () => {
+	const katalog = [
+		buch({
+			title: 'Drachenreiter',
+			author: 'Cornelia Funke',
+			suchwoerter: ['Drachen', 'Fantasy', 'Tierfantasy']
+		}),
+		buch({ title: 'Krabat', author: 'Otfried Preußler' })
+	];
+	const titel = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
+
+	it('findet über ein Schlagwort, auch angefangen', () => {
+		expect(titel('fanta')).toEqual(['Drachenreiter']);
+	});
+	it('findet über einen Verweis auf ein Schlagwort', () => {
+		expect(titel('Tierfantasy')).toEqual(['Drachenreiter']);
+	});
+	it('jeder Begriff darf ein anderes Feld treffen', () => {
+		expect(titel('funke fantasy')).toEqual(['Drachenreiter']);
+	});
+	it('ein Titel ohne Schlagworte wird weiter über seine Felder gefunden', () => {
+		expect(titel('krabat')).toEqual(['Krabat']);
+	});
+});

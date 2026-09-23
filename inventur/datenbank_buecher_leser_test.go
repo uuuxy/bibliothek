@@ -33,6 +33,9 @@ func TestBookRepository_ListBooks(t *testing.T) {
 				2, 3, 0, &lastCounted, 1, "Buch", 5, 6,
 				"", "", 2020, "", map[string]any{}, "4. Aufl. 2023", nil, false,
 			))
+		mock.ExpectQuery(`SELECT tsw.titel_id.+FROM schlagworte sw`).
+			WithArgs([]string{"book-1"}).
+			WillReturnRows(pgxmock.NewRows([]string{"titel_id", "woerter"}))
 
 		books, err := repo.ListBooks(ctx, "Math", &grade5, "algebra", false)
 		assert.NoError(t, err)

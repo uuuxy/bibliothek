@@ -130,6 +130,12 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 // nicht ausgesonderten Exemplar, repository.SQLTitelHatExemplar), true die Aufräumsicht
 // der Verwaltung mit genau den Titeln, die der Katalog nicht zeigt. Beide Sichten sind
 // dasselbe Prädikat mit und ohne NOT — eine dritte Zahl über denselben Titel gibt es nicht.
+//
+// Der Suchtext trifft seit dem 23.09.2026 auch die Schlagworte und die Verweise darauf
+// (repository.SQLTitelUeberSchlagwort), und jeder Titel bringt seine Suchwörter mit: Der
+// Reiter „Suche & Filter" lädt die ganze Liste und sucht im Browser — ohne die Wörter fände
+// er über ein Schlagwort nichts, während die Titel-Verwaltung daneben am Server sucht und
+// es fände.
 func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade *int16, searchQuery string, nurOhneExemplare bool) ([]Book, error) {
 	sicht := repository.SQLTitelHatExemplar("bt")
 	if nurOhneExemplare {
@@ -139,7 +145,8 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 		WHERE ` + sicht + `
 		  AND ($1 = '' OR bt.subject = $1)
 		  AND ($2::smallint IS NULL OR bt.grade_level = $2)
-		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%')
+		  AND ($3 = '' OR bt.titel ILIKE '%' || $3 || '%' OR bt.autor ILIKE '%' || $3 || '%' OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($3, '[- ]', '', 'g') || '%' OR bt.subject ILIKE '%' || $3 || '%' OR CAST(bt.id AS TEXT) ILIKE '%' || $3 || '%'
+		       OR ` + repository.SQLTitelUeberSchlagwort("bt", "$3") + `)
 	` + buchListenGroupBySchlank + `
 		ORDER BY bt.sort_order ASC, bt.titel ASC
 		LIMIT $4`
@@ -158,6 +165,18 @@ func (repo *BookRepository) ListBooks(ctx context.Context, subject string, grade
 		log.Printf("WARNUNG: /api/books hat die Sicherheits-Kappung von %d Titeln erreicht — "+
 			"die Katalogliste ist unvollständig. Jetzt auf serverseitige Pagination umstellen.",
 			listBooksSicherheitsLimit)
+	}
+
+	ids := make([]string, len(books))
+	for i := range books {
+		ids[i] = books[i].ID
+	}
+	suchwoerter, err := repository.SuchwoerterDerTitel(ctx, repo.db, ids)
+	if err != nil {
+		return nil, err
+	}
+	for i := range books {
+		books[i].Suchwoerter = suchwoerter[books[i].ID]
 	}
 	return books, nil
 }

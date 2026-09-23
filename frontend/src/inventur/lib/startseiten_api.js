@@ -93,6 +93,14 @@ export function buecherSuchen(buecherArray, searchQuery) {
 			// Die Signatur ist die Regaladresse (Handbuch) — bis zum 02.09.2026 fand die
 			// Suche sie nicht, obwohl der Payload sie längst trug.
 			if (b.signatur && b.signatur.toLowerCase().includes(term)) return true;
+			// Schlagworte und die Verweise darauf (docs/OFFEN.md 4.20). Welche Wörter einen
+			// Titel finden, entscheidet der Server (repository.SuchwoerterDerTitel) — dieselbe
+			// Regel, nach der die Titel-Verwaltung und das Portal am Server suchen.
+			if (
+				Array.isArray(b.suchwoerter) &&
+				b.suchwoerter.some((/** @type {string} */ w) => w.toLowerCase().includes(term))
+			)
+				return true;
 			const num = parseInt(term, 10);
 			return !isNaN(num) && trifftJahrgang(b, num);
 		})
