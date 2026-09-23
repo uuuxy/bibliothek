@@ -331,8 +331,6 @@ eigenen Personensatz; das wäre ein eigener Umbau.
 ### 5.2 Bescheid — vor dem ersten echten Bescheid
 
 - Das Kassenjahr ist das Jahr der Frist (ein Dezember-Brief zählt ins Folgejahr).
-- Die Frist ist serverseitig unbegrenzt; eine vergangene Frist macht den Bescheid sofort
-  übergabefähig.
 - Der Nachdruck liest Bank, Aufsicht, Schulanschrift, Geschäftszeichen und Schulleitung live aus
   den Einstellungen; das Gate `TestBescheidNachdruck_BleibtDerselbeBrief` ändert nur die
   Schüleranschrift. Ein Schnappschuss ist eine Schema-Erweiterung.

@@ -283,6 +283,22 @@ func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 			//nolint:staticcheck // ST1005: ganzer Satz.
 			return apierrors.BadRequest("Die Frist muss ein Datum sein (JJJJ-MM-TT).", err)
 		}
+		// Frühestens morgen: Eine Frist von heute oder gestern machte den Bescheid sofort
+		// übergabefähig. Höchstens ein Jahr voraus: Ihr Jahr geht als Kassenjahr in die
+		// Referenznummer, ein Tippfehler (2062) gäbe eine Nummer, der keine Zahlung zugeordnet
+		// wird. Die Arbeitshilfe nennt eine „Vierwochen-Frist … ab dem Briefdatum" (OFFEN.md 5.2).
+		jetzt := schulzeit.Jetzt()
+		heute := time.Date(jetzt.Year(), jetzt.Month(), jetzt.Day(), 0, 0, 0, 0, schulzeit.Zone())
+		if !frist.After(heute) {
+			//nolint:staticcheck // ST1005: ganzer Satz.
+			return apierrors.BadRequest("Die Frist muss nach dem heutigen Tag liegen — üblich sind vier Wochen ab Briefdatum.",
+				errors.New("frist nicht nach heute"))
+		}
+		if frist.After(heute.AddDate(1, 0, 0)) {
+			//nolint:staticcheck // ST1005: ganzer Satz.
+			return apierrors.BadRequest("Die Frist liegt mehr als ein Jahr in der Zukunft. Bitte das Datum prüfen — ihr Jahr geht als Kassenjahr in die Referenznummer.",
+				errors.New("frist mehr als ein jahr voraus"))
+		}
 
 		ctx := r.Context()
 		angaben, schule, err := s.bescheidAngaben(ctx)
