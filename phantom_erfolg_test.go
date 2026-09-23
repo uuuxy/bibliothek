@@ -108,7 +108,13 @@ var phantomBestand = map[string]int{
 	// gelöschte Zeilen sind der Normalfall beim Anlegen — RowsAffected sagt hier nichts.
 	// Seit 07.09.2026 heißt der Rumpf SaveLmfPlanIn (Transaktion des Aufrufers);
 	// SaveLmfPlan ist nur noch die Hülle mit eigener kurzer Transaktion.
-	"repository/lmf_plan.go:SaveLmfPlanIn":                    3,
+	"repository/lmf_plan.go:SaveLmfPlanIn": 3,
+	// Schlagworte eines Titels (Migration 138), dieselbe Bauart: Wörter anlegen mit
+	// ON CONFLICT DO NOTHING (0 heißt „gibt es schon in anderer Schreibweise"), dann die
+	// Verbindungen ersetzen (DELETE + INSERT, 0 ist der Normalfall). Dass es den Titel gibt,
+	// sichert der FOR-UPDATE-Lock davor (ErrTitelNichtGefunden → 404); das Ergebnis misst
+	// repository/schlagworte_pg_test.go.
+	"repository/schlagworte.go:SetzeSchlagworte":              3,
 	"repository/audit.go:LogAdminAktion":                      1,
 	"repository/audit.go:insertAuditLog":                      1,
 	"repository/audit_books.go:DeleteTitle":                   3,

@@ -87,7 +87,9 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 					))
 			},
 			expectedStatus: http.StatusOK,
-			expectedBody:   `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","gradeLevel":5,"track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"beschreibung":"","erweiterteEigenschaften":{}}]}`,
+			// schlagworte: null heißt „nicht geladen" — die Liste bleibt schlank (Migration 138);
+			// nur der Einzel-Read lädt sie, und ein PUT mit null lässt sie unangetastet.
+			expectedBody: `{"data":[{"id":"b1","isbn":"123","title":"Book 1","author":"Author 1","signatur":"Sig 1","coverUrl":"url","subject":"Math","gradeLevel":5,"track":"G","istLernmittel":false,"stock":10,"verfuegbar":5,"gesamt":10,"imZulauf":2,"lastCounted":"2023-01-01","sortOrder":0,"medientyp":"Buch","jahrgangVon":5,"jahrgangBis":10,"mehrjahresband":false,"untertitel":"Sub","auflage":"4. Aufl. 2023","listenpreis":null,"verlag":"Ver","erscheinungsjahr":2020,"beschreibung":"","erweiterteEigenschaften":{},"schlagworte":null}]}`,
 		},
 		{
 			name: "Success - synonym translation",

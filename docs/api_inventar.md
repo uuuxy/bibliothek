@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-09-22. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-09-23. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -16,7 +16,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (211)
+## Alle registrierten Routen (214)
 
 - `/`
 - `/api/admin`
@@ -84,6 +84,7 @@
 - `GET /api/buecher/titel/{id}/etiketten`
 - `GET /api/buecher/titel/{id}/exemplare`
 - `GET /api/buecher/titel/{id}/historie`
+- `GET /api/buecher/titel/{id}/schlagworte`
 - `GET /api/class-books`
 - `GET /api/csrf-token`
 - `GET /api/dashboard/summary`
@@ -127,6 +128,7 @@
 - `GET /api/reservierungen/klassensatz/eigene`
 - `GET /api/reservierungen/klassensatz/offen`
 - `GET /api/schadensfaelle/{id}/pdf`
+- `GET /api/schlagworte`
 - `GET /api/schueler`
 - `GET /api/schueler/deleted`
 - `GET /api/schueler/{barcode_id}/photo`
@@ -221,6 +223,7 @@
 - `PUT /api/buecher/exemplare/{id}/barcode`
 - `PUT /api/buecher/exemplare/{id}/status`
 - `PUT /api/buecher/titel/{id}/lernmittel`
+- `PUT /api/buecher/titel/{id}/schlagworte`
 - `PUT /api/buecher/titel/{id}/signatur`
 - `PUT /api/einstellungen`
 - `PUT /api/geraete/{id}`

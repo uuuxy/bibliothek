@@ -28,7 +28,7 @@ export function mehrjahresbandHinweis(an, von, bis) {
  * zweimal wörtlich in routes/admin/+page.svelte (Anfangszustand und „Neues Buch"); beim
  * Nachtragen des Schulzweigs fiel auf, dass ein neues Feld an beiden Stellen gepflegt
  * werden muss — vergisst man eine, schickt genau einer der beiden Wege das Feld nie mit.
- * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, gradeLevel: number, istLernmittel: boolean, track: string, mehrjahresband: boolean, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string, listenpreis: number|null }}
+ * @returns {{ id: null, isbn: string, title: string, author: string, subject: string, gradeLevel: number, istLernmittel: boolean, track: string, mehrjahresband: boolean, stock: number, coverUrl: string, lastCounted: string, medientyp: string, auflage: string, schlagworte: string[], listenpreis: number|null }}
  */
 export function leeresBuchFormular() {
 	return {
@@ -46,6 +46,9 @@ export function leeresBuchFormular() {
 		lastCounted: '',
 		medientyp: 'Buch',
 		auflage: '',
+		// Schlagworte (Migration 138): Ein neuer Titel beginnt ohne. Eine leere Liste ist
+		// hier richtig — beim Anlegen gibt es nichts, was sie überschreiben könnte.
+		schlagworte: [],
 		// null, NICHT 0: Ein leeres Feld heißt „nicht erfasst" — dann rechnet der
 		// Schadensersatz mit dem Einkaufspreis und sagt das. Eine 0 hieße „kostet heute
 		// nichts" und ergäbe einen Ersatzbetrag von 0,00 € (Migration 127).

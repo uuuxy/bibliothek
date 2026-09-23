@@ -79,6 +79,14 @@ func (repo *BookRepository) CreateBook(ctx context.Context, book Book) (string, 
 		return "", fmt.Errorf("buch konnte nicht erstellt werden: %w", handleDbError(err))
 	}
 
+	// Schlagworte in derselben Transaktion (Migration 138): Scheitern sie, entsteht auch
+	// der Titel nicht. nil (Scanner-Neuanlage, Aufrufer ohne das Feld) legt keine an.
+	if book.Schlagworte != nil {
+		if _, err := repository.SetzeSchlagworte(ctx, tx, id, book.Schlagworte); err != nil {
+			return "", fmt.Errorf("schlagworte konnten nicht gespeichert werden: %w", err)
+		}
+	}
+
 	if book.Stock > 0 {
 		if err := repo.syncBookStock(ctx, tx, id, book.Stock); err != nil {
 			return "", fmt.Errorf("exemplare konnten nicht angelegt werden: %w", err)

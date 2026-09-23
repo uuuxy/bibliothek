@@ -50,14 +50,14 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
    dessen Frist in die Herbstferien fiel. Seit dem 22.09.2026 ist auch die letzte Frage
    entschieden: Ferien UND Feiertage kommen als iCal-Datei, die Datei gewinnt vor der Rechnung,
    Fristen rutschen mit, und ein auslaufender Kalender meldet sich an der Theke und per Mail an
-   die Leitung. Gebaut ist nichts. Die **Themensuche** ist am 22.09.2026
-   entschieden (4.20): Als Nächstes wird gemessen, was die DNB für den Katalog liefert, danach
-   folgt die Wortliste — gebaut ist nichts.
+   die Leitung. Gebaut ist nichts. Die **Schlagworte** sind am 23.09.2026
+   neu entschieden (4.20): frei eintragbar wie in Littera, mit Pflegeseite und Verweisen. Das
+   Feld am Titel steht; offen sind Pflegeseite, Suche, DNB-Vorschlag und Littera-Übernahme.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 137; 135 gibt es
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 138; 135 gibt es
 nicht, sie ist zurückgenommen). Das passiert beim Start von allein; Daten gehen nicht verloren.
 Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Testserver am
-21.09.2026: 8 Lehrkräfte).
+21.09.2026: 8 Lehrkräfte). Migration 138 legt zwei leere Tabellen für die Schlagworte an.
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
@@ -353,46 +353,37 @@ Leitung, wenn der Kalender ausläuft.
 **Nicht gebaut.** Ändert einen Schreibpfad und braucht eine Migration; Gate am Rückweg, vorher rot
 gesehen.
 
-### 4.20 „Ich will was Gruseliges" — der Bestand hat kein Thema
+### 4.20 Schlagworte am Titel — frei eintragbar wie in Littera
 
-**Was heute da ist.** Am Titel stehen Fach (Systematik), Signatur, Jahrgang, Schulzweig und die
-Beschreibung, die im Volltext mitsucht. Das Fach ist die Schulfach-Systematik: für Lernmittel
-richtig, für die Schülerbücherei nicht — „Jugendliteratur" ist kein Thema.
+**Entschieden am 23.09.2026** (ersetzt die Entscheidung vom 22.09. für ein geschlossenes
+Vokabular): Schlagworte werden frei eingetragen, mehrere je Titel, mit Vorschlägen aus dem
+Bestand — wie Littera („Schlagworte (Wertehilfe)"). Zusammengehalten wird die Liste wie dort
+durch Pflege: Umbenennen und Zusammenführen ändern alle Titel auf einmal, Verweise leiten
+Schreibweisen auf ein Wort („Tierfantasy" → „Fantasy"). Eine Liste, nicht zwei: Die 15 bis 20
+Wörter, die im Portal als Filter stehen, markiert die Pflegeseite. Seit Migration 138 gibt es
+das Feld am Titel (Buchformular, Bestellkorb); die Grenzen dort: 30 Wörter je Titel, 80 Zeichen
+je Wort, Vorschlagsliste die 500 häufigsten.
 
-**Wie Littera es macht:** Schlagworte (frei, mit Verweisen für Schreibvarianten und Pseudonyme)
-und daneben Interessenkreise — „eine thematische Gliederung des Belletristikbereiches (z. B.
-Krimi, Heimat…)". Beides ist in der Recherche filterbar und als Liste auswertbar.
+**Offen, in dieser Reihenfolge — jede Stufe mit Freigabe:**
 
-**Was dabei heute verloren geht:** Der Littera-Altbestand bringt Schlagworte mit (MAB 710). Der
-Import liest sie, leitet daraus das Fach ab und wirft sie danach weg
-(`internal/service/import_service.go`); gespeichert wird keines. Wer sie haben will, spielt den
-Import gegen das frische Backup neu ein (7.2).
+1. **Pflegeseite** unter Einstellungen: alle Wörter mit Titelzahl, umbenennen und
+   zusammenführen, löschen (Rückfrage nennt die Zahl der Titel), Verweise setzen,
+   Filter-Markierung. Braucht eine Migration (Verweise, Markierung). Beim Zusammenführen wird
+   das alte Wort zum Verweis auf das neue.
+2. **Suche:** Katalog und Portal finden über Schlagwort und Verweis; die markierten Wörter
+   stehen im Portal als Filter.
+3. **DNB-Vorschlag beim Bestellen per ISBN:** Vorgeschlagen wird nur, was es schon als
+   Schlagwort oder Verweis gibt. Gemessen am 23.09.2026 an 13 aktuellen Sätzen: Die Gattung
+   (655 `gatbeg`) nennt ein Genre nur bei Jugendbüchern ab 12 („Science Fiction", „Dystopie
+   und Utopie"), bei Kinderbüchern nur „Kinderbücher bis 11 Jahre". Die freien Verlagswörter
+   (653) tragen „Fantasy" und „Freundschaft", aber auch bis zu 98 Werbewörter je Titel
+   („TikTok", „Must Read") — deshalb der Abgleich gegen die eigene Liste.
+4. **Littera-Schlagworte** (MAB 710) beim nächsten Einspielen des Backups mitnehmen (7.2).
+   Heute liest der Import sie, leitet das Fach ab und verwirft sie. Vorher messen, wie viele
+   Titel welche tragen.
 
-**Fragen:** Braucht die Schülerbücherei die Themensuche im öffentlichen Katalog — und wer pflegt
-sie bei Neuzugängen? Ein Feld, das nach dem Import nie wieder gefüllt wird, kennt nach zwei Jahren
-nur noch die Vergangenheit.
-
-**Vorschlag:** Erst am Backup messen, wie viele Titel überhaupt brauchbare Schlagworte tragen;
-darunter erübrigt sich die Frage. Trägt der Altbestand, dann ein geschlossenes Vokabular von
-zwölf bis zwanzig Wörtern statt freier Schlagworte — als Auswahl am Titel und als Filter im
-Katalog und im Portal. Freie Schlagworte brauchen Normdatenpflege (Littera hat dafür ein eigenes
-Modul); die haben wir nicht.
-
-**Stand 22.09.2026 — entschieden: bauen.** Die Quelle für das Vokabular ist die DNB, nicht
-der Altbestand: Jeder DNB-Satz trägt drei geschlossene Vokabulare, die der Code heute
-verwirft — die Warengruppe des Buchhandels (653 `(VLB-WN)`, z. B. „1250 Kinderbücher bis
-11 Jahre", „1120 Belletristik/Spannung"), die Thema-Kategorien (655 `$2 gatbeg`, z. B.
-„Spannung") und die Sachgruppe (082/084, K = Kinder- und Jugendliteratur). Die freien
-Verlagsschlagworte in 653 („Gruselgeschichte", aber auch „Minecraft Buch Kinder") sind
-Suchmaschinentext und werden nicht gespeichert; der Klappentext (856 Inhaltstext) wird
-nicht übernommen. Google Books fällt als Themenquelle aus: ohne API-Key antwortet es mit
-429 (Tageskontingent geteilt), und seine Kategorien sind englische Grobklassen.
-
-Stufen: (1) ohne Migration — der DNB-Leser liest `(Lesealter)` neben `(Zielgruppe)` und
-liefert aus den drei Vokabularen einen Themen-Vorschlag; (2) Migration — ein Feld „Thema"
-am Titel mit geschlossenem Vokabular (Vorschlag aus der ISBN-Suche, Auswahl in der Maske,
-Filter im Katalog und im Portal). Vor Stufe 2 zu klären: die Wortliste (zwölf bis zwanzig),
-ein Thema je Titel oder mehrere, und wer es bei Titeln ohne DNB-Treffer pflegt.
+Nicht geplant: Verweise für Autoren (Pseudonyme). Der Autor ist ein Textfeld am Titel, ohne
+eigenen Personensatz; das wäre ein eigener Umbau.
 
 ---
 
@@ -462,7 +453,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Titel, Autor, ISBN, Verlag, Jahr, Cover und Fach. **Verworfen** werden weiterhin Untertitel,
   Altersangabe (`Zielgruppe`) und Ladenpreis, obwohl es für den Preis seit Migration 127 die
   Spalte `listenpreis` gibt. Die Gattungsbegriffe (MARC 655) liest der DNB-Leser, gespeichert
-  werden sie nicht — sie sind die Quelle der Themensuche (4.20).
+  werden sie nicht — sie sind eine Quelle des Schlagwort-Vorschlags (4.20, Stufe 3).
   Die Signatur ist seit dem 22.09.2026 kein erfundener Vorschlag mehr: Gemessen am Testserver
   tragen die Titel der Schülerbücherei die Littera-Codes am Regal (`Sk` 499, `Pg` 464,
   `Lernhilfe` 390, `JF` 351 …) und KEIN zweites Signaturteil; „BIB Kinderbuch" kam in keinem
@@ -656,6 +647,17 @@ Betriebsbereitschaft, Stand-Gate rekursiv). Offen bleibt:
   Ziel durchspielen, nicht herleiten.
 - **Zu 7.3:** Der zweite Ort muss kein S3 sein — ein zweiter Rechner per Kopierbefehl oder
   eine getauschte Platte tun dasselbe ohne Vertragsfrage. Eine Betriebsentscheidung.
+
+### 5.21 Palettenfarben auf M3-Rollen — Freigabe offen
+
+Stand 23.09.2026: 1557 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
+noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
+Textgraustufen, M3 zwei Rollen, und für „in Ordnung" (das grüne Signaturfeld) kennt M3 keine
+Farbe. Vorschlag: Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit mit Bild
+vorher und nachher. Buchformular und Bestellfenster (86 Fundstellen) kommen direkt nach den
+Schlagworten, weil die neuen Chips dort neben alten Farben stehen. Für den Rest fehlt die
+Freigabe.
 
 ---
 

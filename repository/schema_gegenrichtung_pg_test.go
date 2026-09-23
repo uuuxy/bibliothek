@@ -45,6 +45,16 @@ var fkAktionenBestand = []string{
 	// Befragt: Der Löschpfad räumt die abhängigen Zeilen selbst und in Reihenfolge ab;
 	// der CASCADE auf die Exemplare ist der letzte Schritt.
 	"CASCADE  buecher_exemplare.titel_id -> buecher_titel",
+	// Befragt am 23.09.2026 (Migration 138): Die Schlagworte eines Titels fallen mit ihm —
+	// Absicht. Sie beschreiben nur diesen Titel, niemand wartet auf sie, und das Wort selbst
+	// bleibt stehen (ohne Titel fällt es aus den Vorschlägen, SchlagwortVorschlaege). Das
+	// Löschen steht im Protokoll (DeleteTitle schreibt vorher einen Schnappschuss des Titels);
+	// die Schlagworte stehen nicht darin.
+	"CASCADE  titel_schlagworte.titel_id -> buecher_titel",
+	// Wird ein Wort gelöscht, verschwindet es aus allen Titeln — Litteras „Löschen (auch aus
+	// allen Medien)". Heute löscht kein Code ein Wort; die Pflegeseite (Stufe 2, OFFEN.md
+	// 4.20) soll es mit einer Rückfrage tun, die die Zahl der betroffenen Titel nennt.
+	"CASCADE  titel_schlagworte.schlagwort_id -> schlagworte",
 	// Befragt (Register 06.09.2026): „Plan verwerfen" löscht den ganzen Plan samt
 	// Zeilen, freien Tagen und Auslassungen — bekannt und als Produktfrage notiert.
 	"CASCADE  lmf_plan_ausgelassen.plan_id -> lmf_plaene",
@@ -178,6 +188,13 @@ var checkBedingungenBestand = []string{
 	// mehr als einen Jahrgang; die Türen der Titel-Verwaltung prüfen dieselbe Regel
 	// (inventur/mehrjahresband.go), die Datenbank hält sie für jeden anderen Schreiber.
 	"chk_mehrjahresband_spanne",
+	// Migration 138, befragt am 23.09.2026: Ein Schlagwort ist getrimmt, nicht leer und
+	// höchstens 80 Zeichen lang. Der Code kennt die Regel: repository.NormalisiereSchlagworte
+	// liefert genau diese Form und weist Längeres vorher mit 400 ab (SchlagwortMaxZeichen,
+	// an der Grenze getestet). Gegenfrage: Die Regel verbietet doppelte Leerzeichen im Wort
+	// NICHT — die zieht der Schreibpfad zusammen; ein anderer Schreiber, der das nicht tut,
+	// legte „Magische  Tiere" neben „Magische Tiere" an.
+	"chk_schlagwort_form",
 	"chk_exemplar_bestellstatus",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur

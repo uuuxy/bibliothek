@@ -50,10 +50,10 @@ grep -rn "<Funktionsname>" --include="*.go" .      # Schreibpfade und Türen
 ```
 
 **Die gemeinsamen Bauteile** (`frontend/src/lib/components/ui/`): Abschnitt ·
-BestaetigungsDialog · BuchCover · Button · CoverPeek · Feld · Kaestchen · KlassenVersandDialog ·
-LadeFehler · Ladekreis · LogoRelief · Menue · Radio · Reiter · Segmente · Select · SelectListe ·
-Snackbar · StatusChip · SuchZustand · Suchfeld · Suchpille · Switch · Tabelle · TabelleSortKopf ·
-Zaehlerpille.
+BestaetigungsDialog · BuchCover · Button · ChipFeld · CoverPeek · Feld · Kaestchen ·
+KlassenVersandDialog · LadeFehler · Ladekreis · LogoRelief · Menue · Radio · Reiter · Segmente ·
+Select · SelectListe · Snackbar · StatusChip · SuchZustand · Suchfeld · Suchpille · Switch ·
+Tabelle · TabelleSortKopf · Zaehlerpille.
 
 - Eine vorhandene Tür erweitern statt eine zweite anzulegen: Ein Zustand hat einen Schreibpfad.
 - Ein neues Bauteil braucht in der Commit-Nachricht die Begründung, warum keins der

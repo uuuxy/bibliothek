@@ -181,6 +181,11 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		writeError(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
+	schlagworte, fehler := schlagworteAusEingabe(eingabe.Schlagworte)
+	if fehler != nil {
+		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		return
+	}
 
 	buch := Book{
 		ISBN:                    strings.TrimSpace(eingabe.ISBN),
@@ -202,6 +207,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		Beschreibung:            strings.TrimSpace(eingabe.Beschreibung),
 		Signatur:                strings.TrimSpace(eingabe.Signatur),
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
+		Schlagworte:             schlagworte,
 	}
 	buch.Title = strings.TrimSpace(eingabe.Titel)
 	buch.Author = strings.TrimSpace(eingabe.Autor)

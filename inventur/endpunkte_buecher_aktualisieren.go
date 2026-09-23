@@ -26,6 +26,11 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		writeError(antwort, http.StatusBadRequest, validierungsFehler.Error())
 		return
 	}
+	schlagworte, fehler := schlagworteAusEingabe(eingabe.Schlagworte)
+	if fehler != nil {
+		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		return
+	}
 
 	ergaenzeFehlendeMetadatenFuerAktualisierung(anfrage.Context(), handler, &eingabe)
 
@@ -70,6 +75,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Beschreibung:            eingabe.Beschreibung,
 		Signatur:                strings.TrimSpace(eingabe.Signatur),
 		ErweiterteEigenschaften: eingabe.ErweiterteEigenschaften,
+		Schlagworte:             schlagworte,
 	}
 
 	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, eingabe.Bestand); fehler != nil {

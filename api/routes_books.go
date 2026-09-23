@@ -14,6 +14,12 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Dieselbe Tür für das Lernmittel-Kennzeichen eines eben angelegten DNB-Titels — es
 	// entscheidet über den Topf der Bestellung (Migration 109).
 	mux.Handle("PUT /api/buecher/titel/{id}/lernmittel", s.RequirePermission("create_orders")(s.UpdateTitelLernmittelHandler()))
+	// Schlagworte (Migration 138): Der Bestellkorb liest die vorhandenen, bevor er die
+	// Menge ersetzt. Schreiben mit create_orders wie Signatur und Lernmittel daneben; das
+	// Buchformular schreibt über PUT /api/books/{id} (edit_books) — beide über
+	// repository.SetzeSchlagworte.
+	mux.Handle("GET /api/buecher/titel/{id}/schlagworte", s.RequirePermission("view_books")(s.GetTitelSchlagworteHandler()))
+	mux.Handle("PUT /api/buecher/titel/{id}/schlagworte", s.RequirePermission("create_orders")(s.PutTitelSchlagworteHandler()))
 
 	// Exemplare (Copies)
 	// Titel-Tür für Bildschirme außerhalb der Theke (Etiketten-Titelsuche im Druck-Center):

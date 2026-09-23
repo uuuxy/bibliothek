@@ -1,5 +1,7 @@
 package inventur
 
+import "bibliothek/repository"
+
 // Book bildet die Tabelle buecher_titel im Code ab.
 type Book struct {
 	ID     string `json:"id" db:"id"`
@@ -50,6 +52,10 @@ type Book struct {
 	Erscheinungsjahr        int            `json:"erscheinungsjahr" db:"erscheinungsjahr"`
 	Beschreibung            string         `json:"beschreibung" db:"beschreibung"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften" db:"erweiterte_eigenschaften"`
+	// Schlagworte (Migration 138) stehen in einer eigenen Tabelle. nil heißt „keine
+	// Aussage": Die Katalogliste lädt sie nicht, und beim Speichern lässt nil die
+	// vorhandenen unangetastet. Eine leere Liste ist eine Aussage — keine Schlagworte.
+	Schlagworte []string `json:"schlagworte"`
 }
 
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.
@@ -85,4 +91,18 @@ type BuchEingabe struct {
 	Beschreibung            string         `json:"beschreibung"`
 	Signatur                string         `json:"signatur"`
 	ErweiterteEigenschaften map[string]any `json:"erweiterteEigenschaften"`
+	// Schlagworte: Zeiger aus demselben Grund wie Bestand — „nicht mitgeschickt" (nil)
+	// lässt die vorhandenen stehen, `[]` entfernt alle. Ein Aufrufer, der das Feld nicht
+	// kennt (Scanner-Neuanlage, ältere Clients), löscht so nichts.
+	Schlagworte *[]string `json:"schlagworte"`
+}
+
+// schlagworteAusEingabe prüft und normalisiert die Schlagworte einer Eingabe VOR dem
+// Schreiben, damit ein Verstoß als 400 mit Text zurückgeht (die Regel selbst steht in
+// repository.NormalisiereSchlagworte). nil bleibt nil: nichts gesagt, nichts geändert.
+func schlagworteAusEingabe(eingabe *[]string) ([]string, error) {
+	if eingabe == nil {
+		return nil, nil
+	}
+	return repository.NormalisiereSchlagworte(*eingabe)
 }

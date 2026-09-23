@@ -188,5 +188,17 @@ func (handler *APIHandler) BearbeiteBuchLesen(antwort http.ResponseWriter, anfra
 		return
 	}
 
-	writeJSON(antwort, http.StatusOK, buecher[0])
+	// Die Maske „Titel bearbeiten" lädt hierüber und schickt das Ganze per PUT zurück.
+	// Scheitert das Nachladen, antwortet der Einzel-Read mit einem Fehler statt ohne
+	// Schlagworte: Die Maske öffnet dann gar nicht, statt mit einem leeren Feld, das beim
+	// Speichern als Aussage „keine Schlagworte" zurückkäme.
+	buch := buecher[0]
+	buch.Schlagworte, fehler = handler.repo.SchlagworteDesTitels(anfrage.Context(), id)
+	if fehler != nil {
+		log.Printf("Fehler beim Laden der Schlagworte: %v", fehler)
+		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+		return
+	}
+
+	writeJSON(antwort, http.StatusOK, buch)
 }

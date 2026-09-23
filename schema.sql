@@ -571,6 +571,27 @@ CREATE TRIGGER trg_buecher_titel_aktualisiert_am
 BEFORE UPDATE ON buecher_titel
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
+-- Migration 138: Schlagworte am Titel, frei eintragbar wie in Littera. Ein Wort ist
+-- case-insensitiv eindeutig (die zuerst angelegte Schreibweise gewinnt); ein Titel trägt
+-- beliebig viele. Eigene Tabelle statt Spalte am Titel, damit Umbenennen und Zählen eine
+-- Zeile bzw. ein JOIN sind. Geschrieben nur über repository.SetzeSchlagworte.
+CREATE TABLE schlagworte (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    wort TEXT NOT NULL,
+    angelegt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_schlagwort_form
+        CHECK (wort = btrim(wort) AND wort <> '' AND char_length(wort) <= 80)
+);
+CREATE UNIQUE INDEX uniq_schlagworte_wort ON schlagworte (lower(wort));
+
+CREATE TABLE titel_schlagworte (
+    titel_id UUID NOT NULL REFERENCES buecher_titel(id) ON DELETE CASCADE,
+    schlagwort_id UUID NOT NULL REFERENCES schlagworte(id) ON DELETE CASCADE,
+    PRIMARY KEY (titel_id, schlagwort_id)
+);
+-- Gegenrichtung zum Primärschlüssel: „wie viele Titel tragen das Wort".
+CREATE INDEX idx_titel_schlagworte_schlagwort ON titel_schlagworte (schlagwort_id);
+
 
 -- Table: buecher_exemplare (Physical items / book copies in circulation)
 CREATE TABLE buecher_exemplare (
@@ -1732,7 +1753,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('133_isbn_normalform.sql'),
 ('134_mehrjahresband.sql'),
 ('136_ausweisnummer_beim_konto.sql'),
-('137_letzter_vorgang_am_leser.sql')
+('137_letzter_vorgang_am_leser.sql'),
+('138_schlagworte.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -121,6 +121,14 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		return ErrBookNotFound
 	}
 
+	// Schlagworte in derselben Transaktion (Migration 138). nil heißt „nicht
+	// mitgeschickt" und lässt die vorhandenen stehen — wie beim Bestand oben.
+	if book.Schlagworte != nil {
+		if _, err := repository.SetzeSchlagworte(ctx, tx, id, book.Schlagworte); err != nil {
+			return fmt.Errorf("schlagworte konnten nicht gespeichert werden: %w", err)
+		}
+	}
+
 	if bestand != nil {
 		if err := repo.syncBookStock(ctx, tx, id, *bestand); err != nil {
 			return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)

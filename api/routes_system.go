@@ -99,6 +99,8 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// Migration 060 entfallen: Sie kannte Namen, die an keinem Buch hingen.
 	mux.Handle("GET /api/signaturen", s.RequirePermission("view_books")(s.GetSignaturenHandler()))
 	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.GetSignaturBuecherHandler()))
+	// Schlagworte (Migration 138): die Vorschlagsliste der Eingabefelder, aus dem Bestand.
+	mux.Handle("GET /api/schlagworte", s.RequirePermission("view_books")(s.GetSchlagwortVorschlaegeHandler()))
 
 	// Real-time Events. Nur Sitzung, kein Fachrecht: den SSE-Stream öffnet jeder
 	// eingeloggte Client (authStore + Kiosk-Omnibox), und an ihm hängt der Herzschlag für

@@ -187,8 +187,8 @@ func (b *marcBibDaten) verarbeitePublikation(subfelder []marcSubfield) {
 // verarbeiteGenre sammelt Genre-/Formangaben aus Tag 655 $a (GND-Vokabular) — die
 // Gattungsbegriffe. Bis zum 22.09.2026 wurde daraus ein Signaturvorschlag „BIB Jugendbuch"
 // abgeleitet; die Signaturen der Schülerbücherei sind aber die Littera-Codes am Regal. Die
-// gesammelten Begriffe sind die Quelle der Themensuche (docs/OFFEN.md 4.20), die als
-// Nächstes eine Zuordnung DNB-Wert → Thema bekommt.
+// gesammelten Begriffe sind eine Quelle des Schlagwort-Vorschlags (docs/OFFEN.md 4.20,
+// Stufe 3): vorgeschlagen wird nur, was es schon als Schlagwort oder Verweis gibt.
 func (b *marcBibDaten) verarbeiteGenre(subfelder []marcSubfield) {
 	for _, unterFeld := range subfelder {
 		if unterFeld.Code == "a" {

@@ -12,6 +12,7 @@
 <script>
 	import { apiPut } from '../../apiFetch.js';
 	import { ladeSignaturen } from '../../utils/signaturen.js';
+	import OrderStagingSchlagworte from './OrderStagingSchlagworte.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Button from '../ui/Button.svelte';
@@ -53,6 +54,8 @@
 			abgebrochen = true;
 		};
 	});
+	/** @type {{ speichereWennGeaendert: () => Promise<void> } | undefined} */
+	let schlagwortTeil = $state();
 	const lernmittelBeiStart = untrack(() => Boolean(book.ist_lernmittel));
 
 	async function uebernehmen() {
@@ -67,6 +70,7 @@
 				);
 			}
 		}
+		await schlagwortTeil?.speichereWennGeaendert();
 		if (istLernmittel !== lernmittelBeiStart) {
 			try {
 				await apiPut(`/api/buecher/titel/${book.id}/lernmittel`, { ist_lernmittel: istLernmittel });
@@ -98,7 +102,7 @@
 	</div>
 
 	<div class="space-y-1">
-		<label for="stagedSignaturInput" class="text-xs font-medium text-slate-500">
+		<label for="stagedSignaturInput" class="text-xs font-medium text-on-surface-variant">
 			Signatur
 			{#if !signaturBeiStart}
 				<span class="text-amber-600 font-normal">(bitte eintragen)</span>
@@ -118,13 +122,16 @@
 		</datalist>
 	</div>
 
+	<OrderStagingSchlagworte bind:this={schlagwortTeil} titelId={book.id} />
+
 	<!-- Die Antwort entscheidet über den Topf: Lernmittel bestellt das Land (Lernmittel-
 	     freiheit), alles andere die Schülerbücherei aus Mitteln des Schulträgers. -->
 	<Kaestchen bind:checked={istLernmittel} label="Lernmittel (Schulbuch der Lernmittelfreiheit)" />
 
 	<div class="flex items-center justify-between gap-3">
 		<div class="flex items-center gap-2">
-			<label for="stagedMengeInput" class="text-xs font-medium text-slate-500">Menge</label>
+			<label for="stagedMengeInput" class="text-xs font-medium text-on-surface-variant">Menge</label
+			>
 			<Feld
 				id="stagedMengeInput"
 				type="number"

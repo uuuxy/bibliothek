@@ -1154,6 +1154,108 @@ const docTemplate = `{
                 }
             }
         },
+        "/buecher/titel/{id}/schlagworte": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Get a title's keywords",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Title ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TitelSchlagworte"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Replace a title's keywords",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Title ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Complete keyword list",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.TitelSchlagworteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TitelSchlagworte"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/buecher/titel/{id}/signatur": {
             "put": {
                 "consumes": [
@@ -1951,6 +2053,38 @@ const docTemplate = `{
                 ],
                 "summary": "LMF-Plan als PDF",
                 "responses": {}
+            }
+        },
+        "/schlagworte": {
+            "get": {
+                "description": "Keywords carried by at least one title, most frequent first (max. 500).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "List keyword suggestions",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repository.SchlagwortZahl"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         },
         "/schueler": {
@@ -3372,6 +3506,10 @@ const docTemplate = `{
                 "klasse": {
                     "type": "string"
                 },
+                "letzter_vorgang_am": {
+                    "description": "Migration 137: der Zeitpunkt des letzten abgeschlossenen Vorgangs — die zweite Uhr\nder Karenz neben abgaenger_seit. Er gehört in die Auskunft, weil er ein über diese\nPerson gespeicherter Zeitpunkt ist und weil er mitbestimmt, wann ihre Daten\nanonymisiert werden. WAS ausgeliehen war, sagt er nicht.",
+                    "type": "string"
+                },
                 "lusd_bestaetigt_am": {
                     "type": "string"
                 },
@@ -4157,6 +4295,32 @@ const docTemplate = `{
                 }
             }
         },
+        "api.TitelSchlagworte": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "schlagworte": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api.TitelSchlagworteRequest": {
+            "type": "object",
+            "properties": {
+                "schlagworte": {
+                    "description": "Zeiger: Ein Körper ohne das Feld ist ein Fehler, keine leere Liste. Diese Tür hat\nkeinen anderen Zweck, als die Schlagworte zu setzen — ein vergessenes Feld darf\nnicht still alle entfernen.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "api.UpdateBarcodeRequest": {
             "type": "object",
             "properties": {
@@ -4518,6 +4682,10 @@ const docTemplate = `{
                 "id": {
                     "description": "ID ist die UUID des Buchtitels.",
                     "type": "string"
+                },
+                "im_zulauf": {
+                    "description": "ImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare\n(SQLBestandImZulauf) — gleiche Zeiger-Regel wie Bestand.",
+                    "type": "integer"
                 },
                 "isbn": {
                     "description": "ISBN ist die Internationale Standardbuchnummer (ISBN-10 oder ISBN-13).",
@@ -4976,6 +5144,17 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vorbesitzer": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.SchlagwortZahl": {
+            "type": "object",
+            "properties": {
+                "titel": {
+                    "type": "integer"
+                },
+                "wort": {
                     "type": "string"
                 }
             }

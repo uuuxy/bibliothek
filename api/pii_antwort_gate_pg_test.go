@@ -334,6 +334,8 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/buecher/titel/{id}/ausleiher": {URL: "/api/buecher/titel/" + w.titelID + "/ausleiher", Positiv: []string{"Vogelbeere"}},
 		"GET /api/buecher/titel/{id}/historie":  {URL: "/api/buecher/titel/" + w.titelID + "/historie"},
 		"GET /api/buecher/titel/{id}/etiketten": {URL: "/api/buecher/titel/" + w.titelID + "/etiketten"},
+		// Schlagworte (Migration 138): Stufe 0, Wörter über den Titel — keine Person.
+		"GET /api/buecher/titel/{id}/schlagworte": {URL: "/api/buecher/titel/" + w.titelID + "/schlagworte"},
 		// Das Abgangsbuch (17.09.2026, OFFEN.md 9.3 d): Stufe 0. Es nennt Exemplare, keine
 		// Leser — auch nicht beim Grund „Verlust", obwohl dort ein Schüler dahintersteht.
 		// Genau das prüft das Gate hier mit: Der Kanarienvogel darf auf diesem Blatt nicht
@@ -407,6 +409,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/print/etikett/{id}":              {URL: "/api/print/etikett/" + w.exemplarID},
 		"GET /api/signaturen":                      {URL: "/api/signaturen"},
 		"GET /api/signaturen/buecher":              {URL: "/api/signaturen/buecher?signatur=GATE"},
+		"GET /api/schlagworte":                     {URL: "/api/schlagworte"},
 
 		// router.go
 		"GET /api/images/cover": {URL: "/api/images/cover"},

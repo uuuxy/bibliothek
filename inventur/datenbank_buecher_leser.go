@@ -196,6 +196,13 @@ func (repo *BookRepository) ListExternalCoverBooks(ctx context.Context, limit in
 	return books, nil
 }
 
+// SchlagworteDesTitels lädt die Schlagworte eines Titels (Migration 138) für den
+// Einzel-Read. Nicht in buchListenSelect: Die Katalogliste bleibt schlank, und ein Feld,
+// das dort als nil steht, sagt „nicht geladen" — Speichern lässt es dann unangetastet.
+func (repo *BookRepository) SchlagworteDesTitels(ctx context.Context, id string) ([]string, error) {
+	return repository.SchlagworteDesTitels(ctx, repo.db, id)
+}
+
 // ListBooksByIDs retrieves list of books for provided IDs.
 // Liefert den VOLLEN Datensatz inkl. Signatur und Bestandszählung — der
 // Einzel-Read GET /api/books/{id} (Buch-Akte, „Titel bearbeiten") hängt daran.

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, fireEvent } from '@testing-library/svelte';
 
 vi.mock('../../apiFetch.js', () => ({
 	apiPut: vi.fn(async () => ({ ok: true, json: async () => ({}) })),
@@ -109,5 +109,87 @@ describe('OrderStaging: die Signatur kommt aus dem Bestand', () => {
 			expect(optionen).toEqual(['JF', 'MANGA']);
 		});
 		expect(apiFetch).toHaveBeenCalledWith('/api/signaturen');
+	});
+});
+
+// Schlagworte (Migration 138). Das Fenster ersetzt die Menge als Ganzes — es muss also
+// zuerst wissen, welche der Titel schon trägt. Drei Fälle: unverändert schweigt es, ein
+// neues Wort schickt die GANZE Menge, und ohne geladene Schlagworte bleibt das Feld zu.
+describe('OrderStaging: Schlagworte', () => {
+	beforeEach(() => vi.clearAllMocks());
+
+	/** @param {string[] | null} vorhanden — null: Laden scheitert */
+	function antworten(vorhanden) {
+		vi.mocked(apiFetch).mockImplementation(async (url) => {
+			if (url === '/api/schlagworte') {
+				return /** @type {any} */ ({
+					ok: true,
+					json: async () => [{ wort: 'Fantasy', titel: 12 }]
+				});
+			}
+			if (String(url) === '/api/buecher/titel/t-1/schlagworte') {
+				return /** @type {any} */ (
+					vorhanden === null
+						? { ok: false, status: 500, json: async () => ({}) }
+						: { ok: true, json: async () => ({ id: 't-1', schlagworte: vorhanden }) }
+				);
+			}
+			return /** @type {any} */ ({ ok: true, json: async () => [] });
+		});
+	}
+	/** @param {any} screen */
+	async function feldBereit(screen) {
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Schlagworte'));
+		await vi.waitFor(() => expect(feld.disabled).toBe(false));
+		return feld;
+	}
+
+	it('zeigt die vorhandenen und schreibt nichts, wenn niemand sie ändert', async () => {
+		antworten(['Tiere']);
+		const screen = fenster();
+		await feldBereit(screen);
+		expect(screen.getByRole('button', { name: '„Tiere“ entfernen' })).toBeTruthy();
+
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		expect(apiPut).not.toHaveBeenCalledWith(
+			'/api/buecher/titel/t-1/schlagworte',
+			expect.anything()
+		);
+	});
+
+	it('schickt die ganze Menge, wenn ein Wort dazukommt — in der Schreibweise des Vorschlags', async () => {
+		antworten(['Tiere']);
+		const screen = fenster();
+		const feld = await feldBereit(screen);
+		await vi.waitFor(() =>
+			expect(screen.container.querySelector('#stagedSchlagworte-vorschlaege option')).toBeTruthy()
+		);
+
+		await fireEvent.input(feld, { target: { value: 'fantasy' }, inputType: 'insertText' });
+		await fireEvent.keyDown(feld, { key: 'Enter' });
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+
+		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
+			schlagworte: ['Tiere', 'Fantasy']
+		});
+	});
+
+	it('bleibt gesperrt und schreibt nichts, wenn die vorhandenen nicht zu laden sind', async () => {
+		antworten(null);
+		const screen = fenster();
+		await vi.waitFor(() => expect(screen.getByText(/Konnten nicht geladen werden/)).toBeTruthy());
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText('Schlagworte'));
+		expect(feld.disabled, 'ein offenes Feld ersetzte mit dem ersten Wort alle vorhandenen').toBe(
+			true
+		);
+
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		expect(apiPut).not.toHaveBeenCalledWith(
+			'/api/buecher/titel/t-1/schlagworte',
+			expect.anything()
+		);
 	});
 });

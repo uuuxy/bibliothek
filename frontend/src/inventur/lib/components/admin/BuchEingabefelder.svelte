@@ -7,6 +7,8 @@
 	import SignaturFeld from './SignaturFeld.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
+	import ChipFeld from '../../../../lib/components/ui/ChipFeld.svelte';
+	import { ladeSchlagwortVorschlaege } from '../../../../lib/utils/schlagworte.js';
 
 	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];
 
@@ -26,8 +28,12 @@
 
 	/** @type {any[]} */
 	let systematikListe = $state([]);
+	/** @type {{ wert: string, beschreibung?: string }[]} */
+	let schlagwortVorschlaege = $state([]);
 
 	onMount(async () => {
+		// Vorschläge sind optional: Ohne sie nimmt das Feld weiter freien Text an.
+		ladeSchlagwortVorschlaege().then((liste) => (schlagwortVorschlaege = liste));
 		try {
 			const antwort = await apiFetch('/api/systematics');
 			if (antwort.ok) {
@@ -37,6 +43,8 @@
 			console.error('Fehler beim Laden der Systematik', fehler);
 		}
 	});
+
+	const schlagworteGeladen = $derived(Array.isArray(formular.schlagworte));
 
 	/** Neuanlage eines Bibliotheksbuchs ohne Signatur → Speichern gesperrt (Material-
 	 *  Error-State am Feld). Lernmittel tragen kein Rückenetikett (Migration 093), für
@@ -126,6 +134,22 @@
 	<BuchEingabefelderKategorisierung bind:formular {systematikListe} />
 
 	<BuchEingabefelderInventar bind:formular />
+
+	<!-- Schlagworte (Migration 138): frei eintragbar wie in Littera, Vorschläge aus dem
+	     Bestand. Die Maske lädt sie über den Einzel-Read und schickt sie mit dem Titel
+	     zurück. Ohne geladene Liste (null) bleibt das Feld zu: Ein Wort ersetzte sonst
+	     still alle vorhandenen — dieselbe Regel wie im Bestellkorb. -->
+	<ChipFeld
+		id="buch-schlagworte"
+		label="Schlagworte"
+		bind:werte={formular.schlagworte}
+		vorschlaege={schlagwortVorschlaege}
+		disabled={!schlagworteGeladen}
+		hint={schlagworteGeladen
+			? undefined
+			: 'Nicht geladen — die vorhandenen bleiben beim Speichern unverändert.'}
+		placeholder="Thema, Gattung, Stichwort"
+	/>
 
 	<div>
 		<label for="buch-beschreibung" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
