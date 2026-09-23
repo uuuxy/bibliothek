@@ -380,6 +380,10 @@ var triggerBestand = []string{
 	// lässt ihn stehen, die Karenz läuft dann länger statt kürzer — unschädlich, weil eine
 	// wieder offene Ausleihe die Zeile ohnehin vor der Anonymisierung schützt. Gestempelt
 	// wird jeder Leser, gelesen wird der Wert nur bei Abgängern.
+	// Nachgetragen im Rasterdurchgang 23.09.2026: Der Stempel SPERRT die Leserzeile, und zwar
+	// nach der Ausleihe — gegen die Sperrreihenfolge Schüler → Ausleihe → Exemplar. Bei der
+	// Fremdrückgabe über Kreuz an zwei Theken bricht Postgres eine Transaktion ab (40P01,
+	// repository/raster_2309_pg_test.go; OFFEN.md 5.22).
 	"trg_leser_stempel_rueckgabe @ ausleihen",
 	"trg_leser_stempel_schaden @ schadensfaelle",
 	// Migration 137: derselbe Trigger wie vorher, aber eine andere Funktion dahinter

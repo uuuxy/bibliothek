@@ -26,8 +26,9 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
    Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
-   10?), 5.5 (Google Books nur noch für Cover?), 5.21 (welche Rückmeldung gibt der
-   Inventur-Scanner, wenn Grün und Bernstein keine M3-Rolle haben?).
+   10?), 5.5 (Google Books nur noch für Cover?), 5.5 (Ersatz-Etikett nach der Vorlage?), 5.21
+   (welche Rückmeldung gibt der Inventur-Scanner, wenn Grün und Bernstein keine M3-Rolle
+   haben?), 5.22 (Verklemmung bei der Fremdrückgabe über Kreuz: so lassen?).
 4. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
@@ -397,6 +398,14 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Google Books und OpenLibrary; Google liefert also Titel, Autor und Verlag, wenn die DNB den
   Titel nicht kennt. Nach einer Notiz vom 22.09.2026 soll Google nur noch als Rückfall für das
   Cover dienen. Gilt das — dann aus der Reihe nehmen?
+- **Frage: Ersatz-Etikett nach der Vorlage?** Der Druckknopf an der Exemplarkarte
+  (`GET /api/print/etikett/{id}`) druckt ein A6-Blatt mit Titel, Autor und Strichcode — ohne
+  Schulname, Anschaffungsjahr, Signatur und Eigentumsvermerk. Das Etikett nach der Vorlage hat
+  diese Felder seit dem 04.08.2026 (`d0623f99`), das A6-Blatt blieb, wie es war. Es vermerkt
+  das Exemplar trotzdem als etikettiert (seit `5d102f58`): Ein neues Exemplar, für das jemand
+  diesen Knopf nimmt, fällt aus „Fehlende Etiketten", ohne je den Eigentumsvermerk bekommen zu
+  haben (Rasterdurchgang 23.09.2026). Vorschlag: Der Knopf druckt das Etikett nach der Vorlage,
+  denselben Weg wie das Druck-Center, und das A6-Blatt entfällt.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -519,6 +528,27 @@ dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui
 (Schlagwort-Pflege). Beim Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld
 „Ab Feld" kommen — beides passt nicht in die 64 px hohe Leiste.
 
+### 5.22 Fremdrückgabe über Kreuz verklemmt sich — seit Migration 137
+
+Der Rückgabe-Trigger `trg_leser_stempel_rueckgabe` (Karenz-Uhr) sperrt bei einer Rückgabe die
+Leserzeile des Ausleihers — im Normalfall immer, denn die Rückgabe liegt nach dem letzten
+Stempel —, und zwar NACH der Ausleihe. Die Fremdrückgabe an der Theke sperrt vorher das Kind der
+offenen Sitzung. Geben zwei Kinder an zwei Theken zugleich je das Buch des anderen ab, wartet jede
+Transaktion auf die andere, und Postgres bricht nach einer Sekunde eine ab (40P01). Nachgestellt
+am 23.09.2026 mit den Schritten des Codes; ohne den Trigger läuft derselbe Ablauf durch
+(`TEST_DATABASE_URL=… go test -tags raster -run TestRaster_Fremdrueckgabe ./repository/`). Das
+Nachbuchen zweier Theken, die über Kreuz umbuchen, hat dieselbe Folge von Sperren (nicht eigens
+nachgestellt).
+
+Wirkung: An der Theke erscheint eine Fehlermeldung, erneutes Scannen bucht. Beim Nachbuchen
+wird der Eintrag „wiederholen" und läuft in der nächsten Runde durch. Keine Daten gehen verloren.
+Nebenfolge derselben Sperre: Eine Rückgabe wartet, solange ein anderer Vorgang die Leserzeile
+hält (etwa ein LUSD-Lauf, der diesen Schüler ändert).
+
+**Frage:** so lassen? Die Abhilfe ohne Verklemmung wäre der Stempel in einer eigenen Tabelle statt
+an der Leserzeile — eine Migration an der Karenz-Uhr (Löschuhr, Wächter, DSGVO-Auskunft lesen
+ihn). Vorschlag: so lassen und beim nächsten Umbau der Karenz-Uhr mitnehmen.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -577,6 +607,10 @@ dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui
 - Die Altersangabe der DNB (653 „(Zielgruppe)ab 10 Jahre", `MetadatenErgebnis.Zielgruppe`) wird
   gelesen und nicht gespeichert: Es gibt keine Spalte und keinen Leser. Anlass zum Bauen: ein
   Leser, etwa ein Filter im Portal.
+- Das Nachschlagen (`GET /api/lookup/{isbn}`) liefert einen Untertitel (`subtitle`), den weder
+  das ISBN-Feld noch der Scan im Buchformular übernimmt. Beim Anlegen trägt ihn der Server
+  nach, beim Ändern nicht (`ergaenzeFehlendeMetadatenFuerAktualisierung`) — der Zwilling zu
+  `8f7610aa`, der den Untertitel sonst mitnimmt.
 - `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
   Testprozesses; unter `TZ=Pacific/Midway` ist das der Vortag und der Zähler nennt 0. Kein
   Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
