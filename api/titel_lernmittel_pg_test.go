@@ -70,3 +70,66 @@ func TestLernmittelKennzeichenUnbekannterTitelIst404(t *testing.T) {
 		t.Errorf("Status %d, want 404", rec.Code)
 	}
 }
+
+// Fällt das Lernmittel-Kennzeichen, fällt der Mehrjahresband mit (Migration 134,
+// Rasterdurchgang 23.09.2026, K2) — wie im Buchformular. Das Fenster der Bestellsuche
+// schreibt über diese Tür auch das Kennzeichen eines VORHANDENEN Titels. Setzte sie allein
+// ist_lernmittel, lehnte chk_mehrjahresband_spanne ab (am alten Code: Status 500, „violates
+// check constraint"), und das Fenster meldete nur „konnte nicht gespeichert werden".
+func TestLernmittelKennzeichenNimmtDenMehrjahresbandMit(t *testing.T) {
+	pool := pgTestPool(t)
+	ctx := context.Background()
+	srv := &Server{DB: &db.Database{Pool: pool}}
+	const isbnBand, isbnNormal = "9780000134031", "9780000134048"
+	t.Cleanup(func() {
+		if _, err := pool.Exec(ctx, `DELETE FROM buecher_titel WHERE isbn IN ($1, $2)`, isbnBand, isbnNormal); err != nil {
+			t.Errorf("aufräumen: %v", err)
+		}
+	})
+	var band, normal string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO buecher_titel (titel, isbn, ist_lernmittel, jahrgang_von, jahrgang_bis, mehrjahresband)
+		VALUES ('Band Erdkunde 7-9', $1, true, 7, 9, true) RETURNING id`, isbnBand).Scan(&band); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO buecher_titel (titel, isbn, ist_lernmittel, jahrgang_von, jahrgang_bis)
+		VALUES ('Normal Erdkunde 7', $1, true, 7, 9) RETURNING id`, isbnNormal).Scan(&normal); err != nil {
+		t.Fatal(err)
+	}
+	setze := func(id, body string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodPut, "/api/buecher/titel/"+id+"/lernmittel", strings.NewReader(body))
+		req.SetPathValue("id", id)
+		req.Header.Set("Content-Type", "application/json")
+		rec := httptest.NewRecorder()
+		srv.UpdateTitelLernmittelHandler()(rec, req)
+		return rec
+	}
+	lies := func(id string) (lernmittel, schalter bool) {
+		t.Helper()
+		if err := pool.QueryRow(ctx, `SELECT ist_lernmittel, mehrjahresband FROM buecher_titel WHERE id = $1`, id).Scan(&lernmittel, &schalter); err != nil {
+			t.Fatal(err)
+		}
+		return lernmittel, schalter
+	}
+
+	// Gegenprobe: ohne Schalter fällt nur das Kennzeichen.
+	if rec := setze(normal, `{"ist_lernmittel":false}`); rec.Code != http.StatusOK {
+		t.Fatalf("gewöhnlicher Titel: Status %d: %s", rec.Code, rec.Body.String())
+	}
+
+	// Ein Häkchen, das bleibt, lässt den Schalter stehen.
+	if rec := setze(band, `{"ist_lernmittel":true}`); rec.Code != http.StatusOK {
+		t.Fatalf("Mehrjahresband, Kennzeichen bleibt: Status %d: %s", rec.Code, rec.Body.String())
+	}
+	if lernmittel, schalter := lies(band); !lernmittel || !schalter {
+		t.Errorf("Kennzeichen bleibt an: ist_lernmittel=%v, mehrjahresband=%v — erwartet beide an", lernmittel, schalter)
+	}
+
+	if rec := setze(band, `{"ist_lernmittel":false}`); rec.Code != http.StatusOK {
+		t.Fatalf("Mehrjahresband, Kennzeichen aus: Status %d, erwartet 200: %s", rec.Code, rec.Body.String())
+	}
+	if lernmittel, schalter := lies(band); lernmittel || schalter {
+		t.Errorf("nach „kein Lernmittel“: ist_lernmittel=%v, mehrjahresband=%v — erwartet beide aus", lernmittel, schalter)
+	}
+}

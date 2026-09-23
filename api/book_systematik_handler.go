@@ -82,7 +82,12 @@ type UpdateTitelLernmittelRequest struct {
 // Schulbuch war damit dauerhaft ein Bücherei-Titel: falsche Frist, falscher Katalog,
 // falsche Löschfrist, unsichtbar im Bestellbedarf, und seit Migration 109 der falsche
 // Topf auf der Bestellung. Das Fenster fragt jetzt nach; dieser Endpunkt schreibt die
-// Antwort. Für vorhandene Titel gilt das Buchformular (PUT /api/books/{id}) wie bisher.
+// Antwort — auch für einen vorhandenen Titel, sobald jemand im Fenster das Kästchen umlegt.
+//
+// Fällt das Kennzeichen, fällt der Mehrjahresband mit (Migration 134), wie im Buchformular:
+// Den Schalter gibt es nur an einem Lernmittel. Setzte die Tür allein ist_lernmittel, lehnte
+// chk_mehrjahresband_spanne ab, und das Fenster meldete nur „konnte nicht gespeichert
+// werden" (Rasterdurchgang 23.09.2026, K2).
 //
 // @Summary      Update a title's Lernmittel flag
 // @Tags         books
@@ -108,7 +113,8 @@ func (s *Server) UpdateTitelLernmittelHandler() http.HandlerFunc {
 
 		var istLernmittel bool
 		err := s.DB.Pool.QueryRow(r.Context(), `
-			UPDATE buecher_titel SET ist_lernmittel = $2, aktualisiert_am = CURRENT_TIMESTAMP
+			UPDATE buecher_titel SET ist_lernmittel = $2, mehrjahresband = mehrjahresband AND $2,
+			       aktualisiert_am = CURRENT_TIMESTAMP
 			WHERE id = $1::uuid
 			RETURNING ist_lernmittel
 		`, id, req.IstLernmittel).Scan(&istLernmittel)
