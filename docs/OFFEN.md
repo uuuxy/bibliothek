@@ -26,7 +26,8 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
    Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
-   10?), 5.5 (Google Books nur noch für Cover?).
+   10?), 5.5 (Google Books nur noch für Cover?), 5.21 (welche Rückmeldung gibt der
+   Inventur-Scanner, wenn Grün und Bernstein keine M3-Rolle haben?).
 4. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
