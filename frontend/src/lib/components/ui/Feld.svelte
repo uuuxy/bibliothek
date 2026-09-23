@@ -120,12 +120,12 @@
 
 {#snippet roh()}
 	{#if mehrzeilig}
-		<!-- `restFuerTextarea` ist die Naht zwischen zwei Elementtypen: `rest` ist als
-		     HTMLInputAttributes typisiert (das Bauteil ist zuerst ein <input>). Die
-		     Attribute, die hier durchgereicht werden, gibt es an beiden Elementen. -->
+		<!-- restFuerTextarea: nur Attribute, die beide Elemente kennen. min-height = Zeilen + py-2 +
+		     Rahmen — ohne Eltern-Raster sizt Chrome die subgrid-Zeile ohne `rows` (18 px). -->
 		<textarea
 			id={feldId}
 			rows={zeilen}
+			style:min-height="calc({zeilen}lh + 1rem + 2px)"
 			aria-describedby={beschreibung}
 			aria-invalid={ungueltig || undefined}
 			bind:value
