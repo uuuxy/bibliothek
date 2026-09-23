@@ -52,9 +52,13 @@ var fkAktionenBestand = []string{
 	// die Schlagworte stehen nicht darin.
 	"CASCADE  titel_schlagworte.titel_id -> buecher_titel",
 	// Wird ein Wort gelöscht, verschwindet es aus allen Titeln — Litteras „Löschen (auch aus
-	// allen Medien)". Heute löscht kein Code ein Wort; die Pflegeseite (Stufe 2, OFFEN.md
-	// 4.20) soll es mit einer Rückfrage tun, die die Zahl der betroffenen Titel nennt.
+	// allen Medien)". Gelöscht wird nur über LoescheSchlagwort (Migration 143, Pflege der
+	// Schlagworte); seine Antwort nennt die Zahl der Titel, die das Wort verloren.
 	"CASCADE  titel_schlagworte.schlagwort_id -> schlagworte",
+	// Migration 143, befragt am 23.09.2026: Fällt ein Wort, fallen die Verweise darauf mit —
+	// ein Verweis ohne Ziel hat keine Bedeutung. Wer löscht, ist LoescheSchlagwort; die
+	// Antwort nennt die Zahl der Verweise, die mitgingen (schlagworte_pflege_pg_test.go).
+	"CASCADE  schlagworte.verweis_auf -> schlagworte",
 	// Befragt (Register 06.09.2026): „Plan verwerfen" löscht den ganzen Plan samt
 	// Zeilen, freien Tagen und Auslassungen — bekannt und als Produktfrage notiert.
 	"CASCADE  lmf_plan_ausgelassen.plan_id -> lmf_plaene",
@@ -195,6 +199,13 @@ var checkBedingungenBestand = []string{
 	// NICHT — die zieht der Schreibpfad zusammen; ein anderer Schreiber, der das nicht tut,
 	// legte „Magische  Tiere" neben „Magische Tiere" an.
 	"chk_schlagwort_form",
+	// Migration 143, befragt am 23.09.2026: Ein Verweis zeigt nie auf sich selbst und ist nie
+	// Filter. Der Code kennt beides — fuehreZusammenIn lehnt „mit sich selbst" vorher ab,
+	// SetzeSchlagwortFilter lehnt den Filter an einem Verweis ab, und das Zusammenführen nimmt
+	// die Markierung weg, bevor das Wort zum Verweis wird. Am Rückbau rot bewiesen
+	// (TestSchlagwortPflege_DatenbankHaeltDieRegeln).
+	"chk_schlagwort_verweis_kein_filter",
+	"chk_schlagwort_verweis_nicht_selbst",
 	"chk_exemplar_bestellstatus",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
@@ -322,6 +333,13 @@ var triggerBestand = []string{
 	// eine ISBN vergleicht, vergleicht die Normalform — Go über isbnutil.Normalform, SQL
 	// über isbn_normalform(); die Parität prüft repository/isbn_normalform_pg_test.go.
 	"trg_titel_isbn_normalform @ buecher_titel",
+	// Migration 143, befragt am 23.09.2026: keine Kette von Verweisen, kein Titel an einem
+	// Verweis. Beide Schreib-Türen halten es selbst ein — SetzeSchlagworte hängt über
+	// coalesce(verweis_auf, id) das Ziel an, fuehreZusammenIn löst erst Titel und Verweise und
+	// macht dann das Wort zum Verweis. Die Trigger sind der Rückhalt; regelFehler übersetzt
+	// ihre Ausnahme in 409 (TestSchlagwortPflege_DatenbankHaeltDieRegeln, am Rückbau rot).
+	"trg_schlagwort_verweis_pruefen @ schlagworte",
+	"trg_titel_schlagwort_kein_verweis @ titel_schlagworte",
 	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
 	// ist genau der Zweck — vorher kannte sie nur ReportDamage, sechs andere Aussonder- und
 	// Löschwege ließen das Kind im Abholfach stehen (repository/vormerkung_abholfach_pg_test.go).

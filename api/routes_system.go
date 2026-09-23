@@ -101,6 +101,14 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.GetSignaturBuecherHandler()))
 	// Schlagworte (Migration 138): die Vorschlagsliste der Eingabefelder, aus dem Bestand.
 	mux.Handle("GET /api/schlagworte", s.RequirePermission("view_books")(s.GetSchlagwortVorschlaegeHandler()))
+	// Pflege der Schlagworte (Migration 143, OFFEN.md 4.20 Stufe 1): wie die Systematik mit
+	// edit_books — die Pflege ändert den Katalog, nicht den Bestand an Exemplaren.
+	mux.Handle("GET /api/schlagworte/pflege", s.RequirePermission("edit_books")(s.GetSchlagwortPflegeHandler()))
+	mux.Handle("PUT /api/schlagworte/{id}/wort", s.RequirePermission("edit_books")(s.PutSchlagwortWortHandler()))
+	mux.Handle("PUT /api/schlagworte/{id}/filter", s.RequirePermission("edit_books")(s.PutSchlagwortFilterHandler()))
+	mux.Handle("POST /api/schlagworte/{id}/zusammenfuehren", s.RequirePermission("edit_books")(s.PostSchlagwortZusammenfuehrenHandler()))
+	mux.Handle("POST /api/schlagworte/verweise", s.RequirePermission("edit_books")(s.PostSchlagwortVerweisHandler()))
+	mux.Handle("DELETE /api/schlagworte/{id}", s.RequirePermission("edit_books")(s.DeleteSchlagwortHandler()))
 
 	// Real-time Events. Nur Sitzung, kein Fachrecht: den SSE-Stream öffnet jeder
 	// eingeloggte Client (authStore + Kiosk-Omnibox), und an ihm hängt der Herzschlag für

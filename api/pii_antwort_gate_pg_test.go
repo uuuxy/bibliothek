@@ -410,6 +410,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/signaturen":                      {URL: "/api/signaturen"},
 		"GET /api/signaturen/buecher":              {URL: "/api/signaturen/buecher?signatur=GATE"},
 		"GET /api/schlagworte":                     {URL: "/api/schlagworte"},
+		"GET /api/schlagworte/pflege":              {URL: "/api/schlagworte/pflege"},
 
 		// router.go
 		"GET /api/images/cover": {URL: "/api/images/cover"},

@@ -112,18 +112,22 @@ func SetzeSchlagworte(ctx context.Context, q DBQueryer, titelID string, roh []st
 	// Die Menge des Titels ersetzen: Was nicht mehr genannt ist, fällt; was neu ist,
 	// kommt dazu. Zwei Anweisungen statt einer schreibenden CTE — ein INSERT in einer CTE
 	// ist für die übrige Anweisung unsichtbar, die neuen Wörter fehlten dann hier.
+	//
+	// Seit Migration 143 kann ein genanntes Wort ein Verweis sein („Tierfantasy" →
+	// „Fantasy"): Am Titel hängt dann sein Ziel. COALESCE(verweis_auf, id) ist die eine
+	// Stelle, an der das aufgelöst wird — in beiden Anweisungen gleich.
 	if _, err := tx.Exec(ctx, `
 		DELETE FROM titel_schlagworte ts
-		USING schlagworte s
-		WHERE ts.schlagwort_id = s.id
-		  AND ts.titel_id = $1
-		  AND NOT (lower(s.wort) = ANY (SELECT lower(w) FROM unnest($2::text[]) AS w))`,
+		WHERE ts.titel_id = $1
+		  AND ts.schlagwort_id NOT IN (
+		      SELECT coalesce(s.verweis_auf, s.id) FROM schlagworte s
+		      WHERE lower(s.wort) = ANY (SELECT lower(w) FROM unnest($2::text[]) AS w))`,
 		titelID, woerter); err != nil {
 		return nil, fmt.Errorf("schlagworte entfernen: %w", err)
 	}
 	if _, err := tx.Exec(ctx, `
 		INSERT INTO titel_schlagworte (titel_id, schlagwort_id)
-		SELECT $1, s.id
+		SELECT DISTINCT $1::uuid, coalesce(s.verweis_auf, s.id)
 		FROM schlagworte s
 		WHERE lower(s.wort) = ANY (SELECT lower(w) FROM unnest($2::text[]) AS w)
 		ON CONFLICT DO NOTHING`,

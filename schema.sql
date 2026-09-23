@@ -574,15 +574,25 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 -- Migration 138: Schlagworte am Titel, frei eintragbar wie in Littera. Ein Wort ist
 -- case-insensitiv eindeutig (die zuerst angelegte Schreibweise gewinnt); ein Titel trägt
 -- beliebig viele. Eigene Tabelle statt Spalte am Titel, damit Umbenennen und Zählen eine
--- Zeile bzw. ein JOIN sind. Geschrieben nur über repository.SetzeSchlagworte.
+-- Zeile bzw. ein JOIN sind. Geschrieben über repository.SetzeSchlagworte (am Titel) und
+-- repository/schlagworte_pflege.go (Pflege, Migration 143).
 CREATE TABLE schlagworte (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     wort TEXT NOT NULL,
     angelegt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Migration 143: Ein Verweis zeigt auf ein Wort („Tierfantasy" → „Fantasy"); wer ihn
+    -- tippt, bekommt am Titel das Ziel. ist_filter: steht im Portal als Filter.
+    verweis_auf UUID REFERENCES schlagworte(id) ON DELETE CASCADE,
+    ist_filter BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT chk_schlagwort_form
-        CHECK (wort = btrim(wort) AND wort <> '' AND char_length(wort) <= 80)
+        CHECK (wort = btrim(wort) AND wort <> '' AND char_length(wort) <= 80),
+    CONSTRAINT chk_schlagwort_verweis_nicht_selbst
+        CHECK (verweis_auf IS NULL OR verweis_auf <> id),
+    CONSTRAINT chk_schlagwort_verweis_kein_filter
+        CHECK (verweis_auf IS NULL OR NOT ist_filter)
 );
 CREATE UNIQUE INDEX uniq_schlagworte_wort ON schlagworte (lower(wort));
+CREATE INDEX idx_schlagworte_verweis_auf ON schlagworte (verweis_auf) WHERE verweis_auf IS NOT NULL;
 
 CREATE TABLE titel_schlagworte (
     titel_id UUID NOT NULL REFERENCES buecher_titel(id) ON DELETE CASCADE,
@@ -591,6 +601,41 @@ CREATE TABLE titel_schlagworte (
 );
 -- Gegenrichtung zum Primärschlüssel: „wie viele Titel tragen das Wort".
 CREATE INDEX idx_titel_schlagworte_schlagwort ON titel_schlagworte (schlagwort_id);
+
+-- Migration 143: keine Kette von Verweisen, kein Titel an einem Verweis.
+CREATE FUNCTION schlagwort_verweis_pruefen()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.verweis_auf IS NOT NULL THEN
+        IF EXISTS (SELECT 1 FROM schlagworte WHERE id = NEW.verweis_auf AND verweis_auf IS NOT NULL) THEN
+            RAISE EXCEPTION 'schlagwort_verweis_kette: ein Verweis zeigt auf ein Schlagwort, nicht auf einen Verweis';
+        END IF;
+        IF EXISTS (SELECT 1 FROM schlagworte WHERE verweis_auf = NEW.id) THEN
+            RAISE EXCEPTION 'schlagwort_verweis_kette: auf dieses Wort zeigen Verweise';
+        END IF;
+        IF EXISTS (SELECT 1 FROM titel_schlagworte WHERE schlagwort_id = NEW.id) THEN
+            RAISE EXCEPTION 'schlagwort_verweis_mit_titeln: ein Verweis trägt keine Titel';
+        END IF;
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_schlagwort_verweis_pruefen
+BEFORE INSERT OR UPDATE OF verweis_auf ON schlagworte
+FOR EACH ROW EXECUTE FUNCTION schlagwort_verweis_pruefen();
+
+CREATE FUNCTION titel_schlagwort_kein_verweis()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM schlagworte WHERE id = NEW.schlagwort_id AND verweis_auf IS NOT NULL) THEN
+        RAISE EXCEPTION 'schlagwort_verweis_mit_titeln: ein Titel hängt am Ziel eines Verweises, nicht am Verweis';
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_titel_schlagwort_kein_verweis
+BEFORE INSERT OR UPDATE OF schlagwort_id ON titel_schlagworte
+FOR EACH ROW EXECUTE FUNCTION titel_schlagwort_kein_verweis();
 
 
 -- Table: buecher_exemplare (Physical items / book copies in circulation)
@@ -1763,7 +1808,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('139_zugangsdatum_schulzeit.sql'),
 ('140_isbn_altbestand_normalform.sql'),
 ('141_bescheid_absender_snapshot.sql'),
-('142_bescheid_briefdatum_schulzeit.sql')
+('142_bescheid_briefdatum_schulzeit.sql'),
+('143_schlagworte_pflege.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

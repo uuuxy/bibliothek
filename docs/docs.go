@@ -2087,6 +2087,335 @@ const docTemplate = `{
                 }
             }
         },
+        "/schlagworte/pflege": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "List keywords for maintenance",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repository.SchlagwortPflegeListe"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schlagworte/verweise": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Create a keyword reference",
+                "parameters": [
+                    {
+                        "description": "Spelling and target",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SchlagwortVerweisRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schlagworte/{id}": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Delete a keyword",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SchlagwortAenderung"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schlagworte/{id}/filter": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Mark a keyword as portal filter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Filter flag",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SchlagwortFilterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schlagworte/{id}/wort": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Rename a keyword",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "New spelling",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SchlagwortWortRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SchlagwortAenderung"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/schlagworte/{id}/zusammenfuehren": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Merge a keyword into another",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Keyword ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Target keyword",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.SchlagwortZielRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.SchlagwortAenderung"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/schueler": {
             "get": {
                 "description": "Retrieves students, optionally filtered by a specific school class or a search term, along with loan counts.",
@@ -4127,6 +4456,61 @@ const docTemplate = `{
                 }
             }
         },
+        "api.SchlagwortAenderung": {
+            "type": "object",
+            "properties": {
+                "titel": {
+                    "type": "integer"
+                },
+                "verweise": {
+                    "type": "integer"
+                },
+                "wort": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SchlagwortFilterRequest": {
+            "type": "object",
+            "properties": {
+                "ist_filter": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api.SchlagwortVerweisRequest": {
+            "type": "object",
+            "required": [
+                "ziel_id"
+            ],
+            "properties": {
+                "wort": {
+                    "type": "string"
+                },
+                "ziel_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SchlagwortWortRequest": {
+            "type": "object",
+            "properties": {
+                "wort": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.SchlagwortZielRequest": {
+            "type": "object",
+            "required": [
+                "ziel_id"
+            ],
+            "properties": {
+                "ziel_id": {
+                    "type": "string"
+                }
+            }
+        },
         "api.SchuelerKiosk": {
             "type": "object",
             "properties": {
@@ -5144,6 +5528,52 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "vorbesitzer": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.SchlagwortPflegeListe": {
+            "type": "object",
+            "properties": {
+                "gesamt": {
+                    "type": "integer"
+                },
+                "zeilen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.SchlagwortPflegeZeile"
+                    }
+                }
+            }
+        },
+        "repository.SchlagwortPflegeZeile": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "ist_filter": {
+                    "type": "boolean"
+                },
+                "titel": {
+                    "description": "Titel: wie viele Titel das Wort tragen. Ein Verweis trägt nie welche.",
+                    "type": "integer"
+                },
+                "verweis_auf": {
+                    "type": "string"
+                },
+                "verweis_auf_id": {
+                    "description": "VerweisAuf: das Ziel, wenn das Wort ein Verweis ist; sonst leer.",
+                    "type": "string"
+                },
+                "verweise": {
+                    "description": "Verweise: die Wörter, die auf dieses zeigen, alphabetisch; nie nil.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "wort": {
                     "type": "string"
                 }
             }

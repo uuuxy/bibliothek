@@ -114,7 +114,13 @@ var phantomBestand = map[string]int{
 	// Verbindungen ersetzen (DELETE + INSERT, 0 ist der Normalfall). Dass es den Titel gibt,
 	// sichert der FOR-UPDATE-Lock davor (ErrTitelNichtGefunden → 404); das Ergebnis misst
 	// repository/schlagworte_pg_test.go.
-	"repository/schlagworte.go:SetzeSchlagworte":              3,
+	"repository/schlagworte.go:SetzeSchlagworte": 3,
+	// Zusammenführen zweier Schlagworte (Migration 143): fünf Schritte in einer Schleife —
+	// Titel umhängen, lösen, Verweise umhängen, Filter übernehmen, zum Verweis machen. Null
+	// Zeilen ist bei den ersten vier der Normalfall (ein Wort ohne Titel, ohne Verweise); dass
+	// es beide Wörter gibt, sichern die FOR-UPDATE-Sperren davor (ErrSchlagwortNichtGefunden).
+	// Das Ergebnis misst repository/schlagworte_pflege_pg_test.go.
+	"repository/schlagworte_pflege.go:fuehreZusammenIn":       1,
 	"repository/audit.go:LogAdminAktion":                      1,
 	"repository/audit.go:insertAuditLog":                      1,
 	"repository/audit_books.go:DeleteTitle":                   3,

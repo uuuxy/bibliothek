@@ -32,11 +32,12 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen 139 bis 142). Das
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen 139 bis 143). Das
 passiert beim Start von allein; Daten gehen nicht verloren. 139 und 142 ändern nur Vorgaben
 (Zugangsdatum, Briefdatum des Bescheids) auf den Kalendertag der Schule; 140 schreibt ISBNs aus
 der Zeit vor Migration 133 in die Normalform (am Testserver eine Zeile); 141 gibt dem Bescheid
-eine leere Spalte für die Angaben der Schule.
+eine leere Spalte für die Angaben der Schule; 143 gibt den Schlagworten Verweise und die
+Filter-Markierung.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
@@ -297,8 +298,10 @@ Titel, 80 Zeichen je Wort, Vorschlagsliste die 500 häufigsten.
 
 1. **Pflegeseite** unter Einstellungen: alle Wörter mit Titelzahl, umbenennen und
    zusammenführen, löschen (Rückfrage nennt die Zahl der Titel), Verweise setzen,
-   Filter-Markierung. Braucht eine Migration (Verweise, Markierung). Beim Zusammenführen wird
-   das alte Wort zum Verweis auf das neue.
+   Filter-Markierung. Beim Zusammenführen wird das alte Wort zum Verweis auf das neue.
+   **Server gebaut am 23.09.2026** (Migration 143; `GET /api/schlagworte/pflege` und fünf
+   Aktionen, Recht `edit_books` wie die Systematik); ein getippter Verweis landet am Titel als
+   sein Ziel. **Offen: die Seite selbst.**
 2. **Suche:** Katalog und Portal finden über Schlagwort und Verweis; die markierten Wörter
    stehen im Portal als Filter.
 3. **DNB-Vorschlag beim Bestellen per ISBN:** Vorgeschlagen wird nur, was es schon als

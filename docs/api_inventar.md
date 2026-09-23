@@ -6,7 +6,13 @@
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
+- `DELETE /api/schlagworte/{id}`
 - `GET /api/schadensfaelle/{id}/pdf`
+- `GET /api/schlagworte/pflege`
+- `POST /api/schlagworte/verweise`
+- `POST /api/schlagworte/{id}/zusammenfuehren`
+- `PUT /api/schlagworte/{id}/filter`
+- `PUT /api/schlagworte/{id}/wort`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -16,7 +22,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (214)
+## Alle registrierten Routen (220)
 
 - `/`
 - `/api/admin`
@@ -36,6 +42,7 @@
 - `DELETE /api/klassen-mapping/{klasse}`
 - `DELETE /api/lieferanten/{id}`
 - `DELETE /api/lmf-plan/{art}`
+- `DELETE /api/schlagworte/{id}`
 - `DELETE /api/schueler/deleted/{id}`
 - `DELETE /api/schueler/{id}`
 - `DELETE /api/systematics/{id}`
@@ -129,6 +136,7 @@
 - `GET /api/reservierungen/klassensatz/offen`
 - `GET /api/schadensfaelle/{id}/pdf`
 - `GET /api/schlagworte`
+- `GET /api/schlagworte/pflege`
 - `GET /api/schueler`
 - `GET /api/schueler/deleted`
 - `GET /api/schueler/{barcode_id}/photo`
@@ -201,6 +209,8 @@
 - `POST /api/reservierungen/klassensatz`
 - `POST /api/schadensfaelle/{id}/bezahlt`
 - `POST /api/schadensfaelle/{id}/storno`
+- `POST /api/schlagworte/verweise`
+- `POST /api/schlagworte/{id}/zusammenfuehren`
 - `POST /api/schueler`
 - `POST /api/schueler/{id}/bescheide`
 - `POST /api/schueler/{id}/photo`
@@ -231,4 +241,6 @@
 - `PUT /api/lmf-plan/{art}`
 - `PUT /api/mail-templates/{id}`
 - `PUT /api/reservierungen/klassensatz/{id}/erledigen`
+- `PUT /api/schlagworte/{id}/filter`
+- `PUT /api/schlagworte/{id}/wort`
 - `PUT /api/systematics/{id}`
