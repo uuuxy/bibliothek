@@ -232,6 +232,10 @@ func (s *Server) PostSchlagworteLoeschenHandler() http.HandlerFunc {
 			return nil
 		}
 		geloescht, err := repository.LoescheSchlagworte(r.Context(), s.DB.Pool, req.IDs)
+		if errors.Is(err, repository.ErrSchlagwortNichtGefunden) {
+			// Alle oder keins: Der Satz sagt, dass auch die übrigen noch da sind.
+			return apierrors.NotFound("Ein gewähltes Schlagwort gibt es nicht mehr — gelöscht wurde nichts", err)
+		}
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}

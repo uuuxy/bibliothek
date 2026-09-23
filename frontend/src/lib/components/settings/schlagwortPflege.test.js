@@ -105,6 +105,13 @@ describe('Schlagwort-Pflege: mehrere löschen', () => {
 		);
 	});
 
+	it('nennt sechs Wörter alle — „und 1 weitere" wäre kein Deutsch', () => {
+		const sechs = ['A', 'B', 'C', 'D', 'E', 'F'].map((w) => mit(w, 0));
+		expect(loeschFrage(sechs).text).toBe(
+			'„A“, „B“, „C“, „D“, „E“ und „F“. Das lässt sich nicht rückgängig machen.'
+		);
+	});
+
 	it('kürzt lange Auswahlen auf fünf Namen', () => {
 		const sieben = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((w) => mit(w, 0));
 		expect(loeschFrage(sieben).text).toBe(

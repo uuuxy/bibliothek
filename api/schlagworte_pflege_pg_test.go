@@ -111,7 +111,10 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 		aenderung.Woerter != 1 || aenderung.Titel != 1 || aenderung.Verweise != 2 {
 		t.Errorf("löschen: %d %s, want 200 mit woerter=1, titel=1, verweise=2 (Fantasy vom Umbenennen, Tierfantasy vom Zusammenführen)", rec.Code, rec.Body.String())
 	}
-	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":["`+ids["Fantasy"]+`"]}`); rec.Code != http.StatusNotFound {
-		t.Errorf("zweites Löschen: %d, want 404", rec.Code)
+	// Fehlt eins der gewählten Wörter, fällt keins — und die Meldung sagt das, damit niemand
+	// bei 30 markierten Wörtern rätselt, ob 29 davon weg sind.
+	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":["`+ids["Fantasy"]+`"]}`); rec.Code != http.StatusNotFound ||
+		!strings.Contains(rec.Body.String(), "gelöscht wurde nichts") {
+		t.Errorf("zweites Löschen: %d %s, want 404 mit „gelöscht wurde nichts“", rec.Code, rec.Body.String())
 	}
 }

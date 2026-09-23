@@ -39,11 +39,32 @@ test('Schlagwort-Pflege: mehrere Wörter auf einmal löschen', async ({ page }) 
 			timeout: 15000
 		});
 
+		// Ohne Treffer gibt es nichts zu markieren: Das Kästchen im Kopf ist gesperrt. Anklickbar
+		// hakte es sich an, ohne dass etwas markiert war (Kaestchen hält einen eigenen Stand,
+		// solange die Eigenschaft sich nicht ändert).
+		const suche = page.getByRole('searchbox', { name: 'Schlagwort suchen' });
+		const alle = page.getByRole('checkbox', { name: 'Alle angezeigten Schlagworte markieren' });
+		await suche.fill(`${s}-kein-treffer`);
+		await expect(page.getByText('Kein Schlagwort passt zur Suche.')).toBeVisible();
+		await expect(alle).toBeDisabled();
+		await suche.fill(s);
+		await expect(alle).toBeEnabled();
+
 		const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Schlagworte' });
 		await expect(leiste).toBeHidden();
 		await markieren(magie);
 		await markieren(muehle);
 		await expect(leiste).toContainText('2 markiert');
+
+		// Die Symbole erklären sich mit der Blase der Anwendung (data-tip), nicht mit dem
+		// Tooltip des Browsers. Das Gate icon-tooltips sieht beide nicht: Es markiert nichts,
+		// und es öffnet die Kategorie Schlagworte nicht.
+		const blase = page.locator('[data-tooltip-blase]');
+		await leiste.getByRole('button', { name: 'Markierung aufheben' }).hover();
+		await expect(blase).toHaveText('Markierung aufheben');
+		await page.getByRole('button', { name: `Aktionen für „${muehle}“` }).hover();
+		await expect(blase).toHaveText(`Aktionen für „${muehle}“`);
+		await page.mouse.move(0, 0);
 
 		await leiste.getByRole('button', { name: 'Löschen' }).click();
 		const frage = page.getByRole('dialog', { name: '2 Schlagworte löschen?' });

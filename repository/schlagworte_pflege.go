@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
 	"strings"
 
 	"bibliothek/db"
@@ -329,7 +328,6 @@ type SchlagwortLoeschung struct {
 // nichts (ErrSchlagwortNichtGefunden) — die Pflegeseite lädt dann den neuen Stand.
 func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (SchlagwortLoeschung, error) {
 	var ergebnis SchlagwortLoeschung
-	ids = slices.Compact(slices.Sorted(slices.Values(ids)))
 	if len(ids) == 0 {
 		return ergebnis, fmt.Errorf("%w: kein Schlagwort gewählt", ErrSchlagwortUngueltig)
 	}
@@ -341,16 +339,24 @@ func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (Schlagw
 		return ergebnis, fmt.Errorf("löschen: transaktion öffnen: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
+	// Wie viele verschiedene Wörter gewählt sind, zählt die Datenbank: Sie liest „7C9E…" und
+	// „7c9e…" als dieselbe Kennung, die Tür nimmt beide Schreibweisen an. Entdoppelt wurde
+	// bis zum 23.09.2026 der Text in Go — zwei Schreibweisen zählten als zwei Wörter, die
+	// Sperre fand eine Zeile, und die Tür meldete 404, obwohl alles da war.
+	var gewaehlt, gesperrt int
+	if err := tx.QueryRow(ctx, `SELECT count(DISTINCT k)::int FROM unnest($1::uuid[]) k`, ids).
+		Scan(&gewaehlt); err != nil {
+		return ergebnis, fmt.Errorf("löschen: kennungen zählen: %w", err)
+	}
 	// In fester Reihenfolge sperren (LockRows steht über dem Sort), wie fuehreZusammenIn —
 	// zwei Löschende mit überlappender Auswahl verklemmen sich nicht.
-	var gesperrt int
 	if err := tx.QueryRow(ctx, `
 		SELECT count(*)::int FROM (
 			SELECT id FROM schlagworte WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
 		) g`, ids).Scan(&gesperrt); err != nil {
 		return ergebnis, fmt.Errorf("löschen: sperren: %w", err)
 	}
-	if gesperrt != len(ids) {
+	if gesperrt != gewaehlt {
 		return ergebnis, ErrSchlagwortNichtGefunden
 	}
 	if err := tx.QueryRow(ctx, `
@@ -366,13 +372,13 @@ func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (Schlagw
 	}
 	// Die Zeilen sind gesperrt; ein gewählter Verweis, dessen Ziel ebenfalls gewählt ist, fällt
 	// hier selbst, nicht erst über die Kaskade (die läuft am Ende der Anweisung).
-	if tag.RowsAffected() != int64(len(ids)) {
-		return ergebnis, fmt.Errorf("löschen: %d Zeilen statt %d", tag.RowsAffected(), len(ids))
+	if tag.RowsAffected() != int64(gewaehlt) {
+		return ergebnis, fmt.Errorf("löschen: %d Zeilen statt %d", tag.RowsAffected(), gewaehlt)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		return ergebnis, fmt.Errorf("löschen: commit: %w", err)
 	}
-	ergebnis.Woerter = len(ids)
+	ergebnis.Woerter = gewaehlt
 	return ergebnis, nil
 }
 

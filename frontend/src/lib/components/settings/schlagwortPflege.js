@@ -98,8 +98,10 @@ export function dialogHinweis(art, z, neu) {
 
 /**
  * Die Rückfrage vor dem Löschen — ein Wort aus dem Menü der Zeile oder mehrere markierte, über
- * dieselbe Tür (POST /api/schlagworte/loeschen). Bei mehreren nennt sie die ersten fünf Wörter,
- * wie oft sie an Titeln stehen und wie viele Verweise mitfallen, ohne selbst markiert zu sein.
+ * dieselbe Tür (POST /api/schlagworte/loeschen). Bei mehreren nennt sie die Wörter — bis sechs
+ * alle, ab sieben die ersten fünf und „N weitere" (N ist dann mindestens 2; „1 weitere" wäre
+ * kein Deutsch) —, wie oft sie an Titeln stehen und wie viele Verweise mitfallen, ohne selbst
+ * markiert zu sein.
  * Ein Titel mit zwei markierten Wörtern zählt hier zweimal: Die Seite kennt die Titel nicht,
  * die Meldung danach nennt die Zahl des Servers (loeschErgebnis).
  * @param {SchlagwortZeile[]} gewaehlt
@@ -109,7 +111,7 @@ export function loeschFrage(gewaehlt) {
 	if (gewaehlt.length === 1) {
 		return { titel: `„${gewaehlt[0].wort}“ löschen?`, text: loeschFolgen(gewaehlt[0]) };
 	}
-	const namen = gewaehlt.slice(0, 5).map((z) => `„${z.wort}“`);
+	const namen = gewaehlt.slice(0, gewaehlt.length > 6 ? 5 : 6).map((z) => `„${z.wort}“`);
 	const rest = gewaehlt.length - namen.length;
 	const liste =
 		rest > 0

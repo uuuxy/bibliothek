@@ -44,7 +44,7 @@
 				variant="ghost"
 				size="sm"
 				aria-label="Markierung aufheben"
-				title="Markierung aufheben"
+				data-tip="Markierung aufheben"
 				onclick={onleeren}
 			>
 				<X class="h-4 w-4" aria-hidden="true" />

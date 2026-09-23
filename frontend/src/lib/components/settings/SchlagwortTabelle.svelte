@@ -37,9 +37,12 @@
 		<thead>
 			<tr>
 				<th class="w-10">
+					<!-- Ohne Zeilen gesperrt: Kaestchen hält einen eigenen Stand, solange `checked` sich
+					     nicht ändert — über einer leeren Liste blieb es sonst angehakt. -->
 					<Kaestchen
 						checked={alle}
 						indeterminate={markiert > 0 && !alle}
+						disabled={zeilen.length === 0}
 						onchange={onalle}
 						aria-label="Alle angezeigten Schlagworte markieren"
 					/>

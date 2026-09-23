@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -48,9 +49,12 @@ func TestSchlagwortPflege_MehrereLoeschen(t *testing.T) {
 	}
 
 	// Magie mit einem seiner Verweise gewählt, dazu Mühle (auch an Krabat) und Zeit (an Momo),
-	// Mühle doppelt: 4 Wörter; Krabat und Momo je einmal gezählt; Hexerei fällt mit, Zauberei
-	// ist gewählt und zählt nicht als mitgefallen.
-	geloescht, err := LoescheSchlagworte(ctx, pool, []string{ids["Magie"], zauberei, ids["Mühle"], ids["Zeit"], ids["Mühle"]})
+	// Mühle doppelt, einmal in Großbuchstaben — dieselbe Kennung, die Tür nimmt beide
+	// Schreibweisen an: 4 Wörter; Krabat und Momo je einmal gezählt; Hexerei fällt mit,
+	// Zauberei ist gewählt und zählt nicht als mitgefallen.
+	geloescht, err := LoescheSchlagworte(ctx, pool, []string{
+		ids["Magie"], zauberei, ids["Mühle"], ids["Zeit"], strings.ToUpper(ids["Mühle"]),
+	})
 	if err != nil {
 		t.Fatalf("mehrere löschen: %v", err)
 	}

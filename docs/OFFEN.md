@@ -503,6 +503,11 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
 über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
 freigegeben am 23.09.2026.
 
+Dazu gehört die Leiste des Ausweisdrucks in der Leserdatei (`students/AuswahlAktionsleiste`,
+dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui/AuswahlLeiste`
+(Schlagwort-Pflege). Beim Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld
+„Ab Feld" kommen — beides passt nicht in die 64 px hohe Leiste.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)

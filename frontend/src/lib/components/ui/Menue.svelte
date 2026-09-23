@@ -143,7 +143,7 @@
 			aria-haspopup="menu"
 			aria-expanded={offen}
 			aria-label={etikett}
-			title={etikett}
+			data-tip={etikett}
 			onclick={() => (offen ? schliessen() : oeffnen())}
 		>
 			<EllipsisVertical class="h-4 w-4" aria-hidden="true" />
