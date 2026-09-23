@@ -655,7 +655,8 @@ Ausleihe. Welche Titel überhaupt erscheinen, regelt die **gemeinsame Sichtbarke
 dieselbe): kein Lernmittel (`buecher_titel.ist_lernmittel`, seit Migration 093 ein Feld statt
 eines „LMF"-Präfixes in Titel oder Signatur) und mindestens ein Exemplar im Haus (nicht
 ausgesondert, nicht nur bestellt). Maximal 50 Treffer; der Kopf `X-Treffer-Gesamt` nennt, wie
-viele es insgesamt sind (seit 23.09.2026).
+viele es insgesamt sind (seit 23.09.2026), und die Seite sagt dann „Gezeigt werden 50 von N
+Treffern" statt „50 Treffer".
 Das Suchfeld ist scannertauglich (Enter löst die Suche aus). Das Kollegiums-Portal benutzt für
 seine Suche denselben Endpunkt (§12, Rolle Kollegium), dazu den Filter nach Schlagwort
 (`?schlagwort_id=`, Liste über `GET /api/public/opac/filter`, §13) und sagt über den Kopf,

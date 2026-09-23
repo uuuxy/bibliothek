@@ -11,6 +11,8 @@
 	let results = $state.raw([]);
 	let loading = $state(false);
 	let searched = $state(false);
+	/** Alle Treffer der Suche — der Katalog zeigt höchstens 50 (Kopf X-Treffer-Gesamt, api/opac.go). */
+	let gesamt = $state(0);
 	/** @type {ReturnType<typeof setTimeout> | undefined} */
 	let debounce;
 
@@ -26,8 +28,10 @@
 		try {
 			const url = `/api/public/opac/suche?q=${encodeURIComponent(q)}`;
 			const res = await fetch(url);
-			if (res.ok) results = await res.json();
-			else results = [];
+			if (res.ok) {
+				results = await res.json();
+				gesamt = Number(res.headers.get('X-Treffer-Gesamt')) || results.length;
+			} else results = [];
 		} catch {
 			results = [];
 		} finally {
@@ -83,7 +87,15 @@
 	<!-- Results / empty states -->
 	<div class="flex-1 w-full max-w-4xl mx-auto px-6 pb-10 relative z-10">
 		{#if results.length > 0}
-			<p class="text-xs text-on-surface-variant font-medium mb-4">{results.length} Treffer</p>
+			<!-- Bis zum 23.09.2026 stand hier bei jeder breiten Suche „50 Treffer" — die Kappung
+			     des Servers, nicht die Zahl der Bücher. Derselbe Satz wie in „Mein Portal". -->
+			<p class="text-xs text-on-surface-variant font-medium mb-4">
+				{#if gesamt > results.length}
+					Gezeigt werden {results.length} von {gesamt} Treffern — ein Suchwort grenzt ein.
+				{:else}
+					{results.length} Treffer
+				{/if}
+			</p>
 			<!-- Dieselbe Kachel wie im internen Katalog (02.09.2026): das Cover IST die Kachel,
 			     2:3 wie ein Buch, keine Karte, kein Rahmen. Vorher lag das Hochformat-Cover in
 			     einer festen Querformat-Fläche und wurde oben und unten abgeschnitten. -->
