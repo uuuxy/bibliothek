@@ -71,16 +71,14 @@
 <div class="flex flex-col w-full my-4" transition:fade={{ duration: 200 }}>
 	<!-- Drawer Header -->
 	<div
-		class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10 rounded-t-3xl"
+		class="px-6 py-5 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest sticky top-0 z-10 rounded-t-3xl"
 	>
-		<h2 class="text-xl font-bold text-slate-900">
+		<h2 class="text-xl font-bold text-on-surface">
 			{formular.id ? 'Buch bearbeiten' : 'Neues Buch'}
 		</h2>
-		<button
-			onclick={onClose}
-			class="p-2 hover:bg-slate-100 rounded-full text-slate-500 transition"
-			aria-label="Schließen"
-		>
+		<!-- M3 Icon button, Standard: Symbol in on-surface-variant, die Rückmeldung beim
+		     Zeigen kommt aus dem State-Layer aller Knöpfe (komponenten.css). -->
+		<button onclick={onClose} class="icon-btn p-2 text-on-surface-variant" aria-label="Schließen">
 			<X class="w-6 h-6" aria-hidden="true" />
 		</button>
 	</div>
@@ -109,7 +107,7 @@
 
 	<!-- Drawer Footer -->
 	<div
-		class="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0 rounded-b-2xl"
+		class="p-6 border-t border-outline-variant bg-surface flex justify-end gap-3 sticky bottom-0 rounded-b-2xl"
 	>
 		{#if formular.id && onDelete}
 			<!-- Löschen gehörte bisher nur der Mehrfachauswahl in der Titel-Liste; wer schon in
@@ -154,7 +152,7 @@
 			onclick={onSave}
 			disabled={speichernGesperrt}
 			title={speichernGesperrt ? 'Signatur eintragen, um zu speichern' : undefined}
-			class="px-5 bg-emerald-600 hover:bg-emerald-700"
+			class="px-5"
 		>
 			Speichern
 		</Button>

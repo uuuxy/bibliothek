@@ -4,6 +4,7 @@
 	import { showToast } from '$lib/store.svelte.js';
 	import { onMount } from 'svelte';
 	import { Trash2 } from '@lucide/svelte';
+	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 
 	let { formular = $bindable() } = $props();
 
@@ -61,43 +62,43 @@
 	}
 </script>
 
-<div class="mt-8 border-t border-slate-100 pt-6">
-	<h3 class="text-lg font-semibold text-slate-900 mb-4">Exemplare ({exemplare.length})</h3>
+<div class="mt-8 border-t border-outline-variant pt-6">
+	<h3 class="text-lg font-semibold text-on-surface mb-4">Exemplare ({exemplare.length})</h3>
 
 	{#if loading}
-		<div class="text-sm text-slate-500 py-4 flex items-center justify-center">
+		<div class="text-sm text-on-surface-variant py-4 flex items-center justify-center">
 			Lade Exemplare...
 		</div>
 	{:else if error}
-		<div class="text-sm text-red-600 py-4">{error}</div>
+		<div class="text-sm text-error py-4">{error}</div>
 	{:else if exemplare.length === 0}
-		<div class="text-sm text-slate-500 py-4 italic text-center">
+		<div class="text-sm text-on-surface-variant py-4 italic text-center">
 			Keine Exemplare in der Datenbank vorhanden. (Gesamtbestand: {formular.stock})
 		</div>
 	{:else}
 		<div class="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
 			{#each exemplare as ex, _i (_i)}
-				<div
-					class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-100"
-				>
+				<!-- Dieselben Exemplare zeigt die Buchakte (BookExemplarCard): umrandete Fläche in
+				     outline-variant, Barcode als getönte Chip-Form, Zustand über StatusChip. Zwei
+				     Ansichten desselben Exemplars sollen nicht zwei Farbsprachen sprechen. -->
+				<div class="flex items-center justify-between p-3 rounded-lg border border-outline-variant">
 					<div class="flex items-center gap-3">
 						<span
-							class="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-2 py-1 rounded font-mono"
+							class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap bg-primary-container text-on-primary-container"
 						>
 							{ex.barcode_id}
 						</span>
-						<span
-							class="text-label-small font-bold px-2 py-0.5 rounded-full {!ex.ist_ausleihbar
-								? 'bg-rose-50 text-rose-700 border border-rose-100'
+						<StatusChip
+							ton={!ex.ist_ausleihbar ? 'fehler' : !ex.ist_verfuegbar ? 'warten' : 'erfolg'}
+							text={!ex.ist_ausleihbar
+								? 'Gesperrt'
 								: !ex.ist_verfuegbar
-									? 'bg-amber-50 text-amber-700 border border-amber-100'
-									: 'bg-emerald-50 text-emerald-700 border border-emerald-100'}"
-						>
-							{!ex.ist_ausleihbar ? 'Gesperrt' : !ex.ist_verfuegbar ? 'Ausgeliehen' : 'Verfügbar'}
-						</span>
+									? 'Ausgeliehen'
+									: 'Verfügbar'}
+						/>
 						{#if ex.zustand_notiz}
 							<span
-								class="text-label-small text-slate-500 truncate max-w-37.5"
+								class="text-label-small text-on-surface-variant truncate max-w-37.5"
 								title={ex.zustand_notiz}>{ex.zustand_notiz}</span
 							>
 						{/if}
@@ -105,7 +106,7 @@
 					<button
 						title="Exemplar löschen"
 						aria-label="Exemplar löschen"
-						class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-500 focus:outline-none"
+						class="icon-btn text-on-surface-variant hover:text-error focus-visible:ring-2 focus-visible:ring-primary focus:outline-none"
 						onclick={() => deleteCopy(ex)}
 					>
 						<Trash2 class="w-4 h-4" aria-hidden="true" />
@@ -124,10 +125,10 @@
 		background: transparent;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb {
-		background: #cbd5e1;
+		background: var(--color-outline-variant);
 		border-radius: 4px;
 	}
 	.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-		background: #94a3b8;
+		background: var(--color-outline);
 	}
 </style>

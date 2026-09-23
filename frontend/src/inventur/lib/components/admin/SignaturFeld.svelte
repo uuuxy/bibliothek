@@ -8,10 +8,15 @@
      damit entstand neben Litteras Vokabular ein zweites. Eine neue Adresse lässt sich
      weiterhin frei eintippen.
 
-     Der Rahmen wechselt die Farbe statt nur eine Meldung darunter zu setzen: Ohne
-     Signatur ist Speichern gesperrt, das muss man sehen, bevor man klickt. -->
+     Ohne Signatur ist Speichern gesperrt, das muss man sehen, bevor man klickt. Das zeigt
+     der Fehlerzustand des Feldes (M3 Text fields: roter Rand, Hinweis in error) und die
+     Marke „Pflicht". Bis zum 23.09.2026 färbte sich zusätzlich der Kasten rot bzw. grün;
+     M3 kennt für „in Ordnung" keine Farbrolle, und ein roter Kasten um ein rotes Feld
+     meldete denselben Fehler zweimal. Der Kasten ist jetzt derselbe wie beim
+     Lernmittel-Schalter darunter. -->
 <script>
 	import { Tag } from '@lucide/svelte';
+	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import { ladeSignaturen } from '../../../../lib/utils/signaturen.js';
 
@@ -40,19 +45,14 @@
 	);
 </script>
 
-<div
-	class="rounded-xl border-2 p-4 transition-colors {signaturFehlt
-		? 'border-rose-300 bg-rose-50/40'
-		: 'border-emerald-200 bg-emerald-50/30'}"
->
-	<label for="buch-signatur" class="flex items-center gap-2 text-sm font-bold text-slate-800 mb-1">
-		<Tag class="h-4 w-4 text-slate-500" aria-hidden="true" />
+<div class="rounded-xl border border-outline-variant p-4">
+	<label for="buch-signatur" class="flex items-center gap-2 text-sm font-bold text-on-surface mb-1">
+		<Tag class="h-4 w-4 text-on-surface-variant" aria-hidden="true" />
 		Signatur (Buchrücken)
-		{#if !formular.id && !formular.istLernmittel}<span
-				class="text-xs font-medium px-1.5 py-0.5 rounded {signaturFehlt
-					? 'bg-rose-100 text-rose-700'
-					: 'bg-emerald-100 text-emerald-700'}">Pflicht</span
-			>{/if}
+		{#if !formular.id && !formular.istLernmittel}<StatusChip
+				ton={signaturFehlt ? 'fehler' : 'neutral'}
+				text="Pflicht"
+			/>{/if}
 	</label>
 	<!-- Beschriftung bleibt eigenes <label>: Symbol und „Pflicht"-Marke passen nicht in
 	     die Text-Prop des Feldes. Fehlerzustand und Hinweis kommen aus dem Bauteil. -->

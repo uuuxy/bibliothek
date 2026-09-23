@@ -66,6 +66,9 @@
 	}
 </script>
 
+<!-- Die zwei Symbole sind nachlaufende Icon-Buttons des Feldes: on-surface-variant wie die
+     Kamera im Suchfeld (ui/Suchfeld), beim Zeigen primary. Die Rückmeldung als Fläche kommt
+     aus dem State-Layer aller Knöpfe; bis zum 23.09.2026 färbten sie sich grün. -->
 <Feld
 	id="buch-isbn"
 	label={formular.medientyp === 'CD' || formular.medientyp === 'DVD' ? 'EAN' : 'ISBN'}
@@ -78,7 +81,7 @@
 			type="button"
 			onclick={aktualisiereMetadaten}
 			disabled={isLookupActive}
-			class="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-emerald-600 disabled:opacity-50"
+			class="rounded-full p-0.5 text-on-surface-variant transition-colors hover:text-primary disabled:opacity-50"
 			title="Daten aus dem Internet aktualisieren"
 			aria-label="Daten aus dem Internet aktualisieren"
 		>
@@ -92,7 +95,7 @@
 			type="button"
 			onclick={() => (wirdGescannt = true)}
 			aria-pressed={wirdGescannt}
-			class="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-200 hover:text-emerald-600"
+			class="rounded-full p-0.5 text-on-surface-variant transition-colors hover:text-primary"
 			title="Scan ISBN"
 			aria-label="Scan ISBN"
 		>

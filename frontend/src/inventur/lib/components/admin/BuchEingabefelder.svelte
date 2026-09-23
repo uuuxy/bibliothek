@@ -151,15 +151,13 @@
 		placeholder="Thema, Gattung, Stichwort"
 	/>
 
-	<div>
-		<label for="buch-beschreibung" class="mb-1.5 block text-sm font-medium text-on-surface-variant"
-			>Beschreibung / Klappentext</label
-		>
-		<textarea
-			id="buch-beschreibung"
-			rows="3"
-			bind:value={formular.beschreibung}
-			class="w-full rounded-lg border-slate-300 bg-slate-50 px-4 py-2.5 text-slate-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition"
-		></textarea>
-	</div>
+	<!-- Das mehrzeilige ui/Feld statt einer eigenen textarea: dieselbe Form, Farbe und
+	     Fokusanzeige wie jedes Feld darüber (bis zum 23.09.2026 grün fokussiert). -->
+	<Feld
+		id="buch-beschreibung"
+		label="Beschreibung / Klappentext"
+		mehrzeilig
+		zeilen={3}
+		bind:value={formular.beschreibung}
+	/>
 </div>

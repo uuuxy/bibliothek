@@ -44,7 +44,9 @@
 		{:else if formular.id}
 			<!-- Vor dem ersten Speichern steht unten schon „Erst speichern, dann Bild
 			     hochladen" — zwei Texte übereinander (Absprache vom 25.08.2026: am Live-Bildschirm). -->
-			<div class="w-full h-full flex items-center justify-center text-slate-400">Kein Bild</div>
+			<div class="w-full h-full flex items-center justify-center text-on-surface-variant">
+				Kein Bild
+			</div>
 		{/if}
 
 		<!-- Nur noch ein HINWEIS, kein Bedienelement mehr (11.08.2026).
@@ -79,7 +81,7 @@
 			</div>
 		{:else}
 			<div
-				class="absolute inset-0 flex items-center justify-center text-center p-2 text-xs text-slate-500"
+				class="absolute inset-0 flex items-center justify-center text-center p-2 text-xs text-on-surface-variant"
 			>
 				Erst speichern, dann Bild hochladen
 			</div>
