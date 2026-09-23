@@ -92,12 +92,17 @@
 	}
 </script>
 
-<div class="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50/60 space-y-3.5 animate-fade-in">
+<!-- Umrandete Fläche in surface-container-low (M3 Color roles: Surface container low, „Low-
+     emphasis container color"), damit die weißen Felder darin stehen. Bis zum 23.09.2026
+     blau getönt, mit einer Palettenfarbe ohne Rolle. -->
+<div
+	class="mt-3 p-4 rounded-xl border border-outline-variant bg-surface-container-low space-y-3.5 animate-fade-in"
+>
 	<div class="flex items-center gap-3 min-w-0">
 		<BuchCover coverUrl={book.cover_url} isbn={book.isbn} titel={book.titel} klasse="shrink-0" />
 		<div class="min-w-0">
-			<div class="font-bold text-slate-900 text-sm truncate">{book.titel}</div>
-			<div class="text-xs text-slate-500 truncate">{book.autor}</div>
+			<div class="font-bold text-on-surface text-sm truncate">{book.titel}</div>
+			<div class="text-xs text-on-surface-variant truncate">{book.autor}</div>
 		</div>
 	</div>
 
@@ -105,7 +110,9 @@
 		<label for="stagedSignaturInput" class="text-xs font-medium text-on-surface-variant">
 			Signatur
 			{#if !signaturBeiStart}
-				<span class="text-amber-600 font-normal">(bitte eintragen)</span>
+				<!-- primary: M3 „High-emphasis … texts … against surface". Eine Warnfarbe gibt es
+				     in den Rollen nicht; bis zum 23.09.2026 stand hier amber. -->
+				<span class="text-primary font-normal">(bitte eintragen)</span>
 			{/if}
 		</label>
 		<Feld

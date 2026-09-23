@@ -7,7 +7,7 @@
 	import { orderStore } from '../../stores/orderStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import OrderStaging from './OrderStaging.svelte';
-	import { coverSrc } from '../../utils/coverSrc.js';
+	import BuchCover from '../ui/BuchCover.svelte';
 
 	/** @type {any} */
 	let stagedBook = $state(null);
@@ -59,7 +59,8 @@
 
 <div class="space-y-4">
 	<div class="space-y-1.5">
-		<label for="supplier" class="block text-xs font-medium text-slate-500">Lieferant</label>
+		<label for="supplier" class="block text-xs font-medium text-on-surface-variant">Lieferant</label
+		>
 		<Select
 			id="supplier"
 			bind:value={orderStore.selectedSupplierId}
@@ -71,7 +72,7 @@
 		/>
 	</div>
 	<div class="space-y-1.5 relative">
-		<label for="book" class="block text-xs font-medium text-slate-500"
+		<label for="book" class="block text-xs font-medium text-on-surface-variant"
 			>Titel suchen &amp; hinzufügen</label
 		>
 		<Suchfeld
@@ -85,37 +86,30 @@
 			etikett="Titel suchen & hinzufügen"
 		/>
 		{#if orderStore.showDropdown && (localResults.length > 0 || dnbResults.length > 0)}
+			<!-- M3 Lists: Titel in on-surface, Autor und ISBN sowie die Angabe rechts („trailing
+			     text") in on-surface-variant, keine Trennlinien zwischen den Zeilen. Das Cover
+			     kommt aus ui/BuchCover — mit dessen Platzhalter, wenn keine Quelle ein Bild hat.
+			     Die Rückmeldung beim Zeigen gibt der State-Layer der Knöpfe. -->
 			<div
-				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl max-h-72 overflow-y-auto divide-y divide-slate-100"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl max-h-72 overflow-y-auto"
 			>
 				{#if localResults.length > 0}
 					<div
-						class="bg-slate-50/80 px-3.5 py-2 text-xs font-medium text-slate-500 sticky top-0 backdrop-blur-xs z-5"
+						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"
 					>
 						Im lokalen Bestand
 					</div>
 					{#each localResults as b, _i (_i)}
-						{@const quelle = coverSrc(b.cover_url, b.isbn)}
 						<button
 							onclick={() => openStaging(b)}
-							class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-0 flex items-center gap-3 text-base"
+							class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base"
 						>
-							{#if quelle}<img
-									src={quelle}
-									class="w-7 aspect-3/4 object-cover rounded-sm"
-									alt=""
-								/>{:else}<div
-									class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase"
-								>
-									{b.titel.charAt(0)}
-								</div>{/if}
+							<BuchCover coverUrl={b.cover_url} isbn={b.isbn} titel={b.titel} dekorativ />
 							<div class="min-w-0 flex-1">
-								<div class="font-bold text-slate-800 truncate">{b.titel}</div>
-								<div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div>
+								<div class="font-bold text-on-surface truncate">{b.titel}</div>
+								<div class="text-sm text-on-surface-variant truncate">{b.autor} · {b.isbn}</div>
 							</div>
-							<span
-								class="shrink-0 text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold"
-							>
+							<span class="shrink-0 text-label-small text-on-surface-variant">
 								Bestand: {b.current_stock || 0}
 							</span>
 						</button>
@@ -124,7 +118,7 @@
 
 				{#if dnbResults.length > 0}
 					<div
-						class="bg-slate-50/80 px-3.5 py-2 text-xs font-medium text-slate-500 sticky top-0 backdrop-blur-xs z-5"
+						class="bg-surface-container px-3.5 py-2 text-xs font-medium text-on-surface-variant sticky top-0 z-5"
 					>
 						Neu aus DNB (Externe Suche)
 					</div>
@@ -134,40 +128,21 @@
 							localResults.some(
 								(l) => (l.isbn || '').replace(/-/g, '') === (b.isbn || '').replace(/-/g, '')
 							)}
-						{@const quelle = coverSrc(b.cover_url, b.isbn)}
 						<button
 							onclick={() => !isDuplicate && openStaging(b)}
 							disabled={isDuplicate}
-							class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base border-b border-slate-100 last:border-0 {isDuplicate
-								? 'opacity-50 cursor-not-allowed bg-slate-50/30'
-								: 'hover:bg-slate-50'}"
+							class="w-full text-left px-3.5 py-2.5 flex items-center gap-3 text-base {isDuplicate
+								? 'opacity-50 cursor-not-allowed'
+								: ''}"
 						>
-							{#if quelle}<img
-									src={quelle}
-									class="w-7 aspect-3/4 object-cover rounded-sm"
-									alt=""
-								/>{:else}<div
-									class="w-7 aspect-3/4 rounded bg-slate-200 flex items-center justify-center font-bold text-sm uppercase"
-								>
-									{b.titel.charAt(0)}
-								</div>{/if}
+							<BuchCover coverUrl={b.cover_url} isbn={b.isbn} titel={b.titel} dekorativ />
 							<div class="min-w-0 flex-1">
-								<div class="font-bold text-slate-800 truncate">{b.titel}</div>
-								<div class="text-sm text-slate-400 truncate">{b.autor} · {b.isbn}</div>
+								<div class="font-bold text-on-surface truncate">{b.titel}</div>
+								<div class="text-sm text-on-surface-variant truncate">{b.autor} · {b.isbn}</div>
 							</div>
-							{#if isDuplicate}
-								<span
-									class="shrink-0 text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-medium"
-								>
-									Vorhanden
-								</span>
-							{:else}
-								<span
-									class="shrink-0 text-label-small bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-bold uppercase"
-								>
-									NEU
-								</span>
-							{/if}
+							<span class="shrink-0 text-label-small text-on-surface-variant">
+								{isDuplicate ? 'Vorhanden' : 'Neu'}
+							</span>
 						</button>
 					{/each}
 				{/if}
@@ -175,14 +150,14 @@
 		{/if}
 		{#if orderStore.searchLoading}
 			<div
-				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
 			>
 				<Ladekreis size="sm" />
 				Suche läuft...
 			</div>
 		{:else if resolvingDnb}
 			<div
-				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-slate-500"
+				class="absolute z-10 w-full mt-1 bg-surface-container rounded-sm shadow-xl px-4 py-3 flex items-center gap-2 text-sm text-on-surface-variant"
 			>
 				<Ladekreis size="sm" />
 				Titel wird im Katalog angelegt...

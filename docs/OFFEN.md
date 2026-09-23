@@ -25,8 +25,7 @@ Hosting- und Pflegekonzept (9.9).
    der Nachweis für den Server.
 3. **Drei Freigaben, jede mit Migration:** das Werk über den Auflagen (4.18, dazu die Frage, wer
    ein Werk anlegt), der Ferienkalender (4.19), die Pflegeseite der Schlagworte (4.20).
-4. **Die Palettenfarben** (5.21): Buchformular und Bestellfenster folgen direkt; für den Rest der
-   Anwendung fehlt die Freigabe.
+4. **Die Palettenfarben** (5.21): Freigabe für die übrige Anwendung, Bildschirm für Bildschirm.
 5. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
    Schulbücher).
@@ -42,12 +41,11 @@ Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Tests
 
 **Im Code, in dieser Reihenfolge:**
 
-1. **5.21** Buchformular und Bestellfenster auf Farbrollen (86 Fundstellen).
-2. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
-3. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
+1. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
+2. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
    Stufe 3 (5.3).
-4. Nach der Antwort zu E5 (**8.3**): **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. Nach der Antwort zu E5 (**8.3**): **5.4**.
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
 die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
@@ -532,14 +530,14 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen — Freigabe offen
 
-Stand 23.09.2026: 1557 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 23.09.2026: 1471 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
-Textgraustufen, M3 zwei Rollen, und für „in Ordnung" (das grüne Signaturfeld) kennt M3 keine
-Farbe. Vorschlag: Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit mit Bild
-vorher und nachher. Buchformular und Bestellfenster (86 Fundstellen) kommen direkt nach den
-Schlagworten, weil die neuen Chips dort neben alten Farben stehen. Für den Rest fehlt die
-Freigabe.
+Textgraustufen, M3 zwei Rollen, und für „in Ordnung" kennt M3 keine Farbe. Vorschlag:
+Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit, am gerenderten Bildschirm
+geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über ui/StatusChip, Cover
+über ui/BuchCover, Rückmeldung beim Zeigen über den State-Layer statt `hover:bg-*`, ein Fehler
+über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für den Rest fehlt die Freigabe.
 
 ---
 

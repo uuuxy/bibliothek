@@ -34,11 +34,21 @@
 	 * @prop {string} [titel] Liefert die Initiale des Platzhalters und den Alternativtext
 	 * @prop {'zeile'|'liste'|'gross'} [groesse]
 	 * @prop {string} [klasse]
+	 * @prop {boolean} [dekorativ] Leerer Alternativtext — für ein Cover INNERHALB eines Knopfs,
+	 *   der den Titel selbst als Text trägt. Sonst sagte ein Screenreader ihn zweimal an
+	 *   („Cover von Emil … Emil …"), WCAG-Technik H2.
 	 */
 	import { coverKandidaten } from '../../utils/coverSrc.js';
 
-	/** @type {{ coverUrl?: string, isbn?: string, titel?: string, groesse?: 'zeile'|'liste'|'gross', klasse?: string }} */
-	let { coverUrl = '', isbn = '', titel = '', groesse = 'zeile', klasse = '' } = $props();
+	/** @type {{ coverUrl?: string, isbn?: string, titel?: string, groesse?: 'zeile'|'liste'|'gross', klasse?: string, dekorativ?: boolean }} */
+	let {
+		coverUrl = '',
+		isbn = '',
+		titel = '',
+		groesse = 'zeile',
+		klasse = '',
+		dekorativ = false
+	} = $props();
 
 	const MASSE = {
 		zeile: 'h-10', // 40 px — Arbeitslisten in kompakter Dichte
@@ -83,7 +93,7 @@
 {#if zeigeBild}
 	<img
 		src={quelle}
-		alt={titel ? `Cover von ${titel}` : ''}
+		alt={titel && !dekorativ ? `Cover von ${titel}` : ''}
 		loading="lazy"
 		decoding="async"
 		onerror={naechsteQuelle}
