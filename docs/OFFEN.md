@@ -33,9 +33,10 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migration 139). Das passiert beim
-Start von allein; Daten gehen nicht verloren. 139 ändert nur die Vorgabe des Zugangsdatums
-neuer Exemplare auf den Kalendertag der Schule.
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen 139 und 140). Das
+passiert beim Start von allein; Daten gehen nicht verloren. 139 ändert nur die Vorgabe des
+Zugangsdatums neuer Exemplare auf den Kalendertag der Schule; 140 schreibt ISBNs aus der Zeit
+vor Migration 133 in die Normalform (am Testserver eine Zeile).
 
 **Im Code, in dieser Reihenfolge:**
 
@@ -394,20 +395,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
   nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
   Kategorie C, bis es einmal vorkommt.
-- ISBN: Seit Migration 133 (22.09.2026) bringt die Datenbank jede geschriebene ISBN an jeder Tür
-  in EINE Schreibweise; Import-Zuordnung, Schnellanlage und die fünf Suchfelder vergleichen die
-  Normalform. Der Altbestand ist noch nicht zurückgeschrieben: erst am Server messen, ob zwei
-  Altzeilen sich nur in der Schreibweise unterscheiden (Einzeiler unten), dann eine Migration,
-  die `isbn = isbn_normalform(isbn)` setzt. Ein CHECK auf den Jahrgang fehlt, „Jahrgang
-  unbekannt" ist von der Vorgabe nicht zu unterscheiden — und seit dem Mehrjahresband (Migration 134)
-  hängt eine Frist an „bis": Wer den Schalter auf einem Titel mit der Vorgabe 5 bis 10
-  umlegt, bekommt die 10. Ein CHECK allein löst das nicht; eine Vorgabe „unbekannt" (NULL)
-  bräuchte die drei Leser (Mahnwesen „Jahrgang", Inventur, Portal-Filter) mit.
-
-  ```sql
-  SELECT isbn_normalform(isbn) AS normalform, count(*) AS titel, string_agg(isbn, ' | ') AS schreibweisen
-  FROM buecher_titel WHERE isbn IS NOT NULL GROUP BY 1 HAVING count(*) > 1 ORDER BY 2 DESC;
-  ```
+- Jahrgang am Titel: Ein CHECK fehlt, „Jahrgang unbekannt" ist von der Vorgabe 5 bis 10 nicht
+  zu unterscheiden — und seit dem Mehrjahresband (Migration 134) hängt eine Frist an „bis": Wer
+  den Schalter auf einem Titel mit der Vorgabe umlegt, bekommt die 10. Ein CHECK allein löst
+  das nicht; eine Vorgabe „unbekannt" (NULL) bräuchte die drei Leser (Mahnwesen „Jahrgang",
+  Inventur, Portal-Filter) mit.
 - „Klasse" neben der Spanne (22.09.2026): Zwei Jahrgangsangaben am Titel, „Klasse"
   (`grade_level`) und „von … bis" (`jahrgang_von/bis`). Mahnwesen „nach Jahrgang", Inventur
   nach Klasse und die Mehrjahresband-Frist lesen nur die Spanne; Titel-Tabelle,

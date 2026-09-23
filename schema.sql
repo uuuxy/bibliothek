@@ -1756,7 +1756,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('136_ausweisnummer_beim_konto.sql'),
 ('137_letzter_vorgang_am_leser.sql'),
 ('138_schlagworte.sql'),
-('139_zugangsdatum_schulzeit.sql')
+('139_zugangsdatum_schulzeit.sql'),
+('140_isbn_altbestand_normalform.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
