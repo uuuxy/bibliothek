@@ -123,6 +123,27 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 			wantErr: true,
 			errMsg:  "stock muss >= 0 sein",
 		},
+		// chk_listenpreis_nonneg (Migration 127) lehnte ab, bevor die Tür prüfte: Beim Ändern
+		// kam eine 500 „buch konnte nicht aktualisiert werden", ohne zu sagen, was erlaubt ist.
+		{
+			name: "Negativer Listenpreis",
+			eingabe: BuchEingabe{
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: 5,
+				Listenpreis:  zeigerAufPreis(-0.01),
+			},
+			wantErr: true,
+			errMsg:  "listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)",
+		},
+		{
+			name: "Listenpreis 0 ist erlaubt",
+			eingabe: BuchEingabe{
+				ISBN:         "978-3-16-148410-0",
+				KlassenStufe: 5,
+				Listenpreis:  zeigerAufPreis(0),
+			},
+			wantErr: false,
+		},
 		{
 			name: "Trims spaces from fields",
 			eingabe: BuchEingabe{
@@ -173,6 +194,9 @@ func TestBereinigeUndValidiereBuchEingabe(t *testing.T) {
 // zeigerAuf macht aus einer geschriebenen Zahl den Zeiger, den BuchEingabe.Bestand
 // verlangt — "nicht mitgeschickt" ist dort ein eigener Fall (nil).
 func zeigerAuf(n int) *int { return &n }
+
+// zeigerAufPreis: dasselbe für den Listenpreis — nil heißt „nicht erfasst", 0 ist ein Preis.
+func zeigerAufPreis(p float64) *float64 { return &p }
 
 // Die drei folgenden Fälle sind das Gate zum Raster-Fund vom 23.08.2026: Beim ÄNDERN
 // bedeutet ein fehlender oder geleerter Wert etwas anderes als beim Anlegen.

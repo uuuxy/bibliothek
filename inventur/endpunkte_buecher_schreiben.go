@@ -181,6 +181,10 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		writeError(antwort, http.StatusBadRequest, fehler.Error())
 		return
 	}
+	if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
+		writeError(antwort, http.StatusBadRequest, fehler.Error())
+		return
+	}
 	schlagworte, fehler := schlagworteAusEingabe(eingabe.Schlagworte)
 	if fehler != nil {
 		writeError(antwort, http.StatusBadRequest, fehler.Error())

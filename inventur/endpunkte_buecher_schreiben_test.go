@@ -211,6 +211,28 @@ func TestBearbeiteBuchErstellen(t *testing.T) {
 		}
 	})
 
+	// chk_listenpreis_nonneg (Migration 127): Vorher lief der Wert bis in die Datenbank, und
+	// die Antwort hieß nur „buch konnte nicht erstellt werden".
+	t.Run("Negativer Listenpreis nennt den erlaubten Bereich", func(t *testing.T) {
+		body := `{"isbn": "978-3-16-148410-0", "title": "T", "author": "A", "listenpreis": -5}`
+		req := httptest.NewRequest(http.MethodPost, "/api/books", strings.NewReader(body))
+		rec := httptest.NewRecorder()
+		handler.BearbeiteBuchErstellen(rec, req)
+
+		if rec.Code != http.StatusBadRequest {
+			t.Errorf("got status %d, want %d", rec.Code, http.StatusBadRequest)
+		}
+		var antwort struct {
+			Error string `json:"error"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &antwort); err != nil {
+			t.Fatalf("Antwort ist kein JSON: %v — %s", err, rec.Body.String())
+		}
+		if antwort.Error != "listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)" {
+			t.Errorf("Meldung nennt den erlaubten Bereich nicht: %q", antwort.Error)
+		}
+	})
+
 	t.Run("Success", func(t *testing.T) {
 		body := `{
 			"isbn": "978-3-16-148410-0",

@@ -122,7 +122,21 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	if eingabe.Bestand != nil && *eingabe.Bestand < 0 {
 		return errors.New("stock muss >= 0 sein")
 	}
+	if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
+		return fehler
+	}
 	return pruefeMehrjahresband(eingabe.IstLernmittel, eingabe.Mehrjahresband, eingabe.JahrgangVon, eingabe.JahrgangBis)
+}
+
+// pruefeListenpreis nennt den erlaubten Bereich, bevor die Datenbank ablehnt
+// (chk_listenpreis_nonneg, Migration 127): Beim Ändern kam dort eine 500, beim Anlegen
+// „buch konnte nicht erstellt werden" — beides ohne zu sagen, was erlaubt ist. Leer (nil)
+// heißt „nicht erfasst" und ist etwas anderes als 0.
+func pruefeListenpreis(preis *float64) error {
+	if preis != nil && *preis < 0 {
+		return errors.New("listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)")
+	}
+	return nil
 }
 
 // ergaenzeFehlendeMetadatenFuerAktualisierung sucht fehlende Buchinformationen über den

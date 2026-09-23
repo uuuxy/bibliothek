@@ -495,11 +495,6 @@ ganzen Go-Code kein `DELETE` — eine vertippte Klasse steht ab dann in jeder Au
   21.09.2026 lehnt es auch die Tür ab. Soll ein Kollege vormerken können, ist das ein eigener
   Umbau über vier Lesepfade der Warteschlange, kein Schalter.
 
-**Eine Kleinigkeit:**
-
-- Ein negativer Listenpreis wird von der Datenbank abgelehnt; die Antwort sagt nicht, was erlaubt
-  ist. Das Schwesterfeld derselben Migration nennt seinen Bereich.
-
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
 hinweg. Am Testserver waren am 21.09.2026 beide Zählungen 0; neue Vormerkungen für Kollegen
