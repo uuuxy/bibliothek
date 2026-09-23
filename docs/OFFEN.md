@@ -507,6 +507,12 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
 über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
 freigegeben am 23.09.2026.
 
+Die zwei größten Posten sind keine Umbenennung (gezählt am 23.09.2026): Die Inventur
+(`UnifiedInventory.svelte`, 45) meldet am Scanner grün, rot und Bernstein — M3 hat keine Rolle
+für „in Ordnung" und keine für Warnung, eine andere Farbe ändert die Bedienung. Frage: welche
+Rückmeldung soll der Scanner geben? `inventur/lib/bookHelpers.js` (48) sind Farbverläufe je
+Fach für selbstgebaute Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
+
 Dazu gehört die Leiste des Ausweisdrucks in der Leserdatei (`students/AuswahlAktionsleiste`,
 dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui/AuswahlLeiste`
 (Schlagwort-Pflege). Beim Umstellen zu klären: wohin der Hinweis „ohne Ablaufjahr" und das Feld
