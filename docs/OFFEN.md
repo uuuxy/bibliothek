@@ -22,7 +22,8 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
 2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
-3. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
+3. **Kleine Fragen:** 5.18 (Klasse umbenennen statt löschen?), 5.1 (wer bucht eine Überweisung
+   ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
    Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
    10?).
@@ -39,13 +40,12 @@ eine leere Spalte für die Angaben der Schule.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
-1. **5.18** Klassen löschen — klein, ohne Datenwirkung.
-2. **4.20** Schlagworte: Pflegeseite, Suche, DNB-Vorschlag (Stufe 4 mit dem Littera-Backup, 7.2).
-3. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
-4. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
-5. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
-6. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
-7. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+1. **4.20** Schlagworte: Pflegeseite, Suche, DNB-Vorschlag (Stufe 4 mit dem Littera-Backup, 7.2).
+2. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
+3. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
+4. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
+5. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
+6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
 die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
@@ -434,11 +434,27 @@ Verwaltung kann sie an einem Kollegen weiter leeren (`TestAusweisnummerLeeren`, 
 am 16.09.2026, als der Hinweis am Feld noch „Leer lassen" sagte) — dann fehlt sie wieder, und
 der Druck liefert eine leere Zeile. Soll Leeren dort eine neue Nummer ziehen statt keine?
 
-### 5.18 Klassen ohne Löschweg
+### 5.18 Eine vertippte Klasse wieder loswerden — Rückfrage
 
-Aus der Schärfung von Frage 12 (16.09.2026): Für `klassen` gibt es im ganzen Go-Code kein
-`DELETE` — eine vertippte Klasse steht ab dann in jeder Auswahlliste. **Entschieden am
-23.09.2026: Löschen wird möglich.**
+Am 23.09.2026 entschieden: „Klasse löschen möglich machen". Beim Bauen stellte sich heraus, dass
+die Beschreibung, auf der die Entscheidung stand, nicht stimmte:
+
+- Die Auswahllisten lesen **nicht** die Tabelle `klassen`, sondern die Verweise:
+  `GET /api/klassen` ist `SELECT DISTINCT klasse FROM schueler`, dazu Klassensätze und
+  Zuordnungen. `klassen` ist ein Vokabular, das Trigger selbst füllen; im Go-Code liest es
+  niemand.
+- Gemessen am Testserver (23.09.2026, lesend): 108 Klassen im Vokabular, 30 ohne jeden Verweis
+  (05A–08D aus Migration 079). Die sieht niemand; ein Löschen änderte nichts Sichtbares.
+- Sichtbar ist eine vertippte Klasse, solange Schüler, ein Klassensatz, eine Zuordnung, eine
+  Reservierung oder ein LMF-Termin sie tragen. Löschen verweigert dann die Datenbank
+  (`ON DELETE RESTRICT` an sechs Tabellen).
+
+**Vorschlag:** Statt „Löschen" ein **Umbenennen** an einer Stelle (Einstellungen → LUSD &
+Versetzung): Liste der Klassen mit Zahl der Schüler, Klassensätze und Zuordnungen; „umbenennen
+in …" zieht über `ON UPDATE CASCADE` alles mit, und gibt es das Ziel schon, werden die Verweise
+dorthin umgehängt und die alte Klasse fällt weg. Eine Klasse ohne Verweis lässt sich dort auch
+löschen. Achtung: Wer Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit — die
+Rückfrage nennt die Zahlen.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
