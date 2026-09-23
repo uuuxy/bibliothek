@@ -65,6 +65,12 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 		}
 		return id
 	}
+	// dbZeit schneidet einen Zeitpunkt auf das zu, was timestamptz speichern kann:
+	// Mikrosekunden. time.Now() liefert unter Linux Nanosekunden, unter macOS gröber — ein
+	// Vergleich mit dem zurückgelesenen Wert wäre sonst dort grün und in der CI rot, ohne
+	// dass sich am Verhalten etwas ändert. Truncate nimmt zugleich den monotonen Anteil.
+	dbZeit := func(t time.Time) time.Time { return t.Truncate(time.Microsecond) }
+
 	// stand liest beide Uhren des Lesers auf einmal.
 	stand := func(id string) (vorgang *time.Time, aktualisiert time.Time) {
 		t.Helper()
@@ -91,7 +97,7 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 		if uhr, _ := stand(id); uhr != nil {
 			t.Errorf("die offene Ausleihe hat die Uhr auf %v gestellt — gestempelt wird erst die Rückgabe", *uhr)
 		}
-		rueckgabe := time.Now().Add(-2 * time.Hour)
+		rueckgabe := dbZeit(time.Now().Add(-2 * time.Hour))
 		if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = $2 WHERE id = $1`, ausleiheID, rueckgabe); err != nil {
 			t.Fatalf("Rückgabe buchen: %v", err)
 		}
@@ -153,8 +159,8 @@ func TestLeserStempel_VorgangSetztUhrOhneAenderungsstempel(t *testing.T) {
 		// nur ein. rueckgabe_am geht von NULL auf einen Wert und nie von einem Wert auf
 		// einen anderen (nachgesehen am 23.09.2026).
 		id := leser("Rueckwaerts")
-		neu := time.Now().Add(-1 * time.Hour)
-		alt := time.Now().AddDate(0, 0, -30)
+		neu := dbZeit(time.Now().Add(-1 * time.Hour))
+		alt := dbZeit(time.Now().AddDate(0, 0, -30))
 		for _, p := range []struct {
 			name string
 			zeit time.Time

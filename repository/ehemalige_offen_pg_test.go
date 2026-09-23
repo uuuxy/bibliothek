@@ -198,8 +198,13 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	// anderen; für jeden erreichbaren Zustand ist der Stempel dasselbe wie das frühere
 	// max(rueckgabe_am). Dass er nach hinten nicht folgt, hält
 	// repository/leser_stempel_pg_test.go fest.
+	// 390 Tage, nicht 400: Die Ausleihe entsteht mit `now() - interval '400 days'` in der
+	// Datenbank, die Rückgabe kommt als Go-Zeit von vorher — bei gleichem Abstand liegt sie
+	// um Sekundenbruchteile VOR der Ausleihe, und check_return_date weist sie ab. Auf macOS
+	// fiel das nicht auf, in der CI (Linux) sofort. 390 Tage liegen sicher nach der Ausleihe
+	// und sicher außerhalb der 365 Tage, nach denen der Wächter fragt.
 	lang := abgaenger(t, "Lang")
-	ausleihe(t, lang, "B-U3", time.Now().AddDate(0, 0, -400))
+	ausleihe(t, lang, "B-U3", time.Now().AddDate(0, 0, -390))
 	ausleihe(t, lang, "B-U4", nil)
 
 	spaeter, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
