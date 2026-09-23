@@ -26,7 +26,7 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
    Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
-   10?).
+   10?), 5.5 (Google Books nur noch für Cover?).
 4. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
@@ -380,6 +380,24 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   FROM buecher_titel WHERE grade_level BETWEEN 1 AND 13
   ORDER BY ist_lernmittel DESC, signatur NULLS LAST, titel;
   ```
+
+- **Bestellsuche, DNB mit mehreren Wörtern** (gemessen am 23.09.2026): `SucheTextDNB` schickt
+  `any=` + `url.QueryEscape(text)`. „Dunkelnacht Boie" wird `any=Dunkelnacht+Boie`, und die
+  DNB liefert 0 Sätze; „Dunkelnacht" allein 10, „Dunkelnacht and Boie" 14. Wer Titel und Autor
+  tippt, bekommt also still keinen DNB-Treffer (die Suche ist „best-effort" und meldet nichts).
+  Beim Bauen die Eingabe als CQL maskieren, nicht nur Wörter mit „and" verbinden.
+- **ISBN-10 aus der DNB-Freitextsuche** (gemessen am 23.09.2026): Die DNB führt in 020 erst die
+  ISBN-13, dann die ISBN-10; `verarbeiteISBN` nimmt den letzten gültigen Wert. Ein über die
+  Freitextsuche bestellter Titel entsteht deshalb als ISBN-10 („Dunkelnacht": `3751200533`).
+  Ein späterer Scan der ISBN-13 findet ihn nicht (`findeLokalenTitel` vergleicht die
+  Normalform, die 10 und 13 bewusst trennt, Migration 133) und legt ihn ein zweites Mal an.
+  Vorschlag: bei neuen Titeln die ISBN-13 nehmen und beim Nachschlagen beide Formen prüfen
+  (wie `isbnFormen.js` im Browser). Vorher am Testserver zählen, wie viele Titel eine ISBN-10
+  tragen, deren ISBN-13 es auch gibt.
+- **Frage: Google Books als Quelle für Titeldaten.** `SucheNachISBN` fragt der Reihe nach DNB,
+  Google Books und OpenLibrary; Google liefert also Titel, Autor und Verlag, wenn die DNB den
+  Titel nicht kennt. Nach einer Notiz vom 22.09.2026 soll Google nur noch als Rückfall für das
+  Cover dienen. Gilt das — dann aus der Reihe nehmen?
 
 ### 5.10 Gates und Werkzeuge
 
