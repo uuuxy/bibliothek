@@ -26,7 +26,7 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
    Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
-   10?), 4.20 (welche Littera-Funktionen der Schlagwort-Pflege noch dazukommen, siehe dort).
+   10?).
 4. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
@@ -309,13 +309,10 @@ steht seit dem 23.09.2026):
    Heute liest der Import sie, leitet das Fach ab und verwirft sie. Vorher messen, wie viele
    Titel welche tragen.
 
-**Frage: Was aus Littera noch dazukommt.** Das Handbuch (Dienstprogramme → Datenbearbeitung,
-Verweise, Schlagworte Ex-/Import; Auswertungen → Schlagwortliste) kennt drei Dinge, die die
-Pflegeseite nicht hat: mehrere Wörter auf einmal löschen, die Schlagwortliste drucken, den
-Schlagwortkatalog in eine Datei schreiben und aus einer lesen. Das erste hilft beim Aufräumen
-nach dem Einlesen der Littera-Schlagworte (Punkt 3 oben). Ein Littera-Verweis kann außerdem
-mehreren Wörtern zugeordnet sein; das Handbuch beschreibt Verweise als Hilfe für die Recherche.
-Unsere zeigen auf ein Wort und stellen schon die Eingabe am Titel richtig.
+**Aus Littera nur, wenn die Bücherei es braucht** (entschieden am 23.09.2026): die
+Schlagwortliste drucken, den Schlagwortkatalog in eine Datei schreiben und aus einer lesen. Ein
+Littera-Verweis kann mehreren Wörtern zugeordnet sein; unsere zeigen auf eins und stellen die
+Eingabe am Titel richtig.
 
 Nicht geplant: Verweise für Autoren (Pseudonyme). Der Autor ist ein Textfeld am Titel, ohne
 eigenen Personensatz; das wäre ein eigener Umbau.

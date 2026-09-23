@@ -108,7 +108,7 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("PUT /api/schlagworte/{id}/filter", s.RequirePermission("edit_books")(s.PutSchlagwortFilterHandler()))
 	mux.Handle("POST /api/schlagworte/{id}/zusammenfuehren", s.RequirePermission("edit_books")(s.PostSchlagwortZusammenfuehrenHandler()))
 	mux.Handle("POST /api/schlagworte/verweise", s.RequirePermission("edit_books")(s.PostSchlagwortVerweisHandler()))
-	mux.Handle("DELETE /api/schlagworte/{id}", s.RequirePermission("edit_books")(s.DeleteSchlagwortHandler()))
+	mux.Handle("POST /api/schlagworte/loeschen", s.RequirePermission("edit_books")(s.PostSchlagworteLoeschenHandler()))
 
 	// Real-time Events. Nur Sitzung, kein Fachrecht: den SSE-Stream öffnet jeder
 	// eingeloggte Client (authStore + Kiosk-Omnibox), und an ihm hängt der Herzschlag für

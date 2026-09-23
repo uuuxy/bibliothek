@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"bibliothek/db"
@@ -311,33 +312,68 @@ func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAl
 	return titel, nil
 }
 
-// LoescheSchlagwort löscht ein Wort; die Titel verlieren es, die Verweise darauf fallen mit
-// (ON DELETE CASCADE). Liefert, wie viele Titel und Verweise betroffen waren.
-func LoescheSchlagwort(ctx context.Context, q DBQueryer, id string) (titel, verweise int, err error) {
+// SchlagwortLoeschung sagt, was ein Löschen getroffen hat: die gewählten Wörter, die Titel,
+// die dadurch Schlagworte verloren (jeder Titel einmal), und die Verweise, die mitfielen, ohne
+// selbst gewählt zu sein.
+type SchlagwortLoeschung struct {
+	Woerter  int
+	Titel    int
+	Verweise int
+}
+
+// LoescheSchlagworte löscht die gewählten Wörter in einer Transaktion — alle oder keins; die
+// Titel verlieren sie, die Verweise darauf fallen mit (ON DELETE CASCADE). Mehrere auf einmal
+// wie in Littera („Datenbearbeitung", Markieren und Löschen), für das Aufräumen nach dem
+// Einlesen der Littera-Schlagworte (docs/OFFEN.md 4.20). Ein einzelnes Wort ist eine Liste mit
+// einem Eintrag: eine Tür, eine Regel. Gibt es eine Kennung nicht (mehr), löscht die Tür
+// nichts (ErrSchlagwortNichtGefunden) — die Pflegeseite lädt dann den neuen Stand.
+func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (SchlagwortLoeschung, error) {
+	var ergebnis SchlagwortLoeschung
+	ids = slices.Compact(slices.Sorted(slices.Values(ids)))
+	if len(ids) == 0 {
+		return ergebnis, fmt.Errorf("%w: kein Schlagwort gewählt", ErrSchlagwortUngueltig)
+	}
+	if len(ids) > schlagwortPflegeListeMax {
+		return ergebnis, fmt.Errorf("%w: höchstens %d Schlagworte auf einmal", ErrSchlagwortUngueltig, schlagwortPflegeListeMax)
+	}
 	tx, err := q.Begin(ctx)
 	if err != nil {
-		return 0, 0, fmt.Errorf("löschen: transaktion öffnen: %w", err)
+		return ergebnis, fmt.Errorf("löschen: transaktion öffnen: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	if _, err := sperreSchlagwort(ctx, tx, id); err != nil {
-		return 0, 0, err
+	// In fester Reihenfolge sperren (LockRows steht über dem Sort), wie fuehreZusammenIn —
+	// zwei Löschende mit überlappender Auswahl verklemmen sich nicht.
+	var gesperrt int
+	if err := tx.QueryRow(ctx, `
+		SELECT count(*)::int FROM (
+			SELECT id FROM schlagworte WHERE id = ANY($1::uuid[]) ORDER BY id FOR UPDATE
+		) g`, ids).Scan(&gesperrt); err != nil {
+		return ergebnis, fmt.Errorf("löschen: sperren: %w", err)
+	}
+	if gesperrt != len(ids) {
+		return ergebnis, ErrSchlagwortNichtGefunden
 	}
 	if err := tx.QueryRow(ctx, `
-		SELECT (SELECT count(*)::int FROM titel_schlagworte WHERE schlagwort_id = $1),
-		       (SELECT count(*)::int FROM schlagworte WHERE verweis_auf = $1)`, id).Scan(&titel, &verweise); err != nil {
-		return 0, 0, fmt.Errorf("löschen: zählen: %w", err)
+		SELECT (SELECT count(DISTINCT titel_id)::int FROM titel_schlagworte WHERE schlagwort_id = ANY($1::uuid[])),
+		       (SELECT count(*)::int FROM schlagworte
+		        WHERE verweis_auf = ANY($1::uuid[]) AND NOT id = ANY($1::uuid[]))`, ids).
+		Scan(&ergebnis.Titel, &ergebnis.Verweise); err != nil {
+		return ergebnis, fmt.Errorf("löschen: zählen: %w", err)
 	}
-	tag, err := tx.Exec(ctx, `DELETE FROM schlagworte WHERE id = $1`, id)
+	tag, err := tx.Exec(ctx, `DELETE FROM schlagworte WHERE id = ANY($1::uuid[])`, ids)
 	if err != nil {
-		return 0, 0, fmt.Errorf("löschen: %w", err)
+		return ergebnis, fmt.Errorf("löschen: %w", err)
 	}
-	if tag.RowsAffected() != 1 {
-		return 0, 0, ErrSchlagwortNichtGefunden
+	// Die Zeilen sind gesperrt; ein gewählter Verweis, dessen Ziel ebenfalls gewählt ist, fällt
+	// hier selbst, nicht erst über die Kaskade (die läuft am Ende der Anweisung).
+	if tag.RowsAffected() != int64(len(ids)) {
+		return ergebnis, fmt.Errorf("löschen: %d Zeilen statt %d", tag.RowsAffected(), len(ids))
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return 0, 0, fmt.Errorf("löschen: commit: %w", err)
+		return ergebnis, fmt.Errorf("löschen: commit: %w", err)
 	}
-	return titel, verweise, nil
+	ergebnis.Woerter = len(ids)
+	return ergebnis, nil
 }
 
 // SetzeSchlagwortVerweis leitet eine Schreibweise auf ein Wort („Tierfantasy" → „Fantasy").

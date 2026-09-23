@@ -96,11 +96,22 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 		t.Errorf("Verweis als Filter: %d %s, want 409", rec.Code, rec.Body.String())
 	}
 
-	rec = ruf(srv.DeleteSchlagwortHandler(), http.MethodDelete, "", ids["Fantasy"], "")
-	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil || aenderung.Titel != 1 || aenderung.Verweise != 2 {
-		t.Errorf("löschen: %d %s, want 200 mit titel=1, verweise=2 (Fantasy vom Umbenennen, Tierfantasy vom Zusammenführen)", rec.Code, rec.Body.String())
+	loeschen := srv.PostSchlagworteLoeschenHandler()
+	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":["keine-uuid"]}`); rec.Code != http.StatusBadRequest {
+		t.Errorf("löschen mit ungültiger Kennung: %d, want 400", rec.Code)
 	}
-	if rec := ruf(srv.DeleteSchlagwortHandler(), http.MethodDelete, "", ids["Fantasy"], ""); rec.Code != http.StatusNotFound {
+	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":[]}`); rec.Code != http.StatusBadRequest {
+		t.Errorf("löschen ohne Auswahl: %d, want 400", rec.Code)
+	}
+	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":[""]}`); rec.Code != http.StatusBadRequest {
+		t.Errorf("löschen mit leerer Kennung: %d, want 400", rec.Code)
+	}
+	rec = ruf(loeschen, http.MethodPost, "", "", `{"ids":["`+ids["Fantasy"]+`"]}`)
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil ||
+		aenderung.Woerter != 1 || aenderung.Titel != 1 || aenderung.Verweise != 2 {
+		t.Errorf("löschen: %d %s, want 200 mit woerter=1, titel=1, verweise=2 (Fantasy vom Umbenennen, Tierfantasy vom Zusammenführen)", rec.Code, rec.Body.String())
+	}
+	if rec := ruf(loeschen, http.MethodPost, "", "", `{"ids":["`+ids["Fantasy"]+`"]}`); rec.Code != http.StatusNotFound {
 		t.Errorf("zweites Löschen: %d, want 404", rec.Code)
 	}
 }

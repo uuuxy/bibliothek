@@ -6,13 +6,7 @@
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `DELETE /api/schlagworte/{id}`
 - `GET /api/schadensfaelle/{id}/pdf`
-- `GET /api/schlagworte/pflege`
-- `POST /api/schlagworte/verweise`
-- `POST /api/schlagworte/{id}/zusammenfuehren`
-- `PUT /api/schlagworte/{id}/filter`
-- `PUT /api/schlagworte/{id}/wort`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -42,7 +36,6 @@
 - `DELETE /api/klassen-mapping/{klasse}`
 - `DELETE /api/lieferanten/{id}`
 - `DELETE /api/lmf-plan/{art}`
-- `DELETE /api/schlagworte/{id}`
 - `DELETE /api/schueler/deleted/{id}`
 - `DELETE /api/schueler/{id}`
 - `DELETE /api/systematics/{id}`
@@ -209,6 +202,7 @@
 - `POST /api/reservierungen/klassensatz`
 - `POST /api/schadensfaelle/{id}/bezahlt`
 - `POST /api/schadensfaelle/{id}/storno`
+- `POST /api/schlagworte/loeschen`
 - `POST /api/schlagworte/verweise`
 - `POST /api/schlagworte/{id}/zusammenfuehren`
 - `POST /api/schueler`

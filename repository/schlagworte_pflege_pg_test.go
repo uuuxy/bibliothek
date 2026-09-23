@@ -166,9 +166,9 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 	}
 
 	// Löschen: Titel verlieren das Wort, Verweise darauf fallen mit.
-	titel, verweise, err := LoescheSchlagwort(ctx, pool, ids["Magie"])
-	if err != nil || titel != 1 || verweise != 1 {
-		t.Errorf("löschen: titel=%d verweise=%d err=%v, want 1 und 1", titel, verweise, err)
+	geloescht, err := LoescheSchlagworte(ctx, pool, []string{ids["Magie"]})
+	if err != nil || geloescht != (SchlagwortLoeschung{Woerter: 1, Titel: 1, Verweise: 1}) {
+		t.Errorf("löschen: %+v err=%v, want 1 Wort, 1 Titel, 1 Verweis", geloescht, err)
 	}
 	if got := woerterAm(t, pool, "Krabat"); len(got) != 0 {
 		t.Errorf("Krabat nach dem Löschen: %q", got)

@@ -52,11 +52,11 @@ var fkAktionenBestand = []string{
 	// die Schlagworte stehen nicht darin.
 	"CASCADE  titel_schlagworte.titel_id -> buecher_titel",
 	// Wird ein Wort gelöscht, verschwindet es aus allen Titeln — Litteras „Löschen (auch aus
-	// allen Medien)". Gelöscht wird nur über LoescheSchlagwort (Migration 143, Pflege der
-	// Schlagworte); seine Antwort nennt die Zahl der Titel, die das Wort verloren.
+	// allen Medien)". Gelöscht wird nur über LoescheSchlagworte (Migration 143, Pflege der
+	// Schlagworte); seine Antwort nennt die Zahl der Titel, die Wörter verloren.
 	"CASCADE  titel_schlagworte.schlagwort_id -> schlagworte",
 	// Migration 143, befragt am 23.09.2026: Fällt ein Wort, fallen die Verweise darauf mit —
-	// ein Verweis ohne Ziel hat keine Bedeutung. Wer löscht, ist LoescheSchlagwort; die
+	// ein Verweis ohne Ziel hat keine Bedeutung. Wer löscht, ist LoescheSchlagworte; die
 	// Antwort nennt die Zahl der Verweise, die mitgingen (schlagworte_pflege_pg_test.go).
 	"CASCADE  schlagworte.verweis_auf -> schlagworte",
 	// Befragt (Register 06.09.2026): „Plan verwerfen" löscht den ganzen Plan samt

@@ -4,7 +4,9 @@ import {
 	loeschFolgen,
 	zaehlSatz,
 	verweisWahl,
-	dialogHinweis
+	dialogHinweis,
+	loeschFrage,
+	loeschErgebnis
 } from './schlagwortPflege.js';
 
 const wort = { id: 'a', wort: 'Fantasy', titel: 12, verweise: ['Tierfantasy'], ist_filter: false };
@@ -80,5 +82,43 @@ describe('Schlagwort-Pflege: Anzeige-Regeln', () => {
 		);
 		expect(loeschFolgen({ ...wort, titel: 1 })).toMatch(/^1 Titel verliert das Schlagwort, /);
 		expect(dialogHinweis('verweis', wort, 'Fantasie')).toMatch(/bekommt „Fantasy“/);
+	});
+});
+
+describe('Schlagwort-Pflege: mehrere löschen', () => {
+	const mit = (w, titel, verweise = []) => ({ id: w, wort: w, titel, verweise, ist_filter: false });
+
+	it('fragt bei einem Wort wie bisher', () => {
+		expect(loeschFrage([wort])).toEqual({ titel: '„Fantasy“ löschen?', text: loeschFolgen(wort) });
+	});
+
+	it('nennt die Wörter, die Titelzahl und nur die Verweise, die nicht selbst markiert sind', () => {
+		const frage = loeschFrage([
+			mit('Magie', 3, ['Zauberei', 'Hexerei']),
+			mit('Mühle', 1),
+			{ ...verweis, wort: 'zauberei', verweis_auf: 'Magie' }
+		]);
+		expect(frage.titel).toBe('3 Schlagworte löschen?');
+		expect(frage.text).toBe(
+			'„Magie“, „Mühle“ und „zauberei“. Sie stehen zusammen 4-mal an Titeln. ' +
+				'1 Verweis darauf fällt mit. Das lässt sich nicht rückgängig machen.'
+		);
+	});
+
+	it('kürzt lange Auswahlen auf fünf Namen', () => {
+		const sieben = ['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((w) => mit(w, 0));
+		expect(loeschFrage(sieben).text).toBe(
+			'„A“, „B“, „C“, „D“, „E“ und 2 weitere. Das lässt sich nicht rückgängig machen.'
+		);
+	});
+
+	it('meldet danach die Zahlen des Servers', () => {
+		expect(loeschErgebnis([wort], { woerter: 1, titel: 12 })).toBe('„Fantasy“ gelöscht.');
+		expect(loeschErgebnis([wort, verweis], { woerter: 2, titel: 1 })).toBe(
+			'2 Schlagworte gelöscht. 1 Titel hat Schlagworte verloren.'
+		);
+		expect(loeschErgebnis([wort, verweis], { woerter: 2, titel: 0 })).toBe(
+			'2 Schlagworte gelöscht.'
+		);
 	});
 });

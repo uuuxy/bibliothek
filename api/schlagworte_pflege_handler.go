@@ -41,9 +41,17 @@ type SchlagwortVerweisRequest struct {
 	ZielID string `json:"ziel_id" validate:"required,uuid_oder_leer"`
 }
 
+// SchlagworteLoeschenRequest nennt die Wörter, die fallen sollen. Jede Kennung ist Pflicht und
+// eine UUID — eine leere käme sonst als 500 aus der Datenbank zurück.
+type SchlagworteLoeschenRequest struct {
+	IDs []string `json:"ids" validate:"required,dive,required,uuid_oder_leer"`
+}
+
 // SchlagwortAenderung ist die Antwort der Pflege-Türen: was sich getan hat, als Zahlen.
+// Woerter trägt nur das Löschen.
 type SchlagwortAenderung struct {
 	Wort     string `json:"wort,omitempty"`
+	Woerter  int    `json:"woerter,omitempty"`
 	Titel    int    `json:"titel"`
 	Verweise int    `json:"verweise"`
 }
@@ -203,28 +211,33 @@ func (s *Server) PostSchlagwortVerweisHandler() http.HandlerFunc {
 	})
 }
 
-// DeleteSchlagwortHandler löscht ein Schlagwort; die Titel verlieren es, Verweise darauf
-// fallen mit. Die Antwort nennt, wie viele es waren.
+// PostSchlagworteLoeschenHandler löscht die gewählten Schlagworte, alle oder keins; die Titel
+// verlieren sie, Verweise darauf fallen mit. Eine Tür für ein Wort und für viele
+// (repository.LoescheSchlagworte). Die Antwort nennt, wie viele Wörter, Titel und Verweise
+// es waren.
 //
-// @Summary      Delete a keyword
+// @Summary      Delete keywords
 // @Tags         books
+// @Accept       json
 // @Produce      json
-// @Param        id  path  string  true  "Keyword ID"
+// @Param        body  body  SchlagworteLoeschenRequest  true  "Keyword IDs"
 // @Success      200  {object}  SchlagwortAenderung
 // @Failure      400  {object}  map[string]string
 // @Failure      404  {object}  map[string]string
-// @Router       /schlagworte/{id} [delete]
-func (s *Server) DeleteSchlagwortHandler() http.HandlerFunc {
+// @Router       /schlagworte/loeschen [post]
+func (s *Server) PostSchlagworteLoeschenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		id, err := schlagwortIDAusPfad(r)
-		if err != nil {
-			return err
+		var req SchlagworteLoeschenRequest
+		if !DecodeAndValidate(w, r, &req) {
+			return nil
 		}
-		titel, verweise, err := repository.LoescheSchlagwort(r.Context(), s.DB.Pool, id)
+		geloescht, err := repository.LoescheSchlagworte(r.Context(), s.DB.Pool, req.IDs)
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
-		RespondJSON(w, http.StatusOK, SchlagwortAenderung{Titel: titel, Verweise: verweise})
+		RespondJSON(w, http.StatusOK, SchlagwortAenderung{
+			Woerter: geloescht.Woerter, Titel: geloescht.Titel, Verweise: geloescht.Verweise,
+		})
 		return nil
 	})
 }

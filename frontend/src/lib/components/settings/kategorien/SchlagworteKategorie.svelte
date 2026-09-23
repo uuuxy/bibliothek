@@ -3,26 +3,26 @@
 	 * @component SchlagworteKategorie
 	 * Die Pflegeseite der Schlagworte (docs/OFFEN.md 4.20, Stufe 1; Server seit Migration 143).
 	 * Eine freie Liste bleibt wie in Littera durch Pflege brauchbar: Jede Zeile ist ein Wort mit
-	 * seiner Titelzahl; Umbenennen, Zusammenführen und Verweis anlegen öffnen einen Dialog
-	 * (SchlagwortPflegeDialog), Löschen fragt mit der Zahl der Titel nach, der Schalter setzt die
-	 * Filter-Markierung für das Portal. Die Regeln (kein Verweis als Filter, keine Kette …) stehen
-	 * im Server; die Seite bietet nur an, was dort erlaubt ist.
-	 *
-	 * Bauform nach M3 Lists: Zählung als „trailing text" („meta-information … such as a price,
-	 * count"), Schalter „to toggle settings on or off", das Menü als „supplementary action … in
-	 * the trailing position".
+	 * seiner Titelzahl (SchlagwortTabelle); Umbenennen, Zusammenführen und Verweis anlegen öffnen
+	 * einen Dialog (SchlagwortPflegeDialog), Löschen fragt mit der Zahl der Titel nach, der
+	 * Schalter setzt die Filter-Markierung für das Portal. Markierte Zeilen löscht die
+	 * AuswahlLeiste auf einmal — dieselbe Tür wie das Löschen aus dem Menü. Die Regeln (kein
+	 * Verweis als Filter, keine Kette …) stehen im Server; die Seite bietet nur an, was dort
+	 * erlaubt ist.
 	 */
 	import { onMount } from 'svelte';
-	import { apiGet, apiPut, apiDelete } from '../../../apiFetch.js';
+	import { SvelteSet } from 'svelte/reactivity';
+	import { Trash2 } from '@lucide/svelte';
+	import { apiGet, apiPut, apiPost } from '../../../apiFetch.js';
 	import { toastStore } from '../../../stores/toastStore.svelte.js';
 	import { loeschenBestaetigen } from '../../../stores/bestaetigung.svelte.js';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import SchlagwortPflegeDialog from '../SchlagwortPflegeDialog.svelte';
-	import { menueEintraege, loeschFolgen, zaehlSatz } from '../schlagwortPflege.js';
-	import Tabelle from '../../ui/Tabelle.svelte';
+	import SchlagwortTabelle from '../SchlagwortTabelle.svelte';
+	import { loeschFrage, loeschErgebnis, zaehlSatz } from '../schlagwortPflege.js';
 	import Suchfeld from '../../ui/Suchfeld.svelte';
-	import Switch from '../../ui/Switch.svelte';
-	import Menue from '../../ui/Menue.svelte';
+	import AuswahlLeiste from '../../ui/AuswahlLeiste.svelte';
+	import Button from '../../ui/Button.svelte';
 	import Ladekreis from '../../ui/Ladekreis.svelte';
 	import LadeFehler from '../../ui/LadeFehler.svelte';
 
@@ -48,7 +48,22 @@
 			(z) => z.wort.toLowerCase().includes(s) || z.verweise.some((v) => v.toLowerCase().includes(s))
 		);
 	});
+	const sichtbar = $derived(treffer.slice(0, ANZEIGE_MAX));
 	const filterZahl = $derived(zeilen.filter((z) => z.ist_filter).length);
+
+	// Markiert zählt nur, was zu sehen ist (wie leserAuswahl.svelte.js): Wer die Suche ändert,
+	// löscht nicht, was er nicht mehr vor sich hat.
+	const auswahl = new SvelteSet();
+	const markiert = $derived(sichtbar.filter((z) => auswahl.has(z.id)));
+	/** @param {string} id */
+	function umschalten(id) {
+		if (!auswahl.delete(id)) auswahl.add(id);
+	}
+	function alleUmschalten() {
+		const alle = markiert.length === sichtbar.length;
+		auswahl.clear();
+		if (!alle) for (const z of sichtbar) auswahl.add(z.id);
+	}
 
 	// Sequenznummer wie in useStudentProfile: Zwei schnell umgelegte Schalter laden die Liste
 	// zweimal, und kam die ältere Antwort zuletzt, zeigte ein Schalter den alten Stand.
@@ -69,19 +84,23 @@
 
 	/** @param {Zeile} z @param {string} id */
 	function waehle(z, id) {
-		if (id === 'loeschen') loeschen(z);
+		if (id === 'loeschen') loeschen([z]);
 		else auftrag = { art: /** @type {any} */ (id), zeile: z };
 	}
 
-	/** @param {Zeile} z */
-	async function loeschen(z) {
-		if (!(await loeschenBestaetigen(`„${z.wort}“ löschen?`, loeschFolgen(z)))) return;
+	/** @param {Zeile[]} gewaehlt - eins aus dem Menü oder die markierten */
+	async function loeschen(gewaehlt) {
+		const frage = loeschFrage(gewaehlt);
+		if (!(await loeschenBestaetigen(frage.titel, frage.text))) return;
 		try {
-			await apiDelete(`/api/schlagworte/${z.id}`);
+			const ids = gewaehlt.map((z) => z.id);
+			const antwort = await apiPost('/api/schlagworte/loeschen', { ids });
+			toastStore.addToast(loeschErgebnis(gewaehlt, antwort), 'success');
+			for (const id of ids) auswahl.delete(id);
 		} catch {
-			return; // Meldung kam bereits aus apiDelete.
+			// Meldung kam bereits aus apiPost; gelöscht ist nichts (alle oder keins). Neu laden
+			// zeigt, was ein anderer inzwischen geändert hat.
 		}
-		toastStore.addToast(`„${z.wort}“ gelöscht.`, 'success');
 		await laden();
 	}
 
@@ -134,49 +153,14 @@
 				</p>
 			</div>
 
-			<div class="overflow-x-auto">
-				<Tabelle beschriftung="Schlagworte mit Titelzahl, Filter und Aktionen">
-					<thead>
-						<tr>
-							<th>Schlagwort</th>
-							<th class="text-right">Titel</th>
-							<th>Filter im Portal</th>
-							<th><span class="sr-only">Aktionen</span></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each treffer.slice(0, ANZEIGE_MAX) as z (z.id)}
-							<tr>
-								<td>
-									<div>{z.wort}</div>
-									{#if z.verweis_auf_id}
-										<div class="text-xs text-on-surface-variant">Verweis auf „{z.verweis_auf}“</div>
-									{:else if z.verweise.length}
-										<div class="text-xs text-on-surface-variant">auch: {z.verweise.join(', ')}</div>
-									{/if}
-								</td>
-								<td class="text-right tabular-nums">{z.verweis_auf_id ? '' : z.titel}</td>
-								<td>
-									{#if !z.verweis_auf_id}
-										<Switch
-											checked={z.ist_filter}
-											label="„{z.wort}“ als Filter im Portal"
-											onchange={(an) => setzeFilter(z, an)}
-										/>
-									{/if}
-								</td>
-								<td class="w-12 text-right">
-									<Menue
-										etikett="Aktionen für „{z.wort}“"
-										eintraege={menueEintraege(z)}
-										onwahl={(id) => waehle(z, id)}
-									/>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</Tabelle>
-			</div>
+			<SchlagwortTabelle
+				zeilen={sichtbar}
+				{auswahl}
+				onumschalten={umschalten}
+				onalle={alleUmschalten}
+				onfilter={setzeFilter}
+				onwahl={waehle}
+			/>
 
 			{#if treffer.length === 0}
 				<p class="text-sm text-on-surface-variant">Kein Schlagwort passt zur Suche.</p>
@@ -190,6 +174,18 @@
 					Geladen sind die ersten {zeilen.length} von {liste.gesamt} Einträgen (Schlagworte und Verweise)
 					in alphabetischer Folge.
 				</p>
+			{/if}
+			{#if markiert.length > 0}
+				<AuswahlLeiste
+					satz="{markiert.length} markiert"
+					beschriftung="Aktionen für die markierten Schlagworte"
+					onleeren={() => auswahl.clear()}
+				>
+					<Button variant="danger" onclick={() => loeschen(markiert)}>
+						<Trash2 class="h-4 w-4" aria-hidden="true" />
+						Löschen
+					</Button>
+				</AuswahlLeiste>
 			{/if}
 		</div>
 	{/if}

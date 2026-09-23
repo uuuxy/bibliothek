@@ -95,3 +95,50 @@ export function dialogHinweis(art, z, neu) {
 	}
 	return `Wer diese Schreibweise am Titel einträgt, bekommt „${z.wort}“. Trägt sie schon Titel, werden sie umgestellt.`;
 }
+
+/**
+ * Die Rückfrage vor dem Löschen — ein Wort aus dem Menü der Zeile oder mehrere markierte, über
+ * dieselbe Tür (POST /api/schlagworte/loeschen). Bei mehreren nennt sie die ersten fünf Wörter,
+ * wie oft sie an Titeln stehen und wie viele Verweise mitfallen, ohne selbst markiert zu sein.
+ * Ein Titel mit zwei markierten Wörtern zählt hier zweimal: Die Seite kennt die Titel nicht,
+ * die Meldung danach nennt die Zahl des Servers (loeschErgebnis).
+ * @param {SchlagwortZeile[]} gewaehlt
+ * @returns {{ titel: string, text: string }}
+ */
+export function loeschFrage(gewaehlt) {
+	if (gewaehlt.length === 1) {
+		return { titel: `„${gewaehlt[0].wort}“ löschen?`, text: loeschFolgen(gewaehlt[0]) };
+	}
+	const namen = gewaehlt.slice(0, 5).map((z) => `„${z.wort}“`);
+	const rest = gewaehlt.length - namen.length;
+	const liste =
+		rest > 0
+			? `${namen.join(', ')} und ${rest} weitere`
+			: `${namen.slice(0, -1).join(', ')} und ${namen.at(-1)}`;
+	const markiert = new Set(gewaehlt.map((z) => z.wort.toLowerCase()));
+	const woerter = gewaehlt.filter((z) => !z.verweis_auf_id);
+	const vergeben = woerter.reduce((n, z) => n + z.titel, 0);
+	const mit = woerter
+		.flatMap((z) => z.verweise)
+		.filter((v) => !markiert.has(v.toLowerCase())).length;
+	const saetze = [`${liste}.`];
+	if (vergeben > 0) saetze.push(`Sie stehen zusammen ${vergeben}-mal an Titeln.`);
+	if (mit > 0)
+		saetze.push(mit === 1 ? '1 Verweis darauf fällt mit.' : `${mit} Verweise darauf fallen mit.`);
+	saetze.push('Das lässt sich nicht rückgängig machen.');
+	return { titel: `${gewaehlt.length} Schlagworte löschen?`, text: saetze.join(' ') };
+}
+
+/**
+ * Die Meldung nach dem Löschen, mit den Zahlen des Servers.
+ * @param {SchlagwortZeile[]} gewaehlt
+ * @param {{ woerter: number, titel: number }} antwort
+ */
+export function loeschErgebnis(gewaehlt, antwort) {
+	if (gewaehlt.length === 1) return `„${gewaehlt[0].wort}“ gelöscht.`;
+	const titel =
+		antwort.titel === 0
+			? ''
+			: ` ${antwort.titel} ${antwort.titel === 1 ? 'Titel hat' : 'Titel haben'} Schlagworte verloren.`;
+	return `${antwort.woerter} Schlagworte gelöscht.${titel}`;
+}

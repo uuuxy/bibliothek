@@ -49,7 +49,7 @@ grep -rn "<Funktionsname>" --include="*.go" .      # Schreibpfade und Türen
 ./scripts/api_inventar.sh                          # alle Routen, beide Richtungen
 ```
 
-**Die gemeinsamen Bauteile** (`frontend/src/lib/components/ui/`): Abschnitt ·
+**Die gemeinsamen Bauteile** (`frontend/src/lib/components/ui/`): Abschnitt · AuswahlLeiste ·
 BestaetigungsDialog · BuchCover · Button · ChipFeld · CoverPeek · Feld · Kaestchen ·
 KlassenVersandDialog · LadeFehler · Ladekreis · LogoRelief · Menue · Radio · Reiter · Segmente ·
 Select · SelectListe · Snackbar · StatusChip · SuchZustand · Suchfeld · Suchpille · Switch ·
