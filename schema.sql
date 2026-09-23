@@ -599,7 +599,8 @@ CREATE TABLE buecher_exemplare (
     titel_id UUID NOT NULL REFERENCES buecher_titel(id) ON DELETE CASCADE, -- Cascade delete copies if title is deleted
     barcode_id VARCHAR(100) UNIQUE NOT NULL,          -- Unique barcode sticker on the book copy
     zustand_notiz TEXT,                               -- Field for damage notes / physical condition remarks
-    erworben_am DATE NOT NULL DEFAULT CURRENT_DATE,
+    -- Vorgabe: der Kalendertag der Schule, nicht der der Sitzung (UTC) — Migration 139.
+    erworben_am DATE NOT NULL DEFAULT ((now() AT TIME ZONE 'Europe/Berlin')::date),
     ist_ausleihbar BOOLEAN NOT NULL DEFAULT true,      -- Switch to block copies from being lent out
     -- Der frühere globale Inventur-Zustand (inventur_status/inventur_geprueft_am) wurde
     -- mit Migration 045 entfernt. Inventur-Fortschritt lebt jetzt session-gebunden in
@@ -1754,7 +1755,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('134_mehrjahresband.sql'),
 ('136_ausweisnummer_beim_konto.sql'),
 ('137_letzter_vorgang_am_leser.sql'),
-('138_schlagworte.sql')
+('138_schlagworte.sql'),
+('139_zugangsdatum_schulzeit.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

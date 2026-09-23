@@ -33,10 +33,9 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 138; 135 gibt es
-nicht, sie ist zurückgenommen). Das passiert beim Start von allein; Daten gehen nicht verloren.
-Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Testserver am
-21.09.2026: 8 Lehrkräfte). Migration 138 legt zwei leere Tabellen für die Schlagworte an.
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migration 139). Das passiert beim
+Start von allein; Daten gehen nicht verloren. 139 ändert nur die Vorgabe des Zugangsdatums
+neuer Exemplare auf den Kalendertag der Schule.
 
 **Im Code, in dieser Reihenfolge:**
 
@@ -390,13 +389,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Spalte `listenpreis` gibt. Die Gattungsbegriffe (MARC 655) liest der DNB-Leser, gespeichert
   werden sie nicht — sie sind eine Quelle des Schlagwort-Vorschlags (4.20, Stufe 3).
 
-- Zugangsdatum beim Anlegen außerhalb des Bestellwegs (Rasterdurchgang 22.09.2026, Frage 6):
-  Handanlage, Sammelimport und Bestand-Nachziehen lassen `erworben_am` auf der Vorgabe
-  `CURRENT_DATE`, der Listenimport schreibt sie selbst — alle vier in der UTC-Sitzung der
-  Datenbank. Zwischen Mitternacht und zwei Uhr ist das der Vortag, und der INSERT-Trigger aus
-  Migration 129 übernimmt ihn als Zugang; Migration 130 hat nur den UPDATE-Zweig (Wareneingang)
-  auf die Schulzeit gestellt. Fix: Vorgabe der Spalte auf `(now() AT TIME ZONE 'Europe/Berlin')::date`
-  (Migration) und im Listenimport `schulzeit.SQLHeute`. Nicht gebaut, weil Migration.
 - Listenimport gegen den Nummern-Wächter (Migration 131): Trägt eine Zeile der Datei die
   Ausweisnummer eines Lesers als Buch-Barcode, lehnt der Wächter ab und der ganze Import
   bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,

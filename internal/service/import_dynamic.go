@@ -383,9 +383,14 @@ func fuegeExemplareEin(ctx context.Context, tx pgx.Tx, copiesToInsert []importCo
 	// dauerhaft auf 999+ (ein Waechter, der immer schreit, wird abgeschaltet).
 	// Neuzugaenge aus dem Bestellwesen behalten false — dort entsteht das Etikett
 	// wirklich erst im Haus.
+	//
+	// erworben_am kommt aus der Vorgabe der Spalte, dem Kalendertag der Schule (Migration
+	// 139). Bis zum 23.09.2026 stand hier CURRENT_DATE — der Tag der Datenbank-Sitzung
+	// (UTC), zwischen Mitternacht und 2 Uhr der Vortag, und eine zweite Regel neben der
+	// Vorgabe.
 	qInsertExemplar := `
-		INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, ist_ausleihbar, zustand_notiz, etikett_gedruckt)
-		VALUES ($1, $2, CURRENT_DATE, $3, NULLIF($4, ''), true)
+		INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar, zustand_notiz, etikett_gedruckt)
+		VALUES ($1, $2, $3, NULLIF($4, ''), true)
 		ON CONFLICT (barcode_id) DO NOTHING
 	`
 	for _, c := range copiesToInsert {

@@ -35,7 +35,7 @@ func (s *Server) queryLabelItems(ctx context.Context, id string) ([]BarcodeLabel
 	// Das Jahr ist das des Zugangs (zugang_am, Migration 129) — im Bestellweg ist erworben_am
 	// der Bestelltag, und ein im Dezember bestelltes Buch käme sonst mit dem alten Jahr aufs
 	// Etikett und mit dem neuen ins Zugangsbuch. Der Rückfall auf erworben_am (NOT NULL,
-	// Vorgabe CURRENT_DATE) deckt Zeilen ohne Zugangsdatum; to_char liefert damit immer
+	// Vorgabe der Schultag, Migration 139) deckt Zeilen ohne Zugangsdatum; to_char liefert damit immer
 	// vier Ziffern und nie NULL.
 	//
 	// Ausgesonderte Exemplare bleiben draußen (17.09.2026, OFFEN.md 5.5): Wer die Etiketten

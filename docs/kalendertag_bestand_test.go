@@ -38,19 +38,19 @@ var bestandKalendertag = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	// Einmal-Werkzeuge der Alt-Übernahme: Anschaffungsdatum eines importierten Exemplars.
+	// Einmal-Werkzeug der Alt-Übernahme: Anschaffungsdatum eines importierten Exemplars.
 	// Ein um zwei Stunden verschobenes Kaufdatum ändert keine Entscheidung über einen
-	// Menschen, und beide laufen ohnehin von Hand und tagsüber.
-	"cmd/migrate/pg_writer.go":           {1, "erworben_am beim Alt-Import"},
-	"internal/service/import_dynamic.go": {1, "erworben_am beim Listen-Import"},
-	"api/stats.go":                       {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
-	"cmd/seed/main.go":                   {1, "erfundene Abgangsjahre für Testdaten"},
-	"inventur/lernmittel_handler.go":     {1, "Datum im DATEINAMEN eines Downloads"},
-	"inventur/export_csv.go":             {1, "Datum im DATEINAMEN eines Downloads"},
-	"internal/uebernahme/protokoll.go":   {1, "Zeitstempel einer Protokollzeile"},
-	"api/pdf_service.go":                 {1, "Datum im DATEINAMEN eines Downloads"},
-	"api/mahnwesen_bulk.go":              {1, "Datum im DATEINAMEN der Sammel-PDF"},
-	"api/order_service.go":               {1, "Anschaffungsjahr eines Exemplars"},
+	// Menschen, und es läuft ohnehin von Hand und tagsüber. Der Listen-Import stand hier
+	// bis zum 23.09.2026; seitdem nimmt er die Vorgabe der Spalte (Migration 139).
+	"cmd/migrate/pg_writer.go":         {1, "erworben_am beim Alt-Import"},
+	"api/stats.go":                     {5, "Statistik-Fenster (30 Tage, 12 Monate): verschiebt ein Ranking, keine Entscheidung; das Schuljahr dort rechnet bereits in der Schulzeitzone"},
+	"cmd/seed/main.go":                 {1, "erfundene Abgangsjahre für Testdaten"},
+	"inventur/lernmittel_handler.go":   {1, "Datum im DATEINAMEN eines Downloads"},
+	"inventur/export_csv.go":           {1, "Datum im DATEINAMEN eines Downloads"},
+	"internal/uebernahme/protokoll.go": {1, "Zeitstempel einer Protokollzeile"},
+	"api/pdf_service.go":               {1, "Datum im DATEINAMEN eines Downloads"},
+	"api/mahnwesen_bulk.go":            {1, "Datum im DATEINAMEN der Sammel-PDF"},
+	"api/order_service.go":             {1, "Anschaffungsjahr eines Exemplars"},
 }
 
 var (
