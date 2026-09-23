@@ -50,7 +50,7 @@ grep -rn "<Funktionsname>" --include="*.go" .      # Schreibpfade und Türen
 ```
 
 **Die gemeinsamen Bauteile** (`frontend/src/lib/components/ui/`): Abschnitt · AuswahlLeiste ·
-BestaetigungsDialog · BuchCover · Button · ChipFeld · CoverPeek · Feld · Kaestchen ·
+BestaetigungsDialog · BuchCover · Button · ChipFeld · CoverPeek · EingabeDialog · Feld · Kaestchen ·
 KlassenVersandDialog · LadeFehler · Ladekreis · LogoRelief · Menue · Radio · Reiter · Segmente ·
 Select · SelectListe · Snackbar · StatusChip · SuchZustand · Suchfeld · Suchpille · Switch ·
 Tabelle · TabelleSortKopf · Zaehlerpille.

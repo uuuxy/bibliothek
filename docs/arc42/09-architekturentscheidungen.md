@@ -479,7 +479,7 @@ CI und im pre-push-Hook.
 **Entscheidung.** Die interaktive API-Doku wird **nur** bei `APP_ENV=local`/`development`
 gemountet. Das vollständige Routenverzeichnis ist ein generiertes Dokument.
 
-**Anlass.** Swagger deckt die **annotierten** Endpunkte ab (aktuell 63 Operationen auf 54
+**Anlass.** Swagger deckt die **annotierten** Endpunkte ab (am 17.09.2026 63 Operationen auf 54
 Pfaden von 206 registrierten Routen). Eine unvollständige Liste, die vollständig aussieht,
 ist schlechter als keine.
 

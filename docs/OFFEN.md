@@ -32,13 +32,6 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen 139 bis 144). Das
-passiert beim Start von allein; Daten gehen nicht verloren. 139 und 142 ändern nur Vorgaben
-(Zugangsdatum, Briefdatum des Bescheids) auf den Kalendertag der Schule; 140 schreibt ISBNs aus
-der Zeit vor Migration 133 in die Normalform (am Testserver eine Zeile); 141 gibt dem Bescheid
-eine leere Spalte für die Angaben der Schule; 143 gibt den Schlagworten Verweise und die
-Filter-Markierung; 144 ersetzt zwei Prüf-Funktionen dieser Verweise, ohne Daten anzufassen.
-
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
 1. **4.20** Schlagworte: Suche, DNB-Vorschlag (die Littera-Schlagworte mit dem Backup, 7.2).

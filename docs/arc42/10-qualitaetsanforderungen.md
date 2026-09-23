@@ -128,5 +128,5 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 - **Barrierefreiheit ist im Anfangszustand gemessen.** Zustände nach mehreren
   Interaktionsschritten sind nur teilweise abgedeckt; Umfang und bekannte Lücken stehen in
   [FACHKONZEPT.md §19](../FACHKONZEPT.md).
-- **Swagger deckt 63 von 206 Routen ab.** Das vollständige Verzeichnis ist
+- **Swagger deckt 78 von 216 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
   [api_inventar.md](../api_inventar.md) — generiert, nicht gepflegt.
