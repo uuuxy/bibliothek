@@ -7,7 +7,7 @@
 // Mahnfrist ein?"), ohne dass man alle Kategorien durchklickt.
 //
 // Hier stehen bewusst nur Daten, keine Komponenten: Welche Kategorie welches Bauteil
-// rendert, steht sichtbar in SystemSettings.svelte. Eine Liste von Komponenten in
+// rendert, steht sichtbar in KategorieDetail.svelte. Eine Liste von Komponenten in
 // einer .js-Datei würde diese Bauteile zudem vor dem Verwaisten-Test verstecken
 // (frontend-hygiene.test.js sucht echte Importe).
 import {
@@ -24,6 +24,7 @@ import {
 	School,
 	ShieldCheck,
 	ShoppingCart,
+	Tags,
 	Truck
 } from '@lucide/svelte';
 
@@ -64,6 +65,15 @@ export const KATEGORIEN = [
 		kurz: 'Händler, Kundennummern, Hauptlieferant',
 		icon: Truck,
 		rechte: ['create_orders']
+	},
+	{
+		// Pflege der Schlagworte am Titel (docs/OFFEN.md 4.20, Migration 143). Recht wie die
+		// Türen /api/schlagworte/* in routes_system.go: edit_books, wie die Systematik.
+		id: 'schlagworte',
+		titel: 'Schlagworte',
+		kurz: 'Umbenennen, zusammenführen, Verweise, Filter',
+		icon: Tags,
+		rechte: ['edit_books']
 	},
 	{
 		// Angaben für den Schadensersatz-Bescheid (Migration 110). Kein eigenes Recht:

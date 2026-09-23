@@ -15,7 +15,7 @@
 
 	// Der Anfangswert ist eine MOMENTAUFNAHME: Das Formular gehört ab hier dem
 	// Benutzer, nicht dem Server. Frische Werte kommen nach dem Speichern über den
-	// {#key}-Block in SystemSettings.svelte, der die Kategorie neu aufbaut — ohne
+	// {#key}-Block in KategorieDetail.svelte, der die Kategorie neu aufbaut — ohne
 	// untrack würde Svelte hier eine Ableitung erwarten und beim Neuladen die
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);

@@ -17,7 +17,8 @@ import { KATEGORIEN } from './components/settings/kategorien.js';
 // (Datenschutz gegen den Rest); dieser hier prüft alle gegen alle.
 
 const KATEGORIE_DIR = join(srcRoot, 'lib/components/settings/kategorien');
-const SHELL = join(srcRoot, 'lib/SystemSettings.svelte');
+// Die Zuordnung Kategorie → Bauteil steht seit dem 23.09.2026 in KategorieDetail.svelte.
+const SHELL = join(srcRoot, 'lib/components/settings/KategorieDetail.svelte');
 
 // Das Vokabular der Einstellungs-Schlüssel — GELESEN aus repository/system_settings_patch.go,
 // nicht danebengeschrieben.

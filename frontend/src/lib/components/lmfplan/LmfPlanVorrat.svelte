@@ -15,7 +15,7 @@
 	import { ChevronDown, ChevronRight } from '@lucide/svelte';
 	import Feld from '../ui/Feld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
-	import LmfPlanEingabeDialog from './LmfPlanEingabeDialog.svelte';
+	import EingabeDialog from '../ui/EingabeDialog.svelte';
 
 	/** @type {{ klassen: string[], draussen: (klasse: string) => boolean, marker: ReturnType<typeof import('../../lmfplanDienst.js').klassenMarker>, onhinein: (klasse: string) => void }} */
 	let { klassen, draussen, marker, onhinein } = $props();
@@ -87,7 +87,7 @@
 	</div>
 {/if}
 
-<LmfPlanEingabeDialog
+<EingabeDialog
 	open={dialogOffen}
 	titel="Andere Klasse eintragen"
 	aktion="In den Plan"
@@ -102,4 +102,4 @@
 		placeholder="z. B. 07G1"
 		hint="Eine Klasse, die es im Programm noch nicht gibt — sie kommt mit dem LUSD-Import."
 	/>
-</LmfPlanEingabeDialog>
+</EingabeDialog>

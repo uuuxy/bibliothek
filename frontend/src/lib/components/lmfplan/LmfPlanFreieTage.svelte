@@ -2,7 +2,7 @@
      weiß (Brückentag, pädagogischer Tag): ein Chip-Set — Input-Chips je Tag (M3: das
      Entfernen-Symbol „is required and must be used to remove the chip") und dahinter
      der Assist-Chip „Tag freihalten", der das kleine Dialogfenster mit Datum und Grund
-     öffnet (LmfPlanEingabeDialog). Bis 06.09.2026 stand hier ein leeres Dauerformular
+     öffnet (ui/EingabeDialog). Bis 06.09.2026 stand hier ein leeres Dauerformular
      mit drei Spalten für eine Eingabe, die ein- bis zweimal im Jahr vorkommt. Darunter
      die Zeile „Übersprungen", die jeden ausgefallenen Werktag des Plan-Zeitraums mit
      Grund nennt — Feiertage eingeschlossen, damit ein fehlender Donnerstag in der
@@ -12,7 +12,7 @@
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import LmfKlasseChip from './LmfKlasseChip.svelte';
-	import LmfPlanEingabeDialog from './LmfPlanEingabeDialog.svelte';
+	import EingabeDialog from '../ui/EingabeDialog.svelte';
 	import { datumKurz, wochentag } from '../../lmfplanDienst.js';
 
 	/** @type {{ tage: import('../../lmfplanDienst.js').FreierTag[], ausfaelle: import('../../lmfplanDienst.js').Ausfall[] }} */
@@ -68,7 +68,7 @@
 	</p>
 {/if}
 
-<LmfPlanEingabeDialog
+<EingabeDialog
 	open={offen}
 	titel="Tag freihalten"
 	aktion="Freihalten"
@@ -83,4 +83,4 @@
 		bind:value={grund}
 		placeholder="z. B. Pädagogischer Tag"
 	/>
-</LmfPlanEingabeDialog>
+</EingabeDialog>

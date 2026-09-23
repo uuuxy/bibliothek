@@ -161,7 +161,7 @@
 	</div>
 {/snippet}
 
-<!-- Titel und Beitext kommen vom KategorieRahmen (SystemSettings.svelte) — bis zum
+<!-- Titel und Beitext kommen vom KategorieRahmen (KategorieDetail.svelte) — bis zum
      24.08.2026 stand „Datenverwaltung“ hier ein zweites Mal direkt darunter. -->
 <div class="space-y-8">
 	<div class="grid grid-cols-1 gap-8">

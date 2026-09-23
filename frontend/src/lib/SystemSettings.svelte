@@ -26,22 +26,8 @@
 	import { onMount } from 'svelte';
 	import { ArrowLeft } from '@lucide/svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
-	import DataManagement from './components/admin/DataManagement.svelte';
-	import SchuljahreswechselBereich from './components/admin/SchuljahreswechselBereich.svelte';
-	import Betriebsbereitschaft from './Betriebsbereitschaft.svelte';
-	import SystemSettingsRouting from './SystemSettingsRouting.svelte';
 	import KategorieListe from './components/settings/KategorieListe.svelte';
-	import KategorieRahmen from './components/settings/KategorieRahmen.svelte';
-	import SchuleKategorie from './components/settings/kategorien/SchuleKategorie.svelte';
-	import AusleiheKategorie from './components/settings/kategorien/AusleiheKategorie.svelte';
-	import MahnwesenKategorie from './components/settings/kategorien/MahnwesenKategorie.svelte';
-	import BestellwesenKategorie from './components/settings/kategorien/BestellwesenKategorie.svelte';
-	import SchadensersatzKategorie from './components/settings/kategorien/SchadensersatzKategorie.svelte';
-	import LieferantenKategorie from './components/settings/kategorien/LieferantenKategorie.svelte';
-	import DatenschutzKategorie from './components/settings/kategorien/DatenschutzKategorie.svelte';
-	import ErreichbarkeitKategorie from './components/settings/kategorien/ErreichbarkeitKategorie.svelte';
-	import MailKategorie from './components/settings/kategorien/MailKategorie.svelte';
-	import GlobalLMFExtendWidget from './GlobalLMFExtendWidget.svelte';
+	import KategorieDetail from './components/settings/KategorieDetail.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
@@ -134,66 +120,7 @@
 					<ArrowLeft size={18} /> Alle Einstellungen
 				</button>
 
-				<!-- Neu laden nach dem Speichern erzeugt ein frisches `daten`; der Schlüssel
-				     baut die Kategorie damit aus den GESPEICHERTEN Werten neu auf. Ohne ihn
-				     stünde im Feld weiter die Eingabe, auch wenn der Server sie normalisiert
-				     hat (0 in einem Frist-Feld wird zur Vorgabe). -->
-				{#key daten}
-					{#if aktiv === 'schule'}
-						<SchuleKategorie {daten} onSaved={loadSettings} />
-					{:else if aktiv === 'ausleihe'}
-						<AusleiheKategorie {daten} onSaved={loadSettings} />
-					{:else if aktiv === 'mahnwesen'}
-						<MahnwesenKategorie {daten} onSaved={loadSettings} />
-					{:else if aktiv === 'routing'}
-						<KategorieRahmen
-							titel="Mahnwesen-Routing"
-							kurz="Welche Lehrkraft die Mahnliste einer Klasse bekommt."
-						>
-							<SystemSettingsRouting />
-						</KategorieRahmen>
-					{:else if aktiv === 'bestellwesen'}
-						<BestellwesenKategorie {daten} onSaved={loadSettings} />
-					{:else if aktiv === 'lieferanten' && sichtbar.has('lieferanten')}
-						<LieferantenKategorie />
-					{:else if aktiv === 'schadensersatz' && sichtbar.has('schadensersatz')}
-						<SchadensersatzKategorie {daten} onSaved={loadSettings} />
-					{:else if aktiv === 'datenschutz'}
-						<DatenschutzKategorie {daten} onSaved={loadSettings} />
-					{:else if aktiv === 'erreichbarkeit'}
-						<ErreichbarkeitKategorie {daten} onSaved={loadSettings} />
-					{:else if aktiv === 'mail'}
-						<MailKategorie />
-					{:else if aktiv === 'lmf'}
-						<KategorieRahmen
-							titel="LMF-Aktionen"
-							kurz="Massenwerkzeuge für Lernmittel — sie verändern viele Ausleihen zugleich."
-						>
-							<GlobalLMFExtendWidget />
-						</KategorieRahmen>
-					{:else if aktiv === 'daten' && sichtbar.has('daten')}
-						<KategorieRahmen
-							titel="Datenverwaltung"
-							kurz="Importe und Exporte des Bestands, Offline-Sicherungen einspielen."
-						>
-							<DataManagement />
-						</KategorieRahmen>
-					{:else if aktiv === 'schuljahr' && sichtbar.has('schuljahr')}
-						<KategorieRahmen
-							titel="LUSD & Versetzung"
-							kurz="LUSD-Datenabgleich und Klassen-Versetzung zum Ende des Schuljahres."
-						>
-							<SchuljahreswechselBereich {daten} onSaved={loadSettings} />
-						</KategorieRahmen>
-					{:else if aktiv === 'betrieb'}
-						<KategorieRahmen
-							titel="Betriebsbereitschaft"
-							kurz="Was ist eingerichtet, aber nicht in Betrieb? Diese Seite prüft nur — geändert wird in den Kategorien daneben."
-						>
-							<Betriebsbereitschaft />
-						</KategorieRahmen>
-					{/if}
-				{/key}
+				<KategorieDetail {aktiv} {sichtbar} {daten} onSaved={loadSettings} />
 			</div>
 		</div>
 	{/if}
