@@ -210,6 +210,12 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	// dagegen folgt der Quelle, sobald sie eine nennt — sie hat eine Spaltenvorgabe
 	// (5–10), an der sich „ungepflegt" nicht von „gepflegt" unterscheiden lässt, und
 	// Litteras Signatur ist für den Altbestand die gepflegte Quelle.
+	//
+	// Ausgenommen ist ein Mehrjahresband (Migration 134): Den Schalter gibt es nur in
+	// der Titel-Verwaltung, und wer ihn setzt, setzt die Spanne mit — sie ist dann
+	// gepflegt, und an ihrem „bis" hängt die Frist. Die Signatur nennt oft nur einen
+	// Jahrgang („LMF Bio 7"); übernommen, verletzte sie chk_mehrjahresband_spanne, und der
+	// ganze Import fiele (Rasterdurchgang 23.09.2026, K1).
 	const qUpdate = `
 		UPDATE buecher_titel SET
 			titel = $2,
@@ -221,8 +227,8 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 			ist_lernmittel = ist_lernmittel OR $8,
 			subject = COALESCE(subject, NULLIF($9, '')),
 			grade_level = COALESCE(NULLIF(grade_level, 0), NULLIF($10, 0)::smallint),
-			jahrgang_von = CASE WHEN $11 > 0 THEN $11 ELSE jahrgang_von END,
-			jahrgang_bis = CASE WHEN $12 > 0 THEN $12 ELSE jahrgang_bis END,
+			jahrgang_von = CASE WHEN $11 > 0 AND NOT mehrjahresband THEN $11 ELSE jahrgang_von END,
+			jahrgang_bis = CASE WHEN $12 > 0 AND NOT mehrjahresband THEN $12 ELSE jahrgang_bis END,
 			aktualisiert_am = CURRENT_TIMESTAMP
 		WHERE id = $1
 	`
