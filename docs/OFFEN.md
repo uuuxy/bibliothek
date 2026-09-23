@@ -13,25 +13,22 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ## Was jetzt dran ist
 
-**Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): die Frage 9.3 c und die zwei
-Bedingungen neben der Mängelliste — der Nachweis der DSGVO-Konformität und ein Hosting- und
-Pflegekonzept (9.9). Das fehlende Pflegekonzept nennt das Protokoll ein mögliches
-Ausschlusskriterium; deshalb steht Abschnitt 9 in beiden Listen unten an erster Stelle.
+**Die Sichtung vom 16.09.2026** (Abschnitt 9): offen ist die Frage 9.3 c. Die zwei Bedingungen
+aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Die Sichtung** (Abschnitt 9): 9.3 c (Bücherei-Sperre wegen überfälliger Schulbücher;
-   Vorschlag: so lassen) und die vier Fragen zum Pflegekonzept (9.9).
-2. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen. Er ändert Daten.
-3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
+1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen. Er ändert Daten.
+2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
-4. **Drei Freigaben, jede mit Migration:** das Werk über den Auflagen (4.18, dazu die Frage, wer
+3. **Drei Freigaben, jede mit Migration:** das Werk über den Auflagen (4.18, dazu die Frage, wer
    ein Werk anlegt), der Ferienkalender (4.19), die Pflegeseite der Schlagworte (4.20).
-5. **Die Palettenfarben** (5.21): Freigabe für die übrige Anwendung, Bildschirm für Bildschirm.
-6. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
-   5.19 (Auskunft und Vormerken für Kollegen).
-7. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
+4. **Die Palettenfarben** (5.21): Freigabe für die übrige Anwendung, Bildschirm für Bildschirm.
+5. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
+   5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
+   Schulbücher; Vorschlag: so lassen).
+6. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
@@ -41,16 +38,13 @@ nicht, sie ist zurückgenommen). Das passiert beim Start von allein; Daten gehen
 Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Testserver am
 21.09.2026: 8 Lehrkräfte). Migration 138 legt zwei leere Tabellen für die Schlagworte an.
 
-**Bei mir, in dieser Reihenfolge:**
+**Im Code, in dieser Reihenfolge:**
 
-1. **9.9** die zwei Dokumente: den DSGVO-Nachweis aus dem vorhandenen Material zusammenstellen
-   (Doku, keine Bauarbeit); das Pflegekonzept als Entwurf mit dem, was der Code schon
-   beantwortet — deine vier Antworten bleiben darin als Lücken markiert.
-2. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
-3. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
+1. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
+2. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
    Stufe 3 (5.3).
-4. Nach der Antwort zu E5 (**8.3**): **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. Nach der Antwort zu E5 (**8.3**): **5.4**.
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
 die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
@@ -781,6 +775,9 @@ die Automatik weist es heute ab, weil sie Medien zählt, nicht Töpfe. Ob die B�
 eine Einstellung (`MaxOverdueItems`).
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
+
+**Entschieden am 23.09.2026: zurückgestellt.** Beides bleibt liegen, bis es ansteht; dann gelten
+die Schritte und Fragen unten.
 
 Die Einschätzung am Ende des Protokolls nennt zwei Punkte, die in keinem der zwölf Mängel
 stehen:
