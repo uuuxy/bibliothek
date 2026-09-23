@@ -28,8 +28,9 @@
 				const err = await res.json().catch(() => ({}));
 				throw new Error(err.error || 'Fehler beim Laden der Exemplare');
 			}
-			const json = await res.json();
-			exemplare = json.data || [];
+			// Die Antwort ist das nackte Array (RespondJSON), wie Buchakte und Druck-Center
+			// sie lesen — bis zum 23.09.2026 stand hier `json.data`, und die Liste blieb leer.
+			exemplare = (await res.json()) ?? [];
 		} catch (err) {
 			error = err instanceof Error ? err.message : String(err);
 		} finally {
