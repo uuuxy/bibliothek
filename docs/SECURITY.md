@@ -2,7 +2,10 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-17 (das Vuln-Gate mit benannten Ausnahmen:
+> Zuletzt aktualisiert: 2026-09-23 (Endpunkte ohne Anmeldung: was das Routen-Gate als Schutz
+> annimmt, die Tabelle mit allen Einträgen der Allowlist; `RequireRoles` ist seit dem
+> 04.08.2026 entfallen).
+> Davor 2026-09-17 (das Vuln-Gate mit benannten Ausnahmen:
 > `scripts/govulncheck-gate.sh` und `security/vuln-ausnahmen.json`).
 > Davor 2026-09-16 (Rollenkonzept: `leitung` ergänzt — Admin minus
 > `manage_users` und `manage_settings`, Migration 122; Kollegium als Grundzustand statt
@@ -137,10 +140,14 @@ jeder Lehrkraft (siehe unten).
 
 ### Endpunkte ohne Anmeldung
 
-Ein Test erzwingt die Vollständigkeit dieser Liste: `TestAlleRoutenSindGeschuetzt`
-(`api/routes_authz_coverage_test.go`) lässt jede registrierte Route ohne
-`RequirePermission`/`RequireRoles` fehlschlagen, solange sie nicht mit Begründung auf der
-Allowlist steht. Eine ungeschützte Route kann also nicht unbemerkt live gehen.
+`TestAlleRoutenSindGeschuetzt` (`api/routes_authz_coverage_test.go`) lässt jede registrierte
+Route fehlschlagen, die weder `RequirePermission` noch `RequireAuthenticated` trägt noch an
+das Inventur-Modul übergibt und nicht mit Begründung auf der Allowlist im Test steht. Die
+Routen des Inventur-Moduls prüfen die Tests in `api/pii_matrix_test.go`: Jede Route muss in
+der [PII-Matrix](PII_MATRIX.de.md) stehen, und das dort genannte Recht muss an ihrer
+Registrierung stehen. Eine ungeschützte Route kann also nicht unbemerkt live gehen. Die
+Tabelle gibt die Allowlist wieder; verbindlich ist die Liste im Test, und kein Test
+vergleicht die beiden.
 
 Bewusst öffentlich sind:
 
@@ -152,6 +159,9 @@ Bewusst öffentlich sind:
 | `GET /api/images/cover`, `/uploads/`                                                          | Cover-Bilder (SSRF-Host-Allowlist). Schülerfotos liegen **nicht** hier, sondern AES-verschlüsselt in der Datenbank. Grenzen siehe unten.                                                                                                |
 | `GET /api/csrf-token`, `/api/auth/*`, `POST /login`                                           | Bootstrap bzw. selbst-authentifizierend.                                                                                                                                                                                                |
 | `GET /api/public/bestellung/{token}` + `/etiketten/{groesse}?format=…` + `POST …/bestaetigen` | Bestätigungs-Link an den Lieferanten — siehe unten. `format` wählt das Bogenraster der kleinen Etiketten und wird gegen die Allowlist in `api/label_formats.go` geprüft: Unbekanntes ergibt **400**, nicht stillschweigend die Vorgabe. |
+| `GET /health`                                                                                 | Betriebszustand: antwortet nur `healthy` oder `unhealthy` (Datenbank erreichbar oder nicht), keine Daten.                                                                                                                               |
+| `GET /swagger`, `GET /swagger/`                                                               | API-Beschreibung; nur registriert bei `APP_ENV=local` oder `development`.                                                                                                                                                               |
+| `/`, `/favicon.ico`                                                                           | Die Oberfläche selbst: statische Dateien aus `frontend/dist`, über `os.OpenRoot` an das Verzeichnis gebunden. `/favicon.ico` antwortet 204.                                                                                             |
 
 **Der Bestätigungs-Link ist der einzige schreibende Zugang ohne Anmeldung.** Sein
 Zuschnitt begrenzt den Schaden:

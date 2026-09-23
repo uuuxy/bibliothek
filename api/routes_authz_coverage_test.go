@@ -12,8 +12,8 @@ import (
 // ungeschützte Endpunkte. Jede in router.go / routes_*.go registrierte HTTP-Route
 // MUSS eine der drei Bedingungen erfüllen:
 //
-//  1. einen Autorisierungs-Wrapper tragen (RequirePermission / RequireRoles),
-//  2. an den inventur-invHandler delegieren (der intern RequireViewBooks/-EditBooks setzt), ODER
+//  1. einen Autorisierungs-Wrapper tragen (RequirePermission oder RequireAuthenticated),
+//  2. an den inventur-invHandler delegieren (dessen Routen prüft TestPIIMatrixRechtStimmtMitCodeUeberein), ODER
 //  3. bewusst auf der öffentlichen Allowlist unten stehen.
 //
 // Eine neu hinzugefügte Route ohne Schutz lässt diesen Test rot werden — damit kann
@@ -77,7 +77,6 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 			pfad := methodenPraefix.ReplaceAllString(muster, "")
 
 			geschuetzt := strings.Contains(ausdruck, "RequirePermission(") ||
-				strings.Contains(ausdruck, "RequireRoles(") ||
 				// RequireAuthenticated verlangt eine gültige Sitzung, aber kein Fachrecht —
 				// die richtige Schwelle für Endpunkte, die JEDER angemeldete Client öffnet
 				// (heute nur der SSE-Stream /events). Bewusst hier und nicht auf der
@@ -91,7 +90,7 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 				continue
 			}
 			t.Errorf("Route %q (in %s) hat KEINEN Autorisierungs-Wrapper und steht nicht auf der Public-Allowlist.\n"+
-				"→ Entweder mit RequirePermission(...)/RequireRoles(...) schützen, oder — falls bewusst öffentlich — "+
+				"→ Entweder mit RequirePermission(...) schützen (RequireAuthenticated(...), wenn jede Sitzung genügt), oder — falls bewusst öffentlich — "+
 				"mit Begründung in publicAllowlist (routes_authz_coverage_test.go) aufnehmen.", muster, datei)
 		}
 	}
