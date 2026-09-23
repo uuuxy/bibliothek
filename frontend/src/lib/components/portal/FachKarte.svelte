@@ -58,7 +58,7 @@
 			href={exportUrl}
 			download
 			title="{name}: Bestandsliste als PDF, mit Buchbildern"
-			class="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 text-label-large font-semibold text-on-surface-variant hover:bg-surface-container"
+			class="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold text-on-surface-variant hover:bg-surface-container"
 		>
 			<Download size={18} aria-hidden="true" />
 			Als PDF

@@ -28,7 +28,7 @@
 
 {#each bloecke as block (block.art)}
 	<section class="mt-6" aria-label={block.label}>
-		<h2 class="text-title-medium font-medium text-on-surface px-4">{artLabel(block.art)}</h2>
+		<h2 class="text-base font-medium text-on-surface px-4">{artLabel(block.art)}</h2>
 		<p class="px-4 pb-2 text-sm text-on-surface-variant max-w-3xl">
 			{artErklaerung(block.art, eingangsjahrgaenge)}
 		</p>

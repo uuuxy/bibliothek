@@ -41,7 +41,7 @@
 </script>
 
 <div class="flex flex-col gap-4">
-	<p class="max-w-2xl text-body-medium text-on-surface-variant">
+	<p class="max-w-2xl text-sm text-on-surface-variant">
 		Öffnet die Schülerdatei mit fertig markierter Klasse — dort startet der Druck über die
 		Aktionsleiste (Ausweiskarten oder Etikettenbogen, je nach Betriebsart im Reiter
 		„Schülerausweise“).

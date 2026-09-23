@@ -56,7 +56,7 @@
 </script>
 
 <section aria-labelledby="lmf-zeitraum-titel">
-	<h2 id="lmf-zeitraum-titel" class="text-title-medium font-medium text-on-surface">Zeitraum</h2>
+	<h2 id="lmf-zeitraum-titel" class="text-base font-medium text-on-surface">Zeitraum</h2>
 	<!-- Der EINE Satz unter dem Titel ist der dynamische (Ferien, gerechneter Beginn);
 	     die Regel selbst („endet am Donnerstag vor den Ferien") steht als Hinweis unter
 	     dem Datumsfeld und im Handbuch — als eigener Satz kostete sie eine Zeile (Absprache vom

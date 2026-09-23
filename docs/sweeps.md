@@ -239,6 +239,7 @@ steht im Kopfkommentar der Datei.
 | `frontend-hygiene-dialoge.test.js`         | Nur `confirm(`/`alert(`/`prompt(` als Aufruf ohne Präfix (außer `window.`); ein Dialog aus einer Variablen oder aus einer Abhängigkeit nicht. |
 | `frontend-hygiene-ladekreis.test.js`       | Nur `.svelte` und nur `animate-spin` + `rounded-full` in EINER Klassenliste; ein Nachbau mit den Klassen auf zwei Elementen oder aus einer Variablen nicht. |
 | `frontend-hygiene-schalter.test.js`        | Nur literale `<input type="checkbox|radio">` und das Wort `peer-checked`; ein Schalter aus ARIA (`role="switch"`) ohne diese Marker nicht. |
+| `frontend-hygiene-schrift.test.js`         | Nur literale Klassen `text-<display\|headline\|title\|body\|label>-<small\|medium\|large>`; eine zusammengesetzte Klasse, eine Größe in `.css` oder im `style`-Attribut nicht. Die erlaubten Rollen liest er aus `theme-mass.css`. |
 | `frontend-hygiene-tabellen.test.js`        | Nur literale `<table>`- und Zellen-Tags mit `class="…"`; Klassen aus Variablen und eine Tabelle aus `<div role="table">` nicht. |
 | `frontend-hygiene-thekenzeitgeber.test.js` | Nur Testdateien, die aus `omnibox.svelte.js` importieren, und nur das VORKOMMEN eines Aufräum-Wortes; ob das Aufräumen auch läuft (afterEach), nicht. |
 

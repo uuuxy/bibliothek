@@ -85,9 +85,7 @@
 </script>
 
 <section aria-labelledby="lmf-reihenfolge-titel">
-	<h2 id="lmf-reihenfolge-titel" class="text-title-medium font-medium text-on-surface">
-		Reihenfolge
-	</h2>
+	<h2 id="lmf-reihenfolge-titel" class="text-base font-medium text-on-surface">Reihenfolge</h2>
 	<!-- Kein Bedienungssatz mehr (06.09.2026, Absprache: Erklärungstexte kosten Zeilen).
 	     Der Satz erscheint nur, wenn er etwas zu sagen hat: der fehlende erste Tag oder
 	     Klassen ohne Schüler. -->

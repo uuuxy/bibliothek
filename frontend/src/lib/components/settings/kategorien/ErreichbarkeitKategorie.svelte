@@ -106,10 +106,10 @@
 	</div>
 
 	<section class="mt-6" aria-labelledby="oeffentliche-seiten">
-		<h3 id="oeffentliche-seiten" class="text-on-surface text-title-small font-medium">
+		<h3 id="oeffentliche-seiten" class="text-on-surface text-base font-medium">
 			Öffentliche Seiten
 		</h3>
-		<p class="text-on-surface-variant text-body-small mt-1">
+		<p class="text-on-surface-variant text-sm mt-1">
 			Ohne Anmeldung erreichbar, ohne Personendaten. Sie haben keinen Menüpunkt — diese Adressen
 			weitergeben oder auf dem Flur-Bildschirm eintragen.
 		</p>
@@ -118,9 +118,9 @@
 				{@const url = (basis || 'https://bibliothek.schule.de') + seite.pfad}
 				<li class="border-outline-variant flex items-center gap-3 rounded-lg border px-3 py-2">
 					<div class="min-w-0 flex-1">
-						<div class="text-on-surface text-body-medium font-medium">{seite.name}</div>
-						<div class="text-on-surface-variant text-body-small">{seite.wer}</div>
-						<code class="text-on-surface text-body-small block truncate">{url}</code>
+						<div class="text-on-surface text-sm font-medium">{seite.name}</div>
+						<div class="text-on-surface-variant text-sm">{seite.wer}</div>
+						<code class="text-on-surface text-sm block truncate">{url}</code>
 					</div>
 					<button
 						type="button"
@@ -138,7 +138,7 @@
 			{/each}
 		</ul>
 		{#if !basis}
-			<p class="text-on-surface-variant text-body-small mt-2">
+			<p class="text-on-surface-variant text-sm mt-2">
 				Sobald die öffentliche Adresse oben eingetragen ist, stehen hier die echten Adressen.
 			</p>
 		{/if}

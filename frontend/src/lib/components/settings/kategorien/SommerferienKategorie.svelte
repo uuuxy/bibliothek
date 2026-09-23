@@ -89,9 +89,7 @@
 
 <section aria-labelledby="sommerferien-titel" class="space-y-4" data-testid="sommerferien">
 	<div>
-		<h3 id="sommerferien-titel" class="text-title-medium font-medium text-on-surface">
-			Sommerferien
-		</h3>
+		<h3 id="sommerferien-titel" class="text-base font-medium text-on-surface">Sommerferien</h3>
 		<p class="mt-1 max-w-3xl text-sm text-on-surface-variant">
 			Der LMF-Plan endet am Donnerstag vor den Sommerferien und beginnt am ersten Schultag danach.
 			Das Programm kennt die Jahre des aktuellen KMK-Beschlusses; spätere Jahre trägst du hier ein
