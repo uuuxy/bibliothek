@@ -1172,7 +1172,8 @@ CREATE TABLE schadensersatz_bescheide (
     laufende_nr         INTEGER NOT NULL
         CONSTRAINT chk_bescheid_laufende_nr CHECK (laufende_nr >= 1),
     referenznummer      TEXT NOT NULL UNIQUE,
-    brief_datum         DATE NOT NULL DEFAULT CURRENT_DATE,
+    -- Der Kalendertag der Schule, nicht der der Sitzung (UTC) — Migration 142.
+    brief_datum         DATE NOT NULL DEFAULT ((now() AT TIME ZONE 'Europe/Berlin')::date),
     frist_bis           DATE NOT NULL,
     gesamtbetrag        NUMERIC(10,2) NOT NULL DEFAULT 0.00
         CONSTRAINT chk_bescheid_betrag CHECK (gesamtbetrag >= 0.00),
@@ -1761,7 +1762,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('138_schlagworte.sql'),
 ('139_zugangsdatum_schulzeit.sql'),
 ('140_isbn_altbestand_normalform.sql'),
-('141_bescheid_absender_snapshot.sql')
+('141_bescheid_absender_snapshot.sql'),
+('142_bescheid_briefdatum_schulzeit.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
