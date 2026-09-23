@@ -351,11 +351,6 @@ eigenen Personensatz; das wäre ein eigener Umbau.
 - `scripts/tabula_rasa.sql` leert `schadensersatz_nummern` nicht; die Bescheide fallen über
   `TRUNCATE … schueler … CASCADE` mit. Nach Tabula rasa sind alle Bescheide weg, der Nummernkreis
   läuft weiter. Vorher festlegen, ob genau das gewollt ist (Nummern nie recyceln).
-- Der Elternbrief je Schadensfall (`GET /api/schadensfaelle/{id}/pdf`, `api/pdf.go`) prüft nicht,
-  ob die Forderung auf einem Bescheid steht — dann stünde dieselbe Forderung auf zwei Briefen mit
-  zwei Fristen. Die Oberfläche öffnet ihn nicht mehr (Mahnverfahren Stufe 1); über die Adresse
-  bleibt er erreichbar. Fällt mit dem Entfernen der Altbriefe (5.4) weg, sonst vorher denselben
-  Filter wie bei der Ersatzforderung.
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 

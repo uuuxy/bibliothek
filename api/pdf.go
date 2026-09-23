@@ -27,13 +27,22 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 
 		ctx := r.Context()
 
-		info, err := s.fetchDamageCaseInfo(ctx, id)
+		info, aufBescheid, err := s.fetchDamageCaseInfo(ctx, id)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				apierrors.SendHTTPError(w, http.StatusNotFound, err)
 				return
 			}
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		// Steht die Forderung auf einem Schadensersatz-Bescheid, gilt der Bescheid: Ein
+		// Elternbrief daneben nennte sie ein zweites Mal, mit eigener Frist und eigenem
+		// Zahlungsweg. Dieselbe Regel wie bei der Ersatzforderung (print.go,
+		// bescheid_id IS NULL); docs/OFFEN.md 5.2, 23.09.2026.
+		if aufBescheid {
+			apierrors.SendHTTPError(w, http.StatusConflict, errors.New(
+				"die Forderung steht auf einem Schadensersatz-Bescheid — dafür gilt der Bescheid, kein Elternbrief"))
 			return
 		}
 
@@ -71,14 +80,16 @@ func (s *Server) GenerateDamagePDFHandler() http.HandlerFunc {
 	}
 }
 
-func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.SchadensfallInfo, error) {
+// fetchDamageCaseInfo lädt den Fall für den Elternbrief und sagt dazu, ob die Forderung
+// schon auf einem Schadensersatz-Bescheid steht (dann gibt es keinen Brief).
+func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.SchadensfallInfo, bool, error) {
 	var beschreibung string
 	var betrag float64
 	var erstelltAm time.Time
 	var sVorname, sNachname, sKlasse string
 	var sStrasse, sHausnummer, sPLZ, sOrt string
 	var tTitel, eBarcode string
-	var istLernmittel bool
+	var istLernmittel, aufBescheid bool
 
 	// COALESCE auf den Adressspalten: nullbar in der DB, nicht-nullbar in Go
 	// (NULL-Scan-Bugklasse). Anschrift fürs Fensterkuvert, siehe SchadensfallInfo.
@@ -90,7 +101,8 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 			COALESCE(s.plz, ''), COALESCE(s.ort, ''),
 			t.titel, e.barcode_id,
 			-- Der Topf und damit der Zahlungsweg des Briefs (pdf/zahlungsweg.go).
-			COALESCE(t.ist_lernmittel, false)
+			COALESCE(t.ist_lernmittel, false),
+			sf.bescheid_id IS NOT NULL
 		FROM schadensfaelle sf
 		JOIN schueler s ON sf.schueler_id = s.id
 		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
@@ -102,10 +114,10 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		&beschreibung, &betrag, &erstelltAm,
 		&sVorname, &sNachname, &sKlasse,
 		&sStrasse, &sHausnummer, &sPLZ, &sOrt,
-		&tTitel, &eBarcode, &istLernmittel,
+		&tTitel, &eBarcode, &istLernmittel, &aufBescheid,
 	)
 	if err != nil {
-		return pdf.SchadensfallInfo{}, err
+		return pdf.SchadensfallInfo{}, false, err
 	}
 
 	return pdf.SchadensfallInfo{
@@ -122,7 +134,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		BuchTitel:        tTitel,
 		ExemplarBarcode:  eBarcode,
 		IstLernmittel:    istLernmittel,
-	}, nil
+	}, aufBescheid, nil
 }
 
 func (s *Server) markElternbriefGenerated(ctx context.Context, id string) {
