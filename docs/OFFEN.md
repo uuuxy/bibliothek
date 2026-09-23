@@ -22,13 +22,11 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
 2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
-3. **Drei Freigaben, jede mit Migration:** das Werk über den Auflagen (4.18, dazu die Frage, wer
-   ein Werk anlegt), der Ferienkalender (4.19), die Pflegeseite der Schlagworte (4.20).
-4. **Die Palettenfarben** (5.21): Freigabe für die übrige Anwendung, Bildschirm für Bildschirm.
-5. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
+3. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
-   Schulbücher; Vorschlag: so lassen).
-6. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
+   Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
+   10?).
+4. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
@@ -39,13 +37,15 @@ passiert beim Start von allein; Daten gehen nicht verloren. 139 und 142 ändern 
 der Zeit vor Migration 133 in die Normalform (am Testserver eine Zeile); 141 gibt dem Bescheid
 eine leere Spalte für die Angaben der Schule.
 
-**Im Code, in dieser Reihenfolge:**
+**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
-1. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
-2. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
-   Stufe 3 (5.3).
-3. Nach der Antwort zu E5 (**8.3**): **5.4**.
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+1. **5.5** die DNB-Felder und **5.18** Klassen löschen — klein, ohne Datenwirkung.
+2. **4.20** Schlagworte: Pflegeseite, Suche, DNB-Vorschlag (Stufe 4 mit dem Littera-Backup, 7.2).
+3. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
+4. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
+5. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
+6. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
+7. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
 die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
@@ -183,15 +183,15 @@ hängen am Titel.
   Frage nicht betrifft, bleibt unverändert. Am Werk rechnen Meldebestand, Bedarf und
   Nachbestellung; an der Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe.
 
-**Offen: Wer legt das Werk an?** (Am 17.09.2026 ohne Meinung geblieben.) **Vorschlag:** Der
-Vorschlag entsteht automatisch, das Ja kommt von einem Menschen. Vollautomatisch über den Namen zu
+**Entschieden am 23.09.2026: Der Besteller legt das Werk an.** Der Vorschlag entsteht
+automatisch beim Nachbestellen, das Ja gibt der Besteller. Vollautomatisch über den Namen zu
 gruppieren verbindet früher oder später zwei „Deutschbuch 7" verschiedener Verlage; rein von Hand
 pflegt es niemand, und der Bedarf bleibt falsch. Auf dem Weg über die Nachbestellung ist der
 Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 
-**Nicht gebaut:** das Werk samt Migration, Gruppierung im Bedarf und Warnung in der Ausgabe.
-Ändert das Schema und rechnet die Nachbestell-Liste anders. Das geht in Stufen mit Nachweis und
-erst nach deiner Freigabe.
+**Freigegeben am 23.09.2026, nicht gebaut:** das Werk samt Migration, Gruppierung im Bedarf
+und Warnung in der Ausgabe. Ändert das Schema und rechnet die Nachbestell-Liste anders — in
+Stufen mit Nachweis.
 
 ### 4.19 Frist fällt in die Ferien
 
@@ -275,7 +275,7 @@ den Kalender wie heute schon die Ferientabelle, ist aber nicht der meldende Weg.
 4. **Nur Datei, kein Adressfeld.** Eine URL, die der Server selbst abruft, wäre ein Abruf nach
    außen aus dem Schulnetz heraus — der Grund, aus dem schon die Ferientabelle im Programm steht.
 
-**Reihenfolge, wenn freigegeben:** (1) Kalender-Tabelle samt Übernahme der Sommerferien,
+**Freigegeben am 23.09.2026, in dieser Reihenfolge:** (1) Kalender-Tabelle samt Übernahme der Sommerferien,
 (2) iCal-Upload mit Vorschau (Ferien und Feiertage, Gegenprobe gegen die Rechnung), (3) Frist
 rechnet gegen den Kalender, (4) Mitrutschen bei Nachtrag, (5) Band an der Theke und Mail an die
 Leitung, wenn der Kalender ausläuft.
@@ -293,7 +293,7 @@ Die 15 bis 20 Wörter, die im Portal als Filter stehen, markiert die Pflegeseite
 Titel steht seit Migration 138; selbst gesetzt und änderbar sind dort die Grenzen: 30 Wörter je
 Titel, 80 Zeichen je Wort, Vorschlagsliste die 500 häufigsten.
 
-**Offen, in dieser Reihenfolge — jede Stufe mit Freigabe:**
+**Freigegeben am 23.09.2026, in dieser Reihenfolge:**
 
 1. **Pflegeseite** unter Einstellungen: alle Wörter mit Titelzahl, umbenennen und
    zusammenführen, löschen (Rückfrage nennt die Zahl der Titel), Verweise setzen,
@@ -328,13 +328,6 @@ eigenen Personensatz; das wäre ein eigener Umbau.
   Überweisung, und niemand an der Theke sieht ihn. Zu klären mit der Schule: Wer bucht eine
   Zahlung ein, die auf dem Kontoauszug steht? Keine Bauarbeit, bevor das beantwortet ist —
   eine erfundene Antwort steht sonst als Vorgang in der Akte.
-
-### 5.2 Bescheid — vor dem ersten echten Bescheid
-
-- Das Kassenjahr ist das Jahr der Frist (ein Dezember-Brief zählt ins Folgejahr).
-- `scripts/tabula_rasa.sql` leert `schadensersatz_nummern` nicht; die Bescheide fallen über
-  `TRUNCATE … schueler … CASCADE` mit. Nach Tabula rasa sind alle Bescheide weg, der Nummernkreis
-  läuft weiter. Vorher festlegen, ob genau das gewollt ist (Nummern nie recyceln).
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 
@@ -449,8 +442,9 @@ der Druck liefert eine leere Zeile. Soll Leeren dort eine neue Nummer ziehen sta
 
 ### 5.18 Klassen ohne Löschweg
 
-Aus der Schärfung von Frage 12 (16.09.2026) bleibt eine Beobachtung: Für `klassen` gibt es im
-ganzen Go-Code kein `DELETE` — eine vertippte Klasse steht ab dann in jeder Auswahlliste.
+Aus der Schärfung von Frage 12 (16.09.2026): Für `klassen` gibt es im ganzen Go-Code kein
+`DELETE` — eine vertippte Klasse steht ab dann in jeder Auswahlliste. **Entschieden am
+23.09.2026: Löschen wird möglich.**
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
@@ -485,7 +479,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 - **Zu 7.3:** Der zweite Ort muss kein S3 sein — ein zweiter Rechner per Kopierbefehl oder
   eine getauschte Platte tun dasselbe ohne Vertragsfrage. Eine Betriebsentscheidung.
 
-### 5.21 Palettenfarben auf M3-Rollen — Freigabe offen
+### 5.21 Palettenfarben auf M3-Rollen
 
 Stand 23.09.2026: 1471 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
@@ -494,7 +488,8 @@ Textgraustufen, M3 zwei Rollen, und für „in Ordnung" kennt M3 keine Farbe. Vo
 Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit, am gerenderten Bildschirm
 geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über ui/StatusChip, Cover
 über ui/BuchCover, Rückmeldung beim Zeigen über den State-Layer statt `hover:bg-*`, ein Fehler
-über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für den Rest fehlt die Freigabe.
+über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
+freigegeben am 23.09.2026.
 
 ---
 
@@ -678,7 +673,13 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 ### 8.1 E1: Schulamts- und Schulnummer
 
 Für die Referenznummer der Bescheide; die Felder stehen in den Einstellungen und sind am
-13.09.2026 leer. **Erst nach 5.2 eintragen:** Mit den Nummern entstehen echte Bescheide.
+13.09.2026 leer. Mit den Nummern entstehen echte Bescheide; was davor zu richten war (Frist,
+Nachdruck, Briefdatum), ist seit dem 23.09.2026 gebaut.
+
+**Beim Schulamt mitfragen — das Kassenjahr:** Das Programm nimmt das Jahr der Frist, ein
+Dezember-Brief mit Frist im Januar zählt also ins Folgejahr. Die Arbeitshilfe nennt das
+Kassenjahr als Teil der Referenznummer, sagt aber nicht, welches Jahr gemeint ist, und verweist
+„im Zweifelsfall" ans Schulamt. Die Nummer lässt sich nach dem Brief nicht mehr ändern.
 
 ### 8.2 E2: E-Mail-Erlass vom 11.06.2018 und aktuelles Musterschreiben
 
