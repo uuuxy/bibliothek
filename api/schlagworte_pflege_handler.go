@@ -14,8 +14,12 @@ import (
 // allgemeines PATCH — so trägt jede ihre Regel sichtbar mit.
 
 // SchlagwortWortRequest ist die neue Schreibweise für PUT /api/schlagworte/{id}/wort.
+// AlteAlsVerweis: ob die alte Schreibweise als Verweis stehen bleibt
+// (repository.BenenneSchlagwortUm). Pflicht wie ist_filter — ohne das Feld wäre die Vorgabe
+// je Tür eine andere (Zusammenführen ließ den Verweis immer stehen, Umbenennen nie).
 type SchlagwortWortRequest struct {
-	Wort string `json:"wort"`
+	Wort           string `json:"wort"`
+	AlteAlsVerweis *bool  `json:"alte_als_verweis"`
 }
 
 // SchlagwortFilterRequest setzt oder nimmt die Filter-Markierung. Zeiger: Ein Körper ohne
@@ -24,9 +28,11 @@ type SchlagwortFilterRequest struct {
 	IstFilter *bool `json:"ist_filter"`
 }
 
-// SchlagwortZielRequest nennt das Ziel eines Zusammenführens.
+// SchlagwortZielRequest nennt das Ziel eines Zusammenführens und, Pflicht wie beim
+// Umbenennen, ob das alte Wort als Verweis stehen bleibt.
 type SchlagwortZielRequest struct {
-	ZielID string `json:"ziel_id" validate:"required,uuid_oder_leer"`
+	ZielID         string `json:"ziel_id" validate:"required,uuid_oder_leer"`
+	AlteAlsVerweis *bool  `json:"alte_als_verweis"`
 }
 
 // SchlagwortVerweisRequest legt einen Verweis an: die Schreibweise und ihr Ziel.
@@ -85,11 +91,18 @@ func (s *Server) PutSchlagwortWortHandler() http.HandlerFunc {
 		if !DecodeAndValidate(w, r, &req) {
 			return nil
 		}
-		wort, err := repository.BenenneSchlagwortUm(r.Context(), s.DB.Pool, id, req.Wort)
+		if req.AlteAlsVerweis == nil {
+			return errAlteAlsVerweisFehlt()
+		}
+		wort, verweis, err := repository.BenenneSchlagwortUm(r.Context(), s.DB.Pool, id, req.Wort, *req.AlteAlsVerweis)
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
-		RespondJSON(w, http.StatusOK, SchlagwortAenderung{Wort: wort})
+		antwort := SchlagwortAenderung{Wort: wort}
+		if verweis {
+			antwort.Verweise = 1
+		}
+		RespondJSON(w, http.StatusOK, antwort)
 		return nil
 	})
 }
@@ -129,7 +142,7 @@ func (s *Server) PutSchlagwortFilterHandler() http.HandlerFunc {
 }
 
 // PostSchlagwortZusammenfuehrenHandler hängt die Titel des Wortes an das Ziel und macht
-// das Wort zum Verweis darauf.
+// das Wort zum Verweis darauf oder löscht es (alte_als_verweis).
 //
 // @Summary      Merge a keyword into another
 // @Tags         books
@@ -152,7 +165,10 @@ func (s *Server) PostSchlagwortZusammenfuehrenHandler() http.HandlerFunc {
 		if !DecodeAndValidate(w, r, &req) {
 			return nil
 		}
-		titel, err := repository.FuehreSchlagworteZusammen(r.Context(), s.DB.Pool, id, req.ZielID)
+		if req.AlteAlsVerweis == nil {
+			return errAlteAlsVerweisFehlt()
+		}
+		titel, err := repository.FuehreSchlagworteZusammen(r.Context(), s.DB.Pool, id, req.ZielID, *req.AlteAlsVerweis)
 		if err != nil {
 			return schlagwortPflegeFehler(err)
 		}
@@ -211,6 +227,11 @@ func (s *Server) DeleteSchlagwortHandler() http.HandlerFunc {
 		RespondJSON(w, http.StatusOK, SchlagwortAenderung{Titel: titel, Verweise: verweise})
 		return nil
 	})
+}
+
+// errAlteAlsVerweisFehlt ist die Antwort auf einen Körper ohne alte_als_verweis.
+func errAlteAlsVerweisFehlt() error {
+	return apierrors.BadRequest("alte_als_verweis fehlt", errors.New("feld alte_als_verweis fehlt"))
 }
 
 // schlagwortIDAusPfad prüft die Kennung, bevor irgendetwas die Datenbank fragt.

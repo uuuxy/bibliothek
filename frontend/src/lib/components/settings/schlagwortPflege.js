@@ -1,7 +1,8 @@
 import { Pencil, Merge, CornerDownRight, Trash2 } from '@lucide/svelte';
 
-// Die zwei Regeln der Pflegeseite, die nicht im Server stehen, sondern in der Anzeige: was
-// das Menü einer Zeile anbietet und was die Löschen-Rückfrage sagt (SchlagworteKategorie).
+// Die Regeln der Pflegeseite, die nicht im Server stehen, sondern in der Anzeige: was das
+// Menü einer Zeile anbietet, was die Löschen-Rückfrage sagt, die Zählzeile
+// (SchlagworteKategorie) und was der Dialog zeigt (SchlagwortPflegeDialog).
 
 /** @typedef {{ id: string, wort: string, titel: number, verweis_auf_id?: string, verweis_auf?: string, verweise: string[], ist_filter: boolean }} SchlagwortZeile */
 
@@ -30,11 +31,67 @@ export function menueEintraege(z) {
 export function loeschFolgen(z) {
 	const folgen = z.verweis_auf_id
 		? `Wer „${z.wort}“ einträgt, landet danach nicht mehr bei „${z.verweis_auf}“.`
-		: `${z.titel} Titel verlieren das Schlagwort` +
+		: `${z.titel} Titel ${z.titel === 1 ? 'verliert' : 'verlieren'} das Schlagwort` +
 			(z.verweise.length === 1
 				? ', der Verweis darauf fällt mit.'
 				: z.verweise.length > 1
 					? `, ${z.verweise.length} Verweise darauf fallen mit.`
 					: '.');
 	return `${folgen} Das lässt sich nicht rückgängig machen.`;
+}
+
+/**
+ * Die Zählzeile über der Liste: Wörter und Verweise getrennt. Bis zum 23.09.2026 zählte
+ * „N Schlagworte" die Verweise mit (gesamt ist jede Zeile der Tabelle schlagworte).
+ * @param {{ gesamt: number, verweise: number }} liste
+ * @param {number} filter - wie viele Wörter als Filter markiert sind
+ */
+export function zaehlSatz(liste, filter) {
+	const woerter = liste.gesamt - liste.verweise;
+	const teile = [`${woerter} ${woerter === 1 ? 'Schlagwort' : 'Schlagworte'}`];
+	if (liste.verweise > 0)
+		teile.push(`${liste.verweise} ${liste.verweise === 1 ? 'Verweis' : 'Verweise'}`);
+	teile.push(`${filter} als Filter im Portal`);
+	return teile.join(' · ');
+}
+
+/**
+ * Bietet der Dialog „als Verweis behalten" an? Beim Zusammenführen immer, beim Umbenennen an
+ * jedem Wort, nicht an einem Verweis: Eine weitere Schreibweise legt „Verweis anlegen" am
+ * Ziel an (repository.BenenneSchlagwortUm lehnt es ab). Das Kästchen steht vom Öffnen an da,
+ * nicht erst beim Tippen, damit der Dialog nicht springt; ändert sich nur die Groß- und
+ * Kleinschreibung, bewirkt es nichts — das bleibt dasselbe Wort, und die Meldung danach
+ * nennt keinen Verweis.
+ * @param {'umbenennen' | 'zusammenfuehren' | 'verweis'} art
+ * @param {SchlagwortZeile} z
+ */
+export function verweisWahl(art, z) {
+	if (art === 'zusammenfuehren') return true;
+	return art === 'umbenennen' && !z.verweis_auf_id;
+}
+
+/**
+ * Der Hinweis unter dem Eingabefeld des Dialogs.
+ * @param {'umbenennen' | 'zusammenfuehren' | 'verweis'} art
+ * @param {SchlagwortZeile} z
+ * @param {string} neu - die Eingabe, getrimmt
+ */
+export function dialogHinweis(art, z, neu) {
+	if (art === 'umbenennen') {
+		// Die neue Schreibweise ist ein Verweis auf dieses Wort: Der Server tauscht die beiden.
+		const eigener = z.verweise.find((v) => v.toLowerCase() === neu.toLowerCase());
+		if (eigener)
+			return `„${eigener}“ ist bisher ein Verweis auf „${z.wort}“ und wird zum Schlagwort.`;
+		if (z.titel === 1) return 'Der Titel trägt danach die neue Schreibweise.';
+		return z.titel > 1 ? `Alle ${z.titel} Titel tragen danach die neue Schreibweise.` : '';
+	}
+	if (art === 'zusammenfuehren') {
+		if (z.titel === 0) return '';
+		const titel =
+			z.titel === 1
+				? 'Der Titel bekommt das gewählte Wort.'
+				: `Die ${z.titel} Titel bekommen das gewählte Wort.`;
+		return `${titel} Das lässt sich nicht rückgängig machen.`;
+	}
+	return `Wer diese Schreibweise am Titel einträgt, bekommt „${z.wort}“. Trägt sie schon Titel, werden sie umgestellt.`;
 }

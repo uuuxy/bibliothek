@@ -49,17 +49,20 @@ type SchlagwortPflegeZeile struct {
 }
 
 // SchlagwortPflegeListe ist die Antwort der Pflegeseite: die Zeilen alphabetisch und die
-// Gesamtzahl — liegt sie über der Kappung, sagt die Seite das.
+// Gesamtzahl — liegt sie über der Kappung, sagt die Seite das. Gesamt zählt jede Zeile,
+// Verweise die Zeilen, die Verweise sind; die Wörter sind die Differenz.
 type SchlagwortPflegeListe struct {
-	Zeilen []SchlagwortPflegeZeile `json:"zeilen"`
-	Gesamt int                     `json:"gesamt"`
+	Zeilen   []SchlagwortPflegeZeile `json:"zeilen"`
+	Gesamt   int                     `json:"gesamt"`
+	Verweise int                     `json:"verweise"`
 }
 
 // SchlagworteZurPflege liefert alle Schlagworte mit Titelzahl, Verweisziel und den
 // Verweisen darauf, alphabetisch.
 func SchlagworteZurPflege(ctx context.Context, q DBQueryer) (SchlagwortPflegeListe, error) {
 	liste := SchlagwortPflegeListe{Zeilen: []SchlagwortPflegeZeile{}}
-	if err := q.QueryRow(ctx, `SELECT count(*)::int FROM schlagworte`).Scan(&liste.Gesamt); err != nil {
+	if err := q.QueryRow(ctx, `SELECT count(*)::int, count(verweis_auf)::int FROM schlagworte`).
+		Scan(&liste.Gesamt, &liste.Verweise); err != nil {
 		return liste, fmt.Errorf("schlagworte zählen: %w", err)
 	}
 	rows, err := q.Query(ctx, `
@@ -135,53 +138,102 @@ func regelFehler(err error, was string) error {
 // neue. Gibt es das neue Wort schon (ohne Rücksicht auf Groß- und Kleinschreibung) als
 // ANDERES Schlagwort, ist das ein Zusammenführen und wird abgelehnt (ErrSchlagwortGibtEs) —
 // die Pflegeseite fragt dann nach. Nur die Schreibweise zu ändern („fantasy" → „Fantasy")
-// geht.
-func BenenneSchlagwortUm(ctx context.Context, q DBQueryer, id, neu string) (string, error) {
+// geht. Ist die neue Schreibweise ein Verweis auf eben dieses Wort, tauschen die beiden:
+// „Krimi" mit dem Verweis „Kriminalroman" wird „Kriminalroman", der Verweis geht im Wort
+// auf. Vorher lehnte die Tür das ab und riet zum Zusammenführen — das scheitert an einem
+// eigenen Verweis („nicht mit sich selbst").
+//
+// alteAlsVerweis lässt die alte Schreibweise als Verweis auf das Wort stehen, wie beim
+// Zusammenführen (entschieden am 23.09.2026, docs/OFFEN.md 4.20). Das hält eine Maske
+// richtig, die beim Umbenennen offen war: Buchformular und Bestellkorb schicken beim
+// Speichern die Menge zurück, die sie beim Öffnen gelesen haben, und die alte Schreibweise
+// löst sich dann zum Wort auf. Ohne Verweis — so macht es Littera — legt ein solches
+// Speichern die alte Schreibweise wieder an. Liefert die gespeicherte Schreibweise und ob ein
+// Verweis entstanden ist.
+//
+// Ein Verweis selbst lässt sich nur ohne alteAlsVerweis umbenennen (ErrSchlagwortRegel, mit
+// dem Weg im Satz): Seine alte Schreibweise müsste auf sein Ziel zeigen, und dafür bräuchte
+// die Tür nach dem Verweis noch das Ziel — die umgekehrte Reihenfolge des Zusammenführens,
+// das erst das Ziel sperrt und dann seine Verweise umhängt. Eine weitere Schreibweise legt
+// „Verweis anlegen" am Ziel an.
+func BenenneSchlagwortUm(ctx context.Context, q DBQueryer, id, neu string, alteAlsVerweis bool) (string, bool, error) {
 	wort, err := einWort(neu)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	tx, err := q.Begin(ctx)
 	if err != nil {
-		return "", fmt.Errorf("umbenennen: transaktion öffnen: %w", err)
+		return "", false, fmt.Errorf("umbenennen: transaktion öffnen: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	if _, err := sperreSchlagwort(ctx, tx, id); err != nil {
-		return "", err
+	alt, err := sperreSchlagwort(ctx, tx, id)
+	if err != nil {
+		return "", false, err
 	}
-	var anderes string
-	err = tx.QueryRow(ctx,
-		`SELECT wort FROM schlagworte WHERE lower(wort) = lower($1) AND id <> $2`, wort, id).Scan(&anderes)
-	if err == nil {
-		return "", fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
+	if alteAlsVerweis && alt.verweisAuf != nil {
+		return "", false, fmt.Errorf("%w: „%s“ ist ein Verweis — eine weitere Schreibweise legt „Verweis anlegen“ am Ziel an",
+			ErrSchlagwortRegel, alt.wort)
 	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return "", fmt.Errorf("umbenennen: vorhandenes wort suchen: %w", err)
+	var anderesID, anderes string
+	var anderesZiel *string
+	err = tx.QueryRow(ctx, `SELECT id::text, wort, verweis_auf::text FROM schlagworte
+		WHERE lower(wort) = lower($1) AND id <> $2`, wort, id).Scan(&anderesID, &anderes, &anderesZiel)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		return "", false, fmt.Errorf("umbenennen: vorhandenes wort suchen: %w", err)
+	case anderesZiel != nil && *anderesZiel == id:
+		// Der eigene Verweis geht im Wort auf. Ohne Sperre gelesen, damit die Tür nur Zeilen
+		// sperrt, die sie ändert. Hat ihn inzwischen jemand umgehängt oder gelöscht, trifft
+		// das DELETE keine Zeile; die Tür meldet dann „gibt es schon", und ein zweiter Versuch
+		// sieht den neuen Stand.
+		tag, err := tx.Exec(ctx, `DELETE FROM schlagworte WHERE id = $1 AND verweis_auf = $2`, anderesID, id)
+		if err != nil {
+			return "", false, fmt.Errorf("umbenennen: eigenen verweis auflösen: %w", err)
+		}
+		if tag.RowsAffected() != 1 {
+			return "", false, fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
+		}
+	default:
+		return "", false, fmt.Errorf("%w: „%s“", ErrSchlagwortGibtEs, anderes)
 	}
 	tag, err := tx.Exec(ctx, `UPDATE schlagworte SET wort = $2 WHERE id = $1`, id, wort)
 	if err != nil {
-		return "", fmt.Errorf("umbenennen: %w", err)
+		return "", false, fmt.Errorf("umbenennen: %w", err)
 	}
 	if tag.RowsAffected() != 1 {
-		return "", ErrSchlagwortNichtGefunden
+		return "", false, ErrSchlagwortNichtGefunden
+	}
+	verweis := false
+	if alteAlsVerweis {
+		// Der Konflikt auf lower(wort) ist genau der Fall „nur die Groß- und Kleinschreibung
+		// geändert": Dann ist die alte Schreibweise dasselbe Wort, ein Verweis wäre keiner.
+		tag, err := tx.Exec(ctx, `
+			INSERT INTO schlagworte (wort, verweis_auf) VALUES ($1, $2)
+			ON CONFLICT (lower(wort)) DO NOTHING`, alt.wort, id)
+		if err != nil {
+			return "", false, regelFehler(err, "umbenennen: alte schreibweise als verweis")
+		}
+		verweis = tag.RowsAffected() == 1
 	}
 	if err := tx.Commit(ctx); err != nil {
-		return "", fmt.Errorf("umbenennen: commit: %w", err)
+		return "", false, fmt.Errorf("umbenennen: commit: %w", err)
 	}
-	return wort, nil
+	return wort, verweis, nil
 }
 
-// FuehreSchlagworteZusammen hängt die Titel von „von" an „in" und macht „von" zum Verweis
-// auf „in": Wer das alte Wort gewohnt ist, landet weiter richtig. Verweise auf „von" zeigen
-// danach auf „in", eine Filter-Markierung geht auf „in" über. Ist „in" selbst ein Verweis,
-// gilt sein Ziel. Liefert die Zahl der Titel, die „von" trug.
-func FuehreSchlagworteZusammen(ctx context.Context, q DBQueryer, vonID, inID string) (int, error) {
+// FuehreSchlagworteZusammen hängt die Titel von „von" an „in". Mit alteAlsVerweis wird „von"
+// zum Verweis auf „in" — wer das alte Wort gewohnt ist, landet weiter richtig —, sonst fällt
+// es weg, wie in Littera. Verweise auf „von" zeigen danach auf „in", eine Filter-Markierung
+// geht auf „in" über. Ist „in" selbst ein Verweis, gilt sein Ziel. Liefert die Zahl der
+// Titel, die „von" trug.
+func FuehreSchlagworteZusammen(ctx context.Context, q DBQueryer, vonID, inID string, alteAlsVerweis bool) (int, error) {
 	tx, err := q.Begin(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("zusammenführen: transaktion öffnen: %w", err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	titel, err := fuehreZusammenIn(ctx, tx, vonID, inID)
+	titel, err := fuehreZusammenIn(ctx, tx, vonID, inID, alteAlsVerweis)
 	if err != nil {
 		return 0, err
 	}
@@ -192,7 +244,7 @@ func FuehreSchlagworteZusammen(ctx context.Context, q DBQueryer, vonID, inID str
 }
 
 // fuehreZusammenIn ist das Zusammenführen innerhalb einer laufenden Transaktion.
-func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string) (int, error) {
+func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string, alteAlsVerweis bool) (int, error) {
 	// In fester Reihenfolge sperren, damit zwei gegenläufige Aufrufe nicht verklemmen.
 	erste, zweite := vonID, inID
 	if zweite < erste {
@@ -224,11 +276,17 @@ func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string) (int, 
 		return 0, fmt.Errorf("zusammenführen: titel zählen: %w", err)
 	}
 	// Die Reihenfolge ist die Regel der Trigger: erst Titel und Verweise von „von"
-	// wegnehmen, dann wird „von" selbst zum Verweis.
-	schritte := []struct {
+	// wegnehmen, dann wird „von" selbst zum Verweis (oder fällt weg).
+	type zusammenSchritt struct {
 		was, sql string
 		args     []any
-	}{
+	}
+	letzter := zusammenSchritt{"zum verweis machen", `UPDATE schlagworte SET verweis_auf = $2, ist_filter = false WHERE id = $1`,
+		[]any{von.id, ziel.id}}
+	if !alteAlsVerweis {
+		letzter = zusammenSchritt{"altes wort löschen", `DELETE FROM schlagworte WHERE id = $1`, []any{von.id}}
+	}
+	schritte := []zusammenSchritt{
 		{"titel umhängen", `INSERT INTO titel_schlagworte (titel_id, schlagwort_id)
 			SELECT titel_id, $2 FROM titel_schlagworte WHERE schlagwort_id = $1 ON CONFLICT DO NOTHING`,
 			[]any{von.id, ziel.id}},
@@ -236,8 +294,7 @@ func fuehreZusammenIn(ctx context.Context, tx pgx.Tx, vonID, inID string) (int, 
 		{"verweise umhängen", `UPDATE schlagworte SET verweis_auf = $2 WHERE verweis_auf = $1`,
 			[]any{von.id, ziel.id}},
 		{"filter übernehmen", `UPDATE schlagworte SET ist_filter = true WHERE id = $1`, nil},
-		{"zum verweis machen", `UPDATE schlagworte SET verweis_auf = $2, ist_filter = false WHERE id = $1`,
-			[]any{von.id, ziel.id}},
+		letzter,
 	}
 	for _, schritt := range schritte {
 		if schritt.args == nil {
@@ -320,7 +377,7 @@ func SetzeSchlagwortVerweis(ctx context.Context, q DBQueryer, roh, zielID string
 	case err != nil:
 		return fmt.Errorf("verweis: vorhandenes wort suchen: %w", err)
 	default:
-		if _, err := fuehreZusammenIn(ctx, tx, vorhandenID, zielID); err != nil {
+		if _, err := fuehreZusammenIn(ctx, tx, vorhandenID, zielID, true); err != nil {
 			return err
 		}
 	}

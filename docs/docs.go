@@ -4495,6 +4495,9 @@ const docTemplate = `{
         "api.SchlagwortWortRequest": {
             "type": "object",
             "properties": {
+                "alte_als_verweis": {
+                    "type": "boolean"
+                },
                 "wort": {
                     "type": "string"
                 }
@@ -4506,6 +4509,9 @@ const docTemplate = `{
                 "ziel_id"
             ],
             "properties": {
+                "alte_als_verweis": {
+                    "type": "boolean"
+                },
                 "ziel_id": {
                     "type": "string"
                 }
@@ -5536,6 +5542,9 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "gesamt": {
+                    "type": "integer"
+                },
+                "verweise": {
                     "type": "integer"
                 },
                 "zeilen": {

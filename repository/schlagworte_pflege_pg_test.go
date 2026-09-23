@@ -86,7 +86,7 @@ func TestSchlagwortPflege_ZusammenfuehrenMachtDasAlteWortZumVerweis(t *testing.T
 		t.Fatal(err)
 	}
 
-	titel, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], ids["Fantasy"])
+	titel, err := FuehreSchlagworteZusammen(ctx, pool, ids["Tierfantasy"], ids["Fantasy"], true)
 	if err != nil {
 		t.Fatalf("zusammenführen: %v", err)
 	}
@@ -121,7 +121,7 @@ func TestSchlagwortPflege_ZusammenfuehrenMachtDasAlteWortZumVerweis(t *testing.T
 		t.Errorf("getippter Verweis: %q, want [Fantasy]", got)
 	}
 
-	if _, err := FuehreSchlagworteZusammen(ctx, pool, ids["Fantasy"], ids["Tierfantasy"]); !errors.Is(err, ErrSchlagwortRegel) {
+	if _, err := FuehreSchlagworteZusammen(ctx, pool, ids["Fantasy"], ids["Tierfantasy"], true); !errors.Is(err, ErrSchlagwortRegel) {
 		t.Errorf("mit dem eigenen Verweis zusammenführen: %v, want ErrSchlagwortRegel", err)
 	}
 }
@@ -135,13 +135,13 @@ func TestSchlagwortPflege_UmbenennenLoeschenVerweisFilter(t *testing.T) {
 		"Krabat":    {"Magie"},
 	})
 
-	if neu, err := BenenneSchlagwortUm(ctx, pool, ids["gewalt"], "  Gewalt "); err != nil || neu != "Gewalt" {
-		t.Errorf("Schreibweise ändern: %q, %v", neu, err)
+	if neu, verweis, err := BenenneSchlagwortUm(ctx, pool, ids["gewalt"], "  Gewalt ", true); err != nil || neu != "Gewalt" || verweis {
+		t.Errorf("Schreibweise ändern: %q, verweis=%v, %v — want Gewalt ohne Verweis (dasselbe Wort)", neu, verweis, err)
 	}
-	if _, err := BenenneSchlagwortUm(ctx, pool, ids["Schule"], "magie"); !errors.Is(err, ErrSchlagwortGibtEs) {
+	if _, _, err := BenenneSchlagwortUm(ctx, pool, ids["Schule"], "magie", true); !errors.Is(err, ErrSchlagwortGibtEs) {
 		t.Errorf("umbenennen auf ein vorhandenes Wort: %v, want ErrSchlagwortGibtEs", err)
 	}
-	if _, err := BenenneSchlagwortUm(ctx, pool, "00000000-0000-0000-0000-000000000000", "X"); !errors.Is(err, ErrSchlagwortNichtGefunden) {
+	if _, _, err := BenenneSchlagwortUm(ctx, pool, "00000000-0000-0000-0000-000000000000", "X", true); !errors.Is(err, ErrSchlagwortNichtGefunden) {
 		t.Errorf("unbekanntes Wort: %v, want ErrSchlagwortNichtGefunden", err)
 	}
 
@@ -283,7 +283,7 @@ func TestSchlagwortPflege_GleichzeitigKeinTitelAmVerweis(t *testing.T) {
 		fertig <- err
 	}()
 	ueberschneidung(t, pool, pflege, fertig)
-	if _, err := fuehreZusammenIn(ctx, pflege, ids["Detektiv"], ids["Krimi"]); err != nil {
+	if _, err := fuehreZusammenIn(ctx, pflege, ids["Detektiv"], ids["Krimi"], true); err != nil {
 		t.Fatalf("zusammenführen: %v", err)
 	}
 	if err := pflege.Commit(ctx); err != nil {

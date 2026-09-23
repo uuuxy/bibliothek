@@ -55,10 +55,10 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 	}
 
 	if rec := ruf(srv.GetSchlagwortPflegeHandler(), http.MethodGet, "/api/schlagworte/pflege", "", ""); rec.Code != http.StatusOK ||
-		!strings.Contains(rec.Body.String(), `"gesamt":2`) {
+		!strings.Contains(rec.Body.String(), `"gesamt":2,"verweise":0`) {
 		t.Errorf("Liste: %d %s", rec.Code, rec.Body.String())
 	}
-	if rec := ruf(srv.PutSchlagwortWortHandler(), http.MethodPut, "", ids["Tierfantasy"], `{"wort":"fantasy"}`); rec.Code != http.StatusConflict ||
+	if rec := ruf(srv.PutSchlagwortWortHandler(), http.MethodPut, "", ids["Tierfantasy"], `{"wort":"fantasy","alte_als_verweis":true}`); rec.Code != http.StatusConflict ||
 		!strings.Contains(rec.Body.String(), "Zusammenführen") {
 		t.Errorf("umbenennen auf vorhandenes Wort: %d %s, want 409 mit Hinweis", rec.Code, rec.Body.String())
 	}
@@ -72,8 +72,23 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 		t.Errorf("Ziel keine UUID: %d, want 400", rec.Code)
 	}
 
-	rec := ruf(srv.PostSchlagwortZusammenfuehrenHandler(), http.MethodPost, "", ids["Tierfantasy"], `{"ziel_id":"`+ids["Fantasy"]+`"}`)
+	// alte_als_verweis ist Pflicht: Ohne das Feld wäre die Vorgabe je Tür eine andere.
+	if rec := ruf(srv.PutSchlagwortWortHandler(), http.MethodPut, "", ids["Fantasy"], `{"wort":"Fantasie"}`); rec.Code != http.StatusBadRequest ||
+		!strings.Contains(rec.Body.String(), "alte_als_verweis fehlt") {
+		t.Errorf("umbenennen ohne alte_als_verweis: %d %s, want 400", rec.Code, rec.Body.String())
+	}
+	if rec := ruf(srv.PostSchlagwortZusammenfuehrenHandler(), http.MethodPost, "", ids["Tierfantasy"], `{"ziel_id":"`+ids["Fantasy"]+`"}`); rec.Code != http.StatusBadRequest ||
+		!strings.Contains(rec.Body.String(), "alte_als_verweis fehlt") {
+		t.Errorf("zusammenführen ohne alte_als_verweis: %d %s, want 400", rec.Code, rec.Body.String())
+	}
+
 	var aenderung SchlagwortAenderung
+	rec := ruf(srv.PutSchlagwortWortHandler(), http.MethodPut, "", ids["Fantasy"], `{"wort":"Fantasie","alte_als_verweis":true}`)
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil || aenderung.Wort != "Fantasie" || aenderung.Verweise != 1 {
+		t.Fatalf("umbenennen mit Verweis: %d %s, want 200 mit wort=Fantasie, verweise=1", rec.Code, rec.Body.String())
+	}
+
+	rec = ruf(srv.PostSchlagwortZusammenfuehrenHandler(), http.MethodPost, "", ids["Tierfantasy"], `{"ziel_id":"`+ids["Fantasy"]+`","alte_als_verweis":true}`)
 	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil || aenderung.Titel != 1 {
 		t.Fatalf("zusammenführen: %d %s, want 200 mit titel=1", rec.Code, rec.Body.String())
 	}
@@ -82,8 +97,8 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 	}
 
 	rec = ruf(srv.DeleteSchlagwortHandler(), http.MethodDelete, "", ids["Fantasy"], "")
-	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil || aenderung.Titel != 1 || aenderung.Verweise != 1 {
-		t.Errorf("löschen: %d %s, want 200 mit titel=1, verweise=1", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK || json.Unmarshal(rec.Body.Bytes(), &aenderung) != nil || aenderung.Titel != 1 || aenderung.Verweise != 2 {
+		t.Errorf("löschen: %d %s, want 200 mit titel=1, verweise=2 (Fantasy vom Umbenennen, Tierfantasy vom Zusammenführen)", rec.Code, rec.Body.String())
 	}
 	if rec := ruf(srv.DeleteSchlagwortHandler(), http.MethodDelete, "", ids["Fantasy"], ""); rec.Code != http.StatusNotFound {
 		t.Errorf("zweites Löschen: %d, want 404", rec.Code)

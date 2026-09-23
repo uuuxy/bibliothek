@@ -10,6 +10,12 @@
 	 * Zusammenführen. Fehler des Servers (409 „gibt es schon", Regel verletzt) zeigt apiFetch als
 	 * Meldung mit seinem Satz; der Dialog bleibt dann offen.
 	 *
+	 * Umbenennen und Zusammenführen fragen mit einem Kästchen, ob die alte Schreibweise als
+	 * Verweis stehen bleibt (docs/OFFEN.md 4.20, entschieden am 23.09.2026), vorbelegt mit ja:
+	 * Das hält eine Maske richtig, die dabei offen war, und wer das alte Wort gewohnt ist,
+	 * landet weiter richtig. Abgewählt verschwindet es ganz, wie in Littera. Wann das Kästchen
+	 * erscheint und was der Hinweis sagt, steht in schlagwortPflege.js.
+	 *
 	 * @prop {{ art: 'umbenennen' | 'zusammenfuehren' | 'verweis', zeile: any } | null} auftrag
 	 * @prop {any[]} zeilen - alle geladenen Schlagworte, für Vorschläge und Ziel.
 	 * @prop {() => void} onclose
@@ -19,6 +25,8 @@
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import EingabeDialog from '../ui/EingabeDialog.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import Kaestchen from '../ui/Kaestchen.svelte';
+	import { verweisWahl, dialogHinweis } from './schlagwortPflege.js';
 
 	/** @type {{ auftrag: { art: 'umbenennen' | 'zusammenfuehren' | 'verweis', zeile: any } | null, zeilen: any[], onclose: () => void, onfertig: () => Promise<void> }} */
 	let { auftrag, zeilen, onclose, onfertig } = $props();
@@ -33,6 +41,9 @@
 
 	const wort = $derived(auftrag?.zeile.wort ?? '');
 	const neu = $derived(eingabe.trim());
+	// Jeder neue Auftrag beginnt mit „behalten"; die Wahl gilt, solange der Dialog offen ist.
+	let behalten = $derived(auftrag !== null);
+	const wahl = $derived(auftrag ? verweisWahl(auftrag.art, auftrag.zeile) : false);
 	const ziel = $derived(
 		auftrag?.art === 'zusammenfuehren'
 			? zeilen.find((z) => z.id !== auftrag.zeile.id && z.wort.toLowerCase() === neu.toLowerCase())
@@ -60,18 +71,7 @@
 		}[auftrag?.art ?? 'umbenennen']
 	);
 
-	const hinweis = $derived.by(() => {
-		if (!auftrag) return '';
-		const n = auftrag.zeile.titel;
-		if (auftrag.art === 'umbenennen')
-			return n > 0 ? `Alle ${n} Titel tragen danach die neue Schreibweise.` : '';
-		if (auftrag.art === 'zusammenfuehren')
-			return (
-				(n > 0 ? `Die ${n} Titel bekommen das gewählte Wort; ` : '') +
-				`„${wort}“ bleibt als Verweis darauf.`
-			);
-		return `Wer diese Schreibweise am Titel einträgt, bekommt „${wort}“. Trägt sie schon Titel, werden sie umgestellt.`;
-	});
+	const hinweis = $derived(auftrag ? dialogHinweis(auftrag.art, auftrag.zeile, neu) : '');
 
 	async function ausfuehren() {
 		if (!auftrag || !gueltig) return;
@@ -79,14 +79,19 @@
 		laeuft = true;
 		try {
 			if (art === 'umbenennen') {
-				const r = await apiPut(`/api/schlagworte/${zeile.id}/wort`, { wort: neu });
-				toastStore.addToast(`Umbenannt in „${r?.wort ?? neu}“.`, 'success');
+				const r = await apiPut(`/api/schlagworte/${zeile.id}/wort`, {
+					wort: neu,
+					alte_als_verweis: wahl && behalten
+				});
+				const rest = r?.verweise ? ` „${zeile.wort}“ bleibt als Verweis.` : '';
+				toastStore.addToast(`Umbenannt in „${r?.wort ?? neu}“.${rest}`, 'success');
 			} else if (art === 'zusammenfuehren' && ziel) {
 				const r = await apiPost(`/api/schlagworte/${zeile.id}/zusammenfuehren`, {
-					ziel_id: ziel.id
+					ziel_id: ziel.id,
+					alte_als_verweis: behalten
 				});
 				toastStore.addToast(
-					`Zusammengeführt: ${r?.titel ?? 0} Titel tragen jetzt „${ziel.wort}“.`,
+					`Zusammengeführt: ${r?.titel ?? 0} Titel ${r?.titel === 1 ? 'trägt' : 'tragen'} jetzt „${ziel.wort}“.`,
 					'success'
 				);
 			} else {
@@ -118,6 +123,9 @@
 		list={auftrag?.art === 'zusammenfuehren' ? listeId : undefined}
 		autocomplete="off"
 	/>
+	{#if wahl}
+		<Kaestchen bind:checked={behalten} label="„{wort}“ als Verweis behalten" />
+	{/if}
 	{#if auftrag?.art === 'zusammenfuehren'}
 		<datalist id={listeId}>
 			{#each zeilen.filter((z) => z.id !== auftrag?.zeile.id && !z.verweis_auf_id) as z (z.id)}

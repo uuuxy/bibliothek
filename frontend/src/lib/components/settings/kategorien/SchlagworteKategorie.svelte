@@ -18,7 +18,7 @@
 	import { loeschenBestaetigen } from '../../../stores/bestaetigung.svelte.js';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import SchlagwortPflegeDialog from '../SchlagwortPflegeDialog.svelte';
-	import { menueEintraege, loeschFolgen } from '../schlagwortPflege.js';
+	import { menueEintraege, loeschFolgen, zaehlSatz } from '../schlagwortPflege.js';
 	import Tabelle from '../../ui/Tabelle.svelte';
 	import Suchfeld from '../../ui/Suchfeld.svelte';
 	import Switch from '../../ui/Switch.svelte';
@@ -31,7 +31,9 @@
 	// Mehr Zeilen machen die Seite träge und helfen niemandem beim Suchen: Die Suche grenzt ein.
 	const ANZEIGE_MAX = 200;
 
-	let liste = $state(/** @type {{ zeilen: Zeile[], gesamt: number } | null} */ (null));
+	let liste = $state(
+		/** @type {{ zeilen: Zeile[], gesamt: number, verweise: number } | null} */ (null)
+	);
 	let ladeFehler = $state(false);
 	let suche = $state('');
 	let auftrag = $state(
@@ -48,12 +50,19 @@
 	});
 	const filterZahl = $derived(zeilen.filter((z) => z.ist_filter).length);
 
+	// Sequenznummer wie in useStudentProfile: Zwei schnell umgelegte Schalter laden die Liste
+	// zweimal, und kam die ältere Antwort zuletzt, zeigte ein Schalter den alten Stand.
+	let laufNr = 0;
+
 	async function laden() {
+		const meine = ++laufNr;
 		try {
-			liste = await apiGet('/api/schlagworte/pflege');
+			const antwort = await apiGet('/api/schlagworte/pflege');
+			if (meine !== laufNr) return; // eine jüngere Liste ist schon unterwegs oder da
+			liste = antwort;
 			ladeFehler = false;
 		} catch {
-			ladeFehler = true; // Meldung kam bereits aus apiGet.
+			if (meine === laufNr) ladeFehler = true; // Meldung kam bereits aus apiGet.
 		}
 	}
 	onMount(laden);
@@ -78,10 +87,13 @@
 
 	/** @param {Zeile} z @param {boolean} an */
 	async function setzeFilter(z, an) {
+		// Die Zeile zieht mit dem Schalter mit (die Zählung stimmt sofort) und springt bei einem
+		// Fehler zurück; das Neuladen danach bringt den gespeicherten Stand.
+		z.ist_filter = an;
 		try {
 			await apiPut(`/api/schlagworte/${z.id}/filter`, { ist_filter: an });
 		} catch {
-			// Meldung kam bereits aus apiPut; der Schalter zeigt wieder den gespeicherten Stand.
+			z.ist_filter = !an; // Meldung kam bereits aus apiPut.
 		}
 		await laden();
 	}
@@ -94,7 +106,8 @@
 	{#snippet mehr()}
 		<p>
 			Ein Verweis leitet eine Schreibweise auf ein Wort: Wer am Titel „Tierfantasy“ einträgt,
-			bekommt „Fantasy“. Beim Zusammenführen wird das alte Wort zum Verweis auf das neue.
+			bekommt „Fantasy“. Umbenennen und Zusammenführen lassen die alte Schreibweise als Verweis
+			stehen; wer das nicht will, wählt es im Dialog ab.
 		</p>
 		<p>Die als Filter markierten Wörter erscheinen im Portal mit dem nächsten Ausbau der Suche.</p>
 	{/snippet}
@@ -117,7 +130,7 @@
 					klasse="w-72"
 				/>
 				<p class="text-sm text-on-surface-variant">
-					{liste.gesamt} Schlagworte · {filterZahl} als Filter im Portal
+					{zaehlSatz(liste, filterZahl)}
 				</p>
 			</div>
 
@@ -174,7 +187,8 @@
 			{/if}
 			{#if liste.gesamt > zeilen.length}
 				<p class="text-sm text-on-surface-variant">
-					Geladen sind die ersten {zeilen.length} von {liste.gesamt} Schlagworten in alphabetischer Folge.
+					Geladen sind die ersten {zeilen.length} von {liste.gesamt} Einträgen (Schlagworte und Verweise)
+					in alphabetischer Folge.
 				</p>
 			{/if}
 		</div>
