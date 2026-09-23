@@ -89,20 +89,8 @@ und nimmt jede Scan-Form offline an, der Sync schickt an `POST /api/action/nachb
 nicht durchging, steht als Meldungsliste am Band. Wie sich das verhält, steht in
 [FACHKONZEPT.md](FACHKONZEPT.md) 18.4 und im [Handbuch](HANDBUCH.md).
 
-Zwei Dinge sind offen.
-
-**Der Nachweis (2.3).** Stufe 1 und 3 gehören von Hand in den echten Chrome, Stufe 2 über die
-Tür.
-
-**Der Server nimmt eine Nummer nur in der Schreibweise an, in der sie gespeichert ist.**
-`internal/service/omnibox_service.go` vergleicht die Vorsilben mit `strings.HasPrefix` gegen
-`"A-"`, `"S-"`, `"L-"`, `"B-"`, `"G-"`, und `GetLeserByBarcode` schlägt mit
-`WHERE barcode_id = $1` exakt nach. Die Theke vereinheitlicht seit dem 16.09.2026 selbst
-(`frontend/src/lib/scanEinordnen.js`, `normalisiereScan`) — nur wenn hinter der Vorsilbe eine
-Ziffer steht, sonst würde aus der Suche nach „s-bahn" ein Ausweis. Ein anderer Aufrufer
-(Skript, zweite Oberfläche, direkter Aufruf) läuft weiterhin ins Leere. Ob das am Server
-geheilt wird, ist zu entscheiden: Eine Suche über `upper(barcode_id)` nutzt den vorhandenen
-Index nicht mehr, und der hält die Eindeutigkeit der Ausweisnummern.
+Offen ist **der Nachweis (2.3):** Stufe 1 und 3 gehören von Hand in den echten Chrome, Stufe 2
+über die Tür.
 
 ### 2.3 Nachweis am Stack (je Stufe, echter Chrome)
 
@@ -531,6 +519,14 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
   nicht zwischen „kein Ping gekommen" und „der Tab selbst stand" (Standby, eingefrorener
   Hintergrund-Tab). Beim Aufwachen wäre der Herzschlag alt und das Band stünde bis zum nächsten
   Ping, höchstens 15 s. Nicht nachgestellt.
+- Schreibweise der Nummern (entschieden am 23.09.2026: am Server nichts bauen). Der Server
+  schlägt Nummern exakt nach (`GetLeserByBarcode`, `GetCopyByBarcode`); die Theke
+  vereinheitlicht vorher (`normalisiereScan`, nur mit Ziffer hinter der Vorsilbe) — beim
+  Buchen und in der Offline-Warteschlange. Roh fragt nur die Vorschau beim Tippen
+  (`/api/search`). Gemessen am Testserver am 23.09.2026: alle gespeicherten Vorsilben groß
+  (40 Leser, 4.130 Exemplare, keine klein). **Anlass zum Bauen:** ein zweiter Aufrufer, der
+  rohe Nummern schickt — dann die Eingabe am Server vereinheitlichen (nicht `upper(barcode_id)`,
+  das nimmt den Index), mit einer gemeinsamen Fall-Tabelle für Go und JS.
 - Die Sperrprüfung liest aus dem Pool, während die Checkout-Transaktion mit `FOR UPDATE` offen ist
   (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim Nachbuchen
   vieler Ausleihen (Abschnitt 2) beobachten.
