@@ -1179,6 +1179,9 @@ CREATE TABLE schadensersatz_bescheide (
     -- Anrede, Name und Anschrift zum Briefdatum: Der Nachdruck ergibt dasselbe Blatt wie
     -- das Original, auch nach einem Umzug.
     empfaenger_snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+    -- Die Angaben der Schule zum Briefdatum (Migration 141): Schulanschrift, Zeichen,
+    -- Bearbeiter, Zahlstelle, Bankverbindung, Aufsicht, Schulleitung. NULL = älter.
+    absender_snapshot   JSONB,
     status              TEXT NOT NULL DEFAULT 'offen'
         CONSTRAINT chk_bescheid_status CHECK (status IN ('offen', 'uebergeben', 'erledigt')),
     uebergeben_am       TIMESTAMPTZ,
@@ -1757,7 +1760,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('137_letzter_vorgang_am_leser.sql'),
 ('138_schlagworte.sql'),
 ('139_zugangsdatum_schulzeit.sql'),
-('140_isbn_altbestand_normalform.sql')
+('140_isbn_altbestand_normalform.sql'),
+('141_bescheid_absender_snapshot.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -38,8 +38,11 @@ type BescheidEingabe struct {
 	// Verluste: überfällige Bücher, die mit dem Brief als Verlust gebucht werden (Stufe 2,
 	// bescheid_verlust.go). Ihre Forderungen entstehen in derselben Transaktion und
 	// kommen zu den Positionen dazu.
-	Verluste    []BescheidVerlustEingabe
-	Snapshot    map[string]string
+	Verluste []BescheidVerlustEingabe
+	Snapshot map[string]string
+	// Absender: die Angaben der Schule zum Briefdatum (Migration 141) — Grundlage des
+	// Nachdrucks wie Snapshot für den Empfänger.
+	Absender    map[string]string
 	ErstelltVon string
 	// Referenznummer baut der Aufrufer aus der laufenden Nummer, die diese Schicht zieht
 	// (BescheidAngaben.Referenznummer) — das Format ist eine Sache der Einstellungen,
@@ -78,6 +81,7 @@ type BescheidRepository interface {
 	ZuSchueler(ctx context.Context, schuelerID string) ([]Bescheid, error)
 	Lies(ctx context.Context, id string) (*Bescheid, error)
 	Snapshot(ctx context.Context, id string) (map[string]string, error)
+	AbsenderSnapshot(ctx context.Context, id string) (map[string]string, error)
 	Positionen(ctx context.Context, id string) ([]BescheidBriefPosition, error)
 	DruckVermerken(ctx context.Context, id string) error
 	Uebergebe(ctx context.Context, id string) error
@@ -138,6 +142,17 @@ func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) 
 	if err != nil {
 		return nil, fmt.Errorf("empfänger-snapshot: %w", err)
 	}
+	// Ohne Absender bleibt die Spalte NULL (wie bei Bescheiden vor Migration 141), nicht
+	// das JSON-Wort null.
+	var absender *string
+	if len(e.Absender) > 0 {
+		roh, err := json.Marshal(e.Absender)
+		if err != nil {
+			return nil, fmt.Errorf("absender-snapshot: %w", err)
+		}
+		text := string(roh)
+		absender = &text
+	}
 
 	var summe float64
 	for _, p := range e.Positionen {
@@ -151,12 +166,12 @@ func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) 
 	err = tx.QueryRow(ctx, `
 		INSERT INTO schadensersatz_bescheide
 			(schueler_id, mittel, kassenjahr, laufende_nr, referenznummer, frist_bis,
-			 gesamtbetrag, empfaenger_snapshot, erstellt_von)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, NULLIF($9, '')::uuid)
+			 gesamtbetrag, empfaenger_snapshot, erstellt_von, absender_snapshot)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, NULLIF($9, '')::uuid, $10::jsonb)
 		RETURNING id, referenznummer, kassenjahr, laufende_nr, brief_datum, frist_bis,
 		          gesamtbetrag, status`,
 		e.SchuelerID, e.Mittel, e.Kassenjahr, laufendeNr, e.Referenznummer(laufendeNr),
-		e.FristBis, summe, string(snapshot), e.ErstelltVon,
+		e.FristBis, summe, string(snapshot), e.ErstelltVon, absender,
 	).Scan(&b.ID, &b.Referenznummer, &b.Kassenjahr, &b.LaufendeNr, &b.BriefDatum,
 		&b.FristBis, &b.Gesamtbetrag, &b.Status)
 	if err != nil {
@@ -359,6 +374,25 @@ func (r *pgBescheidRepository) Snapshot(ctx context.Context, id string) (map[str
 	out := map[string]string{}
 	if err := json.Unmarshal(roh, &out); err != nil {
 		return nil, fmt.Errorf("empfänger-snapshot lesen: %w", err)
+	}
+	return out, nil
+}
+
+// AbsenderSnapshot liest die Angaben der Schule zum Briefdatum (Migration 141). Bescheide
+// von vorher haben keinen; dann ist die Karte leer, und der Nachdruck nimmt die
+// Einstellungen von heute.
+func (r *pgBescheidRepository) AbsenderSnapshot(ctx context.Context, id string) (map[string]string, error) {
+	var roh []byte
+	if err := r.db.QueryRow(ctx,
+		`SELECT absender_snapshot FROM schadensersatz_bescheide WHERE id = $1`, id).Scan(&roh); err != nil {
+		return nil, err
+	}
+	out := map[string]string{}
+	if roh == nil {
+		return out, nil
+	}
+	if err := json.Unmarshal(roh, &out); err != nil {
+		return nil, fmt.Errorf("absender-snapshot lesen: %w", err)
 	}
 	return out, nil
 }

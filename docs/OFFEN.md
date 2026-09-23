@@ -33,10 +33,11 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen 139 und 140). Das
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen 139 bis 141). Das
 passiert beim Start von allein; Daten gehen nicht verloren. 139 ändert nur die Vorgabe des
 Zugangsdatums neuer Exemplare auf den Kalendertag der Schule; 140 schreibt ISBNs aus der Zeit
-vor Migration 133 in die Normalform (am Testserver eine Zeile).
+vor Migration 133 in die Normalform (am Testserver eine Zeile); 141 gibt dem Bescheid eine
+leere Spalte für die Angaben der Schule.
 
 **Im Code, in dieser Reihenfolge:**
 
@@ -331,9 +332,6 @@ eigenen Personensatz; das wäre ein eigener Umbau.
 ### 5.2 Bescheid — vor dem ersten echten Bescheid
 
 - Das Kassenjahr ist das Jahr der Frist (ein Dezember-Brief zählt ins Folgejahr).
-- Der Nachdruck liest Bank, Aufsicht, Schulanschrift, Geschäftszeichen und Schulleitung live aus
-  den Einstellungen; das Gate `TestBescheidNachdruck_BleibtDerselbeBrief` ändert nur die
-  Schüleranschrift. Ein Schnappschuss ist eine Schema-Erweiterung.
 - `scripts/tabula_rasa.sql` leert `schadensersatz_nummern` nicht; die Bescheide fallen über
   `TRUNCATE … schueler … CASCADE` mit. Nach Tabula rasa sind alle Bescheide weg, der Nummernkreis
   läuft weiter. Vorher festlegen, ob genau das gewollt ist (Nummern nie recyceln).

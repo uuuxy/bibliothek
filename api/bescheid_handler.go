@@ -11,7 +11,6 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/auth"
-	"bibliothek/pdf"
 	"bibliothek/pkg/ersatzwert"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -327,6 +326,7 @@ func (s *Server) BescheidErstellenHandler(bescheidRepo repository.BescheidReposi
 			Kassenjahr:     frist.Year(),
 			FristBis:       frist,
 			Snapshot:       snapshot,
+			Absender:       bescheidAbsenderAus(angaben, schule),
 			ErstelltVon:    bescheidAkteur(ctx),
 			Referenznummer: func(nr int) string { return angaben.Referenznummer(frist.Year(), nr) },
 		}
@@ -519,27 +519,34 @@ func (s *Server) bescheidBrief(ctx context.Context, bescheidRepo repository.Besc
 	if err != nil {
 		return BescheidBrief{}, nil, apierrors.Internal("Positionen konnten nicht gelesen werden", err)
 	}
-	angaben, schule, err := s.bescheidAngaben(ctx)
+	// Die Angaben der Schule, wie sie im Brief standen (Migration 141). Ein Bescheid von
+	// vorher hat keinen Schnappschuss; für ihn gelten die Einstellungen von heute.
+	absender, err := bescheidRepo.AbsenderSnapshot(ctx, id)
 	if err != nil {
-		return BescheidBrief{}, nil, apierrors.Internal("Einstellungen konnten nicht gelesen werden", err)
+		return BescheidBrief{}, nil, apierrors.Internal("Angaben der Schule konnten nicht gelesen werden", err)
+	}
+	if len(absender) == 0 {
+		angaben, schule, err := s.bescheidAngaben(ctx)
+		if err != nil {
+			return BescheidBrief{}, nil, apierrors.Internal("Einstellungen konnten nicht gelesen werden", err)
+		}
+		absender = bescheidAbsenderAus(angaben, schule)
 	}
 
 	brief := BescheidBrief{
-		Schule: pdf.SchuleInfo{
-			Name: schule.Name, Strasse: schule.Strasse, PLZ: schule.PLZ, Ort: schule.Ort,
-		},
+		Schule:            bescheidSchuleAus(absender),
 		Empfaenger:        bescheidEmpfaengerAus(snapshot),
-		Geschaeftszeichen: angaben.Geschaeftszeichen,
-		Bearbeiter:        angaben.Bearbeiter,
-		Durchwahl:         angaben.Durchwahl,
+		Geschaeftszeichen: absender["geschaeftszeichen"],
+		Bearbeiter:        absender["bearbeiter"],
+		Durchwahl:         absender["durchwahl"],
 		BriefDatum:        bescheid.BriefDatum,
 		FristBis:          bescheid.FristBis,
 		Gesamtbetrag:      bescheid.Gesamtbetrag,
-		Zahlstelle:        angaben.Zahlstelle,
-		Bankverbindung:    angaben.Bankverbindung,
+		Zahlstelle:        absender["zahlstelle"],
+		Bankverbindung:    absender["bankverbindung"],
 		Referenznummer:    bescheid.Referenznummer,
-		Aufsicht:          angaben.Aufsicht,
-		Schulleitung:      angaben.Schulleitung,
+		Aufsicht:          absender["aufsicht"],
+		Schulleitung:      absender["schulleitung"],
 	}
 	name := brief.Empfaenger.Name
 	for _, p := range positionen {
