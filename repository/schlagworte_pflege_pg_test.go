@@ -5,7 +5,11 @@ import (
 	"errors"
 	"slices"
 	"testing"
+	"time"
 
+	"bibliothek/db"
+
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -204,5 +208,140 @@ func TestSchlagwortPflege_DatenbankHaeltDieRegeln(t *testing.T) {
 		if _, err := pool.Exec(ctx, sql); err == nil {
 			t.Errorf("%s: die Datenbank hat es angenommen", name)
 		}
+	}
+}
+
+// titelAnVerweisen zählt Titel, die an einem Verweis hängen — das verbietet Migration 143.
+func titelAnVerweisen(t *testing.T, pool *pgxpool.Pool) int {
+	t.Helper()
+	var n int
+	if err := pool.QueryRow(context.Background(), `
+		SELECT count(*)::int FROM titel_schlagworte ts
+		JOIN schlagworte s ON s.id = ts.schlagwort_id
+		WHERE s.verweis_auf IS NOT NULL`).Scan(&n); err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+// ueberschneidung wartet, bis der nebenläufige Schreiber entweder fertig ist oder von der
+// Transaktion `sperrer` blockiert wird — erst danach darf der Test sie committen. Beides kann
+// richtig sein: Vor Migration 144 kam ein Schreiber teils sofort durch (die Fremdschlüssel-
+// Prüfung verträgt sich mit einer offenen Änderung), seit 144 wartet er. Gefragt wird nach
+// genau diesem Sperrer (pg_blocking_pids), nicht nach irgendeiner wartenden Sitzung:
+// internal/pgtest hält eine Sitzungssperre, auf die in der vollen Suite andere Testpakete
+// warten. `fertig` muss gepuffert sein; sein Wert bleibt für den Test im Kanal.
+func ueberschneidung(t *testing.T, pool *pgxpool.Pool, sperrer pgx.Tx, fertig chan error) {
+	t.Helper()
+	ctx := context.Background()
+	var pid int
+	if err := sperrer.QueryRow(ctx, `SELECT pg_backend_pid()`).Scan(&pid); err != nil {
+		t.Fatal(err)
+	}
+	for range 100 {
+		if len(fertig) > 0 {
+			return
+		}
+		var n int
+		if err := pool.QueryRow(ctx, `
+			SELECT count(*)::int FROM pg_stat_activity WHERE $1 = ANY (pg_blocking_pids(pid))`, pid).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		if n > 0 {
+			return
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	t.Fatal("der nebenläufige Schreiber ist weder fertig, noch wartet er auf die Transaktion des Tests")
+}
+
+// Rasterdurchgang 23.09.2026, V1: Das Zusammenführen hat „Detektiv" gesperrt, aber noch nicht
+// zum Verweis gemacht, als das Buchformular einen Titel daran hängt. Vor Migration 144 kamen
+// beide Trigger durch — jeder sah die offene Änderung des anderen nicht —, und der Titel hing
+// danach an einem Verweis. Seit 144 wartet der Trigger am Titel, bis das Zusammenführen fertig
+// ist, und sieht dann den Verweis: Das Speichern bekommt die Ausnahme, ein zweites Speichern
+// löst den Verweis auf. Die Pflege läuft Schritt für Schritt in einer Transaktion des Tests,
+// damit die Überschneidung sicher entsteht.
+func TestSchlagwortPflege_GleichzeitigKeinTitelAmVerweis(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+	ids := pflegeStand(t, pool, map[string][]string{"Emil": {"Krimi"}, "Kalle": {"Detektiv"}})
+	neu := seedSchlagwortTitel(t, pool, "Die drei ???")
+
+	pflege, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.SafeRollback(ctx, pflege)
+	if _, err := sperreSchlagwort(ctx, pflege, ids["Detektiv"]); err != nil {
+		t.Fatal(err)
+	}
+	fertig := make(chan error, 1)
+	go func() {
+		_, err := SetzeSchlagworte(ctx, pool, neu, []string{"Detektiv"})
+		fertig <- err
+	}()
+	ueberschneidung(t, pool, pflege, fertig)
+	if _, err := fuehreZusammenIn(ctx, pflege, ids["Detektiv"], ids["Krimi"]); err != nil {
+		t.Fatalf("zusammenführen: %v", err)
+	}
+	if err := pflege.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-fertig; err == nil {
+		t.Error("das Speichern kam durch — erwartet war die Ausnahme des Triggers")
+	}
+	if n := titelAnVerweisen(t, pool); n != 0 {
+		t.Errorf("%d Titel hängen an einem Verweis; „Die drei ???“ trägt %v", n, woerterAm(t, pool, "Die drei ???"))
+	}
+
+	if _, err := SetzeSchlagworte(ctx, pool, neu, []string{"Detektiv"}); err != nil {
+		t.Fatalf("zweites Speichern: %v", err)
+	}
+	if got := woerterAm(t, pool, "Die drei ???"); !slices.Equal(got, []string{"Krimi"}) {
+		t.Errorf("nach dem zweiten Speichern trägt „Die drei ???“ %v, erwartet [Krimi]", got)
+	}
+}
+
+// Rasterdurchgang 23.09.2026, V3: Ein Verweis „Tierfantasy" → „Fantasy" entsteht, während
+// „Fantasy" selbst zum Verweis wird. Vor Migration 144 kamen beide durch — eine Kette. Rohes
+// SQL, weil die Go-Tür ihr Ziel ohnehin sperrt: geprüft wird die Zusage der Datenbank.
+func TestSchlagwortPflege_GleichzeitigKeineKette(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+	ids := pflegeStand(t, pool, map[string][]string{"Emil": {"Fantasy", "Abenteuer"}})
+	if _, err := pool.Exec(ctx, `DELETE FROM titel_schlagworte`); err != nil {
+		t.Fatal(err)
+	}
+	b, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.SafeRollback(ctx, b)
+	if _, err := b.Exec(ctx, `UPDATE schlagworte SET verweis_auf = $2 WHERE id = $1`,
+		ids["Fantasy"], ids["Abenteuer"]); err != nil {
+		t.Fatal(err)
+	}
+	fertig := make(chan error, 1)
+	go func() {
+		_, err := pool.Exec(ctx, `INSERT INTO schlagworte (wort, verweis_auf) VALUES ('Tierfantasy', $1)`, ids["Fantasy"])
+		fertig <- err
+	}()
+	ueberschneidung(t, pool, b, fertig)
+	if err := b.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-fertig; err == nil {
+		t.Error("der Verweis auf einen Verweis kam durch — erwartet war die Ausnahme des Triggers")
+	}
+	var ketten int
+	if err := pool.QueryRow(ctx, `SELECT count(*)::int FROM schlagworte v
+		JOIN schlagworte z ON z.id = v.verweis_auf WHERE z.verweis_auf IS NOT NULL`).Scan(&ketten); err != nil {
+		t.Fatal(err)
+	}
+	if ketten != 0 {
+		t.Errorf("%d Verweis(e) zeigen auf einen Verweis", ketten)
 	}
 }

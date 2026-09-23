@@ -602,11 +602,14 @@ CREATE TABLE titel_schlagworte (
 -- Gegenrichtung zum Primärschlüssel: „wie viele Titel tragen das Wort".
 CREATE INDEX idx_titel_schlagworte_schlagwort ON titel_schlagworte (schlagwort_id);
 
--- Migration 143: keine Kette von Verweisen, kein Titel an einem Verweis.
+-- Migration 143: keine Kette von Verweisen, kein Titel an einem Verweis. Migration 144: Jeder
+-- Trigger sperrt die geprüfte Zeile FOR SHARE, damit sich überschneidende Schreiber die Regel
+-- nicht gemeinsam umgehen (jeder sah die offene Änderung des anderen nicht).
 CREATE FUNCTION schlagwort_verweis_pruefen()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF NEW.verweis_auf IS NOT NULL THEN
+        PERFORM 1 FROM schlagworte WHERE id = NEW.verweis_auf FOR SHARE;
         IF EXISTS (SELECT 1 FROM schlagworte WHERE id = NEW.verweis_auf AND verweis_auf IS NOT NULL) THEN
             RAISE EXCEPTION 'schlagwort_verweis_kette: ein Verweis zeigt auf ein Schlagwort, nicht auf einen Verweis';
         END IF;
@@ -627,6 +630,7 @@ FOR EACH ROW EXECUTE FUNCTION schlagwort_verweis_pruefen();
 CREATE FUNCTION titel_schlagwort_kein_verweis()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
+    PERFORM 1 FROM schlagworte WHERE id = NEW.schlagwort_id FOR SHARE;
     IF EXISTS (SELECT 1 FROM schlagworte WHERE id = NEW.schlagwort_id AND verweis_auf IS NOT NULL) THEN
         RAISE EXCEPTION 'schlagwort_verweis_mit_titeln: ein Titel hängt am Ziel eines Verweises, nicht am Verweis';
     END IF;
@@ -1809,7 +1813,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('140_isbn_altbestand_normalform.sql'),
 ('141_bescheid_absender_snapshot.sql'),
 ('142_bescheid_briefdatum_schulzeit.sql'),
-('143_schlagworte_pflege.sql')
+('143_schlagworte_pflege.sql'),
+('144_schlagworte_verweis_sperre.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

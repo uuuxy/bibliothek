@@ -201,7 +201,7 @@ steht im Kopfkommentar der Datei.
 
 | Ratsche                                                       | Sieht nicht                                                                                                                                      |
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `db/migrations_schema_paritaet_pg_test.go`                    | Was in BEIDEN verglichenen Wegen fehlt (Laufzeit-DDL, Migration 104–106); RLS, Kommentare, Grants, Storage-Parameter.                            |
+| `db/migrations_schema_paritaet_pg_test.go`                    | Was in BEIDEN verglichenen Wegen fehlt (Laufzeit-DDL, Migration 104–106); RLS, Kommentare, Grants, Storage-Parameter; bei Funktionen seit 23.09.2026 Name und Körper, nicht Argumente und Eigenschaften (VOLATILE, SECURITY DEFINER). |
 | `db/migrations_drift_test.go`                                 | Nur Dateinamen gegen die Seed-Liste, nicht Inhalte.                                                                                              |
 | `repository/schema_gegenrichtung_pg_test.go`                  | Bewusst kein Urteil: ein CASCADE, der schon in der Liste steht und dessen Folge niemand behandelt, bleibt grün; 96 nullbare Spalten ausgenommen. |
 | `inventur/schema_paritaet_test.go`                            | Nur `UpdateBook`/`buecher_titel`; parst `schema.sql`, nicht die laufende DB.                                                                     |

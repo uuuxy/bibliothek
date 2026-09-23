@@ -46,7 +46,12 @@ var paritaetsAspekte = []struct{ name, query string }{
 	{"Index", `SELECT tablename || ' ' || indexdef FROM pg_indexes WHERE schemaname = 'public'`},
 	{"Trigger", `SELECT DISTINCT event_object_table || ' ' || trigger_name || ' ' || action_timing
 		FROM information_schema.triggers WHERE trigger_schema = 'public'`},
-	{"Funktion", `SELECT proname FROM pg_proc WHERE pronamespace = 'public'::regnamespace`},
+	// Mit dem Körper (md5 von prosrc), nicht nur dem Namen — seit 23.09.2026. Vorher sah das
+	// Gate nicht, ob eine Migration eine Trigger-Funktion anders ersetzt als schema.sql: Die
+	// Tests liefen gegen den frischen Körper, der Server bekäme den gewachsenen (Anlass:
+	// Migration 144, deren Schutz nur im Körper steht). Gemessen am selben Tag: alle Körper
+	// auf beiden Wegen byte-gleich; ein Kommentar im Körper zählt also mit.
+	{"Funktion", `SELECT proname || ' md5=' || md5(prosrc) FROM pg_proc WHERE pronamespace = 'public'::regnamespace`},
 	{"Enum-Wert", `SELECT t.typname || '=' || e.enumlabel FROM pg_type t
 		JOIN pg_enum e ON e.enumtypid = t.oid WHERE t.typnamespace = 'public'::regnamespace`},
 	{"Sequenz", `SELECT sequencename FROM pg_sequences WHERE schemaname = 'public'`},

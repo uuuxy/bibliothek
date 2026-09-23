@@ -26,7 +26,7 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
    ein), 5.16 (Ausweisnummer leeren),
    5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
    Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
-   10?).
+   10?), 4.20 (soll Umbenennen eines Schlagworts die alte Schreibweise als Verweis behalten?).
 4. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
@@ -309,6 +309,21 @@ steht seit dem 23.09.2026):
    Heute liest der Import sie, leitet das Fach ab und verwirft sie. Vorher messen, wie viele
    Titel welche tragen.
 
+**Frage aus dem Rasterdurchgang 23.09.2026:** Zusammenführen lässt das alte Wort als Verweis
+stehen, Umbenennen nicht. Buchformular und Bestellkorb schicken beim Speichern die ganze Menge
+zurück, die sie beim Öffnen gelesen haben. War eine Maske während des Umbenennens offen, legt ihr
+Speichern die alte Schreibweise neu an und nimmt dem Titel die neue (nachgestellt:
+`repository/raster_2309_schlagworte_pg_test.go`, mit `-tags raster` rot). Vorschlag: Umbenennen
+behält die alte Schreibweise als Verweis, wie beim Zusammenführen; eine reine Änderung der Groß-
+und Kleinschreibung braucht keinen. Nachteil: Ein Tippfehler bleibt als Verweis in der Liste,
+bis man ihn löscht.
+
+**Kleinigkeiten an der Pflegeseite, aus demselben Durchgang (als Nächstes):** (a) Zwei schnell
+nacheinander umgelegte Filter-Schalter laden die Liste zweimal; kommt die ältere Antwort zuletzt,
+zeigt ein Schalter den alten Stand. (b) Der Zusammenführen-Dialog sagt nicht, dass es sich nicht
+zurücknehmen lässt — welche Titel das alte Wort trugen, ist danach nicht mehr zu sehen. (c) Die
+Zahl „N Schlagworte" zählt die Verweise mit.
+
 Nicht geplant: Verweise für Autoren (Pseudonyme). Der Autor ist ein Textfeld am Titel, ohne
 eigenen Personensatz; das wäre ein eigener Umbau.
 
@@ -395,8 +410,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.10 Gates und Werkzeuge
 
-- Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT; die Schema-Parität
-  vergleicht Funktionen nur am Namen.
+- Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - **Wiedervorlage 17. November 2026: `GO-2026-6452` (excelize).** Am 16.09.2026 erschien eine
   Schwachstelle ohne heile Fassung — der Eintrag führt alle Versionen ab 0 und nennt keine

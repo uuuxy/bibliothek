@@ -338,6 +338,11 @@ var triggerBestand = []string{
 	// coalesce(verweis_auf, id) das Ziel an, fuehreZusammenIn löst erst Titel und Verweise und
 	// macht dann das Wort zum Verweis. Die Trigger sind der Rückhalt; regelFehler übersetzt
 	// ihre Ausnahme in 409 (TestSchlagwortPflege_DatenbankHaeltDieRegeln, am Rückbau rot).
+	// Migration 144, Rasterdurchgang 23.09.2026: Die Türen hielten es nur je für sich —
+	// überschnitten sich zwei, kamen beide durch (Titel am Verweis, Kette). Seither sperrt
+	// jeder Trigger die geprüfte Zeile FOR SHARE (TestSchlagwortPflege_Gleichzeitig…, am
+	// Rückbau rot). Wer zu spät kommt, bekommt die Ausnahme; beim Buchformular ist das ein
+	// einmaliges „buch konnte nicht aktualisiert werden", das zweite Speichern löst auf.
 	"trg_schlagwort_verweis_pruefen @ schlagworte",
 	"trg_titel_schlagwort_kein_verweis @ titel_schlagworte",
 	// Migration 112, befragt am 10.09.2026: Die Folge (Vormerkung zurück auf „wartend")
