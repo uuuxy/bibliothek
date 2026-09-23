@@ -575,8 +575,6 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
   `KlassenBuchKachel` im Portal). Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
 - 3.000 Titel ohne ISBN: `inventur.SucheTextDNB` nur mit Bestätigung durch einen Menschen
   verdrahten.
-- `scripts/backup.sh` exportiert die ganze `.env` — als einziger Punkt hier mit leichtem
-  Sicherheitsbezug zuerst.
 - `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
   Testprozesses; unter `TZ=Pacific/Midway` ist das der Vortag und der Zähler nennt 0. Kein
   Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen
