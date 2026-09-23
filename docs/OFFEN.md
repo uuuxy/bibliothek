@@ -13,23 +13,25 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ## Was jetzt dran ist
 
-**Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): Offen sind dort eine Frage (9.3 c)
-und die zwei Bedingungen neben der Mängelliste — der Nachweis der DSGVO-Konformität und ein
-Hosting- und Pflegekonzept (9.9).
+**Vorrang hat die Sichtung vom 16.09.2026** (Abschnitt 9): die Frage 9.3 c und die zwei
+Bedingungen neben der Mängelliste — der Nachweis der DSGVO-Konformität und ein Hosting- und
+Pflegekonzept (9.9). Das fehlende Pflegekonzept nennt das Protokoll ein mögliches
+Ausschlusskriterium; deshalb steht Abschnitt 9 in beiden Listen unten an erster Stelle.
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen. Er ändert Daten.
-2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
+1. **Die Sichtung** (Abschnitt 9): 9.3 c (Bücherei-Sperre wegen überfälliger Schulbücher;
+   Vorschlag: so lassen) und die vier Fragen zum Pflegekonzept (9.9).
+2. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen. Er ändert Daten.
+3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
-3. **Drei Freigaben, jede mit Migration:** das Werk über den Auflagen (4.18, dazu die Frage, wer
+4. **Drei Freigaben, jede mit Migration:** das Werk über den Auflagen (4.18, dazu die Frage, wer
    ein Werk anlegt), der Ferienkalender (4.19), die Pflegeseite der Schlagworte (4.20).
-4. **Die Palettenfarben** (5.21): Freigabe für die übrige Anwendung, Bildschirm für Bildschirm.
-5. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
-   5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
-   Schulbücher).
-6. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
+5. **Die Palettenfarben** (5.21): Freigabe für die übrige Anwendung, Bildschirm für Bildschirm.
+6. **Kleine Fragen:** 5.1 (wer bucht eine Überweisung ein), 5.16 (Ausweisnummer leeren),
+   5.19 (Auskunft und Vormerken für Kollegen).
+7. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
    der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
    diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
    kommt.
@@ -39,13 +41,16 @@ nicht, sie ist zurückgenommen). Das passiert beim Start von allein; Daten gehen
 Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Testserver am
 21.09.2026: 8 Lehrkräfte). Migration 138 legt zwei leere Tabellen für die Schlagworte an.
 
-**Im Code, in dieser Reihenfolge:**
+**Bei mir, in dieser Reihenfolge:**
 
-1. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
-2. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
+1. **9.9** die zwei Dokumente: den DSGVO-Nachweis aus dem vorhandenen Material zusammenstellen
+   (Doku, keine Bauarbeit); das Pflegekonzept als Entwurf mit dem, was der Code schon
+   beantwortet — deine vier Antworten bleiben darin als Lücken markiert.
+2. **5.5** (Rückschreiben nach der Messung) und **5.19** — kleine B-Commits.
+3. Mahnverfahren: vor dem ersten echten Bescheid **5.2**, dann **4.4** (E6) und **5.13**
    Stufe 3 (5.3).
-3. Nach der Antwort zu E5 (**8.3**): **5.4**.
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+4. Nach der Antwort zu E5 (**8.3**): **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
 die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
@@ -582,7 +587,7 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
   Horizont-Test wird ab 2029 rot. Beim nächsten KMK-Beschluss gegen die Quelle prüfen.
 - Browser-Gates: Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
   Anfangszustand; kein Screenreader-Durchgang; der Ausweis-Designer geht nur per Maus.
-- 17 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
+- 16 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
   `KlassenBuchKachel` im Portal). Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
 - 3.000 Titel ohne ISBN: `inventur.SucheTextDNB` nur mit Bestätigung durch einen Menschen
   verdrahten.
@@ -624,7 +629,7 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
 
 Integer-Cent statt float64 · Bundle-Splitting · TypeScript-Migration · `inventur/` ins Haupt-API
 verschmelzen · `cmd/migrate` (MySQL) löschen — seine PG-Tests sichern mit `internal/uebernahme`
-geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (26 Dateien
+geteilten Code · API-Versionierung · Mandantenfähigkeit (RLS) · Trennlinien-Durchgang (25 Dateien
 mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch-Ausdruck je
 Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt
 [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·
@@ -785,15 +790,20 @@ stehen:
 > sein."
 
 - **Nachweis der DSGVO-Konformität.** Das Material liegt vor und ist vollständiger, als der Satz
-  vermuten lässt: VVT-Entwurf, Datenschutzhinweis-Entwurf, die PII-Matrix über jede Route, die
-  Löschfristen samt nächtlichem Job. Was fehlt, ist ein Dokument, das man einer prüfenden Stelle
-  GIBT — und die Beschlussfassung der Schule (8.5, B1–B7). Das Zusammenstellen ist Arbeit an der
-  Doku, keine Bauarbeit.
+  vermuten lässt: VVT-Entwurf und Datenschutzhinweis ([datenschutz/](datenschutz/)), die
+  PII-Matrix über jede Route ([PII_MATRIX.de.md](PII_MATRIX.de.md)), die Löschfristen samt
+  nächtlichem Job. Was fehlt, ist ein Dokument, das man weitergeben kann — und die
+  Beschlussfassung der Schule (8.5, B1–B7). **Nächster Schritt, bei mir:** das Dokument aus
+  diesem Material zusammenstellen; Arbeit an der Doku, keine Bauarbeit.
 - **Hosting- und Programmpflegekonzept.** Hier fehlt wirklich etwas. Betrieb, Sicherung,
   Wiederherstellung und Aktualisierung sind beschrieben — aber als Anleitung für den Betreiber
-  (DEPLOYMENT.md, resilience_and_recovery.md, SCRIPTS.md), nicht als Konzept, das jemand prüft:
-  Wer betreibt das Programm, wer pflegt es, was gilt, wenn die Pflege endet, wie kommen
-  Aktualisierungen zu einer Schule, die es einsetzt. Das ist zugleich die Frage, ob das Programm
-  über die eigene Schule hinaus verwendbar ist — sie lässt sich nicht aus dem Code beantworten.
+  (DEPLOYMENT.md, resilience_and_recovery.md, SCRIPTS.md), nicht als Konzept, das jemand prüft.
+  **Nächster Schritt, bei mir:** ein Entwurf mit dem, was der Code beantwortet — wie eine
+  Aktualisierung zur Schule kommt (Release, Image, `update.sh`), Sicherung, Wiederherstellung.
+  **Vier Fragen bei dir**, die sich nicht aus dem Code beantworten lassen:
+  1. Wer betreibt das Programm — die Schule, der Schulträger oder du?
+  2. Wer pflegt es?
+  3. Was gilt, wenn die Pflege endet — Datenausgabe, Rückweg zu Littera (7.2)?
+  4. Soll es über die eigene Schule hinaus eingesetzt werden?
 
 **Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.**
