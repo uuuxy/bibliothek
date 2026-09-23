@@ -51,3 +51,40 @@ func TestSucheDNB_StichwoerterOhneVorsatzEintraege(t *testing.T) {
 		t.Errorf("Zielgruppe = %q — der Vorsatz-Eintrag wird weiter gelesen", res.Zielgruppe)
 	}
 }
+
+// Die Freitextsuche der Bestellung schickt „jedes Wort irgendwo im Satz" (any all "…").
+// Bis zum 23.09.2026 ging any=Dunkelnacht+Boie hinaus, und die DNB lieferte mit zwei Wörtern
+// keinen Satz. Anführungszeichen und Backslash der Eingabe sind maskiert, sonst endete die
+// Zeichenkette mitten in der Eingabe; „and" ist ein Wort, kein Operator.
+func TestCqlAlleWoerter(t *testing.T) {
+	faelle := map[string]string{
+		"Dunkelnacht":      `any all "Dunkelnacht"`,
+		"Dunkelnacht Boie": `any all "Dunkelnacht Boie"`,
+		`Der "Hobbit"`:     `any all "Der \"Hobbit\""`,
+		`a\b`:              `any all "a\\b"`,
+		"Harry and Potter": `any all "Harry and Potter"`,
+	}
+	for eingabe, erwartet := range faelle {
+		if got := cqlAlleWoerter(eingabe); got != erwartet {
+			t.Errorf("cqlAlleWoerter(%q) = %s, erwartet %s", eingabe, got, erwartet)
+		}
+	}
+}
+
+// Was wirklich an die DNB geht: die Abfrage als Parameter query, nach dem Dekodieren genau
+// any all "…".
+func TestSucheTextDNB_SchicktAlleWoerter(t *testing.T) {
+	var gesendet string
+	client := &MetadatenClient{httpClient: &http.Client{Transport: &mockTransport{
+		roundTripFunc: func(r *http.Request) (*http.Response, error) {
+			gesendet = r.URL.Query().Get("query")
+			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(`<searchRetrieveResponse/>`))}, nil
+		},
+	}}}
+	if _, err := client.SucheTextDNB(context.Background(), "  Dunkelnacht Boie "); err != nil {
+		t.Fatal(err)
+	}
+	if gesendet != `any all "Dunkelnacht Boie"` {
+		t.Errorf("an die DNB ging query=%s, erwartet any all \"Dunkelnacht Boie\"", gesendet)
+	}
+}

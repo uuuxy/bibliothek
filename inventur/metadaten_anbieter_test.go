@@ -148,7 +148,7 @@ func TestSucheDNB_And_SucheTextDNB(t *testing.T) {
 	// mockTransport is defined in metadaten_client_test.go
 	mockTr := &mockTransport{
 		roundTripFunc: func(req *http.Request) (*http.Response, error) {
-			if strings.Contains(req.URL.String(), "NUM=9781234567890") || strings.Contains(req.URL.String(), "any=Test+Book") {
+			if strings.Contains(req.URL.String(), "NUM=9781234567890") || req.URL.Query().Get("query") == `any all "Test Book"` {
 				xmlData := `
 					<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
 					  <records>

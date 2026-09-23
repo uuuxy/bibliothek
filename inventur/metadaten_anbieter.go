@@ -302,6 +302,16 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 	}, nil
 }
 
+// cqlAlleWoerter baut aus einer Eingabe die CQL-Abfrage „jedes Wort irgendwo im Satz":
+// any all "…". Bis zum 23.09.2026 ging die Eingabe als any=Dunkelnacht+Boie hinaus, und die
+// DNB lieferte mit zwei Wörtern 0 Sätze — mit „Dunkelnacht" allein 15, mit any all
+// "Dunkelnacht Boie" 14 (gemessen). In Anführungszeichen ist jedes Wort ein Suchwort, auch
+// „and" oder „or"; maskiert werden nur Backslash und Anführungszeichen, die die Zeichenkette
+// sonst beendeten.
+func cqlAlleWoerter(text string) string {
+	return `any all "` + strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(text) + `"`
+}
+
 // SucheTextDNB fragt die DNB per Freitext ab — für die Bestellsuche, wenn keine ISBN
 // vorliegt. Liefert mehrere Treffer; die Auswahl trifft die Oberfläche.
 func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query string) ([]MetadatenErgebnis, error) {
@@ -315,7 +325,7 @@ func (client *MetadatenClient) SucheTextDNB(kontext context.Context, query strin
 	if validiereISBN(cleanQuery) {
 		sruQuery = "NUM=" + cleanQuery
 	} else {
-		sruQuery = "any=" + url.QueryEscape(trimmed)
+		sruQuery = url.QueryEscape(cqlAlleWoerter(trimmed))
 	}
 
 	apiURL := fmt.Sprintf("https://services.dnb.de/sru/dnb?version=1.1&operation=searchRetrieve&query=%s&recordSchema=MARC21-xml&maximumRecords=10", sruQuery)

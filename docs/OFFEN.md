@@ -381,11 +381,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   ORDER BY ist_lernmittel DESC, signatur NULLS LAST, titel;
   ```
 
-- **Bestellsuche, DNB mit mehreren Wörtern** (gemessen am 23.09.2026): `SucheTextDNB` schickt
-  `any=` + `url.QueryEscape(text)`. „Dunkelnacht Boie" wird `any=Dunkelnacht+Boie`, und die
-  DNB liefert 0 Sätze; „Dunkelnacht" allein 10, „Dunkelnacht and Boie" 14. Wer Titel und Autor
-  tippt, bekommt also still keinen DNB-Treffer (die Suche ist „best-effort" und meldet nichts).
-  Beim Bauen die Eingabe als CQL maskieren, nicht nur Wörter mit „and" verbinden.
 - **ISBN-10 und ISBN-13 desselben Buchs:** Die Normalform trennt beide bewusst (Migration 133),
   die Littera-Übernahme behält eine gültige ISBN-10. Die Bestelltür (`findeLokalenTitel`), die
   Markierung „Vorhanden" der Bestellsuche (`sammleExistierendeISBNs`) und die
