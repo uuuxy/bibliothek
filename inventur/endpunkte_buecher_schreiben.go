@@ -29,7 +29,9 @@ func validiereBuchErstellenEingabe(antwort http.ResponseWriter, isbn string, kla
 	return true
 }
 
-// listenpreisAusNachschlagen entscheidet, ob der Ladenpreis der DNB den Listenpreis füllt.
+// ListenpreisAusNachschlagen entscheidet, ob der Ladenpreis der DNB den Listenpreis füllt.
+// Exportiert, weil der Bestellweg (api.upsertTitelAusMetadaten) dieselbe Regel nimmt — seit
+// dem 23.09.2026, vorher verwarf er den Preis.
 //
 // Eigene Funktion, weil hier zwei Regeln zusammenkommen, die beide am Ende in einem
 // Bescheid an Erziehungsberechtigte landen — und weil sie so prüfbar sind, ohne eine
@@ -40,11 +42,34 @@ func validiereBuchErstellenEingabe(antwort http.ResponseWriter, isbn string, kla
 //  2. Ein gefundener Preis von 0 füllt NICHTS. Die DNB-Regeln liefern 0, wenn der Satz
 //     nur D-Mark kennt (metadaten_preis.go); eine 0 in der Spalte hieße „kostet heute
 //     nichts" und ergäbe einen Ersatzbetrag von 0,00 €.
-func listenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
+func ListenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
 	if vorhanden != nil || gefunden <= 0 {
 		return vorhanden
 	}
 	return &gefunden
+}
+
+// ergaenzeAusNachschlagen übernimmt aus einem Nachschlagen, was im Buch fehlt: Was schon
+// eingetragen ist, gewinnt immer. Der Untertitel kommt seit dem 23.09.2026 mit (OFFEN.md
+// 5.5) — aber nur, wenn ohnehin nachgeschlagen wird; für ihn allein wird die DNB nicht
+// gefragt.
+func ergaenzeAusNachschlagen(buch *Book, nachschlagen *MetadatenErgebnis) {
+	if nachschlagen == nil {
+		return
+	}
+	if buch.Title == "" {
+		buch.Title = strings.TrimSpace(nachschlagen.Titel)
+	}
+	if buch.Author == "" {
+		buch.Author = strings.TrimSpace(nachschlagen.Autor)
+	}
+	if buch.CoverURL == "" {
+		buch.CoverURL = strings.TrimSpace(nachschlagen.CoverURL)
+	}
+	if buch.Untertitel == "" {
+		buch.Untertitel = strings.TrimSpace(nachschlagen.Untertitel)
+	}
+	buch.Listenpreis = ListenpreisAusNachschlagen(buch.Listenpreis, nachschlagen.Preis)
 }
 
 // ergaenzeBuchMetadaten füllt fehlende Titel/Autor/Cover/Listenpreis aus dem
@@ -63,18 +88,7 @@ func listenpreisAusNachschlagen(vorhanden *float64, gefunden float64) *float64 {
 func (handler *APIHandler) ergaenzeBuchMetadaten(ctx context.Context, buch *Book) {
 	if buch.Title == "" || buch.Author == "" || buch.CoverURL == "" || buch.Listenpreis == nil {
 		nachschlagen, _ := handler.metadaten.SucheNachISBN(ctx, buch.ISBN) //nolint:errcheck
-		if nachschlagen != nil {
-			if buch.Title == "" {
-				buch.Title = strings.TrimSpace(nachschlagen.Titel)
-			}
-			if buch.Author == "" {
-				buch.Author = strings.TrimSpace(nachschlagen.Autor)
-			}
-			if buch.CoverURL == "" {
-				buch.CoverURL = strings.TrimSpace(nachschlagen.CoverURL)
-			}
-			buch.Listenpreis = listenpreisAusNachschlagen(buch.Listenpreis, nachschlagen.Preis)
-		}
+		ergaenzeAusNachschlagen(buch, nachschlagen)
 	}
 	if buch.Title == "" {
 		buch.Title = "Unbekannter Titel"

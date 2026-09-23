@@ -39,7 +39,7 @@ eine leere Spalte für die Angaben der Schule.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
-1. **5.5** die DNB-Felder und **5.18** Klassen löschen — klein, ohne Datenwirkung.
+1. **5.18** Klassen löschen — klein, ohne Datenwirkung.
 2. **4.20** Schlagworte: Pflegeseite, Suche, DNB-Vorschlag (Stufe 4 mit dem Littera-Backup, 7.2).
 3. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
 4. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
@@ -361,12 +361,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.5 Bestand, Katalog, Druck
 
-- Bestellen per ISBN legt den Titel aus der DNB an (`upsertTitelAusMetadaten`) und speichert
-  Titel, Autor, ISBN, Verlag, Jahr, Cover und Fach. **Verworfen** werden weiterhin Untertitel,
-  Altersangabe (`Zielgruppe`) und Ladenpreis, obwohl es für den Preis seit Migration 127 die
-  Spalte `listenpreis` gibt. Die Gattungsbegriffe (MARC 655) liest der DNB-Leser, gespeichert
-  werden sie nicht — sie sind eine Quelle des Schlagwort-Vorschlags (4.20, Stufe 3).
-
 - Listenimport gegen den Nummern-Wächter (Migration 131): Trägt eine Zeile der Datei die
   Ausweisnummer eines Lesers als Buch-Barcode, lehnt der Wächter ab und der ganze Import
   bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
@@ -546,6 +540,9 @@ freigegeben am 23.09.2026.
   `KlassenBuchKachel` im Portal). Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
 - 3.000 Titel ohne ISBN: `inventur.SucheTextDNB` nur mit Bestätigung durch einen Menschen
   verdrahten.
+- Die Altersangabe der DNB (653 „(Zielgruppe)ab 10 Jahre", `MetadatenErgebnis.Zielgruppe`) wird
+  gelesen und nicht gespeichert: Es gibt keine Spalte und keinen Leser. Anlass zum Bauen: ein
+  Leser, etwa ein Filter im Portal.
 - `TestEtikettenkette_ZaehlerFolgtDenFilternDerListe` schickt `?bis=time.Now()` in der Zone des
   Testprozesses; unter `TZ=Pacific/Midway` ist das der Vortag und der Zähler nennt 0. Kein
   Produktfehler — im Betrieb kommt dieses Datum aus dem Browser in Berlin. Beim nächsten Anfassen

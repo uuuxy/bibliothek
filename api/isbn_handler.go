@@ -57,19 +57,28 @@ func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta 
 		return ISBNLookupResponse{}, err
 	}
 
+	// Untertitel und Ladenpreis gehen seit dem 23.09.2026 mit (OFFEN.md 5.5). Der Preis nach
+	// derselben Regel wie beim Anlegen über das Buchformular: 0 heißt „nicht ermittelbar"
+	// und füllt nichts. Steht der Titel schon da (ON CONFLICT), gewinnt, was erfasst ist.
+	// Die Altersangabe (Zielgruppe) bleibt ungespeichert: Es gibt für sie keine Spalte und
+	// keinen Leser.
+	listenpreis := inventur.ListenpreisAusNachschlagen(nil, meta.Preis)
 	resp := ISBNLookupResponse{ISBN: isbn}
 	err = s.DB.Pool.QueryRow(ctx, `
-		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, subject)
-		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''))
+		INSERT INTO buecher_titel (titel, autor, isbn, verlag, erscheinungsjahr, cover_url, subject, untertitel, listenpreis)
+		VALUES ($1, $2, $3, $4, $5, $6, NULLIF($7, ''), NULLIF(btrim($8), ''), $9)
 		ON CONFLICT (isbn) DO UPDATE
 			SET titel      = EXCLUDED.titel,
 			    autor      = EXCLUDED.autor,
 			    verlag     = EXCLUDED.verlag,
 			    erscheinungsjahr = EXCLUDED.erscheinungsjahr,
 			    cover_url  = COALESCE(NULLIF(EXCLUDED.cover_url, ''), buecher_titel.cover_url),
+			    untertitel = COALESCE(NULLIF(buecher_titel.untertitel, ''), EXCLUDED.untertitel),
+			    listenpreis = COALESCE(buecher_titel.listenpreis, EXCLUDED.listenpreis),
 			    aktualisiert_am = CURRENT_TIMESTAMP
 		RETURNING id, titel, coalesce(autor,''), coalesce(verlag,''), coalesce(cover_url,''), coalesce(signatur,''), ist_lernmittel
-	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, kanonisch[meta.Fach]).
+	`, meta.Titel, meta.Autor, isbn, meta.Verlag, jahrInt, meta.CoverURL, kanonisch[meta.Fach],
+		meta.Untertitel, listenpreis).
 		Scan(&resp.TitelID, &resp.Titel, &resp.Autor, &resp.Verlag, &resp.CoverURL, &resp.Signatur, &resp.IstLernmittel)
 	if err != nil {
 		return ISBNLookupResponse{}, err

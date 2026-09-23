@@ -53,7 +53,7 @@ func TestListenpreisAusNachschlagen(t *testing.T) {
 
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
-			got := listenpreisAusNachschlagen(f.vorhanden, f.gefunden)
+			got := ListenpreisAusNachschlagen(f.vorhanden, f.gefunden)
 
 			switch {
 			case f.want == nil && got != nil:
@@ -64,5 +64,33 @@ func TestListenpreisAusNachschlagen(t *testing.T) {
 				t.Errorf("Listenpreis = %.2f, want %.2f — %s", *got, *f.want, f.warum)
 			}
 		})
+	}
+}
+
+// Die Übernahme beim Anlegen (ergaenzeAusNachschlagen): Was fehlt, kommt aus dem
+// Nachschlagen, was eingetragen ist, bleibt — auch beim Untertitel, der seit dem 23.09.2026
+// mitkommt (OFFEN.md 5.5; der Bestellweg nimmt ihn ebenfalls).
+func TestErgaenzeAusNachschlagen_Untertitel(t *testing.T) {
+	gefunden := &MetadatenErgebnis{Titel: "Wolkenkind", Untertitel: " Ein Roman ", Preis: 12.00}
+
+	leer := Book{}
+	ergaenzeAusNachschlagen(&leer, gefunden)
+	if leer.Untertitel != "Ein Roman" {
+		t.Errorf("leerer Untertitel: %q, want „Ein Roman“ (getrimmt)", leer.Untertitel)
+	}
+	if leer.Listenpreis == nil || *leer.Listenpreis != 12.00 {
+		t.Errorf("Listenpreis: %v, want 12.00", leer.Listenpreis)
+	}
+
+	gepflegt := Book{Untertitel: "Gepflegt"}
+	ergaenzeAusNachschlagen(&gepflegt, gefunden)
+	if gepflegt.Untertitel != "Gepflegt" {
+		t.Errorf("eingetragener Untertitel überschrieben: %q", gepflegt.Untertitel)
+	}
+
+	ohne := Book{Title: "Bleibt"}
+	ergaenzeAusNachschlagen(&ohne, nil)
+	if ohne.Title != "Bleibt" || ohne.Untertitel != "" {
+		t.Errorf("ohne Nachschlagen verändert: %+v", ohne)
 	}
 }
