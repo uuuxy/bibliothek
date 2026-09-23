@@ -195,6 +195,13 @@ CREATE TABLE leser (
     -- Zeitpunkt des Abgangs durch einen LUSD-Import — die Uhr der Karenzzeit vor der
     -- Anonymisierung (Einstellung abgaenger_karenz_tage). NULL bei Aktiven und Rückkehrern.
     abgaenger_seit TIMESTAMP WITH TIME ZONE,
+    -- Zeitpunkt des letzten ABGESCHLOSSENEN Vorgangs: letzte Rückgabe oder letzter
+    -- Abschluss eines Schadensfalls (Migration 137). Die zweite Uhr der Karenz neben
+    -- abgaenger_seit; repository.KarenzUhr nimmt den späteren der beiden. Von Triggern
+    -- gepflegt (leser_stempel_rueckgabe, leser_stempel_schaden), nie von Hand gesetzt.
+    -- Sie steht hier und nicht als Unterabfrage über ausleihen, weil der Lesehistorie-Lauf
+    -- genau jene schueler_id leert und die Karenz sonst still verkürzt hätte.
+    letzter_vorgang_am TIMESTAMP WITH TIME ZONE,
     strasse VARCHAR(255),
     hausnummer VARCHAR(50),
     plz VARCHAR(20),
@@ -266,9 +273,30 @@ CREATE UNIQUE INDEX uniq_schueler_lusd_id_active ON leser (lusd_id) WHERE delete
 -- Ausweis-Barcode darf bei Wiederanmeldung/Recycling neu vergeben werden (siehe Migration 049).
 CREATE UNIQUE INDEX uniq_schueler_barcode_active ON leser (barcode_id) WHERE deleted_at IS NULL;
 
+-- Migration 137: leser hat eine EIGENE Stempel-Funktion. Ändert sich nur
+-- letzter_vorgang_am und sonst kein Feld, bleibt aktualisiert_am stehen — eine Rückgabe
+-- an der Theke ist keine Änderung am Leser. Das ist nicht kosmetisch: aktualisiert_am ist
+-- der Rückfall von repository.AbgangSeit für Altzeilen ohne Abgangsstempel, und eine
+-- Rückgabe würde deren Karenz-Uhr sonst vorschieben. Der Vergleich läuft über den ganzen
+-- Datensatz, nicht über eine Spaltenliste — eine Aufzählung veraltet still, sobald jemand
+-- eine Spalte ergänzt. Der teure Zweig wird nur betreten, wenn letzter_vorgang_am sich
+-- überhaupt geändert hat; ein LUSD-Massenlauf baut nie ein jsonb.
+CREATE OR REPLACE FUNCTION leser_aktualisiert_am()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.letzter_vorgang_am IS DISTINCT FROM OLD.letzter_vorgang_am
+       AND to_jsonb(NEW) - 'letzter_vorgang_am' - 'aktualisiert_am'
+         = to_jsonb(OLD) - 'letzter_vorgang_am' - 'aktualisiert_am' THEN
+        NEW.aktualisiert_am := OLD.aktualisiert_am;
+        RETURN NEW;
+    END IF;
+    NEW.aktualisiert_am := CURRENT_TIMESTAMP;
+    RETURN NEW;
+END $$;
+
 CREATE TRIGGER trg_schueler_aktualisiert_am
 BEFORE UPDATE ON leser
-FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+FOR EACH ROW EXECUTE FUNCTION leser_aktualisiert_am();
 
 
 -- Table: schueler_fotos (Encrypted student photos)
@@ -290,7 +318,10 @@ FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 --
 -- SELECT * friert die Spaltenliste beim Anlegen ein. Eine neue Spalte in leser
 -- erscheint hier also NICHT von selbst; das Gate dafuer steht in
--- repository/schema_gegenrichtung_pg_test.go.
+-- repository/schema_gegenrichtung_pg_test.go. Auf dem gewachsenen Weg muss die
+-- Migration die Sicht deshalb mit CREATE OR REPLACE VIEW nachziehen — Migration 137
+-- (letzter_vorgang_am) ist der erste Fall, und PredikatAnonymisierung liest genau
+-- diese Sicht.
 CREATE VIEW schueler AS
     SELECT * FROM leser WHERE art = 'schueler'
     WITH CHECK OPTION;
@@ -939,6 +970,28 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_exemplar ON ausleihen (ex
 CREATE UNIQUE INDEX IF NOT EXISTS uniq_ausleihen_aktiv_geraet ON ausleihen (geraet_id) WHERE rueckgabe_am IS NULL AND geraet_id IS NOT NULL;
 CREATE INDEX idx_ausleihen_rueckgabe_frist ON ausleihen (rueckgabe_frist);
 
+-- Migration 137: Jede Rückgabe stempelt leser.letzter_vorgang_am — die Uhr der Karenz.
+-- Hier und nicht in den Schreibpfaden, weil eine Rückgabe an mehreren Stellen entsteht
+-- (Theke, Nachbuchen eines Offline-Scans, Sammelrückgabe); dasselbe Muster wie
+-- konto_hat_leserzeile. Gestempelt wird nur nach VORNE: Das WHERE lässt das UPDATE aus,
+-- wenn der Stempel schon später steht — eine nachgebuchte alte Rückgabe kann die Uhr
+-- nicht zurückdrehen, und der Trigger schreibt bei den meisten Vorgängen genau einmal.
+CREATE OR REPLACE FUNCTION leser_stempel_rueckgabe()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.schueler_id IS NULL OR NEW.rueckgabe_am IS NULL THEN
+        RETURN NULL;
+    END IF;
+    UPDATE leser SET letzter_vorgang_am = NEW.rueckgabe_am
+     WHERE id = NEW.schueler_id
+       AND (letzter_vorgang_am IS NULL OR letzter_vorgang_am < NEW.rueckgabe_am);
+    RETURN NULL;
+END $$;
+
+CREATE TRIGGER trg_leser_stempel_rueckgabe
+AFTER INSERT OR UPDATE OF rueckgabe_am, schueler_id ON ausleihen
+FOR EACH ROW EXECUTE FUNCTION leser_stempel_rueckgabe();
+
 
 -- Table: schadensfaelle (Incidents concerning damaged or lost books)
 CREATE TABLE schadensfaelle (
@@ -985,6 +1038,29 @@ CREATE INDEX idx_schadensfaelle_offene ON schadensfaelle (ist_bezahlt) WHERE ist
 CREATE TRIGGER trg_schadensfaelle_aktualisiert_am
 BEFORE UPDATE ON schadensfaelle
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
+
+-- Migration 137: Ein ABGESCHLOSSENER Schadensfall stempelt leser.letzter_vorgang_am.
+-- Abgeschlossen heißt ist_bezahlt — das setzt die Bezahlung wie das Storno
+-- (repository/audit_system.go). Der Zeitpunkt ist der spätere von aktualisiert_am und
+-- storniert_am; GREATEST übergeht dabei ein NULL. Gestempelt wird nur nach vorne.
+CREATE OR REPLACE FUNCTION leser_stempel_schaden()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE
+    zeitpunkt TIMESTAMPTZ;
+BEGIN
+    IF NEW.schueler_id IS NULL OR NOT NEW.ist_bezahlt THEN
+        RETURN NULL;
+    END IF;
+    zeitpunkt := GREATEST(NEW.aktualisiert_am, NEW.storniert_am);
+    UPDATE leser SET letzter_vorgang_am = zeitpunkt
+     WHERE id = NEW.schueler_id
+       AND (letzter_vorgang_am IS NULL OR letzter_vorgang_am < zeitpunkt);
+    RETURN NULL;
+END $$;
+
+CREATE TRIGGER trg_leser_stempel_schaden
+AFTER INSERT OR UPDATE OF ist_bezahlt, storniert_am, aktualisiert_am, schueler_id ON schadensfaelle
+FOR EACH ROW EXECUTE FUNCTION leser_stempel_schaden();
 
 
 -- Table: audit_log (Audit trail for immutable security logs)
@@ -1655,7 +1731,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('132_bewegungsstempel_bei_zustandswechsel.sql'),
 ('133_isbn_normalform.sql'),
 ('134_mehrjahresband.sql'),
-('136_ausweisnummer_beim_konto.sql')
+('136_ausweisnummer_beim_konto.sql'),
+('137_letzter_vorgang_am_leser.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

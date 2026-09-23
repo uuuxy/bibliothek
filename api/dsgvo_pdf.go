@@ -124,6 +124,10 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, st
 func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoStammdaten) {
 	dsgvoAbschnitt(p, tr, "1. Stammdaten")
 	dsgvoZeile(p, tr, "Interne ID", st.ID)
+	// Art und Zugangskonto kamen mit Migration 123 in die Auskunft, aber nicht auf dieses
+	// Blatt — die gedruckte Auskunft war damit kürzer als die abgerufene. Nachgetragen am
+	// 23.09.2026 samt Ratsche (TestDsgvoPDF_DrucktJedesStammdatenfeld).
+	dsgvoZeile(p, tr, "Art des Lesers", dsgvoLeserart(st.Art))
 	dsgvoZeile(p, tr, "Ausweis-Barcode", st.BarcodeID)
 	dsgvoZeile(p, tr, "Vorname", st.Vorname)
 	dsgvoZeile(p, tr, "Nachname", st.Nachname)
@@ -132,6 +136,7 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoS
 	dsgvoZeile(p, tr, "Schuleintritt", dsgvoStrPtr(st.SchulEintrittAm))
 	dsgvoZeile(p, tr, "Abgangsjahr", fmt.Sprint(st.AbgaengerJahr))
 	dsgvoZeile(p, tr, "Abgänger seit", dsgvoZeitPtr(st.AbgaengerSeit))
+	dsgvoZeile(p, tr, "Letzter abgeschlossener Vorgang", dsgvoZeitPtr(st.LetzterVorgangAm))
 	dsgvoZeile(p, tr, "LUSD-ID", dsgvoStrPtr(st.LusdID))
 	dsgvoZeile(p, tr, "Zuletzt im LUSD-Export bestätigt", dsgvoZeitPtr(st.LusdBestaetigtAm))
 	dsgvoZeile(p, tr, "Anonymisiert am", dsgvoZeitPtr(st.AnonymisiertAm))
@@ -147,6 +152,23 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoS
 	if st.GeloeschtAm != nil {
 		dsgvoZeile(p, tr, "Gelöscht am (Papierkorb)", st.GeloeschtAm.Format(dsgvoZeitFormat))
 	}
+	// Die Anmeldedaten selbst stehen nicht hier (sie gehören zum Konto, nicht zum Leser);
+	// dass es eines gibt, ist aber eine Angabe über diese Person.
+	dsgvoZeile(p, tr, "Zugangskonto vorhanden", dsgvoJaNein(st.HatZugangskonto))
+}
+
+// dsgvoLeserart schreibt die gespeicherte Art aus. Der Wert steht so in der Datenbank
+// (leser.art); ein unbekannter bleibt unverändert stehen, statt still zu verschwinden.
+func dsgvoLeserart(art string) string {
+	switch art {
+	case "schueler":
+		return "Schüler/in"
+	case "lehrkraft":
+		return "Lehrkraft"
+	case "liv":
+		return "Lehrkraft im Vorbereitungsdienst"
+	}
+	return art
 }
 
 func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto DsgvoFoto) {

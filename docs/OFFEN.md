@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 22.09.2026
+Stand: 23.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -35,9 +35,8 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 3. **Die Zahlen vom Testserver liegen vor** (21.09.2026): 8 Leser ohne Ausweisnummer, alle
    Lehrkräfte (5.16 C); kein Kollege in einer Warteschlange, in der er nie nachrückt (5.19).
    Die Messung aus 4.3 ist gelaufen (22.09.2026: kein Titel mit Wert); 4.3 ist gebaut und weg.
-4. **Die Karenz-Uhr (4.12), freigegeben am 22.09.2026, noch nicht gebaut:** eine eigene
-   Spalte, eine Migration mit Rückfüllung über den ganzen Bestand. Die Ausweisnummer beim
-   Anlegen eines Kontos ist gebaut (Migration 136).
+4. **Gebaut am 23.09.2026:** die Karenz-Uhr (Migration 137, eigene Spalte am Leser mit
+   Rückfüllung) und die Ausweisnummer beim Anlegen eines Kontos (Migration 136).
 5. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
    Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
    der Nachweis für den Server.
@@ -48,13 +47,14 @@ DSGVO-Konformität und ein Hosting- und Pflegekonzept (9.9).
 7. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger. Hier
    ist nichts zu tun außer nachzufragen, wenn nichts kommt.
 8. **Aus dem Abgleich mit Littera** (4.19, 4.20): **Ferienkalender** — heute mahnen wir das Kind,
-   dessen Frist in die Herbstferien fiel. Richtung und Form sind am 18.09.2026 entschieden
-   (Ferien als iCal-Datei, Fristen rutschen mit); gebaut ist nichts, und eine Frage steht noch
-   offen (Feiertage als zweite Datei oder gerechnet). Die **Themensuche** ist am 22.09.2026
+   dessen Frist in die Herbstferien fiel. Seit dem 22.09.2026 ist auch die letzte Frage
+   entschieden: Ferien UND Feiertage kommen als iCal-Datei, die Datei gewinnt vor der Rechnung,
+   Fristen rutschen mit, und ein auslaufender Kalender meldet sich an der Theke und per Mail an
+   die Leitung. Gebaut ist nichts. Die **Themensuche** ist am 22.09.2026
    entschieden (4.20): Als Nächstes wird gemessen, was die DNB für den Katalog liefert, danach
    folgt die Wortliste — gebaut ist nichts.
 
-**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 136; 135 gibt es
+**Beim nächsten Aufspielen erweitert sich die Datenbank** (Migrationen bis 137; 135 gibt es
 nicht, sie ist zurückgenommen). Das passiert beim Start von allein; Daten gehen nicht verloren.
 Migration 136 trägt jedem aktiven Leser ohne Ausweis eine Nummer nach (am Testserver am
 21.09.2026: 8 Lehrkräfte).
@@ -91,7 +91,7 @@ jemandem schaden?"**
 ## Reihenfolge
 
 1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen.
-2. **Die Karenz-Spalte** (4.12), freigegeben.
+2. **Die Karenz-Spalte**, gebaut am 23.09.2026 (Migration 137).
 3. **Abschnitt 2** Offline-Betrieb der Theke: gebaut, samt Meldungsliste und Doku. Offen sind
    nur noch die Nachweise am Stack (2.3) — Stufe 1 und 3 von Hand, Stufe 2 über die Tür.
 4. **5.16** Leserdatei: gebaut und abgenommen; die Ausweisnummer beim Konto ist seit Migration 136 gebaut.
@@ -192,31 +192,6 @@ GROUP BY 1, 2, 3 ORDER BY 3, 1;
 
 **Wann:** vor Abnahme-Flow 4. Kommt eine neue Littera-Übernahme mit Neuaufbau (7.2), erledigt
 sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
-
-### 4.12 Karenz gegen Lesehistorie
-
-Die Uhr vor der Anonymisierung rechnet ab der letzten Rückgabe über `ausleihen.schueler_id`, die
-der Lesehistorie-Lauf trennt. Ist die Karenz länger eingestellt als die Lesehistorie, wird früher
-anonymisiert als eingestellt. Es gibt zwei Lesehistorie-Fristen: Schülerbücherei (Vorgabe 90 Tage)
-und Lernmittel (`lesehistorie_lernmittel_tage`, Vorgabe 730); mit den Vorgaben (Karenz 90) ohne
-Wirkung. **Frage:** Soll die Einstellung Karenz ≤ beide Lesehistorie-Fristen erzwingen, oder
-speichert die Uhr ihren Zeitpunkt selbst (eigene Spalte)?
-
-**Entschieden am 16.09.2026: eigene Spalte, per Trigger gepflegt.** Nicht erzwingen — die
-Kopplung liefe in die falsche Richtung: Um eine längere Karenz zu bekommen, müsste die Schule
-die Lesehistorie verlängern, also mehr Personendaten länger aufbewahren. Die beiden Fristen
-beantworten verschiedene Fragen und dürfen sich nicht gegenseitig binden.
-
-**Gebaut wird erst nach deinem Ja (17.09.2026)** — die Umsetzung ist eine Migration mit zwei
-Triggern und einer Rückfüllung über den ganzen Bestand. Der Plan steht, der Nachweis ist
-beschrieben; was fehlt, ist die Freigabe für einen Eingriff ins Schema.
-
-Stattdessen bekommt die Leserzeile eine Spalte „letzter Vorgang", die kein anderer Löschlauf
-anfasst; gepflegt von Triggern auf `ausleihen` (Rückgabe) und `schadensfaelle` (bezahlt oder
-storniert), nach dem Muster von `konto_hat_leserzeile` — an der einen Stelle, an der kein
-Schreibweg vorbeikommt. `repository.KarenzUhr` (seit 22.09.2026 die eine Formulierung für
-Löschuhr und Wächter) rechnet dann `GREATEST(AbgangSeit, letzter_vorgang_am)` ohne Unterabfragen. Nachweis: ein PG-Test mit Karenz > Lesehistorie, der beweist, dass der
-Lesehistorie-Lauf den Anonymisierungs-Zeitpunkt NICHT verschiebt — am alten Stand rot.
 
 ### 4.18 Neue Auflage eines Schulbuchs — ein Werk über den Auflagen
 
@@ -326,24 +301,29 @@ steht und die das Mahnwesen später liest.
   Hand einzutragen, macht niemand zweimal. Die Datei holt die Schule selbst, z. B. bei
   `schulferien.org/deutschland/ical/`; hochgeladen wird sie in den Einstellungen. Zur Laufzeit
   fragt der Server nichts ab — dieselbe Linie wie bei der Sommerferien-Tabelle.
-- **Ein Warner**, wenn der Kalender ausläuft: in der Betriebsbereitschaft, wo schon die
-  Ferientabelle steht. Ein Kalender, der still endet, rechnet ab dem ersten fehlenden Tag wieder
-  falsch, ohne dass es jemand merkt.
+- **Ein Warner**, wenn der Kalender ausläuft. Ein Kalender, der still endet, rechnet ab dem
+  ersten fehlenden Tag wieder falsch, ohne dass es jemand merkt.
 
 **Beim Mitrutschen gilt dieselbe Ausnahmeliste wie beim LMF-Plan:** nur offene Ausleihen, nur nach
 hinten, und nicht angefasst werden von Hand gesetzte Fristen, Lernmittel mit Termin aus dem Plan
 und die Fristen des Ferien-Leseclubs. Jede Verschiebung steht im Protokoll, und die Meldung nennt
 die Zahl der betroffenen Ausleihen.
 
-**Offen — zwei Dateien oder eine?** Vorgeschlagen war je eine Datei für Ferien und für Feiertage.
-Für die Ferien ist das richtig. Bei den Feiertagen rate ich ab: Die rechnet das Programm bereits
-exakt für Hessen (`pkg/lmfplan/feiertage.go`, Fronleichnam eingeschlossen), ohne Pflege und ohne
-Ablaufdatum. Eine hochgeladene Datei daneben wäre eine zweite Quelle für denselben Zustand — die
-teuerste Bugklasse dieses Projekts: Wer die Datei eines anderen Bundeslandes erwischt, verschiebt
-Fristen auf einen Tag, an dem die Schule offen hat, und niemand sieht warum. *Vorschlag:* die
-zweite Datei annehmen, aber nur als **Gegenprobe** — das Programm vergleicht sie mit seiner
-Rechnung und meldet Abweichungen, statt sie zu übernehmen. Das kostet wenig und fängt genau den
-Fall, in dem unsere Rechnung falsch wäre.
+**Entschieden am 22.09.2026 — zwei Dateien, und die Datei gewinnt.** Für Ferien und für
+Feiertage je eine iCal-Datei. Die gerechneten Feiertage Hessens (`pkg/lmfplan/feiertage.go`)
+bleiben die Vorbelegung für jedes Jahr, zu dem nichts hochgeladen ist; für ein Jahr aus der Datei
+gilt die Datei. Damit hat jedes Jahr genau eine Quelle statt zweier nebeneinander — dasselbe
+Muster wie bei den Sommerferien heute (eigener Eintrag schlägt Programmtabelle). Die Gefahr
+bleibt, dass jemand die Datei eines anderen Bundeslandes erwischt und Fristen auf einen Tag
+schiebt, an dem die Schule offen hat; dagegen steht die Vorschau (Falle 2) und die Gegenprobe des
+Programms: Weichen die Feiertage der Datei von der Rechnung ab, nennt die Vorschau jeden
+abweichenden Tag, bevor übernommen wird.
+
+**Entschieden am 22.09.2026 — wo der auslaufende Kalender gemeldet wird:** als **Band an der
+Theke**, für die, die den Kalender ändern dürfen, sobald er in weniger als der längsten Leihfrist
+endet — dort entsteht die falsche Frist; und als **Mail an die Leitung**, weil der, der das
+Hochladen vergisst, die Einstellungen nicht von selbst aufsucht. Die Betriebsbereitschaft nennt
+den Kalender wie heute schon die Ferientabelle, ist aber nicht der meldende Weg.
 
 **Was beim Bauen die Fallen sind** (vorab notiert, weil sie still danebengehen):
 
@@ -366,8 +346,9 @@ Fall, in dem unsere Rechnung falsch wäre.
    außen aus dem Schulnetz heraus — der Grund, aus dem schon die Ferientabelle im Programm steht.
 
 **Reihenfolge, wenn freigegeben:** (1) Kalender-Tabelle samt Übernahme der Sommerferien,
-(2) iCal-Upload mit Vorschau, (3) Frist rechnet gegen den Kalender, (4) Mitrutschen bei Nachtrag,
-(5) Warner in der Betriebsbereitschaft.
+(2) iCal-Upload mit Vorschau (Ferien und Feiertage, Gegenprobe gegen die Rechnung), (3) Frist
+rechnet gegen den Kalender, (4) Mitrutschen bei Nachtrag, (5) Band an der Theke und Mail an die
+Leitung, wenn der Kalender ausläuft.
 
 **Nicht gebaut.** Ändert einen Schreibpfad und braucht eine Migration; Gate am Rückweg, vorher rot
 gesehen.

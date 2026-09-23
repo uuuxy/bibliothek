@@ -206,6 +206,7 @@ steht im Kopfkommentar der Datei.
 | `repository/schema_gegenrichtung_pg_test.go`                  | Bewusst kein Urteil: ein CASCADE, der schon in der Liste steht und dessen Folge niemand behandelt, bleibt grün; 96 nullbare Spalten ausgenommen. |
 | `inventur/schema_paritaet_test.go`                            | Nur `UpdateBook`/`buecher_titel`; parst `schema.sql`, nicht die laufende DB.                                                                     |
 | `api/dsgvo_spalten_gate_pg_test.go`                           | Wort-Vorkommen ≠ Selektion (Spalte nur im WHERE zählt als abgedeckt); nur `schueler`.                                                            |
+| `api/dsgvo_pdf_felder_gate_test.go`                           | Nur DASS ein Feld gedruckt wird, nicht WAS und nicht mit welcher Beschriftung; liest den Quelltext, nicht das fertige PDF.                       |
 | `api/dsgvo_paar_rundreise_pg_test.go`                         | Nur gesäte Kanarienwerte; Referenzen OHNE Fremdschlüssel (JSON-Details, Freitext).                                                               |
 | `jobs/dsgvo_spuren_paarung_pg_test.go`                        | Eine Spur, die BEIDE Pfade vergessen.                                                                                                            |
 | `api/etiketten_*_paritaet_pg_test.go`                         | Nur die aufgezählten Felder — ein neues Etikettenfeld muss von Hand hinein.                                                                      |

@@ -123,32 +123,39 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Wächter lesen: %v", err)
 	}
-	var titelID, schuelerID string
+	var titelID string
 	if err := pool.QueryRow(ctx, `
 		INSERT INTO buecher_titel (titel, autor, medientyp) VALUES ('Karenzuhr-Testband', 'P', 'Buch')
 		RETURNING id`).Scan(&titelID); err != nil {
 		t.Fatalf("Titel anlegen: %v", err)
 	}
-	if err := pool.QueryRow(ctx, `
-		INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, abgaenger_seit)
-		VALUES ($1, 'Kurz', 'Zurueck', '10A', 2024, true, now() - interval '2 years') RETURNING id`,
-		"W-Uhr-"+suffix).Scan(&schuelerID); err != nil {
-		t.Fatalf("Abgänger anlegen: %v", err)
-	}
 	t.Cleanup(func() {
 		auf := context.Background()
-		for _, schritt := range []struct{ sql, arg string }{
-			{`DELETE FROM ausleihen WHERE schueler_id = $1`, schuelerID},
-			{`DELETE FROM buecher_exemplare WHERE titel_id = $1`, titelID},
-			{`DELETE FROM buecher_titel WHERE id = $1`, titelID},
-			{`DELETE FROM schueler WHERE id = $1`, schuelerID},
+		for _, sql := range []string{
+			`DELETE FROM ausleihen WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)`,
+			`DELETE FROM buecher_exemplare WHERE titel_id = $1`,
+			`DELETE FROM buecher_titel WHERE id = $1`,
 		} {
-			if _, err := pool.Exec(auf, schritt.sql, schritt.arg); err != nil {
-				t.Errorf("aufräumen (%s): %v", schritt.sql, err)
+			if _, err := pool.Exec(auf, sql, titelID); err != nil {
+				t.Errorf("aufräumen (%s): %v", sql, err)
 			}
 		}
+		if _, err := pool.Exec(auf, `DELETE FROM schueler WHERE barcode_id LIKE 'W-Uhr-%' || $1`, suffix); err != nil {
+			t.Errorf("aufräumen Schüler: %v", err)
+		}
 	})
-	ausleihe := func(t *testing.T, barcode string, rueckgabe any) {
+	abgaenger := func(t *testing.T, name string) string {
+		t.Helper()
+		var id string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr, ist_abgaenger, abgaenger_seit)
+			VALUES ($1, $2, 'Zurueck', '10A', 2024, true, now() - interval '2 years') RETURNING id`,
+			"W-Uhr-"+name+"-"+suffix, name).Scan(&id); err != nil {
+			t.Fatalf("Abgänger %s anlegen: %v", name, err)
+		}
+		return id
+	}
+	ausleihe := func(t *testing.T, schuelerID, barcode string, rueckgabe any) {
 		t.Helper()
 		var exemplarID string
 		if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, $2) RETURNING id`,
@@ -162,10 +169,11 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 	}
-	// Vor zehn Tagen ein Buch zurückgegeben (die Uhr der Löschfrist läuft ab hier) …
-	ausleihe(t, "B-U1", time.Now().AddDate(0, 0, -10))
+	// KURZ: vor zehn Tagen ein Buch zurückgegeben (die Uhr der Löschfrist läuft ab hier) …
+	kurz := abgaenger(t, "Kurz")
+	ausleihe(t, kurz, "B-U1", time.Now().AddDate(0, 0, -10))
 	// … und ein zweites noch offen (der Vorgang, der die Löschung blockiert).
-	ausleihe(t, "B-U2", nil)
+	ausleihe(t, kurz, "B-U2", nil)
 
 	nachher, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
 	if err != nil {
@@ -175,12 +183,25 @@ func TestWaechterRechnetMitDerUhrDerLoeschfrist(t *testing.T) {
 		t.Errorf("der Wächter meldet %d neue Fälle, erwartet 0 — die Karenz läuft seit der Rückgabe vor zehn Tagen, "+
 			"die Löschuhr (PredikatAnonymisierung) rechnet genau so", neu)
 	}
-	// Gegenprobe: Ist die Rückgabe älter als die Karenz, meldet der Wächter — wie die
+	// Gegenprobe: Ist die letzte Rückgabe älter als die Karenz, meldet der Wächter — wie die
 	// Löschuhr, die ihn dann nur wegen des offenen Buchs stehen lässt.
-	if _, err := pool.Exec(ctx, `UPDATE ausleihen SET rueckgabe_am = now() - interval '400 days'
-		WHERE schueler_id = $1 AND rueckgabe_am IS NOT NULL`, schuelerID); err != nil {
-		t.Fatal(err)
-	}
+	//
+	// LANG bekommt seine alte Rückgabe beim Anlegen. Bis zum 23.09.2026 datierte diese
+	// Gegenprobe stattdessen die Rückgabe von KURZ per UPDATE um 390 Tage zurück. Seit
+	// Migration 137 steht die Uhr als Stempel am Leser und folgt einer Rückdatierung nicht
+	// mehr — sie geht nur nach vorne. Nachgesehen am 23.09.2026: Kein Schreibpfad der
+	// Anwendung stellt den Zustand her, den das UPDATE herstellte. Alle drei Rückgabewege
+	// fassen nur offene Ausleihen an (repository/loan.go ReturnLoanZumTx,
+	// repository/schaden_melden.go, internal/service/device_service.go über activeLoan), und
+	// die Littera-Übernahme fügt nur ein (internal/littera/schreiber_ausleihen.go).
+	// rueckgabe_am geht also von NULL auf einen Wert und nie von einem Wert auf einen
+	// anderen; für jeden erreichbaren Zustand ist der Stempel dasselbe wie das frühere
+	// max(rueckgabe_am). Dass er nach hinten nicht folgt, hält
+	// repository/leser_stempel_pg_test.go fest.
+	lang := abgaenger(t, "Lang")
+	ausleihe(t, lang, "B-U3", time.Now().AddDate(0, 0, -400))
+	ausleihe(t, lang, "B-U4", nil)
+
 	spaeter, err := repo.ZaehleEhemaligeMitOffenenVorgaengen(ctx, 365)
 	if err != nil {
 		t.Fatalf("Wächter lesen: %v", err)

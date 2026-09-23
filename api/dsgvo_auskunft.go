@@ -43,8 +43,13 @@ type DsgvoStammdaten struct {
 	GeloeschtAm       *time.Time `json:"geloescht_am"`
 	// Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten
 	// unvollständig; Gate: TestDsgvoAuskunft_KenntJedeSchuelerSpalte).
-	SchulEintrittAm  *string    `json:"schul_eintritt_am"`
-	AbgaengerSeit    *time.Time `json:"abgaenger_seit"`
+	SchulEintrittAm *string    `json:"schul_eintritt_am"`
+	AbgaengerSeit   *time.Time `json:"abgaenger_seit"`
+	// Migration 137: der Zeitpunkt des letzten abgeschlossenen Vorgangs — die zweite Uhr
+	// der Karenz neben abgaenger_seit. Er gehört in die Auskunft, weil er ein über diese
+	// Person gespeicherter Zeitpunkt ist und weil er mitbestimmt, wann ihre Daten
+	// anonymisiert werden. WAS ausgeliehen war, sagt er nicht.
+	LetzterVorgangAm *time.Time `json:"letzter_vorgang_am"`
 	LusdBestaetigtAm *time.Time `json:"lusd_bestaetigt_am"`
 	AnonymisiertAm   *time.Time `json:"anonymisiert_am"`
 	// Migration 123: Die Tabelle führt alle Leser. Die Art gehört in die Auskunft, weil
@@ -73,7 +78,8 @@ const dsgvoStammdatenSQL = `
 		       COALESCE(eltern_email, '') AS eltern_email,
 		       is_manually_blocked, block_reason,
 		       erstellt_am, aktualisiert_am, deleted_at,
-		       schul_eintritt_am::text, abgaenger_seit, lusd_bestaetigt_am, anonymized_at,
+		       schul_eintritt_am::text, abgaenger_seit, letzter_vorgang_am,
+		       lusd_bestaetigt_am, anonymized_at,
 		       art,
 		       EXISTS (SELECT 1 FROM benutzer b WHERE b.leser_id = schueler.id) AS hat_konto
 		FROM schueler
@@ -254,7 +260,8 @@ func (s *Server) dsgvoQueryStammdaten(ctx context.Context, id string) (*DsgvoSta
 		&st.Strasse, &st.Hausnummer, &st.Plz, &st.Ort, &st.ElternEmail,
 		&st.IsManuallyBlocked, &st.BlockReason,
 		&st.ErstelltAm, &st.AktualisiertAm, &st.GeloeschtAm,
-		&st.SchulEintrittAm, &st.AbgaengerSeit, &st.LusdBestaetigtAm, &st.AnonymisiertAm,
+		&st.SchulEintrittAm, &st.AbgaengerSeit, &st.LetzterVorgangAm,
+		&st.LusdBestaetigtAm, &st.AnonymisiertAm,
 		&st.Art, &st.HatZugangskonto,
 	)
 	if errors.Is(err, pgx.ErrNoRows) {

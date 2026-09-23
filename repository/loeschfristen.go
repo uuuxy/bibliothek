@@ -39,23 +39,23 @@ func AbgangSeit(alias string) string {
 	return "COALESCE(" + alias + ".abgaenger_seit, " + alias + ".aktualisiert_am)"
 }
 
-// KarenzUhr ist der Zeitpunkt, ab dem die Karenz eines Abgängers läuft: der SPÄTESTE von
-// Abgang (AbgangSeit), letzter Rückgabe einer Ausleihe und letztem Abschluss eines
-// Schadensfalls (Bezahlung oder Storno — beides setzt ist_bezahlt). EINE Formulierung für
-// die Löschuhr (PredikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
+// KarenzUhr ist der Zeitpunkt, ab dem die Karenz eines Abgängers läuft: der SPÄTERE von
+// Abgang (AbgangSeit) und letztem abgeschlossenem Vorgang (letzter_vorgang_am — letzte
+// Rückgabe oder letzter Abschluss eines Schadensfalls). EINE Formulierung für die Löschuhr
+// (PredikatAnonymisierung) und den Wächter „Ehemalige mit offenen Vorgängen"
 // (ZaehleEhemaligeMitOffenenVorgaengen) — bis zum 22.09.2026 rechnete der Wächter allein
 // mit dem Abgang und meldete „Karenz abgelaufen", wo die Löschuhr noch lief (OFFEN.md 5.12).
-// GREATEST übergeht NULL — ein Schüler ohne je einen Vorgang rechnet allein ab dem Abgang.
+// GREATEST übergeht NULL — ein Leser ohne je einen Vorgang rechnet allein ab dem Abgang.
 //
-// Die eigene Spalte aus OFFEN.md 4.12 (letzter Vorgang, per Trigger) ändert diesen Ausdruck
-// hier — an einer Stelle.
+// Bis Migration 137 stand der letzte Vorgang hier als zwei Unterabfragen über
+// ausleihen.schueler_id und schadensfaelle.schueler_id. Genau die erste Spalte leert der
+// Lesehistorie-Lauf (jobs/cron_dsgvo_lesehistorie.go): Ist die Karenz länger eingestellt als
+// die Lesehistorie-Frist, verschwand die Rückgabe aus der Rechnung, die Uhr fiel auf den
+// Abgang zurück und die Zeile wurde FRÜHER anonymisiert als eingestellt (OFFEN.md 4.12).
+// Seit 137 trägt der Leser den Zeitpunkt selbst, von Triggern gestempelt; er überlebt das
+// Trennen der Ausleihe und sagt nichts darüber, WAS gelesen wurde.
 func KarenzUhr(alias string) string {
-	return `GREATEST(
-		          ` + AbgangSeit(alias) + `,
-		          (SELECT max(a.rueckgabe_am) FROM ausleihen a WHERE a.schueler_id = ` + alias + `.id),
-		          (SELECT max(GREATEST(sf.aktualisiert_am, sf.storniert_am)) FROM schadensfaelle sf
-		            WHERE sf.schueler_id = ` + alias + `.id AND sf.ist_bezahlt)
-		      )`
+	return "GREATEST(" + AbgangSeit(alias) + ", " + alias + ".letzter_vorgang_am)"
 }
 
 // ── Schüler-Anonymisierung ──────────────────────────────────────────────────
@@ -66,10 +66,11 @@ func KarenzUhr(alias string) string {
 // Konstante; die Abgänger-Frist ist die einstellbare Karenzzeit (abgaengerKarenzTage,
 // Migration 094).
 //
-// Die Uhr der Karenz (KarenzUhr) ist der SPÄTESTE von drei Zeitpunkten: der Abgang
-// (abgaenger_seit; aktualisiert_am nur als Rückfall für Altzeilen ohne Stempel), die letzte
-// Rückgabe einer Ausleihe und der letzte Abschluss eines Schadensfalls (Bezahlung oder
-// Storno — beides setzt ist_bezahlt, repository/audit_system.go). Bis 05.09.2026 zählte nur
+// Die Uhr der Karenz (KarenzUhr) ist der SPÄTERE von zwei Zeitpunkten: dem Abgang
+// (abgaenger_seit; aktualisiert_am nur als Rückfall für Altzeilen ohne Stempel) und dem
+// letzten abgeschlossenen Vorgang (letzter_vorgang_am — die letzte Rückgabe einer Ausleihe
+// oder der letzte Abschluss eines Schadensfalls, Bezahlung wie Storno; seit Migration 137
+// eine Spalte am Leser statt zweier Unterabfragen). Bis 05.09.2026 zählte nur
 // der Abgang. Weil offene Vorgänge die Zeile schützen, kippte der Schutz damit genau mit der
 // Rückgabe: Wer am Tag 10 zurückgab, hatte 80 Tage Reparaturfenster; wer am Tag 120
 // zurückgab, wurde in der Folgenacht anonymisiert. Die Karenz ist für die Korrektur an

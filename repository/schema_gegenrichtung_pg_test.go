@@ -321,6 +321,22 @@ var triggerBestand = []string{
 	"trg_lmf_termine_aktualisiert_am @ lmf_termine",
 	"trg_mail_vorlagen_updated_at @ mail_vorlagen",
 	"trg_schadensfaelle_aktualisiert_am @ schadensfaelle",
+	// Migration 137, befragt am 22.09.2026: Beide stempeln leser.letzter_vorgang_am — die
+	// Uhr der Karenz vor der Anonymisierung (repository.KarenzUhr). Frage 12: Der Wert stand
+	// vorher nirgends, er entsteht mit diesen Triggern; gerechnet wurde er bis dahin zur
+	// Laufzeit über ausleihen.schueler_id, und genau die leert der Lesehistorie-Lauf. Die
+	// Folge, die man kennen muss: Der Stempel geht nur nach VORNE. Eine stornierte Rückgabe
+	// lässt ihn stehen, die Karenz läuft dann länger statt kürzer — unschädlich, weil eine
+	// wieder offene Ausleihe die Zeile ohnehin vor der Anonymisierung schützt. Gestempelt
+	// wird jeder Leser, gelesen wird der Wert nur bei Abgängern.
+	"trg_leser_stempel_rueckgabe @ ausleihen",
+	"trg_leser_stempel_schaden @ schadensfaelle",
+	// Migration 137: derselbe Trigger wie vorher, aber eine andere Funktion dahinter
+	// (leser_aktualisiert_am statt set_aktualisiert_am) — ändert sich NUR
+	// letzter_vorgang_am, bleibt aktualisiert_am stehen. Eine Rückgabe ist keine Änderung
+	// am Leser, und aktualisiert_am ist der Rückfall von repository.AbgangSeit.
+	// Diese Ratsche sieht Namen, nicht Funktionskörper; das Verhalten hält
+	// jobs/cron_dsgvo_karenz_lesehistorie_pg_test.go und repository/leser_stempel_pg_test.go.
 	"trg_schueler_aktualisiert_am @ leser",
 	"trg_schueler_fotos_aktualisiert_am @ schueler_fotos",
 	"trg_schueler_klasse_vokabular @ leser",
