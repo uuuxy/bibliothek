@@ -37,8 +37,7 @@ func TestBereinigeISBN(t *testing.T) {
 	}
 }
 
-// Der letzte GÜLTIGE Wert gewinnt — ein nachfolgendes unbrauchbares $a darf eine bereits
-// erkannte Nummer nicht wieder löschen.
+// Ein nachfolgendes unbrauchbares $a darf eine bereits erkannte Nummer nicht wieder löschen.
 func TestVerarbeiteISBNBehaeltGueltigeNummerBeiNachfolgendemSchrott(t *testing.T) {
 	var b marcBibDaten
 	b.verarbeiteISBN([]marcSubfield{
@@ -48,5 +47,35 @@ func TestVerarbeiteISBNBehaeltGueltigeNummerBeiNachfolgendemSchrott(t *testing.T
 
 	if b.isbn != "9783124912008" {
 		t.Errorf("isbn = %q, erwartet 9783124912008", b.isbn)
+	}
+}
+
+// Die ISBN-13 gewinnt vor der ISBN-10, gleich in welcher Reihenfolge; innerhalb einer Länge
+// der erste gültige Wert. Die DNB führt beide Formen desselben Buchs, die ISBN-10 zuletzt —
+// bis zum 23.09.2026 gewann sie deshalb, und ein über die Freitextsuche bestellter Titel
+// entstand zehnstellig (docs/OFFEN.md 5.5).
+func TestVerarbeiteISBNNimmtDieISBN13(t *testing.T) {
+	faelle := []struct {
+		name    string
+		felder  [][]string // je 020 die Werte seiner $a
+		erwarte string
+	}{
+		{"erst 13, dann 10 (wie die DNB)", [][]string{{"9783751200530"}, {"3751200533"}}, "9783751200530"},
+		{"erst 10, dann 13", [][]string{{"3751200533"}, {"9783751200530"}}, "9783751200530"},
+		{"nur 10", [][]string{{"3751200533"}}, "3751200533"},
+		{"zwei 13: die erste", [][]string{{"9783751200530"}, {"9783551652713"}}, "9783751200530"},
+	}
+	for _, f := range faelle {
+		var b marcBibDaten
+		for _, werte := range f.felder {
+			var felder []marcSubfield
+			for _, w := range werte {
+				felder = append(felder, marcSubfield{Code: "a", Value: w})
+			}
+			b.verarbeiteISBN(felder)
+		}
+		if b.isbn != f.erwarte {
+			t.Errorf("%s: isbn = %q, erwartet %q", f.name, b.isbn, f.erwarte)
+		}
 	}
 }

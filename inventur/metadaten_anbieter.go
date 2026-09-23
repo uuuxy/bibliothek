@@ -93,8 +93,17 @@ func (b *marcBibDaten) verarbeiteFeld(feld marcDatafield) {
 	}
 }
 
-// verarbeiteISBN liest die ISBN aus Tag 020 $a (letzter gültiger Wert gewinnt) und
-// nebenbei den Ladenpreis aus $c. Der stand bisher ungenutzt in jeder DNB-Antwort.
+// verarbeiteISBN liest die ISBN aus Tag 020 $a und nebenbei den Ladenpreis aus $c. Der
+// stand bisher ungenutzt in jeder DNB-Antwort.
+//
+// Die ISBN-13 gewinnt vor der ISBN-10; innerhalb einer Länge der erste gültige Wert. Die DNB
+// führt beide Formen desselben Buchs in 020, erst die 13-, dann die 10-stellige
+// („Dunkelnacht": 9783751200530, dann 3751200533). Bis zum 23.09.2026 gewann der letzte
+// gültige Wert — an 30 Sätzen der Freitextsuche gemessen trugen 19 beide Formen, und in
+// allen 19 stand die ISBN-10 zuletzt, mit gleichem Kern. Ein über die Freitextsuche
+// bestellter Titel entstand damit zehnstellig, und der Strichcode auf dem Buch (immer
+// EAN-13) fand ihn später nicht: Die Normalform trennt 10 und 13 bewusst (Migration 133),
+// die Bestelltür legte den Titel ein zweites Mal an (docs/OFFEN.md 5.5).
 //
 // Der ERSTE brauchbare Preis gewinnt, nicht der letzte: Die DNB liefert zu einer ISBN
 // mehrere Sätze (Auflagen), die neueren zuerst. Bei der Alexander Gesamtausgabe steht im
@@ -109,7 +118,12 @@ func (b *marcBibDaten) verarbeiteISBN(subfelder []marcSubfield) {
 		if unterFeld.Code != "a" {
 			continue
 		}
-		if nummer := bereinigeISBN(unterFeld.Value); nummer != "" {
+		nummer := bereinigeISBN(unterFeld.Value)
+		switch {
+		case nummer == "":
+		case len(nummer) == 13 && len(b.isbn) != 13:
+			b.isbn = nummer
+		case b.isbn == "":
 			b.isbn = nummer
 		}
 	}

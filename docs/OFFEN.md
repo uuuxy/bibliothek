@@ -386,14 +386,17 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   DNB liefert 0 Sätze; „Dunkelnacht" allein 10, „Dunkelnacht and Boie" 14. Wer Titel und Autor
   tippt, bekommt also still keinen DNB-Treffer (die Suche ist „best-effort" und meldet nichts).
   Beim Bauen die Eingabe als CQL maskieren, nicht nur Wörter mit „and" verbinden.
-- **ISBN-10 aus der DNB-Freitextsuche** (gemessen am 23.09.2026): Die DNB führt in 020 erst die
-  ISBN-13, dann die ISBN-10; `verarbeiteISBN` nimmt den letzten gültigen Wert. Ein über die
-  Freitextsuche bestellter Titel entsteht deshalb als ISBN-10 („Dunkelnacht": `3751200533`).
-  Ein späterer Scan der ISBN-13 findet ihn nicht (`findeLokalenTitel` vergleicht die
-  Normalform, die 10 und 13 bewusst trennt, Migration 133) und legt ihn ein zweites Mal an.
-  Vorschlag: bei neuen Titeln die ISBN-13 nehmen und beim Nachschlagen beide Formen prüfen
-  (wie `isbnFormen.js` im Browser). Vorher am Testserver zählen, wie viele Titel eine ISBN-10
-  tragen, deren ISBN-13 es auch gibt.
+- **ISBN-10 und ISBN-13 desselben Buchs:** Die Normalform trennt beide bewusst (Migration 133),
+  die Littera-Übernahme behält eine gültige ISBN-10. Die Bestelltür (`findeLokalenTitel`), die
+  Markierung „Vorhanden" der Bestellsuche (`sammleExistierendeISBNs`) und die
+  Dublettenkontrolle der Maske vergleichen nur die Normalform: Ein Titel mit ISBN-10 wird beim
+  Bestellen per Strichcode (EAN-13) nicht gefunden und entsteht ein zweites Mal. Die Suche im
+  Browser rechnet schon um (`isbnFormen.js`), am Server fehlt das Gegenstück. Gemessen am
+  Testserver am 23.09.2026 (lesend): 100 Titel mit ISBN-10, 9.743 mit ISBN-13, 4 Paare mit
+  gleichem Kern — alle aus der Littera-Übernahme vom 15.07.2026, ohne Exemplare; eines davon
+  sind zwei verschiedene Bücher unter derselben Nummer („Heinrich Mann" und „Frédéric Chopin",
+  rororo, `3499500252`/`9783499500251`). Ein Abgleich über beide Formen darf deshalb
+  vorschlagen, nicht still zusammenführen.
 - **Frage: Google Books als Quelle für Titeldaten.** `SucheNachISBN` fragt der Reihe nach DNB,
   Google Books und OpenLibrary; Google liefert also Titel, Autor und Verlag, wenn die DNB den
   Titel nicht kennt. Nach einer Notiz vom 22.09.2026 soll Google nur noch als Rückfall für das
