@@ -1,6 +1,6 @@
 # 5. Bausteinsicht
 
-Stand: 18.09.2026 · alle Umfangszahlen gemessen am 17.09.2026
+Stand: 23.09.2026 · alle Umfangszahlen gemessen am 17.09.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -347,7 +347,7 @@ Vollständig: `schema.sql` (42 Tabellen) und [invarianten.md](../invarianten.md)
 | `audit_logs`                   | Ereignisprotokoll, `details JSONB`; append-only als **Konvention**, DSGVO-Tilgung als bewusste Ausnahme            |
 | `revoked_tokens`               | Sperrliste abgemeldeter JWTs                                                                                      |
 | `schueler_fotos`               | AES-256-GCM verschlüsselte Passbilder (kein öffentliches Dateiverzeichnis)                                        |
-| `system_einstellungen`         | Die 14 Einstellungskategorien der Oberfläche                                                                      |
+| `system_einstellungen`         | Die Schalter der Einstellungskategorien (FACHKONZEPT §17); Lieferanten, Schlagworte und Mail in eigenen Tabellen   |
 | `mail_settings_config`, `mail_vorlagen` | SMTP-Zugang (Passwort verschlüsselt) und Textvorlagen                                                    |
 | `view_buecher_bestand` (Sicht) | Bestandszahlen je Titel für Katalog und Theke                                                                     |
 

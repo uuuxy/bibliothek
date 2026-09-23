@@ -1,6 +1,6 @@
 # LUSD-Import — Schülerdaten ohne Schüler-ID
 
-Stand: 2026-09-05. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
+Stand: 2026-09-23. **Das eine Dokument zum LUSD-Import:** Was die Schule exportieren muss,
 wie der Import Schüler wiedererkennt, was mit Abgängern passiert, und wie man eine falsche
 Zuordnung repariert. Der Code steht in `api/lusd_*.go` und
 `repository/lusd_bestand.go`; die fachliche Kurzfassung im [Fachkonzept §8](FACHKONZEPT.md),
@@ -122,9 +122,12 @@ Wer bestätigt war und im Export fehlt, wird Abgänger. Seit dem 02.09.2026:
 | nichts offen, Karenz = 0                 | sofort anonymisiert (Verhalten bis 02.09.2026)                                                                    |
 
 Die **Karenzzeit** steht in _Einstellungen → Datenschutz & Sitzung → Abgänger-Karenzzeit_
-(Vorgabe **90 Tage**, Schlüssel `abgaenger_karenz_tage`). Ihre Uhr ist
-`schueler.abgaenger_seit` (Migration 094): gesetzt beim ersten Abgang, nicht verschoben
-bei weiteren Läufen, geräumt bei Rückkehr. Import, nächtlicher Job
+(Vorgabe **90 Tage**, Schlüssel `abgaenger_karenz_tage`). Ihre Uhr läuft ab dem späteren
+von zwei Zeitpunkten: `abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, nicht
+verschoben bei weiteren Läufen, geräumt bei Rückkehr) und `letzter_vorgang_am` (Migration
+137: letzte Rückgabe oder letzter Schadensabschluss). Den zweiten stempeln Trigger am Leser;
+aus den Ausleihen gerechnet, ginge er verloren, sobald die Lesehistorie-Befristung eine
+Ausleihe vom Leser trennt, und die Karenz würde kürzer als eingestellt. Import, nächtlicher Job
 (`jobs/cron_dsgvo.go`) und Selbstprüfung lesen **denselben** Schlüssel und rechnen mit
 **demselben** Prädikat (`repository.PredikatAnonymisierung`).
 
@@ -199,7 +202,7 @@ auf PII-Stufe 2 (kein Adressfeld in der Antwort, Gate `pii_antwort_gate_pg_test.
 | Anwenden: Batch, Neuanlage, Abgänger, Karenz                         | `api/lusd_apply.go`                                                                                                                                    |
 | Lauf, Bremse, Wahl des Admins, Audit                                 | `api/lusd.go`                                                                                                                                          |
 | Zusammenführen                                                       | `repository/schueler_zusammenfuehren.go`, `api/student_zusammenfuehren.go`                                                                             |
-| Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`                                                                  |
+| Karenz-Prädikat, Job, Wächter                                        | `repository/loeschfristen.go`, `jobs/cron_dsgvo.go`, `repository/loeschrueckstand.go`; Uhr: `migrations/137_letzter_vorgang_am_leser.sql`              |
 | Oberfläche                                                           | `frontend/src/lib/components/students/LusdImportView.svelte`, `LusdUmbenennungen.svelte`, `lusdVorschauRubriken.js`, `SchuelerZusammenfuehren*.svelte` |
 | Tests, die den Jahreszyklus spielen                                  | `api/lusd_namensmodus_pg_test.go`, `api/lusd_umbenennung_pg_test.go`, `api/student_zusammenfuehren_pg_test.go`, `api/lusd_paarung_test.go`             |
 

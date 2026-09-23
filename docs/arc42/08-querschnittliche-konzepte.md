@@ -1,6 +1,6 @@
 # 8. Querschnittliche Konzepte
 
-Stand: 17.09.2026
+Stand: 23.09.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -156,7 +156,9 @@ Lesehistorie, Anliegen             →  eigene Läufe in derselben Nachtkette
 Die **Reihenfolge ist die Zusage**: Löschung läuft nach der Anonymisierung, damit die
 Karenz für beides gilt. Import, Nachtlauf und Selbstprüfung lesen **denselben**
 Einstellungsschlüssel und rechnen mit **demselben** Prädikat
-(`repository.PredikatAnonymisierung`).
+(`repository.PredikatAnonymisierung`). Keine Frist darf eine andere verkürzen: Die Uhr der
+Karenz liest den letzten abgeschlossenen Vorgang am Leser (`letzter_vorgang_am`, Migration
+137), nicht aus den Ausleihen, deren Zuordnung die Lesehistorie-Befristung löst.
 
 **Offene Vorgänge schlagen die Frist:** Wer eine offene Ausleihe oder einen unbezahlten
 Schaden hat, wird gesperrt, behält aber Name und Anschrift — sonst ließe sich die Forderung
@@ -393,7 +395,7 @@ Zwei Orte mit klarer Trennung:
 | Ort                              | Inhalt                                                                                                         | Änderbar durch            |
 | -------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------- |
 | **Umgebung** (`.env`, Compose)   | Was zum Starten gebraucht wird und Sicherheitsentscheidungen: DSN, Geheimnisse, Ports, IMAP, Proxy-Vertrauen, Cookie-Secure, Backup- und S3-Zugang | Betrieb (Neustart nötig)  |
-| **Datenbank** (`system_einstellungen`, `mail_settings_config`, `role_permissions`) | Fachliche Schalter: 14 Einstellungskategorien, Fristen, Limits, Karenzzeit, Sitzungsfristen, SMTP-Zugang, Rechtematrix | Oberfläche (sofort wirksam) |
+| **Datenbank** (`system_einstellungen`, `mail_settings_config`, `role_permissions`) | Fachliche Schalter der Einstellungskategorien (FACHKONZEPT §17): Fristen, Limits, Karenzzeit, Sitzungsfristen, SMTP-Zugang, Rechtematrix | Oberfläche (sofort wirksam) |
 
 **Die Vorgabe ist immer die sichere Richtung.** `COOKIE_SECURE` ohne Wert ⇒ `true` mit
 Warnung; unlesbarer Wert ⇒ Abbruch. Der Secret-Guard ist von selbst scharf. Fehlt
