@@ -358,6 +358,7 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 
 		// routes_misc.go
 		"GET /api/public/opac/suche":                             {URL: "/api/public/opac/suche?q=Antwortgate"},
+		"GET /api/public/opac/filter":                            {URL: "/api/public/opac/filter"},
 		"GET /api/monitor/slides":                                {URL: "/api/monitor/slides"},
 		"GET /api/public/bestellung/{token}":                     {URL: "/api/public/bestellung/gate-dummy-token"},
 		"GET /api/public/bestellung/{token}/etiketten/{groesse}": {URL: "/api/public/bestellung/gate-dummy-token/etiketten/klein"},

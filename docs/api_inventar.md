@@ -16,7 +16,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (220)
+## Alle registrierten Routen (221)
 
 - `/`
 - `/api/admin`
@@ -121,6 +121,7 @@
 - `GET /api/print/rechnung/{schueler_id}`
 - `GET /api/public/bestellung/{token}`
 - `GET /api/public/bestellung/{token}/etiketten/{groesse}`
+- `GET /api/public/opac/filter`
 - `GET /api/public/opac/suche`
 - `GET /api/reports/overdue-pdf`
 - `GET /api/reservierungen/klassensatz`

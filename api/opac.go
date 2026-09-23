@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"bibliothek/apierrors"
@@ -14,26 +15,37 @@ import (
 // queryOpacTitel führt die (parametrisierte) OPAC-Suche aus und mappt die Zeilen.
 // Bei einem Query- oder Iterationsfehler wird der Fehler propagiert, damit der
 // öffentliche Katalog keine irreführenden Teildaten als vollständig ausliefert.
-func (s *Server) queryOpacTitel(ctx context.Context, query string, args []any) ([]OpacTitel, error) {
+// Zurück kommt dazu die Zahl aller Treffer vor der Kappung (letzte Spalte der Abfrage).
+func (s *Server) queryOpacTitel(ctx context.Context, query string, args []any) ([]OpacTitel, int, error) {
 	rows, err := s.DB.Pool.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
 	result := make([]OpacTitel, 0)
+	treffer := 0
 	for rows.Next() {
 		var t OpacTitel
-		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.CoverURL, &t.Verfuegbar, &t.Gesamt); err != nil {
-			return nil, err
+		if err := rows.Scan(&t.ID, &t.Titel, &t.Autor, &t.ISBN, &t.CoverURL, &t.Verfuegbar, &t.Gesamt, &treffer); err != nil {
+			return nil, 0, err
 		}
 		result = append(result, t)
 	}
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return result, nil
+	return result, treffer, nil
 }
+
+// opacTrefferKopf nennt, wie viele Titel eine Suche im öffentlichen Katalog trifft. Die
+// Antwort zeigt höchstens opacGrenze davon; ohne die Zahl sähen 50 gezeigte Treffer aus
+// wie alle. Ein Kopf statt eines Felds, weil die Antwort eine Liste ist, die OPAC-Seite
+// und „Mein Portal" so lesen — dasselbe Muster wie X-Sperre an der Theke (api/action.go).
+const (
+	opacTrefferKopf = "X-Treffer-Gesamt"
+	opacGrenze      = 50
+)
 
 // OpacTitel is a DSGVO-compliant book view for the public catalog.
 // Contains no loan data and no reader data.
@@ -49,11 +61,20 @@ type OpacTitel struct {
 
 // PublicCatalogSearchHandler handles GET /api/opac/suche?q=...
 // Public endpoint: no auth required. Never exposes loan or reader data (DSGVO).
+//
+// schlagwort_id (seit 23.09.2026, docs/OFFEN.md 4.20) beschränkt auf die Titel eines
+// Worts — der Filter in „Mein Portal", das über diese Tür sucht. Ohne Suchtext liefert der
+// Filter alle Titel des Worts, mit Suchtext die, die beides treffen.
 func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		q := strings.TrimSpace(r.URL.Query().Get("q"))
+		schlagwortID, err := uuidAusQuery(r, "schlagwort_id")
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+			return
+		}
 
-		if q == "" {
+		if q == "" && schlagwortID == "" {
 			w.Header().Set(headerContentType, contentTypeJSON)
 			httpresp.Write(w, []byte("[]"))
 			return
@@ -89,6 +110,11 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			   OR regexp_replace(coalesce(bt.isbn, ''), '[- ]', '', 'g') ILIKE '%' || regexp_replace($2, '[- ]', '', 'g') || '%'
 			   OR `+repository.SQLTitelUeberSchlagwort("bt", "$2")+`)`)
 		}
+		if schlagwortID != "" {
+			args = append(args, schlagwortID)
+			searchConditions = append(searchConditions,
+				repository.SQLTitelMitSchlagwort("bt", fmt.Sprintf("$%d", len(args))))
+		}
 
 		whereClause := ""
 		if len(searchConditions) > 0 {
@@ -99,23 +125,40 @@ func (s *Server) PublicCatalogSearchHandler() http.HandlerFunc {
 			SELECT bt.id, bt.titel, COALESCE(bt.autor, ''), COALESCE(bt.isbn, ''),
 			       COALESCE(bt.cover_url, ''),
 			       COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
-			       COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt
+			       COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
+			       count(*) OVER () AS treffer
 			FROM buecher_titel bt
 			LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 			LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 			%s
 			GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.cover_url
 			ORDER BY bt.titel
-			LIMIT 50
-		`, whereClause)
+			LIMIT %d
+		`, whereClause, opacGrenze)
 
-		result, err := s.queryOpacTitel(ctx, query, args)
+		result, treffer, err := s.queryOpacTitel(ctx, query, args)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 
+		w.Header().Set(opacTrefferKopf, strconv.Itoa(treffer))
 		RespondJSON(w, http.StatusOK, result)
+	}
+}
+
+// PublicCatalogFilterHandler handles GET /api/public/opac/filter — die Schlagworte, die im
+// Portal als Filter stehen (Pflegeseite, ist_filter), mit ihrer Kennung für
+// ?schlagwort_id=. Nur Wörter, zu denen der öffentliche Katalog einen Titel zeigt
+// (repository.OeffentlicheSchlagwortFilter). Katalogdaten, kein Personenbezug.
+func (s *Server) PublicCatalogFilterHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		filter, err := repository.OeffentlicheSchlagwortFilter(r.Context(), s.DB.Pool)
+		if err != nil {
+			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+			return
+		}
+		RespondJSON(w, http.StatusOK, filter)
 	}
 }
 

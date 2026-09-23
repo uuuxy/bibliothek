@@ -10,6 +10,9 @@ import (
 func (s *Server) registerPublicRoutes(mux *http.ServeMux) {
 	// ── PUBLIC ENDPOINTS ──
 	mux.HandleFunc("GET /api/public/opac/suche", s.PublicCatalogSearchHandler())
+	// Die Schlagworte, die im Portal als Filter stehen (docs/OFFEN.md 4.20). Öffentlich wie
+	// die Suche, die sie filtern: Das Portal sucht über den OPAC (KollegiumPortal.svelte).
+	mux.HandleFunc("GET /api/public/opac/filter", s.PublicCatalogFilterHandler())
 	mux.HandleFunc("GET /api/monitor/slides", s.GetMonitorSlidesHandler())
 
 	// Bestätigungs-Link an den Lieferanten (Migration 063). Kein Login: Der Token aus dem

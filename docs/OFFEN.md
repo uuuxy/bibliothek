@@ -34,7 +34,7 @@ aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.20
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
 
-1. **4.20** Schlagworte: Filter im Portal, DNB-Vorschlag (die Littera-Schlagworte mit dem Backup, 7.2).
+1. **4.20** Schlagworte: DNB-Vorschlag (die Littera-Schlagworte mit dem Backup, 7.2).
 2. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
 3. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
 4. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
@@ -290,15 +290,13 @@ Titel, 80 Zeichen je Wort, Vorschlagsliste die 500 häufigsten.
 **Freigegeben am 23.09.2026, in dieser Reihenfolge** (die Pflegeseite unter Einstellungen
 steht seit dem 23.09.2026):
 
-1. **Filter im Portal:** Die markierten Wörter stehen in _Mein Portal → Suchen & Reservieren_
-   als Filter.
-2. **DNB-Vorschlag beim Bestellen per ISBN:** Vorgeschlagen wird nur, was es schon als
+1. **DNB-Vorschlag beim Bestellen per ISBN:** Vorgeschlagen wird nur, was es schon als
    Schlagwort oder Verweis gibt. Gemessen am 23.09.2026 an 13 aktuellen Sätzen: Die Gattung
    (655 `gatbeg`) nennt ein Genre nur bei Jugendbüchern ab 12 („Science Fiction", „Dystopie
    und Utopie"), bei Kinderbüchern nur „Kinderbücher bis 11 Jahre". Die freien Verlagswörter
    (653) tragen „Fantasy" und „Freundschaft", aber auch bis zu 98 Werbewörter je Titel
    („TikTok", „Must Read") — deshalb der Abgleich gegen die eigene Liste.
-3. **Littera-Schlagworte** (MAB 710) beim nächsten Einspielen des Backups mitnehmen (7.2).
+2. **Littera-Schlagworte** (MAB 710) beim nächsten Einspielen des Backups mitnehmen (7.2).
    Heute liest der Import sie, leitet das Fach ab und verwirft sie. Vorher messen, wie viele
    Titel welche tragen.
 
@@ -406,6 +404,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   nachsehen, ob excelize inzwischen eine Fassung mit Fix hat — dann Ausnahme löschen und
   heben.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
+- `e2e/icon-trefferflaechen.spec.js` misst die Bestellhistorie, legt aber keine Bestellung an:
+  Allein oder ohne eine `bestell…`-Spec davor läuft es in die Zeitüberschreitung (lokal am
+  23.09.2026, Bestellhistorie leer; der globale Teardown löscht die E2E-Bestellungen). In der
+  vollen Suite legt eine alphabetisch frühere Spec sie an. Nach dem Muster von `seedBenutzer`
+  selbst anlegen.
 
 ### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
 
@@ -570,6 +573,10 @@ dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui
 - Knopfzeile über den Reitern (Mahnwesen): kommt aus dem gemeinsamen Seitengerüst; Anlass wäre ein
   Rundgang über das Gerüst.
 - Drei handgebaute Pillen-Gruppen in `StatsDashboard` statt `ui/Segmente.svelte`.
+- Schriftstärke der Chips: `ui/ChipFeld`, `ui/FilterChips` und `ui/Segmente` schreiben
+  `font-medium`, das im Haus 400 ist (`styles/theme-mass.css`; an `FilterChips` im Browser
+  gemessen am 23.09.2026, die beiden anderen tragen dieselbe Klasse). M3 nennt für label-large
+  500, die Knöpfe tragen `font-semibold` (500). Alle drei zusammen entscheiden, nicht einzeln.
 - Etikettenraster doppelt (`api/label_formats.go` und `etikettformate.js`), gehalten von
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
 - Reste des Nie-verdrahtet-Sweeps: `inventur_sessions.gestartet_von` wird nie angezeigt;

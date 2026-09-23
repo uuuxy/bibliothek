@@ -25,9 +25,13 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 	// JEDE Ergänzung hier ist eine bewusste Sicherheitsentscheidung — Reviewer aufgepasst.
 	publicAllowlist := map[string]string{
 		"/api/public/opac/suche": "öffentlicher Katalog (nur Titel/Autor/Verfügbarkeit, keine PII)",
-		"/api/monitor/slides":    "öffentlicher Bibliotheks-Monitor (nur Buchdaten)",
-		"/api/images/cover":      "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in image_caching.go)",
-		"/api/csrf-token":        "CSRF-Bootstrap-Endpunkt",
+		// Die Filterwörter der Suche darüber: Das Portal sucht über den öffentlichen Katalog,
+		// und eine Liste hinter der Anmeldung schützte nichts, solange die gefilterte Suche
+		// offen ist. Nur Schlagworte, keine PII.
+		"/api/public/opac/filter": "Filterwörter der öffentlichen Katalogsuche (nur Schlagworte, keine PII)",
+		"/api/monitor/slides":     "öffentlicher Bibliotheks-Monitor (nur Buchdaten)",
+		"/api/images/cover":       "öffentlicher Cover-Proxy (SSRF-Host-Allowlist in image_caching.go)",
+		"/api/csrf-token":         "CSRF-Bootstrap-Endpunkt",
 		// Bestätigungs-Link an den Lieferanten (Migration 063). Kein Login, aber auch kein
 		// offener Endpunkt: Der 256-Bit-Token aus der Bestellmail ist der Ausweis und
 		// öffnet ausschließlich SEINE Bestellung. Sichtbar sind Lieferant, Datum,

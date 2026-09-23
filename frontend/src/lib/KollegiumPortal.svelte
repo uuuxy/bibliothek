@@ -1,5 +1,4 @@
 <script>
-	import { apiFetch } from './apiFetch.js';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
@@ -13,6 +12,8 @@
 	import PortalSchulbuecher from './components/portal/PortalSchulbuecher.svelte';
 	import PortalLmfPlan from './components/portal/PortalLmfPlan.svelte';
 	import Reiter from './components/ui/Reiter.svelte';
+	import FilterChips from './components/ui/FilterChips.svelte';
+	import { erzeugePortalSuche } from './components/portal/portalSuche.svelte.js';
 	import {
 		erzeugeKlassensatzReservierung,
 		erzeugeReservierungsListen
@@ -28,13 +29,8 @@
 	// Abrufen — und nach dem Absenden zeigte der Zähler noch den alten Stand.
 	const eigeneAnliegen = erzeugeEigeneAnliegen();
 
-	let searchQuery = $state('');
-	let searchResults = $state.raw(/** @type {any[]} */ ([]));
-	/** Der letzte Suchlauf ist gescheitert — dann steht hier kein Ergebnis, sondern nichts. */
-	let suchfehler = $state(false);
-	let isSearching = $state(false);
-
-	let searchTimeout = /** @type {any} */ (null);
+	// Suchtext, Filter nach Schlagwort und Treffer — ausgelagert, Begründung in der Fabrik.
+	const suche = erzeugePortalSuche();
 
 	// Warteschlange (alle) + eigene Reservierungen samt Bibliotheks-Notiz —
 	// ausgelagert (Größen-Ratsche), Begründung und Zuschnitt in der Fabrik.
@@ -43,6 +39,7 @@
 	$effect(() => {
 		listen.lade();
 		eigeneAnliegen.lade();
+		suche.ladeFilter();
 	});
 
 	// Formular-Zustand und Absenden je Titel — ausgelagert, Begründung dort.
@@ -51,44 +48,6 @@
 		listen.warteschlangeFuer,
 		listen.lade
 	);
-
-	$effect(() => {
-		const q = searchQuery;
-		clearTimeout(searchTimeout);
-		if (q.trim().length < 2) {
-			searchResults = [];
-			return () => clearTimeout(searchTimeout);
-		}
-		searchTimeout = setTimeout(async () => {
-			isSearching = true;
-			try {
-				// Bewusst der OPAC und nicht /api/search: Nur der OPAC rechnet die
-				// Verfügbarkeit aus. /api/search liefert `BookTitle` — dort gibt es KEIN
-				// Bestandsfeld, weshalb das Abzeichen unten still übersprungen wurde und
-				// Lehrkräfte nie erfahren haben, ob ein Klassensatz überhaupt frei ist.
-				//
-				// Der OPAC passt auch fachlich: ausdrücklich nur Titel, Autor und Verfügbarkeit,
-				// keine Ausleih- oder Personendaten — genau das, was eine Lehrkraft sehen darf.
-				suchfehler = false;
-				const res = await apiFetch(`/api/public/opac/suche?q=${encodeURIComponent(q)}`);
-				if (res.ok) {
-					const data = await res.json();
-					searchResults = Array.isArray(data) ? data : (data.books ?? []);
-				} else {
-					// Sonst stünden die Treffer des vorigen Suchtextes unter der neuen
-					// Eingabe (Sweep „verschluckte Fehlantwort", 06.09.2026).
-					searchResults = [];
-					suchfehler = true;
-				}
-			} catch {
-				searchResults = [];
-				suchfehler = true;
-			} finally {
-				isSearching = false;
-			}
-		}, 300);
-		return () => clearTimeout(searchTimeout);
-	});
 </script>
 
 <PageShell>
@@ -119,28 +78,43 @@
 
 	{#if reiter === 'buecher'}
 		<!-- `mt-4`: Der Abstand Reiter→Pille ist im Haus 24 px (Huelle) + 16 px. Er fehlte
-		     hier, die Pille begann bei 57 px statt bei 73. -->
-		<div class="mt-4">
+		     hier, die Pille begann bei 57 px statt bei 73. Die Filter nach Schlagwort stehen
+		     darunter wie die Filterzeile der Leserdatei (gap-3); ohne markierte Wörter
+		     entfällt die Zeile. -->
+		<div class="mt-4 flex flex-col gap-3">
 			<Suchpille
 				id="portal-suchfeld"
-				bind:wert={searchQuery}
+				bind:wert={suche.text}
 				platzhalter="Titel, Autor oder ISBN eingeben …"
 				etikett="Bücher für einen Klassensatz suchen"
 				autofokus
 				{nachlaufend}
 			/>
+			{#if suche.filter.length > 0}
+				<FilterChips
+					optionen={suche.filter.map((f) => ({ wert: f.id, text: f.wort }))}
+					wert={suche.schlagwort}
+					onwahl={(w) => (suche.schlagwort = w)}
+					etikett="Nach Schlagwort filtern"
+				/>
+			{/if}
 		</div>
 
-		{#if suchfehler}
+		{#if suche.fehler}
 			<p class="text-sm font-semibold text-error" role="alert">
 				Die Suche ist fehlgeschlagen. Bitte erneut versuchen — es werden keine Treffer angezeigt,
 				damit hier nichts Falsches steht.
 			</p>
 		{/if}
 
-		{#if searchResults.length > 0}
+		{#if suche.treffer.length > 0}
+			{#if suche.gesamt > suche.treffer.length}
+				<p class="text-sm text-on-surface-variant">
+					Gezeigt werden {suche.treffer.length} von {suche.gesamt} Treffern — ein Suchwort grenzt ein.
+				</p>
+			{/if}
 			<div class="space-y-4">
-				{#each searchResults as book (book.id ?? book.titel_id)}
+				{#each suche.treffer as book (book.id ?? book.titel_id)}
 					{@const titelId = book.id ?? book.titel_id}
 					<PortalTrefferkarte
 						{book}
@@ -151,13 +125,16 @@
 					/>
 				{/each}
 			</div>
-		{:else if searchQuery.trim().length >= 2 && !isSearching}
+		{:else if suche.aktiv && !suche.laedt && !suche.fehler}
+			<!-- Nicht bei einem Fehler: Dann ist nichts gefunden, weil nicht gesucht wurde. -->
 			<SuchZustand
 				symbol={Search}
 				titel="Keine Bücher gefunden"
-				hinweis="Versuche es mit einem anderen Titel oder Autor."
+				hinweis={suche.schlagwort
+					? 'Versuche es mit einem anderen Suchwort oder nimm den Filter zurück.'
+					: 'Versuche es mit einem anderen Titel oder Autor.'}
 			/>
-		{:else if searchQuery.trim().length === 0}
+		{:else if suche.leer}
 			<PortalUeberblick reservierungen={listen.eigene} />
 		{/if}
 	{:else if reiter === 'klassensaetze'}
@@ -179,7 +156,7 @@
      bei right-4, während das Feld nur pr-4 Innenabstand hatte — ein langer Suchbegriff
      lief also unter den Punkt. -->
 {#snippet nachlaufend()}
-	{#if isSearching}
+	{#if suche.laedt}
 		<Ladekreis size="sm" />
 	{/if}
 {/snippet}

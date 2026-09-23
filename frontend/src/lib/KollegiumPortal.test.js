@@ -20,11 +20,13 @@ const TITEL = 'Seydlitz Geographie';
 /**
  * Antwort des OPAC — ein nacktes Array, kein `{books: …}`-Umschlag, und mit den
  * Bestandszahlen. Beides muss hier stimmen: Das Portal hat lange `/api/search`
- * befragt, das die Felder `verfuegbar`/`gesamt` gar nicht kennt.
+ * befragt, das die Felder `verfuegbar`/`gesamt` gar nicht kennt. Dazu der Kopf
+ * X-Treffer-Gesamt, den der OPAC seit dem 23.09.2026 schickt (api/opac.go).
  */
 function suchtreffer(verfuegbar = 12, gesamt = 30) {
 	return {
 		ok: true,
+		headers: new Headers({ 'X-Treffer-Gesamt': '1' }),
 		json: async () => [{ id: 'titel-1', titel: TITEL, autor: 'Klaus Berger', verfuegbar, gesamt }]
 	};
 }
