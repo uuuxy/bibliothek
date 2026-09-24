@@ -144,4 +144,32 @@ func TestZusammenfuehrenKollegium(t *testing.T) {
 			}
 		}
 	})
+
+	// Ein aktives Konto ist nie ohne Nummer (Migration 145, docs/OFFEN.md 5.16) — auch nicht,
+	// wenn es beim Zusammenführen auf eine Zeile ohne Nummer wandert. Das Ziel behält seine
+	// Nummer (siehe Kopf von repository/schueler_zusammenfuehren.go); hat es keine, kommt
+	// eine aus dem Generator.
+	t.Run("ein aktives Konto wandert nicht auf eine Zeile ohne Nummer", func(t *testing.T) {
+		ziel := legeLeser(t, "Ohne", "Nummerziel", "lehrkraft", "")
+		var quelle string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO benutzer (email, vorname, nachname, rolle)
+			VALUES ('ohne.nummerziel@schule.invalid', 'Ohne', 'Nummerziel', 'kollegium')
+			RETURNING leser_id`).Scan(&quelle); err != nil {
+			t.Fatalf("Konto anlegen: %v", err)
+		}
+		if _, err := repository.ZusammenfuehrenSchueler(ctx, pool, zfAuftrag(ziel, quelle)); err != nil {
+			t.Fatalf("Zusammenführen: %v", err)
+		}
+		var nummer *string
+		var aktiv bool
+		if err := pool.QueryRow(ctx, `
+			SELECT l.barcode_id, b.aktiv FROM leser l JOIN benutzer b ON b.leser_id = l.id
+			 WHERE l.id = $1`, ziel).Scan(&nummer, &aktiv); err != nil {
+			t.Fatalf("Ziel lesen: %v", err)
+		}
+		if aktiv && nummer == nil {
+			t.Fatal("ein aktives Konto hängt nach dem Zusammenführen an einer Zeile ohne Ausweisnummer")
+		}
+	})
 }

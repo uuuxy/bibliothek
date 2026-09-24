@@ -470,6 +470,10 @@ Reiter **Benutzer** (anlegen, bearbeiten, deaktivieren; **Zugangsanfragen** aus 
 Selbstanmeldung freischalten) und **Rollen & Rechte** (Matrix; Änderungen wirken sofort auf
 Menü und Schnittstelle).
 
+Die **Ausweisnummer** eines freigeschalteten Zugangs vergibt das Programm. Leeren Sie das Feld,
+bekommt die Person die nächste freie Nummer — die alte Karte gilt dann nicht mehr, ein neuer
+Ausweis ist zu drucken.
+
 **Vier Rollen vergeben Sie hier: Admin, Leitung, Mitarbeit, Helfer.** Die Leitung darf
 alles, was der Admin darf, außer zwei Dingen: Benutzer & Rechte und die Einstellungen.
 (Der Grund ist nicht Misstrauen: Wer Benutzerkonten ändert, ändert auch E-Mail-Adressen —

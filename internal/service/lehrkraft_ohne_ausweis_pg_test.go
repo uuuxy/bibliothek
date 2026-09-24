@@ -26,24 +26,16 @@ func TestResolveBorrower_LehrkraftOhneAusweis(t *testing.T) {
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
+	// Seit Migration 136 bekommt ein aktives Konto eine Nummer, seit 145 behält es eine.
+	// Ohne Nummer ist eine Lehrkraft seitdem nur ohne aktives Konto — etwa ohne Schul-Adresse,
+	// solange die Akte keine nachgetragen hat. Der Ausleihpfad muss den Zustand tragen.
 	var leserID string
 	if err := pool.QueryRow(ctx, `
-		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv)
-		VALUES ('Ohne', 'Ausweis', $1, 'kollegium', true) RETURNING leser_id
-	`, "ohne-ausweis-"+suffix+"@schule.invalid").Scan(&leserID); err != nil {
+		INSERT INTO leser (vorname, nachname, art) VALUES ('Ohne', $1, 'lehrkraft') RETURNING id
+	`, "Ausweis-"+suffix).Scan(&leserID); err != nil {
 		t.Fatalf("Lehrkraft ohne Ausweis anlegen: %v", err)
 	}
-	// Seit Migration 136 bekommt ein aktives Konto beim Anlegen eine Nummer. Ohne Nummer ist
-	// eine Lehrkraft seitdem, wenn die Verwaltung sie geleert hat — der Zustand bleibt
-	// möglich, und der Ausleihpfad muss ihn weiter tragen.
-	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = NULL WHERE id = $1`, leserID); err != nil {
-		t.Fatalf("Nummer leeren: %v", err)
-	}
 	t.Cleanup(func() {
-		if _, err := pool.Exec(ctx, `DELETE FROM benutzer WHERE email = $1`,
-			"ohne-ausweis-"+suffix+"@schule.invalid"); err != nil {
-			t.Errorf("Aufräumen (Konto): %v", err)
-		}
 		if _, err := pool.Exec(ctx, `DELETE FROM leser WHERE id = $1`, leserID); err != nil {
 			t.Errorf("Aufräumen (Leser): %v", err)
 		}

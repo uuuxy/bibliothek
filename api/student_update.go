@@ -478,9 +478,9 @@ func baueSchuelerUpdate(w http.ResponseWriter, req *patchStudentRequest) (*updat
 	// Die Ausweisnummer steht NICHT mehr in dieser Liste: Ihre Pflicht ist an die Art
 	// gepaart, wie in der Datenbank (chk_leser_schueler_pflichtfelder), und die Art steht
 	// hier nicht fest. Ein Schüler ohne Nummer ist an der Theke unauffindbar; ein Kollege
-	// hat sie erst, wenn ein Ausweis gedruckt ist — und muss sie wieder loswerden können,
-	// wenn sie falsch eingetragen wurde. Geprüft wird sie deshalb im Handler an der
-	// wirklichen Art (pruefeAusweisLeerung).
+	// muss eine falsch eingetragene wieder loswerden können — mit aktivem Konto bekommt er
+	// dabei eine neue aus dem Generator (Migration 145). Geprüft wird sie deshalb im Handler
+	// an der wirklichen Art (pruefeAusweisLeerung).
 	for _, feld := range []struct {
 		bezeichnung string
 		wert        *string

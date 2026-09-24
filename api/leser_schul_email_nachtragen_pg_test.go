@@ -206,7 +206,8 @@ func TestSchulEmailNachtragen(t *testing.T) {
 	})
 }
 
-// Die Ausweisnummer eines Kollegen lässt sich wieder entfernen — die des Schülers nicht.
+// Die Ausweisnummer eines Kollegen ohne aktives Konto lässt sich wieder entfernen, die eines
+// aktiven Kontos wird dabei neu gezogen (Migration 145) — die des Schülers nicht.
 //
 // der Blick auf die fertige Maske am 16.09.2026 brachte den Fall ans Licht: Der
 // Hinweis unter dem Feld sagt dem Kollegen „Leer lassen, solange kein Ausweis gedruckt
@@ -249,6 +250,31 @@ func TestAusweisnummerLeeren(t *testing.T) {
 		}
 		if nummer != nil {
 			t.Fatalf("die Nummer steht noch da: %q", *nummer)
+		}
+	})
+
+	// Seit Migration 145 (docs/OFFEN.md 5.16): Hat der Kollege ein aktives Konto, zieht
+	// Leeren eine neue Nummer — die Tippfehler-Nummer ist weg, eine Lücke entsteht nicht.
+	t.Run("mit aktivem Konto kommt eine neue Nummer", func(t *testing.T) {
+		var id string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO benutzer (email, vorname, nachname, rolle)
+			VALUES ('tipp.konto@schule.invalid', 'Tipp', 'Konto', 'kollegium')
+			RETURNING leser_id::text`).Scan(&id); err != nil {
+			t.Fatalf("Konto anlegen: %v", err)
+		}
+		if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'A-TIPPKONTO' WHERE id = $1`, id); err != nil {
+			t.Fatalf("Tippfehler eintragen: %v", err)
+		}
+		if rec := patch(t, id, `{"nachname":"Konto","barcode_id":""}`); rec.Code != http.StatusOK {
+			t.Fatalf("Antwort %d: %s", rec.Code, rec.Body.String())
+		}
+		var nummer *string
+		if err := pool.QueryRow(ctx, `SELECT barcode_id FROM leser WHERE id = $1`, id).Scan(&nummer); err != nil {
+			t.Fatalf("Ausweisnummer lesen: %v", err)
+		}
+		if nummer == nil || !strings.HasPrefix(*nummer, "A-") || *nummer == "A-TIPPKONTO" {
+			t.Fatalf("erwartet eine neue Nummer aus dem Generator, steht: %v", nummer)
 		}
 	})
 

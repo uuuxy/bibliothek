@@ -33,9 +33,10 @@ func NewSequenceRepository(db DBQueryer) *SequenceRepository {
 
 // NaechsteAusweisnummer liefert die nächste freie laufende Ausweisnummer (ohne Vorsilbe;
 // die gedruckte Form setzt api.AusweisNummer). Der Generator steht seit Migration 136 in
-// der Datenbank (ausweis_nummer_start), weil auch der Trigger aktives_konto_hat_ausweis ihn
-// braucht: Ein Nummernkreis hat EINEN Zähler — zwei daneben waren der Fehler aus Migration
-// 068. Bis dahin rechnete GetNextSequence dieselbe Regel in Go.
+// der Datenbank (ausweis_nummer_start), weil auch die Trigger aktives_konto_hat_ausweis und
+// aktives_konto_behaelt_ausweis (Migration 145) ihn brauchen: Ein Nummernkreis hat EINEN
+// Zähler — zwei daneben waren der Fehler aus Migration 068. Bis dahin rechnete
+// GetNextSequence dieselbe Regel in Go.
 //
 // Die Regeln: numerisch statt lexikografisch (A-100000 > A-99999), Fallback 10001, Nummern
 // mit mehr als 15 Ziffern (verrutschter Scan) werden übergangen. Der Advisory-Lock hält bis

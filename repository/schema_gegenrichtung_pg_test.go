@@ -306,8 +306,16 @@ var triggerBestand = []string{
 	// AKTIVEN Kontos, das keine Nummer hat (Anlegen, Freischaltung). Lesepfade, die mit
 	// „Kollege ohne Nummer" rechneten: loescheUnberuehrteLeserzeile (eine Nummer heißt
 	// „bleibt stehen") — deshalb bekommt eine offene Zugangsanfrage keine; der Ausleihpfad
-	// trägt eine geleerte Nummer weiter (lehrkraft_ohne_ausweis_pg_test.go).
+	// trägt eine Lehrkraft ohne Nummer weiter (lehrkraft_ohne_ausweis_pg_test.go).
+	// Migration 145: feuert auch beim Wechsel von leser_id — das Zusammenführen hängt ein
+	// aktives Konto sonst an eine Zeile ohne Nummer (leser_zusammenfuehren_kollegium_pg_test.go).
 	"trg_aktives_konto_hat_ausweis @ benutzer",
+	// Migration 145, befragt am 24.09.2026: Schreibt leser.barcode_id neu, wenn die Nummer
+	// eines AKTIVEN Kontos verschwindet (Akte, Benutzerverwaltung leeren sie). Frage 12: Wer
+	// NULL schreibt, findet danach eine Nummer in der Zeile; „Kollege ohne Nummer" gibt es
+	// nur noch ohne Konto oder mit inaktivem (api/sequence_pg_test.go,
+	// TestAusweisnummerLeeren).
+	"trg_leser_aktives_konto_behaelt_ausweis @ leser",
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",

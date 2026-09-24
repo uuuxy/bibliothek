@@ -69,9 +69,9 @@
 		<Feld id="email" label="E-Mail Adresse" type="email" bind:value={userForm.email} required />
 		<Feld
 			id="barcode_id"
-			label="Barcode (Anmelde-ID)"
+			label="Ausweisnummer"
 			bind:value={userForm.barcode_id}
-			placeholder="Z. B. L-001, MA-04 (optional)"
+			hint="Leeres Feld: Das Programm vergibt die nächste freie Nummer."
 		/>
 		{#each AUSWAHLEN as auswahl (auswahl.id)}
 			<div class="space-y-1.5">

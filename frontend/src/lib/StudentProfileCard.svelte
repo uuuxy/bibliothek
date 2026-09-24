@@ -92,9 +92,10 @@
 			<AbgangsjahrFeld bind:profile darfBearbeiten={rechte.bearbeiten} />
 		{/if}
 
-		<!-- Ein Kollege aus der Selbstanmeldung hat noch keine Ausweisnummer. Eine leere
-		     Zeile sähe nach einem Anzeigefehler aus; ohne Nummer gibt es auch keinen
-		     Ausweis zu drucken. Eingetragen wird sie in „Benutzer & Rechte". -->
+		<!-- Ohne Ausweisnummer ist ein Kollege nur ohne aktiven Zugang (offene Anfrage,
+		     deaktiviert, keine Schul-Adresse): Ein aktiver bekommt und behält eine
+		     (Migrationen 136, 145). Eine leere Zeile sähe nach einem Anzeigefehler aus;
+		     ohne Nummer gibt es auch keinen Ausweis zu drucken. -->
 		{#if profile.barcode_id}
 			<p class="text-sm text-slate-400 font-mono tracking-widest">{profile.barcode_id}</p>
 		{:else}

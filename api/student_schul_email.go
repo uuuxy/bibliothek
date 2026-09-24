@@ -147,6 +147,10 @@ func (s *Server) trageKontoNach(ctx context.Context, w http.ResponseWriter, lese
 // „Änderungen gespeichert", der Server hätte es mit 400 abgewiesen. Ein Tippfehler in der
 // Nummer war damit endgültig.
 //
+// Seit Migration 145 bleibt die Spalte nur bei einem Kollegen ohne aktives Konto leer; hat
+// er eines, zieht die Datenbank beim Leeren eine neue Nummer
+// (trg_leser_aktives_konto_behaelt_ausweis).
+//
 // ok=false: Die Fehlerantwort steht bereits.
 func (s *Server) pruefeAusweisLeerung(ctx context.Context, w http.ResponseWriter, id string, reqBarcode *string) bool {
 	if reqBarcode == nil || strings.TrimSpace(*reqBarcode) != "" {

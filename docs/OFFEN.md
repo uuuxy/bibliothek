@@ -30,15 +30,16 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, ergänzt am 24.09.2026):
 
-1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.16 (Leeren zieht eine neue Nummer), 5.5
-   (Ersatz-Etikett nach der Vorlage), 5.19 (Auskunft für jeden Leser), 5.21 (Palettenfarben,
-   Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18 (Klassen als Stammdaten,
-   mit Frage-Runde zur Oberfläche).
-2. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
+1. **5.23** Eine Ausweisnummer kann ein zweites Mal vergeben werden — Verdacht der Kategorie A,
+   deshalb vor den kleinen Punkten.
+2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.5 (Ersatz-Etikett nach der Vorlage), 5.19
+   (Auskunft für jeden Leser), 5.21 (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf
+   eigenen M3-Rollen), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
+3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
    Nachbestell-Liste, also zuletzt.
-3. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+4. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Von 4.20 (Schlagworte) bleiben nur die Littera-Schlagworte; sie kommen mit dem Backup (7.2).
 
@@ -340,12 +341,6 @@ bedienen; verschlossen sind Schule, Fristen und Mailversand (`manage_settings`) 
 Rechte (`manage_users`). Der Nummernkreis bleibt unangetastet: Ohne Netz ist die Vorsilbe die
 einzige Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheidet.
 
-**Entschieden am 24.09.2026, nicht gebaut:** Seit Migration 136 hat jedes aktive Konto eine
-Ausweisnummer. Die Verwaltung kann sie an einem Kollegen weiter leeren
-(`TestAusweisnummerLeeren`, entschieden am 16.09.2026, als der Hinweis am Feld noch „Leer
-lassen" sagte) — dann fehlt sie, und der Druck liefert eine leere Zeile. Künftig zieht Leeren
-eine neue Nummer aus dem Generator der Datenbank; ein aktives Konto ist nie ohne Nummer.
-
 ### 5.18 Klassen als Stammdaten — wie die Lesergruppen in Littera
 
 Am 23.09.2026 entschieden: „Klasse löschen möglich machen". Beim Bauen stellte sich heraus, dass
@@ -456,6 +451,20 @@ eigenen Tabelle statt an der Leserzeile — eine Migration an der Karenz-Uhr (L�
 DSGVO-Auskunft lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit; bis dahin steht der
 Punkt hier, damit dieser Umbau ihn findet.
 
+### 5.23 Eine Ausweisnummer kann ein zweites Mal vergeben werden — Verdacht, Kategorie A
+
+`ausweis_nummer_start()` (Migration 136) rechnet „höchste A-Nummer in `leser` + 1". Verschwindet
+die höchste Nummer aus der Tabelle, gibt der Generator sie beim nächsten Ziehen an eine andere
+Person. Verschwinden kann sie beim endgültigen Löschen (DSGVO-Löschung, die Quelle beim
+Zusammenführen), beim Anonymisieren (`ANON-…`), beim Leeren an einem Leser ohne aktives Konto und
+beim Umschreiben von Hand. Nachgestellt am 24.09.2026 an der Test-Datenbank: Kind mit A-10001
+angelegt, endgültig gelöscht, die nächste Nummer ist wieder A-10001. Die Folge: Eine noch
+vorhandene Karte der gelöschten Person bucht an der Theke auf die neue. Nicht gemessen ist, wie
+oft eine Karte nach dem Löschen noch benutzt wird.
+
+Richtung der Abhilfe: eine Hochwassermarke, die jede geschriebene A-Nummer hebt; der Generator
+zieht über sie statt über die Tabelle.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -503,6 +512,9 @@ Punkt hier, damit dieser Umbau ihn findet.
 
 ### 6.2 Kategorie C
 
+- Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
+  in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
+  freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
 - Die Ferientabelle 2027–2030 (`pkg/lmfplan/ferien.go`) ist eine ungeprüfte Abschrift; der
   Horizont-Test wird ab 2029 rot. Beim nächsten KMK-Beschluss gegen die Quelle prüfen.
 - Browser-Gates: Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den

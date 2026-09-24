@@ -804,8 +804,9 @@ CREATE INDEX IF NOT EXISTS idx_exemplare_zugang_am
 -- fuenf Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Uebernahme, Seed,
 -- Testaufbauten); die sechste wuerde es vergessen, und ein Kollege, den die Theke nicht
 -- findet, ist genau der Fehler, den der Umbau abschafft.
--- Migration 136: EIN Generator für Ausweisnummern, in der Datenbank — der Trigger
--- aktives_konto_hat_ausweis und Go (repository.SequenceRepository.NaechsteAusweisnummer) rufen ihn. Numerisch statt
+-- Migration 136: EIN Generator für Ausweisnummern, in der Datenbank — die Trigger
+-- aktives_konto_hat_ausweis und aktives_konto_behaelt_ausweis (145) und Go
+-- (repository.SequenceRepository.NaechsteAusweisnummer) rufen ihn. Numerisch statt
 -- lexikografisch, Fallback 10001, überlange Nummern werden übergangen; der Advisory-Lock
 -- hält bis zum Ende der Transaktion.
 CREATE OR REPLACE FUNCTION ausweis_nummer_start()
@@ -847,17 +848,16 @@ CREATE TRIGGER trg_benutzer_hat_leserzeile
 BEFORE INSERT ON benutzer
 FOR EACH ROW EXECUTE FUNCTION konto_hat_leserzeile();
 
--- Migration 136: Ein AKTIVES Konto hat eine Ausweisnummer — vergeben beim Anlegen oder bei
--- der Freischaltung, aufgeschoben bis zum Commit, damit ein Schreiber der Leserzeile in
--- derselben Transaktion (repository.UpdateUser) sie nicht wieder leert. Eine offene
--- Zugangsanfrage bekommt keine (Waisen-Regel, repository.loescheUnberuehrteLeserzeile).
+-- Migration 136/145: Ein AKTIVES Konto hat eine Ausweisnummer — vergeben beim Anlegen, bei
+-- der Freischaltung und wenn ein aktives Konto an eine Zeile ohne Nummer wandert
+-- (Zusammenführen, benutzer.leser_id). Aufgeschoben bis zum Commit, damit ein Schreiber der
+-- Leserzeile in derselben Transaktion (repository.UpdateUser, Littera-Übernahme) vorher
+-- sprechen kann. Ob eine Nummer fehlt, entscheidet das WHERE. Eine offene Zugangsanfrage
+-- bekommt keine (Waisen-Regel, repository.loescheUnberuehrteLeserzeile).
 CREATE OR REPLACE FUNCTION aktives_konto_hat_ausweis()
 RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF NOT NEW.aktiv OR NEW.leser_id IS NULL THEN
-        RETURN NULL;
-    END IF;
-    IF TG_OP = 'UPDATE' AND OLD.aktiv THEN
         RETURN NULL;
     END IF;
     UPDATE leser
@@ -867,9 +867,31 @@ BEGIN
 END $$;
 
 CREATE CONSTRAINT TRIGGER trg_aktives_konto_hat_ausweis
-AFTER INSERT OR UPDATE OF aktiv ON benutzer
+AFTER INSERT OR UPDATE OF aktiv, leser_id ON benutzer
 DEFERRABLE INITIALLY DEFERRED
 FOR EACH ROW EXECUTE FUNCTION aktives_konto_hat_ausweis();
+
+-- Migration 145: Verschwindet die Nummer eines aktiven Kontos (Akte oder
+-- Benutzerverwaltung leeren sie), zieht der Trigger sofort eine neue aus demselben
+-- Generator — VOR dem Schreiben, damit der Generator die alte noch mitzählt. NULL über
+-- NULL bleibt dem aufgeschobenen Trigger oben. Der Name sortiert vor
+-- trg_leser_nummer_ist_kein_buch, damit die gezogene Nummer dort geprüft wird.
+CREATE OR REPLACE FUNCTION aktives_konto_behaelt_ausweis()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF OLD.barcode_id IS NULL OR NEW.barcode_id IS NOT NULL
+       OR NEW.deleted_at IS NOT NULL OR NEW.anonymized_at IS NOT NULL THEN
+        RETURN NEW;
+    END IF;
+    IF EXISTS (SELECT 1 FROM benutzer WHERE leser_id = NEW.id AND aktiv) THEN
+        NEW.barcode_id := ausweisnummer(ausweis_nummer_start());
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_leser_aktives_konto_behaelt_ausweis
+BEFORE UPDATE OF barcode_id ON leser
+FOR EACH ROW EXECUTE FUNCTION aktives_konto_behaelt_ausweis();
 
 -- Migration 118 hielt eine Ausweisnummer ueber ZWEI Tabellen eindeutig (Trigger
 -- ausweis_eindeutig_ueber_personen), Migration 120 sorgte dafuer, dass ein
@@ -1814,7 +1836,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('141_bescheid_absender_snapshot.sql'),
 ('142_bescheid_briefdatum_schulzeit.sql'),
 ('143_schlagworte_pflege.sql'),
-('144_schlagworte_verweis_sperre.sql')
+('144_schlagworte_verweis_sperre.sql'),
+('145_geleerte_ausweisnummer_zieht_neue.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
