@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 23.09.2026
+Stand: 24.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
