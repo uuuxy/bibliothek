@@ -116,7 +116,7 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a 
 	st := a.Stammdaten
 	p.Cell(0, 6, tr(fmt.Sprintf("Betroffene Person: %s %s (Klasse %s)", st.Vorname, st.Nachname, st.Klasse)))
 	p.Ln(5)
-	p.Cell(0, 6, tr("Erstellt am: "+a.ErstelltAm.In(schulzeit.Zone()).Format(dsgvoZeitFormat)))
+	p.Cell(0, 6, tr("Erstellt am: "+dsgvoZeit(a.ErstelltAm)))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(9)
 	p.SetFont("Arial", "", 9)
@@ -150,10 +150,10 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoS
 	dsgvoZeile(p, tr, "Manuell gesperrt", dsgvoJaNein(st.IsManuallyBlocked))
 	dsgvoZeile(p, tr, "Sperrgrund", dsgvoStrPtr(st.BlockReason))
 	dsgvoZeile(p, tr, "Abgänger", dsgvoJaNein(st.IstAbgaenger))
-	dsgvoZeile(p, tr, "Erfasst am", st.ErstelltAm.Format(dsgvoZeitFormat))
-	dsgvoZeile(p, tr, "Zuletzt geändert", st.AktualisiertAm.Format(dsgvoZeitFormat))
+	dsgvoZeile(p, tr, "Erfasst am", dsgvoZeit(st.ErstelltAm))
+	dsgvoZeile(p, tr, "Zuletzt geändert", dsgvoZeit(st.AktualisiertAm))
 	if st.GeloeschtAm != nil {
-		dsgvoZeile(p, tr, "Gelöscht am (Papierkorb)", st.GeloeschtAm.Format(dsgvoZeitFormat))
+		dsgvoZeile(p, tr, "Gelöscht am (Papierkorb)", dsgvoZeit(*st.GeloeschtAm))
 	}
 	// Die Anmeldedaten selbst stehen nicht hier (sie gehören zum Konto, nicht zum Leser);
 	// dass es eines gibt, ist aber eine Angabe über diese Person.
@@ -178,7 +178,7 @@ func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto DsgvoFoto) 
 	dsgvoAbschnitt(p, tr, "2. Ausweisfoto")
 	dsgvoZeile(p, tr, "Vorhanden", dsgvoJaNein(foto.Vorhanden))
 	if foto.AktualisiertAm != nil {
-		dsgvoZeile(p, tr, "Aktualisiert am", foto.AktualisiertAm.Format(dsgvoZeitFormat))
+		dsgvoZeile(p, tr, "Aktualisiert am", dsgvoZeit(*foto.AktualisiertAm))
 	}
 	dsgvoZeile(p, tr, "Hinweis", foto.Hinweis)
 }
@@ -192,12 +192,12 @@ func dsgvoAusleihAbschnitt(p *gofpdf.Fpdf, tr func(string) string, ausleihen []D
 	for _, a := range ausleihen {
 		rueck := "offen"
 		if a.RueckgabeAm != nil {
-			rueck = a.RueckgabeAm.Format(dsgvoDatumFormat)
+			rueck = dsgvoDatum(*a.RueckgabeAm)
 		}
 		dsgvoEintragTitel(p, tr, a.Gegenstand)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Barcode: %s · ausgeliehen: %s · Frist: %s · zurückgegeben: %s",
-			dsgvoLeerWert(a.Barcode), a.AusgeliehenAm.Format(dsgvoDatumFormat),
-			a.RueckgabeFrist.Format(dsgvoDatumFormat), rueck))
+			dsgvoLeerWert(a.Barcode), dsgvoDatum(a.AusgeliehenAm),
+			dsgvoDatum(a.RueckgabeFrist), rueck))
 	}
 }
 
@@ -215,14 +215,14 @@ func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []D
 		// Zeitpunkt und Grund der Stornierung standen bis zum 24.09.2026 nur in der
 		// abgerufenen Auskunft, nicht auf diesem Blatt.
 		if f.StorniertAm != nil {
-			status = "storniert am " + f.StorniertAm.Format(dsgvoDatumFormat)
+			status = "storniert am " + dsgvoDatum(*f.StorniertAm)
 			if f.Stornierungsgrund != nil && *f.Stornierungsgrund != "" {
 				status += " (Grund: " + *f.Stornierungsgrund + ")"
 			}
 		}
 		dsgvoEintragTitel(p, tr, f.Beschreibung)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Betrag: %s EUR · Status: %s · gemeldet: %s",
-			f.Betrag, status, f.ErstelltAm.Format(dsgvoDatumFormat)))
+			f.Betrag, status, dsgvoDatum(f.ErstelltAm)))
 	}
 }
 
@@ -235,7 +235,7 @@ func dsgvoVormerkAbschnitt(p *gofpdf.Fpdf, tr func(string) string, vormerkungen 
 	for _, v := range vormerkungen {
 		dsgvoEintragTitel(p, tr, v.Titel)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Status: %s · erstellt: %s%s",
-			v.Status, v.ErstelltAm.Format(dsgvoDatumFormat), dsgvoNotiz(v.Notiz)))
+			v.Status, dsgvoDatum(v.ErstelltAm), dsgvoNotiz(v.Notiz)))
 	}
 }
 
@@ -251,7 +251,7 @@ func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []
 	for _, b := range bescheide {
 		dsgvoEintragTitel(p, tr, "Bescheid "+b.Referenznummer)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("vom %s · Frist: %s · Betrag: %s EUR · Status: %s",
-			b.BriefDatum.Format(dsgvoDatumFormat), b.FristBis.Format(dsgvoDatumFormat),
+			dsgvoDatum(b.BriefDatum), dsgvoDatum(b.FristBis),
 			b.Gesamtbetrag, b.Status))
 	}
 }
@@ -276,10 +276,10 @@ func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []
 		}
 		bearbeitet := "noch nicht bearbeitet"
 		if m.QuittiertAm != nil {
-			bearbeitet = "bearbeitet am " + m.QuittiertAm.Format(dsgvoDatumFormat)
+			bearbeitet = "bearbeitet am " + dsgvoDatum(*m.QuittiertAm)
 		}
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Buch: %s · gescannt: %s · beteiligt als %s%s · %s",
-			dsgvoLeerWert(m.Barcode), m.GescanntAm.Format(dsgvoZeitFormat),
+			dsgvoLeerWert(m.Barcode), dsgvoZeit(m.GescanntAm),
 			dsgvoNachbuchRolle(m.Rolle), grund, bearbeitet))
 	}
 }
@@ -332,7 +332,7 @@ func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAu
 			kontext = " · " + *e.Kontext
 		}
 		p.MultiCell(0, 5, tr(fmt.Sprintf("%s — %s — %s%s",
-			e.Zeitpunkt.Format(dsgvoZeitFormat), e.Aktion, e.Akteur, kontext)), "", "L", false)
+			dsgvoZeit(e.Zeitpunkt), e.Aktion, e.Akteur, kontext)), "", "L", false)
 	}
 }
 
@@ -348,7 +348,7 @@ func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege 
 	p.SetFont("Arial", "", 8)
 	for _, e := range eintraege {
 		p.MultiCell(0, 5, tr(fmt.Sprintf("%s — %s",
-			e.Zeitpunkt.Format(dsgvoZeitFormat), e.Aktion)), "", "L", false)
+			dsgvoZeit(e.Zeitpunkt), e.Aktion)), "", "L", false)
 	}
 }
 
@@ -430,12 +430,26 @@ func dsgvoLeerWert(s string) string {
 	return s
 }
 
+// dsgvoZeit und dsgvoDatum schreiben einen Zeitpunkt so, wie die Schule ihn liest: in der
+// Schulzeitzone. Zeitpunkte aus der Datenbank kommen über pgx in der Zone des Prozesses an
+// (time.Local), und der Container läuft in UTC. Bis zum 24.09.2026 stand deshalb jede
+// Uhrzeit dieses Blatts im Sommer zwei Stunden zu früh da, ein Vorgang kurz nach
+// Mitternacht am Vortag. Ein reines Datum (DATE, Mitternacht UTC) bleibt beim Umrechnen
+// derselbe Tag, weil Berlin vor UTC liegt.
+func dsgvoZeit(t time.Time) string {
+	return t.In(schulzeit.Zone()).Format(dsgvoZeitFormat)
+}
+
+func dsgvoDatum(t time.Time) string {
+	return t.In(schulzeit.Zone()).Format(dsgvoDatumFormat)
+}
+
 // dsgvoZeitPtr: Zeitpunkt oder Strich — wie dsgvoStrPtr für Texte.
 func dsgvoZeitPtr(t *time.Time) string {
 	if t == nil {
 		return "—"
 	}
-	return t.Format(dsgvoZeitFormat)
+	return dsgvoZeit(*t)
 }
 
 func dsgvoJaNein(b bool) string {

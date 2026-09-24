@@ -10,6 +10,7 @@ import (
 
 	"bibliothek/internal/pdftest"
 	"bibliothek/pdf"
+	"bibliothek/pkg/schulzeit"
 )
 
 // Die gedruckte Auskunft enthält, was die abgerufene enthält (24.09.2026).
@@ -24,8 +25,12 @@ import (
 // echte PDF und verlangt jeden Wert auf dem Blatt. Ein neues Feld oder ein neuer Teil der
 // Auskunft ist damit geprüft, ohne dass jemand dieses Gate anfasst.
 //
+// Zeitpunkte prüft es am Datum (TT.MM.JJJJ) in der Schulzeitzone: Jeder liegt auf 23:30 UTC,
+// in Berlin also schon am nächsten Tag. Ein Abschnitt, der die Zone des Servers druckt (der
+// Container läuft in UTC), nennt den Vortag und fällt auf.
+//
 // BLINDHEIT: Ja/Nein-Werte prüft es nicht — „Ja" steht zu oft auf dem Blatt, um einem
-// Feld zugeordnet zu werden. Zeitpunkte prüft es am Datum (TT.MM.JJJJ).
+// Feld zugeordnet zu werden.
 func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 	// Ausnahmen: Pfad → Begründung.
 	ausnahmen := map[string]string{
@@ -93,9 +98,10 @@ func (w *pruefwerte) fuelle(t *testing.T, v reflect.Value, pfad string) {
 	w.n++
 	switch {
 	case v.Type() == zeitTyp:
-		tag := time.Date(1990, 1, 1, 12, 0, 0, 0, time.UTC).AddDate(0, 0, w.n)
-		v.Set(reflect.ValueOf(tag))
-		w.merke(pfad, tag.Format(dsgvoDatumFormat))
+		// Drei Tage Abstand: Der UTC-Tag eines Feldes ist nie der Berliner Tag eines anderen.
+		zeitpunkt := time.Date(1990, 1, 1, 23, 30, 0, 0, time.UTC).AddDate(0, 0, 3*w.n)
+		v.Set(reflect.ValueOf(zeitpunkt))
+		w.merke(pfad, zeitpunkt.In(schulzeit.Zone()).Format(dsgvoDatumFormat))
 	case v.Type() == rohdatenTyp:
 		wort := fmt.Sprintf("Pruefwert%03d", w.n)
 		v.Set(reflect.ValueOf(json.RawMessage(`{"pruefwert":"` + wort + `"}`)))
