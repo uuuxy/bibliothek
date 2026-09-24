@@ -20,9 +20,10 @@ Fachrecht über den echten Router mit einer Rolle, die das Recht ihrer Zeile
 NICHT hat, und verlangt 403 mit der Begründung des Rechte-Wächters. Damit ist
 auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein Recht, das im
 Seed ohnehin jede Rolle hält.
-Stand: 16.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 24.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
-Antwort-Gate eingezogen).
+Antwort-Gate eingezogen; 24.09.: die Sperr-Tür und das Protokoll der Sperren am Code
+nachgetragen, die übrigen Zeilen nicht erneut erhoben).
 
 **Seit dem 16.09.2026 stehen hinter denselben Routen auch Daten von Lehrkräften.** Die
 Leserdatei führt Schüler und Kollegium in einer Tabelle (`leser`, FACHKONZEPT §12.3); die
@@ -64,7 +65,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `POST /api/schueler`                                   | create_students       | 1     | Antwort nur id + barcode_id                                                                                                                            |
 | `POST /api/print/schueler-etiketten`                   | view_students         | 1     | Klebebogen als PDF: Name, Klasse, Barcode-ID. Eingabe sind nur IDs, die Angaben holt der Server — kein Weg, fremde Namen auf echte Barcodes zu drucken |
 | `PATCH /api/schueler/{id}`                             | edit_students         | 0     | Antwort nur Status-Echo                                                                                                                                |
-| `PATCH /api/admin/students/{id}/lock`                  | edit_students         | 1     | Name, Klasse, Sperrflag                                                                                                                                |
+| `PATCH /api/admin/students/{id}/lock`                  | edit_students         | 1     | Name, Klasse, beide Sperrflags (seit 24.09.2026 auch `ist_gesperrt`, denn Aufheben nimmt beide weg)                                                    |
 | `DELETE /api/schueler/{id}`                            | delete_students       | 0     | nur Erfolgsmeldung                                                                                                                                     |
 | `GET /api/schueler/{id}/dsgvo-auskunft`                | manage_students_admin | 3     | Vollauskunft (Zweck: DSGVO Art. 15) für jeden Leser; beim Kollegen mit Zugangskonto und selbst bearbeiteten Vorgängen samt IP-Adresse des eigenen Arbeitsplatzes, ohne Daten Dritter |
 | `GET /api/schueler/{id}/dsgvo-auskunft/pdf`            | manage_students_admin | 3     | dieselbe Vollauskunft als PDF                                                                                                                          |
@@ -246,7 +247,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `PUT /api/systematics/{id}`                  | edit_books      | 0     | Sachgruppen                                                                                                                                                                                                                                   |
 | `DELETE /api/systematics/{id}`               | edit_books      | 0     | Sachgruppen                                                                                                                                                                                                                                   |
 | `GET /api/faecher`                           | view_books      | 0     | Fächerliste                                                                                                                                                                                                                                   |
-| `GET /api/admin/auditlog`                    | manage_users    | 2     | details-JSONB: schueler_id + Sperrgrund bei OVERRIDE_BLOCK                                                                                                                                                                                    |
+| `GET /api/admin/auditlog`                    | manage_users    | 2     | details-JSONB: schueler_id + Sperrgrund bei LESER_GESPERRT und LESER_ENTSPERRT (seit 24.09.2026) und in OVERRIDE_BLOCK-Einträgen bis zum 24.09.2026; seither nennt OVERRIDE_BLOCK nur Zahlen                                                  |
 | `GET /api/barcode/next`                      | edit_books      | 0     | nächste Exemplarnummer                                                                                                                                                                                                                        |
 | `GET /api/barcode`                           | view_books      | 0     | Barcode-PNG aus Aufrufer-Eingabe                                                                                                                                                                                                              |
 | `GET /api/signaturen`                        | view_books      | 0     | Signatur-Gruppen                                                                                                                                                                                                                              |

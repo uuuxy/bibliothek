@@ -56,11 +56,16 @@ die Forderung landet in der Akte, der Elternbrief kommt als PDF).
 
 - Kommt ein **vorgemerktes** Buch zurück, erscheint ein roter Hinweis: nicht ins Regal, die
   nächste Leserin wartet. (§4)
-- Ein **gesperrter** Ausweis wird angehalten — mit dem hinterlegten Grund. Ausleihen ist nur
-  bewusst per Override möglich; die Sperre aufheben nur mit dem Recht dazu. (§2.2)
-- Eine **offene Forderung** oder zu viele überfällige Bücher halten nur die Schülerbücherei an.
-  Ein Schulbuch geht immer raus — die Lernmittelfreiheit lässt keine Sperre zu, und darum
-  fragt die Theke dabei auch nicht nach einem Override.
+- Ein **gesperrter** Ausweis wird angehalten — mit dem hinterlegten Grund. Dann geht nur die
+  Rückgabe. Wer Schülerdaten ändern darf, hebt die Sperre im Dialog auf („Sperre aufheben"),
+  und das Buch geht raus. Das gilt für die Sperre von Hand und für die, die das Programm
+  Ehemaligen setzt. (§2.2)
+- Eine **offene Forderung** oder zu viele überfällige Bücher halten Schülerbücherei und Geräte
+  an. Wer Schülerdaten ändern darf, übergeht das einmalig („Einmalig ignorieren").
+- Ein **Schulbuch** geht trotzdem raus — die Lernmittelfreiheit lässt keine automatische Sperre
+  zu, und darum fragt die Theke dabei auch nicht nach. Nur eine Sperre von Hand hält auch das
+  Schulbuch an.
+- **Kollegen** werden nie angehalten.
 - **Überfällige** Bücher und die Mahnstufe stehen direkt an der Ausleihzeile.
 
 **Außerdem:** Geräte (iPads, Taschenrechner, Beamer) laufen über dieselbe Theke, mit
@@ -307,7 +312,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Verlust/Schaden melden** an der Ausleihzeile beendet die Ausleihe und legt die Forderung an.
   Das Kind steht danach nicht mehr in der Mahnliste, sondern im Mahnwesen unter _Schadensersatz_.
   Der Brief an die Eltern ist der nächste, eigene Schritt.
-- **Sperren** verlangt eine Begründung — sie steht danach an der Theke.
+- **Sperren** verlangt eine Begründung — sie steht danach an der Theke. **Sperre aufheben**
+  nimmt jede Sperre weg, auch die, die das Programm Ehemaligen setzt. Beides steht im
+  Protokoll. Einen Kollegen sperrt man nicht; der Knopf ist bei ihm grau.
 - **Neuer Leser** per Formular. Der Dialog fragt zuerst, wer das ist: Schüler, Lehrkraft
   oder LiV. Klassenweise legt man Schüler besser über den LUSD-Import an
   (_Einstellungen → LUSD & Versetzung_).
@@ -560,7 +567,8 @@ Ziehen auch über ihr Zeilenmenü verschieben (nach oben, nach unten, an den Anf
 Wer im Betriebssystem „Bewegung reduzieren" eingestellt hat, sieht keine Ein- und
 Ausblendungen. Meldungen am oberen Rand bleiben stehen, solange die Maus oder der Fokus
 darauf liegt. An der Theke hält das Scanfeld den Fokus — das ist gewollt, der Scanner tippt
-blind.
+blind. Steht der Sperr-Dialog („Ausleihe blockiert"), liegt der Fokus auf „Abbrechen": Ein
+weiterer Scan bricht dort ab, statt eine Sperre aufzuheben oder zu übergehen.
 
 Was nicht ohne Maus geht: die Zeichenfläche des Ausweis-Designers (§19, Bekannte Lücken). Ein
 Durchgang mit einem Screenreader hat nicht stattgefunden.

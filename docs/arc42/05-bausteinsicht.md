@@ -242,7 +242,8 @@ frontend/src
 | ------------------------------ | -------------------------------------------------------------------------------------------------------- |
 | `loan.go`                      | Dienstdefinition, Abhängigkeiten (Pools und Repositories)                                                |
 | `loan_checkout.go`             | Die Transaktionsklammer: Sperren in der Reihenfolge Schüler → Ausleihe → Exemplar, Limits, Vormerkungskonflikt |
-| `loan_checkout_validation.go`  | Sperren des Lesers, Überfällig-Automatik, Override mit Audit                                             |
+| `loan_checkout_validation.go`  | Ausleiher und Leihfrist auflösen                                                                         |
+| `ausleih_sperren.go`           | Die Sperren einer Ausleihe — ein Prüfweg für Buch, Gerät und Nachbuchen; Übergehen mit Protokoll         |
 | `loan_checkout_cases.go`       | Abbildung der DB-Fehler auf HTTP-Fälle (`mapLoanCreateErr` → 409)                                        |
 | `loan_return.go`               | Rückgabe, inklusive Vormerkungs-Nachrücken (`FOR UPDATE OF v SKIP LOCKED`)                                |
 | `loan_rules.go`                | Fristenberechnung je Medienart und Entleiherart                                                          |

@@ -143,7 +143,7 @@ func scanStudentMitZusatz(row Scanner, zusatz ...any) (*Student, error) {
 	var s Student
 	ziele := []any{
 		&s.ID, &s.BarcodeID, &s.Vorname, &s.Nachname, &s.Klasse, &s.AbgaengerJahr, &s.IstGesperrt, &s.LusdID, &s.IstAbgaenger, &s.Geburtsdatum, &s.ErstelltAm, &s.AktualisiertAm, &s.IsManuallyBlocked, &s.BlockReason,
-		&s.Strasse, &s.Hausnummer, &s.Plz, &s.Ort, &s.ElternEmail,
+		&s.Strasse, &s.Hausnummer, &s.Plz, &s.Ort, &s.ElternEmail, &s.IstAnonymisiert,
 	}
 	if err := row.Scan(append(ziele, zusatz...)...); err != nil {
 		return nil, err

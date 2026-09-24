@@ -73,6 +73,29 @@ describe('Zeitgeber der Theke', () => {
 		expect(geknallt, 'ein Zeitgeber hat die Seite überlebt und ins Leere gegriffen').toBe('');
 	});
 
+	// Zwei Scans kurz hintereinander (e2e am 24.09.2026, drei von vier Läufen): Der Sperr-Dialog
+	// ging auf, BEVOR der Zeitgeber des ersten Scans feuerte, und der zog den Fokus aus dem
+	// Dialog ins Scanfeld dahinter. Beim Feuern gilt dieselbe Frage wie beim Planen.
+	it('zieht den Fokus nicht ins Scanfeld, wenn inzwischen ein Dialog offen ist', () => {
+		const feld = document.createElement('input');
+		feld.id = 'omnibox-input';
+		document.body.appendChild(feld);
+		try {
+			uiStore.beimWechselZurTheke?.();
+			omniboxStore.blockAlert = { message: 'gesperrt', query: 'B-1', art: 'leser' };
+			vi.advanceTimersByTime(100);
+			expect(document.activeElement, 'der Zeitgeber zog den Fokus aus dem Dialog').not.toBe(feld);
+
+			// Gegenprobe: ohne Dialog springt der Fokus ins Feld — sonst misst der Test nichts.
+			omniboxStore.blockAlert = null;
+			uiStore.beimWechselZurTheke?.();
+			vi.advanceTimersByTime(100);
+			expect(document.activeElement).toBe(feld);
+		} finally {
+			feld.remove();
+		}
+	});
+
 	it('plant den Fokussprung nicht doppelt', () => {
 		uiStore.beimWechselZurTheke?.();
 		const nachDemErsten = vi.getTimerCount();

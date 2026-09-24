@@ -24,7 +24,8 @@ die Entscheidungen unten).
    Stelle. Die drei anderen Fragen sind beantwortet.
 2. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
-   zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, dazu der Wortlaut des
+   zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen
+   beim Schulbuch (8.7), dazu der Wortlaut des
    Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher
    tragen keinen Vermerk). Den Echtstart halten diese Antworten auf, nicht der Code.
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
@@ -37,8 +38,7 @@ die Entscheidungen unten).
 Vorschlag vom 24.09.2026):
 
 1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
-   Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), die Sperre nur
-   im eigenen Topf mit dem Übergehen am Gerät (4.4, Umbau an der Theke).
+   Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
 2. **5.3** — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben wird (echte
    Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
@@ -139,30 +139,6 @@ Littera kennt keine Übergabe; dort bucht man einen offenen Betrag von Hand aus,
 löschen zu können. **Entschieden am 24.09.2026: Mit der Übergabe ist der Fall für die Schule
 erledigt**; zu melden bleibt eine spätere Rückgabe, das kann die Theke schon. Umbau: 5.3.
 
-**Zweite Frage: Sperrt eine offene Lernmittel-Forderung die Schülerbücherei?** Heute ja,
-übergehbar (`zaehleOffeneSchaeden` zählt jeden Topf); nur das Lernmittel selbst sperrt seit dem
-22.09.2026 nichts mehr. Die Sichtung beanstandete aber die Forderung: „Bei offener Bearbeitung
-von Mängeln/Verlusten für LMF erfolgt z.Zt. die Sperrung der Schülerinnen und Schüler. LMF
-untersagt dies." **Entschieden am 24.09.2026: Eine Forderung sperrt nur Bücher ihres eigenen
-Topfs** (Topf wie beim Bescheid, 5.4). Das erfüllt beide Lesarten der Antwort vom 22.09.2026 („gilt nur für
-Lernmittel": das Buch oder die Forderung) und trennt Land und Schulträger wie beim Geld. Die
-Überfällig-Automatik bleibt, wie am 24.09.2026 entschieden (`MaxOverdueItems`): Überfällig ist
-kein Mangel und kein Verlust. Littera zeigt ab einem einstellbaren Gebührenlimit einen Hinweis,
-und ein Mensch entscheidet — wie unsere übergehbare Sperre.
-
-**Dritte Frage: Was gilt am Gerät? Entschieden am 24.09.2026:** Am Gerät sperrt weiter jede
-offene Forderung, auch eine für ein Lernmittel; ein Gerät ist kein Lernmittel (so schon am
-22.09.2026 gebaut). Neu: Die Sperre am Gerät lässt sich übergehen wie beim Buch, mit dem Recht
-„Schülerdaten ändern" und einem Eintrag im Protokoll. Bisher nimmt der Geräte-Pfad
-`override_block` nicht an (`ladeAkteur` in `internal/service/device_service.go`, seit dem
-19.08.2026 so im Code, nie als Entscheidung festgehalten). Ein Geräte-Schaden hat keinen Topf und
-sperrt wie heute Bücher der Schülerbücherei und Geräte — ein Konto je Leser wie in Littera.
-Littera kennt weder Töpfe noch eine Geräteausleihe: ein Saldo je Leser, ab dem Gebührenlimit ein
-Hinweis, den man im Verleih mit „Alle Warnungen ignorieren" übergeht; eine Sperre von Hand hebt
-man erst in den Leserdaten auf. **Umbau:** ein Prüfweg für Buch und Gerät statt zweier
-(`pruefeSchuelerAusleihbarMit` und `pruefeGeraetAutomatikSperren`), mit zwei Zählweisen der
-Forderungen — Buch der Schülerbücherei: alle außer Topf Land; Gerät: alle.
-
 ### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
 
 Der Lauf geht über das Druck-Center („Fehlende Etiketten" → „Altbestand aufräumen", mit
@@ -246,8 +222,9 @@ E6 ist am 24.09.2026 bejaht (4.4). Fertig sein muss es spätestens mit der Antwo
 ab dann gibt es echte Bescheide und vier Wochen später die erste Übergabe. Eine Stufe, jeder Punkt mit einem Test, der am Rückbau rot
 wird; das Modell der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
 
-- **Abschließen:** `Uebergebe` setzt in derselben Transaktion `ist_bezahlt` an den offenen
-  Forderungen, wie Zahlung und Storno — die 17 Dateien, die nach offenen Forderungen fragen,
+- **Abschließen:** Bis dahin zählt eine übergebene Forderung an der Theke weiter als Hinweis:
+  Sie hält Bücherei und Gerät an, übergehbar (FACHKONZEPT §2.2). `Uebergebe` setzt in derselben
+  Transaktion `ist_bezahlt` an den offenen Forderungen, wie Zahlung und Storno — die 17 Dateien, die nach offenen Forderungen fragen,
   folgen von selbst, die Karenz startet über den Trigger aus Migration 137 (`aktualisiert_am`
   mitsetzen). Dazu ein Kennzeichen je Forderung: Ein Brief kann bezahlte und offene Positionen
   mischen.
@@ -418,7 +395,8 @@ Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
 24.09.2026 auch die Details der Kontoereignisse. Offen ist, was davon aufs Blatt gehört.
 Nachgesehen am 24.09.2026: Die bearbeitende Person steht in eigenen Spalten (`bearbeiter_id`,
 `admin_id`), die die Auskunft nicht ausgibt; Freitexte in den Details — etwa der Grund einer
-übergangenen Sperre (`OVERRIDE_BLOCK`) — können aber andere Personen nennen.
+Sperre (`LESER_GESPERRT`, `LESER_ENTSPERRT`; bis zum 24.09.2026 auch `OVERRIDE_BLOCK`) —
+können aber andere Personen nennen.
 
 **Beim Bau der Auskunft für Kollegen gefunden (24.09.2026), jeweils am Code nachgesehen:**
 
@@ -822,6 +800,26 @@ Zuerst B3 und B4 anstoßen.
 Gilt für das System die Pflicht zur Barrierefreiheit — mit Erklärung zur Barrierefreiheit und
 barrierefreien PDFs (HTML-Druckweg oder begründete Ausnahme)? Bis zur Antwort geparkt; was die
 Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
+
+### 8.7 Die Sperre der Ehemaligen beim Schulbuch
+
+Die Schule am 22.09.2026: „Für die Lernmittel darf es keinerlei automatische ‚Sperrung' geben,
+auch nicht eine Sperrung, die bestimmte Personen aufheben können." Gebaut ist danach
+(24.09.2026, FACHKONZEPT §2.2): Beim Schulbuch hält nur eine Sperre von Hand auf. Die Sperre,
+die das Programm den Ehemaligen setzt — Abschlussklasse nach der Versetzung, im LUSD-Export
+nicht mehr enthalten —, zählt dort nicht; bei Bücherei und Gerät lässt sie nur die Rückgabe zu.
+**Frage an die Schule:** Gilt der Satz auch für diese Kinder? Betroffen sind nur Kinder, die
+noch an der Schule sind (E-Phase nach der 10R, Wiederholer); wer gegangen ist, holt keine
+Schulbücher ab. Soll die Sperre auch beim Schulbuch gelten, ändert sich eine Stelle
+(`pruefeSperreAmLeser`) samt ihrem PG-Test (`TestTheke_EhemaligeSperreNichtAmSchulbuch`).
+
+**Dieselbe Frage gilt der Frist eines Schulbuchs** (am Code nachgesehen am 24.09.2026): Einem
+gesperrten Kind — von Hand oder als Ehemaligem — verlängert das Programm kein Buch, auch kein
+Schulbuch (`checkAusleiheGesperrt` in `api/ausleihe.go`, für die Einzelverlängerung und die
+Frist von Hand), die Klassenverlängerung der Schulbücher (`GlobalExtendLMFHandler`) und der
+LMF-Plan (`SetzeLernmittelFristFuerKlassenIn`) lassen es aus. Die Sperre soll zur Rückgabe
+zwingen; beim Schulbuch ist das eine Folge der Sperre, die die Schule vielleicht ebenfalls
+ausschließen will. Gebaut wird erst mit der Antwort.
 
 ---
 

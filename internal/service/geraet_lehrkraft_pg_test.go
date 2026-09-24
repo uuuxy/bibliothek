@@ -7,6 +7,11 @@ package service
 // Daten existieren" (am Stack nachgestellt). Bis zum 16.09.2026 entschied danach die
 // Personenart des KONTOS, wer als Lehrkraft gilt — ein Admin ohne dieses Feld bekam kein
 // Gerät, obwohl er vor der Theke stand. Beides ist hier abgesichert.
+//
+// Bis zum 24.09.2026 bekam eine von Hand gesperrte Lehrkraft hier kein Gerät, am Buch aber
+// jedes. Entschieden ist: Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch am
+// Gerät nicht (pruefeAusleihSperren). Den gesperrten Schüler hält
+// geraet_rueckgabe_sperre_pg_test.go.
 
 import (
 	"context"
@@ -24,13 +29,15 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 	ctx := context.Background()
 	suffix := fmt.Sprintf("%d", time.Now().UnixNano())
 
-	legeLeserAn := func(kuerzel, art string, gesperrt bool) string {
+	// vonHandGesperrt: der Zustand, den der Knopf in der Akte bis zum 24.09.2026 auch einem
+	// Kollegen setzen konnte.
+	legeLeserAn := func(kuerzel, art string, vonHandGesperrt bool) string {
 		t.Helper()
 		var id string
 		if err := pool.QueryRow(ctx, `
-			INSERT INTO leser (vorname, nachname, art, ist_gesperrt, block_reason)
+			INSERT INTO leser (vorname, nachname, art, is_manually_blocked, block_reason)
 			VALUES ('Geraete', $1, $2, $3, CASE WHEN $3 THEN 'Testsperre' END) RETURNING id
-		`, kuerzel, art, gesperrt).Scan(&id); err != nil {
+		`, kuerzel, art, vonHandGesperrt).Scan(&id); err != nil {
 			t.Fatalf("Leser %s anlegen: %v", kuerzel, err)
 		}
 		return id
@@ -68,7 +75,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 		{"Lehrkraft bekommt das Gerät", legeLeserAn("LK", "lehrkraft", false), true, nil},
 		{"LiV bekommt das Gerät", legeLeserAn("LIV", "liv", false), true, nil},
 		{"unbekannte Kennung", "3f2504e0-4f89-11d3-9a0c-0305e82c3301", false, ErrNotFound},
-		{"gesperrter Leser bekommt nichts", legeLeserAn("GES", "lehrkraft", true), false, ErrBlocked},
+		{"gesperrte Lehrkraft bekommt das Gerät — ein Kollege wird nie gesperrt", legeLeserAn("GES", "lehrkraft", true), true, nil},
 	}
 	for i, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -77,7 +84,7 @@ func TestGeraetAusleiheNurAnAktivenLeser(t *testing.T) {
 				t.Fatalf("Gerät anlegen: %v", err)
 			}
 			kennung := f.kennung
-			res, err := svc.HandleDeviceAction(ctx, barcode, &kennung, true, mitarbeiterID)
+			res, err := svc.HandleDeviceAction(ctx, barcode, &kennung, true, false, mitarbeiterID)
 
 			var offen int
 			if qerr := pool.QueryRow(ctx, `

@@ -150,10 +150,16 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 	// konnte das Buch eines Mitschülers nicht abgeben, während dieselbe Rückgabe ohne offene
 	// Sitzung (HandleSimpleReturn) durchging. Die Ausleihe liegt hier unter FOR UPDATE, der
 	// Fall kann sich bis zum Commit nicht mehr ändern.
-	if chkCtx.istSchueler() && neueAusleihe {
-		if err := s.pruefeSchuelerAusleihbar(ctx, chkCtx.leser, chkCtx.borrowerID, staffID, overrideBlock, copy.IstLernmittel); err != nil {
+	//
+	// Die Sperren gelten der Art nach (pruefeAusleihSperren: ein Kollege wird nie gesperrt);
+	// bis zum 24.09.2026 stand dafür hier ein istSchueler() davor. Gezählt wird über den
+	// Pool wie bisher; ein einfaches SELECT wartet auf keine Zeilensperre dieser Transaktion.
+	if neueAusleihe {
+		lage, err := pruefeAusleihSperren(ctx, s.pool, chkCtx.leser, copy.IstLernmittel, overrideBlock)
+		if err != nil {
 			return nil, err
 		}
+		chkCtx.uebergangen = lage.uebergangen
 	}
 
 	if err := s.pruefeSchuelerAusleihlimit(ctx, chkCtx, copy, activeLoansCount, neueAusleihe); err != nil {

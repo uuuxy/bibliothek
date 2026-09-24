@@ -67,10 +67,17 @@ export function createOmniboxStore() {
 	 * Geräte-Scan mit Zubehör: Der Server unterbricht mit type=geraet_check und
 	 * wartet auf die Bestätigung der Checkliste. Hier liegt die Anfrage, bis der
 	 * Dialog bestätigt (erneuter Versand mit confirmed_checklist) oder abbricht.
-	 * @type {{query: string, geraet: any} | null}
+	 * overrideBlock: Der Scan war schon ein Übergehen (Sperr-Dialog) — die Bestätigung
+	 * schickt es mit, sonst hielte die Sperre den zweiten Versand wieder auf.
+	 * @type {{query: string, geraet: any, overrideBlock: boolean} | null}
 	 */
 	let checklistAnfrage = $state(null);
-	let blockAlert = $state(/** @type {{message: string, query: string} | null} */ (null));
+	/**
+	 * Der Sperr-Dialog. art ist das Merkmal X-Sperre: „uebergehbar" (Hinweis — einmalig
+	 * übergehen) oder „leser" (Sperre am Leser — aufheben).
+	 * @type {{message: string, query: string, art: 'uebergehbar' | 'leser'} | null}
+	 */
+	let blockAlert = $state(null);
 	// isOffline is now handled globally via offlineSync
 	let offlineQueueCount = $state(0);
 
@@ -279,8 +286,9 @@ export function createOmniboxStore() {
 		// Bis zum 13.09.2026 entschieden hier die Wörter „Sperre", „Sperr-Automatik" und
 		// „überfällig": Die Schadens-Sperre traf keins, und bei der System-Sperre hing es am
 		// Sperrgrund, den eine Helferin gar nicht zu sehen bekommt.
-		if (res.status === 403 && res.headers.get('X-Sperre') === 'uebergehbar') {
-			blockAlert = { message: errStr, query: q };
+		const art = res.headers.get('X-Sperre');
+		if (res.status === 403 && (art === 'uebergehbar' || art === 'leser')) {
+			blockAlert = { message: errStr, query: q, art };
 			throw new Error('BLOCK_ALERT');
 		}
 
@@ -338,8 +346,9 @@ export function createOmniboxStore() {
 		if (data.aufsicht_informieren) showToast(data.aufsicht_informieren, 'warning');
 	}
 
-	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type.
-	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '') {
+	// Verarbeitet die erfolgreiche Server-Antwort je nach data.type. overrideBlock ist das
+	// Übergehen, mit dem der Scan geschickt wurde — die Zubehör-Liste reicht es weiter.
+	function verarbeiteAktionsErgebnis(data, reloadProfileCb, q = '', overrideBlock = false) {
 		if (data.type === 'student') {
 			activeStudent = data.student;
 			abholbereit = data.abholbereit ?? [];
@@ -354,7 +363,7 @@ export function createOmniboxStore() {
 			}
 		} else if (data.type === 'geraet_check') {
 			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
-			checklistAnfrage = { query: q, geraet: data.geraet };
+			checklistAnfrage = { query: q, geraet: data.geraet, overrideBlock };
 		} else if (data.type === 'ausleihe') {
 			triggerScreenFlash('success');
 			playSoundSuccess();
@@ -748,7 +757,7 @@ export function createOmniboxStore() {
 				await handleActionHttpError(res, q); // wirft immer
 			}
 			const data = await res.json();
-			verarbeiteAktionsErgebnis(data, reloadProfileCb, q);
+			verarbeiteAktionsErgebnis(data, reloadProfileCb, q, overrideBlock);
 		} catch (e) {
 			triggerFlash('red');
 			verarbeiteAntwortfehler(e);
@@ -773,8 +782,13 @@ export function createOmniboxStore() {
 	 * Bedienung stören und den Dialog wegtippbar machen.
 	 */
 	function scanfeldWiederScharfstellen() {
-		if (showCamera || blockAlert || vormerkungAlert || checklistAnfrage) return;
+		if (entscheidungOffen()) return;
 		fokussiereScanfeld();
+	}
+
+	// Ein Dialog, der eine menschliche Entscheidung braucht, oder die laufende Kamera.
+	function entscheidungOffen() {
+		return !!(showCamera || blockAlert || vormerkungAlert || checklistAnfrage);
 	}
 
 	// Der Fokussprung selbst — DIE Stelle, an der ein Zeitgeber dieses Stores die Seite
@@ -784,10 +798,16 @@ export function createOmniboxStore() {
 	// das Aufräumen fehlen kann.
 	//
 	// Nach der Aktion rendert Svelte das Profil neu; erst danach steht das Feld wieder.
+	//
+	// Beim Feuern wird noch einmal gefragt, nicht nur beim Planen: Zwei Scans kurz
+	// hintereinander öffneten den Sperr-Dialog, BEVOR der Zeitgeber des ersten Scans feuerte
+	// (e2e am 24.09.2026, drei von vier Läufen) — er zog den Fokus dann aus dem Dialog ins
+	// Scanfeld dahinter, und der nächste Scan wäre dort gelandet statt im Dialog.
 	function fokussiereScanfeld() {
 		if (fokusTimer) clearTimeout(fokusTimer);
 		fokusTimer = setTimeout(() => {
 			fokusTimer = null;
+			if (entscheidungOffen()) return;
 			document.getElementById('omnibox-input')?.focus();
 		}, 50);
 	}

@@ -219,10 +219,12 @@ export function useStudentProfile() {
 
 	function handleLockSuccess(updated) {
 		if (profile) {
-			// Sofortiges Feedback: nur das Handschloss lokal übernehmen. ist_gesperrt
-			// (Systemsperre) bleibt der Serverwert — die frühere Formel (manuell ||
-			// offene Schäden) erfand eine dritte Sperr-Definition (sperrStatus.js).
+			// Sofortiges Feedback: die zwei Sperren so, wie der Server sie nach dem Umschalten
+			// meldet (seit dem 24.09.2026 nennt die Antwort beide — Aufheben nimmt auch die der
+			// Ehemaligen weg). Die frühere Formel (manuell || offene Schäden) erfand eine dritte
+			// Sperr-Definition (sperrStatus.js).
 			profile.is_manually_blocked = updated.is_manually_blocked;
+			profile.ist_gesperrt = updated.ist_gesperrt;
 			// Dann die EINE Wahrheit vom Server holen — wie nach Bearbeiten/Foto.
 			// Der Sperrgrund (Anzeige seit 01.09.2026) steckt bewusst NICHT in der
 			// Lock-Antwort (sie ist Stufe 1 hinter edit_students, der Grund Stufe 2

@@ -57,21 +57,25 @@ test('Sperrstatus: eine Wahrheit für Liste, Profil und Umschalter', async ({ pa
 	const zeile2 = page.locator('tr').filter({ hasText: `Systemsperre-${suffix}` });
 	await expect(zeile2.getByText('Gesperrt')).toBeVisible();
 
-	// 2) Profil des System-Gesperrten: Sperren+Entsperren (Handschloss) darf die
-	//    Anzeige NICHT auf „Aktiv" kippen — die Systemsperre besteht weiter.
-	//    Vorher log die erfundene Formel genau hier.
+	// 2) Profil des System-Gesperrten. Bis zum 24.09.2026 bot der Knopf hier „Schüler
+	//    sperren" an — er löste nur das Handschloss, die Sperre des Programms blieb. Seitdem
+	//    hebt er jede Sperre am Leser auf (api/student_lock.go) und richtet sich nach
+	//    demselben Prädikat wie die Anzeige.
 	// Seit 09.09.2026 öffnet der NAME das Profil, nicht die Zeile (nested-interactive).
 	await zeile2.getByRole('button', { name: /^Profil von/ }).click();
 	await expect(page.getByText('Konto-Status')).toBeVisible();
 	await expect(page.getByText('Gesperrt', { exact: true }).first()).toBeVisible();
 
-	await page.getByRole('button', { name: 'Schüler sperren' }).click();
-	await page.getByLabel(/Grund der Sperre/).fill('E2E Zusatzsperre');
-	await page.getByRole('button', { name: 'Bestätigen' }).click();
 	await page.getByRole('button', { name: 'Sperre aufheben' }).click();
 	await page.getByRole('button', { name: 'Bestätigen' }).click();
 	await expect(page.getByRole('button', { name: 'Schüler sperren' })).toBeVisible();
+	const status = page.getByText('Konto-Status').locator('xpath=ancestor::div[2]');
+	await expect(status.getByText('Aktiv', { exact: true })).toBeVisible();
 
-	// Die Anzeige bleibt bei der Wahrheit der Datenbank:
-	await expect(page.getByText('Gesperrt', { exact: true }).first()).toBeVisible();
+	// Die Anzeige bleibt bei der Wahrheit der Datenbank — auch nach dem Neuladen, der Stelle,
+	// an der am 31.08.2026 die erfundene Formel aufflog.
+	await page.reload();
+	await page.getByTitle('Leserdatei').click();
+	await suche.fill(`Systemsperre-${suffix}`);
+	await expect(zeile2.getByText('Alles ok')).toBeVisible();
 });

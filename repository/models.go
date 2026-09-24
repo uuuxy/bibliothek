@@ -67,7 +67,10 @@ type Student struct {
 	// sondern beim Lesen gesetzt. nil heißt: aus dieser Klassenbezeichnung nicht
 	// ableitbar — dann fragt der Druckdialog nach, statt ein Datum zu erfinden.
 	AusweisGueltigBis *int `json:"ausweis_gueltig_bis,omitempty"`
-	// IstGesperrt sperrt die Ausleihberechtigung des Schülers bei Verlusten oder offenen Gebühren.
+	// IstGesperrt ist die Sperre, die das Programm setzt: Ehemalige (Versetzung, LUSD-Import),
+	// Papierkorb, Anonymisierung. Die Theke lässt dann nur die Rückgabe zu, außer beim
+	// Lernmittel (service.pruefeAusleihSperren). Offene Forderungen und überfällige Medien
+	// setzen sie NICHT — die zählt die Theke bei jeder Ausleihe selbst.
 	IstGesperrt bool `json:"ist_gesperrt"`
 	// LusdID ist die Schüler-ID aus dem hessischen LUSD-System für automatisierte Abgleiche.
 	LusdID *string `json:"lusd_id,omitempty"`
@@ -79,9 +82,10 @@ type Student struct {
 	ErstelltAm time.Time `json:"erstellt_am"`
 	// AktualisiertAm ist der Zeitpunkt der letzten Aktualisierung.
 	AktualisiertAm time.Time `json:"aktualisiert_am"`
-	// IsManuallyBlocked zeigt an, ob der Schüler manuell (Hard-Block) gesperrt wurde.
+	// IsManuallyBlocked ist die Sperre von Hand (PATCH /api/admin/students/{id}/lock). Sie gilt
+	// auch beim Lernmittel; aufgehoben wird sie in der Akte.
 	IsManuallyBlocked bool `json:"is_manually_blocked"`
-	// BlockReason enthält die Begründung für die manuelle Sperre.
+	// BlockReason ist der Grund der Sperre — von Hand oder vom Programm, eine Spalte für beide.
 	BlockReason *string `json:"block_reason,omitempty"`
 	// Strasse ist der Straßenname der Postanschrift (optionale Stammdaten).
 	Strasse string `json:"strasse"`
@@ -93,6 +97,11 @@ type Student struct {
 	Ort string `json:"ort"`
 	// ElternEmail ist die Kontakt-E-Mail der Erziehungsberechtigten.
 	ElternEmail string `json:"eltern_email"`
+	// IstAnonymisiert: anonymized_at ist gesetzt, die Zeile ist keine Person mehr. Die Theke
+	// gibt ihr nichts aus, auch kein Lernmittel (service.pruefeAusleihSperren) — die Namenssuche
+	// findet sie noch („Abgänger Anonymisiert-…"). Gefüllt nur über die Spaltenliste der
+	// Leser-Abfragen (repository.spaltenLeser); nicht in der API.
+	IstAnonymisiert bool `json:"-"`
 }
 
 // BookTitle repräsentiert die beschreibenden Metadaten eines Buchtitels oder Werks (Tabelle `buecher_titel`).

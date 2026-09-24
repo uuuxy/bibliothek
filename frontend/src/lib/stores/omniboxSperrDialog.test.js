@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-// Der Sperr-Dialog („Ausleihe blockiert", mit „Einmalig ignorieren") hängt am Merkmal
-// X-Sperre: uebergehbar, nicht am Wortlaut der Meldung.
+// Der Sperr-Dialog („Ausleihe blockiert") hängt am Merkmal X-Sperre, nicht am Wortlaut der
+// Meldung: „uebergehbar" für einen Hinweis („Einmalig ignorieren"), seit dem 24.09.2026
+// „leser" für eine Sperre am Leser („Sperre aufheben").
 //
 // Bis zum 13.09.2026 öffnete handleActionHttpError den Dialog nur, wenn im Fehlertext
 // „Sperre", „Sperr-Automatik" oder „überfällig" stand. Die Schadens-Sperre („1 unbezahlte(r)
@@ -86,5 +87,56 @@ describe('Sperr-Dialog an der Theke', () => {
 		post.mockResolvedValue(antwort403('keine Berechtigung für diese Aktion'));
 		await scanne();
 		expect(omniboxStore.blockAlert).toBeNull();
+	});
+
+	// Seit dem 24.09.2026 trägt eine Sperre am Leser ihr eigenes Merkmal: Der Dialog öffnet
+	// und bietet das Aufheben an, nicht das Übergehen (OmniboxBlockAlert.test.js).
+	it('öffnet für eine Sperre am Leser und merkt sich die Art', async () => {
+		post.mockResolvedValue(
+			antwort403('die ausleihe ist gesperrt: Manuelle Sperre', { 'X-Sperre': 'leser' })
+		);
+		await scanne();
+		expect(omniboxStore.blockAlert?.art).toBe('leser');
+	});
+
+	it('merkt sich beim Hinweis die Art „uebergehbar"', async () => {
+		post.mockResolvedValue(
+			antwort403('die ausleihe ist gesperrt: 2 überfällige Medien vorhanden (Sperr-Automatik)', {
+				'X-Sperre': 'uebergehbar'
+			})
+		);
+		await scanne();
+		expect(omniboxStore.blockAlert?.art).toBe('uebergehbar');
+	});
+});
+
+// Ein übergangener Geräte-Scan läuft in die Zubehör-Liste (type=geraet_check). Deren
+// Bestätigung schickt den Scan erneut — ohne override_block hielte ihn die Sperre wieder auf,
+// und die Theke käme aus Sperr-Dialog und Zubehör-Liste nicht mehr heraus.
+describe('Zubehör-Liste nach dem Übergehen', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+		omniboxStore.checklistAnfrage = null;
+		omniboxStore.activeStudent = { id: 'schueler-7', vorname: 'Anna', nachname: 'Müller' };
+	});
+
+	it('merkt sich override_block des Scans', async () => {
+		post.mockResolvedValue({
+			ok: true,
+			json: async () => ({ type: 'geraet_check', geraet: { barcode_id: 'G-1', zubehoer: 'Kabel' } })
+		});
+		omniboxStore.queryVal = 'G-1';
+		await omniboxStore.submitAction(null, null, true);
+		expect(omniboxStore.checklistAnfrage?.overrideBlock).toBe(true);
+	});
+
+	it('ohne Übergehen bleibt es aus', async () => {
+		post.mockResolvedValue({
+			ok: true,
+			json: async () => ({ type: 'geraet_check', geraet: { barcode_id: 'G-1', zubehoer: 'Kabel' } })
+		});
+		omniboxStore.queryVal = 'G-1';
+		await omniboxStore.submitAction(null, null);
+		expect(omniboxStore.checklistAnfrage?.overrideBlock).toBe(false);
 	});
 });

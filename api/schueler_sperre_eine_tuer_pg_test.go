@@ -73,7 +73,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	}
 
 	// 2. Und der Sperr-Endpunkt erklärt weiterhin, was fehlt, statt abzustürzen.
-	rec = fahre(`{"is_locked":true}`, srv.LockStudentHandler())
+	rec = fahre(`{"is_locked":true}`, srv.LockStudentHandler(auditRepo))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("Sperr-Endpunkt ohne Grund: Status %d, erwartet 400 — %s", rec.Code, rec.Body.String())
 	}
@@ -85,7 +85,7 @@ func TestSperreNurUeberDenSperrEndpunkt(t *testing.T) {
 	}
 
 	// 3. Mit Grund geht es — sonst prüfte der Test nur, dass nichts funktioniert.
-	rec = fahre(`{"is_locked":true,"reason":"Bücher nicht zurückgegeben"}`, srv.LockStudentHandler())
+	rec = fahre(`{"is_locked":true,"reason":"Bücher nicht zurückgegeben"}`, srv.LockStudentHandler(auditRepo))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("Sperren mit Grund: Status %d — %s", rec.Code, rec.Body.String())
 	}

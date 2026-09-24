@@ -210,13 +210,13 @@ func (s *defaultLoanService) nachbuchKontext(ctx context.Context, tx pgx.Tx, l *
 }
 
 // nachbuchSchranken sind dieselben Schranken wie am Online-Scan — Sperren, Ausleihlimit,
-// fremde Vormerkung —, die Zählungen laufen über die Transaktion des Eintrags. Ein
-// Sperr-Override gibt es beim Nachbuchen nicht: Niemand steht daneben.
+// fremde Vormerkung —, die Zählungen laufen über die Transaktion des Eintrags. Übergehen
+// gibt es beim Nachbuchen nicht: Niemand steht daneben.
 func (s *defaultLoanService) nachbuchSchranken(ctx context.Context, q pgx.Tx, l *nachbuchLage, chkCtx *checkoutContext) error {
+	if _, err := pruefeAusleihSperren(ctx, q, l.leser, l.copy.IstLernmittel, false); err != nil {
+		return err
+	}
 	if chkCtx.istSchueler() {
-		if err := s.pruefeSchuelerAusleihbarMit(ctx, q, l.leser, l.leser.ID, l.e.StaffID, false, l.copy.IstLernmittel); err != nil {
-			return err
-		}
 		anzahl, err := s.zaehleAktiveSchuelerAusleihen(ctx, q, chkCtx)
 		if err != nil {
 			return err

@@ -164,6 +164,7 @@ func (s *defaultLoanService) handleNewLoan(
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	protokolliereUebergangen(ctx, s.auditRepo, staffID, chkCtx.borrowerID, chkCtx.uebergangen)
 
 	resp.Type = "ausleihe"
 	resp.Book = copy

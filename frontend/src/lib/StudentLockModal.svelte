@@ -8,6 +8,7 @@
 	import { Unlock, Lock, AlertCircle } from '@lucide/svelte';
 	import Modal from './Modal.svelte';
 	import Button from './components/ui/Button.svelte';
+	import { ausleiheGesperrt } from './sperrStatus.js';
 
 	/** @type {{ open: boolean, profile: any, onsuccess: (updatedProfile: any) => void }} */
 	let { open = $bindable(false), profile, onsuccess } = $props();
@@ -16,9 +17,13 @@
 	let errorMsg = $state('');
 	let reason = $state('');
 
+	// Aufheben, sobald eine Sperre am Leser besteht — von Hand oder die der Ehemaligen; die Tür
+	// nimmt beide weg (api/student_lock.go, seit dem 24.09.2026). Dasselbe Prädikat wie der
+	// Knopf, der dieses Fenster öffnet (StudentKontoStatus).
+	let gesperrt = $derived(ausleiheGesperrt(profile));
 	// Beim Sperren (nicht beim Entsperren) ist ein Grund Pflicht — deckt sich mit dem
 	// Backend-Check und dem DB-Constraint chk_schueler_block_reason.
-	let willLock = $derived(profile && !profile.is_manually_blocked);
+	let willLock = $derived(profile && !gesperrt);
 
 	// Das Modal bleibt (via bind:open) dauerhaft gemountet, der State überlebt also das
 	// Schließen. Ohne diesen Reset blitzte beim nächsten Öffnen — ggf. für einen anderen
@@ -40,7 +45,7 @@
 		errorMsg = '';
 		try {
 			const res = await apiClient.patch(`/api/admin/students/${profile.id}/lock`, {
-				is_locked: !profile.is_manually_blocked,
+				is_locked: !gesperrt,
 				reason: reason.trim()
 			});
 
@@ -65,11 +70,11 @@
 	{#snippet header()}
 		<h3
 			id="sperre-titel"
-			class="text-lg font-bold {profile?.is_manually_blocked
+			class="text-lg font-bold {gesperrt
 				? 'text-emerald-700'
 				: 'text-error'} flex items-center gap-2"
 		>
-			{#if profile?.is_manually_blocked}
+			{#if gesperrt}
 				<Unlock class="w-5 h-5" aria-hidden="true" />
 				Sperre aufheben
 			{:else}
@@ -81,7 +86,7 @@
 
 	<div class="px-6 py-6 text-on-surface-variant space-y-4">
 		<p class="text-sm font-medium leading-relaxed">
-			{#if profile?.is_manually_blocked}
+			{#if gesperrt}
 				Möchten Sie die Ausleihe für <span class="font-bold text-on-surface"
 					>{profile.vorname} {profile.nachname}</span
 				> wirklich freigeben?
@@ -123,7 +128,7 @@
 			Abbrechen
 		</Button>
 		<Button
-			variant={profile?.is_manually_blocked ? 'success' : 'danger-solid'}
+			variant={gesperrt ? 'success' : 'danger-solid'}
 			onclick={handleConfirm}
 			disabled={isSubmitting}
 		>

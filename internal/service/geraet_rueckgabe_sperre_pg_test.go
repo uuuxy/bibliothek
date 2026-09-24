@@ -105,12 +105,12 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 
 	t.Run("defektes Gerät kommt von der Lehrkraft zurück", func(t *testing.T) {
 		barcode := legeGeraetAn(t, "defekt")
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, mitarbeiterID); err != nil {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, false, mitarbeiterID); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		sperreGeraet(t, barcode)
 
-		res, err := svc.HandleDeviceAction(ctx, barcode, nil, true, mitarbeiterID)
+		res, err := svc.HandleDeviceAction(ctx, barcode, nil, true, false, mitarbeiterID)
 		if err != nil {
 			t.Fatalf("Rückgabe eines verliehenen, danach defekt gemeldeten Geräts abgewiesen: %v", err)
 		}
@@ -122,12 +122,12 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 	t.Run("gesperrter Schüler gibt sein Gerät zurück", func(t *testing.T) {
 		barcode := legeGeraetAn(t, "schueler")
 		schuelerID := legeSchuelerAn(t, "Zurueck")
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, mitarbeiterID); err != nil {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, false, mitarbeiterID); err != nil {
 			t.Fatalf("Ausleihe: %v", err)
 		}
 		sperreSchueler(t, schuelerID)
 
-		res, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, mitarbeiterID)
+		res, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, false, mitarbeiterID)
 		if err != nil {
 			t.Fatalf("Rückgabe durch den gesperrten Schüler abgewiesen: %v", err)
 		}
@@ -140,7 +140,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		barcode := legeGeraetAn(t, "frei")
 		sperreGeraet(t, barcode)
 
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, mitarbeiterID); !errors.Is(err, ErrBlocked) {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &lehrkraftID, true, false, mitarbeiterID); !errors.Is(err, ErrBlocked) {
 			t.Fatalf("erwartet ErrBlocked, war %v", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {
@@ -153,7 +153,7 @@ func TestGeraetRueckgabeTrotzSperre(t *testing.T) {
 		schuelerID := legeSchuelerAn(t, "Gesperrt")
 		sperreSchueler(t, schuelerID)
 
-		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, mitarbeiterID); !errors.Is(err, ErrBlocked) {
+		if _, err := svc.HandleDeviceAction(ctx, barcode, &schuelerID, true, false, mitarbeiterID); !errors.Is(err, ErrBlocked) {
 			t.Fatalf("erwartet ErrBlocked, war %v", err)
 		}
 		if n := offeneAusleihen(t, barcode); n != 0 {

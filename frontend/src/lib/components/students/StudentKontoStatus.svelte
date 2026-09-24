@@ -18,10 +18,14 @@
 <script>
 	import { Lock, Unlock } from '@lucide/svelte';
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
+	import { istKollegium } from '../../leserArt.js';
 	import Button from '../ui/Button.svelte';
 
 	/** @type {{ profile: any, onLock?: () => void }} */
 	let { profile, onLock } = $props();
+
+	const gesperrt = $derived(ausleiheGesperrt(profile));
+	const kollege = $derived(istKollegium(profile));
 </script>
 
 <div class="w-full space-y-3 border-t border-b border-slate-200 py-3">
@@ -30,7 +34,7 @@
 		<!-- Gesperrt ist die Ausnahme und trägt Farbe; „Aktiv" ist der Normalfall und
 		     bleibt still. Ein pulsierender grüner Punkt für „alles in Ordnung" zieht
 		     Aufmerksamkeit auf die einzige Stelle, die keine braucht. -->
-		{#if ausleiheGesperrt(profile)}
+		{#if gesperrt}
 			<span class="text-sm font-medium text-rose-600">Gesperrt</span>
 		{:else}
 			<span class="text-sm text-slate-500">Aktiv</span>
@@ -43,7 +47,7 @@
 	     gesperrt wurde (nur die DSGVO-Auskunft druckte ihn). Sichtbar nur im
 	     gesperrten Zustand; das Profil steht ohnehin hinter view_students
 	     (PII-Matrix: Sperrgrund = Stufe 2 hinter genau diesem Recht). -->
-	{#if ausleiheGesperrt(profile) && profile.block_reason}
+	{#if gesperrt && profile.block_reason}
 		<p class="text-sm text-on-surface-variant">
 			<span class="font-medium text-on-surface">Grund:</span>
 			{profile.block_reason}
@@ -51,20 +55,27 @@
 	{/if}
 
 	{#if onLock}
-		<!-- Beschriftung nach dem MANUELLEN Schloss, nicht nach ist_gesperrt: Ein Schüler
-		     kann wegen Überfälligkeit gesperrt sein, ohne dass ihn jemand von Hand
-		     gesperrt hätte. Stünde dann hier „Sperre aufheben", verspräche der Knopf
-		     etwas, das er nicht halten kann — er löst nur das Handschloss. -->
+		<!-- Beschriftung nach dem einen Prädikat (sperrStatus.js): Seit dem 24.09.2026 hebt der
+		     Knopf JEDE Sperre am Leser auf, auch die der Ehemaligen (api/student_lock.go). Bis
+		     dahin löste er nur die Sperre von Hand und stand bei einem gesperrten Ehemaligen auf
+		     „Schüler sperren".
+		     Ein Kollege wird nie gesperrt: Der Knopf bleibt an seiner Stelle, verschlossen, mit
+		     dem Satz warum (eine Maske für jeden, 16.09.2026). -->
 		<Button
-			variant={profile.is_manually_blocked ? 'success' : 'danger'}
+			variant={gesperrt ? 'success' : 'danger'}
 			class="w-full"
 			onclick={onLock}
+			disabled={kollege}
 		>
-			{#if profile.is_manually_blocked}
+			{#if gesperrt}
 				<Unlock class="w-4 h-4" aria-hidden="true" /> Sperre aufheben
 			{:else}
-				<Lock class="w-4 h-4" aria-hidden="true" /> Schüler sperren
+				<Lock class="w-4 h-4" aria-hidden="true" />
+				{kollege ? 'Kollegen sperren' : 'Schüler sperren'}
 			{/if}
 		</Button>
+		{#if kollege}
+			<p class="text-sm text-on-surface-variant">Kollegen werden nicht gesperrt.</p>
+		{/if}
 	{/if}
 </div>

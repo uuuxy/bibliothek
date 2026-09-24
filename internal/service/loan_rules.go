@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"bibliothek/db"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
@@ -72,10 +71,10 @@ func (s *defaultLoanService) querySettings(ctx context.Context) (*SystemEinstell
 	return ladeSystemEinstellungen(ctx, s.pool)
 }
 
-// ladeSystemEinstellungen liest die Systemeinstellungen aus einem beliebigen Pool —
-// geteilt zwischen Buch- (querySettings) und Geräte-Pfad (pruefeGeraetAutomatikSperren),
-// damit Fristen und Sperr-Schwellen aus EINER Quelle kommen.
-func ladeSystemEinstellungen(ctx context.Context, pool db.PgxPoolIface) (*SystemEinstellungen, error) {
+// ladeSystemEinstellungen liest die Systemeinstellungen über q — den Pool oder eine
+// Transaktion. Geteilt zwischen den Fristen (querySettings) und der Überfällig-Automatik
+// (pruefeAusleihSperren), damit Fristen und Sperr-Schwellen aus EINER Quelle kommen.
+func ladeSystemEinstellungen(ctx context.Context, pool repository.DBQueryer) (*SystemEinstellungen, error) {
 	// coalesce: eine einzige NULL-wert-Zeile (z. B. nie gesetztes
 	// ferien_leseclub_zieldatum) ließe sonst den Scan in string scheitern —
 	// pgx bricht dann die Iteration ab und rows.Err() macht JEDEN Checkout zum 500.

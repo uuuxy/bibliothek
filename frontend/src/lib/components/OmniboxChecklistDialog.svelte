@@ -7,9 +7,10 @@
 	/**
 	 * Zubehör-Checkliste beim Geräte-Scan: Der Server unterbricht mit
 	 * type=geraet_check; erst die Bestätigung hier schickt den Scan mit
-	 * confirmed_checklist erneut — dieselbe Mechanik wie der Sperr-Override.
-	 * Gilt für Ausleihe UND Rückgabe (fehlt ein Teil bei der Rückgabe, wird
-	 * abgebrochen und der Schaden am Profil gemeldet).
+	 * confirmed_checklist erneut — dieselbe Mechanik wie der Sperr-Override. War der
+	 * Scan schon ein Übergehen, geht override_block mit (checklistAnfrage.overrideBlock).
+	 * Gilt für Ausleihe UND Rückgabe. Fehlt ein Teil bei der Rückgabe, wird abgebrochen;
+	 * eine Forderung für ein Gerät legt das Programm noch nicht an (docs/OFFEN.md 5.25).
 	 *
 	 * Seit 07.09.2026 auf Modal.svelte, Ebene „oberst": Die Theke liegt selbst als
 	 * Overlay über allem, und diese Rückfrage muss über der Theke stehen.
@@ -29,7 +30,7 @@
 		if (!anfrage) return;
 		omniboxStore.checklistAnfrage = null;
 		omniboxStore.queryVal = anfrage.query;
-		omniboxStore.submitAction(null, onReload, false, true);
+		omniboxStore.submitAction(null, onReload, anfrage.overrideBlock, true);
 	}
 
 	function abbrechen() {

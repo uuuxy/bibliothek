@@ -49,8 +49,9 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 
 	// Sanktions-Konsistenz: Ist das Buch an einen gesperrten Schüler verliehen, darf die
 	// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
-	// eine Verlängerung ausgehebelt werden. Lehrer-/Handapparat-Ausleihen (kein
-	// schueler_id → LEFT JOIN liefert NULL) sind nicht betroffen.
+	// eine Verlängerung ausgehebelt werden. Einen Kollegen betrifft das nicht: Er wird nie
+	// gesperrt (checkAusleiheGesperrt). Seit Migration 125 trägt auch seine Ausleihe eine
+	// schueler_id; der Satz „kein schueler_id, nicht betroffen" stimmte danach nicht mehr.
 	gesperrt, blockReason, errChk := s.checkAusleiheGesperrt(ctx, ausleiheID)
 	if errChk != nil {
 		if errors.Is(errChk, pgx.ErrNoRows) {
@@ -342,12 +343,16 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 	}
 }
 
-// checkAusleiheGesperrt prüft, ob die angegebene Ausleihe an einen gesperrten Schüler vergeben ist.
+// checkAusleiheGesperrt prüft, ob die angegebene Ausleihe an einen gesperrten Schüler vergeben ist
+// — nach derselben Regel wie die Theke (service.pruefeAusleihSperren) und die Anzeige
+// (sperrStatus.js): Ein Kollege wird nie gesperrt (16.09. und 24.09.2026), eine alte Sperre an
+// seinem Konto zählt nicht.
 func (s *Server) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (bool, string, error) {
 	var gesperrt bool
 	var blockReason string
 	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT COALESCE(l.ist_gesperrt, false) OR COALESCE(l.is_manually_blocked, false),
+		SELECT (COALESCE(l.ist_gesperrt, false) OR COALESCE(l.is_manually_blocked, false))
+		       AND COALESCE(l.art, 'schueler') = 'schueler',
 		       COALESCE(l.block_reason, '')
 		FROM ausleihen a
 		LEFT JOIN leser l ON l.id = a.schueler_id

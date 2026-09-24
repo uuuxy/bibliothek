@@ -181,14 +181,16 @@ func TestLeserdatei_AkteEinerLehrkraft(t *testing.T) {
 // Zwei Türen, die erst mit der Leserdatei erreichbar wurden und über die Sicht `schueler`
 // liefen. Beide stehen in der Akte eines Kollegen sichtbar da:
 //
-//   - Sperren (PATCH /api/admin/students/{id}/lock) antwortete mit „Schüler nicht
-//     gefunden". Ein Knopf, der nur scheitern kann.
+//   - Der Sperr-Endpunkt (PATCH /api/admin/students/{id}/lock) antwortete mit „Schüler
+//     nicht gefunden". Ein Knopf, der nur scheitern kann.
 //   - Das Passbild wurde gespeichert, aber nie ausgeliefert: Die Auslieferung verband
 //     das Foto über die Sicht mit seiner Person. Die Akte zeigte weiter die Initialen,
 //     und niemand konnte sagen, warum.
 //
-// Die Sperre selbst wirkt an der richtigen Stelle: Der Ausleihpfad liest den Leser
-// (GetLeserByID), nicht die Sicht.
+// Seit dem 24.09.2026 wird ein Kollege nicht mehr gesperrt (entschieden am 16.09.2026,
+// bestätigt am 24.09.2026): Die Tür lehnt es mit einem Satz ab, und eine alte Sperre an
+// seinem Konto lässt sie aufheben — über `leser`, sonst wäre auch das „nicht gefunden".
+// Rot gesehen am Rückbau: ohne den Fall für Kollegen sperrt die Tür ihn (200).
 func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -208,23 +210,43 @@ func TestLeserdatei_SperreUndFotoEinesKollegen(t *testing.T) {
 		t.Fatalf("Lehrkraft anlegen: %v", err)
 	}
 
-	// 1. Sperren
-	req := httptest.NewRequest(http.MethodPatch, "/api/admin/students/"+id+"/lock",
-		strings.NewReader(`{"is_locked":true,"reason":"Buch seit zwei Jahren überfällig"}`))
-	req.Header.Set("Content-Type", "application/json")
-	req.SetPathValue("id", id)
-	req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
-	rec := httptest.NewRecorder()
-	srv.LockStudentHandler().ServeHTTP(rec, req)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("Kollegen sperren: Status %d, %s", rec.Code, rec.Body.String())
+	sperrTuer := func(body string) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPatch, "/api/admin/students/"+id+"/lock", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.SetPathValue("id", id)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey, claims))
+		rec := httptest.NewRecorder()
+		srv.LockStudentHandler(repository.NewAuditRepository(pool)).ServeHTTP(rec, req)
+		return rec
 	}
-	var gesperrt bool
-	if err := pool.QueryRow(ctx, `SELECT is_manually_blocked FROM leser WHERE id = $1`, id).Scan(&gesperrt); err != nil {
-		t.Fatalf("Sperrstatus lesen: %v", err)
+	gesperrt := func() bool {
+		t.Helper()
+		var b bool
+		if err := pool.QueryRow(ctx, `SELECT is_manually_blocked FROM leser WHERE id = $1`, id).Scan(&b); err != nil {
+			t.Fatalf("Sperrstatus lesen: %v", err)
+		}
+		return b
 	}
-	if !gesperrt {
-		t.Error("die Sperre ist nirgends angekommen")
+
+	// 1. Sperren lehnt die Tür ab — mit dem Satz, den auch die Akte zeigt.
+	rec := sperrTuer(`{"is_locked":true,"reason":"Buch seit zwei Jahren überfällig"}`)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "Kollegen werden nicht gesperrt") {
+		t.Fatalf("Kollegen sperren: Status %d, %s — erwartet 400 „Kollegen werden nicht gesperrt.“", rec.Code, rec.Body.String())
+	}
+	if gesperrt() {
+		t.Error("abgelehnt, aber trotzdem gesperrt")
+	}
+
+	// 1b. Eine Sperre von früher lässt sich aufheben (die Tür schreibt `leser`).
+	if _, err := pool.Exec(ctx, `UPDATE leser SET is_manually_blocked = true, block_reason = 'alt' WHERE id = $1`, id); err != nil {
+		t.Fatalf("alte Sperre anlegen: %v", err)
+	}
+	if rec := sperrTuer(`{"is_locked":false}`); rec.Code != http.StatusOK {
+		t.Fatalf("alte Sperre eines Kollegen aufheben: Status %d, %s", rec.Code, rec.Body.String())
+	}
+	if gesperrt() {
+		t.Error("die alte Sperre steht noch")
 	}
 
 	// 2. Passbild ausliefern. Ein Klartextbild genügt nicht — die Spalte ist

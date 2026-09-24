@@ -16,14 +16,28 @@ import (
 	"bibliothek/repository"
 )
 
-// Merkmal einer Sperre, die die Theke übergehen darf (service.IstUebergehbareSperre): Am
-// Header öffnet das Frontend den Override-Dialog, das Cache-Feld trägt es durch eine
-// Wiederholung mit demselben Idempotenz-Schlüssel (sperr_merkmal_test.go).
+// Merkmal einer Sperre (service/sperr_merkmal.go): Am Header wählt der Dialog der Theke,
+// was er anbietet — „uebergehbar" das einmalige Übergehen, „leser" das Aufheben der Sperre
+// am Leser. Das Cache-Feld trägt es durch eine Wiederholung mit demselben
+// Idempotenz-Schlüssel (sperr_merkmal_test.go).
 const (
 	sperrKopf        = "X-Sperre"
 	sperrUebergehbar = "uebergehbar"
+	sperrAmLeser     = "leser"
 	sperrCacheFeld   = "sperre"
 )
+
+// sperrMerkmal liest das Merkmal aus der Fehlerkette; leer heißt: keine Sperre, die die
+// Theke übergehen oder aufheben lässt.
+func sperrMerkmal(err error) string {
+	switch {
+	case service.IstUebergehbareSperre(err):
+		return sperrUebergehbar
+	case service.IstSperreAmLeser(err):
+		return sperrAmLeser
+	}
+	return ""
+}
 
 // ohneSperrgrund nimmt einem Sperr-Fehler den Freitext (block_reason), wenn der
 // Aufrufer ihn nicht sehen darf. Die Theke erfährt weiterhin DASS gesperrt ist
@@ -146,8 +160,8 @@ func (s *Server) serveCachedActionResponse(w http.ResponseWriter, antwort *repos
 			log.Printf("idempotenz: beschädigte Fehler-Antwort im Cache, wird neu berechnet: %v", uerr)
 			return false
 		}
-		if errData[sperrCacheFeld] == sperrUebergehbar {
-			w.Header().Set(sperrKopf, sperrUebergehbar)
+		if merkmal := errData[sperrCacheFeld]; merkmal == sperrUebergehbar || merkmal == sperrAmLeser {
+			w.Header().Set(sperrKopf, merkmal)
 		}
 		apierrors.SendHTTPError(w, cachedStatus, errors.New(errData["error"]))
 		return true
@@ -194,13 +208,15 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			return
 		}
 
-		// Eine Sperre aufheben ist ein Verwaltungsakt, kein Theken-Vorgang:
+		// Einen Hinweis übergehen ist ein Verwaltungsakt, kein Theken-Vorgang:
 		// override_block wirkt nur mit edit_students — demselben Recht, das auch
 		// das Sperren/Entsperren erlaubt. Ohne es bleibt die Sperre bestehen; wer
 		// das Feld trotzdem setzt, wird behandelt, als hätte er es nicht gesetzt.
 		// Am 18.08.2026 live gefunden: perform_actions allein reichte, ein Helfer
 		// konnte jede Sperre per Request-Feld aushebeln — die UI bot den Schalter
 		// nie an, der Schutz war also nur Konvention (bewertung-Muster F1/F4).
+		// Seit dem 24.09.2026 übergeht es am Buch wie am Gerät nur die Hinweise
+		// (offene Forderung, Überfällig-Automatik), keine Sperre am Leser.
 		res, err := omniboxSvc.ProcessQuery(ctx, service.OmniboxQuery{
 			Query:              req.Query,
 			ActiveLeserID:      req.ActiveLeserID,
@@ -215,12 +231,12 @@ func (s *Server) ActionHandler(omniboxSvc service.OmniboxService) http.HandlerFu
 			err = ohneSperrgrund(err, s.BesitztRecht(r, "view_students"))
 			status := mapServiceErrorToStatus(err)
 			cacheDaten := map[string]string{"error": err.Error()}
-			if service.IstUebergehbareSperre(err) {
-				// Merkmal für den Override-Dialog der Theke — im Header, damit der Body die
+			if merkmal := sperrMerkmal(err); merkmal != "" {
+				// Merkmal für den Sperr-Dialog der Theke — im Header, damit der Body die
 				// eine kanonische Fehlerform behält, und im Cache, damit eine Wiederholung
 				// es nicht verliert (sperr_merkmal_test.go).
-				w.Header().Set(sperrKopf, sperrUebergehbar)
-				cacheDaten[sperrCacheFeld] = sperrUebergehbar
+				w.Header().Set(sperrKopf, merkmal)
+				cacheDaten[sperrCacheFeld] = merkmal
 			}
 			s.saveToCache(ctx, req.IdempotencyKey, cacheDaten, status)
 			apierrors.SendHTTPError(w, status, err)

@@ -88,6 +88,22 @@ func TestOverrideDueDate_SperrKonsistenzUndAudit(t *testing.T) {
 		}
 	})
 
+	// Ein Kollege wird nie gesperrt (16.09. und 24.09.2026) — auch hier nicht, wenn an seinem
+	// Konto noch eine Sperre von früher steht. Rot gesehen am Rückbau: ohne die Art in
+	// checkAusleiheGesperrt 403.
+	t.Run("Kollege mit alter Sperre + Zukunftsdatum geht durch", func(t *testing.T) {
+		var kollege string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO leser (vorname, nachname, art, is_manually_blocked, block_reason)
+			VALUES ('Frist', 'Kollege', 'lehrkraft', true, 'alt') RETURNING id`).Scan(&kollege); err != nil {
+			t.Fatalf("Kollegen anlegen: %v", err)
+		}
+		ausleiheKollege := seedAusleihe(t, pool, kollege, "Buch Kollege", alteFrist)
+		if w := call(ausleiheKollege, zukunft); w.Code != http.StatusOK {
+			t.Fatalf("erwartet 200, war %d: %s", w.Code, w.Body.String())
+		}
+	})
+
 	t.Run("normal + Zukunftsdatum geht durch und wird auditiert", func(t *testing.T) {
 		vorher := auditZaehler()
 		w := call(ausleiheNormal, zukunft)

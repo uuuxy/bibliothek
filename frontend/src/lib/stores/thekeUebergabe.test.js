@@ -24,7 +24,11 @@ describe('Theken-Übergabe', () => {
 		vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }));
 		omniboxStore.activeStudent = { id: 's1', vorname: 'Mia', nachname: 'Muster' };
 		omniboxStore.queryVal = 'Mül';
-		omniboxStore.blockAlert = { message: 'Gesperrt: Ausweismissbrauch', query: 'S-1' };
+		omniboxStore.blockAlert = {
+			message: 'Gesperrt: Ausweismissbrauch',
+			query: 'S-1',
+			art: 'leser'
+		};
 		uiStore.requestedStudentId = 's1';
 	});
 

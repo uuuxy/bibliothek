@@ -216,7 +216,7 @@ func (s *defaultOmniboxService) verarbeite(ctx context.Context, q OmniboxQuery) 
 	case strings.HasPrefix(q.Query, "B-"), strings.HasPrefix(q.Query, "LMF-"):
 		return resp, s.handleBookAction(ctx, q, resp)
 	case strings.HasPrefix(q.Query, "G-"):
-		dr, err := s.deviceSvc.HandleDeviceAction(ctx, q.Query, q.ActiveLeserID, q.ConfirmedChecklist, q.StaffID)
+		dr, err := s.deviceSvc.HandleDeviceAction(ctx, q.Query, q.ActiveLeserID, q.ConfirmedChecklist, q.OverrideBlock, q.StaffID)
 		if err == nil {
 			s.mapDeviceResult(dr, resp)
 		}

@@ -37,7 +37,9 @@ type DeviceService interface {
 	// HandleDeviceAction verarbeitet das Scannen eines Geräts. Je nach Zustand wird das Gerät
 	// entweder ausgeliehen (falls frei) oder zurückgegeben (falls aktuell ausgeliehen).
 	// Zudem wird geprüft, ob eine Zubehör-Checkliste vor der Ausleihe bestätigt werden muss.
-	HandleDeviceAction(ctx context.Context, query string, activeLeserID *string, confirmedChecklist bool, staffID string) (*DeviceResult, error)
+	// overrideBlock übergeht die Hinweise (offene Forderung, Überfällig-Automatik), nicht
+	// die Sperre am Leser — wie beim Buch (pruefeAusleihSperren).
+	HandleDeviceAction(ctx context.Context, query string, activeLeserID *string, confirmedChecklist, overrideBlock bool, staffID string) (*DeviceResult, error)
 }
 
 // defaultDeviceService ist die Standard-Implementierung des DeviceService.
@@ -91,35 +93,34 @@ func pruefeGeraetAusleihbar(g repository.Geraet) error {
 	return nil
 }
 
-// ladeAkteur ermittelt den aktiven Schüler bzw. Lehrer und wendet die Sperren an — für
-// die AUSLEIHE. Die Rückgabe nimmt ladeRueckgeber: Ein gesperrter Schüler muss sein Gerät
-// zurückgeben können. Die Einstellungen, die die Sperr-Prüfung geladen hat, gehen mit
-// zurück — aus ihnen rechnet leiheGeraetAus die Frist, ohne sie ein zweites Mal zu lesen.
-func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *string) (*repository.Student, *SystemEinstellungen, error) {
+// ladeAkteur ermittelt den aktiven Leser und prüft die Sperren der AUSLEIHE — denselben
+// Prüfweg wie beim Buch (pruefeAusleihSperren, entschieden am 24.09.2026). Ein Gerät ist
+// kein Lernmittel: Es gelten die Sperre am Leser und beide Hinweise.
+//
+// Bis zum 24.09.2026 hatte das Gerät eine eigene Prüfung. Sie ließ nichts übergehen („Geräte
+// kennen bewusst KEIN override_block", seit dem 19.08.2026 so im Code, nie als Entscheidung
+// festgehalten) und prüfte auch Kollegen, die am Buch nie gesperrt waren.
+//
+// Die Rückgabe nimmt ladeRueckgeber: Ein gesperrter Leser muss sein Gerät zurückgeben
+// können. Die Lage geht mit zurück — leiheGeraetAus rechnet aus ihren Einstellungen die
+// Frist und protokolliert, was übergangen wurde.
+func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *string, overrideBlock bool) (*repository.Student, sperrLage, error) {
 	leser, err := s.ladeRueckgeber(ctx, activeLeserID)
 	if err != nil || leser == nil {
-		return nil, nil, err
+		return nil, sperrLage{}, err
 	}
-	// BEIDE Sperr-Flags prüfen — wie der Buch-Pfad (pruefeGesperrt +
-	// pruefeManuellGesperrt). Zuvor blockierte nur die System-Sperre (ist_gesperrt);
-	// ein von der Bibliothek MANUELL gesperrter Leser (is_manually_blocked, etwa
-	// wegen unbezahlter Schäden) konnte trotzdem ein Gerät ausleihen — und Geräte
-	// sind wertvoller als Bücher. Geräte kennen bewusst KEIN override_block.
-	if leser.IstGesperrt || leser.IsManuallyBlocked {
-		return nil, nil, fmt.Errorf("%w: Diese Person ist gesperrt", ErrBlocked)
-	}
-	// Dieselben AUTOMATIK-Sperren wie der Buch-Pfad (Betreiber-Entscheidung
-	// 19.08.2026): unbezahlte Schäden und die Überfällig-Automatik. Wer kein Buch
-	// bekäme, bekommt auch kein iPad. Geräte kennen kein Override.
-	//
-	// Seit Migration 125 gelten sie für JEDEN Leser. Vorher lief eine Lehrkraft an
-	// diesen Prüfungen vorbei — nicht als Entscheidung, sondern weil ihre Ausleihen in
-	// einer anderen Spalte standen und der Zähler sie nicht sah.
-	einst, err := pruefeGeraetAutomatikSperren(ctx, s.pool, leser.ID)
+	lage, err := pruefeAusleihSperren(ctx, s.pool, leser, false, overrideBlock)
 	if err != nil {
-		return nil, nil, err
+		return nil, sperrLage{}, err
 	}
-	return leser, einst, nil
+	if lage.einst == nil {
+		// Die Prüfung liest die Einstellungen nur für die Überfällig-Automatik, und die läuft
+		// bei einem Kollegen nie. Die Frist braucht sie trotzdem: die Sommerferien der Schule.
+		if lage.einst, err = ladeSystemEinstellungen(ctx, s.pool); err != nil {
+			return nil, sperrLage{}, err
+		}
+	}
+	return leser, lage, nil
 }
 
 // ladeRueckgeber ermittelt den aktiven Leser aus dem gescannten Ausweis, ohne
@@ -175,7 +176,7 @@ func geraeteRueckgabeFrist(now time.Time, kalender lmfplan.Ferientabelle) time.T
 	return Tagesfrist(now, geraeteLeihfristTage, kalender)
 }
 
-func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Student, einst *SystemEinstellungen, staffID string) (*DeviceResult, error) {
+func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Student, lage sperrLage, staffID string) (*DeviceResult, error) {
 	if leser == nil {
 		return nil, fmt.Errorf("%w: Bitte scannen Sie zuerst einen Ausweis", ErrInvalidState)
 	}
@@ -183,8 +184,8 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 	// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen), auf das Tagesende in der
 	// Schul-Zeitzone normalisiert (analog zu den Buch-Fristen).
 	sommerferien := ""
-	if einst != nil {
-		sommerferien = einst.Sommerferien
+	if lage.einst != nil {
+		sommerferien = lage.einst.Sommerferien
 	}
 	dueTime := geraeteRueckgabeFrist(time.Now(), lmfplan.FerientabelleAus(sommerferien))
 	resp := &DeviceResult{Student: leser}
@@ -217,6 +218,7 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, err
 	}
+	protokolliereUebergangen(ctx, s.auditRepo, staffID, leser.ID, lage.uebergangen)
 
 	resp.Type = "ausleihe"
 	resp.Geraet = g
@@ -290,6 +292,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	query string,
 	activeLeserID *string,
 	confirmedChecklist bool,
+	overrideBlock bool,
 	staffID string,
 ) (*DeviceResult, error) {
 	g, err := s.ladeGeraet(ctx, query)
@@ -309,59 +312,33 @@ func (s *defaultDeviceService) HandleDeviceAction(
 		return nil, err
 	}
 
-	// Die Sperren (Gerät defekt oder ausgesondert, Schüler gesperrt) gelten der AUSLEIHE.
+	// Die Sperren (Gerät defekt oder ausgesondert, Leser gesperrt) gelten der AUSLEIHE.
 	// Bis zum 13.09.2026 standen sie vor dieser Weiche und hielten auch die Rückgabe auf:
 	// 403, die Ausleihe blieb offen (geraet_rueckgabe_sperre_pg_test.go).
 	var leser *repository.Student
-	var einst *SystemEinstellungen
+	var lage sperrLage
 	if hasActiveLoan {
 		leser, err = s.ladeRueckgeber(ctx, activeLeserID)
 	} else {
 		if err = pruefeGeraetAusleihbar(g); err != nil {
 			return nil, err
 		}
-		leser, einst, err = s.ladeAkteur(ctx, activeLeserID)
+		leser, lage, err = s.ladeAkteur(ctx, activeLeserID, overrideBlock)
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	// Checklisten-Regel: Hat das Gerät Zubehör und der Benutzer hat es noch nicht
-	// bestätigt, unterbrechen wir und fordern die Bestätigung an.
+	// bestätigt, unterbrechen wir und fordern die Bestätigung an. Das Übergehen einer Sperre
+	// geht hier nicht verloren: Die Theke schickt override_block mit der Bestätigung erneut
+	// (OmniboxChecklistDialog.svelte), und protokolliert wird erst in leiheGeraetAus.
 	if g.Zubehoer != "" && !confirmedChecklist {
 		return &DeviceResult{Type: "geraet_check", Geraet: &g}, nil
 	}
 
 	if !hasActiveLoan {
-		return s.leiheGeraetAus(ctx, tx, &g, leser, einst, staffID)
+		return s.leiheGeraetAus(ctx, tx, &g, leser, lage, staffID)
 	}
 	return s.gibGeraetZurueck(ctx, tx, &g, &activeLoan, leser, staffID)
-}
-
-// pruefeGeraetAutomatikSperren wendet die AUTOMATIK-Sperren des Buch-Pfads auch auf die
-// Geräte-Ausleihe an: unbezahlte Schäden und die Überfällig-Automatik. Die expliziten
-// Sperr-Flags prüft bereits ladeAkteur; Geräte kennen bewusst kein override_block.
-// Nutzt dieselben Zähl-/Settings-Quellen wie der Buch-Pfad (loan_checkout_validation.go)
-// und gibt die geladenen Einstellungen zurück (für die Frist in leiheGeraetAus).
-func pruefeGeraetAutomatikSperren(ctx context.Context, pool db.PgxPoolIface, leserID string) (*SystemEinstellungen, error) {
-	offeneSchaeden, err := zaehleOffeneSchaeden(ctx, pool, leserID)
-	if err != nil {
-		return nil, err
-	}
-	if offeneSchaeden > 0 {
-		return nil, fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offeneSchaeden)
-	}
-
-	settings, err := ladeSystemEinstellungen(ctx, pool)
-	if err != nil {
-		return nil, err
-	}
-	overdue, err := zaehleUeberfaelligeMedien(ctx, pool, leserID, settings.MaxOverdueDays)
-	if err != nil {
-		return nil, err
-	}
-	if overdue >= settings.MaxOverdueItems {
-		return nil, fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdue)
-	}
-	return settings, nil
 }
