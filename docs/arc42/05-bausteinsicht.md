@@ -1,6 +1,6 @@
 # 5. Bausteinsicht
 
-Stand: 23.09.2026 · alle Umfangszahlen gemessen am 23.09.2026
+Stand: 24.09.2026 · alle Umfangszahlen gemessen am 24.09.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -14,15 +14,15 @@ Stand: 23.09.2026 · alle Umfangszahlen gemessen am 23.09.2026
 │  ┌────────────────────────────┐        ┌───────────────────────────────────┐ │
 │  │  Frontend (SPA + PWA)      │        │  Backend (Go)                     │ │
 │  │  Svelte 5 Runes, Tailwind  │◄──────►│  net/http, pgx/v5                 │ │
-│  │  294 .svelte, 65.601 Zeilen│  JSON  │  68.178 Zeilen Produktivcode      │ │
-│  │  IndexedDB-Warteschlange   │  SSE   │  217 Routen, 147 Migrationen      │ │
+│  │  294 .svelte, 65.602 Zeilen│  JSON  │  68.404 Zeilen Produktivcode      │ │
+│  │  IndexedDB-Warteschlange   │  SSE   │  217 Routen, 149 Migrationen      │ │
 │  └────────────────────────────┘        └──────────────┬────────────────────┘ │
 │           ausgeliefert AUS dem Backend                │                       │
 │           (frontend/dist, os.OpenRoot)                │ pgx-Pool              │
 │                                                        ▼                      │
 │                                          ┌───────────────────────────────┐   │
 │                                          │  PostgreSQL 18                │   │
-│                                          │  44 Tabellen, 2 Sichten       │   │
+│                                          │  43 Tabellen, 2 Sichten       │   │
 │                                          └───────────────────────────────┘   │
 │                                                                              │
 │  ┌──────────────────────────────────────────────────────────────────────────┐│
@@ -327,7 +327,7 @@ Umgebung meldet sich noch am selben Vormittag, nicht erst am nächsten Tag.
 
 ## 5.5 Wichtige Datenstrukturen (Auszug)
 
-Vollständig: `schema.sql` (44 Tabellen) und [invarianten.md](../invarianten.md).
+Vollständig: `schema.sql` (43 Tabellen) und [invarianten.md](../invarianten.md).
 
 | Tabelle / Sicht                | Bedeutung                                                                                                        |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
@@ -335,6 +335,7 @@ Vollständig: `schema.sql` (44 Tabellen) und [invarianten.md](../invarianten.md)
 | `buecher_exemplare`            | Bestand: das physische Stück (Barcode, Zustand, `ist_ausleihbar`, `letzte_bewegung_am`)                          |
 | `ausleihen`                    | Aktive und historische Ausleihen; `exemplar_id` XOR `geraet_id`; aktiv = `rueckgabe_am IS NULL`                    |
 | `leser`                        | **Alle** Entleiher mit `art` ∈ {`schueler`, `lehrkraft`, `liv`}, ein gemeinsamer Ausweis-Nummernkreis             |
+| `ausweisnummern_ausgeschieden` | Jede `A-`-Nummer, die eine Leserzeile verlassen hat — nur die Zahl, ohne Person; der Generator zählt über sie hinweg (Migration 146) |
 | `schueler` (**Sicht**)         | `WHERE art = 'schueler'` + `WITH CHECK OPTION` — trägt die alte Bedeutung „wirklich Schüler" weiter               |
 | `benutzer`                     | Anmeldekonten; `UNIQUE lower(email)`; **keine** Passwortspalte                                                    |
 | `role_permissions`             | Die konfigurierbare Rechtematrix; Vorgabe kommt aus `db/seed.go`                                                  |
@@ -374,9 +375,9 @@ find frontend/src -name '*.svelte' -not -path '*/node_modules/*' | wc -l
 find frontend/src \( -name '*.svelte' -o -name '*.js' \) -not -path '*/node_modules/*' | xargs cat | wc -l
 ls frontend/e2e | wc -l
 
-# Routen und Schema
+# Routen und Schema — „^", weil zwei Kommentarzeilen in schema.sql CREATE TABLE nennen
 grep -rhoE 'mux\.(Handle|HandleFunc)\(' api/*.go | wc -l
-grep -c 'CREATE TABLE' schema.sql
+grep -c '^CREATE TABLE' schema.sql
 ```
 
 Für das vollständige Routenverzeichnis samt Abgleich gegen die Frontend-Aufrufer in

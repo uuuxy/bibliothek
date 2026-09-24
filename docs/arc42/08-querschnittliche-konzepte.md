@@ -1,6 +1,6 @@
 # 8. Querschnittliche Konzepte
 
-Stand: 23.09.2026
+Stand: 24.09.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -295,10 +295,12 @@ einzigen unbrauchbaren Meldung kollabieren.
 | Bestandsstichtage?            | 15.3. und 15.9. (`pkg/schulzeit`) — geprüft wird an den **Rändern**, weil dort entschieden wird, ob ein Abgang noch in den Nachweis gehört |
 | Und die Uhr des Kiosk-Rechners? | Wird beim Nachbuchen gemessen; der Versatz wird herausgerechnet und ab einer Schwelle protokolliert (siehe [6.5](06-laufzeitsicht.md#65-theke-ohne-netz--und-das-nachbuchen)) |
 
-Eine **Ferienautomatik gibt es nicht.** Das Werkzeug für „Bücher über die Sommerferien
-mitnehmen" ist der Ferien-Leseclub (aktiv + Zieldatum ⇒ feste Rückgabefrist für alle
-Ausleihen). Die Tabelle `ferien_schliesszeiten` hatte nie einen Schreiber und ist
-ausgebaut; das Mahnwesen wird ohnehin nur von Hand bedient.
+**Ferien:** Eine Frist nach Tagen — Buch, Medium, Gerät, Verlängerung — endet an einem
+Schultag; fällt sie auf ein Wochenende, einen Feiertag Hessens oder in die Ferien, gilt der
+nächste (`service.Tagesfrist`, seit 24.09.2026, A19). Die Ferien stehen als Tabelle im
+Programm (`pkg/lmfplan/ferien.go`, `pkg/lmfplan/schulferien.go`). Stichtage rücken nicht. Das
+Werkzeug für „Bücher über die Sommerferien mitnehmen" bleibt der Ferien-Leseclub (aktiv +
+Zieldatum ⇒ feste Rückgabefrist für alle Ausleihen); das Mahnwesen wird nur von Hand bedient.
 
 ---
 

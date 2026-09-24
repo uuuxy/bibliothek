@@ -1,6 +1,6 @@
 # 9. Architekturentscheidungen
 
-Stand: 23.09.2026
+Stand: 24.09.2026
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -35,7 +35,7 @@ veralten.
 | A16 | Cron auf UTC genagelt                                                          | 19.08.2026    | gültig   |
 | A17 | Backup: nur die Datenbank, verschlüsselt, mit wöchentlicher Restore-Probe      | 11.07.2026    | gültig   |
 | A18 | Mahnstufe steigt nur beim PDF-Druck                                            | —             | gültig   |
-| A19 | Keine Ferienautomatik; Ferien-Leseclub stattdessen                             | 06.09.2026    | gültig   |
+| A19 | Frist nach Tagen endet an einem Schultag; Ferien als Tabelle im Programm      | 24.09.2026    | gültig   |
 | A20 | Schülerfotos verschlüsselt in der Datenbank, kein öffentliches Verzeichnis     | 08.08.2026    | gültig   |
 | A21 | Offline-Sync über die Nachbuch-Tür statt über die Stapel-Tür                    | 16.09.2026    | gültig   |
 | A22 | Kein TypeScript; JSDoc + `svelte-check`                                        | von Anfang an | gültig   |
@@ -292,7 +292,11 @@ Bücher `B-`, Geräte `G-`.
 Handanlage/LUSD, `L-` aus dem Littera-Personenlauf). Seit A10 ist das die falsche Aussage:
 Wer jemand ist, steht in den Stammdaten, nicht auf der Karte.
 
-**Folge.** Nummern werden nicht recycelt, alte Karten funktionieren weiter. **Die Vorsilbe
+**Folge.** Nummern werden nicht recycelt, alte Karten funktionieren weiter — seit Migration 146
+(24.09.2026) auch dann nicht, wenn die Nummer aus `leser` verschwindet: Die Tabelle
+`ausweisnummern_ausgeschieden` hält sie als Zahl fest, und der Generator zählt über sie hinweg.
+Eine Sequenz reichte dafür nicht, weil der LUSD-Lauf selbst weiterzählt, die Littera-Übernahme
+Ersatznummern bildet und Nummern von Hand nur in der Tabelle stehen. **Die Vorsilbe
 selbst bleibt** — und der Grund ist nicht offensichtlich: Ohne Netz ist sie die einzige
 Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheiden kann
 (A21). Littera kommt ohne aus, weil dort Nummer und Scanwert zwei verschiedene Felder sind.
@@ -399,22 +403,28 @@ die Klassenleitung, nie an Schüler.
 
 ---
 
-## A19 — Keine Ferienautomatik
+## A19 — Frist nach Tagen endet an einem Schultag; Ferien als Tabelle im Programm
 
-**Entscheidung.** Es gibt **keine** automatische Verlängerung „bis zum ersten Schultag nach
-den Ferien" und **keine** Ferien-Pause des Mahnwesens. Das Werkzeug ist der
-**Ferien-Leseclub**: aktiv + Zieldatum ⇒ alle Ausleihen bekommen dieses feste
-Rückgabedatum.
+**Entscheidung (24.09.2026).** Fällt eine Frist, die in Tagen zählt — Buch, Medium, Gerät,
+Verlängerung —, auf ein Wochenende, einen Feiertag Hessens oder in die Ferien, gilt der
+nächste Schultag. Die Ferien stehen als Tabelle im Programm, nicht als Datei, die die Schule
+hochlädt. Stichtage (Lernmittel, LMF-Plan, Ferien-Leseclub), Fristen von Hand und die
+Jahresfrist der Dauerleihe rücken nicht. Eine Ferien-Pause des Mahnwesens gibt es nicht; für
+„Bücher über die Sommerferien mitnehmen" bleibt der **Ferien-Leseclub** (aktiv + Zieldatum ⇒
+festes Rückgabedatum).
 
-**Anlass.** Die Tabelle `ferien_schliesszeiten` (Migration 017) hatte **nie einen
-Schreiber** — Banner und Sperre waren gebaut und liefen ins Leere. Die Doku behauptete die
-Automatik bis zum 06.09.2026 trotzdem.
+**Anlass.** Ausleihe am 24.09.2026 plus 21 Tage ist der 15.10., mitten in den Herbstferien.
+Vom 06.09. bis zum 24.09.2026 galt „keine Ferienautomatik": Die Tabelle
+`ferien_schliesszeiten` (Migration 017) hatte nie einen Schreiber, Banner und Sperre liefen
+ins Leere, und sie ist mit Migration 102 ausgebaut. Littera führte Schließtage als Liste von
+Hand; in der Sicherung von 2010 ist sie leer.
 
-**Folge.** Ausbau statt Reparatur (Migration 102); das Mahnwesen wird bewusst nur von Hand
-bedient.
+**Folge.** Das Kultusministerium legt die Termine vier Schuljahre im Voraus fest. Zwei Jahre
+vor dem Ende der Tabelle melden es die Betriebsbereitschaft und zwei Horizont-Tests. Die
+beweglichen Ferientage der Schule kennt die Tabelle nicht.
 
-**Fundstelle.** `internal/service/loan_rules.go`, Migration 102,
-[FACHKONZEPT.md §2.1](../FACHKONZEPT.md).
+**Fundstelle.** `service.Tagesfrist` (`internal/service/loan_rules.go`),
+`pkg/lmfplan/schulferien.go`, `pkg/lmfplan/ferien.go`, [FACHKONZEPT.md §2.1](../FACHKONZEPT.md).
 
 ---
 

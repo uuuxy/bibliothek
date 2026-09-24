@@ -166,7 +166,7 @@ Das System verwaltet den Mangel an verfügbaren Büchern durch zwei Konzepte:
 
 ### 4.1. Einzel-Vormerkungen
 
-- Ein Schüler kann ein Buch vormerken, wenn kein Exemplar mehr frei ist.
+- Ein Schüler kann ein Buch vormerken, wenn kein Exemplar mehr frei ist. Vormerken können nur Schüler (entschieden am 24.09.2026): Die Oberfläche bietet zum Vormerken nur Schüler an, und seit dem 21.09.2026 lehnt die Tür einen Kollegen mit 409 ab (`ErrVormerkungNurFuerSchueler`).
 - **Rückgabe-Match:** Wird ein Exemplar dieses Titels zurückgegeben, prüft das System, ob eine Vormerkung vorliegt.
 - **Abholbereitschaft:** Das Buch wird nicht freigegeben, sondern direkt dem wartenden Schüler zugeteilt (Status `abholbereit`). Es landet physisch im Bereitstellungsregal.
 - _Schutz:_ Es ist technisch unmöglich, dass ein Schüler ein Buch vormerkt, das er aktuell selbst ausleiht (Vermeidung von Monopolisierung).
@@ -322,7 +322,7 @@ Die Software verwaltet Bedarfe und Lieferungen:
 
 - Wenn ein Schüler in der LUSD nicht mehr auftaucht, wird er im System zum "Abgänger" im Sinne des Imports (`ist_abgaenger = true`): Er ist **weg**. Die Abgänger-Ansicht (§8.x) meint etwas anderes — die Abschlussklassen, die noch da sind; in der Leserdatei heißt der Reiter der Weggegangenen deshalb „Ehemalige / Archiv".
 - **Karenzzeit (seit 02.09.2026):** Ein Abgänger ohne offene Vorgänge wird beim Import **nicht mehr sofort anonymisiert**, sondern nur gesperrt (Grund „Automatisierte Abgänger-Sperre (Karenzzeit vor Anonymisierung)"); der nächtliche Job anonymisiert nach der Karenzzeit aus _Einstellungen → Datenschutz & Sitzung_ (`abgaenger_karenz_tage`, Vorgabe 90, 0 = sofort wie früher). Uhr ist der spätere von zwei Zeitpunkten (`repository.KarenzUhr`): `abgaenger_seit` (Migration 094: gesetzt beim ersten Abgang, geräumt bei Rückkehr) und `letzter_vorgang_am` am Leser (Migration 137) — die letzte Rückgabe einer Ausleihe oder der letzte Abschluss eines Schadensfalls, bezahlt oder storniert. Den Vorgang zählt die Uhr seit 05.09.2026; vorher zählte nur der Abgang, und der Schutz kippte mit der Rückgabe, weil offene Vorgänge die Zeile bis dahin gehalten hatten. Bis Migration 137 rechnete sie ihn aus `ausleihen` und `schadensfaelle` — der Lesehistorie-Lauf trennt aber die Ausleihe nach seiner Frist vom Leser, die Uhr fiel dann auf den Abgang zurück, und die Karenz wurde still kürzer als eingestellt. Seitdem stempeln Trigger den Zeitpunkt am Leser, bei jeder Rückgabe und bei jedem Abschluss eines Schadensfalls; die Uhr geht nie zurück. Grenze: Was der Lesehistorie-Lauf vor 137 schon getrennt hatte, ist nicht mehr auffindbar — diese Leser rechnen weiter ab dem Abgang. Import, Job und Selbstprüfung teilen Schlüssel und Prädikat (`repository.PredikatAnonymisierung`). Die Karenz ist der Raum, in dem eine falsche Zuordnung ohne Schüler-ID noch repariert werden kann; sie ersetzt die frühere feste Frist von 360 Tagen (kürzer, nicht länger). Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft seit 05.09.2026 nur anonymisierte Datensätze — sie wartet die Karenz ab, statt sie abzuschneiden; im Cron läuft die Anonymisierung deshalb vor der Löschung (`RunNaechtlicheDSGVO`).
-- Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Foto), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Admin-Audit-Log und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
+- Die Anonymisierung leert nicht nur den Schülerdatensatz selbst (Name, Adresse, Geburtsdatum, Schuleintritt, LUSD-ID, Eltern-E-Mail, Foto; die Ausweisnummer wird durch `ANON-…` ersetzt, eine `A-`-Nummer bleibt als bloße Zahl ohne Person gesperrt, §12), sondern tilgt die Personendaten auch aus den **Neben-Tabellen**: den Klarnamen aus dem fachlichen Audit-Log, die LUSD-ID aus dem Admin-Audit-Log und die offenen Vormerkungen. Sonst überlebte der Personenbezug bis zur Audit-Aufbewahrungsfrist.
 - **Retention-Blockade:** Ein Abgänger wird **nicht** gelöscht oder anonymisiert, solange er noch Bücher ausgeliehen hat oder unbezahlte Schadensfälle existieren. In diesem Fall wird der Datensatz eingefroren (`ist_gesperrt = true`, Sperrgrund: "Automatisierte Abgänger-Sperre (offene Vorgänge)"). Falls die offenen Vorgänge geklärt werden und der Abgänger im Folgejahr in der LUSD wieder als aktiver Schüler auftaucht, hebt das System die Sperre automatisch wieder auf.
 - **Papierkorb:** Manuelles Löschen von Schülern durch den Admin verschiebt diese in einen Papierkorb (Soft-Delete). Ausleihhistorie und Name bleiben vorerst für einen etwaigen Restore erhalten. Erst der `Purge`-Prozess löscht sie endgültig und anonymisiert historische Ausleihen (`schueler_id = NULL`).
 - **Lesehistorie ist befristet (seit 22.08.2026):** Eine zurückgegebene Ausleihe bleibt nicht bis zur Schüler-Löschung dem Schüler zugeordnet. Ein nächtlicher Job trennt sie nach Frist (`schueler_id = NULL`) — **Schülerbücherei 90 Tage**, **Lernmittel 730 Tage** nach Rückgabe; beides in den Einstellungen unter „Datenschutz & Sitzung", 0 = aus. Der Vorgang bleibt für Statistik und Bestandskartei erhalten, nur ohne Person. Ausleihen mit offenem Schadensfall bleiben zugeordnet. Die Frist gilt seit dem 16.09.2026 JEDEM LESER, auch dem Kollegium — was ein Erwachsener gelesen hat, muss die Bücherei nach der Rückgabe so wenig wissen wie bei einem Kind. Eine laufende Dauerleihe ist nicht betroffen: Die Frist beginnt mit der Rückgabe. Die Karenz-Uhr hängt daran seit Migration 137 nicht mehr (siehe oben). Folge für die Oberfläche: Schülerprofil und Titel-Historie zeigen nur noch Ausleihen innerhalb der Frist mit Namen, ältere als „anonym".
@@ -488,8 +488,9 @@ nicht zu sehen. Die Kehrseite ist eine eigene Bugklasse; sie steht in
 derselben Stelle. Einem Kollegen sind drei verschlossen, und zwar nicht aus Geschmack:
 Klasse und Abgangsjahr (eine Klasse gehört keiner Lehrkraft, und das Abgangsjahr leitet der
 Server aus ihr ab) sowie die LUSD-Kennung (die Datenbank verbietet sie einem Nicht-Schüler).
-Geburtsdatum, Ausweisnummer, Anschrift und Eltern-E-Mail stehen jedem offen und bleiben beim
-Kollegen leer.
+Geburtsdatum, Ausweisnummer, Anschrift und Eltern-E-Mail stehen jedem offen. Beim Kollegen
+bleiben Geburtsdatum, Anschrift und Eltern-E-Mail leer; eine Ausweisnummer hat jeder mit
+freigeschaltetem Zugang, das Programm vergibt sie (Migrationen 136 und 145).
 
 **Die Schul-E-Mail ist beim Anlegen einer Lehrkraft oder LiV Pflicht.** Sie ist keine
 Kontaktangabe, sondern der Schlüssel: Mit ihr entsteht sofort das Anmeldekonto, und weil der
@@ -499,10 +500,16 @@ zweimal in der Leserdatei — Ausweis und Ausleihen am ersten Eintrag, die Anmel
 zweiten. Freigeschaltet wird das Konto nur, wenn der Anlegende `manage_users` hat; sonst
 entsteht eine Zugangsanfrage wie bei der Selbstanmeldung. Die Adresse steht dabei an genau
 EINER Stelle, am Konto (`benutzer.email`, `UNIQUE lower(email)`) — eine zweite Spalte an der
-Leserzeile gibt es bewusst nicht.
+Leserzeile gibt es bewusst nicht. Die Akte liest sie vom Konto; fehlt sie, lässt sie sich dort
+nachtragen, ändern lässt sie sich nur in „Benutzer & Rechte" (`api/student_schul_email.go`).
 
 **Ausweise:** Alle Leser ziehen ihre Nummer aus EINEM Nummernkreis (Migration 125), und
-alle neuen Nummern tragen die Vorsilbe `A-` (§1). Die Aufschrift der gedruckten Karte
+alle neuen Nummern tragen die Vorsilbe `A-` (§1). Eine `A-`-Nummer vergibt das Programm nur
+einmal, auch nachdem sie verschwunden ist — endgültig gelöscht, anonymisiert, zusammengeführt,
+geleert oder umgeschrieben (Migration 146): Die Tabelle `ausweisnummern_ausgeschieden` hält sie
+als bloße Zahl fest, ohne Person, und der Generator zählt über sie hinweg. Eine alte Karte
+findet danach an der Theke niemanden. Von Hand bleibt eine frühere Nummer eintragbar, etwa die
+alte Karte eines Schülers, der zurückkommt. Die Aufschrift der gedruckten Karte
 richtet sich nach der Art — „Schülerausweis" oder „Lehrerausweis"; eine Gültigkeit trägt
 nur der Schülerausweis, weil der Ausweis einer Lehrkraft mit keinem Schuljahr abläuft.
 

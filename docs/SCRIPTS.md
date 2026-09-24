@@ -92,9 +92,14 @@ DELETE FROM benutzer  WHERE rolle = 'kollegium' AND email LIKE '%@littera.invali
 > Littera-Lehrkraftkonten und sieht am Ende einen Fehler, der nach „nichts passiert"
 > aussieht.
 
+**Lehrkräfte räumt der Block nicht vollständig auf** (offen, [OFFEN.md](OFFEN.md) 5.24): Er
+löscht ihre Konten, ihre Leserzeilen bleiben mit der Ausweisnummer stehen; eine Lehrkraft, die
+in Littera eine echte Adresse hat, trifft er gar nicht. Vor einem zweiten Personenlauf auf
+derselben Datenbank dort nachsehen.
+
 **Ersatznummern nach dem Aufräumen:** Wer keine verwendbare Ausweisnummer mitbringt, bekommt
-`A-<Littera-Kennung>`. Das Aufräumen löscht diese Zeilen, und eine gelöschte A-Nummer vergibt
-das Programm nicht noch einmal (Migration 146) — der zweite Lauf gibt diesen Personen
+`A-<Littera-Kennung>`. Das Aufräumen löscht die Zeilen der Schüler, und eine gelöschte A-Nummer
+vergibt das Programm nicht noch einmal (Migration 146) — der zweite Lauf gibt diesen Personen
 `A-<Littera-Kennung>-2`. Karten, die nach dem ersten Lauf gedruckt wurden, gelten dann nicht
 mehr. Nummern aus Littera selbst (Lesernummer, Herstellernummer der Karte) betrifft das nicht:
 Sie sind keine A-Nummern.

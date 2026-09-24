@@ -39,7 +39,8 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
 3. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-Von 4.20 (Schlagworte) bleiben nur die Littera-Schlagworte; sie kommen mit dem Backup (7.2).
+Mit dem Littera-Backup (7.2) kommen die Littera-Schlagworte aus 4.20. Vor einem zweiten
+Personenlauf auf derselben Datenbank muss das Aufräumen stimmen (**5.24**).
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
 die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
@@ -75,8 +76,6 @@ jemandem schaden?"**
 
 ---
 
----
-
 ## 2. Offline-Betrieb der Theke — der Nachweis steht aus
 
 Gebaut sind alle drei Stufen (15./16.09.2026): Die Theke hält die Buch-Barcode-Liste im Browser
@@ -90,9 +89,9 @@ Offen ist **der Nachweis (2.3):** Stufe 1 und 3 gehören von Hand in den echten 
 ### 2.3 Nachweis am Stack (je Stufe, echter Chrome)
 
 - Stufe 1: DevTools-Drosselung 20 s, Schüler laden, Buch, Escape → IndexedDB trägt den Schüler.
-  Offline „zurückgeben" im Profil → Rückgabe. Lehrkraft laden, Buch → Handapparat. IndexedDB
-  blockiert → „NICHT gespeichert". Zwei Sicherungen einspielen → ein Stapel. Zwei parallele
-  Anfragen mit einem Schlüssel gegen `/api/action` → eine Ausleihe.
+  Offline „zurückgeben" im Profil → Rückgabe. Lehrkraft laden, Buch scannen → Ausleihe auf die
+  Lehrkraft. IndexedDB blockiert → „NICHT gespeichert". Zwei Sicherungen einspielen → ein
+  Stapel. Zwei parallele Anfragen mit einem Schlüssel gegen `/api/action` → eine Ausleihe.
 - Stufe 2: curl mit Cookie gegen `/nachbuchen`: Umbuchung, Doppelscan, gesperrter Ausweis,
   Rückgabe vor älterer Ausleihe (409 `veraltet`), abgebrochener Online-Versand mit gleichem
   Schlüssel (Ausleihe nachgeholt), verloren gemeldetes Buch (Forderung endet, Hinweis in der
@@ -326,19 +325,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 Folgen der Übergabe (5.3): Übergabe-PDF und Sammelliste für das Schulamt; E6 (4.4). Das Modell
 der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
 
-### 5.16 Leserdatei und Rolle Leitung — was noch offen ist
-
-**Entschieden, damit die Frage nicht wiederkommt:** Ein Kollege hat bewusst keinen
-Kontoauszug und keine Ersatzforderung in seiner Akte (die DSGVO-Auskunft kommt, 5.19) — sie
-gehören der Schülerarbeit und lesen die Sicht `schueler`, ausgeblendet statt kaputt. Die E-Mail
-eines Kollegen steht am Konto
-(`benutzer.email`, `UNIQUE lower(email)`) und nicht in `leser.eltern_email`; in der Akte wird sie
-vom Konto gelesen und ist nachtragbar, solange keine da ist. Die Leitung sieht den Menüpunkt
-„Einstellungen" und darf darin LUSD & Versetzung, Datenverwaltung, LMF-Aktionen und Lieferanten
-bedienen; verschlossen sind Schule, Fristen und Mailversand (`manage_settings`) sowie Benutzer &
-Rechte (`manage_users`). Der Nummernkreis bleibt unangetastet: Ohne Netz ist die Vorsilbe die
-einzige Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheidet.
-
 ### 5.18 Klassen als Stammdaten — wie die Lesergruppen in Littera
 
 Am 23.09.2026 entschieden: „Klasse löschen möglich machen". Beim Bauen stellte sich heraus, dass
@@ -375,9 +361,6 @@ Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
 (`api/dsgvo_auskunft.go`). Heute gibt es sie für einen Kollegen nicht; das Auskunftsrecht gilt
 aber für jede Person. Für einen Kollegen enthält sie, was es bei ihm gibt (Konto, E-Mail,
 Ausleihen, Protokoll); die Schülerteile entfallen.
-
-Vormerken bleibt Schülern vorbehalten (entschieden am 24.09.2026) — so bietet es die Oberfläche
-an, und seit dem 21.09.2026 lehnt es auch die Tür ab.
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
@@ -449,16 +432,24 @@ eigenen Tabelle statt an der Leserzeile — eine Migration an der Karenz-Uhr (L�
 DSGVO-Auskunft lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit; bis dahin steht der
 Punkt hier, damit dieser Umbau ihn findet.
 
-### 5.24 Aufräumen vor einem zweiten Littera-Lauf lässt die Leserzeilen der Lehrkräfte stehen
+### 5.24 Aufräumen vor einem zweiten Littera-Lauf lässt Lehrkräfte stehen
 
 Die Anleitung in `docs/SCRIPTS.md` (Abschnitt 1, „Wiederholung") löscht die Littera-Lehrkräfte
-mit `DELETE FROM benutzer … '%@littera.invalid'`. Seit Migration 125 zeigt das Konto auf die
-Leserzeile, nicht umgekehrt: Die Zeile bleibt mit ihrer Ausweisnummer stehen, ohne Konto.
-Nachgestellt am 24.09.2026 an der Test-Datenbank (Konto weg, Leserzeile mit Nummer „31" da).
-Ein zweiter Lauf legt die Lehrkraft dann ein zweites Mal an und gibt ihr eine Ersatznummer, weil
+mit `DELETE FROM benutzer … '%@littera.invalid'`. Das hat zwei Lücken:
+
+- Seit Migration 125 zeigt das Konto auf die Leserzeile, nicht umgekehrt: Die Zeile bleibt mit
+  ihrer Ausweisnummer stehen, ohne Konto. Nachgestellt am 24.09.2026 an der Test-Datenbank
+  (Konto weg, Leserzeile mit Nummer „31" da).
+- Eine Lehrkraft, deren Adresse in Littera steht, bekommt diese Adresse statt des Platzhalters
+  (`mailadresse` in `internal/littera/schreiber_personen.go`). Das Aufräumen trifft dann weder
+  ihr Konto noch ihre Leserzeile. Im Stand von 2010 hat eine von 158 Lehrkräften eine Adresse.
+
+Ein zweiter Lauf legt diese Lehrkräfte ein zweites Mal an und gibt ihnen eine Ersatznummer, weil
 ihre Nummer an der alten Zeile hängt; ihre Karte findet an der Theke die alte Zeile. Das
 Protokoll meldet jede dieser Ersatznummern. Abhilfe: die Leserzeilen vor den Konten löschen,
-über `benutzer.leser_id`. Nötig vor einem zweiten Lauf, etwa einem Neuaufbau aus 7.2.
+über `benutzer.leser_id` (`ON DELETE SET NULL`). Für Lehrkräfte mit echter Adresse fehlt ein
+Merkmal, an dem das Aufräumen sie erkennt. Nötig, bevor auf derselben Datenbank ein zweiter
+Personenlauf läuft, etwa mit dem frischen Backup aus 7.2.
 
 ---
 
@@ -487,6 +478,11 @@ Protokoll meldet jede dieser Ersatznummern. Abhilfe: die Leserzeilen vor den Kon
   (40 Leser, 4.130 Exemplare, keine klein). **Anlass zum Bauen:** ein zweiter Aufrufer, der
   rohe Nummern schickt — dann die Eingabe am Server vereinheitlichen (nicht `upper(barcode_id)`,
   das nimmt den Index), mit einer gemeinsamen Fall-Tabelle für Go und JS.
+- Von Hand lässt sich eine ausgeschiedene `A-`-Nummer wieder eintragen, in der Akte wie in
+  „Benutzer & Rechte" — gewollt für die alte Karte eines Schülers, der zurückkommt (Migration
+  146). Die Maske sagt dabei nicht, dass die Nummer schon einmal vergeben war; nur der Generator
+  und die Littera-Übernahme lesen `ausweisnummern_ausgeschieden`. Anlass zum Bauen: eine alte
+  Karte, die auf diesem Weg an eine andere Person gerät.
 - Die Sperrprüfung liest aus dem Pool, während die Checkout-Transaktion mit `FOR UPDATE` offen ist
   (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim Nachbuchen
   vieler Ausleihen (Abschnitt 2) beobachten.
@@ -510,8 +506,6 @@ Protokoll meldet jede dieser Ersatznummern. Abhilfe: die Leserzeilen vor den Kon
 - Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
   in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
   freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
-- Die Ferientabelle 2027–2030 (`pkg/lmfplan/ferien.go`) ist eine ungeprüfte Abschrift; der
-  Horizont-Test wird ab 2029 rot. Beim nächsten KMK-Beschluss gegen die Quelle prüfen.
 - Browser-Gates: Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
   Anfangszustand; kein Screenreader-Durchgang; der Ausweis-Designer geht nur per Maus.
 - 16 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
@@ -590,7 +584,8 @@ teuerste offene Position vor dem Echtstart — früh bei der Schule anfragen.
 **Reihenfolge:** Littera-Personen und -Ausleihen im selben Lauf übernehmen, **bevor** ein echter
 LUSD-Import läuft. Der Littera-Personenlauf erkennt Schüler aus der LUSD nicht und legt sie ein
 zweites Mal an ([SCRIPTS.md](SCRIPTS.md), Abschnitt 0). Das Geburtsdatum im Backup ist die Brücke
-für den späteren LUSD-Abgleich — vor dem Lauf prüfen.
+für den späteren LUSD-Abgleich — vor dem Lauf prüfen. Hat auf der Datenbank schon ein
+Personenlauf stattgefunden, vorher das Aufräumen aus 5.24 richten.
 **Vor dem Personenlauf:** Im frischen Backup nachsehen, ob die Tabelle `FremdLeserNummer` gefüllt
 ist (im Stand von 2010 ist sie leer). Sie trägt die Nummern, die die Ausweise beim Scannen liefern;
 nur mit ihr funktionieren die vorhandenen Ausweise ohne Neudruck. **Ist sie leer, muss jeder Ausweis

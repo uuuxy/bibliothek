@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-22. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-24. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -282,7 +282,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Akte**: _Ausleihen & Historie_ und _Stammdaten & Adresse_ — für jeden dieselben Felder
   an derselben Stelle. Bei einer Lehrkraft sind drei davon verschlossen, weil sie ihr
   nicht gehören: Klasse, Abgangsjahr und LUSD-Kennung. Geburtsdatum, Ausweisnummer,
-  Anschrift und Eltern-E-Mail stehen jedem offen und bleiben beim Kollegen meist leer.
+  Anschrift und Eltern-E-Mail stehen jedem offen. Beim Kollegen bleiben Geburtsdatum,
+  Anschrift und Eltern-E-Mail meist leer; eine Ausweisnummer hat jeder mit freigeschaltetem
+  Zugang.
   Die Art lässt sich zwischen Lehrkraft und LiV umstellen; über die Schüler-Grenze geht
   sie nicht — ein Schüler kommt aus der LUSD und bleibt Schüler.
 - **Dokumente** in der Akte: Ausweis drucken, Kontoauszug, Ersatzforderung (nur bei offenem
@@ -325,8 +327,8 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   bleibt der Datensatz, dessen Ausweis das Kind in der Hand hat; Ausleihen, Gebühren und
   Historie des anderen wandern hinüber, vom Foto bleibt das jüngere. Die Suche im Dialog
   findet auch Ehemalige und Gesperrte. **Wurde für den aufgelösten Datensatz schon ein
-  Ausweis gedruckt, diese zweite Karte einziehen und vernichten:** Ihre Nummer ist danach
-  frei und kann beim nächsten neu angelegten Schüler wieder vergeben werden.
+  Ausweis gedruckt, diese zweite Karte einziehen und vernichten:** Ihre Nummer findet an der
+  Theke danach niemanden mehr, und das Programm vergibt sie nicht noch einmal.
   ([LUSD.md](LUSD.md) §5)
 
 ## Mahnwesen
@@ -387,8 +389,8 @@ Datensatz erhalten — Zeit, eine falsche Zuordnung noch zu reparieren — und w
 automatisch anonymisiert. Bleibt ein Buch oder eine Forderung dauerhaft offen, meldet
 _Einstellungen → Betriebsbereitschaft_ nach einem Jahr „Ehemalige mit offenen Vorgängen": In der
 Akte das Buch als Verlust melden, dann die Forderung bezahlt oder storniert buchen — danach
-löscht das System von selbst. Der Buch-Barcode wird dabei nicht neu vergeben, die
-Ausweisnummer des Kindes nach der Löschung schon. Die Karenz läuft ab dem **späteren**
+löscht das System von selbst. Weder der Buch-Barcode noch die Ausweisnummer des Kindes wird
+danach neu vergeben. Die Karenz läuft ab dem **späteren**
 Zeitpunkt: dem Abgang oder der letzten Rückgabe beziehungsweise Schadensregulierung. Wer
 erst lange nach dem Abgang zurückgibt, hat damit trotzdem die volle Karenz. Die endgültige Löschung ab dem 30. Januar des Folgejahres trifft nur Datensätze, die die Karenz durchlaufen haben, also schon anonymisiert sind (§8).
 (§8, [LUSD.md](LUSD.md) §4)
@@ -477,7 +479,10 @@ bekommt die Person die nächste freie Nummer — die alte Karte gilt dann nicht 
 Ausweis ist zu drucken.
 
 **Vier Rollen vergeben Sie hier: Admin, Leitung, Mitarbeit, Helfer.** Die Leitung darf
-alles, was der Admin darf, außer zwei Dingen: Benutzer & Rechte und die Einstellungen.
+alles, was der Admin darf, außer zwei Dingen: Benutzer & Rechte und die Einstellungen, die
+das Recht „Einstellungen verwalten" verlangen (Schule, Ausleihe & Fristen, Mahnwesen, Mail und
+sechs weitere). Unter _Einstellungen_ bedient sie LUSD & Versetzung, Datenverwaltung,
+LMF-Aktionen, Lieferanten und Schlagworte.
 (Der Grund ist nicht Misstrauen: Wer Benutzerkonten ändert, ändert auch E-Mail-Adressen —
 und die Adresse ist die Anmeldung.)
 
