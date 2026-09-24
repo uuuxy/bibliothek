@@ -39,7 +39,7 @@ func TestGenerateDsgvoAuskunftPDF(t *testing.T) {
 		auditEintraege: []DsgvoAuditEintrag{{Aktion: "update", Akteur: "USER", Zeitpunkt: time.Now(), Kontext: &kontext}},
 	}
 
-	out, err := generateDsgvoAuskunftPDF(daten, pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
+	out, err := generateDsgvoAuskunftPDF(dsgvoAntwort(daten, time.Now()), pdf.SchuleInfo{Name: "Testschule", Ort: "Frankfurt"})
 	if err != nil {
 		t.Fatalf("generateDsgvoAuskunftPDF: %v", err)
 	}

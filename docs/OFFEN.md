@@ -37,22 +37,21 @@ die Entscheidungen unten).
 4. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
    den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
-**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; Punkt 1 und die Stellung von 5.3
-sind der Vorschlag vom 24.09.2026):
+**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
+Vorschlag vom 24.09.2026):
 
-1. **5.19 Stufe 0** (Kategorie A): Das PDF der Auskunft enthält die Nachbuch-Meldungen nicht.
-2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.19 Stufe 1 (Auskunft für jeden Leser),
-   5.21 (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18
+1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.19 (Auskunft für jeden Leser), 5.21
+   (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18
    (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche). Nach deinem Nein zur Sperre über
    die Töpfe hinweg (4.4) deren kleiner Umbau an der Theke.
-3. **5.3** nach deinem Ja zu E6 — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben
+2. **5.3** nach deinem Ja zu E6 — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben
    wird (echte Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute
    schon besteht.
-4. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
+3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
    Nachbestell-Liste, also zuletzt.
-5. Nach der Antwort zu 8.3: **5.4**.
-6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+4. Nach der Antwort zu 8.3: **5.4**.
+5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Mit dem Littera-Backup (7.2) kommen die Littera-Schlagworte aus 4.20. Vor einem zweiten
 Personenlauf auf derselben Datenbank muss das Aufräumen stimmen (**5.24**).
@@ -405,18 +404,17 @@ Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
 **Entschieden am 24.09.2026, nicht gebaut: die DSGVO-Auskunft für jeden Leser**
-(`api/dsgvo_auskunft.go`), am Code nachgesehen am 24.09.2026:
+(`api/dsgvo_auskunft.go`), am Code nachgesehen am 24.09.2026. Für einen Kollegen endet die
+Auskunft mit 404 (Stammdaten aus der Sicht `schueler`), die Akte blendet den Knopf aus. Acht der
+neun Datenteile fragen schon nach der Leser-ID. Es fehlen das Konto, die eigenen Anfragen
+(`lehrer_anliegen`, Klassensatz-Reservierungen), die Kontoereignisse im Verwaltungsprotokoll und
+die Pflichtangaben für Beschäftigte (VVT Tätigkeit 3, § 23 HDSIG). Vier Gates stehen auf „nur
+Schüler" und führen den Umbau. Littera hat keine Auskunft; sein Stammdatenblatt ist für jede
+Leserart gleich.
 
-- **Stufe 0, Kategorie A, auch für Schüler:** Das PDF — nur das bekommt die Person — enthält die
-  Nachbuch-Meldungen nicht (4e898c98 nahm sie nur ins JSON). Dazu ein Gate „jeder Teil der
-  Auskunft steht als Abschnitt im PDF", am alten Code rot.
-- **Stufe 1:** Für einen Kollegen endet die Auskunft mit 404 (Stammdaten aus der Sicht
-  `schueler`), die Akte blendet den Knopf aus. Acht der neun Teile fragen schon nach der
-  Leser-ID. Es fehlen das Konto, die eigenen Anfragen (`lehrer_anliegen`,
-  Klassensatz-Reservierungen), die Kontoereignisse im Verwaltungsprotokoll und die
-  Pflichtangaben für Beschäftigte (VVT Tätigkeit 3, § 23 HDSIG). Vier Gates stehen auf „nur
-  Schüler" und führen den Umbau. Littera hat keine Auskunft; sein Stammdatenblatt ist für jede
-  Leserart gleich.
+Beim Umbau mitentscheiden: Die Rohdaten der Protokolleinträge (`details`) stehen nur in der
+abgerufenen Auskunft, nicht auf dem Blatt — sie nennen auch die bearbeitende Person. Das Gate
+`TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt sie als begründete Ausnahme.
 
 **Frage bei dir:** Die Einträge, in denen ein Kollege selbst handelt (gebuchte Ausleihen,
 Verwaltungseingriffe mit IP-Adresse, Inventur; bei einer Bibliothekskraft Tausende in 24

@@ -604,20 +604,28 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 		// Rechenschaftspflicht: Die Auskunftserteilung selbst wird protokolliert.
 		s.protokolliereDsgvoAuskunft(ctx, id)
 
-		RespondJSON(w, http.StatusOK, DsgvoAuskunftResponse{
-			Art:                  "Auskunft nach Art. 15 DSGVO",
-			ErstelltAm:           time.Now(),
-			Stammdaten:           *daten.stammdaten,
-			Foto:                 daten.foto,
-			Ausleihen:            daten.ausleihen,
-			Schadensfaelle:       daten.schaeden,
-			Vormerkungen:         daten.vormerkungen,
-			Bescheide:            daten.bescheide,
-			NachbuchMeldungen:    daten.nachbuchMeldungen,
-			AuditEintraege:       daten.auditEintraege,
-			Verwaltung:           daten.verwaltung,
-			Verarbeitungsangaben: daten.verarbeitung,
-		})
+		RespondJSON(w, http.StatusOK, dsgvoAntwort(daten, time.Now()))
 		return nil
 	})
+}
+
+// dsgvoAntwort ist die Auskunft als EIN Objekt: Die JSON-Antwort und das PDF entstehen
+// beide daraus. Bis zum 24.09.2026 setzte der JSON-Handler sein Objekt selbst zusammen und
+// das PDF las die Einzelteile — das PDF ließ dabei die Nachbuch-Meldungen aus, und niemand
+// merkte es. Gate: TestDsgvoPDF_DrucktJedeAngabeDerAuskunft.
+func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) DsgvoAuskunftResponse {
+	return DsgvoAuskunftResponse{
+		Art:                  "Auskunft nach Art. 15 DSGVO",
+		ErstelltAm:           erstelltAm,
+		Stammdaten:           *daten.stammdaten,
+		Foto:                 daten.foto,
+		Ausleihen:            daten.ausleihen,
+		Schadensfaelle:       daten.schaeden,
+		Vormerkungen:         daten.vormerkungen,
+		Bescheide:            daten.bescheide,
+		NachbuchMeldungen:    daten.nachbuchMeldungen,
+		AuditEintraege:       daten.auditEintraege,
+		Verwaltung:           daten.verwaltung,
+		Verarbeitungsangaben: daten.verarbeitung,
+	}
 }

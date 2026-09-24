@@ -57,7 +57,7 @@ func (s *Server) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 			Ort:     settings.SchuleOrt,
 		}
 
-		pdfBytes, err := generateDsgvoAuskunftPDF(daten, schule)
+		pdfBytes, err := generateDsgvoAuskunftPDF(dsgvoAntwort(daten, schulzeit.Jetzt()), schule)
 		if err != nil {
 			return apierrors.Internal("PDF-Erzeugung fehlgeschlagen", err)
 		}
@@ -70,24 +70,26 @@ func (s *Server) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 	})
 }
 
-// generateDsgvoAuskunftPDF rendert die vollständige Art.-15-Auskunft als PDF.
-func generateDsgvoAuskunftPDF(daten *dsgvoDaten, schule pdf.SchuleInfo) ([]byte, error) {
+// generateDsgvoAuskunftPDF rendert die vollständige Art.-15-Auskunft als PDF — aus
+// demselben Objekt, das die JSON-Antwort ist (dsgvoAntwort).
+func generateDsgvoAuskunftPDF(a DsgvoAuskunftResponse, schule pdf.SchuleInfo) ([]byte, error) {
 	p := gofpdf.New("P", "mm", "A4", "")
 	p.SetMargins(20, 20, 20)
 	p.SetAutoPageBreak(true, 20)
 	tr := pdfzeichen.Uebersetzer(p.UnicodeTranslatorFromDescriptor("")) // UTF-8 → Latin-1 für Umlaute
 	p.AddPage()
 
-	dsgvoKopf(p, tr, schule, daten.stammdaten)
-	dsgvoStammdatenAbschnitt(p, tr, daten.stammdaten)
-	dsgvoFotoAbschnitt(p, tr, daten.foto)
-	dsgvoAusleihAbschnitt(p, tr, daten.ausleihen)
-	dsgvoSchadensAbschnitt(p, tr, daten.schaeden)
-	dsgvoVormerkAbschnitt(p, tr, daten.vormerkungen)
-	dsgvoBescheidAbschnitt(p, tr, daten.bescheide)
-	dsgvoAuditAbschnitt(p, tr, daten.auditEintraege)
-	dsgvoVerwaltungAbschnitt(p, tr, daten.verwaltung)
-	dsgvoVerarbeitungAbschnitt(p, tr, daten.verarbeitung)
+	dsgvoKopf(p, tr, schule, a)
+	dsgvoStammdatenAbschnitt(p, tr, &a.Stammdaten)
+	dsgvoFotoAbschnitt(p, tr, a.Foto)
+	dsgvoAusleihAbschnitt(p, tr, a.Ausleihen)
+	dsgvoSchadensAbschnitt(p, tr, a.Schadensfaelle)
+	dsgvoVormerkAbschnitt(p, tr, a.Vormerkungen)
+	dsgvoBescheidAbschnitt(p, tr, a.Bescheide)
+	dsgvoNachbuchAbschnitt(p, tr, a.NachbuchMeldungen)
+	dsgvoAuditAbschnitt(p, tr, a.AuditEintraege)
+	dsgvoVerwaltungAbschnitt(p, tr, a.Verwaltung)
+	dsgvoVerarbeitungAbschnitt(p, tr, a.Verarbeitungsangaben)
 
 	var buf bytes.Buffer
 	if err := p.Output(&buf); err != nil {
@@ -96,7 +98,7 @@ func generateDsgvoAuskunftPDF(daten *dsgvoDaten, schule pdf.SchuleInfo) ([]byte,
 	return buf.Bytes(), nil
 }
 
-func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, st *DsgvoStammdaten) {
+func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a DsgvoAuskunftResponse) {
 	p.SetFont("Arial", "B", 14)
 	p.Cell(0, 8, tr(schule.Name))
 	p.Ln(7)
@@ -107,13 +109,14 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, st
 	p.Ln(11)
 
 	p.SetFont("Arial", "B", 16)
-	p.Cell(0, 10, tr("Auskunft nach Art. 15 DSGVO"))
+	p.Cell(0, 10, tr(a.Art))
 	p.Ln(9)
 	p.SetFont("Arial", "", 10)
 	p.SetTextColor(90, 90, 90)
+	st := a.Stammdaten
 	p.Cell(0, 6, tr(fmt.Sprintf("Betroffene Person: %s %s (Klasse %s)", st.Vorname, st.Nachname, st.Klasse)))
 	p.Ln(5)
-	p.Cell(0, 6, tr("Erstellt am: "+schulzeit.Jetzt().Format(dsgvoZeitFormat)))
+	p.Cell(0, 6, tr("Erstellt am: "+a.ErstelltAm.In(schulzeit.Zone()).Format(dsgvoZeitFormat)))
 	p.SetTextColor(0, 0, 0)
 	p.Ln(9)
 	p.SetFont("Arial", "", 9)
@@ -209,8 +212,13 @@ func dsgvoSchadensAbschnitt(p *gofpdf.Fpdf, tr func(string) string, schaeden []D
 		if f.IstBezahlt {
 			status = "bezahlt"
 		}
+		// Zeitpunkt und Grund der Stornierung standen bis zum 24.09.2026 nur in der
+		// abgerufenen Auskunft, nicht auf diesem Blatt.
 		if f.StorniertAm != nil {
-			status = "storniert"
+			status = "storniert am " + f.StorniertAm.Format(dsgvoDatumFormat)
+			if f.Stornierungsgrund != nil && *f.Stornierungsgrund != "" {
+				status += " (Grund: " + *f.Stornierungsgrund + ")"
+			}
 		}
 		dsgvoEintragTitel(p, tr, f.Beschreibung)
 		dsgvoEintragZeile(p, tr, fmt.Sprintf("Betrag: %s EUR · Status: %s · gemeldet: %s",
@@ -248,8 +256,71 @@ func dsgvoBescheidAbschnitt(p *gofpdf.Fpdf, tr func(string) string, bescheide []
 	}
 }
 
+// dsgvoNachbuchAbschnitt nennt die Nachbuch-Meldungen, in denen die Person steht
+// (Migration 117): Die Theke hat ohne Netz gescannt, und beim späteren Buchen wich das
+// Ergebnis vom Scan ab. In der abgerufenen Auskunft seit dem 15.09.2026 (4e898c98), auf
+// diesem Blatt seit dem 24.09.2026. Eine Meldung nennt keine andere Person — nur, in
+// welcher Rolle diese hier beteiligt war.
+func dsgvoNachbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, meldungen []DsgvoNachbuchMeldung) {
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Meldungen zu Buchungen nach einem Netzausfall (%d)", len(meldungen)))
+	if len(meldungen) == 0 {
+		dsgvoLeer(p, tr)
+		return
+	}
+	for _, m := range meldungen {
+		ergebnis := dsgvoNachbuchErgebnis(m.Ergebnis)
+		dsgvoEintragTitel(p, tr, ergebnis)
+		grund := ""
+		if m.Grund != nil && *m.Grund != "" && *m.Grund != ergebnis {
+			grund = " · Grund: " + *m.Grund
+		}
+		bearbeitet := "noch nicht bearbeitet"
+		if m.QuittiertAm != nil {
+			bearbeitet = "bearbeitet am " + m.QuittiertAm.Format(dsgvoDatumFormat)
+		}
+		dsgvoEintragZeile(p, tr, fmt.Sprintf("Buch: %s · gescannt: %s · beteiligt als %s%s · %s",
+			dsgvoLeerWert(m.Barcode), m.GescanntAm.Format(dsgvoZeitFormat),
+			dsgvoNachbuchRolle(m.Rolle), grund, bearbeitet))
+	}
+}
+
+// dsgvoNachbuchErgebnis schreibt das Ergebniswort der Nachbuch-Tür aus, mit demselben
+// Wortlaut wie die Meldungsliste der Bibliothek (NachbuchMeldungen.svelte). Ein unbekanntes
+// Wort bleibt stehen, statt still zu verschwinden.
+func dsgvoNachbuchErgebnis(ergebnis string) string {
+	switch ergebnis {
+	case repository.NachbuchUmgebucht:
+		return "lag bei jemand anderem — dort zurückgenommen, neu ausgeliehen"
+	case repository.NachbuchNurReaktiviert:
+		return "Buch war abgeschrieben und ist wieder im Umlauf"
+	case repository.NachbuchNichtGebucht:
+		return "nicht gebucht"
+	case repository.NachbuchVeraltet:
+		return "nicht gebucht — es gab schon eine neuere Buchung"
+	case repository.NachbuchBereitsAusgeliehen:
+		return "war schon ausgeliehen"
+	case repository.NachbuchZurueckgegeben:
+		return "zurückgegeben"
+	case repository.NachbuchAusgeliehen:
+		return "ausgeliehen"
+	}
+	return ergebnis
+}
+
+// dsgvoNachbuchRolle sagt, als wer die Person an der Meldung beteiligt war
+// (dsgvoQueryNachbuchMeldungen). Ein unbekannter Wert bleibt stehen.
+func dsgvoNachbuchRolle(rolle string) string {
+	switch rolle {
+	case "ausleiher":
+		return "Ausleiher/in"
+	case "vorbesitzer":
+		return "bisherige/r Ausleiher/in"
+	}
+	return rolle
+}
+
 func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAuditEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("7. Protokolleinträge zu diesem Datensatz (%d)", len(audit)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Protokolleinträge zu diesem Datensatz (%d)", len(audit)))
 	if len(audit) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -269,7 +340,7 @@ func dsgvoAuditAbschnitt(p *gofpdf.Fpdf, tr func(string) string, audit []DsgvoAu
 // 31.08.2026 Teil der Auskunft; vorher war audit_logs die eine Quelle mit Schülerbezug,
 // die die Auskunft nicht las.
 func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege []DsgvoVerwaltungsEintrag) {
-	dsgvoAbschnitt(p, tr, fmt.Sprintf("8. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
+	dsgvoAbschnitt(p, tr, fmt.Sprintf("9. Verwaltungsprotokolle zu diesem Datensatz (%d)", len(eintraege)))
 	if len(eintraege) == 0 {
 		dsgvoLeer(p, tr)
 		return
@@ -282,7 +353,7 @@ func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege 
 }
 
 func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va DsgvoVerarbeitungsangaben) {
-	dsgvoAbschnitt(p, tr, "9. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
+	dsgvoAbschnitt(p, tr, "10. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
 	dsgvoAbsatz(p, tr, "Verarbeitungszwecke", strings.Join(va.Zwecke, "; "))
 	dsgvoAbsatz(p, tr, "Rechtsgrundlage", va.Rechtsgrundlage)
 	dsgvoAbsatz(p, tr, "Empfänger", va.Empfaenger)
