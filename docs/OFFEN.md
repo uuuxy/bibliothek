@@ -13,32 +13,31 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 ## Was jetzt dran ist
 
-**Die Sichtung vom 16.09.2026** (Abschnitt 9): offen ist die Frage 9.3 c. Die zwei Bedingungen
-aus 9.9 — DSGVO-Nachweis sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
+**Die Sichtung vom 16.09.2026** (Abschnitt 9): Die zwei Bedingungen aus 9.9 — DSGVO-Nachweis
+sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Der Etiketten-Lauf im Druck-Center** (4.8): Stichtag 15.07.2026, gemessen. Er ändert Daten.
-2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2): Netz kappen, Bücher aller
-   Formen und zwei Ausweise scannen, 20 Minuten warten, Netz zurück, Meldungen ansehen. Dazu
-   der Nachweis für den Server.
-3. **Kleine Fragen:** 5.18 (Klasse umbenennen statt löschen?), 5.1 (wer bucht eine Überweisung
-   ein), 5.16 (Ausweisnummer leeren),
-   5.19 (Auskunft und Vormerken für Kollegen), 9.3 c (Bücherei-Sperre wegen überfälliger
-   Schulbücher; Vorschlag: so lassen), 5.5 (Jahrgang am Titel: „unbekannt" statt Vorgabe 5 bis
-   10?), 5.5 (Google Books nur noch für Cover?), 5.5 (Ersatz-Etikett nach der Vorlage?), 5.21
-   (welche Rückmeldung gibt der Inventur-Scanner, wenn Grün und Bernstein keine M3-Rolle
-   haben?), 5.22 (Verklemmung bei der Fremdrückgabe über Kreuz: so lassen?).
-4. **Liegt bei anderen** (Abschnitt 8): die Anfragen an Schule, Schulamt und Schulträger, dazu
-   der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt,
-   diese Bücher tragen keinen Vermerk). Hier ist nichts zu tun außer nachzufragen, wenn nichts
-   kommt.
+1. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
+   gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1, E2, E5 (8.1–8.3), die Frage zur
+   Überweisung (8.7), dazu der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen
+   → Schule; leer heißt, diese Bücher tragen keinen Vermerk). Den Echtstart halten diese
+   Antworten auf, nicht der Code.
+2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
+   Chrome). Stufe 2 (die Tür per curl) mache ich am lokalen Stack.
+3. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
+   den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
-**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, die Reihenfolge ist meine):
+**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, ergänzt am 24.09.2026):
 
 1. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
-2. **4.18** Werk über den Auflagen — ändert die Nachbestell-Liste, also zuletzt.
-3. **5.21** Palettenfarben nebenher, Bildschirm für Bildschirm.
+2. **Zwischen den Stufen:** die am 24.09.2026 entschiedenen kleinen Punkte — 5.16 (Leeren zieht
+   eine neue Nummer), 5.5 (Ersatz-Etikett nach der Vorlage), 5.19 (Auskunft für jeden Leser),
+   5.21 (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18
+   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
+3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
+   derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
+   Nachbestell-Liste, also zuletzt.
 4. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
 5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -121,7 +120,8 @@ Die Nummern bleiben fest; beantwortete Fragen fallen weg, sobald sie umgesetzt s
 Bleibt der Schüler gesperrt und die Forderung offen, bis das Sekretariat „bezahlt laut
 Finanzbericht" bucht — oder gilt die Übergabe schulseitig als erledigt? **Vorschlag (Konzept):**
 Sperre bleibt, Löschblockade fällt. **Seit dem 22.09.2026 gilt „Sperre bleibt" nur noch für
-die Schülerbücherei:** Für Lernmittel darf keine Forderung eine Ausleihe abweisen (9.3 c). **Wann:** sobald ein erster echter Bescheid absehbar ist;
+die Schülerbücherei:** Für Lernmittel darf keine Forderung eine Ausleihe abweisen (Antwort der
+Schule vom 22.09.2026). **Wann:** sobald ein erster echter Bescheid absehbar ist;
 blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt 6.
 
 ### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
@@ -277,6 +277,13 @@ den Kalender wie heute schon die Ferientabelle, ist aber nicht der meldende Weg.
 rechnet gegen den Kalender, (4) Mitrutschen bei Nachtrag, (5) Band an der Theke und Mail an die
 Leitung, wenn der Kalender ausläuft.
 
+**Entschieden am 24.09.2026 — wie die Frist den Kalender liest:** Nur Fristen in Tagen (Bücher und
+Medien, Fall 2 und 3 in `calculateDueDate`) gehen gegen den Kalender: Fällt die Frist auf Ferien,
+Feiertag oder Wochenende, gilt der nächste Schultag. Lernmittel behalten Stichtag bzw. Plan, beim
+Berechnen wie beim Mitrutschen — der LMF-Stichtag 31.07. liegt in jedem Jahr der Tabelle in den
+hessischen Sommerferien (`pkg/lmfplan/ferien.go`); eine Regel über alle Fristen schöbe jedes
+Lernmittel auf den ersten Schultag danach, den Tag der Ausgabe.
+
 **Nicht gebaut.** Ändert einen Schreibpfad und braucht eine Migration; Gate am Rückweg, vorher rot
 gesehen.
 
@@ -305,17 +312,6 @@ eigenen Personensatz; das wäre ein eigener Umbau.
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
-
-### 5.1 Schäden und Benutzer
-
-- **Was „Bezahlt" bedeutet** (17.09.2026, aus dem Abgleich der Anforderungsliste,
-  [mittel_konzept.md](mittel_konzept.md) Abschnitt 3): Der Knopf in der Schülerakte
-  verbucht heute eine Barzahlung am Tresen. Für Lernmittel des Landes sieht die Arbeitshilfe
-  Bargeld nur als Ausnahme vor — mit Quittung und Weiterleitung binnen 14 Tagen. Die Briefe
-  nennen inzwischen das Konto; ein eingehender Betrag kommt also in aller Regel als
-  Überweisung, und niemand an der Theke sieht ihn. Zu klären mit der Schule: Wer bucht eine
-  Zahlung ein, die auf dem Kontoauszug steht? Keine Bauarbeit, bevor das beantwortet ist —
-  eine erfundene Antwort steht sonst als Vorgang in der Akte.
 
 ### 5.3 Folgen der Übergabe (nach 4.4)
 
@@ -354,11 +350,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   bricht mit der rohen Datenbankmeldung ab (`ON CONFLICT DO NOTHING` fängt nur den Index,
   nicht die Ausnahme). Laut, also richtig — nur die Meldung nennt weder Zeile noch Weg.
   Kategorie C, bis es einmal vorkommt.
-- Jahrgang am Titel: Ein CHECK fehlt, „Jahrgang unbekannt" ist von der Vorgabe 5 bis 10 nicht
-  zu unterscheiden — und seit dem Mehrjahresband (Migration 134) hängt eine Frist an „bis": Wer
-  den Schalter auf einem Titel mit der Vorgabe umlegt, bekommt die 10. Ein CHECK allein löst
-  das nicht; eine Vorgabe „unbekannt" (NULL) bräuchte die drei Leser (Mahnwesen „Jahrgang",
-  Inventur, Portal-Filter) mit.
 - „Klasse" neben der Spanne (22.09.2026): Zwei Jahrgangsangaben am Titel, „Klasse"
   (`grade_level`) und „von … bis" (`jahrgang_von/bis`). Mahnwesen „nach Jahrgang", Inventur
   nach Klasse und die Mehrjahresband-Frist lesen nur die Spanne; Titel-Tabelle,
@@ -376,6 +367,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   unten), dann die Spalte mit genau diesen Werten ablösen. Dabei mitentscheiden: die Spalte
   „klasse" des Listenimports und der Klassenvorschlag der ISBN-Suche, der auch aus
   „Band 2", „Level 9" und jeder Zahl von 5 bis 13 im Titel eine Klasse macht.
+  **Entschieden am 24.09.2026, im selben Umbau:** „Jahrgang unbekannt" wird eine eigene Vorgabe
+  (NULL) statt 5 bis 10 — heute ist beides nicht zu unterscheiden, und wer den
+  Mehrjahresband-Schalter (Migration 134) auf einem Titel mit der Vorgabe umlegt, bekommt die 10.
+  Die drei Leser der Spanne (Mahnwesen „Jahrgang", Inventur, Portal-Filter) lernen „unbekannt"
+  mit. Vorher am Testserver messen.
 
   ```sql
   SELECT grade_level, jahrgang_von, jahrgang_bis, ist_lernmittel, signatur, titel
@@ -394,18 +390,14 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   sind zwei verschiedene Bücher unter derselben Nummer („Heinrich Mann" und „Frédéric Chopin",
   rororo, `3499500252`/`9783499500251`). Ein Abgleich über beide Formen darf deshalb
   vorschlagen, nicht still zusammenführen.
-- **Frage: Google Books als Quelle für Titeldaten.** `SucheNachISBN` fragt der Reihe nach DNB,
-  Google Books und OpenLibrary; Google liefert also Titel, Autor und Verlag, wenn die DNB den
-  Titel nicht kennt. Nach einer Notiz vom 22.09.2026 soll Google nur noch als Rückfall für das
-  Cover dienen. Gilt das — dann aus der Reihe nehmen?
-- **Frage: Ersatz-Etikett nach der Vorlage?** Der Druckknopf an der Exemplarkarte
-  (`GET /api/print/etikett/{id}`) druckt ein A6-Blatt mit Titel, Autor und Strichcode — ohne
+- **Ersatz-Etikett nach der Vorlage — entschieden am 24.09.2026, nicht gebaut.** Der
+  Druckknopf an der Exemplarkarte (`GET /api/print/etikett/{id}`) druckt ein A6-Blatt mit Titel, Autor und Strichcode — ohne
   Schulname, Anschaffungsjahr, Signatur und Eigentumsvermerk. Das Etikett nach der Vorlage hat
   diese Felder seit dem 04.08.2026 (`d0623f99`), das A6-Blatt blieb, wie es war. Es vermerkt
   das Exemplar trotzdem als etikettiert (seit `5d102f58`): Ein neues Exemplar, für das jemand
   diesen Knopf nimmt, fällt aus „Fehlende Etiketten", ohne je den Eigentumsvermerk bekommen zu
-  haben (Rasterdurchgang 23.09.2026). Vorschlag: Der Knopf druckt das Etikett nach der Vorlage,
-  denselben Weg wie das Druck-Center, und das A6-Blatt entfällt.
+  haben (Rasterdurchgang 23.09.2026). Der Knopf druckt künftig das Etikett nach der Vorlage,
+  denselben Weg wie das Druck-Center; das A6-Blatt entfällt.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -436,8 +428,9 @@ der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
 ### 5.16 Leserdatei und Rolle Leitung — was noch offen ist
 
 **Entschieden, damit die Frage nicht wiederkommt:** Ein Kollege hat bewusst keinen
-Kontoauszug, keine Ersatzforderung und keine DSGVO-Auskunft in seiner Akte — sie gehören der
-Schülerarbeit und lesen die Sicht `schueler`, ausgeblendet statt kaputt. Die E-Mail eines Kollegen steht am Konto
+Kontoauszug und keine Ersatzforderung in seiner Akte (die DSGVO-Auskunft kommt, 5.19) — sie
+gehören der Schülerarbeit und lesen die Sicht `schueler`, ausgeblendet statt kaputt. Die E-Mail
+eines Kollegen steht am Konto
 (`benutzer.email`, `UNIQUE lower(email)`) und nicht in `leser.eltern_email`; in der Akte wird sie
 vom Konto gelesen und ist nachtragbar, solange keine da ist. Die Leitung sieht den Menüpunkt
 „Einstellungen" und darf darin LUSD & Versetzung, Datenverwaltung, LMF-Aktionen und Lieferanten
@@ -445,12 +438,13 @@ bedienen; verschlossen sind Schule, Fristen und Mailversand (`manage_settings`) 
 Rechte (`manage_users`). Der Nummernkreis bleibt unangetastet: Ohne Netz ist die Vorsilbe die
 einzige Information, an der die Theke einen Buchscan von einem Ausweisscan unterscheidet.
 
-**Offen, eine Frage:** Seit Migration 136 hat jedes aktive Konto eine Ausweisnummer. Die
-Verwaltung kann sie an einem Kollegen weiter leeren (`TestAusweisnummerLeeren`, entschieden
-am 16.09.2026, als der Hinweis am Feld noch „Leer lassen" sagte) — dann fehlt sie wieder, und
-der Druck liefert eine leere Zeile. Soll Leeren dort eine neue Nummer ziehen statt keine?
+**Entschieden am 24.09.2026, nicht gebaut:** Seit Migration 136 hat jedes aktive Konto eine
+Ausweisnummer. Die Verwaltung kann sie an einem Kollegen weiter leeren
+(`TestAusweisnummerLeeren`, entschieden am 16.09.2026, als der Hinweis am Feld noch „Leer
+lassen" sagte) — dann fehlt sie, und der Druck liefert eine leere Zeile. Künftig zieht Leeren
+eine neue Nummer aus dem Generator der Datenbank; ein aktives Konto ist nie ohne Nummer.
 
-### 5.18 Eine vertippte Klasse wieder loswerden — Rückfrage
+### 5.18 Klassen als Stammdaten — wie die Lesergruppen in Littera
 
 Am 23.09.2026 entschieden: „Klasse löschen möglich machen". Beim Bauen stellte sich heraus, dass
 die Beschreibung, auf der die Entscheidung stand, nicht stimmte:
@@ -465,23 +459,30 @@ die Beschreibung, auf der die Entscheidung stand, nicht stimmte:
   Reservierung oder ein LMF-Termin sie tragen. Löschen verweigert dann die Datenbank
   (`ON DELETE RESTRICT` an sechs Tabellen).
 
-**Vorschlag:** Statt „Löschen" ein **Umbenennen** an einer Stelle (Einstellungen → LUSD &
-Versetzung): Liste der Klassen mit Zahl der Schüler, Klassensätze und Zuordnungen; „umbenennen
-in …" zieht über `ON UPDATE CASCADE` alles mit, und gibt es das Ziel schon, werden die Verweise
-dorthin umgehängt und die alte Klasse fällt weg. Eine Klasse ohne Verweis lässt sich dort auch
-löschen. Achtung: Wer Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit — die
-Rückfrage nennt die Zahlen.
+**Littera** (Handbuch, „Lesergruppen"): Klassen sind Stammdaten unter „Stammdaten →
+Lesergruppen", mit Kurzbezeichnung und Bezeichnung unter einer Obergruppe; am Leser ist die
+Klasse ein Pflichtfeld und wird nur aus dieser Liste gewählt. Gepflegt wird an der einen Stelle
+(für die gleich gebaute Systematik: „einzelne Gruppen löschen, bearbeiten oder ergänzen"). Beim
+Import aus der Schulverwaltung entstehen die Gruppen selbst.
+
+**Entschieden am 24.09.2026, nicht gebaut — Stammdaten-Seite wie in Littera:** Die Tabelle
+`klassen` wird die eine Liste, und alle Auswahllisten lesen sie statt `SELECT DISTINCT` über die
+Verweise. Eine Pflegeseite (Einstellungen → LUSD & Versetzung) zeigt jede Klasse mit der Zahl der
+Schüler, Klassensätze und Zuordnungen: „umbenennen in …" zieht über `ON UPDATE CASCADE` alles mit;
+gibt es das Ziel schon, werden die Verweise dorthin umgehängt (Zusammenführen), und die alte
+Klasse fällt weg; löschen nur ohne Verweis. Der LUSD-Import legt neue Klassen weiter selbst an.
+Wer Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit — die Rückfrage nennt die
+Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
-**Zwei Fragen:**
+**Entschieden am 24.09.2026, nicht gebaut: die DSGVO-Auskunft für jeden Leser**
+(`api/dsgvo_auskunft.go`). Heute gibt es sie für einen Kollegen nicht; das Auskunftsrecht gilt
+aber für jede Person. Für einen Kollegen enthält sie, was es bei ihm gibt (Konto, E-Mail,
+Ausleihen, Protokoll); die Schülerteile entfallen.
 
-- **DSGVO-Auskunft** (`api/dsgvo_auskunft.go`): Für einen Kollegen gibt es sie nicht (5.16
-  nennt das als Absicht). Auch eine Lehrkraft kann Auskunft über ihre Daten verlangen — soll
-  die Auskunft für jeden Leser gehen?
-- **Vormerken** lässt sich nur für Schüler — so bietet es die Oberfläche an, und seit dem
-  21.09.2026 lehnt es auch die Tür ab. Soll ein Kollege vormerken können, ist das ein eigener
-  Umbau über vier Lesepfade der Warteschlange, kein Schalter.
+Vormerken bleibt Schülern vorbehalten (entschieden am 24.09.2026) — so bietet es die Oberfläche
+an, und seit dem 21.09.2026 lehnt es auch die Tür ab.
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
@@ -518,10 +519,13 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
 freigegeben am 23.09.2026.
 
 Die zwei größten Posten sind keine Umbenennung (gezählt am 23.09.2026): Die Inventur
-(`UnifiedInventory.svelte`, 45) meldet am Scanner grün, rot und Bernstein — M3 hat keine Rolle
-für „in Ordnung" und keine für Warnung, eine andere Farbe ändert die Bedienung. Frage: welche
-Rückmeldung soll der Scanner geben? `inventur/lib/bookHelpers.js` (48) sind Farbverläufe je
-Fach für selbstgebaute Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
+(`UnifiedInventory.svelte`, 45) meldet am Scanner grün, rot und Bernstein. M3 sieht dafür eigene
+Farbrollen vor (m3.material.io, „Define custom color roles": „a static green color called
+Success … to indicate a success state", je vier Rollen wie bei den Akzentfarben). **Entschieden
+am 24.09.2026:** In `styles/rollen.css` entstehen die Vierer `success` und `warning` (Farbe,
+On-Farbe, Container, On-Container); Rot bleibt `error`, die Bedienung ändert sich nicht.
+`inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach für selbstgebaute
+Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
 
 Dazu gehört die Leiste des Ausweisdrucks in der Leserdatei (`students/AuswahlAktionsleiste`,
 dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui/AuswahlLeiste`
@@ -545,9 +549,10 @@ wird der Eintrag „wiederholen" und läuft in der nächsten Runde durch. Keine 
 Nebenfolge derselben Sperre: Eine Rückgabe wartet, solange ein anderer Vorgang die Leserzeile
 hält (etwa ein LUSD-Lauf, der diesen Schüler ändert).
 
-**Frage:** so lassen? Die Abhilfe ohne Verklemmung wäre der Stempel in einer eigenen Tabelle statt
-an der Leserzeile — eine Migration an der Karenz-Uhr (Löschuhr, Wächter, DSGVO-Auskunft lesen
-ihn). Vorschlag: so lassen und beim nächsten Umbau der Karenz-Uhr mitnehmen.
+**Entschieden am 24.09.2026: so lassen.** Die Abhilfe ohne Verklemmung wäre der Stempel in einer
+eigenen Tabelle statt an der Leserzeile — eine Migration an der Karenz-Uhr (Löschuhr, Wächter,
+DSGVO-Auskunft lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit; bis dahin steht der
+Punkt hier, damit dieser Umbau ihn findet.
 
 ---
 
@@ -787,6 +792,15 @@ Gilt für das System die Pflicht zur Barrierefreiheit — mit Erklärung zur Bar
 barrierefreien PDFs (HTML-Druckweg oder begründete Ausnahme)? Bis zur Antwort geparkt; was die
 Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
 
+### 8.7 Wer bucht eine Überweisung ein?
+
+Der Knopf „Bezahlt" in der Schülerakte verbucht eine Barzahlung am Tresen. Für Lernmittel des
+Landes sieht die Arbeitshilfe Bargeld nur als Ausnahme vor — mit Quittung und Weiterleitung
+binnen 14 Tagen ([mittel_konzept.md](mittel_konzept.md), Abschnitt 3). Die Briefe nennen das
+Konto; ein Betrag kommt also in aller Regel als Überweisung, und an der Theke sieht ihn niemand.
+Frage an die Schule: Wer bucht eine Zahlung ein, die auf dem Kontoauszug steht? Keine Bauarbeit
+vor der Antwort — eine erfundene Antwort stünde sonst als Vorgang in der Akte.
+
 ---
 
 ## 9. Sichtung vom 16.09.2026
@@ -798,15 +812,6 @@ löschen, vier statt sechs Wochen) in [mittel_konzept.md](mittel_konzept.md) Abs
 Zwei Quellen liegen dem zugrunde: `~/Downloads/Arbeitshilfe_Mahnschreiben.pdf` (Erlass vom
 17.12.2014, Az. 674.100.002-00178) und `~/Downloads/Ablauf Mahnverfahren.pdf` (die
 Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschnitt 3).
-
-### 9.3 Vorgaben des Landes (Protokoll 1)
-
-**9.3 c) Sperrung bei offener Bearbeitung — eine Frage bei dir.** Nach der Antwort der Schule
-vom 22.09.2026 darf ein Lernmittel nie automatisch gesperrt werden; für die Schulbibliothek gilt
-das nicht. Offen: Ein Kind mit überfälligen Lernmitteln, das ein Buch der Schülerbücherei will —
-die Automatik weist es heute ab, weil sie Medien zählt, nicht Töpfe. Ob die Bücherei wegen
-überfälliger Schulbücher zumacht, entscheidet die Schule selbst. Vorschlag: so lassen, es ist
-eine Einstellung (`MaxOverdueItems`).
 
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 
