@@ -14,37 +14,52 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 ## Was jetzt dran ist
 
 **Die Sichtung vom 16.09.2026** (Abschnitt 9): Die zwei Bedingungen aus 9.9 — DSGVO-Nachweis
-sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
+sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt (zum Pflegekonzept siehe
+die Entscheidungen unten).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
-   gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1, E2, E5 (8.1–8.3), die Frage zur
-   Überweisung (8.7), dazu der Wortlaut des Eigentumsvermerks der Schülerbücherei (Einstellungen
-   → Schule; leer heißt, diese Bücher tragen keinen Vermerk). Den Echtstart halten diese
-   Antworten auf, nicht der Code.
-2. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
+1. **Vier Entscheidungen vom 24.09.2026, je mit Empfehlung:**
+   - 4.4 (E6): Ist der Fall mit der Übergabe an die Schulaufsicht für die Schule erledigt?
+     Empfehlung ja — Arbeitshilfe und Anforderungsliste der Schule sagen es so.
+   - 4.4: Sperrt eine offene Lernmittel-Forderung die Schülerbücherei? Empfehlung nein — eine
+     Forderung sperrt nur Bücher ihres eigenen Topfs.
+   - 5.19: Stehen in der Auskunft eines Kollegen die Protokolleinträge, in denen er selbst
+     handelt? Empfehlung ja, ohne die Daten der betroffenen Schüler.
+   - 9.9: Das Pflegekonzept jetzt statt zurückgestellt? Empfehlung ja, als Wartungshandbuch.
+2. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
+   gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
+   zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, dazu der Wortlaut des
+   Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher
+   tragen keinen Vermerk). Den Echtstart halten diese Antworten auf, nicht der Code.
+3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome). Stufe 2 (die Tür per curl) mache ich am lokalen Stack.
-3. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
+4. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
    den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
-**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, ergänzt am 24.09.2026):
+**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; Punkt 1 und die Stellung von 5.3
+sind der Vorschlag vom 24.09.2026):
 
-1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.19 (Auskunft für jeden Leser), 5.21
-   (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18 (Klassen
-   als Stammdaten, mit Frage-Runde zur Oberfläche).
-2. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
+1. **5.19 Stufe 0** (Kategorie A): Das PDF der Auskunft enthält die Nachbuch-Meldungen nicht.
+2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.19 Stufe 1 (Auskunft für jeden Leser),
+   5.21 (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18
+   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche). Nach deinem Nein zur Sperre über
+   die Töpfe hinweg (4.4) deren kleiner Umbau an der Theke.
+3. **5.3** nach deinem Ja zu E6 — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben
+   wird (echte Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute
+   schon besteht.
+4. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
    Nachbestell-Liste, also zuletzt.
-3. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
-4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+5. Nach der Antwort zu 8.3: **5.4**.
+6. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Mit dem Littera-Backup (7.2) kommen die Littera-Schlagworte aus 4.20. Vor einem zweiten
 Personenlauf auf derselben Datenbank muss das Aufräumen stimmen (**5.24**).
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
-die Anfragen E1, E2, E5 (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen
-echten LUSD-Import erst nach der Littera-Übernahme (7.2).
+die Anfragen E1, E2 und zu den Zahlungswegen (8.1–8.3), B3 und B4 (8.5) und ein Termin für die
+Abnahmen (7.7). Einen echten LUSD-Import erst nach der Littera-Übernahme (7.2).
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
@@ -114,12 +129,31 @@ Die Nummern bleiben fest; beantwortete Fragen fallen weg, sobald sie umgesetzt s
 
 ### 4.4 E6: Nach der Übergabe an die Schulaufsicht
 
-Bleibt der Schüler gesperrt und die Forderung offen, bis das Sekretariat „bezahlt laut
-Finanzbericht" bucht — oder gilt die Übergabe schulseitig als erledigt? **Vorschlag (Konzept):**
-Sperre bleibt, Löschblockade fällt. **Seit dem 22.09.2026 gilt „Sperre bleibt" nur noch für
-die Schülerbücherei:** Für Lernmittel darf keine Forderung eine Ausleihe abweisen (Antwort der
-Schule vom 22.09.2026). **Wann:** sobald ein erster echter Bescheid absehbar ist;
-blockiert 5.3. Einzelheiten in [mittel_konzept.md](mittel_konzept.md), Abschnitt 6.
+**Heute** setzt die Übergabe nur Status und Zeitpunkt (`Uebergebe`, `repository/bescheid.go`).
+Die Forderung bleibt offen, und weil die Unterlagen eine Rückmeldung nur für eingegangenes Geld
+vorsehen, meist für immer: Der Abgänger wird nie anonymisiert oder gelöscht
+(`PredikatAnonymisierung`), Löschen von Hand lehnt der Server ab, die Selbstprüfung meldet ihn
+nach einem Jahr. Die Oberfläche sagt dagegen schon: „Der Fall liegt bei der Aufsicht; die Schule
+veranlasst nichts mehr." (`bescheidStatus.js`)
+
+**Die Unterlagen der Schule beantworten die Frage** (nachgelesen am 24.09.2026). Arbeitshilfe,
+Abschnitt 2: „Das weitere Verfahren wird im Staatlichen Schulamt geführt … Weitere Schritte sind
+durch die Schule nicht zu veranlassen." Anforderungsliste (`Ablauf Mahnverfahren.pdf`), Punkt 7,
+zum Ausdruck für das Schulamt: „Der Saldo der betroffenen Leser wird entsprechend bereinigt."
+Littera kennt keine Übergabe; dort bucht man einen offenen Betrag von Hand aus, um den Leser
+löschen zu können. **Empfehlung: Mit der Übergabe ist der Fall für die Schule erledigt**; zu
+melden bleibt eine spätere Rückgabe, das kann die Theke schon. Umbau: 5.3.
+
+**Zweite Frage: Sperrt eine offene Lernmittel-Forderung die Schülerbücherei?** Heute ja,
+übergehbar (`zaehleOffeneSchaeden` zählt jeden Topf); nur das Lernmittel selbst sperrt seit dem
+22.09.2026 nichts mehr. Die Sichtung beanstandete aber die Forderung: „Bei offener Bearbeitung
+von Mängeln/Verlusten für LMF erfolgt z.Zt. die Sperrung der Schülerinnen und Schüler. LMF
+untersagt dies." **Empfehlung: Eine Forderung sperrt nur Bücher ihres eigenen Topfs** (Topf wie
+beim Bescheid, 5.4). Das erfüllt beide Lesarten der Antwort vom 22.09.2026 („gilt nur für
+Lernmittel": das Buch oder die Forderung) und trennt Land und Schulträger wie beim Geld. Die
+Überfällig-Automatik bleibt, wie am 24.09.2026 entschieden (`MaxOverdueItems`): Überfällig ist
+kein Mangel und kein Verlust. Littera zeigt ab einem einstellbaren Gebührenlimit einen Hinweis,
+und ein Mensch entscheidet — wie unsere übergehbare Sperre.
 
 ### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
 
@@ -187,39 +221,47 @@ Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 und Warnung in der Ausgabe. Ändert das Schema und rechnet die Nachbestell-Liste anders — in
 Stufen mit Nachweis.
 
-### 4.20 Schlagworte am Titel — frei eintragbar wie in Littera
+### 4.20 Littera-Schlagworte übernehmen
 
-**Entschieden am 23.09.2026:** Schlagworte werden frei eingetragen, mehrere je Titel, mit
-Vorschlägen aus dem Bestand — wie Littera („Schlagworte (Wertehilfe)"). Zusammengehalten wird
-die Liste wie dort durch Pflege: Umbenennen und Zusammenführen ändern alle Titel auf einmal,
-Verweise leiten Schreibweisen auf ein Wort („Tierfantasy" → „Fantasy"). Eine Liste, nicht zwei:
-Die 15 bis 20 Wörter, die im Portal als Filter stehen, markiert die Pflegeseite. Das Feld am
-Titel steht seit Migration 138; selbst gesetzt und änderbar sind dort die Grenzen: 30 Wörter je
-Titel, 80 Zeichen je Wort, Vorschlagsliste die 500 häufigsten.
-
-**Offen (freigegeben am 23.09.2026):** die **Littera-Schlagworte** (MAB 710) beim nächsten
-Einspielen des Backups mitnehmen (7.2). Heute liest der Import sie, leitet das Fach ab und
-verwirft sie. Vorher messen, wie viele Titel welche tragen.
-
-**Aus Littera nur, wenn die Bücherei es braucht** (entschieden am 23.09.2026): die
-Schlagwortliste drucken, den Schlagwortkatalog in eine Datei schreiben und aus einer lesen. Ein
-Littera-Verweis kann mehreren Wörtern zugeordnet sein; unsere zeigen auf eins und stellen die
-Eingabe am Titel richtig.
-
-Nicht geplant: Verweise für Autoren (Pseudonyme). Der Autor ist ein Textfeld am Titel, ohne
-eigenen Personensatz; das wäre ein eigener Umbau.
+**Freigegeben am 23.09.2026:** die **Littera-Schlagworte** (MAB 710) beim nächsten Einspielen
+des Backups mitnehmen (7.2). Heute liest der Import sie, leitet das Fach ab und verwirft sie.
+Vorher messen, wie viele Titel welche tragen. Die Schlagworte selbst (Migration 138, Pflege mit
+Verweisen, Portal-Filter) stehen in [FACHKONZEPT.md](FACHKONZEPT.md).
 
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
 
-### 5.3 Folgen der Übergabe (nach 4.4)
+### 5.3 Die Übergabe schließt die Forderung ab (nach 4.4)
 
-`POST /api/bescheide/{id}/uebergeben` setzt heute nur Status und Zeitpunkt
-(`repository/bescheid.go`). Offen:
+Nach dem Ja zu E6, spätestens mit der Antwort zu E1 (8.1) — ab dann gibt es echte Bescheide und
+vier Wochen später die erste Übergabe. Eine Stufe, jeder Punkt mit einem Test, der am Rückbau rot
+wird; das Modell der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
 
-- Übergabe-PDF (Original und Sammelliste).
-- Die Gates der Übergabe-Folgen.
+- **Abschließen:** `Uebergebe` setzt in derselben Transaktion `ist_bezahlt` an den offenen
+  Forderungen, wie Zahlung und Storno — die 17 Dateien, die nach offenen Forderungen fragen,
+  folgen von selbst, die Karenz startet über den Trigger aus Migration 137 (`aktualisiert_am`
+  mitsetzen). Dazu ein Kennzeichen je Forderung: Ein Brief kann bezahlte und offene Positionen
+  mischen.
+- **Rückfrage:** „Übergeben" bucht heute ohne Rückfrage (`BescheideTabelle.svelte`). Übergeben
+  wird nur, wenn nicht gezahlt wurde — gezahlt wird aber aufs Konto des Landes, das die Theke
+  nicht sieht (wer es einbucht: 8.3). Der Dialog nennt Referenznummer und Betrag und fragt nach
+  dem Zahlungseingang.
+- **Späte Rückgabe:** `VerbucheRueckkehr` muss übergebene Forderungen ausdrücklich mitnehmen,
+  sonst entfällt „Schulaufsicht informieren" (PG-Test). `entferneSchuelerPIIUndLoesche` löscht
+  heute jede erledigte Forderung mit dem Leser; eine übergebene bleibt ohne Person stehen wie der
+  Bescheid, sonst findet die Theke nach der Löschung nichts.
+- **Anzeige:** Akte, Auskunft und Protokoll zeigten sonst „bezahlt" — dritter Zustand „an die
+  Schulaufsicht übergeben"; ebenso die Abhilfe in `pruefeEhemaligeOffen` und der Theken-Satz „Die
+  Forderung bleibt bis dahin offen".
+- **Übergabe-PDF:** Original-Nachdruck und Sammelliste für das Schulamt.
+- Vorher am Testserver zählen (lokal 0):
+  `SELECT count(*) FROM schadensfaelle f JOIN schadensersatz_bescheide b ON b.id = f.bescheid_id WHERE b.status = 'uebergeben' AND NOT f.ist_bezahlt;`
+
+**Bis dahin (Verdacht, am Code gelesen):** Die Akte bietet „Bezahlt" und „Stornieren" auch auf
+einem übergebenen Bescheid, die Selbstprüfung rät nach einem Jahr dazu — und nach einem Storno
+löst eine spätere Rückgabe „Schulaufsicht informieren" nicht mehr aus. Wirkt erst mit echten
+Bescheiden.
 
 ### 5.4 Schadensersatz Teil A, Etappen 3 und 4 (nach 8.3)
 
@@ -231,6 +273,16 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   steht sichtbar „(Bankverbindung des Schulträgers nicht hinterlegt)". Warnung in der
   Betriebsbereitschaft. Topf in die Referenznummer, sonst kollidieren Land und Kreis an der
   UNIQUE-Spalte. Heute lehnt der Server jeden Topf außer `land` mit 409 ab.
+- **Zahlungen nach 8.3**, wie Littera sie führte (Zahlungsart, Beleg, Auswertung nach Zeitraum
+  und Zahlungsart): Zahlungsart beim Knopf „Bezahlt", Quittung als PDF, beide Wege auf der
+  Rechnung, Liste der Barzahlungen je Zeitraum und Topf — auch für die Ausnahme beim Land (Bargeld
+  binnen 14 Tagen weiterleiten, [mittel_konzept.md](mittel_konzept.md) 1.1). Der Hinweis
+  „bereits bezahlt" nennt dann, wann und wie; an ihm zeigt sich eine doppelte Zahlung.
+- **Topf einer Forderung, eine Regel:** Der Bescheid nimmt `ist_lernmittel` am Titel, das
+  Eigentum den Topf der Bestellung (`ExemplarTopfSQL`). Beim Altbestand ist das dasselbe; bei
+  einem aus dem anderen Topf bestellten Exemplar ginge das Geld an den, dem das Buch nicht gehört.
+  Vorher am Testserver zählen (lokal 0):
+  `SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id JOIN bestellungen_verlauf bv ON bv.id = e.bestellung_id WHERE bv.mittel <> CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END;`
 - **Altbriefe entfernen** (es geht darum, ob es sie neben dem Bescheid überhaupt weiter geben
   soll): Elternbrief
   `pdf/schadensfall.go` ← `api/pdf.go`
@@ -320,11 +372,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   vollen Suite legt eine alphabetisch frühere Spec sie an. Nach dem Muster von `seedBenutzer`
   selbst anlegen.
 
-### 5.13 Mahnverfahren: Stufe 3 (nach 4.4)
-
-Folgen der Übergabe (5.3): Übergabe-PDF und Sammelliste für das Schulamt; E6 (4.4). Das Modell
-der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
-
 ### 5.18 Klassen als Stammdaten — wie die Lesergruppen in Littera
 
 Am 23.09.2026 entschieden: „Klasse löschen möglich machen". Beim Bauen stellte sich heraus, dass
@@ -358,9 +405,23 @@ Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
 **Entschieden am 24.09.2026, nicht gebaut: die DSGVO-Auskunft für jeden Leser**
-(`api/dsgvo_auskunft.go`). Heute gibt es sie für einen Kollegen nicht; das Auskunftsrecht gilt
-aber für jede Person. Für einen Kollegen enthält sie, was es bei ihm gibt (Konto, E-Mail,
-Ausleihen, Protokoll); die Schülerteile entfallen.
+(`api/dsgvo_auskunft.go`), am Code nachgesehen am 24.09.2026:
+
+- **Stufe 0, Kategorie A, auch für Schüler:** Das PDF — nur das bekommt die Person — enthält die
+  Nachbuch-Meldungen nicht (4e898c98 nahm sie nur ins JSON). Dazu ein Gate „jeder Teil der
+  Auskunft steht als Abschnitt im PDF", am alten Code rot.
+- **Stufe 1:** Für einen Kollegen endet die Auskunft mit 404 (Stammdaten aus der Sicht
+  `schueler`), die Akte blendet den Knopf aus. Acht der neun Teile fragen schon nach der
+  Leser-ID. Es fehlen das Konto, die eigenen Anfragen (`lehrer_anliegen`,
+  Klassensatz-Reservierungen), die Kontoereignisse im Verwaltungsprotokoll und die
+  Pflichtangaben für Beschäftigte (VVT Tätigkeit 3, § 23 HDSIG). Vier Gates stehen auf „nur
+  Schüler" und führen den Umbau. Littera hat keine Auskunft; sein Stammdatenblatt ist für jede
+  Leserart gleich.
+
+**Frage bei dir:** Die Einträge, in denen ein Kollege selbst handelt (gebuchte Ausleihen,
+Verwaltungseingriffe mit IP-Adresse, Inventur; bei einer Bibliothekskraft Tausende in 24
+Monaten), zählt das VVT zu seinen Daten. **Empfehlung: aufnehmen, ohne die Daten Dritter** —
+Zeitpunkt, Handlung, IP-Adresse, nicht der betroffene Schüler (Art. 15 Abs. 4 DSGVO).
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
@@ -538,6 +599,9 @@ Personenlauf läuft, etwa mit dem frischen Backup aus 7.2.
   `font-medium`, das im Haus 400 ist (`styles/theme-mass.css`; an `FilterChips` im Browser
   gemessen am 23.09.2026, die beiden anderen tragen dieselbe Klasse). M3 nennt für label-large
   500, die Knöpfe tragen `font-semibold` (500). Alle drei zusammen entscheiden, nicht einzeln.
+- `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 16 Dateien; gepflegt wird
+  der Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt. Neue PDFs (5.3, 5.4) nicht
+  mehr auf dem archivierten; die 16 beim fachlichen Anfassen umstellen, mit den PDF-Gates.
 - Etikettenraster doppelt (`api/label_formats.go` und `etikettformate.js`), gehalten von
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
 - Reste des Nie-verdrahtet-Sweeps: `inventur_sessions.gestartet_von` wird nie angezeigt;
@@ -574,7 +638,10 @@ Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides ne
 [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·
 ein Schüler wird Lehrkraft (die Datenbank verbietet es, `chk_leser_nur_schueler_werden_abgaenger`;
 heute ein zweiter Leser, bei Häufung ein Umzugspfad wie Migration 072) · der Littera-Personenlauf
-übergeht Praktikanten, Sekretariat und „Im Ausland" (`internal/littera/leser.go`).
+übergeht Praktikanten, Sekretariat und „Im Ausland" (`internal/littera/leser.go`) ·
+Schlagwortliste drucken, Schlagwortkatalog als Datei aus- und einlesen (wie Littera, nur wenn die
+Bücherei es braucht; 23.09.2026) · Verweise für Autoren (der Autor ist ein Textfeld, kein
+Personensatz).
 
 ---
 
@@ -673,10 +740,26 @@ Kassenjahr als Teil der Referenznummer, sagt aber nicht, welches Jahr gemeint is
 Die vorliegenden Unterlagen sind von 2014 und nennen eine inzwischen aufgelöste Stelle. Gebaut
 ist nach dem Muster von 2014; der Text ist an einer Stelle austauschbar.
 
-### 8.3 E5: Zahlungsweg der Schülerbücherei
+### 8.3 E5: Zahlungswege der Schülerbücherei — und wer eine Zahlung einbucht
 
-Kreiskasse mit Kassenzeichen, Budgetkonto oder bar mit Quittung? Zuständig ist der Fachbereich
-Schule und Betreuung des Hochtaunuskreises. **Engpass:** Ohne Antwort kein 5.4.
+Für die Schülerbücherei nennt der Brief keinen Weg, sondern „(Bankverbindung des Schulträgers
+nicht hinterlegt)" (`pdf/zahlungsweg.go`). Es fehlen Konto und Verwendungszweck oder
+Kassenzeichen, und ob die Schule Geld des Schulträgers bar annehmen darf (in öffentlichen Kassen
+meist nur eine eingerichtete Zahlstelle) und wie es zu ihm kommt. **In zwei Schritten fragen**
+(Vorschlag vom 24.09.2026):
+
+1. **Die Schule** (Büchereileitung, Sekretariat): Wie wurde Ersatz für Bücher der
+   Schülerbücherei bisher bezahlt, wohin ging das Geld? Wer bucht eine Zahlung ein, die auf dem
+   Kontoauszug oder im Finanzbericht steht — für beide Töpfe? „Bezahlt" verbucht heute eine
+   Barzahlung am Tresen. Keine Bauarbeit vor der Antwort; eine erfundene stünde als Vorgang in
+   der Akte.
+2. **Der Schulträger** (Fachbereich Schule und Betreuung des Hochtaunuskreises), als Vorschlag
+   zum Bestätigen, an die bisherige Praxis angepasst: „Wir bieten beides an: Überweisung auf Ihr
+   Konto mit der Rechnungsnummer als Verwendungszweck, und Barzahlung gegen Quittung. Das Bargeld
+   geben wir einmal im Monat mit einer Liste an Sie weiter. Ist das zulässig? Welches Konto und
+   welches Kassenzeichen gelten?"
+
+**Engpass:** Ohne Antwort kein 5.4.
 
 ### 8.4 D2: Getrennte Kundenkonten beim Händler?
 
@@ -704,15 +787,6 @@ Zuerst B3 und B4 anstoßen.
 Gilt für das System die Pflicht zur Barrierefreiheit — mit Erklärung zur Barrierefreiheit und
 barrierefreien PDFs (HTML-Druckweg oder begründete Ausnahme)? Bis zur Antwort geparkt; was die
 Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
-
-### 8.7 Wer bucht eine Überweisung ein?
-
-Der Knopf „Bezahlt" in der Schülerakte verbucht eine Barzahlung am Tresen. Für Lernmittel des
-Landes sieht die Arbeitshilfe Bargeld nur als Ausnahme vor — mit Quittung und Weiterleitung
-binnen 14 Tagen ([mittel_konzept.md](mittel_konzept.md), Abschnitt 3). Die Briefe nennen das
-Konto; ein Betrag kommt also in aller Regel als Überweisung, und an der Theke sieht ihn niemand.
-Frage an die Schule: Wer bucht eine Zahlung ein, die auf dem Kontoauszug steht? Keine Bauarbeit
-vor der Antwort — eine erfundene Antwort stünde sonst als Vorgang in der Akte.
 
 ---
 
@@ -754,5 +828,19 @@ stehen:
   2. Wer pflegt es?
   3. Was gilt, wenn die Pflege endet — Datenausgabe, Rückweg zu Littera (7.2)?
   4. Soll es über die eigene Schule hinaus eingesetzt werden?
+
+**Gemessen am 24.09.2026: Kann ein Mensch das System ohne KI weiterführen?** Den Code ja (keine
+Go-Funktion über 150 Zeilen, 23 direkte Module, übliche Bausteine, Tests und CI, Betrieb mit
+einem Befehl). Bremsen würde, was um den Code liegt: 2.484 Commits seit dem 29.05.2026, Wissen
+außerhalb des Repos (142 Projekt-Einträge im Gedächtnis der KI, Quelldokumente in einem privaten
+Ordner), die Zahl der Projektregeln. Littera regelt die Pflege über einen „Softwarewartungs- und
+Pflegevertrag" mit Hotline, Fernwartung und Update-Codes; hier muss das Pflegekonzept das
+beantworten. **Vorschlag:** Pflegekonzept und Wartungshandbuch als ein Dokument, drei bis fünf
+Seiten mit Verweisen: die vier Fragen oben, wiederkehrende Aufgaben mit Takt (Ferientabelle bis
+2030, LTS-Wechsel, Wiedervorlagen in `security/vuln-ausnahmen.json`), was bei einem roten Gate zu
+tun ist ([sweeps.md](sweeps.md)), wo die Quelldokumente liegen. Das Repo ist öffentlich:
+Zugänge, Server und der Ort der zwei Schlüssel ([DEPLOYMENT.md](DEPLOYMENT.md)) gehören auf ein
+Blatt bei der Schule. Danach das Projektwissen aus dem Gedächtnis der KI entlang der Gliederung
+ins Repo, und eine Wartungsaufgabe einmal allein mit der Doku erledigen.
 
 **Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.**
