@@ -183,3 +183,17 @@ func TestDsgvoVerarbeitungsangaben_KarenzAusEinstellung(t *testing.T) {
 		t.Errorf("Karenz 0 muss sofort heißen: %q", va.Speicherdauer)
 	}
 }
+
+// Die Herkunft nennt jeden Weg, auf dem Stammdaten in die Leserdatei kommen — auch die
+// Übernahme aus dem bisherigen Bibliotheksprogramm (internal/littera/schreiber_personen.go
+// legt Schüler und Lehrkräfte an). Bis zum 24.09.2026 fehlte sie in der Auskunft der Schüler.
+func TestDsgvoHerkunft_NenntDieUebernahme(t *testing.T) {
+	for art, va := range map[string]DsgvoVerarbeitungsangaben{
+		"schueler":  dsgvoVerarbeitungsangaben(90, 730, 90, 24),
+		"lehrkraft": dsgvoVerarbeitungsangabenKollegium(dsgvoFristWerte{90, 730, 90, 24, 365}),
+	} {
+		if !strings.Contains(va.Herkunft, "Übernahme aus dem bisherigen Bibliotheksprogramm") {
+			t.Errorf("%s: Herkunft nennt die Übernahme nicht: %q", art, va.Herkunft)
+		}
+	}
+}

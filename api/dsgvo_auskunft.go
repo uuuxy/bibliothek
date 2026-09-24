@@ -240,7 +240,7 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
 			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", auditMonate) + " Monate. Verschlüsselte Backups 14 Tage.",
-		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule (Export/Import) bzw. manuelle Erfassung durch das Bibliotheksteam",
+		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule (Export/Import), Übernahme aus dem bisherigen Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum) bzw. manuelle Erfassung durch das Bibliotheksteam",
 		Betroffenenrechte: dsgvoBetroffenenrechte,
 	}
 }
