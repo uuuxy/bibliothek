@@ -37,6 +37,21 @@
 	--color-on-error: #ffffff;
 	--color-error-container: #ffdad6;
 	--color-on-error-container: #410002;
+	/* Erfolg und Warnung — eigene Farbrollen, wie M3 sie vorsieht („Define custom color
+	   roles": „a static green color called Success is defined in addition to the scheme,
+	   and applied to UI to indicate a success state"; je vier Rollen wie bei error).
+	   Dieselben Töne wie error — Farbe 40, On-Farbe 100, Container 90, On-Container 10 —
+	   aus den Tonleitern in theme-farben.css (emerald, amber); nachgerechnet am 24.09.2026
+	   (L* 40,5 / 91,2 / 9,8 und 41,3 / 90,0 / 9,9, Kontrast jedes Paars ab 6,2 : 1).
+	   Entschieden am 24.09.2026 für die Rückmeldung am Inventur-Scanner. */
+	--color-success: #346b39;
+	--color-on-success: #ffffff;
+	--color-success-container: #b7f5b9;
+	--color-on-success-container: #002106;
+	--color-warning: #8f5300;
+	--color-on-warning: #ffffff;
+	--color-warning-container: #ffdcc2;
+	--color-on-warning-container: #2e1500;
 }
 
 body {

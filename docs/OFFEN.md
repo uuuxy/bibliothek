@@ -37,9 +37,8 @@ die Entscheidungen unten).
 Vorschlag vom 24.09.2026):
 
 1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
-   Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18 (Klassen als Stammdaten, mit
-   Frage-Runde zur Oberfläche), die Sperre nur im eigenen Topf (4.4, kleiner Umbau an der
-   Theke).
+   Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), die Sperre nur
+   im eigenen Topf (4.4, kleiner Umbau an der Theke).
 2. **5.3** — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben wird (echte
    Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
@@ -451,24 +450,33 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 23.09.2026: 1471 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 24.09.2026: 1426 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
-Textgraustufen, M3 zwei Rollen, und für „in Ordnung" kennt M3 keine Farbe. Vorschlag:
+Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
+eigenen Rollen `success` und `warning` in `styles/rollen.css` (M3, „Define custom color
+roles"). Vorschlag:
 Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit, am gerenderten Bildschirm
 geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über ui/StatusChip, Cover
 über ui/BuchCover, Rückmeldung beim Zeigen über den State-Layer statt `hover:bg-*`, ein Fehler
 über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
 freigegeben am 23.09.2026.
 
-Die zwei größten Posten sind keine Umbenennung (gezählt am 23.09.2026): Die Inventur
-(`UnifiedInventory.svelte`, 45) meldet am Scanner grün, rot und Bernstein. M3 sieht dafür eigene
-Farbrollen vor (m3.material.io, „Define custom color roles": „a static green color called
-Success … to indicate a success state", je vier Rollen wie bei den Akzentfarben). **Entschieden
-am 24.09.2026:** In `styles/rollen.css` entstehen die Vierer `success` und `warning` (Farbe,
-On-Farbe, Container, On-Container); Rot bleibt `error`, die Bedienung ändert sich nicht.
-`inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach für selbstgebaute
-Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
+Der Inventur-Bildschirm steht seit dem 24.09.2026 auf Rollen (`UnifiedInventory.svelte`, die
+Scan-Rückmeldung in `inventur/ScanRueckmeldung.svelte`). Offen auf demselben Bildschirm: die
+beiden Dialoge (`InventoryStartModal` 32, `InventoryFinishModal` 15) und der Fehlbestandsbericht
+(`inventur/FehlbestandBericht` 14). `inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach
+für selbstgebaute Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
+
+Beim Ansehen der Inventur am 24.09.2026 aufgefallen, jeweils am Code nachgesehen:
+
+- Ein unbekannter Barcode zeigt am Scanner den rohen Fehlertext „exemplar für inventur-scan
+  nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt `pgx.ErrNoRows` ein,
+  `ladeExemplarFuerScan` gibt ihn mit 404 unverändert weiter). Der Status stimmt, der Satz nicht.
+- Eine verworfene Inventur steht unter „Frühere Inventuren" als „vollständig":
+  `AbortInventurSession` setzt `abgeschlossen_am` wie ein Abschluss und `verloren_gemeldet = 0`,
+  die Liste fragt nur `abgeschlossen_am IS NOT NULL`, und der Bildschirm schreibt bei 0 Verlusten
+  „vollständig". Wer die Liste liest, hält den Bereich für geprüft.
 
 Dazu gehört die Leiste des Ausweisdrucks in der Leserdatei (`students/AuswahlAktionsleiste`,
 dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui/AuswahlLeiste`
