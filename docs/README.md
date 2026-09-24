@@ -47,6 +47,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 | den **LUSD-Import** verstehen oder fahren: Spalten für das Sekretariat, Umbenennung ohne Schüler-ID, Karenzzeit, Zusammenführen | [LUSD.md](LUSD.md)                                                                                                               |
 | wissen, welche fachliche Regel gilt (Fristen, Vormerkung, DSGVO, Rollen)                                                        | [FACHKONZEPT.md](FACHKONZEPT.md)                                                                                                 |
 | das System betreiben, deployen, sichern, wiederherstellen                                                                       | [DEPLOYMENT.md](DEPLOYMENT.md), [resilience_and_recovery.md](resilience_and_recovery.md), [SCRIPTS.md](SCRIPTS.md)               |
+| wissen, wer das Programm pflegt — oder als Vertretung ein Update einspielen oder eine Sicherung zurückholen                     | [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)                                                                                             |
 | etwas abnehmen (LUSD, Versetzung, Klassensatz)                                                                                  | [abnahme_checkliste.md](abnahme_checkliste.md)                                                                                   |
 | Datenschutz beurteilen (welche Daten, welche Fristen, welche Rechte)                                                            | [SECURITY.md](SECURITY.md), [PII_MATRIX.de.md](PII_MATRIX.de.md), [datenschutz/](datenschutz/)                                   |
 | Barrierefreiheit beurteilen (was die Gates prüfen, was offen ist)                                                               | [FACHKONZEPT.md §19](FACHKONZEPT.md), [HANDBUCH.md](HANDBUCH.md) „Bedienung ohne Maus"                                           |
@@ -67,6 +68,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 
 | Dokument                                                 | Inhalt                                                                                          |
 | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)                     | Pflegekonzept und Wartungshandbuch (Entwurf): Zuständigkeiten, Update und Wiederherstellung für die Vertretung, wiederkehrende Aufgaben, Ende der Pflege |
 | [DEPLOYMENT.md](DEPLOYMENT.md)                           | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups                                      |
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschlüsselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
 | [SCRIPTS.md](SCRIPTS.md)                                 | CLI-Werkzeuge: Littera-Altbestand, Foto-Migration, Backup, Deployment, Lasttest                 |

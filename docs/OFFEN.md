@@ -19,11 +19,13 @@ die Entscheidungen unten).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Die Zählung zum Sperrgrund im Protokoll** (7.8): ein Einzeiler am Testserver, lesend. Ist
-   die vierte Zahl größer als 0, folgt eine einmalige Bereinigung.
-2. **Eine Frage zum Pflegekonzept** (9.9): ob das Programm über die eigene Schule hinaus
-   eingesetzt werden soll — am 24.09.2026 offen gelassen; der Entwurf nennt sie als offene
-   Stelle. Die drei anderen Fragen sind beantwortet.
+1. **Zwei Zählungen am Testserver** (7.8), lesend, je ein Einzeiler: der Sperrgrund im
+   Protokoll (ist die vierte Zahl größer als 0, folgt eine einmalige Bereinigung) und die
+   Postgres-Version des laufenden Datenbank-Containers.
+2. **Den Entwurf des Pflegekonzepts lesen** ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), 9.9) und die
+   vier offenen Stellen in seinem Abschnitt 9 beantworten: Einsatz über die eigene Schule hinaus
+   (am 24.09.2026 offen gelassen), Meldeweg und Reaktionszeit, wer Betriebssystem und Docker des
+   Servers aktualisiert, ob am Schulserver nur Releases eingespielt werden.
 3. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
    zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen
@@ -49,8 +51,8 @@ Vorschlag vom 24.09.2026):
 4. Nach der Antwort zu 8.3: **5.4**.
 5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-**In der Doku:** das Pflegekonzept als Wartungshandbuch (9.9), entschieden am 24.09.2026.
-**Gleich danach im Code:** das Gate gegen Leser-Werte im Protokoll (5.10), entschieden am
+**In der Doku:** das Pflegekonzept (9.9) — der Entwurf steht seit dem 24.09.2026; es folgen die
+Arbeitsnotizen ins Repository und die Probe durch die Vertretung. **Gleich danach im Code:** das Gate gegen Leser-Werte im Protokoll (5.10), entschieden am
 24.09.2026.
 
 Mit dem Littera-Backup (7.2) kommen die Littera-Schlagworte aus 4.20. Vor einem zweiten
@@ -760,6 +762,19 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
   docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS mit_grund, count(*) FILTER (WHERE l.id IS NOT NULL AND l.anonymized_at IS NULL) AS vorhanden, count(*) FILTER (WHERE l.anonymized_at IS NOT NULL) AS anonymisiert, count(*) FILTER (WHERE l.id IS NULL) AS geloescht FROM audit_logs a LEFT JOIN leser l ON l.id::text = a.details->>'schueler_id' WHERE (a.details ? 'grund' OR a.details ? 'reason') AND a.details ? 'schueler_id';"
   ```
 
+- **Die Postgres-Nebenversion am Server** (gefunden beim Pflegekonzept, 24.09.2026).
+  `update.sh` ruft `docker compose up -d --build` auf und holt das Image `postgres:18-alpine`
+  nie neu; der Datenbank-Container bleibt auf der Nebenversion, mit der er angelegt wurde
+  (Major-Wechsel 31.08.2026). Nebenversionen mit Sicherheitskorrekturen erscheinen
+  vierteljährlich; aktuell ist 18.6 (postgresql.org, abgerufen am 24.09.2026). Der Port ist nur
+  an `127.0.0.1` gebunden, das begrenzt das Risiko. Liegt die Zahl unter 18.6, bekommt
+  `update.sh` einen Schritt, der das Datenbank-Image holt. Ob die Basis-Images des Backends
+  (`--build` ohne `--pull`) dieselbe Lücke haben, ist nicht gemessen.
+
+  ```
+  docker exec bibliothek-db postgres --version
+  ```
+
 ## 8. Schule, Schulamt, Schulträger
 
 ### 8.1 E1: Schulamts- und Schulnummer
@@ -897,36 +912,20 @@ stehen:
   nächtlichem Job. Was fehlt, ist ein Dokument, das man weitergeben kann — und die
   Beschlussfassung der Schule (8.5, B1–B7). **Nächster Schritt, bei mir:** das Dokument aus
   diesem Material zusammenstellen; Arbeit an der Doku, keine Bauarbeit.
-- **Hosting- und Programmpflegekonzept.** Hier fehlt wirklich etwas. Betrieb, Sicherung,
-  Wiederherstellung und Aktualisierung sind beschrieben — aber als Anleitung für den Betreiber
-  (DEPLOYMENT.md, resilience_and_recovery.md, SCRIPTS.md), nicht als Konzept, das jemand prüft.
-  **Nächster Schritt, bei mir:** ein Entwurf mit dem, was der Code beantwortet — wie eine
-  Aktualisierung zur Schule kommt (Release, Image, `update.sh`), Sicherung, Wiederherstellung.
-  **Die vier Fragen, die sich nicht aus dem Code beantworten lassen — beantwortet am
-  24.09.2026:**
-  1. Betrieb: die Schule, auf eigenem Server; die IT des Schulträgers für Hardware und Netz.
-  2. Pflege: du, mit einer benannten Vertretung, die nach dem Wartungshandbuch ein Update
-     einspielt und eine Sicherung zurückholt.
-  3. Ende der Pflege: Übergabe an eine andere Stelle (der Code steht unter EUPL 1.2); findet
-     sich niemand, läuft das Programm bis zum Schuljahresende weiter, die Daten kommen aus der
-     nächtlichen Sicherung, und die Schule wechselt auf ein Kaufprogramm. Unbefristeter
-     Weiterbetrieb ohne Sicherheitsupdates ist keine Option; einen Rückweg zu Littera gibt es
-     nicht (keine Ausgabe in Litteras Importform).
-  4. Über die eigene Schule hinaus: offen gelassen; der Entwurf nennt die Frage als offene
-     Stelle.
-
-**Gemessen am 24.09.2026: Kann ein Mensch das System ohne KI weiterführen?** Den Code ja (keine
-Go-Funktion über 150 Zeilen, 23 direkte Module, übliche Bausteine, Tests und CI, Betrieb mit
-einem Befehl). Bremsen würde, was um den Code liegt: 2.484 Commits seit dem 29.05.2026, Wissen
-außerhalb des Repos (142 Projekt-Einträge im Gedächtnis der KI, Quelldokumente in einem privaten
-Ordner), die Zahl der Projektregeln. Littera regelt die Pflege über einen „Softwarewartungs- und
-Pflegevertrag" mit Hotline, Fernwartung und Update-Codes; hier muss das Pflegekonzept das
-beantworten. **Vorschlag:** Pflegekonzept und Wartungshandbuch als ein Dokument, drei bis fünf
-Seiten mit Verweisen: die vier Fragen oben, wiederkehrende Aufgaben mit Takt (Ferientabelle bis
-2030, LTS-Wechsel, Wiedervorlagen in `security/vuln-ausnahmen.json`), was bei einem roten Gate zu
-tun ist ([sweeps.md](sweeps.md)), wo die Quelldokumente liegen. Das Repo ist öffentlich:
-Zugänge, Server und der Ort der zwei Schlüssel ([DEPLOYMENT.md](DEPLOYMENT.md)) gehören auf ein
-Blatt bei der Schule. Danach das Projektwissen aus dem Gedächtnis der KI entlang der Gliederung
-ins Repo, und eine Wartungsaufgabe einmal allein mit der Doku erledigen.
+- **Hosting- und Programmpflegekonzept.** Der Entwurf steht seit dem 24.09.2026:
+  [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) — mit den drei am 24.09.2026 beantworteten Fragen
+  (Betrieb, Pflege mit Vertretung, Ende der Pflege), den wiederkehrenden Aufgaben mit Takt, den
+  zwei Handgriffen der Vertretung und der Messung, ob jemand anderes das Programm weiterführen
+  kann. Offen:
+  1. **Die vier offenen Stellen** in Abschnitt 9 des Entwurfs — bei dir: Einsatz über die
+     eigene Schule hinaus; Meldeweg und Reaktionszeit (Littera regelt das über einen
+     „Softwarewartungs- und Pflegevertrag" mit Hotline, Fernwartung und Update-Codes); wer
+     Betriebssystem und Docker des Servers aktualisiert; ob am Schulserver nur Releases
+     eingespielt werden (heute spielt `update.sh` den Stand von `main` ein).
+  2. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — bei dir.
+  3. **Die Arbeitsnotizen der Entwicklung** (am 24.09.2026 219 Einträge) entlang der Gliederung
+     des Entwurfs ins Repository — bei mir.
+  4. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
+     mit dem Dokument.
 
 **Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.**
