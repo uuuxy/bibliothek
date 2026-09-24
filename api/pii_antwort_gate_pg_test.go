@@ -407,7 +407,6 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/admin/auditlog":                  {URL: "/api/admin/auditlog"},
 		"GET /api/barcode/next":                    {URL: "/api/barcode/next"},
 		"GET /api/barcode":                         {URL: "/api/barcode?content=BUCHBC-GATE-1"},
-		"GET /api/print/etikett/{id}":              {URL: "/api/print/etikett/" + w.exemplarID},
 		"GET /api/signaturen":                      {URL: "/api/signaturen"},
 		"GET /api/signaturen/buecher":              {URL: "/api/signaturen/buecher?signatur=GATE"},
 		"GET /api/schlagworte":                     {URL: "/api/schlagworte"},

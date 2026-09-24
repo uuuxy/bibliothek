@@ -38,7 +38,6 @@ import (
 var phantomBestand = map[string]int{
 	"api/ausweis_layout.go:SaveAusweisLayoutHandler":          1,
 	"api/dsgvo_auskunft.go:protokolliereDsgvoAuskunft":        1,
-	"api/etiketten_offen.go:markEtikettGedruckt":              1,
 	"api/klassen_mapping.go:UpsertKlassenMappingHandler":      1,
 	"api/lusd.go:computeLusdLauf":                             1,
 	"api/lusd_apply.go:adoptiereWaisen":                       1,

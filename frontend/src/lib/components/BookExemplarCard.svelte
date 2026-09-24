@@ -10,10 +10,10 @@
 
 	/**
 	 * Einzelne Exemplar-Karte. Verwaltet ihren eigenen Bearbeitungsmodus
-	 * (Barcode/Status) lokal; Auswahl & Löschen laufen über Callbacks zum Eltern-Tab.
-	 * @type {{ ex: any, selected: boolean, darfBearbeiten?: boolean, onToggleSelect: () => void, onDelete: () => void }}
+	 * (Barcode/Status) lokal; Auswahl, Löschen und Etikett laufen über Callbacks zum Eltern-Tab.
+	 * @type {{ ex: any, selected: boolean, darfBearbeiten?: boolean, onToggleSelect: () => void, onDelete: () => void, onEtikett?: () => void }}
 	 */
-	let { ex, selected, darfBearbeiten = false, onToggleSelect, onDelete } = $props();
+	let { ex, selected, darfBearbeiten = false, onToggleSelect, onDelete, onEtikett } = $props();
 
 	let editingBarcode = $state(false);
 	let editBarcodeValue = $state('');
@@ -132,15 +132,15 @@
 						{ex.barcode_id}
 					</span>
 					{#if darfBearbeiten}
-						{#if ex.barcode_id.startsWith('B-')}
-							<a
-								href={`/api/print/etikett/${ex.id}`}
-								target="_blank"
-								title="Ersatz-Etikett drucken"
-								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center gap-1"
+						{#if onEtikett && ex.barcode_id.startsWith('B-')}
+							<button
+								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
+								aria-label="Etikett für {ex.barcode_id} im Druck-Center drucken"
+								data-tip="Etikett im Druck-Center drucken"
+								onclick={onEtikett}
 							>
 								<Printer class="w-3.5 h-3.5" aria-hidden="true" />
-							</a>
+							</button>
 						{/if}
 						{#if ex.barcode_id.startsWith('AUTO-') || ex.barcode_id.startsWith('SYS-')}
 							<button

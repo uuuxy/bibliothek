@@ -105,5 +105,6 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
 	// BEWEIS: Diese Meldung stammt aus dem Etikettendruck (LabelSettings) und erscheint
 	// NUR, wenn printQueue.copies dort ankommt. Vor dem Fix war die Seite leer, der Text
 	// existierte nie. Er beweist beide Hälften: Navigation UND Queue-Übergabe.
-	await expect(page.getByText(/Etiketten aus der freigegebenen Lieferung geladen/)).toBeVisible();
+	// Die Zahl hängt am Zulauf der Test-Datenbank: „1 Etikett" und „3 Etiketten".
+	await expect(page.getByText(/\d+ Etikett(en)? zum Drucken übernommen/)).toBeVisible();
 });

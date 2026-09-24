@@ -2,7 +2,8 @@
 	import { showToast } from '../inventur/lib/store.svelte.js';
 	import { loeschenBestaetigen } from './stores/bestaetigung.svelte.js';
 	import { authStore } from './stores/authStore.svelte.js';
-	import { hatRecht } from './menu.js';
+	import { erlaubteTabs, hatRecht } from './menu.js';
+	import { printQueue } from './stores/printQueue.svelte.js';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
 	import BookExemplarCard from './components/BookExemplarCard.svelte';
@@ -15,6 +16,17 @@
 	const selectedExemplare = new SvelteSet();
 	// Auswahl/Löschen/Barcode/Status hängen an edit_books — nicht an der Rolle.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
+	// Das Etikett entsteht im Druck-Center, auf dem Bogen nach der Vorlage (OFFEN.md 5.5). Wer
+	// den Bildschirm nicht öffnen darf, bekäme statt des Bogens den ersten erlaubten: Der
+	// Router stellt einen gesperrten Reiter zurück.
+	const darfEtikett = $derived(
+		darfBearbeiten && erlaubteTabs(authStore.currentUser).has('druck-center')
+	);
+
+	/** Dieselbe Übergabe wie Wareneingang und Nachdruck — das Druck-Center öffnet sich selbst. */
+	function etikettDrucken(/** @type {any} */ ex) {
+		printQueue.copies = [{ barcode_id: ex.barcode_id, titel: book.title, autor: book.author }];
+	}
 
 	/** @param {string} id */
 	function toggleSelect(id) {
@@ -111,6 +123,7 @@
 				selected={selectedExemplare.has(ex.id)}
 				onToggleSelect={() => toggleSelect(ex.id)}
 				onDelete={() => deleteCopy(ex)}
+				onEtikett={darfEtikett ? () => etikettDrucken(ex) : undefined}
 			/>
 		{/each}
 	</div>

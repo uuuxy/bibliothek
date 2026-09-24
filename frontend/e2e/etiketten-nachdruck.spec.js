@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, seedSQL, querySQL, uniqueSuffix, gehZu } from './helpers.js';
 
 // Der Anlass (Betreiber): Eine Lieferung ist im System freigegeben, aber die Etiketten
 // kamen nie aus dem Drucker. Danach gab es keinen Weg mehr zu genau diesen Exemplaren
@@ -121,33 +121,52 @@ test('Bestellwesen weist auf offene Etiketten hin und führt in die Liste', asyn
 	await expect(page.getByLabel(`${titel} (E2E-HIN-${s}) auswählen`)).toBeVisible();
 });
 
-// Zwei Druckwege mit verschiedenem Gedächtnis: Der A4-Bogen buchte gegen, der Einzeldruck
-// aus der Buchakte nicht. Ein dort gedrucktes Etikett blieb damit für immer auf der Liste
-// "Fehlende Etiketten" — sie wurde also ausgerechnet durch Benutzung unbrauchbar.
-test('Einzeldruck aus der Buchakte bucht das Etikett gegen', async ({ page }) => {
+// Das Etikett eines einzelnen Exemplars kommt aus dem Druck-Center, auf dem Bogen nach der
+// Vorlage (OFFEN.md 5.5, entschieden am 24.09.2026). Bis dahin druckte der Knopf der
+// Exemplarkarte ein eigenes A6-Blatt ohne Schulname, Anschaffungsjahr, Signatur und
+// Eigentumsvermerk — und vermerkte das Exemplar trotzdem als etikettiert. Der Test geht den
+// Weg von Hand: Karte → Druck-Center → Bogen.
+test('Das Etikett aus der Buchakte druckt das Druck-Center und bucht es gegen', async ({
+	page,
+	context
+}) => {
 	const s = uniqueSuffix();
 	const barcode = `B-E2E${s.slice(0, 8)}`;
+	const titel = `E2E-Einzel-Titel ${s}`;
 
 	seedSQL(`
 		WITH t AS (
-			INSERT INTO buecher_titel (titel, autor) VALUES ('E2E-Einzel-Titel ${s}', 'Testautorin') RETURNING id
+			INSERT INTO buecher_titel (titel, autor) VALUES ('${titel}', 'Testautorin') RETURNING id
 		)
 		INSERT INTO buecher_exemplare (titel_id, barcode_id, etikett_gedruckt, erworben_am)
 		SELECT t.id, '${barcode}', false, CURRENT_DATE FROM t;
 	`);
+	const titelID = querySQL(
+		`SELECT titel_id FROM buecher_exemplare WHERE barcode_id = '${barcode}'`
+	);
 
-	const exemplarID = querySQL(`SELECT id FROM buecher_exemplare WHERE barcode_id = '${barcode}'`);
 	await uiLogin(page);
+	await gehZu(page, `/medienkatalog/buch/${titelID}`);
+	await page.getByRole('tab', { name: /^Exemplare/ }).click();
+	await page
+		.getByRole('button', { name: `Etikett für ${barcode} im Druck-Center drucken` })
+		.click();
+	await expect(page.getByText('1 Etikett zum Drucken übernommen.', { exact: true })).toBeVisible();
 
-	// Der Weg, den die Buchakte nimmt: ein GET auf die Etikett-Route.
-	const res = await page.request.get(`/api/print/etikett/${exemplarID}`);
-	expect(res.status(), 'Ersatz-Etikett-PDF').toBe(200);
-	expect(res.headers()['content-type']).toContain('application/pdf');
+	// BEWEIS am Druckauftrag: derselbe Weg wie jeder Bogen im Druck-Center, genau dieses Exemplar.
+	const auftrag = page.waitForRequest(
+		(r) => r.method() === 'POST' && r.url().endsWith('/api/print/labels')
+	);
+	const neuerTab = context.waitForEvent('page');
+	await page.getByRole('button', { name: 'A4-Bogen drucken' }).click();
+	const koerper = (await auftrag).postDataJSON();
+	expect(koerper.items).toEqual([{ BarcodeID: barcode, Titel: titel, Autor: 'Testautorin' }]);
+	await (await neuerTab).close();
 
-	// BEWEIS an der Datenbank: Vorher blieb der Wert auf 'f'.
+	// BEWEIS an der Datenbank: Der Vermerk kommt mit dem Bogen.
 	await expect
 		.poll(() =>
-			querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE id = '${exemplarID}'`)
+			querySQL(`SELECT etikett_gedruckt FROM buecher_exemplare WHERE barcode_id = '${barcode}'`)
 		)
 		.toBe('t');
 });

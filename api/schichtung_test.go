@@ -54,7 +54,6 @@ var handlerMitSQL = []string{
 	"audit_logs_handler.go",
 	"ausleihe.go",
 	"ausweis_layout.go",
-	"barcode_print.go",
 	"bestellbericht_handler.go",
 	"bestellbestaetigung_etiketten.go",
 	"bestellbestaetigung_handler.go",

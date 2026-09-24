@@ -11,13 +11,16 @@
 
 <div class="lg:col-span-7 space-y-6 text-left">
 	{#if (printQueue.copies?.length ?? 0) > 0}
+		{@const anzahl = printQueue.copies?.length ?? 0}
 		<div class="p-4 border-l-2 border-blue-300 bg-blue-50/50 space-y-4 text-left animate-fade-in">
 			<div class="flex items-start gap-2.5">
 				<Printer class="h-4 w-4" aria-hidden="true" />
 				<div>
 					<h3 class="text-base font-medium text-blue-800">Aktiver Druckauftrag</h3>
 					<p class="text-xs text-blue-700 font-medium leading-relaxed mt-1">
-						Es werden {printQueue.copies?.length ?? 0} Etiketten aus der freigegebenen Lieferung geladen.
+						<!-- Ohne Herkunft: Die Übergabe kommt aus dem Wareneingang, dem Nachdruck oder
+						     der Buchakte — „aus der freigegebenen Lieferung" stimmte nur für den ersten. -->
+						{anzahl === 1 ? '1 Etikett' : `${anzahl} Etiketten`} zum Drucken übernommen.
 					</p>
 				</div>
 			</div>

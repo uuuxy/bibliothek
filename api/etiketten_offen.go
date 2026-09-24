@@ -1,8 +1,6 @@
 package api
 
 import (
-	"context"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -185,21 +183,6 @@ func (s *Server) EtikettenOffenAnzahlHandler() http.HandlerFunc {
 	})
 }
 
-// markEtikettGedruckt vermerkt den Druck eines EINZELNEN Exemplars (Buchakte,
-// Ersatz-Etikett). Ein Fehler wird protokolliert, aber nicht durchgereicht: Das PDF ist
-// zu diesem Zeitpunkt erzeugt, und ein misslungener Vermerk darf den Druck nicht als
-// gescheitert erscheinen lassen. Der Preis ist ein Exemplar, das erneut auf der Liste
-// steht — harmlos gegenüber einem Etikett, das niemand mehr nachdruckt.
-func (s *Server) markEtikettGedruckt(ctx context.Context, exemplarID string) {
-	_, err := s.DB.Pool.Exec(ctx, `
-		UPDATE buecher_exemplare SET etikett_gedruckt = true, aktualisiert_am = CURRENT_TIMESTAMP
-		WHERE id = $1 AND etikett_gedruckt = false
-	`, exemplarID)
-	if err != nil {
-		log.Printf("Etikettendruck: Vermerk für Exemplar %s fehlgeschlagen: %v", exemplarID, err)
-	}
-}
-
 // EtikettenAltbestandRequest nennt den Stichtag, bis zu dem aufgeraeumt wird.
 type EtikettenAltbestandRequest struct {
 	Bis string `json:"bis"` // YYYY-MM-DD, einschliesslich
@@ -300,8 +283,9 @@ func (s *Server) EtikettenGedrucktHandler() http.HandlerFunc {
 // Die beiden Fälle aus dem Betrieb:
 //
 //  1. PAPIERSTAU. Der Druck wird gegengebucht, sobald das PDF erzeugt ist (siehe
-//     markEtikettGedruckt) — ob das Etikett wirklich aus dem Drucker kam, weiss das
-//     Programm nicht. Bleibt der Bogen im Gerät, gelten die Exemplare als erledigt.
+//     vermerkeGedruckt in frontend/src/lib/stores/labels.svelte.js) — ob das Etikett
+//     wirklich aus dem Drucker kam, weiss das Programm nicht. Bleibt der Bogen im Gerät,
+//     gelten die Exemplare als erledigt.
 //  2. ZU WEITER STICHTAG. Beim Altbestand-Aufräumen einen zu späten Tag gewählt, und die
 //     frische Lieferung ohne Etikett verschwindet mit. Diese Aktion war deshalb bisher
 //     ausdrücklich als unumkehrbar dokumentiert (docs/abnahme_checkliste.md, Flow 4).

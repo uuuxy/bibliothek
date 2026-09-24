@@ -92,7 +92,6 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	// speichern darf (das Barcode-PUT verlangt edit_books), soll sie auch nicht ziehen.
 	mux.Handle("GET /api/barcode/next", s.RequirePermission("edit_books")(s.NextBarcodeHandler()))
 	mux.Handle("GET /api/barcode", s.RequirePermission("view_books")(s.BarcodeHandler()))
-	mux.Handle("GET /api/print/etikett/{id}", s.RequirePermission("view_books")(s.PrintErsatzEtikettHandler()))
 
 	// Signaturen — abgeleitet aus buecher_titel.signatur, nicht aus einer Stammtabelle.
 	// Die frühere Tabelle `signatures` (samt GET/POST /api/signatures) ist mit

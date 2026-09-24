@@ -30,9 +30,9 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, ergänzt am 24.09.2026):
 
-1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.5 (Ersatz-Etikett nach der Vorlage), 5.19
-   (Auskunft für jeden Leser), 5.21 (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf
-   eigenen M3-Rollen), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
+1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.19 (Auskunft für jeden Leser), 5.21
+   (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18 (Klassen
+   als Stammdaten, mit Frage-Runde zur Oberfläche).
 2. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
    Nachbestell-Liste, also zuletzt.
@@ -290,14 +290,14 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   sind zwei verschiedene Bücher unter derselben Nummer („Heinrich Mann" und „Frédéric Chopin",
   rororo, `3499500252`/`9783499500251`). Ein Abgleich über beide Formen darf deshalb
   vorschlagen, nicht still zusammenführen.
-- **Ersatz-Etikett nach der Vorlage — entschieden am 24.09.2026, nicht gebaut.** Der
-  Druckknopf an der Exemplarkarte (`GET /api/print/etikett/{id}`) druckt ein A6-Blatt mit Titel, Autor und Strichcode — ohne
-  Schulname, Anschaffungsjahr, Signatur und Eigentumsvermerk. Das Etikett nach der Vorlage hat
-  diese Felder seit dem 04.08.2026 (`d0623f99`), das A6-Blatt blieb, wie es war. Es vermerkt
-  das Exemplar trotzdem als etikettiert (seit `5d102f58`): Ein neues Exemplar, für das jemand
-  diesen Knopf nimmt, fällt aus „Fehlende Etiketten", ohne je den Eigentumsvermerk bekommen zu
-  haben (Rasterdurchgang 23.09.2026). Der Knopf druckt künftig das Etikett nach der Vorlage,
-  denselben Weg wie das Druck-Center; das A6-Blatt entfällt.
+- **Frage: Etikett-Knopf nur bei `B-`-Nummern?** Der Knopf an der Exemplarkarte übergibt das
+  Exemplar ans Druck-Center, steht aber nur bei Nummern mit `B-` — so seit seinem ersten Commit
+  (`7daf4ac6`, Juni 2026), ohne Begründung. Littera-Exemplare tragen nackte Mediennummern und
+  bekommen keinen; das Druck-Center druckt sie über „Fehlende Etiketten" (4.8 plant genau das).
+  Vorschlag: den Knopf bei jeder Nummer zeigen außer den Platzhaltern `AUTO-` und `SYS-`.
+- Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
+  140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
+  Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
 
 ### 5.10 Gates und Werkzeuge
 
@@ -499,6 +499,10 @@ Personenlauf läuft, etwa mit dem frischen Backup aus 7.2.
   beide Wege.
 - Portal: Das Menü „Mein Portal" verlangt `create_reservations`, `GET /api/lmf-termine` nur eine
   Sitzung — bewusst, der Inhalt ist PII-Stufe 0.
+- Das Druck-Center hängt im Menü an `view_students`, seine Buch-Etiketten brauchen nur
+  `view_books` und `edit_books`. Ab Werk hat jede Rolle mit `edit_books` auch `view_students`;
+  wer die Rechte anders verteilt, erreicht die Buch-Etiketten nicht (Sammelpunkt wie
+  „Einstellungen"). Der Etikett-Knopf der Buchakte fragt deshalb beides ab.
 - Ausfallmatrix A3 und B4; A3 erst nach S3 (7.3).
 
 ### 6.2 Kategorie C
@@ -551,9 +555,14 @@ Personenlauf läuft, etwa mit dem frischen Backup aus 7.2.
 - Der Paritätstest vergleicht keine COMMENTs und Seeds.
 - Erbe der PR-Zulieferungen: Go-Testdateien über 200 Zeilen, ein schwacher Export-CSV-Test.
 - Klone: Go 9 Gruppen (05.09.2026), Frontend 0,41 %.
-- 52 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/`; der Bestand ist seit dem
-  07.08.2026 eingefroren (`handlerMitSQL` in `api/schichtung_test.go`). Umstellen beim fachlichen
-  Anfassen einer Datei, nicht in einem Rutsch.
+- 50 Handler-Dateien in `api/` formulieren rohes SQL neben `repository/` (gezählt am 24.09.2026);
+  der Bestand ist seit dem 07.08.2026 eingefroren (`handlerMitSQL` in `api/schichtung_test.go`).
+  Umstellen beim fachlichen Anfassen einer Datei, nicht in einem Rutsch.
+- Exemplarkarte der Buchakte (`BookExemplarCard.svelte`): Die vier Symbolknöpfe sind 14 px groß
+  statt 32 px (`.icon-btn`), drei erklären sich per `title` statt `data-tip`; die Buchakte fehlt
+  in `icon-trefferflaechen.spec.js` und `icon-tooltips.spec.js`. Ein 32-px-Knopf bricht die
+  Kopfzeile bei 1280 px um (gemessen am 24.09.2026: Karte 70 → 100 px) — die Knöpfe brauchen
+  eine eigene Zeile; eine Layoutfrage, nicht einzeln.
 
 ### 6.3 Parkdeck (bewusste Nicht-Entscheidungen)
 
