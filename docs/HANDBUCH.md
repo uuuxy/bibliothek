@@ -42,7 +42,8 @@ Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
    Bücher, Gebühren, Vormerkungen.
 2. **Buch scannen** → ausgeliehen. Frist wird automatisch berechnet (Lernmittel bis zum
    Stichtag 31.07., andere Medien nach Tagen oder, bei eingeschaltetem Ferien-Leseclub, bis
-   zu dessen festem Rückgabedatum). (§2)
+   zu dessen festem Rückgabedatum). Fällt eine Frist nach Tagen auf ein Wochenende, einen
+   Feiertag oder in die Ferien, gilt der nächste Schultag. (§2)
 3. **Dasselbe Buch erneut scannen** → zurückgegeben. Ein Buch ohne geöffnete Theke scannen →
    wird sofort zurückgebucht, auch wenn es auf jemand anderen verbucht war
    („Fremdrückgabe", mit Hinweis).

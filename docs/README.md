@@ -19,7 +19,7 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 ## Hauptfunktionen
 
 - **Zentrale Omnibox (Scanner-Dispatcher):** Ein Eingabefeld verarbeitet alle Barcode-Scans. Ohne Präfix wird in der Reihenfolge Buch → Schülerausweis → Lehrerausweis → Volltextsuche aufgelöst — die Ausweise aus dem Littera-Altbestand tragen nackte Nummern und dürfen nicht neu gedruckt werden. Die Präfixe sind eine Abkürzung, keine Voraussetzung. Neue Ausweisnummern bekommen seit dem 16.09.2026 die Vorsilbe `A-` (Ausweis) statt `S-`/`L-` — wer jemand ist, steht in den Stammdaten und nicht auf der Karte; gelesen werden `S-` und `L-` weiter, weil es Nummern von früher gibt. Bücher tragen `B-`, Geräte `G-`.
-- **Fristenberechnung:** Berücksichtigung von LMF-Büchern (Stichtag 31. Juli), Sonderbeständen (CDs, DVDs, Hörbücher) und Ferien-Leseclub.
+- **Fristenberechnung:** Berücksichtigung von LMF-Büchern (Stichtag 31. Juli), Sonderbeständen (CDs, DVDs, Hörbücher) und Ferien-Leseclub; eine Frist nach Tagen, die auf Wochenende, Feiertag oder Ferien fällt, rückt auf den nächsten Schultag.
 - **Audit-Trail:** Ereignisprotokollierung für administrative Aktionen (append-only als Konvention; die DSGVO-Tilgung ist die bewusste Ausnahme).
 - **Datenschutz-Funktionen:** Löschroutinen für Schulabgänger, AES-256-Verschlüsselung für Schülerfotos.
 - **LUSD-Schnittstelle:** Import von Schülerdaten aus dem LUSD-System.

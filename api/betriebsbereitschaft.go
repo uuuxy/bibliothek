@@ -143,6 +143,13 @@ type Lage struct {
 	// die Abhilfe eine Einstellung ist, nicht ein Programm-Update.
 	FerientabelleBis int
 
+	// Ferien für Leihfristen (24.09.2026): Herbst-, Weihnachts- und Osterferien Hessen
+	// stehen als Tabelle im Programm (pkg/lmfplan/schulferien.go); eine Leihfrist, die in
+	// sie fällt, rückt auf den nächsten Schultag. Das Jahr, in dem die letzten dieser
+	// Ferien enden — danach rücken die Fristen nur noch über Wochenende, Feiertag und
+	// Sommerferien. Anders als bei den Sommerferien gibt es keine Einstellung dafür.
+	UebrigeFerienBis int
+
 	// Restore-Probe (Schema-Erweiterung 21.08.2026): Ob das jüngste Backup
 	// WIEDERHERSTELLBAR ist, beweist wöchentlich jobs.RunRestoreProbe — ein Backup,
 	// das sich nicht einspielen lässt, ist exakt so viel wert wie keins. nil: noch
@@ -243,6 +250,7 @@ func Pruefe(l Lage) []Befund {
 		pruefeEhemaligeOffen(l),
 		pruefeNachbuchMeldungenOffen(l),
 		pruefeFerientabelle(l),
+		pruefeUebrigeFerien(l),
 		pruefeBescheidAngaben(l),
 	}
 	return befunde
@@ -268,6 +276,24 @@ func pruefeFerientabelle(l Lage) Befund {
 	}
 	b.Stufe = StufeOK
 	b.Befund = fmt.Sprintf("Sommerferien Hessen bis %d hinterlegt.", l.FerientabelleBis)
+	return b
+}
+
+// pruefeUebrigeFerien: Kennen die Leihfristen die Herbst-, Weihnachts- und Osterferien
+// noch weit genug? Derselbe Vorlauf wie bei den Sommerferien.
+func pruefeUebrigeFerien(l Lage) Befund {
+	b := Befund{Bereich: "Ferien für Leihfristen"}
+	if l.Jetzt.Year()+ferientabelleVorlaufJahre > l.UebrigeFerienBis {
+		b.Stufe = StufeWarnung
+		b.Befund = fmt.Sprintf("Herbst-, Weihnachts- und Osterferien Hessen sind nur bis %d hinterlegt.", l.UebrigeFerienBis)
+		b.Folge = "Danach rückt eine Leihfrist, die in diese Ferien fällt, nicht mehr auf den nächsten Schultag. " +
+			"Wer in den Ferien nicht zurückgeben kann, steht nach den Ferien in der Mahnliste."
+		b.Abhilfe = "Die Termine stehen im Programm (Quelle: kultus.hessen.de/schulsystem/ferien/ferientermine). " +
+			"Auf eine Programmversion aktualisieren, die die folgenden Schuljahre enthält."
+		return b
+	}
+	b.Stufe = StufeOK
+	b.Befund = fmt.Sprintf("Herbst-, Weihnachts- und Osterferien Hessen bis %d hinterlegt.", l.UebrigeFerienBis)
 	return b
 }
 

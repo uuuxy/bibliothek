@@ -59,27 +59,33 @@ func TestParseGrade(t *testing.T) {
 // --- calculateDueDate: Fristberechnung. Ein stiller Fehler hier erzeugt falsche
 // Rückgabefristen und damit falsches Mahnwesen. ---
 
+// Feste Uhr an einem Tag, dessen Fristen auf Schultage fallen: Dienstag 01.09.2026 plus 21
+// Tage ist Dienstag 22.09., plus 7 Tage Dienstag 08.09. Mit time.Now() hinge das Ergebnis
+// vom Kalender ab — Fristen, die auf Wochenende, Feiertag oder Ferien fallen, rücken auf den
+// nächsten Schultag (tagesfrist_test.go).
 func TestCalculateDueDate_RegularBook(t *testing.T) {
-	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: false, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
-	want := time.Now().AddDate(0, 0, 21)
-	if !sameDay(got, want) {
-		t.Errorf("reguläres Buch: got %v, want Tag %v", got, want)
+	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schoolLocation())
+	got := calculateDueDate(jetzt, DueDateOptions{IstLernmittel: false, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schoolLocation())
+	if !got.Equal(want) {
+		t.Errorf("reguläres Buch: got %v, want %v", got, want)
 	}
 }
 
 func TestCalculateDueDate_Media(t *testing.T) {
+	jetzt := time.Date(2026, time.September, 1, 10, 0, 0, 0, schoolLocation())
 	for _, mt := range []string{"CD", "DVD", "Audio-CD", "dvd"} {
-		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: false, Medientyp: mt, LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
-		want := time.Now().AddDate(0, 0, 7)
-		if !sameDay(got, want) {
-			t.Errorf("Medium %q: got %v, want Tag %v", mt, got, want)
+		got := calculateDueDate(jetzt, DueDateOptions{IstLernmittel: false, Medientyp: mt, LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+		want := time.Date(2026, time.September, 8, 23, 59, 59, 0, schoolLocation())
+		if !got.Equal(want) {
+			t.Errorf("Medium %q: got %v, want %v", mt, got, want)
 		}
 	}
 }
 
 func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 	for _, titel := range []string{"Mathe 9", "Deutsch 5"} {
-		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
 
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("LMF %q: Stichtag soll 31.07 sein, got %02d-%02d", titel, got.Month(), got.Day())
@@ -113,14 +119,14 @@ func TestCalculateDueDate_LMF_DefaultStichtag(t *testing.T) {
 // heißen. Das war der Fehler von 2026: ein Klartext-Titel mit „LMF" nur in der Signatur
 // bekam die 21-Tage-Frist.
 func TestCalculateDueDate_LMF_NurInSignatur(t *testing.T) {
-	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
 	if got.Month() != time.July || got.Day() != 31 {
 		t.Errorf("LMF nur in Signatur: Stichtag soll 31.07 sein, got %02d-%02d", got.Month(), got.Day())
 	}
 }
 
 func TestCalculateDueDate_LMF_CustomStichtag(t *testing.T) {
-	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+	got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "06-15", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
 	if got.Month() != time.June || got.Day() != 15 {
 		t.Errorf("benutzerdefinierter Stichtag 06-15: got %02d-%02d", got.Month(), got.Day())
 	}
@@ -128,7 +134,7 @@ func TestCalculateDueDate_LMF_CustomStichtag(t *testing.T) {
 
 func TestCalculateDueDate_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 	for _, bad := range []string{"99-99", "kaputt", "13-40", ""} {
-		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
+		got := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: bad, FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
 		if got.Month() != time.July || got.Day() != 31 {
 			t.Errorf("ungültiger Stichtag %q soll auf 31.07 zurückfallen, got %02d-%02d", bad, got.Month(), got.Day())
 		}
@@ -136,8 +142,8 @@ func TestCalculateDueDate_LMF_InvalidStichtagFallsBackToJuly31(t *testing.T) {
 }
 
 func TestCalculateDueDate_LMF_AdditionalYears(t *testing.T) {
-	base := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0})
-	plus2 := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 2})
+	base := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 0, Sommerferien: ""})
+	plus2 := calculateDueDate(time.Now(), DueDateOptions{IstLernmittel: true, Medientyp: "Buch", LmfStichtag: "07-31", FristBuchTage: 21, FristMedienTage: 7, AdditionalYears: 2, Sommerferien: ""})
 
 	if plus2.Year() != base.Year()+2 {
 		t.Errorf("additionalYears=2 soll Stichtagsjahr um 2 erhöhen: base %d, got %d", base.Year(), plus2.Year())
@@ -352,6 +358,8 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnError(errors.New("db down"))
 
+	// Feste Uhr: 01.09.2026 plus 21 Tage ist ein Schultag (TestCalculateDueDate_RegularBook).
+	svc.jetzt = func() time.Time { return time.Date(2026, time.September, 1, 10, 0, 0, 0, schoolLocation()) }
 	copy := &repository.BookCopy{Titel: "Der Hobbit", Medientyp: "Buch"}
 	got, err := svc.resolveCheckoutDueDate(context.Background(), copy, "5a")
 	// Bewusst kein Fehler: bei DB-Ausfall greifen Notfall-Defaults (21 Tage),
@@ -359,9 +367,9 @@ func TestResolveCheckoutDueDate_DBErrorUsesEmergencyDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("DB-Fehler soll mit Notfall-Default abgefangen werden, bekam: %v", err)
 	}
-	want := time.Now().AddDate(0, 0, 21)
-	if !sameDay(got, want) {
-		t.Errorf("Notfall-Default soll 21 Tage sein: got %v, want Tag %v", got, want)
+	want := time.Date(2026, time.September, 22, 23, 59, 59, 0, schoolLocation())
+	if !got.Equal(want) {
+		t.Errorf("Notfall-Default soll 21 Tage sein: got %v, want %v", got, want)
 	}
 }
 

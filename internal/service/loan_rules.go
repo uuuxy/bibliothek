@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
@@ -31,7 +32,9 @@ func schoolLocation() *time.Location {
 // "Ende des Tages" im System: JEDE Rückgabefrist (reguläre Bücher, Medien, LMF-Stichtag,
 // Geräte, Handapparat/Lehrer-Dauerleihe) läuft hierüber — seit 19.08.2026 auch die
 // manuelle Frist-Überschreibung und die LMF-Massenverlängerung im api-Paket, die zuvor
-// roh 23:59:59 UTC setzten und damit fristabhängig 1–2 h daneben lagen. Damit fällt die Fälligkeit immer
+// roh 23:59:59 UTC setzten und damit fristabhängig 1–2 h daneben lagen; seit 24.09.2026 über
+// Tagesfrist auch die Einzel-Verlängerung, die bis dahin in SQL ab CURRENT_TIMESTAMP rechnete
+// und bei einer überfälligen Ausleihe die Uhrzeit der Verlängerung behielt. Damit fällt die Fälligkeit immer
 // deterministisch auf den Kalendertag — unabhängig von der Server-Zeitzone (Docker = UTC) —
 // und es gibt keine zweite, rohe Berechnungsmethode mehr, die bei künftigen Änderungen
 // (z. B. kürzere Handapparat-Frist) auf die Füße fällt.
@@ -58,6 +61,9 @@ type SystemEinstellungen struct {
 	MaxOverdueDays int
 	// MaxOverdueItems: Anzahl der überfälligen Medien ab denen blockiert wird.
 	MaxOverdueItems int
+	// Sommerferien ist der Text der Einstellung „sommerferien" — die Jahre, die die Schule
+	// neben der Programmtabelle eingetragen hat. Leer heißt: nur die Programmtabelle.
+	Sommerferien string
 }
 
 // querySettings liest die aktuellen Einstellungen aus der Datenbank aus und liefert
@@ -139,6 +145,8 @@ func applyEinstellung(settings *SystemEinstellungen, key, value string) {
 		if v, err := strconv.Atoi(value); err == nil {
 			settings.MaxOverdueItems = v
 		}
+	case lmfplan.SommerferienSchluessel:
+		settings.Sommerferien = value
 	}
 }
 
@@ -151,6 +159,9 @@ type DueDateOptions struct {
 	FristBuchTage   int
 	FristMedienTage int
 	AdditionalYears int
+	// Sommerferien: Text der Einstellung „sommerferien" (SystemEinstellungen.Sommerferien);
+	// leer heißt Programmtabelle.
+	Sommerferien string
 }
 
 // calculateDueDate berechnet das Rückgabedatum auf Basis von Lernmittel-Kennzeichen,
@@ -187,12 +198,26 @@ func calculateDueDate(jetzt time.Time, opts DueDateOptions) time.Time {
 	// eine verkürzte Ausleihfrist (fristMedienTage).
 	lower := strings.ToLower(opts.Medientyp)
 	if strings.Contains(lower, "cd") || strings.Contains(lower, "dvd") || strings.Contains(lower, "audio") {
-		return TagesEndeInSchulzeitzone(now.AddDate(0, 0, opts.FristMedienTage))
+		return Tagesfrist(now, opts.FristMedienTage, lmfplan.FerientabelleAus(opts.Sommerferien))
 	}
 
 	// 3. Fall: Reguläre Bücher
 	// Standardleihfrist für normale Buchbestände (fristBuchTage).
-	return TagesEndeInSchulzeitzone(now.AddDate(0, 0, opts.FristBuchTage))
+	return Tagesfrist(now, opts.FristBuchTage, lmfplan.FerientabelleAus(opts.Sommerferien))
+}
+
+// Tagesfrist ist die Frist einer Leihe, die in Tagen zählt — Buch, Medium, Gerät,
+// Verlängerung: ab plus tage, und fällt dieser Tag auf ein Wochenende, einen Feiertag oder
+// in die Ferien, der nächste Schultag; Tagesende in der Schulzeitzone.
+//
+// Entscheidung vom 24.09.2026: Wer vor den Herbstferien ausleiht, soll nicht gemahnt
+// werden, weil die Frist in die Ferien fiel. Nicht hierüber laufen Stichtage und von Hand
+// gesetzte Fristen — Lernmittel (Stichtag, LMF-Plan), Ferien-Leseclub, Frist-Überschreibung,
+// die Jahresfrist der Dauerleihe. Der LMF-Stichtag 31.07. liegt in jedem Jahr der Tabelle in
+// den Sommerferien; über diese Regel stünde jedes Lernmittel am Tag der Bücherausgabe.
+func Tagesfrist(ab time.Time, tage int, kalender lmfplan.Ferientabelle) time.Time {
+	tag := kalender.NaechsterSchultag(ab.In(schoolLocation()).AddDate(0, 0, tage))
+	return TagesEndeInSchulzeitzone(time.Date(tag.Year(), tag.Month(), tag.Day(), 12, 0, 0, 0, schoolLocation()))
 }
 
 // parseGrade extrahiert den Jahrgang aus dem Klassen-String.
@@ -252,6 +277,7 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 			FristBuchTage:   21,
 			FristMedienTage: 7,
 			AdditionalYears: additionalYears,
+			Sommerferien:    "",
 		}), nil
 	}
 
@@ -311,5 +337,6 @@ func (s *defaultLoanService) resolveCheckoutDueDateAm(ctx context.Context, copy 
 		FristBuchTage:   settings.FristBuchTage,
 		FristMedienTage: settings.FristMedienTage,
 		AdditionalYears: additionalYears,
+		Sommerferien:    settings.Sommerferien,
 	}), nil
 }

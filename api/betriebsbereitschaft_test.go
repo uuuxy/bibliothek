@@ -65,6 +65,8 @@ func lageEingerichtet() Lage {
 		NachbuchMeldungenOffen: zahl(0),
 		// Ferientabelle: reicht weit genug (testJetzt 2026 + 2 ≤ 2030).
 		FerientabelleBis: 2030,
+		// Ferien für Leihfristen: ebenso (Programmtabelle bis 2030).
+		UebrigeFerienBis: 2030,
 		// Schadensersatz-Bescheid: erhoben, keine Pflichtangabe fehlt.
 		BescheidFehlend: []string{},
 		// Schlüssel und Bestand: geprüft, beide Spalten lesbar.
@@ -195,6 +197,15 @@ func TestBetriebsbereitschaft_MeldetJedeLuecke(t *testing.T) {
 			bereich:  "Ferientabelle",
 			stufe:    StufeWarnung,
 			enthaelt: "kmk.org",
+		},
+		{
+			// Dieselbe Schwelle für Herbst-, Weihnachts- und Osterferien; die Abhilfe ist ein
+			// Programm-Update, keine Einstellung.
+			name:     "Ferien für Leihfristen laufen in unter zwei Jahren aus",
+			aendere:  func(l *Lage) { l.UebrigeFerienBis = 2027 },
+			bereich:  "Ferien für Leihfristen",
+			stufe:    StufeWarnung,
+			enthaelt: "kultus.hessen.de",
 		},
 		{
 			name:     "Ehemalige nicht erhoben",

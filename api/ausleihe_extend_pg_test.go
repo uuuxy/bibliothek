@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 )
 
@@ -26,20 +27,20 @@ func (m *mockSystemSettingsRepo) SaveSettings(ctx context.Context, req *reposito
 	return nil
 }
 
-// pruefeFristAbHeute belegt, dass die neue Frist tage Tage in der Zukunft liegt.
-//
-// Bewusst mit Toleranz statt auf die Sekunde: Die Datenbank setzt CURRENT_TIMESTAMP,
-// der Test liest die Uhr des Testprozesses — auf die Sekunde gleich sind die nie.
-// Ein Tag Spielraum trennt "richtig gerechnet" sicher von "falsche Grundlage
-// genommen" (dort läge die Abweichung bei Jahren).
-func pruefeFristAbHeute(t *testing.T, frist time.Time, tage int) {
+// pruefeFrist belegt die neue Frist auf die Sekunde: Seit dem 24.09.2026 rechnet die
+// Verlängerung mit der Uhr des Servers (s.jetzt) statt mit CURRENT_TIMESTAMP, der Test setzt
+// sie fest. Vorher prüfte er mit einem Tag Toleranz gegen time.Now() — das hätte weder das
+// Tagesende noch den nächsten Schultag gesehen.
+func pruefeFrist(t *testing.T, frist, soll time.Time) {
 	t.Helper()
-	erwartet := time.Now().UTC().AddDate(0, 0, tage)
-	abweichung := frist.Sub(erwartet)
-	if abweichung < -24*time.Hour || abweichung > 24*time.Hour {
-		t.Errorf("Frist falsch: erwartet rund %v (heute + %d Tage), war %v — Abweichung %v",
-			erwartet.Format("2006-01-02"), tage, frist.Format("2006-01-02"), abweichung)
+	if !frist.Equal(soll) {
+		t.Errorf("Frist %s, erwartet %s", frist.In(schulzeit.Zone()), soll)
 	}
+}
+
+// fristEnde ist das Tagesende eines Kalendertags in der Schulzeitzone.
+func fristEnde(j int, m time.Month, d int) time.Time {
+	return time.Date(j, m, d, 23, 59, 59, 0, schulzeit.Zone())
 }
 
 func TestExtendLoanHandler(t *testing.T) {
@@ -62,6 +63,9 @@ func TestExtendLoanHandler(t *testing.T) {
 	ausleiheNormal := seedAusleihe(t, pool, sid1, "Testbuch Normal", alteFrist)
 	ausleiheGesperrt := seedAusleihe(t, pool, sidGesperrt, "Testbuch Gesperrt", alteFrist)
 
+	// Eine eigene Ausleihe für den Fall, dass die neue Frist in die Ferien fällt.
+	ausleiheFerien := seedAusleihe(t, pool, sid1, "Testbuch Ferien", alteFrist)
+
 	// Create a returned loan
 	ausleiheReturned := seedAusleihe(t, pool, sid1, "Testbuch Returned", alteFrist)
 	_, err = pool.Exec(context.Background(), "UPDATE ausleihen SET rueckgabe_am = CURRENT_TIMESTAMP WHERE id = $1", ausleiheReturned)
@@ -69,9 +73,14 @@ func TestExtendLoanHandler(t *testing.T) {
 		t.Fatalf("Failed to mark loan as returned: %v", err)
 	}
 
+	// Montag 02.11.2026: 14, 21 und 28 Tage fallen von hier aus auf verschiedene Schultage,
+	// die Fälle unterscheiden die Tageszahl also.
+	november := time.Date(2026, time.November, 2, 10, 0, 0, 0, schulzeit.Zone())
+
 	tests := []struct {
 		name           string
 		ausleiheID     string
+		jetzt          time.Time
 		extensionDays  int
 		setupRoute     func(*http.ServeMux, *Server, repository.SystemSettingsRepository)
 		expectedStatus int
@@ -80,6 +89,7 @@ func TestExtendLoanHandler(t *testing.T) {
 		{
 			name:           "Happy Path - Extends Loan with configured interval",
 			ausleiheID:     ausleiheNormal,
+			jetzt:          november,
 			extensionDays:  14,
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]interface{}) {
@@ -91,20 +101,32 @@ func TestExtendLoanHandler(t *testing.T) {
 				// api/ausleihe.go. Bei einer laengst ueberfaelligen Ausleihe (hier 2023)
 				// ist das HEUTE, nicht die alte Frist: Sonst käme eine Verlaengerung
 				// heraus, die im Moment der Buchung schon wieder abgelaufen ist.
-				newFrist := fristVon(t, pool, ausleiheNormal)
-				pruefeFristAbHeute(t, newFrist, 14)
+				// Heute plus 14 Tage, auf das Tagesende: Montag 16.11.2026.
+				pruefeFrist(t, fristVon(t, pool, ausleiheNormal), fristEnde(2026, time.November, 16))
 			},
 		},
 		{
 			name:           "Happy Path - Falls back to 28 days if interval missing",
 			ausleiheID:     ausleiheNormal, // Using same loan is fine, we just update it again
-			extensionDays:  0,              // Will trigger fallback to 28
+			jetzt:          november,
+			extensionDays:  0, // Will trigger fallback to 28
 			expectedStatus: http.StatusOK,
 			verify: func(t *testing.T, resp map[string]interface{}) {
-				// Der vorige Fall hat die Frist bereits auf heute+14 gesetzt. Die liegt
-				// jetzt in der ZUKUNFT, also rechnet GREATEST ab ihr: heute+14+28.
-				newFrist := fristVon(t, pool, ausleiheNormal)
-				pruefeFristAbHeute(t, newFrist, 14+28)
+				// Der vorige Fall hat die Frist bereits auf den 16.11. gesetzt. Die liegt
+				// in der ZUKUNFT, also rechnet die Verlängerung ab ihr: 16.11. plus 28 Tage.
+				pruefeFrist(t, fristVon(t, pool, ausleiheNormal), fristEnde(2026, time.December, 14))
+			},
+		},
+		{
+			// Entscheidung vom 24.09.2026: Donnerstag 24.09.2026 plus 21 Tage ist der 15.10.,
+			// mitten in den Herbstferien (05.10.–17.10.) — die Frist ist der Montag danach.
+			name:           "Frist in den Herbstferien rückt auf den nächsten Schultag",
+			ausleiheID:     ausleiheFerien,
+			jetzt:          time.Date(2026, time.September, 24, 10, 0, 0, 0, schulzeit.Zone()),
+			extensionDays:  21,
+			expectedStatus: http.StatusOK,
+			verify: func(t *testing.T, resp map[string]interface{}) {
+				pruefeFrist(t, fristVon(t, pool, ausleiheFerien), fristEnde(2026, time.October, 19))
 			},
 		},
 		{
@@ -148,6 +170,9 @@ func TestExtendLoanHandler(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			srv := &Server{DB: &db.Database{Pool: pool}}
+			if !tt.jetzt.IsZero() {
+				srv.Uhr = func() time.Time { return tt.jetzt }
+			}
 
 			settingsRepo := &mockSystemSettingsRepo{
 				settings: &repository.SystemEinstellungen{

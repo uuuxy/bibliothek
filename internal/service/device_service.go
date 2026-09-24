@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/db"
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -92,11 +93,12 @@ func pruefeGeraetAusleihbar(g repository.Geraet) error {
 
 // ladeAkteur ermittelt den aktiven Schüler bzw. Lehrer und wendet die Sperren an — für
 // die AUSLEIHE. Die Rückgabe nimmt ladeRueckgeber: Ein gesperrter Schüler muss sein Gerät
-// zurückgeben können.
-func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *string) (*repository.Student, error) {
+// zurückgeben können. Die Einstellungen, die die Sperr-Prüfung geladen hat, gehen mit
+// zurück — aus ihnen rechnet leiheGeraetAus die Frist, ohne sie ein zweites Mal zu lesen.
+func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *string) (*repository.Student, *SystemEinstellungen, error) {
 	leser, err := s.ladeRueckgeber(ctx, activeLeserID)
 	if err != nil || leser == nil {
-		return nil, err
+		return nil, nil, err
 	}
 	// BEIDE Sperr-Flags prüfen — wie der Buch-Pfad (pruefeGesperrt +
 	// pruefeManuellGesperrt). Zuvor blockierte nur die System-Sperre (ist_gesperrt);
@@ -104,7 +106,7 @@ func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *st
 	// wegen unbezahlter Schäden) konnte trotzdem ein Gerät ausleihen — und Geräte
 	// sind wertvoller als Bücher. Geräte kennen bewusst KEIN override_block.
 	if leser.IstGesperrt || leser.IsManuallyBlocked {
-		return nil, fmt.Errorf("%w: Diese Person ist gesperrt", ErrBlocked)
+		return nil, nil, fmt.Errorf("%w: Diese Person ist gesperrt", ErrBlocked)
 	}
 	// Dieselben AUTOMATIK-Sperren wie der Buch-Pfad (Betreiber-Entscheidung
 	// 19.08.2026): unbezahlte Schäden und die Überfällig-Automatik. Wer kein Buch
@@ -113,10 +115,11 @@ func (s *defaultDeviceService) ladeAkteur(ctx context.Context, activeLeserID *st
 	// Seit Migration 125 gelten sie für JEDEN Leser. Vorher lief eine Lehrkraft an
 	// diesen Prüfungen vorbei — nicht als Entscheidung, sondern weil ihre Ausleihen in
 	// einer anderen Spalte standen und der Zähler sie nicht sah.
-	if err := pruefeGeraetAutomatikSperren(ctx, s.pool, leser.ID); err != nil {
-		return nil, err
+	einst, err := pruefeGeraetAutomatikSperren(ctx, s.pool, leser.ID)
+	if err != nil {
+		return nil, nil, err
 	}
-	return leser, nil
+	return leser, einst, nil
 }
 
 // ladeRueckgeber ermittelt den aktiven Leser aus dem gescannten Ausweis, ohne
@@ -162,23 +165,28 @@ func ladeAktiveAusleihe(ctx context.Context, tx pgx.Tx, geraetID string) (reposi
 // geraeteLeihfristTage ist die Standard-Leihfrist für Hardware (2 Wochen).
 const geraeteLeihfristTage = 14
 
-// geraeteRueckgabeFrist normalisiert die Geräte-Leihfrist auf das Tagesende (23:59:59) in der
-// Schul-Zeitzone (Europe/Berlin) — exakt wie die Buch-Fristen (loan_rules.go). Ohne diese
+// geraeteRueckgabeFrist ist die Geräte-Leihfrist als Tagesfrist wie die der Bücher
+// (loan_rules.go): Tagesende in der Schul-Zeitzone (Europe/Berlin), und fällt der Tag auf ein
+// Wochenende, einen Feiertag oder in die Ferien, der nächste Schultag. Ohne die
 // Normalisierung fiel die Frist auf die Sekunde genau N Tage später in der Server-Zeitzone
 // (im Docker-Container UTC); ein um 10:00 MESZ geliehenes Gerät wäre 08:00 UTC fällig, was
 // Mahnläufe und die "heute/morgen fällig"-Anzeige verschob.
-func geraeteRueckgabeFrist(now time.Time) time.Time {
-	return TagesEndeInSchulzeitzone(now.In(schoolLocation()).AddDate(0, 0, geraeteLeihfristTage))
+func geraeteRueckgabeFrist(now time.Time, kalender lmfplan.Ferientabelle) time.Time {
+	return Tagesfrist(now, geraeteLeihfristTage, kalender)
 }
 
-func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Student, staffID string) (*DeviceResult, error) {
+func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Student, einst *SystemEinstellungen, staffID string) (*DeviceResult, error) {
 	if leser == nil {
 		return nil, fmt.Errorf("%w: Bitte scannen Sie zuerst einen Ausweis", ErrInvalidState)
 	}
 
 	// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen), auf das Tagesende in der
 	// Schul-Zeitzone normalisiert (analog zu den Buch-Fristen).
-	dueTime := geraeteRueckgabeFrist(time.Now())
+	sommerferien := ""
+	if einst != nil {
+		sommerferien = einst.Sommerferien
+	}
+	dueTime := geraeteRueckgabeFrist(time.Now(), lmfplan.FerientabelleAus(sommerferien))
 	resp := &DeviceResult{Student: leser}
 	var newLoanID string
 	// Ein Schreiber für jeden Leser. Nicht-Schüler bekommen das Gerät als Dauerleihe —
@@ -305,13 +313,14 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	// Bis zum 13.09.2026 standen sie vor dieser Weiche und hielten auch die Rückgabe auf:
 	// 403, die Ausleihe blieb offen (geraet_rueckgabe_sperre_pg_test.go).
 	var leser *repository.Student
+	var einst *SystemEinstellungen
 	if hasActiveLoan {
 		leser, err = s.ladeRueckgeber(ctx, activeLeserID)
 	} else {
 		if err = pruefeGeraetAusleihbar(g); err != nil {
 			return nil, err
 		}
-		leser, err = s.ladeAkteur(ctx, activeLeserID)
+		leser, einst, err = s.ladeAkteur(ctx, activeLeserID)
 	}
 	if err != nil {
 		return nil, err
@@ -324,7 +333,7 @@ func (s *defaultDeviceService) HandleDeviceAction(
 	}
 
 	if !hasActiveLoan {
-		return s.leiheGeraetAus(ctx, tx, &g, leser, staffID)
+		return s.leiheGeraetAus(ctx, tx, &g, leser, einst, staffID)
 	}
 	return s.gibGeraetZurueck(ctx, tx, &g, &activeLoan, leser, staffID)
 }
@@ -332,26 +341,27 @@ func (s *defaultDeviceService) HandleDeviceAction(
 // pruefeGeraetAutomatikSperren wendet die AUTOMATIK-Sperren des Buch-Pfads auch auf die
 // Geräte-Ausleihe an: unbezahlte Schäden und die Überfällig-Automatik. Die expliziten
 // Sperr-Flags prüft bereits ladeAkteur; Geräte kennen bewusst kein override_block.
-// Nutzt dieselben Zähl-/Settings-Quellen wie der Buch-Pfad (loan_checkout_validation.go).
-func pruefeGeraetAutomatikSperren(ctx context.Context, pool db.PgxPoolIface, leserID string) error {
+// Nutzt dieselben Zähl-/Settings-Quellen wie der Buch-Pfad (loan_checkout_validation.go)
+// und gibt die geladenen Einstellungen zurück (für die Frist in leiheGeraetAus).
+func pruefeGeraetAutomatikSperren(ctx context.Context, pool db.PgxPoolIface, leserID string) (*SystemEinstellungen, error) {
 	offeneSchaeden, err := zaehleOffeneSchaeden(ctx, pool, leserID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if offeneSchaeden > 0 {
-		return fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offeneSchaeden)
+		return nil, fmt.Errorf("%w: %d unbezahlte(r) Schadensfall/-fälle offen", ErrBlocked, offeneSchaeden)
 	}
 
 	settings, err := ladeSystemEinstellungen(ctx, pool)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	overdue, err := zaehleUeberfaelligeMedien(ctx, pool, leserID, settings.MaxOverdueDays)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if overdue >= settings.MaxOverdueItems {
-		return fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdue)
+		return nil, fmt.Errorf("%w: %d überfällige Medien vorhanden (Sperr-Automatik)", ErrBlocked, overdue)
 	}
-	return nil
+	return settings, nil
 }

@@ -166,6 +166,7 @@ func (s *Server) sammleLage(
 	// Lückenlos AB dem laufenden Jahr — nicht das Maximum: Ein vergessenes Jahr mitten in
 	// der Liste lässt den Planer ohne Vorgabe stehen, und genau das soll die Prüfung sagen.
 	lage.FerientabelleBis = lmfplan.FerientabelleAus(sommerferien).LueckenlosBis(lage.Jetzt.Year())
+	lage.UebrigeFerienBis = lmfplan.UebrigeFerienBis()
 
 	// Ergebnis der wöchentlichen Restore-Probe. Unlesbar oder nie gelaufen → nil,
 	// die Prüfung meldet dann „noch kein Probelauf" statt eines falschen Urteils.

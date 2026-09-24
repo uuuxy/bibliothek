@@ -30,16 +30,15 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, ergänzt am 24.09.2026):
 
-1. **4.19** Ferienkalender, in den fünf Stufen dort — er ändert Fristen, also Stufe für Stufe.
-2. **Zwischen den Stufen:** die am 24.09.2026 entschiedenen kleinen Punkte — 5.16 (Leeren zieht
-   eine neue Nummer), 5.5 (Ersatz-Etikett nach der Vorlage), 5.19 (Auskunft für jeden Leser),
-   5.21 (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18
-   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
-3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
+1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.16 (Leeren zieht eine neue Nummer), 5.5
+   (Ersatz-Etikett nach der Vorlage), 5.19 (Auskunft für jeden Leser), 5.21 (Palettenfarben,
+   Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18 (Klassen als Stammdaten,
+   mit Frage-Runde zur Oberfläche).
+2. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
    Nachbestell-Liste, also zuletzt.
-4. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Von 4.20 (Schlagworte) bleiben nur die Littera-Schlagworte; sie kommen mit dem Backup (7.2).
 
@@ -189,103 +188,6 @@ Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 **Freigegeben am 23.09.2026, nicht gebaut:** das Werk samt Migration, Gruppierung im Bedarf
 und Warnung in der Ausgabe. Ändert das Schema und rechnet die Nachbestell-Liste anders — in
 Stufen mit Nachweis.
-
-### 4.19 Frist fällt in die Ferien
-
-**Der Fall.** Ausleihe am letzten Schultag vor den Herbstferien, Frist 21 Tage: fällig mitten in
-den Ferien. Das Kind kann nicht zurückgeben, steht danach in der Mahnliste und ab einem
-überfälligen Medium mit gesperrtem Ausweis an der Theke (`MaxOverdueItems`, Vorgabe 1).
-
-**Was heute passiert.** `calculateDueDate` (`internal/service/loan_rules.go`) rechnet
-Kalendertage: Stichtag bei Lernmitteln, feste Tageszahl sonst. Kein Kalender geht ein. Der einzige
-Behelf ist der Ferien-Leseclub — ein festes Zieldatum für ALLE Ausleihen, von Hand ein- und
-auszuschalten.
-
-**Woher kämen die Tage bei uns?** Das ist die eigentliche Frage. Gebaut ist bisher nur, was der
-LMF-Plan braucht:
-
-- **Feiertage Hessens:** gerechnet, kein Pflegeaufwand (`pkg/lmfplan/feiertage.go`; die gesetzlichen
-  Feiertage Hessens samt Fronleichnam).
-- **Sommerferien:** Programmtabelle nach dem KMK-Beschluss bis 2030 plus eigene Einträge der
-  Schule (Einstellungen → LUSD & Versetzung → Sommerferien). Läuft die Tabelle aus, warnt die
-  Betriebsbereitschaft zwei Jahre vorher.
-- **Bewegliche Ferientage, pädagogische Tage, Brückentage:** `lmf_plan_freie_tage` — sie hängen
-  aber am einzelnen Plan (`plan_id`), nicht am Schuljahr.
-- **Herbst-, Weihnachts- und Osterferien gibt es nirgends**, Öffnungstage der Bibliothek auch
-  nicht. Genau diese Ferien sind die, in die eine 21-Tage-Frist fällt.
-
-**Entschieden am 18.09.2026:**
-
-- **Öffnungstage gibt es nicht** — die Bibliothek hat keine festen Öffnungszeiten. Damit besteht
-  der Kalender aus Ferien, Feiertagen und Wochenenden; die Hälfte, die Littera „Öffnungstage"
-  nennt, entfällt ersatzlos.
-- **Laufende Ausleihen rutschen mit.** Wer im September ausgeliehen hat und im Oktober die
-  Herbstferien nachgetragen bekommt, soll nicht gemahnt werden, weil die Eintragung zu spät kam.
-  Das Muster dafür steht schon: Beim Veröffentlichen des LMF-Plans folgen die offenen
-  Schulbuch-Ausleihen dem Termin ihrer Klasse (`api/lmf_termine_frist.go`), und die Meldung nennt
-  die Zahl.
-- **Die Ferien kommen als Datei** (iCal), nicht als Tipparbeit: sechs Zeiträume je Schuljahr von
-  Hand einzutragen, macht niemand zweimal. Die Datei holt die Schule selbst, z. B. bei
-  `schulferien.org/deutschland/ical/`; hochgeladen wird sie in den Einstellungen. Zur Laufzeit
-  fragt der Server nichts ab — dieselbe Linie wie bei der Sommerferien-Tabelle.
-- **Ein Warner**, wenn der Kalender ausläuft. Ein Kalender, der still endet, rechnet ab dem
-  ersten fehlenden Tag wieder falsch, ohne dass es jemand merkt.
-
-**Beim Mitrutschen gilt dieselbe Ausnahmeliste wie beim LMF-Plan:** nur offene Ausleihen, nur nach
-hinten, und nicht angefasst werden von Hand gesetzte Fristen, Lernmittel mit Termin aus dem Plan
-und die Fristen des Ferien-Leseclubs. Jede Verschiebung steht im Protokoll, und die Meldung nennt
-die Zahl der betroffenen Ausleihen.
-
-**Entschieden am 22.09.2026 — zwei Dateien, und die Datei gewinnt.** Für Ferien und für
-Feiertage je eine iCal-Datei. Die gerechneten Feiertage Hessens (`pkg/lmfplan/feiertage.go`)
-bleiben die Vorbelegung für jedes Jahr, zu dem nichts hochgeladen ist; für ein Jahr aus der Datei
-gilt die Datei. Damit hat jedes Jahr genau eine Quelle statt zweier nebeneinander — dasselbe
-Muster wie bei den Sommerferien heute (eigener Eintrag schlägt Programmtabelle). Die Gefahr
-bleibt, dass jemand die Datei eines anderen Bundeslandes erwischt und Fristen auf einen Tag
-schiebt, an dem die Schule offen hat; dagegen steht die Vorschau (Falle 2) und die Gegenprobe des
-Programms: Weichen die Feiertage der Datei von der Rechnung ab, nennt die Vorschau jeden
-abweichenden Tag, bevor übernommen wird.
-
-**Entschieden am 22.09.2026 — wo der auslaufende Kalender gemeldet wird:** als **Band an der
-Theke**, für die, die den Kalender ändern dürfen, sobald er in weniger als der längsten Leihfrist
-endet — dort entsteht die falsche Frist; und als **Mail an die Leitung**, weil der, der das
-Hochladen vergisst, die Einstellungen nicht von selbst aufsucht. Die Betriebsbereitschaft nennt
-den Kalender wie heute schon die Ferientabelle, ist aber nicht der meldende Weg.
-
-**Was beim Bauen die Fallen sind** (vorab notiert, weil sie still danebengehen):
-
-1. **`DTEND` ist bei ganztägigen Terminen exklusiv.** Ein Ferienzeitraum „bis 31.10." steht in der
-   Datei als `DTEND:20261101`. Wer das direkt übernimmt, hängt einen Tag an oder verliert einen —
-   und der erste Schultag wird zum Ferientag. Gate genau darauf.
-2. **Eine Vorschau vor dem Übernehmen**, wie beim LUSD-Import: „Diese 6 Zeiträume werden
-   eingetragen." Die Quelle ist austauschbar (`schulferien.org` ist eine von mehreren und nicht
-   amtlich), und auch der Dateiname ist keine Prüfung — er heißt zwar „Ferien Hessen", ist aber
-   in zwei Sekunden umbenannt. Geprüft wird der Inhalt, von einem Menschen an der Vorschau.
-   **Die Maschine kann dabei eine harte Probe beisteuern:** Jede Ferien-Datei enthält die
-   Sommerferien, und die kennen wir für Hessen bis 2030 aus der Programmtabelle. Weichen sie ab,
-   stimmt das Bundesland oder das Jahr nicht — dann warnt der Upload, statt die Fristen der
-   ganzen Schule auf fremde Termine zu schieben.
-3. **Die Sommerferien gibt es schon** — als JSON-Liste unter dem Schlüssel `sommerferien`
-   (`pkg/lmfplan/ferien_einstellung.go`), gelesen von Planer und Selbstprüfung. Der neue Kalender
-   muss sie aufnehmen, nicht neben ihnen stehen, sonst gibt es zwei Listen von Sommerferien. Der
-   Upload ist dann ein Weg in EINE Tabelle, das Tippen von Hand der andere.
-4. **Nur Datei, kein Adressfeld.** Eine URL, die der Server selbst abruft, wäre ein Abruf nach
-   außen aus dem Schulnetz heraus — der Grund, aus dem schon die Ferientabelle im Programm steht.
-
-**Freigegeben am 23.09.2026, in dieser Reihenfolge:** (1) Kalender-Tabelle samt Übernahme der Sommerferien,
-(2) iCal-Upload mit Vorschau (Ferien und Feiertage, Gegenprobe gegen die Rechnung), (3) Frist
-rechnet gegen den Kalender, (4) Mitrutschen bei Nachtrag, (5) Band an der Theke und Mail an die
-Leitung, wenn der Kalender ausläuft.
-
-**Entschieden am 24.09.2026 — wie die Frist den Kalender liest:** Nur Fristen in Tagen (Bücher und
-Medien, Fall 2 und 3 in `calculateDueDate`) gehen gegen den Kalender: Fällt die Frist auf Ferien,
-Feiertag oder Wochenende, gilt der nächste Schultag. Lernmittel behalten Stichtag bzw. Plan, beim
-Berechnen wie beim Mitrutschen — der LMF-Stichtag 31.07. liegt in jedem Jahr der Tabelle in den
-hessischen Sommerferien (`pkg/lmfplan/ferien.go`); eine Regel über alle Fristen schöbe jedes
-Lernmittel auf den ersten Schultag danach, den Tag der Ausgabe.
-
-**Nicht gebaut.** Ändert einen Schreibpfad und braucht eine Migration; Gate am Rückweg, vorher rot
-gesehen.
 
 ### 4.20 Schlagworte am Titel — frei eintragbar wie in Littera
 

@@ -62,7 +62,7 @@ func TestGeraeteAusleiheRespektiertManuelleSperre(t *testing.T) {
 	// Nur manuell gesperrt → blockiert VOR jeder Pool-Nutzung (Flag-Check zuerst).
 	svc := &defaultDeviceService{studentRepo: stubStudentRepoSperre{
 		student: &repository.Student{ID: sid, IstGesperrt: false, IsManuallyBlocked: true}}}
-	if _, err := svc.ladeAkteur(context.Background(), &sid); !errors.Is(err, ErrBlocked) {
+	if _, _, err := svc.ladeAkteur(context.Background(), &sid); !errors.Is(err, ErrBlocked) {
 		t.Fatalf("manuell gesperrter Schüler muss auch fürs Gerät blockiert sein, err=%v", err)
 	}
 }
@@ -84,7 +84,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 
 		svc := &defaultDeviceService{pool: mock, studentRepo: stubStudentRepoSperre{
 			student: &repository.Student{ID: sid}}}
-		if _, err := svc.ladeAkteur(context.Background(), &sid); !errors.Is(err, ErrBlocked) {
+		if _, _, err := svc.ladeAkteur(context.Background(), &sid); !errors.Is(err, ErrBlocked) {
 			t.Fatalf("Schüler mit unbezahltem Schaden muss auch fürs Gerät blockiert sein, err=%v", err)
 		}
 	})
@@ -104,7 +104,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 
 		svc := &defaultDeviceService{pool: mock, studentRepo: stubStudentRepoSperre{
 			student: &repository.Student{ID: sid}}}
-		if _, err := svc.ladeAkteur(context.Background(), &sid); err != nil {
+		if _, _, err := svc.ladeAkteur(context.Background(), &sid); err != nil {
 			t.Fatalf("ungesperrter Schüler ohne offene Vorgänge darf nicht blockiert werden: %v", err)
 		}
 	})

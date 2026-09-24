@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"bibliothek/internal/service"
+	"bibliothek/pkg/lmfplan"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -74,8 +75,12 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	// Retrieve standard extension interval
 	settings, err := settingsRepo.GetSettings(ctx)
 	extensionDays := 28 // Default if not configured
-	if err == nil && settings.FristBuchTage > 0 {
-		extensionDays = settings.FristBuchTage
+	sommerferien := ""  // leer: nur die Programmtabelle
+	if err == nil {
+		if settings.FristBuchTage > 0 {
+			extensionDays = settings.FristBuchTage
+		}
+		sommerferien = settings.Sommerferien
 	}
 
 	// Gerechnet wird ab dem SPÄTEREN von altem Fristende und heute.
@@ -95,9 +100,43 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	// zurückgesetzt. Das ist beabsichtigt: Wer verlängert, gewährt ausdrücklich neue Zeit —
 	// ohne den Reset übersprünge dasselbe Buch beim nächsten Überziehen die 1. Mahnstufe
 	// und eskalierte sofort in Stufe 2 (Rechnung).
+	//
+	// Seit dem 24.09.2026 rechnet Go statt SQL: Die neue Frist ist eine Tagesfrist wie die
+	// der Ausleihe (service.Tagesfrist) — Tagesende in der Schulzeitzone, und fällt sie auf
+	// ein Wochenende, einen Feiertag oder in die Ferien, der nächste Schultag. Vorher stand
+	// hier GREATEST(rueckgabe_frist, CURRENT_TIMESTAMP) + Intervall: ohne Kalender, und bei
+	// einer überfälligen Ausleihe mit der Uhrzeit der Verlängerung statt des Tagesendes.
+	// Die Zeile ist gesperrt, bis die neue Frist steht (zwei Verlängerungen zugleich
+	// rechnen nacheinander, nicht beide von derselben alten Frist aus).
+	tx, err := s.DB.Pool.Begin(ctx)
+	if err != nil {
+		log.Printf("Fehler beim Starten der Transaktion (Einzel-Verlaengerung): %v", err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		return
+	}
+	defer db.SafeRollback(ctx, tx)
+
+	var alteFrist time.Time
+	err = tx.QueryRow(ctx, `SELECT rueckgabe_frist FROM ausleihen WHERE id = $1 AND rueckgabe_am IS NULL FOR UPDATE`,
+		ausleiheID).Scan(&alteFrist)
+	if errors.Is(err, pgx.ErrNoRows) {
+		apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
+		return
+	}
+	if err != nil {
+		log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		return
+	}
+	basis := s.jetzt()
+	if alteFrist.After(basis) {
+		basis = alteFrist
+	}
+	neueFrist := service.Tagesfrist(basis, extensionDays, lmfplan.FerientabelleAus(sommerferien))
+
 	q := `
 			UPDATE ausleihen
-			SET rueckgabe_frist = GREATEST(rueckgabe_frist, CURRENT_TIMESTAMP) + ($2 * INTERVAL '1 day'),
+			SET rueckgabe_frist = $2,
 			    mahnstufe = 0,
 			    letztes_mahndatum = NULL
 			WHERE id = $1 AND rueckgabe_am IS NULL
@@ -106,13 +145,13 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 
 	var id string
 	var newFrist time.Time
-	err = s.DB.Pool.QueryRow(ctx, q, ausleiheID, extensionDays).Scan(&id, &newFrist)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			apierrors.SendHTTPError(w, http.StatusNotFound, errors.New("ausleihe nicht gefunden oder bereits zurückgegeben"))
-			return
-		}
+	if err := tx.QueryRow(ctx, q, ausleiheID, neueFrist).Scan(&id, &newFrist); err != nil {
 		log.Printf("Fehler bei Einzel-Verlaengerung: %v", err)
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
+		return
+	}
+	if err := tx.Commit(ctx); err != nil {
+		log.Printf("Fehler beim Abschluss der Einzel-Verlaengerung: %v", err)
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("interner Serverfehler"))
 		return
 	}
