@@ -19,19 +19,21 @@ die Entscheidungen unten).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Eine Frage zum Pflegekonzept** (9.9): ob das Programm über die eigene Schule hinaus
+1. **Die Zählung zum Sperrgrund im Protokoll** (7.8): ein Einzeiler am Testserver, lesend. Ist
+   die vierte Zahl größer als 0, folgt eine einmalige Bereinigung.
+2. **Eine Frage zum Pflegekonzept** (9.9): ob das Programm über die eigene Schule hinaus
    eingesetzt werden soll — am 24.09.2026 offen gelassen; der Entwurf nennt sie als offene
    Stelle. Die drei anderen Fragen sind beantwortet.
-2. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
+3. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
    zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen
-   beim Schulbuch (8.7), dazu der Wortlaut des
+   beim Schulbuch (8.7), die Abholfrist bei Vormerkungen (8.8), dazu der Wortlaut des
    Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher
    tragen keinen Vermerk). Den Echtstart halten diese Antworten auf, nicht der Code.
-3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
+4. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
-4. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
+5. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
    den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
@@ -48,6 +50,8 @@ Vorschlag vom 24.09.2026):
 5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **In der Doku:** das Pflegekonzept als Wartungshandbuch (9.9), entschieden am 24.09.2026.
+**Gleich danach im Code:** das Gate gegen Leser-Werte im Protokoll (5.10), entschieden am
+24.09.2026.
 
 Mit dem Littera-Backup (7.2) kommen die Littera-Schlagworte aus 4.20. Vor einem zweiten
 Personenlauf auf derselben Datenbank muss das Aufräumen stimmen (**5.24**).
@@ -338,6 +342,17 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.10 Gates und Werkzeuge
 
+- **Kein Gate gegen Leser-Werte im Protokoll, die die Tilgung nicht kennt** (entschieden am
+  24.09.2026: bauen, nach dem Pflegekonzept). Dreimal derselbe Fehler: LUSD-ID (6d01f27a,
+  August), Ausweisnummer (131a534a, 02.09.2026), Sperrgrund (5b50202d, 24.09.2026). Jedes Mal
+  kam ein Wert der Leserzeile oder ein Freitext neben `schueler_id` in `audit_logs`, und die
+  Anweisung „audit_logs" in `repository.spurTilgungen` entfernte ihn nicht. Die Rundreise
+  (`api/dsgvo_paar_rundreise_pg_test.go`) sieht nur Werte, die sie selbst anlegt. Vorschlag:
+  eine Ratsche über jeden Audit-Eintrag mit `schueler_id`, die jeden weiteren Schlüssel als
+  „getilgt" oder „bleibt" eingeordnet verlangt; die Liste „getilgt" muss mit der Anweisung
+  übereinstimmen. Ausgangspunkt: Die Suche nach `"schueler_id":` findet am 24.09.2026 zehn
+  Stellen in `api/` und `internal/`, als Map-Literal und als JSON-Text. Ob das alle Schreiber
+  sind, ist nicht geprüft; das klärt der Bau.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - **Wiedervorlage 17. November 2026: `GO-2026-6452` (excelize).** Am 16.09.2026 erschien eine
@@ -734,6 +749,16 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
+- **Der Sperrgrund im Protokoll** (seit 5b50202d tilgt die Anonymisierung `grund` und `reason`
+  in `audit_logs`). Die Abfrage zählt die Einträge mit einem dieser Schlüssel neben
+  `schueler_id` — insgesamt, dann nach dem Leser: vorhanden, anonymisiert, gelöscht. Die
+  anonymisierten räumt der Nachtlauf nach dem Update selbst (er geht über `anonymized_at`
+  vorhandener Zeilen). Die gelöschten erreicht er nicht: Ist die vierte Zahl größer als 0,
+  folgt eine einmalige Bereinigung nur für diese Einträge.
+
+  ```
+  docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS mit_grund, count(*) FILTER (WHERE l.id IS NOT NULL AND l.anonymized_at IS NULL) AS vorhanden, count(*) FILTER (WHERE l.anonymized_at IS NOT NULL) AS anonymisiert, count(*) FILTER (WHERE l.id IS NULL) AS geloescht FROM audit_logs a LEFT JOIN leser l ON l.id::text = a.details->>'schueler_id' WHERE (a.details ? 'grund' OR a.details ? 'reason') AND a.details ? 'schueler_id';"
+  ```
 
 ## 8. Schule, Schulamt, Schulträger
 
@@ -820,6 +845,25 @@ Frist von Hand), die Klassenverlängerung der Schulbücher (`GlobalExtendLMFHand
 LMF-Plan (`SetzeLernmittelFristFuerKlassenIn`) lassen es aus. Die Sperre soll zur Rückgabe
 zwingen; beim Schulbuch ist das eine Folge der Sperre, die die Schule vielleicht ebenfalls
 ausschließen will. Gebaut wird erst mit der Antwort.
+
+### 8.8 Die Abholfrist bei Vormerkungen
+
+Ein vorgemerktes Buch liegt nach der Rückgabe drei Tage bereit, gerechnet ab der Uhrzeit der
+Rückgabe (`INTERVAL '3 days'` in `internal/service/loan_return.go` und
+`repository/vormerkung_nachruecken.go`). Danach verfällt die Vormerkung beim nächsten
+stündlichen Lauf, und das Buch geht an den Nächsten in der Warteschlange. Wochenende und Ferien
+zählen mit: Ein Buch, das freitags um 10 Uhr zurückkommt, liegt bis Montag 10 Uhr bereit; kommt
+es in den letzten drei Tagen vor den Herbstferien zurück, verfällt die Vormerkung in den Ferien.
+
+Die Leihfrist verschiebt seit dem 24.09.2026 ein Ende an einem Wochenende, Feiertag oder in den
+Ferien auf den nächsten Schultag (`Tagesfrist` in `internal/service/loan_rules.go`); die
+Abholfrist nicht. Littera führt eine „Maximale Reservierungsdauer" in Tagen, die die Schule
+einstellt (Stammdaten → Einstellungen → Verleih); Öffnungs- und Schließtage nennt das Handbuch
+nur für die Leihfrist.
+
+**Frage an die Schule:** Reichen drei Tage? Soll die Abholfrist wie die Leihfrist auf den
+nächsten Schultag fallen, und soll die Zahl einstellbar sein wie in Littera? Bis zur Antwort
+bleibt es bei drei Tagen ab der Rückgabe.
 
 ---
 
