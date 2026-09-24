@@ -23,13 +23,13 @@ const (
 
 // DsgvoAuskunftPDFHandler liefert die Betroffenenauskunft nach Art. 15 DSGVO als
 // lesbares PDF. Inhaltlich identisch zur JSON-Variante (dieselbe sammleDsgvoDaten-
-// Quelle), nur menschenlesbar aufbereitet — gedacht zur Aushändigung an Schüler bzw.
-// Erziehungsberechtigte (JSON ist für diesen Zweck ungeeignet). Die Erteilung wird
+// Quelle), nur menschenlesbar aufbereitet — gedacht zur Aushändigung an die Person bzw.
+// die Erziehungsberechtigten (JSON ist für diesen Zweck ungeeignet). Die Erteilung wird
 // wie bei der JSON-Auskunft im Audit-Log protokolliert (Rechenschaftspflicht).
 // @Summary      DSGVO-Betroffenenauskunft (Art. 15) als PDF
 // @Tags         students
 // @Produce      application/pdf
-// @Param        id   path      string  true  "Student ID (UUID)"
+// @Param        id   path      string  true  "Reader ID (UUID)"
 // @Success      200  {file}    binary
 // @Router       /schueler/{id}/dsgvo-auskunft/pdf [get]
 func (s *Server) DsgvoAuskunftPDFHandler() http.HandlerFunc {
@@ -89,6 +89,7 @@ func generateDsgvoAuskunftPDF(a DsgvoAuskunftResponse, schule pdf.SchuleInfo) ([
 	dsgvoNachbuchAbschnitt(p, tr, a.NachbuchMeldungen)
 	dsgvoAuditAbschnitt(p, tr, a.AuditEintraege)
 	dsgvoVerwaltungAbschnitt(p, tr, a.Verwaltung)
+	dsgvoKontoAbschnitt(p, tr, a.Zugangskonto)
 	dsgvoVerarbeitungAbschnitt(p, tr, a.Verarbeitungsangaben)
 
 	var buf bytes.Buffer
@@ -113,8 +114,14 @@ func dsgvoKopf(p *gofpdf.Fpdf, tr func(string) string, schule pdf.SchuleInfo, a 
 	p.Ln(9)
 	p.SetFont("Arial", "", 10)
 	p.SetTextColor(90, 90, 90)
+	// Ein Kollege hat keine Klasse; bis zum 24.09.2026 gab es seine Auskunft nicht, und die
+	// Zeile hätte „(Klasse )" gelautet.
 	st := a.Stammdaten
-	p.Cell(0, 6, tr(fmt.Sprintf("Betroffene Person: %s %s (Klasse %s)", st.Vorname, st.Nachname, st.Klasse)))
+	zuordnung := "Klasse " + st.Klasse
+	if st.Klasse == "" {
+		zuordnung = dsgvoLeserart(st.Art)
+	}
+	p.Cell(0, 6, tr(fmt.Sprintf("Betroffene Person: %s %s (%s)", st.Vorname, st.Nachname, zuordnung)))
 	p.Ln(5)
 	p.Cell(0, 6, tr("Erstellt am: "+dsgvoZeit(a.ErstelltAm)))
 	p.SetTextColor(0, 0, 0)
@@ -155,8 +162,8 @@ func dsgvoStammdatenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, st *DsgvoS
 	if st.GeloeschtAm != nil {
 		dsgvoZeile(p, tr, "Gelöscht am (Papierkorb)", dsgvoZeit(*st.GeloeschtAm))
 	}
-	// Die Anmeldedaten selbst stehen nicht hier (sie gehören zum Konto, nicht zum Leser);
-	// dass es eines gibt, ist aber eine Angabe über diese Person.
+	// Die Anmeldedaten selbst stehen nicht hier, sondern in Abschnitt 10 (sie gehören zum
+	// Konto, nicht zum Leser); dass es eines gibt, ist aber eine Angabe über diese Person.
 	dsgvoZeile(p, tr, "Zugangskonto vorhanden", dsgvoJaNein(st.HatZugangskonto))
 }
 
@@ -353,7 +360,7 @@ func dsgvoVerwaltungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, eintraege 
 }
 
 func dsgvoVerarbeitungAbschnitt(p *gofpdf.Fpdf, tr func(string) string, va DsgvoVerarbeitungsangaben) {
-	dsgvoAbschnitt(p, tr, "10. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
+	dsgvoAbschnitt(p, tr, "11. Angaben zur Verarbeitung (Art. 15 Abs. 1 DSGVO)")
 	dsgvoAbsatz(p, tr, "Verarbeitungszwecke", strings.Join(va.Zwecke, "; "))
 	dsgvoAbsatz(p, tr, "Rechtsgrundlage", va.Rechtsgrundlage)
 	dsgvoAbsatz(p, tr, "Empfänger", va.Empfaenger)

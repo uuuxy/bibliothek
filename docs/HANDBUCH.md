@@ -288,7 +288,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   Die Art lässt sich zwischen Lehrkraft und LiV umstellen; über die Schüler-Grenze geht
   sie nicht — ein Schüler kommt aus der LUSD und bleibt Schüler.
 - **Dokumente** in der Akte: Ausweis drucken, Kontoauszug, Ersatzforderung (nur bei offenem
-  Schaden), DSGVO-Auskunft. Die drei letzten gibt es nur beim Schüler. Gibt es für das
+  Schaden), DSGVO-Auskunft. Kontoauszug und Ersatzforderung gibt es nur beim Schüler, die
+  DSGVO-Auskunft für jeden Leser; beim Kollegen nennt sie auch sein Zugangskonto, seine
+  Wünsche und Reservierungen im Portal und seine Klassenleitungen. Gibt es für das
   Kind einen Schadensersatz-Bescheid, steht unter _Ausleihen & Historie_ die Karte
   **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
   und _Nachdruck_ (derselbe Brief mit derselben Nummer).

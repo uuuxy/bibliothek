@@ -37,11 +37,11 @@
 	// Toolbar mit einem Dauer-Umschalter zuzustellen.
 	const hasBack = $derived(idStore.back.elements.some((/** @type {any} */ e) => e.show));
 
-	// Drei der Dokumente gibt es für einen Kollegen NICHT: Kontoauszug,
-	// Ersatzforderung und DSGVO-Auskunft lesen alle die Sicht `schueler` (api/print.go,
-	// api/dsgvo_auskunft.go) und beantworten seine ID mit „nicht gefunden". Ein Knopf,
-	// der nur scheitern kann, ist schlechter als keiner — und die Ersatzforderung ist
-	// ohnehin ein Schreiben an die Eltern eines Schülers.
+	// Zwei der Dokumente gibt es für einen Kollegen NICHT: Kontoauszug und
+	// Ersatzforderung lesen die Sicht `schueler` (api/print.go) und beantworten seine ID
+	// mit „nicht gefunden". Ein Knopf, der nur scheitern kann, ist schlechter als keiner —
+	// und die Ersatzforderung ist ohnehin ein Schreiben an die Eltern eines Schülers. Die
+	// DSGVO-Auskunft gibt es seit dem 24.09.2026 für jeden Leser (SchuelerDokumente).
 	const kollege = $derived(istKollegium(profile));
 
 	// Ohne Ausweisnummer gibt es keinen Ausweis zu drucken: Die Karte trüge ein leeres
@@ -133,15 +133,16 @@
 				klasse={profile.klasse ?? ''}
 				onWert={onGueltigBis}
 			/>
-
-			<SchuelerDokumente
-				{profile}
-				{darfAuskunft}
-				{kontoauszugPdfLoading}
-				{rechnungPdfLoading}
-				{downloadKontoauszugPDF}
-				{downloadRechnungPDF}
-			/>
 		{/if}
+
+		<SchuelerDokumente
+			{profile}
+			{kollege}
+			{darfAuskunft}
+			{kontoauszugPdfLoading}
+			{rechnungPdfLoading}
+			{downloadKontoauszugPDF}
+			{downloadRechnungPDF}
+		/>
 	</div>
 </div>

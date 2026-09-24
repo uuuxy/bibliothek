@@ -10,9 +10,9 @@ import (
 
 // Das dritte Glied der Auskunfts-Kette (23.09.2026).
 //
-// Die Kette ist: Spalte in `schueler` → Feld in DsgvoStammdaten → Zeile auf dem Blatt,
+// Die Kette ist: Spalte in `leser` → Feld in DsgvoStammdaten → Zeile auf dem Blatt,
 // das die betroffene Person bekommt. Das erste Glied hält
-// TestDsgvoAuskunft_KenntJedeSchuelerSpalte, das zweite der Compiler (die Abfrage wird in
+// TestDsgvoAuskunft_KenntJedeLeserSpalte, das zweite der Compiler (die Abfrage wird in
 // den Struct gescannt). Das dritte hielt bis heute niemand: Der PDF-Abschnitt zählt seine
 // Zeilen von Hand auf, und wer ein Feld ergänzt, ergänzt die Zeile leicht nicht.
 //

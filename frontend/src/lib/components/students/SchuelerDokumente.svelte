@@ -2,10 +2,11 @@
   @component
   SchuelerDokumente — Kontoauszug, Ersatzforderung und DSGVO-Auskunft.
 
-  Eigene Datei, weil diese drei einem KOLLEGEN nicht gehören: Sie lesen alle die Sicht
-  `schueler` (api/print.go, api/dsgvo_auskunft.go) und beantworten seine ID mit „nicht
-  gefunden". Beieinander statt dreimal dieselbe Bedingung — und StudentProfileActions
-  bleibt unter der 200-Zeilen-Grenze.
+  Die ersten beiden gehören einem KOLLEGEN nicht: Sie lesen die Sicht `schueler`
+  (api/print.go) und beantworten seine ID mit „nicht gefunden"; die Ersatzforderung ist
+  ohnehin ein Schreiben an die Eltern. Die DSGVO-Auskunft gibt es seit dem 24.09.2026 für
+  jeden Leser (docs/OFFEN.md 5.19). Beieinander statt dreimal dieselbe Bedingung — und
+  StudentProfileActions bleibt unter der 200-Zeilen-Grenze.
 -->
 <script>
 	import Button from '../ui/Button.svelte';
@@ -17,6 +18,7 @@
 	/**
 	 * @type {{
 	 *   profile: any,
+	 *   kollege?: boolean,
 	 *   darfAuskunft?: boolean,
 	 *   kontoauszugPdfLoading: boolean,
 	 *   rechnungPdfLoading: boolean,
@@ -26,6 +28,7 @@
 	 */
 	let {
 		profile,
+		kollege = false,
 		darfAuskunft = false,
 		kontoauszugPdfLoading,
 		rechnungPdfLoading,
@@ -62,19 +65,20 @@
 	<Ladekreis size="sm" />
 {/snippet}
 
-<!-- Kontoauszug: das (einzige) Ausleih-Dokument als archivierbares Server-PDF. -->
-<Button
-	variant="secondary"
-	onclick={downloadKontoauszugPDF}
-	disabled={kontoauszugPdfLoading || !(profile.entliehene_buecher?.length > 0)}
->
-	{#if kontoauszugPdfLoading}{@render spinner()}{:else}<Printer
-			class="w-4 h-4 text-blue-600"
-		/>{/if}
-	Kontoauszug
-</Button>
+{#if !kollege}
+	<!-- Kontoauszug: das (einzige) Ausleih-Dokument als archivierbares Server-PDF. -->
+	<Button
+		variant="secondary"
+		onclick={downloadKontoauszugPDF}
+		disabled={kontoauszugPdfLoading || !(profile.entliehene_buecher?.length > 0)}
+	>
+		{#if kontoauszugPdfLoading}{@render spinner()}{:else}<Printer
+				class="w-4 h-4 text-blue-600"
+			/>{/if}
+		Kontoauszug
+	</Button>
 
-<!-- Ersatzforderung: Rechnung an die Eltern über offene Schadensfälle.
+	<!-- Ersatzforderung: Rechnung an die Eltern über offene Schadensfälle.
 
      data-tip am UMSCHLAG, nicht am Knopf: Ein disabled-Element bekommt keine
      Zeigerereignisse — weder für den nativen title noch für die Blase dieses
@@ -82,23 +86,24 @@
      also im Code und erreichte genau in dem Zustand niemanden, in dem man sie
      braucht: wenn der Knopf grau ist und man wissen will, warum. Der Umschlag
      fängt das Ereignis ab, das der graue Knopf durchlässt. -->
-<span
-	class="inline-flex"
-	data-tip={!profile.has_open_damages
-		? 'Kein offener Schadensfall — eine Ersatzforderung gibt es erst, wenn ein Schaden erfasst ist'
-		: 'Ersatzforderung über offene Schäden drucken'}
->
-	<Button
-		variant="secondary"
-		onclick={downloadRechnungPDF}
-		disabled={rechnungPdfLoading || !profile.has_open_damages}
+	<span
+		class="inline-flex"
+		data-tip={!profile.has_open_damages
+			? 'Kein offener Schadensfall — eine Ersatzforderung gibt es erst, wenn ein Schaden erfasst ist'
+			: 'Ersatzforderung über offene Schäden drucken'}
 	>
-		{#if rechnungPdfLoading}{@render spinner()}{:else}<AlertTriangle
-				class="w-4 h-4 text-rose-600"
-			/>{/if}
-		Ersatzforderung
-	</Button>
-</span>
+		<Button
+			variant="secondary"
+			onclick={downloadRechnungPDF}
+			disabled={rechnungPdfLoading || !profile.has_open_damages}
+		>
+			{#if rechnungPdfLoading}{@render spinner()}{:else}<AlertTriangle
+					class="w-4 h-4 text-rose-600"
+				/>{/if}
+			Ersatzforderung
+		</Button>
+	</span>
+{/if}
 
 {#if darfAuskunft}
 	<Button

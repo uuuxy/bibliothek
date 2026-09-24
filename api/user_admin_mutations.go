@@ -93,7 +93,8 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 
 		// Die Leserzeile — und damit der Platz für Ausweis und Ausleihen — entsteht dabei
 		// von selbst (Trigger trg_benutzer_hat_leserzeile, Migration 125).
-		if _, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole); err != nil {
+		kontoID, err := userRepo.CreateUser(ctx, barcode, req.Vorname, req.Nachname, req.Email, dbEnumRole)
+		if err != nil {
 			if meldeAusweisKollision(w, err) {
 				return
 			}
@@ -101,8 +102,10 @@ func (s *Server) CreateUserHandler(userRepo repository.UserRepository) http.Hand
 			return
 		}
 
+		// ziel_id wie bei USER_UPDATE: Daran findet die Auskunft nach Art. 15 den Eintrag
+		// (repository/dsgvo_konto.go). Bis zum 24.09.2026 trug die Anlage nur die Adresse.
 		s.auditiereBenutzerMutation(r, "USER_CREATE", map[string]any{
-			"email": req.Email, "rolle": dbEnumRole, "vorname": req.Vorname, "nachname": req.Nachname,
+			"ziel_id": kontoID, "email": req.Email, "rolle": dbEnumRole, "vorname": req.Vorname, "nachname": req.Nachname,
 		})
 
 		w.Header().Set(headerContentType, contentTypeJSON)

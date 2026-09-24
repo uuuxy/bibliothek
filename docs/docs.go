@@ -2793,11 +2793,11 @@ const docTemplate = `{
                 "tags": [
                     "students"
                 ],
-                "summary": "DSGVO-Betroffenenauskunft (Art. 15) für einen Schüler",
+                "summary": "DSGVO-Betroffenenauskunft (Art. 15) für einen Leser",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Student ID (UUID)",
+                        "description": "Reader ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -2834,7 +2834,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Student ID (UUID)",
+                        "description": "Reader ID (UUID)",
                         "name": "id",
                         "in": "path",
                         "required": true
@@ -3683,6 +3683,14 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/api.DsgvoVormerkung"
                     }
+                },
+                "zugangskonto": {
+                    "description": "Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;\nnull, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.DsgvoZugangskonto"
+                        }
+                    ]
                 }
             }
         },
@@ -3822,7 +3830,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "hat_zugangskonto": {
-                    "description": "Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)\nstehen NICHT hier: Sie gehören zum Konto, nicht zum Leser, und die Auskunft nach\nArt. 15 beantwortet, was über DIESE Person als Leser gespeichert ist.",
+                    "description": "Zeigt ein Zugangskonto auf diesen Leser? Die Anmeldedaten selbst (E-Mail, Rolle)\nstehen nicht hier, sondern im eigenen Teil der Auskunft (DsgvoAuskunftResponse.\nZugangskonto): Sie gehören zum Konto, nicht zum Leser.",
                     "type": "boolean"
                 },
                 "hausnummer": {
@@ -3863,7 +3871,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "schul_eintritt_am": {
-                    "description": "Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten\nunvollständig; Gate: TestDsgvoAuskunft_KenntJedeSchuelerSpalte).",
+                    "description": "Seit Migration 084/094 (nachgetragen 02.09.2026 — die Auskunft war um vier Spalten\nunvollständig; Gate: TestDsgvoAuskunft_KenntJedeLeserSpalte).",
                     "type": "string"
                 },
                 "sperrgrund": {
@@ -5173,6 +5181,109 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.DsgvoAnfrage": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "description": "nur beim Klassensatz, sonst 0",
+                    "type": "integer"
+                },
+                "art": {
+                    "description": "wunsch | meldung | klassensatz",
+                    "type": "string"
+                },
+                "erledigt": {
+                    "type": "boolean"
+                },
+                "erledigt_am": {
+                    "description": "beim Klassensatz vor Migration 089 leer",
+                    "type": "string"
+                },
+                "erledigt_notiz": {
+                    "type": "string"
+                },
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "klasse": {
+                    "type": "string"
+                },
+                "kommentar": {
+                    "type": "string"
+                },
+                "titel": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.DsgvoKontoEreignis": {
+            "type": "object",
+            "properties": {
+                "aktion": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "object"
+                },
+                "zeitpunkt": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.DsgvoZugangskonto": {
+            "type": "object",
+            "properties": {
+                "aktiv": {
+                    "type": "boolean"
+                },
+                "aktualisiert_am": {
+                    "type": "string"
+                },
+                "anfragen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DsgvoAnfrage"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "ereignisse_im_verwaltungsprotokoll": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DsgvoKontoEreignis"
+                    }
+                },
+                "erstellt_am": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "klassenleitungen": {
+                    "description": "Die Klassen, deren Klassenleitung diese Adresse ist (klassen_lehrer_mapping): Dorthin\ngeht die Liste der überfälligen Medien einer Klasse.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "nachname": {
+                    "type": "string"
+                },
+                "rolle": {
+                    "type": "string"
+                },
+                "vorname": {
+                    "type": "string"
+                },
+                "zugang_beantragt_am": {
                     "type": "string"
                 }
             }

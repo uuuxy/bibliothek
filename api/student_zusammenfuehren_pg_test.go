@@ -180,7 +180,7 @@ func TestZusammenfuehren_JedeTabelleWandert(t *testing.T) {
 	var zaehlungen []zaehlung
 	for _, q := range dsgvoSchuelerQuellen {
 		switch q.Tabelle {
-		case "schueler":
+		case "leser":
 			// Die Zeile selbst wandert nicht — sie geht im Ziel auf.
 		case "ausleihen":
 			seedOffeneAusleihe(t, pool, quelle, "ZFT")

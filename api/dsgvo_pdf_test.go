@@ -99,6 +99,9 @@ func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktion", "zeitstempel", "details"}).
 			AddRow("RESTORE_STUDENT", time.Now(), []byte(`{"schueler_id":"`+dsgvoTestID+`"}`)))
+	mock.ExpectQuery(`FROM benutzer\s+WHERE leser_id = \$1`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}))
 
 	mock.ExpectExec(`INSERT INTO audit_log`).
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").

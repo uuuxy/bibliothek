@@ -56,7 +56,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	for _, q := range dsgvoSchuelerQuellen {
 		var err error
 		switch q.Tabelle {
-		case "schueler":
+		case "leser":
 			// oben angelegt
 		case "schueler_fotos":
 			_, err = pool.Exec(ctx, `INSERT INTO schueler_fotos (schueler_id, foto_encrypted)
@@ -140,7 +140,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 	for _, q := range dsgvoSchuelerQuellen {
 		leer := false
 		switch q.Tabelle {
-		case "schueler":
+		case "leser":
 			leer = daten.stammdaten == nil || daten.stammdaten.Vorname != vorname
 		case "schueler_fotos":
 			leer = !daten.foto.Vorhanden
@@ -165,9 +165,10 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		case "nachbuch_meldungen":
 			leer = len(daten.nachbuchMeldungen) == 0
 		case "benutzer":
-			// Die Auskunft nennt, DASS ein Zugangskonto auf diesen Leser zeigt — nicht
-			// dessen Anmeldedaten. E-Mail und Rolle gehören zum Konto, nicht zum Leser.
-			leer = daten.stammdaten == nil || !daten.stammdaten.HatZugangskonto
+			// Die Auskunft nennt, DASS ein Zugangskonto auf diesen Leser zeigt, und seit
+			// dem 24.09.2026 auch das Konto selbst (repository/dsgvo_konto.go).
+			leer = daten.stammdaten == nil || !daten.stammdaten.HatZugangskonto ||
+				daten.zugangskonto == nil || daten.zugangskonto.Email != "rundreise-"+sid+"@test.invalid"
 		default:
 			t.Fatalf("keine Auskunfts-Prüfung für Quelle %s — Test mit der Liste nachziehen", q.Tabelle)
 		}
@@ -199,7 +200,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 
 	// Und die Tabellen selbst sind leer bzw. entkoppelt.
 	for tabelle, zaehler := range map[string]string{
-		"schueler":        `SELECT count(*) FROM schueler WHERE id = $1`,
+		"leser":           `SELECT count(*) FROM leser WHERE id = $1`,
 		"schueler_fotos":  `SELECT count(*) FROM schueler_fotos WHERE schueler_id = $1`,
 		"schadensfaelle":  `SELECT count(*) FROM schadensfaelle WHERE schueler_id = $1`,
 		"vormerkungen":    `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`,

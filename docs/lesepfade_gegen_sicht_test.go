@@ -57,7 +57,6 @@ var lesepfadeGeprueft = map[string]struct {
 	"api/pdf.go":                            {1, "Elternbrief je Schadensfall — ein Kollege bekommt keine Forderung (Tür: schaden_melden.go)"},
 	"api/reports_pdf.go":                    {1, "Mahnbriefe an Eltern — gemahnt werden Schüler, nicht das Kollegium (wie mahnwesen_queries.go)"},
 	// Rest der Durchsicht, 22.09.2026 — die Liste der Ungeprüften ist damit leer.
-	"api/dsgvo_auskunft.go":                 {1, "Auskunft nur für Schüler — Entscheidung vom 16.09.2026 (OFFEN.md 5.16 A: ausgeblendet statt kaputt); ob Kollegen sie bekommen sollen, ist als Frage in OFFEN.md 5.19 notiert"},
 	"api/student_update.go":                 {1, "Vorprüfung der LUSD-ID: chk_leser_nur_schueler_werden_abgaenger erzwingt lusd_id IS NULL für jeden Nicht-Schüler — Sicht und Tabelle liefern hier dasselbe"},
 	"cmd/migrate-fotos/main.go":             {1, "Einmal-Werkzeug für Littera-Schülerfotos; eine Nummer ohne Schüler steht als Warnung im Lauf, nicht still"},
 	"internal/littera/schreiber.go":         {1, "Zielbestand-Probe zählt die littera:-Herkunft, die nur schreibeSchueler setzt; Kollegen aus Littera werden Konten (benutzer)"},

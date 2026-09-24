@@ -92,6 +92,10 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktion", "zeitstempel", "details"}).
 			AddRow("RESTORE_STUDENT", time.Now(), []byte(`{"schueler_id":"`+dsgvoTestID+`"}`)))
+	// Seit dem 24.09.2026: das Zugangskonto. Ein Schüler hat in der Regel keines.
+	mock.ExpectQuery(`FROM benutzer\s+WHERE leser_id = \$1`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}))
 	mock.ExpectExec(`INSERT INTO audit_log`).
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -104,6 +108,9 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 	var resp DsgvoAuskunftResponse
 	if err := json.Unmarshal(rec.Body.Bytes(), &resp); err != nil {
 		t.Fatalf("Antwort kein valides JSON: %v", err)
+	}
+	if resp.Zugangskonto != nil {
+		t.Errorf("ohne Konto muss zugangskonto null sein: %+v", resp.Zugangskonto)
 	}
 	if resp.Stammdaten.Nachname != "Muster" || !resp.Foto.Vorhanden ||
 		len(resp.Ausleihen) != 1 || len(resp.Schadensfaelle) != 1 ||
@@ -147,7 +154,7 @@ func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 	mock.ExpectQuery(`SELECT aktualisiert_am FROM schueler_fotos`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktualisiert_am"})) // kein Foto
-	for _, frag := range []string{`FROM ausleihen a`, `FROM schadensfaelle`, `FROM vormerkungen v`, `FROM schadensersatz_bescheide`, `FROM nachbuch_meldungen`, `FROM audit_log`, `FROM audit_logs`} {
+	for _, frag := range []string{`FROM ausleihen a`, `FROM schadensfaelle`, `FROM vormerkungen v`, `FROM schadensersatz_bescheide`, `FROM nachbuch_meldungen`, `FROM audit_log`, `FROM audit_logs`, `FROM benutzer\s+WHERE leser_id`} {
 		mock.ExpectQuery(frag).WithArgs(dsgvoTestID).
 			WillReturnRows(pgxmock.NewRows([]string{"x"}))
 	}
