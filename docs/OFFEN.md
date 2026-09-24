@@ -19,14 +19,9 @@ die Entscheidungen unten).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Vier Entscheidungen vom 24.09.2026, je mit Empfehlung:**
-   - 4.4 (E6): Ist der Fall mit der Übergabe an die Schulaufsicht für die Schule erledigt?
-     Empfehlung ja — Arbeitshilfe und Anforderungsliste der Schule sagen es so.
-   - 4.4: Sperrt eine offene Lernmittel-Forderung die Schülerbücherei? Empfehlung nein — eine
-     Forderung sperrt nur Bücher ihres eigenen Topfs.
-   - 5.19: Stehen in der Auskunft eines Kollegen die Protokolleinträge, in denen er selbst
-     handelt? Empfehlung ja, ohne die Daten der betroffenen Schüler.
-   - 9.9: Das Pflegekonzept jetzt statt zurückgestellt? Empfehlung ja, als Wartungshandbuch.
+1. **Die vier Fragen zum Pflegekonzept** (9.9): Wer betreibt das Programm, wer pflegt es, was
+   gilt, wenn die Pflege endet, und soll es über die eigene Schule hinaus eingesetzt werden?
+   Der Entwurf entsteht ohne die Antworten; sie füllen die offenen Stellen darin.
 2. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
    zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, dazu der Wortlaut des
@@ -43,16 +38,17 @@ Vorschlag vom 24.09.2026):
 
 1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.19 (Auskunft für jeden Leser), 5.21
    (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18
-   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche). Nach deinem Nein zur Sperre über
-   die Töpfe hinweg (4.4) deren kleiner Umbau an der Theke.
-2. **5.3** nach deinem Ja zu E6 — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben
-   wird (echte Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute
-   schon besteht.
+   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), die Sperre nur im eigenen Topf
+   (4.4, kleiner Umbau an der Theke).
+2. **5.3** — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben wird (echte
+   Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
    Nachbestell-Liste, also zuletzt.
 4. Nach der Antwort zu 8.3: **5.4**.
 5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+
+**In der Doku:** das Pflegekonzept als Wartungshandbuch (9.9), entschieden am 24.09.2026.
 
 Mit dem Littera-Backup (7.2) kommen die Littera-Schlagworte aus 4.20. Vor einem zweiten
 Personenlauf auf derselben Datenbank muss das Aufräumen stimmen (**5.24**).
@@ -141,15 +137,15 @@ Abschnitt 2: „Das weitere Verfahren wird im Staatlichen Schulamt geführt … 
 durch die Schule nicht zu veranlassen." Anforderungsliste (`Ablauf Mahnverfahren.pdf`), Punkt 7,
 zum Ausdruck für das Schulamt: „Der Saldo der betroffenen Leser wird entsprechend bereinigt."
 Littera kennt keine Übergabe; dort bucht man einen offenen Betrag von Hand aus, um den Leser
-löschen zu können. **Empfehlung: Mit der Übergabe ist der Fall für die Schule erledigt**; zu
-melden bleibt eine spätere Rückgabe, das kann die Theke schon. Umbau: 5.3.
+löschen zu können. **Entschieden am 24.09.2026: Mit der Übergabe ist der Fall für die Schule
+erledigt**; zu melden bleibt eine spätere Rückgabe, das kann die Theke schon. Umbau: 5.3.
 
 **Zweite Frage: Sperrt eine offene Lernmittel-Forderung die Schülerbücherei?** Heute ja,
 übergehbar (`zaehleOffeneSchaeden` zählt jeden Topf); nur das Lernmittel selbst sperrt seit dem
 22.09.2026 nichts mehr. Die Sichtung beanstandete aber die Forderung: „Bei offener Bearbeitung
 von Mängeln/Verlusten für LMF erfolgt z.Zt. die Sperrung der Schülerinnen und Schüler. LMF
-untersagt dies." **Empfehlung: Eine Forderung sperrt nur Bücher ihres eigenen Topfs** (Topf wie
-beim Bescheid, 5.4). Das erfüllt beide Lesarten der Antwort vom 22.09.2026 („gilt nur für
+untersagt dies." **Entschieden am 24.09.2026: Eine Forderung sperrt nur Bücher ihres eigenen
+Topfs** (Topf wie beim Bescheid, 5.4). Das erfüllt beide Lesarten der Antwort vom 22.09.2026 („gilt nur für
 Lernmittel": das Buch oder die Forderung) und trennt Land und Schulträger wie beim Geld. Die
 Überfällig-Automatik bleibt, wie am 24.09.2026 entschieden (`MaxOverdueItems`): Überfällig ist
 kein Mangel und kein Verlust. Littera zeigt ab einem einstellbaren Gebührenlimit einen Hinweis,
@@ -234,8 +230,8 @@ Verweisen, Portal-Filter) stehen in [FACHKONZEPT.md](FACHKONZEPT.md).
 
 ### 5.3 Die Übergabe schließt die Forderung ab (nach 4.4)
 
-Nach dem Ja zu E6, spätestens mit der Antwort zu E1 (8.1) — ab dann gibt es echte Bescheide und
-vier Wochen später die erste Übergabe. Eine Stufe, jeder Punkt mit einem Test, der am Rückbau rot
+E6 ist am 24.09.2026 bejaht (4.4). Fertig sein muss es spätestens mit der Antwort zu E1 (8.1) —
+ab dann gibt es echte Bescheide und vier Wochen später die erste Übergabe. Eine Stufe, jeder Punkt mit einem Test, der am Rückbau rot
 wird; das Modell der Stufen 1 und 2 beschreibt das [Handbuch](HANDBUCH.md).
 
 - **Abschließen:** `Uebergebe` setzt in derselben Transaktion `ist_bezahlt` an den offenen
@@ -417,10 +413,11 @@ Beim Umbau mitentscheiden: Die Rohdaten der Protokolleinträge (`details`) stehe
 abgerufenen Auskunft, nicht auf dem Blatt — sie nennen auch die bearbeitende Person. Das Gate
 `TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt sie als begründete Ausnahme.
 
-**Frage bei dir:** Die Einträge, in denen ein Kollege selbst handelt (gebuchte Ausleihen,
-Verwaltungseingriffe mit IP-Adresse, Inventur; bei einer Bibliothekskraft Tausende in 24
-Monaten), zählt das VVT zu seinen Daten. **Empfehlung: aufnehmen, ohne die Daten Dritter** —
-Zeitpunkt, Handlung, IP-Adresse, nicht der betroffene Schüler (Art. 15 Abs. 4 DSGVO).
+**Entschieden am 24.09.2026:** Die Einträge, in denen ein Kollege selbst handelt (gebuchte
+Ausleihen, Verwaltungseingriffe mit IP-Adresse, Inventur; bei einer Bibliothekskraft Tausende in
+24 Monaten), zählt das VVT zu seinen Daten. Sie kommen in seine Auskunft, **ohne die Daten
+Dritter** — Zeitpunkt, Handlung, IP-Adresse, nicht der betroffene Schüler (Art. 15 Abs. 4
+DSGVO).
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
@@ -802,7 +799,9 @@ Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschni
 ### 9.9 Zwei Bedingungen neben der Mängelliste
 
 **Entschieden am 23.09.2026: zurückgestellt.** Beides bleibt liegen, bis es ansteht; dann gelten
-die Schritte und Fragen unten.
+die Schritte und Fragen unten. **Am 24.09.2026 für das Pflegekonzept umentschieden: jetzt, als
+Wartungshandbuch** (Vorschlag am Ende dieses Abschnitts); der DSGVO-Nachweis bleibt
+zurückgestellt.
 
 Die Einschätzung am Ende des Protokolls nennt zwei Punkte, die in keinem der zwölf Mängel
 stehen:
