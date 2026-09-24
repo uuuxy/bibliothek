@@ -293,7 +293,9 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Ausweis drucken**: Auf der Karte steht, was sie ist — _Schülerausweis_ oder
   _Lehrerausweis_. Die Gültigkeit („Gültig bis 31.07. …") trägt nur der Schülerausweis;
   der Ausweis einer Lehrkraft läuft mit keinem Schuljahr ab. Neue Ausweisnummern beginnen
-  mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen.
+  mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen. Eine
+  `A-`-Nummer vergibt das Programm nur einmal: Wird eine Person gelöscht oder anonymisiert,
+  bekommt niemand sonst ihre Nummer, und ihre alte Karte findet an der Theke niemanden.
 - **Gebühren & Schäden**: offen / bezahlt; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. Steht eine offene Forderung noch auf keinem Brief, gibt es hier _Bescheid erstellen_
   (derselbe Dialog wie im Mahnwesen). (§14)

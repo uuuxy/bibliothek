@@ -37,8 +37,9 @@ func TestPersonenlaufAusweis(t *testing.T) {
 	t.Cleanup(func() { prot.Schliessen() })
 
 	p := &personenlauf{
-		s:               &Schreiber{prot: prot},
-		belegteAusweise: make(map[string]bool),
+		s:                   &Schreiber{prot: prot},
+		belegteAusweise:     make(map[string]bool),
+		verbrauchteAusweise: make(map[string]bool),
 	}
 
 	// 1. Regular case: Lesernummer exists and is not used

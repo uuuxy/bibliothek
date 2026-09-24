@@ -804,25 +804,64 @@ CREATE INDEX IF NOT EXISTS idx_exemplare_zugang_am
 -- fuenf Stellen (Benutzerverwaltung, Selbstanmeldung, Littera-Uebernahme, Seed,
 -- Testaufbauten); die sechste wuerde es vergessen, und ein Kollege, den die Theke nicht
 -- findet, ist genau der Fehler, den der Umbau abschafft.
+-- Migration 146: Jede A-Nummer, die aus leser verschwindet (endgültig gelöscht,
+-- anonymisiert, zusammengeführt, geleert, umgeschrieben), steht hier — nur die Zahl, keine
+-- Person. Der Generator zieht über das Maximum aus leser und dieser Tabelle; eine Nummer, die
+-- einmal einer Person gehörte, gibt er nie wieder aus. Von Hand bleibt sie eintragbar.
+CREATE TABLE ausweisnummern_ausgeschieden (
+    nummer bigint PRIMARY KEY
+        CONSTRAINT chk_ausweisnummer_ausgeschieden_positiv CHECK (nummer > 0)
+);
+
 -- Migration 136: EIN Generator für Ausweisnummern, in der Datenbank — die Trigger
 -- aktives_konto_hat_ausweis und aktives_konto_behaelt_ausweis (145) und Go
 -- (repository.SequenceRepository.NaechsteAusweisnummer) rufen ihn. Numerisch statt
 -- lexikografisch, Fallback 10001, überlange Nummern werden übergangen; der Advisory-Lock
--- hält bis zum Ende der Transaktion.
+-- hält bis zum Ende der Transaktion. Seit Migration 146 auch über die ausgeschiedenen
+-- Nummern.
 CREATE OR REPLACE FUNCTION ausweis_nummer_start()
 RETURNS bigint LANGUAGE plpgsql AS $$
 DECLARE
     letzte bigint;
 BEGIN
     PERFORM pg_advisory_xact_lock(hashtextextended('leser.barcode_id.A-', 0));
-    SELECT coalesce(max(substr(barcode_id, 3)::bigint), 0) INTO letzte
-    FROM leser
-    WHERE barcode_id LIKE 'A-%' AND substr(barcode_id, 3) ~ '^[0-9]{1,15}$';
+    SELECT GREATEST(
+        (SELECT coalesce(max(substr(barcode_id, 3)::bigint), 0)
+           FROM leser
+          WHERE barcode_id LIKE 'A-%' AND substr(barcode_id, 3) ~ '^[0-9]{1,15}$'),
+        (SELECT coalesce(max(nummer), 0) FROM ausweisnummern_ausgeschieden))
+    INTO letzte;
     IF letzte > 0 THEN
         RETURN letzte + 1;
     END IF;
     RETURN 10001;
 END $$;
+
+-- Migration 146: Hält fest, welche A-Nummer eine Zeile verlässt — nach dem Schreiben: Der
+-- Trigger sieht die Zeile, wie die vorgelagerten Trigger sie hinterlassen haben (etwa die neue
+-- Nummer aus 145), und feuert nur, wenn die Änderung geschrieben wurde. Nur Einfügen: keine
+-- Zählerzeile, die jeder Entferner nach seiner Leserzeile sperren müsste.
+CREATE OR REPLACE FUNCTION ausweisnummer_ausgeschieden()
+RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE
+    n bigint;
+BEGIN
+    IF TG_OP = 'UPDATE' AND NEW.barcode_id IS NOT DISTINCT FROM OLD.barcode_id THEN
+        RETURN NULL;
+    END IF;
+    IF OLD.barcode_id IS NULL OR OLD.barcode_id !~ '^A-[0-9]{1,15}$' THEN
+        RETURN NULL;
+    END IF;
+    n := substr(OLD.barcode_id, 3)::bigint;
+    IF n > 0 THEN
+        INSERT INTO ausweisnummern_ausgeschieden (nummer) VALUES (n) ON CONFLICT DO NOTHING;
+    END IF;
+    RETURN NULL;
+END $$;
+
+CREATE TRIGGER trg_leser_ausweisnummer_ausgeschieden
+AFTER DELETE OR UPDATE OF barcode_id ON leser
+FOR EACH ROW EXECUTE FUNCTION ausweisnummer_ausgeschieden();
 
 -- Die gedruckte Form, gleich api.AusweisNummer: „A-" und mindestens fünf Ziffern.
 CREATE OR REPLACE FUNCTION ausweisnummer(n bigint)
@@ -1837,7 +1876,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('142_bescheid_briefdatum_schulzeit.sql'),
 ('143_schlagworte_pflege.sql'),
 ('144_schlagworte_verweis_sperre.sql'),
-('145_geleerte_ausweisnummer_zieht_neue.sql')
+('145_geleerte_ausweisnummer_zieht_neue.sql'),
+('146_ausweisnummer_kommt_nie_wieder.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -30,16 +30,14 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026, ergänzt am 24.09.2026):
 
-1. **5.23** Eine Ausweisnummer kann ein zweites Mal vergeben werden — Verdacht der Kategorie A,
-   deshalb vor den kleinen Punkten.
-2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.5 (Ersatz-Etikett nach der Vorlage), 5.19
+1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.5 (Ersatz-Etikett nach der Vorlage), 5.19
    (Auskunft für jeden Leser), 5.21 (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf
    eigenen M3-Rollen), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
-3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
+2. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
    Nachbestell-Liste, also zuletzt.
-4. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. Mahnverfahren nach der Antwort zu E6 (**4.4**): **5.13** Stufe 3 (5.3); nach E5 (**8.3**): **5.4**.
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Von 4.20 (Schlagworte) bleiben nur die Littera-Schlagworte; sie kommen mit dem Backup (7.2).
 
@@ -451,19 +449,16 @@ eigenen Tabelle statt an der Leserzeile — eine Migration an der Karenz-Uhr (L�
 DSGVO-Auskunft lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit; bis dahin steht der
 Punkt hier, damit dieser Umbau ihn findet.
 
-### 5.23 Eine Ausweisnummer kann ein zweites Mal vergeben werden — Verdacht, Kategorie A
+### 5.24 Aufräumen vor einem zweiten Littera-Lauf lässt die Leserzeilen der Lehrkräfte stehen
 
-`ausweis_nummer_start()` (Migration 136) rechnet „höchste A-Nummer in `leser` + 1". Verschwindet
-die höchste Nummer aus der Tabelle, gibt der Generator sie beim nächsten Ziehen an eine andere
-Person. Verschwinden kann sie beim endgültigen Löschen (DSGVO-Löschung, die Quelle beim
-Zusammenführen), beim Anonymisieren (`ANON-…`), beim Leeren an einem Leser ohne aktives Konto und
-beim Umschreiben von Hand. Nachgestellt am 24.09.2026 an der Test-Datenbank: Kind mit A-10001
-angelegt, endgültig gelöscht, die nächste Nummer ist wieder A-10001. Die Folge: Eine noch
-vorhandene Karte der gelöschten Person bucht an der Theke auf die neue. Nicht gemessen ist, wie
-oft eine Karte nach dem Löschen noch benutzt wird.
-
-Richtung der Abhilfe: eine Hochwassermarke, die jede geschriebene A-Nummer hebt; der Generator
-zieht über sie statt über die Tabelle.
+Die Anleitung in `docs/SCRIPTS.md` (Abschnitt 1, „Wiederholung") löscht die Littera-Lehrkräfte
+mit `DELETE FROM benutzer … '%@littera.invalid'`. Seit Migration 125 zeigt das Konto auf die
+Leserzeile, nicht umgekehrt: Die Zeile bleibt mit ihrer Ausweisnummer stehen, ohne Konto.
+Nachgestellt am 24.09.2026 an der Test-Datenbank (Konto weg, Leserzeile mit Nummer „31" da).
+Ein zweiter Lauf legt die Lehrkraft dann ein zweites Mal an und gibt ihr eine Ersatznummer, weil
+ihre Nummer an der alten Zeile hängt; ihre Karte findet an der Theke die alte Zeile. Das
+Protokoll meldet jede dieser Ersatznummern. Abhilfe: die Leserzeilen vor den Konten löschen,
+über `benutzer.leser_id`. Nötig vor einem zweiten Lauf, etwa einem Neuaufbau aus 7.2.
 
 ---
 

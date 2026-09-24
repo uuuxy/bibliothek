@@ -97,7 +97,8 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 	}
 
 	lauf := &personenlauf{s: s, bericht: &bericht,
-		belegteAusweise: map[string]bool{}, belegteMails: map[string]bool{}, buchBarcodes: map[string]bool{},
+		belegteAusweise: map[string]bool{}, verbrauchteAusweise: map[string]bool{},
+		belegteMails: map[string]bool{}, buchBarcodes: map[string]bool{},
 		karten: ab.Ausweisnummern, mehrereKarten: map[string]bool{}}
 	for _, id := range ab.AusweisMehrfach {
 		lauf.mehrereKarten[id] = true
@@ -134,7 +135,12 @@ type personenlauf struct {
 	s               *Schreiber
 	bericht         *PersonenBericht
 	belegteAusweise map[string]bool
-	belegteMails    map[string]bool
+	// verbrauchteAusweise hält die Ersatzvergabe aus jeder Nummer heraus, die schon einmal an
+	// einer Leserzeile stand — auch im Papierkorb, auch ausgeschieden (Migration 146) —, jede
+	// A-Nummer zusätzlich ohne führende Nullen (sqlVerbrauchteAusweise). Die eigene Karte einer
+	// Person prüft nur belegteAusweise: Sie gehört dieser Person.
+	verbrauchteAusweise map[string]bool
+	belegteMails        map[string]bool
 	// buchBarcodes sind für Ausweise gesperrt: Die Theke löst eine Nummer ohne Vorsilbe
 	// zuerst als Buch auf (resolveOhnePraefix).
 	buchBarcodes map[string]bool
@@ -150,6 +156,11 @@ type personenlauf struct {
 func (p *personenlauf) vorbelegen(ctx context.Context) error {
 	// EINE Abfrage über alle Ausweisnummern — sie stehen seit Migration 125 an einem Ort.
 	if err := p.lade(ctx, `SELECT barcode_id FROM leser WHERE deleted_at IS NULL AND barcode_id IS NOT NULL`, p.belegteAusweise); err != nil {
+		return err
+	}
+	// Die Ersatznummer erfindet dieser Lauf selbst; sie darf keine sein, die schon einmal einer
+	// Person gehörte (docs/OFFEN.md 5.23).
+	if err := p.lade(ctx, sqlVerbrauchteAusweise, p.verbrauchteAusweise); err != nil {
 		return err
 	}
 	// Die Bücher stehen zu diesem Zeitpunkt schon da: Der Lauf schreibt den Bestand vor den
@@ -355,8 +366,12 @@ func (p *personenlauf) ausweis(l Leser) string {
 	// Ausweis soll nichts über die Person behaupten — wer jemand ist, steht in den
 	// Stammdaten. Die Theke liest „L-" weiterhin, damit Nummern aus früheren Läufen
 	// scannen; vergeben wird es nicht mehr.
+	//
+	// Die Ersatznummer liegt im Nummernkreis des Generators (ausweis_nummer_start): Die
+	// Littera-Kennungen reichten 2010 bis 6845 und wachsen mit jeder Anlage. Deshalb weicht sie
+	// jeder Nummer aus, die schon einmal einer Person gehörte (ersatzFrei).
 	ersatz := "A-" + l.ID
-	for n := 2; p.belegteAusweise[ersatz] || p.buchBarcodes[ersatz]; n++ {
+	for n := 2; !p.ersatzFrei(ersatz); n++ {
 		ersatz = fmt.Sprintf("A-%s-%d", l.ID, n)
 	}
 	grund := "Ausweisnummer bereits vergeben"
@@ -369,6 +384,25 @@ func (p *personenlauf) ausweis(l Leser) string {
 	p.s.prot.Warnung(l.ID, nummer, grund+" – Ausweis "+ersatz+" vergeben, Karte muss neu gedruckt werden")
 	p.belegteAusweise[ersatz] = true
 	return ersatz
+}
+
+// sqlVerbrauchteAusweise liest jede Nummer, die je an einer Leserzeile stand, und jede A-Nummer
+// als Zahl ohne führende Nullen — aus leser und aus ausweisnummern_ausgeschieden. So zählt sie
+// auch der Generator (substr(barcode_id, 3)::bigint): A-04908 steht hier als A-4908 und sperrt
+// die Ersatznummer A-4908, die aus der Littera-Kennung 4908 entstünde.
+const sqlVerbrauchteAusweise = `
+	SELECT barcode_id FROM leser WHERE barcode_id IS NOT NULL
+	UNION
+	SELECT 'A-' || substr(barcode_id, 3)::bigint FROM leser WHERE barcode_id ~ '^A-[0-9]{1,15}$'
+	UNION
+	SELECT 'A-' || nummer FROM ausweisnummern_ausgeschieden`
+
+// ersatzFrei sagt, ob eine selbst erfundene Nummer vergeben werden darf: Sie steht weder an
+// einer aktiven Leserzeile noch an einem Buch, und sie stand nie an einer Person — auch nicht
+// als dieselbe Zahl in anderer Schreibweise (A-04908 und A-4908). Deren Karte buchte sonst an
+// der Theke auf die übernommene Person (docs/OFFEN.md 5.23).
+func (p *personenlauf) ersatzFrei(nummer string) bool {
+	return !p.belegteAusweise[nummer] && !p.buchBarcodes[nummer] && !p.verbrauchteAusweise[nummer]
 }
 
 // mailadresse liefert die echte Adresse oder einen unzustellbaren Platzhalter.

@@ -281,6 +281,11 @@ var checkBedingungenBestand = []string{
 	"chk_schaden_art",
 	"chk_verlauf_anzahl_nonneg", "chk_verlauf_gesamtbetrag_nonneg", "chk_vormerkung_status",
 	"mail_settings_config_single_row_chk",
+	// Migration 146, befragt am 24.09.2026: Eine ausgeschiedene Ausweisnummer ist größer als 0.
+	// Frage 12: Einziger Schreiber ist der Trigger trg_leser_ausweisnummer_ausgeschieden, und
+	// er lässt „A-0" aus, statt an der Bedingung zu scheitern — sonst bräche das Löschen eines
+	// Lesers mit dieser Nummer ab (api/ausweisnummer_kommt_nie_wieder_pg_test.go).
+	"chk_ausweisnummer_ausgeschieden_positiv",
 }
 
 // Trigger ändern Daten, ohne dass eine Zeile Go-Code davon weiß. Hier stehen drei Sorten:
@@ -316,6 +321,13 @@ var triggerBestand = []string{
 	// nur noch ohne Konto oder mit inaktivem (api/sequence_pg_test.go,
 	// TestAusweisnummerLeeren).
 	"trg_leser_aktives_konto_behaelt_ausweis @ leser",
+	// Migration 146, befragt am 24.09.2026: Schreibt jede A-Nummer, die eine Leserzeile
+	// verlässt (Löschen, Anonymisieren, Leeren, Umschreiben), in ausweisnummern_ausgeschieden.
+	// Frage 12: Gelesen wird die Tabelle vom Generator (ausweis_nummer_start) und von der
+	// Ersatzvergabe der Littera-Übernahme (internal/littera, ersatzFrei); eine Nummer, die dort
+	// steht, gibt keiner der beiden mehr aus. Von Hand bleibt sie eintragbar
+	// (api/ausweisnummer_kommt_nie_wieder_pg_test.go).
+	"trg_leser_ausweisnummer_ausgeschieden @ leser",
 	"trg_buecher_exemplare_aktualisiert_am @ buecher_exemplare",
 	"trg_buecher_titel_aktualisiert_am @ buecher_titel",
 	"trg_class_books_vokabular @ class_books",

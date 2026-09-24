@@ -42,10 +42,15 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 // Truncate mit CASCADE räumt die vier referenzierenden Tabellen mit (schueler,
 // klassen_lehrer_mapping, class_books, klassensatz_reservierungen) — alles Testdaten.
 // Befüllt wird klassen von keiner Migration, sie entsteht allein durch den Trigger.
+//
+// ausweisnummern_ausgeschieden gehört aus demselben Grund dazu: Der Generator zieht über sie
+// (Migration 146), und eine Nummer, die ein früherer Test entfernt hat, verschöbe die festen
+// Nummern in sequence_pg_test.go.
 func resetBestandsdaten(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(), `
-		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, leser, benutzer, klassen
+		TRUNCATE buecher_exemplare, buecher_titel, ausleihen, leser, benutzer, klassen,
+		         ausweisnummern_ausgeschieden
 		RESTART IDENTITY CASCADE
 	`)
 	if err != nil {

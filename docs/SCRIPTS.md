@@ -92,6 +92,13 @@ DELETE FROM benutzer  WHERE rolle = 'kollegium' AND email LIKE '%@littera.invali
 > Littera-Lehrkraftkonten und sieht am Ende einen Fehler, der nach „nichts passiert"
 > aussieht.
 
+**Ersatznummern nach dem Aufräumen:** Wer keine verwendbare Ausweisnummer mitbringt, bekommt
+`A-<Littera-Kennung>`. Das Aufräumen löscht diese Zeilen, und eine gelöschte A-Nummer vergibt
+das Programm nicht noch einmal (Migration 146) — der zweite Lauf gibt diesen Personen
+`A-<Littera-Kennung>-2`. Karten, die nach dem ersten Lauf gedruckt wurden, gelten dann nicht
+mehr. Nummern aus Littera selbst (Lesernummer, Herstellernummer der Karte) betrifft das nicht:
+Sie sind keine A-Nummern.
+
 **Lehrkräfte** werden mit `aktiv = true` angelegt — die Ausweis-Abfrage der Omnibox
 filtert darauf, eine inaktive Lehrkraft wäre am Scanner unauffindbar. Den Login sperrt
 statt dessen die Adresse: Anmeldung geht ausschließlich über IMAP gegen den Schul-Mail-

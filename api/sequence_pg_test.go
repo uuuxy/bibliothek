@@ -350,29 +350,31 @@ func pruefeMigrationslauf(t *testing.T, pool *pgxpool.Pool, datei string, soll m
 	}
 }
 
-// NULL über NULL zieht nicht sofort. So schreibt die Littera-Übernahme jede Lehrkraft ohne
-// Ausweis: erst das Konto, dann die Leserzeile mit ihrer Nummer oder NULL — in EINER
-// Transaktion über den ganzen Bestand. Nähme der Trigger an leser hier den Lock des
-// Generators, hielte der Lauf ihn bis zu seinem Ende, und jede Neuanlage an der Theke
-// wartete so lange. Die Nummer kommt beim Commit (aufgeschobener Trigger aus 136).
+// NULL über NULL ist kein Leeren: Die Zeile hat noch keine Nummer. So schreibt die
+// Freischaltung einer Zugangsanfrage (repository.UpdateUser, leeres Feld) — erst das Konto,
+// dann die Leserzeile, in einer Transaktion. Der Trigger an leser lässt das liegen; die Nummer
+// kommt wie seit Migration 136 beim Commit, und mit ihr erst der Lock des Generators.
 func TestAusweisnummer_NullUeberNullZiehtErstBeimCommit(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 
+	var kontoID, leserID string
+	if err := pool.QueryRow(ctx, `
+		INSERT INTO benutzer (email, vorname, nachname, rolle, aktiv, zugang_beantragt_am)
+		VALUES ('null-ueber-null@example.org', 'Null', 'Probe', 'kollegium', false, now())
+		RETURNING id, leser_id`).Scan(&kontoID, &leserID); err != nil {
+		t.Fatal(err)
+	}
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer db.SafeRollback(ctx, tx)
-	var leserID string
-	if err := tx.QueryRow(ctx, `
-		INSERT INTO benutzer (email, vorname, nachname, rolle, aktiv)
-		VALUES ('null-ueber-null@example.org', 'Null', 'Probe', 'kollegium', true)
-		RETURNING leser_id`).Scan(&leserID); err != nil {
+	if _, err := tx.Exec(ctx, `UPDATE benutzer SET aktiv = true, zugang_beantragt_am = NULL WHERE id = $1`, kontoID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := tx.Exec(ctx, `UPDATE leser SET barcode_id = NULL, art = 'lehrkraft' WHERE id = $1`, leserID); err != nil {
+	if _, err := tx.Exec(ctx, `UPDATE leser SET barcode_id = NULLIF('', '') WHERE id = $1`, leserID); err != nil {
 		t.Fatal(err)
 	}
 	var locks int
@@ -381,7 +383,7 @@ func TestAusweisnummer_NullUeberNullZiehtErstBeimCommit(t *testing.T) {
 		t.Fatal(err)
 	}
 	if locks != 0 {
-		t.Errorf("vor dem Commit hält die Transaktion %d Advisory-Lock(s) — der Generator wurde mitten im Lauf gerufen", locks)
+		t.Errorf("vor dem Commit hält die Transaktion %d Advisory-Lock(s) — NULL über NULL wurde als Leeren behandelt", locks)
 	}
 	if err := tx.Commit(ctx); err != nil {
 		t.Fatal(err)

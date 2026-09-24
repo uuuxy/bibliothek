@@ -208,6 +208,62 @@ func TestDoppelteAusweisnummerWeichtAus(t *testing.T) {
 	}
 }
 
+// TestErsatznummerKommtNieWieder: Die Ersatznummer A-<Littera-Kennung> erfindet der Lauf
+// selbst — sie ist eine Vergabe im Nummernkreis des Generators (docs/OFFEN.md 5.23). Sie
+// darf keine Nummer sein, die schon einmal in der Leserdatei stand: nicht die eines Lesers
+// im Papierkorb, nicht eine ausgeschiedene, und nicht dieselbe Zahl in anderer Schreibweise
+// (A-04908 und A-4908) und keine Ersatzform eines Lesers im Papierkorb (A-4910-2). Deren Karte
+// buchte sonst an der Theke auf die übernommene Person.
+// Die Kennungen reichten 2010 bis 6845 und wachsen mit jeder Anlage in Littera; sie
+// erreichen den Bereich, in dem der Generator seit A-10001 vergibt.
+func TestErsatznummerKommtNieWieder(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	ctx := context.Background()
+	for _, sql := range []string{
+		`INSERT INTO leser (vorname, nachname, art, barcode_id, deleted_at)
+		 VALUES ('Im', 'Papierkorb', 'lehrkraft', 'A-10002', now())`,
+		`INSERT INTO leser (vorname, nachname, art, barcode_id) VALUES ('Ist', 'Geloescht', 'lehrkraft', 'A-10003')`,
+		`DELETE FROM leser WHERE barcode_id = 'A-10003'`,
+		`INSERT INTO leser (vorname, nachname, art, barcode_id) VALUES ('Mit', 'Nullen', 'lehrkraft', 'A-04908')`,
+		`INSERT INTO leser (vorname, nachname, art, barcode_id) VALUES ('Traegt', 'A4910', 'lehrkraft', 'A-4910')`,
+		`INSERT INTO leser (vorname, nachname, art, barcode_id, deleted_at)
+		 VALUES ('Ersatzform', 'Papierkorb', 'lehrkraft', 'A-4910-2', now())`,
+	} {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatalf("%s: %v", sql, err)
+		}
+	}
+	s, protokoll := testSchreiber(t, pool, nil)
+
+	ab := &Altbestand{Leser: []Leser{
+		leser("10002", "", "07H1", ArtSchueler),
+		leser("10003", "", "07H1", ArtSchueler),
+		leser("4908", "", "07H1", ArtSchueler),
+		leser("4909", "", "07H1", ArtSchueler),
+		leser("4910", "", "07H1", ArtSchueler),
+	}}
+	if _, err := s.SchreibePersonen(ctx, ab); err != nil {
+		t.Fatalf("SchreibePersonen: %v", err)
+	}
+	for kennung, erwartet := range map[string]string{
+		"10002": "A-10002-2", "10003": "A-10003-2", "4908": "A-4908-2", "4909": "A-4909",
+		"4910": "A-4910-3",
+	} {
+		var ist string
+		if err := pool.QueryRow(ctx, `SELECT coalesce(barcode_id, '') FROM leser WHERE lusd_id = $1`,
+			"littera:"+kennung).Scan(&ist); err != nil {
+			t.Fatalf("Leser %s lesen: %v", kennung, err)
+		}
+		if ist != erwartet {
+			t.Errorf("Littera-Leser %s trägt %q, erwartet %q", kennung, ist, erwartet)
+		}
+	}
+	if text := protokoll(); !strings.Contains(text, "Karte muss neu gedruckt werden") {
+		t.Errorf("die Ersatzvergabe muss protokolliert werden:\n%s", text)
+	}
+}
+
 // TestFremdLeserNummerGewinnt: Der Ausweis liefert beim Scannen die Nummer seines Herstellers
 // (gemessen „B97601826457"); Littera hält sie in FremdLeserNummer. Steht eine da, wird SIE die
 // Ausweisnummer — nicht die Lesernummer. Bis zum 15.09.2026 wurde die Tabelle eingelesen und

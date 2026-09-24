@@ -22,9 +22,9 @@
 --     Er läuft VOR dem Schreiben: Der Generator sieht die Zeile noch mit der alten Nummer
 --     und zählt sie mit, sie kommt also nicht wieder. Ein Trigger nach dem Schreiben sähe
 --     sie nicht mehr und gäbe sie, wenn sie die höchste war, gleich noch einmal aus.
---     NULL über NULL lässt er liegen (die Littera-Übernahme schreibt so jede Lehrkraft
---     ohne Ausweis): Das erledigt wie bisher der aufgeschobene Trigger beim Commit, und der
---     Lock des Generators wird nicht mitten in einem langen Lauf genommen.
+--     NULL über NULL lässt er liegen: Das ist kein Leeren, die Zeile hat noch keine
+--     Nummer. So schreibt die Freischaltung einer Zugangsanfrage (repository.UpdateUser,
+--     leeres Feld); die Nummer kommt wie bisher beim Commit vom aufgeschobenen Trigger.
 --   - 3 fängt der aufgeschobene Trigger aus 136, der dafür auch beim Wechsel von
 --     benutzer.leser_id feuert. Seine Rückkehr bei „war schon aktiv" entfällt: Sie hielt
 --     eine geleerte Nummer leer, und das war die alte Entscheidung. Ob eine Nummer fehlt,
