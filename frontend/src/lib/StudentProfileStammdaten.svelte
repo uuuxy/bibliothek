@@ -46,11 +46,7 @@
 
      Die Ausweisnummer steht bewusst NICHT hier: Sie steht schon auf der Karte links
      (StudentProfileCard.svelte), samt Hinweis, wenn noch keine vergeben ist. Zweimal
-     dieselbe Zahl ist keine Gründlichkeit.
-
-     Zusammenführen bleibt vorerst eine Schülersache — nicht aus Absicht, sondern weil der
-     Zusammenführ-Code gegen die Sicht `schueler` schreibt und bei einem Kollegen null
-     Zeilen träfe. Steht in docs/OFFEN.md 5.16. -->
+     dieselbe Zahl ist keine Gründlichkeit. -->
 <div class="w-full pt-2 animate-fade-in space-y-8">
 	<div class="flex justify-between items-center border-b border-outline-variant pb-4">
 		<h3 class="text-xl font-bold text-on-surface flex items-center gap-2">
