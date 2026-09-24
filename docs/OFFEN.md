@@ -33,7 +33,8 @@ die Entscheidungen unten).
    Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher
    tragen keinen Vermerk). Den Echtstart halten diese Antworten auf, nicht der Code.
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
-   Chrome). Stufe 2 (die Tür per curl) mache ich am lokalen Stack.
+   Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
+   Stack, wenn der Nachweis ansteht.
 4. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
    den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
@@ -283,12 +284,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Vorher am Testserver zählen (lokal 0):
   `SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id JOIN bestellungen_verlauf bv ON bv.id = e.bestellung_id WHERE bv.mittel <> CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END;`
 - **Altbriefe entfernen** (es geht darum, ob es sie neben dem Bescheid überhaupt weiter geben
-  soll): Elternbrief
-  `pdf/schadensfall.go` ← `api/pdf.go`
-  (`GenerateDamagePDFHandler`) ← Route in `api/routes_students.go` ← `useStudentProfile.svelte.js`;
-  Rechnung `pdf/rechnung.go` ← `api/print.go` ← `GET /api/print/rechnung/{schueler_id}` in
-  `api/routes_system.go` ← Knopf in `StudentProfileActions.svelte`; dazu
-  `api/print_rechnung_pg_test.go` und `elternbrief_generiert*`. Der Eltern-Mahnbrief bleibt.
+  soll): Elternbrief `pdf/schadensfall.go` ← `api/pdf.go` (`GenerateDamagePDFHandler`) ←
+  Route in `api/routes_students.go` — die Oberfläche ruft ihn seit dem 15.09.2026 nicht mehr
+  auf (`33e92c44`), erreichbar ist er nur noch über die Adresse; Rechnung `pdf/rechnung.go` ←
+  `api/print.go` ← `GET /api/print/rechnung/{schueler_id}` in `api/routes_system.go` ← Knopf
+  in `students/SchuelerDokumente.svelte`; dazu `api/print_rechnung_pg_test.go` und
+  `elternbrief_generiert*`. Der Eltern-Mahnbrief bleibt.
 - **Doku:** FACHKONZEPT Abschnitt 3 (Mahnwesen ohne Bescheid) und 14 (PDF-Rechnung, Barzahlung am
   Tresen); SECURITY und VVT-Entwurf mit dem Zweck „Schadensersatz-Bescheid". Den VVT-Satz
   vorziehen, bevor die Schule den Entwurf beschließt (8.5).
