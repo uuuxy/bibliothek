@@ -206,7 +206,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 		"vormerkungen":    `SELECT count(*) FROM vormerkungen WHERE schueler_id = $1`,
 		"ausleihen":       `SELECT count(*) FROM ausleihen WHERE schueler_id = $1`,
 		"audit_log (LH)":  `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = $1`,
-		"audit_logs (Vw)": `SELECT count(*) FROM audit_logs WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode') AND details->>'schueler_id' = $1`,
+		"audit_logs (Vw)": `SELECT count(*) FROM audit_logs WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode' OR details ? 'grund' OR details ? 'reason') AND details->>'schueler_id' = $1`,
 		// Der Bescheid bleibt als Beleg, aber ohne Person: schueler_id ist NULL
 		// (ON DELETE SET NULL) und der Snapshot geleert.
 		"schadensersatz_bescheide": `SELECT count(*) FROM schadensersatz_bescheide WHERE schueler_id = $1`,

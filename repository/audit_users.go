@@ -551,10 +551,16 @@ var spurTilgungen = []SpurTilgung{
 		// Hülle einen ANON-Barcode bekommt, damit die physische Karte nicht mehr aufgeht —
 		// im Verwaltungsprotokoll stand die alte Nummer sonst bis zu 24 Monate neben der
 		// UUID (Rasterdurchgang 02.09.2026).
-		Beschreibung: "audit_logs (LUSD-ID, Barcodes)",
+		// Der Grund einer Sperre ebenso: Die Anonymisierung ersetzt block_reason, weil er
+		// andere Personen nennen kann, und die Sperr-Tür schreibt ihn als grund ins Protokoll
+		// (LESER_GESPERRT, LESER_ENTSPERRT), das Übergehen an der Theke bis zum 24.09.2026 als
+		// reason (OVERRIDE_BLOCK). Rasterdurchgang 24.09.2026,
+		// api/sperrgrund_tilgung_pg_test.go.
+		Beschreibung: "audit_logs (LUSD-ID, Barcodes, Sperrgrund)",
 		sql: `UPDATE audit_logs
-			SET details = details - 'lusd_id' - 'barcode' - 'aufgeloest_barcode'
-			WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode')
+			SET details = details - 'lusd_id' - 'barcode' - 'aufgeloest_barcode' - 'grund' - 'reason'
+			WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode'
+			       OR details ? 'grund' OR details ? 'reason')
 			  AND details->>'schueler_id' = ANY($1::text[])`,
 	},
 	{
