@@ -19,9 +19,9 @@ die Entscheidungen unten).
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Die vier Fragen zum Pflegekonzept** (9.9): Wer betreibt das Programm, wer pflegt es, was
-   gilt, wenn die Pflege endet, und soll es über die eigene Schule hinaus eingesetzt werden?
-   Der Entwurf entsteht ohne die Antworten; sie füllen die offenen Stellen darin.
+1. **Eine Frage zum Pflegekonzept** (9.9): ob das Programm über die eigene Schule hinaus
+   eingesetzt werden soll — am 24.09.2026 offen gelassen; der Entwurf nennt sie als offene
+   Stelle. Die drei anderen Fragen sind beantwortet.
 2. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
    zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, dazu der Wortlaut des
@@ -38,7 +38,7 @@ Vorschlag vom 24.09.2026):
 
 1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), die Sperre nur
-   im eigenen Topf (4.4, kleiner Umbau an der Theke).
+   im eigenen Topf mit dem Übergehen am Gerät (4.4, Umbau an der Theke).
 2. **5.3** — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben wird (echte
    Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
@@ -149,6 +149,19 @@ Lernmittel": das Buch oder die Forderung) und trennt Land und Schulträger wie b
 Überfällig-Automatik bleibt, wie am 24.09.2026 entschieden (`MaxOverdueItems`): Überfällig ist
 kein Mangel und kein Verlust. Littera zeigt ab einem einstellbaren Gebührenlimit einen Hinweis,
 und ein Mensch entscheidet — wie unsere übergehbare Sperre.
+
+**Dritte Frage: Was gilt am Gerät? Entschieden am 24.09.2026:** Am Gerät sperrt weiter jede
+offene Forderung, auch eine für ein Lernmittel; ein Gerät ist kein Lernmittel (so schon am
+22.09.2026 gebaut). Neu: Die Sperre am Gerät lässt sich übergehen wie beim Buch, mit dem Recht
+„Schülerdaten ändern" und einem Eintrag im Protokoll. Bisher nimmt der Geräte-Pfad
+`override_block` nicht an (`ladeAkteur` in `internal/service/device_service.go`, seit dem
+19.08.2026 so im Code, nie als Entscheidung festgehalten). Ein Geräte-Schaden hat keinen Topf und
+sperrt wie heute Bücher der Schülerbücherei und Geräte — ein Konto je Leser wie in Littera.
+Littera kennt weder Töpfe noch eine Geräteausleihe: ein Saldo je Leser, ab dem Gebührenlimit ein
+Hinweis, den man im Verleih mit „Alle Warnungen ignorieren" übergeht; eine Sperre von Hand hebt
+man erst in den Leserdaten auf. **Umbau:** ein Prüfweg für Buch und Gerät statt zweier
+(`pruefeSchuelerAusleihbarMit` und `pruefeGeraetAutomatikSperren`), mit zwei Zählweisen der
+Forderungen — Buch der Schülerbücherei: alle außer Topf Land; Gerät: alle.
 
 ### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
 
@@ -524,6 +537,16 @@ Protokoll meldet jede dieser Ersatznummern. Abhilfe: die Leserzeilen vor den Kon
 Merkmal, an dem das Aufräumen sie erkennt. Nötig, bevor auf derselben Datenbank ein zweiter
 Personenlauf läuft, etwa mit dem frischen Backup aus 7.2.
 
+### 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
+
+Die Datenbank sieht sie vor (`check_damage_item`: genau eines von `exemplar_id` und
+`geraet_id`), die Rechnung an die Eltern kann sie drucken (`queryRechnungItems`), aber der
+einzige Schreiber `meldeSchaden` (`repository/schaden_melden.go`) nimmt nur ein Buch-Exemplar:
+Er sondert das Exemplar aus und legt die Forderung mit `exemplar_id` an. Fehlt bei der Rückgabe
+Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHKONZEPT (Abschnitt
+5) behauptete bis zum 24.09.2026 einen. Gesperrt würde nach 4.4 wie heute (Schülerbücherei und
+Geräte).
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -837,11 +860,18 @@ stehen:
   (DEPLOYMENT.md, resilience_and_recovery.md, SCRIPTS.md), nicht als Konzept, das jemand prüft.
   **Nächster Schritt, bei mir:** ein Entwurf mit dem, was der Code beantwortet — wie eine
   Aktualisierung zur Schule kommt (Release, Image, `update.sh`), Sicherung, Wiederherstellung.
-  **Vier Fragen bei dir**, die sich nicht aus dem Code beantworten lassen:
-  1. Wer betreibt das Programm — die Schule, der Schulträger oder du?
-  2. Wer pflegt es?
-  3. Was gilt, wenn die Pflege endet — Datenausgabe, Rückweg zu Littera (7.2)?
-  4. Soll es über die eigene Schule hinaus eingesetzt werden?
+  **Die vier Fragen, die sich nicht aus dem Code beantworten lassen — beantwortet am
+  24.09.2026:**
+  1. Betrieb: die Schule, auf eigenem Server; die IT des Schulträgers für Hardware und Netz.
+  2. Pflege: du, mit einer benannten Vertretung, die nach dem Wartungshandbuch ein Update
+     einspielt und eine Sicherung zurückholt.
+  3. Ende der Pflege: Übergabe an eine andere Stelle (der Code steht unter EUPL 1.2); findet
+     sich niemand, läuft das Programm bis zum Schuljahresende weiter, die Daten kommen aus der
+     nächtlichen Sicherung, und die Schule wechselt auf ein Kaufprogramm. Unbefristeter
+     Weiterbetrieb ohne Sicherheitsupdates ist keine Option; einen Rückweg zu Littera gibt es
+     nicht (keine Ausgabe in Litteras Importform).
+  4. Über die eigene Schule hinaus: offen gelassen; der Entwurf nennt die Frage als offene
+     Stelle.
 
 **Gemessen am 24.09.2026: Kann ein Mensch das System ohne KI weiterführen?** Den Code ja (keine
 Go-Funktion über 150 Zeilen, 23 direkte Module, übliche Bausteine, Tests und CI, Betrieb mit

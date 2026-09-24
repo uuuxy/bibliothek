@@ -267,8 +267,10 @@ dieser Abschnitt beschrieb die Absicht als Realität):
   Buch-Fristen; Lehrkräfte leihen Geräte als Handapparat (Dauerleihe).
 - **Zustands-Sperre:** Defekte (`ist_ausleihbar = false`) und ausgesonderte Geräte
   verweigern die Ausleihe am Kiosk.
-- Fehlendes Zubehör bei der Rückgabe: Das Personal bricht im Dialog ab und meldet
-  den Schaden über den bestehenden Schadensfall-Weg am Profil.
+- Fehlendes Zubehör bei der Rückgabe: Das Personal bricht im Dialog ab. Eine
+  Forderung für ein Gerät legt das Programm noch nicht an — der Schadensfall-Weg am
+  Profil nimmt nur Buch-Exemplare, die Datenbank sieht Geräte-Forderungen vor
+  ([OFFEN.md](OFFEN.md) 5.25).
 
 ---
 
