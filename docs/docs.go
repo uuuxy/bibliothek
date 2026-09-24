@@ -5223,6 +5223,21 @@ const docTemplate = `{
                 }
             }
         },
+        "repository.DsgvoEigenerVorgang": {
+            "type": "object",
+            "properties": {
+                "handlung": {
+                    "type": "string"
+                },
+                "ip_adresse": {
+                    "description": "Nur im Verwaltungsprotokoll gespeichert (audit_logs.ip_adresse): der Arbeitsplatz,\nan dem die Person gearbeitet hat.",
+                    "type": "string"
+                },
+                "zeitpunkt": {
+                    "type": "string"
+                }
+            }
+        },
         "repository.DsgvoKontoEreignis": {
             "type": "object",
             "properties": {
@@ -5279,6 +5294,13 @@ const docTemplate = `{
                 },
                 "rolle": {
                     "type": "string"
+                },
+                "selbst_bearbeitete_vorgaenge": {
+                    "description": "Was die Person mit diesem Konto selbst bearbeitet hat — ohne die Daten Dritter\n(dsgvo_konto_vorgaenge.go).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DsgvoEigenerVorgang"
+                    }
                 },
                 "vorname": {
                     "type": "string"

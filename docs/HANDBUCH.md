@@ -290,7 +290,8 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Dokumente** in der Akte: Ausweis drucken, Kontoauszug, Ersatzforderung (nur bei offenem
   Schaden), DSGVO-Auskunft. Kontoauszug und Ersatzforderung gibt es nur beim Schüler, die
   DSGVO-Auskunft für jeden Leser; beim Kollegen nennt sie auch sein Zugangskonto, seine
-  Wünsche und Reservierungen im Portal und seine Klassenleitungen. Gibt es für das
+  Wünsche und Reservierungen im Portal, seine Klassenleitungen und die Vorgänge, die er selbst
+  bearbeitet hat — mit Zeitpunkt und Handlung, ohne Angaben zu anderen Personen. Gibt es für das
   Kind einen Schadensersatz-Bescheid, steht unter _Ausleihen & Historie_ die Karte
   **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
   und _Nachdruck_ (derselbe Brief mit derselben Nummer).

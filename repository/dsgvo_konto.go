@@ -1,8 +1,9 @@
 package repository
 
 // dsgvo_konto.go — der Teil der Auskunft nach Art. 15 DSGVO, der am ZUGANGSKONTO hängt: das
-// Konto selbst, die Klassenleitungen, die eigenen Anfragen im Kollegiums-Portal und die
-// Einträge des Verwaltungsprotokolls über das Konto. Bis zum 24.09.2026 endete die Auskunft
+// Konto selbst, die Klassenleitungen, die eigenen Anfragen im Kollegiums-Portal, die
+// Einträge des Verwaltungsprotokolls über das Konto und die Vorgänge, die die Person selbst
+// bearbeitet hat (dsgvo_konto_vorgaenge.go). Bis zum 24.09.2026 endete die Auskunft
 // eines Kollegen mit „nicht gefunden" (Stammdaten aus der Sicht `schueler`); entschieden ist
 // seither: Die Auskunft gibt es für jeden Leser (OFFEN.md 5.19).
 //
@@ -36,6 +37,9 @@ type DsgvoZugangskonto struct {
 	Klassenleitungen []string             `json:"klassenleitungen"`
 	Anfragen         []DsgvoAnfrage       `json:"anfragen"`
 	Ereignisse       []DsgvoKontoEreignis `json:"ereignisse_im_verwaltungsprotokoll"`
+	// Was die Person mit diesem Konto selbst bearbeitet hat — ohne die Daten Dritter
+	// (dsgvo_konto_vorgaenge.go).
+	EigeneVorgaenge []DsgvoEigenerVorgang `json:"selbst_bearbeitete_vorgaenge"`
 }
 
 // DsgvoAnfrage ist ein Wunsch, eine Meldung oder eine Klassensatz-Reservierung, die die
@@ -135,6 +139,9 @@ func LeseDsgvoZugangskonto(ctx context.Context, q DBQueryer, leserID string) (*D
 		return e, r.Scan(&e.Aktion, &e.Zeitpunkt, &e.Details)
 	}, k.ID, k.Email, k.ErstelltAm); err != nil {
 		return nil, fmt.Errorf("kontoereignisse: %w", err)
+	}
+	if k.EigeneVorgaenge, err = leseDsgvoEigeneVorgaenge(ctx, q, k.ID); err != nil {
+		return nil, err
 	}
 	return &k, nil
 }

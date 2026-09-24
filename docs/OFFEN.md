@@ -36,10 +36,10 @@ die Entscheidungen unten).
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026):
 
-1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.19 (Auskunft für jeden Leser), 5.21
-   (Palettenfarben, Bildschirm für Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18
-   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), die Sperre nur im eigenen Topf
-   (4.4, kleiner Umbau an der Theke).
+1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
+   Bildschirm; der Scanner auf eigenen M3-Rollen), 5.18 (Klassen als Stammdaten, mit
+   Frage-Runde zur Oberfläche), die Sperre nur im eigenen Topf (4.4, kleiner Umbau an der
+   Theke).
 2. **5.3** — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben wird (echte
    Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
@@ -400,24 +400,32 @@ Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
-**Entschieden am 24.09.2026, nicht gebaut: die DSGVO-Auskunft für jeden Leser**
-(`api/dsgvo_auskunft.go`), am Code nachgesehen am 24.09.2026. Für einen Kollegen endet die
-Auskunft mit 404 (Stammdaten aus der Sicht `schueler`), die Akte blendet den Knopf aus. Acht der
-neun Datenteile fragen schon nach der Leser-ID. Es fehlen das Konto, die eigenen Anfragen
-(`lehrer_anliegen`, Klassensatz-Reservierungen), die Kontoereignisse im Verwaltungsprotokoll und
-die Pflichtangaben für Beschäftigte (VVT Tätigkeit 3, § 23 HDSIG). Vier Gates stehen auf „nur
-Schüler" und führen den Umbau. Littera hat keine Auskunft; sein Stammdatenblatt ist für jede
-Leserart gleich.
+**Offen aus dem Umbau der Auskunft (gebaut am 24.09.2026):** Die Rohdaten der Protokolleinträge
+(`details`) stehen nur in der abgerufenen Auskunft, nicht auf dem Blatt; das Gate
+`TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt sie als begründete Ausnahme, seit dem
+24.09.2026 auch die Details der Kontoereignisse. Offen ist, was davon aufs Blatt gehört.
+Nachgesehen am 24.09.2026: Die bearbeitende Person steht in eigenen Spalten (`bearbeiter_id`,
+`admin_id`), die die Auskunft nicht ausgibt; Freitexte in den Details — etwa der Grund einer
+übergangenen Sperre (`OVERRIDE_BLOCK`) — können aber andere Personen nennen.
 
-Beim Umbau mitentscheiden: Die Rohdaten der Protokolleinträge (`details`) stehen nur in der
-abgerufenen Auskunft, nicht auf dem Blatt — sie nennen auch die bearbeitende Person. Das Gate
-`TestDsgvoPDF_DrucktJedeAngabeDerAuskunft` führt sie als begründete Ausnahme.
+**Beim Bau der Auskunft für Kollegen gefunden (24.09.2026), jeweils am Code nachgesehen:**
 
-**Entschieden am 24.09.2026:** Die Einträge, in denen ein Kollege selbst handelt (gebuchte
-Ausleihen, Verwaltungseingriffe mit IP-Adresse, Inventur; bei einer Bibliothekskraft Tausende in
-24 Monaten), zählt das VVT zu seinen Daten. Sie kommen in seine Auskunft, **ohne die Daten
-Dritter** — Zeitpunkt, Handlung, IP-Adresse, nicht der betroffene Schüler (Art. 15 Abs. 4
-DSGVO).
+- Ein gelöschter Kollege bleibt ohne Frist im Papierkorb: `PredikatAnonymisierung` nimmt nur
+  `art = 'schueler'` (nötig, weil `chk_leser_nur_schueler_werden_abgaenger` die Anonymisierung
+  eines Kollegen verbietet), und eine andere Routine gibt es nicht; entfernt wird er nur von
+  Hand (Papierkorb → Endgültig löschen, Recht `manage_students_admin`). Die Auskunft sagt das
+  so. Offen: eine Frist für gelöschte Kollegen.
+- Klassensatz-Reservierungen löscht kein Job; erledigte Wünsche und Meldungen fallen nach der
+  eingestellten Frist (Vorgabe 365 Tage).
+- Wird nur das Konto gelöscht (Benutzer & Rechte), bleibt die Leserzeile mit Ausweis stehen
+  (`loescheUnberuehrteLeserzeile`). Die Einträge über das gelöschte Konto — `USER_CREATE` und
+  `USER_UPDATE` mit seiner `ziel_id`, der Löscheintrag in `audit_log` mit Name und E-Mail-Adresse —
+  zeigen danach auf kein Konto mehr, und die Auskunft der Person findet sie nicht. Abhilfe:
+  beim Löschen die `leser_id` in den Löscheintrag schreiben und die Auskunft darüber suchen
+  lassen.
+- Ein Kollege mit Zugang, der über die Leserdatei angelegt wird (`POST /api/schueler` mit
+  Adresse), hinterlässt keinen Protokolleintrag; über Benutzer & Rechte entsteht `USER_CREATE`.
+  Zwei Türen zum selben Zustand, die Rechenschaft hängt an der Tür.
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung

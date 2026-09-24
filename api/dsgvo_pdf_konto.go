@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"bibliothek/pkg/schulzeit"
 	"bibliothek/repository"
 
 	"github.com/jung-kurt/gofpdf"
@@ -72,6 +73,53 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	for _, e := range k.Ereignisse {
 		p.MultiCell(0, 5, tr(dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoKontoAktion(e.Aktion)), "", "L", false)
 	}
+
+	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Vorgänge, die diese Person im System bearbeitet hat (%d)", len(k.EigeneVorgaenge)))
+	dsgvoHinweis(p, tr, "Ohne Angaben zu anderen Personen (Art. 15 Abs. 4 DSGVO). Eine Buchung kann zweimal "+
+		"stehen: als Ausleihvorgang, solange die bearbeitende Person daran gespeichert ist (bis 14 Tage nach "+
+		"der Rückgabe), und als Protokolleintrag.")
+	if len(k.EigeneVorgaenge) == 0 {
+		dsgvoLeer(p, tr)
+	}
+	p.SetFont("Arial", "", 8)
+	for _, z := range dsgvoVorgaengeJeTag(k.EigeneVorgaenge) {
+		p.MultiCell(0, 5, tr(fmt.Sprintf("%s · %s (%d): %s", z.tag, z.handlung, len(z.zeiten),
+			strings.Join(z.zeiten, ", "))), "", "L", false)
+	}
+}
+
+// dsgvoVorgangsZeile fasst die Vorgänge eines Tages mit derselben Handlung zusammen.
+type dsgvoVorgangsZeile struct {
+	tag, handlung string
+	zeiten        []string
+}
+
+// dsgvoVorgaengeJeTag fasst die selbst bearbeiteten Vorgänge je Tag und Handlung zusammen und
+// behält jede Uhrzeit. Bei einer Bibliothekskraft sind es Tausende Vorgänge; eine Zeile je
+// Vorgang wären Hunderte Seiten. Die Reihenfolge folgt der Abfrage (neueste zuerst); innerhalb
+// eines Tages stehen die Handlungen in der Reihenfolge, in der sie zuerst vorkommen.
+func dsgvoVorgaengeJeTag(vorgaenge []repository.DsgvoEigenerVorgang) []dsgvoVorgangsZeile {
+	var zeilen []dsgvoVorgangsZeile
+	index := map[[2]string]int{}
+	for _, v := range vorgaenge {
+		tag, zeit := "ohne gespeicherten Zeitpunkt", "—"
+		if v.Zeitpunkt != nil {
+			lokal := v.Zeitpunkt.In(schulzeit.Zone())
+			tag, zeit = lokal.Format(dsgvoDatumFormat), lokal.Format("15:04")
+		}
+		if v.IPAdresse != nil && *v.IPAdresse != "" {
+			zeit += " (IP " + *v.IPAdresse + ")"
+		}
+		schluessel := [2]string{tag, v.Handlung}
+		i, gibtEs := index[schluessel]
+		if !gibtEs {
+			i = len(zeilen)
+			index[schluessel] = i
+			zeilen = append(zeilen, dsgvoVorgangsZeile{tag: tag, handlung: v.Handlung})
+		}
+		zeilen[i].zeiten = append(zeilen[i].zeiten, zeit)
+	}
+	return zeilen
 }
 
 // dsgvoUnterabschnitt ist eine Zwischenüberschrift innerhalb eines Abschnitts.
