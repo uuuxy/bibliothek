@@ -40,15 +40,15 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
    den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
-Vorschlag vom 24.09.2026):
+Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — in sechs Stufen, jede mit Nachweis und
+   Freigabe; der ISBN-10/13-Abgleich aus 5.5 kommt mit Stufe 4 an derselben Tür
+   (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`).
+2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
-2. **5.3** — vor 4.18: Es muss stehen, bevor ein echter Bescheid übergeben wird (echte
-   Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
-3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
-   derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
-   Nachbestell-Liste, also zuletzt. Vorher offen: woran das Werk seinen Bedarf misst (4.18).
+3. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
+   der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 4. Nach der Antwort zu 8.3: **5.4**.
 5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -209,18 +209,46 @@ gruppieren verbindet früher oder später zwei „Deutschbuch 7" verschiedener V
 pflegt es niemand, und der Bedarf bleibt falsch. Auf dem Weg über die Nachbestellung ist der
 Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 
-**Freigegeben am 23.09.2026, nicht gebaut:** das Werk samt Migration, Gruppierung im Bedarf
-und Warnung in der Ausgabe. Ändert das Schema und rechnet die Nachbestell-Liste anders — in
-Stufen mit Nachweis.
+**Entschieden am 25.09.2026:**
 
-**Offen vor dem Bau: woran das Werk seinen Bedarf misst.** Die Entscheidung vom 17.09.2026
-rechnet mit einem Soll je Werk („95 Stück Mathe 7"; „am Werk rechnen Meldebestand, Bedarf und
-Nachbestellung"). Ein Soll je Buch gibt es heute nicht: Am 30.07.2026 ist entschieden worden,
-`meldebestand` nicht zu pflegen und ihm keine Oberfläche zu geben. Kein Schreibpfad setzt die
-Spalte, und sie löst nichts aus ([FACHKONZEPT.md](FACHKONZEPT.md), Bestellbedarf). Mit dem Werk
-und der einen Schwelle stünde ein Buch in zwei Auflagen als eine Zeile auf der Liste; eine Zahl
-wie 95 für ein bestimmtes Buch ließe sich damit nicht ausdrücken. Zu entscheiden: bleibt es bei
-der einen Schwelle, oder bekommt das Werk ein eigenes Soll?
+- **Zusammenfassen an zwei Stellen, über eine Schreibfunktion:** in der Titelmaske von Hand —
+  auch für Bücher, die schon in mehreren Auflagen im Katalog stehen — und beim Nachbestellen als
+  Vorschlag, den der Besteller bestätigt. Littera kennt nur den Weg von Hand: die Verweisung
+  „Früherer Titel" in der Titelmaske, und die wirkt nur auf die Suche.
+- **Der Bedarf vergleicht die Summe aller Auflagen mit der einen Schwelle** aus den Einstellungen.
+  Ein Soll je Buch gibt es nicht; `meldebestand` wird seit dem 30.07.2026 nicht gepflegt
+  ([FACHKONZEPT.md](FACHKONZEPT.md), Bestellbedarf). Das ersetzt den Meldebestand am Werk aus
+  der Form vom 17.09.2026.
+- **Gemischte Auflagen in einer Klasse:** eine Hinweiszeile an der Theke wie bei der
+  Fremdrückgabe, kein Dialog; dazu die Aufschlüsselung in der Klassensatz-Übersicht.
+- **Gebaut wird jetzt**, vor 5.21, 5.18 und 5.3: 5.3 wird erst mit echten Bescheiden gebraucht,
+  und die gibt es erst mit den Nummern aus E1 (8.1).
+- **`werke` ohne Spalte Name** (Abweichung von der Form vom 17.09.2026): Jede Ansicht zeigt die
+  neueste Auflage mit ihrem Titel; ein eigener Name, den keine Ansicht liest und niemand pflegt,
+  liefe auseinander wie `meldebestand`.
+
+**Die Stufen** — je Stufe ein Test, der am alten Stand rot ist, die volle Suite mit Postgres und
+der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibung der
+Oberfläche, gebaut wird nach der Freigabe:
+
+1. **Datenform und Tür, nur Server:** Migration 148 (`werke`, `buecher_titel.werk_id`), eine
+   Funktion im Repository zum Zusammenfassen und Lösen, Routen für die Titelmaske (`edit_books`)
+   und eine Leseroute für die Auflagen eines Titels (`view_books`).
+2. **Titelmaske:** ein Abschnitt „Auflagen" bei Lernmitteln — die zusammengefassten Auflagen mit
+   Bestand, „Andere Auflage zuordnen", „Lösen".
+3. **Nachbestell-Liste und PDF:** eine Zeile je Buch, die Summe gegen die Schwelle; bestellt wird
+   die neueste Auflage, darunter steht die Aufschlüsselung.
+4. **Vorschlag beim Nachbestellen:** „Neue Auflage bestellen" an der Zeile — ISBN der neuen
+   Auflage, Titel anlegen, Vorschlag bestätigen (Route mit `create_orders`, dieselbe Funktion).
+   Dazu der ISBN-10/13-Abgleich aus 5.5 an derselben Tür (`findeLokalenTitel`).
+5. **Gemischte Auflagen:** die Hinweiszeile an der Theke und die Klassensatz-Übersicht.
+6. **Suche:** Medienkatalog und Portal zeigen das Buch einmal, mit der Gesamtzahl und der
+   Aufschlüsselung je Auflage.
+
+**Messung am Testserver, lesend** — wie viele Lernmittel schon in mehreren Auflagen im Katalog
+stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob Stufe 2 eine Vorschlagsliste
+braucht:
+`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS gruppen, coalesce(sum(n),0) AS titel, count(*) FILTER (WHERE mit_bestand > 1) AS gruppen_mit_bestand_in_mehreren FROM (SELECT count(*) AS n, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM buecher_exemplare e WHERE e.titel_id = b.id AND NOT e.ist_ausgesondert)) AS mit_bestand FROM buecher_titel b WHERE b.ist_lernmittel GROUP BY lower(trim(b.titel)), lower(trim(coalesce(b.verlag, ''))) HAVING count(*) > 1) x;"`
 
 ### 4.20 Littera-Schlagworte übernehmen
 
