@@ -359,16 +359,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   sind, ist nicht geprüft; das klärt der Bau.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
-- **Wiedervorlage 17. November 2026: `GO-2026-6452` (excelize).** Am 16.09.2026 erschien eine
-  Schwachstelle ohne heile Fassung — der Eintrag führt alle Versionen ab 0 und nennt keine
-  mit Fix. Sie trifft uns nicht: Der gewöhnliche Weg hat den Bereichsschutz seit v2.11.0,
-  und der ungeschützte Auslagerungs-Weg ist unerreichbar, weil `xlsxgrenze.Optionen()` beide
-  Entpackgrenzen gleich setzt (nachgemessen, vier Tests). Solange das so ist, steht sie als
-  begründete Ausnahme in `security/vuln-ausnahmen.json`; das Gate
-  (`scripts/govulncheck-gate.sh`) wird von allein rot, sobald die Wiedervorlage abläuft, die
-  Ausnahme überflüssig wird oder irgendeine andere Schwachstelle unseren Code trifft. Zu tun:
-  nachsehen, ob excelize inzwischen eine Fassung mit Fix hat — dann Ausnahme löschen und
-  heben.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
 - `e2e/icon-trefferflaechen.spec.js` misst die Bestellhistorie, legt aber keine Bestellung an:
   Allein oder ohne eine `bestell…`-Spec davor läuft es in die Zeitüberschreitung (lokal am

@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-24 (Anonymisierung: die Ausweisnummer wird ersetzt, eine
+> Zuletzt aktualisiert: 2026-09-25 (Ausnahmeliste von govulncheck leer: GO-2026-6452 gilt in
+> der Datenbank als behoben, die Abwehr über gleiche Entpackgrenzen bleibt).
+> Davor 2026-09-24 (Anonymisierung: die Ausweisnummer wird ersetzt, eine
 > `A-`-Nummer bleibt als bloße Zahl gesperrt, Migration 146).
 > Davor 2026-09-23 (Endpunkte ohne Anmeldung: was das Routen-Gate als Schutz
 > annimmt, die Tabelle mit allen Einträgen der Allowlist; `RequireRoles` ist seit dem
@@ -681,6 +683,14 @@ bei einer überfälligen Wiedervorlage und auch dann, wenn eine Ausnahme gar nic
 gemeldet wird: Dann gibt es einen Fix, und der Eintrag gehört gelöscht. Anlass war
 GO-2026-6452 (excelize) — für alle Versionen ab 0, ohne eine mit Fix; ohne Ausnahme wäre
 kein Push mehr möglich gewesen, und `--no-verify` wäre zur Gewohnheit geworden.
+
+Am 24.09.2026 abends trug die Schwachstellen-Datenbank 2.11.0 als behobene Fassung nach — die
+Fassung, die wir benutzen. Das Gate meldete daraufhin die Ausnahme als überflüssig; sie ist
+seit dem 25.09.2026 gelöscht, die Liste ist leer. **Die Abwehr bleibt trotzdem:** Behoben ist
+in 2.11.0 nur der gewöhnliche Weg. Auf dem Auslagerungs-Weg stürzt 2.11.0 weiter ab, sobald
+die beiden Entpackgrenzen auseinanderliegen (`TestNegativerSharedStringIndex_IstEineEchteGefahr`
+in `pkg/xlsxgrenze/negativer_sharedstring_test.go`, am 25.09.2026 grün, also mit Absturz).
+`xlsxgrenze.Optionen()` setzt beide gleich, und die Tests daneben halten das fest.
 
 **CodeQL läuft daneben, ohne Datei im Repository.** Für dieses Repository ist GitHubs
 **Standard-Setup** aktiv (Settings → Code security → Code scanning). Es analysiert `go`,
