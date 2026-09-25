@@ -73,6 +73,11 @@ type LoanResult struct {
 	// genommen hat. Das reservierte Exemplar muss zurück ins normale Regal — sonst
 	// bleibt es als "Geisterbuch" im Fach liegen, obwohl es laut DB verfügbar ist.
 	RegalfreigabeBarcode string
+	// AuflagenHinweis ist gesetzt, wenn das ausgeliehene Schulbuch eine Auflage eines Buchs
+	// ist, von dem Kinder derselben Klasse gerade eine ANDERE Auflage haben (docs/OFFEN.md
+	// 4.18, Stufe 5: „Die Ausgabe warnt, wenn eine Klasse gemischte Auflagen bekommt"). Nur
+	// ein Hinweis — die Ausleihe ist gebucht.
+	AuflagenHinweis *repository.AuflagenMischung
 }
 
 // LoanService steuert die Geschäftsregeln und Transaktionen rund um das Ausleihen und Zurückgeben von Büchern.

@@ -54,6 +54,12 @@ die Forderung landet in der Akte, der Elternbrief kommt als PDF).
 
 **Die Theke warnt von selbst:**
 
+- Bekommt ein Kind ein **Schulbuch in einer anderen Auflage**, als Kinder seiner Klasse sie
+  schon haben (seit 25.09.2026; nur bei Auflagen, die in der Titel-Verwaltung zusammengefasst
+  sind), blitzt die Theke orange, und über dem Konto steht zum Beispiel „Andere Auflage in der
+  07B: 12 Kinder haben 3. Aufl. · 2019 — dieses Exemplar ist 4. Aufl. · 2023." Die Ausleihe ist
+  gebucht; wer die Klasse einheitlich haben will, nimmt das Buch zurück (erneut scannen) und
+  gibt die andere Auflage aus. Andere Auflagen haben andere Seitenzahlen. (§13)
 - Kommt ein **vorgemerktes** Buch zurück, erscheint ein roter Hinweis: nicht ins Regal, die
   nächste Leserin wartet. (§4)
 - Ein **gesperrter** Ausweis wird angehalten — mit dem hinterlegten Grund. Dann geht nur die

@@ -41,8 +41,8 @@ Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe, weil sich Auflagen in d
 unterscheiden. Geschrieben wird `werk_id` nur in `repository/auflagen.go`. Am Werk zählen
 Bedarf und Nachbestellung: Die Nachbestell-Liste summiert über `COALESCE(werk_id, id)` und
 zeigt die neueste Auflage (`api/reorders.go`); „Neue Auflage bestellen" fasst aus der Zeile heraus
-zusammen. Was noch folgt — ISBN-10/13-Abgleich an der Bestelltür, Hinweis bei gemischten
-Auflagen, Suche —, steht in docs/OFFEN.md 4.18.
+zusammen. An der Theke warnt eine Zeile, wenn eine Klasse gemischte Auflagen bekommt. Was noch
+folgt — Klassensatz-Übersicht, Suche, ISBN-10/13-Abgleich —, steht in docs/OFFEN.md 4.18.
 
 **Rolle und Art sind zwei verschiedene Fragen.** Die **Rolle** sagt, was jemand im
 Programm darf (Admin, Leitung, Mitarbeiter, Helfer — dazu `kollegium` als Grundzustand).

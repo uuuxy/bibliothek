@@ -171,7 +171,22 @@ func (s *defaultLoanService) handleNewLoan(
 	if loan != nil {
 		resp.DueDate = &loan.RueckgabeFrist
 	}
+	if chkCtx.istSchueler() && copy.IstLernmittel {
+		resp.AuflagenHinweis = s.auflagenHinweis(ctx, copy.TitelID, chkCtx.borrowerID)
+	}
 	return resp, nil
+}
+
+// auflagenHinweis fragt NACH der Buchung, ob die Klasse gemischte Auflagen bekommt
+// (repository.AuflagenMischungInKlasse). Ein Fehler hier darf die gebuchte Ausleihe nicht
+// als gescheitert melden: Er landet im Log, und die Theke zeigt keinen Hinweis.
+func (s *defaultLoanService) auflagenHinweis(ctx context.Context, titelID, schuelerID string) *repository.AuflagenMischung {
+	m, err := repository.AuflagenMischungInKlasse(ctx, s.pool, titelID, schuelerID)
+	if err != nil {
+		log.Printf("auflagen-hinweis: %v", err)
+		return nil
+	}
+	return m
 }
 
 // handleReturn handles the case where the active user returns their own book.

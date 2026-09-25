@@ -3474,6 +3474,14 @@ const docTemplate = `{
                         "$ref": "#/definitions/api.AbholbereitInfo"
                     }
                 },
+                "auflagen_hinweis": {
+                    "description": "AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die\nKinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5) — Klasse, diese\nAuflage und die anderen mit der Zahl der Kinder, keine Namen. PII-Matrix: Stufe 1 wie\ndie übrige Theken-Antwort (die Klasse des Kindes steht dort ohnehin).",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/repository.AuflagenMischung"
+                        }
+                    ]
+                },
                 "aufsicht_informieren": {
                     "description": "AufsichtInformieren: Das zurückgebrachte Buch steht auf einem bereits übergebenen\nSchadensersatz-Bescheid — die Schulaufsicht ist unverzüglich zu informieren (#597).\nGetrennt von Message, weil es eine Aufgabe ist und keine Erfolgsmeldung.",
                     "type": "string"
@@ -5175,6 +5183,40 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "verlag": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.AuflageInKlasse": {
+            "type": "object",
+            "properties": {
+                "auflage": {
+                    "type": "string"
+                },
+                "erscheinungsjahr": {
+                    "type": "integer"
+                },
+                "kinder": {
+                    "type": "integer"
+                }
+            }
+        },
+        "repository.AuflagenMischung": {
+            "type": "object",
+            "properties": {
+                "andere": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.AuflageInKlasse"
+                    }
+                },
+                "auflage": {
+                    "type": "string"
+                },
+                "erscheinungsjahr": {
+                    "type": "integer"
+                },
+                "klasse": {
                     "type": "string"
                 }
             }

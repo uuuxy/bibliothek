@@ -50,6 +50,9 @@ export function createOmniboxStore() {
 	let flashBorder = $state('');
 	let screenFlash = $state(''); // "success" | "error" | ""
 	let lastFremdrueckgabe = $state(/** @type {any} */ (null));
+	// Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): der Hinweis der letzten Ausleihe, bis
+	// zum nächsten Scan — wie die Fremdrückgabe, als Zeile über dem Konto (OmniboxThekeHinweise).
+	let lastAuflagenHinweis = $state(/** @type {any} */ (null));
 	let isShaking = $state(false);
 	let scanError = $state(false);
 	let errorMessage = $state('');
@@ -365,9 +368,13 @@ export function createOmniboxStore() {
 			// Kein Fehler, kein Erfolg: Der Scan wartet auf die Zubehör-Bestätigung.
 			checklistAnfrage = { query: q, geraet: data.geraet, overrideBlock };
 		} else if (data.type === 'ausleihe') {
-			triggerScreenFlash('success');
+			// Gebucht ist die Ausleihe in jedem Fall (Ton wie immer). Gehört das Buch zu einer
+			// anderen Auflage als die, die die Klasse schon hat, blitzt es wie bei der
+			// Fremdrückgabe, und die Zeile über dem Konto sagt, welche (4.18, Stufe 5).
+			lastAuflagenHinweis = data.auflagen_hinweis ?? null;
+			triggerScreenFlash(lastAuflagenHinweis ? 'warning' : 'success');
 			playSoundSuccess();
-			triggerFlash('green');
+			triggerFlash(lastAuflagenHinweis ? 'orange' : 'green');
 			showToast(
 				`„${data.book?.titel ?? data.geraet?.modellname}" ausgeliehen an ${activeStudent?.vorname}.`
 			);
@@ -690,6 +697,7 @@ export function createOmniboxStore() {
 		queryVal = '';
 		isDropdownOpen = false;
 		lastFremdrueckgabe = null;
+		lastAuflagenHinweis = null;
 		clearFehlerBanner();
 
 		// Disable input while processing
@@ -882,6 +890,9 @@ export function createOmniboxStore() {
 		},
 		set lastFremdrueckgabe(v) {
 			lastFremdrueckgabe = v;
+		},
+		get lastAuflagenHinweis() {
+			return lastAuflagenHinweis;
 		},
 		get isShaking() {
 			return isShaking;

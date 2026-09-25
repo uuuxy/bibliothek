@@ -59,6 +59,9 @@ type OmniboxResult struct {
 	// greifen soll, solange der Schüler vor ihr steht. Ohne ihn läge das Buch im
 	// Fach, bis die 3-Tage-Frist es still an den Nächsten weiterreicht.
 	Abholbereit []AbholbereiteVormerkung
+	// AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die
+	// Kinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5). Aus LoanResult.
+	AuflagenHinweis *repository.AuflagenMischung
 }
 
 // AbholbereiteVormerkung ist ein Eintrag des Abholfach-Hinweises: Titel und
@@ -535,4 +538,5 @@ func (s *defaultOmniboxService) mapLoanResult(lr *LoanResult, resp *OmniboxResul
 	resp.VormerkungTitel = lr.VormerkungTitel
 	resp.VormerkungUser = lr.VormerkungUser
 	resp.RegalfreigabeBarcode = lr.RegalfreigabeBarcode
+	resp.AuflagenHinweis = lr.AuflagenHinweis
 }

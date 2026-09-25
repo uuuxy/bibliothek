@@ -69,6 +69,8 @@ var lesepfadeGeprueft = map[string]struct {
 	"repository/titel_loeschen_wartende.go": {1, "Namen zu Vormerkungen — Vormerkungen gibt es nur für Schüler (Tür: VormerkungRepository.Create)"},
 	"api/graduates.go":                      {2, "Abgänger-Liste und -Detail; das Kollegium hat keine Abgangslogik"},
 	"api/print.go":                          {3, "Rechnung (ein Kollege bekommt keine Forderung, schaden_melden.go), Mahnung je Klasse (gemahnt werden Schüler) und Kontoauszug (für Kollegen bewusst nicht, OFFEN.md 5.16 A)"},
+	// Auflagen eines Buchs, 25.09.2026 (OFFEN.md 4.18, Stufe 5).
+	"repository/auflagen_klasse.go": {2, "Hinweis an der Theke zu gemischten Auflagen in einer KLASSE — Klassen haben nur Schüler; dieselbe Klassendefinition wie inventur/datenbank_klassen.go, und der Aufruf steht nur hinter istSchueler()"},
 }
 
 // lesepfadeUngeprueft: seit dem 22.09.2026 leer (28 Dateien am 21./22.09. durchgesehen). NUR SCHRUMPFEN —

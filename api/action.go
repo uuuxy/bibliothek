@@ -278,6 +278,7 @@ func mapOmniboxResultToActionResponse(res *service.OmniboxResult) *ActionRespons
 		RegalfreigabeBarcode: res.RegalfreigabeBarcode,
 		AufsichtInformieren:  res.AufsichtInformieren,
 		Abholbereit:          zuAbholbereitInfos(res.Abholbereit),
+		AuflagenHinweis:      res.AuflagenHinweis,
 	}
 }
 

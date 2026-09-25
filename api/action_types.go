@@ -46,6 +46,11 @@ type ActionResponse struct {
 	// Schüler ein vorgemerktes Buch im Abholfach liegt. Titel + Frist, keine IDs;
 	// PII-Matrix: Stufe-1-Inhalt wie die Warteliste (Leseinteresse zu Name).
 	Abholbereit []AbholbereitInfo `json:"abholbereit,omitempty"`
+	// AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die
+	// Kinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5) — Klasse, diese
+	// Auflage und die anderen mit der Zahl der Kinder, keine Namen. PII-Matrix: Stufe 1 wie
+	// die übrige Theken-Antwort (die Klasse des Kindes steht dort ohnehin).
+	AuflagenHinweis *repository.AuflagenMischung `json:"auflagen_hinweis,omitempty"`
 }
 
 // AbholbereitInfo ist ein Eintrag des Abholfach-Hinweises.

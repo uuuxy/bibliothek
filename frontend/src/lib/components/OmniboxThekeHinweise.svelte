@@ -15,10 +15,16 @@
 	 *    Hinweis sagt, was daran anders ist: Die Frist ist ein Jahr
 	 *    (resolveBorrowerAndDueTime). Vorher stand dafür eine eigene schmale
 	 *    Karte da, weil es die Akte noch nicht gab.
+	 * 4. Gemischte Auflagen (25.09.2026, docs/OFFEN.md 4.18, Stufe 5): Das eben
+	 *    ausgeliehene Schulbuch ist eine andere Auflage als die, die Kinder derselben
+	 *    Klasse schon haben — verschiedene Auflagen heißen verschiedene Seitenzahlen.
+	 *    Entschieden: eine Zeile wie bei der Fremdrückgabe, kein Dialog; die Ausleihe
+	 *    ist gebucht, wer will, legt das Buch zurück und holt die andere Auflage.
 	 */
-	import { AlertTriangle, PackageCheck, GraduationCap } from '@lucide/svelte';
+	import { AlertTriangle, BookCopy, PackageCheck, GraduationCap } from '@lucide/svelte';
 	import { omniboxStore } from '../stores/omnibox.svelte.js';
 	import { leserArtText, istKollegium } from '../leserArt.js';
+	import { auflagenHinweisText } from '../utils/auflagenText.js';
 </script>
 
 {#if omniboxStore.lastFremdrueckgabe}
@@ -34,6 +40,16 @@
 			<strong class="font-medium">nicht auf {omniboxStore.activeStudent.vorname} gebucht</strong>.
 			Erneut scannen, um es auszuleihen.</span
 		>
+	</div>
+{/if}
+
+{#if omniboxStore.lastAuflagenHinweis}
+	<div
+		class="bg-warning-container text-on-warning-container no-print mb-2 flex w-full max-w-xl items-center space-x-2 p-3 text-xs"
+		role="status"
+	>
+		<BookCopy class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<span>{auflagenHinweisText(omniboxStore.lastAuflagenHinweis)}</span>
 	</div>
 {/if}
 
