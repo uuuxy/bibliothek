@@ -1032,6 +1032,152 @@ const docTemplate = `{
                 }
             }
         },
+        "/buecher/titel/{id}/auflagen": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "List the editions of a title's book",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Title ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TitelAuflagen"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Join another edition to a title's book",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Title ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The other edition",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.AuflageZuordnenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TitelAuflagen"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Detach a title from its book's editions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Title ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.TitelAuflagen"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/buecher/titel/{id}/ausleiher": {
             "get": {
                 "responses": {}
@@ -3384,6 +3530,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api.AuflageZuordnenRequest": {
+            "type": "object",
+            "required": [
+                "titel_id"
+            ],
+            "properties": {
+                "titel_id": {
+                    "type": "string"
+                }
+            }
+        },
         "api.BescheidErstellenRequest": {
             "type": "object",
             "properties": {
@@ -4715,6 +4872,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api.TitelAuflagen": {
+            "type": "object",
+            "properties": {
+                "auflagen": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.Auflage"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "api.TitelSchlagworte": {
             "type": "object",
             "properties": {
@@ -4911,6 +5082,41 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "von": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.Auflage": {
+            "type": "object",
+            "properties": {
+                "auflage": {
+                    "type": "string"
+                },
+                "erscheinungsjahr": {
+                    "type": "integer"
+                },
+                "gesamt": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "im_zulauf": {
+                    "type": "integer"
+                },
+                "isbn": {
+                    "type": "string"
+                },
+                "ist_lernmittel": {
+                    "type": "boolean"
+                },
+                "titel": {
+                    "type": "string"
+                },
+                "verfuegbar": {
+                    "type": "integer"
+                },
+                "verlag": {
                     "type": "string"
                 }
             }

@@ -35,6 +35,9 @@ var nichtVonUpdateBook = map[string]string{
 	"sort_order":    "manuelle Reihenfolge des Admins, gesetzt in reorder_handler.go (Ziehen und Ablegen)",
 	"search_vector": "GENERATED ALWAYS — Postgres pflegt die Spalte, ein Schreibversuch wäre ein Fehler",
 	"cover_status":  "gehört der asynchronen Cover-Beschaffung (internal/service/cover_service.go)",
+	"werk_id": "gehört repository/auflagen.go (FasseAuflagenZusammen, LoeseAuflage, Migration 148): " +
+		"Dort stehen die Regeln — nur Lernmittel, zwei Gruppen werden eine, ein Werk mit weniger " +
+		"als zwei Titeln fällt. UpdateBook schriebe den Wert ohne sie.",
 	"meldebestand": "Altbestand: Die Spalte wird NUR gelesen und von keinem Codepfad geschrieben. " +
 		"Die Bestellschwelle kommt seit dem Umbau aus den Einstellungen, der Wert wird laut " +
 		"api/reorders.go nur noch informativ mitgeliefert.",

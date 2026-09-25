@@ -336,6 +336,9 @@ func bauePIIAufrufe(w kanarienWelt) map[string]piiAufruf {
 		"GET /api/buecher/titel/{id}/etiketten": {URL: "/api/buecher/titel/" + w.titelID + "/etiketten"},
 		// Schlagworte (Migration 138): Stufe 0, Wörter über den Titel — keine Person.
 		"GET /api/buecher/titel/{id}/schlagworte": {URL: "/api/buecher/titel/" + w.titelID + "/schlagworte"},
+		// Auflagen eines Schulbuchs (Migration 148): Stufe 0 — Titel und Bestandszahlen. Der
+		// Titel der Kanarienwelt ist verliehen; wer ihn hat, darf hier nicht auftauchen.
+		"GET /api/buecher/titel/{id}/auflagen": {URL: "/api/buecher/titel/" + w.titelID + "/auflagen"},
 		// Das Abgangsbuch (17.09.2026, OFFEN.md 9.3 d): Stufe 0. Es nennt Exemplare, keine
 		// Leser — auch nicht beim Grund „Verlust", obwohl dort ein Schüler dahintersteht.
 		// Genau das prüft das Gate hier mit: Der Kanarienvogel darf auf diesem Blatt nicht

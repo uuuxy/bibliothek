@@ -128,6 +128,13 @@ var fkAktionenBestand = []string{
 	// Befragt am 06.09.2026: LEFT JOIN mit ausdrücklicher Begründung im Code
 	// (bestelldetail_repo.go), beide Geschwister-Pfade halten es genauso.
 	"SET NULL  bestellungen_positionen.titel_id -> buecher_titel",
+	// Befragt am 25.09.2026 (Migration 148): Ein Werk löscht nur repository/auflagen.go, und
+	// erst, nachdem es den letzten Titel daran gelöst hat (raeumeWerkAuf, vereineWerke) —
+	// auflagen_pg_test.go zählt danach die Werke. Der SET NULL fängt einen Titel auf, der
+	// dabei übersehen würde: Er steht danach allein, wie vor dem Zusammenfassen, und nichts
+	// anderes hängt an werk_id. Im Protokoll steht das Zusammenfassen nicht, so wenig wie
+	// jede andere Änderung an Titeldaten.
+	"SET NULL  buecher_titel.werk_id -> werke",
 	// Befragt: Der Fehlbestandsbericht hält eine Abschrift, gerade damit er das Löschen
 	// des Exemplars überlebt (inventur_verlust_aktionen.go).
 	"SET NULL  inventur_verluste.exemplar_id -> buecher_exemplare",

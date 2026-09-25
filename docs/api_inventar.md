@@ -1,12 +1,15 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-09-24. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-09-25. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
+- `DELETE /api/buecher/titel/{id}/auflagen`
+- `GET /api/buecher/titel/{id}/auflagen`
 - `GET /api/schadensfaelle/{id}/pdf`
+- `POST /api/buecher/titel/{id}/auflagen`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 
@@ -16,7 +19,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (220)
+## Alle registrierten Routen (223)
 
 - `/`
 - `/api/admin`
@@ -33,6 +36,7 @@
 - `DELETE /api/books`
 - `DELETE /api/buecher/exemplare/{id}`
 - `DELETE /api/buecher/titel/{id}`
+- `DELETE /api/buecher/titel/{id}/auflagen`
 - `DELETE /api/klassen-mapping/{klasse}`
 - `DELETE /api/lieferanten/{id}`
 - `DELETE /api/lmf-plan/{art}`
@@ -80,6 +84,7 @@
 - `GET /api/books/{id}`
 - `GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag`
 - `GET /api/buecher/titel/suche`
+- `GET /api/buecher/titel/{id}/auflagen`
 - `GET /api/buecher/titel/{id}/ausleiher`
 - `GET /api/buecher/titel/{id}/etiketten`
 - `GET /api/buecher/titel/{id}/exemplare`
@@ -180,6 +185,7 @@
 - `POST /api/buecher/aus-isbn`
 - `POST /api/buecher/exemplare/verlust-endgueltig-loeschen`
 - `POST /api/buecher/exemplare/{id}/gefunden`
+- `POST /api/buecher/titel/{id}/auflagen`
 - `POST /api/damage/report`
 - `POST /api/exemplare/etiketten-altbestand`
 - `POST /api/exemplare/etiketten-gedruckt`

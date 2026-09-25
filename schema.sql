@@ -460,6 +460,19 @@ CREATE TABLE revoked_tokens (
 CREATE INDEX idx_revoked_tokens_expires_at ON revoked_tokens(expires_at);
 
 
+-- Table: werke (Migration 148) — ein Buch über seinen Auflagen. Titel mit derselben
+-- werk_id sind Auflagen desselben Buchs; ein Titel ohne Werk ist sein eigenes (gelesen über
+-- COALESCE(werk_id, id)). Kein Name: Jede Ansicht zeigt die neueste Auflage mit ihrem Titel.
+-- Geschrieben nur über repository/auflagen.go.
+CREATE TABLE werke (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    angelegt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE werke IS
+    'Ein Buch über seinen Auflagen (Migration 148): Titel mit derselben werk_id sind '
+    'Auflagen desselben Buchs. Geschrieben nur über repository/auflagen.go.';
+
 -- Table: buecher_titel (Master book catalog metadata)
 -- Under the strict rule: metadata is separated from physical copies
 CREATE TABLE buecher_titel (
@@ -494,6 +507,11 @@ CREATE TABLE buecher_titel (
     -- eigener Titel mit eigener ISBN; dieses Feld ist das, was die beiden Zeilen in einer
     -- Liste unterscheidbar macht.
     auflage VARCHAR(50),
+    -- Migration 148: das Buch, zu dem diese Auflage gehört (docs/OFFEN.md 4.18). NULL heißt:
+    -- keine andere Auflage zugeordnet. Geschrieben nur über repository/auflagen.go, nicht
+    -- über UpdateBook; ein Werk löscht nur diese Datei, nachdem sie den letzten Titel gelöst
+    -- hat — SET NULL fängt einen übersehenen auf.
+    werk_id UUID CONSTRAINT fk_titel_werk REFERENCES werke (id) ON DELETE SET NULL,
     -- Migration 127: Was ein Ersatz HEUTE kostet — der „Neupreis zum Zeitpunkt des
     -- Verlusts" der Arbeitshilfe, in der Sprache des Medienzentrums der Listenpreis.
     -- NULLBAR mit Absicht: NULL heißt „nicht erfasst" (die Staffel weicht dann auf den
@@ -566,6 +584,9 @@ CREATE INDEX idx_buecher_isbn_normalisiert ON buecher_titel (replace(isbn, '-', 
 -- Migration 093: Teilindex auf die Minderheit der Lernmittel (Massenverlängerung,
 -- Bestellbedarf, Statistik fragen genau nach ihnen).
 CREATE INDEX idx_titel_lernmittel ON buecher_titel (ist_lernmittel) WHERE ist_lernmittel;
+-- Migration 148: „alle Auflagen dieses Buchs" und die Gruppierung der Nachbestell-Liste.
+-- Teilindex: Die meisten Titel gehören zu keinem Werk.
+CREATE INDEX idx_buecher_titel_werk_id ON buecher_titel (werk_id) WHERE werk_id IS NOT NULL;
 
 CREATE TRIGGER trg_buecher_titel_aktualisiert_am
 BEFORE UPDATE ON buecher_titel
@@ -1878,7 +1899,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('144_schlagworte_verweis_sperre.sql'),
 ('145_geleerte_ausweisnummer_zieht_neue.sql'),
 ('146_ausweisnummer_kommt_nie_wieder.sql'),
-('147_protokoll_verwaiste_leser.sql')
+('147_protokoll_verwaiste_leser.sql'),
+('148_auflagen_eines_buchs.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

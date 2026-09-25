@@ -42,8 +42,8 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — in sechs Stufen, jede mit Nachweis und
-   Freigabe; der ISBN-10/13-Abgleich aus 5.5 kommt mit Stufe 4 an derselben Tür
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — Stufen 2 bis 6, jede mit Nachweis; der
+   ISBN-10/13-Abgleich aus 5.5 kommt mit Stufe 4 an derselben Tür
    (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`).
 2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
@@ -229,11 +229,9 @@ Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 
 **Die Stufen** — je Stufe ein Test, der am alten Stand rot ist, die volle Suite mit Postgres und
 der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibung der
-Oberfläche, gebaut wird nach der Freigabe:
+Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Am Ende läuft das Raster über das ganze
+Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
 
-1. **Datenform und Tür, nur Server:** Migration 148 (`werke`, `buecher_titel.werk_id`), eine
-   Funktion im Repository zum Zusammenfassen und Lösen, Routen für die Titelmaske (`edit_books`)
-   und eine Leseroute für die Auflagen eines Titels (`view_books`).
 2. **Titelmaske:** ein Abschnitt „Auflagen" bei Lernmitteln — die zusammengefassten Auflagen mit
    Bestand, „Andere Auflage zuordnen", „Lösen".
 3. **Nachbestell-Liste und PDF:** eine Zeile je Buch, die Summe gegen die Schwelle; bestellt wird

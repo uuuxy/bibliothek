@@ -119,7 +119,14 @@ var phantomBestand = map[string]int{
 	// Zeilen ist bei den ersten vier der Normalfall (ein Wort ohne Titel, ohne Verweise); dass
 	// es beide Wörter gibt, sichern die FOR-UPDATE-Sperren davor (ErrSchlagwortNichtGefunden).
 	// Das Ergebnis misst repository/schlagworte_pflege_pg_test.go.
-	"repository/schlagworte_pflege.go:fuehreZusammenIn":       1,
+	"repository/schlagworte_pflege.go:fuehreZusammenIn": 1,
+	// Auflagen eines Schulbuchs (Migration 148): sperreAuflagen nimmt nur die Sperre
+	// (pg_advisory_xact_lock) — kein Schreibvorgang, dessen Erfolg jemand meldet.
+	// raeumeWerkAuf löst den letzten Titel eines Werks; 0 Zeilen sind richtig, wenn nur der
+	// eben gelöste daran hing (gezählt direkt davor). Die übrigen Stellen der Datei prüfen
+	// RowsAffected; das Ergebnis misst repository/auflagen_pg_test.go.
+	"repository/auflagen.go:sperreAuflagen":                   1,
+	"repository/auflagen.go:raeumeWerkAuf":                    1,
 	"repository/audit.go:LogAdminAktion":                      1,
 	"repository/audit.go:insertAuditLog":                      1,
 	"repository/audit_books.go:DeleteTitle":                   3,
