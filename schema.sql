@@ -1877,7 +1877,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('143_schlagworte_pflege.sql'),
 ('144_schlagworte_verweis_sperre.sql'),
 ('145_geleerte_ausweisnummer_zieht_neue.sql'),
-('146_ausweisnummer_kommt_nie_wieder.sql')
+('146_ausweisnummer_kommt_nie_wieder.sql'),
+('147_protokoll_verwaiste_leser.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

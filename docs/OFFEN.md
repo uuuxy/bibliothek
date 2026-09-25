@@ -19,14 +19,14 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Drei Messungen am Testserver** (7.8), lesend, je ein Einzeiler: der Sperrgrund im
-   Protokoll (ist die vierte Zahl größer als 0, folgt eine einmalige Bereinigung), die
-   Postgres-Version des Datenbank-Containers und das Alter der `apk upgrade`-Schicht im
-   Backend-Image.
-2. **Den Entwurf des Pflegekonzepts lesen** ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), 9.9) und die
-   vier offenen Stellen in seinem Abschnitt 9 beantworten: Einsatz über die eigene Schule hinaus
-   (am 24.09.2026 offen gelassen), Meldeweg und Reaktionszeit, wer Betriebssystem und Docker des
-   Servers aktualisiert, ob am Schulserver nur Releases eingespielt werden.
+1. **Nach dem nächsten Update eine Kontrollzählung** (7.8), lesend: Migration 147 räumt die
+   drei Protokolleinträge zu gelöschten Lesern; die Zählung muss danach 0 zeigen.
+2. **Die Vorschläge vom 25.09.2026 bestätigen oder ändern** — zur Aktualität der Images (7.8)
+   und zu den vier offenen Stellen des Pflegekonzepts (9.9, Entwurf in
+   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)). Danach baue ich in drei Stufen: `update.sh` holt das
+   Datenbank-Image und baut ohne Cache; ein Release-Modus für den Schulserver; das Pflegekonzept
+   mit den Antworten und eine Vorlage für das Blatt. Dazu nur du: ob die Vertretung schon
+   benannt ist.
 3. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
    zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen
@@ -744,15 +744,15 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
-- **Der Sperrgrund im Protokoll** (seit 5b50202d tilgt die Anonymisierung `grund` und `reason`
-  in `audit_logs`). Die Abfrage zählt die Einträge mit einem dieser Schlüssel neben
-  `schueler_id` — insgesamt, dann nach dem Leser: vorhanden, anonymisiert, gelöscht. Die
-  anonymisierten räumt der Nachtlauf nach dem Update selbst (er geht über `anonymized_at`
-  vorhandener Zeilen). Die gelöschten erreicht er nicht: Ist die vierte Zahl größer als 0,
-  folgt eine einmalige Bereinigung nur für diese Einträge.
+- **Der Sperrgrund im Protokoll — Kontrolle nach dem Update.** Gemessen am Testserver am
+  25.09.2026: 4 Einträge mit `grund` oder `reason`, davon 1 zu einem vorhandenen Leser (bleibt
+  bis zu seiner Anonymisierung), 0 anonymisiert, 3 zu gelöschten Lesern. Migration 147 nimmt
+  jedem Eintrag zu einer Kennung ohne Leser die fünf Schlüssel der Tilgung. Nach dem Update
+  zeigt die Abfrage in der ersten Spalte 1 (die Migration ist gelaufen) und in der zweiten 0;
+  dann ist der Punkt erledigt.
 
   ```
-  docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS mit_grund, count(*) FILTER (WHERE l.id IS NOT NULL AND l.anonymized_at IS NULL) AS vorhanden, count(*) FILTER (WHERE l.anonymized_at IS NOT NULL) AS anonymisiert, count(*) FILTER (WHERE l.id IS NULL) AS geloescht FROM audit_logs a LEFT JOIN leser l ON l.id::text = a.details->>'schueler_id' WHERE (a.details ? 'grund' OR a.details ? 'reason') AND a.details ? 'schueler_id';"
+  docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM schema_migrations WHERE version = '147_protokoll_verwaiste_leser.sql') AS migration_147, (SELECT count(*) FROM audit_logs a WHERE (a.details ? 'lusd_id' OR a.details ? 'barcode' OR a.details ? 'aufgeloest_barcode' OR a.details ? 'grund' OR a.details ? 'reason') AND a.details ? 'schueler_id' AND NOT EXISTS (SELECT 1 FROM leser l WHERE l.id::text = lower(a.details->>'schueler_id'))) AS verwaist_mit_schluessel;"
   ```
 
 - **Die Postgres-Nebenversion am Server** (gefunden beim Pflegekonzept, 24.09.2026).
@@ -762,13 +762,16 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
   vierteljährlich; aktuell ist 18.6 (postgresql.org, abgerufen am 24.09.2026). Der Port ist nur
   an `127.0.0.1` gebunden, das begrenzt das Risiko. Die Lücke besteht unabhängig vom Messwert —
   auch bei 18.6 käme die nächste Nebenversion nicht an; die Zahl zeigt nur, wie weit der Server
-  zurückliegt. **Zu entscheiden:** ob `update.sh` das Datenbank-Image bei jedem Update holt
-  (dann startet die Datenbank bei einer neuen Nebenversion während des Updates neu) oder ob das
-  eine eigene Wartungsaufgabe im Pflegekonzept wird.
-
-  ```
-  docker exec bibliothek-db postgres --version
-  ```
+  zurückliegt. Gemessen am Testserver am 25.09.2026: 18.6, also aktuell. **Zu entscheiden:** ob
+  `update.sh` das Datenbank-Image bei jedem Update holt (dann startet die Datenbank bei einer
+  neuen Nebenversion während des Updates neu) oder ob das eine eigene Wartungsaufgabe im
+  Pflegekonzept wird. **Vorschlag vom 25.09.2026: bei jedem Update holen.** Postgres rät dazu
+  („The community considers performing minor upgrades to be less risky than continuing to run
+  an old minor version", postgresql.org/support/versioning); eine Nebenversion braucht weder
+  Sicherung noch Neuaufbau. Die Datenbank sortiert unter musl ohne Sprachregeln (lokal
+  gemessen: `datlocprovider` = c), ein neues Alpine im Image ändert also die Reihenfolge der
+  Indizes nicht. Die CI testet bei jedem Lauf gegen denselben Tag `postgres:18-alpine`. Die
+  Hauptversion bleibt im Repo festgeschrieben.
 
 - **Die Alpine-Pakete im Backend-Image** (gefunden am 25.09.2026). Das `Dockerfile` holt
   Sicherheitskorrekturen nur über `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht
@@ -776,13 +779,14 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
   `--no-cache`; das Aufräumen in Schritt 7 entfernt nur Schichten, die eine Woche lang niemand
   benutzt hat. Lokal gemessen: Image vom 24.09.2026, die `apk upgrade`-Schicht darin drei Wochen
   alt. Der Trivy-Scan der CI prüft ein frisch gebautes Image, nicht das am Server. Zeigt die
-  Zeile unten am Server mehr als eine Woche, besteht die Lücke dort ebenso. **Zu entscheiden:**
-  `--pull` beim Bau und eine Zeile im `Dockerfile`, die die Schicht in einem festen Takt neu
-  baut, oder `--no-cache` (jedes Update baut dann alles neu).
-
-  ```
-  docker history --format '{{.CreatedSince}} {{.CreatedBy}}' $(docker inspect -f '{{.Image}}' bibliothek-backend) | grep 'apk --no-cache upgrade'
-  ```
+  Zeile unten am Server mehr als eine Woche, besteht die Lücke dort ebenso. Gemessen am
+  Testserver am 25.09.2026: 3 Tage — der Server liegt kaum zurück, die Lücke bleibt. **Zu
+  entscheiden:** `--pull` beim Bau und eine Zeile im `Dockerfile`, die die Schicht in einem
+  festen Takt neu baut, oder `--no-cache` (jedes Update baut dann alles neu). **Vorschlag vom
+  25.09.2026: `--pull --no-cache`.** Genau so baut der Sicherheitsscan der CI, und er braucht
+  dafür 93 Sekunden (Lauf vom 25.09.2026, Schritt „Build Docker image for scanning"); der
+  Takt-Stempel spart ein, zwei Minuten und braucht eigene Mechanik. Dazu eine Regel im
+  Pflegekonzept: mindestens einmal im Monat ein Update einspielen, auch ohne neue Funktionen.
 
 ## 8. Schule, Schulamt, Schulträger
 
@@ -926,13 +930,26 @@ stehen:
   (Betrieb, Pflege mit Vertretung, Ende der Pflege), den wiederkehrenden Aufgaben mit Takt, den
   zwei Handgriffen der Vertretung und der Messung, ob jemand anderes das Programm weiterführen
   kann. Offen:
-  1. **Die vier offenen Stellen** in Abschnitt 9 des Entwurfs — bei dir: Einsatz über die
-     eigene Schule hinaus; Meldeweg und Reaktionszeit (für Littera bot der Hersteller einen
-     „Softwarewartungs- und Pflegevertrag" mit Hotline, Fernwartung und Update-Codes an; ob die
-     Schule ihn hatte, ist nicht belegt); wer
-     Betriebssystem und Docker des Servers aktualisiert; ob am Schulserver nur Releases
-     eingespielt werden (heute spielt `update.sh` den Stand von `main` ein).
-  2. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — bei dir.
+  1. **Die vier offenen Stellen** in Abschnitt 9 des Entwurfs — bei dir, mit den Vorschlägen vom
+     25.09.2026:
+     - Einsatz über die eigene Schule hinaus: vorerst nein, nach einem Schuljahr Echtbetrieb neu
+       entscheiden. Jede Schule braucht einen eigenen Server und eine eigene Vertretung; wer die
+       Pflege für eine andere Schule übernimmt, braucht dort eine Regelung als
+       Auftragsverarbeiter (8.5, B6). Die EUPL erlaubt anderen den Betrieb ohne Pflegezusage.
+     - Meldeweg und Reaktionszeit: Meldung per E-Mail an die Entwicklung, die Vertretung in
+       Kopie, bei Stillstand ein Anruf; nie über GitHub-Issues, weil das Repository öffentlich
+       ist. Stillstand: Antwort am selben Schultag, hat ein Update ihn ausgelöst, geht die
+       Vertretung auf den Stand davor zurück; Fehler ohne Stillstand: innerhalb einer Woche;
+       Wünsche: mit dem nächsten Release. Für Littera bot der Hersteller einen
+       „Softwarewartungs- und Pflegevertrag" mit Hotline, Fernwartung und Update-Codes an; ob
+       die Schule ihn hatte, ist nicht belegt.
+     - Betriebssystem und Docker: die IT des Schulträgers, mit automatischen
+       Sicherheitsupdates in der Nacht, dazu das externe Signal (7.5).
+     - Release oder `main`: Der Schulserver bekommt nur Releases, der Testserver folgt `main`
+       als Vorstufe. Ein Release entsteht nur, wenn alle acht Prüfläufe grün sind.
+  2. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — bei dir; eine Vorlage lege ich
+     an. Vorschlag: die zwei Schlüssel in einem Passwortmanager und als Papier im verschlossenen
+     Umschlag im Tresor der Schule, nie per E-Mail.
   3. **Die Arbeitsnotizen der Entwicklung** (am 24.09.2026 219 Einträge) entlang der Gliederung
      des Entwurfs ins Repository — bei mir.
   4. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
