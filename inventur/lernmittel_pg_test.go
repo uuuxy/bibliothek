@@ -200,3 +200,98 @@ func TestLernmittelJeFach_ZaehltNurSchulbuecher(t *testing.T) {
 		t.Errorf("Fach-Export zeigt das falsche Fach. Gedruckt: %s", gedruckt)
 	}
 }
+
+// Ein Buch in mehreren Auflagen ist im Portal eine Zeile (docs/OFFEN.md 4.18, Stufe 6): die
+// 3. Auflage mit zwei Exemplaren (eines verliehen), die 4. mit einem, dazu eine alte, die kein
+// Schulbuch mehr ist und nicht mitzählt. Oben steht die neueste getroffene Auflage, die Zahlen
+// sind die Summe, und die Fach-Zahlen zählen Bücher statt Auflagen. Nach der ISBN der 3.
+// Auflage gesucht steht diese oben — gezählt wird trotzdem das ganze Buch.
+func TestLernmittel_EinBuchInMehrerenAuflagen(t *testing.T) {
+	pool := pgtest.Pool(t)
+	ctx := context.Background()
+	const (
+		werk = "00000000-0000-0000-0000-0000000b5000"
+		alt  = "00000000-0000-0000-0000-0000000b5001"
+		neu  = "00000000-0000-0000-0000-0000000b5002"
+		weg  = "00000000-0000-0000-0000-0000000b5003"
+		m8   = "00000000-0000-0000-0000-0000000b5004"
+	)
+	aufraeumen := []string{`DELETE FROM ausleihen`, `DELETE FROM buecher_exemplare`, `DELETE FROM buecher_titel`, `DELETE FROM werke`}
+	for _, sql := range append(append([]string{}, aufraeumen...),
+		`INSERT INTO systematik_kategorien (kuerzel, bezeichnung) VALUES ('LMTEST-MA', 'Mathematik') ON CONFLICT DO NOTHING`,
+		`INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr) VALUES ('LM-S1', 'Lern', 'Mittel', '07A', 2031) ON CONFLICT DO NOTHING`,
+		`INSERT INTO werke (id) VALUES ('`+werk+`')`,
+		`INSERT INTO buecher_titel (id, titel, isbn, subject, ist_lernmittel, auflage, erscheinungsjahr, werk_id) VALUES
+			('`+alt+`', 'Mathe 7', '978-B1', 'Mathematik', true, '3. Aufl.', 2019, '`+werk+`'),
+			('`+neu+`', 'Mathe 7', '978-B2', 'Mathematik', true, '4. Aufl.', 2023, '`+werk+`'),
+			('`+weg+`', 'Mathe 7', '978-B0', 'Mathematik', false, '2. Aufl.', 2015, '`+werk+`'),
+			('`+m8+`', 'Mathe 8', '978-B8', 'Mathematik', true, NULL, NULL, NULL)`,
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES
+			('`+alt+`', 'LMA-1'), ('`+alt+`', 'LMA-2'), ('`+neu+`', 'LMA-3'), ('`+m8+`', 'LMA-4'),
+			('`+weg+`', 'LMA-5'), ('`+weg+`', 'LMA-6'), ('`+weg+`', 'LMA-7')`,
+		`INSERT INTO ausleihen (exemplar_id, schueler_id, rueckgabe_frist)
+			SELECT e.id, s.id, now() + interval '14 days' FROM buecher_exemplare e, schueler s WHERE e.barcode_id = 'LMA-1' AND s.barcode_id = 'LM-S1'`,
+	) {
+		if _, err := pool.Exec(ctx, sql); err != nil {
+			t.Fatalf("%.40s: %v", sql, err)
+		}
+	}
+	t.Cleanup(func() {
+		for _, sql := range aufraeumen {
+			if _, err := pool.Exec(context.Background(), sql); err != nil {
+				t.Logf("Aufräumen: %v", err)
+			}
+		}
+	})
+	repo := NewBookRepository(pool)
+	aufschluesselung := []AuflageImBestand{
+		{ID: neu, Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 1},
+		{ID: alt, Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 2},
+	}
+	pruefeBuch := func(name string, z LernmittelTitel, id, isbn string) {
+		t.Helper()
+		if z.ID != id || z.ISBN != isbn || z.Gesamt != 3 || z.Verliehen != 1 || z.Verfuegbar != 2 {
+			t.Errorf("%s: %s/%s %d/%d/%d — erwartet %s/%s mit 3 gesamt, 1 verliehen, 2 verfügbar (die alte Auflage ohne Schulbuch-Schalter zählt nicht)",
+				name, z.ID, z.ISBN, z.Gesamt, z.Verliehen, z.Verfuegbar, id, isbn)
+		}
+		if len(z.AuflagenBestand) != 2 || z.AuflagenBestand[0] != aufschluesselung[0] || z.AuflagenBestand[1] != aufschluesselung[1] {
+			t.Errorf("%s: Aufschlüsselung %+v — erwartet %+v", name, z.AuflagenBestand, aufschluesselung)
+		}
+	}
+
+	zeilen, err := repo.GetLernmittelTitel(ctx, "Mathematik", false, LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(zeilen) != 2 {
+		t.Fatalf("Mathematik: %d Zeilen %+v — erwartet das Buch einmal und Mathe 8", len(zeilen), zeilen)
+	}
+	pruefeBuch("ohne Suche", zeilen[0], neu, "978-B2")
+	if zeilen[1].ID != m8 || zeilen[1].AuflagenBestand != nil {
+		t.Errorf("Mathe 8 ohne Buch: %+v — erwartet eine gewöhnliche Zeile ohne Aufschlüsselung", zeilen[1])
+	}
+
+	getroffen, err := repo.GetLernmittelTitel(ctx, "", true, LernmittelFilter{Suche: "978-B1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(getroffen) != 1 {
+		t.Fatalf("Suche nach der ISBN der 3. Auflage: %+v — erwartet eine Zeile", getroffen)
+	}
+	pruefeBuch("Suche 978-B1", getroffen[0], alt, "978-B1")
+
+	faecher, err := repo.GetLernmittelFaecher(ctx, LernmittelFilter{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(faecher) != 1 || faecher[0].Titel != 2 || faecher[0].Gesamt != 4 || faecher[0].Verliehen != 1 {
+		t.Errorf("Fach-Zahlen: %+v — erwartet Mathematik mit 2 Büchern, 4 gesamt, 1 verliehen", faecher)
+	}
+	fSuche, err := repo.GetLernmittelFaecher(ctx, LernmittelFilter{Suche: "978-B1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(fSuche) != 1 || fSuche[0].Titel != 1 || fSuche[0].Gesamt != 3 {
+		t.Errorf("Fach-Zahlen der Suche: %+v — erwartet 1 Buch mit 3 Exemplaren", fSuche)
+	}
+}

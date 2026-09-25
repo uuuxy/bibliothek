@@ -42,3 +42,28 @@ describe('KlassenBuchKachel: Auflagen in der Klasse', () => {
 		expect(queryByTestId('klassensatz-auflagen')).toBeNull();
 	});
 });
+
+// Portal „Schulbücher" (docs/OFFEN.md 4.18, Stufe 6): Eine Zeile für ein Buch in mehreren
+// Auflagen trägt die Summe und auflagenBestand (inventur.LernmittelTitel) — die Kachel sagt,
+// woraus die Summe besteht. Das Feld heißt anders als `auflagen` (Kinder je Auflage im
+// Klassensatz), damit die beiden Aufschlüsselungen sich nicht vermengen.
+describe('KlassenBuchKachel: Bestand aus mehreren Auflagen', () => {
+	it('zeigt unter der Summe, woraus sie besteht', () => {
+		const { getByTestId, queryByTestId } = render(KlassenBuchKachel, {
+			book: buch({
+				quelle: undefined,
+				verfuegbar: 46,
+				gesamt: 58,
+				auflagenBestand: [
+					{ auflage: '4. Aufl.', erscheinungsjahr: 2023, gesamt_bestand: 16 },
+					{ auflage: '3. Aufl.', erscheinungsjahr: 2019, gesamt_bestand: 42 }
+				]
+			}),
+			bearbeitbar: false
+		});
+		expect(getByTestId('schulbuch-auflagen').textContent).toBe(
+			'Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019 (42)'
+		);
+		expect(queryByTestId('klassensatz-auflagen')).toBeNull();
+	});
+});

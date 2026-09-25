@@ -582,7 +582,10 @@ mit Coverbild, Titel, Autor, ISBN, Jahrgang, Schulzweig, Zähldatum und den Zahl
 Spalte **Gezählt** erscheint nur, wenn in der Auswahl überhaupt schon gezählt wurde. Im Kopf steht,
 welcher Ausschnitt es ist — ein gefilterter Ausdruck ist sonst nicht von der vollen Liste
 zu unterscheiden. Gezählt wird nur, was den
-Lernmittel-Schalter trägt. Den **Schulzweig** pflegt die Bibliothek am Buch: In der
+Lernmittel-Schalter trägt. Ein Buch in mehreren Auflagen, die in der Titel-Verwaltung
+zusammengefasst sind, ist eine Kachel und eine PDF-Zeile (seit 25.09.2026): die Zahlen sind
+die Summe, darunter steht „Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019
+(42)", und die Fach-Zeile zählt es als einen Titel. Den **Schulzweig** pflegt die Bibliothek am Buch: In der
 Buchmaske erscheint das Feld, sobald „Lernmittel" eingeschaltet ist; leer heißt „gilt für
 alle Zweige" — solche Bücher erscheinen deshalb unter **jedem** Zweig-Filter, und die
 Auswahl „Ohne Schulzweig" zeigt umgekehrt nur sie. Littera hat den Zweig nie mitgeliefert,

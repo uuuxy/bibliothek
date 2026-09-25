@@ -255,3 +255,82 @@ func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
 		})
 	}
 }
+
+// Die Beschriftung einer Auflage im Ausdruck ist der Zwilling der Browser-Seite
+// (frontend/src/lib/utils/auflagenText.js). Dieselben Fälle wie in auflagenText.test.js — wer
+// eine Seite ändert, sieht hier oder dort Rot, solange die andere nicht mitzieht.
+func TestAuflagenBeschriftung_WieImBrowser(t *testing.T) {
+	for _, fall := range []struct {
+		auflage string
+		jahr    int
+		soll    string
+	}{
+		{"4. Aufl.", 2023, "4. Aufl. · 2023"},
+		{"4. Aufl. 2023", 2023, "4. Aufl. 2023"},
+		{" 2. Auflage ", 0, "2. Auflage"},
+		{"", 2019, "Ausgabe 2019"},
+		{"", 0, "Auflage ohne Angabe"},
+	} {
+		if ist := auflagenBeschriftung(fall.auflage, fall.jahr); ist != fall.soll {
+			t.Errorf("auflagenBeschriftung(%q, %d) = %q, erwartet %q", fall.auflage, fall.jahr, ist, fall.soll)
+		}
+	}
+	for _, fall := range []struct {
+		auflagen []AuflageImBestand
+		soll     string
+	}{
+		{[]AuflageImBestand{{Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 30}, {Auflage: "3. Aufl.", Erscheinungsjahr: 2019}},
+			"Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), 3. Aufl. · 2019 (0)"},
+		{[]AuflageImBestand{{Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 30}, {Gesamt: 3}},
+			"Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), Auflage ohne Angabe (3)"},
+	} {
+		if ist := auflagenAufschluesselung(fall.auflagen); ist != fall.soll {
+			t.Errorf("auflagenAufschluesselung = %q, erwartet %q", ist, fall.soll)
+		}
+	}
+}
+
+// Ein Buch in mehreren Auflagen (docs/OFFEN.md 4.18, Stufe 6): Unter dem Titel steht im
+// Ausdruck, woraus die Zahlen der Zeile bestehen — ein Buch ohne weitere Auflage bleibt, wie es
+// war.
+func TestSchulbuecherAlsPDF_AuflagenUnterDemTitel(t *testing.T) {
+	titel := []LernmittelTitel{
+		{
+			Title: "Mathe 7", ISBN: "978-B2", Subject: "Mathematik", JahrgangVon: 7, JahrgangBis: 7,
+			Gesamt: 58, Verliehen: 12, Verfuegbar: 46,
+			AuflagenBestand: []AuflageImBestand{
+				{ID: "neu", Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 16},
+				{ID: "alt", Auflage: "3. Aufl.", Erscheinungsjahr: 2019, Gesamt: 42},
+			},
+		},
+		{Title: "Mathe 8", ISBN: "978-B8", Subject: "Mathematik", JahrgangVon: 8, JahrgangBis: 8, Gesamt: 5, Verfuegbar: 5},
+	}
+	doc, err := SchulbuecherAlsPDF(titel, "Mathematik", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	texte := pdftest.Texte(t, doc)
+	alles := strings.Join(texte, "\n")
+	for _, e := range []string{"Mathe 7", "58", "Mathe 8"} {
+		if !strings.Contains(alles, e) {
+			t.Errorf("Erwarteter Text %q fehlt im PDF", e)
+		}
+	}
+	// Die Aufschlüsselung bricht in der Titelspalte um, und pdftest liefert die Zeilen sortiert,
+	// nicht in Lesereihenfolge: Der Satz muss aus einer oder zwei Zeilen zusammengehen.
+	const soll = "Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019 (42)"
+	gefunden := false
+	for _, a := range texte {
+		for _, b := range append([]string{""}, texte...) {
+			if strings.TrimSpace(a+" "+b) == soll {
+				gefunden = true
+			}
+		}
+	}
+	if !gefunden {
+		t.Errorf("Aufschlüsselung %q fehlt im PDF (Texte: %q)", soll, texte)
+	}
+	if n := strings.Count(alles, "Bestand aus"); n != 1 {
+		t.Errorf("die Aufschlüsselung steht %d-mal im PDF — erwartet nur beim Buch in zwei Auflagen", n)
+	}
+}

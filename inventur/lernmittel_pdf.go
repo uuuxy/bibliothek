@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"bibliothek/pkg/coverdatei"
@@ -19,7 +20,8 @@ import (
 // Im PDF steht es fest an seiner Zeile, druckt sauber und öffnet sich ohne Excel.
 //
 // Gezeigt wird, was der Reiter zeigt: Bild, Titel, Autor, ISBN, Jahrgang, Schulzweig,
-// Gesamt, Verliehen, Verfügbar.
+// Gesamt, Verliehen, Verfügbar — bei einem Buch in mehreren Auflagen unter dem Titel, woraus
+// die Zahlen bestehen (docs/OFFEN.md 4.18, Stufe 6).
 
 // Spaltenbreiten in mm. Die Summe ist immer 178 = A4-Breite (210) minus zweimal 16 mm
 // Rand; die Titelspalte nimmt auf, was die optionale Zählspalte übrig lässt.
@@ -175,7 +177,7 @@ func zeichneSchulbuchZeile(pdf *gofpdf.Fpdf, tr func(string) string, t Lernmitte
 	pdf.SetFont("Arial", "", 8)
 	pdf.SetXY(randLinks, oben)
 	pdf.CellFormat(spCover, zeilenH, "", "1", 0, "", false, 0, "")
-	pdf.CellFormat(breiteTitel, zeilenH, tr(kuerze(t.Title, int(breiteTitel/1.6))), "1", 0, "L", false, 0, "")
+	zeichneTitelZelle(pdf, tr, t, breiteTitel)
 	pdf.CellFormat(spAutor, zeilenH, tr(kuerze(t.Autor, 16)), "1", 0, "L", false, 0, "")
 	pdf.CellFormat(spISBN, zeilenH, tr(t.ISBN), "1", 0, "L", false, 0, "")
 	pdf.CellFormat(spJg, zeilenH, tr(jahrgangText(t)), "1", 0, "C", false, 0, "")
@@ -232,6 +234,55 @@ func fachAnzeige(fach string) string {
 		return "ohne Fach"
 	}
 	return fach
+}
+
+// zeichneTitelZelle schreibt den Titel in seine Zelle. Steht die Zeile für ein Buch in
+// mehreren Auflagen (docs/OFFEN.md 4.18, Stufe 6), steht darunter kleiner, woraus ihre Zahlen
+// bestehen — dieselben Worte wie auf dem Bildschirm. Die Zelle behält ihre Höhe: Wüchse die
+// Zeile, stimmte der Umbruch vor dem Cover nicht mehr (zeichneSchulbuchZeile).
+func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTitel, breite float64) {
+	titel := tr(kuerze(t.Title, int(breite/1.6)))
+	if len(t.AuflagenBestand) < 2 {
+		pdf.CellFormat(breite, zeilenH, titel, "1", 0, "L", false, 0, "")
+		return
+	}
+	x, y := pdf.GetXY()
+	pdf.CellFormat(breite, zeilenH, "", "1", 0, "L", false, 0, "")
+	pdf.SetXY(x, y+1.5)
+	pdf.CellFormat(breite, 4, titel, "", 2, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 6.5)
+	// Höchstens drei Zeilen (1,5 + 4 + 3 × 3 = 14,5 mm von 17): rund 1,25 mm je Zeichen in
+	// dieser Größe. Drei Auflagen passen so auch in die schmale Titelspalte (45 mm).
+	pdf.MultiCell(breite, 3, tr(kuerze(auflagenAufschluesselung(t.AuflagenBestand), int(3*breite/1.25))), "", "L", false)
+	pdf.SetFont("Arial", "", 8)
+	pdf.SetXY(x+breite, y)
+}
+
+// auflagenBeschriftung ist der Zwilling von auflagenBeschriftung in
+// frontend/src/lib/utils/auflagenText.js: Der Ausdruck nennt eine Auflage mit denselben Worten
+// wie der Bildschirm. Beide Seiten prüfen dieselben Fälle (TestAuflagenBeschriftung_WieImBrowser
+// und auflagenText.test.js) — wer die eine Seite ändert, ändert die andere mit.
+func auflagenBeschriftung(auflage string, jahr int) string {
+	auflage = strings.TrimSpace(auflage)
+	jahrText := strconv.Itoa(jahr)
+	switch {
+	case auflage != "" && jahr != 0 && !strings.Contains(auflage, jahrText):
+		return auflage + " · " + jahrText
+	case auflage != "":
+		return auflage
+	case jahr != 0:
+		return "Ausgabe " + jahrText
+	}
+	return "Auflage ohne Angabe"
+}
+
+// auflagenAufschluesselung ist der Zwilling der gleichnamigen Funktion in auflagenText.js.
+func auflagenAufschluesselung(auflagen []AuflageImBestand) string {
+	teile := make([]string, 0, len(auflagen))
+	for _, a := range auflagen {
+		teile = append(teile, fmt.Sprintf("%s (%d)", auflagenBeschriftung(a.Auflage, a.Erscheinungsjahr), a.Gesamt))
+	}
+	return fmt.Sprintf("Bestand aus %d Auflagen: %s", len(auflagen), strings.Join(teile, ", "))
 }
 
 func kuerze(s string, max int) string {

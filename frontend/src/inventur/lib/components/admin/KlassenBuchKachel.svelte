@@ -9,7 +9,10 @@
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
 	import { bestandSatz } from '../../../../lib/utils/format.js';
-	import { auflagenDerKlasse } from '../../../../lib/utils/auflagenText.js';
+	import {
+		auflagenDerKlasse,
+		auflagenAufschluesselung
+	} from '../../../../lib/utils/auflagenText.js';
 	import BuchKarteCover from '../BuchKarteCover.svelte';
 
 	/**
@@ -25,7 +28,8 @@
 	 *     imZulauf?: number,
 	 *     quelle?: string,
 	 *     leser?: number,
-	 *     auflagen?: { id: string, auflage?: string, erscheinungsjahr?: number, kinder: number }[]
+	 *     auflagen?: { id: string, auflage?: string, erscheinungsjahr?: number, kinder: number }[],
+	 *     auflagenBestand?: { auflage?: string, erscheinungsjahr?: number, gesamt_bestand: number }[]
 	 *   },
 	 *   onEdit?: (book: any) => void,
 	 *   bearbeitbar?: boolean
@@ -97,6 +101,14 @@
 		</h3>
 		{#if bestand}
 			<span class="text-on-surface-variant">{bestand}</span>
+		{/if}
+		{#if book.auflagenBestand?.length}
+			<!-- Ein Buch in mehreren Auflagen (Portal „Schulbücher", docs/OFFEN.md 4.18, Stufe 6):
+			     Die Zahlen darüber sind die Summe; hier steht, woraus sie besteht — wie auf der
+			     Kachel des Medienkatalogs. -->
+			<span class="text-xs text-on-surface-variant" data-testid="schulbuch-auflagen"
+				>{auflagenAufschluesselung(book.auflagenBestand)}</span
+			>
 		{/if}
 		{#if book.quelle === 'ausleihe'}
 			<!-- Live aus den Ausleihen abgeleitet, nicht gespeichert (05.09.2026): mehr als die

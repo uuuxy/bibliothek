@@ -2,7 +2,10 @@ package inventur
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+
+	"bibliothek/repository"
 )
 
 // Schulbücher je Fach fürs Lehrerportal (03.09.2026): Die Fachsprecher wollen
@@ -45,6 +48,21 @@ type LernmittelTitel struct {
 	// ohne Datum sagt nicht, wie alt sie ist — im Ausdruck steht sie sonst so da, als
 	// wäre sie von heute.
 	Gezaehlt string `json:"gezaehlt"`
+	// AuflagenBestand: Steht die Zeile für ein Buch in mehreren Auflagen (docs/OFFEN.md 4.18,
+	// Stufe 6), sind die Zahlen oben die Summe, und hier steht, woraus sie besteht — die
+	// neueste Auflage zuerst. Sonst fehlt das Feld. Nicht „auflagen": Unter diesem Namen trägt
+	// dieselbe Kachel im Klassensatz die Kinder je Auflage (ClassBook.Auflagen).
+	AuflagenBestand []AuflageImBestand `json:"auflagenBestand,omitempty"`
+}
+
+// AuflageImBestand ist eine Auflage eines Schulbuchs mit ihrem Bestand. gesamt_bestand wie
+// in der Aufschlüsselung des Bestellbedarfs (api.ReorderAuflage): Die Oberfläche schreibt
+// beide mit derselben Funktion (auflagenAufschluesselung).
+type AuflageImBestand struct {
+	ID               string `json:"id"`
+	Auflage          string `json:"auflage"`
+	Erscheinungsjahr int    `json:"erscheinungsjahr"`
+	Gesamt           int    `json:"gesamt_bestand"`
 }
 
 // LernmittelFilter sind die drei Einschränkungen des Portal-Reiters. Nullwerte heißen
@@ -86,17 +104,53 @@ const lernmittelJoins = `
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 	WHERE b.ist_lernmittel`
 
+// lernmittelJeBuchSQL liefert eine Zeile je Buch (docs/OFFEN.md 4.18, Stufe 6; entschieden
+// am 17.09.2026: ein Treffer mit der Gesamtzahl und darunter die Aufschlüsselung je Auflage).
+// Die Filter ($1–$3) wählen die Bücher: Trifft eine Auflage, gehört das Buch dazu. Gezählt
+// wird über alle Schulbuch-Auflagen des Buchs, und oben steht die neueste getroffene — nach
+// einer ISBN also genau diese. Ein Titel ohne Werk ist über COALESCE(werk_id, id) sein
+// eigenes Buch: Für ihn ändert sich nichts. Liste, Fach-Zahlen und PDF lesen dieselben Zeilen.
+func lernmittelJeBuchSQL() string {
+	neueste := repository.SQLNeuesteAuflageZuerst("t")
+	return `
+		WITH titel AS (
+			SELECT b.id, COALESCE(b.werk_id, b.id) AS buch, b.titel, COALESCE(b.autor, '') AS autor,
+			       COALESCE(b.subject, '') AS subject, COALESCE(b.cover_url, '') AS cover_url,
+			       COALESCE(b.isbn, '') AS isbn, b.jahrgang_von, b.jahrgang_bis, COALESCE(b.track, '') AS track,
+			       COALESCE(TO_CHAR(b.last_counted, 'DD.MM.YYYY'), '') AS gezaehlt,
+			       b.auflage, b.erscheinungsjahr, b.erstellt_am,` + lernmittelZaehlung + `,
+			       (true ` + lernmittelFilterSQL + `) AS getroffen` + lernmittelJoins + `
+			GROUP BY b.id
+		),
+		buch AS (
+			SELECT t.buch, sum(t.gesamt)::int AS gesamt, sum(t.verliehen)::int AS verliehen,
+			       sum(t.verfuegbar)::int AS verfuegbar, count(*) AS anzahl,
+			       json_agg(json_build_object('id', t.id, 'auflage', coalesce(t.auflage, ''),
+			           'erscheinungsjahr', coalesce(t.erscheinungsjahr, 0), 'gesamt_bestand', t.gesamt)
+			           ORDER BY ` + neueste + `) AS auflagen
+			FROM titel t
+			GROUP BY t.buch
+			HAVING bool_or(t.getroffen)
+		),
+		vertreter AS (
+			SELECT DISTINCT ON (t.buch) t.* FROM titel t WHERE t.getroffen ORDER BY t.buch, ` + neueste + `
+		)
+		SELECT v.id, v.titel, v.autor, v.subject, v.cover_url, v.isbn, v.jahrgang_von, v.jahrgang_bis,
+		       v.track, v.gezaehlt, b.gesamt, b.verliehen, b.verfuegbar,
+		       CASE WHEN b.anzahl > 1 THEN b.auflagen END AS auflagen
+		FROM buch b
+		JOIN vertreter v ON v.buch = b.buch`
+}
+
 // GetLernmittelFaecher liefert je Fach die Zahlen; Titel ohne Fach als eigene Zeile
-// (Fach ""), am Ende sortiert.
+// (Fach ""), am Ende sortiert. Gezählt wird über dieselben Zeilen wie die Liste darunter
+// (lernmittelJeBuchSQL): „Titel" sind Bücher, ein Buch in drei Auflagen zählt einmal.
 func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, f LernmittelFilter) ([]FachBestand, error) {
 	rows, err := repo.db.Query(ctx, `
-		SELECT fach, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
-		FROM (
-			SELECT COALESCE(b.subject, '') AS fach, b.id,`+lernmittelZaehlung+lernmittelJoins+lernmittelFilterSQL+`
-			GROUP BY b.subject, b.id
-		) t
-		GROUP BY fach
-		ORDER BY (fach = ''), fach`, f.Jahrgang, f.Zweig, f.Suche)
+		SELECT subject, COUNT(*) AS titel, SUM(gesamt)::int, SUM(verliehen)::int, SUM(verfuegbar)::int
+		FROM (`+lernmittelJeBuchSQL()+`) zeilen
+		GROUP BY subject
+		ORDER BY (subject = ''), subject`, f.Jahrgang, f.Zweig, f.Suche)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel je fach: %w", err)
 	}
@@ -115,13 +169,9 @@ func (repo *BookRepository) GetLernmittelFaecher(ctx context.Context, f Lernmitt
 // GetLernmittelTitel liefert die Schulbücher eines Fachs (fach "" = ohne Fach); mit
 // alleFaecher=true alle Lernmittel, nach Fach und Titel sortiert.
 func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string, alleFaecher bool, f LernmittelFilter) ([]LernmittelTitel, error) {
-	rows, err := repo.db.Query(ctx, `
-		SELECT b.id, b.titel, COALESCE(b.autor, ''), COALESCE(b.subject, ''), COALESCE(b.cover_url, ''),
-		       COALESCE(b.isbn, ''), b.jahrgang_von, b.jahrgang_bis, COALESCE(b.track, ''),
-		       COALESCE(TO_CHAR(b.last_counted, 'DD.MM.YYYY'), ''),`+lernmittelZaehlung+lernmittelJoins+lernmittelFilterSQL+`
-		  AND ($4 OR COALESCE(b.subject, '') = $5)
-		GROUP BY b.id, b.titel, b.autor, b.subject, b.cover_url, b.isbn, b.jahrgang_von, b.jahrgang_bis, b.track, b.last_counted
-		ORDER BY (COALESCE(b.subject, '') = ''), b.subject, b.jahrgang_von, b.titel`,
+	rows, err := repo.db.Query(ctx, lernmittelJeBuchSQL()+`
+		WHERE ($4 OR v.subject = $5)
+		ORDER BY (v.subject = ''), v.subject, v.jahrgang_von, v.titel`,
 		f.Jahrgang, f.Zweig, f.Suche, alleFaecher, fach)
 	if err != nil {
 		return nil, fmt.Errorf("lernmittel eines fachs: %w", err)
@@ -130,8 +180,14 @@ func (repo *BookRepository) GetLernmittelTitel(ctx context.Context, fach string,
 	out := []LernmittelTitel{}
 	for rows.Next() {
 		var t LernmittelTitel
-		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Track, &t.Gezaehlt, &t.Gesamt, &t.Verliehen, &t.Verfuegbar); err != nil {
+		var auflagen []byte
+		if err := rows.Scan(&t.ID, &t.Title, &t.Autor, &t.Subject, &t.CoverURL, &t.ISBN, &t.JahrgangVon, &t.JahrgangBis, &t.Track, &t.Gezaehlt, &t.Gesamt, &t.Verliehen, &t.Verfuegbar, &auflagen); err != nil {
 			return nil, err
+		}
+		if len(auflagen) > 0 {
+			if err := json.Unmarshal(auflagen, &t.AuflagenBestand); err != nil {
+				return nil, fmt.Errorf("auflagen von %s: %w", t.ID, err)
+			}
 		}
 		out = append(out, t)
 	}
