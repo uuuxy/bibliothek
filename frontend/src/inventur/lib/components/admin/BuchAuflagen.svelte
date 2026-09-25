@@ -19,7 +19,7 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import AuflagenZeile from './AuflagenZeile.svelte';
 	import AuflageZuordnenDialog from './AuflageZuordnenDialog.svelte';
-	import { auflagenBeschriftung } from './auflagenText.js';
+	import { auflagenBeschriftung } from '../../../../lib/utils/auflagenText.js';
 
 	/** @type {{ formular: any }} */
 	let { formular } = $props();

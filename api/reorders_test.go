@@ -15,7 +15,7 @@ import (
 // reorderSpalten spiegelt die Projektion aus queryReorders.
 func reorderSpalten() []string {
 	return []string{"id", "titel", "autor", "isbn", "verlag", "signatur",
-		"erscheinungsjahr", "cover_url", "meldebestand", "verfuegbar", "gesamt", "ist_lernmittel"}
+		"erscheinungsjahr", "cover_url", "meldebestand", "verfuegbar", "gesamt", "ist_lernmittel", "auflagen"}
 }
 
 func TestQueryReorders(t *testing.T) {
@@ -30,10 +30,10 @@ func TestQueryReorders(t *testing.T) {
 	// Echter Fehlbestand: gesamt 3 < Meldebestand 5 (ein Titel hat Exemplare verloren).
 	// Ein verliehener Klassensatz (gesamt 30 >= 5) taucht dagegen gar nicht auf — das
 	// prüft der PG-Test; hier geht es um die Projektion beider Bestandszahlen.
-	mock.ExpectQuery("SELECT t.id, t.titel, coalesce").
+	mock.ExpectQuery("WITH titel AS").
 		WithArgs(5).
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()).
-			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3, true))
+			AddRow("1", "LMF-Mathe 7", "Verlag", "12345", "Klett", "Ma 7", 2023, "", 5, 1, 3, true, []byte(nil)))
 
 	results, err := server.queryReorders(context.Background(), "", 5)
 	if err != nil {
@@ -103,7 +103,7 @@ func TestGetReordersLeereListeIstArray(t *testing.T) {
 	// Settings-Zeilen ⇒ Defaults (Warnung an, Schwelle 3).
 	mock.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
-	mock.ExpectQuery("SELECT t.id, t.titel, coalesce").
+	mock.ExpectQuery("WITH titel AS").
 		WithArgs(3). // Default-Schwelle (leere Settings ⇒ Default 3)
 		WillReturnRows(pgxmock.NewRows(reorderSpalten()))
 

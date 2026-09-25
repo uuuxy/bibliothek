@@ -42,7 +42,7 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — Stufen 3 bis 6, jede mit Nachweis; der
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — Stufen 4 bis 6, jede mit Nachweis; der
    ISBN-10/13-Abgleich aus 5.5 kommt mit Stufe 4 an derselben Tür
    (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`).
 2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
@@ -232,8 +232,6 @@ der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibun
 Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Am Ende läuft das Raster über das ganze
 Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
 
-3. **Nachbestell-Liste und PDF:** eine Zeile je Buch, die Summe gegen die Schwelle; bestellt wird
-   die neueste Auflage, darunter steht die Aufschlüsselung.
 4. **Vorschlag beim Nachbestellen:** „Neue Auflage bestellen" an der Zeile — ISBN der neuen
    Auflage, Titel anlegen, Vorschlag bestätigen (Route mit `create_orders`, dieselbe Funktion).
    Dazu der ISBN-10/13-Abgleich aus 5.5 an derselben Tür (`findeLokalenTitel`).
@@ -394,9 +392,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- `e2e/icon-trefferflaechen.spec.js` misst die Bestellhistorie, legt aber keine Bestellung an:
-  Allein oder ohne eine `bestell…`-Spec davor läuft es in die Zeitüberschreitung (lokal am
-  23.09.2026, Bestellhistorie leer; der globale Teardown löscht die E2E-Bestellungen). In der
+- `e2e/icon-trefferflaechen.spec.js` und `e2e/icon-tooltips.spec.js` messen die Bestellhistorie,
+  legen aber keine Bestellung an: Allein oder ohne eine `bestell…`-Spec davor laufen sie in die
+  Zeitüberschreitung (lokal am 23.09.2026 und am 25.09.2026, Bestellhistorie leer; der globale
+  Teardown löscht die E2E-Bestellungen). In der
   vollen Suite legt eine alphabetisch frühere Spec sie an. Nach dem Muster von `seedBenutzer`
   selbst anlegen.
 

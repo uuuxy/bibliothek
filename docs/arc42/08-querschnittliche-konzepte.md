@@ -38,10 +38,10 @@ sagen kann — und warum ein Titel ohne Exemplar es ausdrücklich sagen muss.
 Die Spalte ist nullbar und wird über `COALESCE(werk_id, id)` gelesen: Ein Titel ohne Werk ist
 sein eigenes, und jeder Lesepfad, der nicht nach Auflagen fragt, bleibt, wie er ist. An der
 Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe, weil sich Auflagen in den Seitenzahlen
-unterscheiden. Geschrieben wird `werk_id` nur in `repository/auflagen.go`. Gebaut sind bisher
-die Datenform, die Türen und der Abschnitt in der Titelmaske; dass Bedarf und Nachbestellung
-am Werk zählen, folgt in Stufen (docs/OFFEN.md 4.18) — bis dahin zählt die Nachbestell-Liste je
-Titel.
+unterscheiden. Geschrieben wird `werk_id` nur in `repository/auflagen.go`. Am Werk zählen
+Bedarf und Nachbestellung: Die Nachbestell-Liste summiert über `COALESCE(werk_id, id)` und
+zeigt die neueste Auflage (`api/reorders.go`). Was noch folgt — Vorschlag beim Nachbestellen,
+Hinweis bei gemischten Auflagen, Suche —, steht in docs/OFFEN.md 4.18.
 
 **Rolle und Art sind zwei verschiedene Fragen.** Die **Rolle** sagt, was jemand im
 Programm darf (Admin, Leitung, Mitarbeiter, Helfer — dazu `kollegium` als Grundzustand).

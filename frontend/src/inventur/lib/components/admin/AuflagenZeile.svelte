@@ -6,7 +6,7 @@
      die Trefferliste des Zuordnen-Dialogs, damit beide dieselbe Auflage gleich nennen. -->
 <script>
 	import { bestandSatz } from '../../../../lib/utils/format.js';
-	import { auflagenBeschriftung } from './auflagenText.js';
+	import { auflagenBeschriftung } from '../../../../lib/utils/auflagenText.js';
 
 	/** @type {{ auflage?: string, erscheinungsjahr?: number, titel: string, isbn?: string, verlag?: string, gesamt?: number, verfuegbar?: number, imZulauf?: number, diese?: boolean }} */
 	let {

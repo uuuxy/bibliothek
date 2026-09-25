@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-24
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-25
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -183,14 +183,16 @@ Ausweisnummer und Klasse mit 200 weg. Beide Richtungen sind jetzt geregelt und g
 | Ein Bestätigungs-Token gehört zu genau einer Bestellung, gespeichert nur als Hash                                              | 🟢 Partieller Unique-Index auf `bestaetigungs_token_hash`               | `migrations/063`                                                                  |
 | Die Etikettenseite des Links zeigt nur Exemplare DIESER Bestellung mit Vorab-Barcode                                           | 🟡 SQL-Filter + PG-Test                                                 | `api/bestellbestaetigung_etiketten.go`, `bestellbestaetigung_ablauf_pg_test.go`   |
 
-**Hinweis zum Bestellbedarf (aktualisiert 05.08.2026):** Ohne die LMF-Vorauswahl bestand
+**Hinweis zum Bestellbedarf (aktualisiert 25.09.2026):** Ohne die LMF-Vorauswahl bestand
 die Liste zu ~99% aus Titeln, die niemand nachbestellen will (gemessen: 12.079 von 12.707
 Titeln), weil alle Titel den Default-Meldebestand 5 tragen, der Median aber bei 1 Exemplar
 liegt. **Entschieden:** Die frühere offene Frage („wird `meldebestand` je Titel gepflegt?")
 ist gegenstandslos — der Auslöser ist jetzt die Einstellung `bestellbedarf_schwelle`
 (Vorgabe 3, in der Oberfläche änderbar, abschaltbar über
 `bestellbedarf_warnung_aktiv`). `meldebestand` wird nur noch informativ mitgeliefert und
-löst nichts mehr aus (`api/reorders.go`).
+löst nichts mehr aus (`api/reorders.go`). Seit dem 25.09.2026 zählt die Liste am Buch: Auflagen
+mit derselben `werk_id` (Migration 148) bilden eine Zeile, ihre Summe steht gegen die Schwelle
+(docs/OFFEN.md 4.18, `TestQueryReorders_ZaehltAmBuch`).
 
 ---
 

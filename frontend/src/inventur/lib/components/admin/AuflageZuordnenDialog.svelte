@@ -13,7 +13,7 @@
 	import Suchfeld from '../../../../lib/components/ui/Suchfeld.svelte';
 	import AuflagenZeile from './AuflagenZeile.svelte';
 	import { erzeugeAuflagenSuche } from './auflagenSuche.svelte.js';
-	import { auflagenBeschriftung } from './auflagenText.js';
+	import { auflagenBeschriftung } from '../../../../lib/utils/auflagenText.js';
 
 	/** @type {{ open: boolean, titelId: string, bekannte: string[], onZugeordnet: (auflagen: any[]) => void }} */
 	let { open = $bindable(false), titelId, bekannte, onZugeordnet } = $props();

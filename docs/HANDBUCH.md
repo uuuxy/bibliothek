@@ -427,6 +427,14 @@ Reservierungen** (Warteschlange aus dem Kollegium; _Abschließen_ schickt die Be
 **Wünsche & Meldungen** (Anliegen aus dem Portal, _Erledigen_ mit Notiz an die Lehrkraft).
 Lieferanten und Hauptlieferant stehen in den Einstellungen. (§7)
 
+**Auflagen im Bestellbedarf** (seit 25.09.2026): Sind Auflagen eines Schulbuchs in der
+Titel-Verwaltung zusammengefasst (siehe _Auflagen_ bei der Titel-Verwaltung), steht das Buch
+im Bestellbedarf einmal. Gezählt wird der Bestand aller Auflagen zusammen; die Zeile zeigt die
+neueste Auflage — sie kommt in den Warenkorb —, und darunter steht, woraus die Zahl besteht
+(„Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), 3. Aufl. · 2019 (0)"). Das Filterfeld findet
+die Zeile auch über die ISBN einer älteren Auflage. Die Bestellliste als PDF nennt die ISBN der
+neuesten Auflage und rechnet die Menge mit der Summe.
+
 Über _Titel suchen & hinzufügen_ kommen auch Titel dazu, die es noch nicht gibt; vor dem
 Warenkorb steht ein Fenster mit Signatur, Schlagworten, der Frage „Lernmittel?" und der Menge.
 Entsteht der Titel dabei neu aus der DNB, stehen unter den Schlagworten die Wörter, die der
