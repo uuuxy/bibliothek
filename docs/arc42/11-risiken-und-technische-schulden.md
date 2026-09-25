@@ -103,8 +103,8 @@ Entwicklung und Betrieb liegen bei einer Person. Die Gegenmittel sind bewusst ge
 Teil der Architektur: Gates statt Checklisten, Selbstprüfung statt Runbook-Gedächtnis,
 Begründungen im Code und in der Commit-Historie, ausgedruckter **Rückweg** bei
 fehlgeschlagenem Deploy, Wiederherstellungswerkzeuge **im Image**. Das ersetzt keine zweite
-Person. Seit dem 24.09.2026 gibt es eine benannte Vertretung für zwei Handgriffe — ein Update
-einspielen, eine Sicherung zurückholen — und dafür das
+Person. Seit dem 24.09.2026 ist eine benannte Vertretung für zwei Handgriffe vorgesehen — ein
+Update einspielen, eine Sicherung zurückholen — und dafür das
 [Pflegekonzept und Wartungshandbuch](../PFLEGEKONZEPT.md) (Entwurf). Änderungen am Code
 bleiben bei einer Person.
 

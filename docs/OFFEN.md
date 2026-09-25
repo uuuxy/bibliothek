@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 24.09.2026
+Stand: 25.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -14,14 +14,15 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 ## Was jetzt dran ist
 
 **Die Sichtung vom 16.09.2026** (Abschnitt 9): Die zwei Bedingungen aus 9.9 — DSGVO-Nachweis
-sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt (zum Pflegekonzept siehe
-die Entscheidungen unten).
+sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pflegekonzept ist am
+24.09.2026 umentschieden und liegt als Entwurf vor; der DSGVO-Nachweis bleibt zurückgestellt.
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Zwei Zählungen am Testserver** (7.8), lesend, je ein Einzeiler: der Sperrgrund im
-   Protokoll (ist die vierte Zahl größer als 0, folgt eine einmalige Bereinigung) und die
-   Postgres-Version des laufenden Datenbank-Containers.
+1. **Drei Messungen am Testserver** (7.8), lesend, je ein Einzeiler: der Sperrgrund im
+   Protokoll (ist die vierte Zahl größer als 0, folgt eine einmalige Bereinigung), die
+   Postgres-Version des Datenbank-Containers und das Alter der `apk upgrade`-Schicht im
+   Backend-Image.
 2. **Den Entwurf des Pflegekonzepts lesen** ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), 9.9) und die
    vier offenen Stellen in seinem Abschnitt 9 beantworten: Einsatz über die eigene Schule hinaus
    (am 24.09.2026 offen gelassen), Meldeweg und Reaktionszeit, wer Betriebssystem und Docker des
@@ -348,7 +349,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   24.09.2026: bauen, nach dem Pflegekonzept). Dreimal derselbe Fehler: LUSD-ID (6d01f27a,
   August), Ausweisnummer (131a534a, 02.09.2026), Sperrgrund (5b50202d, 24.09.2026). Jedes Mal
   kam ein Wert der Leserzeile oder ein Freitext neben `schueler_id` in `audit_logs`, und die
-  Anweisung „audit_logs" in `repository.spurTilgungen` entfernte ihn nicht. Die Rundreise
+  Tilgung entfernte ihn nicht (im August fehlte der Schritt für `audit_logs` noch ganz). Die
+  Rundreise
   (`api/dsgvo_paar_rundreise_pg_test.go`) sieht nur Werte, die sie selbst anlegt. Vorschlag:
   eine Ratsche über jeden Audit-Eintrag mit `schueler_id`, die jeden weiteren Schlüssel als
   „getilgt" oder „bleibt" eingeordnet verlangt; die Liste „getilgt" muss mit der Anweisung
@@ -679,7 +681,8 @@ Personensatz).
 
 Geplante Zielumgebung ist der Schulserver; heute ist der Hetzner-Server die einzige Instanz. Beim
 Umzug gilt dieser Abschnitt dort erneut — ebenso das, was am Hetzner-Server schon erfüllt ist
-(Commit-Geschichte, 13.09.2026).
+(Commit-Geschichte, 13.09.2026). Fest auf den Testserver eingetragen sind dabei die Adresse in
+der Schlussmeldung von `update.sh` und `DOMAIN` in `scripts/deploy.sh`.
 
 ### 7.2 Frisches Littera-Backup
 
@@ -764,15 +767,31 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 
 - **Die Postgres-Nebenversion am Server** (gefunden beim Pflegekonzept, 24.09.2026).
   `update.sh` ruft `docker compose up -d --build` auf und holt das Image `postgres:18-alpine`
-  nie neu; der Datenbank-Container bleibt auf der Nebenversion, mit der er angelegt wurde
-  (Major-Wechsel 31.08.2026). Nebenversionen mit Sicherheitskorrekturen erscheinen
+  nie neu; der Datenbank-Container bleibt auf der Nebenversion des Images, das beim Anlegen
+  vorlag (Major-Wechsel 31.08.2026). Nebenversionen mit Sicherheitskorrekturen erscheinen
   vierteljährlich; aktuell ist 18.6 (postgresql.org, abgerufen am 24.09.2026). Der Port ist nur
-  an `127.0.0.1` gebunden, das begrenzt das Risiko. Liegt die Zahl unter 18.6, bekommt
-  `update.sh` einen Schritt, der das Datenbank-Image holt. Ob die Basis-Images des Backends
-  (`--build` ohne `--pull`) dieselbe Lücke haben, ist nicht gemessen.
+  an `127.0.0.1` gebunden, das begrenzt das Risiko. Die Lücke besteht unabhängig vom Messwert —
+  auch bei 18.6 käme die nächste Nebenversion nicht an; die Zahl zeigt nur, wie weit der Server
+  zurückliegt. **Zu entscheiden:** ob `update.sh` das Datenbank-Image bei jedem Update holt
+  (dann startet die Datenbank bei einer neuen Nebenversion während des Updates neu) oder ob das
+  eine eigene Wartungsaufgabe im Pflegekonzept wird.
 
   ```
   docker exec bibliothek-db postgres --version
+  ```
+
+- **Die Alpine-Pakete im Backend-Image** (gefunden am 25.09.2026). Das `Dockerfile` holt
+  Sicherheitskorrekturen nur über `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht
+  fest, solange die Zeilen davor gleich bleiben, und `update.sh` baut ohne `--pull` und ohne
+  `--no-cache`; das Aufräumen in Schritt 7 entfernt nur Schichten, die eine Woche lang niemand
+  benutzt hat. Lokal gemessen: Image vom 24.09.2026, die `apk upgrade`-Schicht darin drei Wochen
+  alt. Der Trivy-Scan der CI prüft ein frisch gebautes Image, nicht das am Server. Zeigt die
+  Zeile unten am Server mehr als eine Woche, besteht die Lücke dort ebenso. **Zu entscheiden:**
+  `--pull` beim Bau und eine Zeile im `Dockerfile`, die die Schicht in einem festen Takt neu
+  baut, oder `--no-cache` (jedes Update baut dann alles neu).
+
+  ```
+  docker history --format '{{.CreatedSince}} {{.CreatedBy}}' $(docker inspect -f '{{.Image}}' bibliothek-backend) | grep 'apk --no-cache upgrade'
   ```
 
 ## 8. Schule, Schulamt, Schulträger
@@ -863,9 +882,9 @@ ausschließen will. Gebaut wird erst mit der Antwort.
 
 ### 8.8 Die Abholfrist bei Vormerkungen
 
-Ein vorgemerktes Buch liegt nach der Rückgabe drei Tage bereit, gerechnet ab der Uhrzeit der
-Rückgabe (`INTERVAL '3 days'` in `internal/service/loan_return.go` und
-`repository/vormerkung_nachruecken.go`). Danach verfällt die Vormerkung beim nächsten
+Ein vorgemerktes Buch liegt drei Tage bereit, gerechnet ab dem Zeitpunkt, zu dem es zugeteilt
+wird: bei der Rückgabe (`INTERVAL '3 days'` in `internal/service/loan_return.go`) oder beim
+Nachrücken, wenn der Vorige es nicht abgeholt hat (`repository/vormerkung_nachruecken.go`). Danach verfällt die Vormerkung beim nächsten
 stündlichen Lauf, und das Buch geht an den Nächsten in der Warteschlange. Wochenende und Ferien
 zählen mit: Ein Buch, das freitags um 10 Uhr zurückkommt, liegt bis Montag 10 Uhr bereit; kommt
 es in den letzten drei Tagen vor den Herbstferien zurück, verfällt die Vormerkung in den Ferien.
@@ -918,8 +937,9 @@ stehen:
   zwei Handgriffen der Vertretung und der Messung, ob jemand anderes das Programm weiterführen
   kann. Offen:
   1. **Die vier offenen Stellen** in Abschnitt 9 des Entwurfs — bei dir: Einsatz über die
-     eigene Schule hinaus; Meldeweg und Reaktionszeit (Littera regelt das über einen
-     „Softwarewartungs- und Pflegevertrag" mit Hotline, Fernwartung und Update-Codes); wer
+     eigene Schule hinaus; Meldeweg und Reaktionszeit (für Littera bot der Hersteller einen
+     „Softwarewartungs- und Pflegevertrag" mit Hotline, Fernwartung und Update-Codes an; ob die
+     Schule ihn hatte, ist nicht belegt); wer
      Betriebssystem und Docker des Servers aktualisiert; ob am Schulserver nur Releases
      eingespielt werden (heute spielt `update.sh` den Stand von `main` ein).
   2. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — bei dir.

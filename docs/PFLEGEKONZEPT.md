@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 24.09.2026 (Entwurf)
+Stand: 25.09.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -8,8 +8,8 @@ endet? Für die Vertretung: Wie spielt man ohne die Entwicklung ein Update ein u
 Sicherung zurück?
 
 Befehlsfolgen stehen hier nicht. Sie stehen jeweils an einer Stelle, auf die dieses Dokument
-verweist, und dort halten Tests sie mit dem Code in Übereinstimmung
-(`docs/rueckweg_anleitungen_test.go`, `docs/deployment_anleitung_test.go`).
+verweist; einen Teil davon prüfen Tests gegen den Code (`docs/rueckweg_anleitungen_test.go`,
+`docs/deployment_anleitung_test.go`).
 
 **Nicht in diesem Dokument**, weil das Repository öffentlich ist: Zugänge, die Adresse des
 Servers, der Ort der Schlüssel und der Quelldokumente, Namen und Telefonnummern. Das alles
@@ -21,7 +21,7 @@ steht auf einem Blatt, das bei der Schule liegt (Abschnitt 7.3).
 
 | Rolle             | Wer                                       | Aufgabe                                                                                    |
 | ----------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Betrieb           | die Schule, auf eigenem Server            | nutzt das Programm; Ansprechpartner für Einstellungen, Rechte und Fragen der Bibliothek    |
+| Betrieb           | die Schule, auf eigenem Server            | betreibt und nutzt das Programm                                                            |
 | Hardware und Netz | die IT des Schulträgers                   | Server, Netzanbindung                                                                      |
 | Pflege            | die Entwicklung des Programms             | Fehler beheben, Sicherheitsupdates, Termine und Vorgaben nachziehen, Updates bereitstellen |
 | Vertretung        | eine benannte Person (Name auf dem Blatt) | ein Update einspielen (3.1), eine Sicherung zurückholen (3.2)                              |
@@ -41,9 +41,10 @@ bleiben bei der Entwicklung oder bei einer Stelle, die die Pflege übernimmt (Ab
    (eine Versionsnummer wie `v2.14.0`) entsteht nur, wenn alle acht grün sind
    ([DEPLOYMENT.md](DEPLOYMENT.md) §8, `scripts/tag-gate.sh`). Was beim Einspielen von Hand zu
    tun ist, steht in der Release-Notiz.
-4. **Auf den Server** kommt ein Stand nur von Hand, mit `update.sh`: Vorab-Sicherung → neuer
-   Code → Bau → Gesundheitsprüfung → Abgleich, ob der laufende Stand der eingespielte ist
-   ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4 und §7). Ein automatisches Update gibt es nicht.
+4. **Auf den Server** kommt ein Stand nur von Hand, mit `update.sh`: Vorab-Sicherung der
+   Datenbank → Bau des neuen Stands → Gesundheitsprüfung → Abgleich, ob der laufende Stand der
+   eingespielte ist ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4 und §7). Ein automatisches Update gibt
+   es nicht. `update.sh` fragt nicht ab, ob die Prüfläufe des Stands auf GitHub grün sind.
 5. **Die Datenbank** passt sich beim Start selbst an (Migrationen). Migrationen laufen nur
    vorwärts: Zurück geht es über die Vorab-Sicherung, nicht über den alten Code allein.
 
@@ -53,16 +54,19 @@ bleiben bei der Entwicklung oder bei einer Stelle, die die Pflege übernimmt (Ab
 
 ### 3.1 Ein Update einspielen
 
-1. Die Release-Notiz lesen: Sie nennt, was von Hand zu tun ist.
+1. Auf GitHub nachsehen, ob die Prüfläufe des neuesten Stands grün sind, und die Hinweise
+   zum Einspielen lesen (Release-Notiz). Ob am Schulserver nur Releases eingespielt werden,
+   ist offen (Abschnitt 9).
 2. Am Server im Programmverzeichnis erst `git pull`, dann `./update.sh` — zwei getrennte
-   Befehle, weil das Skript sich sonst während des Laufs selbst ersetzt
+   Befehle, weil sonst die alte Fassung des Skripts das Update fährt
    ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4).
 3. **Erfolg** heißt: Das Skript endet mit „UPDATE ERFOLGREICH ABGESCHLOSSEN", und unter
    System → Einstellungen → Betriebsbereitschaft steht kein kritischer Befund.
-4. **Misserfolg:** Das Skript bricht ab und gibt eine Anleitung zum Zurückgehen samt Pfad der
-   Vorab-Sicherung aus. Ihr folgen; die Einzelheiten stehen in
-   [resilience_and_recovery.md](resilience_and_recovery.md) §2a („Nach einem fehlgeschlagenen
-   Deploy") und §2c.
+4. **Misserfolg:** Das Skript bricht ab und gibt eine Anleitung zum Zurückgehen aus: den
+   Commit, der vor dem Update lief (aus dem laufenden Image gelesen), und den Pfad der
+   Vorab-Sicherung. Ihr folgen. Die Vorab-Sicherung ist in diesem Fall nicht verschlüsselt;
+   die Einzelheiten stehen in [resilience_and_recovery.md](resilience_and_recovery.md) §2b
+   („Der Klartext-Fall") und §2c.
 
 ### 3.2 Eine Sicherung zurückholen
 
@@ -83,8 +87,9 @@ Betriebsbereitschaft als kritisch, und die tägliche Alarm-Mail geht hinaus.
 **Ablauf:** [resilience_and_recovery.md](resilience_and_recovery.md) §2a (einspielen), §2c
 (der Weg zurück, falls es misslingt), §2d (Arbeitsdateien löschen — sie enthalten alle Namen
 im Klartext). Danach die Betriebsbereitschaft ansehen: „Schlüssel und Bestand" meldet, ob der
-laufende Schlüssel zu den Daten passt. Buchcover sind nicht in der Sicherung; das Programm lädt
-sie nach ([DEPLOYMENT.md](DEPLOYMENT.md) §6, mit dem Befehl dafür).
+laufende Schlüssel zu den Daten passt. Buchcover sind nicht in der Sicherung. Fehlen sie nach
+einer Wiederherstellung auf einem neuen Server, lädt das Programm sie nach einem Befehl aus
+[DEPLOYMENT.md](DEPLOYMENT.md) §6 neu; von Hand hochgeladene Cover kommen so nicht zurück.
 
 **Üben:** Die Probe von Hand an einem fremden Ziel ([resilience_and_recovery.md](resilience_and_recovery.md)
 §2e, [OFFEN.md](OFFEN.md) 7.4) ist zugleich die Probe dieses Dokuments: Die Vertretung macht sie
@@ -94,17 +99,18 @@ einmal allein, nur mit diesen Seiten.
 
 ## 4. Wiederkehrende Aufgaben
 
-| Was                          | Wann                                                                                                                        | Woran man es merkt                                                                      | Was zu tun ist                                                                                                                                                                                    |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Abhängigkeiten               | wöchentlich, montags 06:00 Berliner Zeit                                                                                    | Dependabot öffnet Pull Requests; die CI prüft sie                                       | einzeln ansehen, bei grüner CI übernehmen. Kein automatisches Übernehmen; TypeScript 7 ist bewusst zurückgehalten (`.github/dependabot.yml`)                                                      |
-| Sicherheitsprüfung           | bei jedem Push und montags 07:00 UTC                                                                                        | `.github/workflows/security-scan.yml` wird rot                                          | Abhängigkeit heben. Gibt es keinen Fix und trifft die Lücke den Code nicht: Ausnahme nach den Regeln in `security/vuln-ausnahmen.json` — mit Nachweis als Test und Wiedervorlage                  |
-| Wiedervorlage einer Ausnahme | nächste am 17. November 2026 (`GO-2026-6452`)                                                                               | das Gate wird am Tag selbst rot                                                         | nachsehen, ob es einen Fix gibt ([OFFEN.md](OFFEN.md) 5.10)                                                                                                                                       |
-| Go                           | halbjährlich (Februar, August); unterstützt sind die zwei neuesten Linien, zurzeit 1.26 und 1.27                            | Dependabot (Docker-Basis)                                                               | `go.mod` und `Dockerfile` gemeinsam heben; `golangci-lint` und `govulncheck` am Arbeitsplatz mitziehen, sonst verweigern die Hooks                                                                |
-| Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS                                                      | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                       |
-| PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`) | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                          |
-| PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | —                                                                                       | `update.sh` holt das Datenbank-Image nicht neu ([OFFEN.md](OFFEN.md) 7.8)                                                                                                                         |
-| Ferien                       | Sommerferien und übrige Ferien Hessens stehen bis 2030 im Programm                                                          | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                           | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/ferien.go`, `schulferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien |
-| Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                        | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                               |
+| Was                          | Wann                                                                                                                        | Woran man es merkt                                                                                                                               | Was zu tun ist                                                                                                                                                                                    |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Abhängigkeiten               | wöchentlich, montags 06:00 Berliner Zeit                                                                                    | Dependabot öffnet Pull Requests; die CI prüft sie                                                                                                | einzeln ansehen, bei grüner CI übernehmen. Kein automatisches Übernehmen; TypeScript 7 ist bewusst zurückgehalten (`.github/dependabot.yml`)                                                      |
+| Sicherheitsprüfung           | bei jedem Push und montags 07:00 UTC                                                                                        | `.github/workflows/security-scan.yml` wird rot                                                                                                   | Abhängigkeit heben. Gibt es keinen Fix und trifft die Lücke den Code nicht: Ausnahme nach den Regeln in `security/vuln-ausnahmen.json` — mit Nachweis als Test und Wiedervorlage                  |
+| Wiedervorlage einer Ausnahme | nächste am 17. November 2026 (`GO-2026-6452`)                                                                               | ab dem Tag danach ist die Sicherheitsprüfung rot, bei jedem Push und im Wochenlauf                                                               | nachsehen, ob es einen Fix gibt ([OFFEN.md](OFFEN.md) 5.10)                                                                                                                                       |
+| Go                           | halbjährlich (Februar, August); unterstützt sind die zwei neuesten Linien, zurzeit 1.26 und 1.27                            | Dependabot schlägt die neue Docker-Basis vor; ein Test verlangt dieselbe Version in `go.mod` und `Dockerfile` (`docs/umgebung_paritaet_test.go`) | `go.mod` und `Dockerfile` gemeinsam heben; `golangci-lint` und `govulncheck` am Arbeitsplatz mitziehen, sonst verweigern die Hooks                                                                |
+| Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS; ein Test verlangt dieselbe Hauptversion an allen Stellen                                                     | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                       |
+| PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                          |
+| PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | —                                                                                                                                                | offen: `update.sh` holt das Datenbank-Image nicht neu ([OFFEN.md](OFFEN.md) 7.8)                                                                                                                  |
+| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | offen: Der Build-Cache hält die Schicht mit `apk upgrade` fest, ein Neubau holt die Korrekturen dann nicht; am Server nicht gemessen ([OFFEN.md](OFFEN.md) 7.8)                                   |
+| Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/ferien.go`, `schulferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien |
+| Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                                                                                 | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                               |
 
 Feiertage rechnet das Programm selbst aus (`pkg/lmfplan/feiertage.go`); sie brauchen keine
 Pflege. Die beweglichen Ferientage legt jede Schule selbst; sie stehen nicht im Programm.
@@ -120,13 +126,13 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 
 - **Auf `main` rot:** nicht einspielen. Ein Release entsteht ohnehin nicht (Abschnitt 2).
 - **Eine Ratsche** (ein Test, der eine bekannte Fehlerart im ganzen Code sucht) nennt im
-  Kopfkommentar ihren Anlass, was sie nicht sieht und was bei Rot zu tun ist; die Übersicht
-  steht in [sweeps.md](sweeps.md) („Landkarte der Ratschen"). Repariert wird die Ursache. Eine
+  Kopfkommentar ihren Anlass und was sie nicht sieht, meist auch, was bei Rot zu tun ist; die
+  Übersicht steht in [sweeps.md](sweeps.md) („Landkarte der Ratschen"). Repariert wird die Ursache. Eine
   Liste erlaubter Ausnahmen zu verlängern oder eine Zahl zu erhöhen, lockert die Prüfung und
   braucht eine Begründung in der Commit-Nachricht.
-- **Rot ohne Änderung am Code** ist bei zwei Arten von Tests gewollt: Die Horizont-Tests der
-  Ferien und die Wiedervorlagen der Sicherheits-Ausnahmen werden an einem Datum rot. Dann ist
-  die Aufgabe aus Abschnitt 4 fällig.
+- **Rot ohne Änderung am Code** ist in drei Fällen gewollt: Eine Schwachstelle wird neu
+  veröffentlicht, eine Wiedervorlage der Sicherheits-Ausnahmen läuft ab, oder ein
+  Horizont-Test der Ferien erreicht sein Jahr. Dann ist die Aufgabe aus Abschnitt 4 fällig.
 - **Wo die Begründungen stehen:** in den Commit-Nachrichten (`git log --grep`), in
   [invarianten.md](invarianten.md) (was immer gelten muss, und das Raster aus vierzehn Fragen,
   wenn ein Schreibpfad seine Form wechselt), in [arc42/09](arc42/09-architekturentscheidungen.md)
@@ -136,7 +142,8 @@ Für die Entwicklung und für jeden, der sie übernimmt.
 
 ## 6. Kann jemand anderes das Programm weiterführen?
 
-Gemessen am 24.09.2026. **Der Code:** keine Go-Funktion über 150 Zeilen (die längste hat 148),
+Gemessen am 24.09.2026. **Der Code:** außerhalb der Tests keine Go-Funktion über 150 Zeilen
+(die längste hat 148),
 23 direkte Go-Abhängigkeiten, übliche Bausteine (Go mit `net/http` und `pgx`, Svelte 5,
 Tailwind, PostgreSQL, Docker Compose), Tests und CI, Betrieb mit einem Befehl. Die
 Architektur ist nach arc42 beschrieben ([arc42/](arc42/README.md)).
@@ -151,8 +158,8 @@ Wissen außerhalb des Repositorys (Abschnitt 7).
 
 ### 7.1 Quelldokumente
 
-Sie liegen nicht im Repository, weil es öffentlich ist: Das Handbuch ist urheberrechtlich
-geschützt, die Sicherung enthält Personendaten. Ort auf dem Blatt.
+Sie liegen nicht im Repository, weil es öffentlich ist; das Handbuch ist zudem
+urheberrechtlich geschützt, die Sicherung enthält Personendaten. Ort auf dem Blatt.
 
 - das Handbuch des bisherigen Bibliotheksprogramms Littera
 - die Littera-Sicherung `littera_sav.mdb` (Stand 2010; ein neuerer Stand steht aus,
@@ -194,11 +201,13 @@ Auf Papier bei der Schule, nicht im Repository:
 
 1. **Einsatz über die eigene Schule hinaus:** offen gelassen am 24.09.2026.
 2. **Meldeweg und Reaktionszeit:** Wie die Schule einen Fehler meldet und wann sie Antwort
-   bekommt, ist nicht vereinbart. Littera regelte das über einen Pflegevertrag mit Hotline und
-   Fernwartung.
+   bekommt, ist nicht vereinbart. Für Littera bot der Hersteller einen „Softwarewartungs- und
+   Pflegevertrag" an, dazu Hotline, Fernwartung und Update-Codes (Littera-Handbuch); ob die
+   Schule einen solchen Vertrag hatte, ist hier nicht belegt.
 3. **Betriebssystem und Docker auf dem Server:** Wer sie aktualisiert, ist nicht geregelt; die
    IT des Schulträgers ist für Hardware und Netz genannt.
-4. **Release oder `main`:** `update.sh` spielt den neuesten Stand von `main` ein, nicht das
-   letzte Release. Ob am Schulserver nur Releases eingespielt werden, ist nicht entschieden.
+4. **Release oder `main`:** `update.sh` holt mit `git pull` den neuesten Stand des Zweigs, nicht
+   das letzte Release, und prüft nicht, ob seine Prüfläufe grün sind. Ob am Schulserver nur
+   Releases eingespielt werden, ist nicht entschieden.
 5. **Betrieb:** Sicherung außer Haus, externes Signal bei Ausfall, Probe der Wiederherstellung
    an einem fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
