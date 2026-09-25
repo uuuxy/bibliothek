@@ -81,9 +81,9 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", pgxmock.AnyArg(), "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}).AddRow(
-						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", int16(5), "G", false, int64(5), int64(10), int64(2), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, "", map[string]any{}, "4. Aufl. 2023", nil, false,
+						"b1", "123", "Book 1", "Author 1", "Sig 1", "url", "Math", int16(5), "G", false, int64(5), int64(10), int64(2), &dateStr, 0, "Buch", 5, 10, "Sub", "Ver", 2020, "", map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
 					))
 				// Die Suchwörter der gelieferten Titel (repository.SuchwoerterDerTitel).
 				m.ExpectQuery("(?s)SELECT tsw.titel_id.*FROM schlagworte sw").
@@ -104,7 +104,7 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", pgxmock.AnyArg(), "politik", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -118,7 +118,7 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*WHERE NOT EXISTS.*").
 					WithArgs("", pgxmock.AnyArg(), "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -156,7 +156,7 @@ func TestBearbeiteBuecherListe(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", &grade, "", 50000).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband",
+						"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel", "verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis", "untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage", "listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 					}))
 			},
 			expectedStatus: http.StatusOK,

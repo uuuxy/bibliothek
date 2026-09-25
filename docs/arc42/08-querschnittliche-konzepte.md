@@ -43,8 +43,10 @@ Bedarf und Nachbestellung: Die Nachbestell-Liste summiert über `COALESCE(werk_i
 zeigt die neueste Auflage (`api/reorders.go`); „Neue Auflage bestellen" fasst aus der Zeile heraus
 zusammen. An der Theke warnt eine Zeile, wenn eine Klasse gemischte Auflagen bekommt; die
 Klassensatz-Übersicht zählt am Buch und schlüsselt die Auflagen einer Klasse auf
-(`inventur/datenbank_klassen.go`). Was noch folgt — Suche, ISBN-10/13-Abgleich —, steht in
-docs/OFFEN.md 4.18.
+(`inventur/datenbank_klassen.go`). Der Medienkatalog zeigt ein Buch als eine Kachel mit der
+Summe; zusammengefasst wird erst in der Anzeige, weil dieselbe Katalogliste jede Auflage
+einzeln an die Titel-Verwaltung liefert. Was noch folgt — die Schulbücher im Portal,
+ISBN-10/13-Abgleich —, steht in docs/OFFEN.md 4.18.
 
 **Rolle und Art sind zwei verschiedene Fragen.** Die **Rolle** sagt, was jemand im
 Programm darf (Admin, Leitung, Mitarbeiter, Helfer — dazu `kollegium` als Grundzustand).

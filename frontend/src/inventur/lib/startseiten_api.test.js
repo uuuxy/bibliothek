@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buecherSuchen } from './startseiten_api.js';
+import { buecherSuchen, buecherJeBuch } from './startseiten_api.js';
 
 const buch = (/** @type {any} */ felder) => ({ id: Math.random().toString(), ...felder });
 
@@ -62,5 +62,63 @@ describe('buecherSuchen: Schlagworte und Verweise', () => {
 	});
 	it('ein Titel ohne Schlagworte wird weiter über seine Felder gefunden', () => {
 		expect(titel('krabat')).toEqual(['Krabat']);
+	});
+});
+
+// Ein Buch in mehreren Auflagen ist eine Kachel (docs/OFFEN.md 4.18, Stufe 6). werkId und
+// werkRang kommen vom Server (1 = die neueste Auflage); gezählt wird über alle Auflagen der
+// ganzen Liste, oben steht die getroffene.
+describe('buecherJeBuch', () => {
+	const neu = {
+		id: 'neu',
+		title: 'Mathe 7',
+		isbn: '978-3-12-000002',
+		auflage: '4. Aufl.',
+		erscheinungsjahr: 2023,
+		werkId: 'w',
+		werkRang: 1,
+		gesamt: 4,
+		verfuegbar: 1,
+		imZulauf: 30
+	};
+	const alt = {
+		id: 'alt',
+		title: 'Mathe 7',
+		isbn: '978-3-12-000001',
+		auflage: '3. Aufl.',
+		erscheinungsjahr: 2019,
+		werkId: 'w',
+		werkRang: 2,
+		gesamt: 42,
+		verfuegbar: 40,
+		imZulauf: 0
+	};
+	const faust = { id: 'faust', title: 'Faust', gesamt: 3, verfuegbar: 2 };
+	const katalog = [faust, alt, neu];
+	const summe = {
+		gesamt: 46,
+		verfuegbar: 41,
+		imZulauf: 30,
+		auflagen: [
+			{ id: 'neu', auflage: '4. Aufl.', erscheinungsjahr: 2023, gesamt_bestand: 4 },
+			{ id: 'alt', auflage: '3. Aufl.', erscheinungsjahr: 2019, gesamt_bestand: 42 }
+		]
+	};
+
+	it('zeigt das Buch einmal: die neueste Auflage oben, die Summe aller, die neueste zuerst', () => {
+		expect(buecherJeBuch(katalog, katalog)).toEqual([faust, { ...neu, buch: summe }]);
+	});
+
+	it('trifft die Suche nur die alte Auflage, steht sie oben — gezählt wird trotzdem das ganze Buch', () => {
+		const karten = buecherJeBuch(katalog, buecherSuchen(katalog, '978-3-12-000001'));
+		expect(karten).toEqual([{ ...alt, buch: summe }]);
+	});
+
+	it('die Kachel steht dort, wo die erste getroffene Auflage stand', () => {
+		expect(buecherJeBuch(katalog, [alt, faust, neu]).map((b) => b.id)).toEqual(['neu', 'faust']);
+	});
+
+	it('eine Auflage allein im Katalog ist eine gewöhnliche Kachel', () => {
+		expect(buecherJeBuch([faust, neu], [faust, neu])).toEqual([faust, neu]);
 	});
 });

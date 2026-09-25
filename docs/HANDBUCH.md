@@ -108,7 +108,11 @@ beides einstellbar (_Datenschutz & Sitzung_).
   Lernmitteln — auch unter Titeln, von denen kein Exemplar mehr da ist — und fasst die
   gewählte mit dieser zusammen; gehört sie schon zu weiteren Auflagen, kommen die mit, und
   der Dialog sagt das vorher. Das Symbol am Ende einer Zeile löst eine Auflage wieder. Jede
-  Auflage behält ihre ISBN, ihre Exemplare und deren Etiketten. (§13)
+  Auflage behält ihre ISBN, ihre Exemplare und deren Etiketten. In _Suche & Filter_ ist ein
+  so zusammengefasstes Buch eine Karte: oben die Auflage, die die Suche getroffen hat — nach
+  einer gescannten ISBN genau diese, sonst die neueste —, als Bestand die Summe aller
+  Auflagen und darunter „Bestand aus 2 Auflagen: 4. Aufl. · 2023 (16), 3. Aufl. · 2019
+  (42)". Die Titel-Verwaltung listet weiter jede Auflage einzeln. (§13)
 - **Mehrjahresband**: Bei einem Lernmittel heißt die Spanne „Im Unterricht von Jahrgang …
   bis". Bleibt das Buch über diese Spanne beim Kind, statt am Rückgabetermin der Klasse
   zurückzukommen, schaltet man darunter „Mehrjahresband" ein; der Hinweis daneben rechnet

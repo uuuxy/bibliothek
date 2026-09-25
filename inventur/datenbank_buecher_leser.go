@@ -10,10 +10,23 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+// buchWerkSpalten: das Buch, zu dem ein Titel als Auflage gehört (Migration 148), und sein
+// Rang darin — 1 ist die neueste nach repository.SQLNeuesteAuflageZuerst, gezählt über ALLE
+// Auflagen des Buchs, auch die ohne Exemplar. Ohne Werk "" und 0; die Unterabfrage läuft nur
+// für Titel mit Werk. Der Medienkatalog fasst damit die Auflagen zu einer Kachel zusammen
+// (docs/OFFEN.md 4.18, Stufe 6). Eine Stelle für beide SELECTs, damit scanBuchZeilen passt.
+var buchWerkSpalten = `,
+		COALESCE(bt.werk_id::text, '') AS werk_id,
+		CASE WHEN bt.werk_id IS NULL THEN 0 ELSE (
+			SELECT x.rang FROM (
+				SELECT w.id, row_number() OVER (ORDER BY ` + repository.SQLNeuesteAuflageZuerst("w") + `) AS rang
+				FROM buecher_titel w WHERE w.werk_id = bt.werk_id) x
+			WHERE x.id = bt.id) END AS werk_rang`
+
 // buchListenSelect ist der gemeinsame SELECT für Buchlisten und Einzel-Reads:
 // Stammdaten (inkl. Signatur) plus Verfügbarkeits-/Bestandszählung über die
 // Exemplare. Verwender hängen WHERE an; buchListenGroupBy muss folgen.
-const buchListenSelect = `
+var buchListenSelect = `
 	SELECT
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
 		COALESCE(bt.signatur, '') AS signatur,
@@ -26,14 +39,14 @@ const buchListenSelect = `
 		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
 		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, COALESCE(bt.beschreibung, '') AS beschreibung,
-		bt.erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband
+		bt.erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband` + buchWerkSpalten + `
 	FROM buecher_titel bt
 	LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
 `
 
 const buchListenGroupBy = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.beschreibung, bt.erweiterte_eigenschaften, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
 `
 
 // buchListenSelectSchlank ist die LISTEN-Variante: identische Spaltenzahl/-reihenfolge
@@ -43,7 +56,7 @@ const buchListenGroupBy = `
 // nutzen diese Felder NICHT (nur Titel/Autor/ISBN/Fach/Track/Jahrgang); das Detail holt
 // sie per Einzel-Read (ListBooksByIDs) mit dem vollen buchListenSelect nach. Das
 // verkleinert die /api/books-Payload je Titel um ein Vielfaches — ohne Verhaltensänderung.
-const buchListenSelectSchlank = `
+var buchListenSelectSchlank = `
 	SELECT
 		bt.id, COALESCE(bt.isbn, '') AS isbn, bt.titel AS title, COALESCE(bt.autor, '') AS author,
 		COALESCE(bt.signatur, '') AS signatur,
@@ -56,7 +69,7 @@ const buchListenSelectSchlank = `
 		COALESCE(bt.jahrgang_von, 5) AS jahrgang_von, COALESCE(bt.jahrgang_bis, 10) AS jahrgang_bis,
 		COALESCE(bt.untertitel, '') AS untertitel, COALESCE(bt.verlag, '') AS verlag,
 		COALESCE(bt.erscheinungsjahr, 0) AS erscheinungsjahr, '' AS beschreibung,
-		'{}'::jsonb AS erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband
+		'{}'::jsonb AS erweiterte_eigenschaften, COALESCE(bt.auflage, '') AS auflage, bt.listenpreis, bt.mehrjahresband` + buchWerkSpalten + `
 	FROM buecher_titel bt
 	LEFT JOIN buecher_exemplare e ON e.titel_id = bt.id
 	LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
@@ -65,7 +78,7 @@ const buchListenSelectSchlank = `
 // buchListenGroupBySchlank lässt die beiden Konstanten-Spalten aus der Gruppierung weg
 // (Konstanten müssen nicht gruppiert werden — spart dem Server das Hashen großer Werte).
 const buchListenGroupBySchlank = `
-	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband
+	GROUP BY bt.id, bt.titel, bt.autor, bt.isbn, bt.signatur, bt.cover_url, bt.subject, bt.grade_level, bt.track, bt.ist_lernmittel, bt.last_counted, bt.sort_order, bt.medientyp, bt.jahrgang_von, bt.jahrgang_bis, bt.untertitel, bt.verlag, bt.erscheinungsjahr, bt.auflage, bt.listenpreis, bt.mehrjahresband, bt.werk_id
 `
 
 // listBooksSicherheitsLimit kappt die Katalogliste als reine Runaway-/Speicher-Bremse.
@@ -107,6 +120,8 @@ func scanBuchZeilen(rows pgx.Rows) ([]Book, error) {
 			&book.Auflage,
 			&book.Listenpreis,
 			&book.Mehrjahresband,
+			&book.WerkID,
+			&book.WerkRang,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)

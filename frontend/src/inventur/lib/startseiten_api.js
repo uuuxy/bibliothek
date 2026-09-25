@@ -106,3 +106,63 @@ export function buecherSuchen(buecherArray, searchQuery) {
 		})
 	);
 }
+
+/**
+ * Ein Buch in mehreren Auflagen ist EINE Kachel (docs/OFFEN.md 4.18, Stufe 6; entschieden am
+ * 17.09.2026: „Die Suche zeigt einen Treffer mit der Gesamtzahl und darunter die
+ * Aufschlüsselung je Auflage"). Oben steht die Auflage, die die Suche getroffen hat — bei einer
+ * gescannten ISBN genau diese, sonst die neueste (werkRang 1, am Server nach
+ * repository.SQLNeuesteAuflageZuerst). Gezählt werden ALLE Auflagen des Buchs aus der ganzen
+ * Liste, nicht nur die getroffenen: Wer eine alte Auflage scannt, fragt, ob die Schule das Buch
+ * hat. Die Kachel steht dort, wo die erste getroffene Auflage stand; ein Titel ohne Buch bleibt,
+ * wie er ist. Zusammengefasst wird nur hier, in der Anzeige: Titel-Verwaltung und
+ * Zuordnen-Dialog lesen dieselbe Liste und brauchen jede Auflage einzeln.
+ * @param {any[]} alle die ganze Katalogliste
+ * @param {any[]} treffer das, was buecherSuchen davon übrig lässt
+ */
+export function buecherJeBuch(alle, treffer) {
+	/** @type {Map<string, any[]>} */
+	const auflagen = new Map();
+	for (const b of alle) {
+		if (b.werkId) auflagen.set(b.werkId, [...(auflagen.get(b.werkId) ?? []), b]);
+	}
+	/** @type {Map<string, any>} je Buch die getroffene Auflage mit dem kleinsten Rang */
+	const vertreter = new Map();
+	for (const b of treffer) {
+		const bisher = b.werkId && vertreter.get(b.werkId);
+		if (b.werkId && (!bisher || b.werkRang < bisher.werkRang)) vertreter.set(b.werkId, b);
+	}
+	const gezeigt = new Set();
+	/** @type {any[]} */
+	const karten = [];
+	for (const b of treffer) {
+		if (!b.werkId) karten.push(b);
+		else if (!gezeigt.has(b.werkId)) {
+			gezeigt.add(b.werkId);
+			const liste = [...(auflagen.get(b.werkId) ?? [b])].sort((x, y) => x.werkRang - y.werkRang);
+			const v = vertreter.get(b.werkId);
+			karten.push(liste.length < 2 ? v : { ...v, buch: summeDesBuchs(liste) });
+		}
+	}
+	return karten;
+}
+
+/**
+ * Die Zahlen eines Buchs über seine Auflagen und die Liste für die Aufschlüsselung — in der
+ * Form, die auflagenAufschluesselung auch im Bestellbedarf bekommt (gesamt_bestand).
+ * @param {any[]} liste die Auflagen, die neueste zuerst
+ */
+function summeDesBuchs(liste) {
+	const summe = (/** @type {string} */ feld) => liste.reduce((s, a) => s + (a[feld] ?? 0), 0);
+	return {
+		gesamt: summe('gesamt'),
+		verfuegbar: summe('verfuegbar'),
+		imZulauf: summe('imZulauf'),
+		auflagen: liste.map((a) => ({
+			id: a.id,
+			auflage: a.auflage,
+			erscheinungsjahr: a.erscheinungsjahr,
+			gesamt_bestand: a.gesamt ?? 0
+		}))
+	};
+}

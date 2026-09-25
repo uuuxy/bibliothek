@@ -17,7 +17,7 @@
 	import Button from '../../lib/components/ui/Button.svelte';
 	import { hatRecht } from '../../lib/menu.js';
 	import { authStore } from '../../lib/stores/authStore.svelte.js';
-	import { buecherLaden, buecherSuchen } from '$lib/startseiten_api.js';
+	import { buecherLaden, buecherSuchen, buecherJeBuch } from '$lib/startseiten_api.js';
 
 	let searchQuery = $state('');
 	let selectedBook = $state(/** @type {any} */ (null)); // For Quick-Edit Drawer
@@ -37,7 +37,8 @@
 
 	/** @type {any[]} */
 	let books = $state.raw([]);
-	let filteredBooks = $derived(buecherSuchen(books, searchQuery));
+	// Ein Buch in mehreren Auflagen ist eine Kachel (docs/OFFEN.md 4.18, Stufe 6).
+	let filteredBooks = $derived(buecherJeBuch(books, buecherSuchen(books, searchQuery)));
 
 	let displayLimit = $state(50);
 	let paginatedBooks = $derived(filteredBooks.slice(0, displayLimit));

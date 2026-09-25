@@ -61,6 +61,13 @@ type Book struct {
 	// der Katalogliste. Ein Suchindex, keine Anzeige und kein Schreibweg: Ein Verweis ist
 	// kein Schlagwort des Titels, und das Speichern liest das Feld nicht.
 	Suchwoerter []string `json:"suchwoerter,omitempty"`
+	// WerkID und WerkRang (Migration 148, docs/OFFEN.md 4.18, Stufe 6): das Buch, zu dem die
+	// Auflage gehört, und ihr Rang darin — 1 ist die neueste nach
+	// repository.SQLNeuesteAuflageZuerst, gezählt über ALLE Auflagen des Buchs. Der
+	// Medienkatalog fasst damit die Auflagen eines Buchs zu einer Kachel zusammen. Ohne Werk
+	// "" und 0. Nur Ausgabe: Geschrieben wird werk_id allein in repository/auflagen.go.
+	WerkID   string `json:"werkId,omitempty"`
+	WerkRang int    `json:"werkRang,omitempty"`
 }
 
 // BuchEingabe repräsentiert die erwartete JSON-Struktur für das Erstellen oder Aktualisieren eines Buches.

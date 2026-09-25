@@ -42,7 +42,8 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch Stufe 6 (Suche), danach der
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch Stufe 6 für die Schulbücher im
+   Portal (der Medienkatalog ist gebaut), danach der
    ISBN-10/13-Abgleich aus 5.5 an `findeLokalenTitel` (hinter `POST /api/buecher/aus-isbn`),
    jede mit Nachweis. Der Abgleich ist nach hinten gerückt (25.09.2026): Er trifft rund 100
    Titel mit ISBN-10 (Messung vom 23.09.2026) und ändert den Hauptweg der Titelsuche beim
@@ -239,8 +240,13 @@ Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
   wird per EAN-13 nicht gefunden und entsteht ein zweites Mal. Ein Treffer über die andere Form
   wird vorgeschlagen, nicht still übernommen — eines der vier Paare am Testserver sind zwei
   verschiedene Bücher unter derselben Nummer. Betrifft auch „Titel suchen & hinzufügen".
-- **Stufe 6, Suche:** Medienkatalog und Portal zeigen das Buch einmal, mit der Gesamtzahl und
-  der Aufschlüsselung je Auflage.
+- **Stufe 6, Suche — noch das Portal:** Der Reiter „Schulbücher" in _Mein Portal_
+  (`GetLernmittelTitel`, `GetLernmittelFaecher`, dazu der PDF-Export) zeigt das Buch einmal,
+  mit der Gesamtzahl und der Aufschlüsselung je Auflage — wie der Medienkatalog seit dem
+  25.09.2026. Anders als dort rechnet das Portal am Server (es filtert nach Jahrgang, Zweig und
+  Suchtext): eine Zeile je Buch, oben die getroffene Auflage, die Zahlen eines Fachs zählen
+  Bücher statt Auflagen, und der PDF-Export zeigt dieselben Zeilen wie der Bildschirm (so
+  verlangt es `handlePortalLernmittelExport`).
 
 **Messung am Testserver, lesend** — wie viele Lernmittel schon in mehreren Auflagen im Katalog
 stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob die Titelmaske zusätzlich

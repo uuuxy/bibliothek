@@ -9,6 +9,8 @@
      Regaladresse), Bestand als Satz statt Ampelpunkt, Prüfdatum nur wenn es eines gibt.
      Fach-, Klassen- und Zweig-Chips sind bewusst weg: Das Suchfeld findet sie, der
      Reiter „Jahrgänge" gruppiert danach. Der Autor interessiert im Schulkatalog nicht.
+     Ein Buch in mehreren Auflagen (docs/OFFEN.md 4.18, Stufe 6) zählt die Summe; eine Zeile
+     darunter sagt, woraus sie besteht (startseiten_api.js, buecherJeBuch).
 
      Vorher (bis 02.09.2026): weiße Karte mit Rahmen UND Schatten, sechs
      Informationsschichten, Stift in einem weißen Kästchen auf dem Cover, Ampelpunkt
@@ -17,6 +19,7 @@
 	import { coverKandidaten } from '../../../lib/utils/coverSrc.js';
 	import BuchKarteCover from './BuchKarteCover.svelte';
 	import { bestandSatz, formatDatum } from '../../../lib/utils/format.js';
+	import { auflagenAufschluesselung } from '../../../lib/utils/auflagenText.js';
 	import { Copy, MapPin, SquarePen } from '@lucide/svelte';
 
 	/**
@@ -34,7 +37,8 @@
 	 *     lastCounted?: string,
 	 *     signatur?: string,
 	 *     medientyp?: string,
-	 *     auflage?: string
+	 *     auflage?: string,
+	 *     buch?: { gesamt: number, verfuegbar: number, imZulauf: number, auflagen: any[] }
 	 *   },
 	 *   onclick?: (event: Event) => void,
 	 *   onEditClick?: () => void
@@ -56,7 +60,8 @@
 	 *  0: Im Schuljahr ist fast jedes Lernmittel komplett verliehen; ein Katalog, der
 	 *  überall rot ist, sagt nichts mehr. Der Wortlaut kommt aus format.js, weil ihn
 	 *  seit dem 17.09.2026 auch die Theke braucht. */
-	const bestand = $derived(bestandSatz(book.gesamt, book.verfuegbar, book.imZulauf));
+	const zahlen = $derived(book.buch ?? book);
+	const bestand = $derived(bestandSatz(zahlen.gesamt, zahlen.verfuegbar, zahlen.imZulauf));
 
 	const geprueft = $derived(book.lastCounted ? formatDatum(book.lastCounted) : '');
 
@@ -180,6 +185,9 @@
 				</button>
 			{/if}
 		</div>
+		{#if book.buch}
+			<p class="text-xs">{auflagenAufschluesselung(book.buch.auflagen)}</p>
+		{/if}
 
 		{#if geprueft}
 			<span>Geprüft {geprueft}</span>

@@ -27,11 +27,11 @@ func TestBookRepository_ListBooks(t *testing.T) {
 				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
 				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage",
-				"listenpreis", "mehrjahresband",
+				"listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 			}).AddRow(
 				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
 				2, 3, 0, &lastCounted, 1, "Buch", 5, 6,
-				"", "", 2020, "", map[string]any{}, "4. Aufl. 2023", nil, false,
+				"", "", 2020, "", map[string]any{}, "4. Aufl. 2023", nil, false, "werk-1", 2,
 			))
 		mock.ExpectQuery(`SELECT tsw.titel_id.+FROM schlagworte sw`).
 			WithArgs([]string{"book-1"}).
@@ -43,6 +43,9 @@ func TestBookRepository_ListBooks(t *testing.T) {
 		if len(books) > 0 {
 			assert.Equal(t, "book-1", books[0].ID)
 			assert.Equal(t, 3, books[0].Stock)
+			// Buch und Rang der Auflage (docs/OFFEN.md 4.18, Stufe 6) stehen am Ende der Zeile.
+			assert.Equal(t, "werk-1", books[0].WerkID)
+			assert.Equal(t, 2, books[0].WerkRang)
 		}
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -154,11 +157,11 @@ func TestBookRepository_ListBooksByIDs(t *testing.T) {
 				"id", "isbn", "title", "author", "signatur", "cover_url", "subject", "grade_level", "track", "ist_lernmittel",
 				"verfuegbar", "gesamt", "im_zulauf", "last_counted", "sort_order", "medientyp", "jahrgang_von", "jahrgang_bis",
 				"untertitel", "verlag", "erscheinungsjahr", "beschreibung", "erweiterte_eigenschaften", "auflage",
-				"listenpreis", "mehrjahresband",
+				"listenpreis", "mehrjahresband", "werk_id", "werk_rang",
 			}).AddRow(
 				"book-1", "123", "Algebra", "Smith", "SIG-1", "url", "Math", int16(5), "A", false,
 				2, 3, 0, &lastCounted, 1, "Buch", 5, 6,
-				"", "", 2020, "desc", map[string]any{}, "4. Aufl. 2023", nil, false,
+				"", "", 2020, "desc", map[string]any{}, "4. Aufl. 2023", nil, false, "", 0,
 			))
 
 		books, err := repo.ListBooksByIDs(ctx, ids)
