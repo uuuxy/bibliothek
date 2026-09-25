@@ -21,41 +21,36 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 
 1. **Nach dem nächsten Update eine Kontrollzählung** (7.8), lesend: Migration 147 räumt die
    drei Protokolleinträge zu gelöschten Lesern; die Zählung muss danach 0 zeigen.
-2. **Die Messung zu 4.18** am Testserver, lesend (Einzeiler in 4.18): wie viele Lernmittel schon
-   mehrfach im Katalog stehen. Sie entscheidet, ob die Titelmaske eine Liste mit Vorschlägen zum
-   Zusammenfassen braucht — der letzte offene Schritt von 4.18.
-3. **Zwei Skripte entscheiden** (5.26, 5.27): `repair_titel_dubletten.sql` löschen oder enger
+2. **Zwei Skripte entscheiden** (5.26, 5.27): `repair_titel_dubletten.sql` löschen oder enger
    gruppieren; und ob der Echtbetrieb mit einer leeren Datenbank und der Littera-Übernahme
    beginnt — dann fällt `tabula_rasa.sql` weg, das seit Migration 124 abbricht.
-4. **Die Vorschläge vom 25.09.2026 bestätigen oder ändern** — zur Aktualität der Images (7.8)
+3. **Die Vorschläge vom 25.09.2026 bestätigen oder ändern** — zur Aktualität der Images (7.8)
    und zu den vier offenen Stellen des Pflegekonzepts (9.9, Entwurf in
    [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)). Danach baue ich in drei Stufen: `update.sh` holt das
    Datenbank-Image und baut ohne Cache; ein Release-Modus für den Schulserver; das Pflegekonzept
    mit den Antworten und eine Vorlage für das Blatt. Dazu nur du: ob die Vertretung schon
    benannt ist.
-5. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
+4. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
    zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen
    beim Schulbuch (8.7), die Abholfrist bei Vormerkungen (8.8), dazu der Wortlaut des
    Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher
    tragen keinen Vermerk). Den Echtstart halten diese Antworten auf, nicht der Code.
-6. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
+5. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
-7. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
+6. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
    den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
-Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
+Vorschlag vom 24.09.2026):
 
-1. **4.18** Auflagen eines Schulbuchs — nur noch die Messung am Testserver (lesend, Einzeiler
-   dort); sie entscheidet, ob die Titelmaske eine Liste mit Vorschlägen zum Zusammenfassen braucht.
-2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
+1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
-3. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
+2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
    der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
-4. Nach der Antwort zu 8.3: **5.4**.
-5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+3. Nach der Antwort zu 8.3: **5.4**.
+4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 **In der Doku:** das Pflegekonzept (9.9) — der Entwurf steht seit dem 24.09.2026; es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung. **Gleich danach im Code:** das Gate gegen Leser-Werte im Protokoll (5.10), entschieden am
@@ -178,17 +173,6 @@ GROUP BY 1, 2, 3 ORDER BY 3, 1;
 
 **Wann:** vor Abnahme-Flow 4. Kommt eine neue Littera-Übernahme mit Neuaufbau (7.2), erledigt
 sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
-
-### 4.18 Neue Auflage eines Schulbuchs — ein Werk über den Auflagen
-
-Gebaut am 25.09.2026 in sechs Stufen, das Raster über das ganze Vorhaben ist gelaufen (Commits mit
-„4.18" in der Nachricht, `git log --grep=Rasterdurchgang`). Wie es arbeitet, steht in
-[FACHKONZEPT.md](FACHKONZEPT.md) unter „Auflagen eines Schulbuchs". Offen ist nur die Messung:
-
-**Messung am Testserver, lesend** — wie viele Lernmittel schon in mehreren Auflagen im Katalog
-stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob die Titelmaske zusätzlich
-eine Liste mit Vorschlägen zum Zusammenfassen braucht:
-`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS gruppen, coalesce(sum(n),0) AS titel, count(*) FILTER (WHERE mit_bestand > 1) AS gruppen_mit_bestand_in_mehreren FROM (SELECT count(*) AS n, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM buecher_exemplare e WHERE e.titel_id = b.id AND NOT e.ist_ausgesondert)) AS mit_bestand FROM buecher_titel b WHERE b.ist_lernmittel GROUP BY lower(trim(b.titel)), lower(trim(coalesce(b.verlag, ''))) HAVING count(*) > 1) x;"`
 
 ### 4.20 Littera-Schlagworte übernehmen
 
@@ -526,7 +510,8 @@ Geräte).
 Aufgefallen beim Raster zu 4.18 (25.09.2026), am Code gelesen. Die einmalige Reparatur vom
 13.07.2026 gruppiert allein über den normalisierten Titel: Zwei Auflagen „Mathe 7" mit
 verschiedener ISBN werden ein Titel, die Exemplare wandern an den Keeper, die zweite ISBN
-fällt weg — entgegen „Zusammengelegt wird nichts" (4.18). Ebenso zwei gleichnamige Bücher
+fällt weg — entgegen „jedes Exemplar bleibt an seiner Auflage" (FACHKONZEPT, Auflagen eines
+Schulbuchs). Ebenso zwei gleichnamige Bücher
 verschiedener Verlage. Werke räumt das Skript nicht auf; `ON DELETE SET NULL` lässt einen Titel
 allein an seinem Werk zurück. Wirkt nur, wenn jemand es von Hand wieder laufen lässt — etwa
 nach der Littera-Übernahme (7.2); [SCRIPTS.md](SCRIPTS.md) nennt es ohne „einmalig".
