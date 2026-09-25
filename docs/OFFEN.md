@@ -48,7 +48,7 @@ Vorschlag vom 24.09.2026):
    Bescheide gibt es ab der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. **4.18** Werk über den Auflagen, mit dem ISBN-10/13-Abgleich aus 5.5 als Stufe 0 — beide an
    derselben Tür (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`). Ändert die
-   Nachbestell-Liste, also zuletzt.
+   Nachbestell-Liste, also zuletzt. Vorher offen: woran das Werk seinen Bedarf misst (4.18).
 4. Nach der Antwort zu 8.3: **5.4**.
 5. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -180,12 +180,13 @@ sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
 der nächsten Auflage — neue ISBN, also ein neuer Titel. Es geht ausdrücklich NUR um Schulbücher.
 
 **Was heute passiert.** `buecher_titel.isbn` ist UNIQUE; die neue Auflage wird zwangsläufig eine
-zweite Titelzeile, und das ist richtig so — es sind zwei verschiedene Bücher. Nur hängen
-`meldebestand` und der Gesamtbestand am TITEL (`api/reorders.go`): Die alte Zeile behält den
-Meldebestand 95 und zählt ihre 65 Restexemplare, die neue startet mit der Vorgabe 5 und hat 30.
-Die Nachbestell-Liste steht damit für dasselbe Buch zweimal da, und beide Zahlen sind falsch.
-Dasselbe gilt für den Klassensatz (`class_books`), Vormerkungen und Reservierungen — sie alle
-hängen am Titel.
+zweite Titelzeile, und das ist richtig so — es sind zwei verschiedene Bücher. Nur zählt die
+Nachbestell-Liste den Bestand je TITEL (`queryReorders` in `api/reorders.go`) und misst jede
+Zeile an derselben Schwelle aus den Einstellungen (`bestellbedarf_schwelle`, Vorgabe 3). Zwei
+Auflagen desselben Buchs zählen damit getrennt: Liegt jede für sich unter der Schwelle, steht
+dasselbe Buch zweimal auf der Liste, jede Zeile mit der Menge, die ihrer eigenen Auflage fehlt —
+auch wenn beide zusammen reichen. Am Titel hängen außerdem der Klassensatz (`class_books`),
+Vormerkungen und Reservierungen (`klassensatz_reservierungen`).
 
 **Entschieden am 17.09.2026:**
 
@@ -211,6 +212,15 @@ Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 **Freigegeben am 23.09.2026, nicht gebaut:** das Werk samt Migration, Gruppierung im Bedarf
 und Warnung in der Ausgabe. Ändert das Schema und rechnet die Nachbestell-Liste anders — in
 Stufen mit Nachweis.
+
+**Offen vor dem Bau: woran das Werk seinen Bedarf misst.** Die Entscheidung vom 17.09.2026
+rechnet mit einem Soll je Werk („95 Stück Mathe 7"; „am Werk rechnen Meldebestand, Bedarf und
+Nachbestellung"). Ein Soll je Buch gibt es heute nicht: Am 30.07.2026 ist entschieden worden,
+`meldebestand` nicht zu pflegen und ihm keine Oberfläche zu geben. Kein Schreibpfad setzt die
+Spalte, und sie löst nichts aus ([FACHKONZEPT.md](FACHKONZEPT.md), Bestellbedarf). Mit dem Werk
+und der einen Schwelle stünde ein Buch in zwei Auflagen als eine Zeile auf der Liste; eine Zahl
+wie 95 für ein bestimmtes Buch ließe sich damit nicht ausdrücken. Zu entscheiden: bleibt es bei
+der einen Schwelle, oder bekommt das Werk ein eigenes Soll?
 
 ### 4.20 Littera-Schlagworte übernehmen
 

@@ -91,7 +91,7 @@ beides einstellbar (_Datenschutz & Sitzung_).
   Wasserschaden): Er mindert jeden künftigen Ersatzbetrag, zieht das Buch aber nicht aus
   dem Verkehr. Erfasst wird das nach der Rückgabe hier, nicht an der Theke. (§14)
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
-  Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen, Meldebestand,
+  Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen,
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
