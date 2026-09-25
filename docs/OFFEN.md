@@ -401,6 +401,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Teardown löscht die E2E-Bestellungen). In der
   vollen Suite legt eine alphabetisch frühere Spec sie an. Nach dem Muster von `seedBenutzer`
   selbst anlegen.
+- **`ubuntu-latest` wechselt ab 19. Oktober 2026 auf Ubuntu 26.** Alle zehn Jobs in
+  `.github/workflows/` laufen auf `ubuntu-latest`, am 25.09.2026 das Abbild `ubuntu-24.04`
+  (Ubuntu 24.04.5, Log des CI-Laufs zu 31de3b62); jede CI-Annotation kündigt den Wechsel an
+  (actions/runner-images#14748). Was dabei bricht — etwa Postgres-Client oder die
+  Chromium-Abhängigkeiten von Playwright —, meldet sich in der CI. Vorher entscheiden: einen
+  Lauf gegen das neue Abbild, oder `ubuntu-24.04` festschreiben und den Wechsel selbst legen.
 
 ### 5.18 Klassen als Stammdaten — wie die Lesergruppen in Littera
 
