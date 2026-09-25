@@ -42,7 +42,8 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch das Raster über das ganze Vorhaben.
+1. **4.18** Auflagen eines Schulbuchs — nur noch die Messung am Testserver (lesend, Einzeiler
+   dort); sie entscheidet, ob die Titelmaske eine Liste mit Vorschlägen zum Zusammenfassen braucht.
 2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
 3. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
@@ -174,61 +175,9 @@ sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
 
 ### 4.18 Neue Auflage eines Schulbuchs — ein Werk über den Auflagen
 
-**Der Fall (gefragt am 17.09.2026):** Ein Schulbuch wird nachbestellt, es gibt es aber nur noch in
-der nächsten Auflage — neue ISBN, also ein neuer Titel. Es geht ausdrücklich NUR um Schulbücher.
-
-**Was heute passiert.** `buecher_titel.isbn` ist UNIQUE; die neue Auflage wird zwangsläufig eine
-zweite Titelzeile, und das ist richtig so — es sind zwei verschiedene Bücher. Nur zählt die
-Nachbestell-Liste den Bestand je TITEL (`queryReorders` in `api/reorders.go`) und misst jede
-Zeile an derselben Schwelle aus den Einstellungen (`bestellbedarf_schwelle`, Vorgabe 3). Zwei
-Auflagen desselben Buchs zählen damit getrennt: Liegt jede für sich unter der Schwelle, steht
-dasselbe Buch zweimal auf der Liste, jede Zeile mit der Menge, die ihrer eigenen Auflage fehlt —
-auch wenn beide zusammen reichen. Am Titel hängen außerdem der Klassensatz (`class_books`),
-Vormerkungen und Reservierungen (`klassensatz_reservierungen`).
-
-**Entschieden am 17.09.2026:**
-
-- **Der Bedarf rechnet am Werk**, nicht an der Auflage: „95 Stück Mathe 7, egal welche Auflage."
-  Die Suche zeigt einen Treffer mit der Gesamtzahl und darunter die Aufschlüsselung je Auflage.
-- **Die Ausgabe warnt**, wenn eine Klasse gemischte Auflagen bekommt. Still darf das nicht
-  passieren: verschiedene Auflagen heißen verschiedene Seitenzahlen.
-- **Zusammengelegt wird nichts.** Zwei Titelzeilen zu einer zu machen und die Exemplare umzuhängen
-  verliert die Auflage — und genau die ist bei Schulbüchern die Information, die zählt. Jedes
-  Exemplar bleibt an seiner Auflage.
-- **Die Form:** eine schmale Tabelle `werke` (Id, Name) und eine NULLBARE Spalte `werk_id` am
-  Titel; gruppiert wird über `COALESCE(werk_id, id)`. Jeder Titel ohne Werk ist damit sein eigenes
-  Werk — es gibt keinen Zwischenzustand „halber Bestand gepflegt", und jeder Lesepfad, den die
-  Frage nicht betrifft, bleibt unverändert. Am Werk rechnen Meldebestand, Bedarf und
-  Nachbestellung; an der Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe.
-
-**Entschieden am 23.09.2026: Der Besteller legt das Werk an.** Der Vorschlag entsteht
-automatisch beim Nachbestellen, das Ja gibt der Besteller. Vollautomatisch über den Namen zu
-gruppieren verbindet früher oder später zwei „Deutschbuch 7" verschiedener Verlage; rein von Hand
-pflegt es niemand, und der Bedarf bleibt falsch. Auf dem Weg über die Nachbestellung ist der
-Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
-
-**Entschieden am 25.09.2026:**
-
-- **Zusammenfassen an zwei Stellen, über eine Schreibfunktion:** in der Titelmaske von Hand —
-  auch für Bücher, die schon in mehreren Auflagen im Katalog stehen — und beim Nachbestellen als
-  Vorschlag, den der Besteller bestätigt. Littera kennt nur den Weg von Hand: die Verweisung
-  „Früherer Titel" in der Titelmaske, und die wirkt nur auf die Suche.
-- **Der Bedarf vergleicht die Summe aller Auflagen mit der einen Schwelle** aus den Einstellungen.
-  Ein Soll je Buch gibt es nicht; `meldebestand` wird seit dem 30.07.2026 nicht gepflegt
-  ([FACHKONZEPT.md](FACHKONZEPT.md), Bestellbedarf). Das ersetzt den Meldebestand am Werk aus
-  der Form vom 17.09.2026.
-- **Gemischte Auflagen in einer Klasse:** eine Hinweiszeile an der Theke wie bei der
-  Fremdrückgabe, kein Dialog; dazu die Aufschlüsselung in der Klassensatz-Übersicht.
-- **Gebaut wird jetzt**, vor 5.21, 5.18 und 5.3: 5.3 wird erst mit echten Bescheiden gebraucht,
-  und die gibt es erst mit den Nummern aus E1 (8.1).
-- **`werke` ohne Spalte Name** (Abweichung von der Form vom 17.09.2026): Jede Ansicht zeigt die
-  neueste Auflage mit ihrem Titel; ein eigener Name, den keine Ansicht liest und niemand pflegt,
-  liefe auseinander wie `meldebestand`.
-
-**Die Stufen** — je Stufe ein Test, der am alten Stand rot ist, die volle Suite mit Postgres und
-der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibung der
-Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Alle Stufen sind gebaut; es fehlt das
-Raster über das ganze Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg.
+Gebaut am 25.09.2026 in sechs Stufen, das Raster über das ganze Vorhaben ist gelaufen (Commits mit
+„4.18" in der Nachricht, `git log --grep=Rasterdurchgang`). Wie es arbeitet, steht in
+[FACHKONZEPT.md](FACHKONZEPT.md) unter „Auflagen eines Schulbuchs". Offen ist nur die Messung:
 
 **Messung am Testserver, lesend** — wie viele Lernmittel schon in mehreren Auflagen im Katalog
 stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob die Titelmaske zusätzlich
@@ -566,7 +515,7 @@ Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHK
 5) behauptete bis zum 24.09.2026 einen. Gesperrt würde nach 4.4 wie heute (Schülerbücherei und
 Geräte).
 
-### 5.26 `repair_titel_dubletten.sql` legt Auflagen zusammen
+### 5.26 Skripte halten die Regel der Auflagen nicht — `repair_titel_dubletten.sql` legt sie zusammen
 
 Aufgefallen beim Raster zu 4.18 (25.09.2026), am Code gelesen. Die einmalige Reparatur vom
 13.07.2026 gruppiert allein über den normalisierten Titel: Zwei Auflagen „Mathe 7" mit
@@ -577,6 +526,24 @@ allein an seinem Werk zurück. Wirkt nur, wenn jemand es von Hand wieder laufen 
 nach der Littera-Übernahme (7.2); [SCRIPTS.md](SCRIPTS.md) nennt es ohne „einmalig".
 Möglichkeiten: das Skript löschen (der Anlass ist erledigt) oder über Titel, Verlag und
 fehlende ISBN gruppieren und Lernmittel ausnehmen.
+
+Dieselbe Lücke ohne Zusammenlegen (Rasterdurchgang 25.09.2026): `e2e_altlasten.sql`,
+`entferne_demo_daten.sql` und `seed_demo.sql` löschen Titel per DELETE, `tabula_rasa.sql` leert
+`buecher_titel` per `TRUNCATE … CASCADE` — das erreicht `werke` nicht, der Verweis zeigt vom Titel
+zum Werk. Zurück bleiben Werke ohne Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der
+überall wie ein Titel ohne weitere Auflage erscheint (Titelmaske: „Keine andere Auflage
+zugeordnet."). Kein Schaden; die Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine
+Skripte.
+
+### 5.27 `tabula_rasa.sql` bricht seit Migration 124 ab
+
+Nachgestellt am 25.09.2026 an der Test-Datenbank: `ERROR: "schueler" is not a table` —
+`schueler` ist seit Migration 124 eine Sicht auf `leser`. Das Skript bricht in seiner Transaktion
+ab und ändert nichts; laut also. Seine Tabellenliste ist älter als die Leser-Tabelle (124, seit
+125 mit dem Kollegium) und als `werke` (148, siehe 5.26). Gedacht ist es für den Schritt vor dem
+Echtbetrieb. Frage: Beginnt der Echtbetrieb mit einer leeren Datenbank und der Littera-Übernahme
+(7.2)? Dann fällt das Skript weg. Sonst braucht es eine neue Liste aus dem Tabellenbestand und die
+Entscheidung, welche Leser bleiben.
 
 ---
 
