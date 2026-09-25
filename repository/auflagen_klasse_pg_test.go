@@ -80,7 +80,7 @@ func TestAuflagenMischungInKlasse(t *testing.T) {
 	if m.Klasse != "07B" || m.Auflage != "4. Aufl." || m.Erscheinungsjahr != 2023 {
 		t.Errorf("Kopf %+v — erwartet 07B, 4. Aufl., 2023", m)
 	}
-	if len(m.Andere) != 1 || m.Andere[0].Auflage != "3. Aufl." || m.Andere[0].Kinder != 3 {
+	if len(m.Andere) != 1 || m.Andere[0].ID != alt || m.Andere[0].Auflage != "3. Aufl." || m.Andere[0].Kinder != 3 {
 		t.Errorf("andere Auflagen %+v — erwartet 3. Aufl. bei 3 Kindern (Ida, Ben, Cem; nicht Dora, Gustav, Hanna, nicht die 7c)", m.Andere)
 	}
 

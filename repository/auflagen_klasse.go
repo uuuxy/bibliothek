@@ -18,9 +18,11 @@ import (
 // der Klassensatz-Übersicht (GetClassGroups): klassen_normkey über die Sicht schueler, nur
 // aktive Kinder.
 
-// AuflageInKlasse ist eine andere Auflage desselben Buchs und wie viele Kinder der Klasse
-// sie gerade haben.
+// AuflageInKlasse ist eine Auflage desselben Buchs und wie viele Kinder der Klasse sie
+// gerade haben — an der Theke (die anderen Auflagen) und in der Klassensatz-Übersicht (alle,
+// die die Klasse hat; inventur.GetClassGroups).
 type AuflageInKlasse struct {
+	ID               string `json:"id"`
 	Auflage          string `json:"auflage"`
 	Erscheinungsjahr int    `json:"erscheinungsjahr"`
 	Kinder           int    `json:"kinder"`
@@ -57,7 +59,7 @@ func AuflagenMischungInKlasse(ctx context.Context, q DBQueryer, titelID, schuele
 	}
 
 	rows, err := q.Query(ctx, `
-		SELECT coalesce(t.auflage, ''), coalesce(t.erscheinungsjahr, 0), count(DISTINCT s.id)::int
+		SELECT t.id::text, coalesce(t.auflage, ''), coalesce(t.erscheinungsjahr, 0), count(DISTINCT s.id)::int
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
 		JOIN buecher_titel t ON t.id = e.titel_id
@@ -74,7 +76,7 @@ func AuflagenMischungInKlasse(ctx context.Context, q DBQueryer, titelID, schuele
 	defer rows.Close()
 	for rows.Next() {
 		var a AuflageInKlasse
-		if err := rows.Scan(&a.Auflage, &a.Erscheinungsjahr, &a.Kinder); err != nil {
+		if err := rows.Scan(&a.ID, &a.Auflage, &a.Erscheinungsjahr, &a.Kinder); err != nil {
 			return nil, fmt.Errorf("auflagen in der klasse: %w", err)
 		}
 		m.Andere = append(m.Andere, a)

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	auflagenBeschriftung,
 	auflagenAufschluesselung,
+	auflagenDerKlasse,
 	auflagenHinweisText
 } from './auflagenText.js';
 
@@ -49,6 +50,32 @@ describe('auflagenAufschluesselung', () => {
 				{ gesamt_bestand: 3 }
 			])
 		).toBe('Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), Auflage ohne Angabe (3)');
+	});
+});
+
+// Die Auflagen einer Klasse auf der Klassensatz-Kachel (4.18, Stufe 5): Die Reihenfolge ist die
+// des Servers, die Auflage der Kachel trägt denselben Zusatz wie in der Titelmaske.
+describe('auflagenDerKlasse', () => {
+	it('nennt jede Auflage mit ihren Kindern und markiert die der Kachel', () => {
+		expect(
+			auflagenDerKlasse(
+				[
+					{ id: 'neu', auflage: '4. Aufl.', erscheinungsjahr: 2023, kinder: 20 },
+					{ id: 'alt', auflage: '3. Aufl.', erscheinungsjahr: 2019, kinder: 1 }
+				],
+				'neu'
+			)
+		).toEqual(['4. Aufl. · 2023: 20 Kinder — diese Auflage', '3. Aufl. · 2019: 1 Kind']);
+	});
+
+	it('markiert nichts, wenn die Auflage der Kachel in der Klasse fehlt', () => {
+		// Von Hand ist die 3. Auflage zugeordnet, die Kinder haben alle die 4.
+		expect(
+			auflagenDerKlasse(
+				[{ id: 'neu', auflage: '4. Aufl.', erscheinungsjahr: 2023, kinder: 6 }],
+				'alt'
+			)
+		).toEqual(['4. Aufl. · 2023: 6 Kinder']);
 	});
 });
 

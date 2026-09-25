@@ -42,12 +42,11 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch die Stufen 5 und 6, danach der
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch Stufe 6 (Suche), danach der
    ISBN-10/13-Abgleich aus 5.5 an `findeLokalenTitel` (hinter `POST /api/buecher/aus-isbn`),
    jede mit Nachweis. Der Abgleich ist nach hinten gerückt (25.09.2026): Er trifft rund 100
    Titel mit ISBN-10 (Messung vom 23.09.2026) und ändert den Hauptweg der Titelsuche beim
-   Bestellen; die Warnung bei gemischten Auflagen schützt Klassen vor Büchern mit anderen
-   Seitenzahlen.
+   Bestellen.
 2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
 3. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
@@ -235,18 +234,13 @@ der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibun
 Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Am Ende läuft das Raster über das ganze
 Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
 
-4. **ISBN-10/13-Abgleich an der Bestelltür** (aus 5.5; „Neue Auflage bestellen" ist gebaut):
-   `findeLokalenTitel` findet heute nur dieselbe Schreibweise. Ein Titel mit ISBN-10 wird per
-   EAN-13 nicht gefunden und entsteht ein zweites Mal. Ein Treffer über die andere Form wird
-   vorgeschlagen, nicht still übernommen — eines der vier Paare am Testserver sind zwei
-   verschiedene Bücher unter derselben Nummer. Betrifft auch „Titel suchen & hinzufügen".
-5. **Gemischte Auflagen in der Klassensatz-Übersicht** (die Hinweiszeile an der Theke ist
-   gebaut): `GetClassGroups` zählt die Ausleihen je Titel und nimmt, was mehr als die Hälfte
-   der Klasse hat. Bei 20 Kindern mit der 4. und 8 mit der 3. Auflage erscheint nur die 4. —
-   die Mischung bleibt unsichtbar. Je Werk zählen und die Auflagen aufschlüsseln; die Sicht
-   liest auch das Portal des Kollegiums.
-6. **Suche:** Medienkatalog und Portal zeigen das Buch einmal, mit der Gesamtzahl und der
-   Aufschlüsselung je Auflage.
+- **Stufe 4, ISBN-10/13-Abgleich an der Bestelltür** (aus 5.5; „Neue Auflage bestellen" ist
+  gebaut): `findeLokalenTitel` findet heute nur dieselbe Schreibweise. Ein Titel mit ISBN-10
+  wird per EAN-13 nicht gefunden und entsteht ein zweites Mal. Ein Treffer über die andere Form
+  wird vorgeschlagen, nicht still übernommen — eines der vier Paare am Testserver sind zwei
+  verschiedene Bücher unter derselben Nummer. Betrifft auch „Titel suchen & hinzufügen".
+- **Stufe 6, Suche:** Medienkatalog und Portal zeigen das Buch einmal, mit der Gesamtzahl und
+  der Aufschlüsselung je Auflage.
 
 **Messung am Testserver, lesend** — wie viele Lernmittel schon in mehreren Auflagen im Katalog
 stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob die Titelmaske zusätzlich

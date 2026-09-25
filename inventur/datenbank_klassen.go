@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"bibliothek/repository"
@@ -49,7 +50,17 @@ const KlassensatzMindestLeser = 5
 // Lektüre. Ein Titel, der schon von Hand zugeordnet ist, erscheint nur einmal (hand).
 // Beide Quellen laufen durch dieselbe Sortierung; branch filtert auf den Bildungsgang,
 // sortOrder bestimmt die Reihenfolge der Klassen.
+//
+// Auflagen (docs/OFFEN.md 4.18, Stufe 5, 25.09.2026): Gezählt wird am BUCH, nicht an der
+// Auflage — COALESCE(werk_id, id) wie im Bestellbedarf. Je Auflage gezählt, verschwand ein
+// Klassensatz, sobald er auf zwei Auflagen verteilt war (14 Kinder mit der 4., 14 mit der
+// 3. Auflage: keine hat mehr als die Hälfte), und bei 20 zu 8 blieb die Mischung
+// unsichtbar. Für ein Buch aus den Ausleihen steht die Auflage, die die meisten Kinder der
+// Klasse haben, bei Gleichstand die neueste: Die Kachel zeigt, was die Klasse hat, nicht,
+// was zuletzt erschien. Eine Zuordnung von Hand deckt das ganze Buch ab. Haben Kinder der
+// Klasse eine andere Auflage als die der Kachel, trägt die Zeile die Aufschlüsselung.
 func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, sortOrder string) ([]ClassGroup, error) {
+	neueste := repository.SQLNeuesteAuflageZuerst("t")
 	query := `
 		WITH klassen_groesse AS (
 			SELECT klassen_normkey(klasse) AS k, min(klasse) AS klasse, count(*) AS n
@@ -57,33 +68,61 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 			WHERE deleted_at IS NULL AND ist_abgaenger = false AND klasse ~ '^\d'
 			GROUP BY klassen_normkey(klasse)
 		),
-		leser AS (
-			SELECT klassen_normkey(s.klasse) AS k, e.titel_id, count(DISTINCT s.id) AS leser
+		offen AS (
+			SELECT klassen_normkey(s.klasse) AS k, s.id AS kind, t.id AS titel_id,
+			       COALESCE(t.werk_id, t.id) AS buch
 			FROM ausleihen a
 			JOIN schueler s ON s.id = a.schueler_id AND s.deleted_at IS NULL AND s.ist_abgaenger = false
 			JOIN buecher_exemplare e ON e.id = a.exemplar_id
+			JOIN buecher_titel t ON t.id = e.titel_id
 			WHERE a.rueckgabe_am IS NULL
-			GROUP BY klassen_normkey(s.klasse), e.titel_id
+		),
+		je_auflage AS (
+			SELECT k, buch, titel_id, count(DISTINCT kind) AS kinder
+			FROM offen GROUP BY k, buch, titel_id
+		),
+		leser AS (
+			SELECT k, buch, count(DISTINCT kind) AS leser
+			FROM offen GROUP BY k, buch
+		),
+		vertreter AS (
+			SELECT DISTINCT ON (j.k, j.buch) j.k, j.buch, j.titel_id
+			FROM je_auflage j JOIN buecher_titel t ON t.id = j.titel_id
+			ORDER BY j.k, j.buch, j.kinder DESC, ` + neueste + `
+		),
+		mischung AS (
+			-- Nur Titel, die zu einem Buch mit mehreren Auflagen gehören: Ohne Werk ist buch = titel_id.
+			SELECT j.k, j.buch, array_agg(j.titel_id) AS titel_ids,
+			       json_agg(json_build_object('id', t.id, 'auflage', coalesce(t.auflage, ''),
+			           'erscheinungsjahr', coalesce(t.erscheinungsjahr, 0), 'kinder', j.kinder)
+			           ORDER BY j.kinder DESC, ` + neueste + `) AS auflagen
+			FROM je_auflage j JOIN buecher_titel t ON t.id = j.titel_id
+			WHERE j.buch <> j.titel_id
+			GROUP BY j.k, j.buch
 		),
 		zuordnung AS (
 			SELECT class_name, book_id, 'hand'::text AS quelle, 0::bigint AS leser FROM class_books
 			UNION ALL
 			SELECT COALESCE((SELECT min(h.class_name) FROM class_books h WHERE klassen_normkey(h.class_name) = l.k), g.klasse),
-			       l.titel_id, 'ausleihe', l.leser
+			       v.titel_id, 'ausleihe', l.leser
 			FROM leser l
 			JOIN klassen_groesse g ON g.k = l.k
+			JOIN vertreter v ON v.k = l.k AND v.buch = l.buch
 			WHERE l.leser * 2 > g.n AND l.leser >= $2
-			  AND NOT EXISTS (SELECT 1 FROM class_books h
-			                  WHERE klassen_normkey(h.class_name) = l.k AND h.book_id = l.titel_id)
+			  AND NOT EXISTS (SELECT 1 FROM class_books h JOIN buecher_titel ht ON ht.id = h.book_id
+			                  WHERE klassen_normkey(h.class_name) = l.k AND COALESCE(ht.werk_id, ht.id) = l.buch)
 		)
-		SELECT 
-			cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject, 
-			COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url, 
+		SELECT
+			cb.class_name, b.id, b.titel AS title, COALESCE(b.subject, '') AS subject,
+			COALESCE(b.track, '') AS track, COALESCE(b.cover_url, '') AS cover_url,
 			COALESCE(b.isbn, '') AS isbn,
 			COUNT(e.id) FILTER (WHERE e.ist_ausleihbar = true AND e.ist_ausgesondert = false AND a.id IS NULL) AS verfuegbar,
 			COUNT(e.id) FILTER (WHERE e.ist_ausgesondert = false AND e.bestellstatus IS NULL) AS gesamt,
 			` + repository.SQLFilterImZulauf + ` AS im_zulauf,
-			cb.quelle, cb.leser
+			cb.quelle, cb.leser,
+			(SELECT m.auflagen FROM mischung m
+			 WHERE m.k = klassen_normkey(cb.class_name) AND m.buch = COALESCE(b.werk_id, b.id)
+			   AND NOT (m.titel_ids <@ ARRAY[b.id])) AS auflagen
 		FROM zuordnung cb
 		JOIN buecher_titel b ON cb.book_id = b.id
 		LEFT JOIN buecher_exemplare e ON e.titel_id = b.id
@@ -125,9 +164,15 @@ func (repo *BookRepository) GetClassGroups(ctx context.Context, branch string, s
 	for rows.Next() {
 		var className string
 		var book ClassBook
-		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.ImZulauf, &book.Quelle, &book.Leser)
+		var auflagen []byte
+		err := rows.Scan(&className, &book.ID, &book.Title, &book.Subject, &book.Track, &book.CoverURL, &book.ISBN, &book.Verfuegbar, &book.Gesamt, &book.ImZulauf, &book.Quelle, &book.Leser, &auflagen)
 		if err != nil {
 			return nil, fmt.Errorf("daten konnten nicht gelesen werden: %w", err)
+		}
+		if len(auflagen) > 0 {
+			if err := json.Unmarshal(auflagen, &book.Auflagen); err != nil {
+				return nil, fmt.Errorf("auflagen von %s in %s: %w", book.ID, className, err)
+			}
 		}
 
 		if _, exists := groupsMap[className]; !exists {

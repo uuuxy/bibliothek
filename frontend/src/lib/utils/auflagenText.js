@@ -34,6 +34,29 @@ export function auflagenAufschluesselung(auflagen) {
 }
 
 /**
+ * Der Zusatz an der Auflage, um die es gerade geht — in der Titelmaske der bearbeitete Titel,
+ * auf der Klassensatz-Kachel die Auflage der Kachel. Das Leerzeichen vorn gehört zum Wert:
+ * Leerraum am Anfang eines Elements nimmt Svelte weg, und Prettier bricht die Zeile genau dort
+ * um — am 25.09.2026 stand „2019— diese Auflage".
+ */
+export const DIESE_AUFLAGE = ' — diese Auflage';
+
+/**
+ * Die Auflagen einer Klasse auf der Kachel der Klassensatz-Übersicht (4.18, Stufe 5): Kinder
+ * der Klasse haben eine andere Auflage als die der Kachel. Eine Zeile je Auflage in der
+ * Reihenfolge des Servers (die meisten Kinder zuerst); die Auflage der Kachel trägt
+ * DIESE_AUFLAGE wie in der Titelmaske.
+ * @param {{ id: string, auflage?: string, erscheinungsjahr?: number, kinder: number }[]} auflagen
+ * @param {string} kachelID
+ */
+export function auflagenDerKlasse(auflagen, kachelID) {
+	return auflagen.map(
+		(a) =>
+			`${auflagenBeschriftung(a)}: ${a.kinder} ${a.kinder === 1 ? 'Kind' : 'Kinder'}${a.id === kachelID ? DIESE_AUFLAGE : ''}`
+	);
+}
+
+/**
  * Die Hinweiszeile der Theke bei gemischten Auflagen (4.18, Stufe 5): Das eben ausgeliehene
  * Schulbuch ist eine andere Auflage als die, die Kinder derselben Klasse schon haben. Klasse
  * und Zahlen, keine Namen — genug, um das Buch zurückzulegen und die andere Auflage zu holen.

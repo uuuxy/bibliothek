@@ -6,7 +6,7 @@
      die Trefferliste des Zuordnen-Dialogs, damit beide dieselbe Auflage gleich nennen. -->
 <script>
 	import { bestandSatz } from '../../../../lib/utils/format.js';
-	import { auflagenBeschriftung } from '../../../../lib/utils/auflagenText.js';
+	import { auflagenBeschriftung, DIESE_AUFLAGE } from '../../../../lib/utils/auflagenText.js';
 
 	/** @type {{ auflage?: string, erscheinungsjahr?: number, titel: string, isbn?: string, verlag?: string, gesamt?: number, verfuegbar?: number, imZulauf?: number, diese?: boolean }} */
 	let {
@@ -23,11 +23,8 @@
 
 	const zusatz = $derived([titel, isbn, verlag].filter(Boolean).join(' · '));
 
-	// Das Leerzeichen vorn gehört zum Wert: Leerraum am Anfang eines Elements nimmt Svelte weg,
-	// und Prettier bricht die Zeile genau dort um — am 25.09.2026 stand „2019— diese Auflage".
-	// Eine Konstante statt {' — …'} im Markup, weil svelte/no-useless-mustaches den Literal
-	// dort ablehnt.
-	const DIESE_AUFLAGE = ' — diese Auflage';
+	// DIESE_AUFLAGE ist eine Konstante statt {' — …'} im Markup, weil svelte/no-useless-mustaches
+	// den Literal dort ablehnt; warum das Leerzeichen vorn zum Wert gehört, steht an der Konstante.
 </script>
 
 <div class="flex min-w-0 flex-1 items-center gap-3">

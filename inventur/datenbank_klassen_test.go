@@ -441,11 +441,11 @@ func TestGetClassGroups(t *testing.T) {
 			sortOrder: "",
 			mockSetup: func() {
 				rows := pgxmock.NewRows([]string{
-					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser",
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
-					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "hand", 0).
-					AddRow("5A", "550e8400-e29b-41d4-a716-446655440001", "Buch 2", "Deutsch", "G", "url2", "456", 2, 5, 0, "hand", 0).
-					AddRow("6B", "550e8400-e29b-41d4-a716-446655440002", "Buch 1", "Mathe", "R", "url1", "123", 4, 8, 0, "hand", 0)
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "hand", 0, nil).
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440001", "Buch 2", "Deutsch", "G", "url2", "456", 2, 5, 0, "hand", 0, nil).
+					AddRow("6B", "550e8400-e29b-41d4-a716-446655440002", "Buch 1", "Mathe", "R", "url1", "123", 4, 8, 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY.*CASE.*ASC, b\.titel ASC`).
 					WithArgs("", KlassensatzMindestLeser).
@@ -460,9 +460,9 @@ func TestGetClassGroups(t *testing.T) {
 			sortOrder: "desc",
 			mockSetup: func() {
 				rows := pgxmock.NewRows([]string{
-					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser",
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
-					AddRow("10F", "550e8400-e29b-41d4-a716-446655440003", "Buch 3", "Englisch", "F", "url3", "789", 1, 1, 0, "hand", 0)
+					AddRow("10F", "550e8400-e29b-41d4-a716-446655440003", "Buch 3", "Englisch", "F", "url3", "789", 1, 1, 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*cb\.class_name, b\.id, b\.titel AS title.*FROM zuordnung cb.*ORDER BY.*CAST.*DESC, cb\.class_name DESC, b\.titel ASC`).
 					WithArgs("F", KlassensatzMindestLeser).
@@ -490,9 +490,9 @@ func TestGetClassGroups(t *testing.T) {
 			mockSetup: func() {
 				// Invalid type for gesamt (string instead of int) to force scan error
 				rows := pgxmock.NewRows([]string{
-					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser",
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
-					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, "invalid", 0, "hand", 0)
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, "invalid", 0, "hand", 0, nil)
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
 					WithArgs("", KlassensatzMindestLeser).
@@ -507,10 +507,29 @@ func TestGetClassGroups(t *testing.T) {
 			sortOrder: "",
 			mockSetup: func() {
 				rows := pgxmock.NewRows([]string{
-					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser",
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 				}).
-					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "hand", 0).
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "hand", 0, nil).
 					RowError(0, fmt.Errorf("row error"))
+
+				mock.ExpectQuery(`(?s)SELECT.*`).
+					WithArgs("", KlassensatzMindestLeser).
+					WillReturnRows(rows)
+			},
+			wantErr:    true,
+			wantGroups: 0,
+		},
+		{
+			// Die Aufschlüsselung der Auflagen (4.18, Stufe 5) ist JSON aus der Abfrage; ist es
+			// nicht lesbar, ist das ein Fehler und keine Kachel ohne Mischung.
+			name:      "auflagen error",
+			branch:    "",
+			sortOrder: "",
+			mockSetup: func() {
+				rows := pgxmock.NewRows([]string{
+					"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
+				}).
+					AddRow("5A", "550e8400-e29b-41d4-a716-446655440000", "Buch 1", "Mathe", "G", "url1", "123", 5, 10, 0, "ausleihe", 6, []byte(`{kaputt`))
 
 				mock.ExpectQuery(`(?s)SELECT.*`).
 					WithArgs("", KlassensatzMindestLeser).

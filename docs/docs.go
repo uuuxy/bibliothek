@@ -5196,6 +5196,9 @@ const docTemplate = `{
                 "erscheinungsjahr": {
                     "type": "integer"
                 },
+                "id": {
+                    "type": "string"
+                },
                 "kinder": {
                     "type": "integer"
                 }

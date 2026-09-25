@@ -150,6 +150,13 @@ _Bücher verwalten_ sind nur die handgepflegten Titel vorgewählt, ein abgeleite
 per Haken übernehmen. Gibt die Klasse die Bücher zurück, verschwindet das Abzeichen wieder.
 Das Kollegium sieht dieselben Einträge in _Mein Portal → Klassensätze_.
 
+Auflagen desselben Buchs, die in der Titel-Verwaltung zusammengefasst sind, zählen zusammen
+(seit 25.09.2026): Haben 4 Kinder die 4. und 2 die 3. Auflage, ist das ein Buch mit 6 Lesern.
+Die Kachel zeigt die Auflage, die die meisten Kinder haben. Haben Kinder der Klasse eine andere
+Auflage als die der Kachel, steht darunter in Orange _Auflagen in der Klasse_ mit jeder Auflage
+und der Zahl der Kinder — die der Kachel mit „diese Auflage". Andere Auflagen haben andere
+Seitenzahlen; die Theke warnt beim Ausleihen ebenfalls. (§13)
+
 **Die Klasse kommt von den Kindern, nicht vom Namen** (07.09.2026 aufgeschrieben, weil die
 Frage beim Büchertausch aufkam): Die abgeleiteten Einträge fragen bei jedem Aufruf, welche
 Klasse in der Schülerliste steht und was deren Kinder gerade ausgeliehen haben. Beim

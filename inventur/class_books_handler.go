@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"bibliothek/repository"
 )
 
 // ClassBook ist ein Klassensatz-Titel, wie ihn das Lehrerportal anzeigt.
@@ -23,6 +25,10 @@ type ClassBook struct {
 	// viele Kinder der Klasse ihn gerade haben (nur bei "ausleihe" gefüllt).
 	Quelle string `json:"quelle"`
 	Leser  int    `json:"leser"`
+	// Auflagen: Haben Kinder der Klasse eine andere Auflage desselben Buchs als die der
+	// Kachel, stehen hier alle Auflagen, die die Klasse hat, mit der Zahl der Kinder — die
+	// meisten zuerst (docs/OFFEN.md 4.18, Stufe 5). Sonst fehlt das Feld.
+	Auflagen []repository.AuflageInKlasse `json:"auflagen,omitempty"`
 }
 
 // ClassGroup bündelt die Klassensatz-Titel EINER Klasse — die Gruppierung passiert

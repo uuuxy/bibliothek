@@ -9,6 +9,7 @@
 <script>
 	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
 	import { bestandSatz } from '../../../../lib/utils/format.js';
+	import { auflagenDerKlasse } from '../../../../lib/utils/auflagenText.js';
 	import BuchKarteCover from '../BuchKarteCover.svelte';
 
 	/**
@@ -23,7 +24,8 @@
 	 *     gesamt?: number,
 	 *     imZulauf?: number,
 	 *     quelle?: string,
-	 *     leser?: number
+	 *     leser?: number,
+	 *     auflagen?: { id: string, auflage?: string, erscheinungsjahr?: number, kinder: number }[]
 	 *   },
 	 *   onEdit?: (book: any) => void,
 	 *   bearbeitbar?: boolean
@@ -102,6 +104,20 @@
 			<span class="text-xs text-on-surface-variant" data-testid="klassensatz-aus-ausleihen">
 				aus Ausleihen · {book.leser} Leser
 			</span>
+		{/if}
+		{#if book.auflagen?.length}
+			<!-- Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): Kinder der Klasse haben eine
+			     andere Auflage als die der Kachel — andere Auflagen haben andere Seitenzahlen.
+			     Begleittext der Karte (M3 Cards, Anatomie: „Supporting text"), in der Warnrolle
+			     wie die Zeile an der Theke; auf der Fläche die Rolle selbst, nicht der Container. -->
+			<div class="text-xs text-warning" data-testid="klassensatz-auflagen">
+				<p>Auflagen in der Klasse</p>
+				<ul>
+					{#each auflagenDerKlasse(book.auflagen, book.id) as zeile, i (i)}
+						<li>{zeile}</li>
+					{/each}
+				</ul>
+			</div>
 		{/if}
 	</div>
 {/snippet}

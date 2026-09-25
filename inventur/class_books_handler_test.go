@@ -32,13 +32,32 @@ func TestHandleClassBooks(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser",
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}).AddRow(
-						"5A", "b1", "Book 1", "Math", "G", "url", "123", 5, 10, 0, "hand", 0,
+						"5A", "b1", "Book 1", "Math", "G", "url", "123", 5, 10, 0, "hand", 0, nil,
 					))
 			},
 			expectedStatus: http.StatusOK,
 			expectedBody:   `{"data":[{"className":"5A","books":[{"id":"b1","title":"Book 1","subject":"Math","track":"G","coverUrl":"url","isbn":"123","verfuegbar":5,"gesamt":10,"imZulauf":0,"quelle":"hand","leser":0}]}]}`,
+		},
+		{
+			// Gemischte Auflagen (docs/OFFEN.md 4.18, Stufe 5): Die Schlüssel der Aufschlüsselung
+			// liest die Kachel (KlassenBuchKachel) — id, auflage, erscheinungsjahr, kinder.
+			name:   "Success - Auflagen der Klasse",
+			branch: "",
+			sort:   "",
+			setupMock: func(m pgxmock.PgxPoolIface) {
+				m.ExpectQuery("(?s)SELECT.*").
+					WithArgs("", KlassensatzMindestLeser).
+					WillReturnRows(pgxmock.NewRows([]string{
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
+					}).AddRow(
+						"07B", "b1", "Mathe 7", "Math", "G", "", "", 0, 4, 0, "ausleihe", 6,
+						[]byte(`[{"id":"b1","auflage":"4. Aufl.","erscheinungsjahr":2023,"kinder":4},{"id":"b0","auflage":"3. Aufl.","erscheinungsjahr":2019,"kinder":2}]`),
+					))
+			},
+			expectedStatus: http.StatusOK,
+			expectedBody:   `{"data":[{"className":"07B","books":[{"id":"b1","title":"Mathe 7","subject":"Math","track":"G","coverUrl":"","isbn":"","verfuegbar":0,"gesamt":4,"imZulauf":0,"quelle":"ausleihe","leser":6,"auflagen":[{"id":"b1","auflage":"4. Aufl.","erscheinungsjahr":2023,"kinder":4},{"id":"b0","auflage":"3. Aufl.","erscheinungsjahr":2019,"kinder":2}]}]}]}`,
 		},
 		{
 			name:   "Success - Empty results fallback",
@@ -48,7 +67,7 @@ func TestHandleClassBooks(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("", KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser",
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}))
 			},
 			expectedStatus: http.StatusOK,
@@ -62,7 +81,7 @@ func TestHandleClassBooks(t *testing.T) {
 				m.ExpectQuery("(?s)SELECT.*").
 					WithArgs("F", KlassensatzMindestLeser).
 					WillReturnRows(pgxmock.NewRows([]string{
-						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser",
+						"class_name", "id", "title", "subject", "track", "cover_url", "isbn", "verfuegbar", "gesamt", "im_zulauf", "quelle", "leser", "auflagen",
 					}))
 			},
 			expectedStatus: http.StatusOK,
