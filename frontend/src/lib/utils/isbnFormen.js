@@ -10,6 +10,10 @@
  * Nicht geraten wird dabei nichts: Zwischen ISBN-10 und ISBN-13 mit 978-Präfix liegt eine
  * feste Rechnung — gleicher Kern, neu berechnete Prüfziffer. Beide Formen bezeichnen
  * dasselbe Buch.
+ *
+ * Am Server rechnet isbnutil.AndereForm dasselbe für die Bestelltür (docs/OFFEN.md 4.18,
+ * Stufe 4). Beide Seiten lesen dieselben Prüffälle (isbnFormen.faelle.json) — rechnen sie
+ * verschieden, wird der Go- oder der Vitest rot.
  */
 
 /** Nur die bedeutungstragenden Zeichen, Prüfzeichen groß. @param {unknown} roh */

@@ -466,6 +466,14 @@ DNB-Satz nennt und die es unter _Einstellungen → Schlagworte_ schon gibt (auch
 Verweis), als _Vorschläge aus der DNB_: Ein Klick übernimmt eines; eingetragen wird nur, was
 jemand übernommen hat.
 
+**Dieselbe ISBN, zehn- oder dreizehnstellig** (seit 25.09.2026): Ältere Titel stehen oft mit
+der zehnstelligen ISBN im Katalog, auf dem Buchrücken steht die dreizehnstellige. Findet
+_Titel suchen & hinzufügen_ oder _Neue Auflage bestellen_ die ISBN nur in der anderen Länge,
+wird nichts angelegt, und es erscheint die Frage „Ist es dasselbe Buch?" mit zwei Zeilen:
+_Diesen Titel nehmen_ (der Titel aus dem Katalog, mit Titel und ISBN) oder _Neu anlegen_ (ein
+eigener Titel aus der DNB). Ohne Klick geschieht nichts. Gefragt wird, obwohl sich beide
+Längen ineinander umrechnen lassen: Eine falsch erfasste ISBN führt sonst auf ein anderes Buch.
+
 ## Inventur
 
 _Neue Bestandsprüfung starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →

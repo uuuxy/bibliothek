@@ -46,8 +46,10 @@ Klassensatz-Übersicht zählt am Buch und schlüsselt die Auflagen einer Klasse 
 (`inventur/datenbank_klassen.go`). Der Medienkatalog zeigt ein Buch als eine Kachel mit der
 Summe; zusammengefasst wird erst in der Anzeige, weil dieselbe Katalogliste jede Auflage
 einzeln an die Titel-Verwaltung liefert. Der Reiter „Schulbücher" im Portal fasst am Server
-zusammen, weil er dort filtert; Liste, Fach-Zahlen und PDF lesen dieselben Zeilen. Was noch
-folgt — der ISBN-10/13-Abgleich an der Bestelltür —, steht in docs/OFFEN.md 4.18.
+zusammen, weil er dort filtert; Liste, Fach-Zahlen und PDF lesen dieselben Zeilen. Steht die
+ISBN beim Bestellen nur in der anderen Länge im Katalog (ISBN-10 ↔ ISBN-13), schlägt die Tür der
+Titelsuche diesen Titel vor, statt einen zweiten anzulegen (`api/isbn_handler.go`,
+`isbnutil.AndereForm`); angelegt wird erst mit „Neu anlegen".
 
 **Rolle und Art sind zwei verschiedene Fragen.** Die **Rolle** sagt, was jemand im
 Programm darf (Admin, Leitung, Mitarbeiter, Helfer — dazu `kollegium` als Grundzustand).

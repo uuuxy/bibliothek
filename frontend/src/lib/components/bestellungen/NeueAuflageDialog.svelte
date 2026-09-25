@@ -15,6 +15,8 @@
 	import Button from '../ui/Button.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
+	import AndereIsbnFormWahl from './AndereIsbnFormWahl.svelte';
+	import { ausIsbnRumpf, istAndereFormFrage } from './ausIsbn.js';
 
 	/** @type {{ zeile: any | null, onschliessen: () => void, onbestellt: (titel: any) => void }} */
 	let { zeile, onschliessen, onbestellt } = $props();
@@ -22,6 +24,8 @@
 	let isbn = $state('');
 	/** Der Titel zur eingegebenen ISBN (Antwort von aus-isbn) — der Vorschlag. @type {any | null} */
 	let gefunden = $state(null);
+	/** Die Antwort mit andere_form, bis „Diesen Titel nehmen" oder „Neu anlegen". @type {any | null} */
+	let wahl = $state(null);
 	let laeuft = $state(false);
 	let fehler = $state('');
 
@@ -42,25 +46,29 @@
 	function leeren() {
 		isbn = '';
 		gefunden = null;
+		wahl = null;
 		laeuft = false;
 		fehler = '';
 	}
 
-	/** @param {string} [code] */
-	async function suchen(code) {
+	/** @param {string} [code] @param {boolean} [neuAnlegen] true nach „Neu anlegen" */
+	async function suchen(code, neuAnlegen = false) {
 		const wert = (code ?? isbn).trim();
 		if (!wert || laeuft) return;
 		isbn = wert;
 		laeuft = true;
 		fehler = '';
 		gefunden = null;
+		wahl = null;
 		try {
-			const res = await apiClient.post('/api/buecher/aus-isbn', { isbn: wert });
+			const res = await apiClient.post('/api/buecher/aus-isbn', ausIsbnRumpf(wert, neuAnlegen));
 			if (!res.ok) {
 				fehler = await extractApiError(res);
 				return;
 			}
-			gefunden = await res.json();
+			const titel = await res.json();
+			if (istAndereFormFrage(titel)) wahl = titel;
+			else gefunden = titel;
 		} catch {
 			fehler = 'Netzwerkfehler — die ISBN-Abfrage hat den Server nicht erreicht.';
 		} finally {
@@ -132,6 +140,16 @@
 			/>
 		</form>
 
+		{#if wahl}
+			<!-- Die ISBN der Antwort, nicht die des Felds: Wer dort weitertippt, meint eine andere. -->
+			<AndereIsbnFormWahl
+				isbn={wahl.isbn}
+				vorschlag={wahl.andere_form}
+				{laeuft}
+				onnehmen={() => ((gefunden = wahl.andere_form), (wahl = null))}
+				onneu={() => suchen(wahl.isbn, true)}
+			/>
+		{/if}
 		{#if gefunden}
 			<!-- Der Titel vorn: Hier wird geprüft, ob die ISBN das richtige Buch getroffen hat. Auflage
 			     und Jahr kennt die Antwort von aus-isbn nicht. -->
@@ -167,8 +185,10 @@
 		class="flex justify-end gap-3 border-t border-outline-variant bg-surface-container-low px-6 py-4"
 	>
 		<Button variant="secondary" onclick={onschliessen}>Abbrechen</Button>
-		{#if gefunden}
-			<Button onclick={zuordnen} disabled={schonDabei || laeuft}>
+		{#if gefunden || wahl}
+			<!-- Solange die Frage offen ist, gibt es nichts zu bestätigen (M3 Dialogs: „Disable
+			     confirming actions until a choice is made"). -->
+			<Button onclick={zuordnen} disabled={!gefunden || schonDabei || laeuft}>
 				{laeuft ? 'Wird zugeordnet …' : 'Zuordnen und bestellen'}
 			</Button>
 		{:else}

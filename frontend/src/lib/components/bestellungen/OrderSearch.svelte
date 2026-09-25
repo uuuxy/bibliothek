@@ -8,53 +8,65 @@
 	import Select from '../ui/Select.svelte';
 	import OrderStaging from './OrderStaging.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
+	import AndereIsbnFormWahl from './AndereIsbnFormWahl.svelte';
+	import { ausIsbnRumpf, istAndereFormFrage } from './ausIsbn.js';
 
 	/** @type {any} */
 	let stagedBook = $state(null);
 	let resolvingDnb = $state(false);
+	/** Die Frage, wenn die ISBN des DNB-Treffers in der anderen Länge im Katalog steht; bis dahin
+	 *  ist nichts angelegt (ausIsbn.js). @type {{ vorschlag: any, book: any } | null} */
+	let wahl = $state(null);
 
 	let localResults = $derived(orderStore.searchResults.filter((r) => r.source === 'local'));
 	let dnbResults = $derived(orderStore.searchResults.filter((r) => r.source === 'dnb'));
 
-	/** @param {any} book */
-	async function openStaging(book) {
-		if (book.source === 'dnb') {
-			resolvingDnb = true;
-			try {
-				const localBook = await apiPost('/api/buecher/aus-isbn', { isbn: book.isbn });
-				if (localBook && localBook.titel_id) {
-					stageBook({
-						id: localBook.titel_id,
-						titel: localBook.titel,
-						autor: localBook.autor,
-						isbn: localBook.isbn,
-						verlag: localBook.verlag,
-						cover_url: localBook.cover_url,
-						// exists=false: signatur ist nur ein VORSCHLAG aus der DNB-Heuristik.
-						signatur: localBook.signatur ?? '',
-						// Preisvorschlag vom DNB-Treffer — über /aus-isbn ginge er sonst verloren.
-						preis_vorschlag: book.preis_vorschlag,
-						// Ein eben angelegter Titel ist noch kein Lernmittel — OrderStaging fragt nach.
-						ist_lernmittel: Boolean(localBook.ist_lernmittel),
-						// Schlagworte der eigenen Liste, die der DNB-Satz nennt — nur angeboten,
-						// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20).
-						schlagwort_vorschlaege: localBook.schlagwort_vorschlaege ?? []
-					});
-				} else {
-					toastStore.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
-				}
-			} catch {
+	/** @param {any} book @param {boolean} [neuAnlegen] true nach „Neu anlegen" */
+	async function openStaging(book, neuAnlegen = false) {
+		wahl = null;
+		if (book.source !== 'dnb') return stageBook(book);
+		resolvingDnb = true;
+		try {
+			const localBook = await apiPost('/api/buecher/aus-isbn', ausIsbnRumpf(book.isbn, neuAnlegen));
+			if (istAndereFormFrage(localBook)) {
+				wahl = { vorschlag: localBook.andere_form, book };
+				orderStore.showDropdown = false;
+			} else if (localBook && localBook.titel_id) {
+				stageAusTuer(localBook, book);
+			} else {
 				toastStore.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
-			} finally {
-				resolvingDnb = false;
 			}
-		} else {
-			stageBook(book);
+		} catch {
+			toastStore.addToast('Fehler beim Anlegen des DNB-Buchs', 'error');
+		} finally {
+			resolvingDnb = false;
 		}
+	}
+
+	/** Das Fenster mit dem Titel aus der Tür. @param {any} localBook @param {any} book der DNB-Treffer */
+	function stageAusTuer(localBook, book) {
+		stageBook({
+			id: localBook.titel_id,
+			titel: localBook.titel,
+			autor: localBook.autor,
+			isbn: localBook.isbn,
+			verlag: localBook.verlag,
+			cover_url: localBook.cover_url,
+			// exists=false: signatur ist nur ein VORSCHLAG aus der DNB-Heuristik.
+			signatur: localBook.signatur ?? '',
+			// Preisvorschlag vom DNB-Treffer — über /aus-isbn ginge er sonst verloren.
+			preis_vorschlag: book.preis_vorschlag,
+			// Ein eben angelegter Titel ist noch kein Lernmittel — OrderStaging fragt nach.
+			ist_lernmittel: Boolean(localBook.ist_lernmittel),
+			// Schlagworte der eigenen Liste, die der DNB-Satz nennt — nur angeboten,
+			// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20).
+			schlagwort_vorschlaege: localBook.schlagwort_vorschlaege ?? []
+		});
 	}
 
 	/** @param {any} book */
 	function stageBook(book) {
+		wahl = null;
 		stagedBook = book;
 		orderStore.resetSearch();
 	}
@@ -80,11 +92,11 @@
 		>
 		<Suchfeld
 			kamera
-			onscan={(code) => scanUebernehmen(code, orderStore, openStaging)}
+			onscan={(code) => ((wahl = null), scanUebernehmen(code, orderStore, openStaging))}
 			autofokus
 			id="book"
 			bind:wert={orderStore.searchQuery}
-			oninput={() => orderStore.handleSearchInput()}
+			oninput={() => ((wahl = null), orderStore.handleSearchInput())}
 			platzhalter="Titel, Autor oder ISBN …"
 			etikett="Titel suchen & hinzufügen"
 		/>
@@ -165,6 +177,15 @@
 				<Ladekreis size="sm" />
 				Titel wird im Katalog angelegt...
 			</div>
+		{/if}
+		{#if wahl}
+			<AndereIsbnFormWahl
+				isbn={wahl.book.isbn}
+				vorschlag={wahl.vorschlag}
+				neuTitel={wahl.book.titel}
+				onnehmen={() => wahl && stageAusTuer(wahl.vorschlag, wahl.book)}
+				onneu={() => wahl && openStaging(wahl.book, true)}
+			/>
 		{/if}
 	</div>
 </div>

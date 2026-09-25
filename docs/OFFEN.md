@@ -42,11 +42,7 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch der ISBN-10/13-Abgleich aus 5.5
-   an `findeLokalenTitel` (hinter `POST /api/buecher/aus-isbn`), mit Nachweis, dann das Raster
-   über das ganze Vorhaben. Der Abgleich ist nach hinten gerückt (25.09.2026): Er trifft rund
-   100 Titel mit ISBN-10 (Messung vom 23.09.2026) und ändert den Hauptweg der Titelsuche beim
-   Bestellen.
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch das Raster über das ganze Vorhaben.
 2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
 3. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
@@ -231,14 +227,8 @@ Vorschlag praktisch sicher, weil er von einem konkreten Titel ausgeht.
 
 **Die Stufen** — je Stufe ein Test, der am alten Stand rot ist, die volle Suite mit Postgres und
 der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibung der
-Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Am Ende läuft das Raster über das ganze
-Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
-
-- **Stufe 4, ISBN-10/13-Abgleich an der Bestelltür** (aus 5.5; „Neue Auflage bestellen" ist
-  gebaut): `findeLokalenTitel` findet heute nur dieselbe Schreibweise. Ein Titel mit ISBN-10
-  wird per EAN-13 nicht gefunden und entsteht ein zweites Mal. Ein Treffer über die andere Form
-  wird vorgeschlagen, nicht still übernommen — eines der vier Paare am Testserver sind zwei
-  verschiedene Bücher unter derselben Nummer. Betrifft auch „Titel suchen & hinzufügen".
+Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Alle Stufen sind gebaut; es fehlt das
+Raster über das ganze Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg.
 
 **Messung am Testserver, lesend** — wie viele Lernmittel schon in mehreren Auflagen im Katalog
 stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob die Titelmaske zusätzlich
@@ -357,16 +347,18 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   ```
 
 - **ISBN-10 und ISBN-13 desselben Buchs:** Die Normalform trennt beide bewusst (Migration 133),
-  die Littera-Übernahme behält eine gültige ISBN-10. Die Bestelltür (`findeLokalenTitel`), die
-  Markierung „Vorhanden" der Bestellsuche (`sammleExistierendeISBNs`) und die
-  Dublettenkontrolle der Maske vergleichen nur die Normalform: Ein Titel mit ISBN-10 wird beim
-  Bestellen per Strichcode (EAN-13) nicht gefunden und entsteht ein zweites Mal. Die Suche im
-  Browser rechnet schon um (`isbnFormen.js`), am Server fehlt das Gegenstück. Gemessen am
-  Testserver am 23.09.2026 (lesend): 100 Titel mit ISBN-10, 9.743 mit ISBN-13, 4 Paare mit
-  gleichem Kern — alle aus der Littera-Übernahme vom 15.07.2026, ohne Exemplare; eines davon
-  sind zwei verschiedene Bücher unter derselben Nummer („Heinrich Mann" und „Frédéric Chopin",
-  rororo, `3499500252`/`9783499500251`). Ein Abgleich über beide Formen darf deshalb
-  vorschlagen, nicht still zusammenführen.
+  die Littera-Übernahme behält eine gültige ISBN-10. Seit dem 25.09.2026 rechnet die Bestelltür
+  um und schlägt den Titel unter der anderen Länge vor (4.18, Stufe 4; `isbnutil.AndereForm`,
+  der Zwilling von `isbnFormen.js`). Nur die Schreibweise vergleichen weiter die Markierung
+  „Vorhanden" der Bestellsuche (`sammleExistierendeISBNs`) und die Dublettenkontrolle der
+  Maske: Ein DNB-Treffer, dessen ISBN-10 im Katalog steht, heißt in der Trefferliste „Neu",
+  erst der Klick führt zur Frage. Gemessen am Testserver am 23.09.2026 (lesend): 100 Titel mit
+  ISBN-10, 9.743 mit ISBN-13, 4 Paare mit gleichem Kern — alle aus der Littera-Übernahme vom
+  15.07.2026, ohne Exemplare. Unter `3499500252` und `9783499500251` stehen zwei verschiedene
+  Bücher („Heinrich Mann" und „Frédéric Chopin", rororo): Die ISBN-10 trägt ein falsches
+  Prüfzeichen (richtig wäre `3499500256`; die Prüfung `KlaereISBN` der Übernahme gibt es seit dem
+  04.08.2026), und die Rechnung führt von ihr trotzdem auf die ISBN-13. Deshalb wird
+  vorgeschlagen, nicht still zusammengeführt.
 - **Frage: Etikett-Knopf nur bei `B-`-Nummern?** Der Knopf an der Exemplarkarte übergibt das
   Exemplar ans Druck-Center, steht aber nur bei Nummern mit `B-` — so seit seinem ersten Commit
   (`7daf4ac6`, Juni 2026), ohne Begründung. Littera-Exemplare tragen nackte Mediennummern und

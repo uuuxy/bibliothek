@@ -92,3 +92,75 @@ describe('NeueAuflageDialog', () => {
 		expect(onbestellt).not.toHaveBeenCalled();
 	});
 });
+
+// Steht die ISBN nur in der anderen Länge im Katalog (ISBN-10 ↔ ISBN-13), legt die Tür nichts
+// an und antwortet mit andere_form (docs/OFFEN.md 4.18, Stufe 4). Der Dialog fragt dann, und
+// bis zur Wahl gibt es nichts zu bestätigen.
+describe('NeueAuflageDialog: dieselbe ISBN in der anderen Länge', () => {
+	const frage = {
+		exists: false,
+		titel_id: '',
+		isbn: '9783161484100',
+		andere_form: {
+			exists: true,
+			titel_id: 'zehn',
+			titel: 'Elemente Chemie 1',
+			isbn: '316148410X',
+			verlag: 'Klett',
+			ist_lernmittel: true
+		}
+	};
+
+	async function bisZurFrage() {
+		vi.mocked(apiClient.post).mockResolvedValueOnce(/** @type {any} */ (antwort(frage)));
+		const onbestellt = vi.fn();
+		const screen = render(NeueAuflageDialog, { zeile, onschliessen: vi.fn(), onbestellt });
+		await fireEvent.input(screen.getByLabelText('ISBN der neuen Auflage'), {
+			target: { value: '978-3-16-148410-0' }
+		});
+		await fireEvent.click(screen.getByRole('button', { name: 'Suchen' }));
+		await screen.findByText(/in zehnstelliger Form/);
+		return { screen, onbestellt };
+	}
+
+	it('fragt, statt einen Vorschlag zu bestätigen', async () => {
+		const { screen } = await bisZurFrage();
+		expect(screen.getByRole('button', { name: /Diesen Titel nehmen/ }).textContent).toContain(
+			'Elemente Chemie 1'
+		);
+		expect(
+			screen.getByRole('button', { name: 'Zuordnen und bestellen' }).hasAttribute('disabled')
+		).toBe(true);
+		expect(screen.getByRole('button', { name: 'Abbrechen' }).hasAttribute('disabled')).toBe(false);
+	});
+
+	it('„Diesen Titel nehmen" ordnet den Titel aus dem Katalog zu', async () => {
+		const { screen, onbestellt } = await bisZurFrage();
+		await fireEvent.click(screen.getByRole('button', { name: /Diesen Titel nehmen/ }));
+		expect(screen.queryByText(/in zehnstelliger Form/)).toBeNull();
+
+		vi.mocked(apiClient.post).mockResolvedValueOnce(/** @type {any} */ (antwort({ auflagen: [] })));
+		await fireEvent.click(screen.getByRole('button', { name: 'Zuordnen und bestellen' }));
+		await vi.waitFor(() => expect(onbestellt).toHaveBeenCalled());
+		expect(apiClient.post).toHaveBeenLastCalledWith('/api/buecher/titel/alt/neue-auflage', {
+			titel_id: 'zehn'
+		});
+		// Er ist schon ein Lernmittel.
+		expect(apiClient.put).not.toHaveBeenCalled();
+	});
+
+	it('„Neu anlegen" fragt die Tür erneut, mit neu_anlegen und der ISBN der Frage', async () => {
+		const { screen } = await bisZurFrage();
+		// Wer im Feld weitertippt, meint eine andere ISBN — die Frage gilt der, nach der sie fragt.
+		await fireEvent.input(screen.getByLabelText('ISBN der neuen Auflage'), {
+			target: { value: '9780306406157' }
+		});
+		vi.mocked(apiClient.post).mockResolvedValueOnce(/** @type {any} */ (antwort(neu)));
+		await fireEvent.click(screen.getByRole('button', { name: /Neu anlegen/ }));
+		await screen.findByText(neu.titel);
+		expect(apiClient.post).toHaveBeenLastCalledWith('/api/buecher/aus-isbn', {
+			isbn: '9783161484100',
+			neu_anlegen: true
+		});
+	});
+});

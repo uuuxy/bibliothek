@@ -1,0 +1,42 @@
+{
+	"_zweck": "Geteilte Prüffälle: isbnFormen (isbnFormen.js, zweiter Eintrag) und isbnutil.AndereForm (pkg/isbnutil/andere_form.go) rechnen dieselbe ISBN in die andere Länge um. Beide Tests lesen diese Datei; rechnen die Seiten verschieden, fragt die Bestelltür nach einem anderen Titel, als die Katalogsuche findet (docs/OFFEN.md 4.18, Stufe 4).",
+	"_grenze": "Nur Eingaben aus Ziffern, X, Bindestrichen und Leerzeichen. Andere Zeichen behandeln beide Seiten bewusst verschieden: Der Browser streicht sie für die Suche, der Server hält die Normalform der Datenbank (Migration 133), in der ‚ISBN 978…' keine ISBN ist.",
+	"faelle": [
+		{
+			"fall": "ISBN-13 (978) auf die zehnstellige Form, Beispielpaar der Norm",
+			"roh": "9780306406157",
+			"andere": "0306406152"
+		},
+		{
+			"fall": "ISBN-10 auf die dreizehnstellige Form",
+			"roh": "0306406152",
+			"andere": "9780306406157"
+		},
+		{
+			"fall": "Bindestriche wie auf dem Buch",
+			"roh": "978-0-306-40615-7",
+			"andere": "0306406152"
+		},
+		{ "fall": "ISBN-10 mit Bindestrichen", "roh": "0-306-40615-2", "andere": "9780306406157" },
+		{
+			"fall": "Prüfzeichen X, zweites Beispielpaar der Norm",
+			"roh": "9783161484100",
+			"andere": "316148410X"
+		},
+		{ "fall": "kleines x und Leerzeichen", "roh": "3 16 148410 x", "andere": "9783161484100" },
+		{
+			"fall": "Testserver: ISBN-10 mit falschem Prüfzeichen führt auf die ISBN-13 eines anderen Buchs",
+			"roh": "3499500252",
+			"andere": "9783499500251"
+		},
+		{
+			"fall": "Testserver: zurück führt die Rechnung auf das richtige Prüfzeichen",
+			"roh": "9783499500251",
+			"andere": "3499500256"
+		},
+		{ "fall": "979 hat keine ISBN-10", "roh": "9791234567896", "andere": null },
+		{ "fall": "eine einzelne Zahl ist keine ISBN", "roh": "7", "andere": null },
+		{ "fall": "zwölf Ziffern sind keine ISBN", "roh": "978316148410", "andere": null },
+		{ "fall": "leer", "roh": "", "andere": null }
+	]
+}

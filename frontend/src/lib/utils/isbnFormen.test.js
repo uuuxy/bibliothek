@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { isbnFormen, normalisiereIsbn } from './isbnFormen.js';
+import pruefung from './isbnFormen.faelle.json';
 
 // Die Zahlen stammen aus echten Schulbüchern, nicht aus einem Generator: Der Vergleich
 // ISBN-10 ↔ ISBN-13 ist eine Rechnung mit Prüfziffer, und eine selbst ausgedachte ISBN
@@ -46,4 +47,22 @@ describe('isbnFormen', () => {
 		expect(isbnFormen('B97601826457')).toEqual([]); // Ausweis-Fremdnummer, keine ISBN
 		expect(isbnFormen('')).toEqual([]);
 	});
+});
+
+// Die JavaScript-Seite der geteilten Prüffälle (pkg/isbnutil/andere_form_test.go prüft die
+// Go-Seite): Die Bestelltür rechnet mit isbnutil.AndereForm, die Katalogsuche hiermit.
+describe('isbnFormen, geteilte Prüffälle mit isbnutil.AndereForm', () => {
+	const faelle = pruefung.faelle;
+
+	it('liest die gemeinsame Datei überhaupt ein', () => {
+		// Ohne diesen Boden liefe die Suite still grün, wenn die Datei umbenannt wird.
+		expect(faelle.filter((f) => f.andere !== null).length).toBeGreaterThanOrEqual(8);
+		expect(faelle.filter((f) => f.andere === null).length).toBeGreaterThanOrEqual(4);
+	});
+
+	for (const f of faelle) {
+		it(`${f.fall}: ${JSON.stringify(f.roh)}`, () => {
+			expect(isbnFormen(f.roh)[1] ?? null).toBe(f.andere);
+		});
+	}
 });

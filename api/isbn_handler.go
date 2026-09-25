@@ -9,6 +9,7 @@ import (
 
 	"bibliothek/apierrors"
 	"bibliothek/inventur"
+	"bibliothek/pkg/isbnutil"
 	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
@@ -46,6 +47,17 @@ func (s *Server) findeLokalenTitel(ctx context.Context, isbn string) (*ISBNLooku
 		return nil, nil
 	}
 	return nil, err
+}
+
+// findeTitelUnterAndererForm sucht den Titel, der dieselbe ISBN in der anderen Länge trägt
+// (isbnutil.AndereForm: ISBN-10 ↔ ISBN-13 mit 978). Rückgabe (nil, nil): Es gibt keine andere
+// Form, oder unter ihr steht nichts im Katalog.
+func (s *Server) findeTitelUnterAndererForm(ctx context.Context, isbn string) (*ISBNLookupResponse, error) {
+	andere := isbnutil.AndereForm(isbn)
+	if andere == "" {
+		return nil, nil
+	}
+	return s.findeLokalenTitel(ctx, andere)
 }
 
 func (s *Server) upsertTitelAusMetadaten(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
@@ -116,6 +128,13 @@ type ISBNLookupResponse struct {
 	// docs/OFFEN.md 4.20). Ein Vorschlag, kein Eintrag: Am Titel steht davon nichts, bis im
 	// Bestellkorb jemand einen übernimmt.
 	SchlagwortVorschlaege []string `json:"schlagwort_vorschlaege,omitempty"`
+	// AndereForm: Unter dieser Schreibweise steht die ISBN nicht im Katalog, wohl aber in der
+	// anderen Länge (ISBN-10 ↔ ISBN-13, docs/OFFEN.md 4.18 Stufe 4 und 5.5). Dann ist NICHTS
+	// angelegt, titel_id ist leer, und hier steht der gefundene Titel. Die Oberfläche fragt
+	// „Diesen Titel nehmen" oder „Neu anlegen"; Neu anlegen schickt dieselbe ISBN mit
+	// neu_anlegen. Vorgeschlagen statt still übernommen: Am Testserver führt die Rechnung von
+	// einer ISBN-10 mit falschem Prüfzeichen auf die ISBN-13 eines anderen Buchs.
+	AndereForm *ISBNLookupResponse `json:"andere_form,omitempty"`
 }
 
 // titelAusNachschlagen legt den Titel aus einem Treffer der Katalogdienste an und gibt den
@@ -138,8 +157,9 @@ func (s *Server) titelAusNachschlagen(ctx context.Context, isbn string, meta *in
 // ISBNZuTitelHandler handles POST /api/buecher/aus-isbn.
 // It receives an ISBN, checks the local catalog, and—if the title is not
 // yet catalogued—fetches metadata from DNB / Google Books / OpenLibrary and
-// creates a new buecher_titel record. The response always contains a titel_id
-// that the order workspace can add to the cart immediately.
+// creates a new buecher_titel record. The response contains a titel_id that the order
+// workspace can add to the cart immediately — außer, der Katalog hat dieselbe ISBN in der
+// anderen Länge: Dann trägt sie nur andere_form, und angelegt ist nichts.
 func (s *Server) ISBNZuTitelHandler() http.HandlerFunc {
 	return s.isbnZuTitel(inventur.NeuerMetadatenClient())
 }
@@ -151,6 +171,9 @@ func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerF
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req struct {
 			ISBN string `json:"isbn"`
+			// NeuAnlegen: Die Antwort hat einen Titel unter der anderen Form vorgeschlagen, und
+			// der Besteller hat „Neu anlegen" gewählt — dann wird nach ihr nicht mehr gesucht.
+			NeuAnlegen bool `json:"neu_anlegen"`
 		}
 		if !DecodeAndValidate(w, r, &req) {
 			return
@@ -173,6 +196,17 @@ func (s *Server) isbnZuTitel(metaClient *inventur.MetadatenClient) http.HandlerF
 		if lokal != nil {
 			RespondJSON(w, http.StatusOK, *lokal)
 			return
+		}
+		if !req.NeuAnlegen {
+			andere, err := s.findeTitelUnterAndererForm(ctx, req.ISBN)
+			if err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
+			}
+			if andere != nil {
+				RespondJSON(w, http.StatusOK, ISBNLookupResponse{ISBN: req.ISBN, AndereForm: andere})
+				return
+			}
 		}
 
 		// 2. Not yet in catalog – fetch metadata from DNB / Google / OpenLibrary.
