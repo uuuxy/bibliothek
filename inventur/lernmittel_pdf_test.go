@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"image"
 	"image/color"
@@ -257,36 +258,62 @@ func TestSchulbuecherAlsPDF_JahrgangText(t *testing.T) {
 }
 
 // Die Beschriftung einer Auflage im Ausdruck ist der Zwilling der Browser-Seite
-// (frontend/src/lib/utils/auflagenText.js). Dieselben Fälle wie in auflagenText.test.js — wer
-// eine Seite ändert, sieht hier oder dort Rot, solange die andere nicht mitzieht.
+// (frontend/src/lib/utils/auflagenText.js). Beide Seiten lesen dieselben Prüffälle
+// (auflagenText.faelle.json, Bauart wie code39.faelle.json) — rechnen sie verschieden, nennt
+// das PDF eine Auflage anders als der Bildschirm. Bis zum Rasterdurchgang vom 25.09.2026 standen
+// die Fälle zweimal von Hand da.
 func TestAuflagenBeschriftung_WieImBrowser(t *testing.T) {
-	for _, fall := range []struct {
-		auflage string
-		jahr    int
-		soll    string
-	}{
-		{"4. Aufl.", 2023, "4. Aufl. · 2023"},
-		{"4. Aufl. 2023", 2023, "4. Aufl. 2023"},
-		{" 2. Auflage ", 0, "2. Auflage"},
-		{"", 2019, "Ausgabe 2019"},
-		{"", 0, "Auflage ohne Angabe"},
-	} {
-		if ist := auflagenBeschriftung(fall.auflage, fall.jahr); ist != fall.soll {
-			t.Errorf("auflagenBeschriftung(%q, %d) = %q, erwartet %q", fall.auflage, fall.jahr, ist, fall.soll)
+	const faelleDatei = "../frontend/src/lib/utils/auflagenText.faelle.json"
+	roh, err := os.ReadFile(faelleDatei)
+	if err != nil {
+		t.Fatalf("Prüffälle lesen: %v", err)
+	}
+	var pruefung struct {
+		Beschriftung []struct {
+			Fall    string `json:"fall"`
+			Auflage string `json:"auflage"`
+			Jahr    int    `json:"jahr"`
+			Soll    string `json:"soll"`
+		} `json:"beschriftung"`
+		Aufschluesselung []struct {
+			Fall     string `json:"fall"`
+			Auflagen []struct {
+				Auflage string `json:"auflage"`
+				Jahr    int    `json:"jahr"`
+				Bestand int    `json:"bestand"`
+			} `json:"auflagen"`
+			Soll string `json:"soll"`
+		} `json:"aufschluesselung"`
+	}
+	if err := json.Unmarshal(roh, &pruefung); err != nil {
+		t.Fatalf("Prüffälle: %v", err)
+	}
+	if len(pruefung.Beschriftung) < 6 || len(pruefung.Aufschluesselung) < 2 {
+		t.Fatalf("%d Beschriftungen, %d Aufschlüsselungen — erwartet mindestens 6 und 2: liest der Test "+
+			"noch auf auflagenText.faelle.json?", len(pruefung.Beschriftung), len(pruefung.Aufschluesselung))
+	}
+	for _, f := range pruefung.Beschriftung {
+		if ist := auflagenBeschriftung(f.Auflage, f.Jahr); ist != f.Soll {
+			t.Errorf("%s: auflagenBeschriftung(%q, %d) = %q, erwartet %q", f.Fall, f.Auflage, f.Jahr, ist, f.Soll)
 		}
 	}
-	for _, fall := range []struct {
-		auflagen []AuflageImBestand
-		soll     string
-	}{
-		{[]AuflageImBestand{{Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 30}, {Auflage: "3. Aufl.", Erscheinungsjahr: 2019}},
-			"Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), 3. Aufl. · 2019 (0)"},
-		{[]AuflageImBestand{{Auflage: "4. Aufl.", Erscheinungsjahr: 2023, Gesamt: 30}, {Gesamt: 3}},
-			"Bestand aus 2 Auflagen: 4. Aufl. · 2023 (30), Auflage ohne Angabe (3)"},
-	} {
-		if ist := auflagenAufschluesselung(fall.auflagen); ist != fall.soll {
-			t.Errorf("auflagenAufschluesselung = %q, erwartet %q", ist, fall.soll)
+	for _, f := range pruefung.Aufschluesselung {
+		auflagen := make([]AuflageImBestand, 0, len(f.Auflagen))
+		for _, a := range f.Auflagen {
+			auflagen = append(auflagen, AuflageImBestand{Auflage: a.Auflage, Erscheinungsjahr: a.Jahr, Gesamt: a.Bestand})
 		}
+		if ist := auflagenAufschluesselung(auflagen); ist != f.Soll {
+			t.Errorf("%s: auflagenAufschluesselung = %q, erwartet %q", f.Fall, ist, f.Soll)
+		}
+	}
+
+	// Liest die JavaScript-Seite dieselbe Datei? Sonst prüfte jede Seite nur sich selbst.
+	vitest, err := os.ReadFile("../frontend/src/lib/utils/auflagenText.test.js")
+	if err != nil {
+		t.Fatalf("Vitest lesen: %v", err)
+	}
+	if !strings.Contains(string(vitest), "./auflagenText.faelle.json") {
+		t.Error("auflagenText.test.js liest auflagenText.faelle.json nicht mehr ein")
 	}
 }
 

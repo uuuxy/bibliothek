@@ -11,6 +11,9 @@
  * beginnt jede Form, die nicht aus dem Feld kommt, mit einem Substantiv — M3 schreibt
  * Satzschreibung vor („only the first letter of the first word in a sentence or phrase is
  * capitalized"), und ein großes „Ohne" mitten im Satz bräche sie.
+ *
+ * Der Ausdruck des Portal-Reiters „Schulbücher" rechnet dasselbe in Go
+ * (inventur/lernmittel_pdf.go); beide Seiten lesen dieselben Prüffälle (auflagenText.faelle.json).
  * @param {{ auflage?: string, erscheinungsjahr?: number }} a
  */
 export function auflagenBeschriftung(a) {

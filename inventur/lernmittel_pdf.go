@@ -260,8 +260,9 @@ func zeichneTitelZelle(pdf *gofpdf.Fpdf, tr func(string) string, t LernmittelTit
 
 // auflagenBeschriftung ist der Zwilling von auflagenBeschriftung in
 // frontend/src/lib/utils/auflagenText.js: Der Ausdruck nennt eine Auflage mit denselben Worten
-// wie der Bildschirm. Beide Seiten prüfen dieselben Fälle (TestAuflagenBeschriftung_WieImBrowser
-// und auflagenText.test.js) — wer die eine Seite ändert, ändert die andere mit.
+// wie der Bildschirm. Beide Seiten lesen dieselben Prüffälle (auflagenText.faelle.json,
+// TestAuflagenBeschriftung_WieImBrowser und auflagenText.test.js) — rechnen sie verschieden,
+// wird der Go- oder der Vitest rot.
 func auflagenBeschriftung(auflage string, jahr int) string {
 	auflage = strings.TrimSpace(auflage)
 	jahrText := strconv.Itoa(jahr)
