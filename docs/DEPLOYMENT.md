@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-09-21
+> Zuletzt aktualisiert: 2026-09-25
 
 ---
 
@@ -223,7 +223,9 @@ Fassung selbst aktualisiert.
 
 Führt aus: **Backup** → `git pull` → `docker compose up -d --build` →
 **Gesundheitsprüfung** → alte Backups aufräumen. Bei Fehlschlag bricht es ab und gibt
-eine Rollback-Anleitung samt Pfad zum eben erzeugten Backup aus.
+eine Rollback-Anleitung samt Pfad zum eben erzeugten Backup aus. Den Commit, auf den sie
+zurückführt, liest es aus dem laufenden Image (`GIT_COMMIT`), nicht aus dem
+Arbeitsverzeichnis — nach dem vorgezogenen `git pull` stünde dort schon der neue Stand.
 
 `scripts/deploy.sh` ist der ältere, schlankere Weg (`git pull` →
 `docker compose up -d --build` → Caddy-Block prüfen/ergänzen) — **ohne** Backup und

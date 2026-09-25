@@ -85,9 +85,11 @@ TIMESTAMP="$(date +%Y%m%d_%H%M%S)"
 # letzte DEPLOY-Sicherung statt des Nachtbackups, und alles seit dem letzten Deploy war nach
 # dem Restore still weg (Bestands-Durchgang, „Zwei Ablagen, ein Dateiname").
 BACKUP_FILE="${BACKUP_DIR}/vordeploy_${TIMESTAMP}.sql.gz"
-# Der Commit VOR dem Pull (Schritt 2) — der Rückweg der Rollback-Anleitung. Leer, solange
-# kein Pull gelaufen ist: dann ist der Code noch der alte.
+# Der Stand VOR diesem Update — der Rückweg der Rollback-Anleitung. Gelesen in Schritt 0
+# aus dem laufenden Image; nur wenn das nicht geht, in Schritt 2 aus dem Arbeitsverzeichnis.
+# VORHER_QUELLE sagt, woher er stammt ("image" oder "arbeitsverzeichnis").
 VORHER_COMMIT=""
+VORHER_QUELLE=""
 
 # ── Farben für Ausgabe ────────────────────────────────────────────────────────
 RED='\033[0;31m'
@@ -126,6 +128,11 @@ print_rollback_instructions() {
     echo -e "  ${BOLD}2. Code auf den Stand VOR diesem Update zurücksetzen:${NC}"
     if [ -n "${VORHER_COMMIT}" ]; then
         echo "     git reset --hard ${VORHER_COMMIT}"
+        if [ "${VORHER_QUELLE}" = "arbeitsverzeichnis" ]; then
+            echo "     # Achtung: Der laufende Stand war nicht lesbar, dieser Commit stammt aus dem"
+            echo "     # Arbeitsverzeichnis. Lief git pull schon vor diesem Skript, ist er bereits"
+            echo "     # der neue Stand — dann zeigt git reflog den Commit davor."
+        fi
     else
         echo "     # Kein git pull gelaufen — der Code ist noch der alte, nichts zu tun."
     fi
@@ -175,6 +182,18 @@ else
     SKIP_BACKUP=false
 fi
 
+# Der Rückweg der Rollback-Anleitung ist der Commit, aus dem das LAUFENDE Image gebaut
+# wurde (GIT_COMMIT, dieselbe Quelle wie Schritt 4b). Bis zum 25.09.2026 stand hier nichts,
+# und Schritt 2 las `git rev-parse HEAD` vor seinem Pull — nach dem vorgezogenen `git pull`
+# aus DEPLOYMENT.md §2.4 schon der NEUE Stand. Die Anleitung druckte `git reset --hard` auf
+# den neuen Commit und baute danach wieder den neuen Code. ORIG_HEAD hilft nicht: Der Pull
+# in Schritt 2, der nichts mehr findet, setzt es auf den neuen Stand
+# (docs/rueckweg_anleitungen_test.go, TestRueckweg_RollbackNenntDenLaufendenStand).
+VORHER_COMMIT="$(docker exec "${APP_CONTAINER}" printenv GIT_COMMIT 2>/dev/null || echo '')"
+if [ -n "${VORHER_COMMIT}" ]; then
+    VORHER_QUELLE="image"
+fi
+
 mkdir -p "${BACKUP_DIR}"
 log_ok "Voraussetzungen erfüllt."
 
@@ -221,8 +240,13 @@ log_step "Schritt 2: Code aktualisieren (git pull)"
 
 if [ -d "$(dirname "$0")/.git" ]; then
     cd "$(dirname "$0")"
-    VORHER_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo '')"
-    log_info "Führe git pull aus... (Stand davor: ${VORHER_COMMIT})"
+    if [ -z "${VORHER_COMMIT}" ]; then
+        # Rückfall: kein laufender Container, oder sein Image trägt keinen Commit. Dann
+        # bleibt nur das Arbeitsverzeichnis — richtig nur, wenn vorher kein git pull lief.
+        VORHER_COMMIT="$(git rev-parse HEAD 2>/dev/null || echo '')"
+        VORHER_QUELLE="arbeitsverzeichnis"
+    fi
+    log_info "Führe git pull aus... (Stand vor dem Update: ${VORHER_COMMIT}, aus: ${VORHER_QUELLE})"
     if ! git pull; then
         log_error "git pull fehlgeschlagen!"
         print_rollback_instructions

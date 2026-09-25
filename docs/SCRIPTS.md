@@ -242,7 +242,8 @@ Fassung selbst aktualisiert.
 Führt aus: Backup (siehe oben) → `git pull` → `docker compose up -d --build` →
 Gesundheitsprüfung (Docker-Status **und** `/health` im Container) → alte Backups
 aufräumen. Bei Fehlschlag: Abbruch mit Rollback-Anleitung, die auf das eben erzeugte
-Backup zeigt.
+Backup zeigt und auf den Commit des laufenden Images (`GIT_COMMIT`) — nicht auf HEAD, das
+nach dem vorgezogenen `git pull` schon der neue Stand ist.
 
 `scripts/deploy.sh` ist der ältere, schlankere Weg (`git pull` →
 `docker compose up -d --build` → prüft, ob der Domain-Block im Caddyfile steht, und
