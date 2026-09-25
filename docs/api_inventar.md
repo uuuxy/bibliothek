@@ -16,7 +16,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (223)
+## Alle registrierten Routen (224)
 
 - `/`
 - `/api/admin`
@@ -183,6 +183,7 @@
 - `POST /api/buecher/exemplare/verlust-endgueltig-loeschen`
 - `POST /api/buecher/exemplare/{id}/gefunden`
 - `POST /api/buecher/titel/{id}/auflagen`
+- `POST /api/buecher/titel/{id}/neue-auflage`
 - `POST /api/damage/report`
 - `POST /api/exemplare/etiketten-altbestand`
 - `POST /api/exemplare/etiketten-gedruckt`

@@ -435,6 +435,13 @@ neueste Auflage — sie kommt in den Warenkorb —, und darunter steht, woraus d
 die Zeile auch über die ISBN einer älteren Auflage. Die Bestellliste als PDF nennt die ISBN der
 neuesten Auflage und rechnet die Menge mit der Summe.
 
+**Neue Auflage bestellen:** Gibt es ein Schulbuch nur noch in einer neuen Auflage, steht im Menü
+der Zeile (⋮) _Neue Auflage bestellen …_. Die ISBN der neuen Auflage eingeben oder scannen und
+_Suchen_: Der Titel kommt aus dem Katalog oder, wenn es ihn noch nicht gibt, aus der DNB und
+wird angezeigt. _Zuordnen und bestellen_ fasst ihn mit der Zeile zu einem Buch zusammen, führt
+ihn als Lernmittel und legt ihn in den Warenkorb; danach steht das Buch mit beiden Auflagen in
+der Liste.
+
 Über _Titel suchen & hinzufügen_ kommen auch Titel dazu, die es noch nicht gibt; vor dem
 Warenkorb steht ein Fenster mit Signatur, Schlagworten, der Frage „Lernmittel?" und der Menge.
 Entsteht der Titel dabei neu aus der DNB, stehen unter den Schlagworten die Wörter, die der

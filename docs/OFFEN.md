@@ -42,9 +42,9 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — Stufen 4 bis 6, jede mit Nachweis; der
-   ISBN-10/13-Abgleich aus 5.5 kommt mit Stufe 4 an derselben Tür
-   (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`).
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — noch der ISBN-10/13-Abgleich aus 5.5 an
+   `findeLokalenTitel` (hinter `POST /api/buecher/aus-isbn`), dann die Stufen 5 und 6, jede mit
+   Nachweis.
 2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
 3. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
@@ -232,9 +232,11 @@ der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibun
 Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Am Ende läuft das Raster über das ganze
 Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
 
-4. **Vorschlag beim Nachbestellen:** „Neue Auflage bestellen" an der Zeile — ISBN der neuen
-   Auflage, Titel anlegen, Vorschlag bestätigen (Route mit `create_orders`, dieselbe Funktion).
-   Dazu der ISBN-10/13-Abgleich aus 5.5 an derselben Tür (`findeLokalenTitel`).
+4. **ISBN-10/13-Abgleich an der Bestelltür** (aus 5.5; „Neue Auflage bestellen" ist gebaut):
+   `findeLokalenTitel` findet heute nur dieselbe Schreibweise. Ein Titel mit ISBN-10 wird per
+   EAN-13 nicht gefunden und entsteht ein zweites Mal. Ein Treffer über die andere Form wird
+   vorgeschlagen, nicht still übernommen — eines der vier Paare am Testserver sind zwei
+   verschiedene Bücher unter derselben Nummer. Betrifft auch „Titel suchen & hinzufügen".
 5. **Gemischte Auflagen:** die Hinweiszeile an der Theke und die Klassensatz-Übersicht.
 6. **Suche:** Medienkatalog und Portal zeigen das Buch einmal, mit der Gesamtzahl und der
    Aufschlüsselung je Auflage.

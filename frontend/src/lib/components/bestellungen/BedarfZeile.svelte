@@ -6,13 +6,18 @@
      „Limit supporting text to one to three lines". Die Farben der übrigen Zeile stehen, wie
      sie waren; ihre Umstellung auf Rollen ist 5.21, Bildschirm für Bildschirm. -->
 <script>
-	import { Plus } from '@lucide/svelte';
+	import { BookPlus, Plus } from '@lucide/svelte';
 	import CoverPeek from '../ui/CoverPeek.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
+	import Menue from '../ui/Menue.svelte';
 	import { auflagenAufschluesselung } from '../../utils/auflagenText.js';
 
-	/** @type {{ r: any, onAddToCart: (r: any) => void }} */
-	let { r, onAddToCart } = $props();
+	/** @type {{ r: any, onAddToCart: (r: any) => void, onNeueAuflage?: (r: any) => void }} */
+	let { r, onAddToCart, onNeueAuflage } = $props();
+
+	// Material 3, Menus: „Use menus in situations that need extra actions, like: Overflow menus" —
+	// das Plus bleibt die eine sichtbare Aktion der Zeile, alles Weitere steht dahinter.
+	const eintraege = [{ id: 'neue-auflage', text: 'Neue Auflage bestellen …', icon: BookPlus }];
 </script>
 
 <div
@@ -66,4 +71,7 @@
 	>
 		<Plus class="w-4 h-4" aria-hidden="true" />
 	</button>
+	{#if onNeueAuflage}
+		<Menue etikett="Weitere Aktionen zu {r.titel}" {eintraege} onwahl={() => onNeueAuflage?.(r)} />
+	{/if}
 </div>

@@ -54,7 +54,9 @@ func (s *Server) GetTitelAuflagenHandler() http.HandlerFunc {
 
 // PostTitelAuflagenHandler fasst einen Titel mit einer anderen Auflage desselben Buchs
 // zusammen. Gehört einer der beiden schon zu einem Buch mit weiteren Auflagen, kommen alle
-// zusammen.
+// zusammen. Zwei Routen, ein Handler: die Titelmaske (…/auflagen, edit_books) und der
+// Bestellbedarf (…/neue-auflage, create_orders — „Der Besteller legt das Werk an",
+// docs/OFFEN.md 4.18, entschieden am 23.09.2026).
 //
 // @Summary      Join another edition to a title's book
 // @Tags         books
@@ -66,6 +68,7 @@ func (s *Server) GetTitelAuflagenHandler() http.HandlerFunc {
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
 // @Router       /buecher/titel/{id}/auflagen [post]
+// @Router       /buecher/titel/{id}/neue-auflage [post]
 func (s *Server) PostTitelAuflagenHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
 		id, err := titelIDAusPfad(r)

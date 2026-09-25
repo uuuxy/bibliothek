@@ -21,11 +21,13 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	mux.Handle("GET /api/buecher/titel/{id}/schlagworte", s.RequirePermission("view_books")(s.GetTitelSchlagworteHandler()))
 	mux.Handle("PUT /api/buecher/titel/{id}/schlagworte", s.RequirePermission("create_orders")(s.PutTitelSchlagworteHandler()))
 	// Auflagen eines Schulbuchs (Migration 148, docs/OFFEN.md 4.18): Zusammenfassen und
-	// Lösen aus der Titelmaske mit edit_books. Der Bestellkorb bekommt eine eigene Route mit
-	// create_orders; beide rufen repository/auflagen.go.
+	// Lösen aus der Titelmaske mit edit_books; „Neue Auflage bestellen" im Bestellbedarf mit
+	// create_orders (Stufe 4). Alle rufen repository/auflagen.go — derselbe Handler wie die
+	// Titelmaske, andere Route, anderes Recht, wie bei den Schlagworten.
 	mux.Handle("GET /api/buecher/titel/{id}/auflagen", s.RequirePermission("view_books")(s.GetTitelAuflagenHandler()))
 	mux.Handle("POST /api/buecher/titel/{id}/auflagen", s.RequirePermission("edit_books")(s.PostTitelAuflagenHandler()))
 	mux.Handle("DELETE /api/buecher/titel/{id}/auflagen", s.RequirePermission("edit_books")(s.DeleteTitelAuflagenHandler()))
+	mux.Handle("POST /api/buecher/titel/{id}/neue-auflage", s.RequirePermission("create_orders")(s.PostTitelAuflagenHandler()))
 
 	// Exemplare (Copies)
 	// Titel-Tür für Bildschirme außerhalb der Theke (Etiketten-Titelsuche im Druck-Center):

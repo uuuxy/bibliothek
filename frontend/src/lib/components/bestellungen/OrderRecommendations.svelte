@@ -3,7 +3,13 @@
 	import Suchpille from '../ui/Suchpille.svelte';
 	import Button from '../ui/Button.svelte';
 	import BedarfZeile from './BedarfZeile.svelte';
+	import NeueAuflageDialog from './NeueAuflageDialog.svelte';
+	import { orderStore } from '../../stores/orderStore.svelte.js';
 	let { recommendations, onAddToCart } = $props();
+
+	// „Neue Auflage bestellen" (docs/OFFEN.md 4.18, Stufe 4): die Zeile, deren Dialog offen ist.
+	/** @type {any | null} */
+	let neueAuflageFuer = $state(null);
 
 	// Nur die ersten Einträge ins DOM (Muster wie BookTable/Inventur-Startseite).
 	// Der Bestellbedarf umfasst schnell den halben Katalog — jeder Titel unter seinem
@@ -163,7 +169,7 @@
 		     Kartenrahmen faellt eine Fehlausrichtung von 12 px sofort auf. -->
 		<div class="overflow-y-auto max-h-[calc(100vh-19rem)] -mx-3 py-3 space-y-1.5">
 			{#each sichtbare as r, _i (_i)}
-				<BedarfZeile {r} {onAddToCart} />
+				<BedarfZeile {r} {onAddToCart} onNeueAuflage={(z) => (neueAuflageFuer = z)} />
 			{/each}
 
 			{#if gefiltert.length > maxVisible}
@@ -175,4 +181,15 @@
 			{/if}
 		</div>
 	{/if}
+
+	<!-- Nach dem Zuordnen ist die Zeile ein Buch mit zwei Auflagen: neu laden, damit sie so dasteht. -->
+	<NeueAuflageDialog
+		zeile={neueAuflageFuer}
+		onschliessen={() => (neueAuflageFuer = null)}
+		onbestellt={(titel) => {
+			neueAuflageFuer = null;
+			onAddToCart(titel);
+			orderStore.loadRecommendations();
+		}}
+	/>
 </section>

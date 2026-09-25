@@ -77,3 +77,18 @@ describe('OrderRecommendations: Filter', () => {
 		expect(screen.queryByText('Physik 8')).toBeNull();
 	});
 });
+
+describe('BedarfZeile: Neue Auflage bestellen', () => {
+	it('bietet die Aktion im Menü der Zeile an und reicht die Zeile weiter', async () => {
+		const onNeueAuflage = vi.fn();
+		const screen = render(BedarfZeile, { r: einzeln, onAddToCart: vi.fn(), onNeueAuflage });
+		await fireEvent.click(screen.getByRole('button', { name: 'Weitere Aktionen zu Physik 8' }));
+		await fireEvent.click(await screen.findByRole('menuitem', { name: /Neue Auflage bestellen/ }));
+		expect(onNeueAuflage).toHaveBeenCalledWith(einzeln);
+	});
+
+	it('zeigt kein Menü, wenn niemand die Aktion anbietet', () => {
+		const screen = render(BedarfZeile, { r: einzeln, onAddToCart: vi.fn() });
+		expect(screen.queryByRole('button', { name: /Weitere Aktionen/ })).toBeNull();
+	});
+});
