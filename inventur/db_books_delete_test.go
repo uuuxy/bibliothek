@@ -25,6 +25,7 @@ func TestDeleteBooks(t *testing.T) {
 	// Nicht-gefunden-Fall unterscheidet erst der Titel-DELETE danach.
 	erwarteLeser := func(mock pgxmock.PgxPoolIface, cover string) {
 		mock.ExpectBegin()
+		erwarteAuflagenSperre(mock, ids)
 		// Barcode-Snapshots ALLER Exemplare vor den DELETEs — die Tresen-Auskunft
 		// findet gelöschte Exemplare nur über diese Spur (Befund 01.09.2026).
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
@@ -205,4 +206,14 @@ func TestLoescheLokaleCoverDateien(t *testing.T) {
 
 	_, err = os.Stat(outsideFile)
 	assert.NoError(t, err, "outside file should NOT have been deleted")
+}
+
+// erwarteAuflagenSperre: DeleteBooks nimmt als ERSTES die Sperre der Auflagen und liest die
+// Werke der Titel (repository.WerkeDerTitel, docs/OFFEN.md 4.18) — hier gehört keiner zu
+// einem, also räumt repository.RaeumeWerkeAuf danach nichts auf.
+func erwarteAuflagenSperre(mock pgxmock.PgxPoolIface, ids any) {
+	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("SELECT", 1))
+	mock.ExpectQuery(`SELECT DISTINCT werk_id::text FROM buecher_titel`).WithArgs(ids).
+		WillReturnRows(pgxmock.NewRows([]string{"werk_id"}))
 }

@@ -47,6 +47,13 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	}
 	defer db.SafeRollback(ctx, tx)
 
+	// Gehört der Titel zu einem Buch in mehreren Auflagen, muss das Werk danach noch stimmen
+	// (docs/OFFEN.md 4.18). Als erstes: Die Sperre der Auflagen kommt vor jeder Zeilensperre.
+	werke, err := WerkeDerTitel(ctx, tx, []string{titleID})
+	if err != nil {
+		return err
+	}
+
 	// Snapshot erstellen: Metadaten vor dem Löschen für das Audit-Log sichern
 	var titel, autor, isbn string
 	err = tx.QueryRow(ctx,
@@ -159,6 +166,9 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	}
 	if tag.RowsAffected() == 0 {
 		return ErrTitelNichtGefunden
+	}
+	if err = RaeumeWerkeAuf(ctx, tx, werke); err != nil {
+		return err
 	}
 
 	// Löschung im Audit-Log vermerken

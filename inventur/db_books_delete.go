@@ -42,6 +42,13 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	}
 	defer db.SafeRollback(ctx, tx)
 
+	// Bücher in mehreren Auflagen (docs/OFFEN.md 4.18): Ihre Werke müssen danach noch stimmen.
+	// Als erstes — die Sperre der Auflagen kommt vor jeder Zeilensperre (repository.WerkeDerTitel).
+	werke, err := repository.WerkeDerTitel(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+
 	// Alles, was eine Spur braucht, wird IN der Transaktion gelesen. Bis zum 21.09.2026
 	// standen drei Leser vor dem Begin (OFFEN.md 5.5): Was sie sahen, war nicht
 	// zwingend das, was fiel.
@@ -85,6 +92,9 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	}
 	if result.RowsAffected() == 0 {
 		return ErrBookNotFound
+	}
+	if err := repository.RaeumeWerkeAuf(ctx, tx, werke); err != nil {
+		return err
 	}
 
 	// In derselben Transaktion: Entweder die Löschung UND ihre Spur, oder keins von beidem.

@@ -39,6 +39,7 @@ func TestDeleteTitle_MeldetAktiveAusleihenAlsSentinel(t *testing.T) {
 	const titelID = "11111111-1111-1111-1111-111111111111"
 
 	mock.ExpectBegin()
+	erwarteAuflagenSperre(mock, []string{titelID})
 	mock.ExpectQuery("FROM buecher_titel WHERE id").
 		WithArgs(titelID).
 		WillReturnRows(snapshotTitelRows())
@@ -78,6 +79,7 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	const titelID = "22222222-2222-2222-2222-222222222222"
 
 	mock.ExpectBegin()
+	erwarteAuflagenSperre(mock, []string{titelID})
 	mock.ExpectQuery("FROM buecher_titel WHERE id").
 		WithArgs(titelID).
 		WillReturnRows(snapshotTitelRows())
@@ -162,6 +164,7 @@ func TestDeleteTitle_LeseFehlerBlocktLoeschung(t *testing.T) {
 	leseFehler := errors.New("Verbindung während der Iteration verloren")
 
 	mock.ExpectBegin()
+	erwarteAuflagenSperre(mock, []string{titelID})
 	mock.ExpectQuery("FROM buecher_titel WHERE id").
 		WithArgs(titelID).
 		WillReturnRows(snapshotTitelRows())
@@ -223,4 +226,14 @@ func TestLogAusleihe_SchreibtInDieUebergebeneTransaktion(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("Erwartungen: %v", err)
 	}
+}
+
+// erwarteAuflagenSperre: Das Löschen nimmt als ERSTES die Sperre der Auflagen und liest die
+// Werke des Titels (WerkeDerTitel, docs/OFFEN.md 4.18) — hier gehört er zu keinem, also
+// räumt RaeumeWerkeAuf danach nichts auf.
+func erwarteAuflagenSperre(mock pgxmock.PgxPoolIface, ids []string) {
+	mock.ExpectExec(`SELECT pg_advisory_xact_lock`).WithArgs(auflagenLockKey).
+		WillReturnResult(pgxmock.NewResult("SELECT", 1))
+	mock.ExpectQuery(`SELECT DISTINCT werk_id::text FROM buecher_titel`).WithArgs(ids).
+		WillReturnRows(pgxmock.NewRows([]string{"werk_id"}))
 }

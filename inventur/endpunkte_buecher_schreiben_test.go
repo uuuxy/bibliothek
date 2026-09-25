@@ -113,6 +113,7 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 		// per RETURNING). Die Reihenfolge selbst prüft db_books_delete_test.go; hier
 		// zählt, dass der Endpunkt mit 200 antwortet.
 		mock.ExpectBegin()
+		erwarteAuflagenSperre(mock, pgxmock.AnyArg())
 
 		// Barcode-Snapshots vor den DELETEs (Tresen-Auskunft; hier: keine Exemplare).
 		mock.ExpectQuery(`FROM buecher_exemplare e`).
