@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-24. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-25. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -96,6 +96,13 @@ beides einstellbar (_Datenschutz & Sitzung_).
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
   Etiketten_. (§13)
+- **Auflagen** (seit 25.09.2026, bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
+  ein eigener Titel mit eigener ISBN, denn die Seitenzahlen sind andere. In der Maske steht
+  unter den Feldern der Abschnitt _Auflagen_: _Andere Auflage zuordnen_ sucht unter den
+  Lernmitteln — auch unter Titeln, von denen kein Exemplar mehr da ist — und fasst die
+  gewählte mit dieser zusammen; gehört sie schon zu weiteren Auflagen, kommen die mit, und
+  der Dialog sagt das vorher. Das Symbol am Ende einer Zeile löst eine Auflage wieder. Jede
+  Auflage behält ihre ISBN, ihre Exemplare und deren Etiketten. (§13)
 - **Mehrjahresband**: Bei einem Lernmittel heißt die Spanne „Im Unterricht von Jahrgang …
   bis". Bleibt das Buch über diese Spanne beim Kind, statt am Rückgabetermin der Klasse
   zurückzukommen, schaltet man darunter „Mehrjahresband" ein; der Hinweis daneben rechnet

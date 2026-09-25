@@ -6,10 +6,7 @@
 
 (SSE `/events`, Dashboards, Public-Endpoints und Swagger können legitim ohne SPA-Aufrufer sein — vor dem Löschen prüfen!)
 
-- `DELETE /api/buecher/titel/{id}/auflagen`
-- `GET /api/buecher/titel/{id}/auflagen`
 - `GET /api/schadensfaelle/{id}/pdf`
-- `POST /api/buecher/titel/{id}/auflagen`
 
 ## Frontend-Aufrufe ohne Go-Route (Geister-Aufrufe = Bugs!)
 

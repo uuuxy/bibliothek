@@ -39,8 +39,9 @@ Die Spalte ist nullbar und wird über `COALESCE(werk_id, id)` gelesen: Ein Titel
 sein eigenes, und jeder Lesepfad, der nicht nach Auflagen fragt, bleibt, wie er ist. An der
 Auflage bleiben Exemplar, Etikett, Ausleihe und Ausgabe, weil sich Auflagen in den Seitenzahlen
 unterscheiden. Geschrieben wird `werk_id` nur in `repository/auflagen.go`. Gebaut sind bisher
-die Datenform und die Türen; dass Bedarf und Nachbestellung am Werk zählen, folgt in Stufen
-(docs/OFFEN.md 4.18) — bis dahin zählt die Nachbestell-Liste je Titel.
+die Datenform, die Türen und der Abschnitt in der Titelmaske; dass Bedarf und Nachbestellung
+am Werk zählen, folgt in Stufen (docs/OFFEN.md 4.18) — bis dahin zählt die Nachbestell-Liste je
+Titel.
 
 **Rolle und Art sind zwei verschiedene Fragen.** Die **Rolle** sagt, was jemand im
 Programm darf (Admin, Leitung, Mitarbeiter, Helfer — dazu `kollegium` als Grundzustand).

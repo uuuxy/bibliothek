@@ -5,6 +5,7 @@
 	import BuchCoverUpload from './BuchCoverUpload.svelte';
 	import BuchEingabefelder from './BuchEingabefelder.svelte';
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
+	import BuchAuflagen from './BuchAuflagen.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { BookOpen, Printer, Trash2, X } from '@lucide/svelte';
 
@@ -97,6 +98,7 @@
 
 			<BuchEingabefelder bind:formular bind:wirdGescannt />
 			{#if formular.id}
+				<BuchAuflagen {formular} />
 				<BuchExemplareListe bind:formular />
 			{/if}
 		</div>

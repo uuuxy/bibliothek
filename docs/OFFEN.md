@@ -42,7 +42,7 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
 Vorschlag vom 24.09.2026, 4.18 ist am 25.09.2026 nach vorn gezogen):
 
-1. **4.18** Auflagen eines Schulbuchs zusammenfassen — Stufen 2 bis 6, jede mit Nachweis; der
+1. **4.18** Auflagen eines Schulbuchs zusammenfassen — Stufen 3 bis 6, jede mit Nachweis; der
    ISBN-10/13-Abgleich aus 5.5 kommt mit Stufe 4 an derselben Tür
    (`findeLokalenTitel` hinter `POST /api/buecher/aus-isbn`).
 2. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
@@ -232,8 +232,6 @@ der Nachweis am gebauten Stack; vor jeder sichtbaren Stufe steht die Beschreibun
 Oberfläche. Weiterbauen ist am 25.09.2026 freigegeben. Am Ende läuft das Raster über das ganze
 Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
 
-2. **Titelmaske:** ein Abschnitt „Auflagen" bei Lernmitteln — die zusammengefassten Auflagen mit
-   Bestand, „Andere Auflage zuordnen", „Lösen".
 3. **Nachbestell-Liste und PDF:** eine Zeile je Buch, die Summe gegen die Schwelle; bestellt wird
    die neueste Auflage, darunter steht die Aufschlüsselung.
 4. **Vorschlag beim Nachbestellen:** „Neue Auflage bestellen" an der Zeile — ISBN der neuen
@@ -244,8 +242,8 @@ Vorhaben, mit Wachstum, Zustands-Ausgängen und Rückweg:
    Aufschlüsselung je Auflage.
 
 **Messung am Testserver, lesend** — wie viele Lernmittel schon in mehreren Auflagen im Katalog
-stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob Stufe 2 eine Vorschlagsliste
-braucht:
+stehen (gleicher Titel, gleicher Verlag); die Zahl entscheidet, ob die Titelmaske zusätzlich
+eine Liste mit Vorschlägen zum Zusammenfassen braucht:
 `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) AS gruppen, coalesce(sum(n),0) AS titel, count(*) FILTER (WHERE mit_bestand > 1) AS gruppen_mit_bestand_in_mehreren FROM (SELECT count(*) AS n, count(*) FILTER (WHERE EXISTS (SELECT 1 FROM buecher_exemplare e WHERE e.titel_id = b.id AND NOT e.ist_ausgesondert)) AS mit_bestand FROM buecher_titel b WHERE b.ist_lernmittel GROUP BY lower(trim(b.titel)), lower(trim(coalesce(b.verlag, ''))) HAVING count(*) > 1) x;"`
 
 ### 4.20 Littera-Schlagworte übernehmen
