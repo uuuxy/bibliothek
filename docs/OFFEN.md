@@ -574,6 +574,18 @@ Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHK
 5) behauptete bis zum 24.09.2026 einen. Gesperrt würde nach 4.4 wie heute (Schülerbücherei und
 Geräte).
 
+### 5.26 `repair_titel_dubletten.sql` legt Auflagen zusammen
+
+Aufgefallen beim Raster zu 4.18 (25.09.2026), am Code gelesen. Die einmalige Reparatur vom
+13.07.2026 gruppiert allein über den normalisierten Titel: Zwei Auflagen „Mathe 7" mit
+verschiedener ISBN werden ein Titel, die Exemplare wandern an den Keeper, die zweite ISBN
+fällt weg — entgegen „Zusammengelegt wird nichts" (4.18). Ebenso zwei gleichnamige Bücher
+verschiedener Verlage. Werke räumt das Skript nicht auf; `ON DELETE SET NULL` lässt einen Titel
+allein an seinem Werk zurück. Wirkt nur, wenn jemand es von Hand wieder laufen lässt — etwa
+nach der Littera-Übernahme (7.2); [SCRIPTS.md](SCRIPTS.md) nennt es ohne „einmalig".
+Möglichkeiten: das Skript löschen (der Anlass ist erledigt) oder über Titel, Verlag und
+fehlende ISBN gruppieren und Lernmittel ausnehmen.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
