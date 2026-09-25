@@ -19,27 +19,25 @@ sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pfl
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Nach dem nächsten Update eine Kontrollzählung** (7.8), lesend: Migration 147 räumt die
-   drei Protokolleinträge zu gelöschten Lesern; die Zählung muss danach 0 zeigen.
-2. **Zwei Skripte entscheiden** (5.26, 5.27): `repair_titel_dubletten.sql` löschen oder enger
+1. **Zwei Skripte entscheiden** (5.26, 5.27): `repair_titel_dubletten.sql` löschen oder enger
    gruppieren; und ob der Echtbetrieb mit einer leeren Datenbank und der Littera-Übernahme
    beginnt — dann fällt `tabula_rasa.sql` weg, das seit Migration 124 abbricht.
-3. **Die Vorschläge vom 25.09.2026 bestätigen oder ändern** — zur Aktualität der Images (7.8)
+2. **Die Vorschläge vom 25.09.2026 bestätigen oder ändern** — zur Aktualität der Images (7.8)
    und zu den vier offenen Stellen des Pflegekonzepts (9.9, Entwurf in
    [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)). Danach baue ich in drei Stufen: `update.sh` holt das
    Datenbank-Image und baut ohne Cache; ein Release-Modus für den Schulserver; das Pflegekonzept
    mit den Antworten und eine Vorlage für das Blatt. Dazu nur du: ob die Vertretung schon
    benannt ist.
-4. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
+3. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
    gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
    zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen
    beim Schulbuch (8.7), die Abholfrist bei Vormerkungen (8.8), dazu der Wortlaut des
    Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher
    tragen keinen Vermerk). Den Echtstart halten diese Antworten auf, nicht der Code.
-5. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
+4. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
-6. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
+5. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
    den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
 **Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
@@ -746,17 +744,6 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
-- **Der Sperrgrund im Protokoll — Kontrolle nach dem Update.** Gemessen am Testserver am
-  25.09.2026: 4 Einträge mit `grund` oder `reason`, davon 1 zu einem vorhandenen Leser (bleibt
-  bis zu seiner Anonymisierung), 0 anonymisiert, 3 zu gelöschten Lesern. Migration 147 nimmt
-  jedem Eintrag zu einer Kennung ohne Leser die fünf Schlüssel der Tilgung. Nach dem Update
-  zeigt die Abfrage in der ersten Spalte 1 (die Migration ist gelaufen) und in der zweiten 0;
-  dann ist der Punkt erledigt.
-
-  ```
-  docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM schema_migrations WHERE version = '147_protokoll_verwaiste_leser.sql') AS migration_147, (SELECT count(*) FROM audit_logs a WHERE (a.details ? 'lusd_id' OR a.details ? 'barcode' OR a.details ? 'aufgeloest_barcode' OR a.details ? 'grund' OR a.details ? 'reason') AND a.details ? 'schueler_id' AND NOT EXISTS (SELECT 1 FROM leser l WHERE l.id::text = lower(a.details->>'schueler_id'))) AS verwaist_mit_schluessel;"
-  ```
-
 - **Die Postgres-Nebenversion am Server** (gefunden beim Pflegekonzept, 24.09.2026).
   `update.sh` ruft `docker compose up -d --build` auf und holt das Image `postgres:18-alpine`
   nie neu; der Datenbank-Container bleibt auf der Nebenversion des Images, das beim Anlegen
