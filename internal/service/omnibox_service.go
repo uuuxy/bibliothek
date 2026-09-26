@@ -230,20 +230,19 @@ func (s *defaultOmniboxService) verarbeite(ctx context.Context, q OmniboxQuery) 
 }
 
 // resolveOhnePraefix löst einen Barcode/eine Query ohne bekanntes Präfix auf.
-// Auflösungsreihenfolge: Buch → Schülerausweis → Lehrerausweis → Volltextsuche.
+// Auflösungsreihenfolge: Buch → Ausweis → Volltextsuche.
 //
-// Die Präfixe S-/L-/B-/G- sind eine Abkürzung, keine Voraussetzung: Littera kennt sie
-// nicht, und die Ausweise aus dem Altbestand tragen nackte Nummern. Ein Schülerausweis
-// liefert gemessen `B97601826457` (Nummer des Kartenherstellers), ein Buchetikett eine
-// 13-stellige EAN-13 — die Formen sind verschieden genug, dass die Reihenfolge hier
-// eindeutig entscheidet.
+// Die Präfixe A-/B-/G- (und S-/L- von früher) sind eine Abkürzung, keine Voraussetzung:
+// Littera kennt sie nicht, und die Ausweise aus dem Altbestand tragen nackte Nummern. Ein
+// Schülerausweis liefert gemessen `B97601826457` (Nummer des Kartenherstellers), ein
+// Buchetikett eine 13-stellige EAN-13 — die Formen sind verschieden genug, dass die
+// Reihenfolge hier eindeutig entscheidet.
 //
-// Die Lehrer-Stufe fehlte lange, und das war kein bewusster Ausschluss: Lehrkräfte
-// stehen bei uns in `benutzer`, Schüler in `schueler`. Ein gescannter Lehrerausweis lief
-// deshalb bis in die Volltextsuche und meldete „keine Treffer" — obwohl handleTeacherAction
-// die passende Abfrage längst hatte, nur eben allein hinter dem L--Präfix. In Littera
-// gibt es diesen Unterschied nicht; die Karte ist dieselbe, nur der Aufdruck lautet
-// „Lehrerausweis".
+// Bis Migration 125 standen Lehrkräfte in `benutzer` und Schüler in `schueler`, und die
+// Reihenfolge brauchte eine eigene Lehrer-Stufe; ohne sie lief ein gescannter
+// Lehrerausweis bis in die Volltextsuche. Seitdem stehen alle Leser in `leser`, und eine
+// Stufe (GetLeserByBarcode) findet den Ausweis, gleich welcher Art. In Littera gibt es den
+// Unterschied nicht; die Karte ist dieselbe, nur der Aufdruck lautet „Lehrerausweis".
 //
 // Die Lookups liefern bei Nichttreffer (nil, nil); ein non-nil Fehler ist daher ein
 // echter DB-Fehler und wird propagiert (→ HTTP 500), statt ihn als "nicht gefunden" zu
