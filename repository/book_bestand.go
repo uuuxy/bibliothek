@@ -18,23 +18,26 @@ package repository
 //     Trefferliste über einen Titel, dessen Exemplare alle unterwegs sind, „Keine
 //     Exemplare" — und schickte den Kollegen ins Regal (docs/OFFEN.md 5.5).
 const (
-	// SQLBestandGesamt zählt die Exemplare eines Titels, die im Bestand stehen.
-	// Einzusetzen in eine SELECT-Liste; der Titel muss als `b` gebunden sein.
-	SQLBestandGesamt = `(SELECT count(*) FROM buecher_exemplare e
-		WHERE e.titel_id = b.id AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL)`
-
-	// SQLBestandVerfuegbar zählt davon die, die jemand sofort mitnehmen könnte.
-	SQLBestandVerfuegbar = `(SELECT count(*) FROM buecher_exemplare e
-		WHERE e.titel_id = b.id AND e.ist_ausgesondert = false AND e.ist_ausleihbar = true
-		  AND NOT EXISTS (SELECT 1 FROM ausleihen a
-		                  WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL))`
-
-	// SQLBestandImZulauf zählt die bestellten, noch nicht eingetroffenen Exemplare.
-	// Dieselbe Grenze wie SQLBestandGesamt, nur die andere Seite von bestellstatus: Beide
-	// zusammen sind alle nicht ausgesonderten Exemplare (SQLTitelHatExemplar).
-	SQLBestandImZulauf = `(SELECT count(*) FROM buecher_exemplare e
-		WHERE e.titel_id = b.id AND e.ist_ausgesondert = false AND e.bestellstatus IS NOT NULL)`
+	// SQLBestandSelect projiziert die drei von SQLBestandLateral erzeugten Spalten
+	// (gesamt, verfuegbar, im_zulauf). Die JOIN-Ergebnisse müssen als `bestand`
+	// verfügbar sein.
+	SQLBestandSelect = `COALESCE(bestand.gesamt, 0), COALESCE(bestand.verfuegbar, 0), COALESCE(bestand.im_zulauf, 0)`
 )
+
+// SQLBestandLateral bündelt die Zählung von gesamt, verfügbar und im_zulauf in einem einzigen
+// LEFT JOIN LATERAL auf die Exemplar-Tabelle. Das vermeidet drei teure, korrelierte Sub-Selects
+// je Titel-Zeile in Listen wie der Buch-Suche.
+func SQLBestandLateral(titelAlias string) string {
+	return `LEFT JOIN LATERAL (
+		SELECT
+			COUNT(*) FILTER (WHERE e.bestellstatus IS NULL) AS gesamt,
+			COUNT(*) FILTER (WHERE e.ist_ausleihbar = true AND
+				NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)) AS verfuegbar,
+			COUNT(*) FILTER (WHERE e.bestellstatus IS NOT NULL) AS im_zulauf
+		FROM buecher_exemplare e
+		WHERE e.titel_id = ` + titelAlias + `.id AND e.ist_ausgesondert = false
+	) bestand ON true`
+}
 
 // SQLFilterImZulauf ist dieselbe Grenze als COUNT-FILTER für Abfragen, die die Exemplare
 // als `e` joinen (Katalogliste, Klassenbücher) statt je Titel zu zählen.
