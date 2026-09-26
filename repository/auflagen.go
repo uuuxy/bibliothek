@@ -74,8 +74,9 @@ func AuflagenDesTitels(ctx context.Context, q DBQueryer, titelID string) ([]Aufl
 	rows, err := q.Query(ctx, `
 		SELECT b.id, b.titel, coalesce(b.auflage, ''), coalesce(b.isbn, ''), coalesce(b.verlag, ''),
 		       coalesce(b.erscheinungsjahr, 0), b.ist_lernmittel,
-		       `+SQLBestandGesamt+`, `+SQLBestandVerfuegbar+`, `+SQLBestandImZulauf+`
+			       `+SQLBestandSelect+`
 		FROM buecher_titel b
+			`+SQLBestandLateral("b")+`
 		WHERE b.id = $1
 		   OR b.werk_id = (SELECT werk_id FROM buecher_titel WHERE id = $1)
 		ORDER BY `+SQLNeuesteAuflageZuerst("b"), titelID)
