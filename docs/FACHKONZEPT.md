@@ -14,10 +14,12 @@ Altbestand tragen nackte Nummern und dürfen nicht neu gedruckt werden; ein Scan
 deshalb der Reihe nach aufgelöst:
 
 ```
-Buch-Exemplar → Schülerausweis → Lehrerausweis → Volltextsuche im Katalog
+Buch-Exemplar → Ausweis (Schüler wie Kollegium) → Volltextsuche im Katalog
 ```
 
-Das geht auf, weil die Formen verschieden sind: Buchetiketten liefern eine 13-stellige
+Seit Migration 125 stehen alle Leser in einer Tabelle; eine Stufe sucht den Leser zum Ausweis,
+gleich welcher Art (`resolveOhnePraefix`). Vorher gab es getrennte Stufen für Schüler- und
+Lehrerausweis. Das geht auf, weil die Formen verschieden sind: Buchetiketten liefern eine 13-stellige
 EAN-13, Schülerausweise die Nummer ihres Kartenherstellers. Die Vorgängersoftware Littera
 kennt überhaupt keine Präfixe — sie hat getrennte Suchfelder, wir haben eines für alles.
 
@@ -80,7 +82,9 @@ Zwei Pläne, zwei Zeitpunkte (entschieden am 06.09.2026 — „Rückgabe" und �
 unklar): **Büchertausch vor den Sommerferien** (`art = rueckgabe`): alle Klassen geben ab
 und bekommen direkt die neuen Bücher; Abschlussklassen (`AbschlussklasseSQL`) und Klassen,
 deren nächster Jahrgang ein Eingangsjahrgang ist (die 6er → 7H/7R/7G), geben **nur
-zurück** (`nurRueckgabeSQL`, Markierung `nur_rueckgabe` in Planer, Portal und PDF).
+zurück** (`nurRueckgabeSQL`). Der Vorschlag belegt den Vermerk dieser Zeilen mit „nur
+Rückgabe" vor (`vermerkNurRueckgabe`); danach gehört der Text der Bibliothek, und Planer,
+Portal und PDF zeigen den Vermerk (seit 06.09.2026 kein eigenes Feld mehr).
 **Bücherausgabe nach den Sommerferien** (`art = ausgabe`): nur die neu gebildeten Klassen
 der **Eingangsjahrgänge** (Einstellung `lmf_eingangsjahrgaenge`, Vorgabe „5, 7",
 `EingangsjahrgaengeAus`); der Vorschlag enthält nur sie. **Entwurf und Veröffentlichung**

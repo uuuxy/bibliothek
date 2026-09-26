@@ -1,6 +1,6 @@
 # 9. Architekturentscheidungen
 
-Stand: 24.09.2026
+Stand: 26.09.2026
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -170,8 +170,12 @@ Kanal würde den Prozess abbrechen). Rückstau wird übersprungen (Puffer 10, `s
 **Anlass.** Online-Scan und Nachbuchen fassen dieselben Zeilen an. Zwei verschiedene
 Reihenfolgen verklemmen sich gegeneinander.
 
-**Folge.** Die Regel ist eingehalten, aber **nur Konvention (🟡)**: Ein Gate gibt es nicht.
-Sie steht als Invariante im Katalog und in den Kommentaren der beteiligten Funktionen.
+**Folge.** Die Schreibpfade des Codes halten die Regel, aber **nur als Konvention (🟡)**: Ein
+Gate gibt es nicht. Sie steht als Invariante im Katalog und in den Kommentaren der beteiligten
+Funktionen. Der Rückgabe-Trigger aus Migration 137 (`trg_leser_stempel_rueckgabe`) hält sie
+nicht: Er sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an zwei Theken zugleich je
+das Buch des anderen ab, bricht Postgres eine der beiden Buchungen ab; erneutes Scannen bucht.
+Am 24.09.2026 entschieden, das so zu lassen, bis die Karenz-Uhr umgebaut wird (OFFEN.md 5.22).
 
 **Fundstelle.** `internal/service/loan_checkout.go`, `repository/loan.go`
 (`StempleBewegungZum`), [invarianten.md](../invarianten.md) Abschnitt 1.
@@ -475,7 +479,7 @@ altem Stand (v3.0.0) und ist seit dem 22.09.2026 entfernt.
 `jsconfig.json` (`checkJs`) und `svelte-check --fail-on-warnings`.
 
 **Anlass.** Der Nutzen wäre Typprüfung — und die gibt es so auch. Der Preis wäre der Umbau
-von 286 Komponenten.
+von rund 300 Komponenten.
 
 **Folge.** Die Typabdeckung hängt an der JSDoc-Disziplin; das Gate ist `npm run check` in
 CI und im pre-push-Hook.

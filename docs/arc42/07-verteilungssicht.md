@@ -1,6 +1,6 @@
 # 7. Verteilungssicht
 
-Stand: 17.09.2026 · Betriebsanleitung: [DEPLOYMENT.md](../DEPLOYMENT.md)
+Stand: 26.09.2026 · Betriebsanleitung: [DEPLOYMENT.md](../DEPLOYMENT.md)
 
 ---
 
@@ -139,7 +139,7 @@ liest, muss in Compose ankommen.
 
 | Weg                        | Was er tut                                                                                                                                                              | Wann                             |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
-| **`./update.sh`**          | 1. `pg_dump`-Vorabsicherung → 2. `git pull` → 3. `docker compose up -d --build` → 4. Gesundheitsprüfung **und** Commit-Abgleich (`GIT_COMMIT` im Image vs. `git rev-parse HEAD`) → 5. Vorabsicherung verschlüsseln, Klartext löschen → 6. Backups > 30 Tage aufräumen → 7. Build-Cache > 7 Tage aufräumen. Bei Fehler: Abbruch **mit ausgedrucktem Rückweg** | **Der gepflegte Weg** für Updates |
+| **`./update.sh`**          | 1. `pg_dump`-Vorabsicherung → 2. `git pull` → 3. `docker compose up -d --build` → 4. Gesundheitsprüfung **und** Commit-Abgleich (`GIT_COMMIT` im Image vs. `git rev-parse HEAD`) → 5. Vorabsicherung verschlüsseln, Klartext löschen → 6. Backups > 30 Tage aufräumen → 7. Build-Cache > 7 Tage aufräumen. Bei Fehler: Abbruch **mit ausgedrucktem Rückweg** auf den Stand, der vorher lief (Commit des laufenden Images, seit 25.09.2026; ohne lesbares Image der Commit des Arbeitsverzeichnisses, mit Warnung) | **Der gepflegte Weg** für Updates |
 | `scripts/deploy.sh`        | Stammt aus der Einrichtung (trägt den Caddy-Block nach). Baut und geht — **kein** Backup, **keine** Gesundheitsprüfung, **kein** Commit-Beweis                            | Ersteinrichtung                   |
 | `scripts/stack-neu.sh`     | Stack neu aufsetzen                                                                                                                                                      | Notfall/Neuaufbau                 |
 | `update_caddy.sh`          | Schreibt die maßgebliche Caddy-Konfiguration auf dem Server                                                                                                              | Proxy-Änderungen                  |

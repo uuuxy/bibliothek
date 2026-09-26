@@ -1,6 +1,6 @@
 # 11. Risiken und technische Schulden
 
-Stand: 24.09.2026
+Stand: 26.09.2026
 
 **Dieses Kapitel führt keine Arbeitsliste.** Was zu tun, zu prüfen und zu entscheiden ist —
 und in welcher Reihenfolge —, steht an genau einem Ort: [OFFEN.md](../OFFEN.md). Hier
@@ -36,8 +36,12 @@ richtig — sie muss nur bewusst bleiben.
 | **Auswirkung** | hoch (Deadlock im Ausleihbetrieb) |
 | **Sichtbarkeit** | mittel — ein Deadlock fällt auf, aber erst unter Last |
 
-Jeder heutige Schreibpfad hält Schüler → Ausleihe → Exemplar (A7). Ein neuer Pfad, der die
-Reihenfolge tauscht, verklemmt sich gegen die bestehenden. Es gibt **keinen Detektor**;
+Die Schreibpfade des Codes halten Schüler → Ausleihe → Exemplar (A7). Ein neuer Pfad, der die
+Reihenfolge tauscht, verklemmt sich gegen die bestehenden — und das ist eingetreten: Der
+Rückgabe-Trigger aus Migration 137 sperrt die Leserzeile nach der Ausleihe. Geben zwei Kinder an
+zwei Theken zugleich je das Buch des anderen ab, bricht Postgres eine Buchung ab (40P01,
+nachgestellt am 23.09.2026); erneutes Scannen bucht, Daten gehen nicht verloren. Am 24.09.2026
+entschieden, das bis zum nächsten Umbau der Karenz-Uhr so zu lassen (OFFEN.md 5.22). Es gibt **keinen Detektor**;
 die Invariante steht als 🟡 im Katalog. Ein Gate wäre schwer, weil die Sperren über mehrere
 Funktionen verteilt sind — der ehrliche Zwischenstand ist der Kommentar an jeder Stelle.
 
@@ -54,7 +58,7 @@ Zusammenführen aufgefallen — beide erst im Betrieb. Es gibt inzwischen einen 
 (`docs/schreibpfade_gegen_sicht_test.go`), und er ist textbasiert: SQL aus Variablen oder
 generischen Helfern sieht er nicht.
 
-### R4 — `api/` ist mit 27.810 Zeilen in 153 Dateien das schwerste Paket
+### R4 — `api/` ist mit 29.083 Zeilen in 158 Dateien das schwerste Paket
 
 | | |
 | --- | --- |
@@ -154,10 +158,10 @@ auflösen soll. Solange Karten und Etiketten von früher im Umlauf sind, bleibt 
 | #  | Schuld                                                                                                                  | Kosten heute                                                     | Warum sie (noch) steht                                                                      |
 | -- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | D1 | **Invarianten auf Ebene 🟡** (Sperren des Lesers, Überfällig-Automatik, Ausleihlimit, Sperrreihenfolge)                   | Ein zweiter Schreibpfad kann sie auslassen                        | Teils Ermessen enthalten (Override mit Audit), teils über Funktionsgrenzen verteilt          |
-| D2 | **Swagger deckt 78 von 217 Routen** (Kapitel 1.4)                                                                        | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
+| D2 | **Swagger deckt 82 von 220 Routen** (Kapitel 1.4)                                                                        | Interaktive Doku ist unvollständig                                | Das **vollständige** Verzeichnis ist generiert (`api_inventar.md`); Annotationen sind Handarbeit |
 | D3 | **Doppelte Migrationsnummern** (003, 008, 021, 022)                                                                      | Style-Smell; sortiert deterministisch                            | Umnummerieren würde bereits gelaufene Migrationen betreffen — Risiko ohne Nutzen              |
 | D4 | **Frontend-Altbestand über 200 Zeilen**                                                                                  | Große Komponenten sind schwer zu ändern                          | Ratsche friert den Bestand ein (darf nicht wachsen); Umbau läuft nebenher                    |
-| D5 | **Gemischte Sprache im Code** (`book`/`loan`/`student` neben `leser`/`ausleihen`)                                         | Kognitive Last beim Lesen                                        | Eine Umbenennung quer durch 78 Repository-Dateien wäre ein Risiko ohne fachlichen Gewinn      |
+| D5 | **Gemischte Sprache im Code** (`book`/`loan`/`student` neben `leser`/`ausleihen`)                                         | Kognitive Last beim Lesen                                        | Eine Umbenennung quer durch 87 Repository-Dateien wäre ein Risiko ohne fachlichen Gewinn      |
 | D6 | **`docs/` ist Go-Paket und Dokumentverzeichnis in einem**                                                                | Verwirrend; Gates liegen bei den Dokumenten                      | Die Gates **wollen** neben ihren Dokumenten liegen (`stand_angaben`, `invarianten_fundstellen`) |
 | D7 | **PG-Tests lokal still übersprungen**                                                                                    | Ein Lauf kann grün aussehen, ohne Constraints geprüft zu haben    | Ein Postgres gehört nicht in einen Push; Gegenmittel ist die Skip-Bilanz                     |
 | D8 | **Die `Caddyfile` im Repo ist nicht maßgeblich**                                                                         | Zwei Orte, ein Zustand                                           | Der Host betreibt mehrere Dienste in einer Datei; die Repo-Datei sagt das in Zeile 1          |

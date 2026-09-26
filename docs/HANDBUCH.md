@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-25. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-26. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -91,7 +91,9 @@ beides einstellbar (_Datenschutz & Sitzung_).
   eingetragen ist. Dasselbe gilt für die Suche der Titel-Verwaltung, den öffentlichen
   Katalog und _Mein Portal_.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
-  (Warteliste mit Schüler-Suche), Historie. An jedem Exemplar steht, **was es heute noch
+  (Warteliste mit Schüler-Suche), Historie. Das Drucksymbol an einem Exemplar (bei Nummern
+  mit `B-`) legt sein Etikett ins Druck-Center; gedruckt wird dort auf dem gewählten Bogen,
+  bei einem angebrochenen ab dem Startfeld. An jedem Exemplar steht, **was es heute noch
   wert ist**, samt Herleitung („3. Verleihjahr → 60 % von 24,90 €"). Ist ein Buch
   beschädigt, tragen Sie im Zustands-Dialog einen Prozentwert ein (z. B. 20 % für einen
   Wasserschaden): Er mindert jeden künftigen Ersatzbetrag, zieht das Buch aber nicht aus

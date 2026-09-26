@@ -260,6 +260,6 @@ Neben der Ausleihen- und Rückgaben-Historie werden kritische administrative Ein
 - Die Tabelle `audit_logs` speichert dabei unter anderem:
   - Wer (Admin-ID) hat die Aktion durchgeführt?
   - Wann (Zeitstempel) wurde die Aktion ausgeführt?
-  - Was (Aktion, z.B. `OVERRIDE_BLOCK`, `RECEIVE_ITEM`, `DELETE_STUDENT`) wurde getan?
+  - Was (Aktion, z.B. `LESER_ENTSPERRT`, `OVERRIDE_BLOCK`, `BULK_RECEIVE_ITEMS`, `DELETE_STUDENT`) wurde getan?
   - Details im JSON-Format für tiefergehende Analysen.
-- Dies stellt sicher, dass manuelle Sperr-Aufhebungen oder Wareneingänge jederzeit nachvollzogen werden können.
+- Dies stellt sicher, dass aufgehobene Sperren, übergangene Hinweise oder Wareneingänge jederzeit nachvollzogen werden können.

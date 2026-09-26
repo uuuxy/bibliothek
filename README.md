@@ -14,8 +14,8 @@ konkreten Betrieb gebaut, und die Entscheidungen darin sind entsprechend konkret
 ## Was es kann
 
 - **Zentrale Scanner-Omnibox** — ein Eingabefeld für alle Barcodes. Ohne Präfix wird in
-  der Reihenfolge Buch → Schülerausweis → Lehrerausweis → Volltextsuche aufgelöst; die
-  Ausweise des Altbestands tragen nackte Nummern und dürfen nicht neu gedruckt werden.
+  der Reihenfolge Buch → Ausweis → Volltextsuche aufgelöst; die Ausweise des Altbestands
+  tragen nackte Nummern und dürfen nicht neu gedruckt werden.
 - **Fristenberechnung** mit Lernmittelfreiheit (fester Stichtag 31. Juli), Sonderbeständen
   und Ferienlogik.
 - **Mahnwesen** — Mahnstufe steigt ausschließlich beim PDF-Druck (dem physischen
@@ -61,8 +61,9 @@ für Bibliothekspersonal gibt es das [Benutzerhandbuch](docs/HANDBUCH.md).
 | Betrieb | Docker Compose hinter Caddy |
 | Lizenz | [EUPL-1.2](LICENSE) |
 
-Umfang, gemessen am 01.09.2026: rund 52.000 Zeilen Go im Produktivcode, dazu 53.300
-Zeilen in 371 Testdateien; etwa 35.000 Zeilen Svelte/JavaScript und 79 e2e-Dateien.
+Umfang, gemessen am 26.09.2026: rund 70.000 Zeilen Go im Produktivcode, dazu 93.100
+Zeilen in 657 Testdateien; etwa 68.100 Zeilen Svelte/JavaScript und 118 e2e-Dateien. Die
+genauen Zahlen und alle Messbefehle stehen in [arc42, Kapitel 1.4](docs/arc42/01-einfuehrung-und-ziele.md).
 
 Diese Zahlen altern. Die vorige Fassung stand auf dem Stand vom Juli und lag bei den
 Testzeilen um 47 % daneben — deshalb steht hier das Messdatum und darunter der Befehl,

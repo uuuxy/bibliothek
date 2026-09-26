@@ -1,6 +1,6 @@
 # 8. Querschnittliche Konzepte
 
-Stand: 24.09.2026
+Stand: 26.09.2026
 
 Diese Konzepte gelten quer über alle Bausteine. Wer einen davon anfasst, ändert das System
 an vielen Stellen zugleich — darum stehen sie hier zusammen und nicht in
@@ -190,7 +190,7 @@ nicht mehr zustellen.
   Commit: Kann die Spur nicht geschrieben werden, gibt es die Buchung nicht. Vorher lief
   die Zeile nach dem Commit in eigener Transaktion — brach die Verbindung dazwischen ab,
   galt die Ausleihe **ohne** Revisionsspur.
-- Admin-Aktionen (Sperr-Override, Wareneingang-Sammelbuchung) stehen weiter neben dem
+- Admin-Aktionen (Übergehen eines Hinweises, Wareneingang-Sammelbuchung) stehen weiter neben dem
   Vorgang.
 - **Keine IP-Adressen in der Anfrage-Logzeile.**
 
@@ -227,8 +227,8 @@ Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Beispiele f
 `UNIQUE lower(email)`.
 
 Ein Beispiel für ein bewusst gebliebenes 🟡: die **Sperrreihenfolge** Schüler → Ausleihe →
-Exemplar. Sie ist Konvention; jeder Schreibpfad hält sie, ein Gate gibt es nicht
-([Kapitel 11](11-risiken-und-technische-schulden.md)).
+Exemplar. Sie ist Konvention; die Schreibpfade des Codes halten sie, der Rückgabe-Trigger aus
+Migration 137 nicht, und ein Gate gibt es nicht ([Kapitel 11](11-risiken-und-technische-schulden.md), R2).
 
 ### Migrations-Hygiene
 
@@ -260,7 +260,8 @@ Vier Schichten, in dieser Reihenfolge wirksam:
    mit `SELECT … FOR UPDATE`. Die Sperrreihenfolge ist **Schüler → Ausleihe → Exemplar**;
    Online-Scan und Nachbuchen halten sie gleich, sonst verklemmen sie sich gegeneinander.
    Die Rückgabe mit Vormerkung nimmt `FOR UPDATE OF v SKIP LOCKED`, damit eine fremde
-   Sperre den Rückgabevorgang nicht anhält.
+   Sperre den Rückgabevorgang nicht anhält. Der Rückgabe-Trigger aus Migration 137 sperrt
+   die Leserzeile nach der Ausleihe; die Folge steht in Kapitel 11, R2.
 2. **Struktur.** Die partiellen Unique-Indizes sind an der entscheidenden Stelle **der
    einzige** Schutz: Zwei Stationen, die dasselbe Exemplar für verschiedene Leser scannen,
    greifen auf keine gemeinsame Zeile (siehe

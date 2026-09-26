@@ -1,6 +1,6 @@
 # 10. Qualitätsanforderungen
 
-Stand: 17.09.2026
+Stand: 26.09.2026
 
 ---
 
@@ -124,9 +124,10 @@ Ehrlichkeit über die Grenzen gehört zur Qualitätszusage, sonst ist sie nur We
 - **PG-Tests laufen lokal nur, wenn eine Datenbank steht.** In CI immer, im pre-push-Hook
   nur bei laufendem Stack-Postgres — sonst **still** übersprungen. Dagegen steht die
   Skip-Bilanz (S21), nicht ein Zwang.
-- **Die Sperrreihenfolge (A7) ist Konvention.** Kein Gate erzwingt sie.
+- **Die Sperrreihenfolge (A7) ist Konvention.** Kein Gate erzwingt sie, und der Rückgabe-Trigger
+  aus Migration 137 hält sie nicht (Kapitel 11, R2).
 - **Barrierefreiheit ist im Anfangszustand gemessen.** Zustände nach mehreren
   Interaktionsschritten sind nur teilweise abgedeckt; Umfang und bekannte Lücken stehen in
   [FACHKONZEPT.md §19](../FACHKONZEPT.md).
-- **Swagger deckt 78 von 217 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
+- **Swagger deckt 82 von 220 Routen ab** (Messung in Kapitel 1.4). Das vollständige Verzeichnis ist
   [api_inventar.md](../api_inventar.md) — generiert, nicht gepflegt.

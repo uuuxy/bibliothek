@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 25.09.2026
+Stand: 26.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -49,6 +49,9 @@ Vorschlag vom 24.09.2026):
    der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
+
+**Nachzuholen:** der Rasterdurchgang über die Änderungen vom 24.09.2026 (**5.28**). Vorschlag
+vom 26.09.2026: vor Punkt 1, weil diese Änderungen schon auf dem Testserver laufen.
 
 **In der Doku:** das Pflegekonzept (9.9) — der Entwurf steht seit dem 24.09.2026; es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung. **Gleich danach im Code:** das Gate gegen Leser-Werte im Protokoll (5.10), entschieden am
@@ -512,7 +515,8 @@ fällt weg — entgegen „jedes Exemplar bleibt an seiner Auflage" (FACHKONZEPT
 Schulbuchs). Ebenso zwei gleichnamige Bücher
 verschiedener Verlage. Werke räumt das Skript nicht auf; `ON DELETE SET NULL` lässt einen Titel
 allein an seinem Werk zurück. Wirkt nur, wenn jemand es von Hand wieder laufen lässt — etwa
-nach der Littera-Übernahme (7.2); [SCRIPTS.md](SCRIPTS.md) nennt es ohne „einmalig".
+nach der Littera-Übernahme (7.2); [SCRIPTS.md](SCRIPTS.md) nennt es seit dem 26.09.2026
+„einmalig" und warnt davor, es wieder laufen zu lassen.
 Möglichkeiten: das Skript löschen (der Anlass ist erledigt) oder über Titel, Verlag und
 fehlende ISBN gruppieren und Lernmittel ausnehmen.
 
@@ -532,7 +536,22 @@ ab und ändert nichts; laut also. Seine Tabellenliste ist älter als die Leser-T
 125 mit dem Kollegium) und als `werke` (148, siehe 5.26). Gedacht ist es für den Schritt vor dem
 Echtbetrieb. Frage: Beginnt der Echtbetrieb mit einer leeren Datenbank und der Littera-Übernahme
 (7.2)? Dann fällt das Skript weg. Sonst braucht es eine neue Liste aus dem Tabellenbestand und die
-Entscheidung, welche Leser bleiben.
+Entscheidung, welche Leser bleiben. [SCRIPTS.md](SCRIPTS.md) nennt den Abbruch seit dem 26.09.2026.
+
+### 5.28 Rasterdurchgang über die Änderungen vom 24.09.2026 steht aus
+
+Aufgefallen am 25.09.2026 beim Abgleich der Durchgänge mit den Commits: Der Durchgang vom
+24.09.2026 abends lief über den Prüfweg der Ausleihe (29a5c786, Fund 5b50202d), der vom
+25.09.2026 über die Auflagen (4.18). Ohne Durchgang sind die Leihfrist auf dem nächsten Schultag
+(513dacdd), die Ausweisnummern (Migrationen 145 und 146), die Datenschutz-Auskunft für jeden
+Leser samt PDF (1c451b6c, f47bd81b, 40822ada), der Etikett-Knopf über das Druck-Center
+(4476ef94) und vom 25.09.2026 früh Migration 147 und der Rückweg in `update.sh` (52ca5ace). Die
+Commits tragen eigene Messungen und Tests; die vierzehn Fragen hat an ihnen niemand gestellt.
+Am ehesten lohnen: Fragen 4 und 9 an der Auskunft (wer ruft sie für wen ab, enthält die eines
+Kollegen keine Daten Dritter, das PDF als vollständige Kopie der Personendaten); Frage 12 an den
+Ausweisnummern (wer schreibt die Nummer außer der neuen Tür — LUSD-Import, Littera-Übernahme,
+Zusammenführen — und was bekommt jeder, wenn die Regel der Datenbank greift); Frage 6 an der
+Verlängerung (sperrt seit dem 24.09.2026 die Ausleihzeile, neben 5.22).
 
 ---
 

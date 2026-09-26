@@ -1,6 +1,6 @@
 # 1. Einführung und Ziele
 
-Stand: 24.09.2026
+Stand: 26.09.2026
 
 ---
 
@@ -89,17 +89,17 @@ wenn dadurch eine Statistik ihre Zahlenbasis verliert.
 
 ---
 
-## 1.4 Umfang in Zahlen (gemessen 24.09.2026)
+## 1.4 Umfang in Zahlen (gemessen 26.09.2026)
 
 | Gegenstand                        | Umfang                                    |
 | --------------------------------- | ----------------------------------------- |
-| Go-Produktivcode                  | 68.404 Zeilen (ohne das generierte `docs/docs.go`) |
-| Go-Tests                          | 89.896 Zeilen in 638 Testdateien           |
-| Svelte/JavaScript (`frontend/src`) | 65.602 Zeilen, davon 294 `.svelte`-Dateien |
-| e2e-Spezifikationen (Playwright)  | 110 Dateien                                |
-| Registrierte HTTP-Routen          | 217 (davon 78 Operationen Swagger-annotiert) |
-| Datenbank-Migrationen             | 149                                        |
-| Tabellen / Sichten in `schema.sql`| 43 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
+| Go-Produktivcode                  | 70.004 Zeilen (ohne das generierte `docs/docs.go`) |
+| Go-Tests                          | 93.136 Zeilen in 657 Testdateien           |
+| Svelte/JavaScript (`frontend/src`) | 68.139 Zeilen, davon 301 `.svelte`-Dateien |
+| e2e-Spezifikationen (Playwright)  | 118 Dateien                                |
+| Registrierte HTTP-Routen          | 220 (davon 82 Operationen Swagger-annotiert) |
+| Datenbank-Migrationen             | 151                                        |
+| Tabellen / Sichten in `schema.sql`| 44 Tabellen, 2 Sichten (`schueler`, `view_buecher_bestand`) |
 
 Die Befehle, mit denen diese Zahlen in zehn Sekunden neu erhoben werden, stehen in
 [Kapitel 5](05-bausteinsicht.md#anhang-die-zahlen-selbst-nachmessen). Das ist Absicht: Eine

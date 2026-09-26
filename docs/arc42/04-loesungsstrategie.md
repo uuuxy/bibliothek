@@ -1,6 +1,6 @@
 # 4. Lösungsstrategie
 
-Stand: 17.09.2026
+Stand: 26.09.2026
 
 Dieses Kapitel nennt die tragenden Entscheidungen in Kurzform und ordnet sie den
 Qualitätszielen aus [Kapitel 1](01-einfuehrung-und-ziele.md#12-qualitätsziele) zu. Die
@@ -37,6 +37,8 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
    **Sperrreihenfolge** ist festgelegt — Schüler → Ausleihe → Exemplar —, weil Online-Scan
    und Nachbuchen sich sonst gegeneinander verklemmen. Die Rückgabe mit Vormerkung nimmt
    `FOR UPDATE OF v SKIP LOCKED`, damit eine fremde Sperre den Rückgabevorgang nicht anhält.
+   Eine bekannte Ausnahme: Der Rückgabe-Trigger aus Migration 137 sperrt die Leserzeile nach
+   der Ausleihe ([Kapitel 11](11-risiken-und-technische-schulden.md), R2).
 3. **Idempotenz:** `idempotency_keys` mit gespeicherter Antwort, stündlicher TTL-Lauf,
    Wartezeit auf eine laufende Anfrage desselben Schlüssels. Der Unique-Index deckt den
    TOCTOU-Fall ab, in dem zwei Anfragen die Idempotenz-Prüfung gleichzeitig passieren.
@@ -112,6 +114,6 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 | **WebSockets statt SSE**                       | Der Datenfluss ist einseitig (Server → Stationen). SSE kommt ohne Protokoll-Upgrade durch den Reverse Proxy und reconnectet von selbst.                                            |
 | **Eigene Benutzerverwaltung mit Passwörtern**   | Ein zweiter Passwortspeicher in einer Schule ist ein Risiko ohne Nutzen. Es gibt keine Passwortspalte — und damit auch keinen Passwort-Leak.                                        |
 | **Redis/Memcached für Cache und Rate-Limit**    | Ein Prozess, ein Host: In-Memory reicht und spart eine Betriebskomponente. Der Preis ist die fehlende horizontale Skalierbarkeit (dokumentiert in [Kapitel 11](11-risiken-und-technische-schulden.md)). |
-| **TypeScript im Frontend**                     | JSDoc mit `checkJs` und `svelte-check --fail-on-warnings` liefert die Prüfung ohne den Umbau von 286 Komponenten.                                                                   |
+| **TypeScript im Frontend**                     | JSDoc mit `checkJs` und `svelte-check --fail-on-warnings` liefert die Prüfung ohne den Umbau von rund 300 Komponenten.                                                                |
 | **Kubernetes**                                  | Ein Schulserver. `docker compose` plus `update.sh` ist die Betriebsform, die eine Person im Ernstfall noch versteht.                                                               |
 | **Soft-Delete überall**                        | Wo die DSGVO Löschung verlangt, ist ein Soft-Delete keine Löschung. Es gibt Soft-Deletes im Bestand (Aussonderung mit Grund), aber die Abgänger-Tilgung ist ein Hard-Delete.        |

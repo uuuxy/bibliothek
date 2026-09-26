@@ -1,6 +1,6 @@
 # 5. Bausteinsicht
 
-Stand: 24.09.2026 · alle Umfangszahlen gemessen am 24.09.2026
+Stand: 26.09.2026 · alle Umfangszahlen gemessen am 26.09.2026
 (Befehle im [Anhang](#anhang-die-zahlen-selbst-nachmessen))
 
 ---
@@ -14,15 +14,15 @@ Stand: 24.09.2026 · alle Umfangszahlen gemessen am 24.09.2026
 │  ┌────────────────────────────┐        ┌───────────────────────────────────┐ │
 │  │  Frontend (SPA + PWA)      │        │  Backend (Go)                     │ │
 │  │  Svelte 5 Runes, Tailwind  │◄──────►│  net/http, pgx/v5                 │ │
-│  │  294 .svelte, 65.602 Zeilen│  JSON  │  68.404 Zeilen Produktivcode      │ │
-│  │  IndexedDB-Warteschlange   │  SSE   │  217 Routen, 149 Migrationen      │ │
+│  │  301 .svelte, 68.139 Zeilen│  JSON  │  70.004 Zeilen Produktivcode      │ │
+│  │  IndexedDB-Warteschlange   │  SSE   │  220 Routen, 151 Migrationen      │ │
 │  └────────────────────────────┘        └──────────────┬────────────────────┘ │
 │           ausgeliefert AUS dem Backend                │                       │
 │           (frontend/dist, os.OpenRoot)                │ pgx-Pool              │
 │                                                        ▼                      │
 │                                          ┌───────────────────────────────┐   │
 │                                          │  PostgreSQL 18                │   │
-│                                          │  43 Tabellen, 2 Sichten       │   │
+│                                          │  44 Tabellen, 2 Sichten       │   │
 │                                          └───────────────────────────────┘   │
 │                                                                              │
 │  ┌──────────────────────────────────────────────────────────────────────────┐│
@@ -35,7 +35,7 @@ Stand: 24.09.2026 · alle Umfangszahlen gemessen am 24.09.2026
 | -------------------------- | ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | **Frontend (SPA/PWA)**     | Bedienung, Ansichten, Offline-Warteschlange, Menü-Sichtbarkeit, Druckvorbereitung                     | Autorisierung (nur Blende — Autorität ist immer das Backend)          |
 | **Backend (Go)**           | Routing, Auth/RBAC, Fachlogik, Persistenz, PDF, Mail, Hintergrundjobs, Echtzeit, Auslieferung der SPA  | Rendering der Oberfläche; Zustandshaltung über Prozessgrenzen hinweg  |
-| **PostgreSQL**             | Datenhaltung **und Durchsetzung der Invarianten** (Constraints, partielle Unique-Indizes, Sichten)    | Geschäftsregeln, die Ermessen enthalten (Ersatzwert-Vorschlag, Sperr-Override) |
+| **PostgreSQL**             | Datenhaltung **und Durchsetzung der Invarianten** (Constraints, partielle Unique-Indizes, Sichten)    | Geschäftsregeln, die Ermessen enthalten (Ersatzwert-Vorschlag, Übergehen eines Hinweises) |
 | **cmd-Werkzeuge**          | Altbestandsübernahme, Migrationen von Hand, Foto-Migration, Backup/Restore, Schlüsselwechsel, Seeding, Lasttest | Alles, was im laufenden Betrieb über die Oberfläche erreichbar sein muss |
 
 ---
@@ -88,20 +88,20 @@ HTTP-Anfrage
 | Paket                   | Umfang (Produktivcode) | Verantwortung                                                                                                                                                                     |
 | ----------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `main.go`               | 1 Datei                | Konfiguration lesen **und hart prüfen** (DSN, JWT ≥ 32 Zeichen, AES-Schlüssel exakt 32 Byte, IMAP, Secret-Guard), Pool, Migrationen, Rechte-Seed, Admin-Bootstrap, SMTP-Übernahme, Broker, Scheduler, Server, Graceful Shutdown |
-| `api/`                  | 28.415 Zeilen, 156 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Selbstprüfung, Mail-Routen, LUSD-Parser und -Anwendung, öffentliche Seiten     |
-| `repository/`           | 13.987 Zeilen, 83 Dateien  | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
-| `internal/service/`     | Teil von 8.547 Zeilen  | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
-| `inventur/`             | 5.953 Zeilen, 43 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
+| `api/`                  | 29.083 Zeilen, 158 Dateien | HTTP-Schicht: Router, Middleware, CSRF, Rate-Limit, Handler je Fachbereich, PDF-Endpunkte, Selbstprüfung, Mail-Routen, LUSD-Parser und -Anwendung, öffentliche Seiten     |
+| `repository/`           | 14.695 Zeilen, 87 Dateien  | SQL gegen `pgx`: Abfragen, Schreibpfade, Mapping auf Go-Strukturen, Sperren, Bewegungsstempel, Audit-Schreiber, Systemeinstellungen                                        |
+| `internal/service/`     | Teil von 8.674 Zeilen  | Fachlogik mit Transaktionsklammer: Ausleihe/Rückgabe (`loan_*.go`), Omnibox, Nachbuchen, Geräte, Cover, Fotos, Bestellungen, Importe, Littera-Etiketten                          |
+| `inventur/`             | 6.144 Zeilen, 43 Dateien   | **Eigenständiges Untermodul** mit eigenem Handler-Baum und eigener Datenbankschicht: Medienkatalog-CRUD, Excel-Import, ISBN-Suche, Metadaten- und Cover-Beschaffung, Dublettenkontrolle, Lernmittel-Sichten, Uploads |
 | `auth/`                 | 1.342 Zeilen, 8 Dateien    | Anmeldung gegen IMAP, JWT-Erzeugung/-Prüfung, Sperrliste widerrufener Token (Ticker alle 15 min), Selbstanmeldung des Kollegiums, `/api/auth/me`, Refresh                  |
 | `jobs/`                 | 1.536 Zeilen, 11 Dateien   | Cron-Scheduler (UTC) und die Läufe: DSGVO-Kette, Audit-Aufbewahrung, Backup (+ optional S3), Idempotenz-TTL, Vormerkungs-Verfall, Cover-Sync, Restore-Probe               |
 | `db/`                   | 715 Zeilen, 4 Dateien      | Verbindungspool, Migrations-Runner, Rechte-Seed (`seed.go` = Vorgabe je Rolle), Admin-Bootstrap, SMTP-Konfig-Übernahme                                                    |
-| `pkg/` (19 Pakete)      | 2.099 Zeilen, 23 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
+| `pkg/` (19 Pakete)      | 2.231 Zeilen, 25 Dateien   | Wiederverwendbares ohne Fachbezug bzw. mit **isoliertem** Fachbezug — siehe Tabelle unten                                                                                 |
 | `pdf/`                  | 1.394 Zeilen, 11 Dateien   | Erzeugte Dokumente: Mahnliste, Kontoauszug, Rechnung, Schadensfall, LMF-Plan, Zahlungsweg, Schulkopf                                                                      |
 | `mailservice/`          | 476 Zeilen, 4 Dateien      | SMTP-Versand mit erzwungenem STARTTLS, Kopfzeilen-Härtung (CR/LF), SMTP-Konfiguration aus der Datenbank                                                                   |
 | `sse/`                  | 193 Zeilen, 1 Datei        | Broker und Handler für Server-Sent Events                                                                                                                                 |
 | `apierrors/`            | 242 Zeilen, 1 Datei        | Einheitliche Fehlerantworten (`SendHTTPError`) und ihre Abbildung auf HTTP-Status                                                                                          |
-| `internal/*` (übrige)   | Teil von 8.547 Zeilen  | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest` (Prüfhilfen) |
-| `migrations/`           | 147 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
+| `internal/*` (übrige)   | Teil von 8.674 Zeilen  | `crypto` (AES-256-GCM), `backupkrypto` (scrypt + Dateiformat), `littera` (Altbestand lesen/abbilden/schreiben), `uebernahme` (Savepoint, Fehlerklassen, ISBN, Protokoll), `ausweis` (Gültigkeit), `middleware` (Security-Header), `pgtest`/`smtptest`/`pdftest` (Prüfhilfen) |
+| `migrations/`           | 151 Dateien            | Nummerierte, idempotente Schema-Schritte; laufen beim Start                                                                                                                |
 | `docs/` (Go-Anteil)     | `docs.go` generiert    | Swagger-Spezifikation, ausgeliefert **nur** bei `APP_ENV=local`/`development`                                                                                              |
 | `cmd/` (9 Kommandos)    | 2.430 Zeilen, 13 Dateien   | `littera-altbestand`, `littera-import`, `migrate`, `migrate-fotos`, `encrypt-backup`, `restore-backup`, `rotate-encryption-key`, `seed`, `stresstest`                      |
 
@@ -328,7 +328,7 @@ Umgebung meldet sich noch am selben Vormittag, nicht erst am nächsten Tag.
 
 ## 5.5 Wichtige Datenstrukturen (Auszug)
 
-Vollständig: `schema.sql` (43 Tabellen) und [invarianten.md](../invarianten.md).
+Vollständig: `schema.sql` (44 Tabellen) und [invarianten.md](../invarianten.md).
 
 | Tabelle / Sicht                | Bedeutung                                                                                                        |
 | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |

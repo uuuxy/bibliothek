@@ -1,6 +1,6 @@
 # 6. Laufzeitsicht
 
-Stand: 18.09.2026
+Stand: 26.09.2026
 
 Zehn Szenarien, ausgewählt nach einem Kriterium: **Wo ist die Architektur an der
 Arbeit?** Der Normalfall („Liste laden, JSON zurückgeben") kommt nicht vor — er erklärt
@@ -168,6 +168,11 @@ Welcher Pfad welche Zeile sperrt:
 | Geräte-Ausleihe            | die aktive Geräte-Ausleihe                                                 | `internal/service/device_service.go`                           |
 | Nachbuchen                 | **zwei** Sperren in der festgelegten Folge: `leser`, dann `buecher_exemplare` | `internal/service/nachbuchen.go`                            |
 | Schaden erfassen           | die **Ausleihe**-Zeile — der Schuldner wird aus ihr gelesen, nicht aus dem Request | `repository/schaden_melden.go`                          |
+| Rückgabe (Trigger, seit Migration 137) | die **Leser**-Zeile des Ausleihers, **nach** der Ausleihe — gegen die festgelegte Folge ([Kapitel 11](11-risiken-und-technische-schulden.md), R2) | `trg_leser_stempel_rueckgabe` (`schema.sql`)          |
+| Verlängerung (seit 24.09.2026) | die **Ausleihe**-Zeile; die neue Frist rechnet Go, nicht mehr SQL      | `handleExtendLoan` (`api/ausleihe.go`)                         |
+| Sperren und Aufheben am Leser | die **Leser**-Zeile                                                     | `LockStudentHandler` (`api/student_lock.go`)                   |
+| Auflagen zusammenfassen und lösen | erst die Advisory-Sperre der Auflagen, dann die **Titel**-Zeilen, nach `id` geordnet | `sperreAuflagen` (`repository/auflagen.go`)   |
+| Schlagworte eines Titels, Schlagwort-Pflege | die **Titel**-Zeile bzw. die **Schlagwort**-Zeilen, mehrere nach `id` geordnet | `SetzeSchlagworte` (`repository/schlagworte.go`), `sperreSchlagwort` und `LoescheSchlagworte` (`repository/schlagworte_pflege.go`) |
 | Bescheid, Inventur-Abschluss, Zusammenführen, Bestellmittel, Audit-System | jeweils die betroffene Zeile                  | `repository/bescheid_*.go`, `inventur_session_finish.go`, `schueler_zusammenfuehren.go`, `bestellung_mittel.go`, `audit_system.go` |
 
 > **Warum hier die Ausleihe-Zeile steht:** Die frühere Kurzfassung `ARCHITECTURE.md` (bis
@@ -178,7 +183,8 @@ Welcher Pfad welche Zeile sperrt:
 > `repository/schaden_melden.go`) — und zwar mit Absicht: Zwei parallele
 > „Schaden melden"-Klicks würden sonst beide den Prüfschritt passieren und je einen
 > Schadensfall anlegen; der Schüler würde für dasselbe Buch doppelt belastet. Im
-> Produktivcode stehen derzeit **14** `FOR UPDATE`-Anweisungen in 13 Dateien.
+> Produktivcode stehen am 26.09.2026 **20** `FOR UPDATE`-Anweisungen in 18 Dateien
+> (Kommentare nicht mitgezählt; am 17.09.2026 waren es 14 in 13).
 
 ---
 
