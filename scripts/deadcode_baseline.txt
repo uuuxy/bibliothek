@@ -34,14 +34,14 @@ internal/smtptest/server.go: unreachable func: adresseAus
 
 # Episodischer Littera-Werkzeugkasten: Prüfwerkzeug für die noch ausstehende
 # Littera-Migration (nächster Lauf nach frischem Littera-Backup). BarcodeInhalt
-# entschlüsselt die alte Littera-Druckzeichenkette und dient als Gegenprobe zur
-# Exemplarnummer, aus der die EAN-13 gerechnet wird — 61.520 von 61.520 stimmen
-# überein. Der Lauf hängt an LITTERA_CSV_DIR und braucht die echten Altdaten,
-# die nicht im Repo liegen (Rolle des Alt-Decoders in 1a3733d0 dokumentiert).
-# Kein Drift-Risiko: es existiert kein paralleler Live-Pfad zu diesen Funktionen.
+# liest aus Litteras Druckzeichenkette (dem EAN-13 in der Setzform einer
+# EAN-13-Schrift) Exemplar- und Bibliotheksnummer und dient als Gegenprobe zu den
+# Spalten — 61.520 von 61.520 stimmen überein. Der Lauf hängt an LITTERA_CSV_DIR
+# und braucht die echten Altdaten, die nicht im Repo liegen. Den EAN-13 selbst
+# liest seit dem 28.09.2026 EtikettZiffern im Schreibpfad (über entschluessele,
+# deshalb steht das hier nicht mehr); BarcodeInhalt bleibt die Gegenprobe.
 internal/littera/abgang.go: unreachable func: IstAbschlussklasse
 internal/littera/barcode.go: unreachable func: BarcodeInhalt
-internal/littera/barcode.go: unreachable func: entschluessele
 internal/littera/barcode.go: unreachable func: entschluesseleZiffer
 internal/littera/leser.go: unreachable func: NurArt
 
