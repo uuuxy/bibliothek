@@ -130,6 +130,10 @@ Bestand nach dem Erledigen stimmt.
 nachbessern — diese nicht. Es gibt keinen Knopf, der einen zu weit gefassten Stichtag
 zurücknimmt. Vorher ein Backup ziehen.
 
+**Mit dem Neuaufbau am Schulserver entfällt dieser Flow** ([OFFEN.md](OFFEN.md) 7.7): Die
+Littera-Übernahme setzt den Vermerk selbst, weil der Altbestand seine Etiketten trägt. Gebraucht
+wird er nur auf einer Datenbank, deren Exemplare ohne den Vermerk angelegt wurden.
+
 **Warum es das gibt:** `etikett_gedruckt` wurde bis vor Kurzem nirgends gesetzt. Für den
 gesamten Altbestand steht deshalb „kein Etikett" — nicht weil keins am Buch klebt, sondern
 weil es nie jemand vermerkt hat. Ohne dieses Aufräumen zeigt die Nachdruck-Liste dauerhaft

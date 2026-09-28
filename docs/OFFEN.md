@@ -17,49 +17,67 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pflegekonzept ist am
 24.09.2026 umentschieden, der DSGVO-Nachweis am 28.09.2026; beide liegen als Entwurf vor.
 
+**Entschieden am 28.09.2026: Neuaufbau am Schulserver.** Der Echtbetrieb beginnt mit einer leeren
+Datenbank und der Littera-Übernahme; `tabula_rasa.sql` und `repair_titel_dubletten.sql` sind
+entfernt, das Aufräumen vor einem zweiten Littera-Lauf und der Etiketten-Lauf für den Altbestand
+entfallen.
+
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Zwei Skripte entscheiden** (5.26, 5.27): `repair_titel_dubletten.sql` löschen oder enger
-   gruppieren; und ob der Echtbetrieb mit einer leeren Datenbank und der Littera-Übernahme
-   beginnt — dann fällt `tabula_rasa.sql` weg, das seit Migration 124 abbricht.
+1. **Drei Fragen, bevor weiterer Code entsteht** (28.09.2026). Ist eine davon ein Nein, hilft
+   kein weiterer Code; sind alle drei ein Ja, bleibt vor dem Echtstart überschaubare Arbeit im
+   Code.
+   - **Schulträger:** Gibt es den Schulserver, ab wann, in welchem Netz (8.5, B5)? Heute ist er
+     nur geplante Zielumgebung (Abschnitt 7), und echte Schülerdaten — auch die aus Littera —
+     gehören nur dorthin. Dazu: Hat der Schulträger eine Vorlage für das IT-Sicherheitskonzept?
+     Dann kommt der Teil des Programms in seiner Form.
+   - **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
+     Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
+     Mahnwesen akzeptiert, und wer wird Vertretung?
+   - **Littera:** das Kennwort, das bei der Einrichtung von Littera für dessen SQL Server
+     vergeben wurde. Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und
+     ein neues Backup ist nicht nötig (7.2).
 2. **Die Vorschläge vom 25.09.2026 bestätigen oder ändern** — zur Aktualität der Images (7.8)
    und zu den vier offenen Stellen des Pflegekonzepts (9.9, Entwurf in
    [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)). Danach baue ich in drei Stufen: `update.sh` holt das
    Datenbank-Image und baut ohne Cache; ein Release-Modus für den Schulserver; das Pflegekonzept
-   mit den Antworten und eine Vorlage für das Blatt. Dazu nur du: ob die Vertretung schon
-   benannt ist.
-3. **Die Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8 und 7.2), soweit noch nicht
-   gestellt: Littera-Backup (7.2), B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in
-   zwei Schritten — erst die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen
-   beim Schulbuch (8.7), die Abholfrist bei Vormerkungen (8.8), dazu der Wortlaut des
-   Eigentumsvermerks der Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher
-   tragen keinen Vermerk). Den Echtstart halten diese Antworten auf, nicht der Code.
+   mit den Antworten und eine Vorlage für das Blatt.
+3. **Die übrigen Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8), soweit noch nicht
+   gestellt: B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in zwei Schritten — erst
+   die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen beim Schulbuch (8.7), die
+   Abholfrist bei Vormerkungen (8.8), dazu der Wortlaut des Eigentumsvermerks der
+   Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher tragen keinen Vermerk).
 4. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
-5. **Der Etiketten-Lauf im Druck-Center** (4.8): ohne Zeitdruck — nötig vor Abnahme-Flow 4, für
-   den es noch keinen Termin gibt; mit einem Neuaufbau aus 7.2 entfällt er.
 
-**Im Code, in dieser Reihenfolge** (freigegeben am 23.09.2026; die Stellung von 5.3 ist der
-Vorschlag vom 24.09.2026):
+**Im Code** (entschieden am 28.09.2026): Bis die drei Fragen beantwortet sind, entsteht nur, was
+einen Termin hat — die CI vor dem 19. Oktober 2026 festschreiben (5.10) und ab dem 28. Oktober
+2026 Node 26 nach der Regel „immer die aktive LTS" ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
+Abschnitt 4). Danach in dieser Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist
+der Vorschlag vom 24.09.2026):
 
 1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
-2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird (echte Bescheide gibt es ab
-   der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
+2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
+   im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-**In der Doku:** das Pflegekonzept (9.9) — der Entwurf steht seit dem 24.09.2026; es folgen die
-Arbeitsnotizen ins Repository und die Probe durch die Vertretung. **Gleich danach im Code:** das Gate gegen Leser-Werte im Protokoll (5.10), entschieden am
-24.09.2026.
+Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`) und 5.30 (Aufbewahrung der
+Sicherungen).
 
-Mit dem Littera-Backup (7.2) kommen die Littera-Schlagworte aus 4.20. Vor einem zweiten
-Personenlauf auf derselben Datenbank muss das Aufräumen stimmen (**5.24**).
+**In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf; es folgen die
+Arbeitsnotizen ins Repository, die Vorlage für das Blatt und die Probe durch die Vertretung.
+**Gleich danach im Code**, sobald die drei Fragen beantwortet sind: das Gate gegen Leser-Werte
+im Protokoll (5.10), entschieden am 24.09.2026.
 
-**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst S3 (7.3), das Littera-Backup (7.2),
-die Anfragen E1, E2 und zu den Zahlungswegen (8.1–8.3), B3 und B4 (8.5) und ein Termin für die
-Abnahmen (7.7). Einen echten LUSD-Import erst nach der Littera-Übernahme (7.2).
+Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20.
+
+**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver und S3 (7.3), das
+Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den Zahlungswegen (8.1–8.3),
+B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
+Littera-Übernahme (7.2).
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
 Betriebspunkte in 7. Keiner davon schadet still; sie werden gebündelt erledigt.
@@ -143,34 +161,6 @@ zum Ausdruck für das Schulamt: „Der Saldo der betroffenen Leser wird entsprec
 Littera kennt keine Übergabe; dort bucht man einen offenen Betrag von Hand aus, um den Leser
 löschen zu können. **Entschieden am 24.09.2026: Mit der Übergabe ist der Fall für die Schule
 erledigt**; zu melden bleibt eine spätere Rückgabe, das kann die Theke schon. Umbau: 5.3.
-
-### 4.8 Etiketten-Altbestand nachtragen — gemessen, der Lauf steht aus
-
-Der Lauf geht über das Druck-Center („Fehlende Etiketten" → „Altbestand aufräumen", mit
-Vorschau und Stichtag).
-
-**Gemessen am Testserver am 21.09.2026** (Exemplare ohne Etikett-Vermerk, nicht ausgesondert,
-nach `erworben_am`): 30.654 Exemplare ohne `B-`-Nummer, alle am 15.07.2026 — dem Tag der
-Littera-Übernahme. Jede `B-`-Nummer liegt danach: 23.07. (8, davon 1 im Zulauf), 31.07. (7),
-02.08. (1), 10.09. (2, beide im Zulauf), 16.09. (9). Der Lauf vergleicht
-`erworben_am <= Stichtag`; **der Stichtag 15.07.2026 trifft genau den Altbestand** und lässt
-die 27 Neuzugänge offen.
-
-**Der Lauf selbst:** Stichtag 15.07.2026 eintragen; die Vorschau muss 30.654 zeigen. Den ganzen
-Lauf nimmt nichts zurück (einzelne Exemplare holt „Etikett zurücksetzen" in der
-Nachdruck-Liste zurück). Am Schulserver vorher dieselbe Zählung wiederholen — die Zahlen oben
-gelten für den Testserver:
-
-```sql
-SELECT (barcode_id LIKE 'B-%') AS b_nummer, (bestellstatus IS NOT NULL) AS im_zulauf,
-       erworben_am::date AS tag, count(*)
-FROM buecher_exemplare
-WHERE etikett_gedruckt = false AND ist_ausgesondert = false
-GROUP BY 1, 2, 3 ORDER BY 3, 1;
-```
-
-**Wann:** vor Abnahme-Flow 4. Kommt eine neue Littera-Übernahme mit Neuaufbau (7.2), erledigt
-sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
 
 ### 4.20 Littera-Schlagworte übernehmen
 
@@ -312,7 +302,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - **Frage: Etikett-Knopf nur bei `B-`-Nummern?** Der Knopf an der Exemplarkarte übergibt das
   Exemplar ans Druck-Center, steht aber nur bei Nummern mit `B-` — so seit seinem ersten Commit
   (`7daf4ac6`, Juni 2026), ohne Begründung. Littera-Exemplare tragen nackte Mediennummern und
-  bekommen keinen; das Druck-Center druckt sie über „Fehlende Etiketten" (4.8 plant genau das).
+  bekommen keinen.
   Vorschlag: den Knopf bei jeder Nummer zeigen außer den Platzhaltern `AUTO-` und `SYS-`.
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
@@ -487,25 +477,6 @@ eigenen Tabelle statt an der Leserzeile — eine Migration an der Karenz-Uhr (L�
 DSGVO-Auskunft lesen ihn). Sie kommt beim nächsten Umbau der Karenz-Uhr mit; bis dahin steht der
 Punkt hier, damit dieser Umbau ihn findet.
 
-### 5.24 Aufräumen vor einem zweiten Littera-Lauf lässt Lehrkräfte stehen
-
-Die Anleitung in `docs/SCRIPTS.md` (Abschnitt 1, „Wiederholung") löscht die Littera-Lehrkräfte
-mit `DELETE FROM benutzer … '%@littera.invalid'`. Das hat zwei Lücken:
-
-- Seit Migration 125 zeigt das Konto auf die Leserzeile, nicht umgekehrt: Die Zeile bleibt mit
-  ihrer Ausweisnummer stehen, ohne Konto. Nachgestellt am 24.09.2026 an der Test-Datenbank
-  (Konto weg, Leserzeile mit Nummer „31" da).
-- Eine Lehrkraft, deren Adresse in Littera steht, bekommt diese Adresse statt des Platzhalters
-  (`mailadresse` in `internal/littera/schreiber_personen.go`). Das Aufräumen trifft dann weder
-  ihr Konto noch ihre Leserzeile. Im Stand von 2010 hat eine von 158 Lehrkräften eine Adresse.
-
-Ein zweiter Lauf legt diese Lehrkräfte ein zweites Mal an und gibt ihnen eine Ersatznummer, weil
-ihre Nummer an der alten Zeile hängt; ihre Karte findet an der Theke die alte Zeile. Das
-Protokoll meldet jede dieser Ersatznummern. Abhilfe: die Leserzeilen vor den Konten löschen,
-über `benutzer.leser_id` (`ON DELETE SET NULL`). Für Lehrkräfte mit echter Adresse fehlt ein
-Merkmal, an dem das Aufräumen sie erkennt. Nötig, bevor auf derselben Datenbank ein zweiter
-Personenlauf läuft, etwa mit dem frischen Backup aus 7.2.
-
 ### 5.25 Eine Forderung für ein Gerät lässt sich nicht anlegen
 
 Die Datenbank sieht sie vor (`check_damage_item`: genau eines von `exemplar_id` und
@@ -515,38 +486,6 @@ Er sondert das Exemplar aus und legt die Forderung mit `exemplar_id` an. Fehlt b
 Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHKONZEPT (Abschnitt
 5) behauptete bis zum 24.09.2026 einen. Gesperrt würde nach 4.4 wie heute (Schülerbücherei und
 Geräte).
-
-### 5.26 Skripte halten die Regel der Auflagen nicht — `repair_titel_dubletten.sql` legt sie zusammen
-
-Aufgefallen beim Raster zu 4.18 (25.09.2026), am Code gelesen. Die einmalige Reparatur vom
-13.07.2026 gruppiert allein über den normalisierten Titel: Zwei Auflagen „Mathe 7" mit
-verschiedener ISBN werden ein Titel, die Exemplare wandern an den Keeper, die zweite ISBN
-fällt weg — entgegen „jedes Exemplar bleibt an seiner Auflage" (FACHKONZEPT, Auflagen eines
-Schulbuchs). Ebenso zwei gleichnamige Bücher
-verschiedener Verlage. Werke räumt das Skript nicht auf; `ON DELETE SET NULL` lässt einen Titel
-allein an seinem Werk zurück. Wirkt nur, wenn jemand es von Hand wieder laufen lässt — etwa
-nach der Littera-Übernahme (7.2); [SCRIPTS.md](SCRIPTS.md) nennt es seit dem 26.09.2026
-„einmalig" und warnt davor, es wieder laufen zu lassen.
-Möglichkeiten: das Skript löschen (der Anlass ist erledigt) oder über Titel, Verlag und
-fehlende ISBN gruppieren und Lernmittel ausnehmen.
-
-Dieselbe Lücke ohne Zusammenlegen (Rasterdurchgang 25.09.2026): `e2e_altlasten.sql`,
-`entferne_demo_daten.sql` und `seed_demo.sql` löschen Titel per DELETE, `tabula_rasa.sql` leert
-`buecher_titel` per `TRUNCATE … CASCADE` — das erreicht `werke` nicht, der Verweis zeigt vom Titel
-zum Werk. Zurück bleiben Werke ohne Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der
-überall wie ein Titel ohne weitere Auflage erscheint (Titelmaske: „Keine andere Auflage
-zugeordnet."). Kein Schaden; die Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine
-Skripte.
-
-### 5.27 `tabula_rasa.sql` bricht seit Migration 124 ab
-
-Nachgestellt am 25.09.2026 an der Test-Datenbank: `ERROR: "schueler" is not a table` —
-`schueler` ist seit Migration 124 eine Sicht auf `leser`. Das Skript bricht in seiner Transaktion
-ab und ändert nichts; laut also. Seine Tabellenliste ist älter als die Leser-Tabelle (124, seit
-125 mit dem Kollegium) und als `werke` (148, siehe 5.26). Gedacht ist es für den Schritt vor dem
-Echtbetrieb. Frage: Beginnt der Echtbetrieb mit einer leeren Datenbank und der Littera-Übernahme
-(7.2)? Dann fällt das Skript weg. Sonst braucht es eine neue Liste aus dem Tabellenbestand und die
-Entscheidung, welche Leser bleiben. [SCRIPTS.md](SCRIPTS.md) nennt den Abbruch seit dem 26.09.2026.
 
 ### 5.29 API-Antworten tragen kein `Cache-Control`
 
@@ -632,6 +571,12 @@ Löschläufe nach Frist greifen in der nächsten Nacht wieder, eine Löschung vo
   ein Konto angemeldet war; der Datenschutz-Nachweis (Abschnitte 8 und 9) sagt das so. Ein
   Protokoll der Anmeldungen wären neue Personendaten des Personals (Zeitpunkt, Netzadresse) mit
   eigener Frist. Anlass zum Bauen: ein Vorfall oder eine Frage des Datenschutzbeauftragten.
+- Skripte, die Titel löschen, lassen Werke zurück (Rasterdurchgang 25.09.2026):
+  `e2e_altlasten.sql`, `entferne_demo_daten.sql` und `seed_demo.sql` löschen Titel per DELETE;
+  das erreicht `werke` nicht, der Verweis zeigt vom Titel zum Werk. Zurück bleiben Werke ohne
+  Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der überall wie ein Titel ohne
+  weitere Auflage erscheint (Titelmaske: „Keine andere Auflage zugeordnet."). Kein Schaden; die
+  Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
 
 ### 6.2 Kategorie C
 
@@ -728,8 +673,9 @@ teuerste offene Position vor dem Echtstart — früh bei der Schule anfragen.
 **Reihenfolge:** Littera-Personen und -Ausleihen im selben Lauf übernehmen, **bevor** ein echter
 LUSD-Import läuft. Der Littera-Personenlauf erkennt Schüler aus der LUSD nicht und legt sie ein
 zweites Mal an ([SCRIPTS.md](SCRIPTS.md), Abschnitt 0). Das Geburtsdatum im Backup ist die Brücke
-für den späteren LUSD-Abgleich — vor dem Lauf prüfen. Hat auf der Datenbank schon ein
-Personenlauf stattgefunden, vorher das Aufräumen aus 5.24 richten.
+für den späteren LUSD-Abgleich — vor dem Lauf prüfen. Die Übernahme läuft am Schulserver auf
+einer neu angelegten Datenbank (entschieden am 28.09.2026); muss sie wiederholt werden, wird die
+Datenbank neu angelegt ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
 **Vor dem Personenlauf:** Im frischen Backup nachsehen, ob die Tabelle `FremdLeserNummer` gefüllt
 ist (im Stand von 2010 ist sie leer). Sie trägt die Nummern, die die Ausweise beim Scannen liefern;
 nur mit ihr funktionieren die vorhandenen Ausweise ohne Neudruck. **Ist sie leer, muss jeder Ausweis
@@ -737,11 +683,21 @@ neu gedruckt werden:** Kein Ausweis liefert beim Scannen die Lesernummer, und Li
 und Leser getrennt, beide ab 1 — fast jede Lesernummer ist auf dem Server schon die Nummer eines
 Buchs, der Lauf vergibt dann `L-`-Nummern. Ist sie gefüllt, stehen die einzelnen Personen ohne Karte
 mit „keine Karte in FremdLeserNummer" im Protokoll des Laufs.
-**Am 17.09.2026 aufgefallen:** In `~/Downloads` und auf dem Schreibtisch liegen seit dem
-09.09.2026 zwei Littera-Sicherungen vom 01. und 02.09.2026 (856 KB und 602 KB). Ob das die
-Datensicherung aus dem laufenden Littera ist, ist UNGEPRÜFT — für eine Vollsicherung wären
-100 MB+ zu erwarten, die Größe spricht eher für einen Teilexport. Zum Nachsehen fehlt auf dem
-Rechner ein Entpacker für `.7z`.
+**Die Sicherungen vom 01. und 02.09.2026** (nachgesehen am 28.09.2026): In `~/Downloads` und
+auf dem Schreibtisch liegen seit dem 09.09.2026 zwei Littera-Sicherungen
+(`littera_sicherung_01_09_2026_14_04_50.7z` und `littera_sicherung_02_09_2026_13_29_22.7z`,
+856 KB und 602 KB). Jede enthält eine `.bak` (16,7 MB und 13,4 MB) und ist verschlüsselt.
+Name und Form sind nach dem Littera-Handbuch („Datensicherung mit SQL Server-Datenbank",
+lokaler Server) die Sicherung der **SQL-Server-Fassung**: Die `.bak` ist dann eine
+SQL-Server-Sicherung, keine Access-Datei, und `mdb-export` liest sie nicht. Zum Zurückspielen
+nennt das Handbuch: „Man benötigt das Kennwort welches bei der Installation des Servers erfasst
+wurde" — das kennt, wer Littera an der Schule eingerichtet hat. **Nächste Schritte:** (1) dieses
+Kennwort erfragen; (2) die `.bak` auf dem eigenen Rechner in einen SQL Server einspielen und die
+neun Tabellen aus Abschnitt 1 von [SCRIPTS.md](SCRIPTS.md) als CSV ausgeben, Spaltennamen und
+Datumsformate gegen den Importer prüfen, der bisher nur `mdb-export` kennt; (3) lokal und nur
+lesend messen, nicht auf dem Testserver: `FremdLeserNummer` gefüllt, offene Ausleihen, Titel mit
+Schlagworten (4.20). Ob es die volle Datenbank ist, zeigt erst das Einspielen; dass die jüngere
+Datei kleiner ist, ist ungeklärt.
 
 **Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
 Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.
@@ -782,7 +738,8 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 - Flows 1–3 mit dem Sekretariat: LUSD-Import, Versetzung (vor dem Schuljahreswechsel),
   Klassensatz erledigen. Dabei um Geburtsdatum und Eintrittsdatum im LUSD-Bericht bitten. Ein
   LUSD-Import mit echten Schülern erst nach der Littera-Übernahme (7.2).
-- Flow 4 (Altbestand-Etiketten, nicht umkehrbar) erst nach 4.8.
+- Flow 4 (Altbestand-Etiketten) entfällt mit dem Neuaufbau (entschieden am 28.09.2026): Die
+  Littera-Übernahme setzt den Etikett-Vermerk selbst (`internal/littera/schreiber_bestand.go`).
 - Flow 5: Selbstanmeldung einer Lehrkraft.
 - Danach: Ergebnis hier eintragen; bei Parser-Auffälligkeiten die echte LUSD-Datei anonymisiert als
   Testfixture sichern.
