@@ -285,7 +285,7 @@ func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klass
 	}
 
 	br := tx.SendBatch(ctx, b)
-	defer func() { _ = br.Close() }()
+	defer func() { _ = br.Close() }() //nolint:errcheck
 
 	kanonisch := make([]string, 0, gefragt)
 	for i := 0; i < gefragt; i++ {
