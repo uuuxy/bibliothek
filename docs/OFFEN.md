@@ -385,7 +385,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
   neue Abbild — brechen kann etwa der Postgres-Client oder die Chromium-Abhängigkeiten von
-  Playwright; spätestens, wenn GitHub `ubuntu-24.04` abkündigt.
+  Playwright; spätestens, wenn GitHub `ubuntu-24.04` abkündigt. Nicht darunter: CodeQL läuft
+  in der Standard-Einrichtung von GitHub (Repository-Einstellung, keine Workflow-Datei) auf
+  `ubuntu-latest` und wechselt am 19. Oktober 2026 mit; der Hinweis darauf steht an jedem
+  CodeQL-Lauf (gesehen am 28.09.2026). Bricht die Analyse dort, wird der CodeQL-Lauf rot.
 - **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
   `-exclude`): G706 (36 Stellen in 18 Dateien), G704 (6), G703 (5), G120 (5), G124 (4), G404
   (4), G115 (3), G101 (1); der Grund je Regel steht in `.github/workflows/security-scan.yml`.
