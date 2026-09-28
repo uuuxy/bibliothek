@@ -58,8 +58,13 @@ einen Termin hat — ab dem 28. Oktober 2026 Node 26 nach der Regel „immer die
 `ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Danach in dieser
 Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026):
 
-1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
-   Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
+1. Was still jemandem schaden kann (entschieden am 28.09.2026, nach der Regel unten „kann das
+   still jemandem schaden?"): das Gate gegen Leser-Werte im Protokoll (5.10), aus 5.19 die
+   Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei, `Cache-Control` (5.29),
+   die verworfene Inventur (5.32). Die zwei fehlenden Fristen aus 5.19 (gelöschte Kollegen,
+   Klassensatz-Reservierungen) brauchen vorher eine Entscheidung. Danach 5.18 (Klassen als
+   Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für
+   Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -332,11 +337,23 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Prüfzeichen (richtig wäre `3499500256`; die Prüfung `KlaereISBN` der Übernahme gibt es seit dem
   04.08.2026), und die Rechnung führt von ihr trotzdem auf die ISBN-13. Deshalb wird
   vorgeschlagen, nicht still zusammengeführt.
-- **Frage: Etikett-Knopf nur bei `B-`-Nummern?** Der Knopf an der Exemplarkarte übergibt das
-  Exemplar ans Druck-Center, steht aber nur bei Nummern mit `B-` — so seit seinem ersten Commit
-  (`7daf4ac6`, Juni 2026), ohne Begründung. Littera-Exemplare tragen nackte Mediennummern und
-  bekommen keinen.
-  Vorschlag: den Knopf bei jeder Nummer zeigen außer den Platzhaltern `AUTO-` und `SYS-`.
+- **Etikett-Knopf bei jeder echten Nummer; ein Nachdruck gleicht dem alten Etikett**
+  (entschieden am 28.09.2026, nicht gebaut). Der Knopf an der Exemplarkarte übergibt das
+  Exemplar ans Druck-Center wie Wareneingang und Nachdruck, steht aber nur bei Nummern mit `B-`
+  (`BookExemplarCard.svelte`, seit Juni 2026 ohne Begründung); auch `LMF-` bekommt keinen.
+  Künftig: bei jeder Nummer außer den Platzhaltern `AUTO-` und `SYS-`. Die Platzhalter-Regel
+  steht in derselben Datei schon zweimal (Farbe der Nummer, „Barcode scannen"); mit dem
+  Etikett-Knopf wird sie eine Regel für alle drei Stellen. Littera-Exemplare tragen nach der
+  Übernahme den EAN-13 ihres Etiketts als `barcode_id` (seit 1b594d1e richtig,
+  `etikettAmBuch` in `internal/littera/schreiber_barcodes.go`) und die kurze Nummer in
+  `erweiterte_eigenschaften` als `littera_exemplarnr`. Das Buchetikett setzt jeden Wert als
+  Code 128 (oder als QR, wenn im Druck-Center gewählt) und druckt ihn unter „Exemplar-Nr."
+  aus (`api/label_pdf.go`); ein Nachdruck sähe damit anders aus als das alte Etikett
+  (13 Ziffern statt „58968", anderer Strichcode), scannt aber gleich. Dazu bauen: Ist die
+  Nummer ein Littera-EAN (`dekodiereLitteraEtikett` in `internal/service/littera_etikett.go`),
+  druckt das Etikett EAN-13 und die kurze Nummer. Ein Ersatzetikett aus Littera
+  (`FremdBarcode`) bleibt Code 128. Die Übernahme setzt `etikett_gedruckt = true`, die
+  Nachdruck-Liste läuft also nicht voll.
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
   Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
@@ -483,10 +500,6 @@ Beim Ansehen der Inventur am 24.09.2026 aufgefallen, jeweils am Code nachgesehen
 - Ein unbekannter Barcode zeigt am Scanner den rohen Fehlertext „exemplar für inventur-scan
   nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt `pgx.ErrNoRows` ein,
   `ladeExemplarFuerScan` gibt ihn mit 404 unverändert weiter). Der Status stimmt, der Satz nicht.
-- Eine verworfene Inventur steht unter „Frühere Inventuren" als „vollständig":
-  `AbortInventurSession` setzt `abgeschlossen_am` wie ein Abschluss und `verloren_gemeldet = 0`,
-  die Liste fragt nur `abgeschlossen_am IS NOT NULL`, und der Bildschirm schreibt bei 0 Verlusten
-  „vollständig". Wer die Liste liest, hält den Bereich für geprüft.
 
 Dazu gehört die Leiste des Ausweisdrucks in der Leserdatei (`students/AuswahlAktionsleiste`,
 dunkel in Palettenfarben): Seit dem 23.09.2026 gibt es für markierte Zeilen `ui/AuswahlLeiste`
@@ -550,9 +563,12 @@ PFLEGEKONZEPT 3.2 und den Datenschutz-Nachweis (Abschnitte 4 und 9); die S3-Kopi
 dieselbe Regel (7.3). Beim Bau klären (nicht nachgestellt): Eine zurückgespielte ältere Sicherung
 bringt auch Personen zurück, die seit ihrem Stand von Hand endgültig gelöscht wurden; die
 Löschläufe nach Frist greifen in der nächsten Nacht wieder, eine Löschung von Hand nicht.
-Mitentscheiden: ob die Sicherung vor einem Update bei 30 Tagen bleibt (`BACKUP_RETENTION_DAYS`
-in `update.sh`; gelöscht wird erst beim ersten Update danach, mit „mindestens ein Update im
-Monat" also nach 30 bis etwa 60 Tagen).
+Die Sicherung vor einem Update bleibt bei 30 Tagen (entschieden am 28.09.2026): Sie liegt nur
+auf dem Server (die Kopie außer Haus nimmt nur die Nachtsicherung, `uploadBackupToS3` in
+`jobs/backup.go`), 30 bis etwa 60 Tage liegen innerhalb der drei Monate oben, und bis die
+wöchentlichen Stände gebaut sind, ist sie nach 14 Nächten der einzige Stand von vor dem Update
+(`rotateBackups(backupDir, 14)`).
+Dass das Löschen an einem Lauf hängt, gehört zu 5.31.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
@@ -592,6 +608,24 @@ Fragen oben beantwortet sind.
   Docker image for scanning"); ein Takt-Stempel im `Dockerfile` spart ein, zwei Minuten und
   braucht eigene Mechanik. Die Regel „mindestens einmal im Monat ein Update, auch ohne neue
   Funktionen" steht seit dem 28.09.2026 im Pflegekonzept (Abschnitt 4).
+- **Das Löschen hängt am Lauf** (gefunden am 28.09.2026). `update.sh` und `scripts/backup.sh`
+  löschen alte Sicherungen nur, wenn sie laufen. Kommt kein Update mehr, bleibt die letzte
+  Vorab-Sicherung für immer; ein Klartext-Rest nach einem misslungenen Update bleibt bis zum
+  ersten Lauf eines der beiden Skripte nach zwei Tagen. Die Meldungen sagen das seit d0391f6d.
+  Vorschlag, nicht nachgestellt: Mit fertigen Images bleibt das alte Image am Server. Läuft
+  der alte Container, verschlüsselt Schritt 1 die Sicherung sofort, und der Rückweg
+  entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
+  unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
+  der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
+
+
+### 5.32 Eine verworfene Inventur steht als „vollständig" in der Liste
+
+Aufgefallen beim Ansehen der Inventur am 24.09.2026, am Code nachgesehen; bis zum 28.09.2026
+unter 5.21 notiert. `AbortInventurSession` setzt `abgeschlossen_am` wie ein Abschluss und
+`verloren_gemeldet = 0`, die Liste „Frühere Inventuren" fragt nur `abgeschlossen_am IS NOT NULL`,
+und der Bildschirm schreibt bei 0 Verlusten „vollständig". Wer die Liste liest, hält den Bereich
+für geprüft. Kein Datenschutz-Fall, aber ein stilles falsches Ergebnis.
 
 ---
 
@@ -779,6 +813,15 @@ Datumsformate gegen den Importer prüfen, der bisher nur `mdb-export` kennt; (3)
 lesend messen, nicht auf dem Testserver: `FremdLeserNummer` gefüllt, offene Ausleihen, Titel mit
 Schlagworten (4.20). Ob es die volle Datenbank ist, zeigt erst das Einspielen; dass die jüngere
 Datei kleiner ist, ist ungeklärt.
+**Etiketten vor dem Lauf prüfen:** `LITTERA_CSV_DIR=… go test ./internal/littera/` gegen die
+ausgegebenen Tabellen. Der Lauf vergleicht seit dem 28.09.2026 den vollen EAN-13 jedes Etiketts
+mit der Rechnung (`pruefeEtiketten`); bis dahin prüfte er nur die Nummer und sah nicht, dass die
+Übernahme für Nummern unter sechs Stellen falsch rechnete (1b594d1e). In der Sicherung von 2010
+kommen 8 Exemplarnummern doppelt vor. Ergeben zwei Exemplare dasselbe Etikett, bekommt das
+zweite eine neue Nummer aus `barcode_seq` („Barcode bereits vergeben" im Protokoll), wird aber
+wie jedes übernommene Exemplar als gedruckt vermerkt (`sqlExemplarEinfuegen` setzt
+`etikett_gedruckt` fest auf `true`) und erscheint nicht auf der Nachdruck-Liste. Vor dem Lauf
+klären: diese Exemplare als ungedruckt anlegen.
 
 **Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
 Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.
