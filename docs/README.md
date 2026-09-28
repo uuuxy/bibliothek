@@ -69,6 +69,7 @@ Eine webbasierte Verwaltungssoftware f체r Schulbibliotheken. Das System unterst�
 | Dokument                                                 | Inhalt                                                                                          |
 | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)                     | Pflegekonzept und Wartungshandbuch (Entwurf): Zust채ndigkeiten, Update und Wiederherstellung f체r die Vertretung, wiederkehrende Aufgaben, Ende der Pflege |
+| [blatt_vorlage.md](blatt_vorlage.md)                     | Vorlage f체r das Blatt bei der Schule (Erreichbarkeit, Server, Ort der Schl체ssel) zum Ausdrucken |
 | [DEPLOYMENT.md](DEPLOYMENT.md)                           | Produktions-Deployment, Umgebungsvariablen, Caddy, Backups                                      |
 | [resilience_and_recovery.md](resilience_and_recovery.md) | Backup (verschl체sselt + manuell), Restore-Probe, Notfall-Wiederherstellung, Cronjob-Einrichtung |
 | [SCRIPTS.md](SCRIPTS.md)                                 | CLI-Werkzeuge: Littera-Altbestand, Foto-Migration, Backup, Deployment, Lasttest                 |

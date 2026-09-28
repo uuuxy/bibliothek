@@ -30,18 +30,19 @@ entfallen.
    - **Schulträger:** Gibt es den Schulserver, ab wann, in welchem Netz (8.5, B5)? Heute ist er
      nur geplante Zielumgebung (Abschnitt 7), und echte Schülerdaten — auch die aus Littera —
      gehören nur dorthin. Dazu: Hat der Schulträger eine Vorlage für das IT-Sicherheitskonzept?
-     Dann kommt der Teil des Programms in seiner Form.
+     Dann kommt der Teil des Programms in seiner Form. Außerdem: ob seine IT Betriebssystem und
+     Docker pflegt, wie im Pflegekonzept vorgesehen (Abschnitt 9); wie die Pflege den Server
+     erreicht, vor Ort oder über einen Fernzugang; und bei einem Server nur im Schulnetz, woher
+     ein Zertifikat kommt, dem die Browser der Schule vertrauen (4.23).
    - **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
      Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
      Mahnwesen akzeptiert, und wer wird Vertretung?
    - **Littera:** das Kennwort, das bei der Einrichtung von Littera für dessen SQL Server
      vergeben wurde. Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und
      ein neues Backup ist nicht nötig (7.2).
-2. **Die Vorschläge vom 25.09.2026 bestätigen oder ändern** — zur Aktualität der Images (7.8)
-   und zu den vier offenen Stellen des Pflegekonzepts (9.9, Entwurf in
-   [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md)). Danach baue ich in drei Stufen: `update.sh` holt das
-   Datenbank-Image und baut ohne Cache; ein Release-Modus für den Schulserver; das Pflegekonzept
-   mit den Antworten und eine Vorlage für das Blatt.
+2. **Die Erreichbarkeit von außen** (4.23): alles nur im Schulnetz, oder von außen nur die Seite
+   für die Lieferanten? Die Entscheidung vom 28.09.2026 „Lehrkräfte nur im Schulnetz" hat drei
+   Folgen, die dabei nicht genannt waren.
 3. **Die übrigen Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8), soweit noch nicht
    gestellt: B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in zwei Schritten — erst
    die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen beim Schulbuch (8.7), die
@@ -64,11 +65,13 @@ Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag v
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`) und 5.30 (Aufbewahrung der
-Sicherungen).
+Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`), 5.30 (Aufbewahrung der
+Sicherungen) und 5.31 (`update.sh` für den Schulserver).
 
-**In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf; es folgen die
-Arbeitsnotizen ins Repository, die Vorlage für das Blatt und die Probe durch die Vertretung.
+**In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf. Im
+Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stellen eingetragen,
+die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es folgen die
+Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 **Gleich danach im Code**, sobald die drei Fragen beantwortet sind: das Gate gegen Leser-Werte
 im Protokoll (5.10), entschieden am 24.09.2026.
 
@@ -181,6 +184,36 @@ eine Umsetzung aus der Sicherung. Littera führt unter Dienstprogramme einen Ex-
 Schlagworte. **Frage:** eine Gesamtausgabe bauen (Katalog mit Signaturen und Schlagworten,
 Exemplare, Leser, offene Ausleihen) oder beim Ende der Pflege aus der Sicherung umsetzen?
 Verwandt im Parkdeck (6.3): den Schlagwortkatalog als Datei aus- und einlesen.
+
+### 4.23 Erreichbarkeit von außen
+
+Entschieden am 28.09.2026: Lehrkräfte erreichen das Programm vorerst nur im Schulnetz, nicht von
+zu Hause. Bei der Entscheidung nicht genannt, am Code nachgesehen am 28.09.2026 — daran hängen
+drei Dinge:
+
+- **Der Bestätigungs-Link an Lieferanten** (`/api/public/bestellung/…`) öffnet ohne Anmeldung
+  eine Seite, auf der der Händler das Bogenraster wählt, die Etiketten druckt und die Bestellung
+  bestätigt. Er setzt die öffentliche Adresse voraus (Einstellungen). Ohne sie geht die
+  Bestellung ohne Link hinaus, die Etikettenbögen liegen der Mail bei (`bestellAnhaenge` in
+  `api/pdf_service.go`), und die Bestätigung trägt die Bibliothek von Hand nach.
+- **Der Katalog ohne Anmeldung** (`/api/public/opac/…`) ist nur in der Schule durchsuchbar.
+- **Das Zertifikat:** Den Service Worker, mit dem sich die Theke bei einem Netzausfall neu laden
+  lässt ([arc42/08](arc42/08-querschnittliche-konzepte.md), „Offline"), registriert der Browser
+  nur über HTTPS mit einem Zertifikat, dem er vertraut. Heute holt Caddy es selbst bei Let's
+  Encrypt (`Caddyfile`: keine `tls`-Zeile); so eingerichtet, muss Let's Encrypt den Server von
+  außen erreichen. Steht er nur im Schulnetz, muss das Zertifikat von der IT des Schulträgers
+  kommen.
+
+Littera lief im Schulnetz; Recherche, Reservierung und Verlängerung über das Internet gab es
+dort nur mit dem gesondert lizenzierten Zusatzmodul web.OPAC (Littera-Handbuch, „Einstellungen
+für den web.OPAC"). Ob die Schule es hatte, ist nicht belegt.
+
+**Frage:** alles nur im Schulnetz, der Link fällt weg — oder von außen nur die Seite für die
+Lieferanten? Im zweiten Fall holt Caddy das Zertifikat wie heute am Testserver selbst, der Server
+steht dafür aber im Internet, und alles außer dieser Seite muss am Eingang auf das Schulnetz
+beschränkt werden. **Empfehlung:** alles nur im Schulnetz; der Schulträger muss dann nichts ins
+Internet öffnen, und Katalog oder Link lassen sich später nach außen geben, wenn sie gebraucht
+werden.
 
 ---
 
@@ -517,6 +550,55 @@ dieselbe Regel (7.3). Beim Bau klären (nicht nachgestellt): Eine zurückgespiel
 bringt auch Personen zurück, die seit ihrem Stand von Hand endgültig gelöscht wurden; die
 Löschläufe nach Frist greifen in der nächsten Nacht wieder, eine Löschung von Hand nicht.
 
+**Nachgesehen am 28.09.2026: Es gibt drei Arten von Sicherungen, die Datenschutz-Unterlagen
+nennen eine.** Neben den Nachtsicherungen hält `update.sh` die Sicherung vor jedem Update 30 Tage
+(`BACKUP_RETENTION_DAYS=30`, Schritt 6, `vordeploy_*.sql.gz.enc` in `./backups` auf dem Host),
+`scripts/backup.sh` seine Ad-hoc-Sicherungen 7 Tage (`RETENTION_ENC_TAGE`); Klartext-Reste beider
+Skripte 2 Tage. [resilience_and_recovery.md](resilience_and_recovery.md) 1b beschreibt beide
+Wege; der Datenschutz-Nachweis (Abschnitt 4) und das VVT („Verschlüsselte Backups 14 Tage")
+nennen nur die Nachtsicherungen. Mit der Regel „mindestens ein Update im Monat" (Pflegekonzept,
+Abschnitt 4) liegt praktisch immer eine Vorab-Sicherung. Die Unterlagen nachziehen, eigener
+Commit; ob die 30 Tage bleiben, gehört zur Entscheidung über die Aufbewahrung.
+
+### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
+
+**Entschieden am 28.09.2026, nicht gebaut.** Vor dem Echtstart; gebaut wird, wenn die drei
+Fragen oben beantwortet sind.
+
+- **Nur Releases:** Der Schulserver bekommt nur Releases, der Testserver folgt `main` als
+  Vorstufe. Heute holt `update.sh` mit `git pull` den neuesten Stand des Zweigs und fragt nicht
+  ab, ob dessen Prüfläufe grün sind. Ein Release entsteht nur, wenn alle Pflicht-Prüfungen des
+  Commits grün sind (`scripts/tag-gate.sh`).
+- **Die Postgres-Nebenversion am Server** (gefunden beim Pflegekonzept, 24.09.2026).
+  `update.sh` ruft `docker compose up -d --build` auf und holt das Image `postgres:18-alpine`
+  nie neu; der Datenbank-Container bleibt auf der Nebenversion des Images, das beim Anlegen
+  vorlag (Major-Wechsel 31.08.2026). Nebenversionen mit Sicherheitskorrekturen erscheinen
+  vierteljährlich; aktuell ist 18.6 (postgresql.org, abgerufen am 24.09.2026). Der Port ist nur
+  an `127.0.0.1` gebunden, das begrenzt das Risiko. Die Lücke besteht unabhängig vom Messwert —
+  auch bei 18.6 käme die nächste Nebenversion nicht an; die Zahl zeigt nur, wie weit der Server
+  zurückliegt. Gemessen am Testserver am 25.09.2026: 18.6, also aktuell. **Entschieden am
+  28.09.2026 nach dem Vorschlag vom 25.09.2026: bei jedem Update holen;** die Datenbank startet
+  dann bei einer neuen Nebenversion während des Updates neu. Postgres rät zu solchen Updates
+  („The community considers performing minor upgrades to be less risky than continuing to run
+  an old minor version", postgresql.org/support/versioning); eine Nebenversion braucht weder
+  Sicherung noch Neuaufbau. Die Datenbank sortiert unter musl ohne Sprachregeln (lokal
+  gemessen: `datlocprovider` = c), ein neues Alpine im Image ändert also die Reihenfolge der
+  Indizes nicht. Die CI testet bei jedem Lauf gegen denselben Tag `postgres:18-alpine`. Die
+  Hauptversion bleibt im Repo festgeschrieben.
+- **Die Alpine-Pakete im Backend-Image** (gefunden am 25.09.2026). Das `Dockerfile` holt
+  Sicherheitskorrekturen nur über `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht
+  fest, solange die Zeilen davor gleich bleiben, und `update.sh` baut ohne `--pull` und ohne
+  `--no-cache`; das Aufräumen in Schritt 7 entfernt nur Schichten, die eine Woche lang niemand
+  benutzt hat. Lokal gemessen: Image vom 24.09.2026, die `apk upgrade`-Schicht darin drei Wochen
+  alt. Der Trivy-Scan der CI prüft ein frisch gebautes Image, nicht das am Server. Gemessen am
+  Testserver am 25.09.2026: 3 Tage — der Server liegt kaum zurück, die Lücke bleibt. **Entschieden
+  am 28.09.2026 nach dem Vorschlag vom 25.09.2026: `--pull --no-cache`;** jedes Update baut dann
+  alles neu. Der Sicherheitsscan der CI baut ohnehin ohne Zwischenspeicher (`docker build` auf
+  einem frischen Runner) und braucht dafür 93 Sekunden (Lauf vom 25.09.2026, Schritt „Build
+  Docker image for scanning"); ein Takt-Stempel im `Dockerfile` spart ein, zwei Minuten und
+  braucht eigene Mechanik. Die Regel „mindestens einmal im Monat ein Update, auch ohne neue
+  Funktionen" steht seit dem 28.09.2026 im Pflegekonzept (Abschnitt 4).
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -756,38 +838,6 @@ Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
-- **Die Postgres-Nebenversion am Server** (gefunden beim Pflegekonzept, 24.09.2026).
-  `update.sh` ruft `docker compose up -d --build` auf und holt das Image `postgres:18-alpine`
-  nie neu; der Datenbank-Container bleibt auf der Nebenversion des Images, das beim Anlegen
-  vorlag (Major-Wechsel 31.08.2026). Nebenversionen mit Sicherheitskorrekturen erscheinen
-  vierteljährlich; aktuell ist 18.6 (postgresql.org, abgerufen am 24.09.2026). Der Port ist nur
-  an `127.0.0.1` gebunden, das begrenzt das Risiko. Die Lücke besteht unabhängig vom Messwert —
-  auch bei 18.6 käme die nächste Nebenversion nicht an; die Zahl zeigt nur, wie weit der Server
-  zurückliegt. Gemessen am Testserver am 25.09.2026: 18.6, also aktuell. **Zu entscheiden:** ob
-  `update.sh` das Datenbank-Image bei jedem Update holt (dann startet die Datenbank bei einer
-  neuen Nebenversion während des Updates neu) oder ob das eine eigene Wartungsaufgabe im
-  Pflegekonzept wird. **Vorschlag vom 25.09.2026: bei jedem Update holen.** Postgres rät dazu
-  („The community considers performing minor upgrades to be less risky than continuing to run
-  an old minor version", postgresql.org/support/versioning); eine Nebenversion braucht weder
-  Sicherung noch Neuaufbau. Die Datenbank sortiert unter musl ohne Sprachregeln (lokal
-  gemessen: `datlocprovider` = c), ein neues Alpine im Image ändert also die Reihenfolge der
-  Indizes nicht. Die CI testet bei jedem Lauf gegen denselben Tag `postgres:18-alpine`. Die
-  Hauptversion bleibt im Repo festgeschrieben.
-
-- **Die Alpine-Pakete im Backend-Image** (gefunden am 25.09.2026). Das `Dockerfile` holt
-  Sicherheitskorrekturen nur über `apk --no-cache upgrade`. Der Build-Cache hält diese Schicht
-  fest, solange die Zeilen davor gleich bleiben, und `update.sh` baut ohne `--pull` und ohne
-  `--no-cache`; das Aufräumen in Schritt 7 entfernt nur Schichten, die eine Woche lang niemand
-  benutzt hat. Lokal gemessen: Image vom 24.09.2026, die `apk upgrade`-Schicht darin drei Wochen
-  alt. Der Trivy-Scan der CI prüft ein frisch gebautes Image, nicht das am Server. Zeigt die
-  Zeile unten am Server mehr als eine Woche, besteht die Lücke dort ebenso. Gemessen am
-  Testserver am 25.09.2026: 3 Tage — der Server liegt kaum zurück, die Lücke bleibt. **Zu
-  entscheiden:** `--pull` beim Bau und eine Zeile im `Dockerfile`, die die Schicht in einem
-  festen Takt neu baut, oder `--no-cache` (jedes Update baut dann alles neu). **Vorschlag vom
-  25.09.2026: `--pull --no-cache`.** Genau so baut der Sicherheitsscan der CI, und er braucht
-  dafür 93 Sekunden (Lauf vom 25.09.2026, Schritt „Build Docker image for scanning"); der
-  Takt-Stempel spart ein, zwei Minuten und braucht eigene Mechanik. Dazu eine Regel im
-  Pflegekonzept: mindestens einmal im Monat ein Update einspielen, auch ohne neue Funktionen.
 
 ## 8. Schule, Schulamt, Schulträger
 
@@ -932,30 +982,15 @@ stehen:
   24.09.2026 beantworteten Fragen
   (Betrieb, Pflege mit Vertretung, Ende der Pflege), den wiederkehrenden Aufgaben mit Takt, den
   zwei Handgriffen der Vertretung und der Messung, ob jemand anderes das Programm weiterführen
-  kann. Offen:
-  1. **Die vier offenen Stellen** in Abschnitt 9 des Entwurfs — bei dir, mit den Vorschlägen vom
-     25.09.2026:
-     - Einsatz über die eigene Schule hinaus: vorerst nein, nach einem Schuljahr Echtbetrieb neu
-       entscheiden. Jede Schule braucht einen eigenen Server und eine eigene Vertretung; wer die
-       Pflege für eine andere Schule übernimmt, braucht dort eine Regelung als
-       Auftragsverarbeiter (8.5, B6). Die EUPL erlaubt anderen den Betrieb ohne Pflegezusage.
-     - Meldeweg und Reaktionszeit: Meldung per E-Mail an die Entwicklung, die Vertretung in
-       Kopie, bei Stillstand ein Anruf; nie über GitHub-Issues, weil das Repository öffentlich
-       ist. Stillstand: Antwort am selben Schultag, hat ein Update ihn ausgelöst, geht die
-       Vertretung auf den Stand davor zurück; Fehler ohne Stillstand: innerhalb einer Woche;
-       Wünsche: mit dem nächsten Release. Für Littera bot der Hersteller einen
-       „Softwarewartungs- und Pflegevertrag" mit Hotline, Fernwartung und Update-Codes an; ob
-       die Schule ihn hatte, ist nicht belegt.
-     - Betriebssystem und Docker: die IT des Schulträgers, mit automatischen
-       Sicherheitsupdates in der Nacht, dazu das externe Signal (7.5).
-     - Release oder `main`: Der Schulserver bekommt nur Releases, der Testserver folgt `main`
-       als Vorstufe. Ein Release entsteht nur, wenn alle acht Prüfläufe grün sind.
-  2. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — bei dir; eine Vorlage lege ich
-     an. Vorschlag: die zwei Schlüssel in einem Passwortmanager und als Papier im verschlossenen
-     Umschlag im Tresor der Schule, nie per E-Mail.
-  3. **Die Arbeitsnotizen der Entwicklung** (am 24.09.2026 219 Einträge) entlang der Gliederung
+  kann; am 28.09.2026 mit den Antworten zu den vier offenen Stellen des Entwurfs (für welche
+  Schulen, Fehler melden, Betriebssystem und Docker, nur Releases) und der Vorlage für das Blatt.
+  Offen:
+  1. **Das Blatt bei der Schule** (Abschnitt 7.3 des Entwurfs) — ausfüllen bei dir, Vorlage in
+     [blatt_vorlage.md](blatt_vorlage.md). Vorschlag: die zwei Schlüssel in einem Passwortmanager
+     und als Papier im verschlossenen Umschlag im Tresor der Schule, nie per E-Mail.
+  2. **Die Arbeitsnotizen der Entwicklung** (am 24.09.2026 219 Einträge) entlang der Gliederung
      des Entwurfs ins Repository — bei mir.
-  4. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
+  3. **Die Probe:** Die Vertretung macht die Wiederherstellung an einem fremden Ziel (7.4) allein
      mit dem Dokument.
 
 **Beides ist Voraussetzung für ein „nutzbar", nicht Beiwerk.**

@@ -22,12 +22,26 @@ steht auf einem Blatt, das bei der Schule liegt (Abschnitt 7.3).
 | Rolle             | Wer                                       | Aufgabe                                                                                    |
 | ----------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------ |
 | Betrieb           | die Schule, auf eigenem Server            | betreibt und nutzt das Programm                                                            |
-| Hardware und Netz | die IT des Schulträgers                   | Server, Netzanbindung                                                                      |
+| Hardware und Netz | die IT des Schulträgers                   | Server, Netzanbindung; vorgesehen auch Betriebssystem und Docker (Abschnitt 9)             |
 | Pflege            | die Entwicklung des Programms             | Fehler beheben, Sicherheitsupdates, Termine und Vorgaben nachziehen, Updates bereitstellen |
 | Vertretung        | eine benannte Person (Name auf dem Blatt) | ein Update einspielen (3.1), eine Sicherung zurückholen (3.2)                              |
 
 Von der Vertretung wird nicht mehr verlangt als die zwei Handgriffe in Abschnitt 3. Änderungen am Code
 bleiben bei der Entwicklung oder bei einer Stelle, die die Pflege übernimmt (Abschnitt 8).
+
+**Für welche Schulen** (entschieden am 28.09.2026): Gepflegt wird das Programm für die eigene
+Schule; nach einem Schuljahr Echtbetrieb wird neu entschieden. Jede weitere Schule bräuchte einen
+eigenen Server und eine eigene Vertretung. Betreiben darf das Programm nach der Lizenz jede
+Stelle, eine Pflege ist damit nicht zugesagt (Abschnitt 8).
+
+**Fehler melden** (entschieden am 28.09.2026): per E-Mail an die Entwicklung, die Vertretung in
+Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, weil das Repository
+öffentlich ist. Die Adressen stehen auf dem Blatt (Abschnitt 7.3).
+
+- **Stillstand:** Antwort am selben Schultag. Hat ein Update ihn ausgelöst, geht die Vertretung
+  auf den Stand davor zurück (3.1).
+- **Fehler ohne Stillstand:** innerhalb einer Woche.
+- **Wünsche:** mit dem nächsten Release.
 
 ---
 
@@ -45,6 +59,9 @@ bleiben bei der Entwicklung oder bei einer Stelle, die die Pflege übernimmt (Ab
    Datenbank → Bau des neuen Stands → Gesundheitsprüfung → Abgleich, ob der laufende Stand der
    eingespielte ist ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4 und §7). Ein automatisches Update gibt
    es nicht. `update.sh` fragt nicht ab, ob die Prüfläufe des Stands auf GitHub grün sind.
+   **Entschieden am 28.09.2026:** Der Schulserver bekommt nur Releases, der Testserver folgt
+   `main` als Vorstufe. Heute holt `update.sh` mit `git pull` den neuesten Stand des Zweigs;
+   der Weg über Releases ist nicht gebaut ([OFFEN.md](OFFEN.md) 5.31).
 5. **Die Datenbank** passt sich beim Start selbst an (Migrationen). Migrationen laufen nur
    vorwärts: Zurück geht es über die Vorab-Sicherung, nicht über den alten Code allein.
 
@@ -55,8 +72,8 @@ bleiben bei der Entwicklung oder bei einer Stelle, die die Pflege übernimmt (Ab
 ### 3.1 Ein Update einspielen
 
 1. Auf GitHub nachsehen, ob die Prüfläufe des neuesten Stands grün sind, und die Hinweise
-   zum Einspielen lesen (Release-Notiz). Ob am Schulserver nur Releases eingespielt werden,
-   ist offen (Abschnitt 9).
+   zum Einspielen lesen (Release-Notiz). Am Schulserver wird nur ein Release eingespielt; der
+   Weg dafür ist noch nicht gebaut (Abschnitt 2).
 2. Am Server im Programmverzeichnis erst `git pull`, dann `./update.sh` — zwei getrennte
    Befehle, weil sonst die alte Fassung des Skripts das Update fährt
    ([DEPLOYMENT.md](DEPLOYMENT.md) §2.4).
@@ -103,18 +120,19 @@ einmal allein, nur mit diesen Seiten.
 
 ## 4. Wiederkehrende Aufgaben
 
-| Was                          | Wann                                                                                                                        | Woran man es merkt                                                                                                                               | Was zu tun ist                                                                                                                                                                                    |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Abhängigkeiten               | wöchentlich, montags 06:00 Berliner Zeit                                                                                    | Dependabot öffnet Pull Requests; die CI prüft sie                                                                                                | einzeln ansehen, bei grüner CI übernehmen. Kein automatisches Übernehmen; TypeScript 7 ist bewusst zurückgehalten (`.github/dependabot.yml`)                                                      |
-| Sicherheitsprüfung           | bei jedem Push und montags 07:00 UTC                                                                                        | `.github/workflows/security-scan.yml` wird rot                                                                                                   | Abhängigkeit heben. Gibt es keinen Fix und trifft die Lücke den Code nicht: Ausnahme nach den Regeln in `security/vuln-ausnahmen.json` — mit Nachweis als Test und Wiedervorlage                  |
-| Wiedervorlage einer Ausnahme | je Eintrag in `security/vuln-ausnahmen.json`; seit dem 25.09.2026 ist die Liste leer                                        | ab dem Tag nach der Wiedervorlage ist die Sicherheitsprüfung rot, bei jedem Push und im Wochenlauf                                               | nachsehen, ob es einen Fix gibt; dann die Abhängigkeit heben und die Ausnahme löschen                                                                                                             |
+| Was                          | Wann                                                                                                                        | Woran man es merkt                                                                                                                               | Was zu tun ist                                                                                                                                                                                                                       |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Abhängigkeiten               | wöchentlich, montags 06:00 Berliner Zeit                                                                                    | Dependabot öffnet Pull Requests; die CI prüft sie                                                                                                | einzeln ansehen, bei grüner CI übernehmen. Kein automatisches Übernehmen; TypeScript 7 ist bewusst zurückgehalten (`.github/dependabot.yml`)                                                                                         |
+| Sicherheitsprüfung           | bei jedem Push und montags 07:00 UTC                                                                                        | `.github/workflows/security-scan.yml` wird rot                                                                                                   | Abhängigkeit heben. Gibt es keinen Fix und trifft die Lücke den Code nicht: Ausnahme nach den Regeln in `security/vuln-ausnahmen.json` — mit Nachweis als Test und Wiedervorlage                                                     |
+| Wiedervorlage einer Ausnahme | je Eintrag in `security/vuln-ausnahmen.json`; seit dem 25.09.2026 ist die Liste leer                                        | ab dem Tag nach der Wiedervorlage ist die Sicherheitsprüfung rot, bei jedem Push und im Wochenlauf                                               | nachsehen, ob es einen Fix gibt; dann die Abhängigkeit heben und die Ausnahme löschen                                                                                                                                                |
 | Go                           | halbjährlich (Februar, August); unterstützt sind die zwei neuesten Linien, zurzeit 1.26 und 1.27                            | Dependabot schlägt die neue Docker-Basis vor; ein Test verlangt dieselbe Version in `go.mod` und `Dockerfile` (`docs/umgebung_paritaet_test.go`) | `go.mod` und `Dockerfile` gemeinsam heben; `golangci-lint` und `govulncheck` am Arbeitsplatz mitziehen, sonst verweigern die Hooks; die festen Versionen von gosec und govulncheck in `.github/workflows/security-scan.yml` mitheben |
-| Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS; ein Test verlangt dieselbe Hauptversion an allen Stellen                                                     | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                       |
-| PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                          |
-| PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | —                                                                                                                                                | offen: `update.sh` holt das Datenbank-Image nicht neu ([OFFEN.md](OFFEN.md) 7.8)                                                                                                                  |
-| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | offen: Der Build-Cache hält die Schicht mit `apk upgrade` fest, ein Neubau holt die Korrekturen dann nicht; am Server nicht gemessen ([OFFEN.md](OFFEN.md) 7.8)                                   |
-| Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/ferien.go`, `schulferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien |
-| Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                                                                                 | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                               |
+| Node                         | Node 24 ist bis zum 20. Oktober 2026 aktive LTS, danach in Wartung bis 30. April 2028; Node 26 wird am 28. Oktober 2026 LTS | Projektregel: immer die aktive LTS; ein Test verlangt dieselbe Hauptversion an allen Stellen                                                     | `Dockerfile` und `.github/workflows/ci.yml` gemeinsam heben                                                                                                                                                                          |
+| PostgreSQL, Hauptversion     | 18 wird bis 14. November 2030 gepflegt                                                                                      | ein Test verlangt eine Hauptversion an allen Stellen (`docs/umgebung_paritaet_test.go`)                                                          | nur über Sicherung und Wiederherstellung ([DEPLOYMENT.md](DEPLOYMENT.md) §5); den `pg_dump`-Client im `Dockerfile` mitziehen, sonst schlägt die sonntägliche Probe Alarm                                                             |
+| PostgreSQL, Nebenversion     | vierteljährlich                                                                                                             | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` holt das Datenbank-Image bei jedem Update neu; nicht gebaut ([OFFEN.md](OFFEN.md) 5.31)                                                                                                       |
+| Pakete im Backend-Image      | laufend (Sicherheitskorrekturen von Alpine)                                                                                 | —                                                                                                                                                | entschieden am 28.09.2026: `update.sh` baut mit `--pull --no-cache`; bis dahin hält der Build-Cache die Schicht mit `apk upgrade` fest, und ein Neubau holt die Korrekturen nicht ([OFFEN.md](OFFEN.md) 5.31)                        |
+| Update einspielen            | mindestens einmal im Monat, auch ohne neue Funktionen (entschieden am 28.09.2026)                                           | —                                                                                                                                                | ein Update nach 3.1; sobald 5.31 gebaut ist, holt es dabei die Sicherheitskorrekturen von Datenbank und Paketen                                                                                                                      |
+| Ferien                       | Sommerferien Hessens stehen bis 2030 im Programm, die übrigen Ferien bis zum Schuljahr 2029/30                              | ab Januar 2029: Test rot, Warnung in der Betriebsbereitschaft                                                                                    | neue Termine von KMK und Kultusministerium eintragen (`pkg/lmfplan/ferien.go`, `schulferien.go`). Sommerferien kann die Schule selbst eintragen: Einstellungen → LUSD & Versetzung → Sommerferien                                    |
+| Betriebsbereitschaft         | täglich                                                                                                                     | Alarm-Mail bei kritischem Befund                                                                                                                 | Befund, Folge und Abhilfe stehen in der Mail ([FACHKONZEPT.md](FACHKONZEPT.md) §15)                                                                                                                                                  |
 
 Feiertage rechnet das Programm selbst aus (`pkg/lmfplan/feiertage.go`); sie brauchen keine
 Pflege. Die beweglichen Ferientage legt jede Schule selbst; sie stehen nicht im Programm.
@@ -190,6 +208,8 @@ Auf Papier bei der Schule, nicht im Repository:
 - Ort der Quelldokumente (7.1)
 - Zugang zum Repository mit Schreibrecht, falls die Pflege übergeben wird
 
+Vorlage zum Ausdrucken: [blatt_vorlage.md](blatt_vorlage.md).
+
 ---
 
 ## 8. Wenn die Pflege endet
@@ -210,16 +230,15 @@ Auf Papier bei der Schule, nicht im Repository:
 
 ## 9. Offene Stellen
 
-1. **Einsatz über die eigene Schule hinaus:** offen gelassen am 24.09.2026.
-2. **Meldeweg und Reaktionszeit:** Wie die Schule einen Fehler meldet und wann sie Antwort
-   bekommt, ist nicht vereinbart. Für Littera bot der Hersteller einen „Softwarewartungs- und
-   Pflegevertrag" an, dazu Hotline, Fernwartung und Update-Codes (Littera-Handbuch); ob die
-   Schule einen solchen Vertrag hatte, ist hier nicht belegt.
-3. **Betriebssystem und Docker auf dem Server:** Wer sie aktualisiert, ist nicht geregelt; die
-   IT des Schulträgers ist für Hardware und Netz genannt.
-4. **Release oder `main`:** `update.sh` holt mit `git pull` den neuesten Stand des Zweigs, nicht
-   das letzte Release, und prüft nicht, ob seine Prüfläufe grün sind. Ob am Schulserver nur
-   Releases eingespielt werden, ist nicht entschieden.
+1. **Betriebssystem und Docker auf dem Server:** vorgesehen ist die IT des Schulträgers, mit
+   automatischen Sicherheitsupdates in der Nacht (entschieden am 28.09.2026); die Zusage des
+   Schulträgers steht aus.
+2. **`update.sh` für den Schulserver:** nur Releases einspielen und die Images bei jedem Update
+   frisch holen — entschieden am 28.09.2026, nicht gebaut ([OFFEN.md](OFFEN.md) 5.31).
+3. **Erreichbarkeit von außen:** ob das Programm nur im Schulnetz erreichbar ist; daran hängen der
+   Bestätigungs-Link an Lieferanten, der Katalog von zu Hause und das Zertifikat
+   ([OFFEN.md](OFFEN.md) 4.23).
+4. **Vertretung:** noch nicht benannt.
 5. **Betrieb:** Sicherung außer Haus, externes Signal bei Ausfall, Probe der Wiederherstellung
    an einem fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
 6. **Datenweg beim Wechsel:** ob das Programm eine Gesamtausgabe bekommt, die ein anderes
