@@ -42,7 +42,7 @@
 	"dependencies": {
 		"@fontsource/roboto": "^5.3.0",
 		"@lucide/svelte": "^1.47.0",
-		"@sentry/svelte": "^10.75.0",
+		"@sentry/svelte": "^11.0.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"html5-qrcode": "^2.3.8",
 		"idb": "^8.0.3",
