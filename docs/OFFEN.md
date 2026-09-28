@@ -423,6 +423,12 @@ Klasse fällt weg; löschen nur ohne Verweis. Der LUSD-Import legt neue Klassen 
 Wer Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit — die Rückfrage nennt die
 Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
 
+**Erweitert am 28.09.2026:** nicht nur Klassen, sondern alle Lesergruppen wie in Littera, je mit
+Kürzel, Bezeichnung und Art (Schüler oder Kollegium) — auch Fachbereiche, Praktikanten, U-plus,
+„Im Ausland". Anlass: Die Übernahme der 42 Konten ohne Schüler-/Lehrkraft-Gruppe (7.2). Im Schema
+steht dafür schon eine Tabelle `lesergruppen` (`kuerzel`, `bezeichnung`), die kein Go-Code liest
+oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*)` am Testserver).
+
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
 **Offen aus dem Umbau der Auskunft (gebaut am 24.09.2026):** Die Rohdaten der Protokolleinträge
@@ -627,6 +633,31 @@ unter 5.21 notiert. `AbortInventurSession` setzt `abgeschlossen_am` wie ein Absc
 und der Bildschirm schreibt bei 0 Verlusten „vollständig". Wer die Liste liest, hält den Bereich
 für geprüft. Kein Datenschutz-Fall, aber ein stilles falsches Ergebnis.
 
+### 5.33 Funde der Generalprobe vom 28.09.2026
+
+Lokal, abgeschottet (Backend ohne Internet, Mail auf 127.0.0.1:9, kein S3), mit der
+Littera-Sicherung von 2010: Neuaufbau aus den Migrationen, Übernahme mit Personen und Ausleihen,
+Scan echter Etikettenwerte, Ausleihe und Rückgabe, Buchliste der Theke ohne Netz, Etikett-
+Nachdruck, Mahnwesen und Mahnbriefe aller 71 Klassen, Sicherung mit dem Code des Nachtjobs und
+Wiederherstellung nach 2a (Schritte 1–4, eingespielt in eine Wegwerf-Datenbank statt mit `dropdb`) (Zeilen, Tabellen, Indizes, Trigger gleich;
+das Programm startet darauf). Alles lief. Kleine Funde, nicht gebaut:
+
+- [resilience_and_recovery.md](resilience_and_recovery.md) 2a Schritt 6 spielt mit `psql -f` ohne
+  `-v ON_ERROR_STOP=1` ein, und kein Schritt prüft danach den Erfolg (Zeilenzahlen) — `psql` meldet
+  auch bei Fehlern 0. Beim Rückweg von `update.sh` am 10.09.2026 behoben, hier nicht.
+- Dieselbe Datei, 2b: „Die Skripte tun das nach 2 Tagen von selbst" — gelöscht wird nur bei einem
+  Lauf (d0391f6d); beim Durchgang an dem Tag übersehen.
+- Hilfetext von `-barcodes` in `cmd/littera-altbestand` nennt die Exemplarnummer, geschrieben wird
+  der EAN-13 des Etiketts.
+- Meldungen an der Theke beginnen mit dem technischen Vorsatz „ungültiger Transaktionszustand:"
+  (etwa beim Buch-Scan ohne aktiven Leser: „… Dieses Buchexemplar ist aktuell nicht ausgeliehen").
+- 7.2 sagt, fast jede Littera-Lesernummer kollidiere mit einer Buchnummer. Das galt für die nackten
+  Nummern des Testservers; nach dem Neuaufbau tragen Bücher den EAN-13, in der Probe kollidierte
+  1 von 1.949.
+
+Vorgeschlagen, nicht entschieden: die Probe als Skript ins Repository, damit sie mit der Sicherung
+von 2026 wiederholbar ist.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -822,6 +853,25 @@ zweite eine neue Nummer aus `barcode_seq` („Barcode bereits vergeben" im Proto
 wie jedes übernommene Exemplar als gedruckt vermerkt (`sqlExemplarEinfuegen` setzt
 `etikett_gedruckt` fest auf `true`) und erscheint nicht auf der Nachdruck-Liste. Vor dem Lauf
 klären: diese Exemplare als ungedruckt anlegen.
+
+**Die 42 Konten ohne Schüler-/Lehrkraft-Gruppe (entschieden am 28.09.2026, nicht gebaut).** In
+der Sicherung von 2010 übernimmt der Lauf 42 Leser nicht (`ArtSonstige`, `ArtUnbekannt` in
+`internal/littera/leser.go`, übersprungen in `einePerson`), und mit ihnen fehlen 341 Ausleihen —
+diese Bücher stünden als verfügbar im Regal. Gezählt am 28.09.2026 (nur Gruppen und Zahlen):
+Fachbereich-Sammelkonten 9 Konten / 279 Ausleihen, Praktikant/in 9 / 20, Sekretärin 2 / 3,
+U-plus 3 / 7 (einer Jahrgang 1950, zwei ohne Geburtsdatum), „Im Ausland" 14 / 11 (Jahrgänge 1992–1994), „Undefinierte
+Untergruppe" 5 / 21. Entschieden:
+1. Fachbereiche, Praktikanten, Sekretärinnen und U-plus ins Kollegium (`schreibeLehrkraft`):
+   nicht gemahnt, Anmeldung über die Platzhalter-Adresse gesperrt. „Im Ausland" als Schüler mit
+   der Littera-Klasse „AUS", die LUSD ordnet die Klasse zu. Beim Bau klären: das Abgangsjahr — aus
+   „AUS" lässt sich keines ableiten (`abgangsjahr`), bei „Abgegangen" gilt das laufende Schuljahr.
+2. Eine Gruppe ohne Zuordnung (heute „Undefinierte Untergruppe") hält den Lauf an, im Trockenlauf
+   wie im echten Lauf und vor dem ersten Schreiben: Gruppe, Personen- und Ausleihzahl werden
+   genannt; zugeordnet wird etwa in Littera selbst.
+3. Die Lesergruppen selbst kommen mit 5.18. Für die Littera-Gruppe eines Kollegium-Kontos gibt es
+   bis dahin kein Feld (weder `leser` noch `benutzer`); sie steht je Konto im Protokoll des Laufs.
+Nachweis: Generalprobe wiederholen — erwartet 15.612 von 15.615 Ausleihen (die restlichen 3 sind
+Widersprüche in Littera: ein Exemplar fehlt im Bestand, zwei sind doppelt verliehen).
 
 **Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
 Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.
