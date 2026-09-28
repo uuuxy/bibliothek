@@ -15,6 +15,8 @@ permissions:
   # `actions: read` stand hier nur fuer den eigenen CodeQL-Job (siehe unten, entfernt).
   # Die vier verbliebenen Pruefungen brauchen es nicht.
 
+# Actions per Commit-SHA, Runner fest auf ubuntu-24.04 — warum: Kopf von ci.yml.
+
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -23,21 +25,24 @@ jobs:
   # ── Go: govulncheck (official Go Vulnerability Database) ──────────────────
   go-vuln-scan:
     name: Go – govulncheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: true
 
+      # Feste Version statt @latest (28.09.2026): Ein neues Release soll die Prüfung nicht
+      # ungefragt ändern. Die Schwachstellen-Datenbank lädt govulncheck bei jedem Lauf frisch;
+      # festgeschrieben ist nur das Werkzeug. Heben wie Go selbst (PFLEGEKONZEPT.md, Abschnitt 4).
       - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
 
       - name: Run govulncheck
         # Über das Gate-Skript statt direkt: Es kennt eine benannte Ausnahmeliste
@@ -49,29 +54,55 @@ jobs:
   # ── Go: gosec (static security analysis) ─────────────────────────────────
   go-sec-scan:
     name: Go – gosec static analysis
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: true
 
+      # Feste Version statt @latest (28.09.2026), wie bei govulncheck: Ein neues gosec bringt
+      # neue Regeln mit, und die sollen sich mit einem eigenen Commit melden, nicht mitten in
+      # anderer Arbeit.
       - name: Install gosec
         run: |
-          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
           echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
+      # Ausgenommen sind nur Regeln, die heute Stellen melden — je Regel mit Grund und der
+      # Zahl, gemessen mit v2.29.0 ohne -exclude am 28.09.2026. Bis dahin standen hier 13
+      # Regeln mit einer Begründung für zwei; fünf davon (G110, G204, G304, G401, G702)
+      # meldeten gar nichts, weil ihre Stellen einzeln `#nosec` tragen. Sie sind wieder scharf:
+      # Eine neue Stelle ohne Vermerk wird rot.
+      #
+      # Eine global ausgenommene Regel meldet auch eine NEUE Stelle nicht. Die Umstellung auf
+      # einzelne Vermerke steht in docs/OFFEN.md 5.10.
+      #   G706 (36 Stellen)  Log-Einschleusung: log.Printf läuft über slog.SetDefault durch den
+      #                      JSON-Handler, ein Umbruch bleibt im String (docs/SECURITY.md,
+      #                      „Log-Injection", am Container nachgestellt).
+      #   G704 (6)           SSRF: Abrufe bei DNB, Open Library, Google Books und Cover-Quellen;
+      #                      Cover-Adressen gegen eine feste Host-Liste (docs/SECURITY.md,
+      #                      „Cover-Proxy").
+      #   G703 (5)           Pfad aus Eingabe: Cover-Cache und Oberfläche über os.Root gebunden,
+      #                      Backup-Pfade aus Umgebung und Kommandozeile des Betreibers.
+      #   G120 (5)           Formular ohne Grenze: Importe und Uploads; die Body-Grenze der
+      #                      Anfragekette begrenzt jeden Rumpf.
+      #   G124 (4)           Cookie-Attribute: Secure hängt an COOKIE_SECURE (im Betrieb true),
+      #                      HttpOnly und SameSite=Strict stehen fest; zwei Stellen im Lasttest.
+      #   G404 (4)           math/rand: nur im Demo-Seed (cmd/seed).
+      #   G115 (3)           int nach rune: Prüfziffern der Littera-Etiketten (Ziffern 0 bis 9)
+      #                      und der Demo-Seed.
+      #   G101 (1)           „Zugangsdaten": der Kopfname X-CSRF-Token im Lasttest.
       - name: Run gosec
-        # Exclude G304 (file path from variable) and G401 (MD5/SHA1) – not applicable
         run: >
           gosec
-          -exclude=G304,G401,G115,G404,G704,G101,G124,G120,G204,G110,G706,G703,G702
+          -exclude=G706,G704,G703,G120,G124,G404,G115,G101
           ./...
 
   # ── CodeQL steht NICHT hier ──────────────────────────────────────────────
@@ -93,7 +124,7 @@ jobs:
   # (Settings → Code security → Code scanning). Vorher nicht.
   npm-audit:
     name: npm – audit (frontend)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     defaults:
@@ -101,10 +132,10 @@ jobs:
         working-directory: frontend
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "24"
           cache: npm
@@ -140,12 +171,12 @@ jobs:
   # ── Docker image scan (Trivy) ─────────────────────────────────────────────
   docker-scan:
     name: Docker – Trivy image scan
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build Docker image for scanning
         run: docker build -t bibliothek:scan .
@@ -199,7 +230,7 @@ jobs:
         # Trivy-Scan des fertigen Images UND der `docker build` samt seinen Proben
         # (pg_dump vorhanden, Volume-Ziele für appuser beschreibbar) — der einzige Ort,
         # an dem der Frontend-Build in CI überhaupt läuft. Acht Pushes lang.
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: bibliothek:scan
           format: table

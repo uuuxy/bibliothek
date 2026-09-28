@@ -52,10 +52,10 @@ entfallen.
    Stack, wenn der Nachweis ansteht.
 
 **Im Code** (entschieden am 28.09.2026): Bis die drei Fragen beantwortet sind, entsteht nur, was
-einen Termin hat — die CI vor dem 19. Oktober 2026 festschreiben (5.10) und ab dem 28. Oktober
-2026 Node 26 nach der Regel „immer die aktive LTS" ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md),
-Abschnitt 4). Danach in dieser Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist
-der Vorschlag vom 24.09.2026):
+einen Termin hat — ab dem 28. Oktober 2026 Node 26 nach der Regel „immer die aktive LTS"
+([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Die CI steht seit dem 28.09.2026 fest auf
+`ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Danach in dieser
+Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026):
 
 1. Die am 24.09.2026 entschiedenen kleinen Punkte — 5.21 (Palettenfarben, Bildschirm für
    Bildschirm), 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche).
@@ -331,12 +331,17 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Teardown löscht die E2E-Bestellungen). In der
   vollen Suite legt eine alphabetisch frühere Spec sie an. Nach dem Muster von `seedBenutzer`
   selbst anlegen.
-- **`ubuntu-latest` wechselt ab 19. Oktober 2026 auf Ubuntu 26.** Alle zehn Jobs in
-  `.github/workflows/` laufen auf `ubuntu-latest`, am 25.09.2026 das Abbild `ubuntu-24.04`
-  (Ubuntu 24.04.5, Log des CI-Laufs zu 31de3b62); jede CI-Annotation kündigt den Wechsel an
-  (actions/runner-images#14748). Was dabei bricht — etwa Postgres-Client oder die
-  Chromium-Abhängigkeiten von Playwright —, meldet sich in der CI. Vorher entscheiden: einen
-  Lauf gegen das neue Abbild, oder `ubuntu-24.04` festschreiben und den Wechsel selbst legen.
+- **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
+  `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
+  (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
+  neue Abbild — brechen kann etwa der Postgres-Client oder die Chromium-Abhängigkeiten von
+  Playwright; spätestens, wenn GitHub `ubuntu-24.04` abkündigt.
+- **gosec: acht Regeln global ausgenommen** (gemessen mit v2.29.0 am 28.09.2026, ohne
+  `-exclude`): G706 (36 Stellen in 18 Dateien), G704 (6), G703 (5), G120 (5), G124 (4), G404
+  (4), G115 (3), G101 (1); der Grund je Regel steht in `.github/workflows/security-scan.yml`.
+  Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
+  dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
+  Nur mit Anlass.
 
 ### 5.18 Klassen als Stammdaten — wie die Lesergruppen in Littera
 

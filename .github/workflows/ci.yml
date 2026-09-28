@@ -10,6 +10,13 @@ on:
 permissions:
   contents: read
 
+# Festgeschrieben seit dem 28.09.2026, in allen vier Workflows:
+# - Jede Action per Commit-SHA, die Version als Kommentar dahinter. Einen Tag wie `v7` kann
+#   der Eigentümer auf anderen Code umhängen (so im März 2025 bei tj-actions/changed-files),
+#   einen SHA nicht. Dependabot (github-actions) hebt SHA und Kommentar gemeinsam.
+# - Der Runner fest auf ubuntu-24.04. GitHub stellt ubuntu-latest ab dem 19. Oktober 2026 auf
+#   Ubuntu 26 um; den Wechsel legen wir selbst, mit eigenem Lauf (docs/OFFEN.md 5.10).
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -35,16 +42,16 @@ jobs:
   # Workflow-Syntax wird geprüft, BEVOR ein Tippfehler erst beim nächsten v-Tag auffällt
   # (release.yml/docker-publish.yml laufen nur dort; Prüfung 22.08.2026).
   actionlint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: actionlint
-        uses: docker://rhysd/actionlint:1.7.12
+        uses: docker://rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
         with:
           args: -color
 
   build-and-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       # Aktiviert die DB-Integrationstests (db/constraints_pg_test.go). Ohne diese
@@ -79,10 +86,10 @@ jobs:
 
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Set up Go
-      uses: actions/setup-go@v7
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version-file: 'go.mod'
 
@@ -107,7 +114,7 @@ jobs:
     # goinstall@latest würde über den alten Modulpfad (ohne /v2) v1 installieren,
     # dessen "config verify" das v2-Schema ablehnt. Version = lokaler Stand.
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v9
+      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
       with:
         version: v2.13.2
         args: --timeout=5m
@@ -192,19 +199,19 @@ jobs:
         grep -A 1 -E "^\s*--- SKIP" /tmp/gotest.log || echo "(kein Test übersprungen)"
 
   frontend-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     # cache: npm — npm ci zieht die Tarballs aus dem Runner-Cache statt aus der
     # Registry; das Netz wird nur noch gebraucht, wenn sich der Lockfile ändert.
     # Hintergrund 19.08.2026: Installationsschritte hingen mehrfach an gestörten
     # Spiegeln/Registries — die Abhängigkeit gehört weggecacht, nicht nur befristet.
     - name: Set up Node.js
-      uses: actions/setup-node@v7
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         # == Dockerfile frontend-builder: getestet wird mit der Node-Major, die das
         # ausgelieferte Bundle baut (docs/umgebung_paritaet_test.go hält das Paar).
@@ -253,17 +260,17 @@ jobs:
         npm run test
 
   e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
     - name: Check out repository code
-      uses: actions/checkout@v7
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     # cache: npm — siehe frontend-test: die Registry wird nur noch bei
     # Lockfile-Änderungen gebraucht.
     - name: Set up Node.js
-      uses: actions/setup-node@v7
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         # == Dockerfile frontend-builder (siehe frontend-test-Job).
         node-version: 24
@@ -275,7 +282,7 @@ jobs:
     # CDN fällt als Ausfallquelle weg.
     - name: Cache Playwright-Browser
       id: pw-cache
-      uses: actions/cache@v6
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.cache/ms-playwright
         key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
@@ -358,7 +365,7 @@ jobs:
 
     - name: Upload traces on failure
       if: failure()
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: playwright-traces
         path: frontend/test-results/

@@ -264,7 +264,7 @@ steht im Kopfkommentar der Datei.
 | `scripts/deadcode_gate.sh`        | Tote Interface-Methoden (Methodentabelle gilt als erreichbar); was nur Tests am Leben halten.                                                                                                   |
 | CI-Skip-Bilanz (`build-and-test`) | Schreibt nur ins Log — ein neuer stiller Skip ohne Guard bleibt grün.                                                                                                                           |
 | `scripts/tag-gate.sh`             | Nur Prüfläufe desselben Commits, und nur zum Zeitpunkt des Tags — eine Lücke, die danach bekannt wird, sieht es nicht. Ein Job außerhalb der Pflichtliste (dafür `TestTagGateVerlangtAllePrueflaeufe`); ein Workflow, der das Skript nicht mehr ruft (dafür `TestTagWorkflowsRufenDasTagGate`).|
-| `security-scan.yml`               | gosec um 13 Regeln entschärft (G304/G401/G101/G204/…); CodeQL läuft über GitHubs Default-Setup — fällt das ab, merkt es dieser Workflow nicht.                                                  |
+| `security-scan.yml`               | gosec um 8 Regeln entschärft, je Regel mit Grund und gemessener Zahl im Workflow (seit 28.09.2026; vorher 13, fünf davon ohne Fundstelle): Eine neue Stelle dieser Regeln sieht es nicht (OFFEN.md 5.10). CodeQL läuft über GitHubs Default-Setup — fällt das ab, merkt es dieser Workflow nicht. |
 
 **Läuft NIRGENDS automatisch (nur von Hand):** `scripts/pruefe_secrets.sh` (Default-Secrets,
 fehlender Backup-Schlüssel, `ENFORCE_PROD_SECRETS=false` — alle drei still),
