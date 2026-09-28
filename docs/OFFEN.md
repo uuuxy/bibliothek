@@ -34,8 +34,9 @@ entfallen.
      Docker pflegt, wie im Pflegekonzept vorgesehen (Abschnitt 9); wie die Pflege den Server
      erreicht, vor Ort oder über einen Fernzugang; und was die Seite für die Lieferanten von ihm
      braucht: einen Namen im Internet, die Freigabe von Port 443 und die Angabe, wie Anfragen aus
-     dem Schulnetz am Server ankommen (4.23). Mitzubringen ist eine Aufstellung, was der Server
-     braucht; sie fehlt noch und liegt bei mir (4.23).
+     dem Schulnetz am Server ankommen (4.23); und ob er einen Speicher für die Sicherungen außer
+     Haus stellt (7.3). Mitzubringen ist eine Aufstellung, was der Server braucht; sie fehlt noch
+     und liegt bei mir (4.23).
    - **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
      Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
      Mahnwesen akzeptiert, und wer wird Vertretung?
@@ -43,11 +44,20 @@ entfallen.
      vergeben wurde — zu fragen bei dem, der Littera eingerichtet hat, nicht bei der Bücherei.
      Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und ein neues
      Backup ist nicht nötig. Kennt es niemand, bleibt die Littera-Hotline (7.2).
-2. **Die übrigen Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8), soweit noch nicht
-   gestellt: B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in zwei Schritten — erst
-   die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen beim Schulbuch (8.7), die
-   Abholfrist bei Vormerkungen (8.8), dazu der Wortlaut des Eigentumsvermerks der
-   Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher tragen keinen Vermerk).
+2. **Die übrigen Anfragen** (Abschnitt 8), soweit noch nicht gestellt:
+   - **Sekretariat:** die Schulnummer für die Bescheide (8.1); wie Ersatz für Bücher der
+     Schülerbücherei bisher bezahlt wurde und wer eine Zahlung einbucht (8.3, erster Schritt).
+   - **Schulamt:** das Kürzel des Schulamtsbereichs und welches Kassenjahr in die Referenznummer
+     gehört (8.1); der Mail-Erlass vom 11.06.2018 und das aktuelle Musterschreiben — aus dem von
+     2014 stammen heute Zahlstelle und Bankverbindung im Bescheid (8.2).
+   - **Datenschutzbeauftragter der Schule:** beteiligen und schriftlich festhalten, ob eine
+     Datenschutz-Folgenabschätzung nötig ist (B4); das Foto auf dem Ausweis (B3; beides 8.5).
+   - **Schulträger**, nach der Antwort der Schule: die Zahlungswege der Schülerbücherei (8.3,
+     zweiter Schritt).
+   - **An einem Buch selbst:** den Eigentumsvermerk auf den alten Littera-Etiketten der
+     Schülerbücherei ablesen. Entschieden am 28.09.2026: Neue Etiketten tragen denselben
+     Wortlaut; er wird beim Einrichten unter Einstellungen → Schule eingetragen (heute leer, also
+     kein Vermerk). In der Sicherung von 2010 steht er nicht.
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
@@ -62,9 +72,10 @@ Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag v
    still jemandem schaden?"): das Gate gegen Leser-Werte im Protokoll (5.10), aus 5.19 die
    Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei, `Cache-Control` (5.29),
    die verworfene Inventur (5.32), dazu die zwei Fristen aus 5.19 (gelöschte Kollegen,
-   Klassensatz-Reservierungen; entschieden am 28.09.2026). Danach 5.18 (Klassen als
-   Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für
-   Bildschirm).
+   Klassensatz-Reservierungen; entschieden am 28.09.2026). Danach die zwei kleinen Umbauten 8.7
+   (Verlängerung beim Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026, dann 5.18
+   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben,
+   Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -83,9 +94,10 @@ im Protokoll (5.10), entschieden am 24.09.2026.
 
 Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20.
 
-**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver und S3 (7.3), das
-Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den Zahlungswegen (8.1–8.3),
-B3 und B4 (8.5) und ein Termin für die Abnahmen (7.7). Einen echten LUSD-Import erst nach der
+**Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
+Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
+Zahlungswegen (8.1–8.3), B3 und B4 (8.5) und ein Termin für die Abnahmen, sobald der
+Schulserver steht (7.7). Einen echten LUSD-Import erst nach der
 Littera-Übernahme (7.2).
 
 **Was liegen bleiben darf:** die übrigen B-Punkte in Abschnitt 5, die Beobachtungen in 6 und die
@@ -882,20 +894,23 @@ liegt auf einer Platte. Nur EU oder Schulträger. Der Code ist fertig bis auf da
 hoch, die Rotation gilt nur dem lokalen Verzeichnis. Ohne Löschregel am Speicher bliebe dort jede
 Sicherung mit allen Personen ihres Stands unbegrenzt liegen. Beim Einrichten eine Löschregel am
 Speicher setzen, die der Aufbewahrung aus 5.30 folgt, oder die Rotation im Code auf den Speicher
-ausdehnen.
+ausdehnen. **Entschieden am 28.09.2026:** zuerst beim Schulträger fragen, ob er einen Speicher
+außer Haus stellt (Frage oben); ein Speicher des Schulträgers braucht keinen Vertrag mit einem
+Dritten. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
 
 ### 7.4 Manuelle Restore-Probe an einem fremden Ziel
 
 Die automatische Wochenprobe im Container lief am 13.09.2026 erfolgreich; sie ersetzt die
 manuelle Probe nicht. Anleitung: [resilience_and_recovery.md](resilience_and_recovery.md),
 Abschnitt 2e — dabei die neuen Befehle erproben, die bisher nur am Text geprüft sind. Sinnvoll
-nach S3 oder am Schulserver.
+nach S3 oder am Schulserver. Machen soll sie die Vertretung allein mit dem Pflegekonzept (9.9);
+sie wartet also auf den Schulserver und auf die benannte Vertretung.
 
 ### 7.5 Externes Uptime-Signal
 
 Fällt der Server ganz aus, meldet es niemand. Ein externer Monitor ruft alle 5 Minuten `/health`
 ab ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 7.0). Etwa fünf Minuten Aufwand; beim Umzug neu
-einrichten.
+einrichten. Am Schulserver geht das, weil `/health` am Eingang von außen offen bleibt (4.23).
 
 ### 7.6 Ruleset `main`
 
@@ -905,7 +920,10 @@ Admin-Bypass.
 
 ### 7.7 Abnahmen
 
-Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup.
+Ablauf in [abnahme_checkliste.md](abnahme_checkliste.md), vorher ein Backup. **Der Termin hängt am
+Schulserver** (nachgesehen am 28.09.2026): Die Abnahme prüft echte Daten (Kopf der Checkliste),
+echte Schülerdaten gehören nur auf den Schulserver, und der LUSD-Import kommt erst nach der
+Littera-Übernahme, die dort läuft (7.2).
 
 - Flows 1–3 mit dem Sekretariat: LUSD-Import, Versetzung (vor dem Schuljahreswechsel),
   Klassensatz erledigen. Dabei um Geburtsdatum und Eintrittsdatum im LUSD-Bericht bitten. Ein
@@ -1000,18 +1018,21 @@ auch nicht eine Sperrung, die bestimmte Personen aufheben können." Gebaut ist d
 (24.09.2026, FACHKONZEPT §2.2): Beim Schulbuch hält nur eine Sperre von Hand auf. Die Sperre,
 die das Programm den Ehemaligen setzt — Abschlussklasse nach der Versetzung, im LUSD-Export
 nicht mehr enthalten —, zählt dort nicht; bei Bücherei und Gerät lässt sie nur die Rückgabe zu.
-**Frage an die Schule:** Gilt der Satz auch für diese Kinder? Betroffen sind nur Kinder, die
-noch an der Schule sind (E-Phase nach der 10R, Wiederholer); wer gegangen ist, holt keine
-Schulbücher ab. Soll die Sperre auch beim Schulbuch gelten, ändert sich eine Stelle
-(`pruefeSperreAmLeser`) samt ihrem PG-Test (`TestTheke_EhemaligeSperreNichtAmSchulbuch`).
+Betroffen sind nur Kinder, die noch an der Schule sind (E-Phase nach der 10R, Wiederholer); wer
+gegangen ist, holt keine Schulbücher ab.
 
-**Dieselbe Frage gilt der Frist eines Schulbuchs** (am Code nachgesehen am 24.09.2026): Einem
-gesperrten Kind — von Hand oder als Ehemaligem — verlängert das Programm kein Buch, auch kein
-Schulbuch (`checkAusleiheGesperrt` in `api/ausleihe.go`, für die Einzelverlängerung und die
-Frist von Hand), die Klassenverlängerung der Schulbücher (`GlobalExtendLMFHandler`) und der
-LMF-Plan (`SetzeLernmittelFristFuerKlassenIn`) lassen es aus. Die Sperre soll zur Rückgabe
-zwingen; beim Schulbuch ist das eine Folge der Sperre, die die Schule vielleicht ebenfalls
-ausschließen will. Gebaut wird erst mit der Antwort.
+Einem gesperrten Kind — von Hand oder als Ehemaligem — verlängert das Programm kein Buch, auch
+kein Schulbuch (`checkAusleiheGesperrt` in `api/ausleihe.go`, für die Einzelverlängerung und die
+Frist von Hand; am Code nachgesehen am 24.09.2026 und 28.09.2026), die Klassenverlängerung der
+Schulbücher (`GlobalExtendLMFHandler`) und der LMF-Plan (`SetzeLernmittelFristFuerKlassenIn`)
+lassen es aus. Littera kennt Sperren nur von Hand.
+
+**Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen, und auch bei der
+Verlängerung.** Die automatische Sperre hält beim Schulbuch weder Ausleihe noch Verlängerung an;
+eine Sperre von Hand gilt weiter. Nicht gebaut: `checkAusleiheGesperrt` fragt heute
+`ist_gesperrt OR is_manually_blocked` ohne Unterschied nach dem Buch; beim Schulbuch soll es nach
+derselben Regel entscheiden wie die Theke (`pruefeSperreAmLeser`, PG-Test
+`TestTheke_EhemaligeSperreNichtAmSchulbuch`). Mit PG-Test für beide Aufrufer und FACHKONZEPT §2.2.
 
 ### 8.8 Die Abholfrist bei Vormerkungen
 
@@ -1028,9 +1049,14 @@ Abholfrist nicht. Littera führt eine „Maximale Reservierungsdauer" in Tagen, 
 einstellt (Stammdaten → Einstellungen → Verleih); Öffnungs- und Schließtage nennt das Handbuch
 nur für die Leihfrist.
 
-**Frage an die Schule:** Reichen drei Tage? Soll die Abholfrist wie die Leihfrist auf den
-nächsten Schultag fallen, und soll die Zahl einstellbar sein wie in Littera? Bis zur Antwort
-bleibt es bei drei Tagen ab der Rückgabe.
+In der Sicherung von 2010 steht dort 0 (Tabelle `Einstellungen`, Spalte `MaxResDauer`,
+nachgesehen am 28.09.2026).
+
+**Entschieden am 28.09.2026: drei Tage, das Ende fällt wie bei der Leihfrist auf den nächsten
+Schultag;** keine neue Einstellung. Folge: Kommt ein Buch kurz vor den Ferien zurück, liegt es bis
+nach den Ferien bereit. Nicht gebaut: Beide Stellen rechnen heute selbst
+(`INTERVAL '3 days'` in `loan_return.go` und `vormerkung_nachruecken.go`); beim Bau eine Regel
+über `Tagesfrist` für beide, mit Test über ein Wochenende und über Ferien.
 
 ---
 

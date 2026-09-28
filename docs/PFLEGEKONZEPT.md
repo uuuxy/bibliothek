@@ -244,8 +244,9 @@ Vorlage zum Ausdrucken: [blatt_vorlage.md](blatt_vorlage.md).
    Angaben des Schulträgers dazu: Name im Internet, Freigabe von Port 443, Absenderadresse der
    Schulgeräte ([OFFEN.md](OFFEN.md) 4.23).
 4. **Vertretung:** noch nicht benannt.
-5. **Betrieb:** Sicherung außer Haus, externes Signal bei Ausfall, Probe der Wiederherstellung
-   an einem fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
+5. **Betrieb:** Sicherung außer Haus (entschieden am 28.09.2026: zuerst beim Schulträger nach
+   einem Speicher fragen), externes Signal bei Ausfall, Probe der Wiederherstellung an einem
+   fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
 6. **Datenweg beim Wechsel:** ob das Programm eine Gesamtausgabe bekommt, die ein anderes
    Programm einliest — Katalog mit Signaturen und Schlagworten, Exemplare, Leser, offene
    Ausleihen ([OFFEN.md](OFFEN.md) 4.22).
