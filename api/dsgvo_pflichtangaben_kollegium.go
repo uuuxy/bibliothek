@@ -48,7 +48,7 @@ func dsgvoVerarbeitungsangabenKollegium(f dsgvoFristWerte) DsgvoVerarbeitungsang
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + nachRueckgabe(f.lesehistorieTage) + ", Lernmittel " + nachRueckgabe(f.lernmittelTage) + "; danach automatisch getrennt. " +
 			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Erledigte Wünsche und Meldungen: " + anliegen + "; Klassensatz-Reservierungen werden nicht automatisch gelöscht. " +
 			"Protokolle " + fmt.Sprintf("%d", f.auditMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, eine automatische Frist gibt es nicht, auch nicht für einen gelöschten Leserdatensatz im Papierkorb. " +
-			"Verschlüsselte Backups 14 Tage.",
+			dsgvoSicherungen,
 		Herkunft:          "Anlage durch die Bibliothek oder die Verwaltung der Zugangskonten, die eigene Anmeldung mit der dienstlichen E-Mail-Adresse oder die Übernahme aus dem bisherigen Bibliotheksprogramm; Protokolleinträge entstehen bei der Arbeit im System",
 		Betroffenenrechte: dsgvoBetroffenenrechte,
 	}

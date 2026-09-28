@@ -415,11 +415,13 @@ fi
 # ── Schritt 6: Alte Backups aufräumen ─────────────────────────────────────────
 log_step "Schritt 6: Alte Backups aufräumen (verschlüsselt: ${BACKUP_RETENTION_DAYS} Tage, Klartext: ${KLARTEXT_RETENTION_DAYS} Tage)"
 
-# Zwei Fristen, zwei Muster. `backup_*.sql.gz` trifft NICHT die `.enc`-Dateien — deren
-# Name endet auf `.enc`, und `find -name` vergleicht den ganzen Namen.
-# Beide Präfixe: vordeploy_ seit 10.09.2026, backup_ für die Vorab-Sicherungen davor.
+# Zwei Fristen, zwei Muster. `*.sql.gz` trifft NICHT die `.enc`-Dateien — deren Name
+# endet auf `.enc`, und `find -name` vergleicht den ganzen Namen.
+# Verschlüsselt: nur die eigenen (vordeploy_ seit 10.09.2026, backup_ für die Vorab-
+# Sicherungen davor); scripts/backup.sh legt im selben Ordner mit eigener Frist ab.
+# Klartext: jeder im Ordner, gleich von wem (Gate: docs/backup_ablage_test.go).
 DELETED=$(find "${BACKUP_DIR}" \( -name "vordeploy_*.sql.gz.enc" -o -name "backup_*.sql.gz.enc" \) -mtime "+${BACKUP_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
-DELETED_KLAR=$(find "${BACKUP_DIR}" \( -name "vordeploy_*.sql.gz" -o -name "backup_*.sql.gz" \) -mtime "+${KLARTEXT_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
+DELETED_KLAR=$(find "${BACKUP_DIR}" -name "*.sql.gz" -mtime "+${KLARTEXT_RETENTION_DAYS}" -print -delete 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "${DELETED}" -gt 0 ] || [ "${DELETED_KLAR}" -gt 0 ]; then
     log_ok "${DELETED} verschlüsselte/s und ${DELETED_KLAR} unverschlüsselte/s Backup/s gelöscht."
@@ -427,8 +429,8 @@ else
     log_info "Keine alten Backups zum Löschen gefunden."
 fi
 
-REMAINING=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz.enc" 2>/dev/null | wc -l | tr -d ' ')
-REMAINING_KLAR=$(find "${BACKUP_DIR}" -name "backup_*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
+REMAINING=$(find "${BACKUP_DIR}" -name "*.sql.gz.enc" 2>/dev/null | wc -l | tr -d ' ')
+REMAINING_KLAR=$(find "${BACKUP_DIR}" -name "*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')
 log_info "${REMAINING} verschlüsselte/s Backup/s verbleiben in ${BACKUP_DIR}/"
 if [ "${REMAINING_KLAR}" -gt 0 ]; then
     log_warn "${REMAINING_KLAR} UNVERSCHLÜSSELTE/S Backup/s liegt/liegen dort ebenfalls (Klarnamen im Klartext)."

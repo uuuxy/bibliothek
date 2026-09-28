@@ -96,7 +96,9 @@ fi
 
 # -- Aufräum-Logik (Retention Policy) --
 echo "Räume alte Backups auf (verschlüsselt: ${RETENTION_ENC_TAGE} Tage, Klartext: ${RETENTION_KLARTEXT_TAGE} Tage)..."
-find "$BACKUP_DIR" -type f -name "*.sql.gz.enc" -mtime "+${RETENTION_ENC_TAGE}" -exec rm -f {} \;
+# Verschlüsselt nur die eigenen: Im selben Ordner liegen die Vorab-Sicherungen von update.sh
+# mit 30 Tagen Frist. Klartext dagegen jeder (Gate: docs/backup_ablage_test.go).
+find "$BACKUP_DIR" -type f -name "bibliothek_backup_*.sql.gz.enc" -mtime "+${RETENTION_ENC_TAGE}" -exec rm -f {} \;
 find "$BACKUP_DIR" -type f -name "*.sql.gz" -mtime "+${RETENTION_KLARTEXT_TAGE}" -exec rm -f {} \;
 
 KLARTEXT_UEBRIG=$(find "$BACKUP_DIR" -type f -name "*.sql.gz" 2>/dev/null | wc -l | tr -d ' ')

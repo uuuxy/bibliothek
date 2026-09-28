@@ -543,22 +543,16 @@ vorher nachsehen, ob die Theke ohne Netz auf dem Browser-Cache aufbaut.
 falscher Import, ein Löschlauf, ein Reparaturskript — und erst nach den sechs Wochen der
 Sommerferien auffällt, steckt dann in jeder vorhandenen Sicherung. Künftig bleiben dazu 12
 wöchentliche Stände; gelöschte Personen stehen damit bis zu etwa drei Monate in den Sicherungen.
-Vor dem Echtstart. Beim Bau mitziehen: das VVT (Löschfristen: „Verschlüsselte Backups 14 Tage"),
+Vor dem Echtstart. Beim Bau mitziehen: die Auskunft (`dsgvoSicherungen`, `api/dsgvo_sicherungen_test.go`
+wird rot), das VVT (Löschfristen der Tätigkeit 1),
 [resilience_and_recovery.md](resilience_and_recovery.md) 1a, SECURITY („Rotation"),
 PFLEGEKONZEPT 3.2 und den Datenschutz-Nachweis (Abschnitte 4 und 9); die S3-Kopie braucht
 dieselbe Regel (7.3). Beim Bau klären (nicht nachgestellt): Eine zurückgespielte ältere Sicherung
 bringt auch Personen zurück, die seit ihrem Stand von Hand endgültig gelöscht wurden; die
 Löschläufe nach Frist greifen in der nächsten Nacht wieder, eine Löschung von Hand nicht.
-
-**Nachgesehen am 28.09.2026: Es gibt drei Arten von Sicherungen, die Datenschutz-Unterlagen
-nennen eine.** Neben den Nachtsicherungen hält `update.sh` die Sicherung vor jedem Update 30 Tage
-(`BACKUP_RETENTION_DAYS=30`, Schritt 6, `vordeploy_*.sql.gz.enc` in `./backups` auf dem Host),
-`scripts/backup.sh` seine Ad-hoc-Sicherungen 7 Tage (`RETENTION_ENC_TAGE`); Klartext-Reste beider
-Skripte 2 Tage. [resilience_and_recovery.md](resilience_and_recovery.md) 1b beschreibt beide
-Wege; der Datenschutz-Nachweis (Abschnitt 4) und das VVT („Verschlüsselte Backups 14 Tage")
-nennen nur die Nachtsicherungen. Mit der Regel „mindestens ein Update im Monat" (Pflegekonzept,
-Abschnitt 4) liegt praktisch immer eine Vorab-Sicherung. Die Unterlagen nachziehen, eigener
-Commit; ob die 30 Tage bleiben, gehört zur Entscheidung über die Aufbewahrung.
+Mitentscheiden: ob die Sicherung vor einem Update bei 30 Tagen bleibt (`BACKUP_RETENTION_DAYS`
+in `update.sh`; gelöscht wird erst beim ersten Update danach, mit „mindestens ein Update im
+Monat" also nach 30 bis etwa 60 Tagen).
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 

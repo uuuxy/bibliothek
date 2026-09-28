@@ -239,11 +239,26 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 			"Schülerbücherei: Einwilligung, Art. 6 Abs. 1 lit. a DSGVO, § 3 SchDSV (freiwillige Nutzung; bei Minderjährigen durch die Erziehungsberechtigten), sofern die Schule sie nicht als schulische Aufgabe nach Art. 6 Abs. 1 lit. e führt — maßgeblich ist das Verzeichnis von Verarbeitungstätigkeiten der Schule.",
 		Empfaenger: "Keine Übermittlung an Dritte; Verarbeitung durch das Bibliothekspersonal der Schule. Klassenleitungen erhalten die Liste überfälliger Medien ihrer Klasse. Helfer an der Theke sehen nur Name, Klasse und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + frist(lesehistorieTage) + ", Lernmittel " + frist(lernmittelTage) + "; danach automatisch getrennt. " +
-			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", auditMonate) + " Monate. Verschlüsselte Backups 14 Tage.",
+			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Schülerdatensatz nach dem Abgang: solange eine Ausleihe offen oder ein Schadensfall unbezahlt ist, bleibt er erhalten; danach wird er " + karenz + " anonymisiert und ab dem 30. Januar des Folgejahres endgültig gelöscht. Papierkorb nach 180 Tagen. Protokolle " + fmt.Sprintf("%d", auditMonate) + " Monate. " + dsgvoSicherungen,
 		Herkunft:          "Stammdaten aus der Lehrer- und Schülerdatenbank (LUSD) der Schule (Export/Import), Übernahme aus dem bisherigen Bibliotheksprogramm (Name, Klasse, Ausweisnummer, Geburtsdatum) bzw. manuelle Erfassung durch das Bibliotheksteam",
 		Betroffenenrechte: dsgvoBetroffenenrechte,
 	}
 }
+
+// Die Sicherungen nennt die Auskunft jeder Leserart gleich. Die Zahlen stehen in drei Quellen
+// außerhalb von Go (jobs/backup.go, update.sh, scripts/backup.sh); dsgvo_sicherungen_test.go
+// hält sie deckungsgleich. Bis zum 28.09.2026 stand hier nur „Verschlüsselte Backups 14
+// Tage" — die Sicherung vor einem Update und die von Hand fehlten.
+const (
+	sicherungNaechte       = 14 // jobs/backup.go, rotateBackups
+	sicherungVorUpdateTage = 30 // update.sh, BACKUP_RETENTION_DAYS
+	sicherungVonHandTage   = 7  // scripts/backup.sh, RETENTION_ENC_TAGE
+)
+
+var dsgvoSicherungen = fmt.Sprintf("Verschlüsselte Sicherungen: die der letzten %d Nächte; "+
+	"eine Sicherung vor einem Update wird beim ersten Update nach %d Tagen gelöscht, "+
+	"eine von Hand angelegte beim ersten weiteren Lauf nach %d Tagen.",
+	sicherungNaechte, sicherungVorUpdateTage, sicherungVonHandTage)
 
 // dsgvoBetroffenenrechte gilt für jede Leserart gleich.
 const dsgvoBetroffenenrechte = "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)"

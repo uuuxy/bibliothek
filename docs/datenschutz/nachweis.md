@@ -73,7 +73,10 @@ Datenschutz & Sitzung.
 | erledigte Wünsche und Meldungen des Kollegiums                       | 365 Tage nach der Erledigung                                                                    | ja          |
 | quittierte Meldungen der Theke nach einem Netzausfall                | Frist der Schülerbücherei, höchstens 30 Tage                                                    | über diese  |
 | Protokoll                                                            | 24 Monate                                                                                       | ja, mindestens 6 |
-| Sicherungen                                                          | 14 Tage (entschieden am 28.09.2026: dazu 12 wöchentliche, noch nicht gebaut)                     | nein        |
+| Sicherung jede Nacht                                                 | die letzten 14 bleiben (entschieden am 28.09.2026: dazu 12 wöchentliche, noch nicht gebaut)     | nein        |
+| Sicherung vor einem Update                                           | gelöscht beim ersten Update, bei dem sie älter als 30 Tage ist                                  | nein        |
+| Sicherung von Hand                                                   | gelöscht beim ersten Lauf von Hand, bei dem sie älter als 7 Tage ist                            | nein        |
+| unverschlüsselte Sicherung (misslungenes Update, Verschlüsselung nicht möglich) | gelöscht beim ersten Update oder Lauf von Hand nach 2 Tagen; jeder Lauf meldet, wie viele noch liegen | nein        |
 
 Beim Anonymisieren leert das Programm Name, Anschrift, Geburtsdatum, Schuleintritt, LUSD-ID und
 Eltern-E-Mail, löscht das Foto, ersetzt die Ausweisnummer und tilgt die Spuren der Person im
@@ -92,7 +95,8 @@ Kurzfassung; vollständig im Anhang des [Verzeichnisses](vvt_entwurf.md) und im
   (beides einstellbar). Ein deaktiviertes oder herabgestuftes Konto verliert seine Rechte bei der
   nächsten Anfrage, nicht erst mit dem Ablauf der Sitzung.
 - **Verschlüsselung:** Fotos und das Passwort des Mailversands liegen verschlüsselt in der
-  Datenbank, die Sicherungen verschlüsselt auf der Platte. Die Verbindung zum Browser ist
+  Datenbank, die Sicherungen verschlüsselt auf der Platte; unverschlüsselt bleibt eine
+  Sicherung nur in den zwei Fällen aus Abschnitt 4. Die Verbindung zum Browser ist
   verschlüsselt; Mail verschickt das Programm nur über eine verschlüsselte Verbindung.
 - **Geheimnisse:** Mit den Beispielschlüsseln aus der Vorlage verweigert der Server im Betrieb
   den Start, außer jemand schaltet diese Prüfung ausdrücklich ab.
@@ -119,6 +123,7 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 | Die Anonymisierung entfernt, was an der Person hängt                                          | `api/dsgvo_paar_rundreise_pg_test.go` (Grenze: Abschnitt 9)                                              |
 | Die Auskunft druckt jede Angabe, die sie enthält                                              | `api/dsgvo_pdf_vollstaendig_test.go`                                                                    |
 | Eine Sicherung lässt sich zurückspielen                                                       | `jobs/backup_drill_pg_test.go`, `jobs/restore_probe_pg_test.go`; im Betrieb die Probe jeden Sonntag      |
+| Update und Sicherung von Hand löschen je nur ihre eigenen verschlüsselten Sicherungen; jeden unverschlüsselten Rest löschen und melden beide | `docs/backup_ablage_test.go`                                                                            |
 | Mail geht nie unverschlüsselt hinaus                                                          | `mailservice/versand_test.go`                                                                           |
 | Die Theke leert sich und sperrt nach der eingestellten Zeit                                   | `frontend/src/lib/stores/idleLock.test.js`                                                              |
 

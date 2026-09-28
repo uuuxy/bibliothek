@@ -74,10 +74,15 @@ den Klartext. Offen liegt sie damit für die Dauer eines Deploys statt 30 Tage.
 (`pruefe_enc_rundweg`). Eine Formprüfung allein reichte nicht: Eine beim Schreiben
 abgeschnittene Datei trägt ihre `BKDF`-Kennung und sieht vollständig aus.
 
-**Fristen und Ausnahmefall.** `.enc` rotiert wie gehabt (7 bzw. 30 Tage). Was als Klartext
-liegen bleibt — weil ein Deploy fehlschlug oder die Verschlüsselung nicht möglich war —
-wird nach **2 Tagen** gelöscht, und beide Skripte sagen bei jedem Lauf, wie viele solcher
-Dateien noch da sind. Ist die Verschlüsselung nicht möglich (Container aus, Schlüssel
+**Fristen und Ausnahmefall.** `.enc` rotiert wie gehabt (7 bzw. 30 Tage), und jedes Skript
+löscht nur seine eigenen: Bis zum 28.09.2026 traf das Muster von `scripts/backup.sh`
+(`*.sql.gz.enc`) auch die `vordeploy_…` im selben Ordner, mit der Crontab unten hielten sie
+7 statt 30 Tage. Was als Klartext liegen bleibt — weil ein Deploy fehlschlug oder die
+Verschlüsselung nicht möglich war — löscht jedes der beiden Skripte nach **2 Tagen**, gleich
+welches ihn anlegte, und beide sagen bei jedem Lauf, wie viele solcher Dateien noch da sind
+(`update.sh` zählte vom 10.09. bis 28.09.2026 nur `backup_…` und sah die `vordeploy_…` nicht).
+Gelöscht wird nur, wenn ein Skript läuft: „nach 2 Tagen" heißt beim ersten Lauf danach.
+Gate: `docs/backup_ablage_test.go`. Ist die Verschlüsselung nicht möglich (Container aus, Schlüssel
 nicht gesetzt, altes Image), bricht `scripts/backup.sh` **nicht** ab: Ein lesbares Backup
 ist besser als keines. Es benennt den Zustand und setzt die kurze Frist.
 

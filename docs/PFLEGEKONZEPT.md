@@ -90,7 +90,11 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 **Was es gibt:** Jede Nacht um 02:30 UTC eine verschlüsselte Sicherung der Datenbank; die
 letzten 14 bleiben. Entschieden am 28.09.2026, noch nicht gebaut: dazu 12 wöchentliche
 Stände, damit ein Fehler, der erst nach den Sommerferien auffällt, noch eine Sicherung von
-davor vorfindet ([OFFEN.md](OFFEN.md) 5.30). Die Sicherungen liegen auf demselben Server —
+davor vorfindet ([OFFEN.md](OFFEN.md) 5.30). Dazu legt `update.sh` vor jedem Update eine
+Sicherung an, die beim ersten Update nach 30 Tagen gelöscht wird; eine Sicherung von Hand mit
+`scripts/backup.sh` wird beim ersten Lauf nach 7 Tagen gelöscht. Die Nachtsicherungen liegen im
+Container, diese beiden in `backups/` im Programmverzeichnis
+([SCRIPTS.md](SCRIPTS.md) §3). Alle Sicherungen liegen auf demselben Server —
 eine Kopie außer Haus ist vorbereitet, aber nicht eingerichtet ([OFFEN.md](OFFEN.md) 7.3).
 Wird sie als S3-Speicher eingerichtet, braucht der Speicher eine eigene Löschregel: Das
 Programm lädt dorthin nur hoch und löscht nie. Sonntags um 03:30 UTC spielt das Programm
