@@ -14,20 +14,22 @@ func leser(id, nummer, klasse string, art LeserArt) Leser {
 		Klasse: klasse, Art: art}
 }
 
-// TestNurSchuelerUndLehrkraefteWerdenGeschrieben: Praktikanten, Sekretariat und die
-// Sammelkonten der Fachbereiche sind weder das eine noch das andere. Bei Personendaten
-// ist eine ausgelassene Zeile das kleinere Übel als eine falsch einsortierte — aber sie
-// muss im Protokoll stehen, sonst verschwinden 20 Personen und 302 Ausleihen lautlos.
-func TestNurSchuelerUndLehrkraefteWerdenGeschrieben(t *testing.T) {
+// TestSonstigeKommenInsKollegium: Praktikanten, Sekretariat, U-plus und die Sammelkonten der
+// Fachbereiche sind keine Schüler, aber Entleiher. Bis zum 28.09.2026 ließ der Lauf sie aus —
+// in der Sicherung von 2010 42 Konten, und mit ihnen 341 Ausleihen, deren Bücher danach als
+// verfügbar gegolten hätten. Jetzt kommen sie ins Kollegium (nicht gemahnt, Anmeldung über
+// die Platzhalter-Adresse gesperrt), und ihre Littera-Gruppe steht im Protokoll.
+func TestSonstigeKommenInsKollegium(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
 	s, protokoll := testSchreiber(t, pool, nil)
 
+	fachbereich := leser("3", "103", "FB Bio", ArtSonstige)
+	fachbereich.Gruppe = "Fachbereich Biologie"
 	ab := &Altbestand{Leser: []Leser{
 		leser("1", "101", "07H1", ArtSchueler),
 		leser("2", "102", "", ArtLehrkraft),
-		leser("3", "103", "FB Bio", ArtSonstige),
-		leser("4", "104", "IMPORT", ArtUnbekannt),
+		fachbereich,
 		leser("5", "105", "Ab", ArtAbgegangen),
 	}}
 
@@ -35,21 +37,43 @@ func TestNurSchuelerUndLehrkraefteWerdenGeschrieben(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SchreibePersonen: %v", err)
 	}
-	if bericht.Schueler != 2 || bericht.Lehrkraefte != 1 || bericht.Uebersprungen != 2 {
-		t.Errorf("2 Schüler / 1 Lehrkraft / 2 ausgelassen erwartet, gemeldet: %d / %d / %d",
-			bericht.Schueler, bericht.Lehrkraefte, bericht.Uebersprungen)
+	if bericht.Schueler != 2 || bericht.Lehrkraefte != 2 || bericht.Uebersprungen != 0 || !bericht.AbgleichOK {
+		t.Errorf("2 Schüler / 2 im Kollegium / 0 ausgelassen erwartet, gemeldet: %+v", bericht)
 	}
-	if !bericht.AbgleichOK {
-		t.Error("der Abgleich mit der Datenbank muss stimmen")
-	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM schueler`); n != 2 {
-		t.Errorf("2 Schüler in der Datenbank erwartet, gefunden: %d", n)
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser l JOIN benutzer b ON b.leser_id = l.id
+		WHERE l.barcode_id = '103' AND l.art = 'lehrkraft' AND b.rolle = 'kollegium'
+		  AND b.email LIKE '%.invalid'`); n != 1 {
+		t.Errorf("das Fachbereichskonto gehört ins Kollegium, mit Platzhalter-Adresse; gefunden: %d", n)
 	}
 	text := protokoll()
-	for _, id := range []string{"littera_id=3", "littera_id=4"} {
-		if !strings.Contains(text, id) {
-			t.Errorf("die ausgelassene Person %s muss im Protokoll stehen:\n%s", id, text)
-		}
+	if !strings.Contains(text, "littera_id=3") || !strings.Contains(text, "Littera-Gruppe „Fachbereich Biologie“") {
+		t.Errorf("die Littera-Gruppe des Kontos muss im Protokoll stehen:\n%s", text)
+	}
+}
+
+// TestLeserOhneZuordnungSchreibtNiemanden: Eine Gruppe ohne Art hält den Lauf an, bevor die
+// erste Person geschrieben ist — auch die zugeordneten nicht (Entscheidung vom 28.09.2026).
+// Ein Lauf, der sie ausließe, verlöre ihre Ausleihen; einer, der erst die anderen schreibt,
+// müsste nach dem Zuordnen auf eine neue Datenbank.
+func TestLeserOhneZuordnungSchreibtNiemanden(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+
+	unklar := leser("4", "104", "IMPORT", ArtUnbekannt)
+	unklar.Gruppe, unklar.GruppeNr = "IMPORT", "123"
+	ab := &Altbestand{Leser: []Leser{
+		leser("1", "101", "07H1", ArtSchueler),
+		leser("2", "102", "", ArtLehrkraft),
+		unklar,
+	}}
+
+	_, err := s.SchreibePersonen(context.Background(), ab)
+	if err == nil || !strings.Contains(err.Error(), "Lesergruppe 123 „IMPORT“") {
+		t.Fatalf("der Lauf muss mit der Gruppe anhalten, Fehler: %v", err)
+	}
+	if n := zaehle(t, pool, `SELECT count(*) FROM leser`) + zaehle(t, pool, `SELECT count(*) FROM benutzer`); n != 0 {
+		t.Errorf("vor dem Halt darf niemand geschrieben sein, gefunden: %d Zeilen", n)
 	}
 }
 
@@ -111,23 +135,39 @@ func TestAbgaengerBekommenEinJahr(t *testing.T) {
 	}
 }
 
-// TestSchuelerOhneAbleitbaresJahrWirdGemeldet: ein GERATENES Abgangsjahr archiviert
-// irgendwann still den falschen Schüler. Lieber die Zeile auslassen und melden.
-func TestSchuelerOhneAbleitbaresJahrWirdGemeldet(t *testing.T) {
+// TestSchuelerOhneJahrgangBekommtDenRueckfall: „Im Ausland" trägt die Klasse „AUS", aus der
+// sich kein Abgangsjahr ablesen lässt. Bis zum 28.09.2026 ließ der Lauf solche Schüler samt
+// Ausleihen aus; jetzt bekommen sie das Jahr, das die Anwendung bei Handanlage und LUSD-Import
+// für eine Klasse ohne Jahrgang einsetzt (repository.AbgangsjahrOhneKlasse) — und die Warnung
+// sagt, dass es ein Platzhalter ist.
+func TestSchuelerOhneJahrgangBekommtDenRueckfall(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
-	s, protokoll := testSchreiber(t, pool, nil)
+	s, protokoll := testSchreiber(t, pool, nil) // Stichtag 04.08.2026
 
-	ab := &Altbestand{Leser: []Leser{leser("1", "101", "Sonderklasse", ArtSchueler)}}
+	ab := &Altbestand{Leser: []Leser{leser("1", "101", "AUS", ArtSchueler)}}
 	bericht, err := s.SchreibePersonen(context.Background(), ab)
 	if err != nil {
 		t.Fatalf("SchreibePersonen: %v", err)
 	}
-	if bericht.Schueler != 0 || bericht.Uebersprungen != 1 {
-		t.Errorf("die Zeile muss ausgelassen werden, gemeldet: %+v", bericht)
+	if bericht.Schueler != 1 || bericht.Uebersprungen != 0 {
+		t.Fatalf("der Schüler muss ankommen, gemeldet: %+v", bericht)
 	}
-	if text := protokoll(); !strings.Contains(text, "Abgangsjahr") {
-		t.Errorf("das Protokoll muss den Grund nennen:\n%s", text)
+	var jahr int
+	var klasse string
+	var abgaenger bool
+	if err := pool.QueryRow(context.Background(),
+		`SELECT abgaenger_jahr, klasse, ist_abgaenger FROM schueler`).Scan(&jahr, &klasse, &abgaenger); err != nil {
+		t.Fatalf("Abfrage: %v", err)
+	}
+	if soll := repository.AbgangsjahrOhneKlasse(time.Date(2026, 8, 4, 12, 0, 0, 0, time.UTC)); jahr != soll || soll != 2031 {
+		t.Errorf("Abgangsjahr %d erwartet (Rückfall der Anwendung, 2026 + 5), gefunden: %d", soll, jahr)
+	}
+	if klasse != "AUS" || abgaenger {
+		t.Errorf("Klasse „AUS“ und kein Abgänger erwartet, gefunden: %q / %v", klasse, abgaenger)
+	}
+	if text := protokoll(); !strings.Contains(text, "Klasse „AUS“ nennt keinen Jahrgang – Abgangsjahr 2031") {
+		t.Errorf("die Warnung muss Klasse und eingesetztes Jahr nennen:\n%s", text)
 	}
 }
 

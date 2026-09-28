@@ -31,7 +31,8 @@ for t in Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser
   mdb-export littera_sav.mdb "$t" > "littera-export/$(echo "$t" | tr 'A-Z' 'a-z').csv"
 done
 
-# 2. Trockenlauf – liest und berichtet, schreibt nichts
+# 2. Trockenlauf – liest und berichtet, schreibt nichts. Mit denselben Schaltern wie der
+#    Lauf (etwa -personen -ausleihen): Dann nennt er auch Lesergruppen ohne Zuordnung.
 go run ./cmd/littera-altbestand -csv ./littera-export -trocken
 
 # 3. Übernahme
@@ -116,6 +117,17 @@ filtert darauf, eine inaktive Lehrkraft wäre am Scanner unauffindbar. Den Login
 statt dessen die Adresse: Anmeldung geht ausschließlich über IMAP gegen den Schul-Mail-
 server, und `littera-4908@littera.invalid` gibt es dort nicht. `-lehrer-inaktiv` kehrt das
 um, macht die Karten aber wertlos.
+
+**Jeder Leser kommt an** (seit 28.09.2026): Praktikanten, Sekretariat, U-plus und die
+Sammelkonten der Fachbereiche ins Kollegium wie eine Lehrkraft (Ausleihen als Dauerleihe,
+keine Mahnung, Littera-Gruppe als Warnung im Protokoll), „Im Ausland" als Schüler mit der
+Klasse `AUS`. Ein Schüler, dessen Klasse keinen Jahrgang nennt, bekommt das Abgangsjahr der
+Handanlage (Kalenderjahr + 5) und eine Warnung. Eine Lesergruppe, die keiner Art zugeordnet
+ist (in der Sicherung von 2010 „Undefinierte Untergruppe", 5 Personen, 21 Ausleihen), **hält
+den Lauf mit `-personen` an, bevor er etwas schreibt** — der Trockenlauf mit denselben
+Schaltern endet dann ebenfalls mit 1 und nennt Gruppe, Personen- und Ausleihzahl. Zuordnen in
+Littera selbst (die Personen in ihre Gruppe setzen, neu sichern und ausgeben) oder, für eine
+neue Gruppenbezeichnung, in `artAusUntergruppe` (`internal/littera/leser.go`).
 
 **Rückgabewerte:** 0 vollständig · 1 abgebrochen · 2 unvollständig (Details im Protokoll).
 

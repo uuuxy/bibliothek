@@ -795,8 +795,7 @@ mit `divide-y`, nur als eigener Durchgang mit Messung im Browser) · Zugangsbuch
 Schulhalbjahr und Topf · Bestandskartei-Ausdruck zum 15.3. und 15.9. (beides nennt
 [mittel_konzept.md](mittel_konzept.md), Abschnitt 7.1, als Verfahrensvorgabe; nicht gebaut) ·
 ein Schüler wird Lehrkraft (die Datenbank verbietet es, `chk_leser_nur_schueler_werden_abgaenger`;
-heute ein zweiter Leser, bei Häufung ein Umzugspfad wie Migration 072) · der Littera-Personenlauf
-übergeht Praktikanten, Sekretariat und „Im Ausland" (`internal/littera/leser.go`) ·
+heute ein zweiter Leser, bei Häufung ein Umzugspfad wie Migration 072) ·
 Schlagwortliste drucken, Schlagwortkatalog als Datei aus- und einlesen (wie Littera, nur wenn die
 Bücherei es braucht; 23.09.2026) · Verweise für Autoren (der Autor ist ein Textfeld, kein
 Personensatz).
@@ -854,24 +853,15 @@ wie jedes übernommene Exemplar als gedruckt vermerkt (`sqlExemplarEinfuegen` se
 `etikett_gedruckt` fest auf `true`) und erscheint nicht auf der Nachdruck-Liste. Vor dem Lauf
 klären: diese Exemplare als ungedruckt anlegen.
 
-**Die 42 Konten ohne Schüler-/Lehrkraft-Gruppe (entschieden am 28.09.2026, nicht gebaut).** In
-der Sicherung von 2010 übernimmt der Lauf 42 Leser nicht (`ArtSonstige`, `ArtUnbekannt` in
-`internal/littera/leser.go`, übersprungen in `einePerson`), und mit ihnen fehlen 341 Ausleihen —
-diese Bücher stünden als verfügbar im Regal. Gezählt am 28.09.2026 (nur Gruppen und Zahlen):
-Fachbereich-Sammelkonten 9 Konten / 279 Ausleihen, Praktikant/in 9 / 20, Sekretärin 2 / 3,
-U-plus 3 / 7 (einer Jahrgang 1950, zwei ohne Geburtsdatum), „Im Ausland" 14 / 11 (Jahrgänge 1992–1994), „Undefinierte
-Untergruppe" 5 / 21. Entschieden:
-1. Fachbereiche, Praktikanten, Sekretärinnen und U-plus ins Kollegium (`schreibeLehrkraft`):
-   nicht gemahnt, Anmeldung über die Platzhalter-Adresse gesperrt. „Im Ausland" als Schüler mit
-   der Littera-Klasse „AUS", die LUSD ordnet die Klasse zu. Beim Bau klären: das Abgangsjahr — aus
-   „AUS" lässt sich keines ableiten (`abgangsjahr`), bei „Abgegangen" gilt das laufende Schuljahr.
-2. Eine Gruppe ohne Zuordnung (heute „Undefinierte Untergruppe") hält den Lauf an, im Trockenlauf
-   wie im echten Lauf und vor dem ersten Schreiben: Gruppe, Personen- und Ausleihzahl werden
-   genannt; zugeordnet wird etwa in Littera selbst.
-3. Die Lesergruppen selbst kommen mit 5.18. Für die Littera-Gruppe eines Kollegium-Kontos gibt es
-   bis dahin kein Feld (weder `leser` noch `benutzer`); sie steht je Konto im Protokoll des Laufs.
-Nachweis: Generalprobe wiederholen — erwartet 15.612 von 15.615 Ausleihen (die restlichen 3 sind
-Widersprüche in Littera: ein Exemplar fehlt im Bestand, zwei sind doppelt verliehen).
+**Lesergruppen ohne Zuordnung vor dem Umstiegstag klären.** Seit dem 28.09.2026 übernimmt der
+Lauf jeden Leser ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1); eine Lesergruppe ohne Zuordnung hält
+ihn an, bevor er schreibt. In der Sicherung von 2010 ist das „Undefinierte Untergruppe" (5
+Personen, 21 Ausleihen). Mit dem frischen Backup den Trockenlauf mit `-personen -ausleihen`
+fahren; nennt er Gruppen, setzt die Bücherei diese Personen in Littera in ihre Gruppe, bevor
+die Sicherung für den Umstieg gezogen wird.
+Nachweis steht aus: Generalprobe wiederholen — erwartet 15.612 von 15.615 Ausleihen (die
+restlichen 3 sind Widersprüche in Littera: ein Exemplar fehlt im Bestand, zwei sind doppelt
+verliehen).
 
 **Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
 Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.

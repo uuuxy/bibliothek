@@ -27,9 +27,9 @@ var klassenMuster = regexp.MustCompile(`^(\d+)(.*)$`)
 //
 // Die Förderstufe (Jahrgang 5–6) ist ein Sonderfall: Von dort geht es erst danach in
 // einen der drei Zweige, das Abgangsjahr steht also noch gar nicht fest. Angesetzt wird
-// bewusst der LÄNGSTE Weg. Das Abgangsjahr steuert die Stapel-Archivierung; ein zu
-// früher Wert würde einen Schüler aus dem Bestand nehmen, der noch zur Schule geht.
-// Ein zu später Wert kostet nichts — der Versetzungslauf zieht ihn jedes Jahr nach.
+// bewusst der LÄNGSTE Weg. Solange der Schüler da ist, steht das Jahr nur im Profil; als
+// Abgänger markieren ihn Versetzung und LUSD-Import, und beide setzen dann das tatsächliche
+// Jahr. Ein zu später Wert kostet also nichts, ein zu früher stünde falsch in der Akte.
 func AbschlussJahrgang(zweigUndZug string) (int, bool) {
 	rest := strings.ToUpper(strings.TrimSpace(zweigUndZug))
 	if rest == "" {
@@ -55,9 +55,10 @@ func AbschlussJahrgang(zweigUndZug string) (int, bool) {
 // zwei Schuljahre später.
 //
 // Zweiter Rückgabewert ist false, wenn die Klassenbezeichnung nichts hergibt (kein
-// Jahrgang, unbekannter Zweig). Dann darf der Import KEINEN Wert erfinden:
-// schueler.abgaenger_jahr ist NOT NULL, aber eine geratene Jahreszahl archiviert
-// irgendwann still den falschen Schüler.
+// Jahrgang, unbekannter Zweig). Dann erfindet diese Funktion keinen Wert: Was an seine
+// Stelle tritt, hängt an der Gruppe und steht beim Aufrufer (personenlauf.abgangsjahr —
+// „Abgegangen", „Im Ausland"); ein Schüler einer gewöhnlichen Klasse ohne Jahrgang wird
+// nicht übernommen und steht als FEHLER im Protokoll.
 func AbgaengerJahr(klasse string, schuljahrEnde int) (int, bool) {
 	treffer := klassenMuster.FindStringSubmatch(strings.TrimSpace(klasse))
 	if treffer == nil {

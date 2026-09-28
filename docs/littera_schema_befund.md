@@ -70,20 +70,28 @@ Die naheliegende Quelle `LeserSchueler` (705 Zeilen mit `Jahrgang`, `Abgang`,
 
 | Untergruppe | Art | Ziel |
 |---|---|---|
-| `Schüler`, **`Sekundarstufe II`** | `ArtSchueler` | `schueler` |
+| `Schüler`, **`Sekundarstufe II`**, `Im Ausland` | `ArtSchueler` | `schueler` |
 | `Lehrer`, `Lehrerin` | `ArtLehrkraft` | `benutzer` mit Rolle `kollegium` (bis Migration 069: `lehrer`) |
+| `Referendar`, `Referendarin` | `ArtLiV` | Kollegium, Personenart `liv` |
 | `Abgegangen` | `ArtAbgegangen` | `schueler` mit `ist_abgaenger` |
-| `Praktikant`, `Sekretärin`, `Fachbereich …` | `ArtSonstige` | kein Schüler |
-| alles andere (`IMPORT`, `U-plus`, `Im Ausland`, `UNDEF`) | `ArtUnbekannt` | **nicht schreiben** |
+| `Praktikant`, `Praktikantin`, `Sekretärin`, `U-plus`, `Fachbereich …` | `ArtSonstige` | Kollegium, Personenart `lehrkraft`; Ausleihen als Dauerleihe |
+| alles andere (`Undefinierte Untergruppe`, `IMPORT`) | `ArtUnbekannt` | **Lauf hält an, bevor er schreibt** |
 
 `Sekundarstufe II` ist der Fall, den man leicht übersieht: eine eigene Untergruppe,
 aber die Oberstufenklassen (11T1, 12T3, 13T5) sind selbstverständlich Schüler.
+`Im Ausland` kommt mit der Littera-Klasse `AUS`; die richtige Klasse trägt der LUSD-Import
+nach. Aus `AUS` lässt sich kein Abgangsjahr ablesen, es gilt das Jahr, das die Anwendung für
+jede Klasse ohne Jahrgang einsetzt (`repository.AbgangsjahrOhneKlasse`), mit einer Warnung im
+Protokoll. `U-plus` sind Vertretungskräfte. Die Littera-Gruppe eines Kollegium-Kontos steht
+im Protokoll des Laufs, bis es Lesergruppen gibt ([OFFEN.md](OFFEN.md) 5.18).
 
-Gemessen am Altbestand: **1.720 Schüler · 158 Lehrkräfte · 71 abgegangen · 20 sonstige ·
-22 unklar** — und jeder der 1.720 Schüler hat eine Klasse (`schueler.klasse` ist NOT NULL,
-ein Test sichert das ab). Unklare Zeilen werden bewusst **nicht** stillschweigend zu
-Schülern: Bei Personendaten ist eine ausgelassene Zeile das kleinere Übel als eine
-falsch einsortierte.
+Gemessen am Altbestand: **1.734 Schüler (davon 14 im Ausland) · 158 Lehrkräfte · 71
+abgegangen · 23 sonstige · 5 ohne Zuordnung** — und jeder Schüler hat eine Klasse
+(`schueler.klasse` ist NOT NULL, ein Test sichert das ab). Eine Gruppe ohne Zuordnung wird
+**nicht** geraten und nicht ausgelassen: Ausgelassen fehlten ihre Ausleihen, und die Bücher
+stünden als verfügbar im Regal. Der Lauf nennt Gruppe, Personen- und Ausleihzahl und hält
+an, im Trockenlauf wie im echten Lauf (`OhneZuordnung`, Entscheidung vom 28.09.2026);
+zugeordnet wird in Littera selbst oder in `artAusUntergruppe`.
 
 Feldbelegung, gemessen: Nachname 1.991 · Vorname 1.980 · Geburtsdatum 1.924 ·
 Adresse 1.927 · Anmeldedatum 834 · **eMail nur 3** · Abmeldedatum 0.
@@ -170,9 +178,13 @@ Kartenhersteller bzw. Ersatzetiketten, in den Stammdaten stehen sie nicht.
   aus der Klasse gerechnet. Die Abschlussklassen sind **9H, 10R und 13**; die Regel ist
   nicht neu erfunden, sondern aus `api/student_promotion.go` (`is_graduating`) übernommen,
   damit Import und Schuljahreswechsel dieselbe Aussage treffen. Die Förderstufe rechnet
-  bewusst mit dem längsten Weg (13): Ein zu frühes Abgangsjahr würde einen Schüler
-  archivieren, der noch zur Schule geht; ein zu spätes zieht der Versetzungslauf nach.
-  Am Altbestand: für **alle 1.720 Schüler ableitbar**, davon 232 in einer Abschlussklasse.
+  bewusst mit dem längsten Weg (13): Solange der Schüler da ist, steht das Jahr nur im
+  Profil; als Abgänger markieren ihn Versetzung und LUSD-Import, und beide setzen dann das
+  tatsächliche Jahr — ein zu spätes kostet nichts, ein zu frühes stünde falsch in der Akte.
+  Eine Klasse ohne Jahrgang („AUS") bekommt das Jahr der Handanlage (Kalenderjahr + 5,
+  `repository.AbgangsjahrOhneKlasse`) und eine Warnung im Protokoll.
+  Am Altbestand: für 1.720 von 1.734 Schülern ableitbar (die 14 „Im Ausland" nicht), davon
+  232 in einer Abschlussklasse.
 * **Ausleihen — erledigt** (`LeseAusleihen`, `NurOffene`, `OhneExemplar`, `OhneFrist`).
 * **Schreibpfad nach Postgres — erledigt** (`cmd/littera-altbestand`, siehe unten).
 

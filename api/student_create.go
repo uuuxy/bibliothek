@@ -79,7 +79,7 @@ func calculateAbgaengerJahr(klasse string) int {
 func abgaengerJahrAm(klasse string, jetzt time.Time) int {
 	jahrgang, abschluss, ok := abschlussJahrgang(klasse)
 	if !ok {
-		return jetzt.Year() + 5 // Fallback
+		return repository.AbgangsjahrOhneKlasse(jetzt)
 	}
 	yearsLeft := abschluss - jahrgang
 	if yearsLeft < 0 {

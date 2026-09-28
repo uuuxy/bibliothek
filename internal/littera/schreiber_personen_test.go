@@ -4,6 +4,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"bibliothek/internal/uebernahme"
 )
@@ -115,29 +116,29 @@ func TestPersonenlaufMailadresse(t *testing.T) {
 func TestPersonenlaufAbgangsjahr(t *testing.T) {
 	p := &personenlauf{
 		s: &Schreiber{
-			opt: Optionen{SchuljahrEnde: 2027},
+			opt: Optionen{SchuljahrEnde: 2027, Jetzt: time.Date(2026, time.September, 7, 12, 0, 0, 0, time.UTC)},
 		},
 	}
 
 	// 1. Valid class with calculable year
 	l1 := Leser{Klasse: "10R1"}
-	jahr, ok := p.abgangsjahr(l1)
-	if !ok || jahr != 2027 {
-		t.Errorf("expected 2027, true; got %d, %v", jahr, ok)
+	jahr, rueckfall := p.abgangsjahr(l1)
+	if rueckfall || jahr != 2027 {
+		t.Errorf("expected 2027, false; got %d, %v", jahr, rueckfall)
 	}
 
-	// 2. Uncalculable class, but ArtAbgegangen
+	// 2. Uncalculable class, but ArtAbgegangen: the current school year, no placeholder
 	l2 := Leser{Klasse: "Ab", Art: ArtAbgegangen}
-	jahr, ok = p.abgangsjahr(l2)
-	if !ok || jahr != 2027 {
-		t.Errorf("expected 2027, true; got %d, %v", jahr, ok)
+	jahr, rueckfall = p.abgangsjahr(l2)
+	if rueckfall || jahr != 2027 {
+		t.Errorf("expected 2027, false; got %d, %v", jahr, rueckfall)
 	}
 
-	// 3. Uncalculable class, NOT ArtAbgegangen
-	l3 := Leser{Klasse: "Sonderklasse", Art: ArtSchueler}
-	jahr, ok = p.abgangsjahr(l3)
-	if ok || jahr != 0 {
-		t.Errorf("expected 0, false; got %d, %v", jahr, ok)
+	// 3. Uncalculable class („Im Ausland“, AUS): the application's fallback, marked for the warning
+	l3 := Leser{Klasse: "AUS", Art: ArtSchueler}
+	jahr, rueckfall = p.abgangsjahr(l3)
+	if !rueckfall || jahr != 2031 {
+		t.Errorf("expected 2031, true; got %d, %v", jahr, rueckfall)
 	}
 }
 

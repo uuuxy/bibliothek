@@ -16,6 +16,9 @@ const gruppenCSV = `Buchungsdatum,Buchungsnummer,KurzBez,Untergruppe,Obergruppe
 ,96,"Prakt","Praktikant",1
 ,97,"FB-Ek","Fachbereich Erdkunde",1
 ,98,"Ausl","Im Ausland",1
+,122,"Sekr.","Sekretärin",79
+,123,"IMPORT"," IMPORT",1
+,129,"U+","U-plus",74
 `
 
 func TestArtAusUntergruppe(t *testing.T) {
@@ -36,11 +39,17 @@ func TestArtAusUntergruppe(t *testing.T) {
 		"90": {ArtLehrkraft, "Lehrer", "Lehrkraft"},
 		"91": {ArtLehrkraft, "Lehrerin", "Lehrkraft"},
 		"95": {ArtAbgegangen, "Ab", "ehemalige Schueler"},
-		"96": {ArtSonstige, "Prakt", "Praktikant ist weder Schueler noch Lehrkraft"},
-		"97": {ArtSonstige, "FB-Ek", "Fachbereich ist ein Sammelkonto, keine Person"},
-		// Unklar heisst unklar — NICHT stillschweigend Schueler.
-		"98": {ArtUnbekannt, "Ausl", "unklare Untergruppe braucht eine Entscheidung"},
-		"1":  {ArtUnbekannt, "UNDEF", "undefiniert"},
+		// Entscheidung vom 28.09.2026: keine Schueler, aber Entleiher — ins Kollegium.
+		"96":  {ArtSonstige, "Prakt", "Praktikant ist weder Schueler noch Lehrkraft"},
+		"97":  {ArtSonstige, "FB-Ek", "Fachbereich ist ein Sammelkonto, keine Person"},
+		"122": {ArtSonstige, "Sekr.", "Sekretariat"},
+		"129": {ArtSonstige, "U+", "U-plus: Vertretungskraefte"},
+		// Schueler auf Zeit im Ausland: Schueler mit der Littera-Klasse.
+		"98": {ArtSchueler, "Ausl", "Im Ausland bleibt Schueler"},
+		// Ohne Zuordnung heisst ohne Zuordnung — NICHT stillschweigend Schueler; der Lauf
+		// haelt an (OhneZuordnung). Die Bezeichnung zaehlt ohne Leerraum („ IMPORT").
+		"1":   {ArtUnbekannt, "UNDEF", "undefiniert"},
+		"123": {ArtUnbekannt, "IMPORT", "Importgruppe ohne Zuordnung"},
 	}
 
 	for id, erwartet := range faelle {
@@ -126,16 +135,20 @@ func TestLeseLeser_OrdnetEinUndFiltert(t *testing.T) {
 	if len(NurArt(leser, ArtAbgegangen)) != 1 {
 		t.Error("Abgaenger-Menge falsch")
 	}
+	// Die Gruppe reist mit: Das Protokoll nennt sie fuer ein Kollegium-Konto, und der Halt
+	// bei fehlender Zuordnung nennt Schluessel und Bezeichnung.
+	if leser[4].Gruppe != "Fachbereich Erdkunde" || leser[4].GruppeNr != "97" {
+		t.Errorf("Gruppe des Fachbereichskontos: %q / %q", leser[4].Gruppe, leser[4].GruppeNr)
+	}
 }
 
 // TestUnbekannteArtWirdNichtZuSchueler haelt die vorsichtige Vorgabe fest: Was nicht
-// eindeutig zugeordnet werden kann, wird NICHT stillschweigend zum Schueler gemacht.
-// Bei Personendaten ist eine ausgelassene Zeile das kleinere Uebel als eine falsch
-// einsortierte.
+// eindeutig zugeordnet werden kann, wird NICHT stillschweigend zum Schueler gemacht —
+// der Personenlauf haelt an, bis es zugeordnet ist (OhneZuordnung).
 func TestUnbekannteArtWirdNichtZuSchueler(t *testing.T) {
-	gruppen := map[string]Lesergruppe{"98": {Klasse: "Ausl", Art: ArtUnbekannt}}
+	gruppen := map[string]Lesergruppe{"1": {Klasse: "UNDEF", Bezeichnung: "Undefinierte Untergruppe", Art: ArtUnbekannt}}
 	const csv = `Buchungsnummer,Lesernummer,Vorname,Nachname,Lesergruppe
-50,2001,"Unklar","Fall",98
+50,2001,"Unklar","Fall",1
 `
 	leser, err := LeseLeser(strings.NewReader(csv), gruppen)
 	if err != nil {

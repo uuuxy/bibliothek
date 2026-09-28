@@ -18,20 +18,28 @@ import (
 type LeserArt int
 
 const (
-	// ArtUnbekannt steht für eine nicht auflösbare oder unklare Untergruppe (z. B. „IMPORT",
-	// „U-plus", „Im Ausland"). Diese Zeilen werden NICHT still zu Schülern gemacht —
-	// sie brauchen eine Entscheidung, bevor Personendaten geschrieben werden.
+	// ArtUnbekannt steht für eine Untergruppe, die keiner Art zugeordnet ist („Undefinierte
+	// Untergruppe", „IMPORT"), und für eine Lesergruppe, die in Leser_UG fehlt. Mit solchen
+	// Lesern hält der Personenlauf an, bevor er etwas schreibt (OhneZuordnung): Ausgelassen
+	// fehlten ihre Ausleihen, und die Bücher stünden als verfügbar im Regal. Zugeordnet wird
+	// in Littera selbst oder hier in artAusUntergruppe (Entscheidung vom 28.09.2026).
 	ArtUnbekannt LeserArt = iota
 	// ArtSchueler umfasst „Schüler" UND „Sekundarstufe II": Die Oberstufenklassen
 	// (11T1, 12T3, 13T5) sind eine eigene Untergruppe, aber selbstverständlich Schüler.
+	// Ebenso „Im Ausland": Sie kommen mit der Littera-Klasse („AUS"), die richtige trägt der
+	// LUSD-Import nach; das Abgangsjahr ist der Rückfall für eine Klasse ohne Jahrgang
+	// (personenlauf.abgangsjahr).
 	ArtSchueler
 	// ArtLehrkraft umfasst „Lehrer" und „Lehrerin".
 	ArtLehrkraft
 	// ArtAbgegangen sind ehemalige Schüler — Untergruppe „Abgegangen". Gehören als
 	// Abgänger in die Schülerdatei, nicht als aktive Schüler.
 	ArtAbgegangen
-	// ArtSonstige sind Praktikanten, Sekretariat, Fachbereichs-Sammelkonten. Keine Schüler,
-	// aber auch keine Lehrkräfte im Sinne des Portals.
+	// ArtSonstige sind Praktikanten, Sekretariat, die Vertretungskräfte aus „U-plus" und die
+	// Sammelkonten der Fachbereiche: keine Schüler, aber Entleiher. Sie kommen ins Kollegium
+	// wie eine Lehrkraft (Personenart „lehrkraft"), werden also nicht gemahnt; ihre
+	// Littera-Gruppe steht im Protokoll, bis es Lesergruppen gibt (docs/OFFEN.md 5.18). Bis zum
+	// 28.09.2026 übernahm der Lauf sie nicht, und mit ihnen fehlten ihre Ausleihen.
 	ArtSonstige
 	// ArtLiV sind Referendare — in Hessen LiV, Lehrkraft im Vorbereitungsdienst. Sie gehören ins
 	// Kollegium mit der Personenart „liv" (Migration 119). Bis zum 15.09.2026 fielen sie unter
@@ -41,8 +49,9 @@ const (
 
 // Lesergruppe ist eine Zeile aus `Leser_UG` — Klassenbezeichnung plus Art.
 type Lesergruppe struct {
-	Klasse string // KurzBez: "07H1", "12T3" — die Klasse, wie sie an der Schule heißt
-	Art    LeserArt
+	Klasse      string // KurzBez: "07H1", "12T3" — die Klasse, wie sie an der Schule heißt
+	Bezeichnung string // Untergruppe, wie Littera sie führt: „Schüler", „Fachbereich Erdkunde"
+	Art         LeserArt
 }
 
 // Leser ist eine Person aus dem Littera-Altbestand.
@@ -63,6 +72,8 @@ type Leser struct {
 	Nachname     string
 	Klasse       string
 	Art          LeserArt
+	Gruppe       string // Littera-Untergruppe (Lesergruppe.Bezeichnung), leer ohne Eintrag in Leser_UG
+	GruppeNr     string // Leser.Lesergruppe — der Schlüssel in Leser_UG
 	Geburtsdatum string // Rohform wie exportiert
 	EMail        string
 	Strasse      string
@@ -78,7 +89,7 @@ type Leser struct {
 func artAusUntergruppe(bezeichnung string) LeserArt {
 	b := strings.TrimSpace(bezeichnung)
 	switch b {
-	case "Schüler", "Sekundarstufe II":
+	case "Schüler", "Sekundarstufe II", "Im Ausland":
 		return ArtSchueler
 	case "Lehrer", "Lehrerin":
 		return ArtLehrkraft
@@ -86,7 +97,7 @@ func artAusUntergruppe(bezeichnung string) LeserArt {
 		return ArtLiV
 	case "Abgegangen":
 		return ArtAbgegangen
-	case "Praktikant", "Praktikantin", "Sekretärin":
+	case "Praktikant", "Praktikantin", "Sekretärin", "U-plus":
 		return ArtSonstige
 	}
 	// Sammelkonten der Fachbereiche sind keine Personen.
@@ -109,8 +120,9 @@ func LeseLesergruppen(r io.Reader) (map[string]Lesergruppe, error) {
 			continue
 		}
 		gruppen[id] = Lesergruppe{
-			Klasse: strings.TrimSpace(z["KurzBez"]),
-			Art:    artAusUntergruppe(z["Untergruppe"]),
+			Klasse:      strings.TrimSpace(z["KurzBez"]),
+			Bezeichnung: strings.TrimSpace(z["Untergruppe"]),
+			Art:         artAusUntergruppe(z["Untergruppe"]),
 		}
 	}
 	return gruppen, nil
@@ -133,7 +145,8 @@ func LeseLeser(r io.Reader, gruppen map[string]Lesergruppe) ([]Leser, error) {
 		if id == "" {
 			continue // ohne internen Schlüssel lässt sich keine Ausleihe zuordnen
 		}
-		gruppe := gruppen[strings.TrimSpace(z["Lesergruppe"])]
+		gruppeNr := strings.TrimSpace(z["Lesergruppe"])
+		gruppe := gruppen[gruppeNr]
 		leser = append(leser, Leser{
 			ID:           id,
 			Lesernummer:  strings.TrimSpace(z["Lesernummer"]),
@@ -141,6 +154,8 @@ func LeseLeser(r io.Reader, gruppen map[string]Lesergruppe) ([]Leser, error) {
 			Nachname:     strings.TrimSpace(z["Nachname"]),
 			Klasse:       gruppe.Klasse,
 			Art:          gruppe.Art,
+			Gruppe:       gruppe.Bezeichnung,
+			GruppeNr:     gruppeNr,
 			Geburtsdatum: strings.TrimSpace(z["Geburtsdatum"]),
 			EMail:        strings.TrimSpace(z["eMail"]),
 			Strasse:      strings.TrimSpace(z["Adresse"]),

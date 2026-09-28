@@ -107,8 +107,8 @@ func TestZweiteOffeneAusleiheWirdAbgelehnt(t *testing.T) {
 	}
 }
 
-// TestAusleiheOhneEntleiherWirdGemeldet: 341 Ausleihen des Altbestands hängen an
-// Sammelkonten und unklaren Gruppen, die bewusst nicht angelegt werden. Sie blind zu
+// TestAusleiheOhneEntleiherWirdGemeldet: Eine Ausleihe, deren Entleiher nicht angekommen
+// ist (an einem Schreibfehler gescheitert, oder in Leser gar nicht vorhanden). Sie blind zu
 // schreiben scheiterte am Fremdschlüssel und risse den ganzen Lauf mit; sie
 // stillschweigend zu verwerfen verschwiege, dass ein Buch verliehen war.
 func TestAusleiheOhneEntleiherWirdGemeldet(t *testing.T) {
@@ -117,10 +117,10 @@ func TestAusleiheOhneEntleiherWirdGemeldet(t *testing.T) {
 	s, protokoll := testSchreiber(t, pool, nil)
 
 	ab := bestand(titel("1", "Ein Buch", ""), titel("2", "Noch eins", ""))
-	ab.Leser = []Leser{leser("FB", "301", "FB Bio", ArtSonstige)}
+	ab.Leser = []Leser{leser("S1", "301", "07H1", ArtSchueler)}
 	ab.Ausleihen = []Ausleihe{
-		ausleihe("A1", "E1", "FB", 0),          // Entleiher nicht übernommen
-		ausleihe("A2", "GIBTS NICHT", "FB", 1), // Exemplar unbekannt
+		ausleihe("A1", "E1", "NIEMAND", 0),     // Entleiher steht nicht in Leser
+		ausleihe("A2", "GIBTS NICHT", "S1", 1), // Exemplar unbekannt
 	}
 	bestandBericht, personenBericht := ausleihWelt(t, s, ab)
 
@@ -135,6 +135,37 @@ func TestAusleiheOhneEntleiherWirdGemeldet(t *testing.T) {
 	for _, erwartet := range []string{"littera_id=A1", "littera_id=A2", "nicht übernommen"} {
 		if !strings.Contains(text, erwartet) {
 			t.Errorf("das Protokoll nennt %q nicht:\n%s", erwartet, text)
+		}
+	}
+}
+
+// TestAusleihenDerSonstigenKommenAlsDauerleihe: Die Bücher, die ein Fachbereich in Littera
+// auf sein Sammelkonto gebucht hat, stehen in den Fachräumen. Ihre Ausleihen kommen mit —
+// als Dauerleihe wie bei einer Lehrkraft (ist_handapparat), also ohne Mahnung. Ein Schüler
+// „Im Ausland" daneben behält die gewöhnliche Ausleihe.
+func TestAusleihenDerSonstigenKommenAlsDauerleihe(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+
+	ab := bestand(titel("1", "Ein Buch", ""), titel("2", "Noch eins", ""))
+	ab.Leser = []Leser{leser("FB", "301", "FB Bio", ArtSonstige), leser("S1", "302", "AUS", ArtSchueler)}
+	ab.Ausleihen = []Ausleihe{ausleihe("A1", "E1", "FB", 0), ausleihe("A2", "E2", "S1", 0)}
+	bestandBericht, personenBericht := ausleihWelt(t, s, ab)
+
+	bericht, err := s.SchreibeAusleihen(context.Background(), ab, bestandBericht, personenBericht)
+	if err != nil {
+		t.Fatalf("SchreibeAusleihen: %v", err)
+	}
+	if bericht.Geschrieben != 2 || bericht.OhneEntleiher != 0 || !bericht.AbgleichOK {
+		t.Fatalf("beide Ausleihen müssen ankommen, gemeldet: %+v", bericht)
+	}
+	for barcode, dauerleihe := range map[string]bool{"301": true, "302": false} {
+		if n := zaehle(t, pool, `SELECT count(*) FROM ausleihen a JOIN leser l ON l.id = a.schueler_id
+			WHERE l.barcode_id = $1 AND a.ist_handapparat = $2 AND a.rueckgabe_am IS NULL`,
+			barcode, dauerleihe); n != 1 {
+			t.Errorf("Ausweis %s: eine offene Ausleihe mit ist_handapparat=%v erwartet, gefunden: %d",
+				barcode, dauerleihe, n)
 		}
 	}
 }

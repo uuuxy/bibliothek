@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"bibliothek/internal/uebernahme"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -15,8 +16,8 @@ import (
 type PersonenBericht struct {
 	QuellLeser    int
 	Schueler      int
-	Lehrkraefte   int
-	Uebersprungen int // Sonstige, Unklare und an einem Fehler gescheiterte
+	Lehrkraefte   int // jedes Konto im Kollegium: Lehrkräfte, LiV und ArtSonstige
+	Uebersprungen int // an einem Fehler gescheiterte
 
 	IstSchueler    int
 	IstLehrkraefte int
@@ -79,16 +80,20 @@ const sqlBenutzerEinfuegen = `
 const sqlLeserzeileNachtragen = `
 	UPDATE leser SET barcode_id = $1, art = $2 WHERE id = $3`
 
-// SchreibePersonen überträgt Schüler und Lehrkräfte.
+// SchreibePersonen überträgt jeden Leser: Schüler (auch „Abgegangen" und „Im Ausland") in
+// die Schülerdatei, alle anderen ins Kollegium.
 //
-// Sonstige (Praktikanten, Sekretariat, Fachbereichs-Sammelkonten) und Unklare werden
-// bewusst NICHT geschrieben: Bei Personendaten ist eine ausgelassene Zeile das kleinere
-// Übel als eine falsch einsortierte. Ihre Ausleihen fallen damit weg und werden im
-// Ausleihteil einzeln als FEHLER gemeldet, nicht stillschweigend verschluckt.
+// Ein Leser ohne Art (OhneZuordnung) hält den Lauf an, bevor die erste Person geschrieben
+// ist. Bei Personendaten ist eine falsch einsortierte Zeile schlimmer als eine fehlende —
+// aber eine fehlende nimmt ihre Ausleihen mit, und das Buch gilt als verfügbar. Deshalb
+// weder raten noch auslassen: zuordnen, dann laufen.
 func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (PersonenBericht, error) {
 	bericht := PersonenBericht{
 		QuellLeser:   len(ab.Leser),
 		EntleiherIDs: make(map[string]Entleiher, len(ab.Leser)),
+	}
+	if offen := OhneZuordnung(ab); len(offen) > 0 {
+		return bericht, fmt.Errorf("Leser ohne Zuordnung, es wurde keine Person geschrieben: %v", offen)
 	}
 
 	vorherS, vorherL, err := s.zaehlePersonen(ctx)
@@ -219,13 +224,6 @@ func (p *personenlauf) einBatch(ctx context.Context, batch []Leser) error {
 }
 
 func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error {
-	if l.Art == ArtSonstige || l.Art == ArtUnbekannt {
-		p.bericht.Uebersprungen++
-		p.s.prot.Fehler(l.ID, l.Lesernummer,
-			"weder Schüler noch Lehrkraft (Praktikant, Sammelkonto oder unklare Gruppe) – nicht übernommen")
-		return nil
-	}
-
 	var neu Entleiher
 	erg, err := uebernahme.ImSavepoint(ctx, tx, "littera_id="+l.ID, func(sp pgx.Tx) error {
 		var innerErr error
@@ -248,23 +246,29 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 	} else {
 		p.bericht.Lehrkraefte++
 	}
+	if l.Art == ArtSonstige {
+		// Die Gruppe hat im Ziel noch kein Feld (weder leser noch benutzer), bis es
+		// Lesergruppen gibt (docs/OFFEN.md 5.18) — hier bleibt sie je Konto nachlesbar.
+		p.s.prot.Warnung(l.ID, l.Lesernummer, "Littera-Gruppe „"+l.Gruppe+"“ ("+l.Klasse+
+			") – ins Kollegium übernommen, Ausleihen als Dauerleihe; die Gruppe steht nur hier")
+	}
 	return nil
 }
 
 func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
-	if l.Art == ArtLehrkraft || l.Art == ArtLiV {
+	switch l.Art {
+	case ArtLehrkraft, ArtLiV, ArtSonstige:
 		return p.schreibeLehrkraft(ctx, tx, l)
+	case ArtSchueler, ArtAbgegangen:
+		return p.schreibeSchueler(ctx, tx, l)
 	}
-	return p.schreibeSchueler(ctx, tx, l)
+	// SchreibePersonen lässt keinen Leser ohne Art herein (OhneZuordnung); kommt doch einer
+	// an, bricht der Lauf ab, statt ihn irgendwo einzusortieren.
+	return Entleiher{}, fmt.Errorf("Leser %s hat keine Art (%d)", l.ID, l.Art)
 }
 
 func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
-	jahr, ok := p.abgangsjahr(l)
-	if !ok {
-		return Entleiher{}, fmt.Errorf(
-			"%w: aus der Klasse %q lässt sich kein Abgangsjahr ableiten, schueler.abgaenger_jahr ist NOT NULL",
-			uebernahme.ErrZeile, l.Klasse)
-	}
+	jahr, rueckfall := p.abgangsjahr(l)
 
 	var geburtsdatum *time.Time
 	if g, ok := GeburtsdatumAus(l.Geburtsdatum, p.s.opt.Jetzt); ok {
@@ -286,22 +290,34 @@ func (p *personenlauf) schreibeSchueler(ctx context.Context, tx pgx.Tx, l Leser)
 	if err != nil {
 		return Entleiher{}, fmt.Errorf("beim Schüler %s %s: %w", l.Vorname, l.Nachname, err)
 	}
+	if rueckfall {
+		p.s.prot.Warnung(l.ID, l.Lesernummer, fmt.Sprintf(
+			"Klasse „%s“ nennt keinen Jahrgang – Abgangsjahr %d eingesetzt wie bei der Handanlage; "+
+				"das richtige setzt der Abgang (Versetzung, LUSD-Import)", l.Klasse, jahr))
+	}
 	return Entleiher{LeserID: id, IstSchueler: true}, nil
 }
 
 // abgangsjahr rechnet das Abgangsjahr aus der Klasse.
 //
 // Die Gruppe „Abgegangen" trägt als Klassenbezeichnung nur „Ab" — daraus ist nichts
-// abzuleiten. Für sie gilt das laufende Schuljahr: Sie sind bereits weg, das Jahr steuert
-// nur noch die Stapel-Archivierung, und ist_abgaenger sagt die Wahrheit ohnehin.
-func (p *personenlauf) abgangsjahr(l Leser) (int, bool) {
+// abzuleiten. Für sie gilt das laufende Schuljahr: Sie sind bereits weg, ist_abgaenger sagt
+// die Wahrheit, und das Jahr bestimmt nur noch, ab wann die Löschung greifen darf
+// (repository.PredikatAbgaengerLoeschung).
+//
+// Jede andere Klasse ohne Jahrgang („AUS" der Gruppe „Im Ausland") bekommt, was die
+// Anwendung dafür überall einsetzt, Handanlage wie LUSD-Import (repository.AbgangsjahrOhneKlasse),
+// und rueckfall=true für die Warnung. Bis zum 28.09.2026 wurde ein solcher Schüler samt seinen
+// Ausleihen ausgelassen — mit der Begründung, ein geratenes Jahr archiviere ihn still; eine
+// Archivierung nach dem Abgangsjahr gibt es aber nicht (siehe AbgangsjahrOhneKlasse).
+func (p *personenlauf) abgangsjahr(l Leser) (jahr int, rueckfall bool) {
 	if jahr, ok := AbgaengerJahr(l.Klasse, p.s.opt.SchuljahrEnde); ok {
-		return jahr, true
+		return jahr, false
 	}
 	if l.Art == ArtAbgegangen {
-		return p.s.opt.SchuljahrEnde, true
+		return p.s.opt.SchuljahrEnde, false
 	}
-	return 0, false
+	return repository.AbgangsjahrOhneKlasse(p.s.opt.Jetzt), true
 }
 
 func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {

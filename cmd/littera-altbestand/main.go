@@ -20,7 +20,9 @@
 //
 //	0 – vollständig übernommen. Warnungen können im Protokoll stehen, aber jeder
 //	    Quelldatensatz ist angekommen.
-//	1 – abgebrochen. Ab dem gemeldeten Punkt wurde nichts mehr geschrieben.
+//	1 – abgebrochen. Ab dem gemeldeten Punkt wurde nichts mehr geschrieben. Auch der
+//	    Trockenlauf endet so, wenn der echte Lauf mit denselben Schaltern anhielte
+//	    (Leser ohne Zuordnung, zuordnungGeprueft).
 //	2 – abgeschlossen, aber unvollständig. Welche Datensätze fehlen, steht als
 //	    FEHLER-Zeile im Protokoll.
 package main
@@ -85,9 +87,30 @@ func run() int {
 
 	if s.trocken {
 		trockenlauf(ab)
-		return exitOK
+		return zuordnungGeprueft(ab, s.personen)
 	}
 	return uebertrage(s, ab)
+}
+
+// zuordnungGeprueft nennt jede Lesergruppe ohne Art und hält einen Lauf mit -personen an —
+// im echten Lauf vor dem Protokoll, der Verbindung und dem Bestand, also bevor irgendetwas
+// geschrieben ist (Entscheidung vom 28.09.2026). Zugeordnet wird in Littera selbst oder in
+// littera.artAusUntergruppe; danach der Lauf von vorn. Ohne -personen betrifft es nichts.
+func zuordnungGeprueft(ab *littera.Altbestand, personen bool) int {
+	offen := littera.OhneZuordnung(ab)
+	if len(offen) == 0 {
+		return exitOK
+	}
+	if !personen {
+		log.Printf("  Lesergruppen ohne Zuordnung: %d (ohne -personen ohne Belang)", len(offen))
+		return exitOK
+	}
+	log.Print("FEHLER: Leser ohne Zuordnung zu Schüler oder Kollegium — es wird nichts geschrieben:")
+	for _, b := range offen {
+		log.Printf("  %v", b)
+	}
+	log.Print("       Erst in Littera einer Gruppe zuordnen (oder in littera.artAusUntergruppe), dann erneut starten.")
+	return exitAbgebrochen
 }
 
 func lies() schalter {
@@ -96,7 +119,8 @@ func lies() schalter {
 	flag.StringVar(&s.dbURL, "db", os.Getenv("DATABASE_URL"), "PostgreSQL-Verbindung")
 	flag.BoolVar(&s.trocken, "trocken", false, "nur lesen und berichten, nicht schreiben")
 	flag.BoolVar(&s.bestand, "bestand", true, "Titel und Exemplare übernehmen")
-	flag.BoolVar(&s.personen, "personen", false, "Schüler und Lehrkräfte übernehmen")
+	flag.BoolVar(&s.personen, "personen", false,
+		"alle Leser übernehmen: Schüler, alle anderen ins Kollegium (hält an bei einer Gruppe ohne Zuordnung)")
 	flag.BoolVar(&s.ausleihen, "ausleihen", false, "Ausleihen übernehmen (setzt -personen voraus)")
 	flag.StringVar(&s.barcodes, "barcodes", string(littera.BarcodeLittera),
 		"littera = Exemplarnummer vom vorhandenen Etikett, neu = frische B-XXXXX aus barcode_seq")
@@ -123,9 +147,10 @@ func trockenlauf(ab *littera.Altbestand) {
 	for _, l := range ab.Leser {
 		nach[l.Art]++
 	}
-	log.Printf("  Leser: %d Schüler, %d Lehrkräfte, %d LiV, %d abgegangen, %d sonstige, %d unklar",
-		nach[littera.ArtSchueler], nach[littera.ArtLehrkraft], nach[littera.ArtLiV], nach[littera.ArtAbgegangen],
-		nach[littera.ArtSonstige], nach[littera.ArtUnbekannt])
+	log.Printf("  Leser: %d Schüler, %d abgegangen; Kollegium: %d Lehrkräfte, %d LiV, %d sonstige; "+
+		"ohne Zuordnung: %d",
+		nach[littera.ArtSchueler], nach[littera.ArtAbgegangen], nach[littera.ArtLehrkraft],
+		nach[littera.ArtLiV], nach[littera.ArtSonstige], nach[littera.ArtUnbekannt])
 
 	bekannt := make(map[string]bool, len(ab.Exemplare))
 	for _, e := range ab.Exemplare {
@@ -137,6 +162,9 @@ func trockenlauf(ab *littera.Altbestand) {
 }
 
 func uebertrage(s schalter, ab *littera.Altbestand) int {
+	if code := zuordnungGeprueft(ab, s.personen); code != exitOK {
+		return code
+	}
 	if s.dbURL == "" {
 		log.Print("FEHLER: -db fehlt und DATABASE_URL ist nicht gesetzt")
 		return exitAbgebrochen
@@ -214,7 +242,7 @@ func fuehreAus(
 			b.Abbruch = fmt.Errorf("bei den Personen: %w", err)
 			return b
 		}
-		log.Printf("  → %d Schüler, %d Lehrkräfte, %d nicht übernommen",
+		log.Printf("  → %d Schüler, %d ins Kollegium, %d nicht übernommen",
 			b.Personen.Schueler, b.Personen.Lehrkraefte, b.Personen.Uebersprungen)
 	}
 
@@ -251,9 +279,9 @@ func drucke(b littera.Bericht, s schalter) {
 	}
 	if s.personen {
 		log.Printf("Personen   Quelle %6d Leser", b.Personen.QuellLeser)
-		log.Printf("           geschrieben %6d Schüler / %4d Lehrkräfte, nicht übernommen %d",
+		log.Printf("           geschrieben %6d Schüler / %4d Kollegium, nicht übernommen %d",
 			b.Personen.Schueler, b.Personen.Lehrkraefte, b.Personen.Uebersprungen)
-		abgleich(b.Personen.AbgleichOK, fmt.Sprintf("%d Schüler / %d Lehrkräfte tatsächlich neu",
+		abgleich(b.Personen.AbgleichOK, fmt.Sprintf("%d Schüler / %d Kollegium tatsächlich neu",
 			b.Personen.IstSchueler, b.Personen.IstLehrkraefte))
 	}
 	if s.ausleihen {

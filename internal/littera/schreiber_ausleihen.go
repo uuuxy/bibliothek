@@ -131,8 +131,8 @@ func (l *ausleihlauf) beideEndenGefunden(a Ausleihe) bool {
 	if _, ok := l.entleiher[a.LeserID]; !ok {
 		l.bericht.OhneEntleiher++
 		l.s.prot.Fehler(a.ID, a.LeserID,
-			"der Entleiher wurde nicht übernommen (Sammelkonto, unklare Gruppe oder Fehler) – "+
-				"Ausleihe nicht übernommen")
+			"der Entleiher wurde nicht übernommen (seine eigene FEHLER-Zeile nennt den Grund, "+
+				"oder er fehlt in Leser) – Ausleihe nicht übernommen")
 		return false
 	}
 	return true

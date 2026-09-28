@@ -1,6 +1,21 @@
 package repository
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
+
+// AbgangsjahrOhneKlasse ist das Abgangsjahr eines Schülers, dessen Klasse keinen Jahrgang
+// hergibt („ABG", „AUS", ein Kursname): das Kalenderjahr plus fünf. Bis zum Abgang steht der
+// Wert nur als „Abgang JJJJ" im Profil und lässt sich dort ändern; als Abgänger markieren die
+// Versetzung und der LUSD-Import, und beide setzen dabei das tatsächliche Jahr
+// (api/student_promotion.go, api/lusd_apply.go).
+//
+// Verbraucher: die Handanlage und der LUSD-Import (api.abgaengerJahrAm) und die
+// Littera-Übernahme für die Gruppe „Im Ausland" — eine Antwort auf dieselbe Frage.
+func AbgangsjahrOhneKlasse(jetzt time.Time) int {
+	return jetzt.Year() + 5
+}
 
 // AbschlussklasseSQL liefert das SQL-Prädikat „diese Klasse ist eine Abschlussklasse" für
 // einen Spaltenausdruck. Es ist die EINE Regel für das Ende eines Bildungsgangs an dieser
