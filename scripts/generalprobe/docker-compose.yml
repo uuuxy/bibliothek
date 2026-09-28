@@ -1,0 +1,74 @@
+# Generalprobe (scripts/generalprobe/generalprobe.sh): eine frische Datenbank wie beim Neuaufbau
+# — das Backend legt sie selbst an (schema.sql im Image, dann die Migrationen), kein schema.sql-
+# Mount wie im lokalen Stack.
+#
+# Abgeschottet, weil hier echte Personendaten liegen: Das Backend hängt NUR am Netz „intern"
+# (internal: true, ohne Weg nach draußen). Kein Cover-Abgleich bei Google & Co., keine Mail, kein
+# S3, kein Sentry — das Skript prüft das vor der Übernahme und bricht sonst ab. Die Anmeldung
+# läuft über IMAP_HOST=mock. Die Datenbank ist für die Übernahme vom Rechner aus nur auf
+# 127.0.0.1:5436 erreichbar; dafür hängt sie zusätzlich am Netz „aussen".
+#
+# Die Zugangsdaten hier gelten nur für diesen Wegwerf-Stack; das Skript löscht ihn am Ende samt
+# Volumes (docker compose down -v).
+name: bibliothek-probe
+services:
+  postgres-db:
+    # Dieselbe Hauptversion wie docker-compose.yml.
+    image: postgres:18-alpine
+    container_name: bibliothek-db-probe
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=probe-nur-lokal
+      - POSTGRES_DB=bibliothek
+    volumes:
+      - probe_pgdata:/var/lib/postgresql
+    ports:
+      - "127.0.0.1:5436:5432"
+    networks: [aussen, intern]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bibliothek"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    image: bibliothek-probe:latest
+    container_name: bibliothek-backend-probe
+    environment:
+      - PORT=8086
+      - APP_ENV=local
+      - DATABASE_URL=postgres://postgres:probe-nur-lokal@postgres-db:5432/bibliothek?sslmode=disable
+      - JWT_SECRET=probe-jwt-secret-nur-lokal-mindestens-32-zeichen
+      - APP_ENCRYPTION_KEY=probe-aes-key-32-zeichen-lokal!!
+      - COOKIE_SECURE=false
+      - INITIAL_ADMIN_EMAIL=probe-admin@test.local
+      - IMAP_HOST=mock
+      - SMTP_HOST=127.0.0.1
+      - SMTP_PORT=9
+      - SMTP_FROM=probe@test.local
+      - BACKUP_ENCRYPTION_KEY=probe-backup-schluessel-nur-lokal-32-zeichen
+      - BACKUP_DIR=/app/backups
+      - RATE_LIMIT=5000
+    volumes:
+      - probe_backups:/app/backups
+      - probe_uploads:/app/uploads
+    networks: [intern]
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+
+  werkzeug:
+    image: curlimages/curl:latest
+    container_name: bibliothek-werkzeug-probe
+    entrypoint: ["sleep", "infinity"]
+    networks: [intern]
+
+volumes:
+  probe_pgdata:
+  probe_backups:
+  probe_uploads:
+
+networks:
+  aussen: {}
+  intern:
+    internal: true

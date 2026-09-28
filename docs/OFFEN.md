@@ -816,7 +816,8 @@ wurde" — das kennt, wer Littera an der Schule eingerichtet hat. **Nächste Sch
 Kennwort erfragen; (2) die `.bak` auf dem eigenen Rechner in einen SQL Server einspielen und die
 neun Tabellen aus Abschnitt 1 von [SCRIPTS.md](SCRIPTS.md) als CSV ausgeben, Spaltennamen und
 Datumsformate gegen den Importer prüfen, der bisher nur `mdb-export` kennt; (3) lokal und nur
-lesend messen, nicht auf dem Testserver: `FremdLeserNummer` gefüllt, offene Ausleihen, Titel mit
+lesend messen, nicht auf dem Testserver, am einfachsten mit der Generalprobe über das
+CSV-Verzeichnis ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1b): `FremdLeserNummer` gefüllt, offene Ausleihen, Titel mit
 Schlagworten (4.20). Ob es die volle Datenbank ist, zeigt erst das Einspielen; dass die jüngere
 Datei kleiner ist, ist ungeklärt.
 **Etiketten vor dem Lauf prüfen:** `LITTERA_CSV_DIR=… go test ./internal/littera/` gegen die
@@ -832,12 +833,10 @@ klären: diese Exemplare als ungedruckt anlegen.
 **Lesergruppen ohne Zuordnung vor dem Umstiegstag klären.** Seit dem 28.09.2026 übernimmt der
 Lauf jeden Leser ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1); eine Lesergruppe ohne Zuordnung hält
 ihn an, bevor er schreibt. In der Sicherung von 2010 ist das „Undefinierte Untergruppe" (5
-Personen, 21 Ausleihen). Mit dem frischen Backup den Trockenlauf mit `-personen -ausleihen`
-fahren; nennt er Gruppen, setzt die Bücherei diese Personen in Littera in ihre Gruppe, bevor
-die Sicherung für den Umstieg gezogen wird.
-Nachweis steht aus: Generalprobe wiederholen — erwartet 15.612 von 15.615 Ausleihen (die
-restlichen 3 sind Widersprüche in Littera: ein Exemplar fehlt im Bestand, zwei sind doppelt
-verliehen).
+Personen, 21 Ausleihen). Mit dem frischen Backup die Generalprobe fahren ([SCRIPTS.md](SCRIPTS.md),
+Abschnitt 1b; mit der Sicherung von 2010 am 28.09.2026 bestanden, 15.612 von 15.615 Ausleihen);
+nennt sie Gruppen, setzt die Bücherei diese Personen in Littera in ihre Gruppe, bevor die
+Sicherung für den Umstieg gezogen wird.
 
 **Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
 Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.

@@ -170,6 +170,57 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
 - **Rückgabewerte:** 0 erfolgreich · 1 abgebrochen (fehlende Datei, DB nicht erreichbar,
   Importfehler). Die Zahl verarbeiteter Titel steht als `verarbeitete_titel` im JSON-Log.
 
+### 1b. Generalprobe mit einer Littera-Sicherung (`scripts/generalprobe/`)
+
+Übernimmt eine Littera-Sicherung in eine frische Datenbank und prüft das Ergebnis durch die
+Anwendung — der Probelauf vor dem Umstieg. Läuft auf dem Arbeitsrechner, nicht am Server.
+
+```bash
+SICHERUNG="$HOME/littera/littera_sav.mdb"   # oder ein Verzeichnis mit den CSVs aus Abschnitt 1
+scripts/generalprobe/generalprobe.sh "$SICHERUNG"
+```
+
+Was die Probe tut, in dieser Reihenfolge:
+
+1. **Neuaufbau:** Image aus dem aktuellen Stand, leere Datenbank, das Backend legt sie selbst
+   an; alle Migrationen müssen eingetragen sein.
+2. **Abschottung, bevor Daten hineinkommen:** Das Backend hängt nur an einem Netz ohne Weg ins
+   Internet (erreicht es doch eins, bricht die Probe ab). Anmeldung über die IMAP-Attrappe,
+   keine Mail, kein S3, kein Cover-Abgleich.
+3. **Export** der neun Tabellen aus Abschnitt 1 mit `mdb-export`, dazu `FremdLeserNummer` und
+   `FremdBarcode`, wenn es sie gibt — oder die CSVs aus dem übergebenen Verzeichnis.
+4. **Trockenlauf** mit `-personen -ausleihen`. Nennt er Lesergruppen ohne Zuordnung, prüft die
+   Probe, dass der echte Lauf anhält und nichts schreibt. Weiter geht es dann nur mit
+   `--gruppe 'Undefinierte Untergruppe=Schüler'`: Das stellt nach, was die Bücherei in Littera
+   täte, und zwar nur in der Kopie des Exports.
+5. **Übernahme:** alle Abgleiche an der Datenbank, jeder Leser übernommen, keine Ausleihe ohne
+   Entleiher; das Protokoll nach Grund gezählt, ohne Werte.
+6. **Theke,** über das interne Netz so angesprochen wie von der Oberfläche: Etikettenwerte je
+   Stellenzahl der Exemplarnummer (aus Litteras Spalte `Barcode`, unabhängig vom Code der
+   Übernahme gelesen), Ausweis, Ausleihe und Rückgabe, Rückgabe eines in Littera verliehenen
+   Buchs, Buchliste für die Theke ohne Netz, Etikett-Nachdruck, Mahnwesen mit den Mahnbriefen
+   aller Klassen, Leserdatei, Katalog. Ausleihe und Rückgaben werden an der Datenbank belegt.
+7. **Nachtsicherung** mit dem Code des Jobs (`nachtsicherung.go`, ohne S3 und Mail) und
+   **Wiederherstellung** nach [resilience_and_recovery.md](resilience_and_recovery.md) 2a in
+   eine Wegwerf-Datenbank: Einspielen mit `ON_ERROR_STOP`, Zeilen je Tabelle gegen den Dump
+   (Schritt 7), Tabellen, Indizes und Trigger gleich, das Programm startet darauf.
+
+**Voraussetzungen:** Docker, Go, Python 3, `psql` und `pg_dump` in Version 18, für eine
+`.mdb` die mdbtools; Port 5436 frei. Die Probe braucht einige Minuten.
+
+**Personendaten:** Export, Protokoll und Dumps liegen nur in einem Arbeitsverzeichnis
+(`mktemp`, nur für den eigenen Benutzer lesbar) und werden am Ende gelöscht, der Stack mit
+`down -v`. Die Ausgabe nennt Zählungen, Nummern und Gruppenbezeichnungen, keinen Namen.
+`--behalten` lässt beides zur Durchsicht stehen und nennt die Befehle zum Löschen.
+
+**Rückgabewerte:** 0 jede Prüfung bestanden · 1 eine Prüfung abgewichen oder abgebrochen.
+
+**Ergebnis am 28.09.2026** mit der Sicherung von 2010 (Stand `0437fecc`): jede Prüfung
+bestanden. 10.732 Titel, 61.520 Exemplare, 1.991 Leser (1.810 Schüler, 181 im Kollegium),
+15.612 von 15.615 Ausleihen; die übrigen drei sind Widersprüche in Littera (ein Exemplar fehlt
+im Bestand, zwei sind doppelt verliehen). „Undefinierte Untergruppe" (5 Personen, 21
+Ausleihen) hielt den Lauf an und wurde mit `--gruppe` als Schüler nachgestellt.
+
 ---
 
 ## 2. Foto-Migration (`cmd/migrate-fotos`)
@@ -356,7 +407,8 @@ Liest nur den Bild-Header (`image.DecodeConfig`) — ohne volle RAM-Allokation. 
 
 Bis zum 05.08.2026 beschrieb dieses Dokument nur die großen Werkzeuge; die folgenden
 Skripte lagen undokumentiert im Verzeichnis. Sie sind bewusst kurz gehalten — der
-ausführliche Kommentar steht jeweils im Dateikopf.
+ausführliche Kommentar steht jeweils im Dateikopf. Die Generalprobe (`scripts/generalprobe/`)
+steht in Abschnitt 1b.
 
 ### Qualitäts-Gates (lokal, es gibt dafür keinen CI-Job)
 

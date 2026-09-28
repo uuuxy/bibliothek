@@ -194,21 +194,25 @@ Die Härtung aus `cmd/migrate/pg_writer.go` wurde nicht kopiert, sondern nach
 `internal/uebernahme` herausgelöst; beide Werkzeuge benutzen jetzt dieselbe. Bedienung:
 `docs/SCRIPTS.md`.
 
-Vollständiger Lauf gegen ein frisches PostgreSQL mit dem Produktivschema, 16 Sekunden:
+Vollständiger Lauf in der Generalprobe vom 28.09.2026 (`scripts/generalprobe/`, frische
+Datenbank aus den Migrationen), 22 Sekunden:
 
 | | Quelle | geschrieben | Abgleich an der DB |
 |---|---|---|---|
 | Titel | 10.732 | 10.732 | ✓ |
 | Exemplare | 61.520 | 61.520 | ✓ |
-| Schüler | 1.791 | 1.791 | ✓ |
-| Lehrkräfte | 158 | 158 | ✓ |
-| Ausleihen | 15.615 | 15.271 | ✓ |
+| Schüler (mit Abgegangenen und „Im Ausland") | 1.810 | 1.810 | ✓ |
+| Kollegium (Lehrkräfte und Sonstige) | 181 | 181 | ✓ |
+| Ausleihen | 15.615 | 15.612 | ✓ |
 
-1.804 Abwertungen (614 doppelte ISBN, 450 ungültige Prüfziffer, 406 Frist vor
-Verleihdatum, 168 leerer Haupttitel, 157 Platzhalter-Mail, 8 Ersatz-Barcode, 1
-Ersatz-Ausweis) und 386 Ausfälle (341 Ausleihen an nicht übernommene Sammelkonten, 42
-Personen ohne Zuordnung, 2 Doppelbelegungen, 1 Ausleihe auf ein Exemplar, das es nicht
-gibt). Jede Zeile steht mit ihrem Littera-Schlüssel im Protokoll.
+„Undefinierte Untergruppe" (5 Personen) hielt den Lauf zuerst an und ist hier als Schüler
+zugeordnet, wie es die Bücherei in Littera täte. 1.876 Abwertungen (614 doppelte ISBN, 450
+ungültige Prüfziffer, 411 Frist vor Verleihdatum, 180 Platzhalter-Mail, 168 leerer
+Haupttitel, 23 Littera-Gruppe eines Kollegium-Kontos, 19 Klasse ohne Jahrgang, 8
+Ersatz-Barcode, 2 Etikett ungleich Rechnung, 1 Ersatz-Ausweis) und 3 Ausfälle (2
+Doppelbelegungen, 1 Ausleihe auf ein Exemplar, das es nicht gibt). Jede Zeile steht mit ihrem
+Littera-Schlüssel im Protokoll. Bis zum 28.09.2026 fehlten 42 Personen und mit ihnen 341
+Ausleihen.
 
 ### Das Etikett ist entschlüsselt
 
