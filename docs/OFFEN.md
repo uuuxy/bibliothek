@@ -35,8 +35,7 @@ entfallen.
      erreicht, vor Ort oder über einen Fernzugang; und was die Seite für die Lieferanten von ihm
      braucht: einen Namen im Internet, die Freigabe von Port 443 und die Angabe, wie Anfragen aus
      dem Schulnetz am Server ankommen (4.23); und ob er einen Speicher für die Sicherungen außer
-     Haus stellt (7.3). Mitzubringen ist eine Aufstellung, was der Server braucht; sie fehlt noch
-     und liegt bei mir (4.23).
+     Haus stellt (7.3).
    - **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
      Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
      Mahnwesen akzeptiert, und wer wird Vertretung?
@@ -57,7 +56,10 @@ entfallen.
    - **An einem Buch selbst:** den Eigentumsvermerk auf den alten Littera-Etiketten der
      Schülerbücherei ablesen. Entschieden am 28.09.2026: Neue Etiketten tragen denselben
      Wortlaut; er wird beim Einrichten unter Einstellungen → Schule eingetragen (heute leer, also
-     kein Vermerk). In der Sicherung von 2010 steht er nicht.
+     kein Vermerk). Littera führt den Vermerk je Exemplar: In der Medienliste vom 12.06.2026
+     tragen über 13.000 Exemplare das Land, 2.942 den Schulträger, einige hundert andere
+     Eigentümer (Schule, Förderverein, Bibliothek), rund 50.000 keinen. Zum Ablesen ein Buch
+     nehmen, das dort den Schulträger trägt.
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
@@ -239,13 +241,11 @@ steht; und mit welcher Absenderadresse Anfragen aus dem Schulnetz am Server anko
 erkennt der Eingang das Schulnetz. Kommen Anfragen von außen und aus der Schule mit derselben
 Adresse an, kann er sie nicht unterscheiden.
 
-**Bei mir:** eine Aufstellung, was der Server braucht, zum Weitergeben an den Schulträger. Auch
-im Schulnetz braucht er Verbindungen nach außen: den Mailserver der Schule (die Anmeldung läuft
-über das Postfach, `auth/imap.go`), DNB, Google Books und OpenLibrary für Titeldaten und Cover
-(`pkg/coverquelle`), für Updates GitHub, Docker Hub und die Paketquellen (`Dockerfile`,
-`update.sh`). Gesammelt steht das nirgends: [arc42/03](arc42/03-kontextabgrenzung.md) nennt die
-Verbindungen des laufenden Programms, nicht die der Updates, und keine Maße für Speicher und
-Platz.
+Auch im Schulnetz braucht der Server Verbindungen nach außen: den Mailserver der Schule (die
+Anmeldung läuft über das Postfach, `auth/imap.go`), DNB, Google Books und OpenLibrary für
+Titeldaten und Cover (`pkg/coverquelle`), für Updates GitHub, Docker Hub und die Paketquellen
+(`Dockerfile`, `update.sh`). Eine Aufstellung für den Schulträger entsteht nicht (entschieden am
+28.09.2026).
 
 ---
 
@@ -910,7 +910,8 @@ sie wartet also auf den Schulserver und auf die benannte Vertretung.
 
 Fällt der Server ganz aus, meldet es niemand. Ein externer Monitor ruft alle 5 Minuten `/health`
 ab ([DEPLOYMENT.md](DEPLOYMENT.md), Abschnitt 7.0). Etwa fünf Minuten Aufwand; beim Umzug neu
-einrichten. Am Schulserver geht das, weil `/health` am Eingang von außen offen bleibt (4.23).
+einrichten. Am Schulserver geht das erst, wenn der Eingang aus 4.23 gebaut ist, der `/health`
+von außen durchlässt, und Port 443 frei ist.
 
 ### 7.6 Ruleset `main`
 
@@ -1025,7 +1026,7 @@ Einem gesperrten Kind — von Hand oder als Ehemaligem — verlängert das Progr
 kein Schulbuch (`checkAusleiheGesperrt` in `api/ausleihe.go`, für die Einzelverlängerung und die
 Frist von Hand; am Code nachgesehen am 24.09.2026 und 28.09.2026), die Klassenverlängerung der
 Schulbücher (`GlobalExtendLMFHandler`) und der LMF-Plan (`SetzeLernmittelFristFuerKlassenIn`)
-lassen es aus. Littera kennt Sperren nur von Hand.
+lassen es aus. Eine Sperre beim Verlassen der Schule kennt Littera nicht.
 
 **Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen, und auch bei der
 Verlängerung.** Die automatische Sperre hält beim Schulbuch weder Ausleihe noch Verlängerung an;
@@ -1033,6 +1034,8 @@ eine Sperre von Hand gilt weiter. Nicht gebaut: `checkAusleiheGesperrt` fragt he
 `ist_gesperrt OR is_manually_blocked` ohne Unterschied nach dem Buch; beim Schulbuch soll es nach
 derselben Regel entscheiden wie die Theke (`pruefeSperreAmLeser`, PG-Test
 `TestTheke_EhemaligeSperreNichtAmSchulbuch`). Mit PG-Test für beide Aufrufer und FACHKONZEPT §2.2.
+Dazu gehören die Klassenverlängerung und der LMF-Plan: Beide lassen heute jedes Kind mit
+`ist_gesperrt` aus.
 
 ### 8.8 Die Abholfrist bei Vormerkungen
 
