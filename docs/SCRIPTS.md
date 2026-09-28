@@ -69,6 +69,15 @@ jedes Exemplar der Sicherung von 2010.
 Sequenz, aus der die Anwendung ihre Barcodes zieht — und setzt voraus, dass jedes Buch
 ein neues Etikett bekommt.
 
+**Neue Nummer, neues Etikett:** Eine Nummer aus `barcode_seq` bekommt auch mit
+`-barcodes littera` jedes Exemplar, dessen Etikett schon ein anderes trägt („Barcode bereits
+vergeben" im Protokoll; in der Sicherung von 2010 teilen sich 13 Exemplare 5 Nummern, 8
+bekommen eine neue), aus dem sich kein Etikett bilden lässt oder dessen Nummer zu lang für
+die Spalte ist. Diese Exemplare legt der Lauf seit dem 28.09.2026 als ungedruckt an; sie
+stehen im Druck-Center unter „Fehlende Etiketten", mit `-barcodes neu` alle. Bis das neue
+Etikett klebt, liefert ein Buch mit doppeltem Etikett am Scanner die Nummer des Exemplars,
+das die Nummer behalten hat.
+
 Trägt Litteras Tabelle `FremdBarcode` für ein Exemplar ein Ersatzetikett, gewinnt das
 gegen die EAN-13 des Etiketts. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
 die Nummer des Kartenherstellers (`B97601826457`), und die steht in keinem Stammdatenfeld.

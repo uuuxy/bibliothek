@@ -43,13 +43,14 @@ const sqlTitelEinfuegen = `
 	        $12, NULLIF($13, ''), NULLIF($14, 0)::smallint, COALESCE(NULLIF($15, 0), 5), COALESCE(NULLIF($16, 0), 10))
 	RETURNING id`
 
-// etikett_gedruckt = true: Altbestand traegt seine Littera-Etiketten physisch —
-// siehe gleiche Begruendung am Sammelimport (import_dynamic.go).
+// etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —
+// siehe gleiche Begruendung am Sammelimport (import_dynamic.go). Ausnahme ist eine neu
+// vergebene Nummer (klaereBarcodes, ohneEtikett): Die traegt kein Etikett.
 const sqlExemplarEinfuegen = `
 	INSERT INTO buecher_exemplare
 		(titel_id, barcode_id, erworben_am, ist_ausleihbar, einkaufspreis,
 		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt)
-	VALUES ($1,$2,$3,true,$4,$5,$6,true)
+	VALUES ($1,$2,$3,true,$4,$5,$6,$7)
 	RETURNING id`
 
 // SchreibeBestand überträgt Titel und Exemplare.
@@ -71,7 +72,7 @@ func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (Bestan
 		return bericht, err
 	}
 
-	barcodes, err := s.klaereBarcodes(ctx, ab.Exemplare, ab.Fremdbarcodes)
+	barcodes, ohneEtikett, err := s.klaereBarcodes(ctx, ab.Exemplare, ab.Fremdbarcodes)
 	if err != nil {
 		return bericht, err
 	}
@@ -80,7 +81,7 @@ func (s *Schreiber) SchreibeBestand(ctx context.Context, ab *Altbestand) (Bestan
 		return bericht, err
 	}
 
-	lauf := &bestandslauf{s: s, ab: ab, barcodes: barcodes, isbns: isbns,
+	lauf := &bestandslauf{s: s, ab: ab, barcodes: barcodes, ohneEtikett: ohneEtikett, isbns: isbns,
 		exemplareJeTitel: ExemplareJeTitel(ab.Exemplare), bericht: &bericht}
 	if err := lauf.alleBatches(ctx); err != nil {
 		return bericht, err
@@ -111,6 +112,7 @@ type bestandslauf struct {
 	s                *Schreiber
 	ab               *Altbestand
 	barcodes         map[string]string // Littera-Exemplar-ID → barcode_id
+	ohneEtikett      map[string]bool   // Littera-Exemplar-ID → Nummer neu vergeben
 	isbns            map[string]string // normalisierte ISBN → Littera-Titel-ID
 	exemplareJeTitel map[string][]Exemplar
 	bericht          *BestandBericht
@@ -258,7 +260,7 @@ func (l *bestandslauf) schreibeExemplare(
 			return nil, err
 		}
 		batch.Queue(sqlExemplarEinfuegen, titelID, barcode,
-			erworbenAm(e, l.s.opt.Jetzt), e.Preis, eigenschaften, l.s.opt.Jetzt)
+			erworbenAm(e, l.s.opt.Jetzt), e.Preis, eigenschaften, l.s.opt.Jetzt, !l.ohneEtikett[e.ID])
 	}
 
 	br := tx.SendBatch(ctx, batch)

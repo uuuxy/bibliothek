@@ -21,15 +21,20 @@ import (
 //
 // Auch der VORHANDENE Bestand wird eingelesen. Läuft der Import in eine Datenbank, in der
 // schon Exemplare stehen, wäre jede Überschneidung sonst ein Titelverlust.
+//
+// ohneEtikett nennt die Exemplare mit neu vergebener Nummer. Diese Nummer steht auf keinem
+// Etikett am Buch; das Exemplar kommt deshalb ungedruckt in die Liste „Fehlende Etiketten".
+// Als gedruckt vermerkt, fände niemand das Buch, das ein neues Etikett braucht, und am
+// Scanner läse es weiter die Nummer des anderen Exemplars.
 func (s *Schreiber) klaereBarcodes(
 	ctx context.Context, exemplare []Exemplar, fremd map[string]string,
-) (map[string]string, error) {
+) (zuweisung map[string]string, ohneEtikett map[string]bool, err error) {
 	belegt, err := s.vorhandeneBarcodes(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	zuweisung := make(map[string]string, len(exemplare))
+	zuweisung = make(map[string]string, len(exemplare))
 	var brauchtNeue []Exemplar
 
 	for _, e := range exemplare {
@@ -48,9 +53,13 @@ func (s *Schreiber) klaereBarcodes(
 	}
 
 	if err := s.vergebeNeueBarcodes(ctx, brauchtNeue, belegt, zuweisung); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return zuweisung, nil
+	ohneEtikett = make(map[string]bool, len(brauchtNeue))
+	for _, e := range brauchtNeue {
+		ohneEtikett[e.ID] = true
+	}
+	return zuweisung, ohneEtikett, nil
 }
 
 // barcodeWunsch liefert die gewünschte Nummer oder "" für „bitte neu vergeben".

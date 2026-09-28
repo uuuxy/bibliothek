@@ -228,7 +228,9 @@ Neubeklebung scannbar. Ob die Lesegeräte den Zifferninhalt liefern, konnte nur 
 Buch beantworten: Zwei Scans in der Bibliothek am 18.08.2026 zeigten, dass der Strichcode
 eine EAN-13 liefert (Nummer rechts auf 8 Stellen genullt, Bibliotheksnummer, Stellenzahl,
 Prüfziffer). Die Theke rechnet sie auf die Nummer zurück, unter der das System das Exemplar
-führt (`84cbe12d`) — `-barcodes neu` ist nicht nötig, kein Exemplar braucht ein neues Etikett.
+führt (`84cbe12d`) — `-barcodes neu` ist nicht nötig. Ein neues Etikett brauchen nur Exemplare,
+deren Etikett schon ein anderes trägt (13 Exemplare teilen sich 5 Nummern, 8 bekommen eine neue;
+SCRIPTS.md, Abschnitt 1).
 
 Nachtrag 28.09.2026: Die Übernahme schreibt die EAN-13 des Etiketts nach `barcode_id`, nicht
 die Exemplarnummer. Die Spalte `Barcode` ist diese EAN-13 in der Setzform einer EAN-13-Schrift

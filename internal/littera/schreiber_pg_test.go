@@ -7,6 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"bibliothek/repository"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -278,6 +280,48 @@ func TestDoppelterBarcodeWeichtAus(t *testing.T) {
 	if text := protokoll(); !strings.Contains(text, "Barcode bereits vergeben") {
 		t.Errorf("die Ersatzvergabe muss protokolliert werden:\n%s", text)
 	}
+}
+
+// TestNeueNummerStehtInFehlendeEtiketten: Eine neu vergebene Nummer steht auf keinem
+// Etikett am Buch. Als gedruckt vermerkt, fehlte das Exemplar in der Liste „Fehlende
+// Etiketten", und am Scanner läse das Buch weiter die Nummer des anderen Exemplars.
+// Gezählt wird mit der Bedingung, mit der die Liste selbst filtert.
+func TestNeueNummerStehtInFehlendeEtiketten(t *testing.T) {
+	aufDerListe := `SELECT count(*) FROM buecher_exemplare e WHERE ` + repository.EtikettOffenBedingung
+
+	t.Run("doppelte Nummer", func(t *testing.T) {
+		pool := pgTestPool(t)
+		leereAlles(t, pool)
+		s, _ := testSchreiber(t, pool, nil)
+
+		ab := bestand(titel("1", "Ein Buch", ""))
+		ab.Exemplare = append(ab.Exemplare,
+			Exemplar{ID: "E1b", Exemplarnummer: "101", Bibliotheksnummer: testBibliothek,
+				TitelID: "1"}) // dieselbe Nummer wie E1
+		if _, err := s.SchreibeBestand(context.Background(), ab); err != nil {
+			t.Fatalf("SchreibeBestand: %v", err)
+		}
+		if n := zaehle(t, pool, aufDerListe); n != 1 {
+			t.Errorf("genau ein Exemplar gehört in die Liste, dort stehen: %d", n)
+		}
+		if n := zaehle(t, pool, aufDerListe+` AND e.barcode_id ~ '^B-'`); n != 1 {
+			t.Errorf("das Exemplar mit der neuen Nummer fehlt in der Liste")
+		}
+	})
+
+	t.Run("alle Nummern neu", func(t *testing.T) {
+		pool := pgTestPool(t)
+		leereAlles(t, pool)
+		s, _ := testSchreiber(t, pool, func(o *Optionen) { o.Barcodes = BarcodeNeu })
+
+		ab := bestand(titel("1", "Ein Buch", ""), titel("2", "Noch ein Buch", ""))
+		if _, err := s.SchreibeBestand(context.Background(), ab); err != nil {
+			t.Fatalf("SchreibeBestand: %v", err)
+		}
+		if n := zaehle(t, pool, aufDerListe); n != 2 {
+			t.Errorf("beide Exemplare gehören in die Liste, dort stehen: %d", n)
+		}
+	})
 }
 
 // TestSignaturLandetAmTitel: buecher_titel.signatur ist seit Migration 060 die einzige

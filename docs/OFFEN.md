@@ -352,8 +352,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   (13 Ziffern statt „58968", anderer Strichcode), scannt aber gleich. Dazu bauen: Ist die
   Nummer ein Littera-EAN (`dekodiereLitteraEtikett` in `internal/service/littera_etikett.go`),
   druckt das Etikett EAN-13 und die kurze Nummer. Ein Ersatzetikett aus Littera
-  (`FremdBarcode`) bleibt Code 128. Die Übernahme setzt `etikett_gedruckt = true`, die
-  Nachdruck-Liste läuft also nicht voll.
+  (`FremdBarcode`) bleibt Code 128. Die Übernahme setzt `etikett_gedruckt = true` außer bei
+  einer neu vergebenen Nummer, die Nachdruck-Liste läuft also nicht voll.
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
   Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
@@ -828,14 +828,11 @@ CSV-Verzeichnis ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1b): `FremdLeserNummer` gef
 Schlagworten (4.20). Ob es die volle Datenbank ist, zeigt erst das Einspielen; dass die jüngere
 Datei kleiner ist, ist ungeklärt.
 **Etiketten vor dem Lauf prüfen:** `LITTERA_CSV_DIR=… go test ./internal/littera/` gegen die
-ausgegebenen Tabellen. Der Lauf vergleicht seit dem 28.09.2026 den vollen EAN-13 jedes Etiketts
+ausgegebenen Tabellen. Der Test vergleicht seit dem 28.09.2026 den vollen EAN-13 jedes Etiketts
 mit der Rechnung (`pruefeEtiketten`); bis dahin prüfte er nur die Nummer und sah nicht, dass die
-Übernahme für Nummern unter sechs Stellen falsch rechnete (1b594d1e). In der Sicherung von 2010
-kommen 8 Exemplarnummern doppelt vor. Ergeben zwei Exemplare dasselbe Etikett, bekommt das
-zweite eine neue Nummer aus `barcode_seq` („Barcode bereits vergeben" im Protokoll), wird aber
-wie jedes übernommene Exemplar als gedruckt vermerkt (`sqlExemplarEinfuegen` setzt
-`etikett_gedruckt` fest auf `true`) und erscheint nicht auf der Nachdruck-Liste. Vor dem Lauf
-klären: diese Exemplare als ungedruckt anlegen.
+Übernahme für Nummern unter sechs Stellen falsch rechnete (1b594d1e). Exemplare, deren Etikett
+schon ein anderes trägt (2010: 8), stehen nach dem Lauf unter „Fehlende Etiketten"
+([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
 
 **Lesergruppen ohne Zuordnung vor dem Umstiegstag klären.** Seit dem 28.09.2026 übernimmt der
 Lauf jeden Leser ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1); eine Lesergruppe ohne Zuordnung hält
