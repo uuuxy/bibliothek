@@ -224,7 +224,8 @@ plausible Größe — auffallen würde der Verlust erst beim Wiederherstellen.
 **Klartext als Ausnahme.** Beide Skripte fallen darauf zurück, wenn die Verschlüsselung
 nicht möglich ist (Backend-Container aus, `BACKUP_ENCRYPTION_KEY` nicht gesetzt, Image
 älter als 23.08.2026) — kein Abbruch, denn ein lesbares Backup ist besser als keines. Sie
-sagen es dann laut, und die Datei verfällt nach 2 Tagen. Wiederherstellung und
+sagen es dann laut; die Datei löscht erst ein späterer Lauf eines der beiden Skripte,
+frühestens nach 2 Tagen (eine Uhr, die ohne Lauf löscht, gibt es nicht). Wiederherstellung und
 Restore-Probe: [resilience_and_recovery.md](resilience_and_recovery.md).
 
 ---

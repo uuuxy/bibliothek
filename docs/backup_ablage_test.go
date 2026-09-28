@@ -25,7 +25,8 @@ import (
 //
 // Blindheit: Gelesen werden nur die -name-Muster der find-Zeilen über $BACKUP_DIR in den
 // zwei Skripten. Ein drittes Skript, das denselben Ordner aufräumt, ein rm mit Glob und die
-// -mtime-Werte sieht der Test nicht.
+// -mtime-Werte sieht der Test nicht. Das Versprechen eines Löschens nach Zeit erkennt er nur in
+// drei Wortformen („automatisch gelöscht", „verschwindet nach", „wird in/nach ${…} Tagen").
 
 var backupSkripte = map[string]struct {
 	erzeugt string   // die Zeile, die den Dateinamen bildet — hält die Beispielnamen ehrlich
@@ -128,6 +129,21 @@ func TestBackupAblage_KlartextHatEineFristUndWirdGemeldet(t *testing.T) {
 			}
 			if !trifftEines(t, zaehltKlar, name) {
 				t.Errorf("%s meldet den Klartext-Rest %s nicht (Muster %v)", pfad, name, zaehltKlar)
+			}
+		}
+	}
+}
+
+// Gelöscht wird nur, wenn eines der Skripte läuft. Bis zum 28.09.2026 sagten beide dem
+// Bedienenden „wird in 2 Tagen automatisch gelöscht" — wer sich darauf verließ, ließ die
+// ganze Datenbank im Klartext liegen, bis zum nächsten Lauf, der Wochen später kommen kann.
+func TestBackupAblage_KeineLoeschUhrVersprochen(t *testing.T) {
+	versprechen := regexp.MustCompile(`(?i)automatisch gelöscht|verschwindet nach|wird (in|nach) \$\{[A-Z_]+\} Tagen`)
+	for pfad := range backupSkripte {
+		for i, zeile := range strings.Split(lies(t, pfad), "\n") {
+			if versprechen.MatchString(zeile) {
+				t.Errorf("%s:%d verspricht ein Löschen nach Zeit, gelöscht wird aber nur bei einem Lauf: %s",
+					pfad, i+1, strings.TrimSpace(zeile))
 			}
 		}
 	}

@@ -79,10 +79,11 @@ if krypto_moeglich; then
   fi
 else
   # Notnagel. Kein Abbruch: Ein lesbares Backup ist besser als keines — aber es wird
-  # benannt, was es ist, und es verschwindet nach zwei Tagen.
+  # benannt, was es ist, und ein späterer Lauf löscht es nach zwei Tagen — nur ein Lauf löscht.
   echo "WARNUNG: Verschlüsselung nicht möglich ($KRYPTO_GRUND)."
   echo "WARNUNG: Es entsteht ein UNVERSCHLÜSSELTER Dump mit allen Klarnamen und Adressen."
-  echo "WARNUNG: Er wird nach ${RETENTION_KLARTEXT_TAGE} Tagen gelöscht — bitte vorher selbst entsorgen."
+  echo "WARNUNG: Ihn löscht erst ein späterer Lauf, frühestens nach ${RETENTION_KLARTEXT_TAGE} Tagen —"
+  echo "WARNUNG: bitte selbst entsorgen (shred -u), sobald er nicht mehr gebraucht wird."
   BACKUP_FILE="$BACKUP_BASIS"
   if (umask 077; set -o pipefail; \
       docker exec "$CONTAINER_NAME" pg_dump -U "$DB_USER" -d "$DB_NAME" | gzip > "$BACKUP_FILE"); then

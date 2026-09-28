@@ -8,7 +8,8 @@
 #   3. docker compose up -d --build (rebuild & restart)
 #   4. Bei Fehler: Abbruch + Rollback-Anleitung
 #   5. Nach erfolgreichem Deploy: Vorab-Sicherung verschlüsseln, Klartext löschen
-#   6. Backups älter als 30 Tage werden automatisch gelöscht
+#   6. Alte Backups aufräumen: vordeploy_ älter als 30 Tage, Klartext älter als 2 Tage.
+#      Gelöscht wird nur hier, bei einem Lauf — eine Uhr, die ohne Lauf löscht, gibt es nicht.
 #   7. Docker-Build-Cache älter als 7 Tage wird aufgeräumt
 # ==============================================================================
 set -euo pipefail
@@ -152,7 +153,8 @@ print_rollback_instructions() {
     echo "     # Sie ist UNVERSCHLÜSSELT und enthält jeden Schülernamen, jede Adresse,"
     echo "     # jede Ausleihe im Klartext. Nach geglücktem Rollback löschen:"
     echo "     shred -u \"${BACKUP_FILE}\"   # oder: rm -f"
-    echo "     # Andernfalls wird sie nach ${KLARTEXT_RETENTION_DAYS} Tagen automatisch gelöscht."
+    echo "     # Sonst löscht sie erst ein späterer Lauf von update.sh oder scripts/backup.sh,"
+    echo "     # frühestens nach ${KLARTEXT_RETENTION_DAYS} Tagen."
     echo ""
     echo -e "${YELLOW}Alle verfügbaren Backups:${NC}"
     ls -lh "${BACKUP_DIR}"/*.sql.gz "${BACKUP_DIR}"/*.sql.gz.enc 2>/dev/null || echo "  (keine Backups gefunden)"
@@ -403,13 +405,15 @@ elif krypto_moeglich; then
     else
         log_warn "Verschlüsselung fehlgeschlagen — die Sicherung bleibt im KLARTEXT liegen:"
         log_warn "  ${BACKUP_FILE}"
-        log_warn "  Sie enthält jeden Schülernamen und jede Adresse im Klartext und wird"
-        log_warn "  in ${KLARTEXT_RETENTION_DAYS} Tagen automatisch gelöscht."
+        log_warn "  Sie enthält jeden Schülernamen und jede Adresse im Klartext. Nicht mehr"
+        log_warn "  gebraucht: selbst löschen (shred -u). Sonst löscht sie erst ein späterer"
+        log_warn "  Lauf, frühestens nach ${KLARTEXT_RETENTION_DAYS} Tagen."
     fi
 else
     log_warn "Verschlüsselung nicht möglich (${KRYPTO_GRUND})."
     log_warn "Die Vorab-Sicherung bleibt im KLARTEXT liegen: ${BACKUP_FILE}"
-    log_warn "Sie wird in ${KLARTEXT_RETENTION_DAYS} Tagen automatisch gelöscht."
+    log_warn "Nicht mehr gebraucht: selbst löschen (shred -u). Sonst löscht sie erst ein"
+    log_warn "späterer Lauf, frühestens nach ${KLARTEXT_RETENTION_DAYS} Tagen."
 fi
 
 # ── Schritt 6: Alte Backups aufräumen ─────────────────────────────────────────
