@@ -429,6 +429,10 @@ Kürzel, Bezeichnung und Art (Schüler oder Kollegium) — auch Fachbereiche, Pr
 steht dafür schon eine Tabelle `lesergruppen` (`kuerzel`, `bezeichnung`), die kein Go-Code liest
 oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*)` am Testserver).
 
+**Reihenfolge entschieden am 28.09.2026:** nach dem Umstieg, an der Stelle im Plan oben. Der
+Umstieg hängt nicht daran: Seit dem 28.09.2026 übernimmt der Lauf jeden Leser und schreibt die
+Littera-Gruppe als Warnung ins Protokoll ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
+
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
 **Offen aus dem Umbau der Auskunft (gebaut am 24.09.2026):** Die Rohdaten der Protokolleinträge
