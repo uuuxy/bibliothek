@@ -272,13 +272,25 @@ func (r *LmfTerminRepository) SaveLmfPlanIn(ctx context.Context, tx pgx.Tx, plan
 // schreibeKlassen fügt Klassen einer Elternzeile hinzu und liefert die vom Vokabular-
 // Trigger kanonisierten Namen („5f1" → „05F1"); Leerwerte und Dubletten fallen weg.
 func schreibeKlassen(ctx context.Context, tx pgx.Tx, sql, elternID string, klassen []string) ([]string, error) {
-	kanonisch := make([]string, 0, len(klassen))
+	b := &pgx.Batch{}
+	gefragt := 0
 	for _, k := range klassen {
-		if k = strings.TrimSpace(k); k == "" {
-			continue
+		if k = strings.TrimSpace(k); k != "" {
+			b.Queue(sql, elternID, k)
+			gefragt++
 		}
+	}
+	if gefragt == 0 {
+		return []string{}, nil
+	}
+
+	br := tx.SendBatch(ctx, b)
+	defer func() { _ = br.Close() }()
+
+	kanonisch := make([]string, 0, gefragt)
+	for i := 0; i < gefragt; i++ {
 		var name string
-		err := tx.QueryRow(ctx, sql, elternID, k).Scan(&name)
+		err := br.QueryRow().Scan(&name)
 		if err == pgx.ErrNoRows {
 			continue
 		}
