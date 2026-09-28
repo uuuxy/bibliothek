@@ -18,6 +18,9 @@
      Tastatur: Pfeile wandern, Pos1/Ende springen, Enter und Leertaste wählen (der
      Eintrag ist ein <button>), Escape schließt und gibt den Fokus an den Knopf zurück
      (escapeSchliesst — nur das oberste Overlay reagiert), Tab verlässt das Menü.
+     Gesperrte Einträge nehmen den Fokus und wählen nichts (M3 Menus, Accessibility:
+     „Disabled menu items can receive focus but aren't selectable") — deshalb
+     aria-disabled wie in SelectListe; ein <button disabled> nimmt im Browser keinen Fokus.
 
      Seit 07.09.2026 tragen die beiden alten Menüs dieses Bauteil, und dafür kann es
      zweierlei mehr: einen eigenen Auslöser (`ausloeser`-Snippet — der Split-Button
@@ -180,10 +183,10 @@
 				type="button"
 				role="menuitem"
 				tabindex={i === aktiv ? 0 : -1}
-				disabled={e.disabled}
+				aria-disabled={e.disabled || undefined}
 				onclick={() => waehlen(e)}
 				onpointerenter={() => (aktiv = i)}
-				class="m3-state flex h-12 w-full cursor-pointer items-center gap-3 px-3 text-left text-sm text-on-surface focus:outline-none focus-visible:bg-on-surface/8 disabled:cursor-not-allowed disabled:opacity-40"
+				class="m3-state flex h-12 w-full cursor-pointer items-center gap-3 px-3 text-left text-sm text-on-surface focus:outline-none focus-visible:bg-on-surface/8 aria-disabled:cursor-not-allowed aria-disabled:opacity-40"
 			>
 				{#if e.icon}
 					{@const Icon = e.icon}
