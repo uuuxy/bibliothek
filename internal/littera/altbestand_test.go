@@ -77,10 +77,10 @@ func TestEchterAltbestand(t *testing.T) {
 func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 	t.Helper()
 
-	abweichend, unlesbar := 0, 0
-	var beispiel string
+	abweichend, unlesbar, keinEAN, falschGerechnet, andereBib := 0, 0, 0, 0, 0
+	var beispiel, beispielRechnung string
 	for _, e := range exemplare {
-		nummer, _, ok := BarcodeInhalt(e.Barcode)
+		nummer, bib, ok := BarcodeInhalt(e.Barcode)
 		if !ok {
 			unlesbar++
 			continue
@@ -91,6 +91,24 @@ func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 				beispiel = e.Barcode + " → " + nummer + ", Spalte sagt " + e.Exemplarnummer
 			}
 		}
+		// Der volle EAN-13: Die Rechnung aus den Spalten muss das Etikett ergeben, wo die
+		// Spalten dieselben Nummern tragen wie das Etikett. Bis zum 28.09.2026 prüfte diese
+		// Schleife nur die Nummer — die falsche Rechnung für kurze Nummern sah sie nicht.
+		ean, eanOK := EtikettZiffern(e.Barcode)
+		if !eanOK {
+			keinEAN++
+			continue
+		}
+		if spalte, _ := zifferngefuellt(e.Bibliotheksnummer, etikettBibLen); spalte != bib {
+			andereBib++ // am Altbestand zweimal: Spalte 0, Etikett 0395 — die Übernahme nimmt das Etikett
+			continue
+		}
+		if gerechnet, _ := EtikettBarcode(e.Exemplarnummer, e.Bibliotheksnummer); gerechnet != ean {
+			falschGerechnet++
+			if beispielRechnung == "" {
+				beispielRechnung = e.Exemplarnummer + ": Etikett " + ean + ", gerechnet " + gerechnet
+			}
+		}
 	}
 	if unlesbar > 0 {
 		t.Errorf("%d Etiketten folgen nicht dem bekannten Muster – die Entschluesselung stimmt nicht", unlesbar)
@@ -99,8 +117,15 @@ func pruefeEtiketten(t *testing.T, exemplare []Exemplar) {
 		t.Errorf("%d Etiketten tragen eine ANDERE Nummer als die Spalte Exemplarnummer (%s) – "+
 			"barcode_id waere dann falsch", abweichend, beispiel)
 	}
-	t.Logf("Etiketten: %d von %d entschluesselt und mit der Exemplarnummer deckungsgleich",
-		len(exemplare)-unlesbar-abweichend, len(exemplare))
+	if keinEAN > 0 {
+		t.Errorf("%d Druckzeichenketten sind kein EAN-13 (Paritaet oder Pruefziffer) – EtikettZiffern pruefen", keinEAN)
+	}
+	if falschGerechnet > 0 {
+		t.Errorf("%d Etiketten weichen von EtikettBarcode ab (%s) – die Rechnung stimmt nicht", falschGerechnet, beispielRechnung)
+	}
+	t.Logf("Etiketten: %d von %d entschluesselt und mit der Exemplarnummer deckungsgleich; "+
+		"%d mit anderer Bibliotheksnummer in der Spalte als auf dem Etikett",
+		len(exemplare)-unlesbar-abweichend, len(exemplare), andereBib)
 }
 
 // pruefeLeserEinordnung belegt, dass die Weiche Schüler/Lehrkraft am echten Bestand

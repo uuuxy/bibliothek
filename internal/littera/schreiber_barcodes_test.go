@@ -48,6 +48,36 @@ func TestSchreiber_barcodeWunsch(t *testing.T) {
 		}
 	})
 
+	t.Run("das Etikett gewinnt vor der Rechnung, mit Vermerk", func(t *testing.T) {
+		// So in der Sicherung von 2010: Spalte Bibliotheksnummer 0, Etikett 0395.
+		e := Exemplar{ID: "E6", Exemplarnummer: "50149", Bibliotheksnummer: "0", Barcode: "5 *pafopö#-c.bbc*"}
+		vorher := prot.Warnungen()
+		if got := s.barcodeWunsch(e, ""); got != "5014900039553" {
+			t.Errorf("erwartet den EAN vom Etikett 5014900039553, bekommen %q", got)
+		}
+		if prot.Warnungen() != vorher+1 {
+			t.Errorf("die Abweichung zwischen Etikett und Spalte braucht einen Vermerk im Protokoll")
+		}
+	})
+
+	t.Run("Etikett und Rechnung gleich: kein Vermerk", func(t *testing.T) {
+		e := Exemplar{ID: "E7", Exemplarnummer: "808", Bibliotheksnummer: "395", Barcode: "8 *pkpööp#-c.bc-*"}
+		vorher := prot.Warnungen()
+		if got := s.barcodeWunsch(e, ""); got != "8080000039530" {
+			t.Errorf("erwartet 8080000039530, bekommen %q", got)
+		}
+		if prot.Warnungen() != vorher {
+			t.Errorf("ohne Abweichung kein Vermerk")
+		}
+	})
+
+	t.Run("ohne Druckzeichenkette wird gerechnet", func(t *testing.T) {
+		e := Exemplar{ID: "E8", Exemplarnummer: "58968", Bibliotheksnummer: "395"}
+		if got := s.barcodeWunsch(e, ""); got != "5896800039556" {
+			t.Errorf("erwartet den gescannten Wert 5896800039556, bekommen %q", got)
+		}
+	})
+
 	t.Run("Ungültiger Littera Barcode", func(t *testing.T) {
 		e := Exemplar{ID: "E4", Exemplarnummer: "ungültig", Bibliotheksnummer: "13"}
 		got := s.barcodeWunsch(e, "")

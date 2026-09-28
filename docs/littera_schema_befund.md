@@ -214,6 +214,13 @@ eine EAN-13 liefert (Nummer rechts auf 8 Stellen genullt, Bibliotheksnummer, Ste
 Prüfziffer). Die Theke rechnet sie auf die Nummer zurück, unter der das System das Exemplar
 führt (`84cbe12d`) — `-barcodes neu` ist nicht nötig, kein Exemplar braucht ein neues Etikett.
 
+Nachtrag 28.09.2026: Die Übernahme schreibt die EAN-13 des Etiketts nach `barcode_id`, nicht
+die Exemplarnummer. Die Spalte `Barcode` ist diese EAN-13 in der Setzform einer EAN-13-Schrift
+(Parität und Prüfziffer stimmen an allen 61.520 Exemplaren) und wird als Etikett übernommen
+(`littera.EtikettZiffern`). `littera.EtikettBarcode` rechnete bis dahin für Nummern unter
+sechs Stellen links aufgefüllt und mit einer festen 6 an Stelle 12 — anders als die beiden
+Scans oben; getroffen hätte es jedes Exemplar dieser Sicherung. Siehe [SCRIPTS.md](SCRIPTS.md).
+
 ### Zwei Fehler, die der Schreibpfad aufgedeckt hat
 
 **Das Autorenfeld war verschmutzt.** Die frühere Angabe „10.002 von 10.732 Titeln mit

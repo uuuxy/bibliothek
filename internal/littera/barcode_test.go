@@ -78,22 +78,24 @@ func TestGeburtsdatumAus(t *testing.T) {
 	}
 }
 
-// TestEtikettBarcode rechnet gegen ZWEI echte Bücher aus dem Regal der Schule.
+// TestEtikettBarcode rechnet gegen echte Etiketten: vier gescannte Bücher und drei
+// Druckzeichenketten aus TestBarcodeInhalt.
 //
-// Diese beiden Zeilen sind der einzige Beleg, dass der Import scannbare Barcodes
-// schreibt. Vorher stand dort die nackte Exemplarnummer — kein einziges der 61.520
-// Exemplare wäre am Scanner auffindbar gewesen, und gemerkt hätte man es erst an der
-// Theke.
+// Bis zum 28.09.2026 standen hier für 808 und 61512 „0008080039569" und „0615120039566" —
+// nicht gemessen, sondern aus der Annahme gerechnet, kürzere Nummern würden links
+// aufgefüllt. Ihre eigenen Druckzeichenketten zwei Tests weiter oben sagen etwas anderes.
 func TestEtikettBarcode(t *testing.T) {
 	faelle := []struct {
 		exemplarnummer string
 		erwartet       string
 	}{
-		{"105785", "1057850039567"}, // Zeitreise, Ansch.-J. 2022
-		{"110815", "1108150039563"},
-		// Die Altbestandsnummern sind kürzer und werden links mit Nullen gefüllt.
-		{"808", "0008080039569"},
-		{"61512", "0615120039566"},
+		{"105785", "1057850039567"}, // gescannt, Zeitreise, Ansch.-J. 2022
+		{"110815", "1108150039563"}, // gescannt
+		{"124117", "1241170039561"}, // gescannt am 18.08.2026 (internal/service)
+		{"58968", "5896800039556"},  // gescannt am 18.08.2026, fünfstellig
+		{"808", "8080000039530"},    // Druckzeichenkette 8 *pkpööp#-c.bc-*
+		{"25317", "2531700039550"},  // Druckzeichenkette 2 *teajpö#-c.bb-*
+		{"61512", "6151200039551"},  // Druckzeichenkette 6 *qgaspp#-c.bby*
 	}
 	for _, f := range faelle {
 		got, ok := EtikettBarcode(f.exemplarnummer, "395")
@@ -118,7 +120,8 @@ func TestEtikettBarcode(t *testing.T) {
 func TestEtikettBarcodeLehntUnpassendesAb(t *testing.T) {
 	faelle := []struct{ nummer, bib string }{
 		{"", "395"},         // keine Exemplarnummer
-		{"1234567", "395"},  // passt nicht in sechs Stellen
+		{"12345678", "395"}, // passt nicht in sieben Stellen
+		{"0808", "395"},     // führende Null, rechts aufgefüllt nicht von 808 zu trennen
 		{"12A456", "395"},   // keine reine Ziffernfolge
 		{"105785", ""},      // keine Bibliotheksnummer
 		{"105785", "12345"}, // Bibliotheksnummer zu lang
@@ -126,6 +129,47 @@ func TestEtikettBarcodeLehntUnpassendesAb(t *testing.T) {
 	for _, f := range faelle {
 		if got, ok := EtikettBarcode(f.nummer, f.bib); ok {
 			t.Errorf("(%q, %q) hätte abgelehnt werden müssen, ergab %q", f.nummer, f.bib, got)
+		}
+	}
+}
+
+// TestEtikettZiffern liest aus echten Druckzeichenketten den EAN-13 und hält ihn gegen die
+// Rechnung aus Nummer und Bibliotheksnummer: Beide beschreiben dasselbe Etikett.
+func TestEtikettZiffern(t *testing.T) {
+	faelle := []struct{ roh, ean string }{
+		{"8 *pkpööp#-c.bc-*", "8080000039530"},
+		{"8 *plpööp#-c.bc.*", "8090000039539"},
+		{"8 *qöpööp#-c.bcb*", "8100000039535"},
+		{"2 *teajpö#-c.bb-*", "2531700039550"},
+		{"6 *qgaspp#-c.bby*", "6151200039551"},
+		{"5 *pafopö#-c.bbc*", "5014900039553"}, // in Littera zweimal, einmal mit Bibliotheksnummer 0
+	}
+	for _, f := range faelle {
+		ean, ok := EtikettZiffern(f.roh)
+		if !ok || ean != f.ean {
+			t.Errorf("%q → %q (%v), erwartet %q", f.roh, ean, ok, f.ean)
+			continue
+		}
+		nummer, bib, _ := BarcodeInhalt(f.roh)
+		if gerechnet, _ := EtikettBarcode(nummer, bib); gerechnet != ean {
+			t.Errorf("%q: aus %s/%s gerechnet %q, das Etikett trägt %q", f.roh, nummer, bib, gerechnet, ean)
+		}
+	}
+}
+
+// TestEtikettZifferLehntAb: Stimmen Parität, Prüfziffer oder Zeichenvorrat nicht, ist die
+// Zeichenkette kein EAN-13, und es wird gerechnet statt geraten.
+func TestEtikettZifferLehntAb(t *testing.T) {
+	for _, roh := range []string{
+		"",
+		"B-00042",
+		"8 *ökpööp#-c.bc-*", // erste Ziffer passt nicht zur Parität der linken Hälfte
+		"8 *pkpööp#-c.bcy*", // falsche Prüfziffer
+		"8 *pkpööp#pc.bc-*", // rechte Hälfte aus der falschen Reihe
+		"8 *pkpöö?#-c.bc-*", // unbekanntes Zeichen
+	} {
+		if ean, ok := EtikettZiffern(roh); ok {
+			t.Errorf("%q hätte abgelehnt werden müssen, ergab %q", roh, ean)
 		}
 	}
 }

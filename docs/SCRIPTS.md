@@ -48,22 +48,28 @@ verliehen. Für einen aktuellen Export sind beide Schalter richtig.
 Buchetikett liest — eine **EAN-13**, nicht die daneben gedruckte Exemplarnummer:
 
 ```
-1 0 5 7 8 5   0   0 3 9 5   6   7      Exemplar-Nr. 105785 → 1057850039567
-└─ Exemplarnr └─ Bibl.-Nr ─┘   └ Prüfziffer
-   6-stellig       0395
+5 8 9 6 8 0 0   0 3 9 5   5   6      Exemplar-Nr. 58968 → 5896800039556
+└ Exemplarnr., ┘ └ Bibl.-Nr┘ │   └ Prüfziffer
+  rechts auf 7    0395       └ Stellenzahl der Exemplarnummer
+  Stellen genullt
 ```
 
-Gemessen an zwei echten Büchern der Schule, Prüfziffer jeweils verifiziert (siehe
-`littera.EtikettBarcode`). Der Bestand bleibt damit ohne Neubeklebung scannbar. Eine
-zweite Etikettengeneration gibt es nicht mehr: Die alten Littera-Aufkleber (Zeichenkette
-für eine Barcode-Schrift, `8 *pkpööp#-c.bc-*`) sitzen auf Büchern, die nicht mehr im
-Regal stehen — bestätigt am 04.08.2026.
+Belegt an vier gescannten Büchern und an allen 61.520 Exemplaren der Sicherung von 2010.
+Litteras Spalte `Barcode` ist dieselbe EAN-13, gesetzt für eine EAN-13-Schrift
+(`8 *pkpööp#-c.bc-*` ergibt `8080000039530`); Parität und Prüfziffer stimmen bei allen
+61.520. Die Übernahme nimmt deshalb diese Zeichenkette als Etikett (`littera.EtikettZiffern`)
+und rechnet aus Exemplar- und Bibliotheksnummer (`littera.EtikettBarcode`) nur, wenn sie
+fehlt. Weichen beide ab, gilt das Etikett, mit Vermerk im Protokoll; in der Sicherung von
+2010 zweimal (Bibliotheksnummer 0 in der Spalte, 0395 auf dem Etikett). Der Bestand bleibt
+damit ohne Neubeklebung scannbar. Bis zum 28.09.2026 rechnete `EtikettBarcode` für Nummern
+unter sechs Stellen falsch (links aufgefüllt, an Stelle 12 fest eine 6); getroffen hätte es
+jedes Exemplar der Sicherung von 2010.
 `-barcodes neu` vergibt stattdessen frische `B-XXXXX` aus `barcode_seq` — derselben
 Sequenz, aus der die Anwendung ihre Barcodes zieht — und setzt voraus, dass jedes Buch
 ein neues Etikett bekommt.
 
 Trägt Litteras Tabelle `FremdBarcode` für ein Exemplar ein Ersatzetikett, gewinnt das
-gegen die gerechnete EAN-13. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
+gegen die EAN-13 des Etiketts. Dasselbe gilt für Schülerausweise: `FremdLeserNummer` hält
 die Nummer des Kartenherstellers (`B97601826457`), und die steht in keinem Stammdatenfeld.
 Beide Dateien sind optional; fehlen sie, rechnet der Import mit den Littera-Nummern.
 

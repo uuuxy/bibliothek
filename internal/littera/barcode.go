@@ -2,6 +2,7 @@ package littera
 
 import (
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -22,12 +23,14 @@ import (
 // Länge und Prüfzeichen. Zwei Alphabete für dieselben Ziffern, damit gleiche Ziffern
 // nebeneinander unterscheidbare Balken ergeben.
 //
-// Wofür das heute noch gut ist: NICHT um zu wissen, was im Regal klebt — die Etiketten
-// der Schule sind inzwischen durchweg EAN-13 (siehe EtikettBarcode), die alte
-// Druckzeichenkette beschreibt eine abgelöste Generation. Es ist eine PRÜFUNG der Quelle:
-// Die EAN-13 wird aus `Exemplarnummer` gerechnet, also muss diese Spalte stimmen. Die
-// Druckzeichenkette trägt dieselbe Nummer unabhängig kodiert und dient als Gegenprobe —
-// am Altbestand stimmen 61.520 von 61.520 überein (siehe pruefeEtiketten).
+// Die Zeichenkette IST der EAN-13 des Etiketts, gesetzt in einer EAN-13-Schrift: Die erste
+// Ziffer steht vor dem Startzeichen, die linke Hälfte wählt je Ziffer zwischen den Reihen
+// `qwertz…` und `asdf…` (die EAN-Parität, aus der ein Scanner die erste Ziffer liest), die
+// rechte Hälfte steht in der Reihe `yxcv…`, das letzte Zeichen ist die EAN-Prüfziffer.
+// Nachgemessen am 28.09.2026 an allen 61.520 Exemplaren der Sicherung von 2010: Parität und
+// Prüfziffer stimmen bei allen (siehe EtikettZiffern). Bis dahin stand hier, die Etiketten
+// seien „inzwischen durchweg EAN-13" und die Zeichenkette beschreibe eine abgelöste
+// Generation — es ist dieselbe Generation.
 //
 // Ohne die Längenangabe an vorletzter Stelle wäre die Nummer übrigens nicht eindeutig
 // rekonstruierbar: 81 und 810 ergäben beide `100000`.
@@ -84,34 +87,79 @@ func entschluesseleZiffer(s string) (int, bool) {
 	return 0, false
 }
 
-// Das Etikett am Buch trägt eine EAN-13, nicht die nackte Exemplarnummer.
+// eanParitaet ist die Parität der linken Hälfte je erster Ziffer (EAN-13, A = `qwertz…`,
+// B = `asdf…`). Die erste Ziffer steht nicht als Balken im Code, ein Scanner liest sie aus
+// diesem Muster.
+var eanParitaet = [10]string{
+	"AAAAAA", "AABABB", "AABBAB", "AABBBA", "ABAABB",
+	"ABBAAB", "ABBBAA", "ABABAB", "ABABBA", "ABBABA",
+}
+
+// EtikettZiffern liest aus der Druckzeichenkette die dreizehn Ziffern, die ein Scanner vom
+// Etikett liefert. ok nur, wenn Parität und Prüfziffer stimmen — sonst ist die Zeichenkette
+// kein EAN-13, und niemand darf raten.
+func EtikettZiffern(roh string) (string, bool) {
+	treffer := barcodeMuster.FindStringSubmatch(strings.TrimSpace(roh))
+	if treffer == nil {
+		return "", false
+	}
+	var paritaet strings.Builder
+	for _, r := range treffer[2] {
+		switch {
+		case strings.ContainsRune("qwertzuiop", r):
+			paritaet.WriteByte('A')
+		case strings.ContainsRune("asdfghjklö", r):
+			paritaet.WriteByte('B')
+		default:
+			return "", false
+		}
+	}
+	if paritaet.String() != eanParitaet[treffer[1][0]-'0'] {
+		return "", false
+	}
+	rechts := treffer[3] + treffer[4] + treffer[5]
+	for _, r := range rechts {
+		if !strings.ContainsRune("yxcvbnm,.-", r) {
+			return "", false
+		}
+	}
+	ziffern, ok := entschluessele(treffer[2] + rechts)
+	if !ok {
+		return "", false
+	}
+	ean := treffer[1] + ziffern
+	if EAN13Pruefziffer(ean[:12]) != int(ean[12]-'0') {
+		return "", false
+	}
+	return ean, true
+}
+
+// Das Etikett am Buch trägt eine EAN-13, nicht die nackte Exemplarnummer. Aufbau:
 //
-// Gemessen an zwei echten Büchern der Schule:
+//	5 8 9 6 8 0 0   0 3 9 5   5   6
+//	└ 58968 ┘ └┘    └ 0395 ┘  ↑   ↑
+//	Exemplarnr.,    Bibl.-Nr. │   EAN-13-Prüfziffer
+//	rechts mit Nullen         └── Stellenzahl der Exemplarnummer
+//	auf 7 Stellen
 //
-//	Exemplar-Nr. 105785  →  1057850039567
-//	Exemplar-Nr. 110815  →  1108150039563
+// Belegt an vier gescannten Büchern (105785 → 1057850039567, 110815 → 1108150039563,
+// 58968 → 5896800039556, 124117 → 1241170039561) und an allen 61.520 Druckzeichenketten
+// der Sicherung von 2010 (61.518 gleich; die zwei anderen tragen in der Spalte die
+// Bibliotheksnummer 0, auf dem Etikett 0395).
 //
-// Aufbau (beide Male identisch, Prüfziffer jeweils verifiziert):
+// Bis zum 28.09.2026 füllte EtikettBarcode LINKS auf sechs Stellen auf und setzte an Stelle
+// 12 fest eine 6 — abgeleitet aus zwei 6-stelligen Nummern, bei denen beide Regeln dasselbe
+// ergeben. Für jede kürzere Nummer entstand ein Barcode, den kein Etikett trägt; in der
+// Sicherung von 2010 hat keine Nummer mehr als fünf Stellen, getroffen hätte es also jedes
+// ihrer 61.520 Exemplare. Der Scanner rechnete schon richtig zurück (dekodiereLitteraEtikett
+// in internal/service); dass Übernahme und Scanner übereinstimmen, prüft
+// internal/service/littera_etikett_uebernahme_test.go.
 //
-//	1 0 5 7 8 5   0   0 3 9 5   6   7
-//	└─ 105785 ─┘  ↑   └─ 0395 ┘ ↑   ↑
-//	Exemplarnr.   │   Bibl.-Nr. │   EAN-13-Prüfziffer
-//	6-stellig     └── konstant ─┘
-//
-// Warum das hier steht und nicht „nimm Exemplar.Exemplarnummer": Der Import schrieb
-// zuerst die nackte Nummer nach buecher_exemplare.barcode_id. Kein einziges der 61.520
-// Exemplare wäre damit am Scanner auffindbar gewesen — und aufgefallen wäre es erst an
-// der Theke. Dieselbe Falle wie beim Schülerausweis, wo unter dem Strichcode „[0395] 37"
-// steht, der Scanner aber „B97601826457" liefert.
-//
-// Die Stellen 7 und 12 sind aus zwei Proben als konstant abgeleitet, nicht aus einer
-// Littera-Dokumentation. Liefert ein drittes Buch etwas anderes, gehören sie
-// parametrisiert — der Aufbau steht deshalb hier an einer Stelle und nicht verstreut.
+// Aufdruck und Scanwert sind verschiedene Werte — dieselbe Falle wie beim Schülerausweis,
+// wo unter dem Strichcode „[0395] 37" steht, der Scanner aber „B97601826457" liefert.
 const (
-	etikettFuellerVorne  = "0" // Stelle 7, zwischen Exemplarnummer und Bibliotheksnummer
-	etikettFuellerHinten = "6" // Stelle 12, vor der Prüfziffer
-	etikettExemplarLen   = 6
-	etikettBibLen        = 4
+	etikettNummerLen = 7 // erste Ziffer und linke Hälfte des EAN-13
+	etikettBibLen    = 4
 )
 
 // EtikettBarcode baut den Wert, den ein Scanner vom Buchetikett liest.
@@ -119,13 +167,19 @@ const (
 // ok ist false, wenn die Nummern nicht in das Muster passen (zu lang oder nicht
 // numerisch). Dann darf niemand raten: Ein falscher Barcode ist schlimmer als gar keiner,
 // weil das Buch dann unter einer Nummer steht, die es nirgends gibt.
+//
+// Eine führende Null lehnt sie ab: Rechts aufgefüllt wäre „0808" nicht von „808" zu
+// unterscheiden, und Littera vergibt solche Nummern nicht.
 func EtikettBarcode(exemplarnummer, bibliotheksnummer string) (string, bool) {
-	nr, nrOK := zifferngefuellt(exemplarnummer, etikettExemplarLen)
-	bib, bibOK := zifferngefuellt(bibliotheksnummer, etikettBibLen)
-	if !nrOK || !bibOK {
+	nr := strings.TrimSpace(exemplarnummer)
+	if _, ok := zifferngefuellt(nr, etikettNummerLen); !ok || nr[0] == '0' {
 		return "", false
 	}
-	rumpf := nr + etikettFuellerVorne + bib + etikettFuellerHinten
+	bib, bibOK := zifferngefuellt(bibliotheksnummer, etikettBibLen)
+	if !bibOK {
+		return "", false
+	}
+	rumpf := nr + strings.Repeat("0", etikettNummerLen-len(nr)) + bib + strconv.Itoa(len(nr))
 	return rumpf + string('0'+rune(EAN13Pruefziffer(rumpf))), true
 }
 

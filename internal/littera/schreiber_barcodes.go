@@ -3,6 +3,7 @@ package littera
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"bibliothek/internal/uebernahme"
 )
@@ -61,7 +62,7 @@ func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 	if s.opt.Barcodes != BarcodeLittera {
 		return ""
 	}
-	nummer, ok := EtikettBarcode(e.Exemplarnummer, e.Bibliotheksnummer)
+	nummer, ok := s.etikettAmBuch(e)
 	if !ok {
 		s.prot.Warnung(e.ID, e.Exemplarnummer,
 			"aus Exemplar- und Bibliotheksnummer lässt sich kein Etikett-Barcode bilden – "+
@@ -79,6 +80,30 @@ func (s *Schreiber) barcodeWunsch(e Exemplar, fremd string) string {
 		return ""
 	}
 	return nummer
+}
+
+// etikettAmBuch liefert den EAN-13 des Littera-Etiketts. Maßgeblich ist die
+// Druckzeichenkette: Sie ist das Etikett selbst, in EAN-13-Schrift gesetzt (EtikettZiffern).
+// Gerechnet wird nur, wenn sie fehlt oder kein EAN-13 ist.
+//
+// Weichen Etikett und Rechnung ab, hat sich eine Spalte nach dem Druck geändert. In der
+// Sicherung von 2010 zweimal: Die Bibliotheksnummer steht auf 0, das Etikett trägt 0395
+// (gemessen am 28.09.2026). Dann gilt das Etikett, mit Vermerk im Protokoll.
+func (s *Schreiber) etikettAmBuch(e Exemplar) (string, bool) {
+	gerechnet, gerechnetOK := EtikettBarcode(e.Exemplarnummer, e.Bibliotheksnummer)
+	gedruckt, gedrucktOK := EtikettZiffern(e.Barcode)
+	switch {
+	case gedrucktOK && gerechnetOK && gedruckt != gerechnet:
+		s.prot.Warnung(e.ID, e.Exemplarnummer, "das Etikett trägt "+gedruckt+
+			", aus Exemplar- und Bibliotheksnummer folgt "+gerechnet+" – übernommen wird das Etikett")
+		return gedruckt, true
+	case gedrucktOK:
+		return gedruckt, true
+	case strings.TrimSpace(e.Barcode) != "":
+		s.prot.Warnung(e.ID, e.Exemplarnummer,
+			"die Druckzeichenkette ist kein lesbarer EAN-13 – Etikett aus Exemplar- und Bibliotheksnummer gerechnet")
+	}
+	return gerechnet, gerechnetOK
 }
 
 func (s *Schreiber) vorhandeneBarcodes(ctx context.Context) (map[string]bool, error) {
