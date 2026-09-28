@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 25.09.2026 (Entwurf)
+Stand: 28.09.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -71,8 +71,12 @@ bleiben bei der Entwicklung oder bei einer Stelle, die die Pflege übernimmt (Ab
 ### 3.2 Eine Sicherung zurückholen
 
 **Was es gibt:** Jede Nacht um 02:30 UTC eine verschlüsselte Sicherung der Datenbank; die
-letzten 14 bleiben. Sie liegen auf demselben Server — eine Kopie außer Haus ist vorbereitet,
-aber nicht eingerichtet ([OFFEN.md](OFFEN.md) 7.3). Sonntags um 03:30 UTC spielt das Programm
+letzten 14 bleiben. Entschieden am 28.09.2026, noch nicht gebaut: dazu 12 wöchentliche
+Stände, damit ein Fehler, der erst nach den Sommerferien auffällt, noch eine Sicherung von
+davor vorfindet ([OFFEN.md](OFFEN.md) 5.30). Die Sicherungen liegen auf demselben Server —
+eine Kopie außer Haus ist vorbereitet, aber nicht eingerichtet ([OFFEN.md](OFFEN.md) 7.3).
+Wird sie als S3-Speicher eingerichtet, braucht der Speicher eine eigene Löschregel: Das
+Programm lädt dorthin nur hoch und löscht nie. Sonntags um 03:30 UTC spielt das Programm
 die jüngste Sicherung probeweise in eine Wegwerf-Datenbank ein; misslingt das, meldet es die
 Betriebsbereitschaft als kritisch, und die tägliche Alarm-Mail geht hinaus.
 
@@ -179,6 +183,8 @@ für die Pflege zählt, kommt entlang der Gliederung dieses Dokuments ins Reposi
 Auf Papier bei der Schule, nicht im Repository:
 
 - Namen und Erreichbarkeit: Entwicklung, Vertretung, IT des Schulträgers
+- Namen und Erreichbarkeit von Schulleitung und Datenschutzbeauftragtem — für eine Datenpanne
+  ([Datenschutz-Nachweis](datenschutz/nachweis.md), Abschnitt 8)
 - Zugang zum Server (Adresse, Konto) und Programmverzeichnis
 - Ort der Kopie von `APP_ENCRYPTION_KEY` und `BACKUP_ENCRYPTION_KEY` außerhalb des Servers
 - Ort der Quelldokumente (7.1)
@@ -191,7 +197,12 @@ Auf Papier bei der Schule, nicht im Repository:
 1. **Übergabe** an eine andere Stelle. Der Code steht unter EUPL 1.2; jede Stelle darf ihn
    übernehmen, ändern und weitergeben.
 2. **Findet sich niemand,** läuft das Programm bis zum Ende des Schuljahres weiter. Die Daten
-   kommen aus der nächtlichen Sicherung, und die Schule wechselt auf ein Kaufprogramm.
+   kommen aus der nächtlichen Sicherung, und die Schule wechselt auf ein Kaufprogramm. Was es
+   dafür heute gibt: die Sicherung selbst, eine vollständige PostgreSQL-Datenbank, und die
+   Bestandsliste als CSV (je Exemplar Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode,
+   Zustand; Einstellungen → Datenverwaltung). Leser, Ausleihen, Signaturen und Schlagworte
+   gibt das Programm in keiner Form aus, die ein anderes Programm einliest; ein Wechsel
+   braucht dafür eine Umsetzung aus der Sicherung (Abschnitt 9).
 3. **Ausgeschlossen** ist ein unbefristeter Weiterbetrieb ohne Sicherheitsupdates. Einen Weg
    zurück zu Littera gibt es nicht: Das Programm gibt keine Daten in Litteras Importform aus.
 
@@ -211,3 +222,6 @@ Auf Papier bei der Schule, nicht im Repository:
    Releases eingespielt werden, ist nicht entschieden.
 5. **Betrieb:** Sicherung außer Haus, externes Signal bei Ausfall, Probe der Wiederherstellung
    an einem fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
+6. **Datenweg beim Wechsel:** ob das Programm eine Gesamtausgabe bekommt, die ein anderes
+   Programm einliest — Katalog mit Signaturen und Schlagworten, Exemplare, Leser, offene
+   Ausleihen ([OFFEN.md](OFFEN.md) 4.22).

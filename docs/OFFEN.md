@@ -15,7 +15,7 @@ Andere Dokumente erklären (Konzept, Anleitung, der Katalog der Bugklassen in
 
 **Die Sichtung vom 16.09.2026** (Abschnitt 9): Die zwei Bedingungen aus 9.9 — DSGVO-Nachweis
 sowie Hosting- und Pflegekonzept — sind am 23.09.2026 zurückgestellt. Das Pflegekonzept ist am
-24.09.2026 umentschieden und liegt als Entwurf vor; der DSGVO-Nachweis bleibt zurückgestellt.
+24.09.2026 umentschieden, der DSGVO-Nachweis am 28.09.2026; beide liegen als Entwurf vor.
 
 **Was bei dir liegt — der Reihe nach:**
 
@@ -178,6 +178,19 @@ sich der Punkt — der Import setzt den Vermerk seit dem 16.08.2026 selbst.
 des Backups mitnehmen (7.2). Heute liest der Import sie, leitet das Fach ab und verwirft sie.
 Vorher messen, wie viele Titel welche tragen. Die Schlagworte selbst (Migration 138, Pflege mit
 Verweisen, Portal-Filter) stehen in [FACHKONZEPT.md](FACHKONZEPT.md).
+
+### 4.22 Datenweg beim Wechsel auf ein anderes Programm
+
+Aufgefallen beim Datenschutz-Nachweis (28.09.2026), am Code nachgesehen. Für das Ende der Pflege
+sieht das Pflegekonzept den Wechsel auf ein Kaufprogramm vor (Abschnitt 8). Mitnehmen lassen sich
+heute die nächtliche Sicherung, eine vollständige PostgreSQL-Datenbank, und die Bestandsliste als
+CSV (`GET /api/admin/books/export`, Einstellungen → Datenverwaltung: je Exemplar Titel, Autor,
+Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand). Leser, Ausleihen, Signaturen und Schlagworte
+gibt das Programm in keiner Form aus, die ein anderes Programm einliest; ein Wechsel bräuchte
+eine Umsetzung aus der Sicherung. Littera führt unter Dienstprogramme einen Ex- und Import der
+Schlagworte. **Frage:** eine Gesamtausgabe bauen (Katalog mit Signaturen und Schlagworten,
+Exemplare, Leser, offene Ausleihen) oder beim Ende der Pflege aus der Sicherung umsetzen?
+Verwandt im Parkdeck (6.3): den Schlagwortkatalog als Datei aus- und einlesen.
 
 ---
 
@@ -546,6 +559,20 @@ damit in seinem Festplatten-Cache ablegen, auf Rechnern, die mehrere Personen be
 Abhilfe: `Cache-Control: no-store` als Vorgabe für `/api/`, wo der Handler nichts Eigenes setzt;
 vorher nachsehen, ob die Theke ohne Netz auf dem Browser-Cache aufbaut.
 
+### 5.30 Aufbewahrung der Sicherungen: zusätzlich 12 wöchentliche
+
+**Entschieden am 28.09.2026, nicht gebaut.** Heute bleiben die letzten 14 Nachtsicherungen
+(`rotateBackups(backupDir, 14)` in `jobs/backup.go`). Ein Fehler, der still Daten verändert — ein
+falscher Import, ein Löschlauf, ein Reparaturskript — und erst nach den sechs Wochen der
+Sommerferien auffällt, steckt dann in jeder vorhandenen Sicherung. Künftig bleiben dazu 12
+wöchentliche Stände; gelöschte Personen stehen damit bis zu etwa drei Monate in den Sicherungen.
+Vor dem Echtstart. Beim Bau mitziehen: das VVT (Löschfristen: „Verschlüsselte Backups 14 Tage"),
+[resilience_and_recovery.md](resilience_and_recovery.md) 1a, SECURITY („Rotation"),
+PFLEGEKONZEPT 3.2 und den Datenschutz-Nachweis (Abschnitte 4 und 9); die S3-Kopie braucht
+dieselbe Regel (7.3). Beim Bau klären (nicht nachgestellt): Eine zurückgespielte ältere Sicherung
+bringt auch Personen zurück, die seit ihrem Stand von Hand endgültig gelöscht wurden; die
+Löschläufe nach Frist greifen in der nächsten Nacht wieder, eine Löschung von Hand nicht.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -599,6 +626,12 @@ vorher nachsehen, ob die Theke ohne Netz auf dem Browser-Cache aufbaut.
   wer die Rechte anders verteilt, erreicht die Buch-Etiketten nicht (Sammelpunkt wie
   „Einstellungen"). Der Etikett-Knopf der Buchakte fragt deshalb beides ab.
 - Ausfallmatrix A3 und B4; A3 erst nach S3 (7.3).
+- Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `LoginHandler` in
+  `auth/handlers.go` schreibt keinen Eintrag, nur die Selbstanmeldung
+  (`auth/selbstanmeldung.go`). Nach einem Missbrauch lässt sich nicht nachsehen, wann und von wo
+  ein Konto angemeldet war; der Datenschutz-Nachweis (Abschnitte 8 und 9) sagt das so. Ein
+  Protokoll der Anmeldungen wären neue Personendaten des Personals (Zeitpunkt, Netzadresse) mit
+  eigener Frist. Anlass zum Bauen: ein Vorfall oder eine Frage des Datenschutzbeauftragten.
 
 ### 6.2 Kategorie C
 
@@ -716,7 +749,12 @@ Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umsti
 ### 7.3 S3-Auslagerung der Backups
 
 `S3_ENDPOINT`, `S3_ACCESS_KEY`, `S3_SECRET_KEY` und `S3_BUCKET` sind leer (13.09.2026); alles
-liegt auf einer Platte. Nur EU oder Schulträger. Der Code ist fertig.
+liegt auf einer Platte. Nur EU oder Schulträger. Der Code ist fertig bis auf das Löschen
+(nachgesehen am 28.09.2026): `uploadBackupToS3` in `jobs/backup.go` lädt jede Nachtsicherung
+hoch, die Rotation gilt nur dem lokalen Verzeichnis. Ohne Löschregel am Speicher bliebe dort jede
+Sicherung mit allen Personen ihres Stands unbegrenzt liegen. Beim Einrichten eine Löschregel am
+Speicher setzen, die der Aufbewahrung aus 5.30 folgt, oder die Rotation im Code auf den Speicher
+ausdehnen.
 
 ### 7.4 Manuelle Restore-Probe an einem fremden Ziel
 
@@ -910,8 +948,9 @@ Anforderungsliste, abgeglichen in [mittel_konzept.md](mittel_konzept.md) Abschni
 
 **Entschieden am 23.09.2026: zurückgestellt.** Beides bleibt liegen, bis es ansteht; dann gelten
 die Schritte und Fragen unten. **Am 24.09.2026 für das Pflegekonzept umentschieden: jetzt, als
-Wartungshandbuch** (Vorschlag am Ende dieses Abschnitts); der DSGVO-Nachweis bleibt
-zurückgestellt.
+Wartungshandbuch** (Vorschlag am Ende dieses Abschnitts); **am 28.09.2026 auch für den
+DSGVO-Nachweis**, weil jetzt die Antworten von Schule und Schulträger den Echtstart bestimmen
+und beide Dokumente sie beeinflussen.
 
 Die Einschätzung am Ende des Protokolls nennt zwei Punkte, die in keinem der zwölf Mängel
 stehen:
@@ -920,14 +959,15 @@ stehen:
 > Hosting- und Programmpflegekonzepte sind nicht geplant. Dies könnte ein Ausschlusskriterium
 > sein."
 
-- **Nachweis der DSGVO-Konformität.** Das Material liegt vor und ist vollständiger, als der Satz
-  vermuten lässt: VVT-Entwurf und Datenschutzhinweis ([datenschutz/](datenschutz/)), die
-  PII-Matrix über jede Route ([PII_MATRIX.de.md](PII_MATRIX.de.md)), die Löschfristen samt
-  nächtlichem Job. Was fehlt, ist ein Dokument, das man weitergeben kann — und die
-  Beschlussfassung der Schule (8.5, B1–B7). **Nächster Schritt, bei mir:** das Dokument aus
-  diesem Material zusammenstellen; Arbeit an der Doku, keine Bauarbeit.
-- **Hosting- und Programmpflegekonzept.** Der Entwurf steht seit dem 24.09.2026:
-  [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) — mit den drei am 24.09.2026 beantworteten Fragen
+- **Nachweis der DSGVO-Konformität.** Der Entwurf steht seit dem 28.09.2026:
+  [datenschutz/nachweis.md](datenschutz/nachweis.md) — eine Übersicht zum Weitergeben mit den
+  Unterlagen (VVT-Entwurf, Datenschutzhinweis, PII-Matrix), den Löschfristen, dem Test hinter
+  jeder Zusage, dem Ablauf bei einer Datenpanne, den bekannten Lücken und dem, was bei der
+  Schule liegt. Offen ist die Beschlussfassung der Schule (8.5, B1–B7).
+- **Hosting- und Programmpflegekonzept.** Der Entwurf steht seit dem 24.09.2026, ergänzt am
+  28.09.2026 um die Aufbewahrung der Sicherungen, den Datenweg beim Wechsel (4.22) und die
+  Kontakte für eine Datenpanne: [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) — mit den drei am
+  24.09.2026 beantworteten Fragen
   (Betrieb, Pflege mit Vertretung, Ende der Pflege), den wiederkehrenden Aufgaben mit Takt, den
   zwei Handgriffen der Vertretung und der Messung, ob jemand anderes das Programm weiterführen
   kann. Offen:
