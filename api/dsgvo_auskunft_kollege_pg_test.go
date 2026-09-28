@@ -83,10 +83,15 @@ func TestDsgvoAuskunft_Kollege(t *testing.T) {
 	exec(`INSERT INTO audit_logs (admin_id, aktion, details) VALUES ($1, 'SELBSTANMELDUNG', '{"rolle":"kollegium"}')`, konto)
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
+	// Abgerufen vom Administrator: Die Auskunft über einen Leser mit Konto verlangt seit dem
+	// 28.09.2026 manage_users (TestDsgvoAuskunft_KontoVerlangtKontenrecht).
+	adminKonto, _ := legeKontoAn("Ada", "ada@auskunft-kollege.invalid")
 	rufe := func(t *testing.T, h http.HandlerFunc, pfad string) *httptest.ResponseRecorder {
 		t.Helper()
 		req := httptest.NewRequest(http.MethodGet, pfad, nil)
 		req.SetPathValue("id", leser)
+		req = req.WithContext(context.WithValue(req.Context(), auth.ClaimsContextKey,
+			&auth.Claims{UserID: adminKonto, Rolle: auth.RoleAdmin}))
 		rec := httptest.NewRecorder()
 		h(rec, req)
 		if rec.Code != http.StatusOK {

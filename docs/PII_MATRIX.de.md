@@ -20,11 +20,12 @@ Fachrecht über den echten Router mit einer Rolle, die das Recht ihrer Zeile
 NICHT hat, und verlangt 403 mit der Begründung des Rechte-Wächters. Damit ist
 auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein Recht, das im
 Seed ohnehin jede Rolle hält.
-Stand: 25.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Stand: 28.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen; 24.09.: die Sperr-Tür und das Protokoll der Sperren am Code
 nachgetragen; 25.09.: die Auflagen-Türen und der Auflagen-Hinweis der Theke am Code
-nachgetragen, die übrigen Zeilen nicht erneut erhoben).
+nachgetragen; 28.09.: das Zusatzrecht der Auskunft über einen Leser mit Zugangskonto
+nachgetragen; die übrigen Zeilen nicht erneut erhoben).
 
 **Seit dem 16.09.2026 stehen hinter denselben Routen auch Daten von Lehrkräften.** Die
 Leserdatei führt Schüler und Kollegium in einer Tabelle (`leser`, FACHKONZEPT §12.3); die
@@ -68,8 +69,8 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `PATCH /api/schueler/{id}`                             | edit_students         | 0     | Antwort nur Status-Echo                                                                                                                                |
 | `PATCH /api/admin/students/{id}/lock`                  | edit_students         | 1     | Name, Klasse, beide Sperrflags (seit 24.09.2026 auch `ist_gesperrt`, denn Aufheben nimmt beide weg)                                                    |
 | `DELETE /api/schueler/{id}`                            | delete_students       | 0     | nur Erfolgsmeldung                                                                                                                                     |
-| `GET /api/schueler/{id}/dsgvo-auskunft`                | manage_students_admin | 3     | Vollauskunft (Zweck: DSGVO Art. 15) für jeden Leser; beim Kollegen mit Zugangskonto und selbst bearbeiteten Vorgängen samt IP-Adresse des eigenen Arbeitsplatzes, ohne Daten Dritter |
-| `GET /api/schueler/{id}/dsgvo-auskunft/pdf`            | manage_students_admin | 3     | dieselbe Vollauskunft als PDF                                                                                                                          |
+| `GET /api/schueler/{id}/dsgvo-auskunft`                | manage_students_admin | 3     | Vollauskunft (Zweck: DSGVO Art. 15) für jeden Leser; beim Kollegen mit Zugangskonto und selbst bearbeiteten Vorgängen samt IP-Adresse des eigenen Arbeitsplatzes, ohne Daten Dritter. Zeigt auf den Leser ein Zugangskonto, verlangt der Handler zusätzlich manage_users (seit 28.09.2026) |
+| `GET /api/schueler/{id}/dsgvo-auskunft/pdf`            | manage_students_admin | 3     | dieselbe Vollauskunft als PDF, mit demselben Zusatzrecht                                                                                                                          |
 | `POST /api/schueler/{id}/zusammenfuehren`              | merge_students        | 1     | verbliebener Datensatz: Name, Klasse, Barcode + Zähler der gewanderten Vorgänge (Zusammenführen zweier Datensätze, seit 02.09.2026)                    |
 | `GET /api/schueler/{id}/zusammenfuehren-kandidaten`    | merge_students        | 2     | Kandidatensuche über ALLE nicht gelöschten Schüler (auch Abgänger/Gesperrte): Name, Klasse, Barcode, Geburtsdatum, Sperr-/Abgängerflag, offene Bücher  |
 | `GET /api/schueler/deleted`                            | delete_students       | 2     | Papierkorb: Name, Klasse, deleted_at                                                                                                                   |

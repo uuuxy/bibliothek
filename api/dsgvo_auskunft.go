@@ -528,10 +528,21 @@ type dsgvoDaten struct {
 	verarbeitung      DsgvoVerarbeitungsangaben
 }
 
+// dsgvoKontoRecht verlangt die Auskunft zusätzlich zum Recht der Route, sobald auf den Leser
+// ein Zugangskonto zeigt (seit 28.09.2026). Dann nennt sie das Konto, seine Einträge im
+// Verwaltungsprotokoll und jeden Vorgang, den die Person selbst bearbeitet hat, bei
+// Verwaltungseingriffen mit IP-Adresse. Konten und dieses Protokoll zeigt die Anwendung sonst
+// nur mit manage_users (GET /api/benutzer, GET /api/admin/auditlog). Das Recht der Route,
+// manage_students_admin, hat ab Werk auch die Leitung, und es ist zum Delegieren ans
+// Sekretariat gedacht (db/seed.go, RechteOptional). Gate:
+// TestDsgvoAuskunft_KontoVerlangtKontenrecht.
+const dsgvoKontoRecht = "manage_users"
+
 // sammleDsgvoDaten lädt alle personenbezogenen Daten eines Lesers — Schüler, Lehrkraft
 // oder LiV — für die Art.-15-Auskunft. Fehler sind bereits als HTTP-Fehler (apierrors)
-// verpackt.
-func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, error) {
+// verpackt. darfKonto sagt, ob der Aufrufer dsgvoKontoRecht hat; ohne das Recht endet die
+// Auskunft über einen Leser mit Zugangskonto mit 403, bevor sie protokolliert wird.
+func (s *Server) sammleDsgvoDaten(ctx context.Context, id string, darfKonto bool) (*dsgvoDaten, error) {
 	stammdaten, err := s.dsgvoQueryStammdaten(ctx, id)
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden der Stammdaten", err)
@@ -575,6 +586,12 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string) (*dsgvoDaten, 
 	zugangskonto, err := repository.LeseDsgvoZugangskonto(ctx, s.DB.Pool, id)
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden des Zugangskontos", err)
+	}
+	// Geprüft am gelesenen Konto, nicht an stammdaten.HatZugangskonto: Entscheidend ist,
+	// was die Antwort enthalten würde.
+	if zugangskonto != nil && !darfKonto {
+		return nil, apierrors.New(http.StatusForbidden,
+			"Die Auskunft über einen Leser mit Zugangskonto verlangt das Recht „Benutzer & Rechte verwalten“.", nil)
 	}
 	verarbeitung := dsgvoPflichtangaben(stammdaten.Art, s.dsgvoFristen(ctx))
 
@@ -633,7 +650,7 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 		}
 		ctx := r.Context()
 
-		daten, err := s.sammleDsgvoDaten(ctx, id)
+		daten, err := s.sammleDsgvoDaten(ctx, id, s.BesitztRecht(r, dsgvoKontoRecht))
 		if err != nil {
 			return err
 		}

@@ -133,7 +133,7 @@ func TestDsgvoRundreise_PurgeTilgtWasDieAuskunftZeigt(t *testing.T) {
 
 	// ── 1. Die Auskunft zeigt VORHER aus jeder Quelle etwas ──
 	srv := &Server{DB: &db.Database{Pool: pool}}
-	daten, err := srv.sammleDsgvoDaten(ctx, sid)
+	daten, err := srv.sammleDsgvoDaten(ctx, sid, true)
 	if err != nil {
 		t.Fatalf("sammleDsgvoDaten vor der Löschung: %v", err)
 	}

@@ -17,7 +17,7 @@
 	import { useStudentProfile } from './useStudentProfile.svelte.js';
 	import { Info } from '@lucide/svelte';
 	import { authStore } from './stores/authStore.svelte.js';
-	import { schuelerRechte } from './schuelerRechte.js';
+	import { schuelerRechte, darfAuskunftUeber } from './schuelerRechte.js';
 	import { istKollegium } from './leserArt.js';
 	import { druckeAusweis } from './ausweisDruck.js';
 	/**
@@ -123,7 +123,7 @@
 				{#if rechte.einsehen}
 					<StudentProfileActions
 						profile={st.profile}
-						darfAuskunft={rechte.auskunft}
+						darfAuskunft={darfAuskunftUeber(rechte, st.profile)}
 						kontoauszugPdfLoading={st.kontoauszugPdfLoading}
 						rechnungPdfLoading={st.rechnungPdfLoading}
 						downloadKontoauszugPDF={st.downloadKontoauszugPDF}

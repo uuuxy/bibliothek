@@ -40,7 +40,7 @@ func (s *Server) DsgvoAuskunftPDFHandler() http.HandlerFunc {
 		}
 		ctx := r.Context()
 
-		daten, err := s.sammleDsgvoDaten(ctx, id)
+		daten, err := s.sammleDsgvoDaten(ctx, id, s.BesitztRecht(r, dsgvoKontoRecht))
 		if err != nil {
 			return err
 		}

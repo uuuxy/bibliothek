@@ -9,7 +9,7 @@ import { hatRecht } from './menu.js';
 
 /**
  * @param {any} user  authStore.currentUser
- * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, endgueltigLoeschen: boolean, auskunft: boolean, foto: boolean, zusammenfuehren: boolean }}
+ * @returns {{ einsehen: boolean, anlegen: boolean, bearbeiten: boolean, loeschen: boolean, endgueltigLoeschen: boolean, auskunft: boolean, auskunftMitKonto: boolean, foto: boolean, zusammenfuehren: boolean }}
  */
 export function schuelerRechte(user) {
 	return {
@@ -24,8 +24,13 @@ export function schuelerRechte(user) {
 		// DELETE /api/schueler/deleted/{id} — sofortiges endgültiges Löschen aus dem
 		// Papierkorb (Art.-17-Löschverlangen), nicht dasselbe Recht wie der Soft-Delete
 		endgueltigLoeschen: hatRecht(user, 'manage_students_admin'),
-		// GET /api/schueler/{id}/dsgvo-auskunft
+		// GET /api/schueler/{id}/dsgvo-auskunft — über einen Leser mit Zugangskonto nur
+		// zusammen mit auskunftMitKonto (darfAuskunftUeber)
 		auskunft: hatRecht(user, 'manage_students_admin'),
+		// Zeigt auf den Leser ein Zugangskonto, verlangt der Server zusätzlich manage_users: Die
+		// Auskunft nennt dann Konto, Kontoereignisse und selbst bearbeitete Vorgänge mit
+		// IP-Adresse (api/dsgvo_auskunft.go, dsgvoKontoRecht; seit 28.09.2026).
+		auskunftMitKonto: hatRecht(user, 'manage_users'),
 		// POST /api/schueler/{id}/photo
 		foto: hatRecht(user, 'upload_photos'),
 		// POST /api/schueler/{id}/zusammenfuehren — zwei Datensätze, ein Mensch (Umbenennung
@@ -33,4 +38,15 @@ export function schuelerRechte(user) {
 		// Admin einzeln delegieren kann (vorher an manage_students_admin gebunden).
 		zusammenfuehren: hatRecht(user, 'merge_students')
 	};
+}
+
+/**
+ * Bietet die Akte DIESES Lesers die DSGVO-Auskunft an? `profil.email` ist die Adresse am
+ * Zugangskonto (api/student_profile.go); leer heißt: kein Konto.
+ * @param {ReturnType<typeof schuelerRechte>} rechte
+ * @param {{ email?: string } | null | undefined} profil
+ * @returns {boolean}
+ */
+export function darfAuskunftUeber(rechte, profil) {
+	return rechte.auskunft && (!profil?.email || rechte.auskunftMitKonto);
 }
