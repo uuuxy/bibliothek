@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 26.09.2026
+Stand: 28.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -49,9 +49,6 @@ Vorschlag vom 24.09.2026):
    der Antwort zu E1), und es schließt eine Lücke, die heute schon besteht.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
-
-**Nachzuholen:** der Rasterdurchgang über die Änderungen vom 24.09.2026 (**5.28**). Vorschlag
-vom 26.09.2026: vor Punkt 1, weil diese Änderungen schon auf dem Testserver laufen.
 
 **In der Doku:** das Pflegekonzept (9.9) — der Entwurf steht seit dem 24.09.2026; es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung. **Gleich danach im Code:** das Gate gegen Leser-Werte im Protokoll (5.10), entschieden am
@@ -538,20 +535,16 @@ Echtbetrieb. Frage: Beginnt der Echtbetrieb mit einer leeren Datenbank und der L
 (7.2)? Dann fällt das Skript weg. Sonst braucht es eine neue Liste aus dem Tabellenbestand und die
 Entscheidung, welche Leser bleiben. [SCRIPTS.md](SCRIPTS.md) nennt den Abbruch seit dem 26.09.2026.
 
-### 5.28 Rasterdurchgang über die Änderungen vom 24.09.2026 steht aus
+### 5.29 API-Antworten tragen kein `Cache-Control`
 
-Aufgefallen am 25.09.2026 beim Abgleich der Durchgänge mit den Commits: Der Durchgang vom
-24.09.2026 abends lief über den Prüfweg der Ausleihe (29a5c786, Fund 5b50202d), der vom
-25.09.2026 über die Auflagen (4.18). Ohne Durchgang sind die Leihfrist auf dem nächsten Schultag
-(513dacdd), die Ausweisnummern (Migrationen 145 und 146), die Datenschutz-Auskunft für jeden
-Leser samt PDF (1c451b6c, f47bd81b, 40822ada), der Etikett-Knopf über das Druck-Center
-(4476ef94) und vom 25.09.2026 früh Migration 147 und der Rückweg in `update.sh` (52ca5ace). Die
-Commits tragen eigene Messungen und Tests; die vierzehn Fragen hat an ihnen niemand gestellt.
-Am ehesten lohnen: Fragen 4 und 9 an der Auskunft (wer ruft sie für wen ab, enthält die eines
-Kollegen keine Daten Dritter, das PDF als vollständige Kopie der Personendaten); Frage 12 an den
-Ausweisnummern (wer schreibt die Nummer außer der neuen Tür — LUSD-Import, Littera-Übernahme,
-Zusammenführen — und was bekommt jeder, wenn die Regel der Datenbank greift); Frage 6 an der
-Verlängerung (sperrt seit dem 24.09.2026 die Ausleihzeile, neben 5.22).
+Aufgefallen beim Rasterdurchgang vom 28.09.2026 (Frage 9 an der Datenschutz-Auskunft), nicht
+Teil der Änderungen vom 24.09.2026. Den Kopf setzen nur Buchcover, Barcodes, die Barcode-Liste
+der Theke, der Ereignisstrom und das Ausweisfoto — dieses mit `no-store`, „da die Bilder sensibel
+sind" (`internal/crypto/upload_helpers.go`). Der Caddy-Block der Bibliothek (`update_caddy.sh`)
+setzt keinen. Listen und Akten mit Namen und Adressen und die Auskunft als PDF darf der Browser
+damit in seinem Festplatten-Cache ablegen, auf Rechnern, die mehrere Personen benutzen.
+Abhilfe: `Cache-Control: no-store` als Vorgabe für `/api/`, wo der Handler nichts Eigenes setzt;
+vorher nachsehen, ob die Theke ohne Netz auf dem Browser-Cache aufbaut.
 
 ---
 
