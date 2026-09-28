@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -71,6 +72,31 @@ func TestRueckweg_RollbackFuehrtZurueck(t *testing.T) {
 	}
 	if strings.Contains(block, "git stash") {
 		t.Error("Rollback-Anleitung rät `git stash` — nach einem sauberen Pull wirkungslos")
+	}
+}
+
+// Jede Zeile der Wiederherstellungs-Anleitung, die einen Dump einspielt, bricht beim ersten
+// Fehler ab. Ohne ON_ERROR_STOP endet psql trotz Fehlerflut mit 0 — so lief der Rückweg von
+// update.sh bis zum 10.09.2026 und die Anleitung für den Ernstfall bis zum 28.09.2026, an vier
+// Stellen (2a, 2b, 2c, 2e; gefunden in der Generalprobe).
+//
+// Blindheit: Erkannt wird `psql … -f …` und `| psql` auf einer Zeile, nur in dieser Datei. Ein
+// Einspielen mit `<` oder über mehrere Zeilen mit dem psql-Aufruf vor dem Umbruch sieht der Test nicht.
+func TestRueckweg_EinspielenBrichtBeimErstenFehlerAb(t *testing.T) {
+	einspielen := regexp.MustCompile(`psql\b.*\s-f\s|\|\s*psql\b`)
+	gesehen := 0
+	for i, zeile := range strings.Split(lies(t, "resilience_and_recovery.md"), "\n") {
+		if !einspielen.MatchString(zeile) {
+			continue
+		}
+		gesehen++
+		if !strings.Contains(zeile, "-v ON_ERROR_STOP=1") {
+			t.Errorf("resilience_and_recovery.md:%d spielt ohne ON_ERROR_STOP ein — psql endet dann trotz Fehler mit 0: %s",
+				i+1, strings.TrimSpace(zeile))
+		}
+	}
+	if gesehen < 4 {
+		t.Fatalf("nur %d Einspiel-Zeilen gefunden, erwartet mindestens 4 (2a, 2b, 2c, 2e) — der Detektor sieht nichts", gesehen)
 	}
 }
 

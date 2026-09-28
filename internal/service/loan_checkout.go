@@ -85,7 +85,7 @@ func (s *defaultLoanService) pruefeVormerkungKonflikt(ctx context.Context, tx pg
 	`, copyID).Scan(&reservedSchuelerID, &resVorname, &resNachname)
 	if err == nil {
 		if !chkCtx.istSchueler() || chkCtx.borrowerID != reservedSchuelerID {
-			return fmt.Errorf("%w: Achtung: dieses Exemplar ist noch für %s %s reserviert", ErrConflict, resVorname, resNachname)
+			return meldung(ErrConflict, "Achtung: dieses Exemplar ist noch für %s %s reserviert", resVorname, resNachname)
 		}
 		return nil
 	}
@@ -109,7 +109,7 @@ func (s *defaultLoanService) HandleUnifiedCheckout(
 
 	// Sicherheitsschranke: Nur ausleihbare Exemplare dürfen verarbeitet werden
 	if !copy.IstAusleihbar {
-		return nil, fmt.Errorf("%w: dieses Buchexemplar ist nicht ausleihbar", ErrInvalidState)
+		return nil, meldung(ErrInvalidState, "Dieses Buchexemplar ist nicht ausleihbar")
 	}
 
 	// 1. Ausleiher und Frist auflösen (loan_checkout_validation.go). Die Sperrprüfung folgt

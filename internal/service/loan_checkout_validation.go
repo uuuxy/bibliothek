@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"bibliothek/repository"
@@ -41,7 +40,7 @@ func (c *checkoutContext) istSchueler() bool {
 // Frist" (entschieden am 16.09.2026).
 func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy *repository.BookCopy, leserID *string) (*checkoutContext, error) {
 	if leserID == nil || *leserID == "" {
-		return nil, fmt.Errorf("%w: Kein Leser aktiv", ErrInvalidState)
+		return nil, meldung(ErrInvalidState, "Kein Leser aktiv")
 	}
 
 	leser, err := s.studentRepo.GetLeserByID(ctx, *leserID)
@@ -49,7 +48,7 @@ func (s *defaultLoanService) resolveBorrowerAndDueTime(ctx context.Context, copy
 		return nil, err
 	}
 	if leser == nil {
-		return nil, fmt.Errorf("%w: Aktiver Leser nicht gefunden", ErrNotFound)
+		return nil, meldung(ErrNotFound, "Aktiver Leser nicht gefunden")
 	}
 
 	result := &checkoutContext{borrowerID: *leserID, leser: leser}

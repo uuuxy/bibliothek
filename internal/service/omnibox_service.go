@@ -313,7 +313,7 @@ func (s *defaultOmniboxService) handleAusweisAction(ctx context.Context, query s
 		return err
 	}
 	if leser == nil {
-		return fmt.Errorf("%w: Ausweis %s ist nicht registriert", ErrNotFound, query)
+		return meldung(ErrNotFound, "Ausweis %s ist nicht registriert", query)
 	}
 	s.zeigeLeser(ctx, leser, resp)
 	return nil
@@ -336,7 +336,7 @@ func (s *defaultOmniboxService) handleLeserIDAction(ctx context.Context, id stri
 		return fmt.Errorf("datenbankfehler bei der Leser-Auflösung: %w", err)
 	}
 	if leser == nil {
-		return fmt.Errorf("%w: dieser Leser steht nicht mehr in der Leserdatei", ErrNotFound)
+		return meldung(ErrNotFound, "Dieser Leser steht nicht mehr in der Leserdatei")
 	}
 	s.zeigeLeser(ctx, leser, resp)
 	return nil
@@ -437,9 +437,9 @@ func (s *defaultOmniboxService) versucheReaktivierung(ctx context.Context, query
 	}
 
 	if copy.IstAusgesondert {
-		return false, fmt.Errorf("%w: Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", ErrInvalidState, query)
+		return false, meldung(ErrInvalidState, "Buchexemplar %s ist ausgesondert und kann nicht ausgeliehen werden", query)
 	}
-	return false, fmt.Errorf("%w: Buchexemplar ist nicht ausleihbar", ErrInvalidState)
+	return false, meldung(ErrInvalidState, "Buchexemplar ist nicht ausleihbar")
 }
 
 // holeExemplarZurueck ist der Online-Scan über dem Baustein repository.HoleExemplarZurueck:
@@ -488,7 +488,7 @@ func (s *defaultOmniboxService) handleBookAction(ctx context.Context, q OmniboxQ
 		return err
 	}
 	if copy == nil {
-		return fmt.Errorf("%w: Buchexemplar-Barcode %s wurde nicht gefunden", ErrNotFound, q.Query)
+		return meldung(ErrNotFound, "Buchexemplar-Barcode %s wurde nicht gefunden", q.Query)
 	}
 
 	// Gesperrte/ausgesonderte Exemplare ggf. automatisch reaktivieren.

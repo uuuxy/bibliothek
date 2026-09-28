@@ -123,7 +123,7 @@ func lies() schalter {
 		"alle Leser übernehmen: Schüler, alle anderen ins Kollegium (hält an bei einer Gruppe ohne Zuordnung)")
 	flag.BoolVar(&s.ausleihen, "ausleihen", false, "Ausleihen übernehmen (setzt -personen voraus)")
 	flag.StringVar(&s.barcodes, "barcodes", string(littera.BarcodeLittera),
-		"littera = Exemplarnummer vom vorhandenen Etikett, neu = frische B-XXXXX aus barcode_seq")
+		"littera = EAN-13 vom vorhandenen Etikett (was der Scanner liest), neu = frische B-XXXXX aus barcode_seq")
 	flag.IntVar(&s.batch, "batch", 200, "Datensätze je Transaktion")
 	flag.IntVar(&s.schuljahrEnde, "schuljahr-ende", 0,
 		"Jahr, in dem das laufende Schuljahr endet (0 = aus dem heutigen Datum)")

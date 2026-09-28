@@ -14,10 +14,11 @@ import (
 type Barcodequelle string
 
 const (
-	// BarcodeLittera übernimmt Litteras Exemplarnummer. Die Etiketten, die heute auf den
-	// Büchern kleben, tragen genau diese Nummer (belegt in BarcodeInhalt: 61.520 von
-	// 61.520 rekonstruiert) — der Bestand bleibt damit ohne Neubeklebung scannbar,
-	// vorausgesetzt die Lesegeräte liefern den Zifferninhalt.
+	// BarcodeLittera übernimmt den EAN-13, den das Etikett am Buch trägt: Litteras Spalte
+	// Barcode (EtikettZiffern), gerechnet aus Exemplar- und Bibliotheksnummer nur, wenn sie
+	// fehlt (EtikettBarcode). Das ist der Wert, den der Scanner liest, nicht die daneben
+	// gedruckte Exemplarnummer (61.520 von 61.520 der Sicherung von 2010 geprüft). Der
+	// Bestand bleibt damit ohne Neubeklebung scannbar.
 	BarcodeLittera Barcodequelle = "littera"
 	// BarcodeNeu vergibt B-XXXXX aus der Postgres-Sequenz barcode_seq — dieselbe Quelle,
 	// aus der auch die Anwendung ihre Barcodes zieht (repository/book_inventory.go).

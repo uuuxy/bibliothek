@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"bibliothek/db"
@@ -26,6 +27,26 @@ var (
 	// ErrInvalidState wird zurückgegeben, wenn sich ein Objekt oder eine Transaktion in einem ungültigen Zustand befindet.
 	ErrInvalidState = errors.New("ungültiger Transaktionszustand")
 )
+
+// meldung liefert einen Fehler der Art art (ErrNotFound, ErrConflict, ErrInvalidState), dessen
+// Text allein die Meldung für die Theke ist. Die Texte dieser drei Arten sind interne
+// Bezeichnungen: api/action.go zeigt err.Error(), und mit fmt.Errorf("%w: …") stand bis zum
+// 28.09.2026 davor „ungültiger Transaktionszustand:", „conflict:" oder „eintrag nicht gefunden:"
+// (Generalprobe, OFFEN 5.33). errors.Is erkennt die Art weiter; an ihr hängt der HTTP-Status.
+//
+// ErrBlocked bleibt bei fmt.Errorf: „die ausleihe ist gesperrt" ist ein Satz, und er ist mit
+// Absicht der Kopf jeder Sperrmeldung.
+func meldung(art error, format string, args ...any) error {
+	return &meldungsfehler{art: art, text: fmt.Sprintf(format, args...)}
+}
+
+type meldungsfehler struct {
+	art  error
+	text string
+}
+
+func (e *meldungsfehler) Error() string { return e.text }
+func (e *meldungsfehler) Unwrap() error { return e.art }
 
 // SperrGrundFehler trennt den Sperr-Freitext (schueler.block_reason) vom
 // generischen Teil der Meldung. Der Freitext ist Verwaltungsinformation —

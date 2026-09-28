@@ -633,31 +633,6 @@ unter 5.21 notiert. `AbortInventurSession` setzt `abgeschlossen_am` wie ein Absc
 und der Bildschirm schreibt bei 0 Verlusten „vollständig". Wer die Liste liest, hält den Bereich
 für geprüft. Kein Datenschutz-Fall, aber ein stilles falsches Ergebnis.
 
-### 5.33 Funde der Generalprobe vom 28.09.2026
-
-Lokal, abgeschottet (Backend ohne Internet, Mail auf 127.0.0.1:9, kein S3), mit der
-Littera-Sicherung von 2010: Neuaufbau aus den Migrationen, Übernahme mit Personen und Ausleihen,
-Scan echter Etikettenwerte, Ausleihe und Rückgabe, Buchliste der Theke ohne Netz, Etikett-
-Nachdruck, Mahnwesen und Mahnbriefe aller 71 Klassen, Sicherung mit dem Code des Nachtjobs und
-Wiederherstellung nach 2a (Schritte 1–4, eingespielt in eine Wegwerf-Datenbank statt mit `dropdb`) (Zeilen, Tabellen, Indizes, Trigger gleich;
-das Programm startet darauf). Alles lief. Kleine Funde, nicht gebaut:
-
-- [resilience_and_recovery.md](resilience_and_recovery.md) 2a Schritt 6 spielt mit `psql -f` ohne
-  `-v ON_ERROR_STOP=1` ein, und kein Schritt prüft danach den Erfolg (Zeilenzahlen) — `psql` meldet
-  auch bei Fehlern 0. Beim Rückweg von `update.sh` am 10.09.2026 behoben, hier nicht.
-- Dieselbe Datei, 2b: „Die Skripte tun das nach 2 Tagen von selbst" — gelöscht wird nur bei einem
-  Lauf (d0391f6d); beim Durchgang an dem Tag übersehen.
-- Hilfetext von `-barcodes` in `cmd/littera-altbestand` nennt die Exemplarnummer, geschrieben wird
-  der EAN-13 des Etiketts.
-- Meldungen an der Theke beginnen mit dem technischen Vorsatz „ungültiger Transaktionszustand:"
-  (etwa beim Buch-Scan ohne aktiven Leser: „… Dieses Buchexemplar ist aktuell nicht ausgeliehen").
-- 7.2 sagt, fast jede Littera-Lesernummer kollidiere mit einer Buchnummer. Das galt für die nackten
-  Nummern des Testservers; nach dem Neuaufbau tragen Bücher den EAN-13, in der Probe kollidierte
-  1 von 1.949.
-
-Vorgeschlagen, nicht entschieden: die Probe als Skript ins Repository, damit sie mit der Sicherung
-von 2026 wiederholbar ist.
-
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -824,9 +799,10 @@ Datenbank neu angelegt ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
 **Vor dem Personenlauf:** Im frischen Backup nachsehen, ob die Tabelle `FremdLeserNummer` gefüllt
 ist (im Stand von 2010 ist sie leer). Sie trägt die Nummern, die die Ausweise beim Scannen liefern;
 nur mit ihr funktionieren die vorhandenen Ausweise ohne Neudruck. **Ist sie leer, muss jeder Ausweis
-neu gedruckt werden:** Kein Ausweis liefert beim Scannen die Lesernummer, und Littera zählt Bücher
-und Leser getrennt, beide ab 1 — fast jede Lesernummer ist auf dem Server schon die Nummer eines
-Buchs, der Lauf vergibt dann `L-`-Nummern. Ist sie gefüllt, stehen die einzelnen Personen ohne Karte
+neu gedruckt werden:** Kein Ausweis liefert beim Scannen die Lesernummer. Der Lauf trägt dann
+die Lesernummer als Ausweisnummer ein; mit einem Buch kollidiert sie nach dem Neuaufbau nicht, weil
+Bücher den 13-stelligen EAN-13 tragen (in der Generalprobe eine Nummer doppelt, zwischen zwei
+Lesern — der zweite bekam eine `A-`-Nummer). Ist sie gefüllt, stehen die einzelnen Personen ohne Karte
 mit „keine Karte in FremdLeserNummer" im Protokoll des Laufs.
 **Die Sicherungen vom 01. und 02.09.2026** (nachgesehen am 28.09.2026): In `~/Downloads` und
 auf dem Schreibtisch liegen seit dem 09.09.2026 zwei Littera-Sicherungen

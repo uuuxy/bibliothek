@@ -154,10 +154,19 @@ Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:
 pg_dump -U postgres bibliothek > vor-restore.sql
 ls -lh vor-restore.sql
 
-# 6. Datenbank neu anlegen und einspielen
+# 6. Datenbank neu anlegen und einspielen. ON_ERROR_STOP bricht beim ersten Fehler ab —
+#    ohne es endet psql auch nach einer Fehlerflut mit 0 und lässt eine halbe Datenbank.
 dropdb -U postgres bibliothek
 createdb -U postgres bibliothek
-psql -U postgres -d bibliothek -f "$DUMP"
+psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek -f "$DUMP"; echo "psql-Exit: $? (muss 0 sein)"
+
+# 7. Erfolg prüfen: Zeilen je Tabelle in der Datenbank gegen die Zeilen im Dump.
+#    Weicht eine Zahl ab oder war der Exit nicht 0: weiter mit 2c (Rückweg).
+for t in leser buecher_titel buecher_exemplare ausleihen audit_logs; do
+  im_dump=$(awk -v kopf="COPY public.$t " 'index($0, kopf) == 1 {f = 1; next} /^\\\.$/ {f = 0} f' "$DUMP" | wc -l)
+  in_db=$(psql -U postgres -d bibliothek -tAc "SELECT count(*) FROM $t")
+  echo "$t: Dump $im_dump / Datenbank $in_db"
+done
 ```
 
 ### 2b. Backups aus den Shell-Wegen (Abschnitt 1b)
@@ -178,15 +187,17 @@ zcat "$GZ" | head -5                 # Gegenprobe: echter SQL-Text, keine Fehler
 pg_dump -U postgres bibliothek > vor-restore.sql   # Rückweg
 dropdb -U postgres bibliothek
 createdb -U postgres bibliothek
-zcat "$GZ" | psql -U postgres -d bibliothek
+zcat "$GZ" | psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek; echo "psql-Exit: $? (muss 0 sein)"
 ```
+
+Danach Schritt 7 aus 2a, mit `zcat "$GZ"` an der Stelle von `"$DUMP"` im `awk`.
 
 > Die Gegenprobe mit `head` ist hier nicht Zierde: `scripts/backup.sh` legte vor dem
 > 06.08.2026 ohne `pipefail` auch dann eine gzip-Datei an, wenn `pg_dump` abgebrochen war —
 > darin steht dann eine Fehlermeldung statt eines Dumps (Abschnitt 1b).
 
-> Nach getaner Arbeit **löschen** (`shred -u`). Die Skripte tun das nach 2 Tagen von
-> selbst, aber bis dahin liegt der ganze Bestand lesbar da.
+> Nach getaner Arbeit **löschen** (`shred -u`). Die Skripte löschen solche Reste erst bei
+> einem späteren Lauf, frühestens nach 2 Tagen; bis dahin liegt der ganze Bestand lesbar da.
 
 ### 2c. Der Rückweg
 
@@ -196,7 +207,7 @@ vorher:
 ```bash
 dropdb -U postgres bibliothek
 createdb -U postgres bibliothek
-psql -U postgres -d bibliothek -f vor-restore.sql
+psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek -f vor-restore.sql; echo "psql-Exit: $? (muss 0 sein)"
 ```
 
 Danach die Anwendung neu starten. Ist auch das nicht möglich, bleibt das nächstältere
@@ -239,7 +250,7 @@ read -rsp "BACKUP_ENCRYPTION_KEY: " KEY; echo
 
 createdb -U postgres bibliothek_restore_test
 BACKUP_ENCRYPTION_KEY="$KEY" ./restore-backup "$ENC" \
-  | psql -U postgres -d bibliothek_restore_test
+  | psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek_restore_test; echo "psql-Exit: $? (muss 0 sein)"
 
 # Stichprobe, danach Wegwerf-DB entfernen. `leser` und nicht `schueler`: Letzteres ist
 # seit Migration 124 eine Sicht mit WHERE art = 'schueler' und zählt das Kollegium nicht mit.

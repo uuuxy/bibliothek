@@ -94,7 +94,7 @@ type nachbuchLage struct {
 // Fehler ist ein Serverfehler (Datenbank), und der Eintrag bleibt auf dem Rechner liegen.
 func (s *defaultLoanService) Nachbuchen(ctx context.Context, e NachbuchEintrag) (*NachbuchErgebnis, error) {
 	if e.Absicht != NachbuchAbsichtAusleihe && e.Absicht != NachbuchAbsichtRueckgabe {
-		return nil, fmt.Errorf("%w: unbekannte Absicht %q", ErrInvalidState, e.Absicht)
+		return nil, meldung(ErrInvalidState, "Unbekannte Absicht %q", e.Absicht)
 	}
 	jetzt := s.heute()
 	gescannt := e.GescanntAm.Add(e.UhrVersatz).In(schoolLocation())

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 
 	"bibliothek/repository"
@@ -74,14 +73,14 @@ func (s *defaultLoanService) deuteAusleiheKonflikt(
 	}
 	if aktiv == nil {
 		// Weder geschrieben noch auffindbar — nichts beschönigen.
-		return fmt.Errorf("%w: dieses Exemplar konnte nicht verbucht werden, bitte erneut scannen", ErrConflict)
+		return meldung(ErrConflict, "Dieses Exemplar konnte nicht verbucht werden, bitte erneut scannen")
 	}
 
 	if istSelberAusleiher(aktiv, chkCtx) {
 		return errAusleiheBereitsVorhanden{loan: aktiv}
 	}
 
-	return fmt.Errorf("%w: dieses Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht", ErrConflict)
+	return meldung(ErrConflict, "Dieses Exemplar wurde soeben an einem anderen Arbeitsplatz verbucht")
 }
 
 // istSelberAusleiher prüft, ob die bestehende Ausleihe demselben Leser gehört wie der
@@ -101,7 +100,7 @@ func (e errAusleiheBereitsVorhanden) Error() string {
 func mapLoanCreateErr(err error) error {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		return fmt.Errorf("%w: dieses Exemplar wurde soeben bereits ausgeliehen", ErrConflict)
+		return meldung(ErrConflict, "Dieses Exemplar wurde soeben bereits ausgeliehen")
 	}
 	return err
 }

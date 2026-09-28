@@ -73,7 +73,7 @@ func (s *defaultDeviceService) ladeGeraet(ctx context.Context, query string) (re
 	`, query).Scan(&g.ID, &g.Modellname, &g.Seriennummer, &g.BarcodeID, &g.Zubehoer, &g.IstAusleihbar, &g.IstAusgesondert, &g.ZustandNotiz)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return g, fmt.Errorf("%w: Gerät mit Barcode %s nicht gefunden", ErrNotFound, query)
+			return g, meldung(ErrNotFound, "Gerät mit Barcode %s nicht gefunden", query)
 		}
 		return g, err
 	}
@@ -85,7 +85,7 @@ func (s *defaultDeviceService) ladeGeraet(ctx context.Context, query string) (re
 // richtig, auch für ein Gerät, das inzwischen defekt oder ausgesondert ist.
 func pruefeGeraetAusleihbar(g repository.Geraet) error {
 	if g.IstAusgesondert {
-		return fmt.Errorf("%w: Gerät ist ausgesondert", ErrInvalidState)
+		return meldung(ErrInvalidState, "Gerät ist ausgesondert")
 	}
 	if !g.IstAusleihbar {
 		return fmt.Errorf("%w: Gerät ist aktuell gesperrt", ErrBlocked)
@@ -134,7 +134,7 @@ func (s *defaultDeviceService) ladeRueckgeber(ctx context.Context, activeLeserID
 		return nil, err
 	}
 	if leser == nil {
-		return nil, fmt.Errorf("%w: Aktiver Leser nicht gefunden", ErrNotFound)
+		return nil, meldung(ErrNotFound, "Aktiver Leser nicht gefunden")
 	}
 	return leser, nil
 }
@@ -178,7 +178,7 @@ func geraeteRueckgabeFrist(now time.Time, kalender lmfplan.Ferientabelle) time.T
 
 func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g *repository.Geraet, leser *repository.Student, lage sperrLage, staffID string) (*DeviceResult, error) {
 	if leser == nil {
-		return nil, fmt.Errorf("%w: Bitte scannen Sie zuerst einen Ausweis", ErrInvalidState)
+		return nil, meldung(ErrInvalidState, "Bitte scannen Sie zuerst einen Ausweis")
 	}
 
 	// Standard-Hardware-Leihfrist beträgt 14 Tage (2 Wochen), auf das Tagesende in der
@@ -205,7 +205,7 @@ func (s *defaultDeviceService) leiheGeraetAus(ctx context.Context, tx pgx.Tx, g 
 		// (loan.go: ON CONFLICT → ErrAusleiheKonflikt).
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-			return nil, fmt.Errorf("%w: Gerät ist bereits ausgeliehen (woanders verbucht)", ErrConflict)
+			return nil, meldung(ErrConflict, "Gerät ist bereits ausgeliehen (woanders verbucht)")
 		}
 		return nil, err
 	}

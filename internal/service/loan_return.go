@@ -105,7 +105,7 @@ func (s *defaultLoanService) HandleSimpleReturn(
 	// Rückläufer sortiert, sammelte damit still Bücher auf seinem eigenen Namen. Wer
 	// ausleihen will, legt seinen Ausweis vor wie alle anderen auch.
 	if activeLoan == nil {
-		return nil, fmt.Errorf("%w: Dieses Buchexemplar ist aktuell nicht ausgeliehen", ErrInvalidState)
+		return nil, meldung(ErrInvalidState, "Dieses Buchexemplar ist aktuell nicht ausgeliehen")
 	}
 
 	return s.handleRueckgabe(ctx, tx, copy, activeLoan, staffID, resp)
