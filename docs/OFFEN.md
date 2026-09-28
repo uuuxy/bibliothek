@@ -32,23 +32,23 @@ entfallen.
      gehören nur dorthin. Dazu: Hat der Schulträger eine Vorlage für das IT-Sicherheitskonzept?
      Dann kommt der Teil des Programms in seiner Form. Außerdem: ob seine IT Betriebssystem und
      Docker pflegt, wie im Pflegekonzept vorgesehen (Abschnitt 9); wie die Pflege den Server
-     erreicht, vor Ort oder über einen Fernzugang; und bei einem Server nur im Schulnetz, woher
-     ein Zertifikat kommt, dem die Browser der Schule vertrauen (4.23).
+     erreicht, vor Ort oder über einen Fernzugang; und was die Seite für die Lieferanten von ihm
+     braucht: einen Namen im Internet, die Freigabe von Port 443 und die Angabe, wie Anfragen aus
+     dem Schulnetz am Server ankommen (4.23). Mitzubringen ist eine Aufstellung, was der Server
+     braucht; sie fehlt noch und liegt bei mir (4.23).
    - **Wer die Sichtung gemacht hat** (Abschnitt 9): Reichen Datenschutz-Nachweis und
      Pflegekonzept als die zwei Bedingungen, werden die drei begründeten Abweichungen im
      Mahnwesen akzeptiert, und wer wird Vertretung?
    - **Littera:** das Kennwort, das bei der Einrichtung von Littera für dessen SQL Server
-     vergeben wurde. Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und
-     ein neues Backup ist nicht nötig (7.2).
-2. **Die Erreichbarkeit von außen** (4.23): alles nur im Schulnetz, oder von außen nur die Seite
-   für die Lieferanten? Die Entscheidung vom 28.09.2026 „Lehrkräfte nur im Schulnetz" hat drei
-   Folgen, die dabei nicht genannt waren.
-3. **Die übrigen Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8), soweit noch nicht
+     vergeben wurde — zu fragen bei dem, der Littera eingerichtet hat, nicht bei der Bücherei.
+     Damit öffnen sich womöglich die zwei Sicherungen vom 01. und 02.09.2026, und ein neues
+     Backup ist nicht nötig. Kennt es niemand, bleibt die Littera-Hotline (7.2).
+2. **Die übrigen Anfragen an Schule, Schulamt und Schulträger** (Abschnitt 8), soweit noch nicht
    gestellt: B3 und B4 (8.5), E1 und E2 (8.1, 8.2), die Zahlungswege in zwei Schritten — erst
    die Schule, dann der Schulträger (8.3) —, die Sperre der Ehemaligen beim Schulbuch (8.7), die
    Abholfrist bei Vormerkungen (8.8), dazu der Wortlaut des Eigentumsvermerks der
    Schülerbücherei (Einstellungen → Schule; leer heißt, diese Bücher tragen keinen Vermerk).
-4. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
+3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
 
@@ -61,8 +61,8 @@ Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag v
 1. Was still jemandem schaden kann (entschieden am 28.09.2026, nach der Regel unten „kann das
    still jemandem schaden?"): das Gate gegen Leser-Werte im Protokoll (5.10), aus 5.19 die
    Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei, `Cache-Control` (5.29),
-   die verworfene Inventur (5.32). Die zwei fehlenden Fristen aus 5.19 (gelöschte Kollegen,
-   Klassensatz-Reservierungen) brauchen vorher eine Entscheidung. Danach 5.18 (Klassen als
+   die verworfene Inventur (5.32), dazu die zwei Fristen aus 5.19 (gelöschte Kollegen,
+   Klassensatz-Reservierungen; entschieden am 28.09.2026). Danach 5.18 (Klassen als
    Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für
    Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
@@ -71,7 +71,8 @@ Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag v
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
 Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`), 5.30 (Aufbewahrung der
-Sicherungen) und 5.31 (`update.sh` für den Schulserver).
+Sicherungen), 5.31 (`update.sh` für den Schulserver) und der Eingang für die Seite der
+Lieferanten (4.23).
 
 **In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf. Im
 Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stellen eingetragen,
@@ -192,33 +193,47 @@ Verwandt im Parkdeck (6.3): den Schlagwortkatalog als Datei aus- und einlesen.
 
 ### 4.23 Erreichbarkeit von außen
 
-Entschieden am 28.09.2026: Lehrkräfte erreichen das Programm vorerst nur im Schulnetz, nicht von
-zu Hause. Bei der Entscheidung nicht genannt, am Code nachgesehen am 28.09.2026 — daran hängen
-drei Dinge:
+**Entschieden am 28.09.2026: Von außen ist nur die Seite für die Lieferanten erreichbar,** alles
+andere nur aus dem Schulnetz. Lehrkräfte erreichen das Programm vorerst nicht von zu Hause
+(ebenfalls entschieden am 28.09.2026); der Katalog ohne Anmeldung (`/api/public/opac/…`) ist nur
+in der Schule durchsuchbar. Caddy holt das Zertifikat selbst bei Let's Encrypt wie am
+Testserver (`Caddyfile`: keine `tls`-Zeile). Ohne HTTPS ginge im Betrieb nicht einmal die
+Anmeldung: Das Sitzungs-Cookie wird nur über HTTPS gesetzt (`ermittleCookieSecure` in
+`main.go`). Mit einem Zertifikat, dem die Browser nicht vertrauen, stünde an jedem Gerät eine
+Warnung, und die Theke ließe sich bei einem Netzausfall nicht neu laden (Service Worker,
+[arc42/08](arc42/08-querschnittliche-konzepte.md), „Offline"). Das Uptime-Signal von außen (7.5)
+ruft `/health` ab.
+Littera lief im Schulnetz; Recherche, Reservierung und Verlängerung über das Internet gab es dort
+nur mit dem gesondert lizenzierten Zusatzmodul web.OPAC (Littera-Handbuch, „Einstellungen für den
+web.OPAC").
 
-- **Der Bestätigungs-Link an Lieferanten** (`/api/public/bestellung/…`) öffnet ohne Anmeldung
-  eine Seite, auf der der Händler das Bogenraster wählt, die Etiketten druckt und die Bestellung
-  bestätigt. Er setzt die öffentliche Adresse voraus (Einstellungen). Ohne sie geht die
-  Bestellung ohne Link hinaus, die Etikettenbögen liegen der Mail bei (`bestellAnhaenge` in
-  `api/pdf_service.go`), und die Bestätigung trägt die Bibliothek von Hand nach.
-- **Der Katalog ohne Anmeldung** (`/api/public/opac/…`) ist nur in der Schule durchsuchbar.
-- **Das Zertifikat:** Den Service Worker, mit dem sich die Theke bei einem Netzausfall neu laden
-  lässt ([arc42/08](arc42/08-querschnittliche-konzepte.md), „Offline"), registriert der Browser
-  nur über HTTPS mit einem Zertifikat, dem er vertraut. Heute holt Caddy es selbst bei Let's
-  Encrypt (`Caddyfile`: keine `tls`-Zeile); so eingerichtet, muss Let's Encrypt den Server von
-  außen erreichen. Steht er nur im Schulnetz, muss das Zertifikat von der IT des Schulträgers
-  kommen.
+**Was die Seite von außen braucht** (am Code nachgesehen am 28.09.2026): den Pfad
+`/bestellung/<token>` mit den Dateien der Oberfläche, `/api/public/bestellung/…` (Abruf,
+Etiketten, Bestätigung) und für das Uptime-Signal `/health`, das nur `healthy` oder `unhealthy`
+meldet. Mehr nicht: Das CSRF-Cookie für die Bestätigung setzt schon der erste Abruf
+(`refreshCSRFCookie` in `api/csrf.go`), der Aufruf von `/api/auth/me` beim Laden
+(`restoreSession`) darf scheitern, und die Seite zeigt keine Personendaten — Titel, ISBN, Menge,
+Schule, Lieferant, Topf, Kundennummer (`api/bestellbestaetigung_public.go`).
 
-Littera lief im Schulnetz; Recherche, Reservierung und Verlängerung über das Internet gab es
-dort nur mit dem gesondert lizenzierten Zusatzmodul web.OPAC (Littera-Handbuch, „Einstellungen
-für den web.OPAC"). Ob die Schule es hatte, ist nicht belegt.
+**Zu bauen, vor dem Echtstart:** Der Eingang (Caddy) lässt von außen nur diese Pfade durch; was
+nicht ausdrücklich freigegeben ist, bleibt zu. In den Einstellungen die öffentliche Adresse
+setzen. Mit dem Bau [arc42/07](arc42/07-verteilungssicht.md) (dort „:80/:443 öffentlich") und
+[arc42/09](arc42/09-architekturentscheidungen.md) nachziehen.
 
-**Frage:** alles nur im Schulnetz, der Link fällt weg — oder von außen nur die Seite für die
-Lieferanten? Im zweiten Fall holt Caddy das Zertifikat wie heute am Testserver selbst, der Server
-steht dafür aber im Internet, und alles außer dieser Seite muss am Eingang auf das Schulnetz
-beschränkt werden. **Empfehlung:** alles nur im Schulnetz; der Schulträger muss dann nichts ins
-Internet öffnen, und Katalog oder Link lassen sich später nach außen geben, wenn sie gebraucht
-werden.
+**Vom Schulträger** (Frage oben): der Name, unter dem der Server im Internet erreichbar ist, und
+dass die Geräte der Schule ihn unter demselben Namen erreichen, denn das Zertifikat gilt für den
+Namen; die Freigabe von Port 443 von außen auf den Server und der Netzabschnitt, in dem er dann
+steht; und mit welcher Absenderadresse Anfragen aus dem Schulnetz am Server ankommen. Daran
+erkennt der Eingang das Schulnetz. Kommen Anfragen von außen und aus der Schule mit derselben
+Adresse an, kann er sie nicht unterscheiden.
+
+**Bei mir:** eine Aufstellung, was der Server braucht, zum Weitergeben an den Schulträger. Auch
+im Schulnetz braucht er Verbindungen nach außen: den Mailserver der Schule (die Anmeldung läuft
+über das Postfach, `auth/imap.go`), DNB, Google Books und OpenLibrary für Titeldaten und Cover
+(`pkg/coverquelle`), für Updates GitHub, Docker Hub und die Paketquellen (`Dockerfile`,
+`update.sh`). Gesammelt steht das nirgends: [arc42/03](arc42/03-kontextabgrenzung.md) nennt die
+Verbindungen des laufenden Programms, nicht die der Updates, und keine Maße für Speicher und
+Platz.
 
 ---
 
@@ -453,9 +468,19 @@ können aber andere Personen nennen.
   `art = 'schueler'` (nötig, weil `chk_leser_nur_schueler_werden_abgaenger` die Anonymisierung
   eines Kollegen verbietet), und eine andere Routine gibt es nicht; entfernt wird er nur von
   Hand (Papierkorb → Endgültig löschen, Recht `manage_students_admin`). Die Auskunft sagt das
-  so. Offen: eine Frist für gelöschte Kollegen.
+  so. **Entschieden am 28.09.2026:** nach 180 Tagen im Papierkorb endgültig löschen — dieselbe
+  Frist wie beim Schüler, der dort anonymisiert wird (`StandardAnonymisierungSoftDeleteTage`),
+  derselbe Weg wie von Hand (`entferneSchuelerPIIUndLoesche`, für den nächtlichen Lauf wie
+  `PurgeAbgaenger`), offene Ausleihen und Forderungen halten ihn
+  (`blockiereBeiOffenenVorgaengen`). Das Prädikat gehört nach `repository/loeschfristen.go`, der
+  Wächter zählt mit. Littera löscht sofort und endgültig von Hand, ohne Papierkorb.
 - Klassensatz-Reservierungen löscht kein Job; erledigte Wünsche und Meldungen fallen nach der
-  eingestellten Frist (Vorgabe 365 Tage).
+  eingestellten Frist (Vorgabe 365 Tage). **Entschieden am 28.09.2026:** Erledigte
+  Reservierungen fallen nach derselben Einstellung (`anliegen_tage`). Die Tabelle hat dieselbe
+  Spalte `erledigt_am`, die Regel steht in `PredikatAnliegen`; offene bleiben, bis sie erledigt
+  sind. Littera: Klassensätze stehen nicht im Handbuch. Beim Bau beider Fristen mitziehen: die
+  Pflichtangaben der Auskunft (`dsgvoVerarbeitungsangabenKollegium`; sie sagen heute „eine
+  automatische Frist gibt es nicht"), den Datenschutz-Nachweis (Löschfristen) und das VVT.
 - Wird nur das Konto gelöscht (Benutzer & Rechte), bleibt die Leserzeile mit Ausweis stehen
   (`loescheUnberuehrteLeserzeile`). Die Einträge über das gelöschte Konto — `USER_CREATE` und
   `USER_UPDATE` mit seiner `ziel_id`, der Löscheintrag in `audit_log` mit Name und E-Mail-Adresse —
@@ -819,7 +844,14 @@ Name und Form sind nach dem Littera-Handbuch („Datensicherung mit SQL Server-D
 lokaler Server) die Sicherung der **SQL-Server-Fassung**: Die `.bak` ist dann eine
 SQL-Server-Sicherung, keine Access-Datei, und `mdb-export` liest sie nicht. Zum Zurückspielen
 nennt das Handbuch: „Man benötigt das Kennwort welches bei der Installation des Servers erfasst
-wurde" — das kennt, wer Littera an der Schule eingerichtet hat. **Nächste Schritte:** (1) dieses
+wurde" — das kennt, wer Littera an der Schule eingerichtet hat. Ob es die `.7z` selbst öffnet oder
+erst beim Zurückspielen mit `SqlServerRestore.exe` gebraucht wird, sagt das Handbuch nicht. Kennt
+es niemand, bleibt die Littera-Hotline. Ohne Kennwort blieben nur die Auswertungen von Littera —
+Leserliste (mit dem Leserdatenaustausch, laut Handbuch lizenzabhängig), Medienliste, Liste der
+verliehenen Medien —, die sich teils als Datei ausgeben lassen („Export des Druckbildes"). Ob sie
+die Nummern tragen, die die Übernahme braucht, ist nicht geprüft; die Übernahme liest die Tabellen
+der Datenbank, ein Weg über Auswertungen hieße einen neuen Importer (nachgelesen am 28.09.2026).
+**Nächste Schritte:** (1) dieses
 Kennwort erfragen; (2) die `.bak` auf dem eigenen Rechner in einen SQL Server einspielen und die
 neun Tabellen aus Abschnitt 1 von [SCRIPTS.md](SCRIPTS.md) als CSV ausgeben, Spaltennamen und
 Datumsformate gegen den Importer prüfen, der bisher nur `mdb-export` kennt; (3) lokal und nur
@@ -841,9 +873,6 @@ Personen, 21 Ausleihen). Mit dem frischen Backup die Generalprobe fahren ([SCRIP
 Abschnitt 1b; mit der Sicherung von 2010 am 28.09.2026 bestanden, 15.612 von 15.615 Ausleihen);
 nennt sie Gruppen, setzt die Bücherei diese Personen in Littera in ihre Gruppe, bevor die
 Sicherung für den Umstieg gezogen wird.
-
-**Rückweg zu Littera:** Bücher und Schüler behalten ihre Littera-Nummer, Lehrkräfte nicht. Soll der
-Rückweg offen bleiben, vor dem Lauf nachtragen und das Littera-Backup vom Umstiegstag aufheben.
 
 ### 7.3 S3-Auslagerung der Backups
 
@@ -951,7 +980,10 @@ Abschnitt B, und in [datenschutz/](datenschutz/).
 - **B4** Schulischen DSB beteiligen, Schwellwertanalyse DSFA schriftlich — vor B1/B2.
 - **B5** IT-Sicherheitskonzept mit dem Schulträger, Netzplatzierung.
 - **B6** Rolle des Wartenden regeln (AVV oder dienstlich).
-- **B7** Löschkonzept gegenüber Littera — vor der Littera-Übernahme (7.2).
+- **B7** Löschkonzept gegenüber Littera — vor der Littera-Übernahme (7.2). Dazu gehört, wie lange
+  die Littera-Sicherung vom Umstiegstag aufgehoben wird (entschieden am 28.09.2026: hier statt als
+  eigene Frage nach einem Rückweg; für das Ende der Pflege gibt es seit dem 24.09.2026 keinen
+  Rückweg zu Littera).
 
 Zuerst B3 und B4 anstoßen.
 

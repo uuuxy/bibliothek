@@ -239,9 +239,10 @@ Vorlage zum Ausdrucken: [blatt_vorlage.md](blatt_vorlage.md).
    Schulträgers steht aus.
 2. **`update.sh` für den Schulserver:** nur Releases einspielen und die Images bei jedem Update
    frisch holen — entschieden am 28.09.2026, nicht gebaut ([OFFEN.md](OFFEN.md) 5.31).
-3. **Erreichbarkeit von außen:** ob das Programm nur im Schulnetz erreichbar ist; daran hängen der
-   Bestätigungs-Link an Lieferanten, der Katalog von zu Hause und das Zertifikat
-   ([OFFEN.md](OFFEN.md) 4.23).
+3. **Erreichbarkeit von außen:** entschieden am 28.09.2026 — von außen nur die Seite für die
+   Lieferanten, alles andere nur aus dem Schulnetz. Offen sind die Sperre am Eingang und die
+   Angaben des Schulträgers dazu: Name im Internet, Freigabe von Port 443, Absenderadresse der
+   Schulgeräte ([OFFEN.md](OFFEN.md) 4.23).
 4. **Vertretung:** noch nicht benannt.
 5. **Betrieb:** Sicherung außer Haus, externes Signal bei Ausfall, Probe der Wiederherstellung
    an einem fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.

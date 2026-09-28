@@ -32,9 +32,11 @@ Schülerdaten; für den Betrieb ist ein Server der Schule vorgesehen.
 - **Wer erfasst ist:** Schülerinnen und Schüler (aus dem LUSD-Export und von Hand),
   Lehrkräfte, die ausleihen oder das Portal nutzen, und das Personal mit Zugang.
 - **Wo die Daten liegen:** in einer Datenbank auf dem Server der Schule, die Sicherungen
-  verschlüsselt auf demselben Server; kein Cloud-Dienst. Ein zweiter Ort für die Sicherungen
-  ist vorbereitet, aber nicht eingerichtet (Abschnitt 9). Bei einem Netzausfall hält der
-  Theken-Rechner die Ausweis- und Buchnummern der Scans, keine Namen, bis zum Nachbuchen.
+  verschlüsselt auf demselben Server; kein Cloud-Dienst. Vom Internet aus soll nur die
+  Bestätigungsseite für Lieferanten erreichbar sein, sie zeigt keine Personendaten (Abschnitt 9).
+  Ein zweiter Ort für die Sicherungen ist vorbereitet, aber nicht eingerichtet (Abschnitt 9). Bei
+  einem Netzausfall hält der Theken-Rechner die Ausweis- und Buchnummern der Scans, keine Namen,
+  bis zum Nachbuchen.
 - **Anmeldung:** mit dem Postfach des Schul-Mailservers. Das Programm speichert kein Passwort.
 - **Wohin Daten gehen:** Klassenleitungen bekommen die Mahnliste ihrer Klasse per Mail an die
   dienstliche Adresse. Eltern bekommen Mahnung und Bescheid als gedruckten Brief, keine Mail.
@@ -190,7 +192,11 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   zwischenzuspeichern; auf einem Rechner für mehrere Personen können sie im Browser-Speicher
   liegen bleiben (5.29).
 - Ein gelöschter Kollege bleibt ohne Frist im Papierkorb; Klassensatz-Reservierungen löscht kein
-  Lauf (5.19).
+  Lauf. Entschieden am 28.09.2026, nicht gebaut: der Kollege nach 180 Tagen im Papierkorb
+  endgültig, erledigte Reservierungen nach der Frist für erledigte Wünsche und Meldungen (5.19).
+- Vom Internet aus soll nur die Bestätigungsseite für Lieferanten erreichbar sein, alles andere
+  nur aus dem Schulnetz (entschieden am 28.09.2026); die Sperre am Eingang ist nicht eingerichtet
+  (4.23).
 - Die Auskunft findet Einträge über ein gelöschtes Zugangskonto nicht; ein Kollege, der über die
   Leserdatei angelegt wird, hinterlässt keinen Protokolleintrag (5.19).
 - Dreimal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte;
