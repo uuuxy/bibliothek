@@ -49,7 +49,7 @@ Schülerdaten; für den Betrieb ist ein Server der Schule vorgesehen.
 
 | Stufe | Inhalt                                                                                   | ab Werk sichtbar für                                                    |
 | ----- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| 0     | keine Personendaten: Katalog, Monitor im Flur, Bestellwesen                               | allen; Katalog und Monitor auch ohne Anmeldung                          |
+| 0     | keine Personendaten: Katalog, Monitor im Flur, Bestellwesen                               | je nach Recht; Katalog und Monitor auch ohne Anmeldung                  |
 | 1     | Name, Klasse, Ausweisnummer, Sperrstatus                                                 | der Theke, auch Helfern                                                 |
 | 2     | dazu Geburtsdatum, Abgangsjahr, Sperrgrund, LUSD-ID, Ausleihen (befristet, Abschnitt 4)  | Admin, Leitung, Mitarbeiter                                             |
 | 3     | dazu Anschrift, Eltern-E-Mail, Foto, Forderungen mit Namen                               | Admin, Leitung, Mitarbeiter; die Auskunft (Abschnitt 7) Admin und Leitung |
