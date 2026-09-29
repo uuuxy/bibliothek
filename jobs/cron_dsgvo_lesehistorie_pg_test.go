@@ -15,10 +15,12 @@ import (
 // Regex auf der Signatur, make_interval, der Schadensfall-Wächter, die Geräte ohne
 // Exemplar, die Lehrer-Ausleihe und der Aus-Schalter (0 Tage).
 //
-// Erwartung je Ausleihe nach dem Lauf mit den Vorgaben (90 / 730 Tage):
+// Erwartung je Ausleihe nach dem Lauf mit den Vorgaben (1 / 730 Tage; die Schülerbücherei bis
+// zum 29.09.2026 90 Tage):
 //
 //	F-ALT   Freihand, vor 100 Tagen zurück            → getrennt
-//	F-JUNG  Freihand, vor 10 Tagen zurück             → bleibt
+//	F-GESTERN Freihand, vor 2 Tagen zurück            → getrennt (seit 29.09.2026)
+//	F-JUNG  Freihand, heute zurück                    → bleibt
 //	F-SCHAD Freihand, vor 100 Tagen, offener Schaden  → bleibt
 //	F-OFFEN Freihand, noch ausgeliehen                → bleibt
 //	F-LEHR  Freihand, Kollege, vor 800 Tagen zurück   → getrennt (seit 16.09.2026)
@@ -88,7 +90,8 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	}
 	ids := map[string]string{}
 	ids["F-ALT"] = leihe("F-ALT", exemplar(freihandTitel, "B-F1"), 100)
-	ids["F-JUNG"] = leihe("F-JUNG", exemplar(freihandTitel, "B-F2"), 10)
+	ids["F-GESTERN"] = leihe("F-GESTERN", exemplar(freihandTitel, "B-F7"), 2)
+	ids["F-JUNG"] = leihe("F-JUNG", exemplar(freihandTitel, "B-F2"), 0)
 	ids["F-SCHAD"] = leihe("F-SCHAD", exemplar(freihandTitel, "B-F3"), 100)
 	ids["F-OFFEN"] = leihe("F-OFFEN", exemplar(freihandTitel, "B-F4"), -1)
 	ids["L-MITTEL"] = leihe("L-MITTEL", exemplar(lmfTitel, "B-L1"), 100)
@@ -129,7 +132,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		}
 		return e
 	}
-	for name, tage := range map[string]int{"F-ALT": 100, "F-JUNG": 10, "L-MITTEL": 100, "L-ALT": 800} {
+	for name, tage := range map[string]int{"F-ALT": 100, "F-GESTERN": 2, "F-JUNG": 0, "L-MITTEL": 100, "L-ALT": 800} {
 		must(`INSERT INTO audit_log (tabelle, aktion, datensatz_id, akteur, details, timestamp)
 		      VALUES ('ausleihen', 'RETURN', $1::uuid, 'USER',
 		              jsonb_build_object('exemplar_id', $1::text, 'schueler_id', $2::text),
@@ -147,7 +150,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		}
 		return n > 0
 	}
-	for name, bleibt := range map[string]bool{"F-ALT": false, "F-JUNG": true, "L-MITTEL": true, "L-ALT": false} {
+	for name, bleibt := range map[string]bool{"F-ALT": false, "F-GESTERN": false, "F-JUNG": true, "L-MITTEL": true, "L-ALT": false} {
 		if got := auditTraegtSchueler(name); got != bleibt {
 			t.Errorf("audit_log %s: schueler_id vorhanden = %v, erwartet %v", name, got, bleibt)
 		}
@@ -162,7 +165,7 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 		return hat
 	}
 	erwartung := map[string]bool{ // true = Schüler bleibt zugeordnet
-		"F-ALT": false, "F-JUNG": true, "F-SCHAD": true, "F-OFFEN": true,
+		"F-ALT": false, "F-GESTERN": false, "F-JUNG": true, "F-SCHAD": true, "F-OFFEN": true,
 		"G-ALT": false, "L-MITTEL": true, "L-ALT": false,
 	}
 	for name, bleibt := range erwartung {
@@ -187,11 +190,11 @@ func TestLesehistorieBefristung_TrenntNachFristUndKlasse(t *testing.T) {
 	// Der Lauf protokolliert sich als Systemaktion — mit den Zahlen beider Klassen.
 	var auditZeilen int
 	if err := pool.QueryRow(ctx, `SELECT count(*) FROM audit_log WHERE tabelle = 'ausleihen' AND aktion = 'ANONYMIZE'
-		AND details->>'schuelerbuecherei_getrennt' = '3' AND details->>'lernmittel_getrennt' = '1'`).Scan(&auditZeilen); err != nil {
+		AND details->>'schuelerbuecherei_getrennt' = '4' AND details->>'lernmittel_getrennt' = '1'`).Scan(&auditZeilen); err != nil {
 		t.Fatalf("audit_log: %v", err)
 	}
 	if auditZeilen != 1 {
-		t.Errorf("erwartet genau 1 Audit-Eintrag mit 2/1 Trennungen, gefunden %d", auditZeilen)
+		t.Errorf("erwartet genau 1 Audit-Eintrag mit 4/1 Trennungen, gefunden %d", auditZeilen)
 	}
 
 	// Aus-Schalter: 0 Tage Schülerbücherei → nichts mehr trennen, Lernmittel läuft weiter.

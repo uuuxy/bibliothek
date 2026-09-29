@@ -13,10 +13,18 @@ import "strconv"
 
 const (
 	// StandardLesehistorieTage sind die Tage nach der Rückgabe, nach denen eine Schülerbücherei-
-	// Ausleihe (Freihand, Medien, Geräte) vom Schüler getrennt wird. Das HBDI-Muster-VVT
-	// „Schulbibliothek" verlangt Löschung, „sobald nicht mehr notwendig"; 90 Tage decken
-	// Nachfragen zu einer Rückgabe (später bemerkter Schaden, Fremdrückgabe-Klärung).
-	StandardLesehistorieTage = 90
+	// Ausleihe (Freihand, Medien, Geräte) vom Schüler getrennt wird: einer, der nächtliche Lauf
+	// trennt sie, sobald ein voller Tag vergangen ist (Kulanz des Jobs 0). Entschieden am
+	// 29.09.2026, „so wie Hessen es empfiehlt": Das HBDI-Muster „Schulbibliothek" verlangt, dass
+	// die Daten „unverzüglich gelöscht [werden], sofern sie für die Zwecke … nicht mehr notwendig
+	// sind", das Muster der LAG Schulbibliotheken in Hessen nennt für die Ausleihdaten „nach
+	// Rückgabe des Mediums Löschung beim Ausleiher" und rät, in Littera keine historischen
+	// Verleihdaten zu speichern („Verbot der Möglichkeit, ein ‚Leseprofil' eines Lesers zu
+	// erstellen"). So hielt es auch Littera an dieser Schule: Die Sicherung von 2010 enthält nur
+	// offene Ausleihen. Bis zum 29.09.2026 waren es 90 Tage, für Nachfragen zu einem später
+	// bemerkten Schaden; die sind damit nach der Rückgabe nicht mehr möglich. Eine Ausleihe mit
+	// offener Forderung bleibt zugeordnet.
+	StandardLesehistorieTage = 1
 	// StandardLesehistorieLernmittelTage ist die Lernmittel-Frist: Lernmittel bleiben länger zuordenbar, weil die
 	// Bestandskartei Ausleihe UND Rücklauf nachweisen muss (HKM-Leitfaden LMF 11.3) und
 	// Schadensersatz öffentlich-rechtlich über die Schulaufsicht läuft (12.3–12.7) —

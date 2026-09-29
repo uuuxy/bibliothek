@@ -1,6 +1,10 @@
 package api
 
-import "fmt"
+import (
+	"fmt"
+
+	"bibliothek/repository"
+)
 
 // dsgvoVerarbeitungsangabenKollegium sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO für
 // eine Lehrkraft oder LiV. Grundlage ist das Verzeichnis von Verarbeitungstätigkeiten
@@ -30,7 +34,7 @@ func dsgvoVerarbeitungsangabenKollegium(f dsgvoFristWerte) DsgvoVerarbeitungsang
 		if tage <= 0 {
 			return abgeschaltet
 		}
-		return fmt.Sprintf("%d Tage nach Rückgabe", tage)
+		return repository.TageMitZahl(tage) + " nach Rückgabe"
 	}
 	anliegen := abgeschaltet
 	if f.anliegenTage > 0 {

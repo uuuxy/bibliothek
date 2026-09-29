@@ -231,7 +231,7 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 		if tage <= 0 {
 			return "bis zur Löschung des Schülerdatensatzes (Befristung in dieser Installation abgeschaltet)"
 		}
-		return fmt.Sprintf("%d Tage nach Rückgabe", tage)
+		return repository.TageMitZahl(tage) + " nach Rückgabe"
 	}
 	return DsgvoVerarbeitungsangaben{
 		Zwecke: []string{

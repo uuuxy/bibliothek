@@ -85,9 +85,9 @@ Ausleihvorgänge (Titel, Daten, Erinnerungen) und Vormerkungen.
 **Wer die Daten sieht / Übermittlung.** Wie Teil A. Lesestatistiken der Schule enthalten
 keine Namen.
 
-**Wie lange.** Ein Ausleihvorgang bleibt Ihrem Kind **90 Tage nach der Rückgabe**
-zugeordnet (Rückfragen zu später bemerkten Schäden), danach entfernt das System die
-Zuordnung automatisch. Vormerkungen werden mit Erledigung gelöscht. Beim Verlassen der
+**Wie lange.** Ein Ausleihvorgang bleibt Ihrem Kind **einen Tag nach der Rückgabe**
+zugeordnet, danach entfernt das System die Zuordnung automatisch. Ist ein Schaden offen,
+bleibt sie bis zu seiner Erledigung. Vormerkungen werden mit Erledigung gelöscht. Beim Verlassen der
 Schule oder nach Widerruf gelten die Löschfristen aus Teil A.
 
 **Wenn das Netz ausfällt.** Wie Teil A: Der Rechner an der Ausleihtheke merkt sich so lange

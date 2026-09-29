@@ -220,7 +220,7 @@ func klasse(spalte string, land bool) string {
 // Warum das nichts kostet: Die Frist läuft ab der RÜCKGABE. Eine Dauerleihe des
 // Kollegiums ist nie zurückgegeben und bleibt darum unberührt, solange sie läuft. Und die
 // Paarung Frist × Eigentum bleibt: Ein Buch des Landes behält seine 730 Tage für die
-// Bestandskartei, ein Buch der Schülerbücherei 90.
+// Bestandskartei, ein Buch der Schülerbücherei einen Tag (bis zum 29.09.2026 90).
 func PredikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `a.schueler_id IS NOT NULL
 		  AND a.rueckgabe_am IS NOT NULL

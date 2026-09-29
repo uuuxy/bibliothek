@@ -28,7 +28,7 @@
 	// halb getippte Eingabe überschreiben.
 	const start = untrack(() => daten);
 
-	let lesehistorie = $state(start.lesehistorie_tage ?? 90);
+	let lesehistorie = $state(start.lesehistorie_tage ?? 1);
 	let lesehistorieLmf = $state(start.lesehistorie_lernmittel_tage ?? 730);
 	let anliegen = $state(start.anliegen_tage ?? 365);
 	let auditMonate = $state(start.audit_aufbewahrung_monate ?? 24);
@@ -122,7 +122,7 @@
 			label="Lesehistorie Schülerbücherei (Tage)"
 			min={0}
 			max={3650}
-			hint="Vorgabe 90."
+			hint="Vorgabe 1 (einen Tag nach der Rückgabe)."
 		/>
 		<Feld
 			type="number"

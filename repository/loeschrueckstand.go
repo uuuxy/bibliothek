@@ -168,6 +168,16 @@ func tageText(tage int) string {
 	if tage <= 0 {
 		return "abgeschaltet (0)"
 	}
+	return TageMitZahl(tage)
+}
+
+// TageMitZahl nennt eine Zahl von Tagen mit dem passenden Wort: „1 Tag", sonst „N Tage".
+// Selbstprüfung und Datenschutz-Auskunft schreiben ihre Fristen damit; seit die Frist der
+// Schülerbücherei ein Tag ist (29.09.2026), kommt die Eins dort vor.
+func TageMitZahl(tage int) string {
+	if tage == 1 {
+		return "1 Tag"
+	}
 	return strconv.Itoa(tage) + " Tage"
 }
 
