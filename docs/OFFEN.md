@@ -76,10 +76,8 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgt das Eigentum je Exemplar (4.24, freigegeben am
-   29.09.2026 in drei Stufen, alle drei gebaut; offen die Frage an die Bücherei).
-   Dann 5.18 (Klassen und Lesergruppen als Stammdaten, entschieden am 29.09.2026; vor dem
-   Bau Messung und Stufenplan), dann 5.21
+   zurückgestellt (siehe oben). Es folgt 5.18 (Klassen und Lesergruppen als Stammdaten,
+   entschieden am 29.09.2026; vor dem Bau Messung und Stufenplan), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
@@ -95,7 +93,7 @@ die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es fol
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 
 Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20 und das Eigentum je
-Exemplar aus 4.24.
+Exemplar (4.24); danach ist 4.25 an echten DNB-Sätzen zu messen und zu entscheiden.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
 Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
@@ -250,45 +248,48 @@ Titeldaten und Cover (`pkg/coverquelle`), für Updates GitHub, Docker Hub und di
 
 ### 4.24 Eigentum je Exemplar
 
-Littera führt das Eigentum am Exemplar (`Exemplar.Eigentumsvermerk`, Freitext mit Wertehilfe).
-Das Programm leitete es bis zum 29.09.2026 allein ab (`repository.ExemplarTopfSQL`): Topf der
-Bestellung, sonst `ist_lernmittel` am Titel, und die Übernahme setzt `ist_lernmittel` aus der
-LMF-Signatur. In der Medienliste vom 12.06.2026 (67.109 Exemplare) widerspricht das Littera an
-11.160 Exemplaren ohne LMF-Signatur mit „Land Hessen" und an 3 Schulbüchern mit dem
-Schulträger. Laut Leitfaden „Lernmittelfreiheit in Hessen" des Kultusministeriums dürfen aus
-LMF-Mitteln auch Themenhefte, Quellensammlungen, Lektüren und Ganzschriften gekauft werden
-(Ziffer 2.1), Wörterbücher und Lexika sind Lernmittel ohne Genehmigung (7.5), und mit einer
-Vereinbarung zwischen Kultusministerium und Schulträger bis zu 5 % auch Lehrmittel (13). Was aus
-Landesmitteln beschafft ist, wird als Eigentum des Landes gekennzeichnet (11.1, 11.4; 9.4.2:
-„Bücher …, die im Eigentum des Landes bleiben"). Unter den 11.160 stammen 3.682 aus Titeln mit
-20 und mehr Stück (Klassensätze), 528 sind Zeitschriften, 4.201 Einzelstücke. 74 % aller
-Exemplare haben keinen Vermerk, auch fast alle Schulbücher — die Faustregel bleibt als Vorgabe
-nötig.
+Die Übernahme ordnet den Littera-Eigentumsvermerk je Exemplar nach einer festen Liste zu
+(`vermerkeLittera` in `internal/littera/eigentum.go`): „Land Hessen" wird Land, auch an den
+11.160 Exemplaren ohne LMF-Signatur (nach dem Leitfaden „Lernmittelfreiheit in Hessen", Ziffern
+2.1 und 9.4.2; Begründung in 35ae1cf9), „Hochtaunuskreis" wird Schulträger. Nach welcher Regel
+Etikett, Bestandsbücher und Schadensersatz das Eigentum lesen, steht in
+[FACHKONZEPT.md](FACHKONZEPT.md).
 
-**Entschieden am 29.09.2026:** Jedes Exemplar hat ein Eigentum (Land oder Schulträger) nach einer
-Regel für alle Stellen: ausdrücklich am Exemplar gesetzt, sonst Topf der Bestellung, sonst
-Faustregel. Sichtbar und änderbar wie in Littera. Vorbild auch Destiny („Funding Source —
-Indicate that the copies were purchased using a particular funding source", Sammeländerung über
-Update Copies → Global Update) und BIBLIOTHECAnext (Kostenart und Kostenstelle aus den Tabellen
-unter „Registerpflege / Werte"). Die Übernahme nimmt nur die feste Liste der acht Schreibweisen
-der Medienliste.
+**Offen bei der Schule:** wem die Exemplare mit den fünf seltenen Vermerken gehören (Schule 355,
+Bibliothek 157, Förderverein 86, Info Schulprojekt 31, Dauerleihgabe 4). Bis dahin kommen sie
+nur als Wortlaut mit, und es gilt die Faustregel. Die Zuordnung steht an einer Stelle
+(`vermerkeLittera`); nach der Übernahme lassen sich einzelne Titel auch in der Buchakte setzen
+(_Eigentum ändern_).
 
-**Gebaut am 29.09.2026:** Stufe 1 (Migration 150) — `buecher_exemplare.eigentum`, die Regel in
-`ExemplarTopfSQL` (Etikett), die Übernahme (`internal/littera/eigentum.go`) mit Bericht.
-Stufe 2 — dieselbe Regel im Zugangsbuch (nur der belegte Teil, `ExemplarTopfBelegtSQL`), im
-Abgangsbuch und beim Schadensersatz: wem die Forderung zusteht, welcher Zahlungsweg im Brief
-steht und nach welcher Regel der Betrag vorgeschlagen wird (entschieden am 29.09.2026: Buch
-des Landes → Staffel der Arbeitshilfe, sonst Neuwert; Littera rechnet keinen Betrag aus).
-Stufe 3 (Migration 151) — die Exemplarkarte der Buchakte zeigt Eigentum und Herkunft, markierte
-Exemplare bekommen es über „Eigentum ändern" mit Grund und Protokoll
-(`PUT /api/exemplare/eigentum`, `eigentum_quelle` littera oder hand).
+### 4.25 Schlagwort-Vorschlag aus der DNB: nur für neue Titel, ohne GND-Wörter
 
-**Offen:**
+Vorgemerkt am 29.09.2026. Anlass: Beim Bestellen von „Der Herr der Ringe 2" am Testserver bot
+das Fenster keine Schlagworte an. Zwei Gründe, am Code und am Server (lesend) nachgesehen: Die
+Schlagwortliste des Testservers ist leer (0 Wörter, 0 an Titeln), und der Titel stand schon im
+Katalog.
 
-- **Bei der Schule:** die Zuordnung der fünf seltenen Vermerke (Schule 355, Bibliothek 157,
-  Förderverein 86, Info Schulprojekt 31, Dauerleihgabe 4). Bis dahin kommen sie nur als Wortlaut
-  mit, und es gilt die Faustregel. Die Zuordnung steht an einer Stelle (`vermerkeLittera`);
-  nach der Übernahme lassen sich einzelne Titel auch in der Buchakte setzen (_Eigentum ändern_).
+So arbeitet der Vorschlag seit dem 23.09.2026: Nur ein Titel, der beim Bestellen neu aus der DNB
+angelegt wird, bekommt einen (`POST /api/buecher/aus-isbn`, auch aus der Freitextsuche); ein
+Treffer aus dem eigenen Katalog fragt die DNB nicht. Angeboten wird nur ein Wort der eigenen
+Liste, das mindestens ein Titel trägt, oder ein Verweis darauf
+(`repository.SchlagworteAusStichwoertern`). Gelesen werden 655 `$a` (Gattungsbegriffe, auch
+GND-Formwörter wie „Jugendbuch") und 653 `$a` ohne Vorsatz (Verlagswörter). Solange die Liste
+leer ist — bis die Littera-Schlagworte kommen (4.20) —, bleibt der Vorschlag stumm.
+
+Zwei Lücken, nicht entschieden:
+
+- Ein vorhandener Titel ohne Schlagworte bekommt nie einen Vorschlag; wer beim Nachbestellen
+  welche ergänzen will, tippt sie selbst.
+- Die GND-Sachschlagwörter liest das Programm nicht (`verarbeiteFeld` in
+  `inventur/metadaten_anbieter.go`). Sie stehen in 650/651 mit `$2 gnd`, als Kette zusätzlich in
+  689; an echten Sätzen am 29.09.2026: „Tintenherz" Abenteuerreise und Italien, „Krabat"
+  Schwarze Magie und Lehrling, „Die Schule der magischen Tiere" (vier Sätze) keine. Die GND ist
+  ein festes Vokabular ohne Werbewörter; mit ihr ließen sich auch Wörter vorschlagen, die in der
+  Liste noch fehlen.
+
+**Frage:** GND-Wörter lesen — und wenn ja, auch Wörter außerhalb der eigenen Liste anbieten?
+Einen Vorschlag auch für vorhandene Titel? Zu entscheiden nach der Littera-Übernahme (7.2): Dann
+lässt sich an echten DNB-Sätzen messen, wie oft die GND-Wörter zur Liste passen.
 
 ---
 
@@ -741,7 +742,6 @@ Schülerbücherei — gehört nicht auf den Bescheid des Landes."
 den Brief; so schon vor dem 29.09.2026 mit `ist_lernmittel`. Vorschlag: bei leerem `topf` ein
 eigener Satz ohne das Wort „Buch" — vorher die M3-Seite zu Listen lesen.
 
-
 ### 5.38 Der Löschdialog der Leserakte verspricht, was er nicht tut
 
 Gefunden am 29.09.2026 beim Prüfen der Anleitung zum Zurückspielen, am Code gelesen. Der Dialog
@@ -752,9 +752,10 @@ Oberfläche nicht rückgängig gemacht werden." Der Knopf ruft `DELETE /api/schu
 fällt das Zugangskonto), anonymisiert nichts, und im Reiter _Papierkorb_ lässt sie sich
 wiederherstellen (`POST /api/schueler/{id}/restore`). Anonymisiert wird erst beim endgültigen
 Löschen im Papierkorb oder nach 180 Tagen durch den Nachtlauf. Sichtbar, Wortlaut ohne Wirkung
-auf Daten. Vorschlag: „… kommt in den Papierkorb. Von dort lässt es sich wiederherstellen; nach 180 Tagen
-wird es anonymisiert (Kollegium: gelöscht), von Hand im Papierkorb sofort." — vorher die M3-Seite
-zu Dialogen lesen.
+auf Daten. Vorschlag: „… kommt in den Papierkorb. Von dort lässt es sich wiederherstellen; nach
+180 Tagen wird es anonymisiert (Kollegium: gelöscht), von Hand im Papierkorb sofort." — vorher
+die M3-Seite zu Dialogen lesen.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
