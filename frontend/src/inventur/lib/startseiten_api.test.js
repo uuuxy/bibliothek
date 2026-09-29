@@ -43,6 +43,7 @@ describe('buecherSuchen', () => {
 
 	it('gibt bei leerer Suche alle Bücher zurück', () => {
 		expect(buecherSuchen(katalog, '').length).toBe(katalog.length);
+		// @ts-expect-error type checking null
 		expect(buecherSuchen(null, '')).toEqual([]);
 	});
 
