@@ -50,7 +50,20 @@ Schalter richtig; der Schreibpfad ist dafür gebaut und geprüft.
 
 ### `Exemplar` → `buecher_exemplare`
 `Buchungsnummer` (Schlüssel) · `Titel` (FK) · `Barcode` → `barcode_id` ·
-`Zugangsdatum` → `erworben_am` · `Preis` · `Status` (Long) · `Sig1` + `Sig2` (siehe unten)
+`Zugangsdatum` → `erworben_am` · `Preis` · `Status` (Long) · `Sig1` + `Sig2` (siehe unten) ·
+`Eigentumsvermerk` → `eigentum` (siehe unten)
+
+**Eigentumsvermerk** (Text 50, Wertehilfe): Littera führt hier, wem das Exemplar gehört. In der
+Medienliste vom 12.06.2026 tragen 16.878 von 67.109 Exemplaren einen von acht Werten, die
+übrigen keinen. Übernommen wird nur die feste Liste in `internal/littera/eigentum.go`
+(entschieden am 29.09.2026): „Land Hessen" setzt `eigentum = 'land'`, der Schulträger
+`'schultraeger'`; fünf weitere Werte (Schule, Bibliothek, Förderverein, Info Schulprojekt,
+Dauerleihgabe) kommen nur als Wortlaut mit, bis die Schule sie zuordnet. Der Wortlaut steht in
+`erweiterte_eigenschaften` unter `littera_eigentumsvermerk`. Ein Wert außerhalb der Liste kommt
+nicht mit und steht im Protokoll mit Exemplarnummer, ohne Wortlaut — in der Sicherung von 2010
+ist einer davon ein Personenname. Am meisten bewirkt der erste Wert: 11.160 Exemplare mit
+„Land Hessen" haben keine LMF-Signatur, die Faustregel ordnete sie dem Schulträger zu
+(`repository.ExemplarTopfSQL`, docs/OFFEN.md 4.24).
 
 ### `Leser` → `schueler` — hier ist Vorsicht nötig
 

@@ -276,6 +276,10 @@ func drucke(b littera.Bericht, s schalter) {
 			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen)
 		abgleich(b.Bestand.AbgleichOK, fmt.Sprintf("%d Titel / %d Exemplare tatsächlich neu",
 			b.Bestand.IstTitel, b.Bestand.IstExemplare))
+		log.Printf("           Eigentum aus dem Vermerk: Land %d, Schulträger %d; "+
+			"Vermerk ohne Zuordnung %d, nicht in der Liste %d",
+			b.Bestand.EigentumLand, b.Bestand.EigentumSchultraeger,
+			b.Bestand.VermerkOhneZuordnung, b.Bestand.VermerkUnbekannt)
 	}
 	if s.personen {
 		log.Printf("Personen   Quelle %6d Leser", b.Personen.QuellLeser)

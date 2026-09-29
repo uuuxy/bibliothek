@@ -22,9 +22,15 @@ func MittelGueltig(mittel string) bool {
 }
 
 // ExemplarTopfSQL ist der Topf eines EXEMPLARS als SQL-Ausdruck — das Eigentum folgt dem
-// Geld: zuerst die Zuordnung seiner Bestellung, und wo es keine gibt (Altbestand,
-// Alt-Bestellungen ohne Zuordnung), das Feld ist_lernmittel am Titel. Dieselbe Regel wie
-// beim Nachtragen in Migration 109.
+// Geld. Zuerst gilt das Eigentum, das am Exemplar ausdrücklich steht (Migration 150: aus dem
+// Littera-Vermerk oder von Hand), dann die Zuordnung seiner Bestellung, und wo es beides
+// nicht gibt (Altbestand ohne Vermerk, Alt-Bestellungen ohne Zuordnung), das Feld
+// ist_lernmittel am Titel — dieselbe Faustregel wie beim Nachtragen in Migration 109.
+//
+// Das Ausdrückliche geht vor, weil die Faustregel beim Altbestand nachweislich danebenliegt:
+// Aus LMF-Mitteln dürfen auch Lektüren, Ganzschriften und Nachschlagewerke gekauft werden,
+// und sie bleiben Eigentum des Landes (Leitfaden „Lernmittelfreiheit in Hessen", Ziffern 2.1
+// und 9.4.2). Littera führt sie mit „Land Hessen", ihre Signatur ist aber keine LMF-Signatur.
 //
 // EINE Formulierung für alle Wege, die Etikettendaten bauen: Vier Abfragen mit je eigenem
 // CASE liefen auseinander, und dasselbe Buch trüge je nach Druckweg einen anderen
@@ -34,7 +40,7 @@ func MittelGueltig(mittel string) bool {
 // Anders als beim Bestellen wird hier aus dem Titel abgeleitet: Dort wäre ein Fallback die
 // stille Zuordnung zum falschen Topf, hier ist er die einzige Auskunft über ein Buch, das
 // nie über dieses System bestellt wurde.
-const ExemplarTopfSQL = `COALESCE(bv_topf.mittel, CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END)`
+const ExemplarTopfSQL = `COALESCE(e.eigentum, bv_topf.mittel, CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END)`
 
 // ExemplarTopfJoin hängt die Bestellung des Exemplars an, aus der ExemplarTopfSQL liest.
 const ExemplarTopfJoin = `LEFT JOIN bestellungen_verlauf bv_topf ON bv_topf.id = e.bestellung_id`

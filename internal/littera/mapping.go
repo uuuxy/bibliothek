@@ -64,6 +64,9 @@ type Exemplar struct {
 	Signatur          string // Sig1 + Sig2, zusammengesetzt
 	Zugangsdatum      string // Rohform, wie exportiert (MM/DD/YY HH:MM:SS)
 	Preis             float64
+	// Eigentumsvermerk ist Litteras Angabe, wem das Exemplar gehört (Freitext mit
+	// Wertehilfe, 50 Zeichen). Was davon übernommen wird, entscheidet vermerkZuordnung.
+	Eigentumsvermerk string
 }
 
 // leseTabelle liest eine mdb-export-CSV in Zeilen-Abbildungen (Spaltenname → Wert).
@@ -197,6 +200,7 @@ func LeseExemplare(r io.Reader) ([]Exemplar, error) {
 			Signatur:          SignaturAus(z["Sig1"], z["Sig2"]),
 			Zugangsdatum:      strings.TrimSpace(z["Zugangsdatum"]),
 			Preis:             preisAus(z["Preis"]),
+			Eigentumsvermerk:  strings.TrimSpace(z["Eigentumsvermerk"]),
 		})
 	}
 	return exemplare, nil

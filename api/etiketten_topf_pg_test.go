@@ -85,7 +85,7 @@ func pruefeVermerk(t *testing.T, weg, text, want, nicht string) {
 	}
 }
 
-// Die Regel an den beiden Wegen des Hauses — alle fünf Formen, die ein Exemplar haben kann.
+// Die Regel an den beiden Wegen des Hauses — alle sieben Formen, die ein Exemplar haben kann.
 func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 	pool := pgTestPool(t)
 	ctx := context.Background()
@@ -98,14 +98,20 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 		bestellt      bool
 		mittel        string
 		istLernmittel bool
-		want, nicht   string
+		// eigentum: am Exemplar ausdrücklich gesetzt (Migration 150), "" heißt NULL.
+		eigentum    string
+		want, nicht string
 	}{
-		{"Altbestand, Lernmittel", false, "", true, vermerkLand, vermerkStadt},
-		{"Altbestand, kein Lernmittel", false, "", false, vermerkStadt, vermerkLand},
+		{"Altbestand, Lernmittel", false, "", true, "", vermerkLand, vermerkStadt},
+		{"Altbestand, kein Lernmittel", false, "", false, "", vermerkStadt, vermerkLand},
 		// Die Bestellung schlägt den Titel — das Eigentum folgt dem Geld.
-		{"Bestellung Schülerbücherei, Titel ist Lernmittel", true, repository.MittelSchultraeger, true, vermerkStadt, vermerkLand},
-		{"Bestellung Lernmittelfreiheit, Titel ist keins", true, repository.MittelLand, false, vermerkLand, vermerkStadt},
-		{"Alt-Bestellung ohne Zuordnung, Lernmittel", true, "", true, vermerkLand, vermerkStadt},
+		{"Bestellung Schülerbücherei, Titel ist Lernmittel", true, repository.MittelSchultraeger, true, "", vermerkStadt, vermerkLand},
+		{"Bestellung Lernmittelfreiheit, Titel ist keins", true, repository.MittelLand, false, "", vermerkLand, vermerkStadt},
+		{"Alt-Bestellung ohne Zuordnung, Lernmittel", true, "", true, "", vermerkLand, vermerkStadt},
+		// Das Eigentum am Exemplar schlägt beides (4.24): die Lektüre aus LMF-Mitteln, die
+		// Littera dem Land zuschreibt, und ein ausdrücklich umgesetztes Exemplar einer Bestellung.
+		{"Altbestand, kein Lernmittel, Eigentum Land", false, "", false, repository.MittelLand, vermerkLand, vermerkStadt},
+		{"Bestellung Lernmittelfreiheit, Eigentum Schulträger", true, repository.MittelLand, true, repository.MittelSchultraeger, vermerkStadt, vermerkLand},
 	}
 	for _, f := range faelle {
 		t.Run(f.name, func(t *testing.T) {
@@ -132,8 +138,9 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 				bestellungID = &id
 			}
 			if _, err := pool.Exec(ctx,
-				`INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id) VALUES ($1, 'B-TOPF-1', $2)`,
-				titelID, bestellungID); err != nil {
+				`INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id, eigentum)
+				 VALUES ($1, 'B-TOPF-1', $2, NULLIF($3, ''))`,
+				titelID, bestellungID, f.eigentum); err != nil {
 				t.Fatalf("Exemplar anlegen: %v", err)
 			}
 

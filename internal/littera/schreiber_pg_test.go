@@ -411,3 +411,75 @@ func erzwingeZeilenfehler(t *testing.T, pool *pgxpool.Pool, tabelle, spalte, wer
 }
 
 func quoteLiteral(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
+
+// TestEigentumsvermerkKommtMit: Der Vermerk aus der festen Liste landet am Exemplar — als
+// Eigentum, wo er eindeutig ist, und immer als Wortlaut. Ein Vermerk außerhalb der Liste
+// kommt nicht mit und steht mit Exemplarnummer, aber ohne Wortlaut im Protokoll.
+func TestEigentumsvermerkKommtMit(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, protokoll := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	ab := bestand(titel("1", "Nathan der Weise", ""), titel("2", "Schulbuch", ""),
+		titel("3", "Spende", ""), titel("4", "Privat", ""), titel("5", "Ohne", ""))
+	ab.Signaturen["2"] = "LMF Deu 7 / Bie"
+	for i, v := range []string{"land hessen", "Hochtaunuskreis", "Förderverein", "Erika Mustermann", ""} {
+		ab.Exemplare[i].Eigentumsvermerk = v
+		ab.Exemplare[i].Signatur = ab.Signaturen[ab.Exemplare[i].TitelID]
+	}
+
+	bericht, err := s.SchreibeBestand(ctx, ab)
+	if err != nil {
+		t.Fatalf("SchreibeBestand: %v", err)
+	}
+
+	// Das Eigentum, das die Regel des ganzen Programms daraus macht (ExemplarTopfSQL).
+	topf := func(litteraID string) (eigentum, vermerk, gilt string) {
+		t.Helper()
+		if err := pool.QueryRow(ctx, `
+			SELECT COALESCE(e.eigentum, ''), COALESCE(e.erweiterte_eigenschaften->>'littera_eigentumsvermerk', ''),
+			       `+repository.ExemplarTopfSQL+`
+			FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
+			`+repository.ExemplarTopfJoin+`
+			WHERE e.erweiterte_eigenschaften->>'littera_id' = $1`, litteraID).Scan(&eigentum, &vermerk, &gilt); err != nil {
+			t.Fatalf("Exemplar %s lesen: %v", litteraID, err)
+		}
+		return eigentum, vermerk, gilt
+	}
+	faelle := []struct{ id, eigentum, vermerk, gilt string }{
+		// Keine LMF-Signatur — die Faustregel sagte Schulträger, Littera sagt Land.
+		{"E1", repository.MittelLand, "Land Hessen", repository.MittelLand},
+		// Ein Schulbuch, das Littera dem Schulträger zuschreibt.
+		{"E2", repository.MittelSchultraeger, "Hochtaunuskreis", repository.MittelSchultraeger},
+		// Bekannt, ohne Zuordnung: Wortlaut ja, Eigentum aus der Faustregel.
+		{"E3", "", "Förderverein", repository.MittelSchultraeger},
+		{"E4", "", "", repository.MittelSchultraeger},
+		{"E5", "", "", repository.MittelSchultraeger},
+	}
+	for _, f := range faelle {
+		eigentum, vermerk, gilt := topf(f.id)
+		if eigentum != f.eigentum || vermerk != f.vermerk || gilt != f.gilt {
+			t.Errorf("%s: eigentum %q, Vermerk %q, gilt %q — erwartet %q, %q, %q",
+				f.id, eigentum, vermerk, gilt, f.eigentum, f.vermerk, f.gilt)
+		}
+	}
+
+	if bericht.EigentumLand != 1 || bericht.EigentumSchultraeger != 1 ||
+		bericht.VermerkOhneZuordnung != 1 || bericht.VermerkUnbekannt != 1 {
+		t.Errorf("Bericht: Land %d, Schulträger %d, ohne Zuordnung %d, unbekannt %d — erwartet je 1",
+			bericht.EigentumLand, bericht.EigentumSchultraeger, bericht.VermerkOhneZuordnung, bericht.VermerkUnbekannt)
+	}
+	log := protokoll()
+	if !strings.Contains(log, "104") || !strings.Contains(log, "Eigentumsvermerk") {
+		t.Errorf("der unbekannte Vermerk fehlt mit Exemplarnummer 104 im Protokoll:\n%s", log)
+	}
+	if strings.Contains(log, "Mustermann") {
+		t.Errorf("der Wortlaut eines unbekannten Vermerks steht im Protokoll:\n%s", log)
+	}
+
+	// Die Datenbank hält das Vokabular (chk_exemplar_eigentum).
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'stadt'`); err == nil {
+		t.Error("eigentum = 'stadt' wurde angenommen — die Bedingung chk_exemplar_eigentum fehlt")
+	}
+}

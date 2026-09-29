@@ -59,6 +59,9 @@ entfallen.
      tragen über 13.000 Exemplare das Land, 2.942 den Schulträger, einige hundert andere
      Eigentümer (Schule, Förderverein, Bibliothek), rund 50.000 keinen. Zum Ablesen ein Buch
      nehmen, das dort den Schulträger trägt. Der Vermerk je Exemplar kommt mit (4.24).
+   - **Bücherei:** wem die Bücher mit den Littera-Vermerken „Philipp-Reis-Schule", „Bibliothek",
+     „Förderverein", „Info Schulprojekt" und „Dauerleihgabe" gehören — rund 630 Exemplare, bis
+     dahin ohne Zuordnung (4.24).
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
@@ -73,9 +76,8 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgt der Eigentumsvermerk je Exemplar aus Littera (4.24):
-   eine neue Spalte, gebaut nach deiner Freigabe der Migration und deiner Antwort zum
-   Personennamen im Vermerk. Dazu deine Antwort zu 5.36 (Zurückspielen eines älteren Stands).
+   zurückgestellt (siehe oben). Es folgt das Eigentum je Exemplar (4.24, freigegeben am
+   29.09.2026 in drei Stufen; Stufe 1 gebaut), dazu der Schritt in der Anleitung aus 5.36.
    Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
@@ -91,7 +93,7 @@ Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stel
 die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 
-Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20 und der Eigentumsvermerk je
+Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20 und das Eigentum je
 Exemplar aus 4.24.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
@@ -245,38 +247,43 @@ Titeldaten und Cover (`pkg/coverquelle`), für Updates GitHub, Docker Hub und di
 (`Dockerfile`, `update.sh`). Eine Aufstellung für den Schulträger entsteht nicht (entschieden am
 28.09.2026).
 
-### 4.24 Eigentumsvermerk je Exemplar aus Littera
+### 4.24 Eigentum je Exemplar
 
-Littera führt das Eigentum am Exemplar, in der Spalte `Exemplar.Eigentumsvermerk` (Freitext, 50
-Zeichen). Die Übernahme (`internal/littera`) liest sie nicht, und
-[littera_schema_befund.md](littera_schema_befund.md) nennt sie nicht unter „Was NICHT übernommen
-wird" — entschieden ist das also nicht.
+Littera führt das Eigentum am Exemplar (`Exemplar.Eigentumsvermerk`, Freitext mit Wertehilfe).
+Das Programm leitete es bis zum 29.09.2026 allein ab (`repository.ExemplarTopfSQL`): Topf der
+Bestellung, sonst `ist_lernmittel` am Titel, und die Übernahme setzt `ist_lernmittel` aus der
+LMF-Signatur. In der Medienliste vom 12.06.2026 (67.109 Exemplare) widerspricht das Littera an
+11.160 Exemplaren ohne LMF-Signatur mit „Land Hessen" und an 3 Schulbüchern mit dem
+Schulträger. Laut Leitfaden „Lernmittelfreiheit in Hessen" des Kultusministeriums dürfen aus
+LMF-Mitteln auch Lektüren, Ganzschriften, Themenhefte und Nachschlagewerke gekauft werden
+(Ziffer 2.1), bis zu 5 % auch Lehrmittel (Ziffer 13), und solche Bücher bleiben im Eigentum des
+Landes (Ziffer 9.4.2). Unter den 11.160 sind Klassensätze und Lehrer-Zeitschriften. 74 % aller
+Exemplare haben keinen Vermerk, auch fast alle Schulbücher — die Faustregel bleibt als Vorgabe
+nötig.
 
-Gezählt in der Sicherung von 2010 am 29.09.2026 (`mdb-export`, nur Zählungen, Signatur des
-Exemplars: `Sig1` beginnt mit „LMF" oder nicht), 61.580 Exemplare:
+**Entschieden am 29.09.2026:** Jedes Exemplar hat ein Eigentum (Land oder Schulträger) nach einer
+Regel für alle Stellen: ausdrücklich am Exemplar gesetzt, sonst Topf der Bestellung, sonst
+Faustregel. Sichtbar und änderbar wie in Littera. Vorbild auch Destiny („Funding Source" je
+Exemplar, Sammeländerung), Koha („Source of acquisition" aus einer Werteliste) und BIBLIOTHECA
+(Kostenart und Kostenstelle aus gepflegten Wertetabellen). Die Übernahme nimmt nur die feste
+Liste der acht Schreibweisen der Medienliste.
 
-| Vermerk                                                                | LMF-Signatur | andere |
-| ---------------------------------------------------------------------- | -----------: | -----: |
-| Land                                                                   |       10.193 | 19.882 |
-| Schulträger                                                            |          516 |  7.268 |
-| Schule                                                                 |          112 |    581 |
-| Förderverein                                                           |            0 |    171 |
-| weitere (Verein, Projekt, Bibliothek, Dauerleihgabe, ein Personenname) |            0 |     76 |
-| keiner                                                                 |       13.909 |  8.872 |
+**Stufe 1 gebaut am 29.09.2026** (Migration 150): `buecher_exemplare.eigentum`, die Regel in
+`ExemplarTopfSQL` (Etikett), die Übernahme (`internal/littera/eigentum.go`) mit Bericht.
 
-Das Programm leitet das Eigentum im Altbestand aus `ist_lernmittel` ab (`ExemplarTopfSQL`), und
-die Übernahme setzt `ist_lernmittel` aus der LMF-Signatur (`pkg/lmf.Zerlege`). Nach dieser Regel
-gehörten die 19.882 Exemplare, die Littera dem Land zuschreibt, dem Schulträger, und die 516
-umgekehrt. Daran hängen der Vermerk auf einem neuen Etikett und, ob für ein verlorenes Buch ein
-Bescheid an das Land geht (5.4, „Topf einer Forderung"). In der Medienliste vom 12.06.2026 tragen
-16.878 von 67.109 Exemplaren einen Vermerk; die Sicherung von 2026 ist ohne Kennwort nicht lesbar
-(7.2).
+**Offen:**
 
-**Entschieden am 29.09.2026:** Der Vermerk kommt je Exemplar mit, als eigenes Feld am Exemplar,
-zunächst ohne Wirkung auf Topf und Etikett. Gebaut wird es mit der Übernahme (7.2), denn sie läuft
-einmal. Beim Bau zu klären: der eine Personenname, ein Personendatum in einem Bestandsfeld. Offen
-bei der Schule, bevor der Vermerk eine Wirkung bekommt: was „Land" an einem Buch ohne
-LMF-Signatur bedeutet.
+- **Stufe 2 — eine Regel für alle Leser des Eigentums.** Heute rechnen drei Stellen anders als das
+  Etikett: das Zugangsbuch nur mit dem Topf der Bestellung (`repository/zugangsbuch.go`, ohne
+  Bestellung „ohne Zuordnung"), das Abgangsbuch nur mit `ist_lernmittel`
+  (`repository/abgangsbuch.go`), der Bescheid nur mit `ist_lernmittel` (`repository/bescheid.go`,
+  `bescheid_verlust.go`, `bescheid_ausstehend.go`; dazu 5.4 „Topf einer Forderung").
+- **Stufe 3 — Oberfläche:** Die Exemplarkarte zeigt das Eigentum und seine Herkunft (aus Littera,
+  aus der Bestellung, Vorgabe); ändern einzeln und für mehrere Exemplare eines Titels, wie
+  Littera „Exemplardaten anpassen". Vorher Beschreibung und M3-Nachweis.
+- **Bei der Schule:** die Zuordnung der fünf seltenen Vermerke (Schule 355, Bibliothek 157,
+  Förderverein 86, Info Schulprojekt 31, Dauerleihgabe 4). Bis dahin kommen sie nur als Wortlaut
+  mit, und es gilt die Faustregel. Die Zuordnung steht an einer Stelle (`vermerkeLittera`).
 
 ---
 

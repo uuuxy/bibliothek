@@ -65,6 +65,12 @@ fehlt. Weichen beide ab, gilt das Etikett, mit Vermerk im Protokoll; in der Sich
 damit ohne Neubeklebung scannbar. Bis zum 28.09.2026 rechnete `EtikettBarcode` für Nummern
 unter sechs Stellen falsch (links aufgefüllt, an Stelle 12 fest eine 6); getroffen hätte es
 jedes Exemplar der Sicherung von 2010.
+**Eigentum:** Der Bericht nennt unter „Bestand", wie viele Exemplare ihr Eigentum aus dem
+Littera-Vermerk bekommen (Land, Schulträger), wie viele einen bekannten Vermerk ohne Zuordnung
+tragen und wie viele einen, der nicht in der festen Liste steht. Die letzten stehen einzeln im
+Protokoll, mit Exemplarnummer und ohne Wortlaut; nachsehen in Littera
+([littera_schema_befund.md](littera_schema_befund.md), Abschnitt `Exemplar`).
+
 `-barcodes neu` vergibt stattdessen frische `B-XXXXX` aus `barcode_seq` — derselben
 Sequenz, aus der die Anwendung ihre Barcodes zieht — und setzt voraus, dass jedes Buch
 ein neues Etikett bekommt.

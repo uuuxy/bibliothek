@@ -25,6 +25,12 @@ type BestandBericht struct {
 	IstExemplare int
 	AbgleichOK   bool
 
+	// Eigentumsvermerke der geschriebenen Exemplare (eigentum.go): wie viele das Eigentum
+	// Land bzw. Schulträger ausdrücklich setzen, wie viele einen bekannten Vermerk ohne
+	// Zuordnung tragen und wie viele einen, der nicht in der festen Liste steht. Die
+	// letzten stehen einzeln im Protokoll, mit Exemplarnummer und ohne den Wortlaut.
+	EigentumLand, EigentumSchultraeger, VermerkOhneZuordnung, VermerkUnbekannt int
+
 	// TitelIDs bildet Littera-Titel → UUID ab, ExemplarIDs Littera-Exemplar → UUID.
 	// Der Ausleihteil braucht die zweite Karte.
 	TitelIDs    map[string]string
@@ -46,11 +52,13 @@ const sqlTitelEinfuegen = `
 // etikett_gedruckt ($7): Altbestand traegt seine Littera-Etiketten physisch —
 // siehe gleiche Begruendung am Sammelimport (import_dynamic.go). Ausnahme ist eine neu
 // vergebene Nummer (klaereBarcodes, ohneEtikett): Die traegt kein Etikett.
+//
+// eigentum ($8, Migration 150): aus dem Littera-Vermerk, NULL ohne Zuordnung (eigentum.go).
 const sqlExemplarEinfuegen = `
 	INSERT INTO buecher_exemplare
 		(titel_id, barcode_id, erworben_am, ist_ausleihbar, einkaufspreis,
-		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt)
-	VALUES ($1,$2,$3,true,$4,$5,$6,$7)
+		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt, eigentum)
+	VALUES ($1,$2,$3,true,$4,$5,$6,$7,NULLIF($8, ''))
 	RETURNING id`
 
 // SchreibeBestand überträgt Titel und Exemplare.
@@ -189,7 +197,32 @@ func (l *bestandslauf) einTitel(ctx context.Context, tx pgx.Tx, t Titel) error {
 	for littera, uuid := range exemplarIDs {
 		l.bericht.ExemplarIDs[littera] = uuid
 	}
+	l.bucheVermerke(l.exemplareJeTitel[t.ID])
 	return nil
+}
+
+// bucheVermerke zählt die Eigentumsvermerke eines übernommenen Titels und meldet jeden, der
+// nicht in der festen Liste steht. Erst hier, nach dem Savepoint: Ein übersprungener Titel
+// hat keine Exemplare im Bestand, und sein Vermerk ist nichts, dem jemand nachgehen müsste.
+//
+// Die Meldung nennt die Exemplarnummer, nicht den Wortlaut — der Vermerk ist Freitext und
+// kann einen Personennamen tragen; das Protokoll soll ihn nicht weitertragen.
+func (l *bestandslauf) bucheVermerke(exemplare []Exemplar) {
+	for _, e := range exemplare {
+		vermerk, bekannt := zuordnungAusVermerk(e.Eigentumsvermerk)
+		switch {
+		case !bekannt:
+			l.bericht.VermerkUnbekannt++
+			l.s.prot.Warnung(e.ID, e.Exemplarnummer,
+				"Eigentumsvermerk steht nicht in der festen Liste – nicht übernommen, in Littera nachsehen")
+		case vermerk.Eigentum == repository.MittelLand:
+			l.bericht.EigentumLand++
+		case vermerk.Eigentum == repository.MittelSchultraeger:
+			l.bericht.EigentumSchultraeger++
+		case vermerk.Wortlaut != "":
+			l.bericht.VermerkOhneZuordnung++
+		}
+	}
 }
 
 // schreibeTitel führt die INSERTs aus. Abwertungen werden hier protokolliert, harte
@@ -249,18 +282,25 @@ func (l *bestandslauf) schreibeExemplare(
 			return nil, fmt.Errorf("%w: Exemplar %s hat keinen Barcode zugewiesen bekommen",
 				uebernahme.ErrZeile, e.ID)
 		}
-		eigenschaften, err := jsonEigenschaften(map[string]string{
+		werte := map[string]string{
 			"quelle":             "littera",
 			"littera_id":         e.ID,
 			"littera_etikett":    e.Barcode,
 			"littera_signatur":   e.Signatur,
 			"littera_exemplarnr": e.Exemplarnummer,
-		})
+		}
+		// Nur ein Vermerk aus der festen Liste kommt mit; ein unbekannter meldet einTitel.
+		vermerk, _ := zuordnungAusVermerk(e.Eigentumsvermerk)
+		if vermerk.Wortlaut != "" {
+			werte["littera_eigentumsvermerk"] = vermerk.Wortlaut
+		}
+		eigenschaften, err := jsonEigenschaften(werte)
 		if err != nil {
 			return nil, err
 		}
 		batch.Queue(sqlExemplarEinfuegen, titelID, barcode,
-			erworbenAm(e, l.s.opt.Jetzt), e.Preis, eigenschaften, l.s.opt.Jetzt, !l.ohneEtikett[e.ID])
+			erworbenAm(e, l.s.opt.Jetzt), e.Preis, eigenschaften, l.s.opt.Jetzt, !l.ohneEtikett[e.ID],
+			vermerk.Eigentum)
 	}
 
 	br := tx.SendBatch(ctx, batch)

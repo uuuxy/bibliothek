@@ -225,6 +225,15 @@ var checkBedingungenBestand = []string{
 	"chk_schlagwort_verweis_kein_filter",
 	"chk_schlagwort_verweis_nicht_selbst",
 	"chk_exemplar_bestellstatus",
+	// Migration 150, befragt am 29.09.2026: Das ausdrückliche Eigentum am Exemplar hat
+	// dasselbe Vokabular wie bestellungen_verlauf.mittel. Einziger Schreiber ist die
+	// Littera-Übernahme (internal/littera, sqlExemplarEinfuegen); sie schreibt nur Werte aus
+	// vermerkeLittera, und TestVermerkeLittera_NurGueltigesEigentum hält jede Zuordnung
+	// gegen repository.MittelGueltig. Liefe sie doch dagegen, verlöre sie den Titel samt
+	// Exemplaren im Savepoint und meldete ihn als Fehler (Abbruch, kein Satz). Gegenfrage:
+	// NULL lässt die Regel zu, und NULL heißt „nicht gesetzt" — ExemplarTopfSQL fällt dann auf
+	// die Bestellung und den Titel zurück; kein Lesepfad nimmt NULL als eigenen Topf.
+	"chk_exemplar_eigentum",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
