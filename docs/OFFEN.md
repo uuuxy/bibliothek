@@ -519,9 +519,9 @@ oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*
   Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit. Vom 28.09.2026: Gruppen mit
   Kürzel, Bezeichnung und Art.
 
-**Nächster Schritt:** Messung am Testserver (lesend, Einzeiler unten), dann Stufenplan und
-Beschreibung der Pflegeseite zur Freigabe, erst dann bauen.
-`ssh 46.62.140.190 'docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM lesergruppen) AS lesergruppen, (SELECT count(*) FROM klassen) AS klassen, (SELECT count(*) FROM klassen k WHERE NOT EXISTS (SELECT 1 FROM leser l WHERE l.klasse = k.name)) AS klassen_ohne_leser, (SELECT count(DISTINCT klasse) FROM leser WHERE klasse IS NOT NULL) AS klassen_an_lesern, (SELECT count(*) FROM leser WHERE art <> '"'"'schueler'"'"' AND klasse IS NOT NULL) AS kollegium_mit_klasse;"'`
+**Nächster Schritt:** Messung am Testserver (lesend, Einzeiler unten, am Server selbst
+auszuführen), dann Stufenplan und Beschreibung der Pflegeseite zur Freigabe, erst dann bauen.
+`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM lesergruppen) AS lesergruppen, (SELECT count(*) FROM klassen) AS klassen, (SELECT count(*) FROM klassen k WHERE NOT EXISTS (SELECT 1 FROM leser l WHERE l.klasse = k.name)) AS klassen_ohne_leser, (SELECT count(DISTINCT klasse) FROM leser WHERE klasse IS NOT NULL) AS klassen_an_lesern, (SELECT count(*) FROM leser WHERE art <> 'schueler' AND klasse IS NOT NULL) AS kollegium_mit_klasse;"`
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
