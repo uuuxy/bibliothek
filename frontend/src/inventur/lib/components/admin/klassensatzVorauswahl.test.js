@@ -23,8 +23,27 @@ describe('Vorauswahl im Dialog „Bücher verwalten"', () => {
 		expect([...vorauswahlAusGruppe({ books: [{ id: 7 }] })]).toEqual([7]);
 	});
 
+	it('filtert "ausleihe" Einträge heraus und bildet ein Set der IDs', () => {
+		const filterGruppe = {
+			books: [
+				{ id: 10, quelle: 'hand' },
+				{ id: 20, quelle: 'ausleihe' },
+				{ id: 30, quelle: 'hand' },
+				{ id: 10, quelle: 'hand' } // Duplicate to test Set logic
+			]
+		};
+		const result = vorauswahlAusGruppe(filterGruppe);
+		expect(result).toBeInstanceOf(Set);
+		expect(result.size).toBe(2);
+		expect(result.has(10)).toBe(true);
+		expect(result.has(30)).toBe(true);
+		expect(result.has(20)).toBe(false);
+	});
+
 	it('kommt mit fehlender Gruppe und leerer Liste zurecht', () => {
 		expect(vorauswahlAusGruppe(null).size).toBe(0);
+		expect(vorauswahlAusGruppe(undefined).size).toBe(0);
+		expect(vorauswahlAusGruppe({}).size).toBe(0);
 		expect(vorauswahlAusGruppe({ books: [] }).size).toBe(0);
 	});
 });
