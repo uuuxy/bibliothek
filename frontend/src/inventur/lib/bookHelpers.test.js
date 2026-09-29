@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { getSubjectGradient, getSpineGradient, formatDate } from './bookHelpers.js';
 
 describe('bookHelpers', () => {
@@ -15,6 +15,41 @@ describe('bookHelpers', () => {
 			const expected = 'bg-linear-to-br from-red-600 via-rose-600 to-red-700 border-red-500/30';
 			expect(getSubjectGradient('Deu')).toBe(expected);
 			expect(getSubjectGradient('Deutsch')).toBe(expected);
+		});
+
+		it('returns correct gradient for foreign languages', () => {
+			const expected =
+				'bg-linear-to-br from-violet-600 via-purple-600 to-violet-700 border-purple-500/30';
+			expect(getSubjectGradient('Englisch')).toBe(expected);
+			expect(getSubjectGradient('Französisch')).toBe(expected);
+		});
+
+		it('returns correct gradient for Biology/Nature variations', () => {
+			const expected =
+				'bg-linear-to-br from-teal-600 via-emerald-600 to-teal-700 border-teal-500/30';
+			expect(getSubjectGradient('Bio')).toBe(expected);
+			expect(getSubjectGradient('Biologie')).toBe(expected);
+		});
+
+		it('returns correct gradient for History/Society variations', () => {
+			const expected =
+				'bg-linear-to-br from-amber-600 via-orange-600 to-amber-700 border-amber-500/30';
+			expect(getSubjectGradient('Geschichte')).toBe(expected);
+			expect(getSubjectGradient('Ges')).toBe(expected);
+		});
+
+		it('returns correct gradient for Music/Art variations', () => {
+			const expected =
+				'bg-linear-to-br from-pink-600 via-fuchsia-600 to-pink-700 border-pink-500/30';
+			expect(getSubjectGradient('Musik')).toBe(expected);
+			expect(getSubjectGradient('Kunst')).toBe(expected);
+		});
+
+		it('returns correct gradient for Computer Science variations', () => {
+			const expected =
+				'bg-linear-to-br from-slate-600 via-slate-700 to-slate-800 border-emerald-500/30';
+			expect(getSubjectGradient('Informatik')).toBe(expected);
+			expect(getSubjectGradient('Inf')).toBe(expected);
 		});
 
 		it('returns default gradient for unknown subjects', () => {
@@ -47,6 +82,22 @@ describe('bookHelpers', () => {
 			expect(getSpineGradient('Französisch')).toBe(expected);
 		});
 
+		it('returns correct spine gradient for Biology/Nature variations', () => {
+			expect(getSpineGradient('Biologie')).toBe('from-teal-300 to-emerald-400');
+		});
+
+		it('returns correct spine gradient for History/Society variations', () => {
+			expect(getSpineGradient('Geschichte')).toBe('from-amber-300 to-orange-400');
+		});
+
+		it('returns correct spine gradient for Music/Art variations', () => {
+			expect(getSpineGradient('Musik')).toBe('from-pink-300 to-fuchsia-400');
+		});
+
+		it('returns correct spine gradient for Computer Science variations', () => {
+			expect(getSpineGradient('Informatik')).toBe('from-emerald-300 to-teal-400');
+		});
+
 		it('returns default spine gradient for unknown subjects', () => {
 			expect(getSpineGradient('Sport')).toBe('from-slate-400 to-slate-500');
 		});
@@ -74,6 +125,14 @@ describe('bookHelpers', () => {
 
 		it('returns null for invalid date string', () => {
 			expect(formatDate('not-a-date')).toBeNull();
+		});
+
+		it('returns null if Intl.DateTimeFormat throws an exception', () => {
+			const spy = vi.spyOn(global.Intl, 'DateTimeFormat').mockImplementation(function () {
+				throw new Error('Test Exception');
+			});
+			expect(formatDate('2023-10-15')).toBeNull();
+			spy.mockRestore();
 		});
 	});
 });
