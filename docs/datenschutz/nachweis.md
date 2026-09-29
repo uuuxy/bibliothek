@@ -76,7 +76,7 @@ Datenschutz & Sitzung.
 | erledigte Wünsche, Meldungen und Klassensatz-Reservierungen des Kollegiums                       | 365 Tage nach der Erledigung                                                                    | ja          |
 | quittierte Meldungen der Theke nach einem Netzausfall                | Frist der Schülerbücherei, höchstens 30 Tage                                                    | über diese  |
 | Protokoll                                                            | 24 Monate                                                                                       | ja, mindestens 6 |
-| Sicherung jede Nacht                                                 | die letzten 14 bleiben (entschieden am 28.09.2026: dazu 12 wöchentliche, noch nicht gebaut)     | nein        |
+| Sicherung jede Nacht                                                 | die jüngsten 14 bleiben, dazu von den älteren je Kalenderwoche eine für 12 Wochen (etwa drei Monate) | nein        |
 | Sicherung vor einem Update                                           | gelöscht beim ersten Update, bei dem sie älter als 30 Tage ist                                  | nein        |
 | Sicherung von Hand                                                   | gelöscht beim ersten Lauf von Hand, bei dem sie älter als 7 Tage ist                            | nein        |
 | unverschlüsselte Sicherung (misslungenes Update, Verschlüsselung nicht möglich) | gelöscht beim ersten Update oder Lauf von Hand nach 2 Tagen; jeder Lauf meldet, wie viele noch liegen | nein        |
@@ -187,8 +187,10 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   Wird er als S3-Speicher eingerichtet, löscht das Programm dort nie: Ohne eine Löschregel am
   Speicher bliebe jede Sicherung dort unbegrenzt, mit allen Personen, die zu ihrem Zeitpunkt im
   Programm standen.
-- Die Aufbewahrung der Sicherungen soll künftig die Sommerferien abdecken (entschieden am
-  28.09.2026); dann bleiben gelöschte Personen bis zu etwa drei Monate in den Sicherungen (5.30).
+- Seit dem 29.09.2026 decken die Sicherungen die Sommerferien ab; gelöschte Personen bleiben
+  damit bis zu etwa drei Monate in den Sicherungen. Wer einen älteren Stand zurückspielt, holt
+  Personen zurück, die seitdem von Hand endgültig gelöscht wurden, und das Protokoll dieser
+  Löschung ist mit zurückgespielt (5.36).
 - Antworten mit Personendaten tragen keine Anweisung an den Browser, sie nicht
   zwischenzuspeichern; auf einem Rechner für mehrere Personen können sie im Browser-Speicher
   liegen bleiben (5.29).

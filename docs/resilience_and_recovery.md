@@ -34,7 +34,10 @@ Nachtbackups.
   kürzester Weg: `docker compose exec postgres-db pg_dump -U postgres bibliothek | gzip >
   backups/manuell_$(date +%F).sql.gz` und die Datei nach Eingang des ersten scrypt-Backups
   löschen, sie ist unverschlüsselt). Alte `.enc`-Dateien und S3-Kopien entsorgen.
-- Rotation: die letzten **14** Backups bleiben erhalten.
+- Rotation: die jüngsten **14** Nachtsicherungen bleiben, dazu von den älteren je Kalenderwoche
+  eine für **12** Wochen — zusammen etwa drei Monate (`jobs/backup_aufbewahrung.go`, seit dem
+  29.09.2026). Ein Fehler, der erst nach den Sommerferien auffällt, findet so noch einen Stand
+  von davor.
 - Optionaler Offsite-Upload nach S3, falls `S3_ENDPOINT`/`S3_ACCESS_KEY`/`S3_SECRET_KEY`/`S3_BUCKET` gesetzt sind.
 
 > ⚠️ **Wichtig:** Diese Dateien sind verschlüsselt. `zcat`/`gunzip`/`psql` funktionieren darauf **nicht**
@@ -211,7 +214,14 @@ psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek -f vor-restore.sql; echo "psql
 ```
 
 Danach die Anwendung neu starten. Ist auch das nicht möglich, bleibt das nächstältere
-verschlüsselte Backup — es liegen 14 Stück vor (Abschnitt 1a).
+verschlüsselte Backup — es liegen die der letzten 14 Nächte und 12 Wochenstände vor
+(Abschnitt 1a).
+
+**Ein älterer Stand bringt Gelöschte zurück.** Wer einen älteren Stand zurückspielt, holt auch
+Personen zurück, die seitdem gelöscht wurden. Die Löschläufe nach Frist holen das in der
+nächsten Nacht nach; ein endgültiges Löschen von Hand aus dem Papierkorb nicht — und sein
+Protokolleintrag (`PURGE_STUDENT`) steht in derselben Datenbank, er ist mit zurückgespielt. Wie
+damit umzugehen ist, ist offen ([OFFEN.md](OFFEN.md) 5.36).
 
 ### 2d. Aufräumen — erst nach bestätigter Wiederherstellung
 

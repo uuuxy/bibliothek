@@ -65,16 +65,16 @@ func TestRotateBackups_BehaeltDieJuengsten(t *testing.T) {
 	}
 	legeDateiAn(t, dir, "notiz.txt")
 
-	rotateBackups(dir, 10) // weniger als maxKeep: nichts passiert
+	rotateBackups(dir, 10, 0) // weniger als die Nächte: nichts passiert
 	vorher, err := BackupDateien(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(vorher) != 4 {
-		t.Fatalf("unter maxKeep darf nichts gelöscht werden, übrig %v", namen(vorher))
+		t.Fatalf("unter der Zahl der Nächte darf nichts gelöscht werden, übrig %v", namen(vorher))
 	}
 
-	rotateBackups(dir, 2)
+	rotateBackups(dir, 2, 0)
 	d, err := BackupDateien(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -103,7 +103,7 @@ func TestRotateBackups_LoeschtSymlinkNichtSeinZiel(t *testing.T) {
 	legeDateiAn(t, dir, "backup_2026-09-01T02-30.sql.gz.enc")
 	legeDateiAn(t, dir, "backup_2026-09-02T02-30.sql.gz.enc")
 
-	rotateBackups(dir, 2)
+	rotateBackups(dir, 2, 0)
 
 	if _, err := os.Lstat(link); !os.IsNotExist(err) {
 		t.Errorf("der Link ist der älteste Eintrag und muss weg sein: %v", err)

@@ -3,6 +3,7 @@ package api
 import (
 	"bibliothek/apierrors"
 	"bibliothek/auth"
+	"bibliothek/jobs"
 	"bibliothek/repository"
 	"context"
 	"encoding/json"
@@ -248,20 +249,22 @@ func dsgvoVerarbeitungsangaben(lesehistorieTage, lernmittelTage, karenzTage, aud
 	}
 }
 
-// Die Sicherungen nennt die Auskunft jeder Leserart gleich. Die Zahlen stehen in drei Quellen
-// außerhalb von Go (jobs/backup.go, update.sh, scripts/backup.sh); dsgvo_sicherungen_test.go
-// hält sie deckungsgleich. Bis zum 28.09.2026 stand hier nur „Verschlüsselte Backups 14
-// Tage" — die Sicherung vor einem Update und die von Hand fehlten.
+// Die Sicherungen nennt die Auskunft jeder Leserart gleich. Die Aufbewahrung der
+// Nachtsicherung liest sie aus dem Job (jobs.BehalteNaechte, jobs.BehalteWochen); die zwei
+// anderen Fristen stehen in Shell-Skripten (update.sh, scripts/backup.sh), und
+// dsgvo_sicherungen_test.go hält sie deckungsgleich. Bis zum 28.09.2026 stand hier nur
+// „Verschlüsselte Backups 14 Tage" — die Sicherung vor einem Update und die von Hand fehlten.
+// Die wöchentlichen Stände gibt es seit dem 29.09.2026.
 const (
-	sicherungNaechte       = 14 // jobs/backup.go, rotateBackups
 	sicherungVorUpdateTage = 30 // update.sh, BACKUP_RETENTION_DAYS
 	sicherungVonHandTage   = 7  // scripts/backup.sh, RETENTION_ENC_TAGE
 )
 
-var dsgvoSicherungen = fmt.Sprintf("Verschlüsselte Sicherungen: die der letzten %d Nächte; "+
+var dsgvoSicherungen = fmt.Sprintf("Verschlüsselte Sicherungen: die der letzten %d Nächte, "+
+	"dazu von den älteren je Kalenderwoche eine, für %d Wochen (zusammen etwa drei Monate); "+
 	"eine Sicherung vor einem Update wird beim ersten Update nach %d Tagen gelöscht, "+
 	"eine von Hand angelegte beim ersten weiteren Lauf nach %d Tagen.",
-	sicherungNaechte, sicherungVorUpdateTage, sicherungVonHandTage)
+	jobs.BehalteNaechte, jobs.BehalteWochen, sicherungVorUpdateTage, sicherungVonHandTage)
 
 // dsgvoBetroffenenrechte gilt für jede Leserart gleich.
 const dsgvoBetroffenenrechte = "Recht auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18) und Widerspruch (Art. 21) sowie Widerruf einer Einwilligung; Beschwerderecht beim Hessischen Beauftragten für Datenschutz und Informationsfreiheit (HBDI)"

@@ -73,10 +73,11 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgen der Eigentumsvermerk je Exemplar aus Littera (4.24)
-   und zusätzlich 12 wöchentliche Stände der Sicherung (5.30). Dann 5.18 (Klassen als
-   Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für
-   Bildschirm).
+   zurückgestellt (siehe oben). Es folgt der Eigentumsvermerk je Exemplar aus Littera (4.24):
+   eine neue Spalte, gebaut nach deiner Freigabe der Migration und deiner Antwort zum
+   Personennamen im Vermerk. Dazu deine Antwort zu 5.36 (Zurückspielen eines älteren Stands).
+   Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21
+   (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -602,27 +603,6 @@ damit in seinem Festplatten-Cache ablegen, auf Rechnern, die mehrere Personen be
 Abhilfe: `Cache-Control: no-store` als Vorgabe für `/api/`, wo der Handler nichts Eigenes setzt;
 vorher nachsehen, ob die Theke ohne Netz auf dem Browser-Cache aufbaut.
 
-### 5.30 Aufbewahrung der Sicherungen: zusätzlich 12 wöchentliche
-
-**Entschieden am 28.09.2026, nicht gebaut.** Heute bleiben die letzten 14 Nachtsicherungen
-(`rotateBackups(backupDir, 14)` in `jobs/backup.go`). Ein Fehler, der still Daten verändert — ein
-falscher Import, ein Löschlauf, ein Reparaturskript — und erst nach den sechs Wochen der
-Sommerferien auffällt, steckt dann in jeder vorhandenen Sicherung. Künftig bleiben dazu 12
-wöchentliche Stände; gelöschte Personen stehen damit bis zu etwa drei Monate in den Sicherungen.
-Vor dem Echtstart. Beim Bau mitziehen: die Auskunft (`dsgvoSicherungen`, `api/dsgvo_sicherungen_test.go`
-wird rot), das VVT (Löschfristen der Tätigkeit 1),
-[resilience_and_recovery.md](resilience_and_recovery.md) 1a, SECURITY („Rotation"),
-PFLEGEKONZEPT 3.2 und den Datenschutz-Nachweis (Abschnitte 4 und 9); die S3-Kopie braucht
-dieselbe Regel (7.3). Beim Bau klären (nicht nachgestellt): Eine zurückgespielte ältere Sicherung
-bringt auch Personen zurück, die seit ihrem Stand von Hand endgültig gelöscht wurden; die
-Löschläufe nach Frist greifen in der nächsten Nacht wieder, eine Löschung von Hand nicht.
-Die Sicherung vor einem Update bleibt bei 30 Tagen (entschieden am 28.09.2026): Sie liegt nur
-auf dem Server (die Kopie außer Haus nimmt nur die Nachtsicherung, `uploadBackupToS3` in
-`jobs/backup.go`), 30 bis etwa 60 Tage liegen innerhalb der drei Monate oben, und bis die
-wöchentlichen Stände gebaut sind, ist sie nach 14 Nächten der einzige Stand von vor dem Update
-(`rotateBackups(backupDir, 14)`).
-Dass das Löschen an einem Lauf hängt, gehört zu 5.31.
-
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
 **Entschieden am 28.09.2026, nicht gebaut.** Vor dem Echtstart; gebaut wird, wenn die drei
@@ -710,6 +690,26 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   Löschwegen hatten 90 Tage angenommen; zu den Nachbuch-Meldungen steht in
   `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
   binden".
+
+### 5.36 Ein älterer Stand bringt von Hand Gelöschte zurück
+
+Seit dem 29.09.2026 bleiben neben den 14 Nachtsicherungen 12 Wochenstände, zusammen etwa drei
+Monate (`jobs/backup_aufbewahrung.go`). Wer einen älteren Stand zurückspielt, holt Personen
+zurück, die seitdem gelöscht wurden. Die Löschläufe nach Frist (`RunNaechtlicheDSGVO`, jede Nacht
+um 00:00 UTC) holen das nach, soweit die Frist der Person abgelaufen ist. Ein endgültiges Löschen
+von Hand aus dem Papierkorb (`PurgeStudentHandler`) holt nichts nach, und sein Protokolleintrag
+(`PURGE_STUDENT` in `audit_logs`) ist mit zurückgespielt: Danach steht in der Datenbank nicht
+mehr, wer gelöscht war. Am Code nachgesehen am 29.09.2026, nicht nachgestellt. Mit 14 Nächten
+bestand das schon; die Wochenstände dehnen es auf etwa drei Monate.
+
+**Frage:** Reicht ein Schritt in der Anleitung zum Zurückspielen
+([resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2) — vorher aus dem
+laufenden Stand die `PURGE_STUDENT`-Einträge seit dem Datum der Sicherung ablesen, danach dieselben
+Personen erneut endgültig löschen? Oder soll das Programm endgültige Löschungen zusätzlich
+außerhalb der Datenbank festhalten und nach dem Zurückspielen selbst wiederholen? Empfehlung: der
+Schritt in der Anleitung. Einen Wochenstand spielt man zurück, wenn ein Fehler spät auffällt —
+dann ist der laufende Stand noch lesbar. Fällt die Datenbank ganz aus, gilt die jüngste
+Nachtsicherung.
 
 ---
 
@@ -927,8 +927,9 @@ liegt auf einer Platte. Nur EU oder Schulträger. Der Code ist fertig bis auf da
 (nachgesehen am 28.09.2026): `uploadBackupToS3` in `jobs/backup.go` lädt jede Nachtsicherung
 hoch, die Rotation gilt nur dem lokalen Verzeichnis. Ohne Löschregel am Speicher bliebe dort jede
 Sicherung mit allen Personen ihres Stands unbegrenzt liegen. Beim Einrichten eine Löschregel am
-Speicher setzen, die der Aufbewahrung aus 5.30 folgt, oder die Rotation im Code auf den Speicher
-ausdehnen. **Entschieden am 28.09.2026:** zuerst beim Schulträger fragen, ob er einen Speicher
+Speicher setzen, die der Aufbewahrung der Nachtsicherung folgt (die jüngsten 14, dazu je
+Kalenderwoche eine für 12 Wochen; `jobs.BehalteNaechte`, `jobs.BehalteWochen`), oder die Rotation
+im Code auf den Speicher ausdehnen. **Entschieden am 28.09.2026:** zuerst beim Schulträger fragen, ob er einen Speicher
 außer Haus stellt (Frage oben); ein Speicher des Schulträgers braucht keinen Vertrag mit einem
 Dritten. Einen anderen Kopierweg als S3 gibt es im Programm nicht.
 

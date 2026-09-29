@@ -62,7 +62,7 @@ func (b *BackupJob) RunDatabaseBackup() {
 		return
 	}
 
-	timestamp := time.Now().UTC().Format("2006-01-02T150405Z")
+	timestamp := time.Now().UTC().Format(sicherungsStempel)
 	outFilename := filepath.Join(backupDir, fmt.Sprintf("backup_%s.sql.gz.enc", timestamp))
 
 	log.Printf("Backup: starting daily PostgreSQL backup → %s", outFilename)
@@ -98,8 +98,8 @@ func (b *BackupJob) RunDatabaseBackup() {
 	// S3 Offsite Upload
 	uploadBackupToS3(ctx, outFilename, encrypted)
 
-	// Rotation: Nur die letzten 14 täglichen Backups behalten, um Speicherplatzmangel zu vermeiden
-	rotateBackups(backupDir, 14)
+	// Rotation: die jüngsten Nächte und je Woche ein älterer Stand (backup_aufbewahrung.go).
+	rotateBackups(backupDir, BehalteNaechte, BehalteWochen)
 }
 
 // resolveBackupEnv liest die Backup-relevanten Umgebungsvariablen und legt bei
@@ -297,10 +297,11 @@ func uploadBackupToS3(ctx context.Context, outFilename string, encrypted []byte)
 	log.Printf("Backup: S3 upload successful → s3://%s/%s", s3Bucket, objectName)
 }
 
-// rotateBackups löscht die ältesten Sicherungen, wenn es mehr als maxKeep gibt. Die
+// rotateBackups löscht, was die Aufbewahrung nicht hält: Die naechte jüngsten Sicherungen
+// bleiben, von den älteren je Kalenderwoche die jüngste für wochen Wochen (zuLoeschen). Die
 // Namen tragen den Zeitstempel, die Listenreihenfolge ist die zeitliche (backup_dateien.go).
 // Gelöscht wird über die Wurzel: ein Symlink verschwindet als Link, sein Ziel bleibt.
-func rotateBackups(dir string, maxKeep int) {
+func rotateBackups(dir string, naechte, wochen int) {
 	root, err := os.OpenRoot(dir)
 	if err != nil {
 		return
@@ -315,10 +316,7 @@ func rotateBackups(dir string, maxKeep int) {
 		log.Printf("Backup rotation: Verzeichnis %s nicht lesbar, es wird nichts rotiert: %v", dir, err)
 		return
 	}
-	if len(dateien) <= maxKeep {
-		return
-	}
-	for _, d := range dateien[:len(dateien)-maxKeep] {
+	for _, d := range zuLoeschen(dateien, naechte, wochen) {
 		if err := root.Remove(d.Name); err != nil {
 			// #nosec G706
 			log.Printf("Backup rotation: failed to delete %s: %v", d.Name, err)

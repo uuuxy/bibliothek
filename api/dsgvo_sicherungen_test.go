@@ -7,19 +7,20 @@ import (
 	"testing"
 )
 
-// Die Auskunft nennt die Fristen der Sicherungen als feste Zahlen; gelten tun die Zahlen in
-// drei Quellen außerhalb dieses Pakets. Ändert sich eine davon (OFFEN.md 5.30: 12 wöchentliche
-// Stände), wird dieser Test rot, und die Auskunft an die betroffene Person zieht mit.
+// Die Auskunft nennt die Fristen der Sicherungen vor einem Update und von Hand als feste
+// Zahlen; gelten tun sie in zwei Shell-Skripten. Ändert sich eine davon, wird dieser Test rot,
+// und die Auskunft an die betroffene Person zieht mit. Die Nachtsicherung liest die Auskunft
+// seit dem 29.09.2026 aus dem Job selbst (jobs.BehalteNaechte, jobs.BehalteWochen); bis dahin
+// stand sie hier als dritte Zeile, per Muster aus jobs/backup.go gelesen.
 //
-// Blindheit: nur die drei Zahlen an je genau einer Fundstelle. Eine vierte Art von Sicherung
-// oder eine Zahl, die ihre Bedeutung wechselt (Stände statt Nächte), sieht er nicht.
+// Blindheit: nur die zwei Zahlen an je genau einer Fundstelle. Eine weitere Art von Sicherung
+// oder eine Zahl, die ihre Bedeutung wechselt, sieht er nicht.
 func TestDsgvoSicherungen_FolgenDenQuellen(t *testing.T) {
 	faelle := []struct {
 		pfad       string
 		muster     string
 		inAuskunft int
 	}{
-		{"../jobs/backup.go", `rotateBackups\(backupDir, (\d+)\)`, sicherungNaechte},
 		{"../update.sh", `(?m)^BACKUP_RETENTION_DAYS=(\d+)$`, sicherungVorUpdateTage},
 		{"../scripts/backup.sh", `(?m)^RETENTION_ENC_TAGE=(\d+)$`, sicherungVonHandTage},
 	}

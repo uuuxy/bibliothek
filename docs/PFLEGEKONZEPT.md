@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 28.09.2026 (Entwurf)
+Stand: 29.09.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -88,9 +88,10 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 ### 3.2 Eine Sicherung zurückholen
 
 **Was es gibt:** Jede Nacht um 02:30 UTC eine verschlüsselte Sicherung der Datenbank; die
-letzten 14 bleiben. Entschieden am 28.09.2026, noch nicht gebaut: dazu 12 wöchentliche
-Stände, damit ein Fehler, der erst nach den Sommerferien auffällt, noch eine Sicherung von
-davor vorfindet ([OFFEN.md](OFFEN.md) 5.30). Dazu legt `update.sh` vor jedem Update eine
+jüngsten 14 bleiben, dazu seit dem 29.09.2026 von den älteren je Kalenderwoche eine für 12
+Wochen, damit ein Fehler, der erst nach den Sommerferien auffällt, noch eine Sicherung von
+davor vorfindet. Ein älterer Stand bringt Personen zurück, die seitdem von Hand endgültig
+gelöscht wurden ([OFFEN.md](OFFEN.md) 5.36). Dazu legt `update.sh` vor jedem Update eine
 Sicherung an, die beim ersten Update nach 30 Tagen gelöscht wird; eine Sicherung von Hand mit
 `scripts/backup.sh` wird beim ersten Lauf nach 7 Tagen gelöscht. Die Nachtsicherungen liegen im
 Container, diese beiden in `backups/` im Programmverzeichnis
