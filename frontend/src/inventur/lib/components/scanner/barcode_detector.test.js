@@ -10,7 +10,8 @@ describe('Rückfall-Erkenner: was ist ein Fehler, was ist der Normalfall', () =>
 		for (const text of [
 			'QR code parse error, error = NotFoundException: No MultiFormat Readers were able to detect the code.',
 			'D: No MultiFormat Readers were able to detect the code.',
-			'NotFoundException'
+			'NotFoundException',
+			'Error: NotFound'
 		]) {
 			expect(istNichtsGefunden(text), text).toBe(true);
 			expect(istNichtsGefunden(new Error(text)), 'als Error: ' + text).toBe(true);
@@ -24,8 +25,12 @@ describe('Rückfall-Erkenner: was ist ein Fehler, was ist der Normalfall', () =>
 			'Cannot start file scan - ongoing camera scan'
 		]) {
 			expect(istNichtsGefunden(text), text).toBe(false);
+			expect(istNichtsGefunden(new Error(text)), 'als Error: ' + text).toBe(false);
 		}
 		expect(istNichtsGefunden(undefined)).toBe(false);
+		expect(istNichtsGefunden(null)).toBe(false);
+		expect(istNichtsGefunden(123)).toBe(false);
+		expect(istNichtsGefunden({})).toBe(false);
 	});
 });
 
