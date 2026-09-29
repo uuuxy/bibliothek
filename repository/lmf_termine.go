@@ -153,9 +153,18 @@ func (r *LmfTerminRepository) RueckgabeTerminLage(ctx context.Context, klasse st
 	return lage, nil
 }
 
+// SchulbuchFristGehtMitSQL sagt, wessen offene Schulbücher eine Frist für die ganze Klasse
+// mitnehmen — die Massenverlängerung (api/ausleihe.go) und der LMF-Plan
+// (SetzeLernmittelFristFuerKlassenIn); s ist die Sicht `schueler`. Es ist die Regel der Theke
+// für das Lernmittel (service.SperreAmLeserHaeltAn): Die Sperre von Hand hält an, ein
+// anonymisierter Datensatz bekommt nichts, der Papierkorb ist draußen. Die Sperre, die das
+// Programm den Ehemaligen setzt (ist_gesperrt), zählt nicht — entschieden am 28.09.2026.
+// Vorher ließen beide Wege jedes Kind mit ist_gesperrt aus.
+const SchulbuchFristGehtMitSQL = `s.deleted_at IS NULL AND s.anonymized_at IS NULL AND COALESCE(s.is_manually_blocked, false) = false`
+
 // SetzeLernmittelFristFuerKlassenIn schreibt die Frist offener Lernmittel-Ausleihen der
 // genannten Klassen um — dieselbe Regel wie die Massenverlängerung (api/ausleihe.go):
-// nur aktive, nicht gesperrte Schüler, nur Lernmittel, Mahnstufe zurück, wenn die neue
+// nur Schüler nach SchulbuchFristGehtMitSQL, nur Lernmittel, Mahnstufe zurück, wenn die neue
 // Frist in der Zukunft liegt. Zusätzlich: nur Fristen im Schuljahr [von, bis) — eine
 // mehrjährige Ausleihe (Frist im übernächsten Sommer) folgt dem Plan nicht. Ist
 // nurWennFristAm gesetzt, werden nur Ausleihen angefasst, deren Frist genau an diesem
@@ -184,9 +193,7 @@ func (r *LmfTerminRepository) SetzeLernmittelFristFuerKlassenIn(ctx context.Cont
 		  AND a.exemplar_id = e.id
 		  AND e.titel_id = t.id
 		  AND a.rueckgabe_am IS NULL
-		  AND s.deleted_at IS NULL
-		  AND s.ist_gesperrt = false
-		  AND COALESCE(s.is_manually_blocked, false) = false
+		  AND `+SchulbuchFristGehtMitSQL+`
 		  -- EINE Normalform für beide Seiten (klassen_normkey, Migration 079): „09H1" in der
 		  -- Akte und „9h1" aus dem Plan sind dieselbe Klasse. KlassenSchluessel (Go) kennt
 		  -- die führende Null nicht — deshalb hier nicht.

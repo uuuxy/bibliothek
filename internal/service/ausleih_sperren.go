@@ -46,16 +46,25 @@ type sperrLage struct {
 // prüft sie nie: Wer gesperrt ist, muss zurückgeben können. q trägt die Abfragen — am Scan
 // der Pool, beim Nachbuchen die Transaktion des Eintrags. uebergehen ist override_block.
 func pruefeAusleihSperren(ctx context.Context, q repository.DBQueryer, leser *repository.Student, lernmittel, uebergehen bool) (sperrLage, error) {
-	if istKollegium(leser) {
-		return sperrLage{}, nil
-	}
-	if err := pruefeSperreAmLeser(leser, lernmittel); err != nil {
+	if err := SperreAmLeserHaeltAn(leser, lernmittel); err != nil {
 		return sperrLage{}, err
 	}
-	if lernmittel {
+	if istKollegium(leser) || lernmittel {
 		return sperrLage{}, nil
 	}
 	return pruefeHinweise(ctx, q, leser.ID, uebergehen)
+}
+
+// SperreAmLeserHaeltAn ist der Teil der Regel, den auch die Verlängerung fragt (Einzel-
+// verlängerung und Frist von Hand, api/ausleihe.go): Hält eine Sperre am Leser diese Ausleihe
+// an? Beim Schulbuch nur die von Hand, beim Kollegen keine; der anonymisierte Datensatz bekommt
+// nichts. Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen und auch
+// bei der Verlängerung. Die Hinweise (Forderung, überfällig) halten eine Verlängerung nicht an.
+func SperreAmLeserHaeltAn(leser *repository.Student, lernmittel bool) error {
+	if istKollegium(leser) {
+		return nil
+	}
+	return pruefeSperreAmLeser(leser, lernmittel)
 }
 
 // istKollegium: Lehrkraft oder LiV. Leer heißt Schüler — so liest es die Sicht `schueler`

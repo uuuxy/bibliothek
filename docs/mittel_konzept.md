@@ -1,4 +1,4 @@
-# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 24.09.2026)
+# Landesmittel und Kreismittel — Konzept (Entwurf 09.09.2026, Stand 29.09.2026)
 
 **Teil A:** Schadensersatz für verlorene und beschädigte Bücher (Abschnitte 1–6).
 **Teil B:** Getrennte Töpfe in der Beschaffung — Bestellung, Rechnung, Berichte (Abschnitt 7).
@@ -75,8 +75,9 @@ Schülerbücherei ist aus Mitteln des Schulträgers beschafft.
 - **Keine Sperre bei Lernmitteln:** Die Sperre weiterer Ausleihen bis zur Zahlung steht in
   keiner der vorliegenden Unterlagen des Landes; sie war eine Annahme. Die Schule hat am
   22.09.2026 entschieden: Für Lernmittel gibt es keinerlei automatische Sperre, auch keine
-  übergehbare; für die Schülerbücherei bleibt sie. Gebaut in
-  `internal/service/ausleih_sperren.go` (`pruefeAusleihSperren`). „Nur Überweisung, keine Barzahlung" ist
+  übergehbare; für die Schülerbücherei bleibt sie. Am 28.09.2026 entschieden: auch nicht die
+  der Ehemaligen und auch nicht bei der Verlängerung. Gebaut in
+  `internal/service/ausleih_sperren.go` (`pruefeAusleihSperren`, `SperreAmLeserHaeltAn`). „Nur Überweisung, keine Barzahlung" ist
   dagegen belegt (Arbeitshilfe, Abschnitt 1).
 
 **Zwei Dinge, die die Schule wissen muss:**

@@ -70,7 +70,8 @@ die Forderung landet in der Akte, der Elternbrief kommt als PDF).
   an. Wer Schülerdaten ändern darf, übergeht das einmalig („Einmalig ignorieren").
 - Ein **Schulbuch** geht trotzdem raus — die Lernmittelfreiheit lässt keine automatische Sperre
   zu, und darum fragt die Theke dabei auch nicht nach. Nur eine Sperre von Hand hält auch das
-  Schulbuch an.
+  Schulbuch an. Dasselbe gilt fürs Verlängern: an der Buchzeile, für die ganze Klasse
+  (_LMF-Aktionen_) und mit den Terminen des Büchertauschs. (§2.2)
 - **Kollegen** werden nie angehalten.
 - **Überfällige** Bücher und die Mahnstufe stehen direkt an der Ausleihzeile.
 

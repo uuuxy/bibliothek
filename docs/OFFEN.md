@@ -73,11 +73,10 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgen die zwei kleinen Umbauten 8.7 (Verlängerung beim
-   Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026, der Eigentumsvermerk je Exemplar
-   aus Littera (4.24) und zusätzlich 12 wöchentliche Stände der Sicherung (5.30). Dann 5.18
-   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben,
-   Bildschirm für Bildschirm).
+   zurückgestellt (siehe oben). Es folgen der kleine Umbau 8.8 (Abholfrist), entschieden am
+   28.09.2026, der Eigentumsvermerk je Exemplar aus Littera (4.24) und zusätzlich 12
+   wöchentliche Stände der Sicherung (5.30). Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde
+   zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -1046,31 +1045,6 @@ Zuerst B3 und B4 anstoßen.
 Gilt für das System die Pflicht zur Barrierefreiheit — mit Erklärung zur Barrierefreiheit und
 barrierefreien PDFs (HTML-Druckweg oder begründete Ausnahme)? Bis zur Antwort geparkt; was die
 Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
-
-### 8.7 Die Sperre der Ehemaligen beim Schulbuch
-
-Die Schule am 22.09.2026: „Für die Lernmittel darf es keinerlei automatische ‚Sperrung' geben,
-auch nicht eine Sperrung, die bestimmte Personen aufheben können." Gebaut ist danach
-(24.09.2026, FACHKONZEPT §2.2): Beim Schulbuch hält nur eine Sperre von Hand auf. Die Sperre,
-die das Programm den Ehemaligen setzt — Abschlussklasse nach der Versetzung, im LUSD-Export
-nicht mehr enthalten —, zählt dort nicht; bei Bücherei und Gerät lässt sie nur die Rückgabe zu.
-Betroffen sind nur Kinder, die noch an der Schule sind (E-Phase nach der 10R, Wiederholer); wer
-gegangen ist, holt keine Schulbücher ab.
-
-Einem gesperrten Kind — von Hand oder als Ehemaligem — verlängert das Programm kein Buch, auch
-kein Schulbuch (`checkAusleiheGesperrt` in `api/ausleihe.go`, für die Einzelverlängerung und die
-Frist von Hand; am Code nachgesehen am 24.09.2026 und 28.09.2026), die Klassenverlängerung der
-Schulbücher (`GlobalExtendLMFHandler`) und der LMF-Plan (`SetzeLernmittelFristFuerKlassenIn`)
-lassen es aus. Eine Sperre beim Verlassen der Schule kennt Littera nicht.
-
-**Entschieden am 28.09.2026: Der Satz der Schule gilt auch für die Ehemaligen, und auch bei der
-Verlängerung.** Die automatische Sperre hält beim Schulbuch weder Ausleihe noch Verlängerung an;
-eine Sperre von Hand gilt weiter. Nicht gebaut: `checkAusleiheGesperrt` fragt heute
-`ist_gesperrt OR is_manually_blocked` ohne Unterschied nach dem Buch; beim Schulbuch soll es nach
-derselben Regel entscheiden wie die Theke (`pruefeSperreAmLeser`, PG-Test
-`TestTheke_EhemaligeSperreNichtAmSchulbuch`). Mit PG-Test für beide Aufrufer und FACHKONZEPT §2.2.
-Dazu gehören die Klassenverlängerung und der LMF-Plan: Beide lassen heute jedes Kind mit
-`ist_gesperrt` aus.
 
 ### 8.8 Die Abholfrist bei Vormerkungen
 

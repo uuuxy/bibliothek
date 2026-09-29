@@ -19,7 +19,9 @@ import (
 // Entscheidung 3a; seit Migration 097 als Reihenfolge): Ein Rückgabe-Plan setzt die
 // Frist der offenen Schulbücher seiner Klassen; ein Umschreiben zieht nach; Klassen, die
 // aus dem Plan fallen, kehren zum Stichtag zurück; Verwerfen ebenso. Nicht angefasst:
-// Nicht-Lernmittel, gesperrte Schüler, mehrjährige Ausleihen, andere Klassen, Ausgabe-Pläne.
+// Nicht-Lernmittel, von Hand gesperrte Schüler, mehrjährige Ausleihen, andere Klassen,
+// Ausgabe-Pläne. Die Sperre der Ehemaligen hält den Plan nicht an
+// (TestVerlaengerung_EhemaligeSperreNichtAmSchulbuch_LmfPlan).
 func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
@@ -46,7 +48,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	annaMehrjahr := seedAusleihe(t, pool, anna, "LMF Atlas Anna", tag("2028-07-31"))
 	ben := seedSchueler(t, pool, "F-2", "Ben", "09h1") // andere Schreibweise, dieselbe Klasse
 	benLmf := seedAusleihe(t, pool, ben, "LMF Mathe 9 Ben", stichtag)
-	if _, err := pool.Exec(ctx, `UPDATE schueler SET ist_gesperrt = true, block_reason = 'Test' WHERE id = $1`, ben); err != nil {
+	if _, err := pool.Exec(ctx, `UPDATE schueler SET is_manually_blocked = true, block_reason = 'Test' WHERE id = $1`, ben); err != nil {
 		t.Fatal(err)
 	}
 	emil := seedSchueler(t, pool, "F-3", "Emil", "8G1")
@@ -108,7 +110,7 @@ func TestLmfPlan_RueckgabeTerminIstDieFristDerKlasse(t *testing.T) {
 	erwarte("Annas Schulbuch", annaLmf, tag("2027-06-28"))
 	erwarte("Annas Roman (kein Lernmittel)", annaRoman, tag("2026-10-01"))
 	erwarte("Annas mehrjähriger Atlas", annaMehrjahr, tag("2028-07-31"))
-	erwarte("Bens Schulbuch (gesperrt)", benLmf, stichtag)
+	erwarte("Bens Schulbuch (von Hand gesperrt)", benLmf, stichtag)
 	erwarte("Emils Schulbuch (8G1)", emilLmf, stichtag)
 
 	// 2. Umschreiben mit späterem Ende: der Plan ist veröffentlicht, die Korrektur

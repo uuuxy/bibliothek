@@ -49,9 +49,8 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 
 	// Sanktions-Konsistenz: Ist das Buch an einen gesperrten Schüler verliehen, darf die
 	// Frist nicht verlängert werden — die Sperre soll zur Rückgabe zwingen, nicht durch
-	// eine Verlängerung ausgehebelt werden. Einen Kollegen betrifft das nicht: Er wird nie
-	// gesperrt (checkAusleiheGesperrt). Seit Migration 125 trägt auch seine Ausleihe eine
-	// schueler_id; der Satz „kein schueler_id, nicht betroffen" stimmte danach nicht mehr.
+	// eine Verlängerung ausgehebelt werden. Welche Sperre zählt, sagt die Regel der Theke
+	// (checkAusleiheGesperrt): Beim Schulbuch nur die von Hand, beim Kollegen keine.
 	gesperrt, blockReason, errChk := s.checkAusleiheGesperrt(ctx, ausleiheID)
 	if errChk != nil {
 		if errors.Is(errChk, pgx.ErrNoRows) {
@@ -200,13 +199,13 @@ func (s *Server) OverrideDueDateHandler(auditRepo repository.AuditRepository) ht
 		ctx := r.Context()
 
 		// Sanktions-Konsistenz mit ExtendLoanHandler und GlobalExtendLMFHandler: Ist das
-		// Buch an einen gesperrten Schüler verliehen, darf die Frist nicht in die ZUKUNFT
-		// verschoben werden — das machte die Ausleihe wieder "nicht überfällig", setzte
-		// die Mahn-Eskalation zurück und hebelte so die Auto-Sperre aus (die aus überfälligen
-		// Ausleihen berechnet wird). Genau diese Umgehung war bis 18.08.2026 über diesen
-		// Endpunkt möglich, während die beiden Verlängerungs-Endpunkte sie ausdrücklich
-		// verbieten. Ein VORGEZOGENES Datum (Rückruf) bleibt auch bei Sperre erlaubt:
-		// Es hebt die Sanktion nicht auf, im Gegenteil.
+		// Buch an einen gesperrten Schüler verliehen (welche Sperre zählt, sagt
+		// checkAusleiheGesperrt), darf die Frist nicht in die ZUKUNFT verschoben werden — das
+		// machte die Ausleihe wieder "nicht überfällig", setzte die Mahn-Eskalation zurück und
+		// hebelte so die Auto-Sperre aus (die aus überfälligen Ausleihen berechnet wird).
+		// Genau diese Umgehung war bis 18.08.2026 über diesen Endpunkt möglich, während die
+		// beiden Verlängerungs-Endpunkte sie ausdrücklich verbieten. Ein VORGEZOGENES Datum
+		// (Rückruf) bleibt auch bei Sperre erlaubt: Es hebt die Sanktion nicht auf, im Gegenteil.
 		if newDate.After(time.Now()) {
 			gesperrt, _, errChk := s.checkAusleiheGesperrt(ctx, ausleiheID)
 			if errChk != nil {
@@ -313,11 +312,10 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 			  AND a.exemplar_id = e.id
 			  AND e.titel_id = t.id
 			  AND a.rueckgabe_am IS NULL
-			  AND s.deleted_at IS NULL
-			  -- Gesperrte Schüler von der Massen-Verlängerung ausnehmen: die Sperre soll zur
-			  -- Rückgabe zwingen, nicht durch eine Fristverlängerung ausgehebelt werden.
-			  AND s.ist_gesperrt = false
-			  AND COALESCE(s.is_manually_blocked, false) = false
+			  -- Die Sperre von Hand nimmt ein Kind aus: Sie soll zur Rückgabe zwingen, nicht
+			  -- durch eine Fristverlängerung ausgehebelt werden. Die der Ehemaligen zählt beim
+			  -- Schulbuch nicht, wie an der Theke.
+			  AND ` + repository.SchulbuchFristGehtMitSQL + `
 			  -- Über den Normal-Schlüssel (Migration 079/087): „5a" aus einem Formular und
 			  -- „05A" als registrierte Anzeigeform meinen dieselbe Klasse.
 			  AND klassen_normkey(s.klasse) = klassen_normkey($2)
@@ -343,20 +341,40 @@ func (s *Server) GlobalExtendLMFHandler() http.HandlerFunc {
 	}
 }
 
-// checkAusleiheGesperrt prüft, ob die angegebene Ausleihe an einen gesperrten Schüler vergeben ist
-// — nach derselben Regel wie die Theke (service.pruefeAusleihSperren) und die Anzeige
-// (sperrStatus.js): Ein Kollege wird nie gesperrt (16.09. und 24.09.2026), eine alte Sperre an
-// seinem Konto zählt nicht.
+// checkAusleiheGesperrt prüft, ob eine Sperre am Leser die Verlängerung dieser Ausleihe
+// anhält, und liefert den Grund. Es entscheidet die Regel der Theke
+// (service.SperreAmLeserHaeltAn): beim Schulbuch nur die Sperre von Hand, beim Kollegen keine;
+// ein anonymisierter Datensatz und der Papierkorb bekommen nichts.
+// Bis zum 29.09.2026 stand hier eine eigene Abfrage, die jede Sperre zählte — auch die der
+// Ehemaligen beim Schulbuch, das die Theke demselben Kind ausgibt.
 func (s *Server) checkAusleiheGesperrt(ctx context.Context, ausleiheID string) (bool, string, error) {
-	var gesperrt bool
-	var blockReason string
+	var leserID *string
+	var lernmittel bool
 	err := s.DB.Pool.QueryRow(ctx, `
-		SELECT (COALESCE(l.ist_gesperrt, false) OR COALESCE(l.is_manually_blocked, false))
-		       AND COALESCE(l.art, 'schueler') = 'schueler',
-		       COALESCE(l.block_reason, '')
+		SELECT a.schueler_id, COALESCE(t.ist_lernmittel, false)
 		FROM ausleihen a
-		LEFT JOIN leser l ON l.id = a.schueler_id
+		LEFT JOIN buecher_exemplare e ON e.id = a.exemplar_id
+		LEFT JOIN buecher_titel t ON t.id = e.titel_id
 		WHERE a.id = $1 AND a.rueckgabe_am IS NULL
-	`, ausleiheID).Scan(&gesperrt, &blockReason)
-	return gesperrt, blockReason, err
+	`, ausleiheID).Scan(&leserID, &lernmittel)
+	if err != nil || leserID == nil {
+		return false, "", err
+	}
+	leser, err := repository.NewStudentRepository(s.DB.Pool).GetLeserByID(ctx, *leserID)
+	if err != nil {
+		return false, "", err
+	}
+	if leser == nil {
+		// Im Papierkorb: Die Theke findet ihn nicht und gibt ihm nichts aus.
+		return true, "", nil
+	}
+	sperre := service.SperreAmLeserHaeltAn(leser, lernmittel)
+	if sperre == nil {
+		return false, "", nil
+	}
+	var mitGrund *service.SperrGrundFehler
+	if errors.As(sperre, &mitGrund) {
+		return true, mitGrund.Grund, nil
+	}
+	return true, "", nil
 }
