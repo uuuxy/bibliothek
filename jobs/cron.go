@@ -168,6 +168,9 @@ func (s *Scheduler) RunNaechtlicheDSGVO() {
 	// zuerst — und schnitt die Karenz am Stichtag ab.
 	s.RunGDPRAnonymizeOldData()
 	s.RunGDPRDeleteAbgaenger()
+	// Gelöschte Kollegen nach 180 Tagen im Papierkorb endgültig löschen
+	// (cron_dsgvo_papierkorb.go, entschieden am 28.09.2026).
+	s.RunPapierkorbKollegenLoeschung()
 	// Lesehistorie befristen (cron_dsgvo_lesehistorie.go): trennt abgeschlossene
 	// Ausleihen nach Frist vom Schüler. Fristen stehen in den Einstellungen.
 	s.RunLesehistorieBefristung()

@@ -17,8 +17,10 @@ import "fmt"
 //     manage_users, das Protokoll audit_logs (api/routes_system.go).
 //   - Trennen der Ausleihen: PredikatLesehistorieAusleihen fragt nicht nach der Art.
 //   - Erledigte Klassensatz-Reservierungen fallen seit dem 29.09.2026 nach derselben Frist wie
-//     erledigte Wünsche und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege bleibt
-//     im Papierkorb, weil PredikatAnonymisierung nur art = 'schueler' nimmt.
+//     erledigte Wünsche und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege fällt
+//     seit dem 29.09.2026 nach 180 Tagen im Papierkorb endgültig (RunPapierkorbKollegenLoeschung,
+//     über PurgeStudent); offene Ausleihen und unbezahlte Forderungen halten ihn. Sein
+//     Zugangskonto geht schon beim Löschen (DeleteStudent).
 //
 // Die Fristen kommen aus denselben Einstellungen wie bei den Jobs (dsgvoFristen), damit eine
 // geänderte Frist hier nicht als Werksvorgabe stehen bleibt.
@@ -48,7 +50,8 @@ func dsgvoVerarbeitungsangabenKollegium(f dsgvoFristWerte) DsgvoVerarbeitungsang
 			"die Liste der Zugangskonten und die Protokolle sehen nur Personen, denen die Schule deren Verwaltung übertragen hat. Helfer an der Theke sehen nur Name, Ausweisnummer und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + nachRueckgabe(f.lesehistorieTage) + ", Lernmittel " + nachRueckgabe(f.lernmittelTage) + "; danach automatisch getrennt. " +
 			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Erledigte Wünsche, Meldungen und Klassensatz-Reservierungen: " + anliegen + ". " +
-			"Protokolle " + fmt.Sprintf("%d", f.auditMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, eine automatische Frist gibt es nicht, auch nicht für einen gelöschten Leserdatensatz im Papierkorb. " +
+			"Protokolle " + fmt.Sprintf("%d", f.auditMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, das Zugangskonto dabei sofort. " +
+			"Der gelöschte Leserdatensatz liegt 180 Tage im Papierkorb und wird danach automatisch endgültig gelöscht, solange keine Ausleihe und keine unbezahlte Forderung offen ist. " +
 			dsgvoSicherungen,
 		Herkunft:          "Anlage durch die Bibliothek oder die Verwaltung der Zugangskonten, die eigene Anmeldung mit der dienstlichen E-Mail-Adresse oder die Übernahme aus dem bisherigen Bibliotheksprogramm; Protokolleinträge entstehen bei der Arbeit im System",
 		Betroffenenrechte: dsgvoBetroffenenrechte,

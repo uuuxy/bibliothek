@@ -163,6 +163,19 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 		repository.AbgaengerStichjahr(time.Now())-1)
 
 	schuelerID := eins("Probeschüler", `SELECT id FROM schueler WHERE barcode_id = 'S-DRILL-1'`)
+
+	// 2a. Gelöschter Kollege seit 200 Tagen im Papierkorb (Frist 180). Dazu einer, den eine
+	//     offene Ausleihe hält: Weder Wächter noch Job dürfen ihn anfassen — zählte der Wächter
+	//     ihn, meldete er nach dem Lauf jede Nacht einen Rückstand, den niemand abbauen kann.
+	must("Kollege im Papierkorb", `
+		INSERT INTO leser (art, vorname, nachname, deleted_at)
+		VALUES ('lehrkraft', 'Konrad', 'Papierkorb', NOW() - interval '200 days')`)
+	gehalten := eins("gehaltener Kollege", `
+		INSERT INTO leser (art, vorname, nachname, deleted_at)
+		VALUES ('lehrkraft', 'Greta', 'Gehalten', NOW() - interval '200 days') RETURNING id`)
+	schuldner := eins("Kollege mit unbezahlter Forderung", `
+		INSERT INTO leser (art, vorname, nachname, deleted_at)
+		VALUES ('lehrkraft', 'Fritz', 'Forderung', NOW() - interval '200 days') RETURNING id`)
 	freihand := eins("Freihand-Titel", `INSERT INTO buecher_titel (titel, signatur) VALUES ('Der Roman', 'Ro Mus') RETURNING id`)
 	lmf := eins("LMF-Titel", `INSERT INTO buecher_titel (titel, signatur, ist_lernmittel) VALUES ('Deutschbuch 7', 'LMF-Deutsch 7', true) RETURNING id`)
 
@@ -182,6 +195,16 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 			        jsonb_build_object('schueler_id', $3::text))`, exemplarID, tageZurueck, schuelerID)
 	}
 	leihe("Freihand-Ausleihe", freihand, "B-RUECK-F", repository.StandardLesehistorieTage+40)
+	offenesExemplar := eins("Exemplar des gehaltenen Kollegen",
+		`INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-KOLL-OFFEN') RETURNING id`, freihand)
+	must("offene Ausleihe des gehaltenen Kollegen", `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist)
+		VALUES ($1, $2, NOW() - interval '210 days', NOW() + interval '30 days')`, offenesExemplar, gehalten)
+	must("unbezahlte Forderung des Kollegen", `
+		INSERT INTO schadensfaelle (exemplar_id, schueler_id, beschreibung, betrag)
+		VALUES ($1, $2, 'Wasserschaden', 12.50)`,
+		eins("Exemplar der Forderung", `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-KOLL-SCHADEN') RETURNING id`, freihand),
+		schuldner)
 	leihe("Lernmittel-Ausleihe", lmf, "B-RUECK-L", repository.StandardLesehistorieLernmittelTage+70)
 
 	// 5. Erledigte Anliegen: vor 400 Tagen erledigt (Frist 365).

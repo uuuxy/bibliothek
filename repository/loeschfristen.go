@@ -106,6 +106,24 @@ func PredikatAnonymisierung(abgaengerKarenzTage, kulanz int) Loeschbedingung {
 // Selbstprüfung stellt dieselbe Frage als count(*). Stünde die Einschränkung nur im Job,
 // zählte der Wächter weiter Kollegen mit und meldete Arbeit, die niemand tun kann.
 
+// ── Gelöschte Kollegen endgültig löschen ($1 Tage, $2 Kulanz) ─────────────────
+
+// PredikatKollegenPapierkorb liefert die Bedingung, mit der RunPapierkorbKollegenLoeschung
+// Kollegen auswählt, die seit StandardAnonymisierungSoftDeleteTage im Papierkorb liegen
+// (entschieden am 28.09.2026, docs/OFFEN.md 5.19). Dieselbe Frist wie beim Schüler, der dort
+// anonymisiert wird; einen Kollegen verbietet chk_leser_nur_schueler_werden_abgaenger zu
+// anonymisieren, deshalb fällt er ganz — über denselben Weg wie „Endgültig löschen" von Hand
+// (PurgeStudent). Offene Ausleihen und unbezahlte Forderungen halten ihn, wie dort.
+//
+// Gefragt wird die Tabelle leser, nicht die Sicht schueler: Die zeigt keinen Kollegen.
+func PredikatKollegenPapierkorb(kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{StandardAnonymisierungSoftDeleteTage, kulanz}, Where: `art <> 'schueler'
+		  AND deleted_at IS NOT NULL
+		  AND deleted_at < NOW() - make_interval(days => $1::int + $2::int)
+		  AND NOT EXISTS (SELECT 1 FROM ausleihen WHERE schueler_id = leser.id AND rueckgabe_am IS NULL)
+		  AND NOT EXISTS (SELECT 1 FROM schadensfaelle WHERE schueler_id = leser.id AND ist_bezahlt = false)`}
+}
+
 // ── Abgänger endgültig löschen ($1 Stichjahr) ─────────────────────────────────
 
 // PredikatAbgaengerLoeschung liefert die WHERE-Bedingung, mit der

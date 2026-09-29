@@ -75,6 +75,13 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	}
 	stand = append(stand, LoeschRueckstand{Routine: "Abgänger endgültig löschen", Frist: "nach der Karenz (anonymisiert), ab 30. Januar des Folgejahres", Zeilen: n})
 
+	// 2a. Gelöschte Kollegen endgültig löschen (180 Tage im Papierkorb, entschieden am 28.09.2026).
+	n, err = r.zaehle(ctx, "leser", "", PredikatKollegenPapierkorb(KulanzWaechter))
+	if err != nil {
+		return fehler(err)
+	}
+	stand = append(stand, LoeschRueckstand{Routine: "Gelöschte Kollegen endgültig löschen", Frist: tageText(StandardAnonymisierungSoftDeleteTage) + " im Papierkorb", Zeilen: n})
+
 	// 3./4. Lesehistorie, beide Klassen — Ausleihe UND Protokolleintrag. Die
 	//       Protokollzeile trägt dieselbe Zuordnung; wer nur die Ausleihe zählt, sieht
 	//       die halbe Wahrheit (Prüfung 22.08.2026, A5).
