@@ -24,9 +24,8 @@ entfallen.
 
 **Was bei dir liegt — der Reihe nach:**
 
-1. **Drei Fragen, bevor weiterer Code entsteht** (28.09.2026). Ist eine davon ein Nein, hilft
-   kein weiterer Code; sind alle drei ein Ja, bleibt vor dem Echtstart überschaubare Arbeit im
-   Code.
+1. **Drei Fragen** (28.09.2026). Ist eine davon ein Nein, hilft kein weiterer Code; sind alle
+   drei ein Ja, bleibt vor dem Echtstart überschaubare Arbeit im Code.
    - **Schulträger:** Gibt es den Schulserver, ab wann, in welchem Netz (8.5, B5)? Heute ist er
      nur geplante Zielumgebung (Abschnitt 7), und echte Schülerdaten — auch die aus Littera —
      gehören nur dorthin. Dazu: Hat der Schulträger eine Vorlage für das IT-Sicherheitskonzept?
@@ -64,35 +63,35 @@ entfallen.
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
 
-**Im Code** (entschieden am 28.09.2026): Bis die drei Fragen beantwortet sind, entsteht nur, was
-einen Termin hat — ab dem 28. Oktober 2026 Node 26 nach der Regel „immer die aktive LTS"
+**Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
+hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. `Cache-Control` (5.29) bleibt
+zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 26 ab dem
+28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Die CI steht seit dem 28.09.2026 fest auf
-`ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Danach in dieser
-Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026):
+`ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Die Reihenfolge
+(freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
+Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Was still jemandem schaden kann (entschieden am 28.09.2026, nach der Regel unten „kann das
-   still jemandem schaden?"): das Gate gegen Leser-Werte im Protokoll (5.10), aus 5.19 die
-   Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei, `Cache-Control` (5.29),
-   dazu die zwei Fristen aus 5.19 (gelöschte Kollegen,
-   Klassensatz-Reservierungen; entschieden am 28.09.2026). Danach die zwei kleinen Umbauten 8.7
-   (Verlängerung beim Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026, dann 5.18
-   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben,
-   Bildschirm für Bildschirm).
+   still jemandem schaden?"): das Gate gegen Leser-Werte im Protokoll (5.10), die zwei Fristen
+   aus 5.19 (gelöschte Kollegen, Klassensatz-Reservierungen; entschieden am 28.09.2026), aus
+   5.19 die Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei. Danach die zwei
+   kleinen Umbauten 8.7 (Verlängerung beim Schulbuch) und 8.8 (Abholfrist), entschieden am
+   28.09.2026, der Eigentumsvermerk je Exemplar aus Littera (4.24) und zusätzlich 12 wöchentliche
+   Stände der Sicherung (5.30). Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche),
+   dann 5.21 (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`), 5.30 (Aufbewahrung der
-Sicherungen), 5.31 (`update.sh` für den Schulserver) und der Eingang für die Seite der
-Lieferanten (4.23).
+Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`), 5.31 (`update.sh` für den
+Schulserver) und der Eingang für die Seite der Lieferanten (4.23).
 
 **In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf. Im
 Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stellen eingetragen,
 die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
-**Gleich danach im Code**, sobald die drei Fragen beantwortet sind: das Gate gegen Leser-Werte
-im Protokoll (5.10), entschieden am 24.09.2026.
 
 Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20 und der Eigentumsvermerk je
 Exemplar aus 4.24.
