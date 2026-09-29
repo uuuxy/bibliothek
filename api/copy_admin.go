@@ -183,11 +183,15 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 		copies := []CopyResponse{}
 		for rows.Next() {
 			var cp CopyResponse
+			// Eine unlesbare Zeile ist ein Fehler, kein Exemplar, das still von der Buchakte
+			// verschwindet (bis zum 29.09.2026 wurde sie übersprungen, die Liste kam mit 200).
 			if err := rows.Scan(&cp.ID, &cp.BarcodeID, &cp.ZustandNotiz, &cp.IstAusleihbar,
 				&cp.IstAusgesondert, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar,
-				&cp.Eigentum, &cp.EigentumHerkunft, &cp.LitteraEigentumsvermerk); err == nil {
-				copies = append(copies, cp)
+				&cp.Eigentum, &cp.EigentumHerkunft, &cp.LitteraEigentumsvermerk); err != nil {
+				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+				return
 			}
+			copies = append(copies, cp)
 		}
 		if err := rows.Err(); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
