@@ -13,12 +13,16 @@
 
      Die Zahl wird hier NICHT gerechnet. Sie kommt fertig vom Server, aus derselben
      Funktion wie der Vorschlag im Melde-Dialog — zwei Rechnungen an zwei Orten wären
-     zwei Beträge für dasselbe Buch, und einer davon stünde in einem Bescheid. -->
+     zwei Beträge für dasselbe Buch, und einer davon stünde in einem Bescheid.
+
+     Darunter das Eigentum (4.24, Stufe 3, BookExemplarEigentum): Es hängt am Ersatzwert —
+     wem das Buch gehört, entscheidet, nach welcher Regel er gerechnet wird. -->
 <script>
 	import { formatEuro } from '../utils/format.js';
 	import { ersatzwertBekannt } from './exemplarErsatzwert.js';
+	import BookExemplarEigentum from './BookExemplarEigentum.svelte';
 
-	/** @type {{ ex: { zustand_notiz?: string, zustand_abwertung_prozent?: number, ersatzwert?: number, ersatzwert_herleitung?: string, ersatzwert_bekannt?: boolean } }} */
+	/** @type {{ ex: { zustand_notiz?: string, zustand_abwertung_prozent?: number, ersatzwert?: number, ersatzwert_herleitung?: string, ersatzwert_bekannt?: boolean, eigentum?: string, eigentum_herkunft?: string, littera_eigentumsvermerk?: string } }} */
 	let { ex } = $props();
 
 	const notiz = $derived(ex.zustand_notiz || '');
@@ -41,3 +45,4 @@
 		<span class="font-semibold text-on-surface">{formatEuro(ex.ersatzwert ?? 0)}</span>
 	</p>
 {/if}
+<BookExemplarEigentum {ex} />

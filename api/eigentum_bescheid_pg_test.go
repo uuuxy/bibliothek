@@ -46,7 +46,7 @@ func TestSchadensersatz_FolgtDemEigentum(t *testing.T) {
 
 	lektuere := seedMonitorTitel(t, pool, "Nathan der Weise", "Ga Les", true, 0)
 	exLektuere := vorbereiten(lektuere, "EB-LEKTUERE")
-	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'land' WHERE id = $1`, exLektuere); err != nil {
+	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'land', eigentum_quelle = 'littera' WHERE id = $1`, exLektuere); err != nil {
 		t.Fatalf("Eigentum setzen: %v", err)
 	}
 	schulbuch := bescheidLernmittel(t, pool, "Mathematik 7")

@@ -234,6 +234,15 @@ var checkBedingungenBestand = []string{
 	// NULL lässt die Regel zu, und NULL heißt „nicht gesetzt" — ExemplarTopfSQL fällt dann auf
 	// die Bestellung und den Titel zurück; kein Lesepfad nimmt NULL als eigenen Topf.
 	"chk_exemplar_eigentum",
+	// Migration 151, befragt am 29.09.2026: Die Quelle des Eigentums ist littera oder hand und
+	// steht genau dann, wenn Eigentum steht. Die Schreiber beider Spalten: die Littera-Übernahme
+	// (sqlExemplarEinfuegen, setzt beide aus demselben Parameter) und die Buchakte
+	// (SetzeExemplarEigentum, setzt beide in einer Anweisung, prüft das Eigentum vorher gegen
+	// MittelGueltig → 400). Keiner läuft gegen die Regel; ein dritter Schreiber, der nur
+	// eigentum setzt, bekommt einen Abbruch (23514), keinen Satz
+	// (api/exemplar_eigentum_pg_test.go, Schritt 6). Gegenfrage: NULL/NULL ist der Normalfall —
+	// ExemplarTopfHerkunftSQL liest die Quelle nur, wenn Eigentum steht.
+	"chk_exemplar_eigentum_mit_quelle", "chk_exemplar_eigentum_quelle",
 	// Migration 111, befragt am 10.09.2026: Wer ein Exemplar freigibt oder aussondert, räumt
 	// bestellstatus — Wareneingang, Status-Editor, Aussondern, Ausbuchen, Bestandskorrektur
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.

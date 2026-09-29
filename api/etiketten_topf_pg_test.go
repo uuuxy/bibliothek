@@ -138,8 +138,8 @@ func TestEigentumsvermerkFolgtDemTopf_BuchformularUndDruckCenter(t *testing.T) {
 				bestellungID = &id
 			}
 			if _, err := pool.Exec(ctx,
-				`INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id, eigentum)
-				 VALUES ($1, 'B-TOPF-1', $2, NULLIF($3, ''))`,
+				`INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id, eigentum, eigentum_quelle)
+				 VALUES ($1, 'B-TOPF-1', $2, NULLIF($3, ''), CASE WHEN $3 = '' THEN NULL ELSE 'hand' END)`,
 				titelID, bestellungID, f.eigentum); err != nil {
 				t.Fatalf("Exemplar anlegen: %v", err)
 			}

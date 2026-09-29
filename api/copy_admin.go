@@ -127,11 +127,18 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 
 		ctx := r.Context()
 
+		// Eigentum und Herkunft nach der einen Regel (repository.ExemplarTopfSQL,
+		// ExemplarTopfHerkunftSQL), dazu der Wortlaut des Littera-Vermerks, wenn es einen gab
+		// (docs/OFFEN.md 4.24, Stufe 3).
 		query := `
 			SELECT e.id, e.barcode_id, coalesce(e.zustand_notiz, ''), e.ist_ausleihbar, e.ist_ausgesondert,
 			       coalesce(e.zustand_abwertung_prozent, 0),
-			       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar
+			       NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL) AS ist_verfuegbar,
+			       ` + repository.ExemplarTopfSQL + `, ` + repository.ExemplarTopfHerkunftSQL + `,
+			       coalesce(e.erweiterte_eigenschaften->>'littera_eigentumsvermerk', '')
 			FROM buecher_exemplare e
+			JOIN buecher_titel t ON t.id = e.titel_id
+			` + repository.ExemplarTopfJoin + `
 			WHERE e.titel_id = $1
 			ORDER BY e.ist_ausgesondert ASC, e.barcode_id
 		`
@@ -164,13 +171,21 @@ func (s *Server) GetTitleCopiesHandler(bescheidRepo repository.BescheidRepositor
 			// müsste die Karte die Antwort aus dem Herleitungssatz lesen — und 0,00 € heißt
 			// zweierlei (Totalschaden oder kein Preis erfasst).
 			ErsatzwertBekannt bool `json:"ersatzwert_bekannt"`
+			// Eigentum ('land' oder 'schultraeger') und woher es kommt ('littera', 'hand',
+			// 'bestellung', 'vorgabe') — dieselbe Regel wie Etikett und Schadensersatz.
+			Eigentum         string `json:"eigentum"`
+			EigentumHerkunft string `json:"eigentum_herkunft"`
+			// LitteraEigentumsvermerk ist der Wortlaut aus Littera (feste Liste), auch wenn er
+			// kein Eigentum setzt — die Bücherei sieht, was dort stand.
+			LitteraEigentumsvermerk string `json:"littera_eigentumsvermerk"`
 		}
 
 		copies := []CopyResponse{}
 		for rows.Next() {
 			var cp CopyResponse
 			if err := rows.Scan(&cp.ID, &cp.BarcodeID, &cp.ZustandNotiz, &cp.IstAusleihbar,
-				&cp.IstAusgesondert, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar); err == nil {
+				&cp.IstAusgesondert, &cp.ZustandAbwertungProzent, &cp.IstVerfuegbar,
+				&cp.Eigentum, &cp.EigentumHerkunft, &cp.LitteraEigentumsvermerk); err == nil {
 				copies = append(copies, cp)
 			}
 		}

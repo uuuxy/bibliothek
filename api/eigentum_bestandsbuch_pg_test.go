@@ -44,9 +44,10 @@ func TestAbgangsbuch_TopfFolgtDemEigentum(t *testing.T) {
 	abgang := func(titelID, barcode string, bestellung *string, eigentum string) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id, eigentum, ist_ausleihbar,
-			                               ist_ausgesondert, aussonderung_grund)
-			VALUES ($1, $2, $3, NULLIF($4, ''), false, true, 'VERLUST')`,
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, bestellung_id, eigentum, eigentum_quelle,
+			                               ist_ausleihbar, ist_ausgesondert, aussonderung_grund)
+			VALUES ($1, $2, $3, NULLIF($4, ''), CASE WHEN $4 = '' THEN NULL ELSE 'littera' END,
+			        false, true, 'VERLUST')`,
 			titelID, barcode, bestellung, eigentum); err != nil {
 			t.Fatalf("Abgang %s: %v", barcode, err)
 		}
@@ -97,8 +98,8 @@ func TestZugangsbuch_EigentumAmExemplarIstEinBeleg(t *testing.T) {
 	zugang := func(barcode string, bestellung *string, eigentum string) {
 		t.Helper()
 		if _, err := pool.Exec(ctx, `
-			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, bestellung_id, eigentum)
-			VALUES ($1, $2, '2026-05-04', $3, NULLIF($4, ''))`,
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, erworben_am, bestellung_id, eigentum, eigentum_quelle)
+			VALUES ($1, $2, '2026-05-04', $3, NULLIF($4, ''), CASE WHEN $4 = '' THEN NULL ELSE 'littera' END)`,
 			titelID, barcode, bestellung, eigentum); err != nil {
 			t.Fatalf("Zugang %s: %v", barcode, err)
 		}

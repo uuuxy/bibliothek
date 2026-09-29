@@ -723,6 +723,11 @@ CREATE TABLE buecher_exemplare (
     -- (repository.ExemplarTopfSQL). Dasselbe Vokabular wie bestellungen_verlauf.mittel.
     eigentum TEXT
         CONSTRAINT chk_exemplar_eigentum CHECK (eigentum IS NULL OR eigentum IN ('land', 'schultraeger')),
+    -- Woher eigentum kommt (Migration 151): littera (Übernahme) oder hand (Buchakte). NULL genau
+    -- dann, wenn eigentum NULL ist — wer eigentum schreibt, nennt die Quelle.
+    eigentum_quelle TEXT
+        CONSTRAINT chk_exemplar_eigentum_quelle CHECK (eigentum_quelle IS NULL OR eigentum_quelle IN ('littera', 'hand')),
+    CONSTRAINT chk_exemplar_eigentum_mit_quelle CHECK ((eigentum IS NULL) = (eigentum_quelle IS NULL)),
     -- Migration 111: bestellstatus nur im Zulauf — jeder Ausgang (freigeben, aussondern)
     -- muss ihn räumen, sonst zählen OPAC/Inventur/Katalog das Exemplar nie.
     CONSTRAINT chk_exemplar_bestellstatus_nur_im_zulauf
@@ -1907,7 +1912,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('147_protokoll_verwaiste_leser.sql'),
 ('148_auflagen_eines_buchs.sql'),
 ('149_inventur_verworfen.sql'),
-('150_eigentum_am_exemplar.sql')
+('150_eigentum_am_exemplar.sql'),
+('151_eigentum_quelle.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

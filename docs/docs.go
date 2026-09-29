@@ -1608,6 +1608,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/exemplare/eigentum": {
+            "put": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Eigentum markierter Exemplare setzen",
+                "parameters": [
+                    {
+                        "description": "Exemplare, Eigentum, Grund",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ExemplarEigentumRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/exemplare/etiketten-altbestand": {
             "post": {
                 "consumes": [
@@ -4195,6 +4249,24 @@ const docTemplate = `{
                 },
                 "topf": {
                     "description": "Topf ist das Eigentum des Exemplars und unterscheidet die beiden Regeln (Staffel des\nLandes oder Neuwert); die Herleitung benennt sie.",
+                    "type": "string"
+                }
+            }
+        },
+        "api.ExemplarEigentumRequest": {
+            "type": "object",
+            "properties": {
+                "eigentum": {
+                    "description": "Eigentum: \"land\", \"schultraeger\" oder \"\" — leer nimmt die Angabe am Exemplar weg, dann\ngilt wieder der Topf der Bestellung oder die Faustregel aus dem Titel.",
+                    "type": "string"
+                },
+                "exemplar_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "grund": {
                     "type": "string"
                 }
             }

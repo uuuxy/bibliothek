@@ -54,11 +54,12 @@ const sqlTitelEinfuegen = `
 // vergebene Nummer (klaereBarcodes, ohneEtikett): Die traegt kein Etikett.
 //
 // eigentum ($8, Migration 150): aus dem Littera-Vermerk, NULL ohne Zuordnung (eigentum.go).
+// eigentum_quelle (Migration 151) ist dann 'littera' — die Datenbank verlangt beide oder keins.
 const sqlExemplarEinfuegen = `
 	INSERT INTO buecher_exemplare
 		(titel_id, barcode_id, erworben_am, ist_ausleihbar, einkaufspreis,
-		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt, eigentum)
-	VALUES ($1,$2,$3,true,$4,$5,$6,$7,NULLIF($8, ''))
+		 erweiterte_eigenschaften, erstellt_am, etikett_gedruckt, eigentum, eigentum_quelle)
+	VALUES ($1,$2,$3,true,$4,$5,$6,$7,NULLIF($8, ''), CASE WHEN $8 = '' THEN NULL ELSE 'littera' END)
 	RETURNING id`
 
 // SchreibeBestand überträgt Titel und Exemplare.

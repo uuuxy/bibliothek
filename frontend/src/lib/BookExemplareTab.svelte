@@ -7,8 +7,10 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { apiFetch } from './apiFetch.js';
 	import BookExemplarCard from './components/BookExemplarCard.svelte';
+	import ExemplarEigentumDialog from './components/ExemplarEigentumDialog.svelte';
+	import AuswahlLeiste from './components/ui/AuswahlLeiste.svelte';
 	import Button from './components/ui/Button.svelte';
-	import { BookOpen } from '@lucide/svelte';
+	import { BookOpen, Trash2 } from '@lucide/svelte';
 
 	/** @type {{ exemplare: any[], book: any, loadAll: (id: string) => void }} */
 	let { exemplare = $bindable([]), book, loadAll } = $props();
@@ -16,6 +18,11 @@
 	const selectedExemplare = new SvelteSet();
 	// Auswahl/Löschen/Barcode/Status hängen an edit_books — nicht an der Rolle.
 	const darfBearbeiten = $derived(hatRecht(authStore.currentUser, 'edit_books'));
+	// Löschen hängt am Server an delete_books (routes_books.go) — die Leiste zeigt den Knopf
+	// nur, wer ihn auch benutzen darf (UI entscheidet nach Recht).
+	const darfLoeschen = $derived(hatRecht(authStore.currentUser, 'delete_books'));
+	// Eigentum markierter Exemplare (4.24, Stufe 3): Dialog wie „Topf der Bestellung ändern".
+	let eigentumOffen = $state(false);
 	// Das Etikett entsteht im Druck-Center, auf dem Bogen nach der Vorlage (OFFEN.md 5.5). Wer
 	// den Bildschirm nicht öffnen darf, bekäme statt des Bogens den ersten erlaubten: Der
 	// Router stellt einen gesperrten Reiter zurück.
@@ -35,6 +42,17 @@
 		} else {
 			selectedExemplare.add(id);
 		}
+	}
+
+	/** Wie Littera „Exemplare: Alle" — ein Klassensatz hat 30 Bände und mehr. */
+	function alleAuswaehlen() {
+		for (const ex of exemplare) selectedExemplare.add(ex.id);
+	}
+
+	/** Nach dem Ändern: neu laden (Eigentum und Herkunft kommen vom Server) und Markierung weg. */
+	async function eigentumGeaendert() {
+		selectedExemplare.clear();
+		if (book?.id) await loadAll(book.id);
 	}
 
 	/** @param {any} ex */
@@ -103,18 +121,6 @@
 		<p class="font-semibold text-sm">Keine physischen Exemplare mit Barcodes angelegt.</p>
 	</div>
 {:else}
-	{#if selectedExemplare.size > 0 && darfBearbeiten}
-		<div
-			class="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl flex items-center justify-between animate-fade-in"
-		>
-			<span class="text-sm font-semibold text-rose-800"
-				>{selectedExemplare.size} Exemplare ausgewählt</span
-			>
-			<Button variant="danger-solid" size="sm" onclick={deleteSelectedCopies}>
-				Ausgewählte löschen
-			</Button>
-		</div>
-	{/if}
 	<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
 		{#each exemplare as ex (ex.id)}
 			<BookExemplarCard
@@ -127,4 +133,31 @@
 			/>
 		{/each}
 	</div>
+	<!-- M3 Selection/Toolbars: die gemeinsame schwebende Leiste unter der Liste, wie auf der
+	     Pflegeseite der Schlagworte. Bis zum 29.09.2026 stand hier ein eigener Balken oben. -->
+	{#if selectedExemplare.size > 0 && darfBearbeiten}
+		<AuswahlLeiste
+			satz="{selectedExemplare.size} markiert"
+			beschriftung="Aktionen für die markierten Exemplare"
+			onleeren={() => selectedExemplare.clear()}
+		>
+			{#if selectedExemplare.size < exemplare.length}
+				<Button variant="ghost" onclick={alleAuswaehlen}>Alle auswählen</Button>
+			{/if}
+			<Button onclick={() => (eigentumOffen = true)}>Eigentum ändern</Button>
+			{#if darfLoeschen}
+				<Button variant="danger" onclick={deleteSelectedCopies}>
+					<Trash2 class="h-4 w-4" aria-hidden="true" />
+					Löschen
+				</Button>
+			{/if}
+		</AuswahlLeiste>
+	{/if}
 {/if}
+
+<ExemplarEigentumDialog
+	open={eigentumOffen}
+	exemplarIds={Array.from(selectedExemplare)}
+	onclose={() => (eigentumOffen = false)}
+	onGeaendert={eigentumGeaendert}
+/>

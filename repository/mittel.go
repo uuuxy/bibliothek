@@ -42,6 +42,13 @@ func MittelGueltig(mittel string) bool {
 // nie über dieses System bestellt wurde.
 const ExemplarTopfSQL = `COALESCE(` + ExemplarTopfBelegtSQL + `, CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END)`
 
+// ExemplarTopfHerkunftSQL sagt, woher ExemplarTopfSQL seinen Wert nimmt: 'littera' oder 'hand'
+// (Eigentum am Exemplar, Quelle aus Migration 151), 'bestellung' oder 'vorgabe' (die
+// Faustregel aus dem Titel). Die Buchakte nennt es neben dem Eigentum. Dieselbe Reihenfolge wie
+// ExemplarTopfSQL, dieselben Aliasse.
+const ExemplarTopfHerkunftSQL = `CASE WHEN e.eigentum IS NOT NULL THEN e.eigentum_quelle ` +
+	`WHEN bv_topf.mittel IS NOT NULL THEN 'bestellung' ELSE 'vorgabe' END`
+
 // ExemplarTopfBelegtSQL ist der Teil von ExemplarTopfSQL, der auf einem Beleg steht: das
 // Eigentum am Exemplar oder der Topf seiner Bestellung. NULL, wo es beides nicht gibt. Das
 // Zugangsbuch liest nur diesen Teil — es weist nach, aus welchem Geld ein Buch kam, und die

@@ -478,8 +478,16 @@ func TestEigentumsvermerkKommtMit(t *testing.T) {
 		t.Errorf("der Wortlaut eines unbekannten Vermerks steht im Protokoll:\n%s", log)
 	}
 
-	// Die Datenbank hält das Vokabular (chk_exemplar_eigentum).
-	if _, err := pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'stadt'`); err == nil {
-		t.Error("eigentum = 'stadt' wurde angenommen — die Bedingung chk_exemplar_eigentum fehlt")
+	// Wer Eigentum setzt, nennt die Quelle (Migration 151): littera, sonst keine.
+	if n := zaehle(t, pool, `SELECT count(*) FROM buecher_exemplare
+		WHERE (eigentum IS NOT NULL AND eigentum_quelle = 'littera') OR (eigentum IS NULL AND eigentum_quelle IS NULL)`); n != 5 {
+		t.Errorf("Quelle des Eigentums: %d von 5 Exemplaren stimmen", n)
+	}
+
+	// Die Datenbank hält das Vokabular (chk_exemplar_eigentum). Mit Quelle, damit allein diese
+	// Bedingung greifen kann und nicht die Kopplung aus Migration 151.
+	_, err = pool.Exec(ctx, `UPDATE buecher_exemplare SET eigentum = 'stadt', eigentum_quelle = 'littera'`)
+	if err == nil || !strings.Contains(err.Error(), `"chk_exemplar_eigentum"`) {
+		t.Errorf("eigentum = 'stadt' — erwartet die Abweisung durch chk_exemplar_eigentum, war: %v", err)
 	}
 }

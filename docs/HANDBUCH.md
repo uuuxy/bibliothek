@@ -100,6 +100,14 @@ beides einstellbar (_Datenschutz & Sitzung_).
   beschädigt, tragen Sie im Zustands-Dialog einen Prozentwert ein (z. B. 20 % für einen
   Wasserschaden): Er mindert jeden künftigen Ersatzbetrag, zieht das Buch aber nicht aus
   dem Verkehr. Erfasst wird das nach der Rückgabe hier, nicht an der Theke. (§14)
+  Darunter steht, **wem das Exemplar gehört** — Land oder Schulträger — und woher die Angabe
+  kommt: laut Littera, von Hand gesetzt, aus der Bestellung oder als Vorgabe aus dem Titel
+  (Lernmittel → Land). Danach richten sich der Vermerk auf dem Etikett, die Bestandsbücher
+  und beim Schadensersatz, an wen gezahlt wird und nach welcher Regel der Betrag
+  vorgeschlagen wird. Ändern: Exemplare ankreuzen (in der Leiste unten auch _Alle
+  auswählen_), dann _Eigentum ändern_ — Land, Schulträger oder _Vorgabe_ (nimmt die Angabe am
+  Exemplar wieder weg), mit Grund; jede Änderung steht im Protokoll. Einen Littera-Vermerk,
+  den das Programm nicht zuordnet (etwa „Förderverein"), zeigt die Zeile mit an.
 - **Titel-Verwaltung**: neuen Titel anlegen (ISBN-Eingabe holt Metadaten und schlägt eine
   Signatur vor — vor dem Speichern prüfen), bearbeiten, Cover tauschen,
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben

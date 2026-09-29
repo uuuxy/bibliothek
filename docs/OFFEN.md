@@ -77,7 +77,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt das Eigentum je Exemplar (4.24, freigegeben am
-   29.09.2026 in drei Stufen; Stufe 1 und 2 gebaut, Stufe 3 mit Beschreibung vorab).
+   29.09.2026 in drei Stufen, alle drei gebaut; offen die Frage an die Bücherei).
    Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
@@ -274,15 +274,16 @@ Stufe 2 — dieselbe Regel im Zugangsbuch (nur der belegte Teil, `ExemplarTopfBe
 Abgangsbuch und beim Schadensersatz: wem die Forderung zusteht, welcher Zahlungsweg im Brief
 steht und nach welcher Regel der Betrag vorgeschlagen wird (entschieden am 29.09.2026: Buch
 des Landes → Staffel der Arbeitshilfe, sonst Neuwert; Littera rechnet keinen Betrag aus).
+Stufe 3 (Migration 151) — die Exemplarkarte der Buchakte zeigt Eigentum und Herkunft, markierte
+Exemplare bekommen es über „Eigentum ändern" mit Grund und Protokoll
+(`PUT /api/exemplare/eigentum`, `eigentum_quelle` littera oder hand).
 
 **Offen:**
 
-- **Stufe 3 — Oberfläche:** Die Exemplarkarte zeigt das Eigentum und seine Herkunft (aus Littera,
-  aus der Bestellung, Vorgabe); ändern einzeln und für mehrere Exemplare eines Titels, wie
-  Littera „Exemplardaten anpassen". Vorher Beschreibung und M3-Nachweis.
 - **Bei der Schule:** die Zuordnung der fünf seltenen Vermerke (Schule 355, Bibliothek 157,
   Förderverein 86, Info Schulprojekt 31, Dauerleihgabe 4). Bis dahin kommen sie nur als Wortlaut
-  mit, und es gilt die Faustregel. Die Zuordnung steht an einer Stelle (`vermerkeLittera`).
+  mit, und es gilt die Faustregel. Die Zuordnung steht an einer Stelle (`vermerkeLittera`);
+  nach der Übernahme lassen sich einzelne Titel auch in der Buchakte setzen (_Eigentum ändern_).
 
 ---
 

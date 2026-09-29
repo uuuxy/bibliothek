@@ -57,6 +57,9 @@ func (s *Server) registerBookRoutes(mux *http.ServeMux, bookRepo repository.Book
 	// Der Weg zurück nach Papierstau oder zu weitem Altbestands-Stichtag.
 	mux.Handle("POST /api/exemplare/etiketten-zuruecksetzen", s.RequirePermission("edit_books")(s.EtikettenZuruecksetzenHandler()))
 	mux.Handle("POST /api/exemplare/etiketten-altbestand", s.RequirePermission("edit_books")(s.EtikettenAltbestandHandler()))
+	// Eigentum markierter Exemplare (4.24, Stufe 3): edit_books wie Barcode und Status, Grund
+	// Pflicht, jede Änderung im Protokoll.
+	mux.Handle("PUT /api/exemplare/eigentum", s.RequirePermission("edit_books")(s.ExemplarEigentumHandler()))
 
 	// Das Abgangsbuch: welche Exemplare in einem Zeitraum aus dem Bestand gingen
 	// (Protokoll des Medienzentrums vom 16.09.2026, Punkt 1). view_books wie der übrige
