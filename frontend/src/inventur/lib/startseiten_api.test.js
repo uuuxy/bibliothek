@@ -31,6 +31,55 @@ const bestand = [
 	buch({ title: 'Hörbuch', subject: 'Englisch', medientyp: 'CD', verfuegbar: 1, gesamt: 1 })
 ];
 
+describe('buecherSuchen', () => {
+	const katalog = [
+		buch({ title: 'Mathematik 1', subject: 'Mathematik', gradeLevel: 5 }),
+		buch({ title: 'Politik und Wirtschaft', subject: 'PoWi', gradeLevel: 10 }),
+		buch({ title: 'Englisch G21', author: 'Schwarz', isbn: '978-3-06-031306-8' }),
+		buch({ title: 'Biologie heute', istLernmittel: true }),
+		buch({ title: 'Chemie', jahrgangVon: 8, jahrgangBis: 10 })
+	];
+	const finde = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
+
+	it('gibt bei leerer Suche alle Bücher zurück', () => {
+		expect(buecherSuchen(katalog, '').length).toBe(katalog.length);
+		// @ts-expect-error null statt einer Liste: Die Suche liefert dann eine leere Liste.
+		expect(buecherSuchen(null, '')).toEqual([]);
+	});
+
+	it('findet Bücher über Autor, Titel, Fach', () => {
+		expect(finde('schwarz')).toEqual(['Englisch G21']);
+		expect(finde('mathe')).toEqual(['Mathematik 1']);
+	});
+
+	it('nutzt Synonyme für die Suche', () => {
+		// 'powi' sucht nach 'politik' -> findet "Politik und Wirtschaft"
+		expect(finde('powi')).toEqual(['Politik und Wirtschaft']);
+	});
+
+	it('findet über Jahrgangsstufe (gradeLevel) oder Spanne (jahrgangVon-Bis)', () => {
+		expect(finde('10')).toEqual(['Politik und Wirtschaft', 'Chemie']);
+		expect(finde('5')).toEqual(['Mathematik 1']);
+	});
+
+	it('ignoriert Füllwörter wie Klasse oder Jg bei Zahlensuche', () => {
+		expect(finde('10. klasse')).toEqual(['Politik und Wirtschaft', 'Chemie']);
+		// Nur „Chemie" (Jahrgang 8 bis 10) ist hier gemeint. Dass eine einzelne Ziffer auch jede
+		// ISBN trifft, die sie enthält, ist ein Fehler (docs/OFFEN.md 5.34) — nicht festgehalten.
+		expect(finde('jg. 8')).toContain('Chemie');
+	});
+
+	it('findet über ISBN (mit und ohne Striche, alte 10-stellige)', () => {
+		expect(finde('9783060313068')).toEqual(['Englisch G21']);
+		expect(finde('978-3-06-031306-8')).toEqual(['Englisch G21']);
+		expect(finde('306031306X')).toEqual(['Englisch G21']);
+	});
+
+	it('findet über Eigenschaft Lernmittel', () => {
+		expect(finde('lernmittel')).toEqual(['Biologie heute']);
+	});
+});
+
 describe('buecherSuchen: Signatur', () => {
 	it('findet ein Buch über seine Signatur (Regaladresse)', () => {
 		expect(buecherSuchen(bestand, 'goe').map((b) => b.title)).toEqual(['Faust']);

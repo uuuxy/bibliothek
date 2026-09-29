@@ -32,4 +32,18 @@ describe('buch_form_optionen: Mehrjahresband', () => {
 			expect(mehrjahresbandHinweis(true, von, bis)).toMatch(/^Braucht eine Spanne/);
 		}
 	});
+
+	it('an: akzeptiert auch Strings aus HTML-Eingabefeldern', () => {
+		const hinweis = mehrjahresbandHinweis(true, '5', '10');
+		expect(hinweis).toContain('bis zum Ende von Jahrgang 10');
+		expect(hinweis).toContain('Kind der 5');
+		expect(hinweis).toContain('nach 6 Schuljahren');
+	});
+
+	it('an: erlaubt die maximale Spanne von Jahrgang 1 bis 13', () => {
+		const hinweis = mehrjahresbandHinweis(true, 1, 13);
+		expect(hinweis).toContain('bis zum Ende von Jahrgang 13');
+		expect(hinweis).toContain('Kind der 1');
+		expect(hinweis).toContain('nach 13 Schuljahren');
+	});
 });

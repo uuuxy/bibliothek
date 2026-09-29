@@ -702,6 +702,19 @@ Fragen oben beantwortet sind.
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
 
+### 5.34 Die Suche im Medienkatalog nach einer Klasse trifft jede ISBN mit dieser Ziffer
+
+Gefunden am 29.09.2026 bei der Durchsicht von PR #687, an `buecherSuchen`
+(`frontend/src/inventur/lib/startseiten_api.js`, Medienkatalog → Suche & Filter) nachgestellt.
+Jeder Suchbegriff wird auch als Teilstück der ISBN gesucht, eine einzelne Ziffer eingeschlossen.
+„Klasse 7", „Jg. 8" und „9" treffen damit jedes Buch mit einer ISBN-13 (sie beginnen mit 978),
+„Klasse 5" jedes, dessen ISBN eine 5 enthält — neben den Büchern des Jahrgangs. Gemessen an vier
+Büchern (Jahrgang 5, Jahrgang 9, zwei ohne Jahrgang, drei mit ISBN): „Klasse 7" fand die drei mit
+ISBN, richtig wären keine. Der Fehler ist sichtbar, die Liste ist zu lang. Vorschlag: Eine Zahl,
+die als Jahrgang gelesen wird (höchstens zwei Ziffern), sucht nicht in der ISBN; die Suche nach
+einer ganzen ISBN und ihren Schreibweisen (`isbnFormen`) bleibt. Der Test in
+`startseiten_api.test.js` hält den Fehltreffer bewusst nicht fest.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
