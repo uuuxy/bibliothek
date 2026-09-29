@@ -78,7 +78,8 @@ Reihenfolge unter 1. die vom 29.09.2026):
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt das Eigentum je Exemplar (4.24, freigegeben am
    29.09.2026 in drei Stufen, alle drei gebaut; offen die Frage an die Bücherei).
-   Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21
+   Dann 5.18 (Klassen und Lesergruppen als Stammdaten, entschieden am 29.09.2026; vor dem
+   Bau Messung und Stufenplan), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
@@ -480,9 +481,40 @@ Kürzel, Bezeichnung und Art (Schüler oder Kollegium) — auch Fachbereiche, Pr
 steht dafür schon eine Tabelle `lesergruppen` (`kuerzel`, `bezeichnung`), die kein Go-Code liest
 oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*)` am Testserver).
 
-**Reihenfolge entschieden am 28.09.2026:** nach dem Umstieg, an der Stelle im Plan oben. Der
-Umstieg hängt nicht daran: Seit dem 28.09.2026 übernimmt der Lauf jeden Leser und schreibt die
-Littera-Gruppe als Warnung ins Protokoll ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
+**Entschieden am 29.09.2026 (Frage-Runde; ersetzt die Reihenfolge vom 28.09.2026 und das
+„umbenennen in …" vom 24.09.2026):**
+
+- **Vor dem Umstieg bauen.** Die Übernahme läuft einmal; gibt es die Lesergruppen, bringt sie die
+  Littera-Gruppen der Sonderkonten mit, statt sie nur als Warnung ins Protokoll zu schreiben
+  ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
+- **Klasse überall aus der Liste** — Leserakte, „Manuell eingeben" bei der Neuanlage,
+  Klassensatz-Reservierung im Portal, Zuordnung im Mahnwesen. Eine neue Klasse entsteht nur nach
+  Rückfrage („Klasse 5f gibt es noch nicht — anlegen?"), im Portal gar nicht, oder durch den
+  LUSD-Import. Wie Littera: Die Untergruppe wird nur aus der Liste gewählt.
+- **Drei getrennte Aktionen** wie FOLIO (Patron groups: löschen nur mit 0 Nutzern, Wechsel per
+  Sammeländerung „Select the new patron group from the menu"), Koha und die Schlagwort-Pflege:
+  Umbenennen (nur auf einen neuen Namen, sonst Abweisung), Zusammenlegen (Ziel aus der Liste,
+  vorher die Zahlen der wandernden Schüler, Klassensätze, Zuordnungen, Reservierungen,
+  LMF-Termine), Löschen (nur ohne Verweis); jede Änderung im Protokoll. Grund: Ein vertippter
+  neuer Name, der eine vorhandene Klasse trifft, legte sonst still zwei Klassen zusammen.
+- **Keine Obergruppen von Hand.** Die Seite ordnet unter Förderstufe, Hauptschulzweig,
+  Realschulzweig, Gymnasialzweig, Oberstufe und „Kollegium und Sonderkonten" — aus dem
+  Klassennamen (Klassenschema, wie Portal-Filter und Ausweis-Gültigkeit) bzw. aus der Art. Die
+  Statistik zählt nach denselben Überschriften. In Littera waren die Obergruppen dieser Schule
+  genau diese Zweige und Personenarten (Sicherung 2010: 14 Obergruppen, 119 Untergruppen, keine
+  Preise daran); `Leser_UG.VorrNach` („vorrücken nach") übernimmt bei uns die Versetzung.
+- **Kollegium ohne Pflichtgruppe.** Lehrkräfte und LiV sind über ihre Art eingeordnet;
+  Lesergruppen nur für Sonderkonten (Fachbereich, Praktikum, U-plus, Sekretariat). „Lehrer" und
+  „Lehrerin" aus Littera werden nicht als Gruppe übernommen — sie tragen das Geschlecht, das das
+  Programm nicht speichert, und die Art steht schon an jeder Person.
+- Weiter gilt vom 24.09.2026: Pflegeseite unter Einstellungen → LUSD & Versetzung, `klassen`
+  wird die eine Liste für alle Auswahllisten, der LUSD-Import legt neue Klassen an, und wer
+  Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit. Vom 28.09.2026: Gruppen mit
+  Kürzel, Bezeichnung und Art.
+
+**Nächster Schritt:** Messung am Testserver (lesend, Einzeiler unten), dann Stufenplan und
+Beschreibung der Pflegeseite zur Freigabe, erst dann bauen.
+`ssh 46.62.140.190 'docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM lesergruppen) AS lesergruppen, (SELECT count(*) FROM klassen) AS klassen, (SELECT count(*) FROM klassen k WHERE NOT EXISTS (SELECT 1 FROM leser l WHERE l.klasse = k.name)) AS klassen_ohne_leser, (SELECT count(DISTINCT klasse) FROM leser WHERE klasse IS NOT NULL) AS klassen_an_lesern, (SELECT count(*) FROM leser WHERE art <> '"'"'schueler'"'"' AND klasse IS NOT NULL) AS kollegium_mit_klasse;"'`
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
