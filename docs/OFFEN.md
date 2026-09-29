@@ -73,13 +73,13 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Was still jemandem schaden kann (entschieden am 28.09.2026, nach der Regel unten „kann das
-   still jemandem schaden?"): das Gate gegen Leser-Werte im Protokoll (5.10), die zwei Fristen
-   aus 5.19 (gelöschte Kollegen, Klassensatz-Reservierungen; entschieden am 28.09.2026), aus
-   5.19 die Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei. Danach die zwei
-   kleinen Umbauten 8.7 (Verlängerung beim Schulbuch) und 8.8 (Abholfrist), entschieden am
-   28.09.2026, der Eigentumsvermerk je Exemplar aus Littera (4.24) und zusätzlich 12 wöchentliche
-   Stände der Sicherung (5.30). Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche),
-   dann 5.21 (Palettenfarben, Bildschirm für Bildschirm).
+   still jemandem schaden?"): die zwei Fristen aus 5.19 (gelöschte Kollegen,
+   Klassensatz-Reservierungen; entschieden am 28.09.2026), aus 5.19 die Auskunft bei gelöschtem
+   Konto und der Kollege über die Leserdatei. Danach die zwei kleinen Umbauten 8.7 (Verlängerung
+   beim Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026, der Eigentumsvermerk je
+   Exemplar aus Littera (4.24) und zusätzlich 12 wöchentliche Stände der Sicherung (5.30). Dann
+   5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben,
+   Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -421,18 +421,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 ### 5.10 Gates und Werkzeuge
 
-- **Kein Gate gegen Leser-Werte im Protokoll, die die Tilgung nicht kennt** (entschieden am
-  24.09.2026: bauen, nach dem Pflegekonzept). Dreimal derselbe Fehler: LUSD-ID (6d01f27a,
-  August), Ausweisnummer (131a534a, 02.09.2026), Sperrgrund (5b50202d, 24.09.2026). Jedes Mal
-  kam ein Wert der Leserzeile oder ein Freitext neben `schueler_id` in `audit_logs`, und die
-  Tilgung entfernte ihn nicht (im August fehlte der Schritt für `audit_logs` noch ganz). Die
-  Rundreise
-  (`api/dsgvo_paar_rundreise_pg_test.go`) sieht nur Werte, die sie selbst anlegt. Vorschlag:
-  eine Ratsche über jeden Audit-Eintrag mit `schueler_id`, die jeden weiteren Schlüssel als
-  „getilgt" oder „bleibt" eingeordnet verlangt; die Liste „getilgt" muss mit der Anweisung
-  übereinstimmen. Ausgangspunkt: Die Suche nach `"schueler_id":` findet am 24.09.2026 zehn
-  Stellen in `api/` und `internal/`, als Map-Literal und als JSON-Text. Ob das alle Schreiber
-  sind, ist nicht geprüft; das klärt der Bau.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
