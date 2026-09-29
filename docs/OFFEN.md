@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 28.09.2026
+Stand: 29.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -59,7 +59,7 @@ entfallen.
      kein Vermerk). Littera führt den Vermerk je Exemplar: In der Medienliste vom 12.06.2026
      tragen über 13.000 Exemplare das Land, 2.942 den Schulträger, einige hundert andere
      Eigentümer (Schule, Förderverein, Bibliothek), rund 50.000 keinen. Zum Ablesen ein Buch
-     nehmen, das dort den Schulträger trägt.
+     nehmen, das dort den Schulträger trägt. Ob der Vermerk je Exemplar mitkommt: 4.24.
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
@@ -247,6 +247,38 @@ Titeldaten und Cover (`pkg/coverquelle`), für Updates GitHub, Docker Hub und di
 (`Dockerfile`, `update.sh`). Eine Aufstellung für den Schulträger entsteht nicht (entschieden am
 28.09.2026).
 
+### 4.24 Eigentumsvermerk je Exemplar aus Littera
+
+Littera führt das Eigentum am Exemplar, in der Spalte `Exemplar.Eigentumsvermerk` (Freitext, 50
+Zeichen). Die Übernahme (`internal/littera`) liest sie nicht, und
+[littera_schema_befund.md](littera_schema_befund.md) nennt sie nicht unter „Was NICHT übernommen
+wird" — entschieden ist das also nicht.
+
+Gezählt in der Sicherung von 2010 am 29.09.2026 (`mdb-export`, nur Zählungen, Signatur des
+Exemplars: `Sig1` beginnt mit „LMF" oder nicht), 61.580 Exemplare:
+
+| Vermerk                                                                | LMF-Signatur | andere |
+| ---------------------------------------------------------------------- | -----------: | -----: |
+| Land                                                                   |       10.193 | 19.882 |
+| Schulträger                                                            |          516 |  7.268 |
+| Schule                                                                 |          112 |    581 |
+| Förderverein                                                           |            0 |    171 |
+| weitere (Verein, Projekt, Bibliothek, Dauerleihgabe, ein Personenname) |            0 |     76 |
+| keiner                                                                 |       13.909 |  8.872 |
+
+Das Programm leitet das Eigentum im Altbestand aus `ist_lernmittel` ab (`ExemplarTopfSQL`), und
+die Übernahme setzt `ist_lernmittel` aus der LMF-Signatur (`pkg/lmf.Zerlege`). Nach dieser Regel
+gehörten die 19.882 Exemplare, die Littera dem Land zuschreibt, dem Schulträger, und die 516
+umgekehrt. Daran hängen der Vermerk auf einem neuen Etikett und, ob für ein verlorenes Buch ein
+Bescheid an das Land geht (5.4, „Topf einer Forderung"). In der Medienliste vom 12.06.2026 tragen
+16.878 von 67.109 Exemplaren einen Vermerk; die Sicherung von 2026 ist ohne Kennwort nicht lesbar
+(7.2).
+
+**Zu entscheiden vor der Übernahme**, denn sie läuft einmal: ob der Vermerk je Exemplar mitkommt.
+Vorschlag: mitnehmen, als eigenes Feld am Exemplar, zunächst ohne Wirkung auf Topf und Etikett.
+Offen bei der Schule: was „Land" an einem Buch ohne LMF-Signatur bedeutet. Der eine Personenname
+wäre ein Personendatum in einem Bestandsfeld.
+
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
@@ -299,7 +331,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   binnen 14 Tagen weiterleiten, [mittel_konzept.md](mittel_konzept.md) 1.1). Der Hinweis
   „bereits bezahlt" nennt dann, wann und wie; an ihm zeigt sich eine doppelte Zahlung.
 - **Topf einer Forderung, eine Regel:** Der Bescheid nimmt `ist_lernmittel` am Titel, das
-  Eigentum den Topf der Bestellung (`ExemplarTopfSQL`). Beim Altbestand ist das dasselbe; bei
+  Eigentum den Topf der Bestellung (`ExemplarTopfSQL`). Beim Altbestand ist das dasselbe (Littera
+  führt das Eigentum anders, 4.24); bei
   einem aus dem anderen Topf bestellten Exemplar ginge das Geld an den, dem das Buch nicht gehört.
   Vorher am Testserver zählen (lokal 0):
   `SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id JOIN bestellungen_verlauf bv ON bv.id = e.bestellung_id WHERE bv.mittel <> CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END;`
@@ -1057,9 +1090,12 @@ nachgesehen am 28.09.2026).
 
 **Entschieden am 28.09.2026: drei Tage, das Ende fällt wie bei der Leihfrist auf den nächsten
 Schultag;** keine neue Einstellung. Folge: Kommt ein Buch kurz vor den Ferien zurück, liegt es bis
-nach den Ferien bereit. Nicht gebaut: Beide Stellen rechnen heute selbst
-(`INTERVAL '3 days'` in `loan_return.go` und `vormerkung_nachruecken.go`); beim Bau eine Regel
-über `Tagesfrist` für beide, mit Test über ein Wochenende und über Ferien.
+nach den Ferien bereit. Nicht gebaut: Die drei Tage stehen zweimal im Code (`INTERVAL '3 days'`
+in `loan_return.go` und in `bedieneNaechstenWartenden`, `vormerkung_nachruecken.go`). Gesetzt wird
+die Frist bei der Rückgabe und über `bedieneNaechstenWartenden` im Verfall-Lauf, beim Löschen
+einer Vormerkung von Hand und bei der Spuren-Tilgung. `Tagesfrist` liegt in `internal/service`
+und braucht die Sommerferien aus den Einstellungen; `repository` erreicht es nicht. Beim Bau die
+Regel eine Schicht tiefer, mit Test über ein Wochenende, über Ferien und über den Verfall-Lauf.
 
 ---
 
