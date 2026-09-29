@@ -47,7 +47,7 @@ type WartenderBezug struct {
 	Wer       string // Schülername, Klasse oder Klassensatz-Name
 	Status    string
 	Seit      string
-	SchuelerD *string // gesetzt bei Vormerkungen: Schlüssel für die Lesehistorie-Befristung
+	SchuelerD *string // gesetzt bei Vormerkungen: Schlüssel, an dem die Tilgung den Namen (betrifft) findet
 	Kontext   string
 }
 

@@ -715,6 +715,33 @@ die als Jahrgang gelesen wird (höchstens zwei Ziffern), sucht nicht in der ISBN
 einer ganzen ISBN und ihren Schreibweisen (`isbnFormen`) bleibt. Der Test in
 `startseiten_api.test.js` hält den Fehltreffer bewusst nicht fest.
 
+### 5.35 Protokolleinträge zu Lesern, die die Tilgung noch nicht erreicht
+
+Gefunden beim Bau des Gates aus 5.10 am 29.09.2026. Behoben ist am selben Tag die Löschspur
+eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `beschreibung`,
+`betrifft`) fallen jetzt mit der Anonymisierung und dem endgültigen Löschen
+(`api/titel_loeschspur_tilgung_pg_test.go`). Offen:
+
+- **Einträge zu Lesern, die schon endgültig gelöscht sind.** Der Nachtlauf räumt nur Einträge
+  zu anonymisierten Lesern, die noch in der Tabelle stehen. Wer vor dem Einspielen endgültig
+  gelöscht wurde, behält in der Löschspur Name oder Freitext bis zur Audit-Aufbewahrung. Der
+  Schulserver beginnt leer (Neuaufbau), betroffen ist nur der Testserver. Erst messen, dann wie
+  Migration 147 bereinigen:
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM audit_log a WHERE a.details ?| ARRAY['schuldner','beschreibung','betrifft'] AND a.details ? 'schueler_id' AND NOT EXISTS (SELECT 1 FROM leser l WHERE l.id::text = lower(a.details->>'schueler_id'));"`
+- **Einträge, die einen Leser nur über seine Forderung meinen.** Das Stornieren einer Forderung
+  schreibt `grund` in die Datensatz-Historie (`tabelle = 'schadensfaelle'`, Kennung der
+  Forderung, ohne `schueler_id`), ebenso das Stornieren bei der Rückgabe
+  (`repository/bescheid_rueckkehr.go`). Die Tilgung findet solche Einträge nicht. Ob in diesem
+  Grund Personenbezug steht, ist nicht nachgestellt.
+- **Frage: Gilt für die Löschspur von Forderung und Vormerkung die Lesehistorie-Frist?** Die
+  Ausleihspur eines gelöschten Titels verliert Kennung und Namen nach der Lesehistorie-Frist
+  der Schülerbücherei (`tabelle = 'ausleihen'`; das Exemplar gibt es nicht mehr, es zählt als
+  Nicht-Lernmittel). Die Spuren von Forderung und Vormerkung behalten die Kennung bis zur
+  Anonymisierung, sonst bis zur Audit-Aufbewahrung (24 Monate). Die Kommentare in beiden
+  Löschwegen hatten 90 Tage angenommen; zu den Nachbuch-Meldungen steht in
+  `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
+  binden".
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)

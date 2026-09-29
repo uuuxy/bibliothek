@@ -269,9 +269,11 @@ func loescheSchaedenMitSpur(ctx context.Context, tx pgx.Tx, ids []string) ([]off
 }
 
 // protokolliereOffeneSchaeden hält jede offene Forderung fest, bevor sie mit dem Titel
-// fällt: Wer schuldet wie viel, wofür, seit wann. Wie bei den offenen Ausleihen ist
-// `schueler_id` nicht nur Information, sondern der Schlüssel, an dem die
-// Lesehistorie-Befristung die Zeile findet.
+// fällt: Wer schuldet wie viel, wofür, seit wann. `schueler_id` ist nicht nur Information,
+// sondern der Schlüssel, an dem die Tilgung die Zeile findet — beim Anonymisieren fallen
+// schuldner und beschreibung (repository.spurTilgungen). Anders als bei den offenen
+// Ausleihen erreicht die Lesehistorie-Befristung diese Zeile nicht; sie arbeitet nur auf
+// tabelle = 'ausleihen'.
 func protokolliereOffeneSchaeden(ctx context.Context, tx pgx.Tx, offene []offenerSchaden) error {
 	for _, o := range offene {
 		inhalt := map[string]any{

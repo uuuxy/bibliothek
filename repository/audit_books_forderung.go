@@ -18,9 +18,11 @@ import (
 // protokolliereOffeneForderungen hält jede unbezahlte, nicht stornierte Forderung der
 // Exemplare dieses Titels fest — in derselben Transaktion, direkt vor dem DELETE.
 //
-// `schueler_id` ist nicht nur Information, sondern der Schlüssel, an dem die
-// Lesehistorie-Befristung die Zeile findet (repository/loeschfristen.go verlangt
-// `details ? 'schueler_id'`); ohne ihn stünde der Klarname 24 Monate hier statt 90 Tage.
+// `schueler_id` ist nicht nur Information, sondern der Schlüssel, an dem die Tilgung die
+// Zeile findet: Beim Anonymisieren und beim endgültigen Löschen fallen schuldner und
+// beschreibung (protokollSchluesselMitPersonenbezug). Die Lesehistorie-Befristung erreicht
+// die Zeile nicht, sie arbeitet nur auf tabelle = 'ausleihen'; bis dahin gilt die
+// Audit-Aufbewahrung (24 Monate).
 func protokolliereOffeneForderungen(ctx context.Context, tx pgx.Tx, titelID string) error {
 	rows, err := tx.Query(ctx, `
 		SELECT sf.id, e.id, e.barcode_id,

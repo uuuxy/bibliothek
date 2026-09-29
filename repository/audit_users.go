@@ -544,24 +544,31 @@ var spurTilgungen = []SpurTilgung{
 			WHERE tabelle = 'ausleihen' AND details->>'schueler_id' = ANY($1::text[])`,
 	},
 	{
+		// Name und Freitext, die neben der Kennung des Lesers in der Datensatz-Historie
+		// stehen: die Spur einer offenen Forderung oder Vormerkung, deren Titel gelöscht wurde
+		// (schuldner, beschreibung, betrifft). Die Einträge bleiben als Beleg, die Kennung ist
+		// danach ein Pseudonym. Bis zum 29.09.2026 fehlte diese Anweisung; die
+		// Lesehistorie-Befristung erreicht diese Zeilen nicht (sie arbeitet nur auf
+		// tabelle = 'ausleihen'). api/titel_loeschspur_tilgung_pg_test.go.
+		Beschreibung: "audit_log (Personenbezug neben der Leserkennung)",
+		sql:          tilgePersonenbezugImProtokoll("audit_log"),
+	},
+	{
 		// Die staatliche LUSD-ID (LUSD_ID_NACHGETRAGEN) und die Ausweis-Barcodes
-		// (SCHUELER_ZUSAMMENGEFUEHRT, Tresen-Auskunft): Nur die PII-Schlüssel fallen;
-		// Aktion, Zeit und schueler_id (nach Anonymisierung ein Pseudonym) bleiben für
-		// die Rechenschaftspflicht erhalten. Der Barcode gehört dazu, weil die anonyme
-		// Hülle einen ANON-Barcode bekommt, damit die physische Karte nicht mehr aufgeht —
-		// im Verwaltungsprotokoll stand die alte Nummer sonst bis zu 24 Monate neben der
-		// UUID (Rasterdurchgang 02.09.2026).
+		// (SCHUELER_ZUSAMMENGEFUEHRT): Nur die Schlüssel mit Personenbezug fallen; Aktion,
+		// Zeit und schueler_id (nach Anonymisierung ein Pseudonym) bleiben für die
+		// Rechenschaftspflicht erhalten. Der Barcode gehört dazu, weil die anonyme Hülle
+		// einen ANON-Barcode bekommt, damit die physische Karte nicht mehr aufgeht — im
+		// Verwaltungsprotokoll stand die alte Nummer sonst bis zu 24 Monate neben der UUID
+		// (Rasterdurchgang 02.09.2026).
 		// Der Grund einer Sperre ebenso: Die Anonymisierung ersetzt block_reason, weil er
 		// andere Personen nennen kann, und die Sperr-Tür schreibt ihn als grund ins Protokoll
 		// (LESER_GESPERRT, LESER_ENTSPERRT), das Übergehen an der Theke bis zum 24.09.2026 als
 		// reason (OVERRIDE_BLOCK). Rasterdurchgang 24.09.2026,
-		// api/sperrgrund_tilgung_pg_test.go.
-		Beschreibung: "audit_logs (LUSD-ID, Barcodes, Sperrgrund)",
-		sql: `UPDATE audit_logs
-			SET details = details - 'lusd_id' - 'barcode' - 'aufgeloest_barcode' - 'grund' - 'reason'
-			WHERE (details ? 'lusd_id' OR details ? 'barcode' OR details ? 'aufgeloest_barcode'
-			       OR details ? 'grund' OR details ? 'reason')
-			  AND details->>'schueler_id' = ANY($1::text[])`,
+		// api/sperrgrund_tilgung_pg_test.go. Die Schlüssel stehen seit dem 29.09.2026 in
+		// protokollSchluesselMitPersonenbezug, eine Liste für beide Protokolle.
+		Beschreibung: "audit_logs (Personenbezug neben der Leserkennung)",
+		sql:          tilgePersonenbezugImProtokoll("audit_logs"),
 	},
 	{
 		// Schadensfall-Freitext (entschieden am 16.09.2026, OFFEN.md 4.15): Der FALL bleibt
