@@ -40,7 +40,13 @@ func MittelGueltig(mittel string) bool {
 // Anders als beim Bestellen wird hier aus dem Titel abgeleitet: Dort wäre ein Fallback die
 // stille Zuordnung zum falschen Topf, hier ist er die einzige Auskunft über ein Buch, das
 // nie über dieses System bestellt wurde.
-const ExemplarTopfSQL = `COALESCE(e.eigentum, bv_topf.mittel, CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END)`
+const ExemplarTopfSQL = `COALESCE(` + ExemplarTopfBelegtSQL + `, CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END)`
+
+// ExemplarTopfBelegtSQL ist der Teil von ExemplarTopfSQL, der auf einem Beleg steht: das
+// Eigentum am Exemplar oder der Topf seiner Bestellung. NULL, wo es beides nicht gibt. Das
+// Zugangsbuch liest nur diesen Teil — es weist nach, aus welchem Geld ein Buch kam, und die
+// Faustregel aus dem Titel ist dafür kein Nachweis. Dieselben Aliasse wie ExemplarTopfSQL.
+const ExemplarTopfBelegtSQL = `COALESCE(e.eigentum, bv_topf.mittel)`
 
 // ExemplarTopfJoin hängt die Bestellung des Exemplars an, aus der ExemplarTopfSQL liest.
 const ExemplarTopfJoin = `LEFT JOIN bestellungen_verlauf bv_topf ON bv_topf.id = e.bestellung_id`

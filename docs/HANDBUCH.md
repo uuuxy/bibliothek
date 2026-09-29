@@ -514,8 +514,9 @@ Was noch im Zulauf steht, gehört nicht in den Nachweis: Es liegt noch beim Hän
 **Was nicht auf dem Blatt steht, steht ausdrücklich darunter:** Exemplare, die vor der
 Einführung der Bestandsbücher ausgesondert wurden, tragen kein Abgangsdatum — ihre Zahl
 nennt der Ausdruck, statt Vollständigkeit zu behaupten. Im Zugangsbuch stehen Bücher ohne hinterlegte
-Bestellung unter „ohne Zuordnung", weil nicht belegt ist, aus welchem Geld sie bezahlt
-wurden. (§13)
+Bestellung und ohne Eigentumsangabe am Buch unter „ohne Zuordnung", weil nicht belegt ist,
+aus welchem Geld sie bezahlt wurden. Bücher aus Littera mit dem Vermerk „Land Hessen" oder dem
+des Schulträgers stehen im jeweiligen Abschnitt. (§13)
 
 ## Bestellberichte
 

@@ -268,16 +268,17 @@ Exemplar, Sammeländerung), Koha („Source of acquisition" aus einer Werteliste
 (Kostenart und Kostenstelle aus gepflegten Wertetabellen). Die Übernahme nimmt nur die feste
 Liste der acht Schreibweisen der Medienliste.
 
-**Stufe 1 gebaut am 29.09.2026** (Migration 150): `buecher_exemplare.eigentum`, die Regel in
-`ExemplarTopfSQL` (Etikett), die Übernahme (`internal/littera/eigentum.go`) mit Bericht.
+**Gebaut am 29.09.2026:** Stufe 1 (Migration 150) — `buecher_exemplare.eigentum`, die Regel in
+`ExemplarTopfSQL` (Etikett), die Übernahme (`internal/littera/eigentum.go`) mit Bericht. Aus
+Stufe 2 das Zugangsbuch (Eigentum am Exemplar oder Bestellung, `ExemplarTopfBelegtSQL`) und das
+Abgangsbuch (`ExemplarTopfSQL`).
 
 **Offen:**
 
-- **Stufe 2 — eine Regel für alle Leser des Eigentums.** Heute rechnen drei Stellen anders als das
-  Etikett: das Zugangsbuch nur mit dem Topf der Bestellung (`repository/zugangsbuch.go`, ohne
-  Bestellung „ohne Zuordnung"), das Abgangsbuch nur mit `ist_lernmittel`
-  (`repository/abgangsbuch.go`), der Bescheid nur mit `ist_lernmittel` (`repository/bescheid.go`,
-  `bescheid_verlust.go`, `bescheid_ausstehend.go`; dazu 5.4 „Topf einer Forderung").
+- **Stufe 2, Rest — der Bescheid.** Er nimmt den Topf einer Forderung noch aus `ist_lernmittel`
+  (`repository/bescheid.go` `ordnePositionenZu` und `OffeneForderungen`, `bescheid_verlust.go`,
+  `bescheid_ausstehend.go`, `ersatzwert_groessen.go`; dazu 5.4 „Topf einer Forderung"). Am selben
+  Kennzeichen hängt die Rechenregel des Betrags (Staffel der Arbeitshilfe oder Neuwert).
 - **Stufe 3 — Oberfläche:** Die Exemplarkarte zeigt das Eigentum und seine Herkunft (aus Littera,
   aus der Bestellung, Vorgabe); ändern einzeln und für mehrere Exemplare eines Titels, wie
   Littera „Exemplardaten anpassen". Vorher Beschreibung und M3-Nachweis.

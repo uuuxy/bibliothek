@@ -30,11 +30,13 @@ type ZugangsZeile struct {
 	// Lieferant steht im Zugangsbuch, weil die Arbeitshilfe ihn verlangt. Leer, wenn keine
 	// Bestellung hinterlegt ist — dann gibt es keinen Lieferanten, den man nennen könnte.
 	Lieferant string `json:"lieferant"`
-	// Topf: der Topf der BESTELLUNG, aus der das Exemplar kam. Leer, wenn keine hinterlegt
-	// ist. Bewusst nicht aus `ist_lernmittel` des Titels abgeleitet: Beim Zugang geht es
-	// darum, aus welchem Geld das Buch bezahlt wurde, und das steht an der Bestellung
-	// (Migration 109, „eine Bestellung = ein Topf"). Der Titel ist dort nur ein Vorschlag —
-	// er darf im Warenkorb umgehängt werden, und genau dann wäre die Ableitung falsch.
+	// Topf: das Eigentum, soweit es belegt ist (repository.ExemplarTopfBelegtSQL) — am
+	// Exemplar ausdrücklich gesetzt (Migration 150, etwa aus dem Littera-Vermerk), sonst der
+	// Topf der BESTELLUNG, aus der das Exemplar kam. Leer, wenn es beides nicht gibt. Bewusst
+	// nicht aus `ist_lernmittel` des Titels abgeleitet: Beim Zugang geht es darum, aus welchem
+	// Geld das Buch bezahlt wurde (Migration 109, „eine Bestellung = ein Topf"). Der Titel ist
+	// dort nur ein Vorschlag — er darf im Warenkorb umgehängt werden, und genau dann wäre die
+	// Ableitung falsch.
 	Topf string `json:"topf"`
 }
 
@@ -68,10 +70,10 @@ func LadeZugangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Zuga
 	// sondern falsch: Es machte aus dem 16.09. je nach Sitzungszeitzone den 15.
 	rows, err := q.Query(ctx, `
 		SELECT e.zugang_am, e.barcode_id, t.titel, COALESCE(t.signatur, ''),
-		       COALESCE(b.lieferant_name, ''), COALESCE(b.mittel, '')
+		       COALESCE(bv_topf.lieferant_name, ''), COALESCE(`+ExemplarTopfBelegtSQL+`, '')
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		LEFT JOIN bestellungen_verlauf b ON b.id = e.bestellung_id
+		`+ExemplarTopfJoin+`
 		WHERE e.zugang_am >= $1::date AND e.zugang_am <= $2::date
 		ORDER BY e.zugang_am, t.titel, e.barcode_id
 	`, abVon, bisTag)

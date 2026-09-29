@@ -28,9 +28,11 @@ type AbgangsZeile struct {
 	// Bildschirm dieselben vier Wörter benutzen — zwei Übersetzungen desselben
 	// Schlüssels laufen auseinander, sobald einer davon geändert wird.
 	GrundText string `json:"grund_text"`
-	// Topf: 'land' für ein Lernmittel, sonst 'schultraeger' — dasselbe Vokabular wie bei
-	// Bestellung und Bescheid (Migrationen 109/110). Beim Abgang entscheidet ihn der
-	// Titel: Ein Buch des Landes bleibt eines, egal wie es einmal beschafft wurde.
+	// Topf: 'land' oder 'schultraeger' — dasselbe Vokabular wie bei Bestellung und Bescheid
+	// (Migrationen 109/110) und dieselbe Regel wie am Etikett (repository.ExemplarTopfSQL):
+	// Eigentum am Exemplar, sonst Topf der Bestellung, sonst der Titel. Bis zum 29.09.2026
+	// entschied hier allein der Titel; ein Buch, das der Schulträger bezahlt hatte, ging dann
+	// als Abgang des Landes ab, obwohl sein Etikett den Schulträger nannte.
 	Topf string `json:"topf"`
 }
 
@@ -101,12 +103,14 @@ func LadeAbgangsbuch(ctx context.Context, q DBQueryer, von, bis time.Time) (Abga
 	rows, err := q.Query(ctx, `
 		SELECT e.ausgesondert_am, e.barcode_id, t.titel,
 		       COALESCE(t.signatur, ''), COALESCE(e.aussonderung_grund, ''),
-		       CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END
+		       `+ExemplarTopfSQL+`
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
+		`+ExemplarTopfJoin+`
 		WHERE e.ist_ausgesondert = true
 		  AND e.ausgesondert_am >= $1 AND e.ausgesondert_am < $2
-		ORDER BY t.ist_lernmittel DESC, e.ausgesondert_am, t.titel, e.barcode_id
+		-- Spalte 6 ist der Topf: 'land' vor 'schultraeger', die Reihenfolge des Ausdrucks.
+		ORDER BY 6, e.ausgesondert_am, t.titel, e.barcode_id
 	`, abVon, bisAusschliesslich)
 	if err != nil {
 		return buch, err

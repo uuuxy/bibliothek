@@ -42,9 +42,10 @@ type Abschnitt[T any] struct {
 // Inhalt tragen.
 //
 // „Ohne Zuordnung" erscheint nur, wenn es solche Zeilen gibt. Beim Abgangsbuch kann es sie
-// nicht geben (jeder Titel ist entweder Lernmittel oder nicht), beim Zugangsbuch schon: Ein
-// Exemplar, das ohne Bestellung entstanden ist, trägt keinen Beleg darüber, aus welchem Geld
-// es bezahlt wurde — und geraten wird das nicht.
+// nicht geben (repository.ExemplarTopfSQL endet in der Faustregel aus dem Titel und hat immer
+// eine Antwort), beim Zugangsbuch schon: Ein Exemplar ohne Eigentum am Exemplar und ohne
+// Bestellung trägt keinen Beleg darüber, aus welchem Geld es bezahlt wurde — und geraten wird
+// das nicht (repository.ExemplarTopfBelegtSQL).
 func abschnitteAus[T any](zeilen []T, topfVon func(T) string) []Abschnitt[T] {
 	nach := map[string][]T{}
 	for _, z := range zeilen {
