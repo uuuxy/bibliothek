@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-28. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-29. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -483,7 +483,9 @@ Längen ineinander umrechnen lassen: Eine falsch erfasste ISBN führt sonst auf 
 _Neue Bestandsprüfung starten_ → Umfang wählen (komplett, eine Signatur, Fach/Klasse) →
 scannen; Fortschrittsbalken. **Achtung:** _Inventur abschließen_ bucht alles Ungescannte im
 Umfang als Verlust — vorher den Fehlbestandsbericht prüfen; dort lassen sich Funde wieder
-zurückholen. Laufende Inventuren können fortgesetzt oder verworfen werden. (§6)
+zurückholen. Laufende Inventuren können fortgesetzt oder verworfen werden. Verwerfen bucht
+nichts: Unter _Frühere Inventuren_ steht der Lauf dann als „verworfen", ohne Fehlbestand — der
+Bereich gilt nicht als geprüft (seit 29.09.2026). (§6)
 
 ---
 

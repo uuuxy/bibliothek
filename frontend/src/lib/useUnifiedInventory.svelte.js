@@ -73,6 +73,14 @@ export function useUnifiedInventory() {
 		}
 	}
 
+	/** @param {any} offene laufende Session aus offeneSessions */
+	async function verwerfeSession(offene) {
+		await session.verwerfeSession(offene);
+		// Wie nach dem Abschluss: Die verworfene Inventur steht sofort unter den früheren —
+		// als verworfen, nicht als vollständig (Migration 149).
+		await fb.loadAbgeschlosseneInventuren();
+	}
+
 	function getProgressPercent() {
 		if (session.stats.erwartet === 0) return 0;
 		return Math.min(100, Math.round((session.stats.erfasst / session.stats.erwartet) * 100));
@@ -168,7 +176,7 @@ export function useUnifiedInventory() {
 		loadOffeneSessions: session.loadOffeneSessions,
 		startInventory: session.startInventory,
 		resumeSession: session.resumeSession,
-		verwerfeSession: session.verwerfeSession,
+		verwerfeSession,
 		handleScan,
 		finishInventory,
 		getProgressPercent

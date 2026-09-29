@@ -230,6 +230,13 @@ var checkBedingungenBestand = []string{
 	// (api/bestellstatus_ausgang_pg_test.go). Ein vergessener Ausgang scheitert hier laut.
 	"chk_exemplar_bestellstatus_nur_im_zulauf",
 	"chk_grade_level_bereich", "chk_inv_session_scope",
+	// Migration 149, befragt am 29.09.2026: Eine laufende Inventur ist nie verworfen. Die
+	// Schreiber der beiden Spalten: CreateInventurSession legt ohne beide an (false, NULL),
+	// FinishInventurSession setzt nur abgeschlossen_am, AbortInventurSession setzt beide in
+	// einer Anweisung — keiner läuft gegen die Regel. Keiner setzt abgeschlossen_am zurück;
+	// wer je „Inventur wieder öffnen" baut und verworfen stehen lässt, bekommt einen Abbruch
+	// (23514), keinen Satz (api/inventur_verworfen_pg_test.go).
+	"chk_inv_session_verworfen_beendet",
 	// Migration 127, befragt am 17.09.2026: Beide Werte gehen in einen Ersatzbetrag ein,
 	// der in einem Bescheid an Erziehungsberechtigte steht. Der Code prüft sie an der Tür
 	// (der Listenpreis kommt aus der Maske oder von der DNB, die Abwertung aus einem Feld

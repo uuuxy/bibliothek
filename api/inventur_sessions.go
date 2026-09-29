@@ -19,13 +19,15 @@ type InventurSessionDTO struct {
 }
 
 // AbgeschlosseneInventurDTO ist die Frontend-Sicht auf eine fertige Inventur. Sie
-// trägt nur, was für die Auswahl nötig ist: wann, welcher Bereich, wie viele Verluste.
+// trägt nur, was für die Auswahl nötig ist: wann, welcher Bereich, wie viele Verluste,
+// und ob sie verworfen wurde — dann ist der Bereich nicht geprüft, auch ohne Verlust.
 type AbgeschlosseneInventurDTO struct {
 	SessionID       string `json:"session_id"`
 	Label           string `json:"label"`
 	AbgeschlossenAm string `json:"abgeschlossen_am"`
 	Erfasst         int    `json:"erfasst"`
 	Verluste        int    `json:"verluste"`
+	Verworfen       bool   `json:"verworfen"`
 }
 
 // ListAbgeschlosseneInventurenHandler liefert die zuletzt abgeschlossenen Inventuren.
@@ -65,6 +67,7 @@ func (s *Server) ListAbgeschlosseneInventurenHandler() http.HandlerFunc {
 				AbgeschlossenAm: abgeschlossen,
 				Erfasst:         sessions[i].Erfasst,
 				Verluste:        sessions[i].Verluste,
+				Verworfen:       sessions[i].Verworfen,
 			})
 		}
 		RespondJSON(w, http.StatusOK, out)

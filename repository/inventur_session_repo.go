@@ -39,7 +39,8 @@ type InventurSession struct {
 	Erfasst      int // in dieser Session gescannte Exemplare
 	// Nur bei abgeschlossenen Sessions gefüllt (ListAbgeschlosseneInventurSessions):
 	AbgeschlossenAm *string
-	Verluste        int // beim Abschluss gebuchte Fehlbestände (inventur_verluste)
+	Verluste        int  // beim Abschluss gebuchte Fehlbestände (inventur_verluste)
+	Verworfen       bool // mit „Verwerfen" beendet, ohne Verlustbuchung (Migration 149)
 }
 
 // Scope leitet aus den gespeicherten Feldern den auswertbaren InventurScope ab —
@@ -147,7 +148,8 @@ func (r *InventoryRepository) GetInventurSession(ctx context.Context, id string)
 
 // ListAbgeschlosseneInventurSessions liefert die zuletzt abgeschlossenen Inventuren
 // samt Anzahl gebuchter Verluste — die Auswahlliste, über die man den Fehlbestand
-// einer früheren Inventur wieder aufrufen kann.
+// einer früheren Inventur wieder aufrufen kann. Verworfene stehen mit darin und tragen
+// Verworfen: Sie sind beendet, aber nicht geprüft (Migration 149).
 //
 // Ohne sie war GET /api/inventur/fehlbestand unerreichbar: Der Endpunkt braucht eine
 // session_id, und die einzige Session-Liste filterte auf abgeschlossen_am IS NULL —
@@ -167,7 +169,7 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 	rows, err := r.db.Query(ctx, `
 		WITH limited_sessions AS (
 			SELECT id, scope_type, scope_signatur, scope_subject, scope_grade, scope_label,
-			       gestartet_von, gestartet_am, abgeschlossen_am, erfasst_gemeldet
+			       gestartet_von, gestartet_am, abgeschlossen_am, erfasst_gemeldet, verworfen
 			FROM inventur_sessions
 			WHERE abgeschlossen_am IS NOT NULL
 			ORDER BY abgeschlossen_am DESC
@@ -176,7 +178,8 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 		SELECT s.id, s.scope_type, s.scope_signatur, s.scope_subject, s.scope_grade, s.scope_label,
 		       s.gestartet_von::text, s.gestartet_am::text, s.abgeschlossen_am::text,
 		       COALESCE(e.count, 0),
-		       COALESCE(v.count, 0)
+		       COALESCE(v.count, 0),
+		       s.verworfen
 		FROM limited_sessions s
 		-- COALESCE auf die eingefrorene Zahl (Migration 103): Nur eine OFFENE Session
 		-- zählt live; ein abgeschlossener Durchgang behält, was er gezählt hat.
@@ -194,7 +197,7 @@ func (r *InventoryRepository) ListAbgeschlosseneInventurSessions(ctx context.Con
 	for rows.Next() {
 		var s InventurSession
 		if err := rows.Scan(&s.ID, &s.ScopeType, &s.Signatur, &s.Subject, &s.Grade, &s.ScopeLabel,
-			&s.GestartetVon, &s.GestartetAm, &s.AbgeschlossenAm, &s.Erfasst, &s.Verluste); err != nil {
+			&s.GestartetVon, &s.GestartetAm, &s.AbgeschlossenAm, &s.Erfasst, &s.Verluste, &s.Verworfen); err != nil {
 			return nil, fmt.Errorf("session-zeile unlesbar: %w", err)
 		}
 		sessions = append(sessions, s)

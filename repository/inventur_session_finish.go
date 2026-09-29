@@ -237,14 +237,18 @@ var ErrInventurSessionNichtGefunden = errors.New("inventur-session nicht gefunde
 // oder hängengebliebene Inventuren. Die Erfassungen bleiben (CASCADE räumt sie erst
 // beim echten Löschen); der Scope wird dadurch wieder frei für einen Neustart.
 //
+// verworfen = true (Migration 149): abgeschlossen_am allein machte aus dem Verwerfen einen
+// Abschluss ohne Verlust, und die Liste früherer Inventuren schrieb „vollständig".
+//
 // 0 Zeilen hatte hier ZWEI Bedeutungen und beide wurden als „abgebrochen" quittiert
 // (Phantom-Erfolg-Sweep 31.08.2026): Session existiert nicht (→ Fehler, der Aufrufer
 // redet über die falsche ID) oder war schon abgeschlossen (→ idempotent in Ordnung,
-// das Ziel „Scope frei" ist erreicht).
+// das Ziel „Scope frei" ist erreicht). Ein Abschluss wird dabei nicht nachträglich zum
+// Verwerfen: Die Bedingung abgeschlossen_am IS NULL lässt die Zeile stehen.
 func (r *InventoryRepository) AbortInventurSession(ctx context.Context, sessionID string) error {
 	tag, err := r.db.Exec(ctx, `
 		UPDATE inventur_sessions
-		SET abgeschlossen_am = now(), verloren_gemeldet = 0,
+		SET abgeschlossen_am = now(), verloren_gemeldet = 0, verworfen = true,
 		    erfasst_gemeldet = (SELECT count(*) FROM inventur_erfassungen WHERE session_id = $1)
 		WHERE id = $1 AND abgeschlossen_am IS NULL
 	`, sessionID)

@@ -31,7 +31,7 @@ const BESTAND = {
 	'src/lib/Omnibox.svelte': 226,
 	'src/lib/StatsDashboard.svelte': 370,
 	'src/lib/StudentProfile.svelte': 236,
-	'src/lib/UnifiedInventory.svelte': 272,
+	'src/lib/UnifiedInventory.svelte': 271,
 	'src/lib/UserManagement.svelte': 228,
 	'src/lib/components/BookExemplarCard.svelte': 209,
 	'src/lib/components/labels/EtikettenNachdruck.svelte': 364,

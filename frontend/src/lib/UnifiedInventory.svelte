@@ -10,6 +10,7 @@
 	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
 	import ScanRueckmeldung from './components/inventur/ScanRueckmeldung.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
+	import { formatDatum } from './utils/format.js';
 	import { ClipboardCheck, Plus, ScanBarcode } from '@lucide/svelte';
 
 	const inventoryState = useUnifiedInventory();
@@ -55,13 +56,6 @@
 		await inventoryState.loadOffeneSessions();
 		await inventoryState.loadAbgeschlosseneInventuren();
 	});
-
-	/** @param {string} iso */
-	function datumKurz(iso) {
-		const d = new Date(iso);
-		if (Number.isNaN(d.getTime())) return iso;
-		return d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-	}
 
 	function focusInput() {
 		if (barcodeInputEl) barcodeInputEl.focus();
@@ -148,7 +142,8 @@
 			     Der Fehlbestandsbericht entstand bisher nur aus der Antwort des Abschlusses
 			     und lebte im Arbeitsspeicher DIESES Browsers: Neu laden — weg. Der Kollege am
 			     zweiten Arbeitsplatz, der mit der Liste ins Regal geht, sah ihn nie. Die Daten
-			     liegen dauerhaft auf dem Server; hier ist der Weg zurück zu ihnen. -->
+			     liegen dauerhaft auf dem Server; hier ist der Weg zurück zu ihnen. Eine verworfene
+			     Inventur hat nichts gebucht und keinen Bericht; ihr Bereich ist nicht geprüft. -->
 			{#if inventoryState.abgeschlosseneInventuren.length > 0}
 				<div class="w-full max-w-4xl mx-auto text-left space-y-2 pt-4">
 					<h4 class="text-sm font-semibold text-on-surface-variant">Frühere Inventuren</h4>
@@ -159,23 +154,27 @@
 							<div class="min-w-0">
 								<div class="font-semibold text-on-surface truncate">{inventur.label}</div>
 								<div class="text-xs text-on-surface-variant">
-									{datumKurz(inventur.abgeschlossen_am)} · {inventur.erfasst} erfasst ·
-									{#if inventur.verluste > 0}
+									{formatDatum(inventur.abgeschlossen_am)} · {inventur.erfasst} erfasst ·
+									{#if inventur.verworfen}
+										verworfen
+									{:else if inventur.verluste > 0}
 										<span class="text-error font-semibold">{inventur.verluste} fehlend</span>
 									{:else}
 										vollständig
 									{/if}
 								</div>
 							</div>
-							<Button
-								variant="secondary"
-								size="sm"
-								class="shrink-0"
-								disabled={inventoryState.ladeFruehereLaeuft}
-								onclick={() => inventoryState.zeigeFrueherenFehlbestand(inventur)}
-							>
-								Fehlbestand
-							</Button>
+							{#if !inventur.verworfen}
+								<Button
+									variant="secondary"
+									size="sm"
+									class="shrink-0"
+									disabled={inventoryState.ladeFruehereLaeuft}
+									onclick={() => inventoryState.zeigeFrueherenFehlbestand(inventur)}
+								>
+									Fehlbestand
+								</Button>
+							{/if}
 						</div>
 					{/each}
 				</div>

@@ -87,3 +87,67 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
         `);
 	}
 });
+
+// Eine verworfene Inventur steht unter „Frühere Inventuren" als verworfen, nicht als
+// „vollständig", und bietet keinen Fehlbestand an (docs/OFFEN.md 5.32, Migration 149).
+// „Verwerfen" schrieb dieselben Spalten wie ein Abschluss ohne Verlust; wer die Liste las,
+// hielt den Bereich für geprüft.
+test('Inventur: verworfen steht nicht als vollständig in der Liste', async ({ page }) => {
+	await uiLogin(page);
+	const suffix = uniqueSuffix();
+	const sigName = `E2E-VERW-${suffix}`;
+	const label = `Signatur ${sigName}`;
+
+	try {
+		seedSQL(`
+            WITH t AS (
+                INSERT INTO buecher_titel (titel, signatur)
+                VALUES ('E2E-Verwerfbuch-${suffix}', '${sigName}') RETURNING id
+            )
+            INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+            SELECT id, b, true FROM t, unnest(ARRAY['B-VERWA-${suffix}', 'B-VERWB-${suffix}']) AS b;
+        `);
+
+		await page.getByTitle('Inventur').click();
+		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
+		await page.getByText('Nur bestimmte Signatur').click();
+		await page.getByLabel('Signatur auswählen').fill(sigName);
+		await page.getByRole('button', { name: 'Inventur Starten' }).click();
+
+		const scan = page.getByPlaceholder('Barcode scannen...');
+		await expect(scan).toBeVisible();
+		await scan.fill(`B-VERWA-${suffix}`);
+		await scan.press('Enter');
+		await expect(page.getByText(`E2E-Verwerfbuch-${suffix}`).first()).toBeVisible();
+
+		// Nach dem Neuladen steht die Inventur unter „Laufende Inventuren" — dort wird verworfen.
+		// In beiden Listen steht die Beschriftung im Textblock (Name und Zeile darunter), der
+		// Textblock in der Zeile mit den Knöpfen.
+		await page.reload();
+		const beschriftung = page.getByText(label, { exact: true });
+		const text = beschriftung.locator('..');
+		const zeile = beschriftung.locator('../..');
+		await zeile.getByRole('button', { name: 'Verwerfen' }).click();
+
+		// Ohne Neuladen in der Liste früherer Inventuren, als verworfen und ohne Bericht.
+		await expect(text).toContainText(/1 erfasst\s*·\s*verworfen/);
+		await expect(text).not.toContainText('vollständig');
+		await expect(zeile.getByRole('button', { name: 'Fehlbestand' })).toHaveCount(0);
+
+		expect(querySQL(`SELECT verworfen FROM inventur_sessions WHERE scope_label = '${label}'`)).toBe(
+			't'
+		);
+		// Verworfen bucht keinen Verlust: Das ungescannte Buch bleibt im Umlauf.
+		expect(
+			querySQL(
+				`SELECT ist_ausgesondert FROM buecher_exemplare WHERE barcode_id = 'B-VERWB-${suffix}'`
+			)
+		).toBe('f');
+	} finally {
+		seedSQL(`
+            DELETE FROM inventur_sessions WHERE scope_label = '${label}';
+            DELETE FROM buecher_exemplare WHERE barcode_id IN ('B-VERWA-${suffix}', 'B-VERWB-${suffix}');
+            DELETE FROM buecher_titel WHERE titel = 'E2E-Verwerfbuch-${suffix}';
+        `);
+	}
+});

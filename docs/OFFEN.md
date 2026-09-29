@@ -73,7 +73,7 @@ Reihenfolge (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag v
 1. Was still jemandem schaden kann (entschieden am 28.09.2026, nach der Regel unten „kann das
    still jemandem schaden?"): das Gate gegen Leser-Werte im Protokoll (5.10), aus 5.19 die
    Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei, `Cache-Control` (5.29),
-   die verworfene Inventur (5.32), dazu die zwei Fristen aus 5.19 (gelöschte Kollegen,
+   dazu die zwei Fristen aus 5.19 (gelöschte Kollegen,
    Klassensatz-Reservierungen; entschieden am 28.09.2026). Danach die zwei kleinen Umbauten 8.7
    (Verlängerung beim Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026, dann 5.18
    (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben,
@@ -702,15 +702,6 @@ Fragen oben beantwortet sind.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-
-### 5.32 Eine verworfene Inventur steht als „vollständig" in der Liste
-
-Aufgefallen beim Ansehen der Inventur am 24.09.2026, am Code nachgesehen; bis zum 28.09.2026
-unter 5.21 notiert. `AbortInventurSession` setzt `abgeschlossen_am` wie ein Abschluss und
-`verloren_gemeldet = 0`, die Liste „Frühere Inventuren" fragt nur `abgeschlossen_am IS NOT NULL`,
-und der Bildschirm schreibt bei 0 Verlusten „vollständig". Wer die Liste liest, hält den Bereich
-für geprüft. Kein Datenschutz-Fall, aber ein stilles falsches Ergebnis.
 
 ---
 

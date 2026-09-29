@@ -1900,7 +1900,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('145_geleerte_ausweisnummer_zieht_neue.sql'),
 ('146_ausweisnummer_kommt_nie_wieder.sql'),
 ('147_protokoll_verwaiste_leser.sql'),
-('148_auflagen_eines_buchs.sql')
+('148_auflagen_eines_buchs.sql'),
+('149_inventur_verworfen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------
@@ -2016,10 +2017,15 @@ CREATE TABLE IF NOT EXISTS inventur_sessions (
     -- ON DELETE CASCADE mit dem Exemplar, eine live gezählte Zahl senkte damit
     -- rückwirkend das Ergebnis eines abgeschlossenen Durchgangs. NULL = noch offen.
     erfasst_gemeldet  INT,
+    -- Mit „Verwerfen" beendet, ohne Verlustbuchung (Migration 149). abgeschlossen_am ist
+    -- das Ende jeder Inventur, diese Spalte sagt, wie sie endete.
+    verworfen         BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT chk_inv_session_scope
         CHECK (scope_type IN ('global', 'signature', 'filter')
                AND (scope_type <> 'signature' OR COALESCE(btrim(scope_signatur), '') <> '')
-               AND (scope_type <> 'filter' OR scope_subject IS NOT NULL OR scope_grade IS NOT NULL))
+               AND (scope_type <> 'filter' OR scope_subject IS NOT NULL OR scope_grade IS NOT NULL)),
+    CONSTRAINT chk_inv_session_verworfen_beendet
+        CHECK (NOT verworfen OR abgeschlossen_am IS NOT NULL)
 );
 
 -- Abschrift der bei einem Inventur-Abschluss als Verlust gebuchten Exemplare.

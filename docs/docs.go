@@ -3450,6 +3450,9 @@ const docTemplate = `{
                 },
                 "verluste": {
                     "type": "integer"
+                },
+                "verworfen": {
+                    "type": "boolean"
                 }
             }
         },
