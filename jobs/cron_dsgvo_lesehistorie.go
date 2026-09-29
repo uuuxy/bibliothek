@@ -19,8 +19,10 @@ import (
 // Dieser Job trennt die Ausleihe vom Schüler (schueler_id = NULL), der Vorgang selbst
 // bleibt für Statistik und Bestandskartei erhalten. Zwei Fristen, weil zwei
 // Verarbeitungstätigkeiten: Schülerbücherei kurz, Lernmittel lang (Nachweis von
-// Ausleihe UND Rücklauf, Schadensersatz über die Schulaufsicht). Beide stehen in den
-// Einstellungen; 0 schaltet die jeweilige Befristung ab.
+// Ausleihe UND Rücklauf, Schadensersatz über die Schulaufsicht). Lernmittel heißt hier
+// wie im Leitfaden: aus Landesmitteln beschafft, also jedes Buch im Eigentum des Landes
+// (repository.ExemplarTopfSQL, seit dem 29.09.2026; vorher ist_lernmittel am Titel). Beide
+// Fristen stehen in den Einstellungen; 0 schaltet die jeweilige Befristung ab.
 //
 // Nicht getrennt werden Ausleihen, an denen ein OFFENER Schadensfall hängt — dort ist
 // der Zweck (Forderung) noch nicht erreicht.
@@ -98,7 +100,7 @@ func (s *Scheduler) trenneAusleihen(ctx context.Context, tage int, lernmittel bo
 // Ohne das trug das Protokoll die Lesehistorie bis zur Audit-Aufbewahrung (24 Monate)
 // weiter — die Trennung der Ausleihe wäre nur Kosmetik gewesen (Prüfung 22.08.2026, A5).
 // datensatz_id ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über
-// den Titel. Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat
+// sein Eigentum. Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat
 // oder ein offener Schadensfall daran hängt — dort ist der Zweck nicht erreicht.
 func (s *Scheduler) tilgeAusleihProtokoll(ctx context.Context, tage int, lernmittel bool) int64 {
 	if tage <= 0 {

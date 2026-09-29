@@ -178,22 +178,32 @@ func AbgaengerStichjahr(jetzt time.Time) int {
 
 // ── Lesehistorie befristen ($1 Tage, $2 Kulanz) ───────────────────────────────
 
-// istLernmittelExemplar formuliert die Klassenfrage über das Exemplar in `spalte`.
-func istLernmittelExemplar(spalte string) string {
+// istLandExemplar formuliert die Klassenfrage über das Exemplar in `spalte`: Gehört es dem
+// Land? Dieselbe Regel wie Etikett, Bestandsbücher und Bescheid (ExemplarTopfSQL: Eigentum am
+// Exemplar, sonst Topf der Bestellung, sonst ist_lernmittel am Titel).
+//
+// Die lange Frist hat ihren Grund im Verfahren des Landes, Bestandskartei (Leitfaden
+// Lernmittelfreiheit 11.3) und Schadensersatz über die Schulaufsicht, und der Leitfaden knüpft
+// die Bestandsverzeichnisse an „alle aus Landesmitteln beschafften Gegenstände" (11.1), also an
+// das Eigentum. Bis zum 29.09.2026 entschied hier ist_lernmittel allein, während Bescheid und
+// Zahlungsweg schon dem Eigentum folgten: Eine Lektüre des Landes ging an die Schulaufsicht und
+// verlor ihren Ausleiher nach der Frist der Schülerbücherei (docs/OFFEN.md 4.26).
+func istLandExemplar(spalte string) string {
 	return `EXISTS (
 		SELECT 1 FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
-		WHERE e.id = ` + spalte + ` AND t.ist_lernmittel)`
+		` + ExemplarTopfJoin + `
+		WHERE e.id = ` + spalte + ` AND ` + ExemplarTopfSQL + ` = '` + MittelLand + `')`
 }
 
-// klasse wählt die Frist-Klasse: true = nur Lernmittel, false = alles andere
-// (Freihand, Medien und Geräte — Geräte haben kein Exemplar und fallen damit automatisch
-// in die kurze Frist).
-func klasse(spalte string, lernmittel bool) string {
-	if lernmittel {
-		return istLernmittelExemplar(spalte)
+// klasse wählt die Frist-Klasse: true = Bücher des Landes, false = alles andere
+// (Schülerbücherei, Medien und Geräte — Geräte haben kein Exemplar und fallen damit
+// automatisch in die kurze Frist).
+func klasse(spalte string, land bool) string {
+	if land {
+		return istLandExemplar(spalte)
 	}
-	return "NOT " + istLernmittelExemplar(spalte)
+	return "NOT " + istLandExemplar(spalte)
 }
 
 // PredikatLesehistorieAusleihen liefert die WHERE-Bedingung, mit der die Ausleihe vom
@@ -209,9 +219,9 @@ func klasse(spalte string, lernmittel bool) string {
 //
 // Warum das nichts kostet: Die Frist läuft ab der RÜCKGABE. Eine Dauerleihe des
 // Kollegiums ist nie zurückgegeben und bleibt darum unberührt, solange sie läuft. Und die
-// Paarung Frist × Medienklasse bleibt: Ein Lernmittel behält seine 730 Tage für die
+// Paarung Frist × Eigentum bleibt: Ein Buch des Landes behält seine 730 Tage für die
 // Bestandskartei, ein Buch der Schülerbücherei 90.
-func PredikatLesehistorieAusleihen(lernmittel bool, tage, kulanz int) Loeschbedingung {
+func PredikatLesehistorieAusleihen(land bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `a.schueler_id IS NOT NULL
 		  AND a.rueckgabe_am IS NOT NULL
 		  AND a.rueckgabe_am < NOW() - make_interval(days => $1::int + $2::int)
@@ -220,15 +230,15 @@ func PredikatLesehistorieAusleihen(lernmittel bool, tage, kulanz int) Loeschbedi
 		        WHERE sf.ausleihe_id = a.id
 		          AND sf.ist_bezahlt = false
 		          AND sf.storniert_am IS NULL)
-		  AND ` + klasse("a.exemplar_id", lernmittel)}
+		  AND ` + klasse("a.exemplar_id", land)}
 }
 
 // PredikatLesehistorieProtokoll liefert die WHERE-Bedingung, mit der dem Ausleih-
 // Protokoll (audit_log, Alias `al`) die Schüler-Zuordnung genommen wird. datensatz_id
-// ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über den Titel.
+// ist dort das EXEMPLAR (so schreibt logLoanEvent), die Klasse kommt über sein Eigentum.
 // Ein Eintrag bleibt, solange dieser Schüler dieses Exemplar noch offen hat oder ein
 // offener Schadensfall daran hängt.
-func PredikatLesehistorieProtokoll(lernmittel bool, tage, kulanz int) Loeschbedingung {
+func PredikatLesehistorieProtokoll(land bool, tage, kulanz int) Loeschbedingung {
 	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `al.tabelle = 'ausleihen'
 		  AND al.details ? 'schueler_id'
 		  -- Wie beim Prädikat der Ausleihen: jeder Leser (16.09.2026).
@@ -244,7 +254,7 @@ func PredikatLesehistorieProtokoll(lernmittel bool, tage, kulanz int) Loeschbedi
 		          AND sf.schueler_id::text = al.details->>'schueler_id'
 		          AND sf.ist_bezahlt = false
 		          AND sf.storniert_am IS NULL)
-		  AND ` + klasse("al.datensatz_id", lernmittel)}
+		  AND ` + klasse("al.datensatz_id", land)}
 }
 
 // ── Erledigte Anliegen ($1 Tage, $2 Kulanz) ───────────────────────────────────

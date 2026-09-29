@@ -68,7 +68,7 @@ Datenschutz & Sitzung.
 | Was                                                                  | Frist                                                                                          | einstellbar |
 | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
 | Zuordnung einer Ausleihe der Schülerbücherei zur Person              | 90 Tage nach der Rückgabe, dann getrennt; ein offener Schadensfall hält sie                     | ja          |
-| Zuordnung einer Lernmittel-Ausleihe zur Person                       | 730 Tage nach der Rückgabe, sonst wie oben                                                      | ja          |
+| Zuordnung der Ausleihe eines Buchs des Landes zur Person             | 730 Tage nach der Rückgabe, sonst wie oben                                                      | ja          |
 | bearbeitende Person an einer Ausleihe                                | 14 Tage nach der Rückgabe                                                                       | nein        |
 | Abgänger ohne offene Vorgänge                                        | anonymisiert 90 Tage nach dem späteren von Abgang und letztem Vorgang, endgültig gelöscht ab dem 30. Januar des Folgejahres | die 90 Tage |
 | Schülerin oder Schüler im Papierkorb                                 | anonymisiert nach 180 Tagen                                                                     | nein        |

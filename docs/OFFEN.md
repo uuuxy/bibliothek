@@ -84,8 +84,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-Vor dem Echtstart außerdem: 4.26 (Frist der Ausleihhistorie, Frage offen; vor der
-Littera-Übernahme), 5.29 (Antworten ohne `Cache-Control`), 5.31 (`update.sh` für den
+Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`), 5.31 (`update.sh` für den
 Schulserver) und der Eingang für die Seite der Lieferanten (4.23).
 
 **In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf. Im
@@ -291,36 +290,6 @@ Zwei Lücken, nicht entschieden:
 **Frage:** GND-Wörter lesen — und wenn ja, auch Wörter außerhalb der eigenen Liste anbieten?
 Einen Vorschlag auch für vorhandene Titel? Zu entscheiden nach der Littera-Übernahme (7.2): Dann
 lässt sich an echten DNB-Sätzen messen, wie oft die GND-Wörter zur Liste passen.
-
-### 4.26 Frist der Ausleihhistorie: nach dem Titel oder nach dem Eigentum?
-
-Gefunden beim Rasterdurchgang vom 29.09.2026 (Fragen 3 und 13). Wie lange eine zurückgegebene
-Ausleihe der Person zugeordnet bleibt, entscheidet das Merkmal am Titel (`istLernmittelExemplar`
-in `repository/loeschfristen.go`): Lernmittel 730 Tage, sonst 90. Begründet sind die 730 Tage
-mit der Bestandskartei (Leitfaden Lernmittelfreiheit 11.3) und dem Schadensersatz über die
-Schulaufsicht ([SECURITY.md](SECURITY.md), Lesehistorie). Der Leitfaden knüpft die
-Bestandsverzeichnisse an das Geld: „Alle aus Landesmitteln beschafften Gegenstände müssen in
-Bestandsverzeichnissen erfasst werden" (11.1). Wem ein Exemplar gehört und an wen der Bescheid
-geht, sagt seit dem 29.09.2026 das Eigentum (`repository.ExemplarTopfSQL`, 4.24); bis dahin
-lasen Bescheid und Frist dasselbe Merkmal am Titel.
-
-Wo die beiden Regeln jetzt auseinanderlaufen:
-
-- Bücher des Landes ohne Lernmittel-Titel: nach der Littera-Übernahme rund 11.160 Exemplare mit
-  „Land Hessen" (darunter Klassensätze und Zeitschriften), dazu Bücher aus einer Bestellung im
-  Topf des Landes. Der Bescheid geht an das Land, die Person fällt nach 90 Tagen von der
-  Ausleihe.
-- Schulbücher im Eigentum des Schulträgers (3 Exemplare mit „Hochtaunuskreis"): 730 statt 90
-  Tage.
-
-Littera unterscheidet nicht: „Für Hessen werden jeweils die letzten 3 Nutzer eines Exemplars
-gespeichert" (Handbuch, Titel/Exemplarhistorie), gleich wem das Buch gehört.
-
-**Frage:** Soll die Frist dem Eigentum folgen, nach derselben Regel wie Etikett, Bestandsbücher
-und Bescheid? **Empfehlung: ja, vor der Littera-Übernahme.** Ohne Eigentum und ohne Bestellung
-bleibt es beim Merkmal am Titel. Folge: Bei Büchern des Landes aus der Bücherei bleibt die
-Person 730 statt 90 Tage an der Ausleihe; die Texte zu den Löschfristen (Auskunft, Verzeichnis
-der Verarbeitungstätigkeiten, Datenschutz-Nachweis) ziehen mit.
 
 ---
 
