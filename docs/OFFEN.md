@@ -77,7 +77,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt 5.18 (Klassen und Lesergruppen als Stammdaten,
-   entschieden am 29.09.2026; vor dem Bau Messung und Stufenplan), dann 5.21
+   entschieden am 29.09.2026; Stufenplan vorgelegt am 29.09.2026, Freigabe offen), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
@@ -520,9 +520,36 @@ oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*
   Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit. Vom 28.09.2026: Gruppen mit
   Kürzel, Bezeichnung und Art.
 
-**Nächster Schritt:** Messung am Testserver (lesend, Einzeiler unten, am Server selbst
-auszuführen), dann Stufenplan und Beschreibung der Pflegeseite zur Freigabe, erst dann bauen.
-`docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT (SELECT count(*) FROM lesergruppen) AS lesergruppen, (SELECT count(*) FROM klassen) AS klassen, (SELECT count(*) FROM klassen k WHERE NOT EXISTS (SELECT 1 FROM leser l WHERE l.klasse = k.name)) AS klassen_ohne_leser, (SELECT count(DISTINCT klasse) FROM leser WHERE klasse IS NOT NULL) AS klassen_an_lesern, (SELECT count(*) FROM leser WHERE art <> 'schueler' AND klasse IS NOT NULL) AS kollegium_mit_klasse;"`
+**Gemessen am Testserver (29.09.2026, lesend):** 108 Klassen in `klassen`, 27 davon an Lesern,
+81 ohne Leser (Altlasten des Testservers; der Schulserver beginnt leer); `lesergruppen` leer;
+kein Kollege mit Klasse. Vor dem Bau muss nichts bereinigt werden.
+
+**Am Code nachgesehen (29.09.2026):** Sechs Stellen nehmen die Klasse als Freitext, und die
+Auslöser an den sechs verweisenden Tabellen legen eine unbekannte Klasse still an
+(`klasse_kanonisieren`): Leserakte (`LeserEditFelder`), Neuanlage („Manuell eingeben…"),
+Mahnwesen-Zuordnung, Klassensatz-Reservierung im Portal, Klassensatz im Bestand
+(`ClassAssignPicker`), Klassenverlängerung. `GET /api/klassen` liest nur
+`SELECT DISTINCT klasse FROM schueler`, nicht `klassen`. Beim Zusammenlegen greifen
+Eindeutigkeiten: eine Klassenleitung je Klasse (`klassen_lehrer_mapping`), ein Buch je
+Klassensatz, eine Klasse je LMF-Termin und je Plan.
+
+**Stufenplan, vorgelegt am 29.09.2026 (Freigabe offen):**
+
+1. Server: `klassen` ist die Liste aller Auswahllisten, mit Zahlen je Klasse. Umbenennen nur auf
+   einen freien Namen; Zusammenlegen mit dem Ziel aus der Liste, Doppelte fallen zusammen, die
+   Klassenleitung der Zielklasse bleibt; Löschen nur ohne Verweis. Jede Änderung im Protokoll.
+2. Pflegeseite unter Einstellungen → LUSD & Versetzung, mit dem Recht der Versetzung
+   (`manage_students_admin`), gebaut wie die Schlagwort-Pflege und gegliedert nach dem Zweig
+   aus dem Namen.
+3. Klasse aus der Liste an den sechs Stellen; eine neue nur nach Rückfrage, im Portal gar
+   nicht; LUSD-Import und Littera-Übernahme legen weiter an. Dabei: Beispiele nach dem
+   Klassenschema statt „7a" und „8b", „Klasse löschen" bei den Klassensätzen heißt „Buchliste
+   löschen" (es entfernt nur die Buchliste).
+4. Gruppen für Sonderkonten in `lesergruppen` (Kürzel, Bezeichnung), wählbar an der Leserakte
+   eines Kollegen; die Littera-Übernahme setzt sie statt einer Zeile im Protokoll.
+
+Später, mit eigener Frage: Statistik nach Zweigen. Sie braucht den Zweig an der Ausleihe ohne
+Namen, weil eine Ausleihe der Bücherei seit dem 29.09.2026 den Namen nach einem Tag verliert.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
