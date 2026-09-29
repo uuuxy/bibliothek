@@ -19,6 +19,8 @@ import "strings"
 //   - betrifft: Name eines Lesers, dessen Vormerkung mit dem Titel fiel
 //     (titel_loeschen_wartende.go)
 //   - entleiher: Name aus der Spur einer laufenden Ausleihe, deren Titel gelöscht wurde
+//   - vorname, nachname, email: Name und Adresse eines gelöschten Zugangskontos, dessen
+//     Leserzeile stehen blieb (konto_loeschspur.go, seit dem 29.09.2026)
 //
 // Eine Liste für beide Tabellen. Bis zum 29.09.2026 hatte nur audit_logs eine solche
 // Anweisung; Name und Freitext der Titel-Löschspur in audit_log überlebten die
@@ -26,6 +28,7 @@ import "strings"
 var protokollSchluesselMitPersonenbezug = []string{
 	"lusd_id", "barcode", "aufgeloest_barcode", "grund", "reason",
 	"schuldner", "beschreibung", "betrifft", "entleiher",
+	"vorname", "nachname", "email",
 }
 
 // tilgePersonenbezugImProtokoll baut die Anweisung, die einer Protokolltabelle (audit_logs

@@ -86,11 +86,17 @@ func (r *pgAuditRepository) DeleteUser(ctx context.Context, userID string, bearb
 		return err
 	}
 
-	if err = r.insertAuditLog(ctx, tx, auditEntry{
-		Tabelle: "benutzer", Aktion: "DELETE", DatensatzID: userID,
-		BearbeiterID: &bearbeiterID, Akteur: "USER",
-		Details: map[string]any{"vorname": vorname, "nachname": nachname, "email": email, "rolle": rolle,
-			"leserzeile_geloescht": geloescht, "leserzeile_bleibt_wegen": grund},
+	// Die Leserkennung kommt nur in den Eintrag, wenn die Leserzeile stehen bleibt: Über sie
+	// findet die Auskunft des Lesers das frühere Konto. Ging die Zeile mit, gibt es keinen
+	// Leser mehr, dem die Kennung etwas sagte (protokolliereKontoLoeschung).
+	var bleibenderLeser *string
+	if !geloescht {
+		bleibenderLeser = leserID
+	}
+	if err = r.protokolliereKontoLoeschung(ctx, tx, kontoLoeschung{
+		kontoID: userID, vorname: vorname, nachname: nachname, email: email, rolle: rolle,
+		leserID: bleibenderLeser, bearbeiterID: bearbeiterID,
+		ueberBenutzerverwaltung: true, leserzeileGeloescht: geloescht, leserzeileBleibtWegen: grund,
 	}); err != nil {
 		return err
 	}
@@ -267,11 +273,9 @@ func (r *pgAuditRepository) DeleteStudent(ctx context.Context, studentID string,
 	// (api/student_schul_email.go) — derselbe Weg wie beim Altbestand.
 	var kontenGeloescht int64
 	if art != "schueler" {
-		kontoTag, kontoErr := tx.Exec(ctx, `DELETE FROM benutzer WHERE leser_id = $1`, studentID)
-		if kontoErr != nil {
-			return fmt.Errorf("deleting account of reader: %w", kontoErr)
+		if kontenGeloescht, err = r.loescheKontenDerLeserzeile(ctx, tx, studentID, bearbeiterID); err != nil {
+			return err
 		}
-		kontenGeloescht = kontoTag.RowsAffected()
 	}
 
 	// Akteur ermitteln (entweder manueller Admin-User oder automatische System-Bereinigung)

@@ -164,3 +164,52 @@ func sammle[T any](ctx context.Context, q DBQueryer, sql string, lies func(pgx.R
 	}
 	return out, rows.Err()
 }
+
+// DsgvoFrueheresZugangskonto ist ein gelöschtes Konto, das auf diesen Leser zeigte, samt den
+// Einträgen über das Konto, die nach dem Löschen noch zu finden sind (seit 29.09.2026,
+// OFFEN.md 5.19). Nach dem Löschen führt kein Fremdschlüssel mehr vom Leser zum Konto; der
+// Weg ist der Löscheintrag (konto_loeschspur.go), der die Leserkennung trägt. Löscheinträge
+// von vor dem 29.09.2026 tragen sie nicht und bleiben hier unsichtbar.
+type DsgvoFrueheresZugangskonto struct {
+	ID          string    `json:"id"`
+	GeloeschtAm time.Time `json:"geloescht_am"`
+	Email       string    `json:"email"`
+	Rolle       string    `json:"rolle"`
+	// Nur die Einträge, die das Konto als ziel_id tragen (Anlage, Änderung). Was die Person
+	// mit dem Konto bearbeitet hat, trug die Kennung des Kontos in einer Spalte mit
+	// ON DELETE SET NULL und ist ihr nicht mehr zuzuordnen.
+	Ereignisse []DsgvoKontoEreignis `json:"ereignisse_im_verwaltungsprotokoll"`
+}
+
+const dsgvoFruehereKontenSQL = `
+	SELECT datensatz_id::text, timestamp, coalesce(details->>'email', ''), coalesce(details->>'rolle', '')
+	FROM audit_log
+	WHERE tabelle = 'benutzer' AND aktion = 'DELETE' AND details->>'schueler_id' = $1::text
+	ORDER BY timestamp DESC`
+
+const dsgvoFruehereKontoEreignisseSQL = `
+	SELECT aktion, zeitstempel, details
+	FROM audit_logs
+	WHERE details->>'ziel_id' = $1::text
+	ORDER BY zeitstempel DESC`
+
+// LeseDsgvoFruehereZugangskonten liest die gelöschten Konten dieses Lesers. Leer statt nil,
+// damit die abgerufene Auskunft „keine" sagt und nicht „unbekannt".
+func LeseDsgvoFruehereZugangskonten(ctx context.Context, q DBQueryer, leserID string) ([]DsgvoFrueheresZugangskonto, error) {
+	konten, err := sammle(ctx, q, dsgvoFruehereKontenSQL, func(r pgx.Rows) (DsgvoFrueheresZugangskonto, error) {
+		var k DsgvoFrueheresZugangskonto
+		return k, r.Scan(&k.ID, &k.GeloeschtAm, &k.Email, &k.Rolle)
+	}, leserID)
+	if err != nil {
+		return nil, fmt.Errorf("frühere zugangskonten: %w", err)
+	}
+	for i := range konten {
+		if konten[i].Ereignisse, err = sammle(ctx, q, dsgvoFruehereKontoEreignisseSQL, func(r pgx.Rows) (DsgvoKontoEreignis, error) {
+			var e DsgvoKontoEreignis
+			return e, r.Scan(&e.Aktion, &e.Zeitpunkt, &e.Details)
+		}, konten[i].ID); err != nil {
+			return nil, fmt.Errorf("einträge eines früheren kontos: %w", err)
+		}
+	}
+	return konten, nil
+}

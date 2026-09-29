@@ -96,6 +96,10 @@ func TestDsgvoAuskunft_HappyPathLiefertAlleSektionen(t *testing.T) {
 	mock.ExpectQuery(`FROM benutzer\s+WHERE leser_id = \$1`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id"}))
+	// Seit dem 29.09.2026: frühere Zugangskonten über ihren Löscheintrag. Ein Schüler hat keine.
+	mock.ExpectQuery(`FROM audit_log\s+WHERE tabelle = 'benutzer' AND aktion = 'DELETE'`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "timestamp", "email", "rolle"}))
 	mock.ExpectExec(`INSERT INTO audit_log`).
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
@@ -154,7 +158,8 @@ func TestDsgvoAuskunft_AuditFehlerVerhindertAuskunftNicht(t *testing.T) {
 	mock.ExpectQuery(`SELECT aktualisiert_am FROM schueler_fotos`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"aktualisiert_am"})) // kein Foto
-	for _, frag := range []string{`FROM ausleihen a`, `FROM schadensfaelle`, `FROM vormerkungen v`, `FROM schadensersatz_bescheide`, `FROM nachbuch_meldungen`, `FROM audit_log`, `FROM audit_logs`, `FROM benutzer\s+WHERE leser_id`} {
+	for _, frag := range []string{`FROM ausleihen a`, `FROM schadensfaelle`, `FROM vormerkungen v`, `FROM schadensersatz_bescheide`, `FROM nachbuch_meldungen`, `FROM audit_log`, `FROM audit_logs`, `FROM benutzer\s+WHERE leser_id`,
+		`FROM audit_log\s+WHERE tabelle = 'benutzer' AND aktion = 'DELETE'`} {
 		mock.ExpectQuery(frag).WithArgs(dsgvoTestID).
 			WillReturnRows(pgxmock.NewRows([]string{"x"}))
 	}

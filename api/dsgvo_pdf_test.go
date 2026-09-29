@@ -102,6 +102,10 @@ func TestDsgvoAuskunftPDFHandler_Success(t *testing.T) {
 	mock.ExpectQuery(`FROM benutzer\s+WHERE leser_id = \$1`).
 		WithArgs(dsgvoTestID).
 		WillReturnRows(pgxmock.NewRows([]string{"id"}))
+	// Seit dem 29.09.2026: frühere Zugangskonten über ihren Löscheintrag. Ein Schüler hat keine.
+	mock.ExpectQuery(`FROM audit_log\s+WHERE tabelle = 'benutzer' AND aktion = 'DELETE'`).
+		WithArgs(dsgvoTestID).
+		WillReturnRows(pgxmock.NewRows([]string{"id", "timestamp", "email", "rolle"}))
 
 	mock.ExpectExec(`INSERT INTO audit_log`).
 		WithArgs(dsgvoTestID, (*string)(nil), "SYSTEM").

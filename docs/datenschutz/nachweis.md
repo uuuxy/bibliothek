@@ -199,11 +199,14 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 - Vom Internet aus soll nur die Bestätigungsseite für Lieferanten erreichbar sein, alles andere
   nur aus dem Schulnetz (entschieden am 28.09.2026); die Sperre am Eingang ist nicht eingerichtet
   (4.23).
-- Die Auskunft findet Einträge über ein gelöschtes Zugangskonto nicht; ein Kollege, der über die
-  Leserdatei angelegt wird, hinterlässt keinen Protokolleintrag (5.19).
-- Dreimal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte;
-  jedes Mal behoben. Der Test aus Abschnitt 6 sieht nur Werte, die er selbst anlegt; ein Test
-  gegen die ganze Klasse ist beschlossen und nicht gebaut (5.10).
+- Ein Kollege, der über die Leserdatei angelegt wird, hinterlässt keinen Protokolleintrag
+  (5.19). Ein gelöschtes Zugangskonto nennt die Auskunft seit dem 29.09.2026; Löschungen von
+  davor trugen den Bezug zum Leser nicht und bleiben für sie unsichtbar.
+- Viermal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte;
+  jedes Mal behoben, zuletzt am 29.09.2026 Name und Freitext aus der Löschspur eines Titels.
+  Seit dem 29.09.2026 prüft ein Test jede Stelle im Code, die einen Protokolleintrag mit der
+  Kennung eines Lesers baut. Offen sind Einträge, die einen Leser ohne diese Kennung meinen,
+  und Einträge zu Lesern, die vor der jeweiligen Behebung gelöscht wurden (5.35).
 - Anmeldungen stehen nicht im Protokoll; nach einem Missbrauch lässt sich nicht nachsehen, wann
   und von wo ein Konto angemeldet war (6.1).
 

@@ -198,8 +198,11 @@ type DsgvoAuskunftResponse struct {
 	Verwaltung        []DsgvoVerwaltungsEintrag `json:"verwaltungsprotokolle"`
 	// Das Konto, mit dem sich die Person anmeldet, samt Anfragen und Kontoereignissen;
 	// null, wenn auf diesen Leser kein Konto zeigt (bei Schülern der Regelfall).
-	Zugangskonto         *repository.DsgvoZugangskonto `json:"zugangskonto"`
-	Verarbeitungsangaben DsgvoVerarbeitungsangaben     `json:"verarbeitungsangaben"`
+	Zugangskonto *repository.DsgvoZugangskonto `json:"zugangskonto"`
+	// Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie (seit
+	// 29.09.2026). Leer, wenn es keine gab.
+	FruehereZugangskonten []repository.DsgvoFrueheresZugangskonto `json:"fruehere_zugangskonten"`
+	Verarbeitungsangaben  DsgvoVerarbeitungsangaben               `json:"verarbeitungsangaben"`
 }
 
 // dsgvoVerarbeitungsangaben formuliert die Pflichtangaben nach Art. 15 Abs. 1 DSGVO —
@@ -540,11 +543,13 @@ type dsgvoDaten struct {
 	auditEintraege    []DsgvoAuditEintrag
 	verwaltung        []DsgvoVerwaltungsEintrag
 	zugangskonto      *repository.DsgvoZugangskonto
+	fruehereKonten    []repository.DsgvoFrueheresZugangskonto
 	verarbeitung      DsgvoVerarbeitungsangaben
 }
 
 // dsgvoKontoRecht verlangt die Auskunft zusätzlich zum Recht der Route, sobald auf den Leser
-// ein Zugangskonto zeigt (seit 28.09.2026). Dann nennt sie das Konto, seine Einträge im
+// ein Zugangskonto zeigt (seit 28.09.2026) oder einmal gezeigt hat (seit 29.09.2026: Die
+// Auskunft nennt dann das gelöschte Konto samt seinen Einträgen, dieselbe Art Daten). Dann nennt sie das Konto, seine Einträge im
 // Verwaltungsprotokoll und jeden Vorgang, den die Person selbst bearbeitet hat, bei
 // Verwaltungseingriffen mit IP-Adresse. Konten und dieses Protokoll zeigt die Anwendung sonst
 // nur mit manage_users (GET /api/benutzer, GET /api/admin/auditlog). Das Recht der Route,
@@ -602,9 +607,13 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string, darfKonto bool
 	if err != nil {
 		return nil, apierrors.Internal("Fehler beim Laden des Zugangskontos", err)
 	}
-	// Geprüft am gelesenen Konto, nicht an stammdaten.HatZugangskonto: Entscheidend ist,
-	// was die Antwort enthalten würde.
-	if zugangskonto != nil && !darfKonto {
+	fruehereKonten, err := repository.LeseDsgvoFruehereZugangskonten(ctx, s.DB.Pool, id)
+	if err != nil {
+		return nil, apierrors.Internal("Fehler beim Laden der früheren Zugangskonten", err)
+	}
+	// Geprüft an den gelesenen Konten, nicht an stammdaten.HatZugangskonto: Entscheidend ist,
+	// was die Antwort enthalten würde — auch ein gelöschtes Konto samt seinen Einträgen.
+	if (zugangskonto != nil || len(fruehereKonten) > 0) && !darfKonto {
 		return nil, apierrors.New(http.StatusForbidden,
 			"Die Auskunft über einen Leser mit Zugangskonto verlangt das Recht „Benutzer & Rechte verwalten“.", nil)
 	}
@@ -613,6 +622,7 @@ func (s *Server) sammleDsgvoDaten(ctx context.Context, id string, darfKonto bool
 	return &dsgvoDaten{
 		verarbeitung:      verarbeitung,
 		zugangskonto:      zugangskonto,
+		fruehereKonten:    fruehereKonten,
 		stammdaten:        stammdaten,
 		foto:              foto,
 		ausleihen:         ausleihen,
@@ -684,18 +694,19 @@ func (s *Server) DsgvoAuskunftHandler() http.HandlerFunc {
 // merkte es. Gate: TestDsgvoPDF_DrucktJedeAngabeDerAuskunft.
 func dsgvoAntwort(daten *dsgvoDaten, erstelltAm time.Time) DsgvoAuskunftResponse {
 	return DsgvoAuskunftResponse{
-		Art:                  "Auskunft nach Art. 15 DSGVO",
-		ErstelltAm:           erstelltAm,
-		Stammdaten:           *daten.stammdaten,
-		Foto:                 daten.foto,
-		Ausleihen:            daten.ausleihen,
-		Schadensfaelle:       daten.schaeden,
-		Vormerkungen:         daten.vormerkungen,
-		Bescheide:            daten.bescheide,
-		NachbuchMeldungen:    daten.nachbuchMeldungen,
-		AuditEintraege:       daten.auditEintraege,
-		Verwaltung:           daten.verwaltung,
-		Zugangskonto:         daten.zugangskonto,
-		Verarbeitungsangaben: daten.verarbeitung,
+		Art:                   "Auskunft nach Art. 15 DSGVO",
+		ErstelltAm:            erstelltAm,
+		Stammdaten:            *daten.stammdaten,
+		Foto:                  daten.foto,
+		Ausleihen:             daten.ausleihen,
+		Schadensfaelle:        daten.schaeden,
+		Vormerkungen:          daten.vormerkungen,
+		Bescheide:             daten.bescheide,
+		NachbuchMeldungen:     daten.nachbuchMeldungen,
+		AuditEintraege:        daten.auditEintraege,
+		Verwaltung:            daten.verwaltung,
+		Zugangskonto:          daten.zugangskonto,
+		FruehereZugangskonten: daten.fruehereKonten,
+		Verarbeitungsangaben:  daten.verarbeitung,
 	}
 }

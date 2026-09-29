@@ -90,6 +90,7 @@ func generateDsgvoAuskunftPDF(a DsgvoAuskunftResponse, schule pdf.SchuleInfo) ([
 	dsgvoAuditAbschnitt(p, tr, a.AuditEintraege)
 	dsgvoVerwaltungAbschnitt(p, tr, a.Verwaltung)
 	dsgvoKontoAbschnitt(p, tr, a.Zugangskonto)
+	dsgvoFruehereKontenAbschnitt(p, tr, a.FruehereZugangskonten)
 	dsgvoVerarbeitungAbschnitt(p, tr, a.Verarbeitungsangaben)
 
 	var buf bytes.Buffer

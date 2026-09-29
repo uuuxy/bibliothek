@@ -11,6 +11,7 @@ import (
 
 	"bibliothek/auth"
 	"bibliothek/db"
+	"bibliothek/repository"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -141,6 +142,29 @@ func TestDsgvoAuskunft_KontoVerlangtKontenrecht(t *testing.T) {
 	if rec := rufe(srv.DsgvoAuskunftHandler(), ottoLeser, lea, auth.RoleLeitung); rec.Code != http.StatusOK {
 		t.Errorf("Gegenprobe: die Leitung bekommt die Auskunft eines Kollegen ohne Konto nicht (Status %d) — %s",
 			rec.Code, rec.Body.String())
+	}
+
+	// Ein gelöschtes Konto zählt wie ein bestehendes (29.09.2026): Die Auskunft nennt dann das
+	// frühere Konto samt seinen Einträgen, dieselbe Art Daten. Der Ausweis hält die Leserzeile,
+	// wenn das Konto über Benutzer & Rechte fällt.
+	fritz, fritzLeser := konto("Fritz", "fritz@auskunft-recht.invalid", "mitarbeiter")
+	if _, err := pool.Exec(ctx, `UPDATE leser SET barcode_id = 'AR-FRITZ-1' WHERE id = $1`, fritzLeser); err != nil {
+		t.Fatalf("Ausweis für Fritz: %v", err)
+	}
+	if err := repository.NewAuditRepository(pool).DeleteUser(ctx, fritz, ada); err != nil {
+		t.Fatalf("Konto von Fritz löschen: %v", err)
+	}
+	for name, h := range map[string]http.HandlerFunc{
+		"JSON": srv.DsgvoAuskunftHandler(), "PDF": srv.DsgvoAuskunftPDFHandler(),
+	} {
+		rec := rufe(h, fritzLeser, lea, auth.RoleLeitung)
+		if rec.Code != http.StatusForbidden {
+			t.Errorf("%s: die Leitung ohne manage_users bekommt die Auskunft eines Kollegen mit gelöschtem Konto "+
+				"(Status %d, erwartet 403)", name, rec.Code)
+		}
+		if strings.Contains(rec.Body.String(), "fritz@auskunft-recht.invalid") {
+			t.Errorf("%s: die Antwort an die Leitung enthält die Adresse des gelöschten Kontos", name)
+		}
 	}
 
 	rec := rufe(srv.DsgvoAuskunftHandler(), ritaLeser, ada, auth.RoleAdmin)

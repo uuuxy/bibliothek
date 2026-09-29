@@ -3868,6 +3868,13 @@ const docTemplate = `{
                 "ausweisfoto": {
                     "$ref": "#/definitions/api.DsgvoFoto"
                 },
+                "fruehere_zugangskonten": {
+                    "description": "Gelöschte Konten, die auf diesen Leser zeigten, samt den Einträgen über sie (seit\n29.09.2026). Leer, wenn es keine gab.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DsgvoFrueheresZugangskonto"
+                    }
+                },
                 "nachbuch_meldungen": {
                     "type": "array",
                     "items": {
@@ -5546,6 +5553,30 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "zeitpunkt": {
+                    "type": "string"
+                }
+            }
+        },
+        "repository.DsgvoFrueheresZugangskonto": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "ereignisse_im_verwaltungsprotokoll": {
+                    "description": "Nur die Einträge, die das Konto als ziel_id tragen (Anlage, Änderung). Was die Person\nmit dem Konto bearbeitet hat, trug die Kennung des Kontos in einer Spalte mit\nON DELETE SET NULL und ist ihr nicht mehr zuzuordnen.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repository.DsgvoKontoEreignis"
+                    }
+                },
+                "geloescht_am": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "rolle": {
                     "type": "string"
                 }
             }

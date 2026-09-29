@@ -88,6 +88,31 @@ func dsgvoKontoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, k *repository.D
 	}
 }
 
+// dsgvoFruehereKontenAbschnitt druckt die gelöschten Konten, die auf diesen Leser zeigten, als
+// Teil von Abschnitt 10 (repository.LeseDsgvoFruehereZugangskonten, seit 29.09.2026). Gab es
+// keine, bleibt es beim Abschnitt darüber.
+func dsgvoFruehereKontenAbschnitt(p *gofpdf.Fpdf, tr func(string) string, konten []repository.DsgvoFrueheresZugangskonto) {
+	if len(konten) == 0 {
+		return
+	}
+	dsgvoUnterabschnitt(p, tr, fmt.Sprintf("Frühere Zugangskonten (%d)", len(konten)))
+	dsgvoHinweis(p, tr, "Gelöschte Konten, die auf diesen Leserdatensatz zeigten, mit den Einträgen im "+
+		"Verwaltungsprotokoll über das Konto. Was die Person mit einem solchen Konto selbst bearbeitet hat, "+
+		"ist ihr nach dem Löschen nicht mehr zuzuordnen.")
+	for _, k := range konten {
+		dsgvoEintragTitel(p, tr, k.Email)
+		dsgvoEintragZeile(p, tr, strings.Join([]string{
+			"Interne ID: " + k.ID,
+			"Rolle: " + dsgvoRolle(k.Rolle),
+			"gelöscht: " + dsgvoZeit(k.GeloeschtAm),
+		}, " · "))
+		p.SetFont("Arial", "", 8)
+		for _, e := range k.Ereignisse {
+			p.MultiCell(0, 5, tr(dsgvoZeit(e.Zeitpunkt)+" — "+dsgvoKontoAktion(e.Aktion)), "", "L", false)
+		}
+	}
+}
+
 // dsgvoVorgangsZeile fasst die Vorgänge eines Tages mit derselben Handlung zusammen.
 type dsgvoVorgangsZeile struct {
 	tag, handlung string

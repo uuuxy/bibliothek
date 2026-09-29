@@ -39,6 +39,8 @@ func TestDsgvoPDF_DrucktJedeAngabeDerAuskunft(t *testing.T) {
 		"verwaltungsprotokolle[].details": "wie protokolleintraege[].details",
 		"zugangskonto.ereignisse_im_verwaltungsprotokoll[].details": "Rohdaten des Protokolls wie " +
 			"verwaltungsprotokolle[].details; dieselbe offene Frage (OFFEN.md 5.19).",
+		"fruehere_zugangskonten[].ereignisse_im_verwaltungsprotokoll[].details": "wie " +
+			"zugangskonto.ereignisse_im_verwaltungsprotokoll[].details",
 	}
 
 	var a DsgvoAuskunftResponse
