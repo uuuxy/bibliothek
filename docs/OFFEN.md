@@ -73,13 +73,12 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Was still jemandem schaden kann (entschieden am 28.09.2026, nach der Regel unten „kann das
-   still jemandem schaden?"): die zwei Fristen aus 5.19 (gelöschte Kollegen,
-   Klassensatz-Reservierungen; entschieden am 28.09.2026), aus 5.19 die Auskunft bei gelöschtem
-   Konto und der Kollege über die Leserdatei. Danach die zwei kleinen Umbauten 8.7 (Verlängerung
-   beim Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026, der Eigentumsvermerk je
-   Exemplar aus Littera (4.24) und zusätzlich 12 wöchentliche Stände der Sicherung (5.30). Dann
-   5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben,
-   Bildschirm für Bildschirm).
+   still jemandem schaden?"): aus 5.19 die Frist für gelöschte Kollegen (entschieden am
+   28.09.2026), die Auskunft bei gelöschtem Konto und der Kollege über die Leserdatei. Danach
+   die zwei kleinen Umbauten 8.7 (Verlängerung beim Schulbuch) und 8.8 (Abholfrist), entschieden
+   am 28.09.2026, der Eigentumsvermerk je Exemplar aus Littera (4.24) und zusätzlich 12
+   wöchentliche Stände der Sicherung (5.30). Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde
+   zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -507,14 +506,10 @@ können aber andere Personen nennen.
   derselbe Weg wie von Hand (`entferneSchuelerPIIUndLoesche`, für den nächtlichen Lauf wie
   `PurgeAbgaenger`), offene Ausleihen und Forderungen halten ihn
   (`blockiereBeiOffenenVorgaengen`). Das Prädikat gehört nach `repository/loeschfristen.go`, der
-  Wächter zählt mit. Littera löscht sofort und endgültig von Hand, ohne Papierkorb.
-- Klassensatz-Reservierungen löscht kein Job; erledigte Wünsche und Meldungen fallen nach der
-  eingestellten Frist (Vorgabe 365 Tage). **Entschieden am 28.09.2026:** Erledigte
-  Reservierungen fallen nach derselben Einstellung (`anliegen_tage`). Die Tabelle hat dieselbe
-  Spalte `erledigt_am`, die Regel steht in `PredikatAnliegen`; offene bleiben, bis sie erledigt
-  sind. Littera: Klassensätze stehen nicht im Handbuch. Beim Bau beider Fristen mitziehen: die
-  Pflichtangaben der Auskunft (`dsgvoVerarbeitungsangabenKollegium`; sie sagen heute „eine
-  automatische Frist gibt es nicht"), den Datenschutz-Nachweis (Löschfristen) und das VVT.
+  Wächter zählt mit. Littera löscht sofort und endgültig von Hand, ohne Papierkorb. Beim Bau
+  mitziehen: die Pflichtangaben der Auskunft (`dsgvoVerarbeitungsangabenKollegium`; sie sagen
+  heute „eine automatische Frist gibt es nicht"), den Datenschutz-Nachweis (Löschfristen) und
+  das VVT.
 - Wird nur das Konto gelöscht (Benutzer & Rechte), bleibt die Leserzeile mit Ausweis stehen
   (`loescheUnberuehrteLeserzeile`). Die Einträge über das gelöschte Konto — `USER_CREATE` und
   `USER_UPDATE` mit seiner `ziel_id`, der Löscheintrag in `audit_log` mit Name und E-Mail-Adresse —

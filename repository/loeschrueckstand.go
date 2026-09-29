@@ -110,6 +110,15 @@ func (r *BetriebszustandRepository) ZaehleLoeschRueckstand(ctx context.Context) 
 	}
 	stand = append(stand, anliegen)
 
+	// 5a. Erledigte Klassensatz-Reservierungen: dieselbe Einstellung wie die Anliegen.
+	reservierungen := LoeschRueckstand{Routine: "Erledigte Klassensatz-Reservierungen", Frist: tageText(anliegenTage), Aus: anliegenTage <= 0}
+	if !reservierungen.Aus {
+		if reservierungen.Zeilen, err = r.zaehle(ctx, "klassensatz_reservierungen", "", PredikatKlassensatzReservierungen(anliegenTage, KulanzWaechter)); err != nil {
+			return fehler(err)
+		}
+	}
+	stand = append(stand, reservierungen)
+
 	// 5b. Quittierte Nachbuch-Meldungen (Migration 117): Lesehistorie-Frist, höchstens 30 Tage.
 	nachbuchTage := NachbuchMeldungenTage(einst)
 	nachbuch := LoeschRueckstand{Routine: "Quittierte Nachbuch-Meldungen", Frist: tageText(nachbuchTage)}

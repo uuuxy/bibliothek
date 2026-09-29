@@ -239,6 +239,20 @@ func PredikatAnliegen(tage, kulanz int) Loeschbedingung {
 		  AND erledigt_am < NOW() - make_interval(days => $1::int + $2::int)`}
 }
 
+// PredikatKlassensatzReservierungen liefert die Bedingung für erledigte
+// Klassensatz-Reservierungen. Dieselbe Frist wie die erledigten Anliegen (anliegen_tage,
+// entschieden am 28.09.2026, docs/OFFEN.md 5.19): Eine Reservierung ist eine Anfrage aus dem
+// Kollegiums-Portal wie ein Wunsch; erledigt ist ihr Zweck erreicht, offen bleibt sie.
+//
+// Anders als beim Anliegen steht „erledigt" hier in einer eigenen Spalte; erledigt_am kam mit
+// Migration 089 dazu, ohne Nachtrag. Eine Reservierung, die davor erledigt wurde, hat keinen
+// Zeitpunkt und bleibt stehen — ein erfundener wäre schlechter als keiner.
+func PredikatKlassensatzReservierungen(tage, kulanz int) Loeschbedingung {
+	return Loeschbedingung{Args: []any{tage, kulanz}, Where: `erledigt = true
+		  AND erledigt_am IS NOT NULL
+		  AND erledigt_am < NOW() - make_interval(days => $1::int + $2::int)`}
+}
+
 // ── Nachbuch-Meldungen ($1 Tage, $2 Kulanz) ─────────────────────────────────────
 //
 // Quittierte Meldungen fallen nach der Lesehistorie-Frist der Schülerbücherei, höchstens

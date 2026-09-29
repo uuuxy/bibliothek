@@ -60,13 +60,12 @@ func TestLoeschRueckstand_WaechterUndJobStellenDieselbeFrage(t *testing.T) {
 		t.Fatal("Wächter lieferte keine einzige Routine")
 	}
 
-	// Der Lauf. Kein gefälschtes Datum, keine gesetzte Frist — die Vorgaben.
+	// Der Lauf. Kein gefälschtes Datum, keine gesetzte Frist — die Vorgaben. Gefahren wird,
+	// was der Cron plant (Start in cron.go): die nächtliche Folge und die Audit-Aufbewahrung um
+	// 03:00. Bis zum 29.09.2026 rief der Test jede Routine einzeln auf; eine Routine, die im
+	// Nachtlauf fehlt, wäre dann grün geblieben und erst im Betrieb als Rückstand aufgefallen.
 	s := NewScheduler(pool, repository.NewAuditRepository(pool))
-	s.RunGDPRAnonymizeOldData()
-	s.RunGDPRDeleteAbgaenger()
-	s.RunLesehistorieBefristung()
-	s.RunAnliegenBefristung()
-	s.RunNachbuchMeldungenBefristung()
+	s.RunNaechtlicheDSGVO()
 	s.RunAuditAufbewahrung()
 
 	// Richtung 2: Ist danach Ruhe? Jede verbleibende Zeile heißt, dass der Wächter eine
@@ -190,6 +189,16 @@ func legeUeberfaelligeDatenAn(ctx context.Context, t *testing.T, pool *pgxpool.P
 		INSERT INTO lehrer_anliegen (art, titel_text, kommentar, erstellt_am, erledigt_am)
 		VALUES ('wunsch', 'ALT-ERLEDIGT', 'Bitte anschaffen',
 		        NOW() - interval '430 days', NOW() - interval '400 days')`)
+
+	// 5a. Erledigte Klassensatz-Reservierung: vor 400 Tagen erledigt (dieselbe Frist, 365).
+	must("Klassensatz-Reservierung", `
+		INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erledigt, erstellt_am, erledigt_am)
+		VALUES ($1, '7a', 30, true, NOW() - interval '430 days', NOW() - interval '400 days')`, freihand)
+	// Dazu eine offene mit altem erledigt_am: Weder Wächter noch Job dürfen sie zählen. Fragte
+	// der Wächter nur nach erledigt_am, meldete er sie nach dem Lauf weiter.
+	must("wieder geöffnete Reservierung", `
+		INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, erledigt, erstellt_am, erledigt_am)
+		VALUES ($1, '7a', 30, false, NOW() - interval '430 days', NOW() - interval '400 days')`, freihand)
 
 	// 6. Audit-Aufbewahrung: beide Protokolltabellen, jenseits der 24 Monate.
 	must("altes audit_log", `

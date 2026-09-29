@@ -97,8 +97,8 @@
 			die Zuordnung.
 		</p>
 		<p>
-			Anliegen: Tage nach der Erledigung, nach denen ein Wunsch bzw. eine Meldung aus dem
-			Kollegiums-Portal gelöscht wird. Offene Anliegen haben keine Frist.
+			Anliegen: Tage nach der Erledigung, nach denen ein Wunsch, eine Meldung oder eine
+			Klassensatz-Reservierung aus dem Kollegiums-Portal gelöscht wird. Offene haben keine Frist.
 		</p>
 		<p>
 			Sitzung: Minuten ohne Bedienung, bis die Theke den geladenen Schüler fallen lässt bzw. der

@@ -65,3 +65,46 @@ func (s *Scheduler) RunAnliegenBefristung() {
 		log.Printf("Scheduler Anliegen: Audit-Eintrag fehlgeschlagen: %v", err)
 	}
 }
+
+// ── Erledigte Klassensatz-Reservierungen befristen ───────────────────────────
+//
+// Reservierungen aus dem Kollegiums-Portal hatten bis zum 29.09.2026 keinen Löschpfad; sie
+// tragen die Klasse, eine Notiz und über angefordert_von das Konto der Lehrkraft. Entschieden
+// am 28.09.2026 (docs/OFFEN.md 5.19): dieselbe Frist wie die erledigten Anliegen, dieselbe
+// Einstellung. Offene Reservierungen bleiben.
+
+// RunKlassensatzBefristung löscht erledigte Klassensatz-Reservierungen nach Ablauf der Frist.
+func (s *Scheduler) RunKlassensatzBefristung() {
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+
+	einst, err := repository.NewSystemSettingsRepository(s.db).GetSettings(ctx)
+	if err != nil {
+		log.Printf("Scheduler Klassensatz: Einstellungen nicht lesbar, Lauf übersprungen: %v", err)
+		return
+	}
+	tage := repository.TageOderStandard(einst.AnliegenTage, repository.StandardAnliegenTage)
+	if tage <= 0 {
+		// 0 heißt "aus" — dieselbe Einstellung wie bei den Anliegen.
+		return
+	}
+
+	bedingung := repository.PredikatKlassensatzReservierungen(tage, repository.KulanzJob)
+	tag, err := s.db.Exec(ctx, `DELETE FROM klassensatz_reservierungen WHERE `+bedingung.Where, bedingung.Args...)
+	if err != nil {
+		log.Printf("Scheduler Klassensatz: Löschen fehlgeschlagen: %v", err)
+		return
+	}
+
+	geloescht := tag.RowsAffected()
+	if geloescht == 0 {
+		return
+	}
+	log.Printf("Scheduler Klassensatz: %d erledigte Reservierungen nach %d Tagen gelöscht", geloescht, tage)
+
+	if err := s.auditRepo.LogSystemAktion(ctx, "klassensatz_reservierungen", "DELETE",
+		"DSGVO: erledigte Klassensatz-Reservierungen nach Frist gelöscht",
+		map[string]any{"geloescht": geloescht, "tage": tage}); err != nil {
+		log.Printf("Scheduler Klassensatz: Audit-Eintrag fehlgeschlagen: %v", err)
+	}
+}

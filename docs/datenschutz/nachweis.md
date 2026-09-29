@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 28.09.2026 (Entwurf)
+Stand: 29.09.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
@@ -72,7 +72,7 @@ Datenschutz & Sitzung.
 | bearbeitende Person an einer Ausleihe                                | 14 Tage nach der Rückgabe                                                                       | nein        |
 | Abgänger ohne offene Vorgänge                                        | anonymisiert 90 Tage nach dem späteren von Abgang und letztem Vorgang, endgültig gelöscht ab dem 30. Januar des Folgejahres | die 90 Tage |
 | Schülerin oder Schüler im Papierkorb                                 | anonymisiert nach 180 Tagen                                                                     | nein        |
-| erledigte Wünsche und Meldungen des Kollegiums                       | 365 Tage nach der Erledigung                                                                    | ja          |
+| erledigte Wünsche, Meldungen und Klassensatz-Reservierungen des Kollegiums                       | 365 Tage nach der Erledigung                                                                    | ja          |
 | quittierte Meldungen der Theke nach einem Netzausfall                | Frist der Schülerbücherei, höchstens 30 Tage                                                    | über diese  |
 | Protokoll                                                            | 24 Monate                                                                                       | ja, mindestens 6 |
 | Sicherung jede Nacht                                                 | die letzten 14 bleiben (entschieden am 28.09.2026: dazu 12 wöchentliche, noch nicht gebaut)     | nein        |
@@ -191,9 +191,11 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 - Antworten mit Personendaten tragen keine Anweisung an den Browser, sie nicht
   zwischenzuspeichern; auf einem Rechner für mehrere Personen können sie im Browser-Speicher
   liegen bleiben (5.29).
-- Ein gelöschter Kollege bleibt ohne Frist im Papierkorb; Klassensatz-Reservierungen löscht kein
-  Lauf. Entschieden am 28.09.2026, nicht gebaut: der Kollege nach 180 Tagen im Papierkorb
-  endgültig, erledigte Reservierungen nach der Frist für erledigte Wünsche und Meldungen (5.19).
+- Ein gelöschter Kollege bleibt ohne Frist im Papierkorb. Entschieden am 28.09.2026, nicht
+  gebaut: nach 180 Tagen im Papierkorb endgültig löschen (5.19). Erledigte Klassensatz-
+  Reservierungen fallen seit dem 29.09.2026 nach der Frist für erledigte Wünsche und Meldungen;
+  eine Reservierung, die vor dem Einspielen von Migration 089 (31.08.2026) erledigt wurde, hat
+  keinen Zeitpunkt und bleibt stehen.
 - Vom Internet aus soll nur die Bestätigungsseite für Lieferanten erreichbar sein, alles andere
   nur aus dem Schulnetz (entschieden am 28.09.2026); die Sperre am Eingang ist nicht eingerichtet
   (4.23).

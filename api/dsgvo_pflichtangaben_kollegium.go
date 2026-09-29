@@ -16,8 +16,9 @@ import "fmt"
 //     (repository/anliegen_repo.go, reservation_repo.go); die Kontenliste verlangt
 //     manage_users, das Protokoll audit_logs (api/routes_system.go).
 //   - Trennen der Ausleihen: PredikatLesehistorieAusleihen fragt nicht nach der Art.
-//   - Klassensatz-Reservierungen löscht kein Job; ein gelöschter Kollege bleibt im
-//     Papierkorb, weil PredikatAnonymisierung nur art = 'schueler' nimmt.
+//   - Erledigte Klassensatz-Reservierungen fallen seit dem 29.09.2026 nach derselben Frist wie
+//     erledigte Wünsche und Meldungen (RunKlassensatzBefristung). Ein gelöschter Kollege bleibt
+//     im Papierkorb, weil PredikatAnonymisierung nur art = 'schueler' nimmt.
 //
 // Die Fristen kommen aus denselben Einstellungen wie bei den Jobs (dsgvoFristen), damit eine
 // geänderte Frist hier nicht als Werksvorgabe stehen bleibt.
@@ -46,7 +47,7 @@ func dsgvoVerarbeitungsangabenKollegium(f dsgvoFristWerte) DsgvoVerarbeitungsang
 		Empfaenger: "Keine Übermittlung an Dritte. Das Bibliothekspersonal der Schule sieht die eigenen Ausleihen sowie Wünsche, Meldungen und Reservierungen mit dem Namen der anfragenden Person; " +
 			"die Liste der Zugangskonten und die Protokolle sehen nur Personen, denen die Schule deren Verwaltung übertragen hat. Helfer an der Theke sehen nur Name, Ausweisnummer und Sperrstatus.",
 		Speicherdauer: "Ausleihvorgänge bleiben der Person zugeordnet: Schülerbücherei " + nachRueckgabe(f.lesehistorieTage) + ", Lernmittel " + nachRueckgabe(f.lernmittelTage) + "; danach automatisch getrennt. " +
-			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Erledigte Wünsche und Meldungen: " + anliegen + "; Klassensatz-Reservierungen werden nicht automatisch gelöscht. " +
+			"Bearbeitende Person einer Ausleihe nach 14 Tagen entfernt. Erledigte Wünsche, Meldungen und Klassensatz-Reservierungen: " + anliegen + ". " +
 			"Protokolle " + fmt.Sprintf("%d", f.auditMonate) + " Monate. Leserdatensatz und Zugangskonto bis zum Ausscheiden; gelöscht werden sie von Hand durch die Schule, eine automatische Frist gibt es nicht, auch nicht für einen gelöschten Leserdatensatz im Papierkorb. " +
 			dsgvoSicherungen,
 		Herkunft:          "Anlage durch die Bibliothek oder die Verwaltung der Zugangskonten, die eigene Anmeldung mit der dienstlichen E-Mail-Adresse oder die Übernahme aus dem bisherigen Bibliotheksprogramm; Protokolleinträge entstehen bei der Arbeit im System",
