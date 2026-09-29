@@ -220,6 +220,11 @@ nur die Anwendung kennt sie alle.
 
 Danach die Liste vernichten: `shred -u geloescht.txt`.
 
+Alles andere seit der Sicherung steht ebenfalls auf dem alten Stand — Ausleihen, Rückgaben,
+Änderungen, auch der Papierkorb: Wer seitdem in den Papierkorb gelegt wurde, steht wieder aktiv in
+der Leserdatei, und seine 180 Tage bis zum endgültigen Löschen beginnen erst, wenn man ihn erneut
+löscht. Nachgeholt wird nur, was zwingend weg sein muss (Schritt 8).
+
 ### 2b. Backups aus den Shell-Wegen (Abschnitt 1b)
 
 **Der Regelfall — `.enc`:** identisch zu Abschnitt 2a, nur der Dateiname unterscheidet

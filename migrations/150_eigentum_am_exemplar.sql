@@ -4,10 +4,12 @@
 -- Wem ein Exemplar gehört, bestimmte bisher allein die Regel repository.ExemplarTopfSQL: der
 -- Topf der Bestellung, sonst ist_lernmittel am Titel. Für den Altbestand ist das eine
 -- Faustregel. Littera führt das Eigentum je Exemplar (Exemplar.Eigentumsvermerk). In der
--- Medienliste vom 12.06.2026 steht „Land Hessen" an rund 11.200 Exemplaren ohne LMF-Signatur —
--- Lektüren, Ganzschriften, Nachschlagewerke und Zeitschriften, die nach dem Leitfaden des
--- Kultusministeriums aus LMF-Mitteln beschafft werden dürfen und dann im Eigentum des Landes
--- bleiben (Leitfaden „Lernmittelfreiheit in Hessen", Ziffern 2.1, 9.4.2 und 13).
+-- Medienliste vom 12.06.2026 steht „Land Hessen" an 11.160 Exemplaren ohne LMF-Signatur, davon
+-- 3.682 aus Titeln mit 20 und mehr Stück (Klassensätze) und 528 Zeitschriften. Nach dem Leitfaden
+-- „Lernmittelfreiheit in Hessen" des Kultusministeriums dürfen aus LMF-Mitteln auch Lektüren und
+-- Ganzschriften gekauft werden (Ziffer 2.1), mit einer Vereinbarung mit dem Schulträger bis zu
+-- 5 % auch Lehrmittel (13); was aus Landesmitteln beschafft ist, wird als Eigentum des Landes
+-- gekennzeichnet (11.1, 11.4).
 --
 -- Die Spalte hält das Eigentum, wo es ausdrücklich bekannt ist. NULL heißt „nicht ausdrücklich
 -- gesetzt": Dann gilt weiter die Bestellung, sonst der Titel. Dasselbe Vokabular wie

@@ -256,18 +256,22 @@ Bestellung, sonst `ist_lernmittel` am Titel, und die Übernahme setzt `ist_lernm
 LMF-Signatur. In der Medienliste vom 12.06.2026 (67.109 Exemplare) widerspricht das Littera an
 11.160 Exemplaren ohne LMF-Signatur mit „Land Hessen" und an 3 Schulbüchern mit dem
 Schulträger. Laut Leitfaden „Lernmittelfreiheit in Hessen" des Kultusministeriums dürfen aus
-LMF-Mitteln auch Lektüren, Ganzschriften, Themenhefte und Nachschlagewerke gekauft werden
-(Ziffer 2.1), bis zu 5 % auch Lehrmittel (Ziffer 13), und solche Bücher bleiben im Eigentum des
-Landes (Ziffer 9.4.2). Unter den 11.160 sind Klassensätze und Lehrer-Zeitschriften. 74 % aller
+LMF-Mitteln auch Themenhefte, Quellensammlungen, Lektüren und Ganzschriften gekauft werden
+(Ziffer 2.1), Wörterbücher und Lexika sind Lernmittel ohne Genehmigung (7.5), und mit einer
+Vereinbarung zwischen Kultusministerium und Schulträger bis zu 5 % auch Lehrmittel (13). Was aus
+Landesmitteln beschafft ist, wird als Eigentum des Landes gekennzeichnet (11.1, 11.4; 9.4.2:
+„Bücher …, die im Eigentum des Landes bleiben"). Unter den 11.160 stammen 3.682 aus Titeln mit
+20 und mehr Stück (Klassensätze), 528 sind Zeitschriften, 4.201 Einzelstücke. 74 % aller
 Exemplare haben keinen Vermerk, auch fast alle Schulbücher — die Faustregel bleibt als Vorgabe
 nötig.
 
 **Entschieden am 29.09.2026:** Jedes Exemplar hat ein Eigentum (Land oder Schulträger) nach einer
 Regel für alle Stellen: ausdrücklich am Exemplar gesetzt, sonst Topf der Bestellung, sonst
-Faustregel. Sichtbar und änderbar wie in Littera. Vorbild auch Destiny („Funding Source" je
-Exemplar, Sammeländerung), Koha („Source of acquisition" aus einer Werteliste) und BIBLIOTHECA
-(Kostenart und Kostenstelle aus gepflegten Wertetabellen). Die Übernahme nimmt nur die feste
-Liste der acht Schreibweisen der Medienliste.
+Faustregel. Sichtbar und änderbar wie in Littera. Vorbild auch Destiny („Funding Source —
+Indicate that the copies were purchased using a particular funding source", Sammeländerung über
+Update Copies → Global Update) und BIBLIOTHECAnext (Kostenart und Kostenstelle aus den Tabellen
+unter „Registerpflege / Werte"). Die Übernahme nimmt nur die feste Liste der acht Schreibweisen
+der Medienliste.
 
 **Gebaut am 29.09.2026:** Stufe 1 (Migration 150) — `buecher_exemplare.eigentum`, die Regel in
 `ExemplarTopfSQL` (Etikett), die Übernahme (`internal/littera/eigentum.go`) mit Bericht.
@@ -491,15 +495,18 @@ oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*
   Klassensatz-Reservierung im Portal, Zuordnung im Mahnwesen. Eine neue Klasse entsteht nur nach
   Rückfrage („Klasse 5f gibt es noch nicht — anlegen?"), im Portal gar nicht, oder durch den
   LUSD-Import. Wie Littera: Die Untergruppe wird nur aus der Liste gewählt.
-- **Drei getrennte Aktionen** wie FOLIO (Patron groups: löschen nur mit 0 Nutzern, Wechsel per
-  Sammeländerung „Select the new patron group from the menu"), Koha und die Schlagwort-Pflege:
+- **Drei getrennte Aktionen** wie FOLIO („A patron group can be deleted only if it is no longer
+  applied to any user records"; Wechsel per Sammeländerung „Patron group — Replace with — Select
+  value") und die Schlagwort-Pflege:
   Umbenennen (nur auf einen neuen Namen, sonst Abweisung), Zusammenlegen (Ziel aus der Liste,
   vorher die Zahlen der wandernden Schüler, Klassensätze, Zuordnungen, Reservierungen,
   LMF-Termine), Löschen (nur ohne Verweis); jede Änderung im Protokoll. Grund: Ein vertippter
   neuer Name, der eine vorhandene Klasse trifft, legte sonst still zwei Klassen zusammen.
 - **Keine Obergruppen von Hand.** Die Seite ordnet unter Förderstufe, Hauptschulzweig,
   Realschulzweig, Gymnasialzweig, Oberstufe und „Kollegium und Sonderkonten" — aus dem
-  Klassennamen (Klassenschema, wie Portal-Filter und Ausweis-Gültigkeit) bzw. aus der Art. Die
+  Klassennamen (Klassenschema: 05F1, 05G1, 07H1, 07R1, ET1, 12T1; so lesen schon Ausweis-Gültigkeit
+  und Abschlussklasse den Zweig — der Zweig-Filter im Portal dagegen liest ein Feld am Schulbuch)
+  bzw. aus der Art. Die
   Statistik zählt nach denselben Überschriften. In Littera waren die Obergruppen dieser Schule
   genau diese Zweige und Personenarten (Sicherung 2010: 14 Obergruppen, 119 Untergruppen, keine
   Preise daran); `Leser_UG.VorrNach` („vorrücken nach") übernimmt bei uns die Versetzung.
@@ -734,6 +741,20 @@ Schülerbücherei — gehört nicht auf den Bescheid des Landes."
 den Brief; so schon vor dem 29.09.2026 mit `ist_lernmittel`. Vorschlag: bei leerem `topf` ein
 eigener Satz ohne das Wort „Buch" — vorher die M3-Seite zu Listen lesen.
 
+
+### 5.38 Der Löschdialog der Leserakte verspricht, was er nicht tut
+
+Gefunden am 29.09.2026 beim Prüfen der Anleitung zum Zurückspielen, am Code gelesen. Der Dialog
+„Schüler löschen" bzw. „Kollegen löschen" (`frontend/src/lib/StudentProfileDeleteModal.svelte`)
+sagt: „Alle historischen Ausleihen werden anonymisiert. Dieser Vorgang kann in der regulären
+Oberfläche nicht rückgängig gemacht werden." Der Knopf ruft `DELETE /api/schueler/{id}`
+(`DeleteStudent`): Er legt die Person in den Papierkorb (`deleted_at`, gesperrt; beim Kollegium
+fällt das Zugangskonto), anonymisiert nichts, und im Reiter _Papierkorb_ lässt sie sich
+wiederherstellen (`POST /api/schueler/{id}/restore`). Anonymisiert wird erst beim endgültigen
+Löschen im Papierkorb oder nach 180 Tagen durch den Nachtlauf. Sichtbar, Wortlaut ohne Wirkung
+auf Daten. Vorschlag: „… kommt in den Papierkorb. Von dort lässt es sich wiederherstellen; nach 180 Tagen
+wird es anonymisiert (Kollegium: gelöscht), von Hand im Papierkorb sofort." — vorher die M3-Seite
+zu Dialogen lesen.
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)

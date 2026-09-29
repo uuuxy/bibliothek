@@ -28,9 +28,10 @@ func MittelGueltig(mittel string) bool {
 // ist_lernmittel am Titel — dieselbe Faustregel wie beim Nachtragen in Migration 109.
 //
 // Das Ausdrückliche geht vor, weil die Faustregel beim Altbestand nachweislich danebenliegt:
-// Aus LMF-Mitteln dürfen auch Lektüren, Ganzschriften und Nachschlagewerke gekauft werden,
-// und sie bleiben Eigentum des Landes (Leitfaden „Lernmittelfreiheit in Hessen", Ziffern 2.1
-// und 9.4.2). Littera führt sie mit „Land Hessen", ihre Signatur ist aber keine LMF-Signatur.
+// Aus LMF-Mitteln dürfen auch Lektüren und Ganzschriften gekauft werden (Leitfaden
+// „Lernmittelfreiheit in Hessen", Ziffer 2.1; Wörterbücher und Lexika 7.5), und was aus
+// Landesmitteln beschafft ist, wird als Eigentum des Landes gekennzeichnet (11.1, 11.4). Littera
+// führt solche Bücher mit „Land Hessen", ihre Signatur ist aber keine LMF-Signatur.
 //
 // EINE Formulierung für alle Wege, die Etikettendaten bauen: Vier Abfragen mit je eigenem
 // CASE liefen auseinander, und dasselbe Buch trüge je nach Druckweg einen anderen
