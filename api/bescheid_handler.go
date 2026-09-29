@@ -44,21 +44,22 @@ type BescheidVorschlagPosition struct {
 	// Herleitung: „3. Verleihjahr → 60 % von 41,50 €" bzw. der Hinweis, dass kein Preis
 	// hinterlegt ist.
 	Herleitung string `json:"herleitung"`
-	// IstLernmittel entscheidet den Topf: Lernmittel gehen an das Land, alles andere an
-	// den Schulträger. Ein Brief trägt genau einen Topf.
-	IstLernmittel bool `json:"ist_lernmittel"`
+	// Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL): Bücher des Landes
+	// gehen an das Land, alles andere an den Schulträger; leer bei einem Geräteschaden. Ein
+	// Brief trägt genau einen Topf. Bis zum 29.09.2026 stand hier ist_lernmittel des Titels.
+	Topf string `json:"topf"`
 }
 
 // BescheidVorschlagAusleihe ist ein überfälliges Buch ohne Forderung: Es kommt mit dem
 // Brief als Verlust in die Bücher (Stufe 2). Betrag und Herleitung wie bei einer Position.
 type BescheidVorschlagAusleihe struct {
-	AusleiheID    string  `json:"ausleihe_id"`
-	Titel         string  `json:"titel"`
-	ISBN          string  `json:"isbn"`
-	Betrag        float64 `json:"betrag"`
-	Herleitung    string  `json:"herleitung"`
-	IstLernmittel bool    `json:"ist_lernmittel"`
-	FaelligSeit   string  `json:"faellig_seit"`
+	AusleiheID  string  `json:"ausleihe_id"`
+	Titel       string  `json:"titel"`
+	ISBN        string  `json:"isbn"`
+	Betrag      float64 `json:"betrag"`
+	Herleitung  string  `json:"herleitung"`
+	Topf        string  `json:"topf"`
+	FaelligSeit string  `json:"faellig_seit"`
 }
 
 // BescheidVorschlag ist die Antwort für den Dialog.
@@ -169,7 +170,7 @@ func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisq
 	v := ersatzwertEingabe{
 		Kaufpreis: f.Kaufpreis, Listenpreis: f.Listenpreis, ZustandAbschlag: f.ZustandAbschlag,
 		SchuljahreMitAusleihe: f.SchuljahreMitAusleihe, SchuljahreImBestand: f.SchuljahreImBestand,
-		IstLernmittel: f.IstLernmittel,
+		Topf: f.Topf,
 	}.rechne(quelle)
 	return BescheidVorschlagPosition{
 		SchadensfallID: f.SchadensfallID,
@@ -178,7 +179,7 @@ func bescheidVorschlagAus(f repository.OffeneForderung, quelle ersatzwert.Preisq
 		ISBN:           f.ISBN,
 		Betrag:         v.Betrag,
 		Herleitung:     bescheidHerleitung(v),
-		IstLernmittel:  f.IstLernmittel,
+		Topf:           f.Topf,
 	}
 }
 
@@ -188,16 +189,16 @@ func bescheidVorschlagAusAusleihe(a repository.UeberfaelligeAusleihe, quelle ers
 	v := ersatzwertEingabe{
 		Kaufpreis: a.Kaufpreis, Listenpreis: a.Listenpreis, ZustandAbschlag: a.ZustandAbschlag,
 		SchuljahreMitAusleihe: a.SchuljahreMitAusleihe, SchuljahreImBestand: a.SchuljahreImBestand,
-		IstLernmittel: a.IstLernmittel,
+		Topf: a.Topf,
 	}.rechne(quelle)
 	return BescheidVorschlagAusleihe{
-		AusleiheID:    a.AusleiheID,
-		Titel:         a.Titel,
-		ISBN:          a.ISBN,
-		Betrag:        v.Betrag,
-		Herleitung:    bescheidHerleitung(v),
-		IstLernmittel: a.IstLernmittel,
-		FaelligSeit:   a.FaelligSeit.In(schulzeit.Zone()).Format(dateFormatISO),
+		AusleiheID:  a.AusleiheID,
+		Titel:       a.Titel,
+		ISBN:        a.ISBN,
+		Betrag:      v.Betrag,
+		Herleitung:  bescheidHerleitung(v),
+		Topf:        a.Topf,
+		FaelligSeit: a.FaelligSeit.In(schulzeit.Zone()).Format(dateFormatISO),
 	}
 }
 

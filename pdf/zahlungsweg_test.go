@@ -25,7 +25,7 @@ func blattText(t *testing.T, roh []byte) string {
 
 func TestRechnungLernmittelNenntDasKontoDesLandes(t *testing.T) {
 	items := []RechnungItem{
-		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, IstLernmittel: true},
+		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, Land: true},
 	}
 	got, err := GenerateRechnung(Schueler{Vorname: "Lena", Nachname: "Land"}, items, testSchule(), testZahlung())
 	if err != nil {
@@ -77,7 +77,7 @@ func TestRechnungBuechereiSagtDassDerWegFehlt(t *testing.T) {
 // Landes in der Kasse des Trägers.
 func TestRechnungMitBeidenToepfenZeigtBeideWegeMitTeilsummen(t *testing.T) {
 	items := []RechnungItem{
-		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, IstLernmittel: true},
+		{Titel: "Deutschbuch 7", Barcode: "B-1", Ausleihdatum: time.Now(), Ersatzpreis: 19.90, Land: true},
 		{Titel: "Gregs Tagebuch", Barcode: "B-2", Ausleihdatum: time.Now(), Ersatzpreis: 9.95},
 	}
 	got, err := GenerateRechnung(Schueler{Vorname: "Mia", Nachname: "Gemischt"}, items, testSchule(), testZahlung())
@@ -101,7 +101,7 @@ func TestElternbriefFolgtDemselbenZahlungsweg(t *testing.T) {
 	}
 
 	lernmittel := basis
-	lernmittel.IstLernmittel = true
+	lernmittel.Land = true
 	got, err := GenerateSchadensfallPDF(lernmittel, testSchule(), testZahlung())
 	if err != nil {
 		t.Fatalf("Elternbrief (Lernmittel): %v", err)

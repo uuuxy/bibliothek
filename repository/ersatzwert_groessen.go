@@ -40,10 +40,12 @@ type ErsatzwertGroessen struct {
 	// wie in OffeneForderung, weil ersatzwert.Verleihjahr das Maximum von beiden nimmt.
 	SchuljahreMitAusleihe int
 	SchuljahreImBestand   int
-	// IstLernmittel entscheidet, ob die Staffel überhaupt gilt: Sie steht in der
-	// Arbeitshilfe für Schulbücher der Lernmittelfreiheit. Für einen Roman aus der
-	// Schülerbücherei gibt es keine Vorgabe des Landes.
-	IstLernmittel bool
+	// Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL) und entscheidet die
+	// REGEL des Betrags: Staffel der Arbeitshilfe für ein Buch des Landes, Neuwert für alles
+	// andere. Bis zum 29.09.2026 entschied ist_lernmittel des Titels; eine Lektüre aus
+	// LMF-Mitteln gehört aber dem Land, und das Land beschreibt in der Arbeitshilfe selbst,
+	// was ein angemessener Betrag ist (entschieden am 29.09.2026, docs/OFFEN.md 4.24).
+	Topf string
 }
 
 // GroessenFuerExemplar liest die Größen des Staffel-Vorschlags für ein Exemplar.
@@ -88,7 +90,7 @@ func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, w
 		       coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8,
 		       e.zustand_abwertung_prozent,
-		       coalesce(t.ist_lernmittel, false),
+		       `+ExemplarTopfSQL+`,
 		       -- Der Zugang, nicht der Bestelltag (Migration 129): Im Bestellweg entsteht die
 		       -- Zeile beim Bestellen, in den Bestand kommt das Buch mit der Lieferung — bei
 		       -- Lernmitteln regelmäßig im nächsten Schuljahr. Altbestand trägt in zugang_am
@@ -97,6 +99,7 @@ func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, w
 		       COALESCE(e.zugang_am, e.erworben_am)
 		FROM buecher_exemplare e
 		JOIN buecher_titel t ON t.id = e.titel_id
+		`+ExemplarTopfJoin+`
 		WHERE `+bedingung, wert)
 	if err != nil {
 		return nil, err
@@ -110,7 +113,7 @@ func (r *pgBescheidRepository) groessen(ctx context.Context, bedingung string, w
 		var g ErsatzwertGroessen
 		var zugang *time.Time
 		if err := rows.Scan(&id, &g.Kaufpreis, &g.Listenpreis, &g.ZustandAbschlag,
-			&g.IstLernmittel, &zugang); err != nil {
+			&g.Topf, &zugang); err != nil {
 			return nil, err
 		}
 		// Dieselbe Rechnung wie in OffeneForderungen: Schuljahre, nicht Kalenderjahre.

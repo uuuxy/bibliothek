@@ -97,7 +97,7 @@
 							<td class="text-right tabular-nums">{euro(z.summe)}</td>
 							<td><span class="text-on-surface-variant">–</span></td>
 							<td>
-								{#if z.lernmittel}
+								{#if z.land}
 									<StatusChip
 										ton="warten"
 										icon={FileText}
@@ -113,7 +113,7 @@
 								{/if}
 							</td>
 							<td class="text-right whitespace-nowrap">
-								{#if darfSchreiben && z.lernmittel}
+								{#if darfSchreiben && z.land}
 									<Button onclick={() => onBescheid(z.schueler_id)}>Bescheid erstellen</Button>
 								{/if}
 							</td>

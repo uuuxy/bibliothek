@@ -45,13 +45,15 @@ func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID 
 		       COALESCE(e.barcode_id, g.barcode_id, ''),
 		       COALESCE(a.ausgeliehen_am, sf.erstellt_am),
 		       sf.betrag,
-		       -- Der Topf der Position und damit ihr Zahlungsweg. Ohne Titel (Geräteschaden)
-		       -- ist es kein Lernmittel des Landes: COALESCE, sonst scannt NULL in einen
-		       -- nicht-nullbaren bool (NULL-Scan-Bugklasse).
-		       COALESCE(t.ist_lernmittel, false)
+		       -- Der Topf der Position und damit ihr Zahlungsweg: das Eigentum des Exemplars
+		       -- (repository.ExemplarTopfSQL), dieselbe Regel wie am Etikett und im Bescheid.
+		       -- Ohne Exemplar (Geräteschaden) ist es kein Buch des Landes: Die Bedingung auf
+		       -- e.id liefert dann false statt NULL (NULL-Scan-Bugklasse).
+		       (e.id IS NOT NULL AND ` + repository.ExemplarTopfSQL + ` = 'land')
 		FROM schadensfaelle sf
 		LEFT JOIN buecher_exemplare e ON sf.exemplar_id = e.id
 		LEFT JOIN buecher_titel t ON e.titel_id = t.id
+		` + repository.ExemplarTopfJoin + `
 		LEFT JOIN geraete g ON sf.geraet_id = g.id
 		LEFT JOIN ausleihen a ON sf.ausleihe_id = a.id
 		WHERE sf.schueler_id = $1 AND sf.ist_bezahlt = false
@@ -68,7 +70,7 @@ func queryRechnungItems(ctx context.Context, dbPool db.PgxPoolIface, schuelerID 
 		var item pdf.RechnungItem
 		// Kein `continue`: Eine Rechnung, der still eine Position fehlt, nennt einen zu
 		// kleinen Betrag — und niemand erfährt es. Lieber gar kein Brief als ein falscher.
-		if err := rows.Scan(&item.Titel, &item.Barcode, &item.Ausleihdatum, &item.Ersatzpreis, &item.IstLernmittel); err != nil {
+		if err := rows.Scan(&item.Titel, &item.Barcode, &item.Ausleihdatum, &item.Ersatzpreis, &item.Land); err != nil {
 			return nil, err
 		}
 		items = append(items, item)

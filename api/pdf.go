@@ -89,7 +89,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 	var sVorname, sNachname, sKlasse string
 	var sStrasse, sHausnummer, sPLZ, sOrt string
 	var tTitel, eBarcode string
-	var istLernmittel, aufBescheid bool
+	var land, aufBescheid bool
 
 	// COALESCE auf den Adressspalten: nullbar in der DB, nicht-nullbar in Go
 	// (NULL-Scan-Bugklasse). Anschrift fürs Fensterkuvert, siehe SchadensfallInfo.
@@ -100,13 +100,15 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 			COALESCE(s.strasse, ''), COALESCE(s.hausnummer, ''),
 			COALESCE(s.plz, ''), COALESCE(s.ort, ''),
 			t.titel, e.barcode_id,
-			-- Der Topf und damit der Zahlungsweg des Briefs (pdf/zahlungsweg.go).
-			COALESCE(t.ist_lernmittel, false),
+			-- Der Topf und damit der Zahlungsweg des Briefs (pdf/zahlungsweg.go): das Eigentum
+			-- des Exemplars, dieselbe Regel wie am Etikett und im Bescheid.
+			(` + repository.ExemplarTopfSQL + ` = 'land'),
 			sf.bescheid_id IS NOT NULL
 		FROM schadensfaelle sf
 		JOIN schueler s ON sf.schueler_id = s.id
 		JOIN buecher_exemplare e ON sf.exemplar_id = e.id
 		JOIN buecher_titel t ON e.titel_id = t.id
+		` + repository.ExemplarTopfJoin + `
 		WHERE sf.id = $1
 	`
 
@@ -114,7 +116,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		&beschreibung, &betrag, &erstelltAm,
 		&sVorname, &sNachname, &sKlasse,
 		&sStrasse, &sHausnummer, &sPLZ, &sOrt,
-		&tTitel, &eBarcode, &istLernmittel, &aufBescheid,
+		&tTitel, &eBarcode, &land, &aufBescheid,
 	)
 	if err != nil {
 		return pdf.SchadensfallInfo{}, false, err
@@ -133,7 +135,7 @@ func (s *Server) fetchDamageCaseInfo(ctx context.Context, id string) (pdf.Schade
 		Ort:              sOrt,
 		BuchTitel:        tTitel,
 		ExemplarBarcode:  eBarcode,
-		IstLernmittel:    istLernmittel,
+		Land:             land,
 	}, aufBescheid, nil
 }
 

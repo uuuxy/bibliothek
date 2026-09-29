@@ -192,7 +192,7 @@ func (r *pgBescheidRepository) Erstelle(ctx context.Context, e BescheidEingabe) 
 	}
 	if zugeordnet != len(e.Positionen) {
 		return nil, fmt.Errorf("%d von %d Forderungen konnten nicht zugeordnet werden — "+
-			"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Lernmittel?",
+			"gehören sie diesem Schüler, sind sie offen, noch auf keinem Bescheid und Bücher des Landes?",
 			len(e.Positionen)-zugeordnet, len(e.Positionen))
 	}
 	b.AnzahlPositionen = zugeordnet
@@ -225,8 +225,10 @@ func ziehLaufendeNummer(ctx context.Context, tx pgx.Tx, mittel string, kassenjah
 // ordnePositionenZu hängt die Forderungen an den Brief und setzt ihren Betrag auf den
 // festgesetzten Wert. Die WHERE-Bedingung ist die Prüfung: Sie lässt nur offene,
 // unzugeordnete Forderungen DIESES Schülers durch — und nur solche aus dem Topf des
-// Briefs: Lernmittel auf den Brief des Landes, alles andere nicht (ein Brief = ein Topf,
-// Konzept 4.6). Eine Forderung ohne Exemplar (Geräteschaden) gehört in keinen der beiden.
+// Briefs: Bücher des Landes auf den Brief des Landes, alles andere nicht (ein Brief = ein
+// Topf, Konzept 4.6). Der Topf ist das Eigentum des Exemplars nach ExemplarTopfSQL, dieselbe
+// Regel wie am Etikett (seit dem 29.09.2026; vorher ist_lernmittel des Titels). Eine
+// Forderung ohne Exemplar (Geräteschaden) gehört in keinen der beiden.
 func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e BescheidEingabe) (int, error) {
 	var zugeordnet int
 	for _, p := range e.Positionen {
@@ -238,8 +240,9 @@ func ordnePositionenZu(ctx context.Context, tx pgx.Tx, bescheidID string, e Besc
 			   AND bescheid_id IS NULL
 			   AND ist_bezahlt = false
 			   AND storniert_am IS NULL
-			   AND EXISTS (SELECT 1 FROM buecher_exemplare ex JOIN buecher_titel t ON t.id = ex.titel_id
-			               WHERE ex.id = schadensfaelle.exemplar_id AND t.ist_lernmittel = ($5 = 'land'))`,
+			   AND EXISTS (SELECT 1 FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id
+			               `+ExemplarTopfJoin+`
+			               WHERE e.id = schadensfaelle.exemplar_id AND `+ExemplarTopfSQL+` = $5)`,
 			bescheidID, p.Betrag, p.SchadensfallID, e.SchuelerID, e.Mittel)
 		if err != nil {
 			return 0, fmt.Errorf("position %s zuordnen: %w", p.SchadensfallID, err)
@@ -490,7 +493,10 @@ type OffeneForderung struct {
 	// davon ab. 0 beim Listenpreis heißt „nicht erfasst".
 	Listenpreis     float64
 	ZustandAbschlag int
-	IstLernmittel   bool
+	// Topf: das Eigentum des Exemplars (ExemplarTopfSQL) — wem die Forderung zusteht und
+	// nach welcher Regel ihr Betrag vorgeschlagen wird. Leer bei einer Forderung ohne
+	// Exemplar (Geräteschaden): Sie gehört auf keinen der beiden Briefe.
+	Topf string
 	// Die beiden Größen für das Verleihjahr, und beide zählen SCHULJAHRE: in wie vielen
 	// war das Exemplar ausgeliehen, und wie viele liegen seit seiner Beschaffung. Beide
 	// sind unvollständig (der Altbestand kam ohne Ausleihhistorie), deshalb rechnet
@@ -533,12 +539,13 @@ func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID
 		       coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8,
 		       coalesce(e.zustand_abwertung_prozent, 0),
-		       coalesce(t.ist_lernmittel, false),
+		       CASE WHEN e.id IS NULL THEN '' ELSE `+ExemplarTopfSQL+` END,
 		       -- Zugang statt Bestelltag (Migration 129, Begründung an ersatzwert_groessen.go).
 		       f.exemplar_id, COALESCE(e.zugang_am, e.erworben_am)
 		FROM schadensfaelle f
 		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
+		`+ExemplarTopfJoin+`
 		WHERE f.schueler_id = $1
 		  AND f.bescheid_id IS NULL
 		  AND f.ist_bezahlt = false
@@ -559,7 +566,7 @@ func (r *pgBescheidRepository) OffeneForderungen(ctx context.Context, schuelerID
 		var exemplarID *string
 		var zugang *time.Time
 		if err := rows.Scan(&f.SchadensfallID, &f.Art, &f.Titel, &f.ISBN, &f.Kaufpreis,
-			&f.Listenpreis, &f.ZustandAbschlag, &f.IstLernmittel, &exemplarID, &zugang); err != nil {
+			&f.Listenpreis, &f.ZustandAbschlag, &f.Topf, &exemplarID, &zugang); err != nil {
 			return nil, err
 		}
 		if zugang != nil {

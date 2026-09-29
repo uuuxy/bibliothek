@@ -104,8 +104,8 @@ func TestGroessenFuerExemplarZaehltSchuljahre(t *testing.T) {
 		if g.Kaufpreis != 20.00 {
 			t.Errorf("Kaufpreis = %.2f, want 20.00", g.Kaufpreis)
 		}
-		if !g.IstLernmittel {
-			t.Error("IstLernmittel = false — der Titel ist als Lernmittel angelegt")
+		if g.Topf != MittelLand {
+			t.Errorf("Topf = %q — der Titel ist als Lernmittel angelegt, ohne Bestellung und ohne Eigentum am Exemplar gilt Land", g.Topf)
 		}
 		if jahr := ersatzwert.Verleihjahr(g.SchuljahreMitAusleihe, g.SchuljahreImBestand); jahr != 1 {
 			t.Errorf("Verleihjahr = %d, want 1 (im Bestand: %d, mit Ausleihe: %d)",

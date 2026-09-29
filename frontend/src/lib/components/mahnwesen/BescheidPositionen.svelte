@@ -49,7 +49,7 @@
 							bind:checked={gewaehlt[p.key]}
 							label=""
 							aria-label="{p.titel} in den Bescheid aufnehmen"
-							disabled={!p.ist_lernmittel}
+							disabled={p.topf !== 'land'}
 						/>
 					</div>
 					<div class="min-w-0 flex-1">
@@ -62,7 +62,7 @@
 								Fällig seit {datum(p.faellig_seit)} · wird mit dem Brief als Verlust gebucht
 							</div>
 						{/if}
-						{#if !p.ist_lernmittel}
+						{#if p.topf !== 'land'}
 							<div class="text-xs text-on-surface-variant">
 								Buch der Schülerbücherei — gehört nicht auf den Bescheid des Landes.
 							</div>

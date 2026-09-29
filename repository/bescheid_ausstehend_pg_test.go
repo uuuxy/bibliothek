@@ -116,7 +116,7 @@ func TestAusstehend_NurOffeneForderungenOhneBescheid(t *testing.T) {
 	if !ok {
 		t.Fatalf("das Kind mit offenen Forderungen fehlt in der Liste")
 	}
-	if z.Anzahl != 2 || z.Summe != 20 || !z.Lernmittel || z.Klasse != "07B" {
+	if z.Anzahl != 2 || z.Summe != 20 || !z.Land || z.Klasse != "07B" {
 		t.Errorf("Zeile falsch: %+v (erwartet 2 Forderungen, 20,00 €, Lernmittel, 07B)", z)
 	}
 	for name, id := range map[string]string{"storniert": storniert, "gelöscht": geloescht, "auf Bescheid": mitBrief} {

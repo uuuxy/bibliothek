@@ -50,8 +50,8 @@ type ZahlungswegBlock struct {
 }
 
 // ZahlungswegZeilen liefert die Zeilen für EINEN Topf.
-func ZahlungswegZeilen(istLernmittel bool, a Zahlungsangaben) []string {
-	if !istLernmittel {
+func ZahlungswegZeilen(land bool, a Zahlungsangaben) []string {
+	if !land {
 		return []string{ZahlungswegTraegerSatz, ZahlungswegTraegerFehlt}
 	}
 	zeilen := []string{fmt.Sprintf(ZahlungswegLandSatz, a.Zahlstelle)}

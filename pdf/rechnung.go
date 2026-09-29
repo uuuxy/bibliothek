@@ -36,11 +36,13 @@ type RechnungItem struct {
 	Barcode      string
 	Ausleihdatum time.Time
 	Ersatzpreis  float64
-	// IstLernmittel entscheidet den Topf und damit den Zahlungsweg dieser Position:
-	// Lernmittel gehen an das Land, alles andere (Bücherei, Geräte) an den Schulträger
-	// (siehe zahlungsweg.go). Eine Rechnung kann beides tragen — sie listet alle offenen
-	// Forderungen eines Schülers und sucht sie sich nicht aus.
-	IstLernmittel bool
+	// Land: Die Position betrifft ein Buch des Landes (Eigentum nach
+	// repository.ExemplarTopfSQL). Das entscheidet den Zahlungsweg: Bücher des Landes an das
+	// Land, alles andere (Bücherei, Geräte) an den Schulträger (siehe zahlungsweg.go). Eine
+	// Rechnung kann beides tragen — sie listet alle offenen Forderungen eines Schülers und
+	// sucht sie sich nicht aus. Bis zum 29.09.2026 hieß das Feld IstLernmittel und kam aus
+	// ist_lernmittel des Titels.
+	Land bool
 }
 
 // GenerateRechnung creates a DIN 5008 compliant invoice PDF.
@@ -184,7 +186,7 @@ func buildItemsTableBlock(m core.Maroto, items []RechnungItem) {
 func buildFooterBlock(m core.Maroto, items []RechnungItem, zahlung Zahlungsangaben) {
 	var land, traeger float64
 	for _, item := range items {
-		if item.IstLernmittel {
+		if item.Land {
 			land += item.Ersatzpreis
 			continue
 		}

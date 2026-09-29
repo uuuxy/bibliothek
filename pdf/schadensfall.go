@@ -30,9 +30,9 @@ type SchadensfallInfo struct {
 	Ort             string
 	BuchTitel       string
 	ExemplarBarcode string
-	// IstLernmittel entscheidet den Zahlungsweg: Lernmittel gehen an das Land, alles
-	// andere an den Schulträger (zahlungsweg.go).
-	IstLernmittel bool
+	// Land: Das Buch gehört dem Land (Eigentum nach repository.ExemplarTopfSQL). Das
+	// entscheidet den Zahlungsweg: an das Land, sonst an den Schulträger (zahlungsweg.go).
+	Land bool
 }
 
 // GenerateSchadensfallPDF generates a formal PDF notification letter ("Elternbrief")
@@ -137,7 +137,7 @@ func addSchadensfallBody(pdf *gofpdf.Fpdf, data SchadensfallInfo, zahlung Zahlun
 		"Sollten Sie Fragen zum Schadensfall haben, können Sie sich gerne zu den Öffnungszeiten "+
 		"an das Bibliotheksteam wenden.\n\n"+
 		"Vielen Dank für Ihr Verständnis und Ihre Kooperation.",
-		data.Betrag, dueTime, strings.Join(ZahlungswegZeilen(data.IstLernmittel, zahlung), "\n"))
+		data.Betrag, dueTime, strings.Join(ZahlungswegZeilen(data.Land, zahlung), "\n"))
 	pdf.MultiCell(0, 5, tr(instructions), "", "L", false)
 	pdf.Ln(15)
 }

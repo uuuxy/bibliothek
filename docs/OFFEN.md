@@ -77,7 +77,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt das Eigentum je Exemplar (4.24, freigegeben am
-   29.09.2026 in drei Stufen; Stufe 1 gebaut), dazu der Schritt in der Anleitung aus 5.36.
+   29.09.2026 in drei Stufen; Stufe 1 und 2 gebaut), dazu der Schritt in der Anleitung aus 5.36.
    Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
@@ -269,16 +269,14 @@ Exemplar, Sammeländerung), Koha („Source of acquisition" aus einer Werteliste
 Liste der acht Schreibweisen der Medienliste.
 
 **Gebaut am 29.09.2026:** Stufe 1 (Migration 150) — `buecher_exemplare.eigentum`, die Regel in
-`ExemplarTopfSQL` (Etikett), die Übernahme (`internal/littera/eigentum.go`) mit Bericht. Aus
-Stufe 2 das Zugangsbuch (Eigentum am Exemplar oder Bestellung, `ExemplarTopfBelegtSQL`) und das
-Abgangsbuch (`ExemplarTopfSQL`).
+`ExemplarTopfSQL` (Etikett), die Übernahme (`internal/littera/eigentum.go`) mit Bericht.
+Stufe 2 — dieselbe Regel im Zugangsbuch (nur der belegte Teil, `ExemplarTopfBelegtSQL`), im
+Abgangsbuch und beim Schadensersatz: wem die Forderung zusteht, welcher Zahlungsweg im Brief
+steht und nach welcher Regel der Betrag vorgeschlagen wird (entschieden am 29.09.2026: Buch
+des Landes → Staffel der Arbeitshilfe, sonst Neuwert; Littera rechnet keinen Betrag aus).
 
 **Offen:**
 
-- **Stufe 2, Rest — der Bescheid.** Er nimmt den Topf einer Forderung noch aus `ist_lernmittel`
-  (`repository/bescheid.go` `ordnePositionenZu` und `OffeneForderungen`, `bescheid_verlust.go`,
-  `bescheid_ausstehend.go`, `ersatzwert_groessen.go`; dazu 5.4 „Topf einer Forderung"). Am selben
-  Kennzeichen hängt die Rechenregel des Betrags (Staffel der Arbeitshilfe oder Neuwert).
 - **Stufe 3 — Oberfläche:** Die Exemplarkarte zeigt das Eigentum und seine Herkunft (aus Littera,
   aus der Bestellung, Vorgabe); ändern einzeln und für mehrere Exemplare eines Titels, wie
   Littera „Exemplardaten anpassen". Vorher Beschreibung und M3-Nachweis.
@@ -337,12 +335,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Rechnung, Liste der Barzahlungen je Zeitraum und Topf — auch für die Ausnahme beim Land (Bargeld
   binnen 14 Tagen weiterleiten, [mittel_konzept.md](mittel_konzept.md) 1.1). Der Hinweis
   „bereits bezahlt" nennt dann, wann und wie; an ihm zeigt sich eine doppelte Zahlung.
-- **Topf einer Forderung, eine Regel:** Der Bescheid nimmt `ist_lernmittel` am Titel, das
-  Eigentum den Topf der Bestellung (`ExemplarTopfSQL`). Beim Altbestand ist das dasselbe (Littera
-  führt das Eigentum anders, 4.24); bei
-  einem aus dem anderen Topf bestellten Exemplar ginge das Geld an den, dem das Buch nicht gehört.
-  Vorher am Testserver zählen (lokal 0):
-  `SELECT count(*) FROM buecher_exemplare e JOIN buecher_titel t ON t.id = e.titel_id JOIN bestellungen_verlauf bv ON bv.id = e.bestellung_id WHERE bv.mittel <> CASE WHEN t.ist_lernmittel THEN 'land' ELSE 'schultraeger' END;`
 - **Altbriefe entfernen** (es geht darum, ob es sie neben dem Bescheid überhaupt weiter geben
   soll): Elternbrief `pdf/schadensfall.go` ← `api/pdf.go` (`GenerateDamagePDFHandler`) ←
   Route in `api/routes_students.go` — die Oberfläche ruft ihn seit dem 15.09.2026 nicht mehr

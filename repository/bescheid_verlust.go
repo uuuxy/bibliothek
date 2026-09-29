@@ -31,8 +31,9 @@ type UeberfaelligeAusleihe struct {
 	// OffeneForderung, damit beide Wege denselben Betrag vorschlagen.
 	Listenpreis     float64
 	ZustandAbschlag int
-	IstLernmittel   bool
-	FaelligSeit     time.Time
+	// Topf: das Eigentum des Exemplars (ExemplarTopfSQL), wie bei OffeneForderung.
+	Topf        string
+	FaelligSeit time.Time
 	// Dieselben beiden Größen wie bei OffeneForderung, für die Staffel.
 	SchuljahreMitAusleihe int
 	SchuljahreImBestand   int
@@ -70,10 +71,11 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 		SELECT a.id, e.id, t.titel, coalesce(t.isbn, ''), coalesce(e.einkaufspreis, 0)::float8,
 		       coalesce(t.listenpreis, 0)::float8, coalesce(e.zustand_abwertung_prozent, 0),
 		       -- Zugang statt Bestelltag (Migration 129, Begründung an ersatzwert_groessen.go).
-		       coalesce(t.ist_lernmittel, false), a.rueckgabe_frist, COALESCE(e.zugang_am, e.erworben_am)
+		       `+ExemplarTopfSQL+`, a.rueckgabe_frist, COALESCE(e.zugang_am, e.erworben_am)
 		FROM ausleihen a
 		JOIN buecher_exemplare e ON e.id = a.exemplar_id
 		JOIN buecher_titel t ON t.id = e.titel_id
+		`+ExemplarTopfJoin+`
 		WHERE a.schueler_id = $1
 		  AND a.rueckgabe_am IS NULL
 		  AND a.rueckgabe_frist < $2
@@ -98,7 +100,7 @@ func (r *pgBescheidRepository) UeberfaelligeAusleihen(ctx context.Context, schue
 		var zugang *time.Time
 		if err := rows.Scan(&a.AusleiheID, &a.ExemplarID, &a.Titel, &a.ISBN, &a.Kaufpreis,
 			&a.Listenpreis, &a.ZustandAbschlag,
-			&a.IstLernmittel, &a.FaelligSeit, &zugang); err != nil {
+			&a.Topf, &a.FaelligSeit, &zugang); err != nil {
 			return nil, err
 		}
 		if zugang != nil {

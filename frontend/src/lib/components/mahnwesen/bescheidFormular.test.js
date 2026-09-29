@@ -19,16 +19,16 @@ const vorschlag = {
 			art: 'beschaedigt',
 			titel: 'Mathe 7',
 			betrag: 12,
-			ist_lernmittel: true
+			topf: 'land'
 		},
-		{ schadensfall_id: 'f2', art: 'beschaedigt', titel: 'Roman', betrag: 5, ist_lernmittel: false }
+		{ schadensfall_id: 'f2', art: 'beschaedigt', titel: 'Roman', betrag: 5, topf: 'schultraeger' }
 	],
 	ausleihen: [
 		{
 			ausleihe_id: 'a1',
 			titel: 'Physik 8',
 			betrag: 24.9,
-			ist_lernmittel: true,
+			topf: 'land',
 			faellig_seit: '2026-08-15'
 		}
 	]
@@ -56,7 +56,7 @@ describe('BescheidFormular', () => {
 		vi.mocked(apiPost).mockReset();
 	});
 
-	it('wählt nach dem Laden nur Lernmittel vor und übernimmt Frist und Beträge', async () => {
+	it('wählt nach dem Laden nur Bücher des Landes vor und übernimmt Frist und Beträge', async () => {
 		vi.mocked(apiGet).mockResolvedValue(vorschlag);
 		const f = new BescheidFormular('s1');
 		await f.laden();

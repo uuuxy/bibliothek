@@ -66,7 +66,8 @@ export class BescheidFormular {
 	);
 
 	/** Der Vorschlag wird EINMAL geholt; danach gehört das Formular dem Menschen.
-	 *  Vorgewählt ist, was auf den Brief des Landes darf: Lernmittel. */
+	 *  Vorgewählt ist, was auf den Brief des Landes darf: ein Buch des Landes (topf,
+	 *  das Eigentum nach der Regel des Servers — nicht mehr ist_lernmittel des Titels). */
 	async laden() {
 		this.laedt = true;
 		try {
@@ -74,7 +75,7 @@ export class BescheidFormular {
 			this.vorschlag = daten;
 			this.frist = daten?.frist_bis ?? '';
 			for (const p of this.positionen) {
-				this.gewaehlt[p.key] = !!p.ist_lernmittel;
+				this.gewaehlt[p.key] = p.topf === 'land';
 				this.betraege[p.key] = p.betrag;
 			}
 		} catch {

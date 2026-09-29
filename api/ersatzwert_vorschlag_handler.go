@@ -46,8 +46,9 @@ type ErsatzwertVorschlag struct {
 	// Dialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung
 	// landet.
 	Herleitung string `json:"herleitung"`
-	// IstLernmittel unterscheidet die beiden Regeln; der Dialog benennt sie.
-	IstLernmittel bool `json:"ist_lernmittel"`
+	// Topf ist das Eigentum des Exemplars und unterscheidet die beiden Regeln (Staffel des
+	// Landes oder Neuwert); die Herleitung benennt sie.
+	Topf string `json:"topf"`
 	// Bekannt sagt, ob dem Betrag ein Preis zugrunde liegt — die Unterscheidung, die 0,00 €
 	// erst lesbar macht: Ergebnis eines Totalschadens oder fehlende Angabe?
 	//
@@ -104,13 +105,16 @@ type ersatzwertEingabe struct {
 	// Die beiden Größen des Verleihjahrs — nur die Staffel benutzt sie.
 	SchuljahreMitAusleihe int
 	SchuljahreImBestand   int
-	// IstLernmittel entscheidet über die REGEL, nicht über einen Faktor: Staffel des
-	// Landes oder Neuwert der Benutzungsordnung.
-	IstLernmittel bool
+	// Topf entscheidet über die REGEL, nicht über einen Faktor: Staffel des Landes für ein
+	// Buch des Landes, sonst Neuwert der Benutzungsordnung. Der Topf ist das Eigentum nach
+	// repository.ExemplarTopfSQL — bis zum 29.09.2026 entschied ist_lernmittel des Titels,
+	// und eine Lektüre aus LMF-Mitteln bekam den Neuwert, obwohl sie dem Land gehört
+	// (entschieden am 29.09.2026, docs/OFFEN.md 4.24).
+	Topf string
 }
 
 func (e ersatzwertEingabe) rechne(quelle ersatzwert.Preisquelle) ersatzwert.Vorschlag {
-	if !e.IstLernmittel {
+	if e.Topf != repository.MittelLand {
 		return ersatzwert.RechneNeuwert(e.Kaufpreis, e.Listenpreis, e.ZustandAbschlag, quelle)
 	}
 	return ersatzwert.Rechne(ersatzwert.Verleihjahr(e.SchuljahreMitAusleihe, e.SchuljahreImBestand),
@@ -122,7 +126,7 @@ func eingabeAusGroessen(g repository.ErsatzwertGroessen) ersatzwertEingabe {
 	return ersatzwertEingabe{
 		Kaufpreis: g.Kaufpreis, Listenpreis: g.Listenpreis, ZustandAbschlag: g.ZustandAbschlag,
 		SchuljahreMitAusleihe: g.SchuljahreMitAusleihe, SchuljahreImBestand: g.SchuljahreImBestand,
-		IstLernmittel: g.IstLernmittel,
+		Topf: g.Topf,
 	}
 }
 
@@ -130,10 +134,10 @@ func eingabeAusGroessen(g repository.ErsatzwertGroessen) ersatzwertEingabe {
 func ersatzwertVorschlagAus(g repository.ErsatzwertGroessen, quelle ersatzwert.Preisquelle) ErsatzwertVorschlag {
 	v := eingabeAusGroessen(g).rechne(quelle)
 	return ErsatzwertVorschlag{
-		Betrag:        v.Betrag,
-		Herleitung:    bescheidHerleitung(v),
-		IstLernmittel: g.IstLernmittel,
-		Bekannt:       v.PreisBekannt(),
+		Betrag:     v.Betrag,
+		Herleitung: bescheidHerleitung(v),
+		Topf:       g.Topf,
+		Bekannt:    v.PreisBekannt(),
 	}
 }
 

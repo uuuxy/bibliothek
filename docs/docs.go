@@ -3702,10 +3702,10 @@ const docTemplate = `{
                 "isbn": {
                     "type": "string"
                 },
-                "ist_lernmittel": {
-                    "type": "boolean"
-                },
                 "titel": {
+                    "type": "string"
+                },
+                "topf": {
                     "type": "string"
                 }
             }
@@ -3726,14 +3726,14 @@ const docTemplate = `{
                 "isbn": {
                     "type": "string"
                 },
-                "ist_lernmittel": {
-                    "description": "IstLernmittel entscheidet den Topf: Lernmittel gehen an das Land, alles andere an\nden Schulträger. Ein Brief trägt genau einen Topf.",
-                    "type": "boolean"
-                },
                 "schadensfall_id": {
                     "type": "string"
                 },
                 "titel": {
+                    "type": "string"
+                },
+                "topf": {
+                    "description": "Topf ist das Eigentum des Exemplars (repository.ExemplarTopfSQL): Bücher des Landes\ngehen an das Land, alles andere an den Schulträger; leer bei einem Geräteschaden. Ein\nBrief trägt genau einen Topf. Bis zum 29.09.2026 stand hier ist_lernmittel des Titels.",
                     "type": "string"
                 }
             }
@@ -4193,9 +4193,9 @@ const docTemplate = `{
                     "description": "Herleitung sagt dem Personal, WARUM dieser Betrag vorgeschlagen wird — damit im\nDialog nachvollziehbar steht, woher die Zahl kommt, bevor sie in einer Forderung\nlandet.",
                     "type": "string"
                 },
-                "ist_lernmittel": {
-                    "description": "IstLernmittel unterscheidet die beiden Regeln; der Dialog benennt sie.",
-                    "type": "boolean"
+                "topf": {
+                    "description": "Topf ist das Eigentum des Exemplars und unterscheidet die beiden Regeln (Staffel des\nLandes oder Neuwert); die Herleitung benennt sie.",
+                    "type": "string"
                 }
             }
         },
@@ -5792,8 +5792,8 @@ const docTemplate = `{
                 "klasse": {
                     "type": "string"
                 },
-                "lernmittel": {
-                    "description": "Lernmittel: mindestens eine der Forderungen betrifft ein Lernmittel und kann\ndamit auf den Bescheid des Landes. Die Rechnung der Schülerbücherei ist noch\nnicht gebaut (mittel_konzept.md 4.7, Etappe 3).",
+                "land": {
+                    "description": "Land: mindestens eine der Forderungen betrifft ein Buch des Landes (Eigentum nach\nExemplarTopfSQL) und kann damit auf den Bescheid des Landes. Die Rechnung der\nSchülerbücherei ist noch nicht gebaut (mittel_konzept.md 4.7, Etappe 3). Bis zum\n29.09.2026 hieß das Feld lernmittel und las ist_lernmittel des Titels.",
                     "type": "boolean"
                 },
                 "schueler_id": {

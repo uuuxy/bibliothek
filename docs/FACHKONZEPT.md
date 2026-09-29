@@ -580,10 +580,14 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   „Schüler nicht gefunden".
 - **Was ein Buch heute noch wert ist, steht am Exemplar** (seit 17.09.2026, `pkg/ersatzwert`,
   Migration 127): Die Buchakte zeigt an jedem Exemplar den Ersatzwert samt Herleitung
-  („3. Verleihjahr → 60 % von 24,90 €"). Zwei Regeln, nicht eine — für ein **Lernmittel des
+  („3. Verleihjahr → 60 % von 24,90 €"). Zwei Regeln, nicht eine — für ein **Buch des
   Landes** die Staffel der Arbeitshilfe (1. Verleihjahr voller Preis, dann 80/60/40/20 %, ab
   dem 6. Jahr 10 %), für ein Buch der **Schülerbücherei** der Neuwert ohne Altersabschlag
-  („zuerst Ersatzbeschaffung, sonst Geld in Höhe des Neuwerts", Benutzungsordnung). Ein
+  („zuerst Ersatzbeschaffung, sonst Geld in Höhe des Neuwerts", Benutzungsordnung). Wem ein Buch
+  gehört, sagt seit dem 29.09.2026 dieselbe Regel wie am Etikett (`repository.ExemplarTopfSQL`:
+  Eigentum am Exemplar, sonst Bestellung, sonst Titel), nicht mehr `ist_lernmittel`: Eine
+  Lektüre aus LMF-Mitteln gehört dem Land, und das Land beschreibt in der Arbeitshilfe selbst,
+  was ein angemessener Betrag ist (Leitfaden Lernmittelfreiheit 12.5 und 12.7). Ein
   beschädigtes Exemplar trägt zusätzlich einen Prozentwert für seinen Zustand
   (`zustand_abwertung_prozent`, erfasst im Zustands-Dialog der Buchakte, nicht an der Theke):
   Er wirkt NACH der Staffel und mindert jeden künftigen Ersatzbetrag in beiden Töpfen, zieht
@@ -594,7 +598,8 @@ Nicht nur bei Hardware, sondern auch bei Büchern greift ein dediziertes Schaden
   „so eingestellt". In jedem Fall ein Vorschlag, kein Automat: Der Mensch bestätigt oder
   überschreibt, und ohne hinterlegten Preis bleibt das Feld bei 0 mit einem Satz, der es sagt.
 - **Wohin gezahlt wird, steht im Brief** (seit 17.09.2026, `pdf/zahlungsweg.go`): Für ein
-  Lernmittel des Landes nennen Elternbrief und Rechnung die Zahlstelle und die Bankverbindung
+  Buch des Landes (Eigentum nach `repository.ExemplarTopfSQL`, seit dem 29.09.2026; vorher
+  `ist_lernmittel`) nennen Elternbrief und Rechnung die Zahlstelle und die Bankverbindung
   aus den Einstellungen — dieselbe Angabe wie im Schadensersatz-Bescheid. Für ein Buch der
   Schülerbücherei steht dort, dass der Weg des Schulträgers noch nicht hinterlegt ist; er ist
   eine offene Frage an den Träger. Trägt eine Rechnung beides, stehen beide Wege mit ihrer

@@ -19,7 +19,7 @@ describe('BescheideTabelle', () => {
 				anzahl: 2,
 				summe: 20,
 				seit: '2026-09-01T00:00:00Z',
-				lernmittel: true
+				land: true
 			}
 		];
 		bescheideStore.liste = [];
@@ -41,7 +41,7 @@ describe('BescheideTabelle', () => {
 				anzahl: 1,
 				summe: 5,
 				seit: '2026-09-01T00:00:00Z',
-				lernmittel: false
+				land: false
 			}
 		];
 		bescheideStore.liste = [];

@@ -23,10 +23,11 @@ type ForderungOhneBescheid struct {
 	Summe        float64 `json:"summe"`
 	// Seit: die älteste dieser Forderungen — so lange wartet der Fall schon.
 	Seit time.Time `json:"seit"`
-	// Lernmittel: mindestens eine der Forderungen betrifft ein Lernmittel und kann
-	// damit auf den Bescheid des Landes. Die Rechnung der Schülerbücherei ist noch
-	// nicht gebaut (mittel_konzept.md 4.7, Etappe 3).
-	Lernmittel bool `json:"lernmittel"`
+	// Land: mindestens eine der Forderungen betrifft ein Buch des Landes (Eigentum nach
+	// ExemplarTopfSQL) und kann damit auf den Bescheid des Landes. Die Rechnung der
+	// Schülerbücherei ist noch nicht gebaut (mittel_konzept.md 4.7, Etappe 3). Bis zum
+	// 29.09.2026 hieß das Feld lernmittel und las ist_lernmittel des Titels.
+	Land bool `json:"land"`
 }
 
 // Ausstehend liefert je Kind die offenen Forderungen ohne Bescheid, älteste zuerst.
@@ -38,11 +39,12 @@ func (r *pgBescheidRepository) Ausstehend(ctx context.Context) ([]ForderungOhneB
 	rows, err := r.db.Query(ctx, `
 		SELECT s.id, s.vorname || ' ' || s.nachname, coalesce(s.klasse, ''),
 		       count(*)::int, coalesce(sum(f.betrag), 0)::float8, min(f.erstellt_am),
-		       bool_or(coalesce(t.ist_lernmittel, false))
+		       bool_or(e.id IS NOT NULL AND `+ExemplarTopfSQL+` = 'land')
 		FROM schadensfaelle f
 		JOIN schueler s ON s.id = f.schueler_id
 		LEFT JOIN buecher_exemplare e ON e.id = f.exemplar_id
 		LEFT JOIN buecher_titel t ON t.id = e.titel_id
+		`+ExemplarTopfJoin+`
 		WHERE f.bescheid_id IS NULL
 		  AND f.ist_bezahlt = false
 		  AND f.storniert_am IS NULL
@@ -59,7 +61,7 @@ func (r *pgBescheidRepository) Ausstehend(ctx context.Context) ([]ForderungOhneB
 	for rows.Next() {
 		var z ForderungOhneBescheid
 		if err := rows.Scan(&z.SchuelerID, &z.SchuelerName, &z.Klasse, &z.Anzahl, &z.Summe,
-			&z.Seit, &z.Lernmittel); err != nil {
+			&z.Seit, &z.Land); err != nil {
 			return nil, err
 		}
 		out = append(out, z)
