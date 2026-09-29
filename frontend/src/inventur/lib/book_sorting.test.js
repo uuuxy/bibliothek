@@ -3,81 +3,50 @@ import { sortBooksBySubjectAndTitle } from './book_sorting.js';
 
 describe('sortBooksBySubjectAndTitle', () => {
 	it('sorts by predefined subject order', () => {
-		const books = [
-			{ subject: 'Deutsch', title: 'Buch B' },
-			{ subject: 'Mathe', title: 'Buch A' }
-		];
-
-		const sorted = [...books].sort(sortBooksBySubjectAndTitle);
-
-		expect(sorted[0].subject).toBe('Mathe');
-		expect(sorted[1].subject).toBe('Deutsch');
+		const a = { subject: 'deutsch', title: 'Buch A' };
+		const b = { subject: 'mathe', title: 'Buch B' };
+		expect(sortBooksBySubjectAndTitle(a, b)).toBeGreaterThan(0);
+		expect(sortBooksBySubjectAndTitle(b, a)).toBeLessThan(0);
 	});
 
-	it('sorts by title if subjects are identical', () => {
-		const books = [
-			{ subject: 'Mathe', title: 'Buch Z' },
-			{ subject: 'Mathe', title: 'Buch A' }
-		];
-
-		const sorted = [...books].sort(sortBooksBySubjectAndTitle);
-
-		expect(sorted[0].title).toBe('Buch A');
-		expect(sorted[1].title).toBe('Buch Z');
+	it('sorts by title when subjects are the same', () => {
+		const a = { subject: 'mathe', title: 'Algebra' };
+		const b = { subject: 'mathe', title: 'Geometrie' };
+		expect(sortBooksBySubjectAndTitle(a, b)).toBeLessThan(0);
+		expect(sortBooksBySubjectAndTitle(b, a)).toBeGreaterThan(0);
 	});
 
-	it('handles different casing and trailing spaces in subjects', () => {
-		const books = [
-			{ subject: ' DEUTSCH ', title: 'Buch B' },
-			{ subject: 'mAtHe', title: 'Buch A' }
-		];
-
-		const sorted = [...books].sort(sortBooksBySubjectAndTitle);
-
-		expect(sorted[0].subject).toBe('mAtHe');
-		expect(sorted[1].subject).toBe(' DEUTSCH ');
+	it('handles "mathematik" variation as "mathe"', () => {
+		const a = { subject: 'mathematik', title: 'Algebra' };
+		const b = { subject: 'deutsch', title: 'Grammatik' };
+		expect(sortBooksBySubjectAndTitle(a, b)).toBeLessThan(0);
 	});
 
-	it('normalizes "mathematik" to "mathe"', () => {
-		const books = [
-			{ subject: 'Englisch', title: 'Buch B' },
-			{ subject: 'Mathematik', title: 'Buch A' }
-		];
-
-		const sorted = [...books].sort(sortBooksBySubjectAndTitle);
-
-		expect(sorted[0].subject).toBe('Mathematik');
-		expect(sorted[1].subject).toBe('Englisch');
+	it('handles case-insensitivity and whitespace', () => {
+		const a = { subject: ' Mathe ', title: 'Algebra' };
+		const b = { subject: 'DEUTSCH', title: 'Grammatik' };
+		expect(sortBooksBySubjectAndTitle(a, b)).toBeLessThan(0);
 	});
 
-	it('puts unknown subjects at the end, sorted by title', () => {
-		const books = [
-			{ subject: 'Sport', title: 'Z' },
-			{ subject: 'Informatik', title: 'A' },
-			{ subject: 'Mathe', title: 'M' }
-		];
-
-		const sorted = [...books].sort(sortBooksBySubjectAndTitle);
-
-		expect(sorted[0].title).toBe('M');
-		expect(sorted[1].title).toBe('A'); // Informatik
-		expect(sorted[2].title).toBe('Z'); // Sport
+	it('sorts unknown subjects to the end', () => {
+		const a = { subject: 'sport', title: 'Basketball' };
+		const b = { subject: 'physik', title: 'Mechanik' };
+		expect(sortBooksBySubjectAndTitle(a, b)).toBeGreaterThan(0);
+		expect(sortBooksBySubjectAndTitle(b, a)).toBeLessThan(0);
 	});
 
-	it('handles missing or undefined subjects gracefully', () => {
-		const books = [{ title: 'Z Ohne Fach' }, { subject: 'Mathe', title: 'A Mathe' }];
-
-		const sorted = [...books].sort(sortBooksBySubjectAndTitle);
-
-		expect(sorted[0].title).toBe('A Mathe');
-		expect(sorted[1].title).toBe('Z Ohne Fach');
+	it('sorts unknown subjects by title', () => {
+		const a = { subject: 'sport', title: 'Basketball' };
+		const b = { subject: 'kunst', title: 'Malerei' };
+		expect(sortBooksBySubjectAndTitle(a, b)).toBeLessThan(0);
 	});
 
-	it('sorts correctly when both subjects are unknown or missing', () => {
-		const a = { subject: undefined, title: 'B' };
-		const b = { subject: '', title: 'A' };
+	it('handles missing subjects', () => {
+		const a = { title: 'Zebra' };
+		const b = { subject: 'mathe', title: 'Algebra' };
+		expect(sortBooksBySubjectAndTitle(a, b)).toBeGreaterThan(0);
 
-		expect(sortBooksBySubjectAndTitle(a, b)).toBe(1); // 'B' > 'A'
-		expect(sortBooksBySubjectAndTitle(b, a)).toBe(-1); // 'A' < 'B'
+		const c = { subject: '', title: 'Affe' };
+		expect(sortBooksBySubjectAndTitle(a, c)).toBeGreaterThan(0);
 	});
 });
