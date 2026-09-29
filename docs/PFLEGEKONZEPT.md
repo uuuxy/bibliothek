@@ -91,7 +91,8 @@ Kopie; bei Stillstand zusätzlich ein Anruf. Nie über die Issues auf GitHub, we
 jüngsten 14 bleiben, dazu seit dem 29.09.2026 von den älteren je Kalenderwoche eine für 12
 Wochen, damit ein Fehler, der erst nach den Sommerferien auffällt, noch eine Sicherung von
 davor vorfindet. Ein älterer Stand bringt Personen zurück, die seitdem von Hand endgültig
-gelöscht wurden ([OFFEN.md](OFFEN.md) 5.36). Dazu legt `update.sh` vor jedem Update eine
+gelöscht wurden; wie sie nachgeholt werden, steht in
+[resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2a, Schritte 5b und 8. Dazu legt `update.sh` vor jedem Update eine
 Sicherung an, die beim ersten Update nach 30 Tagen gelöscht wird; eine Sicherung von Hand mit
 `scripts/backup.sh` wird beim ersten Lauf nach 7 Tagen gelöscht. Die Nachtsicherungen liegen im
 Container, diese beiden in `backups/` im Programmverzeichnis

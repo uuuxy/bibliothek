@@ -190,7 +190,10 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 - Seit dem 29.09.2026 decken die Sicherungen die Sommerferien ab; gelöschte Personen bleiben
   damit bis zu etwa drei Monate in den Sicherungen. Wer einen älteren Stand zurückspielt, holt
   Personen zurück, die seitdem von Hand endgültig gelöscht wurden, und das Protokoll dieser
-  Löschung ist mit zurückgespielt (5.36).
+  Löschung ist mit zurückgespielt. Die Anleitung zum Zurückspielen hält deren Kennungen vorher
+  fest und nennt danach, wer erneut zu löschen ist
+  ([resilience_and_recovery.md](../resilience_and_recovery.md), Abschnitt 2a, Schritte 5b und
+  8); das Nachholen ist Handarbeit.
 - Antworten mit Personendaten tragen keine Anweisung an den Browser, sie nicht
   zwischenzuspeichern; auf einem Rechner für mehrere Personen können sie im Browser-Speicher
   liegen bleiben (5.29).

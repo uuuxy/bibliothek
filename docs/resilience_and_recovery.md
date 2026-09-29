@@ -157,6 +157,21 @@ Erst wenn Schritt 4 plausibel aussieht, die Datenbank ersetzen:
 pg_dump -U postgres bibliothek > vor-restore.sql
 ls -lh vor-restore.sql
 
+# 5b. Was von Hand endgültig gelöscht wurde, festhalten (seit 29.09.2026).
+#     Eine Sicherung bringt jeden zurück, der NACH ihr gelöscht wurde: Leser aus dem
+#     Papierkorb, Zugangskonten, die Quelle einer Zusammenführung. Der Eintrag darüber steht
+#     nur im Protokoll dieser Datenbank und geht mit dem Einspielen verloren. Festgehalten
+#     werden ALLE Kennungen; welche davon zurückkommen, zeigt Schritt 8. Die Datei enthält
+#     nur Kennungen, keine Namen. Die Löschläufe nach Frist holen ihren Teil selbst nach.
+psql -U postgres -d bibliothek -tA -F ' ' > geloescht.txt <<'SQL'
+SELECT 'leser', details->>'schueler_id', '' FROM audit_logs WHERE aktion = 'PURGE_STUDENT'
+UNION ALL
+SELECT 'konto', datensatz_id::text, '' FROM audit_log WHERE tabelle = 'benutzer' AND aktion = 'DELETE' AND akteur = 'USER'
+UNION ALL
+SELECT 'zusammengefuehrt', details->>'aufgeloest_id', details->>'schueler_id' FROM audit_logs WHERE aktion = 'SCHUELER_ZUSAMMENGEFUEHRT';
+SQL
+wc -l geloescht.txt
+
 # 6. Datenbank neu anlegen und einspielen. ON_ERROR_STOP bricht beim ersten Fehler ab —
 #    ohne es endet psql auch nach einer Fehlerflut mit 0 und lässt eine halbe Datenbank.
 dropdb -U postgres bibliothek
@@ -170,7 +185,40 @@ for t in leser buecher_titel buecher_exemplare ausleihen audit_logs; do
   in_db=$(psql -U postgres -d bibliothek -tAc "SELECT count(*) FROM $t")
   echo "$t: Dump $im_dump / Datenbank $in_db"
 done
+
+# 8. Wer aus Schritt 5b wieder da ist. Keine Zeile: nichts nachzuholen.
+psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek -v liste="$(tr '\n' ';' < geloescht.txt)" <<'SQL'
+WITH g AS (
+    SELECT split_part(z, ' ', 1) AS art, split_part(z, ' ', 2) AS id, split_part(z, ' ', 3) AS ziel
+    FROM unnest(string_to_array(:'liste', ';')) AS z
+    WHERE z <> ''
+)
+SELECT g.art, l.vorname || ' ' || l.nachname AS wer, coalesce(l.klasse, '') AS klasse_oder_email,
+       l.deleted_at IS NOT NULL AS im_papierkorb,
+       coalesce(z.vorname || ' ' || z.nachname, '') AS zusammenfuehren_mit
+FROM g JOIN leser l ON l.id::text = g.id
+LEFT JOIN leser z ON z.id::text = g.ziel
+WHERE g.art IN ('leser', 'zusammengefuehrt')
+UNION ALL
+SELECT g.art, b.vorname || ' ' || b.nachname, b.email, NULL, ''
+FROM g JOIN benutzer b ON b.id::text = g.id
+WHERE g.art = 'konto'
+ORDER BY 1, 2;
+SQL
 ```
+
+Jede Zeile aus Schritt 8 wird in der Anwendung nachgeholt, auf demselben Weg wie beim ersten Mal
+— nicht per SQL: Das endgültige Löschen tilgt die Spuren eines Lesers in vielen Tabellen, und
+nur die Anwendung kennt sie alle.
+
+- **leser:** _Leserdatei_ → Akte öffnen → löschen; danach im Reiter _Papierkorb_ endgültig
+  löschen (`im_papierkorb = t`: nur der zweite Schritt). Hält eine offene Ausleihe oder eine
+  unbezahlte Forderung aus dem alten Stand das Löschen auf, zuerst sie klären.
+- **konto:** _Benutzer & Rechte_ → Reiter _Benutzer_ → das Konto löschen.
+- **zusammengefuehrt:** die Akte von `zusammenfuehren_mit` öffnen → _Stammdaten & Adresse_ →
+  _Doppelter Datensatz?_ → mit `wer` zusammenführen.
+
+Danach die Liste vernichten: `shred -u geloescht.txt`.
 
 ### 2b. Backups aus den Shell-Wegen (Abschnitt 1b)
 
@@ -193,7 +241,8 @@ createdb -U postgres bibliothek
 zcat "$GZ" | psql -v ON_ERROR_STOP=1 -U postgres -d bibliothek; echo "psql-Exit: $? (muss 0 sein)"
 ```
 
-Danach Schritt 7 aus 2a, mit `zcat "$GZ"` an der Stelle von `"$DUMP"` im `awk`.
+Vor dem `dropdb` Schritt 5b aus 2a; danach die Schritte 7 und 8 aus 2a, in Schritt 7 mit
+`zcat "$GZ"` an der Stelle von `"$DUMP"` im `awk`.
 
 > Die Gegenprobe mit `head` ist hier nicht Zierde: `scripts/backup.sh` legte vor dem
 > 06.08.2026 ohne `pipefail` auch dann eine gzip-Datei an, wenn `pg_dump` abgebrochen war —
@@ -219,9 +268,11 @@ verschlüsselte Backup — es liegen die der letzten 14 Nächte und 12 Wochenst�
 
 **Ein älterer Stand bringt Gelöschte zurück.** Wer einen älteren Stand zurückspielt, holt auch
 Personen zurück, die seitdem gelöscht wurden. Die Löschläufe nach Frist holen das in der
-nächsten Nacht nach; ein endgültiges Löschen von Hand aus dem Papierkorb nicht — und sein
-Protokolleintrag (`PURGE_STUDENT`) steht in derselben Datenbank, er ist mit zurückgespielt. Wie
-damit umzugehen ist, ist offen ([OFFEN.md](OFFEN.md) 5.36).
+nächsten Nacht nach; ein endgültiges Löschen von Hand nicht — weder aus dem Papierkorb noch
+unter Benutzer & Rechte, noch das Zusammenführen —, und der Protokolleintrag darüber steht in
+derselben Datenbank, er ist mit zurückgespielt. Deshalb halten die Schritte 5b und 8 in
+Abschnitt 2a die Kennungen vor dem Einspielen fest und nennen danach, wer nachzuholen ist
+(entschieden am 29.09.2026: ein Schritt in der Anleitung, kein Löschjournal im Programm).
 
 ### 2d. Aufräumen — erst nach bestätigter Wiederherstellung
 

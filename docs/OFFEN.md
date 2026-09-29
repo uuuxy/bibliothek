@@ -77,7 +77,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt das Eigentum je Exemplar (4.24, freigegeben am
-   29.09.2026 in drei Stufen; Stufe 1 und 2 gebaut), dazu der Schritt in der Anleitung aus 5.36.
+   29.09.2026 in drei Stufen; Stufe 1 und 2 gebaut, Stufe 3 mit Beschreibung vorab).
    Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
@@ -691,25 +691,15 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
   binden".
 
-### 5.36 Ein älterer Stand bringt von Hand Gelöschte zurück
+### 5.37 Der Bescheid-Dialog nennt einen Geräteschaden „Buch der Schülerbücherei"
 
-Seit dem 29.09.2026 bleiben neben den 14 Nachtsicherungen 12 Wochenstände, zusammen etwa drei
-Monate (`jobs/backup_aufbewahrung.go`). Wer einen älteren Stand zurückspielt, holt Personen
-zurück, die seitdem gelöscht wurden. Die Löschläufe nach Frist (`RunNaechtlicheDSGVO`, jede Nacht
-um 00:00 UTC) holen das nach, soweit die Frist der Person abgelaufen ist. Ein endgültiges Löschen
-von Hand aus dem Papierkorb (`PurgeStudentHandler`) holt nichts nach, und sein Protokolleintrag
-(`PURGE_STUDENT` in `audit_logs`) ist mit zurückgespielt: Danach steht in der Datenbank nicht
-mehr, wer gelöscht war. Am Code nachgesehen am 29.09.2026, nicht nachgestellt. Mit 14 Nächten
-bestand das schon; die Wochenstände dehnen es auf etwa drei Monate.
-
-**Frage:** Reicht ein Schritt in der Anleitung zum Zurückspielen
-([resilience_and_recovery.md](resilience_and_recovery.md), Abschnitt 2) — vorher aus dem
-laufenden Stand die `PURGE_STUDENT`-Einträge seit dem Datum der Sicherung ablesen, danach dieselben
-Personen erneut endgültig löschen? Oder soll das Programm endgültige Löschungen zusätzlich
-außerhalb der Datenbank festhalten und nach dem Zurückspielen selbst wiederholen? Empfehlung: der
-Schritt in der Anleitung. Einen Wochenstand spielt man zurück, wenn ein Fehler spät auffällt —
-dann ist der laufende Stand noch lesbar. Fällt die Datenbank ganz aus, gilt die jüngste
-Nachtsicherung.
+Gefunden am 29.09.2026 beim Umbau auf das Eigentum (4.24, Stufe 2), am Code gelesen, nicht
+nachgestellt. Der Dialog listet alle offenen Forderungen des Kindes, auch einen Geräteschaden
+(ohne Exemplar, `topf` leer). Er steht richtig gesperrt da, darunter aber der Satz „Buch der
+Schülerbücherei — gehört nicht auf den Bescheid des Landes."
+(`frontend/src/lib/components/mahnwesen/BescheidPositionen.svelte`). Sichtbar, ohne Wirkung auf
+den Brief; so schon vor dem 29.09.2026 mit `ist_lernmittel`. Vorschlag: bei leerem `topf` ein
+eigener Satz ohne das Wort „Buch" — vorher die M3-Seite zu Listen lesen.
 
 ---
 
