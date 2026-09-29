@@ -73,10 +73,10 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgen der kleine Umbau 8.8 (Abholfrist), entschieden am
-   28.09.2026, der Eigentumsvermerk je Exemplar aus Littera (4.24) und zusätzlich 12
-   wöchentliche Stände der Sicherung (5.30). Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde
-   zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für Bildschirm).
+   zurückgestellt (siehe oben). Es folgen der Eigentumsvermerk je Exemplar aus Littera (4.24)
+   und zusätzlich 12 wöchentliche Stände der Sicherung (5.30). Dann 5.18 (Klassen als
+   Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben, Bildschirm für
+   Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -1045,33 +1045,6 @@ Zuerst B3 und B4 anstoßen.
 Gilt für das System die Pflicht zur Barrierefreiheit — mit Erklärung zur Barrierefreiheit und
 barrierefreien PDFs (HTML-Druckweg oder begründete Ausnahme)? Bis zur Antwort geparkt; was die
 Gates heute prüfen, steht in [FACHKONZEPT.md](FACHKONZEPT.md), Abschnitt 19.
-
-### 8.8 Die Abholfrist bei Vormerkungen
-
-Ein vorgemerktes Buch liegt drei Tage bereit, gerechnet ab dem Zeitpunkt, zu dem es zugeteilt
-wird: bei der Rückgabe (`INTERVAL '3 days'` in `internal/service/loan_return.go`) oder beim
-Nachrücken, wenn der Vorige es nicht abgeholt hat (`repository/vormerkung_nachruecken.go`). Danach verfällt die Vormerkung beim nächsten
-stündlichen Lauf, und das Buch geht an den Nächsten in der Warteschlange. Wochenende und Ferien
-zählen mit: Ein Buch, das freitags um 10 Uhr zurückkommt, liegt bis Montag 10 Uhr bereit; kommt
-es in den letzten drei Tagen vor den Herbstferien zurück, verfällt die Vormerkung in den Ferien.
-
-Die Leihfrist verschiebt seit dem 24.09.2026 ein Ende an einem Wochenende, Feiertag oder in den
-Ferien auf den nächsten Schultag (`Tagesfrist` in `internal/service/loan_rules.go`); die
-Abholfrist nicht. Littera führt eine „Maximale Reservierungsdauer" in Tagen, die die Schule
-einstellt (Stammdaten → Einstellungen → Verleih); Öffnungs- und Schließtage nennt das Handbuch
-nur für die Leihfrist.
-
-In der Sicherung von 2010 steht dort 0 (Tabelle `Einstellungen`, Spalte `MaxResDauer`,
-nachgesehen am 28.09.2026).
-
-**Entschieden am 28.09.2026: drei Tage, das Ende fällt wie bei der Leihfrist auf den nächsten
-Schultag;** keine neue Einstellung. Folge: Kommt ein Buch kurz vor den Ferien zurück, liegt es bis
-nach den Ferien bereit. Nicht gebaut: Die drei Tage stehen zweimal im Code (`INTERVAL '3 days'`
-in `loan_return.go` und in `bedieneNaechstenWartenden`, `vormerkung_nachruecken.go`). Gesetzt wird
-die Frist bei der Rückgabe und über `bedieneNaechstenWartenden` im Verfall-Lauf, beim Löschen
-einer Vormerkung von Hand und bei der Spuren-Tilgung. `Tagesfrist` liegt in `internal/service`
-und braucht die Sommerferien aus den Einstellungen; `repository` erreicht es nicht. Beim Bau die
-Regel eine Schicht tiefer, mit Test über ein Wochenende, über Ferien und über den Verfall-Lauf.
 
 ---
 

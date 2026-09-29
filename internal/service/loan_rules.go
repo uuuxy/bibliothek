@@ -27,13 +27,15 @@ func schoolLocation() *time.Location {
 }
 
 // TagesEndeInSchulzeitzone normalisiert einen Zeitpunkt auf das Ende seines Kalendertags
-// (23:59:59) in der Schul-Zeitzone (Europe/Berlin). Dies ist die EINZIGE Definition von
-// "Ende des Tages" im System: JEDE Rückgabefrist (reguläre Bücher, Medien, LMF-Stichtag,
-// Geräte, Handapparat/Lehrer-Dauerleihe) läuft hierüber — seit 19.08.2026 auch die
-// manuelle Frist-Überschreibung und die LMF-Massenverlängerung im api-Paket, die zuvor
-// roh 23:59:59 UTC setzten und damit fristabhängig 1–2 h daneben lagen; seit 24.09.2026 über
-// Tagesfrist auch die Einzel-Verlängerung, die bis dahin in SQL ab CURRENT_TIMESTAMP rechnete
-// und bei einer überfälligen Ausleihe die Uhrzeit der Verlängerung behielt. Damit fällt die Fälligkeit immer
+// (23:59:59) in der Schul-Zeitzone (Europe/Berlin). Die Definition dahinter,
+// schulzeit.TagesEnde, ist die EINZIGE von "Ende des Tages" im System: JEDE Rückgabefrist
+// (reguläre Bücher, Medien, LMF-Stichtag, Geräte, Handapparat/Lehrer-Dauerleihe) läuft
+// darüber — seit 19.08.2026 auch die manuelle Frist-Überschreibung und die
+// LMF-Massenverlängerung im api-Paket, die zuvor roh 23:59:59 UTC setzten und damit
+// fristabhängig 1–2 h daneben lagen; seit 24.09.2026 über die Tagesfrist
+// (lmfplan.Ferientabelle.Tagesfrist) auch die Einzel-Verlängerung, die bis dahin in SQL ab
+// CURRENT_TIMESTAMP rechnete und bei einer überfälligen Ausleihe die Uhrzeit der
+// Verlängerung behielt. Damit fällt die Fälligkeit immer
 // deterministisch auf den Kalendertag — unabhängig von der Server-Zeitzone (Docker = UTC) —
 // und es gibt keine zweite, rohe Berechnungsmethode mehr, die bei künftigen Änderungen
 // (z. B. kürzere Handapparat-Frist) auf die Füße fällt.
@@ -197,26 +199,12 @@ func calculateDueDate(jetzt time.Time, opts DueDateOptions) time.Time {
 	// eine verkürzte Ausleihfrist (fristMedienTage).
 	lower := strings.ToLower(opts.Medientyp)
 	if strings.Contains(lower, "cd") || strings.Contains(lower, "dvd") || strings.Contains(lower, "audio") {
-		return Tagesfrist(now, opts.FristMedienTage, lmfplan.FerientabelleAus(opts.Sommerferien))
+		return lmfplan.FerientabelleAus(opts.Sommerferien).Tagesfrist(now, opts.FristMedienTage)
 	}
 
 	// 3. Fall: Reguläre Bücher
 	// Standardleihfrist für normale Buchbestände (fristBuchTage).
-	return Tagesfrist(now, opts.FristBuchTage, lmfplan.FerientabelleAus(opts.Sommerferien))
-}
-
-// Tagesfrist ist die Frist einer Leihe, die in Tagen zählt — Buch, Medium, Gerät,
-// Verlängerung: ab plus tage, und fällt dieser Tag auf ein Wochenende, einen Feiertag oder
-// in die Ferien, der nächste Schultag; Tagesende in der Schulzeitzone.
-//
-// Entscheidung vom 24.09.2026: Wer vor den Herbstferien ausleiht, soll nicht gemahnt
-// werden, weil die Frist in die Ferien fiel. Nicht hierüber laufen Stichtage und von Hand
-// gesetzte Fristen — Lernmittel (Stichtag, LMF-Plan), Ferien-Leseclub, Frist-Überschreibung,
-// die Jahresfrist der Dauerleihe. Der LMF-Stichtag 31.07. liegt in jedem Jahr der Tabelle in
-// den Sommerferien; über diese Regel stünde jedes Lernmittel am Tag der Bücherausgabe.
-func Tagesfrist(ab time.Time, tage int, kalender lmfplan.Ferientabelle) time.Time {
-	tag := kalender.NaechsterSchultag(ab.In(schoolLocation()).AddDate(0, 0, tage))
-	return TagesEndeInSchulzeitzone(time.Date(tag.Year(), tag.Month(), tag.Day(), 12, 0, 0, 0, schoolLocation()))
+	return lmfplan.FerientabelleAus(opts.Sommerferien).Tagesfrist(now, opts.FristBuchTage)
 }
 
 // parseGrade extrahiert den Jahrgang aus dem Klassen-String.

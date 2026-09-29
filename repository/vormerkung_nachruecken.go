@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -22,15 +23,19 @@ import (
 // fehlte der Schritt.
 
 // bedieneNaechstenWartenden teilt ein freigewordenes Exemplar dem nächsten wartenden,
-// abholberechtigten Schüler desselben Titels zu (neue 3-Tage-Frist) — aber nur, wenn
-// das Exemplar wirklich noch frei ist (nicht zwischenzeitlich ausgeliehen, gesperrt
-// oder ausgesondert). FOR UPDATE SKIP LOCKED verhindert Doppelzuteilung gegen
+// abholberechtigten Schüler desselben Titels zu (neue Abholfrist ab jetzt, Abholfrist) —
+// aber nur, wenn das Exemplar wirklich noch frei ist (nicht zwischenzeitlich ausgeliehen,
+// gesperrt oder ausgesondert). FOR UPDATE SKIP LOCKED verhindert Doppelzuteilung gegen
 // gleichzeitige Rückgaben. Liefert true, wenn jemand bedient wurde.
-func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarID, titelID string) (bool, error) {
+func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarID, titelID string, jetzt time.Time) (bool, error) {
+	frist, err := Abholfrist(ctx, ex, jetzt)
+	if err != nil {
+		return false, err
+	}
 	tag, err := ex.Exec(ctx, `
 		UPDATE vormerkungen
 		SET status = 'abholbereit', bereitgestellt_exemplar_id = $1,
-		    bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days'
+		    bereitgestellt_bis = $3
 		WHERE id = (
 			SELECT v.id FROM vormerkungen v JOIN schueler s ON v.schueler_id = s.id
 			WHERE v.titel_id = $2 AND v.status = 'wartend'
@@ -43,7 +48,7 @@ func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarI
 			SELECT 1 FROM buecher_exemplare e
 			WHERE e.id = $1 AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
 			  AND NOT EXISTS (SELECT 1 FROM ausleihen a WHERE a.exemplar_id = $1 AND a.rueckgabe_am IS NULL)
-		)`, exemplarID, titelID)
+		)`, exemplarID, titelID, frist)
 	if err != nil {
 		return false, err
 	}
@@ -58,6 +63,9 @@ func bedieneNaechstenWartenden(ctx context.Context, ex SpurenExecutor, exemplarI
 // Warum erst löschen, dann bedienen: Nur so kann der nächste Wartende nicht wieder ein
 // Kind sein, dessen Vormerkung gerade fällt (der Abgänger-Cronjob löscht Schüler, die
 // nicht weichgelöscht sind — sie kämen als „wartend" sonst selbst infrage).
+//
+// Die Abholfrist des Nachrückenden zählt ab jetzt: Die Tilgung ist ein Schritt der Liste
+// spurTilgungen und hat keine eigene Uhr.
 func loescheVormerkungenUndRuecktNach(ctx context.Context, ex SpurenExecutor, schuelerIDs []string) (int64, error) {
 	rows, err := ex.Query(ctx, `
 		DELETE FROM vormerkungen WHERE schueler_id = ANY($1::uuid[])
@@ -75,7 +83,7 @@ func loescheVormerkungenUndRuecktNach(ctx context.Context, ex SpurenExecutor, sc
 		if f.exemplarID == nil || f.titelID == nil {
 			continue
 		}
-		if _, err := bedieneNaechstenWartenden(ctx, ex, *f.exemplarID, *f.titelID); err != nil {
+		if _, err := bedieneNaechstenWartenden(ctx, ex, *f.exemplarID, *f.titelID, time.Now()); err != nil {
 			return int64(len(freigaben)), fmt.Errorf("nächsten wartenden bedienen: %w", err)
 		}
 	}

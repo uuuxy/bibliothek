@@ -74,14 +74,3 @@ func TestResolveCheckoutDueDate_SommerferienAusDerEinstellung(t *testing.T) {
 		t.Errorf("Frist %s, erwartet %s (erster Schultag nach den eingetragenen Sommerferien)", got.In(schoolLocation()), want)
 	}
 }
-
-// Gezählt wird ab dem Berliner Kalendertag: 23.09.2026 22:30 UTC ist in Berlin schon der
-// 24.09. — plus 21 Tage der 15.10. in den Herbstferien, also der 19.10. In UTC gezählt käme
-// der 14.10. heraus, ein Schultag.
-func TestTagesfrist_ZaehltAbDemBerlinerKalendertag(t *testing.T) {
-	ab := time.Date(2026, time.September, 23, 22, 30, 0, 0, time.UTC)
-	got := Tagesfrist(ab, 21, lmfplan.Hessen())
-	if want := time.Date(2026, time.October, 19, 23, 59, 59, 0, schoolLocation()); !got.Equal(want) {
-		t.Errorf("Frist %s, erwartet %s", got.In(schoolLocation()), want)
-	}
-}

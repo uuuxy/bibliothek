@@ -3,7 +3,7 @@ package service
 // Abholfach-Hinweis beim Schüler-Scan (Betreiber-Entscheidung 01.09.2026):
 // Schüler scannen nicht selbst — beim Scan des Ausweises durch die Mitarbeiterin
 // muss die Antwort die abholbereiten Vormerkungen des Schülers tragen, damit
-// das Buch aus dem Abholfach direkt mitgegeben wird, statt dort die 3-Tage-Frist
+// das Buch aus dem Abholfach direkt mitgegeben wird, statt dort die Abholfrist
 // abzuwarten. Echtes Postgres über den ECHTEN Service (NewOmniboxService mit
 // echten Repos): geprüft wird der Live-Pfad des Scans, nicht ein Stub.
 

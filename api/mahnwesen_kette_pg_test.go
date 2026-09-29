@@ -117,7 +117,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	//    13 und 21 Tage beide in den Herbstferien und damit auf demselben Montag. Deshalb
 	//    ab 13 die erste Tageszahl, deren Frist sich von der des Fallbacks unterscheidet.
 	tage := 13
-	for tage%7 == 0 || service.Tagesfrist(time.Now(), tage, lmfplan.Hessen()).Equal(service.Tagesfrist(time.Now(), 21, lmfplan.Hessen())) {
+	for tage%7 == 0 || lmfplan.Hessen().Tagesfrist(time.Now(), tage).Equal(lmfplan.Hessen().Tagesfrist(time.Now(), 21)) {
 		tage++
 	}
 	if _, err := pool.Exec(ctx, `
@@ -150,7 +150,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	bearbeiter := adminFuerAudit(t, pool)
 	frist := ausleiheUeberDenDienst(t, pool, "B-MAHN-1", anna, bearbeiter)
 	// Beide Seiten durch DIESELBE Produktionsdefinition schicken (seit dem 24.09.2026
-	// service.Tagesfrist, davor TagesEndeInSchulzeitzone), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
+	// lmfplan.Ferientabelle.Tagesfrist, davor TagesEndeInSchulzeitzone), statt Kalendertage in der Zeitzone des Testrechners zu vergleichen: Die Frist entsteht
 	// in der Schul-Zeitzone (Europe/Berlin), der Test lief mit time.Now() in der Zeitzone des
 	// Runners. Auf dem UTC-CI sind das ab 22:00 UTC zwei verschiedene Kalendertage — genau
 	// daran war dieser Test in der Nacht auf den 22.08.2026 rot (erwartet 03.09., war 04.09.),
@@ -161,7 +161,7 @@ func TestMahnkette_FristAusDerEinstellungBisZurMailAnDieKlassenleitung(t *testin
 	// AddDate NACH der Umrechnung in die Schulzeitzone — sonst rechnet der Test im
 	// Runner-Kalender und weicht am DST-Ende (24.10., 22–23 UTC) um einen Tag ab
 	// (Prüfung 22.08.2026). Tagesfrist rechnet genau so.
-	erwartet := service.Tagesfrist(time.Now(), tage, lmfplan.Hessen())
+	erwartet := lmfplan.Hessen().Tagesfrist(time.Now(), tage)
 	if !service.TagesEndeInSchulzeitzone(frist).Equal(erwartet) {
 		t.Fatalf("Rückgabefrist = %s, erwartet den %s (%d Tage aus der Einstellung)",
 			frist.Format("02.01.2006"), erwartet.Format("02.01.2006"), tage)

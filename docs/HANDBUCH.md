@@ -61,7 +61,8 @@ die Forderung landet in der Akte, der Elternbrief kommt als PDF).
   gebucht; wer die Klasse einheitlich haben will, nimmt das Buch zurück (erneut scannen) und
   gibt die andere Auflage aus. Andere Auflagen haben andere Seitenzahlen. (§13)
 - Kommt ein **vorgemerktes** Buch zurück, erscheint ein roter Hinweis: nicht ins Regal, die
-  nächste Leserin wartet. (§4)
+  nächste Leserin wartet. Das Buch liegt drei Tage für sie bereit; fällt das Ende auf ein
+  Wochenende oder in die Ferien, bis zum nächsten Schultag. (§4)
 - Ein **gesperrter** Ausweis wird angehalten — mit dem hinterlegten Grund. Dann geht nur die
   Rückgabe. Wer Schülerdaten ändern darf, hebt die Sperre im Dialog auf („Sperre aufheben"),
   und das Buch geht raus. Das gilt für die Sperre von Hand und für die, die das Programm

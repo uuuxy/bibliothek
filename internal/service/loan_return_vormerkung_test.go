@@ -37,8 +37,10 @@ func TestProcessReturnVormerkung_FehlschlagLuegtNicht(t *testing.T) {
 			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse"}).
 				AddRow("33333333-3333-3333-3333-333333333333", "Max", "Mustermann", "10A"))
+		mock.ExpectQuery(`SELECT schluessel, wert FROM system_einstellungen`).
+			WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
 		mock.ExpectExec(`UPDATE vormerkungen SET status = 'abholbereit'`).
-			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
+			WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg(), pgxmock.AnyArg()).
 			WillReturnError(errors.New("verbindung weg"))
 
 		tx, err := mock.Begin(ctx)

@@ -64,8 +64,14 @@ func (s *defaultLoanService) processReturnVormerkungTx(ctx context.Context, tx p
 		schuelerName += ", " + sKlasse
 	}
 
-	// Status der Vormerkung auf 'abholbereit' setzen. Das Buch wird für 3 Tage für diesen Schüler reserviert.
-	if _, err := tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = CURRENT_TIMESTAMP + INTERVAL '3 days' WHERE id = $2", copy.ID, vID); err != nil {
+	// Status der Vormerkung auf 'abholbereit' setzen. Das Buch liegt für diesen Schüler bis zum
+	// Ende der Abholfrist bereit — ab der Uhr des Dienstes, dieselbe Rechnung wie beim
+	// Nachrücken in der Warteschlange (repository.Abholfrist).
+	frist, err := repository.Abholfrist(ctx, tx, s.heute())
+	if err != nil {
+		return fmt.Errorf("abholfrist für vormerkung %s: %w", vID, err)
+	}
+	if _, err := tx.Exec(ctx, "UPDATE vormerkungen SET status = 'abholbereit', bereitgestellt_exemplar_id = $1, bereitgestellt_bis = $3 WHERE id = $2", copy.ID, vID, frist); err != nil {
 		return fmt.Errorf("vormerkung %s auf 'abholbereit' setzen: %w", vID, err)
 	}
 

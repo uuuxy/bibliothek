@@ -5,6 +5,8 @@ import (
 	"bibliothek/pkg/lmfplan"
 	"context"
 	"strconv"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // SystemEinstellungen holds configurable system-wide settings.
@@ -275,9 +277,19 @@ func applyEinstellung(settings *SystemEinstellungen, key string, val *string) {
 
 // GetSettings reads system settings from the database.
 func (repo *pgSystemSettingsRepository) GetSettings(ctx context.Context) (*SystemEinstellungen, error) {
+	return EinstellungenUeber(ctx, repo.db)
+}
+
+// EinstellungenUeber liest die Einstellungen über q — den Pool oder die Transaktion eines
+// Aufrufers — mit derselben Abbildung wie GetSettings (applyEinstellung). Die Abholfrist
+// (Abholfrist) liest so die Sommerferien über den Executor, auf dem sie die Vormerkung
+// zuteilt: eine Transaktion oder, im nächtlichen Tilgungslauf, den Pool als SpurenExecutor.
+func EinstellungenUeber(ctx context.Context, q interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}) (*SystemEinstellungen, error) {
 	settings := standardEinstellungen()
 
-	rows, err := repo.db.Query(ctx, `SELECT schluessel, wert FROM system_einstellungen`)
+	rows, err := q.Query(ctx, `SELECT schluessel, wert FROM system_einstellungen`)
 	if err != nil {
 		return settings, err
 	}

@@ -102,7 +102,7 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	// und eskalierte sofort in Stufe 2 (Rechnung).
 	//
 	// Seit dem 24.09.2026 rechnet Go statt SQL: Die neue Frist ist eine Tagesfrist wie die
-	// der Ausleihe (service.Tagesfrist) — Tagesende in der Schulzeitzone, und fällt sie auf
+	// der Ausleihe (lmfplan.Ferientabelle.Tagesfrist) — Tagesende in der Schulzeitzone, und fällt sie auf
 	// ein Wochenende, einen Feiertag oder in die Ferien, der nächste Schultag. Vorher stand
 	// hier GREATEST(rueckgabe_frist, CURRENT_TIMESTAMP) + Intervall: ohne Kalender, und bei
 	// einer überfälligen Ausleihe mit der Uhrzeit der Verlängerung statt des Tagesendes.
@@ -132,7 +132,7 @@ func (s *Server) handleExtendLoan(w http.ResponseWriter, r *http.Request, settin
 	if alteFrist.After(basis) {
 		basis = alteFrist
 	}
-	neueFrist := service.Tagesfrist(basis, extensionDays, lmfplan.FerientabelleAus(sommerferien))
+	neueFrist := lmfplan.FerientabelleAus(sommerferien).Tagesfrist(basis, extensionDays)
 
 	q := `
 			UPDATE ausleihen

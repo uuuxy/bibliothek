@@ -49,7 +49,7 @@ type Vormerkung struct {
 	// zeigte die Oberfläche jede Reservierung als "Wartet seit …" — auch eine, die
 	// längst zur Abholung bereitliegt und deren Frist bald verfällt.
 	Status string `json:"status"`
-	// BereitgestelltBis ist nur bei 'abholbereit' gesetzt: die 3-Tage-Abholfrist.
+	// BereitgestelltBis ist nur bei 'abholbereit' gesetzt: das Ende der Abholfrist (Abholfrist).
 	BereitgestelltBis *time.Time `json:"bereitgestellt_bis,omitempty"`
 }
 
@@ -63,7 +63,7 @@ type VormerkungRepository interface {
 }
 
 // VerfalleAbgelaufeneVormerkungen behandelt „abholbereit"-Reservierungen, deren
-// 3-Tage-Abholfrist abgelaufen ist (No-Show). Betreiber-Entscheidung 19.08.2026:
+// Abholfrist abgelaufen ist (No-Show). Betreiber-Entscheidung 19.08.2026:
 // „Verfall + nächsten bedienen". Ohne diesen Lauf blieb eine solche Vormerkung für
 // immer 'abholbereit' — der Schüler fiel still aus der Warteschlange, ohne bedient zu
 // werden, und das Exemplar wurde nie wieder zugeteilt.
@@ -72,7 +72,7 @@ type VormerkungRepository interface {
 //     wie in Bibliotheken üblich) — RETURNING liefert Exemplar und Titel.
 //  2. Ist das freigewordene Exemplar noch verfügbar (nicht zwischenzeitlich ausgeliehen
 //     oder ausgesondert), wird es dem NÄCHSTEN wartenden, abholberechtigten Schüler
-//     zugeteilt (Status 'abholbereit', neue 3-Tage-Frist). Ist es weg, geschieht nichts
+//     zugeteilt (Status 'abholbereit', neue Abholfrist ab r.uhr()). Ist es weg, geschieht nichts
 //     Weiteres — der reguläre Rückgabe-Pfad bedient die Warteschlange dann später.
 //
 // Alles in EINER Transaktion; FOR UPDATE SKIP LOCKED verhindert Deadlocks/Doppelzuteilung
@@ -104,7 +104,7 @@ func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Con
 		// Nächsten Wartenden nur dann bedienen, wenn das Exemplar wirklich noch frei
 		// ist — dieselbe Bewegung wie beim endgültigen Löschen eines Schülers
 		// (vormerkung_nachruecken.go).
-		bedient, err := bedieneNaechstenWartenden(ctx, tx, *f.exemplarID, *f.titelID)
+		bedient, err := bedieneNaechstenWartenden(ctx, tx, *f.exemplarID, *f.titelID, r.uhr())
 		if err != nil {
 			return 0, 0, err
 		}
@@ -121,6 +121,18 @@ func (r *pgVormerkungRepository) VerfalleAbgelaufeneVormerkungen(ctx context.Con
 
 type pgVormerkungRepository struct {
 	db db.PgxPoolIface
+	// jetzt ist die Uhr, ab der eine neue Abholfrist zählt (Nachrücken im Verfall-Lauf und
+	// beim Löschen); nil heißt time.Now. Tests setzen einen festen Tag vor einem Wochenende
+	// oder vor den Ferien.
+	jetzt func() time.Time
+}
+
+// uhr liefert den Zeitpunkt, ab dem eine neue Abholfrist zählt.
+func (r *pgVormerkungRepository) uhr() time.Time {
+	if r.jetzt != nil {
+		return r.jetzt()
+	}
+	return time.Now()
 }
 
 // NewVormerkungRepository returns a new PostgreSQL implementation of VormerkungRepository.
@@ -275,7 +287,7 @@ func (r *pgVormerkungRepository) Delete(ctx context.Context, id string) error {
 		return err
 	}
 	if bereitgestellt != nil {
-		if _, err := bedieneNaechstenWartenden(ctx, tx, *bereitgestellt, titelID); err != nil {
+		if _, err := bedieneNaechstenWartenden(ctx, tx, *bereitgestellt, titelID, r.uhr()); err != nil {
 			return err
 		}
 	}

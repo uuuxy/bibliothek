@@ -9,7 +9,7 @@
 	 *    selbst — der Hinweis sagt der MITARBEITERIN, dass für den gerade
 	 *    gescannten Schüler ein vorgemerktes Buch im Abholfach liegt. Ohne ihn
 	 *    stünde der Schüler an der Theke, während sein Buch im Fach auf den
-	 *    Ablauf der 3-Tage-Frist wartet.
+	 *    Ablauf der Abholfrist wartet (repository.Abholfrist).
 	 * 3. Kollegium (16.09.2026): Seit die Akte auch einen Kollegen zeigt, sieht die
 	 *    Theke dieselbe Ansicht wie bei einem Schüler — nur ohne Klasse. Der
 	 *    Hinweis sagt, was daran anders ist: Die Frist ist ein Jahr

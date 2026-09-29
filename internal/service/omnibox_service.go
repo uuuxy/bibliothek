@@ -57,7 +57,7 @@ type OmniboxResult struct {
 	// liegt (Betreiber-Entscheidung 01.09.2026). Schüler scannen nicht selbst —
 	// der Hinweis sagt der Mitarbeiterin am Terminal, dass sie ins Abholfach
 	// greifen soll, solange der Schüler vor ihr steht. Ohne ihn läge das Buch im
-	// Fach, bis die 3-Tage-Frist es still an den Nächsten weiterreicht.
+	// Fach, bis die Abholfrist (repository.Abholfrist) es still an den Nächsten weiterreicht.
 	Abholbereit []AbholbereiteVormerkung
 	// AuflagenHinweis: Das eben ausgeliehene Schulbuch ist eine andere Auflage als die, die
 	// Kinder derselben Klasse schon haben (docs/OFFEN.md 4.18, Stufe 5). Aus LoanResult.

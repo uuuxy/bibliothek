@@ -181,6 +181,9 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 		loanRepo:    &mockLoanRepoReturn{},
 		auditRepo:   audit,
 		studentRepo: &mockStudentRepo{student: &repository.Student{ID: "leser1", Art: "lehrkraft"}},
+		// Donnerstag vor den Herbstferien (05.10.–17.10.2026): plus drei Tage ist Sonntag, der
+		// nächste Schultag der Montag nach den Ferien.
+		jetzt: func() time.Time { return time.Date(2026, time.October, 1, 10, 0, 0, 0, schoolLocation()) },
 	}
 
 	mockPool.ExpectBegin()
@@ -195,9 +198,14 @@ func TestHandleRueckgabe_VormerkungAktiviert(t *testing.T) {
 		WillReturnRows(pgxmock.NewRows([]string{"id", "vorname", "nachname", "klasse"}).
 			AddRow("v1", "Max", "Mustermann", "10A"))
 
-	// Status der Vormerkung auf 'abholbereit' setzen.
+	// Die Abholfrist liest die Einstellungen (repository.Abholfrist); keine Sommerferien der
+	// Schule, es gilt die Programmtabelle.
+	mockPool.ExpectQuery("SELECT schluessel, wert FROM system_einstellungen").
+		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}))
+
+	// Status der Vormerkung auf 'abholbereit' setzen, bis Montag 19.10.2026 abends.
 	mockPool.ExpectExec("UPDATE vormerkungen SET status = 'abholbereit'").
-		WithArgs("c1", "v1").
+		WithArgs("c1", "v1", time.Date(2026, time.October, 19, 23, 59, 59, 0, schoolLocation())).
 		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 	mockPool.ExpectCommit()

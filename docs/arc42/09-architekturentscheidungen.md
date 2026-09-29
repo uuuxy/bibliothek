@@ -1,6 +1,6 @@
 # 9. Architekturentscheidungen
 
-Stand: 26.09.2026
+Stand: 29.09.2026
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -427,8 +427,14 @@ Hand; in der Sicherung von 2010 ist sie leer.
 vor dem Ende der Tabelle melden es die Betriebsbereitschaft und zwei Horizont-Tests. Die
 beweglichen Ferientage der Schule kennt die Tabelle nicht.
 
-**Fundstelle.** `service.Tagesfrist` (`internal/service/loan_rules.go`),
-`pkg/lmfplan/schulferien.go`, `pkg/lmfplan/ferien.go`, [FACHKONZEPT.md §2.1](../FACHKONZEPT.md).
+**Nachtrag (29.09.2026).** Entschieden am 28.09.2026: Dieselbe Regel gilt für die Abholfrist
+einer Vormerkung — drei Tage, das Ende auf dem nächsten Schultag, keine Einstellung. Gesetzt wird sie auch in `repository`
+(Nachrücken in der Warteschlange); deshalb liegt die Rechnung seit dem 29.09.2026 in
+`pkg/lmfplan` und nicht mehr in `internal/service`.
+
+**Fundstelle.** `lmfplan.Ferientabelle.Tagesfrist` (`pkg/lmfplan/tagesfrist.go`),
+`repository.Abholfrist` (`repository/vormerkung_abholfrist.go`), `pkg/lmfplan/schulferien.go`,
+`pkg/lmfplan/ferien.go`, [FACHKONZEPT.md §2.1](../FACHKONZEPT.md).
 
 ---
 
