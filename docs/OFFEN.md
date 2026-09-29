@@ -59,7 +59,7 @@ entfallen.
      kein Vermerk). Littera führt den Vermerk je Exemplar: In der Medienliste vom 12.06.2026
      tragen über 13.000 Exemplare das Land, 2.942 den Schulträger, einige hundert andere
      Eigentümer (Schule, Förderverein, Bibliothek), rund 50.000 keinen. Zum Ablesen ein Buch
-     nehmen, das dort den Schulträger trägt. Ob der Vermerk je Exemplar mitkommt: 4.24.
+     nehmen, das dort den Schulträger trägt. Der Vermerk je Exemplar kommt mit (4.24).
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
@@ -94,7 +94,8 @@ Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 **Gleich danach im Code**, sobald die drei Fragen beantwortet sind: das Gate gegen Leser-Werte
 im Protokoll (5.10), entschieden am 24.09.2026.
 
-Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20.
+Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20 und der Eigentumsvermerk je
+Exemplar aus 4.24.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
 Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
@@ -274,10 +275,11 @@ Bescheid an das Land geht (5.4, „Topf einer Forderung"). In der Medienliste vo
 16.878 von 67.109 Exemplaren einen Vermerk; die Sicherung von 2026 ist ohne Kennwort nicht lesbar
 (7.2).
 
-**Zu entscheiden vor der Übernahme**, denn sie läuft einmal: ob der Vermerk je Exemplar mitkommt.
-Vorschlag: mitnehmen, als eigenes Feld am Exemplar, zunächst ohne Wirkung auf Topf und Etikett.
-Offen bei der Schule: was „Land" an einem Buch ohne LMF-Signatur bedeutet. Der eine Personenname
-wäre ein Personendatum in einem Bestandsfeld.
+**Entschieden am 29.09.2026:** Der Vermerk kommt je Exemplar mit, als eigenes Feld am Exemplar,
+zunächst ohne Wirkung auf Topf und Etikett. Gebaut wird es mit der Übernahme (7.2), denn sie läuft
+einmal. Beim Bau zu klären: der eine Personenname, ein Personendatum in einem Bestandsfeld. Offen
+bei der Schule, bevor der Vermerk eine Wirkung bekommt: was „Land" an einem Buch ohne
+LMF-Signatur bedeutet.
 
 ---
 
