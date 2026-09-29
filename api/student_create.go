@@ -375,6 +375,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	// `leser_id` wird ausdrücklich mitgegeben, damit der Wächter trg_benutzer_hat_leserzeile
 	// NICHT anspringt: Er legt zu jedem Konto ohne Leserzeile eine frische an, und das wäre
 	// hier die zweite — genau der Doppeleintrag, den diese Änderung abschafft.
+	var kontoID string
 	if !istSchuelerArt(req.Art) {
 		// Das Konto entsteht in DERSELBEN Transaktion wie die Leserzeile — scheitert es,
 		// darf auch die Zeile nicht stehen bleiben (die belegte Adresse ist der häufige
@@ -386,7 +387,7 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 			LeserID:  studentID,
 			Aktiv:    darfFreischalten,
 		}
-		if err := repository.LegeKollegiumskonto(ctx, tx, params); err != nil {
+		if kontoID, err = repository.LegeKollegiumskonto(ctx, tx, params); err != nil {
 			antworteAufKontoFehler(w, err, strings.ToLower(strings.TrimSpace(req.Email)))
 			return "", "", false
 		}
@@ -395,6 +396,11 @@ func (s *Server) legeSchuelerAn(ctx context.Context, w http.ResponseWriter, req 
 	if err := tx.Commit(ctx); err != nil {
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", "", false
+	}
+	// Dieselbe Spur wie über Benutzer & Rechte (docs/OFFEN.md 5.19): Bis zum 29.09.2026
+	// hinterließ ein Konto, das über die Leserdatei entstand, keinen Eintrag.
+	if kontoID != "" {
+		s.protokolliereKontoAnlage(ctx, kontoID, strings.ToLower(strings.TrimSpace(req.Email)), "kollegium", req.Vorname, req.Nachname)
 	}
 	return studentID, barcodeID, true
 }

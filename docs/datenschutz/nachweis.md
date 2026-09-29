@@ -199,9 +199,9 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
 - Vom Internet aus soll nur die Bestätigungsseite für Lieferanten erreichbar sein, alles andere
   nur aus dem Schulnetz (entschieden am 28.09.2026); die Sperre am Eingang ist nicht eingerichtet
   (4.23).
-- Ein Kollege, der über die Leserdatei angelegt wird, hinterlässt keinen Protokolleintrag
-  (5.19). Ein gelöschtes Zugangskonto nennt die Auskunft seit dem 29.09.2026; Löschungen von
-  davor trugen den Bezug zum Leser nicht und bleiben für sie unsichtbar.
+- Ein gelöschtes Zugangskonto nennt die Auskunft seit dem 29.09.2026; Löschungen von davor
+  trugen den Bezug zum Leser nicht und bleiben für sie unsichtbar. Die Selbstanmeldung und der
+  Nachtrag einer Schul-E-Mail stehen danach nicht unter dem früheren Konto (5.19).
 - Viermal gelangte ein Wert einer Person ins Protokoll, den die Anonymisierung nicht kannte;
   jedes Mal behoben, zuletzt am 29.09.2026 Name und Freitext aus der Löschspur eines Titels.
   Seit dem 29.09.2026 prüft ein Test jede Stelle im Code, die einen Protokolleintrag mit der

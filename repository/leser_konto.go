@@ -28,6 +28,7 @@ import (
 // die Zeile längst.
 type KontoSchreiber interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
 // ErrLeserNichtGefunden meldet eine Leser-ID, zu der es keine Zeile gibt. Der Handler
@@ -114,18 +115,23 @@ type LegeKollegiumskontoParams struct {
 //
 // Eine belegte Adresse kommt als pgconn.PgError 23505 zurück; der Aufrufer macht daraus
 // eine Auskunft (409), keine Störung.
-func LegeKollegiumskonto(ctx context.Context, q KontoSchreiber, params LegeKollegiumskontoParams) error {
-	tag, err := q.Exec(ctx, `
+//
+// Liefert die Kennung des neuen Kontos: Mit ihr schreibt der Aufrufer den Protokolleintrag
+// über das Konto (ziel_id), an dem die Auskunft es findet — auch nachdem es gelöscht ist.
+func LegeKollegiumskonto(ctx context.Context, q KontoSchreiber, params LegeKollegiumskontoParams) (string, error) {
+	var kontoID string
+	err := q.QueryRow(ctx, `
 		INSERT INTO benutzer (vorname, nachname, email, rolle, aktiv, leser_id, zugang_beantragt_am)
 		VALUES ($1, $2, $3, 'kollegium', $4, $5, CASE WHEN $4 THEN NULL ELSE CURRENT_TIMESTAMP END)
-	`, params.Vorname, params.Nachname, strings.ToLower(strings.TrimSpace(params.Email)), params.Aktiv, params.LeserID)
+		RETURNING id::text
+	`, params.Vorname, params.Nachname, strings.ToLower(strings.TrimSpace(params.Email)), params.Aktiv, params.LeserID).Scan(&kontoID)
+	if errors.Is(err, pgx.ErrNoRows) || (err == nil && kontoID == "") {
+		return "", ErrKontoNichtEntstanden
+	}
 	if err != nil {
-		return err
+		return "", err
 	}
-	if tag.RowsAffected() != 1 {
-		return ErrKontoNichtEntstanden
-	}
-	return nil
+	return kontoID, nil
 }
 
 // IstAdressenKollision erkennt die belegte E-Mail-Adresse (benutzer_email_unique).

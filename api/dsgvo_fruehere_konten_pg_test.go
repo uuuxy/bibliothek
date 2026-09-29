@@ -136,7 +136,7 @@ func TestDsgvoAuskunft_FindetGeloeschteZugangskonten(t *testing.T) {
 		RETURNING id::text`).Scan(&kollege); err != nil {
 		t.Fatalf("Kollege anlegen: %v", err)
 	}
-	if err := repository.LegeKollegiumskonto(ctx, pool, repository.LegeKollegiumskontoParams{
+	if _, err := repository.LegeKollegiumskonto(ctx, pool, repository.LegeKollegiumskontoParams{
 		Vorname: "Paul", Nachname: "Papierkorb", Email: "paul@fruehere-konten.invalid", LeserID: kollege, Aktiv: true,
 	}); err != nil {
 		t.Fatalf("Konto des Kollegen anlegen: %v", err)

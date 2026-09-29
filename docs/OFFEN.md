@@ -72,12 +72,12 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
 Reihenfolge unter 1. die vom 29.09.2026):
 
-1. Was still jemandem schaden kann (entschieden am 28.09.2026, nach der Regel unten „kann das
-   still jemandem schaden?"): aus 5.19 der Kollege über die Leserdatei. Danach die zwei kleinen
-   Umbauten 8.7 (Verlängerung beim Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026,
-   der Eigentumsvermerk je Exemplar aus Littera (4.24) und zusätzlich 12 wöchentliche Stände der
-   Sicherung (5.30). Dann 5.18 (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann
-   5.21 (Palettenfarben, Bildschirm für Bildschirm).
+1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
+   zurückgestellt (siehe oben). Es folgen die zwei kleinen Umbauten 8.7 (Verlängerung beim
+   Schulbuch) und 8.8 (Abholfrist), entschieden am 28.09.2026, der Eigentumsvermerk je Exemplar
+   aus Littera (4.24) und zusätzlich 12 wöchentliche Stände der Sicherung (5.30). Dann 5.18
+   (Klassen als Stammdaten, mit Frage-Runde zur Oberfläche), dann 5.21 (Palettenfarben,
+   Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -494,11 +494,18 @@ Nachgesehen am 24.09.2026: Die bearbeitende Person steht in eigenen Spalten (`be
 Sperre (`LESER_GESPERRT`, `LESER_ENTSPERRT`; bis zum 24.09.2026 auch `OVERRIDE_BLOCK`) —
 können aber andere Personen nennen.
 
-**Beim Bau der Auskunft für Kollegen gefunden (24.09.2026), jeweils am Code nachgesehen:**
+**Beim Bau der Auskunft über gelöschte Konten gefunden (29.09.2026), nicht gebaut:** Zwei
+Einträge über die Anlage eines Kontos tragen seine Kennung nicht als `ziel_id` und fehlen
+deshalb unter den früheren Zugangskonten der Auskunft, sobald das Konto gelöscht ist.
 
-- Ein Kollege mit Zugang, der über die Leserdatei angelegt wird (`POST /api/schueler` mit
-  Adresse), hinterlässt keinen Protokolleintrag; über Benutzer & Rechte entsteht `USER_CREATE`.
-  Zwei Türen zum selben Zustand, die Rechenschaft hängt an der Tür.
+- `SELBSTANMELDUNG` trägt das Konto nur als `admin_id`; die Spalte geht beim Löschen des
+  Kontos auf NULL (`auth/selbstanmeldung.go`).
+- `KOLLEGIUMSKONTO_NACHGETRAGEN` (Schul-E-Mail in der Akte nachgetragen) trägt die Leserkennung,
+  nicht die des Kontos; die Auskunft zeigt ihn unter den Verwaltungseingriffen, nicht beim Konto
+  (`api/student_update.go`).
+
+Abhilfe in beiden Fällen: `ziel_id` in die Details, für den Nachtrag dazu eine Beschriftung im
+PDF (`dsgvoKontoAktion`).
 
 **Auf einer anderen Anlage vorher zählen:** Vormerkungen und Schadensfälle an einem Kollegen
 sehen die Lesepfade gegen die Sicht nicht — die Warteschlange geht über eine solche Vormerkung
