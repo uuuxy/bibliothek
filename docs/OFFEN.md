@@ -76,8 +76,8 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgt 5.18 (Klassen auswählen statt tippen, vereinfacht
-   am 30.09.2026; Lesergruppen für Sonderkonten vor dem Umstieg), dann 5.21
+   zurückgestellt (siehe oben). Es folgt 5.18 (Lesergruppen für Sonderkonten, vor dem Umstieg),
+   dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
@@ -450,39 +450,19 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
 
-### 5.18 Klassen: auswählen statt tippen — und Lesergruppen für Sonderkonten
+### 5.18 Lesergruppen für Sonderkonten — vor dem Umstieg
 
-**Vereinfacht am 30.09.2026** (ersetzt die Pflegeseite mit Umbenennen, Zusammenlegen und Löschen
-vom 24. und 29.09.2026): Die Klassen kommen aus der LUSD. Bisher legte ein Tippfehler an vier
-Stellen still eine Klasse an, die es an der Schule nicht gibt (Auslöser `klasse_kanonisieren`).
-Kann man dort nur auswählen, entstehen keine falschen Klassen mehr, und Umbenennen oder
-Zusammenlegen braucht es nicht. Der Schulserver beginnt leer; die alten Test-Klassen gibt es nur
-auf dem Testserver (gemessen am 29.09.2026: 108 Klassen, 27 davon mit Lesern), und sichtbar sind
-sie nur, solange eine Buchliste, eine Zuordnung oder ein LMF-Termin sie trägt.
+Die Klassen selbst sind seit dem 30.09.2026 erledigt: Sie kommen aus der LUSD, und an allen
+Stellen wird die Klasse gewählt statt getippt (die Geschichte steht in den Commits vom
+30.09.2026). Bewusst von Hand bleibt nur „Andere Klasse eintragen" im LMF-Planer, für die
+Ausgabe an Klassen, die der August-Import erst bringt.
 
-Wie Littera (Handbuch, „Lesergruppen"): „Zur Zuordnung Ihrer Leser/Schüler werden nur die
-Leser-Untergruppen zur Auswahl angeboten"; beim Import aus der Schulverwaltung entstehen die
-Gruppen selbst. Anders als in Littera legt niemand eine Klasse von Hand an — eine neue Klasse
-kommt mit dem LUSD-Abgleich; braucht man das Anlegen doch, lässt es sich ergänzen.
-
-**Zu bauen:**
-
-1. Auswählen statt tippen an der Leserakte (`LeserEditFelder`), bei der Neuanlage („Manuell
-   eingeben…" fällt weg), im Mahnwesen-Routing, bei der Buchliste der Klassensätze
-   (`ClassAssignPicker`) und bei der Klassenverlängerung (dort findet ein Tippfehler nur
-   niemanden). Die Liste ist die vorhandene: `GET /api/klassen`, die Klassen, in denen Schüler
-   sind.
-2. Kleine Korrekturen: Beispiele nach dem Klassenschema statt „7a", „8b" und „10b"; „Klasse
-   löschen" bei den Klassensätzen heißt „Buchliste löschen" (es entfernt nur die Buchliste, die
-   Rückfrage lautet „Klasse … löschen?"); die Seite Mahnwesen-Routing sagt, dass die Liste von
-   Hand gepflegt wird und die Versetzung sie hochrückt (im Handbuch seit dem 30.09.2026).
-3. Eigener Punkt, vor dem Umstieg (entschieden am 29.09.2026): Gruppen für Sonderkonten
-   (Fachbereich, Praktikum, U-plus, Sekretariat) in `lesergruppen` (Kürzel, Bezeichnung),
-   freiwillig wählbar an der Leserakte eines Kollegen; die Littera-Übernahme setzt sie statt
-   einer Zeile im Protokoll ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1). „Lehrer" und „Lehrerin" aus
-   Littera werden keine Gruppe — sie tragen das Geschlecht, das das Programm nicht speichert, und
-   die Art steht schon an jeder Person. Gemessen am 29.09.2026: `lesergruppen` leer, kein Kollege
-   mit Klasse.
+**Zu bauen (entschieden am 29.09.2026):** Gruppen für Sonderkonten (Fachbereich, Praktikum,
+U-plus, Sekretariat) in `lesergruppen` (Kürzel, Bezeichnung), freiwillig wählbar an der
+Leserakte eines Kollegen; die Littera-Übernahme setzt sie statt einer Zeile im Protokoll
+([SCRIPTS.md](SCRIPTS.md), Abschnitt 1). „Lehrer" und „Lehrerin" aus Littera werden keine
+Gruppe — sie tragen das Geschlecht, das das Programm nicht speichert, und die Art steht schon an
+jeder Person. Gemessen am 29.09.2026: `lesergruppen` leer, kein Kollege mit Klasse.
 
 **Offen — Einführungsphase:** Die Versetzung rückt Klassenleitungen von 6 nach 7 und von 10 in
 die Oberstufe nicht mehr hoch. Zuordnungen der Einführungsphase (`ET1`) fasst sie gar nicht an,
