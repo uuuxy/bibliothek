@@ -338,7 +338,7 @@ type lernmittelfelder struct {
 
 // lernmittel liefert Lernmittel, Fach und Jahrgang eines Titels (lernmittelUndFach).
 func (l *bestandslauf) lernmittel(t Titel) (lernmittelfelder, bool) {
-	return lernmittelUndFach(l.ab.Signaturen[t.ID], l.ab.Schlagworte.JeTitel[t.ID])
+	return lernmittelUndFach(l.ab.Signaturen[t.ID], l.ab.Schlagworte.JeTitel[t.ID], l.ab.Interessenkreise.JeTitel[t.ID])
 }
 
 func lernmittelAusSignatur(signatur string) lernmittelfelder {

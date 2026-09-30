@@ -179,6 +179,28 @@ func TestJahrgangAusZielgruppe(t *testing.T) {
 	}
 }
 
+// Ein Titel trägt in Littera bis zu fünf Zielgruppen; die Spanne kommt aus allen, nicht aus der
+// letzten. Stand „Lehrer" zuletzt, blieb sie bis zum 30.09.2026 leer.
+func TestJahrgangAusZielgruppen(t *testing.T) {
+	faelle := []struct {
+		z        []string
+		von, bis int
+	}{
+		{[]string{"Sekundarstufe 2", "Lehrer"}, 11, 13},
+		{[]string{"Lehrer", "Sekundarstufe 2"}, 11, 13},
+		{[]string{"Sekundarstufe 1", "Sekundarstufe 2"}, 5, 13},
+		{[]string{"Förderstufe", "Sekundarstufe 1"}, 5, 10},
+		{[]string{"Lehrer", "Referendare", "DAZ-Schüler"}, 0, 0},
+		{nil, 0, 0},
+	}
+	for _, f := range faelle {
+		von, bis := JahrgangAusZielgruppen(f.z)
+		if von != f.von || bis != f.bis {
+			t.Errorf("JahrgangAusZielgruppen(%q) = %d–%d, want %d–%d", f.z, von, bis, f.von, f.bis)
+		}
+	}
+}
+
 func TestFachExakt(t *testing.T) {
 	faelle := map[string]string{
 		"Mathe": FachMathematik, "mathematik": FachMathematik, "Deutsch": FachDeutsch,

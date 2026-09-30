@@ -28,7 +28,8 @@ die Access-Datei selbst: Deren ODBC-Treiber gibt es nur unter Windows.
 ```bash
 # 1. Export erzeugen (mdbtools, plattformunabhängig)
 for t in Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih \
-         Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte; do
+         Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte \
+         Interessenskreis IntZuMed; do
   mdb-export littera_sav.mdb "$t" > "littera-export/$(echo "$t" | tr 'A-Z' 'a-z').csv"
 done
 
@@ -73,9 +74,14 @@ dieselbe Schreibweise in anderer Groß- und Kleinschreibung ist dasselbe Wort, h
 Titel. Ein leeres oder zu langes Wort fällt weg, eine längere Liste wird gekürzt — beides mit
 Vermerk im Protokoll; das Buch selbst kommt in jedem Fall an. Die Verweise
 (`Verweise_Schlagworte`, `Verweis_Zu_Schlagworte`) zählt der Lauf nur und nennt sie: In der
-Sicherung von 2010 sind beide leer, ihre Form ist an echten Daten noch nicht geprüft. Alle vier
+Sicherung von 2010 sind beide leer, ihre Form ist an echten Daten noch nicht geprüft.
+**Interessenkreise (seit dem 30.09.2026):** Die Tabellen `Interessenskreis` und `IntZuMed` kommen
+als Schlagworte mit, hinter den Schlagworten des Titels und über denselben Pfad; ein gleichlautendes
+Wort („U plus") zählt einmal. An dieser Schule sind es Zielgruppen — Sekundarstufe 1 und 2,
+Lehrer, Referendare, DAZ-Schüler; in der Sicherung von 2010 36 Werte an 8.902 Titeln. Die Stufe
+ergibt die Jahrgangsspanne, wo die Signatur keine nennt (wie im Katalogisat-Import). Alle sechs
 Dateien sind Pflicht. Der Bericht führt die Schlagworte als eigenen Abschnitt mit Abgleich an der
-Datenbank. **Fach:** Nennt die Signatur keins, kommt es aus den Schlagworten, wenn sie genau ein
+Datenbank; die Interessenkreise stehen dort als eigene Zeile. **Fach:** Nennt die Signatur keins, kommt es aus den Schlagworten, wenn sie genau ein
 Fach nennen — dieselbe Regel wie im Katalogisat-Import (Abschnitt 1a); der Bericht zählt beide
 Herkünfte unter „Bestand".
 **Eigentum:** Der Bericht nennt unter „Bestand", wie viele Exemplare ihr Eigentum aus dem
@@ -194,16 +200,18 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
   Standortfeld MAB 108a die LMF-Kennung trägt. Der Import setzt es nur, löscht es nie.
 - **Fach und Jahrgang** kommen aus der Lernmittelsignatur („LMF Bio 7" → Biologie, 7;
   `pkg/lmf.Zerlege`), sonst aus Litteras Schlagwörtern (MAB 710, nur wenn sie genau ein
-  Fach nennen) und der Zielgruppe (MAB 070b: Sek I → 5–10, Sek II → 11–13). Fach und
+  Fach nennen) und den Zielgruppen (MAB 070b, Litteras Interessenkreise, alle Werte eines
+  Eintrags: Sek I → 5–10, Sek II → 11–13, beide → 5–13). Fach und
   Klassenstufe füllen nur Leerstellen, die Jahrgangsspanne folgt der Quelle.
-- **Schlagworte (seit dem 30.09.2026, docs/OFFEN.md 4.20):** Die Wörter aus MAB 710 kommen an
+- **Schlagworte (seit dem 30.09.2026, docs/OFFEN.md 4.20):** Die Wörter aus MAB 710 und dahinter
+  die Interessenkreise aus MAB 070b („Lehrer", „Referendare", „Sekundarstufe 2") kommen an
   Titel, die noch keine tragen, über den Pfad des Buchformulars (`repository.SetzeSchlagworte`)
   und aufbereitet wie in der Übernahme aus der Sicherung (`repository.SchlagworteAusFremddaten`):
   leer oder zu lang fällt weg, höchstens 300 je Titel. Wer schon Schlagworte trägt, behält
   seine; ein erneuter Import überschreibt keine Pflege. Steht ein Titel zweimal in der Datei,
   gilt der erste Eintrag mit Schlagworten. Am Katalogisat vom Juni 2026 in eine leere Datenbank
-  gemessen: 11.302 Titel, 7.238 davon mit Schlagworten, 32.635 Zuordnungen, 10.860 Wörter, 17
-  Sekunden gegen eine lokale Datenbank.
+  gemessen, mit den Interessenkreisen: 11.302 Titel, 7.305 davon mit Schlagworten, 38.365
+  Zuordnungen, 10.877 Wörter, 18 Sekunden gegen eine lokale Datenbank.
 - **Re-Import als Reparatur:** Ein Bestand, der vor Migration 093 importiert wurde, bekommt
   durch einen erneuten Lauf derselben Datei Fach und Jahrgang nachgetragen — die Migration
   hat Titel und Lernmittel-Feld bereits bereinigt, die Titel matchen also.
@@ -229,7 +237,7 @@ Was die Probe tut, in dieser Reihenfolge:
 2. **Abschottung, bevor Daten hineinkommen:** Das Backend hängt nur an einem Netz ohne Weg ins
    Internet (erreicht es doch eins, bricht die Probe ab). Anmeldung über die IMAP-Attrappe,
    keine Mail, kein S3, kein Cover-Abgleich.
-3. **Export** der dreizehn Tabellen aus Abschnitt 1 mit `mdb-export`, dazu `FremdLeserNummer` und
+3. **Export** der fünfzehn Tabellen aus Abschnitt 1 mit `mdb-export`, dazu `FremdLeserNummer` und
    `FremdBarcode`, wenn es sie gibt — oder die CSVs aus dem übergebenen Verzeichnis.
 4. **Trockenlauf** mit `-personen -ausleihen`. Nennt er Lesergruppen ohne Zuordnung, prüft die
    Probe, dass der echte Lauf anhält und nichts schreibt. Weiter geht es dann nur mit
@@ -265,6 +273,9 @@ Ausleihen) hielt den Lauf an und wurde mit `--gruppe` als Schüler nachgestellt.
 Am 30.09.2026 mit den Schlagworten wieder bestanden: 24.109 Zuordnungen an 10.364 Titeln,
 2.742 Wörter (ein leeres Wort weggelassen, „Brasilien" stand zweimal), und das Fach kommt bei
 258 Titeln aus der Signatur und bei 2.945 aus den Schlagworten.
+Mit den Interessenkreisen am selben Tag wieder bestanden: 11.344 Interessenkreise an 8.902 Titeln
+kommen dazu; geschrieben 35.394 Zuordnungen an 10.499 Titeln (59 fielen mit einem gleichlautenden
+Schlagwort zusammen), 2.767 Wörter, Abgleich stimmt. Das Fach bleibt bei 258 und 2.945.
 
 ---
 

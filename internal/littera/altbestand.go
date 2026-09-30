@@ -35,6 +35,9 @@ type Altbestand struct {
 
 	// Schlagworte der Titel (schlagworte.go, docs/OFFEN.md 4.20).
 	Schlagworte SchlagwortQuelle
+	// Interessenkreise der Titel, geschrieben als Schlagworte (schlagworte.go); die
+	// Verweis-Zähler bleiben hier leer.
+	Interessenkreise SchlagwortQuelle
 }
 
 // Dateien sind die mdb-export-Ausgaben, die LeseAltbestand erwartet.
@@ -52,6 +55,8 @@ type Altbestand struct {
 //	mdb-export littera_sav.mdb Schlag_zuord           > schlag_zuord.csv
 //	mdb-export littera_sav.mdb Verweise_Schlagworte   > verweise_schlagworte.csv
 //	mdb-export littera_sav.mdb Verweis_Zu_Schlagworte > verweis_zu_schlagworte.csv
+//	mdb-export littera_sav.mdb Interessenskreis       > interessenskreis.csv
+//	mdb-export littera_sav.mdb IntZuMed               > intzumed.csv
 const (
 	DateiTitel             = "titel.csv"
 	DateiExemplar          = "exemplar.csv"
@@ -69,6 +74,10 @@ const (
 	DateiSchlagZuord          = "schlag_zuord.csv"
 	DateiVerweiseSchlagworte  = "verweise_schlagworte.csv"
 	DateiVerweisZuSchlagworte = "verweis_zu_schlagworte.csv"
+	// Die Interessenkreise ebenso (seit dem 30.09.2026, docs/OFFEN.md 4.20); die Sicherung von
+	// 2010 führt beide Tabellen.
+	DateiInteressenkreise = "interessenskreis.csv"
+	DateiIntZuMed         = "intzumed.csv"
 	// Die beiden Fremdnummern-Tabellen sind OPTIONAL: In einer Installation ohne
 	// herstellerbedruckte Ausweise sind sie leer, und mdb-export erzeugt die Dateien
 	// dann gar nicht erst. Fehlen sie, läuft der Import mit den Littera-eigenen Nummern.
@@ -186,7 +195,15 @@ func leseSchlagworte(verzeichnis string, ab *Altbestand) error {
 	if ab.Schlagworte.VerweisWoerter, err = mitDatei(verzeichnis, DateiVerweiseSchlagworte, zaehleZeilen); err != nil {
 		return err
 	}
-	ab.Schlagworte.VerweisZuordnungen, err = mitDatei(verzeichnis, DateiVerweisZuSchlagworte, zaehleZeilen)
+	if ab.Schlagworte.VerweisZuordnungen, err = mitDatei(verzeichnis, DateiVerweisZuSchlagworte, zaehleZeilen); err != nil {
+		return err
+	}
+	kreise, err := mitDatei(verzeichnis, DateiInteressenkreise, LeseInteressenkreise)
+	if err != nil {
+		return err
+	}
+	ab.Interessenkreise, err = mitDatei(verzeichnis, DateiIntZuMed,
+		func(r io.Reader) (SchlagwortQuelle, error) { return InteressenkreiseJeTitel(kreise, r) })
 	return err
 }
 

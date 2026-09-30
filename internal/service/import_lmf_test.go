@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"testing"
 
@@ -162,5 +163,44 @@ func TestKategorisiere_TitelheuristikNurBeiLernmitteln(t *testing.T) {
 	}
 	if fach, _, _ := kategorisiere(f, true); fach != lmf.FachChemie {
 		t.Errorf("Lernmittel: Titel-Heuristik erwartet %q, war %q", lmf.FachChemie, fach)
+	}
+}
+
+// Littera führt bis zu fünf Interessenkreise je Titel in 070b (docs/OFFEN.md 4.20, entschieden
+// am 30.09.2026: als Schlagworte übernehmen). Sie kommen hinter den Schlagwörtern mit, und die
+// Spanne entsteht aus allen: Bis dahin gewann der letzte Wert — hier „Lehrer" —, und die
+// Spanne blieb leer. Das Fach kommt weiter nur aus den Schlagwörtern.
+func TestParseLitteraXML_InteressenkreiseAlsSchlagworte(t *testing.T) {
+	xmlDaten := `<?xml version="1.0"?>
+<Katalogisate>
+  <Katalogisat>
+    <Feld MAB="310 ">Die Weimarer Republik</Feld>
+    <Feld MAB="540 ">978-3-12-490250-4</Feld>
+    <Feld MAB="700 " Reihung="1">Ev</Feld>
+    <Feld MAB="710 ">Weimarer Republik</Feld>
+    <Feld MAB="710 ">Geschichte</Feld>
+    <Feld MAB="070b">Sekundarstufe 2</Feld>
+    <Feld MAB="070b">Referendare</Feld>
+    <Feld MAB="070b">Lehrer</Feld>
+  </Katalogisat>
+</Katalogisate>`
+
+	repo := &stubBookRepo{}
+	if _, err := NewImportService(repo, nil).ParseLitteraXML(context.Background(), strings.NewReader(xmlDaten)); err != nil {
+		t.Fatalf("ParseLitteraXML: %v", err)
+	}
+	if len(repo.titles) != 1 {
+		t.Fatalf("%d Titel, want 1", len(repo.titles))
+	}
+	g := repo.titles[0]
+	wantSW := []string{"Weimarer Republik", "Geschichte", "Sekundarstufe 2", "Referendare", "Lehrer"}
+	if !slices.Equal(g.Schlagworte, wantSW) {
+		t.Errorf("Schlagworte = %q, want %q", g.Schlagworte, wantSW)
+	}
+	if g.JahrgangVon != 11 || g.JahrgangBis != 13 {
+		t.Errorf("Jahrgang = %d–%d, want 11–13 (aus „Sekundarstufe 2“, nicht aus dem letzten Wert)", g.JahrgangVon, g.JahrgangBis)
+	}
+	if g.Fach != lmf.FachGeschichte {
+		t.Errorf("Fach = %q, want %q", g.Fach, lmf.FachGeschichte)
 	}
 }

@@ -106,3 +106,73 @@ func schlagworteAm(t *testing.T, pool *pgxpool.Pool, titelID string) []string {
 	}
 	return w
 }
+
+// Die Interessenkreise kommen als Schlagworte mit (docs/OFFEN.md 4.20, entschieden am
+// 30.09.2026), hinter den Schlagworten des Titels und über denselben Schreibpfad; ein
+// gleichlautendes Wort („U plus") zählt einmal. Die Stufe ergibt die Jahrgangsspanne, wo die
+// Signatur keine nennt; das Fach kommt nur aus den Schlagworten. Am echten Postgres.
+func TestSchreibeSchlagworte_InteressenkreiseKommenMit(t *testing.T) {
+	pool := pgTestPool(t)
+	leereAlles(t, pool)
+	s, _ := testSchreiber(t, pool, nil)
+	ctx := context.Background()
+
+	ab := bestand(titel("1", "Die Republik von Weimar", ""), titel("2", "Unterricht planen", ""),
+		titel("3", "Biologie heute 7", ""))
+	ab.Signaturen["3"] = "LMF Bio 7"
+	ab.Schlagworte = SchlagwortQuelle{JeTitel: map[string][]string{
+		"1":  {"Geschichte", "U plus"},
+		"99": {"Titel fehlt"},
+	}}
+	ab.Interessenkreise = SchlagwortQuelle{Zuordnungen: 7, JeTitel: map[string][]string{
+		"1":  {"Sekundarstufe 2", "Lehrer", "u plus"},
+		"2":  {"Referendare", "Sekundarstufe 1"},
+		"3":  {"Sekundarstufe 2"},
+		"99": {"Lehrer"},
+	}}
+
+	bestandBericht, err := s.SchreibeBestand(ctx, ab)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := s.SchreibeSchlagworte(ctx, ab, bestandBericht)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for id, will := range map[string][]string{
+		"1": {"Geschichte", "Lehrer", "Sekundarstufe 2", "U plus"},
+		"2": {"Referendare", "Sekundarstufe 1"},
+		"3": {"Sekundarstufe 2"},
+	} {
+		if got := schlagworteAm(t, pool, bestandBericht.TitelIDs[id]); !slices.Equal(got, will) {
+			t.Errorf("Titel %s trägt %q, erwartet %q", id, got, will)
+		}
+	}
+	if !b.AbgleichOK || b.Zuordnungen != 7 || b.Titel != 3 {
+		t.Errorf("Bericht: Abgleich %v, %d Zuordnungen an %d Titeln — erwartet 7 an 3", b.AbgleichOK, b.Zuordnungen, b.Titel)
+	}
+	if b.KreisQuellTitel != 4 || b.KreisQuellZuordnungen != 7 || b.OhneTitel != 1 {
+		t.Errorf("Interessenkreise an %d Titeln, %d Zuordnungen, Titel fehlt %d — erwartet 4, 7 und 1 "+
+			"(Titel 99 steht in beiden Listen und zählt einmal)", b.KreisQuellTitel, b.KreisQuellZuordnungen, b.OhneTitel)
+	}
+
+	for id, will := range map[string]struct {
+		fach     string
+		von, bis int
+	}{
+		"1": {"Geschichte", 11, 13}, // Fach aus den Schlagworten, Spanne aus „Sekundarstufe 2"
+		"2": {"", 5, 10},            // Spanne aus „Sekundarstufe 1"; kein Fach aus einem Interessenkreis
+		"3": {"Biologie", 7, 7},     // die Signatur geht vor
+	} {
+		var fach string
+		var von, bis int
+		if err := pool.QueryRow(ctx, `SELECT coalesce(subject, ''), jahrgang_von, jahrgang_bis FROM buecher_titel WHERE id = $1`,
+			bestandBericht.TitelIDs[id]).Scan(&fach, &von, &bis); err != nil {
+			t.Fatal(err)
+		}
+		if fach != will.fach || von != will.von || bis != will.bis {
+			t.Errorf("Titel %s: Fach %q, %d–%d — erwartet %q, %d–%d", id, fach, von, bis, will.fach, will.von, will.bis)
+		}
+	}
+}

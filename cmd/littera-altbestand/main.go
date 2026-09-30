@@ -145,6 +145,9 @@ func trockenlauf(ab *littera.Altbestand) {
 	sw := ab.Schlagworte
 	log.Printf("  Schlagworte:             %d Zuordnungen an %d Titeln, ohne Wort %d; Verweise %d / %d "+
 		"(werden nicht übernommen)", sw.Zuordnungen, len(sw.JeTitel), sw.OhneWort, sw.VerweisWoerter, sw.VerweisZuordnungen)
+	ik := ab.Interessenkreise
+	log.Printf("  Interessenkreise:        %d Zuordnungen an %d Titeln, ohne Wort %d (kommen als Schlagworte)",
+		ik.Zuordnungen, len(ik.JeTitel), ik.OhneWort)
 	ausSignatur, ausSchlagworten := littera.ZaehleFachquellen(ab)
 	log.Printf("  Fach:                    aus der Signatur %d, aus den Schlagworten %d", ausSignatur, ausSchlagworten)
 
@@ -243,7 +246,8 @@ func fuehreAus(
 			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen)
 
 		// Die Schlagworte gehören zum Bestand (docs/OFFEN.md 4.20): Sie brauchen die Titel.
-		log.Printf("Übernehme Schlagworte (%d Titel) …", len(ab.Schlagworte.JeTitel))
+		log.Printf("Übernehme Schlagworte (%d Titel) und Interessenkreise (%d Titel) …",
+			len(ab.Schlagworte.JeTitel), len(ab.Interessenkreise.JeTitel))
 		if b.Schlagworte, err = schreiber.SchreibeSchlagworte(ctx, ab, b.Bestand); err != nil {
 			b.Abbruch = fmt.Errorf("bei den Schlagworten: %w", err)
 			return b
@@ -337,6 +341,8 @@ func drucke(b littera.Bericht, s schalter) {
 // druckeSchlagworte ist der Abschnitt der Schlagworte im Bericht.
 func druckeSchlagworte(sw littera.SchlagwortBericht) {
 	log.Printf("Schlagworte Quelle %6d Zuordnungen an %d Titeln", sw.QuellZuordnungen, sw.QuellTitel)
+	log.Printf("           Interessenkreise %d Zuordnungen an %d Titeln, ohne Wort %d (als Schlagworte)",
+		sw.KreisQuellZuordnungen, sw.KreisQuellTitel, sw.KreisOhneWort)
 	log.Printf("           geschrieben %6d an %d Titeln; ohne Wort %d, Titel fehlt %d, weggelassen %d, "+
 		"gekürzt %d, Fehler %d", sw.Zuordnungen, sw.Titel, sw.OhneWort, sw.OhneTitel, sw.Weggelassen,
 		sw.Gekuerzt, sw.Uebersprungen)

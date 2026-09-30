@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -94,11 +95,14 @@ func (s *ImportService) ParseLitteraXML(ctx context.Context, xmlData io.Reader) 
 // litteraFelder bündelt die aus einem Katalogisat extrahierten MAB-Rohfelder.
 type litteraFelder struct {
 	autor, titel, ort, verlag, isbn, jahrStr, signatur, standort string
-	// zielgruppe (MAB 070b: „Sekundarstufe 1", „Lehrer") und schlagwoerter (MAB 710:
+	// zielgruppen (MAB 070b: „Sekundarstufe 1", „Lehrer") und schlagwoerter (MAB 710:
 	// „Physik", „Schulbuch", …) — bis zum 02.09.2026 vom Import weggeworfen, obwohl
 	// zwei Drittel der Titel Schlagwörter tragen und sie das Fach nennen. Seit dem
 	// 30.09.2026 kommen die Schlagwörter selbst mit (repository.BookTitle.Schlagworte).
-	zielgruppe    string
+	// 070b trägt Litteras Interessenkreise, bis zu fünf je Titel; entschieden am 30.09.2026:
+	// Sie kommen als Schlagworte mit (docs/OFFEN.md 4.20), und die Jahrgangsspanne entsteht aus
+	// allen. Bis dahin gewann der letzte Wert, und „Lehrer" oder „Referendare" gingen verloren.
+	zielgruppen   []string
 	schlagwoerter []string
 }
 
@@ -132,7 +136,7 @@ func parseKatalogisat(kat Katalogisat) litteraFelder {
 		case "710":
 			f.schlagwoerter = append(f.schlagwoerter, val)
 		case "070b":
-			f.zielgruppe = val
+			f.zielgruppen = append(f.zielgruppen, val)
 		}
 	}
 	return f
@@ -178,7 +182,9 @@ func bookTitleAusFelder(f litteraFelder) (repository.BookTitle, bool) {
 		Fach:             fach,
 		JahrgangVon:      von,
 		JahrgangBis:      bis,
-		Schlagworte:      f.schlagwoerter,
+		// Die Interessenkreise hinter den Schlagwörtern, wie in der Übernahme aus der Sicherung;
+		// ein gleichlautendes Wort („U plus") zählt einmal (repository.SchlagworteAusFremddaten).
+		Schlagworte: append(slices.Clone(f.schlagwoerter), f.zielgruppen...),
 	}, true
 }
 
@@ -186,7 +192,9 @@ func bookTitleAusFelder(f litteraFelder) (repository.BookTitle, bool) {
 // Verlässlichkeit: (1) die Lernmittelsignatur „LMF Bio 7", von Hand vergeben und
 // eindeutig; (2) Litteras Schlagwörter, wenn sie genau ein Fach nennen; (3) nur bei
 // Lernmitteln der Titeltext („Biologie heute 7") — bei Romanen und Sachbüchern
-// wäre das Raten; (4) die Zielgruppe für die Spanne, wo die Signatur keine nennt.
+// wäre das Raten; (4) die Zielgruppen für die Spanne, wo die Signatur keine nennt
+// (lmf.JahrgangAusZielgruppen, alle Werte). Das Fach kommt nie aus den Zielgruppen,
+// auch wenn sie als Schlagworte mitkommen — dieselbe Regel wie in der Übernahme.
 // 0 bzw. "" heißt „unbekannt" und lässt im Bestand alles, wie es ist.
 func kategorisiere(f litteraFelder, lernmittel bool) (fach string, von, bis int) {
 	if z, ok := lmf.Zerlege(f.signatur); ok {
@@ -199,7 +207,7 @@ func kategorisiere(f litteraFelder, lernmittel bool) (fach string, von, bis int)
 		fach = lmf.FachAusText(f.titel)
 	}
 	if von == 0 {
-		von, bis = lmf.JahrgangAusZielgruppe(f.zielgruppe)
+		von, bis = lmf.JahrgangAusZielgruppen(f.zielgruppen)
 	}
 	return fach, von, bis
 }

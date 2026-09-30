@@ -29,7 +29,7 @@ DB="postgresql://postgres:probe-nur-lokal@127.0.0.1:5436"
 NETZ=bibliothek-probe_intern
 SCHLUESSEL=probe-backup-schluessel-nur-lokal-32-zeichen
 TABELLEN=(Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih
-	Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte)
+	Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte Interessenskreis IntZuMed)
 [ -d /opt/homebrew/opt/libpq/bin ] && PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 QUELLE="" BEHALTEN=0 GRUPPEN=()
@@ -72,7 +72,7 @@ trap aufraeumen EXIT
 zeige_lauf() {
 	sed -E 's/^[0-9]{4}\/[0-9]{2}\/[0-9]{2} [0-9:]{8} //' "$1" |
 		sed -E 's/^(⚠  Die Übernahme endete vorzeitig):.*/\1 (Ursache in der Ausgabe des Laufs)/' |
-		grep -E '^(Gelesen|TROCKENLAUF|Übernehme|FEHLER: Leser ohne|━|Bestand |Schlagworte |Personen |Ausleihen |⚠|ℹ|  (Titel mit|davon|Verlage|Schlagworte:|Fach:|Leser:|Ausleihen:|→|Lesergruppe|Warnungen|Fehler \(NICHT)|  +(geschrieben|✓|⚠|Fach aus|[0-9]+ Ausleihen tragen))' || true
+		grep -E '^(Gelesen|TROCKENLAUF|Übernehme|FEHLER: Leser ohne|━|Bestand |Schlagworte |Personen |Ausleihen |⚠|ℹ|  (Titel mit|davon|Verlage|Schlagworte:|Interessenkreise:|Fach:|Leser:|Ausleihen:|→|Lesergruppe|Warnungen|Fehler \(NICHT)|  +(geschrieben|Interessenkreise|✓|⚠|Fach aus|[0-9]+ Ausleihen tragen))' || true
 }
 
 schritt "Werkzeuge"

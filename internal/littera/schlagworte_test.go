@@ -72,10 +72,61 @@ func TestLernmittelUndFach_SignaturVorSchlagworten(t *testing.T) {
 		{"zwei Fächer: lieber leer als falsch", "Ea 1 / Xyz", []string{"Geschichte", "Religion"}, "", false, false},
 		{"kein Fach", "", []string{"Jugendbuch"}, "", false, false},
 	} {
-		lern, aus := lernmittelUndFach(f.signatur, f.schlagworte)
+		lern, aus := lernmittelUndFach(f.signatur, f.schlagworte, nil)
 		if lern.Fach != f.fach || aus != f.ausSchlagworten || lern.IstLernmittel != f.lm {
 			t.Errorf("%s: Fach %q aus Schlagworten %v Lernmittel %v, erwartet %q %v %v",
 				f.name, lern.Fach, aus, lern.IstLernmittel, f.fach, f.ausSchlagworten, f.lm)
+		}
+	}
+}
+
+// Die Interessenkreise (entschieden am 30.09.2026, docs/OFFEN.md 4.20): Lesen wie die
+// Schlagworte, über IntZuMed ohne Sortierung, und eine fehlende Spalte bricht ab.
+func TestInteressenkreiseJeTitel_LesenWieSchlagworte(t *testing.T) {
+	kreise, err := LeseInteressenkreise(strings.NewReader(`Buchungsdatum,Buchungsnummer,Interessenskreis,Zugriff_art,Zugriff_von,Zugriff_terminal
+"06/15/01 09:00:35",1,"Sekundarstufe 2","ANLAGE","Büchereileiter",0
+"07/12/01 10:11:20",3,"Lehrer","ANLAGE","Büchereileiter",0
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	q, err := InteressenkreiseJeTitel(kreise, strings.NewReader(`Buchungsdatum,Buchungsnummer,Titel,Interessenskreis,Zugriff_art,Zugriff_von,Zugriff_terminal
+"06/15/01 13:02:46",21,10,3,"ANLAGE","Büchereileiter",0
+"06/15/01 13:02:46",20,10,1,"ANLAGE","Büchereileiter",0
+"06/15/01 13:02:46",22,11,9,"ANLAGE","Büchereileiter",0
+`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, will := q.JeTitel["10"], []string{"Sekundarstufe 2", "Lehrer"}; !slices.Equal(got, will) {
+		t.Errorf("Titel 10: %q, erwartet %q (Erfassungsreihenfolge)", got, will)
+	}
+	if q.Zuordnungen != 3 || q.OhneWort != 1 {
+		t.Errorf("Zuordnungen %d, ohne Wort %d — erwartet 3 und 1", q.Zuordnungen, q.OhneWort)
+	}
+	if _, err := LeseInteressenkreise(strings.NewReader("Buchungsnummer,Interessenkreis\n1,Lehrer\n")); err == nil ||
+		!strings.Contains(err.Error(), "Interessenskreis") {
+		t.Errorf("Spalte Interessenkreis statt Interessenskreis: Fehler %v, erwartet einer, der die Spalte nennt", err)
+	}
+}
+
+// Die Stufe eines Interessenkreises ergibt die Jahrgangsspanne, wo die Signatur keine nennt —
+// wie im Katalogisat-Import. Die Signatur geht vor, und das Fach kommt nie aus ihnen.
+func TestLernmittelUndFach_JahrgangAusInteressenkreisen(t *testing.T) {
+	for _, f := range []struct {
+		name, signatur string
+		kreise         []string
+		von, bis       int
+		fach           string
+	}{
+		{"Stufe aus dem Interessenkreis", "Ea 1 / Xyz", []string{"Lehrer", "Sekundarstufe 2"}, 11, 13, ""},
+		{"die Signatur geht vor", "LMF Bio 7", []string{"Sekundarstufe 2"}, 7, 7, "Biologie"},
+		{"ohne Stufe keine Spanne", "", []string{"Lehrer", "DAZ-Schüler"}, 0, 0, ""},
+		{"ein Kreis nennt kein Fach", "", []string{"Geschichte"}, 0, 0, ""},
+	} {
+		lern, _ := lernmittelUndFach(f.signatur, nil, f.kreise)
+		if lern.JahrgangVon != f.von || lern.JahrgangBis != f.bis || lern.Fach != f.fach {
+			t.Errorf("%s: %d–%d Fach %q, erwartet %d–%d %q", f.name, lern.JahrgangVon, lern.JahrgangBis, lern.Fach, f.von, f.bis, f.fach)
 		}
 	}
 }

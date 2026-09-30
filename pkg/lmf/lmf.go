@@ -275,3 +275,25 @@ func JahrgangAusZielgruppe(zielgruppe string) (von, bis int) {
 	}
 	return 0, 0
 }
+
+// JahrgangAusZielgruppen nimmt alle Zielgruppen eines Titels — Littera führt bis zu fünf je
+// Titel, etwa „Sekundarstufe 2" und „Lehrer" (Interessenkreise, docs/OFFEN.md 4.20). Die Spanne
+// reicht vom kleinsten bis zum größten erkannten Jahrgang: „Sekundarstufe 1" und „Sekundarstufe
+// 2" ergeben 5–13 wie „Sekundarstufe 1 u. 2". Eine Gruppe ohne Stufe („Lehrer", „DAZ-Schüler")
+// trägt nichts bei. Bis zum 30.09.2026 las der Katalog-Import nur den letzten Wert; stand dort
+// „Lehrer", blieb die Spanne leer.
+func JahrgangAusZielgruppen(zielgruppen []string) (von, bis int) {
+	for _, z := range zielgruppen {
+		v, b := JahrgangAusZielgruppe(z)
+		if v == 0 {
+			continue
+		}
+		if von == 0 || v < von {
+			von = v
+		}
+		if b > bis {
+			bis = b
+		}
+	}
+	return von, bis
+}

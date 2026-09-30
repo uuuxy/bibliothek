@@ -3,6 +3,7 @@ package littera
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"bibliothek/internal/uebernahme"
 	"bibliothek/repository"
@@ -25,6 +26,11 @@ type SchlagwortBericht struct {
 	// Die Verweise werden gezählt, nicht übernommen (schlagworte.go).
 	VerweisWoerter, VerweisZuordnungen int
 
+	// Die Interessenkreise kommen als Schlagworte mit (schlagworte.go, entschieden am
+	// 30.09.2026); gezählt wie die Schlagworte an der Quelle. Titel, Zuordnungen und der
+	// Abgleich oben schließen sie ein.
+	KreisQuellTitel, KreisQuellZuordnungen, KreisOhneWort int
+
 	IstZuordnungen int // tatsächlicher Zuwachs in titel_schlagworte
 	IstWoerter     int // tatsächlicher Zuwachs in schlagworte
 	AbgleichOK     bool
@@ -46,10 +52,11 @@ type schlagwortAuftrag struct {
 // Liste, fehlen nur seine Schlagworte, und die Warnung nennt ihn. Das Buch selbst ist dann
 // schon übernommen — ein Schlagwort darf nie ein Buch kosten.
 func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bestand BestandBericht) (SchlagwortBericht, error) {
-	q := ab.Schlagworte
+	q, kreise := ab.Schlagworte, ab.Interessenkreise
 	b := SchlagwortBericht{
 		QuellTitel: len(q.JeTitel), QuellZuordnungen: q.Zuordnungen, OhneWort: q.OhneWort,
 		VerweisWoerter: q.VerweisWoerter, VerweisZuordnungen: q.VerweisZuordnungen,
+		KreisQuellTitel: len(kreise.JeTitel), KreisQuellZuordnungen: kreise.Zuordnungen, KreisOhneWort: kreise.OhneWort,
 	}
 	if q.VerweisWoerter+q.VerweisZuordnungen > 0 {
 		s.prot.Warnung("", "", fmt.Sprintf("Verweise zu Schlagworten nicht übernommen – %d Wörter, %d Zuordnungen "+
@@ -62,15 +69,22 @@ func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bes
 	}
 
 	// Gezählt über die Zuordnungen, nicht über die Titel des Exports: Eine Zuordnung zu einem
-	// Titel, den es dort gar nicht gibt, fiele sonst nirgends auf.
-	for litteraID := range q.JeTitel {
-		if _, uebernommen := bestand.TitelIDs[litteraID]; !uebernommen {
-			b.OhneTitel++
+	// Titel, den es dort gar nicht gibt, fiele sonst nirgends auf. Ein Titel mit Schlagworten
+	// und Interessenkreisen zählt einmal.
+	ohneTitel := map[string]bool{}
+	for _, jeTitel := range []map[string][]string{q.JeTitel, kreise.JeTitel} {
+		for litteraID := range jeTitel {
+			if _, uebernommen := bestand.TitelIDs[litteraID]; !uebernommen {
+				ohneTitel[litteraID] = true
+			}
 		}
 	}
+	b.OhneTitel = len(ohneTitel)
 	var auftraege []schlagwortAuftrag
 	for _, t := range ab.Titel {
-		roh := q.JeTitel[t.ID]
+		// Die Interessenkreise hinter den Schlagworten; ein gleichlautendes Wort („U plus")
+		// zählt einmal (repository.SchlagworteAusFremddaten).
+		roh := append(slices.Clone(q.JeTitel[t.ID]), kreise.JeTitel[t.ID]...)
 		titelID, uebernommen := bestand.TitelIDs[t.ID]
 		if len(roh) == 0 || !uebernommen {
 			continue

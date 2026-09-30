@@ -33,19 +33,40 @@ type SchlagwortQuelle struct {
 	VerweisWoerter, VerweisZuordnungen int
 }
 
+// Die Interessenkreise (entschieden am 30.09.2026, docs/OFFEN.md 4.20: als Schlagworte
+// übernehmen). Littera führt sie als eigene Liste, gedacht als „thematische Gliederung des
+// Belletristikbereiches (z.B. Krimi, Heimat)" (Handbuch). An dieser Schule sind es Zielgruppen:
+// in der Sicherung von 2010 36 Werte an 8.902 Titeln — Sekundarstufe 1 und 2, Lehrer (1.813
+// Titel), Referendare (986), DAZ-Schüler (209). Die Form gleicht den Schlagworten: Tabelle
+// Interessenskreis (Buchungsnummer → Interessenskreis), über IntZuMed den Titeln zugeordnet.
+// Littera selbst kann jeden Interessenkreis samt aller Titel in ein Schlagwort umwandeln; hier
+// geschieht das beim Schreiben (SchreibeSchlagworte), und die Stufe ergibt die Jahrgangsspanne
+// (lernmittelUndFach), wie im Katalogisat-Import. An Lesern (IntZuLeser) hat die Schule sie nie
+// benutzt; die Tabelle wird nicht gelesen.
+
 // LeseSchlagworte liest die Tabelle `Schlagworte` als Buchungsnummer → Wort.
 func LeseSchlagworte(r io.Reader) (map[string]string, error) {
+	return leseWortliste(r, "SuchWort")
+}
+
+// LeseInteressenkreise liest die Tabelle `Interessenskreis` als Buchungsnummer → Wort.
+func LeseInteressenkreise(r io.Reader) (map[string]string, error) {
+	return leseWortliste(r, "Interessenskreis")
+}
+
+// leseWortliste liest eine Littera-Wortliste (Buchungsnummer → Wort aus der Spalte spalte).
+func leseWortliste(r io.Reader, spalte string) (map[string]string, error) {
 	zeilen, err := leseTabelle(r)
 	if err != nil {
 		return nil, err
 	}
-	if err := spaltenDa(zeilen, "Buchungsnummer", "SuchWort"); err != nil {
+	if err := spaltenDa(zeilen, "Buchungsnummer", spalte); err != nil {
 		return nil, err
 	}
 	woerter := make(map[string]string, len(zeilen))
 	for _, z := range zeilen {
 		if id := strings.TrimSpace(z["Buchungsnummer"]); id != "" {
-			woerter[id] = z["SuchWort"]
+			woerter[id] = z[spalte]
 		}
 	}
 	return woerter, nil
@@ -59,18 +80,29 @@ type schlagwortZuordnung struct {
 
 // SchlagworteJeTitel löst die Schlagworte der Titel über Schlag_zuord auf.
 func SchlagworteJeTitel(woerter map[string]string, zuordnungen io.Reader) (SchlagwortQuelle, error) {
+	return woerterJeTitel(woerter, zuordnungen, "Schlagwort")
+}
+
+// InteressenkreiseJeTitel löst die Interessenkreise der Titel über IntZuMed auf. IntZuMed hat
+// keine Spalte Sortierung; die Reihenfolge ist die der Erfassung.
+func InteressenkreiseJeTitel(woerter map[string]string, zuordnungen io.Reader) (SchlagwortQuelle, error) {
+	return woerterJeTitel(woerter, zuordnungen, "Interessenskreis")
+}
+
+// woerterJeTitel löst eine Littera-Zuordnungstabelle (Titel → Wort aus der Spalte spalte) auf.
+func woerterJeTitel(woerter map[string]string, zuordnungen io.Reader, spalte string) (SchlagwortQuelle, error) {
 	zeilen, err := leseTabelle(zuordnungen)
 	if err != nil {
 		return SchlagwortQuelle{}, err
 	}
-	if err := spaltenDa(zeilen, "Buchungsnummer", "Titel", "Schlagwort"); err != nil {
+	if err := spaltenDa(zeilen, "Buchungsnummer", "Titel", spalte); err != nil {
 		return SchlagwortQuelle{}, err
 	}
 	q := SchlagwortQuelle{JeTitel: map[string][]string{}, Zuordnungen: len(zeilen)}
 	jeTitel := map[string][]schlagwortZuordnung{}
 	for _, z := range zeilen {
 		titelID := strings.TrimSpace(z["Titel"])
-		wort, bekannt := woerter[strings.TrimSpace(z["Schlagwort"])]
+		wort, bekannt := woerter[strings.TrimSpace(z[spalte])]
 		if titelID == "" || !bekannt {
 			q.OhneWort++
 			continue
@@ -130,8 +162,15 @@ func spaltenDa(zeilen []map[string]string, namen ...string) error {
 // falsch (lmf.FachAusSchlagworten). Bis zum 30.09.2026 las die Übernahme nur die Signatur; in
 // der Sicherung von 2010 trugen so 258 Titel ein Fach, mit den Schlagworten 2.945 mehr.
 // ausSchlagworten sagt, ob das Fach aus den Schlagworten kam.
-func lernmittelUndFach(signatur string, schlagworte []string) (lern lernmittelfelder, ausSchlagworten bool) {
+//
+// Die Jahrgangsspanne kommt aus den Interessenkreisen, wo die Signatur keine nennt
+// („Sekundarstufe 2" → 11–13, lmf.JahrgangAusZielgruppen über alle Werte) — wie im
+// Katalogisat-Import, dessen 070b dieselben Werte trägt. Das Fach kommt nie aus ihnen.
+func lernmittelUndFach(signatur string, schlagworte, interessenkreise []string) (lern lernmittelfelder, ausSchlagworten bool) {
 	lern = lernmittelAusSignatur(signatur)
+	if lern.JahrgangVon == 0 {
+		lern.JahrgangVon, lern.JahrgangBis = lmf.JahrgangAusZielgruppen(interessenkreise)
+	}
 	if lern.Fach != "" {
 		return lern, false
 	}
@@ -143,7 +182,8 @@ func lernmittelUndFach(signatur string, schlagworte []string) (lern lernmittelfe
 // wie viele aus den Schlagworten (lernmittelUndFach) — für den Trockenlauf.
 func ZaehleFachquellen(ab *Altbestand) (ausSignatur, ausSchlagworten int) {
 	for _, t := range ab.Titel {
-		switch lern, sw := lernmittelUndFach(ab.Signaturen[t.ID], ab.Schlagworte.JeTitel[t.ID]); {
+		switch lern, sw := lernmittelUndFach(ab.Signaturen[t.ID], ab.Schlagworte.JeTitel[t.ID],
+			ab.Interessenkreise.JeTitel[t.ID]); {
 		case sw:
 			ausSchlagworten++
 		case lern.Fach != "":

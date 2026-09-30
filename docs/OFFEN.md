@@ -91,8 +91,8 @@ Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stel
 die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 
-Mit der Littera-Übernahme (7.2) kommen das Eigentum je Exemplar (4.24) und alle Schlagworte der
-Titel (4.20); danach ist 4.25 an echten DNB-Sätzen zu messen und zu entscheiden.
+Mit der Littera-Übernahme (7.2) kommen das Eigentum je Exemplar (4.24) und alle Schlagworte und
+Interessenkreise der Titel (4.20); danach ist 4.25 an echten DNB-Sätzen zu messen und zu entscheiden.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
 Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
@@ -199,13 +199,6 @@ Gemessen am 30.09.2026 in der Sicherung von 2010: 2.849 Schlagworte, 2.744 davon
 1.390 an genau einem; 24.110 Zuordnungen an 10.364 der 10.732 Titel; keine Verweise; ein Wort
 steht zweimal in der Liste („Brasilien"). Am häufigsten: Deutsche Literatur (796 Titel),
 Jugendbuch (619), Geschichte (488).
-
-**Nicht entschieden: die Interessenkreise** (aufgefallen am 30.09.2026). Littera führt daneben 36
-Interessenkreise an 8.902 Titeln (Sicherung von 2010), Zielgruppen, am häufigsten Sekundarstufe 2
-(2.987 Titel), Sekundarstufe 1 u. 2 (2.402), Sekundarstufe 1 (1.869), Lehrer (1.813) und
-Referendare (986). Die Übernahme liest sie nicht (Tabellen `Interessenskreis`, `IntZuMed`); der
-Katalogisat-Import nimmt die Zielgruppe (MAB 070b) nur für die Jahrgangsspanne. **Frage:**
-mitnehmen, und wenn ja, wohin?
 
 ### 4.22 Datenweg beim Wechsel auf ein anderes Programm
 
@@ -812,21 +805,22 @@ unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
 - Der Katalogisat-Import legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
   die Angaben des zuletzt passenden Eintrags darüber (gemessen am 30.09.2026 am Export vom Juni
   2026, zweimal in eine leere Datenbank). Der Upsert (`queueTitelUpsert` in
-  `BulkUpsertBookTitles`) sucht einen Titel über die ISBN, sonst über den Titeltext. Der erste Lauf
-  macht aus 13.708 Einträgen 11.302 Titel: 226 sind echte Dubletten (gleiche ISBN, gleicher Text),
-  432 teilen die ISBN mit einem Eintrag anderen Texts (4190700703809 steht an neun verschiedenen
-  DVDs), 1.748 den Titeltext bei anderer oder fehlender ISBN — „Harry Potter und der Feuerkelch"
-  steht als Buch, Taschenbuch und DVD in der Datei und wird ein Titel. Beim zweiten Lauf gilt ein
-  solcher Eintrag als Aktualisierung des vorhandenen Titels: Titeltext, Autor, Verlag, Jahr,
-  Signatur und Jahrgangsspanne kommen aus dem Eintrag, sobald er einen Wert hat (`qUpdate`), der
-  letzte gewinnt. Geändert werden so 789 Titel — Jahr 664, Verlag 359, Signatur 347, Autor 220,
-  Jahrgang von 61 und bis 64, Titeltext 38, dazu Leerstellen: ISBN 33, Fach 61, Schlagworte an
-  einem. Der Buchtitel „Harry Potter und der Feuerkelch" trägt danach Signatur und Jahr des
-  DVD-Eintrags („DvD/D", 2005). Die Übernahme aus der Sicherung (`internal/littera`), mit der der
-  Echtbetrieb beginnt (entschieden am 28.09.2026), gleicht nicht über den Titeltext ab; der Import
-  aus CSV und Excel (`internal/service/import_dynamic.go`) tut es ebenfalls, dort nicht gemessen.
-  Der Katalog am Testserver stammt aus diesem Import (13.705 der 13.708 Einträge finden dort ihren
-  Titel, gezählt am 30.09.2026). Anlass zum Bauen: Das Katalogisat wird wieder ein Weg in den
+  `BulkUpsertBookTitles`) sucht einen Titel über die ISBN, sonst über den Titeltext. Der erste
+  Lauf macht aus 13.708 Einträgen 11.302 Titel: 226 sind echte Dubletten (gleiche ISBN, gleicher
+  Text), 432 teilen die ISBN mit einem Eintrag anderen Texts (4190700703809 steht an neun
+  verschiedenen DVDs), 1.748 den Titeltext bei anderer oder fehlender ISBN — „Harry Potter und der
+  Feuerkelch" steht als Buch, Taschenbuch und DVD in der Datei und wird ein Titel. Beim zweiten
+  Lauf gilt ein solcher Eintrag als Aktualisierung des vorhandenen Titels: Titeltext, Autor,
+  Verlag, Jahr, Signatur und Jahrgangsspanne kommen aus dem Eintrag, sobald er einen Wert hat
+  (`qUpdate`), der letzte gewinnt. Geändert werden so 789 Titel — Jahr 664, Verlag 359, Signatur
+  347, Autor 220, Jahrgang von 65 und bis 62 (mit den Interessenkreisen, die die Spanne aus allen
+  Werten bilden), Titeltext 38, dazu Leerstellen: ISBN 33, Fach 61, Schlagworte an einem. Der
+  Buchtitel „Harry Potter und der Feuerkelch" trägt danach Signatur und Jahr des DVD-Eintrags
+  („DvD/D", 2005). Die Übernahme aus der Sicherung (`internal/littera`), mit der der Echtbetrieb
+  beginnt (entschieden am 28.09.2026), gleicht nicht über den Titeltext ab; der Import aus CSV und
+  Excel (`internal/service/import_dynamic.go`) tut es ebenfalls, dort nicht gemessen. Der Katalog
+  am Testserver stammt aus diesem Import (13.705 der 13.708 Einträge finden dort ihren Titel,
+  gezählt am 30.09.2026). Anlass zum Bauen: Das Katalogisat wird wieder ein Weg in den
   Echtbetrieb, oder ein gepflegter Katalog soll es erneut einlesen.
 
 ### 6.2 Kategorie C
