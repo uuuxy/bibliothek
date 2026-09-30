@@ -554,6 +554,24 @@ CREATE TRIGGER trg_titel_isbn_normalform
 BEFORE INSERT OR UPDATE OF isbn ON buecher_titel
 FOR EACH ROW EXECUTE FUNCTION titel_isbn_in_normalform();
 
+-- Migration 154: Titeltexte in einer Unicode-Form (NFC). Die DNB liefert Umlaute zerlegt
+-- („u" + U+0308); zerlegt traf kein eingetippter Suchbegriff den Titel. Die Datenbank setzt
+-- an jeder Tür zusammen, wie bei der ISBN. Die Signatur bleibt, wie sie am Buch steht.
+CREATE OR REPLACE FUNCTION titel_text_in_nfc()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.titel := normalize(NEW.titel, NFC);
+    NEW.untertitel := normalize(NEW.untertitel, NFC);
+    NEW.autor := normalize(NEW.autor, NFC);
+    NEW.verlag := normalize(NEW.verlag, NFC);
+    NEW.beschreibung := normalize(NEW.beschreibung, NFC);
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER trg_titel_text_nfc
+BEFORE INSERT OR UPDATE OF titel, untertitel, autor, verlag, beschreibung ON buecher_titel
+FOR EACH ROW EXECUTE FUNCTION titel_text_in_nfc();
+
 CREATE INDEX idx_buecher_titel_search ON buecher_titel USING GIN (search_vector);
 CREATE INDEX idx_buecher_titel_trgm ON buecher_titel USING gin (titel gin_trgm_ops);
 CREATE INDEX idx_buecher_autor_trgm ON buecher_titel USING gin (autor gin_trgm_ops);
@@ -1896,7 +1914,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('150_eigentum_am_exemplar.sql'),
 ('151_eigentum_quelle.sql'),
 ('152_klassensatz_reservierung_freitext.sql'),
-('153_sonderkonten_als_art.sql')
+('153_sonderkonten_als_art.sql'),
+('154_titeltext_nfc.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

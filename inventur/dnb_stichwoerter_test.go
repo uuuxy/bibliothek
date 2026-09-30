@@ -52,6 +52,46 @@ func TestSucheDNB_StichwoerterOhneVorsatzEintraege(t *testing.T) {
 	}
 }
 
+// Die DNB liefert Umlaute zerlegt: „a" + U+0308 statt „ä" (gemessen am 30.09.2026 an ihrer
+// MARC21-Schnittstelle). Zerlegt traf kein eingetippter Suchbegriff den Titel und kein
+// Stichwort das gleichnamige Schlagwort der Liste. Heraus kommt jeder Wert zusammengesetzt —
+// über ISBN und über die Freitextsuche, die dieselbe Antwort lesen.
+func TestSucheDNB_UmlauteZusammengesetzt(t *testing.T) {
+	const satz = `
+		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
+		  <records><record><recordData>
+			<record xmlns="http://www.loc.gov/MARC21/slim">
+			  <datafield tag="020" ind1=" " ind2=" "><subfield code="a">9783608126044</subfield></datafield>
+			  <datafield tag="245" ind1="1" ind2="0"><subfield code="a">Der Herr der Ringe - Anha` + "\u0308" + `nge und Register</subfield></datafield>
+			  <datafield tag="100" ind1="1" ind2=" "><subfield code="a">Ma` + "\u0308" + `rz, Tobias</subfield></datafield>
+			  <datafield tag="653" ind1=" " ind2=" "><subfield code="a">Vo` + "\u0308" + `gel</subfield></datafield>
+			</record>
+		  </recordData></record></records>
+		</searchRetrieveResponse>`
+	client := &MetadatenClient{httpClient: &http.Client{Transport: &mockTransport{
+		roundTripFunc: func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(satz))}, nil
+		},
+	}}}
+
+	const titel, autor, stichwort = "Der Herr der Ringe - Anhänge und Register", "März, Tobias", "Vögel"
+	res, err := client.sucheDNB(context.Background(), "9783608126044")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.Titel != titel || res.Autor != autor || !slices.Equal(res.Stichwoerter, []string{stichwort}) {
+		t.Errorf("über ISBN: Titel %+q, Autor %+q, Stichwörter %+q — erwartet zusammengesetzt", res.Titel, res.Autor, res.Stichwoerter)
+	}
+
+	treffer, err := client.SucheTextDNB(context.Background(), "Herr der Ringe")
+	if err != nil || len(treffer) != 1 {
+		t.Fatalf("Freitextsuche: %v, %d Treffer", err, len(treffer))
+	}
+	if treffer[0].Titel != titel || treffer[0].Autor != autor {
+		t.Errorf("Freitext: Titel %+q, Autor %+q — erwartet zusammengesetzt", treffer[0].Titel, treffer[0].Autor)
+	}
+}
+
 // Die Freitextsuche der Bestellung schickt „jedes Wort irgendwo im Satz" (any all "…").
 // Bis zum 23.09.2026 ging any=Dunkelnacht+Boie hinaus, und die DNB lieferte mit zwei Wörtern
 // keinen Satz. Anführungszeichen und Backslash der Eingabe sind maskiert, sonst endete die

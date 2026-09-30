@@ -10,6 +10,7 @@ import (
 	"bibliothek/db"
 
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/text/unicode/norm"
 )
 
 // Schlagworte am Titel (Migration 138, docs/OFFEN.md 4.20) — frei eintragbar wie in
@@ -39,15 +40,25 @@ const (
 // antworten mit 400 und reichen den Text weiter.
 var ErrSchlagwortUngueltig = errors.New("schlagworte ungültig")
 
-// NormalisiereSchlagworte bringt eine Eingabe in die gespeicherte Form: Leerraum
-// außen weg und innen zu einem Leerzeichen, Leeres fällt, Doppelte (ohne Rücksicht auf
-// Groß- und Kleinschreibung) fallen — das erste gewinnt. Liefert nie nil, damit „keine
-// Wörter" als leere Liste weitergeht und nicht als „nichts gesagt".
+// schlagwortNormalform ist die Form, in der ein Wort gespeichert und verglichen wird:
+// Leerraum außen weg und innen zu einem Leerzeichen, Unicode zusammengesetzt (NFC). Die DNB
+// liefert Umlaute zerlegt, als Grundbuchstabe mit Pünktchen dahinter (U+0308, gemessen am
+// 30.09.2026); zerlegt und zusammengesetzt sehen gleich aus, sind für lower() und den
+// eindeutigen Index aber zwei Wörter — „Vögel" aus der DNB traf das „Vögel" der Liste nie.
+// Schreibweg, Vorschlag und die Suche der Pflegeseite nehmen diese eine Funktion.
+func schlagwortNormalform(roh string) string {
+	return norm.NFC.String(strings.Join(strings.Fields(roh), " "))
+}
+
+// NormalisiereSchlagworte bringt eine Eingabe in die gespeicherte Form
+// (schlagwortNormalform), Leeres fällt, Doppelte (ohne Rücksicht auf Groß- und
+// Kleinschreibung) fallen — das erste gewinnt. Liefert nie nil, damit „keine Wörter" als
+// leere Liste weitergeht und nicht als „nichts gesagt".
 func NormalisiereSchlagworte(roh []string) ([]string, error) {
 	woerter := make([]string, 0, len(roh))
 	gesehen := make(map[string]bool, len(roh))
 	for _, eingabe := range roh {
-		wort := strings.Join(strings.Fields(eingabe), " ")
+		wort := schlagwortNormalform(eingabe)
 		if wort == "" {
 			continue
 		}

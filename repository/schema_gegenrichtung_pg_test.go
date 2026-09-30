@@ -398,6 +398,13 @@ var triggerBestand = []string{
 	// eine ISBN vergleicht, vergleicht die Normalform — Go über isbnutil.Normalform, SQL
 	// über isbn_normalform(); die Parität prüft repository/isbn_normalform_pg_test.go.
 	"trg_titel_isbn_normalform @ buecher_titel",
+	// Migration 154, befragt am 30.09.2026: Titel, Untertitel, Autor, Verlag und Beschreibung
+	// werden zusammengesetzt gespeichert (NFC) — die DNB liefert Umlaute zerlegt, und zerlegt
+	// fand keine eingetippte Suche den Titel (api/opac_nfc_pg_test.go, am Rückbau rot). Frage 12:
+	// Wer einen gespeicherten Titeltext mit einem Wert aus Go vergleicht, muss ihn ebenfalls
+	// zusammensetzen; die DNB-Antwort tut das in inventur.dekodiereMARC, die Schlagworte in
+	// repository.schlagwortNormalform. Die Signatur ist bewusst nicht dabei.
+	"trg_titel_text_nfc @ buecher_titel",
 	// Migration 143, befragt am 23.09.2026: keine Kette von Verweisen, kein Titel an einem
 	// Verweis. Beide Schreib-Türen halten es selbst ein — SetzeSchlagworte hängt über
 	// coalesce(verweis_auf, id) das Ziel an, fuehreZusammenIn löst erst Titel und Verweise und

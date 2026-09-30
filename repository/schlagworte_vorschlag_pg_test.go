@@ -64,3 +64,51 @@ func TestSchlagworteAusStichwoertern_NurWasDieEigeneListeKennt(t *testing.T) {
 		t.Errorf("ohne Stichwörter: %q, %v — erwartet eine leere Liste", leer, err)
 	}
 }
+
+// Die DNB liefert Umlaute zerlegt („o" + U+0308, gemessen am 30.09.2026). Das zerlegte „Vögel"
+// traf das „Vögel" der Liste nie: Für lower() und den eindeutigen Index sind es zwei Wörter.
+// Beide Wege nehmen dieselbe Normalform (schlagwortNormalform): der Vorschlag und das
+// Speichern — ein zerlegt eingetragenes Wort landet beim vorhandenen, nicht daneben.
+func TestSchlagworte_ZerlegteUmlauteSindDasselbeWort(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+
+	const zusammengesetzt, zerlegt = "Vögel", "Vo\u0308gel"
+	amsel := seedSchlagwortTitel(t, pool, "Die Amsel")
+	if _, err := SetzeSchlagworte(ctx, pool, amsel, []string{zusammengesetzt}); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := SchlagworteAusStichwoertern(ctx, pool, []string{zerlegt, "  gar\u0308ten "})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(got, []string{zusammengesetzt}) {
+		t.Errorf("Vorschlag %+q, erwartet %+q", got, []string{zusammengesetzt})
+	}
+
+	meise := seedSchlagwortTitel(t, pool, "Die Meise")
+	if _, err := SetzeSchlagworte(ctx, pool, meise, []string{zerlegt}); err != nil {
+		t.Fatal(err)
+	}
+	var woerter []string
+	rows, err := pool.Query(ctx, `SELECT wort FROM schlagworte ORDER BY wort`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var w string
+		if err := rows.Scan(&w); err != nil {
+			t.Fatal(err)
+		}
+		woerter = append(woerter, w)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(woerter, []string{zusammengesetzt}) {
+		t.Errorf("Liste nach dem zweiten Titel: %+q — erwartet ein Wort, zusammengesetzt", woerter)
+	}
+}

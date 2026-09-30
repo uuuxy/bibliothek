@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"strings"
 )
 
 // schlagwortStichwoerterMax kappt die Kandidaten eines Satzes. Die DNB liefert bis zu 98
@@ -21,13 +20,14 @@ const schlagwortStichwoerterMax = 300
 // (coalesce(verweis_auf, id)).
 //
 // Verglichen wird das ganze Wort ohne Rücksicht auf Groß- und Kleinschreibung, nach
-// derselben Normalform wie beim Speichern (Leerraum zusammengezogen) — kein Teilstring:
-// „Krieg" soll nicht „Kriegsende" vorschlagen. Die Antwort ist alphabetisch und ohne
-// Doppelte; leer, wenn nichts passt. Geschrieben wird nichts: Das Ja gibt ein Mensch.
+// derselben Normalform wie beim Speichern (schlagwortNormalform: Leerraum zusammengezogen,
+// Umlaute zusammengesetzt) — kein Teilstring: „Krieg" soll nicht „Kriegsende" vorschlagen.
+// Die Antwort ist alphabetisch und ohne Doppelte; leer, wenn nichts passt. Geschrieben wird
+// nichts: Das Ja gibt ein Mensch.
 func SchlagworteAusStichwoertern(ctx context.Context, q DBQueryer, stichwoerter []string) ([]string, error) {
 	kandidaten := make([]string, 0, len(stichwoerter))
 	for _, roh := range stichwoerter {
-		if wort := strings.Join(strings.Fields(roh), " "); wort != "" {
+		if wort := schlagwortNormalform(roh); wort != "" {
 			kandidaten = append(kandidaten, wort)
 		}
 		if len(kandidaten) == schlagwortStichwoerterMax {

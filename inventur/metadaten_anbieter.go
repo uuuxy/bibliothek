@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"bibliothek/pkg/isbnutil"
+
+	"golang.org/x/text/unicode/norm"
 )
 
 // --- Gemeinsame MARC21-/SRU-Strukturen und Parsing-Logik ---
@@ -44,11 +46,26 @@ type sruAntwort struct {
 
 // dekodiereMARC parst die SRU-/MARC21-XML-Antwort. Der LimitReader schützt vor
 // Speicher-Erschöpfung beim XML-Parsing (z. B. Billion-Laughs-Angriff).
+//
+// Jeder Wert wird dabei zusammengesetzt (Unicode NFC). Die DNB liefert Umlaute und Akzente
+// zerlegt, als Grundbuchstabe mit dem Zeichen dahinter („u" + U+0308 statt „ü", gemessen am
+// 30.09.2026). Das sieht gleich aus, trifft aber keine eingetippte Suche und kein Schlagwort
+// der eigenen Liste: Am Testserver fand der Katalog „Anhänge" nicht in „Der Herr der Ringe -
+// Anhänge und Register". Die Datenbank setzt Titeltexte seit Migration 154 ebenfalls zusammen;
+// hier geschieht es für alles, was nie gespeichert wird (die Stichwörter des Vorschlags).
 func dekodiereMARC(koerper []byte) (sruAntwort, error) {
 	var nutzlast sruAntwort
 	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
 	if err := decoder.Decode(&nutzlast); err != nil {
 		return sruAntwort{}, err
+	}
+	for i := range nutzlast.Records.Record {
+		felder := nutzlast.Records.Record[i].RecordData.Record.Datafield
+		for j := range felder {
+			for k := range felder[j].Subfield {
+				felder[j].Subfield[k].Value = norm.NFC.String(felder[j].Subfield[k].Value)
+			}
+		}
 	}
 	return nutzlast, nil
 }

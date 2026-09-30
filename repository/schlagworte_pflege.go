@@ -84,7 +84,7 @@ const sqlPflegeSuchePasst = `($1 = ''
 // schlagwortPflegeTrefferMax Zeilen, dazu die Zahlen der ganzen Tabelle.
 func SchlagworteZurPflege(ctx context.Context, q DBQueryer, suche string) (SchlagwortPflegeListe, error) {
 	liste := SchlagwortPflegeListe{Zeilen: []SchlagwortPflegeZeile{}}
-	suche = strings.Join(strings.Fields(suche), " ")
+	suche = schlagwortNormalform(suche)
 	if err := q.QueryRow(ctx, `
 		SELECT count(*)::int, count(verweis_auf)::int, count(*) FILTER (WHERE ist_filter)::int,
 		       count(*) FILTER (WHERE `+sqlPflegeSuchePasst+`)::int
