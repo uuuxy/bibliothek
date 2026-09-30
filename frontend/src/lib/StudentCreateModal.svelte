@@ -24,7 +24,6 @@
 	let newVorname = $state('');
 	let newNachname = $state('');
 	let newKlasse = $state('');
-	let customKlasseInput = $state(false);
 	let newBarcode = $state('');
 	let newGeburtsdatum = $state('');
 	let newEmail = $state('');
@@ -47,7 +46,6 @@
 			newEmail = '';
 			createError = '';
 			duplicateConflict = '';
-			customKlasseInput = false;
 		}
 	});
 
@@ -152,7 +150,6 @@
 				bind:geburtsdatum={newGeburtsdatum}
 				bind:klasse={newKlasse}
 				bind:barcode={newBarcode}
-				bind:freieKlasse={customKlasseInput}
 				{klassen}
 			/>
 		{/if}

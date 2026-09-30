@@ -54,7 +54,11 @@ test('LMF-Massenverlängerung: global extend verlängert genau die Klassen-Ausle
 
 	await expect(page.getByRole('heading', { name: 'LMF-Massenverlängerung' })).toBeVisible();
 
-	await page.getByLabel(/Klasse/i).fill(klasse);
+	// Auswählen statt tippen (seit 30.09.2026, docs/OFFEN.md 5.18). Die Liste zeigt die Klasse
+	// so, wie sie gespeichert ist (Anzeigeform, Migration 087) — deshalb aus der Datenbank.
+	const anzeige = querySQL(`SELECT klasse FROM schueler WHERE barcode_id = 'S-lmf1-${s}'`).trim();
+	await page.getByRole('combobox', { name: 'Klasse' }).click();
+	await page.getByRole('option', { name: anzeige, exact: true }).click();
 
 	const futureDate = new Date();
 	futureDate.setFullYear(futureDate.getFullYear() + 1);

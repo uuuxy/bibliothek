@@ -1,11 +1,17 @@
 <script>
 	import LeserEditFelder from './components/students/LeserEditFelder.svelte';
+	import { erzeugeKlassenVorschlaege } from './components/students/klassenVorschlaege.svelte.js';
+	import { onMount } from 'svelte';
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import Snackbar from './components/ui/Snackbar.svelte';
 	import Button from './components/ui/Button.svelte';
 	import { useStudentEditForm } from './useStudentEditForm.svelte.js';
 	import { leserArtText } from './leserArt.js';
 	import { Check, ChevronLeft } from '@lucide/svelte';
+
+	// Die Klasse wird gewählt, nicht getippt (docs/OFFEN.md 5.18, 30.09.2026).
+	const klassenListe = erzeugeKlassenVorschlaege();
+	onMount(klassenListe.lade);
 
 	/**
 	 * @type {{
@@ -109,6 +115,7 @@
 	<div class="flex-1 overflow-y-auto px-8 py-6 space-y-8">
 		<LeserEditFelder
 			{formData}
+			klassen={klassenListe.liste}
 			lusdVerknuepft={!!student?.lusd_id}
 			kontoVorhanden={form.kontoVorhanden}
 		/>

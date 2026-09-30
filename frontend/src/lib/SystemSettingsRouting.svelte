@@ -5,6 +5,8 @@
 	import { onMount } from 'svelte';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Feld from './components/ui/Feld.svelte';
+	import Select from './components/ui/Select.svelte';
+	import { erzeugeKlassenVorschlaege } from './components/students/klassenVorschlaege.svelte.js';
 	import { Trash2 } from '@lucide/svelte';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
@@ -13,6 +15,9 @@
 	let newMappingKlasse = $state('');
 	let newMappingEmail = $state('');
 	let mappingSaving = $state(false);
+	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
+	// Klasse an, die es an der Schule nicht gibt, und ihre Mahnliste ging an niemanden.
+	const klassenListe = erzeugeKlassenVorschlaege();
 
 	async function fetchMapping() {
 		mappingLoading = true;
@@ -26,7 +31,7 @@
 	}
 
 	onMount(async () => {
-		await fetchMapping();
+		await Promise.all([fetchMapping(), klassenListe.lade()]);
 	});
 
 	async function upsertMapping() {
@@ -65,8 +70,8 @@
 	<div>
 		<h3 class="text-base font-bold text-slate-900">E-Mail Routing für Mahnungen</h3>
 		<p class="mt-1 max-w-2xl text-sm text-on-surface-variant">
-			Wer die Mahnliste einer Klasse bekommt – hier von Hand eingetragen, die LUSD liefert es nicht;
-			die Versetzung rückt jede Zuordnung eine Stufe hoch, außer vor Klasse 7 und vor der Oberstufe.
+			Von Hand eingetragen, die LUSD liefert es nicht; die Versetzung rückt jede Zuordnung eine
+			Stufe hoch, außer vor Klasse 7 und vor der Oberstufe.
 		</p>
 	</div>
 
@@ -108,7 +113,17 @@
 	<!-- Neuen Eintrag hinzufügen: flacher Eingabeblock ohne Box -->
 	<div class="flex flex-col md:flex-row items-end gap-4">
 		<div class="w-full md:w-32">
-			<Feld bind:value={newMappingKlasse} label="Klasse" type="text" placeholder="z.B. 7a" />
+			<div class="grid gap-y-1.5">
+				<label for="routing-klasse" class="text-sm font-medium text-on-surface-variant"
+					>Klasse</label
+				>
+				<Select
+					id="routing-klasse"
+					bind:value={newMappingKlasse}
+					options={klassenListe.liste.map((k) => ({ value: k, label: k }))}
+					placeholder={klassenListe.liste.length ? 'Klasse wählen' : 'Keine Klassen'}
+				/>
+			</div>
 		</div>
 		<div class="flex-1 w-full">
 			<Feld

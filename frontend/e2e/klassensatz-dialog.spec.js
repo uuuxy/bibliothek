@@ -23,15 +23,23 @@ test.afterAll(async ({ request }) => {
 	// Nur die eine angelegte Zuordnung zurücknehmen. Kein Rundumschlag: Ein Teardown hat
 	// in diesem Projekt schon einmal echte Konfiguration mitgenommen.
 	await request
-		.delete(`/api/admin/class-books?className=${KLASSE.toUpperCase()}`, {
+		.delete(`/api/admin/class-books?className=${KLASSE}`, {
 			failOnStatusCode: false
 		})
 		.catch(() => {});
+	// Der Wegwerf-Schüler, der die Klasse wählbar machte — über seine Kennung, nicht über die
+	// Klasse.
+	querySQL(`DELETE FROM schueler WHERE barcode_id = 'S-ksd-${s}'`);
 });
 
 test('Klassensatz über den Dialog anlegen — Suche grenzt ein, Auswahl landet in der Datenbank', async ({
 	page
 }) => {
+	// Auswählen statt tippen (seit 30.09.2026, docs/OFFEN.md 5.18): Angeboten werden nur
+	// Klassen, die es gibt. Ein Wegwerf-Schüler macht die Test-Klasse zu einer.
+	querySQL(`
+		INSERT INTO schueler (vorname, nachname, klasse, barcode_id, abgaenger_jahr)
+		VALUES ('KSD', 'Wegwerf-${s}', '${KLASSE}', 'S-ksd-${s}', 2030)`);
 	await uiLogin(page);
 
 	// Einen Titel aus dem Bestand nehmen, statt einen zu erfinden: Der Dialog zeigt nur,
@@ -74,24 +82,19 @@ test('Klassensatz über den Dialog anlegen — Suche grenzt ein, Auswahl landet 
 	const treffer = await kacheln.count();
 	expect(treffer, 'die Suche darf den gesuchten Titel nicht wegfiltern').toBeGreaterThan(0);
 
-	// Zielklasse eintragen und auswählen.
-	await page.locator('#class-input').fill(KLASSE);
-	await page.locator('#class-input').press('Enter');
+	// Zielklasse auswählen.
+	await page.locator('#class-input').click();
+	await page.getByRole('option', { name: KLASSE, exact: true }).click();
 	await kacheln.first().click();
 
 	await page.getByRole('button', { name: 'Speichern' }).click();
 
 	// Am Ergebnis prüfen, nicht an der Oberfläche: Ein Dialog, der sich schliesst, sagt
-	// nichts darüber, ob etwas gespeichert wurde.
-	//
-	// upper() auf beiden Seiten, weil die Anwendung Klassennamen auf Grossbuchstaben
-	// normalisiert („zz…" wird zu „ZZ…"). Ohne das verglich der Test an der Wirklichkeit
-	// vorbei und meldete 0, obwohl die Zeile längst dastand.
+	// nichts darüber, ob etwas gespeichert wurde. Die Klasse steht so da, wie der Schüler sie
+	// trägt — seit dem 30.09.2026 wird gewählt, nicht getippt und in Grossbuchstaben umgesetzt.
 	await expect
-		.poll(
-			() =>
-				querySQL(`SELECT count(*) FROM class_books WHERE upper(class_name) = upper('${KLASSE}');`),
-			{ timeout: 10000 }
-		)
+		.poll(() => querySQL(`SELECT count(*) FROM class_books WHERE class_name = '${KLASSE}';`), {
+			timeout: 10000
+		})
 		.toBe('1');
 });

@@ -29,7 +29,6 @@ const BESTAND = {
 		'Systematik-Vorschläge (Datalist)'
 	],
 	'src/inventur/lib/components/admin/ClassAssignPicker.svelte': [1, 'Klassennamen als Vorschlag'],
-	'src/lib/GlobalLMFExtendWidget.svelte': [1, 'Klassennamen als Vorschlag'],
 	'src/lib/components/students/klassenVorschlaege.svelte.js': [
 		1,
 		'Klassen als Vorschlag im Anlegen-Dialog (am 12.09.2026 aus StudentDirectory ausgelagert)'

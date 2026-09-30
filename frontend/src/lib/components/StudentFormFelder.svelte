@@ -1,9 +1,9 @@
 <!-- @component StudentFormFelder — die Eingabefelder für einen neuen Schüler.
 
-     Die Klasse kommt normalerweise aus den Klassen der Schule (GET /api/klassen);
-     „Manuell eingeben" schaltet auf ein Freitextfeld um, weil eine neue Klasse noch
-     keinen Schüler hat. Der Weg zurück steht als Knopf IM Feld — sonst säße man in der
-     Freitexteingabe fest.
+     Die Klasse wird aus den Klassen der Schule gewählt (GET /api/klassen), nicht getippt
+     (docs/OFFEN.md 5.18, 30.09.2026): „Manuell eingeben…" legte bei einem Tippfehler eine
+     Klasse an, die es an der Schule nicht gibt. Eine ganz neue Klasse kommt mit dem
+     LUSD-Abgleich.
 
      Das Geburtsdatum ist Pflicht — nicht als Stammdatum, sondern als SCHLÜSSEL: Der
      LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt einen von Hand
@@ -17,7 +17,7 @@
 	 * @type {{
 	 *   vorname: string, nachname: string, geburtsdatum: string,
 	 *   klasse: string, barcode: string,
-	 *   freieKlasse: boolean, klassen: string[]
+	 *   klassen: string[]
 	 * }}
 	 */
 	let {
@@ -26,14 +26,10 @@
 		geburtsdatum = $bindable(),
 		klasse = $bindable(),
 		barcode = $bindable(),
-		freieKlasse = $bindable(),
 		klassen = []
 	} = $props();
 
-	const klassenOptionen = $derived([
-		...klassen.map((k) => ({ value: k, label: k })),
-		{ value: '__custom__', label: 'Manuell eingeben…' }
-	]);
+	const klassenOptionen = $derived(klassen.map((k) => ({ value: k, label: k })));
 </script>
 
 <Feld label="Vorname *" bind:value={vorname} placeholder="z.B. Max" />
@@ -48,37 +44,17 @@
 	hint="Pflicht: Der LUSD-Import erkennt den Schüler nur über Name + Geburtsdatum wieder — ohne Datum würde er beim nächsten Import doppelt angelegt."
 />
 
-<div class="block text-xs font-medium text-slate-400">
-	<label for="schueler-klasse">Klasse *</label>
-	<div class="mt-1.5 flex gap-2">
-		{#if !freieKlasse}
-			<Select
-				id="schueler-klasse"
-				bind:value={klasse}
-				options={klassenOptionen}
-				placeholder="Klasse auswählen"
-				onchange={(wert) => {
-					if (wert === '__custom__') {
-						freieKlasse = true;
-						klasse = '';
-					}
-				}}
-			/>
-		{:else}
-			<div class="relative w-full">
-				<Feld id="schueler-klasse" bind:value={klasse} placeholder="z.B. 10b" feld="pr-20" />
-				<button
-					type="button"
-					onclick={() => {
-						freieKlasse = false;
-						klasse = '';
-					}}
-					class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors bg-transparent border-none cursor-pointer"
-					>Auswahl</button
-				>
-			</div>
-		{/if}
-	</div>
+<div class="grid gap-y-1.5">
+	<label for="schueler-klasse" class="text-sm font-medium text-on-surface-variant">Klasse *</label>
+	<Select
+		id="schueler-klasse"
+		bind:value={klasse}
+		options={klassenOptionen}
+		placeholder={klassen.length ? 'Klasse auswählen' : 'Keine Klassen'}
+	/>
+	{#if !klassen.length}
+		<span class="text-xs text-on-surface-variant">Die Klassen kommen mit dem LUSD-Abgleich.</span>
+	{/if}
 </div>
 
 <Feld

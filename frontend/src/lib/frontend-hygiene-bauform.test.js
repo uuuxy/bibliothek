@@ -55,7 +55,6 @@ const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 const BESTAND = [
 	'src/inventur/lib/components/admin/BookTableZeile.svelte',
 	'src/inventur/lib/components/admin/ClassAssignmentBookGrid.svelte',
-	'src/inventur/lib/components/admin/ClassAssignmentSelector.svelte',
 	'src/lib/BestellWorkspace.svelte',
 	'src/lib/BorrowedBooksList.svelte',
 	'src/lib/CameraScanner.svelte',

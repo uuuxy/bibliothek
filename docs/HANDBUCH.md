@@ -155,8 +155,10 @@ Rückseite) · **Klassenweise drucken** (Ausweise für eine ganze Klasse). Der D
 ## Klassensätze
 
 Welche Klasse hat welche Lektüre? Klasse suchen, _Klasse hinzufügen_ öffnet den Dialog:
-Bücher auswählen, Zielklasse eintragen, speichern. Reservierungen aus dem Kollegium stehen
-im Bestellwesen (→ _Klassensatz-Reservierungen_). (§4)
+Bücher auswählen, Zielklasse wählen, speichern. Zur Wahl stehen die Klassen der Schüler und
+die Klassen, die schon eine Buchliste haben; eintippen lässt sich eine Klasse nicht — neue
+Klassen kommen mit dem LUSD-Abgleich. Der Papierkorb an einer Klasse löscht nur ihre Buchliste. Reservierungen aus dem Kollegium stehen im Bestellwesen
+(→ _Klassensatz-Reservierungen_). (§4)
 
 Seit 05.09.2026 ergänzt sich die Liste von selbst: Hat mehr als die Hälfte einer Klasse
 (mindestens fünf Kinder) denselben Titel ausgeliehen, erscheint er bei der Klasse mit dem

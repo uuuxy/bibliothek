@@ -36,7 +36,8 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 	/** @param {string} art @returns {string[]} */
 	function felderVon(art) {
 		const screen = render(LeserEditFelder, { formData: formular(art) });
-		return [...screen.container.querySelectorAll('input')]
+		// Seit dem 30.09.2026 ist die Klasse ein Auswahlfeld (Knopf mit role="combobox").
+		return [...screen.container.querySelectorAll('input, [role="combobox"]')]
 			.map((e) => e.id || e.getAttribute('value') || '')
 			.filter(Boolean);
 	}
@@ -67,7 +68,9 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 		const screen = render(LeserEditFelder, { formData: formular('lehrkraft') });
 		// Ohne die Radios: Die gesperrte Art prüft der Test darunter, und sie haben keine
 		// id — sie kämen hier als leerer Name mit und machten die Zusage unlesbar.
-		const zu = [...screen.container.querySelectorAll('input:not([type="radio"])')]
+		const zu = [
+			...screen.container.querySelectorAll('input:not([type="radio"]), [role="combobox"]')
+		]
 			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
 			.map((e) => e.id)
 			.sort();
@@ -82,7 +85,9 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 		const screen = render(LeserEditFelder, { formData: formular('schueler') });
 		// Ohne die Radios: Die gesperrte Art prüft der Test darunter, und sie haben keine
 		// id — sie kämen hier als leerer Name mit und machten die Zusage unlesbar.
-		const zu = [...screen.container.querySelectorAll('input:not([type="radio"])')]
+		const zu = [
+			...screen.container.querySelectorAll('input:not([type="radio"]), [role="combobox"]')
+		]
 			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
 			.map((e) => e.id)
 			.sort();

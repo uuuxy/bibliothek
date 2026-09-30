@@ -36,13 +36,6 @@ const AUSNAHMEN = [
 		grund:
 			'Füllt die 48-px-Scan-Pille (h-full, ohne eigenen Rahmen) — die Pille ist das ' +
 			'Bedienelement, nicht das Feld. Gate: e2e/suchpille-einheitlich.spec.js.'
-	},
-	{
-		datei: 'src/inventur/lib/components/admin/ClassAssignmentSelector.svelte',
-		grund:
-			'Unsichtbares Tipp-Feld IM Chip-Kasten (bg-transparent, border-none): Der Kasten ist ' +
-			'das Feld, die Chips sind sein Wert. Ein zweiter Rahmen darin wäre falsch. ' +
-			'e2e/klassensatz-dialog.spec.js hängt an #class-input.'
 	}
 ];
 

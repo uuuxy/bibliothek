@@ -157,7 +157,7 @@
 				<div
 					class="flex-1 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-outline-variant [&::-webkit-scrollbar-thumb]:rounded-full pr-4 pb-4"
 				>
-					<ClassAssignmentSelector bind:selectedClasses />
+					<ClassAssignmentSelector bind:selectedClasses {vorhandeneGruppen} />
 
 					{#if ueberschriebeneKlassen.length > 0}
 						<!-- Warnung statt Verbot: Genau das WILL man meistens (ein Jahrgang

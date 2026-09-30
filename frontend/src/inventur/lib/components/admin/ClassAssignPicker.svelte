@@ -7,7 +7,8 @@
 	import { onMount } from 'svelte';
 	import Modal from '../../../../lib/Modal.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
-	import Feld from '../../../../lib/components/ui/Feld.svelte';
+	import Select from '../../../../lib/components/ui/Select.svelte';
+	import { erzeugeKlassenVorschlaege } from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
 
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();
@@ -18,9 +19,17 @@
 	let saving = $state(false);
 	let error = $state('');
 
+	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
+	// Klasse an, die es an der Schule nicht gibt. Zur Wahl stehen die Klassen der Schüler und
+	// die Klassen, die schon eine Buchliste haben — die 05F1 bleibt so auch im Sommer wählbar,
+	// bevor der LUSD-Abgleich die neuen Fünftklässler bringt.
+	const klassenListe = erzeugeKlassenVorschlaege();
+	const optionen = $derived(
+		[...new Set([...klassenListe.liste, ...existing])].sort().map((k) => ({ value: k, label: k }))
+	);
+
 	onMount(async () => {
-		// Bestehende Klassennamen als Auswahlvorschläge (Datalist). Rein optional —
-		// scheitert der Abruf, tippt man den Namen einfach frei.
+		klassenListe.lade();
 		try {
 			const res = await apiFetch('/api/admin/class-books', { credentials: 'include' });
 			if (res.ok) {
@@ -28,14 +37,14 @@
 				existing = (json.data || []).map((/** @type {any} */ g) => g.className);
 			}
 		} catch {
-			/* Vorschläge sind optional */
+			/* Dann stehen nur die Klassen der Schüler zur Wahl. */
 		}
 	});
 
 	async function assign() {
 		const name = className.trim();
 		if (!name) {
-			error = 'Bitte einen Klassennamen angeben.';
+			error = 'Bitte eine Klasse wählen.';
 			return;
 		}
 		saving = true;
@@ -68,19 +77,15 @@
 			{bookIds.length === 1 ? 'Buch' : 'Bücher'} einer Schulklasse zuweisen.
 		</p>
 
-		<Feld
-			id="klasse-name"
-			label="Klasse"
-			list="klassen-vorschlaege"
-			bind:value={className}
-			placeholder="z. B. 5a"
-			maxlength={20}
-		/>
-		<datalist id="klassen-vorschlaege">
-			{#each existing as name (name)}
-				<option value={name}></option>
-			{/each}
-		</datalist>
+		<div class="grid gap-y-1.5">
+			<label for="klasse-name" class="text-sm font-medium text-on-surface-variant">Klasse</label>
+			<Select
+				id="klasse-name"
+				bind:value={className}
+				options={optionen}
+				placeholder={optionen.length ? 'Klasse wählen' : 'Keine Klassen'}
+			/>
+		</div>
 
 		{#if error}
 			<div class="text-sm text-rose-600">{error}</div>

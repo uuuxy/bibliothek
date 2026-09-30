@@ -1,85 +1,66 @@
 <script>
-	import { ChevronDown, Users, X } from '@lucide/svelte';
-	let { selectedClasses = $bindable([]) } = $props();
+	// Die Zielklassen des Klassensatz-Dialogs als Chips. Auswählen statt tippen (docs/OFFEN.md
+	// 5.18, 30.09.2026): Bis dahin tippte man die Klassen frei ein, und ein Tippfehler legte
+	// eine Klasse an, die es an der Schule nicht gibt. Zur Wahl stehen die Klassen der Schüler
+	// und die Klassen, die schon eine Buchliste haben (wie in ClassAssignPicker).
+	import { onMount } from 'svelte';
+	import { X } from '@lucide/svelte';
+	import Select from '../../../../lib/components/ui/Select.svelte';
+	import { erzeugeKlassenVorschlaege } from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
 
-	const classInput = $state({ value: '' });
+	/** @type {{ selectedClasses: string[], vorhandeneGruppen?: { className: string }[] }} */
+	let { selectedClasses = $bindable([]), vorhandeneGruppen = [] } = $props();
+
+	const klassenListe = erzeugeKlassenVorschlaege();
+	onMount(klassenListe.lade);
+
+	const optionen = $derived(
+		[...new Set([...klassenListe.liste, ...vorhandeneGruppen.map((g) => g.className)])]
+			.filter((k) => !selectedClasses.includes(k))
+			.sort()
+			.map((k) => ({ value: k, label: k }))
+	);
+
+	/** Das Auswahlfeld fügt hinzu und steht danach wieder leer. */
+	let auswahl = $state('');
 
 	/** @param {string} name */
-	function formatClassName(name) {
-		let formatted = name.trim().toUpperCase();
-		// Adds leading zero if the string starts with a single digit not followed by another digit
-		formatted = formatted.replace(/^(\d)(?!\d)/, '0$1');
-		return formatted;
-	}
-
-	/** @param {string} inputString */
-	function addClass(inputString) {
-		const parts = inputString.split(',');
-		let added = false;
-
-		for (let part of parts) {
-			const formatted = formatClassName(part);
-			if (formatted && !selectedClasses.includes(formatted)) {
-				selectedClasses = [...selectedClasses, formatted];
-				added = true;
-			}
-		}
-
-		if (added || parts.length > 1) {
-			classInput.value = '';
-		}
+	function hinzufuegen(name) {
+		if (name && !selectedClasses.includes(name)) selectedClasses = [...selectedClasses, name];
+		auswahl = '';
 	}
 
 	/** @param {string} name */
 	function removeClass(name) {
 		selectedClasses = selectedClasses.filter((c) => c !== name);
 	}
-
-	/** @param {KeyboardEvent} e */
-	function handleKeyDown(e) {
-		if (e.key === 'Enter' || e.key === ',') {
-			e.preventDefault();
-			addClass(classInput.value);
-		}
-	}
 </script>
 
-<label for="class-input" class="block text-xs text-slate-500 font-medium mb-1">ZIELKLASSEN</label>
-
-<div
-	class="flex flex-wrap items-center gap-2 border border-surface-variant/20 rounded-xl p-2 px-4 w-full sm:w-fit min-w-0 sm:min-w-75 bg-white hover:border-blue-300 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all cursor-text shadow-sm mb-4 sm:mb-6"
->
-	<!-- Group Icon -->
-	<Users class="text-slate-500 mr-1" aria-hidden="true" />
-
-	{#each selectedClasses as selectedClass (selectedClass)}
-		<span
-			class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-sm font-semibold shadow-sm animate-in zoom-in-90 duration-200"
-		>
-			{selectedClass}
-			<button
-				onclick={() => removeClass(selectedClass)}
-				class="hover:opacity-70 rounded-full transition-opacity ml-1"
-				aria-label="Klasse {selectedClass} entfernen"
-				title="Klasse entfernen"
+<div class="mb-4 grid gap-y-1.5 sm:mb-6">
+	<label for="class-input" class="text-sm font-medium text-on-surface-variant">Zielklassen</label>
+	<div class="flex flex-wrap items-center gap-2">
+		{#each selectedClasses as selectedClass (selectedClass)}
+			<span
+				class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-sm font-semibold"
 			>
-				<X class="w-4 h-4" aria-hidden="true" />
-			</button>
-		</span>
-	{/each}
-	<input
-		id="class-input"
-		name="class-input-hidden"
-		type="text"
-		autocomplete="off"
-		spellcheck="false"
-		data-lpignore="true"
-		placeholder={selectedClasses.length === 0 ? 'Klasse wählen...' : ''}
-		bind:value={classInput.value}
-		onkeydown={handleKeyDown}
-		class="h-auto flex-1 bg-transparent border-none outline-none focus:ring-0 px-1 min-w-30 text-slate-900 placeholder:text-slate-400 font-medium"
-	/>
-
-	<!-- Chevron Down Icon -->
-	<ChevronDown class="text-slate-400 ml-auto pointer-events-none" aria-hidden="true" />
+				{selectedClass}
+				<button
+					onclick={() => removeClass(selectedClass)}
+					class="hover:opacity-70 rounded-full transition-opacity ml-1"
+					aria-label="Klasse {selectedClass} entfernen"
+					title="Klasse entfernen"
+				>
+					<X class="w-4 h-4" aria-hidden="true" />
+				</button>
+			</span>
+		{/each}
+		<Select
+			id="class-input"
+			bind:value={auswahl}
+			options={optionen}
+			placeholder={optionen.length ? 'Klasse wählen' : 'Keine weiteren Klassen'}
+			onchange={hinzufuegen}
+			class="w-48"
+		/>
+	</div>
 </div>

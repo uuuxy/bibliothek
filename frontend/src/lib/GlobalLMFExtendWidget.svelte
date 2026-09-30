@@ -1,10 +1,12 @@
 <script>
-	import { apiFetch, apiClient } from './apiFetch.js';
+	import { apiClient } from './apiFetch.js';
 	import { bestaetigen } from './stores/bestaetigung.svelte.js';
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import { onMount } from 'svelte';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
+	import Select from './components/ui/Select.svelte';
+	import { erzeugeKlassenVorschlaege } from './components/students/klassenVorschlaege.svelte.js';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -12,27 +14,15 @@
 	let neuesDatum = $state('');
 	/** @type {boolean} */
 	let isExtending = $state(false);
-	/** @type {string[]} Vorschläge für das Klassenfeld (freies Tippen bleibt möglich) */
-	let klassenVorschlaege = $state([]);
-
-	onMount(async () => {
-		// Echte Schüler-Klassen als Vorschläge (GET /api/klassen liefert DISTINCT klasse).
-		// Rein optional: schlägt der Abruf fehl (z. B. fehlendes view_students-Recht),
-		// tippt man den Klassennamen einfach frei ein.
-		try {
-			const res = await apiFetch('/api/klassen', { credentials: 'include' });
-			if (res.ok) {
-				const data = await res.json();
-				klassenVorschlaege = Array.isArray(data) ? data : [];
-			}
-		} catch {
-			/* Vorschläge sind optional */
-		}
-	});
+	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): die Klassen, in denen Schüler
+	// sind. Ein Tippfehler legte hier keine Klasse an, verlängerte aber still nichts.
+	const klassenListe = erzeugeKlassenVorschlaege();
+	const klassen = $derived(klassenListe.liste);
+	onMount(klassenListe.lade);
 
 	async function handleGlobalExtend() {
 		if (!klasse.trim() || !neuesDatum) {
-			toastStore.addToast('Bitte Klasse und neues Rückgabedatum eingeben.', 'warning');
+			toastStore.addToast('Bitte Klasse wählen und neues Rückgabedatum eingeben.', 'warning');
 			return;
 		}
 
@@ -81,19 +71,16 @@
 	</div>
 
 	<div class="flex items-end gap-4 flex-wrap">
-		<Feld
-			id="extendKlasse"
-			label="Klasse (z.B. 10b)"
-			list="lmf-klassen-vorschlaege"
-			bind:value={klasse}
-			placeholder="10b"
-			class="w-32"
-		/>
-		<datalist id="lmf-klassen-vorschlaege">
-			{#each klassenVorschlaege as k (k)}
-				<option value={k}></option>
-			{/each}
-		</datalist>
+		<div class="grid gap-y-1.5">
+			<label for="extendKlasse" class="text-sm font-medium text-on-surface-variant">Klasse</label>
+			<Select
+				id="extendKlasse"
+				bind:value={klasse}
+				options={klassen.map((k) => ({ value: k, label: k }))}
+				placeholder={klassen.length ? 'Klasse wählen' : 'Keine Klassen'}
+				class="w-36"
+			/>
+		</div>
 
 		<Feld
 			id="extendDatum"

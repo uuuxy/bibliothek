@@ -35,6 +35,7 @@
      einzige bediente Feld und stand vorher zwischen zwei gesperrten. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
+	import Select from '../ui/Select.svelte';
 	import Abschnitt from '../ui/Abschnitt.svelte';
 	import LeserArtWahl from './LeserArtWahl.svelte';
 	import LeserKontaktFelder from './LeserKontaktFelder.svelte';
@@ -45,9 +46,19 @@
 	 * Feldern gebunden — kein $bindable: Gebunden werden die EIGENSCHAFTEN des Objekts,
 	 * das Objekt selbst wird nie ersetzt. Ein $bindable verlangte vom Aufrufer ein
 	 * `bind:`, und dort ist formData ein `const` aus der Hook-Destrukturierung.
-	 * @type {{ formData: any, lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
+	 * @type {{ formData: any, klassen?: string[], lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
 	 */
-	let { formData, lusdVerknuepft = false, kontoVorhanden = false } = $props();
+	let { formData, klassen = [], lusdVerknuepft = false, kontoVorhanden = false } = $props();
+
+	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
+	// Klasse an, die es an der Schule nicht gibt. Die eigene Klasse steht immer mit in der
+	// Liste — auch wenn sie dort fehlt (etwa bei einem Leser im Papierkorb).
+	const klassenOptionen = $derived(
+		[...new Set([...klassen, formData.klasse].filter(Boolean))].map((k) => ({
+			value: k,
+			label: k
+		}))
+	);
 
 	const kollege = $derived(istKollegium({ art: formData.art }));
 
@@ -95,14 +106,22 @@
 	<Abschnitt titel="Schuldaten" />
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-		<Feld
-			id="klasse"
-			label="Klasse{schuelerPflicht}"
-			bind:value={formData.klasse}
-			feld="font-semibold"
-			disabled={kollege}
-			hint={kollege ? 'Nur ein Schüler hat eine Klasse.' : undefined}
-		/>
+		<!-- Wie ui/Feld mit Beschriftung: drei Zeilen im Subgrid, damit die Nachbarn fluchten. -->
+		<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5">
+			<label for="klasse" class="text-sm font-medium text-on-surface-variant"
+				>Klasse{schuelerPflicht}</label
+			>
+			<Select
+				id="klasse"
+				bind:value={formData.klasse}
+				options={klassenOptionen}
+				placeholder="Klasse wählen"
+				disabled={kollege}
+			/>
+			{#if kollege}
+				<span class="text-xs text-on-surface-variant">Nur ein Schüler hat eine Klasse.</span>
+			{/if}
+		</div>
 		<Feld
 			id="abgangsjahr"
 			label="Abgangsjahr"
