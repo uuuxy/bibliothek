@@ -385,7 +385,11 @@ Register **Alle · Akut fällig (bis 14 Tage) · Eskaliert**, Filter nach Klasse
 Eltern oder für eine ganze Klasse drucken; **Sammel-Mahnlauf** per Mail an die Klassenleitungen
 (Klassen wählen, Empfänger prüfen, dann senden). Die Mahnstufe steigt beim **Druck** des
 Mahnbriefs, nicht beim Mailversand. Lehrkräfte werden nie angemahnt. Welche Klasse an welche
-Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. (§3)
+Lehrkraft geht, steht unter _Einstellungen → Mahnwesen-Routing_. Diese Liste wird dort von Hand
+gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was jemand von Hand
+sendet (Mahnlauf, Abgänger-Kontoauszüge).
+Die Versetzung rückt die Zuordnungen eine Stufe hoch, außer von 6 nach 7 und von 10 in die
+Oberstufe: Dort bildet die Schule die Klassen neu, und die Zuordnung wird neu eingetragen. (§3)
 
 **Zwei Fragen, vier Reiter.** _Alle · Akut fällig · Eskaliert_ fragen, wer Bücher zu spät hat.
 Der vierte Reiter **Schadensersatz** fragt, wer Geld schuldet: Sobald für ein Kind ein Verlust

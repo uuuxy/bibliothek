@@ -179,6 +179,9 @@ Regeln (`repository/schueler_zusammenfuehren.go`):
    Bestätigung (Massenabgang) — beim echten Schuljahreswechsel normal.
 5. Gegenprobe: je Rubrik zwei, drei Schüler in der Leserdatei aufrufen.
 6. Danach die Versetzung (Klassen hochzählen), falls der Export noch die alten Klassen trug.
+   Die Klassenleitungen aus dem Mahnwesen-Routing rücken mit hoch, außer von 6 nach 7 und von
+   10 in die Oberstufe: Dort entfällt die Zuordnung, und die neuen Klassen bekommen sie unter
+   _Einstellungen → Mahnwesen-Routing_ von Hand.
 
 ## 7. Datenschutz in einem Absatz
 

@@ -207,7 +207,12 @@ func (s *Server) fuehreSchuljahreswechselAus(ctx context.Context, w http.Respons
 // derselben Regel hoch wie promoteStudentsQuery die Schüler. Absteigend nach
 // Stufe, damit '9a' erst nach dem Wegzug von '10a' auf den freien Namen rücken
 // kann; Abschlussklassen-Zeilen werden entfernt (die Kohorte verlässt die
-// Schule). Der Konflikt-Zweig (Zielname belegt → Zeile bleibt stehen und wird
+// Schule). Ebenso die Zeilen der Jahrgänge 6 und 10 (Vorgabe vom 30.09.2026): Nach
+// der 6 und nach der 10 bildet die Schule die Klassen neu — aus der Förderstufe
+// werden die Zweige, aus der 10 die Oberstufe —, und die neuen Klassen bekommen
+// neue Klassenleitungen. Hochgezählt landete die Zuordnung auf „07F1" oder
+// „11G1", Klassen, die es an der Schule nicht gibt, mit der alten Lehrkraft.
+// Der Konflikt-Zweig (Zielname belegt → Zeile bleibt stehen und wird
 // gemeldet) ist seit dem Klassen-Vokabular (Migration 079) Rückfallebene: Die
 // klassische Ursache — '9a' UND '09a' nebeneinander, beide → '10a' — kann durch
 // die Kanonisierung nicht mehr entstehen. Er bleibt, damit ein Namenskonflikt
@@ -218,7 +223,8 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *Promot
 		       lpad((substring(klasse from '^\d+')::int + 1)::text,
 		            greatest(length(substring(klasse from '^\d+')), length((substring(klasse from '^\d+')::int + 1)::text)), '0')
 		         || substring(klasse from '^\d+(.*)$') AS neue_klasse,
-		       `+repository.AbschlussklasseSQL("klasse")+` AS abschluss
+		       (`+repository.AbschlussklasseSQL("klasse")+`
+		        OR substring(klasse from '^\d+')::int IN (6, 10)) AS entfaellt
 		FROM klassen_lehrer_mapping
 		WHERE klasse ~ '^\d+'
 		ORDER BY substring(klasse from '^\d+')::int DESC, klasse DESC`)
@@ -227,12 +233,12 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *Promot
 	}
 	type zeile struct {
 		alt, neu  string
-		abschluss bool
+		entfaellt bool
 	}
 	var zeilen []zeile
 	for rows.Next() {
 		var z zeile
-		if err := rows.Scan(&z.alt, &z.neu, &z.abschluss); err != nil {
+		if err := rows.Scan(&z.alt, &z.neu, &z.entfaellt); err != nil {
 			rows.Close()
 			return err
 		}
@@ -244,7 +250,7 @@ func versetzeKlassenlehrerZuordnung(ctx context.Context, tx pgx.Tx, resp *Promot
 	}
 
 	for _, z := range zeilen {
-		if z.abschluss {
+		if z.entfaellt {
 			if _, err := tx.Exec(ctx, `DELETE FROM klassen_lehrer_mapping WHERE klasse = $1`, z.alt); err != nil {
 				return err
 			}

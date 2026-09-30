@@ -40,7 +40,7 @@
 						key: 'mapping',
 						label: 'Klassenlehrer-Zuordnungen',
 						hint:
-							'wandern mit der Klasse mit; Abschlussklassen werden entfernt' +
+							'rücken mit hoch, außer bei Abschluss, vor Klasse 7 und vor der Oberstufe' +
 							(r.mapping_konflikte?.length
 								? ' — Namenskonflikte: ' + r.mapping_konflikte.join(', ')
 								: ''),
