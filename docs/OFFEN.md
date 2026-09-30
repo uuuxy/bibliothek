@@ -77,7 +77,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu
-   4.26 (wer die Schule verlässt, hat oft noch Bücher) steht die Frage-Runde aus.
+   4.27 (wer die Schule verlässt, hat oft noch Bücher) steht die Frage-Runde aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -290,7 +290,7 @@ Zwei Lücken, nicht entschieden:
 Einen Vorschlag auch für vorhandene Titel? Zu entscheiden nach der Littera-Übernahme (7.2): Dann
 lässt sich an echten DNB-Sätzen messen, wie oft die GND-Wörter zur Liste passen.
 
-### 4.26 Wer die Schule verlässt, hat oft noch Bücher
+### 4.27 Wer die Schule verlässt, hat oft noch Bücher
 
 Vorgemerkt am 30.09.2026, beim Bau der Sonderkonten (Migration 153). Ein Praktikum endet nach
 Wochen; hat der Praktikant noch Bücher, fällt das heute nirgends auf. Für jeden Leser außer dem
@@ -769,6 +769,11 @@ unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
   `view_books` und `edit_books`. Ab Werk hat jede Rolle mit `edit_books` auch `view_students`;
   wer die Rechte anders verteilt, erreicht die Buch-Etiketten nicht (Sammelpunkt wie
   „Einstellungen"). Der Etikett-Knopf der Buchakte fragt deshalb beides ab.
+- Dieselbe Form bei der Klassenauswahl (Rasterdurchgang 30.09.2026): `GET /api/klassen` verlangt
+  `view_students`, gewählt wird die Klasse aber auch in den Klassensätzen und der
+  LMF-Verlängerung (`edit_books`) und im Mahnwesen-Routing (`manage_settings`). Ab Werk hat jede
+  Rolle mit einem dieser Rechte auch `view_students`. Wer die Rechte anders verteilt, sieht dort
+  „Klassen nicht geladen", und der Rat „Bitte neu öffnen" hilft ihm nicht.
 - Ausfallmatrix A3 und B4; A3 erst nach S3 (7.3).
 - Anmeldungen stehen nicht im Protokoll (am Code nachgesehen am 28.09.2026): `LoginHandler` in
   `auth/handlers.go` schreibt keinen Eintrag, nur die Selbstanmeldung
