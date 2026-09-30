@@ -133,21 +133,29 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 	// zuerst reserviert hat, ist zuerst dran; erledigte dahinter, neueste zuerst.
 	// verfuegbar zählt wie der OPAC (Paarung!): ausleihbar, nicht ausgesondert,
 	// keine offene Ausleihe.
+	//
+	// Die Zählung steht als LATERAL-Join, nicht in der SELECT-Liste: So kann Postgres sie je
+	// Titel zwischenspeichern (Memoize), und mehrere Reservierungen desselben Titels zählen
+	// einmal. Eine Unterabfrage in der SELECT-Liste läuft je Zeile. Gemessen am 30.09.2026
+	// (PR #694) an 2.000 Reservierungen über 252 Titel: 98 ms → 17 ms, 2.000 → 252 Zählungen.
+	// Ein N+1 war es nie — es bleibt eine Abfrage.
 	rows, err := r.db.Query(ctx, `
 		SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
 		       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
 		       CASE WHEN b.id IS NULL THEN NULL
 		            ELSE btrim(b.vorname || ' ' || b.nachname) END AS angefordert_von,
-		       (SELECT COUNT(*) FROM buecher_exemplare e
-		        WHERE e.titel_id = r.titel_id
-		          AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
-		          AND NOT EXISTS (SELECT 1 FROM ausleihen a
-		                          WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		       ) AS verfuegbar,
+		       v.verfuegbar,
 		       r.erledigt_notiz, r.erledigt_am
 		FROM klassensatz_reservierungen r
 		JOIN buecher_titel t ON r.titel_id = t.id
 		LEFT JOIN benutzer b ON r.angefordert_von = b.id
+		CROSS JOIN LATERAL (
+		       SELECT COUNT(*) AS verfuegbar FROM buecher_exemplare e
+		       WHERE e.titel_id = r.titel_id
+		         AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
+		         AND NOT EXISTS (SELECT 1 FROM ausleihen a
+		                         WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
+		) v
 		ORDER BY r.erledigt ASC,
 		         CASE WHEN r.erledigt THEN r.erstellt_am END DESC,
 		         CASE WHEN NOT r.erledigt THEN r.erstellt_am END ASC
