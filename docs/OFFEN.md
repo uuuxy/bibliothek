@@ -464,11 +464,6 @@ Leserakte eines Kollegen; die Littera-Übernahme setzt sie statt einer Zeile im 
 Gruppe — sie tragen das Geschlecht, das das Programm nicht speichert, und die Art steht schon an
 jeder Person. Gemessen am 29.09.2026: `lesergruppen` leer, kein Kollege mit Klasse.
 
-**Offen — Einführungsphase:** Die Versetzung rückt Klassenleitungen von 6 nach 7 und von 10 in
-die Oberstufe nicht mehr hoch. Zuordnungen der Einführungsphase (`ET1`) fasst sie gar nicht an,
-weil der Name keinen Jahrgang trägt; sie gelten danach für den nächsten Jahrgang. Sollen sie bei
-der Versetzung entfallen?
-
 Später, mit eigener Frage: Statistik nach Zweigen. Sie braucht den Zweig an der Ausleihe ohne
 Namen, weil eine Ausleihe der Bücherei seit dem 29.09.2026 den Namen nach einem Tag verliert.
 
@@ -704,14 +699,16 @@ auf Daten. Vorschlag: „… kommt in den Papierkorb. Von dort lässt es sich wi
 180 Tagen wird es anonymisiert (Kollegium: gelöscht), von Hand im Papierkorb sofort." — vorher
 die M3-Seite zu Dialogen lesen.
 
-### 5.39 Die Selbstprüfung zählt die Tutorien der Einführungsphase nicht als Klasse
+### 5.39 Die Selbstprüfung erwartet auch in der Oberstufe eine Klassenleitung
 
-Gefunden am 30.09.2026, am Code gelesen, nicht nachgestellt. Die Prüfung „Klassen-Zuordnung"
-der Betriebsbereitschaft (`KlassenBestand` in `repository/betriebszustand.go`) nimmt als Klassen
-der Schüler nur Namen, die mit einer Ziffer beginnen (`klasse ~ '^\d'`). Die Tutorien der
-Einführungsphase (ET1–ET3) fallen damit heraus: Eine Zuordnung für ET1 erschiene als verwaist,
-eine ET-Klasse ohne Klassenleitung würde nicht gemeldet. Sichtbar als Warnung, keine Wirkung auf
-Daten.
+Die Oberstufe hat keine Klassenleitung, weder in der Einführungsphase (ET1–ET3) noch in 12T und
+13T (Auskunft vom 30.09.2026). Am Code gelesen, nicht nachgestellt: Die Prüfung
+„Klassen-Zuordnung" der Betriebsbereitschaft (`KlassenBestand` in `repository/betriebszustand.go`,
+`pruefeKlassenDrift` in `api/betriebsbereitschaft.go`) nimmt als Klassen der Schüler alle Namen,
+die mit einer Ziffer beginnen (`klasse ~ '^\d'`). Mit den Klassen der Schule meldet sie deshalb
+12T1–12T5 und 13T1–13T3 dauerhaft als „Klassen ohne Lehrkraft-Zuordnung". Die Tutorien der
+Einführungsphase fallen dagegen ganz heraus; eine Buchliste für ET1 erschiene als „Bücherliste für
+unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
 
 ---
 
