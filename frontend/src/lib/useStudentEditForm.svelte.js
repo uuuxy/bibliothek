@@ -1,5 +1,5 @@
 import { apiClient } from './apiFetch.js';
-import { istKollegium } from './leserArt.js';
+import { istKollegium, artMitKonto } from './leserArt.js';
 
 /**
  * Custom hook to manage the state and submission of the student edit form.
@@ -44,7 +44,7 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 		eltern_email: '',
 		// Die SCHUL-Adresse (benutzer.email), nicht die der Eltern. Sie steht nicht an der
 		// Leserzeile, sondern am Konto — die Akte zeigt und trägt sie trotzdem, weil sie
-		// bei Lehrkraft und LiV die Kennung ist, an der die Anmeldung die Person erkennt.
+		// die Kennung ist, an der die Anmeldung die Person erkennt (wo ein Zugang zur Art gehört).
 		email: ''
 	});
 
@@ -112,7 +112,15 @@ export function useStudentEditForm({ getStudent, onSave, showSnackbar }) {
 		// Die Schul-Adresse geht NUR beim Kollegium mit. Bei einem Schüler wäre schon das
 		// Mitschicken eines leeren Strings eine Aussage — der Server weist „E-Mail am
 		// Schüler" mit 400 ab, und zwar zu Recht (pruefeSchulEmail).
-		if (kollege) return { ...ausweis, email: formData.email };
+		//
+		// Bei Praktikum und Fachbereich ohne Konto geht sie leer mit: Wer die Art gerade von
+		// Lehrkraft auf Praktikum stellt, hat vielleicht schon eine Adresse getippt; das Feld
+		// ist dann verschlossen, der Wert aber noch gebunden (artMitKonto, 30.09.2026).
+		if (kollege)
+			return {
+				...ausweis,
+				email: artMitKonto(formData.art) || kontoVorhanden ? formData.email : ''
+			};
 		// Das Abgangsjahr geht NUR mit, wenn jemand es angefasst hat.
 		//
 		// Der Server leitet es aus der Klasse ab, sobald eine Klasse ohne Abgangsjahr

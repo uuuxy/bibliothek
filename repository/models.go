@@ -44,7 +44,7 @@ type User struct {
 type Student struct {
 	// ID ist der eindeutige Primärschlüssel (UUID) des Lesers.
 	ID string `json:"id"`
-	// Art ist Schüler, Lehrkraft oder LiV (Migration 123). Sie entscheidet keine Rechte,
+	// Art: chk_leser_art (Migration 123 und 153). Sie entscheidet keine Rechte,
 	// sondern nur, wen der LUSD-Abgleich und der Löschjob erfassen — und was die Theke
 	// am Treffer anzeigt. Leer, wo die Abfrage die Sicht `schueler` liest: dort ist
 	// jede Zeile ein Schüler.

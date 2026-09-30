@@ -139,17 +139,18 @@ func TestAusleiheOhneEntleiherWirdGemeldet(t *testing.T) {
 	}
 }
 
-// TestAusleihenDerSonstigenKommenAlsDauerleihe: Die Bücher, die ein Fachbereich in Littera
+// TestAusleihenDesFachbereichsKommenAlsDauerleihe: Die Bücher, die ein Fachbereich in Littera
 // auf sein Sammelkonto gebucht hat, stehen in den Fachräumen. Ihre Ausleihen kommen mit —
-// als Dauerleihe wie bei einer Lehrkraft (ist_handapparat), also ohne Mahnung. Ein Schüler
-// „Im Ausland" daneben behält die gewöhnliche Ausleihe.
-func TestAusleihenDerSonstigenKommenAlsDauerleihe(t *testing.T) {
+// als Dauerleihe wie bei einer Lehrkraft (ist_handapparat), also ohne Mahnung, und an der
+// Leserzeile, obwohl der Fachbereich kein Konto hat. Ein Schüler „Im Ausland" daneben behält
+// die gewöhnliche Ausleihe.
+func TestAusleihenDesFachbereichsKommenAlsDauerleihe(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
 	s, _ := testSchreiber(t, pool, nil)
 
 	ab := bestand(titel("1", "Ein Buch", ""), titel("2", "Noch eins", ""))
-	ab.Leser = []Leser{leser("FB", "301", "FB Bio", ArtSonstige), leser("S1", "302", "AUS", ArtSchueler)}
+	ab.Leser = []Leser{leser("FB", "301", "FB Bio", ArtFachbereich), leser("S1", "302", "AUS", ArtSchueler)}
 	ab.Ausleihen = []Ausleihe{ausleihe("A1", "E1", "FB", 0), ausleihe("A2", "E2", "S1", 0)}
 	bestandBericht, personenBericht := ausleihWelt(t, s, ab)
 

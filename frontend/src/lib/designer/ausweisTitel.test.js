@@ -48,6 +48,16 @@ describe('Aufschrift des Ausweises', () => {
 		expect(container.textContent).toContain('Lehrerausweis');
 	});
 
+	// Die Sonderkonten (Migration 153) sind keine Lehrkräfte: Ihre Karte heißt „Leserausweis",
+	// das Wort, das Littera für jeden Ausweis führt (30.09.2026).
+	it('nennt den Ausweis eines Praktikums „Leserausweis"', () => {
+		const { container } = render(CardFace, {
+			props: { side: 'front', student: leser('praktikum'), barcodeType: 'code39' }
+		});
+		expect(container.textContent).toContain('Leserausweis');
+		expect(container.textContent).not.toContain('Lehrerausweis');
+	});
+
 	it('bleibt beim Schüler „Schülerausweis"', () => {
 		const { container } = render(CardFace, {
 			props: { side: 'front', student: leser('schueler'), barcodeType: 'code39' }

@@ -5,14 +5,19 @@
      Geburtsdatum (der LUSD-Import erkennt ihn nur daran wieder), ein Kollege hat beides
      nicht. Stünde die Frage am Ende, hätte man vorher Felder ausgefüllt, die verschwinden.
 
-     Die Arten sind dieselben drei wie in der Datenbank (chk_leser_art, Migration 123). -->
+     Die Arten sind dieselben sieben wie in der Datenbank (chk_leser_art, Migration 153).
+     Bis zum 30.09.2026 waren es drei, als Auswahlknöpfe nebeneinander. Mit den Sonderkonten
+     (Praktikum, Sekretariat, U-plus, Fachbereich) ist es eine Auswahlliste — Material 3,
+     Radio button, Guidelines: „Use radio buttons when there are five or fewer options."
+     und „Consider using a drop-down menu instead of radio buttons when space is
+     constrained". Das Bauteil ist ui/Select, wie die Klasse eine Zeile tiefer. -->
 <script>
-	import Radio from '../ui/Radio.svelte';
-	import { leserArtText } from '../../leserArt.js';
+	import Select from '../ui/Select.svelte';
+	import { LESER_ARTEN, leserArtText } from '../../leserArt.js';
 
 	/**
-	 * Alle drei Arten stehen IMMER da — die Maske hat für jeden dieselbe Form (Absprache vom
-	 * 16.09.2026: „bitte nicht verkomplizieren"). Was nicht gewählt werden darf, steht in
+	 * Alle Arten stehen IMMER in der Liste — die Maske hat für jeden dieselbe Form (Absprache
+	 * vom 16.09.2026: „bitte nicht verkomplizieren"). Was nicht gewählt werden darf, steht in
 	 * `gesperrt` und ist abgeschaltet statt versteckt.
 	 *
 	 * Beim ANLEGEN ist nichts gesperrt. Beim ÄNDERN einer bestehenden Akte ist es die
@@ -20,26 +25,38 @@
 	 * bleibt Schüler („ein Schüler kann nie ein Lehrer werden!"), ein Kollege wird keiner.
 	 * Dieselbe Grenze hält der Server (pruefeUndSetzeArt) — hier steht sie, damit niemand
 	 * erst auf Speichern drücken muss, um es zu erfahren.
-	 * @type {{ art: string, disabled?: boolean, arten?: string[], gesperrt?: string[] }}
+	 * `id` wie bei ui/Feld: Die Akte gibt eine feste (ihre Felder heißen alle fest), der
+	 * Anlegen-Dialog nicht — dann vergibt Svelte eine.
+	 * @type {{ art: string, disabled?: boolean, gesperrt?: string[], hint?: string, class?: string, id?: string }}
 	 */
 	let {
 		art = $bindable(),
 		disabled = false,
-		arten = ['schueler', 'lehrkraft', 'liv'],
-		gesperrt = []
+		gesperrt = [],
+		hint = '',
+		class: className = '',
+		id = undefined
 	} = $props();
+
+	// Eine eigene Kennung je Einbau: Akte und Anlegen-Dialog dürfen sich keine teilen.
+	const eigen = $props.id();
+	const kennung = $derived(id ?? `${eigen}-art`);
+
+	const optionen = $derived(
+		LESER_ARTEN.map((wert) => ({
+			value: wert,
+			label: leserArtText(wert),
+			disabled: gesperrt.includes(wert)
+		}))
+	);
 </script>
 
-<fieldset class="border-0 p-0 m-0">
-	<legend class="text-xs font-medium text-on-surface-variant mb-2">Art des Lesers</legend>
-	<div class="flex flex-wrap items-center gap-6">
-		{#each arten as wert (wert)}
-			<Radio
-				bind:group={art}
-				value={wert}
-				label={leserArtText(wert)}
-				disabled={disabled || gesperrt.includes(wert)}
-			/>
-		{/each}
-	</div>
-</fieldset>
+<!-- Beschriftung, Feld und Hinweis wie ui/Feld: drei Zeilen im Subgrid, damit die Nachbarn
+     in einem Raster fluchten. -->
+<div class="row-span-3 grid grid-rows-subgrid gap-y-1.5 {className}">
+	<label for={kennung} class="text-sm font-medium text-on-surface-variant">Art des Lesers</label>
+	<Select id={kennung} bind:value={art} options={optionen} {disabled} />
+	{#if hint}
+		<span class="text-xs text-on-surface-variant">{hint}</span>
+	{/if}
+</div>

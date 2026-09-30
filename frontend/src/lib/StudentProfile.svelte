@@ -18,7 +18,6 @@
 	import { Info } from '@lucide/svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { schuelerRechte, darfAuskunftUeber } from './schuelerRechte.js';
-	import { istKollegium } from './leserArt.js';
 	import { druckeAusweis } from './ausweisDruck.js';
 	/**
 	 * @typedef {Object} Props
@@ -44,11 +43,6 @@
 	const st = useStudentProfile();
 	// Aktionen folgen dem Recht ihrer Route, nicht der Rolle — Zuordnung in schuelerRechte.js.
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
-
-	// Die Akte zeigt seit dem 16.09.2026 jeden Leser. Was einem Kollegen nicht gehört,
-	// bleibt weg — auch die Gefahrenzone: DELETE /api/schueler geht über die Sicht
-	// `schueler` und liefe bei ihm in ein 404.
-	const kollege = $derived(istKollegium(st.profile));
 
 	// Der Reiter folgt der Absicht, mit der das Profil geöffnet wurde — nicht der
 	// Route: Am Kiosk und aus Mahnwesen/Abgängern heraus geht es um Ausleihen, in der
@@ -170,7 +164,10 @@
 
 						<!-- Gefahrenzone am unteren Ende des Stammdaten-Reiters, seit 16.09.2026 auch beim Kollegium -->
 						{#if rechte.loeschen}
-							<StudentDangerZone {kollege} onDelete={() => (st.showDeleteConfirm = true)} />
+							<StudentDangerZone
+								profile={st.profile}
+								onDelete={() => (st.showDeleteConfirm = true)}
+							/>
 						{/if}
 					{/if}
 				</div>

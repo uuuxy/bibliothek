@@ -7,7 +7,7 @@ import (
 )
 
 // dsgvoVerarbeitungsangabenKollegium sind die Pflichtangaben nach Art. 15 Abs. 1 DSGVO für
-// eine Lehrkraft oder LiV. Grundlage ist das Verzeichnis von Verarbeitungstätigkeiten
+// jeden Leser, der kein Schüler ist. Grundlage ist das Verzeichnis von Verarbeitungstätigkeiten
 // (docs/datenschutz/vvt_entwurf.md, Tätigkeit 3: Benutzerkonten und Protokollierung des
 // Personals). Die Angaben für Schüler (Lernmittelfreiheit, Eltern, LUSD, Abgang und Karenz)
 // treffen auf einen Kollegen nicht zu; bis zum 24.09.2026 gab es seine Auskunft gar nicht

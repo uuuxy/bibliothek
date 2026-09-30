@@ -119,6 +119,7 @@ func TestTrockenlauf(t *testing.T) {
 		Leser: []littera.Leser{
 			{Art: littera.ArtSchueler},
 			{Art: littera.ArtLehrkraft},
+			{Art: littera.ArtFachbereich},
 		},
 		Ausleihen: []littera.Ausleihe{{Frist: time.Now()}},
 	}
@@ -129,7 +130,8 @@ func TestTrockenlauf(t *testing.T) {
 	if !strings.Contains(out, "TROCKENLAUF: es wird nichts geschrieben") {
 		t.Errorf("Trockenlauf Meldung fehlt")
 	}
-	if !strings.Contains(out, "Leser: 1 Schüler, 0 abgegangen; Kollegium: 1 Lehrkräfte, 0 LiV, 0 sonstige; ohne Zuordnung: 0") {
+	if !strings.Contains(out, "Leser: 1 Schüler, 0 abgegangen; Kollegium: 1 Lehrkräfte, 0 LiV, 0 Praktikum, "+
+		"0 Sekretariat, 0 U-plus, 1 Fachbereich; ohne Zuordnung: 0") {
 		t.Errorf("Leser Statistik fehlt oder falsch, log: %s", out)
 	}
 }

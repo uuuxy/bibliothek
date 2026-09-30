@@ -16,12 +16,12 @@ import (
 type PersonenBericht struct {
 	QuellLeser    int
 	Schueler      int
-	Lehrkraefte   int // jedes Konto im Kollegium: Lehrkräfte, LiV und ArtSonstige
+	Kollegium     int // jede Leserzeile im Kollegium, mit Konto oder ohne (ArtMitKonto)
 	Uebersprungen int // an einem Fehler gescheiterte
 
-	IstSchueler    int
-	IstLehrkraefte int
-	AbgleichOK     bool
+	IstSchueler  int
+	IstKollegium int
+	AbgleichOK   bool
 
 	// EntleiherIDs bildet Littera-Leser → Ziel ab. Der Ausleihteil braucht sie.
 	EntleiherIDs map[string]Entleiher
@@ -80,6 +80,14 @@ const sqlBenutzerEinfuegen = `
 const sqlLeserzeileNachtragen = `
 	UPDATE leser SET barcode_id = $1, art = $2 WHERE id = $3`
 
+// Praktikum und Fachbereich bekommen kein Konto (repository.ArtMitKonto, Entscheidung vom
+// 30.09.2026): nur die Leserzeile, an der ihre Ausleihen hängen. Keine Platzhalter-Adresse —
+// es gibt nichts, womit sie sich anmelden sollten.
+const sqlLeserOhneKontoEinfuegen = `
+	INSERT INTO leser (barcode_id, vorname, nachname, art, erstellt_am)
+	VALUES ($1,$2,$3,$4,$5)
+	RETURNING id`
+
 // SchreibePersonen überträgt jeden Leser: Schüler (auch „Abgegangen" und „Im Ausland") in
 // die Schülerdatei, alle anderen ins Kollegium.
 //
@@ -96,7 +104,7 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 		return bericht, fmt.Errorf("Leser ohne Zuordnung, es wurde keine Person geschrieben: %v", offen)
 	}
 
-	vorherS, vorherL, err := s.zaehlePersonen(ctx)
+	vorherS, vorherK, err := s.zaehlePersonen(ctx)
 	if err != nil {
 		return bericht, err
 	}
@@ -115,25 +123,27 @@ func (s *Schreiber) SchreibePersonen(ctx context.Context, ab *Altbestand) (Perso
 		return bericht, err
 	}
 
-	nachherS, nachherL, err := s.zaehlePersonen(ctx)
+	nachherS, nachherK, err := s.zaehlePersonen(ctx)
 	if err != nil {
 		return bericht, fmt.Errorf("der Abgleich nach der Übernahme schlug fehl: %w", err)
 	}
-	bericht.IstSchueler, bericht.IstLehrkraefte = nachherS-vorherS, nachherL-vorherL
+	bericht.IstSchueler, bericht.IstKollegium = nachherS-vorherS, nachherK-vorherK
 	bericht.AbgleichOK = bericht.IstSchueler == bericht.Schueler &&
-		bericht.IstLehrkraefte == bericht.Lehrkraefte
+		bericht.IstKollegium == bericht.Kollegium
 	return bericht, nil
 }
 
-func (s *Schreiber) zaehlePersonen(ctx context.Context) (schueler, lehrkraefte int, err error) {
+// zaehlePersonen zählt die Leserzeilen, nicht die Konten: Praktikum und Fachbereich kommen
+// ohne Konto an (bis zum 30.09.2026 zählte hier benutzer mit der Rolle kollegium).
+func (s *Schreiber) zaehlePersonen(ctx context.Context) (schueler, kollegium int, err error) {
 	err = s.pool.QueryRow(ctx, `
-		SELECT (SELECT count(*) FROM schueler),
-		       (SELECT count(*) FROM benutzer WHERE rolle = 'kollegium')
-	`).Scan(&schueler, &lehrkraefte)
+		SELECT (SELECT count(*) FROM leser WHERE art = 'schueler'),
+		       (SELECT count(*) FROM leser WHERE art <> 'schueler')
+	`).Scan(&schueler, &kollegium)
 	if err != nil {
 		return 0, 0, fmt.Errorf("konnte die Personen nicht zählen: %w", err)
 	}
-	return schueler, lehrkraefte, nil
+	return schueler, kollegium, nil
 }
 
 type personenlauf struct {
@@ -244,23 +254,24 @@ func (p *personenlauf) einePerson(ctx context.Context, tx pgx.Tx, l Leser) error
 	if neu.IstSchueler {
 		p.bericht.Schueler++
 	} else {
-		p.bericht.Lehrkraefte++
-	}
-	if l.Art == ArtSonstige {
-		// Die Gruppe hat im Ziel noch kein Feld (weder leser noch benutzer), bis es
-		// Lesergruppen gibt (docs/OFFEN.md 5.18) — hier bleibt sie je Konto nachlesbar.
-		p.s.prot.Warnung(l.ID, l.Lesernummer, "Littera-Gruppe „"+l.Gruppe+"“ ("+l.Klasse+
-			") – ins Kollegium übernommen, Ausleihen als Dauerleihe; die Gruppe steht nur hier")
+		p.bericht.Kollegium++
 	}
 	return nil
 }
 
+// schreibePerson legt die Person nach ihrer Art an: Schüler in die Schülerdatei, im Kollegium
+// mit Konto, wo eines dazugehört (repository.ArtMitKonto), sonst nur die Leserzeile. Die
+// Littera-Gruppe steht seit dem 30.09.2026 als Art an der Leserzeile (ZielArt) und nicht mehr
+// nur im Protokoll.
 func (p *personenlauf) schreibePerson(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
-	switch l.Art {
-	case ArtLehrkraft, ArtLiV, ArtSonstige:
-		return p.schreibeLehrkraft(ctx, tx, l)
-	case ArtSchueler, ArtAbgegangen:
+	ziel := l.Art.ZielArt()
+	switch {
+	case ziel == "schueler":
 		return p.schreibeSchueler(ctx, tx, l)
+	case repository.ArtMitKonto(ziel):
+		return p.schreibeLehrkraft(ctx, tx, l)
+	case ziel != "":
+		return p.schreibeOhneKonto(ctx, tx, l)
 	}
 	// SchreibePersonen lässt keinen Leser ohne Art herein (OhneZuordnung); kommt doch einer
 	// an, bricht der Lauf ab, statt ihn irgendwo einzusortieren.
@@ -321,10 +332,7 @@ func (p *personenlauf) abgangsjahr(l Leser) (jahr int, rueckfall bool) {
 }
 
 func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
-	art := "lehrkraft"
-	if l.Art == ArtLiV {
-		art = "liv"
-	}
+	art := l.Art.ZielArt()
 	var leserID string
 	err := tx.QueryRow(ctx, sqlBenutzerEinfuegen,
 		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
@@ -345,6 +353,23 @@ func (p *personenlauf) schreibeLehrkraft(ctx context.Context, tx pgx.Tx, l Leser
 	if tag.RowsAffected() == 0 {
 		return Entleiher{}, fmt.Errorf("bei der Lehrkraft %s %s: die Leserzeile fehlt",
 			l.Vorname, l.Nachname)
+	}
+	return Entleiher{LeserID: leserID}, nil
+}
+
+// schreibeOhneKonto legt Praktikum und Fachbereich als Leserzeile ohne Konto an. Ausweis und
+// Name wie im Kollegium; kein Geburtsdatum, keine Klasse (chk_leser_schueler_pflichtfelder
+// gilt nur für Schüler).
+func (p *personenlauf) schreibeOhneKonto(ctx context.Context, tx pgx.Tx, l Leser) (Entleiher, error) {
+	var leserID string
+	err := tx.QueryRow(ctx, sqlLeserOhneKontoEinfuegen,
+		uebernahme.Nullbar(p.ausweis(l)),
+		p.kuerze(l, "vorname", l.Vorname, uebernahme.MaxMedientyp),
+		p.kuerze(l, "nachname", l.Nachname, uebernahme.MaxMedientyp),
+		l.Art.ZielArt(), p.s.opt.Jetzt,
+	).Scan(&leserID)
+	if err != nil {
+		return Entleiher{}, fmt.Errorf("beim Konto %s %s: %w", l.Vorname, l.Nachname, err)
 	}
 	return Entleiher{LeserID: leserID}, nil
 }

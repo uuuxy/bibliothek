@@ -14,40 +14,55 @@ func leser(id, nummer, klasse string, art LeserArt) Leser {
 		Klasse: klasse, Art: art}
 }
 
-// TestSonstigeKommenInsKollegium: Praktikanten, Sekretariat, U-plus und die Sammelkonten der
-// Fachbereiche sind keine Schüler, aber Entleiher. Bis zum 28.09.2026 ließ der Lauf sie aus —
-// in der Sicherung von 2010 42 Konten, und mit ihnen 341 Ausleihen, deren Bücher danach als
-// verfügbar gegolten hätten. Jetzt kommen sie ins Kollegium (nicht gemahnt, Anmeldung über
-// die Platzhalter-Adresse gesperrt), und ihre Littera-Gruppe steht im Protokoll.
-func TestSonstigeKommenInsKollegium(t *testing.T) {
+// TestSonderkontenKommenMitIhrerArt: Praktikanten, Sekretariat, U-plus und die Sammelkonten
+// der Fachbereiche sind keine Schüler, aber Entleiher. Bis zum 28.09.2026 ließ der Lauf sie
+// aus — in der Sicherung von 2010 42 Konten, und mit ihnen 341 Ausleihen, deren Bücher danach
+// als verfügbar gegolten hätten. Bis zum 30.09.2026 kamen sie als „lehrkraft" an, und ihre
+// Littera-Gruppe stand nur im Protokoll. Jetzt trägt die Leserzeile die Art (Migration 153);
+// Sekretariat und U-plus bekommen ein Konto mit Platzhalter-Adresse wie eine Lehrkraft,
+// Praktikum und Fachbereich keins (repository.ArtMitKonto).
+func TestSonderkontenKommenMitIhrerArt(t *testing.T) {
 	pool := pgTestPool(t)
 	leereAlles(t, pool)
 	s, protokoll := testSchreiber(t, pool, nil)
 
-	fachbereich := leser("3", "103", "FB Bio", ArtSonstige)
-	fachbereich.Gruppe = "Fachbereich Biologie"
 	ab := &Altbestand{Leser: []Leser{
 		leser("1", "101", "07H1", ArtSchueler),
 		leser("2", "102", "", ArtLehrkraft),
-		fachbereich,
+		leser("3", "103", "FB Bio", ArtFachbereich),
+		leser("4", "104", "Praktikant", ArtPraktikum),
 		leser("5", "105", "Ab", ArtAbgegangen),
+		leser("6", "106", "Sekr.", ArtSekretariat),
+		leser("7", "107", "U+", ArtUPlus),
 	}}
 
 	bericht, err := s.SchreibePersonen(context.Background(), ab)
 	if err != nil {
 		t.Fatalf("SchreibePersonen: %v", err)
 	}
-	if bericht.Schueler != 2 || bericht.Lehrkraefte != 2 || bericht.Uebersprungen != 0 || !bericht.AbgleichOK {
-		t.Errorf("2 Schüler / 2 im Kollegium / 0 ausgelassen erwartet, gemeldet: %+v", bericht)
+	if bericht.Schueler != 2 || bericht.Kollegium != 5 || bericht.Uebersprungen != 0 || !bericht.AbgleichOK {
+		t.Errorf("2 Schüler / 5 im Kollegium / 0 ausgelassen erwartet, gemeldet: %+v", bericht)
 	}
-	if n := zaehle(t, pool, `SELECT count(*) FROM leser l JOIN benutzer b ON b.leser_id = l.id
-		WHERE l.barcode_id = '103' AND l.art = 'lehrkraft' AND b.rolle = 'kollegium'
-		  AND b.email LIKE '%.invalid'`); n != 1 {
-		t.Errorf("das Fachbereichskonto gehört ins Kollegium, mit Platzhalter-Adresse; gefunden: %d", n)
+	for ausweis, soll := range map[string]struct {
+		art   string
+		konto int
+	}{
+		"102": {"lehrkraft", 1}, "103": {"fachbereich", 0}, "104": {"praktikum", 0},
+		"106": {"sekretariat", 1}, "107": {"uplus", 1},
+	} {
+		if n := zaehle(t, pool, `SELECT count(*) FROM leser WHERE barcode_id = $1 AND art = $2`,
+			ausweis, soll.art); n != 1 {
+			t.Errorf("Ausweis %s: eine Leserzeile mit der Art %q erwartet, gefunden: %d", ausweis, soll.art, n)
+		}
+		if n := zaehle(t, pool, `SELECT count(*) FROM benutzer b JOIN leser l ON l.id = b.leser_id
+			WHERE l.barcode_id = $1 AND b.rolle = 'kollegium' AND b.email LIKE '%.invalid'`,
+			ausweis); n != soll.konto {
+			t.Errorf("Ausweis %s (%s): %d Konten mit Platzhalter-Adresse erwartet, gefunden: %d",
+				ausweis, soll.art, soll.konto, n)
+		}
 	}
-	text := protokoll()
-	if !strings.Contains(text, "littera_id=3") || !strings.Contains(text, "Littera-Gruppe „Fachbereich Biologie“") {
-		t.Errorf("die Littera-Gruppe des Kontos muss im Protokoll stehen:\n%s", text)
+	if text := protokoll(); strings.Contains(text, "Littera-Gruppe") {
+		t.Errorf("die Gruppe steht an der Leserzeile, nicht mehr im Protokoll:\n%s", text)
 	}
 }
 
@@ -93,7 +108,7 @@ func TestLehrkraftUndLiVBekommenIhrePersonenart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("SchreibePersonen: %v", err)
 	}
-	if bericht.Lehrkraefte != 2 || !bericht.AbgleichOK {
+	if bericht.Kollegium != 2 || !bericht.AbgleichOK {
 		t.Fatalf("beide gehören ins Kollegium, gemeldet: %+v", bericht)
 	}
 	// Ausweis und Art stehen seit Migration 125 an der Leserzeile des Kontos, nicht am Konto.

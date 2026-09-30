@@ -39,7 +39,7 @@
 	import Abschnitt from '../ui/Abschnitt.svelte';
 	import LeserArtWahl from './LeserArtWahl.svelte';
 	import LeserKontaktFelder from './LeserKontaktFelder.svelte';
-	import { istKollegium } from '../../leserArt.js';
+	import { istKollegium, LESER_ARTEN } from '../../leserArt.js';
 
 	/**
 	 * `formData` ist der $state-Proxy aus useStudentEditForm und wird hier direkt an den
@@ -64,7 +64,9 @@
 
 	// Die Grenze verläuft in BEIDE Richtungen: Wer Schüler ist, kann nur Schüler bleiben;
 	// wer keiner ist, wird keiner. Gesperrt ist deshalb immer die jeweils andere Seite.
-	const gesperrteArten = $derived(kollege ? ['schueler'] : ['lehrkraft', 'liv']);
+	const gesperrteArten = $derived(
+		kollege ? ['schueler'] : LESER_ARTEN.filter((a) => a !== 'schueler')
+	);
 
 	// Der Stern markiert, was der Server verlangt — und er hängt an der ART, wie die
 	// Pflicht selbst (chk_leser_schueler_pflichtfelder). Ohne ihn erfährt man erst beim
@@ -78,14 +80,17 @@
 
 	<!-- Genau die Angabe, die in der Akte nirgends stand („hier steht nirgends ob jemand
 	     ein Schüler, LiV, oder lehrer ist", 16.09.2026) — bei Littera steht sie
-	     ebenfalls in den Stammdaten. -->
-	<div class="mb-4">
-		<LeserArtWahl bind:art={formData.art} gesperrt={gesperrteArten} />
-		<p class="mt-1 text-xs text-on-surface-variant">
-			{kollege
-				? 'Zwischen Lehrkraft und LiV lässt sich wechseln. Ein Schüler kommt aus der LUSD — dorthin führt kein Weg.'
+	     ebenfalls in den Stammdaten. Seit dem 30.09.2026 eine Auswahlliste (sieben Arten),
+	     im selben Raster wie die Felder darunter und so breit wie eines davon. -->
+	<div class="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+		<LeserArtWahl
+			id="art"
+			bind:art={formData.art}
+			gesperrt={gesperrteArten}
+			hint={kollege
+				? 'Innerhalb des Kollegiums wechselbar. Ein Schüler kommt aus der LUSD — dorthin führt kein Weg.'
 				: 'Ein Schüler kommt aus der LUSD und bleibt Schüler.'}
-		</p>
+		/>
 	</div>
 
 	<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

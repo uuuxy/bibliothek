@@ -356,7 +356,7 @@ gegen die Tür klopft.
 | ----------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Mahnliste, Kontoauszug, Rechnung, Schadensfall, LMF-Plan | `pdf/` (gofpdf/maroto)  | Der **Druck** der Mahnung ist der Verwaltungsakt: nur hier steigt die Mahnstufe                       |
 | Bescheid (Landes-Lernmittel)              | `api/bescheid_pdf.go`                  | Nennt das Konto; Barzahlung ist laut Erlass nicht der Weg. Eigene Nummernfolge                        |
-| Etiketten und Ausweise                    | `api/label_pdf.go`, `api/barcode_*.go` | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"); Gültigkeit nur beim Schülerausweis |
+| Etiketten und Ausweise                    | `api/label_pdf.go`, `api/barcode_*.go` | Aufschrift nach **Art** des Lesers („Schülerausweis"/„Lehrerausweis"/„Leserausweis"); Gültigkeit nur beim Schülerausweis |
 | Zugangs-/Abgangsbuch                      | `api/bestandsbuch.go`, `api/abgangsbuch_*.go` | Getrennt nach Land und Träger; sagt ausdrücklich, was es **nicht** weiß (Aussonderungen ohne Abgangsdatum, Bücher „ohne Zuordnung") |
 | DSGVO-Auskunft                            | `api/dsgvo_pdf.go`                     | Auskunftsrecht als Dokument                                                                           |
 | Barcodebogen für den Händler              | `api/bestellbestaetigung_etiketten.go` | Für Händler, die selbst etikettieren                                                                  |

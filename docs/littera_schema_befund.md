@@ -87,7 +87,10 @@ Die naheliegende Quelle `LeserSchueler` (705 Zeilen mit `Jahrgang`, `Abgang`,
 | `Lehrer`, `Lehrerin` | `ArtLehrkraft` | `benutzer` mit Rolle `kollegium` (bis Migration 069: `lehrer`) |
 | `Referendar`, `Referendarin` | `ArtLiV` | Kollegium, Personenart `liv` |
 | `Abgegangen` | `ArtAbgegangen` | `schueler` mit `ist_abgaenger` |
-| `Praktikant`, `Praktikantin`, `Sekretärin`, `U-plus`, `Fachbereich …` | `ArtSonstige` | Kollegium, Personenart `lehrkraft`; Ausleihen als Dauerleihe |
+| `Praktikant`, `Praktikantin` | `ArtPraktikum` | Kollegium, Art `praktikum`, ohne Konto; Ausleihen als Dauerleihe |
+| `Sekretärin` | `ArtSekretariat` | Kollegium, Art `sekretariat`, mit Konto; Ausleihen als Dauerleihe |
+| `U-plus` | `ArtUPlus` | Kollegium, Art `uplus`, mit Konto; Ausleihen als Dauerleihe |
+| `Fachbereich …` | `ArtFachbereich` | Kollegium, Art `fachbereich`, ohne Konto; Ausleihen als Dauerleihe |
 | alles andere (`Undefinierte Untergruppe`, `IMPORT`) | `ArtUnbekannt` | **Lauf hält an, bevor er schreibt** |
 
 `Sekundarstufe II` ist der Fall, den man leicht übersieht: eine eigene Untergruppe,
@@ -95,11 +98,13 @@ aber die Oberstufenklassen (11T1, 12T3, 13T5) sind selbstverständlich Schüler.
 `Im Ausland` kommt mit der Littera-Klasse `AUS`; die richtige Klasse trägt der LUSD-Import
 nach. Aus `AUS` lässt sich kein Abgangsjahr ablesen, es gilt das Jahr, das die Anwendung für
 jede Klasse ohne Jahrgang einsetzt (`repository.AbgangsjahrOhneKlasse`), mit einer Warnung im
-Protokoll. `U-plus` sind Vertretungskräfte. Die Littera-Gruppe eines Kollegium-Kontos steht
-im Protokoll des Laufs, bis es Lesergruppen gibt ([OFFEN.md](OFFEN.md) 5.18).
+Protokoll. `U-plus` sind Vertretungskräfte. Die Littera-Gruppe steht seit Migration 153 als
+Art an der Leserzeile; bis dahin kamen die Sonderkonten als `lehrkraft` an, und ihre Gruppe
+stand nur im Protokoll des Laufs.
 
 Gemessen am Altbestand: **1.734 Schüler (davon 14 im Ausland) · 158 Lehrkräfte · 71
-abgegangen · 23 sonstige · 5 ohne Zuordnung** — und jeder Schüler hat eine Klasse
+abgegangen · 23 Sonderkonten (9 Praktikum, 9 Fachbereich, 3 U-plus, 2 Sekretariat) · 5 ohne
+Zuordnung** — und jeder Schüler hat eine Klasse
 (`schueler.klasse` ist NOT NULL, ein Test sichert das ab). Eine Gruppe ohne Zuordnung wird
 **nicht** geraten und nicht ausgelassen: Ausgelassen fehlten ihre Ausleihen, und die Bücher
 stünden als verfügbar im Regal. Der Lauf nennt Gruppe, Personen- und Ausleihzahl und hält

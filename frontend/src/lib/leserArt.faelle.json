@@ -1,0 +1,54 @@
+{
+	"_zweck": "Geteilte Prüffälle: Die Arten eines Lesers stehen in der Datenbank (chk_leser_art, Migration 153), im Server (api/leser_art.go, repository.ArtMitKonto, dsgvoLeserart) und im Browser (leserArt.js). Der Go-Test (api/leser_art_pg_test.go) hält diese Datei gegen die Datenbank und den Server, der Vitest (leserArt.test.js) gegen den Browser. Reihenfolge = Reihenfolge der Auswahl „Art des Lesers“.",
+	"arten": [
+		{
+			"art": "schueler",
+			"text": "Schüler",
+			"kollegium": false,
+			"mitKonto": false,
+			"ausweis": "Schülerausweis"
+		},
+		{
+			"art": "lehrkraft",
+			"text": "Lehrkraft",
+			"kollegium": true,
+			"mitKonto": true,
+			"ausweis": "Lehrerausweis"
+		},
+		{
+			"art": "liv",
+			"text": "LiV",
+			"kollegium": true,
+			"mitKonto": true,
+			"ausweis": "Lehrerausweis"
+		},
+		{
+			"art": "praktikum",
+			"text": "Praktikum",
+			"kollegium": true,
+			"mitKonto": false,
+			"ausweis": "Leserausweis"
+		},
+		{
+			"art": "sekretariat",
+			"text": "Sekretariat",
+			"kollegium": true,
+			"mitKonto": true,
+			"ausweis": "Leserausweis"
+		},
+		{
+			"art": "uplus",
+			"text": "U-plus",
+			"kollegium": true,
+			"mitKonto": true,
+			"ausweis": "Leserausweis"
+		},
+		{
+			"art": "fachbereich",
+			"text": "Fachbereich",
+			"kollegium": true,
+			"mitKonto": false,
+			"ausweis": "Leserausweis"
+		}
+	]
+}

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/svelte';
+import { render, fireEvent, cleanup } from '@testing-library/svelte';
 import LeserEditFelder from './components/students/LeserEditFelder.svelte';
+import { LESER_ARTEN } from './leserArt.js';
 
 // EINE Maske für jeden Leser.
 //
@@ -33,6 +34,15 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 		email: ''
 	});
 
+	/** Die ids der verschlossenen Felder, sortiert. @param {string} art @returns {string[]} */
+	function verschlossen(art) {
+		const screen = render(LeserEditFelder, { formData: formular(art) });
+		return [...screen.container.querySelectorAll('input, [role="combobox"]')]
+			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
+			.map((e) => e.id)
+			.sort();
+	}
+
 	/** @param {string} art @returns {string[]} */
 	function felderVon(art) {
 		const screen = render(LeserEditFelder, { formData: formular(art) });
@@ -43,12 +53,13 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 	}
 
 	it('zeigt einem Kollegen genau dieselben Felder wie einem Schüler', () => {
-		expect(felderVon('lehrkraft')).toEqual(felderVon('schueler'));
-		expect(felderVon('liv')).toEqual(felderVon('schueler'));
+		for (const art of LESER_ARTEN) {
+			expect(felderVon(art), `Felder bei art=${art}`).toEqual(felderVon('schueler'));
+		}
 	});
 
 	it('nennt die Abschnitte für jeden gleich', () => {
-		for (const art of ['schueler', 'lehrkraft', 'liv']) {
+		for (const art of LESER_ARTEN) {
 			const text = render(LeserEditFelder, { formData: formular(art) }).container.textContent ?? '';
 			expect(text, `Abschnitte bei art=${art}`).toContain('Persönliche Daten');
 			expect(text).toContain('Schuldaten');
@@ -65,16 +76,25 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 	//                        „eltern@schule.de", auch in der Akte einer Lehrkraft.
 	// Verschlossen heisst hier disabled: sichtbar an derselben Stelle, aber nicht zu füllen.
 	it('verschliesst dem Kollegen Klasse, Abgangsjahr, LUSD-ID und die Eltern-Adresse — mehr nicht', () => {
-		const screen = render(LeserEditFelder, { formData: formular('lehrkraft') });
-		// Ohne die Radios: Die gesperrte Art prüft der Test darunter, und sie haben keine
-		// id — sie kämen hier als leerer Name mit und machten die Zusage unlesbar.
-		const zu = [
-			...screen.container.querySelectorAll('input:not([type="radio"]), [role="combobox"]')
-		]
-			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
-			.map((e) => e.id)
-			.sort();
-		expect(zu).toEqual(['abgangsjahr', 'eltern_email', 'klasse', 'lusd_id']);
+		expect(verschlossen('lehrkraft')).toEqual(['abgangsjahr', 'eltern_email', 'klasse', 'lusd_id']);
+	});
+
+	// Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal" (30.09.2026): Ihnen ist
+	// zusätzlich die Schul-Adresse verschlossen. Sekretariat und U-plus behalten sie wie eine
+	// Lehrkraft.
+	it('verschliesst Praktikum und Fachbereich auch die Schul-Adresse', () => {
+		for (const art of ['praktikum', 'fachbereich']) {
+			expect(verschlossen(art), `art=${art}`).toEqual([
+				'abgangsjahr',
+				'eltern_email',
+				'klasse',
+				'lusd_id',
+				'schul_email'
+			]);
+		}
+		for (const art of ['sekretariat', 'uplus']) {
+			expect(verschlossen(art), `art=${art}`).toEqual(verschlossen('lehrkraft'));
+		}
 	});
 
 	// Die Gegenrichtung: Dem Schüler ist genau EIN Feld verschlossen, die Schul-Adresse.
@@ -82,30 +102,33 @@ describe('Leser-Maske hat für jeden dieselbe Form', () => {
 	// keine E-Mail-Adresse" weist auch der Server ab (pruefeSchulEmail). Ein offenes Feld,
 	// das beim Speichern mit 400 zurückkommt, wäre die schlechtere Auskunft.
 	it('verschliesst dem Schüler nur die Schul-Adresse', () => {
-		const screen = render(LeserEditFelder, { formData: formular('schueler') });
-		// Ohne die Radios: Die gesperrte Art prüft der Test darunter, und sie haben keine
-		// id — sie kämen hier als leerer Name mit und machten die Zusage unlesbar.
-		const zu = [
-			...screen.container.querySelectorAll('input:not([type="radio"]), [role="combobox"]')
-		]
-			.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)
-			.map((e) => e.id)
-			.sort();
-		expect(zu).toEqual(['schul_email']);
+		expect(verschlossen('schueler')).toEqual(['schul_email']);
 	});
 
 	// Die Art selbst: Die Grenze zum Schüler ist in BEIDE Richtungen zu, und zwar als
-	// abgeschalteter Knopf statt als fehlender. Wer die Maske ansieht, soll sehen, dass es
-	// die dritte Möglichkeit gibt und dass sie hier nicht offen steht.
-	it('sperrt die Schüler-Wahl beim Kollegen und die Kollegen-Wahl beim Schüler', () => {
-		const beimKollegen = render(LeserEditFelder, { formData: formular('lehrkraft') });
-		const radiosK = [...beimKollegen.container.querySelectorAll('input[type="radio"]')];
-		expect(radiosK, 'alle drei Arten stehen da').toHaveLength(3);
-		expect(radiosK.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)).toHaveLength(1);
+	// abgeschalteter Eintrag statt als fehlender. Wer die Liste öffnet, soll sehen, dass es
+	// die anderen Arten gibt und dass sie hier nicht offen stehen. Seit dem 30.09.2026 eine
+	// Auswahlliste mit sieben Einträgen statt drei Knöpfen.
+	it('sperrt die Schüler-Wahl beim Kollegen und die Kollegen-Wahl beim Schüler', async () => {
+		/** @param {string} art */
+		async function eintraege(art) {
+			// Die Liste hängt am Dokument, nicht am Container: vorher aufräumen, sonst fände die
+			// Abfrage die Liste der ersten Maske ein zweites Mal.
+			cleanup();
+			const screen = render(LeserEditFelder, { formData: formular(art) });
+			await fireEvent.click(screen.getByRole('combobox', { name: 'Art des Lesers' }));
+			return [...screen.getByRole('listbox').querySelectorAll('[role="option"]')].map((o) => ({
+				text: o.textContent?.trim(),
+				zu: o.getAttribute('aria-disabled') === 'true'
+			}));
+		}
 
-		const beimSchueler = render(LeserEditFelder, { formData: formular('schueler') });
-		const radiosS = [...beimSchueler.container.querySelectorAll('input[type="radio"]')];
-		expect(radiosS).toHaveLength(3);
-		expect(radiosS.filter((e) => /** @type {HTMLInputElement} */ (e).disabled)).toHaveLength(2);
+		const beimKollegen = await eintraege('lehrkraft');
+		expect(beimKollegen, 'alle sieben Arten stehen da').toHaveLength(7);
+		expect(beimKollegen.filter((e) => e.zu).map((e) => e.text)).toEqual(['Schüler']);
+
+		const beimSchueler = await eintraege('schueler');
+		expect(beimSchueler).toHaveLength(7);
+		expect(beimSchueler.filter((e) => !e.zu).map((e) => e.text)).toEqual(['Schüler']);
 	});
 });

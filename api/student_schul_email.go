@@ -34,9 +34,14 @@ import (
 
 // pruefeSchulEmail entscheidet, ob aus der Akte heraus ein Konto entstehen soll.
 //
+// neueArt ist die Art aus demselben Speichern (nil = nicht mitgeschickt), schon geprüft von
+// pruefeUndSetzeArt. Sie gilt vor der gespeicherten: Wer in einem Zug aus einem Praktikum eine
+// Lehrkraft macht und die Schul-E-Mail einträgt, bekommt das Konto; wer aus einer Lehrkraft
+// ohne Konto ein Praktikum macht, bekommt keins (repository.ArtMitKonto).
+//
 // Rückgabe: (nachzutragendeAdresse, ok). Eine leere Adresse heißt „nichts zu tun".
 // ok=false: Die Fehlerantwort steht bereits.
-func (s *Server) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id string, reqEmail *string) (string, bool) {
+func (s *Server) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id string, reqEmail, neueArt *string) (string, bool) {
 	if reqEmail == nil {
 		return "", true
 	}
@@ -50,6 +55,9 @@ func (s *Server) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 		}
 		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 		return "", false
+	}
+	if neueArt != nil {
+		art = strings.TrimSpace(*neueArt)
 	}
 
 	if istSchuelerArt(art) {
@@ -81,8 +89,9 @@ func (s *Server) pruefeSchulEmail(ctx context.Context, w http.ResponseWriter, id
 	if neu == "" {
 		return "", true
 	}
-	// Dieselbe Prüfung wie beim Anlegen: Form der Adresse und die freigegebene Domain.
-	if err := pruefeKollegiumEmail(neu); err != nil {
+	// Dieselbe Prüfung wie beim Anlegen: Zugang nur, wo er zur Art gehört, dann Form der
+	// Adresse und die freigegebene Domain.
+	if err := pruefeEmailZurArt(art, neu); err != nil {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
 		return "", false
 	}

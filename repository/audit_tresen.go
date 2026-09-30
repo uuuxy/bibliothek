@@ -32,7 +32,7 @@ type TresenEreignisZeile struct {
 	Aktion         string
 	LeserName      string
 	LeserKlasse    string
-	LeserArt       string // schueler | lehrkraft | liv; leer ohne Treffer
+	LeserArt       string // chk_leser_art (Migration 153); leer ohne Treffer
 	KontoName      string
 	BearbeiterName string
 }

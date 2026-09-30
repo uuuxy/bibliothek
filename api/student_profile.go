@@ -28,7 +28,7 @@ type StudentProfileResponse struct {
 	BarcodeID string `json:"barcode_id"`
 	Vorname   string `json:"vorname"`
 	Nachname  string `json:"nachname"`
-	// Art ist Schüler, Lehrkraft oder LiV. Die Akte richtet sich danach: Ein Kollege hat
+	// Art: eine aus api/leser_art.go. Die Akte richtet sich danach: Ein Kollege hat
 	// keine Klasse, kein Abgangsjahr, keine Elternadresse und keine LUSD-Kennung — ohne
 	// die Art zeigte die Akte ihm diese Felder als „Keine Angabe" und behauptete damit,
 	// dass sie fehlen. Sie gehören ihm gar nicht.

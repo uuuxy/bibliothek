@@ -67,19 +67,15 @@ const tresenMaxEreignisse = 100
 // tresenEreignis deutet eine Protokollzeile: der Leser (Schüler oder Kollege) vor dem
 // Konto alter Einträge, und ohne auflösbaren Namen ist der Personenbezug getilgt — keine
 // leere Zelle. Bei einem Kollegen steht statt der Klasse die Art; dieselben Wörter wie
-// frontend/src/lib/leserArt.js.
+// frontend/src/lib/leserArt.js (leserArtBezeichnung).
 func tresenEreignis(z repository.TresenEreignisZeile) TresenEreignis {
 	e := TresenEreignis{Zeitpunkt: z.Zeitpunkt, Aktion: z.Aktion, Bearbeiter: z.BearbeiterName}
 	switch {
 	case z.LeserName != "":
 		e.Entleiher = z.LeserName
-		switch z.LeserArt {
-		case "lehrkraft":
-			e.Klasse = "Lehrkraft"
-		case "liv":
-			e.Klasse = "LiV"
-		default:
-			e.Klasse = z.LeserKlasse
+		e.Klasse = z.LeserKlasse
+		if z.LeserArt != "" && !istSchuelerArt(z.LeserArt) {
+			e.Klasse = leserArtBezeichnung(z.LeserArt)
 		}
 	case z.KontoName != "":
 		e.Entleiher, e.Klasse = z.KontoName, "Lehrkraft"

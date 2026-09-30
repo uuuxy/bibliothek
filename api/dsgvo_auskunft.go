@@ -294,8 +294,8 @@ func (s *Server) dsgvoFristen(ctx context.Context) dsgvoFristWerte {
 }
 
 // dsgvoPflichtangaben wählt die Pflichtangaben nach der Art des Lesers: Für einen Schüler
-// gelten Lernmittelfreiheit und Schülerbücherei, für eine Lehrkraft oder LiV das
-// Beschäftigungsverhältnis (dsgvo_pflichtangaben_kollegium.go).
+// gelten Lernmittelfreiheit und Schülerbücherei, für jede andere Art (Kollegium und
+// Sonderkonten, Migration 153) das Beschäftigungsverhältnis (dsgvo_pflichtangaben_kollegium.go).
 func dsgvoPflichtangaben(art string, f dsgvoFristWerte) DsgvoVerarbeitungsangaben {
 	if art == "schueler" {
 		return dsgvoVerarbeitungsangaben(f.lesehistorieTage, f.lernmittelTage, f.karenzTage, f.auditMonate)
@@ -657,7 +657,7 @@ func (s *Server) protokolliereDsgvoAuskunft(ctx context.Context, id string) {
 }
 
 // DsgvoAuskunftHandler stellt die vollständige Betroffenenauskunft nach
-// Art. 15 DSGVO für einen Leser zusammen — Schüler, Lehrkraft oder LiV. Die Erteilung
+// Art. 15 DSGVO für einen Leser zusammen, gleich welcher Art (api/leser_art.go). Die Erteilung
 // selbst wird im Audit-Log protokolliert (Rechenschaftspflicht, Art. 5 Abs. 2 DSGVO).
 //
 // Der Annotationsblock stand bis zum 05.08.2026 rund 70 Zeilen weiter oben — über einem

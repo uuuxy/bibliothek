@@ -46,12 +46,13 @@ func TestOhneZuordnungNenntGruppeUndZahlen(t *testing.T) {
 	}
 }
 
-// TestOhneZuordnungLeerWennAlleZugeordnet: Jede bekannte Art — auch Sonstige und Abgegangen —
-// läuft durch; der Halt gilt nur für Leser ohne Art.
+// TestOhneZuordnungLeerWennAlleZugeordnet: Jede bekannte Art — auch die Sonderkonten und
+// Abgegangen — läuft durch; der Halt gilt nur für Leser ohne Art.
 func TestOhneZuordnungLeerWennAlleZugeordnet(t *testing.T) {
 	ab := &Altbestand{Leser: []Leser{
 		{ID: "1", Art: ArtSchueler}, {ID: "2", Art: ArtLehrkraft}, {ID: "3", Art: ArtLiV},
-		{ID: "4", Art: ArtAbgegangen}, {ID: "5", Art: ArtSonstige},
+		{ID: "4", Art: ArtAbgegangen}, {ID: "5", Art: ArtPraktikum}, {ID: "6", Art: ArtSekretariat},
+		{ID: "7", Art: ArtUPlus}, {ID: "8", Art: ArtFachbereich},
 	}}
 	if befund := OhneZuordnung(ab); len(befund) != 0 {
 		t.Errorf("kein Befund erwartet, gefunden: %+v", befund)

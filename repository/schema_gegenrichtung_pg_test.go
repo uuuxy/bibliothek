@@ -283,8 +283,10 @@ var checkBedingungenBestand = []string{
 	"chk_pos_einzelpreis_nonneg", "chk_pos_menge_positiv", "chk_schueler_block_reason",
 	// Migration 123, befragt am 16.09.2026 — die drei Regeln der Lesertabelle:
 	//
-	// chk_leser_art: schueler | lehrkraft | liv. Der Code schreibt nur diese drei
-	// (api/..., db/seed.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
+	// chk_leser_art: die sieben Arten aus api/leser_art.go (seit Migration 153 auch
+	// Praktikum, Sekretariat, U-plus, Fachbereich). Der Code schreibt nur diese (api/...,
+	// internal/littera, db/seed.go; gegen die Datenbank gehalten in
+	// api/leser_art_pg_test.go); die Datenbank haelt die zweite Tuer fuer Reparaturskripte.
 	//
 	// chk_leser_schueler_pflichtfelder: Klasse, Abgaengerjahr und Ausweis waren fuer ALLE
 	// Pflicht, solange jede Zeile ein Schueler war. Die Pflicht ist nicht aufgegeben,
@@ -416,7 +418,6 @@ var triggerBestand = []string{
 	"trg_klassen_aktualisiert_am @ klassen",
 	"trg_klassen_anzeigeform @ klassen",
 	"trg_klm_klasse_vokabular @ klassen_lehrer_mapping",
-	"trg_lesergruppen_aktualisiert_am @ lesergruppen",
 	"trg_lmf_plaene_aktualisiert_am @ lmf_plaene",
 	"trg_lmf_plan_ausgelassen_vokabular @ lmf_plan_ausgelassen",
 	"trg_lmf_termin_klassen_vokabular @ lmf_termin_klassen",

@@ -1,6 +1,7 @@
 <script>
 	import { AlertTriangle } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import { istKollegium } from './leserArt.js';
 
 	/**
 	 * @component StudentDangerZone
@@ -15,12 +16,19 @@
 	 * klickt: Nach dem Wiederherstellen ist der Zugang nicht von allein zurück, er wird
 	 * über die Schul-E-Mail in der Akte neu angelegt.
 	 *
+	 * Vom Zugang spricht sie nur, wenn es einen gibt: Praktikum und Fachbereich haben nie
+	 * einen (Migration 153), und eine Lehrkraft verliert ihn, wenn die Benutzerverwaltung das
+	 * Konto löscht. `email` im Profil ist die Adresse am Konto, leer heißt kein Konto.
+	 *
 	 * @prop {() => void} onDelete - Callback, der den Lösch-/Archivierungsdialog öffnet.
-	 * @prop {boolean} [kollege] - Lehrkraft oder LiV (hat einen Zugang).
+	 * @prop {any} profile - die geladene Akte (art, email).
 	 */
 
-	/** @type {{ onDelete: () => void, kollege?: boolean }} */
-	let { onDelete, kollege = false } = $props();
+	/** @type {{ onDelete: () => void, profile: any }} */
+	let { onDelete, profile } = $props();
+
+	const kollege = $derived(istKollegium(profile));
+	const mitZugang = $derived(kollege && !!profile?.email);
 </script>
 
 <section
@@ -32,9 +40,12 @@
 			Gefahrenzone
 		</h3>
 		<p class="text-rose-600/80 text-sm mt-1 max-w-xl">
-			{#if kollege}
+			{#if mitZugang}
 				Das Löschen entfernt die Person aus dem regulären System — und mit ihr den Zugang zu „Mein
 				Portal“. Offene Ausleihen oder Forderungen müssen vorher beglichen werden.
+			{:else if kollege}
+				Das Löschen entfernt den Eintrag aus dem regulären System. Offene Ausleihen oder Forderungen
+				müssen vorher beglichen werden.
 			{:else}
 				Das Löschen dieses Schülerprofils entfernt die Person aus dem regulären System. Offene
 				Ausleihen oder Forderungen müssen vorher beglichen werden.

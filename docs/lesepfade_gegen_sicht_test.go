@@ -38,10 +38,9 @@ var lesepfadeGeprueft = map[string]struct {
 	anzahl int
 	grund  string
 }{
-	"api/lusd_apply.go":                      {2, "LUSD-Abgleich sucht über lusd_id — die LUSD kennt nur Schüler"},
-	"api/student_promotion.go":               {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
-	"jobs/cron_dsgvo.go":                     {2, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
-	"internal/littera/schreiber_personen.go": {1, "Zählt nach dem Littera-Schülerlauf die Schüler — das Kollegium zählt derselbe Befehl aus benutzer"},
+	"api/lusd_apply.go":        {2, "LUSD-Abgleich sucht über lusd_id — die LUSD kennt nur Schüler"},
+	"api/student_promotion.go": {1, "Versetzung zum Schuljahresende — betrifft ausschließlich Klassen, also Schüler"},
+	"jobs/cron_dsgvo.go":       {2, "Anonymisierung der Abgänger; das Kollegium hat keine Abgangslogik"},
 	// Durchsicht der Theken-Pfade, 21.09.2026 (OFFEN.md 5.19).
 	"internal/service/loan_checkout.go":    {2, "Zeilensperre fürs Ausleihlimit nur hinter istSchueler(); Abholfach-Prüfung liest Vormerkungen, und die gibt es nur für Schüler (Tür: VormerkungRepository.Create, TestVormerkungCreate_NurFuerSchueler)"},
 	"internal/service/loan_return.go":      {1, "Warteschlange bei der Rückgabe — Vormerkungen gibt es nur für Schüler (Tür: Create)"},

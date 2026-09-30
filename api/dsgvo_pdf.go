@@ -178,8 +178,13 @@ func dsgvoLeserart(art string) string {
 		return "Lehrkraft"
 	case "liv":
 		return "Lehrkraft im Vorbereitungsdienst"
+	case "uplus":
+		return "U-plus (Vertretungskraft)"
+	case "fachbereich":
+		return "Fachbereich (Sammelkonto)"
 	}
-	return art
+	// Praktikum und Sekretariat heißen hier wie in der Leserdatei.
+	return leserArtBezeichnung(art)
 }
 
 func dsgvoFotoAbschnitt(p *gofpdf.Fpdf, tr func(string) string, foto DsgvoFoto) {

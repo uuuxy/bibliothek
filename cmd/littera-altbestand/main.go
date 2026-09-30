@@ -147,10 +147,11 @@ func trockenlauf(ab *littera.Altbestand) {
 	for _, l := range ab.Leser {
 		nach[l.Art]++
 	}
-	log.Printf("  Leser: %d Schüler, %d abgegangen; Kollegium: %d Lehrkräfte, %d LiV, %d sonstige; "+
-		"ohne Zuordnung: %d",
+	log.Printf("  Leser: %d Schüler, %d abgegangen; Kollegium: %d Lehrkräfte, %d LiV, %d Praktikum, "+
+		"%d Sekretariat, %d U-plus, %d Fachbereich; ohne Zuordnung: %d",
 		nach[littera.ArtSchueler], nach[littera.ArtAbgegangen], nach[littera.ArtLehrkraft],
-		nach[littera.ArtLiV], nach[littera.ArtSonstige], nach[littera.ArtUnbekannt])
+		nach[littera.ArtLiV], nach[littera.ArtPraktikum], nach[littera.ArtSekretariat],
+		nach[littera.ArtUPlus], nach[littera.ArtFachbereich], nach[littera.ArtUnbekannt])
 
 	bekannt := make(map[string]bool, len(ab.Exemplare))
 	for _, e := range ab.Exemplare {
@@ -243,7 +244,7 @@ func fuehreAus(
 			return b
 		}
 		log.Printf("  → %d Schüler, %d ins Kollegium, %d nicht übernommen",
-			b.Personen.Schueler, b.Personen.Lehrkraefte, b.Personen.Uebersprungen)
+			b.Personen.Schueler, b.Personen.Kollegium, b.Personen.Uebersprungen)
 	}
 
 	if s.ausleihen {
@@ -284,9 +285,9 @@ func drucke(b littera.Bericht, s schalter) {
 	if s.personen {
 		log.Printf("Personen   Quelle %6d Leser", b.Personen.QuellLeser)
 		log.Printf("           geschrieben %6d Schüler / %4d Kollegium, nicht übernommen %d",
-			b.Personen.Schueler, b.Personen.Lehrkraefte, b.Personen.Uebersprungen)
+			b.Personen.Schueler, b.Personen.Kollegium, b.Personen.Uebersprungen)
 		abgleich(b.Personen.AbgleichOK, fmt.Sprintf("%d Schüler / %d Kollegium tatsächlich neu",
-			b.Personen.IstSchueler, b.Personen.IstLehrkraefte))
+			b.Personen.IstSchueler, b.Personen.IstKollegium))
 	}
 	if s.ausleihen {
 		a := b.Ausleihen

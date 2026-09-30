@@ -9,8 +9,8 @@ import (
 //
 // Littera führt alle Personen in EINER Tabelle `Leser` — Schüler, Lehrkräfte,
 // Praktikanten, das Sekretariat und sogar Sammelkonten der Fachbereiche. Diese
-// Anwendung trennt sie: Schüler nach `schueler`, Lehrkräfte nach `benutzer` mit der
-// Rolle `kollegium` (hieß bis Migration 069 `lehrer`). Ohne diese Einordnung landeten
+// Anwendung trennt sie: Schüler nach `schueler`, alle anderen ins Kollegium, jeweils mit
+// ihrer Art an der Leserzeile (leser.art, ZielArt). Ohne diese Einordnung landeten
 // 158 Lehrkräfte in der Schülerdatei.
 //
 // Die Unterscheidung steht in den Daten selbst und muss nicht geraten werden:
@@ -35,17 +35,47 @@ const (
 	// ArtAbgegangen sind ehemalige Schüler — Untergruppe „Abgegangen". Gehören als
 	// Abgänger in die Schülerdatei, nicht als aktive Schüler.
 	ArtAbgegangen
-	// ArtSonstige sind Praktikanten, Sekretariat, die Vertretungskräfte aus „U-plus" und die
-	// Sammelkonten der Fachbereiche: keine Schüler, aber Entleiher. Sie kommen ins Kollegium
-	// wie eine Lehrkraft (Personenart „lehrkraft"), werden also nicht gemahnt; ihre
-	// Littera-Gruppe steht im Protokoll, bis es Lesergruppen gibt (docs/OFFEN.md 5.18). Bis zum
-	// 28.09.2026 übernahm der Lauf sie nicht, und mit ihnen fehlten ihre Ausleihen.
-	ArtSonstige
+	// ArtPraktikum sind Praktikanten: keine Schüler, aber Entleiher. Sie kommen ins
+	// Kollegium, werden also nicht gemahnt, und bekommen kein Konto (repository.ArtMitKonto).
+	// Bis zum 28.09.2026 übernahm der Lauf die Sonderkonten nicht, und mit ihnen fehlten ihre
+	// Ausleihen; bis zum 30.09.2026 kamen sie als „lehrkraft" an, und ihre Littera-Gruppe
+	// stand nur im Protokoll (docs/OFFEN.md 5.18).
+	ArtPraktikum
 	// ArtLiV sind Referendare — in Hessen LiV, Lehrkraft im Vorbereitungsdienst. Sie gehören ins
-	// Kollegium mit der Personenart „liv" (Migration 119). Bis zum 15.09.2026 fielen sie unter
+	// Kollegium mit der Art „liv" (Migration 119). Bis zum 15.09.2026 fielen sie unter
 	// ArtUnbekannt und wurden nicht übernommen.
 	ArtLiV
+	// ArtSekretariat ist das Sekretariat: Kollegium mit Konto, wie eine Lehrkraft.
+	ArtSekretariat
+	// ArtUPlus sind die Vertretungskräfte aus „U-plus": Kollegium mit Konto, wie eine
+	// Lehrkraft.
+	ArtUPlus
+	// ArtFachbereich sind die Sammelkonten der Fachbereiche („Fachbereich Erdkunde"): keine
+	// Person, sondern ein Konto, das die Kollegen des Fachs benutzen. Kollegium ohne Konto.
+	ArtFachbereich
 )
+
+// ZielArt ist die Art der Leserzeile, in der ein Littera-Leser landet (chk_leser_art,
+// Migration 153); "" für einen Leser ohne Zuordnung, den der Lauf nicht schreibt.
+func (a LeserArt) ZielArt() string {
+	switch a {
+	case ArtSchueler, ArtAbgegangen:
+		return "schueler"
+	case ArtLehrkraft:
+		return "lehrkraft"
+	case ArtLiV:
+		return "liv"
+	case ArtPraktikum:
+		return "praktikum"
+	case ArtSekretariat:
+		return "sekretariat"
+	case ArtUPlus:
+		return "uplus"
+	case ArtFachbereich:
+		return "fachbereich"
+	}
+	return ""
+}
 
 // Lesergruppe ist eine Zeile aus `Leser_UG` — Klassenbezeichnung plus Art.
 type Lesergruppe struct {
@@ -97,12 +127,16 @@ func artAusUntergruppe(bezeichnung string) LeserArt {
 		return ArtLiV
 	case "Abgegangen":
 		return ArtAbgegangen
-	case "Praktikant", "Praktikantin", "Sekretärin", "U-plus":
-		return ArtSonstige
+	case "Praktikant", "Praktikantin":
+		return ArtPraktikum
+	case "Sekretärin":
+		return ArtSekretariat
+	case "U-plus":
+		return ArtUPlus
 	}
 	// Sammelkonten der Fachbereiche sind keine Personen.
 	if strings.HasPrefix(b, "Fachbereich") {
-		return ArtSonstige
+		return ArtFachbereich
 	}
 	return ArtUnbekannt
 }

@@ -23,10 +23,10 @@ Eine webbasierte Verwaltungssoftware für Schulbibliotheken. Das System unterst�
 - **Audit-Trail:** Ereignisprotokollierung für administrative Aktionen (append-only als Konvention; die DSGVO-Tilgung ist die bewusste Ausnahme).
 - **Datenschutz-Funktionen:** Löschroutinen für Schulabgänger, AES-256-Verschlüsselung für Schülerfotos.
 - **LUSD-Schnittstelle:** Import von Schülerdaten aus dem LUSD-System.
-- **Leserdatei:** Schüler und Kollegium in einer Liste (Migration 123). Die Art — Schüler, Lehrkraft, LiV — steht in der Akte und entscheidet keine Rechte; `schueler` ist seither eine Sicht auf `leser`, damit Klassenlisten, LUSD-Abgleich und Löschfristen weiter nur Schüler meinen.
+- **Leserdatei:** Schüler und Kollegium in einer Liste (Migration 123). Die Art — Schüler, Lehrkraft, LiV und die Sonderkonten Praktikum, Sekretariat, U-plus, Fachbereich (Migration 153) — steht in der Akte und entscheidet keine Rechte; `schueler` ist seither eine Sicht auf `leser`, damit Klassenlisten, LUSD-Abgleich und Löschfristen weiter nur Schüler meinen.
 - **Littera-Altbestandsübernahme:** Titel, Exemplare, Personen und offene Ausleihen aus der Vorgängersoftware — mit Savepoint je Datensatz und Abgleich gegen den tatsächlichen Zeilenzuwachs (`cmd/littera-altbestand`).
 - **Hardware-Verwaltung:** Ausleihe von Laptops/Tablets inklusive Zubehör-Checklisten.
-- **Druck-Center:** Erstellung von Barcode-Etiketten und Ausweisen; die Aufschrift der Karte richtet sich nach der Art des Lesers („Schülerausweis" oder „Lehrerausweis").
+- **Druck-Center:** Erstellung von Barcode-Etiketten und Ausweisen; die Aufschrift der Karte richtet sich nach der Art des Lesers („Schülerausweis", „Lehrerausweis" oder „Leserausweis").
 - **Bestellwesen:** Bedarfsvorschläge aus dem Bestand, Bestellmail an den Händler samt Barcodebogen, Wareneingang — und für Händler, die selbst etikettieren, ein Bestätigungs-Link, über den der Lieferant seine Etiketten druckt und die Bestellung selbst bestätigt.
 - **Inventur:** Session-gebundene Bestandsaufnahme mit Scanner, Fehlbestandsliste und Aufarbeitung.
 - **Rollenbasierte Zugriffskontrolle (RBAC):** Vier Rollen vergibt der Admin — Admin, Leitung (Admin minus Benutzerverwaltung und Einstellungen, Migration 122), Mitarbeiter (Tresen-Betrieb) und Helfer (Kiosk-Betrieb ohne Schülerrechte). Kollegium ist keine davon, sondern der Grundzustand jeder Lehrkraft: nur Klassensatz-Reservierung im eigenen Portal. Angemeldet wird gegen den Schul-Mailserver per IMAP — die Anwendung speichert kein Benutzerpasswort.

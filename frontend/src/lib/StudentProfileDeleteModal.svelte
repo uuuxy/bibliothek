@@ -3,7 +3,8 @@
 
      Beim Kollegium sagt der Dialog, was sonst niemand erführe: Mit dem Eintrag fällt der
      ZUGANG. Zurückgeholt wird er nicht durch das Wiederherstellen, sondern indem man in
-     der Akte die Schul-E-Mail erneut einträgt (16.09.2026). -->
+     der Akte die Schul-E-Mail erneut einträgt (16.09.2026). Der Satz steht nur, wenn es einen
+     Zugang gibt — Praktikum und Fachbereich haben keinen (Migration 153). -->
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import Modal from './Modal.svelte';
@@ -15,6 +16,8 @@
 	let { open = false, profile, onclose, onsuccess } = $props();
 
 	const kollege = $derived(istKollegium({ art: profile?.art }));
+	// `email` ist die Adresse am Konto; leer heißt: kein Zugang, der erlöschen könnte.
+	const mitZugang = $derived(kollege && !!profile?.email);
 
 	let deleteError = $state('');
 	let isDeleting = $state(false);
@@ -89,7 +92,7 @@
 					kann in der regulären Oberfläche nicht rückgängig gemacht werden.
 				</p>
 
-				{#if kollege}
+				{#if mitZugang}
 					<p class="mt-2 text-sm text-on-surface-variant leading-relaxed font-sans">
 						Der Zugang zu „Mein Portal“ erlischt dabei. Wird der Eintrag später wiederhergestellt,
 						kommt er ohne Zugang zurück — den legt die Schul-E-Mail in der Akte neu an.

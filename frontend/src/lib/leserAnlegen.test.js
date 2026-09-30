@@ -14,6 +14,17 @@ import StudentCreateModal from './StudentCreateModal.svelte';
 // Ginge bei einer Lehrkraft eine Klasse oder ein Geburtsdatum mit, stünde sie in den
 // Klassenlisten und im LUSD-Abgleich — ein Import, der sie nicht kennt, machte sie zur
 // Abgängerin und anonymisierte nach der Karenz ihren Namen (Migration 123).
+/**
+ * Wählt die Art in der Auswahlliste „Art des Lesers" (seit dem 30.09.2026 eine Liste mit
+ * sieben Arten statt drei Knöpfen).
+ * @param {any} screen
+ * @param {string} wort
+ */
+async function waehleArt(screen, wort) {
+	await fireEvent.click(screen.getByRole('combobox', { name: 'Art des Lesers' }));
+	await fireEvent.click(screen.getByRole('option', { name: wort }));
+}
+
 describe('Neuen Leser anlegen', () => {
 	beforeEach(() => {
 		vi.mocked(apiClient.post).mockReset();
@@ -31,7 +42,7 @@ describe('Neuen Leser anlegen', () => {
 			onsuccess: vi.fn()
 		});
 		if (art !== 'schueler') {
-			await fireEvent.click(screen.getByLabelText(art === 'liv' ? 'LiV' : 'Lehrkraft'));
+			await waehleArt(screen, art === 'liv' ? 'LiV' : 'Lehrkraft');
 		}
 		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: vorname } });
 		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: nachname } });
@@ -85,7 +96,7 @@ describe('Neuen Leser anlegen', () => {
 			onclose: vi.fn(),
 			onsuccess: vi.fn()
 		});
-		await fireEvent.click(screen.getByLabelText('Lehrkraft'));
+		await waehleArt(screen, 'Lehrkraft');
 		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Ohne' } });
 		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Mail' } });
 		await fireEvent.click(screen.getByText('Speichern'));
@@ -105,10 +116,59 @@ describe('Neuen Leser anlegen', () => {
 			onclose: vi.fn(),
 			onsuccess: vi.fn()
 		});
-		await fireEvent.click(screen.getByLabelText('Lehrkraft'));
+		await waehleArt(screen, 'Lehrkraft');
 		const text = screen.container.textContent ?? '';
 		expect(text).toContain('Zugang zu „Mein Portal');
 		expect(text, 'eine Rolle vergibt der Administrator eigens').toContain('Rolle');
+	});
+
+	// Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal" (30.09.2026). Bis dahin
+	// ließ sich ein Praktikant ohne Schuladresse gar nicht anlegen: Die Adresse war für jeden
+	// Kollegen Pflicht.
+	it('legt ein Praktikum ohne Schul-E-Mail an und schickt keine mit', async () => {
+		const screen = render(StudentCreateModal, {
+			open: true,
+			klassen: [],
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
+		await waehleArt(screen, 'Praktikum');
+		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Paul' } });
+		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Praktikant' } });
+		expect(
+			/** @type {HTMLInputElement} */ (screen.getByLabelText('Schul-E-Mail')).disabled,
+			'die Adresse ist beim Praktikum verschlossen'
+		).toBe(true);
+		expect(screen.container.textContent ?? '').toContain('keinen Zugang zu „Mein Portal“');
+		await fireEvent.click(screen.getByText('Speichern'));
+
+		expect(vi.mocked(apiClient.post)).toHaveBeenCalledTimes(1);
+		const koerper = /** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0][1]);
+		expect(koerper.art).toBe('praktikum');
+		expect(koerper.email).toBe('');
+	});
+
+	// Eine vorher getippte Adresse geht nicht mit, wenn die Art danach auf Fachbereich wechselt:
+	// Der Server wiese sie ab.
+	it('schickt beim Fachbereich auch eine vorher getippte Adresse nicht mit', async () => {
+		const screen = render(StudentCreateModal, {
+			open: true,
+			klassen: [],
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
+		await waehleArt(screen, 'Lehrkraft');
+		await fireEvent.input(screen.getByLabelText('Schul-E-Mail *'), {
+			target: { value: 'erdkunde@schule.invalid' }
+		});
+		await waehleArt(screen, 'Fachbereich');
+		await fireEvent.input(screen.getByLabelText('Vorname *'), { target: { value: 'Fachbereich' } });
+		await fireEvent.input(screen.getByLabelText('Nachname *'), { target: { value: 'Erdkunde' } });
+		await fireEvent.click(screen.getByText('Speichern'));
+
+		const koerper = /** @type {any} */ (vi.mocked(apiClient.post).mock.calls[0][1]);
+		expect(koerper.art).toBe('fachbereich');
+		expect(koerper.email).toBe('');
 	});
 
 	it('verlangt vom Schüler weiterhin Klasse und Geburtsdatum', async () => {

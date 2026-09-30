@@ -67,7 +67,7 @@ func SperreAmLeserHaeltAn(leser *repository.Student, lernmittel bool) error {
 	return pruefeSperreAmLeser(leser, lernmittel)
 }
 
-// istKollegium: Lehrkraft oder LiV. Leer heißt Schüler — so liest es die Sicht `schueler`
+// istKollegium: jede Art außer Schüler. Leer heißt Schüler — so liest es die Sicht `schueler`
 // (repository.Student.Art); dieselbe Regel wie leserArt.js im Browser.
 func istKollegium(leser *repository.Student) bool {
 	return leser.Art != "" && leser.Art != "schueler"

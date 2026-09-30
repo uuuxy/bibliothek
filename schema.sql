@@ -177,7 +177,7 @@ CREATE TABLE leser (
     -- Abgaengerjahr und Ausweis waren Pflicht, solange jede Zeile ein Schueler war; fuer
     -- einen Kollegen gelten sie nicht. Die Pflicht ist deshalb nicht aufgegeben, sondern
     -- an die Art GEPAART (chk_leser_schueler_pflichtfelder weiter unten).
-    art VARCHAR(20) NOT NULL DEFAULT 'schueler',      -- schueler | lehrkraft | liv
+    art VARCHAR(20) NOT NULL DEFAULT 'schueler',      -- schueler | lehrkraft | liv | praktikum | sekretariat | uplus | fachbereich (Migration 153)
     barcode_id VARCHAR(100),                          -- Ausweisnummer (Eindeutigkeit: partieller Index uniq_schueler_barcode_active, nur aktive Zeilen — siehe Migration 049); seit Migration 136 bekommt auch jedes Konto eine
     vorname VARCHAR(100) NOT NULL,
     nachname VARCHAR(100) NOT NULL,
@@ -226,7 +226,8 @@ CREATE TABLE leser (
             OR btrim(coalesce(block_reason, '')) <> ''
         ),
     -- Migration 123, drei Constraints fuer die Lesertabelle:
-    CONSTRAINT chk_leser_art CHECK (art IN ('schueler', 'lehrkraft', 'liv')),
+    CONSTRAINT chk_leser_art CHECK (art IN ('schueler', 'lehrkraft', 'liv', 'praktikum',
+                                            'sekretariat', 'uplus', 'fachbereich')),
     -- Die Paarung: Was fuer einen Schueler Pflicht ist, bleibt Pflicht. Ohne sie waere aus
     -- drei Pflichtfeldern fuer alle ein "darf leer sein" fuer alle geworden — und ein
     -- Schueler ohne Klasse faellt in jeder Klassenliste und jeder Mahnung lautlos hinten
@@ -374,19 +375,6 @@ CREATE UNIQUE INDEX uniq_systematik_bezeichnung_ci
 
 CREATE TRIGGER trg_systematik_kategorien_aktualisiert_am
 BEFORE UPDATE ON systematik_kategorien
-FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
-
--- Table: lesergruppen
-CREATE TABLE lesergruppen (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    kuerzel VARCHAR(50) UNIQUE NOT NULL,
-    bezeichnung VARCHAR(255) NOT NULL,
-    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    aktualisiert_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TRIGGER trg_lesergruppen_aktualisiert_am
-BEFORE UPDATE ON lesergruppen
 FOR EACH ROW EXECUTE FUNCTION set_aktualisiert_am();
 
 -- Table: mail_vorlagen
@@ -1907,7 +1895,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('149_inventur_verworfen.sql'),
 ('150_eigentum_am_exemplar.sql'),
 ('151_eigentum_quelle.sql'),
-('152_klassensatz_reservierung_freitext.sql')
+('152_klassensatz_reservierung_freitext.sql'),
+('153_sonderkonten_als_art.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -231,7 +231,7 @@ func (s *Server) PatchStudentHandler(auditRepo repository.AuditRepository) http.
 		// Die Schul-E-Mail wird VOR dem Schreiben geprüft und NACH ihm eingetragen: Das
 		// Konto soll nicht an einer Leserzeile hängen, deren Änderung gescheitert ist.
 		// nachzutragen != "" heißt: Es gibt noch kein Konto, und die Adresse ist gültig.
-		nachzutragen, ok := s.pruefeSchulEmail(ctx, w, id, req.Email)
+		nachzutragen, ok := s.pruefeSchulEmail(ctx, w, id, req.Email, req.Art)
 		if !ok {
 			return
 		}
@@ -339,10 +339,10 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 	return neu, true
 }
 
-// pruefeUndSetzeArt aendert die Art eines Lesers (Migration 123). Erlaubt ist genau
-// EIN Wechsel: zwischen Lehrkraft und LiV. Beide Richtungen ueber die Grenze zum
-// Schueler sind zu — und zwar nicht aus Vorsicht, sondern weil jede von ihnen einen
-// echten Schaden anrichtet:
+// pruefeUndSetzeArt aendert die Art eines Lesers (Migration 123). Erlaubt ist der Wechsel
+// innerhalb des Kollegiums: Lehrkraft, LiV, Praktikum, Sekretariat, U-plus, Fachbereich
+// (Migration 153). Beide Richtungen ueber die Grenze zum Schueler sind zu — und zwar nicht
+// aus Vorsicht, sondern weil jede von ihnen einen echten Schaden anrichtet:
 //
 //	Schueler -> Kollege: Die Zeile verliert damit ihre LUSD-Bindung. Traegt sie eine
 //	  lusd_id, bricht chk_leser_nur_schueler_werden_abgaenger; traegt sie keine, waere
@@ -358,18 +358,22 @@ func (s *Server) pruefeUndSetzeLusdID(ctx context.Context, w http.ResponseWriter
 //
 // nil heisst "nicht mitgeschickt"; derselbe Wert ist ein No-op, damit das Formular
 // die Art unveraendert mitschicken darf.
+//
+// Ein bestehendes Konto bleibt beim Wechsel stehen, auch zu Praktikum oder Fachbereich: Neu
+// angelegt wird dort keines (repository.ArtMitKonto), ueber ein vorhandenes entscheidet die
+// Benutzerverwaltung.
 func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, id string, reqArt *string, b *updateBuilder) bool {
 	if reqArt == nil {
 		return true
 	}
 	neu := strings.TrimSpace(*reqArt)
-	// Dieselbe Menge wie beim Anlegen (leserArten, student_create.go) und dieselbe wie
-	// chk_leser_art in der Datenbank. Eine vierte Art ist ein Tippfehler, kein neuer
+	// Dieselbe Menge wie beim Anlegen (leserArten, api/leser_art.go) und dieselbe wie
+	// chk_leser_art in der Datenbank. Eine unbekannte Art ist ein Tippfehler, kein neuer
 	// Personenkreis — und soll als Auskunft zurueckkommen, nicht als CHECK-500.
 	if !leserArten[neu] {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
-			fmt.Errorf("Unbekannte Art %q. Möglich sind: Schüler, Lehrkraft, LiV.", neu))
+			fmt.Errorf("Unbekannte Art %q. Möglich sind: %s.", neu, moeglicheArten()))
 		return false
 	}
 
@@ -391,7 +395,7 @@ func (s *Server) pruefeUndSetzeArt(ctx context.Context, w http.ResponseWriter, i
 	if istSchuelerArt(aktuell) || istSchuelerArt(neu) {
 		//nolint:staticcheck // ST1005: nutzer-sichtbare Meldung im Formular
 		apierrors.SendHTTPError(w, http.StatusBadRequest,
-			errors.New("Ein Schüler lässt sich nicht in eine Lehrkraft umwandeln und umgekehrt. "+
+			errors.New("Aus einem Schüler wird kein Kollege und umgekehrt. "+
 				"Lege die Person neu an und lösche den falschen Eintrag."))
 		return false
 	}
@@ -409,9 +413,8 @@ type patchStudentRequest struct {
 	BarcodeID     *string `json:"barcode_id"`
 	AbgaengerJahr *int    `json:"abgaenger_jahr"`
 	Geburtsdatum  *string `json:"geburtsdatum"`
-	// Art des Lesers (schueler | lehrkraft | liv, Migration 123). Sie steht hier, weil
-	// die Akte sie zeigen und ein Kollege zwischen Lehrkraft und LiV wechseln koennen
-	// muss. Sie hat einen eigenen kontrollierten Pfad (pruefeUndSetzeArt) und liegt
+	// Art des Lesers (leserArten, Migration 123 und 153). Sie steht hier, weil die Akte
+	// sie zeigen und ein Kollege innerhalb des Kollegiums wechseln koennen muss. Sie hat einen eigenen kontrollierten Pfad (pruefeUndSetzeArt) und liegt
 	// NICHT im generischen Feld-Beutel: Ein Wechsel der Art verschiebt die Zeile
 	// zwischen zwei Pflichtfeld-Welten (chk_leser_schueler_pflichtfelder,
 	// chk_leser_nur_schueler_werden_abgaenger) und liefe roh in einen CHECK — also in
@@ -435,7 +438,7 @@ type patchStudentRequest struct {
 	Plz         *string `json:"plz"`
 	Ort         *string `json:"ort"`
 	ElternEmail *string `json:"eltern_email"`
-	// Email ist die SCHUL-Adresse einer Lehrkraft oder LiV und steht nicht in `leser`,
+	// Email ist die SCHUL-Adresse eines Kollegen mit Zugang und steht nicht in `leser`,
 	// sondern am Konto (benutzer.email). Sie liegt deshalb ebenfalls nicht im
 	// generischen Feld-Beutel, sondern hat ihren eigenen Pfad (pruefeSchulEmail,
 	// api/student_schul_email.go): nachtragbar, solange keine da ist — dann entsteht

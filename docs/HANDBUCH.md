@@ -315,21 +315,24 @@ Fristen und Ausgabe-Pläne. (§2.3)
 Bis zum 16.09.2026 hieß dieser Menüpunkt _Schülerdatei_ und führte nur Schüler. Er führt
 jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer Liste.
 
-- **Wer steht hier drin?** Schüler kommen aus der LUSD. Lehrkräfte und LiV entstehen
-  entweder von selbst, sobald sich jemand über „Mein Portal" anmeldet, oder Sie legen sie
-  mit _Neuer Leser_ an. Wer wer ist, steht als **Art** in der Akte — Schüler, Lehrkraft
-  oder LiV. Die Art entscheidet keine Rechte; ausleihen darf jeder aktive Leser.
+- **Wer steht hier drin?** Schüler kommen aus der LUSD. Das Kollegium entsteht entweder von
+  selbst, sobald sich jemand über „Mein Portal" anmeldet, oder Sie legen es mit _Neuer
+  Leser_ an. Wer wer ist, steht als **Art** in der Akte: Schüler, Lehrkraft, LiV, Praktikum,
+  Sekretariat, U-plus oder Fachbereich. Die Art entscheidet keine Rechte; ausleihen darf
+  jeder aktive Leser, und für jede Art außer Schüler gilt dasselbe wie für das Kollegium.
+  Praktikum und Fachbereich haben keinen Zugang zu „Mein Portal". Ein Fachbereich ist ein
+  Sammelkonto, das die Kollegen des Fachs benutzen.
 - **Reiter**: _Aktive Leser_, _Ehemalige / Archiv_ und (mit dem Recht zum Löschen)
   _Papierkorb_.
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
 - **Akte**: _Ausleihen & Historie_ und _Stammdaten & Adresse_ — für jeden dieselben Felder
-  an derselben Stelle. Bei einer Lehrkraft sind drei davon verschlossen, weil sie ihr
-  nicht gehören: Klasse, Abgangsjahr und LUSD-Kennung. Geburtsdatum, Ausweisnummer,
+  an derselben Stelle. Im Kollegium sind drei davon verschlossen, weil sie ihm nicht
+  gehören: Klasse, Abgangsjahr und LUSD-Kennung. Geburtsdatum, Ausweisnummer,
   Anschrift und Eltern-E-Mail stehen jedem offen. Beim Kollegen bleiben Geburtsdatum,
   Anschrift und Eltern-E-Mail meist leer; eine Ausweisnummer hat jeder mit freigeschaltetem
   Zugang.
-  Die Art lässt sich zwischen Lehrkraft und LiV umstellen; über die Schüler-Grenze geht
-  sie nicht — ein Schüler kommt aus der LUSD und bleibt Schüler.
+  Die Art lässt sich innerhalb des Kollegiums umstellen, etwa von LiV auf Lehrkraft; über
+  die Schüler-Grenze geht sie nicht — ein Schüler kommt aus der LUSD und bleibt Schüler.
 - **Dokumente** in der Akte: Ausweis drucken, Kontoauszug, Ersatzforderung (nur bei offenem
   Schaden), DSGVO-Auskunft. Kontoauszug und Ersatzforderung gibt es nur beim Schüler, die
   DSGVO-Auskunft für jeden Leser; beim Kollegen nennt sie auch sein Zugangskonto, seine
@@ -340,9 +343,10 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   Kind einen Schadensersatz-Bescheid, steht unter _Ausleihen & Historie_ die Karte
   **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
   und _Nachdruck_ (derselbe Brief mit derselben Nummer).
-- **Ausweis drucken**: Auf der Karte steht, was sie ist — _Schülerausweis_ oder
-  _Lehrerausweis_. Die Gültigkeit („Gültig bis 31.07. …") trägt nur der Schülerausweis;
-  der Ausweis einer Lehrkraft läuft mit keinem Schuljahr ab. Neue Ausweisnummern beginnen
+- **Ausweis drucken**: Auf der Karte steht, was sie ist — _Schülerausweis_, _Lehrerausweis_
+  (Lehrkraft und LiV) oder _Leserausweis_ (Praktikum, Sekretariat, U-plus, Fachbereich). Die
+  Gültigkeit („Gültig bis 31.07. …") trägt nur der Schülerausweis; ein Ausweis im Kollegium
+  läuft mit keinem Schuljahr ab. Neue Ausweisnummern beginnen
   mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen. Eine
   `A-`-Nummer vergibt das Programm nur einmal: Wird eine Person gelöscht oder anonymisiert,
   bekommt niemand sonst ihre Nummer, und ihre alte Karte findet an der Theke niemanden.
@@ -355,16 +359,17 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Sperren** verlangt eine Begründung — sie steht danach an der Theke. **Sperre aufheben**
   nimmt jede Sperre weg, auch die, die das Programm Ehemaligen setzt. Beides steht im
   Protokoll. Einen Kollegen sperrt man nicht; der Knopf ist bei ihm grau.
-- **Neuer Leser** per Formular. Der Dialog fragt zuerst, wer das ist: Schüler, Lehrkraft
-  oder LiV. Klassenweise legt man Schüler besser über den LUSD-Import an
+- **Neuer Leser** per Formular. Der Dialog fragt zuerst nach der **Art des Lesers**
+  (Auswahlliste). Klassenweise legt man Schüler besser über den LUSD-Import an
   (_Einstellungen → LUSD & Versetzung_).
 
-  Bei einer Lehrkraft oder LiV ist die **Schul-E-Mail Pflicht**. Sie ist keine
+  Bei Lehrkraft, LiV, Sekretariat und U-plus ist die **Schul-E-Mail Pflicht**. Sie ist keine
   Kontaktangabe, sondern der Schlüssel: Mit ihr entsteht zugleich der Zugang zu „Mein
   Portal", und die Person steht später nicht doppelt da, wenn sie sich selbst anmeldet.
   Freigeschaltet wird der Zugang nur, wenn Sie auch _Benutzer & Rechte_ dürfen; sonst
   entsteht eine Zugangsanfrage, die ein Admin freischaltet. Eine **Rolle** vergibt dieses
-  Formular nie.
+  Formular nie. Bei Praktikum und Fachbereich ist das Feld verschlossen: Es entsteht nur der
+  Eintrag in der Leserdatei, auf den an der Theke ausgeliehen wird.
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
 - Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**; endgültiges
   Löschen/Anonymisieren nur mit Namensbestätigung (DSGVO-Kette, §8).

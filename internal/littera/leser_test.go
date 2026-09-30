@@ -39,11 +39,12 @@ func TestArtAusUntergruppe(t *testing.T) {
 		"90": {ArtLehrkraft, "Lehrer", "Lehrkraft"},
 		"91": {ArtLehrkraft, "Lehrerin", "Lehrkraft"},
 		"95": {ArtAbgegangen, "Ab", "ehemalige Schueler"},
-		// Entscheidung vom 28.09.2026: keine Schueler, aber Entleiher — ins Kollegium.
-		"96":  {ArtSonstige, "Prakt", "Praktikant ist weder Schueler noch Lehrkraft"},
-		"97":  {ArtSonstige, "FB-Ek", "Fachbereich ist ein Sammelkonto, keine Person"},
-		"122": {ArtSonstige, "Sekr.", "Sekretariat"},
-		"129": {ArtSonstige, "U+", "U-plus: Vertretungskraefte"},
+		// Entscheidung vom 28.09.2026: keine Schueler, aber Entleiher — ins Kollegium; seit dem
+		// 30.09.2026 je mit eigener Art (Migration 153).
+		"96":  {ArtPraktikum, "Prakt", "Praktikant ist weder Schueler noch Lehrkraft"},
+		"97":  {ArtFachbereich, "FB-Ek", "Fachbereich ist ein Sammelkonto, keine Person"},
+		"122": {ArtSekretariat, "Sekr.", "Sekretariat"},
+		"129": {ArtUPlus, "U+", "U-plus: Vertretungskraefte"},
 		// Schueler auf Zeit im Ausland: Schueler mit der Littera-Klasse.
 		"98": {ArtSchueler, "Ausl", "Im Ausland bleibt Schueler"},
 		// Ohne Zuordnung heisst ohne Zuordnung — NICHT stillschweigend Schueler; der Lauf

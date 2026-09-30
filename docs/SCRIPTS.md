@@ -134,8 +134,11 @@ server, und `littera-4908@littera.invalid` gibt es dort nicht. `-lehrer-inaktiv`
 um, macht die Karten aber wertlos.
 
 **Jeder Leser kommt an** (seit 28.09.2026): Praktikanten, Sekretariat, U-plus und die
-Sammelkonten der Fachbereiche ins Kollegium wie eine Lehrkraft (Ausleihen als Dauerleihe,
-keine Mahnung, Littera-Gruppe als Warnung im Protokoll), „Im Ausland" als Schüler mit der
+Sammelkonten der Fachbereiche ins Kollegium (Ausleihen als Dauerleihe, keine Mahnung), seit
+dem 30.09.2026 jeweils mit ihrer eigenen Art — Praktikum, Sekretariat, U-plus, Fachbereich;
+vorher als Lehrkraft, die Littera-Gruppe nur als Warnung im Protokoll. Praktikum und
+Fachbereich bekommen kein Konto, nur die Leserzeile; Sekretariat und U-plus ein Konto mit
+Platzhalter-Adresse wie eine Lehrkraft. „Im Ausland" kommt als Schüler mit der
 Klasse `AUS`. Ein Schüler, dessen Klasse keinen Jahrgang nennt, bekommt das Abgangsjahr der
 Handanlage (Kalenderjahr + 5) und eine Warnung. Eine Lesergruppe, die keiner Art zugeordnet
 ist (in der Sicherung von 2010 „Undefinierte Untergruppe", 5 Personen, 21 Ausleihen), **hält

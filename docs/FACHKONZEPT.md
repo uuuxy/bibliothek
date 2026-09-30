@@ -498,15 +498,30 @@ nichts im Programm; ein Admin muss nicht in der Leserdatei stehen.
 Schüler und Kollegium stehen seit Migration 123 in EINER Tabelle `leser` mit der Spalte
 `art`:
 
-| Art         | Wort in der Oberfläche | Woher                                                     |
-| ----------- | ---------------------- | --------------------------------------------------------- |
-| `schueler`  | Schüler                | LUSD-Import oder von Hand                                  |
-| `lehrkraft` | Lehrkraft              | Selbstanmeldung („Mein Portal"), Handanlage, Littera-Bestand |
-| `liv`       | LiV                    | von Hand, oder eine Lehrkraft wird dazu umgestellt          |
+| Art           | Wort in der Oberfläche | Woher                                                              |
+| ------------- | ---------------------- | ------------------------------------------------------------------ |
+| `schueler`    | Schüler                | LUSD-Import oder von Hand                                          |
+| `lehrkraft`   | Lehrkraft              | Selbstanmeldung („Mein Portal"), Handanlage, Littera-Bestand       |
+| `liv`         | LiV                    | von Hand, oder eine Lehrkraft wird dazu umgestellt                 |
+| `praktikum`   | Praktikum              | von Hand, Littera-Bestand („Praktikant", „Praktikantin")           |
+| `sekretariat` | Sekretariat            | von Hand, Littera-Bestand („Sekretärin")                           |
+| `uplus`       | U-plus                 | von Hand, Littera-Bestand („U-plus", die Vertretungskräfte)        |
+| `fachbereich` | Fachbereich            | von Hand, Littera-Bestand („Fachbereich …", Sammelkonto des Fachs) |
 
 Die Art entscheidet **keine Rechte**; ausleihen darf jeder aktive Leser. Ändern lässt sie
-sich nur zwischen Lehrkraft und LiV: Ein Schüler kommt aus der LUSD und bleibt Schüler, in
+sich nur innerhalb des Kollegiums: Ein Schüler kommt aus der LUSD und bleibt Schüler, in
 beide Richtungen (`chk_leser_nur_schueler_werden_abgaenger`).
+
+**Die Sonderkonten** (Migration 153, entschieden am 30.09.2026): Praktikum, Sekretariat, U-plus
+und Fachbereich sind die Lesergruppen, die Littera neben Klassen und Lehrern führt. Sie stehen
+als Art da und nicht als zweites Feld daneben — eine Gruppe neben der Art hätte Paare wie „LiV
+und Sekretariat" erlaubt und eine Pflegeseite gebraucht. Das Programm unterscheidet an jeder
+Stelle nur `art = 'schueler'` gegen den Rest; für die vier gilt deshalb alles, was für das
+Kollegium gilt (Dauerleihe, keine Mahnung, keine Forderung). Praktikum und Fachbereich haben
+**kein Zugangskonto** (`repository.ArtMitKonto`): Ein Fachbereich ist keine Person, sondern ein
+Sammelkonto, das die Kollegen des Fachs benutzen; ein Praktikant leiht aus, braucht aber
+„Mein Portal" nicht. Die leere Tabelle `lesergruppen` (Migration 009), die nie ein Schreibweg
+gefüllt hat, ist mit Migration 153 entfernt.
 
 **`schueler` ist seither eine Sicht**, nicht mehr eine Tabelle: `WHERE art = 'schueler'`
 mit `WITH CHECK OPTION` (Migration 124). Das trägt die alte Bedeutung weiter — Klassenlisten,
@@ -516,13 +531,15 @@ nicht zu sehen. Die Kehrseite ist eine eigene Bugklasse; sie steht in
 
 **Eine Maske für jeden.** Akte und Formular zeigen für jede Art dieselben Felder an
 derselben Stelle. Einem Kollegen sind drei verschlossen, und zwar nicht aus Geschmack:
-Klasse und Abgangsjahr (eine Klasse gehört keiner Lehrkraft, und das Abgangsjahr leitet der
+Klasse und Abgangsjahr (eine Klasse hat nur ein Schüler, und das Abgangsjahr leitet der
 Server aus ihr ab) sowie die LUSD-Kennung (die Datenbank verbietet sie einem Nicht-Schüler).
 Geburtsdatum, Ausweisnummer, Anschrift und Eltern-E-Mail stehen jedem offen. Beim Kollegen
 bleiben Geburtsdatum, Anschrift und Eltern-E-Mail leer; eine Ausweisnummer hat jeder mit
 freigeschaltetem Zugang, das Programm vergibt sie (Migrationen 136 und 145).
 
-**Die Schul-E-Mail ist beim Anlegen einer Lehrkraft oder LiV Pflicht.** Sie ist keine
+**Die Schul-E-Mail ist beim Anlegen von Lehrkraft, LiV, Sekretariat und U-plus Pflicht.**
+Bei Praktikum und Fachbereich muss sie leer bleiben — dort entsteht kein Konto, weder beim
+Anlegen noch beim Nachtragen in der Akte (`api.pruefeEmailZurArt`). Die Adresse ist keine
 Kontaktangabe, sondern der Schlüssel: Mit ihr entsteht sofort das Anmeldekonto, und weil der
 Anmeldeweg eine Zugangsanfrage nur anlegt, wenn zu der Adresse GAR KEIN Konto existiert,
 findet die spätere Selbstanmeldung genau diesen Eintrag. Ohne sie stand die Person danach
@@ -540,8 +557,9 @@ geleert oder umgeschrieben (Migration 146): Die Tabelle `ausweisnummern_ausgesch
 als bloße Zahl fest, ohne Person, und der Generator zählt über sie hinweg. Eine alte Karte
 findet danach an der Theke niemanden. Von Hand bleibt eine frühere Nummer eintragbar, etwa die
 alte Karte eines Schülers, der zurückkommt. Die Aufschrift der gedruckten Karte
-richtet sich nach der Art — „Schülerausweis" oder „Lehrerausweis"; eine Gültigkeit trägt
-nur der Schülerausweis, weil der Ausweis einer Lehrkraft mit keinem Schuljahr abläuft.
+richtet sich nach der Art — „Schülerausweis", „Lehrerausweis" (Lehrkraft und LiV) oder
+„Leserausweis" (die Sonderkonten; so nennt Littera jeden Ausweis); eine Gültigkeit trägt nur
+der Schülerausweis, weil ein Ausweis im Kollegium mit keinem Schuljahr abläuft.
 
 ---
 

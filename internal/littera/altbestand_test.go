@@ -183,9 +183,11 @@ func pruefeLeserEinordnung(t *testing.T, basis string) []Leser {
 		}
 	}
 
-	t.Logf("Leser: %d gesamt — %d Schueler, %d Lehrkraefte, %d abgegangen, %d sonstige, %d unklar",
+	sonderkonten := len(NurArt(leser, ArtPraktikum)) + len(NurArt(leser, ArtSekretariat)) +
+		len(NurArt(leser, ArtUPlus)) + len(NurArt(leser, ArtFachbereich))
+	t.Logf("Leser: %d gesamt — %d Schueler, %d Lehrkraefte, %d abgegangen, %d Sonderkonten, %d unklar",
 		len(leser), len(schueler), len(lehrkraefte), len(abgegangen),
-		len(NurArt(leser, ArtSonstige)), len(NurArt(leser, ArtUnbekannt)))
+		sonderkonten, len(NurArt(leser, ArtUnbekannt)))
 
 	// schueler.abgaenger_jahr ist NOT NULL. Jeder Schueler, der geschrieben werden
 	// soll, braucht also einen Wert — sonst bricht der Import auf halber Strecke ab.

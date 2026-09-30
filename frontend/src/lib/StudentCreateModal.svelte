@@ -15,7 +15,7 @@
 	import StudentFormFelder from './components/StudentFormFelder.svelte';
 	import LeserArtWahl from './components/students/LeserArtWahl.svelte';
 	import KollegiumFormFelder from './components/students/KollegiumFormFelder.svelte';
-	import { leserArtText, istKollegium } from './leserArt.js';
+	import { leserArtText, istKollegium, artMitKonto } from './leserArt.js';
 	import { TriangleAlert } from '@lucide/svelte';
 
 	let { open = false, klassen = [], onclose, onsuccess } = $props();
@@ -32,6 +32,9 @@
 	let isSaving = $state(false);
 
 	const kollege = $derived(istKollegium({ art }));
+	// Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal" und deshalb keine
+	// Schul-E-Mail (30.09.2026) — dieselbe Regel wie im Server (repository.ArtMitKonto).
+	const mitKonto = $derived(artMitKonto(art));
 
 	// Formular zurücksetzen, sobald der Dialog aufgeht — samt Art: Wer zuletzt eine
 	// Lehrkraft angelegt hat, legt beim nächsten Mal nicht ungewollt die zweite an.
@@ -58,7 +61,7 @@
 			// Kontaktangabe: Aus ihr entsteht das Anmeldekonto, und weil sie eindeutig ist,
 			// findet die spätere Selbstanmeldung über „Mein Portal" diesen Eintrag wieder
 			// — statt einen zweiten anzulegen.
-			if (!newEmail.trim())
+			if (mitKonto && !newEmail.trim())
 				return 'Die Schul-E-Mail-Adresse fehlt. Ohne sie steht die Person doppelt in der Leserdatei, sobald sie sich über „Mein Portal“ selbst anmeldet.';
 			return '';
 		}
@@ -82,9 +85,9 @@
 				klasse: kollege ? '' : newKlasse.trim(),
 				barcode_id: newBarcode.trim(),
 				geburtsdatum: kollege ? null : newGeburtsdatum.trim(),
-				// Nur beim Kollegen: Ein Schüler bekommt kein Konto, und der Server weist
-				// eine Adresse an einem Schüler ausdrücklich ab.
-				email: kollege ? newEmail.trim() : ''
+				// Nur wo ein Zugang dazugehört: Ein Schüler, ein Praktikum und ein Fachbereich
+				// bekommen kein Konto, und der Server weist eine Adresse dort ausdrücklich ab.
+				email: mitKonto ? newEmail.trim() : ''
 			});
 			if (res.ok) {
 				onsuccess?.();
@@ -138,6 +141,7 @@
 
 		{#if kollege}
 			<KollegiumFormFelder
+				{art}
 				bind:vorname={newVorname}
 				bind:nachname={newNachname}
 				bind:barcode={newBarcode}

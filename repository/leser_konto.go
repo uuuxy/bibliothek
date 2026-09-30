@@ -35,7 +35,7 @@ type KontoSchreiber interface {
 // macht daraus eine 404 statt einer 500 — „nicht gefunden" ist keine Störung.
 var ErrLeserNichtGefunden = errors.New("leser nicht gefunden")
 
-// LeserArt liefert die Art einer Leserzeile (schueler | lehrkraft | liv).
+// LeserArt liefert die Art einer Leserzeile (chk_leser_art, Migration 153).
 func LeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (string, error) {
 	var art string
 	err := pool.QueryRow(ctx, `SELECT art FROM leser WHERE id = $1`, leserID).Scan(&art)
@@ -43,6 +43,26 @@ func LeserArt(ctx context.Context, pool db.PgxPoolIface, leserID string) (string
 		return "", ErrLeserNichtGefunden
 	}
 	return art, err
+}
+
+// ArtMitKonto sagt, ob zu dieser Art ein Zugang zu „Mein Portal" gehört — und damit die
+// Schul-E-Mail, aus der er entsteht: Lehrkraft, LiV, Sekretariat und U-plus.
+//
+// Praktikum und Fachbereich nicht (Entscheidung vom 30.09.2026): Ein Fachbereich ist keine
+// Person, sondern ein Sammelkonto, das die Kollegen des Fachs benutzen; ein Praktikant leiht
+// aus, braucht aber keinen Zugang. Für sie legt das Programm kein Konto an — weder beim
+// Anlegen noch beim Nachtragen in der Akte, noch in der Littera-Übernahme. Ein Konto, das
+// schon besteht (etwa nach dem Zusammenführen mit einer Selbstanmeldung), bleibt stehen;
+// über den Zugang entscheidet dann die Benutzerverwaltung.
+//
+// Ein Schüler hat nie ein Konto. Dieselbe Tabelle steht für den Browser in
+// frontend/src/lib/leserArt.js; beide prüft leserArt.faelle.json.
+func ArtMitKonto(art string) bool {
+	switch art {
+	case "lehrkraft", "liv", "sekretariat", "uplus":
+		return true
+	}
+	return false
 }
 
 // LeserArtUndKontoEmail liefert die Art der Leserzeile und die Adresse an ihrem Konto

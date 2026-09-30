@@ -21,16 +21,22 @@
      Nachtragen, nicht ändern: Steht am Konto bereits eine Adresse, ist das Feld eine
      Anzeige (readonly, damit man sie lesen und kopieren kann). Geändert wird sie in der
      Benutzerverwaltung — sie ist die Identität des Kontos, und zwei Türen zu demselben
-     Zustand kennt nur eine die Regeln (api/student_schul_email.go). -->
+     Zustand kennt nur eine die Regeln (api/student_schul_email.go).
+
+     Praktikum und Fachbereich bekommen keinen Zugang (30.09.2026, artMitKonto): Bei ihnen
+     ist das Feld verschlossen wie beim Schüler — außer ein Konto besteht schon, dann bleibt
+     es die Anzeige. -->
 <script>
 	import Feld from '../ui/Feld.svelte';
 	import Abschnitt from '../ui/Abschnitt.svelte';
-	import { istKollegium } from '../../leserArt.js';
+	import { istKollegium, artMitKonto } from '../../leserArt.js';
 
 	/** @type {{ formData: any, kontoVorhanden?: boolean }} */
 	let { formData, kontoVorhanden = false } = $props();
 
 	const kollege = $derived(istKollegium({ art: formData.art }));
+	// Nachtragbar ist die Adresse nur, wo ein Zugang zur Art gehört und noch keiner besteht.
+	const nachtragbar = $derived(artMitKonto(formData.art) && !kontoVorhanden);
 </script>
 
 <section>
@@ -66,18 +72,20 @@
 
 		<Feld
 			id="schul_email"
-			label={kollege && !kontoVorhanden ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
+			label={nachtragbar ? 'Schul-E-Mail *' : 'Schul-E-Mail'}
 			class="col-span-4"
 			type="email"
 			bind:value={formData.email}
-			placeholder={kollege ? 'vorname.nachname@schule.de' : ''}
-			disabled={!kollege}
+			placeholder={nachtragbar ? 'vorname.nachname@schule.de' : ''}
+			disabled={!nachtragbar && !(kollege && kontoVorhanden)}
 			readonly={kollege && kontoVorhanden}
 			hint={!kollege
 				? 'Ein Schüler hat keinen Zugang.'
 				: kontoVorhanden
 					? 'Der Zugang besteht. Die Adresse ist die Anmeldung selbst — ändern in der Benutzerverwaltung.'
-					: 'Damit entsteht der Zugang zu „Mein Portal“. Meldet sich die Person später selbst an, findet die Anmeldung diesen Eintrag statt einen zweiten anzulegen.'}
+					: nachtragbar
+						? 'Damit entsteht der Zugang zu „Mein Portal“. Meldet sich die Person später selbst an, findet die Anmeldung diesen Eintrag statt einen zweiten anzulegen.'
+						: 'Praktikum und Fachbereich bekommen keinen Zugang zu „Mein Portal“.'}
 		/>
 		<Feld
 			id="eltern_email"

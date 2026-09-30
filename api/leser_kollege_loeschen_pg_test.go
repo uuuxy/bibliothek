@@ -103,6 +103,24 @@ func TestKollegeLoeschen(t *testing.T) {
 		}
 	})
 
+	// Praktikum und Fachbereich haben nie ein Konto (Migration 153, repository.ArtMitKonto).
+	// Gerade Praktikanten gehen nach Wochen wieder; ihr Eintrag muss sich ohne Konto löschen
+	// lassen, statt am fehlenden Konto zu scheitern.
+	t.Run("ein Praktikum ohne Konto wandert in den Papierkorb", func(t *testing.T) {
+		var leserID string
+		if err := pool.QueryRow(ctx, `
+			INSERT INTO leser (vorname, nachname, art) VALUES ('Pia', 'Praktikum', 'praktikum')
+			RETURNING id::text`).Scan(&leserID); err != nil {
+			t.Fatalf("Leserzeile anlegen: %v", err)
+		}
+		if rec := loesche(t, leserID, admin); rec.Code != http.StatusOK {
+			t.Fatalf("Antwort %d: %s", rec.Code, rec.Body.String())
+		}
+		if n := zaehle(t, `SELECT count(*) FROM leser WHERE id = $1 AND deleted_at IS NOT NULL`, leserID); n != 1 {
+			t.Error("das Praktikum liegt nicht im Papierkorb")
+		}
+	})
+
 	t.Run("der gelöschte Kollege steht im Papierkorb", func(t *testing.T) {
 		leserID, _ := kollegeMitKonto(t, "Paul", "Papierkorb", "paul.papierkorb@schule.invalid")
 		if rec := loesche(t, leserID, admin); rec.Code != http.StatusOK {

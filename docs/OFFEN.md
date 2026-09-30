@@ -76,9 +76,8 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgt 5.18 (Lesergruppen für Sonderkonten, vor dem Umstieg),
-   dann 5.21
-   (Palettenfarben, Bildschirm für Bildschirm).
+   zurückgestellt (siehe oben). Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu
+   4.26 (wer die Schule verlässt, hat oft noch Bücher) steht die Frage-Runde aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -291,6 +290,31 @@ Zwei Lücken, nicht entschieden:
 Einen Vorschlag auch für vorhandene Titel? Zu entscheiden nach der Littera-Übernahme (7.2): Dann
 lässt sich an echten DNB-Sätzen messen, wie oft die GND-Wörter zur Liste passen.
 
+### 4.26 Wer die Schule verlässt, hat oft noch Bücher
+
+Vorgemerkt am 30.09.2026, beim Bau der Sonderkonten (Migration 153). Ein Praktikum endet nach
+Wochen; hat der Praktikant noch Bücher, fällt das heute nirgends auf. Für jeden Leser außer dem
+Schüler ist eine Ausleihe eine Dauerleihe: keine Mahnung, nie überfällig (entschieden am
+16.09.2026). Die Leserdatei zeigt die Art als Spalte, filtern oder sortieren lässt sich danach
+nicht. Löschen lässt sich ein Eintrag mit offenen Büchern nicht; er bleibt stehen, und die Bücher
+stehen nur in seiner Akte.
+
+Gemessen am 30.09.2026 in der Littera-Sicherung von 2010 (jüngste Ausleihe 19.11.2010):
+
+- Littera gab Praktikanten und Lehrern dieselbe Leihfrist, meist 21 Tage.
+- Praktikum: 9 Konten, 8 davon mit offenen Ausleihen (20 Bücher); bei 3 Konten lag ein Buch seit
+  mehr als zwei Jahren (725, 835 und 1.387 Tage).
+- Lehrkräfte: 158 Konten, 143 davon mit offenen Ausleihen (1.380 Bücher), die ältesten seit
+  mehr als neun Jahren.
+- Eine Mahnung hat Littera bei keiner der 15.615 Ausleihen vermerkt.
+
+Die Frist allein hat dort also nichts bewirkt. Die Lücke ist der Tag, an dem jemand geht — ein
+Praktikant nach Wochen, eine Lehrkraft beim Schulwechsel oder Ruhestand.
+
+**Frage:** Was soll geschehen, wenn jemand aus dem Kollegium die Schule verlässt und noch Bücher
+hat? Vor der Frage-Runde nachsehen: Littera-Handbuch (Leser mit Ablaufdatum, Löschliste) und wie
+andere Bibliotheksprogramme ein Konto mit Ablaufdatum führen.
+
 ---
 
 ## 5. Abarbeitbar (Kategorie B)
@@ -449,23 +473,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Eine neue Stelle dieser Regeln meldet gosec nicht. Abhilfe: je Stelle ein `#nosec` mit Grund,
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
-
-### 5.18 Lesergruppen für Sonderkonten — vor dem Umstieg
-
-Die Klassen selbst sind seit dem 30.09.2026 erledigt: Sie kommen aus der LUSD, und an allen
-Stellen wird die Klasse gewählt statt getippt (die Geschichte steht in den Commits vom
-30.09.2026). Bewusst von Hand bleibt nur „Andere Klasse eintragen" im LMF-Planer, für die
-Ausgabe an Klassen, die der August-Import erst bringt.
-
-**Zu bauen (entschieden am 29.09.2026):** Gruppen für Sonderkonten (Fachbereich, Praktikum,
-U-plus, Sekretariat) in `lesergruppen` (Kürzel, Bezeichnung), freiwillig wählbar an der
-Leserakte eines Kollegen; die Littera-Übernahme setzt sie statt einer Zeile im Protokoll
-([SCRIPTS.md](SCRIPTS.md), Abschnitt 1). „Lehrer" und „Lehrerin" aus Littera werden keine
-Gruppe — sie tragen das Geschlecht, das das Programm nicht speichert, und die Art steht schon an
-jeder Person. Gemessen am 29.09.2026: `lesergruppen` leer, kein Kollege mit Klasse.
-
-Später, mit eigener Frage: Statistik nach Zweigen. Sie braucht den Zweig an der Ausleihe ohne
-Namen, weil eine Ausleihe der Bücherei seit dem 29.09.2026 den Namen nach einem Tag verliert.
 
 ### 5.19 Lesepfade gegen die Sicht `schueler` — was offen bleibt
 
@@ -850,7 +857,9 @@ ein Schüler wird Lehrkraft (die Datenbank verbietet es, `chk_leser_nur_schueler
 heute ein zweiter Leser, bei Häufung ein Umzugspfad wie Migration 072) ·
 Schlagwortliste drucken, Schlagwortkatalog als Datei aus- und einlesen (wie Littera, nur wenn die
 Bücherei es braucht; 23.09.2026) · Verweise für Autoren (der Autor ist ein Textfeld, kein
-Personensatz).
+Personensatz) · Statistik nach Zweigen (braucht den Zweig an der Ausleihe ohne Namen, weil eine
+Ausleihe der Bücherei seit dem 29.09.2026 den Namen nach einem Tag verliert; nur mit eigener
+Frage).
 
 ---
 
