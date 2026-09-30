@@ -133,24 +133,37 @@ func (r *pgReservationRepository) GetKlassensatzReservierungen(ctx context.Conte
 	// zuerst reserviert hat, ist zuerst dran; erledigte dahinter, neueste zuerst.
 	// verfuegbar zählt wie der OPAC (Paarung!): ausleihbar, nicht ausgesondert,
 	// keine offene Ausleihe.
+	// Optimization: Replaced correlated scalar subquery for 'verfuegbar' with a LEFT JOIN LATERAL
+	// over a CTE base to prevent N+1 evaluations. The ORDER BY is applied to the outermost query
+	// to guarantee deterministic ordering.
 	rows, err := r.db.Query(ctx, `
-		SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,''),
-		       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
-		       CASE WHEN b.id IS NULL THEN NULL
-		            ELSE btrim(b.vorname || ' ' || b.nachname) END AS angefordert_von,
-		       (SELECT COUNT(*) FROM buecher_exemplare e
-		        WHERE e.titel_id = r.titel_id
-		          AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
-		          AND NOT EXISTS (SELECT 1 FROM ausleihen a
-		                          WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
-		       ) AS verfuegbar,
-		       r.erledigt_notiz, r.erledigt_am
-		FROM klassensatz_reservierungen r
-		JOIN buecher_titel t ON r.titel_id = t.id
-		LEFT JOIN benutzer b ON r.angefordert_von = b.id
-		ORDER BY r.erledigt ASC,
-		         CASE WHEN r.erledigt THEN r.erstellt_am END DESC,
-		         CASE WHEN NOT r.erledigt THEN r.erstellt_am END ASC
+		WITH base AS (
+			SELECT r.id, r.titel_id, t.titel, coalesce(t.cover_url,'') AS cover_url,
+			       r.klasse, r.anzahl, r.notiz, r.erledigt, r.erstellt_am,
+			       CASE WHEN b.id IS NULL THEN NULL
+			            ELSE btrim(b.vorname || ' ' || b.nachname) END AS angefordert_von,
+			       r.erledigt_notiz, r.erledigt_am
+			FROM klassensatz_reservierungen r
+			JOIN buecher_titel t ON r.titel_id = t.id
+			LEFT JOIN benutzer b ON r.angefordert_von = b.id
+		)
+		SELECT base.id, base.titel_id, base.titel, base.cover_url,
+		       base.klasse, base.anzahl, base.notiz, base.erledigt, base.erstellt_am,
+		       base.angefordert_von,
+		       COALESCE(v.verfuegbar, 0) AS verfuegbar,
+		       base.erledigt_notiz, base.erledigt_am
+		FROM base
+		LEFT JOIN LATERAL (
+			SELECT COUNT(*)::int AS verfuegbar
+			FROM buecher_exemplare e
+			WHERE e.titel_id = base.titel_id
+			  AND e.ist_ausleihbar = true AND e.ist_ausgesondert = false
+			  AND NOT EXISTS (SELECT 1 FROM ausleihen a
+			                  WHERE a.exemplar_id = e.id AND a.rueckgabe_am IS NULL)
+		) v ON true
+		ORDER BY base.erledigt ASC,
+		         CASE WHEN base.erledigt THEN base.erstellt_am END DESC,
+		         CASE WHEN NOT base.erledigt THEN base.erstellt_am END ASC
 	`)
 	if err != nil {
 		return nil, err
