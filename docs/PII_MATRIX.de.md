@@ -20,12 +20,17 @@ Fachrecht über den echten Router mit einer Rolle, die das Recht ihrer Zeile
 NICHT hat, und verlangt 403 mit der Begründung des Rechte-Wächters. Damit ist
 auch der Fall abgedeckt, den ein Textvergleich nie sieht: ein Recht, das im
 Seed ohnehin jede Rolle hält.
-Stand: 28.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
+Seit dem 30.09.2026 prüft das Antwort-Gate auch den Kopf: Eine Antwort ab Stufe 1
+muss `Cache-Control: no-store` tragen, damit der Browser sie nicht ablegt
+(`pruefeKeinAblegen`), ebenso eine Route der Stufe 0, deren Adresse eine
+Personenkennung trägt (`adresseTraegtPersonendaten`, heute `GET /api/barcode`).
+Stand: 30.09.2026 (erhoben 19.08.2026, alle 6 Abschnitte Handler für Handler und
 stichprobenartig am laufenden System belegt; 01.09.: Tresen-Auskunft ergänzt,
 Antwort-Gate eingezogen; 24.09.: die Sperr-Tür und das Protokoll der Sperren am Code
 nachgetragen; 25.09.: die Auflagen-Türen und der Auflagen-Hinweis der Theke am Code
 nachgetragen; 28.09.: das Zusatzrecht der Auskunft über einen Leser mit Zugangskonto
-nachgetragen; die übrigen Zeilen nicht erneut erhoben).
+nachgetragen; 30.09.: der Kopf gegen das Ablegen im Browser am Antwort-Gate; die übrigen
+Zeilen nicht erneut erhoben).
 
 **Seit dem 16.09.2026 stehen hinter denselben Routen auch Daten von Lehrkräften.** Die
 Leserdatei führt Schüler und Kollegium in einer Tabelle (`leser`, FACHKONZEPT §12.3); die
@@ -256,7 +261,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `GET /api/faecher`                           | view_books      | 0     | Fächerliste                                                                                                                                                                                                                                   |
 | `GET /api/admin/auditlog`                    | manage_users    | 2     | details-JSONB: schueler_id + Sperrgrund bei LESER_GESPERRT und LESER_ENTSPERRT (seit 24.09.2026) und in OVERRIDE_BLOCK-Einträgen bis zum 24.09.2026; seither nennt OVERRIDE_BLOCK nur Zahlen                                                  |
 | `GET /api/barcode/next`                      | edit_books      | 0     | nächste Exemplarnummer                                                                                                                                                                                                                        |
-| `GET /api/barcode`                           | view_books      | 0     | Barcode-PNG aus Aufrufer-Eingabe                                                                                                                                                                                                              |
+| `GET /api/barcode`                           | view_books      | 0     | Barcode-PNG aus Aufrufer-Eingabe; die Adresse trägt beim Ausweis die Ausweisnummer, deshalb `no-store`                                                                                                                                                                                                              |
 | `GET /api/signaturen`                        | view_books      | 0     | Signatur-Gruppen                                                                                                                                                                                                                              |
 | `GET /api/signaturen/buecher`                | view_books      | 0     | Titel je Signatur                                                                                                                                                                                                                             |
 | `GET /api/schlagworte`                       | view_books      | 0     | Schlagwort-Vorschläge (Wort und Zahl der Titel)                                                                                                                                                                                               |

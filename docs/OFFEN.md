@@ -67,26 +67,24 @@ entfallen.
    Stack, wenn der Nachweis ansteht.
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
-hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. `Cache-Control` (5.29) bleibt
-zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 26 ab dem
+hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
 28. Oktober 2026 nach der Regel „immer die aktive LTS"
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Die CI steht seit dem 28.09.2026 fest auf
 `ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Die Reihenfolge
 (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
 Reihenfolge unter 1. die vom 29.09.2026):
 
-1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu
-   4.22 und 4.24 stehen die Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen
-   aus. Entschieden am 30.09.2026 und zu bauen: 4.25 (Vorschlag für vorhandene Titel); seine
-   Stelle in der Reihenfolge steht aus.
+1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.22 und 4.24 stehen die
+   Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus. Entschieden am
+   30.09.2026 und zu bauen: 4.25 (Vorschlag für vorhandene Titel); seine Stelle in der
+   Reihenfolge steht aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
-Vor dem Echtstart außerdem: 5.29 (Antworten ohne `Cache-Control`), 5.31 (`update.sh` für den
-Schulserver) und der Eingang für die Seite der Lieferanten (4.23).
+Vor dem Echtstart außerdem: 5.31 (`update.sh` für den Schulserver) und der Eingang für die Seite
+der Lieferanten (4.23).
 
 **In der Doku:** Pflegekonzept und Datenschutz-Nachweis (9.9) stehen als Entwurf. Im
 Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stellen eingetragen,
@@ -563,17 +561,6 @@ Er sondert das Exemplar aus und legt die Forderung mit `exemplar_id` an. Fehlt b
 Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHKONZEPT (Abschnitt
 5) behauptete bis zum 24.09.2026 einen. Gesperrt würde nach 4.4 wie heute (Schülerbücherei und
 Geräte).
-
-### 5.29 API-Antworten tragen kein `Cache-Control`
-
-Aufgefallen beim Rasterdurchgang vom 28.09.2026 (Frage 9 an der Datenschutz-Auskunft), nicht
-Teil der Änderungen vom 24.09.2026. Den Kopf setzen nur Buchcover, Barcodes, die Barcode-Liste
-der Theke, der Ereignisstrom und das Ausweisfoto — dieses mit `no-store`, „da die Bilder sensibel
-sind" (`internal/crypto/upload_helpers.go`). Der Caddy-Block der Bibliothek (`update_caddy.sh`)
-setzt keinen. Listen und Akten mit Namen und Adressen und die Auskunft als PDF darf der Browser
-damit in seinem Festplatten-Cache ablegen, auf Rechnern, die mehrere Personen benutzen.
-Abhilfe: `Cache-Control: no-store` als Vorgabe für `/api/`, wo der Handler nichts Eigenes setzt;
-vorher nachsehen, ob die Theke ohne Netz auf dem Browser-Cache aufbaut.
 
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 

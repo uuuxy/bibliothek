@@ -1,20 +1,22 @@
 /**
  * Die eine Adresse, unter der ein Strichcode-Bild geholt wird.
  *
- * Der Server liefert `/api/barcode` mit `Cache-Control: max-age=31536000` — ein Jahr.
- * Das ist richtig, solange dieselbe Adresse dasselbe Bild bedeutet: Ein Ausweisbogen mit
- * 30 Karten holt sonst 30-mal dasselbe PNG.
+ * Bis zum 30.09.2026 lieferte der Server `/api/barcode` mit `Cache-Control:
+ * max-age=31536000` — ein Jahr. Seitdem gilt `no-store` wie für jede Antwort unter /api/
+ * (internal/middleware/security.go, OFFEN.md 5.29): Die Adresse trägt den Inhalt, beim
+ * Ausweis also die Ausweisnummer, und der Browser legte sie mit dem Bild ab.
  *
- * Genau diese Annahme brach am 17.09.2026. Der Drucker stellte von Code 39 (mit
+ * Am 17.09.2026 brach das lange Ablegen schon einmal. Der Drucker stellte von Code 39 (mit
  * Prüfzeichen) auf Code 128 um, die Adresse blieb gleich — und jedes Gerät, das die Karte
  * vorher einmal angezeigt hatte, zeigte weiter den ALTEN Strichcode. Auf dem Handy stand
  * unter der Karte „S-10001", gescannt wurde „S-10001N", und der Server suchte eine Nummer,
  * die es nicht gibt. Der Code war da schon repariert; im Browser lag noch das Bild von
  * gestern.
  *
- * Deshalb trägt die Adresse die Fassung der Kodierung. Wer am Erzeuger etwas ändert
- * (api/barcode_generate.go), zählt FASSUNG hoch — dann ist es für jeden Browser ein neues
- * Bild, ohne dass jemand einen Cache leeren muss.
+ * Deshalb trägt die Adresse die Fassung der Kodierung. Sie bleibt, solange Browser noch
+ * Bilder von vor dem 30.09.2026 halten (höchstens bis Ende September 2027): Wer am Erzeuger
+ * etwas ändert (api/barcode_generate.go), zählt FASSUNG hoch — dann ist es für jeden
+ * Browser ein neues Bild, ohne dass jemand einen Cache leeren muss.
  */
 export const FASSUNG = 'c128';
 

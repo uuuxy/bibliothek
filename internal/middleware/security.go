@@ -2,12 +2,14 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 )
 
 // SecurityHeadersMiddleware adds strict security headers to all responses.
 // This includes Content-Security-Policy (CSP) restricted to 'self',
 // X-Content-Type-Options, X-Frame-Options, X-XSS-Protection,
-// Referrer-Policy, and Permissions-Policy.
+// Referrer-Policy, and Permissions-Policy — and, for every response under
+// /api/, Cache-Control: no-store as a default the handler may override.
 func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
@@ -63,6 +65,27 @@ func SecurityHeadersMiddleware(next http.Handler) http.Handler {
 		// Feature-Policy is deprecated, using Permissions-Policy
 		// Allow camera for barcode scanning
 		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=(self)")
+
+		// Antworten der Schnittstelle legt der Browser nicht ab — seit dem 30.09.2026
+		// (OFFEN.md 5.29), nach OWASP ASVS 5.0, 14.3.2: „anti-caching HTTP response header
+		// fields (i.e., Cache-Control: no-store) so that sensitive data is not cached in
+		// browsers". no-store verbietet auch jedem Zwischenspeicher im Netz das Ablegen
+		// (RFC 9111, 5.2.2.5).
+		//
+		// Bis dahin trug nur das Passfoto den Kopf. Listen, Akten und die Auskunft als PDF
+		// durfte der Browser auf der Festplatte ablegen; das Abmelden löscht dort nichts.
+		// Auf einem Rechner, an dem nacheinander mehrere Leute unter demselben Konto
+		// arbeiten, konnte der Nächste sie mit einem Werkzeug auslesen, bis der Browser sie
+		// selbst überschrieb.
+		//
+		// Nur /api/: Die Programmdateien der Oberfläche tragen keine Personendaten. Die
+		// Vorgabe steht VOR dem Handler, ein eigener Kopf überschreibt sie — heute die Cover
+		// (api/image_caching.go) und die Buchnummern der Theke (api/buchbarcodes_handler.go),
+		// beide ohne Personendaten. Dass keine Antwort mit Personendaten sie aufweicht, prüft
+		// api/pii_antwort_gate_pg_test.go an jeder Route ab Stufe 1.
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			w.Header().Set("Cache-Control", "no-store")
+		}
 
 		next.ServeHTTP(w, r)
 	})

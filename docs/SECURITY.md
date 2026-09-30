@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-29 (Löschroutinen: erledigte Klassensatz-Reservierungen fallen
+> Zuletzt aktualisiert: 2026-09-30 (Security-Header: Antworten unter `/api/` tragen
+> `Cache-Control: no-store`, der Browser legt sie nicht ab).
+> Davor 2026-09-29 (Löschroutinen: erledigte Klassensatz-Reservierungen fallen
 > nach der Frist der Anliegen, gelöschte Kollegen nach 180 Tagen im Papierkorb).
 > Davor 2026-09-26 (Protokoll: die einmalige Bereinigung zu gelöschten Lesern, Migration 147;
 > übergangen wird ein Hinweis, keine Sperre).
@@ -635,6 +637,36 @@ Restriktive HTTP-Header in `internal/middleware/security.go`:
 - `object-src 'none'` — Plugin-Inhalte sind ein klassischer Umgehungsweg für `script-src`
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
+- `Cache-Control: no-store` für jede Antwort unter `/api/` (Abschnitt unten)
+
+### Der Browser legt keine Antwort der Schnittstelle ab (seit 30.09.2026)
+
+Jede Antwort unter `/api/` trägt `Cache-Control: no-store`, gesetzt in derselben Middleware.
+Das verlangt OWASP ASVS 5.0, 14.3.2: „anti-caching HTTP response header fields (i.e.,
+Cache-Control: no-store) so that sensitive data is not cached in browsers". Vorher durfte der
+Browser Listen, Akten und die Auskunft als PDF auf der Festplatte ablegen. Das Abmelden löscht
+dort nichts; an einem Rechner, an dem nacheinander mehrere Leute unter demselben Konto arbeiten,
+ließen sie sich mit einem Werkzeug auslesen, bis der Browser sie selbst überschrieb. `no-store`
+gilt auch für Zwischenspeicher im Netz (RFC 9111, 5.2.2.5).
+
+- **Ausnahmen:** Die Vorgabe steht vor dem Handler, ein eigener Kopf überschreibt sie. Das tun
+  zwei Routen ohne Personendaten: die Buchcover (`/api/images/cover`, `public`) und die
+  Buchnummern der Theke (`/api/action/buchbarcodes`, `no-cache` mit ETag, an der 200 wie an der
+  304). Das Passfoto setzt `no-store` selbst.
+- **Strichcode-Bilder** (`/api/barcode`) tragen seit dem 30.09.2026 keinen eigenen Kopf mehr.
+  Vorher lagen sie ein Jahr lang im Browser, und ihre Adresse enthält beim Ausweis die
+  Ausweisnummer.
+- **Nicht betroffen:** die Programmdateien der Oberfläche außerhalb von `/api/`. Der Service
+  Worker legt nur sie ab, keine Antwort der Schnittstelle (`frontend/vite.config.js`). Die
+  Warteschlange der Theke ohne Netz ist ein eigener Speicher mit Ausweis- und Buchnummern bis
+  zum Nachbuchen ([VVT-Entwurf](datenschutz/vvt_entwurf.md), Zusatz zu Tätigkeit 1 und 2).
+- **Gate:** `api/pii_antwort_gate_pg_test.go` verlangt `no-store` an jeder lesenden Route ab
+  Stufe 1 und an den Routen, deren Adresse eine Personenkennung trägt
+  (`adresseTraegtPersonendaten`); `internal/middleware/security_test.go` prüft die Vorgabe
+  selbst.
+- **Nicht gebaut:** `Clear-Site-Data` beim Abmelden, das ASVS 14.3.1 als Hilfe nennt. Es wirkt
+  nur beim Abmelden über den Knopf, und der Browser legt keine Antwort mit Personendaten mehr
+  ab, die es dort zu löschen gäbe.
 
 ### `img-src` ohne `https:` (seit 06.08.2026)
 

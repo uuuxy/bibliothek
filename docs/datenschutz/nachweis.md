@@ -1,6 +1,6 @@
 # Datenschutz-Nachweis
 
-Stand: 29.09.2026 (Entwurf)
+Stand: 30.09.2026 (Entwurf)
 
 Eine Übersicht zum Weitergeben an Schulleitung, schulischen Datenschutzbeauftragten und
 Schulträger: was das Programm mit Personendaten tut, woran sich jede Zusage prüfen lässt, was
@@ -101,6 +101,9 @@ Kurzfassung; vollständig im Anhang des [Verzeichnisses](vvt_entwurf.md) und im
   Datenbank, die Sicherungen verschlüsselt auf der Platte; unverschlüsselt bleibt eine
   Sicherung nur in den zwei Fällen aus Abschnitt 4. Die Verbindung zum Browser ist
   verschlüsselt; Mail verschickt das Programm nur über eine verschlüsselte Verbindung.
+- **Browser:** Antworten mit Personendaten legt der Browser nicht in seinem Zwischenspeicher
+  ab (seit dem 30.09.2026), auch nicht an Rechnern, die mehrere Personen benutzen. Von den
+  Antworten des Programms behält er nur Buchcover und die Buchnummern der Theke.
 - **Geheimnisse:** Mit den Beispielschlüsseln aus der Vorlage verweigert der Server im Betrieb
   den Start, außer jemand schaltet diese Prüfung ausdrücklich ab.
 - **Protokoll:** Verwaltungsvorgänge stehen mit Zeitpunkt und bearbeitender Person im Protokoll,
@@ -127,6 +130,7 @@ falsch, wird der Test rot, und aus diesem Stand entsteht kein Release.
 | Die Auskunft druckt jede Angabe, die sie enthält                                              | `api/dsgvo_pdf_vollstaendig_test.go`                                                                    |
 | Eine Sicherung lässt sich zurückspielen                                                       | `jobs/backup_drill_pg_test.go`, `jobs/restore_probe_pg_test.go`; im Betrieb die Probe jeden Sonntag      |
 | Update und Sicherung von Hand löschen je nur ihre eigenen verschlüsselten Sicherungen; jeden unverschlüsselten Rest löschen und melden beide | `docs/backup_ablage_test.go`                                                                            |
+| Antworten mit Personendaten legt der Browser nicht ab                                       | `api/pii_antwort_gate_pg_test.go` verlangt an jeder lesenden Adresse ab Stufe 1 den Kopf `Cache-Control: no-store` |
 | Mail geht nie unverschlüsselt hinaus                                                          | `mailservice/versand_test.go`                                                                           |
 | Die Theke leert sich und sperrt nach der eingestellten Zeit                                   | `frontend/src/lib/stores/idleLock.test.js`                                                              |
 
@@ -194,9 +198,6 @@ Stand und Reihenfolge führt [OFFEN.md](../OFFEN.md); die Nummer steht dabei.
   fest und nennt danach, wer erneut zu löschen ist
   ([resilience_and_recovery.md](../resilience_and_recovery.md), Abschnitt 2a, Schritte 5b und
   8); das Nachholen ist Handarbeit.
-- Antworten mit Personendaten tragen keine Anweisung an den Browser, sie nicht
-  zwischenzuspeichern; auf einem Rechner für mehrere Personen können sie im Browser-Speicher
-  liegen bleiben (5.29).
 - Seit dem 29.09.2026 fällt ein gelöschter Kollege nach 180 Tagen im Papierkorb endgültig, und
   erledigte Klassensatz-Reservierungen fallen nach der Frist für erledigte Wünsche und Meldungen;
   eine Reservierung, die vor dem Einspielen von Migration 089 (31.08.2026) erledigt wurde, hat

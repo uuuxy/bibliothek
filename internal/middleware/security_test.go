@@ -63,3 +63,34 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 		t.Errorf("Expected response body %q, got %q", "OK", body)
 	}
 }
+
+// Antworten unter /api/ legt der Browser nicht ab (seit dem 30.09.2026, OFFEN.md 5.29).
+// Die Programmdateien der Oberfläche bleiben unberührt, und ein Handler, der ablegen lassen
+// will, behält seinen eigenen Kopf — die Vorgabe steht vor ihm, nicht nach ihm.
+func TestSecurityHeadersMiddleware_SchnittstelleWirdNichtAbgelegt(t *testing.T) {
+	faelle := []struct {
+		name, pfad, eigenerKopf, erwartet string
+	}{
+		{"Liste", "/api/schueler", "", "no-store"},
+		{"Auskunft als PDF", "/api/schueler/5f0c9a1e-2b7d-4c1a-9d3e-7a1b2c3d4e5f/dsgvo-auskunft/pdf", "", "no-store"},
+		{"Oberfläche", "/", "", ""},
+		{"Programmdatei", "/assets/index-4f2a.js", "", ""},
+		{"Pfad beginnt nur mit api", "/apidoc", "", ""},
+		{"eigener Kopf des Handlers", "/api/images/cover", "public, max-age=86400", "public, max-age=86400"},
+	}
+	for _, f := range faelle {
+		t.Run(f.name, func(t *testing.T) {
+			handler := SecurityHeadersMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if f.eigenerKopf != "" {
+					w.Header().Set("Cache-Control", f.eigenerKopf)
+				}
+				w.WriteHeader(http.StatusOK)
+			}))
+			rr := httptest.NewRecorder()
+			handler.ServeHTTP(rr, httptest.NewRequest(http.MethodGet, "http://example.com"+f.pfad, nil))
+			if got := rr.Header().Get("Cache-Control"); got != f.erwartet {
+				t.Errorf("%s: Cache-Control %q, erwartet %q", f.pfad, got, f.erwartet)
+			}
+		})
+	}
+}

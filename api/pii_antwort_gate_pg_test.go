@@ -38,6 +38,10 @@ package api
 // Schreibrouten am echten Router, mit einer Rolle OHNE das geforderte Recht, Erwartung
 // 403 mit der Begründung des Rechte-Wächters. Diese Richtung ist ungefährlich — der
 // Request stirbt vor dem Handler, es wird nichts geschrieben oder verschickt.
+//
+// Seit dem 30.09.2026 (OFFEN.md 5.29) prüft das Gate auch den Kopf der Antwort: Ab Stufe 1
+// muss sie Cache-Control: no-store tragen, sonst legt der Browser sie ab (pruefeKeinAblegen;
+// dazu adresseTraegtPersonendaten für Stufe-0-Routen mit einer Personenkennung in der Adresse).
 
 import (
 	"context"
@@ -511,6 +515,49 @@ func antwortText(t *testing.T, resp *httptest.ResponseRecorder) string {
 	return string(roh)
 }
 
+// ── Ablage im Browser ────────────────────────────────────────────────────────
+
+// adresseTraegtPersonendaten: Zeilen der Stufe 0, deren ANTWORT nichts über eine Person
+// verrät, deren ADRESSE aber eine Kennung tragen kann. Der Browser legt mit der Antwort
+// auch ihre Adresse ab — für sie gilt deshalb dieselbe Regel wie ab Stufe 1.
+var adresseTraegtPersonendaten = map[string]string{
+	"GET /api/barcode": "content= trägt beim Ausweis die Ausweisnummer (frontend/src/lib/designer/CardFace.svelte); " +
+		"bis zum 30.09.2026 legte der Browser das Bild samt Adresse ein Jahr lang ab.",
+}
+
+// pruefeKeinAblegen: Eine Antwort mit Personendaten trägt Cache-Control: no-store — seit
+// dem 30.09.2026 (OFFEN.md 5.29; OWASP ASVS 5.0, 14.3.2). Die Vorgabe setzt
+// internal/middleware/security.go für jede Antwort unter /api/; rot wird es, wenn ein
+// Handler sie mit einem eigenen Kopf aufweicht oder die Middleware aus der Kette fällt.
+func pruefeKeinAblegen(t *testing.T, route, fall string, stufe int, rec *httptest.ResponseRecorder) {
+	t.Helper()
+	if stufe == 0 && adresseTraegtPersonendaten[route] == "" {
+		return
+	}
+	werte := rec.Header().Values("Cache-Control")
+	if traegtNoStore(werte) {
+		return
+	}
+	t.Errorf("%s%s (Stufe %d): Cache-Control %q — eine Antwort mit Personendaten muss no-store tragen, "+
+		"sonst legt der Browser sie auf der Festplatte ab, über das Abmelden hinaus.\n"+
+		"→ Die Vorgabe setzt internal/middleware/security.go für /api/. Setzt der Handler einen eigenen "+
+		"Cache-Control-Kopf, diesen entfernen oder auf no-store setzen.",
+		route, fall, stufe, strings.Join(werte, ", "))
+}
+
+// traegtNoStore: Steht no-store als Direktive in einem der Cache-Control-Werte? Groß- und
+// Kleinschreibung zählen nicht (RFC 9111, 5.2).
+func traegtNoStore(werte []string) bool {
+	for _, wert := range werte {
+		for _, direktive := range strings.Split(wert, ",") {
+			if strings.EqualFold(strings.TrimSpace(direktive), "no-store") {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 	pool := pgTestPool(t)
 
@@ -560,6 +607,17 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 			t.Errorf("Ausschluss %q ohne Begründung.", route)
 		}
 	}
+	for route, grund := range adresseTraegtPersonendaten {
+		if _, ok := getZeilen[route]; !ok {
+			t.Errorf("adresseTraegtPersonendaten führt %q ohne Matrix-Zeile — Eintrag entfernen.", route)
+		}
+		if _, ok := aufrufe[route]; !ok {
+			t.Errorf("adresseTraegtPersonendaten führt %q, das Gate ruft die Route aber nicht auf — so prüfte es dort nichts.", route)
+		}
+		if strings.TrimSpace(grund) == "" {
+			t.Errorf("adresseTraegtPersonendaten %q ohne Begründung.", route)
+		}
+	}
 
 	routen := make([]string, 0, len(getZeilen))
 	for route := range getZeilen {
@@ -600,6 +658,8 @@ func TestPIIAntwortenHaltenIhreStufe(t *testing.T) {
 					route, stufe, zeile.Recht, kanarie, rec.Code)
 			}
 		}
+
+		pruefeKeinAblegen(t, route, "", stufe, rec)
 
 		// Positiv-Kontrolle: Diese Routen MÜSSEN ihre erlaubten Daten zeigen —
 		// sonst prüfte das Gate leere Antworten und meldete ewig grün.
@@ -751,6 +811,7 @@ func TestPIIAntwortenHaltenIhreStufe_LesendePosts(t *testing.T) {
 						route, fall.Name, stufe, zeile.Recht, kanarie, rec.Code)
 				}
 			}
+			pruefeKeinAblegen(t, route, " ["+fall.Name+"]", stufe, rec)
 			for _, kanarie := range fall.Positiv {
 				if !strings.Contains(text, kanarie) {
 					t.Errorf("%s [%s]: Positiv-Kontrolle %q fehlt (Status %d) — der Aufruf erreicht die Route nicht (mehr); sonst misst das Gate hier nichts.\nAntwort-Anfang: %.200s",
@@ -777,6 +838,24 @@ func TestPIIAntwortGateErkenntVerstoss(t *testing.T) {
 	}
 	if len(verboteneKanarien(3)) != 0 {
 		t.Error("Stufe 3 darf alles — verboteneKanarien(3) muss leer sein")
+	}
+	// Dieselbe Gegenprobe für die Ablage im Browser: Nur no-store als Direktive zählt.
+	for _, f := range []struct {
+		werte []string
+		ja    bool
+	}{
+		{nil, false},
+		{[]string{"public, max-age=31536000"}, false},
+		{[]string{"no-cache"}, false},
+		{[]string{"no-storex"}, false},
+		{[]string{"no-store"}, true},
+		{[]string{"No-Store"}, true},
+		{[]string{"private, no-cache, no-store, must-revalidate"}, true},
+		{[]string{"private", "no-store"}, true},
+	} {
+		if got := traegtNoStore(f.werte); got != f.ja {
+			t.Errorf("traegtNoStore(%q) = %v, erwartet %v", f.werte, got, f.ja)
+		}
 	}
 	if len(verboteneKanarien(0)) != len(kanarienJeStufe[1])+len(kanarienJeStufe[2])+len(kanarienJeStufe[3]) {
 		t.Error("verboteneKanarien(0) muss ALLE Kanarien umfassen")

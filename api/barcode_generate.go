@@ -106,7 +106,12 @@ func (s *Server) BarcodeHandler() http.HandlerFunc {
 		}
 
 		w.Header().Set(headerContentType, "image/png")
-		w.Header().Set(headerCacheControl, "public, max-age=31536000") // Cache for 1 year
+		// Kein eigener Cache-Control-Kopf: no-store wie jede Antwort unter /api/
+		// (internal/middleware/security.go). Bis zum 30.09.2026 stand hier „public,
+		// max-age=31536000". Die Adresse trägt den Inhalt, beim Ausweis also die
+		// Ausweisnummer, und der Browser legte sie mit dem Bild ein Jahr lang ab. Das
+		// PII-Antwort-Gate führt Ausweisnummern als Stufe 1 und prüft diese Route eigens
+		// (adresseTraegtPersonendaten).
 		httpresp.Write(w, pngBytes)
 	}
 }

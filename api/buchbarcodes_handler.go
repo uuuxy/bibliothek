@@ -76,6 +76,13 @@ func (s *Server) BuchbarcodesHandler() http.HandlerFunc {
 		}
 		stand := buchbarcodesStand(kennzahl)
 
+		// no-cache an der 200 und an der 304: Eine 304 bringt den Cache-Control-Kopf mit,
+		// den die 200 hätte (RFC 9110, 15.4.5). Bis zum 30.09.2026 fehlte er an der 304;
+		// seitdem stünde dort sonst die Vorgabe no-store der Schnittstelle
+		// (internal/middleware/security.go). no-cache statt no-store, weil die Liste nur
+		// Buchnummern trägt: erneut fragen, aber der ETag darf sparen.
+		w.Header().Set("Cache-Control", "no-cache")
+
 		// Unverändert: Der Rechner behält seine Liste. Das ist der Normalfall — der
 		// Bestand ändert sich selten, angemeldet wird täglich.
 		if passtStand(r.Header.Get("If-None-Match"), stand) {
@@ -91,7 +98,6 @@ func (s *Server) BuchbarcodesHandler() http.HandlerFunc {
 		antwort := BuchbarcodesResponse{Stand: stand, Anzahl: len(barcodes), Barcodes: barcodes}
 
 		w.Header().Set("ETag", `"`+stand+`"`)
-		w.Header().Set("Cache-Control", "no-cache") // erneut fragen, aber der ETag darf sparen
 		bytes, err := schreibeVielleichtGepackt(w, r, antwort)
 		if err != nil {
 			// Nach dem ersten geschriebenen Byte hilft kein Statuscode mehr — nur das Log.

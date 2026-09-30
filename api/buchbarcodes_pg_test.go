@@ -79,6 +79,9 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	if antwort.Stand == "" || rec.Header().Get("ETag") != `"`+antwort.Stand+`"` {
 		t.Errorf("Stand %q, ETag %q — sie müssen übereinstimmen", antwort.Stand, rec.Header().Get("ETag"))
 	}
+	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
+		t.Errorf("200: Cache-Control %q, erwartet no-cache", cc)
+	}
 
 	// Unverändert: 304, kein Rumpf.
 	rec = hole(`"`+antwort.Stand+`"`, "")
@@ -87,6 +90,11 @@ func TestBuchbarcodes_VollstaendigUndMitStand(t *testing.T) {
 	}
 	if rec.Body.Len() != 0 {
 		t.Errorf("304 mit Rumpf (%d Byte)", rec.Body.Len())
+	}
+	// Die 304 trägt den Kopf der 200 (RFC 9110, 15.4.5). Ohne ihn stünde dort seit dem
+	// 30.09.2026 die Vorgabe no-store der Schnittstelle (OFFEN.md 5.29).
+	if cc := rec.Header().Get("Cache-Control"); cc != "no-cache" {
+		t.Errorf("304: Cache-Control %q, erwartet no-cache wie an der 200", cc)
 	}
 
 	// Ein neues Exemplar ändert den Stand — sonst holte der Rechner es nie.
