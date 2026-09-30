@@ -69,6 +69,44 @@ func NormalisiereSchlagworte(roh []string) ([]string, error) {
 	return woerter, nil
 }
 
+// SchlagwortAufbereitung sagt, was SchlagworteAusFremddaten weggelassen hat.
+type SchlagwortAufbereitung struct {
+	Leer, ZuLang int  // weggelassene Wörter
+	Gekuerzt     bool // mehr als SchlagworteJeTitelMax, die ersten sind geblieben
+}
+
+// SchlagworteAusFremddaten bringt die Schlagworte eines Titels aus einem Import (Littera:
+// Übernahme aus der Sicherung und Katalogisat, docs/OFFEN.md 4.20) in die Form, die
+// SetzeSchlagworte annimmt — Wort für Wort, damit ein einzelnes leeres oder zu langes Wort nicht
+// die ganze Liste kostet, wie es bei der Eingabe in der Maske richtig ist. Doppelte fallen ohne
+// Rücksicht auf Groß- und Kleinschreibung, das erste gewinnt; über SchlagworteJeTitelMax bleiben
+// die ersten. Die Form jedes Worts kommt aus NormalisiereSchlagworte — eine Regel für alle Türen.
+func SchlagworteAusFremddaten(roh []string) ([]string, SchlagwortAufbereitung) {
+	var auf SchlagwortAufbereitung
+	woerter := make([]string, 0, len(roh))
+	gesehen := make(map[string]bool, len(roh))
+	for _, eingabe := range roh {
+		norm, err := NormalisiereSchlagworte([]string{eingabe})
+		switch {
+		case err != nil:
+			auf.ZuLang++
+			continue
+		case len(norm) == 0:
+			auf.Leer++
+			continue
+		}
+		if schluessel := strings.ToLower(norm[0]); !gesehen[schluessel] {
+			gesehen[schluessel] = true
+			woerter = append(woerter, norm[0])
+		}
+	}
+	if len(woerter) > SchlagworteJeTitelMax {
+		auf.Gekuerzt = true
+		woerter = woerter[:SchlagworteJeTitelMax]
+	}
+	return woerter, auf
+}
+
 // SetzeSchlagworte ersetzt die Schlagworte eines Titels durch die genannten und liefert
 // sie in der gespeicherten Schreibweise zurück. Eine leere Liste entfernt alle; wer
 // nichts ändern will, ruft die Funktion nicht auf (die Aufrufer unterscheiden „nicht

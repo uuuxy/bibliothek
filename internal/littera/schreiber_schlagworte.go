@@ -2,9 +2,7 @@ package littera
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 
 	"bibliothek/internal/uebernahme"
 	"bibliothek/repository"
@@ -97,36 +95,23 @@ func (s *Schreiber) SchreibeSchlagworte(ctx context.Context, ab *Altbestand, bes
 	return b, nil
 }
 
-// bereiteSchlagworteVor bringt die Wörter eines Titels in die Form des Schreibpfads und lässt
-// weg, was er ablehnen würde — Wort für Wort, damit ein einzelnes zu langes Wort nicht die
-// ganze Liste kostet. Die Form kommt aus repository.NormalisiereSchlagworte, nicht aus einer
-// zweiten Regel hier.
+// bereiteSchlagworteVor bringt die Wörter eines Titels in die Form des Schreibpfads
+// (repository.SchlagworteAusFremddaten, dieselbe Regel wie im Katalogisat-Import) und schreibt
+// ins Protokoll, was dabei wegfiel.
 func (s *Schreiber) bereiteSchlagworteVor(t Titel, roh []string, b *SchlagwortBericht) []string {
-	var woerter []string
-	gesehen := map[string]bool{}
-	for _, eingabe := range roh {
-		norm, err := repository.NormalisiereSchlagworte([]string{eingabe})
-		switch {
-		case errors.Is(err, repository.ErrSchlagwortUngueltig):
-			b.Weggelassen++
-			s.prot.Warnung(t.ID, t.ISBN, fmt.Sprintf("Schlagwort länger als %d Zeichen – weggelassen",
-				repository.SchlagwortMaxZeichen))
-			continue
-		case len(norm) == 0:
-			b.Weggelassen++
-			s.prot.Warnung(t.ID, t.ISBN, "Schlagwort leer – weggelassen")
-			continue
-		}
-		if schluessel := strings.ToLower(norm[0]); !gesehen[schluessel] {
-			gesehen[schluessel] = true
-			woerter = append(woerter, norm[0])
-		}
+	woerter, auf := repository.SchlagworteAusFremddaten(roh)
+	for range auf.ZuLang {
+		s.prot.Warnung(t.ID, t.ISBN, fmt.Sprintf("Schlagwort länger als %d Zeichen – weggelassen",
+			repository.SchlagwortMaxZeichen))
 	}
-	if len(woerter) > repository.SchlagworteJeTitelMax {
+	for range auf.Leer {
+		s.prot.Warnung(t.ID, t.ISBN, "Schlagwort leer – weggelassen")
+	}
+	b.Weggelassen += auf.Leer + auf.ZuLang
+	if auf.Gekuerzt {
 		b.Gekuerzt++
 		s.prot.Warnung(t.ID, t.ISBN, fmt.Sprintf("mehr als %d Schlagworte – die ersten %d übernommen",
 			repository.SchlagworteJeTitelMax, repository.SchlagworteJeTitelMax))
-		woerter = woerter[:repository.SchlagworteJeTitelMax]
 	}
 	return woerter
 }

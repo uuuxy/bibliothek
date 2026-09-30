@@ -193,6 +193,14 @@ go run ./cmd/littera-import -file katalogisat.xml -db "$DATABASE_URL"
   `pkg/lmf.Zerlege`), sonst aus Litteras Schlagwörtern (MAB 710, nur wenn sie genau ein
   Fach nennen) und der Zielgruppe (MAB 070b: Sek I → 5–10, Sek II → 11–13). Fach und
   Klassenstufe füllen nur Leerstellen, die Jahrgangsspanne folgt der Quelle.
+- **Schlagworte (seit dem 30.09.2026, docs/OFFEN.md 4.20):** Die Wörter aus MAB 710 kommen an
+  Titel, die noch keine tragen, über den Pfad des Buchformulars (`repository.SetzeSchlagworte`)
+  und aufbereitet wie in der Übernahme aus der Sicherung (`repository.SchlagworteAusFremddaten`):
+  leer oder zu lang fällt weg, höchstens 300 je Titel. Wer schon Schlagworte trägt, behält
+  seine; ein erneuter Import überschreibt keine Pflege. Steht ein Titel zweimal in der Datei,
+  gilt der erste Eintrag mit Schlagworten. Am Katalogisat vom Juni 2026 in eine leere Datenbank
+  gemessen: 11.302 Titel, 7.238 davon mit Schlagworten, 32.635 Zuordnungen, 10.860 Wörter, 17
+  Sekunden gegen eine lokale Datenbank.
 - **Re-Import als Reparatur:** Ein Bestand, der vor Migration 093 importiert wurde, bekommt
   durch einen erneuten Lauf derselben Datei Fach und Jahrgang nachgetragen — die Migration
   hat Titel und Lernmittel-Feld bereits bereinigt, die Titel matchen also.

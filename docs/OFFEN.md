@@ -92,8 +92,7 @@ die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es fol
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 
 Mit der Littera-Übernahme (7.2) kommen das Eigentum je Exemplar (4.24) und alle Schlagworte der
-Titel (4.20); aus dem Katalogisat kommen sie noch nicht (4.20, Stufe 3). Danach ist 4.25 an
-echten DNB-Sätzen zu messen und zu entscheiden.
+Titel (4.20); danach ist 4.25 an echten DNB-Sätzen zu messen und zu entscheiden.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
 Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
@@ -192,15 +191,9 @@ Titel tragen mehr als 30, einer 282. Littera bläht den eigenen Schlagwortkatalo
 Übernahme fremder Daten auf („der eigene Schlagwortkatalog wird unkontrolliert aufgebläht",
 Projektarbeit einer Littera-Bücherei, BVÖ 2014); gelöscht wird trotzdem nichts, das niemand
 angesehen hat — aufgeräumt wird danach auf der Pflegeseite, wie in Littera über die
-Datenbearbeitung. Offen:
-
-- **Stufe 3:** Der Katalogisat-Import (`internal/service/import_service.go`) liest die
-  Schlagworte als MAB 710, leitet daraus nur das Fach ab und verwirft sie. Er schreibt sie
-  künftig ebenfalls, aber nur an Titel, die noch keine tragen. Damit kommt die Liste vom Juni
-  2026 schon vor dem Umstieg auf den Testserver.
-- **Verweise:** Die Übernahme aus der Sicherung zählt sie nur (`Verweise_Schlagworte`,
-  `Verweis_Zu_Schlagworte`, 2010 beide leer). Nennt die Generalprobe mit der Sicherung von 2026
-  welche, an diesen Daten die Form ablesen und die Übernahme bauen.
+Datenbearbeitung. Offen sind nur die **Verweise:** Die Übernahme aus der Sicherung zählt sie
+(`Verweise_Schlagworte`, `Verweis_Zu_Schlagworte`, 2010 beide leer). Nennt die Generalprobe mit
+der Sicherung von 2026 welche, an diesen Daten die Form ablesen und die Übernahme bauen.
 
 Gemessen am 30.09.2026 in der Sicherung von 2010: 2.849 Schlagworte, 2.744 davon an Titeln,
 1.390 an genau einem; 24.110 Zuordnungen an 10.364 der 10.732 Titel; keine Verweise; ein Wort
@@ -816,6 +809,12 @@ unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
   Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der überall wie ein Titel ohne
   weitere Auflage erscheint (Titelmaske: „Keine andere Auflage zugeordnet."). Kein Schaden; die
   Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
+- Ein zweiter Lauf desselben Katalogisats ändert noch etwas (gemessen am 30.09.2026 am Export vom
+  Juni 2026, zweimal in eine leere Datenbank): das Fach an 61 Titeln und die Schlagworte an einem.
+  Der Upsert (`BulkUpsertBookTitles`) übergeht beim ersten Lauf eine Dublette in der Datei, weil
+  der Titel noch nicht in der Datenbank steht; beim zweiten steht er dort, und die Dublette wird
+  als Aktualisierung eingereiht. Kein Schaden: Fach und Schlagworte füllen nur Leerstellen. Anlass
+  zum Bauen: ein Import, dessen zweiter Lauf etwas Vorhandenes ändert.
 
 ### 6.2 Kategorie C
 

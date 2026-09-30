@@ -96,7 +96,8 @@ type litteraFelder struct {
 	autor, titel, ort, verlag, isbn, jahrStr, signatur, standort string
 	// zielgruppe (MAB 070b: „Sekundarstufe 1", „Lehrer") und schlagwoerter (MAB 710:
 	// „Physik", „Schulbuch", …) — bis zum 02.09.2026 vom Import weggeworfen, obwohl
-	// zwei Drittel der Titel Schlagwörter tragen und sie das Fach nennen.
+	// zwei Drittel der Titel Schlagwörter tragen und sie das Fach nennen. Seit dem
+	// 30.09.2026 kommen die Schlagwörter selbst mit (repository.BookTitle.Schlagworte).
 	zielgruppe    string
 	schlagwoerter []string
 }
@@ -177,6 +178,7 @@ func bookTitleAusFelder(f litteraFelder) (repository.BookTitle, bool) {
 		Fach:             fach,
 		JahrgangVon:      von,
 		JahrgangBis:      bis,
+		Schlagworte:      f.schlagwoerter,
 	}, true
 }
 

@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -279,11 +281,81 @@ func (r *pgBookRepository) BulkUpsertBookTitles(ctx context.Context, titles []Bo
 	if err := br.Close(); err != nil {
 		return 0, err
 	}
+	if err := ergaenzeSchlagworteAusImport(ctx, tx, titles); err != nil {
+		return 0, err
+	}
 
 	if err := tx.Commit(ctx); err != nil {
 		return 0, err
 	}
 	return queued, nil
+}
+
+// ergaenzeSchlagworteAusImport schreibt die Schlagworte des Katalogisats an die Titel, die noch
+// keine tragen (docs/OFFEN.md 4.20, Stufe 3) — über SetzeSchlagworte, den Pfad des
+// Buchformulars, aufbereitet wie in der Übernahme aus der Sicherung (SchlagworteAusFremddaten).
+// Wer schon Schlagworte trägt, behält seine: Ein erneuter Import überschreibt keine Pflege —
+// dieselbe Regel wie beim Fach, das nur Leerstellen füllt. Nennen zwei Datensätze denselben
+// Titel, gilt der erste, der Schlagworte trägt.
+//
+// Die Titel werden nach dem Batch über dieselbe Zuordnung gefunden wie im Upsert
+// (queueTitelUpsert): zuerst die ISBN, sonst der Titel. Neu angelegte stehen dann schon in der
+// Tabelle, der Batch gibt ihre Kennungen nicht zurück. Gefragt wird für JEDEN Datensatz der
+// Datei, auch für die, die der Upsert als Dublette übergangen hat: Im Katalogisat vom Juni 2026
+// steht mancher Titel zweimal, der erste Eintrag ohne Schlagworte, der zweite mit. Nur mit den
+// eingereihten Datensätzen brachte erst ein zweiter Lauf deren Schlagworte (gemessen am
+// 30.09.2026: 253 Zuordnungen mehr); so bringt sie der erste. Ein zweiter Lauf derselben Datei
+// ergänzt danach höchstens Titel, die der Upsert selbst erst beim zweiten Mal zuordnet (am
+// Katalogisat vom Juni 2026: einer), und ersetzt nie vorhandene Schlagworte.
+func ergaenzeSchlagworteAusImport(ctx context.Context, tx pgx.Tx, titel []BookTitle) error {
+	if !slices.ContainsFunc(titel, func(t BookTitle) bool { return len(t.Schlagworte) > 0 }) {
+		return nil
+	}
+	isbnToID, titelToID, err := ladeTitelBestand(ctx, tx)
+	if err != nil {
+		return err
+	}
+	ohne, err := titelOhneSchlagworte(ctx, tx)
+	if err != nil {
+		return err
+	}
+	for _, t := range titel {
+		woerter, _ := SchlagworteAusFremddaten(t.Schlagworte)
+		if len(woerter) == 0 {
+			continue
+		}
+		id, bekannt := isbnToID[t.ISBN]
+		if !bekannt {
+			id = titelToID[NormalisiereTitelKey(t.Titel)]
+		}
+		if !ohne[id] {
+			continue // trägt schon Schlagworte, oder der Titel ist nicht zu finden
+		}
+		if _, err := SetzeSchlagworte(ctx, tx, id, woerter); err != nil {
+			return fmt.Errorf("schlagworte für %q: %w", t.Titel, err)
+		}
+		ohne[id] = false
+	}
+	return nil
+}
+
+// titelOhneSchlagworte liefert die Kennungen der Titel, die kein Schlagwort tragen.
+func titelOhneSchlagworte(ctx context.Context, tx pgx.Tx) (map[string]bool, error) {
+	rows, err := tx.Query(ctx, `
+		SELECT t.id::text FROM buecher_titel t
+		WHERE NOT EXISTS (SELECT 1 FROM titel_schlagworte ts WHERE ts.titel_id = t.id)`)
+	if err != nil {
+		return nil, fmt.Errorf("titel ohne schlagworte lesen: %w", err)
+	}
+	ids, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return nil, fmt.Errorf("titel ohne schlagworte lesen: %w", err)
+	}
+	ohne := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		ohne[id] = true
+	}
+	return ohne, nil
 }
 
 // ladeTitelBestand lädt den vorhandenen Titelbestand als isbn→id- und titel→id-Maps.
