@@ -194,6 +194,31 @@ describe('OrderStaging: Schlagworte', () => {
 		});
 	});
 
+	// Normdatei-Wörter, die die Liste noch nicht kennt (docs/OFFEN.md 4.25, entschieden am
+	// 30.09.2026): eine eigene Zeile „Neue Schlagworte aus der DNB", nie vorbelegt. Erst ein
+	// Klick übernimmt das Wort; gespeichert wird es wie jedes andere.
+	it('bietet neue Normdatei-Wörter in eigener Zeile an und schreibt nur, was jemand übernimmt', async () => {
+		antworten([]);
+		const screen = fenster({
+			...titel,
+			schlagwort_vorschlaege: ['Krieg'],
+			schlagwort_vorschlaege_neu: ['Judo', 'Schulstress']
+		});
+		await feldBereit(screen);
+		const neu = screen.getByRole('group', { name: 'Neue Schlagworte aus der DNB' });
+		expect(neu.textContent).toContain('Judo');
+		expect(screen.getByRole('group', { name: 'Vorschläge aus der DNB' }).textContent).not.toContain(
+			'Judo'
+		);
+
+		await fireEvent.click(screen.getByRole('button', { name: '„Judo“ übernehmen' }));
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
+			schlagworte: ['Judo']
+		});
+	});
+
 	it('schreibt keinen Vorschlag, den niemand übernommen hat', async () => {
 		antworten([]);
 		const screen = fenster({ ...titel, schlagwort_vorschlaege: ['Krieg'] });

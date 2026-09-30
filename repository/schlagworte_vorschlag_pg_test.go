@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -110,5 +111,57 @@ func TestSchlagworte_ZerlegteUmlauteSindDasselbeWort(t *testing.T) {
 	}
 	if !slices.Equal(woerter, []string{zusammengesetzt}) {
 		t.Errorf("Liste nach dem zweiten Titel: %+q — erwartet ein Wort, zusammengesetzt", woerter)
+	}
+}
+
+// Die Normdatei-Wörter eines DNB-Satzes (docs/OFFEN.md 4.25, entschieden am 30.09.2026): Was die
+// Liste kennt — in einer der Formen, als Wort mit Titeln oder als Verweis —, kommt als
+// vorhanden, aufgelöst zum Ziel. Alles andere kommt als neu, in der Anzeige-Form; ein Wort
+// ohne Titel zählt als neu, ein zu langes Wort wird nicht angeboten, Doppelte fallen.
+func TestSchlagworteAusNormdaten_VorhandenUndNeu(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+
+	prozess := seedSchlagwortTitel(t, pool, "Der Process")
+	if _, err := SetzeSchlagworte(ctx, pool, prozess, []string{"Kafka <Franz>", "Zweiter Weltkrieg"}); err != nil {
+		t.Fatal(err)
+	}
+	var weltkrieg string
+	if err := pool.QueryRow(ctx, `SELECT id FROM schlagworte WHERE wort = 'Zweiter Weltkrieg'`).Scan(&weltkrieg); err != nil {
+		t.Fatal(err)
+	}
+	if err := SetzeSchlagwortVerweis(ctx, pool, "Weltkrieg <1939-1945>", weltkrieg); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Exec(ctx, `INSERT INTO schlagworte (wort) VALUES ('Judo')`); err != nil { // ohne Titel
+		t.Fatal(err)
+	}
+
+	begriff := func(anzeige string, formen ...string) Normdatenbegriff {
+		return Normdatenbegriff{Anzeige: anzeige, Formen: append([]string{anzeige}, formen...)}
+	}
+	vorhanden, neu, err := SchlagworteAusNormdaten(ctx, pool, []Normdatenbegriff{
+		begriff("Kafka <Franz>", "Kafka, Franz"),
+		begriff("weltkrieg <1939-1945>"), // der Verweis, klein geschrieben
+		begriff("Judo"),
+		begriff("Schulstress"),
+		begriff("schulstress"),
+		begriff(strings.Repeat("x", SchlagwortMaxZeichen+1)),
+		begriff("Oslo"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{"Kafka <Franz>", "Zweiter Weltkrieg"}; !slices.Equal(vorhanden, want) {
+		t.Errorf("vorhanden %q, erwartet %q", vorhanden, want)
+	}
+	if want := []string{"Judo", "Oslo", "Schulstress"}; !slices.Equal(neu, want) {
+		t.Errorf("neu %q, erwartet %q", neu, want)
+	}
+
+	leerV, leerN, err := SchlagworteAusNormdaten(ctx, pool, nil)
+	if err != nil || leerV == nil || leerN == nil || len(leerV)+len(leerN) != 0 {
+		t.Errorf("ohne Begriffe: %q, %q, %v — erwartet zwei leere Listen", leerV, leerN, err)
 	}
 }

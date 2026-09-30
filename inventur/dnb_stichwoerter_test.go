@@ -7,6 +7,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"bibliothek/repository"
 )
 
 // Die Kandidaten des Schlagwort-Vorschlags (docs/OFFEN.md 4.20): Gattungsbegriffe aus 655 $a
@@ -126,5 +128,52 @@ func TestSucheTextDNB_SchicktAlleWoerter(t *testing.T) {
 	}
 	if gesendet != `any all "Dunkelnacht Boie"` {
 		t.Errorf("an die DNB ging query=%s, erwartet any all \"Dunkelnacht Boie\"", gesendet)
+	}
+}
+
+// Die Schlagwörter der Gemeinsamen Normdatei (docs/OFFEN.md 4.25, entschieden am 30.09.2026):
+// 600–651 mit $2 gnd, in der Schreibweise der Littera-Liste angeboten und unter beiden Formen
+// gesucht. Andere Vokabulare in denselben Feldern und die Kette in 689 bleiben draußen. Die
+// Felder sind echten DNB-Sätzen nachgebaut („Franz Kafka", „Der Zweite Weltkrieg", abgerufen
+// am 30.09.2026).
+func TestSucheDNB_Normdaten(t *testing.T) {
+	const satz = `
+		<searchRetrieveResponse xmlns="http://www.loc.gov/zing/srw/">
+		  <records><record><recordData>
+			<record xmlns="http://www.loc.gov/MARC21/slim">
+			  <datafield tag="245" ind1="1" ind2="0"><subfield code="a">Probe</subfield></datafield>
+			  <datafield tag="600" ind1="1" ind2="7"><subfield code="0">(DE-588)118559230</subfield><subfield code="a">Kafka, Franz</subfield><subfield code="d">1883-1924</subfield><subfield code="2">gnd</subfield></datafield>
+			  <datafield tag="600" ind1="0" ind2="7"><subfield code="a">Friedrich</subfield><subfield code="b">II.</subfield><subfield code="c">Preußen, König</subfield><subfield code="2">gnd</subfield></datafield>
+			  <datafield tag="648" ind1=" " ind2="7"><subfield code="a">Geschichte 1918-1933</subfield><subfield code="2">gnd</subfield></datafield>
+			  <datafield tag="650" ind1=" " ind2="7"><subfield code="8">1\p</subfield><subfield code="a">Zweiter Weltkrieg</subfield><subfield code="2">gnd</subfield></datafield>
+			  <datafield tag="650" ind1=" " ind2="7"><subfield code="a">Bank</subfield><subfield code="g">Möbel</subfield><subfield code="2">gnd</subfield></datafield>
+			  <datafield tag="651" ind1=" " ind2="7"><subfield code="a">Oslo</subfield><subfield code="2">gnd</subfield></datafield>
+			  <datafield tag="650" ind1=" " ind2="7"><subfield code="a">Economics</subfield><subfield code="2">stw</subfield></datafield>
+			  <datafield tag="689" ind1="0" ind2="0"><subfield code="D">s</subfield><subfield code="a">Zweiter Weltkrieg</subfield></datafield>
+			</record>
+		  </recordData></record></records>
+		</searchRetrieveResponse>`
+	client := &MetadatenClient{httpClient: &http.Client{Transport: &mockTransport{
+		roundTripFunc: func(*http.Request) (*http.Response, error) {
+			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(satz))}, nil
+		},
+	}}}
+
+	res, err := client.sucheDNB(context.Background(), "9783499500916")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []repository.Normdatenbegriff{
+		{Anzeige: "Kafka <Franz>", Formen: []string{"Kafka <Franz>", "Kafka, Franz"}},
+		{Anzeige: "Friedrich <Preußen, König, II.>", Formen: []string{"Friedrich <Preußen, König, II.>", "Friedrich"}},
+		{Anzeige: "Geschichte <1918-1933>", Formen: []string{"Geschichte <1918-1933>", "Geschichte 1918-1933"}},
+		{Anzeige: "Zweiter Weltkrieg", Formen: []string{"Zweiter Weltkrieg"}},
+		{Anzeige: "Bank <Möbel>", Formen: []string{"Bank <Möbel>", "Bank"}},
+		{Anzeige: "Oslo", Formen: []string{"Oslo"}},
+	}
+	if !slices.EqualFunc(res.Normdaten, want, func(a, b repository.Normdatenbegriff) bool {
+		return a.Anzeige == b.Anzeige && slices.Equal(a.Formen, b.Formen)
+	}) {
+		t.Errorf("Normdaten =\n  %q\nerwartet\n  %q", res.Normdaten, want)
 	}
 }

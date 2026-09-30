@@ -132,6 +132,21 @@ describe('ChipFeld mit Angeboten', () => {
 		expect(screen.queryByRole('group')).toBeNull();
 	});
 
+	it('zeigt neue Angebote als eigene Zeile unter ihrem Etikett und übernimmt sie wie die übrigen', async () => {
+		const screen = aufbau({
+			angebote: ['Krieg'],
+			angeboteEtikett: 'Aus der Liste',
+			angeboteNeu: ['Judo'],
+			angeboteNeuEtikett: 'Neu'
+		});
+		expect(screen.getByRole('group', { name: 'Neu' }).textContent).toContain('Judo');
+		expect(screen.getByRole('group', { name: 'Aus der Liste' }).textContent).not.toContain('Judo');
+		await fireEvent.click(angebot(screen, 'Judo'));
+		expect(chips(screen.container)).toEqual(['Judo']);
+		expect(screen.queryByRole('group', { name: 'Neu' })).toBeNull();
+		expect(screen.getByRole('group', { name: 'Aus der Liste' })).toBeTruthy();
+	});
+
 	it('hält die Obergrenze auch für Angebote und sperrt sie mit dem Feld', async () => {
 		const voll = aufbau({ werte: ['A', 'B'], max: 2, angebote: ['C'] });
 		await fireEvent.click(angebot(voll, 'C'));

@@ -270,35 +270,26 @@ nur als Wortlaut mit, und es gilt die Faustregel. Die Zuordnung steht an einer S
 (`vermerkeLittera`); nach der Übernahme lassen sich einzelne Titel auch in der Buchakte setzen
 (_Eigentum ändern_).
 
-### 4.25 Schlagwort-Vorschlag aus der DNB: nur für neue Titel, ohne GND-Wörter
+### 4.25 Schlagwort-Vorschlag aus der DNB auch für Titel, die es schon gibt?
 
-Vorgemerkt am 29.09.2026. Anlass: Beim Bestellen von „Der Herr der Ringe 2" am Testserver bot
-das Fenster keine Schlagworte an. Zwei Gründe, am Code und am Server (lesend) nachgesehen: Die
-Schlagwortliste des Testservers ist leer (0 Wörter, 0 an Titeln), und der Titel stand schon im
+**Entschieden am 30.09.2026 (Frage-Runde), gebaut:** Die Schlagwörter der Normdatei der DNB (MARC
+600–651 mit `$2 gnd`) werden gelesen. Was die eigene Liste kennt, steht unter den Vorschlägen; was
+sie nicht kennt, bietet das Bestellfenster in eigener Zeile als _Neue Schlagworte aus der DNB_ an,
+nie vorbelegt (`repository.SchlagworteAusNormdaten`). Gemessen am 30.09.2026 an 60 Titeln des
+Katalogisats mit ISBN und Schlagworten, 56 davon mit DNB-Satz: Gattung und Verlagswörter ergaben an
+25 Titeln 112 Vorschläge, 12 davon trägt der Titel in Littera; die Normdatei nennt an 24 Titeln 86
+Wörter, 56 davon stehen in der Liste (15 am Titel selbst), und 9 Titel bekämen ohne sie keinen
+Vorschlag.
+
+**Offen:** Einen Vorschlag bekommt nur ein Titel, der beim Bestellen neu aus der DNB entsteht; ein
+Treffer aus dem eigenen Katalog fragt die DNB nicht. Im Katalogisat vom Juni 2026 tragen 5.114
+Einträge keine Schlagworte, 4.891 davon kein Lernmittel, 4.862 mit ISBN — viele davon Romane, die
+Littera-Schulen bewusst nicht verschlagworten (Handbuch der Schulbibliothek Butzbach: „Lexika,
+Jugendbücher und Belletristik müssen nicht verschlagwortet werden"). Littera bietet für vorhandene
+Titel einen Online-Abgleich über die ISBN an, mit Vorschau und je Feld „keine Änderung / hinzufügen
+/ ersetzen". **Frage:** Ein Vorschlag auch für vorhandene Titel? **Empfehlung (Frage-Runde vom
+30.09.2026):** ja, auf Klick beim Nachbestellen und im Buchformular; kein Abgleich über den ganzen
 Katalog.
-
-So arbeitet der Vorschlag seit dem 23.09.2026: Nur ein Titel, der beim Bestellen neu aus der DNB
-angelegt wird, bekommt einen (`POST /api/buecher/aus-isbn`, auch aus der Freitextsuche); ein
-Treffer aus dem eigenen Katalog fragt die DNB nicht. Angeboten wird nur ein Wort der eigenen
-Liste, das mindestens ein Titel trägt, oder ein Verweis darauf
-(`repository.SchlagworteAusStichwoertern`). Gelesen werden 655 `$a` (Gattungsbegriffe, auch
-GND-Formwörter wie „Jugendbuch") und 653 `$a` ohne Vorsatz (Verlagswörter). Solange die Liste
-leer ist — bis die Littera-Schlagworte kommen (4.20) —, bleibt der Vorschlag stumm.
-
-Zwei Lücken, nicht entschieden:
-
-- Ein vorhandener Titel ohne Schlagworte bekommt nie einen Vorschlag; wer beim Nachbestellen
-  welche ergänzen will, tippt sie selbst.
-- Die GND-Sachschlagwörter liest das Programm nicht (`verarbeiteFeld` in
-  `inventur/metadaten_anbieter.go`). Sie stehen in 650/651 mit `$2 gnd`, als Kette zusätzlich in
-  689; an echten Sätzen am 29.09.2026: „Tintenherz" Abenteuerreise und Italien, „Krabat"
-  Schwarze Magie und Lehrling, „Die Schule der magischen Tiere" (vier Sätze) keine. Die GND ist
-  ein festes Vokabular ohne Werbewörter; mit ihr ließen sich auch Wörter vorschlagen, die in der
-  Liste noch fehlen.
-
-**Frage:** GND-Wörter lesen — und wenn ja, auch Wörter außerhalb der eigenen Liste anbieten?
-Einen Vorschlag auch für vorhandene Titel? Zu entscheiden nach der Littera-Übernahme (7.2): Dann
-lässt sich an echten DNB-Sätzen messen, wie oft die GND-Wörter zur Liste passen.
 
 ### 4.27 Wer aus dem Kollegium geht, hat oft noch Bücher
 
@@ -738,6 +729,11 @@ unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
 
 ### 6.1 Beobachtungen
 
+- Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
+  breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
+  30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt
+  `BestellWorkspace.svelte` die Spalten untereinander (`grid-cols-1`); woher die Breite kommt, ist
+  nicht nachgesehen. Anlass zum Bauen: Bestellen soll am Telefon gehen.
 - Der Stand-Merker der Barcode-Liste (Anzahl + `max(aktualisiert_am)`) rechnet mit dem Beginn
   der Transaktion: Ändert eine lange Transaktion ein Etikett und committet nach einem kürzeren
   Schreiber, bleibt es bei 304. Nachgestellt hinter dem Build-Tag `raster`

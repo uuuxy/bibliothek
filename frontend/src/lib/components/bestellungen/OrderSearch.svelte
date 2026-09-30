@@ -58,9 +58,10 @@
 			preis_vorschlag: book.preis_vorschlag,
 			// Ein eben angelegter Titel ist noch kein Lernmittel — OrderStaging fragt nach.
 			ist_lernmittel: Boolean(localBook.ist_lernmittel),
-			// Schlagworte der eigenen Liste, die der DNB-Satz nennt — nur angeboten,
-			// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20).
-			schlagwort_vorschlaege: localBook.schlagwort_vorschlaege ?? []
+			// Schlagworte, die der DNB-Satz nennt — aus der Liste und neu; nur angeboten,
+			// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20, 4.25).
+			schlagwort_vorschlaege: localBook.schlagwort_vorschlaege ?? [],
+			schlagwort_vorschlaege_neu: localBook.schlagwort_vorschlaege_neu ?? []
 		});
 	}
 

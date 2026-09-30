@@ -124,10 +124,15 @@ type ISBNLookupResponse struct {
 	// Bücherei-Titel und blieb es (Frist, Katalog, Löschfrist, Bestellbedarf lesen die Spalte).
 	IstLernmittel bool `json:"ist_lernmittel"`
 	// SchlagwortVorschlaege: nur bei exists=false — die Wörter der eigenen Liste, die der
-	// DNB-Satz als Gattung oder Verlagswort nennt (repository.SchlagworteAusStichwoertern,
-	// docs/OFFEN.md 4.20). Ein Vorschlag, kein Eintrag: Am Titel steht davon nichts, bis im
-	// Bestellkorb jemand einen übernimmt.
+	// DNB-Satz als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
+	// (repository.SchlagworteAusStichwoertern und SchlagworteAusNormdaten, docs/OFFEN.md 4.20
+	// und 4.25). Ein Vorschlag, kein Eintrag: Am Titel steht davon nichts, bis im Bestellkorb
+	// jemand einen übernimmt.
 	SchlagwortVorschlaege []string `json:"schlagwort_vorschlaege,omitempty"`
+	// SchlagwortVorschlaegeNeu: Normdatei-Schlagwörter des Satzes, die die eigene Liste noch
+	// nicht kennt (entschieden am 30.09.2026: angeboten mit dem Zusatz „neu", nie vorbelegt).
+	// Wer eines anklickt, legt es mit dem Speichern in der Liste an.
+	SchlagwortVorschlaegeNeu []string `json:"schlagwort_vorschlaege_neu,omitempty"`
 	// AndereForm: Unter dieser Schreibweise steht die ISBN nicht im Katalog, wohl aber in der
 	// anderen Länge (ISBN-10 ↔ ISBN-13, docs/OFFEN.md 4.18 Stufe 4 und 5.5). Dann ist NICHTS
 	// angelegt, titel_id ist leer, und hier steht der gefundene Titel. Die Oberfläche fragt
@@ -142,7 +147,11 @@ type ISBNLookupResponse struct {
 // Abfrage, entsteht kein Titel — sonst stünde ein angelegter Titel hinter einer
 // Fehlermeldung, und der zweite Versuch fände ihn als vorhanden, ohne Vorschlag.
 func (s *Server) titelAusNachschlagen(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
-	vorschlaege, err := repository.SchlagworteAusStichwoertern(ctx, s.DB.Pool, meta.Stichwoerter)
+	ausStichwoertern, err := repository.SchlagworteAusStichwoertern(ctx, s.DB.Pool, meta.Stichwoerter)
+	if err != nil {
+		return ISBNLookupResponse{}, err
+	}
+	ausNormdaten, neu, err := repository.SchlagworteAusNormdaten(ctx, s.DB.Pool, meta.Normdaten)
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}
@@ -150,7 +159,8 @@ func (s *Server) titelAusNachschlagen(ctx context.Context, isbn string, meta *in
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}
-	resp.SchlagwortVorschlaege = vorschlaege
+	resp.SchlagwortVorschlaege = repository.SchlagworteZusammen(ausStichwoertern, ausNormdaten)
+	resp.SchlagwortVorschlaegeNeu = neu
 	return resp, nil
 }
 

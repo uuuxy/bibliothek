@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"regexp"
 	"strings"
 
 	"bibliothek/pkg/isbnutil"
+	"bibliothek/repository"
 
 	"golang.org/x/text/unicode/norm"
 )
@@ -85,7 +87,10 @@ type marcBibDaten struct {
 	// „(Produktform)", „(VLB-WN)", „(BISAC Subject Heading)", „(Produktgruppe)" (gesehen an
 	// DNB-Sätzen vom 23.09.2026).
 	freieWoerter []string
-	zielgruppe   string
+	// normdaten: die Schlagwörter der Gemeinsamen Normdatei (600–651 mit $2 gnd), für den
+	// Vorschlag beim Bestellen (docs/OFFEN.md 4.25).
+	normdaten  []repository.Normdatenbegriff
+	zielgruppe string
 	// preis ist der Ladenpreis aus MARC21 020 $c — ein VORSCHLAG, keine Tatsache:
 	// Er gilt zum Erscheinungszeitpunkt und ist nicht der Schulpreis.
 	preis float64
@@ -107,6 +112,8 @@ func (b *marcBibDaten) verarbeiteFeld(feld marcDatafield) {
 	case "653":
 		b.verarbeiteZielgruppe(feld.Subfield)
 		b.verarbeiteFreieWoerter(feld.Subfield)
+	case "600", "610", "611", "630", "648", "650", "651":
+		b.verarbeiteNormdaten(feld.Tag, feld.Subfield)
 	}
 }
 
@@ -258,6 +265,53 @@ func (b *marcBibDaten) verarbeiteFreieWoerter(subfelder []marcSubfield) {
 	}
 }
 
+// zeitMitJahren trennt ein Zeitschlagwort der Normdatei in Wort und Jahre: „Geschichte 1918-1933",
+// „Geschichte 1250 v. Chr.".
+var zeitMitJahren = regexp.MustCompile(`^(.*\S) (\d{1,4}( v\. Chr\.)?(-\d{1,4}( v\. Chr\.)?)?)$`)
+
+// verarbeiteNormdaten liest ein Schlagwort der Gemeinsamen Normdatei (docs/OFFEN.md 4.25,
+// entschieden am 30.09.2026): Person (600), Körperschaft (610, 611), Werk (630), Zeit (648),
+// Sache (650) und Ort (651), jeweils nur mit $2 gnd — andere Vokabulare stehen in denselben
+// Feldern. Feld 689 wiederholt dieselben Begriffe als Kette und wird nicht gelesen.
+//
+// Angeboten wird in der Schreibweise der Littera-Liste, in der ein Zusatz in spitzen Klammern
+// steht: „Kafka, Franz" wird „Kafka <Franz>", „Friedrich" mit „II." und „Preußen, König" wird
+// „Friedrich <Preußen, König, II.>", „Geschichte 1918-1933" wird „Geschichte <1918-1933>", der
+// Zusatz $g einer Sache oder eines Orts kommt in die Klammer. Gesucht wird unter beiden Formen.
+func (b *marcBibDaten) verarbeiteNormdaten(tag string, subfelder []marcSubfield) {
+	werte := map[string]string{}
+	for _, s := range subfelder {
+		if _, da := werte[s.Code]; !da {
+			werte[s.Code] = strings.TrimSpace(s.Value)
+		}
+	}
+	a := werte["a"]
+	if werte["2"] != "gnd" || a == "" {
+		return
+	}
+	anzeige := a
+	switch nach, vor, komma := strings.Cut(a, ", "); {
+	case tag == "600" && komma && vor != "":
+		anzeige = nach + " <" + vor + ">"
+	case tag == "600" && werte["c"] != "":
+		zusatz := werte["c"]
+		if werte["b"] != "" {
+			zusatz += ", " + werte["b"]
+		}
+		anzeige = a + " <" + zusatz + ">"
+	case tag == "648" && zeitMitJahren.MatchString(a):
+		teile := zeitMitJahren.FindStringSubmatch(a)
+		anzeige = teile[1] + " <" + teile[2] + ">"
+	case werte["g"] != "":
+		anzeige = a + " <" + werte["g"] + ">"
+	}
+	formen := []string{anzeige}
+	if anzeige != a {
+		formen = append(formen, a)
+	}
+	b.normdaten = append(b.normdaten, repository.Normdatenbegriff{Anzeige: anzeige, Formen: formen})
+}
+
 // stichwoerter sind die Kandidaten des Schlagwort-Vorschlags: Gattungsbegriffe und
 // Verlagswörter in der Reihenfolge des Satzes.
 func (b *marcBibDaten) stichwoerter() []string {
@@ -316,6 +370,7 @@ func (client *MetadatenClient) sucheDNB(kontext context.Context, isbn string) (*
 		Zielgruppe:   akk.zielgruppe,
 		Preis:        akk.preis,
 		Stichwoerter: akk.stichwoerter(),
+		Normdaten:    akk.normdaten,
 	}, nil
 }
 

@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-29. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-09-30. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -490,7 +490,10 @@ Warenkorb steht ein Fenster mit Signatur, Schlagworten, der Frage „Lernmittel?
 Entsteht der Titel dabei neu aus der DNB, stehen unter den Schlagworten die Wörter, die der
 DNB-Satz nennt und die es unter _Einstellungen → Schlagworte_ schon gibt (auch über einen
 Verweis), als _Vorschläge aus der DNB_: Ein Klick übernimmt eines; eingetragen wird nur, was
-jemand übernommen hat.
+jemand übernommen hat. Darunter stehen, seit dem 30.09.2026, die Schlagwörter der Normdatei der
+DNB, die es in der Liste noch nicht gibt, als _Neue Schlagworte aus der DNB_ — Personen in der
+Schreibweise der Liste („Kafka <Franz>"). Ein Klick übernimmt auch hier; mit dem Warenkorb kommt
+das Wort in die Liste.
 
 **Dieselbe ISBN, zehn- oder dreizehnstellig** (seit 25.09.2026): Ältere Titel stehen oft mit
 der zehnstelligen ISBN im Katalog, auf dem Buchrücken steht die dreizehnstellige. Findet

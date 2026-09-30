@@ -133,6 +133,7 @@
 		bind:this={schlagwortTeil}
 		titelId={book.id}
 		angebote={book.schlagwort_vorschlaege ?? []}
+		angeboteNeu={book.schlagwort_vorschlaege_neu ?? []}
 	/>
 
 	<!-- Die Antwort entscheidet über den Topf: Lernmittel bestellt das Land (Lernmittel-

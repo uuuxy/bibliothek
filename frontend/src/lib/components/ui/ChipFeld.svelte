@@ -39,11 +39,15 @@
 	 *   etwa der Schlagwort-Vorschlag aus der DNB. Ein Klick übernimmt; bis dahin ist nichts
 	 *   eingetragen. Was schon gewählt ist, steht nicht mehr darunter.
 	 * @prop {string} [angeboteEtikett] - Name dieser Zeile, sichtbar und für Screenreader.
+	 * @prop {string[]} [angeboteNeu] - Eine zweite Zeile darunter, etwa Normdatei-Wörter, die die
+	 *   eigene Liste noch nicht kennt (docs/OFFEN.md 4.25); ihr Etikett sagt „neu".
+	 * @prop {string} [angeboteNeuEtikett] - Name der zweiten Zeile.
 	 */
-	import { Plus, X } from '@lucide/svelte';
+	import { X } from '@lucide/svelte';
+	import ChipAngebote from './ChipAngebote.svelte';
 	import Feld from './Feld.svelte';
 
-	/** @type {{ werte?: string[] | null, id?: string, label?: string, hint?: string, placeholder?: string, vorschlaege?: { wert: string, beschreibung?: string }[], max?: number, maxZeichen?: number, disabled?: boolean, angebote?: string[], angeboteEtikett?: string, 'aria-label'?: string }} */
+	/** @type {{ werte?: string[] | null, id?: string, label?: string, hint?: string, placeholder?: string, vorschlaege?: { wert: string, beschreibung?: string }[], max?: number, maxZeichen?: number, disabled?: boolean, angebote?: string[], angeboteEtikett?: string, angeboteNeu?: string[], angeboteNeuEtikett?: string, 'aria-label'?: string }} */
 	let {
 		werte = $bindable([]),
 		id = undefined,
@@ -56,6 +60,8 @@
 		disabled = false,
 		angebote = [],
 		angeboteEtikett = 'Vorschläge',
+		angeboteNeu = [],
+		angeboteNeuEtikett = 'Neu',
 		'aria-label': ariaLabel = undefined
 	} = $props();
 
@@ -105,10 +111,9 @@
 		if (art === 'insertReplacementText' || art === undefined) uebernimm();
 	}
 
-	/** Die Angebote, die noch nicht gewählt sind. */
-	const offeneAngebote = $derived(
-		angebote.filter((a) => !liste.some((w) => schluessel(w) === schluessel(a)))
-	);
+	/** Die Angebote, die noch nicht gewählt sind.
+	 *  @param {string[]} werte */
+	const offen = (werte) => werte.filter((a) => !liste.some((w) => schluessel(w) === schluessel(a)));
 
 	/** Übernimmt ein Angebot — mit derselben Obergrenze wie getippter Text.
 	 *  @param {string} wert */
@@ -175,26 +180,6 @@
 			{/each}
 		</ul>
 	{/if}
-	{#if offeneAngebote.length}
-		<!-- M3 Suggestion chips (material-web, _md-comp-suggestion-chip.scss): 32 px, Ecke 8 px,
-		     Umriss outline, Text on-surface-variant, Symbol vorn in primary — „Suggestion chips
-		     help narrow a user's intent by presenting dynamically generated suggestions". Die
-		     Beschriftung steht in eigener Zeile: In schmalen Spalten (Bestellfenster) brach sie
-		     sonst neben dem ersten Chip um, und die übrigen standen versetzt darunter. -->
-		<p class="text-xs text-on-surface-variant" aria-hidden="true">{angeboteEtikett}</p>
-		<div class="flex flex-wrap gap-2" role="group" aria-label={angeboteEtikett}>
-			{#each offeneAngebote as wert (schluessel(wert))}
-				<button
-					type="button"
-					onclick={() => nimm(wert)}
-					{disabled}
-					aria-label="„{wert}“ übernehmen"
-					class="flex h-8 cursor-pointer items-center gap-2 rounded-md border border-outline pr-4 pl-2 text-sm font-medium text-on-surface-variant disabled:cursor-not-allowed disabled:opacity-40"
-				>
-					<Plus class="h-4.5 w-4.5 shrink-0 text-primary" aria-hidden="true" />
-					{wert}
-				</button>
-			{/each}
-		</div>
-	{/if}
+	<ChipAngebote werte={offen(angebote)} etikett={angeboteEtikett} {nimm} {disabled} />
+	<ChipAngebote werte={offen(angeboteNeu)} etikett={angeboteNeuEtikett} {nimm} {disabled} />
 </div>

@@ -22,9 +22,11 @@
 	 * eigenen Liste, die der DNB-Satz nennt. Angeboten zum Anklicken, nicht eingetragen: Der
 	 * Satz nennt etwa „Deutsch" für die Sprache, und ein gleichnamiges Schlagwort für das Fach
 	 * stünde sonst still am Titel.
-	 * @type {{ titelId: string, angebote?: string[] }}
+	 * angeboteNeu: Normdatei-Wörter des Satzes, die die Liste noch nicht kennt (docs/OFFEN.md
+	 * 4.25, entschieden am 30.09.2026: angeboten mit dem Zusatz „neu", nie vorbelegt).
+	 * @type {{ titelId: string, angebote?: string[], angeboteNeu?: string[] }}
 	 */
-	let { titelId, angebote = [] } = $props();
+	let { titelId, angebote = [], angeboteNeu = [] } = $props();
 
 	/** @type {string[]} */
 	let schlagworte = $state([]);
@@ -84,6 +86,8 @@
 		{vorschlaege}
 		{angebote}
 		angeboteEtikett="Vorschläge aus der DNB"
+		{angeboteNeu}
+		angeboteNeuEtikett="Neue Schlagworte aus der DNB"
 		disabled={beiStart === null}
 		hint={fehlen
 			? 'Konnten nicht geladen werden — bitte später im Buchformular eintragen.'

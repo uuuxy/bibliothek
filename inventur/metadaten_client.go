@@ -13,6 +13,7 @@ import (
 	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/isbnutil"
 	"bibliothek/pkg/safehttp"
+	"bibliothek/repository"
 )
 
 // MetadatenClient ist der zentrale HTTP-Client zur Abfrage von Buchmetadaten
@@ -44,6 +45,11 @@ type MetadatenErgebnis struct {
 	// und nie ausgeliefert: Ein Satz trägt bis zu 98 Verlagswörter, darunter Werbung
 	// („TikTok", „Must Read"); vorgeschlagen wird nur, was es in der eigenen Liste gibt.
 	Stichwoerter []string `json:"-"`
+	// Normdaten sind die Schlagwörter der Gemeinsamen Normdatei (MARC 600–651 mit $2 gnd) —
+	// ein festes Vokabular ohne Werbewörter. Angeboten werden sie auch, wenn die eigene Liste
+	// sie noch nicht kennt (repository.SchlagworteAusNormdaten, docs/OFFEN.md 4.25). Nie
+	// gespeichert und nie ausgeliefert.
+	Normdaten []repository.Normdatenbegriff `json:"-"`
 }
 
 // NeuerMetadatenClient initialisiert den HTTP Client mit einem Timeout von 8 Sekunden,
