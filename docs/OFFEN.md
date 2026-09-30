@@ -77,7 +77,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu
-   4.27 (wer die Schule verlässt, hat oft noch Bücher) steht die Frage-Runde aus.
+   4.27 (wer aus dem Kollegium geht, hat oft noch Bücher) steht die Frage-Runde aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -290,7 +290,12 @@ Zwei Lücken, nicht entschieden:
 Einen Vorschlag auch für vorhandene Titel? Zu entscheiden nach der Littera-Übernahme (7.2): Dann
 lässt sich an echten DNB-Sätzen messen, wie oft die GND-Wörter zur Liste passen.
 
-### 4.27 Wer die Schule verlässt, hat oft noch Bücher
+### 4.27 Wer aus dem Kollegium geht, hat oft noch Bücher
+
+Gemeint ist jeder Leser außer dem Schüler: Praktikum, Lehrkraft, LiV, Sekretariat, U-plus; ein
+Fachbereich geht nicht. Schüler sind erfasst: Die Abgängerliste zeigt vom 1. Mai bis 31. Juli, wer
+noch Bücher hat, danach stehen sie unter _Ehemalige / Archiv_ und mit offenen Büchern im
+Mahnwesen ([HANDBUCH.md](HANDBUCH.md), „Abgänger").
 
 Vorgemerkt am 30.09.2026, beim Bau der Sonderkonten (Migration 153). Ein Praktikum endet nach
 Wochen; hat der Praktikant noch Bücher, fällt das heute nirgends auf. Für jeden Leser außer dem
