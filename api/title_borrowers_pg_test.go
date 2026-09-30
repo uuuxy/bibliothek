@@ -18,12 +18,15 @@ import (
 // der Zähler „Ausleiher (n)" zeigte weniger, als ausgeliehen sind, und wer ein Exemplar
 // suchte, suchte es im Regal. Die Titel-Historie daneben kennt den Fall seit dem 22.08.
 // (title_history_pg_test.go); der Reiter blieb zurück.
+//
+// Seit dem 30.09.2026 steht beim Kollegen das Wort seiner Art statt „Lehrer" — ein
+// Fachbereich ist keine Lehrkraft (Migration 153).
 func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
 	ctx := context.Background()
 
-	var titelID, ex1, ex2, schuelerID, lehrerID string
+	var titelID, ex1, ex2, ex3, schuelerID, lehrerID, fachbereichID string
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_titel (titel) VALUES ('Ausleiher-Titel') RETURNING id`).Scan(&titelID); err != nil {
 		t.Fatal(err)
 	}
@@ -31,6 +34,14 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-AUSL-2') RETURNING id`, titelID).Scan(&ex2); err != nil {
+		t.Fatal(err)
+	}
+	if err := pool.QueryRow(ctx, `INSERT INTO buecher_exemplare (titel_id, barcode_id) VALUES ($1, 'B-AUSL-3') RETURNING id`, titelID).Scan(&ex3); err != nil {
+		t.Fatal(err)
+	}
+	// Ein Fachbereich hat kein Konto, nur die Leserzeile (repository.ArtMitKonto).
+	if err := pool.QueryRow(ctx, `INSERT INTO leser (vorname, nachname, art, barcode_id)
+		VALUES ('Fachbereich', 'Erdkunde', 'fachbereich', 'L-AUSL-FB') RETURNING id`).Scan(&fachbereichID); err != nil {
 		t.Fatal(err)
 	}
 	if err := pool.QueryRow(ctx, `INSERT INTO schueler (barcode_id, vorname, nachname, klasse, abgaenger_jahr)
@@ -59,6 +70,11 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 		VALUES ($1, (SELECT leser_id FROM benutzer WHERE id = $2), now(), now() + interval '10 days', true)`, ex2, lehrerID); err != nil {
 		t.Fatalf("Lehrer-Ausleihe: %v", err)
 	}
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO ausleihen (exemplar_id, schueler_id, ausgeliehen_am, rueckgabe_frist, ist_handapparat)
+		VALUES ($1, $2, now(), now() + interval '20 days', true)`, ex3, fachbereichID); err != nil {
+		t.Fatalf("Fachbereich-Ausleihe: %v", err)
+	}
 
 	srv := &Server{DB: &db.Database{Pool: pool}}
 	req := httptest.NewRequest(http.MethodGet, "/api/buecher/titel/"+titelID+"/ausleiher", nil)
@@ -72,8 +88,8 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
 		t.Fatalf("Antwort: %v", err)
 	}
-	if len(got) != 2 {
-		t.Fatalf("erwartet 2 Ausleiher (Schülerin UND Lehrkraft), bekam %d: %+v", len(got), got)
+	if len(got) != 3 {
+		t.Fatalf("erwartet 3 Ausleiher (Schülerin, Lehrkraft, Fachbereich), bekam %d: %+v", len(got), got)
 	}
 	if got[0].Vorname != "Mia" || got[0].Klasse != "07A" || got[0].ExemplarBarcode != "B-AUSL-1" {
 		t.Errorf("Schüler-Ausleihe: %+v", got[0])
@@ -81,8 +97,12 @@ func TestTitleBorrowers_LehrerAusleiheStehtDrin(t *testing.T) {
 	if got[1].Vorname != "Lena" || got[1].Nachname != "Lehr" {
 		t.Errorf("Lehrer-Ausleihe fehlt oder trägt den falschen Namen: %+v", got[1])
 	}
-	if got[1].Klasse != "Lehrer" {
-		t.Errorf("Lehrer-Ausleihe muss als 'Lehrer' ausgewiesen sein (der Klassenfilter des Reiters liest genau dieses Feld): %+v", got[1])
+	// Der Klassenfilter des Reiters liest genau dieses Feld.
+	if got[1].Klasse != "Lehrkraft" {
+		t.Errorf("Lehrer-Ausleihe muss als 'Lehrkraft' ausgewiesen sein: %+v", got[1])
+	}
+	if got[2].Nachname != "Erdkunde" || got[2].Klasse != "Fachbereich" || !got[2].IstDauerleihe {
+		t.Errorf("Fachbereich-Ausleihe muss als 'Fachbereich' ausgewiesen sein, nicht als Lehrkraft: %+v", got[2])
 	}
 	if got[1].SchuelerBarcode != "L-AUSL" || got[1].ExemplarBarcode != "B-AUSL-2" {
 		t.Errorf("Lehrer-Ausleihe: Barcodes falsch: %+v", got[1])

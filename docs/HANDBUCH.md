@@ -93,10 +93,11 @@ beides einstellbar (_Datenschutz & Sitzung_).
   eingetragen ist. Dasselbe gilt für die Suche der Titel-Verwaltung, den öffentlichen
   Katalog und _Mein Portal_.
 - **Buchakte** (Klick auf eine Karte): Exemplare mit Status, aktuelle Ausleiher, Vormerkungen
-  (Warteliste mit Schüler-Suche), Historie. Das Drucksymbol an einem Exemplar (bei Nummern
-  mit `B-`) legt sein Etikett ins Druck-Center; gedruckt wird dort auf dem gewählten Bogen,
-  bei einem angebrochenen ab dem Startfeld. An jedem Exemplar steht, **was es heute noch
-  wert ist**, samt Herleitung („3. Verleihjahr → 60 % von 24,90 €"). Ist ein Buch
+  (Warteliste mit Schüler-Suche), Historie. Wo bei einem Schüler die Klasse steht, steht beim
+  Kollegium die Art, etwa „Lehrkraft" oder „Fachbereich". Das Drucksymbol an einem Exemplar
+  (bei Nummern mit `B-`) legt sein Etikett ins Druck-Center; gedruckt wird dort auf dem
+  gewählten Bogen, bei einem angebrochenen ab dem Startfeld. An jedem Exemplar steht, **was es
+  heute noch wert ist**, samt Herleitung („3. Verleihjahr → 60 % von 24,90 €"). Ist ein Buch
   beschädigt, tragen Sie im Zustands-Dialog einen Prozentwert ein (z. B. 20 % für einen
   Wasserschaden): Er mindert jeden künftigen Ersatzbetrag, zieht das Buch aber nicht aus
   dem Verkehr. Erfasst wird das nach der Rückgabe hier, nicht an der Theke. (§14)

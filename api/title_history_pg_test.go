@@ -15,7 +15,8 @@ import (
 // und vor allem kein falscher. Bis 22.08.2026 machte COALESCE(s.klasse, 'Lehrer') aus
 // jeder Ausleihe ohne Schüler eine Lehrer-Ausleihe; mit der Befristung wäre das die Regel
 // gewesen. Erwartung: getrennte Schüler-Ausleihe → "Anonym" ohne Klasse; echte
-// Lehrer-Ausleihe → Klasse "Lehrer"; zugeordnete Schüler-Ausleihe → Name und Klasse.
+// Lehrer-Ausleihe → das Wort ihrer Art, "Lehrkraft" (bis zum 30.09.2026 "Lehrer");
+// zugeordnete Schüler-Ausleihe → Name und Klasse.
 func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
 	pool := pgTestPool(t)
 	resetBestandsdaten(t, pool)
@@ -75,7 +76,7 @@ func TestTitleHistory_GetrennteAusleiheIstAnonymNichtLehrer(t *testing.T) {
 	if got[1].Vorname != "Anonym" || got[1].Nachname != "" || got[1].Klasse != "" {
 		t.Errorf("getrennte Ausleihe muss anonym OHNE Klasse sein (nicht 'Lehrer'): %+v", got[1])
 	}
-	if got[2].Vorname != "Lena" || got[2].Klasse != "Lehrer" {
+	if got[2].Vorname != "Lena" || got[2].Klasse != "Lehrkraft" {
 		t.Errorf("Lehrer-Ausleihe: %+v", got[2])
 	}
 }

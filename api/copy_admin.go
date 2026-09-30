@@ -252,19 +252,17 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 		// LEFT JOIN auf BEIDE Ausleiher-Arten: Eine Ausleihe an eine Lehrkraft trägt keine
 		// schueler_id, und der frühere INNER JOIN auf schueler ließ sie damit verschwinden
 		// — der Reiter zeigte weniger Ausleiher, als der Titel hat, und wer das Exemplar
-		// suchte, suchte im Regal. Die Klasse 'Lehrer' ist dieselbe Auskunft, die die
-		// Titel-Historie seit dem 22.08.2026 gibt; der Klassenfilter des Reiters liest
-		// genau dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe ab —
-		// laufende trifft die Lesehistorie-Befristung zwar nicht, aber die Antwort soll
+		// suchte, suchte im Regal. Beim Kollegen steht statt der Klasse das Wort seiner Art
+		// (klasseOderArt), dieselbe Auskunft wie in der Titel-Historie; der Klassenfilter des
+		// Reiters liest genau dieses Feld. COALESCE auf 'Anonym' deckt die getrennte Ausleihe
+		// ab — laufende trifft die Lesehistorie-Befristung zwar nicht, aber die Antwort soll
 		// auch dann keinen leeren Namen tragen.
 		query := `
 			SELECT
 			  COALESCE(l.vorname, 'Anonym') AS vorname,
 			  COALESCE(l.nachname, '') AS nachname,
-			  -- „Lehrer" steht jetzt an der Art des Lesers statt an der Spalte, in der
-			  -- er stand (Migration 125). Der Klassenfilter des Reiters liest dieses Feld.
-			  CASE WHEN l.art IS NOT NULL AND l.art <> 'schueler' THEN 'Lehrer'
-			       ELSE COALESCE(l.klasse, '') END AS klasse,
+			  COALESCE(l.klasse, '') AS klasse,
+			  COALESCE(l.art, '') AS art,
 			  COALESCE(l.barcode_id, '') AS ausleiher_barcode,
 			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_frist, a.ist_handapparat
 			FROM ausleihen a
@@ -283,10 +281,12 @@ func (s *Server) GetTitleBorrowersHandler() http.HandlerFunc {
 		borrowers := []TitleBorrower{}
 		for rows.Next() {
 			var b TitleBorrower
-			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.AusgeliehenAm, &b.RueckgabeFrist, &b.IstDauerleihe); err != nil {
+			var art string
+			if err := rows.Scan(&b.Vorname, &b.Nachname, &b.Klasse, &art, &b.SchuelerBarcode, &b.ExemplarBarcode, &b.AusgeliehenAm, &b.RueckgabeFrist, &b.IstDauerleihe); err != nil {
 				apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 				return
 			}
+			b.Klasse = klasseOderArt(b.Klasse, art)
 			borrowers = append(borrowers, b)
 		}
 		if err := rows.Err(); err != nil {
@@ -316,9 +316,10 @@ func (s *Server) GetTitleHistoryHandler() http.HandlerFunc {
 
 // handleGetTitleHistory liefert die letzten 200 Ausleih-Vorgänge eines Titels. Seit der
 // Lesehistorie-Befristung (jobs/cron_dsgvo_lesehistorie.go) trägt ein Großteil davon keine
-// schueler_id mehr: Name → "Anonym", Klasse leer. "Lehrer" gilt nur, wenn wirklich ein
-// Benutzer-Konto ausgeliehen hat — vorher machte COALESCE(s.klasse, 'Lehrer') aus jeder
-// getrennten Schüler-Ausleihe eine Lehrer-Ausleihe. Als
+// schueler_id mehr: Name → "Anonym", Klasse leer. Das Wort einer Art („Lehrkraft",
+// „Fachbereich" …, klasseOderArt) steht nur, wenn wirklich ein Kollege ausgeliehen hat —
+// bis zum 22.08.2026 machte COALESCE(s.klasse, 'Lehrer') aus jeder getrennten
+// Schüler-Ausleihe eine Lehrer-Ausleihe, bis zum 30.09.2026 hieß jeder Kollege „Lehrer". Als
 // Top-Level-Methode ausgelagert (nicht Inline-Closure), damit die Scan-Schleife nicht
 // zusätzlich als Verschachtelung zählt (S3776).
 func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
@@ -334,8 +335,8 @@ func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 			SELECT 
 			  l.vorname AS vorname,
 			  l.nachname AS nachname,
-			  CASE WHEN l.art IS NOT NULL AND l.art <> 'schueler' THEN 'Lehrer'
-			       ELSE l.klasse END AS klasse,
+			  l.klasse AS klasse,
+			  l.art AS art,
 			  e.barcode_id, a.ausgeliehen_am, a.rueckgabe_am
 			FROM ausleihen a
 			JOIN buecher_exemplare e ON a.exemplar_id = e.id
@@ -354,14 +355,14 @@ func (s *Server) handleGetTitleHistory(w http.ResponseWriter, r *http.Request) {
 	history := []TitleHistory{}
 	for rows.Next() {
 		var h TitleHistory
-		var vorname, nachname, klasse *string
-		if err := rows.Scan(&vorname, &nachname, &klasse, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
+		var vorname, nachname, klasse, art *string
+		if err := rows.Scan(&vorname, &nachname, &klasse, &art, &h.ExemplarBarcode, &h.AusgeliehenAm, &h.RueckgabeAm); err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
 		}
 		h.Vorname = stringOrDefault(vorname, "Anonym")
 		h.Nachname = stringOrDefault(nachname, "")
-		h.Klasse = stringOrDefault(klasse, "")
+		h.Klasse = klasseOderArt(stringOrDefault(klasse, ""), stringOrDefault(art, ""))
 		history = append(history, h)
 	}
 	if err := rows.Err(); err != nil {

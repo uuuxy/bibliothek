@@ -46,6 +46,17 @@ func leserArtBezeichnung(art string) string {
 	return art
 }
 
+// klasseOderArt ist, was in einer Liste in der Spalte „Klasse" steht: beim Schüler die
+// Klasse, bei jedem anderen das Wort seiner Art. Theke, Ausleiher-Liste und Ausleihgeschichte
+// eines Buchs lesen es hier. Bis zum 30.09.2026 schrieben die beiden Listen des Buchs „Lehrer"
+// für jeden, der kein Schüler ist — auch für einen Fachbereich oder einen Praktikanten.
+func klasseOderArt(klasse, art string) string {
+	if art != "" && !istSchuelerArt(art) {
+		return leserArtBezeichnung(art)
+	}
+	return klasse
+}
+
 // moeglicheArten zählt die Arten für eine Fehlermeldung auf: „Schüler, Lehrkraft, …".
 func moeglicheArten() string {
 	woerter := make([]string, 0, len(leserArtenListe))

@@ -11,7 +11,7 @@ describe('Ausleiher-Liste: Dauerleihe', () => {
 	const zeile = (dauerleihe) => ({
 		schueler_name: 'Kim',
 		schueler_nachname: 'Kollegin',
-		klasse: 'Lehrer',
+		klasse: 'Lehrkraft',
 		schueler_barcode: 'A-1',
 		exemplar_barcode: 'B-1',
 		ausgeliehen_am: '2025-01-01T10:00:00Z',
