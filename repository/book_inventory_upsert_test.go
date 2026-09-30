@@ -82,10 +82,13 @@ func TestNormalisiereTitelKey(t *testing.T) {
 		{`LMF-"Green Line - Topic zum country of reference "South Africa"`, "LMF-Green Line - Topic zum country of reference South Africa"},
 		{"  Faust   Teil 1 ", "Faust Teil 1"},
 		{"Faust", "Faust"},
+		// Zerlegt wie aus der DNB („a" + U+0308): derselbe Schlüssel wie zusammengesetzt,
+		// denn gespeichert wird seit Migration 154 zusammengesetzt.
+		{"Anha\u0308nge und Register", "Anh\u00e4nge und Register"},
 	}
 	for _, tt := range tests {
 		if got := NormalisiereTitelKey(tt.in); got != tt.want {
-			t.Errorf("NormalisiereTitelKey(%q) = %q, want %q", tt.in, got, tt.want)
+			t.Errorf("NormalisiereTitelKey(%+q) = %+q, want %+q", tt.in, got, tt.want)
 		}
 	}
 }

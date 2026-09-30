@@ -403,7 +403,10 @@ var triggerBestand = []string{
 	// fand keine eingetippte Suche den Titel (api/opac_nfc_pg_test.go, am Rückbau rot). Frage 12:
 	// Wer einen gespeicherten Titeltext mit einem Wert aus Go vergleicht, muss ihn ebenfalls
 	// zusammensetzen; die DNB-Antwort tut das in inventur.dekodiereMARC, die Schlagworte in
-	// repository.schlagwortNormalform. Die Signatur ist bewusst nicht dabei.
+	// repository.schlagwortNormalform, die Titelschlüssel beider Importe (Katalogisat und
+	// Listenimport) in repository.NormalisiereTitelKey — dort fehlte es bis zum Rasterdurchgang
+	// vom 30.09.2026 (internal/service/import_dynamic_nfc_pg_test.go). Die Signatur ist bewusst
+	// nicht dabei.
 	"trg_titel_text_nfc @ buecher_titel",
 	// Migration 143, befragt am 23.09.2026: keine Kette von Verweisen, kein Titel an einem
 	// Verweis. Beide Schreib-Türen halten es selbst ein — SetzeSchlagworte hängt über

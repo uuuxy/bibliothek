@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"golang.org/x/text/unicode/norm"
 )
 
 // NormalisiereTitelKey bildet den Schlüssel für das Titel-Matching der Importe:
@@ -16,8 +17,14 @@ import (
 // XML: `"South Africa"`) — ohne Normalisierung matchen dieselben Titel nie
 // und jeder Import legt Dubletten an. Nur für Map-Schlüssel verwenden, der
 // gespeicherte Titel behält seine Anführungszeichen.
+//
+// Umlaute und Akzente werden zusammengesetzt (Unicode NFC): Seit Migration 154 speichert
+// die Datenbank Titel so (trg_titel_text_nfc). Käme derselbe Titel aus einer Datei
+// zerlegt an („u" + U+0308), träfe er den gespeicherten nicht, und der Import legte ihn
+// ein zweites Mal an. Das Katalogisat vom Juni 2026 enthält kein zerlegtes Zeichen
+// (gemessen am 30.09.2026); was eine Tabelle für den Listenimport enthält, weiß man nicht.
 func NormalisiereTitelKey(titel string) string {
-	return strings.Join(strings.Fields(strings.ReplaceAll(titel, `"`, "")), " ")
+	return norm.NFC.String(strings.Join(strings.Fields(strings.ReplaceAll(titel, `"`, "")), " "))
 }
 
 // UpdateCopyBarcode ändert die Barcode-Zuordnung eines Exemplars.
