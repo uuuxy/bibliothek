@@ -219,6 +219,27 @@ describe('OrderStaging: Schlagworte', () => {
 		});
 	});
 
+	// Beim Tippen fragt das Feld über alle Wörter nach (Rasterdurchgang vom 30.09.2026): Ein
+	// Wort jenseits der 500 häufigsten, die es beim Öffnen lädt, steht danach in der Liste.
+	it('fragt beim Tippen den Server und bietet danach auch ein seltenes Wort an', async () => {
+		antworten([]);
+		const ohneSuche = vi.mocked(apiFetch).getMockImplementation();
+		vi.mocked(apiFetch).mockImplementation(async (url, ...rest) =>
+			String(url) === '/api/schlagworte?suche=zwerg'
+				? /** @type {any} */ ({ ok: true, json: async () => [{ wort: 'Zwergpilze', titel: 1 }] })
+				: /** @type {any} */ (ohneSuche?.(url, ...rest))
+		);
+		const screen = fenster();
+		const feld = await feldBereit(screen);
+
+		await fireEvent.input(feld, { target: { value: 'zwerg' }, inputType: 'insertText' });
+		await vi.waitFor(() =>
+			expect(
+				screen.container.querySelector('#stagedSchlagworte-vorschlaege option[value="Zwergpilze"]')
+			).toBeTruthy()
+		);
+	});
+
 	it('schreibt keinen Vorschlag, den niemand übernommen hat', async () => {
 		antworten([]);
 		const screen = fenster({ ...titel, schlagwort_vorschlaege: ['Krieg'] });

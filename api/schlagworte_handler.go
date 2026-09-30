@@ -28,20 +28,23 @@ type TitelSchlagworte struct {
 	Schlagworte []string `json:"schlagworte"`
 }
 
-// GetSchlagwortVorschlaegeHandler liefert die Schlagworte, die im Bestand vorkommen —
-// die häufigsten zuerst, gekappt auf 500. Die Vorschlagsliste der Eingabefelder, wie
-// GET /api/signaturen für die Signatur.
+// GetSchlagwortVorschlaegeHandler liefert die Schlagworte, die im Bestand vorkommen — ohne
+// ?suche= die häufigsten zuerst (höchstens 500), mit ?suche= die Wörter, die den Text
+// enthalten, über alle Wörter (höchstens 50; repository.SchlagwortVorschlaege). Die
+// Vorschlagsliste der Eingabefelder, wie GET /api/signaturen für die Signatur; das Feld
+// fragt beim Tippen nach (utils/schlagwortVorschlaege.svelte.js).
 //
 // @Summary      List keyword suggestions
-// @Description  Keywords carried by at least one title, most frequent first (max. 500).
+// @Description  Keywords carried by at least one title. Without suche: most frequent first (max. 500). With suche: keywords containing the text, prefix matches first (max. 50).
 // @Tags         books
 // @Produce      json
+// @Param        suche  query  string  false  "Teil eines Worts"
 // @Success      200  {array}   repository.SchlagwortZahl
 // @Failure      500  {object}  map[string]string
 // @Router       /schlagworte [get]
 func (s *Server) GetSchlagwortVorschlaegeHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		vorschlaege, err := repository.SchlagwortVorschlaege(r.Context(), s.DB.Pool)
+		vorschlaege, err := repository.SchlagwortVorschlaege(r.Context(), s.DB.Pool, r.URL.Query().Get("suche"))
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
 		}

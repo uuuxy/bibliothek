@@ -31,6 +31,8 @@
 	 *
 	 * @prop {string[] | null} [werte] - Die gewählten Werte (bindable); null = nicht geladen.
 	 * @prop {{ wert: string, beschreibung?: string }[]} [vorschlaege] - Angebot beim Tippen.
+	 * @prop {(text: string) => void} [ontippen] - Meldet getippten Text (keine Auswahl), damit
+	 *   der Aufrufer die Vorschläge beim Server nachfragt (utils/schlagwortVorschlaege.svelte.js).
 	 * @prop {number} [max=300] - Höchstzahl; darüber meldet das Feld den Fehlerzustand.
 	 * @prop {number} [maxZeichen=80] - Länge eines Werts.
 	 *   Beide sind die Grenzen des Servers (repository.SchlagworteJeTitelMax und
@@ -47,7 +49,7 @@
 	import ChipAngebote from './ChipAngebote.svelte';
 	import Feld from './Feld.svelte';
 
-	/** @type {{ werte?: string[] | null, id?: string, label?: string, hint?: string, placeholder?: string, vorschlaege?: { wert: string, beschreibung?: string }[], max?: number, maxZeichen?: number, disabled?: boolean, angebote?: string[], angeboteEtikett?: string, angeboteNeu?: string[], angeboteNeuEtikett?: string, 'aria-label'?: string }} */
+	/** @type {{ werte?: string[] | null, id?: string, label?: string, hint?: string, placeholder?: string, vorschlaege?: { wert: string, beschreibung?: string }[], ontippen?: (text: string) => void, max?: number, maxZeichen?: number, disabled?: boolean, angebote?: string[], angeboteEtikett?: string, angeboteNeu?: string[], angeboteNeuEtikett?: string, 'aria-label'?: string }} */
 	let {
 		werte = $bindable([]),
 		id = undefined,
@@ -55,6 +57,7 @@
 		hint = 'Mit Enter oder Komma übernehmen.',
 		placeholder = '',
 		vorschlaege = [],
+		ontippen = undefined,
 		max = 300,
 		maxZeichen = 80,
 		disabled = false,
@@ -109,6 +112,7 @@
 	function eingegeben(e) {
 		const art = /** @type {InputEvent} */ (e).inputType;
 		if (art === 'insertReplacementText' || art === undefined) uebernimm();
+		else ontippen?.(/** @type {HTMLInputElement} */ (e.target).value);
 	}
 
 	/** Die Angebote, die noch nicht gewählt sind.

@@ -8,7 +8,7 @@
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import ChipFeld from '../../../../lib/components/ui/ChipFeld.svelte';
-	import { ladeSchlagwortVorschlaege } from '../../../../lib/utils/schlagworte.js';
+	import { erzeugeSchlagwortVorschlaege } from '../../../../lib/utils/schlagwortVorschlaege.svelte.js';
 
 	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];
 
@@ -28,12 +28,11 @@
 
 	/** @type {any[]} */
 	let systematikListe = $state([]);
-	/** @type {{ wert: string, beschreibung?: string }[]} */
-	let schlagwortVorschlaege = $state([]);
+	const schlagwortVorschlaege = erzeugeSchlagwortVorschlaege();
 
 	onMount(async () => {
 		// Vorschläge sind optional: Ohne sie nimmt das Feld weiter freien Text an.
-		ladeSchlagwortVorschlaege().then((liste) => (schlagwortVorschlaege = liste));
+		schlagwortVorschlaege.lade();
 		try {
 			const antwort = await apiFetch('/api/systematics');
 			if (antwort.ok) {
@@ -143,7 +142,8 @@
 		id="buch-schlagworte"
 		label="Schlagworte"
 		bind:werte={formular.schlagworte}
-		vorschlaege={schlagwortVorschlaege}
+		vorschlaege={schlagwortVorschlaege.liste}
+		ontippen={schlagwortVorschlaege.getippt}
 		disabled={!schlagworteGeladen}
 		hint={schlagworteGeladen
 			? undefined

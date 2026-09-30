@@ -8,11 +8,8 @@
 
      Eigene Datei, weil OrderStaging mit dem Feld über der 200-Zeilen-Marke lag. -->
 <script>
-	import {
-		ladeSchlagwortVorschlaege,
-		ladeTitelSchlagworte,
-		setzeTitelSchlagworte
-	} from '../../utils/schlagworte.js';
+	import { ladeTitelSchlagworte, setzeTitelSchlagworte } from '../../utils/schlagworte.js';
+	import { erzeugeSchlagwortVorschlaege } from '../../utils/schlagwortVorschlaege.svelte.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import ChipFeld from '../ui/ChipFeld.svelte';
 	import { untrack } from 'svelte';
@@ -33,14 +30,11 @@
 	/** @type {string[] | null} */
 	let beiStart = $state(null);
 	let fehlen = $state(false);
-	/** @type {{ wert: string, beschreibung?: string }[]} */
-	let vorschlaege = $state([]);
+	const vorschlaege = erzeugeSchlagwortVorschlaege();
 
 	$effect(() => {
 		let abgebrochen = false;
-		ladeSchlagwortVorschlaege().then((liste) => {
-			if (!abgebrochen) vorschlaege = liste;
-		});
+		vorschlaege.lade();
 		ladeTitelSchlagworte(untrack(() => titelId)).then(
 			(liste) => {
 				if (abgebrochen) return;
@@ -83,7 +77,8 @@
 		id="stagedSchlagworte"
 		aria-label="Schlagworte"
 		bind:werte={schlagworte}
-		{vorschlaege}
+		vorschlaege={vorschlaege.liste}
+		ontippen={vorschlaege.getippt}
 		{angebote}
 		angeboteEtikett="Vorschläge aus der DNB"
 		{angeboteNeu}

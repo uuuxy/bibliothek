@@ -1,24 +1,28 @@
 import { apiFetch, apiPut } from '../apiFetch.js';
 
 /**
- * Die Schlagworte des Bestands als Vorschläge für ein ChipFeld (Migration 138) — die
- * häufigsten zuerst, höchstens 500 (GET /api/schlagworte).
+ * Die Schlagworte des Bestands als Vorschläge für ein ChipFeld (Migration 138), über
+ * GET /api/schlagworte: ohne Suchtext die häufigsten zuerst (höchstens 500), mit Suchtext die
+ * Wörter, die ihn enthalten, über alle Wörter (höchstens 50). Die Felder laden sie über
+ * erzeugeSchlagwortVorschlaege (schlagwortVorschlaege.svelte.js), das beim Tippen nachfragt.
  *
- * EIN Abruf für alle Felder, die Schlagworte entgegennehmen (Buchformular, Bestellkorb),
- * wie ladeSignaturen für die Signatur. Antwortet der Server nicht, bleibt die Liste leer:
- * Das Feld nimmt weiter freien Text an, es fehlen nur die Vorschläge.
+ * Antwortet der Server nicht, kommt null: Der Aufrufer behält dann, was er hat. Das Feld nimmt
+ * weiter freien Text an, es fehlen nur die Vorschläge.
  *
- * @returns {Promise<{ wert: string, beschreibung: string }[]>}
+ * @param {string} [suche]
+ * @returns {Promise<{ wert: string, beschreibung: string }[] | null>}
  */
-export async function ladeSchlagwortVorschlaege() {
+export async function ladeSchlagwortVorschlaege(suche = '') {
 	try {
-		const res = await apiFetch('/api/schlagworte');
+		const res = await apiFetch(
+			`/api/schlagworte${suche ? `?suche=${encodeURIComponent(suche)}` : ''}`
+		);
 		if (!res.ok) {
-			return [];
+			return null;
 		}
 		const liste = await res.json();
 		if (!Array.isArray(liste)) {
-			return [];
+			return null;
 		}
 		return liste
 			.filter((/** @type {any} */ v) => typeof v?.wort === 'string')
@@ -27,7 +31,7 @@ export async function ladeSchlagwortVorschlaege() {
 				beschreibung: `${v.titel} Titel`
 			}));
 	} catch {
-		return [];
+		return null;
 	}
 }
 

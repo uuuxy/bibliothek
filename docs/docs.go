@@ -2315,7 +2315,7 @@ const docTemplate = `{
         },
         "/schlagworte": {
             "get": {
-                "description": "Keywords carried by at least one title, most frequent first (max. 500).",
+                "description": "Keywords carried by at least one title. Without suche: most frequent first (max. 500). With suche: keywords containing the text, prefix matches first (max. 50).",
                 "produces": [
                     "application/json"
                 ],
@@ -2323,6 +2323,14 @@ const docTemplate = `{
                     "books"
                 ],
                 "summary": "List keyword suggestions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Teil eines Worts",
+                        "name": "suche",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2405,6 +2413,14 @@ const docTemplate = `{
                     "books"
                 ],
                 "summary": "List keywords for maintenance",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Teil eines Worts oder eines Verweises darauf",
+                        "name": "suche",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -6115,7 +6131,13 @@ const docTemplate = `{
         "repository.SchlagwortPflegeListe": {
             "type": "object",
             "properties": {
+                "filter": {
+                    "type": "integer"
+                },
                 "gesamt": {
+                    "type": "integer"
+                },
+                "treffer": {
                     "type": "integer"
                 },
                 "verweise": {

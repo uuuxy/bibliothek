@@ -30,10 +30,16 @@ const (
 	// diese Wörter beim Einlesen verloren. Eine Grenze bleibt: Ohne sie wäre ein Fehler im
 	// Aufrufer (ein ganzer Text, am Komma zerlegt) eine Liste von Tausenden Wörtern.
 	SchlagworteJeTitelMax = 300
-	// schlagwortVorschlaegeMax kappt die Vorschlagsliste. Die Häufigsten kommen zuerst;
-	// ein seltenes Wort, das darüber fällt, lässt sich weiter tippen und trifft beim
-	// Speichern trotzdem die vorhandene Schreibweise.
+	// schlagwortVorschlaegeMax kappt die Vorschlagsliste, die das Feld beim Öffnen lädt. Die
+	// Häufigsten kommen zuerst; wer tippt, bekommt die Treffer über alle Wörter
+	// (schlagwortVorschlaegeSucheMax).
 	schlagwortVorschlaegeMax = 500
+	// schlagwortVorschlaegeSucheMax kappt die Treffer einer Suche beim Tippen. Bis zum
+	// 30.09.2026 gab es nur die 500 Häufigsten. Mit den Littera-Wörtern (Katalogisat vom Juni
+	// 2026: 13.224 Wörter) deckten sie 56 % der Zuordnungen ab; 12.724 Wörter wurden nie
+	// angeboten, 854 davon mit fünf und mehr Titeln. Wer „Pilz" tippte, sah das vorhandene
+	// „Pilze" nicht und legte ein zweites Wort an (Rasterdurchgang vom 30.09.2026).
+	schlagwortVorschlaegeSucheMax = 50
 )
 
 // ErrSchlagwortUngueltig meldet eine Eingabe, die eine Grenze verletzt. Die Handler
@@ -229,18 +235,30 @@ type SchlagwortZahl struct {
 	Titel int    `json:"titel"`
 }
 
-// SchlagwortVorschlaege liefert die Wörter, die mindestens ein Titel trägt, die
-// häufigsten zuerst, gekappt auf schlagwortVorschlaegeMax. Ein Wort ohne Titel fehlt mit
-// Absicht: Es entsteht, wenn jemand ein Wort anlegt und wieder entfernt — meist ein
-// Tippfehler, der nicht als Vorschlag weiterleben soll.
-func SchlagwortVorschlaege(ctx context.Context, q DBQueryer) ([]SchlagwortZahl, error) {
+// SchlagwortVorschlaege liefert die Wörter, die mindestens ein Titel trägt. Ohne Suche die
+// häufigsten zuerst, gekappt auf schlagwortVorschlaegeMax. Mit Suche die Wörter, die den
+// Text enthalten — über alle Wörter, ohne Rücksicht auf Groß- und Kleinschreibung, wie die
+// Suche der Pflegeseite (strpos über lower(), kein LIKE-Joker) —, die mit dem Text
+// beginnen zuerst, dann die häufigsten, gekappt auf schlagwortVorschlaegeSucheMax.
+//
+// Ein Wort ohne Titel fehlt mit Absicht: Es entsteht, wenn jemand ein Wort anlegt und
+// wieder entfernt — meist ein Tippfehler, der nicht als Vorschlag weiterleben soll.
+// Verweise tragen keine Titel und fehlen deshalb ebenso; wer einen tippt, bekommt beim
+// Speichern sein Ziel (SetzeSchlagworte).
+func SchlagwortVorschlaege(ctx context.Context, q DBQueryer, suche string) ([]SchlagwortZahl, error) {
+	suche = schlagwortNormalform(suche)
+	grenze := schlagwortVorschlaegeMax
+	if suche != "" {
+		grenze = schlagwortVorschlaegeSucheMax
+	}
 	rows, err := q.Query(ctx, `
 		SELECT s.wort, count(*)::int AS titel
 		FROM schlagworte s
 		JOIN titel_schlagworte ts ON ts.schlagwort_id = s.id
+		WHERE $1 = '' OR strpos(lower(s.wort), lower($1)) > 0
 		GROUP BY s.id, s.wort
-		ORDER BY count(*) DESC, lower(s.wort)
-		LIMIT $1`, schlagwortVorschlaegeMax)
+		ORDER BY strpos(lower(s.wort), lower($1)) = 1 DESC, count(*) DESC, lower(s.wort)
+		LIMIT $2`, suche, grenze)
 	if err != nil {
 		return nil, fmt.Errorf("schlagwort-vorschläge lesen: %w", err)
 	}

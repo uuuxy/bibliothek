@@ -144,4 +144,16 @@ func TestSchlagwortVorschlaege_AusDemBestand(t *testing.T) {
 	if !slices.Equal(vorschlaege, want) {
 		t.Errorf("Vorschläge %+v, erwartet %+v", vorschlaege, want)
 	}
+
+	// Beim Tippen fragt das Feld mit ?suche= (Rasterdurchgang vom 30.09.2026): Die Tür reicht
+	// den Text an die Abfrage weiter, die über alle Wörter sucht (repository-Test dazu).
+	rec = httptest.NewRecorder()
+	srv.GetSchlagwortVorschlaegeHandler()(rec, httptest.NewRequest(http.MethodGet, "/api/schlagworte?suche=TI", nil))
+	vorschlaege = nil
+	if err := json.Unmarshal(rec.Body.Bytes(), &vorschlaege); rec.Code != http.StatusOK || err != nil {
+		t.Fatalf("?suche=TI: Status %d, %v: %s", rec.Code, err, rec.Body.String())
+	}
+	if want := []repository.SchlagwortZahl{{Wort: "Tiere", Titel: 1}}; !slices.Equal(vorschlaege, want) {
+		t.Errorf("?suche=TI: %+v, erwartet %+v", vorschlaege, want)
+	}
 }

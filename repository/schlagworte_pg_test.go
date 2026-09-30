@@ -179,7 +179,7 @@ func TestSchlagwortVorschlaege_HaeufigsteZuerstGekapptOhneWaisen(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vorschlaege, err := SchlagwortVorschlaege(ctx, pool)
+	vorschlaege, err := SchlagwortVorschlaege(ctx, pool, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,5 +196,77 @@ func TestSchlagwortVorschlaege_HaeufigsteZuerstGekapptOhneWaisen(t *testing.T) {
 		if v.Wort == "Tippfehlr" {
 			t.Error("ein Wort ohne Titel steht in den Vorschlägen")
 		}
+	}
+}
+
+// Wer tippt, bekommt Treffer über ALLE Wörter (Rasterdurchgang vom 30.09.2026). Bis dahin
+// lud das Feld nur die 500 Häufigsten; mit den Littera-Wörtern (13.224 im Katalogisat vom
+// Juni 2026) blieben 12.724 ungezeigt, und wer „Pilz" tippte, sah das vorhandene „Zwergpilze"
+// nicht. Der Fall hier: ein seltenes Wort jenseits der Kappung, Anfangstreffer zuerst, dann
+// die häufigsten; Verweise und Wörter ohne Titel nie; „%" ist Text; zerlegte Umlaute im
+// Suchtext treffen; die Treffer einer Suche sind gekappt.
+func TestSchlagwortVorschlaege_SucheUeberAlleWoerter(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+
+	sammel := seedSchlagwortTitel(t, pool, "Sammelband")
+	if _, err := pool.Exec(ctx, `
+		WITH neu AS (
+			INSERT INTO schlagworte (wort)
+			SELECT 'Wort ' || lpad(g::text, 4, '0') FROM generate_series(1, $1) g
+			RETURNING id)
+		INSERT INTO titel_schlagworte (titel_id, schlagwort_id) SELECT $2, id FROM neu`,
+		schlagwortVorschlaegeMax+10, sammel); err != nil {
+		t.Fatal(err)
+	}
+	for titel, woerter := range map[string][]string{
+		"Pilzbuch":   {"Pilze", "Speisepilze", "Zwergpilze", "100% Wald", "V\u00f6gel"},
+		"Kochbuch":   {"Speisepilze"},
+		"Wanderbuch": {"Wald"},
+	} {
+		if _, err := SetzeSchlagworte(ctx, pool, seedSchlagwortTitel(t, pool, titel), woerter); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// Ein Verweis auf „Pilze" und eine Waise: beide ohne Titel.
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schlagworte (wort, verweis_auf) SELECT 'Pilzkunde', id FROM schlagworte WHERE wort = 'Pilze';
+		INSERT INTO schlagworte (wort) VALUES ('Pilzbefall')`); err != nil {
+		t.Fatal(err)
+	}
+
+	woerter := func(suche string) []string {
+		t.Helper()
+		vorschlaege, err := SchlagwortVorschlaege(ctx, pool, suche)
+		if err != nil {
+			t.Fatalf("Suche %+q: %v", suche, err)
+		}
+		var aus []string
+		for _, v := range vorschlaege {
+			aus = append(aus, v.Wort)
+		}
+		return aus
+	}
+
+	if slices.Contains(woerter(""), "Zwergpilze") {
+		t.Fatal("Vorbedingung: „Zwergpilze“ steht schon unter den 500 Häufigsten — der Fall prüft dann nichts")
+	}
+	for _, fall := range []struct {
+		suche string
+		want  []string
+	}{
+		{"pilz", []string{"Pilze", "Speisepilze", "Zwergpilze"}},
+		{"  PILZE ", []string{"Pilze", "Speisepilze", "Zwergpilze"}},
+		{"%", []string{"100% Wald"}},
+		{"Vo\u0308g", []string{"V\u00f6gel"}},
+		{"gibt es nicht", nil},
+	} {
+		if got := woerter(fall.suche); !slices.Equal(got, fall.want) {
+			t.Errorf("Suche %+q: %+q, erwartet %+q", fall.suche, got, fall.want)
+		}
+	}
+	if n := len(woerter("wort")); n != schlagwortVorschlaegeSucheMax {
+		t.Errorf("Suche „wort“: %d Treffer, erwartet die Kappung %d", n, schlagwortVorschlaegeSucheMax)
 	}
 }

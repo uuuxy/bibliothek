@@ -51,6 +51,25 @@ describe('ChipFeld', () => {
 		expect(chips(container)).toEqual(['Fantasy']);
 	});
 
+	// Beim Tippen fragt der Aufrufer die Vorschläge beim Server nach (seit dem 30.09.2026,
+	// utils/schlagwortVorschlaege.svelte.js). Gemeldet wird getippter Text, keine Auswahl:
+	// Die ist schon die Übernahme.
+	it('meldet getippten Text an ontippen, eine Auswahl aus der Liste nicht', async () => {
+		/** @type {string[]} */
+		const gemeldet = [];
+		const { getByLabelText } = aufbau({
+			ontippen: (/** @type {string} */ text) => gemeldet.push(text)
+		});
+		const feld = getByLabelText('Schlagworte');
+		await tippe(feld, 'pil');
+		await tippe(feld, 'pilz');
+		await fireEvent.input(feld, {
+			target: { value: 'Pilze' },
+			inputType: 'insertReplacementText'
+		});
+		expect(gemeldet).toEqual(['pil', 'pilz']);
+	});
+
 	it('zählt Doppelte ohne Groß- und Kleinschreibung, und ein Vorschlag gibt die Schreibweise vor', async () => {
 		const { getByLabelText, container } = aufbau({
 			werte: ['Fantasy'],
