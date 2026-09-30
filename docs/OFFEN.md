@@ -809,12 +809,25 @@ unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
   Titel, die keine Ansicht zeigt, oder mit einem einzigen Titel, der überall wie ein Titel ohne
   weitere Auflage erscheint (Titelmaske: „Keine andere Auflage zugeordnet."). Kein Schaden; die
   Ratsche `auflagen_schreibpfad_ratsche_test.go` liest keine Skripte.
-- Ein zweiter Lauf desselben Katalogisats ändert noch etwas (gemessen am 30.09.2026 am Export vom
-  Juni 2026, zweimal in eine leere Datenbank): das Fach an 61 Titeln und die Schlagworte an einem.
-  Der Upsert (`BulkUpsertBookTitles`) übergeht beim ersten Lauf eine Dublette in der Datei, weil
-  der Titel noch nicht in der Datenbank steht; beim zweiten steht er dort, und die Dublette wird
-  als Aktualisierung eingereiht. Kein Schaden: Fach und Schlagworte füllen nur Leerstellen. Anlass
-  zum Bauen: ein Import, dessen zweiter Lauf etwas Vorhandenes ändert.
+- Der Katalogisat-Import legt Einträge über den Titeltext zusammen, und ein zweiter Lauf schreibt
+  die Angaben des zuletzt passenden Eintrags darüber (gemessen am 30.09.2026 am Export vom Juni
+  2026, zweimal in eine leere Datenbank). Der Upsert (`queueTitelUpsert` in
+  `BulkUpsertBookTitles`) sucht einen Titel über die ISBN, sonst über den Titeltext. Der erste Lauf
+  macht aus 13.708 Einträgen 11.302 Titel: 226 sind echte Dubletten (gleiche ISBN, gleicher Text),
+  432 teilen die ISBN mit einem Eintrag anderen Texts (4190700703809 steht an neun verschiedenen
+  DVDs), 1.748 den Titeltext bei anderer oder fehlender ISBN — „Harry Potter und der Feuerkelch"
+  steht als Buch, Taschenbuch und DVD in der Datei und wird ein Titel. Beim zweiten Lauf gilt ein
+  solcher Eintrag als Aktualisierung des vorhandenen Titels: Titeltext, Autor, Verlag, Jahr,
+  Signatur und Jahrgangsspanne kommen aus dem Eintrag, sobald er einen Wert hat (`qUpdate`), der
+  letzte gewinnt. Geändert werden so 789 Titel — Jahr 664, Verlag 359, Signatur 347, Autor 220,
+  Jahrgang von 61 und bis 64, Titeltext 38, dazu Leerstellen: ISBN 33, Fach 61, Schlagworte an
+  einem. Der Buchtitel „Harry Potter und der Feuerkelch" trägt danach Signatur und Jahr des
+  DVD-Eintrags („DvD/D", 2005). Die Übernahme aus der Sicherung (`internal/littera`), mit der der
+  Echtbetrieb beginnt (entschieden am 28.09.2026), gleicht nicht über den Titeltext ab; der Import
+  aus CSV und Excel (`internal/service/import_dynamic.go`) tut es ebenfalls, dort nicht gemessen.
+  Der Katalog am Testserver stammt aus diesem Import (13.705 der 13.708 Einträge finden dort ihren
+  Titel, gezählt am 30.09.2026). Anlass zum Bauen: Das Katalogisat wird wieder ein Weg in den
+  Echtbetrieb, oder ein gepflegter Katalog soll es erneut einlesen.
 
 ### 6.2 Kategorie C
 
