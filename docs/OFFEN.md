@@ -91,8 +91,9 @@ Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stel
 die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 
-Mit der Littera-Übernahme (7.2) kommen die Littera-Schlagworte aus 4.20 und das Eigentum je
-Exemplar (4.24); danach ist 4.25 an echten DNB-Sätzen zu messen und zu entscheiden.
+Mit der Littera-Übernahme (7.2) kommt das Eigentum je Exemplar (4.24). Das Mitnehmen der
+Littera-Schlagworte (4.20) ist freigegeben, aber noch nicht gebaut; danach ist 4.25 an echten
+DNB-Sätzen zu messen und zu entscheiden.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
 Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
@@ -185,10 +186,26 @@ erledigt**; zu melden bleibt eine spätere Rückgabe, das kann die Theke schon. 
 
 ### 4.20 Littera-Schlagworte übernehmen
 
-**Freigegeben am 23.09.2026:** die **Littera-Schlagworte** (MAB 710) beim nächsten Einspielen
-des Backups mitnehmen (7.2). Heute liest der Import sie, leitet das Fach ab und verwirft sie.
-Vorher messen, wie viele Titel welche tragen. Die Schlagworte selbst (Migration 138, Pflege mit
+**Freigegeben am 23.09.2026:** die **Littera-Schlagworte** beim nächsten Einspielen des Backups
+mitnehmen (7.2); nicht gebaut. Die Übernahme aus der Sicherung (`cmd/littera-altbestand`,
+[SCRIPTS.md](SCRIPTS.md) Abschnitt 1) liest sie nicht: Sie stehen in eigenen Tabellen
+(`Schlagworte`, `Schlag_zuord`, Verweise in `Verweise_Schlagworte` und `Verweis_Zu_Schlagworte`),
+exportiert werden nur die neun Tabellen aus Abschnitt 1. Der Katalogisat-Import (Abschnitt 1a)
+liest sie als MAB 710, leitet daraus das Fach ab und verwirft sie (`kategorisiere` in
+`internal/service/import_service.go`). Die Schlagworte selbst (Migration 138, Pflege mit
 Verweisen, Portal-Filter) stehen in [FACHKONZEPT.md](FACHKONZEPT.md).
+
+Gemessen am 30.09.2026 in der Sicherung von 2010: 2.849 Schlagworte, 2.744 davon an Titeln,
+1.390 an genau einem; 24.110 Zuordnungen an 10.364 der 10.732 Titel; keine Verweise; ein Wort
+steht zweimal in der Liste („Brasilien"). Am häufigsten: Deutsche Literatur (796 Titel),
+Jugendbuch (619), Geschichte (488).
+
+**Nicht entschieden: die Interessenkreise** (aufgefallen am 30.09.2026). Littera führt daneben 36
+Interessenkreise an 8.902 Titeln (Sicherung von 2010), Zielgruppen, am häufigsten Sekundarstufe 2
+(2.987 Titel), Sekundarstufe 1 u. 2 (2.402), Sekundarstufe 1 (1.869), Lehrer (1.813) und
+Referendare (986). Die Übernahme liest sie nicht (Tabellen `Interessenskreis`, `IntZuMed`); der
+Katalogisat-Import nimmt die Zielgruppe (MAB 070b) nur für die Jahrgangsspanne. **Frage:**
+mitnehmen, und wenn ja, wohin?
 
 ### 4.22 Datenweg beim Wechsel auf ein anderes Programm
 
