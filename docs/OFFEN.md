@@ -76,8 +76,8 @@ zurückgestellt; am 29.09.2026 war es nicht abschätzbar. Einen Termin hat Node 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
-   zurückgestellt (siehe oben). Es folgt 5.18 (Klassen und Lesergruppen als Stammdaten,
-   entschieden am 29.09.2026; Stufenplan freigegeben am 30.09.2026, in Arbeit), dann 5.21
+   zurückgestellt (siehe oben). Es folgt 5.18 (Klassen auswählen statt tippen, vereinfacht
+   am 30.09.2026; Lesergruppen für Sonderkonten vor dem Umstieg), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
@@ -450,126 +450,44 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   dann die Regel aus `-exclude` nehmen — außerhalb von G706 sind es 28 Stellen in 14 Dateien.
   Nur mit Anlass.
 
-### 5.18 Klassen als Stammdaten — wie die Lesergruppen in Littera
+### 5.18 Klassen: auswählen statt tippen — und Lesergruppen für Sonderkonten
 
-Am 23.09.2026 entschieden: „Klasse löschen möglich machen". Beim Bauen stellte sich heraus, dass
-die Beschreibung, auf der die Entscheidung stand, nicht stimmte:
+**Vereinfacht am 30.09.2026** (ersetzt die Pflegeseite mit Umbenennen, Zusammenlegen und Löschen
+vom 24. und 29.09.2026): Die Klassen kommen aus der LUSD. Bisher legte ein Tippfehler an vier
+Stellen still eine Klasse an, die es an der Schule nicht gibt (Auslöser `klasse_kanonisieren`).
+Kann man dort nur auswählen, entstehen keine falschen Klassen mehr, und Umbenennen oder
+Zusammenlegen braucht es nicht. Der Schulserver beginnt leer; die alten Test-Klassen gibt es nur
+auf dem Testserver (gemessen am 29.09.2026: 108 Klassen, 27 davon mit Lesern), und sichtbar sind
+sie nur, solange eine Buchliste, eine Zuordnung oder ein LMF-Termin sie trägt.
 
-- Die Auswahllisten lesen **nicht** die Tabelle `klassen`, sondern die Verweise:
-  `GET /api/klassen` ist `SELECT DISTINCT klasse FROM schueler`, dazu Klassensätze und
-  Zuordnungen. `klassen` ist ein Vokabular, das Trigger selbst füllen; im Go-Code liest es
-  niemand.
-- Gemessen am Testserver (23.09.2026, lesend): 108 Klassen im Vokabular, 30 ohne jeden Verweis
-  (05A–08D aus Migration 079). Die sieht niemand; ein Löschen änderte nichts Sichtbares.
-- Sichtbar ist eine vertippte Klasse, solange Schüler, ein Klassensatz, eine Zuordnung, eine
-  Reservierung oder ein LMF-Termin sie tragen. Löschen verweigert dann die Datenbank
-  (`ON DELETE RESTRICT` an sechs Tabellen).
+Wie Littera (Handbuch, „Lesergruppen"): „Zur Zuordnung Ihrer Leser/Schüler werden nur die
+Leser-Untergruppen zur Auswahl angeboten"; beim Import aus der Schulverwaltung entstehen die
+Gruppen selbst. Anders als in Littera legt niemand eine Klasse von Hand an — eine neue Klasse
+kommt mit dem LUSD-Abgleich; braucht man das Anlegen doch, lässt es sich ergänzen.
 
-**Littera** (Handbuch, „Lesergruppen"): Klassen sind Stammdaten unter „Stammdaten →
-Lesergruppen", mit Kurzbezeichnung und Bezeichnung unter einer Obergruppe; am Leser ist die
-Klasse ein Pflichtfeld und wird nur aus dieser Liste gewählt. Gepflegt wird an der einen Stelle
-(für die gleich gebaute Systematik: „einzelne Gruppen löschen, bearbeiten oder ergänzen"). Beim
-Import aus der Schulverwaltung entstehen die Gruppen selbst.
+**Zu bauen:**
 
-**Entschieden am 24.09.2026, nicht gebaut — Stammdaten-Seite wie in Littera:** Die Tabelle
-`klassen` wird die eine Liste, und alle Auswahllisten lesen sie statt `SELECT DISTINCT` über die
-Verweise. Eine Pflegeseite (Einstellungen → LUSD & Versetzung) zeigt jede Klasse mit der Zahl der
-Schüler, Klassensätze und Zuordnungen: „umbenennen in …" zieht über `ON UPDATE CASCADE` alles mit;
-gibt es das Ziel schon, werden die Verweise dorthin umgehängt (Zusammenführen), und die alte
-Klasse fällt weg; löschen nur ohne Verweis. Der LUSD-Import legt neue Klassen weiter selbst an.
-Wer Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit — die Rückfrage nennt die
-Zahlen. In Stufen, vorher eine Frage-Runde zur Oberfläche.
+1. Auswählen statt tippen an der Leserakte (`LeserEditFelder`), bei der Neuanlage („Manuell
+   eingeben…" fällt weg), im Mahnwesen-Routing, bei der Buchliste der Klassensätze
+   (`ClassAssignPicker`) und bei der Klassenverlängerung (dort findet ein Tippfehler nur
+   niemanden). Die Liste ist die vorhandene: `GET /api/klassen`, die Klassen, in denen Schüler
+   sind.
+2. Kleine Korrekturen: Beispiele nach dem Klassenschema statt „7a", „8b" und „10b"; „Klasse
+   löschen" bei den Klassensätzen heißt „Buchliste löschen" (es entfernt nur die Buchliste, die
+   Rückfrage lautet „Klasse … löschen?"); die Seite Mahnwesen-Routing sagt, dass die Liste von
+   Hand gepflegt wird und die Versetzung sie hochrückt (im Handbuch seit dem 30.09.2026).
+3. Eigener Punkt, vor dem Umstieg (entschieden am 29.09.2026): Gruppen für Sonderkonten
+   (Fachbereich, Praktikum, U-plus, Sekretariat) in `lesergruppen` (Kürzel, Bezeichnung),
+   freiwillig wählbar an der Leserakte eines Kollegen; die Littera-Übernahme setzt sie statt
+   einer Zeile im Protokoll ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1). „Lehrer" und „Lehrerin" aus
+   Littera werden keine Gruppe — sie tragen das Geschlecht, das das Programm nicht speichert, und
+   die Art steht schon an jeder Person. Gemessen am 29.09.2026: `lesergruppen` leer, kein Kollege
+   mit Klasse.
 
-**Erweitert am 28.09.2026:** nicht nur Klassen, sondern alle Lesergruppen wie in Littera, je mit
-Kürzel, Bezeichnung und Art (Schüler oder Kollegium) — auch Fachbereiche, Praktikanten, U-plus,
-„Im Ausland". Anlass: Die Übernahme der 42 Konten ohne Schüler-/Lehrkraft-Gruppe (7.2). Im Schema
-steht dafür schon eine Tabelle `lesergruppen` (`kuerzel`, `bezeichnung`), die kein Go-Code liest
-oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*)` am Testserver).
-
-**Entschieden am 29.09.2026 (Frage-Runde; ersetzt die Reihenfolge vom 28.09.2026 und das
-„umbenennen in …" vom 24.09.2026):**
-
-- **Vor dem Umstieg bauen.** Die Übernahme läuft einmal; gibt es die Lesergruppen, bringt sie die
-  Littera-Gruppen der Sonderkonten mit, statt sie nur als Warnung ins Protokoll zu schreiben
-  ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
-- **Klasse überall aus der Liste** — Leserakte, „Manuell eingeben" bei der Neuanlage, Zuordnung
-  im Mahnwesen. Eine neue Klasse entsteht nur nach Rückfrage („Klasse 5f gibt es noch nicht —
-  anlegen?") oder durch den LUSD-Import. Wie Littera: Die Untergruppe wird nur aus der Liste
-  gewählt. (Die Klassensatz-Reservierung im Portal stand hier auch; seit 30.09.2026 bleibt sie
-  Freitext, siehe unten.)
-- **Drei getrennte Aktionen** wie FOLIO („A patron group can be deleted only if it is no longer
-  applied to any user records"; Wechsel per Sammeländerung „Patron group — Replace with — Select
-  value") und die Schlagwort-Pflege:
-  Umbenennen (nur auf einen neuen Namen, sonst Abweisung), Zusammenlegen (Ziel aus der Liste,
-  vorher die Zahlen der wandernden Schüler, Klassensätze, Zuordnungen, Reservierungen,
-  LMF-Termine), Löschen (nur ohne Verweis); jede Änderung im Protokoll. Grund: Ein vertippter
-  neuer Name, der eine vorhandene Klasse trifft, legte sonst still zwei Klassen zusammen.
-- **Keine Obergruppen von Hand.** Die Seite ordnet unter Förderstufe, Hauptschulzweig,
-  Realschulzweig, Gymnasialzweig, Oberstufe und „Kollegium und Sonderkonten" — aus dem
-  Klassennamen (Klassenschema: 05F1, 05G1, 07H1, 07R1, ET1, 12T1; so lesen schon Ausweis-Gültigkeit
-  und Abschlussklasse den Zweig — der Zweig-Filter im Portal dagegen liest ein Feld am Schulbuch)
-  bzw. aus der Art. Die
-  Statistik zählt nach denselben Überschriften. In Littera waren die Obergruppen dieser Schule
-  genau diese Zweige und Personenarten (Sicherung 2010: 14 Obergruppen, 119 Untergruppen, keine
-  Preise daran); `Leser_UG.VorrNach` („vorrücken nach") übernimmt bei uns die Versetzung.
-- **Kollegium ohne Pflichtgruppe.** Lehrkräfte und LiV sind über ihre Art eingeordnet;
-  Lesergruppen nur für Sonderkonten (Fachbereich, Praktikum, U-plus, Sekretariat). „Lehrer" und
-  „Lehrerin" aus Littera werden nicht als Gruppe übernommen — sie tragen das Geschlecht, das das
-  Programm nicht speichert, und die Art steht schon an jeder Person.
-- Weiter gilt vom 24.09.2026: Pflegeseite unter Einstellungen → LUSD & Versetzung, `klassen`
-  wird die eine Liste für alle Auswahllisten, der LUSD-Import legt neue Klassen an, und wer
-  Schüler umhängt, ändert ihre LMF-Termine und Klassensätze mit. Vom 28.09.2026: Gruppen mit
-  Kürzel, Bezeichnung und Art.
-
-**Gemessen am Testserver (29.09.2026, lesend):** 108 Klassen in `klassen`, 27 davon an Lesern,
-81 ohne Leser (Altlasten des Testservers; der Schulserver beginnt leer); `lesergruppen` leer;
-kein Kollege mit Klasse. Vor dem Bau muss nichts bereinigt werden.
-
-**Am Code nachgesehen (29.09.2026):** Sechs Stellen nehmen die Klasse als Freitext, und die
-Auslöser an den sechs verweisenden Tabellen legen eine unbekannte Klasse still an
-(`klasse_kanonisieren`): Leserakte (`LeserEditFelder`), Neuanlage („Manuell eingeben…"),
-Mahnwesen-Zuordnung, Klassensatz-Reservierung im Portal, Klassensatz im Bestand
-(`ClassAssignPicker`), Klassenverlängerung. `GET /api/klassen` liest nur
-`SELECT DISTINCT klasse FROM schueler`, nicht `klassen`. Beim Zusammenlegen greifen
-Eindeutigkeiten: eine Klassenleitung je Klasse (`klassen_lehrer_mapping`), ein Buch je
-Klassensatz, eine Klasse je LMF-Termin und je Plan.
-
-**Stufenplan, vorgelegt am 29.09.2026, freigegeben am 30.09.2026:**
-
-1. Server: `klassen` ist die Liste aller Auswahllisten, mit Zahlen je Klasse. Umbenennen nur auf
-   einen freien Namen; Zusammenlegen mit dem Ziel aus der Liste nach den Regeln unten; Löschen
-   nur ohne Verweis. Jede Änderung im Protokoll, dort nur Zahlen, keine Namen.
-2. Pflegeseite unter Einstellungen → LUSD & Versetzung, mit dem Recht der Versetzung
-   (`manage_students_admin`), gebaut wie die Schlagwort-Pflege und gegliedert nach dem Zweig
-   aus dem Namen.
-3. Klasse aus der Liste an der Leserakte, bei der Neuanlage, im Mahnwesen-Routing, bei der
-   Buchliste und bei der Klassenverlängerung; eine neue nur nach Rückfrage; LUSD-Import und
-   Littera-Übernahme legen weiter an. Dabei: Beispiele nach dem Klassenschema statt „7a" und
-   „8b", „Klasse löschen" bei den Klassensätzen heißt „Buchliste löschen" (es entfernt nur die
-   Buchliste), und die Seite Mahnwesen-Routing sagt, dass die Liste von Hand gepflegt wird und
-   die Versetzung sie hochrückt (im Handbuch seit dem 30.09.2026).
-4. Gruppen für Sonderkonten in `lesergruppen` (Kürzel, Bezeichnung), wählbar an der Leserakte
-   eines Kollegen; die Littera-Übernahme setzt sie statt einer Zeile im Protokoll.
-
-**Festgelegt am 30.09.2026:**
-
-- **Klassensatz-Reservierung im Portal: Freitext.** Die Klasse dort zeigt das Programm nur an,
-  es rechnet nicht damit; eine Lehrkraft kann auch einen Kurs eintragen. Die Reservierung legt
-  keine Klasse mehr an: Fremdschlüssel und Auslöser an `klassensatz_reservierungen` fallen weg.
-- **Zusammenlegen:** Was sich zusammenzählen lässt, kommt dazu — Schüler, Buchliste (ein Buch
-  aus beiden Listen steht einmal da). Wo eine Klasse nur eines hat, behält die Zielklasse ihres —
-  Klassenleitung, LMF-Termin, Auslassung im LMF-Plan; hat nur die alte Klasse eines, geht es
-  über. Die umgezogenen Schüler bekommen den Rückgabetermin der Zielklasse als Frist, wie beim
-  Verschieben einer Klasse im Plan. Einen Knopf zum Rückgängigmachen gibt es nicht; die
-  Rückfrage nennt vorher die Zahlen.
-- **Recht:** „Schülerverwaltung: Sonderrechte" (`manage_students_admin`), wie die Versetzung.
-  Ein eigenes Recht lässt sich später herauslösen wie am 03.09.2026 `merge_students`.
-- **Richtigstellung:** Ein Tippfehler legt nur dort eine Klasse an, wo die Klasse gespeichert
-  wird. Die Klassenverlängerung sucht nur; ein Tippfehler trifft dort niemanden.
-- **Offen — Einführungsphase:** Die Versetzung rückt Klassenleitungen von 6 nach 7 und von 10
-  in die Oberstufe nicht mehr hoch. Zuordnungen der Einführungsphase (`ET1`) fasst sie gar nicht
-  an, weil der Name keinen Jahrgang trägt; sie gelten danach für den nächsten Jahrgang. Sollen
-  sie bei der Versetzung entfallen?
+**Offen — Einführungsphase:** Die Versetzung rückt Klassenleitungen von 6 nach 7 und von 10 in
+die Oberstufe nicht mehr hoch. Zuordnungen der Einführungsphase (`ET1`) fasst sie gar nicht an,
+weil der Name keinen Jahrgang trägt; sie gelten danach für den nächsten Jahrgang. Sollen sie bei
+der Versetzung entfallen?
 
 Später, mit eigener Frage: Statistik nach Zweigen. Sie braucht den Zweig an der Ausleihe ohne
 Namen, weil eine Ausleihe der Bücherei seit dem 29.09.2026 den Namen nach einem Tag verliert.
@@ -805,6 +723,15 @@ Löschen im Papierkorb oder nach 180 Tagen durch den Nachtlauf. Sichtbar, Wortla
 auf Daten. Vorschlag: „… kommt in den Papierkorb. Von dort lässt es sich wiederherstellen; nach
 180 Tagen wird es anonymisiert (Kollegium: gelöscht), von Hand im Papierkorb sofort." — vorher
 die M3-Seite zu Dialogen lesen.
+
+### 5.39 Die Selbstprüfung zählt die Tutorien der Einführungsphase nicht als Klasse
+
+Gefunden am 30.09.2026, am Code gelesen, nicht nachgestellt. Die Prüfung „Klassen-Zuordnung"
+der Betriebsbereitschaft (`KlassenBestand` in `repository/betriebszustand.go`) nimmt als Klassen
+der Schüler nur Namen, die mit einer Ziffer beginnen (`klasse ~ '^\d'`). Die Tutorien der
+Einführungsphase (ET1–ET3) fallen damit heraus: Eine Zuordnung für ET1 erschiene als verwaist,
+eine ET-Klasse ohne Klassenleitung würde nicht gemeldet. Sichtbar als Warnung, keine Wirkung auf
+Daten.
 
 ---
 
