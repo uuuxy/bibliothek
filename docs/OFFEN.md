@@ -93,7 +93,8 @@ die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es fol
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 
 Mit der Littera-Übernahme (7.2) kommen das Eigentum je Exemplar (4.24) und alle Schlagworte und
-Interessenkreise der Titel (4.20); danach ist 4.25 an echten DNB-Sätzen zu messen und zu entscheiden.
+Interessenkreise der Titel; ob Littera Verweise zwischen Schlagworten führt, zeigt erst die
+Sicherung von 2026 (4.20).
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
 Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
@@ -184,22 +185,13 @@ Littera kennt keine Übergabe; dort bucht man einen offenen Betrag von Hand aus,
 löschen zu können. **Entschieden am 24.09.2026: Mit der Übergabe ist der Fall für die Schule
 erledigt**; zu melden bleibt eine spätere Rückgabe, das kann die Theke schon. Umbau: 5.3.
 
-### 4.20 Littera-Schlagworte übernehmen
+### 4.20 Littera-Schlagworte übernehmen — die Verweise
 
-**Entschieden am 30.09.2026: alle mitnehmen, in drei Stufen.** Im Katalogisat vom Juni 2026
-stehen 13.207 verschiedene Schlagworte an 9.459 Titeln, 8.920 davon an genau einem Titel; 132
-Titel tragen mehr als 30, einer 282. Littera bläht den eigenen Schlagwortkatalog bei jeder
-Übernahme fremder Daten auf („der eigene Schlagwortkatalog wird unkontrolliert aufgebläht",
-Projektarbeit einer Littera-Bücherei, BVÖ 2014); gelöscht wird trotzdem nichts, das niemand
-angesehen hat — aufgeräumt wird danach auf der Pflegeseite, wie in Littera über die
-Datenbearbeitung. Offen sind nur die **Verweise:** Die Übernahme aus der Sicherung zählt sie
-(`Verweise_Schlagworte`, `Verweis_Zu_Schlagworte`, 2010 beide leer). Nennt die Generalprobe mit
-der Sicherung von 2026 welche, an diesen Daten die Form ablesen und die Übernahme bauen.
-
-Gemessen am 30.09.2026 in der Sicherung von 2010: 2.849 Schlagworte, 2.744 davon an Titeln,
-1.390 an genau einem; 24.110 Zuordnungen an 10.364 der 10.732 Titel; keine Verweise; ein Wort
-steht zweimal in der Liste („Brasilien"). Am häufigsten: Deutsche Literatur (796 Titel),
-Jugendbuch (619), Geschichte (488).
+Die Übernahme aus der Sicherung zählt die Verweise zwischen Schlagworten
+(`Verweise_Schlagworte`, `Verweis_Zu_Schlagworte`), übernimmt sie aber nicht
+(`internal/littera/schlagworte.go`); in der Sicherung von 2010 sind beide leer. Nennt die
+Generalprobe mit der Sicherung von 2026 welche, an diesen Daten die Form ablesen und die
+Übernahme bauen.
 
 ### 4.22 Datenweg beim Wechsel auf ein anderes Programm
 
@@ -293,17 +285,9 @@ dann über den Schulträger, bei 90 Büchern ein seltener Fall.
 
 ### 4.25 Schlagwort-Vorschlag aus der DNB auch für Titel, die es schon gibt?
 
-**Entschieden am 30.09.2026 (Frage-Runde), gebaut:** Die Schlagwörter der Normdatei der DNB (MARC
-600–651 mit `$2 gnd`) werden gelesen. Was die eigene Liste kennt, steht unter den Vorschlägen; was
-sie nicht kennt, bietet das Bestellfenster in eigener Zeile als _Neue Schlagworte aus der DNB_ an,
-nie vorbelegt (`repository.SchlagworteAusNormdaten`). Gemessen am 30.09.2026 an 60 Titeln des
-Katalogisats mit ISBN und Schlagworten, 56 davon mit DNB-Satz: Gattung und Verlagswörter ergaben an
-25 Titeln 112 Vorschläge, 12 davon trägt der Titel in Littera; die Normdatei nennt an 24 Titeln 86
-Wörter, 56 davon stehen in der Liste (15 am Titel selbst), und 9 Titel bekämen ohne sie keinen
-Vorschlag.
-
-**Offen:** Einen Vorschlag bekommt nur ein Titel, der beim Bestellen neu aus der DNB entsteht; ein
-Treffer aus dem eigenen Katalog fragt die DNB nicht. Im Katalogisat vom Juni 2026 tragen 5.114
+Einen Vorschlag bekommt nur ein Titel, der beim Bestellen neu aus der DNB entsteht
+(`SchlagwortVorschlaege` in `api/isbn_handler.go`, nur bei `exists=false`); ein Treffer aus dem
+eigenen Katalog fragt die DNB nicht. Im Katalogisat vom Juni 2026 tragen 5.114
 Einträge keine Schlagworte, 4.891 davon kein Lernmittel, 4.862 mit ISBN — viele davon Romane, die
 Littera-Schulen bewusst nicht verschlagworten (Handbuch der Schulbibliothek Butzbach: „Lexika,
 Jugendbücher und Belletristik müssen nicht verschlagwortet werden"). Littera bietet für vorhandene
@@ -566,7 +550,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 24.09.2026: 1426 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 30.09.2026: 1411 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -890,9 +874,10 @@ unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
   `font-medium`, das im Haus 400 ist (`styles/theme-mass.css`; an `FilterChips` im Browser
   gemessen am 23.09.2026, die beiden anderen tragen dieselbe Klasse). M3 nennt für label-large
   500, die Knöpfe tragen `font-semibold` (500). Alle drei zusammen entscheiden, nicht einzeln.
-- `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 16 Dateien; gepflegt wird
-  der Ableger `github.com/phpdave11/gofpdf`, den maroto mitbringt. Neue PDFs (5.3, 5.4) nicht
-  mehr auf dem archivierten; die 16 beim fachlichen Anfassen umstellen, mit den PDF-Gates.
+- `github.com/jung-kurt/gofpdf` ist seit 2021 archiviert und steckt in 17 Dateien (ohne Tests,
+  gezählt am 30.09.2026); gepflegt wird der Ableger `github.com/phpdave11/gofpdf`, den maroto
+  mitbringt. Neue PDFs (5.3, 5.4) nicht mehr auf dem archivierten; die 17 beim fachlichen Anfassen
+  umstellen, mit den PDF-Gates.
 - Etikettenraster doppelt (`api/label_formats.go` und `etikettformate.js`), gehalten von
   `etikettformate-konsistenz.test.js`; am 31.08.2026 entschieden geparkt.
 - Reste des Nie-verdrahtet-Sweeps: `inventur_sessions.gestartet_von` wird nie angezeigt;
@@ -1033,7 +1018,7 @@ von außen durchlässt, und Port 443 frei ist.
 ### 7.6 Ruleset `main`
 
 PR-Pflicht entfernen (Solo-Entscheidung 30.07.2026), „Block force pushes" und „Restrict
-deletions" anlassen. Am 23.09.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
+deletions" anlassen. Am 30.09.2026 trägt das Ruleset noch `pull_request`; Pushes gehen über den
 Admin-Bypass.
 
 ### 7.7 Abnahmen
