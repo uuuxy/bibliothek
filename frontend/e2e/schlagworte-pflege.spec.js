@@ -108,7 +108,11 @@ test('Schlagwort-Pflege: umbenennen, zusammenführen, Verweis, Filter, löschen'
 		let zugestellt = () => {};
 		const alteListeDa = new Promise((fertig) => (zugestellt = fertig));
 		let halten = true;
-		await page.route('**/api/schlagworte/pflege', async (route) => {
+		// Am Pfad erkannt, nicht an der ganzen Adresse: Seit dem 30.09.2026 sucht die Seite am
+		// Server, und jedes Neuladen trägt den Suchtext mit (?suche=…).
+		/** @param {URL} url */
+		const pflegeListe = (url) => url.pathname === '/api/schlagworte/pflege';
+		await page.route(pflegeListe, async (route) => {
 			if (!halten) return route.continue();
 			halten = false;
 			const antwort = await route.fetch();
@@ -116,7 +120,7 @@ test('Schlagwort-Pflege: umbenennen, zusammenführen, Verweis, Filter, löschen'
 			await route.fulfill({ response: antwort });
 			zugestellt();
 		});
-		const ersteListe = page.waitForRequest('**/api/schlagworte/pflege');
+		const ersteListe = page.waitForRequest((anfrage) => pflegeListe(new URL(anfrage.url())));
 		await schalter(roman).click();
 		await ersteListe;
 		await schalter(abenteuer).click();
@@ -132,7 +136,7 @@ test('Schlagwort-Pflege: umbenennen, zusammenführen, Verweis, Filter, löschen'
 		await page.waitForTimeout(500);
 		await expect(schalter(abenteuer)).toHaveAttribute('aria-checked', 'true');
 		await expect(schalter(roman)).toHaveAttribute('aria-checked', 'true');
-		await page.unroute('**/api/schlagworte/pflege');
+		await page.unroute(pflegeListe);
 
 		await menue(roman, 'Löschen');
 		const frage = page.getByRole('dialog', { name: `„${roman}“ löschen?` });

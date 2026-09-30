@@ -138,6 +138,15 @@ func TestSetzeSchlagworte_Grenzen(t *testing.T) {
 	if _, err := SetzeSchlagworte(ctx, pool, id, []string{strings.Repeat("ä", SchlagwortMaxZeichen)}); err != nil {
 		t.Errorf("%d Umlaute (an der Grenze): %v", SchlagwortMaxZeichen, err)
 	}
+	// So viele, wie Littera an einem Titel führt: 282 im Katalogisat vom Juni 2026 (bis zum
+	// 30.09.2026 lag die Grenze bei 30, docs/OFFEN.md 4.20).
+	littera := make([]string, 282)
+	for i := range littera {
+		littera[i] = fmt.Sprintf("Pflanze %d", i)
+	}
+	if got, err := SetzeSchlagworte(ctx, pool, id, littera); err != nil || len(got) != 282 {
+		t.Errorf("282 Wörter wie in Littera: %d gespeichert, Fehler %v", len(got), err)
+	}
 }
 
 func TestSchlagwortVorschlaege_HaeufigsteZuerstGekapptOhneWaisen(t *testing.T) {

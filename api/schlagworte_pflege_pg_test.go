@@ -58,6 +58,11 @@ func TestSchlagwortPflege_Tueren(t *testing.T) {
 		!strings.Contains(rec.Body.String(), `"gesamt":2,"verweise":0`) {
 		t.Errorf("Liste: %d %s", rec.Code, rec.Body.String())
 	}
+	// Der Suchtext kommt über ?suche= an (30.09.2026): Die Tür reicht ihn an die Abfrage weiter.
+	if rec := ruf(srv.GetSchlagwortPflegeHandler(), http.MethodGet, "/api/schlagworte/pflege?suche=tier", "", ""); rec.Code != http.StatusOK ||
+		!strings.Contains(rec.Body.String(), `"treffer":1`) || strings.Contains(rec.Body.String(), `"wort":"Fantasy"`) {
+		t.Errorf("Suche an der Tür: %d %s, want nur Tierfantasy", rec.Code, rec.Body.String())
+	}
 	if rec := ruf(srv.PutSchlagwortWortHandler(), http.MethodPut, "", ids["Tierfantasy"], `{"wort":"fantasy","alte_als_verweis":true}`); rec.Code != http.StatusConflict ||
 		!strings.Contains(rec.Body.String(), "Zusammenführen") {
 		t.Errorf("umbenennen auf vorhandenes Wort: %d %s, want 409 mit Hinweis", rec.Code, rec.Body.String())

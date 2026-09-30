@@ -22,10 +22,13 @@ const (
 	// SchlagwortMaxZeichen hält die Datenbank selbst (chk_schlagwort_form); hier steht
 	// sie, damit ein zu langes Wort als 400 mit Text ankommt statt als 500.
 	SchlagwortMaxZeichen = 80
-	// SchlagworteJeTitelMax begrenzt die Menge eines Titels. Littera kennt keine Grenze;
-	// dreißig reichen für jede Hand-Eintragung, und ohne Grenze wäre ein Tippfehler im
-	// Aufrufer (ein ganzer Absatz, am Komma zerlegt) eine Liste von Hunderten Wörtern.
-	SchlagworteJeTitelMax = 30
+	// SchlagworteJeTitelMax begrenzt die Menge eines Titels. Littera kennt keine Grenze, und
+	// seine Daten brauchen mehr, als eine Hand-Eintragung je braucht: Im Katalogisat vom Juni
+	// 2026 tragen 132 Titel mehr als 30 Schlagworte, einer 282 („Pflanzen und Umwelt": Bäume,
+	// Algen, Pilze …; docs/OFFEN.md 4.20). Bis zum 30.09.2026 lag die Grenze bei 30 und hätte
+	// diese Wörter beim Einlesen verloren. Eine Grenze bleibt: Ohne sie wäre ein Fehler im
+	// Aufrufer (ein ganzer Text, am Komma zerlegt) eine Liste von Tausenden Wörtern.
+	SchlagworteJeTitelMax = 300
 	// schlagwortVorschlaegeMax kappt die Vorschlagsliste. Die Häufigsten kommen zuerst;
 	// ein seltenes Wort, das darüber fällt, lässt sich weiter tippen und trifft beim
 	// Speichern trotzdem die vorhandene Schreibweise.

@@ -18,10 +18,19 @@ import (
 // dieselben Regeln, die Migration 143 zusätzlich in der Datenbank festschreibt: kein
 // Verweis auf sich selbst, keine Kette, kein Titel an einem Verweis, kein Verweis als Filter.
 
-// schlagwortPflegeListeMax kappt die Pflegeliste. Eine Schülerbücherei hat Hunderte
-// Schlagworte, nicht Zehntausende; die Kappung schützt die Tür, und die Antwort sagt, wie
-// viele es insgesamt sind.
-const schlagwortPflegeListeMax = 5000
+// schlagwortPflegeTrefferMax kappt die Zeilen einer Antwort; die Antwort sagt, wie viele zur
+// Suche passen. Gesucht wird am Server über alle Wörter. Bis zum 30.09.2026 lieferte die Tür
+// die ersten 5.000 in alphabetischer Folge, und die Seite suchte im Browser nur darunter —
+// in der Annahme „eine Schülerbücherei hat Hunderte Schlagworte, nicht Zehntausende". Das
+// Katalogisat aus Littera vom Juni 2026 trägt 13.207 verschiedene (docs/OFFEN.md 4.20); zwei
+// Drittel davon wären auf der Pflegeseite weder zu finden noch als Filter zu markieren
+// gewesen. Dasselbe Muster wie die Serversuche der Leserdatei (schuelerSuche.svelte.js).
+const schlagwortPflegeTrefferMax = 200
+
+// schlagworteLoeschenMax begrenzt, wie viele Wörter ein Löschauftrag nennen darf. Bis zum
+// 30.09.2026 war das die Kappung der Pflegeliste; die Zahl bleibt, die Anzeige hat jetzt
+// ihre eigene Grenze.
+const schlagworteLoeschenMax = 5000
 
 var (
 	// ErrSchlagwortNichtGefunden meldet eine Kennung, die zu keinem Schlagwort gehört.
@@ -48,21 +57,39 @@ type SchlagwortPflegeZeile struct {
 	IstFilter bool     `json:"ist_filter"`
 }
 
-// SchlagwortPflegeListe ist die Antwort der Pflegeseite: die Zeilen alphabetisch und die
-// Gesamtzahl — liegt sie über der Kappung, sagt die Seite das. Gesamt zählt jede Zeile,
-// Verweise die Zeilen, die Verweise sind; die Wörter sind die Differenz.
+// SchlagwortPflegeListe ist die Antwort der Pflegeseite: die passenden Zeilen alphabetisch,
+// höchstens schlagwortPflegeTrefferMax, und die Zahlen dazu. Gesamt zählt jede Zeile der
+// Tabelle, Verweise die Zeilen, die Verweise sind (die Wörter sind die Differenz), Filter die
+// als Filter markierten Wörter — alle drei über die ganze Tabelle, unabhängig von der Suche.
+// Treffer zählt, was zur Suche passt; liegt es über den gelieferten Zeilen, sagt die Seite das.
 type SchlagwortPflegeListe struct {
 	Zeilen   []SchlagwortPflegeZeile `json:"zeilen"`
 	Gesamt   int                     `json:"gesamt"`
 	Verweise int                     `json:"verweise"`
+	Filter   int                     `json:"filter"`
+	Treffer  int                     `json:"treffer"`
 }
 
-// SchlagworteZurPflege liefert alle Schlagworte mit Titelzahl, Verweisziel und den
-// Verweisen darauf, alphabetisch.
-func SchlagworteZurPflege(ctx context.Context, q DBQueryer) (SchlagwortPflegeListe, error) {
+// sqlPflegeSuchePasst ist die Bedingung der Pflegesuche ($1 = Suchtext, leer = alle): Das
+// Wort oder ein Verweis darauf enthält den Text, ohne Rücksicht auf Groß- und
+// Kleinschreibung — wie bisher im Browser. Verglichen wird über lower() wie im eindeutigen
+// Index der Wörter, nicht über LIKE; so braucht der Suchtext keine maskierten Joker.
+const sqlPflegeSuchePasst = `($1 = ''
+	OR strpos(lower(s.wort), lower($1)) > 0
+	OR EXISTS (SELECT 1 FROM schlagworte v
+	           WHERE v.verweis_auf = s.id AND strpos(lower(v.wort), lower($1)) > 0))`
+
+// SchlagworteZurPflege liefert die Schlagworte, die zur Suche passen (leer = alle), mit
+// Titelzahl, Verweisziel und den Verweisen darauf, alphabetisch und höchstens
+// schlagwortPflegeTrefferMax Zeilen, dazu die Zahlen der ganzen Tabelle.
+func SchlagworteZurPflege(ctx context.Context, q DBQueryer, suche string) (SchlagwortPflegeListe, error) {
 	liste := SchlagwortPflegeListe{Zeilen: []SchlagwortPflegeZeile{}}
-	if err := q.QueryRow(ctx, `SELECT count(*)::int, count(verweis_auf)::int FROM schlagworte`).
-		Scan(&liste.Gesamt, &liste.Verweise); err != nil {
+	suche = strings.Join(strings.Fields(suche), " ")
+	if err := q.QueryRow(ctx, `
+		SELECT count(*)::int, count(verweis_auf)::int, count(*) FILTER (WHERE ist_filter)::int,
+		       count(*) FILTER (WHERE `+sqlPflegeSuchePasst+`)::int
+		FROM schlagworte s`, suche).
+		Scan(&liste.Gesamt, &liste.Verweise, &liste.Filter, &liste.Treffer); err != nil {
 		return liste, fmt.Errorf("schlagworte zählen: %w", err)
 	}
 	rows, err := q.Query(ctx, `
@@ -74,8 +101,9 @@ func SchlagworteZurPflege(ctx context.Context, q DBQueryer) (SchlagwortPflegeLis
 		       s.ist_filter
 		FROM schlagworte s
 		LEFT JOIN schlagworte z ON z.id = s.verweis_auf
+		WHERE `+sqlPflegeSuchePasst+`
 		ORDER BY lower(s.wort)
-		LIMIT $1`, schlagwortPflegeListeMax)
+		LIMIT $2`, suche, schlagwortPflegeTrefferMax)
 	if err != nil {
 		return liste, fmt.Errorf("schlagworte zur pflege lesen: %w", err)
 	}
@@ -331,8 +359,8 @@ func LoescheSchlagworte(ctx context.Context, q DBQueryer, ids []string) (Schlagw
 	if len(ids) == 0 {
 		return ergebnis, fmt.Errorf("%w: kein Schlagwort gewählt", ErrSchlagwortUngueltig)
 	}
-	if len(ids) > schlagwortPflegeListeMax {
-		return ergebnis, fmt.Errorf("%w: höchstens %d Schlagworte auf einmal", ErrSchlagwortUngueltig, schlagwortPflegeListeMax)
+	if len(ids) > schlagworteLoeschenMax {
+		return ergebnis, fmt.Errorf("%w: höchstens %d Schlagworte auf einmal", ErrSchlagwortUngueltig, schlagworteLoeschenMax)
 	}
 	tx, err := q.Begin(ctx)
 	if err != nil {

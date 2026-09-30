@@ -60,7 +60,7 @@ func woerterAm(t *testing.T, pool *pgxpool.Pool, titel string) []string {
 
 func pflegeZeile(t *testing.T, pool *pgxpool.Pool, wort string) SchlagwortPflegeZeile {
 	t.Helper()
-	liste, err := SchlagworteZurPflege(context.Background(), pool)
+	liste, err := SchlagworteZurPflege(context.Background(), pool, wort)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -343,5 +343,79 @@ func TestSchlagwortPflege_GleichzeitigKeineKette(t *testing.T) {
 	}
 	if ketten != 0 {
 		t.Errorf("%d Verweis(e) zeigen auf einen Verweis", ketten)
+	}
+}
+
+// Die Pflegeseite sucht am Server über alle Wörter (30.09.2026, docs/OFFEN.md 4.20). Bis dahin
+// lieferte die Tür die ersten 5.000 in alphabetischer Folge, und die Seite suchte im Browser
+// nur darunter: Mit den 13.207 Wörtern des Littera-Katalogisats wäre ein Wort wie
+// „Zwergpinguin" auf der Pflegeseite weder zu finden noch als Filter zu markieren gewesen.
+func TestSchlagwortPflege_SucheUeberAlleWoerter(t *testing.T) {
+	pool := pgTestPool(t)
+	resetSchlagworte(t, pool)
+	ctx := context.Background()
+
+	// Mehr Wörter, als die alte Kappung lieferte — alle alphabetisch vor „Zwergpinguin".
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO schlagworte (wort)
+		SELECT 'Wort ' || lpad(g::text, 5, '0') FROM generate_series(1, 5010) g`); err != nil {
+		t.Fatal(err)
+	}
+	ids := pflegeStand(t, pool, map[string][]string{"Pinguine der Antarktis": {"Zwergpinguin"}})
+	if err := SetzeSchlagwortVerweis(ctx, pool, "Frackvogel", ids["Zwergpinguin"]); err != nil {
+		t.Fatal(err)
+	}
+	if err := SetzeSchlagwortFilter(ctx, pool, ids["Zwergpinguin"], true); err != nil {
+		t.Fatal(err)
+	}
+
+	ohne, err := SchlagworteZurPflege(ctx, pool, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ohne.Zeilen) != schlagwortPflegeTrefferMax {
+		t.Errorf("ohne Suche %d Zeilen, erwartet die Kappung %d", len(ohne.Zeilen), schlagwortPflegeTrefferMax)
+	}
+	// Die Zahlen gelten für die ganze Tabelle, nicht für die gelieferten Zeilen: Der einzige
+	// Filter steht weit hinter der Kappung und zählt trotzdem.
+	if ohne.Gesamt != 5012 || ohne.Verweise != 1 || ohne.Filter != 1 || ohne.Treffer != 5012 {
+		t.Errorf("ohne Suche gesamt=%d verweise=%d filter=%d treffer=%d, want 5012, 1, 1, 5012",
+			ohne.Gesamt, ohne.Verweise, ohne.Filter, ohne.Treffer)
+	}
+
+	pinguin, err := SchlagworteZurPflege(ctx, pool, "  ZWERGp ")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pinguin.Treffer != 1 || len(pinguin.Zeilen) != 1 {
+		t.Fatalf("Suche „zwergp“: treffer=%d, %d Zeilen, want 1 und 1", pinguin.Treffer, len(pinguin.Zeilen))
+	}
+	z := pinguin.Zeilen[0]
+	if z.Wort != "Zwergpinguin" || z.Titel != 1 || !z.IstFilter || !slices.Equal(z.Verweise, []string{"Frackvogel"}) {
+		t.Errorf("gefunden %+v — erwartet Zwergpinguin, 1 Titel, Filter, Verweis Frackvogel", z)
+	}
+
+	// Über den Verweis: die Zeile des Verweises und die seines Ziels.
+	frack, err := SchlagworteZurPflege(ctx, pool, "frackvogel")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var woerter []string
+	for _, zeile := range frack.Zeilen {
+		woerter = append(woerter, zeile.Wort)
+	}
+	if frack.Treffer != 2 || !slices.Equal(woerter, []string{"Frackvogel", "Zwergpinguin"}) {
+		t.Errorf("Suche „frackvogel“: treffer=%d, Zeilen %q, want 2 und [Frackvogel Zwergpinguin]",
+			frack.Treffer, woerter)
+	}
+
+	// Ein Prozentzeichen ist Text, kein Joker.
+	joker, err := SchlagworteZurPflege(ctx, pool, "%")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if joker.Treffer != 0 || len(joker.Zeilen) != 0 {
+		t.Errorf("Suche „%%“: treffer=%d, %d Zeilen, want 0 — ein Joker hätte alles getroffen",
+			joker.Treffer, len(joker.Zeilen))
 	}
 }

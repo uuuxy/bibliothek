@@ -60,7 +60,7 @@ func TestSchlagwortPflege_UmbenennenLaesstDieAlteSchreibweiseAlsVerweis(t *testi
 	if z := pflegeZeile(t, pool, "Krimi"); z.VerweisAufID != ids["Krimi"] || z.VerweisAuf != "Kriminalroman" {
 		t.Errorf("„Krimi“ nach dem Umbenennen: %+v — erwartet Verweis auf dasselbe Wort, jetzt Kriminalroman", z)
 	}
-	liste, err := SchlagworteZurPflege(ctx, pool)
+	liste, err := SchlagworteZurPflege(ctx, pool, "")
 	if err != nil {
 		t.Fatal(err)
 	}

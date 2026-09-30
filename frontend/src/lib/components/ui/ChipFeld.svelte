@@ -31,8 +31,10 @@
 	 *
 	 * @prop {string[] | null} [werte] - Die gewählten Werte (bindable); null = nicht geladen.
 	 * @prop {{ wert: string, beschreibung?: string }[]} [vorschlaege] - Angebot beim Tippen.
-	 * @prop {number} [max=30] - Höchstzahl; darüber meldet das Feld den Fehlerzustand.
+	 * @prop {number} [max=300] - Höchstzahl; darüber meldet das Feld den Fehlerzustand.
 	 * @prop {number} [maxZeichen=80] - Länge eines Werts.
+	 *   Beide sind die Grenzen des Servers (repository.SchlagworteJeTitelMax und
+	 *   SchlagwortMaxZeichen), gehalten von repository/schlagworte_grenzen_zwilling_test.go.
 	 * @prop {string[]} [angebote] - Werte zum Anklicken unter den Chips (M3 Suggestion chips),
 	 *   etwa der Schlagwort-Vorschlag aus der DNB. Ein Klick übernimmt; bis dahin ist nichts
 	 *   eingetragen. Was schon gewählt ist, steht nicht mehr darunter.
@@ -49,7 +51,7 @@
 		hint = 'Mit Enter oder Komma übernehmen.',
 		placeholder = '',
 		vorschlaege = [],
-		max = 30,
+		max = 300,
 		maxZeichen = 80,
 		disabled = false,
 		angebote = [],

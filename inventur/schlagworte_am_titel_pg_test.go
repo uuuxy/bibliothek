@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"bibliothek/internal/pgtest"
+	"bibliothek/repository"
 )
 
 // Die Schlagworte gehen im Buchformular mit dem ganzen Titel hin und her (Migration 138):
@@ -127,8 +128,11 @@ func TestSchlagworte_BuchformularUnterscheidetFehlendLeerUndListe(t *testing.T) 
 	}
 }
 
+// zuVieleSchlagworte liegt eins über der Grenze des Schreibpfads. Die Zahl steht nur dort: Bis
+// zum 30.09.2026 stand hier 31, und die Anhebung der Grenze auf 300 machte daraus einen Fall,
+// der gar nicht mehr zu viele war.
 func zuVieleSchlagworte() []string {
-	woerter := make([]string, 31)
+	woerter := make([]string, repository.SchlagworteJeTitelMax+1)
 	for i := range woerter {
 		woerter[i] = fmt.Sprintf("Wort %d", i)
 	}

@@ -13,13 +13,14 @@
 	import { onMount } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { Trash2 } from '@lucide/svelte';
-	import { apiGet, apiPut, apiPost } from '../../../apiFetch.js';
+	import { apiPut, apiPost } from '../../../apiFetch.js';
 	import { toastStore } from '../../../stores/toastStore.svelte.js';
 	import { loeschenBestaetigen } from '../../../stores/bestaetigung.svelte.js';
 	import KategorieRahmen from '../KategorieRahmen.svelte';
 	import SchlagwortPflegeDialog from '../SchlagwortPflegeDialog.svelte';
 	import SchlagwortTabelle from '../SchlagwortTabelle.svelte';
 	import { loeschFrage, loeschErgebnis, zaehlSatz } from '../schlagwortPflege.js';
+	import { erzeugeSchlagwortPflegeListe } from '../schlagwortPflegeListe.svelte.js';
 	import Suchfeld from '../../ui/Suchfeld.svelte';
 	import AuswahlLeiste from '../../ui/AuswahlLeiste.svelte';
 	import Button from '../../ui/Button.svelte';
@@ -28,28 +29,15 @@
 
 	/** @typedef {import('../schlagwortPflege.js').SchlagwortZeile} Zeile */
 
-	// Mehr Zeilen machen die Seite träge und helfen niemandem beim Suchen: Die Suche grenzt ein.
-	const ANZEIGE_MAX = 200;
-
-	let liste = $state(
-		/** @type {{ zeilen: Zeile[], gesamt: number, verweise: number } | null} */ (null)
-	);
-	let ladeFehler = $state(false);
-	let suche = $state('');
+	// Gesucht wird am Server über alle Wörter (schlagwortPflegeListe.svelte.js, 30.09.2026); die
+	// Antwort bringt höchstens 200 Zeilen und sagt, wie viele zur Suche passen.
+	const pflege = erzeugeSchlagwortPflegeListe();
+	const liste = $derived(pflege.liste);
 	let auftrag = $state(
 		/** @type {{ art: 'umbenennen' | 'zusammenfuehren' | 'verweis', zeile: Zeile } | null} */ (null)
 	);
 
-	const zeilen = $derived(liste?.zeilen ?? []);
-	const treffer = $derived.by(() => {
-		const s = suche.trim().toLowerCase();
-		if (!s) return zeilen;
-		return zeilen.filter(
-			(z) => z.wort.toLowerCase().includes(s) || z.verweise.some((v) => v.toLowerCase().includes(s))
-		);
-	});
-	const sichtbar = $derived(treffer.slice(0, ANZEIGE_MAX));
-	const filterZahl = $derived(zeilen.filter((z) => z.ist_filter).length);
+	const sichtbar = $derived(liste?.zeilen ?? []);
 
 	// Markiert zählt nur, was zu sehen ist (wie leserAuswahl.svelte.js): Wer die Suche ändert,
 	// löscht nicht, was er nicht mehr vor sich hat.
@@ -65,22 +53,7 @@
 		if (!alle) for (const z of sichtbar) auswahl.add(z.id);
 	}
 
-	// Sequenznummer wie in useStudentProfile: Zwei schnell umgelegte Schalter laden die Liste
-	// zweimal, und kam die ältere Antwort zuletzt, zeigte ein Schalter den alten Stand.
-	let laufNr = 0;
-
-	async function laden() {
-		const meine = ++laufNr;
-		try {
-			const antwort = await apiGet('/api/schlagworte/pflege');
-			if (meine !== laufNr) return; // eine jüngere Liste ist schon unterwegs oder da
-			liste = antwort;
-			ladeFehler = false;
-		} catch {
-			if (meine === laufNr) ladeFehler = true; // Meldung kam bereits aus apiGet.
-		}
-	}
-	onMount(laden);
+	onMount(pflege.lade);
 
 	/** @param {Zeile} z @param {string} id */
 	function waehle(z, id) {
@@ -101,7 +74,7 @@
 			// Meldung kam bereits aus apiPost; gelöscht ist nichts (alle oder keins). Neu laden
 			// zeigt, was ein anderer inzwischen geändert hat.
 		}
-		await laden();
+		await pflege.lade();
 	}
 
 	/** @param {Zeile} z @param {boolean} an */
@@ -114,7 +87,7 @@
 		} catch {
 			z.ist_filter = !an; // Meldung kam bereits aus apiPut.
 		}
-		await laden();
+		await pflege.lade();
 	}
 </script>
 
@@ -135,8 +108,8 @@
 		</p>
 	{/snippet}
 
-	{#if ladeFehler}
-		<LadeFehler onerneut={laden} />
+	{#if pflege.ladeFehler}
+		<LadeFehler onerneut={pflege.lade} />
 	{:else if !liste}
 		<div class="flex justify-center py-8"><Ladekreis size="lg" /></div>
 	{:else if liste.gesamt === 0}
@@ -147,13 +120,14 @@
 		<div class="flex flex-col gap-4">
 			<div class="flex flex-wrap items-center gap-4">
 				<Suchfeld
-					bind:wert={suche}
+					bind:wert={pflege.suche}
+					oninput={pflege.angestossen}
 					platzhalter="Schlagwort suchen …"
 					etikett="Schlagwort suchen"
 					klasse="w-72"
 				/>
 				<p class="text-sm text-on-surface-variant">
-					{zaehlSatz(liste, filterZahl)}
+					{zaehlSatz(liste, liste.filter)}
 				</p>
 			</div>
 
@@ -166,17 +140,11 @@
 				onwahl={waehle}
 			/>
 
-			{#if treffer.length === 0}
+			{#if liste.treffer === 0}
 				<p class="text-sm text-on-surface-variant">Kein Schlagwort passt zur Suche.</p>
-			{:else if treffer.length > ANZEIGE_MAX}
+			{:else if liste.treffer > sichtbar.length}
 				<p class="text-sm text-on-surface-variant">
-					{ANZEIGE_MAX} von {treffer.length} angezeigt — die Suche grenzt ein.
-				</p>
-			{/if}
-			{#if liste.gesamt > zeilen.length}
-				<p class="text-sm text-on-surface-variant">
-					Geladen sind die ersten {zeilen.length} von {liste.gesamt} Einträgen (Schlagworte und Verweise)
-					in alphabetischer Folge.
+					{sichtbar.length} von {liste.treffer} angezeigt — die Suche grenzt ein.
 				</p>
 			{/if}
 			{#if markiert.length > 0}
@@ -195,4 +163,4 @@
 	{/if}
 </KategorieRahmen>
 
-<SchlagwortPflegeDialog {auftrag} {zeilen} onclose={() => (auftrag = null)} onfertig={laden} />
+<SchlagwortPflegeDialog {auftrag} onclose={() => (auftrag = null)} onfertig={pflege.lade} />

@@ -7,7 +7,9 @@
 	 * Das Ziel beim Zusammenführen wird getippt und aus den vorhandenen Wörtern vorgeschlagen
 	 * (datalist wie im ChipFeld am Titel); die Aktion bleibt gesperrt, bis die Eingabe ein
 	 * vorhandenes anderes Wort trifft — ein neues Wort anzulegen ist Umbenennen, nicht
-	 * Zusammenführen. Fehler des Servers (409 „gibt es schon", Regel verletzt) zeigt apiFetch als
+	 * Zusammenführen. Die Vorschläge sucht der Dialog selbst am Server, mit derselben Suche
+	 * wie die Pflegeseite (schlagwortPflegeListe.svelte.js); bis zum 30.09.2026 bekam er die
+	 * Zeilen der Seite und fand ein Ziel jenseits der ersten 5.000 Wörter nicht. Fehler des Servers (409 „gibt es schon", Regel verletzt) zeigt apiFetch als
 	 * Meldung mit seinem Satz; der Dialog bleibt dann offen.
 	 *
 	 * Umbenennen und Zusammenführen fragen mit einem Kästchen, ob die alte Schreibweise als
@@ -17,7 +19,6 @@
 	 * erscheint und was der Hinweis sagt, steht in schlagwortPflege.js.
 	 *
 	 * @prop {{ art: 'umbenennen' | 'zusammenfuehren' | 'verweis', zeile: any } | null} auftrag
-	 * @prop {any[]} zeilen - alle geladenen Schlagworte, für Vorschläge und Ziel.
 	 * @prop {() => void} onclose
 	 * @prop {() => Promise<void>} onfertig - lädt die Liste neu.
 	 */
@@ -27,9 +28,20 @@
 	import Feld from '../ui/Feld.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
 	import { verweisWahl, dialogHinweis } from './schlagwortPflege.js';
+	import { erzeugeSchlagwortPflegeListe } from './schlagwortPflegeListe.svelte.js';
 
-	/** @type {{ auftrag: { art: 'umbenennen' | 'zusammenfuehren' | 'verweis', zeile: any } | null, zeilen: any[], onclose: () => void, onfertig: () => Promise<void> }} */
-	let { auftrag, zeilen, onclose, onfertig } = $props();
+	/** @type {{ auftrag: { art: 'umbenennen' | 'zusammenfuehren' | 'verweis', zeile: any } | null, onclose: () => void, onfertig: () => Promise<void> }} */
+	let { auftrag, onclose, onfertig } = $props();
+
+	// Die Wörter, die zur Eingabe passen — nur beim Zusammenführen gebraucht.
+	const kandidaten = erzeugeSchlagwortPflegeListe();
+	const gefunden = $derived(kandidaten.liste?.zeilen ?? []);
+	/** @param {Event} e */
+	function sucheZiel(e) {
+		if (auftrag?.art !== 'zusammenfuehren') return;
+		kandidaten.suche = /** @type {HTMLInputElement} */ (e.currentTarget).value;
+		kandidaten.angestossen();
+	}
 
 	const eigen = $props.id();
 	const listeId = `${eigen}-woerter`;
@@ -46,7 +58,9 @@
 	const wahl = $derived(auftrag ? verweisWahl(auftrag.art, auftrag.zeile) : false);
 	const ziel = $derived(
 		auftrag?.art === 'zusammenfuehren'
-			? zeilen.find((z) => z.id !== auftrag.zeile.id && z.wort.toLowerCase() === neu.toLowerCase())
+			? gefunden.find(
+					(z) => z.id !== auftrag.zeile.id && z.wort.toLowerCase() === neu.toLowerCase()
+				)
 			: undefined
 	);
 	const gueltig = $derived(
@@ -121,6 +135,7 @@
 		bind:value={eingabe}
 		hint={hinweis}
 		list={auftrag?.art === 'zusammenfuehren' ? listeId : undefined}
+		oninput={sucheZiel}
 		autocomplete="off"
 	/>
 	{#if wahl}
@@ -128,7 +143,7 @@
 	{/if}
 	{#if auftrag?.art === 'zusammenfuehren'}
 		<datalist id={listeId}>
-			{#each zeilen.filter((z) => z.id !== auftrag?.zeile.id && !z.verweis_auf_id) as z (z.id)}
+			{#each gefunden.filter((z) => z.id !== auftrag?.zeile.id && !z.verweis_auf_id) as z (z.id)}
 				<option value={z.wort}>{z.titel} Titel</option>
 			{/each}
 		</datalist>

@@ -56,18 +56,20 @@ type SchlagwortAenderung struct {
 	Verweise int    `json:"verweise"`
 }
 
-// GetSchlagwortPflegeHandler liefert alle Schlagworte mit Titelzahl, Verweisziel, den
-// Verweisen darauf und der Filter-Markierung.
+// GetSchlagwortPflegeHandler liefert die Schlagworte, die zu ?suche= passen (leer = alle), mit
+// Titelzahl, Verweisziel, den Verweisen darauf und der Filter-Markierung — höchstens 200
+// Zeilen, dazu die Zahlen der ganzen Tabelle (repository.SchlagworteZurPflege).
 //
 // @Summary      List keywords for maintenance
 // @Tags         books
 // @Produce      json
+// @Param        suche  query  string  false  "Teil eines Worts oder eines Verweises darauf"
 // @Success      200  {object}  repository.SchlagwortPflegeListe
 // @Failure      500  {object}  map[string]string
 // @Router       /schlagworte/pflege [get]
 func (s *Server) GetSchlagwortPflegeHandler() http.HandlerFunc {
 	return apierrors.Wrap(func(w http.ResponseWriter, r *http.Request) error {
-		liste, err := repository.SchlagworteZurPflege(r.Context(), s.DB.Pool)
+		liste, err := repository.SchlagworteZurPflege(r.Context(), s.DB.Pool, r.URL.Query().Get("suche"))
 		if err != nil {
 			return apierrors.Internal("Schlagworte konnten nicht geladen werden", err)
 		}
