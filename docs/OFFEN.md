@@ -91,9 +91,9 @@ Pflegekonzept sind seit dem 28.09.2026 die Antworten zu seinen vier offenen Stel
 die Vorlage für das Blatt liegt in [blatt_vorlage.md](blatt_vorlage.md). Es folgen die
 Arbeitsnotizen ins Repository und die Probe durch die Vertretung.
 
-Mit der Littera-Übernahme (7.2) kommt das Eigentum je Exemplar (4.24). Die Littera-Schlagworte
-(4.20) kommen alle mit, entschieden am 30.09.2026 in drei Stufen; Stufe 2 und 3 stehen aus.
-Danach ist 4.25 an echten DNB-Sätzen zu messen und zu entscheiden.
+Mit der Littera-Übernahme (7.2) kommen das Eigentum je Exemplar (4.24) und alle Schlagworte der
+Titel (4.20); aus dem Katalogisat kommen sie noch nicht (4.20, Stufe 3). Danach ist 4.25 an
+echten DNB-Sätzen zu messen und zu entscheiden.
 
 **Parallel auf der Schulseite:** Abschnitte 7 und 8 — zuerst der Schulserver samt Speicher außer
 Haus (7.3), das Passwort der Littera-Sicherungen (7.2), die Anfragen E1, E2 und zu den
@@ -186,15 +186,6 @@ erledigt**; zu melden bleibt eine spätere Rückgabe, das kann die Theke schon. 
 
 ### 4.20 Littera-Schlagworte übernehmen
 
-**Freigegeben am 23.09.2026:** die **Littera-Schlagworte** beim nächsten Einspielen des Backups
-mitnehmen (7.2). Die Übernahme aus der Sicherung (`cmd/littera-altbestand`,
-[SCRIPTS.md](SCRIPTS.md) Abschnitt 1) liest sie nicht: Sie stehen in eigenen Tabellen
-(`Schlagworte`, `Schlag_zuord`, Verweise in `Verweise_Schlagworte` und `Verweis_Zu_Schlagworte`),
-exportiert werden nur die neun Tabellen aus Abschnitt 1. Der Katalogisat-Import (Abschnitt 1a)
-liest sie als MAB 710, leitet daraus das Fach ab und verwirft sie (`kategorisiere` in
-`internal/service/import_service.go`). Die Schlagworte selbst (Migration 138, Pflege mit
-Verweisen, Portal-Filter) stehen in [FACHKONZEPT.md](FACHKONZEPT.md).
-
 **Entschieden am 30.09.2026: alle mitnehmen, in drei Stufen.** Im Katalogisat vom Juni 2026
 stehen 13.207 verschiedene Schlagworte an 9.459 Titeln, 8.920 davon an genau einem Titel; 132
 Titel tragen mehr als 30, einer 282. Littera bläht den eigenen Schlagwortkatalog bei jeder
@@ -203,14 +194,13 @@ Projektarbeit einer Littera-Bücherei, BVÖ 2014); gelöscht wird trotzdem nicht
 angesehen hat — aufgeräumt wird danach auf der Pflegeseite, wie in Littera über die
 Datenbearbeitung. Offen:
 
-- **Stufe 2:** Die Übernahme aus der Sicherung bringt alle Schlagworte mit (Tabellen
-  `Schlagworte`, `Schlag_zuord`; Verweise zählen, solange ihre Form an echten Daten nicht zu
-  sehen ist) und leitet wie der Katalogisat-Import das Fach aus ihnen ab, wo die Signatur keins
-  nennt (`lmf.FachAusSchlagworten`). In der Sicherung von 2010 bekämen so 2.945 Titel ein Fach
-  zusätzlich zu den 258 aus der Signatur.
-- **Stufe 3:** Der Katalogisat-Import schreibt die Schlagworte ebenfalls, aber nur an Titel, die
-  noch keine tragen. Damit kommt die Liste vom Juni 2026 schon vor dem Umstieg auf den
-  Testserver.
+- **Stufe 3:** Der Katalogisat-Import (`internal/service/import_service.go`) liest die
+  Schlagworte als MAB 710, leitet daraus nur das Fach ab und verwirft sie. Er schreibt sie
+  künftig ebenfalls, aber nur an Titel, die noch keine tragen. Damit kommt die Liste vom Juni
+  2026 schon vor dem Umstieg auf den Testserver.
+- **Verweise:** Die Übernahme aus der Sicherung zählt sie nur (`Verweise_Schlagworte`,
+  `Verweis_Zu_Schlagworte`, 2010 beide leer). Nennt die Generalprobe mit der Sicherung von 2026
+  welche, an diesen Daten die Form ablesen und die Übernahme bauen.
 
 Gemessen am 30.09.2026 in der Sicherung von 2010: 2.849 Schlagworte, 2.744 davon an Titeln,
 1.390 an genau einem; 24.110 Zuordnungen an 10.364 der 10.732 Titel; keine Verweise; ein Wort
@@ -951,7 +941,7 @@ die Nummern tragen, die die Übernahme braucht, ist nicht geprüft; die Übernah
 der Datenbank, ein Weg über Auswertungen hieße einen neuen Importer (nachgelesen am 28.09.2026).
 **Nächste Schritte:** (1) dieses
 Kennwort erfragen; (2) die `.bak` auf dem eigenen Rechner in einen SQL Server einspielen und die
-neun Tabellen aus Abschnitt 1 von [SCRIPTS.md](SCRIPTS.md) als CSV ausgeben, Spaltennamen und
+dreizehn Tabellen aus Abschnitt 1 von [SCRIPTS.md](SCRIPTS.md) als CSV ausgeben, Spaltennamen und
 Datumsformate gegen den Importer prüfen, der bisher nur `mdb-export` kennt; (3) lokal und nur
 lesend messen, nicht auf dem Testserver, am einfachsten mit der Generalprobe über das
 CSV-Verzeichnis ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1b): `FremdLeserNummer` gefüllt, offene Ausleihen, Titel mit

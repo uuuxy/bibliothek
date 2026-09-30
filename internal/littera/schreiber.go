@@ -115,9 +115,10 @@ func (s *Schreiber) PruefeZielbestand(ctx context.Context) error {
 // Gemeldet und Ist werden getrennt geführt und am Ende gegeneinander gehalten: Eine Zahl,
 // die niemand gegen die Datenbank geprüft hat, ist keine Bilanz, sondern eine Behauptung.
 type Bericht struct {
-	Bestand   BestandBericht
-	Personen  PersonenBericht
-	Ausleihen AusleihBericht
+	Bestand     BestandBericht
+	Schlagworte SchlagwortBericht
+	Personen    PersonenBericht
+	Ausleihen   AusleihBericht
 
 	Warnungen int
 	Fehler    int
@@ -126,8 +127,8 @@ type Bericht struct {
 
 // Vollstaendig sagt, ob jeder Quelldatensatz angekommen ist.
 func (b Bericht) Vollstaendig() bool {
-	return b.Abbruch == nil && b.Fehler == 0 &&
-		b.Bestand.AbgleichOK && b.Personen.AbgleichOK && b.Ausleihen.AbgleichOK
+	return b.Abbruch == nil && b.Fehler == 0 && b.Bestand.AbgleichOK && b.Schlagworte.AbgleichOK &&
+		b.Personen.AbgleichOK && b.Ausleihen.AbgleichOK
 }
 
 // zaehle liest einen einzelnen Zählwert.

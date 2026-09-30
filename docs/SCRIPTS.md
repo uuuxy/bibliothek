@@ -27,7 +27,8 @@ die Access-Datei selbst: Deren ODBC-Treiber gibt es nur unter Windows.
 
 ```bash
 # 1. Export erzeugen (mdbtools, plattformunabhängig)
-for t in Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih; do
+for t in Titel Exemplar Verlag Medienart Personen Personen_Zuordnung Leser Leser_UG Verleih \
+         Schlagworte Schlag_zuord Verweise_Schlagworte Verweis_Zu_Schlagworte; do
   mdb-export littera_sav.mdb "$t" > "littera-export/$(echo "$t" | tr 'A-Z' 'a-z').csv"
 done
 
@@ -65,6 +66,18 @@ fehlt. Weichen beide ab, gilt das Etikett, mit Vermerk im Protokoll; in der Sich
 damit ohne Neubeklebung scannbar. Bis zum 28.09.2026 rechnete `EtikettBarcode` für Nummern
 unter sechs Stellen falsch (links aufgefüllt, an Stelle 12 fest eine 6); getroffen hätte es
 jedes Exemplar der Sicherung von 2010.
+**Schlagworte (seit dem 30.09.2026, docs/OFFEN.md 4.20):** Mit dem Bestand kommen alle
+Schlagworte der Titel mit, aus den Tabellen `Schlagworte` und `Schlag_zuord`, geschrieben über
+den Pfad des Buchformulars (`repository.SetzeSchlagworte`): Leerraum wird zusammengezogen,
+dieselbe Schreibweise in anderer Groß- und Kleinschreibung ist dasselbe Wort, höchstens 300 je
+Titel. Ein leeres oder zu langes Wort fällt weg, eine längere Liste wird gekürzt — beides mit
+Vermerk im Protokoll; das Buch selbst kommt in jedem Fall an. Die Verweise
+(`Verweise_Schlagworte`, `Verweis_Zu_Schlagworte`) zählt der Lauf nur und nennt sie: In der
+Sicherung von 2010 sind beide leer, ihre Form ist an echten Daten noch nicht geprüft. Alle vier
+Dateien sind Pflicht. Der Bericht führt die Schlagworte als eigenen Abschnitt mit Abgleich an der
+Datenbank. **Fach:** Nennt die Signatur keins, kommt es aus den Schlagworten, wenn sie genau ein
+Fach nennen — dieselbe Regel wie im Katalogisat-Import (Abschnitt 1a); der Bericht zählt beide
+Herkünfte unter „Bestand".
 **Eigentum:** Der Bericht nennt unter „Bestand", wie viele Exemplare ihr Eigentum aus dem
 Littera-Vermerk bekommen (Land, Schulträger), wie viele einen bekannten Vermerk ohne Zuordnung
 tragen und wie viele einen, der nicht in der festen Liste steht. Die letzten stehen einzeln im
@@ -205,7 +218,7 @@ Was die Probe tut, in dieser Reihenfolge:
 2. **Abschottung, bevor Daten hineinkommen:** Das Backend hängt nur an einem Netz ohne Weg ins
    Internet (erreicht es doch eins, bricht die Probe ab). Anmeldung über die IMAP-Attrappe,
    keine Mail, kein S3, kein Cover-Abgleich.
-3. **Export** der neun Tabellen aus Abschnitt 1 mit `mdb-export`, dazu `FremdLeserNummer` und
+3. **Export** der dreizehn Tabellen aus Abschnitt 1 mit `mdb-export`, dazu `FremdLeserNummer` und
    `FremdBarcode`, wenn es sie gibt — oder die CSVs aus dem übergebenen Verzeichnis.
 4. **Trockenlauf** mit `-personen -ausleihen`. Nennt er Lesergruppen ohne Zuordnung, prüft die
    Probe, dass der echte Lauf anhält und nichts schreibt. Weiter geht es dann nur mit
@@ -238,6 +251,9 @@ bestanden. 10.732 Titel, 61.520 Exemplare, 1.991 Leser (1.810 Schüler, 181 im K
 15.612 von 15.615 Ausleihen; die übrigen drei sind Widersprüche in Littera (ein Exemplar fehlt
 im Bestand, zwei sind doppelt verliehen). „Undefinierte Untergruppe" (5 Personen, 21
 Ausleihen) hielt den Lauf an und wurde mit `--gruppe` als Schüler nachgestellt.
+Am 30.09.2026 mit den Schlagworten wieder bestanden: 24.109 Zuordnungen an 10.364 Titeln,
+2.742 Wörter (ein leeres Wort weggelassen, „Brasilien" stand zweimal), und das Fach kommt bei
+258 Titeln aus der Signatur und bei 2.945 aus den Schlagworten.
 
 ---
 

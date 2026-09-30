@@ -32,6 +32,9 @@ type Altbestand struct {
 	Fremdbarcodes  map[string]string
 	// AusweisMehrfach nennt Leser mit mehr als einer hinterlegten Karte.
 	AusweisMehrfach []string
+
+	// Schlagworte der Titel (schlagworte.go, docs/OFFEN.md 4.20).
+	Schlagworte SchlagwortQuelle
 }
 
 // Dateien sind die mdb-export-Ausgaben, die LeseAltbestand erwartet.
@@ -45,6 +48,10 @@ type Altbestand struct {
 //	mdb-export littera_sav.mdb Leser              > leser.csv
 //	mdb-export littera_sav.mdb Leser_UG           > leser_ug.csv
 //	mdb-export littera_sav.mdb Verleih            > verleih.csv
+//	mdb-export littera_sav.mdb Schlagworte            > schlagworte.csv
+//	mdb-export littera_sav.mdb Schlag_zuord           > schlag_zuord.csv
+//	mdb-export littera_sav.mdb Verweise_Schlagworte   > verweise_schlagworte.csv
+//	mdb-export littera_sav.mdb Verweis_Zu_Schlagworte > verweis_zu_schlagworte.csv
 const (
 	DateiTitel             = "titel.csv"
 	DateiExemplar          = "exemplar.csv"
@@ -55,6 +62,13 @@ const (
 	DateiLeser             = "leser.csv"
 	DateiLeserUG           = "leser_ug.csv"
 	DateiVerleih           = "verleih.csv"
+	// Die Schlagworte sind Pflicht wie die übrigen (seit dem 30.09.2026, docs/OFFEN.md 4.20):
+	// Fehlte eine Datei, kämen die Titel still ohne ihre Schlagworte an. Littera führt alle vier
+	// Tabellen schon im Stand von 2010, die beiden Verweis-Tabellen dort leer.
+	DateiSchlagworte          = "schlagworte.csv"
+	DateiSchlagZuord          = "schlag_zuord.csv"
+	DateiVerweiseSchlagworte  = "verweise_schlagworte.csv"
+	DateiVerweisZuSchlagworte = "verweis_zu_schlagworte.csv"
 	// Die beiden Fremdnummern-Tabellen sind OPTIONAL: In einer Installation ohne
 	// herstellerbedruckte Ausweise sind sie leer, und mdb-export erzeugt die Dateien
 	// dann gar nicht erst. Fehlen sie, läuft der Import mit den Littera-eigenen Nummern.
@@ -84,6 +98,9 @@ func LeseAltbestand(verzeichnis string) (*Altbestand, error) {
 		return nil, err
 	}
 	if err = leseAutoren(verzeichnis, ab); err != nil {
+		return nil, err
+	}
+	if err = leseSchlagworte(verzeichnis, ab); err != nil {
 		return nil, err
 	}
 	if err = leseLeserUndAusleihen(verzeichnis, ab); err != nil {
@@ -155,6 +172,22 @@ func leseAutoren(verzeichnis string, ab *Altbestand) error {
 	}
 	ab.Titel = MitAutoren(ab.Titel, autoren)
 	return nil
+}
+
+func leseSchlagworte(verzeichnis string, ab *Altbestand) error {
+	woerter, err := mitDatei(verzeichnis, DateiSchlagworte, LeseSchlagworte)
+	if err != nil {
+		return err
+	}
+	if ab.Schlagworte, err = mitDatei(verzeichnis, DateiSchlagZuord,
+		func(r io.Reader) (SchlagwortQuelle, error) { return SchlagworteJeTitel(woerter, r) }); err != nil {
+		return err
+	}
+	if ab.Schlagworte.VerweisWoerter, err = mitDatei(verzeichnis, DateiVerweiseSchlagworte, zaehleZeilen); err != nil {
+		return err
+	}
+	ab.Schlagworte.VerweisZuordnungen, err = mitDatei(verzeichnis, DateiVerweisZuSchlagworte, zaehleZeilen)
+	return err
 }
 
 func leseLeserUndAusleihen(verzeichnis string, ab *Altbestand) error {

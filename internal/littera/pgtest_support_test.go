@@ -30,7 +30,8 @@ func pgTestPool(t *testing.T) *pgxpool.Pool {
 func leereAlles(t *testing.T, pool *pgxpool.Pool) {
 	t.Helper()
 	_, err := pool.Exec(context.Background(),
-		`TRUNCATE ausleihen, buecher_exemplare, buecher_titel, leser, benutzer, ausweisnummern_ausgeschieden
+		`TRUNCATE ausleihen, buecher_exemplare, buecher_titel, leser, benutzer, ausweisnummern_ausgeschieden,
+		          schlagworte
 		 RESTART IDENTITY CASCADE`)
 	if err != nil {
 		t.Fatalf("Tabellen konnten nicht geleert werden: %v", err)

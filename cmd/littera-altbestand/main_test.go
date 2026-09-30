@@ -21,11 +21,12 @@ func TestRueckgabewert(t *testing.T) {
 		{
 			name: "Alles OK",
 			bericht: littera.Bericht{
-				Bestand:   littera.BestandBericht{AbgleichOK: true},
-				Personen:  littera.PersonenBericht{AbgleichOK: true},
-				Ausleihen: littera.AusleihBericht{AbgleichOK: true},
-				Fehler:    0,
-				Abbruch:   nil,
+				Bestand:     littera.BestandBericht{AbgleichOK: true},
+				Schlagworte: littera.SchlagwortBericht{AbgleichOK: true},
+				Personen:    littera.PersonenBericht{AbgleichOK: true},
+				Ausleihen:   littera.AusleihBericht{AbgleichOK: true},
+				Fehler:      0,
+				Abbruch:     nil,
 			},
 			want: exitOK,
 		},
@@ -53,6 +54,18 @@ func TestRueckgabewert(t *testing.T) {
 				Personen:  littera.PersonenBericht{AbgleichOK: true},
 				Ausleihen: littera.AusleihBericht{AbgleichOK: true},
 				Fehler:    0,
+			},
+			want: exitUnvollstaendig,
+		},
+		{
+			// Seit dem 30.09.2026 (docs/OFFEN.md 4.20): Fehlen Schlagworte in der Datenbank, ist
+			// der Lauf nicht vollständig, auch wenn Bestand und Personen stimmen.
+			name: "Abgleich der Schlagworte fehlgeschlagen (unvollständig)",
+			bericht: littera.Bericht{
+				Bestand:     littera.BestandBericht{AbgleichOK: true},
+				Schlagworte: littera.SchlagwortBericht{AbgleichOK: false},
+				Personen:    littera.PersonenBericht{AbgleichOK: true},
+				Ausleihen:   littera.AusleihBericht{AbgleichOK: true},
 			},
 			want: exitUnvollstaendig,
 		},

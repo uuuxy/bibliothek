@@ -31,6 +31,10 @@ type BestandBericht struct {
 	// letzten stehen einzeln im Protokoll, mit Exemplarnummer und ohne den Wortlaut.
 	EigentumLand, EigentumSchultraeger, VermerkOhneZuordnung, VermerkUnbekannt int
 
+	// Woher das Fach der geschriebenen Titel kam: aus der Lernmittel-Signatur oder, wo sie
+	// keins nennt, aus den Schlagworten (lernmittelUndFach, seit dem 30.09.2026).
+	FachAusSignatur, FachAusSchlagworten int
+
 	// TitelIDs bildet Littera-Titel → UUID ab, ExemplarIDs Littera-Exemplar → UUID.
 	// Der Ausleihteil braucht die zweite Karte.
 	TitelIDs    map[string]string
@@ -198,6 +202,12 @@ func (l *bestandslauf) einTitel(ctx context.Context, tx pgx.Tx, t Titel) error {
 	for littera, uuid := range exemplarIDs {
 		l.bericht.ExemplarIDs[littera] = uuid
 	}
+	switch lern, ausSchlagworten := l.lernmittel(t); {
+	case ausSchlagworten:
+		l.bericht.FachAusSchlagworten++
+	case lern.Fach != "":
+		l.bericht.FachAusSignatur++
+	}
 	l.bucheVermerke(l.exemplareJeTitel[t.ID])
 	return nil
 }
@@ -245,7 +255,7 @@ func (l *bestandslauf) schreibeTitel(
 
 	// subject ist FK auf die Systematik (Migration 078): das Fach im Savepoint
 	// registrieren, bevor der Titel es trägt.
-	lern := lernmittelAusSignatur(l.ab.Signaturen[t.ID])
+	lern, _ := l.lernmittel(t)
 	kanonisch, err := repository.StelleFaecherSicher(ctx, tx, []string{lern.Fach})
 	if err != nil {
 		return "", nil, reservierteISBN, err
@@ -324,6 +334,11 @@ type lernmittelfelder struct {
 	Fach                     string
 	Stufe                    int // eine Klassenstufe, nur wenn die Signatur genau einen Jahrgang nennt
 	JahrgangVon, JahrgangBis int
+}
+
+// lernmittel liefert Lernmittel, Fach und Jahrgang eines Titels (lernmittelUndFach).
+func (l *bestandslauf) lernmittel(t Titel) (lernmittelfelder, bool) {
+	return lernmittelUndFach(l.ab.Signaturen[t.ID], l.ab.Schlagworte.JeTitel[t.ID])
 }
 
 func lernmittelAusSignatur(signatur string) lernmittelfelder {

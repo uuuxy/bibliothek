@@ -142,6 +142,11 @@ func trockenlauf(ab *littera.Altbestand) {
 	log.Printf("  Titel mit Signatur:      %d", len(ab.Signaturen))
 	log.Printf("  davon uneinheitlich:     %d (häufigster Wert gewinnt)", len(ab.SignaturAbweichend))
 	log.Printf("  Verlage / Medienarten:   %d / %d", len(ab.Verlage), len(ab.Medienarten))
+	sw := ab.Schlagworte
+	log.Printf("  Schlagworte:             %d Zuordnungen an %d Titeln, ohne Wort %d; Verweise %d / %d "+
+		"(werden nicht übernommen)", sw.Zuordnungen, len(sw.JeTitel), sw.OhneWort, sw.VerweisWoerter, sw.VerweisZuordnungen)
+	ausSignatur, ausSchlagworten := littera.ZaehleFachquellen(ab)
+	log.Printf("  Fach:                    aus der Signatur %d, aus den Schlagworten %d", ausSignatur, ausSchlagworten)
 
 	nach := map[littera.LeserArt]int{}
 	for _, l := range ab.Leser {
@@ -224,7 +229,8 @@ func fuehreAus(
 	ctx context.Context, schreiber *littera.Schreiber, s schalter, ab *littera.Altbestand,
 ) littera.Bericht {
 	var b littera.Bericht
-	b.Bestand.AbgleichOK, b.Personen.AbgleichOK, b.Ausleihen.AbgleichOK = true, true, true
+	b.Bestand.AbgleichOK, b.Schlagworte.AbgleichOK = true, true
+	b.Personen.AbgleichOK, b.Ausleihen.AbgleichOK = true, true
 
 	var err error
 	if s.bestand {
@@ -235,6 +241,14 @@ func fuehreAus(
 		}
 		log.Printf("  → %d Titel, %d Exemplare, %d übersprungen",
 			b.Bestand.Titel, b.Bestand.Exemplare, b.Bestand.Uebersprungen)
+
+		// Die Schlagworte gehören zum Bestand (docs/OFFEN.md 4.20): Sie brauchen die Titel.
+		log.Printf("Übernehme Schlagworte (%d Titel) …", len(ab.Schlagworte.JeTitel))
+		if b.Schlagworte, err = schreiber.SchreibeSchlagworte(ctx, ab, b.Bestand); err != nil {
+			b.Abbruch = fmt.Errorf("bei den Schlagworten: %w", err)
+			return b
+		}
+		log.Printf("  → %d Zuordnungen an %d Titeln", b.Schlagworte.Zuordnungen, b.Schlagworte.Titel)
 	}
 
 	if s.personen {
@@ -281,6 +295,9 @@ func drucke(b littera.Bericht, s schalter) {
 			"Vermerk ohne Zuordnung %d, nicht in der Liste %d",
 			b.Bestand.EigentumLand, b.Bestand.EigentumSchultraeger,
 			b.Bestand.VermerkOhneZuordnung, b.Bestand.VermerkUnbekannt)
+		log.Printf("           Fach aus der Signatur %d, aus den Schlagworten %d",
+			b.Bestand.FachAusSignatur, b.Bestand.FachAusSchlagworten)
+		druckeSchlagworte(b.Schlagworte)
 	}
 	if s.personen {
 		log.Printf("Personen   Quelle %6d Leser", b.Personen.QuellLeser)
@@ -314,6 +331,19 @@ func drucke(b littera.Bericht, s schalter) {
 	}
 	if b.Warnungen > 0 {
 		log.Printf("ℹ  %d Datensätze wurden abgewertet übernommen: grep WARNUNG %s", b.Warnungen, protokollPfad)
+	}
+}
+
+// druckeSchlagworte ist der Abschnitt der Schlagworte im Bericht.
+func druckeSchlagworte(sw littera.SchlagwortBericht) {
+	log.Printf("Schlagworte Quelle %6d Zuordnungen an %d Titeln", sw.QuellZuordnungen, sw.QuellTitel)
+	log.Printf("           geschrieben %6d an %d Titeln; ohne Wort %d, Titel fehlt %d, weggelassen %d, "+
+		"gekürzt %d, Fehler %d", sw.Zuordnungen, sw.Titel, sw.OhneWort, sw.OhneTitel, sw.Weggelassen,
+		sw.Gekuerzt, sw.Uebersprungen)
+	abgleich(sw.AbgleichOK, fmt.Sprintf("%d Zuordnungen / %d Wörter tatsächlich neu", sw.IstZuordnungen, sw.IstWoerter))
+	if sw.VerweisWoerter+sw.VerweisZuordnungen > 0 {
+		log.Printf("           ⚠ Verweise nicht übernommen: %d Wörter, %d Zuordnungen (docs/OFFEN.md 4.20)",
+			sw.VerweisWoerter, sw.VerweisZuordnungen)
 	}
 }
 
