@@ -416,7 +416,6 @@ var triggerBestand = []string{
 	"trg_klassen_aktualisiert_am @ klassen",
 	"trg_klassen_anzeigeform @ klassen",
 	"trg_klm_klasse_vokabular @ klassen_lehrer_mapping",
-	"trg_ksr_klasse_vokabular @ klassensatz_reservierungen",
 	"trg_lesergruppen_aktualisiert_am @ lesergruppen",
 	"trg_lmf_plaene_aktualisiert_am @ lmf_plaene",
 	"trg_lmf_plan_ausgelassen_vokabular @ lmf_plan_ausgelassen",

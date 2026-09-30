@@ -67,7 +67,7 @@ func TestKlassenVokabular(t *testing.T) {
 		})
 	})
 
-	t.Run("kanonisierung wirkt in allen vier tabellen", func(t *testing.T) {
+	t.Run("kanonisierung wirkt in schueler, zuordnung und buecherliste", func(t *testing.T) {
 		inTx(t, pool, func(tx pgx.Tx) {
 			erwarteErfolg(t, tx, "Schüler", insSchueler, "KV-3", "07B")
 			erwarteErfolg(t, tx, "Lehrkraft-Zuordnung mit Variante",
@@ -97,15 +97,36 @@ func TestKlassenVokabular(t *testing.T) {
 				t.Errorf("Bücherliste muss auf '07B' kanonisiert werden, war %q", listenKlasse)
 			}
 
-			erwarteErfolg(t, tx, "Klassensatz mit Variante",
-				`INSERT INTO klassensatz_reservierungen (titel_id, klasse) VALUES ($1, '07 b')`, titelID)
-			var ksKlasse string
+		})
+	})
+
+	// Migration 152 (festgelegt am 30.09.2026): Die Klasse einer Klassensatz-Reservierung ist
+	// Freitext. Das Programm zeigt sie nur an; ein Tippfehler im Portal darf keine Klasse
+	// anlegen, die es an der Schule nicht gibt, und ein Kurs bleibt ein Kurs.
+	t.Run("reservierung legt keine klasse an", func(t *testing.T) {
+		inTx(t, pool, func(tx pgx.Tx) {
+			var titelID string
 			if err := tx.QueryRow(ctx,
-				`SELECT klasse FROM klassensatz_reservierungen WHERE titel_id = $1`, titelID).Scan(&ksKlasse); err != nil {
-				t.Fatalf("Klassensatz lesen: %v", err)
+				`INSERT INTO buecher_titel (titel) VALUES ('KV-Reservierung') RETURNING id`).Scan(&titelID); err != nil {
+				t.Fatalf("Titel anlegen: %v", err)
 			}
-			if ksKlasse != "07B" {
-				t.Errorf("Klassensatz muss auf '07B' kanonisiert werden, war %q", ksKlasse)
+			for _, eingabe := range []string{"07 r44", "Kurs Mathe"} {
+				erwarteErfolg(t, tx, "Reservierung "+eingabe,
+					`INSERT INTO klassensatz_reservierungen (titel_id, klasse) VALUES ($1, $2)`, titelID, eingabe)
+				var gespeichert string
+				if err := tx.QueryRow(ctx,
+					`SELECT klasse FROM klassensatz_reservierungen WHERE titel_id = $1 AND klasse = $2`,
+					titelID, eingabe).Scan(&gespeichert); err != nil {
+					t.Errorf("Reservierung %q muss so gespeichert sein, wie sie geschrieben wurde: %v", eingabe, err)
+				}
+				var registriert int
+				if err := tx.QueryRow(ctx,
+					`SELECT count(*) FROM klassen WHERE klassen_normkey(name) = klassen_normkey($1)`, eingabe).Scan(&registriert); err != nil {
+					t.Fatalf("Vokabular zählen: %v", err)
+				}
+				if registriert != 0 {
+					t.Errorf("Reservierung %q hat eine Klasse angelegt (%d Einträge)", eingabe, registriert)
+				}
 			}
 		})
 	})

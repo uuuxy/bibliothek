@@ -137,7 +137,7 @@ test('Klassensatz-Warteschlange: Chip vor dem Klick, Vordermann nach dem Absende
 	// und die Bestätigung nennt den Vordermann.
 	await page.getByRole('button', { name: 'Klassensatz reservieren' }).click();
 	await expect(page.getByRole('status')).toContainText(`du stellst dich hinter k8a${s} an`);
-	await page.getByLabel('Klasse *').fill(`k9b${s}`);
+	await page.getByLabel('Klasse / Kurs *').fill(`k9b${s}`);
 	await page.getByRole('button', { name: /Anfrage senden/ }).click();
 	await expect(
 		page.getByTitle(new RegExp(`dein Satz ist nach k8a${s} an der Reihe`))

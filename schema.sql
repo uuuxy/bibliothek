@@ -1678,9 +1678,7 @@ CREATE TRIGGER trg_class_books_vokabular
 BEFORE INSERT OR UPDATE OF class_name ON class_books
 FOR EACH ROW EXECUTE FUNCTION class_name_kanonisieren();
 
-CREATE TRIGGER trg_ksr_klasse_vokabular
-BEFORE INSERT OR UPDATE OF klasse ON klassensatz_reservierungen
-FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
+-- klassensatz_reservierungen.klasse ist seit Migration 152 Freitext: kein Auslöser, kein FK.
 CREATE TRIGGER trg_lmf_termin_klassen_vokabular
 BEFORE INSERT OR UPDATE OF klasse ON lmf_termin_klassen
 FOR EACH ROW EXECUTE FUNCTION klasse_kanonisieren();
@@ -1726,11 +1724,6 @@ ALTER TABLE klassen_lehrer_mapping
 ALTER TABLE class_books
     ADD CONSTRAINT fk_class_books_klasse_vokabular
     FOREIGN KEY (class_name) REFERENCES klassen (name)
-    ON UPDATE CASCADE ON DELETE RESTRICT;
-
-ALTER TABLE klassensatz_reservierungen
-    ADD CONSTRAINT fk_ksr_klasse_vokabular
-    FOREIGN KEY (klasse) REFERENCES klassen (name)
     ON UPDATE CASCADE ON DELETE RESTRICT;
 
 ALTER TABLE lmf_termin_klassen
@@ -1913,7 +1906,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('148_auflagen_eines_buchs.sql'),
 ('149_inventur_verworfen.sql'),
 ('150_eigentum_am_exemplar.sql'),
-('151_eigentum_quelle.sql')
+('151_eigentum_quelle.sql'),
+('152_klassensatz_reservierung_freitext.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

@@ -596,7 +596,8 @@ eingebaut und je Schule nicht verstellbar. (§12)
 ## Mein Portal (Kollegium)
 
 Lehrkräfte sehen genau diesen Bereich: **Suchen & Reservieren** (Bestand mit Verfügbarkeit
-und Warteschlange; Klassensatz reservieren mit Klasse, Anzahl, Datum. Unter der Suche stehen
+und Warteschlange; Klassensatz reservieren mit Klasse oder Kurs, Anzahl, Datum — das Feld ist
+Freitext und legt keine Klasse an. Unter der Suche stehen
 die Schlagworte, die die Bibliothek unter _Einstellungen → Schlagworte_ als Filter markiert
 hat: Ein Klick zeigt alle Titel des Worts, zusammen mit einem Suchwort nur die, die beides
 treffen; ein zweiter Klick nimmt den Filter zurück. Gezeigt werden höchstens 50 Treffer — gibt

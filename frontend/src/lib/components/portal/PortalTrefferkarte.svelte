@@ -132,7 +132,12 @@
 		>
 			<p class="text-sm font-medium text-on-surface">Klassensatz-Reservierung</p>
 			<div class="grid grid-cols-2 gap-4">
-				<Feld bind:value={form.klasse} label="Klasse *" type="text" placeholder="z. B. 8b" />
+				<Feld
+					bind:value={form.klasse}
+					label="Klasse / Kurs *"
+					type="text"
+					placeholder="z. B. 8G3"
+				/>
 				<Feld type="number" bind:value={form.anzahl} label="Anzahl" min={1} max={200} />
 			</div>
 			<label class="grid gap-y-1.5">

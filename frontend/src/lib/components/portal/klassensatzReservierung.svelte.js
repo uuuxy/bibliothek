@@ -105,7 +105,7 @@ export function erzeugeKlassensatzReservierung(nutzer, warteschlangeFuer, nachSe
 			const f = ensure(titelId);
 			if (f.loading) return; // Doppelklick abfangen, bevor die Anfrage überhaupt rausgeht
 			if (!f.klasse.trim()) {
-				f.error = 'Bitte Klasse angeben.';
+				f.error = 'Bitte Klasse oder Kurs angeben.';
 				return;
 			}
 			f.loading = true;

@@ -41,7 +41,9 @@ async function sucheUndOeffneFormular(screen) {
 	);
 	const knopf = await screen.findByRole('button', { name: 'Klassensatz reservieren' });
 	await fireEvent.click(knopf);
-	await fireEvent.input(await screen.findByLabelText('Klasse *'), { target: { value: '08a' } });
+	await fireEvent.input(await screen.findByLabelText('Klasse / Kurs *'), {
+		target: { value: '08a' }
+	});
 	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));
 }
 
@@ -70,7 +72,7 @@ describe('KollegiumPortal', () => {
 		expect(erneut.hasAttribute('disabled')).toBe(false);
 
 		await fireEvent.click(erneut);
-		expect(await screen.findByLabelText('Klasse *')).toBeTruthy();
+		expect(await screen.findByLabelText('Klasse / Kurs *')).toBeTruthy();
 	});
 
 	/**
@@ -181,7 +183,9 @@ it('zeigt die Warteschlange am Treffer und nennt nach dem Absenden den Vorderman
 	expect((await screen.findByRole('status')).textContent?.replace(/\s+/g, ' ').trim()).toBe(
 		'Reicht aktuell nicht: 0 rechnerisch frei — du stellst dich hinter 8a an.'
 	);
-	await fireEvent.input(await screen.findByLabelText('Klasse *'), { target: { value: '9b' } });
+	await fireEvent.input(await screen.findByLabelText('Klasse / Kurs *'), {
+		target: { value: '9b' }
+	});
 	await fireEvent.click(screen.getByRole('button', { name: /Anfrage senden/ }));
 
 	// Die Bestätigung sagt, hinter wem der eigene Satz an der Reihe ist.

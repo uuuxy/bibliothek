@@ -47,7 +47,7 @@ test('Lehrerportal: Lehrkraft reserviert einen Klassensatz', async ({ page }) =>
 
 	// Reservierungs-Formular öffnen und ausfüllen
 	await page.getByRole('button', { name: 'Klassensatz reservieren' }).first().click();
-	await page.getByLabel('Klasse *').fill(`k8b${s}`);
+	await page.getByLabel('Klasse / Kurs *').fill(`k8b${s}`);
 	await page.getByLabel('Anzahl').fill('25');
 	await page.getByPlaceholder(/Benötigt ab/i).fill('E2E Notiz — bitte ignorieren');
 	await page.getByRole('button', { name: 'Anfrage senden' }).click();

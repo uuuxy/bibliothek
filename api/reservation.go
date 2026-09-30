@@ -254,6 +254,9 @@ func klassensatzBereitText(e *repository.KlassensatzErledigt) string {
 // validateKlassensatzRequest prüft die Pflichtfelder und normalisiert die Anzahl
 // (Default 1, Obergrenze 200). ok=false: die Fehlerantwort wurde bereits geschrieben.
 func validateKlassensatzRequest(w http.ResponseWriter, req *KlassensatzReservierungRequest) bool {
+	// Klasse oder Kurs ist seit Migration 152 Freitext wie beim Anliegen: Trimmen und Kürzen
+	// machte bis dahin der Auslöser des Klassen-Vokabulars.
+	req.Klasse = kuerze(strings.TrimSpace(req.Klasse), 50)
 	if req.TitelID == "" || req.Klasse == "" {
 		apierrors.SendHTTPError(w, http.StatusBadRequest, errors.New("titel_id und klasse sind erforderlich"))
 		return false
