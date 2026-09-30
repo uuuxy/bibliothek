@@ -77,7 +77,8 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu
-   4.27 (wer aus dem Kollegium geht, hat oft noch Bücher) steht die Frage-Runde aus.
+   4.22, 4.24, 4.25 (vorhandene Titel) und 4.27 stehen die Empfehlungen der Frage-Runde vom
+   30.09.2026; die Antworten stehen aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -213,6 +214,17 @@ Schlagworte. **Frage:** eine Gesamtausgabe bauen (Katalog mit Signaturen und Sch
 Exemplare, Leser, offene Ausleihen) oder beim Ende der Pflege aus der Sicherung umsetzen?
 Verwandt im Parkdeck (6.3): den Schlagwortkatalog als Datei aus- und einlesen.
 
+**Nachgesehen am 30.09.2026 (Frage-Runde):** Littera liest Titel im MAB-Format ein, auf Wunsch mit
+Schlagworten, und Schüler aus der LUSD (Handbuch, „MAB Import", „LUSD Leserdaten Import").
+BIBLIOTHECAnext gibt im Standardformat MARC21 „keine Exemplar- und Ausleihdaten" aus, Barcodes nur
+im eigenen Format (Hilfe des Herstellers, „Exportfunktionen nutzen"). Den Bestand mit Barcode und
+Signatur übergibt man zwischen Programmen deshalb meist als Tabelle, die der neue Hersteller
+umsetzt. **Empfehlung:** die vorhandene Bestandsliste um Signatur, Schlagworte und Eigentum
+erweitern — der Teil, der sich nicht neu erfassen lässt (rund 67.000 Exemplare mit Etikett). Leser
+und Ausleihen nicht: Schüler kommen in jedem Programm aus der LUSD, das Kollegium meldet sich neu
+an, und gewechselt wird zum Schuljahresende, wenn die Lernmittel zurück sind. Die erweiterte Liste
+nutzt schon heute: Ohne Signatur lässt sie sich nicht nach Regal sortieren.
+
 ### 4.23 Erreichbarkeit von außen
 
 **Entschieden am 28.09.2026: Von außen ist nur die Seite für die Lieferanten erreichbar,** alles
@@ -270,6 +282,15 @@ nur als Wortlaut mit, und es gilt die Faustregel. Die Zuordnung steht an einer S
 (`vermerkeLittera`); nach der Übernahme lassen sich einzelne Titel auch in der Buchakte setzen
 (_Eigentum ändern_).
 
+**Zur Frage an die Bücherei (30.09.2026):** Eine hessische Schule ist eine nichtrechtsfähige
+Anstalt und schließt Rechtsgeschäfte „mit Wirkung für den ermächtigenden Rechtsträger" ab
+(Hessisches Schulgesetz). „Philipp-Reis-Schule", „Bibliothek" und „Info Schulprojekt" heißen also
+Schulträger oder Land, je nachdem, wessen Geld es war; „Förderverein" und „Dauerleihgabe" können
+Dritten gehören. Gefragt wird je Vermerk: aus welchem Geld — Schulträger, Land, Förderverein —
+oder geliehen? **Empfehlung (Frage-Runde):** kein dritter Eigentümer im Programm. Bücher Dritter
+behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
+dann über den Schulträger, bei 90 Büchern ein seltener Fall.
+
 ### 4.25 Schlagwort-Vorschlag aus der DNB auch für Titel, die es schon gibt?
 
 **Entschieden am 30.09.2026 (Frage-Runde), gebaut:** Die Schlagwörter der Normdatei der DNB (MARC
@@ -318,8 +339,25 @@ Die Frist allein hat dort also nichts bewirkt. Die Lücke ist der Tag, an dem je
 Praktikant nach Wochen, eine Lehrkraft beim Schulwechsel oder Ruhestand.
 
 **Frage:** Was soll geschehen, wenn jemand aus dem Kollegium die Schule verlässt und noch Bücher
-hat? Vor der Frage-Runde nachsehen: Littera-Handbuch (Leser mit Ablaufdatum, Löschliste) und wie
-andere Bibliotheksprogramme ein Konto mit Ablaufdatum führen.
+hat?
+
+**Nachgesehen am 30.09.2026:** Littera kennt kein Ablaufdatum am Leser, nur eine aufgedruckte
+Gültigkeit auf dem Ausweis. Es hat die „Liste der verliehenen Medien", nach Lesergruppe filterbar
+und laut Handbuch „auch als Mahnliste" verwendbar, eine Löschliste „seit … nicht ausgeliehen", in
+der Leser mit offenen Büchern rot stehen, und je Leser die Markierung „Mahnen". In der
+Schulbibliothek Butzbach (Littera, Hessen) steht das Kollegium auf der wöchentlichen Mahnliste:
+„danach folgen die Lehrer und die Referendare". Koha führt je Konto ein Ablaufdatum, warnt beim
+Ausleihen davor (NotifyBorrowerDeparture) und kann die Rückgabe darauf begrenzen
+(ReturnBeforeExpiry: „Require patrons to return items before their accounts expire").
+
+**Empfehlung (Frage-Runde):** ein Enddatum am Leser — Pflicht beim Praktikum, freiwillig bei LiV,
+U-plus, Sekretariat und Lehrkraft, nicht beim Fachbereich. In den letzten 14 Tagen zeigt die Theke
+beim Ausleihen „geht am …, hat noch N Bücher"; die Bücher sind am Enddatum fällig; danach keine
+Ausleihe, und die Person steht auf einer Liste „gegangen, Bücher nicht zurück", ohne Mahnbrief und
+Forderung (wie am 16.09.2026 entschieden). Dazu die Leserdatei nach Art filterbar, mit der Zahl
+offener Bücher, für alle ohne Datum. Sind nach dem Ende alle Bücher zurück, wird der Eintrag nach
+derselben Karenz wie beim Schüler gelöscht; heute bleibt ein Kollege, bis ihn jemand von Hand
+löscht.
 
 ---
 
