@@ -18,7 +18,7 @@
 	import { leserArtText, istKollegium, artMitKonto } from './leserArt.js';
 	import { TriangleAlert } from '@lucide/svelte';
 
-	let { open = false, klassen = [], onclose, onsuccess } = $props();
+	let { open = false, klassen = [], klassenFehler = false, onclose, onsuccess } = $props();
 
 	let art = $state('schueler');
 	let newVorname = $state('');
@@ -155,6 +155,7 @@
 				bind:klasse={newKlasse}
 				bind:barcode={newBarcode}
 				{klassen}
+				{klassenFehler}
 			/>
 		{/if}
 

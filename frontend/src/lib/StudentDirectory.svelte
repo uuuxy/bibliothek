@@ -26,7 +26,7 @@
 
 	let activeStudent = $state(/** @type {any} */ (null));
 
-	// Vorschlagsliste des Anlegen-Dialogs (eigene Datei, Größen-Ratsche).
+	// Die Klassen des Anlegen-Dialogs (eigene Datei, Größen-Ratsche).
 	const klassen = erzeugeKlassenVorschlaege();
 	let showCreateModal = $state(false);
 
@@ -113,7 +113,12 @@
 						suchend={suche.suchend}
 						gekuerzt={suche.gekuerzt}
 						onsearch={() => suche.angestossen()}
-						oncreate={() => (showCreateModal = true)}
+						oncreate={() => {
+							// Frisch laden: Die Liste ist die einzige Wahl, und ein Abruf, der beim
+							// Öffnen der Leserdatei scheiterte, bliebe sonst bis zum Neuladen stehen.
+							klassen.lade();
+							showCreateModal = true;
+						}}
 					/>
 
 					<AuswahlAktionsleiste
@@ -161,6 +166,7 @@
 <StudentCreateModal
 	open={showCreateModal}
 	klassen={klassen.liste}
+	klassenFehler={klassen.ladefehler}
 	onclose={() => (showCreateModal = false)}
 	onsuccess={handleStudentCreated}
 />

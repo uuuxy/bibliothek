@@ -40,15 +40,22 @@
 	import LeserArtWahl from './LeserArtWahl.svelte';
 	import LeserKontaktFelder from './LeserKontaktFelder.svelte';
 	import { istKollegium, LESER_ARTEN } from '../../leserArt.js';
+	import { KLASSEN_LADEFEHLER } from './klassenVorschlaege.svelte.js';
 
 	/**
 	 * `formData` ist der $state-Proxy aus useStudentEditForm und wird hier direkt an den
 	 * Feldern gebunden — kein $bindable: Gebunden werden die EIGENSCHAFTEN des Objekts,
 	 * das Objekt selbst wird nie ersetzt. Ein $bindable verlangte vom Aufrufer ein
 	 * `bind:`, und dort ist formData ein `const` aus der Hook-Destrukturierung.
-	 * @type {{ formData: any, klassen?: string[], lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
+	 * @type {{ formData: any, klassen?: string[], klassenFehler?: boolean, lusdVerknuepft?: boolean, kontoVorhanden?: boolean }}
 	 */
-	let { formData, klassen = [], lusdVerknuepft = false, kontoVorhanden = false } = $props();
+	let {
+		formData,
+		klassen = [],
+		klassenFehler = false,
+		lusdVerknuepft = false,
+		kontoVorhanden = false
+	} = $props();
 
 	// Auswählen statt tippen (docs/OFFEN.md 5.18, 30.09.2026): Ein Tippfehler legte hier eine
 	// Klasse an, die es an der Schule nicht gibt. Die eigene Klasse steht immer mit in der
@@ -125,6 +132,9 @@
 			/>
 			{#if kollege}
 				<span class="text-xs text-on-surface-variant">Nur ein Schüler hat eine Klasse.</span>
+			{:else if klassenFehler}
+				<!-- Zur Wahl steht dann nur die eigene Klasse; der Fehlertext sagt, warum. -->
+				<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
 			{/if}
 		</div>
 		<Feld

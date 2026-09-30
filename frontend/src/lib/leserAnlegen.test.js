@@ -180,4 +180,37 @@ describe('Neuen Leser anlegen', () => {
 		).not.toHaveBeenCalled();
 		expect(screen.container.textContent ?? '').toContain('Klasse');
 	});
+
+	// Seit dem 30.09.2026 wird die Klasse nur gewählt. Ließen sich die Klassen nicht laden,
+	// ist die Eingabe gesperrt — und der Dialog sagte dann „Die Klassen kommen mit dem
+	// LUSD-Abgleich", ein falscher Grund, der zum Warten auf einen Abgleich schickt.
+	it('sagt, dass die Klassen nicht geladen sind, statt auf den LUSD-Abgleich zu warten', () => {
+		const screen = render(StudentCreateModal, {
+			open: true,
+			klassen: [],
+			klassenFehler: true,
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
+		const text = screen.baseElement.textContent ?? '';
+
+		expect(text).toMatch(/Die Klassen ließen sich nicht laden\. Bitte neu öffnen\./);
+		expect(text).toMatch(/Klassen nicht geladen/);
+		expect(text).not.toMatch(/LUSD-Abgleich/);
+		expect(text).not.toMatch(/Keine Klassen/);
+	});
+
+	it('verweist auf den LUSD-Abgleich, wenn die Schule noch keine Klassen hat', () => {
+		const screen = render(StudentCreateModal, {
+			open: true,
+			klassen: [],
+			onclose: vi.fn(),
+			onsuccess: vi.fn()
+		});
+		const text = screen.baseElement.textContent ?? '';
+
+		expect(text).toMatch(/Die Klassen kommen mit dem LUSD-Abgleich\./);
+		expect(text).toMatch(/Keine Klassen/);
+		expect(text).not.toMatch(/ließen sich nicht laden/);
+	});
 });

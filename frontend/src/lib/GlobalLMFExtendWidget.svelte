@@ -6,7 +6,10 @@
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import Select from './components/ui/Select.svelte';
-	import { erzeugeKlassenVorschlaege } from './components/students/klassenVorschlaege.svelte.js';
+	import {
+		erzeugeKlassenVorschlaege,
+		klassenPlatzhalter
+	} from './components/students/klassenVorschlaege.svelte.js';
 
 	/** @type {string} */
 	let klasse = $state('');
@@ -77,7 +80,7 @@
 				id="extendKlasse"
 				bind:value={klasse}
 				options={klassen.map((k) => ({ value: k, label: k }))}
-				placeholder={klassen.length ? 'Klasse wählen' : 'Keine Klassen'}
+				placeholder={klassenPlatzhalter(klassen.length, klassenListe.ladefehler)}
 				class="w-36"
 			/>
 		</div>

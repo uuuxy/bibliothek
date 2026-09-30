@@ -17,6 +17,11 @@ import { findeVerschluckteFehlantworten } from './fehlerausgangScanner.js';
 // Die sechzehn Reste stehen hier mit Begründung. Das ist ein Bestand bewusster
 // Ausnahmen, KEINE Erlaubnis: Neues gehört behandelt, nicht eingetragen.
 //
+// Ausgetragen am 30.09.2026: die Klassen in klassenVorschlaege.svelte.js und in ClassAssignPicker.
+// Seit dem Morgen dieses Tages wird die Klasse nur noch gewählt, nicht getippt — die
+// Begründung „ohne sie tippt man den Wert von Hand" galt nicht mehr, und ein gescheiterter
+// Abruf stand als „Keine Klassen" da. Beide melden ihn jetzt.
+//
 // Ausgetragen am 12.09.2026: der Boot-Restore des authStore. Seine Begründung
 // („Login-Screen IST der richtige Rückfall") stimmte für den Netzwerkfehler, nicht mehr
 // für die Antwort 503 — die seit dem 11.09.2026 heißt „die Sitzung ließ sich nicht
@@ -27,11 +32,6 @@ const BESTAND = {
 	'src/inventur/lib/components/admin/BuchEingabefelder.svelte': [
 		1,
 		'Systematik-Vorschläge (Datalist)'
-	],
-	'src/inventur/lib/components/admin/ClassAssignPicker.svelte': [1, 'Klassennamen als Vorschlag'],
-	'src/lib/components/students/klassenVorschlaege.svelte.js': [
-		1,
-		'Klassen als Vorschlag im Anlegen-Dialog (am 12.09.2026 aus StudentDirectory ausgelagert)'
 	],
 	'src/lib/components/students/KlassenDruckEinstieg.svelte': [
 		1,

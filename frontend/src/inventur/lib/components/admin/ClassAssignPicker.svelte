@@ -8,7 +8,11 @@
 	import Modal from '../../../../lib/Modal.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
-	import { erzeugeKlassenVorschlaege } from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
+	import {
+		erzeugeKlassenVorschlaege,
+		klassenPlatzhalter,
+		KLASSEN_LADEFEHLER
+	} from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
 
 	/** @type {{ bookIds: string[], onClose: () => void, onAssigned: () => void }} */
 	let { bookIds, onClose, onAssigned } = $props();
@@ -28,16 +32,20 @@
 		[...new Set([...klassenListe.liste, ...existing])].sort().map((k) => ({ value: k, label: k }))
 	);
 
+	// Scheitert eine der beiden Quellen, fehlt womöglich genau die gesuchte Klasse. Bis zum
+	// 30.09.2026 schwieg der Dialog dazu, denn man tippte sie dann von Hand ein.
+	let buchlistenFehler = $state(false);
+	const ladefehler = $derived(klassenListe.ladefehler || buchlistenFehler);
+
 	onMount(async () => {
 		klassenListe.lade();
 		try {
 			const res = await apiFetch('/api/admin/class-books', { credentials: 'include' });
-			if (res.ok) {
-				const json = await res.json();
-				existing = (json.data || []).map((/** @type {any} */ g) => g.className);
-			}
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const json = await res.json();
+			existing = (json.data || []).map((/** @type {any} */ g) => g.className);
 		} catch {
-			/* Dann stehen nur die Klassen der Schüler zur Wahl. */
+			buchlistenFehler = true;
 		}
 	});
 
@@ -83,8 +91,11 @@
 				id="klasse-name"
 				bind:value={className}
 				options={optionen}
-				placeholder={optionen.length ? 'Klasse wählen' : 'Keine Klassen'}
+				placeholder={klassenPlatzhalter(optionen.length, ladefehler)}
 			/>
+			{#if ladefehler}
+				<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
+			{/if}
 		</div>
 
 		{#if error}

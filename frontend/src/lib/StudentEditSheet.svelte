@@ -116,6 +116,7 @@
 		<LeserEditFelder
 			{formData}
 			klassen={klassenListe.liste}
+			klassenFehler={klassenListe.ladefehler}
 			lusdVerknuepft={!!student?.lusd_id}
 			kontoVorhanden={form.kontoVorhanden}
 		/>

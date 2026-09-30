@@ -3,7 +3,8 @@
      Die Klasse wird aus den Klassen der Schule gewählt (GET /api/klassen), nicht getippt
      (docs/OFFEN.md 5.18, 30.09.2026): „Manuell eingeben…" legte bei einem Tippfehler eine
      Klasse an, die es an der Schule nicht gibt. Eine ganz neue Klasse kommt mit dem
-     LUSD-Abgleich.
+     LUSD-Abgleich. Ließen sich die Klassen nicht laden, sagt das der Fehlertext statt des
+     Hinweises auf den LUSD-Abgleich (klassenVorschlaege.svelte.js).
 
      Das Geburtsdatum ist Pflicht — nicht als Stammdatum, sondern als SCHLÜSSEL: Der
      LUSD-Export der Schule hat keine Schüler-ID; der Import erkennt einen von Hand
@@ -12,12 +13,13 @@
 <script>
 	import Select from './ui/Select.svelte';
 	import Feld from './ui/Feld.svelte';
+	import { KLASSEN_LADEFEHLER, klassenPlatzhalter } from './students/klassenVorschlaege.svelte.js';
 
 	/**
 	 * @type {{
 	 *   vorname: string, nachname: string, geburtsdatum: string,
 	 *   klasse: string, barcode: string,
-	 *   klassen: string[]
+	 *   klassen: string[], klassenFehler?: boolean
 	 * }}
 	 */
 	let {
@@ -26,7 +28,8 @@
 		geburtsdatum = $bindable(),
 		klasse = $bindable(),
 		barcode = $bindable(),
-		klassen = []
+		klassen = [],
+		klassenFehler = false
 	} = $props();
 
 	const klassenOptionen = $derived(klassen.map((k) => ({ value: k, label: k })));
@@ -50,9 +53,11 @@
 		id="schueler-klasse"
 		bind:value={klasse}
 		options={klassenOptionen}
-		placeholder={klassen.length ? 'Klasse auswählen' : 'Keine Klassen'}
+		placeholder={klassenPlatzhalter(klassen.length, klassenFehler)}
 	/>
-	{#if !klassen.length}
+	{#if klassenFehler}
+		<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
+	{:else if !klassen.length}
 		<span class="text-xs text-on-surface-variant">Die Klassen kommen mit dem LUSD-Abgleich.</span>
 	{/if}
 </div>

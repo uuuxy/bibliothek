@@ -6,7 +6,10 @@
 	import { toastStore } from './stores/toastStore.svelte.js';
 	import Feld from './components/ui/Feld.svelte';
 	import Select from './components/ui/Select.svelte';
-	import { erzeugeKlassenVorschlaege } from './components/students/klassenVorschlaege.svelte.js';
+	import {
+		erzeugeKlassenVorschlaege,
+		klassenPlatzhalter
+	} from './components/students/klassenVorschlaege.svelte.js';
 	import { Trash2 } from '@lucide/svelte';
 
 	/** @type {{klasse: string, lehrer_email: string}[]} */
@@ -121,7 +124,7 @@
 					id="routing-klasse"
 					bind:value={newMappingKlasse}
 					options={klassenListe.liste.map((k) => ({ value: k, label: k }))}
-					placeholder={klassenListe.liste.length ? 'Klasse wählen' : 'Keine Klassen'}
+					placeholder={klassenPlatzhalter(klassenListe.liste.length, klassenListe.ladefehler)}
 				/>
 			</div>
 		</div>

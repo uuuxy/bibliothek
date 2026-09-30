@@ -6,7 +6,11 @@
 	import { onMount } from 'svelte';
 	import { X } from '@lucide/svelte';
 	import Select from '../../../../lib/components/ui/Select.svelte';
-	import { erzeugeKlassenVorschlaege } from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
+	import {
+		erzeugeKlassenVorschlaege,
+		klassenPlatzhalter,
+		KLASSEN_LADEFEHLER
+	} from '../../../../lib/components/students/klassenVorschlaege.svelte.js';
 
 	/** @type {{ selectedClasses: string[], vorhandeneGruppen?: { className: string }[] }} */
 	let { selectedClasses = $bindable([]), vorhandeneGruppen = [] } = $props();
@@ -58,9 +62,16 @@
 			id="class-input"
 			bind:value={auswahl}
 			options={optionen}
-			placeholder={optionen.length ? 'Klasse wählen' : 'Keine weiteren Klassen'}
+			placeholder={klassenPlatzhalter(
+				optionen.length,
+				klassenListe.ladefehler,
+				'Keine weiteren Klassen'
+			)}
 			onchange={hinzufuegen}
 			class="w-48"
 		/>
 	</div>
+	{#if klassenListe.ladefehler}
+		<span class="text-xs text-error">{KLASSEN_LADEFEHLER}</span>
+	{/if}
 </div>
