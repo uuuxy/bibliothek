@@ -328,8 +328,8 @@ alter Aufdruck jede Form haben kann — drei Stellen wären drei Gelegenheiten, 
 vergessen. Ein Fehler, der **kein** `ErrNotFound` ist, gilt ausdrücklich nicht als „ohne
 Treffer".
 
-**Offen bleibt:** Alle vor dem 17.09.2026 gedruckten Ausweise und Etiketten sind mit dem
-Lesegerät weiterhin nur über diesen Weg nutzbar ([OFFEN.md](../OFFEN.md) 9.2).
+**Dauerhaft so:** Alle vor dem 17.09.2026 gedruckten Ausweise und Etiketten bleiben über
+diesen Weg nutzbar; neu drucken muss die Schule nichts (entschieden am 17.09.2026).
 
 **Fundstelle.** `pkg/code39`, `internal/service/omnibox_service.go`,
 `frontend/e2e/barcode-lesbar.spec.js`.

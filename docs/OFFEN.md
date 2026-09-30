@@ -381,8 +381,8 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 
 - **ISBN-10 und ISBN-13 desselben Buchs:** Die Normalform trennt beide bewusst (Migration 133),
   die Littera-Übernahme behält eine gültige ISBN-10. Seit dem 25.09.2026 rechnet die Bestelltür
-  um und schlägt den Titel unter der anderen Länge vor (4.18, Stufe 4; `isbnutil.AndereForm`,
-  der Zwilling von `isbnFormen.js`). Nur die Schreibweise vergleichen weiter die Markierung
+  um und schlägt den Titel unter der anderen Länge vor (`isbnutil.AndereForm`, der Zwilling
+  von `isbnFormen.js`). Nur die Schreibweise vergleichen weiter die Markierung
   „Vorhanden" der Bestellsuche (`sammleExistierendeISBNs`) und die Dublettenkontrolle der
   Maske: Ein DNB-Treffer, dessen ISBN-10 im Katalog steht, heißt in der Trefferliste „Neu",
   erst der Klick führt zur Frage. Gemessen am Testserver am 23.09.2026 (lesend): 100 Titel mit
