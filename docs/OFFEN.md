@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 29.09.2026
+Stand: 30.09.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -77,7 +77,7 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt 5.18 (Klassen und Lesergruppen als Stammdaten,
-   entschieden am 29.09.2026; Stufenplan vorgelegt am 29.09.2026, Freigabe offen), dann 5.21
+   entschieden am 29.09.2026; Stufenplan freigegeben am 30.09.2026, in Arbeit), dann 5.21
    (Palettenfarben, Bildschirm für Bildschirm).
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
@@ -492,10 +492,11 @@ oder schreibt; beim Bau wird sie die eine Liste oder fällt weg (vorher `count(*
 - **Vor dem Umstieg bauen.** Die Übernahme läuft einmal; gibt es die Lesergruppen, bringt sie die
   Littera-Gruppen der Sonderkonten mit, statt sie nur als Warnung ins Protokoll zu schreiben
   ([SCRIPTS.md](SCRIPTS.md), Abschnitt 1).
-- **Klasse überall aus der Liste** — Leserakte, „Manuell eingeben" bei der Neuanlage,
-  Klassensatz-Reservierung im Portal, Zuordnung im Mahnwesen. Eine neue Klasse entsteht nur nach
-  Rückfrage („Klasse 5f gibt es noch nicht — anlegen?"), im Portal gar nicht, oder durch den
-  LUSD-Import. Wie Littera: Die Untergruppe wird nur aus der Liste gewählt.
+- **Klasse überall aus der Liste** — Leserakte, „Manuell eingeben" bei der Neuanlage, Zuordnung
+  im Mahnwesen. Eine neue Klasse entsteht nur nach Rückfrage („Klasse 5f gibt es noch nicht —
+  anlegen?") oder durch den LUSD-Import. Wie Littera: Die Untergruppe wird nur aus der Liste
+  gewählt. (Die Klassensatz-Reservierung im Portal stand hier auch; seit 30.09.2026 bleibt sie
+  Freitext, siehe unten.)
 - **Drei getrennte Aktionen** wie FOLIO („A patron group can be deleted only if it is no longer
   applied to any user records"; Wechsel per Sammeländerung „Patron group — Replace with — Select
   value") und die Schlagwort-Pflege:
@@ -533,20 +534,42 @@ Mahnwesen-Zuordnung, Klassensatz-Reservierung im Portal, Klassensatz im Bestand
 Eindeutigkeiten: eine Klassenleitung je Klasse (`klassen_lehrer_mapping`), ein Buch je
 Klassensatz, eine Klasse je LMF-Termin und je Plan.
 
-**Stufenplan, vorgelegt am 29.09.2026 (Freigabe offen):**
+**Stufenplan, vorgelegt am 29.09.2026, freigegeben am 30.09.2026:**
 
 1. Server: `klassen` ist die Liste aller Auswahllisten, mit Zahlen je Klasse. Umbenennen nur auf
-   einen freien Namen; Zusammenlegen mit dem Ziel aus der Liste, Doppelte fallen zusammen, die
-   Klassenleitung der Zielklasse bleibt; Löschen nur ohne Verweis. Jede Änderung im Protokoll.
+   einen freien Namen; Zusammenlegen mit dem Ziel aus der Liste nach den Regeln unten; Löschen
+   nur ohne Verweis. Jede Änderung im Protokoll, dort nur Zahlen, keine Namen.
 2. Pflegeseite unter Einstellungen → LUSD & Versetzung, mit dem Recht der Versetzung
    (`manage_students_admin`), gebaut wie die Schlagwort-Pflege und gegliedert nach dem Zweig
    aus dem Namen.
-3. Klasse aus der Liste an den sechs Stellen; eine neue nur nach Rückfrage, im Portal gar
-   nicht; LUSD-Import und Littera-Übernahme legen weiter an. Dabei: Beispiele nach dem
-   Klassenschema statt „7a" und „8b", „Klasse löschen" bei den Klassensätzen heißt „Buchliste
-   löschen" (es entfernt nur die Buchliste).
+3. Klasse aus der Liste an der Leserakte, bei der Neuanlage, im Mahnwesen-Routing, bei der
+   Buchliste und bei der Klassenverlängerung; eine neue nur nach Rückfrage; LUSD-Import und
+   Littera-Übernahme legen weiter an. Dabei: Beispiele nach dem Klassenschema statt „7a" und
+   „8b", „Klasse löschen" bei den Klassensätzen heißt „Buchliste löschen" (es entfernt nur die
+   Buchliste), und die Seite Mahnwesen-Routing sagt, dass die Liste von Hand gepflegt wird und
+   die Versetzung sie hochrückt (im Handbuch seit dem 30.09.2026).
 4. Gruppen für Sonderkonten in `lesergruppen` (Kürzel, Bezeichnung), wählbar an der Leserakte
    eines Kollegen; die Littera-Übernahme setzt sie statt einer Zeile im Protokoll.
+
+**Festgelegt am 30.09.2026:**
+
+- **Klassensatz-Reservierung im Portal: Freitext.** Die Klasse dort zeigt das Programm nur an,
+  es rechnet nicht damit; eine Lehrkraft kann auch einen Kurs eintragen. Die Reservierung legt
+  keine Klasse mehr an: Fremdschlüssel und Auslöser an `klassensatz_reservierungen` fallen weg.
+- **Zusammenlegen:** Was sich zusammenzählen lässt, kommt dazu — Schüler, Buchliste (ein Buch
+  aus beiden Listen steht einmal da). Wo eine Klasse nur eines hat, behält die Zielklasse ihres —
+  Klassenleitung, LMF-Termin, Auslassung im LMF-Plan; hat nur die alte Klasse eines, geht es
+  über. Die umgezogenen Schüler bekommen den Rückgabetermin der Zielklasse als Frist, wie beim
+  Verschieben einer Klasse im Plan. Einen Knopf zum Rückgängigmachen gibt es nicht; die
+  Rückfrage nennt vorher die Zahlen.
+- **Recht:** „Schülerverwaltung: Sonderrechte" (`manage_students_admin`), wie die Versetzung.
+  Ein eigenes Recht lässt sich später herauslösen wie am 03.09.2026 `merge_students`.
+- **Richtigstellung:** Ein Tippfehler legt nur dort eine Klasse an, wo die Klasse gespeichert
+  wird. Die Klassenverlängerung sucht nur; ein Tippfehler trifft dort niemanden.
+- **Offen — Einführungsphase:** Die Versetzung rückt Klassenleitungen von 6 nach 7 und von 10
+  in die Oberstufe nicht mehr hoch. Zuordnungen der Einführungsphase (`ET1`) fasst sie gar nicht
+  an, weil der Name keinen Jahrgang trägt; sie gelten danach für den nächsten Jahrgang. Sollen
+  sie bei der Versetzung entfallen?
 
 Später, mit eigener Frage: Statistik nach Zweigen. Sie braucht den Zweig an der Ausleihe ohne
 Namen, weil eine Ausleihe der Bücherei seit dem 29.09.2026 den Namen nach einem Tag verliert.
