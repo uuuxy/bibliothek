@@ -10,8 +10,10 @@
 <script>
 	import { ladeTitelSchlagworte, setzeTitelSchlagworte } from '../../utils/schlagworte.js';
 	import { erzeugeSchlagwortVorschlaege } from '../../utils/schlagwortVorschlaege.svelte.js';
+	import { erzeugeDnbSchlagwortVorschlag } from '../../utils/dnbSchlagwortVorschlag.svelte.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import ChipFeld from '../ui/ChipFeld.svelte';
+	import SchlagwortDnbVorschlag from '../SchlagwortDnbVorschlag.svelte';
 	import { untrack } from 'svelte';
 
 	/**
@@ -21,9 +23,12 @@
 	 * stünde sonst still am Titel.
 	 * angeboteNeu: Normdatei-Wörter des Satzes, die die Liste noch nicht kennt (docs/OFFEN.md
 	 * 4.25, entschieden am 30.09.2026: angeboten mit dem Zusatz „neu", nie vorbelegt).
-	 * @type {{ titelId: string, angebote?: string[], angeboteNeu?: string[] }}
+	 * mitDnbKnopf: Der Titel stand schon im Katalog, die DNB wurde also nicht gefragt — dann holt
+	 * der Knopf unter dem Feld den Vorschlag zur isbn (entschieden am 30.09.2026).
+	 * @type {{ titelId: string, angebote?: string[], angeboteNeu?: string[], isbn?: string, mitDnbKnopf?: boolean }}
 	 */
-	let { titelId, angebote = [], angeboteNeu = [] } = $props();
+	let { titelId, angebote = [], angeboteNeu = [], isbn = '', mitDnbKnopf = false } = $props();
+	const dnb = erzeugeDnbSchlagwortVorschlag();
 
 	/** @type {string[]} */
 	let schlagworte = $state([]);
@@ -79,13 +84,21 @@
 		bind:werte={schlagworte}
 		vorschlaege={vorschlaege.liste}
 		ontippen={vorschlaege.getippt}
-		{angebote}
+		angebote={mitDnbKnopf ? dnb.liste(isbn) : angebote}
 		angeboteEtikett="Vorschläge aus der DNB"
-		{angeboteNeu}
+		angeboteNeu={mitDnbKnopf ? dnb.neu(isbn) : angeboteNeu}
 		angeboteNeuEtikett="Neue Schlagworte aus der DNB"
 		disabled={beiStart === null}
 		hint={fehlen
 			? 'Konnten nicht geladen werden — bitte später im Buchformular eintragen.'
 			: undefined}
 	/>
+	{#if mitDnbKnopf}
+		<SchlagwortDnbVorschlag
+			vorschlag={dnb}
+			{isbn}
+			werte={schlagworte}
+			disabled={beiStart === null}
+		/>
+	{/if}
 </div>

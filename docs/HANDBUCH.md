@@ -114,7 +114,13 @@ beides einstellbar (_Datenschutz & Sitzung_).
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
-  Etiketten_. (§13)
+  Etiketten_. **Schlagworte aus der DNB** (seit 30.09.2026): Holt die ISBN Titel und Autor,
+  stehen unter _Schlagworte_ die Wörter, die die DNB zu dieser ISBN nennt, zum Anklicken — wie
+  beim Bestellen als _Vorschläge aus der DNB_ und _Neue Schlagworte aus der DNB_. Bei einem
+  Titel, den es schon gibt, holt sie der Knopf _Vorschläge aus der DNB_ unter dem Feld.
+  Angeboten wird nur, was der Titel noch nicht trägt; eingetragen wird nur, was jemand anklickt,
+  und erst mit dem Speichern. Kennt die DNB die ISBN nicht oder ist sie nicht erreichbar, steht
+  das in einem Satz darunter. (§13)
 - **Auflagen** (seit 25.09.2026, bei Lernmitteln): Eine neue Auflage eines Schulbuchs ist
   ein eigener Titel mit eigener ISBN, denn die Seitenzahlen sind andere. In der Maske steht
   unter den Feldern der Abschnitt _Auflagen_: _Andere Auflage zuordnen_ sucht unter den
@@ -493,7 +499,9 @@ Verweis), als _Vorschläge aus der DNB_: Ein Klick übernimmt eines; eingetragen
 jemand übernommen hat. Darunter stehen, seit dem 30.09.2026, die Schlagwörter der Normdatei der
 DNB, die es in der Liste noch nicht gibt, als _Neue Schlagworte aus der DNB_ — Personen in der
 Schreibweise der Liste („Kafka <Franz>"). Ein Klick übernimmt auch hier; mit dem Warenkorb kommt
-das Wort in die Liste.
+das Wort in die Liste. Stand der Titel schon im Katalog, holt der Knopf _Vorschläge aus der DNB_
+unter den Schlagworten dieselben Vorschläge (seit 30.09.2026) — nur die Wörter, die der Titel
+noch nicht trägt.
 
 **Dieselbe ISBN, zehn- oder dreizehnstellig** (seit 25.09.2026): Ältere Titel stehen oft mit
 der zehnstelligen ISBN im Katalog, auf dem Buchrücken steht die dreizehnstellige. Findet

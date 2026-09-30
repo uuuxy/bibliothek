@@ -88,6 +88,37 @@ var ErrKatalogdiensteNichtErreichbar = errors.New("katalogdienste (DNB, Google B
 // unlesbare Nutzlast — heißt: Die Quelle war da, sie hatte nur nichts.
 var errQuelleNichtErreichbar = errors.New("quelle nicht erreichbar")
 
+// ErrDNBNichtErreichbar heißt: Die DNB hat nicht geantwortet (Verbindung gescheitert oder
+// Status ≥ 500) — ein Ausfall, kein „kennt die ISBN nicht" (502 beim Aufrufer).
+var ErrDNBNichtErreichbar = errors.New("DNB nicht erreichbar")
+
+// ErrNichtInDerDNB heißt: Die DNB hat geantwortet und kennt die ISBN nicht.
+var ErrNichtInDerDNB = errors.New("die DNB kennt diese ISBN nicht")
+
+// ErrUngueltigeISBN heißt: Die Eingabe hat nicht die Form einer ISBN; gefragt wurde niemand.
+var ErrUngueltigeISBN = errors.New("ungültiges ISBN-Format")
+
+// SucheDNBNachISBN fragt NUR die DNB — für den Schlagwort-Vorschlag im Buchformular und beim
+// Nachbestellen (GET /api/schlagworte/dnb-vorschlag, entschieden am 30.09.2026). Schlagworte
+// liefert keine andere Quelle; SucheNachISBN fragt nach der DNB auch Google Books und
+// OpenLibrary und lädt das Cover herunter — für einen Vorschlag unnötig, und das anonyme
+// Tageskontingent von Google teilen wir mit allen.
+func (client *MetadatenClient) SucheDNBNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {
+	saubereIsbn := isbnutil.CleanISBN(isbn)
+	if !validiereISBN(saubereIsbn) {
+		return nil, ErrUngueltigeISBN
+	}
+	ergebnis, fehler := client.sucheDNB(kontext, saubereIsbn)
+	switch {
+	case errors.Is(fehler, errQuelleNichtErreichbar):
+		return nil, fmt.Errorf("%w: %v", ErrDNBNichtErreichbar, fehler)
+	case fehler != nil:
+		// „nicht gefunden", 4xx oder unlesbare Antwort: Die DNB war da (wie in SucheNachISBN).
+		return nil, fmt.Errorf("%w: %v", ErrNichtInDerDNB, fehler)
+	}
+	return ergebnis, nil
+}
+
 // SucheNachISBN iteriert der Reihe nach über verschiedene Buch-APIs (DNB, Google, OpenLibrary),
 // bis für die gesuchte ISBN gültige Titel-/Autorendaten gefunden wurden.
 func (client *MetadatenClient) SucheNachISBN(kontext context.Context, isbn string) (*MetadatenErgebnis, error) {

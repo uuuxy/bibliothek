@@ -8,11 +8,13 @@
 	import Select from '../../../../lib/components/ui/Select.svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	import ChipFeld from '../../../../lib/components/ui/ChipFeld.svelte';
+	import SchlagwortDnbVorschlag from '../../../../lib/components/SchlagwortDnbVorschlag.svelte';
 	import { erzeugeSchlagwortVorschlaege } from '../../../../lib/utils/schlagwortVorschlaege.svelte.js';
 
 	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];
 
-	let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
+	/** dnbVorschlag: der Schlagwort-Vorschlag der DNB (BuchFormular, erzeugeDnbSchlagwortVorschlag). */
+	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag } = $props();
 
 	// Die medientyp-Spalte ist offen (Littera-Import bringt z. B. "Zeitschrift", "Spiel").
 	// Ohne diesen Zusatz zeigte das Dropdown für einen solchen Wert "Bitte wählen" — er
@@ -85,7 +87,7 @@
 		/>
 
 		<!-- Extrahierte ISBN-Feld-Komponente -->
-		<IsbnFeld bind:formular bind:wirdGescannt />
+		<IsbnFeld bind:formular bind:wirdGescannt {dnbVorschlag} />
 	</div>
 
 	<SignaturFeld bind:formular {signaturFehlt} />
@@ -137,19 +139,32 @@
 	<!-- Schlagworte (Migration 138): frei eintragbar wie in Littera, Vorschläge aus dem
 	     Bestand. Die Maske lädt sie über den Einzel-Read und schickt sie mit dem Titel
 	     zurück. Ohne geladene Liste (null) bleibt das Feld zu: Ein Wort ersetzte sonst
-	     still alle vorhandenen — dieselbe Regel wie im Bestellkorb. -->
-	<ChipFeld
-		id="buch-schlagworte"
-		label="Schlagworte"
-		bind:werte={formular.schlagworte}
-		vorschlaege={schlagwortVorschlaege.liste}
-		ontippen={schlagwortVorschlaege.getippt}
-		disabled={!schlagworteGeladen}
-		hint={schlagworteGeladen
-			? undefined
-			: 'Nicht geladen — die vorhandenen bleiben beim Speichern unverändert.'}
-		placeholder="Thema, Gattung, Stichwort"
-	/>
+	     still alle vorhandenen — dieselbe Regel wie im Bestellkorb. Darunter der Vorschlag
+	     der DNB (seit 30.09.2026): nach einer ISBN-Abfrage von selbst, sonst auf Knopfdruck. -->
+	<div class="space-y-2">
+		<ChipFeld
+			id="buch-schlagworte"
+			label="Schlagworte"
+			bind:werte={formular.schlagworte}
+			vorschlaege={schlagwortVorschlaege.liste}
+			ontippen={schlagwortVorschlaege.getippt}
+			disabled={!schlagworteGeladen}
+			hint={schlagworteGeladen
+				? undefined
+				: 'Nicht geladen — die vorhandenen bleiben beim Speichern unverändert.'}
+			placeholder="Thema, Gattung, Stichwort"
+			angebote={dnbVorschlag.liste(formular.isbn)}
+			angeboteEtikett="Vorschläge aus der DNB"
+			angeboteNeu={dnbVorschlag.neu(formular.isbn)}
+			angeboteNeuEtikett="Neue Schlagworte aus der DNB"
+		/>
+		<SchlagwortDnbVorschlag
+			vorschlag={dnbVorschlag}
+			isbn={formular.isbn}
+			werte={formular.schlagworte}
+			disabled={!schlagworteGeladen}
+		/>
+	</div>
 
 	<!-- Das mehrzeilige ui/Feld statt einer eigenen textarea: dieselbe Form, Farbe und
 	     Fokusanzeige wie jedes Feld darüber (bis zum 23.09.2026 grün fokussiert). -->

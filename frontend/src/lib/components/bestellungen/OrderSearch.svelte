@@ -9,7 +9,7 @@
 	import OrderStaging from './OrderStaging.svelte';
 	import BuchCover from '../ui/BuchCover.svelte';
 	import AndereIsbnFormWahl from './AndereIsbnFormWahl.svelte';
-	import { ausIsbnRumpf, istAndereFormFrage } from './ausIsbn.js';
+	import { ausIsbnRumpf, istAndereFormFrage, fensterAusAntwort } from './ausIsbn.js';
 
 	/** @type {any} */
 	let stagedBook = $state(null);
@@ -43,26 +43,9 @@
 		}
 	}
 
-	/** Das Fenster mit dem Titel aus der Tür. @param {any} localBook @param {any} book der DNB-Treffer */
+	/** Das Fenster mit dem Titel aus der Tür (ausIsbn.js). @param {any} localBook @param {any} book der DNB-Treffer */
 	function stageAusTuer(localBook, book) {
-		stageBook({
-			id: localBook.titel_id,
-			titel: localBook.titel,
-			autor: localBook.autor,
-			isbn: localBook.isbn,
-			verlag: localBook.verlag,
-			cover_url: localBook.cover_url,
-			// exists=false: signatur ist nur ein VORSCHLAG aus der DNB-Heuristik.
-			signatur: localBook.signatur ?? '',
-			// Preisvorschlag vom DNB-Treffer — über /aus-isbn ginge er sonst verloren.
-			preis_vorschlag: book.preis_vorschlag,
-			// Ein eben angelegter Titel ist noch kein Lernmittel — OrderStaging fragt nach.
-			ist_lernmittel: Boolean(localBook.ist_lernmittel),
-			// Schlagworte, die der DNB-Satz nennt — aus der Liste und neu; nur angeboten,
-			// eingetragen wird erst im Fenster (docs/OFFEN.md 4.20, 4.25).
-			schlagwort_vorschlaege: localBook.schlagwort_vorschlaege ?? [],
-			schlagwort_vorschlaege_neu: localBook.schlagwort_vorschlaege_neu ?? []
-		});
+		stageBook(fensterAusAntwort(localBook, book));
 	}
 
 	/** @param {any} book */

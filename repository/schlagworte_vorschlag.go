@@ -140,6 +140,24 @@ func listenZiele(ctx context.Context, q DBQueryer, roh []string) (map[string]str
 	return treffer, rows.Err()
 }
 
+// SchlagwortVorschlagAusDNB ist der ganze Schlagwort-Vorschlag zu einem DNB-Satz: liste sind die
+// Wörter der eigenen Liste, die der Satz als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
+// (SchlagworteAusStichwoertern, SchlagworteAusNormdaten), neu die Normdatei-Wörter, die die Liste
+// noch nicht kennt. Die eine Regel für beide Türen: das Anlegen beim Bestellen (POST
+// /api/buecher/aus-isbn) und den Vorschlag im Buchformular und beim Nachbestellen (GET
+// /api/schlagworte/dnb-vorschlag, entschieden am 30.09.2026). Beide Listen nie nil.
+func SchlagwortVorschlagAusDNB(ctx context.Context, q DBQueryer, stichwoerter []string, normdaten []Normdatenbegriff) (liste, neu []string, err error) {
+	ausStichwoertern, err := SchlagworteAusStichwoertern(ctx, q, stichwoerter)
+	if err != nil {
+		return nil, nil, err
+	}
+	ausNormdaten, neu, err := SchlagworteAusNormdaten(ctx, q, normdaten)
+	if err != nil {
+		return nil, nil, err
+	}
+	return SchlagworteZusammen(ausStichwoertern, ausNormdaten), neu, nil
+}
+
 // SchlagworteZusammen führt Vorschlagslisten zu einer zusammen: alphabetisch, ohne Doppelte.
 func SchlagworteZusammen(listen ...[]string) []string {
 	var alle []string

@@ -100,6 +100,10 @@ func (s *Server) registerSystemRoutes(mux *http.ServeMux, auditRepo repository.A
 	mux.Handle("GET /api/signaturen/buecher", s.RequirePermission("view_books")(s.GetSignaturBuecherHandler()))
 	// Schlagworte (Migration 138): die Vorschlagsliste der Eingabefelder, aus dem Bestand.
 	mux.Handle("GET /api/schlagworte", s.RequirePermission("view_books")(s.GetSchlagwortVorschlaegeHandler()))
+	// Der Vorschlag aus der DNB zu einer ISBN (entschieden am 30.09.2026): für das Buchformular
+	// und das Nachbestellen. Recht wie die Liste darüber und wie GET /api/lookup/{isbn}, das
+	// dieselbe DNB fragt — der Vorschlag liest nur, eingetragen wird über die Türen des Titels.
+	mux.Handle("GET /api/schlagworte/dnb-vorschlag", s.RequirePermission("view_books")(s.DnbSchlagwortVorschlagHandler()))
 	// Pflege der Schlagworte (Migration 143, OFFEN.md 4.20 Stufe 1): wie die Systematik mit
 	// edit_books — die Pflege ändert den Katalog, nicht den Bestand an Exemplaren.
 	mux.Handle("GET /api/schlagworte/pflege", s.RequirePermission("edit_books")(s.GetSchlagwortPflegeHandler()))

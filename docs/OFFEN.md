@@ -75,9 +75,7 @@ hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.22 und 4.24 stehen die
-   Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus. Entschieden am
-   30.09.2026 und zu bauen: 4.25 (Vorschlag für vorhandene Titel); seine Stelle in der
-   Reihenfolge steht aus.
+   Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -281,18 +279,6 @@ Dritten gehören. Gefragt wird je Vermerk: aus welchem Geld — Schulträger, La
 oder geliehen? **Empfehlung (Frage-Runde):** kein dritter Eigentümer im Programm. Bücher Dritter
 behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
 dann über den Schulträger, bei 90 Büchern ein seltener Fall.
-
-### 4.25 Schlagwort-Vorschlag aus der DNB auch für Titel, die es schon gibt
-
-Einen Vorschlag bekommt nur ein Titel, der beim Bestellen neu aus der DNB entsteht
-(`SchlagwortVorschlaege` in `api/isbn_handler.go`, nur bei `exists=false`); ein Treffer aus dem
-eigenen Katalog fragt die DNB nicht. Im Katalogisat vom Juni 2026 tragen 5.114
-Einträge keine Schlagworte, 4.891 davon kein Lernmittel, 4.862 mit ISBN — viele davon Romane, die
-Littera-Schulen bewusst nicht verschlagworten (Handbuch der Schulbibliothek Butzbach: „Lexika,
-Jugendbücher und Belletristik müssen nicht verschlagwortet werden"). Littera bietet für vorhandene
-Titel einen Online-Abgleich über die ISBN an, mit Vorschau und je Feld „keine Änderung / hinzufügen
-/ ersetzen". **Entschieden am 30.09.2026:** Einen Vorschlag gibt es auch für vorhandene Titel, auf
-Klick beim Nachbestellen und im Buchformular; kein Abgleich über den ganzen Katalog. Nicht gebaut.
 
 ---
 

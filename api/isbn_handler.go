@@ -125,9 +125,10 @@ type ISBNLookupResponse struct {
 	IstLernmittel bool `json:"ist_lernmittel"`
 	// SchlagwortVorschlaege: nur bei exists=false — die Wörter der eigenen Liste, die der
 	// DNB-Satz als Gattung, Verlagswort oder Normdatei-Schlagwort nennt
-	// (repository.SchlagworteAusStichwoertern und SchlagworteAusNormdaten, docs/OFFEN.md 4.20
-	// und 4.25). Ein Vorschlag, kein Eintrag: Am Titel steht davon nichts, bis im Bestellkorb
-	// jemand einen übernimmt.
+	// (repository.SchlagwortVorschlagAusDNB, docs/OFFEN.md 4.20 und 4.25). Ein Vorschlag, kein
+	// Eintrag: Am Titel steht davon nichts, bis im Bestellkorb jemand einen übernimmt. Für einen
+	// Titel, den es schon gibt, fragt das Bestellfenster auf Knopfdruck
+	// GET /api/schlagworte/dnb-vorschlag — nach derselben Regel.
 	SchlagwortVorschlaege []string `json:"schlagwort_vorschlaege,omitempty"`
 	// SchlagwortVorschlaegeNeu: Normdatei-Schlagwörter des Satzes, die die eigene Liste noch
 	// nicht kennt (entschieden am 30.09.2026: angeboten mit dem Zusatz „neu", nie vorbelegt).
@@ -147,11 +148,7 @@ type ISBNLookupResponse struct {
 // Abfrage, entsteht kein Titel — sonst stünde ein angelegter Titel hinter einer
 // Fehlermeldung, und der zweite Versuch fände ihn als vorhanden, ohne Vorschlag.
 func (s *Server) titelAusNachschlagen(ctx context.Context, isbn string, meta *inventur.MetadatenErgebnis) (ISBNLookupResponse, error) {
-	ausStichwoertern, err := repository.SchlagworteAusStichwoertern(ctx, s.DB.Pool, meta.Stichwoerter)
-	if err != nil {
-		return ISBNLookupResponse{}, err
-	}
-	ausNormdaten, neu, err := repository.SchlagworteAusNormdaten(ctx, s.DB.Pool, meta.Normdaten)
+	liste, neu, err := repository.SchlagwortVorschlagAusDNB(ctx, s.DB.Pool, meta.Stichwoerter, meta.Normdaten)
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}
@@ -159,7 +156,7 @@ func (s *Server) titelAusNachschlagen(ctx context.Context, isbn string, meta *in
 	if err != nil {
 		return ISBNLookupResponse{}, err
 	}
-	resp.SchlagwortVorschlaege = repository.SchlagworteZusammen(ausStichwoertern, ausNormdaten)
+	resp.SchlagwortVorschlaege = liste
 	resp.SchlagwortVorschlaegeNeu = neu
 	return resp, nil
 }

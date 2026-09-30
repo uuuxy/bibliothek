@@ -462,6 +462,9 @@ var bewusstAusgelassen = map[string]string{
 	"GET /swagger": "Redirect auf /swagger/, gleiche Begründung.",
 	"GET /api/lookup/{isbn}": "Proxy für EXTERNE ISBN-Metadaten — ein Aufruf mit echter ISBN ginge ins Internet; " +
 		"die Antwort sind fremde Titeldaten ohne jeden Schülerbezug (Stufe 0 per Konstruktion).",
+	"GET /api/schlagworte/dnb-vorschlag": "fragt die DNB — ein Aufruf mit echter ISBN ginge ins Internet; die Antwort " +
+		"sind Schlagworte der eigenen Liste und der Normdatei zu einem Satz der DNB, ohne Schülerbezug (Stufe 0). " +
+		"Verhalten mit nachgestellter DNB: schlagwort_dnb_pg_test.go.",
 }
 
 // ── Der Aufruf-Apparat ───────────────────────────────────────────────────────

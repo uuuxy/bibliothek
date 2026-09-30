@@ -2353,6 +2353,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/schlagworte/dnb-vorschlag": {
+            "get": {
+                "description": "Asks only the German National Library (no Google Books, no OpenLibrary, no cover download) and matches its genre terms, publisher keywords and GND subject headings against the own keyword list — the same rule as POST /buecher/aus-isbn. Nothing is written.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "books"
+                ],
+                "summary": "Keyword suggestions from the DNB for an ISBN",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ISBN-10 or ISBN-13",
+                        "name": "isbn",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.DnbSchlagwortVorschlag"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "502": {
+                        "description": "Bad Gateway",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/schlagworte/loeschen": {
             "post": {
                 "consumes": [
@@ -3896,6 +3943,29 @@ const docTemplate = `{
                 },
                 "vorname": {
                     "type": "string"
+                }
+            }
+        },
+        "api.DnbSchlagwortVorschlag": {
+            "type": "object",
+            "properties": {
+                "dnb_satz": {
+                    "description": "DNBSatz: false = die DNB kennt die ISBN nicht; beide Listen sind dann leer.",
+                    "type": "boolean"
+                },
+                "schlagwort_vorschlaege": {
+                    "description": "SchlagwortVorschlaege: die Wörter der eigenen Liste, die der Satz als Gattung, Verlagswort\noder Normdatei-Schlagwort nennt, aufgelöst über Verweise; alphabetisch.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "schlagwort_vorschlaege_neu": {
+                    "description": "SchlagwortVorschlaegeNeu: Normdatei-Schlagwörter, die die Liste noch nicht kennt. Wer eines\nanklickt, legt es mit dem Speichern in der Liste an.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

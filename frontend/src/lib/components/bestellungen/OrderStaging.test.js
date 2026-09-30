@@ -181,7 +181,11 @@ describe('OrderStaging: Schlagworte', () => {
 	// was jemand übernommen hat.
 	it('bietet den DNB-Vorschlag an und schreibt nur, was jemand übernimmt', async () => {
 		antworten([]);
-		const screen = fenster({ ...titel, schlagwort_vorschlaege: ['Krieg', 'Erste Liebe'] });
+		const screen = fenster({
+			...titel,
+			schlagwort_vorschlaege: ['Krieg', 'Erste Liebe'],
+			dnb_vorschlag_da: true
+		});
 		await feldBereit(screen);
 		expect(screen.getByRole('group', { name: 'Vorschläge aus der DNB' })).toBeTruthy();
 
@@ -202,7 +206,8 @@ describe('OrderStaging: Schlagworte', () => {
 		const screen = fenster({
 			...titel,
 			schlagwort_vorschlaege: ['Krieg'],
-			schlagwort_vorschlaege_neu: ['Judo', 'Schulstress']
+			schlagwort_vorschlaege_neu: ['Judo', 'Schulstress'],
+			dnb_vorschlag_da: true
 		});
 		await feldBereit(screen);
 		const neu = screen.getByRole('group', { name: 'Neue Schlagworte aus der DNB' });
@@ -217,6 +222,60 @@ describe('OrderStaging: Schlagworte', () => {
 		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
 			schlagworte: ['Judo']
 		});
+	});
+
+	// Nachbestellen (entschieden am 30.09.2026): Ein Titel, der schon im Katalog stand, bringt
+	// keinen Vorschlag mit — die Tür hat die DNB nicht gefragt. Der Knopf holt ihn; angeboten wird
+	// nur, was der Titel noch nicht trägt, und geschrieben erst mit dem Warenkorb.
+	it('holt beim vorhandenen Titel den DNB-Vorschlag auf Knopfdruck, ohne die vorhandenen', async () => {
+		antworten(['Krieg']);
+		const ohneDnb = vi.mocked(apiFetch).getMockImplementation();
+		vi.mocked(apiFetch).mockImplementation(async (url, ...rest) =>
+			String(url) === '/api/schlagworte/dnb-vorschlag?isbn=9783751200530'
+				? /** @type {any} */ ({
+						ok: true,
+						json: async () => ({
+							dnb_satz: true,
+							schlagwort_vorschlaege: ['Freundschaft', 'Krieg'],
+							schlagwort_vorschlaege_neu: ['Schulstress']
+						})
+					})
+				: /** @type {any} */ (ohneDnb?.(url, ...rest))
+		);
+		const screen = fenster({ ...titel, isbn: '978-3-7512-0053-0' });
+		await feldBereit(screen);
+
+		await fireEvent.click(screen.getByRole('button', { name: 'Vorschläge aus der DNB' }));
+		const liste = await vi.waitFor(() =>
+			screen.getByRole('group', { name: 'Vorschläge aus der DNB' })
+		);
+		expect(liste.textContent).toContain('Freundschaft');
+		expect(liste.textContent, 'trägt der Titel schon').not.toContain('Krieg');
+		expect(
+			screen.getByRole('group', { name: 'Neue Schlagworte aus der DNB' }).textContent
+		).toContain('Schulstress');
+
+		await fireEvent.click(screen.getByRole('button', { name: '„Freundschaft“ übernehmen' }));
+		screen.getByRole('button', { name: 'In den Warenkorb' }).click();
+		await vi.waitFor(() => expect(orderStore.addToCart).toHaveBeenCalled());
+		expect(apiPut).toHaveBeenCalledWith('/api/buecher/titel/t-1/schlagworte', {
+			schlagworte: ['Krieg', 'Freundschaft']
+		});
+	});
+
+	it('zeigt beim eben aus der DNB angelegten Titel keinen Knopf — der Vorschlag liegt bei', async () => {
+		antworten([]);
+		const screen = fenster({
+			...titel,
+			isbn: '9783751200530',
+			schlagwort_vorschlaege: ['Krieg'],
+			dnb_vorschlag_da: true
+		});
+		await feldBereit(screen);
+		expect(screen.queryByRole('button', { name: 'Vorschläge aus der DNB' })).toBeNull();
+		expect(screen.getByRole('group', { name: 'Vorschläge aus der DNB' }).textContent).toContain(
+			'Krieg'
+		);
 	});
 
 	// Beim Tippen fragt das Feld über alle Wörter nach (Rasterdurchgang vom 30.09.2026): Ein
@@ -242,7 +301,7 @@ describe('OrderStaging: Schlagworte', () => {
 
 	it('schreibt keinen Vorschlag, den niemand übernommen hat', async () => {
 		antworten([]);
-		const screen = fenster({ ...titel, schlagwort_vorschlaege: ['Krieg'] });
+		const screen = fenster({ ...titel, schlagwort_vorschlaege: ['Krieg'], dnb_vorschlag_da: true });
 		await feldBereit(screen);
 
 		screen.getByRole('button', { name: 'In den Warenkorb' }).click();

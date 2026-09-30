@@ -9,7 +9,8 @@
 	import { showToast } from '$lib/store.svelte.js';
 	import { Camera, RefreshCw } from '@lucide/svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
-	let { formular = $bindable(), wirdGescannt = $bindable() } = $props();
+	/** dnbVorschlag: Nach einer ISBN-Abfrage mit Treffer holt er die Schlagworte der DNB dazu. */
+	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag = undefined } = $props();
 
 	let isLookupActive = $state(false);
 
@@ -44,6 +45,7 @@
 					formular.gradeLevel = parsedGrade;
 				}
 			}
+			if (daten.title) dnbVorschlag?.lade(formular.isbn);
 			// Klares Feedback statt stillem "nichts passiert"
 			showToast(
 				daten.title

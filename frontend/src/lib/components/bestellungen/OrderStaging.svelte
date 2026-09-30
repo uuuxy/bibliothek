@@ -134,6 +134,8 @@
 		titelId={book.id}
 		angebote={book.schlagwort_vorschlaege ?? []}
 		angeboteNeu={book.schlagwort_vorschlaege_neu ?? []}
+		isbn={book.isbn}
+		mitDnbKnopf={!book.dnb_vorschlag_da}
 	/>
 
 	<!-- Die Antwort entscheidet über den Topf: Lernmittel bestellt das Land (Lernmittel-

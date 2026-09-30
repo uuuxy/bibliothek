@@ -62,13 +62,20 @@ func TestTitelAusNachschlagen_SchlaegtSchlagworteVorOhneSieZuSetzen(t *testing.T
 	}
 }
 
-// dnbAttrappe beantwortet die Anfrage an die DNB mit einem festen Satz; alles andere
-// (Cover-Quellen) gibt es nicht.
-type dnbAttrappe struct{ satz string }
+// dnbAttrappe beantwortet die Anfrage an die DNB mit einem festen Satz, mit status (ohne
+// Angabe 200); alles andere (Cover-Quellen) gibt es nicht.
+type dnbAttrappe struct {
+	satz   string
+	status int
+}
 
 func (d dnbAttrappe) RoundTrip(r *http.Request) (*http.Response, error) {
 	if r.URL.Host == "services.dnb.de" {
-		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(d.satz)), Header: http.Header{}, Request: r}, nil
+		status := d.status
+		if status == 0 {
+			status = http.StatusOK
+		}
+		return &http.Response{StatusCode: status, Body: io.NopCloser(strings.NewReader(d.satz)), Header: http.Header{}, Request: r}, nil
 	}
 	return &http.Response{StatusCode: http.StatusNotFound, Body: http.NoBody, Header: http.Header{}, Request: r}, nil
 }

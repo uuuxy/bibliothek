@@ -7,6 +7,7 @@
 	import BuchExemplareListe from './BuchExemplareListe.svelte';
 	import BuchAuflagen from './BuchAuflagen.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 	import { BookOpen, Printer, Trash2, X } from '@lucide/svelte';
 
 	/** onDelete kommt nur mit dem Recht delete_books (admin/+page) — ohne Recht gibt es den Knopf nicht. */
@@ -23,6 +24,10 @@
 	let wirdGescannt = $state(false);
 	/** ISBN-Abfrage gescheitert — „nichts gefunden" und „Dienst weg" sehen sonst gleich aus. */
 	let lookupFehler = $state(false);
+	// Der Schlagwort-Vorschlag der DNB (entschieden am 30.09.2026): Beide ISBN-Abfragen — der
+	// Scan hier und das Feld in IsbnFeld — holen ihn nach einem Treffer dazu; bei einem Titel,
+	// den es schon gibt, der Knopf unter den Schlagworten.
+	const dnbVorschlag = erzeugeDnbSchlagwortVorschlag();
 
 	// Neuanlage eines Bibliotheksbuchs ohne Signatur ist gesperrt — die Signatur
 	// muss aufs Rücken-Etikett. Lernmittel tragen keins (Migration 093). Die DNB
@@ -51,6 +56,7 @@
 					if (data.coverUrl) formular.coverUrl = data.coverUrl;
 					if (data.subject) formular.subject = data.subject;
 					if (data.grade) formular.gradeLevel = parseInt(data.grade) || formular.gradeLevel;
+					if (data.title) dnbVorschlag.lade(code);
 				} else {
 					// Sweep „verschluckte Fehlantwort" (06.09.2026): Vorher blieb das Formular
 					// nach dem Scan einfach leer — nicht zu unterscheiden von „zu dieser ISBN
@@ -96,7 +102,7 @@
 				</p>
 			{/if}
 
-			<BuchEingabefelder bind:formular bind:wirdGescannt />
+			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} />
 			{#if formular.id}
 				<BuchAuflagen {formular} />
 				<BuchExemplareListe bind:formular />

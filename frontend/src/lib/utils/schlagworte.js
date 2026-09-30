@@ -36,6 +36,33 @@ export async function ladeSchlagwortVorschlaege(suche = '') {
 }
 
 /**
+ * Der Schlagwort-Vorschlag der DNB zu einer ISBN (GET /api/schlagworte/dnb-vorschlag, entschieden
+ * am 30.09.2026): die Wörter der eigenen Liste, die der DNB-Satz nennt, und die Normdatei-Wörter,
+ * die die Liste noch nicht kennt — dieselbe Regel wie beim Anlegen über die Bestellsuche. Nur
+ * angeboten, eingetragen wird über das Feld.
+ *
+ * Ein Fehler wirft: Der Aufrufer sagt „nicht erreichbar" an. Käme hier eine leere Antwort, sähe
+ * ein Ausfall der DNB aus wie „die DNB hat nichts".
+ *
+ * @param {string} isbn
+ * @returns {Promise<{ dnbSatz: boolean, liste: string[], neu: string[] }>}
+ */
+export async function ladeDnbSchlagwortVorschlag(isbn) {
+	const res = await apiFetch(`/api/schlagworte/dnb-vorschlag?isbn=${encodeURIComponent(isbn)}`);
+	if (!res.ok) {
+		throw new Error(`DNB-Vorschlag nicht geladen (${res.status})`);
+	}
+	const antwort = await res.json();
+	const liste = antwort?.schlagwort_vorschlaege;
+	const neu = antwort?.schlagwort_vorschlaege_neu;
+	return {
+		dnbSatz: antwort?.dnb_satz === true,
+		liste: Array.isArray(liste) ? liste : [],
+		neu: Array.isArray(neu) ? neu : []
+	};
+}
+
+/**
  * Die Schlagworte EINES Titels. Der Bestellkorb braucht sie, bevor er ändert: Er ersetzt
  * die Menge als Ganzes, und wer die vorhandenen nicht kennt, überschriebe sie mit seinem
  * ersten Wort. Anders als bei den Vorschlägen ist ein Fehler hier deshalb ein Fehler —
