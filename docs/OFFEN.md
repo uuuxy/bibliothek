@@ -77,8 +77,9 @@ Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Aus der Gruppe „kann still jemandem schaden" (entschieden am 28.09.2026) ist nur 5.29 offen,
    zurückgestellt (siehe oben). Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu
-   4.22, 4.24, 4.25 (vorhandene Titel) und 4.27 stehen die Empfehlungen der Frage-Runde vom
-   30.09.2026; die Antworten stehen aus.
+   4.22 und 4.24 stehen die Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen
+   aus. Entschieden am 30.09.2026 und zu bauen: 4.25 (Vorschlag für vorhandene Titel); seine
+   Stelle in der Reihenfolge steht aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -283,7 +284,7 @@ oder geliehen? **Empfehlung (Frage-Runde):** kein dritter Eigentümer im Program
 behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
 dann über den Schulträger, bei 90 Büchern ein seltener Fall.
 
-### 4.25 Schlagwort-Vorschlag aus der DNB auch für Titel, die es schon gibt?
+### 4.25 Schlagwort-Vorschlag aus der DNB auch für Titel, die es schon gibt
 
 Einen Vorschlag bekommt nur ein Titel, der beim Bestellen neu aus der DNB entsteht
 (`SchlagwortVorschlaege` in `api/isbn_handler.go`, nur bei `exists=false`); ein Treffer aus dem
@@ -292,56 +293,8 @@ Einträge keine Schlagworte, 4.891 davon kein Lernmittel, 4.862 mit ISBN — vie
 Littera-Schulen bewusst nicht verschlagworten (Handbuch der Schulbibliothek Butzbach: „Lexika,
 Jugendbücher und Belletristik müssen nicht verschlagwortet werden"). Littera bietet für vorhandene
 Titel einen Online-Abgleich über die ISBN an, mit Vorschau und je Feld „keine Änderung / hinzufügen
-/ ersetzen". **Frage:** Ein Vorschlag auch für vorhandene Titel? **Empfehlung (Frage-Runde vom
-30.09.2026):** ja, auf Klick beim Nachbestellen und im Buchformular; kein Abgleich über den ganzen
-Katalog.
-
-### 4.27 Wer aus dem Kollegium geht, hat oft noch Bücher
-
-Gemeint ist jeder Leser außer dem Schüler: Praktikum, Lehrkraft, LiV, Sekretariat, U-plus; ein
-Fachbereich geht nicht. Schüler sind erfasst: Die Abgängerliste zeigt vom 1. Mai bis 31. Juli, wer
-noch Bücher hat, danach stehen sie unter _Ehemalige / Archiv_ und mit offenen Büchern im
-Mahnwesen ([HANDBUCH.md](HANDBUCH.md), „Abgänger").
-
-Vorgemerkt am 30.09.2026, beim Bau der Sonderkonten (Migration 153). Ein Praktikum endet nach
-Wochen; hat der Praktikant noch Bücher, fällt das heute nirgends auf. Für jeden Leser außer dem
-Schüler ist eine Ausleihe eine Dauerleihe: keine Mahnung, nie überfällig (entschieden am
-16.09.2026). Die Leserdatei zeigt die Art als Spalte, filtern oder sortieren lässt sich danach
-nicht. Löschen lässt sich ein Eintrag mit offenen Büchern nicht; er bleibt stehen, und die Bücher
-stehen nur in seiner Akte.
-
-Gemessen am 30.09.2026 in der Littera-Sicherung von 2010 (jüngste Ausleihe 19.11.2010):
-
-- Littera gab Praktikanten und Lehrern dieselbe Leihfrist, meist 21 Tage.
-- Praktikum: 9 Konten, 8 davon mit offenen Ausleihen (20 Bücher); bei 3 Konten lag ein Buch seit
-  mehr als zwei Jahren (725, 835 und 1.387 Tage).
-- Lehrkräfte: 158 Konten, 143 davon mit offenen Ausleihen (1.380 Bücher), die ältesten seit
-  mehr als neun Jahren.
-- Eine Mahnung hat Littera bei keiner der 15.615 Ausleihen vermerkt.
-
-Die Frist allein hat dort also nichts bewirkt. Die Lücke ist der Tag, an dem jemand geht — ein
-Praktikant nach Wochen, eine Lehrkraft beim Schulwechsel oder Ruhestand.
-
-**Frage:** Was soll geschehen, wenn jemand aus dem Kollegium die Schule verlässt und noch Bücher
-hat?
-
-**Nachgesehen am 30.09.2026:** Littera kennt kein Ablaufdatum am Leser, nur eine aufgedruckte
-Gültigkeit auf dem Ausweis. Es hat die „Liste der verliehenen Medien", nach Lesergruppe filterbar
-und laut Handbuch „auch als Mahnliste" verwendbar, eine Löschliste „seit … nicht ausgeliehen", in
-der Leser mit offenen Büchern rot stehen, und je Leser die Markierung „Mahnen". In der
-Schulbibliothek Butzbach (Littera, Hessen) steht das Kollegium auf der wöchentlichen Mahnliste:
-„danach folgen die Lehrer und die Referendare". Koha führt je Konto ein Ablaufdatum, warnt beim
-Ausleihen davor (NotifyBorrowerDeparture) und kann die Rückgabe darauf begrenzen
-(ReturnBeforeExpiry: „Require patrons to return items before their accounts expire").
-
-**Empfehlung (Frage-Runde):** ein Enddatum am Leser — Pflicht beim Praktikum, freiwillig bei LiV,
-U-plus, Sekretariat und Lehrkraft, nicht beim Fachbereich. In den letzten 14 Tagen zeigt die Theke
-beim Ausleihen „geht am …, hat noch N Bücher"; die Bücher sind am Enddatum fällig; danach keine
-Ausleihe, und die Person steht auf einer Liste „gegangen, Bücher nicht zurück", ohne Mahnbrief und
-Forderung (wie am 16.09.2026 entschieden). Dazu die Leserdatei nach Art filterbar, mit der Zahl
-offener Bücher, für alle ohne Datum. Sind nach dem Ende alle Bücher zurück, wird der Eintrag nach
-derselben Karenz wie beim Schüler gelöscht; heute bleibt ein Kollege, bis ihn jemand von Hand
-löscht.
+/ ersetzen". **Entschieden am 30.09.2026:** Einen Vorschlag gibt es auch für vorhandene Titel, auf
+Klick beim Nachbestellen und im Buchformular; kein Abgleich über den ganzen Katalog. Nicht gebaut.
 
 ---
 
