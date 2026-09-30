@@ -64,9 +64,9 @@
 <div class="max-w-3xl space-y-8">
 	<div>
 		<h3 class="text-base font-bold text-slate-900">E-Mail Routing für Mahnungen</h3>
-		<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-2xl">
-			Ordnet jeder Klasse eine E-Mail-Adresse zu. Wird im Mahnwesen als Empfänger für
-			Benachrichtigungen vorausgefüllt.
+		<p class="mt-1 max-w-2xl text-sm text-on-surface-variant">
+			Wer die Mahnliste einer Klasse bekommt – hier von Hand eingetragen, die LUSD liefert es nicht;
+			die Versetzung rückt jede Zuordnung eine Stufe hoch, außer vor Klasse 7 und vor der Oberstufe.
 		</p>
 	</div>
 

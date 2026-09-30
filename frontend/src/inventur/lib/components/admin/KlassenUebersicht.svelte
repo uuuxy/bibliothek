@@ -95,7 +95,7 @@
 	 * @param {string} className
 	 */
 	async function deleteGroup(className) {
-		if (!(await loeschenBestaetigen(`Klasse ${className} löschen?`))) return;
+		if (!(await loeschenBestaetigen(`Buchliste von ${className} löschen?`))) return;
 		try {
 			const res = await apiFetch(
 				`/api/admin/class-books?className=${encodeURIComponent(className)}`,

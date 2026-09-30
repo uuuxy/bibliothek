@@ -98,8 +98,8 @@
 				<button
 					onclick={onDelete}
 					class="text-rose-500 hover:text-rose-600 hover:bg-rose-50 p-2 rounded-lg transition-colors cursor-pointer"
-					title="Klasse löschen"
-					aria-label="Klasse löschen"
+					title="Buchliste löschen"
+					aria-label="Buchliste löschen"
 				>
 					<Trash2 class="w-5 h-5" aria-hidden="true" />
 				</button>

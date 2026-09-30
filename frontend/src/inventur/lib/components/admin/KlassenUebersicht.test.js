@@ -63,7 +63,7 @@ describe('KlassenUebersicht', () => {
 
 		expect(screen.queryByRole('button', { name: /Klasse hinzufügen/ })).toBeNull();
 		expect(screen.queryByRole('button', { name: 'Klasse bearbeiten' })).toBeNull();
-		expect(screen.queryByRole('button', { name: 'Klasse löschen' })).toBeNull();
+		expect(screen.queryByRole('button', { name: 'Buchliste löschen' })).toBeNull();
 	});
 
 	it('zeigt die Verwaltungsknöpfe mit edit_books', async () => {
@@ -74,6 +74,6 @@ describe('KlassenUebersicht', () => {
 
 		expect(screen.getByRole('button', { name: /Klasse hinzufügen/ })).toBeTruthy();
 		expect(screen.getAllByRole('button', { name: 'Klasse bearbeiten' })).toHaveLength(2);
-		expect(screen.getAllByRole('button', { name: 'Klasse löschen' })).toHaveLength(2);
+		expect(screen.getAllByRole('button', { name: 'Buchliste löschen' })).toHaveLength(2);
 	});
 });
