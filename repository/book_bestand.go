@@ -18,10 +18,17 @@ package repository
 //     Trefferliste über einen Titel, dessen Exemplare alle unterwegs sind, „Keine
 //     Exemplare" — und schickte den Kollegen ins Regal (docs/OFFEN.md 5.5).
 const (
+	// SQLExemplarImBestand ist die Grenze von „gesamt" selbst, für Abfragen über die
+	// Exemplare als `e`. Die Buchmaske zeigt diese Zahl im Feld „Aktueller Bestand", und die
+	// Bestandskorrektur dahinter (inventur.syncBookStock) zählt und sondert mit derselben
+	// Grenze aus: Zählte sie die bestellten Exemplare mit, hielte sie die Zahl der Maske für
+	// eine Verringerung.
+	SQLExemplarImBestand = `e.ist_ausgesondert = false AND e.bestellstatus IS NULL`
+
 	// SQLBestandGesamt zählt die Exemplare eines Titels, die im Bestand stehen.
 	// Einzusetzen in eine SELECT-Liste; der Titel muss als `b` gebunden sein.
 	SQLBestandGesamt = `(SELECT count(*) FROM buecher_exemplare e
-		WHERE e.titel_id = b.id AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL)`
+		WHERE e.titel_id = b.id AND ` + SQLExemplarImBestand + `)`
 
 	// SQLBestandVerfuegbar zählt davon die, die jemand sofort mitnehmen könnte.
 	SQLBestandVerfuegbar = `(SELECT count(*) FROM buecher_exemplare e

@@ -52,7 +52,7 @@ func TestCreateBook(t *testing.T) {
 			).
 			WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow("book-123"))
 
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare WHERE titel_id = \$1 AND ist_ausgesondert = false`).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 		codes := erwarteBarcodeVergabe(mock, 10)

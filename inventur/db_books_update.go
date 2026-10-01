@@ -143,11 +143,15 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 
 // syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
 //
+// Gezählt und ausgesondert werden nur Exemplare im Bestand (repository.SQLExemplarImBestand),
+// die Zahl, die die Maske zeigt. Bestellte Exemplare gehören dem Wareneingang: Sie zählen
+// hier nicht mit und werden über die Zahl nicht ausgesondert.
+//
 // q ist repository.DBQueryer statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
 // Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides.
 func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQueryer, titelID string, expectedStock int) error {
 	var currentStock int
-	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare WHERE titel_id = $1 AND ist_ausgesondert = false`, titelID).Scan(&currentStock)
+	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = $1 AND `+repository.SQLExemplarImBestand, titelID).Scan(&currentStock)
 	if err != nil {
 		return fmt.Errorf("fehler beim ermitteln des aktuellen bestands: %w", err)
 	}
@@ -191,7 +195,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQu
 				SELECT e.id
 				FROM buecher_exemplare e
 				LEFT JOIN ausleihen a ON a.exemplar_id = e.id AND a.rueckgabe_am IS NULL
-				WHERE e.titel_id = $1 AND e.ist_ausgesondert = false AND a.id IS NULL
+				WHERE e.titel_id = $1 AND ` + repository.SQLExemplarImBestand + ` AND a.id IS NULL
 				LIMIT $2
 			)
 		`
@@ -211,7 +215,7 @@ func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQu
 				WHERE id IN (
 					SELECT e.id
 					FROM buecher_exemplare e
-					WHERE e.titel_id = $1 AND e.ist_ausgesondert = false
+					WHERE e.titel_id = $1 AND ` + repository.SQLExemplarImBestand + `
 					LIMIT $2
 				)
 			`

@@ -53,7 +53,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 
 		// syncBookStock query (in der Tx)
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare WHERE titel_id = \$1 AND ist_ausgesondert = false`).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(10))
 		mock.ExpectCommit()
@@ -127,7 +127,7 @@ func TestSyncBookStock(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("increase stock", func(t *testing.T) {
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare WHERE titel_id = \$1 AND ist_ausgesondert = false`).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(2))
 
@@ -142,7 +142,7 @@ func TestSyncBookStock(t *testing.T) {
 	})
 
 	t.Run("decrease stock - only unused", func(t *testing.T) {
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare WHERE titel_id = \$1 AND ist_ausgesondert = false`).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
@@ -157,7 +157,7 @@ func TestSyncBookStock(t *testing.T) {
 	})
 
 	t.Run("decrease stock - fallback to used", func(t *testing.T) {
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare WHERE titel_id = \$1 AND ist_ausgesondert = false`).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
@@ -177,7 +177,7 @@ func TestSyncBookStock(t *testing.T) {
 	})
 
 	t.Run("no change in stock", func(t *testing.T) {
-		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare WHERE titel_id = \$1 AND ist_ausgesondert = false`).
+		mock.ExpectQuery(`SELECT COUNT\(\*\) FROM buecher_exemplare e WHERE e.titel_id = \$1 AND e.ist_ausgesondert = false AND e.bestellstatus IS NULL`).
 			WithArgs("book-123").
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(5))
 
