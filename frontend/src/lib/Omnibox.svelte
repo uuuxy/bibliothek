@@ -108,14 +108,11 @@
 
 <OmniboxScreenFlash />
 
-<!-- Die Suchleiste ist oben ANGEDOCKT und bleibt es (Material 3): Sie ist ein
-     persistentes Element, aus dem die Ergebnisse aufklappen — sie wechselt nicht selbst
-     die Position. Vorher stand sie im Ruhezustand mittig (min-h-[60vh] justify-center)
-     und sprang beim ersten Scan nach oben. Schon die frühere Animation dieses Sprungs
-     war Wartezeit; der Sprung selbst ist es auch, nur kürzer. Ein Feld, das man mit dem
-     Scanner blind bedient, darf seinen Platz nicht wechseln.
-     Der äußere Container trägt nur die Positionierung für das Relief. -->
-<div class="relative flex flex-1 flex-col w-full overflow-x-hidden">
+<!-- Die Suchleiste ist oben angedockt und bleibt beim Scrollen stehen (Material 3): Ein Feld,
+     das man mit dem Scanner blind bedient, darf seinen Platz nicht wechseln. Der äußere
+     Container trägt nur die Positionierung für das Relief; overflow-x-clip statt -hidden,
+     weil hidden ihn zum Scrollbereich machte und die Leiste dann mit dem Inhalt wegrollte. -->
+<div class="relative flex flex-1 flex-col w-full overflow-x-clip">
 	{#if !omniboxStore.isActive}
 		<!-- Nur im Ruhezustand: Sobald ein Konto geladen ist, füllt der Inhalt die Fläche,
 		     und ein Wasserzeichen dahinter wäre Unruhe statt Dekoration. -->
@@ -125,9 +122,11 @@
 	<!-- relative z-10: Das Relief ist absolut positioniert und läge sonst optisch ÜBER
 	     diesem Inhalt (positionierte Elemente malen über nicht-positionierte). -->
 	<div
-		class="relative z-10 w-full mx-auto flex flex-1 flex-col items-center space-y-6 pt-4 justify-start"
+		class="relative z-10 w-full mx-auto flex flex-1 flex-col items-center space-y-4 justify-start"
 	>
-		<div class="w-full sticky -top-4 z-30 bg-slate-50 py-4">
+		<!-- Die Fläche der Leiste hat die Farbe der Seite: In Ruhe ist hinter ihr nichts zu
+		     sehen, beim Scrollen verdeckt sie den Inhalt, der unter ihr durchläuft. -->
+		<div class="w-full sticky top-0 z-30 bg-surface-container-lowest pb-2">
 			<!-- Material-3-Suchleiste: weiche Pille mit Flächen-Fokus. Bewusst rounded-full und
 		     bewusst 48 px statt der 36-px-Control-Höhe — das Scanfeld ist das globale Werkzeug
 		     des Kiosks und soll sich von den eckigen Datenfeldern abheben. Der Container trägt

@@ -297,15 +297,15 @@ for (const { name, pfad, id, anmelden } of MIT_FOKUS) {
 /**
  * Die Seiten, auf denen die Startlinie gilt: eine Verwaltungsseite mit einer Suchpille.
  *
- * Kiosk und OPAC stehen bewusst NICHT hier. Der Kiosk ist ein Ruhebildschirm ohne
- * Seitenleiste (nur Scanfeld und Wasserzeichen, Ansage vom 02.09.2026), der OPAC
- * eine oeffentliche Seite mit eigenem Kopf. Beide messen ihr AUSSEHEN oben mit — nur ihre
- * Position ist eine andere Frage.
+ * Der OPAC steht bewusst NICHT hier: eine oeffentliche Seite mit eigenem Kopf. Sein
+ * AUSSEHEN misst der Test oben mit, seine Position ist eine andere Frage. Die Theke steht
+ * seit dem 01.10.2026 hier: Ihre Leiste begann 32 px tiefer als auf den anderen Seiten.
  *
  * `reiter` sagt, ob ueber der Suche ein Reiterband steht. Das ist die EINZIGE Sache, die
  * dort stehen darf.
  */
 const STARTLINIE = [
+	{ name: 'Kiosk (Omnibox)', pfad: '/kiosk', id: 'omnibox-input', reiter: false },
 	{ name: 'Medienkatalog', pfad: '/medienkatalog', id: 'katalog-suchfeld', reiter: true },
 	{ name: 'Leserdatei', pfad: '/schuelerdatei', id: 'schuelerdatei-suchfeld', reiter: true },
 	{ name: 'Mahnwesen', pfad: '/mahnwesen', id: 'mahnwesen-suchfeld', reiter: true },
