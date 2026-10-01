@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-09-29
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-01
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -291,13 +291,15 @@ Ferien, 4. Stunde), die Bücherausgabe danach BEGINNT.
   durchgehen. Ohne DB überspringen sie sich — `TestDBTestsLaufenInCI` stellt sicher,
   dass das **in CI** nicht unbemerkt passiert.
 
-## Das Raster — die vierzehn Fragen, und ihre Frontend-Lesart
+## Das Raster — die achtzehn Fragen, und ihre Frontend-Lesart
 
 **Wann:** beim Formwechsel eines Schreibpfads (neuer Endpunkt, neuer Rumpf, andere
 Speicher-Granularität) — nicht bei Kosmetik. Frage 12 zusätzlich bei JEDER Migration,
 Frage 13 immer dann, wenn eine Tabelle, Spalte oder ein Feld ihre Bedeutung ändert, ohne
 den Namen zu wechseln, Frage 14 bei jeder Migration und jedem Import, der vorhandene Werte
-überträgt, umdeutet oder löscht. Die Durchgänge samt Funden stehen in
+überträgt, umdeutet oder löscht. Die Fragen 15 bis 18 bei jeder Änderung an einer Maske,
+einem Dialog oder einem Bildschirm, an dem gescannt wird; Frage 17 außerdem überall, wo ein
+Pfad eine Tür zumacht oder auf einen fremden Dienst wartet. Die Durchgänge samt Funden stehen in
 den Commit-Nachrichten (`git log --grep=Rasterdurchgang`), was davon offen ist in [OFFEN.md](OFFEN.md), die Bestands-Achse (bekannte Bugklasse × ganzer Baum) in
 [sweeps.md](sweeps.md). Die kanonische Liste steht hier, weil sweeps.md hierher zeigt
 und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
@@ -316,6 +318,10 @@ und die Fragen sonst nur verstreut in den Durchgangs-Protokollen stünden.
 12. **Gegenrichtung Schema** — was TUT die Datenbank, das im Code nirgends steht? Fremdschlüssel mit Löschwirkung (CASCADE/SET NULL), CHECK-Bedingungen, Trigger.
 13. **Bedeutungswechsel unter gleichem Namen** — hat dieser Name seit gestern eine andere Bedeutung, und wer liest ihn noch in der alten?
 14. **Datenlage** — was steht in den Zeilen, auf die der Pfad trifft, gemessen am echten Bestand und nicht an der Seed-Datenbank? Trägt die neue Regel jede Form, die dort vorkommt?
+15. **Ungespeichertes** — was steht nur im Browser (getippt, gewählt, eingereiht), und was nimmt es weg: die Sperre, das Ende der Anmeldung, ein Wechsel der Ansicht, ein Neuladen, eine Rückfrage? Bleibt es stehen, oder sagt das Programm es vorher?
+16. **Eingabeweg** — wohin geht ein Scan (Zeichenfolge und Enter), wenn dieser Bildschirm oder Dialog offen ist: in welches Feld, auf welchen Knopf? Hört ein Feld, in das gescannt wird, auf das Enter?
+17. **Ausfall** — wovon hängt der Pfad ab, das fehlen kann (Mailserver, Netz, Datenbank, Katalogdienste), und was kann die Person an der Theke dann noch tun? Macht der Pfad eine Tür zu: Wie kommt man in jedem dieser Fälle wieder hinein?
+18. **Veralteter Stand** — zwischen Laden und Speichern liegt Zeit. Was schreibt der Pfad zurück, das die Person nicht angefasst hat, und was überschreibt er damit, wenn inzwischen ein anderer Arbeitsplatz, ein Import oder ein Hintergrundlauf gespeichert hat?
 
 ### Zu Frage 12 (neu am 06.09.2026)
 
@@ -403,6 +409,70 @@ Migration, die vorhandene Zeilen ändert oder Daten wegnimmt, im Kopf einen Satz
 „gemessen" und dem Datum oder „Ohne Messung:" mit Grund. Die Zeile beweist nicht, dass
 gemessen wurde; sie stellt die Frage dort, wo die Migration entsteht.
 
+### Zu den Fragen 15 bis 18 (neu am 01.10.2026)
+
+Die vierzehn Fragen davor lesen Code, Schema und Daten. Keine fragt nach dem, was zwischen
+Mensch und Server liegt: nach der Eingabe, die der Server noch nicht kennt, nach dem Gerät,
+das sie liefert, nach dem Dienst, der gerade fehlt, und nach dem Stand, der seit dem Laden
+veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderungen seit dem
+30.09.2026 gestellt; jede brachte einen nachgestellten Fund. Was davon offen ist, steht in
+[OFFEN.md](OFFEN.md) 5.5 und 5.44.
+
+- **15 · Ungespeichertes.** Seit `729a7271` (22.08.2026) rendert `App.svelte` hinter der
+  Sperre nach Inaktivität die Anwendung nicht. Was getippt und nicht gespeichert war, ist
+  nach dem Aufschließen weg: Die Maske „Neues Buch" ist zu, die Seite steht auf ihrem ersten
+  Reiter (im Browser nachgestellt). Der Verlassen-Schutz des LMF-Planers
+  (`uiStore.verlassenSperre`) wird nur beim Wechsel des Menüpunkts und beim Schließen des
+  Fensters gefragt. Dieselbe Form früher: die umgeordnete Reihenfolge im Planer
+  (07.09.2026), die letzte Änderung im Ausweis-Designer (24.08.2026). Frage 8 fragt in der
+  Frontend-Lesart das Gegenteil: was beim Verlassen zurück auf Anfang muss.
+- **16 · Eingabeweg.** Ein Handscanner ist eine Tastatur und tippt in das, was den Fokus hat.
+  Mit dem Scanner-Fenster der Titel-Verwaltung (`63c436c6`) entfiel das Feld „Handscanner /
+  ISBN-Eingabe", das auf Enter hörte. In der Maske „Neues Buch" steht der Fokus nach dem
+  Öffnen in keinem Feld, und Enter im ISBN-Feld löst weder die Frage nach dem vorhandenen
+  Titel noch die ISBN-Abfrage aus (im Browser nachgestellt, blind getippt). Dieselbe Form
+  früher: das Scanfeld der Theke ohne Fokus nach dem ersten Scan (`768f44f`, 28.07.2026),
+  ein Dialog, der beim Scan aufgeht und den nächsten Scan bekommt (24.09.2026,
+  `frontend/e2e/sperre.spec.js`).
+- **17 · Ausfall.** Antworten die Katalogdienste nicht, lässt sich kein neues Buch
+  speichern, dem Cover oder Listenpreis fehlt: `ergaenzeBuchMetadaten` fragt vor dem
+  Schreiben DNB, Google Books und OpenLibrary der Reihe nach (je 8 s Frist), die Oberfläche
+  gibt nach 10 s auf, gespeichert wird nichts (am Stack nachgestellt mit Diensten, die nicht
+  antworten; mit Cover und Preis antwortet dieselbe Tür sofort mit 201). Dieselbe Frage hat
+  früher drei Türen offen gehalten: Ohne Netz wird nicht gesperrt (`f7133548`, 16.09.2026),
+  ein Ausfall des Mailservers zählt nicht als Fehlversuch (20.08.2026) und sperrt seit
+  Migration 155 niemanden aus (`0d6ff8e0`, dort auch der Fall im Übergang beim Update).
+- **18 · Veralteter Stand.** `PUT /api/books/{id}` schreibt den Titel als Ganzes, und die
+  Maske schickt den Bestand als Zahl aus dem Augenblick des Öffnens mit, auch wenn niemand
+  das Feld angefasst hat (`speichereBuch`). Zwei Folgen, beide nachgestellt: Speichern zwei
+  Arbeitsplätze denselben Titel nacheinander, gilt der zweite Stand ganz — die Signatur des
+  ersten ist ohne Meldung zurückgesetzt. Kommen zwischen Öffnen und Speichern fünf Exemplare
+  dazu, sondert das Speichern einer Signatur-Änderung fünf Exemplare wieder aus
+  (`syncBookStock`), darunter das ursprüngliche. Die Rückfrage „Gesamtbestand verringern?"
+  vergleicht gegen die geladene Liste, nicht gegen den Titel: Steht er nicht in ihr, kommt
+  sie nicht. Der LMF-Planer hat für dieselbe Lage ein Signal über die Live-Leitung
+  (`fremdesSignal`).
+
+Ein Gate hat keine der vier Fragen. Für 16 gibt es ein Muster (`page.keyboard.type` und
+Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 15 und 18 entsteht der
+Test mit der jeweiligen Behebung.
+
+Schärfungen ohne neue Nummer, vom selben Durchgang:
+
+- **Frage 5, der zweite Versuch:** Was geschieht beim zweiten Mal — Doppelklick, erneutes
+  Senden nach einer Zeitüberschreitung, zweiter Lauf? Belege vom 01.10.2026: Zwei Abfragen
+  und zwei Speicherversuche derselben ISBN ergeben vier Cover-Dateien (OFFEN.md 5.5); die
+  Kontrast-Spec scheitert im zweiten Lauf auf derselben Datenbank (OFFEN.md 5.10).
+- **Frage 8, was liegen bleibt:** Der Lebenszyklus gilt auch für Dateien auf der Platte und
+  für Einträge im Speicher des Browsers, nicht nur für Zeilen.
+- **Frage 10, der Übergang:** Was lebt über ein Update oder einen Rückbau hinweg — offene
+  Fenster mit dem alten Programm, laufende Anmeldungen, eingereihte Vorgänge,
+  zwischengespeicherte Seiten — und versteht jede Seite die Form der anderen? Belege:
+  Anmeldungen ohne Zeile in `sitzungen` nach dem Einspielen von Migration 155 (`0d6ff8e0`);
+  die neuere Startseite nach einem Rückbau (OFFEN.md 6.1).
+- **Frage 14, die Menge:** Schneidet der Pfad an einer Grenze ab, und sagt er es? Beleg: die
+  Vorschläge nur aus den 500 häufigsten Wörtern (`1a0ba055`, 30.09.2026).
+
 ### Frontend-Lesart (ergänzt 31.08.2026)
 
 Anlass: Beim Komplett-Durchgang 31.08. fielen alle drei Frontend-A-Funde unter
@@ -411,14 +481,18 @@ wurde („Schreibpfad" = Handler, „Tür" = Endpunkt). Dieselben Fragen, übers
 
 | Frage                  | Backend-Begriff                             | Frontend-Begriff                                                                                                                                  |
 | ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2 · Spezialwert        | leer/0/nil im Rumpf                         | ein geleertes Zahlenfeld wird beim Umrechnen zur 0 — „nicht anfassen" und „kein Stück" sind dann dieselbe Eingabe (01.10.2026, Bestand in der Buchmaske) |
 | 3 · zwei Türen         | zweiter Endpunkt schreibt denselben Zustand | zweiter Ort für denselben Zustand: Komponenten-State neben dem Store, localStorage neben dem Backend (Multi-PC!)                                  |
-| 5 · stille Fehler      | 200 ohne Wirkung                            | Ladefehler ohne Fehlerzustand — ein catch, das alten Inhalt stehen lässt und nichts anzeigt; Erfolgsmeldung aus der Eingabe statt aus der Antwort |
+| 5 · stille Fehler      | 200 ohne Wirkung                            | Ladefehler ohne Fehlerzustand — ein catch, das alten Inhalt stehen lässt und nichts anzeigt; Erfolgsmeldung aus der Eingabe statt aus der Antwort; ein Knopf, dessen Weg ohne Anfrage und ohne Meldung endet |
 | 6 · Zeit               | Zeitzone, Tx-Fenster                        | Antwort-Reihenfolge: überholt die langsame Antwort die schnelle? Sequenznummer wie im orderStore                                                  |
 | 8 · Lebenszyklus       | Frist, Löschjob                             | Bediener- und Ansichtswechsel: welcher State muss beim Verlassen zurück auf Anfang — und welcher Code tut das wirklich?                           |
-| 11 · geteilter Zustand | Wächter/Lader je Pfad                       | wer lädt den Store auf DIESEM Einstieg — und unmountet das Ergebnis seinen eigenen Lader?                                                         |
+| 11 · geteilter Zustand | Wächter/Lader je Pfad                       | wer lädt den Store auf DIESEM Einstieg — und unmountet das Ergebnis seinen eigenen Lader? Prüft ein Wächter gegen die geladene Liste statt gegen den Datensatz, entfällt er, sobald der Datensatz nicht in ihr steht |
 
-Die übrigen Fragen (1, 2, 4, 7, 9, 10) gelten wörtlich auch vorn — Frage 4 heißt dort:
-das Recht steuert das Menü UND die Route, nie nur eines von beiden.
+Die übrigen Fragen bis 14 (1, 4, 7, 9, 10) gelten wörtlich auch vorn — Frage 4 heißt dort:
+das Recht steuert das Menü UND die Route, nie nur eines von beiden. Die Fragen 15 bis 18
+sind an der Oberfläche gestellt; am Server heißt 17 „welche Frist hat der Aufruf nach
+außen, und was antwortet die Tür, wenn sie abläuft?" und 18 „prüft die Tür beim Schreiben,
+ob der Stand noch der gelesene ist?".
 
 ---
 

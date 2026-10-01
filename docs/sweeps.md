@@ -1,6 +1,6 @@
 # Sweeps — der Prüfvorrat über den Bestand
 
-**Zweck:** Das Raster (siehe `invarianten.md`, vierzehn Fragen) prüft
+**Zweck:** Das Raster (siehe `invarianten.md`, achtzehn Fragen) prüft
 eine **Änderung**: Wenn ein Schreibpfad seine Form wechselt, werden sie
 gestellt. Es sieht nicht, was schon da ist. Diese Seite ist die zweite Achse — der
 **Bestand**: bekannte Bugklassen, je mit einem Suchmuster, das über den ganzen Code
@@ -99,7 +99,7 @@ Was davon offen ist, steht in [OFFEN.md](OFFEN.md).
 | **Verrottete Ausnahme-Begründung**        | Ein Eintrag im Bestand einer Ratsche begründet sich mit einer Tatsache („kein DB-Zugriff"), die der Code später widerlegt                                                                          | — (Detektor-Idee: Aufrufgraph gegen die Begründung)                                                                          | 10.09.: `fehler_kollaps_test.go` friert `claimsAusRequest`/`MeHandler`/`Refresh` mit „kein DB-Zugriff" ein — beide lesen die DB; berichtigt am 11.09.2026 (5cc80b89)                              |
 | **Frist am Tag des Ereignisses**          | Eine Regel nimmt einen Termin als Frist für einen Vorgang, der am oder nach dem Termin eine andere Bedeutung hat                                                                                   | `internal/service/lmf_frist_termintag_pg_test.go` (Matrix T−1/T/T+1 am Rückgabetermin, Uhr `defaultLoanService.jetzt`); übrige Fristquellen ohne Gate | 10.09.: vergangenes Leseclub-Datum (5f09591c). 14.09.2026: LMF-Frist am Rückgabetermin — Matrix T−1/T/T+1 mit fester Uhr (`lmf_frist_termintag_pg_test.go`)                                       |
 | **Timer überlebt den Abbau**              | Eine Action oder Komponente plant einen Timer und räumt ihn beim Abbau nicht; im Test läuft er nach dem Ende der Datei ohne jsdom — Unhandled Error, der ganze Lauf rot, obwohl jeder Test besteht | `keyboardNav.test.js` zählt nach `destroy` die offenen Timer (Fake-Timer)                                                    | 11.09.: `actions/keyboardNav.js`, drei CI-Läufe rot (7e52ebb8). Prüfmuster: jedes `setTimeout`/`setInterval` gegen `clearTimeout` im `destroy` bzw. Effekt-Cleanup; Vorbild `actions/tooltip.js`  |
-| **Wegweiser auf einen umbenannten Ort** | Ein Hinweistext schickt mit „A → B“ an einen Menüpunkt oder eine Kategorie der Einstellungen; nach einer Umbenennung in der Oberfläche zeigt er weiter auf den alten Namen | `api/betriebsbereitschaft_wegweiser_test.go` (liest die Texte der Selbstprüfung per AST und die Namen aus `menu.js` und `kategorien.js`, plus Selbstprobe); blind für Orte ohne Pfeil und für Reiter hinter dem Menüpunkt | 01.10.: drei Hinweise der Selbstprüfung — „Schülerdatei → …“ (seit dem 16.09.2026 Leserdatei), „System → Berechtigungen“ (Benutzer & Rechte) und „Mahnwesen → Klassenlehrer“ (Einstellungen → Mahnwesen-Routing; diese Form sieht das Gate nicht, der erste Schritt war ein Menüpunkt) |
+| **Wegweiser auf einen umbenannten Ort** | Ein Hinweistext schickt mit „A → B“ an einen Menüpunkt oder eine Kategorie der Einstellungen; nach einer Umbenennung in der Oberfläche zeigt er weiter auf den alten Namen | `api/betriebsbereitschaft_wegweiser_test.go` (liest die Texte der Selbstprüfung per AST und die Namen aus `menu.js` und `kategorien.js`, plus Selbstprobe); blind für Orte ohne Pfeil, für Reiter hinter dem Menüpunkt und für die Hinweise der Oberfläche (liest nur `api/betriebsbereitschaft.go`) | 01.10.: drei Hinweise der Selbstprüfung — „Schülerdatei → …“ (seit dem 16.09.2026 Leserdatei), „System → Berechtigungen“ (Benutzer & Rechte) und „Mahnwesen → Klassenlehrer“ (Einstellungen → Mahnwesen-Routing; diese Form sieht das Gate nicht, der erste Schritt war ein Menüpunkt). 01.10. abends: drei Hinweise der Oberfläche mit einem Ort, den es so nicht gibt (OFFEN.md 5.10) |
 
 ### Prüflauf 13.09.2026 — neue Klasse
 
@@ -151,6 +151,20 @@ aber nur Einzelfunde und keinen Detektor — die erste war damit in vier Monaten
 
 **Der Merksatz:** Eine Klasse, die schon dreimal dieselbe Zeile in einer anderen Datei war,
 braucht keinen weiteren Einzelfix, sondern eine Liste, die nur mit Begründung wächst.
+
+### Rasterdurchgang 01.10.2026 — fünf Formen, noch ohne Durchgang über den Bestand
+
+Anlass: die vier neuen Fragen des Rasters (15 bis 18, `invarianten.md`). Jede Form ist an
+einer Stelle nachgestellt; über den Bestand gesucht ist keine. Die Zeilen halten die Form
+fest, damit ein Durchgang ein Suchmuster hat. Was offen ist, steht in [OFFEN.md](OFFEN.md).
+
+| Bugklasse | Form | Gate | Stand |
+| --------- | ---- | ---- | ----- |
+| **Bildschirm weg, Eingabe weg** | Ein Zustandswechsel der Anwendung (Sperre nach Inaktivität, Ende der Anmeldung) baut einen Bildschirm ab, in dem Ungespeichertes steht; der Verlassen-Schutz hängt nur am Wechsel des Menüpunkts | — | 01.10.2026: die Sperre (OFFEN.md 5.44). Suchmuster: Masken mit Eingaben im Bildschirm, gegen jeden Zweig in `App.svelte`, der den Router abbaut |
+| **Absoluter Wert aus dem Ladezeitpunkt** | Eine Maske schickt beim Speichern einen Zählwert oder das ganze Objekt zurück, auch was niemand angefasst hat; der Server setzt es durch und nimmt zurück, was inzwischen anderswo gespeichert wurde | — | 01.10.2026: Bestand und Felder in `PUT /api/books/{id}` (OFFEN.md 5.5). Nicht durchgesehen: Leser, Gerät, Benutzer, Einstellungen. Suchmuster: jedes PUT mit dem ganzen Objekt, ohne Vergleich des Stands |
+| **Wächter an der geladenen Liste** | Eine Rückfrage vergleicht gegen die Liste im Speicher der Seite statt gegen den geöffneten Datensatz; steht er nicht in ihr, entfällt sie | — | 01.10.2026: „Gesamtbestand verringern?" (OFFEN.md 5.5). Suchmuster: `.find(` auf einer Liste vor einer Rückfrage |
+| **Speichern wartet auf einen fremden Dienst** | Ein Schreibpfad fragt vor dem Schreiben einen Dienst außerhalb, mit einer Frist über der der Oberfläche; fehlt der Dienst, wird nichts gespeichert | — | 01.10.2026: `ergaenzeBuchMetadaten` (OFFEN.md 5.5). Nicht durchgesehen: die Bestelltür `aus-isbn`, der Listenimport |
+| **Feld ohne Enter** | Ein Feld, in das gescannt wird, hört nicht auf das Enter des Scanners, oder nach dem Öffnen hat kein Feld den Fokus | Muster: `frontend/e2e/kiosk-scannerfokus.spec.js` (blind tippen, kein Klick) | 01.10.2026: Maske „Neues Buch" (OFFEN.md 5.5) |
 
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 

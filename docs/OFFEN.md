@@ -72,7 +72,9 @@ hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat 
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Die CI steht seit dem 28.09.2026 fest auf
 `ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Die Reihenfolge
 (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
-Reihenfolge unter 1. die vom 29.09.2026):
+Reihenfolge unter 1. die vom 29.09.2026). Davor stehen die Funde der Kategorie A aus dem
+Rasterdurchgang vom 01.10.2026: der Bestand in der Buchmaske (5.5, zwei Punkte) und das
+Ungespeicherte hinter der Sperre (5.44).
 
 1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.22 und 4.24 stehen die
    Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus. Zu 4.28 (Anmelden
@@ -447,6 +449,48 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Rowling. Aus dem Engl. von Klaus Fritz", 9783791504650 „Tintenherz Cornelia Funke. Mit Ill.
   der Autorin". Betrifft die Maske „Neues Buch" und das Bestellen per ISBN.
   Kategorie B.
+- **Eine offen gelassene Buchmaske schreibt den Bestand von vorhin zurück** (gefunden am
+  01.10.2026, am Stack nachgestellt; Kategorie A). Die Maske schickt bei jedem Speichern den
+  Bestand aus dem Augenblick des Öffnens mit (`speichereBuch`), auch wenn niemand das Feld
+  angefasst hat, und `syncBookStock` setzt ihn durch. Nachgestellt: Titel mit einem Exemplar
+  an Platz 1 geöffnet, an Platz 2 den Bestand auf 6 erhöht, an Platz 1 nur die Signatur
+  geändert und gespeichert — danach ein aktives Exemplar und fünf „Automatisch ausgesondert",
+  darunter das ursprüngliche (die Auswahl hat keine Reihenfolge); gemeldet wird „Buch
+  erfolgreich gespeichert!". Reichen die freien Exemplare nicht, sondert derselbe Weg
+  ausgeliehene aus (am Code gelesen). Auch die übrigen Felder gehen als Ganzes zurück: Speichern zwei Plätze
+  denselben Titel nacheinander, gilt der zweite Stand, die Signatur des ersten ist
+  zurückgesetzt, beide Antworten sind 200. Abhilfe: Der Bestand geht nur mit, wenn das Feld
+  geändert wurde, zusammen mit der Zahl, die die Maske gesehen hat; weicht sie vom Stand am
+  Server ab, lehnt die Tür ab (409). Für die übrigen Felder ein Vergleich des Stands beim
+  Schreiben. Dieselbe Form an Leser, Gerät und Benutzer ist nicht durchgesehen (Raster,
+  Frage 18).
+- **„Gesamtbestand verringern?" kommt nur, wenn der Titel in der geladenen Liste steht**
+  (gefunden am 01.10.2026, im Browser nachgestellt; Kategorie A). `saveChanges`
+  (`AdminBuchAktionen.svelte`) vergleicht gegen die Liste der Seite. Über „Neues Buch", eine
+  vergebene ISBN und „Titel öffnen" bei gefilterter Liste steht der Titel nicht in ihr: Aus
+  drei Exemplaren wurde ohne Rückfrage eines. Ein geleertes Bestandsfeld geht als 0 hinaus
+  und sonderte alle drei aus, gemeldet wurde „Buch erfolgreich gespeichert!". Steht der Titel
+  in der Liste, kommt die Rückfrage. Abhilfe: gegen den beim Öffnen geladenen Bestand
+  vergleichen (`oeffneDetails` lädt ihn), ein leeres Feld als „nicht anfassen" senden, und
+  die Rückfrage nennt die Zahl.
+- **Kein neues Buch, solange die Katalogdienste nicht antworten** (gefunden am 01.10.2026, am
+  Stack nachgestellt; Kategorie B). `ergaenzeBuchMetadaten` fragt vor dem Anlegen DNB, Google
+  Books und OpenLibrary, sobald Titel, Autor, Cover oder Listenpreis fehlen; bei einem von
+  Hand eingetragenen Buch fehlt fast immer das Cover. Antwortet keiner der Dienste
+  (nachgestellt mit Adressen, die Pakete verschlucken), meldet die Maske nach 10 s
+  „Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.", der Server bricht ab, gespeichert
+  wird nichts; die Eingaben bleiben stehen. Mit Cover und Listenpreis antwortet dieselbe Tür
+  sofort mit 201. Betrifft jeden Ausfall des Internets und einen Server, dessen Netz die
+  Dienste nicht erreicht (7.8). Abhilfe: Das Anlegen wartet nicht auf die Dienste — die Maske
+  hat die Angaben bei der Eingabe der ISBN schon geholt. Damit entfiele auch die zweite
+  Cover-Datei aus dem Punkt darüber.
+- **Der Handscanner erreicht die Maske „Neues Buch" nicht** (gefunden am 01.10.2026, im
+  Browser nachgestellt, blind getippt; Kategorie B). Mit dem Scanner-Fenster entfiel das Feld
+  „Handscanner / ISBN-Eingabe", das auf Enter hörte. Nach dem Öffnen der Maske steht der
+  Fokus in keinem Feld, ein Scan geht verloren. Im ISBN-Feld gescannt, löst das Enter des
+  Scanners nichts aus: Die Frage nach dem vorhandenen Titel und die ISBN-Abfrage kommen erst
+  beim Verlassen des Felds. Abhilfe: Das ISBN-Feld bekommt beim Öffnen den Fokus, und Enter
+  gilt dort wie das Verlassen.
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
   Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
@@ -468,6 +512,15 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Titel so beginnt, und `e2e/leserdatei.spec.js` lässt „Leserdateibuch …" samt Exemplar und
   Ausleihe liegen. Auf frischer Datenbank läuft kontrast vor leserdatei und ist grün. Den
   Menüpunkt genau treffen oder das Buch aufräumen.
+- Die Prüfung der Wegweiser (`api/betriebsbereitschaft_wegweiser_test.go`) liest nur die Texte
+  der Selbstprüfung. Drei Hinweise der Oberfläche nennen einen Ort, den es so nicht gibt
+  (gefunden am 01.10.2026): `BestelllinkHinweis.svelte` schickt für die öffentliche Adresse
+  nach „Einstellungen → Allgemein → Schule", sie steht unter Einstellungen → Erreichbarkeit &
+  Alarme; `WareneingangView.svelte` nennt das Zugangsbuch unter „System → Bestandsbücher",
+  die Gruppe heißt Berichte; `backupStatusText.js` schreibt „Schlüssel in den Einstellungen
+  unter Betriebsbereitschaft hinterlegen", dort lässt sich nichts hinterlegen, die
+  Selbstprüfung nennt die `.env`. Texte berichtigen und die Prüfung auf die Texte der
+  Oberfläche ausdehnen. Kategorie B.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
@@ -675,6 +728,25 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
   binden".
 
+### 5.44 Die Sperre nach Inaktivität nimmt Ungespeichertes mit
+
+Gefunden am 01.10.2026, im Browser nachgestellt; Kategorie A. Seit dem 22.08.2026 (`729a7271`)
+zeigt die Anwendung hinter der Sperre nichts mehr an, damit Druckvorschau, Tab-Taste und
+Vorlesehilfe die Seite dahinter nicht erreichen: `App.svelte` baut die Bildschirme ab und nach
+dem Aufschließen neu auf. Was getippt und nicht gespeichert war, ist danach weg. Nachgestellt:
+Maske „Neues Buch" mit Titel und Signatur, 16 Minuten ohne Bedienung, Passwort — die Maske ist
+zu, der Medienkatalog steht auf „Suche & Filter", ein Hinweis kommt nicht. Betroffen ist jede
+Maske, die ihre Eingaben im Bildschirm hält (Buch, Benutzer, Gerät, Einstellungen,
+LMF-Planer); der Verlassen-Schutz des Planers (`uiStore.verlassenSperre`) wird bei der Sperre
+nicht gefragt. Kein Test der Sperre enthält eine Maske.
+
+Mit der Vorgabe von 15 Minuten trifft es jede Maske, die eine Viertelstunde offen liegt. Mit
+einer langen Frist kommt die Sperre im Schultag nicht: 480 Minuten sind am Stack nachgestellt
+(keine Sperre nach 7:58 h ohne Bedienung, Sperre nach 8:01 h, Bedienung beginnt die Frist neu).
+
+Abhilfe: Die Bildschirme bleiben hinter der Sperre bestehen, sind aber weder sichtbar noch mit
+der Tastatur erreichbar noch druckbar — die drei Gründe vom 22.08.2026 als Test am Browser.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
@@ -776,7 +848,17 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   01.10.2026: 304 mit späterem, 200 mit früherem Datum). Die Seite verlangt dann ein Bundle,
   das der Server nicht hat, bis jemand ohne Zwischenspeicher neu lädt. Bei einem Update nach
   vorn tritt es nicht auf. Abhilfe mit Anlass: `Cache-Control: no-cache` und ein ETag aus dem
-  Namen des Bundles für die Startseite.
+  Namen des Bundles für die Startseite. Ein Fenster, das über den Rückbau hinweg offen bleibt,
+  arbeitet mit dem neueren Programm weiter: Sperrt es nach Inaktivität, lässt es sich nicht
+  aufschließen, weil dem älteren Stand die Wege zum Sperren und Aufschließen fehlen (am
+  01.10.2026 am Code gelesen, nicht nachgestellt); es hilft nur das Neuladen ohne
+  Zwischenspeicher.
+- Die Live-Leitung (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
+  trägt zu jeder Buchung die Kennung des Lesers, die Buchnummer und den Titel
+  (`broadcastActionEvent`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne
+  Leserecht; einen Namen trägt sie nicht (PII-Matrix, Stufe 0). Gelesen am 01.10.2026, nicht
+  nachgestellt. Zuhörer sind nur die Theke und die Abgänger-Seite. Frage mit Anlass: Braucht
+  die Meldung die Kennung des Lesers für jeden Empfänger?
 
 ### 6.2 Kategorie C
 
@@ -994,6 +1076,9 @@ Littera-Übernahme, die dort läuft (7.2).
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
+- Erreicht der Server die DNB? Ohne sie lässt sich ein neues Buch ohne Cover oder Listenpreis
+  nicht speichern (5.5). Am Abbild vom 01.10.2026 geprüft, Ausgabe „erreichbar":
+  `docker exec bibliothek-backend sh -c 'wget -q -T 8 -O /dev/null "https://services.dnb.de/sru/dnb?version=1.1&operation=explain" && echo erreichbar || echo nicht erreichbar'`
 
 ## 8. Schule, Schulamt, Schulträger
 
