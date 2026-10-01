@@ -30,7 +30,6 @@ import {
 const EIGENES_COVER = /coverKandidaten|coverSrc\(/;
 
 const BESTAND = [
-	'src/lib/BorrowedBooksList.svelte',
 	'src/lib/OpacSearch.svelte',
 	'src/lib/StatsDashboard.svelte',
 	'src/lib/StudentPrintReceipt.svelte',

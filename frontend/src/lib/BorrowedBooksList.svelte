@@ -3,55 +3,19 @@
 	import Tabelle from './components/ui/Tabelle.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { showToast } from '../inventur/lib/store.svelte.js';
-	import { AlertTriangle, CalendarPlus, Check, Loader2, Pencil, Undo2, X } from '@lucide/svelte';
-	import Button from './components/ui/Button.svelte';
-	import Feld from './components/ui/Feld.svelte';
+	import { AlertTriangle, CalendarPlus, Undo2 } from '@lucide/svelte';
+	import AusleiheRueckgabe from './AusleiheRueckgabe.svelte';
+	import BuchCover from './components/ui/BuchCover.svelte';
 	import CoverPeek from './components/ui/CoverPeek.svelte';
-	import { coverSrc } from './utils/coverSrc.js';
+	import Ladekreis from './components/ui/Ladekreis.svelte';
+	import StatusChip from './components/ui/StatusChip.svelte';
 
-	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void, mode?: "loans" | "scans" }} */
-	let {
-		books = [],
-		onReturnClick = undefined,
-		onDamageClick = undefined,
-		mode = 'loans'
-	} = $props();
+	/** @type {{ books: any[], onReturnClick?: (barcode: string) => void, onDamageClick?: (book: any) => void }} */
+	let { books = [], onReturnClick = undefined, onDamageClick = undefined } = $props();
 
 	const extendingIds = new SvelteSet();
 
-	let editingId = $state(null);
-	let editingDate = $state('');
-	let isSavingDate = $state(false);
-
-	async function handleSaveDate(book) {
-		const id = book.ausleihe_id || book.id;
-		if (!id || !editingDate) return;
-		isSavingDate = true;
-		try {
-			const response = await apiFetch(`/api/admin/ausleihen/${id}/faelligkeit`, {
-				method: 'PATCH',
-				body: JSON.stringify({ faellig_am: editingDate })
-			});
-			if (response.ok) {
-				const data = await response.json();
-				book.rueckgabe_frist = data.faellig_am;
-				editingId = null;
-				showToast(
-					`Rückgabedatum auf ${new Date(data.faellig_am).toLocaleDateString('de-DE')} gesetzt.`,
-					'success'
-				);
-			} else {
-				const fehler = await response.json().catch(() => ({}));
-				showToast(fehler.error ?? 'Datum konnte nicht gespeichert werden.', 'error');
-			}
-		} catch (e) {
-			console.error(e);
-			showToast('Netzwerkfehler beim Speichern des Datums.', 'error');
-		} finally {
-			isSavingDate = false;
-		}
-	}
-
+	/** @param {any} book */
 	async function handleExtend(book) {
 		const id = book.ausleihe_id || book.id;
 		if (!id || extendingIds.has(id)) return;
@@ -62,15 +26,13 @@
 			if (response.ok) {
 				const data = await response.json();
 				book.rueckgabe_frist = data.neues_rueckgabe_datum;
-				// Rückmeldung mit dem NEUEN Datum. Vorher änderte sich still eine Zahl in
-				// einer anderen Spalte — wer auf den Knopf sah, sah nichts passieren und
-				// hielt die Verlängerung für kaputt.
+				// Die Meldung nennt das neue Datum: Wer auf den Knopf sieht, sähe sonst nichts
+				// passieren.
 				const neu = new Date(data.neues_rueckgabe_datum).toLocaleDateString('de-DE');
 				showToast(`Verlängert bis ${neu}.`, 'success');
 			} else {
 				const fehler = await response.json().catch(() => ({}));
-				// Die Serverbegründung durchreichen: „Ausleihe gesperrt (Grund)" sagt, was zu
-				// tun ist — „Fehler bei der Verlängerung" lässt den Nutzer ratlos zurück.
+				// Die Begründung des Servers („Ausleihe gesperrt (Grund)") sagt, was zu tun ist.
 				showToast(fehler.error ?? 'Verlängerung nicht möglich.', 'error');
 			}
 		} catch (e) {
@@ -82,201 +44,119 @@
 	}
 </script>
 
-<!-- Ohne eigenen Scrollkasten: Ein Schüler hat acht bis achtzehn Bücher, und die Liste soll sie
-     alle zeigen. Gescrollt wird die Akte. -->
-<Tabelle beschriftung="Ausgeliehene Bücher" class="table-fixed">
-	<thead>
-		<tr>
-			<!-- table-fixed + PROZENT-Breiten (Summe 100%): Die Liste steht auch in schmalen
-				     Panels (Schülerprofil ~590px). Mit festen px-Breiten (w-32/w-48/w-28/w-40 =
-				     592px) blieb dort für die Titelspalte 0px übrig — der truncatete Titel
-				     (overflow:hidden) wurde damit unsichtbar und die Aktions-Spalte abgeschnitten.
-				     Prozente skalieren mit jeder Containerbreite und können nie kollabieren. -->
-			<!-- truncate auch auf den Kopfzellen: bei table-fixed ragt zu langer Kopftext
-				     sonst in die Nachbarspalte hinein (überlappte „RÜCKGABEDATUM|STATUS"). -->
-			<th class={mode === 'loans' ? 'w-[30%]' : 'w-[60%]'}>Titel & Autor</th>
-			<th class={mode === 'loans' ? 'w-[14%]' : 'w-[22%]'}>Barcode</th>
-			{#if mode === 'loans'}
-				<th class="truncate w-[20%]">Rückgabe</th>
-				<th class="truncate w-[19%]">Status</th>
-			{/if}
-			<th class="text-right {mode === 'loans' ? 'w-[17%]' : 'w-[18%]'}">Aktion</th>
-		</tr>
-	</thead>
-	<tbody>
-		{#each books as book (book.id || book.barcode_id || Math.random())}
-			<!-- Lernmittel kommt aus dem Feld (Migration 093) — nicht mehr aus einem
-				     „LMF"-Präfix in Titel oder Signatur, den drei Stellen verschieden lasen. -->
-			{@const isLMF = !!book.ist_lernmittel}
-			<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Sperr-Automatik. -->
-			{@const dauerleihe = !!book.ist_dauerleihe}
-			{@const frist = new Date(book.rueckgabe_frist)}
-			{@const isOverdue = mode === 'loans' && !dauerleihe && frist < new Date()}
-			{@const miniatur = coverSrc(book.cover_url, book.isbn)}
+<!-- Eine Zeile je Buch (M3 Lists: „If the text doesn't fit on one line, it can wrap or be
+     truncated"; „Lists can also show more or less content as they scale up and down in
+     size"). Ein Schüler hat acht bis achtzehn Bücher: Der Titel bekommt die Breite, die die
+     übrigen Spalten nicht brauchen; Miniaturbild und Nummer des Exemplars erscheinen erst,
+     wenn die Liste breit genug ist. Autor und Nummer stehen beim Zeigen auf dem Titel.
+     Ohne eigenen Scrollkasten; gescrollt wird die Akte. -->
+<div class="@container">
+	<Tabelle beschriftung="Ausgeliehene Bücher">
+		<thead>
 			<tr>
-				<td>
-					<div class="flex items-center space-x-3">
-						<!-- Das Miniaturbild ist der Auslöser für die Großansicht: 32×48 px reichen,
-							     um eine Zeile wiederzuerkennen, nicht um ein Cover zu prüfen. Ein
-							     dauerhaft größeres Bild kostete in dieser dichten Liste die Übersicht
-							     (in der Bestellliste waren es 53 px Zeilenhöhe), deshalb erscheint es
-							     nur auf Anforderung — und dann auch per Tastatur und auf dem iPad. -->
-						<CoverPeek isbn={book.isbn || ''} coverUrl={book.cover_url || ''} titel={book.titel}>
-							{#if miniatur}
-								<img
-									src={miniatur}
-									class="w-8 h-12 object-cover rounded shadow-sm border border-slate-100"
-									alt="Cover"
-								/>
-							{:else}
-								<div
-									class="w-8 h-12 rounded shadow-sm flex items-center justify-center font-bold text-white bg-linear-to-br from-indigo-500 to-purple-600 text-xs border border-indigo-600/10"
+				<th class="w-full">Titel</th>
+				<th class="hidden @4xl:table-cell">Barcode</th>
+				<th>Rückgabe</th>
+				<th class="text-right">Aktion</th>
+			</tr>
+		</thead>
+		<tbody>
+			{#each books as book (book.id || book.barcode_id || Math.random())}
+				<!-- Dauerleihe (Kollegium): keine Frist, nie überfällig — wie in der Sperr-Automatik. -->
+				{@const ueberfaellig = !book.ist_dauerleihe && new Date(book.rueckgabe_frist) < new Date()}
+				{@const ausleiheId = book.ausleihe_id || book.id}
+				<tr>
+					<!-- max-w-0 mit w-full: Die Zelle nimmt den Rest der Breite, und der Titel kürzt
+					     sich, statt die Tabelle zu weiten. -->
+					<td class="w-full max-w-0">
+						<div class="flex items-center gap-3">
+							<!-- Das Miniaturbild lässt die Zeile wiedererkennen und öffnet die Großansicht.
+							     In der schmalen Liste weicht es dem Titel. -->
+							<div class="hidden shrink-0 @4xl:block">
+								<CoverPeek
+									isbn={book.isbn || ''}
+									coverUrl={book.cover_url || ''}
+									titel={book.titel}
 								>
-									{book.titel ? book.titel.charAt(0).toUpperCase() : '?'}
-								</div>
-							{/if}
-						</CoverPeek>
-						<div class="flex-1 min-w-0">
-							<div class="flex items-center gap-2 min-w-0">
-								<h4 class="font-bold text-sm text-slate-900 truncate min-w-0" title={book.titel}>
+									<BuchCover
+										coverUrl={book.cover_url || ''}
+										isbn={book.isbn || ''}
+										titel={book.titel}
+										groesse="klein"
+										dekorativ
+										nurGespeichert
+									/>
+								</CoverPeek>
+							</div>
+							<!-- Abgeschnitten statt überlappend: Reicht die Breite nicht einmal für das
+							     Kennzeichen, ragt es nicht in die Spalte daneben. -->
+							<div class="flex min-w-0 items-center gap-3 overflow-hidden">
+								<span
+									class="min-w-0 truncate font-semibold"
+									data-tip={[book.titel, book.autor, book.barcode_id].filter(Boolean).join(' · ')}
+								>
 									{book.titel}
-								</h4>
-								{#if isLMF}
-									<span
-										class="px-1.5 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 uppercase"
-										>Lernmittel</span
+								</span>
+								<!-- Die Sprechblase ist für Vorleseprogramme stumm; die Nummer steht hier nur,
+								     solange ihre Spalte fehlt. -->
+								<span class="sr-only">
+									{#if book.autor}, {book.autor}{/if}<span class="@4xl:hidden"
+										>, Barcode {book.barcode_id}</span
 									>
+								</span>
+								<!-- Lernmittel kommt aus dem Feld (Migration 093), nicht aus dem Titeltext. -->
+								{#if book.ist_lernmittel}
+									<StatusChip text="Lernmittel" />
 								{/if}
 							</div>
-							{#if mode === 'loans'}
-								<div class="text-sm text-slate-600 truncate mt-0.5">{book.autor}</div>
-							{/if}
 						</div>
-					</div>
-				</td>
-				<!-- truncate: lange Barcodes brechen sonst um und überlappen die Nachbarspalte -->
-				<td class="font-semibold truncate" title={book.barcode_id}>{book.barcode_id}</td>
-				{#if mode === 'loans'}
-					<td class="font-semibold whitespace-nowrap">
-						{#if editingId === (book.ausleihe_id || book.id)}
-							<div class="flex items-center gap-1.5">
-								<Feld
-									type="date"
-									bind:value={editingDate}
-									aria-label="Rückgabedatum"
-									disabled={isSavingDate}
-									feld="w-40"
-								/>
-								<button
-									onclick={() => handleSaveDate(book)}
-									disabled={isSavingDate}
-									class="p-1 text-emerald-600 hover:bg-emerald-50 rounded disabled:opacity-50 transition-colors cursor-pointer"
-									title="Speichern"
-									aria-label="Rückgabedatum speichern"
-								>
-									<Check class="w-4 h-4" aria-hidden="true" />
-								</button>
-								<button
-									onclick={() => (editingId = null)}
-									disabled={isSavingDate}
-									class="p-1 text-rose-600 hover:bg-rose-50 rounded disabled:opacity-50 transition-colors cursor-pointer"
-									title="Abbrechen"
-									aria-label="Bearbeiten abbrechen"
-								>
-									<X class="w-4 h-4" aria-hidden="true" />
-								</button>
-							</div>
-						{:else}
-							<div class="flex items-center gap-2 group">
-								<span>{dauerleihe ? 'ohne Frist' : frist.toLocaleDateString('de-DE')}</span>
-								<!-- Kein opacity-0 mehr (10.08.2026): Der Knopf war unsichtbar, blieb
-									     dabei aber anklickbar und per Tab erreichbar — man konnte ihn also
-									     treffen, ohne ihn je zu sehen, und der Tastaturfokus lag auf etwas
-									     Unsichtbarem (WCAG 2.4.7). Am Tablet gibt es kein :hover, dort war
-									     er nie zu finden. Zurückhaltung über die Farbe, nicht über die
-									     Sichtbarkeit. -->
-								<button
-									onclick={() => {
-										editingId = book.ausleihe_id || book.id;
-										editingDate = book.rueckgabe_frist.split('T')[0];
-									}}
-									class="p-0.5 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-									title="Datum bearbeiten"
-									aria-label="Rückgabedatum bearbeiten"
-								>
-									<Pencil class="w-3.5 h-3.5" aria-hidden="true" />
-								</button>
-							</div>
-							<div class="text-sm font-normal text-slate-600 mt-0.5">
-								Geliehen: {new Date(book.ausgeliehen_am).toLocaleDateString('de-DE')}
-							</div>
-						{/if}
 					</td>
-					<td class="whitespace-nowrap">
-						<!-- Farbe nur für die Ausnahme: „In Frist" ist der Normalfall einer
-							     laufenden Ausleihe und braucht kein grünes Abzeichen. Grün auf jeder
-							     Zeile heisst nur, dass Grün nichts mehr bedeutet. -->
-						{#if isOverdue}
-							<span class="text-sm font-medium text-rose-600">Überfällig</span>
-						{:else}
-							<span class="text-sm text-slate-500">{dauerleihe ? 'Dauerleihe' : 'In Frist'}</span>
-						{/if}
-					</td>
-				{/if}
-				<!-- Icons ohne Text, aber mit eindeutigem Symbol. Beschriftungen wurden
-					     versucht und wieder verworfen: Die Liste steht im Schülerprofil in einem
-					     ~590-px-Panel, die Aktionsspalte hat 17 % davon — „Verlängern" überdeckte
-					     dort die Status-Spalte. Statt Platz zu erzwingen, trägt das Symbol jetzt
-					     die Bedeutung: Kalender-Plus statt Uhr (eine Uhr heisst „Zeit", nicht
-					     „Frist verlängern"). Die Rückmeldung nach dem Klick liefert der Toast. -->
-				<td class="text-right">
-					<div class="flex items-center justify-end gap-1">
-						{#if mode === 'loans'}
-							<Button
-								variant="ghost"
-								size="sm"
+					<td class="hidden whitespace-nowrap tabular-nums @4xl:table-cell">{book.barcode_id}</td>
+					<td class="whitespace-nowrap"><AusleiheRueckgabe {book} {ueberfaellig} /></td>
+					<!-- Symbole ohne Text: Die Spalte bleibt schmal, die Sprechblase nennt die Aktion,
+					     und nach dem Klick sagt die Meldung, was geschehen ist. -->
+					<td class="text-right whitespace-nowrap">
+						<div class="flex items-center justify-end gap-1">
+							<button
+								type="button"
+								class="icon-btn text-primary disabled:cursor-not-allowed disabled:text-on-surface/[0.38]"
 								onclick={() => handleExtend(book)}
-								disabled={extendingIds.has(book.ausleihe_id || book.id)}
-								title="Um die Standard-Leihfrist verlängern"
+								disabled={extendingIds.has(ausleiheId)}
+								data-tip="Um die Standard-Leihfrist verlängern"
 								aria-label="Ausleihe verlängern"
-								class="px-2 text-blue-600 hover:bg-blue-50"
 							>
-								{#if extendingIds.has(book.ausleihe_id || book.id)}
-									<Loader2 class="h-4 w-4 animate-spin" aria-hidden="true" />
+								{#if extendingIds.has(ausleiheId)}
+									<Ladekreis size="sm" farbe="aktuell" />
 								{:else}
 									<CalendarPlus class="h-4 w-4" aria-hidden="true" />
 								{/if}
-							</Button>
+							</button>
 							{#if onDamageClick}
-								<Button
-									variant="ghost"
-									size="sm"
+								<button
+									type="button"
+									class="icon-btn text-error"
 									onclick={() => onDamageClick(book)}
-									title="Verlust oder Schaden melden"
+									data-tip="Verlust oder Schaden melden"
 									aria-label="Verlust oder Schaden melden"
-									class="px-2 text-rose-700 hover:bg-rose-50"
 								>
 									<AlertTriangle class="h-4 w-4" aria-hidden="true" />
-								</Button>
+								</button>
 							{/if}
 							{#if onReturnClick}
-								<Button
-									variant="ghost"
-									size="sm"
+								<button
+									type="button"
+									class="icon-btn text-success"
 									onclick={() => onReturnClick(book.barcode_id)}
-									title="Buch zurückgeben"
+									data-tip="Buch zurückgeben"
 									aria-label="Buch zurückgeben"
-									class="px-2 text-emerald-700 hover:bg-emerald-50"
 								>
 									<Undo2 class="h-4 w-4" aria-hidden="true" />
-								</Button>
+								</button>
 							{/if}
-						{:else if mode === 'scans'}
-							<Check class="w-5 h-5 text-emerald-500" aria-hidden="true" />
-						{/if}
-					</div>
-				</td>
-			</tr>
-		{/each}
-	</tbody>
-</Tabelle>
+						</div>
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</Tabelle>
+</div>

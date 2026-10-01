@@ -32,25 +32,30 @@
 	 * @prop {string} [coverUrl] Wert aus `buecher_titel.cover_url`
 	 * @prop {string} [isbn] Schlüssel für den Proxy und die Ausweichquellen
 	 * @prop {string} [titel] Liefert die Initiale des Platzhalters und den Alternativtext
-	 * @prop {'zeile'|'liste'|'gross'} [groesse]
+	 * @prop {'klein'|'zeile'|'liste'|'gross'} [groesse]
 	 * @prop {string} [klasse]
 	 * @prop {boolean} [dekorativ] Leerer Alternativtext — für ein Cover INNERHALB eines Knopfs,
 	 *   der den Titel selbst als Text trägt. Sonst sagte ein Screenreader ihn zweimal an
 	 *   („Cover von Emil … Emil …"), WCAG-Technik H2.
+	 * @prop {boolean} [nurGespeichert] Zeigt nur das Cover, das am Titel gespeichert ist, und
+	 *   fragt weder Google Books noch OpenLibrary. Für Listen über Bücher im Bestand: Dort
+	 *   zeigt `CoverPeek` daneben ebenfalls nur das gespeicherte Bild.
 	 */
-	import { coverKandidaten } from '../../utils/coverSrc.js';
+	import { coverKandidaten, coverSrc } from '../../utils/coverSrc.js';
 
-	/** @type {{ coverUrl?: string, isbn?: string, titel?: string, groesse?: 'zeile'|'liste'|'gross', klasse?: string, dekorativ?: boolean }} */
+	/** @type {{ coverUrl?: string, isbn?: string, titel?: string, groesse?: 'klein'|'zeile'|'liste'|'gross', klasse?: string, dekorativ?: boolean, nurGespeichert?: boolean }} */
 	let {
 		coverUrl = '',
 		isbn = '',
 		titel = '',
 		groesse = 'zeile',
 		klasse = '',
-		dekorativ = false
+		dekorativ = false,
+		nurGespeichert = false
 	} = $props();
 
 	const MASSE = {
+		klein: 'h-7', // 28 px — einzeilige Zeilen, in denen das Cover nur wiedererkennen lässt
 		zeile: 'h-10', // 40 px — Arbeitslisten in kompakter Dichte
 		liste: 'h-14', // 56 px — M3 list-item-leading-image
 		gross: 'h-20' // 80 px — Karten und Detailflächen
@@ -58,7 +63,9 @@
 
 	/** Reihenfolge: gespeichertes Cover, dann Google Books, dann OpenLibrary — alle über
 	 *  den eigenen Proxy, nie per Hotlink (siehe utils/coverSrc.js). */
-	const kandidaten = $derived(coverKandidaten(coverUrl, isbn));
+	const kandidaten = $derived(
+		nurGespeichert ? [coverSrc(coverUrl, isbn)].filter(Boolean) : coverKandidaten(coverUrl, isbn)
+	);
 
 	let index = $state(0);
 	let alleGescheitert = $state(false);

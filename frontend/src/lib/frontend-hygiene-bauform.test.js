@@ -46,8 +46,8 @@ const SCHATTEN = /(^|[\s'"`{(])shadow(-(xs|sm|md|lg|xl|2xl))?(?=[\s'"`});]|$)/;
 //     BEIDES: Ein Alarm, der einen Schüler an der Ausleihe stoppt, wird nicht leiser
 //     gemacht, um eine Gestaltungsregel zu erfüllen. Bewusste Ausnahme, keine Schuld.
 //   * `LabelPreview` bildet Papier nach; der Rahmen ist die Etikettenkante.
-//   * Die Cover-Bilder (`BookTableZeile`, `BorrowedBooksList`, `OrderSearch`,
-//     `WareneingangTable`, `CoverPeek`) sind Bilder, keine M3-Bauteile.
+//   * Die Cover-Bilder (`BookTableZeile`, `OrderSearch`, `WareneingangTable`,
+//     `CoverPeek`) sind Bilder, keine M3-Bauteile.
 //
 // Wer einen Eintrag abräumt, trägt ihn hier aus. Wer einen hinzufügen will, hat einen
 // Verstoß gebaut — die Regel ist nicht ausgelegt, sondern in Googles Token-Spezifikation
@@ -56,7 +56,6 @@ const BESTAND = [
 	'src/inventur/lib/components/admin/BookTableZeile.svelte',
 	'src/inventur/lib/components/admin/ClassAssignmentBookGrid.svelte',
 	'src/lib/BestellWorkspace.svelte',
-	'src/lib/BorrowedBooksList.svelte',
 	'src/lib/CameraScanner.svelte',
 	'src/lib/LitteraImportWidget.svelte',
 	'src/lib/PermissionManager.svelte',

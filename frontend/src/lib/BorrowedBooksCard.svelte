@@ -19,8 +19,6 @@
 			<span class="text-sm font-semibold text-slate-400">Aktuell keine Bücher entliehen.</span>
 		</div>
 	{:else}
-		<div class="relative border-l-2 border-slate-100 pl-4 ml-2 py-1">
-			<BorrowedBooksList {books} {onReturnClick} {onDamageClick} mode="loans" />
-		</div>
+		<BorrowedBooksList {books} {onReturnClick} {onDamageClick} />
 	{/if}
 </div>

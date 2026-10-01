@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 01.10.2026
+Stand: 02.10.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -442,6 +442,19 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Speicherversuche derselben ISBN ergaben vier Dateien. Löschen aus der Maske
   (`DELETE /api/buecher/titel/{id}`) lässt die Datei des Titels liegen, `DELETE /api/books`
   nimmt sie mit (`sammleLokaleCoverPfade`). Der Ordner wächst; Kategorie B.
+- Googles Ersatzbild gilt als Cover (gefunden am 02.10.2026, am lokalen Stack gesehen): Hat
+  ein Titel kein gespeichertes Cover, fragt die Oberfläche über den eigenen Proxy erst Google
+  Books, dann OpenLibrary (`coverKandidaten` in `utils/coverSrc.js`). Google antwortet auf eine
+  ISBN ohne Bild mit Status 200 und einem grauen Bild „image not available" (PNG, 128 × 170 px,
+  1.269 Byte). `holeUndKonvertiereCover` (`api/image_caching.go`) legt es als Cover ab, die
+  Prüfung in `ui/BuchCover.svelte` sieht nur Bilder unter 10 px als leer an. Zu sehen ist dann
+  das Ersatzbild statt der Initiale, und OpenLibrary wird nicht mehr gefragt. Betroffen sind
+  Katalog (`BuchKarte`, `BookTableZeile`), Buch-Akte, Portal (`KlassenBuchKachel`) und das
+  Bestellfenster; die Ausleihliste der Leserakte zeigt nur gespeicherte Cover
+  (`nurGespeichert`). Der Cover-Abgleich des Servers fragt die Google-Books-API und ist nicht
+  betroffen. Abhilfe wäre, das Ersatzbild im Proxy zu erkennen und wie einen Fehlschlag zu
+  behandeln; bereits abgelegte Dateien unter `uploads/covers` blieben bis dahin liegen.
+  Kategorie B.
 - Titel aus der DNB tragen die Verfasserangabe (gefunden am 01.10.2026): `verarbeiteTitel`
   (`inventur/metadaten_anbieter.go`) nimmt MARC 245 $c in den Titel, wenn darin kein „ / "
   steht. Die ISBN 9783551551672 ergibt „Harry Potter und der Stein der Weisen Joanne K.
@@ -732,16 +745,18 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
   Eigenschaften-Feld des Designers. Je Bildschirm mit einer Menge wie an der Schule ansehen:
   Die Testdaten kennen höchstens drei Ausleihen je Leser, an der Schule sind es acht bis
   achtzehn.
-- **Leserakte bei 1280 px Fensterbreite und ausgeklappter Seitenleiste** (im Browser angesehen):
-  „Geliehen: …" ragt in die Spalte „Status", der Titel endet nach rund zwölf Zeichen, und von
-  zwölf Ausleihen stehen fünf im Fenster — die Zeile ist 65 px hoch, die übrigen Tabellen
-  haben 36 bis 40 px. Vorschlag: einzeilige Zeilen, das Ausleihdatum auf Anforderung.
-  Nachgemessen am 01.10.2026: Trägt die Zeile das Kennzeichen „Lernmittel", bleiben dem Titel
-  bei 1280 px 0 px und bei 1366 px 22 px; bei 1920 px sind es 188 px. In der Schulbuchliste der
-  Schule (30.658 Exemplare) ist die Hälfte der Titel länger als 31 Zeichen, ein Viertel länger
-  als 45; die Exemplarnummern haben fünf bis sechs Stellen. Eine Unterteilung der Liste in
-  „Bücherei" und „Lernmittel" ist nicht gewünscht (entschieden am 01.10.2026); das Kennzeichen
-  an der Zeile bleibt.
+- **Leserakte in einem Fenster unter 1200 px Breite** (gemessen am 02.10.2026, Seitenleiste
+  ausgeklappt): Die Akte stellt Leserkarte (320 px) und Inhalt ab 1024 px nebeneinander
+  (`StudentProfile.svelte`, `lg:grid-cols-[320px_minmax(0,1fr)]`). Der Ausleihliste bleiben
+  dann 339 bis 512 px; Datum und Aktionen brauchen 290 px. Dem Titel eines Lernmittels bleiben
+  bei 1200 px rund 100 px und unter 1100 px nichts. Ab 1280 px sind es mindestens 182 px
+  (`e2e/ausleihliste-zeilen.spec.js` verlangt 150 px). Zu entscheiden wäre, ob die Leserkarte
+  unter 1280 px über den Inhalt rückt oder die Zeile dort zweizeilig wird.
+- **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
+  Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
+  gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
+  Maus; an einem Tablet ohne Maus sind beide Angaben in der Akte nicht zu sehen.
+  Vorleseprogramme bekommen sie als unsichtbaren Text.
 - **Leserakte, zwei Beschriftungen:** Der Reiter heißt „Ausleihen & Historie", zeigt aber nur
   die laufenden Ausleihen und die Vormerkungen. Unter dem Reiter „Stammdaten & Adresse" steht
   dieselbe Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem
@@ -877,9 +892,8 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
   `DatenschutzKategorie.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
   auch das Kollegium steht (`DeletedStudentList.svelte`). Beim Umbenennen die E2E-Specs
   mitziehen.
-- Vier Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
-  Durchgang über die Speichern-Wege der Oberfläche, am Code gelesen): das Rückgabedatum einer
-  Ausleihe speichern (`handleSaveDate` in `BorrowedBooksList.svelte`), die Nummer eines
+- Drei Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
+  Durchgang über die Speichern-Wege der Oberfläche, am Code gelesen): die Nummer eines
   Exemplars speichern (`saveBarcode` in `BookExemplarCard.svelte`), eine Sachgruppe „Sichern"
   (`speichereBearbeitung` in `SystematikVerwaltung.svelte`) und „Anmelden" mit leerer Adresse
   oder leerem Passwort (`authStore.handleLogin`). Verloren geht nichts. Den Knopf in dem
@@ -894,7 +908,14 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
   freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
 - Browser-Gates: Die M3- und axe-Gates öffnen die Planer-Dialoge nicht, axe misst nur den
   Anfangszustand; kein Screenreader-Durchgang; der Ausweis-Designer geht nur per Maus.
-- 16 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
+- Symbol-Knöpfe haben 32 × 32 px ohne größere Trefferfläche (`.icon-btn` in
+  `styles/komponenten.css`, Gate `e2e/icon-trefferflaechen.spec.js` mit 32 px als Untergrenze).
+  M3, Icon buttons: „Extra small and small icon buttons must have a target size of 48x48dp or
+  larger to be accessible." `CLAUDE.md` nennt 48 px Trefferfläche als Hausmaß; gemessen wird
+  sie nirgends. In Tabellenzeilen stehen bis zu drei Symbole ohne Abstand nebeneinander
+  (Ausleihliste der Leserakte: verlängern, Schaden melden, zurückgeben). Anlass zum Bauen:
+  Fehlklicks an der Theke oder Bedienung am Tablet.
+- 14 Bestandsstellen bauen ihr Cover selbst (Liste in `frontend-hygiene-cover.test.js`, darunter
   `KlassenBuchKachel` im Portal). Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
 - 3.000 Titel ohne ISBN: `inventur.SucheTextDNB` nur mit Bestätigung durch einen Menschen
   verdrahten.
