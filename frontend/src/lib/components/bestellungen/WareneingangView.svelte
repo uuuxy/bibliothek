@@ -3,6 +3,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
 	import WareneingangTable from './WareneingangTable.svelte';
+	import AuswahlLeiste from '../ui/AuswahlLeiste.svelte';
 	import Button from '../ui/Button.svelte';
 
 	let { incomingShipments = [], onBack, onReceived } = $props();
@@ -68,22 +69,27 @@
 				</p>
 			</div>
 		</div>
-
-		<div class="flex items-center justify-end sm:self-end">
-			<Button
-				size="lg"
-				onclick={handleBulkReceive}
-				disabled={isSubmitting || selectedExemplarIds.length === 0}
-				class="px-6"
-			>
-				{#if isSubmitting}
-					<Ladekreis size="sm" farbe="aktuell" />
-				{/if}
-				Ausgewählte Positionen einbuchen
-			</Button>
-		</div>
 	</div>
 
 	<!-- Content/Table Section -->
 	<WareneingangTable {incomingShipments} {totalItems} bind:selectedExemplarIds />
+
+	<!-- Einbuchen steht in der Leiste unter der Liste, wie bei den Exemplaren der Buchakte:
+	     Ein Knopf im Kopf wäre bei einer langen Lieferung aus dem Bild, sobald man markiert. -->
+	{#if selectedExemplarIds.length > 0}
+		<AuswahlLeiste
+			satz={selectedExemplarIds.length === 1
+				? '1 Exemplar markiert'
+				: `${selectedExemplarIds.length} Exemplare markiert`}
+			beschriftung="Aktionen für die markierten Positionen"
+			onleeren={() => (selectedExemplarIds = [])}
+		>
+			<Button onclick={handleBulkReceive} disabled={isSubmitting}>
+				{#if isSubmitting}
+					<Ladekreis size="sm" farbe="aktuell" />
+				{/if}
+				Einbuchen
+			</Button>
+		</AuswahlLeiste>
+	{/if}
 </div>

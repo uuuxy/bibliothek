@@ -732,10 +732,6 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
   Eigenschaften-Feld des Designers. Je Bildschirm mit einer Menge wie an der Schule ansehen:
   Die Testdaten kennen höchstens drei Ausleihen je Leser, an der Schule sind es acht bis
   achtzehn.
-- **Wareneingang, Frage:** Der Knopf „Ausgewählte Positionen einbuchen" steht im Kopf der Seite
-  und wandert bei einer langen Liste aus dem Bild. Für markierte Zeilen gibt es
-  `ui/AuswahlLeiste` (Exemplare der Buchakte, Schlagwort-Pflege); sie bleibt beim Scrollen
-  unten stehen. Empfehlung: dieselbe Leiste im Wareneingang, der Knopf im Kopf entfällt dann.
 - **Leserakte bei 1280 px Fensterbreite und ausgeklappter Seitenleiste** (im Browser angesehen):
   „Geliehen: …" ragt in die Spalte „Status", der Titel endet nach rund zwölf Zeichen, und von
   zwölf Ausleihen stehen fünf im Fenster — die Zeile ist 65 px hoch, die übrigen Tabellen

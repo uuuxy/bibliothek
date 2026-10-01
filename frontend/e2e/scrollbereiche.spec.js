@@ -116,4 +116,17 @@ test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich s
 		lage?.ueberlaufend,
 		'Im Wareneingang scrollen mehrere Bereiche ineinander.'
 	).toBeLessThanOrEqual(1);
+
+	// Einbuchen steht in der Leiste unter der Liste und bleibt beim Scrollen im Fenster. Der
+	// Knopf im Kopf der Seite war bei einer langen Lieferung aus dem Bild.
+	await expect(page.getByRole('button', { name: 'Einbuchen', exact: true })).toHaveCount(0);
+	await page.getByRole('checkbox', { name: `E2E Scroll-Zulauf ${s} 1 auswählen` }).check();
+	const leiste = page.getByRole('region', { name: 'Aktionen für die markierten Positionen' });
+	await expect(leiste).toContainText('1 Exemplar markiert');
+	await page.getByText(`E2E Scroll-Zulauf ${s} 8`).scrollIntoViewIfNeeded();
+	await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
+	await page.getByRole('heading', { name: 'Wareneingang bearbeiten' }).scrollIntoViewIfNeeded();
+	await expect(leiste.getByRole('button', { name: 'Einbuchen', exact: true })).toBeInViewport();
+	await leiste.getByRole('button', { name: 'Markierung aufheben' }).click();
+	await expect(leiste).toHaveCount(0);
 });

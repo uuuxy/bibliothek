@@ -93,7 +93,7 @@ test('Wareneingang → Druck-Vorschlag öffnet den Etikettendruck (keine weiße 
 
 	// Alles auswählen und einbuchen
 	await page.getByRole('button', { name: 'Alle auswählen' }).click();
-	await page.getByRole('button', { name: 'Ausgewählte Positionen einbuchen' }).click();
+	await page.getByRole('button', { name: 'Einbuchen', exact: true }).click();
 
 	// Die Übergabe an den Etikettendruck liegt jetzt in der Snackbar-Aktion (M3: genau
 	// eine Folgehandlung) statt in einem stehenden Vorschlagsstreifen. Der geprüfte Pfad
