@@ -94,3 +94,101 @@ test('Handscanner: Buchscans landen ohne Klick ins Feld', async ({ page }) => {
 	await expect(page.getByText(/nicht gefunden/i).first()).toBeVisible();
 	await erwarteFokusImScanfeld('nach einem Fehlscan');
 });
+
+// Ein Klick in der Akte lässt den Fokus auf dem Reiter, auf dem Knopf oder nirgends stehen; der
+// nächste Scan verpuffte dann wie oben. Die Theke lenkt das getippte Zeichen deshalb ins
+// Scanfeld (scanOhneFokus.js). Belegt wird es an der Ausleihe in der Datenbank.
+test.describe('Handscanner: der Fokus steht woanders', () => {
+	// Leser mit einer offenen Forderung und drei Lernmitteln; der Leser ist gescannt. Lernmittel,
+	// weil die offene Forderung eine Bücherei-Ausleihe anhält — der Scan soll hier buchen.
+	async function thekeMitLeser(page) {
+		await uiLogin(page);
+		const suffix = uniqueSuffix();
+		const created = await apiPost(page, '/api/schueler', {
+			geburtsdatum: '2012-06-15',
+			vorname: 'E2E',
+			nachname: `Reiter-${suffix}`,
+			klasse: '7A',
+			barcode_id: `S-${suffix}`
+		});
+		expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
+		const { id } = await created.json();
+		seedSQL(`
+			WITH t AS (
+				INSERT INTO buecher_titel (titel, ist_lernmittel)
+				VALUES ('E2E-Reiter1-${suffix}', true), ('E2E-Reiter2-${suffix}', true),
+				       ('E2E-Reiter3-${suffix}', true)
+				RETURNING id, titel
+			)
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+			SELECT id, 'B-' || RIGHT(titel, LENGTH('Reiter1-${suffix}')), true FROM t;
+			WITH t AS (
+				INSERT INTO buecher_titel (titel) VALUES ('E2E-Reiter-Schaden-${suffix}') RETURNING id
+			), e AS (
+				INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+				SELECT id, 'B-RS${suffix}', true FROM t RETURNING id
+			)
+			INSERT INTO schadensfaelle (schueler_id, exemplar_id, beschreibung, betrag)
+			SELECT '${id}', e.id, 'E2E Schaden', 12.00 FROM e;
+		`);
+
+		await expect(page.getByPlaceholder(/scannen/i).first()).toBeVisible();
+		await expect.poll(() => fokus(page)).toBe('omnibox-input');
+		await page.keyboard.type(`S-${suffix}`, { delay: 5 });
+		await page.keyboard.press('Enter');
+		await expect(page.getByText(`Reiter-${suffix}`).first()).toBeVisible();
+		await page.getByRole('tab', { name: /Gebühren & Schäden/ }).click();
+		return suffix;
+	}
+
+	const fokus = (page) => page.evaluate(() => document.activeElement?.id ?? '');
+	const verbucht = (suffix, n) =>
+		querySQL(
+			`SELECT count(*) FROM ausleihen a
+			 JOIN buecher_exemplare e ON e.id = a.exemplar_id
+			 WHERE a.rueckgabe_am IS NULL AND e.barcode_id = 'B-Reiter${n}-${suffix}';`
+		);
+
+	test('der Scan wird verbucht: auf dem Reiter, nach „Bezahlt", nach einem Klick ins Leere', async ({
+		page
+	}) => {
+		const suffix = await thekeMitLeser(page);
+
+		/** Blind scannen. Vorher steht der Fokus nicht im Scanfeld — sonst prüfte der Schritt nichts. */
+		const scanne = async (n, wo) => {
+			expect(await fokus(page), `Fokus ${wo}`).not.toBe('omnibox-input');
+			await page.keyboard.type(`B-Reiter${n}-${suffix}`, { delay: 5 });
+			await page.keyboard.press('Enter');
+			await expect
+				.poll(() => verbucht(suffix, n), { message: `Der Scan ${wo} wurde nicht verbucht` })
+				.toBe('1');
+			// Nach der Buchung gibt die Theke dem Scanfeld den Fokus zurück; erst danach der
+			// nächste Klick, damit ihr Zeitgeber ihn nicht nachträglich verdeckt.
+			await expect.poll(() => fokus(page)).toBe('omnibox-input');
+		};
+
+		await scanne(1, 'auf dem Reiter');
+
+		// Der Knopf verschwindet mit der Zahlung, der Fokus fällt auf die Seite.
+		await page.getByRole('button', { name: 'Bezahlt' }).click();
+		await expect(page.getByText('Zahlung verbucht.')).toBeVisible();
+		await scanne(2, 'nach „Bezahlt"');
+
+		await page.getByRole('heading', { name: new RegExp(`Reiter-${suffix}`) }).click();
+		await scanne(3, 'nach einem Klick neben die Knöpfe');
+	});
+
+	// Die Gegenrichtung: Ein offener Dialog liegt über dem Scanfeld und behält seine Eingabe.
+	// Buchte der Scan dahinter, entstünde eine Ausleihe, während jemand einen Storno begründet.
+	test('ein offener Dialog der Akte behält die Tastatur', async ({ page }) => {
+		const suffix = await thekeMitLeser(page);
+		await page.getByRole('button', { name: 'Stornieren' }).click();
+		await expect(page.getByRole('dialog', { name: 'Gebühr wirklich stornieren?' })).toBeVisible();
+
+		await page.keyboard.type(`B-Reiter1-${suffix}`, { delay: 5 });
+		await page.keyboard.press('Enter');
+		await page.waitForTimeout(1500);
+		expect(await page.locator('#omnibox-input').inputValue()).toBe('');
+		expect(verbucht(suffix, 1), 'Der Scan wurde hinter dem Dialog verbucht').toBe('0');
+	});
+});

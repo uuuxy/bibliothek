@@ -116,6 +116,8 @@ export function createOmniboxStore() {
 	let flashTimer = null;
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let fokusTimer = null;
+	// Während einer Buchung nimmt das Scanfeld nichts an (blur in submitAction).
+	let buchungLaeuft = false;
 
 	function triggerScreenFlash(type) {
 		screenFlash = type;
@@ -702,6 +704,7 @@ export function createOmniboxStore() {
 
 		// Disable input while processing
 		document.getElementById('omnibox-input')?.blur();
+		buchungLaeuft = true;
 
 		// Der Schnappschuss entsteht VOR allem Weiteren (OFFEN.md 2.2, Commit 1): Escape
 		// oder „Theke leeren" waehrend einer laufenden Anfrage darf die Absicht des Scans
@@ -790,6 +793,7 @@ export function createOmniboxStore() {
 	 * Bedienung stören und den Dialog wegtippbar machen.
 	 */
 	function scanfeldWiederScharfstellen() {
+		buchungLaeuft = false;
 		if (entscheidungOffen()) return;
 		fokussiereScanfeld();
 	}
@@ -798,6 +802,11 @@ export function createOmniboxStore() {
 	function entscheidungOffen() {
 		return !!(showCamera || blockAlert || vormerkungAlert || checklistAnfrage);
 	}
+
+	// Darf ein Zeichen, das ohne Fokus getippt wird, ins Scanfeld (scanOhneFokus.js)? Nicht,
+	// solange eine Buchung läuft — sonst buchte ein Doppelscan zweimal — oder eine Entscheidung
+	// offen ist.
+	const scanfeldBereit = () => !buchungLaeuft && !entscheidungOffen();
 
 	// Der Fokussprung selbst — DIE Stelle, an der ein Zeitgeber dieses Stores die Seite
 	// anfasst, und damit die, die nach dem Abbau der Testumgebung den ganzen Lauf riss
@@ -983,6 +992,7 @@ export function createOmniboxStore() {
 		// Exportierte Methoden
 		stoppeZeitgeber,
 		fokussiereScanfeld,
+		scanfeldBereit,
 		triggerScreenFlash,
 		triggerShake,
 		triggerFlash,

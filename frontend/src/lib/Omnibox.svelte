@@ -10,6 +10,7 @@
 	import OmniboxScreenFlash from './components/OmniboxScreenFlash.svelte';
 	import LogoRelief from './components/ui/LogoRelief.svelte';
 	import { omniboxStore } from './stores/omnibox.svelte.js';
+	import { tasteInsScanfeld } from './scanOhneFokus.js';
 	import { abonniere } from './liveEvents.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 
@@ -17,17 +18,10 @@
 
 	let studentProfileComponent = $state(/** @type {any} */ (null));
 
-	// Rückmeldung des Scanners (rot = blockiert/fehlgeschlagen, grün = gebucht, orange = Hinweis).
-	//
-	// Entscheidend ist, dass Grundzustand und Rückmeldung sich AUSSCHLIESSEN, statt
-	// nebeneinander im class-Attribut zu stehen: Tailwind-Utilities haben alle dieselbe
-	// Spezifität, es gewinnt die Regel, die im Stylesheet WEITER HINTEN steht — nicht die,
-	// die im Attribut später kommt. `border-transparent` steht dort hinter `border-red-500`,
-	// also hätte der Grundzustand die Fehlerfarbe geschluckt. (Genau so gemessen: Klassen
-	// gesetzt, berechnete Rahmenfarbe trotzdem transparent.)
-	//
-	// Deshalb liefert dieser Ausdruck den KOMPLETTEN Farbsatz — entweder Ruhe oder Rückmeldung.
-	// Ein Fokus-Blau während einer roten Rückmeldung gibt es damit gar nicht erst.
+	// Rückmeldung des Scanners: rot = blockiert oder fehlgeschlagen, grün = gebucht, orange =
+	// Hinweis. Der Ausdruck liefert den ganzen Farbsatz, Ruhe oder Rückmeldung: Stünden beide im
+	// class-Attribut, gewönne die Regel, die im Stylesheet weiter hinten steht, und der
+	// Grundzustand schluckte die Fehlerfarbe.
 	const RUHE =
 		'bg-slate-100 border-transparent focus-within:bg-white focus-within:border-blue-600 focus-within:ring-1 focus-within:ring-blue-600';
 	const farbZustand = $derived.by(() => {
@@ -87,18 +81,20 @@
 				}
 			}
 		}
+		// Ein Scan landet im Scanfeld, auch wenn der Fokus auf einem Reiter, einem Knopf oder
+		// nirgends steht. In der Capture-Phase, damit das Zeichen schon im Feld ankommt.
+		const insScanfeld = (/** @type {KeyboardEvent} */ e) =>
+			tasteInsScanfeld(e, omniboxStore.scanfeldBereit);
 		window.addEventListener('keydown', handleKeyDown);
-		return () => window.removeEventListener('keydown', handleKeyDown);
+		window.addEventListener('keydown', insScanfeld, true);
+		return () => {
+			window.removeEventListener('keydown', handleKeyDown);
+			window.removeEventListener('keydown', insScanfeld, true);
+		};
 	});
 
-	// Die Kamera. Hier steht nur noch, DASS sie gezeigt wird — wie sie startet, liest und
-	// aufhoert, steht in CameraScanner.svelte.
-	//
-	// Bis zum 17.09.2026 startete diese Datei eine ZWEITE Kamera: `new Html5Qrcode(...)`
-	// gegen das DOM-Element `camera-scan-region`, das im Bauteil lag. Zwei Stellen fuer
-	// eine Kamera — und als das Bauteil sein Element wechselte, blieb hier ein Aufruf ins
-	// Leere zurueck („Kamera konnte nicht gestartet werden"). Der Strom gehoert dem
-	// Bauteil, das ihn anfordert.
+	// Die Kamera: Hier steht nur, dass sie gezeigt wird. Starten, Lesen und Aufhören gehören
+	// CameraScanner.svelte — der Strom gehört dem Bauteil, das ihn anfordert.
 	function startCamera() {
 		omniboxStore.showCamera = true;
 	}

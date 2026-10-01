@@ -53,6 +53,10 @@ Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 die Forderung steht danach in der Akte unter _Gebühren & Schäden_, der Bescheid ist ein eigener
 Schritt).
 
+**Der Scan landet immer im Scanfeld**, auch nach einem Klick auf einen Reiter oder einen Knopf
+der Akte. Nur ein offenes Fenster (etwa „Gebühr stornieren") und ein Feld, in dem gerade getippt
+wird, behalten die Tastatur.
+
 **Die Theke warnt von selbst:**
 
 - Bekommt ein Kind ein **Schulbuch in einer anderen Auflage**, als Kinder seiner Klasse sie
