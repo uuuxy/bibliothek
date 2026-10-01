@@ -88,18 +88,18 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 			expect(
 				titelKasten?.width ?? 0,
 				`„${titel}“ hat keine Breite zum Lesen`
-			).toBeGreaterThanOrEqual(150);
+			).toBeGreaterThanOrEqual(140);
 			expect(zeilenKasten?.height ?? 999, `„${titel}“ steht in mehr als einer Zeile`).toBeLessThan(
 				56
 			);
 		}
 
 		// Die Liste läuft nicht über ihren Platz hinaus, und die Symbole halten ihr Mindestmaß.
-		// Gezählt wird, was zu sehen ist: Der Knopf des Miniaturbilds ruht im schmalen Fenster.
+		// Das Miniaturbild ist ein Bild, kein Symbol; es öffnet die Großansicht des Covers.
 		const mass = await tabelle.evaluate((t) => {
-			const knoepfe = [...t.querySelectorAll('tbody button')]
-				.map((b) => b.getBoundingClientRect())
-				.filter((r) => r.width > 0 && r.height > 0);
+			const knoepfe = [...t.querySelectorAll('tbody button:has(svg)')].map((b) =>
+				b.getBoundingClientRect()
+			);
 			return {
 				laeuftUeber: t.scrollWidth > (t.parentElement?.clientWidth ?? 0) + 1,
 				knoepfe: knoepfe.length,
@@ -109,6 +109,12 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		expect(mass.laeuftUeber, 'die Tabelle ist breiter als ihr Platz').toBe(false);
 		expect(mass.knoepfe, 'je Zeile Datum ändern, verlängern, Schaden, zurückgeben').toBe(48);
 		expect(mass.zuKlein, 'Symbol-Knöpfe unter 32 px').toBe(0);
+
+		// Jede Zeile führt zur Großansicht ihres Covers (e2e/cover-grossansicht.spec.js).
+		await expect(tabelle.getByRole('button', { name: /^Cover von .+ anzeigen$/ })).toHaveCount(12);
+		await expect(
+			tabelle.getByRole('button', { name: `Cover von ${TITEL[0]} anzeigen` })
+		).toBeVisible();
 
 		// Was die Zeile kürzt oder weglässt, steht beim Zeigen auf dem Titel.
 		await expect(tabelle.getByRole('columnheader', { name: 'Barcode' })).toBeHidden();

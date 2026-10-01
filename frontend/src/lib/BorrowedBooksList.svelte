@@ -47,8 +47,8 @@
 <!-- Eine Zeile je Buch (M3 Lists: „If the text doesn't fit on one line, it can wrap or be
      truncated"; „Lists can also show more or less content as they scale up and down in
      size"). Ein Schüler hat acht bis achtzehn Bücher: Der Titel bekommt die Breite, die die
-     übrigen Spalten nicht brauchen; Miniaturbild und Nummer des Exemplars erscheinen erst,
-     wenn die Liste breit genug ist. Autor und Nummer stehen beim Zeigen auf dem Titel.
+     übrigen Spalten nicht brauchen; die Nummer des Exemplars bekommt ihre Spalte erst, wenn
+     die Liste breit genug ist. Autor und Nummer stehen beim Zeigen auf dem Titel.
      Ohne eigenen Scrollkasten; gescrollt wird die Akte. -->
 <div class="@container">
 	<Tabelle beschriftung="Ausgeliehene Bücher">
@@ -70,9 +70,8 @@
 					     sich, statt die Tabelle zu weiten. -->
 					<td class="w-full max-w-0">
 						<div class="flex items-center gap-3">
-							<!-- Das Miniaturbild lässt die Zeile wiedererkennen und öffnet die Großansicht.
-							     In der schmalen Liste weicht es dem Titel. -->
-							<div class="hidden shrink-0 @4xl:block">
+							<!-- Das Miniaturbild lässt die Zeile wiedererkennen und öffnet die Großansicht. -->
+							<div class="shrink-0">
 								<CoverPeek
 									isbn={book.isbn || ''}
 									coverUrl={book.cover_url || ''}

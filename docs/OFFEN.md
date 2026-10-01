@@ -724,10 +724,11 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
 - **Leserakte in einem Fenster unter 1200 px Breite** (gemessen am 02.10.2026, Seitenleiste
   ausgeklappt): Die Akte stellt Leserkarte (320 px) und Inhalt ab 1024 px nebeneinander
   (`StudentProfile.svelte`, `lg:grid-cols-[320px_minmax(0,1fr)]`). Der Ausleihliste bleiben
-  dann 339 bis 512 px; Datum und Aktionen brauchen 290 px. Dem Titel eines Lernmittels bleiben
-  bei 1200 px rund 100 px und unter 1100 px nichts. Ab 1280 px sind es mindestens 182 px
-  (`e2e/ausleihliste-zeilen.spec.js` verlangt 150 px). Zu entscheiden wäre, ob die Leserkarte
-  unter 1280 px über den Inhalt rückt oder die Zeile dort zweizeilig wird.
+  dann 339 bis 512 px; Datum und Aktionen brauchen 290 px, das Miniaturbild 33 px. Dem Titel
+  eines Lernmittels bleiben bei 1200 px 69 px und ab 1100 px abwärts nichts. Ab 1280 px sind
+  es mindestens 149 px, rund zwanzig Zeichen (`e2e/ausleihliste-zeilen.spec.js` verlangt
+  140 px). Zu entscheiden wäre, ob die Leserkarte unter 1280 px über den Inhalt rückt oder die
+  Zeile dort zweizeilig wird.
 - **Leserakte, Autor und Nummer des Exemplars:** Der Autor steht nur in der Sprechblase am
   Titel, die Nummer in Fenstern bis rund 1580 px ebenfalls (darüber hat sie ihre Spalte;
   gemessen bei ausgeklappter Seitenleiste). Die Sprechblase erscheint beim Zeigen mit der
