@@ -24,6 +24,18 @@ export function mehrjahresbandHinweis(an, von, bis) {
 }
 
 /**
+ * Der Hinweis unter „Aktueller Bestand" eines neuen Titels: Ohne Exemplar zeigt ihn kein
+ * Katalog (repository.SQLTitelHatExemplar), nur die Sicht „Ohne Exemplare" der Titelliste.
+ * @param {string|null|undefined} id
+ * @param {number|string|null|undefined} bestand
+ * @returns {string}
+ */
+export function bestandHinweis(id, bestand) {
+	if (id || Number(bestand) > 0) return '';
+	return 'Ohne Exemplar steht der Titel in keinem Katalog, nur in der Titelliste unter „Ohne Exemplare“.';
+}
+
+/**
  * leeresBuchFormular: die EINE Vorlage für ein neues Buch. Sie stand bis zum 03.09.2026
  * zweimal wörtlich in routes/admin/+page.svelte (Anfangszustand und „Neues Buch"); beim
  * Nachtragen des Schulzweigs fiel auf, dass ein neues Feld an beiden Stellen gepflegt
@@ -41,7 +53,9 @@ export function leeresBuchFormular() {
 		istLernmittel: false,
 		track: '',
 		mehrjahresband: false,
-		stock: 0,
+		// Wie bei Littera kommt mit dem Titel das erste Exemplar: Ohne Exemplar stünde das
+		// neue Buch in keinem Katalog. Wer nur den Titel will, trägt 0 ein.
+		stock: 1,
 		coverUrl: '',
 		lastCounted: '',
 		medientyp: 'Buch',

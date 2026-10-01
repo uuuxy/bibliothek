@@ -429,6 +429,37 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
+- **Der Knopf „Scanner" der Titel-Verwaltung speichert kein gefundenes Buch** (gefunden am
+  01.10.2026, am lokalen Stack nachgestellt). `StrichcodeScanner.svelte` reicht die Antwort von
+  `GET /api/lookup/{isbn}` an `IsbnLookupDialog.svelte` weiter. Die Antwort trägt keine ISBN:
+  Der Dialog zeigt „ISBN:" leer und schickt `POST /api/books` ohne `isbn`, der Server antwortet
+  400 „isbn ist erforderlich". Nur wenn das Nachschlagen nichts findet, geht die ISBN mit. So
+  seit dem ersten Commit. Fach, Klassenstufe und Bestand sind Pflicht, ohne dass der Dialog es
+  sagt: Fehlt eines, tut „Speichern" nichts. Der Dialog ist eine zweite Tür neben der Maske
+  „Neues Buch" und kennt deren Regeln nicht: Signatur-Pflicht für Bücherei-Titel,
+  Lernmittel-Schalter, die Rückfrage bei vergebener ISBN und die Vorgabe ein Exemplar.
+  Entschieden am 01.10.2026: Der Knopf öffnet die Maske „Neues Buch" mit eingeschalteter
+  Kamera, der eigene Dialog entfällt und mit ihm das Hochladen eines Fotos mit Strichcode.
+  Laut, Kategorie B.
+- Die Maske „Neues Buch" fragt erst beim Speichern nach dem vorhandenen Titel (01.10.2026):
+  Bis dahin sind Signatur, Fach und die übrigen Felder eingetragen und gehen beim Öffnen des
+  vorhandenen Titels verloren. Littera prüft bei der Eingabe der ISBN (Handbuch,
+  „Dublettenkontrolle"). Entschieden am 01.10.2026: Die Frage kommt, sobald die ISBN im Feld
+  steht (Feld verlassen oder Kamera-Scan), nach derselben Regel wie beim Speichern
+  (`pruefeDublette`); die Frage beim Speichern bleibt. Kategorie B.
+- Jede ISBN-Abfrage legt eine Cover-Datei ab (gefunden am 01.10.2026, am lokalen Stack
+  gezählt): `GET /api/lookup/{isbn}` speichert das Cover als `uploads/cover_auto_…`, auch wenn
+  danach nichts gespeichert wird. `POST /api/books` schlägt wegen des leeren Listenpreises
+  noch einmal nach und legt eine zweite Datei ab, die kein Titel trägt. Zwei Abfragen und zwei
+  Speicherversuche derselben ISBN ergaben vier Dateien. Löschen aus der Maske
+  (`DELETE /api/buecher/titel/{id}`) lässt die Datei des Titels liegen, `DELETE /api/books`
+  nimmt sie mit (`sammleLokaleCoverPfade`). Der Ordner wächst; Kategorie B.
+- Titel aus der DNB tragen die Verfasserangabe (gefunden am 01.10.2026): `verarbeiteTitel`
+  (`inventur/metadaten_anbieter.go`) nimmt MARC 245 $c in den Titel, wenn darin kein „ / "
+  steht. Die ISBN 9783551551672 ergibt „Harry Potter und der Stein der Weisen Joanne K.
+  Rowling. Aus dem Engl. von Klaus Fritz", 9783791504650 „Tintenherz Cornelia Funke. Mit Ill.
+  der Autorin". Betrifft die Maske „Neues Buch", den Scanner und das Bestellen per ISBN.
+  Kategorie B.
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
   Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.

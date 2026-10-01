@@ -162,7 +162,7 @@ func TestStelleFaecherSicher_Mehrere(t *testing.T) {
 // gefunden" ist der Normalfall — die Mock-Tests hier prüfen den Schreibpfad, nicht die
 // Kontrolle; die hat ihren eigenen Test am echten Postgres.
 func erwarteKeineDublette(mock pgxmock.PgxPoolIface) {
-	mock.ExpectQuery(`SELECT (titel|id::text) FROM buecher_titel`).
+	mock.ExpectQuery(`SELECT (bt\.id::text, bt\.titel, EXISTS .+|id::text) FROM buecher_titel`).
 		WithArgs(pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnError(pgx.ErrNoRows)
 }

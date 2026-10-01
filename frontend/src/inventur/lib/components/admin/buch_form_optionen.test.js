@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { leeresBuchFormular, mehrjahresbandHinweis } from './buch_form_optionen.js';
+import { bestandHinweis, leeresBuchFormular, mehrjahresbandHinweis } from './buch_form_optionen.js';
 
 // Mehrjahresband (docs/OFFEN.md 9.6, 22.09.2026): ein Schalter am Werk, die Zahl kommt aus
 // der Spanne „bis". Ein neues Buch beginnt mit „aus"; fehlte der Wert in der Vorlage,
@@ -45,5 +45,25 @@ describe('buch_form_optionen: Mehrjahresband', () => {
 		expect(hinweis).toContain('bis zum Ende von Jahrgang 13');
 		expect(hinweis).toContain('Kind der 1');
 		expect(hinweis).toContain('nach 13 Schuljahren');
+	});
+});
+
+// Ein Titel ohne Exemplar steht in keinem Katalog (docs/OFFEN.md 9.4). Ein neues Buch beginnt
+// deshalb mit einem Exemplar, und wer 0 einträgt, liest vor dem Speichern, wo der Titel landet.
+describe('buch_form_optionen: Bestand eines neuen Buchs', () => {
+	it('die Vorlage beginnt mit einem Exemplar', () => {
+		expect(leeresBuchFormular().stock).toBe(1);
+	});
+
+	it('neuer Titel ohne Exemplar: nennt die Sicht, in der er steht', () => {
+		for (const bestand of [0, '0', '', null, undefined]) {
+			expect(bestandHinweis(null, bestand)).toContain('„Ohne Exemplare“');
+		}
+	});
+
+	it('kein Hinweis mit Bestand und keiner an einem vorhandenen Titel', () => {
+		expect(bestandHinweis(null, 1)).toBe('');
+		expect(bestandHinweis(null, '3')).toBe('');
+		expect(bestandHinweis('titel-1', 0)).toBe('');
 	});
 });

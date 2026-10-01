@@ -80,7 +80,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 
 	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, eingabe.Bestand); fehler != nil {
 		if errors.Is(fehler, ErrDuplicateISBN) {
-			writeError(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
+			schreibeDubletteISBN(antwort, fehler)
 			return
 		}
 		if errors.Is(fehler, ErrBookNotFound) {

@@ -14,6 +14,22 @@ import (
 // Ergebnis, nicht der Fehlerfall.
 func istKeineZeile(err error) bool { return errors.Is(err, pgx.ErrNoRows) }
 
+// DubletteISBN ist ErrDuplicateISBN mit dem Titel, der die Nummer schon trägt. Ein Titel
+// ohne Exemplar steht in keinem Katalog (repository.SQLTitelHatExemplar): Ohne Kennung und
+// Ort führte die Ablehnung zu einem Buch, das sich nicht finden lässt.
+type DubletteISBN struct {
+	ID          string
+	Titel       string
+	HatExemplar bool
+}
+
+func (d *DubletteISBN) Error() string {
+	return fmt.Sprintf("%v: %q (%s) trägt dieselbe Nummer", ErrDuplicateISBN, d.Titel, d.ID)
+}
+
+// Unwrap hält errors.Is(err, ErrDuplicateISBN) für alle Aufrufer gültig.
+func (d *DubletteISBN) Unwrap() error { return ErrDuplicateISBN }
+
 // Dublettenkontrolle beim Anlegen und Ändern eines Titels (OFFEN.md 4.18, Stufe 2).
 //
 // Der UNIQUE-Index auf isbn fängt nur die ZEICHENGLEICHE Dublette. „978-3-12-345678-9"
@@ -30,15 +46,16 @@ func istKeineZeile(err error) bool { return errors.Is(err, pgx.ErrNoRows) }
 // wenn am Server gemessen ist, dass es dort keine Altdublette gibt (OFFEN.md 4.18).
 func pruefeDublette(ctx context.Context, q repository.DBQueryer, b Book, eigeneID string) error {
 	if b.ISBN != "" {
-		var vorhandenerTitel string
+		vorhanden := DubletteISBN{}
 		err := q.QueryRow(ctx, `
-			SELECT titel FROM buecher_titel
-			WHERE replace(replace(lower(isbn), '-', ''), ' ', '') = replace(replace(lower($1), '-', ''), ' ', '')
-			  AND ($2 = '' OR id <> $2::uuid)
-			LIMIT 1`, b.ISBN, eigeneID).Scan(&vorhandenerTitel)
+			SELECT bt.id::text, bt.titel, `+repository.SQLTitelHatExemplar("bt")+`
+			FROM buecher_titel bt
+			WHERE replace(replace(lower(bt.isbn), '-', ''), ' ', '') = replace(replace(lower($1), '-', ''), ' ', '')
+			  AND ($2 = '' OR bt.id <> $2::uuid)
+			LIMIT 1`, b.ISBN, eigeneID).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
 		switch {
 		case err == nil:
-			return fmt.Errorf("%w: %q trägt dieselbe Nummer in anderer Schreibweise", ErrDuplicateISBN, vorhandenerTitel)
+			return &vorhanden
 		case istKeineZeile(err):
 			// kein Treffer — weiter
 		default:

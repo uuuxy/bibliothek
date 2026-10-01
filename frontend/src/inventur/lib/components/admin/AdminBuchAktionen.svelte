@@ -3,6 +3,7 @@
 	import { bestaetigen, loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { appState, showToast } from '$lib/store.svelte.js';
 	import { loescheTitel, coverNeuHolen } from '../../admin_api.js';
+	import { speichereBuch, stehtInSicht, DubletteFehler } from '../../buch_speichern.js';
 	import { hatRecht } from '../../../../lib/menu.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 
@@ -46,41 +47,15 @@
 		}
 
 		try {
-			const url = formular.id ? `/api/books/${formular.id}` : `/api/books`;
-			const res = await apiFetch(url, {
-				method: formular.id ? 'PUT' : 'POST',
-				credentials: 'include',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					...formular,
-					gradeLevel: Number(formular.gradeLevel),
-					istLernmittel: !!formular.istLernmittel,
-					// Keine Zahl im Feld heisst "nicht anfassen", nicht "null Exemplare".
-					// `Number(undefined)` ist NaN und wird in JSON zu null; der Server las das
-					// bis zum 23.08.2026 als 0 und sonderte den ganzen Bestand aus — an der
-					// Warnung oben vorbei, weil `NaN < 5` falsch ist. Der Server unterscheidet
-					// beides inzwischen selbst; hier wird die Absicht trotzdem klar geschrieben,
-					// statt sich auf eine Umrechnung zu verlassen.
-					...(Number.isFinite(Number(formular.stock))
-						? { stock: Number(formular.stock) }
-						: { stock: undefined }),
-					lastCounted: formular.lastCounted || null
-				})
-			});
-			if (!res.ok) {
-				let errMsg = 'Speichern fehlgeschlagen';
-				const errData = await res.json().catch(() => null);
-				if (errData) {
-					errMsg = errData.error || errData.message || errMsg;
-				}
-				throw new Error(errMsg);
+			const neu = !formular.id;
+			const updated = await speichereBuch(formular);
+			// Die Antwort auf das Ändern trägt den Bestand nicht, die Maske schon.
+			const bestand = Number(neu ? updated.stock : formular.stock) || 0;
+			if (books.some((/** @type {any} */ b) => b.id === updated.id)) {
+				books = books.map((/** @type {any} */ b) => (b.id === updated.id ? updated : b));
+			} else if (stehtInSicht(bestand, appState.bestandsAnsicht)) {
+				books = [{ ...updated, stock: bestand }, ...books];
 			}
-			const updated = (await res.json()).data;
-			books = formular.id
-				? books.map((/** @type {any} */ b) => (b.id === updated.id ? updated : b))
-				: [updated, ...books];
 
 			// Sync with appState so Omnibox/Catalog update immediately
 			if (appState.selectedBook && appState.selectedBook.id === updated.id) {
@@ -90,10 +65,33 @@
 			if (isEditMode) {
 				isEditMode = false;
 			}
-			showToast('Buch erfolgreich gespeichert!', 'success');
+			showToast(
+				neu && bestand === 0
+					? 'Titel ohne Exemplar gespeichert. Er steht unter „Ohne Exemplare“.'
+					: 'Buch erfolgreich gespeichert!',
+				'success'
+			);
 		} catch (e) {
+			if (e instanceof DubletteFehler && !formular.id) {
+				await oeffneVorhandenen(e);
+				return;
+			}
 			showToast(e instanceof Error ? e.message : String(e), 'error');
 		}
+	}
+
+	/**
+	 * Die ISBN trägt schon ein Titel: Statt nur abzulehnen, führt die Maske zu ihm — dort
+	 * kommt das Exemplar dazu. Die Seite öffnet ihn über appState.bookToEdit.
+	 * @param {DubletteFehler} fehler
+	 */
+	async function oeffneVorhandenen(fehler) {
+		const oeffnen = await bestaetigen({
+			titel: 'Vorhandenen Titel öffnen?',
+			text: `${fehler.message} Die Eingaben dieser Maske werden dabei verworfen.`,
+			aktion: 'Titel öffnen'
+		});
+		if (oeffnen) appState.bookToEdit = { id: fehler.vorhanden.id };
 	}
 
 	/** @param {File} file */

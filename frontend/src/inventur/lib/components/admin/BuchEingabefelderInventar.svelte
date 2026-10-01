@@ -1,5 +1,6 @@
 <script>
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
+	import { bestandHinweis } from './buch_form_optionen.js';
 
 	let { formular = $bindable() } = $props();
 </script>
@@ -10,6 +11,7 @@
 		label="Aktueller Bestand"
 		type="number"
 		bind:value={formular.stock}
+		hint={bestandHinweis(formular.id, formular.stock)}
 		feld="pr-14"
 	>
 		{#snippet nachlaufend()}Stück{/snippet}

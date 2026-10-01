@@ -104,7 +104,7 @@ func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.
 	erstellteID, fehler := handler.repo.CreateBook(ctx, *buch)
 	if fehler != nil {
 		if errors.Is(fehler, ErrDuplicateISBN) {
-			writeError(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
+			schreibeDubletteISBN(antwort, fehler)
 			return false
 		}
 		log.Printf("Fehler beim Erstellen von Buch ISBN %s: %v", buch.ISBN, fehler)
@@ -113,6 +113,31 @@ func (handler *APIHandler) speichereNeuesBuch(ctx context.Context, antwort http.
 	}
 	buch.ID = erstellteID
 	return true
+}
+
+// schreibeDubletteISBN antwortet mit 409 und nennt unter „vorhanden" den Titel, der die
+// ISBN trägt: Die Maske öffnet ihn damit. Ohne Exemplar steht er nur in der Sicht „Ohne
+// Exemplare" der Titelliste, das sagt die Meldung dazu. Der Rückfall ohne Titel ist die
+// Verletzung des UNIQUE-Index bei zwei gleichzeitigen Anfragen (handleDbError).
+func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
+	var dublette *DubletteISBN
+	if !errors.As(fehler, &dublette) {
+		writeError(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
+		return
+	}
+	meldung := "Diese ISBN trägt schon der Titel „" + dublette.Titel + "“."
+	if !dublette.HatExemplar {
+		meldung += " Er hat kein Exemplar und steht deshalb in der Titelliste nur unter „Ohne Exemplare“."
+	}
+	log.Printf("Dublette abgelehnt: %v", fehler)
+	writeJSON(antwort, http.StatusConflict, map[string]any{
+		"error": meldung,
+		"vorhanden": map[string]any{
+			"id":           dublette.ID,
+			"title":        dublette.Titel,
+			"ohneExemplar": !dublette.HatExemplar,
+		},
+	})
 }
 
 // alleUUIDs: Jede Kennung der Liste ist eine UUID. Eine, die keine ist, ginge sonst an
