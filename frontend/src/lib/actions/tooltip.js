@@ -35,6 +35,17 @@ let blase = null;
 let timer;
 /** @type {HTMLElement|null} */
 let offenFuer = null;
+/** @type {MutationObserver|null} */
+let waechter = null;
+
+/**
+ * Steht das Ziel noch auf der Seite und ist es zu sehen? Eine Zeile kann unter dem ruhenden
+ * Zeiger verschwinden (Theke leeren), die Anwendung hinter dem Sperrbildschirm.
+ * @param {HTMLElement} el
+ */
+function zielSteht(el) {
+	return el.isConnected && !el.closest('[hidden], [inert]') && (el.checkVisibility?.() ?? true);
+}
 
 /** Eine einzige Blase für die ganze Anwendung — sichtbar sein kann ohnehin nur eine. */
 function holeBlase() {
@@ -73,7 +84,7 @@ function positioniere(ziel, el) {
 /** @param {HTMLElement} ziel */
 function zeige(ziel) {
 	const text = ziel.dataset.tip;
-	if (!text) return;
+	if (!text || !zielSteht(ziel)) return;
 	const el = holeBlase();
 	el.textContent = text;
 	try {
@@ -83,11 +94,25 @@ function zeige(ziel) {
 	}
 	positioniere(ziel, el); // erst nach dem Öffnen: vorher hat die Blase keine Maße
 	offenFuer = ziel;
+	// Die Blase geht mit ihrem Ziel: Ohne Mausbewegung meldet der Browser kein Verlassen, und
+	// sie stünde mit dem Titel eines Buchs über der geleerten Theke oder dem Sperrbildschirm.
+	waechter?.disconnect();
+	waechter = new MutationObserver(() => {
+		if (offenFuer && !zielSteht(offenFuer)) verstecke();
+	});
+	waechter.observe(document.body, {
+		childList: true,
+		subtree: true,
+		attributes: true,
+		attributeFilter: ['hidden', 'inert', 'open', 'class', 'style']
+	});
 }
 
 function verstecke() {
 	clearTimeout(timer);
 	offenFuer = null;
+	waechter?.disconnect();
+	waechter = null;
 	if (!blase?.isConnected) return;
 	try {
 		blase.hidePopover();

@@ -124,6 +124,46 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		await expect(blase).toHaveText(`${TITEL[0]} · ${AUTORIN} · ${nummer(0)}`);
 	});
 
+	// Die Sprechblase nennt Titel und Nummer eines Buchs dieses Lesers. Bleibt der Zeiger auf
+	// der Zeile liegen, bis die Theke sich leert oder sperrt, darf sie nicht stehen bleiben.
+	test('die Sprechblase geht mit ihrer Zeile: nach „Theke leeren“ und hinter der Sperre steht sie nicht mehr', async ({
+		page
+	}) => {
+		await page.clock.install();
+		const fristen = page.waitForResponse(
+			(r) => new URL(r.url()).pathname === '/api/einstellungen/sitzung'
+		);
+		await uiLogin(page);
+		await fristen;
+		await expect
+			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
+			.toBe('omnibox-input');
+		await scanne(page, AUSWEIS);
+		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+
+		const blase = page.locator('[data-tooltip-blase]');
+		await page
+			.getByRole('table', { name: 'Ausgeliehene Bücher' })
+			.getByText(TITEL[0], { exact: true })
+			.hover();
+		await page.clock.runFor(400);
+		await expect(blase).toBeVisible();
+
+		// Fünf Minuten ohne Bedienung: Die Theke leert sich, der Zeiger liegt noch dort.
+		await page.clock.fastForward('05:10');
+		await expect(page.getByText('Entliehene Bücher (12)')).toHaveCount(0);
+		await expect(blase, 'die Sprechblase steht ohne ihre Zeile da').toBeHidden();
+
+		// Dasselbe an einem Knopf, der bleibt: Hinter dem Sperrbildschirm ist er ausgeblendet.
+		const knopf = page.getByRole('button', { name: /Navigation einklappen/ });
+		await knopf.hover();
+		await page.clock.runFor(400);
+		await expect(blase).toBeVisible();
+		await page.clock.fastForward('15:10');
+		await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
+		await expect(blase, 'die Sprechblase steht über dem Sperrbildschirm').toBeHidden();
+	});
+
 	test('1920 px: die Titel stehen ungekürzt, und die Nummer des Exemplars hat ihre Spalte', async ({
 		page
 	}) => {
