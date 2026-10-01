@@ -1,13 +1,19 @@
 package inventur
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/pashagolub/pgxmock/v5"
 )
 
 // TestNeuteredFileSystem_Open hält die Aufgabe dieses Dateisystems fest: Ein Verzeichnis
@@ -145,6 +151,79 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 		if f.status == http.StatusNotFound && strings.Contains(rec.Body.String(), "S-10041") {
 			t.Errorf("GET %s: die Antwort nennt eine Datei aus einem Unterordner", f.pfad)
 		}
+	}
+}
+
+// Was Upload und Cover-Abruf als Adresse zurückgeben, liefert /uploads/ aus. Die Regel
+// oben hängt daran, dass beide direkt in uploads/ ablegen: Mit einer Adresse im
+// Unterordner zeigte die Oberfläche für den Titel kein Cover.
+func TestUploadsLiefertWasUploadUndCoverAbrufAblegen(t *testing.T) {
+	imTestVerzeichnis(t)
+
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatalf("pgxmock: %v", err)
+	}
+	defer mock.Close()
+	zeile := pgxmock.NewRows(reihenfolgeBuchSpalten).AddRow(
+		reihenfolgeBuchID, "9781234567890", "Titel", "Autor", "", "", "", int16(0), "", 1, nil, 1, "Buch", 5, 10, nil, "",
+	)
+	mock.ExpectQuery("(?s)SELECT id, COALESCE.*").WithArgs(reihenfolgeBuchID).WillReturnRows(zeile)
+	mock.ExpectExec("(?s)UPDATE buecher_titel.*").
+		WithArgs("", "", pgxmock.AnyArg(), reihenfolgeBuchID).
+		WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+
+	upload := httptest.NewRecorder()
+	(&APIHandler{repo: NewBookRepository(mock)}).handleUploadCover(upload, coverUploadAnfrage(t, reihenfolgeBuchID))
+	if upload.Code != http.StatusOK {
+		t.Fatalf("Upload: Status %d, erwartet 200: %s", upload.Code, upload.Body.String())
+	}
+	var antwort struct {
+		Data struct {
+			CoverURL string `json:"coverUrl"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(upload.Body.Bytes(), &antwort); err != nil {
+		t.Fatalf("Upload: Antwort nicht lesbar: %v", err)
+	}
+
+	bild := createDummyImage("png", 20, 20)
+	fremd := &http.Client{Transport: &mockTransport{
+		roundTripFunc: func(*http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader(bild)),
+				Header:     http.Header{"Content-Type": []string{"image/png"}},
+			}, nil
+		},
+	}}
+	abgerufen := downloadAndSaveCoverLocally(context.Background(), fremd,
+		"https://covers.openlibrary.org/b/id/1-L.jpg", "9783161484100")
+
+	durchlass := func(next http.Handler) http.Handler { return next }
+	handler := NewAPIHandler(APIHandlerConfig{
+		RequireViewBooks:     durchlass,
+		RequireEditBooks:     durchlass,
+		RequireDeleteBooks:   durchlass,
+		RequireAuthenticated: durchlass,
+	})
+	for _, f := range []struct{ schreiber, adresse string }{
+		{"Upload", antwort.Data.CoverURL},
+		{"Cover-Abruf", abgerufen},
+	} {
+		if f.adresse == "" {
+			t.Errorf("%s: keine Adresse — ohne sie misst der Test nichts", f.schreiber)
+			continue
+		}
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, f.adresse, nil))
+		if rec.Code != http.StatusOK || rec.Body.Len() == 0 {
+			t.Errorf("%s legte %s ab, der Abruf darauf: Status %d, %d Bytes — die Oberfläche zeigt für diesen Titel kein Cover",
+				f.schreiber, f.adresse, rec.Code, rec.Body.Len())
+		}
+	}
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Errorf("Datenbank: %v", err)
 	}
 }
 

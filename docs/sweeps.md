@@ -215,6 +215,7 @@ steht im Kopfkommentar der Datei.
 | `docs/pruefe_secrets_test.go`                   | Nur `scripts/pruefe_secrets.sh` an erdachten `.env`-Dateien; ob das Skript am Server je läuft (nur von Hand), einen schwachen Wert, der kein Beispiel ist, und einen Beispielwert außerhalb von `.env.example` und `api.IstBekanntesDefaultGeheimnis` sieht er nicht. |
 | `docs/env_vorlage_test.go`                      | Nur die Zeilen `IMAP_HOST=` und `APP_ENV=` in `.env.example`; eine andere Vorlage (Compose-Datei, Anleitung im Text) und andere Vorgaben nicht. |
 | `api/uploads_auslieferung_pg_test.go`           | Nur den Pfad `/uploads/` am Router, mit einer Datei direkt im Verzeichnis und einer in `uploads/fotos`; eine zweite Auslieferung desselben Verzeichnisses unter einem anderen Pfad und eine Verknüpfung in `uploads/`, die nach draußen zeigt, sieht er nicht. Die Regel selbst prüft `inventur/api_routen_test.go`. |
+| `inventur/api_routen_test.go`                   | `TestUploadsLiefertWasUploadUndCoverAbrufAblegen`: nur die zwei Schreiber, die selbst eine Datei ablegen (Upload, Cover-Abruf); eine Adresse, die über Titel-Formular, Import oder ISBN-Suche in `cover_url` kommt, sieht er nicht. |
 
 **Schema + DB (PG-Tests: CI immer; pre-push nur, wenn Stack-Postgres:5434 läuft — sonst STILL übersprungen)**
 
