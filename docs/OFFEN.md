@@ -741,6 +741,11 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   `DatenschutzKategorie.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
   auch das Kollegium steht (`DeletedStudentList.svelte`). Beim Umbenennen die E2E-Specs
   mitziehen.
+- Zwölf Dialoge und Formulare sperren „Abbrechen", solange ihre Anfrage läuft (etwa
+  `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`;
+  gezählt am 01.10.2026). M3 Dialogs, Guidelines: „Disable confirming actions until a choice is
+  made. Dismissive actions are never disabled." Abbrechen bricht die laufende Anfrage am Server
+  nicht ab; zu entscheiden wäre, ob der Knopf dann den Dialog schließen darf.
 - Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
   in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
   freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
