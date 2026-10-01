@@ -13,7 +13,7 @@ Tests und Code-Reviews. Er wird gepflegt, nicht einmalig geschrieben.
 | 🟡 **Code** | Go-Handler/Service-Logik              | Ja, sobald ein zweiter Schreibpfad die Prüfung auslässt |
 | 🔴 **Doku** | nur im Kommentar/Konzept              | Ja — reine Hoffnung                                     |
 
-Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-01
+Ziel ist, kritische Invarianten von 🔴/🟡 nach 🟢 zu schieben. Stand: 2026-10-02
 (Lücken-Register G1–G6 abgearbeitet; die 🟢-Invarianten sind in CI gegen echtes
 Postgres abgesichert).
 
@@ -139,6 +139,7 @@ Ausweisnummer und Klasse mit 200 weg. Beide Richtungen sind jetzt geregelt und g
 | **Ein Verantwortlicher**: `schadensfaelle.schueler_id` zeigt auf genau einen Leser; NULL heißt anonymisiert (Migration 125) | 🟢 Fremdschlüssel auf `leser` | `schadensfaelle_schueler_id_fkey` |
 | Genau ein betroffenes Objekt                                      | 🟢 CHECK                         | `check_damage_item`                                 |
 | Stornierung revisionssicher (wer/wann/warum)                      | 🟡 Spalten `storniert_*` + Audit | `repository/audit_system.go` (`StornierungGebuehr`) |
+| Storniert ⇒ `ist_bezahlt` gesetzt: Wer offene Forderungen zählt, fragt nur `ist_bezahlt = false` (Akte und Theke über `repository.OffeneSchaeden`, Inventur-Sperre, LUSD-Abgleich) | 🟡 Verabredung: beide Schreiber von `storniert_am` setzen das Feld im selben UPDATE, eine CHECK-Bedingung gibt es nicht | `repository/audit_system.go`, `repository/bescheid_rueckkehr.go` |
 
 ---
 
@@ -468,14 +469,27 @@ Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 18 den Test m
 Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`), für 15 den Test mit der Maske vor und
 nach der Sperre (`frontend/e2e/sperre-ungespeichertes.spec.js`).
 
-Schärfungen ohne neue Nummer, vom selben Durchgang:
+Schärfungen ohne neue Nummer, vom selben Durchgang und vom Durchgang am 02.10.2026 über die
+Änderungen danach:
 
+- **Frage 3, der einzige Auslöser:** Blendet eine Änderung ein Element aus oder nimmt sie es
+  weg — was hat nur dieses Element ausgelöst? Beleg vom 02.10.2026: Das Miniaturbild der
+  Ausleihliste war der Auslöser der Großansicht des Covers; ausgeblendet war sie nicht mehr
+  zu erreichen (`e2e/cover-grossansicht.spec.js`, gefunden vom vollen Browser-Lauf).
 - **Frage 5, der zweite Versuch:** Was geschieht beim zweiten Mal — Doppelklick, erneutes
   Senden nach einer Zeitüberschreitung, zweiter Lauf? Belege vom 01.10.2026: Zwei Abfragen
   und zwei Speicherversuche derselben ISBN ergeben vier Cover-Dateien (OFFEN.md 5.5); die
-  Kontrast-Spec scheitert im zweiten Lauf auf derselben Datenbank (OFFEN.md 5.10).
+  Kontrast-Spec scheitert im zweiten Lauf auf derselben Datenbank (OFFEN.md 5.10). Vom
+  02.10.2026: Ein Doppelklick auf „Speichern" der Buchmaske schickte zwei Anfragen, und die
+  zweite kam als Ablehnung des veralteten Bestands zurück.
+- **Frage 6, die Reihenfolge als Schutz:** Trägt eine Prüfung nur, weil eine Anweisung davor
+  eine Zeile sperrt? Dann steht die Reihenfolge in einem Test. Beleg vom 02.10.2026: Der
+  Vergleich mit dem gesehenen Bestand zählt erst nach dem UPDATE des Titels
+  (`inventur/bestand_gleichzeitig_pg_test.go`).
 - **Frage 8, was liegen bleibt:** Der Lebenszyklus gilt auch für Dateien auf der Platte und
-  für Einträge im Speicher des Browsers, nicht nur für Zeilen.
+  für Einträge im Speicher des Browsers, nicht nur für Zeilen — und für Schwebendes, das an
+  der Seite hängt statt an seinem Bauteil. Beleg vom 02.10.2026: Die Sprechblase blieb über
+  der geleerten Theke und über dem Sperrbildschirm stehen (`actions/tooltip.js`).
 - **Frage 10, der Übergang:** Was lebt über ein Update oder einen Rückbau hinweg — offene
   Fenster mit dem alten Programm, laufende Anmeldungen, eingereihte Vorgänge,
   zwischengespeicherte Seiten — und versteht jede Seite die Form der anderen? Belege:

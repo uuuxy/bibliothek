@@ -65,6 +65,15 @@ entfallen.
 3. **Der Nachweis von Hand für die Theke ohne Netz** (Abschnitt 2, Stufe 1 und 3 im echten
    Chrome) — zurückgestellt am 24.09.2026. Stufe 2 (die Tür per curl) mache ich am lokalen
    Stack, wenn der Nachweis ansteht.
+4. **Am Testserver mit dem Handscanner probieren**, nach `git pull` und `./update.sh`. Die
+   Browser-Tests tippen die Zeichen blind wie ein Scanner; ob der Scanner der Schule schnell
+   genug tippt (höchstens 50 ms je Zeichen), zeigt nur das Gerät.
+   - Sperrbildschirm (Sperrfrist dafür unter Einstellungen kurz stellen): ein Buch scannen.
+     Erwartet: „Scan erkannt", kein Fehlversuch; danach schließt das getippte Passwort auf.
+   - Theke: Leser scannen, einen Reiter der Akte anklicken, in der Akte nach unten rollen, ein
+     Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
+   - Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
+     Eingaben stehen noch da.
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
@@ -253,7 +262,7 @@ Anstalt und schließt Rechtsgeschäfte „mit Wirkung für den ermächtigenden R
 (Hessisches Schulgesetz). „Philipp-Reis-Schule", „Bibliothek" und „Info Schulprojekt" heißen also
 Schulträger oder Land, je nachdem, wessen Geld es war; „Förderverein" und „Dauerleihgabe" können
 Dritten gehören. Gefragt wird je Vermerk: aus welchem Geld — Schulträger, Land, Förderverein —
-oder geliehen? **Empfehlung (Frage-Runde):** kein dritter Eigentümer im Programm. Bücher Dritter
+oder geliehen? **Entschieden am 01.10.2026:** kein dritter Eigentümer im Programm. Bücher Dritter
 behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
 dann über den Schulträger, bei 90 Büchern ein seltener Fall.
 
@@ -852,6 +861,16 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
   dem 01.10.2026 bleibt der Planer hinter der Sperre mit seinen ungespeicherten Änderungen
   stehen; vorher gingen sie mit der Sperre verloren. Abhilfe mit Anlass: nach dem
   Wiederaufbau der Leitung und nach dem Aufschließen den Stand am Server vergleichen.
+- Ungespeichertes übersteht seit dem 01.10.2026 die Sperre nach Inaktivität, aber nicht, was
+  ihr vorausgeht oder folgen kann (Rasterdurchgang vom 02.10.2026, Frage 15). Nach fünf Minuten
+  ohne Bedienung leert sich die Theke und baut die Akte des Lesers ab (am Stack nachgestellt),
+  samt einem offenen Dialog — Schaden melden, Stammdaten bearbeiten, Rückgabedatum ändern — und
+  dem, was darin getippt war. „Abmelden und als andere Person anmelden" am Sperrbildschirm
+  verwirft, was dahinter ungespeichert steht, ohne es zu sagen (am Code gelesen). Ob etwas
+  ungespeichert ist, weiß die Anwendung nur beim LMF-Planer (`uiStore.verlassenSperre`), und
+  gefragt wird nur beim Wechsel des Menüpunkts und beim Schließen des Fensters. Das Leeren der
+  Theke ist gewollt (A4 im Datenschutz-Nachweis). Anlass zum Bauen: eine verlorene Eingabe an
+  der Theke.
 - Die Live-Leitung (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
   trägt zu jeder Buchung die Kennung des Lesers, die Buchnummer und den Titel
   (`broadcastActionEvent`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne
