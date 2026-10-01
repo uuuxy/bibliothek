@@ -320,7 +320,7 @@ func pruefeEhemaligeOffen(l Lage) Befund {
 		b.Stufe = StufeWarnung
 		b.Befund = fmt.Sprintf("%d Ehemalige haben seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung.", n)
 		b.Folge = "Solange der Vorgang offen ist, bleiben Name und Anschrift gespeichert — Karenz, Anonymisierung und Löschung greifen nicht (Art. 5 (1) e DSGVO)."
-		b.Abhilfe = "Schülerdatei → Ehemalige / Archiv → Akte öffnen: das Buch als Verlust melden (schließt die Ausleihe, die Forderung entsteht), dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
+		b.Abhilfe = "Leserdatei → Ehemalige / Archiv → Akte öffnen: das Buch als Verlust melden (schließt die Ausleihe, die Forderung entsteht), dann die Forderung als bezahlt oder storniert buchen. Danach anonymisiert und löscht das System von selbst."
 		return b
 	}
 	b.Stufe = StufeOK
@@ -570,8 +570,8 @@ func pruefeRechteVorgabe(l Lage) Befund {
 	b.Folge = "Menü und API richten sich nach der Live-Tabelle, nicht nach dem Code. " +
 		"Nach einer Code-Änderung bleibt die alte Einstellung bestehen — eine Rolle sieht " +
 		"dann mehr oder weniger, als die aktuelle Vorgabe vorsieht, ohne dass es auffällt."
-	b.Abhilfe = "Jede Zeile prüfen: bewusste Admin-Entscheidung → so lassen (die Warnung " +
-		"dokumentiert sie), Drift nach Code-Änderung → System → Berechtigungen angleichen."
+	b.Abhilfe = "Jede Zeile prüfen. Bewusste Admin-Entscheidung: so lassen (die Warnung " +
+		"dokumentiert sie). Drift nach Code-Änderung: unter Benutzer & Rechte → Rollen & Rechte angleichen."
 	return b
 }
 
@@ -862,7 +862,8 @@ func pruefeKlassenDrift(l Lage) Befund {
 	b.Stufe = StufeWarnung
 	b.Befund = strings.Join(probleme, " — ")
 	b.Folge = "Mahnlisten dieser Klassen erreichen keine Lehrkraft bzw. Listen zeigen ins Leere — ohne Fehlermeldung."
-	b.Abhilfe = "Unter Mahnwesen → Klassenlehrer die Zuordnung nachziehen oder verwaiste Einträge entfernen."
+	b.Abhilfe = "Einstellungen → Mahnwesen-Routing: Zuordnung nachtragen oder verwaiste Zeilen entfernen. " +
+		"Eine Buchliste ohne Klasse unter Klassensätze löschen."
 	return b
 }
 
