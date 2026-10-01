@@ -10,10 +10,9 @@ import (
 	"testing"
 )
 
-// TestNeuteredFileSystem_Open haelt die eigentliche Aufgabe dieses Dateisystems fest:
-// Ein Verzeichnis OHNE index.html darf sich nicht oeffnen lassen. Faellt diese Weiche
-// weg, liefert der Go-Dateiserver an ihrer Stelle ein Verzeichnis-Listing aus und
-// stellt den Inhalt des Frontend-Verzeichnisses offen ins Netz.
+// TestNeuteredFileSystem_Open hält die Aufgabe dieses Dateisystems fest: Ein Verzeichnis
+// lässt sich nicht öffnen, mit oder ohne index.html. Öffnet es sich, zeigt der
+// Go-Dateiserver an seiner Stelle die Dateinamen darin als Liste.
 func TestNeuteredFileSystem_Open(t *testing.T) {
 	// t.TempDir raeumt selbst auf — kein deferter RemoveAll, dessen Fehler niemand liest.
 	tempDir := t.TempDir()
@@ -66,10 +65,13 @@ func TestNeuteredFileSystem_Open(t *testing.T) {
 
 	t.Run("Verzeichnis mit index.html", func(t *testing.T) {
 		f, err := fs.Open("with_index")
-		if err != nil {
-			t.Errorf("kein Fehler erwartet, bekam %v", err)
+		if err == nil {
+			schliesse(t, f)
+			t.Fatal("das Verzeichnis liess sich oeffnen — der Dateiserver zeigt dann seine Dateinamen als Liste")
 		}
-		schliesse(t, f)
+		if !errors.Is(err, os.ErrNotExist) {
+			t.Errorf("os.ErrNotExist erwartet, bekam %v", err)
+		}
 	})
 
 	t.Run("Open directory without index.html", func(t *testing.T) {
@@ -102,6 +104,9 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 	}
 	lege("uploads/cover_1.webp", "cover-inhalt")
 	lege("uploads/fotos/S-10041.jpg", "foto-inhalt")
+	// Eine index.html im Unterordner öffnet das Verzeichnis nicht: Der Dateiserver zeigte
+	// sonst die Dateinamen darin als Liste.
+	lege("uploads/fotos/index.html", "index-inhalt")
 	lege("uploads/covers/abc.webp", "zwischenspeicher-inhalt")
 
 	durchlass := func(next http.Handler) http.Handler { return next }
@@ -120,6 +125,7 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 		{"/uploads/fotos/S-10041.jpg", http.StatusNotFound},
 		{"/uploads/covers/abc.webp", http.StatusNotFound},
 		{"/uploads/fotos/", http.StatusNotFound},
+		{"/uploads/fotos", http.StatusNotFound},
 		{"/uploads/", http.StatusNotFound},
 	}
 	for _, f := range faelle {
@@ -135,6 +141,9 @@ func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
 		}
 		if f.status == http.StatusNotFound && strings.Contains(rec.Body.String(), "-inhalt") {
 			t.Errorf("GET %s: die Antwort trägt den Inhalt einer Datei aus einem Unterordner", f.pfad)
+		}
+		if f.status == http.StatusNotFound && strings.Contains(rec.Body.String(), "S-10041") {
+			t.Errorf("GET %s: die Antwort nennt eine Datei aus einem Unterordner", f.pfad)
 		}
 	}
 }

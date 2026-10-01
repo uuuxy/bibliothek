@@ -32,6 +32,7 @@ func TestUploadsOhneAnmeldungNurDateienDirektImVerzeichnis(t *testing.T) {
 	}
 	lege("uploads/cover_1.webp", "cover-inhalt")
 	lege("uploads/fotos/S-10041.jpg", "foto-inhalt")
+	lege("uploads/fotos/index.html", "index-inhalt")
 
 	authenticator, err := auth.NewAuthenticator(
 		"uploads-auslieferung-testgeheimnis-32-bytes!", pool, time.Hour)
@@ -50,13 +51,16 @@ func TestUploadsOhneAnmeldungNurDateienDirektImVerzeichnis(t *testing.T) {
 		t.Fatalf("GET /uploads/cover_1.webp: Status %d, Rumpf %q — ohne diesen Treffer misst der Test darunter nichts",
 			rec.Code, rec.Body.String())
 	}
-	for _, pfad := range []string{"/uploads/fotos/S-10041.jpg", "/uploads/fotos/"} {
+	for _, pfad := range []string{"/uploads/fotos/S-10041.jpg", "/uploads/fotos/", "/uploads/fotos"} {
 		rec := hole(pfad)
 		if rec.Code != http.StatusNotFound {
 			t.Errorf("GET %s ohne Anmeldung: Status %d, erwartet 404", pfad, rec.Code)
 		}
 		if strings.Contains(rec.Body.String(), "foto-inhalt") {
 			t.Errorf("GET %s ohne Anmeldung: die Antwort trägt den Inhalt der Datei", pfad)
+		}
+		if strings.Contains(rec.Body.String(), "S-10041") {
+			t.Errorf("GET %s ohne Anmeldung: die Antwort nennt die Datei", pfad)
 		}
 	}
 }

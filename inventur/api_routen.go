@@ -6,9 +6,10 @@ import (
 	"strings"
 )
 
-// neuteredFileSystem liefert nur Dateien direkt im Verzeichnis aus: kein Listing und
-// kein Unterordner. /uploads/ ist ohne Anmeldung lesbar, und nur dort legen Upload und
-// Cover-Abruf ihre Dateien ab.
+// neuteredFileSystem liefert nur Dateien direkt im Verzeichnis aus: /uploads/ ist ohne
+// Anmeldung lesbar, und nur dort legen Upload und Cover-Abruf ihre Dateien ab. Ein
+// Verzeichnis öffnet es nie, auch keines mit index.html — http.FileServer zeigte dessen
+// Dateinamen sonst als Liste.
 type neuteredFileSystem struct {
 	fs http.FileSystem
 }
@@ -30,13 +31,8 @@ func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
 	}
 
 	if s.IsDir() {
-		index := strings.TrimSuffix(path, "/") + "/index.html"
-		if idx, err := nfs.fs.Open(index); err != nil {
-			_ = f.Close() //nolint:errcheck
-			return nil, err
-		} else {
-			_ = idx.Close() //nolint:errcheck
-		}
+		_ = f.Close() //nolint:errcheck
+		return nil, os.ErrNotExist
 	}
 
 	return f, nil
