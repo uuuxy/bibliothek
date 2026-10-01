@@ -97,6 +97,21 @@ describe('buecherSuchen', () => {
 	});
 });
 
+// Die Spalten-Vorgabe 5 bis 10 steht an jedem Titel, dessen Jahrgang niemand eingetragen hat.
+describe('buecherSuchen: Jahrgang ohne Angabe', () => {
+	const katalog = [
+		buch({ title: 'Atlas', jahrgangVon: 5, jahrgangBis: 10 }),
+		buch({ title: 'Erdkunde', jahrgangVon: 5, jahrgangBis: 10, gradeLevel: 7 }),
+		buch({ title: 'Geschichte', jahrgangVon: 5, jahrgangBis: 9 })
+	];
+	const titel = (/** @type {string} */ q) => buecherSuchen(katalog, q).map((b) => b.title);
+
+	it('die Vorgabe 5 bis 10 trifft keinen Jahrgang, die Klasse am Titel schon', () => {
+		expect(titel('klasse 7')).toEqual(['Erdkunde', 'Geschichte']);
+		expect(titel('10')).toEqual([]);
+	});
+});
+
 describe('buecherSuchen: Signatur', () => {
 	it('findet ein Buch über seine Signatur (Regaladresse)', () => {
 		expect(buecherSuchen(bestand, 'goe').map((b) => b.title)).toEqual(['Faust']);

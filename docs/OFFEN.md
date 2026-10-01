@@ -389,11 +389,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Die drei Leser der Spanne (Mahnwesen „Jahrgang", Inventur, Portal-Filter) lernen „unbekannt"
   mit. Vorher am Testserver messen.
   Ein vierter Leser ist die Suche im Medienkatalog (`trifftJahrgang` in
-  `frontend/src/inventur/lib/startseiten_api.js`, gefunden am 01.10.2026): Sie liest Klasse oder
-  Spanne. Mit der Vorgabe 5 bis 10 trifft „Klasse 5" bis „Klasse 10" jeden Titel, dessen Spanne
-  nie gepflegt wurde. Am lokalen Stand nachgestellt: Alle 6.205 Titel der Liste tragen 5 bis 10,
-  „Klasse 7" zeigt 6.205. Sichtbar, die Liste ist zu lang; die Suche lernt „unbekannt" mit. Wie
-  viele Titel die Vorgabe tragen, zeigt die zweite Abfrage.
+  `frontend/src/inventur/lib/startseiten_api.js`): Sie liest Klasse oder Spanne. Seit dem
+  01.10.2026 zählt die Vorgabe 5 bis 10 dort nicht mehr als Jahrgang, wie schon in der
+  Schulbuchliste (`jahrgangText`); vorher traf „Klasse 5" bis „Klasse 10" jeden Titel ohne
+  gepflegte Spanne. Gemessen am Testserver am 01.10.2026: 13.057 von 13.062 Titeln tragen die
+  Vorgabe, 153 davon eine Klasse. Eine bewusst gepflegte Spanne 5 bis 10 ist bis zum Umbau
+  davon nicht zu unterscheiden; mit ihm liest die Suche „unbekannt" statt der Vorgabe.
 
   ```sql
   SELECT grade_level, jahrgang_von, jahrgang_bis, ist_lernmittel, signatur, titel
