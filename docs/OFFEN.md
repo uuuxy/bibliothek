@@ -746,6 +746,13 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   am Testserver stammt aus diesem Import (13.705 der 13.708 Einträge finden dort ihren Titel,
   gezählt am 30.09.2026). Anlass zum Bauen: Das Katalogisat wird wieder ein Weg in den
   Echtbetrieb, oder ein gepflegter Katalog soll es erneut einlesen.
+- Nach einem Rückbau auf einen älteren Stand behält ein Browser die neuere Startseite: Sie geht
+  mit `Last-Modified` und ohne `Cache-Control` hinaus (`http.ServeFileFS` in `api/router.go`),
+  und auf die Rückfrage mit dem jüngeren Datum antwortet der ältere Stand mit 304 (gemessen am
+  01.10.2026: 304 mit späterem, 200 mit früherem Datum). Die Seite verlangt dann ein Bundle,
+  das der Server nicht hat, bis jemand ohne Zwischenspeicher neu lädt. Bei einem Update nach
+  vorn tritt es nicht auf. Abhilfe mit Anlass: `Cache-Control: no-cache` und ein ETag aus dem
+  Namen des Bundles für die Startseite.
 
 ### 6.2 Kategorie C
 
