@@ -32,7 +32,7 @@ test('Papierkorb: löschen mit Bestätigung, wiederherstellen, Schadensfall bloc
 
 	// Tipp-Bestätigung: exakter Name als Sicherung gegen Versehen
 	await page.locator('#confirm-name').fill(`E2E Korb-${suffix}`);
-	await page.getByRole('button', { name: 'Endgültig archivieren/löschen' }).click();
+	await page.getByRole('button', { name: 'In den Papierkorb' }).click();
 
 	// Papierkorb zeigt den Gelöschten, Wiederherstellen bringt ihn zurück
 	await page.getByTitle('Leserdatei').click();

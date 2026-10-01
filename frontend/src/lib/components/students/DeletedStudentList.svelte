@@ -2,12 +2,10 @@
   @component
   DeletedStudentList
 
-  Der Papierkorb (weichgelöschte Schüler): wiederherstellen, endgültig löschen.
+  Der Papierkorb (weichgelöschte Leser): wiederherstellen, endgültig löschen.
 
-  Zustand und Fehlerausgänge liegen in papierkorbListe.svelte.js — dort steht auch,
-  warum: Bis zum Rasterdurchgang am 06.09.2026 verschluckte diese Ansicht jeden
-  Fehlschlag, und der Wiederherstellen-Knopf stand auch an Zeilen, an denen er nur
-  scheitern kann.
+  Zustand und Fehlerausgänge liegen in papierkorbListe.svelte.js: Ein Fehlschlag wird
+  gezeigt, und an einer anonymisierten Zeile steht kein Wiederherstellen-Knopf.
 -->
 <script>
 	import { onMount } from 'svelte';
@@ -114,7 +112,7 @@
 										     sondern eine Falle. -->
 										<span
 											class="inline-flex items-center gap-1.5 rounded-lg bg-surface-container px-2 py-1 text-xs font-semibold text-on-surface-variant"
-											title="Nach 180 Tagen im Papierkorb tilgt der nächtliche DSGVO-Lauf Name, Adresse und Geburtsdatum. Diese Zeile lässt sich nicht mehr wiederherstellen."
+											title="Spätestens nach 180 Tagen im Papierkorb tilgt der nächtliche DSGVO-Lauf Name, Adresse und Geburtsdatum. Diese Zeile lässt sich nicht mehr wiederherstellen."
 										>
 											<ShieldOff class="h-4 w-4" aria-hidden="true" />
 											anonymisiert (DSGVO)

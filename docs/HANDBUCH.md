@@ -378,8 +378,12 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   Formular nie. Bei Praktikum und Fachbereich ist das Feld verschlossen: Es entsteht nur der
   Eintrag in der Leserdatei, auf den an der Theke ausgeliehen wird.
 - **Stapelaktionen**: Klasse markieren → Ausweise oder Etiketten für alle drucken.
-- Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**; endgültiges
-  Löschen/Anonymisieren nur mit Namensbestätigung (DSGVO-Kette, §8).
+- Reiter **Ehemalige / Archiv** (wer die Schule verlassen hat) und **Papierkorb**. Löschen in
+  der Akte verlangt den Namen zur Bestätigung und legt die Person in den Papierkorb. Dort lässt
+  sie sich bis zu 180 Tage lang wiederherstellen; danach wird ein Schüler anonymisiert, ein
+  Kollege endgültig gelöscht. Ein Ehemaliger wird schon mit dem Ende seiner Karenzzeit
+  anonymisiert, wenn sie früher abläuft. _Endgültig löschen_ im Papierkorb wirkt sofort und
+  braucht ein eigenes Recht (DSGVO-Kette, §8).
 - **Doppelter Datensatz?** (Recht „Schüler zusammenführen", ab Werk nur Admin; unten im Reiter _Stammdaten & Adresse_): Steht dieselbe
   Person zweimal in der Kartei, beide Datensätze zusammenführen. Der Grund ist je nach Art
   ein anderer, und er steht im Dialog: beim Schüler eine Namensänderung in der LUSD, die

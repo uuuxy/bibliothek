@@ -635,20 +635,6 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
   binden".
 
-### 5.38 Der Löschdialog der Leserakte verspricht, was er nicht tut
-
-Gefunden am 29.09.2026 beim Prüfen der Anleitung zum Zurückspielen, am Code gelesen. Der Dialog
-„Schüler löschen" bzw. „Kollegen löschen" (`frontend/src/lib/StudentProfileDeleteModal.svelte`)
-sagt: „Alle historischen Ausleihen werden anonymisiert. Dieser Vorgang kann in der regulären
-Oberfläche nicht rückgängig gemacht werden." Der Knopf ruft `DELETE /api/schueler/{id}`
-(`DeleteStudent`): Er legt die Person in den Papierkorb (`deleted_at`, gesperrt; beim Kollegium
-fällt das Zugangskonto), anonymisiert nichts, und im Reiter _Papierkorb_ lässt sie sich
-wiederherstellen (`POST /api/schueler/{id}/restore`). Anonymisiert wird erst beim endgültigen
-Löschen im Papierkorb oder nach 180 Tagen durch den Nachtlauf. Sichtbar, Wortlaut ohne Wirkung
-auf Daten. Vorschlag: „… kommt in den Papierkorb. Von dort lässt es sich wiederherstellen; nach
-180 Tagen wird es anonymisiert (Kollegium: gelöscht), von Hand im Papierkorb sofort." — vorher
-die M3-Seite zu Dialogen lesen.
-
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)

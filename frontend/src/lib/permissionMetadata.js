@@ -141,7 +141,7 @@ export const permissionsMetadata = [
 			{
 				key: 'manage_students_admin',
 				label: 'Schülerverwaltung: Sonderrechte',
-				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Lesers, bei einem Leser mit Zugangskonto nur zusammen mit „Benutzer & Rechte verwalten"; außerdem das sofortige endgültige Löschen aus dem Papierkorb (Knopf „Endgültig löschen"). Ohne diesen Knopf anonymisiert der nächtliche Löschjob gelöschte Schüler nach 180 Tagen, sofern nichts mehr offen ist; gelöschte Kollegen bleiben im Papierkorb, bis sie dort entfernt werden'
+				desc: 'Versetzung (Schuljahreswechsel) und DSGVO-Auskunft (Art. 15) über alle Daten eines Lesers, bei einem Leser mit Zugangskonto nur zusammen mit „Benutzer & Rechte verwalten"; außerdem das sofortige endgültige Löschen aus dem Papierkorb (Knopf „Endgültig löschen"). Ohne diesen Knopf anonymisiert der nächtliche Löschjob gelöschte Schüler spätestens nach 180 Tagen, sofern nichts mehr offen ist; gelöschte Kollegen löscht er nach 180 Tagen endgültig'
 			},
 			{
 				key: 'merge_students',

@@ -1,10 +1,11 @@
-<!-- @component StudentProfileDeleteModal — Leserprofil löschen/archivieren, mit
-     Namens-Bestätigung. Seit 07.09.2026 auf Modal.svelte (Register 05.09.).
+<!-- @component StudentProfileDeleteModal — legt einen Leser in den Papierkorb, mit
+     Namens-Bestätigung. Der Dialog sagt, was danach gilt: bis zu 180 Tage wiederherstellbar,
+     dann anonymisiert (Schüler) oder endgültig gelöscht (Kollegium). „Bis zu", weil ein
+     Ehemaliger schon mit dem Ende seiner Karenzzeit anonymisiert wird.
 
-     Beim Kollegium sagt der Dialog, was sonst niemand erführe: Mit dem Eintrag fällt der
-     ZUGANG. Zurückgeholt wird er nicht durch das Wiederherstellen, sondern indem man in
-     der Akte die Schul-E-Mail erneut einträgt (16.09.2026). Der Satz steht nur, wenn es einen
-     Zugang gibt — Praktikum und Fachbereich haben keinen (Migration 153). -->
+     Beim Kollegium fällt mit dem Eintrag der Zugang, und das Wiederherstellen bringt ihn
+     nicht zurück. Der Satz steht nur, wenn es einen Zugang gibt — Praktikum und Fachbereich
+     haben keinen (Migration 153). -->
 <script>
 	import { apiFetch } from './apiFetch.js';
 	import Modal from './Modal.svelte';
@@ -86,10 +87,9 @@
 				</div>
 			{:else}
 				<p class="mt-4 text-sm text-on-surface-variant leading-relaxed font-sans">
-					Sind Sie sicher, dass Sie das Profil von <strong
-						>{profile.vorname} {profile.nachname}</strong
-					> löschen/archivieren möchten? Alle historischen Ausleihen werden anonymisiert. Dieser Vorgang
-					kann in der regulären Oberfläche nicht rückgängig gemacht werden.
+					<strong>{profile.vorname} {profile.nachname}</strong> kommt in den Papierkorb der
+					Leserdatei und lässt sich dort bis zu 180 Tage lang wiederherstellen. Danach wird der
+					Eintrag {kollege ? 'endgültig gelöscht' : 'anonymisiert'}.
 				</p>
 
 				{#if mitZugang}
@@ -137,7 +137,7 @@
 						disabled={isDeleting || !isConfirmed}
 						class="w-full sm:w-auto"
 					>
-						{#if isDeleting}Wird verarbeitet...{:else}Endgültig archivieren/löschen{/if}
+						{#if isDeleting}Wird verarbeitet...{:else}In den Papierkorb{/if}
 					</Button>
 				</div>
 			{/if}
