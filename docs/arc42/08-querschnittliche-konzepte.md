@@ -201,10 +201,10 @@ nicht mehr zustellen.
 - Statistiken kommen ohne Klarnamen (Zirkulation, Wiederbeschaffungswert, Renner und
   Ladenhüter).
 - Mahnlisten gehen an die Klassenleitung, **nie** an Schüler.
-- Es gibt **kein** öffentliches Fotoverzeichnis mehr. `uploads/fotos` wurde bis zum
-  08.08.2026 bei jedem Start neu angelegt, obwohl nichts mehr hineinschrieb — unter einem
-  Pfad, der ohne Anmeldung lesbar ist, und mit Dateinamen, die die **Barcode-IDs von den
-  Schülerausweisen** waren, also vollständig aufzählbar.
+- Es gibt **kein** öffentliches Fotoverzeichnis. Unter `/uploads/`, das ohne Anmeldung
+  lesbar ist, liefert der Server nur Dateien direkt im Verzeichnis aus (Cover), keinen
+  Unterordner; weder Programm noch Image legen `uploads/fotos` an. Die Dateinamen dort
+  waren die **Barcode-IDs von den Schülerausweisen**, also vollständig aufzählbar.
 
 ---
 

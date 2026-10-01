@@ -1,6 +1,6 @@
 # 9. Architekturentscheidungen
 
-Stand: 29.09.2026
+Stand: 01.10.2026
 
 Vierundzwanzig Entscheidungen, die diese Architektur tragen. Format je Eintrag:
 **Entscheidung — Anlass — Folge — Fundstelle.** Wo eine Entscheidung eine längere
@@ -441,19 +441,22 @@ einer Vormerkung — drei Tage, das Ende auf dem nächsten Schultag, keine Einst
 ## A20 — Schülerfotos verschlüsselt in der Datenbank, kein öffentliches Verzeichnis
 
 **Entscheidung.** Passbilder liegen AES-256-GCM verschlüsselt in `schueler_fotos`. Das
-Verzeichnis `uploads/fotos` wird **nicht** mehr angelegt.
+Verzeichnis `uploads/fotos` wird **nicht** mehr angelegt, und `/uploads/` liefert nur
+Dateien direkt im Verzeichnis aus, keinen Unterordner.
 
-**Anlass.** Es wurde bis zum 08.08.2026 bei jedem Start neu erzeugt, obwohl seit der
-Foto-Migration nichts mehr hineinschrieb — unter `/uploads/`, das **bewusst ohne
+**Anlass.** Das Verzeichnis wurde bis zum 08.08.2026 bei jedem Start neu erzeugt, obwohl
+seit der Foto-Migration nichts mehr hineinschrieb — unter `/uploads/`, das **bewusst ohne
 Anmeldung** lesbar ist (Cover für Katalog und Monitor). Die Dateinamen waren die
-Barcode-IDs von den Schülerausweisen, also vollständig aufzählbar.
+Barcode-IDs von den Schülerausweisen, also vollständig aufzählbar. Das Image legte es
+bis zum 01.10.2026 weiter an, und jedes neue Volume übernahm es von dort.
 
 **Folge.** `/uploads/` bleibt öffentlich lesbar (mit Vermerk in der Allowlist), enthält aber
-keine Personendaten. Wer die Datei-Funktion je zurückholt, muss das Verzeichnis **bewusst**
-anlegen und stolpert dabei über den Kommentar an dieser Stelle.
+keine Personendaten. Ein Unterordner kommt nicht ins Netz, auch kein von Hand angelegter;
+auf einem Server mit älterem Volume kann `uploads/fotos` noch liegen (OFFEN.md 7.8).
 
-**Fundstelle.** `api/router.go` (`registerInventurSubmoduleRoutes`), `cmd/migrate-fotos`,
-`internal/crypto`.
+**Fundstelle.** `inventur/api_routen.go` (`neuteredFileSystem`), `Dockerfile`,
+`api/router.go` (`registerInventurSubmoduleRoutes`), `cmd/migrate-fotos`, `internal/crypto`.
+Gates: `inventur/api_routen_test.go`, `api/uploads_auslieferung_pg_test.go`.
 
 ---
 

@@ -115,15 +115,9 @@ func (s *Server) registerInventurSubmoduleRoutes(mux *http.ServeMux) {
 	if err := os.MkdirAll("uploads", 0750); err != nil {
 		log.Printf("router: Upload-Verzeichnis konnte nicht angelegt werden: %v", err)
 	}
-	// uploads/fotos wurde hier bis zum 08.08.2026 bei jedem Start mit angelegt.
-	// Schülerfotos liegen seit der Migration AES-verschlüsselt in der Datenbank
-	// (cmd/migrate-fotos), nichts schreibt mehr in dieses Verzeichnis — und /uploads/
-	// ist bewusst OHNE Anmeldung lesbar (Cover für Katalog und Monitor, so vermerkt in
-	// der Allowlist von routes_authz_coverage_test.go). Ein leeres, aber immer wieder
-	// neu angelegtes Foto-Verzeichnis unter einem öffentlichen Pfad ist eine Einladung:
-	// Die Dateinamen waren die Barcode-IDs, die auf den Schülerausweisen stehen, also
-	// vollständig aufzählbar. Wer die Funktion je zurückholt, soll das Verzeichnis
-	// bewusst anlegen müssen und dabei über diesen Absatz stolpern.
+	// Ein Unterordner uploads/fotos entsteht hier nicht: Schülerfotos liegen verschlüsselt
+	// in der Datenbank, und /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird nur,
+	// was direkt in uploads/ liegt (inventur/api_routen.go).
 	invRepo := inventur.NewBookRepository(s.DB.Pool)
 	invMeta := inventur.NeuerMetadatenClient()
 

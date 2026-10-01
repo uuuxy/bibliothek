@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -83,6 +84,59 @@ func TestNeuteredFileSystem_Open(t *testing.T) {
 			t.Errorf("os.ErrNotExist erwartet, bekam %v", err)
 		}
 	})
+}
+
+// /uploads/ ist ohne Anmeldung lesbar. Ausgeliefert wird deshalb nur, was direkt im
+// Verzeichnis liegt: Dort legen Upload und Cover-Abruf ihre Dateien ab.
+func TestUploadsLiefertNurDateienDirektImVerzeichnis(t *testing.T) {
+	verzeichnis := imTestVerzeichnis(t)
+	lege := func(rel, inhalt string) {
+		t.Helper()
+		pfad := filepath.Join(verzeichnis, rel)
+		if err := os.MkdirAll(filepath.Dir(pfad), 0o750); err != nil {
+			t.Fatalf("Verzeichnis anlegen: %v", err)
+		}
+		if err := os.WriteFile(pfad, []byte(inhalt), 0o600); err != nil {
+			t.Fatalf("Datei anlegen: %v", err)
+		}
+	}
+	lege("uploads/cover_1.webp", "cover-inhalt")
+	lege("uploads/fotos/S-10041.jpg", "foto-inhalt")
+	lege("uploads/covers/abc.webp", "zwischenspeicher-inhalt")
+
+	durchlass := func(next http.Handler) http.Handler { return next }
+	handler := NewAPIHandler(APIHandlerConfig{
+		RequireViewBooks:     durchlass,
+		RequireEditBooks:     durchlass,
+		RequireDeleteBooks:   durchlass,
+		RequireAuthenticated: durchlass,
+	})
+
+	faelle := []struct {
+		pfad   string
+		status int
+	}{
+		{"/uploads/cover_1.webp", http.StatusOK},
+		{"/uploads/fotos/S-10041.jpg", http.StatusNotFound},
+		{"/uploads/covers/abc.webp", http.StatusNotFound},
+		{"/uploads/fotos/", http.StatusNotFound},
+		{"/uploads/", http.StatusNotFound},
+	}
+	for _, f := range faelle {
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, f.pfad, nil))
+		if rec.Code != f.status {
+			t.Errorf("GET %s: Status %d, erwartet %d", f.pfad, rec.Code, f.status)
+		}
+		// Der Treffer belegt, dass der Server aus diesem Verzeichnis liest — sonst wären
+		// die 404 darunter auch ohne die Regel grün.
+		if f.status == http.StatusOK && rec.Body.String() != "cover-inhalt" {
+			t.Errorf("GET %s: Rumpf %q, erwartet den Inhalt der Datei", f.pfad, rec.Body.String())
+		}
+		if f.status == http.StatusNotFound && strings.Contains(rec.Body.String(), "-inhalt") {
+			t.Errorf("GET %s: die Antwort trägt den Inhalt einer Datei aus einem Unterordner", f.pfad)
+		}
+	}
 }
 
 func TestNewAPIHandler_And_ServeHTTP(t *testing.T) {

@@ -165,7 +165,7 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 # /app/uploads funktionierte deshalb, weil es hier steht. Der Unterschied zwischen beiden
 # war eine vergessene Zeile, kein Konzept.
 RUN adduser -D appuser && \
-    mkdir -p /app/uploads/fotos /app/backups && \
+    mkdir -p /app/uploads /app/backups && \
     chown -R appuser:appuser /app
 
 # Switch context

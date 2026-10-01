@@ -250,14 +250,8 @@ func TestMigriereFoto_DBFehler(t *testing.T) {
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
-// TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe ist das Gate zum Fund vom
-// 23.08.2026 (Raster-Frage 9, Ausleitung): Das Werkzeug SAGTE nur "Du kannst das
-// Verzeichnis jetzt sicher löschen".
-//
-// Was liegen blieb, sind unverschlüsselte Schülerfotos unter `/uploads/` — einem Pfad,
-// der bewusst ohne Anmeldung lesbar ist —, und ihre Dateinamen sind die Barcode-IDs vom
-// Schülerausweis, also vollständig aufzählbar. Ein Hinweis auf der Konsole ist für
-// diesen Zustand die falsche Sicherung.
+// Die Quelldateien sind unverschlüsselte Schülerfotos: Das Werkzeug löscht sie selbst,
+// sobald die Gegenprobe bestanden ist, statt das Löschen nur zu empfehlen.
 func TestMigriereAlleFotos_LoeschtQuelldateienNachGegenprobe(t *testing.T) {
 	t.Setenv("APP_ENCRYPTION_KEY", "01234567890123456789012345678901")
 

@@ -155,8 +155,8 @@ func TestInventurDelegationIstWirklichGeschuetzt(t *testing.T) {
 // Autorisierung ausgeliefert werden. JEDE Ergänzung ist eine Sicherheitsentscheidung.
 var publicAllowlistInventur = map[string]string{
 	"/uploads/": "hochgeladene Cover-Bilder, öffentlich lesbar für Katalog/Monitor. " +
-		"Kein Verzeichnislisting (neuteredFileSystem); Schülerfotos liegen nicht hier, " +
-		"sondern AES-verschlüsselt in der Datenbank.",
+		"Kein Verzeichnislisting und kein Unterordner (neuteredFileSystem); Schülerfotos " +
+		"liegen nicht hier, sondern AES-verschlüsselt in der Datenbank.",
 }
 
 // registrierungsAusdruecke liefert jeden Aufruf `<praefix>Handle(` bzw.

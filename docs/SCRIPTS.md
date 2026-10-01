@@ -288,10 +288,10 @@ Migriert unverschlüsselte Bilddateien vom Dateisystem in die Datenbank.
 
 **Warum es selbst aufräumt (seit 23.08.2026).** Bis dahin sagte das Werkzeug nur „Du
 kannst das Verzeichnis `uploads/fotos` jetzt sicher löschen" — ob das jemand tat, wusste
-niemand. Was liegen blieb, sind unverschlüsselte Schülerfotos unter `/uploads/`, einem
-Pfad, der bewusst ohne Anmeldung lesbar ist (Cover für Katalog und Monitor), und ihre
-Dateinamen sind die Barcode-IDs vom Schülerausweis — also vollständig aufzählbar. Ein
-Hinweis auf der Konsole ist für diesen Zustand die falsche Sicherung.
+niemand. Was liegen blieb, sind unverschlüsselte Schülerfotos auf der Platte, und ihre
+Dateinamen sind die Barcode-IDs vom Schülerausweis. Der Server liefert Unterordner von
+`uploads/` nicht aus (`inventur/api_routen.go`); ein Hinweis auf der Konsole ist für
+lesbare Fotos trotzdem die falsche Sicherung.
 
 Gelöscht wird **erst nach bestandener Gegenprobe**: Das eben geschriebene Foto wird
 zurückgelesen, entschlüsselt und mit dem Original verglichen. Bis dahin ist die Datei die

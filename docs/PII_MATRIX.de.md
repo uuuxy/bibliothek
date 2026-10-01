@@ -285,7 +285,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 | `/api/lookup/`                   | inventur-Mux     | 0     | Delegation                                                                                                                |
 | `/api/admin`                     | inventur-Mux     | 0     | Redirect in den Inventur-Mux                                                                                              |
 | `/api/admin/`                    | inventur-Mux     | 0     | Delegation (Spezialrouten oben gewinnen)                                                                                  |
-| `/uploads/`                      | öffentlich       | 0     | nur Cover; fotos/ seit 08.08.2026 abgeschafft (Fotos AES-verschlüsselt in DB) — Prod-Kontrolle: Verzeichnis muss weg sein |
+| `/uploads/`                      | öffentlich       | 0     | nur Dateien direkt im Verzeichnis (Cover), kein Unterordner; Fotos liegen AES-verschlüsselt in der DB                     |
 | `POST /login`                    | öffentlich       | 0     | Login (Rate-Limit); Antwort: Personal-Konto + Rechte                                                                      |
 | `GET /api/images/cover`          | öffentlich       | 0     | Cover-Proxy (SSRF-Allowlist)                                                                                              |
 | `GET /api/csrf-token`            | öffentlich       | 0     | CSRF-Bootstrap                                                                                                            |
@@ -305,7 +305,7 @@ ausschließlich hinter `view_students`/`manage_students_admin`.
 
 | Route                                | Recht                 | Stufe | Inhalt                                                                                                                                            |
 | ------------------------------------ | --------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GET /uploads/`                      | öffentlich            | 0     | FileServer auf uploads/ (nur Cover, s. router.go)                                                                                                 |
+| `GET /uploads/`                      | öffentlich            | 0     | FileServer auf uploads/, nur Dateien direkt im Verzeichnis (Cover)                                                                                |
 | `GET /api/books`                     | inventur:view_books   | 0     | Buchliste mit Verfügbar-Zähler und Suchwörtern (Schlagworte, Verweise), je Titel Buch und Rang der Auflage (`werkId`, `werkRang`, seit 25.09.2026), kein Ausleiher |
 | `GET /api/books/{id}`                | inventur:view_books   | 0     | Einzelbuch                                                                                                                                        |
 | `GET /api/class-books`               | inventur:view_books   | 0     | Klassen-Buchlisten (Klassenname als Etikett); je Buch die Leserzahl und bei gemischten Auflagen die Zahl der Kinder je Auflage — Zahlen, keine Namen (seit 25.09.2026, docs/OFFEN.md 4.18) |

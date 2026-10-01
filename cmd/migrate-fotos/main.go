@@ -46,12 +46,8 @@ func main() {
 	}
 	defer pool.Close()
 
-	// Standardmaessig raeumt das Werkzeug hinter sich auf. Bis zum 23.08.2026 tat es das
-	// NICHT — es sagte nur "Du kannst das Verzeichnis jetzt sicher löschen", und ob das
-	// jemand tat, wusste niemand. Die Dateien sind unverschluesselte Schuelerfotos, ihre
-	// Namen sind die Barcode-IDs vom Ausweis (also vollstaendig aufzaehlbar), und
-	// /uploads/ ist bewusst ohne Anmeldung lesbar. Ein Hinweis auf der Konsole ist fuer
-	// diesen Zustand die falsche Sicherung.
+	// Das Werkzeug räumt hinter sich auf: Die Quelldateien sind unverschlüsselte
+	// Schülerfotos, und ein Hinweis auf der Konsole sichert sie nicht.
 	behalten := os.Getenv("FOTOS_BEHALTEN") == "1"
 	if behalten {
 		slog.Warn("FOTOS_BEHALTEN=1 — die unverschluesselten Quelldateien bleiben liegen")
@@ -92,12 +88,10 @@ func main() {
 	fmt.Printf("Migration abgeschlossen. %d Fotos gefunden, %d erfolgreich migriert und verschlüsselt.\n", processed, migrated)
 	fmt.Printf("%d Quelldateien nach bestandener Gegenprobe gelöscht.\n", geloescht)
 
-	// Ehrlich melden, was liegen bleibt: Jede verbliebene Datei ist ein unverschlüsseltes
-	// Schülerfoto unter einem öffentlich lesbaren Pfad.
+	// Melden, was liegen bleibt: Jede verbliebene Datei ist ein unverschlüsseltes Schülerfoto.
 	if uebrig := processed - geloescht; uebrig > 0 {
 		fmt.Printf("ACHTUNG: %d unverschlüsselte Fotos liegen weiterhin in 'uploads/fotos'.\n", uebrig)
-		fmt.Println("         Sie sind über /uploads/ ohne Anmeldung erreichbar, und ihre Dateinamen")
-		fmt.Println("         sind die Barcode-IDs vom Schülerausweis — also aufzählbar.")
+		fmt.Println("         Der Server liefert sie nicht aus, sie liegen aber lesbar auf der Platte.")
 		fmt.Println("         Nach Prüfung entfernen:  shred -u uploads/fotos/*.jpg")
 	} else if processed > 0 {
 		fmt.Println("Das Verzeichnis 'uploads/fotos' enthält keine Fotos mehr.")

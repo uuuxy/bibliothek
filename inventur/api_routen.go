@@ -2,16 +2,22 @@ package inventur
 
 import (
 	"net/http"
+	"os"
 	"strings"
 )
 
-// neuteredFileSystem prevents directory listing by wrapping an http.FileSystem
-// and returning an error if a requested path is a directory without an index.html.
+// neuteredFileSystem liefert nur Dateien direkt im Verzeichnis aus: kein Listing und
+// kein Unterordner. /uploads/ ist ohne Anmeldung lesbar, und nur dort legen Upload und
+// Cover-Abruf ihre Dateien ab.
 type neuteredFileSystem struct {
 	fs http.FileSystem
 }
 
 func (nfs neuteredFileSystem) Open(path string) (http.File, error) {
+	if strings.Contains(strings.Trim(path, "/"), "/") {
+		return nil, os.ErrNotExist
+	}
+
 	f, err := nfs.fs.Open(path)
 	if err != nil {
 		return nil, err
@@ -77,7 +83,7 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 		mux:       http.NewServeMux(),
 	}
 
-	// Unprotected Uploads (oder durch parent geschützt)
+	// Ohne Anmeldung lesbar: Katalog und Monitor zeigen Cover vor jeder Anmeldung.
 	handler.mux.Handle("GET /uploads/", http.StripPrefix("/uploads/", http.FileServer(neuteredFileSystem{http.Dir("uploads")})))
 
 	// Lesend: RBAC-Permission view_books (injiziert aus api/router.go)
