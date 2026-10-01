@@ -552,6 +552,14 @@ Zubehör oder ist ein Gerät kaputt, gibt es keinen Weg zur Forderung; das FACHK
 5) behauptete bis zum 24.09.2026 einen. Gesperrt würde nach 4.4 wie heute (Schülerbücherei und
 Geräte).
 
+Beim Bau mitnehmen (bis zum 01.10.2026 als 5.37 geführt, am Code gelesen): Der Bescheid-Dialog
+listet auch eine Forderung ohne Exemplar (`topf` leer). Sie steht richtig gesperrt da, darunter
+aber der Satz „Buch der Schülerbücherei — gehört nicht auf den Bescheid des Landes."
+(`frontend/src/lib/components/mahnwesen/BescheidPositionen.svelte`). Die Zeile darüber zeigt
+„ohne ISBN" und, weil ein Gerät keinen Buchpreis hat, „kein Preis hinterlegt — Betrag bitte
+eintragen" neben dem gesperrten Feld. Heute nicht zu sehen: Ohne Schreiber gibt es keine
+Forderung für ein Gerät.
+
 ### 5.31 `update.sh` für den Schulserver: nur Releases, Images frisch
 
 **Entschieden am 28.09.2026, nicht gebaut.** Vor dem Echtstart; gebaut wird, wenn die drei
@@ -626,16 +634,6 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   Löschwegen hatten 90 Tage angenommen; zu den Nachbuch-Meldungen steht in
   `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
   binden".
-
-### 5.37 Der Bescheid-Dialog nennt einen Geräteschaden „Buch der Schülerbücherei"
-
-Gefunden am 29.09.2026 beim Umbau auf das Eigentum (4.24, Stufe 2), am Code gelesen, nicht
-nachgestellt. Der Dialog listet alle offenen Forderungen des Kindes, auch einen Geräteschaden
-(ohne Exemplar, `topf` leer). Er steht richtig gesperrt da, darunter aber der Satz „Buch der
-Schülerbücherei — gehört nicht auf den Bescheid des Landes."
-(`frontend/src/lib/components/mahnwesen/BescheidPositionen.svelte`). Sichtbar, ohne Wirkung auf
-den Brief; so schon vor dem 29.09.2026 mit `ist_lernmittel`. Vorschlag: bei leerem `topf` ein
-eigener Satz ohne das Wort „Buch" — vorher die M3-Seite zu Listen lesen.
 
 ### 5.38 Der Löschdialog der Leserakte verspricht, was er nicht tut
 
