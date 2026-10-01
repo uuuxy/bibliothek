@@ -152,11 +152,12 @@ aber nur Einzelfunde und keinen Detektor — die erste war damit in vier Monaten
 **Der Merksatz:** Eine Klasse, die schon dreimal dieselbe Zeile in einer anderen Datei war,
 braucht keinen weiteren Einzelfix, sondern eine Liste, die nur mit Begründung wächst.
 
-### Rasterdurchgang 01.10.2026 — fünf Formen, noch ohne Durchgang über den Bestand
+### Rasterdurchgang 01.10.2026 — sechs Formen, eine davon über den Bestand gemessen
 
-Anlass: die vier neuen Fragen des Rasters (15 bis 18, `invarianten.md`). Jede Form ist an
-einer Stelle nachgestellt; über den Bestand gesucht ist keine. Die Zeilen halten die Form
-fest, damit ein Durchgang ein Suchmuster hat. Was offen ist, steht in [OFFEN.md](OFFEN.md).
+Anlass: die vier neuen Fragen des Rasters (15 bis 18, `invarianten.md`). Die ersten fünf
+Formen sind an je einer Stelle nachgestellt und über den Bestand nicht gesucht; die Zeilen
+halten die Form fest, damit ein Durchgang ein Suchmuster hat. Die sechste ist über die ganze
+Oberfläche gemessen. Was offen ist, steht in [OFFEN.md](OFFEN.md).
 
 | Bugklasse | Form | Gate | Stand |
 | --------- | ---- | ---- | ----- |
@@ -165,6 +166,7 @@ fest, damit ein Durchgang ein Suchmuster hat. Was offen ist, steht in [OFFEN.md]
 | **Wächter an der geladenen Liste** | Eine Rückfrage vergleicht gegen die Liste im Speicher der Seite statt gegen den geöffneten Datensatz; steht er nicht in ihr, entfällt sie | — | 01.10.2026: „Gesamtbestand verringern?" (OFFEN.md 5.5). Suchmuster: `.find(` auf einer Liste vor einer Rückfrage |
 | **Speichern wartet auf einen fremden Dienst** | Ein Schreibpfad fragt vor dem Schreiben einen Dienst außerhalb, mit einer Frist über der der Oberfläche; fehlt der Dienst, wird nichts gespeichert | — | 01.10.2026: `ergaenzeBuchMetadaten` (OFFEN.md 5.5). Nicht durchgesehen: die Bestelltür `aus-isbn`, der Listenimport |
 | **Feld ohne Enter** | Ein Feld, in das gescannt wird, hört nicht auf das Enter des Scanners, oder nach dem Öffnen hat kein Feld den Fokus | Muster: `frontend/e2e/kiosk-scannerfokus.spec.js` (blind tippen, kein Klick) | 01.10.2026: Maske „Neues Buch" (OFFEN.md 5.5) |
+| **Knopf ohne Antwort** | Ein Speichern-Weg steigt vor dem Schreiben aus (`if (…) return`), ohne dass der Knopf gesperrt ist oder etwas gemeldet wird | — Gemessen am 01.10.2026 am AST über alle `.svelte` und `.js`: 192 Funktionen schreiben, an 92 Stellen steht davor ein Ausstieg ohne Meldung im Zweig. Gelesen: abgelehnte Rückfrage, laufender Vorgang oder ein Knopf, der im selben Zustand gesperrt ist. Kein Gate: Der Detektor sieht den gesperrten Knopf im Template nicht, der Bestand wäre die ganze Liste | 01.10.2026: vier Fälle mit leerem Feld (OFFEN.md 6.2); der Scanner-Dialog der Titel-Verwaltung ist mit `63c436c6` entfallen. Dazu gemessen: von 90 Schreibaufrufen ohne eigene Meldung sieht einer die Antwort nicht an (`vermerkeGedruckt`, dort begründet), sechs `catch` ohne Meldung sind begründet |
 
 ## Landkarte der Ratschen — was jede systembedingt NICHT sieht (07.09.2026)
 

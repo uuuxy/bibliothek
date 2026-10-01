@@ -870,6 +870,13 @@ der Tastatur erreichbar noch druckbar — die drei Gründe vom 22.08.2026 als Te
   `DatenschutzKategorie.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
   auch das Kollegium steht (`DeletedStudentList.svelte`). Beim Umbenennen die E2E-Specs
   mitziehen.
+- Vier Knöpfe tun bei leerem Feld nichts und sagen es nicht (gefunden am 01.10.2026 beim
+  Durchgang über die Speichern-Wege der Oberfläche, am Code gelesen): das Rückgabedatum einer
+  Ausleihe speichern (`handleSaveDate` in `BorrowedBooksList.svelte`), die Nummer eines
+  Exemplars speichern (`saveBarcode` in `BookExemplarCard.svelte`), eine Sachgruppe „Sichern"
+  (`speichereBearbeitung` in `SystematikVerwaltung.svelte`) und „Anmelden" mit leerer Adresse
+  oder leerem Passwort (`authStore.handleLogin`). Verloren geht nichts. Den Knopf in dem
+  Zustand sperren oder das Feld nennen.
 - Zwölf Dialoge und Formulare sperren „Abbrechen", solange ihre Anfrage läuft (etwa
   `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`;
   gezählt am 01.10.2026). M3 Dialogs, Guidelines: „Disable confirming actions until a choice is
