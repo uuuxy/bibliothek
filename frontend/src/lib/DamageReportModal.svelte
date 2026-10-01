@@ -29,6 +29,9 @@
 	// und sagt dazu, WIE er entstanden ist; bis seine Antwort da ist, steht hier lieber 0
 	// als eine Zahl, die gleich wegspringt.
 	let damageAmount = $state(0);
+	// Hat jemand den Betrag selbst eingetragen? Dann bleibt er stehen, auch wenn der Vorschlag
+	// erst danach eintrifft — sonst entstünde die Forderung über den Vorschlag statt den Betrag.
+	let vonHand = false;
 	/** Der Satz unter dem Betragsfeld: Herleitung, Ladehinweis oder Fehlermeldung. */
 	let herleitung = $state('');
 	// Die Fallgruppe steht im Bescheid an die Eltern (welches Kästchen, ob Rückgabe
@@ -46,6 +49,7 @@
 		if (!exemplarId || ohneForderung) return;
 
 		let abgebrochen = false;
+		vonHand = false;
 		herleitung = 'Vorschlag wird berechnet …';
 
 		apiFetch(`/api/buecher/exemplare/${exemplarId}/ersatzwert-vorschlag`)
@@ -55,7 +59,7 @@
 			})
 			.then((v) => {
 				if (abgebrochen) return;
-				damageAmount = v.betrag ?? 0;
+				if (!vonHand) damageAmount = v.betrag ?? 0;
 				herleitung = v.herleitung ?? '';
 			})
 			.catch(() => {
@@ -118,6 +122,7 @@
 						min="0"
 						hint={herleitung}
 						bind:value={damageAmount}
+						oninput={() => (vonHand = true)}
 					>
 						{#snippet nachlaufend()}€{/snippet}
 					</Feld>

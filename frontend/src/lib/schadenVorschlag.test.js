@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, waitFor } from '@testing-library/svelte';
+import { render, waitFor, fireEvent } from '@testing-library/svelte';
 import DamageReportModal from './DamageReportModal.svelte';
 import { apiFetch } from './apiFetch.js';
 
@@ -98,6 +98,38 @@ describe('Betragsvorschlag im Melde-Dialog', () => {
 		await waitFor(() =>
 			expect(screen.container.textContent ?? '').toContain('bitte Betrag selbst eintragen')
 		);
+	});
+
+	// Der Vorschlag kann nach dem Tippen eintreffen, etwa bei langsamem Netz. Der getippte
+	// Betrag bleibt dann stehen; sonst entstünde die Forderung über den Vorschlag — kennt der
+	// Server keinen Preis, über 0 €.
+	it('lässt einen schon getippten Betrag stehen, wenn der Vorschlag später kommt', async () => {
+		let liefere = () => {};
+		vi.mocked(apiFetch).mockImplementation(
+			() =>
+				new Promise((resolve) => {
+					liefere = () =>
+						resolve(
+							/** @type {any} */ ({
+								ok: true,
+								json: async () => ({ betrag: 0, herleitung: 'kein Preis hinterlegt' })
+							})
+						);
+				})
+		);
+		const onSubmit = vi.fn();
+		const screen = render(DamageReportModal, { book: buch, onCancel: vi.fn(), onSubmit });
+
+		const feld = /** @type {HTMLInputElement} */ (screen.getByLabelText(/Ersatzbetrag/));
+		await fireEvent.input(feld, { target: { value: '12.5' } });
+		liefere();
+		await waitFor(() =>
+			expect(screen.container.textContent ?? '').toContain('kein Preis hinterlegt')
+		);
+
+		expect(feld.value).toBe('12.5');
+		await fireEvent.click(screen.getByRole('button', { name: 'Melden' }));
+		expect(onSubmit).toHaveBeenCalledWith('Verloren', 12.5, 'nicht_zurueckgegeben');
 	});
 
 	it('fragt bei einem Kollegen gar nicht erst — dort entsteht keine Forderung', async () => {
