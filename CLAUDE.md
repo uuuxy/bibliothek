@@ -81,3 +81,7 @@ Tabelle · TabelleSortKopf · Zaehlerpille.
 - Dokumente nennen die Sache, nicht den Absender: keine Personennamen, keine prüfende Stelle.
 - Sachlich schreiben: Aussage, Beleg, nächster Schritt. Keine Werbesprache, keine Bewertungen.
 - Commit-Nachrichten auf Deutsch, ohne Werkzeug-Hinweis.
+- Kommentare im Code: ein bis zwei Sätze, warum der Code so ist. Kein Datum, keine
+  Vorgeschichte („bis zum … war …"), keine Wörter in Großbuchstaben zur Betonung — die
+  Geschichte steht in der Commit-Nachricht. Gilt für neue Kommentare und für Dateien, die
+  ohnehin angefasst werden; der Bestand wird nicht in einem Zug umgeschrieben.
