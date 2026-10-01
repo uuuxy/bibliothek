@@ -2,9 +2,8 @@ import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 
 // Die Suchleiste der Theke: ohne getönte Fläche dahinter, der Inhalt 24 px darunter, und beim
-// Scrollen bleibt sie stehen. Gemessen am 01.10.2026 lag sie auf einer Fläche in anderer
-// Farbe als die Seite, der Inhalt folgte nach 40 px, und bei zwölf Ausleihen rollte sie mit
-// nach oben aus dem Fenster.
+// Scrollen bleibt sie stehen. Rollte sie mit, stünde bei zwölf Ausleihen kein Scanfeld mehr
+// im Fenster.
 const s = uniqueSuffix().slice(0, 8);
 const AUSWEIS = `S-TS-${s}`;
 const FREIES_BUCH = `B-TS-13-${s}`;

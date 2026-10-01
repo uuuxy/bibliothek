@@ -1,11 +1,9 @@
 import { test, expect } from '@playwright/test';
 import { uiLogin, seedSQL, querySQL, uniqueSuffix, ADMIN_PASSWORD } from './helpers.js';
 
-// Die Sperre nach Inaktivität baute die Bildschirme ab; was getippt und nicht gespeichert
-// war, war nach dem Aufschließen weg (docs/OFFEN.md 5.44). Jetzt bleibt die Anwendung hinter
-// dem Sperrbildschirm stehen — ausgeblendet und träge. Die drei Gründe, aus denen sie am
-// 22.08.2026 abgebaut wurde, gelten weiter und stehen hier als Prüfung: Die Druckvorschau
-// zeigt sie nicht, Tab erreicht sie nicht, Screenreader lesen sie nicht.
+// Hinter dem Sperrbildschirm bleibt die Anwendung stehen, ausgeblendet und träge: Was getippt
+// und nicht gespeichert war, steht nach dem Aufschließen noch da. Gesperrt zeigt die
+// Druckvorschau sie nicht, Tab erreicht sie nicht, und Screenreader lesen sie nicht.
 const s = uniqueSuffix().slice(0, 6);
 const kern = ('978' + String(Date.now()).slice(-9)).slice(0, 12);
 const ISBN =
