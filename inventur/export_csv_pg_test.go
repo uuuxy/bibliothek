@@ -12,7 +12,7 @@ import (
 	"bibliothek/repository"
 )
 
-// Die Bestandsliste nennt je Exemplar Signatur, Schlagworte und Eigentum (docs/OFFEN.md 4.22):
+// Die Bestandsliste nennt je Exemplar Signatur, Schlagworte und Eigentum (PFLEGEKONZEPT.md 8):
 // der Teil des Bestands, der sich bei einem Wechsel auf ein anderes Programm nicht neu
 // erfassen lässt. An der echten Datenbank geprüft, weil die drei Spalten aus drei Tabellen
 // kommen und das Eigentum der Regel mit drei Stufen folgt (repository.ExemplarTopfSQL).
