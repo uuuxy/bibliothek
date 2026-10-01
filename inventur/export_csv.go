@@ -9,7 +9,11 @@ import (
 	"time"
 
 	"bibliothek/pkg/csvutil"
+	"bibliothek/repository"
 )
+
+// exportSchlagwortTrenner trennt die Schlagworte eines Titels in ihrer einen Zelle.
+const exportSchlagwortTrenner = " | "
 
 // handleExportCSV handles the GET /api/admin/books/export route.
 //
@@ -34,7 +38,7 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 		// Write UTF-8 BOM so Excel opens it correctly with UTF-8
 		_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF}) //nolint:errcheck
 		kopfGesendet = true
-		return writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand"})
+		return writer.Write([]string{"Titel", "Autor", "Verlag", "ISBN", "Jahr", "Kategorie", "Barcode", "Zustand", "Signatur", "Schlagworte", "Eigentum"})
 	}
 
 	// Schutz vor Formel-Injection: Titel/Autor/Notizen stammen aus Importen und
@@ -58,23 +62,38 @@ func (handler *APIHandler) handleExportCSV(w http.ResponseWriter, r *http.Reques
 // ohne die Gesamtmenge im Speicher zu halten. kopf wird genau einmal NACH erfolgreichem
 // Query-Start aufgerufen (der Aufrufer sendet dort seine Header). Bricht schreibe ab
 // (z. B. Verbindung weg), endet der Stream mit diesem Fehler.
+//
+// Signatur und Schlagworte stehen am Titel und wiederholen sich je Exemplar; die Schlagworte
+// teilen sich eine Zelle (exportSchlagwortTrenner), alphabetisch wie in der Buchmaske. Das
+// Eigentum ist das des Exemplars nach repository.ExemplarTopfSQL, dieselbe Regel wie am
+// Etikett. Eine Zeile ohne Exemplar hat keins.
 func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf func() error, schreibe func(row []string) error) error {
 	query := `
 		SELECT
-			bt.titel,
-			coalesce(bt.autor, ''),
-			coalesce(bt.verlag, ''),
-			coalesce(bt.isbn, ''),
-			coalesce(bt.erscheinungsjahr, 0),
-			coalesce(bt.subject, ''),
-			coalesce(be.barcode_id, ''),
-			coalesce(be.zustand_notiz, '')
-		FROM buecher_titel bt
-		LEFT JOIN buecher_exemplare be ON bt.id = be.titel_id AND be.ist_ausgesondert = false
-		ORDER BY bt.titel, be.barcode_id;
+			t.titel,
+			coalesce(t.autor, ''),
+			coalesce(t.verlag, ''),
+			coalesce(t.isbn, ''),
+			coalesce(t.erscheinungsjahr, 0),
+			coalesce(t.subject, ''),
+			coalesce(e.barcode_id, ''),
+			coalesce(e.zustand_notiz, ''),
+			coalesce(t.signatur, ''),
+			coalesce(sw.woerter, ''),
+			CASE WHEN e.id IS NULL THEN '' ELSE ` + repository.ExemplarTopfSQL + ` END
+		FROM buecher_titel t
+		LEFT JOIN buecher_exemplare e ON t.id = e.titel_id AND e.ist_ausgesondert = false
+		` + repository.ExemplarTopfJoin + `
+		LEFT JOIN (
+			SELECT ts.titel_id, string_agg(s.wort, $1 ORDER BY lower(s.wort)) AS woerter
+			FROM titel_schlagworte ts
+			JOIN schlagworte s ON s.id = ts.schlagwort_id
+			GROUP BY ts.titel_id
+		) sw ON sw.titel_id = t.id
+		ORDER BY t.titel, e.barcode_id;
 	`
 
-	pgRows, err := repo.db.Query(ctx, query)
+	pgRows, err := repo.db.Query(ctx, query, exportSchlagwortTrenner)
 	if err != nil {
 		return err
 	}
@@ -85,10 +104,10 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 	}
 
 	for pgRows.Next() {
-		var titel, autor, verlag, isbn, subject, barcode, zustand string
+		var titel, autor, verlag, isbn, subject, barcode, zustand, signatur, schlagworte, topf string
 		var jahr int
 
-		if err := pgRows.Scan(&titel, &autor, &verlag, &isbn, &jahr, &subject, &barcode, &zustand); err != nil {
+		if err := pgRows.Scan(&titel, &autor, &verlag, &isbn, &jahr, &subject, &barcode, &zustand, &signatur, &schlagworte, &topf); err != nil {
 			return err
 		}
 
@@ -102,7 +121,8 @@ func (repo *BookRepository) StreamBooksForCSVExport(ctx context.Context, kopf fu
 			isbn = "'" + isbn
 		}
 
-		if err := schreibe([]string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand}); err != nil {
+		zeile := []string{titel, autor, verlag, isbn, jahrStr, subject, barcode, zustand, signatur, schlagworte, repository.MittelTraeger(topf)}
+		if err := schreibe(zeile); err != nil {
 			return err
 		}
 	}

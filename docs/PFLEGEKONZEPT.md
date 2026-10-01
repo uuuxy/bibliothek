@@ -1,6 +1,6 @@
 # Pflegekonzept und Wartungshandbuch
 
-Stand: 29.09.2026 (Entwurf)
+Stand: 02.10.2026 (Entwurf)
 
 Dieses Dokument beantwortet zwei Fragen. Für die Schule und den Schulträger: Wer betreibt und
 pflegt das Programm, wie kommt eine Änderung auf den Server, und was geschieht, wenn die Pflege
@@ -224,11 +224,16 @@ Vorlage zum Ausdrucken: [blatt_vorlage.md](blatt_vorlage.md).
    übernehmen, ändern und weitergeben.
 2. **Findet sich niemand,** läuft das Programm bis zum Ende des Schuljahres weiter. Die Daten
    kommen aus der nächtlichen Sicherung, und die Schule wechselt auf ein Kaufprogramm. Was es
-   dafür heute gibt: die Sicherung selbst, eine vollständige PostgreSQL-Datenbank, und die
-   Bestandsliste als CSV (je Exemplar Titel, Autor, Verlag, ISBN, Jahr, Kategorie, Barcode,
-   Zustand; Einstellungen → Datenverwaltung). Leser, Ausleihen, Signaturen und Schlagworte
-   gibt das Programm in keiner Form aus, die ein anderes Programm einliest; ein Wechsel
-   braucht dafür eine Umsetzung aus der Sicherung (Abschnitt 9).
+   dafür gibt: die Sicherung selbst, eine vollständige PostgreSQL-Datenbank, und die
+   Bestandsliste als CSV (Einstellungen → Datenverwaltung). Sie trägt je Exemplar Titel,
+   Autor, Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand, Signatur, Schlagworte und Eigentum
+   — den Teil des Bestands, der sich nicht neu erfassen lässt. Mehrere Schlagworte stehen in
+   einer Zelle, getrennt durch „ | "; das Eigentum ist „Land" oder „Schulträger", wie auf dem
+   Etikett. Die Liste führt auch bestellte, noch nicht eingetroffene Exemplare (Zustand „Im
+   Zulauf …") und Titel ohne Exemplar (Zeile ohne Barcode). Leser und Ausleihen gibt das
+   Programm nicht in einer Form aus, die ein anderes Programm einliest (entschieden am
+   01.10.2026): Schüler kommen in jedem Programm aus der LUSD, das Kollegium meldet sich neu
+   an, und gewechselt wird zum Schuljahresende, wenn die Lernmittel zurück sind.
 3. **Ausgeschlossen** ist ein unbefristeter Weiterbetrieb ohne Sicherheitsupdates. Einen Weg
    zurück zu Littera gibt es nicht: Das Programm gibt keine Daten in Litteras Importform aus.
 
@@ -249,6 +254,3 @@ Vorlage zum Ausdrucken: [blatt_vorlage.md](blatt_vorlage.md).
 5. **Betrieb:** Sicherung außer Haus (entschieden am 28.09.2026: zuerst beim Schulträger nach
    einem Speicher fragen), externes Signal bei Ausfall, Probe der Wiederherstellung an einem
    fremden Ziel — [OFFEN.md](OFFEN.md) 7.3, 7.5 und 7.4.
-6. **Datenweg beim Wechsel:** ob das Programm eine Gesamtausgabe bekommt, die ein anderes
-   Programm einliest — Katalog mit Signaturen und Schlagworten, Exemplare, Leser, offene
-   Ausleihen ([OFFEN.md](OFFEN.md) 4.22).

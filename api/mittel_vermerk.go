@@ -39,13 +39,13 @@ type mittelText struct {
 var mittelTexte = map[string]mittelText{
 	repository.MittelLand: {
 		Kurz:    "Lernmittelfreiheit",
-		Traeger: "Land",
+		Traeger: repository.MittelTraeger(repository.MittelLand),
 		Betreff: "Bestellung im Rahmen der Lernmittelfreiheit",
 		Vermerk: "Die Bücher werden im Rahmen der Lernmittelfreiheit beschafft — Sammelbestellung der Schule.",
 	},
 	repository.MittelSchultraeger: {
 		Kurz:    "Schülerbücherei",
-		Traeger: "Schulträger",
+		Traeger: repository.MittelTraeger(repository.MittelSchultraeger),
 		Betreff: "Bestellung für die Schülerbücherei",
 		Vermerk: "Die Bücher sind eine Anschaffung für die Schülerbücherei aus Mitteln des Schulträgers — keine Beschaffung im Rahmen der Lernmittelfreiheit.",
 		// „Schultr" ist das Unterscheidungswort im PDF-Gate; es steht nur in diesem Vermerk.

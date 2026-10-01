@@ -15,6 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// exportSpalten sind die Spalten der Export-Abfrage in ihrer Reihenfolge.
+var exportSpalten = []string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand", "signatur", "schlagworte", "topf"}
+
 func TestStreamBooksForCSVExport(t *testing.T) {
 	t.Run("successful stream", func(t *testing.T) {
 		mock, err := pgxmock.NewPool()
@@ -24,11 +27,12 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		repo := NewBookRepository(mock)
 		ctx := context.Background()
 
-		rows := pgxmock.NewRows([]string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand"}).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut").
-			AddRow("Buch 2", "", "", "", 0, "", "", "")
+		rows := pgxmock.NewRows(exportSpalten).
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "land").
+			AddRow("Buch 2", "", "", "", 0, "", "", "", "", "", "")
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
+			WithArgs(exportSchlagwortTrenner).
 			WillReturnRows(rows)
 
 		kopfCalled := false
@@ -47,8 +51,8 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, kopfCalled)
 		require.Len(t, resultRows, 2)
-		assert.Equal(t, []string{"Buch 1", "Autor 1", "Verlag 1", "'1234567890", "2021", "Kategorie 1", "BC1", "Gut"}, resultRows[0])
-		assert.Equal(t, []string{"Buch 2", "", "", "", "", "", "", ""}, resultRows[1])
+		assert.Equal(t, []string{"Buch 1", "Autor 1", "Verlag 1", "'1234567890", "2021", "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "Land"}, resultRows[0])
+		assert.Equal(t, []string{"Buch 2", "", "", "", "", "", "", "", "", "", ""}, resultRows[1])
 
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -62,6 +66,7 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		ctx := context.Background()
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
+			WithArgs(exportSchlagwortTrenner).
 			WillReturnError(errors.New("db error"))
 
 		kopfCalled := false
@@ -87,8 +92,9 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		repo := NewBookRepository(mock)
 		ctx := context.Background()
 
-		rows := pgxmock.NewRows([]string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand"})
+		rows := pgxmock.NewRows(exportSpalten)
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
+			WithArgs(exportSchlagwortTrenner).
 			WillReturnRows(rows)
 
 		kopf := func() error {
@@ -111,10 +117,11 @@ func TestStreamBooksForCSVExport(t *testing.T) {
 		repo := NewBookRepository(mock)
 		ctx := context.Background()
 
-		rows := pgxmock.NewRows([]string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand"}).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut")
+		rows := pgxmock.NewRows(exportSpalten).
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "schultraeger")
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
+			WithArgs(exportSchlagwortTrenner).
 			WillReturnRows(rows)
 
 		kopf := func() error { return nil }
@@ -139,11 +146,12 @@ func TestHandleExportCSV(t *testing.T) {
 		repo := NewBookRepository(mock)
 		handler := &APIHandler{repo: repo}
 
-		rows := pgxmock.NewRows([]string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand"}).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut").
-			AddRow("=Buch 2", "", "", "", 0, "", "", "") // check formula sanitization
+		rows := pgxmock.NewRows(exportSpalten).
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "Ma 8", "Algebra | Geometrie", "schultraeger").
+			AddRow("=Buch 2", "", "", "", 0, "", "", "", "", "", "") // check formula sanitization
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
+			WithArgs(exportSchlagwortTrenner).
 			WillReturnRows(rows)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)
@@ -168,9 +176,9 @@ func TestHandleExportCSV(t *testing.T) {
 		bodyStr := string(bytes.TrimPrefix(body, []byte{0xEF, 0xBB, 0xBF}))
 		lines := strings.Split(strings.TrimSpace(bodyStr), "\n")
 		require.Len(t, lines, 3)
-		assert.Equal(t, "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand", lines[0])
-		assert.Equal(t, "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut", lines[1])
-		assert.Equal(t, "'=Buch 2;;;;;;;", lines[2]) // sanitized
+		assert.Equal(t, "Titel;Autor;Verlag;ISBN;Jahr;Kategorie;Barcode;Zustand;Signatur;Schlagworte;Eigentum", lines[0])
+		assert.Equal(t, "Buch 1;Autor 1;Verlag 1;'1234567890;2021;Kategorie 1;BC1;Gut;Ma 8;Algebra | Geometrie;Schulträger", lines[1])
+		assert.Equal(t, "'=Buch 2;;;;;;;;;;", lines[2]) // sanitized
 
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -184,6 +192,7 @@ func TestHandleExportCSV(t *testing.T) {
 		handler := &APIHandler{repo: repo}
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
+			WithArgs(exportSchlagwortTrenner).
 			WillReturnError(errors.New("db error"))
 
 		req := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)
@@ -211,11 +220,12 @@ func TestHandleExportCSV(t *testing.T) {
 		repo := NewBookRepository(mock)
 		handler := &APIHandler{repo: repo}
 
-		rows := pgxmock.NewRows([]string{"titel", "autor", "verlag", "isbn", "jahr", "subject", "barcode", "zustand"}).
-			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut").
+		rows := pgxmock.NewRows(exportSpalten).
+			AddRow("Buch 1", "Autor 1", "Verlag 1", "1234567890", 2021, "Kategorie 1", "BC1", "Gut", "", "", "land").
 			RowError(0, errors.New("connection lost"))
 
 		mock.ExpectQuery("SELECT.+FROM buecher_titel.+LEFT JOIN buecher_exemplare").
+			WithArgs(exportSchlagwortTrenner).
 			WillReturnRows(rows)
 
 		req := httptest.NewRequest(http.MethodGet, "/api/admin/books/export", nil)

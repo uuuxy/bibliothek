@@ -74,9 +74,9 @@ hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat 
 (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
 Reihenfolge unter 1. die vom 29.09.2026).
 
-1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.22 und 4.24 stehen die
-   Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus. Zu 4.28 (Anmelden
-   ohne Mailserver) steht die Entscheidung aus.
+1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.24 ist am 01.10.2026
+   entschieden: kein dritter Eigentümer im Programm, die Frage geht an die Bücherei (oben
+   unter 2.). Zu 4.28 (Anmelden ohne Mailserver) steht die Entscheidung aus; erst klären.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -190,30 +190,6 @@ Die Übernahme aus der Sicherung zählt die Verweise zwischen Schlagworten
 (`internal/littera/schlagworte.go`); in der Sicherung von 2010 sind beide leer. Nennt die
 Generalprobe mit der Sicherung von 2026 welche, an diesen Daten die Form ablesen und die
 Übernahme bauen.
-
-### 4.22 Datenweg beim Wechsel auf ein anderes Programm
-
-Aufgefallen beim Datenschutz-Nachweis (28.09.2026), am Code nachgesehen. Für das Ende der Pflege
-sieht das Pflegekonzept den Wechsel auf ein Kaufprogramm vor (Abschnitt 8). Mitnehmen lassen sich
-heute die nächtliche Sicherung, eine vollständige PostgreSQL-Datenbank, und die Bestandsliste als
-CSV (`GET /api/admin/books/export`, Einstellungen → Datenverwaltung: je Exemplar Titel, Autor,
-Verlag, ISBN, Jahr, Kategorie, Barcode, Zustand). Leser, Ausleihen, Signaturen und Schlagworte
-gibt das Programm in keiner Form aus, die ein anderes Programm einliest; ein Wechsel bräuchte
-eine Umsetzung aus der Sicherung. Littera führt unter Dienstprogramme einen Ex- und Import der
-Schlagworte. **Frage:** eine Gesamtausgabe bauen (Katalog mit Signaturen und Schlagworten,
-Exemplare, Leser, offene Ausleihen) oder beim Ende der Pflege aus der Sicherung umsetzen?
-Verwandt im Parkdeck (6.3): den Schlagwortkatalog als Datei aus- und einlesen.
-
-**Nachgesehen am 30.09.2026 (Frage-Runde):** Littera liest Titel im MAB-Format ein, auf Wunsch mit
-Schlagworten, und Schüler aus der LUSD (Handbuch, „MAB Import", „LUSD Leserdaten Import").
-BIBLIOTHECAnext gibt im Standardformat MARC21 „keine Exemplar- und Ausleihdaten" aus, Barcodes nur
-im eigenen Format (Hilfe des Herstellers, „Exportfunktionen nutzen"). Den Bestand mit Barcode und
-Signatur übergibt man zwischen Programmen deshalb meist als Tabelle, die der neue Hersteller
-umsetzt. **Empfehlung:** die vorhandene Bestandsliste um Signatur, Schlagworte und Eigentum
-erweitern — der Teil, der sich nicht neu erfassen lässt (rund 67.000 Exemplare mit Etikett). Leser
-und Ausleihen nicht: Schüler kommen in jedem Programm aus der LUSD, das Kollegium meldet sich neu
-an, und gewechselt wird zum Schuljahresende, wenn die Lernmittel zurück sind. Die erweiterte Liste
-nutzt schon heute: Ohne Signatur lässt sie sich nicht nach Regal sortieren.
 
 ### 4.23 Erreichbarkeit von außen
 
@@ -1217,7 +1193,7 @@ stehen:
   jeder Zusage, dem Ablauf bei einer Datenpanne, den bekannten Lücken und dem, was bei der
   Schule liegt. Offen ist die Beschlussfassung der Schule (8.5, B1–B7).
 - **Hosting- und Programmpflegekonzept.** Der Entwurf steht seit dem 24.09.2026, ergänzt am
-  28.09.2026 um die Aufbewahrung der Sicherungen, den Datenweg beim Wechsel (4.22) und die
+  28.09.2026 um die Aufbewahrung der Sicherungen, den Datenweg beim Wechsel und die
   Kontakte für eine Datenpanne: [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) — mit den drei am
   24.09.2026 beantworteten Fragen
   (Betrieb, Pflege mit Vertretung, Ende der Pflege), den wiederkehrenden Aufgaben mit Takt, den

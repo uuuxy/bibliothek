@@ -21,6 +21,20 @@ func MittelGueltig(mittel string) bool {
 	return mittel == MittelLand || mittel == MittelSchultraeger
 }
 
+// MittelTraeger nennt, wem ein Topf gehört, wo ein Mensch es liest: „Land" oder
+// „Schulträger". Berichte (api.mittelTexte) und die Bestandsliste nehmen das Wort von hier;
+// die Oberfläche führt es in bestellungen/mittel.js, verglichen in
+// api/mittel_vokabular_paritaet_test.go. Ein leerer oder unbekannter Wert ergibt "".
+func MittelTraeger(mittel string) string {
+	switch mittel {
+	case MittelLand:
+		return "Land"
+	case MittelSchultraeger:
+		return "Schulträger"
+	}
+	return ""
+}
+
 // ExemplarTopfSQL ist der Topf eines EXEMPLARS als SQL-Ausdruck — das Eigentum folgt dem
 // Geld. Zuerst gilt das Eigentum, das am Exemplar ausdrücklich steht (Migration 150: aus dem
 // Littera-Vermerk oder von Hand), dann die Zuordnung seiner Bestellung, und wo es beides
