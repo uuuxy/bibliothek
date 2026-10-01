@@ -733,6 +733,14 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
 
 ### 6.2 Kategorie C
 
+- Reste des Worts „Schülerdatei" nach der Umbenennung in „Leserdatei" (16.09.2026), gefunden am
+  01.10.2026: das Recht „Schülerdatei anzeigen" samt Beschreibung und der Hinweis darauf in der
+  Vormerk-Liste (`permissionMetadata.js`, `BookVormerkungenTab.svelte`), das Etikett der
+  Reiterleiste (`StudentDirectory.svelte`), „Öffnet die Schülerdatei …" im Druck-Einstieg
+  (`KlassenDruckEinstieg.svelte`), „Schülerakte" in zwei Erklärtexten (`permissionMetadata.js`,
+  `DatenschutzKategorie.svelte`) und die Überschrift „Gelöschte Schüler (Papierkorb)", unter der
+  auch das Kollegium steht (`DeletedStudentList.svelte`). Beim Umbenennen die E2E-Specs
+  mitziehen.
 - Die Akte eines Kollegen ohne Ausweisnummer sagt am gesperrten Ausweisdruck „die Nummer steht
   in „Benutzer & Rechte""; ohne Konto hat er dort keinen Eintrag. Die Nummer kommt mit dem
   freigeschalteten Zugang (`StudentProfileActions.svelte`, `data-tip`).
