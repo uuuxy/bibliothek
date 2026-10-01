@@ -164,7 +164,7 @@ func PruefeIMAPKonfiguration() error {
 		return errors.New("IMAP_HOST ist nicht gesetzt — ohne Mailserver ist keine Anmeldung möglich (lokal: IMAP_HOST=mock mit APP_ENV=local)")
 	}
 	if host == "mock" && !istLokaleUmgebung() {
-		return fmt.Errorf("IMAP_HOST=mock akzeptiert jedes Passwort und ist nur mit APP_ENV=local/development/test zulässig (aktuell: APP_ENV=%q)", os.Getenv("APP_ENV"))
+		return fmt.Errorf("IMAP_HOST=mock nimmt jedes Passwort an — auf einem Server den Mailserver der Schule eintragen und APP_ENV nicht ändern; mock gilt nur auf dem Entwicklungsrechner zusammen mit APP_ENV=local (aktuell: APP_ENV=%q)", os.Getenv("APP_ENV"))
 	}
 	return nil
 }

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> Zuletzt aktualisiert: 2026-09-25
+> Zuletzt aktualisiert: 2026-10-01
 
 ---
 
@@ -24,7 +24,7 @@ Alle Secrets werden über Umgebungsvariablen übergeben. **Niemals Secrets in di
 | `DATABASE_URL`                                                             | PostgreSQL-DSN                                                                                                                                                                                                                               | Pflicht                                                                                                                                                                                                                                    |
 | `JWT_SECRET`                                                               | HMAC-Signatur-Schlüssel                                                                                                                                                                                                                      | Pflicht, ≥ 32 Zeichen                                                                                                                                                                                                                      |
 | `APP_ENCRYPTION_KEY`                                                       | AES-256-Schlüssel für Schülerfotos **und** das gespeicherte SMTP-Passwort                                                                                                                                                                    | Pflicht, genau 32 Bytes (oder 64 Hex-Zeichen). **Der einzige gültige Name** — `ENCRYPTION_KEY` wurde bis zum 06.08.2026 vorrangig gelesen und umging dabei jede Startprüfung; der Server bricht jetzt ab, wenn er abweichend gesetzt ist   |
-| `APP_ENV`                                                                  | Umgebung (`production` / `local` / `development` / `test`) — steuert Cookie-Secure, Swagger und den Secret-Guard (siehe `ENFORCE_PROD_SECRETS`)                                                                                             | Standard: `production`                                                                                                                                                                                                                     |
+| `APP_ENV`                                                                  | Umgebung. Auf einem Server bleibt `production`; `local` / `development` / `test` lassen die Beispiel-Geheimnisse und `IMAP_HOST=mock` (jedes Passwort) gelten, `local` / `development` öffnen zusätzlich Swagger                            | Standard: `production`                                                                                                                                                                                                                     |
 | `ENFORCE_PROD_SECRETS`                                                     | Harte Start-Verweigerung bei Default-Secrets                                                                                                                                                                                                 | **Vorgabe scharf** außerhalb von `local/development/test` (seit 05.09.2026); nur ausdrückliches `false` schaltet ab                                                                                                                       |
 | `COOKIE_SECURE`                                                            | `true` hinter TLS-Proxy (Caddy)                                                                                                                                                                                                              | Standard: **`true`**, außerhalb von `APP_ENV=local/development/test`. Nicht gesetzt → `true` mit Warnung im Log; unlesbarer Wert → harter Abbruch (`ermittleCookieSecure`). `docker-compose.yml` setzt zusätzlich `${COOKIE_SECURE:-true}` |
 | `PORT`                                                                     | HTTP-Port des Backends                                                                                                                                                                                                                       | Pflicht                                                                                                                                                                                                                                    |
@@ -170,8 +170,10 @@ verlangt die beiden Werte zusätzlich per `${VAR:?}` — ohne sie startet der St
 > Bis zum 05.09.2026 war es umgekehrt (`false` als Standard, `true` musste gesetzt
 > werden). Eine vergessene Zeile reichte, um den Schulserver mit dem JWT-Schlüssel aus dem
 > Repository zu betreiben. `APP_ENV` ist daran gekoppelt: `local`/`development`/`test`
-> schalten den Guard ab, solange `ENFORCE_PROD_SECRETS` nicht gesetzt ist — und würden
-> zugleich das Cookie-`Secure`-Flag deaktivieren und Swagger freischalten.
+> schalten den Guard ab, solange `ENFORCE_PROD_SECRETS` nicht gesetzt ist — und erlauben
+> zugleich `IMAP_HOST=mock`, also die Anmeldung mit jedem Passwort; `local` und
+> `development` schalten zusätzlich Swagger frei. Das Cookie-`Secure`-Flag fällt nur weg,
+> wenn `COOKIE_SECURE` nicht gesetzt ist — `docker-compose.yml` setzt es immer.
 
 Fehlermeldung bei Default-Secret:
 
@@ -182,10 +184,11 @@ JWT_SECRET (≥32 Zeichen) — oder ENFORCE_PROD_SECRETS=false während der Test
 
 **Prüfen statt hoffen:** `./scripts/pruefe_secrets.sh /pfad/zur/.env` liest die Datei,
 ändert nichts und meldet genau die Fehlkonfigurationen, die im Betrieb still bleiben —
-Default-Secrets, fehlender Backup-Schlüssel, `IMAP_HOST=mock`, offene Produktionsschalter.
+Default-Secrets (auch die Beispielwerte aus `.env.example`), fehlender Backup-Schlüssel,
+`IMAP_HOST=mock`, `APP_ENV` auf `local`/`development`/`test`, offene Produktionsschalter.
 Exit-Code 1 bei kritischem Befund, damit es sich in ein Deploy-Skript hängen lässt.
 
-**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY` sowie `COOKIE_SECURE=true` (hinter Caddy-HTTPS); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`.
+**Checkliste vor dem ersten echten Prod-Deploy:** echte Werte für `JWT_SECRET`, `APP_ENCRYPTION_KEY`, `POSTGRES_PASSWORD`, `BACKUP_ENCRYPTION_KEY`; `IMAP_HOST` ist der Mailserver der Schule, nie `mock`; `APP_ENV` bleibt `production`; `COOKIE_SECURE=true` (hinter Caddy-HTTPS); keine Zeile `ENFORCE_PROD_SECRETS=false` in der `.env`. Verweigert der Server den Start wegen eines dieser Werte, behebt ein anderes `APP_ENV` das nicht — es schaltet die Prüfung ab.
 
 > **`APP_ENCRYPTION_KEY` auf einem System mit Bestand ändern?** Nicht einfach
 > überschreiben — Schülerfotos und das gespeicherte SMTP-Passwort sind damit

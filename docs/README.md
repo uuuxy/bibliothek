@@ -131,6 +131,7 @@ Backend: `http://localhost:8084` · DB: `localhost:5434`
 ```bash
 cp .env.example .env
 # DATABASE_URL, JWT_SECRET (≥32 Zeichen), APP_ENCRYPTION_KEY (32 Bytes) anpassen
+# Nur auf dem Entwicklungsrechner: APP_ENV=local und IMAP_HOST=mock (jedes Passwort gilt)
 ```
 
 **2. Backend starten**

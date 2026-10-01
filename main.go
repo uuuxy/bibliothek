@@ -252,12 +252,9 @@ func loadConfig() (dsn, jwtSecret, port string, cookieSecure bool) {
 	// NICHT verwendet werden. Sonst könnte jeder mit Repo-Zugriff Admin-JWTs fälschen (JWT_SECRET)
 	// bzw. die AES-verschlüsselten Schülerfotos entschlüsseln (APP_ENCRYPTION_KEY).
 	//
-	// Die Verweigerung ist seit dem 05.09.2026 die VORGABE außerhalb von local/development/
-	// test. Vorher musste sie mit ENFORCE_PROD_SECRETS=true eingeschaltet werden — eine
-	// vergessene Zeile reichte, damit der Schulserver mit dem Schlüssel aus dem Repository
-	// lief. Wer die Testphase ohne eigene Geheimnisse fahren will, schreibt ausdrücklich
-	// ENFORCE_PROD_SECRETS=false (Regel: api.ErzwingeProdGeheimnisse, geteilt mit der
-	// Selbstprüfung). APP_ENV steuert weiterhin Cookie-Secure & Swagger-Sichtbarkeit.
+	// Außerhalb von local/development/test verweigert der Server die Beispielwerte von
+	// selbst. Nur ein ausdrückliches ENFORCE_PROD_SECRETS=false schaltet das für eine
+	// Testphase ab (api.ErzwingeProdGeheimnisse, geteilt mit der Selbstprüfung).
 	enforceProdSecrets := api.ErzwingeProdGeheimnisse(os.Getenv("APP_ENV"), os.Getenv("ENFORCE_PROD_SECRETS"))
 	if !enforceProdSecrets && strings.EqualFold(strings.TrimSpace(os.Getenv("ENFORCE_PROD_SECRETS")), "false") {
 		slog.Warn("ENFORCE_PROD_SECRETS=false — der Server startet auch mit Beispiel-Geheimnissen aus dem Repository. Nur für die Testphase zulässig.",

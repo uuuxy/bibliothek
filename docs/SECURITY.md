@@ -2,7 +2,9 @@
 
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
-> Zuletzt aktualisiert: 2026-09-30 (Security-Header: Antworten unter `/api/` tragen
+> Zuletzt aktualisiert: 2026-10-01 (Einrichtung: was `APP_ENV` schaltet, die Vorlage ohne
+> `IMAP_HOST=mock`; `/uploads/` liefert nur Dateien direkt im Verzeichnis aus).
+> Davor 2026-09-30 (Security-Header: Antworten unter `/api/` tragen
 > `Cache-Control: no-store`, der Browser legt sie nicht ab).
 > Davor 2026-09-29 (Löschroutinen: erledigte Klassensatz-Reservierungen fallen
 > nach der Frist der Anliegen, gelöschte Kollegen nach 180 Tagen im Papierkorb).
@@ -379,9 +381,15 @@ entscheiden. Gates: `api/prod_geheimnisse_test.go`,
 `TestLoadConfig_ProduktionOhneSchalterVerweigertBeispielJWT` (mit dem alten Code rot).
 
 Die Entkopplung von `APP_ENV` bleibt für den Ausnahmefall: `APP_ENV=local` würde zugleich
-das Cookie-`Secure`-Flag deaktivieren und Swagger öffentlich freischalten. Wer auf einem
-production-Server ohne eigene Geheimnisse testen will, schreibt `ENFORCE_PROD_SECRETS=false`
-— sichtbar, und `scripts/pruefe_secrets.sh` meldet es als kritisch.
+`IMAP_HOST=mock` erlauben, also die Anmeldung mit jedem Passwort, und Swagger öffentlich
+freischalten. Das Cookie-`Secure`-Flag fiele nur weg, wenn `COOKIE_SECURE` nicht gesetzt
+ist; `docker-compose.yml` setzt es immer. Wer auf einem production-Server ohne eigene
+Geheimnisse testen will, schreibt `ENFORCE_PROD_SECRETS=false` — sichtbar, und
+`scripts/pruefe_secrets.sh` meldet es als kritisch, ebenso `APP_ENV` auf `local`,
+`development` oder `test` und die Beispielwerte aus `.env.example`. Die Vorlage trägt
+deshalb kein `IMAP_HOST=mock`, und die Startmeldung des Servers nennt für diesen Fall als
+Weg, den Mailserver der Schule einzutragen und `APP_ENV` stehen zu lassen (Gates:
+`docs/env_vorlage_test.go`, `docs/pruefe_secrets_test.go`, `auth/imap_test.go`).
 
 ### Mindestanforderungen
 

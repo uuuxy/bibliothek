@@ -41,12 +41,14 @@ kritisch() { printf "  ${ROT}✗ %s${AUS}\n    %s\n" "$1" "$2"; befunde=$((befun
 warnung() { printf "  ${GELB}! %s${AUS}\n    %s\n" "$1" "$2"; warnungen=$((warnungen + 1)); }
 gut() { printf "  ${GRUEN}✓ %s${AUS}\n" "$1"; }
 
-# Die Default-Werte aus docker-compose.yml und main.go. Wer einen davon einsetzt,
-# nutzt ein Geheimnis, das öffentlich im Repository steht.
+# Die Beispielwerte aus docker-compose.yml, main.go und .env.example. Wer einen davon
+# einsetzt, nutzt ein Geheimnis, das öffentlich im Repository steht.
 ist_bekannter_default() {
 	case "$1" in
 	"super-secret-default-key-at-least-32-bytes" | "super-secure-aes-key-32-chars-ok" | \
-		"supergeheim_lokal" | "local-dev-jwt-secret-min-32-characters" | "admin" | "postgrespassword")
+		"supergeheim_lokal" | "local-dev-jwt-secret-min-32-characters" | "admin" | "postgrespassword" | \
+		"super-secret-key-that-is-at-least-32-bytes-long" | "your-32-character-encryption-key" | \
+		"change-me-local-dev")
 		return 0
 		;;
 	*) return 1 ;;
@@ -113,7 +115,7 @@ if [ -z "$backup_key" ]; then
 		"Der nächtliche Job überspringt sich STILL (jobs/backup.go). Es gibt keine Backups."
 elif [ "${#backup_key}" -lt 32 ]; then
 	warnung "BACKUP_ENCRYPTION_KEY ist nur ${#backup_key} Zeichen lang" \
-		"Die Ableitung läuft per SHA-256 und ist schnell — kurze Passphrasen sind an einer entwendeten Backup-Datei offline angreifbar. Empfohlen: >= 32."
+		"Der Schlüssel wird per scrypt aus dieser Passphrase abgeleitet; eine kurze Passphrase bleibt an einer entwendeten Backup-Datei ratbar. Empfohlen: >= 32."
 else
 	gut "BACKUP_ENCRYPTION_KEY ist gesetzt (${#backup_key} Zeichen)"
 fi
@@ -154,12 +156,17 @@ else
 	gut "IMAP_HOST=$imap"
 fi
 
-appenv="$(lies APP_ENV)"
-if [ "$appenv" = "local" ] || [ "$appenv" = "development" ]; then
-	kritisch "APP_ENV=$appenv" "Damit sind die Swagger-Docs öffentlich und der IMAP-Mock erlaubt."
-else
+# Gelesen wie im Server: ohne Rücksicht auf Großschreibung und Leerzeichen.
+appenv="$(lies APP_ENV | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+case "$appenv" in
+local | development | test)
+	kritisch "APP_ENV=$appenv" \
+		"Damit gelten die Beispiel-Geheimnisse aus dem Repository und IMAP_HOST=mock (jedes Passwort); bei local und development steht zusätzlich die API-Dokumentation offen. Auf einem Server bleibt APP_ENV=production."
+	;;
+*)
 	gut "APP_ENV=${appenv:-production (Compose-Default)}"
-fi
+	;;
+esac
 
 echo
 echo "─────────────────────────────────────────────────────────"

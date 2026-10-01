@@ -62,6 +62,23 @@ func TestPruefeIMAPKonfiguration(t *testing.T) {
 	}
 }
 
+// Die Startmeldung nennt den Weg für den Server: Mailserver eintragen, APP_ENV lassen.
+// Sonst liest sie sich wie die Anweisung, APP_ENV auf local zu stellen.
+func TestPruefeIMAPKonfiguration_MeldungLaesstAppEnvStehen(t *testing.T) {
+	t.Setenv("APP_ENV", "production")
+	t.Setenv("IMAP_HOST", "mock")
+
+	err := PruefeIMAPKonfiguration()
+	if err == nil {
+		t.Fatal("IMAP_HOST=mock in production: kein Fehler")
+	}
+	for _, muss := range []string{"Mailserver der Schule eintragen", "APP_ENV nicht ändern"} {
+		if !strings.Contains(err.Error(), muss) {
+			t.Errorf("Startmeldung %q nennt %q nicht", err.Error(), muss)
+		}
+	}
+}
+
 // Zweite Schranke: Selbst wenn die Variable erst zur Laufzeit auf "mock" gesetzt
 // wird (also am Startup-Check vorbei), darf AuthenticateIMAP außerhalb der
 // lokalen Entwicklung nicht mehr blind "Passwort korrekt" melden.
