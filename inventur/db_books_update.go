@@ -129,6 +129,8 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 		}
 	}
 
+	// Nach dem UPDATE des Titels: Dessen Zeilensperre lässt einen zweiten Speichervorgang
+	// warten, bis dieser festgeschrieben ist, und erst dann zählen.
 	if bestand != nil {
 		if err := repo.setzeBestand(ctx, tx, id, *bestand); err != nil {
 			return err
