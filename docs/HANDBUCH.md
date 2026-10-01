@@ -88,7 +88,8 @@ Feld) · Passbild per Webcam · Ausweis drucken, Kontoauszug, DSGVO-Auskunft als
 Nach 5 Minuten ohne Eingabe schließt sich die Akte, nach 15 Minuten der Sperrbildschirm —
 beides einstellbar (_Datenschutz & Sitzung_). Weiter geht es mit dem eigenen Passwort, auch
 nach dem Neuladen der Seite und auch dann, wenn der Mailserver der Schule gerade nicht
-erreichbar ist. Ein Scan am Sperrbildschirm oder an der Anmeldung zählt nicht als falsches
+erreichbar ist. Was getippt und noch nicht gespeichert war, steht nach dem Aufschließen noch
+da, an derselben Stelle. Ein Scan am Sperrbildschirm oder an der Anmeldung zählt nicht als falsches
 Passwort: Der Bildschirm meldet „Scan erkannt", erst das eingetippte Passwort schließt auf.
 
 ---

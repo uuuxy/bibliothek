@@ -5,7 +5,6 @@
 	import BestellBestaetigung from './lib/BestellBestaetigung.svelte';
 
 	import { authStore } from './lib/stores/authStore.svelte.js';
-	import { hatRecht } from './lib/menu.js';
 	import { uiStore } from './lib/stores/uiStore.svelte.js';
 	import { starteHintergrundAbrufe } from './lib/stores/hintergrundAbrufe.svelte.js';
 	import { appState } from './inventur/lib/store.svelte.js';
@@ -14,11 +13,7 @@
 
 	import Login from './lib/components/auth/Login.svelte';
 	import Sperrbildschirm from './lib/components/auth/Sperrbildschirm.svelte';
-	import Sidebar from './lib/components/layout/Sidebar.svelte';
-	import BackupAlert from './lib/components/system/BackupAlert.svelte';
-	import Router from './lib/Router.svelte';
-	import Hauptbereich from './lib/components/layout/Hauptbereich.svelte';
-	import SkipLink from './lib/components/layout/SkipLink.svelte';
+	import Anwendungsrahmen from './lib/components/layout/Anwendungsrahmen.svelte';
 	import OfflineIndicator from './lib/components/OfflineIndicator.svelte';
 	import ToastContainer from './lib/ToastContainer.svelte';
 	import BestaetigungsDialog from './lib/components/ui/BestaetigungsDialog.svelte';
@@ -121,41 +116,29 @@
 			</div>
 		{:else if !authStore.isLoggedIn}
 			<Login />
-		{:else if idleLock.gesperrt}
-			<!-- Gesperrt: die App wird NICHT gerendert, nicht nur verdeckt. Sonst zeigte die
-			     Druckvorschau (Strg+P) die Seite dahinter, Tab verließ die Sperre, und
-			     Screenreader lasen Schülerdaten vor (Prüfung 22.08.2026, A6). -->
-			<Sperrbildschirm />
 		{:else}
-			<div class="h-screen flex w-full overflow-hidden">
-				<SkipLink />
-				<Sidebar />
-				<!-- Arbeitsflaeche WEISS, nicht getoent. Am 07.08. hatte ich sie auf `surface`
-				     gestellt, damit die weissen Karten sich abheben — und genau das war der
-				     Fehler: Die Karten gab es laengst, sie lagen nur unsichtbar auf weissem
-				     Grund. Die Toenung hat sie erst hervorgeholt und die Anwendung wirkte
-				     "in Kacheln gezwaengt". Drei Commits (f2320e1, e81ce75, 95d5d33) hatten
-				     das Floating-Card-Muster vorher ausdruecklich abgeschafft: edge-to-edge,
-				     volle Breite, getrennt nur durch divide-y. -->
-				<div
-					class="bg-surface-container-lowest flex w-full min-w-0 flex-1 flex-col overflow-y-auto px-4 py-6 md:px-8"
-				>
-					<!-- Systemzustand, der eine Handlung braucht, steht über dem Inhalt —
-					     nicht in der Navigation. Sichtbar für alle, die den Backup-Status lesen
-					     dürfen (GET /api/admin/system/backup-status verlangt manage_settings). -->
-					{#if hatRecht(authStore.currentUser, 'manage_settings')}
-						<BackupAlert />
-					{/if}
-					<Hauptbereich><Router /></Hauptbereich>
-				</div>
-			</div>
+			{#if idleLock.gesperrt}
+				<Sperrbildschirm />
+			{/if}
+			<!-- Gesperrt bleibt die Anwendung stehen, aber ausgeblendet und träge: Was getippt
+			     und nicht gespeichert ist, überlebt die Sperre. Die Druckvorschau (Strg+P)
+			     zeigt sie nicht, Tab erreicht sie nicht, Screenreader lesen sie nicht (Prüfung
+			     22.08.2026, A6). Nach einem Start in die Sperre steht nichts dahinter. -->
+			{#if !idleLock.gesperrt || idleLock.anwendungSteht}
+				<Anwendungsrahmen verdeckt={idleLock.gesperrt} />
+			{/if}
 		{/if}
 	{/if}
 	<OfflineIndicator
 		verbindungVerloren={authStore.isLoggedIn && !authStore.heartbeatOk && !idleLock.gesperrt}
 	/>
-	<ToastContainer />
-	<BestaetigungsDialog />
+	<!-- Meldungen und eine offene Rückfrage nennen Namen und Titel: Hinter der Sperre sind
+	     sie nicht zu sehen. Die Rückfrage bleibt gestellt und steht nach dem Aufschließen
+	     wieder da. -->
+	{#if !idleLock.gesperrt}
+		<ToastContainer />
+		<BestaetigungsDialog />
+	{/if}
 </div>
 
 <style>

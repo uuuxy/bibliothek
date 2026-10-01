@@ -72,9 +72,7 @@ hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat 
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Die CI steht seit dem 28.09.2026 fest auf
 `ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Die Reihenfolge
 (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
-Reihenfolge unter 1. die vom 29.09.2026). Davor steht der Fund der Kategorie A aus dem
-Rasterdurchgang vom 01.10.2026, der noch offen ist: das Ungespeicherte hinter der Sperre
-(5.44).
+Reihenfolge unter 1. die vom 29.09.2026).
 
 1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.22 und 4.24 stehen die
    Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus. Zu 4.28 (Anmelden
@@ -719,25 +717,6 @@ eines Titels: Name und Freitext neben der Kennung des Lesers (`schuldner`, `besc
   `repository/loeschfristen.go`: „länger als die Lesehistorie darf nichts den Schüler an ein Buch
   binden".
 
-### 5.44 Die Sperre nach Inaktivität nimmt Ungespeichertes mit
-
-Gefunden am 01.10.2026, im Browser nachgestellt; Kategorie A. Seit dem 22.08.2026 (`729a7271`)
-zeigt die Anwendung hinter der Sperre nichts mehr an, damit Druckvorschau, Tab-Taste und
-Vorlesehilfe die Seite dahinter nicht erreichen: `App.svelte` baut die Bildschirme ab und nach
-dem Aufschließen neu auf. Was getippt und nicht gespeichert war, ist danach weg. Nachgestellt:
-Maske „Neues Buch" mit Titel und Signatur, 16 Minuten ohne Bedienung, Passwort — die Maske ist
-zu, der Medienkatalog steht auf „Suche & Filter", ein Hinweis kommt nicht. Betroffen ist jede
-Maske, die ihre Eingaben im Bildschirm hält (Buch, Benutzer, Gerät, Einstellungen,
-LMF-Planer); der Verlassen-Schutz des Planers (`uiStore.verlassenSperre`) wird bei der Sperre
-nicht gefragt. Kein Test der Sperre enthält eine Maske.
-
-Mit der Vorgabe von 15 Minuten trifft es jede Maske, die eine Viertelstunde offen liegt. Mit
-einer langen Frist kommt die Sperre im Schultag nicht: 480 Minuten sind am Stack nachgestellt
-(keine Sperre nach 7:58 h ohne Bedienung, Sperre nach 8:01 h, Bedienung beginnt die Frist neu).
-
-Abhilfe: Die Bildschirme bleiben hinter der Sperre bestehen, sind aber weder sichtbar noch mit
-der Tastatur erreichbar noch druckbar — die drei Gründe vom 22.08.2026 als Test am Browser.
-
 ### 5.45 Listen in einem Kasten mit eigenem Scrollen
 
 Am 01.10.2026 sind zwei Kästen entfernt: die Ausleihliste der Leserakte (256 px, drei Zeilen)
@@ -877,6 +856,13 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
   aufschließen, weil dem älteren Stand die Wege zum Sperren und Aufschließen fehlen (am
   01.10.2026 am Code gelesen, nicht nachgestellt); es hilft nur das Neuladen ohne
   Zwischenspeicher.
+- Der LMF-Planer erfährt nur über die Live-Leitung, dass ein anderer Platz den Plan geändert
+  hat (`fremdesSignal`). War die Leitung unterbrochen — kein Netz, oder die Sperre nach
+  Inaktivität, hinter der sie ruht —, fehlt der Hinweis, und wer danach speichert,
+  überschreibt die fremde Änderung. Am Code gelesen am 01.10.2026, nicht nachgestellt. Seit
+  dem 01.10.2026 bleibt der Planer hinter der Sperre mit seinen ungespeicherten Änderungen
+  stehen; vorher gingen sie mit der Sperre verloren. Abhilfe mit Anlass: nach dem
+  Wiederaufbau der Leitung und nach dem Aufschließen den Stand am Server vergleichen.
 - Die Live-Leitung (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
   trägt zu jeder Buchung die Kennung des Lesers, die Buchnummer und den Titel
   (`broadcastActionEvent`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne

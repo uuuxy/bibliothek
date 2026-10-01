@@ -187,6 +187,35 @@ describe('idleLock: Sperre am Server', () => {
 		expect(aufrufe()).not.toContain('/api/auth/sperren');
 	});
 
+	// Was getippt und nicht gespeichert war, überlebt die Sperre nur, wenn die Anwendung
+	// dahinter stehen bleibt (App.svelte). Nach einem Start in die Sperre gibt es sie nicht.
+	describe('die Anwendung hinter der Sperre', () => {
+		it('bleibt stehen, wenn die Frist im laufenden Fenster abläuft', async () => {
+			lock.start();
+			expect(lock.anwendungSteht).toBe(false);
+			await vi.advanceTimersByTimeAsync(3 * 60_000 + 10);
+			expect([lock.gesperrt, lock.anwendungSteht]).toEqual([true, true]);
+		});
+
+		it('bleibt stehen, wenn ein anderes Fenster gesperrt hat', () => {
+			lock.start();
+			lock.vomServerGesperrt();
+			expect([lock.gesperrt, lock.anwendungSteht]).toEqual([true, true]);
+		});
+
+		it('nach einem Start in die Sperre steht nichts dahinter', () => {
+			lock.verdeckeVorDemStart();
+			lock.start();
+			expect([lock.gesperrt, lock.anwendungSteht]).toEqual([true, false]);
+		});
+
+		it('nach dem Abmelden steht nichts mehr', async () => {
+			await fristLaeuftAb();
+			lock.stop();
+			expect([lock.gesperrt, lock.anwendungSteht]).toEqual([false, false]);
+		});
+	});
+
 	it('ein neu geladenes, gesperrtes Fenster geht mit auf, wenn nebenan aufgeschlossen wird', async () => {
 		serverAntwortet({ '/api/auth/me': { status: 200, body: KONTO } });
 		lock.verdeckeVorDemStart();

@@ -2,6 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { createBarcodeDetector } from '$lib/components/scanner/barcode_detector.js';
 	import Button from '../../../../lib/components/ui/Button.svelte';
+	import { ruhtWennTraege } from '../../../../lib/actions/ruhtWennTraege.js';
 
 	let { onDecode, onStatusChange, showControls = true, scanning = $bindable(false) } = $props();
 
@@ -139,8 +140,11 @@
 	}
 </script>
 
+<!-- Hinter der Sperre läuft keine Kamera: Der Bereich wird träge, der Strom ruht und läuft
+     nach dem Aufschließen wieder an. -->
 <div
 	class="relative overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 min-h-56 aspect-4/3 w-full max-w-sm mx-auto shadow-inner"
+	use:ruhtWennTraege={{ anhalten: stopScanner, fortsetzen: startScanner }}
 >
 	<!-- Ausgeschriebenes Schluss-Tag: <video /> ist kein void-Element, die selbstschliessende
 	     Form ist mehrdeutig und wird von Svelte angemahnt. -->

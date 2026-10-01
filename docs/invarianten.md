@@ -416,7 +416,7 @@ Mensch und Server liegt: nach der Eingabe, die der Server noch nicht kennt, nach
 das sie liefert, nach dem Dienst, der gerade fehlt, und nach dem Stand, der seit dem Laden
 veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderungen seit dem
 30.09.2026 gestellt; jede brachte einen nachgestellten Fund. Was davon offen ist, steht in
-[OFFEN.md](OFFEN.md) 5.5 und 5.44.
+[OFFEN.md](OFFEN.md) 5.5 und 5.10.
 
 - **15 · Ungespeichertes.** Seit `729a7271` (22.08.2026) rendert `App.svelte` hinter der
   Sperre nach Inaktivität die Anwendung nicht. Was getippt und nicht gespeichert war, ist
@@ -425,7 +425,9 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   (`uiStore.verlassenSperre`) wird nur beim Wechsel des Menüpunkts und beim Schließen des
   Fensters gefragt. Dieselbe Form früher: die umgeordnete Reihenfolge im Planer
   (07.09.2026), die letzte Änderung im Ausweis-Designer (24.08.2026). Frage 8 fragt in der
-  Frontend-Lesart das Gegenteil: was beim Verlassen zurück auf Anfang muss.
+  Frontend-Lesart das Gegenteil: was beim Verlassen zurück auf Anfang muss. Behoben am
+  01.10.2026: Die Anwendung bleibt hinter dem Sperrbildschirm stehen, ausgeblendet und
+  träge. Dabei gefunden: Eine offene Rückfrage blieb über dem Sperrbildschirm sichtbar.
 - **16 · Eingabeweg.** Ein Handscanner ist eine Tastatur und tippt in das, was den Fokus hat.
   Mit dem Scanner-Fenster der Titel-Verwaltung (`63c436c6`) entfiel das Feld „Handscanner /
   ISBN-Eingabe", das auf Enter hörte. In der Maske „Neues Buch" steht der Fokus nach dem
@@ -463,8 +465,8 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
 
 Ein Gate hat keine der vier Fragen. Für 16 gibt es ein Muster (`page.keyboard.type` und
 Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 18 den Test mit zwei
-Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`); für 15 entsteht der Test mit der
-Behebung.
+Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`), für 15 den Test mit der Maske vor und
+nach der Sperre (`frontend/e2e/sperre-ungespeichertes.spec.js`).
 
 Schärfungen ohne neue Nummer, vom selben Durchgang:
 

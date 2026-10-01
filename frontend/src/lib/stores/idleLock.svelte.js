@@ -17,13 +17,14 @@
 // jedem seiner Fenster, und gesperrt wie aufgeschlossen wird in allen zugleich. Ob gesperrt
 // ist, sagt dabei allein der Server; die Fenster geben sich nur Bescheid (fensterSignale.js).
 
-import { untrack } from 'svelte';
+import { tick, untrack } from 'svelte';
 import { apiFetch, registriereSitzungGesperrtHandler } from '../apiFetch.js';
 import { abonniere } from '../liveEvents.js';
 import { authStore, registriereGesperrterStartHandler } from './authStore.svelte.js';
 import { beobachteAndereFenster, meldeAktivitaet, meldeSperre } from './fensterSignale.js';
 import { netzLage } from './netzLage.svelte.js';
 import { offlineSync } from './offlineSync.svelte.js';
+import { stelleSperrSchildAuf } from '../sperrSchild.js';
 import { entsperreAmServer, leseSperrzustand, sperreAmServer } from './sperreAmServer.js';
 import { thekeLeeren as thekeLeerenAusfuehren } from './thekeLeeren.js';
 
@@ -33,6 +34,13 @@ const DROSSEL_MS = 1000;
 
 export class IdleLock {
 	gesperrt = $state(false);
+	/**
+	 * Steht hinter dem Sperrbildschirm die aufgebaute Anwendung dieses Fensters? Dann bleibt
+	 * sie stehen (App.svelte), damit Ungespeichertes die Sperre überlebt. Nach einem Start in
+	 * die Sperre (neu geladen, neuer Tab) steht nichts dahinter: Aufgebaut wird erst mit dem
+	 * Passwort.
+	 */
+	anwendungSteht = $state(false);
 	/** Läuft gerade eine Wiederanmeldung (Passwort geht zum IMAP-Server)? */
 	entsperreLaeuft = $state(false);
 	entsperrFehler = $state(/** @type {string | null} */ (null));
@@ -50,6 +58,9 @@ export class IdleLock {
 	// nebenan aufgeschlossen wird. Kann er sie nicht sperren, ist nur dieses Fenster
 	// verdeckt und geht allein mit dem Passwort auf.
 	#amServerGesperrt = false;
+	// Das Feld, in dem beim Sperren der Fokus stand: Dort geht es nach dem Aufschließen weiter.
+	/** @type {HTMLElement | null} */
+	#fokusVorDerSperre = null;
 	#aktivitaetHandler = () => this.aktivitaet();
 	/** @type {(() => void) | null} */
 	#abmeldenFristen = null;
@@ -138,6 +149,8 @@ export class IdleLock {
 		this.#sperreFaellig = false;
 		this.#amServerGesperrt = false;
 		this.gesperrt = false;
+		this.anwendungSteht = false;
+		this.#fokusVorDerSperre = null;
 		this.entsperrFehler = null;
 	}
 
@@ -208,6 +221,11 @@ export class IdleLock {
 		if (amServer) this.#amServerGesperrt = true;
 		if (this.gesperrt) return;
 		this.entsperrFehler = null;
+		// Bis eben war die Anwendung aufgebaut; sie bleibt hinter dem Sperrbildschirm stehen.
+		const aktiv = document.activeElement;
+		this.#fokusVorDerSperre =
+			aktiv instanceof HTMLElement && aktiv !== document.body ? aktiv : null;
+		this.anwendungSteht = true;
 		this.gesperrt = true;
 	}
 
@@ -287,12 +305,23 @@ export class IdleLock {
 		this.#amServerGesperrt = false;
 		this.gesperrt = false;
 		this.entsperrFehler = null;
+		this.#gibFokusZurueck();
 		authStore.uebernimmKonto(konto);
 		this.#letzteAktivitaet = Date.now();
 		meldeAktivitaet(this.#letzteAktivitaet);
 		meldeSperre(false);
 		this.#planeTimer();
 		void this.ladeFristen();
+	}
+
+	/** Erst wenn die Anwendung wieder sichtbar ist, nimmt das Feld den Fokus an. */
+	#gibFokusZurueck() {
+		const feld = this.#fokusVorDerSperre;
+		this.#fokusVorDerSperre = null;
+		if (!feld) return;
+		void tick().then(() => {
+			if (feld.isConnected) feld.focus({ preventScroll: true });
+		});
 	}
 
 	/**
@@ -355,3 +384,5 @@ export const idleLock = new IdleLock();
 // Einmal beim Modul-Laden, wie der 401-Haken des authStore.
 registriereSitzungGesperrtHandler(() => idleLock.vomServerGesperrt());
 registriereGesperrterStartHandler(() => idleLock.verdeckeVorDemStart());
+// Vor jedem Bauteil: Der Schild muss an window der erste Zuhörer sein (sperrSchild.js).
+if (typeof window !== 'undefined') stelleSperrSchildAuf(() => idleLock.gesperrt);

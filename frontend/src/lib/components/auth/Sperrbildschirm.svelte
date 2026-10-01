@@ -8,12 +8,13 @@
 	import Feld from '../ui/Feld.svelte';
 	import { scanSchutz } from '../../scanErkennung.js';
 
-	// Sperrbildschirm nach Inaktivität (A4 in docs/datenschutz_offene_punkte.md).
-	// Ersetzt die ganze Anwendung (App.svelte rendert Sidebar und Inhalt im gesperrten
-	// Zustand NICHT — vorher lag dieser Bildschirm nur darüber, und Strg+P zeigte in der
-	// Druckvorschau die Seite dahinter, Tab verließ die Sperre, Screenreader lasen weiter;
-	// Prüfung 22.08.2026, A6). Weiter geht es nur mit dem Passwort der angemeldeten Person
-	// oder per Abmelden. Der Server hält die Anmeldung so lange gesperrt (stores/idleLock).
+	// Sperrbildschirm nach Inaktivität (A4 in docs/datenschutz_offene_punkte.md). Die
+	// Anwendung dahinter bleibt stehen, damit Ungespeichertes die Sperre überlebt, ist aber
+	// ausgeblendet und träge (App.svelte): Die Druckvorschau zeigt sie nicht, Tab erreicht
+	// sie nicht, Screenreader lesen sie nicht (Prüfung 22.08.2026, A6). Tasten und Zeiger
+	// hält sperrSchild.js von ihr fern; data-sperrbildschirm ist sein Kennzeichen. Weiter
+	// geht es nur mit dem Passwort der angemeldeten Person oder per Abmelden. Der Server
+	// hält die Anmeldung so lange gesperrt (stores/idleLock).
 
 	let passwort = $state('');
 	// Ein Scan am Sperrbildschirm ist kein Passwort: Er geht nicht zum Server, wo er als
@@ -51,6 +52,7 @@
 	aria-modal="true"
 	aria-labelledby="sperre-titel"
 	data-testid="sperrbildschirm"
+	data-sperrbildschirm
 	use:fokusFalle
 	use:scanSchutz={beiScan}
 >

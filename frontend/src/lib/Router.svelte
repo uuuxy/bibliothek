@@ -1,6 +1,7 @@
 <script>
 	import { authStore } from './stores/authStore.svelte.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
+	import { idleLock } from './stores/idleLock.svelte.js';
 	import { appState } from '../inventur/lib/store.svelte.js';
 	import { erlaubteTabs, tabIstGesperrt } from './menu.js';
 	import { escapeGehoertJemandAnderem } from './escapeRegel.js';
@@ -80,6 +81,12 @@
 			uiStore.activeTab = 'kiosk';
 		}
 		function handlePopState() {
+			// Hinter der Sperre bleibt der Bildschirm, wie er ist: Die Zurück-Taste des
+			// Browsers verließe sonst die offene Maske. Die Adresszeile geht zurück.
+			if (idleLock.gesperrt) {
+				window.history.pushState(null, '', currentTargetPath());
+				return;
+			}
 			applyPathToState(window.location.pathname);
 			// Verlassen-Schutz hat angehalten (uiStore): Adresszeile auf den offenen Tab zurück.
 			if (uiStore.blockierterWechsel !== null) {

@@ -3,6 +3,7 @@
 	import Ladekreis from './components/ui/Ladekreis.svelte';
 	import { onMount } from 'svelte';
 	import { escapeSchliesst } from './components/ui/escapeSchliesst.js';
+	import { ruhtWennTraege } from './actions/ruhtWennTraege.js';
 
 	/** @type {{ studentId: string, onCapture: (url: string) => void, onClose: () => void }} */
 	let { studentId, onCapture, onClose } = $props();
@@ -104,8 +105,10 @@
 	});
 </script>
 
+<!-- Hinter der Sperre läuft keine Kamera (wie KameraScanner). -->
 <div
 	class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 backdrop-blur-md p-4 no-print"
+	use:ruhtWennTraege={{ anhalten: stopCamera, fortsetzen: startCamera }}
 >
 	<div
 		class="w-full max-w-lg p-6 rounded-3xl bg-zinc-900 shadow-2xl flex flex-col space-y-4"
