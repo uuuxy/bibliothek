@@ -90,7 +90,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 	}
 	schaden := func(mock pgxmock.PgxPoolIface) {
 		mock.ExpectQuery(`FROM schadensfaelle WHERE schueler_id`).
-			WithArgs(sid).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
+			WithArgs(sid).WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(1, 12.0))
 	}
 
 	t.Run("unbezahlter Schaden blockiert das Gerät", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestGeraeteAusleiheRespektiertAutomatikSperren(t *testing.T) {
 	t.Run("ohne Sperren geht das Gerät durch", func(t *testing.T) {
 		svc, mock := neu(t, func(mock pgxmock.PgxPoolIface) {
 			mock.ExpectQuery(`FROM schadensfaelle WHERE schueler_id`).
-				WithArgs(sid).WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+				WithArgs(sid).WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, 0.0))
 			mock.ExpectQuery(`FROM system_einstellungen`).
 				WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"})) // leer → Defaults
 			mock.ExpectQuery(`FROM ausleihen`).

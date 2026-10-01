@@ -8,8 +8,7 @@
 
 	/** Öffnet das Profil des überfälligen Schülers in der Schülerdatei (zentraler Request). */
 	function openProfile(schuelerId) {
-		uiStore.requestedStudentId = schuelerId;
-		uiStore.activeTab = 'students_dir';
+		uiStore.oeffneAkte(schuelerId);
 	}
 
 	// Derived state for 'Select All' checkbox

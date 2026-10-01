@@ -100,8 +100,8 @@ type StudentRepository interface {
 	// HasPhoto checks if an encrypted photo exists for the student.
 	HasPhoto(ctx context.Context, studentID string) (bool, error)
 
-	// HasOpenDamages checks if the student has any unpaid damage fees.
-	HasOpenDamages(ctx context.Context, studentID string) (bool, error)
+	// OffeneSchaeden: Anzahl und Summe der unbezahlten Forderungen des Lesers.
+	OffeneSchaeden(ctx context.Context, studentID string) (anzahl int, summe float64, err error)
 
 	// GetActiveBorrowedBooks retrieves all books currently borrowed by the student.
 	GetActiveBorrowedBooks(ctx context.Context, studentID string) ([]BorrowedBook, error)

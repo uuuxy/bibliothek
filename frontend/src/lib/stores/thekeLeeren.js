@@ -54,4 +54,5 @@ export function thekeLeeren() {
 	omniboxStore.blockAlert = null;
 	omniboxStore.checklistAnfrage = null;
 	uiStore.requestedStudentId = null;
+	uiStore.requestedStudentReiter = null;
 }

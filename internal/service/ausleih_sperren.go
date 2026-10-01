@@ -112,7 +112,7 @@ func sperrGrund(leser *repository.Student, ersatz string) string {
 func pruefeHinweise(ctx context.Context, q repository.DBQueryer, leserID string, uebergehen bool) (sperrLage, error) {
 	var lage sperrLage
 
-	offen, err := zaehleOffeneSchaeden(ctx, q, leserID)
+	offen, _, err := repository.OffeneSchaeden(ctx, q, leserID)
 	if err != nil {
 		return sperrLage{}, err
 	}
@@ -152,16 +152,6 @@ func protokolliereUebergangen(ctx context.Context, audit repository.AuditReposit
 			"reason":      grund,
 		}))
 	}
-}
-
-// zaehleOffeneSchaeden zählt die unbezahlten, nicht stornierten Schadensfälle eines Lesers
-// — aus jedem Topf. storniert_am setzt ist_bezahlt=true, daher genügt die Flag-Prüfung.
-func zaehleOffeneSchaeden(ctx context.Context, q repository.DBQueryer, schuelerID string) (int, error) {
-	var n int
-	err := q.QueryRow(ctx,
-		`SELECT COUNT(*) FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
-		schuelerID).Scan(&n)
-	return n, err
 }
 
 // zaehleUeberfaelligeMedien zählt die überfälligen (älter als maxOverdueDays), noch nicht

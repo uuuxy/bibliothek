@@ -6,7 +6,7 @@
 	import { initialen, avatarVerlauf } from './avatarKachel.js';
 	import { leserArtText, istKollegium } from './leserArt.js';
 
-	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void }} */
+	/** @type {{ profile: any, rechte?: { bearbeiten: boolean, foto: boolean }, timestamp: number, showWebcam: boolean, showDeleteConfirm: boolean, onDeselect: () => void, leftActions?: import('svelte').Snippet, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
 	let {
 		profile = $bindable(),
 		rechte = { bearbeiten: false, foto: false },
@@ -15,7 +15,8 @@
 		showDeleteConfirm = $bindable(),
 		onDeselect,
 		leftActions,
-		onLock
+		onLock,
+		offen = undefined
 	} = $props();
 
 	const initials = $derived(initialen(profile));
@@ -103,7 +104,7 @@
 		{/if}
 	</div>
 
-	<StudentKontoStatus {profile} {onLock} />
+	<StudentKontoStatus {profile} {onLock} {offen} />
 
 	<!-- Linke Aktionen (z. B. "Sitzung beenden" im Kiosk). Ausweis-Druck & DSGVO-
 	     Auskunft leben bewusst rechts unter „Dokumente & Aktionen" — die Identitäts-

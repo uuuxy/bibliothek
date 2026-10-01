@@ -38,8 +38,8 @@ nicht mehr (zurückgebaut am 04.09.2026). Gebucht wird nur an der Theke.
 
 Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 
-1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status, entliehene
-   Bücher, Gebühren, Vormerkungen.
+1. **Schülerausweis scannen** → die Theke öffnet sich: Foto, Klasse, Konto-Status mit dem
+   offenen Betrag, entliehene Bücher, Vormerkungen; Gebühren stehen im eigenen Reiter.
 2. **Buch scannen** → ausgeliehen. Frist wird automatisch berechnet (Lernmittel bis zum
    Stichtag 31.07., andere Medien nach Tagen oder, bei eingeschaltetem Ferien-Leseclub, bis
    zu dessen festem Rückgabedatum). Fällt eine Frist nach Tagen auf ein Wochenende, einen
@@ -50,7 +50,8 @@ Der Startbildschirm nach der Anmeldung. **Ein Feld für alles:**
 4. **Namen tippen** statt scannen: Vorschläge erscheinen beim Tippen, Klick öffnet die Theke.
 
 **An jeder Buchzeile:** Verlängern · Zurückgeben · Verlust/Schaden melden (Grund, Ersatzbetrag —
-die Forderung landet in der Akte, der Elternbrief kommt als PDF).
+die Forderung steht danach in der Akte unter _Gebühren & Schäden_, der Bescheid ist ein eigener
+Schritt).
 
 **Die Theke warnt von selbst:**
 
@@ -334,7 +335,12 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
 - **Reiter**: _Aktive Leser_, _Ehemalige / Archiv_ und (mit dem Recht zum Löschen)
   _Papierkorb_.
 - **Suche** über den ganzen Bestand (Name, Klasse, Barcode). Zeile anklicken → Akte.
-- **Akte**: _Ausleihen & Historie_ und _Stammdaten & Adresse_ — für jeden dieselben Felder
+- **Akte**: drei Reiter — _Ausleihen & Historie_, _Gebühren & Schäden_ und _Stammdaten &
+  Adresse_. Aus der Leserdatei öffnet sie auf _Stammdaten & Adresse_, aus Mahnliste und
+  Abgängern auf _Ausleihen & Historie_, aus dem Reiter _Schadensersatz_ des Mahnwesens auf
+  _Gebühren & Schäden_. Links stehen bei jedem Leser der Konto-Status und darunter _Offene
+  Forderungen_: _keine_ oder der Betrag in Rot — in jedem Reiter.
+  Für jeden dieselben Felder
   an derselben Stelle. Im Kollegium sind drei davon verschlossen, weil sie ihm nicht
   gehören: Klasse, Abgangsjahr und LUSD-Kennung. Geburtsdatum, Ausweisnummer,
   Anschrift und Eltern-E-Mail stehen jedem offen. Beim Kollegen bleiben Geburtsdatum,
@@ -349,7 +355,7 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   bearbeitet hat — mit Zeitpunkt und Handlung, ohne Angaben zu anderen Personen. Die Auskunft
   über jemanden mit Zugang erstellt nur, wer zusätzlich _Benutzer & Rechte verwalten_ darf; sonst
   fehlt der Knopf in dieser Akte. Gibt es für das
-  Kind einen Schadensersatz-Bescheid, steht unter _Ausleihen & Historie_ die Karte
+  Kind einen Schadensersatz-Bescheid, steht im Reiter _Gebühren & Schäden_ die Liste
   **Schadensersatz-Bescheide**: Referenznummer, Positionen, Betrag, Briefdatum, Frist, Zustand
   und _Nachdruck_ (derselbe Brief mit derselben Nummer).
 - **Ausweis drucken**: Auf der Karte steht, was sie ist — _Schülerausweis_, _Lehrerausweis_
@@ -359,7 +365,8 @@ jetzt **alle, die Bücher bekommen können** — Schüler und Kollegium in einer
   mit `A-`; ältere Karten mit `S-` oder `L-` bleiben gültig und werden weiter gelesen. Eine
   `A-`-Nummer vergibt das Programm nur einmal: Wird eine Person gelöscht oder anonymisiert,
   bekommt niemand sonst ihre Nummer, und ihre alte Karte findet an der Theke niemanden.
-- **Gebühren & Schäden**: offen / bezahlt; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
+- **Gebühren & Schäden** (eigener Reiter; die Zahl daran nennt die offenen Forderungen): offen /
+  bezahlt / storniert; _Bezahlt_ bucht aus, _Stornieren_ verlangt einen
   Grund. Steht eine offene Forderung noch auf keinem Brief, gibt es hier _Bescheid erstellen_
   (derselbe Dialog wie im Mahnwesen). (§14)
 - **Verlust/Schaden melden** an der Ausleihzeile beendet die Ausleihe und legt die Forderung an.
@@ -422,8 +429,8 @@ mehr zu veranlassen; _Rückgabe nach Übergabe_ → die Aufsicht informieren. Di
 was bei der Schule liegt. Erledigte Briefe (bezahlt, storniert) stehen nur noch in der Akte.
 
 **Schadensersatz-Bescheid:** In der Mahnliste genau einen Schüler markieren und _Schadensersatz-
-Bescheid_ drücken; außerdem _Bescheid erstellen_ im Reiter _Schadensersatz_ oder in der Akte an
-der Gebühren-Karte. Der Dialog zeigt die überfälligen Bücher des Kindes und seine offenen
+Bescheid_ drücken; außerdem _Bescheid erstellen_ im Reiter _Schadensersatz_ oder in der Akte im
+Reiter _Gebühren & Schäden_. Der Dialog zeigt die überfälligen Bücher des Kindes und seine offenen
 Forderungen mit einem Betragsvorschlag nach der Staffel der Schule samt Herleitung; Beträge sind
 änderbar, Zeilen abwählbar. Eine Verlustmeldung je Buch ist vorher nicht nötig: _Bescheid
 erstellen_ bucht die gewählten Bücher als Verlust (die Ausleihe endet, das Kind verschwindet aus

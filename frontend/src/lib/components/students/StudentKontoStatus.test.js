@@ -44,4 +44,28 @@ describe('StudentKontoStatus', () => {
 		knopf.click();
 		expect(onLock).not.toHaveBeenCalled();
 	});
+
+	// Was der Leser schuldet, steht beim Konto-Status — bei jedem Leser, damit eine fehlende
+	// Zeile nie als „nichts offen" gelesen wird.
+	it('nennt den offenen Betrag, wenn etwas offen ist', () => {
+		const screen = render(StudentKontoStatus, {
+			profile: { art: 'schueler' },
+			offen: { anzahl: 2, summe: 19.5 }
+		});
+		expect(screen.getByText('Offene Forderungen')).toBeTruthy();
+		expect(screen.getByText(/19,50\s€/)).toBeTruthy();
+		expect(screen.queryByText('keine')).toBeNull();
+	});
+
+	it('sagt „keine", wenn nichts offen ist — auch beim Kollegen', () => {
+		for (const art of ['schueler', 'lehrkraft']) {
+			const screen = render(StudentKontoStatus, {
+				profile: { art },
+				offen: { anzahl: 0, summe: 0 }
+			});
+			expect(screen.getByText('Offene Forderungen')).toBeTruthy();
+			expect(screen.getByText('keine')).toBeTruthy();
+			screen.unmount();
+		}
+	});
 });

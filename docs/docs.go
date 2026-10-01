@@ -4822,6 +4822,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api.OffeneForderungen": {
+            "type": "object",
+            "properties": {
+                "anzahl": {
+                    "type": "integer"
+                },
+                "summe": {
+                    "type": "number"
+                }
+            }
+        },
         "api.PermissionSetting": {
             "type": "object",
             "properties": {
@@ -5095,6 +5106,14 @@ const docTemplate = `{
                 },
                 "nachname": {
                     "type": "string"
+                },
+                "offene_forderungen": {
+                    "description": "OffeneForderungen ist der Kontozustand neben der Sperre: Die Akte zeigt ihn in jedem\nReiter, ohne die Liste der Forderungen abzurufen.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api.OffeneForderungen"
+                        }
+                    ]
                 },
                 "ort": {
                     "type": "string"

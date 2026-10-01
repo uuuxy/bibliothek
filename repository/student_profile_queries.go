@@ -13,11 +13,19 @@ func (repo *pgStudentRepository) HasPhoto(ctx context.Context, studentID string)
 	return hasPhoto, err
 }
 
-// HasOpenDamages checks if the student has any unpaid damage fees.
-func (repo *pgStudentRepository) HasOpenDamages(ctx context.Context, studentID string) (bool, error) {
-	var hasOpenDamages bool
-	err := repo.db.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false)", studentID).Scan(&hasOpenDamages)
-	return hasOpenDamages, err
+// OffeneSchaeden zählt die unbezahlten Forderungen eines Lesers aus jedem Topf und nennt ihre
+// Summe. Ein Storno setzt ist_bezahlt mit, die eine Bedingung deckt beides. Die Akte und der
+// Hinweis an der Theke (service.pruefeHinweise) fragen beide hier, damit sie dieselbe Zahl nennen.
+func OffeneSchaeden(ctx context.Context, q DBQueryer, leserID string) (anzahl int, summe float64, err error) {
+	err = q.QueryRow(ctx,
+		`SELECT COUNT(*), COALESCE(SUM(betrag), 0)::float8 FROM schadensfaelle WHERE schueler_id = $1 AND ist_bezahlt = false`,
+		leserID).Scan(&anzahl, &summe)
+	return anzahl, summe, err
+}
+
+// OffeneSchaeden: Anzahl und Summe der unbezahlten Forderungen des Lesers.
+func (repo *pgStudentRepository) OffeneSchaeden(ctx context.Context, studentID string) (int, float64, error) {
+	return OffeneSchaeden(ctx, repo.db, studentID)
 }
 
 // GetActiveBorrowedBooks retrieves all books currently borrowed by the student.

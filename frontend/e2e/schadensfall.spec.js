@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
 
 // Schadensfall: Verlust melden beendet die Ausleihe und macht die offene Forderung im
 // Profil sichtbar — samt „Bescheid erstellen" an der Gebühren-Karte (seit 15.09.2026) und
@@ -44,6 +44,7 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	// wurden. getByRole prüft, was Nutzer und Screenreader tatsächlich adressieren.
 	await page.getByRole('button', { name: 'Verlust oder Schaden melden' }).first().click();
 	await page.locator('#damage-reason').fill('E2E Wasserschaden');
+	// Der getippte Betrag gilt, auch wenn der Vorschlag des Servers erst danach eintrifft.
 	await page.locator('#damage-amount').fill('12.50');
 
 	// Kein Popup mehr: Wer eines erwartet, sieht es hier — ein neues Fenster wäre der
@@ -65,8 +66,14 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	await expect(ausleihKarte).toBeVisible();
 	await expect(ausleihKarte.getByText(`E2E-Schadenbuch-${suffix}`)).not.toBeVisible();
 
-	// ... und steht als offene Forderung in der Gebühren-Sektion.
-	const gebuehrenKarte = page.locator('div:has(> div > h3:text-matches("Gebühren & Schäden"))');
+	// ... und steht als offene Forderung im Reiter „Gebühren & Schäden". Die Zahl am Reiter
+	// und die Zeile im Konto-Status sagen es, bevor jemand den Reiter öffnet.
+	const reiter = page.getByRole('tab', { name: /Gebühren & Schäden/ });
+	await expect(reiter).toContainText('1');
+	const kontoZeile = page.locator('div:has(> span:text-is("Offene Forderungen"))');
+	await expect(kontoZeile).toContainText('12,50');
+	await reiter.click();
+	const gebuehrenKarte = page.locator('div:has(> div > h3:text-matches("Forderungen"))');
 	await expect(gebuehrenKarte.getByText(`E2E-Schadenbuch-${suffix}`)).toBeVisible();
 	await expect(gebuehrenKarte.getByText('offen', { exact: true })).toBeVisible();
 	// Zweite Tür zum Bescheid: an der Forderung, aus der er entsteht.
@@ -93,4 +100,63 @@ test('Schadensfall: melden beendet Ausleihe und öffnet Forderung', async ({ pag
 	await expect(gebuehrenKarte.getByText('storniert', { exact: true })).toBeVisible();
 	await expect(gebuehrenKarte.getByText('Grund: E2E: Buch wiedergefunden')).toBeVisible();
 	await expect(gebuehrenKarte.getByRole('button', { name: 'Bezahlt' })).not.toBeVisible();
+	// Storniert ist nicht mehr offen: Die Zeile im Konto-Status sagt „keine", die Zahl am
+	// Reiter fällt weg.
+	await expect(kontoZeile).toContainText('keine');
+	await expect(reiter).not.toContainText('1');
+});
+
+// Der offene Betrag kommt mit dem Leser vom Server, nicht aus der Liste des Reiters: Scheitert
+// ihr Abruf, steht er trotzdem da — auch in der Leserdatei, die auf „Stammdaten" öffnet. Sonst
+// läse sich die Akte als „nichts offen".
+test('Schadensfall: der offene Betrag steht auch, wenn die Liste der Forderungen nicht lädt', async ({
+	page
+}) => {
+	await uiLogin(page);
+	const suffix = uniqueSuffix();
+	const vorname = `Ausfall${suffix}`;
+	const created = await apiPost(page, '/api/schueler', {
+		geburtsdatum: '2012-06-15',
+		vorname,
+		nachname: 'E2E-Schaden',
+		klasse: '9R',
+		barcode_id: `S-${suffix}`
+	});
+	expect(created.ok(), `Schüler-Seeding: ${created.status()}`).toBeTruthy();
+	const { id } = await created.json();
+	seedSQL(`
+		WITH t AS (
+			INSERT INTO buecher_titel (titel) VALUES ('E2E-Ausfallbuch-${suffix}') RETURNING id
+		), e AS (
+			INSERT INTO buecher_exemplare (titel_id, barcode_id, ist_ausleihbar)
+			SELECT id, 'B-A${suffix}', true FROM t RETURNING id
+		)
+		INSERT INTO schadensfaelle (schueler_id, exemplar_id, beschreibung, betrag)
+		SELECT '${id}', e.id, 'E2E Verlust', 12.00 FROM e;
+	`);
+	await page.route('**/api/schueler/*/schadensfaelle', (r) =>
+		r.fulfill({ status: 503, contentType: 'application/json', body: '{"error":"aus"}' })
+	);
+
+	await gehZu(page, '/schuelerdatei');
+	await page.getByRole('searchbox', { name: 'Leser suchen' }).fill(vorname);
+	await page.getByRole('button', { name: new RegExp(`Profil von ${vorname} `) }).click();
+
+	await expect(page.getByRole('tab', { name: /Stammdaten & Adresse/ })).toHaveAttribute(
+		'aria-selected',
+		'true'
+	);
+	await expect(page.locator('div:has(> span:text-is("Offene Forderungen"))')).toContainText(
+		'12,00'
+	);
+	const reiter = page.getByRole('tab', { name: /Gebühren & Schäden/ });
+	await expect(reiter).toContainText('1');
+
+	// Die Liste selbst fehlt, und das sagt der Reiter, der sie zeigt — nur er.
+	await reiter.click();
+	await expect(
+		page.getByRole('alert').filter({ hasText: 'Nicht geladen: Gebühren' })
+	).toBeVisible();
+	await page.getByRole('tab', { name: /Ausleihen & Historie/ }).click();
+	await expect(page.getByRole('alert').filter({ hasText: 'Nicht geladen' })).toHaveCount(0);
 });

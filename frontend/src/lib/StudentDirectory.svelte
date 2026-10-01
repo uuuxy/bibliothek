@@ -62,8 +62,8 @@
 
 	// Reiter nach Absicht (siehe StudentProfile): Wer hier selbst gesucht hat, will
 	// Stammdaten — Elternkontakt, Adressabgleich, Abgangsjahr. Wer aus Mahnwesen oder
-	// Abgängern kommt, fragt nach Büchern und darf nicht im Adressformular landen.
-	let profilReiter = $state(/** @type {'ausleihen'|'stammdaten'} */ ('stammdaten'));
+	// Abgängern kommt, fragt nach Büchern oder nach dem Geld und nennt seinen Reiter selbst.
+	let profilReiter = $state(/** @type {'ausleihen'|'gebuehren'|'stammdaten'} */ ('stammdaten'));
 
 	// Öffnet ein Profil, das aus einer anderen Ansicht (Mahnwesen/Abgänger) angefordert
 	// wurde: ID einmalig abgreifen, Request sofort zurücksetzen (kein Wiederöffnen), dann
@@ -71,8 +71,9 @@
 	$effect(() => {
 		const id = uiStore.requestedStudentId;
 		if (!id) return;
+		profilReiter = uiStore.requestedStudentReiter ?? 'ausleihen';
 		uiStore.requestedStudentId = null;
-		profilReiter = 'ausleihen';
+		uiStore.requestedStudentReiter = null;
 		activeStudent = { id };
 	});
 </script>

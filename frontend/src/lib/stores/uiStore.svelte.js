@@ -71,6 +71,21 @@ class UIStore {
 	 * greift die ID auf, öffnet das Profil und setzt sie zurück.
 	 */
 	requestedStudentId = $state(/** @type {string | null} */ (null));
+	/** Reiter, auf dem die angeforderte Akte öffnet; ohne Angabe „Ausleihen". */
+	requestedStudentReiter = $state(/** @type {'ausleihen' | 'gebuehren' | null} */ (null));
+
+	/**
+	 * Öffnet die Akte eines Lesers aus einer anderen Ansicht heraus. Wer nach den Büchern fragt
+	 * (Mahnliste, Abgänger), landet auf „Ausleihen"; wer nach dem Geld fragt, auf „Gebühren &
+	 * Schäden".
+	 * @param {string} id
+	 * @param {'ausleihen' | 'gebuehren'} [reiter]
+	 */
+	oeffneAkte(id, reiter = 'ausleihen') {
+		this.requestedStudentId = id;
+		this.requestedStudentReiter = reiter;
+		this.activeTab = 'students_dir';
+	}
 	/**
 	 * Aus einem System-Alert angeforderte KATEGORIE der Einstellungen (ihre id, z. B.
 	 * 'erreichbarkeit'). Gleiche Mechanik wie requestedStudentId: SystemSettings greift

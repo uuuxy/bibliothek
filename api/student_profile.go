@@ -5,7 +5,6 @@ import (
 	"bibliothek/repository"
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 )
 
@@ -45,19 +44,28 @@ type StudentProfileResponse struct {
 	Geburtsdatum      *string `json:"geburtsdatum,omitempty"`
 	LusdID            *string `json:"lusd_id,omitempty"`
 	HasOpenDamages    bool    `json:"has_open_damages"`
-	IsManuallyBlocked bool    `json:"is_manually_blocked"`
-	BlockReason       *string `json:"block_reason"`
-	Strasse           string  `json:"strasse"`
-	Hausnummer        string  `json:"hausnummer"`
-	Plz               string  `json:"plz"`
-	Ort               string  `json:"ort"`
-	ElternEmail       string  `json:"eltern_email"`
+	// OffeneForderungen ist der Kontozustand neben der Sperre: Die Akte zeigt ihn in jedem
+	// Reiter, ohne die Liste der Forderungen abzurufen.
+	OffeneForderungen OffeneForderungen `json:"offene_forderungen"`
+	IsManuallyBlocked bool              `json:"is_manually_blocked"`
+	BlockReason       *string           `json:"block_reason"`
+	Strasse           string            `json:"strasse"`
+	Hausnummer        string            `json:"hausnummer"`
+	Plz               string            `json:"plz"`
+	Ort               string            `json:"ort"`
+	ElternEmail       string            `json:"eltern_email"`
 	// Email ist die SCHUL-Adresse am Konto (benutzer.email), nicht die der Eltern —
 	// bei Lehrkraft und LiV die Kennung, an der die Anmeldung die Person erkennt.
 	// Leer heißt: Diese Person hat noch kein Konto, die Adresse ist in der Akte
 	// nachtragbar. Bei einem Schüler steht hier nie etwas.
 	Email             string                    `json:"email"`
 	EntlieheneBuecher []repository.BorrowedBook `json:"entliehene_buecher"`
+}
+
+// OffeneForderungen sind Anzahl und Summe der unbezahlten Forderungen eines Lesers.
+type OffeneForderungen struct {
+	Anzahl int     `json:"anzahl"`
+	Summe  float64 `json:"summe"`
 }
 
 // GetStudentProfileHandler returns a student's master data, passport photo URL (if uploaded),
@@ -109,10 +117,11 @@ func (s *Server) GetStudentProfileHandler(
 			borrowedBooks = []repository.BorrowedBook{}
 		}
 
-		// 3.5 Check for open damages
-		hasOpenDamages, err := studentRepo.HasOpenDamages(ctx, student.ID)
+		// 3.5 Offene Forderungen. Ein Fehler bricht ab: „nichts offen" wäre sonst eine Auskunft,
+		// die niemand geprüft hat.
+		anzahl, summe, err := studentRepo.OffeneSchaeden(ctx, student.ID)
 		if err != nil {
-			log.Printf("student-profile: Prüfung auf offene Schadensfälle fehlgeschlagen: %v", err)
+			return apierrors.Internal("Fehler beim Laden der offenen Forderungen", err)
 		}
 
 		// 3.6 Die Schul-Adresse am Konto — nur beim Kollegium (ein Schüler hat keins).
@@ -138,7 +147,8 @@ func (s *Server) GetStudentProfileHandler(
 			FotoURL:           fotoURL,
 			Geburtsdatum:      student.Geburtsdatum,
 			LusdID:            student.LusdID,
-			HasOpenDamages:    hasOpenDamages,
+			HasOpenDamages:    anzahl > 0,
+			OffeneForderungen: OffeneForderungen{Anzahl: anzahl, Summe: summe},
 			IsManuallyBlocked: student.IsManuallyBlocked,
 			BlockReason:       student.BlockReason,
 			Strasse:           student.Strasse,

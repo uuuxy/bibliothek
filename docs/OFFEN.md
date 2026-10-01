@@ -769,6 +769,16 @@ Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kat
   „Geliehen: …" ragt in die Spalte „Status", der Titel endet nach rund zwölf Zeichen, und von
   zwölf Ausleihen stehen fünf im Fenster — die Zeile ist 65 px hoch, die übrigen Tabellen
   haben 36 bis 40 px. Vorschlag: einzeilige Zeilen, das Ausleihdatum auf Anforderung.
+  Nachgemessen am 01.10.2026: Trägt die Zeile das Kennzeichen „Lernmittel", bleiben dem Titel
+  bei 1280 px 0 px und bei 1366 px 22 px; bei 1920 px sind es 188 px. In der Schulbuchliste der
+  Schule (30.658 Exemplare) ist die Hälfte der Titel länger als 31 Zeichen, ein Viertel länger
+  als 45; die Exemplarnummern haben fünf bis sechs Stellen. Eine Unterteilung der Liste in
+  „Bücherei" und „Lernmittel" ist nicht gewünscht (entschieden am 01.10.2026); das Kennzeichen
+  an der Zeile bleibt.
+- **Leserakte, zwei Beschriftungen:** Der Reiter heißt „Ausleihen & Historie", zeigt aber nur
+  die laufenden Ausleihen und die Vormerkungen. Unter dem Reiter „Stammdaten & Adresse" steht
+  dieselbe Überschrift noch einmal; im Reiter „Gebühren & Schäden" heißt die Liste seit dem
+  01.10.2026 „Forderungen".
 
 ---
 

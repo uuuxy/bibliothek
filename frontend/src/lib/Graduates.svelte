@@ -12,8 +12,7 @@
 
 	/** Öffnet das Profil des Abgängers in der Schülerdatei (zentraler Request im uiStore). */
 	function openProfile(student) {
-		uiStore.requestedStudentId = student.id;
-		uiStore.activeTab = 'students_dir';
+		uiStore.oeffneAkte(student.id);
 	}
 
 	// State Runes

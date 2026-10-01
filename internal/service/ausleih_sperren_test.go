@@ -140,8 +140,8 @@ func TestAusleihSperren_AnonymisiertBekommtNichts(t *testing.T) {
 // Theke am Wortlaut, und die Schadens-Sperre bekam keinen Dialog; das Merkmal hält es.
 func TestAusleihSperren_HinweiseSindUebergehbar(t *testing.T) {
 	forderung := func(mock pgxmock.PgxPoolIface) {
-		mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
-			WithArgs("s1").WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(1))
+		mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle").
+			WithArgs("s1").WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(1, 12.0))
 	}
 	ueberfaellig := func(mock pgxmock.PgxPoolIface) { expectSettingsAndOverdue(mock, 2) }
 

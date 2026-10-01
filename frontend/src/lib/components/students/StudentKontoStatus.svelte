@@ -20,9 +20,10 @@
 	import { ausleiheGesperrt } from '../../sperrStatus.js';
 	import { istKollegium } from '../../leserArt.js';
 	import Button from '../ui/Button.svelte';
+	import { formatEuro } from '../../utils/format.js';
 
-	/** @type {{ profile: any, onLock?: () => void }} */
-	let { profile, onLock } = $props();
+	/** @type {{ profile: any, onLock?: () => void, offen?: { anzahl: number, summe: number } }} */
+	let { profile, onLock, offen = { anzahl: 0, summe: 0 } } = $props();
 
 	const gesperrt = $derived(ausleiheGesperrt(profile));
 	const kollege = $derived(istKollegium(profile));
@@ -30,14 +31,14 @@
 
 <div class="w-full space-y-3 border-t border-b border-slate-200 py-3">
 	<div class="flex items-center justify-between">
-		<span class="text-base text-slate-600">Konto-Status</span>
+		<span class="text-base text-on-surface-variant">Konto-Status</span>
 		<!-- Gesperrt ist die Ausnahme und trägt Farbe; „Aktiv" ist der Normalfall und
 		     bleibt still. Ein pulsierender grüner Punkt für „alles in Ordnung" zieht
 		     Aufmerksamkeit auf die einzige Stelle, die keine braucht. -->
 		{#if gesperrt}
-			<span class="text-sm font-medium text-rose-600">Gesperrt</span>
+			<span class="text-sm font-medium text-error">Gesperrt</span>
 		{:else}
-			<span class="text-sm text-slate-500">Aktiv</span>
+			<span class="text-sm text-on-surface-variant">Aktiv</span>
 		{/if}
 	</div>
 
@@ -53,6 +54,17 @@
 			{profile.block_reason}
 		</p>
 	{/if}
+
+	<!-- Was der Leser schuldet, ist Kontozustand: Die Zeile steht bei jedem Leser, und „keine"
+	     bleibt still wie „Aktiv". Die Liste dazu trägt der Reiter „Gebühren & Schäden". -->
+	<div class="flex items-center justify-between">
+		<span class="text-base text-on-surface-variant">Offene Forderungen</span>
+		{#if offen.anzahl > 0}
+			<span class="text-sm font-medium text-error">{formatEuro(offen.summe)}</span>
+		{:else}
+			<span class="text-sm text-on-surface-variant">keine</span>
+		{/if}
+	</div>
 
 	{#if onLock}
 		<!-- Beschriftung nach dem einen Prädikat (sperrStatus.js): Seit dem 24.09.2026 hebt der

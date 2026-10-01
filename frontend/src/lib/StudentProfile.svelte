@@ -12,6 +12,7 @@
 	import StudentDangerZone from './StudentDangerZone.svelte';
 	import StudentProfileStammdaten from './StudentProfileStammdaten.svelte';
 	import StudentProfileAusleihen from './StudentProfileAusleihen.svelte';
+	import StudentProfileGebuehren from './StudentProfileGebuehren.svelte';
 	import StudentProfileActions from './StudentProfileActions.svelte';
 	import StudentPrintReceipt from './StudentPrintReceipt.svelte';
 	import { useStudentProfile } from './useStudentProfile.svelte.js';
@@ -27,7 +28,7 @@
 	 * @property {(zielId: string) => void} [onMerged] - Nach dem Zusammenführen: der Aufrufer hängt seinen aktiven Schüler auf das Ziel um
 	 * @property {import('svelte').Snippet} [leftActions] - Optional slot for left card actions
 	 * @property {import('svelte').Snippet} [rightTop] - Optional slot for right content top
-	 * @property {'ausleihen'|'stammdaten'} [defaultTab] - Reiter, der beim Öffnen oben liegt
+	 * @property {'ausleihen'|'gebuehren'|'stammdaten'} [defaultTab] - Reiter, der beim Öffnen oben liegt
 	 */
 	/** @type {Props} */
 	let {
@@ -43,14 +44,11 @@
 	const st = useStudentProfile();
 	// Aktionen folgen dem Recht ihrer Route, nicht der Rolle — Zuordnung in schuelerRechte.js.
 	const rechte = $derived(schuelerRechte(authStore.currentUser));
+	// Anzahl und Summe kommen mit dem Profil vom Server, nicht aus der Liste des Reiters.
+	const offen = $derived(st.profile?.offene_forderungen ?? { anzahl: 0, summe: 0 });
 
-	// Der Reiter folgt der Absicht, mit der das Profil geöffnet wurde — nicht der
-	// Route: Am Kiosk und aus Mahnwesen/Abgängern heraus geht es um Ausleihen, in der
-	// selbst durchsuchten Schülerdatei um Stammdaten (Anruf bei den Eltern,
-	// Adressabgleich). Deshalb entscheidet der Aufrufer, nicht diese Komponente.
-	//
-	// Bei JEDEM Schülerwechsel zurück: Reiter und offene Blätter. Sonst klebt der Reiter
-	// des vorigen am nächsten, und ein offenes Blatt speichert auf den falschen Schüler.
+	// Der Aufrufer bestimmt den Reiter, der beim Öffnen oben liegt. Bei jedem Wechsel des
+	// Lesers zurück auf ihn, sonst speichert ein offenes Blatt auf den falschen Leser.
 	$effect(() => {
 		if (!student?.id) return;
 		st.activeTab = defaultTab;
@@ -60,17 +58,12 @@
 
 	export const reloadProfile = () => st.fetchProfile(st.profile?.id ?? student?.id);
 
-	// Vom Bediener gesetztes Ablaufjahr. null = Vorschlag des Servers gilt. Bewusst NICHT
-	// gespeichert: Die Abweichung betrifft genau diesen einen Ausdruck (Wiederholer,
-	// Zweigwechsler, Ersatzausweis); am Schüler müsste sie beim nächsten Schuljahreswechsel
-	// wieder aufgeräumt werden. Beim Wechsel des Schülers fällt sie deshalb zurück.
+	// Vom Bediener gesetztes Ablaufjahr für genau diesen Ausdruck; null = Vorschlag des Servers.
+	// Nicht gespeichert, beim Wechsel des Lesers fällt es zurück.
 	let gueltigBisOverride = $state(/** @type {number|null} */ (null));
 	let zuletztGezeigteId = $state(/** @type {string|null} */ (null));
 	$effect(() => {
-		// Nur beim WECHSEL des Schülers zurücksetzen, nicht bei jedem Profil-Reload:
-		// st.fetchProfile() läuft auch nach einer Rückgabe oder Sperre. Würde die
-		// Abweichung dabei verworfen, verlöre man eine gerade getippte Jahreszahl,
-		// ohne dass etwas sichtbar passiert ist.
+		// Nur beim Wechsel des Lesers: Ein Neuladen des Profils lässt die getippte Jahreszahl stehen.
 		const id = st.profile?.id ?? null;
 		if (id !== zuletztGezeigteId) {
 			zuletztGezeigteId = id;
@@ -100,7 +93,6 @@
 		<div
 			class="w-full grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-stretch text-slate-800 animate-fade-in no-print print:hidden font-sans"
 		>
-			<!-- Left Column Profile Card -->
 			<StudentProfileCard
 				bind:profile={st.profile}
 				{rechte}
@@ -109,6 +101,7 @@
 				bind:showDeleteConfirm={st.showDeleteConfirm}
 				{onDeselect}
 				{leftActions}
+				{offen}
 				onLock={rechte.bearbeiten ? () => (st.showLockModal = true) : undefined}
 			/>
 
@@ -132,6 +125,7 @@
 					etikett="Leserakte"
 					reiter={[
 						{ id: 'ausleihen', label: 'Ausleihen & Historie' },
+						{ id: 'gebuehren', label: 'Gebühren & Schäden', anzahl: offen.anzahl },
 						{ id: 'stammdaten', label: 'Stammdaten & Adresse' }
 					]}
 					aktiv={st.activeTab}
@@ -141,17 +135,22 @@
 				<div class="flex-1 relative">
 					{#if st.activeTab === 'ausleihen'}
 						<StudentProfileAusleihen
-							schuelerId={st.profile.id}
 							buecher={st.profile.entliehene_buecher || []}
 							bind:vormerkungen={st.vormerkungen}
-							gebuehren={st.gebuehren}
-							bescheide={st.bescheide}
-							fehlendeListen={st.fehlendeListen}
-							canEdit={rechte.bearbeiten}
+							fehlendeListen={st.fehlendeListen.filter((l) => l === 'Vormerkungen')}
 							{onReturnClick}
 							onDamageClick={rechte.bearbeiten ? st.openDamageModal : undefined}
 							onChanged={() => st.fetchProfile(st.profile.id)}
 							{rightTop}
+						/>
+					{:else if st.activeTab === 'gebuehren'}
+						<StudentProfileGebuehren
+							schuelerId={st.profile.id}
+							gebuehren={st.gebuehren}
+							bescheide={st.bescheide}
+							fehlendeListen={st.fehlendeListen.filter((l) => l !== 'Vormerkungen')}
+							canEdit={rechte.bearbeiten}
+							onChanged={() => st.fetchProfile(st.profile.id)}
 						/>
 					{:else if st.activeTab === 'stammdaten'}
 						<StudentProfileStammdaten
@@ -197,9 +196,8 @@
 {/if}
 
 {#if st.profile}
-	<!-- Die Abweichung wird hier auf das Profil gelegt, nicht in CardFace hineingereicht:
-	     CardFace rendert genau ein Feld (ausweis_gueltig_bis) und kennt keinen Sonderfall.
-	     So drucken Profil, Klassensatz und Designer nachweislich dieselbe Karte. -->
+	<!-- Die Abweichung liegt auf dem Profil, nicht in CardFace: So drucken Profil, Klassensatz
+	     und Designer dieselbe Karte. -->
 	<StudentPrintCard
 		profile={{ ...st.profile, ausweis_gueltig_bis: gueltigBisEffektiv }}
 		timestamp={st.timestamp}

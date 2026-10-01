@@ -10,9 +10,9 @@ import { srcRoot, sammleQuelldateien, relPfad } from './hygiene-quellen.js';
 //   Aufrufer muss SEINEN aktiven Schüler umhängen, sonst bucht die nächste Aktion auf die
 //   gelöschte Kennung. Die Schülerdatei tat das seit dem 03.09.2026, die Theke nicht
 //   (OFFEN.md 3.2) — und dort landet die Kennung auch in der Offline-Warteschlange.
-// - `fehlendeListen` an StudentProfileAusleihen: Ohne das Prop schweigt der Reiter über
-//   einen gescheiterten Abruf, und eine leere Karte liest sich als „nichts offen"
-//   (OFFEN.md 1.5).
+// - `fehlendeListen` an StudentProfileAusleihen und StudentProfileGebuehren: Ohne das Prop
+//   schweigt der Reiter über einen gescheiterten Abruf, und eine leere Karte liest sich als
+//   „nichts offen" (OFFEN.md 1.5).
 
 /**
  * Alle Start-Tags einer Komponente in einer .svelte-Datei, jeweils bis zum schließenden `>`
@@ -40,7 +40,8 @@ function einbauorte(quelle, name) {
 
 const PFLICHT = [
 	['StudentProfile', 'onMerged'],
-	['StudentProfileAusleihen', 'fehlendeListen']
+	['StudentProfileAusleihen', 'fehlendeListen'],
+	['StudentProfileGebuehren', 'fehlendeListen']
 ];
 
 describe('Einbauorte der Schülerakte', () => {

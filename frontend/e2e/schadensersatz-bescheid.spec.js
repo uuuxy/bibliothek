@@ -109,9 +109,13 @@ test.describe('Schadensersatz-Bescheid', () => {
 		await expect(wartend).toContainText('Bescheid noch nicht erstellt');
 		await expect(wartend.getByRole('button', { name: 'Bescheid erstellen' })).toBeVisible();
 
-		// Zweite Tür: der Name führt in die Akte, und dort steht der Knopf an der
-		// Gebühren-Karte — bei der Forderung, aus der der Brief entsteht.
+		// Zweite Tür: Der Name führt in die Akte, und sie öffnet gleich auf „Gebühren &
+		// Schäden" — bei der Forderung, aus der der Brief entsteht.
 		await wartend.getByRole('button', { name: /Akte von .* öffnen/ }).click();
+		await expect(page.getByRole('tab', { name: /Gebühren & Schäden/ })).toHaveAttribute(
+			'aria-selected',
+			'true'
+		);
 		await expect(page.getByRole('button', { name: /Bescheid erstellen/ })).toBeVisible();
 		await gehZu(page, '/mahnwesen');
 

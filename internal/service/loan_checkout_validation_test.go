@@ -32,8 +32,8 @@ func (m *mockStudentRepo) SearchStudentsFuzzy(ctx context.Context, q string, lim
 	return nil, 0, nil
 }
 func (m *mockStudentRepo) HasPhoto(ctx context.Context, id string) (bool, error) { return false, nil }
-func (m *mockStudentRepo) HasOpenDamages(ctx context.Context, id string) (bool, error) {
-	return false, nil
+func (m *mockStudentRepo) OffeneSchaeden(ctx context.Context, id string) (int, float64, error) {
+	return 0, 0, nil
 }
 func (m *mockStudentRepo) GetActiveBorrowedBooks(ctx context.Context, id string) ([]repository.BorrowedBook, error) {
 	return nil, nil
@@ -83,9 +83,9 @@ func strPtr(s string) *string { return &s }
 // expectSettingsAndOverdue richtet die Mock-Erwartungen für einen Durchlauf der
 // Sperrprüfung ohne Sperre ein: offene Schäden → querySettings → Overdue-Zählung.
 func expectSettingsAndOverdue(mock pgxmock.PgxPoolIface, overdueCount int) {
-	mock.ExpectQuery("SELECT COUNT\\(\\*\\) FROM schadensfaelle").
+	mock.ExpectQuery("SELECT COUNT\\(\\*\\), COALESCE\\(SUM\\(betrag\\), 0\\)::float8 FROM schadensfaelle").
 		WithArgs("s1").
-		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
+		WillReturnRows(pgxmock.NewRows([]string{"count", "summe"}).AddRow(0, 0.0))
 	mock.ExpectQuery("SELECT schluessel, coalesce\\(wert, ''\\) FROM system_einstellungen").
 		WillReturnRows(pgxmock.NewRows([]string{"schluessel", "wert"}).
 			AddRow("max_overdue_items", "1").

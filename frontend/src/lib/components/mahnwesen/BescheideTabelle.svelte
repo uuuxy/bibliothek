@@ -29,10 +29,9 @@
 	/** @param {string} iso */
 	const datum = (iso) => new Date(iso).toLocaleDateString('de-DE');
 
-	/** Öffnet die Akte — dort wird bezahlt, storniert und gemeldet. @param {string} id */
+	/** Öffnet die Akte auf „Gebühren & Schäden" — dort wird bezahlt und storniert. @param {string} id */
 	function oeffneAkte(id) {
-		uiStore.requestedStudentId = id;
-		uiStore.activeTab = 'students_dir';
+		uiStore.oeffneAkte(id, 'gebuehren');
 	}
 
 	/** @param {any} b */

@@ -68,8 +68,9 @@
 {#if gebuehren.length > 0}
 	<div class="w-full pt-2">
 		<div class="flex items-center justify-between pb-3 border-b border-outline-variant mb-6">
+			<!-- „Gebühren & Schäden" heißt der Reiter; die Liste darunter nennt, was sie zählt. -->
 			<h3 class="text-base font-medium text-on-surface-variant">
-				Gebühren &amp; Schäden ({gebuehren.length})
+				Forderungen ({gebuehren.length})
 			</h3>
 			{#if bescheidMoeglich}
 				<Button variant="secondary" onclick={() => (bescheidOffen = true)}>
