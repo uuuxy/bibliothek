@@ -747,6 +747,29 @@ einer langen Frist kommt die Sperre im Schultag nicht: 480 Minuten sind am Stack
 Abhilfe: Die Bildschirme bleiben hinter der Sperre bestehen, sind aber weder sichtbar noch mit
 der Tastatur erreichbar noch druckbar — die drei Gründe vom 22.08.2026 als Test am Browser.
 
+### 5.45 Listen in einem Kasten mit eigenem Scrollen
+
+Am 01.10.2026 sind zwei Kästen entfernt: die Ausleihliste der Leserakte (256 px, drei Zeilen)
+und die Positionen im Wareneingang (60 % der Fensterhöhe). Beide Listen zeigen jetzt alle
+Zeilen, gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B. Offen:
+
+- **Weitere Kästen derselben Form, nicht durchgesehen:** `BuchExemplareListe.svelte`
+  (`max-h-64`), `SignaturenView.svelte` (`max-h-112`), `OrderRecommendations.svelte`,
+  `BestellWorkspace.svelte` (`max-h-(--rail-max)`), `LabelBarcodeSchritt.svelte` (`max-h-40`)
+  und `LabelSettings.svelte` (`max-h-48`). Suchmuster: `max-h-` und `overflow-y-auto` in einer
+  Zeile, 14 Treffer; die übrigen acht sind Auswahllisten, Vorschläge, Dialoge und das
+  Eigenschaften-Feld des Designers. Je Bildschirm mit einer Menge wie an der Schule ansehen:
+  Die Testdaten kennen höchstens drei Ausleihen je Leser, an der Schule sind es acht bis
+  achtzehn.
+- **Wareneingang, Frage:** Der Knopf „Ausgewählte Positionen einbuchen" steht im Kopf der Seite
+  und wandert bei einer langen Liste aus dem Bild. Für markierte Zeilen gibt es
+  `ui/AuswahlLeiste` (Exemplare der Buchakte, Schlagwort-Pflege); sie bleibt beim Scrollen
+  unten stehen. Empfehlung: dieselbe Leiste im Wareneingang, der Knopf im Kopf entfällt dann.
+- **Leserakte bei 1280 px Fensterbreite und ausgeklappter Seitenleiste** (im Browser angesehen):
+  „Geliehen: …" ragt in die Spalte „Status", der Titel endet nach rund zwölf Zeichen, und von
+  zwölf Ausleihen stehen fünf im Fenster — die Zeile ist 65 px hoch, die übrigen Tabellen
+  haben 36 bis 40 px. Vorschlag: einzeilige Zeilen, das Ausleihdatum auf Anforderung.
+
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)
