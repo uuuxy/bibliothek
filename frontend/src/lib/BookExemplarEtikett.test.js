@@ -14,14 +14,14 @@ vi.mock('../inventur/lib/store.svelte.js', () => ({ showToast: vi.fn() }));
  */
 
 const book = { id: 't-1', title: 'Seydlitz Geographie', author: 'Anna Autorin' };
-const exemplare = [
-	{ id: 'ex-1', barcode_id: 'B-10001', ist_ausleihbar: true, ist_verfuegbar: true }
-];
 
-/** Zeigt die Exemplare des Titels und liefert den Etikett-Knopf der Karte (oder null). */
-function etikettKnopf() {
+/** Zeigt ein Exemplar mit dieser Nummer und liefert den Etikett-Knopf der Karte (oder null). */
+function etikettKnopf(nummer = 'B-10001') {
+	const exemplare = [
+		{ id: 'ex-1', barcode_id: nummer, ist_ausleihbar: true, ist_verfuegbar: true }
+	];
 	const screen = render(BookExemplareTab, { props: { exemplare, book, loadAll: () => {} } });
-	return screen.queryByRole('button', { name: 'Etikett für B-10001 im Druck-Center drucken' });
+	return screen.queryByRole('button', { name: `Etikett für ${nummer} im Druck-Center drucken` });
 }
 
 beforeEach(() => {
@@ -44,4 +44,24 @@ describe('Etikett aus der Buchakte', () => {
 
 		expect(etikettKnopf()).toBeNull();
 	});
+
+	// Ein Buch aus Littera trägt die 13 Ziffern seines alten Etiketts als Nummer. Bis zum
+	// 30.09.2026 gab es den Knopf nur bei „B-", also für keines dieser Bücher.
+	it('bietet den Knopf auch bei einem Buch aus Littera an', () => {
+		authStore.currentUser = { rolle: 'mitarbeiter', permissions: ['edit_books', 'view_students'] };
+
+		expect(etikettKnopf('5896800039556')).not.toBeNull();
+	});
+
+	it.each(['AUTO-7', 'SYS-100001'])(
+		'bietet bei der Platzhalternummer %s keinen Knopf an',
+		(nummer) => {
+			authStore.currentUser = {
+				rolle: 'mitarbeiter',
+				permissions: ['edit_books', 'view_students']
+			};
+
+			expect(etikettKnopf(nummer)).toBeNull();
+		}
+	);
 });

@@ -20,6 +20,8 @@
 	let barcodeError = $state('');
 
 	let editingStatus = $state(false);
+	// Platzhalter (AUTO-, SYS-) bekommen statt des Etikett-Knopfs „Barcode scannen".
+	const platzhalter = $derived(/^(AUTO|SYS)-/.test(ex.barcode_id));
 
 	async function saveBarcode() {
 		if (!editBarcodeValue.trim()) return;
@@ -123,16 +125,14 @@
 				     weil „Barcode scannen" sonst wortweise umbrach. -->
 				<div class="flex flex-wrap items-center gap-2">
 					<span
-						class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap {ex.barcode_id.startsWith(
-							'AUTO-'
-						) || ex.barcode_id.startsWith('SYS-')
+						class="rounded-md px-2 py-0.5 font-mono text-xs font-bold whitespace-nowrap {platzhalter
 							? 'bg-amber-100 text-amber-700'
 							: 'bg-primary-container text-on-primary-container'}"
 					>
 						{ex.barcode_id}
 					</span>
 					{#if darfBearbeiten}
-						{#if onEtikett && ex.barcode_id.startsWith('B-')}
+						{#if onEtikett && !platzhalter}
 							<button
 								class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
 								aria-label="Etikett für {ex.barcode_id} im Druck-Center drucken"
@@ -142,7 +142,7 @@
 								<Printer class="w-3.5 h-3.5" aria-hidden="true" />
 							</button>
 						{/if}
-						{#if ex.barcode_id.startsWith('AUTO-') || ex.barcode_id.startsWith('SYS-')}
+						{#if platzhalter}
 							<button
 								class="text-xs px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-semibold rounded-lg transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
 								onclick={() => {

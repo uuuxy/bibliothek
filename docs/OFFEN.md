@@ -392,23 +392,19 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Prüfzeichen (richtig wäre `3499500256`; die Prüfung `KlaereISBN` der Übernahme gibt es seit dem
   04.08.2026), und die Rechnung führt von ihr trotzdem auf die ISBN-13. Deshalb wird
   vorgeschlagen, nicht still zusammengeführt.
-- **Etikett-Knopf bei jeder echten Nummer; ein Nachdruck gleicht dem alten Etikett**
-  (entschieden am 28.09.2026, nicht gebaut). Der Knopf an der Exemplarkarte übergibt das
-  Exemplar ans Druck-Center wie Wareneingang und Nachdruck, steht aber nur bei Nummern mit `B-`
-  (`BookExemplarCard.svelte`, seit Juni 2026 ohne Begründung); auch `LMF-` bekommt keinen.
-  Künftig: bei jeder Nummer außer den Platzhaltern `AUTO-` und `SYS-`. Die Platzhalter-Regel
-  steht in derselben Datei schon zweimal (Farbe der Nummer, „Barcode scannen"); mit dem
-  Etikett-Knopf wird sie eine Regel für alle drei Stellen. Littera-Exemplare tragen nach der
-  Übernahme den EAN-13 ihres Etiketts als `barcode_id` (seit 1b594d1e richtig,
-  `etikettAmBuch` in `internal/littera/schreiber_barcodes.go`) und die kurze Nummer in
-  `erweiterte_eigenschaften` als `littera_exemplarnr`. Das Buchetikett setzt jeden Wert als
-  Code 128 (oder als QR, wenn im Druck-Center gewählt) und druckt ihn unter „Exemplar-Nr."
-  aus (`api/label_pdf.go`); ein Nachdruck sähe damit anders aus als das alte Etikett
-  (13 Ziffern statt „58968", anderer Strichcode), scannt aber gleich. Dazu bauen: Ist die
-  Nummer ein Littera-EAN (`dekodiereLitteraEtikett` in `internal/service/littera_etikett.go`),
-  druckt das Etikett EAN-13 und die kurze Nummer. Ein Ersatzetikett aus Littera
-  (`FremdBarcode`) bleibt Code 128. Die Übernahme setzt `etikett_gedruckt = true` außer bei
-  einer neu vergebenen Nummer, die Nachdruck-Liste läuft also nicht voll.
+- **Die kurze Nummer der alten Littera-Etiketten lässt sich an der Theke nicht eintippen**
+  (gefunden am 30.09.2026, am Code gelesen, nicht nachgestellt). Nach der Übernahme ist die
+  Nummer eines Littera-Exemplars der EAN-13 seines Etiketts (`5896800039556`); lesbar steht auf
+  dem Etikett nur „Exemplar-Nr.: 58968". Liest der Scanner das Etikett nicht mehr, findet die
+  Theke das Buch über die getippte kurze Nummer nicht: `resolveOhnePraefix`
+  (`internal/service/omnibox_service.go`) sucht die Nummer genau und rechnet nur 13-stellige
+  Scans zurück; die kurze Nummer steht in `erweiterte_eigenschaften` als `littera_exemplarnr`
+  und wird nirgends gelesen. Ist `FremdLeserNummer` im frischen Backup leer (7.2), tragen die
+  Ausweise die Littera-Lesernummer, und beide Nummernkreise beginnen bei 1: Eine getippte kurze
+  Buchnummer kann dann einen Leser laden. Bis dahin: den Titel suchen (die 13 Ziffern beginnen
+  mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
+  kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
+  Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
   Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
