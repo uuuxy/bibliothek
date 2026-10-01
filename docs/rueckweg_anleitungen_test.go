@@ -100,6 +100,19 @@ func TestRueckweg_EinspielenBrichtBeimErstenFehlerAb(t *testing.T) {
 	}
 }
 
+// umgebungOhneGit liefert die Umgebung ohne die Variablen, mit denen git sein Repository
+// findet. Unter einem Hook in einer verknüpften Arbeitskopie zeigt GIT_DIR auf das echte
+// Repository — die Wegwerf-Repositories des Tests schrieben sonst dorthin.
+func umgebungOhneGit() []string {
+	var sauber []string
+	for _, eintrag := range os.Environ() {
+		if !strings.HasPrefix(eintrag, "GIT_") {
+			sauber = append(sauber, eintrag)
+		}
+	}
+	return sauber
+}
+
 // Der Rückweg zeigt auf den Stand, der VOR dem Update lief — auch wenn `git pull` vorher
 // von Hand lief, wie DEPLOYMENT.md §2.4 es verlangt.
 //
@@ -120,7 +133,7 @@ func TestRueckweg_RollbackNenntDenLaufendenStand(t *testing.T) {
 	}
 	skript := lies(t, "../update.sh")
 	wurzel := t.TempDir()
-	gitUmgebung := append(os.Environ(),
+	gitUmgebung := append(umgebungOhneGit(),
 		"GIT_CONFIG_GLOBAL=/dev/null", "GIT_CONFIG_NOSYSTEM=1",
 		"GIT_AUTHOR_NAME=Probe", "GIT_AUTHOR_EMAIL=probe@example.invalid",
 		"GIT_COMMITTER_NAME=Probe", "GIT_COMMITTER_EMAIL=probe@example.invalid")
