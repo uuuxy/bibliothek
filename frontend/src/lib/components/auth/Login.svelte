@@ -4,6 +4,12 @@
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
 	import logoUrl from '../../../assets/logo.png';
+	import { scanSchutz } from '../../scanErkennung.js';
+
+	// Ein Scan im Passwortfeld ginge als Anmeldeversuch zum Server und zählte als Fehlversuch.
+	function beiScan() {
+		authStore.loginError = 'Scan erkannt: Bitte erst anmelden, dann scannen.';
+	}
 
 	$effect(() => {
 		setTimeout(() => document.getElementById('login-email')?.focus(), 50);
@@ -13,6 +19,7 @@
 <main class="min-h-screen flex items-center justify-center p-6 bg-slate-50">
 	<form
 		onsubmit={(e) => authStore.handleLogin(e, undefined)}
+		use:scanSchutz={beiScan}
 		class="w-full max-w-md p-8 rounded-3xl bg-white border border-slate-100 shadow-xl flex flex-col items-center space-y-6 animate-fade-in no-print"
 	>
 		<img src={logoUrl} alt="Bibliosys Logo" class="w-24 h-24 object-contain" />

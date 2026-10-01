@@ -433,7 +433,11 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   Titel noch die ISBN-Abfrage aus (im Browser nachgestellt, blind getippt). Dieselbe Form
   früher: das Scanfeld der Theke ohne Fokus nach dem ersten Scan (`768f44f`, 28.07.2026),
   ein Dialog, der beim Scan aufgeht und den nächsten Scan bekommt (24.09.2026,
-  `frontend/e2e/sperre.spec.js`).
+  `frontend/e2e/sperre.spec.js`). Derselbe Durchgang fand den Sperrbildschirm: Dort steht
+  der Fokus im Passwortfeld, ein Scan ging als Passwort zum Server und zählte als
+  Fehlversuch, und nach fünf Scans war das Konto an diesem Rechner 15 Minuten gesperrt.
+  Behoben am 01.10.2026 (`frontend/src/lib/scanErkennung.js`,
+  `frontend/e2e/sperre-scan.spec.js`); bis dahin stand der Fund nicht im Repository.
 - **17 · Ausfall.** Antworten die Katalogdienste nicht, lässt sich kein neues Buch
   speichern, dem Cover oder Listenpreis fehlt: `ergaenzeBuchMetadaten` fragt vor dem
   Schreiben DNB, Google Books und OpenLibrary der Reihe nach (je 8 s Frist), die Oberfläche

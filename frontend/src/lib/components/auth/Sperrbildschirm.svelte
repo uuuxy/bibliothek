@@ -6,6 +6,7 @@
 	import { idleLock } from '../../stores/idleLock.svelte.js';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import { scanSchutz } from '../../scanErkennung.js';
 
 	// Sperrbildschirm nach Inaktivität (A4 in docs/datenschutz_offene_punkte.md).
 	// Ersetzt die ganze Anwendung (App.svelte rendert Sidebar und Inhalt im gesperrten
@@ -15,6 +16,14 @@
 	// oder per Abmelden. Der Server hält die Anmeldung so lange gesperrt (stores/idleLock).
 
 	let passwort = $state('');
+	// Ein Scan am Sperrbildschirm ist kein Passwort: Er geht nicht zum Server, wo er als
+	// Fehlversuch zählte, und er drückt keinen Knopf.
+	let scanErkannt = $state(false);
+
+	function beiScan() {
+		idleLock.entsperrFehler = null;
+		scanErkannt = true;
+	}
 
 	$effect(() => {
 		setTimeout(() => document.getElementById('sperre-passwort')?.focus(), 50);
@@ -24,6 +33,7 @@
 	async function entsperren(e) {
 		e.preventDefault();
 		if (idleLock.entsperreLaeuft) return;
+		scanErkannt = false;
 		const ok = await idleLock.entsperren(passwort);
 		passwort = '';
 		if (!ok) setTimeout(() => document.getElementById('sperre-passwort')?.focus(), 50);
@@ -42,6 +52,7 @@
 	aria-labelledby="sperre-titel"
 	data-testid="sperrbildschirm"
 	use:fokusFalle
+	use:scanSchutz={beiScan}
 >
 	<form
 		onsubmit={entsperren}
@@ -77,7 +88,11 @@
 				Entsperren
 			{/if}
 		</Button>
-		{#if idleLock.entsperrFehler}
+		{#if scanErkannt}
+			<p class="text-xs text-error font-semibold text-center animate-slide-up" role="alert">
+				Scan erkannt: Die Anwendung ist gesperrt. Bitte erst das Passwort eintippen, dann scannen.
+			</p>
+		{:else if idleLock.entsperrFehler}
 			<p class="text-xs text-error font-semibold animate-slide-up" role="alert">
 				{idleLock.entsperrFehler}
 			</p>
