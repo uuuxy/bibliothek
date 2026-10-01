@@ -34,12 +34,18 @@
 		}
 	}
 
+	// Ein zweiter Klick, solange das Speichern läuft, schickt nichts: Seine Anfrage träfe den
+	// Stand der ersten und käme als Ablehnung zurück.
+	let speichert = false;
+
 	export async function saveChanges() {
+		if (speichert) return;
 		if (!formular.title || !formular.isbn) {
 			showToast('Titel und ISBN sind Pflichtfelder', 'error');
 			return;
 		}
 
+		speichert = true;
 		try {
 			const frage = verringernRueckfrage(formular);
 			if (frage && !(await bestaetigen(frage))) return;
@@ -80,6 +86,8 @@
 				formular.stock = formular.stockGesehen = e.bestand;
 			}
 			showToast(e instanceof Error ? e.message : String(e), 'error');
+		} finally {
+			speichert = false;
 		}
 	}
 

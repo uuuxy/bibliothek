@@ -141,3 +141,35 @@ describe('AdminBuchAktionen: Bestand eines vorhandenen Titels', () => {
 		expect(formular).toMatchObject({ stock: 6, stockGesehen: 6, signatur: 'Fun 1' });
 	});
 });
+
+// Ein Doppelklick auf „Speichern": Die zweite Anfrage träfe den Stand, den die erste eben
+// geschrieben hat, und käme als Ablehnung zurück — beim neuen Titel als vergebene ISBN, bei
+// einem geänderten Bestand als „inzwischen geändert".
+describe('AdminBuchAktionen: zweiter Klick, solange das Speichern läuft', () => {
+	it('schickt eine Anfrage und meldet einmal', async () => {
+		/** @type {((wert: any) => void)[]} */
+		const wartende = [];
+		vi.mocked(apiFetch).mockImplementation(() => new Promise((fertig) => wartende.push(fertig)));
+		const aktionen = maske({ id: null, isbn: '9783791504544', title: 'Mit Buch', stock: 1 });
+
+		const erster = aktionen.saveChanges();
+		const zweiter = aktionen.saveChanges();
+		for (const fertig of wartende) fertig(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		await Promise.all([erster, zweiter]);
+
+		expect(apiFetch).toHaveBeenCalledTimes(1);
+		expect(showToast).toHaveBeenCalledTimes(1);
+	});
+
+	it('nach einer Ablehnung geht das Speichern wieder', async () => {
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(500, { error: 'Speichern fehlgeschlagen' }));
+		vi.mocked(apiFetch).mockResolvedValueOnce(antwort(201, { data: { id: 'neu', stock: 1 } }));
+		const aktionen = maske({ id: null, isbn: '9783791504544', title: 'Mit Buch', stock: 1 });
+
+		await aktionen.saveChanges();
+		await aktionen.saveChanges();
+
+		expect(apiFetch).toHaveBeenCalledTimes(2);
+		expect(showToast).toHaveBeenLastCalledWith('Buch erfolgreich gespeichert!', 'success');
+	});
+});
