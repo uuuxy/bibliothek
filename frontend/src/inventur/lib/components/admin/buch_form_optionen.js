@@ -24,14 +24,17 @@ export function mehrjahresbandHinweis(an, von, bis) {
 }
 
 /**
- * Der Hinweis unter „Aktueller Bestand" eines neuen Titels: Ohne Exemplar zeigt ihn kein
- * Katalog (repository.SQLTitelHatExemplar), nur die Sicht „Ohne Exemplare" der Titelliste.
+ * Der Hinweis unter „Aktueller Bestand". Neuer Titel: Ohne Exemplar zeigt ihn kein Katalog
+ * (repository.SQLTitelHatExemplar), nur die Sicht „Ohne Exemplare" der Titelliste.
+ * Vorhandener Titel: Ein leeres Feld ändert nichts (bestandsAngabe in buch_speichern.js).
  * @param {string|null|undefined} id
  * @param {number|string|null|undefined} bestand
  * @returns {string}
  */
 export function bestandHinweis(id, bestand) {
-	if (id || Number(bestand) > 0) return '';
+	const leer = bestand === null || bestand === undefined || bestand === '';
+	if (id) return leer ? 'Ohne Zahl bleibt der Bestand, wie er ist.' : '';
+	if (Number(bestand) > 0) return '';
 	return 'Ohne Exemplar steht der Titel in keinem Katalog, nur in der Titelliste unter „Ohne Exemplare“.';
 }
 

@@ -6,6 +6,8 @@
 	import {
 		speichereBuch,
 		stehtInSicht,
+		verringernRueckfrage,
+		BestandVeraltetFehler,
 		DubletteFehler,
 		frageVorhandenenOeffnen
 	} from '../../buch_speichern.js';
@@ -38,20 +40,10 @@
 			return;
 		}
 
-		if (formular.id) {
-			const originalBook = books.find((/** @type {any} */ b) => b.id === formular.id);
-			if (originalBook && Number(formular.stock) < Number(originalBook.stock)) {
-				const proceed = await bestaetigen({
-					titel: 'Gesamtbestand verringern?',
-					text: 'Die entsprechende Anzahl an Exemplaren wird im Hintergrund als verloren markiert.',
-					aktion: 'Verringern',
-					gefaehrlich: true
-				});
-				if (!proceed) return;
-			}
-		}
-
 		try {
+			const frage = verringernRueckfrage(formular);
+			if (frage && !(await bestaetigen(frage))) return;
+
 			const neu = !formular.id;
 			const updated = await speichereBuch(formular);
 			// Die Antwort auf das Ändern trägt den Bestand nicht, die Maske schon.
@@ -81,6 +73,11 @@
 			if (e instanceof DubletteFehler && !formular.id) {
 				await frageVorhandenenOeffnen(e.message, e.vorhanden);
 				return;
+			}
+			// Ein anderer Platz hat den Bestand geändert: Das Feld zeigt den neuen Stand, die
+			// übrigen Eingaben der Maske bleiben stehen.
+			if (e instanceof BestandVeraltetFehler) {
+				formular.stock = formular.stockGesehen = e.bestand;
 			}
 			showToast(e instanceof Error ? e.message : String(e), 'error');
 		}

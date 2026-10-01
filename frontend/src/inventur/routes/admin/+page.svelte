@@ -101,7 +101,9 @@
 				return;
 			}
 		}
-		formular = { ...voll };
+		// stockGesehen: Mit der Zahl vom Öffnen erkennt das Speichern, ob das Feld „Bestand"
+		// geändert wurde und ob sie am Server noch gilt (buch_speichern.js).
+		formular = { ...voll, stockGesehen: voll.stock };
 		if (!formular.medientyp) {
 			formular.medientyp = 'Buch';
 		}

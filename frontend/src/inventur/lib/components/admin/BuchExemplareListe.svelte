@@ -2,6 +2,7 @@
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import { loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { showToast } from '$lib/store.svelte.js';
+	import { ladeBestandNach } from '../../buch_speichern.js';
 	import { onMount } from 'svelte';
 	import { Trash2 } from '@lucide/svelte';
 	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
@@ -49,8 +50,9 @@
 			});
 			if (res.ok) {
 				exemplare = exemplare.filter((e) => e.id !== ex.id);
-				// Also decrement stock in the main form so it's accurate!
-				formular.stock = Math.max(0, Number(formular.stock) - 1);
+				// Der Bestand der Maske kommt neu vom Server: Ein ausgesondertes oder bestelltes
+				// Exemplar zählte nicht mit, sein Löschen ändert die Zahl nicht.
+				await ladeBestandNach(formular);
 				showToast('Exemplar erfolgreich gelöscht', 'success');
 			} else {
 				const err = await res.json().catch(() => ({}));

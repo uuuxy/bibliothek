@@ -58,7 +58,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(10))
 		mock.ExpectCommit()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &book.Stock)
+		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
 		assert.NoError(t, err)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -74,7 +74,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnResult(pgxmock.NewResult("UPDATE", 0))
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &book.Stock)
+		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
 		assert.ErrorIs(t, err, ErrBookNotFound)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -90,7 +90,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnError(fmt.Errorf("db connection failed"))
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &book.Stock)
+		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
 		assert.ErrorContains(t, err, "buch konnte nicht aktualisiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
@@ -112,7 +112,7 @@ func TestUpdateBook(t *testing.T) {
 			WillReturnError(fmt.Errorf("bestand nicht lesbar"))
 		mock.ExpectRollback()
 
-		err := repo.UpdateBook(ctx, "book-123", book, &book.Stock)
+		err := repo.UpdateBook(ctx, "book-123", book, &Bestandsangabe{Soll: book.Stock})
 		assert.ErrorContains(t, err, "exemplare konnten nicht synchronisiert werden")
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})

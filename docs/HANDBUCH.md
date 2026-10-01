@@ -121,7 +121,12 @@ erreichbar ist.
   Exemplare aussondern (Verlust, Schaden, Bestandskorrektur). Wird der Bestand nach oben
   korrigiert, legt das System die fehlenden Exemplare mit regulärer B-Nummer an (seit
   07.09.2026 — vorher „SYS-…"); sie stehen danach im Druck-Center unter _Fehlende
-  Etiketten_. **Schlagworte aus der DNB** (seit 30.09.2026): Holt die ISBN Titel und Autor,
+  Etiketten_. Wird er verringert, fragt die Maske mit beiden Zahlen nach; ausgesondert
+  werden zuerst nicht ausgeliehene Exemplare, bestellte nie. Das Feld zählt die Exemplare im
+  Bestand ohne die bestellten und wird nur gespeichert, wenn es geändert wurde; leer
+  gelassen, bleibt der Bestand. Hat inzwischen ein anderer Platz Exemplare angelegt oder
+  ausgesondert, lehnt das Speichern ab, und das Feld zeigt den neuen Stand (seit
+  01.10.2026). **Schlagworte aus der DNB** (seit 30.09.2026): Holt die ISBN Titel und Autor,
   stehen unter _Schlagworte_ die Wörter, die die DNB zu dieser ISBN nennt, zum Anklicken — wie
   beim Bestellen als _Vorschläge aus der DNB_ und _Neue Schlagworte aus der DNB_. Bei einem
   Titel, den es schon gibt, holt sie der Knopf _Vorschläge aus der DNB_ unter dem Feld.

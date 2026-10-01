@@ -78,9 +78,19 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		Schlagworte:             schlagworte,
 	}
 
-	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, eingabe.Bestand); fehler != nil {
+	if fehler := handler.repo.UpdateBook(anfrage.Context(), id, buch, bestandsangabe(eingabe)); fehler != nil {
 		if errors.Is(fehler, ErrDuplicateISBN) {
 			schreibeDubletteISBN(antwort, fehler)
+			return
+		}
+		var veraltet *BestandVeraltet
+		if errors.As(fehler, &veraltet) {
+			// Mit dem Stand in der Antwort stellt die Maske ihr Feld nach, ohne dass die
+			// übrigen Eingaben verloren gehen.
+			writeJSON(antwort, http.StatusConflict, map[string]any{
+				"error":   veraltet.Meldung(),
+				"bestand": veraltet.Aktuell,
+			})
 			return
 		}
 		if errors.Is(fehler, ErrBookNotFound) {
@@ -94,6 +104,15 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 
 	buch.ID = id
 	writeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": buch})
+}
+
+// bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt
+// sie nichts (nil), und die Exemplare bleiben unangetastet.
+func bestandsangabe(eingabe BuchEingabe) *Bestandsangabe {
+	if eingabe.Bestand == nil {
+		return nil
+	}
+	return &Bestandsangabe{Soll: *eingabe.Bestand, Gesehen: eingabe.BestandGesehen}
 }
 
 // bereinigeUndValidiereBuchEingabe trimmt Leerzeichen der Eingabefelder und prüft auf Gültigkeit.
@@ -121,6 +140,9 @@ func bereinigeUndValidiereBuchEingabe(eingabe *BuchEingabe) error {
 	}
 	if eingabe.Bestand != nil && *eingabe.Bestand < 0 {
 		return errors.New("stock muss >= 0 sein")
+	}
+	if eingabe.BestandGesehen != nil && *eingabe.BestandGesehen < 0 {
+		return errors.New("stockGesehen muss >= 0 sein")
 	}
 	if fehler := pruefeListenpreis(eingabe.Listenpreis); fehler != nil {
 		return fehler

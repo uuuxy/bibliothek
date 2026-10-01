@@ -105,7 +105,7 @@ func sqlVonUpdateBook(t *testing.T) string {
 	mock, err := pgxmock.NewPool(pgxmock.QueryMatcherOption(
 		pgxmock.QueryMatcherFunc(func(expectedSQL, actualSQL string) error {
 			// Nur die Titel-Anweisung interessiert; seit UpdateBook in einer Tx läuft,
-			// kommt zusätzlich die COUNT-Query von syncBookStock durch den Matcher.
+			// kommt zusätzlich die Zählung des Bestands (setzeBestand) durch den Matcher.
 			if strings.Contains(actualSQL, "UPDATE buecher_titel") {
 				erfasst = actualSQL
 			}
@@ -127,7 +127,7 @@ func sqlVonUpdateBook(t *testing.T) string {
 	for i := range beliebig {
 		beliebig[i] = pgxmock.AnyArg()
 	}
-	// UpdateBook ist atomar (Tx): Begin, UPDATE, syncBookStock-COUNT (Stock=0 → keine
+	// UpdateBook ist atomar (Tx): Begin, UPDATE, Zählung des Bestands (Soll 0 bei Stand 0 → keine
 	// weiteren Schreibvorgänge), Commit.
 	mock.ExpectBegin()
 	// Keine Erwartung für die Dublettenkontrolle: Sie fragt die Datenbank nur, wenn eine
@@ -138,8 +138,7 @@ func sqlVonUpdateBook(t *testing.T) string {
 	mock.ExpectCommit()
 
 	repo := NewBookRepository(mock)
-	null := 0
-	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{}, &null); err != nil {
+	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{}, &Bestandsangabe{Soll: 0}); err != nil {
 		t.Fatalf("UpdateBook: %v", err)
 	}
 	if erfasst == "" {

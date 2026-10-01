@@ -72,9 +72,9 @@ hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat 
 ([PFLEGEKONZEPT.md](PFLEGEKONZEPT.md), Abschnitt 4). Die CI steht seit dem 28.09.2026 fest auf
 `ubuntu-24.04`, der Wechsel auf Ubuntu 26 hat damit keinen Termin mehr (5.10). Die Reihenfolge
 (freigegeben am 23.09.2026; die Stellung von 5.3 ist der Vorschlag vom 24.09.2026, die
-Reihenfolge unter 1. die vom 29.09.2026). Davor stehen die Funde der Kategorie A aus dem
-Rasterdurchgang vom 01.10.2026: der Bestand in der Buchmaske (5.5, zwei Punkte) und das
-Ungespeicherte hinter der Sperre (5.44).
+Reihenfolge unter 1. die vom 29.09.2026). Davor steht der Fund der Kategorie A aus dem
+Rasterdurchgang vom 01.10.2026, der noch offen ist: das Ungespeicherte hinter der Sperre
+(5.44).
 
 1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.22 und 4.24 stehen die
    Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus. Zu 4.28 (Anmelden
@@ -449,30 +449,21 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Rowling. Aus dem Engl. von Klaus Fritz", 9783791504650 „Tintenherz Cornelia Funke. Mit Ill.
   der Autorin". Betrifft die Maske „Neues Buch" und das Bestellen per ISBN.
   Kategorie B.
-- **Eine offen gelassene Buchmaske schreibt den Bestand von vorhin zurück** (gefunden am
-  01.10.2026, am Stack nachgestellt; Kategorie A). Die Maske schickt bei jedem Speichern den
-  Bestand aus dem Augenblick des Öffnens mit (`speichereBuch`), auch wenn niemand das Feld
-  angefasst hat, und `syncBookStock` setzt ihn durch. Nachgestellt: Titel mit einem Exemplar
-  an Platz 1 geöffnet, an Platz 2 den Bestand auf 6 erhöht, an Platz 1 nur die Signatur
-  geändert und gespeichert — danach ein aktives Exemplar und fünf „Automatisch ausgesondert",
-  darunter das ursprüngliche (die Auswahl hat keine Reihenfolge); gemeldet wird „Buch
-  erfolgreich gespeichert!". Reichen die freien Exemplare nicht, sondert derselbe Weg
-  ausgeliehene aus (am Code gelesen). Auch die übrigen Felder gehen als Ganzes zurück: Speichern zwei Plätze
-  denselben Titel nacheinander, gilt der zweite Stand, die Signatur des ersten ist
-  zurückgesetzt, beide Antworten sind 200. Abhilfe: Der Bestand geht nur mit, wenn das Feld
-  geändert wurde, zusammen mit der Zahl, die die Maske gesehen hat; weicht sie vom Stand am
-  Server ab, lehnt die Tür ab (409). Für die übrigen Felder ein Vergleich des Stands beim
-  Schreiben. Dieselbe Form an Leser, Gerät und Benutzer ist nicht durchgesehen (Raster,
-  Frage 18).
-- **„Gesamtbestand verringern?" kommt nur, wenn der Titel in der geladenen Liste steht**
-  (gefunden am 01.10.2026, im Browser nachgestellt; Kategorie A). `saveChanges`
-  (`AdminBuchAktionen.svelte`) vergleicht gegen die Liste der Seite. Über „Neues Buch", eine
-  vergebene ISBN und „Titel öffnen" bei gefilterter Liste steht der Titel nicht in ihr: Aus
-  drei Exemplaren wurde ohne Rückfrage eines. Ein geleertes Bestandsfeld geht als 0 hinaus
-  und sonderte alle drei aus, gemeldet wurde „Buch erfolgreich gespeichert!". Steht der Titel
-  in der Liste, kommt die Rückfrage. Abhilfe: gegen den beim Öffnen geladenen Bestand
-  vergleichen (`oeffneDetails` lädt ihn), ein leeres Feld als „nicht anfassen" senden, und
-  die Rückfrage nennt die Zahl.
+- **Speichern zwei Plätze denselben Titel, gilt bei den Feldern des Titels der zweite Stand**
+  (gefunden am 01.10.2026, am Stack nachgestellt). `PUT /api/books/{id}` schreibt alle Felder
+  zurück, auch die, die niemand angefasst hat: Die Signatur, die Platz 1 gespeichert hat, ist
+  nach dem Speichern von Platz 2 wieder die alte, beide Antworten sind 200. Der Bestand ist
+  seit dem 01.10.2026 ausgenommen; er geht nur geändert und mit der Zahl vom Öffnen mit.
+  Abhilfe: Die Maske nennt die Felder, die sie geändert hat, und der Server schreibt nur
+  diese. So halten es Googles Regeln für Schnittstellen (AIP-134: „only fields declared in
+  the field mask are updated"). Ein Vergleich des ganzen Stands lehnte dagegen auch ab, wenn
+  dazwischen nur ein Cover nachgeladen wurde. Dieselbe Form an Leser, Gerät, Benutzer und
+  Einstellungen ist nicht durchgesehen (Raster, Frage 18; [sweeps.md](sweeps.md), „Absoluter
+  Wert aus dem Ladezeitpunkt").
+- Die Exemplarliste der Buchmaske führt ausgesonderte und bestellte Exemplare mit (gesehen am
+  01.10.2026 im Browser): Über der Liste steht „Exemplare (9)" neben dem Bestand 5, beide
+  Arten heißen „Gesperrt", und „Exemplar löschen" an einem ausgesonderten antwortet
+  „exemplar nicht gefunden oder bereits ausgebucht". Kategorie B.
 - **Kein neues Buch, solange die Katalogdienste nicht antworten** (gefunden am 01.10.2026, am
   Stack nachgestellt; Kategorie B). `ergaenzeBuchMetadaten` fragt vor dem Anlegen DNB, Google
   Books und OpenLibrary, sobald Titel, Autor, Cover oder Listenpreis fehlen; bei einem von

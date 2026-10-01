@@ -27,7 +27,7 @@ import (
 // Weg dorthin war kurz: `Number(undefined)` im Formular ist NaN, in JSON null, in Go 0,
 // und die Warnung im Formular ("du verringerst den Bestand") greift bei NaN nicht, weil
 // `NaN < 5` falsch ist.
-func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book, bestand *int) error {
+func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book, bestand *Bestandsangabe) error {
 	// subject ist FK auf die Systematik (Migration 078): unbekannte Fächer erst
 	// registrieren, die kanonische Schreibweise schreiben, Leerwert wird NULL.
 	kanonisch, err := StelleFaecherSicher(ctx, repo.db, []string{book.Subject})
@@ -130,8 +130,8 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	}
 
 	if bestand != nil {
-		if err := repo.syncBookStock(ctx, tx, id, *bestand); err != nil {
-			return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
+		if err := repo.setzeBestand(ctx, tx, id, *bestand); err != nil {
+			return err
 		}
 	}
 
@@ -141,21 +141,90 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	return nil
 }
 
-// syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
+// Bestandsangabe ist, was eine Maske zum Bestand eines vorhandenen Titels sagt: die Zahl,
+// die gelten soll, und die Zahl, die sie beim Öffnen geladen hat. Gesehen ist nil bei einem
+// Aufrufer, der die zweite Zahl nicht kennt (eine vor dem Update geladene Seite).
+type Bestandsangabe struct {
+	Soll    int
+	Gesehen *int
+}
+
+// BestandVeraltet lehnt eine Bestandsänderung ab, deren Maske einen anderen Stand gesehen
+// hat, als jetzt gilt: Zwischen Öffnen und Speichern hat jemand Exemplare angelegt,
+// ausgesondert oder eingebucht. Die Tür antwortet mit 409 und nennt den Stand.
+type BestandVeraltet struct {
+	Gesehen *int
+	Aktuell int
+}
+
+func (e *BestandVeraltet) Error() string {
+	if e.Gesehen == nil {
+		return fmt.Sprintf("bestand ohne gesehenen stand geändert, aktuell %d", e.Aktuell)
+	}
+	return fmt.Sprintf("bestand veraltet: gesehen %d, aktuell %d", *e.Gesehen, e.Aktuell)
+}
+
+// Meldung ist der Satz für die Maske. Ohne gesehene Zahl kommt die Anfrage von einer Seite,
+// die vor dem Update geladen wurde: Sie kann die Zahl nicht mitschicken, bis sie neu lädt.
+func (e *BestandVeraltet) Meldung() string {
+	if e.Gesehen == nil {
+		return fmt.Sprintf("Der Bestand lässt sich mit dieser Fassung der Seite nicht ändern (er steht bei %d). "+
+			"Nichts gespeichert: bitte die Seite neu laden und den Titel neu öffnen.", e.Aktuell)
+	}
+	return fmt.Sprintf("Der Bestand wurde inzwischen an anderer Stelle geändert: jetzt %d statt %d. "+
+		"Nichts gespeichert: bitte die gewünschte Zahl neu eintragen.", e.Aktuell, *e.Gesehen)
+}
+
+// setzeBestand gleicht die Exemplare nur an, wenn die Maske den Stand gesehen hat, der jetzt
+// gilt. Ohne den Vergleich setzte eine länger offene Maske den Bestand auf ihre alte Zahl
+// zurück und sonderte aus, was ein anderer Platz inzwischen angelegt hatte.
 //
-// Gezählt und ausgesondert werden nur Exemplare im Bestand (repository.SQLExemplarImBestand),
-// die Zahl, die die Maske zeigt. Bestellte Exemplare gehören dem Wareneingang: Sie zählen
-// hier nicht mit und werden über die Zahl nicht ausgesondert.
+// Ein Aufrufer ohne gesehene Zahl darf den Stand bestätigen (Soll gleich Stand, nichts
+// geschieht), aber nicht ändern.
+func (repo *BookRepository) setzeBestand(ctx context.Context, q repository.DBQueryer, titelID string, angabe Bestandsangabe) error {
+	aktuell, err := zaehleBestand(ctx, q, titelID)
+	if err != nil {
+		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
+	}
+	if angabe.Gesehen == nil && angabe.Soll == aktuell {
+		return nil
+	}
+	if angabe.Gesehen == nil || *angabe.Gesehen != aktuell {
+		return &BestandVeraltet{Gesehen: angabe.Gesehen, Aktuell: aktuell}
+	}
+	if err := repo.gleicheExemplareAn(ctx, q, titelID, aktuell, angabe.Soll); err != nil {
+		return fmt.Errorf("exemplare konnten nicht synchronisiert werden: %w", err)
+	}
+	return nil
+}
+
+// zaehleBestand zählt die Exemplare im Bestand (repository.SQLExemplarImBestand), die Zahl,
+// die die Maske zeigt. Bestellte Exemplare gehören dem Wareneingang und zählen nicht mit.
+func zaehleBestand(ctx context.Context, q repository.DBQueryer, titelID string) (int, error) {
+	var bestand int
+	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = $1 AND `+repository.SQLExemplarImBestand, titelID).Scan(&bestand)
+	if err != nil {
+		return 0, fmt.Errorf("fehler beim ermitteln des aktuellen bestands: %w", err)
+	}
+	return bestand, nil
+}
+
+// syncBookStock synchronizes the physical buecher_exemplare records to match the expected stock.
 //
 // q ist repository.DBQueryer statt dbSchreiber, weil die Nummernvergabe (barcode_seq gegen
 // Bestandsabgleich) Query braucht — pgx.Tx und der Pool erfüllen beides.
 func (repo *BookRepository) syncBookStock(ctx context.Context, q repository.DBQueryer, titelID string, expectedStock int) error {
-	var currentStock int
-	err := q.QueryRow(ctx, `SELECT COUNT(*) FROM buecher_exemplare e WHERE e.titel_id = $1 AND `+repository.SQLExemplarImBestand, titelID).Scan(&currentStock)
+	currentStock, err := zaehleBestand(ctx, q, titelID)
 	if err != nil {
-		return fmt.Errorf("fehler beim ermitteln des aktuellen bestands: %w", err)
+		return err
 	}
+	return repo.gleicheExemplareAn(ctx, q, titelID, currentStock, expectedStock)
+}
 
+// gleicheExemplareAn legt fehlende Exemplare an oder sondert überzählige aus, bis der Bestand
+// expectedStock erreicht. Ausgesondert wird nur aus dem Bestand: Bestellte Exemplare lassen
+// sich über die Zahl nicht aussondern.
+func (repo *BookRepository) gleicheExemplareAn(ctx context.Context, q repository.DBQueryer, titelID string, currentStock, expectedStock int) error {
 	if expectedStock > currentStock {
 		numToCreate := expectedStock - currentStock
 		if numToCreate > 0 {

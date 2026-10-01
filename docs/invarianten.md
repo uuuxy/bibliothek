@@ -451,11 +451,16 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   (`syncBookStock`), darunter das ursprüngliche. Die Rückfrage „Gesamtbestand verringern?"
   vergleicht gegen die geladene Liste, nicht gegen den Titel: Steht er nicht in ihr, kommt
   sie nicht. Der LMF-Planer hat für dieselbe Lage ein Signal über die Live-Leitung
-  (`fremdesSignal`).
+  (`fremdesSignal`). Behoben am 01.10.2026 für den Bestand: Er geht nur geändert und mit der
+  Zahl vom Öffnen mit, der Server lehnt bei abweichendem Stand ab, und die Rückfrage misst
+  an der geladenen Zahl. Beim Beheben kam ein dritter Fall dazu: Der Server zählte bestellte
+  Exemplare zum Bestand, die Maske nicht — jedes Speichern eines Titels mit offener
+  Bestellung sonderte aus. Offen sind die übrigen Felder des Titels (OFFEN.md 5.5).
 
 Ein Gate hat keine der vier Fragen. Für 16 gibt es ein Muster (`page.keyboard.type` und
-Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 15 und 18 entsteht der
-Test mit der jeweiligen Behebung.
+Enter ohne Klick, `frontend/e2e/kiosk-scannerfokus.spec.js`), für 18 den Test mit zwei
+Plätzen (`frontend/e2e/buchmaske-bestand.spec.js`); für 15 entsteht der Test mit der
+Behebung.
 
 Schärfungen ohne neue Nummer, vom selben Durchgang:
 

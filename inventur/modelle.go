@@ -82,7 +82,11 @@ type BuchEingabe struct {
 	// — eine fehlende 0 sonderte bis zum 23.08.2026 den GESAMTEN Bestand aus, im
 	// Rückfallzweig auch ausgeliehene Exemplare. `Number(undefined)` im Formular wird zu
 	// NaN und in JSON zu null; genau das ist der Weg dorthin.
-	Bestand        *int    `json:"stock"`
+	Bestand *int `json:"stock"`
+	// BestandGesehen: die Zahl, die die Maske beim Öffnen geladen hat. Beim Aktualisieren
+	// gilt „stock" nur, wenn sie dem Stand am Server entspricht (setzeBestand) — sonst
+	// schriebe eine länger offene Maske den Bestand von vorhin zurück.
+	BestandGesehen *int    `json:"stockGesehen"`
 	Titel          string  `json:"title"`
 	Autor          string  `json:"author"`
 	CoverURL       string  `json:"coverUrl"`

@@ -66,4 +66,10 @@ describe('buch_form_optionen: Bestand eines neuen Buchs', () => {
 		expect(bestandHinweis(null, '3')).toBe('');
 		expect(bestandHinweis('titel-1', 0)).toBe('');
 	});
+
+	it('vorhandener Titel mit geleertem Feld: Der Bestand bleibt, und der Hinweis sagt es', () => {
+		for (const leer of ['', null, undefined]) {
+			expect(bestandHinweis('titel-1', leer)).toBe('Ohne Zahl bleibt der Bestand, wie er ist.');
+		}
+	});
 });
