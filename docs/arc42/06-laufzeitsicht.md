@@ -60,11 +60,14 @@ unlesbarer Wert bricht den Start ab.
 2. Sperrliste (`revoked_tokens`),
 3. **Kontostatus live in der DB** (aktiv, nicht gelöscht) — deshalb braucht es keine
    zusätzliche „Zombie-Session"-Prüfung,
-4. Recht aus `role_permissions`, gecacht 60 s, abgesichert über den Epochenzähler,
-5. UUID-Form der Pfadparameter.
+4. **Sperre nach Inaktivität** (`sitzungen`): Eine gesperrte Anmeldung bekommt **423**, bis
+   das Passwort eingegeben ist,
+5. Recht aus `role_permissions`, gecacht 60 s, abgesichert über den Epochenzähler,
+6. UUID-Form der Pfadparameter.
 
-Ein Datenbank-Aussetzer bei Schritt 3 ergibt **503**, nicht 401: Eine 401 würde den
-Arbeitsplatz abmelden, obwohl die Sitzung gültig ist.
+Ein Datenbank-Aussetzer bei Schritt 2 bis 4 ergibt **503**, nicht 401: Eine 401 würde den
+Arbeitsplatz abmelden, obwohl die Sitzung gültig ist. Aus demselben Grund ist „gesperrt" eine
+423 und keine 401: Der Client zeigt den Sperrbildschirm und meldet nicht ab.
 
 ---
 

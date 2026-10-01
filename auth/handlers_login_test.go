@@ -92,6 +92,7 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 		WithArgs("nberger@schule.de").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
 			AddRow("u-admin", "BC-TEST", "admin", "Nina", "Berger", true, "nina@example.org", false))
+	erwarteSitzungAngelegt(mock, "u-admin")
 
 	rec := doLogin(t, a, mock, `{"email":"nberger@schule.de","password":"egal"}`)
 	if rec.Code != http.StatusOK {
@@ -122,12 +123,16 @@ func TestLoginHandler_SuccessSetsCookieAndReturnsLoginShape(t *testing.T) {
 	// Das ausgestellte Token muss verifizierbar sein und die Identität tragen.
 	expectNotBlacklisted(mock)
 	expectKontoAktiv(mock, true)
+	erwarteSperrzustand(mock, false)
 	claims, err := a.VerifyToken(cookies[0].Value)
 	if err != nil {
 		t.Fatalf("ausgestelltes Token ungültig: %v", err)
 	}
 	if claims.UserID != "u-admin" || claims.Rolle != RoleAdmin {
 		t.Errorf("Claims falsch: %+v", claims)
+	}
+	if claims.SitzungID != testSitzungID {
+		t.Errorf("SitzungID = %q, erwartet die Kennung der angelegten Zeile — ohne sie lässt sich die Anmeldung nicht sperren", claims.SitzungID)
 	}
 }
 
@@ -176,6 +181,7 @@ func TestLoginHandler_BarcodeImTokenKommtAusDerDatenbank(t *testing.T) {
 		WithArgs("nberger@schule.de").
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
 			AddRow("u-admin", "BC-ECHT", "admin", "Nina", "Berger", true, "nina@example.org", false))
+	erwarteSitzungAngelegt(mock, "u-admin")
 
 	rec := doLogin(t, a, mock,
 		`{"email":"nberger@schule.de","password":"egal","barcode_id":"BC-FREMD","pin":"0000"}`)
@@ -265,6 +271,7 @@ func TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort(t *testing.T) {
 		WithArgs(email).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
 			AddRow("u-1", "BC-TEST", "admin", "Zurueck", "ImDienst", true, "zurueck@example.org", false))
+	erwarteSitzungAngelegt(mock, "u-1")
 
 	rec := doLogin(t, a, mock, body)
 	if rec.Code != http.StatusOK {

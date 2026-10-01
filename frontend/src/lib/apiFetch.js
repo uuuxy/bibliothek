@@ -272,11 +272,22 @@ export function registriereSitzungAbgelaufenHandler(handler) {
 
 const SITZUNG_AUSNAHMEN = ['/api/auth/', '/api/csrf-token', '/api/public/'];
 
+// 423 heißt: Die Anmeldung gilt, ist aber nach Inaktivität gesperrt — ein anderes Fenster
+// desselben Browsers hat gesperrt. Dann kommt der Sperrbildschirm, keine Abmeldung.
+/** @type {(() => void) | null} */
+let sitzungGesperrtHandler = null;
+
+/** @param {() => void} handler */
+export function registriereSitzungGesperrtHandler(handler) {
+	sitzungGesperrtHandler = handler;
+}
+
 /** @param {string | URL} url @param {number} status */
 function meldeSitzungsverlust(url, status) {
-	if (status !== 401 || !sitzungAbgelaufenHandler) return;
+	if (status !== 401 && status !== 423) return;
 	const pfad = String(url);
 	if (!pfad.startsWith('/api/')) return;
 	if (SITZUNG_AUSNAHMEN.some((a) => pfad.startsWith(a))) return;
-	sitzungAbgelaufenHandler();
+	if (status === 401) sitzungAbgelaufenHandler?.();
+	else sitzungGesperrtHandler?.();
 }

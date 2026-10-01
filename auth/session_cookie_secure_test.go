@@ -60,6 +60,7 @@ func TestLoginCookieFolgtDerKonfiguration(t *testing.T) {
 				WithArgs("nberger@schule.de").
 				WillReturnRows(pgxmock.NewRows([]string{"id", "barcode_id", "rolle", "vorname", "nachname", "aktiv", "email", "beantragt"}).
 					AddRow("u-admin", "BC-TEST", "admin", "Nina", "Berger", true, "nina@example.org", false))
+			erwarteSitzungAngelegt(mock, "u-admin")
 
 			req := httptest.NewRequest(http.MethodPost, "/login",
 				strings.NewReader(`{"email":"nberger@schule.de","password":"egal"}`))
@@ -84,13 +85,14 @@ func TestRefreshCookieFolgtDerKonfiguration(t *testing.T) {
 			// Restlaufzeit 1 h gegen 12-h-Fenster: Der Sliding Refresh greift und
 			// stellt ein neues Cookie aus.
 			issuer, _ := newTestAuthenticator(t, 1*time.Hour)
-			token, err := issuer.GenerateToken("user-1", "B-1", RoleMitarbeiter)
+			token, err := issuer.GenerateToken("user-1", "B-1", RoleMitarbeiter, testSitzungID)
 			if err != nil {
 				t.Fatalf("GenerateToken: %v", err)
 			}
 			a, mock := newTestAuthenticator(t, 12*time.Hour)
 			expectNotBlacklisted(mock)
 			expectKontoStatus(mock, true, RoleMitarbeiter)
+			erwarteSitzungVerlaengert(mock, 1)
 
 			req := httptest.NewRequest(http.MethodPost, "/api/auth/refresh", nil)
 			req.AddCookie(&http.Cookie{Name: "session_token", Value: token})

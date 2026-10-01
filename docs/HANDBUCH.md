@@ -81,7 +81,9 @@ Zubehör-Checkliste beim Scan (§5) · Kamera als Ersatz für den Handscanner (K
 Feld) · Passbild per Webcam · Ausweis drucken, Kontoauszug, DSGVO-Auskunft als PDF (§18).
 
 Nach 5 Minuten ohne Eingabe schließt sich die Akte, nach 15 Minuten der Sperrbildschirm —
-beides einstellbar (_Datenschutz & Sitzung_).
+beides einstellbar (_Datenschutz & Sitzung_). Weiter geht es mit dem eigenen Passwort, auch
+nach dem Neuladen der Seite und auch dann, wenn der Mailserver der Schule gerade nicht
+erreichbar ist.
 
 ---
 

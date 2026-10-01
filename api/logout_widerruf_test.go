@@ -41,7 +41,7 @@ func logoutServer(t *testing.T) (*Server, pgxmock.PgxPoolIface) {
 
 func logoutMitToken(t *testing.T, s *Server) *httptest.ResponseRecorder {
 	t.Helper()
-	token, err := s.Auth.GenerateToken("u1", "BC1", auth.RoleMitarbeiter)
+	token, err := s.Auth.GenerateToken("u1", "BC1", auth.RoleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("token generation: %v", err)
 	}

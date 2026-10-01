@@ -35,6 +35,7 @@ var dsgvoKontoQuellen = []string{
 	"nachbuch_meldungen.quittiert_von",
 	"schadensersatz_bescheide.erstellt_von",
 	"schadensfaelle.storniert_von",
+	"sitzungen.benutzer_id",
 }
 
 func TestDsgvoKontoQuellen_DeckenSichMitDemSchema(t *testing.T) {
@@ -169,6 +170,10 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 			exec(`INSERT INTO klassensatz_reservierungen (titel_id, klasse, anzahl, angefordert_von)
 				VALUES ($1, '5a', 25, $2)`, eigenerTitel, konto)
 			erwartet[quelle] = anfrage("klassensatz")
+		case "sitzungen.benutzer_id":
+			exec(`INSERT INTO sitzungen (benutzer_id, passwort_pruefwert, laeuft_ab)
+				VALUES ($1, 'KANARI-PRUEFWERT', NOW() + interval '12 hours')`, konto)
+			erwartet[quelle] = vorgang("Laufende Anmeldung")
 		default:
 			t.Fatalf("keine Probe für die Kontoquelle %s — Test und Auskunft nachziehen", quelle)
 		}
@@ -193,5 +198,8 @@ func TestDsgvoAuskunft_ZeigtJedeKontoQuelle(t *testing.T) {
 		if strings.Contains(string(roh), dritte) {
 			t.Errorf("Beas Auskunft enthält %q — das sind Daten der betroffenen Schülerin", dritte)
 		}
+	}
+	if strings.Contains(string(roh), "KANARI-PRUEFWERT") {
+		t.Error("Beas Auskunft enthält den Prüfwert ihres Passworts — die Auskunft nennt die Anmeldung, nicht den Wert")
 	}
 }

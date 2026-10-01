@@ -38,6 +38,8 @@ Schülerdaten; für den Betrieb ist ein Server der Schule vorgesehen.
   einem Netzausfall hält der Theken-Rechner die Ausweis- und Buchnummern der Scans, keine Namen,
   bis zum Nachbuchen.
 - **Anmeldung:** mit dem Postfach des Schul-Mailservers. Das Programm speichert kein Passwort.
+  Für die Dauer einer Anmeldung hält es einen Prüfwert davon, damit die Sperre nach Inaktivität
+  auch bei einem Ausfall des Mailservers aufgeht; beim Abmelden wird er gelöscht.
 - **Wohin Daten gehen:** Klassenleitungen bekommen die Mahnliste ihrer Klasse per Mail an die
   dienstliche Adresse. Eltern bekommen Mahnung und Bescheid als gedruckten Brief, keine Mail.
   Einen Schadensfall gibt die Schule auf Papier an die Schulaufsicht ab. Lieferanten sehen nur
@@ -95,7 +97,7 @@ Kurzfassung; vollständig im Anhang des [Verzeichnisses](vvt_entwurf.md) und im
 - **Zugang:** Anmeldung über das Schul-Postfach; nach fünf Fehlversuchen ist die Anmeldung eines
   Kontos von derselben Netzadresse aus 15 Minuten gesperrt. Eine Sitzung gilt 12 Stunden. Die
   Theke leert sich nach 5 Minuten ohne Bedienung, nach 15 Minuten kommt der Sperrbildschirm
-  (beides einstellbar). Ein deaktiviertes oder herabgestuftes Konto verliert seine Rechte bei der
+  (beides einstellbar); er sperrt die Anmeldung am Server, Neuladen öffnet sie nicht. Ein deaktiviertes oder herabgestuftes Konto verliert seine Rechte bei der
   nächsten Anfrage, nicht erst mit dem Ablauf der Sitzung.
 - **Verschlüsselung:** Fotos und das Passwort des Mailversands liegen verschlüsselt in der
   Datenbank, die Sicherungen verschlüsselt auf der Platte; unverschlüsselt bleibt eine

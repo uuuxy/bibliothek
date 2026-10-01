@@ -49,8 +49,9 @@
 		};
 	});
 
+	// Hinter der Sperre nach Inaktivität beantwortet der Server nichts: Die Abrufe ruhen.
 	$effect(() => {
-		if (!authStore.isLoggedIn || !authStore.currentUser) {
+		if (!authStore.isLoggedIn || !authStore.currentUser || idleLock.gesperrt) {
 			uiStore.pendingReservierungen = 0;
 			return;
 		}
@@ -150,7 +151,9 @@
 			</div>
 		{/if}
 	{/if}
-	<OfflineIndicator verbindungVerloren={authStore.isLoggedIn && !authStore.heartbeatOk} />
+	<OfflineIndicator
+		verbindungVerloren={authStore.isLoggedIn && !authStore.heartbeatOk && !idleLock.gesperrt}
+	/>
 	<ToastContainer />
 	<BestaetigungsDialog />
 </div>

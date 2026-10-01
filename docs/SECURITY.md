@@ -3,7 +3,8 @@
 Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sicherheit und Datenschutz der Bibliotheks-Verwaltungssoftware.
 
 > Zuletzt aktualisiert: 2026-10-01 (Einrichtung: was `APP_ENV` schaltet, die Vorlage ohne
-> `IMAP_HOST=mock`; `/uploads/` liefert nur Dateien direkt im Verzeichnis aus).
+> `IMAP_HOST=mock`; `/uploads/` liefert nur Dateien direkt im Verzeichnis aus; die Sperre nach
+> Inaktivität gilt am Server, dazu ein Prüfwert des Passworts für die Dauer der Anmeldung).
 > Davor 2026-09-30 (Security-Header: Antworten unter `/api/` tragen
 > `Cache-Control: no-store`, der Browser legt sie nicht ab).
 > Davor 2026-09-29 (Löschroutinen: erledigte Klassensatz-Reservierungen fallen
@@ -44,19 +45,35 @@ Diese Dokumentation beschreibt die systemweiten Mechanismen zur Wahrung von Sich
 ### Woran die Zugangsdaten geprüft werden
 
 Gegen den **Schul-Mailserver per IMAP** (`auth/handlers.go`, `verifyIMAPCredentials`) —
-nicht gegen die eigene Datenbank. Es gibt seit Migration 012 keine Passwortspalte und
-nirgends einen Passwort-Hash: Die Anwendung speichert **kein** Benutzerpasswort. Ein
+nicht gegen die eigene Datenbank. Es gibt seit Migration 012 keine Passwortspalte: Die
+Anwendung speichert **kein** Benutzerpasswort und keinen dauerhaften Passwort-Hash. Ein
 Konto ist damit die Verbindung aus einer E-Mail-Adresse, die auf dem Schulserver
 existiert, und einer Zeile in `benutzer`; wer `benutzer.email` schreiben darf, übernimmt
 das Konto. Der Brute-Force-Schutz unten schützt deshalb auch den **Mailserver** vor
 Credential-Stuffing über diesen Weg.
+
+Für die Dauer einer Anmeldung hält der Server einen **Prüfwert** des Passworts (Tabelle
+`sitzungen`, Migration 155; entschieden am 01.10.2026). Er hat einen Zweck: Die Sperre nach
+Inaktivität (unten) geht mit dem Passwort auch dann auf, wenn der Mailserver nicht erreichbar
+ist — sonst sperrte sein Ausfall die Theke zu. Der Wert ist Argon2id über das Passwort mit
+eigenem Salz; davor steht ein HMAC mit einem Schlüssel, der aus `JWT_SECRET` abgeleitet ist und
+nicht in der Datenbank liegt (`auth/pruefwert.go`). Mit der Datenbank oder einer Sicherung
+allein lässt sich deshalb kein Passwort durchprobieren. Abmelden löscht die Zeile, abgelaufene
+räumt der Server alle 15 Minuten ab, und ein gelöschtes Konto nimmt seine Zeilen mit. Eine neue
+Anmeldung prüft weiterhin allein der Mailserver (OFFEN.md 4.28).
 
 ### JWT (JSON Web Tokens)
 
 - **Algorithmus-Pinning:** Der Server akzeptiert ausschließlich HMAC-signierte Tokens (HS256). Die `alg=none`-Schwachstelle (CVE-Klasse) ist damit verhindert — ein Token ohne Signatur wird abgelehnt.
 - **Blacklist (fail-closed):** Abgemeldete Tokens werden in einer Datenbank-Blacklist registriert. Ist die Blacklist- oder die Kontostatus-Abfrage nicht erreichbar (DB-Fehler), wird der Request abgelehnt (HTTP 503), nicht durchgelassen. „Fail-Open"-Verhalten ist ausgeschlossen. Bewusst nicht 401: Eine 401 meldet den Arbeitsplatz im Client ab — ein kurzer Datenbank-Aussetzer hätte bis 11.09.2026 alle Arbeitsplätze abgemeldet.
 - **Lebensdauer:** 12 Stunden; danach ist eine erneute Anmeldung erforderlich.
-- **Inaktivität (seit 22.08.2026):** Zwei Fristen im Client, beide in den Einstellungen („Datenschutz & Sitzung", 0 = aus): Nach **5 Minuten** ohne Bedienung lässt die Theken-Ansicht den geladenen Schüler/Lehrer fallen (der nächste an der Theke sieht nicht den vorigen), nach **15 Minuten** kommt der **Sperrbildschirm** — verdeckt die ganze Anwendung, weiter nur mit dem eigenen Passwort (echte Wiederanmeldung gegen `/login`, also gegen den Mailserver) oder per Abmelden. Die Sitzung selbst läuft weiter (Kiosk-Tabs überleben die Nacht), sie ist nur nicht mehr einsehbar. Als Bedienung zählen Zeiger, Tastatur (= Scanner), Berührung, Rad — nicht SSE-Pings oder Poller. Die Fristen holt jeder angemeldete Client von `GET /api/einstellungen/sitzung` (`RequireAuthenticated`, nur zwei Zahlen). Gate: `frontend/src/lib/stores/idleLock.test.js` (gestellte Uhr; am Rückbau rot gesehen), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js`.
+- **Inaktivität (seit 22.08.2026):** Zwei Fristen im Client, beide in den Einstellungen („Datenschutz & Sitzung", 0 = aus): Nach **5 Minuten** ohne Bedienung lässt die Theken-Ansicht den geladenen Schüler/Lehrer fallen (der nächste an der Theke sieht nicht den vorigen), nach **15 Minuten** kommt der **Sperrbildschirm** — verdeckt die ganze Anwendung, weiter nur mit dem eigenen Passwort oder per Abmelden. Die Sitzung selbst läuft weiter (Kiosk-Tabs überleben die Nacht). Als Bedienung zählen Zeiger, Tastatur (= Scanner), Berührung, Rad — nicht SSE-Pings oder Poller. Die Fristen holt jeder angemeldete Client von `GET /api/einstellungen/sitzung` (`RequireAuthenticated`, nur zwei Zahlen).
+  - **Die Sperre gilt am Server** (seit Migration 155, entschieden am 01.10.2026): Mit dem Sperrbildschirm sperrt der Client die Anmeldung (`POST /api/auth/sperren`). Bis das Passwort eingegeben ist, beantwortet der Server jede Anfrage dieser Anmeldung mit 423 — auch nach dem Neuladen, in einem neuen Tab und mit einem erneuerten Token (das Token trägt die Kennung der Zeile in `sitzungen`). Über die Anmeldung selbst liefert er dann nur die E-Mail-Adresse.
+  - **Aufschließen** (`POST /api/auth/entsperren`): Das Passwort prüft der Mailserver, mit denselben Zählern für Fehlversuche wie die Anmeldung. Nur wenn er nicht erreichbar ist, entscheidet der Prüfwert der Anmeldung (oben); lehnt der Mailserver ab, gilt das.
+  - **Mehrere Fenster:** Die Anmeldung gehört dem ganzen Browser. Bedienung in einem Fenster hält die Sperre für alle auf, und gesperrt wie aufgeschlossen wird in allen zugleich. Ob gesperrt ist, sagt dabei allein der Server; die Fenster geben sich nur Bescheid.
+  - **Ohne Verbindung zum Server** wird nicht gesperrt, nur die Theke geleert (FACHKONZEPT.md 18.4). Kommt die Verbindung zurück, überträgt der Rechner erst die Warteschlange und sperrt dann.
+  - **Eine Anmeldung ohne Zeile in `sitzungen`** (ausgestellt vor Migration 155) sperrt der Server nicht und erneuert sie nicht: Ohne Prüfwert ließe sie sich bei einem Ausfall des Mailservers nicht aufschließen. Für sie bleibt die Sperre bis zum Ablauf des Tokens ein Sichtschutz im Fenster.
+  - Gates: `auth/sperre_pg_test.go` (Server, auch mit totem Mailserver), `api/sperre_middleware_test.go` (423 an jeder geschützten Route), `frontend/src/lib/stores/idleLock*.test.js` (gestellte Uhr, mehrere Fenster), Live-Pfad: `frontend/e2e/sperrbildschirm.spec.js` (423 hinter der Sperre, Neuladen, neuer Tab). Jedes am Rückbau rot gesehen.
 - **Cookie-Attribute:** `HttpOnly` (kein JS-Zugriff), `SameSite=Strict`, in Produktion zusätzlich `Secure` (via `COOKIE_SECURE=true`). Hier stand bis zum 08.08.2026 `Lax` — der Code setzt seit jeher `http.SameSiteStrictMode` (`auth/handlers.go`). Die Doku war also laxer als die Anwendung; wer sie als Grundlage für eine Risikoabwägung nimmt, rechnet mit einem Cross-Site-Fenster, das es nicht gibt.
 
 ### Brute-Force-Schutz (Login)

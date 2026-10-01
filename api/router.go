@@ -160,6 +160,11 @@ func (s *Server) registerAuthRoutes(mux *http.ServeMux) {
 	// Logout — blacklists the current token and clears the session cookie
 	mux.HandleFunc("POST /api/auth/logout", s.logoutHandler())
 
+	// Sperre nach Inaktivität: gilt am Server für die Anmeldung, mit der die Anfrage kommt.
+	// Entsperren prüft ein Passwort und hängt deshalb an derselben Bremse wie /login.
+	mux.HandleFunc("POST /api/auth/sperren", auth.SperrenHandler(s.Auth))
+	mux.Handle("POST /api/auth/entsperren", AuthRateLimitMiddleware(auth.EntsperrenHandler(s.DB.Pool, s.Auth)))
+
 	mux.HandleFunc("GET /health", s.healthHandler())
 }
 

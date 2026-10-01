@@ -57,11 +57,18 @@ var phantomBestand = map[string]int{
 	"auth/blacklist.go:Add":                                   1,
 	"auth/blacklist.go:cleanup":                               1,
 	"auth/selbstanmeldung.go:legeZugangsanfrageAn":            1,
-	"cmd/migrate-fotos/main.go:migriereFoto":                  1,
-	"cmd/migrate/pg_writer.go:insertExemplare":                1,
-	"db/migrations.go:applyMigration":                         2,
-	"db/migrations.go:ensureBaselineSchema":                   1,
-	"db/migrations.go:ensureMigrationsTable":                  1,
+	// sitzungen (Migration 155): 0 Zeilen heißt jedes Mal „die Zeile der Anmeldung gibt es
+	// nicht (mehr)" — dann ist nichts gesperrt, kein Prüfwert zu halten, nichts zu löschen.
+	// Wo die Zahl etwas entscheidet (Sperre, Verlaengere), wird sie gelesen.
+	"auth/sitzungen.go:Beende":                 1,
+	"auth/sitzungen.go:Entsperre":              1,
+	"auth/sitzungen.go:MerkePasswort":          1,
+	"auth/sitzungen.go:raeumeAb":               1,
+	"cmd/migrate-fotos/main.go:migriereFoto":   1,
+	"cmd/migrate/pg_writer.go:insertExemplare": 1,
+	"db/migrations.go:applyMigration":          2,
+	"db/migrations.go:ensureBaselineSchema":    1,
+	"db/migrations.go:ensureMigrationsTable":   1,
 	// 3 seit 03.09.2026: zweite Vererbung (manage_students_admin → merge_students), ebenfalls
 	// INSERT … ON CONFLICT DO NOTHING — 0 Zeilen beim zweiten Start sind der Normalfall.
 	"db/seed.go:seedRolePermissions":                           3,

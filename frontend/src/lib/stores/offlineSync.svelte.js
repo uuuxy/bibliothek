@@ -229,8 +229,10 @@ function createOfflineSyncStore() {
 			const res = await apiClient.post('/api/action/nachbuchen', payload);
 
 			if (!res.ok) {
-				// 5xx und 429: Warten hilft. 4xx: Warten hilft nicht — das gehört gesagt.
-				abgelehntMitStatus = res.status < 500 && res.status !== 429 ? res.status : null;
+				// 5xx, 429 und 423 (gesperrt nach Inaktivität, bis jemand aufschließt): Warten
+				// hilft. Sonst 4xx: Warten hilft nicht — das gehört gesagt.
+				const wartenHilft = res.status >= 500 || res.status === 429 || res.status === 423;
+				abgelehntMitStatus = wartenHilft ? null : res.status;
 				return false;
 			}
 			abgelehntMitStatus = null;
@@ -260,8 +262,19 @@ function createOfflineSyncStore() {
 		}
 	}
 
-	async function startSync() {
-		if (isSyncing || netzLage.offline) return;
+	// Ein Lauf zur Zeit. Wer während eines Laufs ruft, wartet auf dessen Ende — die Sperre
+	// nach Inaktivität lässt so erst die Warteschlange durch (idleLock).
+	/** @type {Promise<void> | null} */
+	let laufenderSync = null;
+	function startSync() {
+		if (netzLage.offline) return Promise.resolve();
+		laufenderSync ??= sendeWarteschlange().finally(() => {
+			laufenderSync = null;
+		});
+		return laufenderSync;
+	}
+
+	async function sendeWarteschlange() {
 		isSyncing = true;
 
 		let syncedAny = false;

@@ -84,8 +84,9 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 - **Nachsicht für alte Aufdrucke.** Bleibt ein Scan ohne Treffer, wird ein mögliches
   Code-39-Prüfzeichen abgeschnitten und **ein zweiter Versuch** gestartet — nur als zweiter
   Versuch, weil im Schnitt jeder 43. gültige Code zufällig so aussieht, als hinge eines dran.
-- **Sichtschutz statt Logout.** Nach 5 Minuten leert sich die Theke, nach 15 kommt der
-  Sperrbildschirm; die Sitzung läuft weiter (Mehrplatzrechner).
+- **Sperre statt Logout.** Nach 5 Minuten leert sich die Theke, nach 15 kommt der
+  Sperrbildschirm, und der Server sperrt die Anmeldung, bis das Passwort eingegeben ist; die
+  Sitzung läuft weiter (Mehrplatzrechner).
 - **Barrierefreiheit gemessen, nicht behauptet:** axe über den Anfangszustand aller
   Hauptansichten, dazu Gates für Fokusfalle, Tabellen und Bewegung.
 
@@ -112,7 +113,7 @@ Vier Ebenen, absteigend nach Verlässlichkeit:
 | **ORM (GORM/ent)**                            | Die kritischen Stellen sind Sperren, partielle Indizes und Sichten mit `CHECK OPTION`. Genau das ist der Teil, den ein ORM verdeckt.                                               |
 | **Web-Framework (Gin/Chi/Echo)**              | Der Bedarf ist Methoden-Routing plus sechs Middlewares — das kann `net/http` seit Go 1.22 selbst. Der Preis (eigene Kette, eigene Gates) ist bezahlt und dokumentiert.             |
 | **WebSockets statt SSE**                       | Der Datenfluss ist einseitig (Server → Stationen). SSE kommt ohne Protokoll-Upgrade durch den Reverse Proxy und reconnectet von selbst.                                            |
-| **Eigene Benutzerverwaltung mit Passwörtern**   | Ein zweiter Passwortspeicher in einer Schule ist ein Risiko ohne Nutzen. Es gibt keine Passwortspalte — und damit auch keinen Passwort-Leak.                                        |
+| **Eigene Benutzerverwaltung mit Passwörtern**   | Ein zweiter Passwortspeicher in einer Schule ist ein Risiko ohne Nutzen. Es gibt keine Passwortspalte. Nur für die Dauer einer Anmeldung liegt ein Prüfwert in `sitzungen`, der ohne den Schlüssel des Servers nichts preisgibt (A2).                                        |
 | **Redis/Memcached für Cache und Rate-Limit**    | Ein Prozess, ein Host: In-Memory reicht und spart eine Betriebskomponente. Der Preis ist die fehlende horizontale Skalierbarkeit (dokumentiert in [Kapitel 11](11-risiken-und-technische-schulden.md)). |
 | **TypeScript im Frontend**                     | JSDoc mit `checkJs` und `svelte-check --fail-on-warnings` liefert die Prüfung ohne den Umbau von rund 300 Komponenten.                                                                |
 | **Kubernetes**                                  | Ein Schulserver. `docker compose` plus `update.sh` ist die Betriebsform, die eine Person im Ernstfall noch versteht.                                                               |

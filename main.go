@@ -398,6 +398,7 @@ func main() {
 	// hin: Ein geordnetes Herunterfahren, das die Haelfte stehen laesst, ist keins, und die
 	// naechste Hintergrundaufgabe wuerde sich an dieser Stelle orientieren.
 	authenticator.Blacklist.Stop()
+	authenticator.Sitzungen.Stop()
 
 	slog.Info("Server stopped successfully.")
 }

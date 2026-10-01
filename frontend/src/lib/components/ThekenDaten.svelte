@@ -11,9 +11,12 @@
 	// nichts; sichtbar wird die Liste nur darin, dass ein Scan ohne Netz eingeordnet wird.
 	import { authStore } from '../stores/authStore.svelte.js';
 	import { buchBarcodes } from '../stores/buchBarcodes.svelte.js';
+	import { idleLock } from '../stores/idleLock.svelte.js';
 
+	// Hinter der Sperre nach Inaktivität beantwortet der Server nichts; nach dem
+	// Aufschließen holt der Neulauf die Liste.
 	$effect(() => {
-		if (!authStore.isLoggedIn) return;
+		if (!authStore.isLoggedIn || idleLock.gesperrt) return;
 		buchBarcodes.bereitstellen();
 		// Beim Abmelden fällt der stündliche Abgleich mit — ein Zeitgeber, der die
 		// Anmeldung überlebt, fragt für niemanden nach.

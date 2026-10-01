@@ -49,7 +49,7 @@ func expectBlacklistPass(mock pgxmock.PgxPoolIface, rolle auth.Role) {
 
 func reqWithToken(t *testing.T, s *Server, role auth.Role) *http.Request {
 	t.Helper()
-	token, err := s.Auth.GenerateToken("u1", "BC1", role)
+	token, err := s.Auth.GenerateToken("u1", "BC1", role, "")
 	if err != nil {
 		t.Fatalf("token generation: %v", err)
 	}

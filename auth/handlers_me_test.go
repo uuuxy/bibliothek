@@ -31,7 +31,7 @@ func TestMeHandler_NoCookieReturns401(t *testing.T) {
 
 func TestMeHandler_ActiveAdminGetsLoginShape(t *testing.T) {
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
-	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestMeHandler_ActiveAdminGetsLoginShape(t *testing.T) {
 
 func TestMeHandler_NonAdminLoadsConfiguredPermissions(t *testing.T) {
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
-	token, err := a.GenerateToken("user-2", "B-2", RoleMitarbeiter)
+	token, err := a.GenerateToken("user-2", "B-2", RoleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -104,7 +104,7 @@ func TestMeHandler_DeactivatedUserReturns401(t *testing.T) {
 	// Rolle/Aktiv kommen aus der DB, nicht aus den Claims: Ein zwischenzeitlich
 	// deaktivierter Benutzer darf seine Session nicht wiederherstellen.
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
-	token, err := a.GenerateToken("user-3", "B-3", RoleMitarbeiter)
+	token, err := a.GenerateToken("user-3", "B-3", RoleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}

@@ -147,4 +147,24 @@ describe('Sitzungsverlust-Haken', () => {
 		await apiFetch('/api/books');
 		expect(handler).toHaveBeenCalledTimes(1);
 	});
+
+	// 423 heißt „gesperrt nach Inaktivität": Die Anmeldung gilt weiter. Wer das als
+	// Sitzungsverlust behandelte, meldete den Arbeitsplatz ab, statt den Sperrbildschirm zu zeigen.
+	it('meldet 423 als Sperre, nicht als Sitzungsverlust — und nicht für Auth-Pfade', async () => {
+		const { apiFetch, registriereSitzungAbgelaufenHandler, registriereSitzungGesperrtHandler } =
+			await import('./apiFetch.js');
+		const abgelaufen = vi.fn();
+		const gesperrt = vi.fn();
+		registriereSitzungAbgelaufenHandler(abgelaufen);
+		registriereSitzungGesperrtHandler(gesperrt);
+		globalThis.fetch = vi.fn(async () => new Response('', { status: 423 }));
+
+		await apiFetch('/api/schueler');
+		expect(gesperrt).toHaveBeenCalledTimes(1);
+		expect(abgelaufen).not.toHaveBeenCalled();
+
+		// Der eigene Zustand wird gesperrt mit 423 beantwortet — das ist die Auskunft, kein Anlass.
+		await apiFetch('/api/auth/me');
+		expect(gesperrt).toHaveBeenCalledTimes(1);
+	});
 });

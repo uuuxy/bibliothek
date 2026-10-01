@@ -22,3 +22,7 @@ var ErrPruefungGestoert = errors.New("sitzung konnte nicht geprüft werden, bitt
 // seinem natürlichen Ablauf gültig, und wer das nicht erfährt, hält eine Sitzung für
 // beendet, die es nicht ist.
 var ErrWiderrufGestoert = errors.New("abmeldung unvollständig: die sitzung ließ sich nicht widerrufen, bitte erneut versuchen")
+
+// ErrSitzungGesperrt heißt: Die Anmeldung gilt, ist aber nach Inaktivität gesperrt. Der Server
+// antwortet 423; der Client zeigt den Sperrbildschirm und meldet nicht ab.
+var ErrSitzungGesperrt = errors.New("gesperrt wegen Inaktivität — bitte Passwort eingeben")

@@ -75,7 +75,8 @@ hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat 
 Reihenfolge unter 1. die vom 29.09.2026):
 
 1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.22 und 4.24 stehen die
-   Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus.
+   Empfehlungen der Frage-Runde vom 30.09.2026; die Antworten stehen aus. Zu 4.28 (Anmelden
+   ohne Mailserver) steht die Entscheidung aus.
 2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
    im Echtbetrieb.
 3. Nach der Antwort zu 8.3: **5.4**.
@@ -279,6 +280,21 @@ Dritten gehören. Gefragt wird je Vermerk: aus welchem Geld — Schulträger, La
 oder geliehen? **Empfehlung (Frage-Runde):** kein dritter Eigentümer im Programm. Bücher Dritter
 behalten den Littera-Wortlaut, den die Buchakte schon zeigt; Ersatz für ein verlorenes Buch liefe
 dann über den Schulträger, bei 90 Büchern ein seltener Fall.
+
+### 4.28 Anmelden ohne den Mailserver der Schule
+
+Die Anmeldung prüft jedes Passwort beim Mailserver der Schule (`auth/imap.go`). Ist er nicht
+erreichbar, antwortet `/login` mit 503, und niemand kann sich neu anmelden
+(`TestLoginHandler_MailserverAusfallIstKeinFalschesPasswort`). Wer schon angemeldet ist, arbeitet
+weiter: Die Sperre nach Inaktivität geht seit Migration 155 mit dem Passwort auch ohne
+Mailserver auf, über den Prüfwert der laufenden Anmeldung
+([SECURITY.md](SECURITY.md), „Woran die Zugangsdaten geprüft werden").
+
+**Offen:** Soll auch eine neue Anmeldung ohne Mailserver gehen? Dafür müsste der Prüfwert über
+das Abmelden hinaus bleiben — ein dauerhafter Passwort-Hash je Konto, den es seit Migration 012
+nicht gibt ([arc42/09](arc42/09-architekturentscheidungen.md), A2). Entschieden am 01.10.2026:
+getrennt von der Sperre zu entscheiden. Vor einer Empfehlung zu klären: wie oft der Mailserver
+der Schule ausfällt, und wie Littera und andere Programme es halten.
 
 ---
 

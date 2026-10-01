@@ -47,6 +47,16 @@ function abmeldungZugestellt(status) {
 	return status === 200 || status === 503;
 }
 
+// Findet der Start die Anmeldung gesperrt, verdeckt idleLock das Fenster, bevor `isLoggedIn`
+// die Anwendung rendert. Eine Registrierung statt eines Imports: idleLock importiert diesen Store.
+/** @type {(() => void) | null} */
+let gesperrterStartHandler = null;
+
+/** @param {() => void} handler */
+export function registriereGesperrterStartHandler(handler) {
+	gesperrterStartHandler = handler;
+}
+
 class AuthStore {
 	isLoggedIn = $state(false);
 	currentUser = $state(/** @type {any} */ (null));
@@ -133,6 +143,36 @@ class AuthStore {
 		}
 	}
 
+	/**
+	 * Boot-Restore einer Anmeldung, die nach Inaktivität gesperrt ist: Der Server nennt nur
+	 * die E-Mail-Adresse. Es gibt weder Rechte noch Live-Leitung, bis das Passwort
+	 * eingegeben ist.
+	 * @param {{ email?: string }} zustand
+	 */
+	#applyGesperrt(zustand) {
+		gesperrterStartHandler?.();
+		this.currentUser = { email: zustand?.email ?? '', permissions: [] };
+		this.isLoggedIn = true;
+		this.lastHeartbeatTime = Date.now();
+		this.heartbeatOk = true;
+		this.startSessionRefresh();
+		appState.guestAuthenticated = false;
+		appState.adminAuthenticated = false;
+	}
+
+	/**
+	 * Die Sperre ist aufgeschlossen: Der Server hat das Konto wie bei der Anmeldung geliefert.
+	 * @param {any} user
+	 */
+	uebernimmKonto(user) {
+		this.#applyLogin(user);
+	}
+
+	/** Die Anmeldung ist gesperrt: Die Live-Leitung endet, bis aufgeschlossen ist. */
+	haltLiveAn() {
+		trenne();
+	}
+
 	#applyLogin(user, onRoleCallback) {
 		// Eine neue Anmeldung ist gewollt: Ein alter Merker darf sie beim nächsten Laden nicht beenden.
 		merkeAbmeldung(false);
@@ -193,6 +233,10 @@ class AuthStore {
 				const res = await fetch('/api/auth/me');
 				if (res.ok) {
 					this.#applyLogin(await res.json());
+					return;
+				}
+				if (res.status === 423) {
+					this.#applyGesperrt(await res.json());
 					return;
 				}
 				if (res.status < 500 || versuch >= RESTORE_VERSUCHE) return;

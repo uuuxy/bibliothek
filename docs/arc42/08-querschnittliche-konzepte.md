@@ -438,7 +438,9 @@ und liefe beim nächsten neuen Recht auseinander, ohne dass es jemand merkt.
 - **Tastaturbedienung ist der Normalfall**, nicht die Ausnahme: Ein Handscanner ist eine
   Tastatur. Die Kurzbefehle stehen im [Handbuch](../HANDBUCH.md); Umfang, Grenzen und
   bekannte Lücken in [FACHKONZEPT.md §19](../FACHKONZEPT.md).
-- **Sichtschutz statt Abmeldung:** 5 Minuten ⇒ Theke leeren, 15 Minuten ⇒ Sperrbildschirm.
+- **Sperre statt Abmeldung:** 5 Minuten ⇒ Theke leeren, 15 Minuten ⇒ Sperrbildschirm, und
+  der Server sperrt die Anmeldung, bis das Passwort eingegeben ist (423 für jede Anfrage, auch
+  nach dem Neuladen; bei einem Ausfall des Mailservers entscheidet der Prüfwert der Anmeldung).
   Als Bedienung zählen Zeiger, Tastatur, Berührung und Rad — **nicht** SSE-Pings oder
   Poller. Beide Fristen sind Einstellungen (0 = aus) und kommen aus einer Route, die nur
   zwei Zahlen liefert.

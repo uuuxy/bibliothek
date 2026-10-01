@@ -14,11 +14,11 @@ import (
 func TestGenerateToken_UniquePerCall(t *testing.T) {
 	a, _ := newTestAuthenticator(t, 12*time.Hour)
 
-	t1, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+	t1, err := a.GenerateToken("user-1", "B-1", RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("GenerateToken 1: %v", err)
 	}
-	t2, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+	t2, err := a.GenerateToken("user-1", "B-1", RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("GenerateToken 2: %v", err)
 	}
@@ -35,7 +35,7 @@ func TestGenerateToken_UniquePerCall(t *testing.T) {
 func TestVerifyToken_RealtimeRevocation(t *testing.T) {
 	newToken := func(t *testing.T, a *Authenticator) string {
 		t.Helper()
-		tok, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+		tok, err := a.GenerateToken("user-1", "B-1", RoleAdmin, "")
 		if err != nil {
 			t.Fatalf("GenerateToken: %v", err)
 		}

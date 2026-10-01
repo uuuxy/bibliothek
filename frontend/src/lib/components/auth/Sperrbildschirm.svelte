@@ -12,8 +12,7 @@
 	// Zustand NICHT — vorher lag dieser Bildschirm nur darüber, und Strg+P zeigte in der
 	// Druckvorschau die Seite dahinter, Tab verließ die Sperre, Screenreader lasen weiter;
 	// Prüfung 22.08.2026, A6). Weiter geht es nur mit dem Passwort der angemeldeten Person
-	// (echte Wiederanmeldung gegen den Mailserver) oder per Abmelden. Die Sitzung selbst
-	// läuft weiter; gegen jemanden mit Entwicklerwerkzeugen hilft nur die Abmeldung.
+	// oder per Abmelden. Der Server hält die Anmeldung so lange gesperrt (stores/idleLock).
 
 	let passwort = $state('');
 
@@ -37,7 +36,7 @@
 </script>
 
 <div
-	class="fixed inset-0 z-[60] flex items-center justify-center bg-surface p-6"
+	class="fixed inset-0 z-60 flex items-center justify-center bg-surface p-6"
 	role="dialog"
 	aria-modal="true"
 	aria-labelledby="sperre-titel"

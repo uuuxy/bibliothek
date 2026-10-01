@@ -26,7 +26,33 @@ func newTestAuthenticator(t *testing.T, duration time.Duration) (*Authenticator,
 		t.Fatalf("NewAuthenticator: %v", err)
 	}
 	t.Cleanup(a.Blacklist.Stop)
+	t.Cleanup(a.Sitzungen.Stop)
 	return a, mock
+}
+
+// testSitzungID ist die Kennung, die der Mock für eine neue Zeile in sitzungen liefert.
+const testSitzungID = "5b0f6a2e-8a0c-4a51-9d1c-3f2f6b7c9e10"
+
+// erwarteSitzungAngelegt erwartet die Zeile, die jede gelungene Anmeldung anlegt.
+func erwarteSitzungAngelegt(mock pgxmock.PgxPoolIface, benutzerID string) {
+	mock.ExpectQuery(`INSERT INTO sitzungen`).
+		WithArgs(benutzerID, pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnRows(pgxmock.NewRows([]string{"id"}).AddRow(testSitzungID))
+}
+
+// erwarteSitzungVerlaengert erwartet, dass die Erneuerung des Tokens das Ende der Zeile
+// hinausschiebt; zeilen=0 heißt: Es gibt keine Zeile.
+func erwarteSitzungVerlaengert(mock pgxmock.PgxPoolIface, zeilen int64) {
+	mock.ExpectExec(`UPDATE sitzungen SET laeuft_ab`).
+		WithArgs(testSitzungID, pgxmock.AnyArg()).
+		WillReturnResult(pgxmock.NewResult("UPDATE", zeilen))
+}
+
+// erwarteSperrzustand erwartet die Abfrage der Sperre in VerifyToken.
+func erwarteSperrzustand(mock pgxmock.PgxPoolIface, gesperrt bool) {
+	mock.ExpectQuery(`SELECT gesperrt_seit IS NOT NULL FROM sitzungen`).
+		WithArgs(testSitzungID).
+		WillReturnRows(pgxmock.NewRows([]string{"gesperrt"}).AddRow(gesperrt))
 }
 
 func expectNotBlacklisted(mock pgxmock.PgxPoolIface) {
@@ -80,7 +106,7 @@ func TestRefreshTokenHandler_InvalidTokenReturns401(t *testing.T) {
 func TestRefreshTokenHandler_FreshTokenIsSkippedWithoutNewCookie(t *testing.T) {
 	// Frisch ausgestelltes Token: Restlaufzeit ≈ 100% > 50% → kein Refresh.
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
-	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -104,7 +130,7 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 	// Token wurde mit kurzer Laufzeit ausgestellt (Restlaufzeit 1h). Der Handler
 	// läuft mit 12h-Fenster: 1h < 6h → Sliding Window greift, neues Cookie.
 	issuer, _ := newTestAuthenticator(t, 1*time.Hour)
-	token, err := issuer.GenerateToken("user-1", "B-1", RoleMitarbeiter)
+	token, err := issuer.GenerateToken("user-1", "B-1", RoleMitarbeiter, testSitzungID)
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -112,6 +138,7 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 	expectNotBlacklisted(mock)
 	expectKontoStatus(mock, true, RoleMitarbeiter)
+	erwarteSitzungVerlaengert(mock, 1)
 
 	rec := doRefresh(t, a, &http.Cookie{Name: "session_token", Value: token})
 
@@ -134,12 +161,16 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 	// weil die DB hier dieselbe Rolle meldet).
 	expectNotBlacklisted(mock)
 	expectKontoStatus(mock, true, RoleMitarbeiter)
+	erwarteSperrzustand(mock, false)
 	claims, err := a.VerifyToken(cookies[0].Value)
 	if err != nil {
 		t.Fatalf("neues Token ungültig: %v", err)
 	}
 	if claims.UserID != "user-1" || claims.Rolle != RoleMitarbeiter {
 		t.Errorf("Claims nicht übernommen: %+v", claims)
+	}
+	if claims.SitzungID != testSitzungID {
+		t.Errorf("SitzungID = %q; das erneuerte Token muss die Kennung der Anmeldung behalten, sonst fiele eine Sperre mit der Erneuerung weg", claims.SitzungID)
 	}
 }
 
@@ -150,7 +181,7 @@ func TestRefreshTokenHandler_OldTokenIsRenewedWithNewCookie(t *testing.T) {
 func TestRefreshTokenHandler_HerabstufungWirdNichtFortgeschrieben(t *testing.T) {
 	// Token wurde als ADMIN ausgestellt, Restlaufzeit 1h → Sliding Window greift.
 	issuer, _ := newTestAuthenticator(t, 1*time.Hour)
-	token, err := issuer.GenerateToken("user-1", "B-1", RoleAdmin)
+	token, err := issuer.GenerateToken("user-1", "B-1", RoleAdmin, testSitzungID)
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -159,6 +190,7 @@ func TestRefreshTokenHandler_HerabstufungWirdNichtFortgeschrieben(t *testing.T) 
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
 	expectNotBlacklisted(mock)
 	expectKontoStatus(mock, true, RoleHelfer)
+	erwarteSitzungVerlaengert(mock, 1)
 
 	rec := doRefresh(t, a, &http.Cookie{Name: "session_token", Value: token})
 	if rec.Code != http.StatusOK {
@@ -172,6 +204,7 @@ func TestRefreshTokenHandler_HerabstufungWirdNichtFortgeschrieben(t *testing.T) 
 
 	expectNotBlacklisted(mock)
 	expectKontoStatus(mock, true, RoleHelfer)
+	erwarteSperrzustand(mock, false)
 	claims, err := a.VerifyToken(cookies[0].Value)
 	if err != nil {
 		t.Fatalf("neues Token ungültig: %v", err)
@@ -186,7 +219,7 @@ func TestRefreshTokenHandler_HerabstufungWirdNichtFortgeschrieben(t *testing.T) 
 // Rechteänderung erst beim nächsten Login.
 func TestVerifyToken_RolleKommtAusDerDatenbank(t *testing.T) {
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
-	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}
@@ -206,7 +239,7 @@ func TestVerifyToken_RolleKommtAusDerDatenbank(t *testing.T) {
 func TestRefreshTokenHandler_BlacklistedTokenReturns401(t *testing.T) {
 	// Logout blacklistet das Token — danach darf Refresh es nicht wiederbeleben.
 	a, mock := newTestAuthenticator(t, 12*time.Hour)
-	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin)
+	token, err := a.GenerateToken("user-1", "B-1", RoleAdmin, "")
 	if err != nil {
 		t.Fatalf("GenerateToken: %v", err)
 	}

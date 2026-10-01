@@ -447,6 +447,22 @@ CREATE TABLE revoked_tokens (
 
 CREATE INDEX idx_revoked_tokens_expires_at ON revoked_tokens(expires_at);
 
+-- Table: sitzungen (Migration 155) — eine Zeile je Anmeldung. An ihr hängt die Sperre nach
+-- Inaktivität; das Token trägt ihre Kennung und behält sie über jede Erneuerung.
+-- passwort_pruefwert schließt die Sperre auf, wenn der Mailserver der Schule nicht erreichbar
+-- ist (auth/pruefwert.go). Abmelden löscht die Zeile, abgelaufene räumt der Server ab.
+CREATE TABLE sitzungen (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    benutzer_id UUID NOT NULL REFERENCES benutzer(id) ON DELETE CASCADE,
+    passwort_pruefwert TEXT NOT NULL,
+    gesperrt_seit TIMESTAMP WITH TIME ZONE,
+    laeuft_ab TIMESTAMP WITH TIME ZONE NOT NULL,
+    erstellt_am TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_sitzungen_laeuft_ab ON sitzungen(laeuft_ab);
+CREATE INDEX idx_sitzungen_benutzer ON sitzungen(benutzer_id);
+
 
 -- Table: werke (Migration 148) — ein Buch über seinen Auflagen. Titel mit derselben
 -- werk_id sind Auflagen desselben Buchs; ein Titel ohne Werk ist sein eigenes (gelesen über
@@ -1915,7 +1931,8 @@ INSERT INTO schema_migrations (version) VALUES
 ('151_eigentum_quelle.sql'),
 ('152_klassensatz_reservierung_freitext.sql'),
 ('153_sonderkonten_als_art.sql'),
-('154_titeltext_nfc.sql')
+('154_titeltext_nfc.sql'),
+('155_sitzungen.sql')
 ON CONFLICT DO NOTHING;
 
 -- -------------------------------------------------------------

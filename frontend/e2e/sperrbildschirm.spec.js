@@ -11,12 +11,29 @@ import { uiLogin, apiPost, csrfToken, uniqueSuffix, ADMIN_PASSWORD } from './hel
  * und Sperrbildschirm zusammen funktionieren — mit Playwrights gestellter Uhr, denn die
  * Fristen sind Minuten und kein Test wartet fünf davon.
  *
+ * Die Sperre gilt am Server: Hinter ihr beantwortet er keine Anfrage, und weder Neuladen
+ * noch ein neuer Tab öffnen die Anwendung. Dass sie bei einem Ausfall des Mailservers mit
+ * dem Passwort der Anmeldung aufgeht, steht in auth/sperre_pg_test.go — der Stack hier
+ * nimmt jedes Passwort an.
+ *
  * Die Fristen werden NICHT verändert (Vorgaben 5/15 Minuten) — ein Teardown, der die
  * Konfiguration der Anlage anfasst, ist eine eigene Fehlerquelle.
  */
 test('Theke leert sich nach 5 Minuten, Sperrbildschirm nach 15, Passwort entsperrt', async ({
 	page
 }) => {
+	// Eine Schleife in der Oberfläche endet als Seitenfehler und in Hunderten Anfragen,
+	// während das Endbild stimmt. Beides wird deshalb mitgezählt.
+	/** @type {string[]} */
+	const seitenfehler = [];
+	/** @type {string[]} */
+	const anfragen = [];
+	page.on('pageerror', (e) => seitenfehler.push(e.message));
+	page.on('response', (r) => {
+		const pfad = new URL(r.url()).pathname;
+		if (pfad.startsWith('/api/') || pfad === '/events') anfragen.push(`${r.status()} ${pfad}`);
+	});
+
 	await page.clock.install();
 	await uiLogin(page);
 
@@ -66,11 +83,57 @@ test('Theke leert sich nach 5 Minuten, Sperrbildschirm nach 15, Passwort entsper
 	await page.keyboard.press('Escape');
 	await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
 
+	// Hinter der Sperre liefert der Server nichts: 423 statt der Leserliste, und über die
+	// Anmeldung selbst nur, wer angemeldet ist. Die Sperre geht nach dem Verdecken an den
+	// Server, deshalb gepollt.
+	await expect
+		.poll(async () => (await page.request.get('/api/schueler')).status(), { timeout: 5000 })
+		.toBe(423);
+	const zustand = await page.request.get('/api/auth/me');
+	expect(zustand.status()).toBe(423);
+	expect(Object.keys(await zustand.json()).sort()).toEqual(['email', 'error']);
+
+	// Neuladen öffnet die Anwendung nicht — und fragt den Server nur nach dem Zustand der
+	// Anmeldung und den Fristen, nicht nach Daten.
+	anfragen.length = 0;
+	const fristenGelesen = page.waitForResponse(
+		(r) => new URL(r.url()).pathname === '/api/einstellungen/sitzung'
+	);
+	await page.reload();
+	await expect(page.getByTestId('sperrbildschirm')).toBeVisible();
+	await expect(page.getByPlaceholder(/scannen/i)).toHaveCount(0);
+	await expect(page.locator('#login-email, input[type="email"]')).toHaveCount(0);
+	// Die Fristen sind die letzte Anfrage des Starts. Eine Schleife schickte sie Hunderte Male;
+	// ihre Antworten träfen in der Sekunde danach ein.
+	await fristenGelesen;
+	await page.waitForTimeout(1000);
+	expect(anfragen.length, `Anfragen nach dem Neuladen: ${anfragen.join(', ')}`).toBeLessThan(8);
+	expect(
+		anfragen.filter(
+			(a) => a.startsWith('200 ') && !a.includes('/api/auth/') && !a.includes('csrf')
+		),
+		'hinter der Sperre darf keine Anfrage Daten liefern'
+	).toEqual([]);
+
+	// Ein neuer Tab desselben Browsers auch nicht.
+	const zweiterTab = await page.context().newPage();
+	await zweiterTab.goto('/');
+	await expect(zweiterTab.getByTestId('sperrbildschirm')).toBeVisible();
+	await expect(zweiterTab.getByPlaceholder(/scannen/i)).toHaveCount(0);
+
 	// Passwort der angemeldeten Person (Mock-IMAP nimmt jedes) → wieder frei.
 	await page.locator('#sperre-passwort').fill(ADMIN_PASSWORD);
 	await page.getByRole('button', { name: 'Entsperren' }).click();
 	await expect(page.getByTestId('sperrbildschirm')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Abmelden' })).toBeVisible();
+	expect((await page.request.get('/api/schueler')).status()).toBe(200);
+
+	// Aufgeschlossen ist die Anmeldung, nicht das Fenster: Der zweite Tab geht mit auf.
+	await expect(zweiterTab.getByTestId('sperrbildschirm')).toHaveCount(0);
+	await expect(zweiterTab.getByPlaceholder(/scannen/i).first()).toBeVisible();
+	await zweiterTab.close();
+
+	expect(seitenfehler, 'Fehler in der Oberfläche während des Laufs').toEqual([]);
 
 	// Aufräumen: Testschüler weg (Soft-Delete reicht).
 	const token = await csrfToken(page);

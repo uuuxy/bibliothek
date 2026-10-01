@@ -60,13 +60,20 @@ func (s *Server) claimsAusRequest(r *http.Request) (*auth.Claims, int, error) {
 		return nil, http.StatusBadRequest, err
 	}
 	// VerifyToken prüft neben Signatur und Blacklist auch den Echtzeit-Kontostatus
-	// (aktiv / nicht gelöscht) direkt in der DB — siehe auth.Authenticator.VerifyToken.
-	// Deshalb ist hier keine zusätzliche Zombie-Session-Prüfung nötig.
+	// (aktiv / nicht gelöscht) und die Sperre nach Inaktivität direkt in der DB — siehe
+	// auth.Authenticator.VerifyToken. Deshalb ist hier keine zusätzliche
+	// Zombie-Session-Prüfung nötig.
 	claims, err := s.Auth.VerifyToken(cookie.Value)
 	if errors.Is(err, auth.ErrPruefungGestoert) {
 		// Datenbank-Aussetzer: abgelehnt, aber nicht als abgelaufene Sitzung. Eine 401
 		// meldet den Arbeitsplatz im Client ab (apiFetch → sitzungAbgelaufen).
 		return nil, http.StatusServiceUnavailable, err
+	}
+	if errors.Is(err, auth.ErrSitzungGesperrt) {
+		// Gesperrt nach Inaktivität: Die Anmeldung gilt weiter, antwortet aber nicht, bis
+		// das Passwort eingegeben ist. 423 statt 401, damit der Client den Sperrbildschirm
+		// zeigt und nicht abmeldet.
+		return nil, http.StatusLocked, err
 	}
 	if err != nil {
 		return nil, http.StatusUnauthorized, err

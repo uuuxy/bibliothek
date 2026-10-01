@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -28,7 +29,9 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 		}
 
 		// Parse the token to get expiration time
-		claims, err := s.Auth.VerifyToken(cookie.Value)
+		// Abmelden geht auch aus der Sperre nach Inaktivität heraus (Sperrbildschirm,
+		// „Abmelden und als andere Person anmelden").
+		claims, err := s.Auth.VerifyTokenTrotzSperre(cookie.Value)
 		// widerrufFehler bleibt nil, solange es nichts zu widerrufen GIBT: Ein
 		// ungültiges, abgelaufenes oder längst widerrufenes Token ist kein Aussetzer,
 		// die Abmeldung ist dann vollständig. Gestört ist es nur, wenn die Datenbank
@@ -42,6 +45,13 @@ func (s *Server) logoutHandler() http.HandlerFunc {
 		case err == nil && claims.ExpiresAt != nil:
 			// Blacklist the token so it can't be reused until it naturally expires
 			widerrufFehler = s.Auth.Blacklist.Add(cookie.Value, claims.ExpiresAt.Time)
+		}
+		if err == nil {
+			// Mit der Zeile geht der Prüfwert des Passworts. Scheitert das Löschen, räumt
+			// der Server sie nach Ablauf ab; das Token ist schon widerrufen.
+			if endeErr := s.Auth.Sitzungen.Beende(r.Context(), claims.SitzungID); endeErr != nil {
+				slog.Warn("Abmelden: Zeile der Anmeldung ließ sich nicht löschen", "fehler", endeErr)
+			}
 		}
 
 		// #nosec G124 - Secure flag is dynamically configured

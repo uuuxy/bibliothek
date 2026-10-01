@@ -443,10 +443,10 @@ Der Zugang zum System ist strikt reglementiert und wird durch ein Role-Based Acc
 
 ### 12.1. Login & Sicherheit
 
-- **Verfahren:** E-Mail und Passwort **gegen den Schul-Mailserver (IMAP)**, nicht gegen die eigene Datenbank. Eine lokale Passwortspalte gibt es seit Migration 012 nicht, und es wird nirgends ein Passwort gehasht oder gespeichert — wer ein Konto anlegt, legt kein Passwort fest, sondern setzt eine E-Mail-Adresse, die auf dem Schulserver existiert (`auth/handlers.go`, `verifyIMAPCredentials`). Hier stand bis zum 11.08.2026 „E-Mail und Passwort (Bcrypt-gehasht)" — das war nie so, und zwei Absätze weiter unten stand bereits das Gegenteil.
+- **Verfahren:** E-Mail und Passwort **gegen den Schul-Mailserver (IMAP)**, nicht gegen die eigene Datenbank. Eine lokale Passwortspalte gibt es seit Migration 012 nicht — wer ein Konto anlegt, legt kein Passwort fest, sondern setzt eine E-Mail-Adresse, die auf dem Schulserver existiert (`auth/handlers.go`, `verifyIMAPCredentials`). Gespeichert wird kein Passwort; nur für die Dauer einer Anmeldung hält der Server einen Prüfwert davon, mit dem die Sperre nach Inaktivität auch bei einem Ausfall des Mailservers aufgeht (Migration 155, [SECURITY.md](SECURITY.md)). Hier stand bis zum 11.08.2026 „E-Mail und Passwort (Bcrypt-gehasht)" — das war nie so, und zwei Absätze weiter unten stand bereits das Gegenteil.
 - **Folge für die Kontoverwaltung:** Die E-Mail **ist** die Identität. Wer die Spalte `benutzer.email` schreiben darf, übernimmt damit ein Konto; ein Rechte-Audit, das nur auf `rolle` schaut, sieht diesen Weg nicht.
 - **Session-Management:** Stateless via JWT (JSON Web Tokens) in HttpOnly-Cookies.
-- **Inaktivität (seit 22.08.2026):** Nach 5 Minuten ohne Bedienung leert sich die Theke (kein geladener Schüler mehr), nach 15 Minuten kommt der Sperrbildschirm — Entsperren mit dem eigenen Passwort oder Abmelden. Beide Fristen stehen in den Einstellungen („Datenschutz & Sitzung", 0 = aus). Die Sitzung läuft dabei weiter; es geht um Sichtschutz am Mehrplatz-/Thekenrechner, nicht um einen Logout.
+- **Inaktivität (seit 22.08.2026):** Nach 5 Minuten ohne Bedienung leert sich die Theke (kein geladener Schüler mehr), nach 15 Minuten kommt der Sperrbildschirm — Entsperren mit dem eigenen Passwort oder Abmelden. Beide Fristen stehen in den Einstellungen („Datenschutz & Sitzung", 0 = aus). Die Sitzung läuft dabei weiter, der Server sperrt sie aber: Bis das Passwort eingegeben ist, beantwortet er keine Anfrage, auch nicht nach dem Neuladen oder in einem neuen Tab (entschieden am 01.10.2026, Migration 155). Ist der Mailserver nicht erreichbar, schließt das Passwort der Anmeldung trotzdem auf.
 - **Brute-Force-Schutz:** Strenges Rate-Limiting beim Login (Sperre nach mehreren Fehlversuchen pro IP/E-Mail-Kombination).
 - **Selbstanmeldung des Kollegiums (`SELBSTANMELDUNG_DOMAIN`, `auth/selbstanmeldung.go`):** Rund 160 Lehrkräfte legt niemand vorab von Hand an. Meldet sich ein Postfach der eingetragenen Schuldomain an, das noch kein Konto hat, entsteht ein **inaktiver** Eintrag mit Rolle `kollegium` (Name aus `vorname.nachname@…` geraten, `zugang_beantragt_am` gesetzt, Audit-Zeile `SELBSTANMELDUNG`); die Lehrkraft liest „Zugang beantragt — die Bibliothek muss ihn noch freischalten“, kein Fehlversuch wird gezählt. Unter Benutzer & Rechte steht der Eintrag als „Zugang beantragt“ mit Zähler oben; „Aktiv“ setzen schaltet frei, danach sieht die Person nur „Mein Portal“ (Migration 070). Ein Antrag verfällt nicht von selbst (entschieden am 22.09.2026): Er bleibt sichtbar, bis jemand freischaltet oder löscht; ein stiller Verfall nähme eine echte Anfrage weg, ohne dass sie je jemand gesehen hätte. Wird das aus Datenschutzgründen anders gewollt, gehört die Frist zu den Löschfristen, nicht als Sonderregel hierher. IMAP beantwortet „wer bist du“, nicht „darfst du rein“ — die Freischaltung bleibt bewusst bei der Schule (ein Schülerpostfach derselben Domain würde sonst ebenfalls hereinkommen). Ist die Variable leer, ist der Weg zu: richtige Zugangsdaten enden dann in „Anmeldung fehlgeschlagen“, die Selbstprüfung meldet das als Warnung. Wer in Bibliothek oder LMF mitarbeitet (Mitarbeiter, Helfer), wird weiterhin von Hand angelegt.
 
@@ -824,6 +824,14 @@ nach `sperre_minuten` (Vorgabe 15) erscheint der Sperrbildschirm — die Anwendu
 mehr im DOM; entsperrt wird mit dem Passwort, nicht mit Maus oder Tastatur. Beides ist
 Datenschutz an einem Tresen, an dem Schüler mitlesen können (Kategorie Datenschutz & Sitzung).
 
+Der Server sperrt die Anmeldung mit: Neuladen oder ein neuer Tab zeigen wieder den
+Sperrbildschirm, und hinter ihm liefert der Server keine Daten. Alle Fenster eines Browsers
+sperren und öffnen gemeinsam; wird in einem gearbeitet, sperrt keines. Ist der Mailserver der
+Schule nicht erreichbar, schließt das Passwort trotzdem auf — der Server prüft es dann gegen
+einen Wert, den er sich bei der Anmeldung gemerkt hat und beim Abmelden löscht. Wer beim
+Einspielen von Migration 155 schon angemeldet war, hat diesen Wert nicht; für ihn bleibt die
+Sperre bis zur nächsten Anmeldung ein Sichtschutz im Fenster.
+
 ### 18.4 Die Theke ohne Verbindung
 
 Fällt die Verbindung aus, geht der Betrieb an der Theke weiter. Was dabei geschieht:
@@ -843,8 +851,10 @@ fallen: Ab dann wird nichts mehr zugeordnet, bis ein eindeutiger Ausweis kommt.
 
 **Warteschlange.** Die Scans liegen in einer lokalen IndexedDB (`offlineQueue.js`) mit
 Scan-Zeitpunkt und Idempotenz-Schlüssel. Ein Band oben zeigt den Zustand; die Theke wird dabei
-nicht verdeckt, und ohne Netz sperrt auch der Inaktivitäts-Wächter nicht (aufgeschlossen würde
-gegen den Schul-Mailserver, und der ist dann nicht erreichbar). Geleert wird die Theke weiter.
+nicht verdeckt, und ohne Netz sperrt auch der Inaktivitäts-Wächter nicht (aufgeschlossen wird
+am Server, und der ist dann nicht erreichbar). Geleert wird die Theke weiter. War die Sperre
+fällig, wenn die Verbindung zurückkommt, überträgt der Rechner erst die Warteschlange und sperrt
+dann.
 
 **Nachbuchen.** Kommt die Verbindung zurück, schickt der Rechner die Warteschlange in Portionen
 an `POST /api/action/nachbuchen`. Der Server bucht die Wirklichkeit: Lag das Buch bei jemand

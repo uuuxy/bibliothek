@@ -174,6 +174,10 @@ var fkAktionenBestand = []string{
 	// erstellt hat, steht zusätzlich im Admin-Audit-Log, das die Löschung überlebt.
 	// Die Lesepfade nehmen die Spalte als *string (kein NULL-Scan).
 	"SET NULL  schadensersatz_bescheide.erstellt_von -> benutzer",
+	// Fällt das Konto, fallen seine laufenden Anmeldungen samt dem Prüfwert des Passworts —
+	// er gehört der Person. Behandeln muss die Folge niemand: VerifyToken lehnt jedes Token
+	// eines gelöschten Kontos ab, und die Zeile endet ohnehin mit Abmelden und Ablauf.
+	"CASCADE  sitzungen.benutzer_id -> benutzer",
 	// Befragt am 10.09.2026 (Migration 110): Die Forderung überlebt ihren Brief. Im
 	// Betrieb wird kein Bescheid gelöscht — SET NULL ist die Zusicherung für den Fall,
 	// dass es doch einmal geschieht: Die Forderung trägt Sperre und Löschblockade, sie

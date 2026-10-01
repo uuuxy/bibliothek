@@ -108,7 +108,7 @@ func baueKanarienWelt(t *testing.T, pool *pgxpool.Pool, a *auth.Authenticator) k
 		RETURNING id`).Scan(&w.mitarbeiterID); err != nil {
 		t.Fatalf("Mitarbeiter anlegen: %v", err)
 	}
-	token, err := a.GenerateToken(w.mitarbeiterID, "GATE-MA-1", auth.RoleMitarbeiter)
+	token, err := a.GenerateToken(w.mitarbeiterID, "GATE-MA-1", auth.RoleMitarbeiter, "")
 	if err != nil {
 		t.Fatalf("Session-Token: %v", err)
 	}

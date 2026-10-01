@@ -63,7 +63,15 @@ Dienste würde die Transaktionsklammer zerreißen, die heute Q1 trägt.
 ## A2 — Anmeldung gegen IMAP, keine Passwortspalte
 
 **Entscheidung.** Zugangsdaten werden gegen den Schul-Mailserver geprüft. Die Anwendung
-speichert **kein** Benutzerpasswort und hasht keines.
+speichert **kein** Benutzerpasswort und hält keinen dauerhaften Passwort-Hash.
+
+**Ergänzung (entschieden am 01.10.2026, Migration 155).** Für die Dauer einer Anmeldung hält
+der Server einen Prüfwert des Passworts (`sitzungen.passwort_pruefwert`: Argon2id, davor ein
+HMAC mit einem Schlüssel außerhalb der Datenbank). Anlass: Die Sperre nach Inaktivität gilt am
+Server und wird mit dem Passwort aufgeschlossen; ohne den Prüfwert sperrte ein Ausfall des
+Mailservers die Theke zu. Gefragt wird er nur, wenn der Mailserver nicht erreichbar ist, und er
+fällt mit dem Abmelden, dem Ablauf oder dem Konto. Eine neue Anmeldung prüft weiterhin allein
+der Mailserver.
 
 **Anlass.** Ein zweiter Passwortspeicher in einer Schule ist ein Risiko ohne Nutzen; die
 Schule pflegt die Postfächer ohnehin.
@@ -74,7 +82,8 @@ Daraus folgen A12 und der Eskalationsschutz. Es gibt keinen „Passwort vergesse
 Nebenwirkung: Der Brute-Force-Schutz schützt auch den **Mailserver** vor
 Credential-Stuffing über diesen Weg. Ein Helfer braucht ein Schulpostfach.
 
-**Fundstelle.** `auth/handlers.go` (`verifyIMAPCredentials`), Migration 012.
+**Fundstelle.** `auth/handlers.go` (`verifyIMAPCredentials`), Migration 012;
+`auth/pruefwert.go`, `auth/handlers_sperre.go`, Migration 155.
 
 **Frühere Doku-Lage.** Bis zum 11.08.2026 stand in [FACHKONZEPT.md](../FACHKONZEPT.md)
 „E-Mail und Passwort (Bcrypt-gehasht)" — das war nie so, und zwei Absätze weiter stand

@@ -2,7 +2,8 @@ package repository
 
 // dsgvo_konto_vorgaenge.go — die Vorgänge, die eine Person mit ihrem Zugangskonto selbst
 // bearbeitet hat: gebuchte Ausleihen und Rückgaben, Stornierungen, Bescheide, Inventuren,
-// bearbeitete Meldungen, Protokoll- und Verwaltungseinträge. Das VVT zählt sie zu ihren Daten
+// bearbeitete Meldungen, Protokoll- und Verwaltungseinträge, dazu die laufenden Anmeldungen
+// (seit wann; der Prüfwert des Passworts steht nicht darin). Das VVT zählt sie zu ihren Daten
 // (Tätigkeit 3); entschieden am 24.09.2026: in die Auskunft, OHNE die Daten Dritter
 // (OFFEN.md 5.19, Art. 15 Abs. 4 DSGVO). Deshalb liest jede Teilabfrage nur Zeitpunkt,
 // Handlung und — beim Verwaltungsprotokoll — die IP-Adresse des eigenen Arbeitsplatzes. Wer
@@ -59,6 +60,11 @@ const dsgvoEigeneVorgaengeSQL = `
 		UNION ALL
 		SELECT g.zeitstempel, 'Verwaltungseingriff: ' || g.aktion, g.ip_adresse
 		FROM audit_logs g WHERE g.admin_id = $1
+		UNION ALL
+		SELECT s.erstellt_am,
+		       'Laufende Anmeldung' || CASE WHEN s.gesperrt_seit IS NOT NULL THEN ' (gesperrt nach Inaktivität)' ELSE '' END,
+		       NULL
+		FROM sitzungen s WHERE s.benutzer_id = $1
 	) v
 	ORDER BY zeitpunkt DESC NULLS LAST`
 

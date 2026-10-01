@@ -44,12 +44,17 @@ func TestAlleRoutenSindGeschuetzt(t *testing.T) {
 		"/api/auth/refresh": "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/me":      "Auth-Endpunkt (validiert das Token selbst)",
 		"/api/auth/logout":  "Auth-Endpunkt",
-		"/login":            "Login (Rate-Limit-Middleware, es existiert noch kein Token)",
-		"/health":           "Health-Check",
-		"/swagger/":         "API-Doku (nur bei APP_ENV=local/development registriert)",
-		"/swagger":          "API-Doku (nur bei APP_ENV=local/development registriert)",
-		"/favicon.ico":      "statisches Asset",
-		"/":                 "SPA-Fallback (statisches Frontend)",
+		// Sperre nach Inaktivität: Beide prüfen das Token selbst und wirken nur auf die
+		// Anmeldung, mit der die Anfrage kommt. Hinter RequireAuthenticated ginge Entsperren
+		// nicht — die Tür lehnt eine gesperrte Anmeldung ab.
+		"/api/auth/sperren":    "Auth-Endpunkt (validiert das Token selbst, sperrt nur die eigene Anmeldung)",
+		"/api/auth/entsperren": "Auth-Endpunkt (validiert das Token selbst, prüft das Passwort; Rate-Limit-Middleware)",
+		"/login":               "Login (Rate-Limit-Middleware, es existiert noch kein Token)",
+		"/health":              "Health-Check",
+		"/swagger/":            "API-Doku (nur bei APP_ENV=local/development registriert)",
+		"/swagger":             "API-Doku (nur bei APP_ENV=local/development registriert)",
+		"/favicon.ico":         "statisches Asset",
+		"/":                    "SPA-Fallback (statisches Frontend)",
 	}
 
 	registrierung := regexp.MustCompile(`mux\.Handle(?:Func)?\("([^"]+)"`)

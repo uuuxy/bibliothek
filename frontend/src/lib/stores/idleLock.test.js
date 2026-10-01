@@ -6,7 +6,7 @@ vi.mock('../apiFetch.js', async (importOriginal) => ({
 }));
 // Der Netz-Zustand wird gestellt, nicht gemessen: Die Sperre haengt seit dem 16.09.2026
 // daran, und `navigator.onLine` laesst sich in jsdom nicht zuverlaessig umschalten.
-const netz = vi.hoisted(() => ({ isOffline: false }));
+const netz = vi.hoisted(() => ({ isOffline: false, pendingCount: 0, startSync: async () => {} }));
 vi.mock('./offlineSync.svelte.js', () => ({ offlineSync: netz }));
 // Die Rückkehr des Netzes meldet netzLage (gemessen an /health), nicht mehr das
 // `online`-Ereignis des Fensters: Ein Browser, der dauerhaft „offline" meldet, feuert es nie.
@@ -46,6 +46,8 @@ describe('idleLock', () => {
 		vi.useFakeTimers();
 		vi.mocked(apiFetch).mockReset();
 		vi.mocked(abonniere).mockClear();
+		// Der Merker einer Sperre liegt im Browser und überlebt sonst den Test davor.
+		localStorage.clear();
 		lock = new IdleLock();
 		lock.thekeLeerenMinuten = 1;
 		lock.sperreMinuten = 3;
@@ -102,25 +104,34 @@ describe('idleLock', () => {
 		expect(lock.gesperrt).toBe(true);
 	});
 
-	it('entsperrt nur mit gültigem Passwort — gegen /login, nicht /api', async () => {
+	it('entsperrt nur mit gültigem Passwort — am Server, an der gesperrten Anmeldung', async () => {
+		const konto = { email: 'theke@schule.example', rolle: 'mitarbeiter', permissions: [] };
+		const uebernimm = vi.spyOn(authStore, 'uebernimmKonto').mockImplementation(() => {});
 		lock.start();
 		vi.advanceTimersByTime(3 * 60_000 + 10);
 		expect(lock.gesperrt).toBe(true);
+		vi.mocked(apiFetch).mockReset();
 
-		vi.mocked(apiFetch).mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 401 }));
+		// Falsches Passwort: 401, und der Server führt die Anmeldung weiter als gesperrt.
+		vi.mocked(apiFetch)
+			.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 401 }))
+			.mockResolvedValueOnce(/** @type {any} */ ({ ok: false, status: 423 }));
 		expect(await lock.entsperren('falsch')).toBe(false);
 		expect(lock.gesperrt).toBe(true);
 		expect(lock.entsperrFehler).toMatch(/Passwort falsch/);
+		expect(uebernimm).not.toHaveBeenCalled();
 
-		vi.mocked(apiFetch).mockResolvedValueOnce(/** @type {any} */ ({ ok: true, status: 200 }));
+		vi.mocked(apiFetch).mockResolvedValueOnce(
+			/** @type {any} */ ({ ok: true, status: 200, json: async () => konto })
+		);
 		expect(await lock.entsperren('richtig')).toBe(true);
 		expect(lock.gesperrt).toBe(false);
-		const [url, opts] = vi.mocked(apiFetch).mock.calls[1];
-		expect(url).toBe('/login');
-		expect(JSON.parse(String(opts?.body))).toEqual({
-			email: 'theke@schule.example',
-			password: 'richtig'
-		});
+		const [url, opts] = vi.mocked(apiFetch).mock.calls[2];
+		expect(url).toBe('/api/auth/entsperren');
+		// Wer aufschließt, sagt der Server aus der Anmeldung — der Browser schickt nur das Passwort.
+		expect(JSON.parse(String(opts?.body))).toEqual({ password: 'richtig' });
+		expect(uebernimm).toHaveBeenCalledWith(konto);
+		uebernimm.mockRestore();
 		// Nach dem Entsperren läuft die Uhr wieder von vorn.
 		vi.advanceTimersByTime(3 * 60_000 + 10);
 		expect(lock.gesperrt).toBe(true);
@@ -249,7 +260,8 @@ describe('idleLock', () => {
 			expect(lock.entsperrFehler).toContain('Schulserver');
 			expect(lock.entsperrFehler).toContain('bleiben gespeichert');
 			// Ohne Netz wird gar nicht erst gefragt.
-			expect(apiFetch).not.toHaveBeenCalled();
+			const gefragt = vi.mocked(apiFetch).mock.calls.map(([url]) => url);
+			expect(gefragt).not.toContain('/api/auth/entsperren');
 		});
 	});
 });

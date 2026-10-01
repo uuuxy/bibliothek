@@ -163,6 +163,41 @@ describe('offlineSync.startSync', () => {
 		expect(offlineSync.abgelehntMitStatus).toBe(403);
 	});
 
+	// 423 heißt „gesperrt nach Inaktivität": Nach dem Aufschließen geht derselbe Stapel durch.
+	// Als Ablehnung angesagt stünde im Band „lässt sich nicht buchen", obwohl nur das Passwort fehlt.
+	it('behält die Queue bei 423 und sagt keine Ablehnung an', async () => {
+		await enqueueOfflineAction(rueckgabe('B-203'));
+
+		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 423 }));
+
+		await offlineSync.startSync();
+		expect(await loadQueue(), 'die Vorgänge bleiben gespeichert').toHaveLength(1);
+		expect(offlineSync.abgelehntMitStatus).toBeNull();
+	});
+
+	// Die Sperre nach Inaktivität wartet auf das Ende der Übertragung (idleLock). Liefe der
+	// zweite Aufruf sofort zurück, sperrte sie mitten im Stapel.
+	it('ein zweiter Aufruf während eines Laufs wartet auf dessen Ende', async () => {
+		await enqueueOfflineAction(rueckgabe('B-204'));
+		/** @type {(antwort: any) => void} */
+		let antworte = () => {};
+		vi.mocked(apiClient.post).mockReturnValue(
+			/** @type {any} */ (new Promise((fertig) => (antworte = fertig)))
+		);
+
+		const erster = offlineSync.startSync();
+		let zweiterFertig = false;
+		const zweiter = offlineSync.startSync().then(() => {
+			zweiterFertig = true;
+		});
+		await new Promise((fertig) => setTimeout(fertig, 20));
+		expect(zweiterFertig, 'der Lauf ist noch unterwegs').toBe(false);
+
+		antworte({ ok: false, status: 502 });
+		await Promise.all([erster, zweiter]);
+		expect(zweiterFertig).toBe(true);
+	});
+
 	it('vergisst die Ablehnung, sobald ein Stapel wieder durchgeht', async () => {
 		await enqueueOfflineAction(rueckgabe('B-202'));
 		vi.mocked(apiClient.post).mockResolvedValue(/** @type {any} */ ({ ok: false, status: 403 }));

@@ -1,6 +1,6 @@
 # API-Inventar (generiert)
 
-> Generiert von `scripts/api_inventar.sh` am 2026-09-30. Nicht von Hand editieren.
+> Generiert von `scripts/api_inventar.sh` am 2026-10-01. Nicht von Hand editieren.
 
 ## Go-Routen ohne Frontend-Aufrufer
 
@@ -16,7 +16,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (226)
+## Alle registrierten Routen (228)
 
 - `/`
 - `/api/admin`
@@ -169,8 +169,10 @@
 - `POST /api/anliegen`
 - `POST /api/ausleihen/global-extend-lmf`
 - `POST /api/ausleihen/{ausleihe_id}/verlaengern`
+- `POST /api/auth/entsperren`
 - `POST /api/auth/logout`
 - `POST /api/auth/refresh`
+- `POST /api/auth/sperren`
 - `POST /api/benutzer`
 - `POST /api/bescheide/{id}/uebergeben`
 - `POST /api/bestellungen`

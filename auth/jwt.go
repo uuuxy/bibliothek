@@ -60,6 +60,9 @@ type Claims struct {
 	UserID    string `json:"user_id"`
 	BarcodeID string `json:"barcode_id"`
 	Rolle     Role   `json:"rolle"`
+	// SitzungID ist die Kennung der Anmeldung in der Tabelle sitzungen. Sie bleibt über jede
+	// Erneuerung des Tokens dieselbe; an ihr hängt die Sperre nach Inaktivität.
+	SitzungID string `json:"sid,omitempty"`
 	jwt.RegisteredClaims
 }
 
@@ -68,6 +71,7 @@ type Authenticator struct {
 	secretKey     []byte
 	tokenDuration time.Duration
 	Blacklist     *TokenBlacklist
+	Sitzungen     *Sitzungen
 	pool          DatabasePool
 }
 
@@ -80,12 +84,14 @@ func NewAuthenticator(secret string, pool DatabasePool, duration time.Duration) 
 		secretKey:     []byte(secret),
 		tokenDuration: duration,
 		Blacklist:     NewTokenBlacklist(pool),
+		Sitzungen:     NewSitzungen(pool, []byte(secret)),
 		pool:          pool,
 	}, nil
 }
 
 // GenerateToken generiert ein signiertes JWT, das Benutzeridentität und Rolle enthält.
-func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (string, error) {
+// sitzungID ist die Kennung aus Sitzungen.Beginne; ein Token ohne sie lässt sich nicht sperren.
+func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role, sitzungID string) (string, error) {
 	// jti macht jedes Token einzigartig. Ohne sie sind zwei Logins desselben
 	// Kontos innerhalb derselben Sekunde byte-identisch (iat/exp haben
 	// Sekunden-Granularität) — ein Logout des einen würde über die hash-basierte
@@ -99,6 +105,7 @@ func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (stri
 		UserID:    userID,
 		BarcodeID: barcodeID,
 		Rolle:     role,
+		SitzungID: sitzungID,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        hex.EncodeToString(jtiBytes),
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(a.tokenDuration)),
@@ -117,9 +124,29 @@ func (a *Authenticator) GenerateToken(userID, barcodeID string, role Role) (stri
 	return signedToken, nil
 }
 
-// VerifyToken parst und validiert den bereitgestellten JWT-String und gibt dessen Claims zurück.
-// Es prüft außerdem, ob das Token in der serverseitigen Blacklist widerrufen wurde.
+// VerifyToken prüft das Token wie VerifyTokenTrotzSperre und lehnt zusätzlich ab, wenn die
+// Anmeldung gesperrt ist (ErrSitzungGesperrt). Das ist die Prüfung für jede Anfrage, die
+// Daten liefert oder ändert.
 func (a *Authenticator) VerifyToken(tokenString string) (*Claims, error) {
+	claims, err := a.VerifyTokenTrotzSperre(tokenString)
+	if err != nil {
+		return nil, err
+	}
+	gesperrt, err := a.Sitzungen.IstGesperrt(claims.SitzungID)
+	if err != nil {
+		return nil, fmt.Errorf("%w: sitzung: %v", ErrPruefungGestoert, err)
+	}
+	if gesperrt {
+		return nil, ErrSitzungGesperrt
+	}
+	return claims, nil
+}
+
+// VerifyTokenTrotzSperre parst und validiert den JWT-String und gibt dessen Claims zurück:
+// Signatur, Widerruf in der Blacklist und der aktuelle Stand des Kontos. Die Sperre nach
+// Inaktivität prüft sie nicht — sie ist für die Wege, die eine gesperrte Anmeldung braucht:
+// aufschließen, abmelden, den eigenen Zustand lesen, das Token erneuern.
+func (a *Authenticator) VerifyTokenTrotzSperre(tokenString string) (*Claims, error) {
 	widerrufen, err := a.Blacklist.IsBlacklisted(tokenString)
 	if err != nil {
 		return nil, fmt.Errorf("%w: sperrliste: %v", ErrPruefungGestoert, err)

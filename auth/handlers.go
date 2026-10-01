@@ -163,7 +163,15 @@ func LoginHandler(dbPool db.PgxPoolIface, authenticator *Authenticator, cookieSe
 		}
 
 		role := Role(user.roleStr)
-		token, err := authenticator.GenerateToken(user.id, user.barcodeID, role)
+		// Ohne die Zeile gäbe es ein Token, das sich nach Inaktivität nicht sperren lässt —
+		// dann lieber keine Anmeldung.
+		sitzungID, err := authenticator.Sitzungen.Beginne(ctx, user.id, password, time.Now().Add(authenticator.tokenDuration))
+		if err != nil {
+			slog.Error("Login: Sitzung konnte nicht angelegt werden", "fehler", err)
+			apierrors.SendHTTPError(w, http.StatusServiceUnavailable, ErrAnmeldedienstGestoert)
+			return
+		}
+		token, err := authenticator.GenerateToken(user.id, user.barcodeID, role, sitzungID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
@@ -387,69 +395,108 @@ func loadPermissionsForRole(ctx context.Context, dbPool db.PgxPoolIface, roleStr
 	return permissions, nil
 }
 
-// MeHandler liefert den Benutzer der aktuellen Session — gleicher Response-Body wie
-// der Login. Der SPA-Boot nutzt ihn, um eine bestehende Session wiederherzustellen,
-// statt bei jedem Reload den Login-Screen zu zeigen.
-func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		cookie, err := r.Cookie("session_token")
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
-			return
-		}
+// leseSitzung liest das Session-Cookie und prüft das Token, ohne auf die Sperre nach
+// Inaktivität zu achten. ok=false: die Fehlerantwort wurde bereits geschrieben.
+func leseSitzung(w http.ResponseWriter, r *http.Request, authenticator *Authenticator) (*Claims, bool) {
+	cookie, err := r.Cookie("session_token")
+	if errors.Is(err, http.ErrNoCookie) {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		return nil, false
+	}
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusBadRequest, err)
+		return nil, false
+	}
 
-		claims, err := authenticator.VerifyToken(cookie.Value)
-		if errors.Is(err, ErrPruefungGestoert) {
-			// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
-			// meldet der Client ab. Der Client liest nur den Sentinel-Satz; die
-			// gewrappte Ursache („sperrliste: connection reset by peer") bleibt im Log.
-			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
-			return
-		}
-		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
-			return
-		}
+	claims, err := authenticator.VerifyTokenTrotzSperre(cookie.Value)
+	if errors.Is(err, ErrPruefungGestoert) {
+		// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
+		// meldet der Client ab. Der Client liest nur den Sentinel-Satz; die
+		// gewrappte Ursache („sperrliste: connection reset by peer") bleibt im Log.
+		apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+		return nil, false
+	}
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("sitzung abgelaufen oder ungültig"))
+		return nil, false
+	}
+	return claims, true
+}
 
-		ctx := r.Context()
+// ladeKontoAntwort liest Rolle, Stammdaten und Rechte des Kontos aus der DB — nicht aus den
+// Claims: Rolle oder Aktiv-Status können sich seit Token-Ausstellung geändert haben.
+// ok=false: die Fehlerantwort wurde bereits geschrieben.
+func ladeKontoAntwort(w http.ResponseWriter, r *http.Request, dbPool db.PgxPoolIface, userID string) (LoginResponse, bool) {
+	ctx := r.Context()
 
-		// Rolle und Stammdaten aus der DB — nicht aus den Claims: Rolle oder
-		// Aktiv-Status können sich seit Token-Ausstellung geändert haben.
-		var roleStr, vorname, nachname, email string
-		var aktiv bool
-		err = dbPool.QueryRow(ctx, `
+	var roleStr, vorname, nachname, email string
+	var aktiv bool
+	err := dbPool.QueryRow(ctx, `
 			SELECT rolle, vorname, nachname, aktiv, email
 			FROM benutzer
 			WHERE id = $1
 			LIMIT 1
-		`, claims.UserID).Scan(&roleStr, &vorname, &nachname, &aktiv, &email)
-		// Fehler-Kollaps (Sweep 29.08.2026): Ein DB-Fehler ist keine „abgelaufene Sitzung" —
-		// vorher warf ein Verbindungsabbruch jeden Nutzer mit 401 aus der Anwendung, und
-		// der Client löschte daraufhin die Sitzung.
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
-			return
-		}
-		if err != nil || !aktiv {
-			apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		`, userID).Scan(&roleStr, &vorname, &nachname, &aktiv, &email)
+	// Ein DB-Fehler ist keine abgelaufene Sitzung: 500 statt 401, sonst meldete der Client ab.
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		return LoginResponse{}, false
+	case err != nil:
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
+		return LoginResponse{}, false
+	case !aktiv:
+		apierrors.SendHTTPError(w, http.StatusUnauthorized, errors.New("keine aktive Sitzung"))
+		return LoginResponse{}, false
+	}
+
+	permissions, err := loadPermissionsForRole(ctx, dbPool, roleStr)
+	if err != nil {
+		apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+		return LoginResponse{}, false
+	}
+
+	return LoginResponse{
+		UserID:      userID,
+		Email:       email,
+		Rolle:       Role(roleStr),
+		Vorname:     vorname,
+		Nachname:    nachname,
+		Permissions: permissions,
+	}, true
+}
+
+// MeHandler liefert den Benutzer der aktuellen Session — gleicher Response-Body wie
+// der Login. Der SPA-Boot nutzt ihn, um eine bestehende Session wiederherzustellen,
+// statt bei jedem Reload den Login-Screen zu zeigen.
+//
+// Eine gesperrte Anmeldung beantwortet er mit 423 und nur der E-Mail-Adresse: Der
+// Sperrbildschirm zeigt, wer angemeldet ist, mehr nicht.
+func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		claims, ok := leseSitzung(w, r, authenticator)
+		if !ok {
 			return
 		}
 
-		permissions, err := loadPermissionsForRole(ctx, dbPool, roleStr)
+		gesperrt, err := authenticator.Sitzungen.IstGesperrt(claims.SitzungID)
 		if err != nil {
-			apierrors.SendHTTPError(w, http.StatusInternalServerError, errors.New("berechtigungen konnten nicht geladen werden"))
+			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			return
+		}
+
+		antwort, ok := ladeKontoAntwort(w, r, dbPool, claims.UserID)
+		if !ok {
 			return
 		}
 
 		w.Header().Set(headerContentType, contentTypeJSON)
-		httpresp.Encode(w, LoginResponse{
-			UserID:      claims.UserID,
-			Email:       email,
-			Rolle:       Role(roleStr),
-			Vorname:     vorname,
-			Nachname:    nachname,
-			Permissions: permissions,
-		})
+		if gesperrt {
+			w.WriteHeader(http.StatusLocked)
+			httpresp.Encode(w, map[string]string{"error": ErrSitzungGesperrt.Error(), "email": antwort.Email})
+			return
+		}
+		httpresp.Encode(w, antwort)
 	}
 }
 
@@ -460,6 +507,10 @@ func MeHandler(dbPool db.PgxPoolIface, authenticator *Authenticator) http.Handle
 //
 // This prevents forced re-login during active library use (e.g. a Mitarbeiter working
 // a 6-hour shift with a 12h token window).
+//
+// Erneuert wird nur ein Token mit einer Zeile in sitzungen; das neue trägt dieselbe
+// Kennung, eine Sperre nach Inaktivität bleibt also bestehen. Ein Token ohne Zeile läuft
+// aus: Es ließe sich sonst beliebig lange halten, ohne je sperrbar zu sein.
 func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("session_token")
@@ -472,8 +523,9 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 			return
 		}
 
-		// Verify the existing token is still valid and not revoked
-		claims, err := authenticator.VerifyToken(cookie.Value)
+		// Verify the existing token is still valid and not revoked. Eine gesperrte
+		// Anmeldung wird erneuert wie jede andere: Sie läuft weiter, bis jemand aufschließt.
+		claims, err := authenticator.VerifyTokenTrotzSperre(cookie.Value)
 		if errors.Is(err, ErrPruefungGestoert) {
 			// Datenbank-Aussetzer ist keine abgelaufene Sitzung: 503 statt 401, sonst
 			// meldet der Client ab. Der Client liest nur den Sentinel-Satz; die
@@ -502,7 +554,18 @@ func RefreshTokenHandler(authenticator *Authenticator, cookieSecure bool) http.H
 		// AKTUELLE Rolle aus der Datenbank — VerifyToken überschreibt die im alten
 		// Token signierte. Vorher schrieb der Refresh die alte Rolle fort und machte
 		// aus einer 12-Stunden-Staleness eine unbegrenzte.
-		newToken, err := authenticator.GenerateToken(claims.UserID, claims.BarcodeID, claims.Rolle)
+		verlaengert, err := authenticator.Sitzungen.Verlaengere(r.Context(), claims.SitzungID, time.Now().Add(authenticator.tokenDuration))
+		if err != nil {
+			apierrors.SendHTTPErrorMitMeldung(w, http.StatusServiceUnavailable, ErrPruefungGestoert.Error(), err)
+			return
+		}
+		if !verlaengert {
+			w.Header().Set(headerContentType, contentTypeJSON)
+			httpresp.Encode(w, map[string]string{"status": "ok", "refresh": "skipped"})
+			return
+		}
+
+		newToken, err := authenticator.GenerateToken(claims.UserID, claims.BarcodeID, claims.Rolle, claims.SitzungID)
 		if err != nil {
 			apierrors.SendHTTPError(w, http.StatusInternalServerError, err)
 			return
