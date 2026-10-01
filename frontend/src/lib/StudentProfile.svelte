@@ -112,8 +112,8 @@
 				onLock={rechte.bearbeiten ? () => (st.showLockModal = true) : undefined}
 			/>
 
-			<!-- Right: Timeline / Loans List / Stammdaten -->
-			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pt-6 pb-4">
+			<!-- Kein Abstand nach oben: Der erste Block beginnt auf der Oberkante des linken Kastens. -->
+			<div class="lg:col-span-1 space-y-6 flex flex-col h-full px-6 pb-4">
 				{#if rechte.einsehen}
 					<StudentProfileActions
 						profile={st.profile}
