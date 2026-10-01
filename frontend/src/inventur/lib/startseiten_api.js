@@ -1,11 +1,7 @@
 import { apiFetch } from '../../lib/apiFetch.js';
 import { isbnFormen, normalisiereIsbn } from '../../lib/utils/isbnFormen.js';
 /**
- * startseiten_api.js
- *
- * Enthält alle API-Aufrufe und Hilfsfunktionen für die Gast-Startseite.
- * Hierzu gehören: Bücher laden, Klassen laden,
- * sowie Filterung und Gruppierung der Bücher nach Klassen.
+ * Laden, Suchen und Zusammenfassen je Buch für den Medienkatalog (Suche & Filter).
  */
 
 /**
@@ -45,8 +41,7 @@ const suchSynonyme = new Map([
 
 /**
  * Trifft ein Buch den Jahrgang? Entweder über gradeLevel oder über die gepflegte
- * Spanne von–bis. Eine Regel für Suche UND Filter — zwei Definitionen wären nur
- * zufällig einig.
+ * Spanne von–bis.
  * @param {any} b
  * @param {number} jahrgang
  */
@@ -58,9 +53,9 @@ function trifftJahrgang(b, jahrgang) {
 }
 
 /**
- * Die Buch-Suche der Startseite: jeder Begriff muss mindestens ein Feld treffen;
- * Zahlen zählen als Jahrgang (trifft gradeLevel ODER die Spanne von–bis), Füllwörter
- * wie „Klasse"/„Jg." fallen dann weg.
+ * Die Buch-Suche des Medienkatalogs: Jeder Begriff muss mindestens ein Feld treffen. Eine
+ * Zahl zählt als Jahrgang (gradeLevel oder die Spanne von–bis), Füllwörter wie
+ * „Klasse"/„Jg." fallen dann weg.
  * @param {any[]} buecherArray
  * @param {string} searchQuery
  */
@@ -74,24 +69,23 @@ export function buecherSuchen(buecherArray, searchQuery) {
 		terms = terms.filter((t) => !['klasse', 'kl', 'kl.', 'jahrgang', 'jg', 'jg.'].includes(t));
 	}
 
-	// Je Suchbegriff EINMAL vorab: Ist er eine ISBN, und in welchen Schreibweisen kann
-	// dieselbe ISBN im Bestand stehen? Ohne das findet ein gescannter Strichcode nur den
-	// Bestand, der zeichengleich gespeichert ist — Bindestriche oder eine zehnstellige
-	// Alt-ISBN reichten, damit die Suche leer blieb (18.09.2026). Der Aufwand je Buch
-	// entsteht nur bei ISBN-Begriffen; getippter Text läuft wie bisher.
+	// Je Begriff einmal vorab die Schreibweisen derselben ISBN: Ein gescannter Strichcode
+	// findet so auch den Bestand mit Bindestrichen oder zehnstelliger Alt-ISBN.
 	const isbnJeTerm = terms.map((term) => isbnFormen(term));
+	// Ein oder zwei Ziffern sind ein Jahrgang und kein Stück einer ISBN: „7" steht in jeder
+	// ISBN-13 (978…) und träfe sonst fast jedes Buch.
+	const istJahrgang = terms.map((term) => /^\d{1,2}\.?$/.test(term));
 
 	return (Array.isArray(buecherArray) ? buecherArray : []).filter((/** @type {any} */ b) =>
 		terms.every((term, i) => {
 			if (b.title && b.title.toLowerCase().includes(term)) return true;
-			if (b.isbn && b.isbn.toLowerCase().includes(term)) return true;
+			if (!istJahrgang[i] && b.isbn && b.isbn.toLowerCase().includes(term)) return true;
 			if (b.isbn && isbnJeTerm[i].length > 0 && isbnJeTerm[i].includes(normalisiereIsbn(b.isbn)))
 				return true;
 			if (b.author && b.author.toLowerCase().includes(term)) return true;
 			if (b.subject && b.subject.toLowerCase().includes(term)) return true;
 			if (b.istLernmittel && 'lernmittel'.includes(term)) return true;
-			// Die Signatur ist die Regaladresse (Handbuch) — bis zum 02.09.2026 fand die
-			// Suche sie nicht, obwohl der Payload sie längst trug.
+			// Die Signatur ist die Regaladresse (Handbuch).
 			if (b.signatur && b.signatur.toLowerCase().includes(term)) return true;
 			// Schlagworte und die Verweise darauf (docs/OFFEN.md 4.20). Welche Wörter einen
 			// Titel finden, entscheidet der Server (repository.SuchwoerterDerTitel) — dieselbe
@@ -108,15 +102,10 @@ export function buecherSuchen(buecherArray, searchQuery) {
 }
 
 /**
- * Ein Buch in mehreren Auflagen ist EINE Kachel (docs/OFFEN.md 4.18, Stufe 6; entschieden am
- * 17.09.2026: „Die Suche zeigt einen Treffer mit der Gesamtzahl und darunter die
- * Aufschlüsselung je Auflage"). Oben steht die Auflage, die die Suche getroffen hat — bei einer
- * gescannten ISBN genau diese, sonst die neueste (werkRang 1, am Server nach
- * repository.SQLNeuesteAuflageZuerst). Gezählt werden ALLE Auflagen des Buchs aus der ganzen
- * Liste, nicht nur die getroffenen: Wer eine alte Auflage scannt, fragt, ob die Schule das Buch
- * hat. Die Kachel steht dort, wo die erste getroffene Auflage stand; ein Titel ohne Buch bleibt,
- * wie er ist. Zusammengefasst wird nur hier, in der Anzeige: Titel-Verwaltung und
- * Zuordnen-Dialog lesen dieselbe Liste und brauchen jede Auflage einzeln.
+ * Ein Buch in mehreren Auflagen ist eine Kachel: oben die neueste der getroffenen Auflagen
+ * (kleinster werkRang), gezählt über alle Auflagen der ganzen Liste — wer eine alte Auflage
+ * scannt, fragt, ob die Schule das Buch hat. Zusammengefasst wird nur in der Anzeige;
+ * Titel-Verwaltung und Zuordnen-Dialog lesen dieselbe Liste und brauchen jede Auflage einzeln.
  * @param {any[]} alle die ganze Katalogliste
  * @param {any[]} treffer das, was buecherSuchen davon übrig lässt
  */

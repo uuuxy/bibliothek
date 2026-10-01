@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 30.09.2026
+Stand: 01.10.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -372,11 +372,19 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Mehrjahresband-Schalter (Migration 134) auf einem Titel mit der Vorgabe umlegt, bekommt die 10.
   Die drei Leser der Spanne (Mahnwesen „Jahrgang", Inventur, Portal-Filter) lernen „unbekannt"
   mit. Vorher am Testserver messen.
+  Ein vierter Leser ist die Suche im Medienkatalog (`trifftJahrgang` in
+  `frontend/src/inventur/lib/startseiten_api.js`, gefunden am 01.10.2026): Sie liest Klasse oder
+  Spanne. Mit der Vorgabe 5 bis 10 trifft „Klasse 5" bis „Klasse 10" jeden Titel, dessen Spanne
+  nie gepflegt wurde. Am lokalen Stand nachgestellt: Alle 6.205 Titel der Liste tragen 5 bis 10,
+  „Klasse 7" zeigt 6.205. Sichtbar, die Liste ist zu lang; die Suche lernt „unbekannt" mit. Wie
+  viele Titel die Vorgabe tragen, zeigt die zweite Abfrage.
 
   ```sql
   SELECT grade_level, jahrgang_von, jahrgang_bis, ist_lernmittel, signatur, titel
   FROM buecher_titel WHERE grade_level BETWEEN 1 AND 13
   ORDER BY ist_lernmittel DESC, signatur NULLS LAST, titel;
+
+  SELECT jahrgang_von, jahrgang_bis, count(*) FROM buecher_titel GROUP BY 1, 2 ORDER BY 3 DESC;
   ```
 
 - **ISBN-10 und ISBN-13 desselben Buchs:** Die Normalform trennt beide bewusst (Migration 133),
@@ -591,19 +599,6 @@ Fragen oben beantwortet sind.
   entschlüsselt sie mit dem alten Image (`docker run --rm`); die Vorab-Sicherung läge dann nie
   unverschlüsselt in `backups/`. Läuft er nicht, bleibt der Klartext-Weg. Für das Löschen nach
   der Uhr bräuchte es einen Lauf, der nicht am Update hängt.
-
-### 5.34 Die Suche im Medienkatalog nach einer Klasse trifft jede ISBN mit dieser Ziffer
-
-Gefunden am 29.09.2026 bei der Durchsicht von PR #687, an `buecherSuchen`
-(`frontend/src/inventur/lib/startseiten_api.js`, Medienkatalog → Suche & Filter) nachgestellt.
-Jeder Suchbegriff wird auch als Teilstück der ISBN gesucht, eine einzelne Ziffer eingeschlossen.
-„Klasse 7", „Jg. 8" und „9" treffen damit jedes Buch mit einer ISBN-13 (sie beginnen mit 978),
-„Klasse 5" jedes, dessen ISBN eine 5 enthält — neben den Büchern des Jahrgangs. Gemessen an vier
-Büchern (Jahrgang 5, Jahrgang 9, zwei ohne Jahrgang, drei mit ISBN): „Klasse 7" fand die drei mit
-ISBN, richtig wären keine. Der Fehler ist sichtbar, die Liste ist zu lang. Vorschlag: Eine Zahl,
-die als Jahrgang gelesen wird (höchstens zwei Ziffern), sucht nicht in der ISBN; die Suche nach
-einer ganzen ISBN und ihren Schreibweisen (`isbnFormen`) bleibt. Der Test in
-`startseiten_api.test.js` hält den Fehltreffer bewusst nicht fest.
 
 ### 5.35 Protokolleinträge zu Lesern, die die Tilgung noch nicht erreicht
 

@@ -64,15 +64,32 @@ describe('buecherSuchen', () => {
 
 	it('ignoriert Füllwörter wie Klasse oder Jg bei Zahlensuche', () => {
 		expect(finde('10. klasse')).toEqual(['Politik und Wirtschaft', 'Chemie']);
-		// Nur „Chemie" (Jahrgang 8 bis 10) ist hier gemeint. Dass eine einzelne Ziffer auch jede
-		// ISBN trifft, die sie enthält, ist ein Fehler (docs/OFFEN.md 5.34) — nicht festgehalten.
-		expect(finde('jg. 8')).toContain('Chemie');
+		expect(finde('jg. 8')).toEqual(['Chemie']);
+	});
+
+	// Die ISBN im Katalog enthält 7, 8, 9 und „06": Ohne die Regel träfe jede dieser Suchen
+	// „Englisch G21", ein Buch ohne Jahrgang.
+	it.each([
+		['klasse 7', []],
+		['9', ['Chemie']],
+		['06', []]
+	])('liest „%s" als Jahrgang, nicht als Stück einer ISBN', (suche, erwartet) => {
+		expect(finde(suche)).toEqual(erwartet);
+	});
+
+	it('findet eine Ziffer weiter im Titel', () => {
+		expect(finde('1')).toEqual(['Mathematik 1', 'Englisch G21']);
 	});
 
 	it('findet über ISBN (mit und ohne Striche, alte 10-stellige)', () => {
 		expect(finde('9783060313068')).toEqual(['Englisch G21']);
 		expect(finde('978-3-06-031306-8')).toEqual(['Englisch G21']);
 		expect(finde('306031306X')).toEqual(['Englisch G21']);
+	});
+
+	it('findet über ein Stück der ISBN ab drei Ziffern', () => {
+		expect(finde('978')).toEqual(['Englisch G21']);
+		expect(finde('0313')).toEqual(['Englisch G21']);
 	});
 
 	it('findet über Eigenschaft Lernmittel', () => {
