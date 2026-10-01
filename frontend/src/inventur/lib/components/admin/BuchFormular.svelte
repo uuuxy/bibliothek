@@ -8,6 +8,7 @@
 	import BuchAuflagen from './BuchAuflagen.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
+	import { frageWennVergeben } from '../../buch_speichern.js';
 	import { BookOpen, Printer, Trash2, X } from '@lucide/svelte';
 
 	/** onDelete kommt nur mit dem Recht delete_books (admin/+page) — ohne Recht gibt es den Knopf nicht. */
@@ -42,6 +43,8 @@
 	async function handleScan(code) {
 		formular.isbn = code;
 		lookupFehler = false;
+		// Neue Maske: Trägt die gescannte ISBN schon ein Titel, führt die Frage zu ihm.
+		if (!formular.id && (await frageWennVergeben(code))) return;
 		if (!formular.title) {
 			try {
 				const res = await apiFetch(`/api/lookup/${code}`);

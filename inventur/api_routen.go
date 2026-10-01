@@ -85,6 +85,7 @@ func NewAPIHandler(config APIHandlerConfig) *APIHandler {
 	// Lesend: RBAC-Permission view_books (injiziert aus api/router.go)
 	handler.mux.Handle("GET /api/books", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuecherListe)))
 	handler.mux.Handle("GET /api/books/{id}", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuchLesen)))
+	handler.mux.Handle("GET /api/books/vorhanden", config.RequireViewBooks(http.HandlerFunc(handler.BearbeiteBuchVorhanden)))
 	handler.mux.Handle("GET /api/class-books", config.RequireViewBooks(http.HandlerFunc(handler.handleClassBooks)))
 	handler.mux.Handle("GET /api/lookup/{isbn}", config.RequireViewBooks(http.HandlerFunc(handler.handleLookup)))
 

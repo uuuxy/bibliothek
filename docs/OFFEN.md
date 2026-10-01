@@ -441,12 +441,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Entschieden am 01.10.2026: Der Knopf öffnet die Maske „Neues Buch" mit eingeschalteter
   Kamera, der eigene Dialog entfällt und mit ihm das Hochladen eines Fotos mit Strichcode.
   Laut, Kategorie B.
-- Die Maske „Neues Buch" fragt erst beim Speichern nach dem vorhandenen Titel (01.10.2026):
-  Bis dahin sind Signatur, Fach und die übrigen Felder eingetragen und gehen beim Öffnen des
-  vorhandenen Titels verloren. Littera prüft bei der Eingabe der ISBN (Handbuch,
-  „Dublettenkontrolle"). Entschieden am 01.10.2026: Die Frage kommt, sobald die ISBN im Feld
-  steht (Feld verlassen oder Kamera-Scan), nach derselben Regel wie beim Speichern
-  (`pruefeDublette`); die Frage beim Speichern bleibt. Kategorie B.
+- Die ISBN-Abfrage der Maske „Neues Buch" steht zweimal (gefunden am 01.10.2026, am Code
+  gelesen): `IsbnFeld.svelte` für Feld und Knopf, `handleScan` in `BuchFormular.svelte` für
+  den Kamera-Scan. Beide füllen dieselben Felder aus `GET /api/lookup/{isbn}`; scheitert die
+  Abfrage, meldet das Feld es als Snackbar, der Scan als Zeile über den Feldern, und nur das
+  Feld sagt nach einem Treffer „Metadaten übernommen". Kategorie B.
 - Jede ISBN-Abfrage legt eine Cover-Datei ab (gefunden am 01.10.2026, am lokalen Stack
   gezählt): `GET /api/lookup/{isbn}` speichert das Cover als `uploads/cover_auto_…`, auch wenn
   danach nichts gespeichert wird. `POST /api/books` schlägt wegen des leeren Listenpreises

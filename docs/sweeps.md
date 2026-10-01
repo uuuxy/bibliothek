@@ -229,6 +229,7 @@ steht im Kopfkommentar der Datei.
 | `api/dsgvo_pdf_felder_gate_test.go`                           | Nur DASS ein Feld gedruckt wird, nicht WAS und nicht mit welcher Beschriftung; liest den Quelltext, nicht das fertige PDF.                       |
 | `api/dsgvo_paar_rundreise_pg_test.go`                         | Nur gesäte Kanarienwerte; Referenzen OHNE Fremdschlüssel (JSON-Details, Freitext).                                                               |
 | `jobs/dsgvo_spuren_paarung_pg_test.go`                        | Eine Spur, die BEIDE Pfade vergessen.                                                                                                            |
+| `inventur/buch_vorhanden_pg_test.go`                          | Nur die Schreibweisen seiner Liste; dieselbe ISBN in der anderen Länge (ISBN-10 ↔ ISBN-13) kennen beide Türen nicht.                             |
 | `api/etiketten_*_paritaet_pg_test.go`                         | Nur die aufgezählten Felder — ein neues Etikettenfeld muss von Hand hinein.                                                                      |
 | `api/rechte_schreibwege_pg_test.go`                           | Nur die negative Richtung (403 ohne Recht); nicht, ob es MIT Recht funktioniert; nicht die PII-Stufe.                                            |
 | `api/pii_antwort_gate_pg_test.go`                             | Nicht-GET-Routen; PII-Felder ohne Kanarienwert.                                                                                                  |

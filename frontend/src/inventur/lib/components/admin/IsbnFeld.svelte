@@ -7,18 +7,49 @@
 	import { apiFetch } from '../../../../lib/apiFetch.js';
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import { showToast } from '$lib/store.svelte.js';
+	import { frageWennVergeben } from '../../buch_speichern.js';
 	import { Camera, RefreshCw } from '@lucide/svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
 	/** dnbVorschlag: Nach einer ISBN-Abfrage mit Treffer holt er die Schlagworte der DNB dazu. */
 	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag = undefined } = $props();
 
 	let isLookupActive = $state(false);
+	// Ein Klick auf den Knopf verlässt zugleich das Feld: Der zweite Auslöser schließt sich
+	// dem laufenden Ablauf an, statt Katalog und Katalogdienste doppelt zu fragen.
+	let laeuft = false;
+	let aufWunsch = false;
 
-	async function aktualisiereMetadaten() {
+	/**
+	 * Erst der eigene Katalog, dann die Katalogdienste: In einer neuen Maske führt eine ISBN,
+	 * die schon ein Titel trägt, zu ihm, statt Angaben für ein zweites Buch zu laden.
+	 * @param {boolean} wunsch — der Knopf lädt auch, wenn schon ein Titel dasteht
+	 */
+	async function nachschlagen(wunsch) {
+		aufWunsch ||= wunsch;
+		if (laeuft) return;
+		laeuft = true;
+		try {
+			if (!formular.id && (await frageWennVergeben(formular.isbn))) return;
+			if (aufWunsch || !formular.title) await holeMetadaten();
+		} finally {
+			laeuft = false;
+			aufWunsch = false;
+		}
+	}
+
+	function aufKnopf() {
 		if (!formular.isbn) {
 			showToast('Bitte zuerst eine ISBN eingeben.', 'error');
 			return;
 		}
+		return nachschlagen(true);
+	}
+
+	function beiVerlassen() {
+		if (formular.isbn) return nachschlagen(false);
+	}
+
+	async function holeMetadaten() {
 		isLookupActive = true;
 		try {
 			const antwort = await apiFetch(`/api/lookup/${formular.isbn}`);
@@ -60,12 +91,6 @@
 			isLookupActive = false;
 		}
 	}
-
-	async function beiVerlassen() {
-		if (formular.isbn && !formular.title) {
-			await aktualisiereMetadaten();
-		}
-	}
 </script>
 
 <!-- Die zwei Symbole sind nachlaufende Icon-Buttons des Feldes: on-surface-variant wie die
@@ -81,7 +106,7 @@
 	{#snippet nachlaufend()}
 		<button
 			type="button"
-			onclick={aktualisiereMetadaten}
+			onclick={aufKnopf}
 			disabled={isLookupActive}
 			class="rounded-full p-0.5 text-on-surface-variant transition-colors hover:text-primary disabled:opacity-50"
 			title="Daten aus dem Internet aktualisieren"

@@ -4,7 +4,8 @@ import { uiLogin, seedSQL, querySQL, uniqueSuffix } from './helpers.js';
 // Ein Buch aus der Maske „Neues Buch" ist danach zu finden, und eine vergebene ISBN führt zu
 // ihrem Titel. Ohne Exemplar zeigt keine Suche einen Titel (docs/OFFEN.md 9.4): Mit der
 // Vorgabe Bestand 0 hieß das Speichern „erfolgreich", das Buch stand nirgends, und der zweite
-// Versuch endete mit „existiert bereits".
+// Versuch endete mit „existiert bereits". Gefragt wird, sobald die ISBN im Feld steht — wie in
+// Littera bei der Eingabe, nicht erst beim Speichern.
 const s = uniqueSuffix().slice(0, 6);
 /** Gültige ISBN-13 aus der Uhrzeit: 978 + 9 Ziffern + Prüfziffer. @param {number} versatz */
 function isbn(versatz) {
@@ -90,12 +91,22 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		);
 	});
 
-	test('eine vergebene ISBN führt zum vorhandenen Titel, dort kommt das Exemplar dazu', async ({
+	test('eine vergebene ISBN: die Frage kommt beim Verlassen des ISBN-Felds und führt zum Titel', async ({
 		page
 	}) => {
+		// Für ein Buch, das es schon gibt, fragt die Maske weder die Katalogdienste noch
+		// versucht sie, einen zweiten Titel anzulegen.
+		/** @type {string[]} */
+		const unnoetig = [];
+		page.on('request', (anfrage) => {
+			const pfad = new URL(anfrage.url()).pathname;
+			if (pfad.startsWith('/api/lookup/') || (pfad === '/api/books' && anfrage.method() === 'POST'))
+				unnoetig.push(`${anfrage.method()} ${pfad}`);
+		});
 		await zurTitelVerwaltung(page);
-		await neuesBuch(page, `Zweiter Versuch ${s}`, ISBN_OHNE);
-		await page.getByRole('button', { name: 'Speichern' }).click();
+		await page.getByRole('button', { name: 'Neues Buch' }).first().click();
+		await page.locator('#buch-isbn').fill(ISBN_OHNE);
+		await page.locator('#buch-isbn').press('Tab');
 
 		const frage = page.getByRole('dialog').filter({ hasText: 'Vorhandenen Titel öffnen?' });
 		await expect(frage).toContainText(`Nur Titel ${s}`);
@@ -108,10 +119,36 @@ test.describe.serial('Buch anlegen: danach auffindbar', () => {
 		await page.getByRole('button', { name: 'Speichern' }).click();
 		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
 
+		expect(unnoetig).toEqual([]);
 		expect(exemplare(ISBN_OHNE)).toBe('1');
 		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn = '${ISBN_OHNE}'`)).toBe('1');
 		await expect(await trefferInDerTitelliste(page, 'Mit Exemplaren', ISBN_OHNE)).toHaveText(
 			'Bücher (1)'
 		);
+	});
+
+	test('Abbrechen lässt die Maske stehen, und das Speichern fragt noch einmal', async ({
+		page
+	}) => {
+		await zurTitelVerwaltung(page);
+		// Titel zuerst, dann die ISBN: Die Frage hängt nicht daran, dass der Titel leer ist.
+		await neuesBuch(page, `Zweiter Versuch ${s}`, ISBN_MIT);
+
+		const frage = page.getByRole('dialog').filter({ hasText: 'Vorhandenen Titel öffnen?' });
+		await expect(frage).toContainText(`Anlegen ${s}`);
+		await expect(frage).not.toContainText('„Ohne Exemplare“');
+		await frage.getByRole('button', { name: 'Abbrechen' }).click();
+		await expect(frage).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Neues Buch' })).toBeVisible();
+		await expect(page.locator('#buch-titel')).toHaveValue(`Zweiter Versuch ${s}`);
+
+		await page.getByRole('button', { name: 'Speichern' }).click();
+		await expect(frage).toContainText(`Anlegen ${s}`);
+		await frage.getByRole('button', { name: 'Abbrechen' }).click();
+
+		expect(querySQL(`SELECT count(*) FROM buecher_titel WHERE isbn = '${ISBN_MIT}'`)).toBe('1');
+		expect(
+			querySQL(`SELECT count(*) FROM buecher_titel WHERE titel = 'Zweiter Versuch ${s}'`)
+		).toBe('0');
 	});
 });

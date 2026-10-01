@@ -202,3 +202,30 @@ func (handler *APIHandler) BearbeiteBuchLesen(antwort http.ResponseWriter, anfra
 
 	writeJSON(antwort, http.StatusOK, buch)
 }
+
+// BearbeiteBuchVorhanden sagt vor dem Speichern, was die Dublettenkontrolle zu einer ISBN
+// sagen wird: den Titel, der sie schon trägt, samt der Meldung der Ablehnung — oder keinen.
+// Die Maske „Neues Buch" fragt damit schon bei der Eingabe der ISBN, wie Littera; das Format
+// der Nummer prüft erst das Speichern.
+func (handler *APIHandler) BearbeiteBuchVorhanden(antwort http.ResponseWriter, anfrage *http.Request) {
+	isbn := strings.TrimSpace(anfrage.URL.Query().Get("isbn"))
+	if isbn == "" {
+		writeError(antwort, http.StatusBadRequest, "isbn fehlt")
+		return
+	}
+
+	vorhanden, fehler := handler.repo.TitelMitISBN(anfrage.Context(), isbn)
+	if fehler != nil {
+		log.Printf("Dublettenkontrolle vorab: %v", fehler)
+		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
+		return
+	}
+	if vorhanden == nil {
+		writeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{"vorhanden": nil}})
+		return
+	}
+	writeJSON(antwort, http.StatusOK, map[string]any{"data": map[string]any{
+		"vorhanden": vorhanden.alsAntwort(),
+		"meldung":   vorhanden.Meldung(),
+	}})
+}

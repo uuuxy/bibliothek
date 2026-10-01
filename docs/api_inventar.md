@@ -16,7 +16,7 @@
 - `/api/print/mahnung/`
 - `/api/public/`
 
-## Alle registrierten Routen (228)
+## Alle registrierten Routen (229)
 
 - `/`
 - `/api/admin`
@@ -78,6 +78,7 @@
 - `GET /api/bestellungen/pdf`
 - `GET /api/bestellungen/zulauf`
 - `GET /api/books`
+- `GET /api/books/vorhanden`
 - `GET /api/books/{id}`
 - `GET /api/buecher/exemplare/{id}/ersatzwert-vorschlag`
 - `GET /api/buecher/titel/suche`

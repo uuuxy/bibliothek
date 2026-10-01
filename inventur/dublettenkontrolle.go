@@ -30,36 +30,65 @@ func (d *DubletteISBN) Error() string {
 // Unwrap hält errors.Is(err, ErrDuplicateISBN) für alle Aufrufer gültig.
 func (d *DubletteISBN) Unwrap() error { return ErrDuplicateISBN }
 
-// Dublettenkontrolle beim Anlegen und Ändern eines Titels (OFFEN.md 4.18, Stufe 2).
+// Meldung ist der Satz für die Oberfläche: der Titel und, hat er kein Exemplar, die Sicht,
+// in der er steht. Die Ablehnung beim Speichern und die Auskunft vorab sagen dasselbe.
+func (d *DubletteISBN) Meldung() string {
+	meldung := "Diese ISBN trägt schon der Titel „" + d.Titel + "“."
+	if !d.HatExemplar {
+		meldung += " Er hat kein Exemplar und steht deshalb in der Titelliste nur unter „Ohne Exemplare“."
+	}
+	return meldung
+}
+
+// alsAntwort ist der Titel in der Form, in der beide Türen ihn unter „vorhanden" nennen.
+func (d *DubletteISBN) alsAntwort() map[string]any {
+	return map[string]any{"id": d.ID, "title": d.Titel, "ohneExemplar": !d.HatExemplar}
+}
+
+// titelMitISBN sucht den Titel, der die ISBN schon trägt, ohne Rücksicht auf Bindestriche,
+// Leerzeichen und Großschreibung; eigeneID nimmt den Titel aus, der gerade geändert wird.
+// Ohne Treffer nil. Die Ablehnung beim Speichern und die Auskunft vorab fragen beide hier,
+// damit die Maske vorab dasselbe erfährt, was das Speichern sagen wird.
+func titelMitISBN(ctx context.Context, q repository.DBQueryer, isbn, eigeneID string) (*DubletteISBN, error) {
+	vorhanden := DubletteISBN{}
+	err := q.QueryRow(ctx, `
+		SELECT bt.id::text, bt.titel, `+repository.SQLTitelHatExemplar("bt")+`
+		FROM buecher_titel bt
+		WHERE replace(replace(lower(bt.isbn), '-', ''), ' ', '') = replace(replace(lower($1), '-', ''), ' ', '')
+		  AND ($2 = '' OR bt.id <> $2::uuid)
+		LIMIT 1`, isbn, eigeneID).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
+	switch {
+	case err == nil:
+		return &vorhanden, nil
+	case istKeineZeile(err):
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("dublettenkontrolle (isbn): %w", err)
+	}
+}
+
+// TitelMitISBN sagt vor dem Speichern, was die Dublettenkontrolle zu dieser ISBN sagen wird.
+func (repo *BookRepository) TitelMitISBN(ctx context.Context, isbn string) (*DubletteISBN, error) {
+	return titelMitISBN(ctx, repo.db, isbn, "")
+}
+
+// pruefeDublette lehnt einen Titel ab, den es schon gibt (OFFEN.md 4.18, Stufe 2): mit ISBN
+// den, der die Nummer trägt, ohne ISBN das Paar aus Titel und Autor. Als zwei Titel hätte ein
+// Buch zwei Bestände und zwei Zeilen in der Nachbestellung; Littera bietet an dieser Stelle an,
+// statt des Titels ein weiteres Exemplar aufzunehmen.
 //
-// Der UNIQUE-Index auf isbn fängt nur die ZEICHENGLEICHE Dublette. „978-3-12-345678-9"
-// und „9783123456789" sind aber dieselbe Nummer; als zwei Titel bedeuten sie zwei
-// Bestände, zwei Meldebestände und zwei Zeilen in der Nachbestellung für ein Buch.
-//
-// Littera prüft an derselben Stelle (Medienaufnahme) und bietet statt eines zweiten
-// Titels an, ein weiteres Exemplar anzulegen. Genau das ist hier die Botschaft der
-// Fehlermeldung — die Entscheidung trifft ein Mensch, nicht das Programm.
-//
-// Die Prüfung läuft VOR dem Schreiben in derselben Transaktion. Sie ersetzt keinen
-// Constraint: Zwei gleichzeitige Anfragen können beide durchkommen. Der Constraint
-// dafür wäre ein UNIQUE-Index auf replace(isbn, '-', ”); er lässt sich erst anlegen,
-// wenn am Server gemessen ist, dass es dort keine Altdublette gibt (OFFEN.md 4.18).
+// Die Prüfung läuft vor dem Schreiben in derselben Transaktion und nennt den vorhandenen
+// Titel. Zwei gleichzeitige Anfragen mit derselben ISBN fängt der UNIQUE-Index: Die Datenbank
+// bringt jede ISBN vor dem Schreiben in eine Schreibweise (isbn_normalform).
 func pruefeDublette(ctx context.Context, q repository.DBQueryer, b Book, eigeneID string) error {
 	if b.ISBN != "" {
-		vorhanden := DubletteISBN{}
-		err := q.QueryRow(ctx, `
-			SELECT bt.id::text, bt.titel, `+repository.SQLTitelHatExemplar("bt")+`
-			FROM buecher_titel bt
-			WHERE replace(replace(lower(bt.isbn), '-', ''), ' ', '') = replace(replace(lower($1), '-', ''), ' ', '')
-			  AND ($2 = '' OR bt.id <> $2::uuid)
-			LIMIT 1`, b.ISBN, eigeneID).Scan(&vorhanden.ID, &vorhanden.Titel, &vorhanden.HatExemplar)
-		switch {
-		case err == nil:
-			return &vorhanden
-		case istKeineZeile(err):
-			// kein Treffer — weiter
-		default:
-			return fmt.Errorf("dublettenkontrolle (isbn): %w", err)
+		vorhanden, err := titelMitISBN(ctx, q, b.ISBN, eigeneID)
+		if err != nil {
+			return err
+		}
+		// Ein nil-Zeiger in der error-Schnittstelle wäre nicht nil.
+		if vorhanden != nil {
+			return vorhanden
 		}
 		return nil
 	}

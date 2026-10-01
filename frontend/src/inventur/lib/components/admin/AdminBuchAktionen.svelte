@@ -3,7 +3,12 @@
 	import { bestaetigen, loeschenBestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 	import { appState, showToast } from '$lib/store.svelte.js';
 	import { loescheTitel, coverNeuHolen } from '../../admin_api.js';
-	import { speichereBuch, stehtInSicht, DubletteFehler } from '../../buch_speichern.js';
+	import {
+		speichereBuch,
+		stehtInSicht,
+		DubletteFehler,
+		frageVorhandenenOeffnen
+	} from '../../buch_speichern.js';
 	import { hatRecht } from '../../../../lib/menu.js';
 	import { authStore } from '../../../../lib/stores/authStore.svelte.js';
 
@@ -72,26 +77,13 @@
 				'success'
 			);
 		} catch (e) {
+			// Neue Maske: Statt nur abzulehnen, führt sie zum Titel, der die ISBN schon trägt.
 			if (e instanceof DubletteFehler && !formular.id) {
-				await oeffneVorhandenen(e);
+				await frageVorhandenenOeffnen(e.message, e.vorhanden);
 				return;
 			}
 			showToast(e instanceof Error ? e.message : String(e), 'error');
 		}
-	}
-
-	/**
-	 * Die ISBN trägt schon ein Titel: Statt nur abzulehnen, führt die Maske zu ihm — dort
-	 * kommt das Exemplar dazu. Die Seite öffnet ihn über appState.bookToEdit.
-	 * @param {DubletteFehler} fehler
-	 */
-	async function oeffneVorhandenen(fehler) {
-		const oeffnen = await bestaetigen({
-			titel: 'Vorhandenen Titel öffnen?',
-			text: `${fehler.message} Die Eingaben dieser Maske werden dabei verworfen.`,
-			aktion: 'Titel öffnen'
-		});
-		if (oeffnen) appState.bookToEdit = { id: fehler.vorhanden.id };
 	}
 
 	/** @param {File} file */

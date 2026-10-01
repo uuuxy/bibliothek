@@ -15,3 +15,14 @@ import { vi } from 'vitest';
 if (!Element.prototype.scrollIntoView) {
 	Element.prototype.scrollIntoView = vi.fn();
 }
+
+// jsdom kennt auch `animate` nicht: Jedes Bauteil mit `transition:` wirft sonst beim Rendern.
+// Die Attrappe meldet die Animation gleich als beendet, der Übergang läuft damit durch.
+if (!Element.prototype.animate) {
+	/** @type {any} */ (Element.prototype).animate = () => {
+		/** @type {{ onfinish: (() => void) | null, cancel: () => void, currentTime: number, playState: string }} */
+		const animation = { onfinish: null, cancel: () => {}, currentTime: 0, playState: 'finished' };
+		queueMicrotask(() => animation.onfinish?.());
+		return animation;
+	};
+}

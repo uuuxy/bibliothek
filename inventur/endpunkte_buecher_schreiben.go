@@ -125,18 +125,10 @@ func schreibeDubletteISBN(antwort http.ResponseWriter, fehler error) {
 		writeError(antwort, http.StatusConflict, "Ein Buch mit dieser ISBN existiert bereits in der Datenbank.")
 		return
 	}
-	meldung := "Diese ISBN trägt schon der Titel „" + dublette.Titel + "“."
-	if !dublette.HatExemplar {
-		meldung += " Er hat kein Exemplar und steht deshalb in der Titelliste nur unter „Ohne Exemplare“."
-	}
 	log.Printf("Dublette abgelehnt: %v", fehler)
 	writeJSON(antwort, http.StatusConflict, map[string]any{
-		"error": meldung,
-		"vorhanden": map[string]any{
-			"id":           dublette.ID,
-			"title":        dublette.Titel,
-			"ohneExemplar": !dublette.HatExemplar,
-		},
+		"error":     dublette.Meldung(),
+		"vorhanden": dublette.alsAntwort(),
 	})
 }
 
