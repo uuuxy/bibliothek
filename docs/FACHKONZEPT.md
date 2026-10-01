@@ -665,7 +665,8 @@ bestehende Zeilen nie an, eine geänderte Vorgabe erreicht Alt-Anlagen sonst nie
 Abweichung ist bewusst nur eine Warnung, denn sie kann eine Admin-Entscheidung sein)
 und die Klassen-Zuordnung (seit 18.08.2026, Befund F3: Klassennamen verbinden Schüler,
 Klassenlehrer-Zuordnung und Bücherlisten nur als übereinstimmender Text — die Prüfung
-benennt Klassen ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten ohne Klasse); sowie **Ehemalige mit offenen Vorgängen** (seit 05.09.2026, Register Entscheidung 1:
+benennt Klassen bis Jahrgang 10 ohne Lehrkraft, verwaiste Zuordnungen und Bücherlisten ohne
+Klasse; die Oberstufe (ET, 12T, 13T) hat keine Klassenleitung); sowie **Ehemalige mit offenen Vorgängen** (seit 05.09.2026, Register Entscheidung 1:
 Weggegangene, die seit mehr als einem Jahr ein offenes Buch oder eine unbezahlte Forderung
 haben — der Vorgang schützt sie vor Anonymisierung und Löschung, also bleiben Name und
 Anschrift sonst auf Dauer; Warnung mit Abhilfe „Verlust melden, Forderung bezahlen oder

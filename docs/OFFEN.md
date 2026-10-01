@@ -651,17 +651,6 @@ auf Daten. Vorschlag: „… kommt in den Papierkorb. Von dort lässt es sich wi
 180 Tagen wird es anonymisiert (Kollegium: gelöscht), von Hand im Papierkorb sofort." — vorher
 die M3-Seite zu Dialogen lesen.
 
-### 5.39 Die Selbstprüfung erwartet auch in der Oberstufe eine Klassenleitung
-
-Die Oberstufe hat keine Klassenleitung, weder in der Einführungsphase (ET1–ET3) noch in 12T und
-13T (Auskunft vom 30.09.2026). Am Code gelesen, nicht nachgestellt: Die Prüfung
-„Klassen-Zuordnung" der Betriebsbereitschaft (`KlassenBestand` in `repository/betriebszustand.go`,
-`pruefeKlassenDrift` in `api/betriebsbereitschaft.go`) nimmt als Klassen der Schüler alle Namen,
-die mit einer Ziffer beginnen (`klasse ~ '^\d'`). Mit den Klassen der Schule meldet sie deshalb
-12T1–12T5 und 13T1–13T3 dauerhaft als „Klassen ohne Lehrkraft-Zuordnung". Die Tutorien der
-Einführungsphase fallen dagegen ganz heraus; eine Buchliste für ET1 erschiene als „Bücherliste für
-unbekannte Klassen". Sichtbar als Warnung, keine Wirkung auf Daten.
-
 ---
 
 ## 6. Beobachten und Kategorie C (nur mit Anlass)

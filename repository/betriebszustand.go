@@ -4,8 +4,7 @@ package repository
 // braucht, um den Zustand der Anlage zu beurteilen.
 //
 // Eigene Datei statt einer Zeile im Handler: Handler lesen und schreiben über repository/,
-// dort steht jede Regel genau einmal. Das ist im Projekt eine geprüfte Invariante
-// (api/schichtung_test.go) — und sie hat mich hier zu Recht erwischt.
+// dort steht jede Regel genau einmal (api/schichtung_test.go).
 
 import (
 	"context"
@@ -19,16 +18,14 @@ import (
 // Demo-Daten wieder entfernt — beide Seiten müssen dasselbe meinen.
 const demoBarcodePraefix = "DEMO-S-%"
 
-// demoExemplarPraefix ist das Gegenstück für die Exemplare desselben Skripts. Bis zum
-// 07.09.2026 zählte die Selbstprüfung nur Schüler — wer den DELETE-Block halb ausführte,
-// stand mit 300 Demo-Exemplaren im Bestandsbericht und einer grünen Selbstprüfung da.
+// demoExemplarPraefix ist das Gegenstück für die Exemplare desselben Skripts: Wer dessen
+// Lösch-Block nur halb ausführt, hat sonst Demo-Exemplare im Bestandsbericht und eine grüne
+// Selbstprüfung.
 const demoExemplarPraefix = "DEMO-B-%"
 
-// Kennungen der drei BEISPIEL-Lieferanten, die db/seed.go vom 30.05. bis zum 07.09.2026
-// beim ersten Start anlegte — gewollte Startdaten der ersten Bauwoche, damit das
-// Bestellwesen ohne Vorarbeit bedienbar war (Migration 107 löscht das exakte Tripel).
-// Adresse und Kundennummer einzeln, nicht das Tripel: Ein umbenannter Eintrag mit der
-// Beispiel-Adresse schickt Bestellungen genauso ins Leere wie das Original.
+// Kennungen der drei Beispiel-Lieferanten aus den früheren Startdaten (Migration 107 löscht
+// das exakte Tripel). Adresse und Kundennummer einzeln, nicht das Tripel: Ein umbenannter
+// Eintrag mit der Beispiel-Adresse schickt Bestellungen genauso ins Leere wie das Original.
 var (
 	beispielLieferantenEmails = []string{"bestellung@klett.de", "service@cornelsen.de", "order@westermann.de"}
 	beispielKundennummern     = []string{"K-99281", "C-88123", "W-77441"}
@@ -105,10 +102,9 @@ type AdminKonto struct {
 	Email string
 }
 
-// AktiveAdmins liefert alle aktiven Admin-Konten (Name + Adresse) — EINE Quelle
-// für den Alarm-Versand UND den Betriebsbereitschafts-Befund. Der Vorfall vom
-// 16.08.2026 (Alarm-Mail an ein dem Betreiber unbekanntes Admin-Konto) hat
-// gezeigt: Die Admin-Liste muss sichtbar sein, nicht nur benutzt werden.
+// AktiveAdmins liefert alle aktiven Admin-Konten (Name + Adresse) — eine Quelle für den
+// Alarm-Versand und den Befund der Selbstprüfung: Wer die Alarm-Mails bekommt, soll dort
+// auch zu sehen sein.
 func (r *BetriebszustandRepository) AktiveAdmins(ctx context.Context) ([]AdminKonto, error) {
 	ctx, abbrechen := context.WithTimeout(ctx, 3*time.Second)
 	defer abbrechen()
@@ -160,11 +156,10 @@ func (r *BetriebszustandRepository) LadeRollenRechte(ctx context.Context) (map[s
 	return live, rows.Err()
 }
 
-// KlassenBestand liefert die drei Mengen von Klassennamen, die nur über
-// Text-Gleichheit zusammenhängen (Befund F3): die Klassen der aktiven Schüler
-// (nur echte Stufen-Namen, keine Sonderwerte wie 'ABG'), die Zeilen der
-// Klassenlehrer-Zuordnung und die Klassen der LMF-Bücherlisten. Die
-// Selbstprüfung rechnet daraus den Drift — hier wird nur erhoben.
+// KlassenBestand liefert die drei Mengen von Klassennamen, die nur über Text-Gleichheit
+// zusammenhängen (Befund F3): die Klassen der aktiven Schüler, die Zeilen der
+// Klassenlehrer-Zuordnung und die Klassen der Bücherlisten. Welche Klasse eine Klassenleitung
+// braucht, entscheidet die Selbstprüfung — hier wird nur erhoben.
 func (r *BetriebszustandRepository) KlassenBestand(ctx context.Context) (schueler, zuordnungen, buecherlisten []string, err error) {
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
@@ -188,7 +183,7 @@ func (r *BetriebszustandRepository) KlassenBestand(ctx context.Context) (schuele
 
 	if schueler, err = lies(`
 		SELECT DISTINCT klasse FROM schueler
-		WHERE deleted_at IS NULL AND ist_abgaenger = false AND klasse ~ '^\d'
+		WHERE deleted_at IS NULL AND ist_abgaenger = false AND btrim(klasse) <> ''
 		ORDER BY klasse`); err != nil {
 		return nil, nil, nil, err
 	}
@@ -211,12 +206,10 @@ func (r *BetriebszustandRepository) LadeEinstellungswert(ctx context.Context, sc
 	return wert, err
 }
 
-// ZaehleEhemaligeMitOffenenVorgaengen zählt Weggegangene (ist_abgaenger, nicht
-// gelöscht), die seit mehr als `tage` Tagen weg sind und noch einen offenen Vorgang
-// haben — ein nie zurückgegebenes Buch oder eine unbezahlte Forderung. Genau diese
-// Vorgänge schützen den Datensatz vor Anonymisierung und Löschung (Retention-Blockade);
-// schließt sie niemand, bleibt der Name mit Anschrift auf Dauer stehen, und keine
-// Routine meldet es (Register 05.09.2026, Entscheidung 1: Befund statt Automatismus).
+// ZaehleEhemaligeMitOffenenVorgaengen zählt Weggegangene (ist_abgaenger, nicht gelöscht), die
+// seit mehr als `tage` Tagen weg sind und noch ein offenes Buch oder eine unbezahlte Forderung
+// haben. Der offene Vorgang schützt den Datensatz vor Anonymisierung und Löschung; schließt
+// ihn niemand, bleiben Name und Anschrift auf Dauer stehen, ohne dass eine Routine es meldet.
 func (r *BetriebszustandRepository) ZaehleEhemaligeMitOffenenVorgaengen(ctx context.Context, tage int) (int, error) {
 	var n int
 	// Dieselbe Uhr wie die Löschuhr (KarenzUhr: Abgang, letzte Rückgabe, letzter

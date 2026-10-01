@@ -121,7 +121,7 @@ type Lage struct {
 	// Klassenlehrer-Zuordnung und Bücherlisten nur als übereinstimmender Text —
 	// reißt der Text, meldet nichts einen Fehler, Mahnlisten laufen still leer.
 	// nil heißt jeweils: nicht erhoben (Warnung), leere Liste: alles verbunden.
-	KlassenOhneLehrkraft  []string // aktive Schüler-Klassen ohne Zuordnungs-Zeile
+	KlassenOhneLehrkraft  []string // Klassen bis Jahrgang 10 mit aktiven Schülern, ohne Zuordnungs-Zeile
 	VerwaisteZuordnungen  []string // Zuordnungs-Zeilen ohne aktive Schüler
 	VerwaisteBuecherliste []string // class_books-Klassen ohne aktive Schüler
 

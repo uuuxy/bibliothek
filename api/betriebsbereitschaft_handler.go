@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 
+	"bibliothek/internal/ausweis"
 	"bibliothek/jobs"
 	"bibliothek/pkg/lmfplan"
 	"bibliothek/pkg/schulzeit"
@@ -129,7 +130,7 @@ func (s *Server) sammleLage(
 	// Klassen-Drift (F3): Bei einem Fehler bleiben die Listen nil — die Prüfung
 	// meldet dann „nicht erhoben" statt fälschlich „alles verbunden".
 	if schueler, zuordnungen, listen, err := zustandRepo.KlassenBestand(ctx); err == nil {
-		lage.KlassenOhneLehrkraft = fehlendeEintraege(schueler, zuordnungen)
+		lage.KlassenOhneLehrkraft = fehlendeEintraege(mitKlassenleitung(schueler), zuordnungen)
 		lage.VerwaisteZuordnungen = fehlendeEintraege(zuordnungen, schueler)
 		lage.VerwaisteBuecherliste = fehlendeEintraege(listen, schueler)
 	}
@@ -194,6 +195,26 @@ func (s *Server) BetriebsbereitschaftHandler(
 			Befunde: befunde,
 		})
 	}
+}
+
+// mitKlassenleitung lässt die Klassen übrig, für die die Schule eine Klassenleitung hat: bis
+// Jahrgang 10. Die Oberstufe (ET, 12T, 13T) hat keine, und ein Name ohne Ziffer („ABG") ist
+// ein Sonderwert.
+func mitKlassenleitung(klassen []string) []string {
+	mit := []string{}
+	for _, k := range klassen {
+		if _, jahrgang, lesbar := ausweis.AblaufJahrgang(k); lesbar {
+			if jahrgang <= ausweis.AbschlussMittelstufe {
+				mit = append(mit, k)
+			}
+			continue
+		}
+		// Eine Zahl außerhalb 1 bis 13 („70R1") bleibt gemeldet: Ihre Mahnliste erreicht niemanden.
+		if k != "" && k[0] >= '0' && k[0] <= '9' {
+			mit = append(mit, k)
+		}
+	}
+	return mit
 }
 
 // fehlendeEintraege liefert alle Werte aus `menge`, die in `referenz` fehlen —

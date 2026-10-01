@@ -1,6 +1,6 @@
 # Benutzerhandbuch
 
-Stand: 2026-09-30. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
+Stand: 2026-10-01. Für Bibliothekspersonal, Sekretariat und Schulleitung — geschrieben aus
 Sicht der Arbeit am Tresen, nicht aus Sicht des Codes. Die fachlichen Regeln dahinter stehen
 im [Fachkonzept](FACHKONZEPT.md); dort verweisen die §-Angaben hin.
 
@@ -404,6 +404,8 @@ gepflegt, die LUSD liefert sie nicht, und an die Klassenleitungen geht nur, was 
 sendet (Mahnlauf, Abgänger-Kontoauszüge).
 Die Versetzung rückt die Zuordnungen eine Stufe hoch, außer von 6 nach 7 und von 10 in die
 Oberstufe: Dort bildet die Schule die Klassen neu, und die Zuordnung wird neu eingetragen. (§3)
+Die Oberstufe (ET, 12T, 13T) hat keine Klassenleitung; die Betriebsbereitschaft erwartet für
+ihre Klassen keinen Eintrag.
 
 **Zwei Fragen, vier Reiter.** _Alle · Akut fällig · Eskaliert_ fragen, wer Bücher zu spät hat.
 Der vierte Reiter **Schadensersatz** fragt, wer Geld schuldet: Sobald für ein Kind ein Verlust
