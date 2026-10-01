@@ -63,7 +63,7 @@
 	{/if}
 {/snippet}
 
-<div class="flex-1 flex flex-col min-h-0">
+<div>
 	<div class="flex items-center justify-between mb-3">
 		<h3 class="text-base font-medium text-slate-500">
 			Erwartete Positionen ({totalItems} Exemplare)
@@ -78,64 +78,51 @@
 		{/if}
 	</div>
 
-	<div class="flex-1 bg-slate-50/30 flex flex-col">
-		<div class="overflow-y-auto max-h-[50vh] sm:max-h-[60vh] custom-scrollbar">
-			{#if incomingShipments.length === 0}
-				<div class="py-12 text-center text-sm font-medium text-slate-400">
-					Keine Positionen im Zulauf.
+	<!-- Ohne eigenen Scrollkasten: Die Positionen scrollen mit der Seite, der Name des
+	     Lieferanten bleibt dabei oben stehen. -->
+	<div class="bg-slate-50/30">
+		{#if incomingShipments.length === 0}
+			<div class="py-12 text-center text-sm font-medium text-slate-400">
+				Keine Positionen im Zulauf.
+			</div>
+		{:else}
+			{#each incomingShipments as group, _i (_i)}
+				<div
+					class="bg-slate-50/80 border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm"
+				>
+					<div class="font-bold text-slate-800">{group.supplierName}</div>
+					<div class="text-xs font-semibold text-slate-500">Bestellt am {group.date}</div>
 				</div>
-			{:else}
-				{#each incomingShipments as group, _i (_i)}
-					<div
-						class="bg-slate-50/80 border-b border-slate-200 px-6 py-3 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm"
-					>
-						<div class="font-bold text-slate-800">{group.supplierName}</div>
-						<div class="text-xs font-semibold text-slate-500">Bestellt am {group.date}</div>
-					</div>
-					<Tabelle beschriftung="Bestellte Exemplare im Zulauf">
-						<tbody>
-							{#each group.items as item, _i (_i)}
-								{@const isSelected = item.exemplar_ids.every((/** @type {string} */ id) =>
-									selectedExemplarIds.includes(id)
-								)}
-								<tr aria-selected={isSelected}>
-									<td class="w-12">
-										<Kaestchen
-											checked={isSelected}
-											onchange={(e) => toggleItemSelection(e, item.exemplar_ids || [])}
-											aria-label="{item.titel} auswählen"
-										/>
-									</td>
-									<td class="w-20 shrink-0">
-										{@render coverImage(item)}
-									</td>
-									<td class="font-semibold">{item.titel}</td>
-									<td class="text-right">
-										<span
-											class="inline-flex items-center justify-center min-w-14 h-14 px-2 rounded-xl bg-blue-50 text-blue-800 text-3xl font-extrabold shadow-inner border border-blue-200"
-										>
-											{item.menge}
-										</span>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</Tabelle>
-				{/each}
-			{/if}
-		</div>
+				<Tabelle beschriftung="Bestellte Exemplare im Zulauf">
+					<tbody>
+						{#each group.items as item, _i (_i)}
+							{@const isSelected = item.exemplar_ids.every((/** @type {string} */ id) =>
+								selectedExemplarIds.includes(id)
+							)}
+							<tr aria-selected={isSelected}>
+								<td class="w-12">
+									<Kaestchen
+										checked={isSelected}
+										onchange={(e) => toggleItemSelection(e, item.exemplar_ids || [])}
+										aria-label="{item.titel} auswählen"
+									/>
+								</td>
+								<td class="w-20 shrink-0">
+									{@render coverImage(item)}
+								</td>
+								<td class="font-semibold">{item.titel}</td>
+								<td class="text-right">
+									<span
+										class="inline-flex items-center justify-center min-w-14 h-14 px-2 rounded-xl bg-blue-50 text-blue-800 text-3xl font-extrabold shadow-inner border border-blue-200"
+									>
+										{item.menge}
+									</span>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</Tabelle>
+			{/each}
+		{/if}
 	</div>
 </div>
-
-<style>
-	.custom-scrollbar::-webkit-scrollbar {
-		width: 6px;
-	}
-	.custom-scrollbar::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	.custom-scrollbar::-webkit-scrollbar-thumb {
-		background-color: #cbd5e1;
-		border-radius: 6px;
-	}
-</style>

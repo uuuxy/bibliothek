@@ -66,6 +66,12 @@
 </table>
 
 <style>
+	/* Bezugsrahmen für die unsichtbare Beschriftung: Sie ist absolut gesetzt, hinge sonst an
+	   einem fernen Vorfahren und verlängerte die Seite, sobald die Tabelle unter dem
+	   Fensterrand liegt. */
+	table {
+		position: relative;
+	}
 	table :global(th) {
 		height: 2.5rem;
 		padding: 0 1rem;
