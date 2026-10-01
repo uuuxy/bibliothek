@@ -462,6 +462,12 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Teardown löscht die E2E-Bestellungen). In der
   vollen Suite legt eine alphabetisch frühere Spec sie an. Nach dem Muster von `seedBenutzer`
   selbst anlegen.
+- `e2e/kontrast.spec.js` scheitert im zweiten Lauf der Suite auf derselben kleinen Datenbank
+  (gefunden am 01.10.2026, an einem eigenen Stack zweimal nachgestellt):
+  `page.getByTitle('Leserdatei')` trifft neben dem Menüpunkt auch die Kachel eines Buchs, dessen
+  Titel so beginnt, und `e2e/leserdatei.spec.js` lässt „Leserdateibuch …" samt Exemplar und
+  Ausleihe liegen. Auf frischer Datenbank läuft kontrast vor leserdatei und ist grün. Den
+  Menüpunkt genau treffen oder das Buch aufräumen.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das
