@@ -429,18 +429,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- **Der Knopf „Scanner" der Titel-Verwaltung speichert kein gefundenes Buch** (gefunden am
-  01.10.2026, am lokalen Stack nachgestellt). `StrichcodeScanner.svelte` reicht die Antwort von
-  `GET /api/lookup/{isbn}` an `IsbnLookupDialog.svelte` weiter. Die Antwort trägt keine ISBN:
-  Der Dialog zeigt „ISBN:" leer und schickt `POST /api/books` ohne `isbn`, der Server antwortet
-  400 „isbn ist erforderlich". Nur wenn das Nachschlagen nichts findet, geht die ISBN mit. So
-  seit dem ersten Commit. Fach, Klassenstufe und Bestand sind Pflicht, ohne dass der Dialog es
-  sagt: Fehlt eines, tut „Speichern" nichts. Der Dialog ist eine zweite Tür neben der Maske
-  „Neues Buch" und kennt deren Regeln nicht: Signatur-Pflicht für Bücherei-Titel,
-  Lernmittel-Schalter, die Rückfrage bei vergebener ISBN und die Vorgabe ein Exemplar.
-  Entschieden am 01.10.2026: Der Knopf öffnet die Maske „Neues Buch" mit eingeschalteter
-  Kamera, der eigene Dialog entfällt und mit ihm das Hochladen eines Fotos mit Strichcode.
-  Laut, Kategorie B.
 - Die ISBN-Abfrage der Maske „Neues Buch" steht zweimal (gefunden am 01.10.2026, am Code
   gelesen): `IsbnFeld.svelte` für Feld und Knopf, `handleScan` in `BuchFormular.svelte` für
   den Kamera-Scan. Beide füllen dieselben Felder aus `GET /api/lookup/{isbn}`; scheitert die
@@ -457,7 +445,7 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   (`inventur/metadaten_anbieter.go`) nimmt MARC 245 $c in den Titel, wenn darin kein „ / "
   steht. Die ISBN 9783551551672 ergibt „Harry Potter und der Stein der Weisen Joanne K.
   Rowling. Aus dem Engl. von Klaus Fritz", 9783791504650 „Tintenherz Cornelia Funke. Mit Ill.
-  der Autorin". Betrifft die Maske „Neues Buch", den Scanner und das Bestellen per ISBN.
+  der Autorin". Betrifft die Maske „Neues Buch" und das Bestellen per ISBN.
   Kategorie B.
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der

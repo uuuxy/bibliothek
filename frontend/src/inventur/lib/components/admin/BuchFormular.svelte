@@ -11,9 +11,13 @@
 	import { frageWennVergeben } from '../../buch_speichern.js';
 	import { BookOpen, Printer, Trash2, X } from '@lucide/svelte';
 
-	/** onDelete kommt nur mit dem Recht delete_books (admin/+page) — ohne Recht gibt es den Knopf nicht. */
+	/**
+	 * onDelete kommt nur mit dem Recht delete_books (admin/+page) — ohne Recht gibt es den Knopf nicht.
+	 * wirdGescannt: Die Kamera der Maske; der Knopf „Scanner" der Titelliste öffnet sie eingeschaltet.
+	 */
 	let {
 		formular = $bindable(),
+		wirdGescannt = $bindable(false),
 		onClose,
 		onSave,
 		onCoverUpload,
@@ -22,7 +26,6 @@
 		onDelete = undefined
 	} = $props();
 
-	let wirdGescannt = $state(false);
 	/** ISBN-Abfrage gescheitert — „nichts gefunden" und „Dienst weg" sehen sonst gleich aus. */
 	let lookupFehler = $state(false);
 	// Der Schlagwort-Vorschlag der DNB (entschieden am 30.09.2026): Beide ISBN-Abfragen — der

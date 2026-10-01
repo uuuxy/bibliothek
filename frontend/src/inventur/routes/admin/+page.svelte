@@ -8,7 +8,6 @@
 	import { appState, showToast } from '$lib/store.svelte.js';
 	import BookTable from '$lib/components/admin/BookTable.svelte';
 	import BuchFormular from '$lib/components/admin/BuchFormular.svelte';
-	import StrichcodeScanner from '$lib/components/StrichcodeScanner.svelte';
 	import AdminBuchAktionen from '$lib/components/admin/AdminBuchAktionen.svelte';
 	import ClassAssignPicker from '$lib/components/admin/ClassAssignPicker.svelte';
 	import { leeresBuchFormular } from '$lib/components/admin/buch_form_optionen.js';
@@ -78,6 +77,12 @@
 		istBearbeitenModus = true;
 	}
 
+	/** Der Knopf „Scanner": dieselbe Maske wie „Neues Buch", die Kamera ist schon an. */
+	function neuesBuchScannen() {
+		neuesBuchErstellen();
+		wirdGescannt = true;
+	}
+
 	/** @param {any} buch */
 	async function oeffneDetails(buch) {
 		// Immer das VOLLE Buch vom Einzel-Read laden: Die Katalogliste ist bewusst
@@ -144,25 +149,13 @@
 			showToast(/** @type {any} */ (fehler).message, 'error');
 		}
 	}
-
-	function nachScanAktion() {
-		aktualisiereBuecher();
-	}
 </script>
 
 <div class="relative min-h-[calc(100vh-8rem)]">
-	{#if wirdGescannt}
-		<div
-			class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-		>
-			<!-- Bewusst KEIN Modal.svelte (Overlay-Durchgang 07.09.2026): Das hier ist eine
-			     Kamera-Fläche wie StrichcodeScannerOverlay, kein Dialog — sie trägt weder Feld noch
-			     Überschrift, und Escape/Hintergrundklick gehören dem Scanner. -->
-			<StrichcodeScanner onClose={() => (wirdGescannt = false)} onCreated={nachScanAktion} />
-		</div>
-	{:else if istBearbeitenModus}
+	{#if istBearbeitenModus}
 		<BuchFormular
 			bind:formular
+			bind:wirdGescannt
 			onClose={() => (istBearbeitenModus = false)}
 			onSave={() => buchAktionen.saveChanges()}
 			onCoverUpload={(/** @type {any} */ ereignis) => buchAktionen.handleCoverUpload(ereignis)}
@@ -176,7 +169,7 @@
 			loading={wirdGeladen}
 			onOpenDetail={oeffneDetails}
 			onCreateNew={neuesBuchErstellen}
-			onScan={() => (wirdGescannt = true)}
+			onScan={neuesBuchScannen}
 			onDelete={aktionBuecherLoeschen}
 			onAssignClass={(ids) => (klassenZuweisenIds = ids)}
 			onRetryCovers={aktionExterneCoverRetry}

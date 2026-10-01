@@ -3,7 +3,7 @@
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import Suchpille from '../../../../lib/components/ui/Suchpille.svelte';
 	import Segmente from '../../../../lib/components/ui/Segmente.svelte';
-	import { BookOpen, Plus, RefreshCw, Settings, Trash2 } from '@lucide/svelte';
+	import { BookOpen, Camera, Plus, RefreshCw, Trash2 } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -67,8 +67,10 @@
 			Retry Cover
 		</Button>
 
+		<!-- Öffnet die Maske „Neues Buch" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
+		     an der Kamera im ISBN-Feld und in der Suchpille. -->
 		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
-			<Settings class="w-4 h-4 text-slate-500" aria-hidden="true" />
+			<Camera class="w-4 h-4 text-slate-500" aria-hidden="true" />
 			Scanner
 		</Button>
 

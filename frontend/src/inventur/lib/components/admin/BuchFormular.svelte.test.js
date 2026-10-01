@@ -53,15 +53,16 @@ function server(vergeben) {
 const aufrufe = (anfang) =>
 	vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url).startsWith(anfang));
 
-/** @param {any} formular */
-function maske(formular) {
+/** @param {any} formular @param {{ wirdGescannt?: boolean }} [zusatz] */
+function maske(formular, zusatz = {}) {
 	return render(BuchFormular, {
 		formular,
 		onClose: () => {},
 		onSave: () => {},
 		onCoverUpload: () => {},
 		onCoverNeuHolen: () => {},
-		onAssignClass: () => {}
+		onAssignClass: () => {},
+		...zusatz
 	});
 }
 
@@ -112,5 +113,28 @@ describe('BuchFormular: Kamera-Scan in einer neuen Maske', () => {
 		expect(aufrufe(KATALOG)).toHaveLength(1);
 		expect(String(aufrufe(DIENSTE)[0][0])).toBe(`${DIENSTE}${GESCANNT}`);
 		expect(bestaetigen).not.toHaveBeenCalled();
+	});
+});
+
+// Der Knopf „Scanner" der Titelliste öffnet dieselbe Maske wie „Neues Buch", nur mit
+// eingeschalteter Kamera. Ein eigenes Fenster mit eigenem Speichern gibt es nicht mehr.
+describe('BuchFormular: geöffnet mit eingeschalteter Kamera', () => {
+	it('das Kamera-Fenster steht sofort, der Scan trägt die ISBN ein und schließt es', async () => {
+		server(false);
+		const formular = $state(leeresBuchFormular());
+		const screen = maske(formular, { wirdGescannt: true });
+
+		expect(screen.getByRole('heading', { name: 'ISBN scannen' })).toBeTruthy();
+		expect(screen.getByRole('heading', { name: 'Neues Buch' })).toBeTruthy();
+
+		await waitFor(() => expect(formular.isbn).toBe(GESCANNT), { timeout: 4000 });
+		await waitFor(() => expect(screen.queryByRole('heading', { name: 'ISBN scannen' })).toBeNull());
+		await waitFor(() => expect(formular.title).toBe('Green Line 3'));
+	});
+
+	it('ohne diesen Wunsch bleibt die Kamera aus', () => {
+		const formular = $state(leeresBuchFormular());
+		const screen = maske(formular);
+		expect(screen.queryByRole('heading', { name: 'ISBN scannen' })).toBeNull();
 	});
 });

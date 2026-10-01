@@ -15,7 +15,13 @@ import { uiLogin } from './helpers.js';
  * die Kamera aktiv ist. Ein Bild ohne Meldung wäre die halbe Wahrheit — und eine Meldung
  * ohne Bild die andere Hälfte.
  */
-test('Die Kamera der Theke startet und meldet sich aktiv', async () => {
+
+/**
+ * Öffnet einen Browser mit künstlicher Kamera, meldet an und übergibt die Seite samt der
+ * Liste ihrer Seitenfehler.
+ * @param {(page: import('@playwright/test').Page, seitenfehler: string[]) => Promise<void>} ablauf
+ */
+async function mitKuenstlicherKamera(ablauf) {
 	const browser = await chromium.launch({
 		args: [
 			'--use-fake-ui-for-media-stream',
@@ -32,19 +38,50 @@ test('Die Kamera der Theke startet und meldet sich aktiv', async () => {
 		/** @type {string[]} */
 		const seitenfehler = [];
 		page.on('pageerror', (e) => seitenfehler.push(e.message));
-
 		await uiLogin(page);
-		await page.getByRole('button', { name: /Kamera-Barcode-Scanner/ }).click();
-
-		const video = page.locator('video');
-		await expect(video, 'Nach dem Klick muss ein Video-Element stehen').toHaveCount(1);
-		await expect(
-			page.getByText('Kamera aktiv', { exact: false }),
-			'Die Zeile über dem Bild muss den Zustand nennen — „läuft" sieht sonst aus wie „hängt"'
-		).toBeVisible({ timeout: 10_000 });
-
-		expect(seitenfehler, 'Kein Fehler beim Starten der Kamera').toEqual([]);
+		await ablauf(page, seitenfehler);
 	} finally {
 		await browser.close();
 	}
+}
+
+/** @param {import('@playwright/test').Page} page */
+async function erwarteLaufendeKamera(page) {
+	await expect(page.locator('video'), 'Nach dem Klick muss ein Video-Element stehen').toHaveCount(
+		1
+	);
+	await expect(
+		page.getByText('Kamera aktiv', { exact: false }),
+		'Die Zeile über dem Bild muss den Zustand nennen — „läuft" sieht sonst aus wie „hängt"'
+	).toBeVisible({ timeout: 10_000 });
+}
+
+test('Die Kamera der Theke startet und meldet sich aktiv', async () => {
+	await mitKuenstlicherKamera(async (page, seitenfehler) => {
+		await page.getByRole('button', { name: /Kamera-Barcode-Scanner/ }).click();
+		await erwarteLaufendeKamera(page);
+		expect(seitenfehler, 'Kein Fehler beim Starten der Kamera').toEqual([]);
+	});
+});
+
+// Der Knopf „Scanner" der Titel-Verwaltung hatte ein eigenes Fenster mit eigenem Speichern,
+// das ein gefundenes Buch nicht speichern konnte. Er öffnet jetzt die Maske „Neues Buch" mit
+// eingeschalteter Kamera; wer das Kamera-Fenster schließt, tippt die ISBN in die Maske.
+test('Der Knopf „Scanner" öffnet die Maske „Neues Buch" mit laufender Kamera', async () => {
+	await mitKuenstlicherKamera(async (page, seitenfehler) => {
+		await page.goto('/medienkatalog');
+		await page.getByRole('tab', { name: 'Titel-Verwaltung' }).click();
+		await page.getByRole('button', { name: 'Scanner', exact: true }).click();
+
+		await expect(page.getByRole('heading', { name: 'Neues Buch' })).toBeVisible();
+		await expect(page.getByRole('heading', { name: 'ISBN scannen' })).toBeVisible();
+		await erwarteLaufendeKamera(page);
+
+		await page.getByRole('button', { name: 'Scanner schließen' }).click();
+		await expect(page.getByRole('heading', { name: 'ISBN scannen' })).toHaveCount(0);
+		await expect(page.getByRole('heading', { name: 'Neues Buch' })).toBeVisible();
+		await expect(page.locator('#buch-isbn')).toHaveValue('');
+		await expect(page.locator('#buch-bestand')).toHaveValue('1');
+		expect(seitenfehler, 'Kein Fehler beim Öffnen und Schließen').toEqual([]);
+	});
 });

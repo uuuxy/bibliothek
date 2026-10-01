@@ -93,9 +93,7 @@ const KEIN_DIALOG = [
 	// Der Flur-Monitor IST der Bildschirm, kein Overlay über etwas anderem.
 	'src/lib/Monitor.svelte',
 	// Sperrbildschirm: Escape darf ihn gerade NICHT schließen — das ist sein Zweck.
-	'src/lib/components/auth/Sperrbildschirm.svelte',
-	// Nur der Abdunkler; der Dialog darin (StrichcodeScanner) bringt die Taste mit.
-	'src/inventur/routes/admin/+page.svelte'
+	'src/lib/components/auth/Sperrbildschirm.svelte'
 ];
 
 // Zweite Form derselben Regel (Rasterdurchgang 06.09.2026): Ein Bauteil, das Escape
