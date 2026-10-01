@@ -46,12 +46,12 @@
 
 			const neu = !formular.id;
 			const updated = await speichereBuch(formular);
-			// Die Antwort auf das Ändern trägt den Bestand nicht, die Maske schon.
-			const bestand = Number(neu ? updated.stock : formular.stock) || 0;
+			// Die Antwort ist der gespeicherte Titel samt Bestand; die Zeile der Liste wird sie.
+			const bestand = Number(updated.stock) || 0;
 			if (books.some((/** @type {any} */ b) => b.id === updated.id)) {
 				books = books.map((/** @type {any} */ b) => (b.id === updated.id ? updated : b));
 			} else if (stehtInSicht(bestand, appState.bestandsAnsicht)) {
-				books = [{ ...updated, stock: bestand }, ...books];
+				books = [updated, ...books];
 			}
 
 			// Sync with appState so Omnibox/Catalog update immediately

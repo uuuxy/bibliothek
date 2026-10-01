@@ -1,6 +1,8 @@
 package inventur
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"sort"
@@ -176,31 +178,53 @@ func (handler *APIHandler) BearbeiteBuchLesen(antwort http.ResponseWriter, anfra
 		return
 	}
 
-	buecher, fehler := handler.repo.ListBooksByIDs(anfrage.Context(), []string{id})
+	// Die Maske „Titel bearbeiten" lädt hierüber und schickt das Ganze per PUT zurück.
+	// Scheitert das Nachladen der Schlagworte, antwortet der Einzel-Read mit einem Fehler
+	// statt ohne sie: Die Maske öffnet dann gar nicht, statt mit einem leeren Feld, das beim
+	// Speichern als Aussage „keine Schlagworte" zurückkäme.
+	buch, fehler := handler.ladeTitelVoll(anfrage.Context(), id)
+	if errors.Is(fehler, ErrBookNotFound) {
+		writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
+		return
+	}
 	if fehler != nil {
 		log.Printf("Fehler beim Laden des Buches: %v", fehler)
 		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
 		return
 	}
 
-	if len(buecher) == 0 {
-		writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
-		return
-	}
-
-	// Die Maske „Titel bearbeiten" lädt hierüber und schickt das Ganze per PUT zurück.
-	// Scheitert das Nachladen, antwortet der Einzel-Read mit einem Fehler statt ohne
-	// Schlagworte: Die Maske öffnet dann gar nicht, statt mit einem leeren Feld, das beim
-	// Speichern als Aussage „keine Schlagworte" zurückkäme.
-	buch := buecher[0]
-	buch.Schlagworte, fehler = handler.repo.SchlagworteDesTitels(anfrage.Context(), id)
-	if fehler != nil {
-		log.Printf("Fehler beim Laden der Schlagworte: %v", fehler)
-		writeError(antwort, http.StatusInternalServerError, "Interner Serverfehler")
-		return
-	}
-
 	writeJSON(antwort, http.StatusOK, buch)
+}
+
+// ladeTitelVoll liest einen Titel, wie die Maske ihn bekommt: mit den Bestandszahlen und den
+// Schlagworten. Der Einzel-Read und die Antwort auf das Speichern haben damit dieselbe Form.
+func (handler *APIHandler) ladeTitelVoll(ctx context.Context, id string) (Book, error) {
+	buecher, err := handler.repo.ListBooksByIDs(ctx, []string{id})
+	if err != nil {
+		return Book{}, err
+	}
+	if len(buecher) == 0 {
+		return Book{}, ErrBookNotFound
+	}
+	buch := buecher[0]
+	buch.Schlagworte, err = handler.repo.SchlagworteDesTitels(ctx, id)
+	if err != nil {
+		return Book{}, err
+	}
+	return buch, nil
+}
+
+// gespeichert ist die Antwort auf Anlegen und Ändern: der Titel, wie er jetzt in der Datenbank
+// steht. Die Titelliste ersetzt ihre Zeile durch die Antwort; aus den gesendeten Angaben
+// allein stünde dort der Bestand 0. Scheitert das Nachlesen, bleibt es bei den gesendeten
+// Angaben, denn gespeichert ist der Titel.
+func (handler *APIHandler) gespeichert(ctx context.Context, gesendet Book) Book {
+	buch, err := handler.ladeTitelVoll(ctx, gesendet.ID)
+	if err != nil {
+		log.Printf("Titel %s nach dem Speichern nicht lesbar: %v", gesendet.ID, err)
+		return gesendet
+	}
+	return buch
 }
 
 // BearbeiteBuchVorhanden sagt vor dem Speichern, was die Dublettenkontrolle zu einer ISBN

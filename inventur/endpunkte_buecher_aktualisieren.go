@@ -103,7 +103,7 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 	}
 
 	buch.ID = id
-	writeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": buch})
+	writeJSON(antwort, http.StatusOK, map[string]any{"message": "buch aktualisiert", "data": handler.gespeichert(anfrage.Context(), buch)})
 }
 
 // bestandsangabe liest aus der Eingabe, was sie zum Bestand sagt. Ohne das Feld „stock" sagt

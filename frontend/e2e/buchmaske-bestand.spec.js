@@ -129,6 +129,17 @@ test.describe.serial('Buchmaske: Bestand', () => {
 		expect(stand()).toBe('5/0/2');
 	});
 
+	// Die Antwort auf das Speichern ist der gespeicherte Titel samt Bestand. Aus den gesendeten
+	// Angaben stand in der Zeile nach jedem Speichern eine 0, bis die Liste neu geladen wurde.
+	test('die Zeile der Titelliste zeigt nach dem Speichern den Bestand', async ({ page }) => {
+		await oeffneTitel(page, '5');
+		await page.locator('#buch-signatur').fill('Bes 5');
+		await speichern(page);
+		await expect(page.getByText('Buch erfolgreich gespeichert!')).toBeVisible();
+		const zellen = page.locator('tr', { hasText: TITEL }).first().locator('td');
+		await expect(zellen.nth((await zellen.count()) - 2)).toHaveText('5');
+	});
+
 	test('ein geleertes Feld lässt den Bestand, wie er ist, und sagt es', async ({ page }) => {
 		await oeffneTitel(page, '5');
 		await page.locator('#buch-bestand').fill('');

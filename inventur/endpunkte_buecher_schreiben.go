@@ -254,7 +254,7 @@ func (handler *APIHandler) BearbeiteBuchErstellen(antwort http.ResponseWriter, a
 		return
 	}
 
-	writeJSON(antwort, http.StatusCreated, map[string]any{"message": "buch erstellt", "data": buch})
+	writeJSON(antwort, http.StatusCreated, map[string]any{"message": "buch erstellt", "data": handler.gespeichert(anfrage.Context(), buch)})
 }
 
 // bestandOderNull löst den Zeiger für den ANLEGEN-Weg auf: Wer beim Anlegen keinen
