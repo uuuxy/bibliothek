@@ -11,13 +11,15 @@
 // Bestellweg die Verknüpfung überhaupt schreibt. Genau diese Lücke hat dieses Projekt
 // zweimal getroffen: eine Funktion, isoliert grün, über den Live-Pfad nie erreicht.
 //
-// Der Mailversand ist hier unbedenklich: Der Handler speichert die Bestellung ZUERST und
-// antwortet auch dann mit 200, wenn der Versand scheitert — und der lokale Stack zeigt
-// mit 127.0.0.1:1 ins Leere. Es verlässt nichts diesen Rechner.
+// Der Bestellweg verschickt nach dem Speichern die Bestellmail, und der lokale Stack trägt
+// den Mailserver aus der .env. Der Lieferant hat hier deshalb eine Adresse, die keine ist:
+// Der Versand scheitert an ihr, bevor eine Verbindung entsteht (api/mail_sender.go,
+// TestSendEmail_InvalidRecipient), und der Handler antwortet trotzdem mit 200.
 import { test, expect } from '@playwright/test';
 import { uiLogin, apiPost, csrfToken } from './helpers.js';
 
 const LIEFERANT = 'E2E-Detail-Haendler';
+const KEINE_ADRESSE = 'keine Adresse';
 const MENGE = 3;
 
 test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', async ({ page }) => {
@@ -28,7 +30,7 @@ test('Bestellung öffnen zeigt Positionen und die gelieferten Exemplarnummern', 
 	// Ansicht gegen Daten, die der Produktivpfad so nie erzeugt.
 	const lieferantRes = await apiPost(page, '/api/lieferanten', {
 		name: LIEFERANT,
-		email: 'detail@example.invalid',
+		email: KEINE_ADRESSE,
 		customerNumber: 'K-DETAIL'
 	});
 	expect(lieferantRes.ok(), `Lieferant anlegen: ${await lieferantRes.text()}`).toBeTruthy();

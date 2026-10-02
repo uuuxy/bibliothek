@@ -457,6 +457,15 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   steht; vom Katalog aus brächen sie ab wie der Kontrast-Test bis zum 02.10.2026. Abhilfe:
   `menuepunkt` aus `e2e/helpers.js` an allen Stellen, und die Spec räumt ihren Titel ab.
   Kategorie B.
+- Browser-Tests lassen Daten liegen (gezählt am 02.10.2026 in der lokalen Datenbank; in der CI
+  ist die Datenbank je Lauf frisch). `e2e/bestellung-detail.spec.js` bestellt je Lauf drei
+  Exemplare am ersten Titel des Katalogs und nimmt nur den Lieferanten wieder weg; der
+  Teardown löscht die Bestellung, die Exemplare bleiben „im Zulauf" ohne Bestellung.
+  `e2e/abgaenger-management.spec.js` räumt nichts ab (133 Titel „Abgänger Buch …"), der
+  Wareneingang-Test in `e2e/scrollbereiche.spec.js` lässt je Lauf acht Titel mit je einem
+  Exemplar im Zulauf liegen. Von `e2e/leserdatei.spec.js` stehen aus der Zeit vor dem
+  02.10.2026 noch 84 Titel, 83 Ausleihen, 86 Leser und 81 Konten. Lokale Zahlen tragen diese
+  Reste mit. Abhilfe je Spec: eigener Titel, Aufräumen über die Kennung. Kategorie B.
 - Gegen den Entwicklungsserver (`E2E_BASE_URL=http://localhost:5173`) sind drei Specs rot, die
   am gebauten Stand grün sind (gemessen am 02.10.2026). Die Barrierefreiheits-Prüfung des
   Mahnwesens läuft in die Zeitüberschreitung, und `e2e/zugangsbuch.spec.js` findet den Zugang
