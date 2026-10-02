@@ -10,7 +10,20 @@
 // overflow-Container der Bestellhistorie abgeschnitten wird, bestünde eine reine
 // Attribut-Prüfung — hier fällt beides durch.
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, seedBestellung, oeffneBestellungsDetail } from './helpers.js';
+
+// Die Bestellung, deren Detailansicht geprüft wird, legt der Test selbst an: Er läuft
+// damit auch allein und auf einer leeren Bestellhistorie.
+let marke = '';
+/** @type {(() => void) | undefined} */
+let aufraeumen;
+test.beforeEach(() => {
+	({ marke, aufraeumen } = seedBestellung());
+});
+test.afterEach(() => {
+	aufraeumen?.();
+	aufraeumen = undefined;
+});
 
 const SCREENS = [
 	['Bestellungen', '/bestellungen'],
@@ -88,14 +101,9 @@ test('Jedes Symbol erklärt sich beim Überfahren', async ({ page }) => {
 	}
 
 	// Die Bestellhistorie ausdrücklich: Ihre Symbole stehen in der Detailansicht hinter
-	// einem Zeilenklick — ein Bildschirm, den kein Direktaufruf erreicht. Ohne stille Wächter: Findet der Test den Messpunkt nicht,
-	// gehört er rot (ein übersprungener Messpunkt sieht aus wie ein bestandener).
+	// einem Zeilenklick, die kein Direktaufruf erreicht.
 	await page.goto('/bestellungen');
-	await page.getByRole('tab', { name: 'Bestellhistorie' }).click();
-	const zeilen = page.locator('tbody tr');
-	await zeilen.first().waitFor();
-	await zeilen.first().click();
-	await page.getByRole('heading', { name: 'Bestellte Titel' }).waitFor();
+	await oeffneBestellungsDetail(page, marke);
 	geprueft += await pruefeBildschirm(page, 'Bestellhistorie (Detailansicht)', fehler);
 
 	expect(

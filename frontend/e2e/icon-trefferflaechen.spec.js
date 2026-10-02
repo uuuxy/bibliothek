@@ -19,9 +19,22 @@
 // ein anderer Button als der zum Einklappen — er war beim ersten Messen unsichtbar
 // und dadurch übersehen).
 import { test, expect } from '@playwright/test';
-import { uiLogin, gehZu } from './helpers.js';
+import { uiLogin, gehZu, seedBestellung, oeffneBestellungsDetail } from './helpers.js';
 
 const MIN_FLAECHE = 32; // px — Material 3 Icon-Button „extra small"
+
+// Die Bestellung, deren Detailansicht gemessen wird, legt der Test selbst an: Er läuft
+// damit auch allein und auf einer leeren Bestellhistorie.
+let marke = '';
+/** @type {(() => void) | undefined} */
+let aufraeumen;
+test.beforeEach(() => {
+	({ marke, aufraeumen } = seedBestellung());
+});
+test.afterEach(() => {
+	aufraeumen?.();
+	aufraeumen = undefined;
+});
 
 const SCREENS = [
 	['Bestellungen', '/bestellungen'],
@@ -109,23 +122,11 @@ test('Icon-Buttons halten die Mindest-Trefferfläche', async ({ page }) => {
 		await gehZu(page, pfad);
 		await warteAufStabileButtons(page);
 
-		// Die Symbole der Bestellhistorie stecken in einer zugeklappten Zeile.
-		//
-		// Bewusst OHNE if-visible-Wächter: Ein solcher Wächter hat diesen Test in der
-		// ersten Fassung still übersprungen — der Reiter war im Moment der Prüfung noch
-		// nicht da, die Zeile wurde nie aufgeklappt, und der Test lief grün, obwohl ein
-		// 22-px-Button auf dem Bildschirm stand. Ein übersprungener Messpunkt sieht aus
-		// wie ein bestandener. Deshalb hier harte Erwartungen: Findet der Test seinen
-		// Messpunkt nicht, ist er rot und nicht grün.
+		// Die Symbole der Bestellhistorie (Nachdruck, Titelsatz) stehen in der Detailansicht
+		// einer Bestellung. Der Helfer wartet hart auf beide: Ein übersprungener Messpunkt
+		// sähe aus wie ein bestandener.
 		if (pfad === '/bestellungen') {
-			await page.getByRole('tab', { name: 'Bestellhistorie' }).click();
-			const zeilen = page.locator('tbody tr');
-			await zeilen.first().waitFor();
-			await zeilen.first().click();
-			// Seit dem 08.08.2026 fuehrt die Zeile in die Detailansicht, statt aufzuklappen —
-			// die Symbole (Nachdruck, Titelsatz) stehen dort an den Positionen. Gewartet wird
-			// auf deren Ueberschrift: Bleibt sie aus, ist der Messpunkt weg und der Test rot.
-			await page.getByRole('heading', { name: 'Bestellte Titel' }).waitFor();
+			await oeffneBestellungsDetail(page, marke);
 			await warteAufStabileButtons(page);
 		}
 

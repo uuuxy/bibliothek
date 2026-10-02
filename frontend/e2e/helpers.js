@@ -176,6 +176,64 @@ export function seedBestellbedarf(anzahl = 8) {
 	};
 }
 
+/**
+ * Legt eine Bestellung mit einer Position und zwei Exemplaren ohne Etikett an: für Specs,
+ * die in der Bestellhistorie eine Zeile brauchen und in deren Detailansicht die beiden
+ * Symbole an der Position („Etiketten nachdrucken", „Titelsatz öffnen").
+ *
+ * Direkt in der Datenbank statt über POST /api/bestellungen: Der Bestellweg verschickt die
+ * Bestellmail, und der lokale Stack trägt den Mailserver aus der .env. Die Zeilen haben die
+ * Form, die der Bestellweg schreibt (api/order_service.go: Exemplare im Zulauf, nicht
+ * ausleihbar, Etikett offen).
+ *
+ * @returns {{ marke: string, aufraeumen: () => void }} marke: so heißen Lieferant und Titel;
+ *   aufraeumen: Exemplare, Bestellung samt Position, Titel
+ */
+export function seedBestellung() {
+	const s = uniqueSuffix();
+	const marke = `E2E-Bestellung-${s}`;
+	const dieBestellung = `bestellungen_verlauf b, buecher_titel t
+		WHERE b.lieferant_name = '${marke}' AND t.titel = '${marke}'`;
+
+	seedSQL(`
+		INSERT INTO buecher_titel (titel, autor) VALUES ('${marke}', 'E2E');
+		INSERT INTO bestellungen_verlauf (lieferant_name, lieferant_email, anzahl_exemplare, mittel)
+		VALUES ('${marke}', 'e2e@example.invalid', 2, 'land');
+		INSERT INTO bestellungen_positionen (bestellung_id, titel_id, titel_name, menge, mit_vorab_barcode)
+		SELECT b.id, t.id, t.titel, 2, true FROM ${dieBestellung};
+		INSERT INTO buecher_exemplare
+			(barcode_id, titel_id, bestellung_id, bestellstatus, ist_ausleihbar, zustand_notiz)
+		SELECT 'B-E2EB' || g || '-${s}', t.id, b.id, 'im_zulauf', false, 'Im Zulauf - ${marke}'
+		FROM generate_series(1, 2) g, ${dieBestellung};
+	`);
+
+	const aufraeumen = () => {
+		seedSQL(`
+			DELETE FROM buecher_exemplare
+			WHERE titel_id IN (SELECT id FROM buecher_titel WHERE titel = '${marke}');
+			DELETE FROM bestellungen_verlauf WHERE lieferant_name = '${marke}';
+			DELETE FROM buecher_titel WHERE titel = '${marke}';
+		`);
+	};
+	return { marke, aufraeumen };
+}
+
+/**
+ * Öffnet im Bestellwesen die Detailansicht der Bestellung aus seedBestellung und wartet auf
+ * die beiden Symbole ihrer Position. Fehlt eines, fehlt dem Aufrufer der Messpunkt, und er
+ * wird rot statt grün.
+ * @param {import('@playwright/test').Page} page  steht auf /bestellungen
+ * @param {string} marke  aus seedBestellung
+ */
+export async function oeffneBestellungsDetail(page, marke) {
+	await page.getByRole('tab', { name: 'Bestellhistorie' }).click();
+	await page.getByRole('button', { name: new RegExp(`bei ${marke} öffnen`) }).click();
+	await page.getByRole('heading', { name: 'Bestellte Titel' }).waitFor({ timeout: 15_000 });
+	for (const symbol of [`Etiketten für ${marke} nachdrucken`, `Titelsatz von ${marke} öffnen`]) {
+		await page.getByRole('button', { name: symbol }).waitFor({ timeout: 15_000 });
+	}
+}
+
 /** 8×8-PNG, damit ein Test ein ECHTES Bild bekommt. Die Größe ist der Punkt: Der
  *  Cover-Proxy liefert bei jedem Fehler ein 1×1-GIF mit Status 200 aus, ein Test gegen
  *  "Bild geladen" ginge daran vorbei. Nur naturalWidth > 1 trennt beides. */

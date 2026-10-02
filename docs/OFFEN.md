@@ -440,12 +440,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- `e2e/icon-trefferflaechen.spec.js` und `e2e/icon-tooltips.spec.js` messen die Bestellhistorie,
-  legen aber keine Bestellung an: Allein oder ohne eine `bestell…`-Spec davor laufen sie in die
-  Zeitüberschreitung (lokal am 23.09.2026 und am 25.09.2026, Bestellhistorie leer; der globale
-  Teardown löscht die E2E-Bestellungen). In der
-  vollen Suite legt eine alphabetisch frühere Spec sie an. Nach dem Muster von `seedBenutzer`
-  selbst anlegen.
 - `e2e/kontrast.spec.js` scheitert im zweiten Lauf der Suite auf derselben kleinen Datenbank
   (gefunden am 01.10.2026, an einem eigenen Stack zweimal nachgestellt):
   `page.getByTitle('Leserdatei')` trifft neben dem Menüpunkt auch die Kachel eines Buchs, dessen
