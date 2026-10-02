@@ -62,7 +62,7 @@
 		<!-- Ohne Datum ist der Knopf gesperrt, statt beim Klick nichts zu tun. -->
 		<button
 			type="button"
-			class="icon-btn text-success disabled:cursor-not-allowed disabled:text-on-surface/[0.38]"
+			class="icon-btn text-success disabled:cursor-not-allowed disabled:text-on-surface/38"
 			onclick={speichere}
 			disabled={speichert || !neuesDatum}
 			aria-label="Rückgabedatum speichern"
@@ -72,7 +72,7 @@
 		</button>
 		<button
 			type="button"
-			class="icon-btn text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/[0.38]"
+			class="icon-btn text-on-surface-variant disabled:cursor-not-allowed disabled:text-on-surface/38"
 			onclick={() => (bearbeitet = false)}
 			disabled={speichert}
 			aria-label="Bearbeiten abbrechen"

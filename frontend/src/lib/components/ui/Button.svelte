@@ -79,11 +79,11 @@
 	// (Druck-Center) grau bei voller Deckkraft. Zwei Knöpfe, derselbe Zustand, zwei
 	// Aussagen.
 	//
-	// !-Präfix, weil die Varianten-Klassen (bg-blue-600 …) dieselbe Spezifität haben und
+	// Mit `!`, weil die Varianten-Klassen (bg-blue-600 …) dieselbe Spezifität haben und
 	// bei gleicher Spezifität die Stylesheet-Reihenfolge entscheidet, nicht die im
 	// class-Attribut — dieselbe Falle wie bei den Farb-Overrides weiter unten.
 	const disabledClasses =
-		'disabled:cursor-not-allowed disabled:!bg-on-surface/[0.12] disabled:!text-on-surface/[0.38] disabled:!border-transparent disabled:!shadow-none';
+		'disabled:cursor-not-allowed disabled:bg-on-surface/12! disabled:text-on-surface/38! disabled:border-transparent! disabled:shadow-none!';
 
 	const baseClasses = `m3-state inline-flex items-center justify-center gap-2 font-semibold transition-colors border rounded-full cursor-pointer ${disabledClasses} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2`;
 

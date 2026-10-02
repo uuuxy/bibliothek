@@ -118,7 +118,7 @@
 						<div class="flex items-center justify-end gap-1">
 							<button
 								type="button"
-								class="icon-btn text-primary disabled:cursor-not-allowed disabled:text-on-surface/[0.38]"
+								class="icon-btn text-primary disabled:cursor-not-allowed disabled:text-on-surface/38"
 								onclick={() => handleExtend(book)}
 								disabled={extendingIds.has(ausleiheId)}
 								data-tip="Um die Standard-Leihfrist verlängern"

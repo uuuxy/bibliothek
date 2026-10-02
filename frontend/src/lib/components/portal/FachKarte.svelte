@@ -45,7 +45,7 @@
 				aria-hidden="true"
 			/>
 			<span
-				class="inline-flex min-w-[6.5rem] shrink-0 justify-center rounded-full bg-secondary-container px-3 py-0.5 text-xs font-semibold tabular-nums text-on-secondary-container"
+				class="inline-flex min-w-26 shrink-0 justify-center rounded-full bg-secondary-container px-3 py-0.5 text-xs font-semibold tabular-nums text-on-secondary-container"
 				>{fach.gesamt} Exemplare</span
 			>
 			<span class="truncate text-base font-medium text-on-surface">{name}</span>
