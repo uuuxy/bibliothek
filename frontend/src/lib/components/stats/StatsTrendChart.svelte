@@ -120,27 +120,26 @@
 <div class="w-full h-full flex flex-col">
 	<!-- Kopf: Titel + Legende (Legende immer vorhanden → Identität nie farb-only) -->
 	<div class="flex flex-wrap items-baseline justify-between gap-2 mb-1">
-		<h3 class="text-base font-medium text-slate-500">Aktivität pro Monat</h3>
+		<h3 class="text-base font-medium text-on-surface-variant">Aktivität pro Monat</h3>
 		<div class="flex items-center gap-4 text-xs font-semibold">
-			<span class="flex items-center gap-1.5 text-slate-600">
+			<span class="flex items-center gap-1.5 text-on-surface-variant">
 				<span class="w-2.5 h-2.5 rounded-sm" style="background:{FARBE_AUSLEIHEN}"></span>Ausleihen
 			</span>
-			<span class="flex items-center gap-1.5 text-slate-600">
+			<span class="flex items-center gap-1.5 text-on-surface-variant">
 				<span class="w-2.5 h-2.5 rounded-sm" style="background:{FARBE_RUECKGABEN}"></span>Rückgaben
 			</span>
 		</div>
 	</div>
-	<p class="text-xs text-slate-400 mb-2">Letzte 12 Monate · nach Ausleih- bzw. Rückgabedatum</p>
+	<p class="text-xs text-on-surface-variant">Letzte 12 Monate · nach Ausleih- bzw. Rückgabedatum</p>
 
 	{#if !hatDaten}
 		<div
-			class="flex-1 flex flex-col items-center justify-center text-center text-xs text-slate-400 font-medium"
+			class="mt-2 flex-1 flex flex-col items-center justify-center text-center text-xs text-on-surface-variant font-medium"
 		>
-			<span class="text-2xl block mb-2">📈</span>
 			Noch keine Ausleih-Aktivität im letzten Jahr.
 		</div>
 	{:else}
-		<div class="relative flex-1 min-h-0" bind:clientWidth={boxW} bind:clientHeight={boxH}>
+		<div class="relative mt-2 flex-1 min-h-0" bind:clientWidth={boxW} bind:clientHeight={boxH}>
 			<svg
 				viewBox="0 0 {VBW} {VBH}"
 				class="block w-full h-full"
@@ -164,7 +163,7 @@
 						y={t.y}
 						text-anchor="end"
 						dominant-baseline="middle"
-						class="fill-slate-400"
+						class="fill-on-surface-variant"
 						style="font-size:11px; font-variant-numeric:tabular-nums"
 						>{t.val.toLocaleString('de-DE')}</text
 					>
@@ -189,7 +188,7 @@
 						x={g.cx}
 						y={baselineY + 16}
 						text-anchor="middle"
-						class="fill-slate-400"
+						class="fill-on-surface-variant"
 						style="font-size:11px">{monatLabel(g.monat)}</text
 					>
 				{/each}

@@ -1,15 +1,16 @@
 <script>
 	import Tabelle from './components/ui/Tabelle.svelte';
-	import { coverSrc } from './utils/coverSrc.js';
 	import { formatEuro as euro } from './utils/format.js';
 	import { uiStore } from './stores/uiStore.svelte.js';
 	import OverdueWidget from './OverdueWidget.svelte';
 	import StatsTrendChart from './components/stats/StatsTrendChart.svelte';
 	import Button from './components/ui/Button.svelte';
+	import Segmente from './components/ui/Segmente.svelte';
+	import BuchCover from './components/ui/BuchCover.svelte';
 	import PageShell from './components/layout/PageShell.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
 	import { statistikAbruf } from './components/stats/statistikAbruf.svelte.js';
-	import { ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
+	import { ChartColumn, ChevronRight, CircleCheck, TriangleAlert } from '@lucide/svelte';
 
 	// Flächen: weiß mit Umriss, keine Erhebung, kein Grau (Absprache vom 06.09.2026: „wieder grau?").
 	const FLAECHE = 'bg-surface rounded-xl border border-outline-variant';
@@ -31,24 +32,24 @@
 	}
 
 	const TIMEFRAMES = [
-		{ value: 'all', label: 'Alle' },
-		{ value: 'schuljahr', label: 'Schuljahr' },
-		{ value: 'monat', label: 'Monat' }
+		{ wert: 'all', text: 'Alle' },
+		{ wert: 'schuljahr', text: 'Schuljahr' },
+		{ wert: 'monat', text: 'Monat' }
 	];
 
 	const BESTAND_TYPES = [
-		{ value: '', label: 'Gesamt' },
-		{ value: 'freihand', label: 'Freihand' },
-		{ value: 'lmf', label: 'LMF' }
+		{ wert: '', text: 'Gesamt' },
+		{ wert: 'freihand', text: 'Freihand' },
+		{ wert: 'lmf', text: 'LMF' }
 	];
 
 	// Die beiden Sichten der „Bestands-Analysen"-Card. detailLabel ist der Name, unter dem
 	// die Detailseite firmiert — er trägt auch das aria-label des Drill-Down-Buttons.
 	const ANALYSEN = [
-		{ value: 'renner', label: 'Renner', detailLabel: 'Beliebteste Titel (Die Renner)' },
-		{ value: 'ladenhueter', label: 'Ladenhüter', detailLabel: 'Ladenhüter' }
+		{ wert: 'renner', text: 'Renner', detailLabel: 'Beliebteste Titel (Die Renner)' },
+		{ wert: 'ladenhueter', text: 'Ladenhüter', detailLabel: 'Ladenhüter' }
 	];
-	const aktiveAnalyse = $derived(ANALYSEN.find((a) => a.value === analyse) ?? ANALYSEN[0]);
+	const aktiveAnalyse = $derived(ANALYSEN.find((a) => a.wert === analyse) ?? ANALYSEN[0]);
 
 	/** @param {number} v */
 
@@ -65,7 +66,7 @@
 	// melden gibt. Bei 0 bleiben sie ruhig-grün — so behält Rot seine Signalwirkung und der
 	// Bestzustand sieht nicht wie eine Alarmtafel aus.
 	const verlusteFarbe = $derived(
-		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'text-rose-600' : 'text-emerald-600'
+		(stats?.loss_stats?.verlorene_exemplare ?? 0) > 0 ? 'text-error' : 'text-success'
 	);
 
 	// Zweiter, farbunabhängiger Kanal (WCAG 1.4.1): Bei Handlungsbedarf erscheint zusätzlich
@@ -105,45 +106,23 @@
 	<TriangleAlert class={klasse} aria-hidden="true" />
 {/snippet}
 
-<!-- Segmented Control (Material 3): eine Pillen-Gruppe, aktives Segment als weiße Kapsel.
-     Ein Snippet für alle drei Vorkommen (Bestand, Zeitraum, Analyse-Umschalter). -->
-{#snippet pills(items, current, select, ariaLabel)}
-	<div
-		class="flex items-center bg-slate-100 p-1 rounded-full border border-slate-200/70"
-		role="group"
-		aria-label={ariaLabel}
-	>
-		{#each items as it (it.value)}
-			<button
-				type="button"
-				onclick={() => select(it.value)}
-				aria-pressed={current === it.value}
-				class="px-3.5 py-1 text-sm font-bold rounded-full cursor-pointer transition-all whitespace-nowrap {current ===
-				it.value
-					? 'bg-white text-slate-900 shadow-xs'
-					: 'text-slate-500 hover:text-slate-800'}">{it.label}</button
-			>
-		{/each}
-	</div>
-{/snippet}
-
 <!-- KPI-Kachel: Zahl groß und dünn, Label fett (M3-Typografie); Fläche = „filled card" (Gate: e2e/m3-bauform.spec.js). -->
 {#snippet kpi(label, value, hint, valueClass, status = /** @type {'warn' | null} */ (null))}
 	<div class="{FLAECHE} p-5 flex flex-col justify-between gap-3 text-left">
-		<span class="text-sm font-medium text-slate-500">{label}</span>
+		<span class="text-sm font-medium text-on-surface-variant">{label}</span>
 		<span
 			class="text-4xl font-light tracking-tight tabular-nums leading-none flex items-center gap-2 {valueClass}"
 		>
 			{#if status === 'warn'}{@render warnIcon('w-6 h-6 shrink-0')}{/if}
 			<span class="truncate">{value}</span>
 		</span>
-		<span class="text-sm text-slate-400 leading-snug">{hint}</span>
+		<span class="text-sm text-on-surface-variant leading-snug">{hint}</span>
 	</div>
 {/snippet}
 
 <!-- Kopfzeile jeder großen Card: Label links, optionale Aktionen rechts. -->
 {#snippet cardTitel(label)}
-	<h3 class="text-base font-medium text-slate-500">{label}</h3>
+	<h3 class="text-base font-medium text-on-surface-variant">{label}</h3>
 {/snippet}
 
 {#snippet drillDownButton()}
@@ -152,7 +131,7 @@
 		size="sm"
 		type="button"
 		onclick={() => openDetail(analyse)}
-		class="shrink-0 gap-1 border-blue-100 bg-blue-50 text-sm text-blue-600 hover:bg-blue-100"
+		class="shrink-0 gap-1"
 		aria-label="{aktiveAnalyse.detailLabel} — Detailansicht öffnen"
 	>
 		Alle anzeigen
@@ -164,7 +143,7 @@
      fixen Boxhöhe zentrieren (eine <td> würde oben kleben). -->
 {#snippet leerFlaeche(inhalt)}
 	<div
-		class="h-full flex flex-col items-center justify-center text-center text-xs text-slate-400 font-medium"
+		class="h-full flex flex-col items-center justify-center text-center text-xs text-on-surface-variant font-medium"
 	>
 		{@render inhalt()}
 	</div>
@@ -181,13 +160,13 @@
 {/snippet}
 
 {#snippet keineAusleihen()}
-	<span class="text-2xl block mb-2">📊</span>
+	<ChartColumn class="mx-auto mb-2 h-7 w-7" aria-hidden="true" />
 	Noch keine Ausleihen registriert
 {/snippet}
 
 {#snippet keineLadenhueter()}
 	<!-- „Keine Ladenhüter" ist ein GUTER Zustand (kein toter Bestand): ruhiges Grün. -->
-	<CircleCheck class="w-7 h-7 mx-auto mb-2 text-emerald-500" aria-hidden="true" />
+	<CircleCheck class="w-7 h-7 mx-auto mb-2 text-success" aria-hidden="true" />
 	Keine Ladenhüter — der Bestand ist in Bewegung.
 {/snippet}
 
@@ -203,22 +182,14 @@
 				<tr>
 					<td>
 						<div class="flex items-center gap-3 min-w-0">
-							{#if coverSrc(book.cover_url, book.isbn)}
-								<img
-									src={coverSrc(book.cover_url, book.isbn)}
-									alt=""
-									class="w-8 aspect-3/4 object-cover rounded border border-slate-100 shrink-0"
-								/>
-							{:else}
-								<div
-									class="w-8 aspect-3/4 bg-slate-50 border border-slate-200 rounded flex items-center justify-center text-slate-300 text-xs shrink-0"
-								>
-									📖
-								</div>
-							{/if}
-							<span class="font-semibold text-slate-800 text-sm truncate" title={book.titel}
-								>{book.titel}</span
-							>
+							<BuchCover
+								coverUrl={book.cover_url}
+								isbn={book.isbn}
+								titel={book.titel}
+								nurGespeichert
+								dekorativ
+							/>
+							<span class="truncate font-semibold" title={book.titel}>{book.titel}</span>
 						</div>
 					</td>
 					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
@@ -241,7 +212,7 @@
 				<tr>
 					<td class="font-semibold truncate max-w-64" title={book.titel}>{book.titel}</td>
 					<td class="truncate max-w-48" title={book.autor}>{book.autor}</td>
-					<td class="font-semibold text-amber-600 tabular-nums text-right">{book.letzte_aus}</td>
+					<td class="font-semibold text-warning tabular-nums text-right">{book.letzte_aus}</td>
 				</tr>
 			{/each}
 		</tbody>
@@ -274,17 +245,22 @@
 		<!-- Filterleiste: kompakt in EINER Zeile, direkt auf der grauen Fläche. -->
 		<div class="shrink-0 flex flex-wrap items-center justify-end gap-x-6 gap-y-3">
 			<div class="flex items-center gap-2">
-				<span class="text-sm font-medium text-slate-500">Bestand</span>
-				{@render pills(BESTAND_TYPES, selectedType, (v) => (selectedType = v), 'Bestand filtern')}
+				<span class="text-sm font-medium text-on-surface-variant">Bestand</span>
+				<Segmente
+					etikett="Bestand filtern"
+					optionen={BESTAND_TYPES}
+					wert={selectedType}
+					onwahl={(v) => (selectedType = v)}
+				/>
 			</div>
 			<div class="flex items-center gap-2">
-				<span class="text-sm font-medium text-slate-500">Zeitraum</span>
-				{@render pills(
-					TIMEFRAMES,
-					selectedTimeframe,
-					(v) => (selectedTimeframe = v),
-					'Zeitraum filtern'
-				)}
+				<span class="text-sm font-medium text-on-surface-variant">Zeitraum</span>
+				<Segmente
+					etikett="Zeitraum filtern"
+					optionen={TIMEFRAMES}
+					wert={selectedTimeframe}
+					onwahl={(v) => (selectedTimeframe = v)}
+				/>
 			</div>
 		</div>
 
@@ -303,13 +279,13 @@
 					'Gesamtbestand',
 					num(stats.loss_stats.gesamt_bestand),
 					'Physische Buchkopien im System',
-					'text-slate-900'
+					'text-on-surface'
 				)}
 				{@render kpi(
 					'Aktuell verliehen',
 					num(stats.zirkulation?.aktuell_verliehen ?? 0),
 					`von ${num(stats.zirkulation?.aktiver_bestand ?? 0)} aktiven Exemplaren`,
-					'text-blue-600'
+					'text-primary'
 				)}
 				<!-- Momentaufnahme, keine echte Zeitraum-Quote: neutral gefärbt statt grün, damit
 				     kein „gut/schlecht" suggeriert wird (5 % ist für eine Bibliothek nicht per se gut). -->
@@ -317,7 +293,7 @@
 					'Zirkulationsquote',
 					`${num(stats.zirkulationsquote ?? 0)}\u00a0%`,
 					'verliehen ÷ aktiver Bestand',
-					'text-slate-900'
+					'text-on-surface'
 				)}
 				{@render kpi(
 					'Verluste & Schäden',
@@ -346,7 +322,12 @@
 				<div class="shrink-0 flex flex-wrap items-center justify-between gap-3 mb-3">
 					{@render cardTitel('Bestands-Analysen')}
 					<div class="flex items-center gap-2">
-						{@render pills(ANALYSEN, analyse, (v) => (analyse = v), 'Analyse umschalten')}
+						<Segmente
+							etikett="Analyse umschalten"
+							optionen={ANALYSEN}
+							wert={analyse}
+							onwahl={(v) => (analyse = v === 'ladenhueter' ? 'ladenhueter' : 'renner')}
+						/>
 						{@render drillDownButton()}
 					</div>
 				</div>

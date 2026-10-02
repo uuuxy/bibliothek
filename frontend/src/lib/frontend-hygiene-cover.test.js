@@ -31,7 +31,6 @@ const EIGENES_COVER = /coverKandidaten|coverSrc\(/;
 
 const BESTAND = [
 	'src/lib/OpacSearch.svelte',
-	'src/lib/StatsDashboard.svelte',
 	'src/lib/StudentPrintReceipt.svelte',
 	'src/lib/components/bestellungen/BestellDetailPositionen.svelte',
 	'src/lib/components/bestellungen/WareneingangTable.svelte',

@@ -538,7 +538,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 02.10.2026: 1200 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 02.10.2026: 1151 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -569,6 +569,12 @@ Die Seite „LUSD & Versetzung" steht seit dem 02.10.2026 auf Rollen (`LusdImpor
 Warnung stehen in beiden Dateien von Hand, wie an rund 40 weiteren Stellen der Anwendung
 (gezählt am 02.10.2026: getönte Fläche und Rundung in einer Klassenliste); ein gemeinsames
 Bauteil dafür gibt es nicht.
+
+Die Statistik steht seit dem 02.10.2026 auf Rollen (`StatsDashboard`, `OverdueWidget`,
+`StatsTrendChart`), bis auf die Sprechblase des Diagramms: Sie trägt wie die Sprechblasen der
+ganzen Anwendung (`actions/tooltip.js`) `bg-slate-900`, und `rollen.css` kennt die Rolle dafür
+nicht (M3, Color roles: „Inverse surface: Background fills for elements which contrast against
+surface"). Die Balkenfarben des Diagramms sind feste Werte, keine Rollen.
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 

@@ -62,26 +62,27 @@
 		Überfällige Ausleihen konnten nicht geladen werden.
 	</p>
 {:else if summary}
-	<!-- NEUTRAL (kein Rot-Alarm): Überfälligkeit als reine Statistik. Zahl + Quote in Slate,
-	     Verteilung in Grau (nur „>60 Tage" ein dezenter Amber-Akzent). Die operative
+	<!-- NEUTRAL (kein Rot-Alarm): Überfälligkeit als reine Statistik. Zahl und Quote in den Textrollen,
+	     Verteilung in Grau (nur „>60 Tage" in der Warnrolle). Die operative
 	     Bearbeitung liegt im Mahnwesen — hier nur ein zurückhaltender Textlink dorthin.
 	     Layout: vertikal gestapelt, weil das Widget in der schmalen 1/3-Spalte der
 	     Bento-Reihe sitzt — nebeneinander bräche es dort um. -->
 	<div class="h-full flex flex-col">
-		<h3 class="text-base font-medium text-slate-500">Überfällige Ausleihen</h3>
+		<h3 class="text-base font-medium text-on-surface-variant">Überfällige Ausleihen</h3>
 		<div class="flex items-baseline gap-2 mt-2">
-			<span class="text-4xl font-light text-slate-900 tabular-nums leading-none"
+			<span class="text-4xl font-light text-on-surface tabular-nums leading-none"
 				>{summary.total_overdue}</span
 			>
 			{#if quote !== null && hatMahnungen}
-				<span class="text-xs text-slate-400">≈ {quote} % der laufenden Ausleihen</span>
+				<span class="text-xs text-on-surface-variant">≈ {quote} % der laufenden Ausleihen</span>
 			{/if}
 		</div>
 
 		{#if hatMahnungen}
 			<div class="flex items-baseline justify-between gap-2 mt-5 mb-2.5">
-				<h4 class="text-xs font-medium text-slate-400">Verteilung nach Dauer</h4>
-				<span class="shrink-0 text-xs text-slate-400">längste: {summary.max_tage_overdue} Tage</span
+				<h4 class="text-xs font-medium text-on-surface-variant">Verteilung nach Dauer</h4>
+				<span class="shrink-0 text-xs text-on-surface-variant"
+					>längste: {summary.max_tage_overdue} Tage</span
 				>
 			</div>
 			<!-- 2 Spalten fix (nicht viewport-abhängig): die Card ist immer schmal. -->
@@ -90,13 +91,15 @@
 					{@const alt = bucket.label === 'über 60 Tage' && bucket.count > 0}
 					<div>
 						<div class="flex items-baseline justify-between gap-2 mb-1.5">
-							<span class="text-xs font-medium text-slate-500 truncate">{bucket.label}</span>
-							<span class="text-sm font-semibold tabular-nums text-slate-700">{bucket.count}</span>
+							<span class="text-xs font-medium text-on-surface-variant truncate"
+								>{bucket.label}</span
+							>
+							<span class="text-sm font-semibold tabular-nums text-on-surface">{bucket.count}</span>
 						</div>
-						<!-- Grau; nur die längst-überfällige Gruppe bekommt einen dezenten Amber-Akzent. -->
-						<div class="h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
+						<!-- Grau; nur die längst-überfällige Gruppe steht in der Warnrolle. -->
+						<div class="h-1.5 w-full rounded-full bg-surface-container-highest overflow-hidden">
 							<div
-								class="h-full rounded-full {alt ? 'bg-amber-500' : 'bg-slate-400'}"
+								class="h-full rounded-full {alt ? 'bg-warning' : 'bg-on-surface-variant'}"
 								style="width: {(bucket.count / maxBucket) * 100}%"
 							></div>
 						</div>
@@ -104,8 +107,8 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="flex-1 flex items-center gap-2 text-slate-500 text-sm">
-				<CircleCheck class="w-5 h-5 shrink-0 text-emerald-500" aria-hidden="true" />
+			<div class="flex-1 flex items-center gap-2 text-on-surface-variant text-sm">
+				<CircleCheck class="w-5 h-5 shrink-0 text-success" aria-hidden="true" />
 				Keine überfälligen Ausleihen.
 			</div>
 		{/if}
@@ -113,7 +116,7 @@
 		<button
 			type="button"
 			onclick={() => (uiStore.activeTab = 'mahnwesen')}
-			class="mt-auto pt-3 border-t border-slate-100 inline-flex items-center justify-between gap-1 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+			class="mt-auto pt-3 border-t border-outline-variant inline-flex items-center justify-between gap-1 text-sm font-semibold text-primary cursor-pointer"
 			aria-label="Zum Mahnwesen — überfällige Ausleihen bearbeiten"
 		>
 			Im Mahnwesen bearbeiten
