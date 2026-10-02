@@ -42,6 +42,9 @@ test('Bestell-Reiter: eine Zeile bei 1280 px (historischer Befund)', async ({ pa
 test('Bestell-Reiter: eine Zeile auch bei 860 px — scrollen statt umbrechen', async ({ page }) => {
 	await page.setViewportSize({ width: 860, height: 800 });
 	await uiLogin(page);
+	// Bei dieser Breite beginnt die Navigation eingeklappt. Gemessen wird der enge Fall, für
+	// den die 860 px kalibriert sind: mit ausgeklappter Navigation.
+	await page.getByRole('button', { name: 'Navigation ausklappen' }).click();
 	await page.getByTitle('Bestellungen').click();
 	await misstEineZeile(page, 'Bereiche des Bestellwesens');
 });

@@ -32,6 +32,26 @@ async function scanne(page, code) {
 	await page.keyboard.press('Enter');
 }
 
+/**
+ * Jeder Titel hat Breite zum Lesen, und jedes Buch steht in einer Zeile.
+ * @param {import('@playwright/test').Page} page
+ * @param {import('@playwright/test').Locator} tabelle
+ */
+async function titelSindZuLesen(page, tabelle) {
+	for (const titel of TITEL) {
+		const text = tabelle.getByText(titel, { exact: true });
+		const zeile = tabelle.getByRole('row').filter({ has: page.getByText(titel, { exact: true }) });
+		const titelKasten = await text.boundingBox();
+		const zeilenKasten = await zeile.boundingBox();
+		expect(titelKasten?.width ?? 0, `„${titel}“ hat keine Breite zum Lesen`).toBeGreaterThanOrEqual(
+			140
+		);
+		expect(zeilenKasten?.height ?? 999, `„${titel}“ steht in mehr als einer Zeile`).toBeLessThan(
+			56
+		);
+	}
+}
+
 test.describe.serial('Leserakte: Ausleihliste', () => {
 	test.beforeAll(() => {
 		const werte = TITEL.map(
@@ -78,21 +98,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
 
 		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
-		for (const titel of TITEL) {
-			const text = tabelle.getByText(titel, { exact: true });
-			const zeile = tabelle
-				.getByRole('row')
-				.filter({ has: page.getByText(titel, { exact: true }) });
-			const titelKasten = await text.boundingBox();
-			const zeilenKasten = await zeile.boundingBox();
-			expect(
-				titelKasten?.width ?? 0,
-				`„${titel}“ hat keine Breite zum Lesen`
-			).toBeGreaterThanOrEqual(140);
-			expect(zeilenKasten?.height ?? 999, `„${titel}“ steht in mehr als einer Zeile`).toBeLessThan(
-				56
-			);
-		}
+		await titelSindZuLesen(page, tabelle);
 
 		// Die Liste läuft nicht über ihren Platz hinaus, und die Symbole halten ihr Mindestmaß.
 		// Das Miniaturbild ist ein Bild, kein Symbol; es öffnet die Großansicht des Covers.
@@ -122,6 +128,39 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		const blase = page.locator('[data-tooltip-blase]');
 		await expect(blase).toBeVisible();
 		await expect(blase).toHaveText(`${TITEL[0]} · ${AUTORIN} · ${nummer(0)}`);
+	});
+
+	// Unter 1280 px Fensterbreite beginnt die Navigation eingeklappt (Sidebar.svelte). Neben
+	// ihr in voller Breite und der Leserkarte blieb dem Titel bei 1100 px kein Platz und bei
+	// 1200 px 82 px.
+	test('unter 1280 px beginnt die Navigation eingeklappt; bei 1100 px ist jeder Titel zu lesen', async ({
+		page
+	}) => {
+		await page.setViewportSize({ width: 1279, height: 900 });
+		await uiLogin(page);
+		await expect(page.getByRole('button', { name: 'Navigation ausklappen' })).toBeVisible();
+		await page.setViewportSize({ width: 1280, height: 900 });
+		await expect(page.getByRole('button', { name: 'Navigation einklappen' })).toBeVisible();
+		await page.setViewportSize({ width: 1100, height: 900 });
+		await expect(page.getByRole('button', { name: 'Navigation ausklappen' })).toBeVisible();
+		await expect
+			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
+			.toBe('omnibox-input');
+		await scanne(page, AUSWEIS);
+		await expect(page.getByText('Entliehene Bücher (12)')).toBeVisible();
+
+		const tabelle = page.getByRole('table', { name: 'Ausgeliehene Bücher' });
+		await titelSindZuLesen(page, tabelle);
+		const laeuftUeber = await tabelle.evaluate(
+			(t) => t.scrollWidth > (t.parentElement?.clientWidth ?? 0) + 1
+		);
+		expect(laeuftUeber, 'die Tabelle ist breiter als ihr Platz').toBe(false);
+
+		// Der Doppelpfeil klappt aus, und dabei bleibt es: Die Wahl gilt vor der Fensterbreite.
+		await page.getByRole('button', { name: 'Navigation ausklappen' }).click();
+		await expect(page.getByRole('button', { name: 'Navigation einklappen' })).toBeVisible();
+		await page.setViewportSize({ width: 1000, height: 900 });
+		await expect(page.getByRole('button', { name: 'Navigation einklappen' })).toBeVisible();
 	});
 
 	// Die Sprechblase nennt Titel und Nummer eines Buchs dieses Lesers. Bleibt der Zeiger auf

@@ -49,7 +49,11 @@ class UIStore {
 		if (ziel === 'kiosk') this.beimWechselZurTheke?.();
 	}
 	selectedBook = $state(/** @type {any} */ (null));
-	isSidebarCollapsed = $state(false);
+	/**
+	 * Was der Doppelpfeil der Seitenleiste zuletzt gewählt hat: true eingeklappt, false
+	 * ausgeklappt. Ohne Wahl (null) entscheidet die Fensterbreite, siehe Sidebar.svelte.
+	 */
+	sidebarWahl = $state(/** @type {boolean | null} */ (null));
 	pendingReservierungen = $state(0);
 	/**
 	 * Exemplare ohne gedrucktes Etikett. Liegt hier und nicht im Bestellwesen, weil die

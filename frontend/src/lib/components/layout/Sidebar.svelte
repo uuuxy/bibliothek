@@ -8,9 +8,16 @@
 	import Zaehlerpille from '../ui/Zaehlerpille.svelte';
 	import SidebarFooter from './SidebarFooter.svelte';
 	import logoUrl from '../../../assets/logo.png';
+	import { MediaQuery } from 'svelte/reactivity';
 
 	let systemOpen = $state(false);
-	const zu = $derived(uiStore.isSidebarCollapsed);
+
+	// Unter 1280 px Fensterbreite (Tailwind `xl`) beginnt die Navigation eingeklappt: Erst ab
+	// dieser Breite hat der Titel in der Ausleihliste der Leserakte neben ihr Platz zum Lesen
+	// (e2e/ausleihliste-zeilen.spec.js). Wer den Doppelpfeil benutzt, hat gewählt, und die
+	// Wahl gilt bis zum Neuladen vor der Fensterbreite.
+	const schmalesFenster = new MediaQuery('(width < 80rem)');
+	const zu = $derived(uiStore.sidebarWahl ?? schmalesFenster.current);
 
 	function handleLogout() {
 		authStore.handleLogout(() => {
@@ -81,7 +88,7 @@
      Beschriftung unterscheidet. -->
 {#snippet klappPfeil(/** @type {boolean} */ einklappen)}
 	<button
-		onclick={() => (uiStore.isSidebarCollapsed = einklappen)}
+		onclick={() => (uiStore.sidebarWahl = einklappen)}
 		class="icon-btn text-on-surface-variant hover:bg-surface-container"
 		aria-label={einklappen ? 'Navigation einklappen' : 'Navigation ausklappen'}
 		data-tip={einklappen ? 'Navigation einklappen' : 'Navigation ausklappen'}

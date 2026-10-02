@@ -726,27 +726,20 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   (`Router.svelte`, `overflow-y-auto`). Die Scrollleiste sitzt deshalb 32 px vom Fensterrand,
   und über und unter dem Inhalt bleiben beim Scrollen je 24 px stehen. Betrifft jedes
   Bauteil, das beim Scrollen stehen bleibt (`sticky top-0`).
-- **Leserakte in einem Fenster unter 1200 px Breite** (gemessen am 02.10.2026, Seitenleiste
-  ausgeklappt): Die Akte stellt Leserkarte (320 px) und Inhalt ab 1024 px nebeneinander
-  (`StudentProfile.svelte`, `lg:grid-cols-[320px_minmax(0,1fr)]`). Der Ausleihliste bleiben
-  dann 339 bis 512 px; Datum und Aktionen brauchen 290 px, das Miniaturbild 33 px. Dem Titel
-  eines Lernmittels bleiben bei 1200 px 69 px und ab 1100 px abwärts nichts. Ab 1280 px sind
-  es mindestens 149 px, rund zwanzig Zeichen (`e2e/ausleihliste-zeilen.spec.js` verlangt
-  140 px). Drei Wege, zwei davon gemessen am 02.10.2026 mit zwölf Ausleihen:
-  - Leserkarte über dem Inhalt: Der Titel hat Platz, die Liste beginnt aber erst 894 px
-    unter dem oberen Fensterrand (Fensterhöhe 900 px); die Karte ist in voller Breite 486 px
-    hoch.
-  - Navigation eingeklappt (die Symbolleiste gibt es, `uiStore.isSidebarCollapsed`, heute nur
-    von Hand): Bei 1100 px bleiben der Liste 604 px, der Titel steht wie bei 1280 px; bei
-    1024 px bleiben dem Titel 186 px. Die drei Reiter stehen ganz im Bild; ausgeklappt ist
-    bei 1100 px „Stammdaten & Adresse" abgeschnitten. M3, Navigation drawer, Guidelines:
-    „Use a modal navigation drawer alone or with a navigation rail on medium and expanded
-    breakpoints" und „A standard navigation drawer can be used in single pane layouts in
-    expanded breakpoints"; die Akte hat zwei Bereiche.
-  - Zeile zweizeilig: nicht gebaut.
-
-  Vorschlag: Unter 1200 px Fensterbreite beginnt die Navigation eingeklappt. Entscheidung
-  offen.
+- **Leserakte bei 1024 bis 1065 px Fensterbreite:** Seit dem 02.10.2026 beginnt die
+  Navigation unter 1280 px eingeklappt (`Sidebar.svelte`); der Titel in der Ausleihliste hat
+  damit ab 1066 px mindestens 140 px (`e2e/ausleihliste-zeilen.spec.js`). Darunter, bis zur
+  Grenze von 1024 px, an der die Akte Leserkarte (320 px) und Inhalt nebeneinanderstellt,
+  bleiben ihm 98 bis 139 px (gemessen am 02.10.2026 mit zwölf Ausleihen). Wer die
+  Navigation unter 1258 px von Hand ausklappt, lässt dem Titel weniger als 140 px, unter
+  1118 px nichts. Nicht gebaut: die Zeile zweizeilig.
+- **Eingeklappte Navigation:** Sie zeigt nur Symbole, bis zu 18; der Name steht im `title`
+  des Knopfs und erscheint beim Zeigen mit der Maus. M3, Navigation rail, Guidelines: „All
+  navigation items require a one word label text" und „The collapsed nav rail … should
+  contain 3–7 navigation items". Ausgeklappt schiebt sie in schmalen Fenstern den Inhalt
+  zusammen; M3: „A navigation rail can be expanded by default on larger screen sizes, or can
+  be expanded over content on smaller screen sizes". Anlass zum Bauen: Die Anwendung wird
+  an einem Tablet oder in Fenstern unter 1280 px bedient.
 - **Leserakte, langer Name:** Ein Name aus einem Wort von 22 Zeichen ragt aus der Leserkarte
   in die rechte Spalte und liegt über dem ersten Reiter (gesehen am 02.10.2026 an einem
   Testleser). Namen mit Leerzeichen oder Bindestrich brechen um.

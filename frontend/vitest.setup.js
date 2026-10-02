@@ -26,3 +26,10 @@ if (!Element.prototype.animate) {
 		return animation;
 	};
 }
+
+// jsdom kennt auch `matchMedia` nicht; die Seitenleiste fragt damit nach der Fensterbreite.
+// Die Attrappe verneint jede Abfrage. Ein Test, der eine Breite braucht, setzt seine eigene.
+if (!window.matchMedia) {
+	window.matchMedia = (abfrage) =>
+		/** @type {any} */ (Object.assign(new EventTarget(), { matches: false, media: abfrage }));
+}
