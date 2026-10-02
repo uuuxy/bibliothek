@@ -212,7 +212,7 @@
 		</Tabelle>
 
 		{#if books.length > maxVisible}
-			<div class="p-4 flex justify-center bg-slate-50 border-t border-slate-100">
+			<div class="flex justify-center p-4">
 				<Button variant="secondary" onclick={() => (maxVisible += 50)}>
 					Weitere Bücher laden ({books.length - maxVisible} verbleibend)
 				</Button>

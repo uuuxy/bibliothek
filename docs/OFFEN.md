@@ -531,12 +531,12 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 02.10.2026: 1305 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 02.10.2026: 1249 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
 eigenen Rollen `success` und `warning` in `styles/rollen.css` (M3, „Define custom color
-roles"). Vorschlag:
+roles"). Vorgehen:
 Bildschirm für Bildschirm, die größten zuerst, je Portion ein Commit, am gerenderten Bildschirm
 geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über ui/StatusChip, Cover
 über ui/BuchCover, Rückmeldung beim Zeigen über den State-Layer statt `hover:bg-*`, ein Fehler
@@ -548,6 +548,14 @@ Der Inventur-Bildschirm steht ganz auf Rollen: seit dem 24.09.2026 der Bildschir
 Start-Dialog, die Rückfrage vor dem Abschluss und der Fehlbestandsbericht.
 `inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach für selbstgebaute
 Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
+
+Die Titel-Verwaltung steht seit dem 02.10.2026 auf Rollen (`BookTable`, `BookTableToolbar`,
+`BookTableZeile`). Beim Ansehen aufgefallen, jeweils am Code nachgesehen:
+
+- Ein Titel lässt sich in der Liste nur mit der Maus öffnen: Der Klick hängt an der Zeile
+  (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die Leserdatei
+  öffnet die Akte seit dem 09.09.2026 über den Namen als Knopf.
+- Der Knopf „Retry Cover" trägt eine englische Beschriftung.
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 

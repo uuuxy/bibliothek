@@ -1,7 +1,8 @@
 <script>
-	import { coverKandidaten } from '../../../../lib/utils/coverSrc.js';
 	import { ChevronRight, Menu } from '@lucide/svelte';
 	import Kaestchen from '../../../../lib/components/ui/Kaestchen.svelte';
+	import BuchCover from '../../../../lib/components/ui/BuchCover.svelte';
+	import StatusChip from '../../../../lib/components/ui/StatusChip.svelte';
 
 	/**
 	 * @type {{
@@ -45,45 +46,13 @@
 		onDrop,
 		onDragEnd
 	} = $props();
-
-	/** @type {string[]} */
-	let coverCandidates = $state([]);
-	let currentCandidateIndex = $state(0);
-	let coverSrc = $derived(coverCandidates[currentCandidateIndex] || '');
-	let coverFailed = $state(false);
-
-	$effect(() => {
-		const candidates = [];
-		candidates.push(...coverKandidaten(book?.coverUrl, book?.isbn));
-		coverCandidates = candidates;
-		currentCandidateIndex = 0;
-		coverFailed = candidates.length === 0;
-	});
-
-	function onCoverError() {
-		if (currentCandidateIndex < coverCandidates.length - 1) {
-			currentCandidateIndex++;
-		} else {
-			coverFailed = true;
-		}
-	}
-
-	/**
-	 * @param {Event} event
-	 */
-	function onCoverLoad(event) {
-		const image = /** @type {HTMLImageElement} */ (event.currentTarget);
-		if (image.naturalWidth < 10 || image.naturalHeight < 10) {
-			onCoverError();
-		}
-	}
 </script>
 
+<!-- Abstand, Trennlinie, Rückmeldung beim Zeigen und die Fläche der gewählten Zeile kommen
+     aus ui/Tabelle. Hier steht nur, was diese Zeile eigen hat: die Marke beim Verschieben. -->
 <tr
-	class="group transition-colors cursor-pointer border-b border-slate-100 text-slate-700 hover:bg-slate-50/50 {dragOverIndex ===
-	index
-		? 'border-t-2 border-blue-500 bg-blue-50/30'
-		: ''}"
+	class="group cursor-pointer {dragOverIndex === index ? 'border-t-2 border-primary' : ''}"
+	aria-selected={isSelected}
 	draggable="true"
 	ondragstart={(event) => onDragStart(event, index)}
 	ondragover={(event) => onDragOver(event, index)}
@@ -92,10 +61,10 @@
 	ondragend={onDragEnd}
 	onclick={() => onOpenDetail(book)}
 >
-	<td class="px-6 py-3" onclick={(event) => event.stopPropagation()}>
+	<td onclick={(event) => event.stopPropagation()}>
 		<div class="flex items-center gap-2">
 			<Menu
-				class="w-4 h-4 text-slate-300 cursor-grab active:cursor-grabbing hover:text-slate-500"
+				class="h-4 w-4 cursor-grab text-on-surface-variant active:cursor-grabbing"
 				aria-hidden="true"
 			/>
 			<Kaestchen
@@ -106,96 +75,63 @@
 		</div>
 	</td>
 
-	<td class="px-6 py-3">
-		{#if coverSrc && !coverFailed}
-			<img
-				src={coverSrc}
-				alt="Cover"
-				loading="lazy"
-				class="w-12 aspect-3/4 object-cover rounded-md shadow-xs border border-slate-100"
-				onerror={onCoverError}
-				onload={onCoverLoad}
-			/>
-		{:else}
-			<div
-				class="w-12 aspect-3/4 rounded-md shadow-xs flex items-center justify-center font-bold text-white bg-linear-to-br from-blue-500 to-indigo-600 text-sm border border-indigo-600/10"
-			>
-				{book.title ? book.title.charAt(0).toUpperCase() : '?'}
-			</div>
-		{/if}
+	<!-- Der Titel steht in der Nachbarzelle; das Cover sagt ihn kein zweites Mal an. -->
+	<td>
+		<BuchCover
+			coverUrl={book.coverUrl}
+			isbn={book.isbn}
+			titel={book.title}
+			groesse="liste"
+			dekorativ
+		/>
 	</td>
 
-	<td class="px-6 py-3 font-semibold text-slate-900">
-		{book.title}
-		<div class="text-sm text-slate-500 font-normal">{book.author}</div>
+	<td>
+		<span class="font-semibold">{book.title}</span>
+		<div class="text-on-surface-variant">{book.author}</div>
 	</td>
 
-	<td class="px-6 py-3">
-		{#if book.subject}
-			<span
-				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600"
-			>
-				{book.subject}
-			</span>
-		{:else}
-			<span class="text-slate-400 text-sm">–</span>
-		{/if}
+	<!-- Was man nur liest, steht als Text; wo nichts steht, ein Strich. -->
+	<td>
+		{#if book.subject}{book.subject}{:else}<span class="text-on-surface-variant">–</span>{/if}
 	</td>
 	<!-- Klasse 0 = nicht zugeordnet: „–" statt einer sinnlosen „Kl. 0". -->
-	<td class="px-6 py-3 text-slate-600 text-sm">
-		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-slate-400 text-sm">–</span
+	<td>
+		{#if book.gradeLevel}Kl. {book.gradeLevel}{:else}<span class="text-on-surface-variant">–</span
 			>{/if}
 	</td>
 
-	<td class="px-6 py-3">
+	<td>
 		{#if book.istLernmittel}
-			<span
-				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-cyan-50 text-cyan-700 border border-cyan-100"
-			>
-				Lernmittel
-			</span>
+			<StatusChip text="Lernmittel" />
 		{:else}
-			<span class="text-slate-400 text-sm">Bibliothek</span>
+			<span class="text-on-surface-variant">Bibliothek</span>
 		{/if}
 	</td>
 
-	<td class="px-6 py-3">
+	<td>
 		{#if book.erweiterteEigenschaften?.standort}
-			<span
-				class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-100"
-			>
-				{book.erweiterteEigenschaften.standort}
-			</span>
+			{book.erweiterteEigenschaften.standort}
 		{:else}
-			<span class="text-slate-400 text-sm">-</span>
+			<span class="text-on-surface-variant">–</span>
 		{/if}
 	</td>
 
-	<td class="px-6 py-3 text-right">
+	<td class="text-right tabular-nums">
 		{#if book.lastCounted}
-			<span
-				class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 border border-slate-100 text-slate-500 text-xs font-medium"
-			>
-				{new Date(book.lastCounted).toLocaleDateString('de-DE')}
-			</span>
+			{new Date(book.lastCounted).toLocaleDateString('de-DE')}
 		{:else}
-			<span class="text-slate-400 text-sm">-</span>
+			<span class="text-on-surface-variant">–</span>
 		{/if}
 	</td>
 
-	<td class="px-6 py-3 text-right">
-		<span
-			class="{book.gesamt < 5
-				? 'bg-rose-50 border border-rose-100 text-rose-600'
-				: 'bg-emerald-50 border border-emerald-100/50 text-emerald-700'} px-2.5 py-1 rounded-full text-xs font-bold"
-		>
-			{book.gesamt}
-		</span>
-	</td>
+	<!-- Eine Zahl, keine Farbe: Die meisten Titel der Bücherei haben ein Exemplar, und eine
+	     Fehlerfarbe an fast jeder Zeile sagt nichts mehr. -->
+	<td class="text-right tabular-nums">{book.gesamt}</td>
 
-	<td class="px-6 py-3 text-right">
+	<td class="text-right">
 		<ChevronRight
-			class="w-5 h-5 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity"
+			class="h-5 w-5 text-on-surface-variant opacity-0 transition-opacity group-hover:opacity-100"
 			aria-hidden="true"
 		/>
 	</td>

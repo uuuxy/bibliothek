@@ -38,7 +38,6 @@ const BESTAND = [
 	'src/lib/components/portal/PortalTrefferkarte.svelte',
 	'src/lib/components/stats/StatistikDetailPage.svelte',
 	'src/inventur/lib/components/BuchKarte.svelte',
-	'src/inventur/lib/components/admin/BookTableZeile.svelte',
 	'src/inventur/lib/components/admin/ClassAssignmentSummary.svelte',
 	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte',
 	'src/lib/useBookAkte.svelte.js',

@@ -20,7 +20,7 @@
 		$props();
 </script>
 
-<div class="flex flex-col gap-4 border-b border-slate-100 bg-white px-4 py-4 md:px-6">
+<div class="flex flex-col gap-4 border-b border-outline-variant px-4 py-4 md:px-6">
 	<Suchpille
 		kamera
 		autofokus
@@ -31,7 +31,7 @@
 	/>
 
 	<div class="flex flex-wrap items-center gap-2 sm:gap-3">
-		<h2 class="shrink-0 text-lg font-bold text-slate-900">
+		<h2 class="shrink-0 text-lg font-bold text-on-surface">
 			Bücher ({booksLength})
 		</h2>
 		<!-- Zwei Sichten derselben Liste (M3: „Segmented buttons help people select options,
@@ -48,11 +48,7 @@
 			onwahl={(wert) => (appState.bestandsAnsicht = wert === 'ohne' ? 'ohne' : 'mit')}
 		/>
 		{#if selectedCount > 0}
-			<Button
-				variant="secondary"
-				onclick={onAssignClass}
-				class="border-blue-100 bg-blue-50 text-blue-600 hover:bg-blue-100/60"
-			>
+			<Button variant="secondary" onclick={onAssignClass}>
 				<BookOpen class="w-4 h-4" aria-hidden="true" />
 				Zum Klassensatz hinzufügen ({selectedCount})
 			</Button>
@@ -63,14 +59,14 @@
 		{/if}
 
 		<Button variant="secondary" onclick={onRetryCovers} class="flex-1 sm:flex-none">
-			<RefreshCw class="w-4 h-4 text-slate-500" aria-hidden="true" />
+			<RefreshCw class="w-4 h-4" aria-hidden="true" />
 			Retry Cover
 		</Button>
 
 		<!-- Öffnet die Maske „Neues Buch" mit eingeschalteter Kamera; das Symbol ist dasselbe wie
 		     an der Kamera im ISBN-Feld und in der Suchpille. -->
 		<Button variant="secondary" onclick={onScan} class="flex-1 sm:flex-none">
-			<Camera class="w-4 h-4 text-slate-500" aria-hidden="true" />
+			<Camera class="w-4 h-4" aria-hidden="true" />
 			Scanner
 		</Button>
 
