@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { readFileSync, rmSync } from 'node:fs';
-import { MERKZETTEL } from './global-setup.js';
+import { MERKZETTEL, SETUP_DURCHGELAUFEN } from './global-setup.js';
 import { stelleMailserverZurueck } from './mailserver.js';
 
 // Nach dem Lauf: Testlieferanten abräumen und den Hauptlieferanten wiederherstellen.
@@ -30,6 +30,16 @@ import { stelleMailserverZurueck } from './mailserver.js';
 // benennen ihren Titel „E2E …". Ohne Aufräumen wuchs der rote Zähler im Menü mit jedem
 // Lauf — zuletzt stand dort 223.
 export default function globalTeardown() {
+	// Brach das Setup ab, weil schon eine Suite läuft, gehören Merkzettel, Lieferanten und der
+	// stumme Mailserver jenem Lauf. Räumte dieses Teardown sie ab, liefe die Suite ab hier mit
+	// dem Mailserver der Schule weiter.
+	if (process.env[SETUP_DURCHGELAUFEN] !== '1') {
+		console.warn(
+			'E2E-Teardown: Das Setup dieses Laufs kam nicht durch, es wird nichts zurückgestellt.'
+		);
+		return;
+	}
+
 	const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
 
 	let vorher = '';

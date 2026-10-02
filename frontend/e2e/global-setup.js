@@ -15,6 +15,7 @@ import { MERKZETTEL_MAIL, stelleMailserverStumm } from './mailserver.js';
 // zurücknehmen. Die Frage „wer hatte die Rolle, bevor irgendetwas lief" beantwortet nur,
 // wer vor allen Specs dran ist.
 export const MERKZETTEL = '.e2e-hauptlieferant';
+export const SETUP_DURCHGELAUFEN = 'E2E_SETUP_DURCHGELAUFEN';
 
 export default function globalSetup() {
 	// Ein bereits liegender Merkzettel heisst: Es laeuft schon eine Suite. Zwei Laeufe
@@ -58,4 +59,8 @@ export default function globalSetup() {
 	} catch (err) {
 		console.warn('E2E-Setup: Hauptlieferant nicht gemerkt —', String(err));
 	}
+
+	// Erst hier gehört der Zustand diesem Lauf. Das Teardown liest den Vermerk: Playwright ruft
+	// es auch dann, wenn das Setup oben abgebrochen ist.
+	process.env[SETUP_DURCHGELAUFEN] = '1';
 }
