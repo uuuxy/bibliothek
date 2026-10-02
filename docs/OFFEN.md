@@ -469,15 +469,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Leserdatei liegt bei 30 s an der Grenze (ein Lauf grün, einer rot; am gebauten Stand 6 s).
   Ursache beim Zugangsbuch nicht untersucht. Ein Lauf gegen den Entwicklungsserver ist
   deshalb nie ganz grün.
-- Die Prüfung der Wegweiser (`api/betriebsbereitschaft_wegweiser_test.go`) liest nur die Texte
-  der Selbstprüfung. Drei Hinweise der Oberfläche nennen einen Ort, den es so nicht gibt
-  (gefunden am 01.10.2026): `BestelllinkHinweis.svelte` schickt für die öffentliche Adresse
-  nach „Einstellungen → Allgemein → Schule", sie steht unter Einstellungen → Erreichbarkeit &
-  Alarme; `WareneingangView.svelte` nennt das Zugangsbuch unter „System → Bestandsbücher",
-  die Gruppe heißt Berichte; `backupStatusText.js` schreibt „Schlüssel in den Einstellungen
-  unter Betriebsbereitschaft hinterlegen", dort lässt sich nichts hinterlegen, die
-  Selbstprüfung nennt die `.env`. Texte berichtigen und die Prüfung auf die Texte der
-  Oberfläche ausdehnen. Kategorie B.
 - **Der Wechsel auf Ubuntu 26 als Runner.** Seit dem 28.09.2026 laufen alle zehn Jobs fest auf
   `ubuntu-24.04` statt auf `ubuntu-latest`, das ab dem 19. Oktober 2026 auf Ubuntu 26 zeigt
   (actions/runner-images#14748). Den Wechsel selbst legen, mit einem eigenen Lauf gegen das

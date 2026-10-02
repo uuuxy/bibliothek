@@ -84,18 +84,31 @@ describe('backupMessage', () => {
 });
 
 describe('backupHint', () => {
-	it('gibt zu jeder Störung einen nächsten Schritt', () => {
+	// Der Schlüssel steht in der .env des Servers; die Betriebsbereitschaft prüft nur, dort
+	// lässt sich weder ein Schlüssel hinterlegen noch ein Backup anstoßen.
+	it('nennt für den Schlüssel die .env, nicht die Einstellungen', () => {
 		const faelle = [
 			{
 				last_backup_at: null,
 				encryption_key_set: false,
 				status: /** @type {const} */ ('critical')
 			},
+			{ ...status('2026-07-30T02:30:00', 'warning'), encryption_key_weak: true }
+		];
+		for (const f of faelle) {
+			expect(backupHint(f)).toContain('.env');
+			expect(backupHint(f)).not.toContain('Einstellungen');
+		}
+	});
+
+	it('schickt für den Stand zur Betriebsbereitschaft, ohne dort eine Handlung zu versprechen', () => {
+		const faelle = [
 			{ last_backup_at: null, encryption_key_set: true, status: /** @type {const} */ ('critical') },
 			status('2026-07-01T02:00:00', 'warning')
 		];
 		for (const f of faelle) {
-			expect(backupHint(f)).toContain('Einstellungen');
+			expect(backupHint(f)).toContain('Einstellungen → Betriebsbereitschaft');
+			expect(backupHint(f)).not.toMatch(/hinterlegen|anstoßen/);
 		}
 	});
 

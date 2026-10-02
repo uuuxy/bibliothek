@@ -59,7 +59,7 @@
 			<p class="mt-0.5 text-xs leading-relaxed text-slate-500">
 				Der Hauptlieferant soll die Etikettengröße selbst wählen und damit bestätigen — dafür
 				braucht das System die öffentliche Adresse, unter der er es von außen erreicht
-				(Einstellungen → Allgemein → Schule).
+				(Einstellungen → Erreichbarkeit & Alarme).
 				{#if !istAdmin}
 					Ein Administrator kann sie hinterlegen.
 				{/if}
