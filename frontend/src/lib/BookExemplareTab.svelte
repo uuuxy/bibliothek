@@ -116,7 +116,7 @@
 </script>
 
 {#if exemplare.length === 0}
-	<div class="py-16 flex flex-col items-center text-slate-400 gap-3">
+	<div class="py-16 flex flex-col items-center text-on-surface-variant gap-3">
 		<BookOpen class="w-10 h-10" aria-hidden="true" />
 		<p class="font-semibold text-sm">Keine physischen Exemplare mit Barcodes angelegt.</p>
 	</div>

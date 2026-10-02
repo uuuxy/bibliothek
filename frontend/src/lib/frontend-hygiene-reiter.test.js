@@ -21,7 +21,7 @@ const HANDGEBAUT = /role=(["'])tab\1/;
 // oben vorsieht („bei ihrem nächsten fachlichen Anfassen"). Anlass war die gemessene
 // Höhe: 34 px gegen 32 px überall sonst, verursacht vom `border-b-2` im Textfluss.
 // Die Ratsche rückt damit von drei auf zwei Bestandsfälle.
-const BESTAND = ['src/lib/BookAkte.svelte', 'src/lib/MediaCatalog.svelte'];
+const BESTAND = ['src/lib/MediaCatalog.svelte'];
 
 // Die Komponente selbst trägt das role="tab" — sie ist die Quelle, nicht ein Verstoß.
 const QUELLE = 'src/lib/components/ui/Reiter.svelte';

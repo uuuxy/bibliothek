@@ -538,7 +538,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 03.10.2026: 1033 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 03.10.2026: 1004 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -599,7 +599,8 @@ Leerzeichen ersetzt: „BESTELLUNG HAENDLER", „MAHNUNG ELTERN" (`MailTemplates
 die Eltern"; der Hinweis darunter (`MailVorlagenPlatzhalter.svelte`) beschreibt jede Vorlage
 schon so.
 
-Der Reiter „Vormerkungen" der Buchakte steht seit dem 03.10.2026 auf Rollen. Er trägt als
+Die Buchakte steht seit dem 03.10.2026 auf Rollen, ihre Reiter kommen aus `ui/Reiter`. Der
+Reiter „Vormerkungen" trägt als
 einziger Reiter der Buchakte eine eigene Überschrift („Warteliste / Vormerkungen", 22 px), die
 den Namen des Reiters wiederholt (`BookVormerkungenTab.svelte`).
 

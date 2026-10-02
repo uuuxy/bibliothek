@@ -9,6 +9,7 @@
 	import { useBookAkte } from './useBookAkte.svelte.js';
 	import PageShell from './components/layout/PageShell.svelte';
 	import LadeFehler from './components/ui/LadeFehler.svelte';
+	import Reiter from './components/ui/Reiter.svelte';
 	import { authStore } from './stores/authStore.svelte.js';
 	import { hatRecht } from './menu.js';
 	import { ChevronLeft, Frown } from '@lucide/svelte';
@@ -33,10 +34,12 @@
 	const zaehler = (name, liste) =>
 		`${name} (${akte.fehlendeListen.includes(name) ? '?' : liste.length})`;
 	const tabs = $derived([
-		['ausleiher', zaehler('Ausleiher', akte.borrowers)],
-		['exemplare', zaehler('Exemplare', akte.exemplare)],
-		...(darfVormerken ? [['vormerkungen', zaehler('Vormerkungen', akte.vormerkungen)]] : []),
-		['historie', 'Historie']
+		{ id: 'ausleiher', label: zaehler('Ausleiher', akte.borrowers) },
+		{ id: 'exemplare', label: zaehler('Exemplare', akte.exemplare) },
+		...(darfVormerken
+			? [{ id: 'vormerkungen', label: zaehler('Vormerkungen', akte.vormerkungen) }]
+			: []),
+		{ id: 'historie', label: 'Historie' }
 	]);
 
 	// Der Effekt hängt an GENAU einer Sache: der Titel-ID. untrack sorgt dafür, dass
@@ -55,13 +58,15 @@
 		<div class="flex items-center gap-3">
 			<button
 				onclick={onBack}
-				class="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all text-sm font-semibold cursor-pointer"
+				class="flex items-center gap-2 px-3 py-2 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors text-sm font-semibold cursor-pointer"
 			>
 				<ChevronLeft class="w-4 h-4" aria-hidden="true" />
 				Zurück zum Katalog
 			</button>
-			<span class="text-slate-400">/</span>
-			<span class="text-slate-500 text-sm truncate max-w-xs">{akte.book?.title ?? 'Lade...'}</span>
+			<span class="text-on-surface-variant">/</span>
+			<span class="text-on-surface-variant text-sm truncate max-w-xs"
+				>{akte.book?.title ?? 'Lade...'}</span
+			>
 		</div>
 	</div>
 
@@ -89,27 +94,12 @@
 			</p>
 		{/if}
 
-		<!-- Tabs -->
-		<div class="border-b border-slate-200">
-			<nav class="flex gap-6 overflow-x-auto no-scrollbar" aria-label="Buch-Akte Tabs">
-				{#each tabs as [id, label] (id)}
-					<button
-						onclick={() => (akte.activeTab = id)}
-						class="relative pb-3 text-sm font-semibold transition-colors cursor-pointer {akte.activeTab ===
-						id
-							? 'text-blue-600'
-							: 'text-slate-500 hover:text-slate-700'}"
-						role="tab"
-						aria-selected={akte.activeTab === id}
-					>
-						{label}
-						{#if akte.activeTab === id}
-							<span class="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></span>
-						{/if}
-					</button>
-				{/each}
-			</nav>
-		</div>
+		<Reiter
+			etikett="Bereiche der Buchakte"
+			reiter={tabs}
+			aktiv={akte.activeTab}
+			onwahl={(id) => (akte.activeTab = id)}
+		/>
 
 		<!-- Tab Content -->
 		<div class="w-full">
@@ -132,12 +122,12 @@
 			text={akte.kopfFehler}
 		/>
 	{:else}
-		<div class="py-24 flex flex-col items-center text-slate-400 gap-3">
+		<div class="py-24 flex flex-col items-center text-on-surface-variant gap-3">
 			<Frown class="w-12 h-12" aria-hidden="true" />
 			<p class="font-semibold">Buch nicht gefunden.</p>
 			<button
 				onclick={onBack}
-				class="text-blue-600 text-sm font-semibold hover:underline cursor-pointer"
+				class="text-primary text-sm font-semibold hover:underline cursor-pointer"
 				>Zurück zum Katalog</button
 			>
 		</div>

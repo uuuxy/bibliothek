@@ -57,7 +57,7 @@
 </script>
 
 {#if borrowers.length === 0}
-	<div class="py-16 flex flex-col items-center text-slate-400 gap-3">
+	<div class="py-16 flex flex-col items-center text-on-surface-variant gap-3">
 		<Users class="w-10 h-10" aria-hidden="true" />
 		<p class="font-semibold text-sm">Aktuell niemand hat dieses Buch ausgeliehen.</p>
 	</div>
@@ -77,7 +77,7 @@
 			klasse="flex-1 max-w-xs"
 		/>
 		{#if filteredBorrowers.length !== borrowers.length}
-			<span class="text-xs text-slate-400 self-center"
+			<span class="text-xs text-on-surface-variant self-center"
 				>{filteredBorrowers.length} von {borrowers.length}</span
 			>
 		{/if}
