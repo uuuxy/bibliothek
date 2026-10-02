@@ -312,6 +312,26 @@ export function menuepunkt(page, name) {
 }
 
 /**
+ * Wartet, bis die Navigation ihre Breite erreicht hat.
+ *
+ * Sie fährt beim Ein- und Ausklappen 300 ms (Sidebar.svelte). Wer in dieser Zeit misst, misst
+ * neben einer Zwischenbreite, und was daneben umbricht, steht beim nächsten Blick woanders.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {'eingeklappt' | 'ausgeklappt'} zustand
+ */
+export async function navigationSteht(page, zustand) {
+	const { expect } = await import('@playwright/test');
+	const leiste = page.locator('aside', { has: page.locator('nav') });
+	const breite = zustand === 'eingeklappt' ? 64 : 256;
+	await expect
+		.poll(async () => Math.round((await leiste.boundingBox())?.width ?? 0), {
+			message: `die Navigation steht nicht bei ${breite} px`
+		})
+		.toBe(breite);
+}
+
+/**
  * Der Eintrag einer Einstellungs-Kategorie in der Liste links.
  *
  * Auf die Liste eingegrenzt, nicht auf die Seite: Der Speichern-Knopf der geöffneten

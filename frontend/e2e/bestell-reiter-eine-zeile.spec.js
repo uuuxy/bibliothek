@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin } from './helpers.js';
+import { uiLogin, navigationSteht } from './helpers.js';
 
 // Nebenbefund vom 25.08.2026 (Feld-Migration, Register): Die Bestell-Reiter brachen
 // bei 1280 px in zwei Zeilen um. Beim Nachmessen am 31.08. war der Fall durch den
@@ -11,21 +11,22 @@ import { uiLogin } from './helpers.js';
 // alte Leiste sicher um (rot gesehen), mit Scroll-Verhalten bleibt sie einzeilig.
 // Kalibrierung 31.08.: einzeilige Reiter sind 32–33 px hoch, ein intern
 // umgebrochener 52 px — Schwelle 45.
+//
+// Alle Reiter in einem Zug gemessen: Einzeln nacheinander konnten die ersten vor und die
+// letzten nach einer Verschiebung der Seite darüber gemessen werden.
 async function misstEineZeile(page, name) {
 	const leiste = page.getByRole('tablist', { name });
 	await expect(leiste).toBeVisible();
-	const tabs = leiste.getByRole('tab');
-	const n = await tabs.count();
-	expect(n, 'Reiterzahl').toBeGreaterThanOrEqual(5);
+	const boxen = await leiste.evaluate((el) =>
+		[...el.querySelectorAll('[role="tab"]')].map((t) => {
+			const r = t.getBoundingClientRect();
+			return { y: Math.round(r.y), h: Math.round(r.height) };
+		})
+	);
+	expect(boxen.length, 'Reiterzahl').toBeGreaterThanOrEqual(5);
 
-	const kanten = [];
-	const hoehen = [];
-	for (let i = 0; i < n; i++) {
-		const box = await tabs.nth(i).boundingBox();
-		if (!box) throw new Error(`Reiter ${i} ohne boundingBox`);
-		kanten.push(Math.round(box.y));
-		hoehen.push(Math.round(box.height));
-	}
+	const kanten = boxen.map((b) => b.y);
+	const hoehen = boxen.map((b) => b.h);
 	expect(new Set(kanten).size, `Reiter-Oberkanten: ${kanten.join(', ')}`).toBe(1);
 	for (const h of hoehen) {
 		expect(h, `Reiterhöhen: ${hoehen.join(', ')} — >45 heißt interner Umbruch`).toBeLessThan(45);
@@ -45,6 +46,7 @@ test('Bestell-Reiter: eine Zeile auch bei 860 px — scrollen statt umbrechen', 
 	// Bei dieser Breite beginnt die Navigation eingeklappt. Gemessen wird der enge Fall, für
 	// den die 860 px kalibriert sind: mit ausgeklappter Navigation.
 	await page.getByRole('button', { name: 'Navigation ausklappen' }).click();
+	await navigationSteht(page, 'ausgeklappt');
 	await page.getByTitle('Bestellungen').click();
 	await misstEineZeile(page, 'Bereiche des Bestellwesens');
 });

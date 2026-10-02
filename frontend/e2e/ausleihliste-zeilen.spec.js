@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedSQL } from './helpers.js';
+import { uiLogin, seedSQL, navigationSteht } from './helpers.js';
 
 // Die Ausleihliste der Akte: eine Zeile je Buch, und der Titel ist auch im Fenster von
 // 1280 px zu lesen. Ein Schüler hat acht bis achtzehn Lernmittel; trägt jede Zeile Marke,
@@ -143,6 +143,7 @@ test.describe.serial('Leserakte: Ausleihliste', () => {
 		await expect(page.getByRole('button', { name: 'Navigation einklappen' })).toBeVisible();
 		await page.setViewportSize({ width: 1100, height: 900 });
 		await expect(page.getByRole('button', { name: 'Navigation ausklappen' })).toBeVisible();
+		await navigationSteht(page, 'eingeklappt');
 		await expect
 			.poll(() => page.evaluate(() => document.activeElement?.id ?? ''), { timeout: 5000 })
 			.toBe('omnibox-input');
