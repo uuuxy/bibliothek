@@ -47,19 +47,20 @@
 	const AUSWAHLEN = [{ id: 'rolle', label: 'Benutzer-Rolle', options: ROLLEN }];
 </script>
 
-<Modal {open} {onclose} size="md">
+<Modal {open} {onclose} size="md" beschriftetDurch="benutzer-formular-titel">
 	{#snippet header()}
-		<h3 class="font-bold text-slate-800 text-base">
+		<h3 id="benutzer-formular-titel" class="text-base font-bold text-on-surface">
 			{isEditingUser ? 'Benutzer bearbeiten' : 'Neuen Benutzer anlegen'}
 		</h3>
 	{/snippet}
 	<form onsubmit={handleSaveUser} class="p-6 space-y-4">
 		{#if error}
 			<div
-				class="p-3.5 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold leading-relaxed animate-slide-up"
+				role="alert"
+				class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
-				<AlertTriangle class="h-4 w-4" aria-hidden="true" />
-				{error}
+				<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<span>{error}</span>
 			</div>
 		{/if}
 		<div class="grid grid-cols-2 gap-4">
@@ -75,23 +76,24 @@
 		/>
 		{#each AUSWAHLEN as auswahl (auswahl.id)}
 			<div class="space-y-1.5">
-				<label for={auswahl.id} class="block text-xs font-medium text-slate-400"
+				<label for={auswahl.id} class="block text-xs font-medium text-on-surface-variant"
 					>{auswahl.label}</label
 				>
 				<Select id={auswahl.id} bind:value={userForm[auswahl.id]} options={auswahl.options} />
 			</div>
 		{/each}
 		{#if isEditingUser}
-			<!-- Vorher ein peer-checked-Nachbau OHNE zugänglichen Namen: Der Screenreader las
-			     „Kontrollkästchen", die danebenstehende Erklärung gehörte niemandem. -->
 			<div class="flex items-center gap-3 py-1.5">
 				<Switch id="benutzer-aktiv" bind:checked={userForm.aktiv} label="Benutzerkonto ist aktiv" />
-				<label for="benutzer-aktiv" class="cursor-pointer text-xs font-bold text-slate-600">
+				<label
+					for="benutzer-aktiv"
+					class="cursor-pointer text-xs font-bold text-on-surface-variant"
+				>
 					Benutzerkonto ist aktiv
 				</label>
 			</div>
 		{/if}
-		<div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+		<div class="flex items-center justify-end gap-3 border-t border-outline-variant pt-3">
 			<Button variant="secondary" type="button" onclick={onclose}>Abbrechen</Button>
 			<Button type="submit" disabled={submittingUser}>
 				{#if submittingUser}<Ladekreis size="sm" farbe="aktuell" />{/if}

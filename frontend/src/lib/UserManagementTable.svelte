@@ -1,5 +1,7 @@
 <script>
+	import { Search } from '@lucide/svelte';
 	import Button from './components/ui/Button.svelte';
+	import SuchZustand from './components/ui/SuchZustand.svelte';
 	import Tabelle from './components/ui/Tabelle.svelte';
 
 	/**
@@ -12,17 +14,9 @@
 	/** @type {Props} */
 	let { loadingUsers, filteredUsers, openEditUserModal, openDeleteConfirm } = $props();
 
-	// Farbe des Rollen-Abzeichens. Als Nachschlagetabelle, weil die Kette mit der
-	// Leitung fünf verschachtelte Ternäre tief geworden wäre; der Rückfall bleibt
-	// Mitarbeiter, wie vorher der letzte Zweig.
-	//
-	// Die Leitung trägt M3-Rollenfarben (primary-container) statt einer weiteren
-	// Tailwind-Palettenklasse: Die Farb-Ratsche in frontend-hygiene-farben.test.js
-	// zählt Palettenfundstellen und lässt sie nur SINKEN, ein neues Abzeichen aus der
-	// Palette wäre also rot — und die Rollenfarbe ist ohnehin das Ziel.
-	//
-	// Die Ratsche zählt dabei auch Kommentare: Ein Beispiel aus der Palette in DIESER
-	// Begründung hätte sie genauso hochgezählt wie echtes Markup (gemessen 16.09.2026).
+	// Farbe des Rollen-Abzeichens als Nachschlagetabelle statt einer Kette von Vergleichen;
+	// der Rückfall ist Mitarbeiter. Vier Rollen tragen Palettenfarben, die nichts bedeuten
+	// außer „eine andere Rolle" — ob sie bleiben, ist offen (docs/OFFEN.md 5.21).
 	const ROLLEN_ABZEICHEN = {
 		admin: 'bg-blue-50 text-blue-700 border border-blue-100',
 		leitung: 'bg-primary-container text-on-primary-container border border-outline-variant',
@@ -33,91 +27,78 @@
 </script>
 
 {#if loadingUsers}
-	<div class="p-12 text-center text-slate-400 font-medium animate-pulse">
+	<div class="animate-pulse p-12 text-center font-medium text-on-surface-variant">
 		Lade Systembenutzer...
 	</div>
 {:else if filteredUsers.length === 0}
-	<div
-		class="p-12 rounded-3xl border border-dashed border-slate-200 bg-white text-center text-slate-400"
-	>
-		<span class="text-2xl block mb-2">👥</span>
-		Keine Systembenutzer gefunden.
-	</div>
+	<SuchZustand symbol={Search} titel="Keine Systembenutzer gefunden" />
 {:else}
-	<!-- Rahmen JA, Schatten NEIN: `data-table` ist eines der sechs M3-Bauteile mit
-	     `outline-width: 1px` und hat KEIN container-elevation-Token (material-web
-	     v0.192). Hier standen beide zusammen — die Bauform, die in der Spezifikation
-	     nicht vorkommt. Beim Dialog weicht umgekehrt der Rahmen: Welcher der beiden
-	     Teile geht, entscheidet die Bauteilrolle, nicht der Geschmack. -->
-	<div class="border border-slate-100 bg-white rounded-xl overflow-hidden">
-		<div class="overflow-x-auto">
-			<Tabelle beschriftung="Benutzerkonten">
-				<thead>
+	<div class="overflow-x-auto">
+		<Tabelle beschriftung="Benutzerkonten">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>E-Mail</th>
+					<th>Barcode</th>
+					<th>Rolle</th>
+					<th>Status</th>
+					<th class="w-px text-right whitespace-nowrap">Aktionen</th>
+				</tr>
+			</thead>
+			<tbody class="font-medium">
+				{#each filteredUsers as user, _i (_i)}
+					{@const roleBadge = ROLLEN_ABZEICHEN[user.rolle] ?? ROLLEN_ABZEICHEN.mitarbeiter}
 					<tr>
-						<th>Name</th>
-						<th>E-Mail</th>
-						<th>Barcode</th>
-						<th>Rolle</th>
-						<th>Status</th>
-						<th class="text-right">Aktionen</th>
-					</tr>
-				</thead>
-				<tbody class="font-medium">
-					{#each filteredUsers as user, _i (_i)}
-						{@const roleBadge = ROLLEN_ABZEICHEN[user.rolle] ?? ROLLEN_ABZEICHEN.mitarbeiter}
-						<tr>
-							<td>
-								<span class="font-semibold text-slate-800">{user.vorname} {user.nachname}</span>
-							</td>
-							<td>{user.email}</td>
-							<td>
-								{#if user.barcode_id}
-									<span
-										class="rounded-md border border-slate-200/60 bg-slate-50 px-2 py-0.5 text-sm text-slate-600"
-										>{user.barcode_id}</span
-									>
-								{:else}
-									<span class="text-sm text-slate-400 italic">Keine</span>
-								{/if}
-							</td>
-							<td>
-								<span
-									class="inline-flex px-2 py-0.5 rounded-md font-bold text-xs uppercase tracking-wide {roleBadge}"
-								>
-									{user.rolle}
+						<td>
+							<span class="font-semibold">{user.vorname} {user.nachname}</span>
+						</td>
+						<!-- Eine Adresse hat keine Leerzeichen; ohne Umbruch an beliebiger Stelle
+						     schöbe eine lange die Knöpfe aus dem Fenster. -->
+						<td class="min-w-32 wrap-anywhere">{user.email}</td>
+						<td class="whitespace-nowrap">
+							{#if user.barcode_id}
+								<span class="font-mono">{user.barcode_id}</span>
+							{:else}
+								<span class="text-on-surface-variant italic">Keine</span>
+							{/if}
+						</td>
+						<td>
+							<span
+								class="inline-flex px-2 py-0.5 rounded-md font-bold text-xs uppercase tracking-wide {roleBadge}"
+							>
+								{user.rolle}
+							</span>
+						</td>
+						<td class="whitespace-nowrap">
+							{#if user.aktiv}
+								<span class="inline-flex items-center gap-1.5 text-success">
+									<span class="h-1.5 w-1.5 rounded-full bg-success"></span> Aktiv
 								</span>
-							</td>
-							<td>
-								{#if user.aktiv}
-									<span class="inline-flex items-center gap-1.5 text-sm text-emerald-600">
-										<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Aktiv
-									</span>
-								{:else if user.zugang_beantragt_am}
-									<!-- Selbstanmeldung (Migration 086): wartet auf Freischaltung — NICHT
-									     dasselbe wie ein bewusst deaktiviertes Konto. -->
-									<span
-										class="inline-flex items-center gap-1.5 rounded-full bg-secondary-container px-2 py-0.5 text-xs font-medium text-on-secondary-container"
-									>
-										<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Zugang beantragt
-									</span>
-								{:else}
-									<span class="inline-flex items-center gap-1.5 text-sm text-slate-400">
-										<span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span> Inaktiv
-									</span>
-								{/if}
-							</td>
-							<td class="text-right space-x-2 shrink-0">
-								<Button variant="secondary" size="sm" onclick={() => openEditUserModal(user)}>
-									Bearbeiten
-								</Button>
-								<Button variant="danger" size="sm" onclick={() => openDeleteConfirm(user)}>
-									Löschen
-								</Button>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</Tabelle>
-		</div>
+							{:else if user.zugang_beantragt_am}
+								<!-- Selbstanmeldung: wartet auf Freischaltung, ist also kein bewusst
+								     abgeschaltetes Konto. -->
+								<span
+									class="inline-flex items-center gap-1.5 rounded-full bg-secondary-container px-2 py-0.5 text-xs font-medium text-on-secondary-container"
+								>
+									<span class="h-1.5 w-1.5 rounded-full bg-tertiary"></span> Zugang beantragt
+								</span>
+							{:else}
+								<span class="inline-flex items-center gap-1.5 text-on-surface-variant">
+									<span class="h-1.5 w-1.5 rounded-full bg-outline-variant"></span> Inaktiv
+								</span>
+							{/if}
+						</td>
+						<td class="space-x-2 text-right whitespace-nowrap">
+							<Button variant="secondary" size="sm" onclick={() => openEditUserModal(user)}>
+								Bearbeiten
+							</Button>
+							<Button variant="danger" size="sm" onclick={() => openDeleteConfirm(user)}>
+								Löschen
+							</Button>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</Tabelle>
 	</div>
 {/if}

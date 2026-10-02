@@ -60,7 +60,8 @@ test('Selbstanmeldung: Antrag → sichtbar → freigeschaltet → nur Mein Porta
 	await page.getByLabel('Benutzerkonto ist aktiv').check();
 	await page.getByRole('button', { name: 'Speichern' }).click();
 	await expect(zeile).toContainText('Aktiv');
-	await expect(page.getByRole('status')).toHaveCount(0);
+	// Die Meldung über das Speichern trägt dieselbe Rolle; gemeint ist die Zeile der Anträge.
+	await expect(page.getByRole('status').filter({ hasText: 'Zugangsanfrage' })).toHaveCount(0);
 	await page.getByRole('button', { name: 'Abmelden' }).click();
 
 	// 3. Die Lehrkraft kommt herein — und sieht genau einen Menüpunkt.

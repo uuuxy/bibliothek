@@ -1,14 +1,8 @@
+<!-- @component UserManagement — die Benutzerkonten: Liste, Anlegen, Bearbeiten, Löschen.
+
+     Was eine Rolle darf, steht im Reiter daneben (PermissionManager), nicht hier. -->
 <script>
-	import { AlertTriangle, Check } from '@lucide/svelte';
-	/**
-	 * UserManagement — self-contained component for staff user CRUD.
-	 *
-	 * Responsibilities: listing, creating, editing, and deleting system users
-	 * (benutzer/benutzer_rollen tables). Isolated from role-permission management.
-	 *
-	 * State: users (/api/benutzer), userForm (create/edit modal), showUserModal,
-	 * showDeleteConfirm; $derived filteredUsers (search-filtered view).
-	 */
+	import { AlertTriangle, Plus, X } from '@lucide/svelte';
 	import { onMount } from 'svelte';
 	import UserManagementTable from './UserManagementTable.svelte';
 	import UserManagementZugangsanfragen from './UserManagementZugangsanfragen.svelte';
@@ -20,6 +14,7 @@
 		benutzerFormularAus,
 		benutzerNutzlast
 	} from './benutzerFormular.js';
+	import { toastStore } from './stores/toastStore.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 
@@ -30,10 +25,7 @@
 
 	/** @type {string | null} */
 	let error = $state(null);
-	/** @type {string | null} */
-	let successMessage = $state(null);
 
-	// Create / Edit modal state
 	let showUserModal = $state(false);
 	let isEditingUser = $state(false);
 	// Aufbau, Übernahme und Nutzlast des Formulars: benutzerFormular.js.
@@ -41,13 +33,11 @@
 	let userForm = $state(leeresBenutzerFormular());
 	let submittingUser = $state(false);
 
-	// Delete confirmation state
 	let showDeleteConfirm = $state(false);
 	/** @type {any} */
 	let userToDelete = $state(null);
 	let deletingUser = $state(false);
 
-	// Search-filtered view — recomputed reactively whenever users or query changes
 	let filteredUsers = $derived.by(() => {
 		const query = userSearchQuery.trim().toLowerCase();
 		if (!query) return users;
@@ -97,8 +87,9 @@
 				throw new Error(await extractApiError(res));
 			}
 			showUserModal = false;
-			showToast(
-				isEditingUser ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.'
+			toastStore.addToast(
+				isEditingUser ? 'Benutzer erfolgreich aktualisiert.' : 'Benutzer erfolgreich angelegt.',
+				'success'
 			);
 			fetchUsers();
 		} catch (err) {
@@ -121,11 +112,11 @@
 			}
 			showDeleteConfirm = false;
 			userToDelete = null;
-			showToast('Benutzer erfolgreich gelöscht.');
+			toastStore.addToast('Benutzer erfolgreich gelöscht.', 'success');
 			fetchUsers();
 		} catch (err) {
-			// Modal bewusst offen lassen: Die (handlungsleitende) Fehlermeldung wird inline
-			// im Lösch-Dialog angezeigt, nicht im hier ausgeblendeten globalen Banner.
+			// Der Dialog bleibt offen: Der Satz des Servers sagt, was zu tun ist, und steht
+			// deshalb dort, wo die Frage gestellt wurde.
 			error = err instanceof Error ? err.message : String(err);
 		} finally {
 			deletingUser = false;
@@ -154,34 +145,24 @@
 		showDeleteConfirm = true;
 	}
 
-	/** @param {string} msg */
-	function showToast(msg) {
-		successMessage = msg;
-		setTimeout(() => {
-			if (successMessage === msg) successMessage = null;
-		}, 3000);
-	}
-
 	onMount(fetchUsers);
 </script>
 
 {#if error && !showUserModal && !showDeleteConfirm}
 	<div
-		class="p-4 rounded-2xl bg-rose-50 border border-rose-100 text-rose-600 text-sm font-medium animate-slide-up flex items-center justify-between"
+		role="alert"
+		class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 	>
-		<span><AlertTriangle class="h-4 w-4" aria-hidden="true" /> {error}</span>
-		<button onclick={() => (error = null)} class="text-rose-500 hover:text-rose-600 font-bold ml-2"
-			>×</button
+		<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+		<span class="grow">{error}</span>
+		<button
+			type="button"
+			class="icon-btn"
+			aria-label="Meldung schließen"
+			onclick={() => (error = null)}
 		>
-	</div>
-{/if}
-
-{#if successMessage}
-	<div
-		class="fixed bottom-6 right-6 z-50 p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-semibold shadow-lg animate-slide-up flex items-center gap-2"
-	>
-		<Check class="h-4 w-4 text-emerald-600" aria-hidden="true" />
-		<span>{successMessage}</span>
+			<X class="h-4 w-4" aria-hidden="true" />
+		</button>
 	</div>
 {/if}
 
@@ -196,14 +177,15 @@
 		etikett="Benutzer suchen"
 	/>
 	<div class="flex">
-		<Button onclick={openNewUserModal} class="w-full sm:w-auto">➕ Benutzer anlegen</Button>
+		<Button onclick={openNewUserModal} class="w-full sm:w-auto">
+			<Plus class="h-4 w-4" aria-hidden="true" />
+			Benutzer anlegen
+		</Button>
 	</div>
 </div>
 
-<!-- User Table -->
 <UserManagementTable {loadingUsers} {filteredUsers} {openEditUserModal} {openDeleteConfirm} />
 
-<!-- Modal: Create / Edit User -->
 <UserManagementEditModal
 	open={showUserModal}
 	onclose={() => (showUserModal = false)}
@@ -214,7 +196,6 @@
 	{handleSaveUser}
 />
 
-<!-- Modal: Delete Confirmation -->
 <UserManagementDeleteModal
 	open={showDeleteConfirm && !!userToDelete}
 	onclose={() => {

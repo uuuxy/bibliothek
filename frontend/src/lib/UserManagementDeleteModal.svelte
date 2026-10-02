@@ -17,32 +17,34 @@
 	let { open, onclose, userToDelete, deletingUser, error, confirmDeleteUser } = $props();
 </script>
 
-<Modal {open} {onclose} size="sm">
+<Modal {open} {onclose} size="sm" beschriftetDurch="benutzer-loeschen-titel">
 	<div class="p-6 space-y-4">
 		{#if error}
-			<!-- Fachlicher Konflikt (z. B. 409: offene Handapparat-Ausleihen). Bleibt im Modal
-				     stehen, damit die handlungsleitende Meldung im Kontext sichtbar ist. -->
+			<!-- Etwa offene Ausleihen im Handapparat: Der Satz des Servers sagt, was zu tun ist. -->
 			<div
-				class="p-3.5 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold leading-relaxed animate-slide-up"
+				role="alert"
+				class="flex animate-slide-up items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 			>
-				<AlertTriangle class="h-4 w-4" aria-hidden="true" />
-				{error}
+				<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
+				<span>{error}</span>
 			</div>
 		{/if}
 		<div
-			class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center text-xl mx-auto"
+			class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error-container text-on-error-container"
 		>
 			<AlertTriangle class="h-4 w-4" aria-hidden="true" />
 		</div>
 		<div class="text-center space-y-1.5">
-			<h3 class="font-bold text-slate-800 text-base">Benutzer unwiderruflich löschen?</h3>
-			<p class="text-xs text-slate-500 leading-relaxed font-medium">
+			<h3 id="benutzer-loeschen-titel" class="text-base font-bold text-on-surface">
+				Benutzer unwiderruflich löschen?
+			</h3>
+			<p class="text-xs leading-relaxed font-medium text-on-surface-variant">
 				Sind Sie sicher, dass Sie den Benutzer <strong
 					>{userToDelete?.vorname} {userToDelete?.nachname}</strong
 				> löschen möchten? Diese Aktion wird im Logbuch vermerkt.
 			</p>
 		</div>
-		<div class="flex items-center justify-center gap-3 pt-3 border-t border-slate-100">
+		<div class="flex items-center justify-center gap-3 border-t border-outline-variant pt-3">
 			<Button variant="secondary" onclick={onclose} disabled={deletingUser}>Abbrechen</Button>
 			<Button variant="danger-solid" onclick={confirmDeleteUser} disabled={deletingUser}>
 				{#if deletingUser}<Ladekreis size="sm" farbe="aktuell" />{/if}

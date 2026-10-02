@@ -1,6 +1,6 @@
 # Offene Arbeit
 
-Stand: 02.10.2026
+Stand: 03.10.2026
 
 **Die eine Liste.** Hier steht alles, was noch zu tun, zu prüfen oder zu entscheiden ist — Code,
 Betrieb und Schule. Einen zweiten Ort gibt es nicht. Erledigtes wird gelöscht, nicht archiviert:
@@ -538,7 +538,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 02.10.2026: 1151 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 03.10.2026: 1113 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -575,6 +575,22 @@ Die Statistik steht seit dem 02.10.2026 auf Rollen (`StatsDashboard`, `OverdueWi
 ganzen Anwendung (`actions/tooltip.js`) `bg-slate-900`, und `rollen.css` kennt die Rolle dafür
 nicht (M3, Color roles: „Inverse surface: Background fills for elements which contrast against
 surface"). Die Balkenfarben des Diagramms sind feste Werte, keine Rollen.
+
+Die Benutzerliste steht seit dem 03.10.2026 auf Rollen (`UserManagement`, `UserManagementTable`,
+die Dialoge zum Bearbeiten und Löschen), bis auf die Rollen-Abzeichen (12 Fundstellen):
+
+- Vier Rollen tragen Palettenfarben, die nichts bedeuten außer „eine andere Rolle" (Admin blau,
+  Kollegium grün, Helfer lila, Mitarbeiter gelb); die Leitung trägt `primary-container`. Grün
+  und Gelb sind in `rollen.css` die Rollen für „in Ordnung" und „Achtung". Lokal sind 471 von
+  479 Konten Kollegium. Umstellen hieße: ein neutrales Abzeichen für alle (`ui/StatusChip`)
+  oder die Rolle als Wort; der Verwalter fällt dann in der Liste nicht mehr durch die Farbe auf.
+- Der Dialog „Benutzer unwiderruflich löschen?" ist ein eigener Dialog neben
+  `ui/BestaetigungsDialog`, mit Symbol und Knöpfen in der Mitte. M3, Dialogs, Guidelines:
+  „Buttons are aligned to the trailing edge of the dialog for easier interaction." Er zeigt den
+  Grund eines gescheiterten Löschens im Dialog (offene Ausleihen im Handapparat); das kann der
+  gemeinsame Dialog nicht.
+- Der Zustand eines Kontos steht in zwei Formen: „Aktiv" und „Inaktiv" als Punkt mit Wort,
+  „Zugang beantragt" als Pille.
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 

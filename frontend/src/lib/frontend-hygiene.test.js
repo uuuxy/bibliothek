@@ -57,8 +57,6 @@ const ZEICHNUNGEN = [
 // neu hinzugekommene Dateien UND Einträge, die inzwischen sauber sind.
 const EMOJI_BESTAND = [
 	'src/lib/StudentPrintReceipt.svelte',
-	'src/lib/UserManagement.svelte',
-	'src/lib/UserManagementTable.svelte',
 	'src/lib/WebcamCapture.svelte',
 	'src/lib/components/OmniboxBlockAlert.svelte',
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
