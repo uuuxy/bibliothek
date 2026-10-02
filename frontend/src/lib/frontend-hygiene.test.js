@@ -67,8 +67,6 @@ const EMOJI_BESTAND = [
 	'src/lib/components/layout/RouteFallback.svelte',
 	'src/lib/components/stats/StatistikDetailPage.svelte',
 	'src/lib/components/stats/StatsTrendChart.svelte',
-	'src/lib/components/students/LusdImportView.svelte',
-	'src/lib/components/students/PromoteStudentsView.svelte',
 	'src/lib/designer/Toolbar.svelte'
 ];
 

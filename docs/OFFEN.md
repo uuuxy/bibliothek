@@ -531,7 +531,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 02.10.2026: 1249 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 02.10.2026: 1200 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -556,6 +556,12 @@ Die Titel-Verwaltung steht seit dem 02.10.2026 auf Rollen (`BookTable`, `BookTab
   (`BookTableZeile.svelte`, `onclick` am `<tr>`), die Zeile nimmt keinen Fokus. Die Leserdatei
   öffnet die Akte seit dem 09.09.2026 über den Namen als Knopf.
 - Der Knopf „Retry Cover" trägt eine englische Beschriftung.
+
+Die Seite „LUSD & Versetzung" steht seit dem 02.10.2026 auf Rollen (`LusdImportView`,
+`PromoteStudentsView`, `lusdVorschauRubriken.js`). Die Flächen für Fehler, Erfolg, Hinweis und
+Warnung stehen in beiden Dateien von Hand, wie an rund 40 weiteren Stellen der Anwendung
+(gezählt am 02.10.2026: getönte Fläche und Rundung in einer Klassenliste); ein gemeinsames
+Bauteil dafür gibt es nicht.
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 

@@ -8,7 +8,7 @@
      die Vorschau sagt, welche Stufe gilt, und was unangetastet bleibt. Texte und Rubriken
      stehen in lusdVorschauRubriken.js. -->
 <script>
-	import { AlertTriangle, ChevronRight, CircleCheck } from '@lucide/svelte';
+	import { AlertTriangle, ChevronRight, CircleCheck, FolderOpen } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import { toastStore } from '../../stores/toastStore.svelte.js';
@@ -38,6 +38,7 @@
 	 *  place geändert — SvelteSet ist selbst reaktiv, ein $state-Umschlag wäre doppelt. */
 	const gewaehltePaare = new SvelteSet();
 
+	const dateiGroesse = $derived(`${((selectedFile?.size ?? 0) / 1024).toFixed(1)} KB`);
 	const activeResult = $derived(stage === 'done' ? importResult : previewResult);
 	const info = $derived(modusInfo(activeResult?.modus));
 	const summaryRows = $derived(activeResult ? rubriken(activeResult) : []);
@@ -135,23 +136,23 @@
 		>
 			<div class="min-w-0 flex items-center gap-2">
 				<ChevronRight
-					class="w-3 h-3 text-slate-400 shrink-0 transition-transform group-open:rotate-90"
+					class="w-3 h-3 text-on-surface-variant shrink-0 transition-transform group-open:rotate-90"
 					aria-hidden="true"
 				/>
 				<div class="min-w-0">
-					<p class="text-sm font-bold text-slate-800">{section.label}</p>
-					<p class="text-xs text-slate-500 mt-0.5">{section.hint}</p>
+					<p class="text-sm font-bold text-on-surface">{section.label}</p>
+					<p class="text-xs text-on-surface-variant mt-0.5">{section.hint}</p>
 				</div>
 			</div>
 			<span class="text-lg font-black tabular-nums shrink-0 ml-4 {section.valueClass}"
 				>{section.items.length}</span
 			>
 		</summary>
-		<ul class="divide-y divide-slate-50 pb-2">
+		<ul class="pb-2">
 			{#each section.items as item (item.id)}
 				<li class="py-2 pl-5 flex items-center justify-between gap-3 text-xs">
-					<span class="font-semibold text-slate-700 truncate">{item.vorname} {item.nachname}</span
-					><span class="text-slate-400 font-mono shrink-0"
+					<span class="font-semibold text-on-surface truncate">{item.vorname} {item.nachname}</span
+					><span class="text-on-surface-variant font-mono shrink-0"
 						>{item.alte_klasse && item.neue_klasse
 							? `${item.alte_klasse} → ${item.neue_klasse}`
 							: item.neue_klasse || item.alte_klasse || '—'}</span
@@ -171,7 +172,7 @@
 		>
 			{info.text}
 		</p>
-		<div class="divide-y divide-slate-100">
+		<div class="divide-y divide-outline-variant">
 			<LusdUmbenennungen
 				paare={activeResult.umbenennungen ?? []}
 				gewaehlt={gewaehltePaare}
@@ -191,8 +192,8 @@
 
 <div class="w-full max-w-2xl space-y-8">
 	<div>
-		<h2 class="text-base font-bold text-slate-900">LUSD-Import</h2>
-		<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-xl">
+		<h3 class="text-base font-medium text-on-surface">LUSD-Import</h3>
+		<p class="mt-1 max-w-xl text-sm text-on-surface-variant">
 			Lade die LUSD-Exportdatei hoch, um die Änderungen zu prüfen, bevor sie verbindlich in die
 			Datenbank übernommen werden. Kein Datensatz wird ohne Bestätigung überschrieben.
 		</p>
@@ -201,25 +202,24 @@
 	{#if errorMessage}
 		<div
 			role="alert"
-			class="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold flex items-center gap-2"
+			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<AlertTriangle class="h-4 w-4" aria-hidden="true" /><span>{errorMessage}</span>
+			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 
 	{#if stage === 'done'}
 		<div
-			class="p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-sm font-semibold flex items-center gap-2"
+			class="flex items-center gap-2 rounded-xl bg-success-container px-4 py-3 text-sm text-on-success-container"
 		>
-			<CircleCheck class="h-4 w-4" aria-hidden="true" /><span
-				>Import abgeschlossen — der Bestand ist aktuell.</span
-			>
+			<CircleCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<span>Import abgeschlossen — der Bestand ist aktuell.</span>
 		</div>
 		{@render ergebnis(true)}
 		<Button onclick={resetFlow}>Weitere Datei importieren</Button>
 	{:else}
 		<label
-			class="border-2 border-dashed border-slate-200 hover:border-blue-500/70 hover:bg-slate-50/40 transition-all rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer text-center select-none"
+			class="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-outline-variant p-8 text-center transition-colors select-none hover:border-primary hover:bg-on-surface/8"
 		>
 			<input
 				type="file"
@@ -228,18 +228,18 @@
 				onchange={handleFileChange}
 				disabled={previewLoading || importLoading}
 			/>
-			<span class="text-3xl">📂</span>
+			<FolderOpen class="h-8 w-8 text-on-surface-variant" aria-hidden="true" />
 			{#if selectedFile}
 				<div class="space-y-1">
-					<p class="text-xs font-bold text-slate-700 max-w-xs truncate">{selectedFile.name}</p>
-					<p class="text-label-small text-slate-400">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+					<p class="text-xs font-bold text-on-surface max-w-xs truncate">{selectedFile.name}</p>
+					<p class="text-label-small text-on-surface-variant">{dateiGroesse}</p>
 				</div>
 			{:else}
 				<div class="space-y-1">
-					<p class="text-xs font-bold text-slate-600">
+					<p class="text-xs font-bold text-on-surface">
 						LUSD-CSV oder -Excel auswählen oder reinziehen
 					</p>
-					<p class="text-label-small text-slate-400 font-medium">
+					<p class="text-label-small text-on-surface-variant font-medium">
 						CSV (Komma/Semikolon) oder .xlsx · Pflichtspalten: <code>vorname, nachname, klasse</code
 						>
 						· Zuordnung über <code>lusd_id</code>, sonst <code>geburtsdatum</code> (empfohlen),
@@ -259,11 +259,11 @@
 
 		{#if stage === 'preview' && previewResult}
 			<div class="space-y-4">
-				<p class="text-xs text-slate-500">
+				<p class="text-xs text-on-surface-variant">
 					{previewResult.total_csv_records} Datensätze in der Datei · {previewResult.active_db_students}
 					aktive Schüler im Bestand
 					{#if previewResult.skipped_no_id > 0}
-						· <span class="text-amber-700 font-semibold"
+						· <span class="text-warning font-semibold"
 							>{previewResult.skipped_no_id} Zeilen ohne LUSD-ID werden übersprungen</span
 						>
 					{/if}
@@ -275,9 +275,9 @@
 				</p>
 				{#if hasRiskyGraduates}
 					<div
-						class="p-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-semibold flex items-center gap-2"
+						class="flex items-center gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 					>
-						<AlertTriangle class="h-4 w-4" aria-hidden="true" /><span
+						<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span
 							>Auffällig viele Abgänger ({previewResult.graduates.length} von {previewResult.active_db_students}
 							aktiven Schülern) — Datei vor dem Import genau prüfen. Der Import verlangt dafür eine zusätzliche
 							Bestätigung.</span

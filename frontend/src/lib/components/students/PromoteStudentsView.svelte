@@ -2,7 +2,7 @@
      Dreistufig: Dry-Run-Vorschau (Server rechnet identisches SQL und rollt zurück)
      → Ausführen-Knopf → rote Bestätigung. Kein window.confirm/Modal. -->
 <script>
-	import { AlertTriangle, CircleCheck } from '@lucide/svelte';
+	import { AlertTriangle, CircleCheck, Info } from '@lucide/svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import { apiFetch } from '../../apiFetch.js';
 	import Button from '../ui/Button.svelte';
@@ -27,14 +27,14 @@
 						label: 'Versetzte Schüler',
 						hint: 'Klasse wird um eine Stufe hochgezählt',
 						value: r.promoted_count,
-						valueClass: 'text-emerald-600'
+						valueClass: 'text-success'
 					},
 					{
 						key: 'archived',
 						label: 'Neue Abgänger',
 						hint: 'Abschlussklassen werden archiviert',
 						value: r.archived_count,
-						valueClass: 'text-rose-600'
+						valueClass: 'text-error'
 					},
 					{
 						key: 'mapping',
@@ -106,12 +106,12 @@
 </script>
 
 {#snippet summaryRows(r)}
-	<ul class="divide-y divide-slate-100">
+	<ul class="divide-y divide-outline-variant">
 		{#each rows(r) as row (row.key)}
 			<li class="flex items-center justify-between py-3">
 				<div class="min-w-0">
-					<p class="text-sm font-bold text-slate-800">{row.label}</p>
-					<p class="text-xs text-slate-500 mt-0.5">{row.hint}</p>
+					<p class="text-sm font-bold text-on-surface">{row.label}</p>
+					<p class="text-xs text-on-surface-variant mt-0.5">{row.hint}</p>
 				</div>
 				<span class="text-lg font-black tabular-nums shrink-0 ml-4 {row.valueClass}"
 					>{row.value}</span
@@ -123,8 +123,8 @@
 
 <div class="w-full max-w-2xl space-y-8">
 	<div>
-		<h2 class="text-base font-bold text-slate-900">Schuljahreswechsel</h2>
-		<p class="text-xs text-slate-500 mt-1 leading-relaxed max-w-xl">
+		<h3 class="text-base font-medium text-on-surface">Schuljahreswechsel</h3>
+		<p class="mt-1 max-w-xl text-sm text-on-surface-variant">
 			Zählt die Klassenbezeichnung aller aktiven Schüler stur um eine Jahrgangsstufe hoch (z. B. 5a
 			→ 6a) und markiert Abschlussklassen automatisch als Abgänger. Ausnahmen wie Sitzenbleiber oder
 			individuelle Klassenwechsel lassen sich danach gezielt per LUSD-Import korrigieren.
@@ -133,19 +133,18 @@
 
 	{#if errorMessage}
 		<div
-			class="p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-semibold flex items-center gap-2"
+			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
 		>
-			<AlertTriangle class="h-4 w-4" aria-hidden="true" /><span>{errorMessage}</span>
+			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 
 	{#if result}
 		<div
-			class="p-4 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-800 text-sm font-semibold flex items-center gap-2"
+			class="flex items-center gap-2 rounded-xl bg-success-container px-4 py-3 text-sm text-on-success-container"
 		>
-			<CircleCheck class="h-4 w-4" aria-hidden="true" /><span
-				>Schuljahreswechsel abgeschlossen.</span
-			>
+			<CircleCheck class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<span>Schuljahreswechsel abgeschlossen.</span>
 		</div>
 		{@render summaryRows(result)}
 		<Button onclick={reset}>Fertig</Button>
@@ -163,16 +162,17 @@
 		</div>
 	{:else}
 		<div
-			class="p-4 rounded-xl bg-blue-50 border border-blue-100 text-blue-800 text-xs font-semibold flex items-center gap-2"
+			class="flex items-center gap-2 rounded-xl bg-primary-container px-4 py-3 text-sm text-on-primary-container"
 		>
-			<span>🔍</span><span>Unverbindliche Vorschau — es wurde noch nichts geändert.</span>
+			<Info class="h-4 w-4 shrink-0" aria-hidden="true" />
+			<span>Unverbindliche Vorschau — es wurde noch nichts geändert.</span>
 		</div>
 		{@render summaryRows(preview)}
 
 		<div
-			class="p-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-800 text-xs font-semibold flex items-start gap-2"
+			class="flex items-start gap-2 rounded-xl bg-warning-container px-4 py-3 text-sm text-on-warning-container"
 		>
-			<AlertTriangle class="h-4 w-4" aria-hidden="true" />
+			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" />
 			<span
 				>Dieser Vorgang ist <strong>irreversibel</strong> und betrifft alle aktiven Schüler gleichzeitig.
 				Es gibt keinen automatischen Rückweg — nur ein erneuter LUSD-Import kann einzelne Datensätze danach

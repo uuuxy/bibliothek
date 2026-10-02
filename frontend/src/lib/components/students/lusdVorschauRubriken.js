@@ -66,7 +66,7 @@ export function rubriken(r) {
 			label: 'Neue Schüler',
 			hint: 'Werden neu angelegt',
 			items: r.new_students || [],
-			valueClass: 'text-emerald-600'
+			valueClass: 'text-success'
 		},
 		{
 			key: 'adoptions',
@@ -80,7 +80,7 @@ export function rubriken(r) {
 			label: 'Klassenwechsel',
 			hint: 'Bestehende Schüler mit geänderter Klasse',
 			items: r.class_changes || [],
-			valueClass: 'text-blue-600'
+			valueClass: 'text-primary'
 		},
 		{
 			key: 'returners',
@@ -96,7 +96,7 @@ export function rubriken(r) {
 			// (StandardAbgaengerKarenzTage). Eine 0 hier versprach „sofort anonymisiert“ — und log.
 			hint: abgaengerHinweis(r.karenz_tage ?? 90),
 			items: r.graduates || [],
-			valueClass: 'text-rose-600'
+			valueClass: 'text-error'
 		},
 		{
 			key: 'notInExport',
