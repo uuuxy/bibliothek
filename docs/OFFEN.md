@@ -444,12 +444,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   betroffen. Abhilfe wäre, das Ersatzbild im Proxy zu erkennen und wie einen Fehlschlag zu
   behandeln; bereits abgelegte Dateien unter `uploads/covers` blieben bis dahin liegen.
   Kategorie B.
-- Titel aus der DNB tragen die Verfasserangabe (gefunden am 01.10.2026): `verarbeiteTitel`
-  (`inventur/metadaten_anbieter.go`) nimmt MARC 245 $c in den Titel, wenn darin kein „ / "
-  steht. Die ISBN 9783551551672 ergibt „Harry Potter und der Stein der Weisen Joanne K.
-  Rowling. Aus dem Engl. von Klaus Fritz", 9783791504650 „Tintenherz Cornelia Funke. Mit Ill.
-  der Autorin". Betrifft die Maske „Neues Buch" und das Bestellen per ISBN.
-  Kategorie B.
 - **Speichern zwei Plätze denselben Titel, gilt bei den Feldern des Titels der zweite Stand**
   (gefunden am 01.10.2026, am Stack nachgestellt). `PUT /api/books/{id}` schreibt alle Felder
   zurück, auch die, die niemand angefasst hat: Die Signatur, die Platz 1 gespeichert hat, ist
@@ -975,6 +969,10 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   `KlassenBuchKachel` im Portal). Umstellen beim fachlichen Anfassen, nicht in einem Rutsch.
 - 3.000 Titel ohne ISBN: `inventur.SucheTextDNB` nur mit Bestätigung durch einen Menschen
   verdrahten.
+- Titel aus der DNB tragen deren Platzhalter für eine fehlende Zählung („Deutschbuch [...]
+  Gymnasium 5."), und der Zusatz zum Sachtitel (MARC 245 $b) steht im Titel statt im Feld
+  Untertitel („Lambacher Schweizer Mathematik 6. Ausgabe Hessen Schulbuch mit Medien Klasse
+  6"; an Sätzen der DNB gelesen am 02.10.2026). Die Maske zeigt den Titel vor dem Speichern.
 - Die Altersangabe der DNB (653 „(Zielgruppe)ab 10 Jahre", `MetadatenErgebnis.Zielgruppe`) wird
   gelesen und nicht gespeichert: Es gibt keine Spalte und keinen Leser. Anlass zum Bauen: ein
   Leser, etwa ein Filter im Portal.
@@ -1170,6 +1168,12 @@ Littera-Übernahme, die dort läuft (7.2).
 - Sind die Admin-Konten deaktiviert? Ist `/app/uploads/fotos` leer? Gibt es Lehrkräfte mit
   Platzhalter-Mail `@lehrer-umzug.invalid`? Braucht `repair_fach_kategorie.sql` einen zweiten
   Lauf?
+- Tragen Titel die Nichtsortierzeichen der DNB? Sie umschließen den Artikel am Anfang
+  („Der kleine Hobbit"), sind nicht zu sehen und standen bis zum 02.10.2026 in jedem Titel,
+  der mit Artikel aus einer ISBN-Abfrage oder einer Bestellung per ISBN entstand; seitdem
+  entfernt sie das Einlesen. Bei 0 erledigt, sonst bereinigt eine Migration nach dem Muster
+  von 154:
+  `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM buecher_titel WHERE titel ~ U&'[\0098\009C]';"`
 - Erreicht der Server die DNB? Ohne sie lässt sich ein neues Buch ohne Cover oder Listenpreis
   nicht speichern (5.5). Am Abbild vom 01.10.2026 geprüft, Ausgabe „erreichbar":
   `docker exec bibliothek-backend sh -c 'wget -q -T 8 -O /dev/null "https://services.dnb.de/sru/dnb?version=1.1&operation=explain" && echo erreichbar || echo nicht erreichbar'`

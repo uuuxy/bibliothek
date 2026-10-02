@@ -50,11 +50,13 @@ type sruAntwort struct {
 // Speicher-Erschöpfung beim XML-Parsing (z. B. Billion-Laughs-Angriff).
 //
 // Jeder Wert wird dabei zusammengesetzt (Unicode NFC). Die DNB liefert Umlaute und Akzente
-// zerlegt, als Grundbuchstabe mit dem Zeichen dahinter („u" + U+0308 statt „ü", gemessen am
-// 30.09.2026). Das sieht gleich aus, trifft aber keine eingetippte Suche und kein Schlagwort
-// der eigenen Liste: Am Testserver fand der Katalog „Anhänge" nicht in „Der Herr der Ringe -
-// Anhänge und Register". Die Datenbank setzt Titeltexte seit Migration 154 ebenfalls zusammen;
-// hier geschieht es für alles, was nie gespeichert wird (die Stichwörter des Vorschlags).
+// zerlegt, als Grundbuchstabe mit dem Zeichen dahinter („u" + U+0308 statt „ü"). Das sieht
+// gleich aus, trifft aber keine eingetippte Suche und kein Schlagwort der eigenen Liste. Die
+// Datenbank setzt Titeltexte ebenfalls zusammen (Migration 154); hier geschieht es für alles,
+// was nie gespeichert wird (die Stichwörter des Vorschlags).
+//
+// Die Nichtsortierzeichen fallen weg: Die DNB umschließt mit ihnen den Artikel am Anfang
+// eines Titels. Sie sind nicht zu sehen, und ein Titel mit ihnen gleicht dem getippten nicht.
 func dekodiereMARC(koerper []byte) (sruAntwort, error) {
 	var nutzlast sruAntwort
 	decoder := xml.NewDecoder(io.LimitReader(bytes.NewReader(koerper), 2<<20))
@@ -65,12 +67,16 @@ func dekodiereMARC(koerper []byte) (sruAntwort, error) {
 		felder := nutzlast.Records.Record[i].RecordData.Record.Datafield
 		for j := range felder {
 			for k := range felder[j].Subfield {
-				felder[j].Subfield[k].Value = norm.NFC.String(felder[j].Subfield[k].Value)
+				felder[j].Subfield[k].Value = norm.NFC.String(ohneNichtsortierzeichen.Replace(felder[j].Subfield[k].Value))
 			}
 		}
 	}
 	return nutzlast, nil
 }
+
+// ohneNichtsortierzeichen entfernt U+0098 und U+009C, mit denen MARC21 den Teil eines Werts
+// kennzeichnet, der beim Sortieren nicht zählt.
+var ohneNichtsortierzeichen = strings.NewReplacer(string(rune(0x98)), "", string(rune(0x9c)), "")
 
 // marcBibDaten sammelt die aus den Datafields extrahierten bibliografischen
 // Angaben eines einzelnen Datensatzes.
@@ -78,10 +84,13 @@ type marcBibDaten struct {
 	titelTeile         []string
 	hauptAutor         string
 	extrahierteAutoren []string
-	verlag             string
-	jahr               string
-	isbn               string
-	genres             []string
+	// verfasserangabe ist 245 $c („Joanne K. Rowling. Aus dem Engl. von Klaus Fritz"): Autor
+	// nur, wenn der Satz keinen Verfasser in 100 oder 700 nennt.
+	verfasserangabe string
+	verlag          string
+	jahr            string
+	isbn            string
+	genres          []string
 	// freieWoerter: 653 $a ohne Vorsatz — die Verlagswörter („Burgen", „Erste Liebe").
 	// Einträge mit Vorsatz sind Angaben anderer Art: „(Zielgruppe)", „(Lesealter)",
 	// „(Produktform)", „(VLB-WN)", „(BISAC Subject Heading)", „(Produktgruppe)" (gesehen an
@@ -177,12 +186,18 @@ func bereinigeISBN(wert string) string {
 	return ""
 }
 
-// verarbeiteTitel wertet Tag 245 aus. Im Titel versteckte Autoren (durch
-// " / " abgetrennt) werden extrahiert.
+// verarbeiteTitel wertet Tag 245 aus: Sachtitel, Zusatz, Zählung und Teil ergeben den Titel.
+// Ältere Sätze hängen die Verfasser mit " / " an einen dieser Werte an, neuere führen sie
+// als Verfasserangabe in $c — beides gehört nicht in den Titel.
 func (b *marcBibDaten) verarbeiteTitel(subfelder []marcSubfield) {
 	for _, unterFeld := range subfelder {
 		switch unterFeld.Code {
-		case "a", "b", "n", "p", "c":
+		case "a", "b", "n", "p":
+		case "c":
+			if b.verfasserangabe == "" {
+				b.verfasserangabe = strings.TrimSpace(unterFeld.Value)
+			}
+			continue
 		default:
 			continue
 		}
@@ -323,8 +338,12 @@ func (b *marcBibDaten) titel() string {
 }
 
 // autor bevorzugt den direkten Autoren-Tag; im Titel gefundene Autoren werden
-// ergänzend in Klammern angehängt.
+// ergänzend in Klammern angehängt. Nennt der Satz keinen von beiden, steht die
+// Verfasserangabe.
 func (b *marcBibDaten) autor() string {
+	if b.hauptAutor == "" && len(b.extrahierteAutoren) == 0 {
+		return b.verfasserangabe
+	}
 	if len(b.extrahierteAutoren) == 0 {
 		return b.hauptAutor
 	}
