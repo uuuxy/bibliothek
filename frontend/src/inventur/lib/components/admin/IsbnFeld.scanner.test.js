@@ -7,6 +7,7 @@ vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToa
 
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import IsbnFeld from './IsbnFeld.svelte';
+import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
 const ISBN = '9783791504650';
 const KATALOG = '/api/books/vorhanden';
@@ -22,7 +23,11 @@ const aufrufe = (anfang) =>
 
 /** @param {any} formular @param {boolean} [wirdGescannt] */
 function feld(formular, wirdGescannt = false) {
-	const screen = render(IsbnFeld, { formular, wirdGescannt });
+	const abfrage = erzeugeIsbnAbfrage(
+		() => formular,
+		() => undefined
+	);
+	const screen = render(IsbnFeld, { formular, wirdGescannt, abfrage });
 	return /** @type {HTMLInputElement} */ (screen.getByLabelText('ISBN'));
 }
 const fertig = () => new Promise((r) => setTimeout(r, 0));

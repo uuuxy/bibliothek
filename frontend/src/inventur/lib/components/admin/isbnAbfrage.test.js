@@ -11,8 +11,16 @@ const A = '9783791504650';
 const B = '9783551551672';
 /** Was die Katalogdienste je ISBN kennen; B nennt nur den Titel. */
 const DIENSTE = {
-	[A]: { title: 'Buch A', author: 'Autor A', verlag: 'Verlag A', jahr: '2001', grade: '7' },
-	[B]: { title: 'Buch B' }
+	[A]: {
+		title: 'Buch A',
+		subtitle: 'Untertitel A',
+		author: 'Autor A',
+		verlag: 'Verlag A',
+		jahr: '2001',
+		grade: '7',
+		preis: 12.5
+	},
+	[B]: { title: 'Buch B', preis: 0 }
 };
 
 /** @param {number} status @param {any} koerper */
@@ -125,5 +133,60 @@ describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
 			title: 'Vorhandener Titel',
 			author: 'Autor A'
 		});
+	});
+});
+
+// Der Server trägt beim Speichern nichts nach: Was die Dienste wissen, steht nach der Abfrage
+// in der Maske, auch Untertitel und Listenpreis, und wer speichert, wartet auf sie.
+describe('isbnAbfrage: Untertitel, Listenpreis und das Speichern', () => {
+	it('trägt Untertitel und Ladenpreis ein', async () => {
+		const { formular } = await nachAbfrageA();
+		expect([formular.untertitel, formular.listenpreis]).toEqual(['Untertitel A', 12.5]);
+	});
+
+	it('ein eingetragener Listenpreis bleibt, auch wenn der Knopf neu lädt', async () => {
+		const formular = /** @type {any} */ ({ id: null, isbn: A, title: '', listenpreis: 20 });
+		const abfrage = erzeugeIsbnAbfrage(
+			() => formular,
+			() => undefined
+		);
+
+		await abfrage.nachschlagen(true);
+
+		expect([formular.title, formular.listenpreis]).toEqual(['Buch A', 20]);
+	});
+
+	it('ein Preis von 0 füllt nichts, und eine andere ISBN nimmt den Preis der ersten zurück', async () => {
+		const { formular, abfrage } = await nachAbfrageA();
+
+		formular.isbn = B;
+		await abfrage.nachschlagen(false);
+
+		expect([formular.title, formular.untertitel, formular.listenpreis]).toEqual([
+			'Buch B',
+			undefined,
+			undefined
+		]);
+	});
+
+	it('ruht() wartet auf den laufenden Ablauf und meldet die Frage nach einem vorhandenen Titel', async () => {
+		const formular = /** @type {any} */ ({ id: null, isbn: A, title: '' });
+		const abfrage = erzeugeIsbnAbfrage(
+			() => formular,
+			() => undefined
+		);
+		expect(await abfrage.ruht(), 'ohne Ablauf').toBe(false);
+
+		abfrage.nachschlagen(false);
+		expect(formular.title, 'noch unterwegs').toBe('');
+		expect(await abfrage.ruht()).toBe(false);
+		expect(formular.title).toBe('Buch A');
+
+		vi.mocked(apiFetch).mockImplementation(async () =>
+			antwort(200, { data: { vorhanden: { id: 't1', title: 'Buch A' }, meldung: 'Vergeben.' } })
+		);
+		formular.isbn = B;
+		abfrage.nachschlagen(false);
+		expect(await abfrage.ruht(), 'die ISBN ist vergeben').toBe(true);
 	});
 });

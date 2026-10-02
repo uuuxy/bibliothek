@@ -8,6 +8,7 @@ import { apiFetch } from '../../../../lib/apiFetch.js';
 import BuchEingabefelder from './BuchEingabefelder.svelte';
 import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
 import { leeresBuchFormular } from './buch_form_optionen.js';
+import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
 const DNB = '/api/schlagworte/dnb-vorschlag?isbn=9783751200530';
 
@@ -43,10 +44,13 @@ beforeEach(() => {
 
 /** @param {any} felder — über dem leeren Formular der Seite (leeresBuchFormular) */
 function maske(felder) {
-	return render(BuchEingabefelder, {
-		formular: { ...leeresBuchFormular(), ...felder },
-		dnbVorschlag: erzeugeDnbSchlagwortVorschlag()
-	});
+	const formular = { ...leeresBuchFormular(), ...felder };
+	const dnbVorschlag = erzeugeDnbSchlagwortVorschlag();
+	const abfrage = erzeugeIsbnAbfrage(
+		() => formular,
+		() => dnbVorschlag
+	);
+	return render(BuchEingabefelder, { formular, dnbVorschlag, abfrage });
 }
 const dnbGefragt = () => vi.mocked(apiFetch).mock.calls.some(([url]) => url === DNB);
 

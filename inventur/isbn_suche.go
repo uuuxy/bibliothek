@@ -33,9 +33,10 @@ func (handler *APIHandler) handleLookup(writer http.ResponseWriter, request *htt
 		return
 	}
 
-	// Send mapping back exactly as frontend expects it via REST JSON tags
+	// Der Preis ist der Ladenpreis der DNB und ein Vorschlag für den Listenpreis; 0 heißt,
+	// es ließ sich keiner ermitteln. Die Maske zeigt ihn, bevor gespeichert wird.
 	writeJSON(writer, http.StatusOK, map[string]any{
-		"data": map[string]string{
+		"data": map[string]any{
 			"title":      result.Titel,
 			"subtitle":   result.Untertitel,
 			"author":     result.Autor,
@@ -45,6 +46,7 @@ func (handler *APIHandler) handleLookup(writer http.ResponseWriter, request *htt
 			"verlag":     result.Verlag,
 			"jahr":       result.Jahr,
 			"zielgruppe": result.Zielgruppe,
+			"preis":      result.Preis,
 		},
 	})
 }

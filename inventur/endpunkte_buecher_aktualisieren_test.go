@@ -252,21 +252,56 @@ func TestBearbeiteBuchAktualisieren_LeerHeisstBeimAendernNichtVorgabe(t *testing
 		}
 	})
 
-	t.Run("leerer Autor wird abgelehnt statt ersetzt", func(t *testing.T) {
-		mock, err := pgxmock.NewPool()
-		if err != nil {
-			t.Fatalf("pgxmock: %v", err)
-		}
-		defer mock.Close()
+	// Ein leerer Autor ist nur ein Fehler, wenn der Titel einen trägt. Ohne die Ausnahme
+	// ließe sich ein Titel ohne Autor nicht mehr ändern, seit das Speichern die
+	// Katalogdienste nicht mehr nach einem fragt.
+	for _, fall := range []struct {
+		name     string
+		hatAutor bool
+		status   int
+	}{
+		{"leerer Autor wird abgelehnt, wenn der Titel einen trägt", true, http.StatusBadRequest},
+		{"ein Titel ohne Autor bleibt ohne ihn speicherbar", false, http.StatusOK},
+	} {
+		t.Run(fall.name, func(t *testing.T) {
+			mock, err := pgxmock.NewPool()
+			if err != nil {
+				t.Fatalf("pgxmock: %v", err)
+			}
+			defer mock.Close()
 
-		handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
-		rumpf := `{"isbn":"9783161484100","title":"Titel","author":"","subject":"Mathe"}`
-		w := ruf(t, handler, "0f8fad5b-d9cb-469f-a165-70867728950e", rumpf)
+			const id = "0f8fad5b-d9cb-469f-a165-70867728950e"
+			erwarteFachBekannt(mock, "Mathe")
+			mock.ExpectBegin()
+			mock.ExpectQuery(`SELECT COALESCE\(autor, ''\) <> '' FROM buecher_titel WHERE id = \$1 FOR UPDATE`).
+				WithArgs(id).WillReturnRows(pgxmock.NewRows([]string{"hat"}).AddRow(fall.hatAutor))
+			if fall.hatAutor {
+				mock.ExpectRollback()
+			} else {
+				beliebig := make([]any, 22)
+				for i := range beliebig {
+					beliebig[i] = pgxmock.AnyArg()
+				}
+				erwarteKeineDublette(mock)
+				mock.ExpectExec("UPDATE buecher_titel").WithArgs(beliebig...).
+					WillReturnResult(pgxmock.NewResult("UPDATE", 1))
+				mock.ExpectCommit()
+			}
 
-		if w.Code != http.StatusBadRequest {
-			t.Fatalf("Status %d, erwartet 400 — Rumpf: %s", w.Code, w.Body.String())
-		}
-	})
+			handler := &APIHandler{repo: NewBookRepository(mock), metadaten: stummerMetadatenClient()}
+			w := ruf(t, handler, id, `{"isbn":"9783161484100","title":"Titel","author":"","subject":"Mathe"}`)
+
+			if w.Code != fall.status {
+				t.Fatalf("Status %d, erwartet %d — Rumpf: %s", w.Code, fall.status, w.Body.String())
+			}
+			if strings.Contains(w.Body.String(), "Unbekannter") {
+				t.Error("die Antwort nennt den Platzhalter")
+			}
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("Erwartungen: %v", err)
+			}
+		})
+	}
 }
 
 // ruf schickt einen PUT an den Aktualisieren-Handler. Den Platzhalter {id} füllt im
@@ -281,8 +316,7 @@ func ruf(t *testing.T, handler *APIHandler, id, rumpf string) *httptest.Response
 	return w
 }
 
-// stummerMetadatenClient liefert einen Client, dessen Nachschlag nichts findet — der
-// Nachschlag darf die Aussage der Tests nicht verändern.
+// stummerMetadatenClient liefert einen Client, dessen Katalogdienste nichts finden.
 func stummerMetadatenClient() *MetadatenClient {
 	return &MetadatenClient{httpClient: &http.Client{
 		Transport: &mockTransport{roundTripFunc: func(*http.Request) (*http.Response, error) {

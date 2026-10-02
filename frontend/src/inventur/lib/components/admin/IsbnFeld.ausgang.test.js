@@ -8,6 +8,7 @@ vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToa
 import { apiFetch } from '../../../../lib/apiFetch.js';
 import { showToast } from '$lib/store.svelte.js';
 import IsbnFeld from './IsbnFeld.svelte';
+import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
 const ISBN = '9783791504650';
 
@@ -25,7 +26,11 @@ function server(dienste) {
 
 /** @param {any} formular */
 function feld(formular) {
-	const screen = render(IsbnFeld, { formular, wirdGescannt: false });
+	const abfrage = erzeugeIsbnAbfrage(
+		() => formular,
+		() => undefined
+	);
+	const screen = render(IsbnFeld, { formular, wirdGescannt: false, abfrage });
 	const eingabe = /** @type {HTMLInputElement} */ (screen.getByLabelText('ISBN'));
 	/** Der Text unter dem Feld, an den aria-describedby zeigt. */
 	const hinweis = () => {

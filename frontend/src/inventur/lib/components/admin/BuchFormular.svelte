@@ -6,6 +6,7 @@
 	import BuchAuflagen from './BuchAuflagen.svelte';
 	import Button from '../../../../lib/components/ui/Button.svelte';
 	import { erzeugeDnbSchlagwortVorschlag } from '../../../../lib/utils/dnbSchlagwortVorschlag.svelte.js';
+	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 	import { BookOpen, Printer, Trash2, X } from '@lucide/svelte';
 
 	/**
@@ -26,12 +27,22 @@
 	// Der Schlagwort-Vorschlag der DNB: Die ISBN-Abfrage holt ihn nach einem Treffer dazu; bei
 	// einem Titel, den es schon gibt, der Knopf unter den Schlagworten.
 	const dnbVorschlag = erzeugeDnbSchlagwortVorschlag();
+	const abfrage = erzeugeIsbnAbfrage(
+		() => formular,
+		() => dnbVorschlag
+	);
+
+	// Ein Klick auf „Speichern" verlässt das ISBN-Feld und stößt dessen Abfrage an. Gespeichert
+	// wird erst mit ihren Angaben: Der Server trägt nichts nach. Hat sie nach einem
+	// vorhandenen Titel gefragt, entscheidet die Antwort darauf und nicht dieser Klick.
+	async function speichern() {
+		if (await abfrage.ruht()) return;
+		onSave();
+	}
 
 	// Neuanlage eines Bibliotheksbuchs ohne Signatur ist gesperrt — die Signatur
-	// muss aufs Rücken-Etikett. Lernmittel tragen keins (Migration 093). Die DNB
-	// liefert Titel, Autor, Verlag, Jahr, Cover, Fach und Klasse als Vorschlag,
-	// die Entscheidung bleibt beim Menschen. Altbestand (formular.id) bleibt
-	// speicherbar, damit leere Littera-Importe pflegbar sind.
+	// muss aufs Rücken-Etikett. Lernmittel tragen keins (Migration 093). Altbestand
+	// (formular.id) bleibt speicherbar, damit leere Littera-Importe pflegbar sind.
 	const speichernGesperrt = $derived(
 		!formular.id && !formular.istLernmittel && !(formular.signatur ?? '').trim()
 	);
@@ -54,7 +65,7 @@
 			{formular.id ? 'Buch bearbeiten' : 'Neues Buch'}
 		</h2>
 		<Button
-			onclick={onSave}
+			onclick={speichern}
 			disabled={speichernGesperrt}
 			title={speichernGesperrt ? 'Signatur eintragen, um zu speichern' : undefined}
 			class="ml-4 shrink-0 px-5"
@@ -69,7 +80,7 @@
 	     das letzte Exemplar. -->
 	<div class="flex-1 p-6 lg:grid lg:grid-cols-[minmax(0,1fr)_16rem] lg:gap-x-10">
 		<div class="space-y-8 lg:col-start-1">
-			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} />
+			<BuchEingabefelder bind:formular bind:wirdGescannt {dnbVorschlag} {abfrage} />
 		</div>
 		<aside
 			class="mx-auto mt-8 w-full max-w-64 lg:col-start-2 lg:row-start-1 lg:mt-0 lg:sticky lg:top-20 lg:self-start {formular.id

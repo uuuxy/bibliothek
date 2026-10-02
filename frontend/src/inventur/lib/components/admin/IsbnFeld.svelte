@@ -8,16 +8,12 @@
 	import Ladekreis from '../../../../lib/components/ui/Ladekreis.svelte';
 	import StrichcodeScannerOverlay from '$lib/components/scanner/StrichcodeScannerOverlay.svelte';
 	import { showToast } from '$lib/store.svelte.js';
-	import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 	import { Camera, RefreshCw } from '@lucide/svelte';
 	import Feld from '../../../../lib/components/ui/Feld.svelte';
-	/** dnbVorschlag: Nach einer ISBN-Abfrage mit Treffer holt er die Schlagworte der DNB dazu. */
-	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag = undefined } = $props();
+	/** abfrage: die ISBN-Abfrage der Maske (erzeugeIsbnAbfrage); die Maske wartet vor dem
+	 *  Speichern auf sie. */
+	let { formular = $bindable(), wirdGescannt = $bindable(), abfrage } = $props();
 
-	const abfrage = erzeugeIsbnAbfrage(
-		() => formular,
-		() => dnbVorschlag
-	);
 	/** @type {HTMLInputElement | undefined} */
 	let eingabe = $state();
 	// Die ISBN, zu der die Eingabetaste gefragt hat: Das Verlassen des Feldes danach fragt

@@ -81,6 +81,10 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 	}
 	defer db.SafeRollback(ctx, tx)
 
+	if err := pruefeAutorNichtGeleert(ctx, tx, id, book.Author); err != nil {
+		return err
+	}
+
 	// Wie beim Anlegen: Eine geänderte ISBN darf nicht in anderer Schreibweise auf einen
 	// vorhandenen Titel zeigen (OFFEN.md 4.18). Die eigene Zeile ist ausgenommen.
 	if err := pruefeDublette(ctx, tx, book, id); err != nil {
@@ -139,6 +143,28 @@ func (repo *BookRepository) UpdateBook(ctx context.Context, id string, book Book
 
 	if err := tx.Commit(ctx); err != nil {
 		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
+	}
+	return nil
+}
+
+// pruefeAutorNichtGeleert lehnt eine Änderung ohne Autor ab, wenn der Titel einen trägt: Dann
+// hat ein Formular das Feld nie befüllt, oder jemand hat es geleert. Ein Titel ohne Autor
+// (Medien, Sammelwerke, viele Titel aus Littera) bleibt ohne ihn speicherbar. Die Sperre hält
+// die Zeile bis zum UPDATE derselben Transaktion.
+func pruefeAutorNichtGeleert(ctx context.Context, tx repository.DBQueryer, id, autor string) error {
+	if autor != "" {
+		return nil
+	}
+	var hatAutor bool
+	err := tx.QueryRow(ctx,
+		`SELECT COALESCE(autor, '') <> '' FROM buecher_titel WHERE id = $1 FOR UPDATE`, id).Scan(&hatAutor)
+	switch {
+	case istKeineZeile(err):
+		return ErrBookNotFound
+	case err != nil:
+		return fmt.Errorf("buch konnte nicht aktualisiert werden: %w", err)
+	case hatAutor:
+		return ErrAutorGeleert
 	}
 	return nil
 }

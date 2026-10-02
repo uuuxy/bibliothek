@@ -1,0 +1,104 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, fireEvent, waitFor } from '@testing-library/svelte';
+
+vi.mock('../../../../lib/apiFetch.js', async (importOriginal) => ({
+	...(await importOriginal()),
+	apiFetch: vi.fn()
+}));
+vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+
+import { apiFetch } from '../../../../lib/apiFetch.js';
+import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
+import BuchFormular from './BuchFormular.svelte';
+import { leeresBuchFormular } from './buch_form_optionen.js';
+
+const ISBN = '9783060130764';
+
+/** @param {number} status @param {any} koerper */
+const antwort = (status, koerper) =>
+	/** @type {any} */ ({ ok: status < 400, status, json: async () => koerper });
+
+/**
+ * Der Server der Maske: was der eigene Katalog zur ISBN sagt und was die Katalogdienste
+ * liefern. Alles Übrige (Systematik, Schlagworte) antwortet mit einer leeren Liste.
+ * @param {any} vorhanden @param {() => Promise<any>} [dienste]
+ */
+function server(vorhanden, dienste = async () => antwort(404, {})) {
+	vi.mocked(apiFetch).mockImplementation(async (url) => {
+		const u = String(url);
+		if (u.startsWith('/api/books/vorhanden')) return antwort(200, { data: vorhanden });
+		if (u.startsWith('/api/lookup/')) return dienste();
+		return antwort(200, []);
+	});
+}
+
+/** Verlässt das ISBN-Feld und klickt „Speichern", wie ein Klick auf den Knopf es tut.
+ * @param {any} formular @param {() => void} onSave */
+async function verlasseIsbnUndSpeichere(formular, onSave) {
+	const screen = render(BuchFormular, {
+		formular,
+		onClose: () => {},
+		onSave,
+		onCoverUpload: () => {},
+		onCoverNeuHolen: () => {},
+		onAssignClass: () => {}
+	});
+	await fireEvent.blur(screen.getByLabelText('ISBN'));
+	await fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
+}
+const kurz = () => new Promise((r) => setTimeout(r, 20));
+
+beforeEach(() => vi.clearAllMocks());
+
+// Ein Klick auf „Speichern" verlässt das ISBN-Feld, und dessen Abfrage beginnt. Der Server
+// trägt beim Speichern nichts nach: Ginge der Titel sofort hinaus, fehlten ihm die Angaben,
+// die einen Augenblick später in der Maske stehen.
+describe('BuchFormular: Speichern während der ISBN-Abfrage', () => {
+	it('wartet auf die Angaben der Katalogdienste', async () => {
+		/** @type {() => void} */
+		let antworte = () => {};
+		const dienste = new Promise((gibFrei) => (antworte = () => gibFrei(undefined)));
+		server({ vorhanden: null }, async () => {
+			await dienste;
+			return antwort(200, { data: { title: 'Green Line 3' } });
+		});
+		const formular = $state({ ...leeresBuchFormular(), isbn: ISBN, signatur: 'Eng 3' });
+		let titelBeimSpeichern = null;
+		const onSave = vi.fn(() => (titelBeimSpeichern = formular.title));
+
+		await verlasseIsbnUndSpeichere(formular, onSave);
+		await kurz();
+		expect(onSave, 'die Abfrage läuft noch').not.toHaveBeenCalled();
+
+		antworte();
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+		expect(titelBeimSpeichern).toBe('Green Line 3');
+	});
+
+	it('speichert nicht, wenn die Abfrage nach einem vorhandenen Titel gefragt hat', async () => {
+		server({
+			vorhanden: { id: 'titel-1', title: 'Green Line 3', ohneExemplar: false },
+			meldung: 'Diese ISBN trägt schon der Titel „Green Line 3“.'
+		});
+		vi.mocked(bestaetigen).mockResolvedValue(false);
+		const formular = $state({ ...leeresBuchFormular(), isbn: ISBN, signatur: 'Eng 3' });
+		const onSave = vi.fn();
+
+		await verlasseIsbnUndSpeichere(formular, onSave);
+		await waitFor(() => expect(bestaetigen).toHaveBeenCalledTimes(1));
+		await kurz();
+
+		expect(onSave).not.toHaveBeenCalled();
+	});
+
+	it('ohne laufende Abfrage speichert der Klick', async () => {
+		server({ vorhanden: null });
+		const formular = $state({ ...leeresBuchFormular(), isbn: '', signatur: 'Eng 3' });
+		const onSave = vi.fn();
+
+		await verlasseIsbnUndSpeichere(formular, onSave);
+
+		await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+	});
+});

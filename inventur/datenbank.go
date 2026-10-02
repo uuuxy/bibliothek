@@ -22,6 +22,8 @@ var (
 	// ErrDubletteTitel: derselbe Titel desselben Autors steht ohne ISBN schon im
 	// Katalog — die Dublettenkontrolle ohne Nummer (OFFEN.md 4.18, Stufe 2).
 	ErrDubletteTitel = errors.New("dieser titel steht ohne ISBN bereits im katalog")
+	// ErrAutorGeleert: Eine Änderung nennt keinen Autor, der Titel trägt aber einen.
+	ErrAutorGeleert = errors.New("der autor des titels darf nicht geleert werden")
 )
 
 // NewBookRepository bindet das Inventur-Repository an einen Verbindungspool.

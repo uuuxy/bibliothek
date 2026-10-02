@@ -31,6 +31,7 @@ function felderAus(daten) {
 	/** @type {[string, any][]} */
 	const felder = [
 		['title', daten.title],
+		['untertitel', daten.subtitle],
 		['author', daten.author],
 		['verlag', daten.verlag],
 		['erscheinungsjahr', jahr > 0 ? jahr : undefined],
@@ -40,6 +41,9 @@ function felderAus(daten) {
 	];
 	return felder.filter(([, wert]) => wert !== undefined && wert !== '');
 }
+
+/** @param {any} wert */
+const istLeer = (wert) => wert === null || wert === undefined || wert === '';
 
 /**
  * Die ISBN-Abfrage einer Buchmaske, für jeden Weg der Eingabe dieselbe: erst der eigene
@@ -58,7 +62,8 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 	let ausgang = $state(null);
 	// Ein Klick auf den Knopf verlässt zugleich das Feld: Der zweite Auslöser schließt sich
 	// dem laufenden Ablauf an, statt Katalog und Katalogdienste doppelt zu fragen.
-	let laeuft = false;
+	/** @type {Promise<boolean> | null} */
+	let lauf = null;
 	let aufWunsch = false;
 	// Was die letzte Abfrage in welches Formular geschrieben hat, und zu welcher ISBN. Eine
 	// andere ISBN nimmt es zurück, soweit niemand es geändert hat: Sonst stünden die Angaben
@@ -105,6 +110,11 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 			if (!antwort.ok) return melde(AUSGAENGE[antwort.status] ?? GESCHEITERT);
 			const daten = (await antwort.json()).data ?? {};
 			for (const [feld, wert] of felderAus(daten)) schreibe(formular, feld, wert);
+			// Der Ladenpreis der DNB ist ein Vorschlag für den Listenpreis: Er füllt nur ein
+			// leeres Feld. Was jemand eingetragen hat, bleibt.
+			if (daten.preis > 0 && istLeer(formular.listenpreis)) {
+				schreibe(formular, 'listenpreis', daten.preis);
+			}
 			uebernommenZu = isbn;
 			if (!daten.title) return melde(NICHTS_BEKANNT);
 			dnbVorschlag()?.lade(isbn);
@@ -117,20 +127,23 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 		}
 	}
 
+	/** @returns {Promise<boolean>} ob die Maske nach einem vorhandenen Titel gefragt hat */
+	async function durchlauf() {
+		const formular = maske();
+		if (formular !== uebernommenIn || formular.isbn !== uebernommenZu) nimmZurueck(formular);
+		if (!formular.id && (await frageWennVergeben(formular.isbn))) return true;
+		if (aufWunsch || !formular.title) await holeAngaben(formular);
+		return false;
+	}
+
 	/** @param {boolean} wunsch true: der Knopf lädt auch, wenn schon ein Titel dasteht */
-	async function nachschlagen(wunsch) {
+	function nachschlagen(wunsch) {
 		aufWunsch ||= wunsch;
-		if (laeuft) return;
-		laeuft = true;
-		try {
-			const formular = maske();
-			if (formular !== uebernommenIn || formular.isbn !== uebernommenZu) nimmZurueck(formular);
-			if (!formular.id && (await frageWennVergeben(formular.isbn))) return;
-			if (aufWunsch || !formular.title) await holeAngaben(formular);
-		} finally {
-			laeuft = false;
+		lauf ??= durchlauf().finally(() => {
+			lauf = null;
 			aufWunsch = false;
-		}
+		});
+		return lauf;
 	}
 
 	return {
@@ -145,6 +158,11 @@ export function erzeugeIsbnAbfrage(maske, dnbVorschlag) {
 		vergissAusgang() {
 			ausgang = null;
 		},
-		nachschlagen
+		nachschlagen,
+		/**
+		 * Wartet auf einen laufenden Ablauf: Wer speichert, braucht dessen Angaben.
+		 * @returns {Promise<boolean>} ob dabei nach einem vorhandenen Titel gefragt wurde
+		 */
+		ruht: () => lauf ?? Promise.resolve(false)
 	};
 }

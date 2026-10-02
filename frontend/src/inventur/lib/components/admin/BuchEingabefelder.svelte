@@ -13,8 +13,9 @@
 
 	const MEDIENTYP_BASIS = ['Buch', 'CD', 'DVD'];
 
-	/** dnbVorschlag: der Schlagwort-Vorschlag der DNB (BuchFormular, erzeugeDnbSchlagwortVorschlag). */
-	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag } = $props();
+	/** dnbVorschlag: der Schlagwort-Vorschlag der DNB (BuchFormular, erzeugeDnbSchlagwortVorschlag).
+	 *  abfrage: die ISBN-Abfrage der Maske (BuchFormular, erzeugeIsbnAbfrage). */
+	let { formular = $bindable(), wirdGescannt = $bindable(), dnbVorschlag, abfrage } = $props();
 
 	// Die medientyp-Spalte ist offen (Littera-Import bringt z. B. "Zeitschrift", "Spiel").
 	// Ohne diesen Zusatz zeigte das Dropdown für einen solchen Wert "Bitte wählen" — er
@@ -87,7 +88,7 @@
 		/>
 
 		<!-- Extrahierte ISBN-Feld-Komponente -->
-		<IsbnFeld bind:formular bind:wirdGescannt {dnbVorschlag} />
+		<IsbnFeld bind:formular bind:wirdGescannt {abfrage} />
 	</div>
 
 	<SignaturFeld bind:formular {signaturFehlt} />
@@ -112,14 +113,11 @@
 		hint="Wie auf dem Titelblatt, z. B. „4. Aufl. 2023“. Leer lassen, wenn es nur eine gibt."
 	/>
 
-	<!-- Listenpreis: was ein Ersatz HEUTE kostet — die Grundlage, auf die die Staffel des
-	     Erlasses ab dem zweiten Verleihjahr rechnet (Migration 127). Beim Anlegen über die
-	     ISBN füllt ihn die DNB von selbst; hier steht er, damit ein Mensch ihn prüfen und
-	     überschreiben kann.
-
-	     LEER heißt „nicht erfasst", nicht „kostet nichts": Bei leerem Feld weicht die
-	     Staffel auf den Kaufpreis aus und sagt das in ihrer Herleitung. Eine getippte 0
-	     ergäbe dagegen einen Ersatzbetrag von 0,00 €. -->
+	<!-- Listenpreis: was ein Ersatz heute kostet — die Grundlage, auf die die Staffel des
+	     Erlasses ab dem zweiten Verleihjahr rechnet (Migration 127). Die ISBN-Abfrage trägt
+	     den Ladenpreis der DNB ein, solange das Feld leer ist; hier prüft und überschreibt
+	     ihn ein Mensch. Leer heißt „nicht erfasst", nicht „kostet nichts": Dann weicht die
+	     Staffel auf den Kaufpreis aus. Eine getippte 0 ergäbe einen Ersatzbetrag von 0,00 €. -->
 	<Feld
 		id="buch-listenpreis"
 		label="Listenpreis"

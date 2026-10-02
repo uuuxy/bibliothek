@@ -130,15 +130,16 @@ func sqlVonUpdateBook(t *testing.T) string {
 	// UpdateBook ist atomar (Tx): Begin, UPDATE, Zählung des Bestands (Soll 0 bei Stand 0 → keine
 	// weiteren Schreibvorgänge), Commit.
 	mock.ExpectBegin()
-	// Keine Erwartung für die Dublettenkontrolle: Sie fragt die Datenbank nur, wenn eine
-	// ISBN oder ein Titel da ist — hier wird mit einem leeren Buch gemessen.
+	// Keine Erwartung für die Dublettenkontrolle und die Prüfung des Autors: Die eine fragt
+	// die Datenbank nur mit ISBN oder Titel, die andere nur ohne Autor — gemessen wird mit
+	// einem Buch, das nur einen Autor nennt.
 	mock.ExpectExec("").WithArgs(beliebig...).WillReturnResult(pgxmock.NewResult("UPDATE", 1))
 	mock.ExpectQuery("").WithArgs(pgxmock.AnyArg()).
 		WillReturnRows(pgxmock.NewRows([]string{"count"}).AddRow(0))
 	mock.ExpectCommit()
 
 	repo := NewBookRepository(mock)
-	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{}, &Bestandsangabe{Soll: 0}); err != nil {
+	if err := repo.UpdateBook(context.Background(), "irgendeine-id", Book{Author: "Autor"}, &Bestandsangabe{Soll: 0}); err != nil {
 		t.Fatalf("UpdateBook: %v", err)
 	}
 	if erfasst == "" {

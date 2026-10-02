@@ -424,11 +424,10 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
 - Jede ISBN-Abfrage legt eine Cover-Datei ab (gefunden am 01.10.2026, am lokalen Stack
   gezählt): `GET /api/lookup/{isbn}` speichert das Cover als `uploads/cover_auto_…`, auch wenn
-  danach nichts gespeichert wird. `POST /api/books` schlägt wegen des leeren Listenpreises
-  noch einmal nach und legt eine zweite Datei ab, die kein Titel trägt. Zwei Abfragen und zwei
-  Speicherversuche derselben ISBN ergaben vier Dateien. Löschen aus der Maske
-  (`DELETE /api/buecher/titel/{id}`) lässt die Datei des Titels liegen, `DELETE /api/books`
-  nimmt sie mit (`sammleLokaleCoverPfade`). Der Ordner wächst; Kategorie B.
+  danach nichts gespeichert wird, und jede Wiederholung legt eine weitere ab. Löschen aus der
+  Maske (`DELETE /api/buecher/titel/{id}`) lässt die Datei des Titels liegen,
+  `DELETE /api/books` nimmt sie mit (`sammleLokaleCoverPfade`). Der Ordner wächst;
+  Kategorie B.
 - Googles Ersatzbild gilt als Cover (gefunden am 02.10.2026, am lokalen Stack gesehen): Hat
   ein Titel kein gespeichertes Cover, fragt die Oberfläche über den eigenen Proxy erst Google
   Books, dann OpenLibrary (`coverKandidaten` in `utils/coverSrc.js`). Google antwortet auf eine
@@ -457,17 +456,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   01.10.2026 im Browser): Über der Liste steht „Exemplare (9)" neben dem Bestand 5, beide
   Arten heißen „Gesperrt", und „Exemplar löschen" an einem ausgesonderten antwortet
   „exemplar nicht gefunden oder bereits ausgebucht". Kategorie B.
-- **Kein neues Buch, solange die Katalogdienste nicht antworten** (gefunden am 01.10.2026, am
-  Stack nachgestellt; Kategorie B). `ergaenzeBuchMetadaten` fragt vor dem Anlegen DNB, Google
-  Books und OpenLibrary, sobald Titel, Autor, Cover oder Listenpreis fehlen; bei einem von
-  Hand eingetragenen Buch fehlt fast immer das Cover. Antwortet keiner der Dienste
-  (nachgestellt mit Adressen, die Pakete verschlucken), meldet die Maske nach 10 s
-  „Netzwerk-Timeout: Die Anfrage hat zu lange gedauert.", der Server bricht ab, gespeichert
-  wird nichts; die Eingaben bleiben stehen. Mit Cover und Listenpreis antwortet dieselbe Tür
-  sofort mit 201. Betrifft jeden Ausfall des Internets und einen Server, dessen Netz die
-  Dienste nicht erreicht (7.8). Abhilfe: Das Anlegen wartet nicht auf die Dienste — die Maske
-  hat die Angaben bei der Eingabe der ISBN schon geholt. Damit entfiele auch die zweite
-  Cover-Datei aus dem Punkt darüber.
 - Maske „Neues Buch": „Speichern" ist gesperrt, solange einem Bibliotheksbuch die Signatur
   fehlt; den Grund nennt das Feld Signatur („Speichern ist bis dahin gesperrt"). M3, Dialogs,
   Guidelines, zur bildschirmfüllenden Maske: „Don't disable the confirmation button" und
@@ -819,6 +807,14 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   146). Die Maske sagt dabei nicht, dass die Nummer schon einmal vergeben war; nur der Generator
   und die Littera-Übernahme lesen `ausweisnummern_ausgeschieden`. Anlass zum Bauen: eine alte
   Karte, die auf diesem Weg an eine andere Person gerät.
+- Der Cover-Abgleich fragt eine ISBN, die kein Katalogdienst kennt, alle sechs Stunden und bei
+  jedem Start neu (am Code gelesen am 02.10.2026): `processCover`
+  (`internal/service/cover_service.go`) setzt `FAILED`, sobald die Abfrage einen Fehler
+  liefert, und „nicht gefunden" ist dort ein Fehler; `NOT_FOUND` gibt es nur für einen Treffer
+  ohne Cover. Je Titel sind das bis zu fünf Anfragen an DNB, Google Books und OpenLibrary,
+  gedrosselt auf zwei Titel je Sekunde. Wie viele Titel es trifft, zeigt
+  `SELECT cover_status, count(*) FROM buecher_titel GROUP BY 1` am Server. Anlass zum Bauen:
+  Ein Dienst sperrt die Adresse der Schule, oder der Lauf dauert merklich.
 - Die Sperrprüfung liest aus dem Pool, während die Checkout-Transaktion mit `FOR UPDATE` offen ist
   (drei Abfragen über eine zweite Verbindung). Bei `MaxConns = 50` ohne Wirkung; beim Nachbuchen
   vieler Ausleihen (Abschnitt 2) beobachten.
@@ -1165,8 +1161,8 @@ Littera-Übernahme, die dort läuft (7.2).
   entfernt sie das Einlesen. Bei 0 erledigt, sonst bereinigt eine Migration nach dem Muster
   von 154:
   `docker exec bibliothek-db psql -U postgres -d bibliothek -c "SELECT count(*) FROM buecher_titel WHERE titel ~ U&'[\0098\009C]';"`
-- Erreicht der Server die DNB? Ohne sie lässt sich ein neues Buch ohne Cover oder Listenpreis
-  nicht speichern (5.5). Am Abbild vom 01.10.2026 geprüft, Ausgabe „erreichbar":
+- Erreicht der Server die DNB? Ohne sie bringt die ISBN-Abfrage der Buchmaske keine Angaben
+  und der Cover-Abgleich kein Cover; gespeichert wird trotzdem. Am Abbild vom 01.10.2026 geprüft, Ausgabe „erreichbar":
   `docker exec bibliothek-backend sh -c 'wget -q -T 8 -O /dev/null "https://services.dnb.de/sru/dnb?version=1.1&operation=explain" && echo erreichbar || echo nicht erreichbar'`
 
 ## 8. Schule, Schulamt, Schulträger

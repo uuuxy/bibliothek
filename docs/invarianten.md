@@ -442,11 +442,13 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   Fehlversuch, und nach fünf Scans war das Konto an diesem Rechner 15 Minuten gesperrt.
   Behoben am 01.10.2026 (`frontend/src/lib/scanErkennung.js`,
   `frontend/e2e/sperre-scan.spec.js`); bis dahin stand der Fund nicht im Repository.
-- **17 · Ausfall.** Antworten die Katalogdienste nicht, lässt sich kein neues Buch
-  speichern, dem Cover oder Listenpreis fehlt: `ergaenzeBuchMetadaten` fragt vor dem
+- **17 · Ausfall.** Antworteten die Katalogdienste nicht, ließ sich kein neues Buch
+  speichern, dem Cover oder Listenpreis fehlte: `ergaenzeBuchMetadaten` fragte vor dem
   Schreiben DNB, Google Books und OpenLibrary der Reihe nach (je 8 s Frist), die Oberfläche
-  gibt nach 10 s auf, gespeichert wird nichts (am Stack nachgestellt mit Diensten, die nicht
-  antworten; mit Cover und Preis antwortet dieselbe Tür sofort mit 201). Dieselbe Frage hat
+  gab nach 10 s auf, gespeichert wurde nichts (am Stack nachgestellt mit Diensten, die nicht
+  antworten; mit Cover und Preis antwortete dieselbe Tür sofort mit 201). Dasselbe galt beim
+  Ändern jedes Titels ohne Cover. Behoben am 02.10.2026: Das Speichern fragt keinen Dienst
+  (`inventur/speichern_ohne_katalogdienste_pg_test.go`). Dieselbe Frage hat
   früher drei Türen offen gehalten: Ohne Netz wird nicht gesperrt (`f7133548`, 16.09.2026),
   ein Ausfall des Mailservers zählt nicht als Fehlversuch (20.08.2026) und sperrt seit
   Migration 155 niemanden aus (`0d6ff8e0`, dort auch der Fall im Übergang beim Update).

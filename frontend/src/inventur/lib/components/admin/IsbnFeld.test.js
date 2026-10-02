@@ -9,6 +9,7 @@ import { apiFetch } from '../../../../lib/apiFetch.js';
 import { bestaetigen } from '../../../../lib/stores/bestaetigung.svelte.js';
 import { appState, showToast } from '$lib/store.svelte.js';
 import IsbnFeld from './IsbnFeld.svelte';
+import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
 
 const ISBN = '9783791504650';
 const MELDUNG = 'Diese ISBN trägt schon der Titel „Tintenherz“.';
@@ -51,7 +52,11 @@ const aufrufe = (anfang) =>
 
 /** @param {any} formular */
 function feld(formular) {
-	const screen = render(IsbnFeld, { formular, wirdGescannt: false });
+	const abfrage = erzeugeIsbnAbfrage(
+		() => formular,
+		() => undefined
+	);
+	const screen = render(IsbnFeld, { formular, wirdGescannt: false, abfrage });
 	return {
 		eingabe: screen.getByLabelText('ISBN'),
 		knopf: screen.getByRole('button', { name: 'Daten aus dem Internet aktualisieren' })

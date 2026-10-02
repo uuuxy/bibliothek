@@ -1,7 +1,6 @@
 package inventur
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -32,24 +31,13 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		return
 	}
 
-	ergaenzeFehlendeMetadatenFuerAktualisierung(anfrage.Context(), handler, &eingabe)
-
-	// Beim ÄNDERN ist ein leerer Titel ein Fehler, kein Anlass für einen Platzhalter.
-	//
-	// Bis zum 23.08.2026 wurde daraus still "Unbekannter Titel" bzw. "Unbekannter Autor" —
-	// dieselbe Regel wie beim Anlegen. Dort ist sie richtig: Ein per Scan angelegtes Buch
-	// ohne Fund im Katalog braucht irgendeinen Namen. Beim Ändern steht davor aber ein
-	// Mensch, der ein Feld geleert hat oder dessen Formular es nie befüllt hat — und der
-	// bekam die Bescheinigung "buch aktualisiert", während der Titel seines Buchs
-	// verschwand. Der Nachschlag oben darf weiter füllen; nur der Platzhalter ist weg.
+	// Beim Ändern ist ein leerer Titel ein Fehler, kein Anlass für einen Platzhalter: Davor
+	// steht ein Mensch, der das Feld geleert hat, oder ein Formular, das es nie befüllt hat.
+	// Die Katalogdienste füllen hier nichts nach — sonst wartete das Speichern auf sie, und
+	// in der Akte stünde, was niemand eingetragen und niemand gesehen hat.
 	if eingabe.Titel == "" {
 		writeError(antwort, http.StatusBadRequest,
 			"titel darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
-		return
-	}
-	if eingabe.Autor == "" {
-		writeError(antwort, http.StatusBadRequest,
-			"autor darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
 		return
 	}
 
@@ -95,6 +83,11 @@ func (handler *APIHandler) BearbeiteBuchAktualisieren(antwort http.ResponseWrite
 		}
 		if errors.Is(fehler, ErrBookNotFound) {
 			writeError(antwort, http.StatusNotFound, "Buch nicht gefunden")
+			return
+		}
+		if errors.Is(fehler, ErrAutorGeleert) {
+			writeError(antwort, http.StatusBadRequest,
+				"autor darf nicht leer sein (beim Ändern wird kein Platzhalter eingesetzt)")
 			return
 		}
 		log.Printf("Fehler beim Aktualisieren von Buch ID %s: %v", id, fehler)
@@ -159,25 +152,4 @@ func pruefeListenpreis(preis *float64) error {
 		return errors.New("listenpreis muss >= 0 sein (leer lassen, wenn unbekannt)")
 	}
 	return nil
-}
-
-// ergaenzeFehlendeMetadatenFuerAktualisierung sucht fehlende Buchinformationen über den
-// Metadaten-Handler nach. Standardwerte setzt sie NICHT mehr: Bleibt der Titel danach
-// leer, ist das beim Ändern ein Fehler (400), kein Platzhalter — siehe den Aufrufer.
-func ergaenzeFehlendeMetadatenFuerAktualisierung(ctx context.Context, handler *APIHandler, eingabe *BuchEingabe) {
-	if eingabe.Titel == "" || eingabe.Autor == "" || eingabe.CoverURL == "" {
-		nachschlagen, _ := handler.metadaten.SucheNachISBN(ctx, eingabe.ISBN) //nolint:errcheck
-		if nachschlagen != nil {
-			if eingabe.Titel == "" {
-				eingabe.Titel = strings.TrimSpace(nachschlagen.Titel)
-			}
-			if eingabe.Autor == "" {
-				eingabe.Autor = strings.TrimSpace(nachschlagen.Autor)
-			}
-			if eingabe.CoverURL == "" {
-				eingabe.CoverURL = strings.TrimSpace(nachschlagen.CoverURL)
-			}
-		}
-	}
-
 }
