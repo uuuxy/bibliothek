@@ -479,6 +479,11 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Scanners nichts aus: Die Frage nach dem vorhandenen Titel und die ISBN-Abfrage kommen erst
   beim Verlassen des Felds. Abhilfe: Das ISBN-Feld bekommt beim Öffnen den Fokus, und Enter
   gilt dort wie das Verlassen.
+- Maske „Neues Buch": „Speichern" ist gesperrt, solange einem Bibliotheksbuch die Signatur
+  fehlt; den Grund nennt das Feld Signatur („Speichern ist bis dahin gesperrt"). M3, Dialogs,
+  Guidelines, zur bildschirmfüllenden Maske: „Don't disable the confirmation button" und
+  „Only trigger an additional basic dialog if the action fails". Zu entscheiden wäre, ob der
+  Knopf bedienbar bleibt und ein Klick zum Feld führt (Lesung 02.10.2026, Kategorie C).
 - Druck-Center, Buch-Etiketten: Bei 1280 px Fensterbreite schiebt sich die A4-Vorschau (feste
   140 mm, `LabelPreview.svelte`) über den rechten Rand der Layout-Optionen; die Pfeile der
   Auswahlfelder liegen darunter (Sichtprüfung 24.09.2026). Mit 5.21 für diesen Bildschirm.
@@ -500,6 +505,23 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Titel so beginnt, und `e2e/leserdatei.spec.js` lässt „Leserdateibuch …" samt Exemplar und
   Ausleihe liegen. Auf frischer Datenbank läuft kontrast vor leserdatei und ist grün. Den
   Menüpunkt genau treffen oder das Buch aufräumen.
+- `e2e/schlagworte-roundtrip.spec.js` hängt an der Geschwindigkeit des Rechners (gefunden am
+  02.10.2026). `speichere()` wartet auf die Meldung „Buch erfolgreich gespeichert!" mit
+  `.first()`; eine Meldung steht 5 s, ab dem zweiten Speichern genügt die des vorigen, und der
+  nächste Schritt beginnt, während die Maske noch schließt. Sie blendet 200 ms aus und nimmt
+  in dieser Zeit keine Eingabe an (`inert`); ein Klick auf den Titel holt in dieser Zeit
+  dieselbe Maske zurück. Nachgestellt an beiden Ständen: Speichern, Titel sofort wieder
+  anklicken, Schlagwort tippen — das Feld bleibt leer, gespeichert wird ohne das Wort. Im Test
+  wurde das sichtbar, als eine Meldung über „Speichern" lag und der Klick 900 ms später kam
+  (vierter Schritt rot). Von Hand ist das Fenster von 200 ms nicht zu treffen. Abhilfe: nach
+  dem Speichern warten, bis die Überschrift „Buch bearbeiten" fort ist. Kategorie B.
+- Gegen den Entwicklungsserver (`E2E_BASE_URL=http://localhost:5173`) sind drei Specs rot, die
+  am gebauten Stand grün sind (gemessen am 02.10.2026). Die Barrierefreiheits-Prüfung des
+  Mahnwesens läuft in die Zeitüberschreitung, und `e2e/zugangsbuch.spec.js` findet den Zugang
+  nicht in der Tabelle des Landes — beide auch ohne Änderung an den Quellen. Die Prüfung der
+  Leserdatei liegt bei 30 s an der Grenze (ein Lauf grün, einer rot; am gebauten Stand 6 s).
+  Ursache beim Zugangsbuch nicht untersucht. Ein Lauf gegen den Entwicklungsserver ist
+  deshalb nie ganz grün.
 - Die Prüfung der Wegweiser (`api/betriebsbereitschaft_wegweiser_test.go`) liest nur die Texte
   der Selbstprüfung. Drei Hinweise der Oberfläche nennen einen Ort, den es so nicht gibt
   (gefunden am 01.10.2026): `BestelllinkHinweis.svelte` schickt für die öffentliche Adresse
@@ -760,6 +782,16 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
 
 ### 6.1 Beobachtungen
 
+- Die Meldungen der Anwendung (`ToastContainer.svelte`) erscheinen oben rechts, bis 384 px
+  breit, 5 s lang, und halten ihre Standzeit an, solange der Mauszeiger auf ihnen ruht. Was
+  dort steht, ist in dieser Zeit verdeckt (gemessen am 02.10.2026 bei 1280 × 720: Meldung bei
+  x 975 bis 1256, y 24 bis 68). In der Maske „Buch bearbeiten" steht „Speichern" deshalb
+  hinter der Überschrift statt am rechten Rand (`e2e/scrollbereiche.spec.js`); unter rund
+  1070 px Fensterbreite reicht eine Meldung in voller Breite trotzdem bis an den Knopf. M3,
+  Snackbar, Guidelines: „Snackbars should be placed at the bottom of a UI, in front of the
+  main content" und „avoid positioning the snackbar in a way that completely obscures
+  actionable elements". Am unteren Rand stehen die Auswahlleisten der Listen
+  (`ui/AuswahlLeiste`, `AuswahlAktionsleiste`); dort müssten die Meldungen ausweichen.
 - Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
   breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
   30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt

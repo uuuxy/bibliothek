@@ -23,9 +23,11 @@
 </script>
 
 <div class="flex flex-col items-center">
-	<!-- Füllt die rechte Spalte der Maske (02.09.2026); vorher 128×176 px oben in der Mitte. -->
+	<!-- Füllt die rechte Spalte der Maske. Wo die Spalte beim Scrollen stehen bleibt (ab lg),
+	     richtet sich die Höhe nach dem Fenster: Sie lässt 24rem für Kopf, Abstände und die
+	     Knöpfe darunter, damit die Spalte ganz im Bild bleibt. -->
 	<div
-		class="group relative mb-4 aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low"
+		class="group relative mb-4 aspect-2/3 w-full overflow-hidden rounded-lg bg-surface-container-low lg:h-[clamp(8rem,calc(100vh-24rem),24rem)] lg:w-auto lg:max-w-full"
 	>
 		{#if formular.coverUrl}
 			<img

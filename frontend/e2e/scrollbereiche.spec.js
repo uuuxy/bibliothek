@@ -135,7 +135,7 @@ test('Wareneingang: die Positionen scrollen mit der Seite, und nur ein Bereich s
 	await expect(leiste).toHaveCount(0);
 });
 
-test('Buchmaske: zwanzig Exemplare stehen in einer Liste ohne eigenen Scrollkasten', async ({
+test('Buchmaske: zwanzig Exemplare ohne eigenen Scrollkasten, und nur der Kopf bleibt stehen', async ({
 	page
 }) => {
 	const s = uniqueSuffix();
@@ -170,6 +170,69 @@ test('Buchmaske: zwanzig Exemplare stehen in einer Liste ohne eigenen Scrollkast
 			lage?.ueberlaufend,
 			'In der Buchmaske scrollen mehrere Bereiche ineinander.'
 		).toBeLessThanOrEqual(1);
+
+		// Stehende Bänder nehmen den Feldern die Höhe. Gezählt wird, was beim Scrollen stehen
+		// bleibt (sticky oder fixed) und über die Breite der Maske reicht; die rechte Spalte ist
+		// schmal und zählt nicht. Die Maske ist der kleinste Bereich, der Kopf und Liste enthält.
+		await page.getByText(`B-scm-${s}-20`).scrollIntoViewIfNeeded();
+		const baender = await page.evaluate(() => {
+			const kopf = [...document.querySelectorAll('h2')].find((h) =>
+				h.textContent?.includes('Buch bearbeiten')
+			);
+			const liste = [...document.querySelectorAll('h3')].find((h) =>
+				h.textContent?.includes('Exemplare (')
+			);
+			/** @type {Element | null | undefined} */
+			let maske = kopf;
+			while (maske && liste && !maske.contains(liste)) maske = maske.parentElement;
+			if (!maske || !liste) return null;
+			const breite = maske.getBoundingClientRect().width;
+			return [...maske.querySelectorAll('*')]
+				.filter((e) => ['sticky', 'fixed'].includes(getComputedStyle(e).position))
+				.map((e) => e.getBoundingClientRect())
+				.filter((r) => r.width > breite / 2)
+				.reduce((summe, r) => summe + r.height, 0);
+		});
+		expect(baender, 'Die Buchmaske wurde nicht gefunden.').not.toBeNull();
+		expect(
+			baender,
+			`Stehende Bänder belegen ${baender} px der Fensterhöhe; der Kopf allein misst 56 px.`
+		).toBeLessThanOrEqual(56);
+
+		// Was die Maske auslöst, bleibt neben einer langen Liste erreichbar.
+		for (const name of [
+			'Speichern',
+			'Barcodes drucken',
+			'Zum Klassensatz hinzufügen',
+			'Titel löschen'
+		]) {
+			await expect(
+				page.getByRole('button', { name, exact: true }),
+				`„${name}" ist am Ende der Exemplarliste nicht im Bild.`
+			).toBeInViewport({ ratio: 1 });
+		}
+
+		// Die Meldungen der Anwendung erscheinen oben rechts. Eine Fehlermeldung nach „Speichern"
+		// darf nicht über dem Knopf liegen: Unter dem Mauszeiger hält sie ihre Standzeit an.
+		const speichern = page.getByRole('button', { name: 'Speichern', exact: true });
+		await page.locator('#buch-titel').fill('');
+		await page.getByText(`B-scm-${s}-20`).scrollIntoViewIfNeeded();
+		await speichern.click();
+		const meldung = page
+			.getByRole('alert')
+			.filter({ hasText: 'Titel und ISBN sind Pflichtfelder' });
+		await expect(meldung).toBeVisible();
+		const k = await speichern.boundingBox();
+		const m = await meldung.boundingBox();
+		expect(k && m, 'Knopf oder Meldung haben keine Fläche.').toBeTruthy();
+		const getrennt =
+			!!k &&
+			!!m &&
+			(k.x + k.width <= m.x ||
+				m.x + m.width <= k.x ||
+				k.y + k.height <= m.y ||
+				m.y + m.height <= k.y);
+		expect(getrennt, 'Die Meldung oben rechts liegt über „Speichern".').toBe(true);
 	} finally {
 		// Zwanzig Exemplare ohne gedrucktes Etikett stünden sonst nach jedem Lauf im Druck-Center.
 		seedSQL(`
