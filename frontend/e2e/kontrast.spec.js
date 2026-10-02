@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, seedBestellbedarf } from './helpers.js';
+import { uiLogin, seedBestellbedarf, menuepunkt } from './helpers.js';
 
 // Gate gegen unlesbaren Text (WCAG 2.1 AA).
 //
@@ -69,8 +69,9 @@ test('Text erfüllt den WCAG-AA-Mindestkontrast', async ({ page }) => {
 	let uebersprungen = 0;
 
 	for (const seite of SEITEN) {
-		const ziel = page.getByTitle(seite);
-		if ((await ziel.count()) === 0) continue;
+		// Ohne Wächter „wenn vorhanden": Fehlt ein Menüpunkt, fehlt eine Messung, und der
+		// Test wird rot statt die Seite zu überspringen.
+		const ziel = menuepunkt(page, seite);
 		await ziel.click();
 		// Auf den Navigationszustand warten, nicht auf eine Zeitspanne: Die Seite muss
 		// wirklich stehen, sonst misst der Test den vorigen Bildschirm.

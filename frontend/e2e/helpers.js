@@ -298,6 +298,20 @@ export async function gehZu(page, pfad) {
 }
 
 /**
+ * Der Menüpunkt der Seitenleiste mit genau diesem Namen.
+ *
+ * `page.getByTitle(name)` allein trifft jedes Element, dessen title den Namen enthält: neben
+ * „Leserdatei" auch die Kachel eines Buchs, dessen Titel so beginnt. Playwright bricht dann
+ * mit strict mode ab.
+ *
+ * @param {import('@playwright/test').Page} page
+ * @param {string} name Beschriftung des Menüpunkts, z. B. 'Leserdatei'.
+ */
+export function menuepunkt(page, name) {
+	return page.locator('aside nav').getByTitle(name, { exact: true });
+}
+
+/**
  * Der Eintrag einer Einstellungs-Kategorie in der Liste links.
  *
  * Auf die Liste eingegrenzt, nicht auf die Seite: Der Speichern-Knopf der geöffneten

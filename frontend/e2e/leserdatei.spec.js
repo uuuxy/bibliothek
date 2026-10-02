@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
+import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu, menuepunkt } from './helpers.js';
 
 // Der Nachweis für den Schritt „Theke und Leserdatei" (docs/OFFEN.md 5.16), im Browser
 // und gegen den frisch gebauten Stack.
@@ -8,11 +8,30 @@ import { uiLogin, apiPost, seedSQL, uniqueSuffix, gehZu } from './helpers.js';
 // Ausweis laden — aber sieht man auch, welche Bücher er hat? Und findet man ihn, wenn er
 // die Karte nicht dabei hat? Beides war bis zum 16.09.2026 nein.
 
+// Was der Test anlegt, nimmt er über seine Kennung wieder weg: Ausleihe, Exemplar, Titel,
+// Konto und Leser. Ein liegengebliebener Titel „Leserdateibuch …" stünde sonst im Katalog.
+/** @type {(() => void) | undefined} */
+let aufraeumen;
+test.afterEach(() => {
+	aufraeumen?.();
+	aufraeumen = undefined;
+});
+
 test('Leserdatei: ein Kollege steht in der Liste, hat eine Akte und ist über den Namen zu finden', async ({
 	page
 }) => {
 	const s = uniqueSuffix();
 	const nachname = `Kollegin${s}`;
+	const email = `katrin.${nachname.toLowerCase()}@test.local`;
+	aufraeumen = () =>
+		seedSQL(`
+			DELETE FROM ausleihen WHERE exemplar_id IN
+				(SELECT id FROM buecher_exemplare WHERE barcode_id = 'B-LD-${s}');
+			DELETE FROM buecher_exemplare WHERE barcode_id = 'B-LD-${s}';
+			DELETE FROM buecher_titel WHERE titel = 'Leserdateibuch ${s}';
+			DELETE FROM benutzer WHERE email = '${email}';
+			DELETE FROM leser WHERE nachname = '${nachname}';
+		`);
 
 	// Über die Tür anlegen, die die Leserdatei selbst benutzt: Art zuerst, keine Klasse,
 	// kein Geburtsdatum.
@@ -26,14 +45,14 @@ test('Leserdatei: ein Kollege steht in der Liste, hat eine Akte und ist über de
 		art: 'lehrkraft',
 		vorname: 'Katrin',
 		nachname,
-		email: `katrin.${nachname.toLowerCase()}@test.local`
+		email
 	});
 	expect(angelegt.ok(), `Anlegen fehlgeschlagen: ${angelegt.status()}`).toBeTruthy();
 	const { id, barcode_id: ausweis } = await angelegt.json();
 	expect(ausweis, 'ohne Ausweisnummer ließe sich kein Ausweis drucken').toBeTruthy();
 
 	// ── 1. Die Liste ────────────────────────────────────────────────────────────
-	await page.getByTitle('Leserdatei').click();
+	await menuepunkt(page, 'Leserdatei').click();
 	const suche = page.getByLabel('Leser suchen');
 	await suche.click();
 	await suche.fill(nachname);

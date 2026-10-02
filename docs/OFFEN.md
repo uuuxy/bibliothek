@@ -440,12 +440,23 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
 - Die Schema-Gegenrichtung ist blind für UNIQUE, Teilindizes und RESTRICT.
 - Kein Gate gegen unbegrenzte Listen-Endpunkte.
 - Kein Rückweg für ältere Sicherungen beim Wechsel des `BACKUP_ENCRYPTION_KEY`.
-- `e2e/kontrast.spec.js` scheitert im zweiten Lauf der Suite auf derselben kleinen Datenbank
-  (gefunden am 01.10.2026, an einem eigenen Stack zweimal nachgestellt):
-  `page.getByTitle('Leserdatei')` trifft neben dem Menüpunkt auch die Kachel eines Buchs, dessen
-  Titel so beginnt, und `e2e/leserdatei.spec.js` lässt „Leserdateibuch …" samt Exemplar und
-  Ausleihe liegen. Auf frischer Datenbank läuft kontrast vor leserdatei und ist grün. Den
-  Menüpunkt genau treffen oder das Buch aufräumen.
+- `e2e/kontrast.spec.js` misst den Medienkatalog nicht in jedem Lauf mit seinen Kacheln
+  (gefunden am 02.10.2026, lokal mit 8.600 Titeln). `warteAufStabilenBaum` gilt als stabil,
+  sobald zwei Zählungen im Abstand von 100 ms gleich sind; kommt die Titelliste später, misst
+  der Test die Seite ohne Kacheln und geht weiter. Belegt an einer Kachel, die den Klick auf
+  den nächsten Menüpunkt scheitern ließ, solange der Test ihn per Teilwort traf: fünf von
+  sechs Läufen rot, einer grün, die Kacheln standen dort also noch nicht. Abhilfe: je Seite
+  auf ein Merkmal des Inhalts warten (Kachel, Tabellenzeile). Dieselbe Wartefunktion steht in
+  `control-hoehen.spec.js` und `icon-trefferflaechen.spec.js`, dort nicht nachgemessen.
+  Kategorie B.
+- 45 Specs klicken Menüpunkte per `page.getByTitle('<Name>')`, 88 Stellen (gezählt am
+  02.10.2026). Das trifft jedes Element, dessen `title` den Namen enthält, auch die Kachel
+  eines Buchs. `e2e/abgaenger-management.spec.js` legt Titel „Abgänger Buch …" an und räumt
+  sie nicht ab (lokal 133, der älteste an erster Stelle des Katalogs). Die zwei Klicks auf
+  „Abgänger" (`schueler-profil-klick.spec.js`) kommen heute von der Theke, wo keine Kachel
+  steht; vom Katalog aus brächen sie ab wie der Kontrast-Test bis zum 02.10.2026. Abhilfe:
+  `menuepunkt` aus `e2e/helpers.js` an allen Stellen, und die Spec räumt ihren Titel ab.
+  Kategorie B.
 - `e2e/schlagworte-roundtrip.spec.js` hängt an der Geschwindigkeit des Rechners (gefunden am
   02.10.2026). `speichere()` wartet auf die Meldung „Buch erfolgreich gespeichert!" mit
   `.first()`; eine Meldung steht 5 s, ab dem zweiten Speichern genügt die des vorigen, und der
