@@ -1,0 +1,129 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('../../../../lib/apiFetch.js', () => ({ apiFetch: vi.fn() }));
+vi.mock('../../../../lib/stores/bestaetigung.svelte.js', () => ({ bestaetigen: vi.fn() }));
+vi.mock('$lib/store.svelte.js', () => ({ appState: { bookToEdit: null }, showToast: vi.fn() }));
+
+import { apiFetch } from '../../../../lib/apiFetch.js';
+import { erzeugeIsbnAbfrage } from './isbnAbfrage.svelte.js';
+
+const A = '9783791504650';
+const B = '9783551551672';
+/** Was die Katalogdienste je ISBN kennen; B nennt nur den Titel. */
+const DIENSTE = {
+	[A]: { title: 'Buch A', author: 'Autor A', verlag: 'Verlag A', jahr: '2001', grade: '7' },
+	[B]: { title: 'Buch B' }
+};
+
+/** @param {number} status @param {any} koerper */
+const antwort = (status, koerper) =>
+	/** @type {any} */ ({ ok: status < 400, status, json: async () => koerper });
+/** @param {string} isbn */
+const abfragenZu = (isbn) =>
+	vi.mocked(apiFetch).mock.calls.filter(([url]) => String(url) === `/api/lookup/${isbn}`).length;
+
+/** Eine neue Maske, in der zur ISBN A schon abgefragt ist. */
+async function nachAbfrageA() {
+	const formular = /** @type {any} */ ({ id: null, isbn: A, title: '', author: '', gradeLevel: 5 });
+	const abfrage = erzeugeIsbnAbfrage(
+		() => formular,
+		() => undefined
+	);
+	await abfrage.nachschlagen(false);
+	expect(formular).toMatchObject({ title: 'Buch A', author: 'Autor A', gradeLevel: 7 });
+	return { formular, abfrage };
+}
+
+beforeEach(() => {
+	vi.clearAllMocks();
+	vi.mocked(apiFetch).mockImplementation(async (url) => {
+		const u = String(url);
+		if (!u.startsWith('/api/lookup/')) return antwort(200, { data: { vorhanden: null } });
+		const daten = DIENSTE[u.slice('/api/lookup/'.length)];
+		return daten ? antwort(200, { data: daten }) : antwort(404, {});
+	});
+});
+
+// Die ISBN ändert sich in derselben Maske, etwa durch einen zweiten Scan: Was die erste
+// Abfrage eingetragen hat, gehört zum ersten Buch und darf nicht unter der zweiten Nummer
+// stehen bleiben. Was jemand von Hand geändert hat, bleibt.
+describe('isbnAbfrage: eine andere ISBN in derselben Maske', () => {
+	it('ersetzt die Angaben der ersten Abfrage, auch die, die der zweiten fehlen', async () => {
+		const { formular, abfrage } = await nachAbfrageA();
+
+		formular.isbn = B;
+		await abfrage.nachschlagen(false);
+
+		expect(formular.title).toBe('Buch B');
+		expect([formular.author, formular.verlag, formular.erscheinungsjahr]).toEqual([
+			'',
+			undefined,
+			undefined
+		]);
+		expect(formular.gradeLevel, 'die Vorgabe der Maske').toBe(5);
+	});
+
+	it('lässt stehen, was jemand nach der Abfrage geändert hat', async () => {
+		const { formular, abfrage } = await nachAbfrageA();
+		formular.author = 'Von Hand';
+
+		formular.isbn = B;
+		await abfrage.nachschlagen(false);
+
+		expect([formular.title, formular.author]).toEqual(['Buch B', 'Von Hand']);
+	});
+
+	it('ein von Hand geänderter Titel bleibt, und zur neuen ISBN wird nicht geladen', async () => {
+		const { formular, abfrage } = await nachAbfrageA();
+		formular.title = 'Mein Titel';
+
+		formular.isbn = B;
+		await abfrage.nachschlagen(false);
+
+		expect([formular.title, formular.author]).toEqual(['Mein Titel', '']);
+		expect(abfragenZu(B)).toBe(0);
+	});
+
+	it('kennt die zweite ISBN niemand, stehen die Angaben der ersten nicht mehr da', async () => {
+		const { formular, abfrage } = await nachAbfrageA();
+
+		formular.isbn = '9783000000003';
+		await abfrage.nachschlagen(false);
+
+		expect([formular.title, formular.author, formular.gradeLevel]).toEqual(['', '', 5]);
+		expect(abfrage.ausgang?.text).toContain('nichts bekannt');
+	});
+
+	it('der Knopf zur selben ISBN nimmt nichts zurück; danach gilt der Stand vor der ersten Abfrage', async () => {
+		const { formular, abfrage } = await nachAbfrageA();
+
+		await abfrage.nachschlagen(true);
+		expect(formular.title).toBe('Buch A');
+		expect(abfragenZu(A)).toBe(2);
+
+		formular.isbn = '9783000000003';
+		await abfrage.nachschlagen(false);
+		expect([formular.title, formular.author, formular.gradeLevel]).toEqual(['', '', 5]);
+	});
+
+	it('zeigt die Maske inzwischen einen anderen Titel, bleibt er unberührt', async () => {
+		/** @type {any} */
+		let inDerMaske = { id: null, isbn: A, title: '', author: '' };
+		const abfrage = erzeugeIsbnAbfrage(
+			() => inDerMaske,
+			() => undefined
+		);
+		await abfrage.nachschlagen(false);
+
+		// Derselbe Autor wie in der ersten Abfrage: Er gehört hier zum vorhandenen Titel.
+		inDerMaske = { id: 'titel-2', isbn: B, title: 'Vorhandener Titel', author: 'Autor A' };
+		await abfrage.nachschlagen(false);
+
+		expect(inDerMaske).toEqual({
+			id: 'titel-2',
+			isbn: B,
+			title: 'Vorhandener Titel',
+			author: 'Autor A'
+		});
+	});
+});

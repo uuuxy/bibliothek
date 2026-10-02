@@ -74,6 +74,9 @@ entfallen.
      Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
    - Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
      Eingaben stehen noch da.
+   - „Neues Buch" öffnen und ein Buch scannen, ohne ins Feld zu klicken. Erwartet: Die ISBN
+     steht im Feld, Titel und Autor sind eingetragen. Ein zweites Buch scannen, wieder ohne
+     Klick. Erwartet: ISBN, Titel und Autor sind die des zweiten.
    - Buchmaske, ohne Scanner: einen Titel mit vielen Exemplaren öffnen (der größte am
      Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
      darunter bleiben im Bild. Dann den Titel leeren und „Speichern" drücken. Erwartet: Die
@@ -465,13 +468,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   Dienste nicht erreicht (7.8). Abhilfe: Das Anlegen wartet nicht auf die Dienste — die Maske
   hat die Angaben bei der Eingabe der ISBN schon geholt. Damit entfiele auch die zweite
   Cover-Datei aus dem Punkt darüber.
-- **Der Handscanner erreicht die Maske „Neues Buch" nicht** (gefunden am 01.10.2026, im
-  Browser nachgestellt, blind getippt; Kategorie B). Mit dem Scanner-Fenster entfiel das Feld
-  „Handscanner / ISBN-Eingabe", das auf Enter hörte. Nach dem Öffnen der Maske steht der
-  Fokus in keinem Feld, ein Scan geht verloren. Im ISBN-Feld gescannt, löst das Enter des
-  Scanners nichts aus: Die Frage nach dem vorhandenen Titel und die ISBN-Abfrage kommen erst
-  beim Verlassen des Felds. Abhilfe: Das ISBN-Feld bekommt beim Öffnen den Fokus, und Enter
-  gilt dort wie das Verlassen.
 - Maske „Neues Buch": „Speichern" ist gesperrt, solange einem Bibliotheksbuch die Signatur
   fehlt; den Grund nennt das Feld Signatur („Speichern ist bis dahin gesperrt"). M3, Dialogs,
   Guidelines, zur bildschirmfüllenden Maske: „Don't disable the confirmation button" und

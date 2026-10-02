@@ -431,9 +431,10 @@ veraltet ist. Der Durchgang vom 01.10.2026 hat die vier Fragen an die Änderunge
   träge. Dabei gefunden: Eine offene Rückfrage blieb über dem Sperrbildschirm sichtbar.
 - **16 · Eingabeweg.** Ein Handscanner ist eine Tastatur und tippt in das, was den Fokus hat.
   Mit dem Scanner-Fenster der Titel-Verwaltung (`63c436c6`) entfiel das Feld „Handscanner /
-  ISBN-Eingabe", das auf Enter hörte. In der Maske „Neues Buch" steht der Fokus nach dem
-  Öffnen in keinem Feld, und Enter im ISBN-Feld löst weder die Frage nach dem vorhandenen
-  Titel noch die ISBN-Abfrage aus (im Browser nachgestellt, blind getippt). Dieselbe Form
+  ISBN-Eingabe", das auf Enter hörte. In der Maske „Neues Buch" stand der Fokus nach dem
+  Öffnen in keinem Feld, und Enter im ISBN-Feld löste weder die Frage nach dem vorhandenen
+  Titel noch die ISBN-Abfrage aus (im Browser nachgestellt, blind getippt; behoben am
+  02.10.2026, `frontend/e2e/buch-anlegen-handscanner.spec.js`). Dieselbe Form
   früher: das Scanfeld der Theke ohne Fokus nach dem ersten Scan (`768f44f`, 28.07.2026),
   ein Dialog, der beim Scan aufgeht und den nächsten Scan bekommt (24.09.2026,
   `frontend/e2e/sperre.spec.js`). Derselbe Durchgang fand den Sperrbildschirm: Dort steht
