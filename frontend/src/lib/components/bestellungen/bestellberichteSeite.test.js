@@ -76,3 +76,23 @@ describe('Bestellberichte als eigener Bildschirm', () => {
 		expect(screen.queryByText('Lieferantenabrechnung')).toBeNull();
 	});
 });
+
+describe('Bestellberichte: Zeitraum der Lieferantenabrechnung', () => {
+	// Ein Fehler im Zeitraum steht am Feld wie bei jedem Feld des Hauses: Rahmen und Satz in
+	// der Fehlerfarbe, und der Satz hängt am Feld, damit ein Vorleseprogramm ihn nennt.
+	it('nennt „Von nach Bis" am Feld „Bis" und sperrt den Download', async () => {
+		render(BestellBerichte);
+		await fireEvent.click(await screen.findByRole('radio', { name: /Lieferanten/ }));
+		await fireEvent.input(screen.getByLabelText('Von'), { target: { value: '2026-09-30' } });
+		await fireEvent.input(screen.getByLabelText('Bis'), { target: { value: '2026-09-01' } });
+
+		const bis = screen.getByLabelText('Bis');
+		expect(bis.getAttribute('aria-invalid')).toBe('true');
+		const hinweis = document.getElementById(bis.getAttribute('aria-describedby') ?? '');
+		expect(hinweis?.textContent?.trim()).toBe('Das Von-Datum liegt nach dem Bis-Datum.');
+
+		const download = screen.getByText('PDF herunterladen').closest('a');
+		expect(download?.getAttribute('aria-disabled')).toBe('true');
+		expect(download?.hasAttribute('href')).toBe(false);
+	});
+});

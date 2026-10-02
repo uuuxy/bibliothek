@@ -86,21 +86,21 @@
 	<div class="max-w-3xl space-y-8 overflow-y-auto">
 		<!-- Berichtstyp: flache Liste, kein Kachel-Design -->
 		<section class="space-y-3">
-			<div class="border-b border-slate-200 pb-3">
-				<h2 class="text-lg font-bold text-slate-800">Bestellbericht erstellen</h2>
+			<div class="border-b border-outline-variant pb-3">
+				<h2 class="text-lg font-bold text-on-surface">Bestellbericht erstellen</h2>
 			</div>
-			<div class="divide-y divide-slate-100">
+			<div class="divide-y divide-outline-variant">
 				{#each berichtOptionen as opt, _i (_i)}
 					<label
 						class="flex items-start gap-3 py-3 pl-3 border-l-2 cursor-pointer transition-colors {typ ===
 						opt.value
-							? 'border-blue-600 bg-blue-50/40'
-							: 'border-transparent hover:bg-slate-50/60'}"
+							? 'border-primary'
+							: 'border-transparent hover:bg-surface-container-low'}"
 					>
 						<Radio bind:group={typ} value={opt.value} />
 						<div>
-							<div class="font-bold text-sm text-slate-800">{opt.label}</div>
-							<div class="text-xs text-slate-500">{opt.desc}</div>
+							<div class="font-bold text-sm text-on-surface">{opt.label}</div>
+							<div class="text-xs text-on-surface-variant">{opt.desc}</div>
 						</div>
 					</label>
 				{/each}
@@ -109,7 +109,7 @@
 
 		<!-- Parameter -->
 		<section class="space-y-4">
-			<p class="text-sm font-medium text-slate-700">Parameter</p>
+			<p class="text-sm font-medium text-on-surface">Parameter</p>
 
 			<div class="space-y-1.5">
 				<label class="block text-sm font-medium text-on-surface" for="mittel">Mittelherkunft</label>
@@ -120,7 +120,7 @@
 				<Feld id="monat" label="Monat" type="month" bind:value={monatJahr} />
 			{:else if typ === 'jahr'}
 				<div class="space-y-1.5">
-					<label class="block text-sm font-medium text-slate-700" for="jahr">Jahr</label>
+					<label class="block text-sm font-medium text-on-surface" for="jahr">Jahr</label>
 					<Select
 						id="jahr"
 						bind:value={jahr}
@@ -129,9 +129,9 @@
 				</div>
 			{:else}
 				<div class="space-y-1.5">
-					<label class="block text-sm font-medium text-slate-700" for="lieferant">Lieferant</label>
+					<label class="block text-sm font-medium text-on-surface" for="lieferant">Lieferant</label>
 					{#if suppliers.length === 0}
-						<p class="text-sm text-slate-400 italic">Keine Lieferanten vorhanden.</p>
+						<p class="text-sm text-on-surface-variant italic">Keine Lieferanten vorhanden.</p>
 					{:else}
 						<Select
 							id="lieferant"
@@ -142,11 +142,15 @@
 				</div>
 				<div class="grid grid-cols-2 gap-4">
 					<Feld id="von" label="Von" type="date" bind:value={vonDatum} ungueltig={rangeInvalid} />
-					<Feld id="bis" label="Bis" type="date" bind:value={bisDatum} ungueltig={rangeInvalid} />
+					<Feld
+						id="bis"
+						label="Bis"
+						type="date"
+						bind:value={bisDatum}
+						ungueltig={rangeInvalid}
+						hint={rangeInvalid ? 'Das Von-Datum liegt nach dem Bis-Datum.' : ''}
+					/>
 				</div>
-				{#if rangeInvalid}
-					<p class="text-sm text-rose-600 font-medium">Das Von-Datum liegt nach dem Bis-Datum.</p>
-				{/if}
 			{/if}
 		</section>
 
@@ -157,14 +161,14 @@
 				target="_blank"
 				rel="noopener"
 				aria-disabled={!canDownload}
-				class="inline-flex items-center gap-2 px-6 py-3 font-bold rounded-lg transition-colors text-sm {canDownload
-					? 'bg-blue-600 hover:bg-blue-700 text-white'
-					: 'bg-slate-200 text-slate-400 pointer-events-none'}"
+				class="inline-flex h-9 items-center gap-2 rounded-full px-4 text-sm font-semibold {canDownload
+					? 'm3-state bg-primary text-on-primary'
+					: 'pointer-events-none bg-on-surface/12 text-on-surface/38'}"
 			>
 				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
 				PDF herunterladen
 			</a>
-			<p class="text-xs text-slate-400">
+			<p class="text-xs text-on-surface-variant">
 				Das PDF öffnet sich im Browser — von dort ausdrucken oder als Datei speichern.
 			</p>
 		</section>
