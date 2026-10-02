@@ -1,7 +1,21 @@
 import { toastStore } from './stores/toastStore.svelte.js';
+import { bestaetigen } from './stores/bestaetigung.svelte.js';
 import { scanne, schliesseAb, deuteScanErgebnis } from './inventurApi.js';
 import { useFehlbestand } from './useFehlbestand.svelte.js';
 import { useInventurSession } from './useInventurSession.svelte.js';
+
+/**
+ * Was die Rückfrage vor dem Abschluss sagt: wie viele Bücher als verloren gebucht werden.
+ * @param {number} offen erwartete, nicht gescannte Exemplare
+ */
+export function abschlussText(offen) {
+	if (offen <= 0) {
+		return 'Alle Bücher aus dem aktuellen Scope sind gescannt. Es wird keines als verloren markiert.';
+	}
+	return offen === 1
+		? '1 Buch aus dem aktuellen Scope ist nicht gescannt. Es wird unwiderruflich als verloren markiert und ausgesondert.'
+		: `${offen} Bücher aus dem aktuellen Scope sind nicht gescannt. Sie werden unwiderruflich als verloren markiert und ausgesondert.`;
+}
 
 /**
  * Hook für die Inventur. Der Fortschritt ist seit dem Session-Umbau an eine
@@ -12,7 +26,6 @@ export function useUnifiedInventory() {
 	let lastScan = $state(/** @type {any} */ (null));
 	let barcodeInput = $state('');
 	let isScanning = $state(false);
-	let showFinishModal = $state(false);
 
 	const fb = useFehlbestand();
 	// onActivate: Start/Fortsetzen einer Session gehört zu useInventurSession, aber
@@ -62,7 +75,6 @@ export function useUnifiedInventory() {
 			// Achtung: raeumt bewusst NICHT den Fehlbestand weg — der Bericht soll den
 			// Abschluss ueberleben, sonst waere er im selben Moment wieder verschwunden.
 			session.resetToIdle();
-			showFinishModal = false;
 			lastScan = null;
 			await session.loadOffeneSessions();
 			// Die gerade beendete Inventur gehört sofort in die Auswahl früherer Läufe —
@@ -71,6 +83,25 @@ export function useUnifiedInventory() {
 		} else {
 			toastStore.addToast(r.error || 'Fehler beim Abschließen der Inventur.', 'error');
 		}
+	}
+
+	/**
+	 * Fragt vor dem Abschluss nach. Bei „nein" läuft die Inventur weiter, und der Fokus geht
+	 * zurück ins Scanfeld, damit der nächste Scan gezählt wird.
+	 * @param {Function} [focusInput]
+	 */
+	async function abschliessenNachRueckfrage(focusInput) {
+		const ja = await bestaetigen({
+			titel: 'Inventur abschließen?',
+			text: abschlussText(session.stats.erwartet - session.stats.erfasst),
+			aktion: 'Ja, unwiderruflich abschließen',
+			gefaehrlich: true
+		});
+		if (!ja) {
+			focusInput?.();
+			return;
+		}
+		await finishInventory();
 	}
 
 	/** @param {any} offene laufende Session aus offeneSessions */
@@ -161,12 +192,6 @@ export function useUnifiedInventory() {
 		set showStartModal(v) {
 			session.showStartModal = v;
 		},
-		get showFinishModal() {
-			return showFinishModal;
-		},
-		set showFinishModal(v) {
-			showFinishModal = v;
-		},
 		get errorMessage() {
 			return session.errorMessage;
 		},
@@ -178,7 +203,7 @@ export function useUnifiedInventory() {
 		resumeSession: session.resumeSession,
 		verwerfeSession,
 		handleScan,
-		finishInventory,
+		abschliessenNachRueckfrage,
 		getProgressPercent
 	};
 }

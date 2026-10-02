@@ -546,7 +546,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 02.10.2026: 1366 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 02.10.2026: 1305 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -558,13 +558,21 @@ geprüft. Das Muster steht in Buchformular und Bestellfenster: Zustände über u
 über den Fehlerzustand des Feldes statt eines farbigen Kastens. Für die übrige Anwendung
 freigegeben am 23.09.2026.
 
-Der Inventur-Bildschirm steht seit dem 24.09.2026 auf Rollen (`UnifiedInventory.svelte`, die
-Scan-Rückmeldung in `inventur/ScanRueckmeldung.svelte`). Offen auf demselben Bildschirm: die
-beiden Dialoge (`InventoryStartModal` 32, `InventoryFinishModal` 15) und der Fehlbestandsbericht
-(`inventur/FehlbestandBericht` 14). `inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach
-für selbstgebaute Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
+Der Inventur-Bildschirm steht ganz auf Rollen: seit dem 24.09.2026 der Bildschirm selbst
+(`UnifiedInventory.svelte`, `inventur/ScanRueckmeldung.svelte`), seit dem 02.10.2026 der
+Start-Dialog, die Rückfrage vor dem Abschluss und der Fehlbestandsbericht.
+`inventur/lib/bookHelpers.js` (48) sind Farbverläufe je Fach für selbstgebaute
+Cover-Platzhalter; das gehört zu 6.2 (Cover über `ui/BuchCover`).
 
-Beim Ansehen der Inventur am 24.09.2026 aufgefallen, jeweils am Code nachgesehen:
+Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
+
+- Im Fehlbestandsbericht ist der Titel bei 1280 px nach rund 95 px abgeschnitten, während die
+  Spalte „Signatur" etwa dreimal so breit ist (gesehen am 02.10.2026; die Titelzelle trägt
+  `max-w-0` ohne volle Breite an der Spalte). Der Bericht wird zum Absuchen des Regals
+  ausgedruckt; ob der Ausdruck ebenso kürzt, ist nicht nachgesehen.
+- Die Wörter „Inventur-Scope" (Überschrift des Start-Dialogs) und „aus dem aktuellen Scope"
+  (Rückfrage vor dem Abschluss) stehen so in der Oberfläche; ein deutsches Wort wäre
+  „Umfang" oder „Bereich".
 
 - Ein unbekannter Barcode zeigt am Scanner den rohen Fehlertext „exemplar für inventur-scan
   nicht ladbar: no rows in result set" (`GetExemplarForInventoryScan` hüllt `pgx.ErrNoRows` ein,

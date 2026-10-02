@@ -23,6 +23,7 @@
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Button from '../ui/Button.svelte';
 	import Kaestchen from '../ui/Kaestchen.svelte';
+	import StatusChip from '../ui/StatusChip.svelte';
 	import VerlustLoeschenDialog from './VerlustLoeschenDialog.svelte';
 
 	/**
@@ -68,22 +69,24 @@
 	}
 </script>
 
+<!-- Eine Karte mit Rahmen und ohne Füllung (M3 Cards, outlined): Der Bericht ist ein Gegenstand
+     für sich, mit eigenen Aktionen. Die Tabelle steht ohne zweiten Rahmen darin. -->
 <section
-	class="w-full space-y-5 rounded-xl border border-amber-200 bg-amber-50/50 p-5 print:border-0 print:bg-white print:p-0"
+	class="w-full space-y-5 rounded-xl border border-outline-variant p-5 print:border-0 print:p-0"
 >
 	<div class="flex flex-wrap items-start justify-between gap-4">
 		<div class="flex items-start gap-3">
-			<PackageSearch class="mt-0.5 h-5 w-5 shrink-0 text-amber-700" aria-hidden="true" />
+			<PackageSearch class="mt-0.5 h-5 w-5 shrink-0 text-warning" aria-hidden="true" />
 			<div>
-				<h2 class="text-base font-bold text-slate-800">
+				<h2 class="text-base font-bold text-on-surface">
 					Fehlbestand{label ? ` — ${label}` : ''}
 				</h2>
-				<p class="mt-0.5 text-sm text-slate-600">
+				<p class="mt-0.5 text-sm text-on-surface-variant">
 					{eintraege.length}
 					{eintraege.length === 1 ? 'Exemplar wurde' : 'Exemplare wurden'} als Verlust gebucht. Die Liste
 					ist nach Signatur sortiert — in der Reihenfolge lässt sich das Regal absuchen.
 					{#if offene.length !== eintraege.length}
-						<span class="font-medium text-emerald-700">
+						<span class="font-medium text-success">
 							{eintraege.length - offene.length} bereits geklärt.
 						</span>
 					{/if}
@@ -127,11 +130,11 @@
 	</div>
 
 	{#if eintraege.length === 0}
-		<p class="py-6 text-center text-sm text-slate-500">
+		<p class="py-6 text-center text-sm text-on-surface-variant">
 			Kein Fehlbestand — jedes erwartete Exemplar wurde erfasst.
 		</p>
 	{:else}
-		<div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+		<div class="overflow-x-auto">
 			<Tabelle beschriftung="Fehlbestand">
 				<thead>
 					<tr>
@@ -146,22 +149,22 @@
 				<tbody>
 					{#each eintraege as e (e.barcode_id)}
 						{@const istGefunden = Boolean(e.gefunden_am)}
-						<tr class={istGefunden ? 'bg-emerald-50/40' : ''}>
+						<tr>
 							<td class="whitespace-nowrap">{e.signatur || '—'}</td>
 							<td class="max-w-0">
 								<span
-									class="block truncate font-semibold text-slate-800 {istGefunden
-										? 'line-through decoration-slate-300'
-										: ''}">{e.titel}</span
+									class="block truncate font-semibold {istGefunden
+										? 'text-on-surface-variant line-through'
+										: 'text-on-surface'}">{e.titel}</span
 								>
 								{#if e.autor}
-									<span class="block truncate text-sm text-slate-400">{e.autor}</span>
+									<span class="block truncate text-sm text-on-surface-variant">{e.autor}</span>
 								{/if}
 							</td>
 							<td class="font-mono whitespace-nowrap">{e.barcode_id}</td>
 							<td class="text-center no-print">
 								{#if istGefunden}
-									<span class="text-sm font-medium text-emerald-700">Gefunden</span>
+									<StatusChip ton="erfolg" text="Gefunden" />
 								{:else if e.exemplar_id}
 									<Kaestchen
 										checked={false}
@@ -170,7 +173,9 @@
 										aria-label="{e.titel} als gefunden markieren und zurück in Umlauf bringen"
 									/>
 								{:else}
-									<span class="text-sm text-slate-400" title="Bereits endgültig gelöscht">—</span>
+									<span class="text-sm text-on-surface-variant" title="Bereits endgültig gelöscht"
+										>—</span
+									>
 								{/if}
 							</td>
 						</tr>

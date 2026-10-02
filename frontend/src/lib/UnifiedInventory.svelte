@@ -4,7 +4,6 @@
 	import { slide } from 'svelte/transition';
 	import { useUnifiedInventory } from './useUnifiedInventory.svelte.js';
 	import InventoryStartModal from './components/InventoryStartModal.svelte';
-	import InventoryFinishModal from './components/InventoryFinishModal.svelte';
 	import Button from './components/ui/Button.svelte';
 	import Suchpille from './components/ui/Suchpille.svelte';
 	import FehlbestandBericht from './components/inventur/FehlbestandBericht.svelte';
@@ -15,34 +14,10 @@
 
 	const inventoryState = useUnifiedInventory();
 
-	// $state, nicht `let`: Diese drei werden per bind:this gefüllt, und alle drei werden
-	// unten in einem $effect gelesen. Ohne $state ist die Zuweisung durch bind:this nicht
-	// reaktiv — der Effekt läuft dann genau einmal, nämlich bevor das Element existiert,
-	// und danach nie wieder.
-	//
-	// Beim Barcode-Feld ist das der teure Fall: Es wird erst gerendert, wenn die Inventur
-	// auf 'active' steht. Der Effekt darunter feuerte also mit barcodeInputEl === undefined,
-	// tat nichts, und wurde nie erneut ausgelöst — das Feld blieb ohne Fokus und jeder Scan
-	// lief ins Leere, ohne dass irgendwo ein Fehler erschien.
-	let startDialog = $state();
-	let finishDialog = $state();
+	// $state, nicht `let`: Das Feld wird per bind:this gefüllt und unten in einem $effect
+	// gelesen. Es entsteht erst, wenn die Inventur läuft; ohne $state liefe der Effekt nur
+	// einmal davor, das Feld bliebe ohne Fokus, und jeder Scan ginge ins Leere.
 	let barcodeInputEl = $state();
-
-	$effect(() => {
-		if (inventoryState.showStartModal && startDialog) {
-			startDialog.showModal();
-		} else if (!inventoryState.showStartModal && startDialog) {
-			startDialog.close();
-		}
-	});
-
-	$effect(() => {
-		if (inventoryState.showFinishModal && finishDialog) {
-			finishDialog.showModal();
-		} else if (!inventoryState.showFinishModal && finishDialog) {
-			finishDialog.close();
-		}
-	});
 
 	$effect(() => {
 		if (inventoryState.status === 'active' && barcodeInputEl && !inventoryState.isScanning) {
@@ -241,7 +216,7 @@
 				<Button
 					variant="danger"
 					size="lg"
-					onclick={() => (inventoryState.showFinishModal = true)}
+					onclick={() => inventoryState.abschliessenNachRueckfrage(focusInput)}
 					class="px-6"
 				>
 					Inventur abschließen
@@ -251,21 +226,12 @@
 	{/if}
 </PageShell>
 
-<!-- Start Modal -->
 <InventoryStartModal
-	bind:dialogEl={startDialog}
+	open={inventoryState.showStartModal}
 	state={inventoryState}
 	onClose={() => {
 		inventoryState.showStartModal = false;
 		inventoryState.clearError();
 	}}
 	onStart={inventoryState.startInventory}
-/>
-
-<!-- Finish Modal -->
-<InventoryFinishModal
-	bind:dialogEl={finishDialog}
-	state={inventoryState}
-	onClose={() => (inventoryState.showFinishModal = false)}
-	onFinish={inventoryState.finishInventory}
 />

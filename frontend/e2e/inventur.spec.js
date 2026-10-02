@@ -26,12 +26,23 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
         `);
 
 		await page.getByTitle('Inventur').click();
-		await page.getByRole('button', { name: 'Neue Bestandsprüfung starten' }).click();
+		const neu = page.getByRole('button', { name: 'Neue Bestandsprüfung starten' });
+		await neu.click();
 
-		// Scope: nur die Test-Signatur
+		// Escape schließt den Dialog, und der Knopf öffnet ihn danach wieder.
+		const startTitel = page.getByRole('heading', { name: 'Inventur-Scope wählen' });
+		await expect(startTitel).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(startTitel).toBeHidden();
+		await neu.click();
+		await expect(startTitel).toBeVisible();
+
+		// Scope: nur die Test-Signatur. Ohne Signatur lässt sich nicht starten.
+		const starten = page.getByRole('button', { name: 'Inventur Starten' });
 		await page.getByText('Nur bestimmte Signatur').click();
+		await expect(starten).toBeDisabled();
 		await page.getByLabel('Signatur auswählen').fill(sigName);
-		await page.getByRole('button', { name: 'Inventur Starten' }).click();
+		await starten.click();
 
 		// Exemplar A scannen → als erfasst bestätigt
 		const scan = page.getByPlaceholder('Barcode scannen...');
@@ -40,10 +51,22 @@ test('Inventur: Signatur-Scope, gescannt bleibt, ungescannt wird Verlust', async
 		await scan.press('Enter');
 		await expect(page.getByText(`E2E-Inventurbuch-${suffix}`).first()).toBeVisible();
 
-		// Abschließen → Exemplar B (nie gescannt) wird als Verlust ausgesondert
-		await page.getByRole('button', { name: 'Inventur abschließen' }).click();
+		// Abschließen → Exemplar B (nie gescannt) wird als Verlust ausgesondert. Die Rückfrage
+		// nennt die Zahl; Escape ist „nein", die Inventur läuft weiter, und der Knopf fragt
+		// danach wieder.
+		const abschliessen = page.getByRole('button', { name: 'Inventur abschließen' });
+		const frage = page.getByRole('heading', { name: 'Inventur abschließen?' });
+		await abschliessen.click();
+		await expect(frage).toBeVisible();
+		await expect(page.getByText(/\b1\s+B(uch|ücher)\b/)).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(frage).toBeHidden();
+		// Der Fokus steht wieder im Scanfeld: Der nächste Scan wird gezählt.
+		await expect(scan).toBeFocused();
+		await abschliessen.click();
+		await expect(frage).toBeVisible();
 		await page.getByRole('button', { name: 'Ja, unwiderruflich abschließen' }).click();
-		await expect(page.getByRole('button', { name: 'Neue Bestandsprüfung starten' })).toBeVisible();
+		await expect(neu).toBeVisible();
 
 		// Der Fehlbestandsbericht steht da — und nennt das FEHLENDE Buch, nicht nur eine Zahl.
 		//
