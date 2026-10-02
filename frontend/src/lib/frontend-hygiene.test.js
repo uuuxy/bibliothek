@@ -62,7 +62,6 @@ const EMOJI_BESTAND = [
 	'src/lib/components/OmniboxVormerkungAlert.svelte',
 	'src/lib/components/bestellungen/OrderCart.svelte',
 	'src/lib/components/layout/RouteFallback.svelte',
-	'src/lib/components/stats/StatistikDetailPage.svelte',
 	'src/lib/designer/Toolbar.svelte'
 ];
 

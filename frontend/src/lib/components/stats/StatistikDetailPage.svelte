@@ -6,7 +6,7 @@
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
 	import { statistikAbruf } from './statistikAbruf.svelte.js';
-	import { coverSrc } from '../../utils/coverSrc.js';
+	import BuchCover from '../ui/BuchCover.svelte';
 	import { uiStore } from '../../stores/uiStore.svelte.js';
 	import Select from '../ui/Select.svelte';
 	import Suchfeld from '../ui/Suchfeld.svelte';
@@ -73,7 +73,7 @@
 	<!-- Zurück zur Statistik-Übersicht -->
 	<button
 		onclick={() => (uiStore.activeTab = 'stats')}
-		class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-blue-600 transition-colors cursor-pointer mb-5"
+		class="inline-flex items-center gap-1.5 text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors cursor-pointer mb-5"
 	>
 		<ChevronLeft class="w-4 h-4" aria-hidden="true" />
 		Statistik
@@ -81,8 +81,8 @@
 
 	<header class="space-y-4">
 		<div>
-			<h1 class="text-xl font-bold text-slate-900">{title}</h1>
-			<p class="text-xs text-slate-500 mt-1">{hint}</p>
+			<h1 class="text-xl font-bold text-on-surface">{title}</h1>
+			<p class="mt-1 text-sm text-on-surface-variant">{hint}</p>
 		</div>
 
 		<!-- Lokale Filterzeile -->
@@ -107,7 +107,7 @@
 			/>
 		</div>
 		{#if !abruf.loading}
-			<p class="text-label-small text-slate-400 font-medium">
+			<p class="text-label-small text-on-surface-variant font-medium">
 				{gefiltert.length} von {items.length} Einträgen
 			</p>
 		{/if}
@@ -124,31 +124,25 @@
 			text="Die Liste konnte nicht abgerufen werden."
 		/>
 	{:else if gefiltert.length === 0}
-		<div class="py-20 text-center text-slate-400 text-sm">
+		<div class="py-20 text-center text-on-surface-variant text-sm">
 			{items.length === 0 ? 'Noch keine Daten vorhanden.' : 'Keine Einträge für diese Filter.'}
 		</div>
 	{:else}
-		<ul class="divide-y divide-slate-100 border-t border-slate-100">
+		<ul class="divide-y divide-outline-variant border-t border-outline-variant">
 			<!-- Key ist die Titel-ID: Titel+ISBN taugt nicht, zwei Titel dürfen gleich
 			     heissen und beide ohne ISBN sein (doppelter Key = Absturz der Ansicht). -->
 			{#each gefiltert as row (row.id)}
 				<li class="py-3.5 flex items-center gap-4">
-					{#if coverSrc(row.cover_url, row.isbn)}
-						<img
-							src={coverSrc(row.cover_url, row.isbn)}
-							alt=""
-							class="w-9 aspect-3/4 object-cover rounded-sm border border-slate-100 shrink-0"
-						/>
-					{:else}
-						<div
-							class="w-9 aspect-3/4 bg-slate-50 border border-slate-100 rounded-sm flex items-center justify-center text-slate-300 text-xs shrink-0"
-						>
-							📖
-						</div>
-					{/if}
+					<BuchCover
+						coverUrl={row.cover_url}
+						isbn={row.isbn}
+						titel={row.titel}
+						nurGespeichert
+						dekorativ
+					/>
 					<div class="min-w-0 flex-1">
-						<p class="text-sm font-bold text-slate-800 truncate" title={row.titel}>{row.titel}</p>
-						<p class="text-xs text-slate-500 truncate">
+						<p class="text-sm font-bold text-on-surface truncate" title={row.titel}>{row.titel}</p>
+						<p class="text-xs text-on-surface-variant truncate">
 							{row.autor || '—'}
 							{#if row.fachbereich}· {row.fachbereich}{/if}
 							{#if row.systematik}· <span class="font-mono">{row.systematik}</span>{/if}
@@ -157,10 +151,10 @@
 					</div>
 					<div class="shrink-0 text-right">
 						{#if kind === 'renner'}
-							<span class="text-sm font-black text-slate-900 tabular-nums">{row.count}×</span>
-							<span class="block text-xs text-slate-400 font-semibold">geliehen</span>
+							<span class="text-sm font-black text-on-surface tabular-nums">{row.count}×</span>
+							<span class="block text-xs text-on-surface-variant font-semibold">geliehen</span>
 						{:else}
-							<span class="text-xs font-bold text-amber-600">{row.letzte_aus}</span>
+							<span class="text-xs font-bold text-warning">{row.letzte_aus}</span>
 						{/if}
 					</div>
 				</li>

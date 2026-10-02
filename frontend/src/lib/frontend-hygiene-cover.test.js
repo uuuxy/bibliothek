@@ -35,7 +35,6 @@ const BESTAND = [
 	'src/lib/components/bestellungen/BestellDetailPositionen.svelte',
 	'src/lib/components/bestellungen/WareneingangTable.svelte',
 	'src/lib/components/portal/PortalTrefferkarte.svelte',
-	'src/lib/components/stats/StatistikDetailPage.svelte',
 	'src/inventur/lib/components/BuchKarte.svelte',
 	'src/inventur/lib/components/admin/ClassAssignmentSummary.svelte',
 	'src/inventur/lib/components/admin/KlassenBuchKachel.svelte',
