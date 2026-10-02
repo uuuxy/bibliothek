@@ -59,16 +59,21 @@
 		}
 	});
 
+	// Nur die jüngste Abfrage gilt: Die ganze Liste lädt länger als ein Suchergebnis und
+	// stünde sonst, wenn sie danach ankommt, unter dem Suchwort.
+	let ladeLauf = 0;
 	async function aktualisiereBuecher() {
+		const lauf = ++ladeLauf;
 		wirdGeladen = true;
 		try {
 			const geladene = await holeBuecherListe();
+			if (lauf !== ladeLauf) return;
 			buecher = geladene;
 			appState.adminAuthenticated = true;
 		} catch {
-			appState.adminAuthenticated = false;
+			if (lauf === ladeLauf) appState.adminAuthenticated = false;
 		} finally {
-			wirdGeladen = false;
+			if (lauf === ladeLauf) wirdGeladen = false;
 		}
 	}
 
