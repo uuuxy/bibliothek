@@ -143,6 +143,12 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 	if err = ProtokolliereWartendeBezuege(ctx, tx, wartende); err != nil {
 		return err
 	}
+	// Das lokal gespeicherte Cover fällt mit dem Titel, wie in der Massenaktion der
+	// Bestandstabelle (inventur.DeleteBooks).
+	cover, err := LokaleCoverNurDieserTitel(ctx, tx, []string{titleID})
+	if err != nil {
+		return err
+	}
 	// Verknüpfte Einträge (Schadensfälle, alte Rückgaben) löschen, um ON DELETE RESTRICT Fehler zu vermeiden
 	if _, err = tx.Exec(ctx, "DELETE FROM schadensfaelle WHERE exemplar_id IN (SELECT id FROM buecher_exemplare WHERE titel_id = $1)", titleID); err != nil {
 		return fmt.Errorf("failed to delete damage records for title: %w", err)
@@ -196,7 +202,11 @@ func (r *pgAuditRepository) DeleteTitle(ctx context.Context, titleID string, bea
 		}
 	}
 
-	return tx.Commit(ctx)
+	if err = tx.Commit(ctx); err != nil {
+		return err
+	}
+	LoescheCoverDateien(cover)
+	return nil
 }
 
 // DeleteCopy bucht ein physisches Exemplar aus dem System aus (Soft-Delete) und protokolliert dies im Audit-Log.

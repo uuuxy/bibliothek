@@ -53,6 +53,17 @@ func schreibeUploadDatei(name string, inhalt []byte) error {
 	})
 }
 
+// uploadDateiVorhanden sagt, ob uploads/<name> schon als Datei da ist.
+func uploadDateiVorhanden(name string) bool {
+	vorhanden := false
+	_ = mitUploadsRoot(func(root *os.Root) error { //nolint:errcheck // ohne Verzeichnis gibt es die Datei nicht
+		info, err := root.Stat(name)
+		vorhanden = err == nil && info.Mode().IsRegular()
+		return nil
+	})
+	return vorhanden
+}
+
 // loescheUploadDatei entfernt uploads/<name>. Eine nicht vorhandene Datei ist kein
 // Fehler — der Aufrufer räumt nur auf.
 func loescheUploadDatei(name string) error {

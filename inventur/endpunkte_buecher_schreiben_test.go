@@ -133,7 +133,7 @@ func TestBearbeiteBuecherLoeschen(t *testing.T) {
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"id", "titel_id", "titel", "klasse"}))
 
-		mock.ExpectQuery("SELECT cover_url").
+		mock.ExpectQuery(`SELECT t\.cover_url`).
 			WithArgs(pgxmock.AnyArg()).
 			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/cover.jpg"))
 

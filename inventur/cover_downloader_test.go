@@ -146,6 +146,24 @@ func TestSpeichereCoverDatei(t *testing.T) {
 		}
 	})
 
+	// Der Name kommt aus dem Inhalt: Dieselbe Abfrage legt keine zweite Datei ab, ein
+	// anderes Bild bekommt einen anderen Namen.
+	t.Run("derselbe Inhalt, dieselbe Datei", func(t *testing.T) {
+		erste := speichereCoverDatei([]byte("bild eins"), "9783551551672", ".webp")
+		wieder := speichereCoverDatei([]byte("bild eins"), "9783551551672", ".webp")
+		anderes := speichereCoverDatei([]byte("bild zwei"), "9783551551672", ".webp")
+		if erste == "" || erste != wieder {
+			t.Errorf("zweimal derselbe Inhalt: %q und %q", erste, wieder)
+		}
+		if anderes == erste {
+			t.Errorf("ein anderes Bild trägt denselben Namen %q", anderes)
+		}
+		dateien, err := filepath.Glob(filepath.Join("uploads", "cover_auto_9783551551672_*"))
+		if err != nil || len(dateien) != 2 {
+			t.Errorf("Dateien zur ISBN: %v (%v), erwartet zwei", dateien, err)
+		}
+	})
+
 	t.Run("path traversal attempt in isbn is sanitized", func(t *testing.T) {
 		res := speichereCoverDatei([]byte("dummy data"), "../../../etc/passwd", ".webp")
 		if !strings.HasPrefix(res, "/uploads/cover_auto_passwd_") {

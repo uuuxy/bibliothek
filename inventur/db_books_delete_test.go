@@ -3,8 +3,6 @@ package inventur
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/pashagolub/pgxmock/v5"
@@ -48,7 +46,7 @@ func TestDeleteBooks(t *testing.T) {
 		if cover != "" {
 			zeilen.AddRow(cover)
 		}
-		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel WHERE id = ANY\(\$1::uuid\[\]\) AND cover_url LIKE '/uploads/%'`).
+		mock.ExpectQuery(`SELECT t\.cover_url FROM buecher_titel t\s+WHERE t\.id = ANY\(\$1::uuid\[\]\) AND t\.cover_url LIKE '/uploads/%'`).
 			WithArgs(ids).
 			WillReturnRows(zeilen)
 	}
@@ -142,70 +140,6 @@ func TestDeleteBooks(t *testing.T) {
 		assert.ErrorIs(t, err, ErrBookNotFound)
 		assert.NoError(t, mock.ExpectationsWereMet())
 	})
-}
-
-func TestSammleLokaleCoverPfade(t *testing.T) {
-	ctx := context.Background()
-	ids := []string{"id-1"}
-
-	t.Run("success", func(t *testing.T) {
-		imTestVerzeichnis(t) // DeleteBooks legt sonst inventur/uploads/ im Repo an
-		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
-		defer mock.Close()
-
-		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
-			WithArgs(ids).
-			WillReturnRows(pgxmock.NewRows([]string{"cover_url"}).AddRow("/uploads/test1.jpg").AddRow("/uploads/test2.png"))
-
-		paths, err := sammleLokaleCoverPfade(ctx, mock, ids)
-		assert.NoError(t, err)
-		assert.Equal(t, []string{"/uploads/test1.jpg", "/uploads/test2.png"}, paths)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-
-	t.Run("db error", func(t *testing.T) {
-		mock, err := pgxmock.NewPool()
-		require.NoError(t, err)
-		defer mock.Close()
-
-		mock.ExpectQuery(`SELECT cover_url FROM buecher_titel`).
-			WithArgs(ids).
-			WillReturnError(fmt.Errorf("db error"))
-
-		paths, err := sammleLokaleCoverPfade(ctx, mock, ids)
-		assert.ErrorContains(t, err, "cover-dateien konnten nicht ermittelt werden")
-		assert.Nil(t, paths)
-		assert.NoError(t, mock.ExpectationsWereMet())
-	})
-}
-
-func TestLoescheLokaleCoverDateien(t *testing.T) {
-	imTestVerzeichnis(t)
-	err := os.MkdirAll("uploads", 0750)
-	require.NoError(t, err)
-
-	testFile := filepath.Join("uploads", "test_cover.jpg")
-	err = os.WriteFile(testFile, []byte("data"), 0600)
-	require.NoError(t, err)
-
-	outsideFile := "outside.jpg"
-	err = os.WriteFile(outsideFile, []byte("data"), 0600)
-	require.NoError(t, err)
-
-	loescheLokaleCoverDateien([]string{
-		"/uploads/test_cover.jpg",
-		"http://example.com/cover.jpg",
-		"../outside.jpg",
-		"/uploads/.",
-		"/uploads//",
-	})
-
-	_, err = os.Stat(testFile)
-	assert.True(t, os.IsNotExist(err), "testFile should have been deleted")
-
-	_, err = os.Stat(outsideFile)
-	assert.NoError(t, err, "outside file should NOT have been deleted")
 }
 
 // erwarteAuflagenSperre: DeleteBooks nimmt als ERSTES die Sperre der Auflagen und liest die

@@ -110,3 +110,29 @@ func AlsJPEG(coverURL string) (bilddaten []byte, pfad string, ok bool) {
 	}
 	return jpg, pfad, true
 }
+
+// Loesche entfernt die Datei eines lokal gespeicherten Covers, etwa nachdem sein Titel
+// gelöscht ist. Nur Dateien direkt in der Wurzel: In ihren Unterordnern liegen andere Bilder
+// (Ausweisfotos, der Zwischenspeicher des Cover-Abrufs), und die Cover-URL eines Titels kommt
+// aus einer Maske. Eine fehlende Datei und eine Adresse außerhalb sind kein Fehler; der
+// Aufrufer räumt nur auf.
+func Loesche(coverURL string) error {
+	rel, _, ok := zerlegeCoverURL(coverURL)
+	if !ok || rel == "." || rel != filepath.Base(rel) {
+		return nil
+	}
+	wurzel, ok := oeffneWurzel()
+	if !ok {
+		return nil
+	}
+	defer closeutil.LogClose(wurzel, "coverdatei wurzel")
+
+	// Lstat: Eine Verknüpfung oder ein Ordner unter diesem Namen ist kein Cover.
+	if info, err := wurzel.Lstat(rel); err != nil || !info.Mode().IsRegular() {
+		return nil
+	}
+	if err := wurzel.Remove(rel); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}

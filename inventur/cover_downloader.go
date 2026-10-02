@@ -5,6 +5,7 @@ import (
 	"bibliothek/pkg/imageutil"
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"image"
 	_ "image/gif"
@@ -15,7 +16,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
-	"time"
 
 	_ "golang.org/x/image/webp"
 )
@@ -90,18 +90,21 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 	return fileBytes
 }
 
-// speichereCoverDatei schreibt das aufbereitete Cover unter einem serverseitig
-// generierten (traversal-geschützten) Pfad in uploads/ und liefert den öffentlichen
-// Pfad; "" bei Fehler.
+// speichereCoverDatei schreibt das aufbereitete Cover in uploads/ und liefert den
+// öffentlichen Pfad; "" bei Fehler. Der Name trägt die ISBN und eine Prüfsumme des Inhalts:
+// Dieselbe Abfrage legt dieselbe Datei ab statt bei jedem Mal eine weitere, und ein anderes
+// Bild bekommt einen anderen Namen, sodass kein Browser das alte weiter zeigt.
 func speichereCoverDatei(finalBytes []byte, isbn, saveExt string) string {
-	filename := fmt.Sprintf("cover_auto_%s_%d%s", filepath.Base(isbn), time.Now().Unix(), saveExt)
+	summe := sha256.Sum256(finalBytes)
+	filename := fmt.Sprintf("cover_auto_%s_%x%s", filepath.Base(isbn), summe[:6], saveExt)
 
+	if uploadDateiVorhanden(filename) {
+		return "/uploads/" + filename
+	}
 	if err := schreibeUploadDatei(filename, finalBytes); err != nil {
 		log.Printf("Cover-Download: %v", err)
 		return "" // kein externer Fallback: lieber leer lassen und später erneut versuchen
 	}
-
-	// Erfolg! Das Bild liegt lokal.
 	return "/uploads/" + filename
 }
 

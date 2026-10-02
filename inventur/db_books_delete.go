@@ -3,8 +3,6 @@ package inventur
 import (
 	"context"
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	"bibliothek/db"
 	"bibliothek/repository"
@@ -66,7 +64,7 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 	if err != nil {
 		return err
 	}
-	localCovers, err := sammleLokaleCoverPfade(ctx, tx, ids)
+	localCovers, err := repository.LokaleCoverNurDieserTitel(ctx, tx, ids)
 	if err != nil {
 		return err
 	}
@@ -115,50 +113,8 @@ func (repo *BookRepository) DeleteBooks(ctx context.Context, ids []string) error
 		return fmt.Errorf("löschen konnte nicht abgeschlossen werden: %w", err)
 	}
 
-	// Erst nach dem Commit: die lokalen Cover-Dateien sind unwiederbringlich, das darf
-	// NICHT geschehen, solange das DB-Löschen noch scheitern (zurückrollen) könnte.
-	loescheLokaleCoverDateien(localCovers)
+	// Erst nach dem Commit: Die Cover-Dateien kommen nicht zurück, wenn das Löschen in der
+	// Datenbank doch scheitert.
+	repository.LoescheCoverDateien(localCovers)
 	return nil
-}
-
-// sammleLokaleCoverPfade liefert die lokal gespeicherten Cover-Pfade (/uploads/...)
-// der angegebenen Titel, damit sie nach dem Löschen entfernt werden können.
-func sammleLokaleCoverPfade(ctx context.Context, q zeilenLeser, ids []string) ([]string, error) {
-	coverRows, err := q.Query(ctx, "SELECT cover_url FROM buecher_titel WHERE id = ANY($1::uuid[]) AND cover_url LIKE '/uploads/%'", ids)
-	if err != nil {
-		return nil, fmt.Errorf("cover-dateien konnten nicht ermittelt werden: %w", err)
-	}
-	defer coverRows.Close()
-
-	localCovers := make([]string, 0)
-	for coverRows.Next() {
-		var coverURL string
-		if scanErr := coverRows.Scan(&coverURL); scanErr != nil {
-			return nil, fmt.Errorf("cover-pfade konnten nicht gelesen werden: %w", scanErr)
-		}
-		localCovers = append(localCovers, coverURL)
-	}
-	if rowsErr := coverRows.Err(); rowsErr != nil {
-		return nil, fmt.Errorf("cover-pfade konnten nicht iteriert werden: %w", rowsErr)
-	}
-	return localCovers, nil
-}
-
-// loescheLokaleCoverDateien entfernt die lokalen Cover-Dateien (best-effort; Fehler
-// werden ignoriert, da der DB-Datensatz bereits gelöscht ist).
-func loescheLokaleCoverDateien(localCovers []string) {
-	for _, coverURL := range localCovers {
-		if !strings.HasPrefix(coverURL, "/uploads/") {
-			continue
-		}
-		name := filepath.Base(coverURL)
-		if name == "" || name == "." || name == "/" {
-			continue
-		}
-		// loescheUploadDatei arbeitet über os.Root (uploads_pfad.go) — die Einhegung auf
-		// das Upload-Verzeichnis macht das Betriebssystem, nicht mehr das filepath.Base
-		// oben. Deshalb steht hier kein #nosec mehr: Es gibt kein os.Remove, das gosec
-		// beanstanden könnte.
-		_ = loescheUploadDatei(name) //nolint:errcheck // Best-Effort-Aufräumen nach dem DB-Löschen
-	}
 }

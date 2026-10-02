@@ -37,11 +37,6 @@ type offeneAusleihe struct {
 	Seit       string
 }
 
-// zeilenLeser ist, was die Leser vor dem Löschen brauchen — Pool oder Transaktion.
-type zeilenLeser interface {
-	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
-}
-
 // loescheAusleihenMitSpur entfernt ALLE Ausleihen der Titel (die laufenden wie die
 // abgeschlossenen — sonst hielte ihr ON DELETE RESTRICT das Exemplar fest) und liefert
 // die laufenden als Spur zurück: aus demselben Befehl, der sie entfernt.

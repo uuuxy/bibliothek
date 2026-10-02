@@ -422,12 +422,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- Jede ISBN-Abfrage legt eine Cover-Datei ab (gefunden am 01.10.2026, am lokalen Stack
-  gezählt): `GET /api/lookup/{isbn}` speichert das Cover als `uploads/cover_auto_…`, auch wenn
-  danach nichts gespeichert wird, und jede Wiederholung legt eine weitere ab. Löschen aus der
-  Maske (`DELETE /api/buecher/titel/{id}`) lässt die Datei des Titels liegen,
-  `DELETE /api/books` nimmt sie mit (`sammleLokaleCoverPfade`). Der Ordner wächst;
-  Kategorie B.
 - Googles Ersatzbild gilt als Cover (gefunden am 02.10.2026, am lokalen Stack gesehen): Hat
   ein Titel kein gespeichertes Cover, fragt die Oberfläche über den eigenen Proxy erst Google
   Books, dann OpenLibrary (`coverKandidaten` in `utils/coverSrc.js`). Google antwortet auf eine
@@ -807,6 +801,11 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   146). Die Maske sagt dabei nicht, dass die Nummer schon einmal vergeben war; nur der Generator
   und die Littera-Übernahme lesen `ausweisnummern_ausgeschieden`. Anlass zum Bauen: eine alte
   Karte, die auf diesem Weg an eine andere Person gerät.
+- Cover-Dateien ohne Titel (`uploads/cover_auto_…`): Eine ISBN-Abfrage, nach der nicht
+  gespeichert wird, lässt eine Datei je ISBN liegen (der Name kommt seit dem 02.10.2026 aus
+  ISBN und Inhalt, eine Wiederholung legt keine weitere ab), und ein ersetztes Cover die alte
+  Datei. Was vorher entstand, liegt weiter dort; gemessen ist die Menge an keinem Server.
+  Anlass zum Bauen: Der Ordner wird merklich groß.
 - Der Cover-Abgleich fragt eine ISBN, die kein Katalogdienst kennt, alle sechs Stunden und bei
   jedem Start neu (am Code gelesen am 02.10.2026): `processCover`
   (`internal/service/cover_service.go`) setzt `FAILED`, sobald die Abfrage einen Fehler

@@ -120,6 +120,10 @@ func TestDeleteTitle_LoeschtOhneAktiveAusleihen(t *testing.T) {
 	mock.ExpectExec("INSERT INTO audit_log").
 		WithArgs("vormerkungen", titelID, pgxmock.AnyArg(), pgxmock.AnyArg()).
 		WillReturnResult(pgxmock.NewResult("INSERT", 1))
+	// Das lokale Cover des Titels, vor den DELETEs gelesen und nach dem Commit entfernt.
+	mock.ExpectQuery("SELECT t.cover_url FROM buecher_titel t").
+		WithArgs([]string{titelID}).
+		WillReturnRows(pgxmock.NewRows([]string{"cover_url"}))
 	mock.ExpectExec("DELETE FROM schadensfaelle").WithArgs(titelID).
 		WillReturnResult(pgxmock.NewResult("DELETE", 0))
 	mock.ExpectExec("DELETE FROM ausleihen").WithArgs(titelID).
