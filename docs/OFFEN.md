@@ -74,6 +74,10 @@ entfallen.
      Buch scannen. Erwartet: Die Suchleiste steht noch im Fenster, das Buch ist gebucht.
    - Buchmaske: einen Titel halb ausfüllen, sperren lassen, aufschließen. Erwartet: Die
      Eingaben stehen noch da.
+   - Buchmaske, ohne Scanner: einen Titel mit vielen Exemplaren öffnen (der größte am
+     Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
+     darunter bleiben im Bild. Dann den Titel leeren und „Speichern" drücken. Erwartet: Die
+     Meldung oben rechts liegt nicht über dem Knopf.
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
@@ -594,7 +598,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 30.09.2026: 1411 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 02.10.2026: 1366 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -752,6 +756,13 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   übrigen acht sind Auswahllisten, Vorschläge, Dialoge und das Eigenschaften-Feld des
   Designers. Je Bildschirm mit einer Menge wie an der Schule ansehen: Die Testdaten kennen
   höchstens drei Ausleihen je Leser, an der Schule sind es acht bis achtzehn.
+- **Die Exemplare in „Buch bearbeiten" bei Mengen wie an der Schule** (am Testserver lesend
+  gezählt am 02.10.2026): 2.253 Titel haben Exemplare, mindestens die Hälfte davon eines, 90 %
+  höchstens 58; über 100 Exemplare haben 68 Titel, der größte 383. Lokal mit 403 Exemplaren
+  öffnet die Maske in 0,3 s, „Speichern", Cover und Knöpfe bleiben im Bild, die Seite ist
+  28.377 px hoch. In der Liste lässt sich nicht suchen (`BuchExemplareListe.svelte`); ein
+  einzelnes Exemplar findet dort nur die Suche des Browsers. Anlass zum Bauen: Jemand sucht in
+  der Maske ein bestimmtes Exemplar.
 - **Der Abstand des Rahmens liegt um den Scrollbereich, nicht in ihm** (alle Seiten, gemessen
   am 02.10.2026 bei 1710 × 952 px): `Anwendungsrahmen.svelte` gibt der Arbeitsfläche 24 px
   oben und unten und 32 px an den Seiten, gescrollt wird erst das Element darin
@@ -909,6 +920,12 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   gefragt wird nur beim Wechsel des Menüpunkts und beim Schließen des Fensters. Das Leeren der
   Theke ist gewollt (A4 im Datenschutz-Nachweis). Anlass zum Bauen: eine verlorene Eingabe an
   der Theke.
+- Das Schließen-Symbol der Maske „Buch bearbeiten" und „Neues Buch" verwirft, was getippt und
+  nicht gespeichert ist, ohne Rückfrage: `onClose` schaltet nur zurück zur Titelliste
+  (`inventur/routes/admin/+page.svelte`). Seit dem 02.10.2026 steht „Speichern" im Kopf neben
+  dem Symbol. M3, Dialogs, Guidelines: „When someone dismisses a full-screen dialog, a basic
+  dialog should appear to confirm that they want to discard the unsaved changes." Dafür müsste
+  die Maske wissen, ob etwas geändert ist (wie `uiStore.verlassenSperre` beim LMF-Planer).
 - Die Live-Leitung (`GET /events`) verlangt nur eine Anmeldung, und ihre Meldung „action"
   trägt zu jeder Buchung die Kennung des Lesers, die Buchnummer und den Titel
   (`broadcastActionEvent`). Jedes angemeldete Konto bekommt sie, auch das Kollegium ohne
@@ -932,6 +949,11 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   (`speichereBearbeitung` in `SystematikVerwaltung.svelte`) und „Anmelden" mit leerer Adresse
   oder leerem Passwort (`authStore.handleLogin`). Verloren geht nichts. Den Knopf in dem
   Zustand sperren oder das Feld nennen.
+- Die Maske „Buch bearbeiten" speichert nur per Klick auf „Speichern": Sie ist kein Formular,
+  die Eingabetaste und ein Tastenkürzel lösen nichts aus (`BuchFormular.svelte`, am Code
+  gelesen am 02.10.2026). In der Reihenfolge der Tabulatortaste steht „Speichern" seit dem
+  02.10.2026 vor den Feldern; wer mit der Tastatur ausfüllt, erreicht den Knopf nach dem
+  letzten Feld nur rückwärts.
 - Zwölf Dialoge und Formulare sperren „Abbrechen", solange ihre Anfrage läuft (etwa
   `StudentProfileDeleteModal.svelte`, `BescheidDialog.svelte`, `PapierkorbLoeschenDialog.svelte`;
   gezählt am 01.10.2026). M3 Dialogs, Guidelines: „Disable confirming actions until a choice is
@@ -986,7 +1008,9 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   `ActionEvent.GeraetID` ohne Broadcast und mit Null-Zeitstempel.
 - Cognitive Complexity: 32 Funktionen über 15 ohne Tests (Messung 05.09.2026); lohnend allenfalls
   `OverrideDueDateHandler` und `behandleAbgaenger`.
-- `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen.
+- `javascript:S6551` und `javascript:S8783`: begründete Dauer-Ausnahmen. Die Begründung zu
+  S6551 steht als Kommentar in `settingsWerte.js`; S8783 nennt im Repository keine Stelle
+  (nachgesehen am 02.10.2026).
 - `auth.Claims.BarcodeID` liest niemand mehr; die Ausweisnummer kommt seit Migration 125
   als LEFT JOIN aus der Leserzeile in die Sitzung, nur damit das Feld gefüllt bleibt.
 - Tabellen-Inline-Felder mit 36 px: eine `size="sm"`-Variante von `Feld` erst bei Bedienbefund.
@@ -1050,10 +1074,11 @@ die Lesernummer als Ausweisnummer ein; mit einem Buch kollidiert sie nach dem Ne
 Bücher den 13-stelligen EAN-13 tragen (in der Generalprobe eine Nummer doppelt, zwischen zwei
 Lesern — der zweite bekam eine `A-`-Nummer). Ist sie gefüllt, stehen die einzelnen Personen ohne Karte
 mit „keine Karte in FremdLeserNummer" im Protokoll des Laufs.
-**Die Sicherungen vom 01. und 02.09.2026** (nachgesehen am 28.09.2026): In `~/Downloads` und
-auf dem Schreibtisch liegen seit dem 09.09.2026 zwei Littera-Sicherungen
+**Die Sicherungen vom 01. und 02.09.2026** (nachgesehen am 28.09.2026): In `~/Downloads`
+liegen seit dem 09.09.2026 zwei Littera-Sicherungen
 (`littera_sicherung_01_09_2026_14_04_50.7z` und `littera_sicherung_02_09_2026_13_29_22.7z`,
-856 KB und 602 KB). Jede enthält eine `.bak` (16,7 MB und 13,4 MB) und ist verschlüsselt.
+856 KB und 602 KB); auf dem Schreibtisch liegt nur eine Kopie der ersten (nachgesehen am
+02.10.2026). Jede enthält eine `.bak` (16,7 MB und 13,4 MB) und ist verschlüsselt.
 Name und Form sind nach dem Littera-Handbuch („Datensicherung mit SQL Server-Datenbank",
 lokaler Server) die Sicherung der **SQL-Server-Fassung**: Die `.bak` ist dann eine
 SQL-Server-Sicherung, keine Access-Datei, und `mdb-export` liest sie nicht. Zum Zurückspielen
@@ -1250,6 +1275,13 @@ stehen:
   Unterlagen (VVT-Entwurf, Datenschutzhinweis, PII-Matrix), den Löschfristen, dem Test hinter
   jeder Zusage, dem Ablauf bei einer Datenpanne, den bekannten Lücken und dem, was bei der
   Schule liegt. Offen ist die Beschlussfassung der Schule (8.5, B1–B7).
+  **Die Frist bis zum Sperrbildschirm:** Der Entwurf nennt die Vorgabe des Programms, 15
+  Minuten (Abschnitt 5, „Zugang"). Gewünscht sind an der Schule 8 Stunden ohne Bedienung
+  (01.10.2026). Das Feld nimmt 0 bis 1440 Minuten, 480 sind am Stack nachgestellt; die Vorgabe
+  bleibt 15, der Wert wird am Schulserver einmal unter Einstellungen → Datenschutz & Sitzung
+  eingetragen. Der Nachweis nennt dann die Zahl der Schule. Mit 480 Minuten greift die Sperre an einem
+  Schultag nicht; für den unbeaufsichtigten Platz bleibt das Leeren der Theke nach 5 Minuten.
+  Das gehört zur Beteiligung des Datenschutzbeauftragten (8.5, B4).
 - **Hosting- und Programmpflegekonzept.** Der Entwurf steht seit dem 24.09.2026, ergänzt am
   28.09.2026 um die Aufbewahrung der Sicherungen, den Datenweg beim Wechsel und die
   Kontakte für eine Datenpanne: [PFLEGEKONZEPT.md](PFLEGEKONZEPT.md) — mit den drei am
