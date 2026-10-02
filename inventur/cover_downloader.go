@@ -2,6 +2,7 @@ package inventur
 
 import (
 	"bibliothek/pkg/closeutil"
+	"bibliothek/pkg/coverquelle"
 	"bibliothek/pkg/imageutil"
 	"bytes"
 	"context"
@@ -85,6 +86,10 @@ func ladeCoverBytes(ctx context.Context, client *http.Client, coverURL string) [
 
 	fileBytes, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20)) // max. 10 MB
 	if err != nil || len(fileBytes) == 0 {
+		return nil
+	}
+	// Ein Ersatzbild der Quelle ist kein Cover; die nächste Quelle ist dran.
+	if coverquelle.IstErsatzbild(fileBytes) {
 		return nil
 	}
 	return fileBytes

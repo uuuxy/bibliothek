@@ -422,19 +422,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   mit der kurzen Nummer) oder im Druck-Center unter „Fehlende Etiketten", Stufe „Alle", nach der
   kurzen Nummer suchen und das Etikett nachdrucken; der Nachdruck trägt die volle Nummer als
   Strichcode und als Text. Entscheiden, sobald feststeht, ob `FremdLeserNummer` gefüllt ist.
-- Googles Ersatzbild gilt als Cover (gefunden am 02.10.2026, am lokalen Stack gesehen): Hat
-  ein Titel kein gespeichertes Cover, fragt die Oberfläche über den eigenen Proxy erst Google
-  Books, dann OpenLibrary (`coverKandidaten` in `utils/coverSrc.js`). Google antwortet auf eine
-  ISBN ohne Bild mit Status 200 und einem grauen Bild „image not available" (PNG, 128 × 170 px,
-  1.269 Byte). `holeUndKonvertiereCover` (`api/image_caching.go`) legt es als Cover ab, die
-  Prüfung in `ui/BuchCover.svelte` sieht nur Bilder unter 10 px als leer an. Zu sehen ist dann
-  das Ersatzbild statt der Initiale, und OpenLibrary wird nicht mehr gefragt. Betroffen sind
-  Katalog (`BuchKarte`, `BookTableZeile`), Buch-Akte, Portal (`KlassenBuchKachel`) und das
-  Bestellfenster; die Ausleihliste der Leserakte zeigt nur gespeicherte Cover
-  (`nurGespeichert`). Der Cover-Abgleich des Servers fragt die Google-Books-API und ist nicht
-  betroffen. Abhilfe wäre, das Ersatzbild im Proxy zu erkennen und wie einen Fehlschlag zu
-  behandeln; bereits abgelegte Dateien unter `uploads/covers` blieben bis dahin liegen.
-  Kategorie B.
 - **Speichern zwei Plätze denselben Titel, gilt bei den Feldern des Titels der zweite Stand**
   (gefunden am 01.10.2026, am Stack nachgestellt). `PUT /api/books/{id}` schreibt alle Felder
   zurück, auch die, die niemand angefasst hat: Die Signatur, die Platz 1 gespeichert hat, ist
@@ -805,7 +792,16 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   gespeichert wird, lässt eine Datei je ISBN liegen (der Name kommt seit dem 02.10.2026 aus
   ISBN und Inhalt, eine Wiederholung legt keine weitere ab), und ein ersetztes Cover die alte
   Datei. Was vorher entstand, liegt weiter dort; gemessen ist die Menge an keinem Server.
-  Anlass zum Bauen: Der Ordner wird merklich groß.
+  Im Zwischenspeicher des Cover-Abrufs (`uploads/covers`) liegen dazu die Ersatzbilder von
+  Google Books, die bis zum 02.10.2026 als Cover abgelegt wurden (je 1.118 Byte); abgerufen
+  werden sie nicht mehr. Anlass zum Bauen: Der Ordner wird merklich groß.
+- Ein Titel ohne gespeichertes Cover zeigt, was Google Books oder OpenLibrary liefern. Für
+  Schulbücher ist das wenig (gemessen am 02.10.2026 an sieben ISBN der Reihen Deutschbuch,
+  Lambacher Schweizer, Green Line und Mensch und Politik): Google Books hat eines, OpenLibrary
+  keines, der Cover-Dienst der DNB fünf. Die DNB fragt nur der Cover-Abgleich des Servers
+  (beim Start und alle sechs Stunden); bis er einen Titel erreicht hat, steht dort die
+  Initiale. Anlass zum Bauen: Nach der Littera-Übernahme fehlen in den Katalogen merklich
+  Cover, die es bei der DNB gibt.
 - Der Cover-Abgleich fragt eine ISBN, die kein Katalogdienst kennt, alle sechs Stunden und bei
   jedem Start neu (am Code gelesen am 02.10.2026): `processCover`
   (`internal/service/cover_service.go`) setzt `FAILED`, sobald die Abfrage einen Fehler

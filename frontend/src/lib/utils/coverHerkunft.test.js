@@ -76,6 +76,18 @@ describe('Cover-Herkunft', () => {
 		}
 	});
 
+	// Mit einem leeren `id=` antwortet Google Books auf jede ISBN mit „image not available",
+	// auch wenn es das Cover hat. Der Server prüft dasselbe an seinem Zwilling.
+	it('fragt Google Books ohne leeres id=', () => {
+		const adressen = coverKandidaten('', '9783551551672').map(
+			(k) => new URL(k, 'http://x').searchParams.get('url') ?? ''
+		);
+		const google = adressen.filter((a) => a.includes('books.google.com'));
+		expect(google).toEqual([
+			'https://books.google.com/books/content?vid=ISBN:9783551551672&printsec=frontcover&img=1&zoom=1'
+		]);
+	});
+
 	it('liefert ohne ISBN keine externe Quelle', () => {
 		expect(coverSrc('https://covers.openlibrary.org/x.jpg', '')).toBe('');
 		expect(coverKandidaten('https://covers.openlibrary.org/x.jpg', '')).toEqual([]);

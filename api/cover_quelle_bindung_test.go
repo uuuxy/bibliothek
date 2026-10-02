@@ -17,6 +17,7 @@ import (
 	"testing"
 
 	"bibliothek/db"
+	"bibliothek/pkg/coverquelle"
 
 	"github.com/pashagolub/pgxmock/v5"
 )
@@ -209,5 +210,34 @@ func TestCoverKandidaten_MusterGleichWieImFrontend(t *testing.T) {
 		if !strings.Contains(js, k) {
 			t.Errorf("Frontend-Muster fehlt oder weicht ab:\n  Server: %s", k)
 		}
+		// Mit einem leeren `id=` antwortet Google Books auf jede ISBN mit seinem Ersatzbild
+		// „image not available", auch wenn es das Cover hat.
+		if strings.Contains(k, "?id=&") || strings.Contains(k, "&id=&") {
+			t.Errorf("die Adresse trägt ein leeres id=: %s", k)
+		}
+	}
+}
+
+// Hat eine Quelle kein Cover, antwortet sie mitunter trotzdem mit einem Bild: Google Books
+// mit „image not available" in voller Größe und Status 200. Das Ersatzbild wird nicht als
+// Cover abgelegt; der Aufrufer bekommt das 1×1-GIF und geht zur nächsten Quelle.
+func TestCoverProxy_ErsatzbildWirdNichtAlsCoverAbgelegt(t *testing.T) {
+	downloads := coverStub(t)
+	mock := neuerMockPool(t)
+	s := &Server{DB: &db.Database{Pool: mock}}
+	// Der Stub antwortet auf jede Adresse mit demselben blauen Bild.
+	t.Cleanup(coverquelle.MerkeErsatzbildFuerTest(pngEinfarbig(t, color.RGBA{0, 0, 255, 255})))
+
+	erwarteKatalog(mock, "") // ISBN im Katalog, ohne gespeichertes Cover
+	rr := holeCover(s, testISBN, coverKandidatenFuerISBN(testISBN)[0])
+
+	if !bytes.Equal(rr.Body.Bytes(), coverFallbackGIF) {
+		t.Errorf("das Ersatzbild wurde als Cover ausgeliefert (%d Bytes, %s)", rr.Body.Len(), rr.Header().Get("Content-Type"))
+	}
+	if *downloads != 1 {
+		t.Errorf("Downloads = %d; erwartet 1 — gefragt wird die Quelle, abgelegt wird nichts", *downloads)
+	}
+	if eintraege, err := os.ReadDir(coverCacheVerzeichnis); err != nil || len(eintraege) != 0 {
+		t.Errorf("Dateien im Zwischenspeicher: %d (%v), erwartet keine", len(eintraege), err)
 	}
 }

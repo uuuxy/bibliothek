@@ -13,6 +13,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"bibliothek/pkg/coverquelle"
 )
 
 func TestLadeCoverBytes(t *testing.T) {
@@ -121,6 +123,28 @@ func TestLadeCoverBytes(t *testing.T) {
 			t.Errorf("expected %v, got %v", expectedBytes, res)
 		}
 	})
+}
+
+// Ein Ersatzbild der Quelle („image not available") ist kein Cover: Die Abfrage geht zur
+// nächsten Quelle, statt es am Titel abzulegen.
+func TestLadeCoverBytes_ErsatzbildIstKeinCover(t *testing.T) {
+	bild := []byte("das ersatzbild der quelle")
+	client := &http.Client{Transport: &mockTransport{
+		roundTripFunc: func(*http.Request) (*http.Response, error) {
+			resp := &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(bild)), Header: make(http.Header)}
+			resp.Header.Set("Content-Type", "image/png")
+			return resp, nil
+		},
+	}}
+	const adresse = "https://books.google.com/books/content?vid=ISBN:9783551551672&printsec=frontcover&img=1&zoom=1"
+
+	if got := ladeCoverBytes(context.Background(), client, adresse); !bytes.Equal(got, bild) {
+		t.Fatalf("ein gewöhnliches Bild kommt nicht an: %q", got)
+	}
+	t.Cleanup(coverquelle.MerkeErsatzbildFuerTest(bild))
+	if got := ladeCoverBytes(context.Background(), client, adresse); got != nil {
+		t.Errorf("das Ersatzbild kommt als Cover zurück (%d Bytes)", len(got))
+	}
 }
 
 func TestSpeichereCoverDatei(t *testing.T) {

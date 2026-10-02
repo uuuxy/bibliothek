@@ -49,9 +49,12 @@ export function coverSrc(coverUrl, isbn) {
  * über coverSrc und damit über den eigenen Proxy.
  *
  * Die beiden Adress-Muster kennt auch der Server (api/cover_quelle_bindung.go,
- * coverKandidatenFuerISBN): Der Proxy lädt seit dem 05.09.2026 nur Adressen, die er für
- * die ISBN selbst herleiten kann — ein abweichendes Muster hier bliebe still leer.
+ * coverKandidatenFuerISBN): Der Proxy lädt nur Adressen, die er für die ISBN selbst
+ * herleiten kann — ein abweichendes Muster hier bliebe still leer.
  * Gate: TestCoverKandidaten_MusterGleichWieImFrontend liest diese Datei.
+ *
+ * Hat Google Books kein Cover, antwortet es mit einem Ersatzbild in voller Größe. Der Proxy
+ * erkennt es und liefert sein 1×1-GIF, die Aufrufer gehen damit zur nächsten Quelle.
  *
  * @param {string} [coverUrl] Gespeichertes Cover (lokal oder extern)
  * @param {string} [isbn]
@@ -66,7 +69,7 @@ export function coverKandidaten(coverUrl, isbn) {
 	if (sauber) {
 		kandidaten.push(
 			coverSrc(
-				`https://books.google.com/books/content?id=&vid=ISBN:${sauber}&printsec=frontcover&img=1&zoom=1`,
+				`https://books.google.com/books/content?vid=ISBN:${sauber}&printsec=frontcover&img=1&zoom=1`,
 				sauber
 			),
 			coverSrc(`https://covers.openlibrary.org/b/isbn/${sauber}-L.jpg`, sauber)

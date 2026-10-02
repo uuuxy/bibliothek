@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	_ "image/gif"
@@ -170,6 +171,11 @@ func holeUndKonvertiereCover(ctx context.Context, root *os.Root, urlStr, fileNam
 	}
 	if len(rohBytes) > maxCoverBytes {
 		return fmt.Errorf("cover download: Antwort überschreitet %d MB", maxCoverBytes>>20)
+	}
+	// Ein Ersatzbild der Quelle ist kein Cover: Der Aufrufer zeigt dann die nächste Quelle
+	// oder die Initiale des Titels.
+	if coverquelle.IstErsatzbild(rohBytes) {
+		return errors.New("cover download: die Quelle hat zu dieser ISBN kein Cover (Ersatzbild)")
 	}
 	if err := imageutil.GuardImageDimensions(rohBytes); err != nil {
 		return err

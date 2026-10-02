@@ -24,10 +24,12 @@ import (
 // der geprüften URL — zwei Adressen teilen sich nie eine Datei. Gate: cover_quelle_bindung_test.go.
 
 // coverKandidatenFuerISBN sind die Adressen, die coverKandidaten (frontend/src/lib/utils/
-// coverSrc.js) für eine ISBN selbst baut. Muster hier und dort MÜSSEN gleich bleiben.
+// coverSrc.js) für eine ISBN selbst baut. Muster hier und dort müssen gleich bleiben. Die
+// Adresse von Google Books trägt kein leeres `id=`: Mit ihm antwortet Google auf jede ISBN
+// mit dem Ersatzbild.
 func coverKandidatenFuerISBN(isbnSauber string) []string {
 	return []string{
-		fmt.Sprintf("https://books.google.com/books/content?id=&vid=ISBN:%s&printsec=frontcover&img=1&zoom=1", isbnSauber),
+		fmt.Sprintf("https://books.google.com/books/content?vid=ISBN:%s&printsec=frontcover&img=1&zoom=1", isbnSauber),
 		fmt.Sprintf("https://covers.openlibrary.org/b/isbn/%s-L.jpg", isbnSauber),
 	}
 }
