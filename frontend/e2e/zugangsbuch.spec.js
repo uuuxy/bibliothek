@@ -48,11 +48,31 @@ test('Zugangsbuch: Zugänge des Halbjahres nach Topf, Lieferant dabei — und al
 	// 3. Und die Einschränkung steht dabei, statt Vollständigkeit zu behaupten.
 	await expect(page.getByText(/keine Bestellung hinterlegt/)).toBeVisible();
 
-	// 4. Der Ausdruck antwortet mit einem PDF.
-	const adresse = await page.getByRole('link', { name: 'Ausdrucken' }).getAttribute('href');
+	// 4. Der Ausdruck trägt den Zeitraum, den der Bildschirm zeigt.
+	const druck = page.getByRole('link', { name: 'Ausdrucken' });
+	const adresse = await druck.getAttribute('href');
 	expect(adresse).toMatch(
-		/\/api\/bestand\/zugangsbuch\/pdf\?von=\d{4}-\d{2}-\d{2}&bis=\d{4}-\d{2}-\d{2}/
+		/\/api\/bestand\/zugangsbuch\/pdf\?von=\d{4}-\d{2}-\d{2}&bis=\d{4}-\d{2}-\d{2}$/
 	);
+
+	// 5. Die Töpfe stehen als Felder mit ihrer Zahl unter dem Zeitraum. Ein Klick zeigt einen
+	//    Topf allein, und der Hinweis zu „ohne Zuordnung" geht mit seiner Liste. Der Ausdruck
+	//    bleibt das ganze Buch: Die Wahl ändert seine Adresse nicht.
+	const feldLand = page
+		.getByRole('group', { name: 'Nach Mittelherkunft filtern' })
+		.getByRole('button', { name: /^Lernmittelfreiheit \(Land\) · \d/ });
+	await feldLand.click();
+	await expect(feldLand).toHaveAttribute('aria-pressed', 'true');
+	await expect(land.getByText(`E2E-ZUG-A-${s}`)).toBeVisible();
+	await expect(ohne).toHaveCount(0);
+	await expect(page.getByText(/keine Bestellung hinterlegt/)).toHaveCount(0);
+	await expect(druck).toHaveAttribute('href', adresse ?? '');
+
+	// Der zweite Klick zeigt wieder alle.
+	await feldLand.click();
+	await expect(ohne.getByText(`E2E-ZUG-B-${s}`)).toBeVisible();
+
+	// 6. Der Ausdruck antwortet mit einem PDF.
 	const antwort = await page.request.get(adresse ?? '');
 	expect(antwort.status()).toBe(200);
 	expect(antwort.headers()['content-type']).toContain('application/pdf');

@@ -61,7 +61,8 @@ func generateAbgangsbuchPDF(buch repository.Abgangsbuch, schule pdf.SchuleInfo) 
 // abgangsbuchAbschnitt zeichnet einen Topf und liefert die Zahl seiner Zeilen.
 //
 // Leere Abschnitte überspringt das Blatt: Eine Überschrift ohne Inhalt hilft niemandem, der
-// den Nachweis abheftet. Auf dem Bildschirm steht sie, siehe bestandsbuch_abschnitte.go.
+// den Nachweis abheftet. Auf dem Bildschirm steht der leere Topf als Feld mit einer Null,
+// siehe abschnitteAus in bestandsbuch.go.
 func abgangsbuchAbschnitt(p *gofpdf.Fpdf, tr func(string) string, abschnitt Abschnitt[repository.AbgangsZeile]) int {
 	zeilen := abschnitt.Zeilen
 	if len(zeilen) == 0 {

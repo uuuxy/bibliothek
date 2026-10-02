@@ -1,27 +1,23 @@
 <!-- @component Bestandsbuch — Zugangs- und Abgangsbuch, ein Bauteil.
 
-     Punkt 1 des Protokolls vom 16.09.2026 („Zugangs- und Abgangsbuch fehlen"). Beide Bücher
-     sind derselbe Nachweis in zwei Richtungen: Zeitraum wählen, Liste je Topf, Blatt zum
-     Abheften. Zwei getrennte Bauteile wären zwei Orte für dieselben vier Entscheidungen —
-     und beim ersten Unterschied (Wortlaut, Spaltenhöhe, Fehlermeldung) sähen sie aus wie
-     zwei Programme.
+     Beide Bücher sind derselbe Nachweis in zwei Richtungen: Zeitraum wählen, Liste je Topf,
+     Blatt zum Abheften. Zwei Bauteile wären zwei Orte für dieselben Entscheidungen.
 
-     Abschnitte und Überschriften kommen FERTIG vom Server. Hier selbst zu gruppieren war
-     der erste Entwurf des Abgangsbuchs — und ließ Blatt und Bildschirm sofort
-     auseinanderlaufen („Lernmittelfreiheit (Land)" gegen „Lernmittel (Land)").
-
-     Der Zeitraum ebenso: Beim ersten Laden fragt das Bauteil ohne Datumsangabe, und der
-     Server antwortet mit dem laufenden Schulhalbjahr (Stichtage 15.3./15.9.). Die Felder
-     zeigen danach, was der Server tatsächlich gelesen hat. -->
+     Abschnitte und Überschriften kommen fertig vom Server, damit Blatt und Bildschirm
+     denselben Topf mit demselben Wort nennen. Der Zeitraum ebenso: Das erste Laden fragt ohne
+     Datum, der Server antwortet mit dem laufenden Schulhalbjahr (Stichtage 15.3./15.9.), und
+     die Felder zeigen danach, was er gelesen hat. -->
 <script>
 	import { onMount } from 'svelte';
 	import { apiFetch } from '../../apiFetch.js';
+	import Abschnitt from '../ui/Abschnitt.svelte';
 	import Button from '../ui/Button.svelte';
 	import Feld from '../ui/Feld.svelte';
+	import FilterChips from '../ui/FilterChips.svelte';
 	import Tabelle from '../ui/Tabelle.svelte';
 	import Ladekreis from '../ui/Ladekreis.svelte';
 	import LadeFehler from '../ui/LadeFehler.svelte';
-	import { formatDatum } from '../../utils/format.js';
+	import { formatDatum, formatZahl } from '../../utils/format.js';
 	import { Printer } from '@lucide/svelte';
 
 	/**
@@ -40,18 +36,29 @@
 	let laeuft = $state(true);
 	let fehler = $state('');
 
-	const abschnitte = $derived(buch?.abschnitte ?? []);
+	/** @typedef {{ topf: string, titel: string, zeilen: any[] }} Topf */
+	const abschnitte = $derived(/** @type {Topf[]} */ (buch?.abschnitte ?? []));
 
-	// Der Ausdruck nimmt den GELADENEN Zeitraum, nicht den in den Eingabefeldern.
-	//
-	// Bis zum 17.09.2026 las er `von`/`bis` — und damit das, was gerade im Feld stand. Wer
-	// ein Datum änderte und direkt auf „Ausdrucken" klickte, ohne „Anzeigen" zu drücken,
-	// heftete ein Blatt ab, dessen Zeitraum er nie geprüft hatte: auf dem Bildschirm das
-	// eine Halbjahr, auf dem Papier ein anderes. Bei einem Nachweis, der unterschrieben
-	// wird, ist das der teuerste Unterschied von allen (Rasterdurchgang 17.09.2026, Frage 3).
-	//
-	// Vor der ersten Antwort bleibt die Adresse ohne Zeitraum — dann antwortet der Server
-	// mit dem laufenden Halbjahr, und genau das steht gleich darauf auch auf dem Schirm.
+	// Die Töpfe stehen als Felder mit ihrer Zahl unter dem Zeitraum. Ein leerer Topf belegt
+	// unten keinen Abschnitt: Dass nichts kam oder ging, sagt die Null im Feld. Ein Klick zeigt
+	// einen Topf allein; der Ausdruck bleibt das ganze Buch.
+	let nurTopf = $state(/** @type {string | null} */ (null));
+	const felder = $derived(
+		abschnitte.map((a) => ({ wert: a.topf, text: `${a.titel} · ${formatZahl(a.zeilen.length)}` }))
+	);
+	// „Ohne Zuordnung" fehlt in einem Zeitraum ohne solche Zeilen; die Wahl darauf gilt dann nicht.
+	const wahl = $derived(abschnitte.some((a) => a.topf === nurTopf) ? nurTopf : null);
+	const gezeigt = $derived(
+		abschnitte.filter((a) => (wahl === null ? a.zeilen.length > 0 : a.topf === wahl))
+	);
+	// Eine Liste mit Zeilen bleibt im Dokument und wird nur ausgeblendet: Zehntausende Zeilen
+	// neu aufzubauen dauert Sekunden, in denen der Klick ohne Antwort bliebe.
+	const gebaut = $derived(abschnitte.filter((a) => a.zeilen.length > 0 || a.topf === wahl));
+
+	// Der Ausdruck nimmt den geladenen Zeitraum, nicht den in den Eingabefeldern: Wer ein Datum
+	// ändert und ohne „Anzeigen" druckt, heftete sonst ein Blatt ab, dessen Zeitraum nie auf dem
+	// Bildschirm stand. Vor der ersten Antwort bleibt die Adresse ohne Zeitraum; der Server
+	// nimmt dann das laufende Halbjahr.
 	const druckZeitraum = $derived(
 		buch
 			? `?von=${encodeURIComponent(String(buch.von).slice(0, 10))}&bis=${encodeURIComponent(String(buch.bis).slice(0, 10))}`
@@ -87,18 +94,34 @@
 	onMount(laden);
 </script>
 
+{#snippet nichts()}
+	<p class="text-sm text-on-surface-variant">Kein {wortSingular} in diesem Zeitraum.</p>
+{/snippet}
+
 <div class="py-6 space-y-6">
-	<div class="flex flex-wrap items-end gap-4">
-		<Feld bind:value={von} label="Von" type="date" class="w-44" />
-		<Feld bind:value={bis} label="Bis" type="date" class="w-44" />
-		<Button variant="secondary" onclick={laden} disabled={laeuft}>Anzeigen</Button>
-		<a
-			href={druckAdresse}
-			class="ml-auto inline-flex items-center gap-2 h-9 px-4 rounded-xl bg-primary text-on-primary text-sm font-semibold"
-		>
-			<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
-			Ausdrucken
-		</a>
+	<div class="space-y-4">
+		<div class="flex flex-wrap items-end gap-4">
+			<Feld bind:value={von} label="Von" type="date" class="w-44" />
+			<Feld bind:value={bis} label="Bis" type="date" class="w-44" />
+			<Button variant="secondary" onclick={laden} disabled={laeuft}>Anzeigen</Button>
+			<!-- Ein Link, kein Knopf: Er führt zum Blatt und lässt sich in einem neuen Reiter öffnen.
+			     Die Form ist die von ui/Button. -->
+			<a
+				href={druckAdresse}
+				class="m3-state ml-auto inline-flex h-9 items-center gap-2 rounded-full bg-primary px-4 text-sm font-semibold text-on-primary"
+			>
+				<Printer class="h-4 w-4 shrink-0" aria-hidden="true" />
+				Ausdrucken
+			</a>
+		</div>
+		{#if !laeuft && !fehler && abschnitte.length > 0}
+			<FilterChips
+				etikett="Nach Mittelherkunft filtern"
+				optionen={felder}
+				wert={wahl}
+				onwahl={(topf) => (nurTopf = topf)}
+			/>
+		{/if}
 	</div>
 
 	{#if laeuft}
@@ -106,16 +129,14 @@
 	{:else if fehler}
 		<LadeFehler titel="{buchname} nicht geladen" text={fehler} onerneut={laden} />
 	{:else if buch}
-		{#each abschnitte as abschnitt (abschnitt.topf)}
-			<section class="space-y-2">
-				<h3 class="text-sm font-semibold text-on-surface">
-					{abschnitt.titel} · {abschnitt.zeilen.length}
-					{abschnitt.zeilen.length === 1 ? 'Exemplar' : 'Exemplare'}
-				</h3>
-				{#if abschnitt.zeilen.length === 0}
-					<p class="text-sm text-on-surface-variant">
-						Kein {wortSingular} in diesem Zeitraum.
-					</p>
+		{#each gebaut as abschnitt (abschnitt.topf)}
+			{@const anzahl = abschnitt.zeilen.length}
+			<section hidden={!gezeigt.includes(abschnitt)}>
+				<Abschnitt
+					titel="{abschnitt.titel} · {formatZahl(anzahl)} {anzahl === 1 ? 'Exemplar' : 'Exemplare'}"
+				/>
+				{#if anzahl === 0}
+					{@render nichts()}
 				{:else}
 					<Tabelle beschriftung="{buchname} — {abschnitt.titel}">
 						<thead>
@@ -140,12 +161,13 @@
 				{/if}
 			</section>
 		{/each}
+		{#if gezeigt.length === 0}
+			{@render nichts()}
+		{/if}
 
-		<!-- Was NICHT auf der Liste steht, gehört darunter — sonst behauptet ein Nachweis
-		     Vollständigkeit, die er nicht hat. Beim Abgangsbuch sind das die Exemplare ohne
-		     Abgangsdatum UND die körperlich gelöschten (Rasterdurchgang 17.09.2026), beim
-		     Zugangsbuch die ohne hinterlegte Bestellung. Das jeweils fremde Feld fehlt in der
-		     Antwort schlicht, und `undefined > 0` ist falsch — der Block bleibt dann weg. -->
+		<!-- Was nicht auf der Liste steht, gehört darunter, sonst behauptet der Nachweis eine
+		     Vollständigkeit, die er nicht hat. Das Feld des jeweils anderen Buchs fehlt in der
+		     Antwort, und `undefined > 0` ist falsch: Der Hinweis bleibt dann weg. -->
 		{#if buch.ohne_zeitpunkt > 0}
 			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
 				{buch.ohne_zeitpunkt} weitere Exemplare sind ausgesondert, ohne dass ein Abgangsdatum bekannt
@@ -161,7 +183,8 @@
 				Nummern sind in den System-Logs nachschlagbar.
 			</p>
 		{/if}
-		{#if abschnitte.some((/** @type {any} */ a) => a.topf === '' && a.zeilen.length > 0)}
+		<!-- Der Satz erklärt die Liste „ohne Zuordnung"; ist sie nicht zu sehen, erklärt er nichts. -->
+		{#if gezeigt.some((a) => a.topf === '' && a.zeilen.length > 0)}
 			<p class="text-sm text-on-surface-variant border-t border-outline-variant pt-3">
 				Zu den Exemplaren unter „ohne Zuordnung" ist keine Bestellung hinterlegt — Altbestand,
 				Handanlage oder Bestandskorrektur. Aus welchen Mitteln sie bezahlt wurden, ist deshalb nicht

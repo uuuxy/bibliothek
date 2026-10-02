@@ -804,7 +804,23 @@ gescrollt wird der Bereich der Seite (`e2e/scrollbereiche.spec.js`). Kategorie B
   Halbjahr, 5,4 MB, Abruf 0,1 s, Aufbau im Browser 4,2 s. Die lokalen Zugangsdaten stammen aus
   Importen und Testläufen und sagen nichts über die Schule; ein neues Exemplar übernimmt sein
   Erwerbsdatum als Zugangsdatum (`stempel_zugang_am`). Anlass zum Bauen: ein Halbjahr mit
-  mehreren tausend Zugängen am Server.
+  mehreren tausend Zugängen am Server. Die Felder je Topf über der Liste bauen dabei nichts
+  neu auf: Eine Liste mit Zeilen bleibt im Dokument und wird aus- und eingeblendet (gemessen am
+  02.10.2026 mit 38.810 Zeilen: ausblenden 0,1 s, einblenden 0,8 bis 0,9 s).
+- Die Felder im Zugangs- und Abgangsbuch tragen die Topfnamen des Blatts: „Lernmittelfreiheit
+  (Land) · 63" hat 30 Zeichen, „Schülerbücherei (Schulträger) · 0" 33. M3, Chips, Guidelines:
+  „Chip label text should be 20 characters or fewer", als Don't: „Avoid chip labels longer than
+  20 characters". Kürzer wären „Land" und „Schulträger"; dann nennt das Feld den Topf anders als
+  die Überschrift der Liste und das Blatt. Gemessen am 02.10.2026: Bei 1024 und 800 px stehen
+  die drei Felder in einer Zeile, bei 390 px untereinander.
+- Die Beschriftung der Chips und Umschalter rendert mit Gewicht 400, M3 setzt 500: `ui/FilterChips`,
+  `ui/ChipFeld`, `ui/ChipAngebote` und `ui/Segmente` tragen `font-medium`, das in diesem Haus auf
+  400 zeigt (`styles/theme-mass.css`; `ui/Reiter` nennt die Falle und schreibt `font-semibold`).
+  material-web, Token v0_192: `label-text-weight` ist bei Filter-, Input-, Suggestion- und
+  Assist-Chip und beim Outlined Segmented Button `label-large-weight`, das ist `weight-medium`
+  (500). Gemessen am 02.10.2026 im Zugangsbuch: 14 px, Gewicht 400; `ui/Button` und `ui/Reiter`
+  tragen `font-semibold` (500). Betrifft Portal, Bestandsbücher, Buchformular, Bestellfenster,
+  Titel-Verwaltung, Statistik, LMF-Plan und Druck-Center.
 - Bei 390 px Breite ist die Bestellspalte (Bestellwesen, das Fenster vor dem Warenkorb) 68 px
   breit, auch das Eingabefeld der Schlagworte; die Chips ragen darüber hinaus (gemessen am
   30.09.2026 im echten Chrome, schon vor der zweiten Vorschlagszeile so). Unterhalb von `lg` legt

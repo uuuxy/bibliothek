@@ -36,10 +36,10 @@ type Abschnitt[T any] struct {
 // abschnitteAus gruppiert Zeilen nach Topf — in der Reihenfolge, die in diesem Programm
 // überall gilt (Lernmittel zuerst, dann Schülerbücherei, zuletzt ohne Zuordnung).
 //
-// Die beiden echten Töpfe stehen IMMER da, auch leer: Auf dem Bildschirm sagt „kein Zugang in
-// diesem Zeitraum" etwas, ein fehlender Abschnitt sähe nach einem Filterfehler aus. Der
-// Ausdruck überspringt die leeren — ein Blatt zum Abheften soll keine Überschriften ohne
-// Inhalt tragen.
+// Die beiden echten Töpfe stehen immer da, auch leer: Der Bildschirm zeigt jeden Abschnitt als
+// Feld mit seiner Zahl, und die Null sagt, dass nichts kam oder ging; ein fehlendes Feld sähe
+// nach einem Filterfehler aus. Der Ausdruck überspringt die leeren, weil ein Blatt zum
+// Abheften keine Überschrift ohne Inhalt tragen soll.
 //
 // „Ohne Zuordnung" erscheint nur, wenn es solche Zeilen gibt. Beim Abgangsbuch kann es sie
 // nicht geben (repository.ExemplarTopfSQL endet in der Faustregel aus dem Titel und hat immer
