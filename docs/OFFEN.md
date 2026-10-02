@@ -81,6 +81,10 @@ entfallen.
      Testserver hat 383) und nach unten rollen. Erwartet: „Speichern", das Cover und die Knöpfe
      darunter bleiben im Bild. Dann den Titel leeren und „Speichern" drücken. Erwartet: Die
      Meldung oben rechts liegt nicht über dem Knopf.
+   - Druck-Center, Buch-Etiketten: einen Titel mit mehr als fünf Exemplaren wählen, den Haken
+     „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
+     dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
+     Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
@@ -93,8 +97,8 @@ Reihenfolge unter 1. die vom 29.09.2026).
 1. Es folgt 5.21 (Palettenfarben, Bildschirm für Bildschirm). Zu 4.24 ist am 01.10.2026
    entschieden: kein dritter Eigentümer im Programm, die Frage geht an die Bücherei (oben
    unter 2.). Zu 4.28 (Anmelden ohne Mailserver) steht die Entscheidung aus; erst klären.
-2. **5.3** — muss stehen, bevor ein echter Bescheid übergeben wird; echte Bescheide gibt es erst
-   im Echtbetrieb.
+2. **5.3** ist am 02.10.2026 zurückgestellt: Zurzeit wird nichts an die Schulaufsicht
+   übergeben. Der Punkt steht nicht in der Reihenfolge, bis eine Übergabe ansteht.
 3. Nach der Antwort zu 8.3: **5.4**.
 4. **5.10** (Gates und Werkzeuge) und Abschnitt 6 nur mit Anlass.
 
@@ -293,6 +297,9 @@ der Schule ausfällt, und wie Littera und andere Programme es halten.
 ## 5. Abarbeitbar (Kategorie B)
 
 ### 5.3 Die Übergabe schließt die Forderung ab (nach 4.4)
+
+**Zurückgestellt am 02.10.2026:** Zurzeit wird nichts an die Schulaufsicht übergeben. Der Punkt
+wird nicht vorgeschlagen und nicht in Reihenfolgen genannt, bis eine Übergabe ansteht.
 
 E6 ist am 24.09.2026 bejaht (4.4). Fertig sein muss es spätestens mit der Antwort zu E1 (8.1) —
 ab dann gibt es echte Bescheide und vier Wochen später die erste Übergabe. Eine Stufe, jeder Punkt mit einem Test, der am Rückbau rot
