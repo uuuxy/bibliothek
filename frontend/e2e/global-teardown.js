@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { readFileSync, rmSync } from 'node:fs';
 import { MERKZETTEL } from './global-setup.js';
+import { stelleMailserverZurueck } from './mailserver.js';
 
 // Nach dem Lauf: Testlieferanten abräumen und den Hauptlieferanten wiederherstellen.
 //
@@ -81,5 +82,14 @@ export default function globalTeardown() {
 		// Kein harter Abbruch: Ein fehlgeschlagenes Aufräumen darf einen grünen Lauf nicht
 		// rot färben — es sagt nichts über die geprüfte Anwendung aus.
 		console.warn('E2E-Teardown: nicht abgeräumt —', String(err));
+	}
+
+	// Für sich, damit ein gescheitertes Abräumen oben den Mailserver nicht stumm zurücklässt.
+	// Scheitert das Zurückstellen selbst, bleibt der Merkzettel liegen, und der nächste Lauf
+	// stellt an seinem Ende zurück.
+	try {
+		stelleMailserverZurueck();
+	} catch (err) {
+		console.warn('E2E-Teardown: Mailserver nicht zurückgestellt —', String(err));
 	}
 }

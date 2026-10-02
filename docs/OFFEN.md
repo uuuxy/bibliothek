@@ -457,21 +457,6 @@ Konzept: [mittel_konzept.md](mittel_konzept.md), Abschnitt 4.7.
   steht; vom Katalog aus brächen sie ab wie der Kontrast-Test bis zum 02.10.2026. Abhilfe:
   `menuepunkt` aus `e2e/helpers.js` an allen Stellen, und die Spec räumt ihren Titel ab.
   Kategorie B.
-- **Der lokale Stack trägt den Mailserver der Schule, und Browser-Tests gehen Wege, die Mail
-  verschicken** (gefunden am 02.10.2026). In `mail_settings_config` des lokalen Stacks steht
-  der Server der Schule mit Zugang, übernommen aus der `.env`. Im vollen Lauf vom 02.10.2026
-  nennt das Protokoll des Servers eine Verbindung dorthin: `e2e/feld-roundtrip.spec.js`
-  erledigt ein Anliegen, und der Server schreibt der Lehrkraft (`api/anliegen.go`). Die
-  Verbindung endete am Zertifikat („gilt für srv1…, nicht für smtp…"), vor der Anmeldung;
-  hinaus ging nichts. Der Schutz hängt damit an einem Namen, der nicht zum Zertifikat passt:
-  Mit dem passenden Namen ginge je Lauf eine Mail an `e2e-rt-lehrer@test.local` in den
-  Versand. Weitere Wege mit Mail: Klassensatz bereit (`api/reservation.go`), der Alarm der
-  Betriebsbereitschaft und die Bestellung (die Spec dazu baut seit dem 02.10.2026 keine
-  Verbindung mehr auf). Abhilfe: Der Lauf stellt den Mailserver des Stacks für seine Dauer
-  auf eine Adresse, an der nichts zuhört, und danach zurück, nach dem Muster des Merkzettels
-  für den Hauptlieferanten (`e2e/global-setup.js`); eine Spec prüft, dass es so ist. In der
-  CI setzt der Lauf keinen Mailserver. Kategorie B, solange der Name nicht zum Zertifikat
-  passt.
 - Browser-Tests lassen Daten liegen (gezählt am 02.10.2026 in der lokalen Datenbank; in der CI
   ist die Datenbank je Lauf frisch). `e2e/bestellung-detail.spec.js` bestellt je Lauf drei
   Exemplare am ersten Titel des Katalogs und nimmt nur den Lieferanten wieder weg; der

@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { existsSync, writeFileSync } from 'node:fs';
+import { MERKZETTEL_MAIL, stelleMailserverStumm } from './mailserver.js';
 
 // Merkt sich vor dem Lauf, wer Hauptlieferant ist.
 //
@@ -34,9 +35,16 @@ export default function globalSetup() {
 			`E2E-Setup: ${MERKZETTEL} existiert bereits — es laeuft schon eine Suite gegen dieselbe ` +
 				`Datenbank. Zwei parallele Laeufe verfaelschen Ergebnisse UND nehmen der Anlage den ` +
 				`Hauptlieferanten. Erst den laufenden Lauf abwarten. Ist keiner mehr aktiv, wurde er ` +
-				`abgebrochen — dann die Datei loeschen und den Hauptlieferanten pruefen.`
+				`abgebrochen — dann die Datei loeschen und den Hauptlieferanten pruefen. Der ` +
+				`Mailserver des Stacks steht nach einem Abbruch stumm; der naechste Lauf stellt ihn ` +
+				`an seinem Ende zurueck (${MERKZETTEL_MAIL}).`
 		);
 	}
+
+	// Vor allem anderen und ohne Auffangen: Lässt sich der Mailserver nicht stummstellen,
+	// läuft keine Spec. Vor dem Merkzettel des Hauptlieferanten, weil nach einem Fehler hier
+	// kein Teardown folgt und der Merkzettel den nächsten Lauf sperren würde.
+	stelleMailserverStumm();
 
 	const container = process.env.E2E_DB_CONTAINER || 'bibliothek-db-local';
 	try {

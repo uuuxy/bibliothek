@@ -27,3 +27,4 @@ dist-ssr
 test-results/
 playwright-report/
 .e2e-hauptlieferant
+.e2e-mailserver
