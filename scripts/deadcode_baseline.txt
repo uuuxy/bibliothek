@@ -49,3 +49,9 @@ internal/littera/leser.go: unreachable func: NurArt
 # wird von den pgtest-Support-Dateien mehrerer Pakete benutzt.
 internal/uebernahme/protokoll.go: unreachable func: Protokoll.Leeren
 
+# Selbstdeklarierte Test-Naht (siehe Doc-Kommentar der Funktion): Die Ersatzbilder
+# der Cover-Quellen stehen als Prüfsumme im Programm, nicht als Datei im Repository.
+# Die Tests der beiden Ladewege (api, inventur) melden deshalb ein eigenes Bild an
+# und prüfen so die Erkennung selbst statt einer Attrappe.
+pkg/coverquelle/ersatzbild.go: unreachable func: MerkeErsatzbildFuerTest
+
