@@ -56,7 +56,9 @@ function createLabelStore() {
 	// Zahlen standen hier als dritte Kopie derselben Raster (24.08.2026).
 	let maxPositions = $derived(felderProBogen(formatId));
 	let generationMode = $state('existing');
-	let existingCopies = $state.raw(/** @type {any[]} */ ([]));
+	// Tief reaktiv, nicht $state.raw: Das Kästchen in Schritt 2 schreibt `checked` an das
+	// Exemplar selbst, und der Bogen (finalLabels) muss das sehen.
+	let existingCopies = $state(/** @type {any[]} */ ([]));
 	let loadingCopies = $state(false);
 	let newQuantity = $state(9);
 	let newStartNum = $state(20060);
