@@ -538,7 +538,7 @@ SELECT count(*) FROM schadensfaelle sf JOIN leser l ON l.id = sf.schueler_id WHE
 
 ### 5.21 Palettenfarben auf M3-Rollen
 
-Stand 03.10.2026: 1113 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
+Stand 03.10.2026: 1089 Fundstellen mit Tailwind-Palettenfarben (`slate`, `blue`, `emerald` …),
 gehalten von der Ratsche `frontend/src/lib/frontend-hygiene-farben.test.js`; Neues entsteht nur
 noch auf Rollen. Umstellen ist eine Umgestaltung, keine Umbenennung: Die Palette führt sechs
 Textgraustufen, M3 zwei Rollen. Für „in Ordnung" und „Achtung" gibt es seit dem 24.09.2026 die
@@ -591,6 +591,13 @@ die Dialoge zum Bearbeiten und Löschen), bis auf die Rollen-Abzeichen (12 Funds
   gemeinsame Dialog nicht.
 - Der Zustand eines Kontos steht in zwei Formen: „Aktiv" und „Inaktiv" als Punkt mit Wort,
   „Zugang beantragt" als Pille.
+
+Die Mail-Vorlagen (Einstellungen, Kategorie „Mail") stehen seit dem 03.10.2026 auf Rollen. Die
+Liste nennt die Vorlagen mit ihrem Schlüssel aus der Datenbank, die Unterstriche durch
+Leerzeichen ersetzt: „BESTELLUNG HAENDLER", „MAHNUNG ELTERN" (`MailTemplates.svelte`,
+`t.typ.replace`). Ein Wort für Menschen wäre etwa „Bestellung an den Händler" und „Mahnbrief an
+die Eltern"; der Hinweis darunter (`MailVorlagenPlatzhalter.svelte`) beschreibt jede Vorlage
+schon so.
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 

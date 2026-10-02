@@ -1,16 +1,21 @@
+<!-- @component MailTemplates — die Texte von Eltern-Mahnbrief und Bestellmail.
+
+     Steht in der Einstellungs-Kategorie „Mail" unter deren Überschrift „Mail-Vorlagen", die
+     auch den Hinweis trägt; eine eigene Überschrift hätte die Ordnung der Seite umgekehrt. -->
 <script>
+	import { AlertTriangle } from '@lucide/svelte';
 	import { apiClient } from './apiFetch.js';
+	import { toastStore } from './stores/toastStore.svelte.js';
 	import Button from './components/ui/Button.svelte';
 	import Feld from './components/ui/Feld.svelte';
 	import MailVorlagenPlatzhalter from './MailVorlagenPlatzhalter.svelte';
-	import { CircleCheck } from '@lucide/svelte';
 
 	/** @type {any[]} */
 	let templates = $state([]);
 	let selectedTemplateId = $state(null);
 	let isSaving = $state(false);
-	let saveSuccess = $state(false);
 	let errorMessage = $state('');
+	let laedt = $state(true);
 
 	let selectedTemplate = $derived(templates.find((t) => t.id === selectedTemplateId) || null);
 
@@ -32,13 +37,14 @@
 		} catch (error) {
 			console.error(error);
 			errorMessage = 'Netzwerkfehler beim Laden.';
+		} finally {
+			laedt = false;
 		}
 	}
 
 	async function saveTemplate() {
 		if (!selectedTemplate) return;
 		isSaving = true;
-		saveSuccess = false;
 		errorMessage = '';
 
 		try {
@@ -48,8 +54,7 @@
 			});
 
 			if (res.ok) {
-				saveSuccess = true;
-				setTimeout(() => (saveSuccess = false), 3000);
+				toastStore.addToast('Vorlage gespeichert.', 'success');
 			} else {
 				errorMessage = 'Fehler beim Speichern der Vorlage.';
 			}
@@ -76,71 +81,44 @@
 	}
 </script>
 
-<section class="w-full max-w-6xl mx-auto px-2 py-8 space-y-8">
-	<!-- Header: flach, durch feine Linie statt Kachel abgesetzt -->
-	<div class="flex items-start justify-between gap-4 border-b border-slate-200 pb-6">
-		<div>
-			<h3 class="text-xl font-bold text-slate-900">Brief- & Mail-Vorlagen</h3>
-			<p class="text-sm text-slate-600 mt-1">
-				Texte für den gedruckten Eltern-Mahnbrief und die Bestellmail an den Händler. Welche
-				Platzhalter gelten, hängt von der Vorlage ab — siehe Hinweis unter dem Text.
-			</p>
-		</div>
-
-		{#if saveSuccess}
-			<div
-				class="px-4 py-1.5 bg-emerald-50 text-emerald-700 text-sm font-semibold rounded-xl border border-emerald-100 flex items-center gap-2 animate-fade-in"
-			>
-				<CircleCheck class="h-4 w-4" aria-hidden="true" />
-				Gespeichert
-			</div>
-		{/if}
-	</div>
-
+<section class="space-y-6">
 	{#if errorMessage}
-		<div class="p-3 bg-red-50 text-red-700 text-sm rounded-xl border border-red-100">
-			{errorMessage}
+		<div
+			role="alert"
+			class="flex items-center gap-2 rounded-xl bg-error-container px-4 py-3 text-sm text-on-error-container"
+		>
+			<AlertTriangle class="h-4 w-4 shrink-0" aria-hidden="true" /><span>{errorMessage}</span>
 		</div>
 	{/if}
 
 	<div class="flex flex-col lg:flex-row gap-10">
-		<!-- Sidebar: Vorlagen-Auswahl (Auswahl-Liste, keine Layout-Kachel) -->
-		<div class="lg:w-1/3 flex flex-col gap-2">
-			{#if templates.length === 0}
-				<div class="py-4 text-slate-500 text-sm text-center">Lade Vorlagen...</div>
+		<!-- Die Auswahl in der Form der Kategorienliste daneben (settings/KategorieListe). -->
+		<div class="lg:w-1/3 flex flex-col gap-1">
+			{#if laedt}
+				<div class="py-4 text-sm text-center text-on-surface-variant">Lade Vorlagen...</div>
 			{:else}
 				{#each templates as t, _i (_i)}
+					{@const gewaehlt = selectedTemplateId === t.id}
 					<button
-						class="text-left px-4 py-3 rounded-xl transition-all duration-200 border {selectedTemplateId ===
-						t.id
-							? 'bg-blue-50 border-blue-200'
-							: 'border-transparent hover:bg-slate-50'}"
+						type="button"
+						aria-current={gewaehlt ? 'true' : undefined}
+						class="flex flex-col rounded-2xl px-4 py-3 text-left transition-colors {gewaehlt
+							? 'bg-secondary-container text-on-secondary-container'
+							: 'text-on-surface-variant hover:bg-surface-container'}"
 						onclick={() => {
 							selectedTemplateId = t.id;
-							saveSuccess = false;
 							errorMessage = '';
 						}}
 					>
-						<div
-							class="font-bold text-sm {selectedTemplateId === t.id
-								? 'text-blue-700'
-								: 'text-slate-700'}"
+						<span class="truncate text-sm font-medium">{t.typ.replace(/_/g, ' ')}</span>
+						<span class="truncate text-sm {gewaehlt ? 'opacity-80' : 'text-on-surface-variant'}"
+							>{t.betreff}</span
 						>
-							{t.typ.replace(/_/g, ' ')}
-						</div>
-						<div
-							class="text-xs mt-0.5 truncate {selectedTemplateId === t.id
-								? 'text-blue-500'
-								: 'text-slate-400'}"
-						>
-							{t.betreff}
-						</div>
 					</button>
 				{/each}
 			{/if}
 		</div>
 
-		<!-- Hauptbereich: Formular (flach, ohne umschließende Kachel) -->
 		<div class="lg:w-2/3">
 			{#if selectedTemplate}
 				<div class="flex flex-col h-full gap-6">
@@ -151,17 +129,15 @@
 						oninput={updateBetreff}
 					/>
 
-					<div class="grow flex flex-col">
-						<label for="text_body" class="block text-sm font-medium text-slate-600 mb-2"
-							>Text-Inhalt</label
-						>
-						<textarea
-							id="text_body"
-							value={selectedTemplate.text_body}
-							oninput={updateTextBody}
-							class="w-full grow min-h-70 p-4 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-shadow bg-white text-slate-700 leading-relaxed font-mono text-base resize-y"
-						></textarea>
-					</div>
+					<Feld
+						id="text_body"
+						label="Text-Inhalt"
+						mehrzeilig
+						zeilen={12}
+						feld="font-mono resize-y"
+						value={selectedTemplate.text_body}
+						oninput={updateTextBody}
+					/>
 
 					<MailVorlagenPlatzhalter typ={selectedTemplate.typ} />
 
@@ -173,7 +149,7 @@
 				</div>
 			{:else if templates.length > 0}
 				<div
-					class="h-full flex flex-col items-center justify-center text-slate-400 p-8 border-2 border-dashed border-slate-200 rounded-2xl"
+					class="h-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-outline-variant rounded-2xl text-on-surface-variant"
 				>
 					<p class="text-sm">Bitte wählen Sie links eine Vorlage aus.</p>
 				</div>
