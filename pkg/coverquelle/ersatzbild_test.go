@@ -29,6 +29,21 @@ func TestIstErsatzbild(t *testing.T) {
 	}
 }
 
+// Zurückgenommen wird nur die eigene Angabe: Stand das Bild schon in der Liste, steht es
+// danach weiter dort. Sonst fehlte allen späteren Tests des Pakets ein Eintrag des Programms.
+func TestMerkeErsatzbildFuerTest_BekanntesBildBleibtBekannt(t *testing.T) {
+	bild := []byte("ein bild, das schon in der liste steht")
+	summe := pruefsumme(bild)
+	ersatzbilder[summe] = true
+	t.Cleanup(func() { delete(ersatzbilder, summe) })
+
+	MerkeErsatzbildFuerTest(bild)()
+
+	if !IstErsatzbild(bild) {
+		t.Error("das Zurücknehmen hat einen Eintrag entfernt, der vorher schon galt")
+	}
+}
+
 // Die Prüfsummen der Liste sind an Google Books gemessen. Ändert Google ein Ersatzbild,
 // erkennt das Programm es nicht mehr, und in den Katalogen steht wieder „image not available".
 // Dieser Test misst nach, braucht dafür das Netz und läuft deshalb nur auf Wunsch:

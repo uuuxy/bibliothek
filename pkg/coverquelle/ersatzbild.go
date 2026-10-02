@@ -31,9 +31,12 @@ func IstErsatzbild(antwort []byte) bool {
 
 // MerkeErsatzbildFuerTest lässt einen Test ein eigenes Bild als Ersatzbild gelten: Die echten
 // stehen als Prüfsumme im Programm, nicht als Datei im Repository. Der Rückgabewert nimmt
-// die Angabe zurück.
+// die Angabe zurück; ein Bild, das schon in der Liste stand, bleibt dort.
 func MerkeErsatzbildFuerTest(bild []byte) (vergiss func()) {
 	summe := pruefsumme(bild)
+	if ersatzbilder[summe] {
+		return func() {}
+	}
 	ersatzbilder[summe] = true
 	return func() { delete(ersatzbilder, summe) }
 }
