@@ -85,6 +85,23 @@ entfallen.
      „Alle … Exemplare" entfernen, ins Feld „Nummer eingeben oder scannen" klicken und ein Buch
      dieses Titels scannen, einmal mit einem Littera-Etikett und einmal mit einem eigenen.
      Erwartet: Das Feld ist wieder leer, und in der Vorschau steht genau dieses Etikett.
+5. **Fragen aus der Nacht zum 03.10.2026** (Farben und Bestandsbücher). Gebaut ist nichts davon;
+   jede Frage steht mit Beleg an der genannten Stelle.
+   - **Bestandsbücher, Länge der Feldnamen** (6.1): Die Felder tragen die Topfnamen des Blatts,
+     bis 33 Zeichen; M3 nennt höchstens 20. Kürzer wären „Land" und „Schulträger".
+   - **Schriftstärke von Chips und Umschaltern** (6.1): vier Bauteile rendern 400, die M3-Token
+     nennen 500; betrifft acht Bildschirme.
+   - **Benutzerliste, Farben der Rollen-Abzeichen** (5.21): vier Farben ohne Bedeutung; ein
+     neutrales Abzeichen oder die Rolle als Wort.
+   - **Benutzerliste, Lösch-Dialog** (5.21): eigener Dialog mit Knöpfen in der Mitte; M3 stellt
+     sie rechts.
+   - **Mail-Vorlagen, Namen** (5.21): Die Liste zeigt die Schlüssel „BESTELLUNG HAENDLER" und
+     „MAHNUNG ELTERN".
+   - **Buchakte, Überschrift im Reiter „Vormerkungen"** (5.21): wiederholt den Namen des Reiters.
+   - **Webcam-Aufnahme** (`WebcamCapture.svelte`, 24 Fundstellen): ein dunkler, eigener Dialog;
+     als Dialog des Hauses wäre er hell, das Kamerabild bliebe dunkel.
+   - **Datenverwaltung** (`DataManagement.svelte`, 16 Fundstellen): Die Knöpfe sind schwarz; als
+     Knöpfe des Hauses wären sie blau (primary). Für Schwarz gibt es keine Rolle.
 
 **Im Code:** Die Festlegung vom 28.09.2026 — bis zu den drei Antworten nur, was einen Termin
 hat — ist am 29.09.2026 für die Punkte unter 1. aufgehoben. Einen Termin hat Node 26 ab dem
@@ -600,9 +617,8 @@ die Eltern"; der Hinweis darunter (`MailVorlagenPlatzhalter.svelte`) beschreibt 
 schon so.
 
 Die Buchakte steht seit dem 03.10.2026 auf Rollen, ihre Reiter kommen aus `ui/Reiter`. Der
-Reiter „Vormerkungen" trägt als
-einziger Reiter der Buchakte eine eigene Überschrift („Warteliste / Vormerkungen", 22 px), die
-den Namen des Reiters wiederholt (`BookVormerkungenTab.svelte`).
+Reiter „Vormerkungen" trägt als einziger der Akte eine eigene Überschrift („Warteliste /
+Vormerkungen", 22 px), die den Namen des Reiters wiederholt (`BookVormerkungenTab.svelte`).
 
 Beim Ansehen der Inventur aufgefallen, jeweils am Code nachgesehen:
 
