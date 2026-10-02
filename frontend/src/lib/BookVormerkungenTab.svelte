@@ -65,7 +65,6 @@
 				searchVal = '';
 				searchResults = [];
 				notiz = '';
-				// Reload list
 				const listRes = await apiFetch(`/api/vormerkungen?titel_id=${book.id}`);
 				// Angelegt ist angelegt — schweigt die Liste, legt jemand sie ein zweites Mal an.
 				if (listRes.ok) vormerkungen = await listRes.json();
@@ -82,17 +81,17 @@
 
 <div class="space-y-6 pt-4">
 	<div class="flex items-center justify-between">
-		<h3 class="text-lg font-bold text-slate-800">Warteliste / Vormerkungen</h3>
+		<h3 class="text-lg font-bold text-on-surface">Warteliste / Vormerkungen</h3>
 		<Button onclick={() => (isAdding = !isAdding)}>
 			{isAdding ? 'Abbrechen' : '+ Schüler vormerken'}
 		</Button>
 	</div>
 
 	{#if isAdding}
-		<div class="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 animate-fade-in">
+		<div class="p-5 bg-surface border border-outline-variant rounded-2xl space-y-4 animate-fade-in">
 			{#if !rechte.einsehen}
 				<!-- Sichtbar statt still: Ein fehlendes Suchfeld sähe wie ein Fehler aus. -->
-				<p class="text-sm text-slate-500">
+				<p class="text-sm text-on-surface-variant">
 					Die Schülersuche braucht das Recht „Schülerdatei anzeigen“ (view_students).
 				</p>
 			{:else}
@@ -121,20 +120,22 @@
 				</div>
 
 				{#if searchResults.length > 0}
-					<div class="mt-4 border border-slate-200 rounded-xl overflow-hidden bg-white">
+					<div
+						class="mt-4 border border-outline-variant rounded-xl overflow-hidden bg-surface-container-lowest"
+					>
 						{#each searchResults as r, _i (_i)}
 							<div
-								class="flex items-center justify-between p-3 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors"
+								class="flex items-center justify-between p-3 border-b border-outline-variant last:border-0 hover:bg-surface transition-colors"
 							>
 								<div>
-									<p class="font-semibold text-slate-800 text-sm">{r.title}</p>
-									<p class="text-xs text-slate-500">{r.subtitle}</p>
+									<p class="font-semibold text-on-surface text-sm">{r.title}</p>
+									<p class="text-xs text-on-surface-variant">{r.subtitle}</p>
 								</div>
 								<Button
 									variant="secondary"
 									size="sm"
 									onclick={() => addVormerkung(r.id)}
-									class="border-blue-100 bg-blue-50 text-blue-700 hover:bg-blue-100"
+									class="border-transparent bg-secondary-container text-on-secondary-container"
 								>
 									Auswählen
 								</Button>
@@ -142,7 +143,7 @@
 						{/each}
 					</div>
 				{:else if searchVal && !isSearching && searchResults.length === 0}
-					<p class="text-sm text-slate-500 mt-2">Keine Schüler gefunden.</p>
+					<p class="text-sm text-on-surface-variant mt-2">Keine Schüler gefunden.</p>
 				{/if}
 			{/if}
 		</div>
@@ -150,7 +151,7 @@
 
 	{#if vormerkungen.length === 0}
 		<div
-			class="py-12 flex flex-col items-center text-slate-400 gap-3 border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50"
+			class="py-12 flex flex-col items-center text-on-surface-variant gap-3 border-2 border-dashed border-outline-variant rounded-2xl bg-surface/50"
 		>
 			<Clock class="w-10 h-10" aria-hidden="true" />
 			<p class="font-medium text-sm">Keine ausstehenden Vormerkungen für diesen Titel.</p>
@@ -175,7 +176,7 @@
 								year: 'numeric'
 							})}
 						</td>
-						<td class="font-semibold text-blue-600">
+						<td class="font-semibold text-primary">
 							{v.schueler_name || 'Unbekannt'}
 						</td>
 						<td>
@@ -184,7 +185,7 @@
 						<td class="text-right">
 							<button
 								onclick={() => deleteVormerkung(v.id)}
-								class="text-rose-600 hover:text-rose-700 font-semibold p-2 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+								class="icon-btn text-error"
 								title="Vormerkung löschen"
 								aria-label="Vormerkung löschen"
 							>
